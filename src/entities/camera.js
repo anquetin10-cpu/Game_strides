@@ -1,0 +1,105 @@
+// Caméra 3e personne : orbite au doigt, recentrage automatique derrière le cheval, anti-collision.
+import * as THREE from 'three';
+import { clamp, damp, dampAngle, lerp } from '../core/math.js';
+
+export class FollowCamera {
+  constructor(camera, game) {
+    this.camera = camera;
+    this.game = game;
+    this.yaw = Math.PI;
+    this.pitch = 0.32;
+    this.dist = 6;
+    this.targetDist = 6;
+    this.height = 1.6;
+    this.target = new THREE.Vector3();
+    this.smoothTarget = new THREE.Vector3();
+    this.sens = 1;
+    this.fov = 60;
+    this.shake = 0;
+    this.override = null; // { pos, look, t } pour les plans cinématiques
+    this.lastManual = -10;
+  }
+
+  snap(pos, heading) {
+    this.smoothTarget.copy(pos);
+    this.yaw = heading + Math.PI;
+    this.update(0.016, { pos, heading, speed: 0, mode: 'foot' }, { dx: 0, dy: 0 }, true);
+  }
+
+  update(dt, focus, look, instant = false) {
+    const cam = this.camera;
+    if (this.override) {
+      const o = this.override;
+      cam.position.lerp(o.pos, instant ? 1 : 1 - Math.exp(-3 * dt));
+      cam.lookAt(o.look);
+      return;
+    }
+    const mode = focus.mode;
+    const now = this.game.time;
+    if (look.dx || look.dy) {
+      this.yaw -= look.dx * 0.0062 * this.sens;
+      this.pitch = clamp(this.pitch + look.dy * 0.0045 * this.sens, -0.12, 1.15);
+      this.lastManual = now;
+    }
+    // Recentrage derrière le sujet quand il avance.
+    const idle = now - this.lastManual;
+    if (focus.speed > 1.2 && idle > 1.4) {
+      const k = mode === 'drive' ? 2.4 : 1.4 + Math.min(focus.speed / 10, 1.6);
+      this.yaw = dampAngle(this.yaw, focus.heading + Math.PI, k, dt);
+      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : 0.28, 1.2, dt);
+    }
+    const base = mode === 'drive' ? 11 : mode === 'ride' ? 6.6 : 4.6;
+    this.targetDist = base + (mode === 'ride' ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
+    this.height = mode === 'drive' ? 2.8 : mode === 'ride' ? 2.35 : 1.55;
+    this.smoothTarget.x = instant ? focus.pos.x : damp(this.smoothTarget.x, focus.pos.x, 18, dt);
+    this.smoothTarget.z = instant ? focus.pos.z : damp(this.smoothTarget.z, focus.pos.z, 18, dt);
+    this.smoothTarget.y = instant ? focus.pos.y : damp(this.smoothTarget.y, focus.pos.y, 10, dt);
+    const tx = this.smoothTarget.x, ty = this.smoothTarget.y + this.height, tz = this.smoothTarget.z;
+    this.target.set(tx, ty, tz);
+
+    // Anti-collision bâtiments : rapprocher la caméra si elle passe dans un mur.
+    let dist = this.targetDist;
+    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
+    const dirx = Math.sin(this.yaw) * cp, diry = sp, dirz = Math.cos(this.yaw) * cp;
+    const steps = 8;
+    for (let i = 1; i <= steps; i++) {
+      const d = (this.targetDist * i) / steps;
+      const x = tx + dirx * d, y = ty + diry * d, z = tz + dirz * d;
+      if (this.game.colliders.blocked(x, z, y - 0.5) && d > 1.2) {
+        dist = Math.max(1.2, d - this.targetDist / steps);
+        break;
+      }
+    }
+    this.dist = instant ? dist : dist < this.dist ? damp(this.dist, dist, 14, dt) : damp(this.dist, dist, 3, dt);
+    let cx = tx + dirx * this.dist;
+    let cy = ty + diry * this.dist;
+    let cz = tz + dirz * this.dist;
+    const ground = this.game.terrain.getHeight(cx, cz) + 0.6;
+    if (cy < ground) cy = ground;
+    if (this.game.terrain.waterDepth(cx, cz) > 0) cy = Math.max(cy, 0.8);
+    // Tremblement au grand galop.
+    const shake = this.shake + (mode === 'ride' && focus.speed > 12 ? (focus.speed - 12) * 0.006 : 0);
+    if (shake > 0) {
+      cy += Math.sin(now * 31) * shake;
+      cx += Math.sin(now * 23) * shake * 0.5;
+    }
+    this.shake = Math.max(0, this.shake - dt * 2);
+    cam.position.set(cx, cy, cz);
+    cam.lookAt(tx, ty + (mode === 'ride' ? 0.1 : 0), tz);
+    const fovTarget = 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);
+    this.fov = damp(this.fov, fovTarget, 3, dt);
+    if (Math.abs(cam.fov - this.fov) > 0.05) {
+      cam.fov = this.fov;
+      cam.updateProjectionMatrix();
+    }
+  }
+
+  // Direction monde correspondant au joystick (y = vers l'avant de la caméra).
+  worldDir(mx, my) {
+    const fx = -Math.sin(this.yaw), fz = -Math.cos(this.yaw);
+    const rx = -fz, rz = fx;
+    return { x: fx * my + rx * mx, z: fz * my + rz * mx };
+  }
+}
+
+export { lerp };
