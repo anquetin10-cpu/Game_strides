@@ -1,0 +1,58 @@
+// Captures des écrans d'interface sur plusieurs tailles d'iPhone.
+import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
+const sizes = { se: [667, 375], i14: [844, 390], max: [932, 430] };
+const which = process.argv[2] || 'i14';
+const [W, H] = sizes[which];
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const ctx = await browser.newContext({ viewport: { width: W, height: H }, isMobile: true, hasTouch: true });
+const page = await ctx.newPage();
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+const shot = (n) => page.screenshot({ path: `tests/e2e/out/ui-${which}-${n}.png` });
+await page.goto('http://localhost:5173/?autostart');
+await page.waitForTimeout(1200);
+await shot('loading');
+await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 180000 });
+await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
+await page.waitForTimeout(500);
+await shot('intro');
+await page.evaluate(() => { window.__auto.stopLoop(); window.__auto.closeCards(); });
+// Résultat de mission (tutoriel joué par le pilote, carte laissée ouverte).
+await page.evaluate(() => {
+  const A = window.__auto, g = window.__game;
+  const orig = A.closeCards; A.closeCards = () => 0;
+  A.runStory('tuto');
+  A.closeCards = orig;
+  g.renderer.render(g.scene, g.camera);
+});
+await page.waitForTimeout(400);
+await shot('result');
+await page.evaluate(() => window.__auto.closeCards());
+// Offres dans l'app.
+await page.evaluate(() => { const g = window.__game; g.missions.refreshOffers(false); g.missions.offers.forEach((o) => (o.isNew = true)); g.phone.open('strides', { tab: 'missions' }); });
+await page.waitForTimeout(600);
+await shot('offers');
+await page.evaluate(() => { const g = window.__game; g.phone.show('home'); });
+await page.waitForTimeout(400);
+await shot('phonehome');
+await page.evaluate(() => { const g = window.__game; g.phone.show('messages'); });
+await page.waitForTimeout(300);
+await shot('messages');
+await page.evaluate(() => { const g = window.__game; g.phone.show('stable'); });
+await page.waitForTimeout(300);
+await shot('stable');
+await page.evaluate(() => { const g = window.__game; g.phone.show('shop'); });
+await page.waitForTimeout(300);
+await shot('shop');
+await page.evaluate(() => { const g = window.__game; g.phone.close(); g.state = 'play'; g.pause(); });
+await page.waitForTimeout(400);
+await shot('pause');
+await page.evaluate(() => { document.querySelector('.overlay')?.remove(); const g = window.__game; g.state = 'play'; g.screens.ending(() => {}); });
+await page.waitForTimeout(400);
+await shot('ending');
+await page.setViewportSize({ width: H, height: W });
+await page.waitForTimeout(400);
+await shot('portrait');
+console.log('ERRORS', errors.join('\n') || 'none');
+await browser.close();

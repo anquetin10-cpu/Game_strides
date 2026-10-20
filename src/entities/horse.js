@@ -281,13 +281,17 @@ export class GrazeAI {
   }
 }
 
-// Suit un point / une entité (sifflet, longe).
+// Suit un point / une entité (sifflet, longe), avec contournement simple des obstacles.
 export class FollowAI {
   constructor(getTarget, { stopDist = 3, run = true } = {}) {
     this.getTarget = getTarget;
     this.stopDist = stopDist;
     this.run = run;
     this.done = false;
+    this.best = Infinity;
+    this.stuckT = 0;
+    this.detour = 0;
+    this.detourDir = 1;
   }
   update(h, dt) {
     h.anim.graze = damp(h.anim.graze, 0, 5, dt);
@@ -297,10 +301,29 @@ export class FollowAI {
     if (d < this.stopDist) {
       h.control.mag = 0;
       this.done = true;
+      this.best = d;
       return;
     }
     this.done = false;
+    // Pas de progrès depuis un moment : contourner par le côté.
+    if (d < this.best - 0.5) {
+      this.best = d;
+      this.stuckT = 0;
+    } else this.stuckT += dt;
+    if (this.stuckT > 1.2 && this.detour <= 0) {
+      this.detour = 1.6;
+      this.detourDir = Math.random() < 0.5 ? -1 : 1;
+      this.stuckT = 0;
+      this.best = d;
+    }
     const mag = d > 25 && this.run ? 0.95 : d > 8 ? 0.7 : 0.35;
+    if (this.detour > 0) {
+      this.detour -= dt;
+      const dx = (t.x - h.pos.x) / d, dz = (t.z - h.pos.z) / d;
+      const px = -dz * this.detourDir, pz = dx * this.detourDir;
+      steer(h, h.pos.x + (px * 0.9 + dx * 0.3) * 10, h.pos.z + (pz * 0.9 + dz * 0.3) * 10, Math.max(mag, 0.6));
+      return;
+    }
     steer(h, t.x, t.z, mag, d > 60 && this.run);
   }
 }

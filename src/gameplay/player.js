@@ -3,6 +3,7 @@ import { Human } from '../entities/human.js';
 import { OUTFITS } from '../entities/humanModel.js';
 import { FollowAI } from '../entities/horse.js';
 import { clamp } from '../core/math.js';
+import { nearestRoad } from '../world/layout.js';
 
 export class Player {
   constructor(game, avatar = 'f') {
@@ -175,12 +176,45 @@ export class Player {
     if (d > 700) return false;
     // Trop loin : le cheval « arrive » près du joueur (comme un appel GTA).
     if (d > 160) {
-      const a = Math.random() * Math.PI * 2;
-      h.setPosition(this.human.pos.x + Math.cos(a) * 60, this.human.pos.z + Math.sin(a) * 60);
-      this.game.colliders.resolve(h.pos, 1, -Infinity);
+      // Apparaître à ~60 m sur un point dégagé, de préférence sur une route.
+      const g = this.game;
+      const p = this.human.pos;
+      let best = null;
+      for (let k = 0; k < 24 && !best; k++) {
+        const a = (k / 24) * Math.PI * 2 + Math.random() * 0.2;
+        const r = 45 + (k % 3) * 12;
+        let x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
+        const nr = nearestRoad(x, z);
+        if (nr.d < 25) {
+          x = nr.x;
+          z = nr.z;
+        }
+        if (!g.colliders.blocked(x, z, g.terrain.getHeight(x, z) + 1) && g.terrain.waterDepth(x, z) < 0 && this._clearPath(x, z, p.x, p.z)) best = { x, z };
+      }
+      // Sinon : tout près du joueur, sur un point libre.
+      for (let k = 0; k < 16 && !best; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const x = p.x + Math.cos(a) * 7, z = p.z + Math.sin(a) * 7;
+        if (!g.colliders.blocked(x, z, g.terrain.getHeight(x, z) + 1) && this._clearPath(x, z, p.x, p.z)) best = { x, z };
+      }
+      best ||= { x: p.x + 3, z: p.z + 3 };
+      h.setPosition(best.x, best.z, Math.atan2(p.x - best.x, p.z - best.z));
+      g.colliders.resolve(h.pos, 1, -Infinity);
     }
     h.ai = new FollowAI(() => this.human.pos, { stopDist: 2.6 });
     this.game.bus.emit('player:whistle', h);
+    return true;
+  }
+
+  // Vrai si aucun obstacle haut ne coupe le segment (ligne de vue au sol).
+  _clearPath(x0, z0, x1, z1) {
+    const g = this.game;
+    const d = Math.hypot(x1 - x0, z1 - z0);
+    const n = Math.ceil(d / 1.5);
+    for (let i = 1; i < n; i++) {
+      const x = x0 + ((x1 - x0) * i) / n, z = z0 + ((z1 - z0) * i) / n;
+      if (g.colliders.blocked(x, z, g.terrain.getHeight(x, z) + 1.6)) return false;
+    }
     return true;
   }
 

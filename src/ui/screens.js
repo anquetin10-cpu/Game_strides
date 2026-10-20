@@ -174,6 +174,7 @@ export class Screens {
       extra: [controls, g.phone.promo()],
       buttons: [
         { label: 'Écran titre', ghost: true, run: onTitle, id: 'title' },
+        { label: 'Partager', run: () => g.share('pause'), keep: true, id: 'share' },
         { label: 'Reprendre', primary: true, run: onResume, id: 'resume' },
       ],
     });
@@ -190,7 +191,10 @@ export class Screens {
       title: 'LÉGENDE DE DEAUVELLE',
       body: `${d.playerName}, de groom à vainqueur du Grand Prix : ta carrière s’est construite mission après mission, avis après avis. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
       extra: [promo, h('div.irl', { text: 'Le monde reste ouvert : continue les missions, les chronos et la chasse aux fers d’or.' })],
-      buttons: [{ label: 'Continuer à explorer', primary: true, run: onClose, id: 'continue' }],
+      buttons: [
+        { label: 'Partager le jeu', run: () => g.share('ending'), keep: true, id: 'share' },
+        { label: 'Continuer à explorer', primary: true, run: onClose, id: 'continue' },
+      ],
     });
   }
 
@@ -200,9 +204,11 @@ export class Screens {
 
   photoFrame(on, onExit) {
     if (on) {
-      const exit = h('button.btn.small.primary.exit', { text: 'Quitter le mode photo' });
+      const exit = h('button.btn.small.primary', { text: 'Quitter le mode photo' });
       tap(exit, onExit);
-      this.photoEl = h('div.photo-frame', {}, exit, h('div.wm', {}, h('span', { html: icon('strides'), style: { width: '34px', display: 'inline-block' } }), h('span', { text: 'STRIDES · GRAND TOUR' })));
+      const share = h('button.btn.small', { text: 'Partager le jeu', style: { background: 'rgba(18,19,22,.7)' } });
+      tap(share, () => this.game.share('photo'));
+      this.photoEl = h('div.photo-frame', {}, h('div.exit', { style: { display: 'flex', gap: '8px' } }, exit, share), h('div.wm', {}, h('span', { html: icon('strides'), style: { width: '34px', display: 'inline-block' } }), h('span', { text: 'STRIDES · GRAND TOUR' })));
       document.body.appendChild(this.photoEl);
     } else this.photoEl?.remove();
   }

@@ -64,6 +64,17 @@ export class Game {
     this.applyQuality(d.settings.quality, true);
     this.resize();
     window.addEventListener('resize', () => this.resize());
+    // iOS : sauvegarde à la mise en arrière-plan, rechargement si le contexte WebGL est perdu.
+    window.addEventListener('pagehide', () => this.saveNow());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.state === 'play') this.saveNow();
+      this.last = performance.now();
+    });
+    this.canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      this.saveNow();
+    });
+    this.canvas.addEventListener('webglcontextrestored', () => location.reload());
     window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 300));
 
     // Monde.
@@ -471,6 +482,17 @@ export class Game {
       body: 'Jobs & services, écuries, transport, événements et annuaire des pros vérifiés : l’application STRIDES arrive sur iOS et Android. Gardez l’œil ouvert — et en attendant, Deauvelle vous attend.',
       buttons: [{ label: 'Retour au jeu', primary: true }],
     });
+  }
+
+  share(source = 'game') {
+    const url = location.href.split(/[?#]/)[0];
+    const data = { title: 'STRIDES Grand Tour', text: 'Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix. Par STRIDES.', url };
+    this.bus.emit('share', source);
+    if (navigator.share) {
+      navigator.share(data).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => this.hud.toast('Lien du jeu copié !'), () => this.hud.toast(url));
+    } else this.hud.toast(url);
   }
 
   fade(fn, hold = 0.5) {

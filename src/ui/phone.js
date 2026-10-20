@@ -106,11 +106,18 @@ export class Phone {
       this.close();
       g.photoMode(true);
     });
+    const m = g.missions;
+    const avail = m.offers.filter((o) => !o.locked).length;
+    const rating = g.rating();
+    const widget = h('button.widget', { 'data-app': 'strides-widget' },
+      h('div.w-head', {}, h('span', { html: icon('strides') }), h('span', { text: 'STRIDES' })),
+      h('div.w-main', { text: m.active ? m.active.offer.title : `${avail} mission${avail > 1 ? 's' : ''} dispo` }),
+      h('div.w-sub', { text: m.active ? m.objectiveText() : `${g.levelInfo().title}${rating ? ` · ★ ${rating.toFixed(1)}` : ''} · ${g.save.data.stats.jobs} mission${g.save.data.stats.jobs > 1 ? 's' : ''} réalisée${g.save.data.stats.jobs > 1 ? 's' : ''}` }));
+    tap(widget, () => this.show('strides'));
     return h(
       'div.home-screen',
       {},
-      h('div.clock.tab-num', { text: g.clockText() }),
-      h('div.date', { text: `Deauvelle · ${g.weatherText()}` }),
+      h('div.home-top', {}, h('div', {}, h('div.clock.tab-num', { text: g.clockText() }), h('div.date', { text: `Deauvelle · ${g.weatherText()}` })), widget),
       h(
         'div.apps',
         {},
@@ -536,6 +543,9 @@ export class Phone {
     const owned = SHOP.filter((s) => d.upgrades.includes(s.id));
     if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauvelle.' }));
     for (const s of owned) body.appendChild(h('div.kv', {}, h('span', { text: s.name }), h('b', { text: s.desc })));
+    const sale = h('button.btn.small.primary', { text: 'Vente Élite : voir les chevaux', style: { marginTop: '12px', marginRight: '8px' } });
+    tap(sale, () => this.show('strides', { tab: 'evenements' }));
+    body.appendChild(sale);
     const call = h('button.btn.small', { text: 'Siffler mon cheval', style: { marginTop: '12px' } });
     tap(call, () => {
       this.close();
