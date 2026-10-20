@@ -35,7 +35,7 @@ export class HUD {
     this.phoneBtn = h('button.phone-btn.clickable', { 'aria-label': 'Téléphone', html: icon('phone') }, h('span.badge', { text: '1' }));
     this.pauseBtn = h('button.icon-btn.clickable', { 'aria-label': 'Pause', html: icon('pause') });
     const wallet = h('div.wallet', {}, this.moneyEl, h('div.level-line', {}, this.levelEl, h('div.xpbar', {}, this.xpEl)), this.starsEl);
-    this.el.appendChild(h('div.top-right', {}, wallet, h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' } }, this.phoneBtn, this.pauseBtn)));
+    this.el.appendChild(h('div.top-right', {}, wallet, this.phoneBtn, this.pauseBtn));
     g.input.bindButton(this.phoneBtn, 'phone');
     g.input.bindButton(this.pauseBtn, 'pause');
 

@@ -96,11 +96,12 @@ export class Screens {
     }
     const go = h('button.btn.primary', { text: 'C’est parti', 'data-id': 'start' });
     const card = h('div.card.setup', {},
-      h('div.kicker', { text: 'Ton profil Strides' }),
-      h('h2', { text: 'Qui monte en selle ?' }),
-      h('div.field', {}, h('label', { text: 'Prénom' }), input),
-      h('div.field', {}, h('label', { text: 'Personnage' }), seg),
-      h('div.row', {}, go));
+      h('div.card-body.scrollable', {},
+        h('div.kicker', { text: 'Ton profil Strides' }),
+        h('h2', { text: 'Qui monte en selle ?' }),
+        h('div.field', {}, h('label', { text: 'Prénom' }), input),
+        h('div.field', {}, h('label', { text: 'Personnage' }), seg)),
+      h('div.card-actions', {}, go));
     const ov = h('div.overlay', {}, card);
     tap(go, () => {
       const name = input.value.trim().slice(0, 16) || 'Alex';
@@ -112,8 +113,9 @@ export class Screens {
   }
 
   // ---------- Carte générique ----------
+  // Fenêtre modale : contenu défilable + barre d'actions toujours visible (écrans courts, lecteur intégré).
   card({ kicker, title, body, html, buttons = [], extra = [] }) {
-    const row = h('div.row');
+    const row = h('div.card-actions');
     const ov = h('div.overlay');
     for (const b of buttons) {
       const el = h(`button.btn${b.primary ? '.primary' : b.ghost ? '.ghost' : ''}`, { text: b.label, 'data-id': b.id || '' });
@@ -123,9 +125,14 @@ export class Screens {
       });
       row.appendChild(el);
     }
-    const card = h('div.card', {}, kicker ? h('div.kicker', { text: kicker }) : null, title ? h('h2', { text: title }) : null, body ? h('p', { text: body }) : null, html ? h('div', { html }) : null, ...extra, buttons.length ? row : null);
+    const content = h('div.card-body.scrollable', {}, kicker ? h('div.kicker', { text: kicker }) : null, title ? h('h2', { text: title }) : null, body ? h('p', { text: body }) : null, html ? h('div', { html }) : null, ...extra);
+    const card = h('div.card', {}, content, buttons.length ? row : null);
     ov.appendChild(card);
     document.body.appendChild(ov);
+    // Ombre sur la barre d'actions tant qu'il reste du contenu à faire défiler.
+    const edge = () => row.classList.toggle('more', content.scrollHeight - content.scrollTop - content.clientHeight > 4);
+    content.addEventListener('scroll', edge, { passive: true });
+    requestAnimationFrame(edge);
     this.game.input.releaseAll();
     return ov;
   }

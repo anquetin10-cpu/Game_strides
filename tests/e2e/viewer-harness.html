@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harnais lecteur</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f3f3f1; overflow: hidden; }
+  iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+  /* Imitation de la barre du lecteur d'artifacts mobile (boutons flottants au-dessus de la page). */
+  .chrome { position: fixed; left: 0; right: 0; top: 0; height: 56px; pointer-events: none; z-index: 10; }
+  .chrome .x { position: absolute; left: 30px; top: 18px; width: 34px; height: 34px; border-radius: 50%; background: rgba(120,120,120,.85); pointer-events: auto; }
+  .chrome .t { position: absolute; left: 50%; top: 26px; transform: translateX(-50%); font: 600 14px system-ui; color: #fff; text-shadow: 0 1px 3px #000; }
+  .chrome .r { position: absolute; right: 30px; top: 18px; width: 78px; height: 34px; border-radius: 17px; background: rgba(120,120,120,.85); pointer-events: auto; }
+</style>
+</head>
+<body>
+<iframe id="f" allow="autoplay"></iframe>
+<div class="chrome"><div class="x"></div><div class="t">Strides Grand Tour</div><div class="r"></div></div>
+<script>document.getElementById('f').src = '/' + location.search;</script>
+</body>
+</html>

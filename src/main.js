@@ -10,7 +10,19 @@ function webglAvailable() {
   }
 }
 
+function markEmbedded() {
+  let embedded = false;
+  try {
+    embedded = window.self !== window.top;
+  } catch {
+    embedded = true;
+  }
+  // Dans le lecteur mobile, des boutons flottent au-dessus du haut de la page : on décale le HUD.
+  if (embedded && matchMedia('(pointer: coarse)').matches) document.body.classList.add('embedded');
+}
+
 async function start() {
+  markEmbedded();
   if (!webglAvailable()) {
     document.body.innerHTML = '<div style="color:#f4f3ef;font:500 16px Inter,Arial;padding:40px;text-align:center">Votre navigateur ne prend pas en charge WebGL.<br>Essayez Safari ou Chrome à jour.</div>';
     return;
