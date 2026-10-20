@@ -5,7 +5,7 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message + '\n' + e.stack));
-await page.goto('http://localhost:5173/?autostart');
+await page.goto(`${process.env.BASE || 'http://localhost:5173'}/?autostart`);
 await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 180000 });
 await page.addScriptTag({ type: 'module', content: "import { generateJob } from '/src/gameplay/jobs.js'; window.__jobs = { generateJob };" });
 await page.waitForFunction(() => !!window.__jobs);

@@ -6,7 +6,7 @@ const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message + '\n' + e.stack));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-await page.goto('http://localhost:5173/?autostart');
+await page.goto(`${process.env.BASE || 'http://localhost:5173'}/?autostart`);
 await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 180000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
 const results = await page.evaluate(() => {

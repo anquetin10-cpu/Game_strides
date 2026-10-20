@@ -24,7 +24,6 @@ export class HUD {
     this.zoneEl = h('div.zone-name', { text: '' });
     const mmWrap = h('div.minimap-wrap', {}, h('div.minimap.clickable', {}, this.mmCanvas), this.zoneEl);
     tap(mmWrap.firstChild, () => g.phone.open('map'));
-    this.el.appendChild(mmWrap);
     this.minimap = new Minimap(this.mmCanvas, g);
 
     // Portefeuille + téléphone.
@@ -35,17 +34,20 @@ export class HUD {
     this.phoneBtn = h('button.phone-btn.clickable', { 'aria-label': 'Téléphone', html: icon('phone') }, h('span.badge', { text: '1' }));
     this.pauseBtn = h('button.icon-btn.clickable', { 'aria-label': 'Pause', html: icon('pause') });
     const wallet = h('div.wallet', {}, this.moneyEl, h('div.level-line', {}, this.levelEl, h('div.xpbar', {}, this.xpEl)), this.starsEl);
-    this.el.appendChild(h('div.top-right', {}, wallet, this.phoneBtn, this.pauseBtn));
     g.input.bindButton(this.phoneBtn, 'phone');
     g.input.bindButton(this.pauseBtn, 'pause');
 
-    // Objectif.
+    // Objectif : mission, consigne, détail éventuel, et le chrono à droite.
     this.objTag = h('div.tag');
     this.objText = h('div.text');
-    this.objTimer = h('div.timer.tab-num.hidden');
     this.objSub = h('div.sub.hidden');
-    this.objEl = h('div.objective.off', {}, this.objTag, this.objText, this.objSub, this.objTimer);
-    this.el.appendChild(this.objEl);
+    this.objTimer = h('div.timer.tab-num.hidden');
+    this.objEl = h('div.objective.off', {}, h('div.obj-main', {}, this.objTag, this.objText, this.objSub), this.objTimer);
+    this.hintEl = h('div.hint.off');
+    this.toastsEl = h('div.toasts');
+
+    // Bandeau du haut : minimap | objectif, astuce, toasts | portefeuille. Le centre de l'écran reste dégagé.
+    this.el.appendChild(h('div.top-bar', {}, mmWrap, h('div.top-mid', {}, this.objEl, this.hintEl, this.toastsEl), h('div.top-right', {}, wallet, this.phoneBtn, this.pauseBtn)));
 
     // Télémétrie.
     this.gearEl = h('div.gear', { text: 'N' });
@@ -71,15 +73,14 @@ export class HUD {
     this.actionsEl = h('div.actions', {}, this.btnGallop, this.btnJump, this.btnAction, this.btnWhistle);
     this.el.appendChild(this.actionsEl);
 
-    // Toasts, message central, astuce.
-    this.toastsEl = h('div.toasts');
+    // Message central.
     this.bigEl = h('div.big-msg.hidden', {}, h('div.t'), h('div.s'));
-    this.hintEl = h('div.hint.off');
-    this.el.append(this.toastsEl, this.bigEl, this.hintEl);
+    this.el.appendChild(this.bigEl);
 
-    // Notification.
+    // Notification (un seul écouteur : l'action dépend de la notification affichée).
     this.notifEl = h('div.notif');
     this.root.appendChild(this.notifEl);
+    tap(this.notifEl, () => this._notifTap?.());
 
     // Dialogue.
     this.dialogEl = h('div.dialog.hidden');
@@ -113,17 +114,25 @@ export class HUD {
       return;
     }
     this.objEl.classList.remove('off');
-    this.objTag.textContent = o.tag || '';
-    this.objText.textContent = o.text || '';
-    if (o.sub) {
-      this.objSub.textContent = o.sub;
-      this.objSub.classList.remove('hidden');
-    } else this.objSub.classList.add('hidden');
-    if (o.timer !== undefined && o.timer !== null) {
-      this.objTimer.classList.remove('hidden');
-      this.objTimer.textContent = formatTime(o.timer);
+    // Appelé à chaque image : n'écrire dans le DOM que ce qui change.
+    const set = (el, v) => el.textContent !== v && (el.textContent = v);
+    set(this.objTag, o.tag || '');
+    const text = o.text || '';
+    if (this.objText.textContent !== text) {
+      this.objText.textContent = text;
+      // Nouvelle consigne : petit flash pour attirer l'œil sans masquer l'action.
+      this.objEl.classList.remove('changed');
+      void this.objEl.offsetWidth;
+      this.objEl.classList.add('changed');
+    }
+    this.objSub.classList.toggle('hidden', !o.sub);
+    if (o.sub) set(this.objSub, o.sub);
+    const timed = o.timer !== undefined && o.timer !== null;
+    this.objTimer.classList.toggle('hidden', !timed);
+    if (timed) {
+      set(this.objTimer, formatTime(o.timer));
       this.objTimer.classList.toggle('warn', o.timer < 10);
-    } else this.objTimer.classList.add('hidden');
+    }
   }
 
   setPhoneBadge(n, ringing = false) {
@@ -193,7 +202,7 @@ export class HUD {
   toast(text, kind = '') {
     const t = h(`div.toast${kind ? `.${kind}` : ''}`, { text });
     this.toastsEl.appendChild(t);
-    while (this.toastsEl.children.length > 4) this.toastsEl.firstChild.remove();
+    while (this.toastsEl.children.length > (innerHeight < 300 ? 2 : 3)) this.toastsEl.firstChild.remove();
     setTimeout(() => t.remove(), 3200);
   }
 
@@ -204,8 +213,13 @@ export class HUD {
     el.classList.remove('hidden', 'pop');
     void el.offsetWidth;
     el.classList.add('pop');
+    // L'objectif s'efface le temps du grand message (ils se chevauchent sur écran court), puis réapparaît.
+    this.el.classList.add('big-on');
     clearTimeout(this._bigT);
-    this._bigT = setTimeout(() => el.classList.add('hidden'), ms);
+    this._bigT = setTimeout(() => {
+      el.classList.add('hidden');
+      this.el.classList.remove('big-on');
+    }, ms);
   }
 
   hint(html, ms = 4500) {
@@ -233,7 +247,7 @@ export class HUD {
     const el = this.notifEl;
     el.innerHTML = '';
     el.append(
-      h('div.n-head', {}, h('div.app', { html: icon('strides'), style: { color: '#121316' } }), h('span', { text: n.app || 'STRIDES' }), h('span.when', { text: 'maintenant' })),
+      h('div.n-head', {}, h('div.n-app', { html: icon('strides'), style: { color: '#121316' } }), h('span', { text: n.app || 'STRIDES' }), h('span.when', { text: 'maintenant' })),
       h('div.n-title', { text: n.title }),
       n.body ? h('div.n-body', { text: n.body }) : null
     );
@@ -248,11 +262,13 @@ export class HUD {
         row.appendChild(b);
       }
       el.appendChild(row);
+      this._notifTap = null;
     } else {
-      tap(el, () => {
+      this._notifTap = () => {
+        this._notifTap = null;
         this._closeNotif();
         n.onTap?.();
-      });
+      };
     }
     this.game.audio.notify();
     requestAnimationFrame(() => el.classList.add('show'));
@@ -261,6 +277,7 @@ export class HUD {
   }
   _closeNotif() {
     clearTimeout(this._notifT);
+    this._notifTap = null;
     this.notifEl.classList.remove('show');
     const n = this.notifActive;
     setTimeout(() => {
@@ -279,9 +296,8 @@ export class HUD {
     const l = d.lines[0];
     this.dialogEl.innerHTML = '';
     this.dialogEl.append(
-      h('div.who', {}, h('div.av', { text: l.initials || (l.who || '?').slice(0, 2).toUpperCase() }), h('span', { text: l.who })),
-      h('div.line', { text: l.text }),
-      h('div.next', { text: d.lines.length > 1 ? 'TOUCHER POUR CONTINUER' : 'TOUCHER POUR FERMER' })
+      h('div.who', {}, h('div.av', { text: l.initials || (l.who || '?').slice(0, 2).toUpperCase() }), h('span', { text: l.who }), h('span.next', { text: d.lines.length > 1 ? 'Toucher pour continuer' : 'Toucher pour fermer' })),
+      h('div.line', { text: l.text })
     );
   }
   advanceDialog() {

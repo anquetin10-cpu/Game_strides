@@ -500,11 +500,12 @@ export class Game {
       window.open(CONFIG.downloadUrl, '_blank', 'noopener');
       return;
     }
+    if (document.querySelector('.overlay [data-id="dl-back"]')) return;
     this.screens.card({
       kicker: 'STRIDES',
       title: 'BIENTÔT SUR VOTRE TÉLÉPHONE',
       body: 'Jobs & services, écuries, transport, événements et annuaire des pros vérifiés : l’application STRIDES arrive sur iOS et Android. Gardez l’œil ouvert — et en attendant, Deauvelle vous attend.',
-      buttons: [{ label: 'Retour au jeu', primary: true }],
+      buttons: [{ label: 'Retour au jeu', primary: true, id: 'dl-back' }],
     });
   }
 

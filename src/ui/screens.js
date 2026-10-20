@@ -95,14 +95,13 @@ export class Screens {
       seg.appendChild(b);
     }
     const go = h('button.btn.primary', { text: 'C’est parti', 'data-id': 'start' });
-    const card = h('div.card.setup', {},
-      h('div.card-body.scrollable', {},
-        h('div.kicker', { text: 'Ton profil Strides' }),
-        h('h2', { text: 'Qui monte en selle ?' }),
-        h('div.field', {}, h('label', { text: 'Prénom' }), input),
-        h('div.field', {}, h('label', { text: 'Personnage' }), seg)),
-      h('div.card-actions', {}, go));
-    const ov = h('div.overlay', {}, card);
+    const content = h('div.card-body.scrollable', {},
+      h('div.kicker', { text: 'Ton profil Strides' }),
+      h('h2', { text: 'Qui monte en selle ?' }),
+      h('div.field', {}, h('label', { text: 'Prénom' }), input),
+      h('div.field', {}, h('label', { text: 'Personnage' }), seg));
+    const row = h('div.card-actions', {}, go);
+    const ov = h('div.overlay', {}, h('div.card.setup', {}, content, row));
     tap(go, () => {
       const name = input.value.trim().slice(0, 16) || 'Alex';
       ov.remove();
@@ -110,6 +109,14 @@ export class Screens {
     });
     input.addEventListener('keydown', (e) => e.key === 'Enter' && input.blur());
     document.body.appendChild(ov);
+    this._scrollEdge(content, row);
+  }
+
+  // Ombre sur la barre d'actions tant qu'il reste du contenu à faire défiler.
+  _scrollEdge(content, row) {
+    const edge = () => row.classList.toggle('more', content.scrollHeight - content.scrollTop - content.clientHeight > 4);
+    content.addEventListener('scroll', edge, { passive: true });
+    requestAnimationFrame(edge);
   }
 
   // ---------- Carte générique ----------
@@ -129,10 +136,7 @@ export class Screens {
     const card = h('div.card', {}, content, buttons.length ? row : null);
     ov.appendChild(card);
     document.body.appendChild(ov);
-    // Ombre sur la barre d'actions tant qu'il reste du contenu à faire défiler.
-    const edge = () => row.classList.toggle('more', content.scrollHeight - content.scrollTop - content.clientHeight > 4);
-    content.addEventListener('scroll', edge, { passive: true });
-    requestAnimationFrame(edge);
+    this._scrollEdge(content, row);
     this.game.input.releaseAll();
     return ov;
   }

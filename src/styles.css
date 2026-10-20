@@ -22,6 +22,8 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body.embedded { --st: calc(max(10px, env(safe-area-inset-top, 0px)) + 54px); }
+/* Les fenêtres peuvent remonter un peu : les boutons du lecteur s'arrêtent à ~52 px. */
+body.embedded .overlay { padding-top: calc(var(--st) - 6px); }
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper);
   font-family: var(--ui); -webkit-font-smoothing: antialiased; touch-action: none;
@@ -53,7 +55,10 @@ body.desktop .joy-base { display: none; }
 .hud * { pointer-events: none; }
 .hud .clickable, .hud button { pointer-events: auto; }
 
-.minimap-wrap { position: absolute; left: var(--sl); top: var(--st); width: 132px; }
+/* Bandeau du haut : minimap | objectif, astuces, toasts | portefeuille — le centre de l'écran reste libre. */
+.top-bar { position: absolute; left: var(--sl); right: var(--sr); top: var(--st); display: flex; align-items: flex-start; gap: 12px; }
+.top-mid { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.minimap-wrap { flex: 0 0 auto; width: 132px; }
 .minimap {
   width: 132px; height: 132px; border-radius: 50%; overflow: hidden; position: relative;
   box-shadow: 0 6px 22px rgba(0,0,0,0.35), 0 0 0 2px rgba(244,243,239,0.85); background: #1b1d21;
@@ -61,7 +66,7 @@ body.desktop .joy-base { display: none; }
 .minimap canvas { width: 100%; height: 100%; display: block; }
 .zone-name { margin-top: 8px; font: 600 10px/1.2 var(--ui); letter-spacing: .14em; text-transform: uppercase; color: rgba(244,243,239,.85); text-shadow: 0 1px 4px rgba(0,0,0,.6); text-align: center; }
 
-.top-right { position: absolute; right: var(--sr); top: var(--st); display: flex; align-items: flex-start; gap: 8px; }
+.top-right { flex: 0 0 auto; display: flex; align-items: flex-start; gap: 8px; }
 .top-right .icon-btn { width: 44px; height: 48px; border-radius: 14px; }
 .wallet { text-align: right; text-shadow: 0 2px 10px rgba(0,0,0,0.45); }
 .money { font: italic 800 30px/1 var(--display); letter-spacing: .01em; }
@@ -82,16 +87,20 @@ body.desktop .joy-base { display: none; }
 .icon-btn svg { width: 18px; height: 18px; }
 
 .objective {
-  position: absolute; left: 50%; top: var(--st); transform: translateX(-50%); max-width: min(52vw, 520px);
-  text-align: center; padding: 8px 16px 9px; border-radius: 12px; background: var(--glass);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); transition: opacity .3s, transform .3s;
+  display: flex; align-items: center; gap: 10px; max-width: min(100%, 420px); padding: 7px 12px 8px; border-radius: 14px;
+  background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
-.objective.off { opacity: 0; transform: translate(-50%, -10px); }
-.objective .tag { font: 700 9px/1 var(--ui); letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
-.objective .text { font: 600 14px/1.25 var(--ui); margin-top: 4px; }
-.objective .timer { display: inline-block; margin-top: 6px; font: italic 800 20px/1 var(--display); padding: 3px 10px; border-radius: 6px; background: var(--paper); color: var(--ink); }
+.objective.off { display: none; }
+.objective, .hint { transition: opacity .25s; }
+.hud.big-on .objective, .hud.big-on .hint { opacity: 0; }
+.objective.changed { animation: objIn .6s ease-out; }
+@keyframes objIn { from { opacity: .4; transform: translateY(-6px); box-shadow: 0 0 0 2px rgba(244,243,239,.8); } }
+.obj-main { flex: 1 1 auto; min-width: 0; }
+.objective .tag { font: 700 9px/1.2 var(--ui); letter-spacing: .16em; color: var(--muted); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.objective .text { margin-top: 3px; font: 600 13px/1.25 var(--ui); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.objective .sub { margin-top: 3px; font: 600 11px/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.objective .timer { flex: 0 0 auto; margin-right: -4px; font: italic 800 19px/1 var(--display); padding: 6px 9px; border-radius: 9px; background: var(--paper); color: var(--ink); }
 .objective .timer.warn { background: var(--bad); color: #fff; }
-.objective .sub { margin-top: 4px; font: 500 11px/1.2 var(--ui); color: var(--muted); }
 
 /* Télémétrie (allure / vitesse / endurance) */
 .telemetry {
@@ -134,15 +143,16 @@ body.desktop .joy-base { display: none; }
 
 /* Notification iOS */
 .notif {
-  position: absolute; left: 50%; top: var(--st); width: min(440px, 64vw); transform: translate(-50%, -140%);
+  position: absolute; left: 50%; top: var(--st); width: min(440px, 64vw); transform: translate(-50%, calc(-100% - var(--st) - 24px));
   background: rgba(28,29,33,0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--line); border-radius: 18px; padding: 10px 12px; box-shadow: 0 14px 40px rgba(0,0,0,.45);
-  transition: transform .45s cubic-bezier(.2,.9,.2,1.1); z-index: 30; pointer-events: auto;
+  /* Masquée : hors écran, invisible et intouchable (rien ne dépasse sous le lecteur intégré). */
+  visibility: hidden; pointer-events: none; transition: transform .45s cubic-bezier(.2,.9,.2,1.1), visibility 0s linear .45s; z-index: 30;
 }
-.notif.show { transform: translate(-50%, 0); }
+.notif.show { transform: translate(-50%, 0); visibility: visible; pointer-events: auto; transition: transform .45s cubic-bezier(.2,.9,.2,1.1), visibility 0s; }
 .notif .n-head { display: flex; align-items: center; gap: 8px; font: 600 11px/1 var(--ui); color: var(--muted); }
-.notif .n-head .app { width: 20px; height: 20px; border-radius: 5px; background: var(--paper); display: grid; place-items: center; }
-.notif .n-head .app svg { width: 14px; height: 14px; }
+.notif .n-head .n-app { width: 20px; height: 20px; border-radius: 5px; background: var(--paper); display: grid; place-items: center; }
+.notif .n-head .n-app svg { width: 14px; height: 14px; }
 .notif .n-head .when { margin-left: auto; }
 .notif .n-title { margin-top: 7px; font: 700 14px/1.25 var(--ui); }
 .notif .n-body { margin-top: 3px; font: 500 12px/1.3 var(--ui); color: rgba(244,243,239,.8); }
@@ -151,7 +161,8 @@ body.desktop .joy-base { display: none; }
 .notif .n-actions button.primary { background: var(--paper); color: var(--ink); }
 
 /* Toasts et messages */
-.toasts { position: absolute; left: var(--sl); top: calc(var(--st) + 160px); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.toasts { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.toasts:empty { display: none; }
 .toast { padding: 7px 12px; border-radius: 10px; background: var(--glass); border: 1px solid var(--line); font: 600 12px/1.2 var(--ui); animation: toastIn .35s ease-out; max-width: 260px; }
 .toast.money { font: italic 800 18px/1 var(--display); }
 .toast.gold { color: var(--gold); }
@@ -162,11 +173,11 @@ body.desktop .joy-base { display: none; }
 .big-msg.pop { animation: pop .5s cubic-bezier(.2,.9,.3,1.3); }
 @keyframes pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.8); } }
 .hint {
-  position: absolute; left: 50%; bottom: calc(var(--sb) + 74px); transform: translateX(-50%); max-width: min(60vw, 520px);
-  padding: 8px 14px; border-radius: 10px; background: var(--paper); color: var(--ink); font: 600 12.5px/1.3 var(--ui); text-align: center;
-  box-shadow: 0 8px 24px rgba(0,0,0,.3); transition: opacity .3s;
+  max-width: min(100%, 420px); padding: 6px 12px 7px; border-radius: 10px; background: var(--paper); color: var(--ink);
+  font: 600 12px/1.3 var(--ui); box-shadow: 0 6px 18px rgba(0,0,0,.25); animation: hintIn .3s ease-out;
 }
-.hint.off { opacity: 0; }
+.hint.off { display: none; }
+@keyframes hintIn { from { opacity: 0; transform: translateY(-4px); } }
 .hint b { font-weight: 800; }
 
 /* Dialogue */
@@ -178,11 +189,11 @@ body.desktop .joy-base { display: none; }
 .dialog .who { display: flex; align-items: center; gap: 8px; font: 700 11px/1 var(--ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .dialog .who .av { width: 26px; height: 26px; border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center; font: 800 10px/1 var(--ui); letter-spacing: 0; }
 .dialog .line { margin-top: 8px; font: 500 15px/1.4 var(--ui); min-height: 42px; }
-.dialog .next { position: absolute; right: 14px; bottom: 10px; font: 600 10px/1 var(--ui); letter-spacing: .14em; color: var(--muted); animation: blink 1.2s infinite; }
+.dialog .next { margin-left: auto; font: 600 9px/1 var(--ui); letter-spacing: .14em; color: var(--muted); animation: blink 1.2s infinite; }
 @keyframes blink { 50% { opacity: .3; } }
 
 /* Cartes plein écran (mission, résultats, menus) */
-.overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(10,11,13,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: calc(var(--st) + 4px) var(--sr) calc(var(--sb) + 4px) var(--sl); }
+.overlay { position: fixed; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; background: rgba(10,11,13,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: calc(var(--st) + 4px) var(--sr) calc(var(--sb) + 4px) var(--sl); }
 .card {
   width: min(560px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden; background: var(--ink-2); border: 1px solid var(--line); border-radius: 22px;
   box-shadow: 0 30px 80px rgba(0,0,0,.5); animation: cardIn .4s cubic-bezier(.2,.9,.2,1);
@@ -372,11 +383,9 @@ body.desktop .joy-base { display: none; }
   .telemetry { padding: 6px 12px; }
   .gear { font-size: 32px; }
   .card h2 { font-size: 30px; }
-  .card { padding: 16px 18px; }
   .apps { gap: 10px 8px; }
   .home-screen .clock { font-size: 34px; }
   .app-icon .ic { width: 46px; height: 46px; }
-  .toasts { top: calc(var(--st) + 128px); }
   .rail-btn { padding: 4px 2px; gap: 2px; font-size: 9px; }
   .rail-btn svg { width: 17px; height: 17px; }
   .app-rail { padding-top: 6px; }
@@ -402,8 +411,15 @@ body.desktop .joy-base { display: none; }
   .minimap-wrap, .minimap { width: 92px; }
   .minimap { height: 92px; }
   .zone-name { margin-top: 5px; font-size: 9px; }
-  .objective { padding: 6px 12px 7px; }
-  .objective .text { font-size: 12px; }
+  .top-bar { gap: 10px; }
+  .top-mid { gap: 5px; }
+  .objective { padding: 5px 10px 6px; gap: 8px; }
+  .objective .text { margin-top: 2px; font-size: 12px; }
+  .objective .sub { margin-top: 2px; font-size: 10.5px; }
+  .objective .timer { font-size: 16px; padding: 5px 7px; }
+  .hint { padding: 5px 10px 6px; font-size: 11.5px; }
+  .toast { padding: 5px 10px; font-size: 11px; }
+  .toast.money { font-size: 16px; }
   .phone-btn, .top-right .icon-btn { height: 42px; }
   .phone-btn { width: 42px; }
   .top-right .icon-btn { width: 38px; }
@@ -416,14 +432,43 @@ body.desktop .joy-base { display: none; }
   .widget { padding: 9px 12px; }
   .widget .w-main { font-size: 18px; }
   .dialog { padding: 9px 14px 10px; }
-  .dialog .line { font-size: 13.5px; min-height: 34px; margin-top: 6px; }
-  .notif { padding: 8px 10px; }
-  .notif .n-actions { margin-top: 7px; }
+  .dialog .line { font-size: 13.5px; min-height: 0; margin-top: 6px; }
+  .notif { padding: 7px 10px 8px; border-radius: 14px; }
+  .notif .n-head { font-size: 10px; }
+  .notif .n-head .n-app { width: 16px; height: 16px; border-radius: 4px; }
+  .notif .n-head .n-app svg { width: 11px; height: 11px; }
+  .notif .n-title { margin-top: 4px; font-size: 13px; }
+  .notif .n-body { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notif .n-actions { margin-top: 6px; }
   .notif .n-actions button { height: 30px; }
 }
+@media (max-height: 360px) {
+  /* Profil : prénom et personnage côte à côte, tout tient sans défiler. */
+  .setup .card-body { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; align-items: end; }
+  .setup .card-body > .kicker, .setup .card-body > h2 { grid-column: 1 / -1; }
+  .setup .field { margin-top: 10px; }
+  .setup label { margin-bottom: 6px; }
+  .setup input, .setup .seg button { height: 40px; }
+}
+@media (max-height: 320px) {
+  /* Joystick au repos décalé : son centre ne tombe plus sous la minimap. */
+  .joy-base { left: calc(var(--sl) + 126px); top: calc(100% - var(--sb) - 70px); width: 112px; height: 112px; margin: -56px 0 0 -56px; }
+}
+@media (max-height: 300px) {
+  .notif { width: min(400px, 54vw); }
+  .notif .n-head { display: none; }
+  .notif .n-title { margin-top: 0; }
+  .notif .n-actions button { height: 28px; }
+  .objective .tag { display: none; }
+  .objective .text { margin-top: 0; }
+  /* Minimap réduite : elle ne recouvre plus le centre du joystick ; boutons d'action sous le portefeuille. */
+  .minimap-wrap, .minimap { width: 76px; }
+  .minimap { height: 76px; }
+  .actions { transform: scale(.78); }
+}
 @media (max-width: 700px) {
-  .objective { max-width: 44vw; }
-  .objective .text { font-size: 12.5px; }
+  .top-bar { gap: 8px; }
+  .objective .text { font-size: 12px; -webkit-line-clamp: 3; }
   .app-rail { flex-basis: 74px; }
   .cards { grid-template-columns: 1fr; }
 }
