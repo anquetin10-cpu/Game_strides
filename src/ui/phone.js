@@ -610,8 +610,13 @@ export class Phone {
     body.appendChild(seg('Qualité graphique', 'quality', [['auto', 'Auto'], ['high', 'Haute'], ['low', 'Économie']], (v) => g.applyQuality(v)));
     body.appendChild(seg('Sensibilité caméra', 'camSens', [[0.7, 'Douce'], [1, 'Normale'], [1.4, 'Rapide']], (v) => (g.cam.sens = v)));
     const reset = h('button.btn.small.ghost', { text: 'Recommencer la partie' });
+    let armed = 0;
     tap(reset, () => {
-      if (confirm('Effacer ta progression et recommencer ?')) g.resetGame();
+      // Confirmation en deux temps (pas de boîte de dialogue système).
+      if (Date.now() - armed < 4000) return g.resetGame();
+      armed = Date.now();
+      reset.textContent = 'Toucher encore pour tout effacer';
+      setTimeout(() => (reset.textContent = 'Recommencer la partie'), 4000);
     });
     body.appendChild(h('div.set-row', {}, h('span', { text: 'Progression' }), reset));
     body.appendChild(this.promo());

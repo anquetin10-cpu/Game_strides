@@ -10,7 +10,8 @@
     "build:single": "vite build --mode single",
     "preview": "vite preview --host",
     "test": "vitest run",
-    "e2e": "node tests/e2e/run.mjs"
+    "e2e": "node tests/e2e/run.mjs",
+    "build:artifact": "vite build --mode single && node scripts/make-artifact.mjs"
   },
   "dependencies": {
     "three": "^0.170.0"

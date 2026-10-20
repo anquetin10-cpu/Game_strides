@@ -12,8 +12,9 @@
   --glass: rgba(18, 19, 22, 0.72);
   --display: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
   --ui: Inter, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-  --sl: max(12px, env(safe-area-inset-left));
-  --sr: max(12px, env(safe-area-inset-right));
+  --sl: max(16px, env(safe-area-inset-left, 0px));
+  --sr: max(16px, env(safe-area-inset-right, 0px));
+  color-scheme: dark;
   --st: max(10px, env(safe-area-inset-top));
   --sb: max(10px, env(safe-area-inset-bottom));
 }

@@ -67,6 +67,11 @@ export class Game {
     window.addEventListener('resize', () => this.resize());
     // iOS : sauvegarde à la mise en arrière-plan, rechargement si le contexte WebGL est perdu.
     window.addEventListener('pagehide', () => this.saveNow());
+    // iOS peut suspendre l'audio : reprise au prochain geste.
+    window.addEventListener('pointerup', () => {
+      const c = this.audio.ctx;
+      if (c && c.state !== 'running' && this.save.data.settings.sound) c.resume();
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.state === 'play') this.saveNow();
       this.last = performance.now();
@@ -507,11 +512,15 @@ export class Game {
     const url = location.href.split(/[?#]/)[0];
     const data = { title: 'STRIDES Grand Tour', text: 'Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix. Par STRIDES.', url };
     this.bus.emit('share', source);
+    const copy = () => {
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => this.hud.toast('Lien du jeu copié !'), () => this.hud.toast(url));
+      else this.hud.toast(url);
+    };
     if (navigator.share) {
-      navigator.share(data).catch(() => {});
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(() => this.hud.toast('Lien du jeu copié !'), () => this.hud.toast(url));
-    } else this.hud.toast(url);
+      navigator.share(data).catch((e) => {
+        if (e?.name !== 'AbortError') copy();
+      });
+    } else copy();
   }
 
   fade(fn, hold = 0.5) {
