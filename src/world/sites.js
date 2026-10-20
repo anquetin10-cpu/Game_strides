@@ -10,7 +10,7 @@ export const HOME = {
   house: { x: -72, z: 136, w: 13, d: 9 },
   yard: { x: -112, z: 174, w: 120, d: 30 },
   truck: { x: -64, z: 158, rot: Math.PI / 2 },
-  spawn: { x: -104, z: 168, rot: Math.PI },
+  spawn: { x: -104, z: 168, rot: 0.35 },
   horse: { x: -112, z: 165, rot: Math.PI / 2 },
 };
 

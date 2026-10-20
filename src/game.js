@@ -89,7 +89,7 @@ export class Game {
     await this.world.build((p, m) => this.screens.setLoading(p * 0.8, m));
     this.terrain = this.world.terrain;
     this.sky = this.world.sky;
-    this.grass = new Grass(this.scene, this.terrain, this.world.grassMask, IS_TOUCH ? 2200 : 3400);
+    this.grass = new Grass(this.scene, this.terrain, this.world.grassMask, IS_TOUCH ? 3200 : 4500);
     this.particles = new Particles(this.scene);
     this.resize();
     this.screens.setLoading(0.82, 'Chevaux et cavaliers');

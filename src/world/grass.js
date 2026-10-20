@@ -24,29 +24,34 @@ export function buildGrassMask(canvas) {
 function tuftGeometry() {
   const pos = [];
   const col = [];
-  const blades = 3;
+  const blades = 5;
   for (let i = 0; i < blades; i++) {
-    const a = (i / blades) * Math.PI;
-    const cx = Math.cos(a) * 0.22, cz = Math.sin(a) * 0.22;
-    const h = 0.42;
-    // Deux triangles par lame (quad effilé).
+    const a = (i / blades) * Math.PI * 2 + i * 0.7;
+    const r = 0.06 + (i % 2) * 0.05;
+    const bx = Math.cos(a) * r, bz = Math.sin(a) * r;
+    const w = 0.035;
+    const tx = Math.cos(a + Math.PI / 2) * w, tz = Math.sin(a + Math.PI / 2) * w;
+    const h = 0.24 + (i % 3) * 0.05;
+    const lean = 0.06;
+    // Lame effilée : un triangle (base large, pointe fine).
     const v = [
-      [-cx, 0, -cz], [cx, 0, cz], [cx * 0.25, h, cz * 0.25],
-      [-cx, 0, -cz], [cx * 0.25, h, cz * 0.25], [-cx * 0.25, h * 0.95, -cz * 0.25],
+      [bx - tx, 0, bz - tz],
+      [bx + tx, 0, bz + tz],
+      [bx + Math.cos(a) * lean, h, bz + Math.sin(a) * lean],
     ];
     for (const p of v) {
       pos.push(...p);
       const t = p[1] / h;
-      col.push(0.55 + t * 0.45, 0.62 + t * 0.38, 0.5 + t * 0.3);
+      col.push(0.5 + t * 0.5, 0.58 + t * 0.42, 0.45 + t * 0.35);
     }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  g.computeVertexNormals();
+  const n = new Float32Array(pos.length);
+  for (let i = 0; i < n.length; i += 3) n[i + 1] = 1;
   // Normales vers le haut : éclairage doux et homogène.
-  const n = g.attributes.normal;
-  for (let i = 0; i < n.count; i++) n.setXYZ(i, 0, 1, 0);
+  g.setAttribute('normal', new THREE.BufferAttribute(n, 3));
   return g;
 }
 
@@ -72,8 +77,8 @@ export class Grass {
             vec3 ip = vec3(0.0);
           #endif
           float sway = sin(time * 1.7 + ip.x * 0.31 + ip.z * 0.27) * 0.08 + sin(time * 3.1 + ip.x) * 0.02;
-          transformed.x += sway * position.y * 2.0;
-          transformed.z += sway * position.y * 1.2;`
+          transformed.x += sway * position.y * 3.0;
+          transformed.z += sway * position.y * 1.8;`
         );
     };
     this.mesh = new THREE.InstancedMesh(tuftGeometry(), mat, count);
@@ -109,7 +114,7 @@ export class Grass {
     this.pos[k * 2 + 1] = z;
     const ok = this.isGrass(x, z) && this.terrain.waterDepth(x, z) < -0.05;
     this.alive[k] = ok ? 1 : 0;
-    const s = ok ? 0.7 + rnd() * 0.8 : 0;
+    const s = ok ? 0.75 + rnd() * 0.6 : 0;
     this._v.set(x, this.terrain.getHeight(x, z) - 0.02, z);
     this._q.setFromAxisAngle(UP, rnd() * Math.PI);
     this._s.set(s, s * (0.8 + rnd() * 0.6), s);
