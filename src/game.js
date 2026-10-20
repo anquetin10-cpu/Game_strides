@@ -28,6 +28,7 @@ import { Phone } from './ui/phone.js';
 import { Screens } from './ui/screens.js';
 import { buildMapImage } from './ui/minimap.js';
 import { Grass } from './world/grass.js';
+import { Particles } from './world/particles.js';
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -84,6 +85,8 @@ export class Game {
     this.terrain = this.world.terrain;
     this.sky = this.world.sky;
     this.grass = new Grass(this.scene, this.terrain, this.world.grassMask, IS_TOUCH ? 2200 : 3400);
+    this.particles = new Particles(this.scene);
+    this.resize();
     this.screens.setLoading(0.82, 'Chevaux et cavaliers');
     await new Promise((r) => setTimeout(r, 0));
 
@@ -177,6 +180,7 @@ export class Game {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.hud?.resize();
+    this.particles?.setViewport(h * this.renderer.getPixelRatio());
   }
 
   // ---------- Entités ----------
@@ -318,12 +322,27 @@ export class Game {
     const b = this.bus;
     const a = this.audio;
     b.on('horse:step', ({ horse, n, depth }) => {
-      if (!a.ctx) return;
       const surf = this.surfaceAt(horse.pos.x, horse.pos.z, depth);
+      // Poussière, sable, mottes d'herbe, éclaboussures.
+      const sp = horse.speed;
+      const f = horse.forward;
+      const bx = horse.pos.x - f.x * 0.4, bz = horse.pos.z - f.z * 0.4;
+      const vx = f.x * sp, vz = f.z * sp;
+      if (surf === 'water') this.particles.emit('splash', bx, horse.groundY + Math.max(0, depth), bz, 3 + n * 2, vx, vz);
+      else if (sp > 5) {
+        if (surf === 'sand') this.particles.emit('sand', bx, horse.groundY, bz, n * 3, vx, vz);
+        else if (surf === 'grass' && sp > 9) this.particles.emit('grass', bx, horse.groundY, bz, n, vx, vz);
+        if (surf !== 'road' && sp > 8) this.particles.emit('dust', bx, horse.groundY, bz, 1, vx, vz);
+      }
+      if (!horse.isPlayerHorse || !a.ctx) return;
       const k = clamp(horse.speed / 10, 0.35, 1);
       for (let i = 0; i < n; i++) setTimeout(() => a.hoof(surf, k), i * 35);
     });
-    b.on('horse:land', () => a.thud());
+    b.on('horse:land', (h) => {
+      a.thud();
+      const surf = this.surfaceAt(h.pos.x, h.pos.z);
+      this.particles.emit(surf === 'grass' ? 'grass' : 'sand', h.pos.x, h.groundY, h.pos.z, 10, h.forward.x * h.speed, h.forward.z * h.speed);
+    });
     b.on('horse:jump', (h) => {
       if (h.isPlayerHorse) a.snort();
     });
@@ -604,6 +623,7 @@ export class Game {
   startGame(isNew, cfg = null) {
     this.audio.unlock();
     this.audio.setEnabled(this.save.data.settings.sound);
+    this.audio.setMusic(this.save.data.settings.music);
     this.screens.hideTitle();
     const d = this.save.data;
     if (isNew) {
@@ -688,6 +708,7 @@ export class Game {
     for (const p of this.humans) if (!p.mounted) p.update(dt, this.camera.position);
     for (const h of this.humans) if (h.mounted) h.animateRiding(dt);
     this.ambient.update(dt, this.camera.position);
+    this.particles.update(dt);
   }
 
   update(dt) {
@@ -746,6 +767,7 @@ export class Game {
     this.collectibles.update(dt);
     this.gps.update(dt);
     this.grass.update(dt, this.player.focus.pos);
+    this.particles.update(dt);
     if (this.cheerT > 0) this.cheerT -= dt;
     if (this._confetti) this._updateConfetti(dt);
 

@@ -96,6 +96,7 @@ export class Audio {
       this.engine.osc.frequency.setTargetAtTime(42 + engine * 4.2, t, 0.1);
       this.engine.lp.frequency.setTargetAtTime(220 + engine * 25, t, 0.1);
     } else this.engine.g.gain.setTargetAtTime(0, t, 0.2);
+    this.musicTick();
     void dt;
     void night;
   }
@@ -120,7 +121,7 @@ export class Audio {
     const g = ctx.createGain();
     src.connect(f).connect(g).connect(this.master);
     const vol = (surface === 'road' ? 0.25 : surface === 'water' ? 0.18 : 0.32) * intensity;
-    this._env(g.gain ? g : g, t, 0.004, vol, surface === 'water' ? 0.18 : 0.07);
+    this._env(g, t, 0.004, vol, surface === 'water' ? 0.18 : 0.07);
     src.start(t, Math.random() * 1.5, 0.3);
     if (surface === 'water') {
       // Éclaboussure.
@@ -244,6 +245,69 @@ export class Audio {
     this.crowd.g.gain.setValueAtTime(0.28, t);
     this.crowd.g.gain.setTargetAtTime(0.0, t + 1.6, 0.8);
   }
+  // Musique d'ambiance procédurale (pads + arpèges, discrète).
+  setMusic(on) {
+    this.musicOn = on;
+    if (!this.ctx) return;
+    if (!this.musicBus) {
+      this.musicBus = this.ctx.createGain();
+      this.musicBus.gain.value = 0;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 2400;
+      this.musicBus.connect(lp).connect(this.master);
+      this.nextBar = this.ctx.currentTime + 0.3;
+      this.bar = 0;
+    }
+    this.musicBus.gain.setTargetAtTime(on ? 0.55 : 0, this.ctx.currentTime, 1.2);
+  }
+
+  _note(freq, t, dur, type, vol, attack = 0.02) {
+    const ctx = this.ctx;
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(this.musicBus);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  musicTick() {
+    if (!this.ctx || !this.musicBus || !this.musicOn) return;
+    const ctx = this.ctx;
+    const bpm = 84;
+    const beat = 60 / bpm;
+    const barDur = beat * 4;
+    const mid = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    // Ré majeur 7 — Si mineur 7 — Sol majeur 7 — La 6 sus.
+    const chords = [[62, 66, 69, 73], [59, 62, 66, 69], [55, 59, 62, 66], [57, 61, 64, 66]];
+    while (this.nextBar < ctx.currentTime + 0.6) {
+      const t0 = this.nextBar;
+      const ch = chords[Math.floor(this.bar / 2) % chords.length];
+      // Pad.
+      for (const n of ch) {
+        this._note(mid(n - 12), t0, barDur * 1.05, 'triangle', 0.018, 0.6);
+        this._note(mid(n - 12) * 1.004, t0, barDur * 1.05, 'sine', 0.014, 0.8);
+      }
+      // Basse.
+      this._note(mid(ch[0] - 24), t0, beat * 1.8, 'sine', 0.05, 0.03);
+      this._note(mid(ch[0] - 24), t0 + beat * 2, beat * 1.6, 'sine', 0.04, 0.03);
+      // Arpège en croches, avec respirations.
+      const pattern = [0, 2, 1, 3, 2, 1, 3, 2];
+      for (let k = 0; k < 8; k++) {
+        if (Math.random() < 0.22) continue;
+        const n = ch[pattern[k]] + (k === 7 && Math.random() < 0.3 ? 12 : 0);
+        this._note(mid(n), t0 + (k * beat) / 2, beat * 0.9, 'sine', 0.022, 0.01);
+      }
+      this.nextBar += barDur;
+      this.bar++;
+    }
+  }
+
   horn() {
     this.tone(330, 0.35, 'square', 0.06);
     this.tone(415, 0.35, 'square', 0.05);

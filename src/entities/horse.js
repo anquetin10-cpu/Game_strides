@@ -228,7 +228,7 @@ export class Horse {
     this.anim.turn = this.lastTurn;
     if (this.mesh.visible && (far < 120 || ((this._skip = (this._skip || 0) + 1) & 1))) {
       const r = animateHorse(this.bones, this.anim, far < 120 ? dt : dt * 2);
-      if (r.footfalls && this.isPlayerHorse) g.bus.emit('horse:step', { horse: this, n: r.footfalls, depth });
+      if (r.footfalls && (this.isPlayerHorse || far < 45)) g.bus.emit('horse:step', { horse: this, n: r.footfalls, depth });
     }
     this.speedNow = this.speed;
     this.distance = (this.distance || 0) + Math.hypot(this.pos.x - prevX, this.pos.z - prevZ);

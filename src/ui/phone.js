@@ -591,6 +591,7 @@ export class Phone {
       return h('div.set-row', {}, h('span', { text: label }), t);
     };
     body.appendChild(toggle('Son', 'sound', (v) => g.audio.setEnabled(v)));
+    body.appendChild(toggle('Musique', 'music', (v) => g.audio.setMusic(v)));
     const seg = (label, key, options, onChange) => {
       const s = h('div.seg');
       for (const [v, l] of options) {
