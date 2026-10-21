@@ -72,6 +72,7 @@ export class Phone {
   show(app, opts = {}) {
     const prevBody = this.screen.querySelector('.app-body');
     const scroll = opts.keepScroll && prevBody ? prevBody.scrollTop : 0;
+    const railScroll = this.screen.querySelector('.app-rail')?.scrollTop || 0;
     this.app = app;
     this.screen.innerHTML = '';
     const fn = {
@@ -88,6 +89,13 @@ export class Phone {
     if (scroll) {
       const b = this.screen.querySelector('.app-body');
       if (b) b.scrollTop = scroll;
+    }
+    // Rail Strides défilant (écrans courts) : garder sa position et l'onglet actif en vue.
+    const rail = this.screen.querySelector('.app-rail');
+    const on = rail && rail.querySelector('.rail-btn.on');
+    if (on) {
+      const top = on.offsetTop - rail.offsetTop;
+      rail.scrollTop = Math.min(Math.max(railScroll, top + on.offsetHeight - rail.clientHeight + 6), top - 6);
     }
   }
 
@@ -115,7 +123,7 @@ export class Phone {
       h('div.w-sub', { text: m.active ? m.objectiveText() : `${g.levelInfo().title}${rating ? ` · ★ ${rating.toFixed(1)}` : ''} · ${g.save.data.stats.jobs} mission${g.save.data.stats.jobs > 1 ? 's' : ''} réalisée${g.save.data.stats.jobs > 1 ? 's' : ''}` }));
     tap(widget, () => this.show('strides'));
     return h(
-      'div.home-screen',
+      'div.home-screen.scrollable',
       {},
       h('div.home-top', {}, h('div', {}, h('div.clock.tab-num', { text: g.clockText() }), h('div.date', { text: `Deauvelle · ${g.weatherText()}` })), widget),
       h(
@@ -145,7 +153,7 @@ export class Phone {
       ['annuaire', 'Annuaire', 'directory'],
       ['profil', 'Profil', 'user'],
     ];
-    const rail = h('div.app-rail', {}, h('div.logo', { html: icon('strides') }));
+    const rail = h('div.app-rail.scrollable', {}, h('div.logo', { html: icon('strides') }));
     const counts = this._tabCounts();
     for (const [id, label, ic] of tabs) {
       const b = h(`button.rail-btn${this.tab === id ? '.on' : ''}`, { 'data-tab': id }, h('div', { html: icon(ic) }), h('span', { text: label }), counts[id] ? h('i.dot') : null);
@@ -178,7 +186,10 @@ export class Phone {
   }
 
   _head(title, sub, right) {
-    return h('div.app-head', {}, h('div', {}, h('h3', { text: title }), sub ? h('div.sub', { text: sub }) : null), right ? h('div.right', {}, right) : null);
+    // Retour à l'accueil du téléphone : la barre du bas reste une cible fine.
+    const back = h('button.back', { html: icon('back'), 'aria-label': 'Retour' });
+    tap(back, () => this.show('home'));
+    return h('div.app-head', {}, back, h('div', {}, h('h3', { text: title }), sub ? h('div.sub', { text: sub }) : null), right ? h('div.right', {}, right) : null);
   }
 
   _activeCard() {

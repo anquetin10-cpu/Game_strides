@@ -66,12 +66,15 @@ export class Screens {
     const learn = h('button.btn.ghost', { 'data-id': 'learn' }, h('span', { text: 'Découvrir l’app Strides' }), h('span', { html: icon('external'), style: { width: '16px', height: '16px', display: 'inline-block' } }));
     tap(learn, () => this.game.openDownload('title'));
     menu.appendChild(learn);
-    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone;
+    // Pied de page : astuce « écran d’accueil » seulement dans Safari iOS (sans effet dans le lecteur intégré), raccourcis clavier seulement avec un pointeur fin.
+    const embedded = document.body.classList.contains('embedded');
+    const ios = !embedded && /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone;
+    const foot = ios ? 'Astuce : <b>Partager → Sur l’écran d’accueil</b> pour jouer en plein écran.' : matchMedia('(pointer: coarse)').matches ? '' : 'Clavier : ZQSD/WASD · Espace = saut · Maj = galop · E = action · P = téléphone';
     this.titleEl = h('div.screen.title-screen', {},
       this.brand(),
       h('div.game-title', { style: { marginTop: '14px' } }, CONFIG.title, h('span', { text: 'LE MONDE ÉQUESTRE EN MONDE OUVERT' })),
       menu,
-      h('div.foot', { html: ios ? 'Astuce : <b>Partager → Sur l’écran d’accueil</b> pour jouer en plein écran.' : 'Clavier : ZQSD/WASD · Espace = saut · Maj = galop · E = action · P = téléphone' }));
+      foot ? h('div.foot', { html: foot }) : null);
     document.body.appendChild(this.titleEl);
   }
   hideTitle() {
