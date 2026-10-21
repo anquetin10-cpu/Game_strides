@@ -1,12 +1,14 @@
 // Téléphone du joueur : écran d'accueil + applications (Strides, Carte, Messages, Écurie, Trophées, Réglages, Photo).
 import { h, tap, esc } from './dom.js';
 import { icon } from './icons.js';
-import { drawFullMap } from './minimap.js';
+import { drawBlip, drawFullMap } from './minimap.js';
 import { formatMoney, formatTime, clamp } from '../core/math.js';
 import { HORSES, SHOP, PROS, STABLES } from '../gameplay/data.js';
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
+import { ion } from './ionicons.js';
+import { renderProHome, renderRequest, requestCard } from './requests.js';
 
 const VERTICAL_LABEL = { JOBS: 'Jobs', TRANSPORT: 'Transport', EVENEMENTS: 'Événements', ANNUAIRE: 'Annuaire', ECURIES: 'Écuries' };
 
@@ -58,7 +60,11 @@ export class Phone {
   }
 
   refresh() {
-    if (this.isOpen) this.show(this.app, { keepScroll: true, tab: this.tab, detail: this.detail });
+    // Pas de rendu pendant une confirmation ou une feuille ouverte sur l'écran « Demande reçue ».
+    if (!this.isOpen || (this.app === 'request' && this._reqBusy)) return;
+    // Carte ouverte : simple redessin (le geste en cours et l'astuce fermée sont conservés).
+    if (this.app === 'map') this.redrawMap?.();
+    else this.show(this.app, { keepScroll: true, tab: this.tab, detail: this.detail, id: this.requestId });
   }
 
   updateClock(text) {
@@ -78,6 +84,7 @@ export class Phone {
     const fn = {
       home: () => this.renderHome(),
       strides: () => this.renderStrides(opts),
+      request: () => renderRequest(this, opts),
       map: () => this.renderMap(opts),
       messages: () => this.renderMessages(opts),
       stable: () => this.renderStable(),
@@ -146,23 +153,23 @@ export class Phone {
     if (opts.tab) this.tab = opts.tab;
     this.detail = opts.detail || null;
     const tabs = [
-      ['missions', 'Missions', 'briefcase'],
-      ['ecuries', 'Écuries', 'stable'],
-      ['transport', 'Transport', 'truck'],
-      ['evenements', 'Événements', 'event'],
-      ['annuaire', 'Annuaire', 'directory'],
-      ['profil', 'Profil', 'user'],
+      ['missions', 'Demandes', 'document-text-outline'],
+      ['ecuries', 'Écuries', 'business-outline'],
+      ['transport', 'Transport', 'car-outline'],
+      ['evenements', 'Événements', 'trophy-outline'],
+      ['annuaire', 'Annuaire', 'people-outline'],
+      ['profil', 'Profil', 'person-outline'],
     ];
     const rail = h('div.app-rail.scrollable', {}, h('div.logo', { html: icon('strides') }));
     const counts = this._tabCounts();
     for (const [id, label, ic] of tabs) {
-      const b = h(`button.rail-btn${this.tab === id ? '.on' : ''}`, { 'data-tab': id }, h('div', { html: icon(ic) }), h('span', { text: label }), counts[id] ? h('i.dot') : null);
+      const b = h(`button.rail-btn${this.tab === id ? '.on' : ''}`, { 'data-tab': id }, h('div', { html: ion(ic) }), h('span', { text: label }), counts[id] ? h('i.dot') : null);
       tap(b, () => this.show('strides', { tab: id }));
       rail.appendChild(b);
     }
     const main = h('div.app-main');
     const render = {
-      missions: () => this._tabOffers('JOBS', 'Missions', 'Jobs & services près de vous'),
+      missions: () => renderProHome(this),
       transport: () => this._tabTransport(),
       evenements: () => this._tabEvents(),
       ecuries: () => this._tabStables(),
@@ -170,8 +177,8 @@ export class Phone {
       profil: () => this._tabProfile(),
     }[this.tab];
     main.append(...render());
-    // Marquer les offres de l'onglet comme vues.
-    for (const o of g.missions.offers) if (this._offerTab(o) === this.tab) o.isNew = false;
+    // Marquer les offres de l'onglet comme vues (l'onglet Demandes les liste toutes).
+    for (const o of g.missions.offers) if (this.tab === 'missions' || this._offerTab(o) === this.tab) o.isNew = false;
     g.missions.updateBadge();
     return h('div.app', {}, rail, main);
   }
@@ -182,6 +189,7 @@ export class Phone {
   _tabCounts() {
     const c = {};
     for (const o of this.game.missions.offers) if (o.isNew) c[this._offerTab(o)] = (c[this._offerTab(o)] || 0) + 1;
+    c.missions = this.game.missions.offers.filter((o) => o.isNew).length;
     return c;
   }
 
@@ -213,46 +221,6 @@ export class Phone {
       h('div.acts', {}, gps, ab));
   }
 
-  offerCard(o) {
-    const g = this.game;
-    const d = g.distanceTo(o.place);
-    const client = o.client;
-    const card = h(`div.mcard`, { 'data-offer': o.id },
-      h('div.top', {}, h(`span.chip${o.story ? '.story' : ''}`, { text: `${VERTICAL_LABEL[o.vertical] || o.vertical} · ${o.category}` }), h('span.pay', { text: o.pay ? formatMoney(o.pay) : o.payLabel || '—' })),
-      h('div.title', { text: o.title }),
-      h('div.meta', { text: `${o.placeName} · ${(d / 1000).toFixed(1)} km${o.duration ? ` · ${o.duration}` : ''}` }),
-      o.desc ? h('div.meta', { text: o.desc }) : null,
-      client ? h('div.client', {}, h('div.av', { text: client.initials }), h('span', { text: client.name }), h('span.rating', { text: `★ ${client.rating.toFixed(1)}` }), client.verified ? h('span.verified', { html: `${icon('check')}Vérifié` }) : null) : null);
-    const acts = h('div.acts');
-    const refuse = h('button.btn', { text: 'Refuser', 'data-act': 'refuse' });
-    const accept = h('button.btn.primary', { text: 'Accepter', 'data-act': 'accept' });
-    tap(refuse, () => {
-      g.missions.refuse(o.id);
-      this.refresh();
-    });
-    tap(accept, () => {
-      if (g.missions.accept(o.id)) this.close();
-      else this.refresh();
-    });
-    if (o.locked) {
-      acts.appendChild(h('div.meta', { text: o.locked }));
-    } else acts.append(refuse, accept);
-    card.appendChild(acts);
-    return card;
-  }
-
-  _tabOffers(vertical, title, sub) {
-    const g = this.game;
-    const offers = g.missions.offers.filter((o) => o.vertical === vertical);
-    const body = h('div.app-body.scrollable');
-    const active = this._activeCard();
-    if (active) body.append(h('div.section-t', { text: 'Mission en cours' }), h('div.cards', {}, active));
-    body.appendChild(h('div.section-t', { text: `${offers.length} proposition${offers.length > 1 ? 's' : ''}` }));
-    if (offers.length) body.appendChild(h('div.cards', {}, ...offers.map((o) => this.offerCard(o))));
-    else body.appendChild(h('div.empty', { text: 'Aucune mission pour le moment. Les nouvelles offres arrivent en notification — reste connecté.' }));
-    return [this._head(title, sub), body];
-  }
-
   _tabTransport() {
     const g = this.game;
     const offers = g.missions.offers.filter((o) => o.vertical === 'TRANSPORT');
@@ -260,7 +228,7 @@ export class Phone {
     const active = this._activeCard();
     if (active && g.missions.active.offer.vertical === 'TRANSPORT') body.append(h('div.section-t', { text: 'Mission en cours' }), h('div.cards', {}, active));
     body.appendChild(h('div.section-t', { text: 'Missions de transport' }));
-    if (offers.length) body.appendChild(h('div.cards', {}, ...offers.map((o) => this.offerCard(o))));
+    if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
     else body.appendChild(h('div.empty', { text: g.save.data.completed.includes('transport') || g.levelInfo().level >= 2 ? 'Pas de transport à effectuer pour l’instant.' : 'Débloqué au statut Cavalier.' }));
     // Réserver un transport = voyage rapide.
     body.appendChild(h('div.section-t', { text: 'Réserver un transporteur' }));
@@ -290,7 +258,7 @@ export class Phone {
     const active = this._activeCard();
     if (active && g.missions.active.offer.vertical === 'EVENEMENTS') body.append(h('div.section-t', { text: 'En cours' }), h('div.cards', {}, active));
     body.appendChild(h('div.section-t', { text: 'Compétitions' }));
-    if (offers.length) body.appendChild(h('div.cards', {}, ...offers.map((o) => this.offerCard(o))));
+    if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
     else body.appendChild(h('div.empty', { text: 'Les engagements s’ouvrent avec ta réputation. Continue tes missions !' }));
     // Entraînements libres.
     body.appendChild(h('div.section-t', { text: 'Entraînements libres (chrono)' }));
@@ -326,7 +294,7 @@ export class Phone {
     const g = this.game;
     const offers = g.missions.offers.filter((o) => o.vertical === 'ECURIES');
     const body = h('div.app-body.scrollable');
-    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.cards', {}, ...offers.map((o) => this.offerCard(o))));
+    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
     const pick = g.missions.stablePicker;
     body.appendChild(h('div.section-t', { text: pick ? pick.prompt : 'Écuries à proximité' }));
     const list = h('div.cards');
@@ -361,7 +329,7 @@ export class Phone {
     const g = this.game;
     const offers = g.missions.offers.filter((o) => o.vertical === 'ANNUAIRE');
     const body = h('div.app-body.scrollable');
-    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.cards', {}, ...offers.map((o) => this.offerCard(o))));
+    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
     body.appendChild(h('div.section-t', { text: 'Professionnels vérifiés près de vous' }));
     const list = h('div.cards');
     for (const p of PROS) {
@@ -418,23 +386,43 @@ export class Phone {
     const wrap = h('div.map-app');
     const cv = h('canvas');
     wrap.appendChild(cv);
-    const back = h('button.back', { html: icon('back'), style: { position: 'absolute', left: '12px', top: '10px', width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(18,19,22,.8)', display: 'grid', placeItems: 'center' } });
+    const back = h('button.back.st-back.map-back', { html: ion('chevron-back'), 'aria-label': 'Retour' });
     tap(back, () => this.show('home'));
     wrap.appendChild(back);
-    wrap.appendChild(h('div.map-tip', { text: 'Touchez la carte pour placer un repère GPS' }));
-    wrap.appendChild(h('div.map-legend', {}, ...[['Mission', 'mission'], ['Écurie', 'stable'], ['Boutique', 'shop'], ['Événement', 'event']].map(([l]) => h('span', {}, h('i'), l))));
+    // Astuce affichée jusqu'au premier toucher sur la carte.
+    const tip = this.mapTipSeen ? null : wrap.appendChild(h('div.map-tip', { text: 'Touchez la carte pour placer un repère GPS' }));
+    // Légende : le picto réel de chaque repère.
+    const key = (kind) => {
+      const c = h('canvas', { width: 32, height: 32 });
+      drawBlip(c.getContext('2d'), 16, 16, kind, 1.6);
+      return c;
+    };
+    wrap.appendChild(h('div.map-legend', {}, ...[['Mission', 'mission'], ['Écurie', 'stable'], ['Boutique', 'shop'], ['Événement', 'event']].map(([l, k]) => h('span', {}, key(k), l))));
     requestAnimationFrame(() => {
-      const r = cv.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      cv.width = Math.round(r.width * dpr);
-      cv.height = Math.round(r.height * dpr);
+      // Taille de mise en page : l'animation d'ouverture du téléphone (scale .96) ne fausse plus le canvas.
+      cv.width = Math.round(cv.clientWidth * dpr);
+      cv.height = Math.round(cv.clientHeight * dpr);
       const f = g.player.focus.pos;
       const fit = Math.min(cv.width, cv.height) / WORLD.size;
       this.mapView = this.mapView || { x: f.x * 0.3, z: f.z * 0.3, scale: fit * 1.25 };
       this.mapView.dpr = dpr;
       this.mapView.labels = true;
-      let api = drawFullMap(cv, g, this.mapView);
-      const redraw = () => (api = drawFullMap(cv, g, this.mapView));
+      // Retour, astuce, légende et barre d'accueil en px du canvas : aucun libellé dessous.
+      const avoid = () => {
+        const c = cv.getBoundingClientRect(), k = cv.width / c.width;
+        return [...wrap.querySelectorAll('.back, .map-tip, .map-legend'), this.phone.querySelector('.home-btn')].map((el) => {
+          const q = el.getBoundingClientRect();
+          return { x0: (q.left - c.left) * k, x1: (q.right - c.left) * k, y0: (q.top - c.top) * k, y1: (q.bottom - c.top) * k };
+        });
+      };
+      let api;
+      const redraw = () => {
+        this.mapView.avoid = avoid();
+        api = drawFullMap(cv, g, this.mapView);
+      };
+      redraw();
+      this.redrawMap = redraw;
       // Glisser pour déplacer, pincer/molette pour zoomer, toucher pour un repère.
       const pts = new Map();
       let moved = 0;
@@ -443,6 +431,8 @@ export class Phone {
         cv.setPointerCapture(e.pointerId);
         pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
         moved = 0;
+        this.mapTipSeen = true;
+        tip?.remove();
         if (pts.size === 2) {
           const [a, b] = [...pts.values()];
           pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: this.mapView.scale };
@@ -456,7 +446,12 @@ export class Phone {
         p.y = e.clientY;
         if (pts.size === 2 && pinch) {
           const [a, b] = [...pts.values()];
+          const s0 = this.mapView.scale, r = cv.getBoundingClientRect(), k = cv.width / r.width;
           this.mapView.scale = clamp((pinch.s * Math.hypot(a.x - b.x, a.y - b.y)) / pinch.d, fit * 0.9, fit * 8);
+          // Zoom centré entre les deux doigts : le lieu pincé reste sous les doigts.
+          const mx = ((a.x + b.x) / 2 - r.left) * k - cv.width / 2, my = ((a.y + b.y) / 2 - r.top) * k - cv.height / 2;
+          this.mapView.x += mx / s0 - mx / this.mapView.scale;
+          this.mapView.z += my / s0 - my / this.mapView.scale;
           moved += 10;
         } else {
           moved += Math.abs(dx) + Math.abs(dy);
@@ -468,7 +463,7 @@ export class Phone {
       const up = (e) => {
         if (pts.has(e.pointerId) && moved < 8 && pts.size === 1) {
           const r2 = cv.getBoundingClientRect();
-          const w = api.toWorld((e.clientX - r2.left) * dpr, (e.clientY - r2.top) * dpr);
+          const w = api.toWorld(((e.clientX - r2.left) * cv.width) / r2.width, ((e.clientY - r2.top) * cv.height) / r2.height);
           g.gps.set(w, 'Repère');
           g.hud.toast('Repère GPS placé');
           redraw();

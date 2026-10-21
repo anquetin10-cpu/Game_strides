@@ -2,6 +2,7 @@
 import { WORLD, ROADS, PATHS, XC_PATH, POND, HIPPO, FORESTS, shoreZ, isCliffRegion } from '../world/layout.js';
 import { HOME, HARAS, POLE, DUNES, TOWN } from '../world/sites.js';
 import { getFields } from '../world/fields.js';
+import { drawLogo, LOGO_MARK } from './logo.js';
 
 const SIZE = 1024;
 const S = SIZE / WORLD.size;
@@ -124,23 +125,16 @@ export function drawBlip(ctx, x, y, kind, size = 1) {
   ctx.translate(x, y);
   ctx.scale(size, size);
   if (kind === 'mission' || kind === 'story') {
-    ctx.fillStyle = '#121316';
+    // Pastille encre avec le « S » en tête de cheval du logo STRIDES.
+    ctx.fillStyle = '#0f0f0e';
     ctx.beginPath();
     ctx.arc(0, 0, 8.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#f4f3ef';
+    ctx.strokeStyle = '#f7f4ed';
     ctx.lineWidth = 1.6;
     ctx.stroke();
-    ctx.fillStyle = '#f4f3ef';
-    for (let i = 0; i < 3; i++) {
-      const bx = -5 + i * 3.4;
-      ctx.beginPath();
-      ctx.moveTo(bx + 2.2, -4);
-      ctx.lineTo(bx + 3.6, -4);
-      ctx.lineTo(bx + 1.4, 4);
-      ctx.lineTo(bx, 4);
-      ctx.fill();
-    }
+    const lh = 11.5;
+    drawLogo(ctx, (-lh * LOGO_MARK.w) / LOGO_MARK.h / 2, -lh / 2, lh, '#f7f4ed', true);
   } else if (kind === 'waypoint') {
     ctx.fillStyle = '#f4f3ef';
     ctx.strokeStyle = '#121316';
@@ -187,7 +181,7 @@ export function drawBlip(ctx, x, y, kind, size = 1) {
     ctx.stroke();
     ctx.fillStyle = BLIP_COLORS[kind] || '#9b9da4';
     const glyph = { home: 'H', shop: '€', event: '★', stable: 'É', pro: '+', strides: 'S', view: '◆', beach: '~', town: 'D' }[kind] || '•';
-    ctx.font = '700 8px Inter, Arial, sans-serif';
+    ctx.font = '600 8px Geist, Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(glyph, 0, 0.5);
@@ -299,12 +293,15 @@ export class Minimap {
     ctx.arc(nnx, nny, 7 * (W / 132), 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#f4f3ef';
-    ctx.font = `700 ${9 * (W / 132)}px Inter, Arial`;
+    ctx.font = `600 ${9 * (W / 132)}px Geist, Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('N', nnx, nny + 0.5);
   }
 }
+
+// Priorité des repères sur la carte : GPS, histoire, missions, lieux, cheval et camion, pros et boutique.
+const MAP_RANK = { waypoint: 0, mission: 2, home: 3, event: 3, stable: 3, strides: 3, horse: 4, truck: 4, pro: 5, shop: 5 };
 
 // Carte plein écran (application Carte du téléphone).
 export function drawFullMap(canvas, game, view) {
@@ -334,18 +331,39 @@ export function drawFullMap(canvas, game, view) {
     ctx.setLineDash([]);
   }
   const dpr = view.dpr || 1;
-  ctx.font = `600 ${10 * dpr}px Inter, Arial`;
-  ctx.textAlign = 'center';
-  for (const b of game.getBlips(true)) {
-    const [sx, sy] = toScreen(b.x, b.z);
-    drawBlip(ctx, sx, sy, b.kind, dpr * 1.1);
-    if (b.label && view.labels && (b.kind !== 'pro' && b.kind !== 'shop' || view.scale > 1.2 * (view.dpr || 1))) {
-      ctx.fillStyle = 'rgba(244,243,239,0.85)';
-      ctx.fillText(b.label, sx, sy + 18 * dpr);
-    }
-  }
+  // Repères du plus au moins important : icônes peintes en ordre inverse (missions au-dessus des lieux), puis libellés
+  // posés sous, au-dessus, à droite ou à gauche du repère, seulement s'ils tiennent dans le canvas sans toucher
+  // une icône, la flèche du joueur, un libellé déjà posé ou un bouton de la carte (view.avoid). Recalculé à chaque déplacement ou zoom.
+  const rank = (b) => (MAP_RANK[b.kind] ?? 6) - (b.sticky && b.kind === 'mission' ? 1 : 0);
+  const list = game.getBlips(true).map((b) => ({ b, r: rank(b), p: toScreen(b.x, b.z) })).sort((u, v) => u.r - v.r);
+  for (let i = list.length - 1; i >= 0; i--) drawBlip(ctx, list[i].p[0], list[i].p[1], list[i].b.kind, dpr * 1.1);
   const f = game.player.focus;
   const [px2, py2] = toScreen(f.pos.x, f.pos.z);
+  const boxes = [...(view.avoid || []), { x0: px2 - 10 * dpr, x1: px2 + 10 * dpr, y0: py2 - 10 * dpr, y1: py2 + 10 * dpr }];
+  for (const { r, p: [x, y] } of list) if (r < 6) boxes.push({ x0: x - 7 * dpr, x1: x + 7 * dpr, y0: y - 7 * dpr, y1: y + 7 * dpr });
+  const proZoom = scale >= (4 * Math.min(W, H)) / WORLD.size; // pros et boutique : à partir de 4× la vue d'ensemble
+  const seen = new Set();
+  ctx.font = `500 ${10 * dpr}px Geist, Arial`;
+  ctx.textAlign = 'center';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3 * dpr;
+  ctx.strokeStyle = 'rgba(18,19,22,0.85)';
+  ctx.fillStyle = 'rgba(244,243,239,0.92)';
+  for (const { b, p: [sx, sy] } of list) {
+    if (!b.label || !view.labels || ((b.kind === 'pro' || b.kind === 'shop') && !proZoom)) continue;
+    const key = `${b.label}|${Math.round(b.x / 10)}|${Math.round(b.z / 10)}`; // offres identiques au même endroit : un seul libellé
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const w = ctx.measureText(b.label).width + 4 * dpr;
+    for (const [x, y] of [[sx, sy + 18 * dpr], [sx, sy - 14 * dpr], [sx + 13 * dpr + w / 2, sy + 4 * dpr], [sx - 13 * dpr - w / 2, sy + 4 * dpr]]) {
+      const q = { x0: x - w / 2, x1: x + w / 2, y0: y - 8 * dpr, y1: y + 3 * dpr };
+      if (q.x0 < 0 || q.x1 > W || q.y0 < 0 || q.y1 > H || boxes.some((o) => q.x0 < o.x1 && q.x1 > o.x0 && q.y0 < o.y1 && q.y1 > o.y0)) continue;
+      boxes.push(q);
+      ctx.strokeText(b.label, x, y);
+      ctx.fillText(b.label, x, y);
+      break;
+    }
+  }
   ctx.save();
   ctx.translate(px2, py2);
   ctx.rotate(Math.PI - f.heading);

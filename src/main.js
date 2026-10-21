@@ -24,13 +24,13 @@ function markEmbedded() {
 async function start() {
   markEmbedded();
   if (!webglAvailable()) {
-    document.body.innerHTML = '<div style="color:#f4f3ef;font:500 16px Inter,Arial;padding:40px;text-align:center">Votre navigateur ne prend pas en charge WebGL.<br>Essayez Safari ou Chrome à jour.</div>';
+    document.body.innerHTML = '<div style="color:#f4f3ef;font:500 16px Geist,Arial;padding:40px;text-align:center">Votre navigateur ne prend pas en charge WebGL.<br>Essayez Safari ou Chrome à jour.</div>';
     return;
   }
   // Attendre (brièvement) les polices pour les textures générées.
   try {
     await Promise.race([
-      Promise.all([document.fonts.load('800 40px "Barlow Condensed"'), document.fonts.load('italic 800 40px "Barlow Condensed"'), document.fonts.load('600 20px Inter')]),
+      Promise.all([document.fonts.load('600 40px Geist'), document.fonts.load('400 20px Geist'), document.fonts.load('500 20px "Geist Mono"')]),
       new Promise((r) => setTimeout(r, 1800)),
     ]);
   } catch {

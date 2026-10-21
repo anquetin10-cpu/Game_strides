@@ -3,6 +3,7 @@ import { h, tap, stars } from './dom.js';
 import { icon } from './icons.js';
 import { formatMoney, formatTime } from '../core/math.js';
 import { CONFIG } from '../config.js';
+import { logoSvg } from './logo.js';
 
 const TIPS = [
   'Sur Strides, chaque professionnel est vérifié avant de pouvoir proposer ses services.',
@@ -26,7 +27,7 @@ export class Screens {
   }
 
   brand() {
-    return h('div.brandmark', {}, h('div', { html: icon('strides'), style: { height: '28px', width: '44px' } }), h('div.wm', { text: 'STRIDES' }));
+    return h('div.brandmark', { html: logoSvg(), 'aria-label': 'STRIDES' });
   }
 
   // ---------- Chargement ----------
@@ -157,7 +158,7 @@ export class Screens {
     if (r.irl) extra.push(h('div.irl', { html: r.irl }));
     this.card({
       kicker: r.kicker || 'Mission Strides',
-      title: r.title || 'MISSION RÉUSSIE',
+      title: r.title || 'Mission réussie',
       body: r.body,
       extra,
       buttons: [{ label: 'Continuer', primary: true, id: 'continue', run: onClose }],
@@ -168,7 +169,7 @@ export class Screens {
   missionFailed(reason, onRetry, onLater) {
     this.card({
       kicker: 'Mission',
-      title: 'MISSION ÉCHOUÉE',
+      title: 'Mission échouée',
       body: reason,
       buttons: [
         { label: 'Plus tard', run: onLater, id: 'later' },
@@ -184,7 +185,7 @@ export class Screens {
     const controls = h('div', { html: `<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. Boutons : <b>Saut</b>, <b>Galop</b> (maintenir), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD, Espace (saut), Maj (galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>` });
     return this.card({
       kicker: 'Pause',
-      title: 'STRIDES GRAND TOUR',
+      title: 'STRIDES Grand Tour',
       extra: [controls, g.phone.promo()],
       buttons: [
         { label: 'Écran titre', ghost: true, run: onTitle, id: 'title' },
@@ -202,7 +203,7 @@ export class Screens {
     promo.style.marginTop = '16px';
     this.card({
       kicker: 'Grand Prix CSI 5★ de Deauvelle',
-      title: 'LÉGENDE DE DEAUVELLE',
+      title: 'Légende de Deauvelle',
       body: `${d.playerName}, de groom à vainqueur du Grand Prix : ta carrière s’est construite mission après mission, avis après avis. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
       extra: [promo, h('div.irl', { text: 'Le monde reste ouvert : continue les missions, les chronos et la chasse aux fers d’or.' })],
       buttons: [
@@ -222,8 +223,16 @@ export class Screens {
       tap(exit, onExit);
       const share = h('button.btn.small', { text: 'Partager le jeu', style: { background: 'rgba(18,19,22,.7)' } });
       tap(share, () => this.game.share('photo'));
-      this.photoEl = h('div.photo-frame', {}, h('div.exit', { style: { display: 'flex', gap: '8px' } }, exit, share), h('div.wm', {}, h('span', { html: icon('strides'), style: { width: '34px', display: 'inline-block' } }), h('span', { text: 'STRIDES · GRAND TOUR' })));
+      this.photoEl = h('div.photo-frame', {}, h('div.exit', { style: { display: 'flex', gap: '8px' } }, exit, share), h('div.wm', { html: logoSvg() }));
       document.body.appendChild(this.photoEl);
     } else this.photoEl?.remove();
+  }
+
+  // Message bref dans le cadre photo (le HUD et ses toasts sont masqués).
+  photoToast(text) {
+    if (!this.photoEl) return;
+    const t = h('div.toast.photo-toast', { text });
+    this.photoEl.appendChild(t);
+    setTimeout(() => t.remove(), 2600);
   }
 }

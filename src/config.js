@@ -5,6 +5,7 @@ export const CONFIG = {
   // Lien vers la vraie application Strides (App Store / site). Laisser vide pour afficher
   // un message « bientôt disponible » à la place du lien.
   downloadUrl: '',
+  siteUrl: 'https://strides-app.com',
   saveKey: 'strides-grand-tour-v1',
   // Durée d'une journée de jeu en secondes réelles.
   dayLength: 1200,

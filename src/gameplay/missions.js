@@ -272,6 +272,7 @@ export class MissionManager {
       duration: def.duration,
       isNew: true,
       createdAt: this.game.time,
+      receivedClock: this.game.clockText?.(),
       ...extra,
     };
   }
@@ -314,20 +315,44 @@ export class MissionManager {
     g.phone?.refresh();
   }
 
+  // Notification push « nouvelle demande » : comme dans l'app, on y répond depuis l'écran de la demande.
   pushNotif(o) {
     const g = this.game;
     if (g.state !== 'play') return;
     const d = g.distanceTo(o.place);
     g.hud.notify({
-      title: `${o.story ? 'Nouvelle mission' : 'Nouvelle offre'} · ${o.title}`,
-      body: `${o.pay ? formatMoney(o.pay) : o.payLabel || ''} · ${o.placeName} · ${(d / 1000).toFixed(1)} km${o.client ? ` · ${o.client.name} ★${o.client.rating.toFixed(1)}` : ''}`,
+      title: `Nouvelle demande · ${o.client ? o.client.name : o.title}`,
+      body: `${o.title} · ${o.pay ? `~${o.pay} €` : o.payLabel || ''} · ${(d / 1000).toFixed(1).replace('.', ',')} km`,
       timeout: 11000,
       actions: [
-        { label: 'Refuser', run: () => this.refuse(o.id) },
-        { label: 'Voir', run: () => g.phone.open('strides', { tab: g.phone._offerTab(o) }) },
-        { label: 'Accepter', primary: true, run: () => this.accept(o.id) },
+        { label: 'Plus tard', run: () => {} },
+        { label: 'Répondre à la demande', primary: true, run: () => g.phone.open('request', { id: o.id }) },
       ],
     });
+  }
+
+  // Contre-propositions : le client répond quelques secondes plus tard (accepte jusqu'à +10 %, parfois +25 %).
+  _resolveCounters() {
+    const g = this.game;
+    for (const o of this.offers) {
+      const c = o.counter;
+      if (!c || g.time - c.at < 7) continue;
+      const ratio = c.amount / (o.pay || c.amount);
+      const yes = ratio <= 1.1 || (ratio <= 1.25 && (o.id.length + c.amount) % 2 === 0);
+      o.counter = null;
+      const who = o.client ? o.client.name : 'Le client';
+      if (yes) {
+        o.pay = c.amount;
+        o.counterAccepted = true;
+      }
+      g.hud.notify({
+        title: yes ? 'Contre-proposition acceptée' : 'Contre-proposition déclinée',
+        body: yes ? `${who} accepte ${c.amount} € · ${o.title}` : `${who} maintient ${o.pay} € · ${o.title}`,
+        timeout: 9000,
+        actions: [{ label: 'Plus tard', run: () => {} }, { label: 'Répondre à la demande', primary: true, run: () => g.phone.open('request', { id: o.id }) }],
+      });
+      g.phone?.refresh();
+    }
   }
 
   updateBadge() {
@@ -352,12 +377,12 @@ export class MissionManager {
     return true;
   }
 
-  refuse(id) {
+  refuse(id, { quiet = false } = {}) {
     const o = this.offers.find((x) => x.id === id);
     if (!o) return;
     this.offers.splice(this.offers.indexOf(o), 1);
     this.refusedAt[id] = this.game.time;
-    this.game.hud.toast(o.story ? 'Mission refusée — elle te sera reproposée.' : 'Offre refusée.');
+    if (!quiet) this.game.hud.toast(o.story ? 'Mission refusée — elle te sera reproposée.' : 'Offre refusée.');
     this.updateBadge();
     this.timer = Math.min(this.timer, 25);
   }
@@ -436,7 +461,7 @@ export class MissionManager {
     g.saveNow();
     const review = def.client && !def.noReview ? { initials: def.client.initials, name: def.client.name, text: (def.review || defaultReview)(stars, run) } : null;
     const result = {
-      title: run.resultTitle || 'MISSION RÉUSSIE',
+      title: run.resultTitle || 'Mission réussie',
       kicker: `${def.title} · ${def.client ? def.client.name : 'Strides'}`,
       body: run.resultBody,
       pay,
@@ -471,6 +496,7 @@ export class MissionManager {
 
   update(dt) {
     const g = this.game;
+    this._resolveCounters();
     if (this.active) {
       this.active.update(dt);
       const run = this.active;

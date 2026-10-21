@@ -247,7 +247,7 @@ export class HUD {
     const el = this.notifEl;
     el.innerHTML = '';
     el.append(
-      h('div.n-head', {}, h('div.n-app', { html: icon('strides'), style: { color: '#121316' } }), h('span', { text: n.app || 'STRIDES' }), h('span.when', { text: 'maintenant' })),
+      h('div.n-head', {}, h('div.n-app', { html: icon('strides') }), h('span', { text: n.app || 'STRIDES' }), h('span.when', { text: 'maintenant' })),
       h('div.n-title', { text: n.title }),
       n.body ? h('div.n-body', { text: n.body }) : null
     );

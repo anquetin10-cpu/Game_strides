@@ -31,8 +31,15 @@ await page.waitForSelector('.notif.show', { timeout: 90000 });
 await page.waitForTimeout(600);
 await shot('04-notif');
 step('notification received');
+// « Répondre à la demande » ouvre l'écran de la demande ; « Accepter la mission » se confirme en deux touchers.
 await page.tap('.notif.show .n-actions button.primary');
-await page.waitForTimeout(800);
+await page.waitForSelector('[data-id="accept-request"]');
+await page.waitForTimeout(500);
+await shot('04b-request');
+await page.tap('[data-id="accept-request"]');
+await page.waitForTimeout(250);
+await page.tap('[data-id="accept-request"]');
+await page.waitForTimeout(2000);
 const m = await G(() => ({ active: window.__game.missions.active?.offer.title, dialog: !!window.__game.hud.dialogActive }));
 console.log('mission', JSON.stringify(m));
 await shot('05-dialog');

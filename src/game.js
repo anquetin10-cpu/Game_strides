@@ -501,21 +501,34 @@ export class Game {
       return;
     }
     if (document.querySelector('.overlay [data-id="dl-back"]')) return;
+    // Textes de strides-app.com : l'app est disponible sur l'App Store et Google Play.
     this.screens.card({
-      kicker: 'STRIDES',
-      title: 'BIENTÔT SUR VOTRE TÉLÉPHONE',
-      body: 'Jobs & services, écuries, transport, événements et annuaire des pros vérifiés : l’application STRIDES arrive sur iOS et Android. Gardez l’œil ouvert — et en attendant, Deauvelle vous attend.',
-      buttons: [{ label: 'Retour au jeu', primary: true, id: 'dl-back' }],
+      kicker: 'L’application mobile',
+      title: 'Emportez STRIDES avec vous',
+      body: 'Disponible sur l’App Store et Google Play. STRIDES connecte les écuries et cavaliers aux grooms, palefreniers, chauffeurs et enseignants vérifiés — partout en France, avec un paiement garanti et sécurisé pour chaque prestation.',
+      buttons: [
+        { label: 'Retour au jeu', id: 'dl-back' },
+        { label: 'Ouvrir strides-app.com', primary: true, id: 'dl-site', run: () => this.openSite() },
+      ],
     });
+  }
+
+  // Ouvre strides-app.com dans un nouvel onglet ; si le navigateur (ou le lecteur intégré) bloque, on affiche l'adresse.
+  openSite() {
+    const w = window.open(CONFIG.siteUrl, '_blank');
+    if (w) w.opener = null;
+    else this.hud.toast('strides-app.com');
   }
 
   share(source = 'game') {
     const url = location.href.split(/[?#]/)[0];
     const data = { title: 'STRIDES Grand Tour', text: 'Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix. Par STRIDES.', url };
     this.bus.emit('share', source);
+    // En mode photo le HUD est masqué : le message s'affiche dans le cadre photo.
+    const say = (m) => (this.state === 'photo' ? this.screens.photoToast(m) : this.hud.toast(m));
     const copy = () => {
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => this.hud.toast('Lien du jeu copié !'), () => this.hud.toast(url));
-      else this.hud.toast(url);
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => say('Lien du jeu copié !'), () => say(url));
+      else say(url);
     };
     if (navigator.share) {
       navigator.share(data).catch((e) => {
@@ -661,7 +674,7 @@ export class Game {
     if (isNew) {
       this.screens.card({
         kicker: 'Côte Fleurie · Normandie',
-        title: 'BIENVENUE À DEAUVELLE',
+        title: 'Bienvenue à Deauvelle',
         body: `${this.save.data.playerName}, tu arrives avec Comète, ta jument baie, et zéro euro en poche. Ici, tout le monde travaille avec STRIDES : les missions tombent sur ton téléphone. Accepte-les, réalise-les, construis ta réputation… jusqu’au Grand Prix.`,
         buttons: [{ label: 'En selle', primary: true, id: 'go', run: () => (this.missions.timer = 2.5) }],
       });

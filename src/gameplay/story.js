@@ -606,7 +606,7 @@ export const STORY = [
       return raceSteps(game, run, S, {
         onFinish: (pos) => {
           run.payOverride = [420, 250, 150][pos - 1] ?? 0;
-          run.resultTitle = pos === 1 ? 'VICTOIRE !' : `${pos}${pos === 1 ? 'er' : 'e'} PLACE`;
+          run.resultTitle = pos === 1 ? 'Victoire !' : `${pos}${pos === 1 ? 'er' : 'e'} place`;
         },
       });
     },
@@ -676,7 +676,7 @@ export const STORY = [
             const win = p < bestRival.faults || (p === bestRival.faults && t < bestRival.time);
             r.resultBody = `Pénalités : ${p} · Chrono ${t.toFixed(2)} s — Meilleur adversaire : ${bestRival.faults} pts en ${bestRival.time} s`;
             if (!win) return { fail: `${p} pénalités en ${t.toFixed(1)} s : ${bestRival.name} reste devant. Retente ta chance !` };
-            r.resultTitle = 'VICTOIRE EN GRAND PRIX';
+            r.resultTitle = 'Victoire en Grand Prix';
             game.audio.cheer();
             return true;
           },

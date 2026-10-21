@@ -10,7 +10,7 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 const shot = (n) => page.screenshot({ path: `tests/e2e/out/ui-${which}-${n}.png` });
-await page.goto('http://localhost:5173/?autostart');
+await page.goto(`${process.env.BASE || 'http://localhost:5173'}/?autostart`);
 await page.waitForTimeout(1200);
 await shot('loading');
 await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 180000 });

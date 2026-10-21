@@ -62,7 +62,7 @@ const results = await page.evaluate(() => {
   const off = g.bus.on('mission:complete', ({ result }) => (ok = result));
   for (let i = 0; i < 400 && !ok; i++) { A.solveStep(g.missions.active); A.tick(2); }
   off();
-  check('activity-done', ok && /RECORD|CHRONO/.test(ok.title));
+  check('activity-done', ok && /record|chrono/i.test(ok.title));
   check('best-time-saved', g.save.data.bestTimes.beach_sprint > 0);
   A.closeCards();
   // Mode photo.

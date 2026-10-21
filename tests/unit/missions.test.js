@@ -73,7 +73,25 @@ describe('MissionManager', () => {
     m.refreshOffers(true);
     expect(m.offers.map((o) => o.id)).toContain('story:tuto');
     expect(g.notifs.length).toBe(1);
-    expect(g.notifs[0].actions.map((a) => a.label)).toEqual(['Refuser', 'Voir', 'Accepter']);
+    // Comme dans l'app : on répond depuis l'écran de la demande (pas d'acceptation directe).
+    expect(g.notifs[0].actions.map((a) => a.label)).toEqual(['Plus tard', 'Répondre à la demande']);
+  });
+  it('le client accepte une contre-proposition raisonnable et décline une hausse excessive', () => {
+    m.refreshOffers(false);
+    const o = m.offers.find((x) => x.id === 'story:tuto');
+    const pay = o.pay;
+    o.counter = { amount: Math.round(pay * 1.1), at: g.time };
+    g.time += 8;
+    m.update(1 / 30);
+    expect(o.counter).toBeNull();
+    expect(o.pay).toBe(Math.round(pay * 1.1));
+    expect(o.counterAccepted).toBe(true);
+    expect(g.notifs.at(-1).title).toBe('Contre-proposition acceptée');
+    o.counter = { amount: o.pay * 2, at: g.time };
+    g.time += 8;
+    m.update(1 / 30);
+    expect(o.pay).toBe(Math.round(pay * 1.1));
+    expect(g.notifs.at(-1).title).toBe('Contre-proposition déclinée');
   });
   it('permet de refuser puis re-propose la mission plus tard', () => {
     m.refreshOffers(false);

@@ -92,7 +92,7 @@ export class Activities {
               const score = t + pen;
               const rec = !best || score < best;
               if (rec) game.save.data.bestTimes[a.id] = score;
-              r.resultTitle = rec ? 'NOUVEAU RECORD' : 'CHRONO';
+              r.resultTitle = rec ? 'Nouveau record' : 'Chrono';
               r.resultTime = score;
               r.resultTimeLabel = a.penalties ? 'Temps + pénalités' : 'Chrono';
               r.resultBody = `${a.penalties ? `Pénalités : ${pen} · ` : ''}Meilleur : ${formatTime(Math.min(score, best || score))}`;
