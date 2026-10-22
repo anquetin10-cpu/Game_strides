@@ -31,10 +31,19 @@ async function tapSel(sel) {
   const r = await E((s) => {
     const el = document.querySelector(s);
     if (!el) return null;
-    // Comme un joueur : on fait défiler jusqu'à l'élément s'il est hors champ.
+    // Comme un joueur : on fait défiler jusqu'à l'élément s'il est hors champ, puis on touche sa partie visible.
     el.scrollIntoView({ block: 'nearest' });
     const b = el.getBoundingClientRect();
-    const x = b.left + b.width / 2, y = b.top + b.height / 2;
+    let top = b.top, bottom = b.bottom;
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      const cs = getComputedStyle(p);
+      if (/(auto|scroll|hidden)/.test(cs.overflowY)) {
+        const q = p.getBoundingClientRect();
+        top = Math.max(top, q.top);
+        bottom = Math.min(bottom, q.bottom);
+      }
+    }
+    const x = b.left + b.width / 2, y = (top + Math.max(top, bottom)) / 2;
     const hit = document.elementFromPoint(x, y);
     return { x, y, hit: !!hit && (hit === el || el.contains(hit)) };
   }, sel);
@@ -111,13 +120,16 @@ check('demande retirée + toast', await E((id) => !window.__game.missions.offers
 await E(() => {
   const g = window.__game;
   g.missions.refreshOffers(false);
-  g.phone.show('request', { id: g.missions.offers.find((o) => !o.locked).id });
+  // Contre-proposition possible seulement sur une demande chiffrée.
+  g.phone.show('request', { id: g.missions.offers.find((o) => !o.locked && o.pay).id });
 });
 await wait(400);
 t = await tapSel('[data-id="counter-request"]');
 check('toucher contre-proposition', t.hit);
 await wait(350);
 await page.screenshot({ path: out('8-counter-sheet') });
+t = await tapSel('.sheet .stepper button[aria-label="Plus"]');
+check('toucher + (montant)', t.hit);
 t = await tapSel('.sheet [data-id="send-counter"]');
 check('envoyer la contre-proposition', t.hit);
 await wait(300);

@@ -2,7 +2,7 @@
 import { h, tap } from './dom.js';
 import { icon } from './icons.js';
 import { Minimap } from './minimap.js';
-import { formatMoney, formatTime } from '../core/math.js';
+import { formatMoney, formatTime, dec } from '../core/math.js';
 import { HORSE } from '../config.js';
 
 export class HUD {
@@ -42,12 +42,14 @@ export class HUD {
     this.objText = h('div.text');
     this.objSub = h('div.sub.hidden');
     this.objTimer = h('div.timer.tab-num.hidden');
-    this.objEl = h('div.objective.off', {}, h('div.obj-main', {}, this.objTag, this.objText, this.objSub), this.objTimer);
+    this.objMain = h('div.obj-main', {}, this.objTag, this.objText, this.objSub);
+    this.objEl = h('div.objective.off', {}, this.objMain, this.objTimer);
     this.hintEl = h('div.hint.off');
     this.toastsEl = h('div.toasts');
 
     // Bandeau du haut : minimap | objectif, astuce, toasts | portefeuille. Le centre de l'écran reste dégagé.
-    this.el.appendChild(h('div.top-bar', {}, mmWrap, h('div.top-mid', {}, this.objEl, this.hintEl, this.toastsEl), h('div.top-right', {}, wallet, this.phoneBtn, this.pauseBtn)));
+    this.topMid = h('div.top-mid', {}, this.objEl, this.hintEl, this.toastsEl);
+    this.el.appendChild(h('div.top-bar', {}, mmWrap, this.topMid, h('div.top-right', {}, wallet, this.phoneBtn, this.pauseBtn)));
 
     // Télémétrie.
     this.gearEl = h('div.gear', { text: 'N' });
@@ -101,19 +103,34 @@ export class HUD {
   setLevel(info, rating) {
     this.levelEl.textContent = info.short;
     this.xpEl.style.width = `${Math.round(info.progress * 100)}%`;
-    this.starsEl.textContent = rating ? `★ ${rating.toFixed(1)} · STRIDES` : '';
+    this.starsEl.textContent = rating ? `★ ${dec(rating)} · STRIDES` : '';
   }
 
   setZone(name) {
     if (this.zoneEl.textContent !== name) this.zoneEl.textContent = name;
   }
 
+  // L'astuce se loge dans la carte de l'objectif (une ligne) quand il y en a une : un seul bloc en haut de l'écran.
+  _placeHint() {
+    const inline = !this.objEl.classList.contains('off');
+    if (this.hintEl.classList.contains('inline') === inline && this.hintEl.parentNode) return;
+    this.hintEl.classList.toggle('inline', inline);
+    if (inline) this.objMain.appendChild(this.hintEl);
+    else this.topMid.insertBefore(this.hintEl, this.toastsEl);
+  }
+
   setObjective(o) {
     if (!o) {
-      this.objEl.classList.add('off');
+      if (!this.objEl.classList.contains('off')) {
+        this.objEl.classList.add('off');
+        this._placeHint();
+      }
       return;
     }
-    this.objEl.classList.remove('off');
+    if (this.objEl.classList.contains('off')) {
+      this.objEl.classList.remove('off');
+      this._placeHint();
+    }
     // Appelé à chaque image : n'écrire dans le DOM que ce qui change.
     const set = (el, v) => el.textContent !== v && (el.textContent = v);
     set(this.objTag, o.tag || '');
@@ -202,7 +219,8 @@ export class HUD {
   toast(text, kind = '') {
     const t = h(`div.toast${kind ? `.${kind}` : ''}`, { text });
     this.toastsEl.appendChild(t);
-    while (this.toastsEl.children.length > (innerHeight < 300 ? 2 : 3)) this.toastsEl.firstChild.remove();
+    // Écran bas : un seul toast à la fois, pour laisser le centre de l'écran libre.
+    while (this.toastsEl.children.length > (innerHeight <= 420 ? 1 : 2)) this.toastsEl.firstChild.remove();
     setTimeout(() => t.remove(), 3200);
   }
 
@@ -225,6 +243,7 @@ export class HUD {
   hint(html, ms = 4500) {
     this.hintEl.innerHTML = html;
     this.hintEl.classList.remove('off');
+    this._placeHint();
     clearTimeout(this._hintT);
     if (ms) this._hintT = setTimeout(() => this.hintEl.classList.add('off'), ms);
   }
@@ -273,7 +292,9 @@ export class HUD {
     this.game.audio.notify();
     requestAnimationFrame(() => el.classList.add('show'));
     clearTimeout(this._notifT);
-    this._notifT = setTimeout(() => this._closeNotif(), n.timeout || 9000);
+    // Sur écran bas, la notification couvre une part plus grande de l'écran : elle reste moins longtemps.
+    const ms = n.timeout || 9000;
+    this._notifT = setTimeout(() => this._closeNotif(), innerHeight <= 420 ? Math.min(ms, 7000) : ms);
   }
   _closeNotif() {
     clearTimeout(this._notifT);

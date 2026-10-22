@@ -42,7 +42,3 @@ export function tap(el, fn) {
   return el;
 }
 
-export function stars(n) {
-  const full = Math.round(n);
-  return '★'.repeat(full) + '☆'.repeat(Math.max(0, 5 - full));
-}

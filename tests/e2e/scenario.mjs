@@ -87,7 +87,14 @@ for (const tab of ['ecuries', 'transport', 'evenements', 'annuaire', 'profil']) 
   await page.waitForTimeout(400);
   await shot(`12-tab-${tab}`);
 }
-await page.tap('.home-btn');
+// Barre d'accueil : balayage vers le haut.
+{
+  const b = await page.locator('.home-btn').boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2, b.y - 40, { steps: 4 });
+  await page.mouse.up();
+}
 await page.waitForTimeout(300);
 await page.tap('[data-app="map"]');
 await page.waitForTimeout(800);

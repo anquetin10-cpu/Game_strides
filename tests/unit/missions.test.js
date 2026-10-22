@@ -93,6 +93,33 @@ describe('MissionManager', () => {
     expect(o.pay).toBe(Math.round(pay * 1.1));
     expect(g.notifs.at(-1).title).toBe('Contre-proposition déclinée');
   });
+  it('ne répond pas aux contre-propositions pendant une mission ni sur une demande sans tarif', () => {
+    g.save.data.completed.push('tuto');
+    m.refreshOffers(false);
+    const job = m.offers.find((x) => x.id.startsWith('job:') && x.pay);
+    job.counter = { amount: job.pay, at: g.time };
+    m.active = { update() {}, offer: { vertical: 'X', title: 'x' }, text: () => '', timer: null };
+    g.time += 8;
+    m.update(1 / 30);
+    expect(job.counter).not.toBeNull();
+    m.active = null;
+    m.update(1 / 30);
+    expect(job.counter).toBeNull();
+    job.pay = 0;
+    job.counter = { amount: 40, at: g.time };
+    g.time += 8;
+    m.update(1 / 30);
+    expect(job.counter).not.toBeNull();
+  });
+  it('garde une demande en négociation au-delà de l’expiration', () => {
+    g.save.data.completed.push('tuto');
+    m.refreshOffers(false);
+    const job = m.offers.find((x) => x.id.startsWith('job:'));
+    job.pinned = true;
+    g.time += 400;
+    m.refreshOffers(false);
+    expect(m.offers.includes(job)).toBe(true);
+  });
   it('permet de refuser puis re-propose la mission plus tard', () => {
     m.refreshOffers(false);
     m.refuse('story:tuto');

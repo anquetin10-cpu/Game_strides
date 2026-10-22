@@ -352,8 +352,15 @@ export class Game {
       if (h.isPlayerHorse) a.snort();
     });
     b.on('horse:refuse', () => a.neigh());
-    b.on('horse:tooSlow', () => this.hud.hint('Prends de la vitesse pour sauter : <b>trot</b> minimum.', 2500));
-    b.on('horse:exhausted', () => this.hud.hint('Ton cheval est essoufflé : relâche <b>GALOP</b> pour qu’il récupère.', 3500));
+    // Astuces répétitives : au plus une fois toutes les 45 s (elles ne doivent pas encombrer l'écran).
+    const hintAt = {};
+    const hintOnce = (key, html, ms) => {
+      if (this.time - (hintAt[key] ?? -1e9) < 45) return;
+      hintAt[key] = this.time;
+      this.hud.hint(html, ms);
+    };
+    b.on('horse:tooSlow', () => hintOnce('slow', 'Trop lent pour sauter : passe au <b>trot</b>.', 2500));
+    b.on('horse:exhausted', () => hintOnce('tired', 'Cheval essoufflé : relâche <b>GALOP</b>.', 3500));
     b.on('horse:bump', ({ horse }) => {
       if (horse.isPlayerHorse) {
         a.thud();

@@ -2,7 +2,7 @@
 import { h, tap, esc } from './dom.js';
 import { icon } from './icons.js';
 import { drawBlip, drawFullMap } from './minimap.js';
-import { formatMoney, formatTime, clamp } from '../core/math.js';
+import { formatMoney, formatTime, clamp, dec } from '../core/math.js';
 import { HORSES, SHOP, PROS, STABLES } from '../gameplay/data.js';
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
@@ -21,7 +21,18 @@ export class Phone {
     const closeBtn = h('button.phone-close', { html: icon('close'), 'aria-label': 'Fermer' });
     tap(closeBtn, () => this.close());
     const homeBtn = h('button.home-btn', { 'aria-label': 'Accueil' });
-    tap(homeBtn, () => this.show('home'));
+    // Barre d'accueil : on la balaie vers le haut, comme sur iOS (un toucher un peu bas sous « Accepter » ne quitte pas l'app).
+    let swipeY = null;
+    homeBtn.addEventListener('pointerdown', (e) => {
+      swipeY = e.clientY;
+      homeBtn.setPointerCapture?.(e.pointerId);
+      e.stopPropagation();
+    });
+    homeBtn.addEventListener('pointerup', (e) => {
+      if (swipeY !== null && swipeY - e.clientY > 16) this.show('home');
+      swipeY = null;
+    });
+    homeBtn.addEventListener('pointercancel', () => (swipeY = null));
     this.phone = h('div.phone', {}, h('div.phone-screen', {}, h('div.status-bar', {}, this.clockEl, h('span.r', {}, h('span', { text: '5G' }), h('span.bat', {}, h('i')))), this.screen, homeBtn), closeBtn);
     this.layer.appendChild(this.phone);
     root.appendChild(this.layer);
@@ -38,6 +49,7 @@ export class Phone {
     const g = this.game;
     if (g.state !== 'play') return;
     this.isOpen = true;
+    document.body.classList.add('phone-open');
     g.input.setEnabled(false);
     this.layer.classList.add('open');
     this.show(app, opts);
@@ -48,7 +60,10 @@ export class Phone {
   close() {
     if (!this.isOpen) return;
     this.isOpen = false;
+    document.body.classList.remove('phone-open');
     this.layer.classList.remove('open');
+    // Les toasts de l'app appartiennent à la session ouverte : on ne les retrouve pas à la réouverture.
+    this.phone.querySelector('.app-toasts')?.replaceChildren();
     this.game.input.setEnabled(true);
     this.game.bus.emit('phone:close');
     this.game.audio.click();
@@ -127,7 +142,7 @@ export class Phone {
     const widget = h('button.widget', { 'data-app': 'strides-widget' },
       h('div.w-head', {}, h('span', { html: icon('strides') }), h('span', { text: 'STRIDES' })),
       h('div.w-main', { text: m.active ? m.active.offer.title : `${avail} mission${avail > 1 ? 's' : ''} dispo` }),
-      h('div.w-sub', { text: m.active ? m.objectiveText() : `${g.levelInfo().title}${rating ? ` · ★ ${rating.toFixed(1)}` : ''} · ${g.save.data.stats.jobs} mission${g.save.data.stats.jobs > 1 ? 's' : ''} réalisée${g.save.data.stats.jobs > 1 ? 's' : ''}` }));
+      h('div.w-sub', { text: m.active ? m.objectiveText() : `${g.levelInfo().title}${rating ? ` · ★ ${dec(rating)}` : ''} · ${g.save.data.stats.jobs} mission${g.save.data.stats.jobs > 1 ? 's' : ''} réalisée${g.save.data.stats.jobs > 1 ? 's' : ''}` }));
     tap(widget, () => this.show('strides'));
     return h(
       'div.home-screen.scrollable',
@@ -139,7 +154,7 @@ export class Phone {
         appIcon('strides', 'Strides', 'strides', 'strides', offers),
         appIcon('map', 'Carte', 'map'),
         appIcon('messages', 'Messages', 'message', '', unread),
-        appIcon('stable', 'Mes chevaux', 'horse'),
+        appIcon('stable', 'Chevaux', 'horse'),
         appIcon('trophies', 'Trophées', 'trophy'),
         photo,
         appIcon('settings', 'Réglages', 'settings')
@@ -245,7 +260,7 @@ export class Phone {
         this.close();
         g.fastTravel(s.place, price, s.name);
       });
-      list.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: 'Normandie Horse Transport' }), h('span.verified', { html: `${icon('check')}Vérifié` })), h('div.title', { text: s.name }), h('div.meta', { text: `${(d / 1000).toFixed(1)} km · toi + ton cheval · suivi en temps réel` }), h('div.acts', {}, btn)));
+      list.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: 'Normandie Horse Transport' }), h('span.verified', { html: `${icon('check')}Vérifié` })), h('div.title', { text: s.name }), h('div.meta', { text: `${dec(d / 1000)} km · toi + ton cheval · suivi en temps réel` }), h('div.acts', {}, btn)));
     }
     body.appendChild(list);
     return [this._head('Transport', 'Transporteurs vérifiés · suivi en direct'), body];
@@ -315,9 +330,9 @@ export class Phone {
         acts.appendChild(choose);
       }
       list.appendChild(h('div.mcard', {},
-        h('div.top', {}, h('span.chip', { text: `${s.price} € / mois` }), h('span.client', {}, h('span.rating', { text: `★ ${s.rating.toFixed(1)}` }))),
+        h('div.top', {}, h('span.chip', { text: `${s.price} € / mois` }), h('span.client', {}, h('span.rating', { text: `★ ${dec(s.rating)}` }))),
         h('div.title', { text: s.name }),
-        h('div.meta', { text: `${(d / 1000).toFixed(1)} km · ${s.desc}` }),
+        h('div.meta', { text: `${dec(d / 1000)} km · ${s.desc}` }),
         h('div.meta', { text: s.services.join(' · ') }),
         acts));
     }
@@ -346,8 +361,8 @@ export class Phone {
       });
       list.appendChild(h('div.mcard', {},
         h('div.top', {}, h('span.chip', { text: p.job }), h('span.verified', { html: `${icon('check')}Vérifié` })),
-        h('div.client', {}, h('div.av', { text: p.initials }), h('span', { text: p.name }), h('span.rating', { text: `★ ${p.rating.toFixed(1)}` }), h('span.meta', { text: `(${p.reviews} avis)` })),
-        h('div.meta', { text: `${(d / 1000).toFixed(1)} km · ${p.avail}` }),
+        h('div.client', {}, h('div.av', { text: p.initials }), h('span', { text: p.name }), h('span.rating', { text: `★ ${dec(p.rating)}` }), h('span.meta', { text: `· ${p.reviews} avis` })),
+        h('div.meta', { text: `${dec(d / 1000)} km · ${p.avail}` }),
         h('div.acts', {}, gps, call)));
     }
     body.appendChild(list);
@@ -362,7 +377,7 @@ export class Phone {
     const body = h('div.app-body.scrollable');
     const initials = d.playerName.slice(0, 2).toUpperCase();
     body.append(
-      h('div.profile-head', {}, h('div.av', { text: initials }), h('div', {}, h('div.n', { text: d.playerName }), h('div.l', { text: `${lv.title} · ${rating ? `★ ${rating.toFixed(2)} (${d.ratings.length} avis)` : 'Pas encore d’avis'}` }), lv.level >= 3 ? h('span.verified', { html: `${icon('check')}Profil vérifié`, style: { marginTop: '6px' } }) : null)),
+      h('div.profile-head', {}, h('div.av', { text: initials }), h('div', {}, h('div.n', { text: d.playerName }), h('div.l', { text: `${lv.title} · ${rating ? `★ ${dec(rating)} · ${d.ratings.length} avis` : 'Pas encore d’avis'}` }), lv.level >= 3 ? h('span.verified', { html: `${icon('check')}Profil vérifié`, style: { marginTop: '6px' } }) : null)),
       h('div', { style: { marginTop: '14px' } },
         h('div.kv', {}, h('span', { text: 'Missions réalisées' }), h('b', { text: String(d.stats.jobs) })),
         h('div.kv', {}, h('span', { text: 'Revenus via Strides' }), h('b', { text: formatMoney(d.stats.earned) })),
@@ -570,7 +585,7 @@ export class Phone {
     main.appendChild(this._head('Trophées', 'Ta carrière à Deauvelle'));
     const body = h('div.app-body.scrollable');
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
-    body.appendChild(h('div.result-grid', {}, stat('Fers d’or', `${d.horseshoes.length}/${g.collectibles.total}`), stat('Missions', String(d.stats.jobs)), stat('Gains', formatMoney(d.stats.earned)), stat('Sauts', String(d.stats.jumps)), stat('Distance', `${(d.stats.distance / 1000).toFixed(1)} km`), stat('Note', g.rating() ? `★ ${g.rating().toFixed(1)}` : '—')));
+    body.appendChild(h('div.result-grid', {}, stat('Fers d’or', `${d.horseshoes.length}/${g.collectibles.total}`), stat('Missions', String(d.stats.jobs)), stat('Gains', formatMoney(d.stats.earned)), stat('Sauts', String(d.stats.jumps)), stat('Distance', `${dec(d.stats.distance / 1000)} km`), stat('Note', g.rating() ? `★ ${dec(g.rating())}` : '—')));
     body.appendChild(h('div.section-t', { text: 'Meilleurs chronos', style: { marginTop: '14px' } }));
     for (const a of g.activities.list()) body.appendChild(h('div.kv', {}, h('span', { text: a.name }), h('b', { text: d.bestTimes[a.id] ? formatTime(d.bestTimes[a.id]) : '—' })));
     body.appendChild(h('div.section-t', { text: 'Histoire', style: { marginTop: '14px' } }));

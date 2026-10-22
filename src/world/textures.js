@@ -47,7 +47,9 @@ function drawStoreBadge(ctx, x, y, h, dark = true) {
   ctx.save();
   ctx.fillStyle = dark ? INK : SURFACE;
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, h * 0.22);
+  // roundRect n'existe qu'à partir de Safari 16.
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, h * 0.22);
+  else ctx.rect(x, y, w, h);
   ctx.fill();
   ctx.fillStyle = dark ? '#fff' : INK;
   ctx.save();

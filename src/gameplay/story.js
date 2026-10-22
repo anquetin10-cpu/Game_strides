@@ -5,7 +5,7 @@ import { courseSteps, totalPenalties, checkpointSteps, raceSteps } from './cours
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { GrazeAI, FollowAI, FleeAI } from '../entities/horse.js';
 import { HORSES } from './data.js';
-import { formatMoney } from '../core/math.js';
+import { formatMoney, dec } from '../core/math.js';
 
 const C = {
   camille: { name: 'Camille Martin', initials: 'CM', rating: 4.9, verified: true },
@@ -49,7 +49,7 @@ export const STORY = [
           target: () => game.player.horse.pos,
           radius: 3,
           beacon: false,
-          hint: 'Joystick à gauche pour marcher · glisse à droite pour tourner la caméra.',
+          hint: 'Joystick : marcher · glisse à droite : caméra.',
           update: () => game.player.mode === 'ride',
         }),
         S.goto({ x: HOME.arena.x, z: HOME.arena.z - 13 }, 'Entre dans la carrière (porte au nord)', { r: 5, mode: 'ride', hint: 'Un peu de joystick = <b>pas</b>, plus = <b>trot</b>, à fond = <b>galop</b>.' }),
@@ -60,7 +60,7 @@ export const STORY = [
             return { x: o.x - o.n.x * 8, z: o.z - o.n.z * 8 };
           },
           radius: 3,
-          hint: 'Prends ton élan au trot ou au galop et touche <b>SAUT</b> quand l’anneau du bouton devient <b>vert</b>.',
+          hint: 'Élan au trot ou au galop, puis <b>SAUT</b> quand l’anneau est <b>vert</b>.',
           hintMs: 9000,
           start(r) {
             r.flags.jumped = false;
@@ -77,7 +77,7 @@ export const STORY = [
         }),
         S.custom({
           text: 'Passe au grand galop quelques secondes',
-          hint: 'Maintiens <b>GALOP</b> (Maj au clavier) en poussant le joystick à fond. Sors de la carrière par la porte !',
+          hint: 'Maintiens <b>GALOP</b> (Maj), joystick à fond, et sors par la porte.',
           hintMs: 8000,
           start(r) {
             r.flags.g = 0;
@@ -605,7 +605,9 @@ export const STORY = [
     steps(game, run, S) {
       return raceSteps(game, run, S, {
         onFinish: (pos) => {
-          run.payOverride = [420, 250, 150][pos - 1] ?? 0;
+          // Gains au prorata du montant convenu (contre-proposition comprise) : 100 %, ~60 %, ~36 %.
+          const base = run.offer.pay || 420;
+          run.payOverride = [base, Math.round((base * 250) / 420), Math.round((base * 150) / 420)][pos - 1] ?? 0;
           run.resultTitle = pos === 1 ? 'Victoire !' : `${pos}${pos === 1 ? 'er' : 'e'} place`;
         },
       });
@@ -638,7 +640,7 @@ export const STORY = [
           text: '',
           update(r) {
             const p = totalPenalties(r);
-            r.resultBody = `Pénalités : ${p} · Chrono ${r.data.course.t.toFixed(2)} s`;
+            r.resultBody = `Pénalités : ${p} · Chrono ${dec(r.data.course.t, 2)} s`;
             if (p > 8) return { fail: `${p} pénalités : non qualifié(e). Il en faut 8 au maximum.` };
             return true;
           },
@@ -674,8 +676,8 @@ export const STORY = [
             const p = totalPenalties(r);
             const t = r.data.course.t;
             const win = p < bestRival.faults || (p === bestRival.faults && t < bestRival.time);
-            r.resultBody = `Pénalités : ${p} · Chrono ${t.toFixed(2)} s — Meilleur adversaire : ${bestRival.faults} pts en ${bestRival.time} s`;
-            if (!win) return { fail: `${p} pénalités en ${t.toFixed(1)} s : ${bestRival.name} reste devant. Retente ta chance !` };
+            r.resultBody = `Pénalités : ${p} · Chrono ${dec(t, 2)} s — Meilleur adversaire : ${bestRival.faults} pts en ${dec(bestRival.time)} s`;
+            if (!win) return { fail: `${p} pénalités en ${dec(t)} s : ${bestRival.name} reste devant. Retente ta chance !` };
             r.resultTitle = 'Victoire en Grand Prix';
             game.audio.cheer();
             return true;

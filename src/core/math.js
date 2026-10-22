@@ -84,6 +84,8 @@ export function pointAlong(pts, s) {
   return { x: pts[0][0], z: pts[0][1], dir: 0 };
 }
 
+// Nombre à virgule (français) : 4.9 → « 4,9 ».
+export const dec = (n, k = 1) => n.toFixed(k).replace('.', ',');
 export const formatMoney = (v) => `${Math.round(v).toLocaleString('fr-FR')} €`;
 export const formatTime = (s) => {
   s = Math.max(0, s);

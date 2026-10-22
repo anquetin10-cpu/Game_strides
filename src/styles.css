@@ -9,7 +9,8 @@
   --st-ink: #0f0f0e;
   --st-text: #0a0a09;
   --st-text-2: #46443e;
-  --st-text-3: #76736b;
+  /* Un peu plus foncé que l'app (#76736B) : 4,5:1 minimum sur toutes les surfaces crème, en petit corps. */
+  --st-text-3: #605d56;
   --st-text-4: #b5b0a2;
   --st-line: rgba(10, 10, 9, 0.08);
   --st-line-2: rgba(10, 10, 9, 0.14);
@@ -51,7 +52,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 /* Surfaces claires STRIDES (cartes, téléphone, écrans, notifications, dialogues) : on inverse les jetons,
    les règles existantes (var(--paper) pour le texte, var(--ink-2) pour les fonds…) suivent. */
-.light, .card, .screen, .phone-screen, .notif, .dialog, .objective, .toast, .rotate {
+.light, .card, .screen, .phone-screen, .notif, .dialog, .objective, .toast, .rotate, .wallet, .zone-name {
   --ink: var(--st-bg); --ink-2: var(--st-surface-1); --ink-3: var(--st-surface-2); --line-2: var(--st-line-2);
   --paper: var(--st-ink); --text-2: var(--st-text-2); --muted: var(--st-text-3); --muted-2: var(--st-text-4);
   --line: var(--st-line); --fill: rgba(10, 10, 9, 0.05); --fill-2: rgba(10, 10, 9, 0.1);
@@ -61,7 +62,8 @@
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body.embedded { --st: calc(max(10px, env(safe-area-inset-top, 0px)) + 54px); }
 /* Les fenêtres peuvent remonter un peu : les boutons du lecteur s'arrêtent à ~52 px. */
-body.embedded .overlay, body.embedded .phone-layer { padding-top: calc(var(--st) - 6px); }
+body.embedded .overlay { padding-top: calc(var(--st) - 6px); }
+body.embedded .phone-layer { --ptop: calc(var(--st) - 6px); }
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper);
   font-family: var(--ui); -webkit-font-smoothing: antialiased; touch-action: none;
@@ -102,16 +104,18 @@ body.desktop .joy-base { display: none; }
   box-shadow: 0 6px 22px rgba(0,0,0,0.3), 0 0 0 3px var(--st-surface-2); background: #1b1d21;
 }
 .minimap canvas { width: 100%; height: 100%; display: block; }
-.zone-name { margin-top: 8px; font: 600 10px/1.2 var(--ui); letter-spacing: .14em; text-transform: uppercase; color: rgba(251,250,245,.9); text-shadow: 0 1px 4px rgba(0,0,0,.6); text-align: center; }
+/* Nom de zone et portefeuille sur une plaque crème : lisibles quel que soit le décor derrière. */
+.zone-name { width: fit-content; max-width: 100%; margin: 8px auto 0; padding: 3px 7px; border-radius: 8px; background: var(--glass); font: 600 10px/1.2 var(--ui); letter-spacing: .14em; text-transform: uppercase; color: var(--st-text-2); text-align: center; }
 
 .top-right { flex: 0 0 auto; display: flex; align-items: flex-start; gap: 8px; }
 .top-right .icon-btn { width: 44px; height: 48px; border-radius: 14px; }
-.wallet { text-align: right; text-shadow: 0 2px 10px rgba(0,0,0,0.45); }
+.wallet { text-align: right; padding: 5px 10px 6px; border-radius: 12px; background: var(--glass); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: opacity .25s; }
 .money { font: 600 30px/1 var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
-.level-line { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 4px; font: 600 10px/1 var(--ui); letter-spacing: .14em; color: rgba(244,243,239,.85); }
-.xpbar { width: 72px; height: 3px; background: rgba(255,255,255,.22); border-radius: 2px; overflow: hidden; }
+.level-line { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 4px; font: 600 10px/1 var(--ui); letter-spacing: .14em; color: var(--st-text-2); }
+.xpbar { width: 72px; height: 3px; background: var(--st-line-2); border-radius: 2px; overflow: hidden; }
 .xpbar i { display: block; height: 100%; background: var(--paper); width: 0; transition: width .6s; }
-.stars-line { margin-top: 5px; font: 600 10px/1 var(--ui); color: var(--gold); letter-spacing: .08em; }
+.stars-line { margin-top: 5px; font: 600 10px/1 var(--ui); color: var(--st-bronze-50); letter-spacing: .08em; }
+.stars-line:empty { display: none; }
 /* Boutons du bandeau : surfaces crème STRIDES, icônes encre. */
 .phone-btn {
   width: 48px; height: 48px; border-radius: 14px; background: rgba(247,244,237,.94); color: var(--st-ink);
@@ -132,7 +136,7 @@ body.desktop .joy-base { display: none; }
 }
 .objective.off { display: none; }
 .objective, .hint { transition: opacity .25s; }
-.hud.big-on .objective, .hud.big-on .hint { opacity: 0; }
+.hud.big-on .objective, .hud.big-on .hint, .hud.big-on .wallet { opacity: 0; }
 .objective.changed { animation: objIn .6s ease-out; }
 @keyframes objIn { from { opacity: .4; transform: translateY(-6px); box-shadow: 0 0 0 2px var(--st-gold); } }
 .obj-main { flex: 1 1 auto; min-width: 0; }
@@ -176,7 +180,7 @@ body.desktop .joy-base { display: none; }
 .btn-jump.near .ring { border-color: rgba(244,243,239,.6); }
 .btn-gallop { right: 100px; bottom: 4px; width: 68px; height: 68px; }
 .btn-action { right: 18px; bottom: 102px; width: 72px; height: 72px; background: rgba(247,244,237,0.95); color: var(--st-ink); border-color: transparent; }
-.btn-action span { max-width: 64px; font-size: 9.5px; text-align: center; line-height: 1.1; }
+.btn-action span { max-width: 64px; font-size: 8.5px; letter-spacing: .02em; text-align: center; line-height: 1.1; }
 .btn-whistle { right: 108px; bottom: 86px; width: 50px; height: 50px; }
 .btn-whistle svg { width: 20px; height: 20px; margin: 0 auto; }
 .btn-round.hide { opacity: 0; transform: scale(.6); pointer-events: none; transition: opacity .15s, transform .15s; }
@@ -197,19 +201,23 @@ body.desktop .joy-base { display: none; }
 .notif .n-title { margin-top: 7px; font: 600 14px/1.25 var(--ui); letter-spacing: -.01em; }
 .notif .n-body { margin-top: 2px; font: 400 12.5px/1.3 var(--ui); color: var(--text-2); }
 .notif .n-actions { display: flex; gap: 8px; margin-top: 10px; }
-.notif .n-actions button { flex: 1; height: 34px; border-radius: 12px; font: 600 12.5px/1 var(--ui); background: var(--fill-2); }
-.notif .n-actions button.primary { background: var(--paper); color: var(--ink); }
+.notif .n-actions button { flex: 1; height: 34px; padding: 0 10px; border-radius: 12px; font: 600 12.5px/1 var(--ui); background: var(--fill-2); white-space: nowrap; }
+.notif .n-actions button.primary { flex-grow: 2; background: var(--paper); color: var(--ink); }
+/* Zone sensible plus haute que le bouton (≥ 40 px) sans agrandir la notification. */
+.notif .n-actions button { position: relative; }
+.notif .n-actions button::after { content: ''; position: absolute; inset: -6px -4px; }
 
 /* Toasts et messages */
 .toasts { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .toasts:empty { display: none; }
 .toast { padding: 7px 12px; border-radius: 14px; background: var(--st-surface-3); border: 1px solid var(--st-line-2); box-shadow: 0 8px 20px rgba(0,0,0,.22); font: 500 12.5px/1.25 var(--ui); animation: toastIn .35s ease-out; max-width: 260px; }
 .toast.money { font: 600 17px/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.toast.gold { color: var(--gold); }
+.toast.gold { color: var(--st-bronze-50); }
 @keyframes toastIn { from { opacity: 0; transform: translateX(-12px); } }
 .big-msg { position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
-.big-msg .t { font: 700 clamp(30px, 6.4vw, 58px)/0.98 var(--display); letter-spacing: -.035em; color: var(--st-surface-3); text-shadow: 0 4px 30px rgba(0,0,0,.45); }
-.big-msg .s { margin-top: 8px; font: 500 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(244,243,239,.85); text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+.big-msg .t { font: 700 clamp(30px, 6.4vw, 58px)/0.98 var(--display); letter-spacing: -.035em; color: var(--st-surface-3); text-shadow: 0 1px 3px rgba(0,0,0,.45), 0 4px 30px rgba(0,0,0,.5); }
+/* Sous-titre sur une pastille encre : lisible même sur le sable clair. */
+.big-msg .s { display: inline-block; margin-top: 8px; padding: 4px 9px; border-radius: 8px; background: rgba(15,15,14,.72); font: 500 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--st-surface-3); }
 .big-msg.pop { animation: pop .5s cubic-bezier(.2,.9,.3,1.3); }
 @keyframes pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.8); } }
 .hint {
@@ -217,6 +225,11 @@ body.desktop .joy-base { display: none; }
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font: 500 12px/1.35 var(--ui); box-shadow: 0 6px 18px rgba(0,0,0,.25); animation: hintIn .3s ease-out;
 }
 .hint.off { display: none; }
+/* Astuce dans la carte de l'objectif (deux lignes au plus), pas de second bandeau. */
+.objective .hint.inline { margin-top: 3px; max-width: none; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; animation: none;
+  color: var(--st-bronze-50); font: 500 11.5px/1.3 var(--ui); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.objective .hint.inline.off { display: none; }
+.objective .hint.inline b { color: var(--st-text); }
 @keyframes hintIn { from { opacity: 0; transform: translateY(-4px); } }
 .hint b { font-weight: 600; color: var(--gold); }
 
@@ -250,8 +263,11 @@ body.desktop .joy-base { display: none; }
 .btn:active { transform: scale(.985); }
 .btn.large { height: 56px; padding: 0 24px; font-size: 16px; }
 .btn.primary { background: var(--paper); color: var(--ink); border-color: transparent; font-weight: 600; }
+/* Bouton principal STRIDES : fond encre, texte blanc. */
+.phone-screen .btn.primary, .card .btn.primary, .screen .btn.primary { color: #fff; }
 .card .btn.primary:active, .phone-screen .btn.primary:active, .screen .btn.primary:active { background: var(--st-gold); color: #1a1a18; }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+.title-screen .btn.ghost { background: rgba(247,244,237,.9); border-color: var(--st-line-2); }
 .btn.small { height: 38px; border-radius: 10px; padding: 0 16px; font-size: 13px; flex: 0 0 auto; }
 .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
 .stat { background: var(--ink-3); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
@@ -259,7 +275,8 @@ body.desktop .joy-base { display: none; }
 .stat .v { margin-top: 6px; font: 600 22px/1 var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .review { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--ink-3); border: 1px solid var(--line); display: flex; gap: 12px; align-items: flex-start; }
 .review .av { flex: 0 0 36px; height: 36px; border-radius: 50%; background: var(--st-surface-3); border: 1px solid var(--st-line-2); color: var(--st-text); display: grid; place-items: center; font: 600 11px/1 var(--mono); letter-spacing: .5px; }
-.review .stars { color: var(--st-bronze-50); font-size: 13px; letter-spacing: 3px; }
+.review .stars { margin-top: 2px; }
+.review .stars .ion { width: 13px; height: 13px; }
 .review .q { font: 400 13.5px/1.45 var(--ui); color: var(--text-2); margin-top: 3px; }
 .review .who { font: 600 12px/1.2 var(--ui); color: var(--st-text); }
 .irl { margin-top: 12px; font: 500 12px/1.4 var(--ui); color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
@@ -310,69 +327,121 @@ body.desktop .joy-base { display: none; }
 .photo-frame .exit { position: absolute; left: calc(var(--sl) + 6px); top: calc(var(--st) - 2px); pointer-events: auto; }
 .photo-frame .photo-toast { position: absolute; left: calc(var(--sl) + 6px); top: calc(var(--st) + 44px); }
 
-/* ---------- Téléphone ---------- */
-.phone-layer { position: fixed; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; padding: calc(var(--st) + 2px) var(--sr) calc(var(--sb) + 2px) var(--sl); background: rgba(10,10,9,0.38); opacity: 0; pointer-events: none; transition: opacity .25s; }
+/* ---------- Téléphone : un iPhone en portrait, tenu en main (il sort du bas de l'écran, à droite) ---------- */
+.phone-layer { --ptop: calc(var(--st) + 2px); position: fixed; inset: 0; z-index: 45; display: flex; align-items: flex-start; justify-content: flex-end; padding: var(--ptop) max(var(--sr), 6vw) 0 var(--sl); background: rgba(10,10,9,0.38); opacity: 0; pointer-events: none; transition: opacity .25s; overflow: hidden; }
 .phone-layer.open { opacity: 1; pointer-events: auto; }
 .phone {
-  position: relative; width: min(100%, 780px); height: min(100%, 430px);
-  background: #1c1c1e; border-radius: 38px; padding: 10px 10px 10px 30px; box-shadow: 0 30px 90px rgba(0,0,0,.55), 0 0 0 2px #8e8b85, 0 0 0 3px #3c3b38, inset 0 0 0 2px #0b0b0c;
-  transform: translateY(40px) scale(.96); transition: transform .35s cubic-bezier(.2,.9,.2,1);
+  position: relative; flex: 0 0 auto; width: clamp(272px, 46vw, 340px); aspect-ratio: 9 / 19.5;
+  background: #1c1c1e; border-radius: 46px; padding: 9px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.55), 0 0 0 2px #8e8b85, 0 0 0 3px #3c3b38, inset 0 0 0 2px #0b0b0c;
+  transform: translateY(65%); transition: transform .4s cubic-bezier(.2,.9,.2,1);
 }
 .phone-layer.open .phone { transform: none; }
-.phone::before { content: ''; position: absolute; left: 9px; top: 50%; width: 13px; height: 72px; margin-top: -36px; background: #000; border-radius: 8px; box-shadow: inset 0 0 0 1px #151517; }
-.phone-screen { position: relative; width: 100%; height: 100%; border-radius: 28px; overflow: hidden; background: var(--ink); display: flex; flex-direction: column; }
-.status-bar { flex: 0 0 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font: 600 12px/1 var(--ui); letter-spacing: -.01em; color: var(--paper); }
-.status-bar .r { display: flex; gap: 6px; align-items: center; }
+/* Dynamic Island. */
+.phone::before { content: ''; position: absolute; left: 50%; top: 17px; width: 30%; height: 22px; margin-left: -15%; background: #000; border-radius: 12px; z-index: 7; }
+/* L'écran s'arrête au bas de la zone visible : le reste du téléphone est hors champ. */
+.phone-screen { position: relative; width: 100%; height: min(100%, calc(100vh - var(--ptop) - 9px)); border-radius: 37px 37px 0 0; overflow: hidden; background: var(--ink); display: flex; flex-direction: column; }
+.status-bar { flex: 0 0 38px; display: flex; align-items: center; justify-content: space-between; padding: 4px 24px 0 28px; font: 600 13px/1 var(--ui); letter-spacing: -.01em; color: var(--paper); }
+.status-bar .r { display: flex; gap: 5px; align-items: center; }
 .status-bar .bat { width: 22px; height: 10px; border: 1px solid currentColor; border-radius: 3px; padding: 1px; }
 .status-bar .bat i { display: block; height: 100%; width: 78%; background: currentColor; border-radius: 1px; }
 .phone-content { flex: 1; min-height: 0; position: relative; }
-/* Barre d'accueil dans sa propre bande de 12 px (voir .app) : elle ne recouvre plus le contenu, cible 160×12. */
-.home-btn { position: absolute; left: 50%; bottom: 0; width: 160px; height: 12px; margin-left: -80px; z-index: 5; }
-.home-btn::after { content: ''; position: absolute; left: 20px; right: 20px; top: 4px; height: 5px; border-radius: 3px; background: rgba(10,10,9,.82); }
-.phone-close { position: absolute; right: 2px; top: 2px; width: 34px; height: 34px; border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center; z-index: 6; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+/* Barre d'accueil dans sa propre bande de 12 px (voir .app) : elle ne recouvre pas le contenu. */
+.home-btn { position: absolute; left: 50%; bottom: 0; width: 140px; height: 12px; margin-left: -70px; z-index: 5; }
+.home-btn::after { content: ''; position: absolute; left: 14px; right: 14px; top: 4px; height: 5px; border-radius: 3px; background: rgba(10,10,9,.82); }
+/* Fermer : à gauche du téléphone, hors de l'écran. */
+.phone-close { position: absolute; left: -48px; top: 4px; width: 38px; height: 38px; border-radius: 50%; background: var(--st-surface-2); color: var(--st-ink); display: grid; place-items: center; z-index: 6; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
 .phone-close svg { width: 16px; height: 16px; }
 
-.home-screen { position: absolute; inset: 0; padding: 18px 26px 24px; background: radial-gradient(90% 120% at 88% 0%, #fbf6ea 0%, #efe6d2 42%, #dccdab 100%); display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: none; }
+/* Écran d'accueil iOS : widget STRIDES puis grille de 4 apps (l'heure est dans la barre d'état). */
+.home-screen { position: absolute; inset: 0; padding: 6px 16px 22px; background: radial-gradient(120% 90% at 85% 0%, #fbf6ea 0%, #efe6d2 45%, #dccdab 100%); display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: none; }
 .home-screen .clock { font: 300 44px/1 var(--ui); letter-spacing: -.04em; color: var(--st-text); font-variant-numeric: tabular-nums; }
-.home-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.widget { width: min(300px, 48%); border-radius: 22px; padding: 12px 14px; background: rgba(251,250,245,.92); color: var(--st-text); text-align: left; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 8px 24px rgba(26,26,24,.16); border: 1px solid rgba(255,255,255,.7); }
+.home-top { display: flex; flex-direction: column; gap: 10px; }
+.home-top > div:first-child { display: none; }
+.widget { width: 100%; border-radius: 22px; padding: 12px 14px; background: rgba(251,250,245,.92); color: var(--st-text); text-align: left; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 8px 24px rgba(26,26,24,.16); border: 1px solid rgba(255,255,255,.7); }
 .widget .w-head { display: flex; align-items: center; gap: 8px; font: 500 10px/1 var(--mono); letter-spacing: .06em; color: var(--st-text-3); }
 .widget .w-head svg { width: auto; height: 16px; color: var(--st-ink); }
-.widget .w-main { font: 600 20px/1.1 var(--display); letter-spacing: -.03em; }
+.widget .w-main { font: 600 19px/1.15 var(--display); letter-spacing: -.03em; }
+.widget .w-main, .widget .w-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .widget .w-sub { font: 400 12px/1.35 var(--ui); color: var(--st-text-2); }
 .home-screen .date { font: 500 12px/1 var(--ui); color: var(--muted); margin-top: 6px; }
-.apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 16px 10px; margin-top: auto; }
-.app-icon { display: flex; flex-direction: column; align-items: center; gap: 6px; font: 500 10.5px/1 var(--ui); color: var(--st-text); }
-.app-icon .ic { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; background: var(--st-surface-3); color: var(--st-ink); position: relative; box-shadow: 0 4px 12px rgba(26,26,24,.16); }
-.app-icon .ic svg { width: 26px; height: 26px; }
+.apps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 6px; margin-top: 16px; }
+.app-icon { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; padding: 0; font: 500 10px/1.1 var(--ui); color: var(--st-text); }
+.app-icon > span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-icon .ic { width: 50px; height: 50px; border-radius: 13px; display: grid; place-items: center; background: var(--st-surface-3); color: var(--st-ink); position: relative; box-shadow: 0 4px 12px rgba(26,26,24,.16); }
+.app-icon .ic svg { width: 25px; height: 25px; }
 .app-icon .ic.strides { background: var(--st-ink); color: var(--st-surface-3); }
 .app-icon .ic.strides svg { width: auto; height: 30px; }
 .app-icon .ic .badge { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--bad); color: #fff; font: 700 11px/18px var(--ui); padding: 0 5px; }
 
-/* App générique */
-.app { position: absolute; inset: 0 0 12px; display: flex; background: var(--ink); animation: appIn .28s cubic-bezier(.2,.9,.2,1); }
+/* App générique : contenu puis, pour STRIDES, la barre d'onglets en pilule de l'app (icônes seules). */
+.app { position: absolute; inset: 0 0 12px; display: flex; flex-direction: column; background: var(--ink); animation: appIn .28s cubic-bezier(.2,.9,.2,1); }
 @keyframes appIn { from { opacity: 0; transform: scale(.97); } }
-.app-rail { flex: 0 0 92px; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 10px 6px 14px; gap: 2px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: none; }
-.app-rail .logo { display: flex; justify-content: center; padding: 6px 0 12px; }
-.app-rail .logo svg { height: 26px; width: auto; color: var(--st-ink); }
-.rail-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 2px; border-radius: 12px; font: 500 10px/1 var(--ui); letter-spacing: 0; color: var(--muted); position: relative; }
-.rail-btn svg { width: 20px; height: 20px; }
-.rail-btn.on { background: var(--st-ink); color: var(--st-surface-3); }
-.rail-btn .dot { position: absolute; top: 6px; right: 18px; width: 7px; height: 7px; border-radius: 50%; background: var(--bad); }
-.app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.app-head { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 18px 10px; border-bottom: 1px solid var(--line); }
-.app-head h3 { margin: 0; font: 600 22px/1.1 var(--display); letter-spacing: -.03em; }
-.app-head .sub { font: 400 12px/1.3 var(--ui); color: var(--muted); }
-.app-head .back { width: 30px; height: 30px; border-radius: 10px; background: var(--ink-3); border: 1px solid var(--line); display: grid; place-items: center; }
+.app-rail { order: 2; flex: 0 0 auto; display: flex; gap: 0; margin: 4px 12px 0; padding: 5px; border: 1px solid var(--st-line); border-radius: 24px; background: var(--st-surface-1); }
+.app-rail .logo { display: none; }
+.rail-btn { flex: 1 1 0; height: 36px; padding: 0; border-radius: 18px; display: grid; place-items: center; color: var(--st-text-3); position: relative; }
+.rail-btn > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.rail-btn svg { width: 20px; height: 20px; display: block; }
+.rail-btn.on { background: var(--st-stone); color: var(--st-text); }
+.rail-btn::after { content: ''; position: absolute; left: 0; right: 0; top: -6px; bottom: 0; }
+.rail-btn .dot { position: absolute; top: 6px; right: 24%; width: 8px; height: 8px; border-radius: 50%; background: var(--st-bronze-50); }
+.app-main { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.app-head { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+.app-head > div { min-width: 0; }
+.app-head h3 { margin: 0; font: 600 20px/1.15 var(--display); letter-spacing: -.03em; }
+.app-head .sub { font: 400 12px/1.3 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-head .back { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: var(--ink-3); border: 1px solid var(--line); display: grid; place-items: center; }
 .app-head .back svg { width: 16px; height: 16px; }
 .app-head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-.app-body { flex: 1; overflow-y: auto; padding: 12px 18px 18px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+/* Écrans courts : barre d'état, en-têtes et onglets plus bas, accueil resserré. */
+@media (max-height: 360px) {
+  .phone::before { top: 15px; height: 20px; }
+  .status-bar { flex-basis: 32px; padding-top: 3px; font-size: 12px; }
+  .app-head { padding: 6px 12px; }
+  .app-head h3 { font-size: 18px; }
+  .app-head .back { width: 28px; height: 28px; }
+  .app-rail { margin: 3px 10px 0; padding: 4px; }
+  .app-head .sub { display: none; }
+  .req-head .st-h2 { font-size: 18px; }
+  .sheet-actions .btn { font-size: 14px; }
+  .rail-btn { height: 32px; }
+  .home-screen { padding: 4px 14px 18px; }
+  .widget { padding: 9px 12px; gap: 3px; }
+  .widget .w-main { font-size: 17px; }
+  .apps { gap: 10px 4px; margin-top: 12px; }
+  .app-icon .ic { width: 44px; height: 44px; border-radius: 12px; }
+  .app-icon .ic svg { width: 22px; height: 22px; }
+}
+@media (max-height: 300px) {
+  .phone::before { top: 13px; height: 17px; }
+  .status-bar { flex-basis: 26px; padding-top: 2px; font-size: 11px; }
+  .app-head { padding: 4px 10px; gap: 8px; }
+  .app-head h3 { font-size: 16px; }
+  .app-head .back { width: 26px; height: 26px; }
+  .app-rail { margin: 2px 10px 0; padding: 3px; }
+  .rail-btn svg { width: 18px; height: 18px; }
+  .st-home > .st-eyebrow:first-child { display: none; }
+  .st-home > .st-small + .st-eyebrow.sec { margin-top: 0; }
+}
+/* Appareil tourné en portrait, téléphone ouvert : l'app occupe tout l'écran, comme sur l'iPhone. */
+@media (orientation: portrait) {
+  .phone-layer { justify-content: center; padding: var(--ptop) 0 0; }
+  .phone { width: 100%; height: 100%; aspect-ratio: auto; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+  .phone::before { display: none; }
+  .phone-screen { height: 100%; border-radius: 0; }
+  .phone-close { left: auto; right: 12px; top: 2px; width: 32px; height: 32px; }
+  .phone-close::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; }
+  /* Le vrai iPhone affiche déjà réseau et batterie : la croix prend leur place. */
+  .status-bar .r { visibility: hidden; }
+}
+body.phone-open .rotate { display: none !important; }
+.app-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 16px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .section-t { font: 500 10px/16px var(--ui); letter-spacing: .22px; text-transform: uppercase; color: var(--muted); margin: 4px 0 8px; }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
-/* Carte STRIDES : surface, bordure fine, barre de couleur du métier à gauche (--metier). */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 10px; }
+/* Carte STRIDES : surface, bordure fine. */
 .mcard { background: var(--ink-2); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .mcard.active { border-color: var(--st-green); box-shadow: 0 0 0 1px var(--st-green) inset; }
-.mcard .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mcard .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--st-surface-1); border: 1px solid var(--st-line-2); font: 600 10px/1 var(--mono); letter-spacing: 1.4px; text-transform: uppercase; color: var(--st-text-3); white-space: nowrap; }
 .chip.metier { background: color-mix(in srgb, var(--metier, var(--st-text-3)) 15%, transparent); color: color-mix(in srgb, var(--metier, var(--st-text-3)) 80%, #000); }
 .chip.story { background: var(--st-ink); border-color: var(--st-ink); color: var(--st-surface-3); }
@@ -423,6 +492,8 @@ body.desktop .joy-base { display: none; }
 .toggle.on::after { transform: translateX(18px); }
 .set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); font: 500 14px/1.2 var(--ui); }
 .set-row .seg { width: 230px; }
+.phone .set-row { flex-wrap: wrap; row-gap: 8px; }
+.phone .set-row .seg { flex: 1 0 100%; width: auto; }
 .set-row .seg button { height: 32px; font-size: 12px; }
 .shop-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .shop-item .n { font: 600 14.5px/1.2 var(--ui); letter-spacing: -.01em; }
@@ -436,39 +507,43 @@ body.desktop .joy-base { display: none; }
 .st-eyebrow { font: 500 10px/16px var(--ui); letter-spacing: .22px; text-transform: uppercase; color: var(--st-text-3); }
 .st-eyebrow.sec { margin: 20px 0 8px; }
 .st-section { margin: 20px 0 8px; font: 500 10px/16px var(--ui); letter-spacing: .22px; text-transform: uppercase; color: var(--st-bronze-50); }
-.st-h1 { margin-top: 6px; font: 600 26px/1.1 var(--ui); letter-spacing: -.02px; white-space: pre-line; color: var(--st-text); }
-.st-h2 { font: 600 20px/1.2 var(--ui); letter-spacing: -.015px; color: var(--st-text); }
+.st-h1 { margin-top: 6px; font: 600 28px/30.8px var(--ui); letter-spacing: -.02em; white-space: pre-line; color: var(--st-text); }
+.st-h2 { font: 600 22px/26.4px var(--ui); letter-spacing: -.015em; color: var(--st-text); }
 .st-body { font: 400 15px/1.55 var(--ui); letter-spacing: -.005px; color: var(--st-text); }
 .st-body.b, .req-name { font-weight: 600; }
 .st-small { margin-top: 6px; font: 400 13px/1.45 var(--ui); color: var(--st-text-3); }
 .req-cap { font: 400 12px/1.4 var(--ui); color: var(--st-text-3); }
 .mt4 { margin-top: 4px; } .mt8 { margin-top: 8px; } .mtS { margin-top: 12px; }
 .st-card { background: var(--st-surface-1); border: 1px solid var(--st-line); border-radius: 18px; padding: 16px; }
-.st-amount, .req-amount { font: 700 20px/1.2 var(--ui); letter-spacing: -.015px; font-variant-numeric: tabular-nums; color: var(--st-text); white-space: nowrap; }
+.st-amount, .req-amount { font: 700 22px/1.2 var(--ui); letter-spacing: -.015em; font-variant-numeric: tabular-nums; color: var(--st-text); white-space: nowrap; }
 .badge-st { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 6px; border: 1px solid; font: 600 10px/1 var(--mono); letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; flex: 0 0 auto; }
-.badge-st.v-new { background: rgba(107,163,199,.1); border-color: rgba(107,163,199,.3); color: var(--st-blue); }
-.badge-st.v-pending { background: rgba(224,164,92,.1); border-color: rgba(224,164,92,.3); color: var(--st-bronze); }
-.badge-st.v-verified { background: rgba(95,184,126,.1); border-color: rgba(95,184,126,.3); color: var(--st-green); }
-.badge-st.v-inactive { background: var(--st-surface-1); border-color: var(--st-line-2); color: var(--st-text-3); }
+.badge-st.v-new { background: rgba(107,163,199,.1); border-color: rgba(107,163,199,.3); color: #326389; }
+.badge-st.v-pending { background: rgba(224,164,92,.1); border-color: rgba(224,164,92,.3); color: var(--st-bronze-50); }
+.badge-st.v-verified { background: rgba(95,184,126,.1); border-color: rgba(95,184,126,.3); color: #246c4f; }
+.badge-st.v-inactive { background: var(--st-surface-1); border-color: var(--st-line-2); color: var(--st-text-2); }
 .badge-st.v-top { background: rgba(176,122,47,.08); border-color: rgba(176,122,47,.25); color: var(--st-bronze-50); }
 .st-av { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; background: var(--st-surface-2); border: 1px solid var(--st-line); display: grid; place-items: center; font: 600 13px/1 var(--mono); letter-spacing: 1px; color: var(--st-text-2); }
 .st-stars { display: inline-flex; gap: 3px; color: var(--st-bronze-50); }
 .st-stars .ion { width: 11px; height: 11px; }
-.st-rating { display: flex; align-items: center; gap: 8px; margin-top: 4px; font: 400 12px/1.4 var(--ui); color: var(--st-text-3); }
+.st-rating { display: flex; align-items: center; gap: 8px; margin-top: 4px; font: 400 12px/1.4 var(--ui); color: var(--st-text-3); white-space: nowrap; }
 .st-link { margin-top: 4px; font: 400 12px/1.4 var(--ui); color: var(--st-bronze-50); }
-/* Carte de demande (liste) : liseré de la couleur du métier. */
-.req-list { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-.req-card { display: block; width: 100%; text-align: left; background: var(--st-surface-1); border: 1px solid var(--st-line); border-left: 3px solid var(--metier, var(--st-line-2)); border-radius: 18px; padding: 14px 16px 12px 15px; transition: background .12s, transform .12s; }
+/* Carte de demande (liste) : statut au-dessus du nom, texte sur toute la largeur. */
+.req-list { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.req-card { display: block; width: 100%; text-align: left; background: var(--st-surface-1); border: 1px solid var(--st-line); border-radius: 18px; padding: 14px 16px 12px 15px; transition: background .12s, transform .12s; }
 .req-card:active { background: var(--st-surface-2); transform: scale(.995); }
 .req-row { display: flex; align-items: flex-start; gap: 12px; }
 .req-col { flex: 1 1 auto; min-width: 0; }
-.req-name { font: 600 15px/1.4 var(--ui); color: var(--st-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.req-col .req-cap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.req-name { font: 600 15px/1.3 var(--ui); color: var(--st-text); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+/* Téléphone étroit : les légendes passent à la ligne plutôt que d'être coupées. */
+.req-col .req-cap { overflow-wrap: anywhere; }
+.req-col > .badge-st { margin-bottom: 6px; }
+/* Montant et distance en tête de la demande : visibles sans défiler. */
+.req-key { margin-top: 2px; font: 600 14px/1.35 var(--ui); color: var(--st-text); font-variant-numeric: tabular-nums; }
 .req-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--st-line); }
-.req-delay { font: 400 12px/1.4 var(--ui); color: var(--st-bronze); }
+.req-delay { font: 400 12px/1.4 var(--ui); color: var(--st-bronze-50); }
 .req-foot .acts { display: flex; gap: 8px; }
-.st-card.next { border-left: 3px solid var(--metier); }
 .st-card.next .st-small { margin-top: 8px; }
+.st-card.next .req-foot { flex-wrap: wrap; }
 .st-card.empty-st { text-align: left; }
 .st-card.revenue .req-amount { align-self: center; }
 /* Écran « Demande reçue » : plein écran, colonne de 600 px max, barre d'actions fixe. */
@@ -476,12 +551,13 @@ body.desktop .joy-base { display: none; }
 .st-topbar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--st-line); }
 .st-back { width: 34px; height: 34px; border-radius: 50%; background: var(--st-surface-2); border: 1px solid var(--st-line); display: grid; place-items: center; color: var(--st-text); }
 .st-back .ion { width: 18px; height: 18px; }
+.st-back, .app-head .back { position: relative; }
+.st-back::after, .app-head .back::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; }
 .st-spacer { width: 34px; flex: 0 0 34px; }
-.st-topbar .st-h2 { font-size: 19px; }
+.st-topbar .st-h2 { font-size: 22px; }
 .st-request .app-body { padding: 16px 20px 20px; }
 .st-frame { max-width: 600px; margin: 0 auto; }
-.req-head { border-left: 3px solid var(--metier); }
-.req-head .st-h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.req-head .st-h2 { overflow-wrap: anywhere; }
 .slots { padding: 4px 16px; }
 .slot { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
 .kvs { display: grid; gap: 12px; }
@@ -498,19 +574,18 @@ body.desktop .joy-base { display: none; }
 .conditions .st-eyebrow + .cond { border-top: 0; }
 .cond .ic { color: var(--st-text-3); }
 .cond .ic .ion { width: 14px; height: 14px; }
-.cond.ok .ic, .cond.ok .cond-v, .cond.ok .cond-l .st-body { color: var(--st-green); }
+.cond.ok .ic { color: var(--st-green); }
 .cond-l { flex: 1 1 auto; min-width: 0; }
 .cond-l .st-body { line-height: 1.35; }
 .cond-v { font: 600 15px/1.2 var(--ui); font-variant-numeric: tabular-nums; color: var(--st-text); white-space: nowrap; }
 .st-actions { flex: 0 0 auto; padding: 8px 16px 10px; background: var(--st-bg); border-top: 1px solid var(--st-line); }
 .st-actions-row { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
-.st-actions-row .btn.primary { flex: 2 1 0; }
-.st-actions .btn.icon-only { flex: 0 0 56px; padding: 0; display: grid; place-items: center; }
-.st-actions .btn.icon-only .ion { width: 20px; height: 20px; }
-.st-actions .btn.icon-only .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.st-actions-row .btn { padding: 0 12px; }
+/* Actions secondaires en fin de contenu, empilées comme dans l'app. */
+.st-more { display: grid; gap: 8px; margin-top: 24px; }
+.st-more .btn { width: 100%; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .confirm-hint { margin: 0 auto 6px; max-width: 600px; text-align: center; font: 400 12px/1.4 var(--ui); color: var(--st-text-3); }
 .req-cap.center { text-align: center; padding: 6px 0; }
-.req-cap.done { color: var(--st-green); }
 /* Feuille du bas (BottomSheet) et pastilles de message. */
 .sheet-layer { position: absolute; inset: 0; z-index: 8; background: rgba(10,10,9,.65); display: flex; align-items: flex-end; justify-content: center; animation: fadeIn .3s cubic-bezier(.2,.7,.3,1); }
 .sheet-layer.out { opacity: 0; transition: opacity .2s ease-in; }
@@ -533,13 +608,15 @@ body.desktop .joy-base { display: none; }
 .st-textarea.ph { color: var(--st-text-3); }
 .st-counter { text-align: right; font: 400 12px/1 var(--ui); color: var(--st-text-3); }
 .sheet-actions { display: flex; gap: 12px; }
+.sheet-actions .btn { padding: 0 10px; white-space: nowrap; }
 .stepper { display: flex; align-items: center; gap: 16px; }
 .stepper .btn.step { flex: 0 0 48px; padding: 0; display: grid; place-items: center; }
 .stepper .btn.step .ion { width: 18px; height: 18px; }
 /* Toast de l'app (bas de l'écran du téléphone). */
 /* En haut de l'écran (sous la barre d'état) : la barre d'actions du bas reste libre. */
-.app-toasts { position: absolute; left: 16px; right: 16px; top: 30px; z-index: 9; display: flex; justify-content: center; pointer-events: none; }
-.app-toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--st-line-2); background: var(--st-surface-3); box-shadow: 0 12px 32px rgba(0,0,0,.4); max-width: 420px; animation: toastUp .26s ease-out; }
+.app-toasts { position: absolute; left: 12px; right: 12px; top: 44px; z-index: 9; display: flex; justify-content: center; pointer-events: none; }
+/* Le toast laisse passer les touchers (il se ferme seul) : il ne bloque jamais un bouton. */
+.app-toast { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--st-line-2); background: var(--st-surface-3); box-shadow: 0 12px 32px rgba(0,0,0,.4); max-width: 420px; animation: toastUp .26s ease-out; }
 .app-toast .ic .ion { width: 20px; height: 20px; }
 .app-toast.v-success .ic { color: var(--st-green); }
 .app-toast.v-error .ic { color: var(--st-red); }
@@ -555,16 +632,6 @@ body.desktop .joy-base { display: none; }
   .actions { transform: scale(.88); transform-origin: right bottom; }
   .telemetry { padding: 6px 12px; }
   .gear { font-size: 32px; }
-  .card h2 { font-size: 30px; }
-  .apps { gap: 10px 8px; }
-  .home-screen .clock { font-size: 34px; }
-  .app-icon .ic { width: 46px; height: 46px; }
-  .rail-btn { padding: 4px 2px; gap: 2px; font-size: 9px; }
-  .rail-btn svg { width: 17px; height: 17px; }
-  .app-rail { padding-top: 6px; }
-  .app-rail .logo { display: none; }
-  .app-head { padding: 9px 16px 8px; }
-  .app-head h3 { font-size: 21px; }
 }
 @media (max-height: 360px) {
   .card-body { padding: 14px 16px 2px; }
@@ -587,6 +654,11 @@ body.desktop .joy-base { display: none; }
   .top-bar { gap: 10px; }
   .top-mid { gap: 5px; }
   .objective { padding: 5px 10px 6px; gap: 8px; }
+  /* Écran court : pas de surtitre, carte plus étroite ; grand message réduit. */
+  .objective { max-width: min(100%, 380px); }
+  .objective .tag { display: none; }
+  .big-msg .t { font-size: clamp(24px, 5.4vw, 40px); }
+  .big-msg .s { font-size: 10.5px; }
   .objective .text { margin-top: 2px; font-size: 12px; }
   .objective .sub { margin-top: 2px; font-size: 10.5px; }
   .objective .timer { font-size: 16px; padding: 5px 7px; }
@@ -597,25 +669,6 @@ body.desktop .joy-base { display: none; }
   .phone-btn { width: 42px; }
   .top-right .icon-btn { width: 38px; }
   .money { font-size: 21px; }
-  .home-screen { padding: 12px 18px 16px; }
-  .home-screen .clock { font-size: 28px; }
-  .app-icon .ic { width: 40px; height: 40px; border-radius: 11px; }
-  .app-icon .ic svg { width: 21px; height: 21px; }
-  .apps { gap: 8px 6px; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
-  .widget { padding: 9px 12px; }
-  .widget .w-main { font-size: 18px; }
-  .widget .w-main, .widget .w-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .app-icon { white-space: nowrap; }
-  /* Rail Strides compact : les 6 onglets tiennent (ou défilent) ; apps avec sous-titre sur la ligne du titre. */
-  .app-rail { gap: 0; padding: 3px 4px 4px; }
-  .rail-btn { padding: 3px 2px; gap: 1px; }
-  .rail-btn svg { display: block; width: 16px; height: 16px; }
-  .status-bar { flex-basis: 20px; }
-  .app-head { padding: 4px 14px; min-height: 35px; }
-  .app-head > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-  .app-head h3 { font-size: 19px; flex: none; }
-  .app-head .sub { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .app-head .back { width: 26px; height: 26px; border-radius: 8px; }
   .map-legend { bottom: 8px; gap: 3px; padding: 5px 8px; }
   .map-tip { padding: 5px 8px; font-size: 9.5px; }
   .st-topbar { padding: 4px 12px; }
@@ -626,8 +679,15 @@ body.desktop .joy-base { display: none; }
   .st-request .app-body, .st-home { padding: 10px 14px 14px; }
   .st-h1 { font-size: 21px; }
   .st-actions { padding: 6px 12px 6px; }
-  .st-actions .btn.large { height: 44px; font-size: 14.5px; }
-  .st-actions .btn.icon-only { flex-basis: 48px; }
+  .st-card { padding: 12px 14px; }
+  .app-toasts { top: 36px; }
+  /* Pendant la confirmation, l'aide n'apparaît que pour un avertissement : la zone de lecture reste intacte. */
+  .confirm-hint:not(.warn) { display: none; }
+  /* Feuilles : titre plus petit, sans texte d'introduction, le réglage du montant reste visible. */
+  .sheet .sheet-body > .req-cap.mt4 { display: none; }
+  .sheet .st-h2 { font-size: 18px; line-height: 22px; }
+  .st-actions .btn.large, .st-more .btn.large { height: 44px; font-size: 14.5px; }
+  .st-more { margin-top: 16px; }
   .confirm-hint { margin-bottom: 4px; font-size: 11px; }
   .sheet { padding: 10px 16px 14px; }
   .sheet .handle { margin-bottom: 8px; }
@@ -638,16 +698,20 @@ body.desktop .joy-base { display: none; }
   /* Accueil pro compact : les demandes restent dans le premier écran. */
   .st-home .st-h1, .st-home > .st-small { display: none; }
   .st-eyebrow.sec { margin-top: 12px; }
-  .dialog { padding: 9px 14px 10px; }
-  .dialog .line { font-size: 13.5px; min-height: 0; margin-top: 6px; }
-  .notif { padding: 7px 10px 8px; border-radius: 14px; }
-  .notif .n-head { font-size: 10px; }
-  .notif .n-head .n-app { width: 16px; height: 16px; border-radius: 4px; }
-  .notif .n-head .n-app svg { width: 11px; height: 11px; }
-  .notif .n-title { margin-top: 4px; font-size: 13px; }
-  .notif .n-body { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .notif .n-actions { margin-top: 6px; }
-  .notif .n-actions button { height: 30px; }
+  /* Dialogue calé à gauche, sur la zone du joystick (inutilisé pendant un dialogue) : le cavalier reste visible. */
+  .dialog { left: calc(var(--sl) + 8px); transform: none; width: min(380px, 50vw); padding: 7px 12px 8px; }
+  .dialog .who .av { width: 20px; height: 20px; font-size: 8.5px; }
+  .dialog .line { margin-top: 4px; font-size: 12.5px; line-height: 1.32; min-height: 0; }
+}
+@media (max-height: 420px) {
+  /* Écran bas : un seul toast, sur une ligne ; notification compacte (titre, détail, boutons). */
+  .toast { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notif { width: min(400px, 60vw); padding: 5px 10px 6px; border-radius: 14px; }
+  .notif .n-head { display: none; }
+  .notif .n-title { margin-top: 0; font-size: 12.5px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notif .n-body { margin-top: 1px; font-size: 11.5px; line-height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notif .n-actions { margin-top: 5px; }
+  .notif .n-actions button { height: 28px; }
 }
 @media (max-height: 360px) {
   /* Profil : prénom et personnage côte à côte, tout tient sans défiler. */
@@ -672,34 +736,28 @@ body.desktop .joy-base { display: none; }
 }
 @media (max-height: 300px) {
   .notif { width: min(400px, 54vw); }
-  .notif .n-head { display: none; }
-  .notif .n-title { margin-top: 0; }
-  .notif .n-actions button { height: 28px; }
+  .st-topbar { padding: 3px 10px; }
+  .app-toasts { top: 30px; }
+  .app-toast { padding: 8px 12px; gap: 10px; }
+  .app-toast .s { display: none; }
+  .app-rail { padding: 1px; }
+  .rail-btn { height: 32px; }
+  /* Boutons des feuilles : retour à la ligne plutôt que débordement. */
+  .sheet-actions .btn { min-width: 0; white-space: normal; line-height: 1.15; }
+  .sheet .st-field > .st-label, .sheet .sheet-body > .st-h2 { display: none; }
+  /* En-tête de la demande : nom puis montant et distance dès le premier écran. */
+  .req-head .badge-st { display: none; }
+  .st-request .app-body { padding-top: 6px; }
+  .st-card.req-head { padding-top: 8px; }
   .objective .tag { display: none; }
   .objective .text { margin-top: 0; }
   /* Minimap réduite : elle ne recouvre plus le centre du joystick ; boutons d'action sous le portefeuille. */
   .minimap-wrap, .minimap { width: 76px; }
   .minimap { height: 76px; }
   .actions { transform: scale(.78); }
-  /* Téléphone : cadre et barre d'état amincis ; accueil compact, 7 icônes sur une rangée. */
-  .phone { padding-top: 6px; padding-bottom: 6px; }
-  .status-bar { flex-basis: 18px; font-size: 10px; }
-  .app-head { padding: 2px 12px; min-height: 31px; }
-  .app-head h3 { font-size: 18px; }
-  .home-screen { padding: 8px 16px 14px; }
-  .home-screen .clock { font-size: 22px; }
-  .home-screen .date { margin-top: 3px; }
-  .widget { padding: 7px 10px; gap: 3px; }
-  .widget .w-main { font-size: 16px; }
-  .widget .w-sub { display: none; }
-  .apps { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-  .app-icon { gap: 4px; font-size: 9.5px; }
-  .app-icon .ic { width: 36px; height: 36px; border-radius: 10px; }
-  .app-icon .ic svg { width: 19px; height: 19px; }
 }
 @media (max-width: 700px) {
   .top-bar { gap: 8px; }
   .objective .text { font-size: 12px; -webkit-line-clamp: 3; }
-  .app-rail { flex-basis: 74px; }
-  .cards { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: minmax(0, 1fr); }
 }

@@ -1,6 +1,6 @@
 // Gestionnaire de missions Strides : offres (acceptées/refusées), déroulé par étapes, notes, paiements.
 import { levelFor } from '../core/save.js';
-import { formatMoney } from '../core/math.js';
+import { formatMoney, dec } from '../core/math.js';
 import { STORY } from './story.js';
 import { generateJob } from './jobs.js';
 
@@ -322,7 +322,7 @@ export class MissionManager {
     const d = g.distanceTo(o.place);
     g.hud.notify({
       title: `Nouvelle demande · ${o.client ? o.client.name : o.title}`,
-      body: `${o.title} · ${o.pay ? `~${o.pay} €` : o.payLabel || ''} · ${(d / 1000).toFixed(1).replace('.', ',')} km`,
+      body: `${o.title} · ${o.pay ? `~${o.pay} €` : o.payLabel || ''} · ${dec(d / 1000)} km`,
       timeout: 11000,
       actions: [
         { label: 'Plus tard', run: () => {} },
@@ -334,12 +334,17 @@ export class MissionManager {
   // Contre-propositions : le client répond quelques secondes plus tard (accepte jusqu'à +10 %, parfois +25 %).
   _resolveCounters() {
     const g = this.game;
+    // Pas de réponse pendant une mission : elle arrivera une fois la mission terminée.
+    if (this.active) return;
     for (const o of this.offers) {
       const c = o.counter;
-      if (!c || g.time - c.at < 7) continue;
+      if (!c || !o.pay || g.time - c.at < 7) continue;
       const ratio = c.amount / (o.pay || c.amount);
       const yes = ratio <= 1.1 || (ratio <= 1.25 && (o.id.length + c.amount) % 2 === 0);
       o.counter = null;
+      // Réponse reçue : la demande n'est plus épinglée et repart pour une durée de vie complète.
+      o.pinned = false;
+      o.createdAt = g.time;
       const who = o.client ? o.client.name : 'Le client';
       if (yes) {
         o.pay = c.amount;
@@ -444,7 +449,8 @@ export class MissionManager {
     const def = run.def;
     const stars = Math.max(1, Math.min(5, Math.round(def.rate ? def.rate(run) : 5)));
     const before = levelFor(d.xp);
-    let pay = run.payOverride ?? def.pay ?? 0;
+    // Montant négocié (contre-proposition acceptée) prioritaire sur le tarif de base.
+    let pay = run.payOverride ?? run.offer.pay ?? def.pay ?? 0;
     const tip = stars === 5 && pay > 0 ? Math.round(pay * 0.1) : 0;
     pay += tip;
     d.money += pay;

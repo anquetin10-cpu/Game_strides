@@ -2,7 +2,7 @@
 // (mêmes libellés, mêmes composants : Badge, Card, BottomSheet, Toast, confirmation en deux touchers).
 import { h, tap } from './dom.js';
 import { ion } from './ionicons.js';
-import { formatMoney } from '../core/math.js';
+import { formatMoney, dec } from '../core/math.js';
 
 // Métiers de l'app (couleur et pictogramme Ionicons) et correspondance avec les catégories du jeu.
 const JOBS = {
@@ -19,7 +19,7 @@ const JOB_OF = {
 };
 export const jobOf = (o) => JOBS[JOB_OF[o.category]] || JOBS.groomMaison;
 
-const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const shortDate = (d) => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 const longDate = (d) => `${shortDate(d)} ${d.getFullYear()}`;
@@ -31,7 +31,7 @@ const initialsOf = (c) => c?.initials || (c?.name || 'Client').split(' ').map((w
 // Badge (statut) : variantes new, pending, verified, inactive, top, danger.
 export const badge = (text, v) => h(`span.badge-st.v-${v}`, { text });
 
-function stars(rating) {
+export function stars(rating) {
   const row = h('span.st-stars');
   for (let i = 1; i <= 5; i++) row.insertAdjacentHTML('beforeend', ion(rating - i + 1 >= 0.8 ? 'star' : rating - i + 1 > 0 ? 'star-half' : 'star-outline'));
   return row;
@@ -49,14 +49,14 @@ export function requestCard(phone, o) {
   const c = o.client || { name: 'Client' };
   const job = jobOf(o);
   const [st, v] = !o.opened && !o.locked && !o.counter && !o.counterAccepted ? ['NOUVEAU', 'new'] : statusOf(o);
-  const card = h('button.req-card', { 'data-offer': o.id, style: { '--metier': job.color } },
+  const card = h('button.req-card', { 'data-offer': o.id },
     h('div.req-row', {},
       h('div.st-av', { text: initialsOf(c) }),
       h('div.req-col', {},
+        badge(st, v),
         h('div.req-name', { text: c.name }),
         h('div.req-cap', { text: `${job.label} · ${o.title}` }),
-        h('div.req-cap', { text: `${shortDate(new Date())} · ${o.placeName || ''}` })),
-      badge(st, v)),
+        h('div.req-cap', { text: `${shortDate(new Date())} · ${o.placeName || ''}` }))),
     h('div.req-foot', {},
       h('span.req-delay', { text: o.locked || (o.story ? 'Délai de réponse · 24h restantes' : 'Délai de réponse · expire bientôt') }),
       h('span.req-amount', { text: o.pay ? `~${o.pay} €` : o.payLabel || '—' })));
@@ -89,8 +89,8 @@ export function renderProHome(phone) {
     });
     body.append(
       h('div.st-eyebrow.sec', { text: 'Prochaine mission' }),
-      h('div.st-card.next', { style: { '--metier': jobOf(m.offer).color } },
-        h('div.req-row', {}, h('div.req-col', {}, h('div.st-h2', { text: jobOf(m.offer).label }), h('div.req-cap', { text: m.offer.title })), badge('EN COURS', 'new')),
+      h('div.st-card.next', {},
+        h('div.req-row', {}, h('div.req-col', {}, badge('EN COURS', 'top'), h('div.st-h2', { text: jobOf(m.offer).label }), h('div.req-cap', { text: m.offer.title }))),
         h('div.st-small', { text: g.missions.objectiveText() || '' }),
         h('div.req-foot', {}, h('span.acts', {}, gps, ab), h('span.req-amount', { text: m.offer.pay ? `~${m.offer.pay} €` : '—' }))));
   }
@@ -111,7 +111,6 @@ export function appToast(phone, title, sub, variant = 'success') {
   const wrap = phone.screen.parentElement.querySelector('.app-toasts') || phone.screen.parentElement.appendChild(h('div.app-toasts'));
   const icn = { success: 'checkmark', error: 'close', info: 'chatbubble-ellipses-outline' }[variant];
   const t = h(`div.app-toast.v-${variant}`, {}, h('span.ic', { html: ion(icn) }), h('div', {}, h('div.t', { text: title }), sub ? h('div.s', { text: sub }) : null));
-  tap(t, () => t.remove());
   wrap.replaceChildren(t);
   setTimeout(() => t.remove(), 3500);
 }
@@ -180,25 +179,26 @@ export function renderRequest(phone, opts = {}) {
   const job = jobOf(o);
   const [st, v] = statusOf(o);
   const d = g.distanceTo(o.place);
-  const km = (d / 1000).toFixed(1).replace('.', ',');
+  const km = dec(d / 1000);
   const received = o.receivedClock || g.clockText();
   const frame = h('div.st-frame');
   // En-tête : client, métier, note, statut.
-  frame.appendChild(h('div.st-card.req-head', { style: { '--metier': job.color } },
+  frame.appendChild(h('div.st-card.req-head', {},
     h('div.req-row', {},
       h('div.req-col', {},
+        badge(st, v),
         h('div.st-h2', { text: c.name }),
+        h('div.req-key', { text: `${o.pay ? `~${o.pay} €` : o.payLabel || '—'} · ${km} km` }),
         h('div.req-cap', { text: `${job.label} · ${shortDate(new Date())}` }),
-        h('div.st-rating', {}, c.rating ? stars(c.rating) : null, h('span', { text: c.rating ? `${c.rating.toFixed(1).replace('.', ',')} · ${reviewsOf(c)} avis` : 'Nouveau client' })),
-        h('div.st-link', { text: 'Voir le profil client →' })),
-      badge(st, v)),
+        h('div.st-rating', {}, c.rating ? stars(c.rating) : null, h('span', { text: c.rating ? `${dec(c.rating)} · ${reviewsOf(c)} avis` : 'Nouveau client' })),
+        h('div.st-link', { text: 'Voir le profil client →' }))),
     h('div.req-cap.mt8', { text: `Reçue le ${longDate(new Date())} à ${received}.` }),
     o.locked ? null : h('div.req-cap', { text: `Expire le ${longDate(tomorrow())} à ${received}.` })));
   // Créneaux, détails, note du client.
   const hour = g.hour();
   frame.append(
     h('div.st-section', { text: 'Créneaux demandés' }),
-    h('div.st-card.slots', {}, h('div.slot', {}, h('span.st-body', { text: shortDate(new Date()) }), h('span.req-cap', { text: hour < 12 ? 'Matin' : hour < 19 ? 'Après-midi' : 'Soirée' }))),
+    h('div.st-card.slots', {}, h('div.slot', {}, h('span.st-body', { text: shortDate(new Date()) }), h('span.req-cap', { text: hour < 13 ? 'Matin' : 'Après-midi' }))),
     h('div.st-section', { text: 'Détails' }),
     h('div.st-card.kvs', {},
       kv('Mission', o.title),
@@ -228,9 +228,12 @@ export function renderRequest(phone, opts = {}) {
       cond('card-outline', 'Paiement', 'Fonds sécurisés en séquestre, versés à la fin de la mission', 'Garanti', 'ok'),
       cond('cash-outline', 'TVA', 'Art. 293 B du CGI — franchise en base', 'Non applicable'))
   );
-  const body = h('div.app-body.scrollable', {}, frame);
-  main.appendChild(body);
-  main.appendChild(actions(phone, o));
+  // Comme dans l'app : « Accepter la mission » (fixe en bas), puis contre-proposition et refus en fin de contenu.
+  // Sur écran bas (zone de lecture d'une centaine de pixels), ils viennent juste après l'en-tête.
+  const act = actions(phone, o);
+  if (act.more) frame.insertBefore(act.more, matchMedia('(max-height: 360px)').matches ? frame.children[1] : null);
+  main.appendChild(h('div.app-body.scrollable', {}, frame));
+  main.appendChild(act.bar);
   return h('div.app.full', {}, main);
 }
 
@@ -246,55 +249,73 @@ function actions(phone, o) {
   const bar = h('div.st-actions');
   if (o.locked) {
     bar.appendChild(h('div.req-cap.center', { text: o.locked }));
-    return bar;
+    return { bar };
   }
   const hint = h('div.confirm-hint.hidden');
   const accept = h(`button.btn.large${o.counter ? '' : '.primary'}`, { text: o.counter ? `Accepter à ${o.pay} €` : 'Accepter la mission', 'data-id': 'accept-request' });
-  const counter = h('button.btn.large.icon-only', { html: ion('chatbubble-ellipses-outline'), 'aria-label': 'Message au client et contre-proposition', 'data-id': 'counter-request' });
-  counter.appendChild(h('span.lbl', { text: o.counter ? 'Modifier la contre-proposition' : 'Message au client et contre-proposition' }));
+  const counter = h('button.btn.large', { text: o.counter ? 'Modifier la contre-proposition' : 'Message et contre-proposition', 'data-id': 'counter-request' });
   const refuse = h('button.btn.large', { text: 'Refuser', 'data-id': 'refuse-request' });
+  // Pas de contre-proposition sur une demande sans tarif (ex. ferrure réglée au maréchal).
+  const more = h('div.st-more', {}, o.pay ? counter : null, refuse);
   let confirming = false;
+  let armedAt = 0;
   let timer = 0;
+  const reset = () => {
+    clearTimeout(timer);
+    // Écran remplacé entre-temps (feuille, autre demande) : ne rien toucher.
+    if (!bar.isConnected) return;
+    confirming = false;
+    phone._reqBusy = false;
+    accept.textContent = o.counter ? `Accepter à ${o.pay} €` : 'Accepter la mission';
+    hint.classList.add('hidden');
+  };
   tap(accept, () => {
     if (!confirming) {
       confirming = true;
+      armedAt = performance.now();
       phone._reqBusy = true;
       accept.textContent = o.counter ? `Confirmer à ${o.pay} € ?` : 'Confirmer l’acceptation ?';
       hint.textContent = o.counter ? 'Touchez à nouveau pour confirmer — vous renoncez à votre contre-proposition.' : 'Touchez à nouveau pour confirmer — le client sera informé.';
+      // Sur écran bas, l'aide n'est affichée que pour l'avertissement (contre-proposition abandonnée).
+      hint.classList.toggle('warn', !!o.counter);
       hint.classList.remove('hidden');
       g.audio.click();
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        confirming = false;
-        phone._reqBusy = false;
-        accept.textContent = o.counter ? `Accepter à ${o.pay} €` : 'Accepter la mission';
-        hint.classList.add('hidden');
-      }, 5000);
+      timer = setTimeout(reset, 5000);
       return;
     }
+    // Double toucher trop rapide (< 350 ms) : ce n'est pas une confirmation volontaire.
+    if (performance.now() - armedAt < 350) return;
     clearTimeout(timer);
     if (g.missions.active) {
-      confirming = false;
-      phone._reqBusy = false;
-      accept.textContent = 'Accepter la mission';
-      hint.classList.add('hidden');
+      reset();
       return appToast(phone, 'Mission en cours', 'Terminez ou abandonnez votre mission en cours d’abord.', 'error');
     }
     // Acceptée : toast de l'app, créneaux réservés, puis on range le téléphone et la mission démarre.
     o.counter = null;
+    o.pinned = true;
+    more.remove();
     bar.replaceChildren(h('div.req-cap.center.done', { text: 'Demande acceptée — les créneaux sont réservés dans votre agenda.' }));
     appToast(phone, 'Demande acceptée', 'Les créneaux sont réservés dans votre agenda.');
     g.audio.success?.();
     setTimeout(() => {
       phone._reqBusy = false;
       phone.close();
-      g.missions.accept(o.id);
+      if (g.missions.offers.includes(o)) g.missions.accept(o.id);
+      else g.hud.toast('Cette demande n’est plus disponible.');
     }, 1300);
   });
-  tap(refuse, () => openRefuse(phone, o));
-  tap(counter, () => openCounter(phone, o));
-  bar.append(hint, h('div.st-actions-row', {}, refuse, counter, accept));
-  return bar;
+  // Ouvrir une feuille annule la confirmation en attente (sinon son minuteur libérerait l'écran sous la feuille).
+  tap(refuse, () => {
+    if (confirming) reset();
+    openRefuse(phone, o);
+  });
+  tap(counter, () => {
+    if (confirming) reset();
+    openCounter(phone, o);
+  });
+  bar.append(hint, h('div.st-actions-row', {}, accept));
+  return { bar, more };
 }
 
 function openRefuse(phone, o) {
@@ -304,7 +325,7 @@ function openRefuse(phone, o) {
   const ok = h('button.btn.primary', { text: 'Refuser la demande', 'data-id': 'confirm-refuse' });
   const close = openSheet(phone, [
     h('div.st-h2', { text: 'Refuser la demande' }),
-    h('div.req-cap.mt4', { text: 'Le client sera informé. Vous pouvez lui expliquer pourquoi — c’est facultatif.' }),
+    h('div.req-cap.mt4', { text: "Le client sera informé. Vous pouvez lui expliquer pourquoi — c'est facultatif." }),
     msg.el,
   ], h('div.sheet-actions', {}, cancel, ok));
   tap(cancel, close);
@@ -319,7 +340,8 @@ function openRefuse(phone, o) {
 function openCounter(phone, o) {
   const g = phone.game;
   const base = o.pay || 50;
-  let amount = o.counter?.amount || Math.round((base * 1.1) / 5) * 5;
+  // Part du montant demandé : un envoi sans rien régler donne « Rien à proposer » au lieu d'une hausse invisible.
+  let amount = o.counter?.amount || base;
   const val = h('span.st-amount', { text: `${amount} €` });
   const minus = h('button.btn.step', { html: ion('remove'), 'aria-label': 'Moins' });
   const plus = h('button.btn.step', { html: ion('add'), 'aria-label': 'Plus' });
@@ -330,17 +352,21 @@ function openCounter(phone, o) {
   tap(minus, () => set(amount - 5));
   tap(plus, () => set(amount + 5));
   const msg = messageField('Message au client', 'Précisions, conditions…', ['Disponible plus tôt si besoin', 'Matériel fourni', 'Tarif week-end']);
-  const send = h('button.btn.large.primary', { text: o.counter ? 'Envoyer la nouvelle proposition' : 'Message au client et contre-proposition', 'data-id': 'send-counter' });
+  const cancel = h('button.btn', { text: 'Annuler' });
+  const send = h('button.btn.primary', { text: 'Envoyer', 'data-id': 'send-counter' });
   const close = openSheet(phone, [
     h('div.st-h2', { text: o.counter ? 'Modifier la contre-proposition' : 'Contre-proposition' }),
     h('div.req-cap.mt4', { text: o.counter ? 'Votre proposition en cours est reprise ci-dessous. La nouvelle la remplacera, et le client sera informé.' : 'Ajustez le montant, ou ajoutez simplement un message. Le client devra accepter pour que la mission soit créée.' }),
-    h('div.st-field', {}, h('div.st-label', { text: 'Montant de la mission (€)' }), h('div.stepper', {}, minus, val, plus), h('div.req-cap', { text: `Demandé : ${base} €` })),
+    h('div.st-field', {}, h('div.st-label', { text: 'Montant de la mission (€)' }), h('div.stepper', {}, minus, val, plus), h('div.req-cap', { text: `${base} € = le montant demandé par le client, déplacement inclus.` })),
     msg.el,
-  ], send);
+  ], h('div.sheet-actions', {}, cancel, send));
+  tap(cancel, close);
   tap(send, () => {
     if (amount === base && !msg.value()) return appToast(phone, 'Rien à proposer', 'Modifiez un montant ou ajoutez un message.', 'error');
     o.counter = { amount, note: msg.value(), at: g.time };
     o.counterAccepted = false;
+    // Demande en négociation : elle ne doit pas expirer pendant que le client répond.
+    o.pinned = true;
     close();
     phone.show('request', { id: o.id });
     appToast(phone, 'Contre-proposition envoyée', 'Le client doit maintenant l’accepter.');

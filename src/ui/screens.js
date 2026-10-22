@@ -1,9 +1,10 @@
 // Écrans : chargement, titre, création du personnage, pause, résultats de mission, fin, mode photo.
-import { h, tap, stars } from './dom.js';
+import { h, tap } from './dom.js';
 import { icon } from './icons.js';
 import { formatMoney, formatTime } from '../core/math.js';
 import { CONFIG } from '../config.js';
 import { logoSvg } from './logo.js';
+import { stars } from './requests.js';
 
 const TIPS = [
   'Sur Strides, chaque professionnel est vérifié avant de pouvoir proposer ses services.',
@@ -152,7 +153,7 @@ export class Screens {
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
     extra.push(h('div.result-grid', {}, stat('Paiement', r.pay ? formatMoney(r.pay) : '—'), stat('Réputation', `+${r.xp} XP`), stat(r.timeLabel || 'Temps', r.time !== undefined ? formatTime(r.time) : r.extraValue || '—')));
     if (r.review) {
-      extra.push(h('div.review', {}, h('div.av', { text: r.review.initials }), h('div', {}, h('div.who', { text: r.review.name }), h('div.stars', { text: stars(r.stars) }), h('div.q', { text: `« ${r.review.text} »` }))));
+      extra.push(h('div.review', {}, h('div.av', { text: r.review.initials }), h('div', {}, h('div.who', { text: r.review.name }), h('div.stars', {}, stars(r.stars)), h('div.q', { text: `« ${r.review.text} »` }))));
     }
     if (r.levelUp) extra.push(h('div.levelup', {}, h('span', { text: 'Nouveau statut Strides' }), h('big', { text: r.levelUp.title.toUpperCase() }), h('span', { text: r.levelUp.perk || '' })));
     if (r.irl) extra.push(h('div.irl', { html: r.irl }));
