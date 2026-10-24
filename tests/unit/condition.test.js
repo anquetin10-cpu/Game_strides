@@ -26,8 +26,10 @@ describe('physiologie du cheval', () => {
     run(c, h, 14, 90);
     run(c, h, 0, 30);
     expect(c.hr).toBeGreaterThan(110);
-    run(c, h, 0, 150);
-    expect(c.hr).toBeLessThan(80);
+    run(c, h, 0, 120);
+    expect(c.hr).toBeLessThan(105);
+    run(c, h, 0, 480);
+    expect(c.hr).toBeLessThan(64);
   });
   it('fatigue, chaleur et soif après un long galop ; malus de performance', () => {
     const h = horse();

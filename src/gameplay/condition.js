@@ -42,8 +42,9 @@ export class HorseCondition {
     if (h._slope > 0.05) target += h._slope * v * 9;
     target *= 1 + (1 - this.energy / 100) * 0.15;
     if (this.temp > 39) target += (this.temp - 39) * 10;
-    // Montée rapide (~8 s), récupération lente (selon la condition physique).
-    const tau = target > this.hr ? 8 : 38 / this.fitness;
+    // Montée rapide (~8 s) ; récupération en deux temps : chute rapide jusqu'à ~120 bpm, puis lente
+    // (un cheval en bonne condition repasse sous ~64 bpm en une dizaine de minutes).
+    const tau = target > this.hr ? 8 : (this.hr > 120 ? 22 : 160) / this.fitness;
     this.hr += (target - this.hr) * (1 - Math.exp(-dt / tau));
     this.jumpBoost *= Math.exp(-dt / 10);
     // Énergie : dépense au-delà de ~90 bpm, récupération au repos.
@@ -121,16 +122,17 @@ export function installCare(game) {
     const h = horse();
     return h && near(h.pos, HOME.yard.x, HOME.yard.z, 75);
   };
+  // Un cheval sale ou aux pieds non curés se soigne avant d'être monté (priorité sur « Monter »).
   g.interact.add('care-groom', {
-    label: 'Panser', icon: 'hand', r: 2.8, priority: 1.2, modes: ['foot'],
+    label: 'Panser', icon: 'hand', r: 2.8, priority: 2.5, modes: ['foot'],
     getPos: () => horse()?.pos || { x: 1e9, z: 1e9 },
-    when: () => ready() && horse().cond.clean < 85,
+    when: () => ready() && horse().cond.clean < 50,
     action: () => care('Pansage : étrille, bouchon, brosse douce', 4, (c) => { c.clean = 100; c.resting = false; g.hud.toast('Robe propre et brillante.'); }),
   });
   g.interact.add('care-hooves', {
-    label: 'Curer les pieds', icon: 'shoe', r: 2.8, priority: 1.1, modes: ['foot'],
+    label: 'Curer les pieds', icon: 'shoe', r: 2.8, priority: 2.4, modes: ['foot'],
     getPos: () => horse()?.pos || { x: 1e9, z: 1e9 },
-    when: () => ready() && horse().cond.hooves < 80 && horse().cond.clean >= 85,
+    when: () => ready() && horse().cond.hooves < 50 && horse().cond.clean >= 50,
     action: () => care('Curage des quatre pieds', 3, (c) => { c.hooves = 100; g.hud.toast('Pieds propres, fers bien en place.'); }),
   });
   g.interact.add('care-water', {
