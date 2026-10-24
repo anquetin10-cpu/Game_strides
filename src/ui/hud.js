@@ -57,6 +57,9 @@ export class HUD {
     this.speedEl = h('div.speed.tab-num', { html: '0<small>km/h</small>' });
     this.staminaEl = h('div.stamina', {}, ...Array.from({ length: 10 }, () => h('i')));
     this.comfortEl = h('div.comfort.hidden');
+    this.comfortBar = h('i');
+    this.comfortTxt = h('span');
+    this.comfortEl.append(this.comfortTxt, h('b', {}, this.comfortBar));
     this.teleEl = h('div.telemetry.hidden', {}, this.gearEl, h('div.tele-col', {}, h('div.tele-row', {}, this.gaitEl, this.speedEl), this.staminaEl, this.comfortEl));
     this.el.appendChild(this.teleEl);
 
@@ -72,7 +75,9 @@ export class HUD {
     this.btnAction = mk('btn-action', 'action', 'hand', 'Action');
     this.btnWhistle = mk('btn-whistle', 'whistle', 'whistle', '');
     this.btnWhistle.querySelector('span').remove();
-    this.actionsEl = h('div.actions', {}, this.btnGallop, this.btnJump, this.btnAction, this.btnWhistle);
+    // Action secondaire contextuelle (mener en main, rampe…), à la place du bouton de saut quand on est à pied.
+    this.btnAction2 = mk('btn-action2.hide', 'action2', 'hand', '');
+    this.actionsEl = h('div.actions', {}, this.btnGallop, this.btnJump, this.btnAction, this.btnAction2, this.btnWhistle);
     this.el.appendChild(this.actionsEl);
 
     // Message central.
@@ -178,15 +183,41 @@ export class HUD {
         this.staminaEl.classList.toggle('low', p.horse.exhausted || st < 0.25);
         [...this.staminaEl.children].forEach((c, i) => c.classList.toggle('on', i < on));
       } else {
-        const v = p.truck.speed;
-        this.gearEl.textContent = v < -0.3 ? 'R' : Math.abs(v) < 0.3 ? 'N' : String(Math.min(5, 1 + Math.floor(Math.abs(v) / 5)));
-        this.gaitEl.textContent = 'CAMION';
-        this.staminaEl.classList.add('hidden');
+        // Camion : rapport engagé (boîte auto), régime moteur en barregraphe.
+        const t = p.truck;
+        const gl = t.gearLabel;
+        if (this.gearEl.textContent !== gl) {
+          this.gearEl.textContent = gl;
+          this.gearEl.classList.toggle('small', gl.length > 1);
+        }
+        const rpm = Math.round(t.rpm / 50) * 50;
+        const rt = `${rpm.toLocaleString('fr-FR')} tr/min`;
+        if (this.gaitEl.textContent !== rt) this.gaitEl.textContent = rt;
+        this.staminaEl.classList.remove('hidden', 'low');
+        this.staminaEl.classList.add('rpm');
+        const on = Math.round((t.rpm / 2600) * 10);
+        [...this.staminaEl.children].forEach((c, i) => {
+          c.classList.toggle('on', i < on);
+          c.classList.toggle('red', i >= 9);
+        });
+        if (t.blockedT > 0.5 && !this._blockedHint) {
+          this._blockedHint = true;
+          this.hint(t.door.t > 0 ? 'Porte de service ouverte.' : 'Rampe ouverte : <b>ferme-la</b> à l’arrière du camion avant de rouler.', 3500);
+        } else if (!t.blockedT) this._blockedHint = false;
       }
-      const comfort = g.missions?.comfort;
-      if (comfort !== undefined && comfort !== null && mode === 'drive') {
+      if (mode !== 'drive') this.staminaEl.classList.remove('rpm');
+      // Confort du cheval transporté (mission de transport ou cheval à bord).
+      const tp = p.transport;
+      const mc = g.missions?.comfort;
+      const aboard = tp && tp.aboard.length ? tp.aboard[0].horse : null;
+      const comfort = mc !== undefined && mc !== null ? mc : aboard ? tp.comfort : null;
+      if (comfort !== null && mode === 'drive') {
         this.comfortEl.classList.remove('hidden');
-        this.comfortEl.textContent = `CONFORT DU CHEVAL ${Math.round(comfort)} %`;
+        const txt = `CONFORT${aboard ? ` · ${aboard.name.toUpperCase()}` : ' DU CHEVAL'} ${Math.round(comfort)} %`;
+        if (this.comfortTxt.textContent !== txt) this.comfortTxt.textContent = txt;
+        this.comfortBar.style.width = `${Math.round(comfort)}%`;
+        this.comfortEl.classList.toggle('warn', comfort < 70);
+        this.comfortEl.classList.toggle('bad', comfort < 45);
       } else this.comfortEl.classList.add('hidden');
     } else this.teleEl.classList.add('hidden');
 
@@ -199,13 +230,24 @@ export class HUD {
       this.btnGallop.querySelector('div').innerHTML = icon(mode === 'ride' ? 'gallop' : 'run');
     }
     this.btnWhistle.classList.toggle('hide', !(mode === 'foot' && p.horse && !p.horse.hiddenInTruck && !g.missions?.noWhistle));
+    // Action secondaire du transport (calculée après l'action principale).
+    const sec = mode === 'foot' && p.transport ? p.transport.secondary() : null;
+    const l2 = sec ? sec.label : '';
+    if (l2 !== this._lastAction2) {
+      this._lastAction2 = l2;
+      this.btnAction2.classList.toggle('hide', !sec);
+      if (sec) {
+        this.btnAction2.querySelector('span').textContent = l2;
+        this.btnAction2.querySelector('div').innerHTML = icon(sec.icon || 'hand');
+      }
+    }
     const cur = g.interact.current;
-    const label = cur ? cur.label : '';
+    const label = cur ? `${cur.label}\u200b${cur.icon || ''}` : '';
     if (label !== this._lastAction) {
       this._lastAction = label;
       this.btnAction.classList.toggle('hide', !cur);
       if (cur) {
-        this.btnAction.querySelector('span').textContent = label;
+        this.btnAction.querySelector('span').textContent = cur.label;
         this.btnAction.querySelector('div').innerHTML = icon(cur.icon || 'hand');
       }
     }

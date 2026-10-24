@@ -1,6 +1,6 @@
 // Textures générées (logo Strides, panneaux publicitaires, enseignes, bannières) — design system STRIDES.
 import * as THREE from 'three';
-import { drawLogo, LOGO_FULL } from '../ui/logo.js';
+import { drawLogo, LOGO_FULL, LOGO_MARK } from '../ui/logo.js';
 
 export const FONT_DISPLAY = 'Geist, -apple-system, "Helvetica Neue", Arial, sans-serif';
 export const FONT_UI = 'Geist, -apple-system, "Helvetica Neue", Arial, sans-serif';
@@ -174,23 +174,246 @@ export function bannerTexture() {
   return t;
 }
 
-export function truckTexture() {
-  if (cache.has('truck')) return cache.get('truck');
-  const cv = canvas(1024, 512);
+// ---------- Camion porte-chevaux : atlas de livrée et de matériaux ----------
+// Toute la carrosserie partage un seul matériau PBR : chaque pièce pointe (UV) vers une pastille de l'atlas
+// qui fixe sa couleur, et la même zone des cartes ORM / vernis / émission fixe rugosité, métal, occlusion…
+// Pastille : [couleur sRGB, rugosité, métal, vernis, occlusion, émission intérieure].
+const PAINT = '#1d1e20';
+const VINYL = '#e8e6e0';
+export const TRUCK_SWATCHES = {
+  paint: [PAINT, 0.5, 0, 1, 1],
+  paintSatin: ['#2a2b2e', 0.58, 0, 0.2, 0.9],
+  white: [VINYL, 0.36, 0, 1, 1],
+  gold: ['#c9a24a', 0.32, 0.9, 1, 1],
+  chrome: ['#e4e5e6', 0.07, 1, 0, 1],
+  alu: ['#c4c7ca', 0.3, 1, 0, 1],
+  aluDark: ['#868a90', 0.38, 1, 0, 1],
+  steel: ['#5c5f63', 0.45, 0.85, 0, 0.9],
+  mirror: ['#f0f0f0', 0.015, 1, 0, 1],
+  plastic: ['#2c2d2f', 0.7, 0, 0, 1],
+  plasticGrey: ['#45474a', 0.62, 0, 0, 1],
+  plasticLight: ['#b9bbbd', 0.5, 0, 0, 1],
+  rubber: ['#262626', 0.9, 0, 0, 1],
+  tyre: ['#282828', 0.86, 0, 0, 1],
+  tyreSide: ['#2b2b2b', 0.74, 0, 0, 1],
+  rim: ['#b2b5b9', 0.3, 0.75, 0.3, 1],
+  hub: ['#d0d2d4', 0.2, 1, 0, 1],
+  darkHole: ['#0c0c0c', 0.9, 0, 0, 0.25],
+  darkGlass: ['#101317', 0.04, 0, 1, 1],
+  grille: ['#1e1f20', 0.6, 0, 0, 0.65],
+  tread: ['#9b9ea2', 0.42, 1, 0, 1],
+  exhaust: ['#56504a', 0.7, 0.6, 0, 1],
+  blue: ['#2852a8', 0.5, 0, 0, 1],
+  reflRed: ['#a3201b', 0.25, 0, 1, 1],
+  reflAmber: ['#c27014', 0.25, 0, 1, 1],
+  dash: ['#2a2b2d', 0.72, 0, 0, 0.55],
+  seat: ['#333438', 0.92, 0, 0, 0.55],
+  cabTrim: ['#3a3c40', 0.8, 0, 0, 0.5],
+  // Intérieur du box : occlusion forte (le ciel ne l'éclaire pas), émission = plafonnier.
+  rubberFloor: ['#2a2b2c', 0.93, 0, 0, 0.32, 0.1],
+  pad: ['#3a3d42', 0.6, 0, 0, 0.32, 0.14],
+  padSeam: ['#2a2c30', 0.7, 0, 0, 0.32, 0.08],
+  grp: ['#d6d6d0', 0.42, 0, 0, 0.32, 0.28],
+  ceiling: ['#e2e2dd', 0.5, 0, 0, 0.28, 0.36],
+  hay: ['#a38d58', 0.95, 0, 0, 0.4, 0.2],
+  net: ['#5a4632', 0.9, 0, 0, 0.4, 0.12],
+  woodFloor: ['#6e563c', 0.62, 0, 0.3, 0.35, 0.12],
+  steelInt: ['#8a8d92', 0.32, 1, 0, 0.45, 0.1],
+};
+// Rectangles de livrée (pixels de l'atlas de base 2048 × 1536, origine en haut à gauche).
+export const TRUCK_RECTS = {
+  sideLogo: [0, 0, 940, 1000], // panneau arrière des flancs : 2,35 × 2,5 m
+  rear: [960, 0, 620, 620], // face extérieure du pont (rampe) : 2,3 × 2,3 m
+  door: [1600, 0, 300, 170], // portes de cabine
+  plate: [1600, 180, 264, 56], // plaque d'immatriculation
+  badge: [1600, 246, 128, 128], // logo de calandre
+  luton: [0, 1020, 1400, 220], // face avant de la capucine
+  band: [0, 1250, 1400, 120], // bandeau de flanc
+};
+const SW_ORIGIN = [1420, 640];
+const SW_CELL = 32;
+const SW_COLS = 19;
+
+export function truckTexture(scale = 1) {
+  const key = `truck${scale}`;
+  if (cache.has(key)) return cache.get(key);
+  const W = 2048, H = 1536;
+  const cv = canvas(Math.round(W * scale), Math.round(H * scale));
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = SURFACE;
-  ctx.fillRect(0, 0, 1024, 512);
-  ctx.fillStyle = INK;
-  ctx.fillRect(0, 400, 1024, 112);
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(0, 388, 1024, 12);
-  drawLogo(ctx, 56, 90, 200, INK);
-  ctx.font = `500 30px ${FONT_MONO}`;
-  ctx.fillStyle = '#46443e';
-  ctx.fillText('TRANSPORT DE CHEVAUX · RÉSERVEZ SUR L’APP', 64, 350);
-  const t = toTexture(cv);
-  cache.set('truck', t);
-  return t;
+  ctx.scale(scale, scale);
+  ctx.fillStyle = PAINT;
+  ctx.fillRect(0, 0, W, H);
+  const names = Object.keys(TRUCK_SWATCHES);
+  const cell = (i) => [SW_ORIGIN[0] + (i % SW_COLS) * SW_CELL, SW_ORIGIN[1] + Math.floor(i / SW_COLS) * SW_CELL];
+  names.forEach((n, i) => {
+    const [x, y] = cell(i);
+    ctx.fillStyle = TRUCK_SWATCHES[n][0];
+    ctx.fillRect(x, y, SW_CELL, SW_CELL);
+  });
+  const R = TRUCK_RECTS;
+  // Flancs : grand logo blanc, accroche en capitales mono.
+  {
+    const [x, y, w] = R.sideLogo;
+    const lw = w * 0.84;
+    const lh = (lw * LOGO_FULL.h) / LOGO_FULL.w;
+    drawLogo(ctx, x + (w - lw) / 2, y + 300, lh, VINYL);
+    ctx.fillStyle = VINYL;
+    ctx.textAlign = 'center';
+    ctx.font = `500 40px ${FONT_MONO}`;
+    ctx.fillText('TRANSPORT DE CHEVAUX', x + w / 2, y + 640);
+    ctx.globalAlpha = 0.72;
+    ctx.font = `400 29px ${FONT_UI}`;
+    ctx.fillText('Réservez un transporteur vérifié sur l’app', x + w / 2, y + 690);
+    ctx.globalAlpha = 1;
+  }
+  // Rampe arrière : marque, site, panneau « chevaux ».
+  {
+    const [x, y, w] = R.rear;
+    const mh = 250;
+    drawLogo(ctx, x + w / 2 - (mh * LOGO_MARK.w) / LOGO_MARK.h / 2, y + 70, mh, VINYL, true);
+    ctx.fillStyle = VINYL;
+    ctx.textAlign = 'center';
+    ctx.font = `600 64px ${FONT_DISPLAY}`;
+    ctx.fillText('STRIDES', x + w / 2, y + 400);
+    ctx.font = `500 26px ${FONT_MONO}`;
+    ctx.globalAlpha = 0.75;
+    ctx.fillText('STRIDES-APP.COM', x + w / 2, y + 446);
+    ctx.globalAlpha = 1;
+    // Panneau réglementaire « CHEVAUX » (blanc, liseré noir).
+    const sw = 300, sh = 92, sx = x + (w - sw) / 2, sy = y + 498;
+    ctx.fillStyle = VINYL;
+    ctx.fillRect(sx, sy, sw, sh);
+    ctx.fillStyle = PAINT;
+    ctx.fillRect(sx + 6, sy + 6, sw - 12, sh - 12);
+    ctx.fillStyle = VINYL;
+    ctx.fillRect(sx + 10, sy + 10, sw - 20, sh - 20);
+    ctx.fillStyle = '#16171a';
+    ctx.font = `700 50px ${FONT_DISPLAY}`;
+    ctx.fillText('CHEVAUX', sx + sw / 2, sy + 64);
+  }
+  // Portes de cabine.
+  {
+    const [x, y, w, h] = R.door;
+    const lh = 64;
+    const lw = (lh * LOGO_FULL.w) / LOGO_FULL.h;
+    drawLogo(ctx, x + (w - lw) / 2, y + 30, lh, VINYL);
+    ctx.fillStyle = VINYL;
+    ctx.textAlign = 'center';
+    ctx.font = `500 20px ${FONT_MONO}`;
+    ctx.globalAlpha = 0.8;
+    ctx.fillText('STRIDES-APP.COM', x + w / 2, y + h - 34);
+    ctx.globalAlpha = 1;
+  }
+  // Plaque SIV (fictive) : bandes bleues, étoiles UE, « F », département 14 (Calvados).
+  {
+    const [x, y, w, h] = R.plate;
+    ctx.fillStyle = '#f4f4f0';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#1f3f9a';
+    ctx.fillRect(x, y, 26, h);
+    ctx.fillRect(x + w - 26, y, 26, h);
+    ctx.fillStyle = '#f2c230';
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      ctx.fillRect(x + 13 + Math.cos(a) * 7 - 1, y + 17 + Math.sin(a) * 7 - 1, 2, 2);
+    }
+    ctx.fillStyle = '#f4f4f0';
+    ctx.textAlign = 'center';
+    ctx.font = `700 16px ${FONT_UI}`;
+    ctx.fillText('F', x + 13, y + 46);
+    ctx.fillText('14', x + w - 13, y + 46);
+    ctx.fillStyle = '#121212';
+    ctx.font = `700 38px ${FONT_UI}`;
+    ctx.fillText('ST-750-EQ', x + w / 2, y + 42);
+    ctx.strokeStyle = '#121212';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  }
+  // Logo de calandre (marque argentée sur fond noir).
+  {
+    const [x, y, w, h] = R.badge;
+    ctx.fillStyle = '#1e1f20';
+    ctx.fillRect(x, y, w, h);
+    const mh = 110;
+    drawLogo(ctx, x + w / 2 - (mh * LOGO_MARK.w) / LOGO_MARK.h / 2, y + 9, mh, '#d9dadc', true);
+  }
+  // Capucine : logotype centré.
+  {
+    const [x, y, w, h] = R.luton;
+    const lh = 150;
+    const lw = (lh * LOGO_FULL.w) / LOGO_FULL.h;
+    drawLogo(ctx, x + (w - lw) / 2, y + (h - lh) / 2, lh, VINYL);
+  }
+  // Bandeau de flanc.
+  {
+    const [x, y, w, h] = R.band;
+    ctx.fillStyle = VINYL;
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.85;
+    ctx.font = `500 44px ${FONT_MONO}`;
+    ctx.fillText('JOBS · ÉCURIES · TRANSPORT · ÉVÉNEMENTS', x + w / 2, y + h / 2 + 15);
+    ctx.globalAlpha = 1;
+  }
+  const map = toTexture(cv);
+  map.anisotropy = 8;
+  // Cartes de propriétés (résolution réduite, sans mipmaps : zones uniformes).
+  const small = (fn) => {
+    const s = 0.25 * scale;
+    const c = canvas(Math.round(W * s), Math.round(H * s));
+    const x2 = c.getContext('2d');
+    x2.scale(s, s);
+    fn(x2);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.NoColorSpace;
+    t.generateMipmaps = false;
+    t.minFilter = THREE.LinearFilter;
+    return t;
+  };
+  const paintSw = TRUCK_SWATCHES.paint;
+  const byte = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255);
+  const fillSw = (x2, f) => {
+    names.forEach((n, i) => {
+      const [x, y] = cell(i);
+      x2.fillStyle = f(TRUCK_SWATCHES[n]);
+      x2.fillRect(x, y, SW_CELL, SW_CELL);
+    });
+  };
+  const rgb = (r, g, b) => `rgb(${byte(r)},${byte(g)},${byte(b)})`;
+  // ORM : R = occlusion, V = rugosité, B = métal (la livrée a les propriétés de la peinture).
+  const orm = small((x2) => {
+    x2.fillStyle = rgb(paintSw[4], paintSw[1], paintSw[2]);
+    x2.fillRect(0, 0, W, H);
+    x2.fillStyle = rgb(1, 0.4, 0);
+    x2.fillRect(...R.plate);
+    fillSw(x2, (s) => rgb(s[4], s[1], s[2]));
+  });
+  const coat = small((x2) => {
+    x2.fillStyle = rgb(1, 1, 1);
+    x2.fillRect(0, 0, W, H);
+    x2.fillStyle = rgb(0.2, 0.2, 0.2);
+    x2.fillRect(...R.plate);
+    fillSw(x2, (s) => rgb(s[3], s[3], s[3]));
+  });
+  const emit = small((x2) => {
+    x2.fillStyle = '#000';
+    x2.fillRect(0, 0, W, H);
+    fillSw(x2, (s) => rgb((s[5] || 0) * 1.0, (s[5] || 0) * 0.86, (s[5] || 0) * 0.68));
+  });
+  const uvOf = (px, py) => [px / W, 1 - py / H];
+  const swatchUV = {};
+  names.forEach((n, i) => {
+    const [x, y] = cell(i);
+    swatchUV[n] = uvOf(x + SW_CELL / 2, y + SW_CELL / 2);
+  });
+  // Rectangle en coordonnées de texture : u0 (gauche), u1, v0 (bas), v1 (haut).
+  const rectUV = {};
+  for (const [n, [x, y, w, h]] of Object.entries(R)) {
+    const inset = 2;
+    rectUV[n] = { u0: (x + inset) / W, u1: (x + w - inset) / W, v0: 1 - (y + h - inset) / H, v1: 1 - (y + inset) / H };
+  }
+  const out = { map, orm, coat, emit, swatchUV, rectUV };
+  cache.set(key, out);
+  return out;
 }
 
 // Texture d'asphalte avec marquage central (V le long de la route).
