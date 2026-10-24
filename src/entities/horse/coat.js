@@ -155,6 +155,9 @@ uniform float uFleabit;
 uniform vec3 uDappleCol;
 uniform vec3 uEyeC[2];
 uniform vec3 uEyeAxis[2];
+uniform float uWet;        // pluie (0..1)
+uniform float uSweat;      // transpiration (0..1)
+uniform float uWater;      // hauteur mouillée par l'eau (m, 0 = sec)
 float hHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float hNoise(vec3 x) {
   vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
@@ -176,6 +179,8 @@ const FRAG_COLOR = /* glsl */ `
 float hEye = vExtra.y;
 float hHoofK = 0.0;
 float hSkinK = 0.0;
+float hWetK = 0.0;
+float hFoamK = 0.0;
 {
   vec3 p = vRest;
   vec3 c = diffuseColor.rgb;
@@ -237,6 +242,29 @@ float hSkinK = 0.0;
   // Grain du poil : stries fines dans le sens du poil (vers l'arrière et vers le bas).
   float grain = hNoise(p * vec3(260.0, 90.0, 35.0)) * 0.6 + hNoise(p * vec3(120.0, 40.0, 18.0)) * 0.4;
   c *= mix(1.0, 0.9 + 0.2 * grain, 1.0 - hHoofK);
+  // Mouillé (pluie, eau, transpiration) : poil plaqué plus sombre et brillant ; écume blanche aux frottements.
+  if (uWet + uSweat + uWater > 0.0) {
+    float n1 = hNoise(p * 9.0), n2 = hNoise(p * 31.0);
+    float rain = uWet * (0.55 + 0.45 * smoothstep(-0.3, 0.7, vRestN.y)) * (0.8 + 0.2 * n1);
+    float water = 1.0 - smoothstep(uWater - 0.04, uWater + 0.06 + 0.05 * n1, p.y);
+    // Zones de transpiration : encolure, épaules, poitrail, passage de sangle, flancs, entre les cuisses.
+    float neck = smoothstep(0.5, 0.75, p.z) * (1.0 - smoothstep(1.15, 1.3, p.z)) * smoothstep(1.05, 1.3, p.y);
+    float girth = (1.0 - smoothstep(0.08, 0.2, abs(p.z - 0.38))) * smoothstep(0.85, 1.0, p.y) * (1.0 - smoothstep(1.3, 1.45, p.y));
+    float pad = (1.0 - smoothstep(0.12, 0.22, abs(p.y - 1.2))) * smoothstep(-0.38, -0.25, p.z) * (1.0 - smoothstep(0.42, 0.5, p.z));
+    float thighs = (1.0 - smoothstep(0.08, 0.16, abs(p.x))) * (1.0 - smoothstep(-0.55, -0.45, p.z)) * smoothstep(0.75, 0.95, p.y) * (1.0 - smoothstep(1.3, 1.4, p.y));
+    float flank = smoothstep(0.9, 1.1, p.y) * (1.0 - smoothstep(1.45, 1.6, p.y)) * (1.0 - smoothstep(0.35, 0.6, abs(p.z + 0.2)));
+    float zone = clamp(max(max(neck, girth), max(max(pad, thighs), flank * 0.8)), 0.0, 1.0);
+    float sw = zone * smoothstep(0.08, 0.7, uSweat + (n1 - 0.5) * 0.25);
+    hWetK = clamp(max(max(rain, water), sw), 0.0, 1.0) * (1.0 - hEye);
+    c *= mix(1.0, 0.58, hWetK * (1.0 - hHoofK));
+    // Écume (sueur abondante) : lignes de frottement seulement — bas du tapis, bords de la sangle, entre les cuisses.
+    float padEdge = (1.0 - smoothstep(0.012, 0.035, abs(p.y - 1.175))) * smoothstep(-0.3, -0.24, p.z) * (1.0 - smoothstep(0.38, 0.44, p.z));
+    float girthEdge = (1.0 - smoothstep(0.012, 0.03, abs(abs(p.z - 0.37) - 0.055))) * smoothstep(0.86, 0.95, p.y) * (1.0 - smoothstep(1.18, 1.24, p.y));
+    float inner = thighs * (1.0 - smoothstep(0.03, 0.09, abs(p.x)));
+    float lather = max(max(padEdge, girthEdge), inner);
+    hFoamK = smoothstep(0.6, 1.0, uSweat) * lather * smoothstep(0.55, 0.85, n2 * 0.75 + n1 * 0.45) * 0.9;
+    c = mix(c, vec3(0.74, 0.72, 0.67), hFoamK);
+  }
   // Œil : iris brun sombre, pupille horizontale, reflet humide (vernis).
   if (hEye > 0.5) {
     int ei = p.x > 0.0 ? 0 : 1;
@@ -256,11 +284,13 @@ float hSkinK = 0.0;
 const ROUGH = /* glsl */ `
 roughnessFactor = mix(roughnessFactor, 0.32, hHoofK);
 roughnessFactor = mix(roughnessFactor, 0.36, hSkinK);
+roughnessFactor = mix(roughnessFactor, 0.2, hWetK);
+roughnessFactor = mix(roughnessFactor, 0.85, hFoamK);
 roughnessFactor = mix(roughnessFactor, 0.04, hEye);
 `;
 const PHYS = /* glsl */ `
 #ifdef USE_SHEEN
-  material.sheenColor = (0.06 + 0.5 * sqrt(diffuseColor.rgb)) * sheenColor * (1.0 - hHoofK) * (1.0 - hEye) * (1.0 - hSkinK * 0.7);
+  material.sheenColor = (0.06 + 0.5 * sqrt(diffuseColor.rgb)) * sheenColor * (1.0 - hHoofK) * (1.0 - hEye) * (1.0 - hSkinK * 0.7) * (1.0 - 0.6 * hWetK) * (1.0 - hFoamK);
 #endif
 #ifdef USE_CLEARCOAT
   material.clearcoat = hEye;
@@ -329,6 +359,9 @@ export function createCoatMaterial(assets, coat, mk) {
     uDappleCol: { value: C.mane.clone().lerp(C.body, 0.25) },
     uEyeC: { value: meta.eyes.map((e) => new THREE.Vector3(...e)) },
     uEyeAxis: { value: meta.eyeAxis.map((e) => new THREE.Vector3(...e)) },
+    uWet: { value: 0 },
+    uSweat: { value: 0 },
+    uWater: { value: 0 },
   };
   m.userData.uniforms = U;
   m.onBeforeCompile = (sh) => {

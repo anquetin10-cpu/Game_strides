@@ -5,6 +5,7 @@
 // respiration, repos d'un postérieur, saut (appel, planer en bascule, réception), cabrer, brouter.
 import * as THREE from 'three';
 import { clamp, lerp, smoothstep } from '../../core/math.js';
+import { MODEL_SCALE } from './skeleton.js';
 
 const TAU = Math.PI * 2;
 const ang = (dz, dy) => Math.atan2(dz, -dy); // 0 = vers le bas, + = vers l'avant
@@ -68,7 +69,7 @@ function setupLegs(bones) {
     const J = names.map((n) => worldRest(bones, n).sub(P0)); // articulations dans le repère du parent (repos)
     const hoofC = J[J.length - 1];
     // Point d'appui (centre de la sole) et pince, sous l'articulation du pied.
-    const K = worldRest(bones, 'body').y / 1.222; // échelle du modèle
+    const K = MODEL_SCALE; // unités du modèle par mètre réel
     const sole = new THREE.Vector3(hoofC.x, hoofC.y - 0.06 * K, hoofC.z + 0.01 * K);
     const toe = new THREE.Vector3(hoofC.x, sole.y, hoofC.z + 0.075 * K);
     // Segments plans (z, y) depuis l'articulation proximale de la chaîne.

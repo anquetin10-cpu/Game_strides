@@ -1,6 +1,6 @@
 // Cheval : physique (allures, endurance, saut, collisions) + comportements IA.
 import * as THREE from 'three';
-import { createHorseMesh, animateHorse, gaitIndex, setHorseLod } from './horseModel.js';
+import { createHorseMesh, animateHorse, gaitIndex, setHorseLod, setHorseTack, setHorseWetness } from './horseModel.js';
 import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
 import { WORLD } from '../world/layout.js';
@@ -230,8 +230,17 @@ export class Horse {
     this.anim.jump = this.jumpT;
     this.anim.turn = this.lastTurn;
     this.anim.mounted = !!this.rider;
-    // Niveau de détail : maillage allégé au-delà de ~24 m.
-    if (this.mesh.visible) setHorseLod(this.mesh, far > (this.isPlayerHorse ? 40 : 24) ? 1 : 0);
+    // Robe mouillée : transpiration (état du cheval, sinon estimée selon l'effort), pluie, eau des gués.
+    const effort = this.speed > 7 ? (this.speed - 7) / 9 : -0.4;
+    this._sweat = clamp((this._sweat || 0) + dt * (effort > 0 ? effort * 0.02 : effort * 0.006), 0, 1);
+    const sweat = this.cond?.sweat ?? this._sweat;
+    this._wetLegs = Math.max(depth > 0 ? depth + 0.08 + this.speed * 0.025 : 0, (this._wetLegs || 0) - dt * 0.004);
+    if (this.mesh.visible) {
+      setHorseWetness(this.mesh, { sweat: sweat > 1 ? sweat / 100 : sweat, rain: g.weather?.wetness ?? g.weather?.rain ?? 0, water: this._wetLegs });
+      setHorseTack(this.mesh, { mounted: !!this.rider });
+      // Niveau de détail : maillage allégé au-delà de ~24 m.
+      setHorseLod(this.mesh, far > (this.isPlayerHorse ? 40 : 24) ? 1 : 0);
+    }
     if (this.mesh.visible && (far < 120 || ((this._skip = (this._skip || 0) + 1) & 1))) {
       const r = animateHorse(this.bones, this.anim, far < 120 ? dt : dt * 2);
       if (r.footfalls && (this.isPlayerHorse || far < 45)) g.bus.emit('horse:step', { horse: this, n: r.footfalls, depth, hooves: r.landed });

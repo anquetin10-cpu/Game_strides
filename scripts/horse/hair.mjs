@@ -204,10 +204,10 @@ export function buildHair(S, log = () => {}) {
     const root = add(c, mul(radial, rr));
     const endY = 0.46 + rnd() * 0.05;
     const len = root[1] - endY + 0.05;
-    const dir = add(mul(dAx, 0.6), mul(radial, 0.5));
+    const dir = add(mul(dAx, 0.7), mul(radial, 0.18));
     // Largeur de carte orientée autour de l'axe (volume visible sous tous les angles).
     const side = norm(cross(radial, [0, 1, 0]));
-    strand(root, dir, len, 0.05 + rnd() * 0.035, 8, 0.02 + rnd() * 0.02, 0.9, side, tailW, 0.7 + rnd() * 0.6, Math.floor(rnd() * 4) * 0.25, i % 2 === 0, {
+    strand(root, dir, len, 0.045 + rnd() * 0.03, 8, 0.012 + rnd() * 0.012, 1.3, side, tailW, 0.7 + rnd() * 0.6, Math.floor(rnd() * 4) * 0.25, i % 2 === 0, {
       taper: 0.15,
       normal: (q, n) => norm(add(mul(radial, 0.7), mul(n, 0.3))),
     });
@@ -217,11 +217,12 @@ export function buildHair(S, log = () => {}) {
   // ---------- Cils (paupière supérieure) ----------
   for (const s of [1, -1]) {
     const e = EYE(s);
-    for (let i = 0; i < 3; i++) {
-      const along = (i - 1) * 0.011;
-      const root = add(e, add(add([s * (EYE_R + 0.0015), 0, 0], mul(HEAD_F, along + 0.003)), mul(HEAD_U, 0.0125)));
-      const dir = add([s * 0.65, 0, 0], add(mul(HEAD_U, 0.7), mul(HEAD_F, 0.25)));
-      strand(root, dir, 0.024, 0.012, 2, 0.0005, -0.25, HEAD_F, headW, 0.5, 0.75, false, { taper: 0.4 });
+    // Cils de la paupière supérieure : en visière, vers l'extérieur et légèrement vers le bas.
+    for (let i = 0; i < 4; i++) {
+      const along = (i - 1.5) * 0.008;
+      const root = add(e, add(add([s * (EYE_R - 0.001), 0, 0], mul(HEAD_F, along + 0.002)), mul(HEAD_U, 0.0135)));
+      const dir = add([s * 0.85, 0, 0], add(mul(HEAD_U, 0.12), mul(HEAD_F, 0.18)));
+      strand(root, dir, 0.02, 0.006, 2, 0.0004, 0.35, HEAD_F, headW, 0.45, 0, false, { taper: 0.6 });
     }
   }
 

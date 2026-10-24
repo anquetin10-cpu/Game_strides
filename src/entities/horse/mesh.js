@@ -64,6 +64,9 @@ export function buildHorseMesh(opts = {}) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.frustumCulled = true;
+  // Sphère englobante fixe (repère local, toutes poses, cabrer et encolure basse compris) : three.js ne la
+  // recalcule pas d'après une pose figée, sinon le cheval disparaîtrait après un déplacement.
+  mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 1.15, 0.2), 2.3);
   mesh.userData.bones = bones;
   mesh.userData.lod = 0;
   mesh.userData.markings = mk;
@@ -104,6 +107,18 @@ export function buildHorseMesh(opts = {}) {
   return { mesh, bones, skeleton };
 }
 
+/**
+ * Robe mouillée : sweat (transpiration 0..1 : zones sombres puis écume), rain (pluie 0..1),
+ * water (hauteur mouillée par l'eau en mètres, gué ou mer ; 0 = sec).
+ */
+export function setHorseWetness(mesh, { sweat, rain, water } = {}) {
+  const U = mesh.userData.ownMaterials?.[0]?.userData.uniforms;
+  if (!U) return;
+  if (sweat !== undefined) U.uSweat.value = Math.min(1, Math.max(0, sweat));
+  if (rain !== undefined) U.uWet.value = Math.min(1, Math.max(0, rain));
+  if (water !== undefined) U.uWater.value = Math.max(0, water);
+}
+
 /** Change l'équipement : { saddle, mounted, boots } (seuls les champs fournis changent). */
 export function setHorseTack(mesh, cfg) {
   const part = mesh.userData.tack;
@@ -122,6 +137,7 @@ export function attachPart(horseMesh, geo, material, { shadow = true } = {}) {
   part.castShadow = shadow;
   part.receiveShadow = true;
   geo.boundingSphere = horseMesh.geometry.boundingSphere;
+  part.boundingSphere = horseMesh.boundingSphere;
   geo.boundingBox = horseMesh.geometry.boundingBox;
   horseMesh.add(part);
   horseMesh.userData.parts.push(part);

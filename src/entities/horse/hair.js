@@ -22,13 +22,16 @@ function makeHairTexture() {
   g.lineCap = 'round';
   for (let col = 0; col < 4; col++) {
     const x0 = col * 64;
-    const n = 70 + col * 12;
+    const n = 110 + col * 18;
     for (let i = 0; i < n; i++) {
-      const x = x0 + 4 + rnd() * 56;
-      const end = H * (0.55 + rnd() * 0.45);
-      const l = Math.floor(150 + rnd() * 105);
-      const a = 0.65 + rnd() * 0.35;
-      const w = 1 + rnd() * 2.2;
+      // Densité plus forte au centre de la carte : bords fondus (pas d'effet ruban).
+      const r = (rnd() + rnd() + rnd()) / 3;
+      const x = x0 + 3 + r * 58;
+      const edge = 1 - Math.abs(r - 0.5) * 2;
+      const end = H * (0.5 + rnd() * 0.5) * (0.7 + 0.3 * edge);
+      const l = Math.floor(140 + rnd() * 115);
+      const a = (0.55 + rnd() * 0.45) * (0.55 + 0.45 * edge);
+      const w = 0.8 + rnd() * 1.6;
       const wav = (rnd() - 0.5) * 6, ph = rnd() * 6;
       g.strokeStyle = `rgba(${l},${l},${l},${a})`;
       g.lineWidth = w;
@@ -69,8 +72,8 @@ export function hairMaterial(coat) {
     map: hairTex,
     alphaTest: 0.42,
     side: THREE.DoubleSide,
-    roughness: 0.6,
-    envMapIntensity: 0.55,
+    roughness: 0.72,
+    envMapIntensity: 0.35,
     metalness: 0,
     vertexColors: true,
   });

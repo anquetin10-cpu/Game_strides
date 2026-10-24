@@ -11,7 +11,8 @@ const mirror = (p) => [-p[0], p[1], p[2]];
 // [nom, parent, position de repos]
 const DEF = [
   ['root', null, [0, 0, 0]],
-  ['body', 'root', [0, 1.222, 0]], // thorax (sous la selle)
+  // Thorax : pivot placé pour que l'ancien point d'attache du cavalier (body + (0 ; 0,43 ; 0,02)) tombe dans le siège.
+  ['body', 'root', [0, 1.338, 0]],
   ['breath', 'body', [0, 1.16, 0.08]], // respiration (feuille)
   ['loin', 'body', [0, 1.43, -0.27]], // vertèbres lombaires
   ['pelvis', 'loin', [0, 1.47, -0.5]], // lombo-sacrée → bassin
@@ -44,7 +45,7 @@ const DEF = [
   ['hlP', 'hlC', [0.155, 0.19, -0.755]],
   ['hlH', 'hlP', [0.15, 0.06, -0.69]],
   // Ancres (non pondérées) : selle, anneau du licol, mains du cavalier, étrivières.
-  ['saddle', 'body', [0, 1.62, 0.1]],
+  ['saddle', 'body', [0, 1.62, -0.015]], // point le plus bas du siège
   ['leadAnchor', 'head', [0, 1.555, 1.265]],
   ['reinL', 'body', [0.07, 1.86, 0.5]],
   ['reinR', 'body', [-0.07, 1.86, 0.5]],

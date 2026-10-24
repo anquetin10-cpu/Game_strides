@@ -1,11 +1,11 @@
 // Cheval de sport réaliste (Selle Français, 1,65 m au garrot) : maillage lisse généré hors ligne à partir d'une
 // anatomie en champ de distance (scripts/horse), robe physique (reflet satiné, marques), crins, sellerie complète,
 // et locomotion procédurale fidèle aux allures réelles (voir ./horse/anim.js).
-import { buildHorseMesh, setHorseLod } from './horse/mesh.js';
+import { buildHorseMesh, setHorseLod, setHorseTack, setHorseWetness } from './horse/mesh.js';
 
 export { COATS } from './horse/coat.js';
 export { animateHorse, gaitIndex, hoofWorldPosition } from './horse/anim.js';
-export { setHorseLod };
+export { setHorseLod, setHorseTack, setHorseWetness };
 
 /**
  * opts : { coat: clé de COATS ou objet { body, mane, legs, muzzle, hoof }, blaze, socks: [AG, AD, PG, PD],
