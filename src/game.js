@@ -34,6 +34,7 @@ import { Birds } from './world/birds.js';
 import { HoofPrints } from './world/hoofprints.js';
 import { Boats } from './world/boats.js';
 import { Rain } from './world/rain.js';
+import { TIDE_UNIFORMS, tideLevel, tideState, temperature, conditionText } from './world/weather.js';
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -454,8 +455,19 @@ export class Game {
     return `${hh}:${String(mm).padStart(2, '0')}`;
   }
   weatherText() {
-    const h = this.hour();
-    return h > 6 && h < 21 ? 'Ensoleillé · 21 °C' : 'Nuit claire · 14 °C';
+    const day = Math.floor(this.save.data.gameTime / 86400), h = this.hour();
+    return `${conditionText(day, h)} · ${Math.round(temperature(day, h))} °C`;
+  }
+  // Marée : niveau de la mer (physique, rendu de l'eau) et estran mouillé, recalculé chaque seconde pour le reste.
+  updateTide(dt) {
+    const t = this.save.data.gameTime / 3600;
+    TIDE_UNIFORMS.tdLevel.value = tideLevel(t);
+    if ((this._tideT = (this._tideT || 0) - dt) > 0) return;
+    this._tideT = 1;
+    const st = tideState(t);
+    TIDE_UNIFORMS.tdWet.value = st.wet;
+    TIDE_UNIFORMS.tdMark.value = st.mark;
+    this.tide = st;
   }
   rating() {
     const r = this.save.data.ratings;
@@ -833,13 +845,14 @@ export class Game {
     this.sky.update(hour, this.player.focus.pos, dt);
     this.sky.follow(this.camera);
     this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
+    this.updateTide(dt);
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
     this.birds.update(dt, this.sky.nightFactor);
     this.hoofPrints.update(dt);
     this.boats.update(dt);
     // Pluie (traînées autour de la caméra, bruit de pluie).
-    this.rainFx.update(dt, this.camera, this.sky.rain, (1 - this.sky.nightFactor) * 0.9 + 0.1);
+    this.rainFx.update(dt, this.camera, this.sky.rain, (1 - this.sky.nightFactor) * 0.9 + 0.1, this.sky.windVec);
     this.audio.setRain?.(this.sky.rain);
     // Ambiance sonore : oiseaux des haies le jour, goélands sur la côte.
     if ((this._birdT = (this._birdT ?? 4) - dt) <= 0 && this.sky.nightFactor < 0.5) {

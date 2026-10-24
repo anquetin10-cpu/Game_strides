@@ -62,8 +62,9 @@ export class Rain {
     scene.add(this.lines);
   }
 
-  update(dt, camera, intensity, light = 1) {
+  update(dt, camera, intensity, light = 1, wind = null) {
     const U = this.uniforms;
+    if (wind) U.wind.value.copy(wind);
     U.time.value += dt;
     U.intensity.value = intensity;
     U.camPos.value.copy(camera.position);

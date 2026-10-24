@@ -7,6 +7,7 @@ import { HORSES, SHOP, PROS, STABLES } from '../gameplay/data.js';
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
+import { conditionText, temperature, wind, rainTarget, dayCover, tideLevel, tideEvents, tideCoef, hhmm } from '../world/weather.js';
 import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard } from './requests.js';
 
@@ -106,6 +107,7 @@ export class Phone {
       trophies: () => this.renderTrophies(),
       settings: () => this.renderSettings(),
       shop: () => this.renderShop(),
+      weather: () => this.renderWeather(),
     }[app];
     this.screen.appendChild(fn ? fn() : this.renderHome());
     if (scroll) {
@@ -156,6 +158,7 @@ export class Phone {
         appIcon('messages', 'Messages', 'message', '', unread),
         appIcon('stable', 'Chevaux', 'horse'),
         appIcon('trophies', 'Trophées', 'trophy'),
+        appIcon('weather', 'Météo', 'weather'),
         photo,
         appIcon('settings', 'Réglages', 'settings')
       )
@@ -601,6 +604,39 @@ export class Phone {
     for (const a of g.activities.list()) body.appendChild(h('div.kv', {}, h('span', { text: a.name }), h('b', { text: d.bestTimes[a.id] ? formatTime(d.bestTimes[a.id]) : '—' })));
     body.appendChild(h('div.section-t', { text: 'Histoire', style: { marginTop: '14px' } }));
     for (const s of g.missions.storyList()) body.appendChild(h('div.kv', {}, h('span', { text: s.title }), h('b', { text: d.completed.includes(s.id) ? '✓' : '—' })));
+    main.appendChild(body);
+    return h('div.app', {}, main);
+  }
+
+  // ---------- Météo et marées ----------
+  renderWeather() {
+    const g = this.game;
+    const T = g.save.data.gameTime / 3600;
+    const day = Math.floor(T / 24), hr = T - day * 24;
+    const main = h('div.app-main');
+    const w = wind(day, hr);
+    const rain = rainTarget(day, hr);
+    const hum = Math.round(Math.min(98, 62 + dayCover(day) * 25 + rain * 20 - Math.max(0, temperature(day, hr) - 16) * 1.2));
+    main.appendChild(this._head('Météo', `Deauvelle · ${conditionText(day, hr)}`));
+    const body = h('div.app-body.scrollable');
+    const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
+    body.appendChild(h('div.result-grid', {}, stat('Température', `${Math.round(temperature(day, hr))} °C`), stat('Vent', `${w.dir} ${w.kmh} km/h`), stat('Humidité', `${hum} %`)));
+    body.appendChild(h('div.section-t', { text: 'Prochaines heures', style: { marginTop: '14px' } }));
+    for (let k = 1; k <= 6; k++) {
+      const t = T + k * 2, d2 = Math.floor(t / 24), h2 = t - d2 * 24;
+      body.appendChild(h('div.kv', {}, h('span', { text: `${hhmm(Math.floor(h2))} · ${conditionText(d2, h2)}` }), h('b', { text: `${Math.round(temperature(d2, h2))} °C` })));
+    }
+    // Marées : état courant, prochaines pleines et basses mers, conseil pour le galop sur la plage.
+    const lvl = tideLevel(T);
+    const rising = tideLevel(T + 0.1) > lvl;
+    const ev = tideEvents(T, 26);
+    body.appendChild(h('div.section-t', { text: `Marée ${rising ? 'montante' : 'descendante'} · coefficient ${tideCoef(T)}`, style: { marginTop: '14px' } }));
+    for (const e of ev.slice(0, 4)) {
+      const dd = Math.floor(e.t / 24) - day;
+      body.appendChild(h('div.kv', {}, h('span', { text: `${e.type === 'PM' ? 'Pleine mer' : 'Basse mer'}${dd > 0 ? ' (demain)' : ''}` }), h('b', { text: `${hhmm(e.t)} · ${e.level >= 0 ? '+' : ''}${dec(e.level, 2)} m` })));
+    }
+    const low = ev.find((e) => e.type === 'BM');
+    if (low) body.appendChild(h('p', { text: `Galop sur la plage : sable découvert et ferme autour de la basse mer, de ${hhmm(low.t - 2)} à ${hhmm(low.t + 2)}.`, style: { margin: '10px 0 0', font: '400 12px/1.4 var(--ui)', color: 'var(--muted)' } }));
     main.appendChild(body);
     return h('div.app', {}, main);
   }

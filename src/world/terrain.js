@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { addCloudShadows } from './sky.js';
+import { TIDE_UNIFORMS } from './weather.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
 import { WORLD, ZONES, ROADS, POND, SIGN, shoreZ, isCliffRegion, zoneDist } from './layout.js';
@@ -162,7 +163,7 @@ export class Terrain {
   // Water depth at (x,z): sea or pond. Positive when under water.
   waterDepth(x, z) {
     const h = this.getHeight(x, z);
-    let depth = -h;
+    let depth = TIDE_UNIFORMS.tdLevel.value - h;
     const dp = Math.hypot(x - POND.x, z - POND.z);
     if (dp < POND.r + 2) depth = Math.max(depth, POND.level - h);
     return depth;
@@ -288,7 +289,14 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
     stRough = mix( stRough, 0.9, rock );
   }
   // Sable mouillé près de l'eau : plus sombre et plus brillant.
-  float wet = wA * smoothstep( 0.6, 0.05, vWorldPos.y );
+  // Estran : sable mouillé du bord de l'eau jusqu'au niveau atteint par la dernière pleine mer (il sèche en
+  // remontant), laisse de mer (algues, débris) à la plus haute mer du jour.
+  float above = vWorldPos.y - tdLevel;
+  float band = max( tdWet - tdLevel, 0.05 );
+  float wet = wA * max( 1.0 - smoothstep( 0.03, 0.3, above ), ( 1.0 - smoothstep( band - 0.05, band + 0.04, above ) ) * mix( 0.8, 0.35, clamp( above / band, 0.0, 1.0 ) ) );
+  float wrack = wA * ( 1.0 - smoothstep( 0.0, 0.06, abs( vWorldPos.y - tdMark - 0.03 ) ) ) * smoothstep( 0.42, 0.7, dM.g * 0.7 + dF.r * 0.3 + dL.r * 0.2 ) * stFade;
+  tint = mix( tint, vec3( 0.36, 0.31, 0.2 ), wrack * 0.9 );
+  stH += wrack * 0.9;
   tint *= 1.0 - wet * 0.25;
   stRough = mix( stRough, 0.35, wet );
   diffuseColor.rgb *= mix( vec3( 1.0 ), tint, 0.35 + 0.65 * stFade ) * ( 0.92 + 0.16 * macro );
@@ -303,6 +311,8 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
           .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = stRough;')
           .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = normalize( mix( stBump( -vViewPosition, normal, stH * 0.09 ), normal, stPud ) );');
         addCloudShadows(shader, 'vWorldPos');
+        Object.assign(shader.uniforms, TIDE_UNIFORMS);
+        shader.fragmentShader = shader.fragmentShader.replace('uniform sampler2D splatMap;', 'uniform sampler2D splatMap;\nuniform float tdLevel;\nuniform float tdWet;\nuniform float tdMark;');
       };
     }
     const mesh = new THREE.Mesh(geo, mat);

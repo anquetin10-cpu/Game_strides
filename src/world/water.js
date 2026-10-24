@@ -1,6 +1,7 @@
 // Mer de la Manche (vagues, écume sur le rivage, reflets) et mare de la forêt.
 import * as THREE from 'three';
 import { POND } from './layout.js';
+import { TIDE_UNIFORMS } from './weather.js';
 
 const vert = /* glsl */ `
 #include <common>
@@ -168,6 +169,8 @@ export class Water {
   update(t, sky) {
     const U = this.uniforms;
     U.time.value = t;
+    // La mer monte et descend avec la marée.
+    this.sea.position.y = TIDE_UNIFORMS.tdLevel.value;
     U.horizonColor.value.copy(sky.uniforms.horizonColor.value);
     U.zenithColor.value.copy(sky.uniforms.ambientSky.value);
     U.sunDir.value.copy(sky.sunDir);

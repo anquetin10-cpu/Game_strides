@@ -34,6 +34,7 @@ export const ICONS = {
   briefcase: s('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>'),
   user: s('<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.2-7 8-7s7 2.5 8 7"/>'),
   view: s('<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  weather: s('<circle cx="8" cy="8" r="3"/><path d="M8 2v1.5M2 8h1.5M3.8 3.8l1 1M12.2 3.8l-1 1"/><path d="M9 19h9a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.4A2.8 2.8 0 0 0 9 19z"/>'),
   beach: s('<path d="M4 20h16M12 20 9 7"/><path d="M3 9c3-5 11-6 15-2-5-1-10 0-15 2z"/>'),
   town: s('<path d="M3 20V9l5-3v14M8 20V4h8v16M16 20v-9l5 2v7M3 20h18"/>'),
   shoe: s('<path d="M7 4c-2 2-3 5-3 8 0 4 3 8 8 8s8-4 8-8c0-3-1-6-3-8"/><path d="M7 4l2 2M17 4l-2 2"/>'),

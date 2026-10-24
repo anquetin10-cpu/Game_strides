@@ -2,6 +2,7 @@
 // lumière du soleil calculée à partir de l'atmosphère, éclairage d'ambiance (IBL) et brouillard atmosphérique.
 import * as THREE from 'three';
 import { clamp, lerp, smoothstep } from '../core/math.js';
+import { dayCover, rainTarget, wind } from './weather.js';
 
 // ---------- Brouillard appliqué en linéaire (avant le tone mapping) ----------
 // Par défaut, three.js mélange le brouillard après le tone mapping : la couleur ne correspond alors jamais à celle
@@ -300,8 +301,11 @@ export class Sky {
   setDay(day) {
     if (day === this.day) return;
     this.day = day;
-    const COVERS = [0.38, 0.55, 0.28, 0.72, 0.46, 0.62, 0.33, 0.8, 0.5];
-    this.cover = COVERS[((day % COVERS.length) + COVERS.length) % COVERS.length];
+    this.cover = dayCover(day);
+    this.wind = wind(day);
+    // Vecteur du vent (vers où il souffle) : nord = -z, est = +x ; vitesse en m/s.
+    const a = (this.wind.deg * Math.PI) / 180, ms = this.wind.kmh / 3.6;
+    this.windVec = new THREE.Vector2(-Math.sin(a) * ms, Math.cos(a) * ms);
     this.params.turbidity = 2.2 + this.cover * 1.6;
     this.uniforms.turbidity.value = this.params.turbidity;
     this.uniforms.cloudCover.value = this.cover;
@@ -339,14 +343,15 @@ export class Sky {
     U.moonDirection.value.copy(this.moonDir);
     U.night.value = night;
     U.time.value += dt;
-    U.cloudWind.value.x += dt * 0.0016;
-    U.cloudWind.value.y += dt * 0.0006;
+    // Les nuages dérivent avec le vent du jour.
+    const wv = this.windVec || { x: 3.8, y: 1.4 };
+    U.cloudWind.value.x += dt * 0.00042 * wv.x * 0.9;
+    U.cloudWind.value.y += dt * 0.00042 * wv.y * 0.9;
     CLOUD_UNIFORMS.csWind.value.copy(U.cloudWind.value);
     CLOUD_UNIFORMS.csCover.value = this.cover;
     CLOUD_UNIFORMS.csSun.value.copy(sun);
     // Averses les jours couverts ; le sol se mouille vite et sèche lentement.
-    const rainy = this.cover >= 0.72;
-    const target = rainy ? smoothstep(0.35, 0.7, Math.sin(hour * 1.3 + this.day * 2.1) * 0.5 + 0.5) : 0;
+    const target = rainTarget(this.day, hour);
     this.rain += (target - this.rain) * Math.min(1, dt * 0.15);
     this.wet = clamp(this.wet + (this.rain > 0.08 ? dt / 35 : -dt / 420), 0, 1);
     CLOUD_UNIFORMS.csWet.value = this.wet;

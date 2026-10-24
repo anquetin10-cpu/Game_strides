@@ -42,6 +42,8 @@ const VIEWS = {
   cross: (g) => { const y = g.terrain.getHeight(-30, -300); return { at: [-30, y, -300], from: [-14, y + 3.2, -290] }; },
   // Plage et goélands.
   beach: (g) => { const b = g.birds.birds[3]; return { at: [b.cx, b.h * 0.7, b.cz], from: [b.cx + 30, 4, b.cz + 45] }; },
+  // Estran à hauteur d'homme : bord de l'eau, sable mouillé, laisse de mer (marée).
+  shore: (g) => { const sz = (x) => -430 + 12 * Math.sin(x / 95) + 6 * Math.sin(x / 37 + 1.3); const z = sz(100) + 26; return { at: [55, 0, sz(55) - 4], from: [100, g.terrain.getHeight(100, z) + 1.7, z] }; },
   // Falaises d'Aval depuis la plage.
   cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).
