@@ -107,34 +107,54 @@ export class Audio {
     node.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
   }
 
-  hoof(surface = 'grass', intensity = 1) {
-    if (!this.ctx) return;
+  // Bruit filtré bref (brique de base des sons de sabots).
+  _burst(t, { type = 'bandpass', freq = 400, q = 1, vol = 0.2, a = 0.003, d = 0.06, len = 0.25 }) {
     const ctx = this.ctx;
-    const t = ctx.currentTime + Math.random() * 0.01;
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
     const f = ctx.createBiquadFilter();
-    f.type = 'bandpass';
-    const freqs = { grass: 260, sand: 180, road: 1300, water: 900, wood: 700 };
-    f.frequency.value = (freqs[surface] || 300) * (0.9 + Math.random() * 0.2);
-    f.Q.value = surface === 'road' ? 4 : 1.2;
+    f.type = type;
+    f.frequency.value = freq * (0.9 + Math.random() * 0.2);
+    f.Q.value = q;
     const g = ctx.createGain();
     src.connect(f).connect(g).connect(this.master);
-    const vol = (surface === 'road' ? 0.25 : surface === 'water' ? 0.18 : 0.32) * intensity;
-    this._env(g, t, 0.004, vol, surface === 'water' ? 0.18 : 0.07);
-    src.start(t, Math.random() * 1.5, 0.3);
-    if (surface === 'water') {
-      // Éclaboussure.
-      const s2 = ctx.createBufferSource();
-      s2.buffer = this.noiseBuf;
-      const hp = ctx.createBiquadFilter();
-      hp.type = 'highpass';
-      hp.frequency.value = 2500;
-      const g2 = ctx.createGain();
-      s2.connect(hp).connect(g2).connect(this.master);
-      this._env(g2, t, 0.01, 0.08 * intensity, 0.25);
-      s2.start(t, Math.random(), 0.4);
+    this._env(g, t, a, Math.max(0.0002, vol), d);
+    src.start(t, Math.random() * 1.5, len);
+  }
+
+  // Pose de sabot selon le sol : fer qui claque sur le bitume, gravier qui crisse, herbe sourde, sable feutré, bois creux.
+  hoof(surface = 'grass', intensity = 1) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime + Math.random() * 0.01;
+    const v = intensity;
+    if (surface === 'road') {
+      this._burst(t, { freq: 3200, q: 7, vol: 0.16 * v, a: 0.001, d: 0.025 });
+      this._burst(t + 0.004, { freq: 520, q: 3, vol: 0.22 * v, a: 0.002, d: 0.07 });
+    } else if (surface === 'gravel') {
+      this._burst(t, { freq: 180, q: 1, vol: 0.18 * v, d: 0.06 });
+      for (let i = 0; i < 4; i++) this._burst(t + 0.006 + Math.random() * 0.045, { type: 'highpass', freq: 1800 + Math.random() * 1500, q: 0.7, vol: 0.06 * v, a: 0.001, d: 0.012 });
+    } else if (surface === 'sand') {
+      this._burst(t, { freq: 140, q: 1, vol: 0.2 * v, a: 0.004, d: 0.08 });
+      this._burst(t + 0.01, { freq: 900, q: 0.6, vol: 0.05 * v, a: 0.01, d: 0.1 });
+    } else if (surface === 'wood') {
+      this._burst(t, { freq: 240, q: 9, vol: 0.3 * v, a: 0.002, d: 0.12 });
+      this._burst(t, { freq: 760, q: 5, vol: 0.12 * v, a: 0.001, d: 0.05 });
+    } else if (surface === 'water') {
+      this._burst(t, { freq: 900, q: 1.2, vol: 0.16 * v, d: 0.18 });
+      this._burst(t, { type: 'highpass', freq: 2500, q: 0.7, vol: 0.08 * v, a: 0.01, d: 0.25, len: 0.4 });
+    } else {
+      // Herbe / terre : choc sourd et léger arrachement.
+      this._burst(t, { type: 'lowpass', freq: surface === 'soil' ? 260 : 200, q: 0.9, vol: 0.32 * v, a: 0.003, d: 0.07 });
+      this._burst(t + 0.008, { freq: 1400, q: 0.8, vol: 0.025 * v, a: 0.005, d: 0.05 });
     }
+  }
+
+  // Expiration au galop (souffle nasal rythmé).
+  breath(intensity = 1) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this._burst(t, { freq: 520, q: 1.4, vol: 0.06 * intensity, a: 0.03, d: 0.16, len: 0.3 });
+    this._burst(t, { type: 'lowpass', freq: 240, q: 0.7, vol: 0.05 * intensity, a: 0.03, d: 0.14, len: 0.3 });
   }
 
   tone(freq, dur = 0.15, type = 'sine', vol = 0.15, when = 0, slide = 0) {

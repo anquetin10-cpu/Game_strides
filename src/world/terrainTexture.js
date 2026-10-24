@@ -240,7 +240,7 @@ export function makeTerrainTexture(terrain, size) {
   splat.minFilter = THREE.LinearMipmapLinearFilter;
   splat.magFilter = THREE.LinearFilter;
   splat.needsUpdate = true;
-  return { texture: tex, canvas: cv, splat };
+  return { texture: tex, canvas: cv, splat, splatData, splatSize: half };
 }
 
 // Étalonnage réaliste des couleurs peintes (albédos naturels, moins saturés) et carte des matériaux du sol :

@@ -560,6 +560,17 @@ export class Phone {
       cards.appendChild(h(`div.mcard${active ? '.active' : ''}`, {}, h('div.horse-card', {}, h('div.sw', { style: { background: swatch[hd.coat] || '#888' } }), h('div', {}, h('div.title', { text: hd.name }), h('div.meta', { text: `${hd.breed} · ${hd.age} ans` }))), this._horseBars(hd), h('div.acts', {}, btn)));
     }
     body.appendChild(cards);
+    // Suivi de santé de la monture actuelle (comme un carnet de suivi d'écurie).
+    const c = g.mainHorse?.cond;
+    if (c) {
+      body.appendChild(h('div.section-t', { text: `Santé · ${g.mainHorse.name}`, style: { marginTop: '14px' } }));
+      const gauge = (k, v) => h('div.bar-row', {}, h('span', { text: k }), h('div.bar', {}, h('i', { style: { width: `${Math.max(4, v)}%` } })), h('span', { text: `${Math.round(v)} %` }));
+      body.appendChild(h('div.mcard', {},
+        h('div.title', { text: c.status }),
+        h('div.meta', { text: `Fréquence cardiaque ${Math.round(c.hr)} bpm · Température ${dec(c.temp)} °C${c.sweat > 0.3 ? ' · en sueur' : ''}` }),
+        h('div.bars', {}, gauge('Énergie', c.energy), gauge('Hydratation', c.hydration), gauge('Alimentation', c.satiety), gauge('Propreté', c.clean), gauge('Pieds', c.hooves)),
+        h('div.meta', { text: 'À l’écurie : panser et curer les pieds près du cheval, abreuver à l’abreuvoir, foin à la grange.' })));
+    }
     body.appendChild(h('div.section-t', { text: 'Équipement', style: { marginTop: '14px' } }));
     const owned = SHOP.filter((s) => d.upgrades.includes(s.id));
     if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauvelle.' }));

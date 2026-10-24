@@ -4,6 +4,7 @@ import { createHorseMesh, animateHorse, gaitIndex } from './horseModel.js';
 import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
 import { WORLD } from '../world/layout.js';
+import { HorseCondition } from '../gameplay/condition.js';
 
 const SPEEDS = HORSE.gaits.map((g) => g.speed);
 
@@ -39,6 +40,8 @@ export class Horse {
     this.lastBump = 0;
     this.lastTurn = 0;
     this.visibleDist = 260;
+    // Physiologie (fréquence cardiaque, énergie, sueur, besoins) : voir gameplay/condition.js.
+    this.cond = new HorseCondition(this, opts.cond);
     game.scene.add(this.mesh);
     this.snapToGround();
   }
@@ -47,10 +50,10 @@ export class Horse {
     return HORSE.stamina * (this.def.stamina || 1) * (1 + this.mods.stamina);
   }
   get speedMul() {
-    return (this.def.speed || 1) * (1 + this.mods.speed) * (this.lame ? 0.45 : 1);
+    return (this.def.speed || 1) * (1 + this.mods.speed) * (this.lame ? 0.45 : 1) * (this.cond ? this.cond.speedMul : 1);
   }
   get jumpPower() {
-    return HORSE.jumpPeak * (this.def.jump || 1) * (1 + this.mods.jump);
+    return HORSE.jumpPeak * (this.def.jump || 1) * (1 + this.mods.jump) * (this.cond ? this.cond.jumpMul : 1);
   }
   get gait() {
     return gaitIndex(this.speed / Math.max(0.5, this.speedMul));
@@ -84,6 +87,7 @@ export class Horse {
     const k = 0.72 + 0.28 * smoothstep(4, 8.5, this.speed);
     this.jumpPeak = this.jumpPower * k;
     this.jumpT = 0;
+    this.cond?.onJump();
     this.game.bus.emit('horse:jump', this);
     return true;
   }
@@ -167,6 +171,9 @@ export class Horse {
       this.stamina = Math.min(this.maxStamina, this.stamina + regen * dt);
       if (this.exhausted && this.stamina > this.maxStamina * 0.35) this.exhausted = false;
     }
+
+    this._slope = slope;
+    this.cond.update(dt);
 
     // Saut.
     if (c.jump) {

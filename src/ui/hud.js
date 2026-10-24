@@ -57,7 +57,10 @@ export class HUD {
     this.speedEl = h('div.speed.tab-num', { html: '0<small>km/h</small>' });
     this.staminaEl = h('div.stamina', {}, ...Array.from({ length: 10 }, () => h('i')));
     this.comfortEl = h('div.comfort.hidden');
-    this.teleEl = h('div.telemetry.hidden', {}, this.gearEl, h('div.tele-col', {}, h('div.tele-row', {}, this.gaitEl, this.speedEl), this.staminaEl, this.comfortEl));
+    // Cardiofréquencemètre (comme les capteurs de sangle utilisés en entraînement).
+    this.hrVal = h('span.tab-num', { text: '36' });
+    this.hrEl = h('div.hr-line.hidden', {}, h('i.heart'), this.hrVal, h('small', { text: ' bpm' }));
+    this.teleEl = h('div.telemetry.hidden', {}, this.gearEl, h('div.tele-col', {}, h('div.tele-row', {}, this.gaitEl, this.speedEl), this.staminaEl, this.hrEl, this.comfortEl));
     this.el.appendChild(this.teleEl);
 
     // Boutons d'action.
@@ -177,7 +180,17 @@ export class HUD {
         this.staminaEl.classList.remove('hidden');
         this.staminaEl.classList.toggle('low', p.horse.exhausted || st < 0.25);
         [...this.staminaEl.children].forEach((c, i) => c.classList.toggle('on', i < on));
+        const cond = p.horse.cond;
+        if (cond && (this._hrT = (this._hrT || 0) - dt) <= 0) {
+          this._hrT = 0.5;
+          const bpm = Math.round(cond.hr);
+          this.hrVal.textContent = String(bpm);
+          this.hrEl.classList.remove('hidden');
+          this.hrEl.classList.toggle('high', bpm > 180);
+          this.hrEl.style.setProperty('--beat', `${(60 / bpm).toFixed(2)}s`);
+        }
       } else {
+        this.hrEl.classList.add('hidden');
         const v = p.truck.speed;
         this.gearEl.textContent = v < -0.3 ? 'R' : Math.abs(v) < 0.3 ? 'N' : String(Math.min(5, 1 + Math.floor(Math.abs(v) / 5)));
         this.gaitEl.textContent = 'CAMION';

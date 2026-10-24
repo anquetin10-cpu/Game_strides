@@ -66,7 +66,8 @@ export class World {
     this.terrain = new Terrain(200);
     progress(0.15, 'Champs et plages');
     await tick('texture');
-    const { texture, canvas, splat } = makeTerrainTexture(this.terrain, this.textureSize || 2048);
+    const { texture, canvas, splat, splatData, splatSize } = makeTerrainTexture(this.terrain, this.textureSize || 2048);
+    this.groundSplat = { data: splatData, size: splatSize };
     this.terrainCanvas = canvas;
     this.grassMask = buildGrassMask(canvas);
     this.terrainMesh = this.terrain.buildMesh(texture, this.detailTex, splat);
@@ -971,6 +972,20 @@ export class World {
       }
       this.texturedPanel(adTexture(ad), 11, 5.5, x, y + 6.6, z, rot, { back: '#1b1c1f', depth: 0.35 });
     }
+  }
+
+  // Nature du sol (pour les sons de sabots) : 'grass' | 'soil' | 'sand' | 'gravel'.
+  groundClass(x, z) {
+    const S = this.groundSplat;
+    if (!S) return 'grass';
+    const n = S.size;
+    const i = Math.min(n - 1, Math.max(0, Math.floor(((x + 600) / 1200) * n)));
+    const j = Math.min(n - 1, Math.max(0, Math.floor(((z + 600) / 1200) * n)));
+    const o = ((n - 1 - j) * n + i) * 4;
+    const d = S.data;
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (d[o + k] > d[o + best]) best = k;
+    return ['grass', 'soil', 'sand', 'gravel'][best];
   }
 
   update(dt, camera, sky) {

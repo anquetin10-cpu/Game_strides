@@ -29,6 +29,7 @@ import { Screens } from './ui/screens.js';
 import { buildMapImage } from './ui/minimap.js';
 import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
+import { installCare } from './gameplay/condition.js';
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -122,6 +123,7 @@ export class Game {
     this.mapImage = buildMapImage(this.world);
     this.hud.minimap.setImage(this.mapImage);
     this._worldInteractions();
+    installCare(this);
     this._events();
     this.placeFromSave();
     this.updateWallet();
@@ -237,7 +239,7 @@ export class Game {
   spawnMainHorse(id, at = null) {
     const def = HORSES[id] || HORSES.comete;
     const pos = at || { x: HOME.horse.x, z: HOME.horse.z, heading: HOME.horse.rot };
-    const h = this.spawnHorse(def, pos.x, pos.z, pos.heading ?? 0, { player: true });
+    const h = this.spawnHorse(def, pos.x, pos.z, pos.heading ?? 0, { player: true, cond: this.save.data.horseCare?.[id] });
     h.visibleDist = 600;
     this.applyUpgrades(h);
     this.mainHorse = h;
@@ -346,6 +348,10 @@ export class Game {
       if (!horse.isPlayerHorse || !a.ctx) return;
       const k = clamp(horse.speed / 10, 0.35, 1);
       for (let i = 0; i < n; i++) setTimeout(() => a.hoof(surf, k), i * 35);
+      // Au galop, le cheval expire à chaque foulée (couplage locomotion-respiration).
+      const ph = horse.anim.phase;
+      if (horse.speed > 6 && ph < (horse._lastBreathPh ?? 1)) a.breath(clamp((horse.speed - 5) / 9, 0.3, 1));
+      horse._lastBreathPh = ph;
     });
     b.on('horse:land', (h) => {
       a.thud();
@@ -402,7 +408,7 @@ export class Game {
     if (Math.abs(x - A.x) < A.w / 2 && Math.abs(z - A.z) < A.d / 2) return 'sand';
     const H = HOME.arena;
     if (Math.abs(x - H.x) < H.w / 2 && Math.abs(z - H.z) < H.d / 2) return 'sand';
-    return 'grass';
+    return this.world.groundClass(x, z);
   }
 
   zoneName(x, z) {
@@ -469,6 +475,8 @@ export class Game {
       horse: this.mainHorse ? { x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, heading: this.mainHorse.heading } : null,
       truck: { x: this.truck.pos.x, z: this.truck.pos.z, heading: this.truck.heading },
     };
+    // État du cheval (énergie, hydratation, soins…).
+    if (this.mainHorse) (this.save.data.horseCare ||= {})[this.mainHorse.id] = this.mainHorse.cond.toJSON();
   }
 
   placeFromSave() {

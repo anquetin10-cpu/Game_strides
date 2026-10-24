@@ -163,6 +163,14 @@ body.desktop .joy-base { display: none; }
 .stamina i.on { background: var(--paper); }
 .stamina.low i.on { background: var(--bad); }
 .stamina.boost i.on { background: var(--ok); }
+.hr-line { display: flex; align-items: center; gap: 5px; margin-top: 4px; font: 600 11px/1 var(--ui); color: var(--paper); }
+.hr-line small { font-weight: 500; color: var(--muted); }
+.hr-line .heart { width: 9px; height: 9px; background: #e0524f; transform: rotate(45deg); border-radius: 2px 0 0 0; position: relative; animation: heartbeat var(--beat, 1.6s) ease-in-out infinite; }
+.hr-line .heart::before, .hr-line .heart::after { content: ''; position: absolute; width: 9px; height: 9px; border-radius: 50%; background: inherit; }
+.hr-line .heart::before { left: -4.5px; top: 0; }
+.hr-line .heart::after { left: 0; top: -4.5px; }
+.hr-line.high .heart { background: #ff3b30; }
+@keyframes heartbeat { 0%, 60%, 100% { transform: rotate(45deg) scale(0.85); } 15% { transform: rotate(45deg) scale(1.1); } 30% { transform: rotate(45deg) scale(0.95); } }
 .comfort { font: 600 10px/1 var(--ui); letter-spacing: .1em; color: var(--muted); }
 
 /* Boutons d'action */
