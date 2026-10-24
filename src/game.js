@@ -754,7 +754,7 @@ export class Game {
     for (const p of this.humans) if (!p.mounted) p.update(dt, this.camera.position);
     for (const h of this.humans) if (h.mounted) h.animateRiding(dt);
     this.ambient.update(dt, this.camera.position);
-    this.particles.update(dt);
+    this.particles.update(dt, 0.12 + 0.78 * (1 - this.sky.nightFactor) * Math.min(1, 0.45 + this.sky.sun.intensity / 6));
   }
 
   update(dt) {
@@ -814,7 +814,7 @@ export class Game {
     this.collectibles.update(dt);
     this.gps.update(dt);
     this.grass.update(dt, this.player.focus.pos);
-    this.particles.update(dt);
+    this.particles.update(dt, 0.12 + 0.78 * (1 - this.sky.nightFactor) * Math.min(1, 0.45 + this.sky.sun.intensity / 6));
     if (this.cheerT > 0) this.cheerT -= dt;
     if (this._confetti) this._updateConfetti(dt);
 

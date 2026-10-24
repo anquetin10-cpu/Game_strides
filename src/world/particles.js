@@ -18,12 +18,16 @@ void main() {
 const frag = /* glsl */ `
 varying float vAlpha;
 varying vec3 vColor;
+uniform float light;
 void main() {
   vec2 c = gl_PointCoord - 0.5;
   float d = length(c);
   if (d > 0.5) discard;
-  float a = vAlpha * smoothstep(0.5, 0.15, d);
-  gl_FragColor = vec4(vColor, a);
+  // Bord irrégulier (nuage de poussière plutôt que disque net).
+  float n = fract(sin(dot(floor(gl_PointCoord * 6.0), vec2(12.9898, 78.233))) * 43758.5453);
+  float a = vAlpha * smoothstep(0.5, 0.1, d + (n - 0.5) * 0.12);
+  // Éclairée par la scène (le jour, au crépuscule, la nuit).
+  gl_FragColor = vec4(vColor * light, a);
   #include <colorspace_fragment>
 }`;
 
@@ -52,7 +56,7 @@ export class Particles {
     g.setAttribute('size', new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('alpha', new THREE.BufferAttribute(this.alpha, 1).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(this.color, 3).setUsage(THREE.DynamicDrawUsage));
-    this.uniforms = { scale: { value: 400 } };
+    this.uniforms = { scale: { value: 400 }, light: { value: 1 } };
     this.points = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: vert, fragmentShader: frag, uniforms: this.uniforms, transparent: true, depthWrite: false }));
     this.points.frustumCulled = false;
     this.points.renderOrder = 2;
@@ -88,7 +92,8 @@ export class Particles {
     }
   }
 
-  update(dt) {
+  update(dt, light = 1) {
+    this.uniforms.light.value = light;
     let any = false;
     for (let i = 0; i < this.max; i++) {
       const T = this.type[i];
