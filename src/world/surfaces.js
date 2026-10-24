@@ -54,7 +54,53 @@ const SURFACE_MAIN = /* glsl */ `
   bool sloped = ny > 0.25 && ny < 0.97;
   bool vertical = ny < 0.25;
   bool warm = c.r > c.b * 1.12;
-  if ( sloped && mx < 0.5 && !warm ) {
+  if ( c.g < 0.04 && c.r > 0.25 && c.b > 0.7 ) {
+    // Colombage du Pays d'Auge (repère magenta) : poteaux serrés d'environ 17 cm tous les 46 cm,
+    // hourdis enduit (crème, blanc, ocre) ou briques en épi ; ou pièce de bois pleine (sablières, poteaux).
+    float code = floor( ( 1.0 - c.r ) * 10.0 + 0.5 );
+    float woodI = floor( ( 1.0 - c.b ) * 10.0 + 0.5 );
+    // Chêne grisé par les intempéries, ou bois peints (vert-de-gris, sang-de-bœuf).
+    vec3 woodC = woodI < 0.5 ? vec3( 0.105, 0.07, 0.045 ) : ( woodI < 1.5 ? vec3( 0.085, 0.11, 0.09 ) : vec3( 0.17, 0.04, 0.03 ) );
+    vec4 gr = texture2D( surfDetail, vertical ? vec2( uv.x * 2.2, uv.y * 0.22 ) : vec2( uv.x * 0.22, uv.y * 2.2 ) );
+    float stId = sfHash( vec2( floor( uv.x / 0.46 + 0.5 ), floor( uv.y / 3.0 ) ) );
+    vec3 woodTex = woodC * mix( 0.75, 1.25, gr.r ) * mix( 0.9, 1.1, dB.g ) * mix( 0.8, 1.25, stId );
+    if ( code > 4.5 || !vertical ) {
+      diffuseColor.rgb = woodTex;
+      sfH = gr.r * 0.4 * detW;
+      sfRough = 0.88;
+    } else {
+      float P = 0.46;
+      float si = floor( uv.x / P + 0.5 );
+      float sid = sfHash( vec2( si, 7.13 ) );
+      float W = 0.15 + sid * 0.05;
+      float dS = abs( fract( uv.x / P + 0.5 ) - 0.5 ) * P;
+      float aa = max( pxw * 0.6, 0.003 );
+      float stud = 1.0 - smoothstep( W * 0.5 - aa, W * 0.5 + aa, dS );
+      vec3 fillC;
+      float fillH;
+      if ( code > 2.5 ) {
+        // Briques posées en épi (chevrons alternés par rang).
+        float band = floor( uv.y / 0.15 );
+        float dir = mod( band, 2.0 ) * 2.0 - 1.0;
+        float sq = ( uv.x + dir * uv.y ) / 0.085;
+        float bid = sfHash( vec2( floor( sq ), band ) );
+        float jt = 1.0 - smoothstep( 0.0, 0.12, fract( sq ) ) * smoothstep( 1.0, 0.88, fract( sq ) ) * smoothstep( 0.0, 0.08, fract( uv.y / 0.15 ) );
+        fillC = mix( vec3( 0.36, 0.12, 0.06 ) * mix( 0.75, 1.2, bid ), vec3( 0.6, 0.55, 0.47 ), jt * detW );
+        fillH = ( 1.0 - jt ) * 0.5;
+      } else {
+        fillC = code < 0.5 ? vec3( 0.76, 0.68, 0.53 ) : ( code < 1.5 ? vec3( 0.78, 0.76, 0.7 ) : vec3( 0.66, 0.46, 0.26 ) );
+        fillC *= mix( 0.92, 1.04, dA.r ) * mix( 0.9, 1.03, dB.r ) * mix( 1.0, 0.86, dB.a * 0.7 );
+        fillH = dA.r * 0.3 + dA.g * 0.1;
+      }
+      // Au loin, les poteaux se fondent en une teinte moyenne (pas de moiré).
+      float lod = smoothstep( 0.05, 0.14, pxw );
+      vec3 col = mix( fillC, woodTex, stud );
+      vec3 avg = mix( fillC, woodC, W / P );
+      diffuseColor.rgb = mix( col, avg, lod );
+      sfH = mix( fillH, 0.9 + gr.r * 0.3, stud ) * detW;
+      sfRough = mix( 0.93, 0.88, stud );
+    }
+  } else if ( sloped && mx < 0.5 && !warm ) {
     // Ardoise : petites plaques rectangulaires, bords marqués, légère brillance.
     float id;
     float h = sfRows( uv, vec2( 0.32, 0.2 ), id );

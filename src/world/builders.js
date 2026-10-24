@@ -48,52 +48,165 @@ function partsToGeo(parts) {
   return mergeGeometries(geos, false);
 }
 
+// Repère de colombage pour le shader de surfaces : magenta codé (rouge = remplissage ou poutre, bleu = teinte des bois).
+// Remplissage 0 enduit crème, 1 enduit blanc, 2 ocre, 3 briques en épi ; 5 + bois = pièce de bois pleine.
+// Bois : 0 chêne brun, 1 vert-de-gris peint, 2 sang-de-bœuf.
+export function colombage(fill = 0, wood = 0) {
+  const hx = (v) => Math.round(v * 255).toString(16).padStart(2, '0');
+  return `#${hx(1 - fill * 0.1)}00${hx(1 - wood * 0.1)}`;
+}
+
+// Toit à deux pans sans pignons (les pignons sont des murs, posés à part) : faîtage selon x.
+// Sous-face incluse (débords de toit visibles d'en bas) quand under est donné.
+function roofSlopes(w, h, d, ov) {
+  const hw = w / 2 + ov, hd = d / 2 + ov;
+  const v = [-hw, 0, -hd, hw, 0, -hd, hw, h, 0, -hw, h, 0, -hw, 0, hd, hw, 0, hd, hw, h, 0, -hw, h, 0];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  g.setIndex([0, 3, 2, 0, 2, 1, 4, 5, 6, 4, 6, 7]);
+  g.computeVertexNormals();
+  return g;
+}
+// Copie retournée d'une géométrie (sous-face des toits).
+function flipped(geo) {
+  const g = geo.index ? geo.toNonIndexed() : geo.clone();
+  const p = g.attributes.position.array;
+  for (let i = 0; i < p.length; i += 9) {
+    for (let k = 0; k < 3; k++) {
+      const t = p[i + 3 + k];
+      p[i + 3 + k] = p[i + 6 + k];
+      p[i + 6 + k] = t;
+    }
+  }
+  g.computeVertexNormals();
+  return prep(g);
+}
+// Murs pignons triangulaires aux deux bouts d'un toit à deux pans (faîtage selon x).
+function gableWalls(w, h, d) {
+  const hw = w / 2, hd = d / 2;
+  const v = [-hw, 0, -hd, -hw, h, 0, -hw, 0, hd, hw, 0, -hd, hw, 0, hd, hw, h, 0];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  g.setIndex([0, 2, 1, 3, 5, 4]);
+  g.computeVertexNormals();
+  return g;
+}
+// Toit à deux pans complet posé sur des murs de largeur d (égout au ras du haut des murs) :
+// pans, sous-faces des débords et pignons maçonnés. Faîtage selon x, transformation tf (y = haut des murs).
+function pitchedRoof(parts, w, rise, d, ov, roofC, wallC, soffitC, tf) {
+  const drop = (rise * ov) / (d / 2 + ov);
+  const slopes = roofSlopes(w, rise, d, ov);
+  parts.push([slopes, roofC, { ...tf, y: tf.y - drop }]);
+  parts.push([flipped(slopes), soffitC, { ...tf, y: tf.y - drop - 0.04 }]);
+  parts.push([gableWalls(w, rise - drop, d), wallC, tf]);
+}
+
 /**
  * Bâtiment générique, façade principale vers +Z (local).
+ * Maisons à colombage du Pays d'Auge (poteaux serrés dessinés par le shader, sablières, poteaux d'angle,
+ * guettes, étage en encorbellement), pignons maçonnés, lucarnes, avant-corps à pignon sur les longues façades,
+ * gouttières et descentes, cheminées à mitrons.
  * Retourne { body, glass } (géométries locales peintes).
  */
 export function buildingGeo({
   w, d, h, wall = PALETTE.walls[0], roof = PALETTE.roofs[0], roofType = 'gable', roofH = null,
   timber = false, floors = null, windows = true, door = true, doorColor = '#3b2f28', plinth = '#8f8a80', trim = null, chimney = false,
+  fill = null, wood = null, dormers = true, bays = true,
 }) {
   const body = [];
   const glass = [];
   const fl = floors ?? Math.max(1, Math.floor(h / 3));
+  const hsh = (k) => {
+    const s = Math.sin(w * 12.9898 + d * 78.233 + k * 4.137) * 43758.5453;
+    return s - Math.floor(s);
+  };
   // Volets typiques de la côte normande (couleur stable pour un même bâtiment).
   const SHUTTERS = ['#5d7480', '#7d8b6a', '#e9e6de', '#4a5560', '#8c6d55', '#6f8fa0'];
   const shutter = SHUTTERS[Math.floor(Math.abs(Math.sin(w * 12.9898 + d * 78.233) * 43758.5453)) % SHUTTERS.length];
   const isShop = !!(trim && trim.toLowerCase() === '#c8a96e');
-  body.push([box(w, h + 2, d), wall, { y: -2 }]);
+  const woodT = wood ?? [0, 0, 0, 0, 0, 1, 2][Math.floor(hsh(2) * 7)];
+  const wallC = timber ? colombage(fill ?? [0, 0, 0, 1, 1, 1, 2, 3][Math.floor(hsh(1) * 8)], woodT) : wall;
+  const beamC = colombage(5 + woodT, woodT);
+  const fh = h / fl;
+  // Étage en encorbellement sur les maisons à pans de bois.
+  const over = timber && fl > 1 ? 0.22 : 0;
+  body.push([box(w, (over ? fh : h) + 2, d), wallC, { y: -2 }]);
+  if (over) body.push([box(w + 2 * over, h - fh, d + 2 * over), wallC, { y: fh }]);
   body.push([box(w + 0.2, 2.6, d + 0.2), plinth, { y: -2 }]);
   const rh = roofH ?? Math.min(w, d) * 0.45;
   const along = w >= d;
-  if (roofType === 'gable') body.push([gableRoof(along ? w : d, rh, along ? d : w, 0.5), roof, { y: h, ry: along ? 0 : Math.PI / 2 }]);
-  else if (roofType === 'hip') body.push([hipRoof(along ? w : d, rh, along ? d : w, 0.5), roof, { y: h, ry: along ? 0 : Math.PI / 2 }]);
-  else {
+  const L = along ? w : d, D = along ? d : w;
+  const pitched = roofType === 'gable' || roofType === 'hip';
+  const soffit = timber ? beamC : '#d8d3c8';
+  const R = D / 2 + over + 0.45;
+  if (roofType === 'gable') pitchedRoof(body, L + 2 * over, rh, D + 2 * over, 0.45, roof, wallC, soffit, { y: h, ry: along ? 0 : Math.PI / 2 });
+  else if (roofType === 'hip') {
+    const hip = hipRoof(L + 2 * over, rh, D + 2 * over, 0.45);
+    const drop = (rh * 0.45) / R;
+    body.push([hip, roof, { y: h - drop, ry: along ? 0 : Math.PI / 2 }]);
+    body.push([flipped(hip), soffit, { y: h - drop - 0.04, ry: along ? 0 : Math.PI / 2 }]);
+  } else {
     body.push([box(w + 0.3, 0.5, d + 0.3), roof, { y: h }]);
   }
-  if (trim) body.push([box(w + 0.15, 0.25, d + 0.15), trim, { y: h - 0.25 }]);
-  if (chimney) body.push([box(0.9, rh + 1.4, 0.9), PALETTE.brick[0], { x: w * 0.28, y: h, z: -d * 0.12 }]);
-  const fh = h / fl;
+  if (trim) body.push([box(w + 0.15 + 2 * over, 0.25, d + 0.15 + 2 * over), trim, { y: h - 0.25 }]);
+  if (chimney) {
+    // Souche de cheminée en briques, couronnement et deux mitrons en terre cuite.
+    const cx = w * 0.28, cz = -d * 0.12, ch = rh + 1.4;
+    body.push([box(0.9, ch, 0.9), PALETTE.brick[0], { x: cx, y: h, z: cz }]);
+    body.push([box(1.06, 0.14, 1.06), '#b9b4a8', { x: cx, y: h + ch, z: cz }]);
+    for (const s of [-1, 1]) body.push([cyl(0.09, 0.12, 0.42, 7), '#a0583c', { x: cx + s * 0.2, y: h + ch + 0.14, z: cz }]);
+  }
+  // Hauteur du pan long à une distance s en retrait du mur (le pan coupe le mur à la hauteur h).
+  const roofY = (s) => h + (rh * s) / R;
   const facades = [
     { len: w, nx: 0, nz: 1, off: d / 2, ry: 0 },
     { len: w, nx: 0, nz: -1, off: d / 2, ry: Math.PI },
     { len: d, nx: 1, nz: 0, off: w / 2, ry: Math.PI / 2 },
     { len: d, nx: -1, nz: 0, off: w / 2, ry: -Math.PI / 2 },
   ];
+  // Position locale d'un point de façade : t le long de la façade, k vers l'extérieur.
+  const at = (f, t, k) => ({
+    x: f.nx === 0 ? t * (f.nz > 0 ? 1 : -1) : f.nx * k,
+    z: f.nz === 0 ? t * (f.nx > 0 ? -1 : 1) : f.nz * k,
+  });
   facades.forEach((f, fi) => {
     const cols = Math.max(1, Math.floor(f.len / 3.4));
     const span = f.len / cols;
+    const colT = (c) => -f.len / 2 + span * (c + 0.5);
+    const isLong = pitched && (along ? fi < 2 : fi >= 2);
+    // Avant-corps à pignon (longues façades) : deux travées qui avancent, coiffées d'un pignon.
+    const bayCols = new Set();
+    const proj = 0.8 + over;
+    if (bays && isLong && f.len >= 20 && fl >= 2 && cols >= 6) {
+      const bw = span * 2, rbh = bw * 0.5;
+      const sb = ((rbh + 0.25) * R) / rh;
+      const droof = proj + sb;
+      const mid = (cols - 2) / 2;
+      for (let k = 0; k < cols; k++) {
+        for (const sgn of k ? [-1, 1] : [1]) {
+          const c0 = Math.round(mid + sgn * k * 5);
+          if (c0 < 0 || c0 + 1 >= cols || bayCols.has(c0) || bayCols.has(c0 + 1)) continue;
+          const tb = (colT(c0) + colT(c0 + 1)) / 2;
+          const limit = roofType === 'hip' ? f.len / 2 - droof - bw / 2 - 0.3 : f.len / 2 - bw / 2 - 0.4;
+          if (Math.abs(tb) > limit || roofY(sb) > h + rh - 0.2) continue;
+          bayCols.add(c0).add(c0 + 1);
+          body.push([box(bw, h + 2, proj), wallC, { ...at(f, tb, f.off + proj / 2), y: -2, ry: f.ry }]);
+          pitchedRoof(body, droof, rbh, bw, 0.35, roof, wallC, soffit, { ...at(f, tb, f.off + proj - droof / 2), y: h, ry: f.ry + Math.PI / 2 });
+          if (trim) body.push([box(bw + 0.1, 0.22, 0.12), trim, { ...at(f, tb, f.off + proj + 0.02), y: h - 0.22, ry: f.ry }]);
+        }
+        if (mid - k * 5 < 0 && mid + k * 5 > cols) break;
+      }
+    }
     for (let fl2 = 0; fl2 < fl; fl2++) {
       for (let c = 0; c < cols; c++) {
-        const t = -f.len / 2 + span * (c + 0.5);
+        const t = colT(c);
+        const k0 = f.off + (bayCols.has(c) ? proj : fl2 > 0 ? over : 0);
         const isDoor = door && fi === 0 && fl2 === 0 && c === Math.floor(cols / 2);
         const wy = fl2 * fh + (isDoor ? 0 : fh * 0.32);
         const wh = isDoor ? Math.min(2.4, fh * 0.8) : Math.min(1.5, fh * 0.48);
         const ww = isDoor ? 1.5 : Math.min(1.2, span * 0.45);
-        const x = f.nx === 0 ? t * (f.nz > 0 ? 1 : -1) : f.nx * (f.off + 0.04);
-        const z = f.nz === 0 ? t * (f.nx > 0 ? -1 : 1) : f.nz * (f.off + 0.04);
-        const tf = { x, y: wy, z, ry: f.ry };
+        const tf = { ...at(f, t, k0 + 0.04), y: wy, ry: f.ry };
+        const { x, z } = tf;
         if (isDoor) {
           // Porte d'entrée : vantail à panneaux, imposte vitrée, seuil en pierre.
           body.push([box(ww, wh, 0.14), doorColor, tf]);
@@ -103,42 +216,72 @@ export function buildingGeo({
           body.push([box(ww + 0.3, 0.14, 0.18), trim || PALETTE.white, { ...tf, y: wy + wh }]);
         } else if (windows) {
           const tc = trim || PALETTE.white;
-          // Fenêtre : dormant, appui saillant, petits bois (croisillons), volets battants sur les maisons.
+          // Fenêtre : dormant, appui saillant, petits bois (croisillons), volets battants sur les maisons maçonnées.
           body.push([box(ww + 0.2, wh + 0.2, 0.1), tc, { ...tf, y: wy - 0.1 }]);
-          body.push([box(ww + 0.36, 0.08, 0.26), '#c9c4b8', { ...tf, y: wy - 0.16 }]);
-          const off = (k) => ({ x: x + f.nx * k, z: z + f.nz * k });
+          body.push([box(ww + 0.36, 0.08, 0.26), timber ? beamC : '#c9c4b8', { ...tf, y: wy - 0.16 }]);
+          const off = (kk) => ({ x: x + f.nx * kk, z: z + f.nz * kk });
           body.push([box(0.05, wh, 0.05), tc, { ...tf, ...off(0.07) }]);
           body.push([box(ww, 0.05, 0.05), tc, { ...tf, ...off(0.07), y: wy + wh * 0.62 }]);
-          if (roofType !== 'flat' && !isShop) {
-            const along = (k) => (f.nx === 0 ? { x: x + k * (f.nz > 0 ? 1 : -1), z: z + f.nz * 0.06 } : { x: x + f.nx * 0.06, z: z + k * (f.nx > 0 ? -1 : 1) });
-            for (const sd of [-1, 1]) body.push([box(ww * 0.52, wh + 0.12, 0.05), shutter, { ...tf, ...along(sd * (ww * 0.76 + 0.1)), y: wy - 0.06 }]);
+          if (roofType !== 'flat' && !isShop && !timber) {
+            const side = (kk) => (f.nx === 0 ? { x: x + kk * (f.nz > 0 ? 1 : -1), z: z + f.nz * 0.06 } : { x: x + f.nx * 0.06, z: z + kk * (f.nx > 0 ? -1 : 1) });
+            for (const sd of [-1, 1]) body.push([box(ww * 0.52, wh + 0.12, 0.05), shutter, { ...tf, ...side(sd * (ww * 0.76 + 0.1)), y: wy - 0.06 }]);
           }
           glass.push([winBox(ww, wh, 0.16), PALETTE.glass, tf]);
         }
-        if (timber && c < cols) {
-          const bx = f.nx === 0 ? (t - span / 2) * (f.nz > 0 ? 1 : -1) : f.nx * (f.off + 0.05);
-          const bz = f.nz === 0 ? (t - span / 2) * (f.nx > 0 ? -1 : 1) : f.nz * (f.off + 0.05);
-          if (c > 0) body.push([box(0.22, fh, 0.12), PALETTE.timber, { x: bx, y: fl2 * fh, z: bz, ry: f.ry }]);
-        }
       }
       if (timber) {
-        const bx = f.nx * (f.off + 0.05);
-        const bz = f.nz * (f.off + 0.05);
-        body.push([box(f.len, 0.22, 0.12), PALETTE.timber, { x: bx, y: fl2 * fh + fh - 0.11, z: bz, ry: f.ry }]);
-        if (fl2 === 0) body.push([box(f.len, 0.22, 0.12), PALETTE.timber, { x: bx, y: 0.6, z: bz, ry: f.ry }]);
-        // Croix de Saint-André décoratives à l'étage.
-        if (fl2 > 0) {
-          const cols2 = Math.max(1, Math.floor(f.len / 3.4));
-          const span2 = f.len / cols2;
-          for (let c = 0; c < cols2; c++) {
-            const t = -f.len / 2 + span2 * (c + 0.5);
-            const lx = f.nx === 0 ? t * (f.nz > 0 ? 1 : -1) : f.nx * (f.off + 0.06);
-            const lz = f.nz === 0 ? t * (f.nx > 0 ? -1 : 1) : f.nz * (f.off + 0.06);
-            const lowY = fl2 * fh + 0.1;
-            body.push([box(0.16, fh * 0.32, 0.1), PALETTE.timber, { x: lx, y: lowY, z: lz, ry: f.ry, rz: 0.6 }]);
-          }
+        // Pans de bois : sablières à chaque niveau, poteaux d'angle et guettes (décharges) près des angles.
+        const ko = f.off + (fl2 > 0 ? over : 0) + 0.05;
+        const len = f.len + (fl2 > 0 ? 2 * over : 0);
+        body.push([box(len, 0.26, 0.13), beamC, { ...at(f, 0, ko), y: (fl2 + 1) * fh - 0.26, ry: f.ry }]);
+        body.push([box(len, 0.2, 0.13), beamC, { ...at(f, 0, ko), y: fl2 ? fl2 * fh : 0.5, ry: f.ry }]);
+        // Lisses d'appui et de linteau au droit des fenêtres (grille du colombage), interrompues par la porte.
+        const doorHere = door && fi === 0 && fl2 === 0;
+        const td = colT(Math.floor(cols / 2));
+        const rail = (y) => {
+          if (!doorHere) return body.push([box(len, 0.14, 0.12), beamC, { ...at(f, 0, ko), y, ry: f.ry }]);
+          const a = -len / 2, b = td - 0.95, c2 = td + 0.95, e = len / 2;
+          body.push([box(b - a, 0.14, 0.12), beamC, { ...at(f, (a + b) / 2, ko), y, ry: f.ry }]);
+          body.push([box(e - c2, 0.14, 0.12), beamC, { ...at(f, (c2 + e) / 2, ko), y, ry: f.ry }]);
+        };
+        rail(fl2 * fh + fh * 0.32 - 0.24);
+        rail(fl2 * fh + fh * 0.32 + Math.min(1.5, fh * 0.48) + 0.1);
+        for (const sd of [-1, 1]) {
+          body.push([box(0.24, fh, 0.14), beamC, { ...at(f, sd * (len / 2 - 0.12), ko), y: fl2 * fh, ry: f.ry }]);
+          // Guette : du pied du poteau d'angle vers l'intérieur (repère de façade : x local = t).
+          const run = 0.55, bh = fh - 0.55;
+          body.push([box(0.15, Math.hypot(run, bh), 0.12), beamC, { ...at(f, sd * (len / 2 - 0.3), ko + 0.01), y: fl2 * fh + 0.27, ry: f.ry, rz: sd * Math.atan2(run, bh) }]);
         }
       }
+    }
+    if (!isLong) return;
+    // Lucarnes à fronton dans le pan de toit, alignées sur une travée sur deux.
+    if (dormers && rh > 2.6) {
+      const dw = 1.5, dh = 1.55, dr = 0.75, s0 = 0.55;
+      const y0 = roofY(s0) - 0.2;
+      const dd = ((y0 + dh + dr + 0.15 - h) * R) / rh - s0;
+      if (y0 + dh + dr < h + rh - 0.35 && dd > 0.3) {
+        const mid = (cols - 1) / 2;
+        for (let c = 0; c < cols; c++) {
+          const rel = Math.abs(c - mid);
+          if (Math.round(rel - (cols % 2 ? 0 : 0.5)) % 2 || bayCols.has(c)) continue;
+          const t = colT(c);
+          const limit = roofType === 'hip' ? f.len / 2 - s0 - dd - dw / 2 - 0.3 : f.len / 2 - dw / 2 - 0.6;
+          if (Math.abs(t) > limit) continue;
+          const kf = f.off + over - s0;
+          body.push([box(dw, dh, dd), wallC, { ...at(f, t, kf - dd / 2), y: y0, ry: f.ry }]);
+          pitchedRoof(body, dd, dr, dw, 0.15, roof, wallC, soffit, { ...at(f, t, kf - dd / 2), y: y0 + dh, ry: f.ry + Math.PI / 2 });
+          const tc = trim || PALETTE.white;
+          body.push([box(0.95, 1.12, 0.08), tc, { ...at(f, t, kf + 0.02), y: y0 + 0.22, ry: f.ry }]);
+          glass.push([winBox(0.75, 0.92, 0.12), PALETTE.glass, { ...at(f, t, kf + 0.03), y: y0 + 0.32, ry: f.ry }]);
+        }
+      }
+    }
+    // Gouttière pendante en zinc et descentes aux deux bouts.
+    if (!bayCols.size) {
+      const zinc = '#8d9296';
+      body.push([box(f.len + 2 * over + 0.9, 0.13, 0.15), zinc, { ...at(f, 0, f.off + over + 0.42), y: h - 0.16, ry: f.ry }]);
+      for (const sd of [-1, 1]) body.push([box(0.09, h - 0.15, 0.09), zinc, { ...at(f, sd * (f.len / 2 + over - 0.25), f.off + over + 0.1), y: 0, ry: f.ry }]);
     }
   });
   return { body: partsToGeo(body), glass: glass.length ? partsToGeo(glass) : null };

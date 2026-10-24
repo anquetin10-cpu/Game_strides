@@ -565,7 +565,7 @@ export class World {
     const overlapsSpecial = (x, z, r) => specials.some((s) => Math.abs(x - s.x) < s.w / 2 + r && Math.abs(z - s.z) < s.d / 2 + r);
     // Grand Hôtel (façade vers la mer).
     const ht = TOWN.hotel;
-    this.place(buildingGeo({ w: ht.w, d: ht.d, h: 14, wall: '#f1ebdf', roof: '#3f444b', roofType: 'hip', roofH: 7, timber: true, floors: 4, trim: '#f6f3ec' }), ht.x, ht.z, Math.PI, ht.w, ht.d, 'hotel');
+    this.place(buildingGeo({ w: ht.w, d: ht.d, h: 14, wall: '#f1ebdf', roof: '#3f444b', roofType: 'hip', roofH: 7, timber: true, fill: 0, wood: 1, floors: 4, trim: '#f6f3ec' }), ht.x, ht.z, Math.PI, ht.w, ht.d, 'hotel');
     for (let i = 0; i < 4; i++) {
       const x = ht.x - 30 + i * 20;
       this.batch.add(gableDormer(), null, x, this.h(ht.x, ht.z) + 14, ht.z - ht.d / 2 + 1, Math.PI);
