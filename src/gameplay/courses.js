@@ -8,9 +8,11 @@ import { PathAI } from '../entities/horse.js';
 // ---------- Parcours d'obstacles ----------
 export function courseSteps(game, run, S, opts) {
   const {
-    courseId, start, finish, timeAllowed, heights, kind = 'cso', maxRefusals = 3,
+    courseId, start, finish, timeAllowed, heights, kind = 'cso',
     intro = null,
   } = opts;
+  // Règlement FEI : élimination au deuxième refus en CSO, au quatrième sur un cross.
+  const maxRefusals = opts.maxRefusals ?? (kind === 'xc' ? 4 : 2);
   const ob = game.obstacles;
   const state = { faults: 0, refusals: 0, next: 1, t: 0, running: false, finished: false, timeFaults: 0 };
   run.data.course = state;
@@ -80,8 +82,9 @@ export function courseSteps(game, run, S, opts) {
       update(r, dt) {
         state.t += dt;
         if (game.player.mode !== 'ride') return { fail: 'Tu es descendu de cheval : éliminé.' };
-        if (state.refusals >= maxRefusals) return { fail: `${maxRefusals} refus : éliminé du parcours.` };
-        if (state.t > timeAllowed * 2.2) return { fail: 'Temps limite dépassé : éliminé.' };
+        if (state.refusals >= maxRefusals) return { fail: `${maxRefusals}e refus : éliminé du parcours.` };
+        // Temps limite : le double du temps accordé.
+        if (state.t > timeAllowed * 2) return { fail: 'Temps limite dépassé : éliminé.' };
         if (state.next > list().length) {
           const f = game.player.horse.pos;
           const fx = finish.x, fz = finish.z;
@@ -98,7 +101,8 @@ export function courseSteps(game, run, S, opts) {
       end() {
         state.running = false;
         const over = Math.max(0, state.t - timeAllowed);
-        state.timeFaults = kind === 'xc' ? Math.round(over * 0.4) : Math.ceil(over / 4);
+        // CSO (barème A) : 1 point par seconde entamée ; cross : 0,4 point par seconde.
+        state.timeFaults = kind === 'xc' ? Math.round(over * 0.4) : Math.ceil(over - 1e-9);
         run.resultTime = state.t;
         run.resultTimeLabel = 'Chrono';
       },
