@@ -226,12 +226,148 @@ export function paintTerrainCanvas(terrain, size = 2048) {
 
 export function makeTerrainTexture(terrain, size) {
   const cv = paintTerrainCanvas(terrain, size);
+  const splatData = gradeAndClassify(cv);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   tex.generateMipmaps = true;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
-  return { texture: tex, canvas: cv };
+  // Données brutes (pas de canvas : l'alpha prémultiplié détruirait les canaux indépendants).
+  const half = size >> 1;
+  const splat = new THREE.DataTexture(splatData, half, half, THREE.RGBAFormat);
+  splat.colorSpace = THREE.NoColorSpace;
+  splat.generateMipmaps = true;
+  splat.minFilter = THREE.LinearMipmapLinearFilter;
+  splat.magFilter = THREE.LinearFilter;
+  splat.needsUpdate = true;
+  return { texture: tex, canvas: cv, splat };
+}
+
+// Étalonnage réaliste des couleurs peintes (albédos naturels, moins saturés) et carte des matériaux du sol :
+// R = herbe, G = terre (labours, chemins, cultures), B = sable (plage, carrières, piste), A = sol dur (gravier, pavés, bitume).
+// Couleurs sources de la peinture et leur matériau (0 herbe, 1 culture, 2 terre, 3 sable, 4 gravier/pavés, 5 bitume).
+const GROUND_REFS = [
+  [0, '#6f9e4f #77a653 #679849 #80ad5b #8db863 #93bd68 #73a252 #4d6e38 #7fa65a #7aa957 #74a552 #79a955 #80b05b #8fb26a #7fb455 #86b35e #5d6b55'],
+  [1, '#d3bf78 #cdb56a #dcc843 #e2d052'],
+  [2, '#8f7253 #84694b #a88d68 #9c8460'],
+  [3, '#e7d7ae #c4b38a #a89a72 #e9dcc0 #ecdfc3 #e3d4b4 #c9ad82'],
+  [4, '#cdbf9d #d4c7a8 #d3c7aa #b9b3a7 #d3cbbb #c7bfae #c8c1b3 #e4e0d4 #a19d92'],
+  [5, '#5b5c5e'],
+];
+let groundLut = null;
+function groundClassLut() {
+  if (groundLut) return groundLut;
+  const refs = [];
+  for (const [cls, list] of GROUND_REFS) for (const hex of list.split(' ')) refs.push([...hexToRgb(hex), cls]);
+  groundLut = new Uint8Array(32768);
+  for (let q = 0; q < 32768; q++) {
+    const r = ((q >> 10) & 31) * 8 + 4, g = ((q >> 5) & 31) * 8 + 4, b = (q & 31) * 8 + 4;
+    let best = 1e9, cls = 0;
+    for (const f of refs) {
+      const dd = (f[0] - r) ** 2 + (f[1] - g) ** 2 + (f[2] - b) ** 2;
+      if (dd < best) { best = dd; cls = f[3]; }
+    }
+    groundLut[q] = cls;
+  }
+  return groundLut;
+}
+
+function gradeAndClassify(cv) {
+  const size = cv.width;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  const img = ctx.getImageData(0, 0, size, size);
+  const d = img.data;
+  const lut = groundClassLut();
+  const out = new Uint8Array(size * size * 4);
+  for (let k = 0; k < d.length; k += 4) {
+    let r = d[k], g = d[k + 1], b = d[k + 2];
+    const cls = lut[((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)];
+    const lum = 0.3 * r + 0.59 * g + 0.11 * b;
+    let wG = 0, wS = 0, wA = 0, wH = 0;
+    if (cls === 0) {
+      // Prairie normande : vert olive, moins saturé et plus sombre que la peinture d'origine.
+      wG = 1;
+      r = (lum + (r - lum) * 0.78) * 0.8 + 6;
+      g = (lum + (g - lum) * 0.78) * 0.8 + 2;
+      b = (lum + (b - lum) * 0.7) * 0.72;
+    } else if (cls === 1) {
+      wS = 0.55; wG = 0.45; // chaume / culture mûre
+      r *= 0.86; g *= 0.82; b *= 0.76;
+    } else if (cls === 2) {
+      wS = 1;
+      r *= 0.8; g *= 0.78; b *= 0.76;
+    } else if (cls === 3) {
+      wA = 1;
+      r *= 0.9; g *= 0.89; b *= 0.86;
+    } else {
+      wH = 1;
+      const k2 = cls === 5 ? 0.72 : 0.86;
+      r *= k2; g *= k2; b *= k2 * 0.98;
+    }
+    d[k] = r; d[k + 1] = g; d[k + 2] = b;
+    out[k] = wG * 255; out[k + 1] = wS * 255; out[k + 2] = wA * 255; out[k + 3] = wH * 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  // Demi-résolution (moyenne 2×2), lignes inversées pour suivre l'orientation de la texture du canvas.
+  const half = size >> 1;
+  const sp = new Uint8Array(half * half * 4);
+  for (let j = 0; j < half; j++) {
+    const dst = (half - 1 - j) * half * 4;
+    for (let i = 0; i < half; i++) {
+      const a = ((2 * j) * size + 2 * i) * 4, c = a + size * 4;
+      for (let ch = 0; ch < 4; ch++) sp[dst + i * 4 + ch] = (out[a + ch] + out[a + 4 + ch] + out[c + ch] + out[c + 4 + ch]) >> 2;
+    }
+  }
+  return sp;
+}
+
+// Bruit cellulaire périodique (distance au point le plus proche) : galets, mottes, grains.
+function periodicWorley(size, cells, seed) {
+  let s = seed;
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const pts = new Float32Array(cells * cells * 2).map(() => rnd());
+  const out = new Float32Array(size * size);
+  const cs = size / cells;
+  for (let j = 0; j < size; j++) {
+    for (let i = 0; i < size; i++) {
+      const cx = Math.floor(i / cs), cy = Math.floor(j / cs);
+      let best = 1e9;
+      for (let oy = -1; oy <= 1; oy++) {
+        for (let ox = -1; ox <= 1; ox++) {
+          const gx = cx + ox, gy = cy + oy;
+          const wx = ((gx % cells) + cells) % cells, wy = ((gy % cells) + cells) % cells;
+          const px = (gx + pts[(wy * cells + wx) * 2]) * cs, py = (gy + pts[(wy * cells + wx) * 2 + 1]) * cs;
+          const dd = (px - i) * (px - i) + (py - j) * (py - j);
+          if (dd < best) best = dd;
+        }
+      }
+      out[j * size + i] = Math.min(1, Math.sqrt(best) / cs);
+    }
+  }
+  return out;
+}
+
+// Texture de détail du sol (répétable) : R grain fin, G variation moyenne, B cellules (galets/mottes), A touffes d'herbe.
+export function makeGroundDetail(size = 256) {
+  const n1 = periodicNoise(size, 16, 7), n2 = periodicNoise(size, 32, 13), n3 = periodicNoise(size, 64, 17);
+  const m1 = periodicNoise(size, 4, 19), m2 = periodicNoise(size, 8, 23);
+  const w = periodicWorley(size, 24, 29);
+  const t1 = periodicNoise(size, 48, 31), t2 = periodicNoise(size, 96, 37);
+  const data = new Uint8Array(size * size * 4);
+  for (let k = 0; k < size * size; k++) {
+    data[k * 4] = clamp((n1[k] * 0.25 + n2[k] * 0.35 + n3[k] * 0.4) * 255, 0, 255);
+    data[k * 4 + 1] = clamp((m1[k] * 0.6 + m2[k] * 0.4) * 255, 0, 255);
+    data[k * 4 + 2] = clamp(w[k] * 255, 0, 255);
+    data[k * 4 + 3] = clamp(smoothstep(0.35, 0.75, t1[k] * 0.55 + t2[k] * 0.45) * 255, 0, 255);
+  }
+  const tex = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 4;
+  tex.needsUpdate = true;
+  return tex;
 }
 
 // Bruit de valeur périodique (texture répétable sans couture).

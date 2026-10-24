@@ -167,7 +167,7 @@ export class Terrain {
     return depth;
   }
 
-  buildMesh(texture, detailTexture) {
+  buildMesh(texture, detailTexture, splat) {
     const n = this.n;
     const pos = new Float32Array(n * n * 3);
     const uv = new Float32Array(n * n * 2);
@@ -198,23 +198,84 @@ export class Terrain {
     geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeVertexNormals();
-    const mat = new THREE.MeshStandardMaterial({ map: texture });
-    if (detailTexture) {
+    const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.95, metalness: 0 });
+    if (detailTexture && splat) {
       mat.onBeforeCompile = (shader) => {
         shader.uniforms.detailMap = { value: detailTexture };
+        shader.uniforms.splatMap = { value: splat };
         shader.vertexShader = shader.vertexShader
-          .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;')
-          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
+          .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNrm;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWorldNrm = normalize(mat3(modelMatrix) * objectNormal);');
         shader.fragmentShader = shader.fragmentShader
-          .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nvarying vec2 vWorldXZ;')
-          .replace(
-            '#include <map_fragment>',
-            `#include <map_fragment>
-            float dA = texture2D(detailMap, vWorldXZ * 0.11).r;
-            float dB = texture2D(detailMap, vWorldXZ * 0.023 + 0.37).g;
-            float dC = texture2D(detailMap, vWorldXZ * 0.61 + 0.13).r;
-            diffuseColor.rgb *= (0.74 + 0.36 * dA + 0.16 * (dB - 0.5)) * (0.9 + 0.2 * dC);`
-          );
+          .replace('#include <common>', `#include <common>
+uniform sampler2D detailMap;
+uniform sampler2D splatMap;
+varying vec3 vWorldPos;
+varying vec3 vWorldNrm;
+float stH = 0.0;
+float stRough = 0.95;
+float stFade = 1.0;
+// Relief au pixel (bump) à partir des dérivées écran d'une hauteur procédurale.
+vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
+  vec3 sx = dFdx( surfPos ), sy = dFdy( surfPos );
+  vec3 r1 = cross( sy, surfNorm ), r2 = cross( surfNorm, sx );
+  float det = dot( sx, r1 );
+  vec3 grad = sign( det ) * ( dFdx( h ) * r1 + dFdy( h ) * r2 );
+  return normalize( abs( det ) * surfNorm - grad );
+}`)
+          .replace('#include <map_fragment>', `#include <map_fragment>
+{
+  vec4 sp = texture2D( splatMap, vMapUv );
+  float wG = sp.r, wS = sp.g, wA = sp.b, wH = sp.a;
+  float ws = wG + wS + wA + wH + 1e-3;
+  wG /= ws; wS /= ws; wA /= ws; wH /= ws;
+  vec2 p = vWorldPos.xz;
+  float dist = length( vViewPosition );
+  stFade = 1.0 - smoothstep( 18.0, 140.0, dist );
+  // Taille d'un pixel au sol : on retire les détails plus fins que le pixel (pas de scintillement).
+  float pxw = length( fwidth( p ) );
+  float fineW = 1.0 - smoothstep( 0.006, 0.03, pxw );
+  float midW = 1.0 - smoothstep( 0.05, 0.3, pxw );
+  vec4 dF = texture2D( detailMap, p * 1.31 + 0.17 );
+  vec4 dM = texture2D( detailMap, p * 0.29 );
+  vec4 dL = texture2D( detailMap, p * 0.047 + 0.31 );
+  float macro = texture2D( detailMap, p * 0.0063 + 0.5 ).g;
+  // Herbe : touffes, brins, tons jaunes/verts.
+  float gH = ( dF.a * 0.55 + dF.r * 0.2 ) * fineW + dM.a * 0.35 * midW;
+  vec3 gTint = mix( vec3( 0.82, 0.9, 0.74 ), vec3( 1.12, 1.06, 0.84 ), dL.g ) * mix( 0.84, 1.1, dM.r ) * mix( 1.0, mix( 0.9, 1.05, dF.a ), fineW );
+  // Terre : mottes et cailloux.
+  float sH = ( 1.0 - dF.b ) * 0.5 * fineW + ( ( 1.0 - dM.b ) * 0.5 + dM.r * 0.3 ) * midW;
+  vec3 sTint = vec3( mix( 0.76, 1.1, dM.g ) * mix( 1.0, mix( 0.88, 1.06, 1.0 - dM.b ), midW ) );
+  // Sable : grain fin, ondulations douces.
+  float aH = dF.r * 0.35 * fineW + ( dM.g * 0.4 + dM.r * 0.2 ) * midW;
+  vec3 aTint = vec3( mix( 0.93, 1.05, dM.r ) * mix( 0.95, 1.04, dL.r ) * mix( 1.0, mix( 0.95, 1.04, dF.r ), fineW ) );
+  // Gravier / pavés : gravillons de près, marbrure de loin.
+  vec4 dG = texture2D( detailMap, p * 0.62 + 0.41 );
+  float stones = smoothstep( 0.42, 0.12, dG.b );
+  float hH = ( stones * 0.35 + dF.r * 0.1 ) * fineW + dM.r * 0.25 * midW;
+  vec3 hTint = vec3( mix( 0.9, 1.07, dM.g ) * mix( 0.95, 1.04, dL.r ) * mix( 1.0, mix( 0.94, 1.06, stones ) * mix( 0.97, 1.03, dF.r ), fineW ) );
+  vec3 tint = wG * gTint + wS * sTint + wA * aTint + wH * hTint;
+  stH = ( wG * gH * 0.7 + wS * sH * 1.3 + wA * aH * 0.45 + wH * hH * 0.8 ) * stFade;
+  stRough = wG * 0.97 + wS * 1.0 + wA * 0.9 + wH * 0.82;
+  // Falaises et talus raides : roche stratifiée (projection latérale).
+  float rock = smoothstep( 0.8, 0.55, vWorldNrm.y );
+  if ( rock > 0.0 ) {
+    vec2 rp = abs( vWorldNrm.x ) > abs( vWorldNrm.z ) ? vWorldPos.zy : vWorldPos.xy;
+    vec4 r1 = texture2D( detailMap, rp * vec2( 0.11, 0.45 ) );
+    vec4 r2 = texture2D( detailMap, rp * 0.6 + 0.2 );
+    float rH = r1.r * 0.6 + r2.b * 0.4;
+    tint = mix( tint, vec3( mix( 0.75, 1.15, r1.g ) * mix( 0.85, 1.05, r2.r ) ), rock );
+    stH = mix( stH, rH * 1.6, rock );
+    stRough = mix( stRough, 0.9, rock );
+  }
+  // Sable mouillé près de l'eau : plus sombre et plus brillant.
+  float wet = wA * smoothstep( 0.6, 0.05, vWorldPos.y );
+  tint *= 1.0 - wet * 0.25;
+  stRough = mix( stRough, 0.35, wet );
+  diffuseColor.rgb *= mix( vec3( 1.0 ), tint, 0.35 + 0.65 * stFade ) * ( 0.92 + 0.16 * macro );
+}`)
+          .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = stRough;')
+          .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = stBump( -vViewPosition, normal, stH * 0.09 );');
       };
     }
     const mesh = new THREE.Mesh(geo, mat);

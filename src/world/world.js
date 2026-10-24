@@ -7,7 +7,8 @@ import { mulberry32, polyDist, clamp } from '../core/math.js';
 import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shoreZ, forestDensity, isReserved, nearestRoad } from './layout.js';
 import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBoxes } from './sites.js';
 import { Terrain } from './terrain.js';
-import { makeTerrainTexture, makeDetailTexture } from './terrainTexture.js';
+import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
+import { applySurfaces } from './surfaces.js';
 import { Water } from './water.js';
 import { Sky } from './sky.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
@@ -30,8 +31,10 @@ export class World {
     this.group.name = 'world';
     scene.add(this.group);
     this.features = { buildings: [], fences: [], trees: 0 };
-    this.mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true });
-    this.glassMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, emissive: '#ffcf8a', emissiveIntensity: 0 });
+    // Texture de détail partagée (sol, façades) et matériaux physiques des décors.
+    this.detailTex = makeGroundDetail(256);
+    this.mat = applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), this.detailTex);
+    this.glassMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.06, metalness: 0.1, emissive: '#ffcf8a', emissiveIntensity: 0 });
     this.lightMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: '#ffe2a8', emissiveIntensity: 0.2 });
     this.batch = new StaticBatch(150);
     this.glass = new StaticBatch(150);
@@ -58,10 +61,10 @@ export class World {
     this.terrain = new Terrain(200);
     progress(0.15, 'Champs et plages');
     await tick('texture');
-    const { texture, canvas } = makeTerrainTexture(this.terrain, this.textureSize || 2048);
+    const { texture, canvas, splat } = makeTerrainTexture(this.terrain, this.textureSize || 2048);
     this.terrainCanvas = canvas;
     this.grassMask = buildGrassMask(canvas);
-    this.terrainMesh = this.terrain.buildMesh(texture, makeDetailTexture(128));
+    this.terrainMesh = this.terrain.buildMesh(texture, this.detailTex, splat);
     this.group.add(this.terrainMesh);
     this.sky = new Sky(this.scene);
     this.water = new Water(this.scene, this.terrain);
