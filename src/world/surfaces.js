@@ -79,6 +79,14 @@ const SURFACE_MAIN = /* glsl */ `
     sfH = ( 1.0 - joint ) * 0.8 * detW;
     tint = mix( mix( 0.78, 1.12, id ) * mix( 0.9, 1.05, dA.r ), 1.45, joint * detW );
     sfRough = 0.9;
+  } else if ( warm && sat > 0.3 && mx >= 0.72 && c.g > c.r * 0.78 && c.b < c.g * 0.75 ) {
+    // Paille / foin pressé : brins orientés, mèches plus claires et plus sombres.
+    vec4 g1 = texture2D( surfDetail, vec2( uv.x * 9.0, uv.y * 0.8 ) );
+    vec4 g2 = texture2D( surfDetail, vec2( uv.x * 0.9 + 0.3, uv.y * 7.0 ) );
+    float fib = mix( g1.r, g2.r, 0.35 );
+    sfH = fib * 0.6 * detW;
+    tint = mix( 0.72, 1.18, fib ) * mix( 0.9, 1.06, dB.g );
+    sfRough = 0.95;
   } else if ( warm && sat > 0.25 && mx < 0.72 ) {
     // Bois : bardage vertical (façades) ou poutres, fil du bois et nœuds.
     float board = vertical ? fract( uv.x / 0.16 ) : 0.5;

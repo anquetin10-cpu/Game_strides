@@ -32,6 +32,7 @@ import { Particles } from './world/particles.js';
 import { installCare } from './gameplay/condition.js';
 import { Birds } from './world/birds.js';
 import { HoofPrints } from './world/hoofprints.js';
+import { Boats } from './world/boats.js';
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -99,6 +100,7 @@ export class Game {
     this.particles = new Particles(this.scene);
     this.birds = new Birds(this.scene);
     this.hoofPrints = new HoofPrints(this.scene, this.terrain);
+    this.boats = new Boats(this.scene);
     this.resize();
     this.screens.setLoading(0.82, 'Chevaux et cavaliers');
     await new Promise((r) => setTimeout(r, 0));
@@ -754,6 +756,7 @@ export class Game {
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
     this.birds.update(dt, this.sky.nightFactor);
+    this.boats.update(dt);
     for (const h of this.horses) if (h.ambient) h.update(dt, this.camera.position);
     for (const p of this.humans) if (!p.mounted) p.update(dt, this.camera.position);
     for (const h of this.humans) if (h.mounted) h.animateRiding(dt);
@@ -832,6 +835,7 @@ export class Game {
     this.world.update(dt, this.camera, this.sky);
     this.birds.update(dt, this.sky.nightFactor);
     this.hoofPrints.update(dt);
+    this.boats.update(dt);
     // Ambiance sonore : oiseaux des haies le jour, goélands sur la côte.
     if ((this._birdT = (this._birdT ?? 4) - dt) <= 0 && this.sky.nightFactor < 0.5) {
       const fp = this.player.focus.pos;
