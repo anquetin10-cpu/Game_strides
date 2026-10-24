@@ -319,6 +319,7 @@ export class World {
     this.features.buildings.push({ x: H.x, z: H.z, w: H.w, d: H.d, rot: 0, kind: 'shed' });
     // Carrière et paddock.
     this.rectFence(HOME.arena, { height: 1.1, board: true, color: '#f2f1ec' }, 'n', 5, 0.5);
+    this.arenaLetters(HOME.arena);
     this.rectFence(HOME.paddock, { height: 1.15, rails: 3 }, 'e', 4, 0.3);
     // Abreuvoirs, montoir, brouette, fumière, tracteur, voiture, balles enrubannées.
     this.batch.add(troughGeo(), null, -150, this.h(-150, 205), 205, 0);
@@ -742,6 +743,42 @@ export class World {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;
     this.group.add(new THREE.Mesh(mergeGeometries(faces, false), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 })));
+  }
+
+  // Lettres de dressage autour d'une carrière (A et C aux petits côtés, K E H / F B M aux grands côtés).
+  arenaLetters(r) {
+    const L = ['A', 'K', 'E', 'H', 'C', 'M', 'B', 'F'];
+    const cv = document.createElement('canvas');
+    cv.width = 1024;
+    cv.height = 128;
+    const ctx = cv.getContext('2d');
+    L.forEach((ch, i) => {
+      ctx.fillStyle = '#f4f3ee';
+      ctx.fillRect(i * 128, 0, 128, 128);
+      ctx.fillStyle = '#16171a';
+      ctx.font = 'bold 96px Arial, Helvetica, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ch, i * 128 + 64, 70);
+    });
+    const hx = r.w / 2 + 0.9, hz = r.d / 2 + 0.9, k = r.w / 2 - 6;
+    // Position et orientation (face vers le centre de la carrière).
+    const spots = [[-hx, 0, Math.PI / 2], [-k, hz, Math.PI], [0, hz, Math.PI], [k, hz, Math.PI], [hx, 0, -Math.PI / 2], [k, -hz, 0], [0, -hz, 0], [-k, -hz, 0]];
+    const faces = [];
+    spots.forEach(([dx, dz, rot], i) => {
+      const x = r.x + dx, z = r.z + dz, y = this.h(x, z);
+      this.batch.add(box(0.08, 0.95, 0.08), '#f2f1ec', x, y, z, rot);
+      this.batch.add(box(0.62, 0.62, 0.04, false), '#f2f1ec', x, y + 0.75, z, rot);
+      const g = new THREE.PlaneGeometry(0.56, 0.56);
+      const uv = g.attributes.uv;
+      for (let k2 = 0; k2 < uv.count; k2++) uv.setX(k2, (i + uv.getX(k2)) / 8);
+      g.rotateY(rot);
+      g.translate(x + Math.sin(rot) * 0.025, y + 0.75, z + Math.cos(rot) * 0.025);
+      faces.push(g);
+    });
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.group.add(new THREE.Mesh(mergeGeometries(faces, false), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 })));
   }
 
   // Passages piétons (bandes blanches parallèles à la circulation) aux carrefours du centre-ville.
