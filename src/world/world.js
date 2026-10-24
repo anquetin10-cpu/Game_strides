@@ -106,6 +106,7 @@ export class World {
     await tick('assemble');
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
     this.detailChunks = this.detailBatch.build(this.mat, this.group, { name: 'detail', castShadow: false });
+    this._buildLampPools();
     this.carBatch.build(carMaterial(), this.group, { name: 'cars' });
     for (const m of this.detailChunks) m.userData.center = m.geometry.boundingSphere.center.clone();
     this.chunks.push(...this.glass.build(this.glassMat, this.group, { castShadow: false, name: 'glass' }));
@@ -202,6 +203,36 @@ export class World {
     this.batch.add(L.body, null, x, y, z, rot);
     this.lights.add(L.light, null, x, y, z, rot);
     this.colliders.addCircle(x, z, 0.2, Infinity, 'lamp');
+    // Flaque de lumière au sol (la nuit), sous la lanterne décalée de 0,75 m.
+    (this._lampPools ||= []).push([x + Math.cos(rot) * 0.75, y + 0.09, z - Math.sin(rot) * 0.75]);
+  }
+
+  // Halos des lampadaires : disques additifs au dégradé radial, un seul appel de dessin.
+  _buildLampPools() {
+    const pools = this._lampPools || [];
+    if (!pools.length) return;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const ctx = cv.getContext('2d');
+    const gr = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,222,170,1)');
+    gr.addColorStop(0.3, 'rgba(255,205,140,0.6)');
+    gr.addColorStop(1, 'rgba(255,190,120,0)');
+    ctx.fillStyle = gr;
+    ctx.fillRect(0, 0, 128, 128);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const geo = new THREE.PlaneGeometry(11, 11);
+    geo.rotateX(-Math.PI / 2);
+    this.poolMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: true, toneMapped: true });
+    const mesh = new THREE.InstancedMesh(geo, this.poolMat, pools.length);
+    const m = new THREE.Matrix4();
+    pools.forEach(([x, y, z], i) => mesh.setMatrixAt(i, m.makeTranslation(x, y, z)));
+    mesh.renderOrder = 2;
+    mesh.frustumCulled = false;
+    mesh.visible = false;
+    this.lampPools = mesh;
+    this.group.add(mesh);
   }
 
   text3D(str, size, depth, color) {
@@ -999,6 +1030,10 @@ export class World {
     }
     this.glassMat.emissiveIntensity = night * 0.9;
     this.lightMat.emissiveIntensity = 0.2 + night * 1.6;
+    if (this.lampPools) {
+      this.lampPools.visible = night > 0.05;
+      this.poolMat.opacity = night;
+    }
     if (this.beam) {
       this.beam.rotation.y += dt * 0.8;
       this.beam.material.opacity = night * 0.18;

@@ -31,6 +31,8 @@ const VIEWS = {
   // Cour de l'écurie : tracteur, voiture, matériel.
   yard: (g) => { const y = g.terrain.getHeight(-152, 170); return { at: [-158, y + 1.2, 166], from: [-150.5, y + 2.2, 173] }; },
   car: (g) => { const y = g.terrain.getHeight(-84, 146); return { at: [-84, y + 0.9, 146], from: [-79.5, y + 1.8, 150.5] }; },
+  // Lampadaire (la nuit).
+  lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },
   // Rue de Deauvelle, à hauteur d'homme.
   town: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x, P.z); return { at: [P.x - 30, y + 4, P.z - 25], from: [P.x + 4, y + 1.7, P.z + 6] }; },
   // Route de campagne, à hauteur d'homme.
