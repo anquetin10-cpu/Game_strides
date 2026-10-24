@@ -30,6 +30,52 @@ function toTexture(cv, repeat = false) {
   return t;
 }
 
+// Panneaux routiers français : entrée/sortie d'agglomération (EB10/EB20) et limitation de vitesse (B14).
+export function roadSignTexture(kind, text = '') {
+  const key = `rs:${kind}:${text}`;
+  if (cache.has(key)) return cache.get(key);
+  const round = kind === 'speed';
+  const cv = canvas(round ? 256 : 512, 256);
+  const ctx = cv.getContext('2d');
+  if (round) {
+    ctx.fillStyle = '#c8102e';
+    ctx.beginPath();
+    ctx.arc(128, 128, 124, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f7f7f4';
+    ctx.beginPath();
+    ctx.arc(128, 128, 88, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 104px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 134);
+  } else {
+    ctx.fillStyle = '#f7f7f4';
+    ctx.fillRect(0, 0, 512, 256);
+    ctx.strokeStyle = '#c8102e';
+    ctx.lineWidth = 26;
+    ctx.strokeRect(13, 13, 486, 230);
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 80px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 256, 134, 440);
+    if (kind === 'exit') {
+      ctx.strokeStyle = '#c8102e';
+      ctx.lineWidth = 22;
+      ctx.beginPath();
+      ctx.moveTo(30, 230);
+      ctx.lineTo(482, 26);
+      ctx.stroke();
+    }
+  }
+  const t = toTexture(cv);
+  cache.set(key, t);
+  return t;
+}
+
 // Marque STRIDES : le « S » en tête de cheval du logo officiel (hauteur h). Renvoie la largeur.
 export function drawStridesMark(ctx, x, y, h, color) {
   return drawLogo(ctx, x, y, h, color, true);

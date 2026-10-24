@@ -1,5 +1,6 @@
 // Construction du monde : terrain, mer, routes, sites, bocage, forêts, signalétique Strides.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
@@ -19,7 +20,7 @@ import {
 } from './builders.js';
 import { buildGrassMask } from './grass.js';
 import { createHorseMesh } from '../entities/horseModel.js';
-import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture } from './textures.js';
+import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture } from './textures.js';
 import { getFields } from './fields.js';
 
 const font = new FontLoader().parse(fontJson);
@@ -91,6 +92,7 @@ export class World {
     await tick('town');
     this.buildTown();
     this.buildStreetscape();
+    this.buildRoadSigns();
     this.buildBeach();
     this.buildCliffs();
     this.buildSignHill();
@@ -699,6 +701,48 @@ export class World {
   }
 
   // Trottoirs, passages piétons, jardinières, voitures garées, statue.
+  // Signalisation : entrées/sorties de Deauvelle (agglomération) et limitations à 80 km/h hors agglomération.
+  buildRoadSigns() {
+    const signs = [
+      // [x, z, orientation de la face, type, texte]
+      // À droite de la chaussée dans le sens de circulation (on roule à droite).
+      [-216, -346.2, -Math.PI / 2, 'entry', 'DEAUVELLE'], [-216, -357.8, Math.PI / 2, 'exit', 'DEAUVELLE'],
+      [156, -357.8, Math.PI / 2, 'entry', 'DEAUVELLE'], [156, -346.2, -Math.PI / 2, 'exit', 'DEAUVELLE'],
+      [-24.2, -154, 0, 'entry', 'DEAUVELLE'], [-35.8, -154, Math.PI, 'exit', 'DEAUVELLE'],
+      [-260, -357.8, Math.PI / 2, 'speed', '80'], [200, -346.2, -Math.PI / 2, 'speed', '80'], [-35.8, -110, Math.PI, 'speed', '80'],
+    ];
+    // Faces regroupées dans un seul maillage (atlas : entrée | sortie | 80).
+    const atlas = document.createElement('canvas');
+    atlas.width = 1280;
+    atlas.height = 256;
+    const actx = atlas.getContext('2d');
+    actx.drawImage(roadSignTexture('entry', 'DEAUVELLE').image, 0, 0);
+    actx.drawImage(roadSignTexture('exit', 'DEAUVELLE').image, 512, 0);
+    actx.drawImage(roadSignTexture('speed', '80').image, 1024, 0);
+    const region = { entry: [0, 0.4], exit: [0.4, 0.8], speed: [0.8, 1] };
+    const faces = [];
+    for (const [x, z, rot, kind] of signs) {
+      const y = this.h(x, z);
+      const round = kind === 'speed';
+      const w = round ? 0.8 : 1.3, hgt = round ? 0.8 : 0.65;
+      const top = round ? 2.4 : 2.3;
+      this.batch.add(cyl(0.035, 0.035, top + hgt / 2, 8), '#8d9196', x, y, z, rot);
+      this.batch.add(box(w + 0.04, hgt + 0.04, 0.03, false), '#8d9196', x, y + top, z, rot);
+      const g = round ? new THREE.CircleGeometry(0.4, 32) : new THREE.PlaneGeometry(w, hgt);
+      const [u0, u1] = region[kind];
+      const uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setX(i, u0 + uv.getX(i) * (u1 - u0));
+      g.rotateY(rot);
+      g.translate(x + Math.sin(rot) * 0.02, y + top, z + Math.cos(rot) * 0.02);
+      faces.push(g);
+      this.colliders.addCircle(x, z, 0.15, Infinity, 'sign');
+    }
+    const tex = new THREE.CanvasTexture(atlas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    this.group.add(new THREE.Mesh(mergeGeometries(faces, false), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 })));
+  }
+
   buildStreetscape() {
     const roadW = (x0, x1, z0, z1, edge) => {
       if (edge === 'n' && z0 === -352) return 9;
