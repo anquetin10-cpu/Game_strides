@@ -3,12 +3,13 @@
 //    sauvegarde / rechargement avec le cheval à bord ;
 // 2) « Aller en concours » (offre de l'app, chargement, trajet, déchargement, dossard, échauffement, parcours FEI,
 //    classement et dotation), accéléré par l'API ;
-// 3) Vrais touchers (CDP) en lecteur intégré 667 × 308 et en 844 × 390 : boutons ACTION / secondaire, joystick.
-// Usage : BASE=http://localhost:5173 node tests/e2e/transport-flow.mjs [api,concours,touch]
+// 3) Vrais touchers (CDP) en lecteur intégré 667 × 308 et en 844 × 390 : boutons ACTION / secondaire, joystick ;
+// 4) Vrais trajets sur les routes (Val → Pôle, retour, Haras → Pôle) au joystick virtuel, cheval à bord.
+// Usage : BASE=http://localhost:5173 node tests/e2e/transport-flow.mjs [api,concours,touch,route]
 import { chromium } from 'playwright';
 import { readFileSync, mkdirSync } from 'node:fs';
 const base = process.env.BASE || 'http://localhost:5173';
-const parts = (process.argv[2] || 'api,concours,touch').split(',');
+const parts = (process.argv[2] || 'api,concours,touch,route').split(',');
 const OUT = 'tests/e2e/out/transport';
 mkdirSync(OUT, { recursive: true });
 let fails = 0;
@@ -465,6 +466,117 @@ async function touchFlow(W, H, embedded) {
 if (parts.includes('touch')) {
   await touchFlow(667, 308, true);
   await touchFlow(844, 390, false);
+}
+
+// ---------- 4. Vrai trajet sur les routes, cheval à bord (joystick virtuel) ----------
+// Conducteur appliqué : suit l'itinéraire GPS (poursuite pure), ralentit aux carrefours, laisse passer les voitures.
+async function driveRoute(f, to, from = null) {
+  return f.evaluate(async ([to, from]) => {
+    const A = window.__auto, g = window.__game;
+    const { PARKS } = await import('/src/gameplay/trip.js');
+    const t = g.truck, tp = g.player.transport;
+    if (from) t.setPosition(PARKS[from].x, PARKS[from].z, from === 'pole' ? 4.5 : 0.07);
+    if (!tp.aboard.length) {
+      t.setRampInstant(true);
+      tp.loadInstant(g.mainHorse);
+      t.setRampInstant(false);
+    }
+    if (g.player.mode !== 'drive') A.drive();
+    const target = PARKS[to];
+    g.gps.set(target, 'Parking', { radius: target.r });
+    g.gps.updateRoute(true);
+    const R = (g.gps.route || [[t.pos.x, t.pos.z], [target.x, target.z]]).slice(1);
+    R.unshift([t.pos.x, t.pos.z]);
+    const segLen = [], cum = [0];
+    for (let k = 0; k < R.length - 1; k++) {
+      segLen.push(Math.hypot(R[k + 1][0] - R[k][0], R[k + 1][1] - R[k][1]));
+      cum.push(cum[k] + segLen[k]);
+    }
+    const total = cum[cum.length - 1];
+    const at = (sv) => {
+      sv = Math.max(0, Math.min(total, sv));
+      let k = 0;
+      while (k < segLen.length - 1 && cum[k + 1] < sv) k++;
+      const u = segLen[k] > 0 ? (sv - cum[k]) / segLen[k] : 0;
+      return [R[k][0] + (R[k + 1][0] - R[k][0]) * u, R[k][1] + (R[k + 1][1] - R[k][1]) * u];
+    };
+    const corners = [];
+    for (let k = 1; k < R.length - 1; k++) {
+      const a1 = Math.atan2(R[k][0] - R[k - 1][0], R[k][1] - R[k - 1][1]);
+      const a2 = Math.atan2(R[k + 1][0] - R[k][0], R[k + 1][1] - R[k][1]);
+      const da = Math.abs(Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1)));
+      if (da > 0.12) corners.push({ s: cum[k], v: da > 1.2 ? 2.8 : da > 0.6 ? 4.5 : 9 });
+    }
+    const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+    let sCur = 0, time = 0, bumps = 0, maxKmh = 0, stuck = 0;
+    const onBump = () => bumps++;
+    g.bus.on('truck:bump', onBump);
+    tp.comfort = 100;
+    for (let i = 0; i < 30 * 240; i++) {
+      let bestS = sCur, bd = Infinity;
+      for (let k = 0; k < segLen.length; k++) {
+        if (cum[k + 1] < sCur - 1 || cum[k] > sCur + 40) continue;
+        const ax = R[k][0], az = R[k][1], dx = R[k + 1][0] - ax, dz = R[k + 1][1] - az;
+        const u = Math.max(0, Math.min(1, ((t.pos.x - ax) * dx + (t.pos.z - az) * dz) / (dx * dx + dz * dz || 1)));
+        const d = Math.hypot(ax + dx * u - t.pos.x, az + dz * u - t.pos.z);
+        if (d < bd) { bd = d; bestS = cum[k] + segLen[k] * u; }
+      }
+      sCur = Math.max(sCur, bestS);
+      const v = Math.max(0, t.speed);
+      const Ld = Math.max(7, Math.min(20, 5 + v * 0.9));
+      const look = at(sCur + Ld);
+      const alpha = wrap(Math.atan2(look[0] - t.pos.x, look[1] - t.pos.z) - t.heading);
+      const dl = Math.max(3, Math.hypot(look[0] - t.pos.x, look[1] - t.pos.z));
+      const delta = Math.abs(alpha) > 1.3 ? Math.sign(alpha) * 0.66 : Math.atan((2 * 4.2 * Math.sin(alpha)) / dl);
+      const steerIn = Math.max(-1, Math.min(1, -delta / t.sim.steerLimit(Math.abs(t.speed))));
+      let vT = 16;
+      for (const c of corners) {
+        const ds = c.s - sCur;
+        if (ds < -6 || ds > 160) continue;
+        vT = Math.min(vT, Math.sqrt(c.v * c.v + 2 * 1.4 * Math.max(0, ds - 4)));
+      }
+      const left = total - sCur;
+      vT = Math.min(vT, Math.sqrt(2 * 1.2 * Math.max(0, left - 3)));
+      if (Math.abs(alpha) > 0.9) vT = Math.min(vT, 2.5);
+      const fx = Math.sin(t.heading), fz = Math.cos(t.heading);
+      const nx = t.pos.x + fx * 4.5, nz = t.pos.z + fz * 4.5;
+      for (const c of g.vehicles) {
+        if (c === t || c.proxy || Math.abs(c.speed || 0) < 0.8) continue;
+        const dx = c.pos.x - nx, dz = c.pos.z - nz;
+        const closing = dx * Math.sin(c.heading) + dz * Math.cos(c.heading) < 0;
+        if (Math.hypot(dx, dz) < 16 && dx * fx + dz * fz > -3 && closing) vT = 0;
+      }
+      const aDes = Math.max(-2.2, Math.min(1.3, (vT - t.speed) * 1.1));
+      const thr = aDes > 0 ? Math.min(0.85, 0.15 + aDes / 1.6) : vT === 0 && t.speed < 0.5 ? -0.2 : Math.max(-0.6, aDes / 6.8 - 0.02);
+      g.input.setVirtualMove(steerIn / 1.2, thr / 1.25);
+      A.tick(1);
+      time += 1 / 30;
+      maxKmh = Math.max(maxKmh, t.speed * 3.6);
+      const dEnd = Math.hypot(target.x - t.pos.x, target.z - t.pos.z);
+      if (Math.abs(t.speed) < 0.3 && left > 4 && vT > 0) stuck++; else stuck = 0;
+      if (stuck > 30 * 8) break;
+      if (dEnd < target.r && Math.abs(t.speed) < 0.3) break;
+    }
+    g.input.setVirtualMove(0, 0);
+    A.tick(10);
+    g.bus.off?.('truck:bump', onBump);
+    const dEnd = Math.hypot(target.x - t.pos.x, target.z - t.pos.z);
+    const h = g.mainHorse;
+    return { arrived: dEnd < target.r, dEnd: +dEnd.toFixed(1), time: +time.toFixed(0), km: +(total / 1000).toFixed(2), maxKmh: +maxKmh.toFixed(0), bumps, comfort: +tp.comfort.toFixed(0), aboard: tp.aboard.length, inside: h.hiddenInTruck === true, gear: t.gearLabel };
+  }, [to, from]);
+}
+if (parts.includes('route')) {
+  const { ctx, page, f } = await openGame({ W: 960, H: 540 });
+  const go = await driveRoute(f, 'pole');
+  check('vrai trajet Écurie du Val → parking du Pôle, cheval à bord', go.arrived && go.aboard === 1 && go.inside && go.maxKmh > 45, JSON.stringify(go));
+  check('conduite appliquée : aucun choc, confort ≥ 80 %', go.bumps === 0 && go.comfort >= 80, `chocs ${go.bumps} · confort ${go.comfort} %`);
+  await render(f);
+  await page.screenshot({ path: `${OUT}/route-pole.png` });
+  const back = await driveRoute(f, 'home');
+  check('retour au Val (demi-tour sur le parking du Pôle)', back.arrived && back.aboard === 1 && back.bumps === 0, JSON.stringify(back));
+  const hp = await driveRoute(f, 'pole', 'haras');
+  check('Haras de la Pommeraie → Pôle (mission « Transport express »)', hp.arrived && hp.bumps === 0 && hp.time < 170, JSON.stringify(hp));
+  await ctx.close();
 }
 
 console.log('ERRORS', errors.length ? errors.slice(0, 6).join('\n') : 'none');

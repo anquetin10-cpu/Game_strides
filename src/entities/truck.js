@@ -72,6 +72,10 @@ export class Truck {
     // Obstacle statique pour piétons, chevaux et caméra (désactivé au volant).
     const c = game.colliders;
     this.collider = c.addBox(x, z, D.W / 2, D.L / 2, heading, Infinity, 'truck');
+    // Repère d'encombrement pour la circulation : les voitures ne surveillent qu'un point par véhicule ;
+    // ce second point (la cabine) les fait freiner quand le camion s'engage. Hors carte sans conducteur.
+    this.nose = { pos: new THREE.Vector3(1e6, 0, 1e6), heading, speed: 0, proxy: true };
+    game.vehicles?.push(this.nose);
     this.snap();
   }
 
@@ -293,8 +297,8 @@ export class Truck {
     mat.emissiveIntensity += (target - mat.emissiveIntensity) * Math.min(1, dt * 6);
     // Faisceaux et halos de nuit.
     const k = this.lightsOn ? smoothstep(0.25, 0.6, night) : 0;
-    this.beamMat.opacity = 0.075 * k;
-    this.poolMat.opacity = 0.55 * k;
+    this.beamMat.opacity = 0.06 * k;
+    this.poolMat.opacity = 0.85 * k;
     this.beams.visible = k > 0.01;
     this.haloMat.opacity = 0.9 * k;
     this.tailHaloMat.opacity = (brake ? 0.85 : 0.4) * k;
@@ -314,9 +318,10 @@ export class Truck {
       this.beams.add(m);
     }
     this.poolMat = new THREE.MeshBasicMaterial({ color: '#ffe9c4', map: radial, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
-    const pool = new THREE.Mesh(new THREE.PlaneGeometry(7, 20), this.poolMat);
+    // Flaque de lumière sur la chaussée : plus intense près du camion, portée ~30 m.
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(9, 30), this.poolMat);
     pool.rotation.x = -Math.PI / 2;
-    pool.position.set(0, 0.06, 4.25 + 9.5);
+    pool.position.set(0, 0.06, 4.25 + 13);
     this.beams.add(pool);
     this.haloMat = new THREE.SpriteMaterial({ map: radial, color: '#fff3dc', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
     this.tailHaloMat = new THREE.SpriteMaterial({ map: radial, color: '#ff2a12', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
@@ -485,11 +490,12 @@ export class Truck {
         }
       }
       for (const v of g.vehicles || []) {
-        if (v === this) continue;
+        if (v === this || v.proxy) continue;
         const l = this.toLocal(v.pos.x, v.pos.z);
-        if (Math.abs(l.x) < D.W / 2 + 1.0 && Math.abs(l.z) < D.L / 2 + 2.0) {
-          const pushX = (D.W / 2 + 1.0 - Math.abs(l.x)) * Math.sign(l.x || 1);
-          const pushZ = (D.L / 2 + 2.0 - Math.abs(l.z)) * Math.sign(l.z || 1);
+        // Voiture ≈ cercle de 0,95 m autour de son centre.
+        if (Math.abs(l.x) < D.W / 2 + 0.85 && Math.abs(l.z) < D.L / 2 + 1.6) {
+          const pushX = (D.W / 2 + 0.85 - Math.abs(l.x)) * Math.sign(l.x || 1);
+          const pushZ = (D.L / 2 + 1.6 - Math.abs(l.z)) * Math.sign(l.z || 1);
           const lx = Math.cos(h), lz = -Math.sin(h);
           if (Math.abs(pushX) < Math.abs(pushZ)) {
             this.pos.x -= lx * pushX;
@@ -520,6 +526,12 @@ export class Truck {
     this._rolling = Math.abs(s.vx) > 1.5 ? true : nowStopped ? false : this._rolling;
 
     this.snap();
+    const nose = this.nose;
+    if (driving) {
+      nose.pos.set(this.pos.x + Math.sin(s.heading) * 3.4, this.pos.y, this.pos.z + Math.cos(s.heading) * 3.4);
+      nose.heading = s.heading;
+      nose.speed = s.vx;
+    } else if (nose.pos.x !== 1e6) nose.pos.set(1e6, 0, 1e6);
     // Suspension (masse suspendue) : tangage au freinage/accélération, roulis en virage.
     const sp = this.susp;
     const w2 = 70, c = 2 * 0.38 * Math.sqrt(w2);

@@ -6,7 +6,7 @@ import { POI } from '../world/layout.js';
 import { courseSteps } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { FIRST_NAMES, LAST_NAMES } from './data.js';
-import { box, cyl, partsToGeo } from '../world/builders.js';
+import { box, cyl, compose } from '../world/shapes.js';
 import { signTexture } from '../world/textures.js';
 import { dec, formatMoney, mulberry32 } from '../core/math.js';
 
@@ -188,7 +188,7 @@ function secretariatProps(game) {
     [box(3.34, 0.32, 0.02), '#1b1c1f', { y: 2.2, z: 1.36 }],
   ];
   const g = new THREE.Group();
-  const m = new THREE.Mesh(partsToGeo(parts), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }));
+  const m = new THREE.Mesh(compose(parts), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }));
   m.castShadow = true;
   m.receiveShadow = true;
   g.add(m);
