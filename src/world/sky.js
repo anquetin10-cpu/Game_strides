@@ -28,6 +28,7 @@ export const CLOUD_UNIFORMS = {
   csWind: { value: new THREE.Vector2() },
   csCover: { value: 0.42 },
   csSun: { value: new THREE.Vector3(0, 1, 0) },
+  csWet: { value: 0 },
 };
 export function addCloudShadows(shader, worldPosExpr) {
   Object.assign(shader.uniforms, CLOUD_UNIFORMS);
@@ -36,6 +37,7 @@ export function addCloudShadows(shader, worldPosExpr) {
 uniform vec2 csWind;
 uniform float csCover;
 uniform vec3 csSun;
+uniform float csWet;
 float csHash( vec2 p ) { vec3 p3 = fract( vec3( p.xyx ) * 0.1031 ); p3 += dot( p3, p3.yzx + 33.33 ); return fract( ( p3.x + p3.y ) * p3.z ); }
 float csNoise( vec2 p ) {
   vec2 i = floor( p ), f = fract( p );
@@ -287,6 +289,8 @@ export class Sky {
     this.exposure = 0.55;
     this.cover = 0.42;
     this.day = -1;
+    this.rain = 0;
+    this.wet = 0;
     this._px = new Float32Array(6);
     this._acc = [0, 0, 0];
     this.clouds = this.dome; // compatibilité
@@ -340,6 +344,12 @@ export class Sky {
     CLOUD_UNIFORMS.csWind.value.copy(U.cloudWind.value);
     CLOUD_UNIFORMS.csCover.value = this.cover;
     CLOUD_UNIFORMS.csSun.value.copy(sun);
+    // Averses les jours couverts ; le sol se mouille vite et sèche lentement.
+    const rainy = this.cover >= 0.72;
+    const target = rainy ? smoothstep(0.35, 0.7, Math.sin(hour * 1.3 + this.day * 2.1) * 0.5 + 0.5) : 0;
+    this.rain += (target - this.rain) * Math.min(1, dt * 0.15);
+    this.wet = clamp(this.wet + (this.rain > 0.08 ? dt / 35 : -dt / 420), 0, 1);
+    CLOUD_UNIFORMS.csWet.value = this.wet;
 
     // Couleur du ciel à l'horizon (moyenne autour de l'horizon) et lumière transmise du soleil.
     const px = this._px;
@@ -371,7 +381,7 @@ export class Sky {
       this.sun.color.setRGB(tr / tmax, tg / tmax, tb / tmax, THREE.LinearSRGBColorSpace);
       // Ciel couvert : moins de soleil direct (la lumière diffuse du ciel prend le relais via l'IBL).
       const overcast = 1 - 0.6 * smoothstep(0.5, 0.85, this.cover);
-      this.sun.intensity = 5.2 * smoothstep(-0.02, 0.2, sun.y) * clamp(tmax * 1.15, 0.25, 1) * overcast;
+      this.sun.intensity = 5.2 * smoothstep(-0.02, 0.2, sun.y) * clamp(tmax * 1.15, 0.25, 1) * overcast * (1 - 0.35 * this.rain);
       this._lightDir = sun;
     } else {
       // Lune : lumière froide et faible.
@@ -381,7 +391,7 @@ export class Sky {
     }
     this.hemi.intensity = 0.06 + 0.32 * night;
     this.hemi.color.setRGB(0.4, 0.5, 0.8, THREE.LinearSRGBColorSpace);
-    this.scene.fog.density = lerp(0.0011, 0.0022, night) + (1 - smoothstep(0.0, 0.25, sun.y)) * 0.0006;
+    this.scene.fog.density = lerp(0.0011, 0.0022, night) + (1 - smoothstep(0.0, 0.25, sun.y)) * 0.0006 + this.rain * 0.0028;
 
     // Ombres centrées sur le joueur, alignées sur les texels pour éviter le scintillement.
     const dir = this._lightDir;

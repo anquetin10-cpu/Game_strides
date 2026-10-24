@@ -123,6 +123,9 @@ const SURFACE_MAIN = /* glsl */ `
     sfMetal = 0.0;
   }
   diffuseColor.rgb *= mix( 1.0, tint, 0.4 + 0.6 * ( 1.0 - smoothstep( 40.0, 160.0, dist ) ) );
+  // Pluie : matériaux un peu plus sombres, toitures luisantes.
+  diffuseColor.rgb *= 1.0 - csWet * 0.14;
+  sfRough = mix( sfRough, sloped ? 0.22 : 0.55, csWet * 0.7 );
   // Occultation au contact du sol : les faces verticales s'assombrissent près du terrain.
   vec2 hg = ( p.xz - surfHm.xy ) / surfHm.z;
   vec2 huv = ( hg * surfHm.w + 0.5 ) / ( surfHm.w + 1.0 );
@@ -171,6 +174,7 @@ varying vec3 vRoad;
 varying vec2 vRoadXZ;
 float rdH = 0.0;
 float rdRough = 0.85;
+float rdPud = 0.0;
 vec3 rdBump( vec3 surfPos, vec3 surfNorm, float h ) {
   vec3 sx = dFdx( surfPos ), sy = dFdy( surfPos );
   vec3 r1 = cross( sy, surfNorm ), r2 = cross( surfNorm, sx );
@@ -213,10 +217,15 @@ vec3 rdBump( vec3 surfPos, vec3 surfNorm, float h ) {
   col = mix( col, vec3( 0.62, 0.62, 0.6 ), mark );
   rdRough = mix( rdRough, 0.55, mark );
   rdH = ( agg * 0.5 + dF.r * 0.2 * fineW + mark * 1.5 - crack * 0.8 - edge * dF.b * 0.6 );
+  // Chaussée mouillée : plus sombre, brillante, flaques dans les traces de roues.
+  rdPud = smoothstep( 0.58, 0.66, dL.g * 0.6 + track * 0.5 ) * smoothstep( 0.3, 0.9, csWet );
+  col *= 1.0 - csWet * 0.42;
+  rdRough = mix( rdRough, 0.22, csWet );
+  rdRough = mix( rdRough, 0.04, rdPud );
   diffuseColor.rgb = col;
 }`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = rdRough;')
-      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = rdBump( -vViewPosition, normal, rdH * 0.004 );');
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = normalize( mix( rdBump( -vViewPosition, normal, rdH * 0.004 ), normal, rdPud ) );');
     addCloudShadows(shader, 'vec3( vRoadXZ.x, 0.0, vRoadXZ.y )');
   };
   material.customProgramCacheKey = () => 'st-road';

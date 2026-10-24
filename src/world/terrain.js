@@ -233,6 +233,7 @@ varying vec3 vWorldNrm;
 float stH = 0.0;
 float stRough = 0.95;
 float stFade = 1.0;
+float stPud = 0.0;
 // Relief au pixel (bump) à partir des dérivées écran d'une hauteur procédurale.
 vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   vec3 sx = dFdx( surfPos ), sy = dFdy( surfPos );
@@ -291,9 +292,16 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   tint *= 1.0 - wet * 0.25;
   stRough = mix( stRough, 0.35, wet );
   diffuseColor.rgb *= mix( vec3( 1.0 ), tint, 0.35 + 0.65 * stFade ) * ( 0.92 + 0.16 * macro );
+  // Pluie : sols assombris et plus brillants, flaques dans la terre et les cours.
+  // (les flaques aplanissent la normale plutôt que la hauteur : pas de liseré sombre au bord).
+  float wetK = csWet * ( 1.0 - rock * 0.3 );
+  stPud = smoothstep( 0.76, 0.81, dL.b + dM.r * 0.12 ) * ( wS + wH ) * ( 1.0 - rock ) * smoothstep( 0.3, 0.9, csWet ) * stFade;
+  diffuseColor.rgb *= ( 1.0 - wetK * 0.35 ) * ( 1.0 - stPud * 0.4 );
+  stRough = mix( stRough, 0.5, wetK * ( 0.3 + 0.5 * ( 1.0 - wG ) ) );
+  stRough = mix( stRough, 0.05, stPud );
 }`)
           .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = stRough;')
-          .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = stBump( -vViewPosition, normal, stH * 0.09 );');
+          .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = normalize( mix( stBump( -vViewPosition, normal, stH * 0.09 ), normal, stPud ) );');
         addCloudShadows(shader, 'vWorldPos');
       };
     }

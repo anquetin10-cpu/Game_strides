@@ -15,7 +15,7 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(`${base}/?autostart&quality=high`);
 await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 240000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
-await page.evaluate((d) => { window.__day = d; }, Number(process.env.DAY || 0));
+await page.evaluate(([d, r]) => { window.__day = d; window.__rain = r; }, [Number(process.env.DAY || 0), !!process.env.RAIN]);
 await page.evaluate(async () => { window.__roads = (await import('/src/world/layout.js')).ROADS; window.__sites = await import('/src/world/sites.js'); });
 await page.evaluate(() => { window.__auto.stopLoop(); window.__auto.closeCards(); const g = window.__game; while (g.hud.dialogActive) g.hud.advanceDialog(); g.missions.abandon?.(); window.__auto.closeCards(); });
 const VIEWS = {
@@ -34,6 +34,8 @@ const VIEWS = {
   car: (g) => { const y = g.terrain.getHeight(-84, 146); return { at: [-84, y + 0.9, 146], from: [-79.5, y + 1.8, 150.5] }; },
   // Entrée de Deauvelle (panneau d'agglomération).
   entry: (g) => { const y = g.terrain.getHeight(-230, -353); return { at: [-216, y + 2.2, -346.2], from: [-232, y + 1.8, -350.5] }; },
+  // Hippodrome de la Touques.
+  hippo: (g) => { const y = g.terrain.getHeight(330, 168); return { at: [330, y + 2, 230], from: [300, y + 6, 160] }; },
   // Carrière de l'Écurie du Val (lettres de dressage).
   arena: (g) => { const y = g.terrain.getHeight(-100, 212); return { at: [-100, y + 0.5, 212], from: [-128, y + 3.5, 196] }; },
   // Carrefour du centre (passages piétons).
@@ -61,7 +63,9 @@ for (const hr of hours) {
     const v = new Function('g', `return (${viewSrc})(g)`)(g);
     g.camera.position.set(...v.from);
     g.camera.lookAt(...v.at);
+    if (window.__rain) { g.sky.setDay(3); g.sky.rain = 1; g.sky.wet = 1; }
     g.sky.update(g.hour(), g.player.focus.pos, 0);
+    g.rainFx?.update(0.5, g.camera, g.sky.rain, 1);
     g.sky.follow(g.camera);
     g.sky.updateEnvironment(g.renderer, performance.now() / 1000, true);
     g.world.update(0, g.camera, g.sky);

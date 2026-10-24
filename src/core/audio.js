@@ -196,6 +196,35 @@ export class Audio {
     }
   }
 
+  // Pluie : bruit large bande (gouttes) et grondement sourd, selon l'intensité.
+  setRain(level = 0) {
+    if (!this.ctx) return;
+    if (!this.rainNode) {
+      if (level < 0.02) return;
+      const ctx = this.ctx;
+      const src = ctx.createBufferSource();
+      src.buffer = this.noiseBuf;
+      src.loop = true;
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'bandpass';
+      hp.frequency.value = 3200;
+      hp.Q.value = 0.4;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 500;
+      const g = ctx.createGain();
+      const g2 = ctx.createGain();
+      g.gain.value = g2.gain.value = 0;
+      src.connect(hp).connect(g).connect(this.master);
+      src.connect(lp).connect(g2).connect(this.master);
+      src.start();
+      this.rainNode = { g, g2 };
+    }
+    const t = this.ctx.currentTime;
+    this.rainNode.g.gain.setTargetAtTime(level * 0.09, t, 1.5);
+    this.rainNode.g2.gain.setTargetAtTime(level * 0.05, t, 1.5);
+  }
+
   // Expiration au galop (souffle nasal rythmé).
   breath(intensity = 1) {
     if (!this.ctx) return;
