@@ -179,13 +179,13 @@ export function paintTerrainCanvas(terrain, size = 2048) {
   rect(TOWN.plaza, '#d3cbbb', 4);
   rect({ ...TOWN.plaza, w: 30, d: 30 }, '#c7bfae', 15);
   rect(HOME.yard, '#cdbf9d', 6);
-  rect(HOME.arena, '#e9dcc0', 2);
+  rect(HOME.arena, '#c6ad86', 2);
   rect(HOME.paddock, '#79a955', 2);
   rect(HARAS.court, '#d4c7a8', 4);
   for (const p of HARAS.paddocks) rect(p, '#80b05b', 2);
   rect({ x: POLE.arena.x, z: POLE.arena.z - 8, w: 210, d: 104 }, '#8fb26a', 6);
-  rect(POLE.arena, '#ecdfc3', 2);
-  rect(POLE.warmup, '#e3d4b4', 2);
+  rect(POLE.arena, '#c9b08a', 2);
+  rect(POLE.warmup, '#c0a881', 2);
   rect({ x: 330, z: -192, w: 60, d: 16 }, '#c8c1b3', 3);
   rect({ x: HIPPO_SITE.parking.x, z: HIPPO_SITE.parking.z, w: 70, d: 18 }, '#c8c1b3', 3);
   rect(DUNES.paddock, '#86b35e', 2);
@@ -250,7 +250,7 @@ const GROUND_REFS = [
   [0, '#6f9e4f #77a653 #679849 #80ad5b #8db863 #93bd68 #73a252 #4d6e38 #7fa65a #7aa957 #74a552 #79a955 #80b05b #8fb26a #7fb455 #86b35e #5d6b55'],
   [1, '#d3bf78 #cdb56a #dcc843 #e2d052'],
   [2, '#8f7253 #84694b #a88d68 #9c8460'],
-  [3, '#e7d7ae #c4b38a #a89a72 #e9dcc0 #ecdfc3 #e3d4b4 #c9ad82'],
+  [3, '#e7d7ae #c4b38a #a89a72 #e9dcc0 #ecdfc3 #e3d4b4 #c9ad82 #c6ad86 #c9b08a #c0a881'],
   [4, '#cdbf9d #d4c7a8 #d3c7aa #b9b3a7 #d3cbbb #c7bfae #c8c1b3 #e4e0d4 #a19d92'],
   [5, '#5b5c5e'],
 ];

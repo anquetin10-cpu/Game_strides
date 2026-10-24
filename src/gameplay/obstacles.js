@@ -6,8 +6,11 @@ import { XC_PATH, POND } from '../world/layout.js';
 import { pointAlong, polylineLength, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { signTexture } from '../world/textures.js';
+import { applySurfaces } from '../world/surfaces.js';
 
-const MAT = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true });
+// Bois peint satiné (barres, chandeliers), métal des taquets.
+const MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0 });
+let wallMat = null;
 const COLORS = [
   ['#f2f1ec', '#17181b'],
   ['#f2f1ec', '#b8322a'],
@@ -84,14 +87,19 @@ export class Obstacles {
     } else if (ob.kind === 'brush' || ob.kind === 'water') {
       g.add(new THREE.Mesh(brushJumpGeo(ob.w, ob.h), MAT));
     } else if (ob.kind === 'w') {
+      // Mur de CSO : blocs peints façon briques (joints blancs), couvertine, piliers.
+      wallMat ||= applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), this.game.world.detailTex);
       const wall = partsToGeo([
-        [box(ob.w, ob.h - 0.15, 0.5), '#e8e4da'],
-        [box(ob.w, 0.08, 0.52), '#17181b', { y: ob.h * 0.33 }],
-        [box(ob.w, 0.08, 0.52), '#17181b', { y: ob.h * 0.66 }],
-        [box(0.3, ob.h + 0.4, 0.3), '#17181b', { x: -ob.w / 2 - 0.3 }],
-        [box(0.3, ob.h + 0.4, 0.3), '#17181b', { x: ob.w / 2 + 0.3 }],
+        [box(ob.w, ob.h - 0.15, 0.5), '#a4553f'],
+        [box(ob.w + 0.04, 0.1, 0.56), '#e9e6de', { y: ob.h - 0.25 }],
       ]);
-      g.add(new THREE.Mesh(wall, MAT));
+      g.add(new THREE.Mesh(wall, wallMat));
+      g.add(new THREE.Mesh(partsToGeo([
+        [box(0.5, ob.h + 0.35, 0.6), '#a4553f', { x: -ob.w / 2 - 0.3 }],
+        [box(0.5, ob.h + 0.35, 0.6), '#a4553f', { x: ob.w / 2 + 0.3 }],
+        [box(0.6, 0.1, 0.7), '#e9e6de', { x: -ob.w / 2 - 0.3, y: ob.h + 0.35 }],
+        [box(0.6, 0.1, 0.7), '#e9e6de', { x: ob.w / 2 + 0.3, y: ob.h + 0.35 }],
+      ]), wallMat));
       const top = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
       top.position.y = ob.h - 0.05;
       g.add(top);

@@ -133,3 +133,69 @@ export function applySurfaces(material, detailTexture) {
   material.customProgramCacheKey = () => 'st-surfaces';
   return material;
 }
+
+// Chaussée : enrobé à granulats, traces de roues lustrées, réparations, fissures, rives usées,
+// marquage français (axe discontinu 3 m / 10 m, lignes de rive) légèrement en relief.
+export function applyRoadShader(material, detailTexture) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.surfDetail = { value: detailTexture };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec3 roadUV;\nvarying vec3 vRoad;\nvarying vec2 vRoadXZ;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoad = roadUV;\nvRoadXZ = ( modelMatrix * vec4( transformed, 1.0 ) ).xz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform sampler2D surfDetail;
+varying vec3 vRoad;
+varying vec2 vRoadXZ;
+float rdH = 0.0;
+float rdRough = 0.85;
+vec3 rdBump( vec3 surfPos, vec3 surfNorm, float h ) {
+  vec3 sx = dFdx( surfPos ), sy = dFdy( surfPos );
+  vec3 r1 = cross( sy, surfNorm ), r2 = cross( surfNorm, sx );
+  float det = dot( sx, r1 );
+  vec3 grad = sign( det ) * ( dFdx( h ) * r1 + dFdy( h ) * r2 );
+  return normalize( abs( det ) * surfNorm - grad );
+}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+{
+  float w = vRoad.z;
+  float x = vRoad.x - w * 0.5;
+  float y = vRoad.y;
+  vec2 p = vRoadXZ;
+  float pxw = length( fwidth( p ) );
+  float fineW = 1.0 - smoothstep( 0.008, 0.04, pxw );
+  vec4 dF = texture2D( surfDetail, p * 1.7 );
+  vec4 dM = texture2D( surfDetail, p * 0.19 + 0.3 );
+  vec4 dL = texture2D( surfDetail, p * 0.031 + 0.7 );
+  vec3 col = vec3( 0.042, 0.043, 0.046 ) * mix( 0.85, 1.2, dM.g ) * mix( 0.9, 1.12, dL.r );
+  float agg = smoothstep( 0.22, 0.04, dF.b ) * fineW;
+  col *= 1.0 + agg * 0.9 + ( dF.r - 0.5 ) * 0.3 * fineW;
+  // Traces de roues (deux par voie), plus sombres et lustrées.
+  float lane = abs( abs( x ) - w * 0.25 );
+  float track = smoothstep( 0.45, 0.1, abs( lane - 0.85 ) ) * step( 5.0, w );
+  col *= 1.0 - track * 0.18;
+  rdRough = mix( 0.88, 0.74, track );
+  // Réparations (plaques plus sombres) et fissures fines.
+  float patchM = smoothstep( 0.62, 0.66, dL.g ) * smoothstep( 0.3, 0.5, dM.r );
+  col *= 1.0 - patchM * 0.3;
+  float crack = ( 1.0 - smoothstep( 0.0, 0.012, abs( dM.r - 0.5 ) ) ) * smoothstep( 0.55, 0.7, dL.b ) * fineW;
+  col *= 1.0 - crack * 0.6;
+  // Rives usées : l'enrobé s'effrite vers l'accotement.
+  float edge = smoothstep( w * 0.5 - 0.35, w * 0.5 - 0.02, abs( x ) + ( dF.r - 0.5 ) * 0.25 );
+  col = mix( col, vec3( 0.11, 0.1, 0.085 ) * mix( 0.8, 1.2, dF.g ), edge );
+  // Marquage blanc rétroréfléchissant (usé par endroits).
+  float wear = smoothstep( 0.25, 0.6, dM.a * 0.5 + dF.g * 0.5 );
+  float center = step( 6.0, w ) * ( 1.0 - smoothstep( 0.055, 0.075, abs( x ) ) ) * step( fract( y / 13.0 ), 3.0 / 13.0 );
+  float rive = step( 6.0, w ) * ( 1.0 - smoothstep( 0.06, 0.08, abs( abs( x ) - ( w * 0.5 - 0.3 ) ) ) ) * step( fract( y / 6.5 ), 3.0 / 6.5 );
+  float mark = max( center, rive ) * mix( 0.55, 1.0, wear );
+  col = mix( col, vec3( 0.62, 0.62, 0.6 ), mark );
+  rdRough = mix( rdRough, 0.55, mark );
+  rdH = ( agg * 0.5 + dF.r * 0.2 * fineW + mark * 1.5 - crack * 0.8 - edge * dF.b * 0.6 );
+  diffuseColor.rgb = col;
+}`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = rdRough;')
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = rdBump( -vViewPosition, normal, rdH * 0.004 );');
+  };
+  material.customProgramCacheKey = () => 'st-road';
+  return material;
+}

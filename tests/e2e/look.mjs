@@ -15,6 +15,7 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(`${base}/?autostart&quality=high`);
 await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 240000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
+await page.evaluate(async () => { window.__roads = (await import('/src/world/layout.js')).ROADS; window.__sites = await import('/src/world/sites.js'); });
 await page.evaluate(() => { window.__auto.stopLoop(); window.__auto.closeCards(); const g = window.__game; while (g.hud.dialogActive) g.hud.advanceDialog(); g.missions.abandon?.(); window.__auto.closeCards(); });
 const VIEWS = {
   // Cheval principal, vu de trois quarts.
@@ -25,6 +26,10 @@ const VIEWS = {
   truck: (g) => { const t = g.truck; return { at: [t.pos.x, t.pos.y + 1.6, t.pos.z], from: [t.pos.x + 7, t.pos.y + 3, t.pos.z + 8] }; },
   // Paysage depuis la colline.
   land: (g) => ({ at: [60, 6, -370], from: [250, 50, -260] }),
+  // Carrière du Pôle International : obstacles de CSO.
+  cso: (g) => { const A = window.__sites.POLE.arena; const y = g.terrain.getHeight(A.x, A.z); return { at: [A.x - 30, y + 0.9, A.z - 1], from: [A.x - 23.5, y + 1.8, A.z + 4.5] }; },
+  // Route de campagne, à hauteur d'homme.
+  road: (g) => { const r = window.__roads[1].pts; const [ax, az] = r[1], [bx, bz] = r[2]; const t = 0.5; const x = ax + (bx - ax) * t, z = az + (bz - az) * t; const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz); const y = g.terrain.getHeight(x, z); return { at: [x + (dx / l) * 25, y + 0.5, z + (dz / l) * 25], from: [x - (dz / l) * 1.2, y + 1.7, z + (dx / l) * 1.2] }; },
 };
 for (const hr of hours) {
   await page.evaluate(([hr, view]) => {

@@ -278,52 +278,122 @@ export function roundBaleGeo() {
 }
 
 // Obstacle de saut d'obstacles (montants + barres), largeur w, hauteur h.
+// Chandeliers de CSO à ailes (montant intérieur, aile à lattes, pieds en croix, taquets métalliques),
+// remplissage (planche ou bac à fleurs) et fanions : rouge à droite, blanc à gauche dans le sens du saut (+z).
 export function showJumpGeo(w, h, colors = ['#f2f1ec', '#17181b'], oxer = false) {
   const parts = [];
-  const wing = (x) => {
-    parts.push([box(0.18, h + 0.6, 0.18), colors[1], { x, z: 0 }]);
-    parts.push([box(0.12, h + 0.2, 0.9), colors[0], { x: x + Math.sign(x) * 0.35, y: 0, z: 0 }]);
-    parts.push([box(0.12, 0.12, 1.2), colors[1], { x: x + Math.sign(x) * 0.35, y: h + 0.15, z: 0 }]);
+  const [c0, c1] = colors;
+  const postH = h + 0.75;
+  const standard = (side, z) => {
+    const x = side * (w / 2 + 0.07);
+    // Montant intérieur peint, bandes de couleur.
+    parts.push([box(0.09, postH, 0.09), c0, { x, z }]);
+    for (let y = 0.25; y < postH - 0.2; y += 0.5) parts.push([box(0.095, 0.12, 0.095), c1, { x, y, z }]);
+    // Pieds en croix.
+    parts.push([box(0.6, 0.07, 0.08), c1, { x: x + side * 0.12, z }]);
+    parts.push([box(0.08, 0.07, 0.7), c1, { x, z }]);
+    // Aile : montant extérieur, lisse supérieure inclinée, lattes.
+    const xo = x + side * 0.95;
+    parts.push([box(0.08, postH * 0.72, 0.08), c0, { x: xo, z }]);
+    const topY = postH - 0.12, outY = postH * 0.72;
+    const len = Math.hypot(0.95, topY - outY);
+    parts.push([box(len, 0.08, 0.07, false), c0, { x: x + side * 0.475, y: (topY + outY) / 2, z, rz: side * -Math.atan2(topY - outY, 0.95) }]);
+    for (let k = 0; k < 4; k++) {
+      const y = 0.18 + k * ((outY - 0.25) / 3.5);
+      parts.push([box(0.95, 0.09, 0.035, false), k % 2 ? c1 : c0, { x: x + side * 0.475, y: y + 0.045, z }]);
+    }
   };
-  wing(-w / 2 - 0.2);
-  wing(w / 2 + 0.2);
+  standard(-1, 0);
+  standard(1, 0);
   if (oxer) {
-    parts.push([box(0.18, h + 0.6, 0.18), colors[1], { x: -w / 2 - 0.2, z: 1.2 }]);
-    parts.push([box(0.18, h + 0.6, 0.18), colors[1], { x: w / 2 + 0.2, z: 1.2 }]);
+    standard(-1, 1.2);
+    standard(1, 1.2);
+  }
+  // Taquets (coupelles) sous chaque barre.
+  for (const z of oxer ? [0, 1.2] : [0]) {
+    for (const hh of z ? [h + 0.05] : [h, h * 0.62, h * 0.3]) {
+      for (const side of [-1, 1]) parts.push([box(0.06, 0.05, 0.13), '#9ea3a8', { x: side * (w / 2 + 0.02), y: hh - 0.085, z }]);
+    }
+  }
+  // Remplissage : planche peinte (vertical) ou bac de fleurs (oxer).
+  if (!oxer) {
+    parts.push([box(w - 0.1, 0.32, 0.04), c1, { y: 0.06, z: 0.02 }]);
+    parts.push([box(w - 0.1, 0.05, 0.045), c0, { y: 0.22, z: 0.02 }]);
+  } else {
+    // Jardinière en bois : buis serrés et fleurs (géraniums, rudbeckias).
+    parts.push([box(w * 0.85, 0.32, 0.45), '#6b5039', { y: 0, z: -0.45 }]);
+    const n = Math.max(6, Math.floor(w * 4.5));
+    for (let i = 0; i < n; i++) {
+      const fx = -w * 0.41 + (i / (n - 1)) * w * 0.82;
+      const fz = -0.45 + (((i * 7) % 5) - 2) * 0.05;
+      parts.push([ico(0.11 + ((i * 3) % 4) * 0.012, 1), i % 2 ? '#2f4424' : '#34502a', { x: fx, y: 0.36, z: fz, sy: 0.75 }]);
+      if (i % 2 === 0) parts.push([ico(0.035, 0), i % 6 === 0 ? '#e9c23c' : '#b3262b', { x: fx + 0.04, y: 0.45, z: fz + 0.03 }]);
+      if (i % 3 === 1) parts.push([ico(0.03, 0), '#c42e35', { x: fx - 0.05, y: 0.44, z: fz - 0.06 }]);
+    }
+  }
+  // Fanions (rouge à droite, blanc à gauche quand on saute vers +z).
+  for (const side of [-1, 1]) {
+    const x = side * (w / 2 + 0.07);
+    parts.push([cyl(0.012, 0.012, 0.45, 4), '#d9d9d6', { x, y: postH }]);
+    parts.push([box(0.01, 0.2, 0.26, false), side < 0 ? '#c62b2b' : '#f4f3ee', { x, y: postH + 0.32, z: 0.13 }]);
   }
   return partsToGeo(parts);
 }
 
+// Barre de 10 cm de diamètre, peinte en bandes de ~45 cm, embouts arrondis.
 export function railGeo(w, colors = ['#f2f1ec', '#17181b']) {
-  // Barre rayée (segments alternés).
   const parts = [];
-  const n = 6;
+  const n = Math.max(4, Math.round(w / 0.45));
   for (let i = 0; i < n; i++) {
-    const g = new THREE.CylinderGeometry(0.06, 0.06, w / n, 6);
+    const g = new THREE.CylinderGeometry(0.05, 0.05, w / n, 14, 1, true);
     g.rotateZ(Math.PI / 2);
     parts.push([prep(g), colors[i % 2], { x: -w / 2 + (w / n) * (i + 0.5) }]);
   }
-  return partsToGeo(parts);
-}
-
-export function logJumpGeo(w, h) {
-  const g = new THREE.CylinderGeometry(h * 0.5, h * 0.55, w, 8);
-  g.rotateZ(Math.PI / 2);
-  g.translate(0, h * 0.5, 0);
-  const parts = [[prep(g), '#7a5a3e']];
-  parts.push([box(0.35, h * 0.9, 0.35), '#5f4632', { x: -w / 2 + 0.3, z: 0.35 }]);
-  parts.push([box(0.35, h * 0.9, 0.35), '#5f4632', { x: w / 2 - 0.3, z: 0.35 }]);
-  return partsToGeo(parts);
-}
-
-export function brushJumpGeo(w, h) {
-  const parts = [[box(w, h * 0.5, 1.2), '#6b5038']];
-  const n = Math.floor(w / 0.6);
-  for (let i = 0; i < n; i++) {
-    parts.push([cone(0.4, h * 0.65, 5), i % 2 ? '#3d6a32' : '#467a39', { x: -w / 2 + 0.3 + i * 0.6, y: h * 0.35 }]);
+  for (const side of [-1, 1]) {
+    const cap = new THREE.SphereGeometry(0.05, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+    cap.rotateZ(-side * Math.PI / 2);
+    parts.push([prep(cap), colors[0], { x: side * w / 2 }]);
   }
-  parts.push([box(0.3, h + 0.3, 0.3), '#f2f1ec', { x: -w / 2 - 0.3 }]);
-  parts.push([box(0.3, h + 0.3, 0.3), '#f2f1ec', { x: w / 2 + 0.3 }]);
+  return partsToGeo(parts);
+}
+
+// Tronc de cross : écorce, cernes aux extrémités, chevalets.
+export function logJumpGeo(w, h) {
+  const r = h * 0.5;
+  const g = new THREE.CylinderGeometry(r * 0.94, r, w, 18, 6);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const a = Math.atan2(pos.getZ(i), pos.getX(i));
+    const k = 1 + 0.035 * Math.sin(a * 9 + pos.getY(i) * 2.1) + 0.02 * Math.sin(a * 23);
+    pos.setX(i, pos.getX(i) * k);
+    pos.setZ(i, pos.getZ(i) * k);
+  }
+  g.rotateZ(Math.PI / 2);
+  g.translate(0, r, 0);
+  const parts = [[prep(g), '#5d4a3a']];
+  for (const side of [-1, 1]) {
+    const end = new THREE.CircleGeometry(r * 0.95, 18);
+    end.rotateY(side * Math.PI / 2);
+    parts.push([prep(end), '#b8946a', { x: side * (w / 2 + 0.002), y: r }]);
+    parts.push([box(0.22, r * 1.1, 0.22), '#4e3d2f', { x: side * (w / 2 - 0.35), z: 0.42, rz: 0 }]);
+    parts.push([box(0.22, r * 1.1, 0.22), '#4e3d2f', { x: side * (w / 2 - 0.35), z: -0.42 }]);
+  }
+  return partsToGeo(parts);
+}
+
+// Haie de cross : caisson en bois et brosse de bouleau taillée.
+export function brushJumpGeo(w, h) {
+  const parts = [[box(w, h * 0.45, 1.1), '#5b4533']];
+  parts.push([box(w + 0.04, 0.08, 1.14), '#4a382a', { y: h * 0.45 }]);
+  const n = Math.floor(w / 0.18);
+  for (let i = 0; i < n; i++) {
+    for (const zz of [-0.3, 0, 0.3]) {
+      const x = -w / 2 + 0.09 + i * 0.18 + ((i * 13 + zz * 10) % 5) * 0.012;
+      parts.push([cone(0.11, h * 0.62 + ((i * 7) % 5) * 0.02, 5), (i + zz * 10) % 3 ? '#4a4b33' : '#57583c', { x, y: h * 0.38, z: zz }]);
+    }
+  }
+  parts.push([box(0.22, h + 0.25, 0.22), '#f2f1ec', { x: -w / 2 - 0.3 }]);
+  parts.push([box(0.22, h + 0.25, 0.22), '#f2f1ec', { x: w / 2 + 0.3 }]);
   return partsToGeo(parts);
 }
 

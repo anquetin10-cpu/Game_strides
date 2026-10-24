@@ -8,7 +8,7 @@ import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shor
 import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBoxes } from './sites.js';
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
-import { applySurfaces } from './surfaces.js';
+import { applySurfaces, applyRoadShader } from './surfaces.js';
 import { Water } from './water.js';
 import { Sky } from './sky.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
@@ -238,7 +238,7 @@ export class World {
           const vx = x + nx * half * k;
           const vz = z + nz * half * k;
           positions.push(vx, this.h(vx, vz) + 0.07, vz);
-          uvs.push(u, dist / 12);
+          uvs.push(u * road.w, dist, road.w);
         }
         if (i > 0) {
           const a = base + (i - 1) * 3;
@@ -250,10 +250,11 @@ export class World {
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setAttribute('roadUV', new THREE.Float32BufferAttribute(uvs, 3));
     geo.setIndex(indices);
     geo.computeVertexNormals();
-    const mat = new THREE.MeshStandardMaterial({ map: roadTexture(), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4, depthWrite: false });
+    const mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4, depthWrite: false });
+    applyRoadShader(mat, this.detailTex);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     mesh.renderOrder = -1;
