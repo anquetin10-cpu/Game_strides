@@ -15,6 +15,7 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(`${base}/?autostart&quality=high`);
 await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 240000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
+await page.evaluate((d) => { window.__day = d; }, Number(process.env.DAY || 0));
 await page.evaluate(async () => { window.__roads = (await import('/src/world/layout.js')).ROADS; window.__sites = await import('/src/world/sites.js'); });
 await page.evaluate(() => { window.__auto.stopLoop(); window.__auto.closeCards(); const g = window.__game; while (g.hud.dialogActive) g.hud.advanceDialog(); g.missions.abandon?.(); window.__auto.closeCards(); });
 const VIEWS = {
@@ -41,7 +42,7 @@ const VIEWS = {
 for (const hr of hours) {
   await page.evaluate(([hr, view]) => {
     const g = window.__game;
-    g.save.data.gameTime = hr * 3600;
+    g.save.data.gameTime = (window.__day || 0) * 86400 + hr * 3600;
     g.update(1 / 30);
     const v = ({ horse: 1, home: 1, truck: 1, land: 1 })[view] && window.__lookViews?.[view];
   }, [hr, view]);

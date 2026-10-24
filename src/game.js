@@ -817,6 +817,7 @@ export class Game {
 
     // Ambiance.
     const hour = this.hour();
+    this.sky.setDay(Math.floor(d.gameTime / 86400));
     this.sky.update(hour, this.player.focus.pos, dt);
     this.sky.follow(this.camera);
     this.sky.updateEnvironment(this.renderer, performance.now() / 1000);

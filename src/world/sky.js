@@ -250,9 +250,24 @@ export class Sky {
     this.elevation = 1;
     this.nightFactor = 0;
     this.exposure = 0.55;
+    this.cover = 0.42;
+    this.day = -1;
     this._px = new Float32Array(6);
     this._acc = [0, 0, 0];
     this.clouds = this.dome; // compatibilité
+  }
+
+  // Météo du jour (déterministe) : dégagé, voilé, nuageux ou couvert, à la normande.
+  setDay(day) {
+    if (day === this.day) return;
+    this.day = day;
+    const COVERS = [0.38, 0.55, 0.28, 0.72, 0.46, 0.62, 0.33, 0.8, 0.5];
+    this.cover = COVERS[((day % COVERS.length) + COVERS.length) % COVERS.length];
+    this.params.turbidity = 2.2 + this.cover * 1.6;
+    this.uniforms.turbidity.value = this.params.turbidity;
+    this.uniforms.cloudCover.value = this.cover;
+    this.envDirty = true;
+    this.envAt = -1e9;
   }
 
   setShadowSize(size, extent = 60) {
@@ -316,7 +331,9 @@ export class Sky {
     if (sun.y > -0.02) {
       // Soleil : couleur transmise, intensité selon la masse d'air traversée.
       this.sun.color.setRGB(tr / tmax, tg / tmax, tb / tmax, THREE.LinearSRGBColorSpace);
-      this.sun.intensity = 5.2 * smoothstep(-0.02, 0.2, sun.y) * clamp(tmax * 1.15, 0.25, 1);
+      // Ciel couvert : moins de soleil direct (la lumière diffuse du ciel prend le relais via l'IBL).
+      const overcast = 1 - 0.6 * smoothstep(0.5, 0.85, this.cover);
+      this.sun.intensity = 5.2 * smoothstep(-0.02, 0.2, sun.y) * clamp(tmax * 1.15, 0.25, 1) * overcast;
       this._lightDir = sun;
     } else {
       // Lune : lumière froide et faible.
@@ -335,7 +352,7 @@ export class Sky {
     const fz = Math.round(focus.z / snap) * snap;
     this.sun.position.set(fx + dir.x * 150, (focus.y || 0) + Math.max(dir.y, 0.12) * 150, fz + dir.z * 150);
     this.sun.target.position.set(fx, focus.y || 0, fz);
-    this.envDirty = this.envSun.distanceTo(sun) > 0.02;
+    this.envDirty = this.envDirty || this.envSun.distanceTo(sun) > 0.02;
   }
 
   // Régénère l'éclairage d'ambiance (IBL) quand le soleil a sensiblement bougé (coûteux : rarement).
