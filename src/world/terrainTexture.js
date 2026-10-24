@@ -294,7 +294,10 @@ function gradeAndClassify(cv) {
       wS = 0.55; wG = 0.45; // chaume / culture mûre
       r *= 0.86; g *= 0.82; b *= 0.76;
     } else if (cls === 2) {
-      wS = 1;
+      // Terre : labours (sombres) ou chemins de terre battue, plus clairs et un peu sableux.
+      if (lum > 127) {
+        wS = 0.8; wA = 0.2;
+      } else wS = 1;
       r *= 0.8; g *= 0.78; b *= 0.76;
     } else if (cls === 3) {
       wA = 1;

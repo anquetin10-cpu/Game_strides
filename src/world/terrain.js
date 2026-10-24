@@ -277,6 +277,24 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   vec3 tint = wG * gTint + wS * sTint + wA * aTint + wH * hTint;
   stH = ( wG * gH * 0.7 + wS * sH * 1.3 + wA * aH * 0.45 + wH * hH * 0.8 ) * stFade;
   stRough = wG * 0.97 + wS * 1.0 + wA * 0.9 + wH * 0.82;
+  // Cultures (blé, colza) : traces du pulvérisateur tous les 24 m, rangs de semis, et vagues du vent
+  // qui courent sur les épis ; labours : sillons parallèles.
+  float crop = smoothstep( 0.3, 0.45, wS ) * smoothstep( 0.3, 0.42, wG ) * ( 1.0 - smoothstep( 0.03, 0.08, wA + wH ) );
+  if ( crop > 0.01 ) {
+    float tl = abs( fract( p.y / 24.0 ) - 0.5 ) * 24.0;
+    float track = ( 1.0 - smoothstep( 0.16, 0.3, abs( tl - 0.9 ) ) ) * midW;
+    float rows = ( 0.5 + 0.5 * sin( p.y * 34.9 ) ) * fineW;
+    float wave = texture2D( detailMap, p * 0.021 + csWind * 50.0 ).g;
+    tint *= mix( 1.0, mix( 0.8, 1.14, wave ), crop );
+    tint = mix( tint, tint * vec3( 0.6, 0.53, 0.47 ), track * crop );
+    stH = mix( stH, ( rows * 0.35 + ( 1.0 - track ) * 0.6 + dF.r * 0.2 * fineW ) * stFade, crop );
+  }
+  float plow = smoothstep( 0.9, 0.98, wS );
+  if ( plow > 0.01 ) {
+    float fur = 0.5 + 0.5 * sin( p.y * 14.96 + dM.r * 2.5 );
+    stH = mix( stH, ( fur * 1.1 + sH * 0.35 ) * stFade, plow * midW );
+    tint *= mix( 1.0, mix( 0.84, 1.08, fur ), plow * midW );
+  }
   // Falaises et talus raides : roche stratifiée (projection latérale).
   float rock = smoothstep( 0.8, 0.55, vWorldNrm.y );
   if ( rock > 0.0 ) {
