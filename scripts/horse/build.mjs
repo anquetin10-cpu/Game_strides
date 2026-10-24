@@ -75,9 +75,8 @@ for (const s of [1, -1]) {
   for (let i = 0; i < NS; i++) {
     for (let j = 0; j < NR; j++) {
       const a = base + i * NR + j, b = base + i * NR + ((j + 1) % NR), cc = base + (i + 1) * NR + j, dd = base + (i + 1) * NR + ((j + 1) % NR);
-      const flip = s < 0;
-      if (i > 0) eyeTris.push(...(flip ? [a, b, cc] : [a, cc, b]));
-      if (i < NS - 1) eyeTris.push(...(flip ? [b, dd, cc] : [b, cc, dd]));
+      if (i > 0) eyeTris.push(a, b, cc); // sens direct vu de l'extérieur
+      if (i < NS - 1) eyeTris.push(b, dd, cc);
     }
   }
 }

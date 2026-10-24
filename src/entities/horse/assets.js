@@ -115,7 +115,38 @@ function decode() {
     skinI: A.skinI,
     skinW: A.skinW,
   };
+  // Crins : cartes de mèches (couleur de sommet grise = variation par mèche).
+  let hair = null;
+  if (A.hairPos) {
+    const hv = A.hairCol.length;
+    const hc = new Uint8Array(hv * 3);
+    for (let i = 0; i < hv; i++) hc[i * 3] = hc[i * 3 + 1] = hc[i * 3 + 2] = A.hairCol[i];
+    hair = {
+      position: new THREE.BufferAttribute(decodePositions(A.hairPos, meta.q * S), 3),
+      normal: new THREE.BufferAttribute(decodeNormals(A.hairNor), 3),
+      uv: new THREE.BufferAttribute(A.hairUv, 2, true),
+      color: new THREE.BufferAttribute(hc, 3, true),
+      skinIndex: new THREE.BufferAttribute(A.hairSkinI, 4),
+      skinWeight: new THREE.BufferAttribute(A.hairSkinW, 4, true),
+      index: new THREE.BufferAttribute(decodeIndicesZigzag(A.hairIdx, new Uint16Array(A.hairIdx.length)), 1),
+      lod: [[0, meta.hair.lod0], [0, meta.hair.lod1]],
+    };
+  }
+  // Sellerie : un tampon de sommets, des plages de triangles par pièce.
+  let tack = null;
+  if (A.tackPos) {
+    tack = {
+      position: new THREE.BufferAttribute(decodePositions(A.tackPos, meta.q * S), 3),
+      normal: new THREE.BufferAttribute(decodeNormals(A.tackNor), 3),
+      uv: new THREE.BufferAttribute(A.tackUv, 2, true),
+      aMat: new THREE.BufferAttribute(A.tackMat, 1),
+      skinIndex: new THREE.BufferAttribute(A.tackSkinI, 4),
+      skinWeight: new THREE.BufferAttribute(A.tackSkinW, 4, true),
+      indices: decodeIndicesZigzag(A.tackIdx, new Uint16Array(A.tackIdx.length)),
+      ranges: meta.tack.ranges,
+    };
+  }
   // Squelette de repos (unités du modèle).
   const bones = BONES.map((b) => ({ name: b.name, parent: b.parent, pos: b.pos.map((v) => v * S) }));
-  return { meta, A, body, bones, scale: S };
+  return { meta, A, body, hair, tack, bones, scale: S };
 }

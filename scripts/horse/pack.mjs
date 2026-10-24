@@ -88,6 +88,12 @@ export function packBlob(arrays, meta = {}) {
     parts.push(bytes);
     off += bytes.length;
   }
+  if (process.env.PACK_STATS) {
+    for (const [name, arr] of Object.entries(arrays)) {
+      const b = Buffer.from(arr.buffer, arr.byteOffset, arr.byteLength);
+      console.log(`  ${name.padEnd(10)} ${(b.length / 1024).toFixed(1).padStart(7)} Ko → ${(deflateRawSync(b, { level: 9 }).length / 1024).toFixed(1).padStart(6)} Ko`);
+    }
+  }
   const json = Buffer.from(JSON.stringify(header), 'utf8');
   const hlen = Buffer.alloc(4);
   hlen.writeUInt32LE(json.length, 0);

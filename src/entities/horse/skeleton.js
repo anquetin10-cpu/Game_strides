@@ -45,11 +45,11 @@ const DEF = [
   ['hlH', 'hlP', [0.15, 0.06, -0.69]],
   // Ancres (non pondérées) : selle, anneau du licol, mains du cavalier, étrivières.
   ['saddle', 'body', [0, 1.62, 0.1]],
-  ['leadAnchor', 'head', [0, 1.6, 1.39]],
+  ['leadAnchor', 'head', [0, 1.555, 1.265]],
   ['reinL', 'body', [0.07, 1.86, 0.5]],
   ['reinR', 'body', [-0.07, 1.86, 0.5]],
-  ['stirL', 'body', [0.2, 1.46, 0.2]],
-  ['stirR', 'body', [-0.2, 1.46, 0.2]],
+  ['stirL', 'body', [0.27, 0.98, 0.25]], // étrier (bas de l'étrivière)
+  ['stirR', 'body', [-0.27, 0.98, 0.25]],
 ];
 
 function build() {

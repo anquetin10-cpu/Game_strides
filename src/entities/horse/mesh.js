@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { horseAssets } from './assets.js';
 import { bakeCoatColors, createCoatMaterial, markings } from './coat.js';
+import { hairMaterial } from './hair.js';
+import { tackMaterial, tackIndex } from './tack.js';
 import { mulberry32 } from '../../core/math.js';
 
 const _id = new THREE.Matrix4();
@@ -77,7 +79,40 @@ export function buildHorseMesh(opts = {}) {
       if (m !== material) for (const p of mesh.userData.parts) p.material = m;
     },
   });
+  // Crins (crinière, toupet, queue, cils).
+  if (A.hair) {
+    const H = A.hair;
+    const hg = new THREE.BufferGeometry();
+    for (const k of ['position', 'normal', 'uv', 'color', 'skinIndex', 'skinWeight']) hg.setAttribute(k, H[k]);
+    hg.setIndex(H.index);
+    hg.setDrawRange(H.lod[0][0], H.lod[0][1]);
+    safeDispose(hg, []);
+    mesh.userData.hair = attachPart(mesh, hg, hairMaterial(opts.coat));
+  }
+  // Sellerie (sellé : tapis, selle, sangle, étriers, filet, rênes ; sinon licol).
+  if (A.tack) {
+    const T = A.tack;
+    const tg = new THREE.BufferGeometry();
+    for (const k of ['position', 'normal', 'uv', 'aMat', 'skinIndex', 'skinWeight']) tg.setAttribute(k, T[k]);
+    const cfg = { saddle: opts.saddle !== false, mounted: false, boots: opts.boots ?? opts.saddle !== false };
+    tg.setIndex(tackIndex(T, cfg));
+    safeDispose(tg, []);
+    const part = attachPart(mesh, tg, tackMaterial(opts.pad, opts.padTrim));
+    part.userData.cfg = cfg;
+    mesh.userData.tack = part;
+  }
   return { mesh, bones, skeleton };
+}
+
+/** Change l'équipement : { saddle, mounted, boots } (seuls les champs fournis changent). */
+export function setHorseTack(mesh, cfg) {
+  const part = mesh.userData.tack;
+  if (!part) return;
+  const c = part.userData.cfg;
+  const next = { saddle: cfg.saddle ?? c.saddle, mounted: cfg.mounted ?? c.mounted, boots: cfg.boots ?? c.boots };
+  if (next.saddle === c.saddle && next.mounted === c.mounted && next.boots === c.boots) return;
+  part.userData.cfg = next;
+  part.geometry.setIndex(tackIndex(horseAssets().tack, next));
 }
 
 // Ajoute une pièce skinnée (crins, sellerie) partageant le squelette du cheval.
@@ -97,6 +132,10 @@ export function attachPart(horseMesh, geo, material, { shadow = true } = {}) {
 export function setHorseLod(mesh, lod) {
   if (mesh.userData.lod === lod) return;
   mesh.userData.lod = lod;
-  const r = horseAssets().body.lod[lod];
+  const A = horseAssets();
+  const r = A.body.lod[lod];
   mesh.geometry.setDrawRange(r[0], r[1]);
+  const h = mesh.userData.hair;
+  if (h && A.hair) h.geometry.setDrawRange(A.hair.lod[lod][0], A.hair.lod[lod][1]);
+  for (const p of mesh.userData.parts) if (p.userData.lodRanges) p.geometry.setDrawRange(...p.userData.lodRanges[lod]);
 }
