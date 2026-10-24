@@ -827,6 +827,14 @@ export class Game {
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
     this.birds.update(dt, this.sky.nightFactor);
+    // Ambiance sonore : oiseaux des haies le jour, goélands sur la côte.
+    if ((this._birdT = (this._birdT ?? 4) - dt) <= 0 && this.sky.nightFactor < 0.5) {
+      const fp = this.player.focus.pos;
+      const coast = fp.z - shoreZ(fp.x) < 90;
+      this._birdT = 3 + Math.random() * 7;
+      if (coast) this.audio.gull(0.035);
+      else if (zoneDist(fp.x, fp.z, ZONES.find((zz) => zz.id === 'town')) > 30) this.audio.birdsong(0.03);
+    }
     const f = this.player.focus.pos;
     this.audio.ambience({
       speed: Math.abs(this.player.speed),

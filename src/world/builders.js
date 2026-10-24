@@ -494,13 +494,18 @@ export function awningGeo(w, c1, c2) {
   return partsToGeo(parts);
 }
 
+// Jardinière de rue : bac en acier, feuillage dense et petites fleurs dispersées.
 export function planterGeo(flower) {
-  return partsToGeo([
-    [box(1.6, 0.5, 0.6), '#3a3d42'],
-    [ico(0.32), flower, { x: -0.45, y: 0.62, sy: 0.7 }],
-    [ico(0.32), '#4f7f37', { x: 0, y: 0.6, sy: 0.7 }],
-    [ico(0.32), flower, { x: 0.45, y: 0.62, sy: 0.7 }],
-  ]);
+  const parts = [[box(1.6, 0.5, 0.6), '#3a3d42'], [box(1.66, 0.05, 0.66), '#2b2d31', { y: 0.5 }]];
+  for (let i = 0; i < 9; i++) {
+    const x = -0.62 + (i % 5) * 0.31, z = i < 5 ? -0.12 : 0.12;
+    parts.push([ico(0.16 + (i % 3) * 0.02, 1), i % 2 ? '#3c5a2c' : '#476a33', { x, y: 0.56, z, sy: 0.6 }]);
+  }
+  for (let i = 0; i < 14; i++) {
+    const x = -0.68 + ((i * 7) % 14) * 0.1, z = ((i * 5) % 5) * 0.09 - 0.18;
+    parts.push([ico(0.045, 0), i % 4 === 3 ? '#f2f1ec' : flower, { x, y: 0.66 + (i % 3) * 0.02, z }]);
+  }
+  return partsToGeo(parts);
 }
 
 export { partsToGeo, box, cyl, cone, ico, limb };

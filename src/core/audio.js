@@ -149,6 +149,53 @@ export class Audio {
     }
   }
 
+  // Chant d'oiseau (merle, fauvette) : trilles en glissandos rapides.
+  birdsong(vol = 0.05) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    let t = ctx.currentTime + 0.05;
+    const notes = 3 + Math.floor(Math.random() * 6);
+    const base = 2000 + Math.random() * 1800;
+    for (let i = 0; i < notes; i++) {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      const f0 = base * (0.8 + Math.random() * 0.5), f1 = f0 * (0.7 + Math.random() * 0.7);
+      const d = 0.05 + Math.random() * 0.09;
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f1, t + d);
+      o.connect(g).connect(this.master);
+      this._env(g, t, 0.008, vol, d);
+      o.start(t);
+      o.stop(t + d + 0.05);
+      t += d + 0.02 + Math.random() * 0.06;
+    }
+  }
+
+  // Cri de goéland : « kiaou » descendant, voix rauque (harmoniques).
+  gull(vol = 0.05) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime + 0.02;
+    const calls = 1 + Math.floor(Math.random() * 3);
+    for (let c = 0; c < calls; c++) {
+      const t0 = t + c * 0.32;
+      const o = ctx.createOscillator();
+      const f = ctx.createBiquadFilter();
+      const g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(1350, t0);
+      o.frequency.exponentialRampToValueAtTime(760, t0 + 0.24);
+      f.type = 'bandpass';
+      f.frequency.value = 1500;
+      f.Q.value = 2.5;
+      o.connect(f).connect(g).connect(this.master);
+      this._env(g, t0, 0.02, vol, 0.24);
+      o.start(t0);
+      o.stop(t0 + 0.3);
+    }
+  }
+
   // Expiration au galop (souffle nasal rythmé).
   breath(intensity = 1) {
     if (!this.ctx) return;

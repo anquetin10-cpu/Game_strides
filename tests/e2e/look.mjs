@@ -34,6 +34,8 @@ const VIEWS = {
   car: (g) => { const y = g.terrain.getHeight(-84, 146); return { at: [-84, y + 0.9, 146], from: [-79.5, y + 1.8, 150.5] }; },
   // Entrée de Deauvelle (panneau d'agglomération).
   entry: (g) => { const y = g.terrain.getHeight(-230, -353); return { at: [-216, y + 2.2, -346.2], from: [-232, y + 1.8, -350.5] }; },
+  // Carrefour du centre (passages piétons).
+  cross: (g) => { const y = g.terrain.getHeight(-30, -300); return { at: [-30, y, -300], from: [-14, y + 3.2, -290] }; },
   // Plage et goélands.
   beach: (g) => { const b = g.birds.birds[3]; return { at: [b.cx, b.h * 0.7, b.cz], from: [b.cx + 30, 4, b.cz + 45] }; },
   // Falaises d'Aval depuis la plage.

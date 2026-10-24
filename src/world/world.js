@@ -93,6 +93,7 @@ export class World {
     this.buildTown();
     this.buildStreetscape();
     this.buildRoadSigns();
+    this.buildCrosswalks();
     this.buildBeach();
     this.buildCliffs();
     this.buildSignHill();
@@ -741,6 +742,23 @@ export class World {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;
     this.group.add(new THREE.Mesh(mergeGeometries(faces, false), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 })));
+  }
+
+  // Passages piétons (bandes blanches parallèles à la circulation) aux carrefours du centre-ville.
+  buildCrosswalks() {
+    const cross = (x, z, alongX, w) => {
+      const n = Math.floor(w / 1.0);
+      for (let k = 0; k < n; k++) {
+        const o = -w / 2 + 0.5 + k * 1.0;
+        const bx = alongX ? x : x + o, bz = alongX ? z + o : z;
+        this.batch.add(box(alongX ? 2.6 : 0.5, 0.02, alongX ? 0.5 : 2.6, false), '#e8e8e4', bx, this.h(bx, bz) + 0.085, bz, 0);
+      }
+    };
+    for (const x of [-130, -30, 70]) {
+      cross(x - 7.5, -300, true, 7);
+      cross(x + 7.5, -300, true, 7);
+      cross(x, -300 + 8, false, 7);
+    }
   }
 
   buildStreetscape() {
