@@ -201,6 +201,7 @@ export class Obstacles {
         r.position.y = r.userData.rest.y;
         r.position.z = r.userData.rest.z;
         r.rotation.x = r.userData.rest.rx;
+        r.rotation.z = 0;
         r.userData.fall = null;
       }
     }
@@ -310,16 +311,49 @@ export class Obstacles {
     }
   }
 
+  // Chute d'une barre : un bout quitte son taquet, l'autre suit ; rebonds amortis puis roulement sur le sol.
   update(dt) {
+    const G = 9.81, R = 0.05;
     for (const o of this.list) {
       for (const r of o.rails) {
         const f = r.userData.fall;
-        if (!f) continue;
+        if (!f || f.done) continue;
+        if (!f.ends) {
+          const y0 = r.userData.rest.y;
+          f.ends = [{ y: y0, vy: 0, t0: 0 }, { y: y0, vy: 0, t0: 0.08 + Math.random() * 0.14 }];
+          if (Math.random() < 0.5) f.ends.reverse();
+          f.z = r.userData.rest.z;
+          f.vz = f.dir * (0.7 + Math.random() * 0.9);
+          f.roll = 0;
+        }
         f.t += dt;
-        const t = Math.min(f.t / 0.5, 1);
-        r.position.y = Math.max(0.08, r.userData.rest.y * (1 - t * t));
-        r.position.z = r.userData.rest.z + f.dir * t * 0.6;
-        r.rotation.x = f.dir * t * 0.4;
+        let resting = true;
+        for (const e of f.ends) {
+          if (f.t < e.t0) { resting = false; continue; }
+          e.vy -= G * dt;
+          e.y += e.vy * dt;
+          if (e.y <= R) {
+            e.y = R;
+            if (Math.abs(e.vy) > 0.6) {
+              e.vy = -e.vy * 0.28;
+              if (!f.clonk) { f.clonk = true; this.game.audio?.thud?.(); }
+            } else e.vy = 0;
+          }
+          if (e.y > R + 1e-3 || e.vy !== 0) resting = false;
+        }
+        // Glisse/roule vers l'avant, freinée par le sable.
+        if (f.ends[0].y <= R + 0.02 && f.ends[1].y <= R + 0.02) {
+          f.vz *= Math.exp(-2.6 * dt);
+          if (Math.abs(f.vz) > 0.02) resting = false;
+        }
+        f.z += f.vz * dt;
+        f.roll += (f.vz * dt) / R;
+        const w = o.w;
+        r.position.y = (f.ends[0].y + f.ends[1].y) / 2;
+        r.position.z = f.z;
+        r.rotation.z = Math.atan2(f.ends[1].y - f.ends[0].y, w);
+        r.rotation.x = f.roll;
+        if (resting && f.t > 0.5) f.done = true;
       }
     }
   }
