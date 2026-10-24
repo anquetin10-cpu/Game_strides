@@ -38,6 +38,10 @@ export function buildingGeo({
   const body = [];
   const glass = [];
   const fl = floors ?? Math.max(1, Math.floor(h / 3));
+  // Volets typiques de la côte normande (couleur stable pour un même bâtiment).
+  const SHUTTERS = ['#5d7480', '#7d8b6a', '#e9e6de', '#4a5560', '#8c6d55', '#6f8fa0'];
+  const shutter = SHUTTERS[Math.floor(Math.abs(Math.sin(w * 12.9898 + d * 78.233) * 43758.5453)) % SHUTTERS.length];
+  const isShop = !!(trim && trim.toLowerCase() === '#c8a96e');
   body.push([box(w, h + 2, d), wall, { y: -2 }]);
   body.push([box(w + 0.2, 2.6, d + 0.2), plinth, { y: -2 }]);
   const rh = roofH ?? Math.min(w, d) * 0.45;
@@ -69,9 +73,25 @@ export function buildingGeo({
         const x = f.nx === 0 ? t * (f.nz > 0 ? 1 : -1) : f.nx * (f.off + 0.04);
         const z = f.nz === 0 ? t * (f.nx > 0 ? -1 : 1) : f.nz * (f.off + 0.04);
         const tf = { x, y: wy, z, ry: f.ry };
-        if (isDoor) body.push([box(ww, wh, 0.14), doorColor, tf]);
-        else if (windows) {
-          body.push([box(ww + 0.24, wh + 0.24, 0.1), trim || PALETTE.white, { ...tf, y: wy - 0.12 }]);
+        if (isDoor) {
+          // Porte d'entrée : vantail à panneaux, imposte vitrée, seuil en pierre.
+          body.push([box(ww, wh, 0.14), doorColor, tf]);
+          body.push([box(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.12, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
+          body.push([box(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.52, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
+          body.push([box(ww + 0.5, 0.12, 0.5), '#b9b4a8', { ...tf, y: -0.06 }]);
+          body.push([box(ww + 0.3, 0.14, 0.18), trim || PALETTE.white, { ...tf, y: wy + wh }]);
+        } else if (windows) {
+          const tc = trim || PALETTE.white;
+          // Fenêtre : dormant, appui saillant, petits bois (croisillons), volets battants sur les maisons.
+          body.push([box(ww + 0.2, wh + 0.2, 0.1), tc, { ...tf, y: wy - 0.1 }]);
+          body.push([box(ww + 0.36, 0.08, 0.26), '#c9c4b8', { ...tf, y: wy - 0.16 }]);
+          const off = (k) => ({ x: x + f.nx * k, z: z + f.nz * k });
+          body.push([box(0.05, wh, 0.05), tc, { ...tf, ...off(0.07) }]);
+          body.push([box(ww, 0.05, 0.05), tc, { ...tf, ...off(0.07), y: wy + wh * 0.62 }]);
+          if (roofType !== 'flat' && !isShop) {
+            const along = (k) => (f.nx === 0 ? { x: x + k * (f.nz > 0 ? 1 : -1), z: z + f.nz * 0.06 } : { x: x + f.nx * 0.06, z: z + k * (f.nx > 0 ? -1 : 1) });
+            for (const sd of [-1, 1]) body.push([box(ww * 0.52, wh + 0.12, 0.05), shutter, { ...tf, ...along(sd * (ww * 0.76 + 0.1)), y: wy - 0.06 }]);
+          }
           glass.push([box(ww, wh, 0.16), PALETTE.glass, tf]);
         }
         if (timber && c < cols) {
@@ -104,24 +124,65 @@ export function buildingGeo({
 }
 
 // Écurie : rangée de boxes ouvrant vers +Z.
+// Bâtiment d'écurie (boxes extérieurs) : bardage, portes de box à deux vantaux (bas fermé, haut ouvert avec grille),
+// plaques nominatives, auvent sur poteaux avec jambes de force, gouttières et descentes, lanterneaux d'aération.
 export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = PALETTE.white, roof = '#3a3d42', door = '#3c3f45' }) {
   const parts = [];
   const glass = [];
+  const zf = d / 2;
   parts.push([box(w, h + 2, d), wall, { y: -2 }]);
-  parts.push([box(w + 0.2, 2.5, d + 0.2), '#7c7a74', { y: -2 }]);
+  parts.push([box(w + 0.2, 2.45, d + 0.2), '#8a877f', { y: -2 }]);
+  // Toit avec débord formant auvent, rives et faîtage.
   parts.push([gableRoof(w, d * 0.42, d, 1.6), roof, { y: h }]);
+  parts.push([box(w + 3.3, 0.12, 0.2), '#2b2d31', { y: h + d * 0.42 - 0.02 }]);
   parts.push([box(w + 0.1, 0.22, d + 0.1), trim, { y: h - 0.22 }]);
+  // Gouttières (demi-rondes) et descentes.
+  for (const side of [-1, 1]) {
+    const g = new THREE.CylinderGeometry(0.07, 0.07, w + 3.2, 8, 1, true, 0, Math.PI);
+    g.rotateZ(Math.PI / 2);
+    parts.push([prep(g), '#8b9096', { y: h - 0.62, z: side * (zf + 1.62) }]);
+    for (const sx of [-1, 1]) parts.push([cyl(0.045, 0.045, h - 0.6, 6), '#8b9096', { x: sx * (w / 2 + 1.5), z: side * (zf + 1.62) }]);
+  }
   const step = w / boxes;
   for (let i = 0; i < boxes; i++) {
     const x = -w / 2 + step * (i + 0.5);
-    parts.push([box(step * 0.62, 1.35, 0.14), door, { x, y: 0, z: d / 2 + 0.06 }]);
-    parts.push([box(step * 0.62 + 0.2, 0.12, 0.2), trim, { x, y: 1.35, z: d / 2 + 0.08 }]);
-    glass.push([box(step * 0.62, 1.1, 0.12), '#0d0e10', { x, y: 1.45, z: d / 2 + 0.03 }]);
-    parts.push([box(0.14, h, 0.16), trim, { x: -w / 2 + step * i, y: 0, z: d / 2 + 0.06 }]);
-    // Fenêtre arrière.
-    glass.push([box(1, 0.7, 0.12), PALETTE.glass, { x, y: 2.6, z: -d / 2 - 0.03 }]);
+    const dw = Math.min(1.25, step * 0.42);
+    // Encadrement de porte.
+    parts.push([box(dw + 0.2, 0.1, 0.12), trim, { x, y: 2.3, z: zf + 0.06 }]);
+    parts.push([box(0.1, 2.3, 0.12), trim, { x: x - dw / 2 - 0.05, z: zf + 0.06 }]);
+    parts.push([box(0.1, 2.3, 0.12), trim, { x: x + dw / 2 + 0.05, z: zf + 0.06 }]);
+    // Vantail bas en planches, renfort en Z, barre de pied en acier.
+    parts.push([box(dw, 1.3, 0.06), door, { x, z: zf + 0.04 }]);
+    parts.push([box(dw - 0.1, 0.08, 0.03), trim, { x, y: 1.18, z: zf + 0.08 }]);
+    parts.push([box(dw - 0.1, 0.08, 0.03), trim, { x, y: 0.08, z: zf + 0.08 }]);
+    parts.push([box(Math.hypot(dw - 0.1, 1.0), 0.07, 0.03, false), trim, { x, y: 0.65, z: zf + 0.085, rz: Math.atan2(1.0, dw - 0.1) }]);
+    parts.push([box(dw, 0.12, 0.04), '#5b5f64', { x, y: 1.28, z: zf + 0.08 }]);
+    // Ouverture haute (intérieur sombre) et grille de box.
+    glass.push([box(dw, 0.98, 0.04), '#0a0b0c', { x, y: 1.32, z: zf + 0.01 }]);
+    for (let k = 1; k < 9; k++) parts.push([cyl(0.011, 0.011, 0.95, 4), '#4a4d52', { x: x - dw / 2 + (dw / 9) * k, y: 1.33, z: zf + 0.05 }]);
+    // Vantail haut ouvert, rabattu contre le mur.
+    parts.push([box(0.05, 1.0, dw * 0.5), door, { x: x + dw / 2 + 0.16 + dw * 0.25, y: 1.32, z: zf + 0.05, ry: Math.PI / 2 }]);
+    // Plaque nominative et applique.
+    parts.push([box(0.32, 0.12, 0.02), '#f2f1ec', { x, y: 2.45, z: zf + 0.13 }]);
+    parts.push([box(0.16, 0.22, 0.14), '#1d1e21', { x: x - step * 0.36, y: 2.55, z: zf + 0.07 }]);
+    glass.push([box(0.12, 0.08, 0.08), '#fff1c9', { x: x - step * 0.36, y: 2.5, z: zf + 0.11 }]);
+    parts.push([box(0.14, h, 0.16), trim, { x: -w / 2 + step * i, y: 0, z: zf + 0.06 }]);
+    // Poteaux d'auvent (un sur deux).
+    if (i % 2 === 0) parts.push([box(0.16, h - 0.1, 0.16), trim, { x: -w / 2 + step * i, z: zf + 1.45 }]);
+    // Fenêtre arrière avec cadre.
+    parts.push([box(1.12, 0.82, 0.08), trim, { x, y: 2.54, z: -zf - 0.03 }]);
+    glass.push([box(1, 0.7, 0.12), PALETTE.glass, { x, y: 2.6, z: -zf - 0.05 }]);
+    // Lanterneaux d'aération sur le faîtage.
+    if (i % 3 === 1) {
+      parts.push([box(0.9, 0.55, 0.9), wall, { x, y: h + d * 0.42 - 0.15 }]);
+      for (let k = 0; k < 3; k++) parts.push([box(0.94, 0.05, 0.94), trim, { x, y: h + d * 0.42 + 0.02 + k * 0.14 }]);
+      parts.push([hipRoof(0.9, 0.35, 0.9, 0.12), roof, { x, y: h + d * 0.42 + 0.4 }]);
+    }
   }
-  parts.push([box(0.14, h, 0.16), trim, { x: w / 2, y: 0, z: d / 2 + 0.06 }]);
+  parts.push([box(0.14, h, 0.16), trim, { x: w / 2, y: 0, z: zf + 0.06 }]);
+  parts.push([box(0.16, h - 0.1, 0.16), trim, { x: w / 2, z: zf + 1.45 }]);
+  // Dalle béton devant les boxes.
+  parts.push([box(w + 1.2, 0.08, 2.0), '#a6a39b', { y: -0.04, z: zf + 1.0 }]);
   return { body: partsToGeo(parts), glass: partsToGeo(glass) };
 }
 

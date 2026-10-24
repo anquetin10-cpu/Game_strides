@@ -560,11 +560,26 @@ export class World {
     // Place : fontaine, arbres, terrasse.
     const P = TOWN.plaza;
     const py = this.h(P.x, P.z);
-    this.batch.add(cyl(5, 5.4, 0.7, 20), '#d8d2c4', P.x, py, P.z, 0);
-    this.batch.add(cyl(4.4, 4.4, 0.72, 20), '#5aa3b0', P.x, py + 0.02, P.z, 0);
-    this.batch.add(cyl(0.7, 1, 2.6, 10), '#d8d2c4', P.x, py, P.z, 0);
-    this.batch.add(cyl(1.6, 1.2, 0.4, 12), '#d8d2c4', P.x, py + 2.6, P.z, 0);
-    this.lights.add(cyl(0.3, 0.5, 1.2, 8), '#cfe9f0', P.x, py + 2.9, P.z, 0);
+    // Fontaine en pierre calcaire : margelle moulurée, vasques superposées, eau sombre et reflétante.
+    const lathe = (pts, seg = 40) => prep(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg));
+    this.batch.add(lathe([[4.3, 0], [5.35, 0], [5.45, 0.08], [5.45, 0.55], [5.25, 0.62], [5.25, 0.74], [4.95, 0.78], [4.85, 0.7], [4.4, 0.66], [4.3, 0.2]]), '#d6cfbf', P.x, py, P.z, 0);
+    this.batch.add(lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.5, 2.6], [0.4, 2.62], [0.32, 2.7], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]]), '#d6cfbf', P.x, py, P.z, 0);
+    const fw = new THREE.Mesh(new THREE.CircleGeometry(4.45, 48), new THREE.MeshStandardMaterial({ color: '#1e2c30', roughness: 0.04, metalness: 0, transparent: true, opacity: 0.92 }));
+    fw.rotation.x = -Math.PI / 2;
+    fw.position.set(P.x, py + 0.6, P.z);
+    this.group.add(fw);
+    const fb = new THREE.Mesh(new THREE.CircleGeometry(1.88, 32), fw.material);
+    fb.rotation.x = -Math.PI / 2;
+    fb.position.set(P.x, py + 2.5, P.z);
+    this.group.add(fb);
+    // Filets d'eau qui retombent de la vasque haute.
+    const jets = new THREE.MeshStandardMaterial({ color: '#dfeef2', roughness: 0.1, transparent: true, opacity: 0.38, depthWrite: false });
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const j = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.05, 1.25, 6, 1, true), jets);
+      j.position.set(P.x + Math.cos(a) * 1.0, py + 3.05, P.z + Math.sin(a) * 1.0);
+      this.group.add(j);
+    }
     this.colliders.addCircle(P.x, P.z, 5.4, py + 0.7, 'fountain');
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2;
