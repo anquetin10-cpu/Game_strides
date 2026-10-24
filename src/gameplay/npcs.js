@@ -6,7 +6,7 @@ import { HOME, HARAS, DUNES, POLE, TOWN_BLOCKS } from '../world/sites.js';
 import { ROADS, HIPPO } from '../world/layout.js';
 import { CHATTER } from './data.js';
 import { mulberry32, pick, polylineLength, pointAlong, dampAngle } from '../core/math.js';
-import { carGeo } from '../world/builders.js';
+import { carGeo, carMaterial } from '../world/props.js';
 import { ovalPoint } from './courses.js';
 
 const COATS = ['bay', 'chestnut', 'grey', 'black', 'palomino', 'darkbay', 'white'];
@@ -60,8 +60,8 @@ class Car {
     this.maxSpeed = 10 + Math.random() * 3;
     this.wait = 0;
     const g = new THREE.Group();
-    const geo = carGeo(color);
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true }));
+    const geo = carGeo(color, ['sedan', 'hatch', 'suv'][Math.floor(Math.random() * 3)]);
+    const m = new THREE.Mesh(geo, carMaterial());
     m.castShadow = true;
     g.add(m);
     g.rotation.order = 'YXZ';

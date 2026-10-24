@@ -9,12 +9,13 @@ import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBo
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
 import { applySurfaces, applyRoadShader } from './surfaces.js';
+import { carGeo, carMaterial, tractorGeo, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky } from './sky.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
 import {
   PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, treeTemplate, hedgeGeo, lampGeo, benchGeo, parasolGeo,
-  roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, carGeo, awningGeo, planterGeo,
+  roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, awningGeo, planterGeo,
 } from './builders.js';
 import { buildGrassMask } from './grass.js';
 import { createHorseMesh } from '../entities/horseModel.js';
@@ -39,6 +40,8 @@ export class World {
     this.batch = new StaticBatch(150);
     // Petits détails (sièges, public…) : lot séparé, masqué au-delà de quelques centaines de mètres.
     this.detailBatch = new StaticBatch(90);
+    // Véhicules garés : peinture vernie.
+    this.carBatch = new StaticBatch(200);
     this.glass = new StaticBatch(150);
     this.lights = new StaticBatch(150);
     this.chunks = [];
@@ -102,6 +105,7 @@ export class World {
     await tick('assemble');
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
     this.detailChunks = this.detailBatch.build(this.mat, this.group, { name: 'detail', castShadow: false });
+    this.carBatch.build(carMaterial(), this.group, { name: 'cars' });
     for (const m of this.detailChunks) m.userData.center = m.geometry.boundingSphere.center.clone();
     this.chunks.push(...this.glass.build(this.glassMat, this.group, { castShadow: false, name: 'glass' }));
     this.chunks.push(...this.lights.build(this.lightMat, this.group, { castShadow: false, receiveShadow: false, name: 'lights' }));
@@ -281,8 +285,23 @@ export class World {
     // Carrière et paddock.
     this.rectFence(HOME.arena, { height: 1.1, board: true, color: '#f2f1ec' }, 'n', 5, 0.5);
     this.rectFence(HOME.paddock, { height: 1.15, rails: 3 }, 'e', 4, 0.3);
-    // Abreuvoir, mobilier, panneau.
-    this.batch.add(box(2.4, 0.7, 0.9), '#9aa0a6', -150, this.h(-150, 205), 205, 0);
+    // Abreuvoirs, montoir, brouette, fumière, tracteur, voiture, balles enrubannées.
+    this.batch.add(troughGeo(), null, -150, this.h(-150, 205), 205, 0);
+    this.batch.add(troughGeo(), null, -141, this.h(-141, 161.5), 161.5, 0);
+    this.colliders.addBox(-141, 161.5, 1.3, 0.65, 0, Infinity, 'trough');
+    this.batch.add(mountingBlockGeo(), null, -97, this.h(-97, 162.2), 162.2, Math.PI / 2);
+    this.batch.add(wheelbarrowGeo(), null, -129, this.h(-129, 161), 161, 2.2);
+    this.batch.add(muckHeapGeo(), null, -178, this.h(-178, 152), 152, Math.PI / 2);
+    this.colliders.addBox(-178, 152, 3.2, 3.6, Math.PI / 2, Infinity, 'muck');
+    this.carBatch.add(tractorGeo(), null, -158, this.h(-158, 166), 166, -Math.PI / 2 - 0.25);
+    this.colliders.addBox(-158, 166, 1.4, 2.6, -Math.PI / 2 - 0.25, Infinity, 'tractor');
+    this.carBatch.add(carGeo('#2b3a4a', 'suv'), null, -84, this.h(-84, 146), 146, Math.PI / 2);
+    this.colliders.addBox(-84, 146, 1.0, 2.35, Math.PI / 2, Infinity, 'car');
+    for (let i = 0; i < 6; i++) {
+      const bx = -172 + (i % 3) * 1.5, bz = 192 + Math.floor(i / 3) * 1.6;
+      this.batch.add(wrappedBaleGeo(i % 4 === 3 ? '#e9e8e2' : '#2e3a2f'), null, bx, this.h(bx, bz), bz, 0);
+    }
+    this.colliders.addBox(-170.5, 192.8, 2.4, 1.6, 0, Infinity, 'bales');
     this.signboard('ÉCURIE DU VAL', 'Pension · Travail · Commerce', -40, 162, Math.PI / 2, { w: 5.2 });
     for (const b of homeBoxes()) this.batch.add(box(0.5, 0.4, 0.3), '#3c3f45', b.x + 1.2, this.h(b.x, b.z) + 1.0, b.z + 0.2, 0);
     for (let i = 0; i < 6; i++) this.tree(i % 2 ? 'oak' : 'birch', -186 + this.rnd() * 6, 135 + i * 18, 1 + this.rnd() * 0.3);
@@ -701,7 +720,7 @@ export class World {
       [-170, -228.2, -Math.PI / 2], [-100, -169.8, Math.PI / 2], [120, -296.2, -Math.PI / 2],
     ];
     spots.forEach(([x, z, r], i) => {
-      this.batch.add(carGeo(colors[i % colors.length]), null, x, this.h(x, z), z, r);
+      this.carBatch.add(carGeo(colors[i % colors.length], ['sedan', 'hatch', 'suv'][i % 3]), null, x, this.h(x, z), z, r);
       this.colliders.addBox(x, z, 0.95, 2.15, r, Infinity, 'car');
     });
     // Statue équestre en bronze (« Le Galop »), devant Strides HQ.

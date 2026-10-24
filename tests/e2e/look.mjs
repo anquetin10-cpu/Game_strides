@@ -28,6 +28,9 @@ const VIEWS = {
   land: (g) => ({ at: [60, 6, -370], from: [250, 50, -260] }),
   // Carrière du Pôle International : obstacles de CSO.
   cso: (g) => { const A = window.__sites.POLE.arena; const y = g.terrain.getHeight(A.x, A.z); return { at: [A.x - 30, y + 0.9, A.z - 1], from: [A.x - 23.5, y + 1.8, A.z + 4.5] }; },
+  // Cour de l'écurie : tracteur, voiture, matériel.
+  yard: (g) => { const y = g.terrain.getHeight(-152, 170); return { at: [-158, y + 1.2, 166], from: [-150.5, y + 2.2, 173] }; },
+  car: (g) => { const y = g.terrain.getHeight(-84, 146); return { at: [-84, y + 0.9, 146], from: [-79.5, y + 1.8, 150.5] }; },
   // Rue de Deauvelle, à hauteur d'homme.
   town: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x, P.z); return { at: [P.x - 30, y + 4, P.z - 25], from: [P.x + 4, y + 1.7, P.z + 6] }; },
   // Route de campagne, à hauteur d'homme.

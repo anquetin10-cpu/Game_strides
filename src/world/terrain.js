@@ -241,8 +241,8 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   vec4 dL = texture2D( detailMap, p * 0.047 + 0.31 );
   float macro = texture2D( detailMap, p * 0.0063 + 0.5 ).g;
   // Herbe : touffes, brins, tons jaunes/verts.
-  float gH = ( dF.a * 0.55 + dF.r * 0.2 ) * fineW + dM.a * 0.35 * midW;
-  vec3 gTint = mix( vec3( 0.82, 0.9, 0.74 ), vec3( 1.12, 1.06, 0.84 ), dL.g ) * mix( 0.84, 1.1, dM.r ) * mix( 1.0, mix( 0.9, 1.05, dF.a ), fineW );
+  float gH = ( dF.a * 0.18 + dF.r * 0.08 ) * fineW + ( dM.a * 0.45 + dM.r * 0.15 ) * midW;
+  vec3 gTint = mix( vec3( 0.82, 0.9, 0.74 ), vec3( 1.12, 1.06, 0.84 ), dL.g ) * mix( 0.84, 1.1, dM.r ) * mix( 0.93, 1.05, dM.a ) * mix( 1.0, mix( 0.96, 1.03, dF.a ), fineW );
   // Terre : mottes et cailloux.
   float sH = ( 1.0 - dF.b ) * 0.5 * fineW + ( ( 1.0 - dM.b ) * 0.5 + dM.r * 0.3 ) * midW;
   vec3 sTint = vec3( mix( 0.76, 1.1, dM.g ) * mix( 1.0, mix( 0.88, 1.06, 1.0 - dM.b ), midW ) );
