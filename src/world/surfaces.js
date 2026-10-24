@@ -2,6 +2,7 @@
 // (palette des constructeurs) et de l'orientation de la face, puis le motif (ardoises, tuiles, briques, bardage,
 // enduit, pierre, métal, verre) est calculé dans le shader, en coordonnées du monde, avec son relief et sa rugosité.
 import * as THREE from 'three';
+import { addCloudShadows } from './sky.js';
 
 const SURFACE_CHUNK = /* glsl */ `
 uniform sampler2D surfDetail;
@@ -141,6 +142,7 @@ export function applySurfaces(material, detailTexture, getTerrain = null) {
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = sfRough;')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = sfMetal;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = sfBump( -vViewPosition, normal, sfH * 0.012 );');
+    addCloudShadows(shader, 'vSurfPos');
   };
   material.customProgramCacheKey = () => 'st-surfaces';
   return material;
@@ -207,6 +209,7 @@ vec3 rdBump( vec3 surfPos, vec3 surfNorm, float h ) {
 }`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = rdRough;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = rdBump( -vViewPosition, normal, rdH * 0.004 );');
+    addCloudShadows(shader, 'vec3( vRoadXZ.x, 0.0, vRoadXZ.y )');
   };
   material.customProgramCacheKey = () => 'st-road';
   return material;

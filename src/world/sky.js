@@ -21,6 +21,39 @@ if (!THREE.ShaderChunk.tonemapping_fragment.includes('stFog')) {
   THREE.ShaderChunk.fog_fragment = '';
 }
 
+// ---------- Ombres des nuages au sol ----------
+// Uniformes partagés par référence (mis à jour par le ciel) et injection dans un shader de matériau standard :
+// la lumière directe du soleil est atténuée là où un nuage s'interpose (même champ de bruit que le ciel).
+export const CLOUD_UNIFORMS = {
+  csWind: { value: new THREE.Vector2() },
+  csCover: { value: 0.42 },
+  csSun: { value: new THREE.Vector3(0, 1, 0) },
+};
+export function addCloudShadows(shader, worldPosExpr) {
+  Object.assign(shader.uniforms, CLOUD_UNIFORMS);
+  shader.fragmentShader = shader.fragmentShader
+    .replace('#include <common>', `#include <common>
+uniform vec2 csWind;
+uniform float csCover;
+uniform vec3 csSun;
+float csHash( vec2 p ) { vec3 p3 = fract( vec3( p.xyx ) * 0.1031 ); p3 += dot( p3, p3.yzx + 33.33 ); return fract( ( p3.x + p3.y ) * p3.z ); }
+float csNoise( vec2 p ) {
+  vec2 i = floor( p ), f = fract( p );
+  vec2 u = f * f * ( 3.0 - 2.0 * f );
+  return mix( mix( csHash( i ), csHash( i + vec2( 1.0, 0.0 ) ), u.x ), mix( csHash( i + vec2( 0.0, 1.0 ) ), csHash( i + vec2( 1.0, 1.0 ) ), u.x ), u.y );
+}
+float csCloudShadow( vec3 wp ) {
+  if ( csSun.y < 0.05 ) return 1.0;
+  vec2 q = ( wp.xz + csSun.xz * ( 1600.0 - wp.y ) / csSun.y ) * 0.00042 + csWind;
+  float a = 0.5, s = 0.0;
+  for ( int i = 0; i < 5; i++ ) { s += a * csNoise( q ); q = mat2( 1.6, 1.2, -1.2, 1.6 ) * q; a *= 0.5; }
+  float cov = smoothstep( 1.0 - csCover, 1.15 - csCover * 0.6, s );
+  return 1.0 - cov * 0.78;
+}`)
+    // Le chunk des lumières est développé ici pour atténuer uniquement la lumière directe du soleil.
+    .replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', `getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color *= csCloudShadow( ${worldPosExpr} );`));
+}
+
 // ---------- Modèle de Preetham (repris du Sky de three.js, licence MIT) ----------
 const skyVert = /* glsl */ `
 uniform vec3 sunDirection;
@@ -302,6 +335,9 @@ export class Sky {
     U.time.value += dt;
     U.cloudWind.value.x += dt * 0.0016;
     U.cloudWind.value.y += dt * 0.0006;
+    CLOUD_UNIFORMS.csWind.value.copy(U.cloudWind.value);
+    CLOUD_UNIFORMS.csCover.value = this.cover;
+    CLOUD_UNIFORMS.csSun.value.copy(sun);
 
     // Couleur du ciel à l'horizon (moyenne autour de l'horizon) et lumière transmise du soleil.
     const px = this._px;

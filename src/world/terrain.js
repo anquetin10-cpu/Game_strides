@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { addCloudShadows } from './sky.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
 import { WORLD, ZONES, ROADS, POND, SIGN, shoreZ, isCliffRegion, zoneDist } from './layout.js';
@@ -293,6 +294,7 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
 }`)
           .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = stRough;')
           .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = stBump( -vViewPosition, normal, stH * 0.09 );');
+        addCloudShadows(shader, 'vWorldPos');
       };
     }
     const mesh = new THREE.Mesh(geo, mat);
