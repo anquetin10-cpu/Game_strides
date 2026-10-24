@@ -470,32 +470,79 @@ export function hedgeGeo(len, rnd) {
   return partsToGeo(parts);
 }
 
+// Lampadaire de style en fonte (vert sombre) : socle mouluré, fût cannelé, crosse à volute et lanterne hexagonale
+// suspendue à 0,75 m du fût (la flaque de lumière au sol est calée dessous).
 export function lampGeo() {
+  const iron = '#1e2622';
+  const scroll = new THREE.TorusGeometry(0.25, 0.022, 4, 8, Math.PI / 2);
+  scroll.rotateZ(Math.PI / 2);
+  prep(scroll);
   return {
     body: partsToGeo([
-      [cyl(0.07, 0.1, 4.2, 6), '#2a2b2f'],
-      [box(0.9, 0.08, 0.08, false), '#2a2b2f', { x: 0.35, y: 4.15 }],
+      [cyl(0.2, 0.24, 0.12, 8), iron],
+      [cyl(0.13, 0.19, 0.55, 8), iron, { y: 0.12 }],
+      [cyl(0.17, 0.17, 0.06, 8), iron, { y: 0.66 }],
+      [cyl(0.06, 0.085, 3.35, 8), iron, { y: 0.7 }],
+      [cyl(0.1, 0.1, 0.07, 8), iron, { y: 3.7 }],
+      [ico(0.075, 0), iron, { y: 4.13 }],
+      [box(0.75, 0.05, 0.05, false), iron, { x: 0.39, y: 4.08 }],
+      [scroll, iron, { x: 0.31, y: 3.83 }],
+      [cyl(0.015, 0.015, 0.14, 4), iron, { x: 0.75, y: 3.96 }],
+      [cyl(0.21, 0.21, 0.04, 6), iron, { x: 0.75, y: 3.94 }],
+      [cone(0.21, 0.17, 6), iron, { x: 0.75, y: 3.98 }],
+      [cyl(0.13, 0.06, 0.09, 6), iron, { x: 0.75, y: 3.46 }],
     ]),
-    light: partsToGeo([[box(0.36, 0.22, 0.36), '#fff1c9', { x: 0.75, y: 3.88 }]]),
+    light: partsToGeo([[cyl(0.19, 0.13, 0.4, 6), '#fff1c9', { x: 0.75, y: 3.55 }]]),
   };
 }
 
+// Banc public : lattes de chêne (assise et dossier incliné), flancs et accoudoirs en fonte.
 export function benchGeo() {
-  return partsToGeo([
-    [box(1.8, 0.08, 0.5), PALETTE.wood, { y: 0.45 }],
-    [box(1.8, 0.45, 0.06), PALETTE.wood, { y: 0.55, z: -0.24 }],
-    [box(0.08, 0.45, 0.45), '#2a2b2f', { x: -0.8 }],
-    [box(0.08, 0.45, 0.45), '#2a2b2f', { x: 0.8 }],
-  ]);
+  const iron = '#1e2622', wood = PALETTE.wood;
+  const parts = [];
+  for (let i = 0; i < 4; i++) parts.push([box(1.8, 0.035, 0.09), wood, { y: 0.44, z: 0.2 - i * 0.12 }]);
+  for (let i = 0; i < 3; i++) parts.push([box(1.8, 0.09, 0.03), wood, { y: 0.58 + i * 0.13, z: -0.25 - i * 0.025, rx: -0.2 }]);
+  for (const sx of [-0.78, 0.78]) {
+    parts.push([box(0.05, 0.44, 0.06), iron, { x: sx, z: 0.2 }]);
+    parts.push([box(0.05, 0.9, 0.06), iron, { x: sx, z: -0.24, rx: -0.12 }]);
+    parts.push([box(0.05, 0.05, 0.52), iron, { x: sx, y: 0.41, z: -0.02 }]);
+    parts.push([box(0.06, 0.04, 0.46), iron, { x: sx, y: 0.66, z: 0.0 }]);
+    parts.push([box(0.04, 0.24, 0.04), iron, { x: sx, y: 0.43, z: 0.2 }]);
+    parts.push([box(0.05, 0.03, 0.55), iron, { x: sx, y: 0.02, z: -0.02 }]);
+  }
+  return partsToGeo(parts);
 }
 
+// Parasol de plage : toile à huit panneaux légèrement creusée, lambrequins festonnés, mât à rotule, embout.
 export function parasolGeo(c1, c2) {
-  const parts = [[cyl(0.04, 0.04, 2.4, 5), '#f2f1ec']];
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    const g = new THREE.ConeGeometry(1.4, 0.6, 2, 1, true, a, Math.PI / 3);
-    prep(g);
-    parts.push([g, i % 2 ? c1 : c2, { y: 2.6 }]);
+  const parts = [[cyl(0.025, 0.03, 2.5, 6), '#f2f1ec'], [cyl(0.04, 0.04, 0.08, 6), '#b9b4a8', { y: 1.4 }], [ico(0.05, 0), '#f2f1ec', { y: 2.98 }]];
+  const n = 8, R = 1.45;
+  for (let i = 0; i < n; i++) {
+    const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
+    const g = new THREE.BufferGeometry();
+    // Panneau : sommet, milieu (creusé), bord ; deux triangles par anneau.
+    const ring = (r, y, a) => [Math.cos(a) * r, y, Math.sin(a) * r];
+    const v = [
+      ...ring(0, 2.95, 0), ...ring(R * 0.55, 2.72, a0), ...ring(R * 0.55, 2.72, a1),
+      ...ring(R * 0.55, 2.72, a0), ...ring(R, 2.4, a0), ...ring(R, 2.4, a1),
+      ...ring(R * 0.55, 2.72, a0), ...ring(R, 2.4, a1), ...ring(R * 0.55, 2.72, a1),
+      // Lambrequin (bande verticale sous le bord).
+      ...ring(R, 2.4, a0), ...ring(R, 2.26, a0), ...ring(R, 2.4, a1),
+      ...ring(R, 2.4, a1), ...ring(R, 2.26, a0), ...ring(R, 2.26, a1),
+    ];
+    g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    g.computeVertexNormals();
+    const col = i % 2 ? c1 : c2;
+    parts.push([prep(g), col]);
+    const back = prep(g.clone().scale(1, 1, 1));
+    const idx = back.index.array;
+    for (let k = 0; k < idx.length; k += 3) {
+      const t = idx[k + 1];
+      idx[k + 1] = idx[k + 2];
+      idx[k + 2] = t;
+    }
+    back.computeVertexNormals();
+    parts.push([back, col, { y: -0.01 }]);
   }
   return partsToGeo(parts);
 }
