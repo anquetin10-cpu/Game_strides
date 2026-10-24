@@ -106,7 +106,7 @@ export class Water {
 
     const pg = new THREE.CircleGeometry(POND.r + 1.5, 28);
     pg.rotateX(-Math.PI / 2);
-    this.pond = new THREE.Mesh(pg, new THREE.MeshLambertMaterial({ color: '#3f7d78', transparent: true, opacity: 0.82 }));
+    this.pond = new THREE.Mesh(pg, new THREE.MeshStandardMaterial({ color: '#3f7d78', transparent: true, opacity: 0.82 }));
     this.pond.position.set(POND.x, POND.level, POND.z);
     this.pond.renderOrder = 1;
     scene.add(this.pond);

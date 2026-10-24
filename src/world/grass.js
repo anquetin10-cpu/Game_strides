@@ -63,7 +63,7 @@ export class Grass {
     this.count = count;
     this.rnd = mulberry32(12);
     this.uniforms = { time: { value: 0 } };
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide });
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.time = this.uniforms.time;
       sh.vertexShader = sh.vertexShader

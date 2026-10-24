@@ -7,7 +7,7 @@ import { pointAlong, polylineLength, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { signTexture } from '../world/textures.js';
 
-const MAT = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+const MAT = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true });
 const COLORS = [
   ['#f2f1ec', '#17181b'],
   ['#f2f1ec', '#b8322a'],

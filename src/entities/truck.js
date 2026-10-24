@@ -34,12 +34,12 @@ export class Truck {
         parts.push([cyl(0.22, 0.22, 0.42, 8, false), '#9a9a9a', { x: xx, y: 0.5, z: zz, rz: Math.PI / 2 }]);
       }
     }
-    const body = new THREE.Mesh(partsToGeo(parts), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+    const body = new THREE.Mesh(partsToGeo(parts), new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true }));
     body.castShadow = true;
     body.receiveShadow = true;
     this.group.add(body);
     const tex = truckTexture();
-    const sideMat = new THREE.MeshLambertMaterial({ map: tex });
+    const sideMat = new THREE.MeshStandardMaterial({ map: tex });
     for (const s of [-1, 1]) {
       const p = new THREE.Mesh(new THREE.PlaneGeometry(L - 2.8, 2.8), sideMat);
       p.position.set(s * (W / 2 + 0.03), 2.45, -1.15);

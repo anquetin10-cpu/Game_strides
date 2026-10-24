@@ -30,9 +30,9 @@ export class World {
     this.group.name = 'world';
     scene.add(this.group);
     this.features = { buildings: [], fences: [], trees: 0 };
-    this.mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
-    this.glassMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, emissive: '#ffcf8a', emissiveIntensity: 0 });
-    this.lightMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: '#ffe2a8', emissiveIntensity: 0.2 });
+    this.mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true });
+    this.glassMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, emissive: '#ffcf8a', emissiveIntensity: 0 });
+    this.lightMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: '#ffe2a8', emissiveIntensity: 0.2 });
     this.batch = new StaticBatch(150);
     this.glass = new StaticBatch(150);
     this.lights = new StaticBatch(150);
@@ -158,7 +158,7 @@ export class World {
   }
 
   texturedPanel(tex, w, h, x, y, z, rot, { back = '#1b1c1f', depth = 0.25, doubleSided = false } = {}) {
-    const mat = new THREE.MeshLambertMaterial({ map: tex });
+    const mat = new THREE.MeshStandardMaterial({ map: tex });
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
     plane.position.set(x + Math.sin(rot) * (depth / 2 + 0.01), y, z + Math.cos(rot) * (depth / 2 + 0.01));
     plane.rotation.y = rot;
@@ -250,7 +250,7 @@ export class World {
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geo.setIndex(indices);
     geo.computeVertexNormals();
-    const mat = new THREE.MeshLambertMaterial({ map: roadTexture(), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4, depthWrite: false });
+    const mat = new THREE.MeshStandardMaterial({ map: roadTexture(), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4, depthWrite: false });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     mesh.renderOrder = -1;
@@ -336,7 +336,7 @@ export class World {
       const tex = banner.clone();
       tex.repeat.set(Math.round(len / 12), 1);
       tex.needsUpdate = true;
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.55), new THREE.MeshLambertMaterial({ map: tex }));
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.55), new THREE.MeshStandardMaterial({ map: tex }));
       m.position.set(x, ay + 0.55, z);
       m.rotation.y = rot;
       this.group.add(m);
@@ -682,7 +682,7 @@ export class World {
     statue.mesh.position.set(sx, sy + 1.8, sz);
     statue.mesh.rotation.y = Math.PI / 2;
     statue.mesh.scale.setScalar(1.1);
-    statue.mesh.material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, emissive: '#2a1d0c', emissiveIntensity: 0.3 });
+    statue.mesh.material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, emissive: '#2a1d0c', emissiveIntensity: 0.3 });
     this.group.add(statue.mesh);
   }
 

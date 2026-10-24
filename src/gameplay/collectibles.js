@@ -16,7 +16,7 @@ export class Collectibles {
     this.items = [];
     const geo = new THREE.TorusGeometry(0.42, 0.11, 6, 14, Math.PI * 1.45);
     geo.rotateZ(-Math.PI * 0.225 - Math.PI / 2);
-    const mat = new THREE.MeshLambertMaterial({ color: '#e7c06a', emissive: '#6b4a10', emissiveIntensity: 0.6 });
+    const mat = new THREE.MeshStandardMaterial({ color: '#e7c06a', emissive: '#6b4a10', emissiveIntensity: 0.6 });
     const glowMat = new THREE.SpriteMaterial({ map: horseshoeSpriteTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.85 });
     HORSESHOES.forEach(([x, z], i) => {
       if (game.save.data.horseshoes.includes(i)) return;

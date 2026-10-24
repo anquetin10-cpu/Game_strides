@@ -1,0 +1,50 @@
+// Captures « réalisme » : plusieurs heures et points de vue, rendu réel (SwiftShader).
+// Usage : node tests/e2e/look.mjs [WxH] [heures séparées par des virgules] [vue]   (BASE=http://localhost:5173)
+import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
+const [W, H] = (process.argv[2] || '1280x720').split('x').map(Number);
+const hours = (process.argv[3] || '9,13,19.5').split(',').map(Number);
+const view = process.argv[4] || 'horse';
+const base = process.env.BASE || 'http://localhost:5173';
+const out = (n) => `tests/e2e/out/look/${view}-${n}.png`;
+const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await b.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+await page.goto(`${base}/?autostart&quality=high`);
+await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 240000 });
+await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
+await page.evaluate(() => { window.__auto.stopLoop(); window.__auto.closeCards(); const g = window.__game; while (g.hud.dialogActive) g.hud.advanceDialog(); g.missions.abandon?.(); window.__auto.closeCards(); });
+const VIEWS = {
+  // Cheval principal, vu de trois quarts.
+  horse: (g) => { const h = g.mainHorse; return { at: [h.pos.x, h.pos.y + 1.2, h.pos.z], from: [h.pos.x + 4.2, h.pos.y + 2.0, h.pos.z + 3.6] }; },
+  // Écurie du Val, vue large.
+  home: (g) => { const p = g.player.focus.pos; return { at: [p.x, p.y + 2, p.z], from: [p.x + 22, p.y + 9, p.z + 26] }; },
+  // Camion.
+  truck: (g) => { const t = g.truck; return { at: [t.pos.x, t.pos.y + 1.6, t.pos.z], from: [t.pos.x + 7, t.pos.y + 3, t.pos.z + 8] }; },
+  // Paysage depuis la colline.
+  land: (g) => ({ at: [60, 6, -370], from: [250, 50, -260] }),
+};
+for (const hr of hours) {
+  await page.evaluate(([hr, view]) => {
+    const g = window.__game;
+    g.save.data.gameTime = hr * 3600;
+    g.update(1 / 30);
+    const v = ({ horse: 1, home: 1, truck: 1, land: 1 })[view] && window.__lookViews?.[view];
+  }, [hr, view]);
+  await page.evaluate(([viewSrc]) => {
+    const g = window.__game;
+    const v = new Function('g', `return (${viewSrc})(g)`)(g);
+    g.camera.position.set(...v.from);
+    g.camera.lookAt(...v.at);
+    g.sky.update(g.hour(), g.player.focus.pos, 0);
+    g.sky.follow(g.camera);
+    g.sky.updateEnvironment(g.renderer, performance.now() / 1000, true);
+    g.world.update(0, g.camera, g.sky);
+    g.renderer.render(g.scene, g.camera);
+  }, [VIEWS[view].toString()]);
+  await page.screenshot({ path: out(`${String(hr).replace('.', 'h')}`) });
+}
+console.log(view, hours.join(','), errors.length ? `ERREURS: ${errors.slice(0, 5).join(' | ')}` : 'ok');
+await b.close();

@@ -61,7 +61,7 @@ class Car {
     this.wait = 0;
     const g = new THREE.Group();
     const geo = carGeo(color);
-    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true }));
     m.castShadow = true;
     g.add(m);
     g.rotation.order = 'YXZ';

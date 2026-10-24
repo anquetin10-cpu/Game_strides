@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { transformed, paint } from '../world/shapes.js';
 
-export const SKIN_MAT = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+export const SKIN_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true });
 
 export function buildRig(boneDefs, parts) {
   const bones = {};

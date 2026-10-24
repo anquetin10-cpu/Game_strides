@@ -198,7 +198,7 @@ export class Terrain {
     geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeVertexNormals();
-    const mat = new THREE.MeshLambertMaterial({ map: texture });
+    const mat = new THREE.MeshStandardMaterial({ map: texture });
     if (detailTexture) {
       mat.onBeforeCompile = (shader) => {
         shader.uniforms.detailMap = { value: detailTexture };

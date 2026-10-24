@@ -55,7 +55,7 @@ export class Activities {
       [box(0.04, 0.9, 1.4, false), '#15161a', { y: 2.7, z: 0.7 }],
       [box(0.045, 0.5, 0.5, false), '#f2f1ec', { y: 2.7, z: 0.7 }],
     ]);
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true });
     for (const a of this.defs) {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(a.start.x + 3, g.terrain.getHeight(a.start.x + 3, a.start.z), a.start.z);

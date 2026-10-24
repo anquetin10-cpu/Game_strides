@@ -54,8 +54,11 @@ export class Game {
     this.canvas = document.getElementById('game');
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // Rendu photoréaliste : radiance HDR (ciel physique, soleil), tone mapping filmique.
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 0.42;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.3, 1500);
     this.colliders = new Colliders();
@@ -126,6 +129,7 @@ export class Game {
     this.screens.setLoading(0.97, 'Préparation des shaders');
     await new Promise((r) => setTimeout(r, 0));
     this.sky.update(17.5, this.player.focus.pos, 0);
+    this.sky.updateEnvironment(this.renderer, 0, true);
     this.renderer.compile(this.scene, this.camera);
     this.screens.setLoading(1, 'Prêt');
     this.screens.hideLoading();
@@ -732,6 +736,7 @@ export class Game {
     this.camera.lookAt(c.x, 6, c.z - 40);
     this.sky.update(18.4, { x: this.camera.position.x, y: 0, z: this.camera.position.z }, dt);
     this.sky.follow(this.camera);
+    this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
     for (const h of this.horses) if (h.ambient) h.update(dt, this.camera.position);
@@ -753,6 +758,7 @@ export class Game {
       this.cam.update(dt, this.player.focus, input.look);
       this.sky.update(this.hour(), this.player.focus.pos, dt);
       this.sky.follow(this.camera);
+      this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
       this.world.water.update(this.time, this.sky);
       input.endFrame();
       return;
@@ -805,6 +811,7 @@ export class Game {
     const hour = this.hour();
     this.sky.update(hour, this.player.focus.pos, dt);
     this.sky.follow(this.camera);
+    this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
     const f = this.player.focus.pos;
