@@ -31,6 +31,7 @@ import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
 import { installCare } from './gameplay/condition.js';
 import { Birds } from './world/birds.js';
+import { HoofPrints } from './world/hoofprints.js';
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -97,6 +98,7 @@ export class Game {
     this.grass = new Grass(this.scene, this.terrain, this.world.grassMask, IS_TOUCH ? 3200 : 4500);
     this.particles = new Particles(this.scene);
     this.birds = new Birds(this.scene);
+    this.hoofPrints = new HoofPrints(this.scene, this.terrain);
     this.resize();
     this.screens.setLoading(0.82, 'Chevaux et cavaliers');
     await new Promise((r) => setTimeout(r, 0));
@@ -341,6 +343,8 @@ export class Game {
       const f = horse.forward;
       const bx = horse.pos.x - f.x * 0.4, bz = horse.pos.z - f.z * 0.4;
       const vx = f.x * sp, vz = f.z * sp;
+      // Empreintes dans les sols meubles (sable, terre), plus discrètes dans l'herbe.
+      if ((surf === 'sand' || surf === 'soil') && (horse.isPlayerHorse || horse.rider)) this.hoofPrints.step(horse, n, 1);
       if (surf === 'water') this.particles.emit('splash', bx, horse.groundY + Math.max(0, depth), bz, 3 + n * 2, vx, vz);
       else if (sp > 5) {
         if (surf === 'sand') this.particles.emit('sand', bx, horse.groundY, bz, n * 3, vx, vz);
@@ -827,6 +831,7 @@ export class Game {
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
     this.birds.update(dt, this.sky.nightFactor);
+    this.hoofPrints.update(dt);
     // Ambiance sonore : oiseaux des haies le jour, goélands sur la côte.
     if ((this._birdT = (this._birdT ?? 4) - dt) <= 0 && this.sky.nightFactor < 0.5) {
       const fp = this.player.focus.pos;
