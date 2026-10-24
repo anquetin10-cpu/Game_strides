@@ -51,6 +51,8 @@ for (const hr of hours) {
     g.world.update(0, g.camera, g.sky);
     g.renderer.render(g.scene, g.camera);
   }, [VIEWS[view].toString()]);
+  const info = await page.evaluate(() => { const i = window.__game.renderer.info.render; return `${i.calls} appels, ${Math.round(i.triangles / 1000)}k triangles`; });
+  console.log(view, hr, info);
   await page.screenshot({ path: out(`${String(hr).replace('.', 'h')}`) });
 }
 console.log(view, hours.join(','), errors.length ? `ERREURS: ${errors.slice(0, 5).join(' | ')}` : 'ok');

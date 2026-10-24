@@ -37,6 +37,8 @@ export class World {
     this.glassMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.06, metalness: 0.1, emissive: '#ffcf8a', emissiveIntensity: 0 });
     this.lightMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: '#ffe2a8', emissiveIntensity: 0.2 });
     this.batch = new StaticBatch(150);
+    // Petits détails (sièges, public…) : lot séparé, masqué au-delà de quelques centaines de mètres.
+    this.detailBatch = new StaticBatch(90);
     this.glass = new StaticBatch(150);
     this.lights = new StaticBatch(150);
     this.chunks = [];
@@ -99,6 +101,8 @@ export class World {
     progress(0.86, 'Assemblage');
     await tick('assemble');
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
+    this.detailChunks = this.detailBatch.build(this.mat, this.group, { name: 'detail', castShadow: false });
+    for (const m of this.detailChunks) m.userData.center = m.geometry.boundingSphere.center.clone();
     this.chunks.push(...this.glass.build(this.glassMat, this.group, { castShadow: false, name: 'glass' }));
     this.chunks.push(...this.lights.build(this.lightMat, this.group, { castShadow: false, receiveShadow: false, name: 'lights' }));
     progress(0.9, 'Prêt');
@@ -374,33 +378,52 @@ export class World {
     this.signboard('PÔLE INTERNATIONAL', 'CSO · CSI 3★ · CSI 5★', 344, -150, 0, { w: 6 });
   }
 
-  // Tribune en gradins face à +Z (local).
+  // Tribune en gradins face à +Z (local) : marches béton, sièges baquets, escaliers, garde-corps vitré,
+  // toiture en porte-à-faux sur fermes métalliques, public assis (silhouettes variées).
   buildStands(r, rot, roof = true, title = '') {
     const parts = [];
-    const steps = 5;
-    for (let i = 0; i < steps; i++) {
-      parts.push([box(r.w, 0.7 + i * 0.7, 2.4), i % 2 ? '#d7d5cf' : '#cbc9c2', { z: r.d / 2 - 1.2 - i * 2.4 }]);
-    }
-    parts.push([box(r.w, 4.8, 0.4), '#2a2b2f', { z: -r.d / 2 }]);
-    if (roof) {
-      for (let k = 0; k <= 6; k++) parts.push([box(0.3, 8.5, 0.3), '#1b1c1f', { x: -r.w / 2 + (r.w / 6) * k, z: -r.d / 2 + 0.3 }]);
-      parts.push([box(r.w + 2, 0.4, r.d + 3), '#1b1c1f', { y: 8.5, z: 0.6, rx: -0.08 }]);
-    }
-    // Spectateurs.
-    const crowd = ['#1b1c1f', '#f2f1ec', '#3a5a8c', '#a33b32', '#d9c9a6', '#5d7a4a', '#2e2f33'];
-    for (let i = 0; i < steps; i++) {
-      for (let k = 0; k < Math.floor(r.w / 1.1); k++) {
-        if (this.rnd() < 0.35) continue;
-        const x = -r.w / 2 + 0.6 + k * 1.1 + (this.rnd() - 0.5) * 0.3;
-        const z = r.d / 2 - 1.6 - i * 2.4;
-        const y = 0.7 + i * 0.7;
-        parts.push([box(0.5, 0.7, 0.36), crowd[Math.floor(this.rnd() * crowd.length)], { x, y, z }]);
-        parts.push([box(0.24, 0.26, 0.24), '#e2b894', { x, y: y + 0.72, z }]);
+    const det = [];
+    const rows = Math.max(4, Math.floor((r.d - 1.2) / 0.85));
+    const rise = 0.42;
+    const seatW = 0.5;
+    const nSeats = Math.floor((r.w - 1) / seatW);
+    for (let i = 0; i < rows; i++) {
+      const z = r.d / 2 - 0.6 - i * 0.85;
+      parts.push([box(r.w, rise * (i + 1), 0.85), i % 2 ? '#bdb9b0' : '#c4c0b7', { z }]);
+      for (let k = 0; k < nSeats; k++) {
+        if (k % 20 === 9 || k % 20 === 10) continue; // allée et escalier
+        const x = -r.w / 2 + 0.5 + (k + 0.5) * seatW;
+        const sy = rise * (i + 1);
+        if (this.rnd() < 0.55) det.push(...seatedPerson(this.rnd, x, sy + 0.44, z + 0.02));
+        else det.push([seatGeo(), '#1d1e22', { x, y: sy + 0.38, z: z - 0.05 }]);
       }
+      // Marches d'escalier dans les allées.
+      for (let k = 9; k < nSeats; k += 20) {
+        const x = -r.w / 2 + 0.5 + (k + 1) * seatW;
+        parts.push([box(0.95, rise * (i + 1) - rise / 2, 0.42), '#d2cec5', { x, z: z + 0.21 }]);
+      }
+    }
+    // Garde-corps avant (verre feuilleté sur montants inox).
+    parts.push([box(r.w, 1.0, 0.04), '#9fb2bb', { y: rise, z: r.d / 2 - 0.15 }]);
+    for (let x = -r.w / 2; x <= r.w / 2 + 0.01; x += 2) det.push([box(0.05, 1.05, 0.05), '#b9bdc1', { x, y: rise, z: r.d / 2 - 0.12 }]);
+    // Mur arrière.
+    const backH = rise * rows + 1.2;
+    parts.push([box(r.w, backH, 0.3), '#2a2b2f', { z: -r.d / 2 + 0.15 }]);
+    if (roof) {
+      // Poteaux arrière, fermes en porte-à-faux, couverture.
+      const nb = Math.max(3, Math.round(r.w / 8));
+      for (let k = 0; k <= nb; k++) {
+        const x = -r.w / 2 + (r.w / nb) * k;
+        parts.push([box(0.35, backH + 3.6, 0.35), '#1b1c1f', { x, z: -r.d / 2 + 0.3 }]);
+        parts.push([box(0.18, 0.5, r.d + 2.4, false), '#1b1c1f', { x, y: backH + 3.3, z: 1.1, rx: 0.06 }]);
+        parts.push([box(0.12, 0.12, Math.hypot(r.d * 0.6, 2.6), false), '#1b1c1f', { x, y: backH + 2.0, z: -r.d / 2 + r.d * 0.3, rx: -Math.atan2(2.6, r.d * 0.6) }]);
+      }
+      parts.push([box(r.w + 2, 0.18, r.d + 3), '#2b2c30', { y: backH + 3.6, z: 0.9, rx: 0.06 }]);
     }
     const geo = partsToGeo(parts);
     const y = this.groundAt(r.x, r.z, r.w / 2, r.d / 2, rot);
     this.batch.add(geo, null, r.x, y, r.z, rot);
+    this.detailBatch.add(partsToGeo(det), null, r.x, y, r.z, rot);
     this.colliders.addBox(r.x, r.z, r.w / 2, r.d / 2, rot, Infinity, 'stands');
     this.features.buildings.push({ x: r.x, z: r.z, w: r.w, d: r.d, rot, kind: 'stands' });
     if (title) {
@@ -933,6 +956,13 @@ export class World {
 
   update(dt, camera, sky) {
     const night = sky.nightFactor;
+    if (this.detailChunks) {
+      const cx = camera.position.x, cz = camera.position.z;
+      for (const m of this.detailChunks) {
+        const c = m.userData.center;
+        m.visible = (c.x - cx) * (c.x - cx) + (c.z - cz) * (c.z - cz) < 240 * 240;
+      }
+    }
     this.glassMat.emissiveIntensity = night * 0.9;
     this.lightMat.emissiveIntensity = 0.2 + night * 1.6;
     if (this.beam) {
@@ -948,6 +978,39 @@ export class World {
       m.visible = d < 620;
     }
   }
+}
+
+// Spectateur assis (≈ 250 triangles) : peau, cheveux, haut et pantalon variés, posture légèrement variable.
+const SKIN = ['#e6c2a2', '#d9a982', '#c18e68', '#8d5a3b', '#f0d1b8', '#a8724f'];
+const HAIR = ['#2b1d14', '#4a3222', '#8a6a46', '#c9a46a', '#1b1b1b', '#9a9a96'];
+const TOPS = ['#1f2b45', '#f2f1ec', '#3a5a8c', '#a33b32', '#2e2f33', '#d9c9a6', '#5d7a4a', '#7b2b3a', '#e3d36a', '#4b6f73'];
+const PANTS = ['#2a3446', '#3a3b3f', '#c9c0ad', '#1f2023', '#46536b'];
+let _seat = null;
+// Siège baquet vide (assise + dossier d'un seul tenant, 20 triangles).
+function seatGeo() {
+  if (_seat) return _seat;
+  const v = [-0.21, 0, 0.2, 0.21, 0, 0.2, 0.21, 0, -0.14, -0.21, 0, -0.14, -0.21, 0.42, -0.2, 0.21, 0.42, -0.2];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  g.setIndex([0, 1, 2, 0, 2, 3, 3, 2, 5, 3, 5, 4, 0, 2, 1, 0, 3, 2, 3, 5, 2, 3, 4, 5]);
+  g.computeVertexNormals();
+  _seat = g;
+  return g;
+}
+
+function seatedPerson(rnd, x, y, z) {
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  const skin = pick(SKIN), top = pick(TOPS), pants = pick(PANTS), hair = pick(HAIR);
+  const lean = (rnd() - 0.5) * 0.12;
+  const sh = 0.92 + rnd() * 0.16;
+  // Silhouette vue de loin (~70 triangles) : buste, épaules, tête, cheveux, jambes.
+  const P = [];
+  P.push([new THREE.CylinderGeometry(0.16 * sh, 0.13 * sh, 0.52 * sh, 6, 1), top, { x, y: y + 0.3 * sh, z: z - 0.04, rx: -0.06 + lean, sz: 0.72 }]);
+  P.push([new THREE.IcosahedronGeometry(0.1 * sh, 0), skin, { x, y: y + 0.68 * sh, z: z - 0.03, sy: 1.15 }]);
+  P.push([new THREE.IcosahedronGeometry(0.1 * sh, 0), hair, { x, y: y + 0.72 * sh, z: z - 0.06, sy: 0.7 }]);
+  P.push([new THREE.BoxGeometry(0.32, 0.13, 0.42), pants, { x, y: y + 0.05, z: z + 0.18 }]);
+  P.push([new THREE.BoxGeometry(0.3, 0.42, 0.12), pants, { x, y: y - 0.17, z: z + 0.36 }]);
+  return P.map(([g, c, tf]) => [prep(g), c, tf]);
 }
 
 function pointInPoly(x, z, poly) {
