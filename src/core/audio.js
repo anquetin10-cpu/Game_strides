@@ -139,6 +139,10 @@ export class Audio {
     } else if (surface === 'wood') {
       this._burst(t, { freq: 240, q: 9, vol: 0.3 * v, a: 0.002, d: 0.12 });
       this._burst(t, { freq: 760, q: 5, vol: 0.12 * v, a: 0.001, d: 0.05 });
+    } else if (surface === 'mud') {
+      // Terre détrempée : choc mou puis succion quand le sabot se dégage.
+      this._burst(t, { type: 'lowpass', freq: 170, q: 0.8, vol: 0.3 * v, a: 0.004, d: 0.09 });
+      this._burst(t + 0.05 + Math.random() * 0.02, { freq: 620, q: 2.2, vol: 0.07 * v, a: 0.012, d: 0.06 });
     } else if (surface === 'water') {
       this._burst(t, { freq: 900, q: 1.2, vol: 0.16 * v, d: 0.18 });
       this._burst(t, { type: 'highpass', freq: 2500, q: 0.7, vol: 0.08 * v, a: 0.01, d: 0.25, len: 0.4 });

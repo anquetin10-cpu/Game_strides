@@ -350,15 +350,21 @@ export class Game {
       const vx = f.x * sp, vz = f.z * sp;
       // Empreintes dans les sols meubles (sable, terre), plus discrètes dans l'herbe.
       if ((surf === 'sand' || surf === 'soil') && (horse.isPlayerHorse || horse.rider)) this.hoofPrints.step(horse, n, 1);
+      const wet = this.sky.wet || 0;
       if (surf === 'water') this.particles.emit('splash', bx, horse.groundY + Math.max(0, depth), bz, 3 + n * 2, vx, vz);
-      else if (sp > 5) {
+      else if (wet > 0.35 && sp > 3 && surf !== 'sand') {
+        // Sol détrempé : mottes de terre au lieu de poussière, gouttelettes sur le bitume.
+        if (surf === 'road' || surf === 'gravel') this.particles.emit('spray', bx, horse.groundY, bz, n, vx, vz);
+        else if (surf === 'grass' || surf === 'soil') this.particles.emit('mud', bx, horse.groundY, bz, n * (sp > 8 ? 3 : 1), vx, vz);
+      } else if (sp > 5) {
         if (surf === 'sand') this.particles.emit('sand', bx, horse.groundY, bz, n * 3, vx, vz);
         else if (surf === 'grass' && sp > 9) this.particles.emit('grass', bx, horse.groundY, bz, n, vx, vz);
         if (surf !== 'road' && sp > 8) this.particles.emit('dust', bx, horse.groundY, bz, 1, vx, vz);
       }
       if (!horse.isPlayerHorse || !a.ctx) return;
       const k = clamp(horse.speed / 10, 0.35, 1);
-      for (let i = 0; i < n; i++) setTimeout(() => a.hoof(surf, k), i * 35);
+      const hs = wet > 0.35 && (surf === 'grass' || surf === 'soil') ? 'mud' : surf;
+      for (let i = 0; i < n; i++) setTimeout(() => a.hoof(hs, k), i * 35);
       // Au galop, le cheval expire à chaque foulée (couplage locomotion-respiration).
       const ph = horse.anim.phase;
       if (horse.speed > 6 && ph < (horse._lastBreathPh ?? 1)) a.breath(clamp((horse.speed - 5) / 9, 0.3, 1));

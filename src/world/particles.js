@@ -36,6 +36,10 @@ const TYPES = {
   sand: { color: new THREE.Color('#f6eedb'), size: [0.9, 1.6], life: [0.5, 0.9], up: [1.0, 2.4], spread: 1.5, grow: 1.6, alpha: 0.62, grav: 3 },
   grass: { color: new THREE.Color('#8db063'), size: [0.25, 0.45], life: [0.4, 0.7], up: [1.5, 3], spread: 1.6, grow: 0.2, alpha: 0.9, grav: 7 },
   splash: { color: new THREE.Color('#f3f7f6'), size: [0.5, 1.0], life: [0.4, 0.8], up: [2.5, 4.5], spread: 1.8, grow: 0.8, alpha: 0.85, grav: 9.8 },
+  // Mottes de terre mouillée projetées par les sabots (sol détrempé après la pluie).
+  mud: { color: new THREE.Color('#4a3a2a'), size: [0.18, 0.34], life: [0.45, 0.8], up: [1.6, 3.2], spread: 1.4, grow: 0.1, alpha: 0.95, grav: 9.8 },
+  // Gouttelettes soulevées sur une chaussée mouillée.
+  spray: { color: new THREE.Color('#dfe5e8'), size: [0.3, 0.6], life: [0.25, 0.5], up: [0.8, 1.6], spread: 1.0, grow: 0.7, alpha: 0.35, grav: 6 },
 };
 
 export class Particles {
