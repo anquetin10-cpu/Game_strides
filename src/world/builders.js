@@ -211,7 +211,10 @@ export function shedGeo({ w, d, h = 5, roof = '#5a4a3f', post = PALETTE.darkWood
 export function fenceGeo(points, getH, { height = 1.15, rails = 2, color = PALETTE.white, post = null, spacing = 3, closed = false, board = false } = {}) {
   const geos = [];
   const pts = closed ? [...points, points[0]] : points;
-  const postGeo = box(0.14, height + 0.3, 0.14);
+  // Poteaux : ronds (bois traité) pour les lisses, carrés avec chapeau pour les pare-bottes de carrière.
+  const postGeo = board
+    ? mergeGeometries([box(0.12, height + 0.3, 0.12), transformed(box(0.16, 0.05, 0.16), { y: height + 0.3 })], false)
+    : mergeGeometries([cyl(0.065, 0.075, height + 0.3, 8), transformed(cone(0.07, 0.06, 8), { y: height + 0.3 })], false);
   for (let s = 0; s < pts.length - 1; s++) {
     const [ax, az] = pts[s];
     const [bx, bz] = pts[s + 1];
@@ -229,12 +232,14 @@ export function fenceGeo(points, getH, { height = 1.15, rails = 2, color = PALET
       const segLen = Math.hypot(x1 - x0, z1 - z0, y1 - y0);
       const pitch = Math.atan2(y1 - y0, Math.hypot(x1 - x0, z1 - z0));
       if (board) {
-        const g = box(0.06, height * 0.55, segLen, false);
-        geos.push(paint(transformed(g, { x: (x0 + x1) / 2, y: (y0 + y1) / 2 + height * 0.45, z: (z0 + z1) / 2, ry: ang, rx: -pitch }), color));
+        // Pare-bottes plein (légèrement incliné vers l'extérieur) et lisse haute.
+        const g = box(0.045, height * 0.55, segLen, false);
+        geos.push(paint(transformed(g, { x: (x0 + x1) / 2, y: (y0 + y1) / 2 + height * 0.3, z: (z0 + z1) / 2, ry: ang, rx: -pitch, rz: 0.05 }), color));
+        geos.push(paint(transformed(box(0.05, 0.12, segLen, false), { x: (x0 + x1) / 2, y: (y0 + y1) / 2 + height * 0.92, z: (z0 + z1) / 2, ry: ang, rx: -pitch }), color));
       } else {
         for (let r = 0; r < rails; r++) {
           const ry = height * (0.45 + (0.5 * (r + 1)) / rails);
-          const g = box(0.07, 0.12, segLen, false);
+          const g = box(0.04, 0.14, segLen + 0.1, false);
           geos.push(paint(transformed(g, { x: (x0 + x1) / 2, y: (y0 + y1) / 2 + ry, z: (z0 + z1) / 2, ry: ang, rx: -pitch }), color));
         }
       }

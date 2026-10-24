@@ -147,12 +147,36 @@ export class Obstacles {
     xcLayout().forEach((p, i) => {
       this.add({ x: p.x, z: p.z, rot: p.rot, kind: p.kind, h: p.kind === 'log' ? 0.95 : 1.05, w: 4.2, num: i + 1, course: 'xc', solid: true });
     });
+    // Lignes de départ et d'arrivée : fanions (rouge à droite, blanc à gauche) et cellules de chronométrage.
+    for (const L of [{ ...CSO_START, w: 7 }, CSO_FINISH]) this._timingLine(L);
     const H = HOME.arena;
     this.add({ x: H.x - 9, z: H.z, rot: Math.PI / 2, kind: 'v', h: 0.75, w: 3.2, course: 'home', id: 'home1' });
     this.add({ x: H.x + 10, z: H.z, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.2, course: 'home', id: 'home2', colors: COLORS[1] });
     const W = POLE.warmup;
     this.add({ x: W.x, z: W.z - 9, rot: Math.PI / 2, kind: 'v', h: 1.1, w: 3.4, course: 'warmup' });
     this.add({ x: W.x, z: W.z + 10, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.4, course: 'warmup', colors: COLORS[1] });
+  }
+
+  _timingLine(L) {
+    const parts = [];
+    for (const side of [-1, 1]) {
+      const x = side * L.w / 2;
+      parts.push([box(0.06, 1.6, 0.06), '#f2f1ec', { x }]);
+      parts.push([box(0.012, 0.36, 0.5, false), side < 0 ? '#c62b2b' : '#f4f3ee', { x: x + 0.03 * side, y: 1.38, z: 0.25 }]);
+      // Cellule photoélectrique sur trépied.
+      const cx = x + side * 0.6;
+      for (let k = 0; k < 3; k++) {
+        const a = (k / 3) * Math.PI * 2;
+        parts.push([box(0.025, 0.95, 0.025, false), '#2b2c30', { x: cx + Math.cos(a) * 0.16, y: 0.45, z: Math.sin(a) * 0.16, rx: Math.sin(a) * 0.17, rz: -Math.cos(a) * 0.17 }]);
+      }
+      parts.push([box(0.12, 0.1, 0.16), '#f0c419', { x: cx, y: 0.9 }]);
+      parts.push([box(0.05, 0.05, 0.02), '#c62b2b', { x: cx - side * 0.06, y: 0.93, z: 0.0 }]);
+    }
+    const m = new THREE.Mesh(partsToGeo(parts), MAT);
+    m.position.set(L.x, this.game.terrain.getHeight(L.x, L.z), L.z);
+    m.rotation.y = L.rot;
+    m.castShadow = true;
+    this.group.add(m);
   }
 
   ofCourse(id) {
