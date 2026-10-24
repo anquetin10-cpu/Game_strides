@@ -30,6 +30,7 @@ import { buildMapImage } from './ui/minimap.js';
 import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
 import { installCare } from './gameplay/condition.js';
+import { Birds } from './world/birds.js';
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -95,6 +96,7 @@ export class Game {
     this.sky = this.world.sky;
     this.grass = new Grass(this.scene, this.terrain, this.world.grassMask, IS_TOUCH ? 3200 : 4500);
     this.particles = new Particles(this.scene);
+    this.birds = new Birds(this.scene);
     this.resize();
     this.screens.setLoading(0.82, 'Chevaux et cavaliers');
     await new Promise((r) => setTimeout(r, 0));
@@ -747,6 +749,7 @@ export class Game {
     this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
+    this.birds.update(dt, this.sky.nightFactor);
     for (const h of this.horses) if (h.ambient) h.update(dt, this.camera.position);
     for (const p of this.humans) if (!p.mounted) p.update(dt, this.camera.position);
     for (const h of this.humans) if (h.mounted) h.animateRiding(dt);
@@ -823,6 +826,7 @@ export class Game {
     this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky);
+    this.birds.update(dt, this.sky.nightFactor);
     const f = this.player.focus.pos;
     this.audio.ambience({
       speed: Math.abs(this.player.speed),

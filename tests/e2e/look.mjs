@@ -32,6 +32,10 @@ const VIEWS = {
   // Cour de l'écurie : tracteur, voiture, matériel.
   yard: (g) => { const y = g.terrain.getHeight(-152, 170); return { at: [-158, y + 1.2, 166], from: [-150.5, y + 2.2, 173] }; },
   car: (g) => { const y = g.terrain.getHeight(-84, 146); return { at: [-84, y + 0.9, 146], from: [-79.5, y + 1.8, 150.5] }; },
+  // Plage et goélands.
+  beach: (g) => { const b = g.birds.birds[3]; return { at: [b.cx, b.h * 0.7, b.cz], from: [b.cx + 30, 4, b.cz + 45] }; },
+  // Falaises d'Aval depuis la plage.
+  cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).
   lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },
   // Rue de Deauvelle, à hauteur d'homme.
