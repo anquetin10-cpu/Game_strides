@@ -142,6 +142,7 @@ export class Player {
       if (tp.seq && tp.seq.horse === h) tp.abortSequence();
       if (tp.isAboard(h)) tp.unloadInstant(h);
       if (tp.led && tp.led.horse === h) tp.release(true);
+      tp.travelTack(h, false);
     }
     h.ai = null;
     h.control.mag = 0;

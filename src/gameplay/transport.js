@@ -5,6 +5,8 @@ import { TRUCK_DIM } from '../entities/truckModel.js';
 import { HOME } from '../world/sites.js';
 import { angleDiff, clamp, damp, lerp, wrapAngle } from '../core/math.js';
 import { CompetitionOffers } from './trip.js';
+// Espace de noms : setHorseTack n'existe que dans les modèles de cheval qui savent changer d'équipement.
+import * as HorseModel from '../entities/horseModel.js';
 
 const D = TRUCK_DIM;
 const ease = (t) => t * t * (3 - 2 * t);
@@ -496,6 +498,7 @@ export class Transport {
     h.ai = null;
     h.frozen = false;
     h.isPlayerHorse = false;
+    if (kind === 'load') this.travelTack(h, true);
     this._wrap(h, 'seq');
     p.locked = true;
     t.passThrough.add(h);
@@ -870,10 +873,30 @@ export class Transport {
     yield* this._turn(M, Math.PI, 3);
   }
 
+  // ---------- Tenue de voyage ----------
+  // Licol seul pendant le transport ; la sellerie d'origine revient quand on remonte à cheval.
+  // Sans effet si le modèle de cheval n'expose pas setHorseTack(mesh, { saddle, mounted, boots }).
+  travelTack(h, on) {
+    const set = HorseModel.setHorseTack;
+    const part = h?.mesh?.userData?.tack;
+    if (typeof set !== 'function' || !part) return;
+    if (on) {
+      if (!h._tpTack) {
+        const c = part.userData?.cfg || {};
+        h._tpTack = { saddle: c.saddle ?? true, boots: c.boots };
+      }
+      set(h.mesh, { saddle: false, mounted: false });
+    } else if (h._tpTack) {
+      set(h.mesh, { saddle: h._tpTack.saddle, boots: h._tpTack.boots });
+      h._tpTack = null;
+    }
+  }
+
   // ---------- Cheval à bord ----------
   _setAboard(h, stall) {
     this.aboard.push({ horse: h, stall, sway: { x: 0, vx: 0, z: 0, vz: 0 }, eatT: 2 + Math.random() * 5, look: 0, lookT: 3 });
     h.hiddenInTruck = true;
+    this.travelTack(h, true);
     h.ai = null;
     h.control.mag = 0;
     h.control.speedOverride = undefined;
