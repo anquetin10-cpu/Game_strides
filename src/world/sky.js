@@ -45,8 +45,10 @@ float csNoise( vec2 p ) {
 float csCloudShadow( vec3 wp ) {
   if ( csSun.y < 0.05 ) return 1.0;
   vec2 q = ( wp.xz + csSun.xz * ( 1600.0 - wp.y ) / csSun.y ) * 0.00042 + csWind;
+  // Trois octaves suffisent pour l'ombre (les détails fins du ciel n'y changent rien) ; correction d'amplitude.
   float a = 0.5, s = 0.0;
-  for ( int i = 0; i < 5; i++ ) { s += a * csNoise( q ); q = mat2( 1.6, 1.2, -1.2, 1.6 ) * q; a *= 0.5; }
+  for ( int i = 0; i < 3; i++ ) { s += a * csNoise( q ); q = mat2( 1.6, 1.2, -1.2, 1.6 ) * q; a *= 0.5; }
+  s += 0.0625;
   float cov = smoothstep( 1.0 - csCover, 1.15 - csCover * 0.6, s );
   return 1.0 - cov * 0.78;
 }`)
