@@ -5,6 +5,8 @@ import * as THREE from 'three';
 
 const SURFACE_CHUNK = /* glsl */ `
 uniform sampler2D surfDetail;
+uniform sampler2D surfHeight;
+uniform vec4 surfHm;
 varying vec3 vSurfPos;
 varying vec3 vSurfNrm;
 float sfH = 0.0;
@@ -112,14 +114,24 @@ const SURFACE_MAIN = /* glsl */ `
     sfMetal = 0.0;
   }
   diffuseColor.rgb *= mix( 1.0, tint, 0.4 + 0.6 * ( 1.0 - smoothstep( 40.0, 160.0, dist ) ) );
+  // Occultation au contact du sol : les faces verticales s'assombrissent près du terrain.
+  vec2 hg = ( p.xz - surfHm.xy ) / surfHm.z;
+  vec2 huv = ( hg * surfHm.w + 0.5 ) / ( surfHm.w + 1.0 );
+  float ground = texture2D( surfHeight, vec2( huv.x, 1.0 - huv.y ) ).r;
+  float hag = p.y - ground;
+  diffuseColor.rgb *= mix( 1.0, mix( 0.55, 1.0, smoothstep( 0.0, 1.3, hag ) ), 1.0 - ny * 0.8 );
 }
 `;
 
 // Applique le shader de surfaces à un matériau standard à couleurs de sommet (bâtiments, mobilier, décors).
-export function applySurfaces(material, detailTexture) {
+// getTerrain : fonction renvoyant le terrain (résolu à la compilation, une fois le monde construit).
+export function applySurfaces(material, detailTexture, getTerrain = null) {
   material.vertexColors = true;
   material.onBeforeCompile = (shader) => {
+    const terrain = getTerrain?.();
     shader.uniforms.surfDetail = { value: detailTexture };
+    shader.uniforms.surfHeight = { value: terrain ? terrain.heightTexture() : null };
+    shader.uniforms.surfHm = { value: terrain ? terrain.hmParams : new THREE.Vector4(-1e6, -1e6, 1, 1) };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vSurfPos;\nvarying vec3 vSurfNrm;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSurfPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\nvSurfNrm = mat3( modelMatrix ) * objectNormal;');

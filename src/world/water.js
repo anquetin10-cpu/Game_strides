@@ -1,6 +1,5 @@
 // Mer de la Manche (vagues, écume sur le rivage, reflets) et mare de la forêt.
 import * as THREE from 'three';
-import { DataUtils } from 'three';
 import { POND } from './layout.js';
 
 const vert = /* glsl */ `
@@ -128,18 +127,7 @@ function waveNormalMap(size = 256) {
 export class Water {
   constructor(scene, terrain) {
     // Carte des hauteurs (demi-flottants, filtrage linéaire) pour la profondeur.
-    const n = terrain.n;
-    const data = new Uint16Array(n * n);
-    for (let j = 0; j < n; j++) {
-      for (let i = 0; i < n; i++) {
-        // Ligne 0 de la texture = z max (on retourne l'axe dans le shader).
-        data[(n - 1 - j) * n + i] = DataUtils.toHalfFloat(terrain.heights[j * n + i]);
-      }
-    }
-    const tex = new THREE.DataTexture(data, n, n, THREE.RedFormat, THREE.HalfFloatType);
-    tex.magFilter = THREE.LinearFilter;
-    tex.minFilter = THREE.LinearFilter;
-    tex.needsUpdate = true;
+    const tex = terrain.heightTexture();
     this.uniforms = THREE.UniformsUtils.merge([
       THREE.UniformsLib.fog,
       {

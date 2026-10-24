@@ -167,6 +167,23 @@ export class Terrain {
     return depth;
   }
 
+  // Hauteurs du terrain en texture (demi-flottants) : profondeur de l'eau, contact au sol des façades.
+  heightTexture() {
+    if (this._hTex) return this._hTex;
+    const n = this.n;
+    const data = new Uint16Array(n * n);
+    for (let j = 0; j < n; j++) {
+      for (let i = 0; i < n; i++) data[(n - 1 - j) * n + i] = THREE.DataUtils.toHalfFloat(this.heights[j * n + i]);
+    }
+    const tex = new THREE.DataTexture(data, n, n, THREE.RedFormat, THREE.HalfFloatType);
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    this._hTex = tex;
+    this.hmParams = new THREE.Vector4(-this.half, -this.half, this.size, this.seg);
+    return tex;
+  }
+
   buildMesh(texture, detailTexture, splat) {
     const n = this.n;
     const pos = new Float32Array(n * n * 3);

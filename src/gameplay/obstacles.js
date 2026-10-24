@@ -88,7 +88,7 @@ export class Obstacles {
       g.add(new THREE.Mesh(brushJumpGeo(ob.w, ob.h), MAT));
     } else if (ob.kind === 'w') {
       // Mur de CSO : blocs peints façon briques (joints blancs), couvertine, piliers.
-      wallMat ||= applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), this.game.world.detailTex);
+      wallMat ||= applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), this.game.world.detailTex, () => this.game.terrain);
       const wall = partsToGeo([
         [box(ob.w, ob.h - 0.15, 0.5), '#a4553f'],
         [box(ob.w + 0.04, 0.1, 0.56), '#e9e6de', { y: ob.h - 0.25 }],

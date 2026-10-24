@@ -34,7 +34,7 @@ export class World {
     this.features = { buildings: [], fences: [], trees: 0 };
     // Texture de détail partagée (sol, façades) et matériaux physiques des décors.
     this.detailTex = makeGroundDetail(256);
-    this.mat = applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), this.detailTex);
+    this.mat = applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), this.detailTex, () => this.terrain);
     this.glassMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.06, metalness: 0.1, emissive: '#ffcf8a', emissiveIntensity: 0 });
     this.lightMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: '#ffe2a8', emissiveIntensity: 0.2 });
     this.batch = new StaticBatch(150);
