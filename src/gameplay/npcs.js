@@ -5,8 +5,8 @@ import { randomOutfit } from '../entities/humanModel.js';
 import { HOME, HARAS, DUNES, POLE, TOWN_BLOCKS } from '../world/sites.js';
 import { ROADS, HIPPO } from '../world/layout.js';
 import { CHATTER } from './data.js';
-import { mulberry32, pick, polylineLength, pointAlong, dampAngle } from '../core/math.js';
-import { carGeo, carMaterial } from '../world/props.js';
+import { mulberry32, pick, polylineLength, pointAlong, dampAngle, clamp } from '../core/math.js';
+import { carGeo, carMaterial, unitWheelGeo, CARS } from '../world/props.js';
 import { ovalPoint } from './courses.js';
 
 const COATS = ['bay', 'chestnut', 'grey', 'black', 'palomino', 'darkbay', 'white'];
@@ -49,19 +49,40 @@ class WalkAI {
   }
 }
 
+// Agglomération de Deauvelle (limitation à 50 km/h), d'après l'emprise des îlots.
+const TOWN_BOX = (() => {
+  const b = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 };
+  for (const [x0, x1, z0, z1] of TOWN_BLOCKS) {
+    b.x0 = Math.min(b.x0, x0 - 30);
+    b.x1 = Math.max(b.x1, x1 + 30);
+    b.z0 = Math.min(b.z0, z0 - 30);
+    b.z1 = Math.max(b.z1, z1 + 30);
+  }
+  return b;
+})();
+
+// Voiture de la circulation : 50 km/h en ville, 70 km/h sur les routes de campagne, 20 km/h en croisant des chevaux,
+// arrêt progressif devant un obstacle (distance de freinage selon la vitesse), roues qui tournent, caisse qui suit
+// la pente et plonge au freinage ; demi-tour seulement hors de vue (sinon arrêt en bout de route).
 class Car {
-  constructor(game, road, color, offset) {
+  constructor(game, road, color, offset, kind = 'sedan') {
     this.game = game;
     this.road = road;
     this.len = polylineLength(road.pts);
     this.s = offset * this.len;
     this.dir = offset > 0.5 ? -1 : 1;
     this.speed = 0;
-    this.maxSpeed = 10 + Math.random() * 3;
+    this.accel = 0;
+    this.cruise = 0.88 + Math.random() * 0.2;
     this.wait = 0;
+    this.kind = kind;
+    this.spec = CARS[kind] || CARS.sedan;
+    this.spin = 0;
+    this.pitch = 0;
+    this.slope = 0;
+    this.braking = false;
     const g = new THREE.Group();
-    const geo = carGeo(color, ['sedan', 'hatch', 'suv'][Math.floor(Math.random() * 3)]);
-    const m = new THREE.Mesh(geo, carMaterial());
+    const m = new THREE.Mesh(carGeo(color, kind, { wheels: false }), carMaterial());
     m.castShadow = true;
     g.add(m);
     g.rotation.order = 'YXZ';
@@ -74,46 +95,197 @@ class Car {
   _place() {
     const p = pointAlong(this.road.pts, this.s);
     const dir = this.dir > 0 ? p.dir : p.dir + Math.PI;
-    // Voie de droite.
+    // Voie de droite ; hauteur prise aux deux essieux.
     const rx = Math.cos(dir), rz = -Math.sin(dir);
     this.pos.set(p.x - rx * 2.2, 0, p.z - rz * 2.2);
-    this.pos.y = this.game.terrain.getHeight(this.pos.x, this.pos.z);
+    const fx = Math.sin(dir), fz = Math.cos(dir), hb = this.spec.wb / 2;
+    const T = this.game.terrain;
+    const hf = T.getHeight(this.pos.x + fx * hb, this.pos.z + fz * hb);
+    const hr = T.getHeight(this.pos.x - fx * hb, this.pos.z - fz * hb);
+    this.pos.y = (hf + hr) / 2;
+    this.slope = Math.atan2(hr - hf, this.spec.wb);
     this.heading = dir;
     this.mesh.position.copy(this.pos);
     this.mesh.rotation.y = dir;
+    this.mesh.rotation.x = this.slope + this.pitch;
   }
   update(dt, camPos) {
     const g = this.game;
-    // Obstacle devant ? (joueur, cheval, piéton, autre véhicule)
     const fx = Math.sin(this.heading), fz = Math.cos(this.heading);
-    let blocked = false;
-    const check = (p) => {
+    const inTown = this.pos.x > TOWN_BOX.x0 && this.pos.x < TOWN_BOX.x1 && this.pos.z > TOWN_BOX.z0 && this.pos.z < TOWN_BOX.z1;
+    let limit = (inTown ? 13.9 : 19.4) * this.cruise;
+    // Obstacles devant : distance d'observation croissante avec la vitesse.
+    const look = 8 + this.speed * 1.5;
+    let gap = Infinity, byPlayer = false;
+    const rel = (p) => {
       const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
-      const ahead = dx * fx + dz * fz;
-      const side = Math.abs(dx * fz - dz * fx);
-      if (ahead > 0 && ahead < 11 && side < 2.6) blocked = true;
+      return { ahead: dx * fx + dz * fz, side: Math.abs(dx * fz - dz * fx) };
     };
-    check(g.player.focus.pos);
-    if (g.player.horse) check(g.player.horse.pos);
-    for (const v of g.vehicles) if (v !== this) check(v.pos);
-    const target = blocked ? 0 : this.maxSpeed;
-    this.speed += Math.max(-12 * dt, Math.min(4 * dt, target - this.speed));
-    if (blocked && this.speed < 0.5) {
+    const block = (p) => {
+      const { ahead, side } = rel(p);
+      if (ahead > 0 && ahead < look && side < 2.6) {
+        gap = Math.min(gap, ahead);
+        return true;
+      }
+      return false;
+    };
+    if (block(g.player.focus.pos)) byPlayer = true;
+    for (const v of g.vehicles) if (v !== this && v.pos) block(v.pos);
+    // Code de la route : on croise et on dépasse les chevaux au pas (20 km/h), sans klaxonner.
+    for (const h of g.horses) {
+      if (h.hiddenInTruck || !h.pos) continue;
+      block(h.pos);
+      const { ahead, side } = rel(h.pos);
+      if (ahead > -8 && ahead < 45 && side < 8) limit = Math.min(limit, 5.5);
+    }
+    // Bout de route : demi-tour hors de vue, sinon arrêt.
+    const far = Math.hypot(camPos.x - this.pos.x, camPos.z - this.pos.z);
+    const toEnd = this.dir > 0 ? this.len - this.s : this.s;
+    if (toEnd < 14) {
+      if (far > 160) {
+        this.dir *= -1;
+        this.speed *= 0.3;
+      } else gap = Math.min(gap, Math.max(0, toEnd - 5));
+    }
+    // Vitesse visée : limitation, puis freinage doux (≈ 5 m/s²) pour s'arrêter 5 m avant l'obstacle.
+    let target = limit;
+    if (gap < Infinity) target = Math.min(target, Math.sqrt(Math.max(0, 10 * (gap - 5))));
+    const prev = this.speed;
+    this.speed += clamp(target - this.speed, -9 * dt, 2.6 * dt);
+    this.accel = (this.speed - prev) / Math.max(dt, 1e-3);
+    if (byPlayer && this.speed < 0.5) {
       this.wait += dt;
-      if (this.wait > 3 && Math.hypot(g.player.focus.pos.x - this.pos.x, g.player.focus.pos.z - this.pos.z) < 14) {
-        this.wait = -4;
+      if (this.wait > 4 && Math.hypot(g.player.focus.pos.x - this.pos.x, g.player.focus.pos.z - this.pos.z) < 14) {
+        this.wait = -5;
         g.audio.horn();
       }
     } else if (this.wait > 0) this.wait = 0;
     else this.wait = Math.min(0, this.wait + dt);
-    this.s += this.speed * dt * this.dir;
-    if (this.s > this.len - 4 || this.s < 4) {
-      this.dir *= -1;
-      this.s = Math.max(4, Math.min(this.len - 4, this.s));
-    }
+    this.s = clamp(this.s + this.speed * dt * this.dir, 4, this.len - 4);
+    this.spin += (this.speed * dt) / this.spec.r;
+    // Suspension : la caisse plonge au freinage et se cabre à l'accélération.
+    const pt = clamp(-this.accel * 0.005, -0.02, 0.035);
+    this.pitch += (pt - this.pitch) * Math.min(1, dt * 5);
     this._place();
-    const far = Math.hypot(camPos.x - this.pos.x, camPos.z - this.pos.z);
     this.mesh.visible = far < 300;
+    this.braking = this.accel < -0.8 || this.speed < 0.3;
+  }
+}
+
+// Effets de toute la circulation en trois appels de dessin : roues animées, optiques (phares, feux arrière et
+// feux stop, allumés la nuit et sous la pluie) et faisceaux des phares sur la chaussée.
+function glowTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const x = c.getContext('2d');
+  const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)');
+  gr.addColorStop(0.3, 'rgba(255,255,255,0.55)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = gr;
+  x.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+function beamTexture() {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 128;
+  const x = c.getContext('2d');
+  const img = x.createImageData(64, 128);
+  for (let j = 0; j < 128; j++) {
+    for (let i = 0; i < 64; i++) {
+      // v : 0 au pare-chocs, 1 au bout du faisceau ; code européen plus long côté droit (accotement).
+      const v = 1 - j / 127, u = (i / 63) * 2 - 1;
+      const w = 0.42 + 0.58 * v;
+      const a = Math.max(0, 1 - (u / w) ** 2) * Math.pow(1 - v, 1.25) * Math.min(1, v * 7) * (u < 0 ? 0.8 + 0.2 * (1 - v) : 1);
+      const o = (j * 64 + i) * 4;
+      img.data[o] = img.data[o + 1] = img.data[o + 2] = 255;
+      img.data[o + 3] = a * 255;
+    }
+  }
+  x.putImageData(img, 0, 0);
+  return new THREE.CanvasTexture(c);
+}
+
+class TrafficFx {
+  constructor(scene, n) {
+    this.wheels = new THREE.InstancedMesh(unitWheelGeo(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.1 }), n * 4);
+    this.wheels.castShadow = true;
+    const add = { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false };
+    this.lights = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.62, 0.4), new THREE.MeshBasicMaterial({ map: glowTexture(), ...add }), n * 4);
+    this.lights.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 12), 3);
+    const bg = new THREE.PlaneGeometry(6.5, 26);
+    bg.rotateX(-Math.PI / 2);
+    bg.rotateY(Math.PI);
+    bg.translate(0, 0, 13);
+    this.beams = new THREE.InstancedMesh(bg, new THREE.MeshBasicMaterial({ map: beamTexture(), ...add }), n);
+    this.beams.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 3), 3);
+    for (const m of [this.wheels, this.lights, this.beams]) {
+      m.frustumCulled = false;
+      m.renderOrder = m === this.wheels ? 0 : 4;
+      scene.add(m);
+    }
+    this._car = new THREE.Matrix4();
+    this._loc = new THREE.Matrix4();
+    this._m = new THREE.Matrix4();
+    this._q = new THREE.Quaternion();
+    this._e = new THREE.Euler(0, 0, 0, 'YXZ');
+    this._v = new THREE.Vector3();
+    this._s = new THREE.Vector3();
+    this._zero = new THREE.Matrix4().makeScale(0, 0, 0);
+  }
+
+  update(cars, on) {
+    const { _car: car, _loc: loc, _m: m, _q: q, _e: e, _v: v, _s: sc } = this;
+    const lc = this.lights.instanceColor.array, bc = this.beams.instanceColor.array;
+    cars.forEach((c, i) => {
+      const C = c.spec, hw = C.W / 2;
+      if (!c.mesh.visible) {
+        for (let k = 0; k < 4; k++) {
+          this.wheels.setMatrixAt(i * 4 + k, this._zero);
+          this.lights.setMatrixAt(i * 4 + k, this._zero);
+        }
+        this.beams.setMatrixAt(i, this._zero);
+        return;
+      }
+      // Roues : sur la route (pas de tangage de caisse), en rotation autour de l'essieu.
+      e.set(c.slope, c.heading, 0);
+      car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
+      let k = 0;
+      for (const sx of [-1, 1]) {
+        for (const zw of [C.wb / 2, -C.wb / 2]) {
+          loc.compose(v.set(sx * (hw - 0.14), C.r, zw), q.setFromEuler(e.set(c.spin, 0, 0)), sc.set(C.r, C.r, C.r));
+          this.wheels.setMatrixAt(i * 4 + k++, m.multiplyMatrices(car, loc));
+        }
+      }
+      // Optiques : sur la caisse (avec son tangage).
+      e.set(c.slope + c.pitch, c.heading, 0);
+      car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
+      const yH = C.body[C.body.length - 2][1] - 0.06, yT = C.body[2][1] - 0.06;
+      const tail = on * 0.55 + (c.braking ? 0.9 : 0);
+      k = 0;
+      for (const sx of [-1, 1]) {
+        loc.compose(v.set(sx * (hw - 0.32), yH, C.L / 2 + 0.11), q.identity(), sc.set(1, 1, 1));
+        this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
+        lc.set([1.6 * on, 1.45 * on, 1.15 * on], (i * 4 + k++) * 3);
+        loc.makeRotationY(Math.PI).scale(sc.set(0.8, 0.8, 0.8)).setPosition(sx * (hw - 0.3), yT, -C.L / 2 - 0.11);
+        this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
+        lc.set([1.3 * tail, 0.06 * tail, 0.04 * tail], (i * 4 + k++) * 3);
+      }
+      // Faisceau des phares sur la chaussée.
+      e.set(c.slope, c.heading, 0);
+      car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
+      loc.makeTranslation(0, 0.07, C.L / 2 - 0.3);
+      this.beams.setMatrixAt(i, m.multiplyMatrices(car, loc));
+      bc.set([0.2 * on, 0.185 * on, 0.15 * on], i * 3);
+    });
+    this.wheels.instanceMatrix.needsUpdate = true;
+    this.lights.instanceMatrix.needsUpdate = true;
+    this.lights.instanceColor.needsUpdate = true;
+    this.beams.instanceMatrix.needsUpdate = true;
+    this.beams.instanceColor.needsUpdate = true;
+    this.lights.visible = true;
+    this.beams.visible = on > 0.02;
   }
 }
 
@@ -188,10 +360,11 @@ export class Ambient {
     const roads = ['coast', 'main', 'ew', 'ew', 'main', 'hippo', 'coast'];
     roads.forEach((id, i) => {
       const road = ROADS.find((r) => r.id === id);
-      const c = new Car(g, road, colors[i % colors.length], (i * 0.37) % 1);
+      const c = new Car(g, road, colors[i % colors.length], (i * 0.37) % 1, ['sedan', 'hatch', 'suv'][i % 3]);
       this.cars.push(c);
       g.vehicles.push(c);
     });
+    this.fx = new TrafficFx(g.scene, this.cars.length);
   }
 
   rider(points, coat, speed, pad) {
@@ -214,6 +387,8 @@ export class Ambient {
   update(dt, camPos) {
     for (const c of this.cars) c.update(dt, camPos);
     const g = this.game;
+    // Feux allumés de nuit, à l'aube et au crépuscule, et sous la pluie.
+    this.fx.update(this.cars, clamp(g.sky.nightFactor * 1.6 + g.sky.rain * 0.8, 0, 1));
     for (const p of this.people) {
       if (p.spectator) {
         const cheering = g.cheerT > 0;

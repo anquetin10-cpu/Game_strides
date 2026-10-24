@@ -38,7 +38,7 @@ function wheel(r, w, rim = '#b9bcc0') {
   return parts;
 }
 
-const CARS = {
+export const CARS = {
   // Caisse jusqu'à la ceinture de caisse, pavillon vitré plus étroit (rentré), toit.
   sedan: { L: 4.45, W: 1.8, wb: 2.68, r: 0.31,
     body: [[-2.2, 0.32], [-2.24, 0.5], [-2.18, 0.86], [-1.9, 0.99], [-1.25, 1.03], [1.0, 1.03], [2.06, 0.9], [2.24, 0.62], [2.18, 0.32]],
@@ -52,7 +52,8 @@ const CARS = {
 };
 
 // Voiture réaliste (≈ 3k triangles) : carrosserie profilée, pavillon vitré, toit, montants, roues, optiques.
-export function carGeo(color, kind = 'sedan') {
+// wheels = false : sans les roues (voitures en mouvement, roues animées à part).
+export function carGeo(color, kind = 'sedan', { wheels = true } = {}) {
   const C = CARS[kind] || CARS.sedan;
   const parts = [];
   const hw = C.W / 2;
@@ -65,7 +66,7 @@ export function carGeo(color, kind = 'sedan') {
   parts.push([box(C.W - 0.22, C.glass[2][1] - gy, 0.1), color, { y: gy, z: (C.glass[1][0] + C.glass[2][0]) / 2 - 0.1 }]);
   for (const s of [-1, 1]) {
     parts.push([box(0.2, 0.12, 0.1), color, { x: s * (hw + 0.06), y: gy + 0.02, z: C.glass[3][0] - 0.1 }]);
-    for (const zw of [C.wb / 2, -C.wb / 2]) parts.push(...wheel(C.r, 0.22).map(([g, c, tf]) => [g, c, { ...tf, x: s * (hw - 0.14), y: C.r, z: zw }]));
+    if (wheels) for (const zw of [C.wb / 2, -C.wb / 2]) parts.push(...wheel(C.r, 0.22).map(([g, c, tf]) => [g, c, { ...tf, x: s * (hw - 0.14), y: C.r, z: zw }]));
     parts.push([box(0.42, 0.13, 0.06), '#e9ecef', { x: s * (hw - 0.32), y: C.body[C.body.length - 2][1] - 0.12, z: C.L / 2 - 0.06 }]);
     parts.push([box(0.38, 0.12, 0.05), '#9d1f1f', { x: s * (hw - 0.3), y: C.body[2][1] - 0.12, z: -C.L / 2 + 0.06 }]);
   }
@@ -73,6 +74,17 @@ export function carGeo(color, kind = 'sedan') {
   parts.push([box(0.9, 0.18, 0.04), '#1b1c1f', { y: C.body[C.body.length - 2][1] - 0.32, z: C.L / 2 - 0.02 }]);
   parts.push([box(0.52, 0.11, 0.02), '#f2f1ec', { y: y0 + 0.1, z: C.L / 2 + 0.02 }]);
   parts.push([box(0.52, 0.11, 0.02), '#f2f1ec', { y: y0 + 0.24, z: -C.L / 2 - 0.02 }]);
+  return partsToGeo(parts);
+}
+
+// Roue de rayon 1 (axe selon x), mise à l'échelle par véhicule : pneu, jante à rayons, moyeu.
+export function unitWheelGeo() {
+  const parts = wheel(1, 0.72, '#2c2f33');
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2;
+    parts.push([box(0.76, 0.46, 0.11, false), '#c4c7cb', { y: Math.cos(a) * 0.38, z: Math.sin(a) * 0.38, rx: a }]);
+  }
+  parts.push([cyl(0.2, 0.2, 0.78, 10, false), '#c4c7cb', { rz: Math.PI / 2 }]);
   return partsToGeo(parts);
 }
 
