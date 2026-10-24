@@ -16,6 +16,27 @@ export const PALETTE = {
   glassLit: '#3a4a5a',
 };
 
+// Vitrage avec coordonnées locales de fenêtre (attribut « win » : u, v centrés, largeur, hauteur) pour
+// l'effet de pièce intérieure. Largeur négative : ouverture de box (sans vitre) ; nulle : sans intérieur.
+export function winBox(w, h, d, kind = 1) {
+  const g = box(w, h, d);
+  const pos = g.attributes.position;
+  const a = new Float32Array(pos.count * 4);
+  for (let i = 0; i < pos.count; i++) {
+    a[i * 4] = pos.getX(i);
+    a[i * 4 + 1] = pos.getY(i) - h / 2;
+    a[i * 4 + 2] = kind ? w * kind : 0;
+    a[i * 4 + 3] = kind ? h : 0;
+  }
+  g.setAttribute('win', new THREE.BufferAttribute(a, 4));
+  return g;
+}
+// Ajoute un attribut « win » nul aux vitrages qui n'en ont pas (fusion possible avec les autres).
+export function ensureWin(g) {
+  if (g && !g.attributes.win) g.setAttribute('win', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 4), 4));
+  return g;
+}
+
 // Part = [geometry, color, transform]
 function partsToGeo(parts) {
   const geos = [];
@@ -92,7 +113,7 @@ export function buildingGeo({
             const along = (k) => (f.nx === 0 ? { x: x + k * (f.nz > 0 ? 1 : -1), z: z + f.nz * 0.06 } : { x: x + f.nx * 0.06, z: z + k * (f.nx > 0 ? -1 : 1) });
             for (const sd of [-1, 1]) body.push([box(ww * 0.52, wh + 0.12, 0.05), shutter, { ...tf, ...along(sd * (ww * 0.76 + 0.1)), y: wy - 0.06 }]);
           }
-          glass.push([box(ww, wh, 0.16), PALETTE.glass, tf]);
+          glass.push([winBox(ww, wh, 0.16), PALETTE.glass, tf]);
         }
         if (timber && c < cols) {
           const bx = f.nx === 0 ? (t - span / 2) * (f.nz > 0 ? 1 : -1) : f.nx * (f.off + 0.05);
@@ -158,20 +179,20 @@ export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = P
     parts.push([box(Math.hypot(dw - 0.1, 1.0), 0.07, 0.03, false), trim, { x, y: 0.65, z: zf + 0.085, rz: Math.atan2(1.0, dw - 0.1) }]);
     parts.push([box(dw, 0.12, 0.04), '#5b5f64', { x, y: 1.28, z: zf + 0.08 }]);
     // Ouverture haute (intérieur sombre) et grille de box.
-    glass.push([box(dw, 0.98, 0.04), '#0a0b0c', { x, y: 1.32, z: zf + 0.01 }]);
+    glass.push([winBox(dw, 0.98, 0.04, -1), '#0a0b0c', { x, y: 1.32, z: zf + 0.01 }]);
     for (let k = 1; k < 9; k++) parts.push([cyl(0.011, 0.011, 0.95, 4), '#4a4d52', { x: x - dw / 2 + (dw / 9) * k, y: 1.33, z: zf + 0.05 }]);
     // Vantail haut ouvert, rabattu contre le mur.
     parts.push([box(0.05, 1.0, dw * 0.5), door, { x: x + dw / 2 + 0.16 + dw * 0.25, y: 1.32, z: zf + 0.05, ry: Math.PI / 2 }]);
     // Plaque nominative et applique.
     parts.push([box(0.32, 0.12, 0.02), '#f2f1ec', { x, y: 2.45, z: zf + 0.13 }]);
     parts.push([box(0.16, 0.22, 0.14), '#1d1e21', { x: x - step * 0.36, y: 2.55, z: zf + 0.07 }]);
-    glass.push([box(0.12, 0.08, 0.08), '#fff1c9', { x: x - step * 0.36, y: 2.5, z: zf + 0.11 }]);
+    glass.push([winBox(0.12, 0.08, 0.08, 0), '#fff1c9', { x: x - step * 0.36, y: 2.5, z: zf + 0.11 }]);
     parts.push([box(0.14, h, 0.16), trim, { x: -w / 2 + step * i, y: 0, z: zf + 0.06 }]);
     // Poteaux d'auvent (un sur deux).
     if (i % 2 === 0) parts.push([box(0.16, h - 0.1, 0.16), trim, { x: -w / 2 + step * i, z: zf + 1.45 }]);
     // Fenêtre arrière avec cadre.
     parts.push([box(1.12, 0.82, 0.08), trim, { x, y: 2.54, z: -zf - 0.03 }]);
-    glass.push([box(1, 0.7, 0.12), PALETTE.glass, { x, y: 2.6, z: -zf - 0.05 }]);
+    glass.push([winBox(1, 0.7, 0.12), PALETTE.glass, { x, y: 2.6, z: -zf - 0.05 }]);
     // Lanterneaux d'aération sur le faîtage.
     if (i % 3 === 1) {
       parts.push([box(0.9, 0.55, 0.9), wall, { x, y: h + d * 0.42 - 0.15 }]);

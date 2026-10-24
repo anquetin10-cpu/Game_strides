@@ -9,14 +9,14 @@ import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shor
 import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBoxes } from './sites.js';
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
-import { applySurfaces, applyRoadShader } from './surfaces.js';
+import { applySurfaces, applyRoadShader, applyInteriors, INTERIOR_UNIFORMS } from './surfaces.js';
 import { carGeo, carMaterial, tractorGeo, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky } from './sky.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
 import {
   PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, treeTemplate, hedgeGeo, lampGeo, benchGeo, parasolGeo,
-  roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, awningGeo, planterGeo,
+  roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, awningGeo, planterGeo, winBox, ensureWin,
 } from './builders.js';
 import { buildGrassMask } from './grass.js';
 import { createHorseMesh } from '../entities/horseModel.js';
@@ -36,7 +36,7 @@ export class World {
     // Texture de détail partagée (sol, façades) et matériaux physiques des décors.
     this.detailTex = makeGroundDetail(256);
     this.mat = applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), this.detailTex, () => this.terrain);
-    this.glassMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.06, metalness: 0.1, emissive: '#ffcf8a', emissiveIntensity: 0 });
+    this.glassMat = applyInteriors(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.06, metalness: 0.1 }));
     this.lightMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: '#ffe2a8', emissiveIntensity: 0.2 });
     this.batch = new StaticBatch(150);
     // Petits détails (sièges, public…) : lot séparé, masqué au-delà de quelques centaines de mètres.
@@ -132,7 +132,7 @@ export class World {
     const y = this.groundAt(x, z, w / 2, d / 2, rot);
     const body = geoPair.body || geoPair;
     this.batch.add(body, null, x, y, z, rot);
-    if (geoPair.glass) this.glass.add(geoPair.glass, null, x, y, z, rot);
+    if (geoPair.glass) this.glass.add(ensureWin(geoPair.glass), null, x, y, z, rot);
     if (collide) this.colliders.addBox(x, z, w / 2, d / 2, rot, Infinity, kind);
     this.features.buildings.push({ x, z, w, d, rot, kind });
     return y;
@@ -1127,7 +1127,9 @@ export class World {
         m.visible = (c.x - cx) * (c.x - cx) + (c.z - cz) * (c.z - cz) < 240 * 240;
       }
     }
-    this.glassMat.emissiveIntensity = night * 0.9;
+    // Pièces derrière les vitres : pénombre le jour, éclairage intérieur la nuit.
+    INTERIOR_UNIFORMS.inDay.value = (1 - night) * Math.min(1, 0.3 + sky.sun.intensity / 6);
+    INTERIOR_UNIFORMS.inNight.value = night;
     this.lightMat.emissiveIntensity = 0.2 + night * 1.6;
     if (this.lampPools) {
       this.lampPools.visible = night > 0.05;
@@ -1211,5 +1213,5 @@ function hqGeo(w, d, h) {
   }
   parts.push([box(w * 0.3, h * 0.55, 0.3), '#f4f3ef', { x: -w * 0.33, y: 0, z: d / 2 + 0.1 }]);
   parts.push([box(4, 3, 0.4), '#2a3a4a', { y: 0, z: d / 2 + 0.05 }]);
-  return { body: partsToGeo(parts), glass: partsToGeo([[box(w - 1, h - 1.5, d + 0.12), '#24313d', { y: 0.6 }]]) };
+  return { body: partsToGeo(parts), glass: partsToGeo([[winBox(w - 1, h - 1.5, d + 0.12), '#24313d', { y: 0.6 }]]) };
 }

@@ -222,3 +222,89 @@ vec3 rdBump( vec3 surfPos, vec3 surfNorm, float h ) {
   material.customProgramCacheKey = () => 'st-road';
   return material;
 }
+
+// ---------- Pièces derrière les vitres (« interior mapping ») ----------
+// Chaque fenêtre ouvre sur une pièce simulée par lancer de rayon dans une boîte (murs, sol, plafond, mobilier),
+// couleurs propres à chaque fenêtre, rideaux, éclairage le soir ; les ouvertures de box montrent la stalle.
+export const INTERIOR_UNIFORMS = { inDay: { value: 1 }, inNight: { value: 0 } };
+
+const INTERIOR_CHUNK = /* glsl */ `
+uniform float inDay;
+uniform float inNight;
+varying vec4 vWin;
+varying vec3 vWPos;
+varying vec3 vWNrm;
+float inHash( vec3 p ) { p = fract( p * 0.3183099 + 0.1 ); p *= 17.0; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
+vec3 inRoom = vec3( 0.0 );
+float inStall = 0.0;
+`;
+
+const INTERIOR_MAIN = /* glsl */ `
+if ( abs( vWin.z ) > 0.01 ) {
+  vec3 n = normalize( vWNrm );
+  if ( abs( n.y ) < 0.5 ) {
+    vec3 t = normalize( cross( vec3( 0.0, 1.0, 0.0 ), n ) );
+    vec3 V = normalize( vWPos - cameraPosition );
+    vec3 d = vec3( dot( V, t ), V.y, max( -dot( V, n ), 0.02 ) );
+    float W = abs( vWin.z ), H = vWin.w;
+    bool stall = vWin.z < 0.0;
+    // Grandes baies (bureaux) : découpées en pièces de 4 m × 3,4 m.
+    vec2 cellSz = W > 3.5 ? vec2( 4.0, 3.4 ) : vec2( W + 1.6, H + 1.5 );
+    vec2 p = vWin.xy;
+    vec2 cid = floor( ( p + cellSz * 0.5 ) / cellSz );
+    vec2 lp = p - cid * cellSz;
+    float floorY = -cellSz.y * 0.5 + ( W > 3.5 ? 0.0 : 0.15 ), ceilY = cellSz.y * 0.5;
+    float depth = stall ? 3.2 : 3.6;
+    float tu = ( ( d.x > 0.0 ? cellSz.x * 0.5 : -cellSz.x * 0.5 ) - lp.x ) / d.x;
+    float tv = ( ( d.y > 0.0 ? ceilY : floorY ) - lp.y ) / d.y;
+    float td = depth / d.z;
+    float tm = min( min( tu, tv ), td );
+    vec3 hit = vec3( lp, 0.0 ) + d * tm;
+    float id = inHash( floor( vWPos * 0.5 ) + vec3( cid, 0.0 ) );
+    vec3 wall = mix( vec3( 0.75, 0.7, 0.6 ), vec3( 0.55, 0.62, 0.66 ), step( 0.6, id ) ) * mix( 0.8, 1.05, fract( id * 7.0 ) );
+    vec3 col;
+    if ( stall ) {
+      // Box : planches sombres, litière de paille, fenêtre arrière claire.
+      float boards = 0.85 + 0.15 * step( 0.5, fract( ( tm == tu ? hit.y : hit.x ) * 5.0 ) );
+      col = tm == tv && d.y < 0.0 ? vec3( 0.55, 0.45, 0.25 ) : vec3( 0.18, 0.13, 0.09 ) * boards;
+      if ( tm == td && abs( hit.x ) < 0.35 && hit.y > 0.5 && hit.y < 0.95 ) col = vec3( 1.2, 1.15, 1.0 );
+    } else if ( tm == td ) {
+      col = wall;
+      // Mobilier bas (canapé, buffet) et cadre au mur.
+      if ( hit.y < floorY + 0.8 && abs( hit.x - ( id - 0.5 ) ) < 0.7 ) col = mix( vec3( 0.25, 0.2, 0.18 ), vec3( 0.35, 0.3, 0.45 ), fract( id * 13.0 ) );
+      else if ( abs( hit.x + ( id - 0.5 ) * 0.6 ) < 0.3 && abs( hit.y - 0.3 ) < 0.22 ) col = vec3( 0.2, 0.25, 0.3 );
+    } else if ( tm == tu ) {
+      col = wall * 0.8;
+    } else if ( d.y < 0.0 ) {
+      col = vec3( 0.32, 0.22, 0.14 ) * ( 0.85 + 0.15 * step( 0.5, fract( hit.z * 6.0 ) ) );
+    } else {
+      col = vec3( 0.85 );
+    }
+    // Pénombre selon la profondeur ; rideaux sur une partie des fenêtres.
+    col *= exp( -tm * 0.18 );
+    if ( !stall && id > 0.7 && abs( p.x ) > W * 0.18 ) col = mix( vec3( 0.82, 0.78, 0.7 ), vec3( 0.55, 0.6, 0.65 ), fract( id * 5.0 ) ) * 0.9;
+    // Éclairage : lumière du jour diffuse, pièces allumées le soir (une sur deux).
+    float lit = step( 0.5, fract( id * 3.7 ) );
+    inRoom = col * ( inDay * 0.55 + inNight * ( stall ? 0.35 : lit * 1.6 ) * vec3( 1.0, 0.82, 0.6 ) );
+    inStall = stall ? 1.0 : 0.0;
+    diffuseColor.rgb *= 0.12;
+  }
+}
+`;
+
+export function applyInteriors(material) {
+  material.vertexColors = true;
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, INTERIOR_UNIFORMS);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec4 win;\nvarying vec4 vWin;\nvarying vec3 vWPos;\nvarying vec3 vWNrm;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWin = win;\nvWPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\nvWNrm = mat3( modelMatrix ) * objectNormal;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\n${INTERIOR_CHUNK}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>\n${INTERIOR_MAIN}`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix( roughnessFactor, 1.0, inStall );')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += inRoom;');
+  };
+  material.customProgramCacheKey = () => 'st-interiors';
+  return material;
+}
