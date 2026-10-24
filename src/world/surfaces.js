@@ -42,7 +42,7 @@ const SURFACE_MAIN = /* glsl */ `
   float ny = abs( n.y );
   vec3 p = vSurfPos;
   // Repère de la face : u horizontal le long de la face, v vers le haut (ou dans la pente).
-  vec3 t = normalize( abs( n.y ) > 0.999 ? vec3( 1.0, 0.0, 0.0 ) : cross( vec3( 0.0, 1.0, 0.0 ), n ) );
+  vec3 t = normalize( abs( n.y ) > 0.97 ? vec3( 1.0, 0.0, 0.0 ) : cross( vec3( 0.0, 1.0, 0.0 ), n ) );
   vec3 b = cross( n, t );
   vec2 uv = vec2( dot( p, t ), dot( p, b ) );
   float dist = length( vViewPosition );
@@ -69,7 +69,8 @@ const SURFACE_MAIN = /* glsl */ `
       sfH = gr.r * 0.4 * detW;
       sfRough = 0.88;
     } else {
-      float P = 0.46;
+      // Pays d'Auge : poteaux serrés ; néo-normand (grandes villas, hôtels) : poteaux espacés, grands panneaux enduits.
+      float P = code > 3.5 ? 1.05 : 0.46;
       float si = floor( uv.x / P + 0.5 );
       float sid = sfHash( vec2( si, 7.13 ) );
       float W = 0.15 + sid * 0.05;
@@ -78,7 +79,7 @@ const SURFACE_MAIN = /* glsl */ `
       float stud = 1.0 - smoothstep( W * 0.5 - aa, W * 0.5 + aa, dS );
       vec3 fillC;
       float fillH;
-      if ( code > 2.5 ) {
+      if ( code > 2.5 && code < 3.5 ) {
         // Briques posées en épi (chevrons alternés par rang).
         float band = floor( uv.y / 0.15 );
         float dir = mod( band, 2.0 ) * 2.0 - 1.0;
@@ -88,7 +89,7 @@ const SURFACE_MAIN = /* glsl */ `
         fillC = mix( vec3( 0.36, 0.12, 0.06 ) * mix( 0.75, 1.2, bid ), vec3( 0.6, 0.55, 0.47 ), jt * detW );
         fillH = ( 1.0 - jt ) * 0.5;
       } else {
-        fillC = code < 0.5 ? vec3( 0.76, 0.68, 0.53 ) : ( code < 1.5 ? vec3( 0.78, 0.76, 0.7 ) : vec3( 0.66, 0.46, 0.26 ) );
+        fillC = code < 0.5 || code > 3.5 ? vec3( 0.76, 0.68, 0.53 ) : ( code < 1.5 ? vec3( 0.78, 0.76, 0.7 ) : vec3( 0.66, 0.46, 0.26 ) );
         fillC *= mix( 0.92, 1.04, dA.r ) * mix( 0.9, 1.03, dB.r ) * mix( 1.0, 0.86, dB.a * 0.7 );
         fillH = dA.r * 0.3 + dA.g * 0.1;
       }
@@ -134,12 +135,16 @@ const SURFACE_MAIN = /* glsl */ `
     tint = mix( 0.72, 1.18, fib ) * mix( 0.9, 1.06, dB.g );
     sfRough = 0.95;
   } else if ( warm && sat > 0.25 && mx < 0.72 ) {
-    // Bois : bardage vertical (façades) ou poutres, fil du bois et nœuds.
-    float board = vertical ? fract( uv.x / 0.16 ) : 0.5;
-    float gap = vertical ? 1.0 - smoothstep( 0.0, 0.05, board ) * smoothstep( 1.0, 0.95, board ) : 0.0;
+    // Bois : bardage vertical (façades), platelage (lames posées en travers, joints décalés) ou poutres.
+    float board = vertical ? fract( uv.x / 0.16 ) : fract( uv.x / 0.19 );
+    float gap = 1.0 - smoothstep( 0.0, 0.05, board ) * smoothstep( 1.0, 0.95, board );
+    if ( !vertical ) {
+      float jd = ( 0.5 - abs( fract( uv.y / 2.1 + sfHash( vec2( floor( uv.x / 0.19 ), 1.7 ) ) ) - 0.5 ) ) * 2.1;
+      gap = max( gap, 1.0 - smoothstep( 0.004, 0.01, jd ) );
+    }
     vec4 g = texture2D( surfDetail, vec2( vertical ? uv.x * 3.0 : uv.x * 0.3, vertical ? uv.y * 0.25 : uv.y * 3.0 ) );
     float grain = g.r;
-    float id = sfHash( vec2( floor( uv.x / 0.16 ), 3.0 ) );
+    float id = sfHash( vec2( floor( uv.x / ( vertical ? 0.16 : 0.19 ) ), 3.0 ) );
     sfH = ( ( 1.0 - gap ) * 0.5 + grain * 0.25 ) * detW;
     tint = mix( 0.8, 1.15, grain ) * mix( 0.88, 1.08, id ) * mix( 1.0, 0.55, gap * detW );
     sfRough = 0.82;

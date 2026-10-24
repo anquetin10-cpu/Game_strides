@@ -49,6 +49,8 @@ const VIEWS = {
   // Champ cultivé à hauteur de cavalier (blé ou colza, sinon labour).
   field: (g) => { const F = window.__fields; const f = F.find((x) => x.type === 'wheat' && Math.abs(x.cx) < 400 && Math.abs(x.cz) < 400) || F.find((x) => x.type === 'colza') || F[0]; const y = g.terrain.getHeight(f.cx, f.cz); return { at: [f.cx, y, f.cz], from: [f.cx - 30, g.terrain.getHeight(f.cx - 30, f.cz - 22) + 2.6, f.cz - 22] }; },
   plow: (g) => { const F = window.__fields; const f = F.find((x) => x.type === 'plowed' && Math.abs(x.cx) < 450 && Math.abs(x.cz) < 450) || F[0]; const y = g.terrain.getHeight(f.cx, f.cz); return { at: [f.cx, y, f.cz], from: [f.cx - 26, g.terrain.getHeight(f.cx - 26, f.cz - 20) + 2.6, f.cz - 20] }; },
+  // Cabines de bain et Planches, depuis la plage.
+  cabins: (g) => ({ at: [-60, g.terrain.getHeight(-60, -366) + 1.4, -366], from: [-40, g.terrain.getHeight(-40, -384) + 1.7, -384] }),
   // Falaises d'Aval depuis la plage.
   cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).

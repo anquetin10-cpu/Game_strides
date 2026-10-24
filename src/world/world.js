@@ -565,7 +565,7 @@ export class World {
     const overlapsSpecial = (x, z, r) => specials.some((s) => Math.abs(x - s.x) < s.w / 2 + r && Math.abs(z - s.z) < s.d / 2 + r);
     // Grand Hôtel (façade vers la mer).
     const ht = TOWN.hotel;
-    this.place(buildingGeo({ w: ht.w, d: ht.d, h: 14, wall: '#f1ebdf', roof: '#3f444b', roofType: 'hip', roofH: 7, timber: true, fill: 0, wood: 1, floors: 4, trim: '#f6f3ec' }), ht.x, ht.z, Math.PI, ht.w, ht.d, 'hotel');
+    this.place(buildingGeo({ w: ht.w, d: ht.d, h: 14, wall: '#f1ebdf', roof: '#3f444b', roofType: 'hip', roofH: 7, timber: true, fill: 4, wood: 1, floors: 4, trim: '#f6f3ec' }), ht.x, ht.z, Math.PI, ht.w, ht.d, 'hotel');
     for (let i = 0; i < 4; i++) {
       const x = ht.x - 30 + i * 20;
       this.batch.add(gableDormer(), null, x, this.h(ht.x, ht.z) + 14, ht.z - ht.d / 2 + 1, Math.PI);
@@ -880,26 +880,53 @@ export class World {
 
   buildBeach() {
     const P = TOWN.planches;
-    // Promenade des Planches.
-    for (let x = P.x0; x < P.x1; x += 6) {
-      const y = this.h(x + 3, P.z);
-      this.batch.add(box(6.05, 0.25, 4), '#a58d6f', x + 3, y + 0.05, P.z, 0);
-      this.batch.add(box(0.08, 0.02, 4), '#8c765c', x + 0.1, y + 0.3, P.z, 0);
+    // Promenade des Planches : platelage continu qui épouse le terrain (lames posées en travers dans le shader).
+    {
+      const pos = [], idx = [];
+      const hw = 2, top = 0.3;
+      for (let x = P.x0, k = 0; x <= P.x1 + 0.01; x += 2, k++) {
+        const y = this.h(x, P.z) + top;
+        pos.push(x, y, P.z - hw, x, y, P.z + hw, x, y - 0.4, P.z - hw, x, y - 0.4, P.z + hw);
+        if (k) {
+          const a = (k - 1) * 4, b = k * 4;
+          idx.push(a, a + 1, b + 1, a, b + 1, b);
+          idx.push(a + 2, a, b, a + 2, b, b + 2);
+          idx.push(a + 1, a + 3, b + 3, a + 1, b + 3, b + 1);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      this.batch.addMatrix(g, '#a58d6f', new THREE.Matrix4(), 0, null, (P.x0 + P.x1) / 2, P.z);
     }
-    // Cabines de plage.
-    const doors = ['#1d1e21', '#2f5f8a', '#b8322a', '#2f6e4a', '#c8a96e'];
-    for (let i = 0; i < 34; i++) {
-      const x = -170 + i * 8.5;
-      if (x > 140) break;
+    // Cabines de bain des Planches : rangées continues de six cabines blanches sous un portique à colonnettes,
+    // portes peintes surmontées d'une plaque nominative, corniche et frise.
+    const doors = ['#2f5f8a', '#f2f1ec', '#5d7480', '#2f6e4a', '#2f5f8a', '#c8a96e'];
+    const W = 2.5, N = 6;
+    for (let blk = 0; blk < 12; blk++) {
+      const x0 = -168 + blk * (N * W + 11);
+      const xc = x0 + (N * W) / 2;
+      if (xc > 140) break;
       const z = -366;
-      const y = this.h(x, z);
-      const g = partsToGeo([
-        [box(2.6, 2.6, 2.4), '#f4f3ef'],
-        [gableRoofGeo(2.6, 0.9, 2.4), '#f4f3ef', { y: 2.6 }],
-        [box(1.0, 1.9, 0.08), doors[i % doors.length], { z: -1.22 }],
-      ]);
-      this.batch.add(g, null, x, y, z, 0);
-      this.colliders.addBox(x, z, 1.3, 1.2, 0, Infinity, 'cabin');
+      const y = Math.min(this.h(x0, z), this.h(x0 + N * W, z));
+      const parts = [
+        [box(N * W, 2.7, 2.4), '#f4f3ef'],
+        [box(N * W + 0.3, 0.22, 2.7), '#e9e6de', { y: 2.7 }],
+        [box(N * W + 0.1, 0.12, 1.7), '#f4f3ef', { y: 2.52, z: -2.0 }],
+        [box(N * W + 0.12, 0.16, 0.12), '#2f5f8a', { y: 2.4, z: -2.82 }],
+        [box(N * W + 0.4, 0.12, 4.3), '#d9d4c9', { y: -0.1, z: -0.85 }],
+      ];
+      for (let k = 0; k <= N; k++) parts.push([cyl(0.06, 0.07, 2.42, 8), '#f4f3ef', { x: -N * W / 2 + k * W, z: -2.78 }]);
+      for (let k = 0; k < N; k++) {
+        const cx = -N * W / 2 + (k + 0.5) * W;
+        parts.push([box(1.05, 1.95, 0.08), doors[(blk * N + k) % doors.length], { x: cx, z: -1.22 }]);
+        parts.push([box(0.62, 0.16, 0.04), '#1d1e21', { x: cx, y: 2.1, z: -1.24 }]);
+        parts.push([box(1.25, 0.08, 0.12), '#e9e6de', { x: cx, y: 1.95, z: -1.24 }]);
+        if (k) parts.push([box(0.08, 2.7, 0.1), '#e9e6de', { x: -N * W / 2 + k * W, z: -1.22 }]);
+      }
+      this.batch.add(partsToGeo(parts), null, xc, y, z, 0);
+      this.colliders.addBox(xc, z, (N * W) / 2, 1.2, 0, Infinity, 'cabin');
     }
     // Parasols de Deauvelle.
     const cols = [['#b8322a', '#f2f1ec'], ['#2f5f8a', '#f2f1ec'], ['#e3b23c', '#f2f1ec'], ['#2f6e4a', '#f2f1ec'], ['#d46a2e', '#f2f1ec']];
