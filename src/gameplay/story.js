@@ -6,6 +6,7 @@ import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { GrazeAI, FollowAI, FleeAI } from '../entities/horse.js';
 import { HORSES } from './data.js';
 import { formatMoney, dec } from '../core/math.js';
+import { PARKS, loadStep, unloadStep, driveStep } from './trip.js';
 
 const C = {
   camille: { name: 'Camille Martin', initials: 'CM', rating: 4.9, verified: true },
@@ -328,97 +329,74 @@ export const STORY = [
     },
   },
 
-  // 5 — Transport express
+  // 5 — Transport express : charger Quabar au haras, le livrer au Pôle en douceur, le décharger et le confier.
   {
     id: 'transport', story: true, vertical: 'TRANSPORT', category: 'Transport', title: 'Transport express', level: 2, requires: ['fugueur'],
     desc: 'Conduire le camion Strides : charger Quabar au haras et le livrer au Pôle International, en douceur.',
-    client: C.antoine, place: POI.home, placeName: 'Écurie du Val (camion)', pay: 260, xp: 300, duration: '~5 min',
+    client: C.antoine, place: POI.home, placeName: 'Écurie du Val (camion)', pay: 260, xp: 300, duration: '~6 min',
     irl: 'Strides Transport : réservez un transporteur vérifié et suivez le trajet de votre cheval en temps réel.',
     timeoutText: 'Quabar est arrivé trop tard pour son épreuve.',
     rate: (run) => (run.data.comfort >= 90 ? 5 : run.data.comfort >= 75 ? 4 : run.data.comfort >= 55 ? 3 : 2),
     review: (s) => (s >= 5 ? 'Quabar est descendu du camion frais comme un gardon. Conduite parfaite.' : s >= 4 ? 'Bonne conduite, cheval serein.' : 'Arrivé, mais un peu secoué…'),
     steps(game, run, S) {
       const truck = game.player.truck;
-      const pickup = { x: -380, z: -106 };
-      const drop = { x: 330, z: -168 };
+      const tp = game.player.transport;
       game.missions.noWhistle = true;
       let quabar = null;
+      let groom = null;
+      const H = PARKS.haras;
       return [
         S.custom({
           text: () => (game.player.mode === 'drive' ? '' : 'Monte dans le camion Strides (Écurie du Val)'),
           target: () => truck.pos,
-          radius: 4,
-          hint: 'Au volant : joystick vers le haut = accélérer, vers le bas = freiner / reculer.',
+          radius: 5,
+          hint: 'Au volant : joystick vers le haut = accélérer, vers le bas = freiner puis reculer. Rampe fermée pour rouler.',
           update: () => game.player.mode === 'drive',
         }),
-        S.custom({
-          text: 'Va charger Quabar devant le Haras de la Pommeraie',
-          target: pickup,
-          radius: 9,
-          update: () => game.player.mode === 'drive' && Math.hypot(truck.pos.x - pickup.x, truck.pos.z - pickup.z) < 10 && Math.abs(truck.speed) < 1.5,
-        }),
-        S.custom({
-          text: 'Chargement de Quabar…',
-          start(r) {
-            game.player.locked = true;
-            game.player.noExitTruck = true;
-            r.onCleanup(() => (game.player.noExitTruck = false));
-            quabar = game.spawnHorse({ id: 'quabar', name: 'Quabar', coat: 'grey', speed: 1 }, pickup.x + 6, pickup.z + 4, 0, { saddle: false });
+        driveStep(game, S, {
+          to: H,
+          text: 'Va chercher Quabar au Haras de la Pommeraie',
+          onArrive: (r) => {
+            if (quabar) return;
+            // Antoine attend avec Quabar, protections de transport mises.
+            quabar = game.spawnHorse({ id: 'quabar', name: 'Quabar', coat: 'grey', speed: 1 }, H.x + 9, H.z + 7, -Math.PI / 2, { saddle: false });
             quabar.frozen = true;
+            quabar.leadable = true;
+            quabar.visibleDist = 300;
             r.onCleanup(() => game.despawn(quabar));
-            game.audio.neigh();
-          },
-          update(r) {
-            if (r.stepT > 2.2) {
-              quabar.mesh.visible = false;
-              quabar.hiddenInTruck = true;
-              quabar.visibleDist = 0;
-              game.player.locked = false;
-              return true;
-            }
-            return false;
+            const a = npcAt(game, run, STAFF, H.x + 9.6, H.z + 8.4, -Math.PI / 2, 'Antoine');
+            a.pose = 'wave';
           },
         }),
+        S.dialog([
+          { who: 'Antoine Roux', initials: 'AR', text: 'Voilà Quabar, protections de transport mises. Ouvre la rampe, prends-le en main et fais-le monter calmement.' },
+          { who: 'Antoine Roux', initials: 'AR', text: 'Il a un concours au Pôle : roule en souplesse, il doit arriver frais.' },
+        ]),
+        loadStep(game, S, { horse: () => quabar, name: 'Quabar' }),
+        driveStep(game, S, { to: PARKS.pole, text: 'Livre Quabar au Pôle International — parking des camions', timer: 170, comfort: true }),
         S.custom({
-          text: 'Livre Quabar au Pôle International — en douceur !',
-          target: drop,
-          radius: 10,
-          hint: 'Évite les chocs et les virages brutaux : le <b>confort du cheval</b> compte pour ta note.',
-          start(r) {
-            r.timer = 150;
-            game.missions.comfort = 100;
-            const off = game.bus.on('truck:bump', ({ speed }) => {
-              game.missions.comfort = Math.max(0, game.missions.comfort - Math.min(30, 6 + speed * 1.5));
-              game.cam.shake = 0.15;
-              game.hud.toast('Choc ! Quabar est secoué.');
-            });
-            r.onCleanup(off);
-          },
-          update(r, dt) {
-            if (truck.lateral > 5.5) game.missions.comfort = Math.max(0, game.missions.comfort - (truck.lateral - 5.5) * 2.2 * dt);
-            if (game.missions.comfort <= 0) return { fail: 'Quabar a été trop secoué : transport interrompu.' };
-            return Math.hypot(truck.pos.x - drop.x, truck.pos.z - drop.z) < 11 && Math.abs(truck.speed) < 1.5;
-          },
-          end(r) {
-            r.data.comfort = game.missions.comfort ?? 0;
-            r.timer = null;
-          },
-        }),
-        S.custom({
-          text: 'Déchargement…',
+          text: '',
           start() {
-            game.player.locked = true;
-            quabar.hiddenInTruck = false;
-            quabar.visibleDist = 200;
-            quabar.setPosition(drop.x + 4, drop.z + 6, Math.PI);
+            groom = npcAt(game, run, { ...STAFF_F, top: '#2f5f8a', sleeve: '#2f5f8a' }, PARKS.pole.x - 9, PARKS.pole.z - 6, Math.PI / 2, 'Léa');
+          },
+          update: () => true,
+        }),
+        unloadStep(game, S, { horse: () => quabar, name: 'Quabar' }),
+        S.interact(() => groom.pos, 'Confier Quabar', 'Confie Quabar à Léa, sa groom', {
+          modes: ['foot'],
+          r: 3.6,
+          icon: 'hand',
+          when: () => tp.led?.horse === quabar,
+          onDo: () => {
+            tp.release(true);
+            quabar.ai = null;
+            quabar.frozen = true;
+            quabar.leadable = false;
+            groom.pose = 'wave';
             game.audio.snort();
           },
-          update: (r) => r.stepT > 1.6,
-          end() {
-            game.player.locked = false;
-          },
         }),
-        S.dialog(() => [{ who: 'Antoine Roux', initials: 'AR', text: `Confort du cheval : ${Math.round(run.data.comfort ?? 100)} %. Tout le trajet est tracé dans l’app Strides. Merci pour ce transport !` }]),
+        S.dialog(() => [{ who: 'Léa · Groom de Quabar', initials: 'LF', text: `Merci ! Confort du cheval pendant le trajet : ${Math.round(run.data.comfort ?? 100)} %. Tout le trajet est tracé dans l’app Strides.` }]),
       ];
     },
   },
