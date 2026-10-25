@@ -35,6 +35,10 @@ async function openGame({ W = 844, H = 390, embedded = false, touch = false } = 
     A.closeCards();
     while (g.hud.dialogActive) g.hud.advanceDialog();
     g.missions.timer = 1e9;
+    // Caméra recalée sur le joueur (le plan d'ouverture peut encore être loin quand la boucle s'arrête).
+    const fo = g.player.focus;
+    g.cam.snap(fo.pos, fo.heading || 0);
+    A.tick(2);
   });
   return { ctx, page, f };
 }

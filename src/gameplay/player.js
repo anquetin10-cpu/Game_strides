@@ -212,7 +212,7 @@ export class Player {
     t.body.getWorldQuaternion(_seatQ);
     hu.mesh.quaternion.copy(_seatQ);
     const b = hu.bones;
-    if (b && b.lArm && b.rArm && b.lFore && b.rFore) {
+    if (b && b.lArm && b.rArm && b.lFore && b.rFore && !b.rClav) {
       const st = t.steer * 0.6;
       b.lArm.rotation.set(-1.05 - st * 0.3, 0, 0.12);
       b.rArm.rotation.set(-1.05 + st * 0.3, 0, -0.12);

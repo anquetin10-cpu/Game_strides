@@ -266,7 +266,8 @@ export class Transport {
   _nearLeadable(hp) {
     let best = null, bd = 2.7;
     for (const h of this._leadables()) {
-      if (h.rider || h.hiddenInTruck || this.isAboard(h) || (h.frozen && !h.leadable) || !h.mesh.visible) continue;
+      // Pas de test de visibilité : elle dépend de la distance à la caméra (plans cinématiques, ouverture).
+      if (h.rider || h.hiddenInTruck || this.isAboard(h) || (h.frozen && !h.leadable) || !h.mesh.parent) continue;
       const hx = h.pos.x + Math.sin(h.heading) * 1.1, hz = h.pos.z + Math.cos(h.heading) * 1.1;
       const d = Math.min(Math.hypot(hp.x - h.pos.x, hp.z - h.pos.z) + 0.4, Math.hypot(hp.x - hx, hp.z - hz));
       if (d < bd) {
@@ -435,7 +436,8 @@ export class Transport {
     }
     const holding = (this.led && !s) || (s && s.holding);
     const b = hu.bones;
-    if (holding && b && b.rArm && b.rFore) {
+    // Squelettes récents (clavicules, poses par quaternions) : on laisse leur animation, la longe suit la main.
+    if (holding && b && b.rArm && b.rFore && !b.rClav) {
       b.rArm.rotation.x = -0.45;
       b.rArm.rotation.z = -0.22;
       b.rFore.rotation.x = -0.75;
@@ -1085,6 +1087,7 @@ export class Transport {
       this._removeAboard(h);
       this._unwrap(h);
       h.hiddenInTruck = false;
+      this.travelTack(h, false);
       if (h === main && !(tr && tr.aboard?.length)) {
         const p = d.pos?.horse || { x: HOME.horse.x, z: HOME.horse.z, heading: HOME.horse.rot };
         h.setPosition(p.x, p.z, p.heading ?? 0);

@@ -112,13 +112,14 @@ export class Audio {
 
   hoof(surface = 'grass', intensity = 1) {
     if (!this.ctx) return;
+    // Pont et plancher du camion : son creux dédié.
+    if (surface === 'ramp' || surface === 'truck') return this._hoofTruck(surface, intensity);
     const ctx = this.ctx;
     const t = ctx.currentTime + Math.random() * 0.01;
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
     const f = ctx.createBiquadFilter();
     f.type = 'bandpass';
-    if (surface === 'ramp' || surface === 'truck') return this._hoofTruck(surface, intensity);
     const freqs = { grass: 260, sand: 180, road: 1300, water: 900, wood: 700 };
     f.frequency.value = (freqs[surface] || 300) * (0.9 + Math.random() * 0.2);
     f.Q.value = surface === 'road' ? 4 : 1.2;
