@@ -81,7 +81,7 @@ export class Horse {
     this.groundY = this.game.terrain.getHeight(this.pos.x, this.pos.z);
     this.pos.y = this.groundY;
     this.mesh.position.set(this.pos.x, this.groundY, this.pos.z);
-    this.mesh.rotation.y = this.heading;
+    this.mesh.rotation.set(0, this.heading, 0);
   }
 
   startJump() {
@@ -227,8 +227,7 @@ export class Horse {
     this.groundY = g.terrain.getHeight(this.pos.x, this.pos.z);
     this.pos.y = this.groundY + this.jumpY;
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
-    this.mesh.rotation.y = this.heading;
-    this.mesh.rotation.x = -Math.atan(slope) * 0.85;
+    this.mesh.rotation.set(-Math.atan(slope) * 0.85, this.heading, 0);
 
     // Animation (désactivée au loin pour économiser).
     const far = camPos ? Math.hypot(camPos.x - this.pos.x, camPos.z - this.pos.z) : 0;

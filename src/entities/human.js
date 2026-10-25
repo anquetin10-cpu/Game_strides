@@ -86,7 +86,7 @@ export class Human {
   snap() {
     this.pos.y = this.game.terrain.getHeight(this.pos.x, this.pos.z);
     this.mesh.position.copy(this.pos);
-    this.mesh.rotation.y = this.heading;
+    this.mesh.rotation.set(0, this.heading, 0);
   }
 
   setPosition(x, z, heading = this.heading) {
@@ -169,7 +169,9 @@ export class Human {
     if (this.ai) this.ai.update(this, dt);
     this.pos.y = this.game.terrain.getHeight(this.pos.x, this.pos.z);
     this.mesh.position.copy(this.pos);
-    this.mesh.rotation.y = this.heading;
+    // Orientation entière (pas seulement le cap) : au volant, la cabine impose un quaternion dont les angles d'Euler
+    // décomposés peuvent valoir ±90° en x/z ; ne réécrire que y coucherait le personnage en descendant du camion.
+    this.mesh.rotation.set(0, this.heading, 0);
     const far = camPos ? Math.hypot(camPos.x - this.pos.x, camPos.z - this.pos.z) : 0;
     this.mesh.visible = far < this.visibleDist && !this.hidden;
     if (!this.mesh.visible) return;

@@ -77,6 +77,11 @@ export class FollowCamera {
     let cz = tz + dirz * this.dist;
     const ground = this.game.terrain.getHeight(cx, cz) + 0.6;
     if (cy < ground) cy = ground;
+    // Collé à un véhicule (camion à la rampe…) : la caméra s'élève au-dessus de la caisse au lieu de la traverser.
+    const vt = this.game.colliders.volumeTopAt(cx, cz, cy - 0.3);
+    const lift = vt > -Infinity ? Math.max(0, vt + 0.7 - cy) : 0;
+    this.lift = instant ? lift : damp(this.lift || 0, lift, lift > (this.lift || 0) ? 12 : 3, dt);
+    cy += this.lift;
     // Au-dessus de la mer : marge fixe au-dessus du niveau de la marée (crêtes des vagues comprises).
     if (this.game.terrain.waterDepth(cx, cz) > 0) cy = Math.max(cy, TIDE_UNIFORMS.tdLevel.value + 0.8);
     // Tremblement au grand galop.

@@ -111,6 +111,21 @@ export class Colliders {
     });
     return hit;
   }
+  // Sommet du plus haut obstacle volumineux et bas (camion, van…) qui contient le point, sinon -Infinity
+  // (pour que la caméra passe au-dessus plutôt qu'à travers).
+  volumeTopAt(x, z, y = 0, maxAbove = 5) {
+    let top = -Infinity;
+    this.query(x, z, 1, (col) => {
+      if (col.type === 'c' || !Number.isFinite(col.top) || col.hw < 0.9 || col.hd < 0.9) return;
+      if (y > col.top || col.top - y > maxAbove) return;
+      const dx = x - col.x;
+      const dz = z - col.z;
+      const lx = dx * col.c - dz * col.s;
+      const lz = dx * col.s + dz * col.c;
+      if (Math.abs(lx) < col.hw + 0.3 && Math.abs(lz) < col.hd + 0.3) top = Math.max(top, col.top);
+    });
+    return top;
+  }
   // Point à l'intérieur d'un obstacle haut (pour la caméra).
   blocked(x, z, y = 0) {
     let res = false;
