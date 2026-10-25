@@ -49,7 +49,7 @@ function decodeNormals(d) {
   for (let i = 0; i < n; i++) {
     u += d[i * 2];
     v += d[i * 2 + 1];
-    let x = u / 16383, y = v / 16383;
+    let x = u / 511, y = v / 511;
     const z = 1 - Math.abs(x) - Math.abs(y);
     if (z < 0) {
       const ox = x;
@@ -137,7 +137,7 @@ function decode() {
   if (A.tackPos) {
     tack = {
       position: new THREE.BufferAttribute(decodePositions(A.tackPos, meta.q * S), 3),
-      normal: new THREE.BufferAttribute(decodeNormals(A.tackNor), 3),
+      normal: null, // calculées ci-dessous (lanières arrondies, tranches nettes)
       uv: new THREE.BufferAttribute(A.tackUv, 2, true),
       aMat: new THREE.BufferAttribute(A.tackMat, 1),
       skinIndex: new THREE.BufferAttribute(A.tackSkinI, 4),
@@ -145,6 +145,11 @@ function decode() {
       indices: decodeIndicesZigzag(A.tackIdx, new Uint16Array(A.tackIdx.length)),
       ranges: meta.tack.ranges,
     };
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', tack.position);
+    g.setIndex(new THREE.BufferAttribute(tack.indices, 1));
+    g.computeVertexNormals();
+    tack.normal = g.attributes.normal;
   }
   // Squelette de repos (unités du modèle).
   const bones = BONES.map((b) => ({ name: b.name, parent: b.parent, pos: b.pos.map((v) => v * S) }));

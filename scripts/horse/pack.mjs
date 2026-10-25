@@ -62,7 +62,7 @@ export function encodeNormals(nor) {
       u = (1 - Math.abs(y)) * Math.sign(x || 1);
       v = (1 - Math.abs(x)) * Math.sign(y || 1);
     }
-    const qu = Math.round(u * 16383), qv = Math.round(v * 16383);
+    const qu = Math.round(u * 511), qv = Math.round(v * 511); // 10 bits : écart < 0,2°
     out[i * 2] = qu - px;
     out[i * 2 + 1] = qv - py;
     px = qu;

@@ -133,7 +133,15 @@ const lidIdx = lidTris.map((i) => remap[i]);
 // Paupières : os propre, pas de drapeau « œil ».
 const lidBone = new Map();
 eyeVerts.forEach((e, k) => e.lid && lidBone.set(remap[nv0 + k], e.lid));
-const lod1 = new Uint32Array([...Array.from(i1body, (i) => remap[i]), ...eyeIdx, ...lidIdx]);
+// LOD1 : triangles tournés (plus petit indice en tête, même sens) puis triés → écarts faibles, meilleure compression.
+const lod1Tris = [];
+const l1 = [...Array.from(i1body, (i) => remap[i]), ...eyeIdx, ...lidIdx];
+for (let t = 0; t < l1.length; t += 3) {
+  const a = l1[t], b = l1[t + 1], c = l1[t + 2];
+  lod1Tris.push(a <= b && a <= c ? [a, b, c] : b <= c ? [b, c, a] : [c, a, b]);
+}
+lod1Tris.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+const lod1 = new Uint32Array(lod1Tris.flat());
 pos = rp;
 nor = rn;
 const eyeFlag = new Uint8Array(nv);

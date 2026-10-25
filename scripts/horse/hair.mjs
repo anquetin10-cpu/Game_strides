@@ -2,7 +2,7 @@
 // tronçon et crins longs jusqu'aux jarrets, coupés droit), cils. Chaque mèche suit la gravité et reste posée sur la
 // peau grâce au champ de distance. Poids de peau : chaîne du cou (+ ressorts de crinière), tête, chaîne de la queue.
 import { add, mul, sub, norm, cross, dot, clamp, smooth, lerp } from './sdf.mjs';
-import { hp, HEAD_F, HEAD_U, EYE, EYE_R } from './anatomy.mjs';
+import { hp, HEAD_F } from './anatomy.mjs';
 import { bonePos, BONE_INDEX } from '../../src/entities/horse/skeleton.js';
 import { encodePositions, encodeNormals, encodeIndicesZigzag } from './pack.mjs';
 
@@ -213,18 +213,6 @@ export function buildHair(S, log = () => {}) {
     });
   }
   log(`crins : ${V.length} sommets`);
-
-  // ---------- Cils (paupière supérieure) ----------
-  for (const s of [1, -1]) {
-    const e = EYE(s);
-    // Cils de la paupière supérieure : en visière, vers l'extérieur et légèrement vers le bas.
-    for (let i = 0; i < 4; i++) {
-      const along = (i - 1.5) * 0.008;
-      const root = add(e, add(add([s * (EYE_R - 0.001), 0, 0], mul(HEAD_F, along + 0.002)), mul(HEAD_U, 0.0135)));
-      const dir = add([s * 0.85, 0, 0], add(mul(HEAD_U, 0.12), mul(HEAD_F, 0.18)));
-      strand(root, dir, 0.02, 0.006, 2, 0.0004, 0.35, HEAD_F, headW, 0.45, 0, false, { taper: 0.6 });
-    }
-  }
 
   // ---------- Empaquetage ----------
   const n = V.length;

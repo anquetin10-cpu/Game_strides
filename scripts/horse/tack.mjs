@@ -542,7 +542,7 @@ export function buildTack(S, log = () => {}) {
   log(`assise la plus basse : ${seat.map((v) => v.toFixed(3)).join(', ')}`);
   return {
     meta: { nv: n, ranges, seat },
-    arrays: { tackPos: encodePositions(pos, 0.00025), tackNor: encodeNormals(nor), tackUv: uv, tackMat: mat, tackSkinI: skinI, tackSkinW: skinW, tackIdx: encodeIndicesZigzag(idx) },
+    arrays: { tackPos: encodePositions(pos, 0.00025), tackUv: uv, tackMat: mat, tackSkinI: skinI, tackSkinW: skinW, tackIdx: encodeIndicesZigzag(idx) },
   };
 }
 
