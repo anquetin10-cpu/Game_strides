@@ -1,6 +1,6 @@
 // Cheval : physique (allures, endurance, saut, collisions) + comportements IA.
 import * as THREE from 'three';
-import { createHorseMesh, animateHorse, gaitIndex } from './horseModel.js';
+import { createHorseMesh, animateHorse, gaitIndex, setHorseLod, setHorseTack, setHorseWetness } from './horseModel.js';
 import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
 import { WORLD } from '../world/layout.js';
@@ -19,7 +19,9 @@ export class Horse {
     this.mesh.rotation.order = 'YXZ';
     this.mesh.scale.setScalar(0.94);
     this.bones = bones;
-    this.anim = { speed: 0, phase: Math.random(), jump: -1, turn: 0, graze: 0, rear: 0, t: Math.random() * 10, headYaw: 0 };
+    this.anim = { speed: 0, phase: Math.random(), jump: -1, turn: 0, graze: 0, rear: 0, t: Math.random() * 10, headYaw: 0, vel: 0, mounted: false };
+    // Sabots adaptés au relief : hauteur du terrain sous chaque pied.
+    this.anim.ground = (x, z) => game.terrain.getHeight(x, z);
     this.pos = new THREE.Vector3(opts.x || 0, 0, opts.z || 0);
     this.heading = opts.heading || 0;
     this.speed = 0;
@@ -231,11 +233,24 @@ export class Horse {
     this.mesh.visible = far < this.visibleDist;
     const animSpeed = this.speed / Math.max(0.6, this.speedMul);
     this.anim.speed = animSpeed;
+    this.anim.vel = this.speed; // vitesse réelle : longueur de foulée sans glissement des sabots
     this.anim.jump = this.jumpT;
     this.anim.turn = this.lastTurn;
+    this.anim.mounted = !!this.rider;
+    // Robe mouillée : transpiration (état du cheval, sinon estimée selon l'effort), pluie, eau des gués.
+    const effort = this.speed > 7 ? (this.speed - 7) / 9 : -0.4;
+    this._sweat = clamp((this._sweat || 0) + dt * (effort > 0 ? effort * 0.02 : effort * 0.006), 0, 1);
+    const sweat = this.cond?.sweat ?? this._sweat;
+    this._wetLegs = Math.max(depth > 0 ? depth + 0.08 + this.speed * 0.025 : 0, (this._wetLegs || 0) - dt * 0.004);
+    if (this.mesh.visible) {
+      setHorseWetness(this.mesh, { sweat: sweat > 1 ? sweat / 100 : sweat, rain: g.weather?.wetness ?? g.weather?.rain ?? 0, water: this._wetLegs });
+      setHorseTack(this.mesh, { mounted: !!this.rider });
+      // Niveau de détail : maillage allégé au-delà de ~24 m.
+      setHorseLod(this.mesh, far > (this.isPlayerHorse ? 40 : 24) ? 1 : 0);
+    }
     if (this.mesh.visible && (far < 120 || ((this._skip = (this._skip || 0) + 1) & 1))) {
       const r = animateHorse(this.bones, this.anim, far < 120 ? dt : dt * 2);
-      if (r.footfalls && (this.isPlayerHorse || far < 45)) g.bus.emit('horse:step', { horse: this, n: r.footfalls, depth });
+      if (r.footfalls && (this.isPlayerHorse || far < 45)) g.bus.emit('horse:step', { horse: this, n: r.footfalls, depth, hooves: r.landed });
     }
     this.speedNow = this.speed;
     this.distance = (this.distance || 0) + Math.hypot(this.pos.x - prevX, this.pos.z - prevZ);
@@ -243,7 +258,9 @@ export class Horse {
 
   dispose() {
     this.game.scene.remove(this.mesh);
-    this.mesh.geometry.dispose();
+    // Seules les ressources propres à ce cheval sont libérées (géométries partagées préservées).
+    this.mesh.traverse((o) => o.isMesh && o.geometry.dispose());
+    for (const m of this.mesh.userData.ownMaterials || []) m.dispose();
   }
 }
 
