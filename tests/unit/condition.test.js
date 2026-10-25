@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { HorseCondition } from '../../src/gameplay/condition.js';
+import { describe, it, expect, vi } from 'vitest';
+import { HorseCondition, installCare } from '../../src/gameplay/condition.js';
 
 const horse = (speed = 0) => ({ speed, def: { stamina: 1 }, _slope: 0 });
 const run = (c, h, speed, secs) => {
@@ -49,5 +49,57 @@ describe('physiologie du cheval', () => {
     expect(j.energy).toBe(42);
     const c2 = new HorseCondition(horse(), j);
     expect(c2.clean).toBe(10);
+  });
+});
+
+describe('gestes de soin', () => {
+  const setup = () => {
+    const defs = {};
+    const mk = (id) => {
+      const h = { id, speed: 0, def: { stamina: 1 }, _slope: 0, pos: { x: 0, z: 0 } };
+      h.cond = new HorseCondition(h, { clean: 20, satiety: 40 });
+      return h;
+    };
+    const a = mk('comete'), b = mk('autre');
+    const g = {
+      player: { locked: false, horse: a, human: { carrying: null } },
+      mainHorse: a,
+      hud: { toast() {} },
+      interact: { add: (id, d) => (defs[id] = d) },
+      save: { data: { horseCare: { comete: a.cond.toJSON(), autre: b.cond.toJSON() } } },
+      saveSoon() {},
+    };
+    installCare(g);
+    return { defs, a, b, g };
+  };
+  it('soigne le cheval du départ et ne libère pas un verrou pris entre-temps', () => {
+    vi.useFakeTimers();
+    const { defs, a, b, g } = setup();
+    defs['care-groom'].action();
+    expect(g.player.locked).toBeTruthy();
+    // Changement de cheval puis dialogue pendant le pansage.
+    g.player.horse = g.mainHorse = b;
+    g.player.locked = true;
+    vi.advanceTimersByTime(4100);
+    expect(a.cond.clean).toBe(100);
+    expect(b.cond.clean).toBe(20);
+    expect(g.save.data.horseCare.comete.clean).toBe(100);
+    expect(g.player.locked).toBe(true);
+    vi.useRealTimers();
+  });
+  it('une nouvelle brassée de foin relance la minute de repos', () => {
+    vi.useFakeTimers();
+    const { defs, a, g } = setup();
+    defs['care-hay'].action();
+    vi.advanceTimersByTime(3100);
+    expect(g.player.locked).toBe(false);
+    expect(a.cond.resting).toBe(true);
+    vi.advanceTimersByTime(47000);
+    defs['care-hay'].action();
+    vi.advanceTimersByTime(3100 + 15000);
+    expect(a.cond.resting).toBe(true);
+    vi.advanceTimersByTime(45000);
+    expect(a.cond.resting).toBe(false);
+    vi.useRealTimers();
   });
 });

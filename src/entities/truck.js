@@ -507,7 +507,9 @@ export class Truck {
           bump = Math.max(bump, Math.abs(s.vx));
         }
       }
-      if (g.terrain.waterDepth(this.pos.x, this.pos.z) > 0.6) {
+      // Eau trop profonde : seul un déplacement qui l'approfondit est refusé (garé sur l'estran, la marée ne l'emprisonne pas).
+      const deep = g.terrain.waterDepth(this.pos.x, this.pos.z);
+      if (deep > 0.6 && deep > g.terrain.waterDepth(prevX, prevZ)) {
         this.pos.x = prevX;
         this.pos.z = prevZ;
         s.heading = prevH;

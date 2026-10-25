@@ -64,7 +64,8 @@ const TOWN_BOX = (() => {
 
 // Voiture de la circulation : 50 km/h en ville, 70 km/h sur les routes de campagne, 20 km/h en croisant des chevaux,
 // arrêt progressif devant un obstacle (distance de freinage selon la vitesse), roues qui tournent, caisse qui suit
-// la pente et plonge au freinage ; demi-tour seulement hors de vue (sinon arrêt en bout de route).
+// la pente et plonge au freinage ; en bout de route, arrêt puis demi-tour lent d'une voie à l'autre (immédiat hors de vue).
+const LANE = 2.2;
 class Car {
   constructor(game, road, color, offset, kind = 'sedan') {
     this.game = game;
@@ -82,6 +83,8 @@ class Car {
     this.pitch = 0;
     this.slope = 0;
     this.braking = false;
+    this.uturn = null;
+    this.endWait = 0;
     const g = new THREE.Group();
     const m = new THREE.Mesh(carGeo(color, kind, { wheels: false }), carMaterial());
     m.castShadow = true;
@@ -96,18 +99,30 @@ class Car {
   _place() {
     const p = pointAlong(this.road.pts, this.s);
     const dir = this.dir > 0 ? p.dir : p.dir + Math.PI;
-    // Voie de droite ; hauteur prise aux deux essieux.
+    const u = this.uturn;
+    if (u) {
+      // Demi-tour : demi-cercle vers la gauche, de la voie de droite à la voie opposée.
+      const fx = Math.sin(dir), fz = Math.cos(dir), rx = Math.cos(dir), rz = -Math.sin(dir);
+      const c = Math.cos(u.th), sn = Math.sin(u.th);
+      this._pose(p.x - (rx * c - fx * sn) * LANE, p.z - (rz * c - fz * sn) * LANE, dir + u.th);
+      return;
+    }
+    // Voie de droite.
     const rx = Math.cos(dir), rz = -Math.sin(dir);
-    this.pos.set(p.x - rx * 2.2, 0, p.z - rz * 2.2);
-    const fx = Math.sin(dir), fz = Math.cos(dir), hb = this.spec.wb / 2;
+    this._pose(p.x - rx * LANE, p.z - rz * LANE, dir);
+  }
+  // Pose de la caisse : hauteur prise aux deux essieux.
+  _pose(x, z, heading) {
+    const fx = Math.sin(heading), fz = Math.cos(heading), hb = this.spec.wb / 2;
     const T = this.game.terrain;
+    this.pos.set(x, 0, z);
     const hf = T.getHeight(this.pos.x + fx * hb, this.pos.z + fz * hb);
     const hr = T.getHeight(this.pos.x - fx * hb, this.pos.z - fz * hb);
     this.pos.y = (hf + hr) / 2;
     this.slope = Math.atan2(hr - hf, this.spec.wb);
-    this.heading = dir;
+    this.heading = heading;
     this.mesh.position.copy(this.pos);
-    this.mesh.rotation.y = dir;
+    this.mesh.rotation.y = heading;
     this.mesh.rotation.x = this.slope + this.pitch;
   }
   update(dt, camPos) {
@@ -130,7 +145,8 @@ class Car {
       }
       return false;
     };
-    if (block(g.player.focus.pos)) byPlayer = true;
+    // Cavalier : la voiture attend derrière le cheval sans klaxonner.
+    if (block(g.player.focus.pos) && g.player.mode !== 'ride') byPlayer = true;
     for (const v of g.vehicles) if (v !== this && v.pos) block(v.pos);
     // Code de la route : on croise et on dépasse les chevaux au pas (20 km/h), sans klaxonner.
     for (const h of g.horses) {
@@ -139,15 +155,22 @@ class Car {
       const { ahead, side } = rel(h.pos);
       if (ahead > -8 && ahead < 45 && side < 8) limit = Math.min(limit, 5.5);
     }
-    // Bout de route : demi-tour hors de vue, sinon arrêt.
+    // Bout de route : demi-tour immédiat hors de vue ; sinon freinage à la distance d'arrêt (≈ 5 m/s²),
+    // court arrêt puis demi-tour au pas une fois la place libre.
     const far = Math.hypot(camPos.x - this.pos.x, camPos.z - this.pos.z);
     const toEnd = this.dir > 0 ? this.len - this.s : this.s;
-    if (toEnd < 14) {
-      if (far > 160) {
-        this.dir *= -1;
-        this.speed *= 0.3;
-      } else gap = Math.min(gap, Math.max(0, toEnd - 5));
+    if (this.uturn) limit = 2.2;
+    else if (toEnd < 14 && far > 160) {
+      this.dir *= -1;
+      this.speed *= 0.3;
+    } else if (toEnd < (this.speed * this.speed) / 10 + 12) {
+      gap = Math.min(gap, Math.max(0, toEnd - 5));
+      if (toEnd < 14 && this.speed < 0.3) {
+        this.endWait += dt;
+        if (this.endWait > 1.5 && this._turnClear()) this.uturn = { th: 0 };
+      }
     }
+    if (!this.uturn && this.speed >= 0.3) this.endWait = 0;
     // Vitesse visée : limitation, puis freinage doux (≈ 5 m/s²) pour s'arrêter 5 m avant l'obstacle.
     let target = limit;
     if (gap < Infinity) target = Math.min(target, Math.sqrt(Math.max(0, 10 * (gap - 5))));
@@ -162,7 +185,14 @@ class Car {
       }
     } else if (this.wait > 0) this.wait = 0;
     else this.wait = Math.min(0, this.wait + dt);
-    this.s = clamp(this.s + this.speed * dt * this.dir, 4, this.len - 4);
+    if (this.uturn) {
+      this.uturn.th += (this.speed * dt) / LANE;
+      if (this.uturn.th >= Math.PI) {
+        this.uturn = null;
+        this.endWait = 0;
+        this.dir *= -1;
+      }
+    } else this.s = clamp(this.s + this.speed * dt * this.dir, 4, this.len - 4);
     this.spin += (this.speed * dt) / this.spec.r;
     // Suspension : la caisse plonge au freinage et se cabre à l'accélération.
     const pt = clamp(-this.accel * 0.005, -0.02, 0.035);
@@ -170,6 +200,14 @@ class Car {
     this._place();
     this.mesh.visible = far < 300;
     this.braking = this.accel < -0.8 || this.speed < 0.3;
+  }
+  // Pas de demi-tour tant que le joueur ou un cheval se trouve sur sa trajectoire.
+  _turnClear() {
+    const g = this.game;
+    const cx = this.pos.x + Math.sin(this.heading) * LANE, cz = this.pos.z + Math.cos(this.heading) * LANE;
+    const near = (p) => Math.hypot(p.x - cx, p.z - cz) < LANE + 4.5;
+    if (near(g.player.focus.pos)) return false;
+    return !g.horses.some((h) => !h.hiddenInTruck && h.pos && near(h.pos));
   }
 }
 

@@ -29,7 +29,7 @@ import { Screens } from './ui/screens.js';
 import { buildMapImage } from './ui/minimap.js';
 import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
-import { installCare } from './gameplay/condition.js';
+import { installCare, HorseCondition } from './gameplay/condition.js';
 import { Birds } from './world/birds.js';
 import { HoofPrints } from './world/hoofprints.js';
 import { Boats } from './world/boats.js';
@@ -734,7 +734,7 @@ export class Game {
       if (this.mainHorse.def.id !== 'comete') {
         this.despawn(this.mainHorse);
         this.spawnMainHorse('comete');
-      }
+      } else this.mainHorse.cond = new HorseCondition(this.mainHorse); // Comète repart reposée : rien de l'ancienne sauvegarde.
       this.applyUpgrades(this.mainHorse);
       this.placeFromSave();
       this.save.saveNow();

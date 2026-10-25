@@ -481,7 +481,6 @@ export const STORY = [
         start: { x: GATIEN.start.x + 4, z: GATIEN.start.z },
         finish: { x: GATIEN.start.x, z: GATIEN.start.z, w: 7 },
         timeAllowed: 110,
-        maxRefusals: 3,
         intro: [{ who: 'Paul Faure', initials: 'PF', text: 'Dix obstacles en forêt, dont l’entrée dans la mare. Suis les numéros, attention aux refus. Bonne chance !' }],
       }).concat([
         S.custom({
