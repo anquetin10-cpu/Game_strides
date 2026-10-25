@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { tideLevel, tideEvents, tideCoef, tideState, temperature, rainTarget, dayCover, conditionText, wind } from '../../src/world/weather.js';
+import * as THREE from 'three';
+import { tideLevel, tideEvents, tideCoef, tideState, temperature, rainTarget, dayCover, coverAt, conditionText, wind } from '../../src/world/weather.js';
+import { Sky } from '../../src/world/sky.js';
 
 describe('marée', () => {
   it('alterne pleines et basses mers toutes les ~6 h 12', () => {
@@ -51,5 +53,29 @@ describe('météo', () => {
     const w = wind(3);
     expect(w.kmh).toBeGreaterThan(0);
     expect(['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']).toContain(w.dir);
+  });
+  it('pas de saut de couverture, de pluie ni de température à minuit', () => {
+    for (let d = 0; d < 18; d++) {
+      expect(Math.abs(coverAt(d, 23.999) - coverAt(d + 1, 0))).toBeLessThan(0.01);
+      expect(Math.abs(rainTarget(d, 23.999) - rainTarget(d + 1, 0))).toBeLessThan(0.01);
+      expect(Math.abs(temperature(d, 23.999) - temperature(d + 1, 0))).toBeLessThan(0.05);
+      expect(Math.abs(temperature(d, 5.999) - temperature(d, 6))).toBeLessThan(0.05);
+      expect(coverAt(d, 12)).toBe(dayCover(d));
+    }
+  });
+  it('les nuages avancent dans le sens du vent annoncé', () => {
+    const sky = new Sky(new THREE.Scene());
+    for (let d = 0; d < 9; d++) {
+      sky.setDay(d);
+      // Le vent est nommé d'où il vient : un vent d'ouest souffle vers l'est (+x), un vent de sud-ouest aussi vers le nord (−z).
+      if (sky.wind.dir.includes('O')) expect(sky.windVec.x).toBeGreaterThan(0);
+      if (sky.wind.dir === 'SO') expect(sky.windVec.y).toBeLessThan(0);
+      if (sky.wind.dir === 'NO') expect(sky.windVec.y).toBeGreaterThan(0);
+      const w0 = sky.uniforms.cloudWind.value.clone();
+      sky.update(12, { x: 0, y: 0, z: 0 }, 10);
+      // Un motif lu en (p × échelle + décalage) se déplace de −Δdécalage / échelle.
+      const move = w0.sub(sky.uniforms.cloudWind.value);
+      expect(move.dot(sky.windVec)).toBeGreaterThan(0);
+    }
   });
 });
