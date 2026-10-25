@@ -179,7 +179,7 @@ export function buildHair(S, log = () => {}) {
   const tailW = (pos) => chainW(tailChain, tailNames, pos, 0.05);
   const dockA = [0, 1.5, -0.905], dockB = [0, 1.12, -1.0];
   const dAx = norm(sub(dockB, dockA));
-  const dU = norm(cross(dAx, [1, 0, 0])); // vers l'arrière-haut (dessus du tronçon)
+  const dU = norm(cross([1, 0, 0], dAx)); // vers l'arrière-haut (dessus du tronçon, côté visible)
   const dX = [1, 0, 0];
   // Couverture du tronçon : crins courts couchés vers le bas.
   for (let r = 0; r < 4; r++) {
@@ -194,7 +194,7 @@ export function buildHair(S, log = () => {}) {
     }
   }
   // Crins longs : racines le long du tronçon, tombent jusqu'à ~0,48 m du sol (coupés droit).
-  const NT = 56;
+  const NT = 72;
   for (let i = 0; i < NT; i++) {
     const t = 0.05 + rnd() * 0.85;
     const th = (rnd() - 0.5) * Math.PI * (i % 3 === 0 ? 2 : 1.4);
@@ -207,7 +207,7 @@ export function buildHair(S, log = () => {}) {
     const dir = add(mul(dAx, 0.7), mul(radial, 0.18));
     // Largeur de carte orientée autour de l'axe (volume visible sous tous les angles).
     const side = norm(cross(radial, [0, 1, 0]));
-    strand(root, dir, len, 0.045 + rnd() * 0.03, 8, 0.012 + rnd() * 0.012, 1.3, side, tailW, 0.7 + rnd() * 0.6, Math.floor(rnd() * 4) * 0.25, i % 2 === 0, {
+    strand(root, dir, len, 0.035 + rnd() * 0.03, 8, 0.012 + rnd() * 0.012, 1.3, side, tailW, 0.7 + rnd() * 0.6, Math.floor(rnd() * 4) * 0.25, i % 2 === 0, {
       taper: 0.15,
       normal: (q, n) => norm(add(mul(radial, 0.7), mul(n, 0.3))),
     });

@@ -56,6 +56,8 @@ log('projection et normales');
 const eyeTris = [];
 const eyeVerts = [];
 const EYE_AXIS = [];
+const LID_AXIS = [];
+const lidTris = [];
 for (const s of [1, -1]) {
   const c = EYE(s);
   // Axe du regard : latéral, un peu vers l'avant.
@@ -79,6 +81,24 @@ for (const s of [1, -1]) {
       if (i < NS - 1) eyeTris.push(b, dd, cc);
     }
   }
+  // Paupière supérieure mobile : calotte cachée sous l'arcade (œil ouvert), abaissée par l'os lidL/lidR (clignement).
+  LID_AXIS.push(u);
+  const lb = nv0 + eyeVerts.length;
+  const NA = 6, NB = 10, RL = EYE_R + 0.0028;
+  for (let i = 0; i <= NA; i++) {
+    const al = ((24 + (64 * i) / NA) * Math.PI) / 180;
+    for (let j = 0; j <= NB; j++) {
+      const be = ((-62 + (124 * j) / NB) * Math.PI) / 180;
+      const d = add(add(mul(ax, Math.cos(al) * Math.cos(be)), mul(v, Math.sin(al) * Math.cos(be))), mul(u, Math.sin(be)));
+      eyeVerts.push({ p: add(c, mul(d, RL)), n: d, lid: s > 0 ? 'lidL' : 'lidR' });
+    }
+  }
+  for (let i = 0; i < NA; i++) {
+    for (let j = 0; j < NB; j++) {
+      const a = lb + i * (NB + 1) + j, b = a + 1, cc = a + NB + 1, dd = cc + 1;
+      lidTris.push(a, cc, b, b, cc, dd);
+    }
+  }
 }
 {
   const p2 = new Float32Array((nv0 + eyeVerts.length) * 3), n2 = new Float32Array(p2.length);
@@ -98,7 +118,7 @@ const [i1body] = MeshoptSimplifier.simplify(i0, pos, 3, LOD1 * 3, 0.05, []);
 log(`LOD1 : ${i1body.length / 3} triangles`);
 
 // ---------- Ordre de rendu (cache GPU) et de lecture des sommets ----------
-const all0 = new Uint32Array([...i0, ...eyeTris]);
+const all0 = new Uint32Array([...i0, ...eyeTris, ...lidTris]);
 // (reorderMesh réordonne all0 sur place et renvoie la table des nouveaux numéros de sommets)
 const [remap] = MeshoptEncoder.reorderMesh(all0, true, false);
 const rp = new Float32Array(nv * 3), rn = new Float32Array(nv * 3);
@@ -109,7 +129,11 @@ for (let i = 0; i < nv; i++) {
   rn.set(nor.subarray(i * 3, i * 3 + 3), r * 3);
 }
 const eyeIdx = eyeTris.map((i) => remap[i]);
-const lod1 = new Uint32Array([...Array.from(i1body, (i) => remap[i]), ...eyeIdx]);
+const lidIdx = lidTris.map((i) => remap[i]);
+// Paupières : os propre, pas de drapeau « œil ».
+const lidBone = new Map();
+eyeVerts.forEach((e, k) => e.lid && lidBone.set(remap[nv0 + k], e.lid));
+const lod1 = new Uint32Array([...Array.from(i1body, (i) => remap[i]), ...eyeIdx, ...lidIdx]);
 pos = rp;
 nor = rn;
 const eyeFlag = new Uint8Array(nv);
@@ -123,6 +147,10 @@ const ownerOf = (op, x, y, z) => (typeof op.owner === 'function' ? op.owner(x, y
 for (let i = 0; i < nv; i++) {
   const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
   const m = wv[i];
+  if (lidBone.has(i)) {
+    m.set(BONE_INDEX[lidBone.get(i)], 1);
+    continue;
+  }
   if (eyeFlag[i]) {
     m.set(BONE_INDEX.head, 1);
     continue;
@@ -150,7 +178,7 @@ for (let t = 0; t < all0.length; t += 3) {
 let cur = wv;
 for (let pass = 0; pass < 2; pass++) {
   const next = cur.map((m, i) => {
-    if (eyeFlag[i]) return m;
+    if (eyeFlag[i] || lidBone.has(i)) return m;
     const o = new Map();
     for (const [k, v] of m) o.set(k, v * 0.5);
     const nn = adj[i].size || 1;
@@ -201,6 +229,10 @@ for (let i = 0; i < 40; i++) {
 }
 const ao = new Uint8Array(nv);
 for (let i = 0; i < nv; i++) {
+  if (lidBone.has(i)) {
+    ao[i] = 190;
+    continue;
+  }
   if (eyeFlag[i]) {
     ao[i] = 230;
     continue;
@@ -240,6 +272,7 @@ const meta = {
   counts: { nv, lod0: all0.length, lod1: lod1.length },
   eyes: [EYE(1), EYE(-1)],
   eyeAxis: EYE_AXIS,
+  lidAxis: LID_AXIS,
   eyeR: EYE_R,
   head: { o: HEAD_O, f: HEAD_F, u: HEAD_U },
   hair: hair.meta,

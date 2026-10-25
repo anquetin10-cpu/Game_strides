@@ -51,6 +51,9 @@ const DEF = [
   ['reinR', 'body', [-0.07, 1.86, 0.5]],
   ['stirL', 'body', [0.27, 0.98, 0.25]], // étrier (bas de l'étrivière)
   ['stirR', 'body', [-0.27, 0.98, 0.25]],
+  // Paupières supérieures (centre du globe) : rotation autour de l'axe de la fente pour cligner.
+  ['lidL', 'head', [0.079, 1.8043, 1.3171]],
+  ['lidR', 'head', [-0.079, 1.8043, 1.3171]],
 ];
 
 function build() {

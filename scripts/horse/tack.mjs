@@ -236,7 +236,7 @@ export function buildTack(S, log = () => {}) {
   const pBody = () => ({ body: 1 });
   part('pad');
   {
-    const NZ = 22, NQ = 15;
+    const NZ = 18, NQ = 12;
     for (const s of [1, -1]) {
       const grid = [];
       for (let i = 0; i < NZ; i++) {
@@ -253,7 +253,8 @@ export function buildTack(S, log = () => {}) {
           grid[i].push({ p: pp, n: S.grad(...pp) });
         }
       }
-      shell(grid, 0.016, TACK_MAT.pad, pBody, (u, v) => [s > 0 ? u : 1 - u, v * 0.5 + (s > 0 ? 0 : 0.5)], { thick: (u, v) => 0.014 + 0.004 * Math.sin(Math.PI * v), flip: s < 0, noBottom: true });
+      // Texture : côté gauche lu de l'avant vers l'arrière à l'écran (u inversé), côté droit dans le sens de z.
+      shell(grid, 0.016, TACK_MAT.pad, pBody, (u, v) => [s > 0 ? 1 - u : u, v * 0.5 + (s > 0 ? 0 : 0.5)], { thick: (u, v) => 0.014 + 0.004 * Math.sin(Math.PI * v), flip: s < 0, noBottom: true });
     }
   }
   log(`tapis : ${V.length} sommets`);
@@ -287,7 +288,7 @@ export function buildTack(S, log = () => {}) {
         if (j === Math.floor(NQ / 2) && (!seatLow || p[1] < seatLow[1]) && z > -0.06 && z < 0.22) seatLow = p;
       }
     }
-    shell(grid, 0.012, TACK_MAT.seat, pBody, (u, v) => [0.9, 0.9]);
+    shell(grid, 0.012, TACK_MAT.seat, pBody, (u, v) => [0.9, 0.9], { noBottom: true });
   }
   // Quartiers (avancés, d'obstacle) avec taquets, et faux-quartiers sous le siège.
   for (const s of [1, -1]) {
@@ -302,7 +303,7 @@ export function buildTack(S, log = () => {}) {
         const zF = lerp(0.3, 0.405, v) - 0.04 * Math.pow(v, 5);
         const zB = lerp(-0.03, 0.06, v) + 0.05 * Math.pow(v, 5);
         const z = lerp(zB, zF, u);
-        const p = project(backPt(z, q, s), 0.024);
+        const p = project(backPt(z, q, s), 0.03);
         grid[i].push({ p, n: S.grad(...p) });
       }
     }
@@ -315,7 +316,7 @@ export function buildTack(S, log = () => {}) {
       for (let j = 0; j < 5; j++) {
         const z = lerp(0.2, 0.33, i / 5);
         const q = lerp(0.18, 0.4, j / 4);
-        const p = project(backPt(z, q, s), 0.034);
+        const p = project(backPt(z, q, s), 0.04);
         g2[i].push({ p, n: S.grad(...p) });
       }
     }
@@ -373,7 +374,7 @@ export function buildTack(S, log = () => {}) {
     for (let k = 0; k <= 12; k++) {
       const t = k / 12;
       const p = lerp3(bar, top, t);
-      pts.push(t < 0.85 ? project([p[0], p[1], p[2]], 0.034 + 0.01 * t) : p);
+      pts.push(t < 0.85 ? project([p[0], p[1], p[2]], 0.042 + 0.01 * t) : p);
     }
     strap(pts, 0.026, 0.004, 0.034, TACK_MAT.leather, (p, t) => stirW(s)(p, t), { free: true, normal: () => [s, 0, 0] });
     // Étrier : arceau, plancher, œil.
@@ -489,7 +490,7 @@ export function buildTack(S, log = () => {}) {
       grid.push(row);
     }
     const bw = (p) => (p[1] > 0.205 ? { [s > 0 ? 'flL' : 'frL']: 1 } : { [s > 0 ? 'flL' : 'frL']: 0.5, [s > 0 ? 'flP' : 'frP']: 0.5 });
-    shell(grid, 0.007, TACK_MAT.boots, bw, () => [0.9, 0.9]);
+    shell(grid, 0.007, TACK_MAT.boots, bw, () => [0.9, 0.9], { noBottom: true });
   }
   part('bootsH');
   for (const s of [1, -1]) {
@@ -504,7 +505,7 @@ export function buildTack(S, log = () => {}) {
       grid.push(row);
     }
     const bw = (p) => (p[1] > 0.2 ? { [s > 0 ? 'hlC' : 'hrC']: 0.6, [s > 0 ? 'hlP' : 'hrP']: 0.4 } : { [s > 0 ? 'hlP' : 'hrP']: 1 });
-    shell(grid, 0.007, TACK_MAT.boots, bw, () => [0.9, 0.9]);
+    shell(grid, 0.007, TACK_MAT.boots, bw, () => [0.9, 0.9], { noBottom: true });
   }
   log(`sellerie : ${V.length} sommets`);
 

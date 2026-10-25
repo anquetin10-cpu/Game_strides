@@ -57,8 +57,8 @@ export function buildHorseMesh(opts = {}) {
   geo.boundingBox = new THREE.Box3(new THREE.Vector3(-1.2, -0.2, -1.6), new THREE.Vector3(1.2, 2.8, 2.2));
   safeDispose(geo);
   const mk = markings(opts, rnd);
-  const material = createCoatMaterial(A, opts.coat, mk);
-  const mesh = new THREE.SkinnedMesh(geo, material);
+  const coat = createCoatMaterial(A, opts.coat, mk);
+  const mesh = new THREE.SkinnedMesh(geo, coat.near);
   mesh.add(root);
   mesh.bind(skeleton, _id);
   mesh.castShadow = true;
@@ -71,17 +71,24 @@ export function buildHorseMesh(opts = {}) {
   mesh.userData.lod = 0;
   mesh.userData.markings = mk;
   mesh.userData.parts = [];
-  mesh.userData.ownMaterials = [material];
+  mesh.userData.coat = coat;
+  mesh.userData.ownMaterials = [coat.near, coat.far];
   // Matériau remplacé de l'extérieur (ex. statue de bronze) : les crins et la sellerie le partagent.
-  let current = material;
+  let current = coat.near;
   Object.defineProperty(mesh, 'material', {
     configurable: true,
     get: () => current,
     set: (m) => {
       current = m;
-      if (m !== material) for (const p of mesh.userData.parts) p.material = m;
+      mesh.userData.external = m !== coat.near && m !== coat.far;
+      if (mesh.userData.external) for (const p of mesh.userData.parts) p.material = m;
     },
   });
+  // Paupières : axe de rotation (longueur de la fente) pour cligner.
+  if (A.meta.lidAxis) {
+    bones.lidL.userData.axis = new THREE.Vector3(...A.meta.lidAxis[0]);
+    bones.lidR.userData.axis = new THREE.Vector3(...A.meta.lidAxis[1]);
+  }
   // Crins (crinière, toupet, queue, cils).
   if (A.hair) {
     const H = A.hair;
@@ -97,7 +104,7 @@ export function buildHorseMesh(opts = {}) {
     const T = A.tack;
     const tg = new THREE.BufferGeometry();
     for (const k of ['position', 'normal', 'uv', 'aMat', 'skinIndex', 'skinWeight']) tg.setAttribute(k, T[k]);
-    const cfg = { saddle: opts.saddle !== false, mounted: false, boots: opts.boots ?? opts.saddle !== false };
+    const cfg = { saddle: opts.saddle !== false, mounted: false, boots: opts.boots ?? opts.saddle !== false, lod: 0 };
     tg.setIndex(tackIndex(T, cfg));
     safeDispose(tg, []);
     const part = attachPart(mesh, tg, tackMaterial(opts.pad, opts.padTrim));
@@ -112,11 +119,18 @@ export function buildHorseMesh(opts = {}) {
  * water (hauteur mouillée par l'eau en mètres, gué ou mer ; 0 = sec).
  */
 export function setHorseWetness(mesh, { sweat, rain, water } = {}) {
-  const U = mesh.userData.ownMaterials?.[0]?.userData.uniforms;
+  const U = mesh.userData.coat?.uniforms;
   if (!U) return;
   if (sweat !== undefined) U.uSweat.value = Math.min(1, Math.max(0, sweat));
   if (rain !== undefined) U.uWet.value = Math.min(1, Math.max(0, rain));
   if (water !== undefined) U.uWater.value = Math.max(0, water);
+}
+
+function applyTack(mesh) {
+  const part = mesh.userData.tack;
+  const idx = tackIndex(horseAssets().tack, part.userData.cfg);
+  if (part.geometry.index !== idx) part.geometry.setIndex(idx);
+  part.visible = idx.count > 0;
 }
 
 /** Change l'équipement : { saddle, mounted, boots } (seuls les champs fournis changent). */
@@ -124,10 +138,10 @@ export function setHorseTack(mesh, cfg) {
   const part = mesh.userData.tack;
   if (!part) return;
   const c = part.userData.cfg;
-  const next = { saddle: cfg.saddle ?? c.saddle, mounted: cfg.mounted ?? c.mounted, boots: cfg.boots ?? c.boots };
+  const next = { saddle: cfg.saddle ?? c.saddle, mounted: cfg.mounted ?? c.mounted, boots: cfg.boots ?? c.boots, lod: c.lod };
   if (next.saddle === c.saddle && next.mounted === c.mounted && next.boots === c.boots) return;
   part.userData.cfg = next;
-  part.geometry.setIndex(tackIndex(horseAssets().tack, next));
+  applyTack(mesh);
 }
 
 // Ajoute une pièce skinnée (crins, sellerie) partageant le squelette du cheval.
@@ -144,14 +158,27 @@ export function attachPart(horseMesh, geo, material, { shadow = true } = {}) {
   return part;
 }
 
-// Bascule de niveau de détail (0 : proche, 1 : lointain).
+/**
+ * Niveau de détail (0 : proche, 1 : lointain) : maillage allégé, robe en matériau standard,
+ * crins réduits, sellerie réduite aux grandes pièces, sans ombres portées des crins et de la sellerie.
+ */
 export function setHorseLod(mesh, lod) {
   if (mesh.userData.lod === lod) return;
   mesh.userData.lod = lod;
   const A = horseAssets();
   const r = A.body.lod[lod];
   mesh.geometry.setDrawRange(r[0], r[1]);
+  const coat = mesh.userData.coat;
+  if (coat && !mesh.userData.external) mesh.material = lod ? coat.far : coat.near;
   const h = mesh.userData.hair;
-  if (h && A.hair) h.geometry.setDrawRange(A.hair.lod[lod][0], A.hair.lod[lod][1]);
-  for (const p of mesh.userData.parts) if (p.userData.lodRanges) p.geometry.setDrawRange(...p.userData.lodRanges[lod]);
+  if (h && A.hair) {
+    h.geometry.setDrawRange(A.hair.lod[lod][0], A.hair.lod[lod][1]);
+    h.castShadow = lod === 0;
+  }
+  const t = mesh.userData.tack;
+  if (t) {
+    t.userData.cfg = { ...t.userData.cfg, lod };
+    t.castShadow = lod === 0;
+    applyTack(mesh);
+  }
 }

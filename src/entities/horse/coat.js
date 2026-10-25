@@ -292,17 +292,10 @@ const PHYS = /* glsl */ `
 #ifdef USE_SHEEN
   material.sheenColor = (0.06 + 0.5 * sqrt(diffuseColor.rgb)) * sheenColor * (1.0 - hHoofK) * (1.0 - hEye) * (1.0 - hSkinK * 0.7) * (1.0 - 0.6 * hWetK) * (1.0 - hFoamK);
 #endif
-#ifdef USE_CLEARCOAT
-  material.clearcoat = hEye;
-  material.clearcoatRoughness = 0.02;
-#endif
 `;
 const AO = /* glsl */ `
 float ambientOcclusion = mix(1.0, vExtra.x, 0.9);
 reflectedLight.indirectDiffuse *= ambientOcclusion;
-#if defined( USE_CLEARCOAT )
-  clearcoatSpecularIndirect *= ambientOcclusion;
-#endif
 #if defined( USE_SHEEN )
   sheenSpecularIndirect *= ambientOcclusion;
 #endif
@@ -311,6 +304,7 @@ reflectedLight.indirectDiffuse *= ambientOcclusion;
   reflectedLight.indirectSpecular *= computeSpecularOcclusion( dotNV, ambientOcclusion, material.roughness );
 #endif
 `;
+
 
 // Paramètres de marques (liste, étoile, balzanes) tirés d'une graine.
 export function markings(opts, rnd) {
@@ -328,21 +322,15 @@ export function markings(opts, rnd) {
   return { sockH, blaze, star };
 }
 
+
+/**
+ * Matériaux de robe d'un cheval : proche (physique, reflet satiné « sheen ») et lointain (standard, plus léger),
+ * partageant les mêmes réglages (marques, mouillé). L'œil doit son reflet vitreux à une rugosité très faible.
+ */
 export function createCoatMaterial(assets, coat, mk) {
   const C = resolveCoat(coat);
   const meta = assets.meta;
   const hoofC = meta.hoofC || [[0.145, 0.664, 0.075, 0.036], [-0.145, 0.664, 0.075, 0.036], [0.15, -0.685, 0.077, 0.038], [-0.15, -0.685, 0.077, 0.038]];
-  const m = new THREE.MeshPhysicalMaterial({
-    vertexColors: true,
-    roughness: 0.52,
-    metalness: 0,
-    sheen: 1,
-    sheenRoughness: 0.42,
-    sheenColor: C.sheen.clone().lerp(new THREE.Color(1, 1, 1), 0.5).multiplyScalar(0.55),
-    clearcoat: 1,
-    clearcoatRoughness: 0.03,
-    specularIntensity: 0.6,
-  });
   const U = {
     uScaleInv: { value: 1 / assets.scale },
     uSocks: { value: new THREE.Vector4(...mk.sockH) },
@@ -363,17 +351,33 @@ export function createCoatMaterial(assets, coat, mk) {
     uSweat: { value: 0 },
     uWater: { value: 0 },
   };
-  m.userData.uniforms = U;
-  m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, U);
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\n' + VERT_DECL).replace('#include <begin_vertex>', '#include <begin_vertex>\n' + VERT_MAIN);
-    sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\n' + FRAG_DECL)
-      .replace('#include <color_fragment>', '#include <color_fragment>\n' + FRAG_COLOR)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n' + ROUGH)
-      .replace('#include <lights_physical_fragment>', '#include <lights_physical_fragment>\n' + PHYS)
-      .replace('#include <aomap_fragment>', AO);
+  const patch = (m, key) => {
+    m.userData.uniforms = U;
+    m.onBeforeCompile = (sh) => {
+      Object.assign(sh.uniforms, U);
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\n' + VERT_DECL).replace('#include <begin_vertex>', '#include <begin_vertex>\n' + VERT_MAIN);
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\n' + FRAG_DECL)
+        .replace('#include <color_fragment>', '#include <color_fragment>\n' + FRAG_COLOR)
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n' + ROUGH)
+        .replace('#include <lights_physical_fragment>', '#include <lights_physical_fragment>\n' + PHYS)
+        .replace('#include <aomap_fragment>', AO);
+    };
+    m.customProgramCacheKey = () => key;
+    return m;
   };
-  m.customProgramCacheKey = () => 'horse-coat-1';
-  return m;
+  const near = patch(
+    new THREE.MeshPhysicalMaterial({
+      vertexColors: true,
+      roughness: 0.52,
+      metalness: 0,
+      sheen: 1,
+      sheenRoughness: 0.42,
+      sheenColor: C.sheen.clone().lerp(new THREE.Color(1, 1, 1), 0.5).multiplyScalar(0.55),
+      specularIntensity: 0.6,
+    }),
+    'horse-coat-2',
+  );
+  const far = patch(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.56, metalness: 0 }), 'horse-coat-far-2');
+  return { near, far, uniforms: U };
 }

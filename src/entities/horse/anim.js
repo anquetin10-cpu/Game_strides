@@ -208,6 +208,8 @@ function createState(bones, st) {
     land: 0,
     jumpPrev: -1,
     swish: 0,
+    blink: 0,
+    blinkT: 1 + Math.random() * 4,
     swishT: 3 + Math.random() * 6,
     events: [],
     hooves: legs.map(() => new THREE.Vector3()),
@@ -549,8 +551,8 @@ export function animateHorse(bones, st, dt) {
   const gaitNeck = target === 'walk' ? 0.1 : target === 'trot' ? -0.06 : target === 'canter' ? 0.02 : target === 'gallop' ? 0.18 : 0.06;
   let nod = 0;
   if (target === 'walk') nod = Math.sin(TAU * (st.phase * 2 + 0.1)) * 0.035;
-  else if (target === 'canter') nod = Math.sin(TAU * (st.phase - 0.05)) * 0.07;
-  else if (target === 'gallop') nod = Math.sin(TAU * (st.phase - 0.05)) * 0.09;
+  else if (target === 'canter') nod = Math.sin(TAU * (st.phase - 0.05)) * 0.11;
+  else if (target === 'gallop') nod = Math.sin(TAU * (st.phase - 0.05)) * 0.13;
   let neckP = gaitNeck * A.move + nod * A.move + (1 - A.move) * (0.08 + Math.sin(t * 0.37) * 0.04);
   let headP = -0.02 * A.move;
   if (jumping) {
@@ -637,6 +639,23 @@ export function animateHorse(bones, st, dt) {
   B.earL.rotation.set(Math.min(0, A.earL) * 0.45, A.earL * 0.9, 0);
   B.earR.rotation.set(Math.min(0, A.earR) * 0.45, -A.earR * 0.9, 0);
 
+  // ----- Clignements (paupières) ; paupières mi-closes quand le cheval somnole -----
+  A.blinkT -= dt;
+  if (A.blinkT < 0) {
+    A.blinkT = 1.8 + Math.random() * 5.5;
+    A.blink = 1e-4;
+  }
+  if (A.blink > 0) {
+    A.blink += dt / 0.17;
+    if (A.blink >= 1) A.blink = 0;
+  }
+  const doze = A.restLeg >= 0 && A.idleT > 14 ? 0.45 * A.restK : 0;
+  const lid = Math.max(A.blink > 0 ? Math.sin(Math.PI * A.blink) : 0, doze);
+  if (B.lidL && B.lidL.userData.axis) {
+    B.lidL.quaternion.setFromAxisAngle(B.lidL.userData.axis, -1.02 * lid);
+    B.lidR.quaternion.setFromAxisAngle(B.lidR.userData.axis, -1.02 * lid);
+  }
+
   // ----- Respiration -----
   A.exert = clamp(A.exert + (target === 'gallop' ? 0.08 : target === 'canter' ? 0.03 : -0.02) * dt, 0, 1);
   A.breath += dt * TAU * (0.2 + A.exert * 0.9);
@@ -720,7 +739,9 @@ function solveLeg(L, S, A, B, bodyM, pelvisM, px, py, pz, stance, u, jt, rear, d
     const pitch = S.pitch; // ≤ 0 : talons levés, rotation autour de la pince
     tz += d * (1 - Math.cos(pitch));
     ty += -d * Math.sin(pitch);
-    const ext = A.move > 0.05 ? 0.3 * bump(u / A.duty) * (A.gait === 'walk' ? 0.45 : 1) * A.move : 0;
+    // Le boulet s'abaisse sous la charge, d'autant plus que l'allure est rapide (presque au sol au grand galop).
+    const sink = A.gait === 'walk' ? 0.14 : A.gait === 'trot' ? 0.3 : A.gait === 'canter' ? 0.38 : A.gait === 'gallop' ? 0.5 : 0;
+    const ext = A.move > 0.05 ? sink * bump(u / A.duty) * A.move : 0;
     const aH = seg[4].a0 + pitch;
     const aP = seg[3].a0 + ext - pitch * 0.4;
     const cz = tz - Math.sin(aH) * seg[4].L, cy = ty + Math.cos(aH) * seg[4].L;

@@ -6,14 +6,14 @@ import * as THREE from 'three';
 const PALETTE = [
   // [couleur sRGB, rugosité, métal]
   ['#15161a', 0.82, 0], // 0 tapis (couleur remplacée par l'option pad)
-  ['#3d2416', 0.5, 0], // 1 selle (cuir havane)
+  ['#5a341d', 0.48, 0], // 1 selle (cuir havane)
   ['#24170f', 0.45, 0], // 2 cuir du filet, étrivières
   ['#c9c9cc', 0.22, 1], // 3 acier inoxydable
   ['#b38a3e', 0.3, 1], // 4 laiton
   ['#141414', 0.5, 0], // 5 guêtres
   ['#3a2214', 0.55, 0], // 6 licol en cuir
   ['#121212', 0.62, 0], // 7 sangle
-  ['#2c1a10', 0.72, 0], // 8 siège (cuir grainé)
+  ['#3f2414', 0.7, 0], // 8 siège (cuir grainé)
   ['#0f0f0f', 0.8, 0], // 9 caoutchouc (rênes, étriers)
 ];
 
@@ -64,6 +64,7 @@ function makePadTexture() {
   g.fillText(word, 30, half + half * 0.8); // côté droit : arrière = u faible
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.NoColorSpace;
+  tex.flipY = false; // v = rangée du canevas (0 = dos)
   tex.anisotropy = 4;
   return tex;
 }
@@ -129,10 +130,18 @@ const SETS = {
 };
 const cache = new Map();
 export function tackIndex(T, cfg) {
-  const key = `${cfg.saddle ? 1 : 0}${cfg.mounted ? 1 : 0}${cfg.boots ? 1 : 0}`;
+  const lod = cfg.lod ? 1 : 0;
+  const key = `${cfg.saddle ? 1 : 0}${cfg.mounted ? 1 : 0}${cfg.boots ? 1 : 0}${lod}`;
   let a = cache.get(key);
   if (a) return a;
-  const names = cfg.saddle ? [...SETS.saddled, cfg.mounted ? 'reinsRidden' : 'reinsNeck', ...(cfg.boots ? SETS.boots : [])] : SETS.halter;
+  // Au loin : seulement les grandes pièces (tapis, selle, sangle), plus de licol.
+  const names = lod
+    ? cfg.saddle
+      ? ['pad', 'saddle', 'girth']
+      : []
+    : cfg.saddle
+      ? [...SETS.saddled, cfg.mounted ? 'reinsRidden' : 'reinsNeck', ...(cfg.boots ? SETS.boots : [])]
+      : SETS.halter;
   let n = 0;
   for (const k of names) n += T.ranges[k][1];
   const out = new Uint16Array(n);
