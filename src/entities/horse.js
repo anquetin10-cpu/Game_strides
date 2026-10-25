@@ -216,7 +216,9 @@ export class Horse {
       this.speed *= 1 - clamp(into, 0, 1) * Math.min(1, dt * 12);
     }
     if (g.course) g.course.constrain?.(this, prevX, prevZ);
-    if (g.terrain.waterDepth(this.pos.x, this.pos.z) > 1.35) {
+    // Eau trop profonde : seul un pas qui l'approfondit est refusé (la marée montante ne bloque pas le retour au rivage).
+    const deep = g.terrain.waterDepth(this.pos.x, this.pos.z);
+    if (deep > 1.35 && deep > g.terrain.waterDepth(prevX, prevZ)) {
       this.pos.x = prevX;
       this.pos.z = prevZ;
       this.speed *= 0.5;

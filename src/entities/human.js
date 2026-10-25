@@ -136,7 +136,9 @@ export class Human {
     this.pos.x = clamp(this.pos.x, -lim, lim);
     this.pos.z = clamp(this.pos.z, -lim, lim);
     g.colliders.resolve(this.pos, this.radius, g.terrain.getHeight(this.pos.x, this.pos.z));
-    if (g.terrain.waterDepth(this.pos.x, this.pos.z) > 1.0) {
+    // Eau trop profonde : seul un pas qui l'approfondit est refusé (marée montante : on peut toujours regagner la plage).
+    const deep = g.terrain.waterDepth(this.pos.x, this.pos.z);
+    if (deep > 1.0 && deep > g.terrain.waterDepth(prevX, prevZ)) {
       this.pos.x = prevX;
       this.pos.z = prevZ;
     }
