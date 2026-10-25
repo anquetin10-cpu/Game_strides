@@ -107,14 +107,20 @@ export function installCare(game) {
     const h = horse();
     return h && !h.rider && !h.hiddenInTruck && !h.frozen && h.speed < 0.3 && !busy();
   };
+  // Le geste s'applique au cheval soigné au départ, et ne libère le joueur que si personne d'autre ne l'a verrouillé entre-temps.
   const care = (label, secs, apply, sound) => {
     const p = g.player;
-    p.locked = true;
+    const c = horse().cond;
+    const lock = { care: label };
+    p.locked = lock;
     g.hud.toast(`${label}…`);
     sound?.();
     setTimeout(() => {
-      p.locked = false;
-      apply(horse().cond);
+      if (p.locked === lock) p.locked = false;
+      apply(c);
+      // Cheval changé entre-temps (application « Chevaux ») : le soin reste acquis dans la sauvegarde.
+      const saved = g.save?.data.horseCare;
+      if (c.horse !== g.mainHorse && saved?.[c.horse.id]) saved[c.horse.id] = c.toJSON();
       g.saveSoon?.();
     }, secs * 1000);
   };
@@ -145,6 +151,12 @@ export function installCare(game) {
     label: 'Donner du foin', icon: 'hand', r: 4, priority: 1.25, modes: ['foot'],
     getPos: () => ({ x: HOME.hay.x + 7, z: HOME.hay.z }),
     when: () => ready() && near(horse().pos, HOME.hay.x + 7, HOME.hay.z, 9) && horse().cond.satiety < 90,
-    action: () => care('Une brassée de foin', 3, (c) => { c.satiety = 100; c.resting = true; setTimeout(() => (c.resting = false), 60000); }),
+    action: () => care('Une brassée de foin', 3, (c) => {
+      c.satiety = 100;
+      c.resting = true;
+      // Une nouvelle brassée relance la minute de repos.
+      clearTimeout(c._restT);
+      c._restT = setTimeout(() => (c.resting = false), 60000);
+    }),
   });
 }
