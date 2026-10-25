@@ -12,10 +12,11 @@ import { Water } from './water.js';
 import { Sky } from './sky.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
 import {
-  PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, treeTemplate, hedgeGeo, lampGeo, benchGeo, parasolGeo,
+  PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, lampGeo, benchGeo, parasolGeo,
   roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, carGeo, awningGeo, planterGeo,
 } from './builders.js';
 import { buildGrassMask } from './grass.js';
+import { Vegetation } from './vegetation.js';
 import { createHorseMesh } from '../entities/horseModel.js';
 import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture } from './textures.js';
 import { getFields } from './fields.js';
@@ -39,6 +40,8 @@ export class World {
     this.chunks = [];
     this.animated = [];
     this.rnd = mulberry32(2026);
+    // Arbres et haies : instanciés par variante, niveaux de détail gérés par Vegetation.
+    this.veg = new Vegetation(this.group, scene);
   }
 
   h(x, z) {
@@ -98,6 +101,7 @@ export class World {
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
     this.chunks.push(...this.glass.build(this.glassMat, this.group, { castShadow: false, name: 'glass' }));
     this.chunks.push(...this.lights.build(this.lightMat, this.group, { castShadow: false, receiveShadow: false, name: 'lights' }));
+    this.veg.build((x, z) => this.h(x, z));
     progress(0.9, 'Prêt');
   }
 
@@ -150,9 +154,13 @@ export class World {
     for (const run of runs) this.fence(run, opts);
   }
 
+  // Arbre procédural (chêne, hêtre, frêne, peuplier, bouleau, pin, pommier, têtard, buisson).
+  // Trois tirages aléatoires comme avant : la suite du monde (positions, collisions) reste identique.
   tree(kind, x, z, scale = 1, collide = true) {
     const y = this.h(x, z) - 0.15;
-    this.batch.add(treeTemplate(kind), null, x, y, z, this.rnd() * Math.PI * 2, scale, scale * (0.9 + this.rnd() * 0.25), scale, { jitter: 0.18, rnd: this.rnd });
+    const rot = this.rnd() * Math.PI * 2;
+    const sy = 0.9 + this.rnd() * 0.25;
+    this.veg.addTree(kind, x, y, z, rot, scale, sy, this.rnd());
     if (collide && kind !== 'bush') this.colliders.addCircle(x, z, 0.45 * scale, Infinity, 'tree');
     this.features.trees++;
   }
@@ -797,9 +805,12 @@ export class World {
 
   buildCountryside() {
     const { fields, hedges } = getFields();
+    // Bocage : talus plantés (aubépine, noisetier, ronces) ponctués de chênes, de frênes et d'arbres têtards.
+    const hrnd = mulberry32(808);
     for (const hd of hedges) {
       const [ax, az] = hd.a;
       const [bx, bz] = hd.b;
+      this.veg.addHedge(ax, az, bx, bz);
       const len = Math.hypot(bx - ax, bz - az);
       const n = Math.max(1, Math.ceil(len / 12));
       const ang = Math.atan2(bx - ax, bz - az);
@@ -809,9 +820,14 @@ export class World {
         const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
         const seg = Math.hypot(x1 - x0, z1 - z0);
         const y = Math.min(this.h(x0, z0), this.h(x1, z1), this.h(mx, mz)) - 0.1;
-        this.batch.add(hedgeGeo(seg + 0.3, this.rnd), null, mx, y, mz, ang);
+        // Tirages de l'ancien modèle de haie conservés : la suite aléatoire du monde ne change pas.
+        for (let k = Math.max(1, Math.floor((seg + 0.3) / 3)) * 3; k > 0; k--) this.rnd();
         this.colliders.addSegment(x0, z0, x1, z1, 1.5, y + 1.25, 'hedge');
-        if (this.rnd() < 0.2) this.tree(this.rnd() < 0.7 ? 'oak' : 'poplar', mx + Math.cos(ang) * 0.4, mz - Math.sin(ang) * 0.4, 0.9 + this.rnd() * 0.5);
+        if (this.rnd() < 0.2) {
+          const r = hrnd();
+          const kind = this.rnd() < 0.7 ? (r < 0.4 ? 'pollard' : 'oak') : r < 0.6 ? 'ash' : 'pollard';
+          this.tree(kind, mx + Math.cos(ang) * 0.4, mz - Math.sin(ang) * 0.4, 0.9 + this.rnd() * 0.5);
+        }
       }
     }
     const bale = roundBaleGeo();
@@ -829,6 +845,8 @@ export class World {
           }
         }
       } else if (f.type === 'wheat' && this.rnd() < 0.6) {
+        // Champ moissonné : chaume et balles rondes (les autres restent sur pied).
+        f.harvested = true;
         for (let k = 0; k < 4; k++) {
           const x = f.cx + (this.rnd() - 0.5) * 40;
           const z = f.cz + (this.rnd() - 0.5) * 40;
@@ -846,6 +864,7 @@ export class World {
 
   buildForests() {
     const step = 10;
+    const urnd = mulberry32(4711);
     for (let x = -WORLD.half + 5; x < WORLD.half; x += step) {
       for (let z = -WORLD.half + 5; z < WORLD.half; z += step) {
         const px = x + (this.rnd() - 0.5) * step * 0.9;
@@ -857,9 +876,22 @@ export class World {
         if (Math.hypot(px - POND.x, pz - POND.z) < POND.r + 5) continue;
         if (nearestRoad(px, pz).d < 4) continue;
         if (ZONES.some((zn) => Math.abs(px - zn.x) < zn.hw + 3 && Math.abs(pz - zn.z) < zn.hd + 3)) continue;
+        // Forêts normandes : hêtraie-chênaie avec frênes et bouleaux ; pins maritimes près de la côte.
         const r = this.rnd();
-        const kind = r < 0.45 ? 'pine' : r < 0.85 ? 'oak' : 'birch';
+        const coast = px < -200 && pz < -150;
+        const kind = coast ? (r < 0.55 ? 'pine' : r < 0.8 ? 'oak' : 'birch') : r < 0.06 ? 'pine' : r < 0.42 ? 'beech' : r < 0.72 ? 'oak' : r < 0.84 ? 'ash' : 'birch';
         this.tree(kind, px, pz, 0.85 + this.rnd() * 0.5);
+        // Sous-bois (noisetiers, aubépines) et jeunes arbres, sans collision, tirés à part.
+        for (let k = 0; k < 2; k++) {
+          const r2 = urnd();
+          if (r2 > 0.55) continue;
+          const a = urnd() * Math.PI * 2, rr = 3 + urnd() * 2.5;
+          const ux = px + Math.cos(a) * rr, uz = pz + Math.sin(a) * rr;
+          if (polyDist(ux, uz, XC_PATH).d < 6 || nearestRoad(ux, uz).d < 4) continue;
+          const young = r2 < 0.16;
+          const kind2 = young ? (kind === 'pine' ? 'pine' : r2 < 0.08 ? 'beech' : 'birch') : 'bush';
+          this.veg.addTree(kind2, ux, this.h(ux, uz) - 0.1, uz, urnd() * 6.3, young ? 0.28 + urnd() * 0.2 : 0.6 + urnd() * 0.6, 0.8 + urnd() * 0.4, urnd());
+        }
       }
     }
     // Arbustes et arbres isolés sur le plateau des falaises.
@@ -913,6 +945,7 @@ export class World {
   }
 
   update(dt, camera, sky) {
+    this.veg.update(dt);
     const night = sky.nightFactor;
     this.glassMat.emissiveIntensity = night * 0.9;
     this.lightMat.emissiveIntensity = 0.2 + night * 1.6;
