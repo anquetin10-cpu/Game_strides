@@ -35,6 +35,7 @@ import { HoofPrints } from './world/hoofprints.js';
 import { Boats } from './world/boats.js';
 import { Rain } from './world/rain.js';
 import { TIDE_UNIFORMS, tideLevel, tideState, temperature, conditionText } from './world/weather.js';
+const _rein = new THREE.Vector3();
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -104,6 +105,8 @@ export class Game {
     this.hoofPrints = new HoofPrints(this.scene, this.terrain);
     this.boats = new Boats(this.scene);
     this.rainFx = new Rain(this.scene);
+    // Météo lue par les entités (robe mouillée du cheval) : intensité de pluie et humidité des surfaces.
+    this.weather = { rain: 0, wetness: 0 };
     this.resize();
     this.screens.setLoading(0.82, 'Chevaux et cavaliers');
     await new Promise((r) => setTimeout(r, 0));
@@ -201,6 +204,30 @@ export class Game {
     this.camera.updateProjectionMatrix();
     this.hud?.resize();
     this.particles?.setViewport(h * this.renderer.getPixelRatio());
+  }
+
+  // Rênes : les os de rênes du cheval rejoignent les poings du cavalier (au repos sur l'encolure sinon).
+  _reins() {
+    const cam = this.camera.position;
+    for (const h of this.humans) {
+      const horse = h.mounted;
+      const b = horse?.bones;
+      if (!b?.reinL || !h.getHandWorldPositions) continue;
+      if (Math.hypot(horse.pos.x - cam.x, horse.pos.z - cam.z) > 35) continue;
+      const [L, R] = h.getHandWorldPositions();
+      for (const bone of [b.reinL, b.reinR]) {
+        bone.userData.rest ||= bone.position.clone();
+        bone.parent.updateWorldMatrix(true, false);
+      }
+      b.reinL.position.copy(b.reinL.parent.worldToLocal(_rein.copy(L)));
+      b.reinR.position.copy(b.reinR.parent.worldToLocal(_rein.copy(R)));
+      horse._reinsHeld = true;
+    }
+    for (const horse of this.horses) {
+      if (!horse._reinsHeld || horse.rider) continue;
+      horse._reinsHeld = false;
+      for (const bone of [horse.bones.reinL, horse.bones.reinR]) if (bone?.userData.rest) bone.position.copy(bone.userData.rest);
+    }
   }
 
   // ---------- Entités ----------
@@ -341,7 +368,7 @@ export class Game {
   _events() {
     const b = this.bus;
     const a = this.audio;
-    b.on('horse:step', ({ horse, n, depth }) => {
+    b.on('horse:step', ({ horse, n, depth, hooves }) => {
       const surf = this.surfaceAt(horse.pos.x, horse.pos.z, depth);
       // Poussière, sable, mottes d'herbe, éclaboussures.
       const sp = horse.speed;
@@ -349,7 +376,10 @@ export class Game {
       const bx = horse.pos.x - f.x * 0.4, bz = horse.pos.z - f.z * 0.4;
       const vx = f.x * sp, vz = f.z * sp;
       // Empreintes dans les sols meubles (sable, terre), plus discrètes dans l'herbe.
-      if ((surf === 'sand' || surf === 'soil') && (horse.isPlayerHorse || horse.rider)) this.hoofPrints.step(horse, n, 1);
+      if ((surf === 'sand' || surf === 'soil') && (horse.isPlayerHorse || horse.rider)) {
+        if (hooves && horse.bones) this.hoofPrints.stepAt(horse, hooves, 1);
+        else this.hoofPrints.step(horse, n, 1);
+      }
       const wet = this.sky.wet || 0;
       if (surf === 'water') this.particles.emit('splash', bx, horse.groundY + Math.max(0, depth), bz, 3 + n * 2, vx, vz);
       else if (wet > 0.35 && sp > 3 && surf !== 'sand') {
@@ -781,6 +811,7 @@ export class Game {
     for (const p of this.humans) if (!p.mounted) p.update(dt, this.camera.position);
     for (const h of this.humans) if (h.mounted) h.animateRiding(dt);
     this.ambient.update(dt, this.camera.position);
+    this._reins();
     this.particles.update(dt, 0.12 + 0.78 * (1 - this.sky.nightFactor) * Math.min(1, 0.45 + this.sky.sun.intensity / 6));
   }
 
@@ -831,6 +862,7 @@ export class Game {
     for (const h of this.humans) if (h.mounted && !h.isPlayer) h.animateRiding(dt);
     this._separate();
     this.ambient.update(dt, this.camera.position);
+    this._reins();
     this.obstacles.update(dt);
     this.cam.update(dt, this.player.focus, input.look);
 
@@ -859,6 +891,8 @@ export class Game {
     this.boats.update(dt);
     // Pluie (traînées autour de la caméra, bruit de pluie).
     this.rainFx.update(dt, this.camera, this.sky.rain, (1 - this.sky.nightFactor) * 0.9 + 0.1, this.sky.windVec);
+    this.weather.rain = this.sky.rain;
+    this.weather.wetness = this.sky.wet;
     this.audio.setRain?.(this.sky.rain);
     // Ambiance sonore : oiseaux des haies le jour, goélands sur la côte.
     if ((this._birdT = (this._birdT ?? 4) - dt) <= 0 && this.sky.nightFactor < 0.5) {
