@@ -38,14 +38,23 @@ export function ensureWin(g) {
 }
 
 // Part = [geometry, color, transform]
+// Couleur null : la pièce garde ses couleurs de sommets (déjà peinte).
 function partsToGeo(parts) {
   const geos = [];
   for (const [g, color, tf] of parts) {
     const t = tf ? transformed(g, tf) : g.clone();
-    paint(t, color);
+    if (color !== null) paint(t, color);
     geos.push(t);
   }
   return mergeGeometries(geos, false);
+}
+
+// Pièce plaquée contre un mur (face locale -z côté mur) : sans sa face arrière, toujours cachée ou vue de dos.
+function flatBox(w, h, d) {
+  const g = box(w, h, d);
+  g.setIndex(Array.from(g.index.array.subarray(0, 30)));
+  g.clearGroups();
+  return g;
 }
 
 // Repère de colombage pour le shader de surfaces : magenta codé (rouge = remplissage ou poutre, bleu = teinte des bois).
@@ -106,7 +115,8 @@ function pitchedRoof(parts, w, rise, d, ov, roofC, wallC, soffitC, tf) {
  * Maisons à colombage du Pays d'Auge (poteaux serrés dessinés par le shader, sablières, poteaux d'angle,
  * guettes, étage en encorbellement), pignons maçonnés, lucarnes, avant-corps à pignon sur les longues façades,
  * gouttières et descentes, cheminées à mitrons.
- * Retourne { body, glass } (géométries locales peintes).
+ * Retourne { body, glass, shutters, detail } (géométries locales peintes) ; volets et détails sans ombre portée visible
+ * (voir StaticBatch) : les volets toujours dessinés, les détails (menuiseries, gouttières, mitrons) seulement de près.
  */
 export function buildingGeo({
   w, d, h, wall = PALETTE.walls[0], roof = PALETTE.roofs[0], roofType = 'gable', roofH = null,
@@ -115,6 +125,8 @@ export function buildingGeo({
 }) {
   const body = [];
   const glass = [];
+  const detail = [];
+  const shut = [];
   const fl = floors ?? Math.max(1, Math.floor(h / 3));
   const hsh = (k) => {
     const s = Math.sin(w * 12.9898 + d * 78.233 + k * 4.137) * 43758.5453;
@@ -154,7 +166,7 @@ export function buildingGeo({
     const cx = w * 0.28, cz = -d * 0.12, ch = rh + 1.4;
     body.push([box(0.9, ch, 0.9), PALETTE.brick[0], { x: cx, y: h, z: cz }]);
     body.push([box(1.06, 0.14, 1.06), '#b9b4a8', { x: cx, y: h + ch, z: cz }]);
-    for (const s of [-1, 1]) body.push([cyl(0.09, 0.12, 0.42, 7), '#a0583c', { x: cx + s * 0.2, y: h + ch + 0.14, z: cz }]);
+    for (const s of [-1, 1]) detail.push([cyl(0.09, 0.12, 0.42, 7), '#a0583c', { x: cx + s * 0.2, y: h + ch + 0.14, z: cz }]);
   }
   // Hauteur du pan long à une distance s en retrait du mur (le pan coupe le mur à la hauteur h).
   const roofY = (s) => h + (rh * s) / R;
@@ -210,21 +222,22 @@ export function buildingGeo({
         if (isDoor) {
           // Porte d'entrée : vantail à panneaux, imposte vitrée, seuil en pierre.
           body.push([box(ww, wh, 0.14), doorColor, tf]);
-          body.push([box(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.12, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
-          body.push([box(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.52, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
+          detail.push([flatBox(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.12, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
+          detail.push([flatBox(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.52, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
           body.push([box(ww + 0.5, 0.12, 0.5), '#b9b4a8', { ...tf, y: -0.06 }]);
           body.push([box(ww + 0.3, 0.14, 0.18), trim || PALETTE.white, { ...tf, y: wy + wh }]);
         } else if (windows) {
           const tc = trim || PALETTE.white;
           // Fenêtre : dormant, appui saillant, petits bois (croisillons), volets battants sur les maisons maçonnées.
-          body.push([box(ww + 0.2, wh + 0.2, 0.1), tc, { ...tf, y: wy - 0.1 }]);
-          body.push([box(ww + 0.36, 0.08, 0.26), timber ? beamC : '#c9c4b8', { ...tf, y: wy - 0.16 }]);
+          // L'appui (saillant) porte une ombre ; dormant, petits bois et volets, plaqués au mur, n'en portent pas.
+          detail.push([flatBox(ww + 0.2, wh + 0.2, 0.1), tc, { ...tf, y: wy - 0.1 }]);
+          body.push([flatBox(ww + 0.36, 0.08, 0.26), timber ? beamC : '#c9c4b8', { ...tf, y: wy - 0.16 }]);
           const off = (kk) => ({ x: x + f.nx * kk, z: z + f.nz * kk });
-          body.push([box(0.05, wh, 0.05), tc, { ...tf, ...off(0.07) }]);
-          body.push([box(ww, 0.05, 0.05), tc, { ...tf, ...off(0.07), y: wy + wh * 0.62 }]);
+          detail.push([flatBox(0.05, wh, 0.05), tc, { ...tf, ...off(0.07) }]);
+          detail.push([flatBox(ww, 0.05, 0.05), tc, { ...tf, ...off(0.07), y: wy + wh * 0.62 }]);
           if (roofType !== 'flat' && !isShop && !timber) {
             const side = (kk) => (f.nx === 0 ? { x: x + kk * (f.nz > 0 ? 1 : -1), z: z + f.nz * 0.06 } : { x: x + f.nx * 0.06, z: z + kk * (f.nx > 0 ? -1 : 1) });
-            for (const sd of [-1, 1]) body.push([box(ww * 0.52, wh + 0.12, 0.05), shutter, { ...tf, ...side(sd * (ww * 0.76 + 0.1)), y: wy - 0.06 }]);
+            for (const sd of [-1, 1]) shut.push([flatBox(ww * 0.52, wh + 0.12, 0.05), shutter, { ...tf, ...side(sd * (ww * 0.76 + 0.1)), y: wy - 0.06 }]);
           }
           glass.push([winBox(ww, wh, 0.16), PALETTE.glass, tf]);
         }
@@ -233,24 +246,24 @@ export function buildingGeo({
         // Pans de bois : sablières à chaque niveau, poteaux d'angle et guettes (décharges) près des angles.
         const ko = f.off + (fl2 > 0 ? over : 0) + 0.05;
         const len = f.len + (fl2 > 0 ? 2 * over : 0);
-        body.push([box(len, 0.26, 0.13), beamC, { ...at(f, 0, ko), y: (fl2 + 1) * fh - 0.26, ry: f.ry }]);
-        body.push([box(len, 0.2, 0.13), beamC, { ...at(f, 0, ko), y: fl2 ? fl2 * fh : 0.5, ry: f.ry }]);
+        body.push([flatBox(len, 0.26, 0.13), beamC, { ...at(f, 0, ko), y: (fl2 + 1) * fh - 0.26, ry: f.ry }]);
+        body.push([flatBox(len, 0.2, 0.13), beamC, { ...at(f, 0, ko), y: fl2 ? fl2 * fh : 0.5, ry: f.ry }]);
         // Lisses d'appui et de linteau au droit des fenêtres (grille du colombage), interrompues par la porte.
         const doorHere = door && fi === 0 && fl2 === 0;
         const td = colT(Math.floor(cols / 2));
         const rail = (y) => {
-          if (!doorHere) return body.push([box(len, 0.14, 0.12), beamC, { ...at(f, 0, ko), y, ry: f.ry }]);
+          if (!doorHere) return body.push([flatBox(len, 0.14, 0.12), beamC, { ...at(f, 0, ko), y, ry: f.ry }]);
           const a = -len / 2, b = td - 0.95, c2 = td + 0.95, e = len / 2;
-          body.push([box(b - a, 0.14, 0.12), beamC, { ...at(f, (a + b) / 2, ko), y, ry: f.ry }]);
-          body.push([box(e - c2, 0.14, 0.12), beamC, { ...at(f, (c2 + e) / 2, ko), y, ry: f.ry }]);
+          body.push([flatBox(b - a, 0.14, 0.12), beamC, { ...at(f, (a + b) / 2, ko), y, ry: f.ry }]);
+          body.push([flatBox(e - c2, 0.14, 0.12), beamC, { ...at(f, (c2 + e) / 2, ko), y, ry: f.ry }]);
         };
         rail(fl2 * fh + fh * 0.32 - 0.24);
         rail(fl2 * fh + fh * 0.32 + Math.min(1.5, fh * 0.48) + 0.1);
         for (const sd of [-1, 1]) {
-          body.push([box(0.24, fh, 0.14), beamC, { ...at(f, sd * (len / 2 - 0.12), ko), y: fl2 * fh, ry: f.ry }]);
+          body.push([flatBox(0.24, fh, 0.14), beamC, { ...at(f, sd * (len / 2 - 0.12), ko), y: fl2 * fh, ry: f.ry }]);
           // Guette : du pied du poteau d'angle vers l'intérieur (repère de façade : x local = t).
           const run = 0.55, bh = fh - 0.55;
-          body.push([box(0.15, Math.hypot(run, bh), 0.12), beamC, { ...at(f, sd * (len / 2 - 0.3), ko + 0.01), y: fl2 * fh + 0.27, ry: f.ry, rz: sd * Math.atan2(run, bh) }]);
+          body.push([flatBox(0.15, Math.hypot(run, bh), 0.12), beamC, { ...at(f, sd * (len / 2 - 0.3), ko + 0.01), y: fl2 * fh + 0.27, ry: f.ry, rz: sd * Math.atan2(run, bh) }]);
         }
       }
     }
@@ -272,7 +285,7 @@ export function buildingGeo({
           body.push([box(dw, dh, dd), wallC, { ...at(f, t, kf - dd / 2), y: y0, ry: f.ry }]);
           pitchedRoof(body, dd, dr, dw, 0.15, roof, wallC, soffit, { ...at(f, t, kf - dd / 2), y: y0 + dh, ry: f.ry + Math.PI / 2 });
           const tc = trim || PALETTE.white;
-          body.push([box(0.95, 1.12, 0.08), tc, { ...at(f, t, kf + 0.02), y: y0 + 0.22, ry: f.ry }]);
+          detail.push([flatBox(0.95, 1.12, 0.08), tc, { ...at(f, t, kf + 0.02), y: y0 + 0.22, ry: f.ry }]);
           glass.push([winBox(0.75, 0.92, 0.12), PALETTE.glass, { ...at(f, t, kf + 0.03), y: y0 + 0.32, ry: f.ry }]);
         }
       }
@@ -280,11 +293,12 @@ export function buildingGeo({
     // Gouttière pendante en zinc et descentes aux deux bouts.
     if (!bayCols.size) {
       const zinc = '#8d9296';
-      body.push([box(f.len + 2 * over + 0.9, 0.13, 0.15), zinc, { ...at(f, 0, f.off + over + 0.42), y: h - 0.16, ry: f.ry }]);
-      for (const sd of [-1, 1]) body.push([box(0.09, h - 0.15, 0.09), zinc, { ...at(f, sd * (f.len / 2 + over - 0.25), f.off + over + 0.1), y: 0, ry: f.ry }]);
+      detail.push([flatBox(f.len + 2 * over + 0.9, 0.13, 0.15), zinc, { ...at(f, 0, f.off + over + 0.42), y: h - 0.16, ry: f.ry }]);
+      for (const sd of [-1, 1]) detail.push([flatBox(0.09, h - 0.15, 0.09), zinc, { ...at(f, sd * (f.len / 2 + over - 0.25), f.off + over + 0.1), y: 0, ry: f.ry }]);
     }
   });
-  return { body: partsToGeo(body), glass: glass.length ? partsToGeo(glass) : null };
+  const geo = (list) => (list.length ? partsToGeo(list) : null);
+  return { body: partsToGeo(body), glass: geo(glass), shutters: geo(shut), detail: geo(detail) };
 }
 
 // Écurie : rangée de boxes ouvrant vers +Z.
@@ -293,6 +307,8 @@ export function buildingGeo({
 export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = PALETTE.white, roof = '#3a3d42', door = '#3c3f45' }) {
   const parts = [];
   const glass = [];
+  // Petites pièces (grilles, encadrements, ferrures, plaques, gouttières) : détails sans ombre, dessinés de près.
+  const det = [];
   const zf = d / 2;
   parts.push([box(w, h + 2, d), wall, { y: -2 }]);
   parts.push([box(w + 0.2, 2.45, d + 0.2), '#8a877f', { y: -2 }]);
@@ -304,42 +320,42 @@ export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = P
   for (const side of [-1, 1]) {
     const g = new THREE.CylinderGeometry(0.07, 0.07, w + 3.2, 8, 1, true, 0, Math.PI);
     g.rotateZ(Math.PI / 2);
-    parts.push([prep(g), '#8b9096', { y: h - 0.62, z: side * (zf + 1.62) }]);
-    for (const sx of [-1, 1]) parts.push([cyl(0.045, 0.045, h - 0.6, 6), '#8b9096', { x: sx * (w / 2 + 1.5), z: side * (zf + 1.62) }]);
+    det.push([prep(g), '#8b9096', { y: h - 0.62, z: side * (zf + 1.62) }]);
+    for (const sx of [-1, 1]) det.push([cyl(0.045, 0.045, h - 0.6, 6), '#8b9096', { x: sx * (w / 2 + 1.5), z: side * (zf + 1.62) }]);
   }
   const step = w / boxes;
   for (let i = 0; i < boxes; i++) {
     const x = -w / 2 + step * (i + 0.5);
     const dw = Math.min(1.25, step * 0.42);
     // Encadrement de porte.
-    parts.push([box(dw + 0.2, 0.1, 0.12), trim, { x, y: 2.3, z: zf + 0.06 }]);
-    parts.push([box(0.1, 2.3, 0.12), trim, { x: x - dw / 2 - 0.05, z: zf + 0.06 }]);
-    parts.push([box(0.1, 2.3, 0.12), trim, { x: x + dw / 2 + 0.05, z: zf + 0.06 }]);
+    det.push([box(dw + 0.2, 0.1, 0.12), trim, { x, y: 2.3, z: zf + 0.06 }]);
+    det.push([box(0.1, 2.3, 0.12), trim, { x: x - dw / 2 - 0.05, z: zf + 0.06 }]);
+    det.push([box(0.1, 2.3, 0.12), trim, { x: x + dw / 2 + 0.05, z: zf + 0.06 }]);
     // Vantail bas en planches, renfort en Z, barre de pied en acier.
     parts.push([box(dw, 1.3, 0.06), door, { x, z: zf + 0.04 }]);
-    parts.push([box(dw - 0.1, 0.08, 0.03), trim, { x, y: 1.18, z: zf + 0.08 }]);
-    parts.push([box(dw - 0.1, 0.08, 0.03), trim, { x, y: 0.08, z: zf + 0.08 }]);
-    parts.push([box(Math.hypot(dw - 0.1, 1.0), 0.07, 0.03, false), trim, { x, y: 0.65, z: zf + 0.085, rz: Math.atan2(1.0, dw - 0.1) }]);
-    parts.push([box(dw, 0.12, 0.04), '#5b5f64', { x, y: 1.28, z: zf + 0.08 }]);
+    det.push([box(dw - 0.1, 0.08, 0.03), trim, { x, y: 1.18, z: zf + 0.08 }]);
+    det.push([box(dw - 0.1, 0.08, 0.03), trim, { x, y: 0.08, z: zf + 0.08 }]);
+    det.push([box(Math.hypot(dw - 0.1, 1.0), 0.07, 0.03, false), trim, { x, y: 0.65, z: zf + 0.085, rz: Math.atan2(1.0, dw - 0.1) }]);
+    det.push([box(dw, 0.12, 0.04), '#5b5f64', { x, y: 1.28, z: zf + 0.08 }]);
     // Ouverture haute (intérieur sombre) et grille de box.
     glass.push([winBox(dw, 0.98, 0.04, -1), '#0a0b0c', { x, y: 1.32, z: zf + 0.01 }]);
-    for (let k = 1; k < 9; k++) parts.push([cyl(0.011, 0.011, 0.95, 4), '#4a4d52', { x: x - dw / 2 + (dw / 9) * k, y: 1.33, z: zf + 0.05 }]);
+    for (let k = 1; k < 9; k++) det.push([cyl(0.011, 0.011, 0.95, 4), '#4a4d52', { x: x - dw / 2 + (dw / 9) * k, y: 1.33, z: zf + 0.05 }]);
     // Vantail haut ouvert, rabattu contre le mur.
     parts.push([box(0.05, 1.0, dw * 0.5), door, { x: x + dw / 2 + 0.16 + dw * 0.25, y: 1.32, z: zf + 0.05, ry: Math.PI / 2 }]);
     // Plaque nominative et applique.
-    parts.push([box(0.32, 0.12, 0.02), '#f2f1ec', { x, y: 2.45, z: zf + 0.13 }]);
-    parts.push([box(0.16, 0.22, 0.14), '#1d1e21', { x: x - step * 0.36, y: 2.55, z: zf + 0.07 }]);
+    det.push([box(0.32, 0.12, 0.02), '#f2f1ec', { x, y: 2.45, z: zf + 0.13 }]);
+    det.push([box(0.16, 0.22, 0.14), '#1d1e21', { x: x - step * 0.36, y: 2.55, z: zf + 0.07 }]);
     glass.push([winBox(0.12, 0.08, 0.08, 0), '#fff1c9', { x: x - step * 0.36, y: 2.5, z: zf + 0.11 }]);
     parts.push([box(0.14, h, 0.16), trim, { x: -w / 2 + step * i, y: 0, z: zf + 0.06 }]);
     // Poteaux d'auvent (un sur deux).
     if (i % 2 === 0) parts.push([box(0.16, h - 0.1, 0.16), trim, { x: -w / 2 + step * i, z: zf + 1.45 }]);
     // Fenêtre arrière avec cadre.
-    parts.push([box(1.12, 0.82, 0.08), trim, { x, y: 2.54, z: -zf - 0.03 }]);
+    det.push([box(1.12, 0.82, 0.08), trim, { x, y: 2.54, z: -zf - 0.03 }]);
     glass.push([winBox(1, 0.7, 0.12), PALETTE.glass, { x, y: 2.6, z: -zf - 0.05 }]);
     // Lanterneaux d'aération sur le faîtage.
     if (i % 3 === 1) {
       parts.push([box(0.9, 0.55, 0.9), wall, { x, y: h + d * 0.42 - 0.15 }]);
-      for (let k = 0; k < 3; k++) parts.push([box(0.94, 0.05, 0.94), trim, { x, y: h + d * 0.42 + 0.02 + k * 0.14 }]);
+      for (let k = 0; k < 3; k++) det.push([box(0.94, 0.05, 0.94), trim, { x, y: h + d * 0.42 + 0.02 + k * 0.14 }]);
       parts.push([hipRoof(0.9, 0.35, 0.9, 0.12), roof, { x, y: h + d * 0.42 + 0.4 }]);
     }
   }
@@ -347,7 +363,7 @@ export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = P
   parts.push([box(0.16, h - 0.1, 0.16), trim, { x: w / 2, z: zf + 1.45 }]);
   // Dalle béton devant les boxes.
   parts.push([box(w + 1.2, 0.08, 2.0), '#a6a39b', { y: -0.04, z: zf + 1.0 }]);
-  return { body: partsToGeo(parts), glass: partsToGeo(glass) };
+  return { body: partsToGeo(parts), glass: partsToGeo(glass), detail: partsToGeo(det) };
 }
 
 export function shedGeo({ w, d, h = 5, roof = '#5a4a3f', post = PALETTE.darkWood, hay = true }) {
@@ -371,6 +387,10 @@ export function shedGeo({ w, d, h = 5, roof = '#5a4a3f', post = PALETTE.darkWood
   return partsToGeo(parts);
 }
 
+// Cylindre et cône sans fonds (faces toujours cachées : pied enterré, dessus sous le chapeau).
+const openCyl = (rt, rb, h, seg) => prep(new THREE.CylinderGeometry(rt, rb, h, seg, 1, true).translate(0, h / 2, 0));
+const openCone = (r, h, seg) => prep(new THREE.ConeGeometry(r, h, seg, 1, true).translate(0, h / 2, 0));
+
 // Clôture : poteaux + lisses entre deux points (coordonnées locales au sol, hauteurs données par getH).
 export function fenceGeo(points, getH, { height = 1.15, rails = 2, color = PALETTE.white, post = null, spacing = 3, closed = false, board = false } = {}) {
   const geos = [];
@@ -378,7 +398,7 @@ export function fenceGeo(points, getH, { height = 1.15, rails = 2, color = PALET
   // Poteaux : ronds (bois traité) pour les lisses, carrés avec chapeau pour les pare-bottes de carrière.
   const postGeo = board
     ? mergeGeometries([box(0.12, height + 0.3, 0.12), transformed(box(0.16, 0.05, 0.16), { y: height + 0.3 })], false)
-    : mergeGeometries([cyl(0.065, 0.075, height + 0.3, 8), transformed(cone(0.07, 0.06, 8), { y: height + 0.3 })], false);
+    : mergeGeometries([openCyl(0.065, 0.075, height + 0.3, 8), transformed(openCone(0.07, 0.06, 8), { y: height + 0.3 })], false);
   for (let s = 0; s < pts.length - 1; s++) {
     const [ax, az] = pts[s];
     const [bx, bz] = pts[s + 1];
@@ -426,16 +446,19 @@ export function lampGeo() {
     body: partsToGeo([
       [cyl(0.2, 0.24, 0.12, 8), iron],
       [cyl(0.13, 0.19, 0.55, 8), iron, { y: 0.12 }],
-      [cyl(0.17, 0.17, 0.06, 8), iron, { y: 0.66 }],
       [cyl(0.06, 0.085, 3.35, 8), iron, { y: 0.7 }],
-      [cyl(0.1, 0.1, 0.07, 8), iron, { y: 3.7 }],
-      [ico(0.075, 0), iron, { y: 4.13 }],
       [box(0.75, 0.05, 0.05, false), iron, { x: 0.39, y: 4.08 }],
-      [scroll, iron, { x: 0.31, y: 3.83 }],
-      [cyl(0.015, 0.015, 0.14, 4), iron, { x: 0.75, y: 3.96 }],
       [cyl(0.21, 0.21, 0.04, 6), iron, { x: 0.75, y: 3.94 }],
       [cone(0.21, 0.17, 6), iron, { x: 0.75, y: 3.98 }],
       [cyl(0.13, 0.06, 0.09, 6), iron, { x: 0.75, y: 3.46 }],
+    ]),
+    // Moulures, bagues, volute, tige et fleuron : trop fins pour une ombre visible, dessinés seulement de près.
+    detail: partsToGeo([
+      [cyl(0.17, 0.17, 0.06, 8), iron, { y: 0.66 }],
+      [cyl(0.1, 0.1, 0.07, 8), iron, { y: 3.7 }],
+      [ico(0.075, 0), iron, { y: 4.13 }],
+      [scroll, iron, { x: 0.31, y: 3.83 }],
+      [cyl(0.015, 0.015, 0.14, 4), iron, { x: 0.75, y: 3.96 }],
     ]),
     light: partsToGeo([[cyl(0.19, 0.13, 0.4, 6), '#fff1c9', { x: 0.75, y: 3.55 }]]),
   };
@@ -651,8 +674,10 @@ export function awningGeo(w, c1, c2) {
 }
 
 // Jardinière de rue : bac en acier, feuillage dense et petites fleurs dispersées.
+// Retourne { body, detail } : le bac porte l'ombre, la végétation est un détail dessiné de près.
 export function planterGeo(flower) {
-  const parts = [[box(1.6, 0.5, 0.6), '#3a3d42'], [box(1.66, 0.05, 0.66), '#2b2d31', { y: 0.5 }]];
+  const body = [[box(1.6, 0.5, 0.6), '#3a3d42'], [box(1.66, 0.05, 0.66), '#2b2d31', { y: 0.5 }]];
+  const parts = [];
   for (let i = 0; i < 9; i++) {
     const x = -0.62 + (i % 5) * 0.31, z = i < 5 ? -0.12 : 0.12;
     parts.push([ico(0.16 + (i % 3) * 0.02, 1), i % 2 ? '#3c5a2c' : '#476a33', { x, y: 0.56, z, sy: 0.6 }]);
@@ -661,7 +686,7 @@ export function planterGeo(flower) {
     const x = -0.68 + ((i * 7) % 14) * 0.1, z = ((i * 5) % 5) * 0.09 - 0.18;
     parts.push([ico(0.045, 0), i % 4 === 3 ? '#f2f1ec' : flower, { x, y: 0.66 + (i % 3) * 0.02, z }]);
   }
-  return partsToGeo(parts);
+  return { body: partsToGeo(body), detail: partsToGeo(parts) };
 }
 
 export { partsToGeo, box, cyl, cone, ico, limb };

@@ -115,10 +115,21 @@ export function compose(parts) {
   return mergeGeometries(geos, false);
 }
 
+// Tableaux libérés une fois envoyés au GPU (rien ne relit les tuiles statiques : ni collisions ni lancer de rayons ;
+// une perte de contexte WebGL recharge la page).
+function freeArray() {
+  this.array = null;
+}
+
 export class StaticBatch {
   constructor(chunk = 160) {
     this.chunk = chunk;
     this.groups = new Map();
+    // Petites pièces sans ombre portée visible, rangées après les pièces principales de chaque tuile : elles ne sont
+    // pas dessinées dans la passe d'ombre (intervalle d'indices réduit, aucun appel de dessin en plus).
+    // Niveau 1 : toujours dessinées (volets, jardinières, passages piétons) ;
+    // niveau 2 : seulement pour les tuiles proches (moulures, menuiseries, grilles, gouttières…).
+    this.details = [null, new Map(), new Map()];
   }
   // Ajoute une géométrie (déjà peinte ou non) à la position/orientation donnée.
   add(geo, color, x = 0, y = 0, z = 0, ry = 0, sx = 1, sy = 1, sz = 1, opts = {}) {
@@ -127,9 +138,13 @@ export class StaticBatch {
       const r = new THREE.Matrix4().makeRotationFromEuler(_e.set(opts.rx || 0, 0, opts.rz || 0));
       _m.multiply(r);
     }
-    this.addMatrix(geo, color, _m, opts.jitter || 0, opts.rnd, x, z);
+    this.addMatrix(geo, color, _m, opts.jitter || 0, opts.rnd, x, z, opts.detail);
   }
-  addMatrix(geo, color, m, jitter = 0, rnd, kx, kz) {
+  // Détail sans ombre portée (niveau 2 : masqué au loin ; niveau 1 : toujours dessiné).
+  addDetail(geo, color, x = 0, y = 0, z = 0, ry = 0, level = 2) {
+    this.add(geo, color, x, y, z, ry, 1, 1, 1, { detail: level });
+  }
+  addMatrix(geo, color, m, jitter = 0, rnd, kx, kz, detail = 0) {
     const g = geo.clone();
     g.applyMatrix4(m);
     if (color !== null && color !== undefined) paint(g, color, jitter, rnd);
@@ -141,26 +156,52 @@ export class StaticBatch {
     }
     const e = m.elements;
     const key = `${Math.floor((kx ?? e[12]) / this.chunk)},${Math.floor((kz ?? e[14]) / this.chunk)}`;
-    if (!this.groups.has(key)) this.groups.set(key, []);
-    this.groups.get(key).push(g);
+    const map = detail ? this.details[detail] : this.groups;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(g);
   }
   build(material, parent, { castShadow = true, receiveShadow = true, name = 'batch' } = {}) {
     const meshes = [];
-    for (const [key, list] of this.groups) {
-      const merged = mergeGeometries(list, false);
-      list.forEach((g) => g.dispose());
+    const [, mids, fines] = this.details;
+    const count = (list) => list.reduce((n, g) => n + g.index.count, 0);
+    for (const key of new Set([...this.groups.keys(), ...mids.keys(), ...fines.keys()])) {
+      const list = this.groups.get(key) || [];
+      const mid = mids.get(key) || [];
+      const fine = fines.get(key) || [];
+      // Pièces principales d'abord : leurs indices forment le début de l'intervalle, les détails la fin.
+      const body = count(list);
+      const far = body + count(mid);
+      const all = [...list, ...mid, ...fine];
+      const merged = mergeGeometries(all, false);
+      all.forEach((g) => g.dispose());
       if (!merged) continue;
       merged.computeBoundingSphere();
       const mesh = new THREE.Mesh(merged, material);
-      mesh.castShadow = castShadow;
+      mesh.castShadow = castShadow && body > 0;
       mesh.receiveShadow = receiveShadow;
       mesh.name = `${name}:${key}`;
       mesh.matrixAutoUpdate = false;
       mesh.updateMatrix();
+      if (mid.length || fine.length) {
+        mesh.userData.far = far;
+        const range = merged.drawRange;
+        let saved = range.count;
+        mesh.onBeforeShadow = () => {
+          saved = range.count;
+          range.count = body;
+        };
+        mesh.onAfterShadow = () => {
+          range.count = saved;
+        };
+      }
+      for (const a of Object.values(merged.attributes)) a.onUpload(freeArray);
+      merged.index?.onUpload(freeArray);
       parent.add(mesh);
       meshes.push(mesh);
     }
     this.groups.clear();
+    mids.clear();
+    fines.clear();
     return meshes;
   }
 }

@@ -61,6 +61,8 @@ export class Activities {
       m.position.set(a.start.x + 3, g.terrain.getHeight(a.start.x + 3, a.start.z), a.start.z);
       m.castShadow = true;
       g.scene.add(m);
+      // Poteau fin : masqué au-delà de 300 m (un ou deux pixels), comme les obstacles.
+      g.world.culled.push([m, m.position.x, m.position.z, 300]);
       g.interact.add(`act:${a.id}`, {
         label: 'Chrono',
         icon: 'target',

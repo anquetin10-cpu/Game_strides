@@ -1,5 +1,6 @@
 // Obstacles de saut (CSO, cross, entraînement) : détection du franchissement, barres tombées, refus, aide à l'appel.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { showJumpGeo, railGeo, logJumpGeo, brushJumpGeo, partsToGeo, box } from '../world/builders.js';
 import { POLE, HOME } from '../world/sites.js';
 import { XC_PATH, POND } from '../world/layout.js';
@@ -89,12 +90,10 @@ export class Obstacles {
     } else if (ob.kind === 'w') {
       // Mur de CSO : blocs peints façon briques (joints blancs), couvertine, piliers.
       wallMat ||= applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), this.game.world.detailTex, () => this.game.terrain);
-      const wall = partsToGeo([
+      // Mur et piliers : un seul maillage.
+      g.add(new THREE.Mesh(partsToGeo([
         [box(ob.w, ob.h - 0.15, 0.5), '#a4553f'],
         [box(ob.w + 0.04, 0.1, 0.56), '#e9e6de', { y: ob.h - 0.25 }],
-      ]);
-      g.add(new THREE.Mesh(wall, wallMat));
-      g.add(new THREE.Mesh(partsToGeo([
         [box(0.5, ob.h + 0.35, 0.6), '#a4553f', { x: -ob.w / 2 - 0.3 }],
         [box(0.5, ob.h + 0.35, 0.6), '#a4553f', { x: ob.w / 2 + 0.3 }],
         [box(0.6, 0.1, 0.7), '#e9e6de', { x: -ob.w / 2 - 0.3, y: ob.h + 0.35 }],
@@ -106,21 +105,19 @@ export class Obstacles {
       ob.rails.push(top);
     } else {
       const oxer = ob.kind === 'o';
-      g.add(new THREE.Mesh(showJumpGeo(ob.w, ob.h, ob.colors, oxer), MAT));
-      const heights = [ob.h, ob.h * 0.62, ob.h * 0.3];
-      for (const hh of heights) {
-        const r = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
-        r.position.y = hh;
-        g.add(r);
-        ob.rails.push(r);
-      }
+      // Chandeliers, remplissage et barres qui ne tombent jamais (basses, arrière de l'oxer) : un seul maillage.
+      // Seule la barre du haut, celle que le cheval fait tomber, reste un objet à part.
+      const fixed = [showJumpGeo(ob.w, ob.h, ob.colors, oxer)];
+      for (const hh of [ob.h * 0.62, ob.h * 0.3]) fixed.push(railGeo(ob.w, ob.colors).translate(0, hh, 0));
       if (oxer) {
-        const r = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
-        r.position.set(0, ob.h + 0.05, 1.2);
-        g.add(r);
-        ob.rails.push(r);
+        fixed.push(railGeo(ob.w, ob.colors).translate(0, ob.h + 0.05, 1.2));
         ob.depth = 1.4;
       }
+      g.add(new THREE.Mesh(mergeGeometries(fixed, false), MAT));
+      const top = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
+      top.position.y = ob.h;
+      g.add(top);
+      ob.rails.push(top);
     }
     if (ob.num) {
       const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: signTexture(String(ob.num), '', { dark: true, w: 128, h: 128 }), side: THREE.DoubleSide }));
@@ -137,6 +134,9 @@ export class Obstacles {
     ob.rails.forEach((r) => (r.userData.rest = { y: r.position.y, z: r.position.z, rx: r.rotation.x }));
     ob.group = g;
     this.group.add(g);
+    // Parcours éloignés masqués par le monde : au-delà de 300 m, un obstacle ne fait que quelques pixels.
+    if (ob.cull) ob.cull[0] = g;
+    else this.game.world.culled.push((ob.cull = [g, ob.x, ob.z, 300]));
   }
 
   _build() {
@@ -177,6 +177,7 @@ export class Obstacles {
     m.rotation.y = L.rot;
     m.castShadow = true;
     this.group.add(m);
+    this.game.world.culled.push([m, L.x, L.z, 300]);
   }
 
   ofCourse(id) {

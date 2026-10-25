@@ -47,6 +47,9 @@ export class World {
     this.glass = new StaticBatch(150);
     this.lights = new StaticBatch(150);
     this.chunks = [];
+    // Petits objets isolés masqués au-delà d'une distance propre (panneaux, fontaine, obstacles, poteaux de chrono) :
+    // [objet, x, z, distance].
+    this.culled = [];
     this.animated = [];
     this.rnd = mulberry32(2026);
     // Arbres et haies : instanciés par variante, niveaux de détail gérés par Vegetation.
@@ -113,7 +116,7 @@ export class World {
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
     this.detailChunks = this.detailBatch.build(this.mat, this.group, { name: 'detail', castShadow: false });
     this._buildLampPools();
-    this.carBatch.build(carMaterial(), this.group, { name: 'cars' });
+    this.chunks.push(...this.carBatch.build(carMaterial(), this.group, { name: 'cars' }));
     for (const m of this.detailChunks) m.userData.center = m.geometry.boundingSphere.center.clone();
     this.chunks.push(...this.glass.build(this.glassMat, this.group, { castShadow: false, name: 'glass' }));
     this.chunks.push(...this.lights.build(this.lightMat, this.group, { castShadow: false, receiveShadow: false, name: 'lights' }));
@@ -137,6 +140,8 @@ export class World {
     const y = this.groundAt(x, z, w / 2, d / 2, rot);
     const body = geoPair.body || geoPair;
     this.batch.add(body, null, x, y, z, rot);
+    if (geoPair.shutters) this.batch.addDetail(geoPair.shutters, null, x, y, z, rot, 1);
+    if (geoPair.detail) this.batch.addDetail(geoPair.detail, null, x, y, z, rot);
     if (geoPair.glass) this.glass.add(ensureWin(geoPair.glass), null, x, y, z, rot);
     if (collide) this.colliders.addBox(x, z, w / 2, d / 2, rot, Infinity, kind);
     this.features.buildings.push({ x, z, w, d, rot, kind });
@@ -189,11 +194,15 @@ export class World {
     plane.rotation.y = rot;
     plane.receiveShadow = true;
     this.group.add(plane);
+    // Au loin, la face imprimée ne fait plus qu'un ou deux pixels : seul le caisson (lot statique) reste.
+    const far = clamp(Math.max(w, h) * 70, 250, 620);
+    this.culled.push([plane, x, z, far]);
     if (doubleSided) {
       const p2 = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
       p2.position.set(x - Math.sin(rot) * (depth / 2 + 0.01), y, z - Math.cos(rot) * (depth / 2 + 0.01));
       p2.rotation.y = rot + Math.PI;
       this.group.add(p2);
+      this.culled.push([p2, x, z, far]);
     }
     this.batch.add(box(w + 0.2, h + 0.2, depth, false), back, x, y, z, rot);
     return plane;
@@ -213,6 +222,7 @@ export class World {
     const L = (this._lamp ||= lampGeo());
     const y = this.h(x, z);
     this.batch.add(L.body, null, x, y, z, rot);
+    this.batch.addDetail(L.detail, null, x, y, z, rot);
     this.lights.add(L.light, null, x, y, z, rot);
     this.colliders.addCircle(x, z, 0.2, Infinity, 'lamp');
     // Flaque de lumière au sol (la nuit), sous la lanterne décalée de 0,75 m.
@@ -412,6 +422,7 @@ export class World {
       m.position.set(x, ay + 0.55, z);
       m.rotation.y = rot;
       this.group.add(m);
+      this.culled.push([m, x, z, 450]);
     }
     this.rectFence(POLE.warmup, { height: 1.0, board: true, color: '#f2f1ec' }, 'e', 6, 0.5);
     this.buildStands(POLE.stands, 0, true, 'PÔLE INTERNATIONAL');
@@ -651,22 +662,25 @@ export class World {
     const lathe = (pts, seg = 40) => prep(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg));
     this.batch.add(lathe([[4.3, 0], [5.35, 0], [5.45, 0.08], [5.45, 0.55], [5.25, 0.62], [5.25, 0.74], [4.95, 0.78], [4.85, 0.7], [4.4, 0.66], [4.3, 0.2]]), '#d6cfbf', P.x, py, P.z, 0);
     this.batch.add(lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.5, 2.6], [0.4, 2.62], [0.32, 2.7], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]]), '#d6cfbf', P.x, py, P.z, 0);
-    const fw = new THREE.Mesh(new THREE.CircleGeometry(4.45, 48), new THREE.MeshStandardMaterial({ color: '#1e2c30', roughness: 0.04, metalness: 0, transparent: true, opacity: 0.92 }));
-    fw.rotation.x = -Math.PI / 2;
-    fw.position.set(P.x, py + 0.6, P.z);
+    // Plans d'eau du bassin et de la vasque : un seul maillage (même matériau).
+    const fw = new THREE.Mesh(mergeGeometries([
+      new THREE.CircleGeometry(4.45, 48).rotateX(-Math.PI / 2).translate(0, 0.6, 0),
+      new THREE.CircleGeometry(1.88, 32).rotateX(-Math.PI / 2).translate(0, 2.5, 0),
+    ], false), new THREE.MeshStandardMaterial({ color: '#1e2c30', roughness: 0.04, metalness: 0, transparent: true, opacity: 0.92 }));
+    fw.position.set(P.x, py, P.z);
     this.group.add(fw);
-    const fb = new THREE.Mesh(new THREE.CircleGeometry(1.88, 32), fw.material);
-    fb.rotation.x = -Math.PI / 2;
-    fb.position.set(P.x, py + 2.5, P.z);
-    this.group.add(fb);
-    // Filets d'eau qui retombent de la vasque haute.
+    this.culled.push([fw, P.x, P.z, 620]);
+    // Filets d'eau qui retombent de la vasque haute (fusionnés : un seul appel de dessin).
     const jets = new THREE.MeshStandardMaterial({ color: '#dfeef2', roughness: 0.1, transparent: true, opacity: 0.38, depthWrite: false });
+    const jg = [];
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
-      const j = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.05, 1.25, 6, 1, true), jets);
-      j.position.set(P.x + Math.cos(a) * 1.0, py + 3.05, P.z + Math.sin(a) * 1.0);
-      this.group.add(j);
+      jg.push(new THREE.CylinderGeometry(0.025, 0.05, 1.25, 6, 1, true).translate(Math.cos(a) * 1.0, 3.05, Math.sin(a) * 1.0));
     }
+    const jm = new THREE.Mesh(mergeGeometries(jg, false), jets);
+    jm.position.set(P.x, py, P.z);
+    this.group.add(jm);
+    this.culled.push([jm, P.x, P.z, 150]);
     this.colliders.addCircle(P.x, P.z, 5.4, py + 0.7, 'fountain');
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2;
@@ -797,7 +811,7 @@ export class World {
       for (let k = 0; k < n; k++) {
         const o = -w / 2 + 0.5 + k * 1.0;
         const bx = alongX ? x : x + o, bz = alongX ? z + o : z;
-        this.batch.add(box(alongX ? 2.6 : 0.5, 0.02, alongX ? 0.5 : 2.6, false), '#e8e8e4', bx, this.h(bx, bz) + 0.085, bz, 0);
+        this.batch.addDetail(box(alongX ? 2.6 : 0.5, 0.02, alongX ? 0.5 : 2.6, false), '#e8e8e4', bx, this.h(bx, bz) + 0.085, bz, 0, 1);
       }
     };
     for (const x of [-130, -30, 70]) {
@@ -832,7 +846,11 @@ export class World {
       // Jardinières aux angles.
       const flowers = ['#d8443a', '#e9c94a', '#f2f1ec', '#b55aa0'];
       for (const [px, pz] of [[ax + 3.5, az + 1.3], [bx - 3.5, bz - 1.3]]) {
-        if (this.rnd() < 0.7) this.batch.add(planterGeo(flowers[Math.floor(this.rnd() * 4)]), null, px, this.h(px, pz) + 0.14, pz, 0);
+        if (this.rnd() < 0.7) {
+          const pl = planterGeo(flowers[Math.floor(this.rnd() * 4)]);
+          this.batch.add(pl.body, null, px, this.h(px, pz) + 0.14, pz, 0);
+          this.batch.addDetail(pl.detail, null, px, this.h(px, pz) + 0.14, pz, 0, 1);
+        }
       }
     }
     // Passages piétons à chaque intersection du quadrillage.
@@ -847,7 +865,7 @@ export class World {
           const along = dx !== 0; // bandes parallèles à la route traversée
           for (let k = -2; k <= 2; k++) {
             const bx2 = cx + (along ? 0 : k * 1.2), bz2 = cz + (along ? k * 1.2 : 0);
-            this.batch.add(box(along ? 2.4 : 0.55, 0.03, along ? 0.55 : 2.4, false), '#f2f1ec', bx2, y + 0.095, bz2, 0);
+            this.batch.addDetail(box(along ? 2.4 : 0.55, 0.03, along ? 0.55 : 2.4, false), '#f2f1ec', bx2, y + 0.095, bz2, 0, 1);
           }
         }
       }
@@ -1203,15 +1221,18 @@ export class World {
     }
     // Masquer les tuiles lointaines.
     const cx = camera.position.x, cz = camera.position.z;
+    for (const [o, x, z, d] of this.culled) o.visible = (x - cx) * (x - cx) + (z - cz) * (z - cz) < d * d;
     for (const m of this.chunks) {
       const s = m.geometry.boundingSphere;
       const d = Math.hypot(s.center.x - cx, s.center.z - cz) - s.radius;
       m.visible = d < 620;
+      // Petits détails de façade et de mobilier (fin de l'intervalle d'indices) : seulement pour les tuiles proches.
+      if (m.userData.far !== undefined) m.geometry.drawRange.count = d < 250 ? Infinity : m.userData.far;
     }
   }
 }
 
-// Spectateur assis (≈ 250 triangles) : peau, cheveux, haut et pantalon variés, posture légèrement variable.
+// Spectateur assis (≈ 50 triangles) : peau, cheveux, haut et pantalon variés, posture légèrement variable.
 const SKIN = ['#e6c2a2', '#d9a982', '#c18e68', '#8d5a3b', '#f0d1b8', '#a8724f'];
 const HAIR = ['#2b1d14', '#4a3222', '#8a6a46', '#c9a46a', '#1b1b1b', '#9a9a96'];
 const TOPS = ['#1f2b45', '#f2f1ec', '#3a5a8c', '#a33b32', '#2e2f33', '#d9c9a6', '#5d7a4a', '#7b2b3a', '#e3d36a', '#4b6f73'];
@@ -1229,19 +1250,58 @@ function seatGeo() {
   return g;
 }
 
+// Retire des faces toujours cachées (groupes de la géométrie d'origine : faces d'une boîte, fonds d'un cylindre).
+function dropGroups(g, drop) {
+  const idx = g.index.array, keep = [];
+  g.groups.forEach((gr, i) => {
+    if (!drop.includes(i)) for (let k = gr.start; k < gr.start + gr.count; k++) keep.push(idx[k]);
+  });
+  g.setIndex(keep);
+  g.clearGroups();
+  return prep(g);
+}
+// Formes du public, partagées : buste sans fond (posé sur les cuisses), cuisses sans dessous ni arrière,
+// tibias sans arrière, tête dont les faces du haut et de l'arrière portent les cheveux.
+let _crowd = null;
+function crowdShapes() {
+  if (_crowd) return _crowd;
+  const head = prep(new THREE.IcosahedronGeometry(0.1, 0));
+  const p = head.attributes.position.array;
+  const hair = [];
+  for (let f = 0; f < p.length; f += 9) {
+    const cy = (p[f + 1] + p[f + 4] + p[f + 7]) / 3, cz = (p[f + 2] + p[f + 5] + p[f + 8]) / 3;
+    hair.push(cy > 0.03 || (cz < -0.04 && cy > -0.03));
+  }
+  _crowd = {
+    torso: dropGroups(new THREE.CylinderGeometry(0.16, 0.13, 0.52, 5, 1), [2]),
+    thigh: dropGroups(new THREE.BoxGeometry(0.32, 0.13, 0.42), [3, 5]),
+    shin: dropGroups(new THREE.BoxGeometry(0.3, 0.42, 0.12), [5]),
+    head,
+    hair,
+  };
+  return _crowd;
+}
+
 function seatedPerson(rnd, x, y, z) {
   const pick = (a) => a[Math.floor(rnd() * a.length)];
   const skin = pick(SKIN), top = pick(TOPS), pants = pick(PANTS), hair = pick(HAIR);
   const lean = (rnd() - 0.5) * 0.12;
   const sh = 0.92 + rnd() * 0.16;
-  // Silhouette vue de loin (~70 triangles) : buste, épaules, tête, cheveux, jambes.
-  const P = [];
-  P.push([new THREE.CylinderGeometry(0.16 * sh, 0.13 * sh, 0.52 * sh, 6, 1), top, { x, y: y + 0.3 * sh, z: z - 0.04, rx: -0.06 + lean, sz: 0.72 }]);
-  P.push([new THREE.IcosahedronGeometry(0.1 * sh, 0), skin, { x, y: y + 0.68 * sh, z: z - 0.03, sy: 1.15 }]);
-  P.push([new THREE.IcosahedronGeometry(0.1 * sh, 0), hair, { x, y: y + 0.72 * sh, z: z - 0.06, sy: 0.7 }]);
-  P.push([new THREE.BoxGeometry(0.32, 0.13, 0.42), pants, { x, y: y + 0.05, z: z + 0.18 }]);
-  P.push([new THREE.BoxGeometry(0.3, 0.42, 0.12), pants, { x, y: y - 0.17, z: z + 0.36 }]);
-  return P.map(([g, c, tf]) => [prep(g), c, tf]);
+  // Silhouette vue de loin (~50 triangles) : buste, tête et cheveux, jambes.
+  const S = crowdShapes();
+  const head = S.head.clone();
+  paint(head, skin);
+  const c = head.attributes.color.array;
+  const hc = new THREE.Color(hair);
+  S.hair.forEach((h, f) => {
+    if (h) for (let k = f * 9; k < f * 9 + 9; k += 3) hc.toArray(c, k);
+  });
+  return [
+    [S.torso, top, { x, y: y + 0.3 * sh, z: z - 0.04, rx: -0.06 + lean, sx: sh, sy: sh, sz: 0.72 * sh }],
+    [head, null, { x, y: y + 0.68 * sh, z: z - 0.03, sx: sh, sy: 1.15 * sh, sz: sh }],
+    [S.thigh, pants, { x, y: y + 0.05, z: z + 0.18 }],
+    [S.shin, pants, { x, y: y - 0.17, z: z + 0.36 }],
+  ];
 }
 
 function pointInPoly(x, z, poly) {
