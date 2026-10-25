@@ -58,6 +58,18 @@ export function carGeo(color, kind = 'sedan', { wheels = true } = {}) {
   const parts = [];
   const hw = C.W / 2;
   const y0 = C.body[C.body.length - 1][1];
+  // Position (z du centre) d'une pièce d'épaisseur t posée sur le bout de la caisse (s = 1 avant, -1 arrière)
+  // entre les hauteurs ya et yb : elle dépasse de e du profil, arrondi du bevel (0,07) compris.
+  const onTip = (s, ya, yb, t, e = 0.012) => {
+    let m = 0;
+    for (let i = 0; i < C.body.length - 1; i++) {
+      const [xa, ha] = C.body[i], [xb, hb] = C.body[i + 1];
+      const lo = Math.max(ya, Math.min(ha, hb)), hi = Math.min(yb, Math.max(ha, hb));
+      if (lo > hi) continue;
+      for (const y of [lo, hi]) m = Math.max(m, s * (ha === hb ? (s > 0 ? Math.max(xa, xb) : Math.min(xa, xb)) : xa + ((xb - xa) * (y - ha)) / (hb - ha)));
+    }
+    return s * (m + 0.07 + e - t / 2);
+  };
   parts.push([profile(C.body, C.W, 0.07, [C.wb / 2, -C.wb / 2, C.r, y0]), color, {}]);
   parts.push([profile(C.glass, C.W - 0.26, 0.04), '#121920', {}]);
   parts.push([profile(C.roof, C.W - 0.2, 0.04), color, {}]);
@@ -67,13 +79,15 @@ export function carGeo(color, kind = 'sedan', { wheels = true } = {}) {
   for (const s of [-1, 1]) {
     parts.push([box(0.2, 0.12, 0.1), color, { x: s * (hw + 0.06), y: gy + 0.02, z: C.glass[3][0] - 0.1 }]);
     if (wheels) for (const zw of [C.wb / 2, -C.wb / 2]) parts.push(...wheel(C.r, 0.22).map(([g, c, tf]) => [g, c, { ...tf, x: s * (hw - 0.14), y: C.r, z: zw }]));
-    parts.push([box(0.42, 0.13, 0.06), '#e9ecef', { x: s * (hw - 0.32), y: C.body[C.body.length - 2][1] - 0.12, z: C.L / 2 - 0.06 }]);
-    parts.push([box(0.38, 0.12, 0.05), '#9d1f1f', { x: s * (hw - 0.3), y: C.body[2][1] - 0.12, z: -C.L / 2 + 0.06 }]);
+    const yh = C.body[C.body.length - 2][1] - 0.12, yt = C.body[2][1] - 0.12;
+    parts.push([box(0.42, 0.13, 0.06), '#e9ecef', { x: s * (hw - 0.32), y: yh, z: onTip(1, yh, yh + 0.13, 0.06) }]);
+    parts.push([box(0.38, 0.12, 0.05), '#9d1f1f', { x: s * (hw - 0.3), y: yt, z: onTip(-1, yt, yt + 0.12, 0.05) }]);
   }
-  // Calandre et plaques.
-  parts.push([box(0.9, 0.18, 0.04), '#1b1c1f', { y: C.body[C.body.length - 2][1] - 0.32, z: C.L / 2 - 0.02 }]);
-  parts.push([box(0.52, 0.11, 0.02), '#f2f1ec', { y: y0 + 0.1, z: C.L / 2 + 0.02 }]);
-  parts.push([box(0.52, 0.11, 0.02), '#f2f1ec', { y: y0 + 0.24, z: -C.L / 2 - 0.02 }]);
+  // Calandre et plaques (en avant de la calandre).
+  const yc = C.body[C.body.length - 2][1] - 0.32;
+  parts.push([box(0.9, 0.18, 0.04), '#1b1c1f', { y: yc, z: onTip(1, yc, yc + 0.18, 0.04) }]);
+  parts.push([box(0.52, 0.11, 0.04), '#f2f1ec', { y: y0 + 0.1, z: onTip(1, Math.min(yc, y0 + 0.1), y0 + 0.21, 0.04, 0.025) }]);
+  parts.push([box(0.52, 0.11, 0.04), '#f2f1ec', { y: y0 + 0.24, z: onTip(-1, y0 + 0.24, y0 + 0.35, 0.04, 0.025) }]);
   return partsToGeo(parts);
 }
 

@@ -10,7 +10,7 @@ import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBo
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
 import { applySurfaces, applyRoadShader, applyInteriors, INTERIOR_UNIFORMS } from './surfaces.js';
-import { carGeo, carMaterial, tractorGeo, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
+import { CARS, carGeo, carMaterial, tractorGeo, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky } from './sky.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
@@ -96,7 +96,6 @@ export class World {
     this.buildTown();
     this.buildStreetscape();
     this.buildRoadSigns();
-    this.buildCrosswalks();
     this.buildBeach();
     this.buildCliffs();
     this.buildSignHill();
@@ -139,6 +138,11 @@ export class World {
     this.batch.add(body, null, x, y, z, rot);
     if (geoPair.glass) this.glass.add(ensureWin(geoPair.glass), null, x, y, z, rot);
     if (collide) this.colliders.addBox(x, z, w / 2, d / 2, rot, Infinity, kind);
+    // Avant-corps en saillie sur les façades : une boîte de collision chacun.
+    if (collide && geoPair.bays) {
+      const c = Math.cos(rot), s = Math.sin(rot);
+      for (const [bx, bz, bhw, bhd] of geoPair.bays) this.colliders.addBox(x + bx * c + bz * s, z - bx * s + bz * c, bhw, bhd, rot, Infinity, kind);
+    }
     this.features.buildings.push({ x, z, w, d, rot, kind });
     return y;
   }
@@ -341,7 +345,7 @@ export class World {
     this.carBatch.add(tractorGeo(), null, -158, this.h(-158, 166), 166, -Math.PI / 2 - 0.25);
     this.colliders.addBox(-158, 166, 1.4, 2.6, -Math.PI / 2 - 0.25, Infinity, 'tractor');
     this.carBatch.add(carGeo('#2b3a4a', 'suv'), null, -84, this.h(-84, 146), 146, Math.PI / 2);
-    this.colliders.addBox(-84, 146, 1.0, 2.35, Math.PI / 2, Infinity, 'car');
+    this.colliders.addBox(-84, 146, CARS.suv.W / 2 + 0.16, CARS.suv.L / 2 + 0.12, Math.PI / 2, Infinity, 'car');
     for (let i = 0; i < 6; i++) {
       const bx = -172 + (i % 3) * 1.5, bz = 192 + Math.floor(i / 3) * 1.6;
       this.batch.add(wrappedBaleGeo(i % 4 === 3 ? '#e9e8e2' : '#2e3a2f'), null, bx, this.h(bx, bz), bz, 0);
@@ -574,11 +578,8 @@ export class World {
     const overlapsSpecial = (x, z, r) => specials.some((s) => Math.abs(x - s.x) < s.w / 2 + r && Math.abs(z - s.z) < s.d / 2 + r);
     // Grand Hôtel (façade vers la mer).
     const ht = TOWN.hotel;
+    // Lucarnes et avant-corps générés par buildingGeo (pas de lucarnes rapportées en plus).
     this.place(buildingGeo({ w: ht.w, d: ht.d, h: 14, wall: '#f1ebdf', roof: '#3f444b', roofType: 'hip', roofH: 7, timber: true, fill: 4, wood: 1, floors: 4, trim: '#f6f3ec' }), ht.x, ht.z, Math.PI, ht.w, ht.d, 'hotel');
-    for (let i = 0; i < 4; i++) {
-      const x = ht.x - 30 + i * 20;
-      this.batch.add(gableDormer(), null, x, this.h(ht.x, ht.z) + 14, ht.z - ht.d / 2 + 1, Math.PI);
-    }
     this.signboard('GRAND HÔTEL', 'Deauvelle · 1912', -80, -300 - 9, 0, { w: 5, dark: false });
     // Strides HQ : verre noir, logotype 3D sur le toit.
     const hq = TOWN.hq;
@@ -647,10 +648,10 @@ export class World {
     // Place : fontaine, arbres, terrasse.
     const P = TOWN.plaza;
     const py = this.h(P.x, P.z);
-    // Fontaine en pierre calcaire : margelle moulurée, vasques superposées, eau sombre et reflétante.
+    // Fontaine en pierre calcaire : margelle moulurée, vasques superposées (la vasque médiane est creuse et retient l'eau), eau sombre et reflétante.
     const lathe = (pts, seg = 40) => prep(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg));
     this.batch.add(lathe([[4.3, 0], [5.35, 0], [5.45, 0.08], [5.45, 0.55], [5.25, 0.62], [5.25, 0.74], [4.95, 0.78], [4.85, 0.7], [4.4, 0.66], [4.3, 0.2]]), '#d6cfbf', P.x, py, P.z, 0);
-    this.batch.add(lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.5, 2.6], [0.4, 2.62], [0.32, 2.7], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]]), '#d6cfbf', P.x, py, P.z, 0);
+    this.batch.add(lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.89, 2.5], [1.8, 2.42], [0.4, 2.42], [0.32, 2.5], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]]), '#d6cfbf', P.x, py, P.z, 0);
     const fw = new THREE.Mesh(new THREE.CircleGeometry(4.45, 48), new THREE.MeshStandardMaterial({ color: '#1e2c30', roughness: 0.04, metalness: 0, transparent: true, opacity: 0.92 }));
     fw.rotation.x = -Math.PI / 2;
     fw.position.set(P.x, py + 0.6, P.z);
@@ -737,7 +738,8 @@ export class World {
       const round = kind === 'speed';
       const w = round ? 0.8 : 1.3, hgt = round ? 0.8 : 0.65;
       const top = round ? 2.4 : 2.3;
-      this.batch.add(cyl(0.035, 0.035, top + hgt / 2, 8), '#8d9196', x, y, z, rot);
+      // Mât derrière la tôle (il ne traverse pas la face imprimée).
+      this.batch.add(cyl(0.035, 0.035, top + hgt / 2, 8), '#8d9196', x - Math.sin(rot) * 0.05, y, z - Math.cos(rot) * 0.05, rot);
       this.batch.add(box(w + 0.04, hgt + 0.04, 0.03, false), '#8d9196', x, y + top, z, rot);
       const g = round ? new THREE.CircleGeometry(0.4, 32) : new THREE.PlaneGeometry(w, hgt);
       const [u0, u1] = region[kind];
@@ -776,7 +778,8 @@ export class World {
     const faces = [];
     spots.forEach(([dx, dz, rot], i) => {
       const x = r.x + dx, z = r.z + dz, y = this.h(x, z);
-      this.batch.add(box(0.08, 0.95, 0.08), '#f2f1ec', x, y, z, rot);
+      // Piquet derrière le panneau (il ne masque pas la lettre).
+      this.batch.add(box(0.08, 0.95, 0.08), '#f2f1ec', x - Math.sin(rot) * 0.06, y, z - Math.cos(rot) * 0.06, rot);
       this.batch.add(box(0.62, 0.62, 0.04, false), '#f2f1ec', x, y + 0.75, z, rot);
       const g = new THREE.PlaneGeometry(0.56, 0.56);
       const uv = g.attributes.uv;
@@ -788,23 +791,6 @@ export class World {
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
     this.group.add(new THREE.Mesh(mergeGeometries(faces, false), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 })));
-  }
-
-  // Passages piétons (bandes blanches parallèles à la circulation) aux carrefours du centre-ville.
-  buildCrosswalks() {
-    const cross = (x, z, alongX, w) => {
-      const n = Math.floor(w / 1.0);
-      for (let k = 0; k < n; k++) {
-        const o = -w / 2 + 0.5 + k * 1.0;
-        const bx = alongX ? x : x + o, bz = alongX ? z + o : z;
-        this.batch.add(box(alongX ? 2.6 : 0.5, 0.02, alongX ? 0.5 : 2.6, false), '#e8e8e4', bx, this.h(bx, bz) + 0.085, bz, 0);
-      }
-    };
-    for (const x of [-130, -30, 70]) {
-      cross(x - 7.5, -300, true, 7);
-      cross(x + 7.5, -300, true, 7);
-      cross(x, -300 + 8, false, 7);
-    }
   }
 
   buildStreetscape() {
@@ -860,8 +846,10 @@ export class World {
       [-170, -228.2, -Math.PI / 2], [-100, -169.8, Math.PI / 2], [120, -296.2, -Math.PI / 2],
     ];
     spots.forEach(([x, z, r], i) => {
-      this.carBatch.add(carGeo(colors[i % colors.length], ['sedan', 'hatch', 'suv'][i % 3]), null, x, this.h(x, z), z, r);
-      this.colliders.addBox(x, z, 0.95, 2.15, r, Infinity, 'car');
+      const kind = ['sedan', 'hatch', 'suv'][i % 3];
+      this.carBatch.add(carGeo(colors[i % colors.length], kind), null, x, this.h(x, z), z, r);
+      // Collision à la taille de la carrosserie profilée (rétroviseurs, optiques et plaques compris).
+      this.colliders.addBox(x, z, CARS[kind].W / 2 + 0.16, CARS[kind].L / 2 + 0.12, r, Infinity, 'car');
     });
     // Statue équestre en bronze (« Le Galop »), devant Strides HQ.
     const sx = TOWN.hq.x - 30, sz = TOWN.hq.z + TOWN.hq.d / 2 + 6;
@@ -893,15 +881,24 @@ export class World {
     {
       const pos = [], idx = [];
       const hw = 2, top = 0.3;
+      // Dessus et chants ont chacun leurs sommets : normales nettes (dessus lissé le long du terrain, chants verticaux).
+      let xe = P.x0;
       for (let x = P.x0, k = 0; x <= P.x1 + 0.01; x += 2, k++) {
         const y = this.h(x, P.z) + top;
-        pos.push(x, y, P.z - hw, x, y, P.z + hw, x, y - 0.4, P.z - hw, x, y - 0.4, P.z + hw);
+        pos.push(x, y, P.z - hw, x, y, P.z + hw, x, y, P.z - hw, x, y - 0.4, P.z - hw, x, y, P.z + hw, x, y - 0.4, P.z + hw);
         if (k) {
-          const a = (k - 1) * 4, b = k * 4;
+          const a = (k - 1) * 6, b = k * 6;
           idx.push(a, a + 1, b + 1, a, b + 1, b);
-          idx.push(a + 2, a, b, a + 2, b, b + 2);
-          idx.push(a + 1, a + 3, b + 3, a + 1, b + 3, b + 1);
+          idx.push(a + 3, a + 2, b + 2, a + 3, b + 2, b + 3);
+          idx.push(a + 4, a + 5, b + 5, a + 4, b + 5, b + 4);
         }
+        xe = x;
+      }
+      // Abouts fermés aux deux extrémités.
+      for (const [x, s] of [[P.x0, -1], [xe, 1]]) {
+        const y = this.h(x, P.z) + top, n = pos.length / 3;
+        pos.push(x, y, P.z - hw, x, y - 0.4, P.z - hw, x, y - 0.4, P.z + hw, x, y, P.z + hw);
+        idx.push(...(s < 0 ? [n, n + 1, n + 2, n, n + 2, n + 3] : [n, n + 2, n + 1, n, n + 3, n + 2]));
       }
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -935,7 +932,8 @@ export class World {
         if (k) parts.push([box(0.08, 2.7, 0.1), '#e9e6de', { x: -N * W / 2 + k * W, z: -1.22 }]);
       }
       this.batch.add(partsToGeo(parts), null, xc, y, z, 0);
-      this.colliders.addBox(xc, z, (N * W) / 2, 1.2, 0, Infinity, 'cabin');
+      // Collision : cabines et portique à colonnettes (z local -2,86 à +1,2).
+      this.colliders.addBox(xc, z - 0.83, (N * W) / 2 + 0.15, 2.03, 0, Infinity, 'cabin');
     }
     // Parasols de Deauvelle.
     const cols = [['#b8322a', '#f2f1ec'], ['#2f5f8a', '#f2f1ec'], ['#e3b23c', '#f2f1ec'], ['#2f6e4a', '#f2f1ec'], ['#d46a2e', '#f2f1ec']];
@@ -1217,13 +1215,14 @@ const HAIR = ['#2b1d14', '#4a3222', '#8a6a46', '#c9a46a', '#1b1b1b', '#9a9a96'];
 const TOPS = ['#1f2b45', '#f2f1ec', '#3a5a8c', '#a33b32', '#2e2f33', '#d9c9a6', '#5d7a4a', '#7b2b3a', '#e3d36a', '#4b6f73'];
 const PANTS = ['#2a3446', '#3a3b3f', '#c9c0ad', '#1f2023', '#46536b'];
 let _seat = null;
-// Siège baquet vide (assise + dossier d'un seul tenant, 20 triangles).
+// Siège baquet vide (assise + dossier d'un seul tenant, 8 triangles) : recto et verso ont chacun leurs sommets,
+// sinon leurs normales opposées s'annulent.
 function seatGeo() {
   if (_seat) return _seat;
   const v = [-0.21, 0, 0.2, 0.21, 0, 0.2, 0.21, 0, -0.14, -0.21, 0, -0.14, -0.21, 0.42, -0.2, 0.21, 0.42, -0.2];
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
-  g.setIndex([0, 1, 2, 0, 2, 3, 3, 2, 5, 3, 5, 4, 0, 2, 1, 0, 3, 2, 3, 5, 2, 3, 4, 5]);
+  g.setAttribute('position', new THREE.Float32BufferAttribute([...v, ...v], 3));
+  g.setIndex([0, 1, 2, 0, 2, 3, 3, 2, 5, 3, 5, 4, 6, 8, 7, 6, 9, 8, 9, 11, 8, 9, 10, 11]);
   g.computeVertexNormals();
   _seat = g;
   return g;
@@ -1256,14 +1255,6 @@ function pointInPoly(x, z, poly) {
 
 function gableRoofGeo(w, h, d) {
   return gableRoof(w, h, d);
-}
-
-function gableDormer() {
-  return partsToGeo([
-    [box(3.2, 3, 2.4), '#f1ebdf', { y: -0.5 }],
-    [gableRoofGeo(2.4, 1.6, 3.2), '#3f444b', { y: 2.5, ry: Math.PI / 2 }],
-    [box(1.2, 1.4, 0.15), PALETTE.glass, { y: 0.5, z: -1.25 }],
-  ]);
 }
 
 function hqGeo(w, d, h) {
