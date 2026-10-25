@@ -14,6 +14,10 @@ float sfH = 0.0;
 float sfRough = 0.9;
 float sfMetal = 0.0;
 float sfHash( vec2 p ) { vec3 p3 = fract( vec3( p.xyx ) * 0.1031 ); p3 += dot( p3, p3.yzx + 33.33 ); return fract( ( p3.x + p3.y ) * p3.z ); }
+// Poids de la variation propre à chaque élément de taille s (ardoise, planche, brique) : elle revient à sa
+// moyenne quand l'élément devient plus petit que le pixel (lointain, surfaces courbes où le repère tourne),
+// sinon chaque pixel tire une teinte au hasard (bruit « sel et poivre » qui scintille).
+float sfIdW( float s, float pxw ) { return 1.0 - smoothstep( s, 2.0 * s, pxw ); }
 vec3 sfBump( vec3 surfPos, vec3 surfNorm, float h ) {
   vec3 sx = dFdx( surfPos ), sy = dFdy( surfPos );
   vec3 r1 = cross( sy, surfNorm ), r2 = cross( surfNorm, sx );
@@ -62,7 +66,7 @@ const SURFACE_MAIN = /* glsl */ `
     // Chêne grisé par les intempéries, ou bois peints (vert-de-gris, sang-de-bœuf).
     vec3 woodC = woodI < 0.5 ? vec3( 0.105, 0.07, 0.045 ) : ( woodI < 1.5 ? vec3( 0.085, 0.11, 0.09 ) : vec3( 0.17, 0.04, 0.03 ) );
     vec4 gr = texture2D( surfDetail, vertical ? vec2( uv.x * 2.2, uv.y * 0.22 ) : vec2( uv.x * 0.22, uv.y * 2.2 ) );
-    float stId = sfHash( vec2( floor( uv.x / 0.46 + 0.5 ), floor( uv.y / 3.0 ) ) );
+    float stId = mix( 0.5, sfHash( vec2( floor( uv.x / 0.46 + 0.5 ), floor( uv.y / 3.0 ) ) ), sfIdW( 0.46, pxw ) );
     vec3 woodTex = woodC * mix( 0.75, 1.25, gr.r ) * mix( 0.9, 1.1, dB.g ) * mix( 0.8, 1.25, stId );
     if ( code > 4.5 || !vertical ) {
       diffuseColor.rgb = woodTex;
@@ -72,7 +76,7 @@ const SURFACE_MAIN = /* glsl */ `
       // Pays d'Auge : poteaux serrés ; néo-normand (grandes villas, hôtels) : poteaux espacés, grands panneaux enduits.
       float P = code > 3.5 ? 1.05 : 0.46;
       float si = floor( uv.x / P + 0.5 );
-      float sid = sfHash( vec2( si, 7.13 ) );
+      float sid = mix( 0.5, sfHash( vec2( si, 7.13 ) ), sfIdW( P, pxw ) );
       float W = 0.15 + sid * 0.05;
       float dS = abs( fract( uv.x / P + 0.5 ) - 0.5 ) * P;
       float aa = max( pxw * 0.6, 0.003 );
@@ -84,7 +88,7 @@ const SURFACE_MAIN = /* glsl */ `
         float band = floor( uv.y / 0.15 );
         float dir = mod( band, 2.0 ) * 2.0 - 1.0;
         float sq = ( uv.x + dir * uv.y ) / 0.085;
-        float bid = sfHash( vec2( floor( sq ), band ) );
+        float bid = mix( 0.5, sfHash( vec2( floor( sq ), band ) ), sfIdW( 0.085, pxw ) );
         float jt = 1.0 - smoothstep( 0.0, 0.12, fract( sq ) ) * smoothstep( 1.0, 0.88, fract( sq ) ) * smoothstep( 0.0, 0.08, fract( uv.y / 0.15 ) );
         fillC = mix( vec3( 0.36, 0.12, 0.06 ) * mix( 0.75, 1.2, bid ), vec3( 0.6, 0.55, 0.47 ), jt * detW );
         fillH = ( 1.0 - jt ) * 0.5;
@@ -101,10 +105,17 @@ const SURFACE_MAIN = /* glsl */ `
       sfH = mix( fillH, 0.9 + gr.r * 0.3, stud ) * detW;
       sfRough = mix( 0.93, 0.88, stud );
     }
+  } else if ( warm && c.g > c.r * 1.15 ) {
+    // Végétation restée dans le décor statique (feuillage des jardinières, pelouses, gazon des falaises) :
+    // vert-jaune, que les peintures vertes (bleutées) n'atteignent pas ; feuillage moucheté, sans tuiles ni planches.
+    sfH = ( dA.r * 0.4 + dA.g * 0.2 ) * detW;
+    tint = mix( 0.86, 1.1, dA.r ) * mix( 0.88, 1.06, dB.g );
+    sfRough = 0.95;
   } else if ( sloped && mx < 0.5 && !warm ) {
     // Ardoise : petites plaques rectangulaires, bords marqués, légère brillance.
     float id;
     float h = sfRows( uv, vec2( 0.32, 0.2 ), id );
+    id = mix( 0.5, id, sfIdW( 0.2, pxw ) );
     sfH = h * 0.6 * detW;
     tint = mix( 0.82, 1.12, id ) * mix( 0.92, 1.05, dA.r );
     sfRough = mix( 0.55, 0.75, id );
@@ -112,6 +123,7 @@ const SURFACE_MAIN = /* glsl */ `
     // Tuiles mécaniques en terre cuite : ondulations et rangs.
     float id;
     float h = sfRows( uv, vec2( 0.24, 0.32 ), id );
+    id = mix( 0.5, id, sfIdW( 0.24, pxw ) );
     float wave = 0.5 + 0.5 * sin( uv.x / 0.24 * 6.2831 );
     sfH = ( h * 0.5 + wave * 0.5 ) * 0.8 * detW;
     tint = mix( 0.82, 1.1, id ) * mix( 0.9, 1.05, dA.r ) * mix( 0.85, 1.0, dB.g );
@@ -120,7 +132,7 @@ const SURFACE_MAIN = /* glsl */ `
     // Brique : appareil en panneresses, joints creux et clairs.
     float row = floor( uv.y / 0.075 );
     float u = uv.x / 0.225 + row * 0.5;
-    float id = sfHash( vec2( floor( u ), row ) );
+    float id = mix( 0.5, sfHash( vec2( floor( u ), row ) ), sfIdW( 0.075, pxw ) );
     float fu = fract( u ), fv = fract( uv.y / 0.075 );
     float joint = 1.0 - smoothstep( 0.0, 0.05, fu ) * smoothstep( 1.0, 0.95, fu ) * smoothstep( 0.0, 0.14, fv ) * smoothstep( 1.0, 0.86, fv );
     sfH = ( 1.0 - joint ) * 0.8 * detW;
@@ -144,7 +156,7 @@ const SURFACE_MAIN = /* glsl */ `
     }
     vec4 g = texture2D( surfDetail, vec2( vertical ? uv.x * 3.0 : uv.x * 0.3, vertical ? uv.y * 0.25 : uv.y * 3.0 ) );
     float grain = g.r;
-    float id = sfHash( vec2( floor( uv.x / ( vertical ? 0.16 : 0.19 ) ), 3.0 ) );
+    float id = mix( 0.5, sfHash( vec2( floor( uv.x / ( vertical ? 0.16 : 0.19 ) ), 3.0 ) ), sfIdW( 0.16, pxw ) );
     sfH = ( ( 1.0 - gap ) * 0.5 + grain * 0.25 ) * detW;
     tint = mix( 0.8, 1.15, grain ) * mix( 0.88, 1.08, id ) * mix( 1.0, 0.55, gap * detW );
     sfRough = 0.82;
@@ -216,13 +228,13 @@ export function applyRoadShader(material, detailTexture) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.surfDetail = { value: detailTexture };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec3 roadUV;\nvarying vec3 vRoad;\nvarying vec2 vRoadXZ;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoad = roadUV;\nvRoadXZ = ( modelMatrix * vec4( transformed, 1.0 ) ).xz;');
+      .replace('#include <common>', '#include <common>\nattribute vec3 roadUV;\nvarying vec3 vRoad;\nvarying vec3 vRoadW;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoad = roadUV;\nvRoadW = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform sampler2D surfDetail;
 varying vec3 vRoad;
-varying vec2 vRoadXZ;
+varying vec3 vRoadW;
 float rdH = 0.0;
 float rdRough = 0.85;
 float rdPud = 0.0;
@@ -238,7 +250,7 @@ vec3 rdBump( vec3 surfPos, vec3 surfNorm, float h ) {
   float w = vRoad.z;
   float x = vRoad.x - w * 0.5;
   float y = vRoad.y;
-  vec2 p = vRoadXZ;
+  vec2 p = vRoadW.xz;
   float pxw = length( fwidth( p ) );
   float fineW = 1.0 - smoothstep( 0.008, 0.04, pxw );
   vec4 dF = texture2D( surfDetail, p * 1.7 );
@@ -277,7 +289,8 @@ vec3 rdBump( vec3 surfPos, vec3 surfNorm, float h ) {
 }`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = rdRough;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = normalize( mix( rdBump( -vViewPosition, normal, rdH * 0.004 ), normal, rdPud ) );');
-    addCloudShadows(shader, 'vec3( vRoadXZ.x, 0.0, vRoadXZ.y )');
+    // Position réelle (avec l'altitude) : ombre des nuages alignée sur celle du terrain des accotements.
+    addCloudShadows(shader, 'vRoadW');
   };
   material.customProgramCacheKey = () => 'st-road';
   return material;
@@ -320,7 +333,10 @@ if ( abs( vWin.z ) > 0.01 ) {
     float td = depth / d.z;
     float tm = min( min( tu, tv ), td );
     vec3 hit = vec3( lp, 0.0 ) + d * tm;
-    float id = inHash( floor( vWPos * 0.5 ) + vec3( cid, 0.0 ) );
+    // Pièce tirée au hasard d'après le centre de la vitre (le même pour tous ses pixels, même quand la vitre
+    // chevauche plusieurs cases) ; grille de 2,7 m décalée : aucun centre de fenêtre ne tombe pile sur une limite.
+    vec3 wc = vWPos - t * vWin.x - vec3( 0.0, vWin.y, 0.0 );
+    float id = inHash( floor( wc * 0.37 + 0.123 ) + vec3( cid, 0.0 ) );
     vec3 wall = mix( vec3( 0.75, 0.7, 0.6 ), vec3( 0.55, 0.62, 0.66 ), step( 0.6, id ) ) * mix( 0.8, 1.05, fract( id * 7.0 ) );
     vec3 col;
     if ( stall ) {

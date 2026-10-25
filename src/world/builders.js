@@ -21,9 +21,12 @@ export const PALETTE = {
 export function winBox(w, h, d, kind = 1) {
   const g = box(w, h, d);
   const pos = g.attributes.position;
+  const nrm = g.attributes.normal;
   const a = new Float32Array(pos.count * 4);
   for (let i = 0; i < pos.count; i++) {
-    a[i * 4] = pos.getX(i);
+    // Face -z tournée vers l'extérieur (fenêtres arrière, dos des baies) : u inversé pour suivre le repère
+    // horizontal de la face vu de dehors (sinon la pièce simulée est vue en miroir).
+    a[i * 4] = pos.getX(i) * (nrm.getZ(i) < -0.5 ? -1 : 1);
     a[i * 4 + 1] = pos.getY(i) - h / 2;
     a[i * 4 + 2] = kind ? w * kind : 0;
     a[i * 4 + 3] = kind ? h : 0;
