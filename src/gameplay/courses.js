@@ -11,10 +11,10 @@ export function courseSteps(game, run, S, opts) {
     courseId, start, finish, timeAllowed, heights, kind = 'cso',
     intro = null,
   } = opts;
-  // Règlement FEI : élimination au deuxième refus en CSO, au quatrième sur un cross.
+  // Règlement FEI : élimination au deuxième refus en CSO, au quatrième sur un cross (ou au troisième sur un même obstacle).
   const maxRefusals = opts.maxRefusals ?? (kind === 'xc' ? 4 : 2);
   const ob = game.obstacles;
-  const state = { faults: 0, refusals: 0, next: 1, t: 0, running: false, finished: false, timeFaults: 0 };
+  const state = { faults: 0, refusals: 0, fenceRefusals: 0, next: 1, t: 0, running: false, finished: false, timeFaults: 0 };
   run.data.course = state;
   const list = () => ob.ofCourse(courseId);
   const approach = (o) => ({ x: o.x - o.n.x * 7, z: o.z - o.n.z * 7 });
@@ -51,6 +51,7 @@ export function courseSteps(game, run, S, opts) {
             if (obstacle.course !== courseId) return;
             if (obstacle.num === state.next && dir > 0) {
               state.next++;
+              state.fenceRefusals = 0;
               game.audio.tone(990, 0.08, 'sine', 0.08);
               ob.highlight(courseId, state.next);
               r.applyWaypoint();
@@ -60,6 +61,7 @@ export function courseSteps(game, run, S, opts) {
             if (obstacle.course !== courseId) return;
             if (obstacle.num === state.next && dir > 0) {
               state.next++;
+              state.fenceRefusals = 0;
               state.faults += 4;
               game.audio.fault();
               game.hud.toast(kind === 'xc' ? 'Touché ! +4' : 'Barre tombée ! +4');
@@ -70,9 +72,11 @@ export function courseSteps(game, run, S, opts) {
           game.bus.on('obstacle:refusal', ({ obstacle }) => {
             if (obstacle.course !== courseId || obstacle.num !== state.next) return;
             state.refusals++;
+            state.fenceRefusals++;
             state.faults += pen;
             game.audio.fault();
             game.hud.toast(`Refus ! +${pen}`);
+            if (state.refusals < maxRefusals && state.fenceRefusals < 3) game.hud.hint('Fais une <b>volte</b> pour reprendre ton élan, puis représente l’obstacle.', 3500);
           }),
         ];
         r.onCleanup(() => offs.forEach((f) => f()));
@@ -83,6 +87,7 @@ export function courseSteps(game, run, S, opts) {
         state.t += dt;
         if (game.player.mode !== 'ride') return { fail: 'Tu es descendu de cheval : éliminé.' };
         if (state.refusals >= maxRefusals) return { fail: `${maxRefusals}e refus : éliminé du parcours.` };
+        if (kind === 'xc' && state.fenceRefusals >= 3) return { fail: '3e refus sur le même obstacle : éliminé du parcours.' };
         // Temps limite : le double du temps accordé.
         if (state.t > timeAllowed * 2) return { fail: 'Temps limite dépassé : éliminé.' };
         if (state.next > list().length) {
@@ -91,7 +96,8 @@ export function courseSteps(game, run, S, opts) {
           const n = { x: Math.sin(finish.rot ?? 0), z: Math.cos(finish.rot ?? 0) };
           const s = (f.x - fx) * n.x + (f.z - fz) * n.z;
           const u = Math.abs((f.x - fx) * n.z - (f.z - fz) * n.x);
-          if (finish.rot === undefined ? Math.hypot(f.x - fx, f.z - fz) < (finish.w || 6) : s > 0 && s < 4 && u < (finish.w || 6)) {
+          // Ligne orientée : passer entre les fanions, plantés à ± w/2 de l'axe.
+          if (finish.rot === undefined ? Math.hypot(f.x - fx, f.z - fz) < (finish.w || 6) : s > 0 && s < 4 && u < (finish.w || 6) / 2) {
             state.finished = true;
             return true;
           }

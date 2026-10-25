@@ -262,6 +262,12 @@ export class Obstacles {
     const f = horse.forward;
     const px = horse.pos.x + f.x * 0.4, pz = horse.pos.z + f.z * 0.4;
     const ppx = prevX + f.x * 0.4, ppz = prevZ + f.z * 0.4;
+    // Après un refus, le cheval doit se détourner ou reprendre du champ avant qu'un nouveau refus compte.
+    const ref = horse._refusal;
+    if (ref && !ref.away) {
+      const { s } = this._localS(ref.o, horse.pos.x, horse.pos.z);
+      if ((f.x * ref.o.n.x + f.z * ref.o.n.z) * Math.sign(s) > 0 || Math.abs(s) > ref.o.depth / 2 + 6) ref.away = true;
+    }
     for (const o of this.list) {
       if (Math.abs(o.x - px) > 12 || Math.abs(o.z - pz) > 12) continue;
       const a = this._localS(o, ppx, ppz);
@@ -279,7 +285,11 @@ export class Obstacles {
         horse.pos.x = o.x + o.n.x * back + o.t.x * b.u - f.x * 0.4;
         horse.pos.z = o.z + o.n.z * back + o.t.z * b.u - f.z * 0.4;
         horse.refuse();
-        g.bus.emit('obstacle:refusal', { obstacle: o, dir: side < 0 ? 1 : -1 });
+        // Cheval resté face à l'obstacle (joystick toujours poussé) : même refus, compté une seule fois
+        // tant qu'il ne s'est pas détourné ou n'est pas resté plusieurs secondes sans le représenter.
+        const again = ref && ref.o === o && !ref.away && g.time - ref.t < 5;
+        horse._refusal = { o, t: g.time, away: false };
+        if (!again) g.bus.emit('obstacle:refusal', { obstacle: o, dir: side < 0 ? 1 : -1 });
         continue;
       }
       if (crossing && airborne) {
