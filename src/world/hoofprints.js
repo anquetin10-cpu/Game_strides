@@ -56,7 +56,8 @@ export class HoofPrints {
     this.born = new Float32Array(max);
     this.cursor = 0;
     this.time = 0;
-    this.seq = new Map();
+    // Rang du prochain sabot par cheval ; WeakMap : un cheval retiré du jeu (rivaux de course) n'y reste pas retenu.
+    this.seq = new WeakMap();
     this._m = new THREE.Matrix4();
     this._q = new THREE.Quaternion();
     this._v = new THREE.Vector3();

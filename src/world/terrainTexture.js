@@ -278,7 +278,11 @@ function gradeAndClassify(cv) {
   const img = ctx.getImageData(0, 0, size, size);
   const d = img.data;
   const lut = groundClassLut();
-  const out = new Uint8Array(size * size * 4);
+  // Carte des matériaux en demi-résolution (moyenne 2×2, lignes inversées pour suivre l'orientation de la texture du
+  // canvas), accumulée deux lignes à la fois : pas de tampon pleine résolution (16 Mo de moins au chargement).
+  const half = size >> 1;
+  const sp = new Uint8Array(half * half * 4);
+  const acc = new Uint16Array(half * 4);
   for (let k = 0; k < d.length; k += 4) {
     let r = d[k], g = d[k + 1], b = d[k + 2];
     const cls = lut[((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)];
@@ -308,19 +312,16 @@ function gradeAndClassify(cv) {
       r *= k2; g *= k2; b *= k2 * 0.98;
     }
     d[k] = r; d[k + 1] = g; d[k + 2] = b;
-    out[k] = wG * 255; out[k + 1] = wS * 255; out[k + 2] = wA * 255; out[k + 3] = wH * 255;
-  }
-  ctx.putImageData(img, 0, 0);
-  // Demi-résolution (moyenne 2×2), lignes inversées pour suivre l'orientation de la texture du canvas.
-  const half = size >> 1;
-  const sp = new Uint8Array(half * half * 4);
-  for (let j = 0; j < half; j++) {
-    const dst = (half - 1 - j) * half * 4;
-    for (let i = 0; i < half; i++) {
-      const a = ((2 * j) * size + 2 * i) * 4, c = a + size * 4;
-      for (let ch = 0; ch < 4; ch++) sp[dst + i * 4 + ch] = (out[a + ch] + out[a + 4 + ch] + out[c + ch] + out[c + 4 + ch]) >> 2;
+    const px = k >> 2, i = px % size, j = (px - i) / size;
+    const o = (i >> 1) * 4;
+    acc[o] += (wG * 255) | 0; acc[o + 1] += (wS * 255) | 0; acc[o + 2] += (wA * 255) | 0; acc[o + 3] += (wH * 255) | 0;
+    if (i === size - 1 && j & 1) {
+      const dst = (half - 1 - (j >> 1)) * half * 4;
+      for (let q = 0; q < half * 4; q++) sp[dst + q] = acc[q] >> 2;
+      acc.fill(0);
     }
   }
+  ctx.putImageData(img, 0, 0);
   return sp;
 }
 
