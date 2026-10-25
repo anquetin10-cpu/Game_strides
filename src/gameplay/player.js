@@ -4,6 +4,11 @@ import { OUTFITS } from '../entities/humanModel.js';
 import { FollowAI } from '../entities/horse.js';
 import { clamp } from '../core/math.js';
 import { nearestRoad } from '../world/layout.js';
+import { Transport } from './transport.js';
+import { TRUCK_DIM } from '../entities/truckModel.js';
+import * as THREE from 'three';
+
+const _seatQ = new THREE.Quaternion();
 
 export class Player {
   constructor(game, avatar = 'f') {
@@ -18,6 +23,8 @@ export class Player {
     this.focusPos = this.human.pos;
     this.locked = false;
     this._setupInteractions();
+    // Mener en main, pont du camion, chargement des chevaux.
+    this.transport = new Transport(game, this);
   }
 
   _outfit(avatar, kind = this.outfitKind) {
@@ -38,10 +45,6 @@ export class Player {
     this.human = new Human(this.game, this._outfit(this.avatar), { player: true, x: pos.x, z: pos.z, heading });
     this.human.isPlayer = true;
     if (mounted) this.human.mount(mounted);
-    if (this.mode === 'drive') {
-      this.human.hidden = true;
-      this.human.mesh.visible = false;
-    }
     this.focusPos = this.mode === 'ride' ? this.horse.pos : this.mode === 'drive' ? this.truck.pos : this.human.pos;
   }
 
@@ -87,7 +90,7 @@ export class Player {
       priority: 2,
       modes: ['foot'],
       getPos: () => this.horse?.pos || { x: 1e9, z: 1e9 },
-      when: () => this.horse && !this.horse.frozen && !this.human.carrying && !this.horse.hiddenInTruck,
+      when: () => this.horse && !this.horse.frozen && !this.human.carrying && !this.horse.hiddenInTruck && !this.transport?.busy,
       action: () => this.mount(),
     });
     g.interact.add('dismount', {
@@ -100,14 +103,23 @@ export class Player {
       when: () => this.horse && this.horse.speed < 2.5 && this.horse.jumpT < 0 && !this.noDismount,
       action: () => this.dismount(),
     });
+    // Monter au volant : près d'une portière de la cabine.
+    const doorL = { x: 0, y: 0, z: 0 }, doorR = { x: 0, y: 0, z: 0 };
     g.interact.add('truck-in', {
       label: 'Conduire',
       icon: 'truck',
-      r: 4.5,
+      r: 3.0,
       priority: 1.5,
       modes: ['foot'],
-      getPos: () => this.truck?.pos || { x: 1e9, z: 1e9 },
-      when: () => !!this.truck && !this.human.carrying,
+      getPos: () => {
+        const t = this.truck;
+        if (!t) return { x: 1e9, z: 1e9 };
+        const p = this.human.pos;
+        t.doorPoint(1, doorL);
+        t.doorPoint(-1, doorR);
+        return Math.hypot(p.x - doorL.x, p.z - doorL.z) < Math.hypot(p.x - doorR.x, p.z - doorR.z) ? doorL : doorR;
+      },
+      when: () => !!this.truck && !this.human.carrying && !this.transport?.leading && !this.transport?.busy,
       action: () => this.enterTruck(),
     });
     g.interact.add('truck-out', {
@@ -125,6 +137,13 @@ export class Player {
   mount() {
     const h = this.horse;
     if (!h) return;
+    const tp = this.transport;
+    if (tp) {
+      if (tp.seq && tp.seq.horse === h) tp.abortSequence();
+      if (tp.isAboard(h)) tp.unloadInstant(h);
+      if (tp.led && tp.led.horse === h) tp.release(true);
+      tp.travelTack(h, false);
+    }
     h.ai = null;
     h.control.mag = 0;
     h.control.speedOverride = undefined;
@@ -147,31 +166,70 @@ export class Player {
   }
 
   enterTruck() {
-    if (!this.truck) return;
+    const t = this.truck;
+    if (!t) return;
+    this.transport?.release(true);
+    if (this.mode === 'ride') this.dismount(true);
     this.mode = 'drive';
-    this.truck.driver = this;
-    this.human.hidden = true;
-    this.human.mesh.visible = false;
-    this.focusPos = this.truck.pos;
-    this.game.bus.emit('player:drive', this.truck);
+    t.driver = this;
+    // Le personnage reste visible, assis au volant (voir _seatDriver).
+    this.human.hidden = false;
+    this.focusPos = t.pos;
+    t.startEngine();
+    this.game.bus.emit('player:drive', t);
   }
 
   exitTruck() {
     const t = this.truck;
+    if (this.mode !== 'drive') return;
     this.mode = 'foot';
     t.driver = null;
+    t.speed = 0;
+    t.stopEngine();
     this.human.hidden = false;
-    const lx = Math.cos(t.heading), lz = -Math.sin(t.heading);
-    this.human.setPosition(t.pos.x + lx * 2.2 + Math.sin(t.heading) * 2, t.pos.z + lz * 2.2 + Math.cos(t.heading) * 2, t.heading);
+    // Descente côté conducteur (gauche), devant la roue avant.
+    const p = t.doorPoint(1);
+    this.human.setPosition(p.x, p.z, t.heading + Math.PI / 2);
     this.game.colliders.resolve(this.human.pos, 0.4, -Infinity);
     this.human.snap();
     this.focusPos = this.human.pos;
     this.game.bus.emit('player:exitTruck', t);
   }
 
+  // Conducteur assis dans la cabine : posture assise, mains au volant, suit la caisse (tangage, roulis).
+  _seatDriver(dt) {
+    const hu = this.human;
+    const t = this.truck;
+    const S = TRUCK_DIM.seat;
+    t.localToWorld(S.x, S.y, S.z, hu.pos);
+    const y = hu.pos.y;
+    hu.heading = t.heading;
+    hu.speed = 0;
+    hu.pose = 'sit';
+    hu.update(dt, this.game.camera.position);
+    hu.pos.y = y;
+    hu.mesh.position.copy(hu.pos);
+    t.body.getWorldQuaternion(_seatQ);
+    hu.mesh.quaternion.copy(_seatQ);
+    const b = hu.bones;
+    if (b && b.lArm && b.rArm && b.lFore && b.rFore && !b.rClav) {
+      const st = t.steer * 0.6;
+      b.lArm.rotation.set(-1.05 - st * 0.3, 0, 0.12);
+      b.rArm.rotation.set(-1.05 + st * 0.3, 0, -0.12);
+      b.lFore.rotation.set(-0.55, 0, 0);
+      b.rFore.rotation.set(-0.55, 0, 0);
+      if (b.spine) b.spine.rotation.x = 0.08;
+    }
+  }
+
   whistle() {
     const h = this.horse;
-    if (!h || this.mode !== 'foot' || h.hiddenInTruck || h.frozen) return false;
+    if (h && h.hiddenInTruck && this.mode === 'foot') {
+      this.game.hud.toast(`${h.name} est dans le camion : ouvre la rampe pour la faire descendre.`);
+      return false;
+    }
+    if (!h || this.mode !== 'foot' || h.hiddenInTruck || h.frozen || this.transport?.busy) return false;
+    if (this.transport?.led?.horse === h) return false;
     const d = Math.hypot(h.pos.x - this.human.pos.x, h.pos.z - this.human.pos.z);
     if (d > 700) return false;
     // Trop loin : le cheval « arrive » près du joueur (comme un appel GTA).
@@ -241,16 +299,27 @@ export class Player {
     const mv = input.move;
     const dir = g.cam.worldDir(mv.x, mv.y);
     const dl = Math.hypot(dir.x, dir.z);
+    const tp = this.transport;
     if (this.mode === 'foot') {
-      let sp = 0;
-      if (!locked && mv.mag > 0.1) {
-        sp = mv.mag < 0.55 ? 2.4 * (mv.mag / 0.55 + 0.25) : 5.4;
-        if (input.isHeld('gallop')) sp = 7.2;
-        if (this.human.carrying) sp = Math.min(sp, 3.6);
+      if (tp.controlsHuman) {
+        // Séquence de chargement : le personnage suit le script.
+        tp.driveHuman(dt);
+        this.human.pose = 'walk';
+        this.human.update(dt, g.camera.position);
+      } else {
+        let sp = 0;
+        if (!locked && mv.mag > 0.1) {
+          sp = mv.mag < 0.55 ? 2.4 * (mv.mag / 0.55 + 0.25) : 5.4;
+          if (input.isHeld('gallop')) sp = 7.2;
+          if (this.human.carrying) sp = Math.min(sp, 3.6);
+          // Cheval en main : pas de course, on reste au pas ou au petit trot.
+          if (tp.leading) sp = Math.min(sp, 3.3);
+        }
+        this.human.move(dl ? dir.x / dl : 0, dl ? dir.z / dl : 1, sp, dt);
+        this.human.pose = 'walk';
+        this.human.update(dt, g.camera.position);
       }
-      this.human.move(dl ? dir.x / dl : 0, dl ? dir.z / dl : 1, sp, dt);
-      this.human.pose = 'walk';
-      this.human.update(dt, g.camera.position);
+      tp.afterHuman();
     } else if (this.mode === 'ride') {
       const c = this.horse.control;
       if (!locked) {
@@ -265,10 +334,22 @@ export class Player {
       }
       c.speedOverride = undefined;
       this.human.animateRiding(dt);
-    } else if (this.mode === 'drive') {
-      const throttle = locked ? 0 : clamp(mv.y * 1.25, -1, 1);
-      const steer = locked ? 0 : clamp(mv.x * 1.2, -1, 1);
-      this.truck.update(dt, { throttle, steer }, g.sky.nightFactor);
     }
+    // Le camion vit en permanence (pont, feux, moteur) ; commandes seulement au volant.
+    if (this.truck) {
+      let ctrl = null;
+      if (this.mode === 'drive') {
+        ctrl = this._driveCtrl || (this._driveCtrl = { throttle: 0, steer: 0 });
+        ctrl.throttle = locked ? 0 : clamp(mv.y * 1.25, -1, 1);
+        ctrl.steer = locked ? 0 : clamp(mv.x * 1.2, -1, 1);
+      }
+      this.truck.update(dt, ctrl, g.sky.nightFactor);
+      if (this.mode === 'drive') this._seatDriver(dt);
+    }
+    tp.update(dt);
+    // Action secondaire (bouton contextuel ou touche L).
+    const keyL = input.keys.has('KeyL') && input.enabled;
+    if ((input.wasPressed('action2') || (keyL && !this._keyL)) && !locked && !g.hud.dialogActive && !g.phone.isOpen) tp.triggerSecondary();
+    this._keyL = keyL;
   }
 }

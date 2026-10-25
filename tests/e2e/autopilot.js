@@ -75,8 +75,46 @@
       else if (p.mode === 'drive') p.truck.setPosition(x, z, p.truck.heading);
       else {
         p.human.setPosition(x, z);
-        if (p.horse && !p.horse.hiddenInTruck && !p.horse.frozen) p.horse.setPosition(x + 2.5, z + 2.5, 0);
+        const led = p.transport?.led?.horse;
+        if (led) led.setPosition(x + 1, z + 1, led.heading);
+        if (p.horse && p.horse !== led && !p.horse.hiddenInTruck && !p.horse.frozen) p.horse.setPosition(x + 2.5, z + 2.5, 0);
       }
+    },
+    // Camion : charger / décharger un cheval par l'API du transport (séquence accélérée).
+    loadHorse(h) {
+      const p = g.player, t = p.truck, tp = p.transport;
+      if (!h) return;
+      if (tp.isAboard(h)) {
+        if (!t.rampClosed) t.setRampInstant(false);
+        return;
+      }
+      if (p.mode === 'drive') {
+        t.speed = 0;
+        p.exitTruck();
+      }
+      if (p.mode === 'ride') {
+        p.horse.speed = 0;
+        p.dismount();
+      }
+      t.setRampInstant(true);
+      const rear = t.rearPoint({ x: 0, y: 0, z: 0 }, 2.6);
+      p.human.setPosition(rear.x, rear.z, t.heading);
+      h.setPosition(rear.x - 1, rear.z - 1, t.heading);
+      if (!tp.led || tp.led.horse !== h) tp.lead(h);
+      tp.load(h, { fast: true });
+      t.setRampInstant(false);
+    },
+    unloadHorse(h) {
+      const p = g.player, t = p.truck, tp = p.transport;
+      if (!h || !tp.isAboard(h)) return;
+      if (p.mode === 'drive') {
+        t.speed = 0;
+        p.exitTruck();
+      }
+      t.setRampInstant(true);
+      const rear = t.rearPoint({ x: 0, y: 0, z: 0 }, 2.6);
+      p.human.setPosition(rear.x, rear.z, t.heading);
+      tp.unload(h, { fast: true });
     },
     ensureMode(mode) {
       if (mode === 'ride') A.mount();
@@ -276,6 +314,18 @@
         }
         return;
       }
+      if (s.kind === 'tdrive') {
+        const t = g.player.truck;
+        if (g.player.mode !== 'drive') {
+          if (!t.rampClosed) t.setRampInstant(false);
+          A.drive();
+        }
+        t.setPosition(s.to.x, s.to.z, t.heading);
+        t.speed = 0;
+        return;
+      }
+      if (s.kind === 'tload') return A.loadHorse(s.horse());
+      if (s.kind === 'tunload') return A.unloadHorse(s.horse());
       if ((id === 'transport' || run.offer.vertical === 'TRANSPORT') && s.target) {
         if (/Monte dans le camion/.test(txt) || g.player.mode !== 'drive') return A.drive();
         const t = A.pos(s.target);

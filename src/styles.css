@@ -172,6 +172,15 @@ body.desktop .joy-base { display: none; }
 .hr-line.high .heart { background: #ff3b30; }
 @keyframes heartbeat { 0%, 60%, 100% { transform: rotate(45deg) scale(0.85); } 15% { transform: rotate(45deg) scale(1.1); } 30% { transform: rotate(45deg) scale(0.95); } }
 .comfort { font: 600 10px/1 var(--ui); letter-spacing: .1em; color: var(--muted); }
+/* Camion : rapport (D3, R…), compte-tours, confort du cheval transporté. */
+.gear.small { font-size: 26px; letter-spacing: -.06em; width: 38px; }
+.stamina.rpm i.on { background: var(--paper); }
+.stamina.rpm i.on.red { background: var(--bad); }
+.comfort { display: flex; flex-direction: column; gap: 4px; }
+.comfort b { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.16); overflow: hidden; }
+.comfort b i { display: block; height: 100%; width: 100%; background: var(--ok); transition: width .3s; }
+.comfort.warn b i { background: var(--gold); }
+.comfort.bad b i { background: var(--bad); }
 
 /* Boutons d'action */
 .actions { position: absolute; right: var(--sr); bottom: var(--sb); width: 220px; height: 190px; }
@@ -190,6 +199,8 @@ body.desktop .joy-base { display: none; }
 .btn-action { right: 18px; bottom: 102px; width: 72px; height: 72px; background: rgba(247,244,237,0.95); color: var(--st-ink); border-color: transparent; }
 .btn-action span { max-width: 64px; font-size: 8.5px; letter-spacing: .02em; text-align: center; line-height: 1.1; }
 .btn-whistle { right: 108px; bottom: 86px; width: 50px; height: 50px; }
+.btn-action2 { right: 12px; bottom: 12px; width: 70px; height: 70px; }
+.btn-action2 span { max-width: 62px; font-size: 8.5px; letter-spacing: .02em; text-align: center; line-height: 1.1; }
 .btn-whistle svg { width: 20px; height: 20px; margin: 0 auto; }
 .btn-round.hide { opacity: 0; transform: scale(.6); pointer-events: none; transition: opacity .15s, transform .15s; }
 

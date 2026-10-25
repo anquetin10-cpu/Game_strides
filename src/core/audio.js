@@ -91,7 +91,10 @@ export class Audio {
     const wv = Math.max(0, 1 - seaDist / 160) * (0.1 + 0.06 * Math.sin(t * 0.6));
     this.waves.g.gain.setTargetAtTime(wv, t, 0.4);
     this.crowd.g.gain.setTargetAtTime(crowd * 0.08, t, 0.5);
-    if (engine >= 0) {
+    if (this._eng) {
+      // Moteur du camion géré par truckEngine() (régime, charge, distance).
+      this.engine.g.gain.setTargetAtTime(0, t, 0.2);
+    } else if (engine >= 0) {
       this.engine.g.gain.setTargetAtTime(0.06, t, 0.2);
       this.engine.osc.frequency.setTargetAtTime(42 + engine * 4.2, t, 0.1);
       this.engine.lp.frequency.setTargetAtTime(220 + engine * 25, t, 0.1);
@@ -125,6 +128,8 @@ export class Audio {
   // Pose de sabot selon le sol : fer qui claque sur le bitume, gravier qui crisse, herbe sourde, sable feutré, bois creux.
   hoof(surface = 'grass', intensity = 1) {
     if (!this.ctx) return;
+    // Pont et plancher du camion : son creux dédié.
+    if (surface === 'ramp' || surface === 'truck') return this._hoofTruck(surface, intensity);
     const t = this.ctx.currentTime + Math.random() * 0.01;
     const v = intensity;
     if (surface === 'road') {
@@ -406,6 +411,213 @@ export class Audio {
       this.nextBar += barDur;
       this.bar++;
     }
+  }
+
+  // ---------- Camion ----------
+  // Sabot sur le pont (bois/caoutchouc creux, résonance de la caisse) ou sur le plancher du box.
+  _hoofTruck(surface, intensity = 1) {
+    const ctx = this.ctx;
+    const t = ctx.currentTime + Math.random() * 0.01;
+    const ramp = surface === 'ramp';
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = ramp ? 900 : 420;
+    const g = ctx.createGain();
+    src.connect(lp).connect(g).connect(this.master);
+    this._env(g, t, 0.003, (ramp ? 0.36 : 0.26) * intensity, 0.09);
+    src.start(t, Math.random() * 1.5, 0.25);
+    // Résonance creuse.
+    const o = ctx.createOscillator();
+    o.frequency.setValueAtTime(ramp ? 150 + Math.random() * 30 : 95, t);
+    o.frequency.exponentialRampToValueAtTime(ramp ? 90 : 60, t + 0.18);
+    const og = ctx.createGain();
+    o.connect(og).connect(this.master);
+    this._env(og, t, 0.004, (ramp ? 0.22 : 0.14) * intensity, ramp ? 0.22 : 0.15);
+    o.start(t);
+    o.stop(t + 0.3);
+  }
+
+  _noiseBurst({ type = 'bandpass', freq = 1000, q = 1, vol = 0.1, attack = 0.01, decay = 0.3, when = 0, sweep = 0, dur = null }) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime + when;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.setValueAtTime(freq, t);
+    if (sweep) f.frequency.exponentialRampToValueAtTime(Math.max(40, freq * sweep), t + attack + decay);
+    f.Q.value = q;
+    const g = ctx.createGain();
+    src.connect(f).connect(g).connect(this.master);
+    this._env(g, t, attack, vol, decay);
+    src.start(t, Math.random() * 0.8, dur || attack + decay + 0.05);
+  }
+
+  // Diesel 4 cylindres : impulsions d'allumage (2 par tour), cliquetis de combustion, turbo.
+  _engineNodes() {
+    const ctx = this.ctx;
+    const bus = ctx.createGain();
+    bus.gain.value = 0;
+    const muffle = ctx.createBiquadFilter();
+    muffle.type = 'lowpass';
+    muffle.frequency.value = 2400;
+    bus.connect(muffle).connect(this.master);
+    const fire = ctx.createOscillator();
+    fire.type = 'sawtooth';
+    const fireLp = ctx.createBiquadFilter();
+    fireLp.type = 'lowpass';
+    fireLp.Q.value = 1.4;
+    const fireG = ctx.createGain();
+    fireG.gain.value = 0.55;
+    fire.connect(fireLp).connect(fireG).connect(bus);
+    const sub = ctx.createOscillator();
+    sub.type = 'square';
+    const subLp = ctx.createBiquadFilter();
+    subLp.type = 'lowpass';
+    subLp.frequency.value = 110;
+    const subG = ctx.createGain();
+    subG.gain.value = 0.35;
+    sub.connect(subLp).connect(subG).connect(bus);
+    // Cliquetis : bruit filtré modulé au rythme des explosions.
+    const noise = ctx.createBufferSource();
+    noise.buffer = this.noiseBuf;
+    noise.loop = true;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1700;
+    bp.Q.value = 0.9;
+    const clat = ctx.createGain();
+    clat.gain.value = 0;
+    const lfo = ctx.createOscillator();
+    lfo.type = 'square';
+    const lfoG = ctx.createGain();
+    lfoG.gain.value = 0.05;
+    lfo.connect(lfoG).connect(clat.gain);
+    noise.connect(bp).connect(clat).connect(bus);
+    const turbo = ctx.createOscillator();
+    turbo.type = 'sine';
+    const turboG = ctx.createGain();
+    turboG.gain.value = 0;
+    turbo.connect(turboG).connect(bus);
+    // Bip de recul.
+    const beep = ctx.createOscillator();
+    beep.type = 'square';
+    beep.frequency.value = 1180;
+    const beepLp = ctx.createBiquadFilter();
+    beepLp.type = 'lowpass';
+    beepLp.frequency.value = 2500;
+    const beepG = ctx.createGain();
+    beepG.gain.value = 0;
+    beep.connect(beepLp).connect(beepG).connect(this.master);
+    for (const o of [fire, sub, noise, lfo, turbo, beep]) o.start();
+    return { bus, muffle, fire, fireLp, sub, clat, lfo, lfoG, turbo, turboG, beepG, bp };
+  }
+
+  // Appelé à chaque image par le camion : { on, rpm, load, speed, dist, inside, reverse, brake }.
+  truckEngine(st) {
+    if (!this.ctx) return;
+    const e = (this._eng ||= this._engineNodes());
+    const t = this.ctx.currentTime;
+    const near = st.inside ? 1 : Math.max(0, 1 - st.dist / 70) ** 1.6;
+    const vol = st.on ? (0.05 + st.load * 0.07) * near : 0;
+    e.bus.gain.setTargetAtTime(vol, t, st.on ? 0.08 : 0.35);
+    if (!st.on && !this._engWasOn) {
+      e.beepG.gain.setTargetAtTime(0, t, 0.02);
+      return;
+    }
+    this._engWasOn = st.on;
+    const rpm = Math.max(300, st.rpm);
+    const f = (rpm / 60) * 2;
+    e.fire.frequency.setTargetAtTime(f, t, 0.05);
+    e.sub.frequency.setTargetAtTime(f / 2, t, 0.05);
+    e.lfo.frequency.setTargetAtTime(f, t, 0.05);
+    e.fireLp.frequency.setTargetAtTime(140 + rpm * 0.18 + st.load * 520, t, 0.08);
+    e.lfoG.gain.setTargetAtTime(0.025 + st.load * 0.05, t, 0.08);
+    e.bp.frequency.setTargetAtTime(1400 + rpm * 0.35, t, 0.1);
+    e.turbo.frequency.setTargetAtTime(1800 + rpm * 1.1, t, 0.15);
+    e.turboG.gain.setTargetAtTime(st.on ? Math.max(0, rpm - 1100) / 1500 * (0.15 + st.load * 0.5) * 0.06 : 0, t, 0.25);
+    e.muffle.frequency.setTargetAtTime(st.inside ? 1500 + st.load * 1200 : 900 + near * 2200, t, 0.2);
+    // Bip de recul (0,4 s / 0,4 s).
+    const on = st.reverse && near > 0.05 && (t % 0.8) < 0.4;
+    e.beepG.gain.setTargetAtTime(on ? 0.05 * Math.max(near, 0.4) : 0, t, 0.006);
+  }
+
+  engineStart() {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(95, t);
+    o.frequency.linearRampToValueAtTime(140, t + 0.7);
+    const am = ctx.createOscillator();
+    am.frequency.value = 11;
+    const amG = ctx.createGain();
+    amG.gain.value = 0.04;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 700;
+    const g = ctx.createGain();
+    g.gain.value = 0.05;
+    am.connect(amG).connect(g.gain);
+    o.connect(lp).connect(g).connect(this.master);
+    g.gain.setValueAtTime(0.05, t);
+    g.gain.setTargetAtTime(0, t + 0.75, 0.05);
+    o.start(t);
+    am.start(t);
+    o.stop(t + 1.0);
+    am.stop(t + 1.0);
+    this._noiseBurst({ type: 'lowpass', freq: 220, vol: 0.12, attack: 0.02, decay: 0.5, when: 0.72 });
+  }
+
+  // « Pschitt » des freins à air (arrêt, frein de parc).
+  airBrake(k = 0.6) {
+    this._noiseBurst({ type: 'highpass', freq: 2600, q: 0.5, vol: 0.06 * k, attack: 0.015, decay: 0.55 + k * 0.4 });
+    this._noiseBurst({ type: 'bandpass', freq: 5200, q: 0.8, vol: 0.035 * k, attack: 0.01, decay: 0.35 });
+  }
+
+  gearShift(dir) {
+    if (dir === 2) {
+      this._noiseBurst({ type: 'bandpass', freq: 900, q: 2, vol: 0.05, attack: 0.005, decay: 0.08 });
+      return;
+    }
+    this._noiseBurst({ type: 'bandpass', freq: 3400, q: 1.5, vol: 0.025, attack: 0.004, decay: 0.07 });
+    this._noiseBurst({ type: 'lowpass', freq: 260, vol: 0.05, attack: 0.005, decay: 0.12, when: 0.05 });
+  }
+
+  // Pont : grincement des vérins à ressort, puis choc au sol / fermeture.
+  rampStart() {
+    this._noiseBurst({ type: 'bandpass', freq: 520, q: 6, vol: 0.035, attack: 0.3, decay: 2.2, sweep: 0.7, dur: 2.7 });
+    this._noiseBurst({ type: 'bandpass', freq: 3100, q: 3, vol: 0.03, attack: 0.005, decay: 0.05 });
+  }
+  rampDown() {
+    this.thud();
+    this._noiseBurst({ type: 'bandpass', freq: 950, q: 4, vol: 0.12, attack: 0.004, decay: 0.45 });
+    this._noiseBurst({ type: 'bandpass', freq: 2400, q: 6, vol: 0.06, attack: 0.004, decay: 0.6 });
+  }
+  rampShut() {
+    this.thud();
+    this._noiseBurst({ type: 'bandpass', freq: 700, q: 3, vol: 0.1, attack: 0.004, decay: 0.3 });
+    this.latch(0.12);
+  }
+  latch(when = 0) {
+    this._noiseBurst({ type: 'bandpass', freq: 3200, q: 4, vol: 0.09, attack: 0.002, decay: 0.035, when });
+    this._noiseBurst({ type: 'bandpass', freq: 2600, q: 4, vol: 0.07, attack: 0.002, decay: 0.04, when: when + 0.09 });
+  }
+  truckDoor(open) {
+    if (open) {
+      this.latch();
+      this._noiseBurst({ type: 'bandpass', freq: 640, q: 8, vol: 0.025, attack: 0.1, decay: 0.4, sweep: 1.3, when: 0.08 });
+    } else {
+      this._noiseBurst({ type: 'lowpass', freq: 300, vol: 0.14, attack: 0.004, decay: 0.18 });
+      this.latch(0.02);
+    }
+  }
+  tick() {
+    this._noiseBurst({ type: 'bandpass', freq: 1700, q: 3, vol: 0.02, attack: 0.002, decay: 0.03 });
   }
 
   horn() {
