@@ -132,28 +132,17 @@ class Car {
     let limit = (inTown ? 13.9 : 19.4) * this.cruise;
     // Obstacles devant : distance d'observation croissante avec la vitesse.
     const look = 8 + this.speed * 1.5;
-    let gap = Infinity, byPlayer = false;
-    const rel = (p) => {
-      const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
-      return { ahead: dx * fx + dz * fz, side: Math.abs(dx * fz - dz * fx) };
-    };
-    const block = (p) => {
-      const { ahead, side } = rel(p);
-      if (ahead > 0 && ahead < look && side < 2.6) {
-        gap = Math.min(gap, ahead);
-        return true;
-      }
-      return false;
-    };
+    let gap = this._ahead(g.player.focus.pos, fx, fz, look);
     // Cavalier : la voiture attend derrière le cheval sans klaxonner.
-    if (block(g.player.focus.pos) && g.player.mode !== 'ride') byPlayer = true;
-    for (const v of g.vehicles) if (v !== this && v.pos) block(v.pos);
+    const byPlayer = gap < Infinity && g.player.mode !== 'ride';
+    for (const v of g.vehicles) if (v !== this && v.pos) gap = Math.min(gap, this._ahead(v.pos, fx, fz, look));
     // Code de la route : on croise et on dépasse les chevaux au pas (20 km/h), sans klaxonner.
     for (const h of g.horses) {
       if (h.hiddenInTruck || !h.pos) continue;
-      block(h.pos);
-      const { ahead, side } = rel(h.pos);
-      if (ahead > -8 && ahead < 45 && side < 8) limit = Math.min(limit, 5.5);
+      gap = Math.min(gap, this._ahead(h.pos, fx, fz, look));
+      const dx = h.pos.x - this.pos.x, dz = h.pos.z - this.pos.z;
+      const ahead = dx * fx + dz * fz;
+      if (ahead > -8 && ahead < 45 && Math.abs(dx * fz - dz * fx) < 8) limit = Math.min(limit, 5.5);
     }
     // Bout de route : demi-tour immédiat hors de vue ; sinon freinage à la distance d'arrêt (≈ 5 m/s²),
     // court arrêt puis demi-tour au pas une fois la place libre.
@@ -208,6 +197,12 @@ class Car {
     const near = (p) => Math.hypot(p.x - cx, p.z - cz) < LANE + 4.5;
     if (near(g.player.focus.pos)) return false;
     return !g.horses.some((h) => !h.hiddenInTruck && h.pos && near(h.pos));
+  }
+  // Distance d'un point dans le couloir devant la voiture (2,6 m de part et d'autre), sinon Infinity (sans allocation).
+  _ahead(p, fx, fz, look) {
+    const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
+    const ahead = dx * fx + dz * fz;
+    return ahead > 0 && ahead < look && Math.abs(dx * fz - dz * fx) < 2.6 ? ahead : Infinity;
   }
 }
 
@@ -273,28 +268,23 @@ class TrafficFx {
     this._e = new THREE.Euler(0, 0, 0, 'YXZ');
     this._v = new THREE.Vector3();
     this._s = new THREE.Vector3();
-    this._zero = new THREE.Matrix4().makeScale(0, 0, 0);
   }
 
   update(cars, on) {
     const { _car: car, _loc: loc, _m: m, _q: q, _e: e, _v: v, _s: sc } = this;
     const lc = this.lights.instanceColor.array, bc = this.beams.instanceColor.array;
-    cars.forEach((c, i) => {
+    // Seules les voitures visibles occupent des instances : les autres ne sont dessinées ni à l'écran ni dans l'ombre.
+    let i = 0;
+    for (let ci = 0; ci < cars.length; ci++) {
+      const c = cars[ci];
+      if (!c.mesh.visible) continue;
       const C = c.spec, hw = C.W / 2;
-      if (!c.mesh.visible) {
-        for (let k = 0; k < 4; k++) {
-          this.wheels.setMatrixAt(i * 4 + k, this._zero);
-          this.lights.setMatrixAt(i * 4 + k, this._zero);
-        }
-        this.beams.setMatrixAt(i, this._zero);
-        return;
-      }
       // Roues : sur la route (pas de tangage de caisse), en rotation autour de l'essieu.
       e.set(c.slope, c.heading, 0);
       car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
       let k = 0;
-      for (const sx of [-1, 1]) {
-        for (const zw of [C.wb / 2, -C.wb / 2]) {
+      for (let sx = -1; sx <= 1; sx += 2) {
+        for (let zw = C.wb / 2, n = 0; n < 2; n++, zw = -zw) {
           loc.compose(v.set(sx * (hw - 0.14), C.r, zw), q.setFromEuler(e.set(c.spin, 0, 0)), sc.set(C.r, C.r, C.r));
           this.wheels.setMatrixAt(i * 4 + k++, m.multiplyMatrices(car, loc));
         }
@@ -305,28 +295,39 @@ class TrafficFx {
       const yH = C.body[C.body.length - 2][1] - 0.06, yT = C.body[2][1] - 0.06;
       const tail = on * 0.55 + (c.braking ? 0.9 : 0);
       k = 0;
-      for (const sx of [-1, 1]) {
+      for (let sx = -1; sx <= 1; sx += 2) {
         loc.compose(v.set(sx * (hw - 0.32), yH, C.L / 2 + 0.11), q.identity(), sc.set(1, 1, 1));
         this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
-        lc.set([1.6 * on, 1.45 * on, 1.15 * on], (i * 4 + k++) * 3);
+        let o = (i * 4 + k++) * 3;
+        lc[o] = 1.6 * on;
+        lc[o + 1] = 1.45 * on;
+        lc[o + 2] = 1.15 * on;
         loc.makeRotationY(Math.PI).scale(sc.set(0.8, 0.8, 0.8)).setPosition(sx * (hw - 0.3), yT, -C.L / 2 - 0.11);
         this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
-        lc.set([1.3 * tail, 0.06 * tail, 0.04 * tail], (i * 4 + k++) * 3);
+        o = (i * 4 + k++) * 3;
+        lc[o] = 1.3 * tail;
+        lc[o + 1] = 0.06 * tail;
+        lc[o + 2] = 0.04 * tail;
       }
       // Faisceau des phares sur la chaussée.
       e.set(c.slope, c.heading, 0);
       car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
       loc.makeTranslation(0, 0.07, C.L / 2 - 0.3);
       this.beams.setMatrixAt(i, m.multiplyMatrices(car, loc));
-      bc.set([0.2 * on, 0.185 * on, 0.15 * on], i * 3);
-    });
+      bc[i * 3] = 0.2 * on;
+      bc[i * 3 + 1] = 0.185 * on;
+      bc[i * 3 + 2] = 0.15 * on;
+      i++;
+    }
+    this.wheels.count = this.lights.count = i * 4;
+    this.beams.count = i;
     this.wheels.instanceMatrix.needsUpdate = true;
     this.lights.instanceMatrix.needsUpdate = true;
     this.lights.instanceColor.needsUpdate = true;
     this.beams.instanceMatrix.needsUpdate = true;
     this.beams.instanceColor.needsUpdate = true;
-    this.lights.visible = true;
-    this.beams.visible = on > 0.02;
+    this.wheels.visible = this.lights.visible = i > 0;
+    this.beams.visible = i > 0 && on > 0.02;
   }
 }
 

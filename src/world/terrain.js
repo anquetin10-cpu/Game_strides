@@ -254,6 +254,8 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   stFade = 1.0 - smoothstep( 18.0, 140.0, dist );
   // Taille d'un pixel au sol : on retire les détails plus fins que le pixel (pas de scintillement).
   float pxw = length( fwidth( p ) );
+  // Dérivées calculées hors des branches : les lectures conditionnelles passent par textureGrad (niveau de mip défini).
+  vec2 pdx = dFdx( p ), pdy = dFdy( p );
   float fineW = 1.0 - smoothstep( 0.006, 0.03, pxw );
   float midW = 1.0 - smoothstep( 0.05, 0.3, pxw );
   vec4 dF = texture2D( detailMap, p * 1.31 + 0.17 );
@@ -269,8 +271,9 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   // Sable : grain fin, ondulations douces.
   float aH = dF.r * 0.35 * fineW + ( dM.g * 0.4 + dM.r * 0.2 ) * midW;
   vec3 aTint = vec3( mix( 0.93, 1.05, dM.r ) * mix( 0.95, 1.04, dL.r ) * mix( 1.0, mix( 0.95, 1.04, dF.r ), fineW ) );
-  // Gravier / pavés : gravillons de près, marbrure de loin.
-  vec4 dG = texture2D( detailMap, p * 0.62 + 0.41 );
+  // Gravier / pavés : gravillons de près, marbrure de loin (texture lue seulement sur les sols durs).
+  vec4 dG = vec4( 0.5 );
+  if ( wH > 0.01 ) dG = textureGrad( detailMap, p * 0.62 + 0.41, pdx * 0.62, pdy * 0.62 );
   float stones = smoothstep( 0.42, 0.12, dG.b );
   float hH = ( stones * 0.35 + dF.r * 0.1 ) * fineW + dM.r * 0.25 * midW;
   vec3 hTint = vec3( mix( 0.9, 1.07, dM.g ) * mix( 0.95, 1.04, dL.r ) * mix( 1.0, mix( 0.94, 1.06, stones ) * mix( 0.97, 1.03, dF.r ), fineW ) );
@@ -284,7 +287,7 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
     float tl = abs( fract( p.y / 24.0 ) - 0.5 ) * 24.0;
     float track = ( 1.0 - smoothstep( 0.16, 0.3, abs( tl - 0.9 ) ) ) * midW;
     float rows = ( 0.5 + 0.5 * sin( p.y * 34.9 ) ) * fineW;
-    float wave = texture2D( detailMap, p * 0.021 + csWind * 50.0 ).g;
+    float wave = textureGrad( detailMap, p * 0.021 + csWind * 50.0, pdx * 0.021, pdy * 0.021 ).g;
     tint *= mix( 1.0, mix( 0.8, 1.14, wave ), crop );
     tint = mix( tint, tint * vec3( 0.6, 0.53, 0.47 ), track * crop );
     stH = mix( stH, ( rows * 0.35 + ( 1.0 - track ) * 0.6 + dF.r * 0.2 * fineW ) * stFade, crop );

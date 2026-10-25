@@ -825,6 +825,7 @@ export class Game {
 
     if (this.state === 'photo') {
       this.cam.update(dt, this.player.focus, input.look);
+      this.sky.setDay(Math.floor(d.gameTime / 86400));
       this.sky.update(this.hour(), this.player.focus.pos, dt);
       this.sky.follow(this.camera);
       this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
