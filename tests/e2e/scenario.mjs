@@ -28,10 +28,10 @@ await page.waitForTimeout(800);
 await shot('03-game');
 // Attendre la notification de la première mission.
 await page.waitForSelector('.notif.show', { timeout: 90000 });
-await page.waitForTimeout(600);
-await shot('04-notif');
 step('notification received');
 // « Répondre à la demande » ouvre l'écran de la demande ; « Accepter la mission » se confirme en deux touchers.
+// (On touche avant toute capture : la notification se referme après 7 s et une capture sous rendu logiciel est lente.)
+await page.waitForTimeout(300);
 await page.tap('.notif.show .n-actions button.primary');
 await page.waitForSelector('[data-id="accept-request"]');
 await page.waitForTimeout(500);
