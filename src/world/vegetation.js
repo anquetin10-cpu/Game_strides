@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { mulberry32, clamp } from '../core/math.js';
 import { SPECIES, treeVariant } from './treeGen.js';
 import { LEAF, leafCell, leafAtlas, barkTextures, hedgeTextures } from './vegTextures.js';
+import { addCloudShadows } from './sky.js';
 
 const COARSE = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 // Atlas des imposteurs : 8 × 4 cellules (192 px sur mobile, 256 px sinon).
@@ -131,6 +132,7 @@ function patchMaterial(mat, { wind = true, fade = 0, leaf = false, mapSize = 102
       if (!depth) f = f.replace('#include <normal_fragment_begin>', NORMAL_NOFLIP).replace('#include <lights_fragment_maps>', CANOPY_SKY).replace('#include <lights_fragment_end>', TRANSLUCENCY);
     }
     sh.fragmentShader = f;
+    if (!depth) addCloudShadows(sh);
   };
   mat.customProgramCacheKey = () => `veg-${wind}-${fade}-${leaf}-${depth}-${key}`;
   return mat;
@@ -199,6 +201,7 @@ function impostorMaterial(albedo, normal) {
 }`)
       .replace('#include <lights_fragment_maps>', CANOPY_SKY)
       .replace('#include <lights_fragment_end>', TRANSLUCENCY);
+    addCloudShadows(sh);
   };
   mat.customProgramCacheKey = () => 'veg-impostor';
   return mat;
@@ -584,6 +587,8 @@ export class Vegetation {
     if (!this.hedgeLines.length) return;
     const tex = hedgeTextures();
     this.hullMat = new THREE.MeshStandardMaterial({ map: tex.map, normalMap: tex.normalMap, normalScale: new THREE.Vector2(1.3, 1.3), vertexColors: true, roughness: 0.9, metalness: 0 });
+    this.hullMat.onBeforeCompile = (sh) => addCloudShadows(sh);
+    this.hullMat.customProgramCacheKey = () => 'veg-hull';
     const TILE = 300;
     const tiles = new Map();
     const chunks = [];

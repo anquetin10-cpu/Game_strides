@@ -2,12 +2,15 @@
 import * as THREE from 'three';
 import { POND } from './layout.js';
 import { TIDE_UNIFORMS } from './weather.js';
+import { CLOUD_UNIFORMS, CLOUD_SHADOW_GLSL } from './sky.js';
 
 const vert = /* glsl */ `
 #include <common>
 #include <fog_pars_vertex>
+${CLOUD_SHADOW_GLSL}
 uniform float time;
 varying vec3 vWorld;
+varying float vCs;
 void main() {
   vec4 w = modelMatrix * vec4(position, 1.0);
   // Houle de la Manche : quelques trains d'ondes longues, amplitude modérée.
@@ -15,6 +18,8 @@ void main() {
   float k = 1.0 - smoothstep(120.0, 600.0, d);
   w.y += (sin(dot(w.xz, vec2(0.011, 0.046)) + time * 0.9) * 0.16 + sin(dot(w.xz, vec2(-0.037, 0.021)) + time * 1.27) * 0.09 + sin(dot(w.xz, vec2(0.09, 0.07)) + time * 1.9) * 0.04) * k;
   vWorld = w.xyz;
+  // Ombre des nuages (par sommet : les nuages sont bien plus grands que les mailles de la mer).
+  vCs = csCloudShadow(w.xyz);
   vec4 mvPosition = viewMatrix * w;
   gl_Position = projectionMatrix * mvPosition;
   #include <fog_vertex>
@@ -36,8 +41,11 @@ uniform vec3 sunColor;
 uniform float sunIntensity;
 uniform float night;
 varying vec3 vWorld;
+varying float vCs;
 vec3 waveN(vec2 uv) { return texture2D(waveNormals, uv).xyz * 2.0 - 1.0; }
 void main() {
+  // Soleil direct (reflets, éclairage du corps de l'eau et de l'écume) atténué sous les nuages.
+  float sunI = sunIntensity * vCs;
   vec2 g = (vWorld.xz - hm.xy) / hm.z;
   vec2 uv = (g * hm.w + 0.5) / (hm.w + 1.0);
   float ground = texture2D(heightMap, vec2(uv.x, 1.0 - uv.y)).r;
@@ -64,15 +72,15 @@ void main() {
   float spec = pow(max(dot(N, H), 0.0), 700.0) * 60.0 + pow(max(dot(N, H), 0.0), 90.0) * 1.6;
   // Corps de l'eau : diffusion (vert-bleu en profondeur, sable visible au bord).
   vec3 body = mix(shallowColor, deepColor, smoothstep(0.3, 9.0, depth));
-  vec3 lit = body * (sunIntensity * max(sunDir.y, 0.0) + zenithColor * 2.2) * 0.3;
-  vec3 col = mix(lit, sky, fres) + sunColor * sunIntensity * spec * (1.0 - night) * 0.05;
+  vec3 lit = body * (sunI * max(sunDir.y, 0.0) + zenithColor * 2.2) * 0.3;
+  vec3 col = mix(lit, sky, fres) + sunColor * sunI * spec * (1.0 - night) * 0.05;
   // Rouleaux et écume : lignes qui avancent vers la plage, déchirées par le bruit.
   vec3 fn = waveN(q * 0.12 + vec2(time * 0.02, 0.0));
   float band = 1.0 - smoothstep(0.0, 1.4, depth);
   float lines = smoothstep(0.55, 0.95, sin(depth * 6.5 - time * 1.6 + fn.x * 2.5) * 0.5 + 0.5);
   float edge = 1.0 - smoothstep(0.0, 0.18, depth);
   float foam = clamp((lines * band * 0.8 + edge) * (0.55 + 0.45 * fn.y), 0.0, 1.0);
-  vec3 foamCol = vec3(0.8) * (sunIntensity * max(sunDir.y, 0.05) * 0.35 + zenithColor * 1.5);
+  vec3 foamCol = vec3(0.8) * (sunI * max(sunDir.y, 0.05) * 0.35 + zenithColor * 1.5);
   col = mix(col, foamCol, foam * 0.85);
   float alpha = mix(0.35, 0.97, smoothstep(0.0, 2.5, depth));
   alpha = max(alpha, max(foam * 0.9, fres));
@@ -147,6 +155,7 @@ export class Water {
       },
     ]);
     this.uniforms.heightMap.value = tex;
+    Object.assign(this.uniforms, CLOUD_UNIFORMS);
     this.uniforms.waveNormals.value = waveNormalMap(256);
     const geo = new THREE.PlaneGeometry(4200, 2400, 120, 60);
     geo.rotateX(-Math.PI / 2);
