@@ -228,12 +228,14 @@ float hFoamK = 0.0;
   }
   // Pommelures (gris) et truitures (blanc).
   if (uDapple > 0.0 && p.y > 0.6) {
-    float dc = hCell(p * vec3(13.0, 13.0, 11.0) + vec3(0.0, 0.0, hNoise(p * 4.0)));
-    float ring = smoothstep(0.25, 0.55, dc) * (1.0 - smoothstep(0.55, 0.9, dc));
-    float spot = 1.0 - smoothstep(0.18, 0.42, dc);
+    // Taches claires irrégulières (domaine déformé, bords flous) sur un réseau plus sombre.
+    vec3 dp = p * vec3(12.0, 12.0, 10.0) + (vec3(hNoise(p * 5.0), hNoise(p * 5.0 + 11.0), hNoise(p * 5.0 + 23.0)) - 0.5) * 0.9;
+    float dc = hCell(dp) + (hNoise(p * 40.0) - 0.5) * 0.12;
+    float spot = (1.0 - smoothstep(0.1, 0.5, dc)) * (0.65 + 0.35 * hNoise(p * 7.0));
+    float net = smoothstep(0.4, 0.78, dc);
     float body = smoothstep(0.62, 0.9, p.y) * (1.0 - smoothstep(0.6, 0.85, hb + 0.5 * step(0.0, p.z - 1.0)));
-    c = mix(c, uDappleCol, spot * uDapple * 0.85 * body);
-    c *= 1.0 - ring * 0.18 * uDapple * body;
+    c = mix(c, uDappleCol, spot * uDapple * 0.7 * body);
+    c *= 1.0 - net * 0.2 * uDapple * body;
   }
   if (uFleabit > 0.0) {
     float f = step(0.9, hNoise(p * 160.0)) * hNoise(p * 37.0);
