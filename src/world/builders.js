@@ -415,61 +415,6 @@ export function fenceGeo(points, getH, { height = 1.15, rails = 2, color = PALET
   return mergeGeometries(geos, false);
 }
 
-// --- Végétation (modèles de base peints une fois) ---
-const TREE_CACHE = {};
-export function treeTemplate(kind) {
-  if (TREE_CACHE[kind]) return TREE_CACHE[kind];
-  let parts;
-  if (kind === 'oak') {
-    parts = [
-      [cyl(0.22, 0.34, 3.2, 5), '#5c4634'],
-      [ico(2.6), '#4f7f37', { y: 4.6, sx: 1.1, sy: 0.9 }],
-      [ico(2.1), '#5b8c3f', { x: 1.3, y: 5.6, z: 0.4 }],
-      [ico(1.9), '#47753a', { x: -1.2, y: 5.1, z: -0.6 }],
-    ];
-  } else if (kind === 'pine') {
-    parts = [
-      [cyl(0.18, 0.28, 2.4, 5), '#5a4433'],
-      [cone(2.6, 4.2, 7), '#2f5a36', { y: 1.9 }],
-      [cone(2.0, 3.6, 7), '#356640', { y: 4.1 }],
-      [cone(1.3, 2.8, 7), '#3b6e45', { y: 6.2 }],
-    ];
-  } else if (kind === 'poplar') {
-    parts = [
-      [cyl(0.16, 0.26, 2.5, 5), '#5f4b3a'],
-      [ico(1.6), '#5f9142', { y: 5.2, sy: 2.6 }],
-    ];
-  } else if (kind === 'apple') {
-    parts = [
-      [cyl(0.16, 0.24, 1.6, 5), '#6a5240'],
-      [ico(1.7), '#6c9c46', { y: 2.8, sx: 1.2, sy: 0.85, sz: 1.2 }],
-      [box(0.22, 0.22, 0.22, false), '#c8402e', { x: 1.1, y: 2.5, z: 0.9 }],
-      [box(0.22, 0.22, 0.22, false), '#c8402e', { x: -0.9, y: 3.2, z: 1.0 }],
-      [box(0.22, 0.22, 0.22, false), '#d65538', { x: 0.4, y: 2.3, z: -1.3 }],
-    ];
-  } else if (kind === 'bush') {
-    parts = [[ico(1), '#4e7d3a', { y: 0.6, sy: 0.75 }]];
-  } else if (kind === 'birch') {
-    parts = [
-      [cyl(0.14, 0.2, 4, 5), '#e8e4da'],
-      [ico(1.5), '#7dab4e', { y: 4.4, sy: 1.4 }],
-      [ico(1.1), '#86b456', { x: 0.6, y: 5.5, sy: 1.2 }],
-    ];
-  }
-  TREE_CACHE[kind] = partsToGeo(parts);
-  return TREE_CACHE[kind];
-}
-
-export function hedgeGeo(len, rnd) {
-  const parts = [[box(1.5, 1.25, len), '#3f6b33', {}]];
-  const n = Math.max(1, Math.floor(len / 3));
-  for (let i = 0; i < n; i++) {
-    const z = -len / 2 + (i + 0.5) * (len / n);
-    parts.push([ico(0.9 + rnd() * 0.4), rnd() > 0.5 ? '#46763a' : '#3a652f', { x: (rnd() - 0.5) * 0.4, y: 1.15, z, sy: 0.6 }]);
-  }
-  return partsToGeo(parts);
-}
-
 // Lampadaire de style en fonte (vert sombre) : socle mouluré, fût cannelé, crosse à volute et lanterne hexagonale
 // suspendue à 0,75 m du fût (la flaque de lumière au sol est calée dessous).
 export function lampGeo() {
