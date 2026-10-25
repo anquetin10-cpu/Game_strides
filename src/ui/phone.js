@@ -7,7 +7,7 @@ import { HORSES, SHOP, PROS, STABLES } from '../gameplay/data.js';
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
-import { conditionText, temperature, wind, rainTarget, dayCover, tideLevel, tideEvents, tideCoef, hhmm } from '../world/weather.js';
+import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm } from '../world/weather.js';
 import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard } from './requests.js';
 
@@ -616,7 +616,7 @@ export class Phone {
     const main = h('div.app-main');
     const w = wind(day, hr);
     const rain = rainTarget(day, hr);
-    const hum = Math.round(Math.min(98, 62 + dayCover(day) * 25 + rain * 20 - Math.max(0, temperature(day, hr) - 16) * 1.2));
+    const hum = Math.round(Math.min(98, 62 + coverAt(day, hr) * 25 + rain * 20 - Math.max(0, temperature(day, hr) - 16) * 1.2));
     main.appendChild(this._head('Météo', `Deauvelle · ${conditionText(day, hr)}`));
     const body = h('div.app-body.scrollable');
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));

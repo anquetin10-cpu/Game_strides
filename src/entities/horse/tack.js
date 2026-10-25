@@ -1,6 +1,7 @@
 // Sellerie au jeu : tapis STRIDES (texture générée : matelassage, passepoil blanc, logo), cuirs, acier, laiton,
 // caoutchouc ; ensembles d'indices selon l'équipement (sellé, rênes en main ou sur l'encolure, licol, guêtres).
 import * as THREE from 'three';
+import { addCloudShadows } from '../../world/sky.js';
 
 // Ordre et sens des matériaux : voir scripts/horse/tack.mjs (TACK_MAT).
 const PALETTE = [
@@ -116,6 +117,7 @@ export function tackMaterial(pad = '#15161a', trim = '#f2f1ec') {
       .replace('#include <color_fragment>', FRAG_COLOR)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = trm.x;')
       .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = trm.y;');
+    addCloudShadows(sh);
   };
   m.customProgramCacheKey = () => 'horse-tack-1';
   mats.set(key, m);

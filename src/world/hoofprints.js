@@ -43,7 +43,9 @@ export class HoofPrints {
     this.max = max;
     const geo = new THREE.PlaneGeometry(0.15, 0.17);
     geo.rotateX(-Math.PI / 2);
-    const mat = new THREE.MeshBasicMaterial({ map: printTexture(), transparent: true, blending: THREE.MultiplyBlending, premultipliedAlpha: true, depthWrite: false, toneMapped: false, fog: false });
+    // Passe opaque (le mélange multiplicatif s'y applique aussi), après le sol (ordre 1) : les empreintes font
+    // partie du sol et l'eau, transparente, se dessine par-dessus au lieu d'être assombrie par elles.
+    const mat = new THREE.MeshBasicMaterial({ map: printTexture(), blending: THREE.MultiplyBlending, premultipliedAlpha: true, depthWrite: false, toneMapped: false, fog: false });
     // La couleur d'instance porte l'intensité de l'empreinte : 1 = fraîche, 0 = effacée (blanc = sans effet).
     mat.onBeforeCompile = (shader) => {
       shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', '').replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_COLOR\n  diffuseColor.rgb = mix( vec3( 1.0 ), diffuseColor.rgb, vColor.r );\n#endif');

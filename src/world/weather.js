@@ -17,20 +17,31 @@ export function dayCover(day) {
   return COVERS[mod(day, COVERS.length)];
 }
 
-// Intensité de pluie visée (0 à 1) : averses intermittentes les jours couverts.
+// Couverture du moment : le ciel se charge (ou se dégage) vers le temps du lendemain entre 21 h et minuit.
+export function coverAt(day, hour) {
+  return dayCover(day) + (dayCover(day + 1) - dayCover(day)) * smoothstep(21, 24, hour);
+}
+
+// Intensité de pluie visée (0 à 1) : averses intermittentes les jours couverts, qui commencent après minuit et
+// cessent avant (pas de saut au changement de jour).
 export function rainTarget(day, hour) {
   if (dayCover(day) < 0.72) return 0;
-  return smoothstep(0.35, 0.7, Math.sin(hour * 1.3 + day * 2.1) * 0.5 + 0.5);
+  return smoothstep(0.35, 0.7, Math.sin(hour * 1.3 + day * 2.1) * 0.5 + 0.5) * smoothstep(0, 2, hour) * smoothstep(24, 22, hour);
 }
 
 // Température de l'air (°C) : minimum vers 6 h, maximum vers 15 h ; nuages = journée plus fraîche, nuit plus douce.
+// Le soir refroidit vers le minimum du lendemain : la courbe est continue à minuit.
+const tMax = (day) => 22.5 - dayCover(day) * 6.5 + (hash(day) - 0.5) * 3;
+const tMin = (day) => 12 + dayCover(day) * 2.5 + (hash(day + 50) - 0.5) * 2;
 export function temperature(day, hour) {
-  const c = dayCover(day);
-  const tmax = 22.5 - c * 6.5 + (hash(day) - 0.5) * 3;
-  const tmin = 12 + c * 2.5 + (hash(day + 50) - 0.5) * 2;
   const x = mod(hour - 6, 24);
-  const k = x < 9 ? 0.5 - 0.5 * Math.cos((Math.PI * x) / 9) : 0.5 + 0.5 * Math.cos((Math.PI * (x - 9)) / 15);
-  return tmin + (tmax - tmin) * k - rainTarget(day, hour) * 2.5;
+  let t;
+  if (x < 9) t = tMin(day) + (tMax(day) - tMin(day)) * (0.5 - 0.5 * Math.cos((Math.PI * x) / 9));
+  else {
+    const d = hour < 6 ? day - 1 : day; // après le maximum de 15 h (veille avant 6 h)
+    t = tMin(d + 1) + (tMax(d) - tMin(d + 1)) * (0.5 + 0.5 * Math.cos((Math.PI * (x - 9)) / 15));
+  }
+  return t - rainTarget(day, hour) * 2.5;
 }
 
 // Vent du jour : secteur ouest dominant (brise de mer), plus fort les jours de grisaille.
@@ -43,7 +54,7 @@ export function wind(day, hour = 12) {
 }
 
 export function conditionText(day, hour, night = hour < 6 || hour > 21.5) {
-  const c = dayCover(day), r = rainTarget(day, hour);
+  const c = coverAt(day, hour), r = rainTarget(day, hour);
   if (r > 0.5) return 'Averses';
   if (r > 0.08) return 'Pluie faible';
   if (night) return c < 0.5 ? 'Nuit claire' : 'Nuit couverte';

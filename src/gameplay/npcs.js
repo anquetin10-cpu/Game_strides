@@ -8,6 +8,7 @@ import { CHATTER } from './data.js';
 import { mulberry32, pick, polylineLength, pointAlong, dampAngle, clamp } from '../core/math.js';
 import { carGeo, carMaterial, unitWheelGeo, CARS } from '../world/props.js';
 import { ovalPoint } from './courses.js';
+import { addCloudShadows } from '../world/sky.js';
 
 const COATS = ['bay', 'chestnut', 'grey', 'black', 'palomino', 'darkbay', 'white'];
 
@@ -211,6 +212,8 @@ class TrafficFx {
   constructor(scene, n) {
     this.wheels = new THREE.InstancedMesh(unitWheelGeo(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.1 }), n * 4);
     this.wheels.castShadow = true;
+    this.wheels.material.onBeforeCompile = (sh) => addCloudShadows(sh);
+    this.wheels.material.customProgramCacheKey = () => 'car-wheels';
     const add = { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false };
     this.lights = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.62, 0.4), new THREE.MeshBasicMaterial({ map: glowTexture(), ...add }), n * 4);
     this.lights.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 12), 3);

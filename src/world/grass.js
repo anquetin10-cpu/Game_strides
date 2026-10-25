@@ -7,6 +7,7 @@ import { WORLD, ZONES, ROADS, PATHS, XC_PATH, FORESTS, shoreZ, forestDensity } f
 import { HOME, POLE } from './sites.js';
 import { getFields } from './fields.js';
 import { WIND } from './vegetation.js';
+import { addCloudShadows } from './sky.js';
 import { LEAF, leafCell, leafAtlas } from './vegTextures.js';
 
 const MASK = 512;
@@ -585,6 +586,7 @@ function grassMaterial(defines, uniforms, map) {
 }
 #endif
 #include <lights_fragment_end>`);
+    addCloudShadows(sh);
   };
   mat.customProgramCacheKey = () => `grass-${Object.keys(defines).join('-')}`;
   return mat;

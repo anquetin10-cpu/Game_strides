@@ -7,9 +7,12 @@ import { pointAlong, polylineLength, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { signTexture } from '../world/textures.js';
 import { applySurfaces } from '../world/surfaces.js';
+import { addCloudShadows } from '../world/sky.js';
 
 // Bois peint satiné (barres, chandeliers), métal des taquets.
 const MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0 });
+MAT.onBeforeCompile = (sh) => addCloudShadows(sh);
+MAT.customProgramCacheKey = () => 'obstacles';
 let wallMat = null;
 const COLORS = [
   ['#f2f1ec', '#17181b'],

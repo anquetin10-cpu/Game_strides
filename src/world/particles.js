@@ -7,10 +7,12 @@ attribute float alpha;
 attribute vec3 color;
 varying float vAlpha;
 varying vec3 vColor;
+varying float vSeed;
 uniform float scale;
 void main() {
   vAlpha = alpha;
   vColor = color;
+  vSeed = fract(float(gl_VertexID) * 0.618034);
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_PointSize = size * scale / max(-mv.z, 0.1);
   gl_Position = projectionMatrix * mv;
@@ -18,13 +20,16 @@ void main() {
 const frag = /* glsl */ `
 varying float vAlpha;
 varying vec3 vColor;
+varying float vSeed;
 uniform float light;
 void main() {
   vec2 c = gl_PointCoord - 0.5;
   float d = length(c);
   if (d > 0.5) discard;
-  // Bord irrégulier (nuage de poussière plutôt que disque net).
-  float n = fract(sin(dot(floor(gl_PointCoord * 6.0), vec2(12.9898, 78.233))) * 43758.5453);
+  // Bord irrégulier (nuage de poussière plutôt que disque net) : festons continus le long du bord,
+  // différents pour chaque particule.
+  float ang = atan(c.y, c.x + 1e-5);
+  float n = 0.5 + 0.3 * sin(ang * 3.0 + vSeed * 6.2832) + 0.2 * sin(ang * 5.0 - vSeed * 17.3);
   float a = vAlpha * smoothstep(0.5, 0.1, d + (n - 0.5) * 0.12);
   // Éclairée par la scène (le jour, au crépuscule, la nuit).
   gl_FragColor = vec4(vColor * light, a);

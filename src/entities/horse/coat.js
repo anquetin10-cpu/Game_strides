@@ -1,6 +1,7 @@
 // Robes du cheval : couleurs (albédo linéaire réaliste), extrémités noires, balzanes, liste, pommelures,
 // et matériau de pelage physique (reflet satiné « sheen », sabots cirés, œil vitreux, occlusion ambiante).
 import * as THREE from 'three';
+import { addCloudShadows } from '../../world/sky.js';
 
 // Champs historiques : body, mane, legs (bas des membres), muzzle, hoof — plus des réglages réalistes optionnels.
 export const COATS = {
@@ -364,6 +365,7 @@ export function createCoatMaterial(assets, coat, mk) {
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n' + ROUGH)
         .replace('#include <lights_physical_fragment>', '#include <lights_physical_fragment>\n' + PHYS)
         .replace('#include <aomap_fragment>', AO);
+      addCloudShadows(sh);
     };
     m.customProgramCacheKey = () => key;
     return m;

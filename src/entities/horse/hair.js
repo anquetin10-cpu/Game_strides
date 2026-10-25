@@ -1,6 +1,7 @@
 // Crins : texture de mèches générée (atlas de 4 variantes), matériau double face à seuil alpha, reflets plus doux.
 import * as THREE from 'three';
 import { resolveCoat } from './coat.js';
+import { addCloudShadows } from '../../world/sky.js';
 import { mulberry32 } from '../../core/math.js';
 
 let hairTex = null;
@@ -80,6 +81,7 @@ export function hairMaterial(coat) {
   // Couleur de sommet : variation de teinte par mèche (×1,5).
   m.onBeforeCompile = (sh) => {
     sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.5;');
+    addCloudShadows(sh);
   };
   m.customProgramCacheKey = () => 'horse-hair-1';
   mats.set(key, m);

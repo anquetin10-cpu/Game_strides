@@ -2,11 +2,16 @@
 import * as THREE from 'three';
 import { box, cyl, ico, prep } from './shapes.js';
 import { partsToGeo } from './builders.js';
+import { addCloudShadows } from './sky.js';
 
 // Peinture automobile vernie (les pièces sombres jouent les vitres, les pneus restent mats grâce à leur teinte).
 let _carMat = null;
 export function carMaterial() {
-  _carMat ||= new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.38, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.08 });
+  if (!_carMat) {
+    _carMat = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.38, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.08 });
+    _carMat.onBeforeCompile = (sh) => addCloudShadows(sh);
+    _carMat.customProgramCacheKey = () => 'car-paint';
+  }
   return _carMat;
 }
 

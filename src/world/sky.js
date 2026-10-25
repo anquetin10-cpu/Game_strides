@@ -2,7 +2,7 @@
 // lumière du soleil calculée à partir de l'atmosphère, éclairage d'ambiance (IBL) et brouillard atmosphérique.
 import * as THREE from 'three';
 import { clamp, lerp, smoothstep } from '../core/math.js';
-import { dayCover, rainTarget, wind } from './weather.js';
+import { coverAt, rainTarget, wind } from './weather.js';
 
 // ---------- Brouillard appliqué en linéaire (avant le tone mapping) ----------
 // Par défaut, three.js mélange le brouillard après le tone mapping : la couleur ne correspond alors jamais à celle
@@ -31,10 +31,7 @@ export const CLOUD_UNIFORMS = {
   csSun: { value: new THREE.Vector3(0, 1, 0) },
   csWet: { value: 0 },
 };
-export function addCloudShadows(shader, worldPosExpr) {
-  Object.assign(shader.uniforms, CLOUD_UNIFORMS);
-  shader.fragmentShader = shader.fragmentShader
-    .replace('#include <common>', `#include <common>
+export const CLOUD_SHADOW_GLSL = /* glsl */ `
 uniform vec2 csWind;
 uniform float csCover;
 uniform vec3 csSun;
@@ -53,10 +50,38 @@ float csCloudShadow( vec3 wp ) {
   for ( int i = 0; i < 3; i++ ) { s += a * csNoise( q ); q = mat2( 1.6, 1.2, -1.2, 1.6 ) * q; a *= 0.5; }
   s += 0.0625;
   float cov = smoothstep( 1.0 - csCover, 1.15 - csCover * 0.6, s );
-  return 1.0 - cov * 0.78;
-}`)
-    // Le chunk des lumières est développé ici pour atténuer uniquement la lumière directe du soleil.
-    .replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', `getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color *= csCloudShadow( ${worldPosExpr} );`));
+  // Soleil bas : l'ombre s'estompe avec la lumière directe au lieu de disparaître d'un coup.
+  return 1.0 - cov * 0.78 * smoothstep( 0.05, 0.14, csSun.y );
+}`;
+// Position monde du sommet (instances, lots et squelette compris), après le chunk de projection.
+const CS_VERTEX = /* glsl */ `
+{
+  vec4 csP = vec4( transformed, 1.0 );
+  #ifdef USE_BATCHING
+    csP = batchingMatrix * csP;
+  #endif
+  #ifdef USE_INSTANCING
+    csP = instanceMatrix * csP;
+  #endif
+  vCsShade = csCloudShadow( ( modelMatrix * csP ).xyz );
+}`;
+// worldPosExpr : expression GLSL de la position monde dans le fragment (sol, routes, bâtiments). Sans elle,
+// l'ombre est évaluée par sommet (herbe, arbres, chevaux, personnages, véhicules) : les nuages mesurent des
+// centaines de mètres, le résultat est le même et ne coûte rien par pixel.
+export function addCloudShadows(shader, worldPosExpr = null) {
+  Object.assign(shader.uniforms, CLOUD_UNIFORMS);
+  let shade = 'vCsShade';
+  if (worldPosExpr) {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}`);
+    shade = `csCloudShadow( ${worldPosExpr} )`;
+  } else {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}\nvarying float vCsShade;`)
+      .replace('#include <project_vertex>', `#include <project_vertex>\n${CS_VERTEX}`);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vCsShade;');
+  }
+  // Le chunk des lumières est développé ici pour atténuer uniquement la lumière directe du soleil.
+  shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', `getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color *= ${shade};`));
 }
 
 // ---------- Modèle de Preetham (repris du Sky de three.js, licence MIT) ----------
@@ -289,6 +314,7 @@ export class Sky {
     this.nightFactor = 0;
     this.exposure = 0.55;
     this.cover = 0.42;
+    this.envCover = this.cover;
     this.day = -1;
     this.rain = 0;
     this.wet = 0;
@@ -297,20 +323,29 @@ export class Sky {
     this.clouds = this.dome; // compatibilité
   }
 
-  // Météo du jour (déterministe) : dégagé, voilé, nuageux ou couvert, à la normande.
+  // Météo du jour (déterministe) : dégagé, voilé, nuageux ou couvert, à la normande. La couverture est
+  // recalculée à chaque image (fondu vers le temps du lendemain en fin de soirée, voir update).
   setDay(day) {
     if (day === this.day) return;
     this.day = day;
-    this.cover = dayCover(day);
     this.wind = wind(day);
     // Vecteur du vent (vers où il souffle) : nord = -z, est = +x ; vitesse en m/s.
     const a = (this.wind.deg * Math.PI) / 180, ms = this.wind.kmh / 3.6;
     this.windVec = new THREE.Vector2(-Math.sin(a) * ms, Math.cos(a) * ms);
-    this.params.turbidity = 2.2 + this.cover * 1.6;
+  }
+
+  // Couverture nuageuse du moment : ciel, voile atmosphérique, ombres des nuages et éclairage d'ambiance.
+  _setCover(cover) {
+    if (Math.abs(cover - this.cover) > 0.05) {
+      // Changement brusque (premier jour, saut dans le temps) : éclairage d'ambiance refait tout de suite.
+      this.envDirty = true;
+      this.envAt = -1e9;
+    }
+    this.cover = cover;
+    this.params.turbidity = 2.2 + cover * 1.6;
     this.uniforms.turbidity.value = this.params.turbidity;
-    this.uniforms.cloudCover.value = this.cover;
-    this.envDirty = true;
-    this.envAt = -1e9;
+    this.uniforms.cloudCover.value = cover;
+    this.envDirty = this.envDirty || Math.abs(cover - this.envCover) > 0.03;
   }
 
   setShadowSize(size, extent = 60) {
@@ -343,10 +378,12 @@ export class Sky {
     U.moonDirection.value.copy(this.moonDir);
     U.night.value = night;
     U.time.value += dt;
-    // Les nuages dérivent avec le vent du jour.
+    if (this.day >= 0) this._setCover(coverAt(this.day, hour));
+    // Les nuages dérivent avec le vent du jour : le bruit est lu en (position × échelle + décalage), le décalage
+    // recule donc pour que les nuages avancent dans le sens du vent.
     const wv = this.windVec || { x: 3.8, y: 1.4 };
-    U.cloudWind.value.x += dt * 0.00042 * wv.x * 0.9;
-    U.cloudWind.value.y += dt * 0.00042 * wv.y * 0.9;
+    U.cloudWind.value.x -= dt * 0.00042 * wv.x * 0.9;
+    U.cloudWind.value.y -= dt * 0.00042 * wv.y * 0.9;
     CLOUD_UNIFORMS.csWind.value.copy(U.cloudWind.value);
     CLOUD_UNIFORMS.csCover.value = this.cover;
     CLOUD_UNIFORMS.csSun.value.copy(sun);
@@ -413,6 +450,7 @@ export class Sky {
     if (!force && (!this.envDirty || now - this.envAt < 8)) return;
     this.envAt = now;
     this.envSun.copy(this.sunDir);
+    this.envCover = this.cover;
     this.envDirty = false;
     this.uniforms.envMode.value = 1;
     if (!this.pmrem) this.pmrem = new THREE.PMREMGenerator(renderer);

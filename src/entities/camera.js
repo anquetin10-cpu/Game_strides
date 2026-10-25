@@ -1,6 +1,7 @@
 // Caméra 3e personne : orbite au doigt, recentrage automatique derrière le cheval, anti-collision.
 import * as THREE from 'three';
 import { clamp, damp, dampAngle, lerp } from '../core/math.js';
+import { TIDE_UNIFORMS } from '../world/weather.js';
 
 export class FollowCamera {
   constructor(camera, game) {
@@ -76,7 +77,8 @@ export class FollowCamera {
     let cz = tz + dirz * this.dist;
     const ground = this.game.terrain.getHeight(cx, cz) + 0.6;
     if (cy < ground) cy = ground;
-    if (this.game.terrain.waterDepth(cx, cz) > 0) cy = Math.max(cy, 0.8);
+    // Au-dessus de la mer : marge fixe au-dessus du niveau de la marée (crêtes des vagues comprises).
+    if (this.game.terrain.waterDepth(cx, cz) > 0) cy = Math.max(cy, TIDE_UNIFORMS.tdLevel.value + 0.8);
     // Tremblement au grand galop.
     const shake = this.shake + (mode === 'ride' && focus.speed > 12 ? (focus.speed - 12) * 0.006 : 0);
     if (shake > 0) {

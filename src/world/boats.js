@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { mulberry32 } from '../core/math.js';
 import { shoreZ } from './layout.js';
 import { partsToGeo, box, cyl } from './builders.js';
+import { TIDE_UNIFORMS } from './weather.js';
 
 function sailboatGeometry() {
   // Coque (prisme effilé), roof, mât, voiles triangulaires.
@@ -63,7 +64,8 @@ export class Boats {
       const roll = Math.sign(b.v) * b.heel + Math.sin(this.t * 0.7 + b.ph) * 0.03;
       this._e.set(pitch, b.v > 0 ? Math.PI / 2 : -Math.PI / 2, roll);
       this._q.setFromEuler(this._e);
-      this._m.compose(this._p.set(b.x, Math.sin(this.t * 0.8 + b.ph) * 0.15 - 0.2, b.z), this._q, this._s.setScalar(b.s));
+      // Flottaison sur la mer, qui monte et descend avec la marée.
+      this._m.compose(this._p.set(b.x, TIDE_UNIFORMS.tdLevel.value + Math.sin(this.t * 0.8 + b.ph) * 0.15 - 0.2, b.z), this._q, this._s.setScalar(b.s));
       this.mesh.setMatrixAt(i, this._m);
     }
     this.mesh.instanceMatrix.needsUpdate = true;

@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { truckTexture } from '../world/textures.js';
+import { addCloudShadows } from '../world/sky.js';
 
 // Cotes principales (m).
 export const TRUCK_DIM = {
@@ -659,6 +660,11 @@ export function buildTruckModel({ textureScale = 1 } = {}) {
   const lightMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.12, metalness: 0, emissive: new THREE.Color(1, 1, 1), emissiveMap: lightTex, emissiveIntensity: 7 });
   const glassMat = new THREE.MeshStandardMaterial({ color: new THREE.Color('#0d1317'), roughness: 0.03, metalness: 0, transparent: true, opacity: 0.55, envMapIntensity: 1.6, depthWrite: false });
   glassMat.name = 'truckGlass';
+  // Ombres des nuages sur le camion, comme sur le sol.
+  for (const [m, k] of [[bodyMat, 'body'], [lightMat, 'light'], [glassMat, 'glass']]) {
+    m.onBeforeCompile = (sh) => addCloudShadows(sh);
+    m.customProgramCacheKey = () => `truck-${k}`;
+  }
 
   const lgList = [];
   const col = new THREE.Color();

@@ -2,6 +2,7 @@
 // la tenue associe zone → emplacement (couleur linéaire, rugosité, sheen tissu, vernis cuir/yeux). Occlusion par sommet.
 import * as THREE from 'three';
 import { ZONE_COUNT, SLOT_COUNT } from './zones.js';
+import { addCloudShadows } from '../../world/sky.js';
 
 const ZV = Math.ceil(ZONE_COUNT / 4);
 
@@ -72,6 +73,7 @@ function patch(shader, mat) {
 #endif
   }`,
     );
+  addCloudShadows(shader);
 }
 
 const PROGRAM_KEY = 'strides-human-v1';

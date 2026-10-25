@@ -20,8 +20,9 @@ void main() {
   vec3 c = camPos + vec3( -BOX * 0.5, -8.0, -BOX * 0.5 );
   p.xz = mod( p.xz - camPos.xz + BOX * 0.5, BOX ) + c.xz;
   p.y += c.y;
-  // Traînée : l'extrémité est décalée selon la vitesse de chute et le vent.
-  p += tip * vec3( wind.x * 0.06, 0.55 + seed * 0.25, wind.y * 0.06 );
+  // Traînée : l'extrémité haute est décalée selon la vitesse de chute et du côté d'où vient le vent
+  // (la goutte descend sous le vent).
+  p += tip * vec3( - wind.x * 0.06, 0.55 + seed * 0.25, - wind.y * 0.06 );
   float keep = step( seed, intensity );
   vA = keep * ( 0.18 + 0.2 * ( 1.0 - tip ) ) * ( 1.0 - smoothstep( 14.0, 23.0, distance( p.xz, camPos.xz ) ) );
   gl_Position = projectionMatrix * viewMatrix * vec4( p, 1.0 );
