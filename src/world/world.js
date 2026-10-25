@@ -15,7 +15,7 @@ import {
   PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, lampGeo, benchGeo, parasolGeo,
   roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, carGeo, awningGeo, planterGeo,
 } from './builders.js';
-import { buildGrassMask } from './grass.js';
+import { buildGrassMask, clearGrassUnder } from './grass.js';
 import { Vegetation } from './vegetation.js';
 import { createHorseMesh } from '../entities/horseModel.js';
 import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture } from './textures.js';
@@ -102,6 +102,7 @@ export class World {
     this.chunks.push(...this.glass.build(this.glassMat, this.group, { castShadow: false, name: 'glass' }));
     this.chunks.push(...this.lights.build(this.lightMat, this.group, { castShadow: false, receiveShadow: false, name: 'lights' }));
     this.veg.build((x, z) => this.h(x, z));
+    clearGrassUnder(this.grassMask, this.features.buildings);
     progress(0.9, 'Prêt');
   }
 
