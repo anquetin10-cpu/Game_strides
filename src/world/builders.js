@@ -109,7 +109,7 @@ function pitchedRoof(parts, w, rise, d, ov, roofC, wallC, soffitC, tf) {
  * Maisons à colombage du Pays d'Auge (poteaux serrés dessinés par le shader, sablières, poteaux d'angle,
  * guettes, étage en encorbellement), pignons maçonnés, lucarnes, avant-corps à pignon sur les longues façades,
  * gouttières et descentes, cheminées à mitrons.
- * Retourne { body, glass } (géométries locales peintes).
+ * Retourne { body, glass } (géométries locales peintes) et bays : emprises locales des avant-corps [x, z, demi-largeur, demi-profondeur].
  */
 export function buildingGeo({
   w, d, h, wall = PALETTE.walls[0], roof = PALETTE.roofs[0], roofType = 'gable', roofH = null,
@@ -118,6 +118,7 @@ export function buildingGeo({
 }) {
   const body = [];
   const glass = [];
+  const bayRects = [];
   const fl = floors ?? Math.max(1, Math.floor(h / 3));
   const hsh = (k) => {
     const s = Math.sin(w * 12.9898 + d * 78.233 + k * 4.137) * 43758.5453;
@@ -142,10 +143,11 @@ export function buildingGeo({
   const pitched = roofType === 'gable' || roofType === 'hip';
   const soffit = timber ? beamC : '#d8d3c8';
   const R = D / 2 + over + 0.45;
+  // Abaissement de l'égout au bord du débord (le pan coupe le mur à la hauteur h).
+  const drop = (rh * 0.45) / R;
   if (roofType === 'gable') pitchedRoof(body, L + 2 * over, rh, D + 2 * over, 0.45, roof, wallC, soffit, { y: h, ry: along ? 0 : Math.PI / 2 });
   else if (roofType === 'hip') {
     const hip = hipRoof(L + 2 * over, rh, D + 2 * over, 0.45);
-    const drop = (rh * 0.45) / R;
     body.push([hip, roof, { y: h - drop, ry: along ? 0 : Math.PI / 2 }]);
     body.push([flipped(hip), soffit, { y: h - drop - 0.04, ry: along ? 0 : Math.PI / 2 }]);
   } else {
@@ -193,7 +195,9 @@ export function buildingGeo({
           const limit = roofType === 'hip' ? f.len / 2 - droof - bw / 2 - 0.3 : f.len / 2 - bw / 2 - 0.4;
           if (Math.abs(tb) > limit || roofY(sb) > h + rh - 0.2) continue;
           bayCols.add(c0).add(c0 + 1);
-          body.push([box(bw, h + 2, proj), wallC, { ...at(f, tb, f.off + proj / 2), y: -2, ry: f.ry }]);
+          const bc = at(f, tb, f.off + proj / 2);
+          bayRects.push([bc.x, bc.z, f.nx === 0 ? bw / 2 : proj / 2, f.nx === 0 ? proj / 2 : bw / 2]);
+          body.push([box(bw, h + 2, proj), wallC, { ...bc, y: -2, ry: f.ry }]);
           pitchedRoof(body, droof, rbh, bw, 0.35, roof, wallC, soffit, { ...at(f, tb, f.off + proj - droof / 2), y: h, ry: f.ry + Math.PI / 2 });
           if (trim) body.push([box(bw + 0.1, 0.22, 0.12), trim, { ...at(f, tb, f.off + proj + 0.02), y: h - 0.22, ry: f.ry }]);
         }
@@ -280,14 +284,19 @@ export function buildingGeo({
         }
       }
     }
-    // Gouttière pendante en zinc et descentes aux deux bouts.
+    // Gouttière pendante en zinc sous le bord du débord, descentes le long du mur aux deux bouts et coudes jusqu'à la gouttière.
     if (!bayCols.size) {
       const zinc = '#8d9296';
-      body.push([box(f.len + 2 * over + 0.9, 0.13, 0.15), zinc, { ...at(f, 0, f.off + over + 0.42), y: h - 0.16, ry: f.ry }]);
-      for (const sd of [-1, 1]) body.push([box(0.09, h - 0.15, 0.09), zinc, { ...at(f, sd * (f.len / 2 + over - 0.25), f.off + over + 0.1), y: 0, ry: f.ry }]);
+      const yg = h - drop - 0.13, kg = f.off + over + 0.52, kp = f.off + over + 0.1;
+      body.push([box(f.len + 2 * over + 0.9, 0.13, 0.15), zinc, { ...at(f, 0, kg), y: yg, ry: f.ry }]);
+      for (const sd of [-1, 1]) {
+        const tp = sd * (f.len / 2 + over - 0.25);
+        body.push([box(0.09, yg - 0.3, 0.09), zinc, { ...at(f, tp, kp), y: 0, ry: f.ry }]);
+        body.push([box(0.09, Math.hypot(kg - kp, 0.3), 0.09), zinc, { ...at(f, tp, kp), y: yg - 0.3, ry: f.ry, rx: Math.atan2(kg - kp, 0.3) }]);
+      }
     }
   });
-  return { body: partsToGeo(body), glass: glass.length ? partsToGeo(glass) : null };
+  return { body: partsToGeo(body), glass: glass.length ? partsToGeo(glass) : null, bays: bayRects };
 }
 
 // Écurie : rangée de boxes ouvrant vers +Z.
@@ -299,17 +308,23 @@ export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = P
   const zf = d / 2;
   parts.push([box(w, h + 2, d), wall, { y: -2 }]);
   parts.push([box(w + 0.2, 2.45, d + 0.2), '#8a877f', { y: -2 }]);
-  // Toit avec débord formant auvent, rives et faîtage.
-  parts.push([gableRoof(w, d * 0.42, d, 1.6), roof, { y: h }]);
-  parts.push([box(w + 3.3, 0.12, 0.2), '#2b2d31', { y: h + d * 0.42 - 0.02 }]);
+  // Toit avec débord formant auvent (sous-face visible d'en bas, 10 cm sous la couverture), rives et faîtage.
+  const rise = d * 0.42;
+  const roofG = gableRoof(w, rise, d, 1.6);
+  parts.push([roofG, roof, { y: h }]);
+  parts.push([flipped(roofG), roof, { y: h - 0.1 }]);
+  parts.push([box(w + 3.3, 0.12, 0.2), '#2b2d31', { y: h + rise - 0.02 }]);
   parts.push([box(w + 0.1, 0.22, d + 0.1), trim, { y: h - 0.22 }]);
-  // Gouttières (demi-rondes) et descentes.
+  // Gouttières demi-rondes ouvertes vers le haut (visibles des deux côtés) sous le bord du toit, et descentes.
   for (const side of [-1, 1]) {
-    const g = new THREE.CylinderGeometry(0.07, 0.07, w + 3.2, 8, 1, true, 0, Math.PI);
-    g.rotateZ(Math.PI / 2);
-    parts.push([prep(g), '#8b9096', { y: h - 0.62, z: side * (zf + 1.62) }]);
-    for (const sx of [-1, 1]) parts.push([cyl(0.045, 0.045, h - 0.6, 6), '#8b9096', { x: sx * (w / 2 + 1.5), z: side * (zf + 1.62) }]);
+    const g = prep(new THREE.CylinderGeometry(0.07, 0.07, w + 3.2, 8, 1, true, Math.PI, Math.PI).rotateZ(Math.PI / 2));
+    const zg = side * (zf + 1.67);
+    parts.push([g, '#8b9096', { y: h - 0.11, z: zg }]);
+    parts.push([flipped(g), '#8b9096', { y: h - 0.11, z: zg }]);
+    for (const sx of [-1, 1]) parts.push([cyl(0.045, 0.045, h - 0.17, 6), '#8b9096', { x: sx * (w / 2 + 1.5), z: zg }]);
   }
+  // Poteaux d'auvent jusque sous la couverture (hauteur du pan au droit de leur face extérieure).
+  const postH = h + (rise * 0.07) / (zf + 1.6);
   const step = w / boxes;
   for (let i = 0; i < boxes; i++) {
     const x = -w / 2 + step * (i + 0.5);
@@ -335,7 +350,7 @@ export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = P
     glass.push([winBox(0.12, 0.08, 0.08, 0), '#fff1c9', { x: x - step * 0.36, y: 2.5, z: zf + 0.11 }]);
     parts.push([box(0.14, h, 0.16), trim, { x: -w / 2 + step * i, y: 0, z: zf + 0.06 }]);
     // Poteaux d'auvent (un sur deux).
-    if (i % 2 === 0) parts.push([box(0.16, h - 0.1, 0.16), trim, { x: -w / 2 + step * i, z: zf + 1.45 }]);
+    if (i % 2 === 0) parts.push([box(0.16, postH, 0.16), trim, { x: -w / 2 + step * i, z: zf + 1.45 }]);
     // Fenêtre arrière avec cadre.
     parts.push([box(1.12, 0.82, 0.08), trim, { x, y: 2.54, z: -zf - 0.03 }]);
     glass.push([winBox(1, 0.7, 0.12), PALETTE.glass, { x, y: 2.6, z: -zf - 0.05 }]);
@@ -347,7 +362,7 @@ export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = P
     }
   }
   parts.push([box(0.14, h, 0.16), trim, { x: w / 2, y: 0, z: zf + 0.06 }]);
-  parts.push([box(0.16, h - 0.1, 0.16), trim, { x: w / 2, z: zf + 1.45 }]);
+  parts.push([box(0.16, postH, 0.16), trim, { x: w / 2, z: zf + 1.45 }]);
   // Dalle béton devant les boxes.
   parts.push([box(w + 1.2, 0.08, 2.0), '#a6a39b', { y: -0.04, z: zf + 1.0 }]);
   return { body: partsToGeo(parts), glass: partsToGeo(glass) };
@@ -461,9 +476,9 @@ export function benchGeo() {
   return partsToGeo(parts);
 }
 
-// Parasol de plage : toile à huit panneaux légèrement creusée, lambrequins festonnés, mât à rotule, embout.
+// Parasol de plage : toile à huit panneaux légèrement creusée, lambrequins festonnés, mât à rotule (jusqu'au sommet de la toile), embout.
 export function parasolGeo(c1, c2) {
-  const parts = [[cyl(0.025, 0.03, 2.5, 6), '#f2f1ec'], [cyl(0.04, 0.04, 0.08, 6), '#b9b4a8', { y: 1.4 }], [ico(0.05, 0), '#f2f1ec', { y: 2.98 }]];
+  const parts = [[cyl(0.025, 0.03, 2.95, 6), '#f2f1ec'], [cyl(0.04, 0.04, 0.08, 6), '#b9b4a8', { y: 1.4 }], [ico(0.05, 0), '#f2f1ec', { y: 2.98 }]];
   const n = 8, R = 1.45;
   for (let i = 0; i < n; i++) {
     const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
