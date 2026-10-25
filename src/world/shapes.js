@@ -69,8 +69,11 @@ export function hipRoof(w, h, d, overhang = 0.4) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
   g.setIndex(idx);
-  g.computeVertexNormals();
-  return g;
+  // Pans plans : sommets propres à chaque pan (normales non lissées entre pans), sinon le repère des
+  // ardoises et des tuiles tourne d'un bord à l'autre du pan et le motif se change en stries.
+  const flat = g.toNonIndexed();
+  flat.computeVertexNormals();
+  return prep(flat);
 }
 
 // Segment cylindrique entre deux points (membres, cous, poteaux inclinés).

@@ -291,16 +291,21 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   }
   float plow = smoothstep( 0.9, 0.98, wS );
   if ( plow > 0.01 ) {
-    float fur = 0.5 + 0.5 * sin( p.y * 14.96 + dM.r * 2.5 );
+    // Sillons de 0,42 m : ramenés à leur moyenne dès que la période ne couvre plus assez de pixels (pas de moiré).
+    float furW = 1.0 - smoothstep( 0.8, 2.0, fwidth( p.y ) * 14.96 );
+    float fur = mix( 0.5, 0.5 + 0.5 * sin( p.y * 14.96 + dM.r * 2.5 ), furW );
     stH = mix( stH, ( fur * 1.1 + sH * 0.35 ) * stFade, plow * midW );
     tint *= mix( 1.0, mix( 0.84, 1.08, fur ), plow * midW );
   }
-  // Falaises et talus raides : roche stratifiée (projection latérale).
+  // Falaises et talus raides : roche stratifiée (projections latérales selon x et z, fondues l'une dans
+  // l'autre vers 45° : pas de couture où le motif, le mip et le relief sauteraient).
   float rock = smoothstep( 0.8, 0.55, vWorldNrm.y );
   if ( rock > 0.0 ) {
-    vec2 rp = abs( vWorldNrm.x ) > abs( vWorldNrm.z ) ? vWorldPos.zy : vWorldPos.xy;
-    vec4 r1 = texture2D( detailMap, rp * vec2( 0.11, 0.45 ) );
-    vec4 r2 = texture2D( detailMap, rp * 0.6 + 0.2 );
+    vec2 rw = vWorldNrm.xz * vWorldNrm.xz;
+    rw *= rw;
+    rw /= rw.x + rw.y + 1e-5;
+    vec4 r1 = texture2D( detailMap, vWorldPos.zy * vec2( 0.11, 0.45 ) ) * rw.x + texture2D( detailMap, vWorldPos.xy * vec2( 0.11, 0.45 ) ) * rw.y;
+    vec4 r2 = texture2D( detailMap, vWorldPos.zy * 0.6 + 0.2 ) * rw.x + texture2D( detailMap, vWorldPos.xy * 0.6 + 0.2 ) * rw.y;
     float rH = r1.r * 0.6 + r2.b * 0.4;
     tint = mix( tint, vec3( mix( 0.75, 1.15, r1.g ) * mix( 0.85, 1.05, r2.r ) ), rock );
     stH = mix( stH, rH * 1.6, rock );
