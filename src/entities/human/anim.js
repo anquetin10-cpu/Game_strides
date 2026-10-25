@@ -14,6 +14,14 @@ const frac = (x) => x - Math.floor(x);
 const TAU = Math.PI * 2;
 
 const NAMES = ['hips', 'spine', 'chest', 'neck', 'head', 'hairTail', 'lClav', 'lArm', 'lFore', 'lHand', 'lFing', 'rClav', 'rArm', 'rFore', 'rHand', 'rFing', 'lThigh', 'lShin', 'lFoot', 'lToe', 'rThigh', 'rShin', 'rFoot', 'rToe'];
+const SIDES = ['l', 'r'];
+const ONLY_R = ['r'];
+// Noms d'os par côté (pas de concaténation de chaînes à chaque image).
+const BN = {};
+for (const s of SIDES) {
+  BN[s] = {};
+  for (const n of ['Clav', 'Arm', 'Fore', 'Hand', 'Fing', 'Thigh', 'Shin', 'Foot', 'Toe']) BN[s][n] = s + n;
+}
 
 // ---------- Temporaires (aucune allocation par image) ----------
 const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _v4 = new THREE.Vector3(), _v5 = new THREE.Vector3();
@@ -53,11 +61,11 @@ function forwardTrunk(B, P) {
   mq.neck.copy(mq.chest).multiply(q.neck);
   mp.spine.copy(B.spine.userData.rest).applyQuaternion(mq.hips).add(P.hips);
   mp.chest.copy(B.chest.userData.rest).applyQuaternion(mq.spine).add(mp.spine);
-  for (const s of ['l', 'r']) {
-    mq[s + 'Clav'].copy(mq.chest).multiply(q[s + 'Clav']);
-    mp[s + 'Clav'].copy(B[s + 'Clav'].userData.rest).applyQuaternion(mq.chest).add(mp.chest);
-    mp[s + 'Arm'].copy(B[s + 'Arm'].userData.rest).applyQuaternion(mq[s + 'Clav']).add(mp[s + 'Clav']);
-    mp[s + 'Thigh'].copy(B[s + 'Thigh'].userData.rest).applyQuaternion(mq.hips).add(P.hips);
+  for (const s of SIDES) {
+    mq[BN[s].Clav].copy(mq.chest).multiply(q[BN[s].Clav]);
+    mp[BN[s].Clav].copy(B[BN[s].Clav].userData.rest).applyQuaternion(mq.chest).add(mp.chest);
+    mp[BN[s].Arm].copy(B[BN[s].Arm].userData.rest).applyQuaternion(mq[BN[s].Clav]).add(mp[BN[s].Clav]);
+    mp[BN[s].Thigh].copy(B[BN[s].Thigh].userData.rest).applyQuaternion(mq.hips).add(P.hips);
   }
 }
 
@@ -105,25 +113,25 @@ function lookQ(out, fwd, up) {
 // ---------- Jambes : cible cheville + orientation du pied ----------
 function solveLeg(B, P, side, footPos, footQ, toeAngle, pole) {
   const s = side;
-  const T = B[s + 'Thigh'], S = B[s + 'Shin'], F = B[s + 'Foot'];
+  const T = B[BN[s].Thigh], S = B[BN[s].Shin], F = B[BN[s].Foot];
   // cible cheville = position du pied (cheville)
-  ik2(P.mp[s + 'Thigh'], P.mq.hips, S.userData.rest, F.userData.rest, footPos, pole, 1, 1, P.q[s + 'Thigh'], P.q[s + 'Shin'], P.mq[s + 'Shin']);
-  P.q[s + 'Foot'].copy(P.mq[s + 'Shin']).invert().multiply(footQ);
-  qAxis(P.q[s + 'Toe'], X, -toeAngle);
+  ik2(P.mp[BN[s].Thigh], P.mq.hips, S.userData.rest, F.userData.rest, footPos, pole, 1, 1, P.q[BN[s].Thigh], P.q[BN[s].Shin], P.mq[BN[s].Shin]);
+  P.q[BN[s].Foot].copy(P.mq[BN[s].Shin]).invert().multiply(footQ);
+  qAxis(P.q[BN[s].Toe], X, -toeAngle);
 }
 
 function solveArm(B, P, side, handPos, pole, handQ) {
   const s = side;
-  const A = B[s + 'Arm'], Fo = B[s + 'Fore'], H = B[s + 'Hand'];
-  ik2(P.mp[s + 'Arm'], P.mq[s + 'Clav'], Fo.userData.rest, H.userData.rest, handPos, pole, -1, -1, P.q[s + 'Arm'], P.q[s + 'Fore'], P.mq[s + 'Fore']);
-  if (handQ) P.q[s + 'Hand'].copy(P.mq[s + 'Fore']).invert().multiply(handQ);
+  const A = B[BN[s].Arm], Fo = B[BN[s].Fore], H = B[BN[s].Hand];
+  ik2(P.mp[BN[s].Arm], P.mq[BN[s].Clav], Fo.userData.rest, H.userData.rest, handPos, pole, -1, -1, P.q[BN[s].Arm], P.q[BN[s].Fore], P.mq[BN[s].Fore]);
+  if (handQ) P.q[BN[s].Hand].copy(P.mq[BN[s].Fore]).invert().multiply(handQ);
 }
 
 // Bras en cinématique directe : balancier (x), écart (z), coude, poignet.
 function armFK(P, side, swing, abd, elbow, twist = 0) {
   const sg = side === 'l' ? 1 : -1;
-  qEuler(P.q[side + 'Arm'], -swing, twist * sg, abd * sg);
-  qAxis(P.q[side + 'Fore'], X, -elbow);
+  qEuler(P.q[BN[side].Arm], -swing, twist * sg, abd * sg);
+  qAxis(P.q[BN[side].Fore], X, -elbow);
 }
 
 // Pied posé : position de la cheville selon le point d'appui (talon / plante) et le tangage.
@@ -191,7 +199,7 @@ function locomotion(B, P, st, dt, info, opts) {
   // Pieds
   const stepW = lerp(info.hipHalf * 1.05, info.hipHalf * 0.72, run) + idle * 0.018;
   const lift = lerp(0.05 + 0.025 * Math.min(v, 2.5), 0.11 + 0.025 * Math.min(v, 7), run) * moving;
-  for (const side of ['l', 'r']) {
+  for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const u = frac(ph + (side === 'l' ? 0 : 0.5));
     let z, y = 0, pitch = 0, toe = 0;
@@ -228,8 +236,8 @@ function locomotion(B, P, st, dt, info, opts) {
   // Abaisser le bassin si une cheville est hors de portée.
   const hipsQ = qEuler(P.q.hips, lean * 0.4, yaw, roll);
   P.mq.hips.copy(hipsQ);
-  for (const side of ['l', 'r']) {
-    const hj = _v1.copy(B[side + 'Thigh'].userData.rest).applyQuaternion(hipsQ).add(P.hips);
+  for (const side of SIDES) {
+    const hj = _v1.copy(B[BN[side].Thigh].userData.rest).applyQuaternion(hipsQ).add(P.hips);
     const fp = P.feet[side].pos;
     const dx = hj.x - fp.x, dz = hj.z - fp.z;
     const reach = legLen * 0.992;
@@ -244,7 +252,7 @@ function locomotion(B, P, st, dt, info, opts) {
   qEuler(P.q.head, -lean * 0.25 + 0.02, ws.look * 0.6 * idle + yaw * 0.3, roll * 0.25);
   forwardTrunk(B, P);
   const pole = _v4.set(0, 0, 1);
-  for (const side of ['l', 'r']) {
+  for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const f = P.feet[side];
     solveLeg(B, P, side, f.pos, f.q, f.toe, _v5.set(sg * 0.12, 0, 1).normalize());
@@ -252,16 +260,16 @@ function locomotion(B, P, st, dt, info, opts) {
   void pole;
   // Bras : balancier opposé aux jambes ; course : coudes à 90°, poings.
   const swingA = (lerp(0.2 + 0.09 * Math.min(v, 2.5), 0.5 + 0.03 * Math.min(v, 7), run)) * moving;
-  for (const side of ['l', 'r']) {
+  for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const c = Math.cos(TAU * (ph + (side === 'l' ? 0 : 0.5)));
     const sw = -swingA * c + 0.04 * moving;
     const elbow = lerp(0.22 + Math.max(0, sw) * 0.5, 1.45 + Math.max(0, sw) * 0.25, run) + idle * 0.08;
     const abd = 0.07 + run * 0.05 + idle * (side === 'l' ? shift : -shift) * 0.02 + breath * 0.004;
     armFK(P, side, sw + idle * 0.02, abd, elbow, run * 0.25);
-    qEuler(P.q[side + 'Hand'], 0.05, 0, -sg * 0.08);
-    qAxis(P.q[side + 'Fing'], Zv, -sg * (0.15 + run * 0.9));
-    qEuler(P.q[side + 'Clav'], 0, -sg * sw * 0.08, breath * 0.012 * sg);
+    qEuler(P.q[BN[side].Hand], 0.05, 0, -sg * 0.08);
+    qAxis(P.q[BN[side].Fing], Zv, -sg * (0.15 + run * 0.9));
+    qEuler(P.q[BN[side].Clav], 0, -sg * sw * 0.08, breath * 0.012 * sg);
   }
   return { ph, run, moving };
 }
@@ -271,14 +279,14 @@ function gestures(B, P, st, pose, info) {
   const t = st.t || 0;
   forwardTrunk(B, P);
   if (pose === 'wave' || pose === 'cheer') {
-    for (const side of pose === 'cheer' ? ['l', 'r'] : ['r']) {
+    for (const side of pose === 'cheer' ? SIDES : ONLY_R) {
       const sg = side === 'l' ? 1 : -1;
       const w = Math.sin(t * (pose === 'cheer' ? 7 : 8.5) + (side === 'l' ? 1 : 0));
       // bras levé (abduction ~150°), avant-bras qui balaie
-      qEuler(P.q[side + 'Arm'], -0.35, 0, sg * (2.55 + (pose === 'cheer' ? 0.15 * w : 0)));
-      qEuler(P.q[side + 'Fore'], -0.25, 0, -sg * (pose === 'wave' ? 0.35 + 0.35 * w : 0.1));
-      qEuler(P.q[side + 'Clav'], 0, 0, sg * 0.18);
-      qAxis(P.q[side + 'Fing'], Zv, pose === 'cheer' ? -sg * 1.2 : sg * 0.25);
+      qEuler(P.q[BN[side].Arm], -0.35, 0, sg * (2.55 + (pose === 'cheer' ? 0.15 * w : 0)));
+      qEuler(P.q[BN[side].Fore], -0.25, 0, -sg * (pose === 'wave' ? 0.35 + 0.35 * w : 0.1));
+      qEuler(P.q[BN[side].Clav], 0, 0, sg * 0.18);
+      qAxis(P.q[BN[side].Fing], Zv, pose === 'cheer' ? -sg * 1.2 : sg * 0.25);
     }
     if (pose === 'cheer') {
       // petits sauts : bassin qui rebondit, pieds au sol (IK)
@@ -286,7 +294,7 @@ function gestures(B, P, st, pose, info) {
       P.hips.y -= 0.04 * (1 - j);
       P.hips.y += 0.035 * j;
       forwardTrunk(B, P);
-      for (const side of ['l', 'r']) {
+      for (const side of SIDES) {
         const sg = side === 'l' ? 1 : -1;
         const f = P.feet[side];
         f.pos.y += Math.max(0, j - 0.55) * 0.12;
@@ -297,12 +305,12 @@ function gestures(B, P, st, pose, info) {
     const c = Math.sin(t * 15);
     const sep = 0.035 + 0.075 * (c * 0.5 + 0.5);
     const cy = P.mp.chest.y + 0.02;
-    for (const side of ['l', 'r']) {
+    for (const side of SIDES) {
       const sg = side === 'l' ? 1 : -1;
       P.hands[side].set(sg * sep, cy - 0.06, 0.3);
       solveArm(B, P, side, P.hands[side], _v4.set(sg * 0.8, -0.6, -0.2).normalize(), null);
-      qEuler(P.q[side + 'Hand'], 0, sg * 0.4, sg * 0.2);
-      qAxis(P.q[side + 'Fing'], Zv, sg * 0.2);
+      qEuler(P.q[BN[side].Hand], 0, sg * 0.4, sg * 0.2);
+      qAxis(P.q[BN[side].Fing], Zv, sg * 0.2);
     }
   } else if (pose === 'sit') {
     P.hips.set(0, 0.48, -0.05);
@@ -310,7 +318,7 @@ function gestures(B, P, st, pose, info) {
     qEuler(P.q.spine, 0.12, 0, 0);
     qEuler(P.q.chest, 0.06, 0, 0);
     forwardTrunk(B, P);
-    for (const side of ['l', 'r']) {
+    for (const side of SIDES) {
       const sg = side === 'l' ? 1 : -1;
       const f = P.feet[side];
       plantFoot(f.pos, f.q, info, sg * 0.12, 0.38, 0, 0, sg * 0.12);
@@ -325,12 +333,12 @@ function gestures(B, P, st, pose, info) {
 function carryArms(B, P, st) {
   forwardTrunk(B, P);
   const c = st.carry || { w: 0.34, y: -0.2, z: 0.3 };
-  for (const side of ['l', 'r']) {
+  for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const h = P.hands[side].set(sg * c.w * 0.5, c.y, c.z).applyQuaternion(P.mq.chest).add(P.mp.chest);
     solveArm(B, P, side, h, _v4.set(sg * 0.7, -0.5, -0.4).normalize(), null);
-    qEuler(P.q[side + 'Hand'], -0.2, 0, sg * 0.5);
-    qAxis(P.q[side + 'Fing'], Zv, -sg * 0.9);
+    qEuler(P.q[BN[side].Hand], -0.2, 0, sg * 0.5);
+    qAxis(P.q[BN[side].Fing], Zv, -sg * 0.9);
   }
 }
 
@@ -394,7 +402,7 @@ function riding(B, P, st, dt, info) {
   qEuler(P.q.head, -totalPitch * 0.42 + 0.06 - R.jumpK * 0.08, 0, turn * 0.08);
   forwardTrunk(B, P);
   // Jambes : pied dans l'étrier (plante), talon bas, genou contre la selle, jambe à la sangle.
-  for (const side of ['l', 'r']) {
+  for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const f = P.feet[side];
     const heel = 0.32 + two * 0.12 + R.jumpK * 0.1;
@@ -406,7 +414,7 @@ function riding(B, P, st, dt, info) {
   }
   // Bras : mains au-dessus du garrot, rênes ajustées, main qui accompagne l'encolure ; rendre la main à l'obstacle.
   const nod = (walk * 0.025 + canter * 0.035 + gallop * 0.03) * Math.sin(TAU * (walk > 0.5 ? 2 : 1) * ph + 1.2);
-  for (const side of ['l', 'r']) {
+  for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     let hx = sg * fit.handX, hY = fit.handY - two * 0.07 - R.rel * 0.12, hZ = fit.handZ + two * 0.13 + R.rel * 0.22 + nod + R.post * 0.02;
     if (st.wave && side === 'l') hx = 0.01;
@@ -425,7 +433,7 @@ function riding(B, P, st, dt, info) {
     qAxis(_q3, X, -Math.PI / 2);
     _q2.multiply(_q3);
     solveArm(B, P, side, hp, _v4.set(sg * 0.45, -0.75, -0.5).normalize(), _q2);
-    qAxis(P.q[side + 'Fing'], Zv, -sg * 1.25);
+    qAxis(P.q[BN[side].Fing], Zv, -sg * 1.25);
   }
 }
 

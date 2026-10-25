@@ -150,6 +150,31 @@ export function splitSeams(pos, idx, tz, mergeMap = null) {
 
 // Simplification d'un niveau de détail : coutures préservées, importance par sommet (visage, mains).
 export function simplifyLOD(pos, idx, vz, imp, targetTris, opts = {}) {
+  // Étape préalable : réduire tout sauf la région protégée (visage) pour lui garder un budget.
+  if (opts.protect && opts.protectBudget) {
+    const nv0 = pos.length / 3;
+    const lock = new Uint8Array(nv0);
+    let nl = 0;
+    for (let v = 0; v < nv0; v++) if (opts.protect[v]) {
+      lock[v] = 1;
+      nl++;
+    }
+    let protTris = 0;
+    for (let i = 0; i < idx.length; i += 3) if (lock[idx[i]] && lock[idx[i + 1]] && lock[idx[i + 2]]) protTris++;
+    const stageTarget = protTris + Math.max(0, targetTris - opts.protectBudget);
+    if (stageTarget * 3 < idx.length) {
+      const P0 = new Float32Array(pos);
+      const I0 = new Uint32Array(idx);
+      const A0 = new Float32Array(nv0 * 3);
+      for (let v = 0; v < nv0; v++) for (let k = 0; k < 3; k++) A0[v * 3 + k] = pos[v * 3 + k] * imp[v];
+      const [cnt] = MeshoptSimplifier.simplifyWithUpdate(I0, P0, 3, A0, 3, [opts.attrWeight ?? 1, opts.attrWeight ?? 1, opts.attrWeight ?? 1], lock, stageTarget * 3, opts.maxErr ?? 0.05, ['ErrorAbsolute', ...(opts.flags || [])]);
+      const c = compact(P0, I0.subarray(0, cnt), 3, [Int32Array.from(vz), Float32Array.from(imp)]);
+      pos = c.pos;
+      idx = c.idx;
+      vz = c.extra[0];
+      imp = c.extra[1];
+    }
+  }
   const nv = pos.length / 3;
   const P = new Float32Array(pos);
   const I = new Uint32Array(idx);

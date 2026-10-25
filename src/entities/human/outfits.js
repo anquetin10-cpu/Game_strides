@@ -53,7 +53,7 @@ const mul = (c, r, g, b) => new THREE.Color(c.r * r, c.g * g, c.b * b);
 
 // Matières : [rugosité, sheen, vernis, rugosité du vernis]
 const PBR = {
-  skin: [0.5, 0.22, 0, 0], lips: [0.4, 0.12, 0.15, 0.25], eye: [0.25, 0, 0.9, 0.05], brow: [0.75, 0.25, 0, 0],
+  skin: [0.48, 0.14, 0, 0], lips: [0.4, 0.12, 0.15, 0.25], eye: [0.25, 0, 0.9, 0.05], brow: [0.75, 0.25, 0, 0],
   hair: [0.42, 0.5, 0, 0], wool: [0.8, 0.6, 0, 0], cotton: [0.78, 0.5, 0, 0], tech: [0.6, 0.45, 0.05, 0.4],
   breeches: [0.72, 0.55, 0, 0], denim: [0.88, 0.35, 0, 0], leather: [0.42, 0.05, 0.35, 0.3], boots: [0.36, 0, 0.85, 0.1],
   rubber: [0.85, 0, 0, 0], gloves: [0.55, 0.25, 0.1, 0.4], helmet: [0.6, 0.4, 0.05, 0.5], helmet2: [0.38, 0.05, 0.5, 0.15],
@@ -96,7 +96,7 @@ export function resolveOutfit(outfit = {}, name = '') {
 
   // Palette
   const skinHex = outfit.skin || pickR(r, SKIN_TONES);
-  const skin = lin(skinHex, 0.03, 0.62);
+  const skin = lin(skinHex, 0.03, 0.56);
   const hairHex = outfit.hair || pickR(r, HAIR_COLORS);
   const hairC = lin(hairHex, 0.012, 0.55);
   const slots = new Array(SLOT_COUNT);

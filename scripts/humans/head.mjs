@@ -53,7 +53,7 @@ export function buildHead(sex, J, bone) {
     const c = ec(sd);
     const upper = mask(0.0011, H(sphere(c, R(0.0129)), 'lid'), (x, y, z) => {
       const lx = ((x - c[0]) / s) * sd, ly = (y - c[1]) / s, lz = (z - c[2]) / s;
-      return 0.0036 - ly + lz * 0.1 + lx * 0.04 + lx * lx * 4.2 - Math.max(0, lz - 0.008) * 0.6;
+      return 0.0045 - ly + lz * 0.1 + lx * 0.04 + lx * lx * 4.6 - Math.max(0, lz - 0.008) * 0.6;
     });
     const lower = mask(0.0011, H(sphere(c, R(0.0124)), 'lid'), (x, y, z) => {
       const lx = ((x - c[0]) / s) * sd, ly = (y - c[1]) / s;
@@ -75,9 +75,9 @@ export function buildHead(sex, J, bone) {
   // Lèvres (arc de Cupidon), fente buccale.
   const lw = F.lipW;
   const lips = union(0.0024, [
-    H(ellipsoid(P(0, -0.0188, 0.0948), R([0.0198 * lw, F.lipU, 0.0054]), [-0.25, 0, 0]), 'lips'),
-    ...both((sd) => H(ellipsoid(P(0.0056 * sd, -0.0182, 0.0951), R([0.0074, F.lipU * 0.75, 0.0047]), [-0.22, 0, 0]), 'lips')),
-    H(ellipsoid(P(0, -0.0303, 0.0929), R([0.017 * lw, F.lipL, 0.0058]), [0.25, 0, 0]), 'lips'),
+    H(ellipsoid(P(0, -0.0188, 0.0957), R([0.0198 * lw, F.lipU, 0.0055]), [-0.25, 0, 0]), 'lips'),
+    ...both((sd) => H(ellipsoid(P(0.0056 * sd, -0.0182, 0.0957), R([0.0074, F.lipU * 0.75, 0.0047]), [-0.22, 0, 0]), 'lips')),
+    H(ellipsoid(P(0, -0.0303, 0.0937), R([0.017 * lw, F.lipL, 0.0059]), [0.25, 0, 0]), 'lips'),
   ]);
   const slit = H(ellipsoid(P(0, -0.0246, 0.0985), R([0.0218 * lw, 0.0007, 0.0085])), 'slit');
   const philtrum = H(capsule(P(0, -0.006, 0.1018), P(0, -0.0135, 0.1006), R(0.0014)), 'slit');

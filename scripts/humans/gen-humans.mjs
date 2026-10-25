@@ -2,6 +2,7 @@
 // LOD (meshoptimizer) → normales/poids/occlusion → données compactes dans src/entities/human/data/.
 // Usage : node scripts/humans/gen-humans.mjs [nom...]   (sans argument : tout)
 import { writeFileSync, mkdirSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { Evaluator } from './sdf.mjs';
 import { meshSDF } from './mesher.mjs';
 import { ready, simplifyPositions, cutZones, splitSeams, simplifyLOD, optimize, bakeAO, skinWeights } from './mesh.mjs';
@@ -10,7 +11,8 @@ import { buildHairAssets } from './hair.mjs';
 import { encodeAsset } from './encode.mjs';
 import { Z, LOD_MERGE } from '../../src/entities/human/zones.js';
 
-const OUT = new URL('../../src/entities/human/data/', import.meta.url);
+// OUTDIR : dossier de sortie (par défaut les données du jeu).
+const OUT = process.env.OUTDIR ? pathToFileURL(process.env.OUTDIR.replace(/\/?$/, '/')) : new URL('../../src/entities/human/data/', import.meta.url);
 mkdirSync(OUT, { recursive: true });
 const args = process.argv.slice(2);
 const H = Number(process.env.H || 0.0025);
@@ -25,26 +27,38 @@ const BODIES = [
 
 const log = (...a) => console.log(...a);
 
-function importance(zone, p, headY) {
+// Importance (pondère l'erreur de simplification) et région protégée (visage) par sommet.
+function isFace(zone, p, headY, headZ) {
+  if (zone === Z.LIPS || zone === Z.SCLERA || zone === Z.IRIS || zone === Z.PUPIL || zone === Z.BROW || zone === Z.EYE_LOD || zone === Z.BEARD) return true;
+  return zone === Z.SKIN && p[1] > headY - 0.1 && p[2] > headZ + 0.035 && Math.abs(p[0]) < 0.075;
+}
+function importance(zone, p, headY, headZ) {
+  if (isFace(zone, p, headY, headZ)) return zone === Z.SKIN || zone === Z.BEARD ? 4.5 : 6;
   switch (zone) {
-    case Z.LIPS: case Z.SCLERA: case Z.IRIS: case Z.PUPIL: case Z.BROW: case Z.EYE_LOD: return 3.2;
-    case Z.SKIN: case Z.BEARD: case Z.SCALP: return p[1] > headY - 0.09 ? (p[2] > headY * 0 + 0.0 ? 2.6 : 1.5) : 1.2;
-    case Z.HAND: return 1.7;
-    case Z.HAIR: case Z.HAIR_TIE: return 1.2;
-    case Z.SOLE: case Z.FOOT: return 0.8;
+    case Z.SCALP: return 0.45;
+    case Z.SKIN: return p[1] > headY - 0.1 ? 1.4 : 1.1;
+    case Z.HAND: return 1.1;
+    case Z.HAIR: case Z.HAIR_TIE: return 1.1;
+    case Z.SOLE: return 0.3;
+    case Z.FOOT: return 0.45;
     default: return 1;
   }
 }
 
 // Construit les LOD d'une surface (corps, cheveux, coiffe) à partir d'un évaluateur et d'une fonction de zones.
-export function buildLODs(ev, cut, lods, { headY = 1.6, keep = null } = {}) {
+export function buildLODs(ev, cut, lods, { headY = 1.6, headZ = -0.012, faceBudget = null } = {}) {
   const out = [];
   for (let l = 0; l < lods.length; l++) {
     const sm = splitSeams(cut.pos, cut.idx, cut.tz, LOD_MERGE[l] || null);
     const nv = sm.pos.length / 3;
     const imp = new Float32Array(nv);
-    for (let v = 0; v < nv; v++) imp[v] = importance(sm.vz[v], [sm.pos[v * 3], sm.pos[v * 3 + 1], sm.pos[v * 3 + 2]], headY);
-    const s = simplifyLOD(sm.pos, sm.idx, sm.vz, imp, lods[l], { attrWeight: l === 0 ? 0.9 : 0.6, flags: l === 2 ? ['Regularize'] : ['RegularizeLight'] });
+    const prot = new Uint8Array(nv);
+    for (let v = 0; v < nv; v++) {
+      const p = [sm.pos[v * 3], sm.pos[v * 3 + 1], sm.pos[v * 3 + 2]];
+      imp[v] = importance(sm.vz[v], p, headY, headZ);
+      prot[v] = faceBudget && isFace(sm.vz[v], p, headY, headZ) ? 1 : 0;
+    }
+    const s = simplifyLOD(sm.pos, sm.idx, sm.vz, imp, lods[l], { attrWeight: l === 0 ? 0.9 : 0.6, flags: l === 2 ? ['Regularize'] : ['RegularizeLight'], protect: faceBudget ? prot : null, protectBudget: faceBudget ? faceBudget[l] : 0 });
     const n = s.pos.length / 3;
     const nrm = new Float32Array(n * 3);
     const ao = new Float32Array(n);
@@ -92,7 +106,7 @@ if (process.env.REGION) {
   const surf = meshSDF(ev, bb, Number(process.env.H || 0.0018), { log: (m) => log('  ' + m) });
   const pre = simplifyPositions(surf.pos, surf.idx, 60000, 0.0002);
   const cut = cutZones(pre.pos, pre.idx, ev, (x, y, z) => model.zoneOf(ev, x, y, z), (m) => log('  ' + m));
-  const meshes = buildLODs(ev, cut, [Number(process.env.TRIS || 3000)], { headY: J.head[1] });
+  const meshes = buildLODs(ev, cut, [Number(process.env.TRIS || 3000)], { headY: J.head[1], headZ: J.head[2], faceBudget: name === 'head' ? [Number(process.env.FACE || 1500)] : null });
   const enc = (await import('./encode.mjs')).encodeAsset(meshes);
   writeFileSync(new URL(`../../tests/e2e/out/humans/debug_${name}.js`, import.meta.url), `export default '${enc.b64}';\n`);
   log('ok');
@@ -109,7 +123,7 @@ for (const B of BODIES) {
   const pre = simplifyPositions(surf.pos, surf.idx, 140000, 0.00025);
   log(`  pré-simplifié : ${pre.idx.length / 3} triangles`);
   const cut = cutZones(pre.pos, pre.idx, ev, (x, y, z) => model.zoneOf(ev, x, y, z), (m) => log('  ' + m));
-  const meshes = buildLODs(ev, cut, B.lods, { headY: model.skel.rest.head[1] });
+  const meshes = buildLODs(ev, cut, B.lods, { headY: model.skel.rest.head[1], headZ: model.skel.rest.head[2], faceBudget: [1500, 260, 40] });
   total += writeAsset(B.name, meshes);
   log(`  ${((Date.now() - t0) / 1000).toFixed(1)} s`);
 }

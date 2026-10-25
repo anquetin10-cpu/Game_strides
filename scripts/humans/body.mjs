@@ -358,7 +358,7 @@ export function buildHuman(sex, variant, opts = {}) {
         return cos > 0.9905 ? Z.PUPIL : cos > 0.874 ? Z.IRIS : Z.SCLERA;
       }
     }
-    if (tagD.lips < 0.0009 && hz > 0.084) return Z.LIPS;
+    if (tagD.lips < 0.0013 && hz > 0.084) return Z.LIPS;
     // sourcils : arc fin au-dessus de l'œil
     if (hz > 0.07 && ax > 0.009 && ax < 0.05) {
       const u = (ax - 0.009) / 0.041;
