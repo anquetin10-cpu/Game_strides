@@ -18,6 +18,9 @@ function hrForSpeed(v) {
 
 const DEFAULTS = { energy: 100, hydration: 100, satiety: 100, clean: 100, hooves: 100, temp: 37.8 };
 
+// Simulation suspendue (dialogue, téléphone, écran de choix) : les besoins et l'effort ne progressent plus.
+export const SIM = { paused: false };
+
 export class HorseCondition {
   constructor(horse, saved = null) {
     this.horse = horse;

@@ -272,7 +272,7 @@ export class MissionManager {
       placeName: def.placeName,
       duration: def.duration,
       isNew: true,
-      createdAt: this.game.time,
+      createdAt: this.game.simClock,
       receivedClock: this.game.clockText?.(),
       ...extra,
     };
@@ -299,7 +299,7 @@ export class MissionManager {
     if (d.completed.includes('tuto')) {
       const jobs = this.offers.filter((o) => o.id.startsWith('job:'));
       // Les offres expirent au bout d'un moment (liquidité du marché).
-      for (const j of jobs) if (g.time - j.createdAt > 300 && !j.pinned) this.offers.splice(this.offers.indexOf(j), 1);
+      for (const j of jobs) if (g.simClock - j.createdAt > 300 && !j.pinned) this.offers.splice(this.offers.indexOf(j), 1);
       const n = this.offers.filter((o) => o.id.startsWith('job:')).length;
       if (n < 3) {
         const def = generateJob(g, this.jobSeq++, lv.level);
@@ -345,7 +345,7 @@ export class MissionManager {
       o.counter = null;
       // Réponse reçue : la demande n'est plus épinglée et repart pour une durée de vie complète.
       o.pinned = false;
-      o.createdAt = g.time;
+      o.createdAt = g.simClock;
       const who = o.client ? o.client.name : 'Le client';
       if (yes) {
         o.pay = c.amount;

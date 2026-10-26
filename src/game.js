@@ -30,7 +30,7 @@ import { Screens } from './ui/screens.js';
 import { buildMapImage } from './ui/minimap.js';
 import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
-import { installCare, HorseCondition } from './gameplay/condition.js';
+import { installCare, HorseCondition, SIM } from './gameplay/condition.js';
 import { Birds } from './world/birds.js';
 import { HoofPrints } from './world/hoofprints.js';
 import { Boats } from './world/boats.js';
@@ -53,6 +53,10 @@ export class Game {
       if (/[?&]metrics=1/.test(location.search)) this.metrics.listeners.push((e) => console.info('[mesure]', e.name, e.params));
     }
     this.time = 0;
+    // Horloge de simulation : suspendue (avec l'heure du monde, les besoins, la météo, les marées, les délais et
+    // chronos) tant qu'un dialogue, le téléphone ou un écran de choix est ouvert.
+    this.simClock = 0;
+    this.simPaused = false;
     this.horses = [];
     this.humans = [];
     this.vehicles = [];
@@ -840,9 +844,12 @@ export class Game {
     const d = this.save.data;
     const input = this.input;
     this.time += dt;
-    d.gameTime += (dt * 86400) / CONFIG.dayLength;
     input.poll();
     const overlayOpen = !!document.querySelector('.overlay');
+    this.simPaused = SIM.paused = this.state === 'play' && (this.phone.isOpen || overlayOpen || !!this.hud.dialogActive);
+    const sdt = this.simPaused ? 0 : dt;
+    this.simClock += sdt;
+    d.gameTime += (sdt * 86400) / CONFIG.dayLength;
 
     if (this.state === 'photo') {
       this.cam.update(dt, this.player.focus, input.look);
@@ -891,7 +898,7 @@ export class Game {
     // Gameplay.
     this._talker = this.player.mode !== 'drive' ? this.ambient.nearestTalker(this.player.focus.pos) : null;
     this.interact.update();
-    this.missions.update(dt);
+    this.missions.update(sdt);
     this.collectibles.update(dt);
     this.gps.update(dt);
     this.grass.update(dt, this.player.focus.pos);

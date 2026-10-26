@@ -4,7 +4,7 @@ import { createHorseMesh, animateHorse, gaitIndex, setHorseLod, setHorseTack, se
 import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
 import { WORLD } from '../world/layout.js';
-import { HorseCondition } from '../gameplay/condition.js';
+import { HorseCondition, SIM } from '../gameplay/condition.js';
 
 const SPEEDS = HORSE.gaits.map((g) => g.speed);
 
@@ -180,7 +180,7 @@ export class Horse {
     }
 
     this._slope = slope;
-    this.cond.update(dt);
+    this.cond.update(SIM.paused ? 0 : dt);
 
     // Saut.
     if (c.jump) {
