@@ -1,6 +1,7 @@
 // Ciel physique (diffusion de Rayleigh et de Mie, modèle de Preetham), nuages procéduraux, étoiles et lune,
 // lumière du soleil calculée à partir de l'atmosphère, éclairage d'ambiance (IBL) et brouillard atmosphérique.
 import * as THREE from 'three';
+import { sunDirection } from './sun.js';
 import { clamp, lerp, smoothstep } from '../core/math.js';
 import { coverAt, rainTarget, wind } from './weather.js';
 
@@ -376,13 +377,9 @@ export class Sky {
 
   // hour : 0..24 ; focus : position suivie par l'ombre portée.
   update(hour, focus, dt) {
-    // Course du soleil (Normandie, fin d'été) : lever ~6h30, coucher ~20h30, culmine à ~52°.
-    const dayFrac = (hour - 6.5) / 14;
-    const th = clamp(dayFrac, -0.25, 1.25) * Math.PI; // lever à +x, midi vers +z, coucher à -x
-    const alt = Math.sin(th) * 0.9;
-    const hx = Math.cos(th), hz = 0.45 + 0.35 * Math.max(0, Math.sin(th));
-    const hl = Math.hypot(hx, hz);
-    const sun = this.sunDir.set((hx / hl) * Math.cos(alt), Math.sin(alt), (hz / hl) * Math.cos(alt)).normalize();
+    // Course réelle du soleil à Deauville le 23 août (heure légale d'été) : lever 7 h 01 à l'est-nord-est, midi solaire
+    // 14 h 03 plein sud à 52°, coucher 21 h 04 à l'ouest-nord-ouest.
+    const sun = sunDirection(hour, this.sunDir);
     // Lune : à l'opposé, plus basse.
     this.moonDir.set(-sun.x, Math.max(0.25, Math.abs(sun.y) * 0.8 + 0.2), -sun.z).normalize();
     this.elevation = sun.y;

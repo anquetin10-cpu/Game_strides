@@ -6,6 +6,7 @@ import { STORY } from '../../src/gameplay/story.js';
 import { CHAPTER1 } from '../../src/gameplay/story2.js';
 import { TRUCK_SPEC } from '../../src/entities/truckPhysics.js';
 import { gaitIndex } from '../../src/entities/horse/anim.js';
+import { sunPosition, sunTimes, sunDirection } from '../../src/world/sun.js';
 
 // Audit de réalisme (docs/realisme.md) : grandeurs du jeu confrontées aux valeurs réelles de référence.
 const kmh = (ms) => ms * 3.6;
@@ -215,5 +216,36 @@ describe('parcours du Pôle : tracé cohérent', () => {
       expect(42 - Math.abs(x)).toBeGreaterThanOrEqual(8);
       expect(26 - Math.abs(z)).toBeGreaterThanOrEqual(8);
     }
+  });
+});
+
+describe('réalisme : course du soleil à Deauville (23 août)', () => {
+  it('lever ~7 h, midi solaire ~14 h (heure d’été), coucher ~21 h, ~14 h de jour', () => {
+    const t = sunTimes();
+    expect(t.sunrise).toBeGreaterThan(6.8);
+    expect(t.sunrise).toBeLessThan(7.2);
+    expect(t.noon).toBeGreaterThan(13.8);
+    expect(t.noon).toBeLessThan(14.2);
+    expect(t.sunset - t.sunrise).toBeGreaterThan(13.7);
+    expect(t.sunset - t.sunrise).toBeLessThan(14.3);
+  });
+  it('culmine plein sud à 90° − latitude + déclinaison (~52°)', () => {
+    const p = sunPosition(sunTimes().noon);
+    expect(p.alt).toBeCloseTo(90 - 49.36 + p.decl, 0);
+    expect(p.alt).toBeGreaterThan(50);
+    expect(p.alt).toBeLessThan(54);
+    expect(Math.abs(p.az - 180)).toBeLessThan(1);
+  });
+  it('se lève à l’est-nord-est, se couche à l’ouest-nord-ouest ; dans le monde : est = +x, nord (la mer) = -z', () => {
+    const t = sunTimes();
+    expect(sunPosition(t.sunrise).az).toBeGreaterThan(60);
+    expect(sunPosition(t.sunrise).az).toBeLessThan(80);
+    expect(sunPosition(t.sunset).az).toBeGreaterThan(280);
+    expect(sunPosition(t.sunset).az).toBeLessThan(300);
+    const v = sunDirection(t.noon, {});
+    expect(v.z).toBeGreaterThan(0.5); // plein sud : vers +z, dos à la mer
+    expect(Math.hypot(v.x, v.y, v.z)).toBeCloseTo(1, 6);
+    expect(sunDirection(10, {}).x).toBeGreaterThan(0);
+    expect(sunDirection(0, {}).y).toBeLessThan(-0.3); // nuit noire à minuit (minuit solaire vers 2 h)
   });
 });

@@ -9,6 +9,7 @@ import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
 import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm, realTideHeight } from '../world/weather.js';
+import { sunTimes } from '../world/sun.js';
 import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard, appToast, isStridesOffer } from './requests.js';
 import { renderActivities } from './activities-app.js';
@@ -740,6 +741,8 @@ export class Phone {
     const body = h('div.app-body.scrollable');
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
     body.appendChild(h('div.result-grid', {}, stat('Température', `${Math.round(temperature(day, hr))} °C`), stat('Vent', `${w.dir} ${w.kmh} km/h`), stat('Humidité', `${hum} %`)));
+    const sun = sunTimes();
+    body.appendChild(h('div.kv', { style: { marginTop: '10px' } }, h('span', { text: 'Soleil' }), h('b', { text: `lever ${hhmm(sun.sunrise)} · coucher ${hhmm(sun.sunset)}` })));
     body.appendChild(h('div.section-t', { text: 'Prochaines heures', style: { marginTop: '14px' } }));
     for (let k = 1; k <= 6; k++) {
       const t = T + k * 2, d2 = Math.floor(t / 24), h2 = t - d2 * 24;
