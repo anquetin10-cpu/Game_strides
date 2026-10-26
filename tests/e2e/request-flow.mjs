@@ -101,6 +101,7 @@ await E(() => {
 });
 await wait(500);
 // Première ouverture de Strides : la mention « missions, profils et sommes fictifs » se valide d'abord.
+await page.waitForSelector('[data-id="notice-ok"]', { timeout: 8000 }).catch(() => null);
 check('mention fictive affichée à la première ouverture', await E(() => /fictifs/.test(document.querySelector('.notice-sheet')?.textContent || '')));
 if (await page.$('[data-id="notice-ok"]')) {
   await page.tap('[data-id="notice-ok"]');

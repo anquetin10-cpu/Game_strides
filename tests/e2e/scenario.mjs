@@ -82,7 +82,7 @@ await shot('10-phone-home');
 await page.tap('[data-app="strides"]');
 await page.waitForTimeout(600);
 // Première ouverture : mention « missions, profils et sommes fictifs ».
-if (await page.$('[data-id="notice-ok"]')) {
+if (await page.waitForSelector('[data-id="notice-ok"]', { timeout: 8000 }).catch(() => null)) {
   await shot('11-strides-notice');
   await page.tap('[data-id="notice-ok"]');
   await page.waitForTimeout(300);
