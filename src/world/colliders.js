@@ -126,6 +126,26 @@ export class Colliders {
     });
     return top;
   }
+  // Point interdit à la caméra (à la hauteur y où elle serait) : obstacles hauts gonflés de `pad` (marge devant les
+  // murs et les troncs, plan proche compris), débord de toit (col.eave au-delà de l'emprise, sous-face à col.eaveY)
+  // dès que la caméra approche de sa hauteur — un piéton passe sous l'auvent, la caméra de conduite ne s'y glisse pas.
+  cameraBlocked(x, z, y, pad = 0.45) {
+    let res = false;
+    this.query(x, z, 2.2, (col) => {
+      if (res || y - 0.5 > col.top) return;
+      if (col.type === 'c') {
+        if (Math.hypot(x - col.x, z - col.z) < col.r + pad) res = true;
+      } else {
+        const e = col.eave && y > col.eaveY - 0.9 ? col.eave : 0;
+        const dx = x - col.x;
+        const dz = z - col.z;
+        const lx = dx * col.c - dz * col.s;
+        const lz = dx * col.s + dz * col.c;
+        if (Math.abs(lx) < col.hw + pad + e && Math.abs(lz) < col.hd + pad + e) res = true;
+      }
+    });
+    return res;
+  }
   // Point à l'intérieur d'un obstacle haut (pour la caméra).
   blocked(x, z, y = 0) {
     let res = false;

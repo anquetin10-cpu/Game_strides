@@ -142,7 +142,14 @@ export class World {
     if (geoPair.shutters) this.batch.addDetail(geoPair.shutters, null, x, y, z, rot, 1);
     if (geoPair.detail) this.batch.addDetail(geoPair.detail, null, x, y, z, rot);
     if (geoPair.glass) this.glass.add(ensureWin(geoPair.glass), null, x, y, z, rot);
-    if (collide) this.colliders.addBox(x, z, w / 2, d / 2, rot, Infinity, kind);
+    if (collide) {
+      const col = this.colliders.addBox(x, z, w / 2, d / 2, rot, Infinity, kind);
+      // Débord de toit (écuries) : la caméra l'évite quand elle arrive à sa hauteur (voir Colliders.cameraBlocked).
+      if (geoPair.eave) {
+        col.eave = geoPair.eave;
+        col.eaveY = y + geoPair.eaveY;
+      }
+    }
     // Avant-corps en saillie sur les façades : une boîte de collision chacun.
     if (collide && geoPair.bays) {
       const c = Math.cos(rot), s = Math.sin(rot);

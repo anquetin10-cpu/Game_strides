@@ -175,6 +175,8 @@ export class Transport {
     this._savedRef = null;
     this._stressT = 0;
     this._lastMood = 0;
+    this._closeT = 0; // temps écoulé depuis la demande de fermeture du pont (zone à dégager)
+    this._closeToast = false; // « prêt à partir » à afficher quand le pont est effectivement relevé
     this._setupInteractions();
     this.offers = new CompetitionOffers(game);
     game.bus.on('truck:bump', ({ speed }) => this._onBump(speed));
@@ -285,6 +287,24 @@ export class Transport {
     return Math.hypot(l.x * 0.7, l.z - back);
   }
 
+  // Place derrière le camion (pont, recul du cheval, meneur) : aucun obstacle fixe sur ~4,5 m derrière la charnière.
+  // Les points testés sont tous hors de la boîte de collision du camion lui-même.
+  _rearClear() {
+    const t = this.truck;
+    const c = this.game.colliders;
+    const y = t.pos.y + 1;
+    for (let z = D.hingeZ - 0.35; z > D.hingeZ - 4.8; z -= 0.6) {
+      for (let k = -1; k <= 1; k++) {
+        t.groundPoint(k * 1.25, z, _u);
+        if (c.blocked(_u.x, _u.z, y)) {
+          this.game.hud.toast('Pas assez de place derrière le camion : avance de quelques mètres.');
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   // Action secondaire pour le HUD (la principale passe par le système d'interactions).
   secondary() {
     const c = this.cands;
@@ -308,24 +328,27 @@ export class Transport {
         this.release();
         break;
       case 'open':
+        if (!this._rearClear()) break;
         if (t.openRamp()) {
           t.hazard = true;
           this.preferUnload = this.aboard.length > 0;
+          this._closeToast = false;
           this._persist();
         }
         break;
       case 'close':
         if (t.closeRamp()) {
           this._persist();
-          if (this.aboard.length) g.hud.toast('Rampe fermée — prêt à partir. Conduis en souplesse.');
+          // Le message attend que le pont soit relevé (fermeture ~3,5 s) : voir update().
+          this._closeToast = this.aboard.length > 0;
         }
         break;
       case 'load':
-        if (this.led) this.load(this.led.horse);
+        if (this.led && this._rearClear()) this.load(this.led.horse);
         break;
       case 'unload': {
         const a = this.aboard.find((x) => x.horse === this.player.horse) || this.aboard[this.aboard.length - 1];
-        if (a) this.unload(a.horse);
+        if (a && this._rearClear()) this.unload(a.horse);
         break;
       }
     }
@@ -385,7 +408,16 @@ export class Transport {
     h._tpProto.call(h, dt, camPos);
     // Mené : contourne le camion, longe tendue entre la main et le licol.
     const t = this.truck;
-    if (t && !this.seq) t.pushOut(h.pos, 0.75);
+    if (t && !this.seq) {
+      t.pushOut(h.pos, 0.75);
+      // La tête aussi (1,35 m devant le centre) : le museau ne traverse pas la porte arrière fermée.
+      const fx = Math.sin(h.heading), fz = Math.cos(h.heading);
+      _u.set(h.pos.x + fx * 1.35, 0, h.pos.z + fz * 1.35);
+      if (t.pushOut(_u, 0.3)) {
+        h.pos.x = _u.x - fx * 1.35;
+        h.pos.z = _u.z - fz * 1.35;
+      }
+    }
     if (this.led && this.led.horse === h) this._drawLead(h);
   }
 
@@ -501,6 +533,8 @@ export class Transport {
     h.frozen = false;
     h.isPlayerHorse = false;
     if (kind === 'load') this.travelTack(h, true);
+    // Appuis des sabots reposés sous le cheval (à bord, ils datent d'avant le trajet : jambes tendues ~0,5 s).
+    if (h.anim._a) h.anim._a.init = false;
     this._wrap(h, 'seq');
     p.locked = true;
     t.passThrough.add(h);
@@ -538,6 +572,7 @@ export class Transport {
     const t = this.truck;
     const h = s.horse;
     this.seq = null;
+    h.anim.back = false;
     t.collisionOff = false;
     t.passThrough.delete(h);
     t.setDoor(false);
@@ -579,6 +614,9 @@ export class Transport {
       h.hiddenInTruck = false;
       this._place(s.actor, _w, true);
       h.setPosition(_w.x, _w.z, t.heading + s.actor.h);
+      // Jamais dans un mur (camion garé près d'un bâtiment) : repoussé comme à l'embarquement immédiat.
+      g.colliders.resolve(h.pos, 1, -Infinity);
+      h.snapToGround();
       this.lead(h);
       g.hud.toast(`${h.name || 'Le cheval'} est descendu${fem(h)} du camion.`);
       g.bus.emit('transport:unloaded', h);
@@ -612,13 +650,24 @@ export class Transport {
   _surfaceY(xl, zl) {
     const t = this.truck;
     const r = t.ramp;
+    // Seuil de la porte de service : du plancher au sol en continu, par le marchepied (x ≈ -1,36), sans saut de 0,9 m.
+    if (xl < -1.1 && xl > -2.0 && Math.abs(zl - (D.doorZ[0] + D.doorZ[1]) / 2) < 0.5) {
+      const fy = t.localToWorld(xl, D.floor + 0.02, zl, _u).y;
+      t.groundPoint(xl, zl, _u);
+      return lerp(fy, this.game.terrain.getHeight(_u.x, _u.z), ease(clamp((-xl - 1.15) / 0.65, 0, 1)));
+    }
     if (zl > D.hingeZ - 0.02 && Math.abs(xl) < 1.22) return t.localToWorld(xl, D.floor + 0.02, zl, _u).y;
     const ang = r.angle * ease(r.t);
     const reach = D.rampLen * Math.sin(ang);
     const dz = D.hingeZ - zl;
-    if (r.t > 0.98 && dz >= 0 && dz <= reach && Math.abs(xl) < D.rampW / 2 + 0.15) {
+    if (r.t > 0.98 && dz >= 0 && dz <= reach && Math.abs(xl) < D.rampW / 2 + 0.35) {
       const k = dz / reach;
-      return t.localToWorld(xl, D.floor - 0.01 + Math.cos(ang) * D.rampLen * k + 0.03, zl, _u).y;
+      const ry = t.localToWorld(xl, D.floor - 0.01 + Math.cos(ang) * D.rampLen * k + 0.03, zl, _u).y;
+      // Bord latéral du pont : on l'enjambe en quelques pas plutôt que de tomber d'un coup.
+      const e = (Math.abs(xl) - D.rampW / 2) / 0.35;
+      if (e <= 0) return ry;
+      t.groundPoint(xl, zl, _u);
+      return lerp(ry, this.game.terrain.getHeight(_u.x, _u.z), ease(e));
     }
     t.groundPoint(xl, zl, _u);
     return this.game.terrain.getHeight(_u.x, _u.z);
@@ -644,14 +693,9 @@ export class Transport {
     h.heading = wh;
     h.speed = clamp(h.speed, 0, a.v + 0.3);
     h.anim.graze = damp(h.anim.graze, a.graze, 3, dt);
-    const ph = h.anim.phase;
+    // Reculer : le soutien ramène le sabot vers l'arrière (anim.js) ; inverser la phase le faisait avancer.
+    h.anim.back = !!(a.back && moving);
     h._tpProto.call(h, dt, camPos);
-    // Reculer : cycle des membres inversé (si le modèle expose une phase).
-    if (a.back && moving && typeof ph === 'number' && typeof h.anim.phase === 'number') {
-      const d = (((h.anim.phase - ph) % 1) + 1) % 1;
-      h.anim.phase = (((ph - d) % 1) + 1) % 1;
-      h.anim._lastPhase = h.anim.phase;
-    }
     this._place(a, _w, true);
     h.pos.copy(_w);
     h.groundY = _w.y;
@@ -691,6 +735,16 @@ export class Transport {
     const g = this.game;
     const cam = s.cam || { pos: [-3.4, 2.5, -10.8], look: [-0.3, 1.6, -3.4] };
     t.localToWorld(cam.pos[0], cam.pos[1], cam.pos[2], _w);
+    // Bâtiment derrière le camion : le plan reste de ce côté-ci des murs (même principe que la caméra de suivi).
+    const cs = g.colliders;
+    t.localToWorld(0, cam.pos[1], D.hingeZ - 0.4, _u);
+    for (let q = 0.1; q <= 1.001; q += 0.1) {
+      _v.lerpVectors(_u, _w, q);
+      if (cs.blocked(_v.x, _v.z, _v.y - 0.5)) {
+        _w.lerpVectors(_u, _w, Math.max(0, q - 0.12));
+        break;
+      }
+    }
     const k = 1 - Math.exp(-2.2 * dt);
     this._camOverride.pos.lerp(_w, k);
     t.localToWorld(cam.look[0], cam.look[1], cam.look[2], _w);
@@ -843,7 +897,7 @@ export class Transport {
     yield* this._walk(M, -1.95, doorZ, 1.6);
     t.setDoor(true);
     yield* this._wait(0.45);
-    yield* this._walk(M, -1.0, doorZ, 1.0, { stop: false });
+    yield* this._walk(M, -0.75, doorZ, 1.0, { stop: false });
     M.hidden = true;
     t.setDoor(false);
     yield* this._walk(M, pdx, D.bulkZ + 0.3, 1.3, { stop: false });
@@ -1062,6 +1116,57 @@ export class Transport {
     for (let i = 0; i < n; i++) setTimeout(() => a.hoof(surf, 0.7), i * 40);
   }
 
+  // Pont ou portillons en mouvement : les acteurs libres (joueur à pied, chevaux) sont repoussés vers l'arrière, hors
+  // de la course de la pièce, comme poussés par elle — personne n'est traversé par le pont ni par un portillon.
+  _sweep(dt) {
+    const t = this.truck;
+    const r = t.ramp, gs = t.gates;
+    if (!r.moving && gs.t === gs.target) {
+      this._closeT = 0;
+      return;
+    }
+    const reach = D.rampLen * Math.sin(r.angle * ease(r.t));
+    let eRamp = -Infinity, eGate = -Infinity;
+    if (r.target === 1) {
+      this._closeT = 0;
+      if (r.moving) eRamp = D.hingeZ - reach * 1.2; // ombre du pont au sol, avec marge devant son bout
+      else eGate = D.hingeZ - 1.35; // course des portillons, une fois le pont posé
+    } else {
+      // Fermeture : les portillons se replient d'abord ; pendant ce temps la zone s'étend vers l'arrière pour dégager
+      // le pont avant qu'il ne se relève, puis elle suit son ombre.
+      this._closeT += dt;
+      eRamp = D.hingeZ - Math.min(reach * 1.2, this._closeT * 2);
+      if (gs.t > 0) eGate = D.hingeZ - 1.35;
+    }
+    const p = this.player;
+    if (p.mode === 'foot' && !this.seq) {
+      const hu = p.human;
+      if (this._sweepPush(hu.pos, 0, 0, hu.radius, eRamp, eGate)) hu.mesh.position.copy(hu.pos);
+    }
+    for (const h of this.game.horses) {
+      if (h.hiddenInTruck || !h.mesh.parent || (this.seq && this.seq.horse === h)) continue;
+      this._sweepPush(h.pos, h.heading, 0.45, h.radius, eRamp, eGate);
+    }
+  }
+  // Cercle de collision (centre à `ahead` devant pos, rayon r) ramené derrière le bord (z local) de la zone du pont
+  // (pleine largeur) ou de celle des portillons (de part et d'autre de l'axe). Renvoie vrai s'il a bougé.
+  _sweepPush(pos, heading, ahead, r, eRamp, eGate) {
+    const t = this.truck;
+    const h = t.sim.heading;
+    const dx = pos.x + Math.sin(heading) * ahead - t.pos.x, dz = pos.z + Math.cos(heading) * ahead - t.pos.z;
+    const lz = dx * Math.sin(h) + dz * Math.cos(h);
+    if (lz > D.hingeZ + 0.5) return false;
+    const ax = Math.abs(dx * Math.cos(h) - dz * Math.sin(h));
+    let want = Infinity;
+    if (eRamp > -Infinity && ax < D.rampW / 2 + r) want = eRamp - r;
+    if (eGate > -Infinity && ax > 0.3 && ax < 2.45 + r) want = Math.min(want, eGate - r);
+    if (lz <= want) return false;
+    const back = lz - want;
+    pos.x -= Math.sin(h) * back;
+    pos.z -= Math.cos(h) * back;
+    return true;
+  }
+
   // ---------- Sauvegarde ----------
   _persist() {
     const d = this.game.save.data;
@@ -1103,6 +1208,7 @@ export class Transport {
     }
     t.setRampInstant(!!tr?.ramp);
     t.hazard = !!tr?.ramp;
+    this._closeToast = false;
     if (tr && main && tr.aboard?.some((x) => x.id === (main.def.id || main.id))) {
       this._setAboard(main, tr.aboard[0].stall || 0);
       this.preferUnload = true;
@@ -1139,7 +1245,12 @@ export class Transport {
     if (t.rampClosed && !this.seq) {
       t.hazard = false;
       if (t.partition.target === 1) t.setPartition(false);
+      if (this._closeToast) {
+        this._closeToast = false;
+        g.hud.toast('Rampe fermée — prêt à partir. Conduis en souplesse.');
+      }
     }
+    this._sweep(dt);
     this._updateComfort(dt);
     this.offers.update(dt);
     // Action principale et secondaire.

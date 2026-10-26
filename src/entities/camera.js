@@ -1,6 +1,6 @@
 // Caméra 3e personne : orbite au doigt, recentrage automatique derrière le cheval, anti-collision.
 import * as THREE from 'three';
-import { clamp, damp, dampAngle, lerp } from '../core/math.js';
+import { angleDiff, clamp, damp, lerp } from '../core/math.js';
 import { TIDE_UNIFORMS } from '../world/weather.js';
 
 export class FollowCamera {
@@ -19,6 +19,7 @@ export class FollowCamera {
     this.shake = 0;
     this.override = null; // { pos, look, t } pour les plans cinématiques
     this.lastManual = -10;
+    this.swing = 0; // sens (±1) d'un grand recentrage en cours, 0 sinon
   }
 
   snap(pos, heading) {
@@ -46,9 +47,18 @@ export class FollowCamera {
     const idle = now - this.lastManual;
     if (focus.speed > 1.2 && idle > 1.4) {
       const k = mode === 'drive' ? 2.4 : 1.4 + Math.min(focus.speed / 10, 1.6);
-      this.yaw = dampAngle(this.yaw, focus.heading + Math.PI, k, dt);
+      // Grand recentrage (> ~70°, demi-tour au pied du camion…) : on tourne du côté où la perche est dégagée plutôt
+      // que par le plus court chemin, qui peut balayer la caisse (perche écrasée, vue plongeante sur le toit), et on
+      // garde ce sens jusqu'au bout.
+      let d = angleDiff(this.yaw, focus.heading + Math.PI);
+      if (Math.abs(d) > 1.2) {
+        const s = Math.sign(d);
+        if (!this.swing) this.swing = this._boomFree(s) || !this._boomFree(-s) ? s : -s;
+        if (s !== this.swing) d -= s * 2 * Math.PI;
+      } else this.swing = 0;
+      this.yaw += d * (1 - Math.exp(-k * dt));
       this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : 0.28, 1.2, dt);
-    }
+    } else this.swing = 0;
     const base = mode === 'drive' ? 11 : mode === 'ride' ? 6.6 : 4.6;
     this.targetDist = base + (mode === 'ride' ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
     this.height = mode === 'drive' ? 2.8 : mode === 'ride' ? 2.35 : 1.55;
@@ -58,16 +68,24 @@ export class FollowCamera {
     const tx = this.smoothTarget.x, ty = this.smoothTarget.y + this.height, tz = this.smoothTarget.z;
     this.target.set(tx, ty, tz);
 
-    // Anti-collision bâtiments : rapprocher la caméra si elle passe dans un mur.
+    // Anti-collision bâtiments : rapprocher la caméra si elle passe dans un mur. La perche est sondée tous les 0,4 m
+    // (bout compris) à la hauteur réelle de la caméra (relevée au-dessus d'un véhicule), contre les obstacles gonflés
+    // d'une marge et les débords de toit : elle s'arrête juste devant, jamais dans un auvent ni dans un tronc.
     let dist = this.targetDist;
     const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
     const dirx = Math.sin(this.yaw) * cp, diry = sp, dirz = Math.cos(this.yaw) * cp;
-    const steps = 8;
-    for (let i = 1; i <= steps; i++) {
-      const d = (this.targetDist * i) / steps;
-      const x = tx + dirx * d, y = ty + diry * d, z = tz + dirz * d;
-      if (this.game.colliders.blocked(x, z, y - 0.5) && d > 1.2) {
-        dist = Math.max(1.2, d - this.targetDist / steps);
+    const cs = this.game.colliders;
+    for (let d = 1.2, last = false; !last; d += 0.4) {
+      if (d >= this.targetDist) {
+        d = this.targetDist;
+        last = true;
+      }
+      const x = tx + dirx * d, z = tz + dirz * d;
+      let y = ty + diry * d;
+      const vt = cs.volumeTopAt(x, z, y - 0.3);
+      if (vt > -Infinity) y = Math.max(y, vt + 0.7);
+      if (cs.cameraBlocked(x, z, y)) {
+        dist = Math.max(1.2, d - 0.45);
         break;
       }
     }
@@ -99,6 +117,24 @@ export class FollowCamera {
       cam.fov = this.fov;
       cam.updateProjectionMatrix();
     }
+  }
+
+  // Perche dégagée si l'on tourne du côté s : points à 25-100 % de la distance cible, à 0,6 et 1,2 rad du lacet
+  // actuel, ni dans un obstacle haut ni sous le gabarit d'un véhicule.
+  _boomFree(s) {
+    const c = this.game.colliders;
+    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
+    const tx = this.smoothTarget.x, ty = this.smoothTarget.y + this.height, tz = this.smoothTarget.z;
+    for (let j = 1; j <= 2; j++) {
+      const a = this.yaw + s * 0.6 * j;
+      const ax = Math.sin(a) * cp, az = Math.cos(a) * cp;
+      for (let i = 1; i <= 4; i++) {
+        const d = (this.targetDist * i) / 4;
+        const x = tx + ax * d, y = ty + sp * d, z = tz + az * d;
+        if (c.blocked(x, z, y - 0.5) || c.volumeTopAt(x, z, y - 0.3) > -Infinity) return false;
+      }
+    }
+    return true;
   }
 
   // Direction monde correspondant au joystick (y = vers l'avant de la caméra).

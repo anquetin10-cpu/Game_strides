@@ -193,6 +193,9 @@ export class Player {
     this.game.colliders.resolve(this.human.pos, 0.4, -Infinity);
     this.human.snap();
     this.focusPos = this.human.pos;
+    // Caméra devant la portière, un peu vers l'arrière : elle ne garde pas le lacet de conduite (derrière le camion),
+    // dont la perche passe par la cabine dès qu'on marche.
+    this.game.cam.yaw = t.heading + Math.PI / 2 + 0.6;
     this.game.bus.emit('player:exitTruck', t);
   }
 
