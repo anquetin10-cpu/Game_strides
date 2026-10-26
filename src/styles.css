@@ -105,7 +105,8 @@ body.desktop .joy-base { display: none; }
 }
 .minimap canvas { width: 100%; height: 100%; display: block; }
 /* Nom de zone et portefeuille sur une plaque crème : lisibles quel que soit le décor derrière. */
-.zone-name { width: fit-content; max-width: 100%; margin: 8px auto 0; padding: 3px 7px; border-radius: 8px; background: var(--glass); font: 600 10px/1.2 var(--ui); letter-spacing: .14em; text-transform: uppercase; color: var(--st-text-2); text-align: center; }
+.zone-name { width: fit-content; max-width: 100%; margin: 8px auto 0; padding: 3px 7px; border-radius: 8px; background: var(--glass); font: 600 10px/1.2 var(--ui); letter-spacing: .14em; text-transform: uppercase; color: var(--st-text-2); text-align: center; transition: opacity .25s; }
+.hud.dialog-high .zone-name { opacity: 0; }
 
 .top-right { flex: 0 0 auto; display: flex; align-items: flex-start; gap: 8px; }
 .top-right .icon-btn { width: 44px; height: 48px; border-radius: 14px; }
@@ -150,10 +151,13 @@ body.desktop .joy-base { display: none; }
 .telemetry {
   position: absolute; left: 50%; bottom: var(--sb); transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
   padding: 8px 14px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: opacity .25s;
 }
+/* Pendant un dialogue (cheval à l'arrêt), la télémétrie s'efface : le dialogue ne la recouvre plus sur écran court. */
+.hud.dialog-on .telemetry { opacity: 0; }
 .gear { font: 600 36px/0.9 var(--display); letter-spacing: -.04em; width: 30px; text-align: center; }
-.tele-col { display: flex; flex-direction: column; gap: 5px; min-width: 120px; }
+.tele-col { display: flex; flex-direction: column; gap: 5px; min-width: 136px; }
+.telemetry.drive .tele-col { min-width: 144px; }
 .tele-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .gait-name { font: 500 10px/1 var(--mono); letter-spacing: .08em; color: var(--muted); }
 .speed { font: 600 18px/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -233,7 +237,8 @@ body.desktop .joy-base { display: none; }
 .toast.money { font: 600 17px/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .toast.gold { color: var(--st-bronze-50); }
 @keyframes toastIn { from { opacity: 0; transform: translateX(-12px); } }
-.big-msg { position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+/* Centré au tiers de l'écran, mais jamais sous la bande du lecteur intégré (--st) ; largeur fixe : les titres longs tiennent sur deux lignes. */
+.big-msg { position: absolute; left: 50%; top: max(34%, calc(var(--st) + 56px)); transform: translate(-50%, -50%); width: min(66vw, 640px); text-align: center; pointer-events: none; }
 .big-msg .t { font: 700 clamp(30px, 6.4vw, 58px)/0.98 var(--display); letter-spacing: -.035em; color: var(--st-surface-3); text-shadow: 0 1px 3px rgba(0,0,0,.45), 0 4px 30px rgba(0,0,0,.5); }
 /* Sous-titre sur une pastille encre : lisible même sur le sable clair. */
 .big-msg .s { display: inline-block; margin-top: 8px; padding: 4px 9px; border-radius: 8px; background: rgba(15,15,14,.72); font: 500 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--st-surface-3); }
@@ -493,6 +498,8 @@ body.phone-open .rotate { display: none !important; }
 .profile-head .l { font: 400 12.5px/1.3 var(--ui); color: var(--muted); margin-top: 4px; }
 .msg-list .conv { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); width: 100%; text-align: left; }
 .conv .av { width: 36px; height: 36px; border-radius: 50%; background: var(--st-surface-3); border: 1px solid var(--st-line-2); color: var(--st-text); display: grid; place-items: center; font: 600 11px/1 var(--mono); letter-spacing: .5px; flex: 0 0 36px; }
+/* Colonne de texte : la largeur restante, l'aperçu est tronqué avec « … » (et non coupé par le bord de l'écran). */
+.conv .av + div { flex: 1 1 auto; min-width: 0; }
 .conv .n { font: 600 14px/1.2 var(--ui); }
 .conv .p { font: 400 12.5px/1.35 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
 .bubbles { display: flex; flex-direction: column; gap: 8px; }
@@ -500,7 +507,7 @@ body.phone-open .rotate { display: none !important; }
 .bubble.me { align-self: flex-end; background: var(--paper); color: var(--ink); border-color: transparent; }
 .map-app { position: absolute; inset: 0 0 12px; display: flex; background: #15171a; }
 .map-app canvas { width: 100%; height: 100%; display: block; touch-action: none; }
-.map-back { position: absolute; left: 12px; top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+.map-app .map-back { position: absolute; left: 12px; top: 10px; z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
 .map-legend { position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 5px; font: 500 10px/1 var(--ui); color: rgba(244,243,239,.85); background: rgba(15,15,14,.75); padding: 7px 9px; border-radius: 10px; pointer-events: none; }
 .map-legend span { display: flex; align-items: center; gap: 5px; }
 .map-legend canvas { width: 14px; height: 14px; flex: 0 0 14px; }
@@ -669,7 +676,8 @@ body.phone-open .rotate { display: none !important; }
   .promo { margin-top: 8px; padding: 10px 12px; }
   .minimap-wrap, .minimap { width: 92px; }
   .minimap { height: 92px; }
-  .zone-name { margin-top: 5px; font-size: 9px; }
+  /* Minimap réduite : la plaque peut déborder un peu de chaque côté (« PÔLE INTERNATIONAL » n'est plus coupé). */
+  .zone-name { position: relative; left: 50%; transform: translateX(-50%); margin: 5px 0 0; max-width: calc(100% + 28px); font-size: 9px; }
   .top-bar { gap: 10px; }
   .top-mid { gap: 5px; }
   .objective { padding: 5px 10px 6px; gap: 8px; }
@@ -770,10 +778,16 @@ body.phone-open .rotate { display: none !important; }
   .st-card.req-head { padding-top: 8px; }
   .objective .tag { display: none; }
   .objective .text { margin-top: 0; }
+  /* Le temps de l'astuce, la ligne de détail s'efface : objectif et toast restent au-dessus de la télémétrie. */
+  .obj-main:has(.hint.inline:not(.off)) .sub { display: none; }
   /* Minimap réduite : elle ne recouvre plus le centre du joystick ; boutons d'action sous le portefeuille. */
   .minimap-wrap, .minimap { width: 76px; }
   .minimap { height: 76px; }
   .actions { transform: scale(.78); }
+}
+@media (max-width: 600px) {
+  /* Écran étroit : portefeuille réduit au solde (niveau et note restent dans le téléphone), la carte de l'objectif garde sa largeur. */
+  .level-line, .stars-line { display: none; }
 }
 @media (max-width: 700px) {
   .top-bar { gap: 8px; }

@@ -15,7 +15,7 @@ function mockGame() {
     notifs: [],
     toasts: [],
     hud: {
-      notify: (n) => g.notifs.push(n), toast: (t) => g.toasts.push(t), setPhoneBadge() {}, big() {}, setObjective() {}, clearHint() {}, hint() {},
+      notify: (n) => g.notifs.push(n), toast: (t) => g.toasts.push(t), setPhoneBadge() {}, big() {}, setObjective() {}, clearHint() {}, closeDialog() {}, hint() {},
       dialog: (lines, cb) => (g.dialogCb = cb), advanceDialog() {},
     },
     phone: { refresh() {}, _offerTab: () => 'missions', close() {} },

@@ -708,6 +708,11 @@ export class Game {
   showTitle() {
     this.state = 'title';
     this.titleT = 0;
+    // Dialogue en cours (PNJ, Strides HQ…) : fermé sans suite ; s'il figeait le joueur, on le libère pour « Continuer ».
+    if (this.hud.dialogActive) {
+      this.hud.closeDialog();
+      this.player.locked = false;
+    }
     this.hud.el.classList.add('hidden');
     document.getElementById('touch').classList.add('hidden');
     const hasSave = this.save.hasSave();
