@@ -333,7 +333,9 @@ export class Obstacles {
           const nose = b.s + fn * (NOSE - 0.4);
           const gap = side < 0 ? o.front - nose : nose - o.back;
           const vn = horse.speed * toward;
-          if (!horse._refusing && gap - REFUSE_GAP <= (vn * Math.max(REFUSE_T, (vn * REFUSE_T) / 9.5)) / 2) {
+          // Pas de refus décidé tant que l'appel est encore possible (anneau vert) : le cavalier garde toute la fenêtre d'appel,
+          // y compris devant un mur ou un oxer (face avant plus en avant) au galop de concours.
+          if (!horse._refusing && gap - REFUSE_GAP <= (vn * Math.max(REFUSE_T, (vn * REFUSE_T) / 9.5)) / 2 && (!horse.isPlayerHorse || this.timing(horse) !== 'good')) {
             horse._refusing = o;
             horse.brake((gap - REFUSE_GAP) / toward);
           }

@@ -37,7 +37,7 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 | --- | --- | --- | --- | --- |
 | Barème A au chrono (CSO) | barre 4 pts, 1er refus 4 pts, 2e refus éliminatoire, 1 pt par seconde entamée au-delà du temps accordé, classement aux pénalités puis au temps | règlement de saut d'obstacles | conforme | `challenge.test.js`, `courses.js` |
 | Hauteurs CSO | Amateur 1,00 – 1,20 m ; Pro 2 1,20 – 1,30 m ; qualificative CSI 1,35 – 1,45 m ; Grand Prix CSI 5* 1,50 – 1,60 m | mêmes paliers | conforme ; avertissement avant le départ si le couple cheval + équipement ne peut pas atteindre la hauteur | `realism.test.js`, `courses.js` |
-| Temps accordé | longueur du parcours (270 m) ÷ vitesse imposée : 47 s en national (350 m/min), 44 s en CSI (375), 41 s en Grand Prix (400) ; défi du Pôle v2 à 47 s (la v1, à 75 s, reste archivée avec ses records) | règlement : vitesse imposée selon l'épreuve | conforme | `realism.test.js` |
+| Temps accordé | longueur du parcours du Pôle (245 m, tracé à main gauche, tournants de 8,5 m de rayon au moins) ÷ vitesse imposée : 42 s en national (350 m/min), 40 s en CSI (375), 37 s en Grand Prix (400) ; défi du Pôle v3 à 42 s (v1 à 75 s et v2 à 47 s archivées avec leurs records) | règlement : vitesse imposée selon l'épreuve | conforme | `realism.test.js` |
 | Cross | refus 20 pts, élimination au 3e refus sur un obstacle ou au 4e sur le parcours | règlement de concours complet : 20 / 40 pts, élimination au 3e refus | conforme (barème simplifié) | `courses.js` |
 
 ## 4. Monde, météo, marées, lumière

@@ -130,7 +130,12 @@
     jumpObstacle(o) {
       const p = g.player;
       const h = p.horse;
-      h.setPosition(o.x - o.n.x * 11, o.z - o.n.z * 11, o.rot);
+      // Deuxième élément d'une combinaison (obstacle précédent à moins de 12 m dans l'axe) : on enchaîne depuis la réception
+      // du précédent, comme dans un vrai double, au lieu de reculer derrière lui.
+      const prev = g.obstacles.ofCourse(o.course).find((q) => q.num === o.num - 1);
+      const gapPrev = prev ? (o.x - prev.x) * o.n.x + (o.z - prev.z) * o.n.z : 99;
+      const back = prev && gapPrev > 0 && gapPrev < 12 && Math.abs((o.x - prev.x) * o.n.z - (o.z - prev.z) * o.n.x) < 1 ? gapPrev - 3.4 : 11;
+      h.setPosition(o.x - o.n.x * back, o.z - o.n.z * back, o.rot);
       g.cam.yaw = o.rot + Math.PI;
       // Abord au galop réel du cheval : galop de travail en CSO, galop de cross sur le cross.
       h.speed = (o.course === 'xc' ? 11 : 6.5) * h.speedMul;
@@ -146,7 +151,7 @@
           const f = h.forward;
           const s = (h.pos.x + f.x * 0.4 - o.x) * o.n.x + (h.pos.z + f.z * 0.4 - o.z) * o.n.z;
           const ideal = (h.speed * 0.8) / 2;
-          if (-s <= ideal + 0.2) {
+          if (-s <= ideal + 0.6) {
             g.input.pressed.add('jump');
             jumped = true;
           }

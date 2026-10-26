@@ -75,8 +75,8 @@ destinations officielles et état réel de la mesure, extensions du lot D sépar
 
 - **Défi du Pôle** à conditions fixes et versionnées (`src/gameplay/challenge.js`) : parcours du Pôle (obstacles 1 à 8,
   1,10 m), cheval fourni Onyx à statistiques fixes, jour dégagé à 11 h, sol sec, aide au saut. Version courante
-  `defi-pole-v2` : temps accordé réglementaire de 47 s (270 m à 350 m/min), avec le galop de travail réaliste ; la
-  `defi-pole-v1` (75 s, ancien galop) reste archivée avec ses records. Règle de classement expliquée avant le départ (pénalités puis chrono). Record personnel local
+  `defi-pole-v3` : nouveau tracé du Pôle (≈ 245 m), temps accordé réglementaire de 42 s (245 m à 350 m/min), avec le
+  galop de travail réaliste ; `defi-pole-v1` (75 s, ancien galop) et `defi-pole-v2` (47 s, ancien tracé) restent archivées avec leurs records. Règle de classement expliquée avant le départ (pénalités puis chrono). Record personnel local
   par version, relance immédiate, monde du joueur restauré après le défi. Accès depuis l'app Activités et depuis le
   panneau « Défi du Pôle » à l'entrée du Pôle.
 - **Carte de résultat** (canvas 1080×1350) : nom du défi, résultat, cheval, pseudonyme facultatif, signature
@@ -105,11 +105,11 @@ Paramètres à équilibrer (valeurs actuelles) :
 | Paliers de réputation | 0 / 300 / 900 / 1 800 / 3 200 points | `src/config.js` |
 | M1 | Val 90 €, Haras 140 €, tournée 270 € ; réputation 60 / 80 / 120 | `src/gameplay/story2.js` (`CHAPTER1`) |
 | M2 | paiement 120 € ; Léa 120 €, Inès 200 €, autonome 0 € ; réputation 100 | `story2.js` |
-| M3 | participation 150 €, dotation 220 / 160 / 120 / 90 / 70 €, temps accordé 76 s (ambitieuse : −10 s, +50 %), Léa 80 € ; réputation 200 | `story2.js` |
+| M3 | participation 150 €, dotation 220 / 160 / 120 / 90 / 70 €, temps accordé 42 s (ambitieuse : −2 s, +50 %), Léa 80 € ; réputation 200 | `story2.js` |
 | Aire de pansage | 350 € ; préparation 6 s → 4 s, pansage 4 s → 3 s | `src/gameplay/data.js`, `story2.js`, `condition.js` |
 | Compétences | +0,5 par saut, +1 par soin, +4 par préparation, +2 à +6 par mission | `game.js`, `missions.js`, `story2.js` |
-| Défi | v2 : 8 obstacles, 1,10 m, temps accordé 47 s, temps limite 94 s | `src/gameplay/challenge.js` |
-| Allures et épreuves | galop de travail 6,5 m/s (390 m/min), grand galop 14 m/s ; temps accordé = 270 m ÷ 350 / 375 / 400 m/min ; Grand Prix 1,50 – 1,60 m | `src/config.js`, `courses.js`, `docs/realisme.md` |
+| Défi | v3 : 8 obstacles, 1,10 m, temps accordé 42 s, temps limite 84 s | `src/gameplay/challenge.js` |
+| Allures et épreuves | galop de travail 6,5 m/s (390 m/min), grand galop 14 m/s ; temps accordé = 245 m ÷ 350 / 375 / 400 m/min (42 / 40 / 37 s) ; Grand Prix 1,50 – 1,60 m | `src/config.js`, `courses.js`, `docs/realisme.md` |
 
 ## 4. Recette
 
