@@ -30,11 +30,11 @@ describe('réalisme : allures du cheval', () => {
 
 describe('réalisme : épreuves', () => {
   it('temps accordé = longueur / vitesse imposée (350 m/min national, 375 CSI, 400 Grand Prix)', () => {
-    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national)).toBe(47);
-    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)).toBe(44);
-    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp)).toBe(41);
-    // Parcours faisable au galop de travail réel, virages compris (tracé ~25 % plus long que la corde).
-    expect(COURSE_LENGTH.cso / gait('GALOP')).toBeLessThan(47);
+    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national)).toBe(42);
+    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)).toBe(40);
+    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp)).toBe(37);
+    // Parcours faisable au galop de travail réel sur le tracé mesuré.
+    expect(COURSE_LENGTH.cso / gait('GALOP')).toBeLessThan(42);
   });
   it('Grand Prix CSI 5★ entre 1,50 et 1,60 m ; qualificative jusqu’à 1,45 m', () => {
     const gp = STORY.find((s) => s.id === 'gp');
@@ -43,12 +43,13 @@ describe('réalisme : épreuves', () => {
     expect(csi3.desc).toMatch(/1,45 m/);
   });
   it('premier concours (M3) au temps réglementaire national', () => {
-    expect(CHAPTER1.m3.ta).toBe(47);
-    expect(CHAPTER1.m3.ta - CHAPTER1.m3.ambitiousCut).toBe(44);
+    expect(CHAPTER1.m3.ta).toBe(42);
+    expect(CHAPTER1.m3.ta - CHAPTER1.m3.ambitiousCut).toBe(40);
   });
-  it('défi du Pôle v2 au temps réglementaire, v1 conservée à part', () => {
-    expect(CURRENT_CHALLENGE).toBe(DEFI_POLE_V2);
-    expect(DEFI_POLE_V2.timeAllowed).toBe(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national));
+  it('défi du Pôle v3 au temps réglementaire du nouveau tracé, v1 et v2 conservées à part', () => {
+    expect(CURRENT_CHALLENGE.id).toBe('defi-pole-v3');
+    expect(CURRENT_CHALLENGE.timeAllowed).toBe(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national));
+    expect(DEFI_POLE_V2.timeAllowed).toBe(47);
     expect(DEFI_POLE_V1.timeAllowed).toBe(75);
     expect(Object.isFrozen(DEFI_POLE_V2)).toBe(true);
   });
@@ -166,5 +167,44 @@ describe('hippodrome : anneaux du tour de piste sur la piste', () => {
     const last = hippoLapPoints().at(-1);
     expect(Math.abs(last[0] - HIPPO.x)).toBeLessThan(1);
     expect(ovalPoint(0, HIPPO_LAP.r)[0]).toBeLessThan(HIPPO.x);
+  });
+});
+
+// Tracé du parcours du Pôle : enchaînement logique (tournants larges, aucun obstacle sur la trajectoire, lice à distance).
+import { CSO_START, CSO_FINISH, CSO_LAYOUT } from '../../src/gameplay/obstacles.js';
+import { POLE } from '../../src/world/sites.js';
+describe('parcours du Pôle : tracé cohérent', () => {
+  // Positions relatives au centre de la carrière, cap de saut = (sin rot, cos rot).
+  const layout = CSO_LAYOUT;
+  const n = (r) => [Math.sin(r), Math.cos(r)];
+  const cross = (a, b) => a[0] * b[1] - a[1] * b[0];
+  it('départ dans l’axe du 1, arrivée dans l’axe du double 8–9', () => {
+    const s = [CSO_START.x - POLE.arena.x, CSO_START.z - POLE.arena.z];
+    expect(s[0]).toBe(layout[0][0]);
+    expect(Math.abs(cross(n(CSO_START.rot), [layout[0][0] - s[0], layout[0][1] - s[1]]))).toBeLessThan(1e-9);
+    const f = [CSO_FINISH.x - POLE.arena.x, CSO_FINISH.z - POLE.arena.z];
+    expect(f[1]).toBe(layout[8][1]);
+    expect(f[0]).toBeGreaterThan(layout[8][0]);
+  });
+  it('tournants d’au moins 8 m de rayon entre deux obstacles (arc tangent aux lignes d’abord et de réception)', () => {
+    for (let i = 0; i < layout.length - 1; i++) {
+      const [ax, az, ar] = layout[i], [bx, bz, br] = layout[i + 1];
+      const na = n(ar), nb = n(br);
+      const L = [ax + na[0] * 3, az + na[1] * 3], A = [bx - nb[0] * 4, bz - nb[1] * 4];
+      const v = [A[0] - L[0], A[1] - L[1]];
+      const dot = na[0] * nb[0] + na[1] * nb[1];
+      if (dot > 0.999) { expect(Math.abs(cross(na, v))).toBeLessThan(0.3); continue; }
+      if (dot < -0.999) { expect(Math.abs(cross(na, v)) / 2).toBeGreaterThanOrEqual(8); continue; }
+      const den = cross(na, nb), t = cross(v, nb) / den, u = -cross(v, na) / den;
+      expect(t).toBeGreaterThan(0);
+      expect(u).toBeGreaterThan(0);
+      expect(Math.min(t, u) / Math.tan(Math.acos(dot) / 2)).toBeGreaterThanOrEqual(8);
+    }
+  });
+  it('obstacles dans la carrière, à 8 m au moins de la lice', () => {
+    for (const [x, z] of layout) {
+      expect(42 - Math.abs(x)).toBeGreaterThanOrEqual(8);
+      expect(26 - Math.abs(z)).toBeGreaterThanOrEqual(8);
+    }
   });
 });

@@ -26,20 +26,25 @@ const COLORS = [
 // Refus : longueur de l'avant-main (bout du nez devant l'origine du cheval), marge nez-obstacle à l'arrêt, durée du freinage.
 const NOSE = 1.6, REFUSE_GAP = 0.5, REFUSE_T = 0.3;
 
-// Parcours de CSO du Pôle International (positions relatives au centre de la carrière).
-const CSO_LAYOUT = [
-  [-30, 10, Math.PI, 'v'],
-  [-30, -12, Math.PI, 'o'],
-  [-8, -19, Math.PI / 2, 'v'],
-  [14, -19, Math.PI / 2, 'o'],
-  [32, -6, 0, 'v'],
-  [32, 14, 0, 'w'],
-  [8, 19, -Math.PI / 2, 'v'],
-  [-12, 4, (3 * Math.PI) / 4, 'o'],
-  [6, -6, (3 * Math.PI) / 4, 'v'],
+// Parcours de CSO du Pôle International (positions relatives au centre d'une carrière de 84 × 52 m ; cap de saut
+// rot : direction (sin rot, cos rot)). Tracé à main gauche (on tourne toujours du même côté), comme un vrai parcours : 1 en montant le long du petit côté
+// ouest, ligne 2–3 (24 m, 5 foulées) sur la grande piste nord, demi-volte vers le 4 en descendant le petit côté
+// est, ligne 5–6 (24 m) sur la piste sud, demi-tour vers la ligne centrale 7 → double 8–9 (20 m puis 8 m : une
+// foulée), arrivée dans l'alignement. Tournants de 8,5 m de rayon au moins, 8 m au moins entre la trajectoire et les
+// autres obstacles comme entre la trajectoire et la lice ; longueur du tracé ≈ 245 m.
+export const CSO_LAYOUT = [
+  [-32, 4, 0, 'v'],
+  [-8, 18, Math.PI / 2, 'o'],
+  [16, 18, Math.PI / 2, 'v'],
+  [32, 4, Math.PI, 'o'],
+  [10, -18, -Math.PI / 2, 'v'],
+  [-14, -18, -Math.PI / 2, 'o'],
+  [-12, -1, Math.PI / 2, 'w'],
+  [8, -1, Math.PI / 2, 'v'],
+  [16, -1, Math.PI / 2, 'o'],
 ];
-export const CSO_FINISH = { x: POLE.arena.x + 17, z: POLE.arena.z - 15, rot: (3 * Math.PI) / 4, w: 7 };
-export const CSO_START = { x: POLE.arena.x - 34, z: POLE.arena.z + 21, rot: Math.PI };
+export const CSO_FINISH = { x: POLE.arena.x + 24, z: POLE.arena.z - 1, rot: Math.PI / 2, w: 7 };
+export const CSO_START = { x: POLE.arena.x - 32, z: POLE.arena.z - 10, rot: 0 };
 
 function xcLayout() {
   const L = polylineLength(XC_PATH);

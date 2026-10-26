@@ -46,8 +46,18 @@ export const DEFI_POLE_V2 = deepFreeze({
   timeLimit: 94,
 });
 
-export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2 };
-export const CURRENT_CHALLENGE = DEFI_POLE_V2;
+// Version 3 : nouveau tracé du parcours du Pôle (enchaînement logique à main gauche, ≈ 245 m), temps accordé
+// réglementaire recalculé (245 m à 350 m/min).
+export const DEFI_POLE_V3 = deepFreeze({
+  ...JSON.parse(JSON.stringify(DEFI_POLE_V2)),
+  id: 'defi-pole-v3',
+  version: 3,
+  timeAllowed: 42,
+  timeLimit: 84,
+});
+
+export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3 };
+export const CURRENT_CHALLENGE = DEFI_POLE_V3;
 export const SIGNATURE = 'STRIDES Grand Tour';
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.

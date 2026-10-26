@@ -10,7 +10,7 @@ import { PathAI } from '../entities/horse.js';
 // ---------- Parcours d'obstacles ----------
 // Temps accordé réglementaire : longueur du parcours (mesurée au tracé du cavalier) divisée par la vitesse imposée
 // (350 m/min en épreuves nationales, 375 m/min en CSI, 400 m/min en Grand Prix CSI 5* de plein air).
-export const COURSE_LENGTH = { cso: 270, xc: 760 };
+export const COURSE_LENGTH = { cso: 245, xc: 760 };
 export const COURSE_SPEED = { national: 350, csi: 375, gp: 400, crossAmateur: 420 };
 export const timeAllowedFor = (length, speed) => Math.ceil((length / speed) * 60);
 

@@ -222,7 +222,8 @@ export class Challenges {
       main.control.mag = 0;
     }
     // Cheval fourni : statistiques de la version, sans équipement ni effet de la condition physique.
-    const sx = CSO_START.x, sz = CSO_START.z + 2.5;
+    // Derrière la ligne de départ, dans l'axe du premier obstacle.
+    const sx = CSO_START.x - Math.sin(CSO_START.rot) * 2.5, sz = CSO_START.z - Math.cos(CSO_START.rot) * 2.5;
     const horse = g.spawnHorse({ ...cfg.horse, socks: [...cfg.horse.socks] }, sx, sz, CSO_START.rot, { player: true });
     horse.visibleDist = 600;
     horse.mods = { speed: 0, jump: 0, stamina: 0, clearance: 0 };

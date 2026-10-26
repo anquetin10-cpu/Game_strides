@@ -273,14 +273,16 @@ const M2 = {
           return left.length ? { x: left[0].x, z: left[0].z } : POI.pole;
         },
         radius: 4,
-        hint: 'Comme en vrai : on marche le parcours à pied, foulées comptées, avant de le monter.',
+        hint: 'Comme en vrai : on marche le parcours à pied, dans l’ordre des numéros, en suivant la trajectoire et en comptant les foulées.',
         start(r) {
           r.data.seen ||= [];
         },
         update(r) {
           const f = game.player.focus.pos;
-          for (const o of obs()) {
-            if (r.data.seen.includes(o.num) || game.player.mode !== 'foot') continue;
+          // Dans l'ordre du parcours : seul l'obstacle suivant compte (comme une vraie reconnaissance, numéro après numéro).
+          const next = obs().find((o) => !r.data.seen.includes(o.num));
+          for (const o of next ? [next] : []) {
+            if (game.player.mode !== 'foot') continue;
             if (Math.hypot(f.x - o.x, f.z - o.z) < 4.5) {
               r.data.seen.push(o.num);
               game.audio.tone(990, 0.08, 'sine', 0.08);
@@ -308,7 +310,7 @@ const M2 = {
           },
           update: () => true,
         }),
-        recon([1, 4, 6, 9]),
+        recon([1, 2, 3, 4, 5, 6, 7, 8, 9]),
         backHome,
         S.custom({
           text: '',
@@ -358,7 +360,7 @@ const M2 = {
       const park = { x: HOME.truck.x - 4, z: HOME.truck.z + 9 };
       return [
         ...prepSteps(game, S, { horse: comete, text: 'Préparation rapide de Comète (pansage, pieds)', name: 'Comète' }),
-        recon([1, 6]),
+        recon([1, 2, 3, 4, 5]),
         backHome,
         S.custom({
           text: '',
