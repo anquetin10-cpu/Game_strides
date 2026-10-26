@@ -17,12 +17,23 @@ export const TRUCK_SPEC = {
   cutRpm: 2700,
   // Diesel 4 cylindres 5,1 l, 210 ch : couple max 750 N·m de 1 200 à 1 700 tr/min.
   torque: [[400, 250], [650, 380], [800, 520], [1000, 650], [1200, 750], [1700, 750], [2000, 705], [2300, 645], [2550, 520], [2700, 0]],
+  maxTorque: 750,
   gears: [6.58, 3.81, 2.29, 1.48, 1.0, 0.73],
   gearTorque: [0.42, 0.5, 0.8, 1, 1, 1], // part du couple maxi autorisée par rapport
   reverse: 6.04,
   final: 4.1,
   eff: 0.9,
   shiftTime: 0.42,
+  // Boîte automatique : régimes de passage (montée et descente selon la charge, descente au freinage), démarrage en
+  // 2e (1re en forte côte), régime de patinage de l'embrayage au démarrage, frein moteur (N·m).
+  shiftUp: [1450, 2250],
+  shiftDown: [900, 1320],
+  shiftDownBrake: 1150,
+  startGear: 2,
+  launch: [800, 1250],
+  engineBrake: [40, 0.06],
+  holdRpm: 300, // montée de régime au point mort sous l'accélérateur
+  beep: true, // bip de recul (poids lourd)
   crr: 0.0085, // pneus poids lourd sur enrobé
   crrSoft: 0.035, // herbe, terre
   cdA: 6.6, // Cx ≈ 0,8 × 8,3 m²
@@ -36,6 +47,55 @@ export const TRUCK_SPEC = {
   limiter: 25, // 90 km/h (limiteur légal > 3,5 t)
   cornerF: 7.0, // rigidité de dérive par newton de charge (1/rad), avant
   cornerR: 9.5, // jumelage arrière, plus rigide
+};
+
+// Autres véhicules conduisibles (même modèle physique, caractéristiques de séries réelles) : citadine essence, berline
+// et SUV diesel à boîte automatique, tracteur agricole à inverseur sous charge. Essieux aux positions des modèles 3D.
+const CAR_BASE = {
+  brakeRise: 9, // freins hydrauliques (≈ 0,1 s) ; air comprimé sur le camion
+  massHorse: 0, gearTorque: [1, 1, 1, 1, 1, 1], eff: 0.92, rho: 1.2, beep: false, startGear: 1,
+};
+export const VEHICLE_SPECS = {
+  // Citadine 1.0 TCe 90 ch (3 cylindres essence), 160 N·m, boîte pilotée 5 rapports : 0-100 km/h ~12 s, 178 km/h.
+  hatch: {
+    ...CAR_BASE, name: 'Citadine', massEmpty: 1200, zFront: 1.25, zRear: -1.25, track: 1.5, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.3,
+    idle: 800, maxRpm: 6200, cutRpm: 6500, fuel: 'petrol', cyl: 3, drive: 'front',
+    torque: [[700, 90], [1500, 140], [2250, 160], [3500, 160], [4500, 150], [5500, 128], [6200, 105], [6500, 0]], maxTorque: 160,
+    gears: [3.73, 2.05, 1.39, 1.03, 0.82], reverse: 3.55, final: 4.21, shiftTime: 0.45,
+    crr: 0.011, crrSoft: 0.045, cdA: 0.68, brakeDecel: 9.5, mu: 1.0, muSoft: 0.6,
+    maxSteer: 0.49, steerRate: 1.8, aLatSteer: 7, limiter: 50, cornerF: 9.5, cornerR: 11,
+    shiftUp: [2200, 5800], shiftDown: [1300, 2800], shiftDownBrake: 1700, launch: [1100, 2200], engineBrake: [12, 0.006], holdRpm: 1500,
+  },
+  // Berline 1.5 diesel 130 ch, 300 N·m, automatique 6 rapports : 0-100 km/h ~10 s, 210 km/h.
+  sedan: {
+    ...CAR_BASE, name: 'Berline', massEmpty: 1450, zFront: 1.34, zRear: -1.34, track: 1.57, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.33,
+    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', cyl: 4, drive: 'front',
+    torque: [[700, 150], [1000, 210], [1500, 280], [1750, 300], [2750, 300], [3750, 260], [4500, 200], [4800, 0]], maxTorque: 300,
+    gears: [4.04, 2.37, 1.56, 1.16, 0.85, 0.67], reverse: 3.6, final: 3.32, shiftTime: 0.25,
+    crr: 0.01, crrSoft: 0.045, cdA: 0.62, brakeDecel: 9.8, mu: 1.0, muSoft: 0.6,
+    maxSteer: 0.5, steerRate: 1.7, aLatSteer: 7.5, limiter: 58, cornerF: 10, cornerR: 12,
+    shiftUp: [1600, 4100], shiftDown: [1100, 2200], shiftDownBrake: 1400, launch: [1000, 1800], engineBrake: [15, 0.008], holdRpm: 1200,
+  },
+  // SUV 2.0 diesel 150 ch, 370 N·m, automatique 6 rapports, 4 roues motrices : 0-100 km/h ~10,5 s, 190 km/h.
+  suv: {
+    ...CAR_BASE, name: 'SUV', massEmpty: 1750, zFront: 1.375, zRear: -1.375, track: 1.6, cgEmpty: 0.2, cgHeight: 0.7, wheelR: 0.36,
+    idle: 750, maxRpm: 4300, cutRpm: 4600, fuel: 'diesel', cyl: 4, awd: true,
+    torque: [[700, 180], [1000, 260], [1500, 350], [1750, 370], [2500, 370], [3500, 320], [4300, 240], [4600, 0]], maxTorque: 370,
+    gears: [4.6, 2.72, 1.86, 1.46, 1.22, 1.0], reverse: 4.1, final: 2.9, shiftTime: 0.25,
+    crr: 0.011, crrSoft: 0.04, cdA: 0.92, brakeDecel: 9.2, mu: 0.95, muSoft: 0.7,
+    maxSteer: 0.5, steerRate: 1.6, aLatSteer: 6.5, limiter: 53, cornerF: 9, cornerR: 10.5,
+    shiftUp: [1500, 3900], shiftDown: [1050, 2100], shiftDownBrake: 1350, launch: [950, 1700], engineBrake: [18, 0.01], holdRpm: 1100,
+  },
+  // Tracteur 110 ch (4 cylindres diesel 4,5 l), 480 N·m, inverseur et 6 rapports sous charge, 40 km/h, 4 roues motrices.
+  tractor: {
+    ...CAR_BASE, name: 'Tracteur', massEmpty: 5600, zFront: 1.55, zRear: -0.95, track: 1.9, cgEmpty: 0.15, cgHeight: 1.1, wheelR: 0.82, wheelRFront: 0.52,
+    idle: 850, maxRpm: 2200, cutRpm: 2350, fuel: 'diesel', cyl: 4, awd: true,
+    torque: [[700, 250], [1000, 400], [1400, 480], [1600, 480], [2000, 410], [2200, 350], [2350, 0]], maxTorque: 480,
+    gears: [5.2, 3.6, 2.5, 1.7, 1.25, 1.0], reverse: 4.5, final: 17, shiftTime: 0.35,
+    crr: 0.025, crrSoft: 0.05, cdA: 4.0, brakeDecel: 5.5, mu: 0.8, muSoft: 0.75,
+    maxSteer: 0.75, steerRate: 0.9, aLatSteer: 3.2, limiter: 11.2, cornerF: 6, cornerR: 8,
+    shiftUp: [1500, 2050], shiftDown: [1000, 1400], shiftDownBrake: 1200, launch: [950, 1300], engineBrake: [30, 0.05], holdRpm: 600,
+  },
 };
 
 const G = 9.81;
@@ -75,9 +135,9 @@ export class TruckSim {
     this.r = 0; // lacet (rad/s)
     this.steer = 0; // angle des roues avant (gauche +)
     this.rpm = 0;
-    this.gear = 2; // 1..6, -1 marche arrière
+    this.gear = this.spec.startGear; // 1..n, -1 marche arrière
     this.shiftT = 0;
-    this.shiftTo = 2;
+    this.shiftTo = this.gear;
     this.clutch = 0;
     this.sinceShift = 10;
     this.throttle = 0;
@@ -182,7 +242,7 @@ export class TruckSim {
     if (!this.engineOn) this.throttle = 0;
     // Freins à air : montée en pression progressive (~0,4 s), relâchement plus rapide ; maintien à l'arrêt immédiat.
     if (av < 0.25 && brake >= 1) this.brake = 1;
-    else this.brake += clamp(brake - this.brake, -5 * dt, 2.6 * dt);
+    else this.brake += clamp(brake - this.brake, -5 * dt, (s.brakeRise || 2.6) * dt);
     brake = this.brake;
     this.braking = brake > 0.05 && av > 0.3;
 
@@ -192,7 +252,7 @@ export class TruckSim {
       const ratio = this.ratio();
       const wheelRpm = (av / s.wheelR) * ratio * RPM_K;
       // Boîte automatique (rapports avant) : démarrage en 2e, en 1re seulement en forte côte.
-      const startGear = this.slope > 0.07 ? 1 : 2;
+      const startGear = this.slope > 0.07 ? 1 : s.startGear;
       this.sinceShift += dt;
       if (this.shiftT > 0) {
         this.shiftT -= dt;
@@ -201,14 +261,14 @@ export class TruckSim {
         if (av < 0.6 && this.gear !== startGear) this.gear = this.shiftTo = startGear;
         else if (this.sinceShift > 1.0) {
           const thr = this.throttle;
-          const up = lerp(1450, 2250, thr);
-          const down = this.brake > 0.2 ? 1150 : lerp(900, 1320, thr);
-          if (wheelRpm > up && this.gear < 6) this._shift(this.gear + 1);
+          const up = lerp(s.shiftUp[0], s.shiftUp[1], thr);
+          const down = this.brake > 0.2 ? s.shiftDownBrake : lerp(s.shiftDown[0], s.shiftDown[1], thr);
+          if (wheelRpm > up && this.gear < s.gears.length) this._shift(this.gear + 1);
           else if (wheelRpm < down && this.gear > startGear) this._shift(this.gear - 1);
         }
       }
       // Embrayage piloté : patinage progressif au démarrage, débrayé à l'arrêt et sous le ralenti.
-      const launch = lerp(s.idle + 150, 1250, this.throttle);
+      const launch = lerp(s.launch[0], s.launch[1], this.throttle);
       let rpmTarget, transmit;
       if (this.throttle <= 0.02 && av < 0.3) this.clutch = 0;
       if (this.shiftT > 0) {
@@ -221,7 +281,7 @@ export class TruckSim {
         rpmTarget = launch;
         transmit = this.clutch * this.clutch; // patinage : couple transmis progressivement
       } else if (wheelRpm < s.idle) {
-        rpmTarget = s.idle + this.throttle * 300;
+        rpmTarget = s.idle + this.throttle * s.holdRpm;
         transmit = this.throttle > 0.02 ? this.clutch : 0;
       } else {
         rpmTarget = wheelRpm;
@@ -236,9 +296,9 @@ export class TruckSim {
       const gov = clamp((s.cutRpm - this.rpm) / (s.cutRpm - s.maxRpm), 0, 1);
       // Limitation de couple de la boîte robotisée sur les rapports courts (protection de la transmission).
       const cap = this.gear < 0 ? 0.5 : s.gearTorque[this.gear - 1];
-      let Te = Math.min(torqueAt(s, this.rpm), 750 * cap) * thr * gov;
+      let Te = Math.min(torqueAt(s, this.rpm), s.maxTorque * cap) * thr * gov;
       // Frein moteur (et frein sur échappement) sans gaz, rapport engagé, au-dessus du ralenti.
-      if (thr < 0.02 && wheelRpm > s.idle + 80 && this.shiftT <= 0) Te = -(40 + 0.06 * (this.rpm - s.idle));
+      if (thr < 0.02 && wheelRpm > s.idle + 80 && this.shiftT <= 0) Te = -(s.engineBrake[0] + s.engineBrake[1] * (this.rpm - s.idle));
       this.load = clamp(thr * gov, 0, 1);
       Tw = Te * transmit * ratio * s.eff * (this.gear < 0 ? -1 : 1);
     } else {
@@ -253,7 +313,9 @@ export class TruckSim {
     const Fzr = (m * G * a) / L;
     const Fzf = (m * G * b) / L;
     let Fx = Tw / s.wheelR;
-    Fx = clamp(Fx, -mu * Fzr, mu * Fzr); // motricité (propulsion)
+    // Motricité : essieu moteur (propulsion, traction) ou les quatre roues.
+    const Fzd = s.awd ? Fzf + Fzr : s.drive === 'front' ? Fzf : Fzr;
+    Fx = clamp(Fx, -mu * Fzd, mu * Fzd);
     const crr = lerp(s.crr, s.crrSoft, this.soft);
     const roll = crr * m * G * Math.tanh(v / 0.4);
     const aero = 0.5 * s.rho * s.cdA * v * av;

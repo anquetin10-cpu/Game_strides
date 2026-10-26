@@ -9,6 +9,15 @@ import { TRUCK_DIM } from '../entities/truckModel.js';
 import * as THREE from 'three';
 
 const _seatQ = new THREE.Quaternion();
+const _door = new THREE.Vector3();
+const _tdoor = { x: 0, z: 0 };
+// Portière d'une voiture de la circulation (conducteur à gauche, x > 0).
+function trafficDoor(c, side) {
+  const h = c.heading, xl = side * (c.spec.W / 2 + 0.75), zl = -0.3;
+  _tdoor.x = c.pos.x + Math.sin(h) * zl + Math.cos(h) * xl;
+  _tdoor.z = c.pos.z + Math.cos(h) * zl - Math.sin(h) * xl;
+  return _tdoor;
+}
 
 export class Player {
   constructor(game, avatar = 'f') {
@@ -20,6 +29,7 @@ export class Player {
     this.mode = 'foot';
     this.horse = null;
     this.truck = null;
+    this.vehicle = null; // véhicule conduit (camion compris)
     this.focusPos = this.human.pos;
     this.locked = false;
     this._setupInteractions();
@@ -45,7 +55,7 @@ export class Player {
     this.human = new Human(this.game, this._outfit(this.avatar), { player: true, x: pos.x, z: pos.z, heading });
     this.human.isPlayer = true;
     if (mounted) this.human.mount(mounted);
-    this.focusPos = this.mode === 'ride' ? this.horse.pos : this.mode === 'drive' ? this.truck.pos : this.human.pos;
+    this.focusPos = this.mode === 'ride' ? this.horse.pos : this.mode === 'drive' ? this.vehicle.pos : this.human.pos;
   }
 
   setAvatar(avatar) {
@@ -68,17 +78,22 @@ export class Player {
 
   get speed() {
     if (this.mode === 'ride') return this.horse.speed;
-    if (this.mode === 'drive') return this.truck.speed;
+    if (this.mode === 'drive') return this.vehicle.speed;
     return this.human.speed;
   }
   get heading() {
     if (this.mode === 'ride') return this.horse.heading;
-    if (this.mode === 'drive') return this.truck.heading;
+    if (this.mode === 'drive') return this.vehicle.heading;
     return this.human.heading;
   }
+  // Au volant du camion Strides (les missions de transport l'exigent).
+  get inTruck() {
+    return this.mode === 'drive' && this.vehicle === this.truck;
+  }
+
   get focus() {
-    const pos = this.mode === 'ride' ? this.horse.pos : this.mode === 'drive' ? this.truck.pos : this.human.pos;
-    return { pos, heading: this.heading, speed: this.speed, mode: this.mode };
+    const pos = this.mode === 'ride' ? this.horse.pos : this.mode === 'drive' ? this.vehicle.pos : this.human.pos;
+    return { pos, heading: this.heading, speed: this.speed, mode: this.mode, camDist: this.mode === 'drive' ? this.vehicle.camDist : undefined };
   }
 
   _setupInteractions() {
@@ -122,6 +137,44 @@ export class Player {
       when: () => !!this.truck && !this.human.carrying && !this.transport?.leading && !this.transport?.busy,
       action: () => this.enterTruck(),
     });
+    // Toutes les autres voitures et le tracteur : garés, ou voitures de la circulation arrêtées devant le joueur.
+    const door = { x: 0, y: 0, z: 0 };
+    let near = null;
+    g.interact.add('vehicle-in', {
+      label: 'Conduire',
+      icon: 'car',
+      r: 2.6,
+      priority: 1.4,
+      modes: ['foot'],
+      getPos: () => {
+        near = null;
+        const p = this.human.pos;
+        let best = 2.6;
+        const consider = (v, traffic) => {
+          if (Math.abs(v.pos.x - p.x) > 8 || Math.abs(v.pos.z - p.z) > 8) return;
+          if (traffic && Math.abs(v.speed) > 0.6) return;
+          for (const side of [1, -1]) {
+            const dp = traffic ? trafficDoor(v, side) : v.doorPoint(side, _door);
+            const d = Math.hypot(p.x - dp.x, p.z - dp.z);
+            if (d < best) {
+              best = d;
+              near = { v, traffic };
+              door.x = dp.x;
+              door.z = dp.z;
+            }
+          }
+        };
+        for (const v of g.drivables) if (!v.driver) consider(v, false);
+        for (const c of g.ambient?.cars || []) if (c.mesh.visible && !c.uturn) consider(c, true);
+        return near ? door : { x: 1e9, z: 1e9 };
+      },
+      when: () => !!near && !this.human.carrying && !this.transport?.leading && !this.transport?.busy,
+      action: () => {
+        if (!near) return;
+        const v = near.traffic ? g.ambient.takeOver(near.v) : near.v;
+        if (v) this.enterVehicle(v);
+      },
+    });
     g.interact.add('truck-out', {
       label: 'Sortir',
       icon: 'down',
@@ -129,8 +182,8 @@ export class Player {
       priority: 0,
       modes: ['drive'],
       getPos: () => this.focusPos,
-      when: () => Math.abs(this.truck.speed) < 1.5 && !this.noExitTruck,
-      action: () => this.exitTruck(),
+      when: () => this.vehicle && Math.abs(this.vehicle.speed) < 1.5 && !(this.noExitTruck && this.vehicle === this.truck),
+      action: () => (this.vehicle === this.truck ? this.exitTruck() : this.exitVehicle()),
     });
   }
 
@@ -171,6 +224,7 @@ export class Player {
     this.transport?.release(true);
     if (this.mode === 'ride') this.dismount(true);
     this.mode = 'drive';
+    this.vehicle = t;
     t.driver = this;
     // Le personnage reste visible, assis au volant (voir _seatDriver).
     this.human.hidden = false;
@@ -179,10 +233,45 @@ export class Player {
     this.game.bus.emit('player:drive', t);
   }
 
+  // Voiture ou tracteur : on s'installe au volant et on démarre.
+  enterVehicle(v) {
+    if (v === this.truck) return this.enterTruck();
+    this.transport?.release(true);
+    if (this.mode === 'ride') this.dismount(true);
+    this.mode = 'drive';
+    this.vehicle = v;
+    v.driver = this;
+    v._syncCollider(true);
+    this.human.hidden = false;
+    this.focusPos = v.pos;
+    v.startEngine();
+    this.game.cam.yaw = v.heading + Math.PI;
+    this.game.bus.emit('player:drive', v);
+  }
+
+  exitVehicle() {
+    const v = this.vehicle;
+    if (this.mode !== 'drive' || !v || v === this.truck) return;
+    this.mode = 'foot';
+    v.driver = null;
+    v.speed = 0;
+    v.stopEngine();
+    v._syncCollider(true);
+    this.vehicle = null;
+    const p = v.doorPoint(1);
+    this.human.setPosition(p.x, p.z, v.heading + Math.PI / 2);
+    this.game.colliders.resolve(this.human.pos, 0.4, -Infinity);
+    this.human.snap();
+    this.focusPos = this.human.pos;
+    this.game.cam.yaw = v.heading + Math.PI / 2 + 0.6;
+    this.game.bus.emit('player:exitVehicle', v);
+  }
+
   exitTruck() {
     const t = this.truck;
     if (this.mode !== 'drive') return;
     this.mode = 'foot';
+    this.vehicle = null;
     t.driver = null;
     t.speed = 0;
     t.stopEngine();
@@ -202,8 +291,8 @@ export class Player {
   // Conducteur assis dans la cabine : posture assise, mains au volant, suit la caisse (tangage, roulis).
   _seatDriver(dt) {
     const hu = this.human;
-    const t = this.truck;
-    const S = TRUCK_DIM.seat;
+    const t = this.vehicle;
+    const S = t === this.truck ? TRUCK_DIM.seat : t.seat;
     t.localToWorld(S.x, S.y, S.z, hu.pos);
     const y = hu.pos.y;
     hu.heading = t.heading;
@@ -282,7 +371,7 @@ export class Player {
   // Téléportation (transport Strides, chargement de partie).
   teleport(x, z, heading = 0, withHorse = true) {
     if (this.mode === 'drive') {
-      this.truck.setPosition(x, z, heading);
+      this.vehicle.setPosition(x, z, heading);
     } else if (this.mode === 'ride') {
       this.horse.setPosition(x, z, heading);
     } else {
@@ -346,7 +435,8 @@ export class Player {
         ctrl.throttle = locked ? 0 : clamp(mv.y * 1.25, -1, 1);
         ctrl.steer = locked ? 0 : clamp(mv.x * 1.2, -1, 1);
       }
-      this.truck.update(dt, ctrl, g.sky.nightFactor);
+      this.truck.update(dt, this.vehicle === this.truck ? ctrl : null, g.sky.nightFactor);
+      for (const v of g.drivables) v.update(dt, v === this.vehicle ? ctrl : null, g.sky.nightFactor, g.camera.position);
       if (this.mode === 'drive') this._seatDriver(dt);
     }
     tp.update(dt);

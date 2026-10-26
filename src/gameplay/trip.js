@@ -111,11 +111,11 @@ export function driveStep(game, S, { to, text, timer = null, comfort = false, on
     to,
     text: () => {
       const p = P(game), t = T(game);
-      if (p.mode !== 'drive') return t.rampClosed ? 'Monte au volant du camion' : 'Ferme la rampe et monte au volant';
+      if (!p.inTruck) return p.mode === 'drive' ? 'Gare-toi et monte au volant du camion Strides' : t.rampClosed ? 'Monte au volant du camion' : 'Ferme la rampe et monte au volant';
       const d = Math.hypot(t.pos.x - to.x, t.pos.z - to.z);
       return d < to.r + 4 ? 'Gare le camion et arrête-toi' : text;
     },
-    target: () => (P(game).mode === 'drive' ? to : T(game).pos),
+    target: () => (P(game).inTruck ? to : T(game).pos),
     radius: to.r,
     hint: comfort ? 'Accélère et freine en douceur, ralentis dans les virages : le <b>confort du cheval</b> compte.' : 'Joystick vers le haut : accélérer · vers le bas : freiner puis reculer.',
     hintMs: 6000,
@@ -125,7 +125,7 @@ export function driveStep(game, S, { to, text, timer = null, comfort = false, on
     },
     update(r) {
       const t = T(game);
-      const ok = P(game).mode === 'drive' && Math.hypot(t.pos.x - to.x, t.pos.z - to.z) < to.r && Math.abs(t.speed) < 0.3;
+      const ok = P(game).inTruck && Math.hypot(t.pos.x - to.x, t.pos.z - to.z) < to.r && Math.abs(t.speed) < 0.3;
       if (ok) {
         if (timer) r.timer = null;
         if (comfort) r.data.comfort = TP(game).comfort;

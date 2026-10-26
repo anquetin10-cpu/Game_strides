@@ -33,6 +33,24 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 | Chargement | rampe, portillons, cheval mené en main, attache au box, confort du cheval pendant le trajet | gestes réels du transport | conforme | `transport-flow.mjs` (65 vérifications), `chapter1.mjs` |
 | Aller en concours | charger, rouler, se garer, décharger, retirer le dossard, s'échauffer, concourir, rentrer | déroulé réel d'un concours | conforme | `transport-flow.mjs` (partie concours), `chapter1.mjs` (M3) |
 
+## 2 bis. Autres véhicules (tous conduisibles)
+
+Voitures garées en ville, SUV et tracteur de l'Écurie du Val, voitures de la circulation arrêtées (on en prend le
+volant) : même modèle physique que le camion (moteur et courbe de couple, boîte automatique, embrayage au démarrage,
+frein moteur, pneus à adhérence limitée, direction asservie à la vitesse, épure d'Ackermann), roues motrices et
+directrices animées, suspension (plongée au freinage, roulis en virage), feux stop et de recul, phares la nuit, vitrage
+teinté laissant voir le conducteur et l'habitacle, son moteur propre (3 cylindres essence, diesel, tracteur).
+
+| Véhicule | Jeu | Référence réelle | Statut | Vérification |
+| --- | --- | --- | --- | --- |
+| Citadine essence | 1.0 3 cylindres 90 ch, 160 N·m, 1 200 kg, boîte pilotée 5 rapports, traction : 0-100 km/h en 11 – 14 s, ~175 km/h | citadine TCe 90 : 12,2 s, 178 km/h | conforme | `vehicles.test.js` |
+| Berline diesel | 1.5 130 ch, 300 N·m, 1 450 kg, automatique 6 rapports : 0-100 km/h en 9 – 12 s, 195 – 212 km/h | berline 130 ch diesel : ~10 s, 210 km/h | conforme | `vehicles.test.js` |
+| SUV diesel | 2.0 150 ch, 370 N·m, 1 750 kg, 4 roues motrices : 0-100 km/h en 9,5 – 12,5 s, < 192 km/h | SUV compact 150 ch : ~10,5 s, 190 km/h | conforme | `vehicles.test.js` |
+| Tracteur | 110 ch, 480 N·m, 5,6 t avec chargeur, inverseur et 6 rapports sous charge, 40 km/h | tracteur 110 ch : 40 km/h homologué | conforme | `vehicles.test.js` |
+| Freinage des voitures | 100 → 0 km/h en 37 – 47 m (freins hydrauliques, ABS) | 35 – 45 m sur sec | conforme | `vehicles.test.js` |
+| Braquage | rayon 4,5 – 6 m (empattement 2,5 – 2,75 m) | diamètre de braquage 10 – 11,5 m | conforme | `vehicles.test.js` |
+| Monter / sortir | bouton ACTION « Conduire » à la portière, « Sortir » à l'arrêt ; missions du camion réservées au camion Strides | — | conforme | `vehicles.mjs` |
+
 ## 3. Épreuves
 
 | Grandeur | Jeu | Référence réelle | Statut | Vérification |

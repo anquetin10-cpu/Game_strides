@@ -215,8 +215,8 @@ export class HUD {
         }
       } else {
         this.hrEl.classList.add('hidden');
-        // Camion : rapport engagé (boîte auto), régime moteur en barregraphe.
-        const t = p.truck;
+        // Véhicule conduit : rapport engagé (boîte auto), régime moteur en barregraphe (zone rouge au régime maxi).
+        const t = p.vehicle || p.truck;
         const gl = t.gearLabel;
         if (this.gearEl.textContent !== gl) {
           this.gearEl.textContent = gl;
@@ -227,7 +227,7 @@ export class HUD {
         if (this.gaitEl.textContent !== rt) this.gaitEl.textContent = rt;
         this.staminaEl.classList.remove('hidden', 'low');
         this.staminaEl.classList.add('rpm');
-        const on = Math.round((t.rpm / 2600) * 10);
+        const on = Math.round((t.rpm / ((t.redline || 2450) * 1.06)) * 10);
         [...this.staminaEl.children].forEach((c, i) => {
           c.classList.toggle('on', i < on);
           c.classList.toggle('red', i >= 9);

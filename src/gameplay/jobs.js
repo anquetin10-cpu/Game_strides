@@ -95,8 +95,8 @@ export function generateJob(game, seq, level) {
         const truck = g.player.truck;
         g.missions.noWhistle = true;
         return [
-          S.custom({ text: () => (g.player.mode === 'drive' ? '' : 'Monte dans le camion Strides'), target: () => truck.pos, radius: 4, update: () => g.player.mode === 'drive' }),
-          S.custom({ text: `Va charger le cheval — ${A.name}`, target: A, radius: 10, update: () => g.player.mode === 'drive' && Math.hypot(truck.pos.x - A.x, truck.pos.z - A.z) < 12 && Math.abs(truck.speed) < 1.5 }),
+          S.custom({ text: () => (g.player.inTruck ? '' : 'Monte dans le camion Strides'), target: () => truck.pos, radius: 4, update: () => g.player.inTruck }),
+          S.custom({ text: `Va charger le cheval — ${A.name}`, target: A, radius: 10, update: () => g.player.inTruck && Math.hypot(truck.pos.x - A.x, truck.pos.z - A.z) < 12 && Math.abs(truck.speed) < 1.5 }),
           S.custom({
             text: 'Chargement…',
             start: () => (g.player.locked = true),

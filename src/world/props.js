@@ -15,8 +15,25 @@ export function carMaterial() {
   return _carMat;
 }
 
+// Arrondi des arêtes d'un profil (découpe des coins de Chaikin), extrémités conservées (bas de caisse droit).
+function chaikin(pts, iters = 2) {
+  let p = pts;
+  for (let k = 0; k < iters; k++) {
+    const q = [p[0]];
+    for (let i = 0; i < p.length - 1; i++) {
+      const [ax, ay] = p[i], [bx, by] = p[i + 1];
+      q.push([ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25], [ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75]);
+    }
+    q.push(p[p.length - 1]);
+    p = q;
+  }
+  return p;
+}
+
 // Profil latéral extrudé (x = longueur vers l'avant, y = hauteur), centré en largeur, longueur alignée sur +z.
-function profile(points, width, bevel = 0.06, arches = null) {
+// smooth : nombre de passes d'arrondi des arêtes (capot, pare-brise, pavillon).
+function profile(points, width, bevel = 0.06, arches = null, smooth = 0) {
+  if (smooth) points = chaikin(points, smooth);
   const s = new THREE.Shape();
   s.moveTo(points[0][0], points[0][1]);
   for (let i = 1; i < points.length; i++) s.lineTo(points[i][0], points[i][1]);
@@ -56,11 +73,23 @@ export const CARS = {
     glass: [[-2.22, 1.2], [-2.08, 1.68], [0.55, 1.7], [1.18, 1.2]], roof: [[-2.1, 1.64], [-2.08, 1.77], [0.56, 1.78], [0.62, 1.66]] },
 };
 
-// Voiture réaliste (≈ 3k triangles) : carrosserie profilée, pavillon vitré, toit, montants, roues, optiques.
+// Vitrage teinté des véhicules conduisibles (on devine le conducteur et l'habitacle).
+let _glassMat = null;
+export function glassMaterial() {
+  // Double face : les vitres latérales (fonds de l'extrusion du profil) sont tournées vers l'intérieur.
+  _glassMat ||= new THREE.MeshPhysicalMaterial({ color: '#16222a', roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.74, clearcoat: 1, clearcoatRoughness: 0.03, depthWrite: false, side: THREE.DoubleSide });
+  return _glassMat;
+}
+
+// Voiture réaliste (≈ 3k triangles) : carrosserie profilée, pavillon vitré, toit, montants, joints de portières et
+// poignées, roues, optiques.
 // wheels = false : sans les roues (voitures en mouvement, roues animées à part).
-export function carGeo(color, kind = 'sedan', { wheels = true } = {}) {
+// split = true : renvoie { body, glass } — vitrage à part (matériau transparent) et habitacle (sièges, planche de bord,
+// volant à gauche) pour les véhicules conduisibles.
+export function carGeo(color, kind = 'sedan', { wheels = true, split = false } = {}) {
   const C = CARS[kind] || CARS.sedan;
   const parts = [];
+  const glassParts = split ? [] : parts;
   const hw = C.W / 2;
   const y0 = C.body[C.body.length - 1][1];
   // Position (z du centre) d'une pièce d'épaisseur t posée sur le bout de la caisse (s = 1 avant, -1 arrière)
@@ -75,12 +104,36 @@ export function carGeo(color, kind = 'sedan', { wheels = true } = {}) {
     }
     return s * (m + 0.07 + e - t / 2);
   };
-  parts.push([profile(C.body, C.W, 0.07, [C.wb / 2, -C.wb / 2, C.r, y0]), color, {}]);
-  parts.push([profile(C.glass, C.W - 0.26, 0.04), '#121920', {}]);
-  parts.push([profile(C.roof, C.W - 0.2, 0.04), color, {}]);
+  parts.push([profile(C.body, C.W, 0.07, [C.wb / 2, -C.wb / 2, C.r, y0], 2), color, {}]);
+  glassParts.push([profile(C.glass, C.W - 0.26, 0.04, null, 2), '#121920', {}]);
+  parts.push([profile(C.roof, C.W - 0.2, 0.04, null, 1), color, {}]);
   // Montant central et rétroviseurs.
   const gy = C.glass[0][1];
-  parts.push([box(C.W - 0.22, C.glass[2][1] - gy, 0.1), color, { y: gy, z: (C.glass[1][0] + C.glass[2][0]) / 2 - 0.1 }]);
+  const zB = (C.glass[1][0] + C.glass[2][0]) / 2 - 0.1;
+  parts.push([box(C.W - 0.22, C.glass[2][1] - gy, 0.1), color, { y: gy, z: zB }]);
+  // Joints de portières (avant, montant central, arrière) et poignées.
+  const belt = Math.max(...C.body.map((p) => p[1])) - 0.06;
+  const zA = C.glass[3][0] - 0.06, zR = C.glass[0][0] + (kind === 'hatch' ? 0.55 : 0.3);
+  for (const s of [-1, 1]) {
+    for (const zs of [zA, zB, zR]) parts.push([box(0.012, belt - y0 - 0.14, 0.014, true), '#0c0d0f', { x: s * (hw + 0.004), y: y0 + 0.12, z: zs }]);
+    for (const zh of [zB + 0.12, zR + 0.12]) parts.push([box(0.03, 0.04, 0.2), '#2a2c30', { x: s * (hw + 0.012), y: belt - 0.16, z: zh }]);
+    // Bas de caisse.
+    parts.push([box(0.04, 0.08, C.wb - 2 * C.r - 0.3), '#1b1c1f', { x: s * (hw - 0.01), y: y0 + 0.02, z: 0 }]);
+  }
+  if (split) {
+    // Habitacle : sièges avant et banquette, planche de bord, volant (conduite à gauche, x > 0).
+    // Hanches du conducteur ~1,25 m derrière le pied du pare-brise (comme sur une voiture réelle).
+    const fl = y0 + 0.08, dark = '#24262a', zs = zA - 1.2;
+    for (const sx of [0.36, -0.36]) {
+      parts.push([box(0.48, 0.16, 0.5), dark, { x: sx, y: fl + 0.16, z: zs }]);
+      parts.push([box(0.48, 0.62, 0.12), dark, { x: sx, y: fl + 0.3, z: zs - 0.3, rx: -0.2 }]);
+      parts.push([box(0.26, 0.18, 0.1), dark, { x: sx, y: fl + 0.92, z: zs - 0.42, rx: -0.2 }]);
+    }
+    parts.push([box(C.W - 0.4, 0.5, 0.5), dark, { y: fl + 0.16, z: zs - 0.95 }]);
+    parts.push([box(C.W - 0.3, 0.22, 0.55), '#1a1b1e', { y: belt - 0.26, z: zA - 0.2 }]);
+    parts.push([prep(new THREE.TorusGeometry(0.18, 0.025, 6, 16)), '#111214', { x: 0.36, y: belt + 0.02, z: zA - 0.72, rx: -0.35 }]);
+    parts.push([cyl(0.025, 0.025, 0.28, 6), '#111214', { x: 0.36, y: belt - 0.16, z: zA - 0.58, rx: 0.85 }]);
+  }
   for (const s of [-1, 1]) {
     parts.push([box(0.2, 0.12, 0.1), color, { x: s * (hw + 0.06), y: gy + 0.02, z: C.glass[3][0] - 0.1 }]);
     if (wheels) for (const zw of [C.wb / 2, -C.wb / 2]) parts.push(...wheel(C.r, 0.22).map(([g, c, tf]) => [g, c, { ...tf, x: s * (hw - 0.14), y: C.r, z: zw }]));
@@ -93,6 +146,7 @@ export function carGeo(color, kind = 'sedan', { wheels = true } = {}) {
   parts.push([box(0.9, 0.18, 0.04), '#1b1c1f', { y: yc, z: onTip(1, yc, yc + 0.18, 0.04) }]);
   parts.push([box(0.52, 0.11, 0.04), '#f2f1ec', { y: y0 + 0.1, z: onTip(1, Math.min(yc, y0 + 0.1), y0 + 0.21, 0.04, 0.025) }]);
   parts.push([box(0.52, 0.11, 0.04), '#f2f1ec', { y: y0 + 0.24, z: onTip(-1, y0 + 0.24, y0 + 0.35, 0.04, 0.025) }]);
+  if (split) return { body: partsToGeo(parts), glass: partsToGeo(glassParts) };
   return partsToGeo(parts);
 }
 
@@ -107,9 +161,25 @@ export function unitWheelGeo() {
   return partsToGeo(parts);
 }
 
-// Tracteur agricole (≈ 110 ch) avec chargeur frontal et godet.
-export function tractorGeo(color = '#a3271f') {
+// Roues du tracteur, centrées sur l'axe (axe selon x) : arrière à crampons en chevrons, avant directrice.
+export const TRACTOR_WHEELS = { rear: { x: 1.0, z: -0.95, r: 0.82 }, front: { x: 0.92, z: 1.55, r: 0.52 } };
+export function tractorWheelGeo(rear, s = 1) {
   const parts = [];
+  if (rear) {
+    parts.push(...wheel(0.82, 0.52, '#c9c2b0'));
+    for (let k = 0; k < 18; k++) {
+      const a = (k / 18) * Math.PI * 2;
+      parts.push([box(0.24, 0.08, 0.1, false), '#151517', { x: 0.12 * ((k % 2) * 2 - 1) * 0.5, y: Math.sin(a) * 0.84, z: Math.cos(a) * 0.84, rx: -a, ry: s * 0.4 * ((k % 2) * 2 - 1) }]);
+    }
+  } else parts.push(...wheel(0.52, 0.36, '#c9c2b0'));
+  return partsToGeo(parts);
+}
+
+// Tracteur agricole (≈ 110 ch) avec chargeur frontal et godet. split = true : { body, glass } sans les roues
+// (tracteur conduisible : roues animées, cabine vitrée avec siège et volant).
+export function tractorGeo(color = '#a3271f', { split = false } = {}) {
+  const parts = [];
+  const glassParts = split ? [] : parts;
   // Châssis, capot profilé, calandre.
   parts.push([box(0.9, 0.5, 3.3), '#2b2c30', { y: 0.55, z: 0.25 }]);
   parts.push([profile([[-0.2, 1.0], [-0.2, 1.62], [1.6, 1.58], [2.05, 1.38], [2.1, 0.95]], 0.95, 0.06), color, {}]);
@@ -117,17 +187,25 @@ export function tractorGeo(color = '#a3271f') {
   // Cabine : montants, toit, vitrage.
   parts.push([box(1.5, 0.12, 1.6), color, { y: 2.85, z: -0.85 }]);
   for (const sx of [-0.72, 0.72]) for (const sz of [-1.6, -0.12]) parts.push([box(0.07, 1.3, 0.07), '#1b1c1f', { x: sx, y: 1.55, z: sz }]);
-  parts.push([box(1.42, 1.25, 1.44), '#1a2229', { y: 1.58, z: -0.86 }]);
+  glassParts.push([box(1.42, 1.25, 1.44), '#1a2229', { y: 1.58, z: -0.86 }]);
+  if (split) {
+    parts.push([box(0.5, 0.12, 0.48), '#24262a', { y: 1.62, z: -1.12 }]);
+    parts.push([box(0.5, 0.55, 0.1), '#24262a', { y: 1.7, z: -1.38, rx: -0.15 }]);
+    parts.push([prep(new THREE.TorusGeometry(0.2, 0.025, 6, 16)), '#111214', { y: 2.05, z: -0.42, rx: -0.9 }]);
+    parts.push([cyl(0.03, 0.03, 0.55, 6), '#111214', { y: 1.6, z: -0.32, rx: 0.5 }]);
+  }
   parts.push([box(1.4, 0.35, 1.45), color, { y: 1.22, z: -0.86 }]);
   parts.push([cyl(0.06, 0.06, 1.2, 8), '#2b2c30', { x: 0.35, y: 1.6, z: 1.15 }]);
   // Roues arrière (crampons en chevrons) et avant.
   for (const s of [-1, 1]) {
-    parts.push(...wheel(0.82, 0.52, '#c9c2b0').map(([g, c, tf]) => [g, c, { ...tf, x: s * 1.0, y: 0.82, z: -0.95 }]));
-    for (let k = 0; k < 18; k++) {
-      const a = (k / 18) * Math.PI * 2;
-      parts.push([box(0.24, 0.08, 0.1, false), '#151517', { x: s * (1.0 + 0.12 * ((k % 2) * 2 - 1) * 0.5), y: 0.82 + Math.sin(a) * 0.84, z: -0.95 + Math.cos(a) * 0.84, rx: -a, ry: s * 0.4 * ((k % 2) * 2 - 1) }]);
+    if (!split) {
+      parts.push(...wheel(0.82, 0.52, '#c9c2b0').map(([g, c, tf]) => [g, c, { ...tf, x: s * 1.0, y: 0.82, z: -0.95 }]));
+      for (let k = 0; k < 18; k++) {
+        const a = (k / 18) * Math.PI * 2;
+        parts.push([box(0.24, 0.08, 0.1, false), '#151517', { x: s * (1.0 + 0.12 * ((k % 2) * 2 - 1) * 0.5), y: 0.82 + Math.sin(a) * 0.84, z: -0.95 + Math.cos(a) * 0.84, rx: -a, ry: s * 0.4 * ((k % 2) * 2 - 1) }]);
+      }
+      parts.push(...wheel(0.52, 0.36, '#c9c2b0').map(([g, c, tf]) => [g, c, { ...tf, x: s * 0.92, y: 0.52, z: 1.55 }]));
     }
-    parts.push(...wheel(0.52, 0.36, '#c9c2b0').map(([g, c, tf]) => [g, c, { ...tf, x: s * 0.92, y: 0.52, z: 1.55 }]));
     // Ailes.
     parts.push([box(0.62, 0.06, 1.3), color, { x: s * 1.0, y: 1.72, z: -0.95 }]);
     parts.push([box(0.4, 0.05, 0.75), '#1b1c1f', { x: s * 0.92, y: 1.08, z: 1.55 }]);
@@ -137,6 +215,7 @@ export function tractorGeo(color = '#a3271f') {
   // Godet.
   parts.push([box(2.1, 0.55, 0.7), '#55585c', { y: 0.12, z: 3.1 }]);
   parts.push([box(2.1, 0.06, 0.8), '#3d4044', { y: 0.06, z: 3.15 }]);
+  if (split) return { body: partsToGeo(parts), glass: partsToGeo(glassParts) };
   return partsToGeo(parts);
 }
 

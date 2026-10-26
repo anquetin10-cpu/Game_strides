@@ -304,7 +304,7 @@ export class Phone {
       const btn = h('button.btn.small.primary', { text: `Réserver · ${price} €` });
       tap(btn, () => {
         if (g.missions.active) return g.hud.toast('Termine ta mission en cours d’abord.');
-        if (g.player.mode === 'drive') return g.hud.toast('Sors du camion d’abord.');
+        if (g.player.mode === 'drive') return g.hud.toast(g.player.inTruck ? 'Sors du camion d’abord.' : 'Sors du véhicule d’abord.');
         if (d.money < price) return g.hud.toast('Solde insuffisant.');
         this.close();
         g.fastTravel(s.place, price, s.name);

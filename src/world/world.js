@@ -10,7 +10,7 @@ import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBo
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
 import { applySurfaces, applyRoadShader, applyInteriors, INTERIOR_UNIFORMS } from './surfaces.js';
-import { CARS, carGeo, carMaterial, tractorGeo, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
+import { troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky, CLOUD_UNIFORMS } from './sky.js';
 import { TIDE_EXTREMES } from './weather.js';
@@ -47,7 +47,7 @@ export class World {
     // Petits détails (sièges, public…) : lot séparé, masqué au-delà de quelques centaines de mètres.
     this.detailBatch = new StaticBatch(90);
     // Véhicules garés : peinture vernie.
-    this.carBatch = new StaticBatch(200);
+    this.parkedVehicles = [];
     this.glass = new StaticBatch(150);
     this.lights = new StaticBatch(150);
     this.chunks = [];
@@ -119,7 +119,6 @@ export class World {
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
     this.detailChunks = this.detailBatch.build(this.mat, this.group, { name: 'detail', castShadow: false });
     this._buildLampPools();
-    this.chunks.push(...this.carBatch.build(carMaterial(), this.group, { name: 'cars' }));
     for (const m of this.detailChunks) m.userData.center = m.geometry.boundingSphere.center.clone();
     this.chunks.push(...this.glass.build(this.glassMat, this.group, { castShadow: false, name: 'glass' }));
     this.chunks.push(...this.lights.build(this.lightMat, this.group, { castShadow: false, receiveShadow: false, name: 'lights' }));
@@ -381,10 +380,11 @@ export class World {
     this.batch.add(wheelbarrowGeo(), null, -129, this.h(-129, 161), 161, 2.2);
     this.batch.add(muckHeapGeo(), null, -178, this.h(-178, 152), 152, Math.PI / 2);
     this.colliders.addBox(-178, 152, 3.2, 3.6, Math.PI / 2, Infinity, 'muck');
-    this.carBatch.add(tractorGeo(), null, -158, this.h(-158, 166), 166, -Math.PI / 2 - 0.25);
-    this.colliders.addBox(-158, 166, 1.4, 2.6, -Math.PI / 2 - 0.25, Infinity, 'tractor');
-    this.carBatch.add(carGeo('#2b3a4a', 'suv'), null, -84, this.h(-84, 146), 146, Math.PI / 2);
-    this.colliders.addBox(-84, 146, CARS.suv.W / 2 + 0.16, CARS.suv.L / 2 + 0.12, Math.PI / 2, Infinity, 'car');
+    // Tracteur et voiture de l'écurie : véhicules conduisibles (créés par le jeu, voir vehicle.js).
+    this.parkedVehicles.push(
+      { kind: 'tractor', color: '#a3271f', x: -158, z: 166, heading: -Math.PI / 2 - 0.25 },
+      { kind: 'suv', color: '#2b3a4a', x: -84, z: 146, heading: Math.PI / 2 },
+    );
     for (let i = 0; i < 6; i++) {
       const bx = -172 + (i % 3) * 1.5, bz = 192 + Math.floor(i / 3) * 1.6;
       this.batch.add(wrappedBaleGeo(i % 4 === 3 ? '#e9e8e2' : '#2e3a2f'), null, bx, this.h(bx, bz), bz, 0);
@@ -899,12 +899,8 @@ export class World {
       [-126.2, -210, 0], [-126.2, -190, 0], [66.2, -260, Math.PI], [66.2, -276, Math.PI], [100, -169.8, Math.PI / 2],
       [-170, -228.2, -Math.PI / 2], [-100, -169.8, Math.PI / 2], [120, -296.2, -Math.PI / 2],
     ];
-    spots.forEach(([x, z, r], i) => {
-      const kind = ['sedan', 'hatch', 'suv'][i % 3];
-      this.carBatch.add(carGeo(colors[i % colors.length], kind), null, x, this.h(x, z), z, r);
-      // Collision à la taille de la carrosserie profilée (rétroviseurs, optiques et plaques compris).
-      this.colliders.addBox(x, z, CARS[kind].W / 2 + 0.16, CARS[kind].L / 2 + 0.12, r, Infinity, 'car');
-    });
+    // Voitures conduisibles, créées par le jeu (vehicle.js) avec leur collision.
+    spots.forEach(([x, z, r], i) => this.parkedVehicles.push({ kind: ['sedan', 'hatch', 'suv'][i % 3], color: colors[i % colors.length], x, z, heading: r }));
     // Statue équestre en bronze (« Le Galop »), devant Strides HQ.
     const sx = TOWN.hq.x - 30, sz = TOWN.hq.z + TOWN.hq.d / 2 + 6;
     const sy = this.h(sx, sz);

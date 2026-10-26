@@ -12,6 +12,7 @@ export const ICONS = {
   gallop: s('<path d="M3 8h7M2 12h9M4 16h6"/><path d="M14 7l6 5-6 5"/>'),
   run: s('<circle cx="14" cy="4.5" r="1.8"/><path d="M8 21l3-6 3 2v5M6 12l3-4h5l2 4 3 1"/>'),
   whistle: s('<circle cx="9" cy="14" r="5"/><path d="M13 11l8-4v4l-6 2"/><path d="M9 14h.01"/>'),
+  car: s('<path d="M3 16v-3.5l2-4.5h14l2 4.5V16z"/><path d="M5 12.5h14"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>'),
   truck: s('<path d="M2 16V6h12v10M14 9h4l3 3.5V16h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>'),
   down: s('<path d="M12 4v14M6 12l6 6 6-6"/>'),
   hand: s('<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4a1.5 1.5 0 0 1 3 0v7M14 10.5V6a1.5 1.5 0 0 1 3 0v8c0 4-2.5 7-6 7-2.5 0-4-1-5.5-3L3.5 14.5a1.5 1.5 0 0 1 2.3-1.9L8 15"/>'),

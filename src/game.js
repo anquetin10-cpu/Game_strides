@@ -15,6 +15,7 @@ import { Horse } from './entities/horse.js';
 import { hoofWorldPosition } from './entities/horseModel.js';
 import { Human } from './entities/human.js';
 import { Truck } from './entities/truck.js';
+import { Vehicle } from './entities/vehicle.js';
 import { FollowCamera } from './entities/camera.js';
 import { Player } from './gameplay/player.js';
 import { Interactions } from './gameplay/interact.js';
@@ -67,6 +68,7 @@ export class Game {
     this.horses = [];
     this.humans = [];
     this.vehicles = [];
+    this.drivables = []; // véhicules conduisibles autres que le camion
     this.cheerT = 0;
     this.params = new URLSearchParams(location.search);
     this.debug = this.params.has('debug');
@@ -144,6 +146,13 @@ export class Game {
     this.truck = new Truck(this, { x: HOME.truck.x, z: HOME.truck.z, heading: HOME.truck.rot });
     this.player.truck = this.truck;
     this.vehicles.push(this.truck);
+    // Voitures garées, voiture et tracteur de l'écurie : conduisibles.
+    for (const d of this.world.parkedVehicles) {
+      const v = new Vehicle(this, d);
+      v.home = d;
+      this.drivables.push(v);
+      this.vehicles.push(v);
+    }
     this.spawnMainHorse(d.activeHorse);
     this.ambient = new Ambient(this);
     this.screens.setLoading(0.9, 'Fers d’or et parcours');
@@ -713,11 +722,13 @@ export class Game {
   _storePositions() {
     if (!this.player || this.state === 'title') return;
     const p = this.player;
-    const f = p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.truck.pos;
+    const f = p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.vehicle.pos;
     this.save.data.pos = {
       x: f.x, z: f.z, heading: p.heading,
       horse: this.mainHorse ? { x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, heading: this.mainHorse.heading } : null,
       truck: { x: this.truck.pos.x, z: this.truck.pos.z, heading: this.truck.heading },
+      // Véhicules déplacés par le joueur (indice dans la liste des véhicules garés à l'origine).
+      vehicles: this.drivables.map((v, i) => (v.home && !v.atSpot ? { i: this.world.parkedVehicles.indexOf(v.home), x: v.pos.x, z: v.pos.z, heading: v.heading } : null)).filter((v) => v && v.i >= 0),
     };
     // État du cheval (énergie, hydratation, soins…).
     if (this.mainHorse) (this.save.data.horseCare ||= {})[this.mainHorse.id] = this.mainHorse.cond.toJSON();
@@ -727,6 +738,13 @@ export class Game {
     const pos = this.save.data.pos;
     if (pos && this.save.data.started) {
       if (pos.truck) this.truck.setPosition(pos.truck.x, pos.truck.z, pos.truck.heading);
+      for (const sv of pos.vehicles || []) {
+        const v = this.drivables.find((d) => d.home === this.world.parkedVehicles[sv.i]);
+        if (v) {
+          v.setPosition(sv.x, sv.z, sv.heading);
+          v.atSpot = false;
+        }
+      }
       this.player.human.setPosition(pos.x, pos.z, pos.heading);
       this.colliders.resolve(this.player.human.pos, 0.5, -Infinity);
       if (pos.horse) this.mainHorse.setPosition(pos.horse.x, pos.horse.z, pos.horse.heading);
@@ -980,7 +998,7 @@ export class Game {
     ];
     for (const [p, kind] of pois) out.push({ x: p.x, z: p.z, kind, label: full ? p.name : '' });
     if (this.player.mode !== 'ride' && this.mainHorse && !this.mainHorse.hiddenInTruck) out.push({ x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, kind: 'horse', sticky: true, label: full ? this.mainHorse.name : '' });
-    if (this.player.mode !== 'drive') out.push({ x: this.truck.pos.x, z: this.truck.pos.z, kind: 'truck', label: full ? 'Camion Strides' : '' });
+    if (!(this.player.mode === 'drive' && this.player.vehicle === this.truck)) out.push({ x: this.truck.pos.x, z: this.truck.pos.z, kind: 'truck', label: full ? 'Camion Strides' : '' });
     const f = this.player.focus.pos;
     for (const b of this.collectibles.blips()) if (Math.hypot(b.x - f.x, b.z - f.z) < 70) out.push(b);
     return out;
@@ -1122,7 +1140,7 @@ export class Game {
       // Distance au rivage du moment (la mer se retire à plus de 100 m à basse mer de vives-eaux).
       seaDist: Math.max(0, f.z - this.seaLineZ(f.x)),
       crowd: Math.hypot(f.x - POLE.arena.x, f.z - POLE.arena.z) < 90 ? 0.6 : 0,
-      engine: this.player.mode === 'drive' ? Math.abs(this.truck.speed) : -1,
+      engine: this.player.mode === 'drive' ? Math.abs(this.player.vehicle.speed) : -1,
     }, dt);
 
     // HUD.
@@ -1205,7 +1223,7 @@ export class Game {
       }
     }
     for (const v of this.vehicles) {
-      if (v === this.truck && p.mode === 'drive') continue;
+      if (v === p.vehicle && p.mode === 'drive') continue;
       for (const off of [1.5, -1.5]) {
         const cx = v.pos.x + Math.sin(v.heading) * off, cz = v.pos.z + Math.cos(v.heading) * off;
         const dx = ent.pos.x - cx, dz = ent.pos.z - cz;

@@ -15,7 +15,8 @@ Jouable dans le navigateur, **pensé d'abord pour l'iPhone** (commandes tactiles
 | Caméra : glisser dans la moitié droite | Glisser à la souris |
 | **SAUT** (à cheval) — l'anneau devient vert au bon moment | Espace |
 | **BOOST** (maintenir) : grand galop, anneau d'endurance autour du bouton / **COURIR** à pied | Maj |
-| **ACTION** contextuelle : monter, descendre, parler, prendre, livrer… | E |
+| **ACTION** contextuelle : monter, descendre, parler, prendre, livrer, **conduire** (camion, voitures, tracteur) / sortir du véhicule… | E |
+| Au volant : joystick vers le haut = accélérer, vers le bas = freiner puis marche arrière, gauche/droite = braquer | ZQSD / WASD |
 | Sifflet : rappeler son cheval | Q |
 | Téléphone (en haut à droite) — app Strides, carte, messages… | P |
 | Minimap : toucher pour ouvrir la carte et poser un repère GPS | M |

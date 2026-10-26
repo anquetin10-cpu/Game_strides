@@ -197,6 +197,7 @@ export class Challenges {
     const all = g.obstacles.list.filter((o) => o.course === cfg.courseId).sort((a, b) => a.num - b.num);
     const pre = {
       mode: p.mode,
+      vehicle: p.vehicle,
       human: { x: p.human.pos.x, z: p.human.pos.z, heading: p.human.heading },
       gameTime: d.gameTime,
       rain: g.sky.rain,
@@ -208,8 +209,9 @@ export class Challenges {
     // Monde à rétablir si la page est rechargée pendant la tentative.
     challengeStore(d).resume = { gameTime: d.gameTime, pos: copy(d.pos), care: main ? { id: main.id, cond: main.cond.toJSON() } : null };
     if (p.mode === 'drive') {
-      p.truck.speed = 0;
-      p.exitTruck();
+      p.vehicle.speed = 0;
+      if (p.vehicle === p.truck) p.exitTruck();
+      else p.exitVehicle();
     }
     if (p.mode === 'ride') {
       p.horse.speed = 0;
@@ -319,7 +321,7 @@ export class Challenges {
     }
     p.human.setPosition(pre.human.x, pre.human.z, pre.human.heading);
     if (pre.mode === 'ride' && main && !main.hiddenInTruck) p.mount();
-    else if (pre.mode === 'drive') p.enterTruck();
+    else if (pre.mode === 'drive') p.enterVehicle(pre.vehicle || p.truck);
     d.gameTime = pre.gameTime;
     g.sky.rain = pre.rain;
     g.sky.wet = pre.wet;

@@ -14,10 +14,12 @@ export function makeSteps(game) {
   };
   const resolve = (v) => (typeof v === 'function' ? v() : v);
   const modeHint = (mode) => {
-    if (!mode || P().mode === mode) return null;
-    if (mode === 'ride') return P().mode === 'drive' ? 'Sors du camion puis monte à cheval.' : 'Monte sur ton cheval (siffle-le si besoin).';
-    if (mode === 'foot') return P().mode === 'ride' ? 'Descends de cheval (bouton ACTION à l’arrêt).' : 'Sors du camion (ACTION à l’arrêt).';
-    if (mode === 'drive') return 'Monte dans le camion Strides.';
+    // Une étape « au volant » est une étape du camion Strides (transport des chevaux).
+    if (!mode || (mode === 'drive' ? P().inTruck : P().mode === mode)) return null;
+    const veh = P().vehicle && !P().inTruck ? 'du véhicule' : 'du camion';
+    if (mode === 'ride') return P().mode === 'drive' ? `Sors ${veh} puis monte à cheval.` : 'Monte sur ton cheval (siffle-le si besoin).';
+    if (mode === 'foot') return P().mode === 'ride' ? 'Descends de cheval (bouton ACTION à l’arrêt).' : `Sors ${veh} (ACTION à l’arrêt).`;
+    if (mode === 'drive') return P().mode === 'drive' ? 'Gare-toi et monte dans le camion Strides.' : 'Monte dans le camion Strides.';
     return null;
   };
   let uid = 0;
@@ -50,7 +52,7 @@ export function makeSteps(game) {
         hint,
         update() {
           const p = resolve(pos);
-          return dist(p) < r && (!mode || P().mode === mode);
+          return dist(p) < r && (!mode || (mode === 'drive' ? P().inTruck : P().mode === mode));
         },
       };
     },

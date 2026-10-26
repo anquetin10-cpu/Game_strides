@@ -376,11 +376,11 @@ export const STORY = [
       const H = PARKS.haras;
       return [
         S.custom({
-          text: () => (game.player.mode === 'drive' ? '' : 'Monte dans le camion Strides (Écurie du Val)'),
+          text: () => (game.player.inTruck ? '' : 'Monte dans le camion Strides (Écurie du Val)'),
           target: () => truck.pos,
           radius: 5,
           hint: 'Au volant : joystick vers le haut = accélérer, vers le bas = freiner puis reculer. Rampe fermée pour rouler.',
-          update: () => game.player.mode === 'drive',
+          update: () => game.player.inTruck,
         }),
         driveStep(game, S, {
           to: H,

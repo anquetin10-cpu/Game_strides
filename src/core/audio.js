@@ -91,8 +91,8 @@ export class Audio {
     const wv = Math.max(0, 1 - seaDist / 160) * (0.1 + 0.06 * Math.sin(t * 0.6));
     this.waves.g.gain.setTargetAtTime(wv, t, 0.4);
     this.crowd.g.gain.setTargetAtTime(crowd * 0.08, t, 0.5);
-    if (this._eng) {
-      // Moteur du camion géré par truckEngine() (régime, charge, distance).
+    if (this._engs) {
+      // Moteurs des véhicules gérés par vehicleEngine() (régime, charge, distance).
       this.engine.g.gain.setTargetAtTime(0, t, 0.2);
     } else if (engine >= 0) {
       this.engine.g.gain.setTargetAtTime(0.06, t, 0.2);
@@ -518,41 +518,53 @@ export class Audio {
 
   // Appelé à chaque image par le camion : { on, rpm, load, speed, dist, inside, reverse, brake }.
   truckEngine(st) {
+    st.beep = true;
+    this.vehicleEngine('truck', st);
+  }
+
+  // Moteur d'un véhicule (un jeu de nœuds par clé : camion, voiture conduite) : impulsions d'allumage selon le nombre
+  // de cylindres (moteur 4 temps : cyl / 2 explosions par tour), diesel (claquement, turbo) ou essence (plus aigu).
+  // st : { on, rpm, load, speed, dist, inside, reverse, brake, beep?, fuel?, cyl?, tractor? }.
+  vehicleEngine(key, st) {
     if (!this.ctx) return;
-    const e = (this._eng ||= this._engineNodes());
+    const engs = (this._engs ||= {});
+    const e = (engs[key] ||= this._engineNodes());
     const t = this.ctx.currentTime;
+    const petrol = st.fuel === 'petrol';
     const near = st.inside ? 1 : Math.max(0, 1 - st.dist / 70) ** 1.6;
-    const vol = st.on ? (0.05 + st.load * 0.07) * near : 0;
+    const vol = st.on ? (st.tractor ? 0.07 + st.load * 0.08 : petrol ? 0.035 + st.load * 0.06 : 0.04 + st.load * 0.06) * near : 0;
     e.bus.gain.setTargetAtTime(vol, t, st.on ? 0.08 : 0.35);
-    if (!st.on && !this._engWasOn) {
+    if (!st.on && !e.wasOn) {
       e.beepG.gain.setTargetAtTime(0, t, 0.02);
       return;
     }
-    this._engWasOn = st.on;
+    e.wasOn = st.on;
     const rpm = Math.max(300, st.rpm);
-    const f = (rpm / 60) * 2;
+    const f = (rpm / 60) * ((st.cyl || 4) / 2);
     e.fire.frequency.setTargetAtTime(f, t, 0.05);
     e.sub.frequency.setTargetAtTime(f / 2, t, 0.05);
     e.lfo.frequency.setTargetAtTime(f, t, 0.05);
-    e.fireLp.frequency.setTargetAtTime(140 + rpm * 0.18 + st.load * 520, t, 0.08);
-    e.lfoG.gain.setTargetAtTime(0.025 + st.load * 0.05, t, 0.08);
+    e.fireLp.frequency.setTargetAtTime(petrol ? 260 + rpm * 0.32 + st.load * 900 : 140 + rpm * 0.18 + st.load * 520, t, 0.08);
+    e.lfoG.gain.setTargetAtTime(petrol ? 0.008 : 0.025 + st.load * 0.05, t, 0.08);
     e.bp.frequency.setTargetAtTime(1400 + rpm * 0.35, t, 0.1);
     e.turbo.frequency.setTargetAtTime(1800 + rpm * 1.1, t, 0.15);
-    e.turboG.gain.setTargetAtTime(st.on ? Math.max(0, rpm - 1100) / 1500 * (0.15 + st.load * 0.5) * 0.06 : 0, t, 0.25);
+    e.turboG.gain.setTargetAtTime(st.on && !petrol ? Math.max(0, rpm - 1100) / 1500 * (0.15 + st.load * 0.5) * (st.beep ? 0.06 : 0.03) : 0, t, 0.25);
     e.muffle.frequency.setTargetAtTime(st.inside ? 1500 + st.load * 1200 : 900 + near * 2200, t, 0.2);
-    // Bip de recul (0,4 s / 0,4 s).
-    const on = st.reverse && near > 0.05 && (t % 0.8) < 0.4;
+    // Bip de recul des poids lourds (0,4 s / 0,4 s).
+    const on = st.beep && st.reverse && near > 0.05 && (t % 0.8) < 0.4;
     e.beepG.gain.setTargetAtTime(on ? 0.05 * Math.max(near, 0.4) : 0, t, 0.006);
   }
 
-  engineStart() {
+  // Démarreur puis mise en route (diesel par défaut ; essence : démarreur plus aigu, moteur qui prend plus vite).
+  engineStart(fuel = 'diesel') {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t = ctx.currentTime;
+    const petrol = fuel === 'petrol';
     const o = ctx.createOscillator();
     o.type = 'sawtooth';
-    o.frequency.setValueAtTime(95, t);
-    o.frequency.linearRampToValueAtTime(140, t + 0.7);
+    o.frequency.setValueAtTime(petrol ? 150 : 95, t);
+    o.frequency.linearRampToValueAtTime(petrol ? 230 : 140, t + 0.7);
     const am = ctx.createOscillator();
     am.frequency.value = 11;
     const amG = ctx.createGain();

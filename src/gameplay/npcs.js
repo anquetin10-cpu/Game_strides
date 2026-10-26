@@ -8,6 +8,7 @@ import { CHATTER } from './data.js';
 import { mulberry32, pick, polylineLength, pointAlong, dampAngle, clamp } from '../core/math.js';
 import { carGeo, carMaterial, unitWheelGeo, CARS } from '../world/props.js';
 import { ovalPoint } from './courses.js';
+import { Vehicle } from '../entities/vehicle.js';
 import { addCloudShadows } from '../world/sky.js';
 
 const COATS = ['bay', 'chestnut', 'grey', 'black', 'palomino', 'darkbay', 'white'];
@@ -71,6 +72,7 @@ const LANE = 2.2;
 class Car {
   constructor(game, road, color, offset, kind = 'sedan') {
     this.game = game;
+    this.color = color;
     this.road = road;
     this.len = polylineLength(road.pts);
     this.s = offset * this.len;
@@ -137,7 +139,8 @@ class Car {
     let gap = this._ahead(g.player.focus.pos, fx, fz, look);
     // Cavalier : la voiture attend derrière le cheval sans klaxonner.
     const byPlayer = gap < Infinity && g.player.mode !== 'ride';
-    for (const v of g.vehicles) if (v !== this && v.pos) gap = Math.min(gap, this._ahead(v.pos, fx, fz, look));
+    // Véhicules garés à leur place (hors voie) ignorés ; une voiture laissée sur la chaussée par le joueur arrête la circulation.
+    for (const v of g.vehicles) if (v !== this && v.pos && !v.parked) gap = Math.min(gap, this._ahead(v.pos, fx, fz, look));
     // Code de la route : on croise et on dépasse les chevaux au pas (20 km/h), sans klaxonner.
     for (const h of g.horses) {
       if (h.hiddenInTruck || !h.pos) continue;
@@ -276,18 +279,20 @@ class TrafficFx {
     const { _car: car, _loc: loc, _m: m, _q: q, _e: e, _v: v, _s: sc } = this;
     const lc = this.lights.instanceColor.array, bc = this.beams.instanceColor.array;
     // Seules les voitures visibles occupent des instances : les autres ne sont dessinées ni à l'écran ni dans l'ombre.
-    let i = 0;
+    let i = 0, maxLk = 0;
     for (let ci = 0; ci < cars.length; ci++) {
       const c = cars[ci];
       if (!c.mesh.visible) continue;
       const C = c.spec, hw = C.W / 2;
       // Roues : sur la route (pas de tangage de caisse), en rotation autour de l'essieu.
-      e.set(c.slope, c.heading, 0);
+      e.set(c.slope, c.heading, c.groundRoll || 0);
       car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
       let k = 0;
       for (let sx = -1; sx <= 1; sx += 2) {
         for (let zw = C.wb / 2, n = 0; n < 2; n++, zw = -zw) {
-          loc.compose(v.set(sx * (hw - 0.14), C.r, zw), q.setFromEuler(e.set(c.spin, 0, 0)), sc.set(C.r, C.r, C.r));
+          // Roues avant braquées (épure d'Ackermann des voitures conduisibles), x > 0 à gauche.
+          const st = n === 0 ? (sx > 0 ? c.steerL : c.steerR) || 0 : 0;
+          loc.compose(v.set(sx * (hw - 0.14), C.r, zw), q.setFromEuler(e.set(c.spin, st, 0)), sc.set(C.r, C.r, C.r));
           this.wheels.setMatrixAt(i * 4 + k++, m.multiplyMatrices(car, loc));
         }
       }
@@ -295,30 +300,34 @@ class TrafficFx {
       e.set(c.slope + c.pitch, c.heading, 0);
       car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
       const yH = C.body[C.body.length - 2][1] - 0.06, yT = C.body[2][1] - 0.06;
-      const tail = on * 0.55 + (c.braking ? 0.9 : 0);
+      // Feux de la voiture : globaux pour la circulation, propres à chaque voiture conduisible (moteur, nuit).
+      const lk = c.lightK ?? on;
+      if (lk > maxLk) maxLk = lk;
+      const tail = lk * 0.55 + (c.braking ? 0.9 : 0);
       k = 0;
       for (let sx = -1; sx <= 1; sx += 2) {
         loc.compose(v.set(sx * (hw - 0.32), yH, C.L / 2 + 0.11), q.identity(), sc.set(1, 1, 1));
         this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
         let o = (i * 4 + k++) * 3;
-        lc[o] = 1.6 * on;
-        lc[o + 1] = 1.45 * on;
-        lc[o + 2] = 1.15 * on;
+        lc[o] = 1.6 * lk;
+        lc[o + 1] = 1.45 * lk;
+        lc[o + 2] = 1.15 * lk;
         loc.makeRotationY(Math.PI).scale(sc.set(0.8, 0.8, 0.8)).setPosition(sx * (hw - 0.3), yT, -C.L / 2 - 0.11);
         this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
         o = (i * 4 + k++) * 3;
-        lc[o] = 1.3 * tail;
-        lc[o + 1] = 0.06 * tail;
-        lc[o + 2] = 0.04 * tail;
+        // Feux de recul : blancs en marche arrière.
+        lc[o] = c.reversing ? 1.2 : 1.3 * tail;
+        lc[o + 1] = c.reversing ? 1.15 : 0.06 * tail;
+        lc[o + 2] = c.reversing ? 1.05 : 0.04 * tail;
       }
       // Faisceau des phares sur la chaussée.
       e.set(c.slope, c.heading, 0);
       car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
       loc.makeTranslation(0, 0.07, C.L / 2 - 0.3);
       this.beams.setMatrixAt(i, m.multiplyMatrices(car, loc));
-      bc[i * 3] = 0.2 * on;
-      bc[i * 3 + 1] = 0.185 * on;
-      bc[i * 3 + 2] = 0.15 * on;
+      bc[i * 3] = 0.2 * lk;
+      bc[i * 3 + 1] = 0.185 * lk;
+      bc[i * 3 + 2] = 0.15 * lk;
       i++;
     }
     this.wheels.count = this.lights.count = i * 4;
@@ -329,7 +338,7 @@ class TrafficFx {
     this.beams.instanceMatrix.needsUpdate = true;
     this.beams.instanceColor.needsUpdate = true;
     this.wheels.visible = this.lights.visible = i > 0;
-    this.beams.visible = i > 0 && on > 0.02;
+    this.beams.visible = i > 0 && maxLk > 0.02;
   }
 }
 
@@ -416,7 +425,26 @@ export class Ambient {
       this.cars.push(c);
       g.vehicles.push(c);
     });
-    this.fx = new TrafficFx(g.scene, this.cars.length);
+    // Effets partagés avec les voitures conduisibles (roues, optiques).
+    this.fx = new TrafficFx(g.scene, this.cars.length + (g.drivables || []).filter((v) => !v.isTractor).length);
+    this._fxList = [];
+  }
+
+  // Le joueur prend le volant d'une voiture de la circulation arrêtée : elle quitte le trafic et devient un véhicule
+  // conduisible (même modèle, même couleur, à la même place).
+  takeOver(car) {
+    const g = this.game;
+    const i = this.cars.indexOf(car);
+    if (i < 0) return null;
+    this.cars.splice(i, 1);
+    const k = g.vehicles.indexOf(car);
+    if (k >= 0) g.vehicles.splice(k, 1);
+    g.scene.remove(car.mesh);
+    const v = new Vehicle(g, { kind: car.kind, color: car.color, x: car.pos.x, z: car.pos.z, heading: car.heading });
+    v.atSpot = false;
+    g.drivables.push(v);
+    g.vehicles.push(v);
+    return v;
   }
 
   rider(points, coat, speed, pad) {
@@ -442,7 +470,11 @@ export class Ambient {
     for (const c of this.cars) c.update(dt, camPos);
     const g = this.game;
     // Feux allumés de nuit, à l'aube et au crépuscule, et sous la pluie.
-    this.fx.update(this.cars, clamp(g.sky.nightFactor * 1.6 + g.sky.rain * 0.8, 0, 1));
+    const list = this._fxList;
+    list.length = 0;
+    for (const c of this.cars) list.push(c);
+    for (const v of g.drivables || []) if (!v.isTractor) list.push(v);
+    this.fx.update(list, clamp(g.sky.nightFactor * 1.6 + g.sky.rain * 0.8, 0, 1));
     for (const p of this.people) {
       if (p.spectator) {
         const cheering = g.cheerT > 0;
