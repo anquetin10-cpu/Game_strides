@@ -100,6 +100,12 @@ await E(() => {
   g.phone.open('strides', { tab: 'missions' });
 });
 await wait(500);
+// Première ouverture de Strides : la mention « missions, profils et sommes fictifs » se valide d'abord.
+check('mention fictive affichée à la première ouverture', await E(() => /fictifs/.test(document.querySelector('.notice-sheet')?.textContent || '')));
+if (await page.$('[data-id="notice-ok"]')) {
+  await page.tap('[data-id="notice-ok"]');
+  await wait(300);
+}
 await page.screenshot({ path: out('5-home') });
 check('accueil pro « Demandes entrantes »', await E(() => !!document.querySelector('.st-home .req-card')));
 t = await tapSel('.req-card');
