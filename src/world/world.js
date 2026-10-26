@@ -34,6 +34,9 @@ export class World {
     this.group.name = 'world';
     scene.add(this.group);
     this.features = { buildings: [], fences: [], trees: 0 };
+    // Trottoirs : rectangles [x0, x1, z0, z1, dessus] et leur emprise, pour la hauteur de marche (walkHeight).
+    this.walkways = [];
+    this.walkBox = null;
     // Texture de détail partagée (sol, façades) et matériaux physiques des décors.
     this.detailTex = makeGroundDetail(256);
     this.mat = applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), this.detailTex, () => this.terrain);
@@ -125,6 +128,23 @@ export class World {
   }
 
   // ---------- Utilitaires de placement ----------
+  // Hauteur de marche en (x, z) : le terrain, ou le dessus d'une surface praticable surélevée (platelage des Planches,
+  // trottoirs de Deauvelle) — personnages et chevaux posent les pieds dessus, pas dedans.
+  walkHeight(x, z) {
+    const P = TOWN.planches;
+    if (z > P.z - 2 && z < P.z + 2 && x >= P.x0 && x <= P.x1) {
+      // Platelage : lames interpolées entre deux appuis (tous les 2 m, terrain sur l'axe + 0,3 m, voir buildBeach).
+      const xa = P.x0 + Math.floor((x - P.x0) / 2) * 2;
+      const t = (x - xa) / 2;
+      return this.h(xa, P.z) * (1 - t) + this.h(xa + 2, P.z) * t + 0.3;
+    }
+    const B = this.walkBox;
+    if (B && x > B[0] && x < B[1] && z > B[2] && z < B[3]) {
+      for (const s of this.walkways) if (x > s[0] && x < s[1] && z > s[2] && z < s[3]) return s[4];
+    }
+    return this.h(x, z);
+  }
+
   groundAt(x, z, hw = 0, hd = 0, rot = 0) {
     if (!hw) return this.h(x, z);
     const c = Math.cos(rot), s = Math.sin(rot);
@@ -566,13 +586,15 @@ export class World {
     this.batch.add(cyl(0.12, 0.12, 3.6, 6), '#f2f1ec', fx, fy, fz, 0);
     this.batch.add(cyl(0.6, 0.6, 0.08, 14), '#c8302a', fx, fy + 3.6, fz, 0, 1, 1, 1, { rx: Math.PI / 2 });
     this.colliders.addCircle(fx, fz, 0.3, Infinity, 'post');
-    // Stalles de départ.
+    // Stalles de départ : HIPPO.bays couloirs de 2 m depuis la corde extérieure ; le couloir intérieur reste libre pour
+    // le cavalier à l'entraînement (npcs.js), et chaque partant prend le milieu d'une stalle (courses.js).
     const sx = HIPPO.x - 40;
     const sz = HIPPO.z - HIPPO.radius;
     const gy = this.h(sx, sz);
+    const bw = HIPPO.width / 8;
     const parts = [];
-    for (let k = 0; k <= 8; k++) parts.push([box(3.2, 2.6, 0.2), '#2f6e4a', { z: -HIPPO.width / 2 + (HIPPO.width / 8) * k }]);
-    parts.push([box(0.4, 0.4, HIPPO.width + 0.6), '#f2f1ec', { y: 2.6 }]);
+    for (let k = 0; k <= HIPPO.bays; k++) parts.push([box(3.2, 2.6, 0.2), '#2f6e4a', { z: -HIPPO.width / 2 + bw * k }]);
+    parts.push([box(0.4, 0.4, HIPPO.bays * bw + 0.6), '#f2f1ec', { y: 2.6, z: -HIPPO.width / 2 + (HIPPO.bays * bw) / 2 }]);
     this.batch.add(partsToGeo(parts), null, sx, gy, sz, 0);
     this.signboard('HIPPODROME DE LA TOUQUES', 'Courses de galop', 344, 118, 0, { w: 6 });
   }
@@ -828,6 +850,7 @@ export class World {
       for (const [cx, cz, w, d] of strips) {
         const y = this.h(cx, cz);
         this.batch.add(box(w, 0.16, d), curb, cx, y - 0.02, cz, 0);
+        this.walkways.push([cx - w / 2, cx + w / 2, cz - d / 2, cz + d / 2, y + 0.14]);
       }
       // Jardinières aux angles.
       const flowers = ['#d8443a', '#e9c94a', '#f2f1ec', '#b55aa0'];
@@ -839,6 +862,8 @@ export class World {
         }
       }
     }
+    const W = this.walkways;
+    this.walkBox = [Math.min(...W.map((s) => s[0])), Math.max(...W.map((s) => s[1])), Math.min(...W.map((s) => s[2])), Math.max(...W.map((s) => s[3]))];
     // Passages piétons à chaque intersection du quadrillage.
     const xs = [-130, -30, 70];
     const zs = [-300, -232, -166];

@@ -174,6 +174,9 @@ export function checkpointSteps(game, run, S, points, { text = 'Passe dans les a
 // ---------- Course d'hippodrome ----------
 const SILKS = ['#b8322a', '#2f5f8a', '#e3b23c', '#2f6e4a', '#7a5a8a'];
 const RIVAL_NAMES = ['Éclair de Lune', 'Quick Star', 'Diamant Noir', 'Belle Écume', 'Tempête'];
+// Stalles de départ (géométrie dans world.js) : rayon de l'ovale au milieu du couloir k (0 = corde extérieure).
+const stallR = (k) => HIPPO.radius + HIPPO.width / 2 - (HIPPO.width / 8) * (k + 0.5);
+const STALLS = [5, 4, 2, 1, 0]; // couloirs des concurrents ; le joueur prend le n°3
 
 export function ovalLength(r) {
   return 4 * HIPPO.half + 2 * Math.PI * r;
@@ -225,9 +228,21 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
   run.data.race = race;
   const setup = () => {
     const sp = ovalPoint(startS, HIPPO.radius);
-    const lanes = [-6, -3.5, 3.5, 6, 8.5];
+    // Le cavalier à l'entraînement libère la piste le temps de la course : il regarde le départ depuis la pelouse
+    // intérieure et reprend ses tours ensuite.
+    const tr = game.ambient?.trainer;
+    if (tr) {
+      const tx = HIPPO.x - 30, tz = HIPPO.z - HIPPO.radius + HIPPO.width / 2 + 16;
+      tr.frozen = true;
+      tr.setPosition(tx, tz, Math.atan2(sp[0] - tx, sp[1] - tz));
+      run.onCleanup(() => {
+        tr.frozen = false;
+        tr.ai.i = 0;
+        tr.setPosition(tr.ai.points[0][0], tr.ai.points[0][1], Math.PI / 2);
+      });
+    }
     RIVAL_NAMES.forEach((name, i) => {
-      const lane = HIPPO.radius + lanes[i] * 0.9;
+      const lane = stallR(STALLS[i]);
       const h = game.spawnHorse({ id: `rival${i}`, name, coat: ['chestnut', 'black', 'grey', 'darkbay', 'bay'][i], speed: 1, jump: 1, stamina: 1 }, sp[0], HIPPO.z - lane, Math.PI / 2, { pad: SILKS[i], padTrim: '#f2f1ec' });
       const jockey = game.spawnHuman({ top: SILKS[i], sleeve: SILKS[i], pants: '#f2f1ec', boots: '#121214', skin: ['#e2b894', '#c99a74', '#8d5e3c', '#f0cfb0', '#a8754e'][i], hair: '#2a1d14', helmet: SILKS[(i + 2) % 5] }, sp[0], HIPPO.z - lane, 0);
       jockey.mount(h);
@@ -257,7 +272,7 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
       });
     });
     const p = ovalPoint(startS, HIPPO.radius);
-    game.player.horse.setPosition(p[0], HIPPO.z - HIPPO.radius, Math.PI / 2);
+    game.player.horse.setPosition(p[0], HIPPO.z - stallR(3), Math.PI / 2);
     game.player.horse.stamina = game.player.horse.maxStamina;
     game.cam.snap(game.player.horse.pos, Math.PI / 2);
   };

@@ -7,6 +7,8 @@ import { WORLD } from '../world/layout.js';
 import { HorseCondition } from '../gameplay/condition.js';
 
 const SPEEDS = HORSE.gaits.map((g) => g.speed);
+// Hauteur du sol sous les sabots : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
+const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
 export class Horse {
   constructor(game, def, opts = {}) {
@@ -21,7 +23,7 @@ export class Horse {
     this.bones = bones;
     this.anim = { speed: 0, phase: Math.random(), jump: -1, turn: 0, graze: 0, rear: 0, t: Math.random() * 10, headYaw: 0, vel: 0, mounted: false };
     // Sabots adaptés au relief : hauteur du terrain sous chaque pied.
-    this.anim.ground = (x, z) => game.terrain.getHeight(x, z);
+    this.anim.ground = (x, z) => groundY(game, x, z);
     this.pos = new THREE.Vector3(opts.x || 0, 0, opts.z || 0);
     this.heading = opts.heading || 0;
     this.speed = 0;
@@ -78,7 +80,7 @@ export class Horse {
   }
 
   snapToGround() {
-    this.groundY = this.game.terrain.getHeight(this.pos.x, this.pos.z);
+    this.groundY = groundY(this.game, this.pos.x, this.pos.z);
     this.pos.y = this.groundY;
     this.mesh.position.set(this.pos.x, this.groundY, this.pos.z);
     this.mesh.rotation.set(0, this.heading, 0);
@@ -200,11 +202,12 @@ export class Horse {
     const lim = WORLD.half - 6;
     this.pos.x = clamp(this.pos.x, -lim, lim);
     this.pos.z = clamp(this.pos.z, -lim, lim);
-    // Collision : centre un peu vers l'avant (le cheval est long).
+    // Collision : centre un peu vers l'avant (le cheval est long). Un cheval immobilisé (box, stalle, attente) est placé
+    // par la mission : pas de résolution, elle le pousserait hors du bâtiment où il se trouve.
     const cx = this.pos.x + fw.x * 0.45, cz = this.pos.z + fw.z * 0.45;
     const probe = { x: cx, z: cz };
-    const groundNow = g.terrain.getHeight(this.pos.x, this.pos.z);
-    const hit = g.colliders.resolve(probe, this.radius, groundNow + this.jumpY + (this.jumpT >= 0 ? 0.2 + this.mods.clearance : 0));
+    const groundNow = groundY(g, this.pos.x, this.pos.z);
+    const hit = this.frozen ? null : g.colliders.resolve(probe, this.radius, groundNow + this.jumpY + (this.jumpT >= 0 ? 0.2 + this.mods.clearance : 0));
     if (hit) {
       this.pos.x += probe.x - cx;
       this.pos.z += probe.z - cz;
@@ -224,7 +227,7 @@ export class Horse {
       this.speed *= 0.5;
     }
 
-    this.groundY = g.terrain.getHeight(this.pos.x, this.pos.z);
+    this.groundY = groundY(g, this.pos.x, this.pos.z);
     this.pos.y = this.groundY + this.jumpY;
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
     this.mesh.rotation.set(-Math.atan(slope) * 0.85, this.heading, 0);
@@ -278,6 +281,18 @@ const steer = (horse, tx, tz, mag, gallop = false) => {
   return d;
 };
 
+// Joueur (à pied ou à cheval) sur le chemin du cheval : couloir de 3,2 m, jusqu'à `look` mètres devant (distance
+// d'arrêt d'après la vitesse de croisière, pas la vitesse courante, sinon le cheval hésite en freinant).
+// Les IA ambiantes s'arrêtent devant lui au lieu de le traverser.
+const playerAhead = (h, look) => {
+  const p = h.game.player?.focus.pos;
+  if (!p) return false;
+  const dx = p.x - h.pos.x, dz = p.z - h.pos.z;
+  const fx = Math.sin(h.heading), fz = Math.cos(h.heading);
+  const ahead = dx * fx + dz * fz;
+  return ahead > -1 && ahead < look && Math.abs(dx * fz - dz * fx) < 1.6;
+};
+
 // Broute et se promène dans un enclos rectangulaire.
 export class GrazeAI {
   constructor(area) {
@@ -289,6 +304,7 @@ export class GrazeAI {
     this.timer -= dt;
     if (this.target) {
       const d = steer(h, this.target.x, this.target.z, 0.3);
+      if (playerAhead(h, 3)) h.control.mag = 0;
       h.anim.graze = damp(h.anim.graze, 0, 4, dt);
       if (d < 1.5 || this.timer < 0) {
         this.target = null;
@@ -397,9 +413,9 @@ export class FleeAI {
   }
 }
 
-// Suit un tracé (balade, course, échauffement).
+// Suit un tracé (balade, course, échauffement) ; yield : s'arrête devant le joueur (cavaliers ambiants).
 export class PathAI {
-  constructor(points, { loop = true, speed = 9, jitter = 0, lookahead = 6, onLap = null } = {}) {
+  constructor(points, { loop = true, speed = 9, jitter = 0, lookahead = 6, onLap = null, yield: yieldToPlayer = false } = {}) {
     this.points = points;
     this.i = 0;
     this.loop = loop;
@@ -407,6 +423,7 @@ export class PathAI {
     this.jitter = jitter;
     this.lookahead = lookahead;
     this.onLap = onLap;
+    this.yield = yieldToPlayer;
     this.laps = 0;
     this.finished = false;
     this.offset = (Math.random() - 0.5) * jitter;
@@ -434,7 +451,8 @@ export class PathAI {
       p = this.points[this.i];
     }
     steer(h, p[0], p[1], 1);
-    h.control.speedOverride = typeof this.speed === 'function' ? this.speed(h, this) : this.speed;
+    const v = typeof this.speed === 'function' ? this.speed(h, this) : this.speed;
+    h.control.speedOverride = this.yield && playerAhead(h, 2 + v * 0.7) ? 0 : v;
     h.anim.graze = 0;
   }
 }
