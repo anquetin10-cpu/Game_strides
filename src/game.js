@@ -167,14 +167,26 @@ export class Game {
     const shadows = q !== 'low';
     if (this.sky) {
       this.sky.sun.castShadow = shadows;
+      this.sky.sun.shadow.intensity = 1;
+      this.renderer.shadowMap.autoUpdate = true;
       this.sky.setShadowSize(q === 'high' ? 2048 : IS_TOUCH ? 1024 : 2048, 55);
     }
     this._shadowsOn = shadows;
+    this._shadowDrops = 0;
     if (!initial) this.resize();
   }
 
   _adapt(dt) {
     if (this.quality !== 'auto' || this.state !== 'play') return;
+    // Ombres : fondu de leur intensité (un uniforme) plutôt que castShadow, qui recompile tous les shaders d'un
+    // coup ; la carte d'ombre n'est plus rafraîchie une fois le fondu terminé, et elles reviennent quand la cadence
+    // le permet.
+    const sh = this.sky.sun.shadow;
+    const want = this._shadowsOn ? 1 : 0;
+    if (sh.intensity !== want) {
+      sh.intensity = clamp(sh.intensity + (want ? dt : -dt) / 0.8, 0, 1);
+      this.renderer.shadowMap.autoUpdate = sh.intensity > 0;
+    }
     const a = this._fpsAcc;
     a.t += dt;
     a.n++;
@@ -183,13 +195,17 @@ export class Game {
     a.t = 0;
     a.n = 0;
     this.fps = fps;
+    this._goodWin = fps > 50 ? (this._goodWin || 0) + 1 : 0;
     if (fps < 42 && this.pixelRatio > 1) {
       this.pixelRatio = Math.max(1, this.pixelRatio - 0.25);
       this.renderer.setPixelRatio(this.pixelRatio);
       this.resize();
     } else if (fps < 30 && this._shadowsOn) {
       this._shadowsOn = false;
-      this.sky.sun.castShadow = false;
+      this._shadowDrops = (this._shadowDrops || 0) + 1;
+    } else if (!this._shadowsOn && this._goodWin >= 2 && this._shadowDrops < 3) {
+      // Deux fenêtres consécutives au-dessus de 50 i/s : les ombres reviennent (trois coupures au plus par partie).
+      this._shadowsOn = true;
     } else if (fps > 58 && this.pixelRatio < this.maxPixelRatio) {
       this.pixelRatio = Math.min(this.maxPixelRatio, this.pixelRatio + 0.25);
       this.renderer.setPixelRatio(this.pixelRatio);
@@ -460,21 +476,36 @@ export class Game {
     return this.world.groundClass(x, z);
   }
 
-  zoneName(x, z) {
+  // prev : étiquette affichée ; elle garde une marge de 8 m avant de céder la place (pas de clignotement en longeant
+  // une limite de zone).
+  zoneName(x, z, prev = null) {
+    const keep = (name) => (name === prev ? 8 : 0);
     const named = [
       ['town', 'Deauvelle'], ['pole', 'Pôle International'], ['hippo', 'Hippodrome de la Touques'], ['home', 'Écurie du Val'],
       ['haras', 'Haras de la Pommeraie'], ['dunes', 'Écurie des Dunes'], ['gatien', 'Domaine de Saint-Gatien'],
     ];
     for (const [id, name] of named) {
       const zn = ZONES.find((zz) => zz.id === id);
-      if (zoneDist(x, z, zn) < 4) return name;
+      if (zoneDist(x, z, zn) < 4 + keep(name)) return name;
     }
+    // Front de mer de Deauvelle (route côtière, cabines, Planches) : c'est la ville jusqu'au sable.
+    const town = ZONES.find((zz) => zz.id === 'town');
+    if (Math.abs(x - town.x) < town.hw + 4 + keep('Deauvelle') && z < town.z && z > -380 - keep('Deauvelle')) return 'Deauvelle';
     const ds = z - shoreZ(x);
-    if (x < -430 && z < -250) return 'Falaises d’Aval';
-    if (ds < 70) return 'Plage de Deauvelle';
-    if (forestDensity(x, z) > 0.45) return 'Forêt de Saint-Gatien';
-    if (Math.hypot(x - 120, z - 500) < 120) return 'Colline Strides';
+    if (x < -430 + keep('Falaises d’Aval') && z < -250) return 'Falaises d’Aval';
+    if (ds < 70 + keep('Plage de Deauvelle')) return 'Plage de Deauvelle';
+    if (forestDensity(x, z) > (keep('Forêt de Saint-Gatien') ? 0.37 : 0.45)) return 'Forêt de Saint-Gatien';
+    if (Math.hypot(x - 120, z - 500) < 120 + keep('Colline Strides')) return 'Colline Strides';
     return 'Pays d’Auge';
+  }
+
+  // Éclairement des particules (soleil ou lune, ciel, appoint d'hémisphère) dans l'échelle HDR de la scène : la
+  // poussière est tone-mappée comme le décor et suit donc sa luminosité du plein jour à la nuit, avec un léger
+  // surcroît en pleine lumière (nuages clairs).
+  _particleLight() {
+    const S = this.sky;
+    const e = S.sun.intensity * 0.45 + Math.PI * (S.envBright || 0) + S.hemi.intensity * 0.25;
+    return e * (0.32 + 0.08 * e);
   }
 
   // ---------- Services ----------
@@ -814,7 +845,7 @@ export class Game {
     for (const h of this.humans) if (h.mounted) h.animateRiding(dt);
     this.ambient.update(dt, this.camera.position);
     this._reins();
-    this.particles.update(dt, 0.12 + 0.78 * (1 - this.sky.nightFactor) * Math.min(1, 0.45 + this.sky.sun.intensity / 6));
+    this.particles.update(dt, this._particleLight());
   }
 
   update(dt) {
@@ -876,7 +907,7 @@ export class Game {
     this.collectibles.update(dt);
     this.gps.update(dt);
     this.grass.update(dt, this.player.focus.pos);
-    this.particles.update(dt, 0.12 + 0.78 * (1 - this.sky.nightFactor) * Math.min(1, 0.45 + this.sky.sun.intensity / 6));
+    this.particles.update(dt, this._particleLight());
     if (this.cheerT > 0) this.cheerT -= dt;
     if (this._confetti) this._updateConfetti(dt);
 
@@ -888,7 +919,7 @@ export class Game {
     this.sky.updateEnvironment(this.renderer, performance.now() / 1000);
     this.updateTide(dt);
     this.world.water.update(this.time, this.sky);
-    this.world.update(dt, this.camera, this.sky);
+    this.world.update(dt, this.camera, this.sky, this.player.focus.pos);
     this.birds.update(dt, this.sky.nightFactor);
     this.hoofPrints.update(dt);
     this.boats.update(dt);
@@ -918,7 +949,8 @@ export class Game {
     this._zoneT = (this._zoneT || 0) - dt;
     if (this._zoneT <= 0) {
       this._zoneT = 0.5;
-      this.hud.setZone(this.zoneName(f.x, f.z));
+      this._zone = this.zoneName(f.x, f.z, this._zone);
+      this.hud.setZone(this._zone);
       this.phone.updateClock(this.clockText());
     }
     if (this.player.mode === 'ride') d.stats.distance += Math.abs(this.player.speed) * dt;

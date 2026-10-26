@@ -365,7 +365,7 @@ export function createCoatMaterial(assets, coat, mk) {
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n' + ROUGH)
         .replace('#include <lights_physical_fragment>', '#include <lights_physical_fragment>\n' + PHYS)
         .replace('#include <aomap_fragment>', AO);
-      addCloudShadows(sh);
+      addCloudShadows(sh, null, true);
     };
     m.customProgramCacheKey = () => key;
     return m;

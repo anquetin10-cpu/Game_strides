@@ -117,7 +117,7 @@ export function tackMaterial(pad = '#15161a', trim = '#f2f1ec') {
       .replace('#include <color_fragment>', FRAG_COLOR)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = trm.x;')
       .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = trm.y;');
-    addCloudShadows(sh);
+    addCloudShadows(sh, null, true);
   };
   m.customProgramCacheKey = () => 'horse-tack-1';
   mats.set(key, m);

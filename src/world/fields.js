@@ -1,6 +1,6 @@
 // Bocage normand : parcelles de champs et haies générées de façon déterministe.
-import { mulberry32 } from '../core/math.js';
-import { WORLD, isReserved, forestDensity } from './layout.js';
+import { mulberry32, polyDist } from '../core/math.js';
+import { WORLD, PATHS, isReserved, forestDensity } from './layout.js';
 
 const CELL = 82;
 
@@ -81,4 +81,32 @@ export function getFields() {
   }
   cache = { fields, hedges };
   return cache;
+}
+
+// Chemins de terre (PATHS) : vrai à moins de r mètres de l'axe d'un chemin.
+export function nearPath(x, z, r = 5) {
+  for (const p of PATHS) if (polyDist(x, z, p).d < r) return true;
+  return false;
+}
+
+// Tronçons [x0, z0, x1, z1] de la haie a→b hors des trouées ouvertes par les chemins de terre qui la traversent
+// (cheval et cavalier passent) : échantillonnage au mètre, tronçons de moins de 3 m ignorés.
+export function hedgeRuns(a, b) {
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const n = Math.max(1, Math.ceil(len));
+  const at = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const runs = [];
+  let start = -1;
+  for (let s = 0; s <= n; s++) {
+    const t = s / n;
+    const [x, z] = at(t);
+    const ok = !nearPath(x, z);
+    if (ok && start < 0) start = t;
+    if (start >= 0 && (!ok || s === n)) {
+      const end = ok ? t : (s - 1) / n;
+      if ((end - start) * len >= 3) runs.push([...at(start), ...at(end)]);
+      start = -1;
+    }
+  }
+  return runs;
 }

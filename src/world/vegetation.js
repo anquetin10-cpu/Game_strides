@@ -138,8 +138,10 @@ function patchMaterial(mat, { wind = true, fade = 0, leaf = false, mapSize = 102
   return mat;
 }
 
+// Le fondu tramé s'applique aussi à la passe d'ombre : l'ombre portée apparaît progressivement avec le maillage
+// au lieu de surgir d'un coup à la distance de bascule vers l'imposteur (qui n'en porte pas).
 function depthMaterial(opts) {
-  return patchMaterial(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), { ...opts, fade: 0, depth: true });
+  return patchMaterial(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), { ...opts, fade: 1, depth: true });
 }
 
 // ---------- Imposteurs : panneau face caméra, albédo + normales précalculés ----------
