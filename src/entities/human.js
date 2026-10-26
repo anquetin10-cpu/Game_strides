@@ -207,6 +207,9 @@ export class Human {
     this.mesh.scale.setScalar(this.scale / this._parentScale);
     this.mesh.visible = true;
     this._rideFit = null;
+    // Pose à cheval dès la première image (pas de fondu depuis la pose debout) ; filtre du rebond de selle réamorcé.
+    this.anim._init = false;
+    this.anim._ride = null;
   }
 
   dismount() {
@@ -218,13 +221,37 @@ export class Human {
     this._attach = null;
     this.mesh.scale.setScalar(this.scale);
     this.game.scene.add(this.mesh);
-    // Descendre à gauche du cheval.
+    // Descendre à gauche du cheval ; si une clôture ou un mur longe ce flanc, à droite, sinon derrière
+    // (sinon le cavalier se retrouverait de l'autre côté de la barrière).
     const lx = Math.cos(horse.heading), lz = -Math.sin(horse.heading);
-    this.pos.set(horse.pos.x + lx * 1.3, 0, horse.pos.z + lz * 1.3);
+    let ox = lx * 1.3, oz = lz * 1.3;
+    if (this._sideBlocked(horse.pos, ox, oz)) {
+      const bx = -Math.sin(horse.heading) * 1.6, bz = -Math.cos(horse.heading) * 1.6;
+      if (!this._sideBlocked(horse.pos, -ox, -oz)) {
+        ox = -ox;
+        oz = -oz;
+      } else if (!this._sideBlocked(horse.pos, bx, bz)) {
+        ox = bx;
+        oz = bz;
+      }
+    }
+    this.pos.set(horse.pos.x + ox, 0, horse.pos.z + oz);
     this.game.colliders.resolve(this.pos, this.radius, -Infinity);
     this.heading = horse.heading;
     this.speed = 0;
     this.snap();
+    // Pose debout dès la première image au sol (pas de fondu depuis la pose assise).
+    this.anim._init = false;
+  }
+
+  // Vrai si un obstacle coupe le segment entre le cheval et le point de descente (ox, oz).
+  _sideBlocked(from, ox, oz) {
+    const g = this.game;
+    for (let k = 1; k <= 6; k++) {
+      const x = from.x + (ox * k) / 6, z = from.z + (oz * k) / 6;
+      if (g.colliders.blocked(x, z, g.terrain.getHeight(x, z) + 0.3)) return true;
+    }
+    return false;
   }
 
   animateRiding(dt) {
