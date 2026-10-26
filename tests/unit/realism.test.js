@@ -5,6 +5,7 @@ import { DEFI_POLE_V1, DEFI_POLE_V2, CURRENT_CHALLENGE } from '../../src/gamepla
 import { STORY } from '../../src/gameplay/story.js';
 import { CHAPTER1 } from '../../src/gameplay/story2.js';
 import { TRUCK_SPEC } from '../../src/entities/truckPhysics.js';
+import { BEACH, beachHeight } from '../../src/world/layout.js';
 import { gaitIndex } from '../../src/entities/horse/anim.js';
 import { sunPosition, sunTimes, sunDirection } from '../../src/world/sun.js';
 
@@ -127,27 +128,29 @@ describe('réalisme : la mer du jeu est la marée réelle (plage de Deauvelle)',
     expect(TIDE_EXTREMES.high).toBeGreaterThanOrEqual(ve.pm - 1e-6);
     expect(TIDE_EXTREMES.low).toBeLessThanOrEqual(ve.bm + 1e-6);
   });
-  it('estran large : la mer avance et recule d’au moins 150 m en vives-eaux, d’environ moitié en mortes-eaux', () => {
+  it('estran (plage raccourcie de moitié) : la mer avance et recule d’au moins 75 m en vives-eaux, d’environ moitié en mortes-eaux', () => {
     for (const x of xs) {
       const ex = terrain.waterlineZ(x, ve.pm) - terrain.waterlineZ(x, ve.bm);
       const exMe = terrain.waterlineZ(x, me.pm) - terrain.waterlineZ(x, me.bm);
-      expect(ex).toBeGreaterThanOrEqual(150);
+      expect(ex).toBeGreaterThanOrEqual(75);
       expect(exMe / ex).toBeGreaterThan(0.35);
       expect(exMe / ex).toBeLessThan(0.65);
     }
   });
-  it('pente de l’estran douce (moins de 7 %) et haut de plage sec en pente faible', () => {
+  it('pente de l’estran (raccourci de moitié) sous 14 % et haut de plage sec en pente faible', () => {
+    // Haut de plage sec (profil) : 4 %, du pied des Planches à la berme.
+    for (let z = BEACH.wall; z > BEACH.berm; z -= 2) expect(beachHeight(z) - beachHeight(z - 2)).toBeLessThan(0.041 * 2);
     for (const x of [-300, -100, 40, 200, 450]) {
-      for (let z = -412; z > -566; z -= 6) expect(terrain.getHeight(x, z) - terrain.getHeight(x, z - 6)).toBeLessThan(0.07 * 6);
-      for (let z = -386; z > -404; z -= 6) expect(terrain.getHeight(x, z) - terrain.getHeight(x, z - 6)).toBeLessThan(0.03 * 6);
+      for (let z = -389; z > -466; z -= 3) expect(terrain.getHeight(x, z) - terrain.getHeight(x, z - 3)).toBeLessThan(0.14 * 3);
+
     }
   });
   it('l’eau n’atteint jamais les Planches et la basse mer reste dans le monde', () => {
     const P = TOWN.planches;
     for (let x = P.x0; x <= P.x1; x += 5) {
       expect(terrain.getHeight(x, P.z - 2)).toBeGreaterThan(TIDE_EXTREMES.high + 0.5);
-      // Plusieurs dizaines de mètres de sable sec entre les Planches et la plus haute mer.
-      expect(P.z - 2 - terrain.waterlineZ(x, TIDE_EXTREMES.high)).toBeGreaterThan(30);
+      // Une bande de sable sec entre les Planches et la plus haute mer.
+      expect(P.z - 2 - terrain.waterlineZ(x, TIDE_EXTREMES.high)).toBeGreaterThan(12);
     }
     for (const x of xs) expect(terrain.waterlineZ(x, TIDE_EXTREMES.low)).toBeGreaterThan(-585);
   });

@@ -9,28 +9,39 @@ export const WORLD = { size: 1200, half: 600, seaLevel: 0 };
 export const shoreZ = (x) => -430 + 12 * Math.sin(x / 95) + 6 * Math.sin(x / 37 + 1.3);
 
 // Plage de Deauvelle : profil en travers (hauteur au-dessus du niveau moyen de la mer, m), comme une plage de la baie
-// de Seine à fort marnage. Du pied des Planches (perré, z ≈ -366) : haut de plage sec en pente douce (2 %) jusqu'à la
-// crête de la laisse des pleines mers de vives-eaux (berme, z ≈ -410), puis estran large et concave (6 % en haut,
-// 2,7 % en bas, barres et bâches à peine marquées) jusqu'aux basses mers de vives-eaux (z ≈ -575), puis l'avant-côte.
+// de Seine à fort marnage, raccourci de moitié vers la mer (choix de jeu : plage moins large). Profil de référence
+// (distances avant raccourcissement) : du pied des Planches (perré, z ≈ -366), haut de plage sec en pente douce (2 %)
+// jusqu'à la crête de la laisse des pleines mers de vives-eaux (berme), puis estran concave (6 % en haut, 2,7 % en
+// bas, barres et bâches à peine marquées) jusqu'aux basses mers de vives-eaux, puis l'avant-côte. Toutes les
+// distances au-delà des Planches sont multipliées par BEACH.k : berme à z ≈ -388, basse mer de vives-eaux à z ≈ -470.
 // Le profil suit une côte presque droite (le trait de référence n'ondule qu'au cinquième).
-export const BEACH = { wall: -366, wallH: 4.5, dry: 0.02, berm: -410, a: 0.06233, b: 0.0001071, low: 165 };
-BEACH.bermH = BEACH.wallH - BEACH.dry * (BEACH.wall - BEACH.berm);
-BEACH.lowH = BEACH.bermH - BEACH.a * BEACH.low + BEACH.b * BEACH.low * BEACH.low;
-BEACH.lowSlope = BEACH.a - 2 * BEACH.b * BEACH.low;
+const REF = { dry: 0.02, berm: 44, a: 0.06233, b: 0.0001071, low: 165 };
+REF.bermH = 4.5 - REF.dry * REF.berm;
+REF.lowH = REF.bermH - REF.a * REF.low + REF.b * REF.low * REF.low;
+REF.lowSlope = REF.a - 2 * REF.b * REF.low;
+export const BEACH = { wall: -366, wallH: 4.5, k: 0.5 };
+BEACH.berm = BEACH.wall - REF.berm * BEACH.k;
+BEACH.bermH = REF.bermH;
 export const beachWig = (x) => 0.2 * (shoreZ(x) + 430);
+
+// Hauteur du profil de référence à la distance d (m) du pied des Planches, vers la mer.
+function refHeight(d) {
+  if (d <= REF.berm) return BEACH.wallH - REF.dry * d;
+  const s = d - REF.berm;
+  if (s <= REF.low) {
+    // Barres et bâches : ondulation de 0,12 m, plus douce que la pente (le rivage reste unique).
+    const ridge = 0.12 * Math.sin((2 * Math.PI * (s - 35)) / 45) * smoothstep(30, 55, s) * smoothstep(158, 132, s);
+    return REF.bermH - REF.a * s + REF.b * s * s + ridge;
+  }
+  const e = s - REF.low;
+  return Math.max(-14, REF.lowH - REF.lowSlope * e - 0.012 * e * e);
+}
 
 // Hauteur du profil de plage à la distance zb = z - beachWig(x) (strictement décroissante vers la mer).
 export function beachHeight(zb) {
   const B = BEACH;
-  if (zb >= B.berm) return Math.min(B.wallH + B.dry * (zb - B.wall), 6.5);
-  const s = B.berm - zb;
-  if (s <= B.low) {
-    // Barres et bâches : ondulation de 0,12 m, plus douce que la pente (le rivage reste unique).
-    const ridge = 0.12 * Math.sin((2 * Math.PI * (s - 35)) / 45) * smoothstep(30, 55, s) * smoothstep(158, 132, s);
-    return B.bermH - B.a * s + B.b * s * s + ridge;
-  }
-  const e = s - B.low;
-  return Math.max(-14, B.lowH - B.lowSlope * e - 0.012 * e * e);
+  if (zb >= B.wall) return Math.min(B.wallH + REF.dry * (zb - B.wall), 6.5);
+  return refHeight((B.wall - zb) / B.k);
 }
 
 // Rivage (z) atteint par un niveau d'eau donné sur le profil de la plage (sans le grain du sable) — carte, repères.

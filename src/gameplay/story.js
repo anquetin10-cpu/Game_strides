@@ -294,7 +294,7 @@ export const STORY = [
       const xs = [], rings = [];
       for (let i = 0; i < 7; i++) {
         xs.push(420 - i * 70);
-        rings.push([420 - i * 70, -414 + Math.sin(i * 1.3) * 4]);
+        rings.push([420 - i * 70, -390 + Math.sin(i * 1.3) * 2]);
       }
       const barn = [DUNES.barn.x, DUNES.barn.z + 12];
       const baseLen = pathLength([barn, ...rings, barn]);

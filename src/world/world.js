@@ -995,7 +995,7 @@ export class World {
     for (let row = 0; row < 3; row++) {
       for (let i = 0; i < 18; i++) {
         const x = -150 + i * 15 + row * 5;
-        const z = -386 - row * 7;
+        const z = -378.5 - row * 2.6; // entre les Planches (z ≈ -376) et la berme (z ≈ -388)
         if (this.h(x, z) < TIDE_EXTREMES.high + 0.3) continue;
         const c = cols[(i + row) % cols.length];
         this.batch.add(parasolGeo(c[0], c[1]), null, x, this.h(x, z), z, 0);
@@ -1003,7 +1003,7 @@ export class World {
       }
     }
     // Poste de secours.
-    const lx = 200, lz = -395;
+    const lx = 200, lz = -381;
     this.batch.add(partsToGeo([
       [box(0.2, 3, 0.2), '#f2f1ec', { x: -1, z: -1 }], [box(0.2, 3, 0.2), '#f2f1ec', { x: 1, z: -1 }],
       [box(0.2, 3, 0.2), '#f2f1ec', { x: -1, z: 1 }], [box(0.2, 3, 0.2), '#f2f1ec', { x: 1, z: 1 }],

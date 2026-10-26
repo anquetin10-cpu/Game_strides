@@ -208,8 +208,8 @@ export function checkpointSteps(game, run, S, points, { text = 'Passe dans les a
 
 // Anneaux de galop sur la plage : posés sur le sable ferme, `offset` m au-dessus du rivage le plus haut que la marée
 // atteindra d'ici le passage prévu du cavalier (eta(i) secondes après le départ, au galop : la mer montante ne les noie
-// pas pendant le galop), jamais sur le haut de plage sec (parasols, poste de secours). À basse mer de vives-eaux, la mer
-// est à plus de 150 m des Planches : les anneaux sont alors loin, au bord de l'eau.
+// pas pendant le galop), jamais au pied des Planches (parasols, poste de secours, à 14 m au plus du perré). À basse mer
+// de vives-eaux, la mer est à ~100 m des Planches : les anneaux sont alors loin, au bord de l'eau.
 export const beachRingLevel = (game, seconds) => {
   const d = game.save.data;
   const hoursPerSecond = 24 / (d.settings?.timeScale === 'reel' ? 86400 : CONFIG.dayLength);
@@ -221,7 +221,7 @@ export const beachRingLevel = (game, seconds) => {
 export function beachRingPoints(game, xs, { eta = (i) => 25 + i * 7, offset = 14, wobble = () => 0 } = {}) {
   return xs.map((x, i) => {
     const level = beachRingLevel(game, eta(i));
-    return [x, Math.min(BEACH.berm - 2 + beachWig(x), game.terrain.waterlineZ(x, level) + offset + wobble(i))];
+    return [x, Math.min(BEACH.berm + 4 + beachWig(x), game.terrain.waterlineZ(x, level) + offset + wobble(i))];
   });
 }
 

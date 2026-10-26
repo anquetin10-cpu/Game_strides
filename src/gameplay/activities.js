@@ -16,7 +16,7 @@ export class Activities {
     this.defs = [
       {
         id: 'beach_sprint', name: 'Sprint de la plage', kind: 'Galop', desc: '8 anneaux le long de la mer, de l’Écurie des Dunes à Deauvelle, sur le sable ferme au bord de l’eau (plus loin à marée basse).',
-        start: { x: 505, z: -404 },
+        start: { x: 505, z: -385 },
         build: (g, run, S) => {
           const xs = [];
           for (let i = 0; i < 8; i++) xs.push(470 - i * 72);

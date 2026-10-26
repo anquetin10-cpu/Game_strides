@@ -90,7 +90,7 @@ for (const [k, ev] of Object.entries(tides)) {
   console.log(`${k} (coef ${ev.coef}) : niveau ${r.level.toFixed(2)} m (hauteur affichée ${r.real.toFixed(2)} m), rivage z de ${Math.min(...zs).toFixed(0)} à ${Math.max(...zs).toFixed(0)} (x = 40 : ${zs[XS.indexOf(40)].toFixed(0)})`);
   check(Math.abs(r.sea - r.level) < 1e-6, `${k} : la mer est au niveau de la marée`);
   check(r.deck - r.level > 0.5, `${k} : Planches hors d'eau`, `platelage à ${(r.deck - r.level).toFixed(2)} m au-dessus de l'eau`);
-  check(r.planchesGap > 30, `${k} : au moins 30 m de sable entre les Planches et l'eau`, `${r.planchesGap.toFixed(0)} m`);
+  check(r.planchesGap > 12, `${k} : au moins 12 m de sable entre les Planches et l'eau`, `${r.planchesGap.toFixed(0)} m`);
   check(Math.min(...zs) > -585, `${k} : rivage dans le monde`, `${Math.min(...zs).toFixed(0)}`);
   const sunk = r.boats.filter((b) => Math.abs(b.y - (r.level - 0.2)) > 0.4 || b.ground > r.level - 2);
   check(!sunk.length, `${k} : ${r.boats.length} bateaux à flot (au mouillage au-delà de la basse mer)`, sunk.length ? JSON.stringify(sunk[0]) : `fond ≤ ${Math.max(...r.boats.map((b) => b.ground)).toFixed(1)} m`);
@@ -100,7 +100,7 @@ const exVE = exc('veBM', 'vePM'), exME = exc('meBM', 'mePM');
 console.log(`marnage vives-eaux ${(res.vePM.level - res.veBM.level).toFixed(2)} m, mortes-eaux ${(res.mePM.level - res.meBM.level).toFixed(2)} m`);
 check(res.vePM.level - res.veBM.level > 6.3 && res.vePM.level - res.veBM.level < 8.5, 'marnage de vives-eaux 6,3 – 8,5 m');
 check(res.mePM.level - res.meBM.level > 2.5 && res.mePM.level - res.meBM.level < 4.5, 'marnage de mortes-eaux 2,5 – 4,5 m');
-check(Math.min(...exVE) >= 150, 'excursion de la mer ≥ 150 m en vives-eaux', `${Math.min(...exVE).toFixed(0)} – ${Math.max(...exVE).toFixed(0)} m`);
+check(Math.min(...exVE) >= 75, 'excursion de la mer ≥ 75 m en vives-eaux (plage raccourcie de moitié)', `${Math.min(...exVE).toFixed(0)} – ${Math.max(...exVE).toFixed(0)} m`);
 check(Math.min(...exME) > 0.35 * Math.min(...exVE) && Math.max(...exME) < 0.65 * Math.max(...exVE), 'excursion de mortes-eaux ≈ moitié', `${Math.min(...exME).toFixed(0)} – ${Math.max(...exME).toFixed(0)} m`);
 
 // Galop sur l'estran découvert à basse mer de vives-eaux : entre l'eau et le haut de plage, vers l'est.
@@ -152,7 +152,8 @@ const escape = await page.evaluate(() => {
   A.releaseInput();
   return { deepest, stuckZ, depthEnd: g.terrain.waterDepth(h.pos.x, h.pos.z), z: h.pos.z, rising: g.tide.rising };
 });
-check(escape.deepest < 1.6, 'le cheval ne part pas au large (eau trop profonde refusée)', `profondeur max ${escape.deepest.toFixed(2)} m`);
+// Limite à 1,35 m d'eau ; le cheval arrêté là voit encore la mer monter de quelques dizaines de centimètres pendant l'essai.
+check(escape.deepest < 1.8, 'le cheval ne part pas au large (eau trop profonde refusée)', `profondeur max ${escape.deepest.toFixed(2)} m`);
 check(escape.depthEnd < 0.15 && escape.rising, 'marée montante : le cheval regagne le sable sec', `profondeur finale ${escape.depthEnd.toFixed(2)} m à z = ${escape.z.toFixed(0)}`);
 
 // Mission « Galop sur la plage » à basse mer puis à pleine mer de vives-eaux : anneaux sur le sable, près de l'eau.
