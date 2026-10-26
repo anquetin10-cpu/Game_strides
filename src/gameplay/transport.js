@@ -239,6 +239,8 @@ export class Transport {
     if (p.mode !== 'foot' || this.seq || p.locked || p.human.carrying) return out;
     const hp = p.human.pos;
     const atRear = t && t.stopped && !t.driver && this._distRear(hp) < 2.9;
+    // Rampe en mouvement : l'action reste celle du camion (sinon « Monter » prendrait la main pendant l'animation).
+    if (atRear && !t.rampOpen && !t.rampClosed) out.push({ id: 'wait', label: 'Rampe…', icon: 'truck', prio: 2.9 });
     if (this.led) {
       const h = this.led.horse;
       if (atRear && t.rampOpen && this.freeStall() >= 0 && this._distRear(h.pos) < 7) out.push({ id: 'load', label: 'Faire monter le cheval', icon: 'horse', prio: 3.2 });

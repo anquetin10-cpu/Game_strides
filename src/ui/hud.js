@@ -15,6 +15,11 @@ export class HUD {
     this.notifQueue = [];
     this.notifActive = null;
     this.dialogActive = null;
+    // Téléphone ouvert : une bannière passerait dessous, hors d'atteinte ; elle attend sa fermeture.
+    game.bus.on('phone:open', () => this._holdNotif());
+    game.bus.on('phone:close', () => {
+      if (!this.notifActive) this._nextNotif();
+    });
   }
 
   _build() {
@@ -75,7 +80,7 @@ export class HUD {
     this.btnJump = mk('btn-jump', 'jump', 'jump', 'Saut');
     this.btnJump.prepend(h('div.ring'));
     this.btnGallop = mk('btn-gallop', 'gallop', 'gallop', 'Galop');
-    this.btnAction = mk('btn-action', 'action', 'hand', 'Action');
+    this.btnAction = mk('btn-action.hide', 'action', 'hand', 'Action');
     this.btnWhistle = mk('btn-whistle', 'whistle', 'whistle', '');
     this.btnWhistle.querySelector('span').remove();
     // Action secondaire contextuelle (mener en main, rampe…), à la place du bouton de saut quand on est à pied.
@@ -178,7 +183,11 @@ export class HUD {
       if (mode === 'ride') {
         const gi = p.horse.gait;
         const gd = HORSE.gaits[gi];
-        this.gearEl.textContent = gd.short;
+        if (this.gearEl.textContent !== gd.short) {
+          this.gearEl.textContent = gd.short;
+          // Après le camion : le rapport (D3…) était en petit, l'allure reprend la grande taille.
+          this.gearEl.classList.remove('small');
+        }
         this.gaitEl.textContent = gd.name;
         const st = p.horse.stamina / p.horse.maxStamina;
         const on = Math.ceil(st * 10);
@@ -237,6 +246,7 @@ export class HUD {
     // Boutons selon le mode.
     if (mode !== this._lastMode) {
       this._lastMode = mode;
+      this.teleEl.classList.toggle('drive', mode === 'drive');
       this.btnJump.classList.toggle('hide', mode !== 'ride');
       this.btnGallop.classList.toggle('hide', mode === 'drive');
       this.btnGallop.querySelector('span').textContent = mode === 'ride' ? 'Galop' : 'Courir';
@@ -291,7 +301,8 @@ export class HUD {
     clearTimeout(this._bigT);
     this._bigT = setTimeout(() => {
       el.classList.add('hidden');
-      this.el.classList.remove('big-on');
+      // Les cartes ne reviennent qu'après une courte marge : un compte à rebours (3-2-1) ne les fait pas clignoter.
+      this._bigT = setTimeout(() => this.el.classList.remove('big-on'), 400);
     }, ms);
   }
 
@@ -312,7 +323,8 @@ export class HUD {
     if (!this.notifActive) this._nextNotif();
   }
   _nextNotif() {
-    const n = this.notifQueue.shift();
+    // Téléphone ouvert : la file attend sa fermeture (voir le constructeur).
+    const n = this.game.phone?.isOpen ? null : this.notifQueue.shift();
     if (!n) {
       this.notifActive = null;
       return;
@@ -360,11 +372,23 @@ export class HUD {
       if (this.notifActive === n) this._nextNotif();
     }, 420);
   }
+  // Bannière affichée quand le téléphone s'ouvre : elle repasse en tête de file et reviendra à la fermeture.
+  _holdNotif() {
+    const n = this.notifActive;
+    if (!n || !this.notifEl.classList.contains('show')) return;
+    clearTimeout(this._notifT);
+    this._notifTap = null;
+    this.notifEl.classList.remove('show');
+    this.notifActive = null;
+    this.notifQueue.unshift(n);
+  }
 
   // Dialogue : lines = [{ who, initials, text }]
   dialog(lines, onDone) {
     this.dialogActive = { lines: [...lines], onDone };
     this.dialogEl.classList.remove('hidden');
+    // Cheval à l'arrêt pendant un dialogue : la télémétrie s'efface (le dialogue la recouvrait sur écran court).
+    this.el.classList.add('dialog-on');
     this._showLine();
   }
   _showLine() {
@@ -375,6 +399,9 @@ export class HUD {
       h('div.who', {}, h('div.av', { text: l.initials || (l.who || '?').slice(0, 2).toUpperCase() }), h('span', { text: l.who }), h('span.next', { text: d.lines.length > 1 ? 'Toucher pour continuer' : 'Toucher pour fermer' })),
       h('div.line', { text: l.text })
     );
+    // Écran court, texte long : si le dialogue remonte jusqu'à la plaque de zone, celle-ci s'efface le temps de la lecture.
+    const dr = this.dialogEl.getBoundingClientRect(), zr = this.zoneEl.getBoundingClientRect();
+    this.el.classList.toggle('dialog-high', dr.top < zr.bottom && dr.left < zr.right);
   }
   advanceDialog() {
     const d = this.dialogActive;
@@ -383,10 +410,15 @@ export class HUD {
     this.game.audio.click();
     if (d.lines.length) this._showLine();
     else {
-      this.dialogActive = null;
-      this.dialogEl.classList.add('hidden');
+      this.closeDialog();
       d.onDone?.();
     }
     return true;
+  }
+  // Ferme le dialogue sans le « terminer » (mission abandonnée, retour à l'écran titre).
+  closeDialog() {
+    this.dialogActive = null;
+    this.dialogEl.classList.add('hidden');
+    this.el.classList.remove('dialog-on', 'dialog-high');
   }
 }

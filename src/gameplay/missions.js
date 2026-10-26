@@ -223,6 +223,8 @@ class Run {
     g.missions.stablePicker = null;
     g.course = null;
     g.hud.clearHint();
+    // Dialogue de la mission encore ouvert (abandon) : il ne survit pas à la mission.
+    g.hud.closeDialog();
   }
 }
 
