@@ -393,8 +393,8 @@ export class Phone {
   }
 
   promo() {
-    const btn = h('button.btn', { text: CONFIG.downloadUrl ? 'Télécharger' : 'Découvrir', 'data-cta': 'download' });
-    tap(btn, () => this.game.openDownload('phone'));
+    const btn = h('button.btn', { text: 'Découvrir la vraie application Strides', 'data-cta': 'download' });
+    tap(btn, () => this.game.openStrides('phone', 'discover'));
     return h('div.promo', {}, h('div', { style: { flex: 1 } }, h('div.t', { text: 'Cette app existe pour de vrai.' }), h('div.s', { text: 'Jobs, écuries, transport, événements, annuaire : STRIDES réunit les pros du cheval.' })), btn);
   }
 
@@ -677,6 +677,28 @@ export class Phone {
     };
     body.appendChild(seg('Qualité graphique', 'quality', [['auto', 'Auto'], ['high', 'Haute'], ['low', 'Économie']], (v) => g.applyQuality(v)));
     body.appendChild(seg('Sensibilité caméra', 'camSens', [[0.7, 'Douce'], [1, 'Normale'], [1.4, 'Rapide']], (v) => (g.cam.sens = v)));
+    // Sauvegarde : copie à conserver soi-même (texte) et restauration depuis une copie ou une copie de secours.
+    body.appendChild(h('div.section-t', { text: 'Sauvegarde', style: { marginTop: '14px' } }));
+    const exp = h('button.btn.small', { text: 'Copier ma sauvegarde', 'data-id': 'save-export' });
+    tap(exp, () => {
+      const json = g.save.exportSave();
+      const done = () => g.hud.toast('Sauvegarde copiée : collez-la dans une note pour la conserver.');
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(json).then(done, () => (area.value = json));
+      else area.value = json;
+    });
+    const area = h('textarea.save-area', { placeholder: 'Collez ici une sauvegarde copiée…', 'aria-label': 'Sauvegarde', rows: '3' });
+    const imp = h('button.btn.small', { text: 'Restaurer cette sauvegarde', 'data-id': 'save-import' });
+    tap(imp, () => {
+      if (!area.value.trim()) return g.hud.toast('Collez d’abord une sauvegarde.');
+      if (g.save.importSave(area.value.trim())) location.reload();
+      else g.hud.toast('Sauvegarde illisible : rien n’a été modifié.');
+    });
+    body.appendChild(h('div.set-col', {}, exp, area, imp));
+    for (const b of g.save.backups()) {
+      const r = h('button.btn.small.ghost', { text: `Restaurer : ${b.label}` });
+      tap(r, () => (g.save.restore(b.key) ? location.reload() : g.hud.toast('Copie illisible.')));
+      body.appendChild(r);
+    }
     const reset = h('button.btn.small.ghost', { text: 'Recommencer la partie' });
     let armed = 0;
     tap(reset, () => {

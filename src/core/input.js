@@ -56,6 +56,8 @@ export class Input {
     window.addEventListener('keydown', (e) => this._key(e, true));
     window.addEventListener('keyup', (e) => this._key(e, false));
     window.addEventListener('blur', () => this.releaseAll());
+    // Passage en arrière-plan (autre app, notification, écran verrouillé) : aucune commande ne reste active.
+    document.addEventListener('visibilitychange', () => document.hidden && this.releaseAll());
     s.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 

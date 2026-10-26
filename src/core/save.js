@@ -199,7 +199,7 @@ export class SaveSystem {
       this.data = base;
       return this.data;
     }
-    if (from < SAVE_VERSION) this.saveNow();
+    if (from < SAVE_VERSION) this.saveNow(true);
     return this.data;
   }
   // Nouvelle partie explicite : lève le verrou (les réglages sont conservés).
@@ -209,7 +209,7 @@ export class SaveSystem {
     this.data.settings = settings;
     this.loadIssue = null;
     this.locked = false;
-    this.saveNow();
+    this.saveNow(true);
   }
   // Restauration depuis une copie (clé de backups()) ou un export ; renvoie true si la partie est de nouveau jouable.
   restore(key) {
@@ -227,15 +227,18 @@ export class SaveSystem {
     }
     this.loadIssue = null;
     this.locked = false;
-    this.saveNow();
+    this.saveNow(true);
     return true;
   }
   save() {
     clearTimeout(this._timer);
     this._timer = setTimeout(() => this.saveNow(), 400);
   }
-  saveNow() {
+  // Écrit la sauvegarde. Une partie non commencée n'écrit rien (une nouvelle partie est une action explicite :
+  // reset() force l'écriture) ; une sauvegarde verrouillée (illisible) n'est jamais écrasée.
+  saveNow(force = false) {
     if (!this.store || this.locked) return;
+    if (!force && !this.data.started) return;
     this.data.meta = { ...(this.data.meta || {}), savedAt: Date.now(), build: BUILD };
     this._set(this.key, JSON.stringify(this.data));
   }

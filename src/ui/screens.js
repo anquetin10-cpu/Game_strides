@@ -54,8 +54,19 @@ export class Screens {
   }
 
   // ---------- Titre ----------
-  showTitle({ hasSave, onPlay, onNew }) {
+  showTitle({ hasSave, onPlay, onNew, issue = null, backups = [], onRestore = null }) {
     const menu = h('div.menu');
+    // Sauvegarde illisible, invalide ou d'une version inconnue : rien n'est écrasé, le joueur décide.
+    let notice = null;
+    if (issue) {
+      const why = { corrupt: 'Le fichier de sauvegarde n’a pas pu être lu.', invalid: `La sauvegarde contient des données incohérentes (${issue.detail}).`, version: 'Cette sauvegarde vient d’une version plus récente du jeu.', migration: 'La sauvegarde n’a pas pu être convertie.' }[issue.kind] || 'Sauvegarde inutilisable.';
+      notice = h('div.notice', {}, h('b', { text: 'Sauvegarde non chargée' }), h('span', { text: `${why} Une copie a été conservée ; rien n’a été écrasé. Restaurez une copie ou commencez une nouvelle partie.` }));
+      backups.forEach((b, i) => {
+        const r = h('button.btn.small', { text: `Restaurer : ${b.label}`, 'data-id': `restore-${i}` });
+        tap(r, () => onRestore?.(b.key));
+        notice.appendChild(r);
+      });
+    }
     const add = (label, primary, fn, id) => {
       const b = h(`button.btn${primary ? '.primary' : ''}`, { 'data-id': id }, h('span', { text: label }), h('span', { html: icon('back'), style: { transform: 'rotate(180deg)', width: '16px', height: '16px', display: 'inline-block' } }));
       tap(b, fn);
@@ -64,9 +75,9 @@ export class Screens {
     if (hasSave) {
       add('Continuer', true, onPlay, 'continue');
       add('Nouvelle partie', false, onNew, 'new');
-    } else add('Jouer', true, onNew, 'play');
-    const learn = h('button.btn.ghost', { 'data-id': 'learn' }, h('span', { text: 'Découvrir l’app Strides' }), h('span', { html: icon('external'), style: { width: '16px', height: '16px', display: 'inline-block' } }));
-    tap(learn, () => this.game.openDownload('title'));
+    } else add(issue ? 'Nouvelle partie' : 'Jouer', true, onNew, 'play');
+    const learn = h('button.btn.ghost', { 'data-id': 'learn' }, h('span', { text: 'Découvrir la vraie application Strides' }), h('span', { html: icon('external'), style: { width: '16px', height: '16px', display: 'inline-block' } }));
+    tap(learn, () => this.game.openStrides('title', 'discover'));
     menu.appendChild(learn);
     // Pied de page : astuce « écran d’accueil » seulement dans Safari iOS (sans effet dans le lecteur intégré), raccourcis clavier seulement avec un pointeur fin.
     const embedded = document.body.classList.contains('embedded');
@@ -75,6 +86,7 @@ export class Screens {
     this.titleEl = h('div.screen.title-screen', {},
       this.brand(),
       h('div.game-title', { style: { marginTop: '14px' } }, CONFIG.title, h('span', { text: 'LE MONDE ÉQUESTRE EN MONDE OUVERT' })),
+      notice,
       menu,
       foot ? h('div.foot', { html: foot }) : null);
     document.body.appendChild(this.titleEl);
@@ -190,6 +202,7 @@ export class Screens {
       extra: [controls, g.phone.promo()],
       buttons: [
         { label: 'Écran titre', ghost: true, run: onTitle, id: 'title' },
+        { label: 'Découvrir la vraie application Strides', ghost: true, run: () => g.openStrides('pause', 'discover'), keep: true, id: 'strides' },
         { label: 'Partager', run: () => g.share('pause'), keep: true, id: 'share' },
         { label: 'Reprendre', primary: true, run: onResume, id: 'resume' },
       ],

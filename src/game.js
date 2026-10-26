@@ -575,17 +575,22 @@ export class Game {
     }
   }
 
+  // Accès à la vraie plateforme Strides (destinations officielles, voir config.js) : la partie est sauvegardée avant
+  // toute sortie. intent : 'discover' (page de présentation), 'missions' ou 'pro' (application web, même page :
+  // aucun lien profond inventé), 'store' (fiche App Store).
+  openStrides(placement = 'menu', intent = 'discover') {
+    this.saveNow();
+    this.bus.emit('cta', placement);
+    this.metrics.track('strides_cta_clicked', { placement, mode: intent });
+    const url = intent === 'store' ? CONFIG.downloadUrl || CONFIG.landingUrl : intent === 'discover' ? CONFIG.landingUrl : CONFIG.siteUrl;
+    const w = window.open(url, '_blank');
+    if (w) w.opener = null;
+    else if (this.state === 'play') this.hud.toast(url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
+  }
+
   openDownload(source) {
+    if (CONFIG.downloadUrl) return this.openStrides(source, 'store');
     this.bus.emit('cta', source);
-    try {
-      window.dataLayer?.push({ event: 'strides_cta', source });
-    } catch {
-      /* rien */
-    }
-    if (CONFIG.downloadUrl) {
-      window.open(CONFIG.downloadUrl, '_blank', 'noopener');
-      return;
-    }
     if (document.querySelector('.overlay [data-id="dl-back"]')) return;
     // Textes de strides-app.com : l'app est disponible sur l'App Store et Google Play.
     this.screens.card({
@@ -601,9 +606,7 @@ export class Game {
 
   // Ouvre strides-app.com dans un nouvel onglet ; si le navigateur (ou le lecteur intégré) bloque, on affiche l'adresse.
   openSite() {
-    const w = window.open(CONFIG.siteUrl, '_blank');
-    if (w) w.opener = null;
-    else this.hud.toast('strides-app.com');
+    this.openStrides('card', 'discover');
   }
 
   share(source = 'game') {
@@ -718,8 +721,16 @@ export class Game {
     this.hud.el.classList.add('hidden');
     document.getElementById('touch').classList.add('hidden');
     const hasSave = this.save.hasSave();
+    const issue = this.save.loadIssue;
     this.screens.showTitle({
       hasSave,
+      issue,
+      backups: issue ? this.save.backups() : [],
+      // Restauration : la copie est validée et migrée ; la page est rechargée pour repartir d'un état propre.
+      onRestore: (key) => {
+        if (this.save.restore(key)) location.reload();
+        else this.screens.card({ kicker: 'Sauvegarde', title: 'Copie illisible', body: 'Cette copie ne peut pas être restaurée non plus. Vous pouvez commencer une nouvelle partie ; la copie reste conservée dans le navigateur.', buttons: [{ label: 'Retour', primary: true, id: 'back' }] });
+      },
       onPlay: () => this.startGame(false),
       onNew: () => {
         this.audio.unlock();
