@@ -3,7 +3,8 @@
 Objectif fixé : « une version très réaliste, avec un niveau de détail proche du réel, proche d'une simulation pour
 tout le jeu ; pouvoir mettre le cheval dans le camion Strides pour aller à une compétition ». Ce document confronte
 les grandeurs du jeu aux valeurs réelles. Pour chaque ligne, il indique si la valeur est conforme, ou adaptée pour
-le jeu (écart assumé, à arbitrer), et quel test automatique la vérifie.
+le jeu (écart assumé, imposé par une contrainte physique), et quel test automatique la vérifie. Les grandeurs
+chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 
 ## 1. Cheval
 
@@ -11,8 +12,8 @@ le jeu (écart assumé, à arbitrer), et quel test automatique la vérifie.
 | --- | --- | --- | --- | --- |
 | Pas | 1,9 m/s (6,8 km/h) | 1,5 – 1,9 m/s (5,5 – 7 km/h) | conforme | `config.js`, `horse.test.js` |
 | Trot | 4,6 m/s (16,6 km/h) | 3,3 – 5 m/s (12 – 18 km/h) | conforme | idem |
-| Galop de travail | 9,5 m/s (34 km/h) | parcours de CSO : 350 – 400 m/min (5,8 – 6,7 m/s, 21 – 24 km/h) ; galop allongé 9 – 12 m/s | **adapté** (plus rapide qu'en concours réel) | — |
-| Grand galop | 16 m/s (58 km/h) | pur-sang en course : 16 – 18 m/s ; cheval de sport : 13 – 14 m/s | conforme pour le Derby, rapide pour un cheval de sport | — |
+| Galop de travail | 6,5 m/s (390 m/min, 23 km/h) | parcours de CSO : 350 – 400 m/min | conforme | `realism.test.js` |
+| Grand galop | 14 m/s (50 km/h) | cheval de sport : 45 – 55 km/h | conforme | `realism.test.js` |
 | Ordre des posers | pas à 4 temps, trot diagonal, galop à 3 temps + suspension | idem | conforme | `horse.test.js` (« pose les sabots dans l'ordre réel de chaque allure ») |
 | Fréquence cardiaque | 36 bpm au repos, ~185 bpm à 11 m/s, ~205 bpm à 14 m/s | repos 28 – 44 bpm ; effort maximal 200 – 240 bpm | conforme | `condition.test.js` |
 | Récupération | chute rapide jusqu'à ~120 bpm, puis lente (< 64 bpm en une dizaine de minutes) | idem chez un cheval entraîné | conforme | `condition.test.js` |
@@ -35,8 +36,8 @@ le jeu (écart assumé, à arbitrer), et quel test automatique la vérifie.
 | Grandeur | Jeu | Référence réelle | Statut | Vérification |
 | --- | --- | --- | --- | --- |
 | Barème A au chrono (CSO) | barre 4 pts, 1er refus 4 pts, 2e refus éliminatoire, 1 pt par seconde entamée au-delà du temps accordé, classement aux pénalités puis au temps | règlement de saut d'obstacles | conforme | `challenge.test.js`, `courses.js` |
-| Hauteurs CSO | Amateur 1,00 – 1,20 m ; Pro 2 1,20 – 1,30 m ; Grand Prix 1,30 – 1,45 m | Amateur 1,00 – 1,15 m ; Grand Prix CSI 5* 1,50 – 1,60 m | Amateur conforme ; **Grand Prix adapté** (plus bas) | `trip.js`, `story.js` |
-| Temps accordé | 72 – 76 s pour un parcours d'environ 260 m (≈ 210 m/min) | 350 m/min en national, soit ≈ 45 s | **adapté** (généreux) | — |
+| Hauteurs CSO | Amateur 1,00 – 1,20 m ; Pro 2 1,20 – 1,30 m ; qualificative CSI 1,35 – 1,45 m ; Grand Prix CSI 5* 1,50 – 1,60 m | mêmes paliers | conforme ; avertissement avant le départ si le couple cheval + équipement ne peut pas atteindre la hauteur | `realism.test.js`, `courses.js` |
+| Temps accordé | longueur du parcours (270 m) ÷ vitesse imposée : 47 s en national (350 m/min), 44 s en CSI (375), 41 s en Grand Prix (400) ; défi du Pôle v2 à 47 s (la v1, à 75 s, reste archivée avec ses records) | règlement : vitesse imposée selon l'épreuve | conforme | `realism.test.js` |
 | Cross | refus 20 pts, élimination au 3e refus sur un obstacle ou au 4e sur le parcours | règlement de concours complet : 20 / 40 pts, élimination au 3e refus | conforme (barème simplifié) | `courses.js` |
 
 ## 4. Monde, météo, marées, lumière
@@ -49,20 +50,15 @@ le jeu (écart assumé, à arbitrer), et quel test automatique la vérifie.
 | Pluie, vent | averses les jours couverts, vent d'ouest dominant, nuages poussés par le vent | climat océanique | conforme | `weather.test.js` |
 | Soleil | culmine vers 52°, lever ~6 h 30, coucher ~20 h 30 | fin août à 49,4° N : ~50°, ~6 h 55 / ~20 h 45 | conforme (approché) | `sky.js` |
 | Rendu | ciel physique, éclairage par l'environnement, ombres douces, matériaux physiques, terrain (herbe, terre, sable hersé, graviers, estran mouillé, flaques) | — | appréciation visuelle sur captures | `look.mjs` |
-| Durée d'une journée | 20 minutes réelles | 24 h | **adapté** (compression du temps de jeu) | `config.js` |
+| Durée d'une journée | au choix dans Réglages : « Réel · 24 h » ou « Jeu · 1 jour = 20 min » (par défaut) | 24 h | conforme en mode réel | `game.js`, Réglages |
 | Étendue du monde | 1,2 km × 1,2 km | Côte Fleurie : une vingtaine de kilomètres | **adapté** (compression des distances) | `layout.js` |
 
-## 5. Écarts assumés et arbitrage proposé
+## 5. Écarts restants (contraintes physiques)
 
-Ces écarts sont des choix de jouabilité sur téléphone. Les corriger change le rythme du jeu, rééquilibre toutes
-les épreuves et impose une nouvelle version du défi du Pôle (`defi-pole-v2`, dont les conditions sont figées).
-
-1. **Galop de travail plus réaliste** : 6,5 – 7 m/s au lieu de 9,5 m/s, avec un temps accordé calculé à 350 m/min
-   (≈ 45 s au Pôle). C'est le réalisme d'un vrai parcours, mais plus exigeant au doigt.
-2. **Grand Prix à 1,50 – 1,60 m** : plus fidèle à un CSI 5*, mais plus difficile sans équipement.
-3. **Marnage et distances à l'échelle réelle** : nécessiterait un monde plus vaste (chargement, mémoire et autonomie
-   sur iPhone).
-4. **Durée du jour** : un cycle de 24 h réelles rendrait la nuit, la météo et les marées invisibles en session courte.
+1. **Marnage** réduit (± 0,7 m au lieu d'environ 7 m) : à l'échelle réelle, la mer recouvrirait toute la plage et le
+   front de mer du jeu, dont la géométrie est à l'échelle d'une plage réelle.
+2. **Étendue du monde** de 1,2 km : la Côte Fleurie réelle s'étend sur une vingtaine de kilomètres ; un monde à cette
+   échelle dépasserait la mémoire et l'autonomie d'un iPhone dans un navigateur.
 
 **Non vérifié** : le rendu et la fluidité sur iPhone physique (les captures sont faites dans Chromium avec un rendu
 logiciel).

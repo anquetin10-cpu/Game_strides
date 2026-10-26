@@ -297,7 +297,10 @@ if (parts.includes('concours')) {
     let result = null;
     const off = g.bus.on('mission:complete', ({ result: rr }) => (result = rr));
     let failed = null;
-    const off2 = g.bus.on('mission:fail', () => (failed = document.querySelector('.overlay p')?.textContent || 'fail'));
+    const off2 = g.bus.on('mission:fail', () => (failed ||= 'fail'));
+    // Motif d'échec exact (la carte d'échec s'affiche après l'événement).
+    const origFail = g.screens.missionFailed;
+    g.screens.missionFailed = function (reason, ...rest) { failed = reason; return origFail.call(this, reason, ...rest); };
     let last = -1, same = 0;
     for (let i = 0; i < 4000 && g.missions.active === run && !result && !failed; i++) {
       if (run.i !== last) {

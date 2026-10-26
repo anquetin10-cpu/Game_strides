@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { POLE, HOME } from '../world/sites.js';
 import { POI } from '../world/layout.js';
-import { courseSteps } from './courses.js';
+import { courseSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { FIRST_NAMES, LAST_NAMES } from './data.js';
 import { box, cyl, compose } from '../world/shapes.js';
@@ -138,9 +138,9 @@ export function driveStep(game, S, { to, text, timer = null, comfort = false, on
 
 // ---------- Sortie en concours (CSO au Pôle International) ----------
 const CLASSES = [
-  { id: 'am2', name: 'Amateur 2', h: 1.05, ta: 76, heights: [1.0, 1.05, 1.0, 1.05, 1.05, 1.1, 1.05, 1.1, 1.05], prizes: [260, 180, 130, 100, 80], fee: 22 },
-  { id: 'am1', name: 'Amateur 1', h: 1.15, ta: 74, heights: [1.1, 1.15, 1.1, 1.15, 1.15, 1.2, 1.15, 1.2, 1.15], prizes: [420, 290, 210, 160, 120, 90], fee: 28 },
-  { id: 'pro2', name: 'Pro 2', h: 1.25, ta: 72, heights: [1.2, 1.25, 1.2, 1.25, 1.25, 1.3, 1.25, 1.3, 1.25], prizes: [650, 450, 320, 240, 180, 140], fee: 36 },
+  { id: 'am2', name: 'Amateur 2', h: 1.05, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: [1.0, 1.05, 1.0, 1.05, 1.05, 1.1, 1.05, 1.1, 1.05], prizes: [260, 180, 130, 100, 80], fee: 22 },
+  { id: 'am1', name: 'Amateur 1', h: 1.15, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: [1.1, 1.15, 1.1, 1.15, 1.15, 1.2, 1.15, 1.2, 1.15], prizes: [420, 290, 210, 160, 120, 90], fee: 28 },
+  { id: 'pro2', name: 'Pro 2', h: 1.25, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi), heights: [1.2, 1.25, 1.2, 1.25, 1.25, 1.3, 1.25, 1.3, 1.25], prizes: [650, 450, 320, 240, 180, 140], fee: 36 },
 ];
 const HORSE_NAMES = ['Quartz du Val', 'Ubris de Mai', 'Vendôme', 'Tiara du Ter', 'Diamant Rouge', 'Saphir des Bois', 'Oural', 'Ninja Z', 'Belle d’Auge', 'Utopie', 'Kalimba', 'Rubis Blanc', 'Galaxie', 'Hermès du Lac'];
 const pad2 = (n) => String(n).padStart(2, '0');

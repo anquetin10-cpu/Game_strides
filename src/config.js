@@ -38,8 +38,10 @@ export const HORSE = {
     { name: 'ARRÊT', short: 'N', speed: 0 },
     { name: 'PAS', short: '1', speed: 1.9 },
     { name: 'TROT', short: '2', speed: 4.6 },
-    { name: 'GALOP', short: '3', speed: 9.5 },
-    { name: 'GRAND GALOP', short: '4', speed: 16 },
+    // Galop de travail d'un parcours de CSO : 390 m/min (les parcours se courent à 350 – 400 m/min).
+    { name: 'GALOP', short: '3', speed: 6.5 },
+    // Galop allongé d'un cheval de sport : ~50 km/h.
+    { name: 'GRAND GALOP', short: '4', speed: 14 },
   ],
   jumpPeak: 1.35,
   jumpDuration: 0.8,

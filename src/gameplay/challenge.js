@@ -35,7 +35,19 @@ export const DEFI_POLE_V1 = deepFreeze({
   rules: { rail: 4, firstRefusal: 4, refusalsToEliminate: 2, timeFaultPerSecond: 1 },
 });
 
-export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1 };
+// Version 2 : galop de travail réaliste (390 m/min au lieu de 570) et temps accordé réglementaire (parcours de 270 m à
+// 350 m/min). Les conditions de la v1 n'étant plus reproductibles, la v2 devient le défi courant ; les records de la
+// v1 restent conservés à part.
+export const DEFI_POLE_V2 = deepFreeze({
+  ...JSON.parse(JSON.stringify(DEFI_POLE_V1)),
+  id: 'defi-pole-v2',
+  version: 2,
+  timeAllowed: 47,
+  timeLimit: 94,
+});
+
+export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2 };
+export const CURRENT_CHALLENGE = DEFI_POLE_V2;
 export const SIGNATURE = 'STRIDES Grand Tour';
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.

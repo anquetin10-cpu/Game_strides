@@ -1,6 +1,6 @@
 // Activités libres chronométrées (entraînements) : départ sur place, meilleurs temps sauvegardés.
 import * as THREE from 'three';
-import { courseSteps, checkpointSteps, ovalPoint, totalPenalties } from './courses.js';
+import { courseSteps, checkpointSteps, ovalPoint, totalPenalties, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { GATIEN } from '../world/sites.js';
 import { HIPPO } from '../world/layout.js';
@@ -26,7 +26,7 @@ export class Activities {
       {
         id: 'cso_train', name: 'Parcours du Pôle', kind: 'CSO', desc: 'Les 9 obstacles du Pôle International, hauteur entraînement.',
         start: { x: CSO_START.x, z: CSO_START.z },
-        build: (g, run, S) => courseSteps(g, run, S, { courseId: 'cso', start: CSO_START, finish: CSO_FINISH, timeAllowed: 75, heights: [1.1, 1.1, 1.1, 1.15, 1.1, 1.15, 1.1, 1.15, 1.1] }),
+        build: (g, run, S) => courseSteps(g, run, S, { courseId: 'cso', start: CSO_START, finish: CSO_FINISH, timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: [1.1, 1.1, 1.1, 1.15, 1.1, 1.15, 1.1, 1.15, 1.1] }),
         penalties: true,
       },
       {

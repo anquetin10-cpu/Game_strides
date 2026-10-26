@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { showJumpGeo, railGeo, logJumpGeo, brushJumpGeo, partsToGeo, box } from '../world/builders.js';
 import { POLE, HOME } from '../world/sites.js';
 import { XC_PATH, POND } from '../world/layout.js';
-import { pointAlong, polylineLength, clamp } from '../core/math.js';
+import { pointAlong, polylineLength, clamp, smoothstep } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { signTexture } from '../world/textures.js';
 import { applySurfaces } from '../world/surfaces.js';
@@ -263,7 +263,7 @@ export class Obstacles {
     const dist = Math.abs(s) / Math.max(0.3, Math.abs(dir));
     const tau = dist / horse.speed / HORSE.jumpDuration;
     if (tau <= 0 || tau >= 1) return 'near';
-    const k = 0.72 + 0.28 * Math.min(1, Math.max(0, (horse.speed - 4) / 4.5));
+    const k = 0.72 + 0.28 * smoothstep(3.5, 6.5, horse.speed);
     const peak = horse.jumpPower * k;
     const clear = 4 * peak * tau * (1 - tau) + 0.2 + horse.mods.clearance;
     return clear >= o.h + 0.04 ? 'good' : 'near';

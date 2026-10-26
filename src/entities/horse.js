@@ -96,7 +96,8 @@ export class Horse {
 
   startJump() {
     if (this.jumpT >= 0 || this.speed < HORSE.minJumpSpeed) return false;
-    const k = 0.72 + 0.28 * smoothstep(4, 8.5, this.speed);
+    // Puissance d'appel : pleine au galop de concours (≥ 6,5 m/s, ~390 m/min), réduite au trot.
+    const k = 0.72 + 0.28 * smoothstep(3.5, 6.5, this.speed);
     const peak = this.jumpPower * k;
     // Clôture, haie, mur… sur la trajectoire que ce saut ne franchirait pas (appel trop tôt ou trop tard) : le cheval
     // n'enlève pas et s'arrête devant (refus), au lieu de rester suspendu dans la barrière puis de la traverser.

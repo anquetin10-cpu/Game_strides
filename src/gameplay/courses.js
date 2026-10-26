@@ -3,14 +3,24 @@ import * as THREE from 'three';
 import { HIPPO } from '../world/layout.js';
 import { CSO_FINISH } from './obstacles.js';
 import { formatTime, clamp } from '../core/math.js';
+import { HORSE } from '../config.js';
 import { PathAI } from '../entities/horse.js';
 
 // ---------- Parcours d'obstacles ----------
+// Temps accordé réglementaire : longueur du parcours (mesurée au tracé du cavalier) divisée par la vitesse imposée
+// (350 m/min en épreuves nationales, 375 m/min en CSI, 400 m/min en Grand Prix CSI 5* de plein air).
+export const COURSE_LENGTH = { cso: 270, xc: 760 };
+export const COURSE_SPEED = { national: 350, csi: 375, gp: 400, crossAmateur: 420 };
+export const timeAllowedFor = (length, speed) => Math.ceil((length / speed) * 60);
+
 export function courseSteps(game, run, S, opts) {
   const {
     courseId, start, finish, timeAllowed, heights, kind = 'cso',
     intro = null,
   } = opts;
+  // Capacité de saut du couple (puissance du cheval, équipement) : avertissement avant d'entrer en piste si les
+  // obstacles sont hors de portée — comme un entraîneur le dirait avant d'engager le cheval.
+  const maxH = heights ? Math.max(...heights) : null;
   // Règlement FEI : élimination au deuxième refus en CSO, au quatrième sur un cross (ou au troisième sur un même obstacle).
   const maxRefusals = opts.maxRefusals ?? (kind === 'xc' ? 4 : 2);
   const ob = game.obstacles;
@@ -21,6 +31,18 @@ export function courseSteps(game, run, S, opts) {
   const steps = [];
   steps.push(S.goto(start, kind === 'xc' ? 'Rejoins le départ du cross' : 'Entre en piste : rejoins le départ', { r: 7, mode: 'ride' }));
   if (intro) steps.push(S.dialog(intro));
+  if (maxH) steps.push(S.custom({
+    text: '',
+    start(r) {
+      const h = game.player.horse;
+      const reach = h ? h.jumpPower + 0.2 + (h.mods?.clearance || 0) : 99;
+      if (reach < maxH + 0.04) {
+        r.flags.capWarn = true;
+        game.hud.dialog([{ who: 'Entraîneur', initials: 'EN', text: `Obstacles jusqu’à ${maxH.toFixed(2).replace('.', ',')} m : avec ${h.name} et cet équipement, tu plafonnes vers ${reach.toFixed(2).replace('.', ',')} m. Il faudra un cheval plus puissant ou une selle adaptée (Sellerie du Port, « Mes chevaux »), sinon les barres tomberont.` }], () => (r.flags.capWarn = false));
+      }
+    },
+    update: (r) => !r.flags.capWarn,
+  }));
   steps.push(
     S.custom({
       text: 'Prends ton élan…',
@@ -256,7 +278,8 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
       const pts = [];
       const laneR = HIPPO.radius + (i - 2) * 1.6;
       for (let k = 0; k <= 64; k++) pts.push(ovalPoint(startS + 12 + (k / 64) * (total + 60), laneR));
-      const base = [12.6, 12.3, 11.9, 11.5, 11.1][i] * (0.98 + Math.random() * 0.04);
+      // Adversaires proportionnés au grand galop d'un cheval de sport (14 m/s) : de 67 à 76 % de sa vitesse de pointe.
+      const base = [0.76, 0.74, 0.72, 0.7, 0.67][i] * HORSE.gaits[4].speed * (0.98 + Math.random() * 0.04);
       const r = { horse: h, jockey, name, prog: startS, lastS: startS, finished: false, base };
       h.ai = new PathAI(pts, {
         loop: false,

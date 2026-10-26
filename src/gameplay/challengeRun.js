@@ -3,7 +3,7 @@
 // téléphone, dialogue, écran de choix), résultat et record, puis restauration du monde du joueur (heure, météo,
 // cheval actif, position, mode). Le panneau d'entrée du Pôle donne accès au défi depuis le monde.
 import * as THREE from 'three';
-import { DEFI_POLE_V1, makeResult, recordResult, challengeStore, newAttemptId } from './challenge.js';
+import { CURRENT_CHALLENGE, makeResult, recordResult, challengeStore, newAttemptId } from './challenge.js';
 import { courseSteps } from './courses.js';
 import { CSO_START, CSO_FINISH } from './obstacles.js';
 import { POLE } from '../world/sites.js';
@@ -20,7 +20,7 @@ const copy = (o) => (o == null ? o : JSON.parse(JSON.stringify(o)));
 export class Challenges {
   constructor(game) {
     this.game = game;
-    this.cfg = DEFI_POLE_V1;
+    this.cfg = CURRENT_CHALLENGE;
     this.active = null;
     this.lastConditions = null;
     this.ui = new ChallengeUI(game, this);

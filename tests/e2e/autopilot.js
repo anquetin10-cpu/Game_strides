@@ -132,13 +132,15 @@
       const h = p.horse;
       h.setPosition(o.x - o.n.x * 11, o.z - o.n.z * 11, o.rot);
       g.cam.yaw = o.rot + Math.PI;
-      h.speed = 9;
+      // Abord au galop réel du cheval : galop de travail en CSO, galop de cross sur le cross.
+      h.speed = (o.course === 'xc' ? 11 : 6.5) * h.speedMul;
       h.stamina = h.maxStamina;
       let jumped = false;
       for (let i = 0; i < 200; i++) {
         h.ai = null;
         A.steer(o.n.x, o.n.z, 0.95);
-        g.input.held.delete('gallop');
+        // Cross : galop de cross (grand galop), comme sur un vrai parcours de cross ; CSO : galop de travail.
+        if (o.course === 'xc') g.input.held.add('gallop'); else g.input.held.delete('gallop');
         if (!jumped && g.obstacles.timing(h) === 'good') {
           // Viser le centre de la fenêtre : attendre un peu.
           const f = h.forward;
@@ -435,6 +437,11 @@
       const STORY = g.missions.storyList();
       const def = STORY.find((d) => d.id === id);
       for (const r of def.requires || []) if (!g.save.data.completed.includes(r)) g.save.data.completed.push(r);
+      // Épreuves de haut niveau (1,40 – 1,60 m) : le pilote s'équipe comme un vrai cavalier (selles de saut).
+      if (['csi3', 'gp'].includes(id)) {
+        for (const u of ['selle', 'selle_pro']) if (!g.save.data.upgrades.includes(u)) g.save.data.upgrades.push(u);
+        g.applyUpgrades(g.mainHorse);
+      }
       const lvXp = [0, 300, 900, 1800, 3200][def.level - 1];
       if (g.save.data.reputation < lvXp) g.save.data.reputation = lvXp;
       g.missions.offers = [];

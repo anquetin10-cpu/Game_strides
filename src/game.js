@@ -1023,7 +1023,8 @@ export class Game {
     this.simPaused = SIM.paused = this.state === 'play' && (this.phone.isOpen || overlayOpen || !!this.hud.dialogActive);
     const sdt = this.simPaused ? 0 : dt;
     this.simClock += sdt;
-    d.gameTime += (sdt * 86400) / CONFIG.dayLength;
+    // Écoulement du temps : journée de jeu compressée (20 min), ou temps réel (24 h) au choix dans Réglages.
+    d.gameTime += (sdt * 86400) / (d.settings.timeScale === 'reel' ? 86400 : CONFIG.dayLength);
 
     if (this.state === 'photo') {
       this.cam.update(dt, this.player.focus, input.look);

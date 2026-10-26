@@ -2,7 +2,7 @@
 // que propose réellement l'application Strides (mise en relation avec des professionnels du cheval).
 import { HOME, HARAS, POLE, DUNES, GATIEN, TOWN, homeBoxes, HIPPO_SITE } from '../world/sites.js';
 import { POI, HIPPO } from '../world/layout.js';
-import { courseSteps, totalPenalties, checkpointSteps, raceSteps } from './courses.js';
+import { courseSteps, totalPenalties, checkpointSteps, raceSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { GrazeAI, FollowAI, FleeAI } from '../entities/horse.js';
 import { HORSES } from './data.js';
@@ -604,7 +604,7 @@ export const STORY = [
   // 10 — Qualificative CSI 3★
   {
     id: 'csi3', story: true, vertical: 'EVENEMENTS', category: 'CSO', title: 'Qualificative CSI 3★', level: 4, requires: ['derby', 'pension'],
-    desc: 'Parcours de 9 obstacles au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix.',
+    desc: 'Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix.',
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 500, xp: 450, duration: '~2 min',
     irl: EVENT_IRL,
     rate: (run) => {
@@ -619,9 +619,9 @@ export const STORY = [
         courseId: 'cso',
         start: { x: CSO_START.x, z: CSO_START.z },
         finish: CSO_FINISH,
-        timeAllowed: 72,
-        heights: [1.15, 1.2, 1.15, 1.2, 1.2, 1.25, 1.2, 1.25, 1.2],
-        intro: [{ who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: 'Neuf obstacles, temps accordé 1:12. Suis les numéros et franchis la ligne d’arrivée après le 9. À toi !' }],
+        timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi),
+        heights: [1.35, 1.4, 1.35, 1.4, 1.4, 1.45, 1.4, 1.45, 1.4],
+        intro: [{ who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: `Neuf obstacles jusqu’à 1,45 m, ${COURSE_LENGTH.cso} m à 375 m/min : temps accordé ${timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)} s. Suis les numéros et franchis la ligne d’arrivée après le 9. À toi !` }],
       }).concat([
         S.custom({
           text: '',
@@ -639,21 +639,21 @@ export const STORY = [
   // 11 — Grand Prix CSI 5★
   {
     id: 'gp', story: true, vertical: 'EVENEMENTS', category: 'Grand Prix', title: 'Grand Prix CSI 5★', level: 4, requires: ['csi3'],
-    desc: 'La finale. Obstacles à 1,40 m, meilleurs cavaliers du circuit. Il faut gagner.',
+    desc: 'La finale. Obstacles de 1,50 m à 1,60 m, meilleurs cavaliers du circuit. Il faut gagner. Un cheval et un équipement à la hauteur sont indispensables.',
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 1500, xp: 900, duration: '~2 min',
     irl: EVENT_IRL,
     rate: (run) => (totalPenalties(run) === 0 ? 5 : 4),
     review: () => 'Un Grand Prix d’anthologie. Deauvelle se souviendra de ce parcours.',
     steps(game, run, S) {
-      const bestRival = { name: 'K. Van Dijk', faults: 4, time: 63.4 };
+      const bestRival = { name: 'K. Van Dijk', faults: 4, time: Math.round((timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp) - 3.6) * 10) / 10 };
       return courseSteps(game, run, S, {
         courseId: 'cso',
         start: { x: CSO_START.x, z: CSO_START.z },
         finish: CSO_FINISH,
-        timeAllowed: 70,
-        heights: [1.3, 1.35, 1.3, 1.4, 1.35, 1.4, 1.35, 1.45, 1.4],
+        timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp),
+        heights: [1.5, 1.55, 1.5, 1.6, 1.55, 1.6, 1.55, 1.6, 1.55],
         intro: [
-          { who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: 'Grand Prix CSI 5★. Le meilleur temps provisoire : Van Dijk, 4 points en 63,4 s.' },
+          { who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: `Grand Prix CSI 5★. Le meilleur temps provisoire : Van Dijk, 4 points en ${dec(bestRival.time)} s.` },
           { who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: 'Un sans-faute, ou 4 points plus vite que lui, et la victoire est à toi.' },
         ],
       }).concat([
