@@ -388,7 +388,7 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
         race.started = true;
         race.rivals.forEach((x) => (x.horse.frozen = false));
         game.audio.cheer();
-        game.hud.hint('Maintiens <b>GALOP</b> par à-coups : l’endurance se recharge au galop normal.', 5000);
+        game.hud.hint('Maintiens <b>BOOST</b> par à-coups : l’endurance se recharge au galop normal.', 5000);
         r.data.finishPos = null;
         void r;
       },

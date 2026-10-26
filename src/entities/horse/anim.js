@@ -35,11 +35,14 @@ GAIT.gallopR.lift = GAIT.gallopL.lift;
 GAIT.gallopR.knee = GAIT.gallopL.knee;
 GAIT.gallopR.fet = GAIT.gallopL.fet;
 
+// Seuils entre les allures réelles (pas 1,9 m/s, trot 4,6, galop de travail 6,5, grand galop 14) : le galop
+// commence dès 5,6 m/s, le grand galop au-delà de 10,5 m/s (galop allongé).
+export const GAIT_EDGES = { walk: 3.2, trot: 5.6, canter: 10.5 };
 export function gaitIndex(speed) {
   if (speed < 0.3) return 0;
-  if (speed < 3.2) return 1;
-  if (speed < 7) return 2;
-  if (speed < 12.5) return 3;
+  if (speed < GAIT_EDGES.walk) return 1;
+  if (speed < GAIT_EDGES.trot) return 2;
+  if (speed < GAIT_EDGES.canter) return 3;
   return 4;
 }
 
@@ -272,11 +275,12 @@ export function animateHorse(bones, st, dt) {
   A.events.length = 0;
 
   // ----- Choix de l'allure et main au galop -----
-  let target = vn < 0.25 ? 'idle' : vn < 3.2 ? 'walk' : vn < 7 ? 'trot' : vn < 12.5 ? 'canter' : 'gallop';
+  const E = GAIT_EDGES;
+  let target = vn < 0.25 ? 'idle' : vn < E.walk ? 'walk' : vn < E.trot ? 'trot' : vn < E.canter ? 'canter' : 'gallop';
   if (A.gait === 'walk' && target === 'idle' && vn > 0.12) target = 'walk';
-  if (A.gait === 'trot' && target === 'walk' && vn > 2.9) target = 'trot';
-  if (A.gait === 'canter' && target === 'trot' && vn > 6.4) target = 'canter';
-  if (A.gait === 'gallop' && target === 'canter' && vn > 11.8) target = 'gallop';
+  if (A.gait === 'trot' && target === 'walk' && vn > E.walk - 0.3) target = 'trot';
+  if (A.gait === 'canter' && target === 'trot' && vn > E.trot - 0.4) target = 'canter';
+  if (A.gait === 'gallop' && target === 'canter' && vn > E.canter - 0.7) target = 'gallop';
   const turn = st.turn || 0;
   if (st.lead) A.lead = st.lead;
   else if (Math.abs(turn) > 0.25 && Math.sign(turn) !== A.lead) {

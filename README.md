@@ -11,10 +11,10 @@ Jouable dans le navigateur, **pensé d'abord pour l'iPhone** (commandes tactiles
 
 | Tactile (iPhone) | Clavier |
 | --- | --- |
-| Joystick : poser le pouce n'importe où dans la moitié gauche et glisser | ZQSD / WASD ou flèches |
+| Joystick : poser le pouce n'importe où dans la moitié gauche et glisser — à fond : **galop** | ZQSD / WASD ou flèches (galop ; Ctrl : trot, Alt : pas) |
 | Caméra : glisser dans la moitié droite | Glisser à la souris |
 | **SAUT** (à cheval) — l'anneau devient vert au bon moment | Espace |
-| **GALOP** (maintenir) / **COURIR** à pied | Maj |
+| **BOOST** (maintenir) : grand galop, anneau d'endurance autour du bouton / **COURIR** à pied | Maj |
 | **ACTION** contextuelle : monter, descendre, parler, prendre, livrer… | E |
 | Sifflet : rappeler son cheval | Q |
 | Téléphone (en haut à droite) — app Strides, carte, messages… | P |

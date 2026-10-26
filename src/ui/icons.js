@@ -8,6 +8,7 @@ export const ICONS = {
   phone: s('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>'),
   horse: s('<path d="M5 20v-5.5c0-2 1-3.5 3-4.5l4-2 1.5-4 2 2 3 1.5-1 2.5-2.5-.5-1.5 2.5V20"/><path d="M12 13.5 9 20"/>'),
   jump: s('<path d="M3 18c3-9 15-9 18 0"/><path d="M8 18v2M16 18v2M6 20h12"/><path d="M17 8.5l2-1.5.5 2.5" />'),
+  boost: s('<path d="M13 2.5 5 13.5h6l-1 8 8-11h-6l1-8z"/>'),
   gallop: s('<path d="M3 8h7M2 12h9M4 16h6"/><path d="M14 7l6 5-6 5"/>'),
   run: s('<circle cx="14" cy="4.5" r="1.8"/><path d="M8 21l3-6 3 2v5M6 12l3-4h5l2 4 3 1"/>'),
   whistle: s('<circle cx="9" cy="14" r="5"/><path d="M13 11l8-4v4l-6 2"/><path d="M9 14h.01"/>'),

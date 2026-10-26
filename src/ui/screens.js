@@ -8,7 +8,7 @@ import { stars } from './requests.js';
 
 const TIPS = [
   'Sur Strides, chaque professionnel est vérifié avant de pouvoir proposer ses services.',
-  'Maintiens GALOP pour passer au grand galop. Surveille l’endurance de ton cheval.',
+  'Joystick à fond : galop. Maintiens BOOST pour le grand galop, l’anneau du bouton montre l’endurance.',
   'Appuie sur SAUT au bon moment : l’anneau devient vert quand l’appel est idéal.',
   'Touche la minimap pour ouvrir la carte et placer un repère GPS.',
   'Les fers d’or sont cachés dans tout Deauvelle. Trouve-les tous !',
@@ -82,7 +82,7 @@ export class Screens {
     // Pied de page : astuce « écran d’accueil » seulement dans Safari iOS (sans effet dans le lecteur intégré), raccourcis clavier seulement avec un pointeur fin.
     const embedded = document.body.classList.contains('embedded');
     const ios = !embedded && /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone;
-    const foot = ios ? 'Astuce : <b>Partager → Sur l’écran d’accueil</b> pour jouer en plein écran.' : matchMedia('(pointer: coarse)').matches ? '' : 'Clavier : ZQSD/WASD · Espace = saut · Maj = galop · E = action · P = téléphone';
+    const foot = ios ? 'Astuce : <b>Partager → Sur l’écran d’accueil</b> pour jouer en plein écran.' : matchMedia('(pointer: coarse)').matches ? '' : 'Clavier : ZQSD/WASD = galop (Ctrl trot, Alt pas) · Espace = saut · Maj = boost (grand galop) · E = action · P = téléphone';
     this.titleEl = h('div.screen.title-screen', {},
       this.brand(),
       h('div.game-title', { style: { marginTop: '14px' } }, CONFIG.title, h('span', { text: 'LE MONDE ÉQUESTRE EN MONDE OUVERT' })),
@@ -197,7 +197,7 @@ export class Screens {
   // ---------- Pause ----------
   pause({ onResume, onTitle }) {
     const g = this.game;
-    const controls = h('div', { html: `<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. Boutons : <b>Saut</b>, <b>Galop</b> (maintenir), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD, Espace (saut), Maj (galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>` });
+    const controls = h('div', { html: `<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>` });
     return this.card({
       kicker: 'Pause',
       title: 'STRIDES Grand Tour',

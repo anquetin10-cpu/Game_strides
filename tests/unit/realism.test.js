@@ -5,6 +5,7 @@ import { DEFI_POLE_V1, DEFI_POLE_V2, CURRENT_CHALLENGE } from '../../src/gamepla
 import { STORY } from '../../src/gameplay/story.js';
 import { CHAPTER1 } from '../../src/gameplay/story2.js';
 import { TRUCK_SPEC } from '../../src/entities/truckPhysics.js';
+import { gaitIndex } from '../../src/entities/horse/anim.js';
 
 // Audit de réalisme (docs/realisme.md) : grandeurs du jeu confrontées aux valeurs réelles de référence.
 const kmh = (ms) => ms * 3.6;
@@ -25,6 +26,9 @@ describe('réalisme : allures du cheval', () => {
   it('galop allongé d’un cheval de sport : 45 – 55 km/h', () => {
     expect(kmh(gait('GRAND GALOP'))).toBeGreaterThanOrEqual(45);
     expect(kmh(gait('GRAND GALOP'))).toBeLessThanOrEqual(55);
+  });
+  it('chaque vitesse d’allure est affichée et animée comme cette allure (joystick à fond = galop)', () => {
+    HORSE.gaits.forEach((g, i) => expect(gaitIndex(g.speed)).toBe(i));
   });
 });
 

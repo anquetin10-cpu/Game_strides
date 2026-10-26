@@ -79,7 +79,9 @@ export class HUD {
     };
     this.btnJump = mk('btn-jump', 'jump', 'jump', 'Saut');
     this.btnJump.prepend(h('div.ring'));
-    this.btnGallop = mk('btn-gallop', 'gallop', 'gallop', 'Galop');
+    this.btnGallop = mk('btn-gallop', 'gallop', 'boost', 'Boost');
+    // Jauge d'endurance autour du bouton BOOST (grand galop).
+    this.btnGallop.prepend(h('div.ring'));
     this.btnAction = mk('btn-action.hide', 'action', 'hand', 'Action');
     this.btnWhistle = mk('btn-whistle', 'whistle', 'whistle', '');
     this.btnWhistle.querySelector('span').remove();
@@ -194,6 +196,14 @@ export class HUD {
         this.staminaEl.classList.remove('hidden');
         this.staminaEl.classList.toggle('low', p.horse.exhausted || st < 0.25);
         [...this.staminaEl.children].forEach((c, i) => c.classList.toggle('on', i < on));
+        // Bouton BOOST : anneau d'endurance, allumé pendant le grand galop, éteint quand le cheval est essoufflé.
+        const pct = Math.round(st * 100);
+        if (pct !== this._boostPct) {
+          this._boostPct = pct;
+          this.btnGallop.style.setProperty('--st', `${pct}%`);
+        }
+        this.btnGallop.classList.toggle('boosting', gi === 4);
+        this.btnGallop.classList.toggle('empty', !!p.horse.exhausted);
         const cond = p.horse.cond;
         if (cond && (this._hrT = (this._hrT || 0) - dt) <= 0) {
           this._hrT = 0.5;
@@ -249,8 +259,10 @@ export class HUD {
       this.teleEl.classList.toggle('drive', mode === 'drive');
       this.btnJump.classList.toggle('hide', mode !== 'ride');
       this.btnGallop.classList.toggle('hide', mode === 'drive');
-      this.btnGallop.querySelector('span').textContent = mode === 'ride' ? 'Galop' : 'Courir';
-      this.btnGallop.querySelector('div').innerHTML = icon(mode === 'ride' ? 'gallop' : 'run');
+      this.btnGallop.classList.toggle('boost', mode === 'ride');
+      if (mode !== 'ride') this.btnGallop.classList.remove('boosting', 'empty');
+      this.btnGallop.querySelector('span').textContent = mode === 'ride' ? 'Boost' : 'Courir';
+      this.btnGallop.querySelector('div:not(.ring)').innerHTML = icon(mode === 'ride' ? 'boost' : 'run');
     }
     this.btnWhistle.classList.toggle('hide', !(mode === 'foot' && p.horse && !p.horse.hiddenInTruck && !g.missions?.noWhistle));
     // Action secondaire du transport (calculée après l'action principale).

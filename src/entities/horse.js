@@ -171,7 +171,8 @@ export class Horse {
       const diff = angleDiff(this.heading, desiredHeading);
       let gi = c.mag < 0.42 ? 1 : c.mag < 0.82 ? 2 : 3;
       if (c.gaitOverride) gi = c.gaitOverride;
-      if (c.gallop && gi >= 2 && !this.exhausted) gi = 4;
+      // Galop au joystick seul (à fond) ; le bouton BOOST (maintenu) lance le grand galop dès que le cheval avance.
+      if (c.gallop && !this.exhausted) gi = 4;
       desired = SPEEDS[gi] * this.speedMul;
       if (c.speedOverride !== undefined) desired = c.speedOverride;
       const sp01 = clamp(this.speed / 16, 0, 1);

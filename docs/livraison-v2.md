@@ -173,7 +173,7 @@ Tests unitaires : Vitest, 97 tests (12 fichiers), tous verts. Recette du 26 octo
 | --- | --- | --- | --- |
 | R01 | Lancement et première mission | `scenario.mjs` (partie complète au doigt), `missions.mjs` (« Premiers pas ») | OK |
 | R02 | Déplacements à pied, à cheval, en camion | `features.mjs` (20 vérifications), `transport-flow.mjs` (65), `truck-exit.mjs` | OK |
-| R03 | Touchers simultanés | `multitouch.mjs` : joystick + GALOP + caméra à trois doigts, relâchement sans commande bloquée | OK |
+| R03 | Touchers simultanés | `multitouch.mjs` : joystick + BOOST + caméra à trois doigts, relâchement sans commande bloquée | OK |
 | R04 | M1 : refus et branches | `chapter1.mjs` (refus des deux sans pénalité et reproposition, branche Val, choix mémorisé) ; `missions.mjs` (tournée) | OK |
 | R05 | M2 : débit unique | `chapter1.mjs` : quitter avant confirmation, échec technique simulé (remboursé), double appui rapide, rechargement → 120 € débités une seule fois | OK |
 | R06 | M2 : budget insuffisant | `chapter1.mjs` : confirmation impossible, rien débité, branche autonome terminée | OK |

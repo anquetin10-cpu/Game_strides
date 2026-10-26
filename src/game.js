@@ -577,7 +577,7 @@ export class Game {
     };
     b.on('horse:tooSlow', () => hintOnce('slow', 'Trop lent pour sauter : passe au <b>trot</b>.', 2500));
     b.on('horse:exhausted', (h) => {
-      if (this.player.mode === 'ride' && this.player.horse === h) hintOnce('tired', 'Cheval essoufflé : relâche <b>GALOP</b>.', 3500);
+      if (this.player.mode === 'ride' && this.player.horse === h) hintOnce('tired', 'Cheval essoufflé : relâche <b>BOOST</b>.', 3500);
     });
     b.on('horse:bump', ({ horse }) => {
       if (horse.isPlayerHorse) {

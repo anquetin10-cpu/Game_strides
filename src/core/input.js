@@ -181,10 +181,12 @@ export class Input {
       if (K.has('KeyS') || K.has('ArrowDown')) y -= 1;
       if (K.has('KeyD') || K.has('ArrowRight')) x += 1;
       if (K.has('KeyA') || K.has('ArrowLeft')) x -= 1;
-      const walk = K.has('AltLeft') || K.has('ControlLeft');
+      // Comme le joystick poussé à fond : galop par défaut ; Ctrl = trot, Alt = pas (Maj = boost, grand galop).
+      const walk = K.has('AltLeft');
+      const trot = K.has('ControlLeft');
       const m = Math.hypot(x, y);
       if (m > 0) {
-        const s = walk ? 0.4 : 0.8;
+        const s = walk ? 0.35 : trot ? 0.6 : 1;
         this.move.x = (x / m) * s;
         this.move.y = (y / m) * s;
         this.move.mag = s;

@@ -83,7 +83,7 @@ export const STORY = [
         }),
         S.custom({
           text: 'Passe au grand galop quelques secondes',
-          hint: 'Maintiens <b>GALOP</b> (Maj), joystick à fond, et sors par la porte.',
+          hint: 'Joystick à fond pour galoper, puis maintiens <b>BOOST</b> (Maj) pour le grand galop, et sors par la porte.',
           hintMs: 8000,
           start(r) {
             r.flags.g = 0;
