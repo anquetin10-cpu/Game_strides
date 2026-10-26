@@ -37,6 +37,17 @@ describe('sauvegarde v2', () => {
     expect(JSON.parse(s.store.getItem('t')).version).toBe(SAVE_VERSION);
     expect(s.hasSave()).toBe(true);
   });
+  it('migre une sauvegarde v1 de débutant (R09) sans rien perdre', () => {
+    const s = system(JSON.stringify({ version: 1, started: true, playerName: 'Tom', money: 55, xp: 60, completed: ['tuto'], horses: ['comete'], gameTime: 33000 }));
+    const d = s.load();
+    expect(s.loadIssue).toBeNull();
+    expect(d.reputation).toBe(60);
+    expect(d.completed).toEqual(['tuto']);
+    expect(d.money).toBe(55);
+    expect(reputationTier(d.reputation).title).toBe('Premiers contrats');
+    expect(d.checkpoint).toBeNull();
+    expect(JSON.parse(s.store.getItem('t.backup.v1')).xp).toBe(60);
+  });
   it('ne remplace pas en silence une sauvegarde illisible', () => {
     const s = system('{"version":1,"started":true,"money":');
     const d = s.load();

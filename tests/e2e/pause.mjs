@@ -39,6 +39,17 @@ await dismiss();
 await page.waitForTimeout(500);
 [a, z] = await span(1500);
 check('dialogue terminé : reprise', !z.paused && z.t > a.t);
+// R11 : absence prolongée (onglet en arrière-plan, appareil en veille) — au retour, aucun rattrapage : la première
+// image après une interruption de 10 minutes n'avance le monde que d'un pas borné.
+const gap = await page.evaluate(async () => {
+  const g = window.__game;
+  const c = g.mainHorse.cond;
+  const t0 = g.save.data.gameTime, sat0 = c.satiety;
+  g.last = performance.now() - 600000;
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  return { dGame: g.save.data.gameTime - t0, dSat: sat0 - c.satiety };
+});
+check('R11 retour après 10 min d’absence : pas de rattrapage (≤ 2 pas de 50 ms)', gap.dGame < 2 * 0.05 * 86400 / 1200 + 1e-6 && gap.dSat < 0.01, JSON.stringify(gap));
 console.log(errors.length ? `ERRORS ${errors.slice(0, 3).join(' | ')}` : 'ERRORS none');
 console.log(fails ? `PAUSE ${fails} échec(s)` : 'PAUSE OK');
 process.exitCode = fails || errors.length ? 1 : 0;

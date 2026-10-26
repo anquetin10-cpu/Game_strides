@@ -81,8 +81,14 @@ await page.waitForTimeout(700);
 await shot('10-phone-home');
 await page.tap('[data-app="strides"]');
 await page.waitForTimeout(600);
+// Première ouverture : mention « missions, profils et sommes fictifs ».
+if (await page.$('[data-id="notice-ok"]')) {
+  await shot('11-strides-notice');
+  await page.tap('[data-id="notice-ok"]');
+  await page.waitForTimeout(300);
+}
 await shot('11-strides');
-for (const tab of ['ecuries', 'transport', 'evenements', 'annuaire', 'profil']) {
+for (const tab of ['recruter', 'profil']) {
   await page.tap(`[data-tab="${tab}"]`);
   await page.waitForTimeout(400);
   await shot(`12-tab-${tab}`);

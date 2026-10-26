@@ -388,12 +388,12 @@ export const STORY = [
         S.custom({
           text: '',
           start() {
-            groom = npcAt(game, run, { ...STAFF_F, top: '#2f5f8a', sleeve: '#2f5f8a' }, PARKS.pole.x - 9, PARKS.pole.z - 6, Math.PI / 2, 'Sarah');
+            groom = npcAt(game, run, { ...STAFF_F, top: '#2f5f8a', sleeve: '#2f5f8a' }, PARKS.pole.x - 9, PARKS.pole.z - 6, Math.PI / 2, 'Manon');
           },
           update: () => true,
         }),
         unloadStep(game, S, { horse: () => quabar, name: 'Quabar' }),
-        S.interact(() => groom.pos, 'Confier Quabar', 'Confie Quabar à Sarah, sa groom', {
+        S.interact(() => groom.pos, 'Confier Quabar', 'Confie Quabar à Manon, sa groom', {
           modes: ['foot'],
           r: 3.6,
           icon: 'hand',
@@ -407,7 +407,7 @@ export const STORY = [
             game.audio.snort();
           },
         }),
-        S.dialog(() => [{ who: 'Sarah · Groom de Quabar', initials: 'SB', text: `Merci ! Confort du cheval pendant le trajet : ${Math.round(run.data.comfort ?? 100)} %. Il est arrivé frais.` }]),
+        S.dialog(() => [{ who: 'Manon · Groom de Quabar', initials: 'MB', text: `Merci ! Confort du cheval pendant le trajet : ${Math.round(run.data.comfort ?? 100)} %. Il est arrivé frais.` }]),
       ];
     },
   },

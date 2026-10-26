@@ -281,12 +281,12 @@ if (parts.includes('concours')) {
     tp.offers.t = 0;
     tp.offers.update(0.1);
     const o = g.missions.offers.find((x) => x.id === 'event:concours');
-    g.phone.open('strides', { tab: 'evenements' });
+    g.phone.open('activities');
     const card = !!document.querySelector(`.req-card[data-offer="event:concours"]`);
     g.phone.close();
     return { offer: !!o, title: o?.title, vertical: o?.vertical, card };
   });
-  check('offre de concours dans l’onglet Événements', r.offer && r.vertical === 'EVENEMENTS' && r.card, r.title);
+  check('offre de concours dans l’app Activités', r.offer && r.vertical === 'EVENEMENTS' && r.card, r.title);
   const res = await f.evaluate(() => {
     const A = window.__auto, g = window.__game;
     const p = g.player, t = g.truck, tp = p.transport, h = g.mainHorse;
