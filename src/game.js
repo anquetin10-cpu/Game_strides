@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { Bus } from './core/bus.js';
 import { SaveSystem, levelFor } from './core/save.js';
+import { Metrics } from './core/metrics.js';
 import { Audio } from './core/audio.js';
 import { Input } from './core/input.js';
 import { clamp, formatMoney, mulberry32 } from './core/math.js';
@@ -45,6 +46,12 @@ export class Game {
     this.save = new SaveSystem();
     this.audio = new Audio();
     this.state = 'loading';
+    // Mesure locale (aucun envoi externe) : window.__metrics.log pour la vérification, console avec ?metrics=1.
+    this.metrics = new Metrics(this.save);
+    if (typeof window !== 'undefined') {
+      window.__metrics = this.metrics;
+      if (/[?&]metrics=1/.test(location.search)) this.metrics.listeners.push((e) => console.info('[mesure]', e.name, e.params));
+    }
     this.time = 0;
     this.horses = [];
     this.humans = [];
@@ -512,7 +519,7 @@ export class Game {
     return r.length ? r.reduce((a, b) => a + b, 0) / r.length : 0;
   }
   levelInfo() {
-    return levelFor(this.save.data.xp);
+    return levelFor(this.save.data.reputation);
   }
   updateWallet() {
     this.hud.setMoney(this.save.data.money);
@@ -747,6 +754,7 @@ export class Game {
     this.state = 'play';
     this.hud.el.classList.remove('hidden');
     document.getElementById('touch').classList.remove('hidden');
+    this.metrics.track('game_started', { mode: isNew ? 'new' : 'continue' });
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);
     this.input.setEnabled(true);

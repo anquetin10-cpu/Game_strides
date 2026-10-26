@@ -1,5 +1,6 @@
 // Gestionnaire de missions Strides : offres (acceptées/refusées), déroulé par étapes, notes, paiements.
 import { levelFor } from '../core/save.js';
+import { REPUTATION } from '../config.js';
 import { formatMoney, dec } from '../core/math.js';
 import { STORY } from './story.js';
 import { generateJob } from './jobs.js';
@@ -244,7 +245,7 @@ export class MissionManager {
   }
 
   levelInfo() {
-    return levelFor(this.game.save.data.xp);
+    return levelFor(this.game.save.data.reputation);
   }
 
   storyAvailable(def) {
@@ -289,7 +290,7 @@ export class MissionManager {
       if (this.offers.some((o) => o.id === id) || this.active?.offer.id === id) continue;
       if (this.refusedAt[id] !== undefined && g.time - this.refusedAt[id] < 40) continue;
       const o = this._offerFromDef(def);
-      if (def.level > lv.level) o.locked = `Débloqué au statut ${['Groom', 'Cavalier', 'Pro vérifié', 'International', 'Légende'][def.level - 1]}.`;
+      if (def.level > lv.level) o.locked = `Débloqué au palier « ${(REPUTATION[def.level - 1] || REPUTATION[REPUTATION.length - 1]).title} ».`;
       if (o.locked && this.offers.some((x) => x.locked)) continue;
       this.offers.push(o);
       if (!o.locked) added.push(o);
@@ -448,18 +449,18 @@ export class MissionManager {
     const d = g.save.data;
     const def = run.def;
     const stars = Math.max(1, Math.min(5, Math.round(def.rate ? def.rate(run) : 5)));
-    const before = levelFor(d.xp);
+    const before = levelFor(d.reputation);
     // Montant négocié (contre-proposition acceptée) prioritaire sur le tarif de base.
     let pay = run.payOverride ?? run.offer.pay ?? def.pay ?? 0;
     const tip = stars === 5 && pay > 0 ? Math.round(pay * 0.1) : 0;
     pay += tip;
     d.money += pay;
-    d.xp += def.xp || 0;
+    d.reputation += def.xp || 0;
     if (pay > 0) d.stats.earned += pay;
     if (!def.noCount) d.stats.jobs++;
     if (def.story) d.completed.push(def.id);
     if (def.client && !def.noReview) d.ratings.push(stars);
-    const after = levelFor(d.xp);
+    const after = levelFor(d.reputation);
     run.cleanup();
     this.active = null;
     g.gps.clear();
@@ -526,7 +527,7 @@ export class MissionManager {
 
 const LEVEL_PERKS = {
   2: 'Nouvelles missions : Transport, sorties cavalier, plage.',
-  3: 'Profil vérifié ✓ — les clients te font davantage confiance.',
+  3: 'Référence locale — les clients te recommandent entre eux.',
   4: 'Engagements en CSI ouverts au Pôle International.',
   5: 'Tu es la référence de Deauvelle.',
 };

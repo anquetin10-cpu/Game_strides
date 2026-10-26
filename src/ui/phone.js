@@ -247,7 +247,7 @@ export class Phone {
     if (active && g.missions.active.offer.vertical === 'TRANSPORT') body.append(h('div.section-t', { text: 'Mission en cours' }), h('div.cards', {}, active));
     body.appendChild(h('div.section-t', { text: 'Missions de transport' }));
     if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
-    else body.appendChild(h('div.empty', { text: g.save.data.completed.includes('transport') || g.levelInfo().level >= 2 ? 'Pas de transport à effectuer pour l’instant.' : 'Débloqué au statut Cavalier.' }));
+    else body.appendChild(h('div.empty', { text: g.save.data.completed.includes('transport') || g.levelInfo().level >= 2 ? 'Pas de transport à effectuer pour l’instant.' : 'Débloqué au palier « Professionnel apprécié ».' }));
     // Réserver un transport = voyage rapide.
     body.appendChild(h('div.section-t', { text: 'Réserver un transporteur' }));
     const dests = STABLES.map((s) => s).concat([{ id: 'town', name: 'Deauvelle — centre', place: { x: 20, z: -240 } }, { id: 'beach', name: 'Plage de Deauvelle', place: { x: 60, z: -385 } }]);
@@ -375,7 +375,7 @@ export class Phone {
   _tabProfile() {
     const g = this.game;
     const d = g.save.data;
-    const lv = levelFor(d.xp);
+    const lv = levelFor(d.reputation);
     const rating = g.rating();
     const body = h('div.app-body.scrollable');
     const initials = d.playerName.slice(0, 2).toUpperCase();
@@ -384,8 +384,8 @@ export class Phone {
       h('div', { style: { marginTop: '14px' } },
         h('div.kv', {}, h('span', { text: 'Missions réalisées' }), h('b', { text: String(d.stats.jobs) })),
         h('div.kv', {}, h('span', { text: 'Revenus via Strides' }), h('b', { text: formatMoney(d.stats.earned) })),
-        h('div.kv', {}, h('span', { text: 'Réputation' }), h('b', { text: `${d.xp} XP${lv.next ? ` / ${lv.next.xp}` : ''}` })),
-        h('div.kv', {}, h('span', { text: 'Statut suivant' }), h('b', { text: lv.next ? lv.next.title : 'Statut maximum' }))
+        h('div.kv', {}, h('span', { text: 'Réputation' }), h('b', { text: `${d.reputation} pts${lv.next ? ` / ${lv.next.xp}` : ''}` })),
+        h('div.kv', {}, h('span', { text: 'Palier suivant' }), h('b', { text: lv.next ? lv.next.title : 'Palier maximum' }))
       )
     );
     body.appendChild(this.promo());

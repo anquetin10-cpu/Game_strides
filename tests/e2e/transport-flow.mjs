@@ -275,7 +275,7 @@ if (parts.includes('concours')) {
     const A = window.__auto, g = window.__game;
     const d = g.save.data;
     d.completed.push('tuto');
-    d.xp = 950;
+    d.reputation = 950;
     d.money = 300;
     const tp = g.player.transport;
     tp.offers.t = 0;

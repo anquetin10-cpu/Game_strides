@@ -46,12 +46,12 @@ describe('math', () => {
 });
 
 describe('progression & sauvegarde', () => {
-  it('maps XP to Strides status levels', () => {
-    expect(levelFor(0).title).toBe('Groom');
+  it('maps reputation points to tiers', () => {
+    expect(levelFor(0).title).toBe('Premiers contrats');
     expect(levelFor(299).level).toBe(1);
-    expect(levelFor(300).title).toBe('Cavalier');
-    expect(levelFor(950).title).toBe('Pro vérifié');
-    expect(levelFor(5000).title).toBe('Légende 5★');
+    expect(levelFor(300).title).toBe('Professionnel apprécié');
+    expect(levelFor(950).title).toBe('Référence locale');
+    expect(levelFor(5000).title).toBe('Réputation internationale');
     expect(levelFor(5000).progress).toBe(1);
     expect(levelFor(600).progress).toBeCloseTo(0.5);
   });

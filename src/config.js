@@ -2,24 +2,35 @@
 export const CONFIG = {
   brand: 'STRIDES',
   title: 'GRAND TOUR',
-  // Lien vers la vraie application Strides (App Store / site). Laisser vide pour afficher
-  // un message « bientôt disponible » à la place du lien.
-  downloadUrl: '',
+  // Destinations officielles de la vraie plateforme Strides (relevées sur la page de présentation
+  // https://get.strides-app.com/ le 26 octobre 2026 ; aucun lien profond inventé) :
+  // - landingUrl : présentation des deux parcours (prestataire / client) ;
+  // - siteUrl : l'application web (création de compte, recherche d'un professionnel) ;
+  // - downloadUrl / playUrl : fiches App Store et Google Play. Laisser downloadUrl vide masque le badge.
+  landingUrl: 'https://get.strides-app.com/',
   siteUrl: 'https://strides-app.com',
+  downloadUrl: 'https://apps.apple.com/fr/app/strides/id6793963102',
+  playUrl: 'https://play.google.com/store/apps/details?id=com.stridesapp',
   saveKey: 'strides-grand-tour-v1',
   // Durée d'une journée de jeu en secondes réelles.
   dayLength: 1200,
   startHour: 9,
 };
 
-// Statuts de progression (niveau de réputation Strides).
-export const LEVELS = [
-  { xp: 0, title: 'Groom', short: 'GROOM' },
-  { xp: 300, title: 'Cavalier', short: 'CAVALIER' },
-  { xp: 900, title: 'Pro vérifié', short: 'PRO' },
-  { xp: 1800, title: 'International', short: 'INTER' },
-  { xp: 3200, title: 'Légende 5★', short: 'LÉGENDE' },
+// Paliers de réputation (commune à tous les métiers ; remplace l'ancienne hiérarchie de statuts).
+// Les seuils gardent l'économie actuelle ; `level` des missions = index du palier + 1.
+export const REPUTATION = [
+  { xp: 0, title: 'Premiers contrats', short: 'DÉBUT' },
+  { xp: 300, title: 'Professionnel apprécié', short: 'APPRÉCIÉ' },
+  { xp: 900, title: 'Référence locale', short: 'RÉFÉRENCE' },
+  { xp: 1800, title: 'Équipe reconnue', short: 'RECONNU' },
+  { xp: 3200, title: 'Réputation internationale', short: 'INTERNATIONAL' },
 ];
+export const LEVELS = REPUTATION; // alias de compatibilité
+
+// Mesure des résultats : aucun envoi externe tant que `endpoint` est vide (adaptateur local uniquement).
+export const METRICS = { endpoint: '', enabled: true };
+export const BUILD = '2.0.0';
 
 // Réglages du cheval (valeurs de base, multipliées par les stats du cheval et les équipements).
 export const HORSE = {

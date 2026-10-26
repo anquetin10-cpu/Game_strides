@@ -396,7 +396,7 @@
       const def = STORY.find((d) => d.id === id);
       for (const r of def.requires || []) if (!g.save.data.completed.includes(r)) g.save.data.completed.push(r);
       const lvXp = [0, 300, 900, 1800, 3200][def.level - 1];
-      if (g.save.data.xp < lvXp) g.save.data.xp = lvXp;
+      if (g.save.data.reputation < lvXp) g.save.data.reputation = lvXp;
       g.missions.offers = [];
       g.missions.refreshOffers(false);
       const offer = g.missions.offers.find((o) => o.id === `story:${id}`);

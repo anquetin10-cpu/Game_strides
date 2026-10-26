@@ -28,7 +28,7 @@ for (const id of ids) {
   await page.evaluate(() => { window.__game.renderer.render(window.__game.scene, window.__game.camera); });
   await page.screenshot({ path: `tests/e2e/out/mission-${id}.png` });
 }
-const state = await page.evaluate(() => { const d = window.__game.save.data; return { money: d.money, xp: d.xp, completed: d.completed, ratings: d.ratings }; });
+const state = await page.evaluate(() => { const d = window.__game.save.data; return { money: d.money, reputation: d.reputation, completed: d.completed, ratings: d.ratings }; });
 console.log('STATE', JSON.stringify(state));
 console.log('ERRORS', errors.length ? errors.join('\n') : 'none');
 await browser.close();
