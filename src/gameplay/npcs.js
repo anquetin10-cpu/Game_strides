@@ -375,7 +375,7 @@ export class Ambient {
     const hippoPts = [];
     for (let i = 0; i < 60; i++) hippoPts.push(ovalPoint((i / 60) * (4 * HIPPO.half + 2 * Math.PI * (HIPPO.radius - 5)), HIPPO.radius - 5));
     this.trainer = this.rider(hippoPts, 'black', 11, '#b8322a');
-    this.rider([[380, -416], [120, -414], [-60, -415], [120, -416]], 'palomino', 3.5, '#f2f1ec');
+    this.rider([[380, -410], [120, -409], [-60, -410], [120, -411]], 'palomino', 3.5, '#f2f1ec');
     const H = HOME.arena;
     this.rider([[H.x - 18, H.z - 8], [H.x + 18, H.z - 8], [H.x + 18, H.z + 8], [H.x - 18, H.z + 8]], 'chestnut', 4.2, '#1b1c1f');
 

@@ -13,6 +13,7 @@ import { applySurfaces, applyRoadShader, applyInteriors, INTERIOR_UNIFORMS } fro
 import { CARS, carGeo, carMaterial, tractorGeo, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky, CLOUD_UNIFORMS } from './sky.js';
+import { TIDE_EXTREMES } from './weather.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
 import {
   PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, lampGeo, benchGeo, parasolGeo,
@@ -990,11 +991,12 @@ export class World {
     }
     // Parasols de Deauvelle.
     const cols = [['#b8322a', '#f2f1ec'], ['#2f5f8a', '#f2f1ec'], ['#e3b23c', '#f2f1ec'], ['#2f6e4a', '#f2f1ec'], ['#d46a2e', '#f2f1ec']];
+    // Haut de plage, au pied des Planches : sable sec même aux plus hautes mers (au moins 0,3 m au-dessus).
     for (let row = 0; row < 3; row++) {
       for (let i = 0; i < 18; i++) {
         const x = -150 + i * 15 + row * 5;
-        const z = -392 - row * 8;
-        if (z - shoreZ(x) < 14) continue;
+        const z = -386 - row * 7;
+        if (this.h(x, z) < TIDE_EXTREMES.high + 0.3) continue;
         const c = cols[(i + row) % cols.length];
         this.batch.add(parasolGeo(c[0], c[1]), null, x, this.h(x, z), z, 0);
         this.colliders.addCircle(x, z, 0.2, Infinity, 'parasol');

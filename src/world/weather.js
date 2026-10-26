@@ -67,11 +67,14 @@ export function conditionText(day, hour, night = hour < 6 || hour > 21.5) {
 // ---------- Marée ----------
 // Onde semi-diurne lunaire (M2) et solaire (S2) : vives-eaux quand elles sont en phase (tous les 14,8 jours),
 // mortes-eaux sinon. L'harmonique M4 allonge la pleine mer et raccourcit la basse mer (« tenue du plein »
-// de la baie de Seine). Hauteurs ramenées à l'échelle de la plage du jeu (mètres autour du niveau moyen).
+// de la baie de Seine). Hauteurs à l'échelle réelle (mètres autour du niveau moyen, qui est le zéro du jeu) : c'est la
+// seule source de vérité, pour l'eau du jeu (mer, estran, profondeur) comme pour l'annuaire de l'app Météo.
 const M2 = 12.4206012, S2 = 12;
 const W2 = (2 * Math.PI) / M2, WS = (2 * Math.PI) / S2;
 const PHASE = 4.2; // heure de la pleine mer du jour 0
-const A2 = 0.45, AS = 0.14, A4 = 0.07;
+const A2 = 2.7, AS = 0.84, A4 = 0.42;
+// Niveaux extrêmes (pleine et basse mer des plus fortes vives-eaux) : bornes pour le décor de la plage et les tests.
+export const TIDE_EXTREMES = { high: A2 + AS - A4 * 0.5, low: -(A2 + AS + A4 * 0.5) };
 
 // t : heures de jeu écoulées depuis le début (jour × 24 + heure).
 export function tideLevel(t) {
@@ -79,11 +82,11 @@ export function tideLevel(t) {
   return A2 * Math.cos(a) + AS * Math.cos(WS * (t - PHASE)) - A4 * Math.cos(2 * a) + A4 * 0.5;
 }
 
-// Hauteur d'eau réelle (m au-dessus du zéro des cartes), comme dans un annuaire des marées de Trouville-Deauville :
-// niveau moyen ~4,6 m, marnage ~7 m en vives-eaux moyennes, ~3,5 m en mortes-eaux. Le déplacement de la mer sur la
-// plage du jeu reste à l'échelle du terrain (tideLevel) ; seules les hauteurs affichées sont à l'échelle réelle.
-export const TIDE_REAL = { mean: 4.6, scale: 5.6 };
-export const realTideHeight = (level) => TIDE_REAL.mean + level * TIDE_REAL.scale;
+// Hauteur d'eau affichée (m au-dessus du zéro des cartes), comme dans un annuaire des marées de Trouville-Deauville :
+// niveau moyen 4,6 m au-dessus du zéro des cartes ; marnage ~7 m en vives-eaux (pleine mer ~7,9 m, basse mer ~0,9 m),
+// ~3,7 m en mortes-eaux. Simple changement d'origine du niveau du jeu (tideLevel) : mêmes mètres, même marée.
+export const TIDE_REAL = { mean: 4.6 };
+export const realTideHeight = (level) => TIDE_REAL.mean + level;
 
 // Coefficient de marée (20 à 120, 95 = vives-eaux moyennes) selon l'accord des ondes M2 et S2.
 export function tideCoef(t) {

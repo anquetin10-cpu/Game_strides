@@ -22,7 +22,7 @@ describe('terrain', () => {
     }
   });
   it('has the sea to the north and land to the south', () => {
-    expect(terrain.waterDepth(0, -560)).toBeGreaterThan(3);
+    expect(terrain.waterDepth(0, -592)).toBeGreaterThan(3);
     expect(terrain.waterDepth(0, 100)).toBeLessThan(0);
     expect(terrain.getHeight(0, shoreZ(0) + 30)).toBeGreaterThan(0);
   });

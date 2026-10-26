@@ -543,9 +543,12 @@ export class Game {
         if (surf === 'road' || surf === 'gravel') this.particles.emit('spray', bx, horse.groundY, bz, n, vx, vz);
         else if (surf === 'grass' || surf === 'soil') this.particles.emit('mud', bx, horse.groundY, bz, n * (sp > 8 ? 3 : 1), vx, vz);
       } else if (sp > 5) {
-        if (surf === 'sand') this.particles.emit('sand', bx, horse.groundY, bz, n * 3, vx, vz);
+        // Estran encore humide (sous la dernière pleine mer) : sable ferme et tassé, quelques mottes, pas de poussière.
+        const firm = surf === 'sand' && horse.groundY < TIDE_UNIFORMS.tdWet.value + 0.1;
+        if (firm) this.particles.emit('sand', bx, horse.groundY, bz, n, vx, vz);
+        else if (surf === 'sand') this.particles.emit('sand', bx, horse.groundY, bz, n * 3, vx, vz);
         else if (surf === 'grass' && sp > 9) this.particles.emit('grass', bx, horse.groundY, bz, n, vx, vz);
-        if (surf !== 'road' && sp > 8) this.particles.emit('dust', bx, horse.groundY, bz, 1, vx, vz);
+        if (surf !== 'road' && !firm && sp > 8) this.particles.emit('dust', bx, horse.groundY, bz, 1, vx, vz);
       }
       if (!horse.isPlayerHorse || !a.ctx) return;
       const k = clamp(horse.speed / 10, 0.35, 1);
@@ -611,7 +614,7 @@ export class Game {
     if (depth > 0.08) return 'water';
     if (z > -376 && z < -372 && x > TOWN.planches.x0 && x < TOWN.planches.x1) return 'wood';
     if (nearestRoad(x, z).d < 0) return 'road';
-    if (z - shoreZ(x) < 60) return 'sand';
+    if (z - shoreZ(x) < 60 || (z < -368 && x > -430)) return 'sand';
     const A = POLE.arena;
     if (Math.abs(x - A.x) < A.w / 2 && Math.abs(z - A.z) < A.d / 2) return 'sand';
     const H = HOME.arena;
@@ -680,6 +683,13 @@ export class Game {
     TIDE_UNIFORMS.tdWet.value = st.wet;
     TIDE_UNIFORMS.tdMark.value = st.mark;
     this.tide = st;
+    this._seaLine = null;
+  }
+  // Rivage (z) de la mer en x, au niveau de marée du moment (recalculé chaque seconde, par pas de 10 m en x).
+  seaLineZ(x) {
+    const k = Math.round(x / 10);
+    if (!this._seaLine || this._seaLine.k !== k) this._seaLine = { k, z: this.terrain.waterlineZ(k * 10) };
+    return this._seaLine.z;
   }
   rating() {
     const r = this.save.data.ratings;
@@ -1109,7 +1119,8 @@ export class Game {
     const f = this.player.focus.pos;
     this.audio.ambience({
       speed: Math.abs(this.player.speed),
-      seaDist: Math.max(0, f.z - shoreZ(f.x)),
+      // Distance au rivage du moment (la mer se retire à plus de 100 m à basse mer de vives-eaux).
+      seaDist: Math.max(0, f.z - this.seaLineZ(f.x)),
       crowd: Math.hypot(f.x - POLE.arena.x, f.z - POLE.arena.z) < 90 ? 0.6 : 0,
       engine: this.player.mode === 'drive' ? Math.abs(this.truck.speed) : -1,
     }, dt);

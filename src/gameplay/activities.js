@@ -1,6 +1,6 @@
 // Activités libres chronométrées (entraînements) : départ sur place, meilleurs temps sauvegardés.
 import * as THREE from 'three';
-import { courseSteps, checkpointSteps, ovalPoint, totalPenalties, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
+import { courseSteps, checkpointSteps, beachRingPoints, ovalPoint, totalPenalties, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { GATIEN } from '../world/sites.js';
 import { HIPPO } from '../world/layout.js';
@@ -15,11 +15,12 @@ export class Activities {
     for (let i = 1; i <= 12; i++) lap.push(ovalPoint(60 + (i / 12) * L, HIPPO.radius));
     this.defs = [
       {
-        id: 'beach_sprint', name: 'Sprint de la plage', kind: 'Galop', desc: '8 anneaux le long de la mer, de l’Écurie des Dunes à Deauvelle.',
+        id: 'beach_sprint', name: 'Sprint de la plage', kind: 'Galop', desc: '8 anneaux le long de la mer, de l’Écurie des Dunes à Deauvelle, sur le sable ferme au bord de l’eau (plus loin à marée basse).',
         start: { x: 505, z: -404 },
         build: (g, run, S) => {
-          const pts = [];
-          for (let i = 0; i < 8; i++) pts.push([470 - i * 72, -414 + Math.sin(i * 1.7) * 4]);
+          const xs = [];
+          for (let i = 0; i < 8; i++) xs.push(470 - i * 72);
+          const pts = beachRingPoints(g, xs, { eta: (i) => 12 + i * 7, wobble: (i) => Math.sin(i * 1.7) * 4 });
           return [checkpointSteps(g, run, S, pts, { text: 'Sprint de la plage', mode: 'ride' })];
         },
       },

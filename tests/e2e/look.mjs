@@ -41,9 +41,12 @@ const VIEWS = {
   // Carrefour du centre (passages piétons).
   cross: (g) => { const y = g.terrain.getHeight(-30, -300); return { at: [-30, y, -300], from: [-14, y + 3.2, -290] }; },
   // Plage et goélands.
-  beach: (g) => { const b = g.birds.birds[3]; return { at: [b.cx, b.h * 0.7, b.cz], from: [b.cx + 30, 4, b.cz + 45] }; },
+  beach: (g) => { const b = g.birds.birds[3]; return { at: [b.cx, b.h * 0.7, b.cz], from: [b.cx + 30, Math.max(4, (window.__level ?? 0) + 2), b.cz + 45] }; },
+  // Estran depuis le bord de l'eau, tourné vers les Planches (largeur de plage découverte selon la marée).
+  estran: (g) => { const z = g.terrain.waterlineZ(40) + 6; return { at: [10, 4.5, -385], from: [70, g.terrain.getHeight(70, z) + 1.7, z] }; },
   // Estran à hauteur d'homme : bord de l'eau, sable mouillé, laisse de mer (marée).
-  shore: (g) => { const sz = (x) => -430 + 12 * Math.sin(x / 95) + 6 * Math.sin(x / 37 + 1.3); const z = sz(100) + 26; return { at: [55, 0, sz(55) - 4], from: [100, g.terrain.getHeight(100, z) + 1.7, z] }; },
+  // (le rivage suit la marée du moment : à basse mer de vives-eaux, la mer est à plus de 150 m des Planches).
+  shore: (g) => { const sz = (x) => g.terrain.waterlineZ(x); const z = sz(100) + 26; return { at: [55, window.__level ?? 0, sz(55) - 4], from: [100, g.terrain.getHeight(100, z) + 1.7, z] }; },
   // Circulation : une voiture vue de trois quarts avant (phares, faisceaux, roues).
   traffic: (g) => { const c = g.ambient.cars[1]; c.cruise = 0; c.speed = 0; const fx = Math.sin(c.heading), fz = Math.cos(c.heading); const v = { at: [c.pos.x + fx * 2, c.pos.y + 0.7, c.pos.z + fz * 2], from: [c.pos.x + fx * 14 + fz * 3.5, c.pos.y + 1.7, c.pos.z + fz * 14 - fx * 3.5] }; g.camera.position.set(...v.from); g.ambient.update(0.016, g.camera.position); return v; },
   // Champ cultivé à hauteur de cavalier (blé ou colza, sinon labour).
@@ -64,7 +67,9 @@ for (const hr of hours) {
   await page.evaluate(([hr, view]) => {
     const g = window.__game;
     g.save.data.gameTime = (window.__day || 0) * 86400 + hr * 3600;
+    g._tideT = 0;
     g.update(1 / 30);
+    window.__level = g.tide?.level;
     const v = ({ horse: 1, home: 1, truck: 1, land: 1 })[view] && window.__lookViews?.[view];
   }, [hr, view]);
   await page.evaluate(([viewSrc]) => {

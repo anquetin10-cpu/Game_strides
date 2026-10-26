@@ -5,7 +5,45 @@ import { polyDist, rectDist, smoothstep } from '../core/math.js';
 
 export const WORLD = { size: 1200, half: 600, seaLevel: 0 };
 
+// Trait de côte de référence (limite de la plage et des terres : sable, prairies littorales, placement du décor).
 export const shoreZ = (x) => -430 + 12 * Math.sin(x / 95) + 6 * Math.sin(x / 37 + 1.3);
+
+// Plage de Deauvelle : profil en travers (hauteur au-dessus du niveau moyen de la mer, m), comme une plage de la baie
+// de Seine à fort marnage. Du pied des Planches (perré, z ≈ -366) : haut de plage sec en pente douce (2 %) jusqu'à la
+// crête de la laisse des pleines mers de vives-eaux (berme, z ≈ -410), puis estran large et concave (6 % en haut,
+// 2,7 % en bas, barres et bâches à peine marquées) jusqu'aux basses mers de vives-eaux (z ≈ -575), puis l'avant-côte.
+// Le profil suit une côte presque droite (le trait de référence n'ondule qu'au cinquième).
+export const BEACH = { wall: -366, wallH: 4.5, dry: 0.02, berm: -410, a: 0.06233, b: 0.0001071, low: 165 };
+BEACH.bermH = BEACH.wallH - BEACH.dry * (BEACH.wall - BEACH.berm);
+BEACH.lowH = BEACH.bermH - BEACH.a * BEACH.low + BEACH.b * BEACH.low * BEACH.low;
+BEACH.lowSlope = BEACH.a - 2 * BEACH.b * BEACH.low;
+export const beachWig = (x) => 0.2 * (shoreZ(x) + 430);
+
+// Hauteur du profil de plage à la distance zb = z - beachWig(x) (strictement décroissante vers la mer).
+export function beachHeight(zb) {
+  const B = BEACH;
+  if (zb >= B.berm) return Math.min(B.wallH + B.dry * (zb - B.wall), 6.5);
+  const s = B.berm - zb;
+  if (s <= B.low) {
+    // Barres et bâches : ondulation de 0,12 m, plus douce que la pente (le rivage reste unique).
+    const ridge = 0.12 * Math.sin((2 * Math.PI * (s - 35)) / 45) * smoothstep(30, 55, s) * smoothstep(158, 132, s);
+    return B.bermH - B.a * s + B.b * s * s + ridge;
+  }
+  const e = s - B.low;
+  return Math.max(-14, B.lowH - B.lowSlope * e - 0.012 * e * e);
+}
+
+// Rivage (z) atteint par un niveau d'eau donné sur le profil de la plage (sans le grain du sable) — carte, repères.
+export function tideLineZ(x, level) {
+  let lo = -640, hi = BEACH.wall; // beachHeight(lo) < level < beachHeight(hi)
+  if (beachHeight(hi) <= level) return hi + beachWig(x);
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    if (beachHeight(m) > level) hi = m;
+    else lo = m;
+  }
+  return (lo + hi) / 2 + beachWig(x);
+}
 
 // Zones aplanies (centre, demi-tailles, rotation, rayon d'angle, distance de raccord).
 export const ZONES = [

@@ -755,7 +755,13 @@ export class Phone {
       body.appendChild(h('div.kv', {}, h('span', { text: `${e.type === 'PM' ? 'Pleine mer' : 'Basse mer'}${dd > 0 ? ' (demain)' : ''}` }), h('b', { text: `${hhmm(e.t)} · ${dec(realTideHeight(e.level), 2)} m` })));
     }
     const low = ev.find((e) => e.type === 'BM');
-    if (low) body.appendChild(h('p', { text: `Galop sur la plage : sable découvert et ferme autour de la basse mer, de ${hhmm(low.t - 2)} à ${hhmm(low.t + 2)}.`, style: { margin: '10px 0 0', font: '400 12px/1.4 var(--ui)', color: 'var(--muted)' } }));
+    const high = ev.find((e) => e.type === 'PM');
+    // Distance de la mer aux Planches (devant le Café, x = 40) : la plage de Deauvelle découvre plus de 150 m d'estran
+    // en vives-eaux.
+    const fromPlanches = (lv) => Math.round(-374 - this.game.terrain.waterlineZ(40, lv));
+    const note = (text) => body.appendChild(h('p', { text, style: { margin: '10px 0 0', font: '400 12px/1.4 var(--ui)', color: 'var(--muted)' } }));
+    note(`La mer est en ce moment à ${fromPlanches(lvl)} m des Planches${low && high ? ` (${fromPlanches(high.level)} m à pleine mer, ${fromPlanches(low.level)} m à basse mer)` : ''}.`);
+    if (low) note(`Galop sur la plage : sable découvert et ferme autour de la basse mer, de ${hhmm(low.t - 2)} à ${hhmm(low.t + 2)}.`);
     main.appendChild(body);
     return h('div.app', {}, main);
   }

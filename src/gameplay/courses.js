@@ -1,9 +1,10 @@
 // Épreuves : parcours d'obstacles (CSO, cross), course d'hippodrome, anneaux de passage.
 import * as THREE from 'three';
-import { HIPPO } from '../world/layout.js';
+import { HIPPO, BEACH, beachWig } from '../world/layout.js';
+import { tideLevel } from '../world/weather.js';
 import { CSO_FINISH } from './obstacles.js';
 import { formatTime, clamp } from '../core/math.js';
-import { HORSE } from '../config.js';
+import { HORSE, CONFIG } from '../config.js';
 import { PathAI } from '../entities/horse.js';
 
 // ---------- Parcours d'obstacles ----------
@@ -157,13 +158,18 @@ export function checkpointSteps(game, run, S, points, { text = 'Passe dans les a
   const group = new THREE.Group();
   const meshes = points.map((p, i) => {
     const m = new THREE.Mesh(RING_GEO, new THREE.MeshBasicMaterial({ color: '#f4f3ef', transparent: true, opacity: i === 0 ? 0.95 : 0.35 }));
+    group.add(m);
+    return m;
+  });
+  // Pose des anneaux (refaite au départ : les points peuvent avoir été recalés entre-temps, p. ex. selon la marée).
+  const place = () => meshes.forEach((m, i) => {
+    const p = points[i];
     const next = points[Math.min(i + 1, points.length - 1)];
     const prev = points[Math.max(i - 1, 0)];
     m.rotation.y = Math.atan2(next[0] - prev[0], next[1] - prev[1]);
     m.position.set(p[0], game.terrain.getHeight(p[0], p[1]) + 3.4, p[1]);
-    group.add(m);
-    return m;
   });
+  place();
   const st = { i: 0 };
   return S.custom({
     kind: 'rings',
@@ -174,6 +180,7 @@ export function checkpointSteps(game, run, S, points, { text = 'Passe dans les a
     radius: r,
     beacon: false,
     start(rn) {
+      place();
       game.scene.add(group);
       rn.onCleanup(() => game.scene.remove(group));
       if (timeLimit) rn.timer = timeLimit;
@@ -198,6 +205,28 @@ export function checkpointSteps(game, run, S, points, { text = 'Passe dans les a
     },
   });
 }
+
+// Anneaux de galop sur la plage : posés sur le sable ferme, `offset` m au-dessus du rivage le plus haut que la marée
+// atteindra d'ici le passage prévu du cavalier (eta(i) secondes après le départ, au galop : la mer montante ne les noie
+// pas pendant le galop), jamais sur le haut de plage sec (parasols, poste de secours). À basse mer de vives-eaux, la mer
+// est à plus de 150 m des Planches : les anneaux sont alors loin, au bord de l'eau.
+export const beachRingLevel = (game, seconds) => {
+  const d = game.save.data;
+  const hoursPerSecond = 24 / (d.settings?.timeScale === 'reel' ? 86400 : CONFIG.dayLength);
+  const t0 = d.gameTime / 3600;
+  let level = -Infinity;
+  for (let k = 0; k <= 8; k++) level = Math.max(level, tideLevel(t0 + (k / 8) * seconds * hoursPerSecond));
+  return level;
+};
+export function beachRingPoints(game, xs, { eta = (i) => 25 + i * 7, offset = 14, wobble = () => 0 } = {}) {
+  return xs.map((x, i) => {
+    const level = beachRingLevel(game, eta(i));
+    return [x, Math.min(BEACH.berm - 2 + beachWig(x), game.terrain.waterlineZ(x, level) + offset + wobble(i))];
+  });
+}
+
+// Longueur d'un tracé [[x, z], …].
+export const pathLength = (pts) => pts.reduce((s, p, i) => (i ? s + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0);
 
 // ---------- Course d'hippodrome ----------
 const SILKS = ['#b8322a', '#2f5f8a', '#e3b23c', '#2f6e4a', '#7a5a8a'];

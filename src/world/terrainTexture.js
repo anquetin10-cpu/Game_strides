@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { createNoise2D } from '../core/noise.js';
 import { clamp, smoothstep } from '../core/math.js';
-import { WORLD, ROADS, PATHS, XC_PATH, POND, HIPPO, ZONES, shoreZ, forestDensity, isCliffRegion } from './layout.js';
+import { WORLD, ROADS, PATHS, XC_PATH, POND, HIPPO, ZONES, BEACH, shoreZ, beachWig, forestDensity, isCliffRegion } from './layout.js';
+import { TIDE_EXTREMES } from './weather.js';
 import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS } from './sites.js';
 import { getFields } from './fields.js';
 
@@ -110,10 +111,12 @@ export function paintTerrainCanvas(terrain, size = 2048) {
     col[2] += (c[2] - col[2]) * t;
   };
   const shoreCol = new Float32Array(size);
+  const wigCol = new Float32Array(size);
   const cliffCol = new Float32Array(size);
   for (let i = 0; i < size; i++) {
     const x = -WORLD.half + (i + 0.5) * step;
     shoreCol[i] = shoreZ(x);
+    wigCol[i] = beachWig(x);
     cliffCol[i] = isCliffRegion(x);
   }
   for (let j = 0; j < size; j++) {
@@ -132,12 +135,16 @@ export function paintTerrainCanvas(terrain, size = 2048) {
       if (cliff > 0.2 && ds > 15) mixIn(C.cliffGrass, cliff * 0.6);
       const mi = ((j & 255) << 8) | (i & 255);
       const sandEdge = 60 + (M1[mi] - 0.5) * 14;
-      if (ds < sandEdge + 1 && !(cliff > 0.5 && ds > 11)) {
+      // Plage : sable jusqu'au pied des Planches (côte droite), ou jusqu'au trait de côte de référence ailleurs.
+      const zb = z - wigCol[i];
+      const beachW = cliff < 0.5 ? smoothstep(BEACH.wall + 2, BEACH.wall - 6 + (M1[mi] - 0.5) * 6, zb) : 0;
+      if ((ds < sandEdge + 1 && !(cliff > 0.5 && ds > 11)) || beachW > 0) {
         const h = terrain.getHeight(x, z);
-        let s = C.sand;
-        if (ds < 7) s = mix(C.wetSand, C.sand, clamp(ds / 7, 0, 1));
-        if (h < -0.05) s = mix(C.wetSand, C.seabed, clamp(-h / 4, 0, 1));
-        mixIn(s, smoothstep(sandEdge, sandEdge - 8, ds));
+        // Haut de plage sec et clair ; estran (sous les plus hautes mers) plus gris et tassé, de plus en plus humide
+        // vers le bas ; fonds jamais découverts au-delà des plus basses mers.
+        let s = mix(C.sand, C.wetSand, smoothstep(TIDE_EXTREMES.high + 0.25, TIDE_EXTREMES.high - 0.7, h) * (0.4 + 0.3 * smoothstep(1.5, -3, h)));
+        if (h < TIDE_EXTREMES.low + 0.1) s = mix(s, C.seabed, clamp((TIDE_EXTREMES.low + 0.1 - h) / 3, 0, 1));
+        mixIn(s, Math.max(smoothstep(sandEdge, sandEdge - 8, ds), beachW));
       }
       const slope = bil(slopeG, x, z);
       if (slope > 0.75) mixIn(cliff > 0.3 ? C.chalk : C.rock, smoothstep(0.75, 1.2, slope));
@@ -250,7 +257,8 @@ const GROUND_REFS = [
   [0, '#6f9e4f #77a653 #679849 #80ad5b #8db863 #93bd68 #73a252 #4d6e38 #7fa65a #7aa957 #74a552 #79a955 #80b05b #8fb26a #7fb455 #86b35e #5d6b55'],
   [1, '#d3bf78 #cdb56a #dcc843 #e2d052'],
   [2, '#8f7253 #84694b #a88d68 #9c8460'],
-  [3, '#e7d7ae #c4b38a #a89a72 #e9dcc0 #ecdfc3 #e3d4b4 #c9ad82 #c6ad86 #c9b08a #c0a881'],
+  // (sable : sec, de l'estran — mélanges du sable sec et du sable mouillé, sinon pris pour du gravier —, mouillé, fonds)
+  [3, '#e7d7ae #decea5 #d5c59c #cdbc93 #c4b38a #a89a72 #e9dcc0 #ecdfc3 #e3d4b4 #c9ad82 #c6ad86 #c9b08a #c0a881'],
   [4, '#cdbf9d #d4c7a8 #d3c7aa #b9b3a7 #d3cbbb #c7bfae #c8c1b3 #e4e0d4 #a19d92'],
   [5, '#5b5c5e'],
 ];

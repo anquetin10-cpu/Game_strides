@@ -3,7 +3,7 @@ import { addCloudShadows } from './sky.js';
 import { TIDE_UNIFORMS } from './weather.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
-import { WORLD, ZONES, ROADS, POND, SIGN, shoreZ, isCliffRegion, zoneDist } from './layout.js';
+import { WORLD, ZONES, ROADS, POND, SIGN, BEACH, shoreZ, beachWig, beachHeight, isCliffRegion, zoneDist } from './layout.js';
 import { HOME, POLE } from './sites.js';
 
 // Carrières en sable (centre x, z ; demi-largeur, demi-profondeur) : sol hersé et piste piétinée le long de la lice.
@@ -27,7 +27,10 @@ function hills(x, z) {
 export function baseHeight(x, z) {
   const d = z - shoreZ(x);
   const land = Math.max(5 + hills(x, z), 2.8);
-  const coast = d < 0 ? Math.max(-14, d * 0.07) : Math.min(d * 0.045, 3.2);
+  // Plage à fort marnage (profil dans layout.js) ; grain du sable sur l'estran (quelques centimètres).
+  const zb = z - beachWig(x);
+  let coast = beachHeight(zb);
+  if (zb < BEACH.berm) coast += 0.05 * n2(x * 0.011 + 7, z * 0.017) * smoothstep(BEACH.berm, BEACH.berm - 20, zb);
   let h = lerp(coast, land, smoothstep(55, 150, d));
   const c = isCliffRegion(x);
   if (c > 0) {
@@ -171,6 +174,19 @@ export class Terrain {
     const dp = Math.hypot(x - POND.x, z - POND.z);
     if (dp < POND.r + 2) depth = Math.max(depth, POND.level - h);
     return depth;
+  }
+
+  // Rivage de la mer en x pour un niveau d'eau (par défaut, celui du moment) : premier point du maillage sous l'eau en
+  // descendant la plage depuis les Planches (z = -600 si la mer est au-delà du monde).
+  waterlineZ(x, level = TIDE_UNIFORMS.tdLevel.value) {
+    let prev = this.getHeight(x, -370);
+    if (prev <= level) return -370;
+    for (let z = -372; z >= -600; z -= 2) {
+      const h = this.getHeight(x, z);
+      if (h <= level) return z + 2 * ((level - h) / (prev - h || 1));
+      prev = h;
+    }
+    return -600;
   }
 
   // Hauteurs du terrain en texture (demi-flottants) : profondeur de l'eau, contact au sol des façades.
@@ -349,7 +365,10 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   tint = mix( tint, vec3( 0.36, 0.31, 0.2 ), wrack * 0.9 );
   stH += wrack * 0.9;
   tint *= 1.0 - wet * 0.25;
-  stRough = mix( stRough, 0.35, wet );
+  // Sable mouillé tassé : grain lissé (pas de scintillement du relief fin sous les reflets), un peu moins brillant
+  // en s'éloignant du bord de l'eau.
+  stH *= 1.0 - wet * 0.6;
+  stRough = mix( stRough, mix( 0.5, 0.35, 1.0 - smoothstep( 0.03, 0.3, above ) ), wet );
   diffuseColor.rgb *= mix( vec3( 1.0 ), tint, 0.35 + 0.65 * stFade ) * ( 0.92 + 0.16 * macro );
   // Pluie : sols assombris et plus brillants, flaques dans la terre et les cours.
   // (les flaques aplanissent la normale plutôt que la hauteur : pas de liseré sombre au bord).

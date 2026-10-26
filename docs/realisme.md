@@ -45,7 +45,7 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 | Grandeur | Jeu | Référence réelle | Statut | Vérification |
 | --- | --- | --- | --- | --- |
 | Marée | onde semi-diurne (12 h 25), vives-eaux / mortes-eaux sur 14,8 jours, coefficients 20 – 120, tenue du plein (baie de Seine) | mêmes phénomènes | conforme (forme) | `weather.test.js` |
-| Marnage | hauteurs d'eau affichées à l'échelle réelle (annuaire de Trouville-Deauville : ~7 m en vives-eaux, ~3,5 m en mortes-eaux) ; déplacement visible de la mer à l'échelle de la plage du jeu | ~7 m en vives-eaux | conforme pour les hauteurs ; **adapté** pour l'avancée de la mer (la plage du jeu fait moins de 200 m) | `realism.test.js` |
+| Marnage | niveau de la mer du jeu = hauteur d'eau réelle (une seule source : `tideLevel`, affichée par l'app Météo au-dessus du zéro des cartes de Trouville-Deauville) : 7,1 m en vives-eaux (PM 7,9 m, BM 0,85 m), 3,7 m en mortes-eaux. Plage remodelée : haut de plage sec à 2 % au pied des Planches, estran concave de 6 % à 2,7 % ; la mer avance et recule de ~160 m en vives-eaux (rivage de z ≈ -415 à -575), ~77 m en mortes-eaux ; à la plus haute mer, l'eau reste à ~37 m des Planches | ~7 m en vives-eaux ; estran de Deauville de 1 à 2 %, mer qui recule de plusieurs centaines de mètres | conforme pour les hauteurs d'eau ; **adapté** pour la pente de l'estran (~4,5 % en moyenne au lieu de 1 – 2 % : le monde s'arrête 225 m au-delà des Planches) | `realism.test.js`, `weather.test.js`, `coast.mjs` |
 | Températures | fin d'été normand, de 12 à 25 °C, plus chaud l'après-midi, sans saut à minuit | normales de la Côte Fleurie | conforme | `weather.test.js` |
 | Pluie, vent | averses les jours couverts, vent d'ouest dominant, nuages poussés par le vent | climat océanique | conforme | `weather.test.js` |
 | Soleil | culmine vers 52°, lever ~6 h 30, coucher ~20 h 30 | fin août à 49,4° N : ~50°, ~6 h 55 / ~20 h 45 | conforme (approché) | `sky.js` |
@@ -55,8 +55,16 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 
 ## 5. Écarts restants (contraintes physiques)
 
-1. **Avancée de la mer** : les hauteurs d'eau sont réelles, mais l'excursion horizontale (plusieurs centaines de mètres
-   sur la plage très plate de Deauville) est ramenée à la plage du jeu, longue de moins de 200 m.
+1. **Pente de l'estran** : la mer du jeu monte et descend de la hauteur réelle (7,1 m en vives-eaux, 3,7 m en
+   mortes-eaux) et découvre ~160 m d'estran en vives-eaux (~77 m en mortes-eaux) ; à Deauville, la plage descend
+   de 1 à 2 % et la mer recule de plusieurs centaines de mètres. Il faudrait 400 à 500 m de plage, or le monde
+   s'arrête 225 m au-delà des Planches : l'estran du jeu est donc plus pentu (6 % en haut, 2,7 % en bas, ~4,5 % en
+   moyenne). Le haut de plage reste sec à toutes les marées (parasols, poste de secours, au moins 0,3 m au-dessus de
+   la plus haute mer) et la basse mer de vives-eaux reste dans le monde (z ≈ -577 au plus loin). Les anneaux du
+   « Galop sur la plage » et du « Sprint de la plage » sont posés au départ sur le sable ferme, au bord de l'eau
+   selon la marée prévue au passage (temps imparti allongé à marée basse) ; les bateaux mouillent au-delà des plus
+   basses mers. Comme la journée de jeu dure 20 min par défaut, la mer se déplace vite (jusqu'à ~0,7 m/s) ; en mode
+   « temps réel », à la vitesse réelle.
 2. **Étendue du monde** de 1,2 km : la Côte Fleurie réelle s'étend sur une vingtaine de kilomètres ; un monde à cette
    échelle dépasserait la mémoire et l'autonomie d'un iPhone dans un navigateur.
 

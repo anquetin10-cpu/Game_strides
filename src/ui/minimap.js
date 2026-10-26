@@ -1,5 +1,6 @@
 // Carte stylisée monochrome (minimap tournante + carte plein écran).
-import { WORLD, ROADS, PATHS, XC_PATH, POND, HIPPO, FORESTS, shoreZ, isCliffRegion } from '../world/layout.js';
+import { WORLD, ROADS, PATHS, XC_PATH, POND, HIPPO, FORESTS, BEACH, shoreZ, beachWig, tideLineZ, isCliffRegion } from '../world/layout.js';
+import { TIDE_EXTREMES } from '../world/weather.js';
 import { HOME, HARAS, POLE, DUNES, TOWN } from '../world/sites.js';
 import { getFields } from '../world/fields.js';
 import { drawLogo, LOGO_MARK } from './logo.js';
@@ -31,23 +32,32 @@ export function buildMapImage(world) {
     ctx.arc(px(f.x), pz(f.z), f.r * S * 0.92, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Mer et plage.
+  // Mer (trait de côte au niveau moyen), estran (découvert entre pleines et basses mers de vives-eaux), haut de plage.
+  const lineAt = (x, level) => {
+    const c = isCliffRegion(x);
+    return c >= 1 ? shoreZ(x) : tideLineZ(x, level) * (1 - c) + shoreZ(x) * c;
+  };
+  const band = (za, zb, fill) => {
+    ctx.beginPath();
+    for (let x = -440; x <= WORLD.half; x += 6) ctx[x === -440 ? 'moveTo' : 'lineTo'](px(x), pz(za(x)));
+    for (let x = WORLD.half; x >= -440; x -= 6) ctx.lineTo(px(x), pz(zb(x)));
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  };
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  for (let x = -WORLD.half; x <= WORLD.half; x += 6) ctx.lineTo(px(x), pz(shoreZ(x)));
+  for (let x = -WORLD.half; x <= WORLD.half; x += 6) ctx.lineTo(px(x), pz(lineAt(x, 0)));
   ctx.lineTo(SIZE, 0);
   ctx.closePath();
   ctx.fillStyle = '#1a2630';
   ctx.fill();
+  band((x) => lineAt(x, TIDE_EXTREMES.high), (x) => lineAt(x, TIDE_EXTREMES.low), 'rgba(214,205,180,0.1)');
+  band((x) => BEACH.wall + beachWig(x), (x) => lineAt(x, TIDE_EXTREMES.high), 'rgba(214,205,180,0.24)');
   ctx.strokeStyle = '#5b6a74';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  for (let x = -WORLD.half; x <= WORLD.half; x += 6) ctx[x === -WORLD.half ? 'moveTo' : 'lineTo'](px(x), pz(shoreZ(x)));
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(214,205,180,0.24)';
-  ctx.lineWidth = 50 * S;
-  ctx.beginPath();
-  for (let x = -440; x <= WORLD.half; x += 6) ctx[x === -440 ? 'moveTo' : 'lineTo'](px(x), pz(shoreZ(x) + 30));
+  for (let x = -WORLD.half; x <= WORLD.half; x += 6) ctx[x === -WORLD.half ? 'moveTo' : 'lineTo'](px(x), pz(lineAt(x, 0)));
   ctx.stroke();
   // Falaises.
   ctx.fillStyle = '#2c3034';

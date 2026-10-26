@@ -2,7 +2,7 @@
 // que propose réellement l'application Strides (mise en relation avec des professionnels du cheval).
 import { HOME, HARAS, POLE, DUNES, GATIEN, TOWN, homeBoxes, HIPPO_SITE } from '../world/sites.js';
 import { POI, HIPPO } from '../world/layout.js';
-import { courseSteps, totalPenalties, checkpointSteps, raceSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
+import { courseSteps, totalPenalties, checkpointSteps, beachRingPoints, pathLength, raceSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { GrazeAI, FollowAI, FleeAI } from '../entities/horse.js';
 import { HORSES } from './data.js';
@@ -289,16 +289,27 @@ export const STORY = [
         }
         game.despawn(tornade);
       });
-      const rings = [];
+      // Anneaux sur le sable ferme au bord de l'eau, posés selon la marée au départ du galop (plus loin à marée basse :
+      // le temps imparti tient compte du chemin en plus).
+      const xs = [], rings = [];
       for (let i = 0; i < 7; i++) {
-        const x = 420 - i * 70;
-        rings.push([x, -414 + Math.sin(i * 1.3) * 4]);
+        xs.push(420 - i * 70);
+        rings.push([420 - i * 70, -414 + Math.sin(i * 1.3) * 4]);
       }
+      const barn = [DUNES.barn.x, DUNES.barn.z + 12];
+      const baseLen = pathLength([barn, ...rings, barn]);
+      const tideLine = () => {
+        const lv = game.tide?.level ?? 0;
+        if (lv < -1.2) return 'La mer est basse : les anneaux sont posés loin, sur le sable ferme au bord de l’eau. Idéal pour galoper !';
+        if (lv > 1.8) return 'La mer est haute : les anneaux sont sur la bande de sable au bord de l’eau. Reste sur le sable ferme.';
+        return `La marée ${game.tide?.rising ? 'monte' : 'descend'} : les anneaux suivent le bord de l’eau, sur le sable ferme.`;
+      };
       return [
         S.goto({ x: DUNES.barn.x - 4, z: DUNES.barn.z + 12 }, 'Rejoins l’Écurie des Dunes', { r: 9 }),
-        S.dialog([
+        S.dialog(() => [
           { who: 'Hélène Duval', initials: 'HD', text: 'Voici Tornade. Elle a besoin de se dépenser avant le concours de dimanche.' },
           { who: 'Hélène Duval', initials: 'HD', text: 'Un galop sur la plage, sept anneaux, et tu me la ramènes. Ta jument reste ici en attendant.' },
+          { who: 'Hélène Duval', initials: 'HD', text: tideLine() },
         ]),
         S.custom({
           text: () => (game.player.mode === 'ride' && game.player.horse !== tornade ? 'Descends de ta jument' : 'Monte sur Tornade'),
@@ -317,7 +328,14 @@ export const STORY = [
             return false;
           },
         }),
-        S.custom({ text: '', start: (r) => (r.timer = 95), update: () => true }),
+        S.custom({
+          text: '',
+          start(r) {
+            beachRingPoints(game, xs, { wobble: (i) => Math.sin(i * 1.3) * 4 }).forEach((p, i) => (rings[i][1] = p[1]));
+            r.timer = 95 + Math.ceil(Math.max(0, pathLength([barn, ...rings, barn]) - baseLen) / 11);
+          },
+          update: () => true,
+        }),
         checkpointSteps(game, run, S, rings, { text: 'Galop sur la plage : passe les anneaux', mode: 'ride' }),
         S.custom({ text: '', start: (r) => (r.data.left = r.timer), update: () => true }),
         S.goto({ x: DUNES.barn.x - 2, z: DUNES.barn.z + 12 }, 'Ramène Tornade à l’Écurie des Dunes', { r: 7, mode: 'ride' }),

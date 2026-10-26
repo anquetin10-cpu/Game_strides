@@ -63,7 +63,10 @@ describe('réalisme : camion Strides', () => {
   });
 });
 
-import { tideEvents, realTideHeight, tideCoef } from '../../src/world/weather.js';
+import { tideEvents, tideLevel, realTideHeight, tideCoef, TIDE_EXTREMES } from '../../src/world/weather.js';
+import { Terrain } from '../../src/world/terrain.js';
+import { TOWN } from '../../src/world/sites.js';
+import { WORLD } from '../../src/world/layout.js';
 describe('réalisme : marées de Trouville-Deauville (hauteurs affichées)', () => {
   it('marnage ~7 m en vives-eaux, ~3 – 4 m en mortes-eaux, hauteurs au-dessus du zéro des cartes', () => {
     let springs = 0, neaps = 99;
@@ -81,5 +84,60 @@ describe('réalisme : marées de Trouville-Deauville (hauteurs affichées)', () 
     expect(neaps).toBeGreaterThan(2.5);
     expect(neaps).toBeLessThan(4.5);
     expect(tideCoef(0)).toBeGreaterThanOrEqual(20);
+  });
+});
+
+// Marée de vives-eaux (la plus forte de la lunaison) et de mortes-eaux (la plus faible) : pleine et basse mer.
+function extremeTides() {
+  let ve = null, me = null;
+  for (let day = 0; day < 15; day++) {
+    const ev = tideEvents(day * 24, 24);
+    for (let i = 1; i < ev.length; i++) {
+      const pair = { pm: Math.max(ev[i].level, ev[i - 1].level), bm: Math.min(ev[i].level, ev[i - 1].level) };
+      pair.range = pair.pm - pair.bm;
+      if (!ve || pair.range > ve.range) ve = pair;
+      if (!me || pair.range < me.range) me = pair;
+    }
+  }
+  return { ve, me };
+}
+
+describe('réalisme : la mer du jeu est la marée réelle (plage de Deauvelle)', () => {
+  const terrain = new Terrain(200);
+  const { ve, me } = extremeTides();
+  const xs = [];
+  for (let x = -400; x <= WORLD.half - 6; x += 5) xs.push(x);
+  it('le niveau d’eau du jeu est la hauteur affichée par l’app Météo (une seule source)', () => {
+    for (let t = 0; t < 48; t += 1.7) expect(realTideHeight(tideLevel(t)) - tideLevel(t)).toBeCloseTo(4.6, 6);
+    expect(ve.range).toBeGreaterThan(6.3);
+    expect(ve.range).toBeLessThan(8.5);
+    expect(me.range).toBeGreaterThan(2.5);
+    expect(me.range).toBeLessThan(4.5);
+    expect(TIDE_EXTREMES.high).toBeGreaterThanOrEqual(ve.pm - 1e-6);
+    expect(TIDE_EXTREMES.low).toBeLessThanOrEqual(ve.bm + 1e-6);
+  });
+  it('estran large : la mer avance et recule d’au moins 150 m en vives-eaux, d’environ moitié en mortes-eaux', () => {
+    for (const x of xs) {
+      const ex = terrain.waterlineZ(x, ve.pm) - terrain.waterlineZ(x, ve.bm);
+      const exMe = terrain.waterlineZ(x, me.pm) - terrain.waterlineZ(x, me.bm);
+      expect(ex).toBeGreaterThanOrEqual(150);
+      expect(exMe / ex).toBeGreaterThan(0.35);
+      expect(exMe / ex).toBeLessThan(0.65);
+    }
+  });
+  it('pente de l’estran douce (moins de 7 %) et haut de plage sec en pente faible', () => {
+    for (const x of [-300, -100, 40, 200, 450]) {
+      for (let z = -412; z > -566; z -= 6) expect(terrain.getHeight(x, z) - terrain.getHeight(x, z - 6)).toBeLessThan(0.07 * 6);
+      for (let z = -386; z > -404; z -= 6) expect(terrain.getHeight(x, z) - terrain.getHeight(x, z - 6)).toBeLessThan(0.03 * 6);
+    }
+  });
+  it('l’eau n’atteint jamais les Planches et la basse mer reste dans le monde', () => {
+    const P = TOWN.planches;
+    for (let x = P.x0; x <= P.x1; x += 5) {
+      expect(terrain.getHeight(x, P.z - 2)).toBeGreaterThan(TIDE_EXTREMES.high + 0.5);
+      // Plusieurs dizaines de mètres de sable sec entre les Planches et la plus haute mer.
+      expect(P.z - 2 - terrain.waterlineZ(x, TIDE_EXTREMES.high)).toBeGreaterThan(30);
+    }
+    for (const x of xs) expect(terrain.waterlineZ(x, TIDE_EXTREMES.low)).toBeGreaterThan(-585);
   });
 });
