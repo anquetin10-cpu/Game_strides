@@ -141,3 +141,30 @@ describe('réalisme : la mer du jeu est la marée réelle (plage de Deauvelle)',
     for (const x of xs) expect(terrain.waterlineZ(x, TIDE_EXTREMES.low)).toBeGreaterThan(-585);
   });
 });
+
+import { hippoLapPoints, HIPPO_LAP, ovalPoint } from '../../src/gameplay/courses.js';
+import { HIPPO } from '../../src/world/layout.js';
+describe('hippodrome : anneaux du tour de piste sur la piste', () => {
+  const radial = ([x, z]) => {
+    const lx = x - HIPPO.x, lz = z - HIPPO.z;
+    const cx = Math.max(-HIPPO.half, Math.min(HIPPO.half, lx));
+    return Math.hypot(lx - cx, lz);
+  };
+  it('chaque anneau (rayon 3,2 m) et sa zone de passage restent entre la lice intérieure et la lice extérieure', () => {
+    const inner = HIPPO.radius - HIPPO.width / 2, outer = HIPPO.radius + HIPPO.width / 2;
+    for (const p of hippoLapPoints()) {
+      const r = radial(p);
+      expect(r - 3.2).toBeGreaterThan(inner);
+      expect(r + 3.2).toBeLessThan(outer);
+      expect(r - HIPPO_LAP.pass).toBeGreaterThanOrEqual(inner - 1e-9);
+      expect(r + HIPPO_LAP.pass).toBeLessThanOrEqual(outer + 1e-9);
+    }
+  });
+  it('aucun anneau dans les stalles de départ ; dernier anneau au poteau d’arrivée', () => {
+    const stalls = { x: HIPPO.x - 40, z: HIPPO.z - HIPPO.radius };
+    for (const [x, z] of hippoLapPoints()) expect(Math.hypot(x - stalls.x, z - stalls.z)).toBeGreaterThan(12);
+    const last = hippoLapPoints().at(-1);
+    expect(Math.abs(last[0] - HIPPO.x)).toBeLessThan(1);
+    expect(ovalPoint(0, HIPPO_LAP.r)[0]).toBeLessThan(HIPPO.x);
+  });
+});

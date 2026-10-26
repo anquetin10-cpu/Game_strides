@@ -257,6 +257,18 @@ export function ovalPoint(s, r) {
   return [HIPPO.x - HIPPO.half + Math.cos(a) * r, HIPPO.z + Math.sin(a) * r];
 }
 
+// Tour de l'hippodrome : anneaux sur la piste en sable, entre les deux lices (corde à 61 m, anneau de 3,2 m de rayon :
+// de 57,8 à 64,2 m pour une piste de 54 à 70 m), du poteau d'arrivée (x = HIPPO.x) au poteau, loin des stalles de
+// départ fixes (x ≈ HIPPO.x − 40, couloirs extérieurs).
+export const HIPPO_LAP = { r: 61, pass: 6, n: 12 };
+export function hippoLapPoints(n = HIPPO_LAP.n, r = HIPPO_LAP.r) {
+  const L = ovalLength(r);
+  const post = HIPPO.half; // abscisse curviligne du poteau d'arrivée (x = HIPPO.x, ligne droite des tribunes)
+  const pts = [];
+  for (let i = 1; i <= n; i++) pts.push(ovalPoint(post + (i / n) * L, r));
+  return pts;
+}
+
 // Abscisse curviligne approchée de (x,z) sur l'ovale (rayon de référence) + écart radial.
 export function ovalProject(x, z) {
   const R = HIPPO.radius;
@@ -347,7 +359,8 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
     return onTrack;
   };
   return [
-    S.goto({ x: HIPPO.x - 70, z: HIPPO.z - HIPPO.radius - 14 }, 'Rejoins l’hippodrome (entrée côté tribunes)', { r: 14, mode: 'ride' }),
+    // Rendez-vous sur la piste, dans la ligne droite des tribunes, juste avant les stalles de départ.
+    S.goto({ x: HIPPO.x - 70, z: HIPPO.z - HIPPO.radius }, 'Rejoins la piste de l’hippodrome (ligne droite des tribunes)', { r: 8, mode: 'ride' }),
     S.dialog([
       { who: 'Victor Girard', initials: 'VG', text: 'Un tour de piste, cinq adversaires. Le grand galop ne dure pas : garde de l’endurance pour la dernière ligne droite !' },
     ]),

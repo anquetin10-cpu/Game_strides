@@ -1,6 +1,6 @@
 // Activités libres chronométrées (entraînements) : départ sur place, meilleurs temps sauvegardés.
 import * as THREE from 'three';
-import { courseSteps, checkpointSteps, beachRingPoints, ovalPoint, totalPenalties, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
+import { courseSteps, checkpointSteps, beachRingPoints, ovalPoint, hippoLapPoints, HIPPO_LAP, totalPenalties, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
 import { GATIEN } from '../world/sites.js';
 import { HIPPO } from '../world/layout.js';
@@ -10,9 +10,9 @@ import { box, cyl, partsToGeo } from '../world/builders.js';
 export class Activities {
   constructor(game) {
     this.game = game;
-    const lap = [];
-    const L = 4 * HIPPO.half + 2 * Math.PI * HIPPO.radius;
-    for (let i = 1; i <= 12; i++) lap.push(ovalPoint(60 + (i / 12) * L, HIPPO.radius));
+    const lap = hippoLapPoints();
+    // Départ dans la ligne droite des tribunes, 25 m avant le poteau, après les stalles de départ.
+    const lapStart = ovalPoint(HIPPO.half - 25, HIPPO_LAP.r);
     this.defs = [
       {
         id: 'beach_sprint', name: 'Sprint de la plage', kind: 'Galop', desc: '8 anneaux le long de la mer, de l’Écurie des Dunes à Deauvelle, sur le sable ferme au bord de l’eau (plus loin à marée basse).',
@@ -38,8 +38,10 @@ export class Activities {
       },
       {
         id: 'hippo_lap', name: 'Tour de l’hippodrome', kind: 'Galop', desc: 'Un tour de piste chronométré. Gère l’endurance !',
-        start: { x: HIPPO.x - 40, z: HIPPO.z - HIPPO.radius },
-        build: (g, run, S) => [checkpointSteps(g, run, S, lap, { text: 'Tour de piste', mode: 'ride', r: 9 })],
+        start: { x: lapStart[0], z: lapStart[1] },
+        // Poteau du chrono derrière la lice extérieure (pas sur le sable de la piste).
+        marker: { x: lapStart[0], z: HIPPO.z - HIPPO.radius - HIPPO.width / 2 - 1.5 },
+        build: (g, run, S) => [checkpointSteps(g, run, S, lap, { text: 'Tour de piste', mode: 'ride', r: HIPPO_LAP.pass })],
       },
     ];
     this._markers();
@@ -59,7 +61,8 @@ export class Activities {
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true });
     for (const a of this.defs) {
       const m = new THREE.Mesh(geo, mat);
-      m.position.set(a.start.x + 3, g.terrain.getHeight(a.start.x + 3, a.start.z), a.start.z);
+      const mk = a.marker || { x: a.start.x + 3, z: a.start.z };
+      m.position.set(mk.x, g.terrain.getHeight(mk.x, mk.z), mk.z);
       m.castShadow = true;
       g.scene.add(m);
       // Poteau fin : masqué au-delà de 300 m (un ou deux pixels), comme les obstacles.
