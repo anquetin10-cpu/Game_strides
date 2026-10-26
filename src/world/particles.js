@@ -9,19 +9,22 @@ varying float vAlpha;
 varying vec3 vColor;
 varying float vSeed;
 uniform float scale;
+#include <fog_pars_vertex>
 void main() {
   vAlpha = alpha;
   vColor = color;
   vSeed = fract(float(gl_VertexID) * 0.618034);
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = size * scale / max(-mv.z, 0.1);
-  gl_Position = projectionMatrix * mv;
+  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+  gl_PointSize = size * scale / max(-mvPosition.z, 0.1);
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
 }`;
 const frag = /* glsl */ `
 varying float vAlpha;
 varying vec3 vColor;
 varying float vSeed;
 uniform float light;
+#include <fog_pars_fragment>
 void main() {
   vec2 c = gl_PointCoord - 0.5;
   float d = length(c);
@@ -31,8 +34,10 @@ void main() {
   float ang = atan(c.y, c.x + 1e-5);
   float n = 0.5 + 0.3 * sin(ang * 3.0 + vSeed * 6.2832) + 0.2 * sin(ang * 5.0 - vSeed * 17.3);
   float a = vAlpha * smoothstep(0.5, 0.1, d + (n - 0.5) * 0.12);
-  // Éclairée par la scène (le jour, au crépuscule, la nuit).
+  // Éclairée par la scène (le jour, au crépuscule, la nuit) : radiance HDR passée par le brouillard et le tone
+  // mapping comme le décor, sinon la poussière luit la nuit.
   gl_FragColor = vec4(vColor * light, a);
+  #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`;
 
@@ -65,8 +70,8 @@ export class Particles {
     g.setAttribute('size', new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('alpha', new THREE.BufferAttribute(this.alpha, 1).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(this.color, 3).setUsage(THREE.DynamicDrawUsage));
-    this.uniforms = { scale: { value: 400 }, light: { value: 1 } };
-    this.points = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: vert, fragmentShader: frag, uniforms: this.uniforms, transparent: true, depthWrite: false }));
+    this.uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { scale: { value: 400 }, light: { value: 1 } }]);
+    this.points = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: vert, fragmentShader: frag, uniforms: this.uniforms, transparent: true, depthWrite: false, fog: true }));
     this.points.frustumCulled = false;
     this.points.renderOrder = 2;
     scene.add(this.points);

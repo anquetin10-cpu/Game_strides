@@ -81,7 +81,7 @@ export function hairMaterial(coat) {
   // Couleur de sommet : variation de teinte par mèche (×1,5).
   m.onBeforeCompile = (sh) => {
     sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.5;');
-    addCloudShadows(sh);
+    addCloudShadows(sh, null, true);
   };
   m.customProgramCacheKey = () => 'horse-hair-1';
   mats.set(key, m);

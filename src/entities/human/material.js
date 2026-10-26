@@ -73,7 +73,7 @@ function patch(shader, mat) {
 #endif
   }`,
     );
-  addCloudShadows(shader);
+  addCloudShadows(shader, null, true);
 }
 
 const PROGRAM_KEY = 'strides-human-v1';

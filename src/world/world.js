@@ -12,7 +12,7 @@ import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
 import { applySurfaces, applyRoadShader, applyInteriors, INTERIOR_UNIFORMS } from './surfaces.js';
 import { CARS, carGeo, carMaterial, tractorGeo, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
-import { Sky } from './sky.js';
+import { Sky, CLOUD_UNIFORMS } from './sky.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
 import {
   PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, lampGeo, benchGeo, parasolGeo,
@@ -22,7 +22,7 @@ import { buildGrassMask, clearGrassUnder } from './grass.js';
 import { Vegetation } from './vegetation.js';
 import { createHorseMesh } from '../entities/horseModel.js';
 import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture } from './textures.js';
-import { getFields } from './fields.js';
+import { getFields, hedgeRuns, nearPath } from './fields.js';
 
 const font = new FontLoader().parse(fontJson);
 
@@ -256,8 +256,9 @@ export class World {
     this.batch.addDetail(L.detail, null, x, y, z, rot);
     this.lights.add(L.light, null, x, y, z, rot);
     this.colliders.addCircle(x, z, 0.2, Infinity, 'lamp');
-    // Flaque de lumière au sol (la nuit), sous la lanterne décalée de 0,75 m.
-    (this._lampPools ||= []).push([x + Math.cos(rot) * 0.75, y + 0.09, z - Math.sin(rot) * 0.75]);
+    // Flaque de lumière au sol (la nuit), sous la lanterne décalée de 0,75 m. Posée au-dessus du trottoir (dessus à
+    // +0,14 m) : à hauteur de chaussée, le trottoir la coupait net au bord et restait dans le noir.
+    (this._lampPools ||= []).push([x + Math.cos(rot) * 0.75, y + 0.16, z - Math.sin(rot) * 0.75]);
   }
 
   // Halos des lampadaires : disques additifs au dégradé radial, un seul appel de dessin.
@@ -1078,7 +1079,17 @@ export class World {
     for (const hd of hedges) {
       const [ax, az] = hd.a;
       const [bx, bz] = hd.b;
-      this.veg.addHedge(ax, az, bx, bz);
+      // Trouée là où un chemin de terre traverse la haie : haie et obstacles s'arrêtent de part et d'autre du chemin.
+      for (const [x0, z0, x1, z1] of hedgeRuns(hd.a, hd.b)) {
+        this.veg.addHedge(x0, z0, x1, z1);
+        const m = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 12));
+        for (let i = 0; i < m; i++) {
+          const sx0 = x0 + ((x1 - x0) * i) / m, sz0 = z0 + ((z1 - z0) * i) / m;
+          const sx1 = x0 + ((x1 - x0) * (i + 1)) / m, sz1 = z0 + ((z1 - z0) * (i + 1)) / m;
+          const y = Math.min(this.h(sx0, sz0), this.h(sx1, sz1), this.h((sx0 + sx1) / 2, (sz0 + sz1) / 2)) - 0.1;
+          this.colliders.addSegment(sx0, sz0, sx1, sz1, 1.5, y + 1.25, 'hedge');
+        }
+      }
       const len = Math.hypot(bx - ax, bz - az);
       const n = Math.max(1, Math.ceil(len / 12));
       const ang = Math.atan2(bx - ax, bz - az);
@@ -1087,14 +1098,15 @@ export class World {
         const x1 = ax + ((bx - ax) * (i + 1)) / n, z1 = az + ((bz - az) * (i + 1)) / n;
         const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
         const seg = Math.hypot(x1 - x0, z1 - z0);
-        const y = Math.min(this.h(x0, z0), this.h(x1, z1), this.h(mx, mz)) - 0.1;
         // Tirages de l'ancien modèle de haie conservés : la suite aléatoire du monde ne change pas.
         for (let k = Math.max(1, Math.floor((seg + 0.3) / 3)) * 3; k > 0; k--) this.rnd();
-        this.colliders.addSegment(x0, z0, x1, z1, 1.5, y + 1.25, 'hedge');
         if (this.rnd() < 0.2) {
           const r = hrnd();
           const kind = this.rnd() < 0.7 ? (r < 0.4 ? 'pollard' : 'oak') : r < 0.6 ? 'ash' : 'pollard';
-          this.tree(kind, mx + Math.cos(ang) * 0.4, mz - Math.sin(ang) * 0.4, 0.9 + this.rnd() * 0.5);
+          const tx = mx + Math.cos(ang) * 0.4, tz = mz - Math.sin(ang) * 0.4, ts = 0.9 + this.rnd() * 0.5;
+          // Pas d'arbre sur un chemin (ses trois tirages sont consommés : la suite aléatoire ne change pas).
+          if (nearPath(tx, tz, 3)) for (let k = 0; k < 3; k++) this.rnd();
+          else this.tree(kind, tx, tz, ts);
         }
       }
     }
@@ -1226,7 +1238,8 @@ export class World {
     return ['grass', 'soil', 'sand', 'gravel'][best];
   }
 
-  update(dt, camera, sky) {
+  // focus : position du joueur (lampadaire le plus proche) ; la caméra à défaut (écran titre).
+  update(dt, camera, sky, focus = camera.position) {
     this.veg.update(dt);
     const night = sky.nightFactor;
     if (this.detailChunks) {
@@ -1243,6 +1256,21 @@ export class World {
     if (this.lampPools) {
       this.lampPools.visible = night > 0.05;
       this.poolMat.opacity = night;
+      // Lanterne la plus proche du joueur : éclaire chevaux et cavaliers la nuit (voir addCloudShadows).
+      const lp = CLOUD_UNIFORMS.lpPos.value;
+      lp.w = 0;
+      if (night > 0.05) {
+        let best = 400, bi = -1;
+        for (let i = 0; i < this._lampPools.length; i++) {
+          const p = this._lampPools[i];
+          const d = (p[0] - focus.x) * (p[0] - focus.x) + (p[2] - focus.z) * (p[2] - focus.z);
+          if (d < best) { best = d; bi = i; }
+        }
+        if (bi >= 0) {
+          const p = this._lampPools[bi];
+          lp.set(p[0], p[1] + 3.6, p[2], night * 6);
+        }
+      }
     }
     if (this.beam) {
       this.beam.rotation.y += dt * 0.8;

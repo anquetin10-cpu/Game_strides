@@ -30,6 +30,8 @@ export const CLOUD_UNIFORMS = {
   csCover: { value: 0.42 },
   csSun: { value: new THREE.Vector3(0, 1, 0) },
   csWet: { value: 0 },
+  // Lampadaire le plus proche du joueur : lanterne (xyz) et intensité (w, nulle le jour), voir World.update.
+  lpPos: { value: new THREE.Vector4(0, -1e3, 0, 0) },
 };
 export const CLOUD_SHADOW_GLSL = /* glsl */ `
 uniform vec2 csWind;
@@ -63,25 +65,38 @@ const CS_VERTEX = /* glsl */ `
   #ifdef USE_INSTANCING
     csP = instanceMatrix * csP;
   #endif
-  vCsShade = csCloudShadow( ( modelMatrix * csP ).xyz );
+  vec3 csW = ( modelMatrix * csP ).xyz;
+  vCsShade = csCloudShadow( csW );
+  LAMP_VERTEX
 }`;
+// Lampadaire (chevaux et cavaliers) : diffus enveloppant depuis la lanterne la plus proche du joueur, atténué avec
+// la distance, évalué par sommet (la flaque au sol est déjà dessinée, voir World._buildLampPools).
+const LAMP_VERTEX = /* glsl */ `
+  vec3 lpD = lpPos.xyz - csW;
+  float lpD2 = dot( lpD, lpD );
+  float lpN = dot( inverseTransformDirection( transformedNormal, viewMatrix ), lpD * inversesqrt( lpD2 ) );
+  vLamp = lpPos.w * ( 0.3 + 0.7 * max( lpN, 0.0 ) ) * max( 1.0 - lpD2 / 90.0, 0.0 ) / ( 1.0 + lpD2 * 0.08 );`;
+const LAMP_FRAGMENT = /* glsl */ `
+reflectedLight.directDiffuse += vLamp * vec3( 1.0, 0.72, 0.42 ) * BRDF_Lambert( material.diffuseColor );`;
 // worldPosExpr : expression GLSL de la position monde dans le fragment (sol, routes, bâtiments). Sans elle,
 // l'ombre est évaluée par sommet (herbe, arbres, chevaux, personnages, véhicules) : les nuages mesurent des
 // centaines de mètres, le résultat est le même et ne coûte rien par pixel.
-export function addCloudShadows(shader, worldPosExpr = null) {
+// lamp : ajoute l'éclairage du lampadaire le plus proche (chevaux et cavaliers, évalué par sommet).
+export function addCloudShadows(shader, worldPosExpr = null, lamp = false) {
   Object.assign(shader.uniforms, CLOUD_UNIFORMS);
   let shade = 'vCsShade';
   if (worldPosExpr) {
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}`);
     shade = `csCloudShadow( ${worldPosExpr} )`;
   } else {
+    const varyings = lamp ? 'varying float vCsShade;\nvarying float vLamp;' : 'varying float vCsShade;';
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}\nvarying float vCsShade;`)
-      .replace('#include <project_vertex>', `#include <project_vertex>\n${CS_VERTEX}`);
-    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vCsShade;');
+      .replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}\n${lamp ? 'uniform vec4 lpPos;\n' : ''}${varyings}`)
+      .replace('#include <project_vertex>', `#include <project_vertex>\n${CS_VERTEX.replace('LAMP_VERTEX', lamp ? LAMP_VERTEX : '')}`);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${varyings}`);
   }
   // Le chunk des lumières est développé ici pour atténuer uniquement la lumière directe du soleil.
-  shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', `getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color *= ${shade};`));
+  shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', `getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color *= ${shade};`) + (lamp ? LAMP_FRAGMENT : ''));
 }
 
 // ---------- Modèle de Preetham (repris du Sky de three.js, licence MIT) ----------
@@ -410,6 +425,20 @@ export class Sky {
     // Ciel au zénith → ambiance des nuages.
     preetham({ x: 0, y: 1, z: 0 }, sun, this.params, px);
     U.ambientSky.value.setRGB(lerp(px[0] * 1.25 + 0.05, 0.01, night), lerp(px[1] * 1.15 + 0.05, 0.014, night), lerp(px[2] + 0.05, 0.024, night), THREE.LinearSRGBColorSpace);
+    // Luminance moyenne du ciel (zénith, 45° et horizon, nuit comprise) : entre deux cuissons de la carte
+    // d'environnement, l'intensité de l'éclairage d'ambiance suit cette valeur pour que l'ambiance évolue sans
+    // à-coups à l'aube et au crépuscule (voir updateEnvironment).
+    const zenL = 0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2];
+    const horL = 0.2126 * acc[0] + 0.7152 * acc[1] + 0.0722 * acc[2];
+    let midL = 0;
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + 0.4;
+      preetham({ x: Math.cos(a) * 0.71, y: 0.7, z: Math.sin(a) * 0.71 }, sun, this.params, px);
+      midL += (0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2]) / 4;
+    }
+    const dayB = 0.25 * zenL + 0.5 * midL + 0.25 * horL;
+    this.envBright = lerp(dayB, Math.max(dayB, 0.008), night);
+    if (this.envBake) this.scene.environmentIntensity = clamp(this.envBright / this.envBake, 0.5, 2);
     // Transmission atmosphérique vers le soleil : teinte et intensité (rougit et faiblit au coucher).
     preetham(sun.y > 0.02 ? sun : { x: sun.x, y: 0.02, z: sun.z }, sun.y > 0.02 ? sun : { x: sun.x, y: 0.02, z: sun.z }, this.params, px);
     const tr = px[3], tg = px[4], tb = px[5];
@@ -442,12 +471,14 @@ export class Sky {
     const fz = Math.round(focus.z / snap) * snap;
     this.sun.position.set(fx + dir.x * 150, (focus.y || 0) + Math.max(dir.y, 0.12) * 150, fz + dir.z * 150);
     this.sun.target.position.set(fx, focus.y || 0, fz);
-    this.envDirty = this.envDirty || this.envSun.distanceTo(sun) > 0.02;
+    // Soleil bas (aube, crépuscule) : le ciel change vite, cuissons plus fréquentes (toutes les 2 s au plus).
+    this.envLow = Math.abs(sun.y) < 0.2;
+    this.envDirty = this.envDirty || this.envSun.distanceTo(sun) > (this.envLow ? 0.008 : 0.02);
   }
 
   // Régénère l'éclairage d'ambiance (IBL) quand le soleil a sensiblement bougé (coûteux : rarement).
   updateEnvironment(renderer, now, force = false) {
-    if (!force && (!this.envDirty || now - this.envAt < 8)) return;
+    if (!force && (!this.envDirty || now - this.envAt < (this.envLow ? 2 : 8))) return;
     this.envAt = now;
     this.envSun.copy(this.sunDir);
     this.envCover = this.cover;
@@ -458,6 +489,9 @@ export class Sky {
     this.envTarget = this.pmrem.fromScene(this.envScene, 0, 0.1, 1000);
     this.uniforms.envMode.value = 0;
     this.scene.environment = this.envTarget.texture;
+    // Luminance du ciel au moment de la cuisson : référence de l'intensité d'ambiance jusqu'à la suivante.
+    this.envBake = this.envBright;
+    this.scene.environmentIntensity = 1;
     old?.dispose();
   }
 
