@@ -58,7 +58,8 @@ export const XC_PATH = [
 
 export const POND = { x: -515, z: 420, r: 15 };
 
-export const HIPPO = { x: 330, z: 230, half: 100, radius: 62, width: 16 };
+// bays : stalles de départ (couloirs de 2 m, côté extérieur de la piste) ; le couloir intérieur reste libre.
+export const HIPPO = { x: 330, z: 230, half: 100, radius: 62, width: 16, bays: 6 };
 
 export const FORESTS = [
   { x: -390, z: 415, r: 195 },

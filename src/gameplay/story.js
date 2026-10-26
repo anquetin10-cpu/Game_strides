@@ -109,8 +109,10 @@ export const STORY = [
       const boxes = homeBoxes();
       const targets = [boxes[1], boxes[3], boxes[4], boxes[6]];
       const hay = { x: HOME.hay.x - HOME.hay.w / 2 + 5.6, z: HOME.hay.z };
+      // Dans leur box, la tête passée par-dessus la porte : poitrail et antérieurs restent derrière le mur de façade
+      // (bâtiment plein, façade 0,5 m devant la ligne des boxes).
       const horses = targets.map((b, i) => {
-        const hh = game.spawnHorse({ id: `box${i}`, coat: ['grey', 'chestnut', 'black', 'palomino'][i], blaze: i % 2 === 0 }, b.x, b.z - 1.6, 0, { saddle: false });
+        const hh = game.spawnHorse({ id: `box${i}`, coat: ['grey', 'chestnut', 'black', 'palomino'][i], blaze: i % 2 === 0 }, b.x, b.z - 1.4, 0, { saddle: false });
         hh.frozen = true;
         hh.ai = null;
         run.onCleanup(() => game.despawn(hh));
@@ -150,11 +152,12 @@ export const STORY = [
     timeoutText: 'Trop tard : l’épreuve a commencé sans la selle.',
     rate: (run) => (run.data.left > 40 ? 5 : run.data.left > 25 ? 4 : run.data.left > 10 ? 3 : 2),
     steps(game, run, S) {
-      const seller = npcAt(game, run, { ...STAFF_F, top: '#c8a96e', sleeve: '#c8a96e' }, POI.sellerie.x - 2, POI.sellerie.z + 2, -Math.PI / 2, 'Margaux');
+      // Margaux attend devant la façade de la sellerie (côté rue, au nord de la ruelle qui mène à sa porte) : le point
+      // d'intérêt lui-même est dans l'emprise d'un immeuble voisin.
+      const seller = npcAt(game, run, { ...STAFF_F, top: '#c8a96e', sleeve: '#c8a96e' }, TOWN.sellerie.x + TOWN.sellerie.w / 2 + 1.6, TOWN.sellerie.z + 10, Math.PI / 2, 'Margaux');
       const rider = npcAt(game, run, { top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#f2f1ec', boots: '#121214', skin: '#c99a74', hair: '#2a1d14', helmet: '#16171a', logo: true }, POLE.stables.x - 11, POLE.stables.z - 8, -Math.PI / 2, 'Léa');
-      void seller;
       return [
-        S.interact({ x: POI.sellerie.x, z: POI.sellerie.z }, 'Prendre la selle', 'Va à la Sellerie du Port, à Deauvelle', { modes: ['foot', 'ride'], r: 5, icon: 'bag' }),
+        S.interact(() => seller.pos, 'Prendre la selle', 'Va à la Sellerie du Port, à Deauvelle', { modes: ['foot', 'ride'], r: 5, icon: 'bag' }),
         S.custom({
           text: '',
           start(r) {

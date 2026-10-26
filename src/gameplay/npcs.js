@@ -47,6 +47,8 @@ class WalkAI {
     h.speed = this.speed;
     h.pos.x += Math.sin(h.heading) * h.speed * dt;
     h.pos.z += Math.cos(h.heading) * h.speed * dt;
+    // Lampadaires, voitures garées, camion… : on contourne en glissant le long de l'obstacle (passants visibles).
+    if (h.mesh.visible) g.colliders.resolve(h.pos, 0.3, h.pos.y);
   }
 }
 
@@ -336,7 +338,10 @@ export class Ambient {
     this.game = game;
     this.rnd = mulberry32(99);
     this.people = [];
+    this.walkers = [];
     this.cars = [];
+    this.trainer = null;
+    this._sepTick = 0;
     this.spawn();
   }
 
@@ -365,28 +370,33 @@ export class Ambient {
     const W = POLE.warmup;
     const warm = [[W.x - 14, W.z - 16], [W.x + 14, W.z - 16], [W.x + 14, W.z + 16], [W.x - 14, W.z + 16]];
     this.rider(warm, 'grey', 5, '#2f5f8a');
+    // Hippodrome : couloir intérieur (à la corde), libre des stalles de départ (world.js) ; points serrés pour suivre
+    // les virages sans couper vers le rail. Pendant le Derby, ce cavalier libère la piste (courses.js).
     const hippoPts = [];
-    for (let i = 0; i < 40; i++) hippoPts.push(ovalPoint((i / 40) * (4 * HIPPO.half + 2 * Math.PI * (HIPPO.radius + 4)), HIPPO.radius + 4));
-    this.rider(hippoPts, 'black', 11, '#b8322a');
+    for (let i = 0; i < 60; i++) hippoPts.push(ovalPoint((i / 60) * (4 * HIPPO.half + 2 * Math.PI * (HIPPO.radius - 5)), HIPPO.radius - 5));
+    this.trainer = this.rider(hippoPts, 'black', 11, '#b8322a');
     this.rider([[380, -416], [120, -414], [-60, -415], [120, -416]], 'palomino', 3.5, '#f2f1ec');
     const H = HOME.arena;
     this.rider([[H.x - 18, H.z - 8], [H.x + 18, H.z - 8], [H.x + 18, H.z + 8], [H.x - 18, H.z + 8]], 'chestnut', 4.2, '#1b1c1f');
 
-    // Passants en ville.
+    // Passants en ville : sur le trottoir (de 3,5 à 6,1 m de l'axe des rues), à l'écart des voitures garées
+    // (carrosserie jusqu'à 4,9 m de l'axe) et des façades (6,2 m).
     for (let i = 0; i < 16; i++) {
       const [x0, x1, z0, z1] = TOWN_BLOCKS[i % TOWN_BLOCKS.length];
-      const o = 4.4;
+      const o = 5.4;
       let loop = [[x0 + o, z0 + o], [x1 - o, z0 + o], [x1 - o, z1 - o], [x0 + o, z1 - o]];
       if (i % 2) loop = loop.reverse();
       const start = Math.floor(rnd() * 4);
       loop = loop.slice(start).concat(loop.slice(0, start));
       this.walker(loop, rnd() < 0.2 ? 1.6 : 1.2);
     }
-    // Promeneurs sur les Planches.
+    // Promeneurs sur les Planches : chacun tient sa droite (file sud vers l'est, file nord vers l'ouest), les
+    // promeneurs qui se croisent ne se traversent plus.
     for (let i = 0; i < 5; i++) {
       const x0 = -180 + rnd() * 100;
       const x1 = x0 + 120 + rnd() * 100;
-      this.walker(i % 2 ? [[x0, -373.5], [x1, -374.5]] : [[x1, -374.5], [x0, -373.5]], 1.1);
+      const loop = [[x0, -373], [x1, -373], [x1, -375], [x0, -375]];
+      this.walker(i % 2 ? loop.slice(2).concat(loop.slice(0, 2)) : loop, 1.1);
     }
     // Spectateurs au bord de la carrière du Pôle.
     const A = POLE.arena;
@@ -414,8 +424,9 @@ export class Ambient {
     const h = g.spawnHorse({ id: `rider${points[0][0]}`, coat, speed: 1 }, points[0][0], points[0][1], 0, { pad, padTrim: '#f2f1ec' });
     const r = g.spawnHuman({ top: pad === '#f2f1ec' ? '#1b1c1f' : pad, sleeve: '#1b1c1f', pants: '#f2f1ec', boots: '#121214', skin: pick(['#e2b894', '#c99a74', '#f0cfb0', '#8d5e3c']), hair: '#2a1d14', helmet: '#16171a' }, points[0][0], points[0][1], 0);
     r.mount(h);
-    h.ai = new PathAI(points, { loop: true, speed, lookahead: 4 });
+    h.ai = new PathAI(points, { loop: true, speed, lookahead: 4, yield: true });
     h.ambient = true;
+    return h;
   }
 
   walker(points, speed) {
@@ -424,6 +435,7 @@ export class Ambient {
     p.ai = new WalkAI(points, speed, g);
     p.chatter = pick(CHATTER, this.rnd);
     this.people.push(p);
+    this.walkers.push(p);
   }
 
   update(dt, camPos) {
@@ -435,6 +447,32 @@ export class Ambient {
       if (p.spectator) {
         const cheering = g.cheerT > 0;
         p.pose = cheering ? 'cheer' : 'stand';
+      }
+    }
+    if ((this._sepTick = (this._sepTick + 1) & 1) === 0) this._separateWalkers();
+  }
+
+  // Passants : on ne se traverse pas (une image sur deux suffit, ils marchent au pas). Deux personnes trop proches
+  // sont écartées l'une de l'autre avec un pas de côté, pour se croiser ou se dépasser au lieu de se bloquer face à face.
+  _separateWalkers() {
+    const w = this.walkers;
+    for (let i = 0; i < w.length; i++) {
+      const a = w[i];
+      if (!a.mesh.visible) continue;
+      for (let j = i + 1; j < w.length; j++) {
+        const b = w[j];
+        if (!b.mesh.visible) continue;
+        const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z;
+        if (dx > 0.9 || dx < -0.9 || dz > 0.9 || dz < -0.9) continue;
+        const d = Math.hypot(dx, dz);
+        if (d >= 0.9 || d < 1e-4) continue;
+        const push = (0.9 - d) / 2;
+        const nx = dx / d, nz = dz / d;
+        const mx = (nx + nz * 0.6) * push, mz = (nz - nx * 0.6) * push;
+        a.pos.x -= mx;
+        a.pos.z -= mz;
+        b.pos.x += mx;
+        b.pos.z += mz;
       }
     }
   }

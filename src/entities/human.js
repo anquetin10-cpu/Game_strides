@@ -39,6 +39,8 @@ const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
 const _s = new THREE.Vector3();
 const FIST = new THREE.Vector3(0, -0.068, 0.012);
+// Hauteur du sol sous les pieds : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
+const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
 export class Human {
   constructor(game, outfit, opts = {}) {
@@ -84,7 +86,7 @@ export class Human {
   }
 
   snap() {
-    this.pos.y = this.game.terrain.getHeight(this.pos.x, this.pos.z);
+    this.pos.y = groundY(this.game, this.pos.x, this.pos.z);
     this.mesh.position.copy(this.pos);
     this.mesh.rotation.set(0, this.heading, 0);
   }
@@ -167,8 +169,9 @@ export class Human {
     this.anim.t += dt;
     if (this.mounted) return;
     if (this.ai) this.ai.update(this, dt);
+    else if (!this.isPlayer && !this.spectator && this.pose !== 'sit') this._facePlayer(dt);
     // Sol : terrain, ou pont du camion baissé (on y marche au lieu de s'y enfoncer).
-    this.pos.y = this.game.truck?.walkHeightAt(this.pos.x, this.pos.z) ?? this.game.terrain.getHeight(this.pos.x, this.pos.z);
+    this.pos.y = this.game.truck?.walkHeightAt(this.pos.x, this.pos.z) ?? groundY(this.game, this.pos.x, this.pos.z);
     this.mesh.position.copy(this.pos);
     // Orientation entière (pas seulement le cap) : au volant, la cabine impose un quaternion dont les angles d'Euler
     // décomposés peuvent valoir ±90° en x/z ; ne réécrire que y coucherait le personnage en descendant du camion.
@@ -185,6 +188,15 @@ export class Human {
     this.anim.turnRate = this.anim.turnRate * 0.6 + (dh / step) * 0.4;
     const pose = this.carrying ? 'carry' : this.pose === 'stand' || this.pose === 'walk' ? 'walk' : this.pose;
     animateHuman(this.bones, pose, this.anim, step);
+  }
+
+  // PNJ statique (sans IA) : se tourne vers le joueur qui s'approche, pour ne pas lui parler de dos
+  // (pas sur place joué par l'animation à partir du taux de rotation).
+  _facePlayer(dt) {
+    const p = this.game.player?.focus.pos;
+    if (!p) return;
+    const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
+    if (dx * dx + dz * dz < 64) this.heading = wrapAngle(dampAngle(this.heading, Math.atan2(dx, dz), 4, dt));
   }
 
   // Monter : le maillage devient enfant de l'os « saddle » du cheval s'il existe (sinon « body »), au point d'assise.

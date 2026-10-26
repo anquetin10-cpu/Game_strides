@@ -984,6 +984,23 @@ export class Game {
     const ent = p.mode === 'ride' ? p.horse : p.mode === 'foot' ? p.human : null;
     if (!ent) return;
     const r = p.mode === 'ride' ? 1.0 : 0.4;
+    // Joueur à pied : les chevaux montés (cavaliers à l'entraînement) le contournent largement au lieu de le
+    // traverser, hors séquences du camion (positions scénarisées) ; les chevaux libres sont traités plus bas.
+    if (p.mode === 'foot' && !p.transport?.busy) {
+      for (const h of hs) {
+        if (!h.rider || h.rider === p.human || h.hiddenInTruck || !h.mesh.visible) continue;
+        const fx = Math.sin(h.heading), fz = Math.cos(h.heading);
+        for (let off = -0.6; off <= 0.6; off += 1.2) {
+          const cx = h.pos.x + fx * off, cz = h.pos.z + fz * off;
+          const dx = ent.pos.x - cx, dz = ent.pos.z - cz;
+          const dist = Math.hypot(dx, dz);
+          if (dist < 1.0 && dist > 1e-4) {
+            ent.pos.x = cx + (dx / dist) * 1.0;
+            ent.pos.z = cz + (dz / dist) * 1.0;
+          }
+        }
+      }
+    }
     for (const v of this.vehicles) {
       if (v === this.truck && p.mode === 'drive') continue;
       for (const off of [1.5, -1.5]) {
