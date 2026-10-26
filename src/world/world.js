@@ -689,10 +689,11 @@ export class World {
     // Place : fontaine, arbres, terrasse.
     const P = TOWN.plaza;
     const py = this.h(P.x, P.z);
-    // Fontaine en pierre calcaire : margelle moulurée, vasques superposées (la vasque médiane est creuse et retient l'eau), eau sombre et reflétante.
+    // Fontaine en pierre calcaire (teinte classée « pierre de taille » par le shader de surfaces : grain, blocs,
+    // patine) : margelle moulurée, vasques superposées (la vasque médiane est creuse et retient l'eau), eau sombre et reflétante.
     const lathe = (pts, seg = 40) => prep(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg));
-    this.batch.add(lathe([[4.3, 0], [5.35, 0], [5.45, 0.08], [5.45, 0.55], [5.25, 0.62], [5.25, 0.74], [4.95, 0.78], [4.85, 0.7], [4.4, 0.66], [4.3, 0.2]]), '#d6cfbf', P.x, py, P.z, 0);
-    this.batch.add(lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.89, 2.5], [1.8, 2.42], [0.4, 2.42], [0.32, 2.5], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]]), '#d6cfbf', P.x, py, P.z, 0);
+    this.batch.add(lathe([[4.3, 0], [5.35, 0], [5.45, 0.08], [5.45, 0.55], [5.25, 0.62], [5.25, 0.74], [4.95, 0.78], [4.85, 0.7], [4.4, 0.66], [4.3, 0.2]]), '#c9c1ae', P.x, py, P.z, 0);
+    this.batch.add(lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.89, 2.5], [1.8, 2.42], [0.4, 2.42], [0.32, 2.5], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]]), '#c9c1ae', P.x, py, P.z, 0);
     // Plans d'eau du bassin et de la vasque : un seul maillage (même matériau).
     const fw = new THREE.Mesh(mergeGeometries([
       new THREE.CircleGeometry(4.45, 48).rotateX(-Math.PI / 2).translate(0, 0.6, 0),
@@ -706,7 +707,7 @@ export class World {
     const jg = [];
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
-      jg.push(new THREE.CylinderGeometry(0.025, 0.05, 1.25, 6, 1, true).translate(Math.cos(a) * 1.0, 3.05, Math.sin(a) * 1.0));
+      jg.push(new THREE.CylinderGeometry(0.035, 0.075, 1.25, 8, 1, true).translate(Math.cos(a) * 1.0, 3.05, Math.sin(a) * 1.0));
     }
     const jm = new THREE.Mesh(mergeGeometries(jg, false), jets);
     jm.position.set(P.x, py, P.z);

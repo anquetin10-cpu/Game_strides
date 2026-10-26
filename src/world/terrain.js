@@ -4,6 +4,10 @@ import { TIDE_UNIFORMS } from './weather.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
 import { WORLD, ZONES, ROADS, POND, SIGN, shoreZ, isCliffRegion, zoneDist } from './layout.js';
+import { HOME, POLE } from './sites.js';
+
+// Carrières en sable (centre x, z ; demi-largeur, demi-profondeur) : sol hersé et piste piétinée le long de la lice.
+const ARENAS = [POLE.arena, POLE.warmup, HOME.arena].map((a) => new THREE.Vector4(a.x, a.z, a.w / 2, a.d / 2));
 
 const n1 = createNoise2D(11);
 const n2 = createNoise2D(23);
@@ -222,6 +226,7 @@ export class Terrain {
       mat.onBeforeCompile = (shader) => {
         shader.uniforms.detailMap = { value: detailTexture };
         shader.uniforms.splatMap = { value: splat };
+        shader.uniforms.arenaR = { value: ARENAS };
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNrm;')
           .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWorldNrm = normalize(mat3(modelMatrix) * objectNormal);');
@@ -229,6 +234,7 @@ export class Terrain {
           .replace('#include <common>', `#include <common>
 uniform sampler2D detailMap;
 uniform sampler2D splatMap;
+uniform vec4 arenaR[3];
 varying vec3 vWorldPos;
 varying vec3 vWorldNrm;
 float stH = 0.0;
@@ -313,6 +319,25 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
     tint = mix( tint, vec3( mix( 0.75, 1.15, r1.g ) * mix( 0.85, 1.05, r2.r ) ), rock );
     stH = mix( stH, rH * 1.6, rock );
     stRough = mix( stRough, 0.9, rock );
+  }
+  // Carrières : sable hersé (sillons fins parallèles au grand côté, légèrement ondulés par le passage du tracteur),
+  // piste piétinée à ~1,8 m de la lice (sable plus sombre, creusé, sans traces de herse), empreintes éparses.
+  float arena = 0.0, edge = 1e3;
+  for ( int i = 0; i < 3; i++ ) {
+    vec2 q = abs( p - arenaR[i].xy ) - arenaR[i].zw;
+    float sd = max( q.x, q.y );
+    float inA = 1.0 - smoothstep( -0.6, 0.0, sd );
+    if ( inA > arena ) { arena = inA; edge = -sd; }
+  }
+  if ( arena > 0.01 ) {
+    float harrowW = ( 1.0 - smoothstep( 0.4, 1.2, fwidth( p.y ) * 41.9 ) ) * ( 1.0 - smoothstep( 6.0, 22.0, dist ) );
+    float harrow = mix( 0.5, 0.5 + 0.5 * sin( p.y * 41.9 + sin( p.x * 0.19 ) * 1.4 + dM.r * 1.6 ), harrowW );
+    float track = ( 1.0 - smoothstep( 0.7, 1.6, abs( edge - 1.8 ) ) ) * smoothstep( 0.2, 0.6, edge );
+    float scuff = smoothstep( 0.55, 0.85, dM.b * 0.6 + dF.g * 0.4 ) * ( 0.35 + 0.65 * track );
+    float aH2 = mix( harrow * 0.16 + dF.r * 0.3 * fineW + dM.g * 0.2 * midW, ( 1.0 - dF.b ) * 0.5 * fineW + dM.r * 0.35 * midW, max( track, scuff ) );
+    stH = mix( stH, aH2 * stFade, arena * midW );
+    tint *= mix( vec3( 1.0 ), mix( vec3( mix( 0.985, 1.015, harrow ) ), vec3( 0.86, 0.84, 0.8 ), track * 0.8 ) * mix( 1.0, 0.93, scuff ), arena );
+    stRough = mix( stRough, 0.96, arena );
   }
   // Sable mouillé près de l'eau : plus sombre et plus brillant.
   // Estran : sable mouillé du bord de l'eau jusqu'au niveau atteint par la dernière pleine mer (il sèche en
