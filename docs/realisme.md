@@ -45,7 +45,7 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 | Grandeur | Jeu | Référence réelle | Statut | Vérification |
 | --- | --- | --- | --- | --- |
 | Marée | onde semi-diurne (12 h 25), vives-eaux / mortes-eaux sur 14,8 jours, coefficients 20 – 120, tenue du plein (baie de Seine) | mêmes phénomènes | conforme (forme) | `weather.test.js` |
-| Marnage | ± 0,7 m à l'échelle de la plage du jeu | ~7 m au Havre en vives-eaux | **adapté** (réduit à l'échelle de la plage) | — |
+| Marnage | hauteurs d'eau affichées à l'échelle réelle (annuaire de Trouville-Deauville : ~7 m en vives-eaux, ~3,5 m en mortes-eaux) ; déplacement visible de la mer à l'échelle de la plage du jeu | ~7 m en vives-eaux | conforme pour les hauteurs ; **adapté** pour l'avancée de la mer (la plage du jeu fait moins de 200 m) | `realism.test.js` |
 | Températures | fin d'été normand, de 12 à 25 °C, plus chaud l'après-midi, sans saut à minuit | normales de la Côte Fleurie | conforme | `weather.test.js` |
 | Pluie, vent | averses les jours couverts, vent d'ouest dominant, nuages poussés par le vent | climat océanique | conforme | `weather.test.js` |
 | Soleil | culmine vers 52°, lever ~6 h 30, coucher ~20 h 30 | fin août à 49,4° N : ~50°, ~6 h 55 / ~20 h 45 | conforme (approché) | `sky.js` |
@@ -55,8 +55,8 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 
 ## 5. Écarts restants (contraintes physiques)
 
-1. **Marnage** réduit (± 0,7 m au lieu d'environ 7 m) : à l'échelle réelle, la mer recouvrirait toute la plage et le
-   front de mer du jeu, dont la géométrie est à l'échelle d'une plage réelle.
+1. **Avancée de la mer** : les hauteurs d'eau sont réelles, mais l'excursion horizontale (plusieurs centaines de mètres
+   sur la plage très plate de Deauville) est ramenée à la plage du jeu, longue de moins de 200 m.
 2. **Étendue du monde** de 1,2 km : la Côte Fleurie réelle s'étend sur une vingtaine de kilomètres ; un monde à cette
    échelle dépasserait la mémoire et l'autonomie d'un iPhone dans un navigateur.
 

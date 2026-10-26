@@ -62,3 +62,24 @@ describe('réalisme : camion Strides', () => {
     expect(TRUCK_SPEC.brakeDecel).toBeLessThanOrEqual(8);
   });
 });
+
+import { tideEvents, realTideHeight, tideCoef } from '../../src/world/weather.js';
+describe('réalisme : marées de Trouville-Deauville (hauteurs affichées)', () => {
+  it('marnage ~7 m en vives-eaux, ~3 – 4 m en mortes-eaux, hauteurs au-dessus du zéro des cartes', () => {
+    let springs = 0, neaps = 99;
+    for (let day = 0; day < 15; day++) {
+      const ev = tideEvents(day * 24, 24);
+      for (let i = 1; i < ev.length; i++) {
+        const range = Math.abs(realTideHeight(ev[i].level) - realTideHeight(ev[i - 1].level));
+        springs = Math.max(springs, range);
+        neaps = Math.min(neaps, range);
+      }
+      for (const e of ev) expect(realTideHeight(e.level)).toBeGreaterThan(0);
+    }
+    expect(springs).toBeGreaterThan(6.3);
+    expect(springs).toBeLessThan(8.5);
+    expect(neaps).toBeGreaterThan(2.5);
+    expect(neaps).toBeLessThan(4.5);
+    expect(tideCoef(0)).toBeGreaterThanOrEqual(20);
+  });
+});

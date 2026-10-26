@@ -8,7 +8,7 @@ import { HORSES, SHOP, PROS, STABLES, STABLE_UPGRADES, SKILL_LABEL } from '../ga
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
-import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm } from '../world/weather.js';
+import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm, realTideHeight } from '../world/weather.js';
 import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard, appToast, isStridesOffer } from './requests.js';
 import { renderActivities } from './activities-app.js';
@@ -749,10 +749,10 @@ export class Phone {
     const lvl = tideLevel(T);
     const rising = tideLevel(T + 0.1) > lvl;
     const ev = tideEvents(T, 26);
-    body.appendChild(h('div.section-t', { text: `Marée ${rising ? 'montante' : 'descendante'} · coefficient ${tideCoef(T)}`, style: { marginTop: '14px' } }));
+    body.appendChild(h('div.section-t', { text: `Marée ${rising ? 'montante' : 'descendante'} · coefficient ${tideCoef(T)} · hauteur d’eau ${dec(realTideHeight(lvl), 1)} m`, style: { marginTop: '14px' } }));
     for (const e of ev.slice(0, 4)) {
       const dd = Math.floor(e.t / 24) - day;
-      body.appendChild(h('div.kv', {}, h('span', { text: `${e.type === 'PM' ? 'Pleine mer' : 'Basse mer'}${dd > 0 ? ' (demain)' : ''}` }), h('b', { text: `${hhmm(e.t)} · ${e.level >= 0 ? '+' : ''}${dec(e.level, 2)} m` })));
+      body.appendChild(h('div.kv', {}, h('span', { text: `${e.type === 'PM' ? 'Pleine mer' : 'Basse mer'}${dd > 0 ? ' (demain)' : ''}` }), h('b', { text: `${hhmm(e.t)} · ${dec(realTideHeight(e.level), 2)} m` })));
     }
     const low = ev.find((e) => e.type === 'BM');
     if (low) body.appendChild(h('p', { text: `Galop sur la plage : sable découvert et ferme autour de la basse mer, de ${hhmm(low.t - 2)} à ${hhmm(low.t + 2)}.`, style: { margin: '10px 0 0', font: '400 12px/1.4 var(--ui)', color: 'var(--muted)' } }));

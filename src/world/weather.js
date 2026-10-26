@@ -79,6 +79,12 @@ export function tideLevel(t) {
   return A2 * Math.cos(a) + AS * Math.cos(WS * (t - PHASE)) - A4 * Math.cos(2 * a) + A4 * 0.5;
 }
 
+// Hauteur d'eau réelle (m au-dessus du zéro des cartes), comme dans un annuaire des marées de Trouville-Deauville :
+// niveau moyen ~4,6 m, marnage ~7 m en vives-eaux moyennes, ~3,5 m en mortes-eaux. Le déplacement de la mer sur la
+// plage du jeu reste à l'échelle du terrain (tideLevel) ; seules les hauteurs affichées sont à l'échelle réelle.
+export const TIDE_REAL = { mean: 4.6, scale: 5.6 };
+export const realTideHeight = (level) => TIDE_REAL.mean + level * TIDE_REAL.scale;
+
 // Coefficient de marée (20 à 120, 95 = vives-eaux moyennes) selon l'accord des ondes M2 et S2.
 export function tideCoef(t) {
   const amp = Math.hypot(A2 + AS * Math.cos((WS - W2) * (t - PHASE)), AS * Math.sin((WS - W2) * (t - PHASE)));
