@@ -101,11 +101,13 @@ await E(() => {
 });
 await wait(500);
 // Première ouverture de Strides : la mention « missions, profils et sommes fictifs » se valide d'abord.
-await page.waitForSelector('[data-id="notice-ok"]', { timeout: 8000 }).catch(() => null);
+// (en mode intégré le jeu est dans un cadre : on passe par E() et tapSel, qui visent le document du jeu)
+for (let i = 0; i < 20 && !(await E(() => !!document.querySelector('[data-id="notice-ok"]'))); i++) await wait(200);
 check('mention fictive affichée à la première ouverture', await E(() => /fictifs/.test(document.querySelector('.notice-sheet')?.textContent || '')));
-if (await page.$('[data-id="notice-ok"]')) {
-  await page.tap('[data-id="notice-ok"]');
-  await wait(300);
+await page.screenshot({ path: out('5-notice') });
+if (await E(() => !!document.querySelector('[data-id="notice-ok"]'))) {
+  check('« J’ai compris » visible et touchable', (await tapSel('[data-id="notice-ok"]')).hit);
+  await E(() => window.__auto?.tick?.(3));
 }
 await page.screenshot({ path: out('5-home') });
 check('accueil pro « Demandes entrantes »', await E(() => !!document.querySelector('.st-home .req-card')));

@@ -59,7 +59,7 @@ export function generateJob(game, seq, level) {
       id: `c${seq}`, vertical: 'JOBS', category: 'Coursier', title: `Livraison : ${it.name}`,
       desc: `${A.name} → ${B.name} · ${Math.round(limit)} s pour livrer.`,
       client: c, place: A, placeName: A.name, pay: round5(45 + dist * 0.09), xp: 70, duration: `~${Math.ceil((dist / 10 + 30) / 60)} min`,
-      irl: 'les pros publient leurs besoins ponctuels et trouvent quelqu’un de disponible en temps réel.',
+      irl: 'les écuries et cavaliers trouvent rapidement un professionnel disponible pour un besoin ponctuel.',
       timeoutText: 'Livraison en retard : le client a annulé.',
       rate: (run) => (run.data.left > limit * 0.35 ? 5 : run.data.left > limit * 0.2 ? 4 : run.data.left > limit * 0.08 ? 3 : 2),
       steps(g, run, S) {
@@ -89,7 +89,7 @@ export function generateJob(game, seq, level) {
       id: `t${seq}`, vertical: 'TRANSPORT', category: 'Transport', title: `Transport : ${A.name.split(' ').slice(-1)[0]} → ${B.name.split(' ').slice(-1)[0]}`,
       desc: `Charger un cheval à ${A.name} et le livrer à ${B.name}.`,
       client: c, place: A, placeName: A.name, pay: round5(110 + dist * 0.16), xp: 140, duration: `~${Math.ceil(dist / 300 + 2)} min`,
-      irl: 'Strides Transport relie propriétaires et transporteurs vérifiés, avec suivi en temps réel.',
+      irl: '« Besoin d’un chauffeur pour partir en concours ? » Sur Strides, des chauffeurs proposent le transport des chevaux vers les concours, aller-retour.',
       rate: (run) => (run.data.comfort >= 90 ? 5 : run.data.comfort >= 75 ? 4 : run.data.comfort >= 55 ? 3 : 2),
       steps(g, run, S) {
         const truck = g.player.truck;
@@ -130,7 +130,7 @@ export function generateJob(game, seq, level) {
       id: `r${seq}`, vertical: 'JOBS', category: 'Cavalier', title: `Reconnaissance : ${area.name}`,
       desc: 'Reconnaître un tracé de balade pour un organisateur : 5 balises à cheval.',
       client: c, place: { x: area.pts[0][0], z: area.pts[0][1] }, placeName: area.name, pay: round5(85 + Math.random() * 40), xp: 90, duration: '~3 min',
-      irl: 'organisateurs et écuries confient aussi des missions de terrain aux cavaliers de la communauté.',
+      irl: 'sur Strides, les agents de concours prennent en charge des missions d’organisation et de fonctionnement des concours.',
       rate: (run) => (run.t < 70 ? 5 : run.t < 100 ? 4 : 3),
       steps(g, run, S) {
         return [checkpointSteps(g, run, S, area.pts, { text: `Balises — ${area.name}`, mode: 'ride', r: 7 })];

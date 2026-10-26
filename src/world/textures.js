@@ -309,7 +309,7 @@ export function truckTexture(scale = 1) {
     ctx.fillText('TRANSPORT DE CHEVAUX', x + w / 2, y + 640);
     ctx.globalAlpha = 0.72;
     ctx.font = `400 29px ${FONT_UI}`;
-    ctx.fillText('Réservez un transporteur vérifié sur l’app', x + w / 2, y + 690);
+    ctx.fillText('Un chauffeur pour le concours ? Sur l’app', x + w / 2, y + 690);
     ctx.globalAlpha = 1;
   }
   // Rampe arrière : marque, site, panneau « chevaux ».

@@ -211,9 +211,9 @@ export class Phone {
     const ok = h('button.btn.primary', { text: 'J’ai compris', 'data-id': 'notice-ok' });
     const layer = h('div.sheet-layer.notice-sheet', {}, h('div.sheet', {}, h('div.handle'),
       h('div.sheet-body.scrollable', {},
-        h('div.st-h2', { text: 'Bienvenue dans Strides (version jeu)' }),
-        h('div.st-body.mt8', { text: 'Missions, profils, avis et sommes sont fictifs : rien n’est envoyé à la vraie plateforme et aucun paiement réel n’a lieu.' }),
-        h('div.req-cap.mt8', { text: 'Le jeu reprend les deux usages de la vraie application : recevoir des missions (prestataire) et recruter un professionnel (écurie, cavalier).' })),
+        h('div.st-h2', { text: 'Strides · version jeu' }),
+        h('div.st-body.mt4', { text: 'Missions, profils et sommes fictifs. Rien n’est envoyé, aucun paiement réel.' }),
+        h('div.req-cap.mt8', { text: 'Deux usages, comme dans la vraie application : recevoir des missions et recruter un professionnel.' })),
       h('div.sheet-foot', {}, ok)));
     tap(ok, () => {
       g.save.data.flags.stridesNotice = true;

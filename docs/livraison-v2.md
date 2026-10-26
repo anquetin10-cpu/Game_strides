@@ -160,4 +160,37 @@ pendant la réalisation, à rapprocher de la liste du dossier.
 
 ## 8. Résultats de recette
 
-Voir ci-dessous (complété après l'exécution de la batterie).
+**Environnement réel utilisé** : conteneur Linux, Chromium sans interface piloté par Playwright 1.56, rendu WebGL
+logiciel (SwiftShader), émulation mobile tactile (`isMobile`, `hasTouch`, densité 2) aux formats iPhone paysage
+**667×308 et 568×260 dans le lecteur intégré** (page `tests/e2e/viewer-harness.html`) et **844×390** en plein écran ;
+vrais touchers envoyés par le protocole du navigateur (CDP). **Aucun test n'a été fait sur un iPhone physique** :
+l'émulation Chromium ne remplace pas Safari iOS (partage natif avec fichier, performances, mise en veille).
+Tests unitaires : Vitest, 97 tests (12 fichiers), tous verts. Recette du 26 octobre 2026, sur le code de cette livraison.
+
+| Réf. | Exigence | Test | Résultat |
+| --- | --- | --- | --- |
+| R01 | Lancement et première mission | `scenario.mjs` (partie complète au doigt), `missions.mjs` (« Premiers pas ») | OK |
+| R02 | Déplacements à pied, à cheval, en camion | `features.mjs` (20 vérifications), `transport-flow.mjs` (65), `truck-exit.mjs` | OK |
+| R03 | Touchers simultanés | `multitouch.mjs` : joystick + GALOP + caméra à trois doigts, relâchement sans commande bloquée | OK |
+| R04 | M1 : refus et branches | `chapter1.mjs` (refus des deux sans pénalité et reproposition, branche Val, choix mémorisé) ; `missions.mjs` (tournée) | OK |
+| R05 | M2 : débit unique | `chapter1.mjs` : quitter avant confirmation, échec technique simulé (remboursé), double appui rapide, rechargement → 120 € débités une seule fois | OK |
+| R06 | M2 : budget insuffisant | `chapter1.mjs` : confirmation impossible, rien débité, branche autonome terminée | OK |
+| R07 | M3 : résultat imparfait | `chapter1.mjs` : élimination (deux refus) → « Nouvelle tentative » ou « Retrouver l'équipe », participation versée, suite débloquée | OK |
+| R08 | Double appui et rechargement sans double récompense | `chapter1.mjs` (seconde validation de M1, rechargement), unitaires `grantOnce` | OK |
+| R09 | Anciennes sauvegardes débutant et avancée conservées | unitaires `save.test.js` (v1 débutant et v1 avancée) ; `save-guard.mjs` (v1 avancée migrée, possessions conservées, jouable) | OK |
+| R10 | Sauvegarde incomplète ou migration en échec récupérable | `save-guard.mjs` (illisible : signalée, rien écrasé, restauration de la copie, export / import) ; unitaires (invalide, version plus récente) | OK |
+| R11 | Absence prolongée sans rattrapage punitif | `pause.mjs` (10 min d'interruption → un pas borné ; besoins et horloge suspendus pendant téléphone et dialogues) | OK |
+| R12 | Amélioration visible après rechargement | `chapter1.mjs` (aire de pansage achetée une fois, présente au Val après rechargement, achat répété sans effet) | OK |
+| R13 | Défi rejoué à conditions identiques | `challenge.mjs` (37 vérifications : cheval, heure, météo, hauteur, temps accordé identiques ; monde restauré) | OK |
+| R14 | Carte de résultat lisible, partage ou téléchargement | `challenge.mjs` (carte générée, téléchargement vérifié) | OK, partage natif non testable sous Chromium Linux |
+| R15 | Liens Strides et retour au jeu | `strides-links.mjs` (titre, téléphone, invitation : destinations officielles, partie sauvegardée avant la sortie, jeu intact) | OK, `window.open` intercepté (pas de navigation réelle) |
+| R16 | Mesure désactivée puis activée localement sans doublon | `strides-links.mjs`, `chapter1.mjs`, unitaires `metrics` | OK, aucun envoi externe |
+| R17 | Build et parcours principal sans erreur bloquante ni fonction annoncée fictivement | `npm run build` et `build:single` ; `scenario.mjs`, `missions.mjs` (15 missions), `jobs.mjs`, `request-flow.mjs` (3 formats), `care.mjs` : aucune erreur JavaScript ; aucune fonction « bientôt disponible » dans l'interface | OK |
+
+**Limites connues**
+
+- Les tests jouent avec un pilote automatique (positions placées, sauts au bon moment) : ils vérifient les règles
+  et les enchaînements, pas la difficulté ressentie par un joueur.
+- Sous rendu logiciel, une image peut mettre plusieurs secondes : les durées mesurées ne représentent pas un iPhone.
+- Le partage natif avec fichier et l'ouverture effective d'un nouvel onglet dans le lecteur intégré de claude.ai
+  n'ont pas pu être vérifiés.

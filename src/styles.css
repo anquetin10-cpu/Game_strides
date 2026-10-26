@@ -859,3 +859,10 @@ body.phone-open .rotate { display: none !important; }
   .rc-input { height: 38px; font-size: 14px; }
   .stat.small .v { font-size: 13px; }
 }
+/* Mention fictive de Strides : lisible en entier sur les écrans très bas (lecteur intégré 568×260). */
+@media (max-height: 300px) {
+  .notice-sheet .sheet-body { padding-top: 4px; }
+  .notice-sheet .st-h2 { font-size: 15px; }
+  .notice-sheet .st-body { font-size: 13px; line-height: 1.35; }
+  .notice-sheet .req-cap { display: none; }
+}

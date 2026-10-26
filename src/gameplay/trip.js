@@ -226,7 +226,7 @@ export function competitionDef(level, startHour) {
     duration: '~10 min',
     cls,
     startHour,
-    irl: 'les organisateurs publient leurs concours sur Strides : engagements, heures de passage et résultats, au même endroit.',
+    irl: 'les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.',
     rate: (run) => {
       const rk = run.data.rank || 99;
       return Math.max(2, (rk <= 3 ? 5 : rk <= 6 ? 4 : 3) - (run.data.late ? 1 : 0));
@@ -237,7 +237,7 @@ export function competitionDef(level, startHour) {
       if (d.money >= cls.fee) {
         d.money -= cls.fee;
         game.updateWallet();
-        game.hud.toast(`Engagement réglé via Strides : ${cls.fee} €`);
+        game.hud.toast(`Engagement réglé au secrétariat du concours : ${cls.fee} €`);
       }
     },
     after(game) {
