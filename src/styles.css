@@ -790,3 +790,26 @@ body.phone-open .rotate { display: none !important; }
 /* Réglages : export / restauration de la sauvegarde. */
 .set-col { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 10px; }
 .save-area { width: 100%; min-height: 54px; resize: vertical; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0,0,0,.04); font: 400 11px/1.3 var(--mono); color: inherit; }
+
+/* Chapitre 1 : écrans de choix, résultats d'équipe, mention fictive, recrutement. */
+.choice-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.choice { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; border-radius: 14px; background: var(--fill); border: 1px solid var(--line-2); color: var(--paper); transition: background .12s, transform .12s; }
+.choice:active { transform: scale(.985); background: var(--fill-2); }
+.choice .c-main { flex: 1; min-width: 0; }
+.choice .c-t { font: 600 15px/1.25 var(--ui); }
+.choice .c-s { margin-top: 3px; font: 400 12.5px/1.35 var(--ui); color: var(--muted); }
+.choice .c-r { font: 600 15px/1 var(--mono); color: var(--gold); white-space: nowrap; }
+.choice.off { opacity: .5; }
+.res-table { width: 100%; border-collapse: collapse; margin-top: 10px; font: 400 13px/1.3 var(--ui); }
+.res-table td { padding: 4px 6px; }
+.res-table td:nth-child(n+3) { text-align: right; white-space: nowrap; }
+.res-table tr.me { font-weight: 700; background: rgba(201, 162, 74, .18); }
+.res-table tr.rival { color: var(--muted); font-style: italic; }
+.hire-card .req-foot { margin-top: 10px; }
+.notice-sheet .sheet { max-height: 92%; }
+@media (max-height: 360px) {
+  .choice-list { gap: 6px; margin-top: 10px; }
+  .choice { padding: 8px 12px; }
+  .choice .c-t { font-size: 14px; }
+  .choice .c-s { font-size: 11.5px; }
+}

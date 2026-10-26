@@ -174,7 +174,7 @@ export function rankResults(list) {
 }
 
 // Décor du concours : tente du secrétariat et panneau (le temps de la mission).
-function secretariatProps(game) {
+export function secretariatProps(game) {
   const s = SECRETARIAT;
   const y = game.terrain.getHeight(s.x, s.z);
   const parts = [

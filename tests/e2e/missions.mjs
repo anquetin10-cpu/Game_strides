@@ -13,7 +13,7 @@ await page.goto(`${base}?autostart`);
 await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 180000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
 await page.evaluate(() => { window.__auto.stopLoop(); window.__auto.closeCards(); });
-const ids = only || ['tuto', 'groom', 'livraison', 'fugueur', 'plage', 'transport', 'fer', 'cross', 'pension', 'derby', 'csi3', 'gp'];
+const ids = only || ['tuto', 'm1', 'm2', 'm3', 'groom', 'livraison', 'fugueur', 'plage', 'transport', 'fer', 'cross', 'pension', 'derby', 'csi3', 'gp'];
 let failures = 0;
 for (const id of ids) {
   const t0 = Date.now();

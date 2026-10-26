@@ -85,11 +85,17 @@ export function courseSteps(game, run, S, opts) {
       },
       update(r, dt) {
         state.t += dt;
-        if (game.player.mode !== 'ride') return { fail: 'Tu es descendu de cheval : éliminé.' };
-        if (state.refusals >= maxRefusals) return { fail: `${maxRefusals}e refus : éliminé du parcours.` };
-        if (kind === 'xc' && state.fenceRefusals >= 3) return { fail: '3e refus sur le même obstacle : éliminé du parcours.' };
+        // Élimination : échec de la mission, ou (opts.soft) fin de l'épreuve avec le motif, la mission continuant.
+        const out = (reason) => {
+          if (!opts.soft) return { fail: reason };
+          state.eliminated = reason;
+          return true;
+        };
+        if (game.player.mode !== 'ride') return out('Tu es descendu de cheval : éliminé.');
+        if (state.refusals >= maxRefusals) return out(`${maxRefusals}e refus : éliminé du parcours.`);
+        if (kind === 'xc' && state.fenceRefusals >= 3) return out('3e refus sur le même obstacle : éliminé du parcours.');
         // Temps limite : le double du temps accordé.
-        if (state.t > timeAllowed * 2) return { fail: 'Temps limite dépassé : éliminé.' };
+        if (state.t > timeAllowed * 2) return out('Temps limite dépassé : éliminé.');
         if (state.next > list().length) {
           const f = game.player.horse.pos;
           const fx = finish.x, fz = finish.z;

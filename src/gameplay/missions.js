@@ -234,6 +234,8 @@ export class MissionManager {
     this.comfort = null;
     this.noWhistle = false;
     this.stablePicker = null;
+    // Recrutement en cours (parcours client de M2) : profils proposés dans Strides › Recruter.
+    this.hirePicker = null;
     this.timer = 5;
     this.jobSeq = 1;
     this.refusedAt = {};
@@ -290,6 +292,7 @@ export class MissionManager {
       if (this.offers.some((o) => o.id === id) || this.active?.offer.id === id) continue;
       if (this.refusedAt[id] !== undefined && g.time - this.refusedAt[id] < 40) continue;
       const o = this._offerFromDef(def);
+      if (d.checkpoint?.mission === def.id) o.resume = true;
       if (def.level > lv.level) o.locked = `Débloqué au palier « ${(REPUTATION[def.level - 1] || REPUTATION[REPUTATION.length - 1]).title} ».`;
       if (o.locked && this.offers.some((x) => x.locked)) continue;
       this.offers.push(o);
@@ -395,10 +398,14 @@ export class MissionManager {
 
   start(offer) {
     const g = this.game;
+    const d = g.save.data;
+    // Mesure : une deuxième activité commence (après une première mission terminée).
+    if (d.stats.jobs >= 1) g.metrics?.track('second_activity_started', { mission: offer.def.id, course: offer.vertical === 'EVENEMENTS' ? offer.category : undefined });
     const run = new Run(g, offer, offer.def);
     this.active = run;
     this.lastOffer = offer;
-    g.hud.big(offer.title.toUpperCase(), `${offer.vertical === 'EVENEMENTS' ? 'Événement' : offer.vertical === 'TRANSPORT' ? 'Transport' : offer.vertical === 'ANNUAIRE' ? 'Annuaire' : offer.vertical === 'ECURIES' ? 'Écuries' : 'Mission'} Strides · ${offer.category}`, 2600);
+    const label = { EVENEMENTS: 'Événement', ANNUAIRE: 'Guide local', ECURIES: 'Guide local' }[offer.vertical] || (offer.vertical === 'TRANSPORT' ? 'Mission Strides · Chauffeur' : 'Mission Strides');
+    g.hud.big(offer.title.toUpperCase(), `${label} · ${offer.category}`, 2600);
     g.audio.notify();
     offer.def.setup?.(g, run);
     run.begin();
@@ -406,15 +413,34 @@ export class MissionManager {
     g.bus.emit('mission:start', run);
   }
 
-  abandon() {
+  // Point de reprise d'une mission à étapes (M1 à M3) : choix et paiements déjà faits ne sont jamais refaits.
+  checkpoint(run, step, data = {}) {
+    const d = this.game.save.data;
+    const prev = d.checkpoint?.mission === run.def.id ? d.checkpoint.data : {};
+    d.checkpoint = { mission: run.def.id, step, data: { ...prev, ...data } };
+    this.game.saveNow();
+  }
+  clearCheckpoint(id) {
+    const d = this.game.save.data;
+    if (d.checkpoint && (!id || d.checkpoint.mission === id)) d.checkpoint = null;
+  }
+
+  // Refus depuis l'écran de choix d'une mission acceptée : sans pénalité, reproposée plus tard.
+  decline(run, text) {
+    this.abandon(text);
+  }
+
+  abandon(text = 'Mission abandonnée.') {
     const run = this.active;
     if (!run) return;
     run.finished = true;
     run.cleanup();
     this.active = null;
+    this.clearCheckpoint(run.def.id);
+    this.game.saveNow();
     this.game.gps.clear();
     this.game.hud.setObjective(null);
-    this.game.hud.toast('Mission abandonnée.');
+    this.game.hud.toast(text);
     if (run.offer.story) this.refusedAt[run.offer.id] = this.game.time;
     this.timer = 20;
   }
@@ -454,12 +480,22 @@ export class MissionManager {
     let pay = run.payOverride ?? run.offer.pay ?? def.pay ?? 0;
     const tip = stars === 5 && pay > 0 ? Math.round(pay * 0.1) : 0;
     pay += tip;
+    let rep = run.xpOverride ?? def.xp ?? 0;
+    // Mission d'histoire : versement unique (un double appui ou un rechargement ne paie jamais deux fois).
+    const fresh = !def.story || g.save.grantOnce(`story:${def.id}`, () => {});
+    if (!fresh) pay = rep = 0;
     d.money += pay;
-    d.reputation += def.xp || 0;
+    d.reputation += rep;
     if (pay > 0) d.stats.earned += pay;
-    if (!def.noCount) d.stats.jobs++;
-    if (def.story) d.completed.push(def.id);
-    if (def.client && !def.noReview) d.ratings.push(stars);
+    if (!def.noCount && fresh) d.stats.jobs++;
+    if (def.story && !d.completed.includes(def.id)) d.completed.push(def.id);
+    if (def.client && !def.noReview && fresh) d.ratings.push(stars);
+    this.clearCheckpoint(def.id);
+    if (fresh) {
+      g.addSkill?.('organisation', 2);
+      g.metrics?.track('first_mission_completed', { mission: def.id });
+      if (def.id === 'm2') g.metrics?.track('hiring_mission_completed', { mission: 'm2', mode: run.data.hire });
+    }
     const after = levelFor(d.reputation);
     run.cleanup();
     this.active = null;
@@ -472,7 +508,7 @@ export class MissionManager {
       kicker: `${def.title} · ${def.client ? def.client.name : 'Strides'}`,
       body: run.resultBody,
       pay,
-      xp: def.xp || 0,
+      xp: rep,
       stars,
       time: run.resultTime ?? run.t,
       timeLabel: run.resultTimeLabel,

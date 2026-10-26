@@ -121,6 +121,7 @@ export function installCare(game) {
     setTimeout(() => {
       if (p.locked === lock) p.locked = false;
       apply(c);
+      g.addSkill?.('preparation', 1);
       // Cheval changé entre-temps (application « Chevaux ») : le soin reste acquis dans la sauvegarde.
       const saved = g.save?.data.horseCare;
       if (c.horse !== g.mainHorse && saved?.[c.horse.id]) saved[c.horse.id] = c.toJSON();
@@ -136,7 +137,7 @@ export function installCare(game) {
     label: 'Panser', icon: 'hand', r: 2.8, priority: 2.5, modes: ['foot'],
     getPos: () => horse()?.pos || { x: 1e9, z: 1e9 },
     when: () => ready() && horse().cond.clean < 50,
-    action: () => care('Pansage : étrille, bouchon, brosse douce', 4, (c) => { c.clean = 100; c.resting = false; g.hud.toast('Robe propre et brillante.'); }),
+    action: () => care('Pansage : étrille, bouchon, brosse douce', g.save?.data.upgrades?.includes('aire') ? 3 : 4, (c) => { c.clean = 100; c.resting = false; g.hud.toast('Robe propre et brillante.'); }),
   });
   g.interact.add('care-hooves', {
     label: 'Curer les pieds', icon: 'shoe', r: 2.8, priority: 2.4, modes: ['foot'],

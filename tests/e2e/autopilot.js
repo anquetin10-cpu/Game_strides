@@ -34,6 +34,11 @@
     },
     closeCards() {
       let n = 0;
+      // Invitation vers la vraie application : « Plus tard » (aucune ouverture de page externe pendant les tests).
+      for (const b of document.querySelectorAll('.overlay [data-id="cta-later"]')) {
+        A.tap(b);
+        n++;
+      }
       for (const b of document.querySelectorAll('.overlay .btn.primary')) {
         A.tap(b);
         n++;
@@ -209,6 +214,16 @@
       A.releaseInput();
       return race;
     },
+    // Choix à faire dans les écrans de choix (identifiants data-choice, dans l'ordre de préférence).
+    prefer: ['tournee', 'prudente', 'lea'],
+    pickChoice() {
+      const opts = [...document.querySelectorAll('.overlay .choice')];
+      if (!opts.length) return false;
+      const ok = opts.filter((b) => !b.classList.contains('off'));
+      const want = A.prefer.map((id) => ok.find((b) => b.dataset.choice === id)).find(Boolean) || ok.find((b) => b.dataset.choice !== 'none') || ok[0];
+      A.tap(want);
+      return true;
+    },
     solveStep(run) {
       const s = run.step;
       if (!s) return;
@@ -216,8 +231,30 @@
         g.hud.advanceDialog();
         return;
       }
+      if (A.pickChoice()) return;
       const id = run.def.id;
       const txt = run.text();
+      // Chapitre 1 : recrutement (parcours client), reconnaissance à pied, monter, échauffement.
+      const pick = g.missions.hirePicker;
+      if (pick && /Recruter/.test(txt)) {
+        const p = pick.profiles.find((x) => A.prefer.includes(x.id) && g.save.data.money >= x.price);
+        if (A.prefer.includes('solo') || !p) return pick.onSolo();
+        const res = g.hire(`hire:${pick.mission}`, p.price);
+        A.log.push(`hire ${p.id}: ${res}`);
+        return pick.onConfirm(p);
+      }
+      if (/^Reconnais/.test(txt)) {
+        A.ensureMode('foot');
+        A.goTo(A.pos(s.target), 0.5);
+        return;
+      }
+      if (/^Monte (?!au volant|dans le camion)|pour t’échauffer/.test(txt)) return A.mount();
+      if (/^Résultats officiels/.test(txt)) return A.closeCards();
+      if (/^Échauffe-toi/.test(txt)) {
+        A.mount();
+        for (const o of g.obstacles.ofCourse('warmup')) A.jumpObstacle(o);
+        return;
+      }
       if (s.kind === 'goto') {
         A.ensureMode(s.mode || (g.player.mode === 'foot' ? 'foot' : g.player.mode));
         A.goTo(A.pos(s.target), 1);
@@ -333,11 +370,11 @@
         g.player.truck.speed = 0;
         return;
       }
-      if (id === 'fer' && /Annuaire/.test(txt)) {
+      if (id === 'fer' && /Guide local|Annuaire/.test(txt)) {
         g.contactPro({ id: 'lemaire', name: 'Hugo Lemaire', job: 'Maréchal-ferrant', initials: 'HL', avail: '', place: { x: -140, z: -199 } });
         return;
       }
-      if (id === 'pension' && /Écuries/.test(txt)) {
+      if (id === 'pension' && /Pensions|Écuries/.test(txt)) {
         g.missions.stablePicker?.onPick({ id: 'dunes', price: 480 });
         return;
       }
@@ -351,6 +388,9 @@
       }
       if (s.target) {
         A.goTo(A.pos(s.target), 1);
+        // Chevaux qui suivent le joueur (sortie en main, pension) : ils l'accompagnent.
+        const f = g.player.focus.pos;
+        for (const hh of g.horses) if (hh.ai?.constructor?.name === 'FollowAI' && hh !== g.player.horse) hh.setPosition(f.x + 2, f.z + 2, hh.heading);
       }
     },
     // Joue un job généré.

@@ -17,6 +17,13 @@ export const SHOP = [
   { id: 'veste', name: 'Veste de concours', desc: 'Style de champion (cosmétique)', price: 150, effect: { outfit: 'competition' } },
 ];
 
+// Aménagements de l'écurie (application « Mon écurie ») : achetés avec les gains, visibles au Val, persistants.
+export const STABLE_UPGRADES = [
+  { id: 'aire', name: 'Aire de pansage couverte', desc: 'Préparation regroupée plus rapide (6 s → 4 s), pansage à l’abri.', price: 350, requires: 'chapter1Done', lockedText: 'Camille la proposera après ton premier concours en équipe.' },
+];
+
+export const SKILL_LABEL = { preparation: 'Préparation', equitation: 'Équitation', transport: 'Transport', organisation: 'Organisation' };
+
 export const PROS = [
   { id: 'lemaire', name: 'Hugo Lemaire', job: 'Maréchal-ferrant', rating: 4.9, reviews: 212, place: POI.forge, avail: 'Disponible aujourd’hui', verified: true, initials: 'HL' },
   { id: 'clinique', name: 'Dr Inès Vasseur', job: 'Vétérinaire équin', rating: 4.8, reviews: 168, place: POI.vet, avail: 'Urgences 24/7', verified: true, initials: 'IV' },

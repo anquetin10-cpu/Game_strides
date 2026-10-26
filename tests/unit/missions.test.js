@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { MissionManager } from '../../src/gameplay/missions.js';
 import { STORY } from '../../src/gameplay/story.js';
 import { generateJob } from '../../src/gameplay/jobs.js';
-import { defaultSave } from '../../src/core/save.js';
+import { defaultSave, SaveSystem } from '../../src/core/save.js';
 import { Bus } from '../../src/core/bus.js';
 import { HORSES, SHOP, PROS, STABLES } from '../../src/gameplay/data.js';
 
@@ -11,7 +11,9 @@ function mockGame() {
     state: 'play',
     time: 0,
     bus: new Bus(),
-    save: { data: defaultSave() },
+    save: Object.assign(new SaveSystem('t'), { data: defaultSave(), store: null }),
+    metrics: { log: [], track(name, p) { this.log.push({ name, p }); return true; } },
+    addSkill(k, v) { this.save.data.skills[k] += v; },
     notifs: [],
     toasts: [],
     hud: {
@@ -48,9 +50,11 @@ describe('données', () => {
 });
 
 describe('histoire', () => {
-  it('chaîne les 12 missions avec des prérequis valides', () => {
+  it('chaîne les 15 missions avec des prérequis valides (chapitre 1 : M1 à M3 après les premiers pas)', () => {
     const ids = STORY.map((s) => s.id);
-    expect(ids.length).toBe(12);
+    expect(ids.length).toBe(15);
+    expect(ids.slice(0, 5)).toEqual(['tuto', 'm1', 'm2', 'm3', 'groom']);
+    expect(STORY.find((s) => s.id === 'groom').requires).toEqual(['m3']);
     for (const s of STORY) for (const r of s.requires || []) expect(ids.indexOf(r)).toBeLessThan(ids.indexOf(s.id));
     expect(STORY.every((s) => ['JOBS', 'TRANSPORT', 'EVENEMENTS', 'ANNUAIRE', 'ECURIES'].includes(s.vertical))).toBe(true);
     // Chaque univers Strides est illustré.

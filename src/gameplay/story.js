@@ -1,4 +1,5 @@
-// Missions de l'histoire : de groom à vainqueur du Grand Prix — chaque mission illustre un service Strides.
+// Missions de l'histoire : de groom à vainqueur du Grand Prix. Les textes « Dans la vraie vie » ne décrivent que ce
+// que propose réellement l'application Strides (mise en relation avec des professionnels du cheval).
 import { HOME, HARAS, POLE, DUNES, GATIEN, TOWN, homeBoxes, HIPPO_SITE } from '../world/sites.js';
 import { POI, HIPPO } from '../world/layout.js';
 import { courseSteps, totalPenalties, checkpointSteps, raceSteps } from './courses.js';
@@ -7,6 +8,7 @@ import { GrazeAI, FollowAI, FleeAI } from '../entities/horse.js';
 import { HORSES } from './data.js';
 import { formatMoney, dec } from '../core/math.js';
 import { PARKS, loadStep, unloadStep, driveStep } from './trip.js';
+import { CHAPTER1_MISSIONS } from './story2.js';
 
 const C = {
   camille: { name: 'Camille Martin', initials: 'CM', rating: 4.9, verified: true },
@@ -30,13 +32,16 @@ const STAFF = { top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#3a3d42', boots: '#2a
 const STAFF_F = { ...STAFF, skin: '#eac2a0', hair: '#7a4a28', ponytail: true };
 const OFFICIAL = { top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#1b1c1f', boots: '#121214', skin: '#c99a74', hair: '#2a1d14' };
 
+// Compétitions : le jeu les met en scène, mais Strides ne gère ni engagements ni résultats (vérifié sur la page officielle).
+const EVENT_IRL = 'les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.';
+
 export const STORY = [
   // 0 — Tutoriel
   {
     id: 'tuto', story: true, vertical: 'JOBS', category: 'Prise en main', title: 'Premiers pas', level: 1,
     desc: 'Monte Comète, prends tes marques en carrière et reviens voir Camille.',
     client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 50, xp: 60, duration: '~3 min',
-    irl: 'les écuries publient leurs besoins sur Strides et les pros acceptent les missions en un geste — comme tu viens de le faire.',
+    irl: 'sur Strides, les écuries et cavaliers envoient des propositions de missions aux professionnels, qui acceptent celles qui leur conviennent — comme tu viens de le faire.',
     review: () => 'Bienvenue dans l’équipe ! Belle prise en main.',
     steps(game, run, S) {
       const camille = npcAt(game, run, STAFF_F, -100, 166, Math.PI, 'Camille');
@@ -97,12 +102,15 @@ export const STORY = [
     },
   },
 
+  // Chapitre 1 (M1 à M3) : voir story2.js.
+  ...CHAPTER1_MISSIONS,
+
   // 1 — Groom du matin
   {
-    id: 'groom', story: true, vertical: 'JOBS', category: 'Groom', title: 'Groom du matin', level: 1, requires: ['tuto'],
+    id: 'groom', story: true, vertical: 'JOBS', category: 'Groom', title: 'Groom du matin', level: 1, requires: ['m3'],
     desc: 'Distribuer le foin à quatre chevaux avant la reprise de 10 h.',
     client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 90, xp: 120, duration: '~2 min',
-    irl: 'les écuries trouvent un groom vérifié en quelques minutes, pour une matinée ou pour la saison.',
+    irl: 'les écuries trouvent un groom maison ou un palefrenier au profil vérifié, avec des disponibilités à la journée ou à la demi-journée.',
     review: (s) => (s >= 5 ? 'Rapide et soigneux. Je recommande !' : s >= 4 ? 'Efficace, les chevaux étaient ravis.' : 'Le travail est fait, merci.'),
     rate: (run) => byTime(run.t, 80, 105, 130),
     steps(game, run, S) {
@@ -148,25 +156,25 @@ export const STORY = [
     id: 'livraison', story: true, vertical: 'JOBS', category: 'Coursier', title: 'Selle sur-mesure', level: 1, requires: ['groom'],
     desc: 'Récupérer une selle à la Sellerie du Port et la livrer au Pôle International avant l’épreuve.',
     client: C.margaux, place: POI.sellerie, placeName: 'Sellerie du Port', pay: 120, xp: 150, duration: '~3 min',
-    irl: 'coursiers, grooms, cavaliers : les missions ponctuelles trouvent preneur en temps réel sur Strides.',
+    irl: 'une selle à livrer n’est pas une mission Strides : la plateforme concerne les métiers du cheval — grooms, palefreniers, cavaliers, chauffeurs, enseignants, agents de concours et d’entretien.',
     timeoutText: 'Trop tard : l’épreuve a commencé sans la selle.',
     rate: (run) => (run.data.left > 40 ? 5 : run.data.left > 25 ? 4 : run.data.left > 10 ? 3 : 2),
     steps(game, run, S) {
       // Margaux attend devant la façade de la sellerie (côté rue, au nord de la ruelle qui mène à sa porte) : le point
       // d'intérêt lui-même est dans l'emprise d'un immeuble voisin.
       const seller = npcAt(game, run, { ...STAFF_F, top: '#c8a96e', sleeve: '#c8a96e' }, TOWN.sellerie.x + TOWN.sellerie.w / 2 + 1.6, TOWN.sellerie.z + 10, Math.PI / 2, 'Margaux');
-      const rider = npcAt(game, run, { top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#f2f1ec', boots: '#121214', skin: '#c99a74', hair: '#2a1d14', helmet: '#16171a', logo: true }, POLE.stables.x - 11, POLE.stables.z - 8, -Math.PI / 2, 'Léa');
+      const rider = npcAt(game, run, { top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#f2f1ec', boots: '#121214', skin: '#c99a74', hair: '#2a1d14', helmet: '#16171a', logo: true }, POLE.stables.x - 11, POLE.stables.z - 8, -Math.PI / 2, 'Clara');
       return [
         S.interact(() => seller.pos, 'Prendre la selle', 'Va à la Sellerie du Port, à Deauvelle', { modes: ['foot', 'ride'], r: 5, icon: 'bag' }),
         S.custom({
           text: '',
           start(r) {
-            game.hud.dialog([{ who: 'Margaux Leroy', initials: 'ML', text: 'La selle de Léa, faite sur-mesure. Elle rentre en piste dans 1 min 45 au Pôle International — file !' }], () => (r.flags.go = true));
+            game.hud.dialog([{ who: 'Margaux Leroy', initials: 'ML', text: 'La selle de Clara, faite sur-mesure. Elle rentre en piste dans 1 min 45 au Pôle International — file !' }], () => (r.flags.go = true));
           },
           update: (r) => r.flags.go,
         }),
         S.custom({ text: '', start: (r) => (r.timer = 105), update: () => true }),
-        S.interact(() => rider.pos, 'Livrer la selle', 'Livre la selle à Léa, aux écuries du Pôle', {
+        S.interact(() => rider.pos, 'Livrer la selle', 'Livre la selle à Clara, aux écuries du Pôle', {
           modes: ['foot', 'ride'],
           r: 4.5,
           icon: 'bag',
@@ -176,7 +184,7 @@ export const STORY = [
             rider.pose = 'wave';
           },
         }),
-        S.dialog([{ who: 'Léa Fournier', initials: 'LF', text: 'Juste à temps ! Merci, je file à l’échauffement.' }]),
+        S.dialog([{ who: 'Clara Fournier', initials: 'CF', text: 'Juste à temps ! Merci, je file à l’échauffement.' }]),
       ];
     },
   },
@@ -186,7 +194,7 @@ export const STORY = [
     id: 'fugueur', story: true, vertical: 'JOBS', category: 'Urgence', title: 'Le fugueur', level: 1, requires: ['livraison'],
     desc: 'Un étalon s’est échappé du haras. Le rattraper et le ramener au paddock.',
     client: C.antoine, place: POI.haras, placeName: 'Haras de la Pommeraie', pay: 160, xp: 200, duration: '~4 min',
-    irl: 'en cas d’urgence, Strides met en relation propriétaires et pros disponibles autour d’eux.',
+    irl: '« la solution aux urgences du quotidien » : sur Strides, on trouve rapidement un professionnel disponible.',
     timeoutText: 'Tonnerre s’est enfui trop loin…',
     rate: (run) => byTime(run.data.catchT || 99, 35, 55, 80),
     review: (s) => (s >= 4 ? 'Sang-froid impressionnant. Tonnerre est rentré sans une égratignure.' : 'Merci d’avoir ramené Tonnerre !'),
@@ -256,7 +264,7 @@ export const STORY = [
             return false;
           },
         }),
-        S.dialog([{ who: 'Antoine Roux', initials: 'AR', text: 'Bravo ! Je mets ton profil en favori sur Strides. Pour les urgences, c’est toi que j’appelle.' }]),
+        S.dialog([{ who: 'Antoine Roux', initials: 'AR', text: 'Bravo ! Je garde ton contact. Pour les urgences, c’est toi que j’appelle.' }]),
       ];
     },
   },
@@ -266,7 +274,7 @@ export const STORY = [
     id: 'plage', story: true, vertical: 'JOBS', category: 'Cavalier', title: 'Galop sur la plage', level: 2, requires: ['fugueur'],
     desc: 'Travailler Tornade en bord de mer : 7 anneaux sur la plage, puis retour à l’écurie.',
     client: C.helene, place: POI.dunes, placeName: 'Écurie des Dunes', pay: 180, xp: 250, duration: '~4 min',
-    irl: 'cavaliers freelance : proposez vos services de travail et de sortie aux propriétaires, et recevez des demandes près de chez vous.',
+    irl: '« Vous cherchez un cavalier pour travailler vos chevaux ? » Les cavaliers maison et d’entraînement proposent leurs services sur Strides.',
     timeoutText: 'Trop lent : Tornade n’a pas eu le travail prévu.',
     rate: (run) => (run.data.left > 25 ? 5 : run.data.left > 15 ? 4 : run.data.left > 6 ? 3 : 2),
     steps(game, run, S) {
@@ -337,7 +345,7 @@ export const STORY = [
     id: 'transport', story: true, vertical: 'TRANSPORT', category: 'Transport', title: 'Transport express', level: 2, requires: ['fugueur'],
     desc: 'Conduire le camion Strides : charger Quabar au haras et le livrer au Pôle International, en douceur.',
     client: C.antoine, place: POI.home, placeName: 'Écurie du Val (camion)', pay: 260, xp: 300, duration: '~6 min',
-    irl: 'Strides Transport : réservez un transporteur vérifié et suivez le trajet de votre cheval en temps réel.',
+    irl: '« Besoin d’un chauffeur pour partir en concours ? » Sur Strides, des chauffeurs proposent le transport des chevaux vers les concours, aller-retour.',
     timeoutText: 'Quabar est arrivé trop tard pour son épreuve.',
     rate: (run) => (run.data.comfort >= 90 ? 5 : run.data.comfort >= 75 ? 4 : run.data.comfort >= 55 ? 3 : 2),
     review: (s) => (s >= 5 ? 'Quabar est descendu du camion frais comme un gardon. Conduite parfaite.' : s >= 4 ? 'Bonne conduite, cheval serein.' : 'Arrivé, mais un peu secoué…'),
@@ -380,12 +388,12 @@ export const STORY = [
         S.custom({
           text: '',
           start() {
-            groom = npcAt(game, run, { ...STAFF_F, top: '#2f5f8a', sleeve: '#2f5f8a' }, PARKS.pole.x - 9, PARKS.pole.z - 6, Math.PI / 2, 'Léa');
+            groom = npcAt(game, run, { ...STAFF_F, top: '#2f5f8a', sleeve: '#2f5f8a' }, PARKS.pole.x - 9, PARKS.pole.z - 6, Math.PI / 2, 'Sarah');
           },
           update: () => true,
         }),
         unloadStep(game, S, { horse: () => quabar, name: 'Quabar' }),
-        S.interact(() => groom.pos, 'Confier Quabar', 'Confie Quabar à Léa, sa groom', {
+        S.interact(() => groom.pos, 'Confier Quabar', 'Confie Quabar à Sarah, sa groom', {
           modes: ['foot'],
           r: 3.6,
           icon: 'hand',
@@ -399,7 +407,7 @@ export const STORY = [
             game.audio.snort();
           },
         }),
-        S.dialog(() => [{ who: 'Léa · Groom de Quabar', initials: 'LF', text: `Merci ! Confort du cheval pendant le trajet : ${Math.round(run.data.comfort ?? 100)} %. Tout le trajet est tracé dans l’app Strides.` }]),
+        S.dialog(() => [{ who: 'Sarah · Groom de Quabar', initials: 'SB', text: `Merci ! Confort du cheval pendant le trajet : ${Math.round(run.data.comfort ?? 100)} %. Il est arrivé frais.` }]),
       ];
     },
   },
@@ -407,9 +415,9 @@ export const STORY = [
   // 6 — Fer perdu (Annuaire)
   {
     id: 'fer', story: true, vertical: 'ANNUAIRE', category: 'Urgence', title: 'Fer perdu', level: 2, requires: ['transport', 'plage'],
-    desc: 'Comète a perdu un fer. Trouver un maréchal-ferrant vérifié dans l’annuaire Strides.',
-    client: null, place: POI.forge, placeName: 'Annuaire Strides', pay: 0, payLabel: 'Soins : 60 €', xp: 220, duration: '~3 min', noReview: true,
-    irl: 'l’annuaire Strides réunit maréchaux, vétérinaires, ostéos et dentistes vérifiés, notés par la communauté.',
+    desc: 'Comète a perdu un fer. Trouver un maréchal-ferrant dans le Guide local du téléphone.',
+    client: null, place: POI.forge, placeName: 'Guide local', pay: 0, payLabel: 'Soins : 60 €', xp: 220, duration: '~3 min', noReview: true,
+    irl: 'le Guide local (maréchaux, vétérinaires…) est une fonction du jeu : ces métiers ne sont pas proposés sur Strides.',
     steps(game, run, S) {
       const horse = game.player.horse;
       horse.lame = true;
@@ -418,8 +426,8 @@ export const STORY = [
       return [
         S.dialog([{ who: 'Comète', initials: '🐴', text: '(Comète boite. Un fer s’est détaché — impossible de travailler comme ça.)' }]),
         S.custom({
-          text: 'Ouvre Strides › Annuaire et contacte un maréchal-ferrant',
-          hint: 'Touche le <b>téléphone</b> en haut à droite → <b>Strides</b> → <b>Annuaire</b>.',
+          text: 'Ouvre le Guide local et contacte un maréchal-ferrant',
+          hint: 'Touche le <b>téléphone</b> en haut à droite → <b>Guide local</b> → <b>Santé et soins</b>.',
           hintMs: 9000,
           start(r) {
             r.flags.contact = false;
@@ -432,7 +440,7 @@ export const STORY = [
           update: (r) => r.flags.contact,
         }),
         S.dialog([
-          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Hugo Lemaire, j’ai vu ta demande sur Strides. Je suis à la forge, à Deauvelle.' },
+          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Hugo Lemaire, j’ai bien eu ton appel. Je suis à la forge, à Deauvelle.' },
           { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Viens au pas, sans forcer. Je te la referre en dix minutes.' },
         ]),
         S.interact(() => hugo.pos, 'Faire ferrer', 'Rejoins la Forge Lemaire (au pas)', {
@@ -453,14 +461,13 @@ export const STORY = [
           update: (r) => r.stepT > 2.2,
         }),
         S.dialog([
-          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Et voilà, quatre fers neufs. Paiement réglé via Strides, facture dans l’app.' },
-          { who: 'Toi', initials: game.save.data.playerName.slice(0, 2).toUpperCase(), text: 'Merci Hugo ! Je te laisse 5 étoiles.' },
+          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Et voilà, quatre fers neufs. Tu me règles 60 €, facture dans ta boîte.' },
+          { who: 'Toi', initials: game.save.data.playerName.slice(0, 2).toUpperCase(), text: 'Merci Hugo ! Comète marche comme une horloge.' },
         ]),
       ];
     },
     after(game) {
-      game.hud.toast('Avis publié : Hugo Lemaire ★★★★★');
-      game.message('Hugo Lemaire', 'HL', 'Merci pour l’avis ! N’hésite pas à me recontacter via l’annuaire Strides. Bonne saison !');
+      game.message('Hugo Lemaire', 'HL', 'Merci ! N’hésite pas à me rappeler pour la prochaine ferrure. Bonne saison !');
     },
   },
 
@@ -469,7 +476,7 @@ export const STORY = [
     id: 'cross', story: true, vertical: 'EVENEMENTS', category: 'Cross', title: 'Cross de Saint-Gatien', level: 3, requires: ['fer'],
     desc: '10 obstacles fixes en forêt. Refus : +20 pénalités. Temps accordé : 1:50.',
     client: C.paul, place: POI.gatien, placeName: 'Domaine de Saint-Gatien', pay: 320, xp: 350, duration: '~3 min',
-    irl: 'les organisateurs publient concours, cross et formations, et gèrent les engagements directement sur Strides.',
+    irl: EVENT_IRL,
     rate: (run) => {
       const p = totalPenalties(run);
       return p === 0 ? 5 : p <= 8 ? 4 : p <= 24 ? 3 : 2;
@@ -501,18 +508,18 @@ export const STORY = [
   {
     id: 'pension', story: true, vertical: 'ECURIES', category: 'Recherche', title: 'La pension parfaite', level: 3, requires: ['fer'],
     desc: 'Trouver une pension pour Galant : box + paddock, accès plage, moins de 500 €/mois. Puis l’y conduire.',
-    client: C.chloe, place: POI.haras, placeName: 'Strides › Écuries', pay: 170, xp: 250, duration: '~4 min',
-    irl: 'comparez pensions, services et avis, et contactez l’écurie qui vous correspond, directement sur Strides.',
+    client: C.chloe, place: POI.haras, placeName: 'Guide local › Pensions', pay: 170, xp: 250, duration: '~4 min',
+    irl: 'la recherche de pension est une fonction du jeu (Guide local) : elle n’est pas proposée sur Strides.',
     rate: (run) => (run.data.wrong ? 4 : 5) - (run.t > 220 ? 1 : 0),
     steps(game, run, S) {
       let galant = null;
       return [
         S.custom({
-          text: 'Ouvre Strides › Écuries et choisis la bonne pension',
+          text: 'Ouvre le Guide local › Pensions et choisis la bonne pension',
           hint: 'Critères : <b>box + paddock</b>, <b>accès plage</b>, <b>moins de 500 €/mois</b>.',
           hintMs: 9000,
           start(r) {
-            game.message('Chloé Mercier', 'CM', 'Bonjour ! Je cherche une pension pour Galant : box + paddock, accès plage idéalement, moins de 500 €/mois. Tu peux me trouver ça sur Strides ?');
+            game.message('Chloé Mercier', 'CM', 'Bonjour ! Je cherche une pension pour Galant : box + paddock, accès plage idéalement, moins de 500 €/mois. Tu connais le coin, tu peux m’aider ?');
             game.missions.stablePicker = {
               prompt: 'Galant : box + paddock · plage · < 500 €',
               onPick: (s) => {
@@ -569,7 +576,7 @@ export const STORY = [
             return false;
           },
         }),
-        S.dialog([{ who: 'Chloé Mercier', initials: 'CM', text: 'Galant a l’air ravi ! Box réservé et contrat signé dans l’app. Merci !' }]),
+        S.dialog([{ who: 'Chloé Mercier', initials: 'CM', text: 'Galant a l’air ravi ! Je signe le contrat de pension avec l’écurie. Merci !' }]),
       ];
     },
   },
@@ -579,7 +586,7 @@ export const STORY = [
     id: 'derby', story: true, vertical: 'EVENEMENTS', category: 'Course', title: 'Derby de la Touques', level: 3, requires: ['cross'],
     desc: 'Course de galop, un tour d’hippodrome contre cinq concurrents. Top 3 obligatoire.',
     client: C.victor, place: POI.hippo, placeName: 'Hippodrome de la Touques', pay: 420, xp: 400, duration: '~3 min',
-    irl: 'courses, ventes, stages : l’agenda équestre de la région, centralisé sur Strides.',
+    irl: EVENT_IRL,
     rate: (run) => [5, 5, 4, 3][run.data.finishPos - 1] || 2,
     review: (s) => (s >= 5 ? 'Une victoire tactique, magnifique !' : 'Belle course, sur le podium !'),
     steps(game, run, S) {
@@ -599,7 +606,7 @@ export const STORY = [
     id: 'csi3', story: true, vertical: 'EVENEMENTS', category: 'CSO', title: 'Qualificative CSI 3★', level: 4, requires: ['derby', 'pension'],
     desc: 'Parcours de 9 obstacles au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix.',
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 500, xp: 450, duration: '~2 min',
-    irl: 'engagez-vous en concours en deux clics et retrouvez résultats et classements dans l’app Strides.',
+    irl: EVENT_IRL,
     rate: (run) => {
       const p = totalPenalties(run);
       return p === 0 ? 5 : p <= 4 ? 4 : 3;
@@ -634,7 +641,7 @@ export const STORY = [
     id: 'gp', story: true, vertical: 'EVENEMENTS', category: 'Grand Prix', title: 'Grand Prix CSI 5★', level: 4, requires: ['csi3'],
     desc: 'La finale. Obstacles à 1,40 m, meilleurs cavaliers du circuit. Il faut gagner.',
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 1500, xp: 900, duration: '~2 min',
-    irl: 'de la première mission au Grand Prix : c’est sur Strides que les carrières équestres se construisent.',
+    irl: EVENT_IRL,
     rate: (run) => (totalPenalties(run) === 0 ? 5 : 4),
     review: () => 'Un Grand Prix d’anthologie. Deauvelle se souviendra de ce parcours.',
     steps(game, run, S) {

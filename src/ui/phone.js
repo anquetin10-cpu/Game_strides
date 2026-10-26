@@ -1,17 +1,16 @@
-// Téléphone du joueur : écran d'accueil + applications (Strides, Carte, Messages, Écurie, Trophées, Réglages, Photo).
+// Téléphone du joueur : écran d'accueil + applications (Strides, Carte, Messages, Mes chevaux, Mon écurie, Guide local,
+// Trophées, Météo, Photo, Réglages). Seule l'app Strides reprend la vraie application ; les autres sont des fonctions du jeu.
 import { h, tap, esc } from './dom.js';
 import { icon } from './icons.js';
 import { drawBlip, drawFullMap } from './minimap.js';
 import { formatMoney, formatTime, clamp, dec } from '../core/math.js';
-import { HORSES, SHOP, PROS, STABLES } from '../gameplay/data.js';
+import { HORSES, SHOP, PROS, STABLES, STABLE_UPGRADES, SKILL_LABEL } from '../gameplay/data.js';
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
 import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm } from '../world/weather.js';
 import { ion } from './ionicons.js';
-import { renderProHome, renderRequest, requestCard } from './requests.js';
-
-const VERTICAL_LABEL = { JOBS: 'Jobs', TRANSPORT: 'Transport', EVENEMENTS: 'Événements', ANNUAIRE: 'Annuaire', ECURIES: 'Écuries' };
+import { renderProHome, renderRequest, requestCard, appToast, isStridesOffer } from './requests.js';
 
 export class Phone {
   constructor(game, root) {
@@ -107,6 +106,8 @@ export class Phone {
       trophies: () => this.renderTrophies(),
       settings: () => this.renderSettings(),
       shop: () => this.renderShop(),
+      ecurie: () => this.renderEcurie(),
+      guide: () => this.renderGuide(opts),
       weather: () => this.renderWeather(),
     }[app];
     this.screen.appendChild(fn ? fn() : this.renderHome());
@@ -126,7 +127,6 @@ export class Phone {
   // ---------- Accueil ----------
   renderHome() {
     const g = this.game;
-    const offers = g.missions.offers.filter((o) => o.isNew).length;
     const unread = g.save.data.messages.filter((m) => !m.read).length;
     const appIcon = (id, label, ic, cls = '', badge = 0) => {
       const el = h('button.app-icon', { 'data-app': id }, h(`div.ic${cls ? `.${cls}` : ''}`, { html: icon(ic) }, badge ? h('span.badge', { text: String(badge) }) : null), h('span', { text: label }));
@@ -153,10 +153,12 @@ export class Phone {
       h(
         'div.apps',
         {},
-        appIcon('strides', 'Strides', 'strides', 'strides', offers),
+        appIcon('strides', 'Strides', 'strides', 'strides', g.missions.offers.filter((o) => o.isNew && isStridesOffer(o)).length),
         appIcon('map', 'Carte', 'map'),
         appIcon('messages', 'Messages', 'message', '', unread),
-        appIcon('stable', 'Chevaux', 'horse'),
+        appIcon('stable', 'Mes chevaux', 'horse'),
+        appIcon('ecurie', 'Mon écurie', 'home'),
+        appIcon('guide', 'Guide local', 'directory', '', g.missions.offers.filter((o) => o.isNew && (o.vertical === 'ANNUAIRE' || o.vertical === 'ECURIES')).length),
         appIcon('trophies', 'Trophées', 'trophy'),
         appIcon('weather', 'Météo', 'weather'),
         photo,
@@ -166,16 +168,16 @@ export class Phone {
   }
 
   // ---------- Application Strides ----------
+  // Uniquement ce que propose la vraie application : missions reçues (prestataire), recrutement d'un professionnel
+  // (client) et profil. Pensions, santé, concours et ventes sont des fonctions du jeu, rangées dans d'autres apps.
   renderStrides(opts = {}) {
     const g = this.game;
     if (opts.tab) this.tab = opts.tab;
+    if (!['missions', 'recruter', 'profil'].includes(this.tab)) this.tab = 'missions';
     this.detail = opts.detail || null;
     const tabs = [
       ['missions', 'Demandes', 'document-text-outline'],
-      ['ecuries', 'Écuries', 'business-outline'],
-      ['transport', 'Transport', 'car-outline'],
-      ['evenements', 'Événements', 'trophy-outline'],
-      ['annuaire', 'Annuaire', 'people-outline'],
+      ['recruter', 'Recruter', 'people-outline'],
       ['profil', 'Profil', 'person-outline'],
     ];
     const rail = h('div.app-rail.scrollable', {}, h('div.logo', { html: icon('strides') }));
@@ -188,27 +190,39 @@ export class Phone {
     const main = h('div.app-main');
     const render = {
       missions: () => renderProHome(this),
-      transport: () => this._tabTransport(),
-      evenements: () => this._tabEvents(),
-      ecuries: () => this._tabStables(),
-      annuaire: () => this._tabPros(),
+      recruter: () => this._tabRecruit(),
       profil: () => this._tabProfile(),
     }[this.tab];
     main.append(...render());
-    // Marquer les offres de l'onglet comme vues (l'onglet Demandes les liste toutes).
-    for (const o of g.missions.offers) if (this.tab === 'missions' || this._offerTab(o) === this.tab) o.isNew = false;
+    for (const o of g.missions.offers) if (this.tab === 'missions' && isStridesOffer(o)) o.isNew = false;
     g.missions.updateBadge();
-    return h('div.app', {}, rail, main);
+    const app = h('div.app', {}, rail, main);
+    // Première ouverture : mention fictive, à valider une fois (mémorisée dans la sauvegarde).
+    if (!g.save.data.flags.stridesNotice) requestAnimationFrame(() => this._stridesNotice());
+    return app;
   }
 
-  _offerTab(o) {
-    return { JOBS: 'missions', TRANSPORT: 'transport', EVENEMENTS: 'evenements', ANNUAIRE: 'annuaire', ECURIES: 'ecuries' }[o.vertical] || 'missions';
+  _stridesNotice() {
+    const g = this.game;
+    if (this.app !== 'strides' || this.screen.querySelector('.notice-sheet')) return;
+    const ok = h('button.btn.primary', { text: 'J’ai compris', 'data-id': 'notice-ok' });
+    const layer = h('div.sheet-layer.notice-sheet', {}, h('div.sheet', {}, h('div.handle'),
+      h('div.sheet-body.scrollable', {},
+        h('div.st-h2', { text: 'Bienvenue dans Strides (version jeu)' }),
+        h('div.st-body.mt8', { text: 'Missions, profils, avis et sommes sont fictifs : rien n’est envoyé à la vraie plateforme et aucun paiement réel n’a lieu.' }),
+        h('div.req-cap.mt8', { text: 'Le jeu reprend les deux usages de la vraie application : recevoir des missions (prestataire) et recruter un professionnel (écurie, cavalier).' })),
+      h('div.sheet-foot', {}, ok)));
+    tap(ok, () => {
+      g.save.data.flags.stridesNotice = true;
+      g.saveSoon();
+      layer.remove();
+    });
+    this.screen.appendChild(layer);
   }
+
   _tabCounts() {
-    const c = {};
-    for (const o of this.game.missions.offers) if (o.isNew) c[this._offerTab(o)] = (c[this._offerTab(o)] || 0) + 1;
-    c.missions = this.game.missions.offers.filter((o) => o.isNew).length;
-    return c;
+    const offers = this.game.missions.offers.filter((o) => o.isNew && isStridesOffer(o));
+    return { missions: offers.length, recruter: this.game.missions.hirePicker ? 1 : 0 };
   }
 
   _head(title, sub, right) {
@@ -239,85 +253,207 @@ export class Phone {
       h('div.acts', {}, gps, ab));
   }
 
-  _tabTransport() {
+  // Recruter (« Je cherche un professionnel ») : besoin, profils comparables, confirmation avec débit unique.
+  _tabRecruit() {
     const g = this.game;
-    const offers = g.missions.offers.filter((o) => o.vertical === 'TRANSPORT');
-    const body = h('div.app-body.scrollable');
-    const active = this._activeCard();
-    if (active && g.missions.active.offer.vertical === 'TRANSPORT') body.append(h('div.section-t', { text: 'Mission en cours' }), h('div.cards', {}, active));
-    body.appendChild(h('div.section-t', { text: 'Missions de transport' }));
-    if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
-    else body.appendChild(h('div.empty', { text: g.save.data.completed.includes('transport') || g.levelInfo().level >= 2 ? 'Pas de transport à effectuer pour l’instant.' : 'Débloqué au palier « Professionnel apprécié ».' }));
-    // Réserver un transport = voyage rapide.
-    body.appendChild(h('div.section-t', { text: 'Réserver un transporteur' }));
+    const d = g.save.data;
+    const pick = g.missions.hirePicker;
+    const body = h('div.app-body.scrollable.st-home');
+    body.append(h('div.st-eyebrow', { text: 'Je cherche un professionnel' }), h('div.st-h1', { text: pick ? 'Votre besoin\ndu jour.' : 'Recruter\nun professionnel.' }));
+    if (pick) {
+      body.append(
+        h('div.st-card', {}, h('div.st-eyebrow', { text: 'Besoin' }), h('div.st-body.mt4', { text: pick.need })),
+        h('div.st-eyebrow.sec', { text: `${pick.profiles.length} profils disponibles` })
+      );
+      for (const p of pick.profiles) {
+        const see = h('button.btn.small.primary', { text: 'Voir le profil', 'data-hire': p.id });
+        tap(see, () => this._hireSheet(p));
+        body.appendChild(h('div.st-card.hire-card', {},
+          h('div.req-row', {}, h('div.st-av', { text: p.initials }), h('div.req-col', {},
+            h('div.req-name', { text: p.name }),
+            h('div.req-cap', { text: `${p.job} · ★ ${dec(p.rating)} · ${p.reviews} avis` }),
+            h('div.req-cap', { text: `${p.offer} · ${p.avail}` }))),
+          h('div.req-foot', {}, h('span.acts', {}, see), h('span.req-amount', { text: `${p.price} €` }))));
+      }
+      const solo = h('button.btn.small', { text: 'Je m’organise seul·e', 'data-hire': 'solo' });
+      tap(solo, () => {
+        this.close();
+        pick.onSolo();
+      });
+      body.appendChild(h('div.st-card', {}, h('div.st-body.b', { text: 'Solution autonome' }), h('div.req-cap.mt4', { text: 'Préparation rapide, reconnaissance partielle du parcours, accueil du cheval : aucun débit.' }), h('div.mt8', {}, solo)));
+      body.appendChild(h('div.req-cap.mt8', { text: `Solde : ${formatMoney(d.money)} · profils et sommes fictifs, aucun paiement réel.` }));
+    } else {
+      body.appendChild(h('div.st-card.empty-st', {}, h('div.st-body', { text: 'Aucun besoin en cours.' }), h('div.req-cap', { text: 'Quand l’écurie manque de bras, c’est ici que tu recrutes un groom ou un chauffeur.' })));
+    }
+    // Équipe déjà recrutée (prestations fictives réalisées).
+    const team = Object.entries(d.hired || {}).filter(([, v]) => v && v !== 'solo');
+    if (team.length) {
+      body.appendChild(h('div.st-eyebrow.sec', { text: 'Prestations réalisées' }));
+      for (const [k, v] of team) body.appendChild(h('div.kv', {}, h('span', { text: v === 'lea' ? 'Léa Morel · groom' : 'Inès Ferrand · groom' }), h('b', { text: k === 'm2' ? 'Renfort avant le concours' : k })));
+    }
+    // Chauffeur : trajet immédiat avec ton cheval (voyage rapide du jeu).
+    body.appendChild(h('div.st-eyebrow.sec', { text: 'Chauffeur · trajet avec ton cheval' }));
     const dests = STABLES.map((s) => s).concat([{ id: 'town', name: 'Deauvelle — centre', place: { x: 20, z: -240 } }, { id: 'beach', name: 'Plage de Deauvelle', place: { x: 60, z: -385 } }]);
-    const list = h('div.cards');
     for (const s of dests) {
-      const d = g.distanceTo(s.place);
-      const price = Math.round(15 + d / 25);
+      const dist = g.distanceTo(s.place);
+      const price = Math.round(15 + dist / 25);
       const btn = h('button.btn.small.primary', { text: `Réserver · ${price} €` });
       tap(btn, () => {
         if (g.missions.active) return g.hud.toast('Termine ta mission en cours d’abord.');
         if (g.player.mode === 'drive') return g.hud.toast('Sors du camion d’abord.');
-        if (g.save.data.money < price) return g.hud.toast('Solde insuffisant.');
+        if (d.money < price) return g.hud.toast('Solde insuffisant.');
         this.close();
         g.fastTravel(s.place, price, s.name);
       });
-      list.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: 'Normandie Horse Transport' }), h('span.verified', { html: `${icon('check')}Vérifié` })), h('div.title', { text: s.name }), h('div.meta', { text: `${dec(d / 1000)} km · toi + ton cheval · suivi en temps réel` }), h('div.acts', {}, btn)));
+      body.appendChild(h('div.st-card', {}, h('div.req-row', {}, h('div.req-col', {}, h('div.req-name', { text: s.name }), h('div.req-cap', { text: `${dec(dist / 1000)} km · toi + ton cheval` }))), h('div.req-foot', {}, h('span.acts', {}, btn))));
     }
-    body.appendChild(list);
-    return [this._head('Transport', 'Transporteurs vérifiés · suivi en direct'), body];
+    body.appendChild(this.promo('recruter', 'pro'));
+    return [this._head('Recruter', 'Comparer des profils vérifiés, confirmer'), body];
   }
 
-  _tabEvents() {
+  // Fiche d'un profil : la confirmation (deux touchers) débite une seule fois ; quitter avant ne débite rien.
+  _hireSheet(p) {
     const g = this.game;
-    const offers = g.missions.offers.filter((o) => o.vertical === 'EVENEMENTS');
-    const body = h('div.app-body.scrollable');
-    const active = this._activeCard();
-    if (active && g.missions.active.offer.vertical === 'EVENEMENTS') body.append(h('div.section-t', { text: 'En cours' }), h('div.cards', {}, active));
-    body.appendChild(h('div.section-t', { text: 'Compétitions' }));
-    if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
-    else body.appendChild(h('div.empty', { text: 'Les engagements s’ouvrent avec ta réputation. Continue tes missions !' }));
-    // Entraînements libres.
-    body.appendChild(h('div.section-t', { text: 'Entraînements libres (chrono)' }));
-    const tr = h('div.cards');
-    for (const a of g.activities.list()) {
-      const best = g.save.data.bestTimes[a.id];
-      const btn = h('button.btn.small.primary', { text: 'Itinéraire' });
-      tap(btn, () => {
-        g.gps.set(a.start, a.name);
+    const pick = g.missions.hirePicker;
+    if (!pick) return;
+    const afford = g.save.data.money >= p.price;
+    const cancel = h('button.btn', { text: 'Retour' });
+    const ok = h(`button.btn${afford ? '.primary' : ''}`, { text: afford ? `Confirmer · ${p.price} €` : 'Solde insuffisant', 'data-id': 'confirm-hire' });
+    const layer = h('div.sheet-layer', {}, h('div.sheet', {}, h('div.handle'),
+      h('div.sheet-body.scrollable', {},
+        h('div.st-h2', { text: p.name }),
+        h('div.req-cap.mt4', { text: `${p.job} · ★ ${dec(p.rating)} · ${p.reviews} avis · ${p.avail}` }),
+        h('div.st-body.mt8', { text: p.bio }),
+        h('div.kv-st.mt8', {}, h('span.req-cap', { text: 'Prestation' }), h('span.st-body', { text: p.offer })),
+        h('div.kv-st', {}, h('span.req-cap', { text: 'Montant' }), h('span.st-body', { text: `${p.price} € (débité à la confirmation)` })),
+        h('div.req-cap.mt8', { text: afford ? 'Profil et somme fictifs : aucun paiement réel.' : 'Solde insuffisant : tu peux revenir en arrière et t’organiser seul·e.' })),
+      h('div.sheet-foot', {}, h('div.sheet-actions', {}, cancel, ok))));
+    const close = () => {
+      this._reqBusy = false;
+      layer.remove();
+    };
+    let armed = 0;
+    tap(cancel, close);
+    tap(ok, () => {
+      if (!afford) return appToast(this, 'Solde insuffisant', 'Choisis « Je m’organise seul·e » ou un autre profil.', 'error');
+      if (!armed) {
+        armed = performance.now();
+        ok.textContent = `Confirmer le débit de ${p.price} € ?`;
+        return;
+      }
+      if (performance.now() - armed < 350) return;
+      const res = g.hire(`hire:${pick.mission}`, p.price);
+      if (res === 'error') {
+        close();
+        return appToast(this, 'Échec technique', 'Rien n’a été débité. Réessaie.', 'error');
+      }
+      if (res === 'funds') {
+        close();
+        return appToast(this, 'Solde insuffisant', 'Rien n’a été débité.', 'error');
+      }
+      close();
+      appToast(this, 'Prestation confirmée', `${p.name} · ${p.price} € débités une seule fois.`);
+      setTimeout(() => {
         this.close();
-      });
-      tr.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: a.kind }), h('span.pay', { text: best ? formatTime(best) : '—' })), h('div.title', { text: a.name }), h('div.meta', { text: a.desc }), h('div.acts', {}, btn)));
-    }
-    body.appendChild(tr);
-    // Vente de chevaux.
-    body.appendChild(h('div.section-t', { text: 'Vente Élite · chevaux disponibles' }));
-    const sale = h('div.cards');
-    for (const hd of Object.values(HORSES)) {
-      if (!hd.price) continue;
-      const owned = g.save.data.horses.includes(hd.id);
-      const btn = h(`button.btn.small${owned ? '' : '.primary'}`, { text: owned ? 'Acquis' : `Acheter · ${formatMoney(hd.price)}` });
+        pick.onConfirm(p);
+      }, 900);
+    });
+    this._reqBusy = true;
+    this.screen.appendChild(layer);
+  }
+
+  _tabProfile() {
+    const g = this.game;
+    const d = g.save.data;
+    const lv = levelFor(d.reputation);
+    const rating = g.rating();
+    const body = h('div.app-body.scrollable');
+    const initials = d.playerName.slice(0, 2).toUpperCase();
+    body.append(
+      h('div.profile-head', {}, h('div.av', { text: initials }), h('div', {}, h('div.n', { text: d.playerName }), h('div.l', { text: `${lv.title} · ${rating ? `★ ${dec(rating)} · ${d.ratings.length} avis` : 'Pas encore d’avis'}` }))),
+      h('div', { style: { marginTop: '14px' } },
+        h('div.kv', {}, h('span', { text: 'Missions réalisées' }), h('b', { text: String(d.stats.jobs) })),
+        h('div.kv', {}, h('span', { text: 'Revenus (fictifs)' }), h('b', { text: formatMoney(d.stats.earned) })),
+        h('div.kv', {}, h('span', { text: 'Réputation' }), h('b', { text: `${d.reputation} pts${lv.next ? ` / ${lv.next.xp}` : ''}` })),
+        h('div.kv', {}, h('span', { text: 'Palier suivant' }), h('b', { text: lv.next ? lv.next.title : 'Palier maximum' }))
+      ),
+      h('div.section-t', { text: 'Compétences', style: { marginTop: '14px' } }),
+      this._skillBars()
+    );
+    body.appendChild(this.promo());
+    return [this._head('Profil', 'Ton profil professionnel (jeu)'), body];
+  }
+
+  _skillBars() {
+    const sk = this.game.save.data.skills;
+    return h('div.bars', {}, ...Object.entries(SKILL_LABEL).map(([k, label]) => h('div.bar-row', {}, h('span', { text: label }), h('div.bar', {}, h('i', { style: { width: `${Math.max(3, sk[k] || 0)}%` } })), h('span', { text: String(Math.floor(sk[k] || 0)) }))));
+  }
+
+  // Accès permanent et discret à la vraie application (libellé du dossier ; même page officielle).
+  promo(placement = 'phone', intent = 'discover') {
+    const btn = h('button.btn', { text: 'Découvrir la vraie application Strides', 'data-cta': 'download' });
+    tap(btn, () => this.game.openStrides(placement, intent));
+    return h('div.promo', {}, h('div', { style: { flex: 1 } }, h('div.t', { text: 'Cette app existe pour de vrai.' }), h('div.s', { text: 'Grooms, palefreniers, cavaliers, chauffeurs, enseignants : STRIDES met en relation les écuries et les pros du cheval.' })), btn);
+  }
+
+  // ---------- Mon écurie ----------
+  renderEcurie() {
+    const g = this.game;
+    const d = g.save.data;
+    const main = h('div.app-main');
+    main.appendChild(this._head('Mon écurie', `Écurie du Val · solde ${formatMoney(d.money)}`));
+    const body = h('div.app-body.scrollable');
+    body.appendChild(h('div.section-t', { text: 'Aménagements' }));
+    for (const u of STABLE_UPGRADES) {
+      const owned = d.upgrades.includes(u.id);
+      const locked = u.requires && !d.flags[u.requires];
+      const btn = h(`button.btn.small${owned || locked ? '' : '.primary'}`, { text: owned ? 'Installée' : locked ? 'Pas encore disponible' : `Construire · ${formatMoney(u.price)}`, 'data-upgrade': u.id });
+      let armed = 0;
       if (!owned)
         tap(btn, () => {
-          if (g.buyHorse(hd.id)) this.refresh();
+          if (locked) return g.hud.toast(u.lockedText);
+          if (d.money < u.price) return g.hud.toast('Solde insuffisant.');
+          if (!armed) {
+            armed = performance.now();
+            btn.textContent = `Confirmer · ${formatMoney(u.price)}`;
+            return;
+          }
+          if (performance.now() - armed < 350) return;
+          if (g.buyStableUpgrade(u.id)) this.refresh();
         });
-      sale.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: `${hd.breed} · ${hd.age} ans` }), h('span.pay', { text: formatMoney(hd.price) })), h('div.title', { text: hd.name }), h('div.meta', { text: hd.desc }), this._horseBars(hd), h('div.acts', {}, btn)));
+      body.appendChild(h(`div.mcard${owned ? '.active' : ''}`, {}, h('div.top', {}, h('span.chip', { text: owned ? 'Au Val' : locked ? 'Après le premier concours' : 'Disponible' }), h('span.pay', { text: formatMoney(u.price) })), h('div.title', { text: u.name }), h('div.meta', { text: locked ? u.lockedText : u.desc }), h('div.acts', {}, btn)));
     }
-    body.appendChild(sale);
-    return [this._head('Événements', 'Concours · Courses · Ventes'), body];
+    body.appendChild(h('div.section-t', { text: 'Équipe', style: { marginTop: '14px' } }));
+    const rel = d.relations || {};
+    const member = (name, role, note) => h('div.kv', {}, h('span', { text: `${name} · ${role}` }), h('b', { text: note }));
+    body.appendChild(member('Camille Martin', 'responsable du Val', 'Toujours là'));
+    if (rel.lea?.met) body.appendChild(member('Léa Morel', 'groom', rel.lea.missions ? `${rel.lea.missions} prestation${rel.lea.missions > 1 ? 's' : ''}` : 'Contact'));
+    if (d.hired?.m2 === 'ines') body.appendChild(member('Inès Ferrand', 'groom freelance', '1 prestation'));
+    body.appendChild(h('div.section-t', { text: 'Compétences', style: { marginTop: '14px' } }));
+    body.appendChild(this._skillBars());
+    body.appendChild(h('div.section-t', { text: 'Matériel', style: { marginTop: '14px' } }));
+    const shop = h('button.btn.small.primary', { text: 'Sellerie du Port : équipement', 'data-id': 'open-shop' });
+    tap(shop, () => this.show('shop'));
+    body.appendChild(shop);
+    main.appendChild(body);
+    return h('div.app', {}, main);
   }
 
-  _tabStables() {
+  // ---------- Guide local (fonction du jeu, hors Strides) ----------
+  renderGuide(opts = {}) {
     const g = this.game;
-    const offers = g.missions.offers.filter((o) => o.vertical === 'ECURIES');
-    const body = h('div.app-body.scrollable');
-    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
     const pick = g.missions.stablePicker;
-    body.appendChild(h('div.section-t', { text: pick ? pick.prompt : 'Écuries à proximité' }));
+    const main = h('div.app-main');
+    main.appendChild(this._head('Guide local', 'Pensions et santé · fictif, hors Strides'));
+    const body = h('div.app-body.scrollable');
+    const offers = g.missions.offers.filter((o) => o.vertical === 'ANNUAIRE' || o.vertical === 'ECURIES');
+    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
+    for (const o of offers) o.isNew = false;
+    g.missions.updateBadge();
+    body.appendChild(h('div.section-t', { text: pick ? pick.prompt : 'Pensions à proximité', 'data-sec': 'pensions' }));
     const list = h('div.cards');
     for (const s of STABLES) {
-      const d = g.distanceTo(s.place);
+      const dist = g.distanceTo(s.place);
       const gps = h('button.btn.small', { text: 'Itinéraire' });
       tap(gps, () => {
         g.gps.set(s.place, s.name);
@@ -335,24 +471,16 @@ export class Phone {
       list.appendChild(h('div.mcard', {},
         h('div.top', {}, h('span.chip', { text: `${s.price} € / mois` }), h('span.client', {}, h('span.rating', { text: `★ ${dec(s.rating)}` }))),
         h('div.title', { text: s.name }),
-        h('div.meta', { text: `${dec(d / 1000)} km · ${s.desc}` }),
+        h('div.meta', { text: `${dec(dist / 1000)} km · ${s.desc}` }),
         h('div.meta', { text: s.services.join(' · ') }),
         acts));
     }
     body.appendChild(list);
-    return [this._head('Écuries', 'Pensions et structures vérifiées'), body];
-  }
-
-  _tabPros() {
-    const g = this.game;
-    const offers = g.missions.offers.filter((o) => o.vertical === 'ANNUAIRE');
-    const body = h('div.app-body.scrollable');
-    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
-    body.appendChild(h('div.section-t', { text: 'Professionnels vérifiés près de vous' }));
-    const list = h('div.cards');
+    body.appendChild(h('div.section-t', { text: 'Santé et soins', style: { marginTop: '14px' }, 'data-sec': 'sante' }));
+    const pros = h('div.cards');
     for (const p of PROS) {
-      const d = g.distanceTo(p.place);
-      const call = h('button.btn.small.primary', { text: 'Contacter', 'data-pro': p.id });
+      const dist = g.distanceTo(p.place);
+      const call = h('button.btn.small.primary', { text: 'Appeler', 'data-pro': p.id });
       tap(call, () => {
         this.close();
         g.contactPro(p);
@@ -362,40 +490,17 @@ export class Phone {
         g.gps.set(p.place, p.name);
         this.close();
       });
-      list.appendChild(h('div.mcard', {},
-        h('div.top', {}, h('span.chip', { text: p.job }), h('span.verified', { html: `${icon('check')}Vérifié` })),
-        h('div.client', {}, h('div.av', { text: p.initials }), h('span', { text: p.name }), h('span.rating', { text: `★ ${dec(p.rating)}` }), h('span.meta', { text: `· ${p.reviews} avis` })),
-        h('div.meta', { text: `${dec(d / 1000)} km · ${p.avail}` }),
+      pros.appendChild(h('div.mcard', {},
+        h('div.top', {}, h('span.chip', { text: p.job })),
+        h('div.client', {}, h('div.av', { text: p.initials }), h('span', { text: p.name }), h('span.rating', { text: `★ ${dec(p.rating)}` })),
+        h('div.meta', { text: `${dec(dist / 1000)} km · ${p.avail}` }),
         h('div.acts', {}, gps, call)));
     }
-    body.appendChild(list);
-    return [this._head('Annuaire', 'Maréchaux, vétérinaires, ostéos, transporteurs…'), body];
-  }
-
-  _tabProfile() {
-    const g = this.game;
-    const d = g.save.data;
-    const lv = levelFor(d.reputation);
-    const rating = g.rating();
-    const body = h('div.app-body.scrollable');
-    const initials = d.playerName.slice(0, 2).toUpperCase();
-    body.append(
-      h('div.profile-head', {}, h('div.av', { text: initials }), h('div', {}, h('div.n', { text: d.playerName }), h('div.l', { text: `${lv.title} · ${rating ? `★ ${dec(rating)} · ${d.ratings.length} avis` : 'Pas encore d’avis'}` }), lv.level >= 3 ? h('span.verified', { html: `${icon('check')}Profil vérifié`, style: { marginTop: '6px' } }) : null)),
-      h('div', { style: { marginTop: '14px' } },
-        h('div.kv', {}, h('span', { text: 'Missions réalisées' }), h('b', { text: String(d.stats.jobs) })),
-        h('div.kv', {}, h('span', { text: 'Revenus via Strides' }), h('b', { text: formatMoney(d.stats.earned) })),
-        h('div.kv', {}, h('span', { text: 'Réputation' }), h('b', { text: `${d.reputation} pts${lv.next ? ` / ${lv.next.xp}` : ''}` })),
-        h('div.kv', {}, h('span', { text: 'Palier suivant' }), h('b', { text: lv.next ? lv.next.title : 'Palier maximum' }))
-      )
-    );
-    body.appendChild(this.promo());
-    return [this._head('Profil', 'Ton profil professionnel Strides'), body];
-  }
-
-  promo() {
-    const btn = h('button.btn', { text: 'Découvrir la vraie application Strides', 'data-cta': 'download' });
-    tap(btn, () => this.game.openStrides('phone', 'discover'));
-    return h('div.promo', {}, h('div', { style: { flex: 1 } }, h('div.t', { text: 'Cette app existe pour de vrai.' }), h('div.s', { text: 'Jobs, écuries, transport, événements, annuaire : STRIDES réunit les pros du cheval.' })), btn);
+    body.appendChild(pros);
+    body.appendChild(h('div.irl', { text: 'Guide fictif du jeu : pensions, vétérinaires et maréchaux ne sont pas des services de l’application Strides.' }));
+    main.appendChild(body);
+    if (opts.section) requestAnimationFrame(() => body.querySelector(`[data-sec="${opts.section}"]`)?.scrollIntoView());
+    return h('div.app', {}, main);
   }
 
   // ---------- Carte ----------
@@ -516,7 +621,7 @@ export class Phone {
       g.saveSoon();
       const back = h('button.back', { html: icon('back') });
       tap(back, () => this.show('messages'));
-      main.append(h('div.app-head', {}, back, h('div', {}, h('h3', { text: opts.conv }), h('div.sub', { text: 'via Strides' }))));
+      main.append(h('div.app-head', {}, back, h('div', {}, h('h3', { text: opts.conv }), h('div.sub', { text: 'Messages (fictifs)' }))));
       const body = h('div.app-body.scrollable', {}, h('div.bubbles', {}, ...list.map((m) => h(`div.bubble${m.me ? '.me' : ''}`, { text: m.text }))));
       main.appendChild(body);
       requestAnimationFrame(() => (body.scrollTop = body.scrollHeight));
@@ -578,9 +683,20 @@ export class Phone {
     const owned = SHOP.filter((s) => d.upgrades.includes(s.id));
     if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauvelle.' }));
     for (const s of owned) body.appendChild(h('div.kv', {}, h('span', { text: s.name }), h('b', { text: s.desc })));
-    const sale = h('button.btn.small.primary', { text: 'Vente Élite : voir les chevaux', style: { marginTop: '12px', marginRight: '8px' } });
-    tap(sale, () => this.show('strides', { tab: 'evenements' }));
-    body.appendChild(sale);
+    // Chevaux à vendre : élevage local fictif (hors Strides).
+    body.appendChild(h('div.section-t', { text: 'Chevaux à vendre · élevage local (fictif)', style: { marginTop: '14px' } }));
+    const forSale = h('div.cards');
+    for (const hd of Object.values(HORSES)) {
+      if (!hd.price) continue;
+      const own = d.horses.includes(hd.id);
+      const buy = h(`button.btn.small${own ? '' : '.primary'}`, { text: own ? 'Acquis' : `Acheter · ${formatMoney(hd.price)}` });
+      if (!own)
+        tap(buy, () => {
+          if (g.buyHorse(hd.id)) this.refresh();
+        });
+      forSale.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: `${hd.breed} · ${hd.age} ans` }), h('span.pay', { text: formatMoney(hd.price) })), h('div.title', { text: hd.name }), h('div.meta', { text: hd.desc }), this._horseBars(hd), h('div.acts', {}, buy)));
+    }
+    body.appendChild(forSale);
     const call = h('button.btn.small', { text: 'Siffler mon cheval', style: { marginTop: '12px' } });
     tap(call, () => {
       this.close();
@@ -732,7 +848,7 @@ export class Phone {
         });
       body.appendChild(h('div.shop-item', {}, h('div', { style: { flex: 1 } }, h('div.n', { text: s.name }), h('div.d', { text: `${s.desc}${locked ? ' · nécessite la selle mixte' : ''}` })), btn));
     }
-    body.appendChild(h('div.irl', { html: `<b>Sur Strides</b>, retrouvez les selliers et les pros de l’équipement près de chez vous, avec avis vérifiés.` }));
+    body.appendChild(h('div.irl', { text: 'Boutique fictive du jeu : l’équipement n’est pas vendu sur Strides.' }));
     main.appendChild(body);
     return h('div.app', {}, main);
   }

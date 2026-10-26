@@ -18,6 +18,10 @@ const JOB_OF = {
   Transport: 'chauffeur', Cross: 'cavalierMaison', Recherche: 'groomMaison', Course: 'cavalierEntrainement', CSO: 'groomConcours', 'Grand Prix': 'cavalierMaison',
 };
 export const jobOf = (o) => JOBS[JOB_OF[o.category]] || JOBS.groomMaison;
+// Demandes qui relèvent de la vraie application (missions de professionnels du cheval). Concours (app Activités) et
+// Guide local (pensions, santé) sont des fonctions du jeu, présentées hors de Strides.
+export const isStridesOffer = (o) => o.vertical === 'JOBS' || o.vertical === 'TRANSPORT';
+const homeOf = (o) => (isStridesOffer(o) ? ['strides', { tab: 'missions' }] : o.vertical === 'EVENEMENTS' ? ['activities', {}] : ['guide', {}]);
 
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -39,6 +43,7 @@ export function stars(rating) {
 
 function statusOf(o) {
   if (o.locked) return ['VERROUILLÉE', 'inactive'];
+  if (o.resume) return ['À REPRENDRE', 'top'];
   if (o.counter) return ['EN NÉGOCIATION', 'new'];
   if (o.counterAccepted) return ['PROPOSITION ACCEPTÉE', 'verified'];
   return ['EN ATTENTE', 'pending'];
@@ -48,7 +53,7 @@ function statusOf(o) {
 export function requestCard(phone, o) {
   const c = o.client || { name: 'Client' };
   const job = jobOf(o);
-  const [st, v] = !o.opened && !o.locked && !o.counter && !o.counterAccepted ? ['NOUVEAU', 'new'] : statusOf(o);
+  const [st, v] = !o.opened && !o.resume && !o.locked && !o.counter && !o.counterAccepted ? ['NOUVEAU', 'new'] : statusOf(o);
   const card = h('button.req-card', { 'data-offer': o.id },
     h('div.req-row', {},
       h('div.st-av', { text: initialsOf(c) }),
@@ -94,13 +99,13 @@ export function renderProHome(phone) {
         h('div.st-small', { text: g.missions.objectiveText() || '' }),
         h('div.req-foot', {}, h('span.acts', {}, gps, ab), h('span.req-amount', { text: m.offer.pay ? `~${m.offer.pay} €` : '—' }))));
   }
-  const offers = g.missions.offers;
+  const offers = g.missions.offers.filter(isStridesOffer);
   body.appendChild(h('div.st-eyebrow.sec', { text: `Demandes entrantes · ${offers.filter((o) => !o.locked).length}` }));
   if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(phone, o))));
   else body.appendChild(h('div.st-card.empty-st', {}, h('div.st-body', { text: 'Aucune demande en attente.' }), h('div.req-cap', { text: 'Les demandes de vos clients arriveront ici.' })));
   body.append(
     h('div.st-eyebrow.sec', { text: 'Revenus' }),
-    h('div.st-card.revenue', {}, h('div.req-row', {}, h('div.req-col', {}, h('div.st-body', { text: 'Revenus via Strides' }), h('div.req-cap', { text: `${d.stats.jobs} mission${d.stats.jobs > 1 ? 's' : ''} réalisée${d.stats.jobs > 1 ? 's' : ''} · paiement garanti et sécurisé` })), h('span.req-amount', { text: formatMoney(d.stats.earned) }))),
+    h('div.st-card.revenue', {}, h('div.req-row', {}, h('div.req-col', {}, h('div.st-body', { text: 'Revenus via Strides' }), h('div.req-cap', { text: `${d.stats.jobs} mission${d.stats.jobs > 1 ? 's' : ''} réalisée${d.stats.jobs > 1 ? 's' : ''} · montants fictifs` })), h('span.req-amount', { text: formatMoney(d.stats.earned) }))),
     phone.promo()
   );
   return [phone._head('Demandes reçues', 'Missions proposées par les écuries et cavaliers'), body];
@@ -162,13 +167,14 @@ export function renderRequest(phone, opts = {}) {
   phone.requestId = opts.id;
   phone._reqBusy = false;
   const back = h('button.st-back', { html: ion('chevron-back'), 'aria-label': 'Retour' });
-  tap(back, () => phone.show('strides', { tab: 'missions' }));
-  const top = h('div.st-topbar', {}, back, h('div.st-h2', { text: 'Demande reçue' }), h('span.st-spacer'));
+  const home = o ? homeOf(o) : ['strides', { tab: 'missions' }];
+  tap(back, () => phone.show(...home));
+  const top = h('div.st-topbar', {}, back, h('div.st-h2', { text: !o || isStridesOffer(o) ? 'Demande reçue' : o.vertical === 'EVENEMENTS' ? 'Engagement' : 'Demande' }), h('span.st-spacer'));
   const main = h('div.app-main.st-request');
   main.appendChild(top);
   if (!o) {
     const ret = h('button.btn.small', { text: 'Retour' });
-    tap(ret, () => phone.show('strides', { tab: 'missions' }));
+    tap(ret, () => phone.show(...home));
     main.appendChild(h('div.app-body.scrollable', {}, h('div.st-frame', {}, h('div.st-body', { text: 'Demande introuvable.' }), h('div', { style: { marginTop: '12px' } }, ret))));
     return h('div.app.full', {}, main);
   }
@@ -219,7 +225,9 @@ export function renderRequest(phone, opts = {}) {
   if (o.counterAccepted) frame.appendChild(h('div.st-card.ok-card.mtS', {}, h('span.ic', { html: ion('checkmark-circle') }), h('div', {}, h('div.st-body.b', { text: 'Le client a accepté votre contre-proposition' }), h('div.req-cap', { text: `Nouveau montant : ${o.pay} €. Acceptez la mission pour réserver les créneaux.` }))));
   frame.append(
     h('div.st-section', { text: 'Montant' }),
-    h('div.st-card.amount-card', {}, h('span.st-body', { text: 'Total estimé' }), h('span.st-amount', { text: o.pay ? `~${o.pay} €` : o.payLabel || '—' })),
+    h('div.st-card.amount-card', {}, h('span.st-body', { text: 'Total estimé' }), h('span.st-amount', { text: o.pay ? `~${o.pay} €` : o.payLabel || '—' })));
+  if (!isStridesOffer(o)) frame.appendChild(h('div.req-cap.mt8', { text: o.vertical === 'EVENEMENTS' ? 'Compétition fictive du jeu : les engagements ne passent pas par Strides.' : 'Demande fictive du jeu (Guide local), hors Strides.' }));
+  else frame.append(
     h('div.st-card.conditions', {},
       h('div.st-eyebrow', { text: 'Conditions du prestataire' }),
       cond('navigate-outline', 'Distance de la mission', 'À vol d’oiseau depuis votre position', `~${km} km`),
@@ -332,7 +340,7 @@ function openRefuse(phone, o) {
   tap(ok, () => {
     close();
     g.missions.refuse(o.id, { quiet: true });
-    phone.show('strides', { tab: 'missions' });
+    phone.show(...homeOf(o));
     appToast(phone, 'Demande refusée', 'Le client en sera informé.');
   });
 }
