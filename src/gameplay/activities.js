@@ -80,6 +80,9 @@ export class Activities {
   start(a) {
     const g = this.game;
     const best = g.save.data.bestTimes[a.id];
+    // Mesure : activité lancée après au moins une mission terminée (événement unique par partie).
+    const d = g.save.data;
+    if (d.completed.length || d.stats.jobs) g.metrics?.track('second_activity_started', { course: a.kind === 'CSO' ? 'cso' : a.kind === 'Cross' ? 'xc' : 'galop' });
     const def = {
       id: a.id, vertical: 'EVENEMENTS', category: 'Entraînement', title: a.name, desc: a.desc, client: null, place: a.start, placeName: a.name,
       pay: 0, xp: 15, noReview: true, noCount: true,

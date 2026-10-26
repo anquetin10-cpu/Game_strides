@@ -199,7 +199,18 @@ export class Obstacles {
   }
 
   ofCourse(id) {
-    return this.list.filter((o) => o.course === id).sort((a, b) => a.num - b.num);
+    return this.list.filter((o) => o.course === id && !o.off).sort((a, b) => a.num - b.num);
+  }
+
+  // Retire de la piste (affichage et collisions) les obstacles `nums` d'un parcours ; les autres y reviennent.
+  // Sert au défi rejouable (parcours réduit) ; setOff(courseId, []) rétablit le tracé complet.
+  setOff(courseId, nums = []) {
+    for (const o of this.list) {
+      if (o.course !== courseId) continue;
+      o.off = nums.includes(o.num);
+      if (o.off) o.group.parent?.remove(o.group);
+      else if (!o.group.parent) this.group.add(o.group);
+    }
   }
 
   setHeights(courseId, heights) {
@@ -264,6 +275,7 @@ export class Obstacles {
     let best = null;
     let bestD = 18;
     for (const o of this.list) {
+      if (o.off) continue;
       const dx = o.x - horse.pos.x, dz = o.z - horse.pos.z;
       const d = Math.hypot(dx, dz);
       if (d > bestD) continue;
@@ -298,7 +310,7 @@ export class Obstacles {
     }
     const airborne = horse.jumpT >= 0;
     for (const o of this.list) {
-      if (Math.abs(o.x - px) > 12 || Math.abs(o.z - pz) > 12) continue;
+      if (o.off || Math.abs(o.x - px) > 12 || Math.abs(o.z - pz) > 12) continue;
       const a = this._localS(o, ppx, ppz);
       const b = this._localS(o, px, pz);
       const half = o.w / 2 + 0.35;
@@ -373,7 +385,7 @@ export class Obstacles {
   // Piéton : les obstacles sont des murets.
   blockHuman(human) {
     for (const o of this.list) {
-      if (Math.abs(o.x - human.pos.x) > 6 || Math.abs(o.z - human.pos.z) > 6) continue;
+      if (o.off || Math.abs(o.x - human.pos.x) > 6 || Math.abs(o.z - human.pos.z) > 6) continue;
       const { s, u } = this._localS(o, human.pos.x, human.pos.z);
       const hd = o.depth / 2 + 0.35;
       if (Math.abs(u) < o.w / 2 + 0.2 && Math.abs(s) < hd) {

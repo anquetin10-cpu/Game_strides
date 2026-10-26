@@ -11,6 +11,7 @@ import { WORLD } from '../world/layout.js';
 import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm } from '../world/weather.js';
 import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard, appToast, isStridesOffer } from './requests.js';
+import { renderActivities } from './activities-app.js';
 
 export class Phone {
   constructor(game, root) {
@@ -109,6 +110,7 @@ export class Phone {
       ecurie: () => this.renderEcurie(),
       guide: () => this.renderGuide(opts),
       weather: () => this.renderWeather(),
+      activities: () => renderActivities(this, opts),
     }[app];
     this.screen.appendChild(fn ? fn() : this.renderHome());
     if (scroll) {
@@ -158,6 +160,7 @@ export class Phone {
         appIcon('messages', 'Messages', 'message', '', unread),
         appIcon('stable', 'Mes chevaux', 'horse'),
         appIcon('ecurie', 'Mon écurie', 'home'),
+        appIcon('activities', 'Activités', 'event', '', g.missions.offers.filter((o) => o.isNew && o.vertical === 'EVENEMENTS').length),
         appIcon('guide', 'Guide local', 'directory', '', g.missions.offers.filter((o) => o.isNew && (o.vertical === 'ANNUAIRE' || o.vertical === 'ECURIES')).length),
         appIcon('trophies', 'Trophées', 'trophy'),
         appIcon('weather', 'Météo', 'weather'),

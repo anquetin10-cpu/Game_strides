@@ -24,6 +24,7 @@ import { MissionManager } from './gameplay/missions.js';
 import { Ambient } from './gameplay/npcs.js';
 import { Collectibles } from './gameplay/collectibles.js';
 import { Activities } from './gameplay/activities.js';
+import { Challenges } from './gameplay/challengeRun.js';
 import { HORSES, SHOP, FIRST_NAMES } from './gameplay/data.js';
 import { HUD } from './ui/hud.js';
 import { Phone } from './ui/phone.js';
@@ -149,6 +150,7 @@ export class Game {
     await new Promise((r) => setTimeout(r, 0));
     this.collectibles = new Collectibles(this);
     this.activities = new Activities(this);
+    this.challenge = new Challenges(this);
     this.mapImage = buildMapImage(this.world);
     this.hud.minimap.setImage(this.mapImage);
     this._worldInteractions();
@@ -976,7 +978,9 @@ export class Game {
 
   // ---------- Boucle ----------
   frame(now) {
-    const dt = Math.min(0.05, (now - this.last) / 1000 || 0.016);
+    // Jamais de pas négatif : l'horodatage de la première image peut précéder `last` (démarrage, retour au premier
+    // plan) et faisait reculer l'heure du monde.
+    const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000) || 0.016);
     this.last = now;
     try {
       if (this.state === 'play' || this.state === 'photo') this.update(dt);
