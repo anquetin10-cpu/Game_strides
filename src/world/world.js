@@ -715,7 +715,8 @@ export class World {
     this.colliders.addCircle(P.x, P.z, 5.4, py + 0.7, 'fountain');
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2;
-      this.tree('birch', P.x + Math.cos(a) * 18, P.z + Math.sin(a) * 18, 0.9);
+      // Place de la ville : alignement d'arbres d'ombrage au houppier dense (les bouleaux, clairsemés, restent en lisière).
+      this.tree('beech', P.x + Math.cos(a) * 18, P.z + Math.sin(a) * 18, 0.75);
     }
     const bench = benchGeo();
     for (let i = 0; i < 6; i++) {

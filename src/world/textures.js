@@ -397,7 +397,7 @@ export function truckTexture(scale = 1) {
     ctx.textAlign = 'center';
     ctx.globalAlpha = 0.85;
     ctx.font = `500 44px ${FONT_MONO}`;
-    ctx.fillText('JOBS · ÉCURIES · TRANSPORT · ÉVÉNEMENTS', x + w / 2, y + h / 2 + 15);
+    ctx.fillText('GROOMS · CAVALIERS · CHAUFFEURS · ENSEIGNANTS', x + w / 2, y + h / 2 + 15);
     ctx.globalAlpha = 1;
   }
   const map = toTexture(cv);
