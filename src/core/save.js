@@ -39,6 +39,9 @@ export function defaultSave() {
     // Point de reprise de la mission en cours (missions à étapes) ; null sinon.
     checkpoint: null,
     metrics: { unique: {} },
+    // Défis rejouables (lot C) : record personnel et dernier résultat par version de défi, pseudonyme facultatif
+    // de la carte de résultat ; `resume` = monde du joueur à rétablir si la page est rechargée pendant un défi.
+    challenges: { records: {}, last: null, pseudo: '', resume: null },
     meta: { savedAt: 0, build: BUILD },
   };
 }

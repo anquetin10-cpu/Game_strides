@@ -160,6 +160,8 @@ export class Screens {
 
   // ---------- Résultat de mission ----------
   missionResult(r, onClose) {
+    // Écran de résultat propre à l'activité (défi rejouable : Recommencer, carte de résultat).
+    if (r.custom) return r.custom(onClose);
     const g = this.game;
     const extra = [];
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));

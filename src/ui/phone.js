@@ -10,6 +10,7 @@ import { WORLD } from '../world/layout.js';
 import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm } from '../world/weather.js';
 import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard } from './requests.js';
+import { renderActivities } from './activities-app.js';
 
 const VERTICAL_LABEL = { JOBS: 'Jobs', TRANSPORT: 'Transport', EVENEMENTS: 'Événements', ANNUAIRE: 'Annuaire', ECURIES: 'Écuries' };
 
@@ -108,6 +109,7 @@ export class Phone {
       settings: () => this.renderSettings(),
       shop: () => this.renderShop(),
       weather: () => this.renderWeather(),
+      activities: () => renderActivities(this, opts),
     }[app];
     this.screen.appendChild(fn ? fn() : this.renderHome());
     if (scroll) {
@@ -157,6 +159,7 @@ export class Phone {
         appIcon('map', 'Carte', 'map'),
         appIcon('messages', 'Messages', 'message', '', unread),
         appIcon('stable', 'Chevaux', 'horse'),
+        appIcon('activities', 'Activités', 'event', '', g.missions.offers.filter((o) => o.isNew && o.vertical === 'EVENEMENTS').length),
         appIcon('trophies', 'Trophées', 'trophy'),
         appIcon('weather', 'Météo', 'weather'),
         photo,
