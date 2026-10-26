@@ -43,6 +43,7 @@ export class Horse {
     this.mods = { speed: 0, jump: 0, stamina: 0, clearance: 0 };
     this.lastBump = 0;
     this.lastTurn = 0;
+    this._brake = 0; // décélération d'un refus en cours (m/s²)
     this.visibleDist = 260;
     // Physiologie (fréquence cardiaque, énergie, sueur, besoins) : voir gameplay/condition.js.
     this.cond = new HorseCondition(this, opts.cond);
@@ -76,6 +77,8 @@ export class Horse {
     this.speed = 0;
     this.jumpT = -1;
     this.jumpY = 0;
+    this._brake = 0;
+    this._refusing = null;
     this.snapToGround();
   }
 
@@ -94,11 +97,37 @@ export class Horse {
   startJump() {
     if (this.jumpT >= 0 || this.speed < HORSE.minJumpSpeed) return false;
     const k = 0.72 + 0.28 * smoothstep(4, 8.5, this.speed);
-    this.jumpPeak = this.jumpPower * k;
+    const peak = this.jumpPower * k;
+    // Clôture, haie, mur… sur la trajectoire que ce saut ne franchirait pas (appel trop tôt ou trop tard) : le cheval
+    // n'enlève pas et s'arrête devant (refus), au lieu de rester suspendu dans la barrière puis de la traverser.
+    const block = this._jumpBlocked(peak);
+    if (block >= 0) {
+      this.brake(block - 1.45);
+      return false;
+    }
+    this.jumpPeak = peak;
     this.jumpT = 0;
+    this._brake = 0; // appel tardif pendant un refus : le saut l'emporte
     this.cond?.onJump();
     this.game.bus.emit('horse:jump', this);
     return true;
+  }
+
+  // Distance (m, devant le point de collision avant) du premier point de la trajectoire de saut où le cheval, pieds
+  // trop bas, traverserait un obstacle du monde ; -1 si la voie est libre.
+  _jumpBlocked(peak) {
+    const g = this.game;
+    const fw = this.forward;
+    const len = this.speed * HORSE.jumpDuration;
+    const r = this.radius;
+    const lift = 0.2 + this.mods.clearance;
+    const x0 = this.pos.x + fw.x * 0.45, z0 = this.pos.z + fw.z * 0.45;
+    const feet = (s) => g.terrain.getHeight(x0 + fw.x * s, z0 + fw.z * s) + Horse.jumpHeightAt(peak, clamp(s / len, 0, 1)) + lift;
+    for (let q = 0; q <= len; q += 0.2) {
+      // Le cercle de collision touche ce point pendant tout un intervalle du vol : hauteur des pieds la plus basse aux deux bouts.
+      if (g.colliders.blocked(x0 + fw.x * q, z0 + fw.z * q, Math.min(feet(q - r), feet(q + r)) + 0.05)) return q;
+    }
+    return -1;
   }
 
   // Hauteur du saut à l'instant τ (0..1).
@@ -108,11 +137,18 @@ export class Horse {
 
   refuse() {
     this.speed = 0;
+    this._brake = 0;
     this.anim.rear = 1;
     this._rearT = 1.1;
     this.jumpT = -1;
     this.jumpY = 0;
     this.game.bus.emit('horse:refuse', this);
+  }
+
+  // Refus progressif : freine jusqu'à l'arrêt sur `dist` mètres (au plus ~0,5 s), puis se cabre (voir refuse()).
+  brake(dist) {
+    const v = this.speed;
+    this._brake = Math.max((v * v) / (2 * Math.max(dist, 0.02)), v / 0.5);
   }
 
   update(dt, camPos) {
@@ -149,6 +185,8 @@ export class Horse {
       desired *= 1 - smoothstep(1.3, 2.7, Math.abs(diff)) * 0.75;
     }
     this.lastTurn = damp(this.lastTurn, turnInput, 8, dt);
+    // Refus en cours : les commandes de vitesse sont ignorées jusqu'à l'arrêt (freinage progressif, puis cabré).
+    if (this._brake > 0) desired = 0;
 
     // Eau : ralentit, et bloque au-delà d'une certaine profondeur.
     const depth = g.terrain.waterDepth(this.pos.x, this.pos.z);
@@ -160,10 +198,17 @@ export class Horse {
     const hb = this.groundAt(this.pos.x - fw.x * 1.1, this.pos.z - fw.z * 1.1);
     const slope = (hf - hb) / 2.2;
     if (slope > 0.25) desired *= clamp(1 - (slope - 0.25) * 1.2, 0.35, 1);
+    // Limite de profondeur juste devant : le cheval s'arrête au lieu de piétiner sur place contre elle (le pas qui
+    // l'approfondirait est de toute façon refusé plus bas).
+    if (depth > 0.9 && desired > 0) {
+      const ahead = g.terrain.waterDepth(this.pos.x + fw.x * 0.8, this.pos.z + fw.z * 0.8);
+      if (ahead > 1.35 && ahead > depth) desired = 0;
+    }
 
     if (this.jumpT < 0) {
-      const acc = desired > this.speed ? (this.speed < 5 ? 4.5 : 3.6) : 9;
+      const acc = this._brake > 0 ? this._brake : desired > this.speed ? (this.speed < 5 ? 4.5 : 3.6) : 9;
       this.speed = this.speed + clamp(desired - this.speed, -acc * dt, acc * dt);
+      if (this._brake > 0 && this.speed < 0.05) this.refuse();
     }
 
     // Endurance (grand galop).

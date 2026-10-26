@@ -81,7 +81,7 @@ describe('personnages réalistes', () => {
   it('la cavalière garde sa taille réelle sur un cheval mis à l’échelle et expose ses mains', async () => {
     const { Human } = await import('../../src/entities/human.js');
     const scene = new THREE.Scene();
-    const game = { scene, camera: new THREE.PerspectiveCamera(), terrain: { getHeight: () => 0, waterDepth: () => -1 }, colliders: { resolve() {} } };
+    const game = { scene, camera: new THREE.PerspectiveCamera(), terrain: { getHeight: () => 0, waterDepth: () => -1 }, colliders: { resolve() {}, blocked: () => false } };
     const root = new THREE.Object3D();
     root.scale.setScalar(0.94);
     const body = new THREE.Bone();

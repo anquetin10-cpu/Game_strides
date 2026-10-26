@@ -350,7 +350,8 @@ function riding(B, P, st, dt, info) {
   const hs = st.horseSpeed || 0;
   const ph = st.horseGaitPhase || 0;
   const t = st.t || 0;
-  const R = st._ride || (st._ride = { post: 0, diag: 0, wantDiag: 0, diagT: 0, two: 0, jumpK: 0, rel: 0, bobAvg: 0 });
+  // bobAvg amorcé sur la première hauteur de selle (sinon le filtre part de 0 et enfonce le cavalier dans le cheval pendant ~2 s).
+  const R = st._ride || (st._ride = { post: 0, diag: 0, wantDiag: 0, diagT: 0, two: 0, jumpK: 0, rel: 0, bobAvg: st.bob || 0 });
   const walk = sstep(0.4, 1.2, hs) * (1 - sstep(2.8, 3.6, hs));
   const trot = sstep(2.8, 3.6, hs) * (1 - sstep(6.6, 7.6, hs));
   const canter = sstep(6.6, 7.6, hs) * (1 - sstep(11.5, 13.5, hs));

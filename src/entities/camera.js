@@ -25,7 +25,7 @@ export class FollowCamera {
   snap(pos, heading) {
     this.smoothTarget.copy(pos);
     this.yaw = heading + Math.PI;
-    this.update(0.016, { pos, heading, speed: 0, mode: 'foot' }, { dx: 0, dy: 0 }, true);
+    this.update(0.016, { pos, heading, speed: 0, mode: this.game.player?.mode || 'foot' }, { dx: 0, dy: 0 }, true);
   }
 
   update(dt, focus, look, instant = false) {
@@ -61,7 +61,9 @@ export class FollowCamera {
     } else this.swing = 0;
     const base = mode === 'drive' ? 11 : mode === 'ride' ? 6.6 : 4.6;
     this.targetDist = base + (mode === 'ride' ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
-    this.height = mode === 'drive' ? 2.8 : mode === 'ride' ? 2.35 : 1.55;
+    // Hauteur du pivot lissée : monter ou descendre (de cheval, du camion) ne fait plus sauter la caméra d'une image à l'autre.
+    const height = mode === 'drive' ? 2.8 : mode === 'ride' ? 2.35 : 1.55;
+    this.height = instant ? height : damp(this.height, height, 4, dt);
     this.smoothTarget.x = instant ? focus.pos.x : damp(this.smoothTarget.x, focus.pos.x, 18, dt);
     this.smoothTarget.z = instant ? focus.pos.z : damp(this.smoothTarget.z, focus.pos.z, 18, dt);
     this.smoothTarget.y = instant ? focus.pos.y : damp(this.smoothTarget.y, focus.pos.y, 10, dt);

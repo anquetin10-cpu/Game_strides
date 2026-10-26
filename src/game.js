@@ -12,6 +12,7 @@ import { Colliders } from './world/colliders.js';
 import { POI, ZONES, shoreZ, forestDensity, nearestRoad, zoneDist } from './world/layout.js';
 import { HOME, POLE, TOWN } from './world/sites.js';
 import { Horse } from './entities/horse.js';
+import { hoofWorldPosition } from './entities/horseModel.js';
 import { Human } from './entities/human.js';
 import { Truck } from './entities/truck.js';
 import { FollowCamera } from './entities/camera.js';
@@ -39,6 +40,9 @@ import { Boats } from './world/boats.js';
 import { Rain } from './world/rain.js';
 import { TIDE_UNIFORMS, tideLevel, tideState, temperature, conditionText } from './world/weather.js';
 const _rein = new THREE.Vector3();
+const _hoof = new THREE.Vector3();
+// Séparation du cheval monté et des passants : cercles le long du cheval (encolure, garrot, croupe).
+const HORSE_SEGS = [1.3, 0.3, -0.75];
 
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
@@ -519,8 +523,20 @@ export class Game {
         else this.hoofPrints.step(horse, n, 1);
       }
       const wet = this.sky.wet || 0;
-      if (surf === 'water') this.particles.emit('splash', bx, horse.groundY + Math.max(0, depth), bz, 3 + n * 2, vx, vz);
-      else if (wet > 0.35 && sp > 3 && surf !== 'sand') {
+      if (surf === 'water') {
+        // Éclaboussures à la surface, au poser de chaque sabot ; de moins en moins en eau profonde (jambes immergées :
+        // plus de gerbe qui monte à travers le ventre et le cavalier), et pas à l'arrêt.
+        const k = clamp(1 - (depth - 0.45) / 0.5, 0, 1);
+        if (k > 0 && sp > 1) {
+          const y = horse.groundY + Math.max(0, depth);
+          if (hooves && horse.bones) {
+            for (const i of hooves) {
+              const hp = hoofWorldPosition(horse.bones, i, _hoof);
+              this.particles.emit('splash', hp.x, y, hp.z, Math.ceil(3 * k), vx, vz);
+            }
+          } else this.particles.emit('splash', bx, y, bz, Math.ceil((3 + n * 2) * k), vx, vz);
+        }
+      } else if (wet > 0.35 && sp > 3 && surf !== 'sand') {
         // Sol détrempé : mottes de terre au lieu de poussière, gouttelettes sur le bitume.
         if (surf === 'road' || surf === 'gravel') this.particles.emit('spray', bx, horse.groundY, bz, n, vx, vz);
         else if (surf === 'grass' || surf === 'soil') this.particles.emit('mud', bx, horse.groundY, bz, n * (sp > 8 ? 3 : 1), vx, vz);
@@ -575,11 +591,11 @@ export class Game {
       this.addSkill('equitation', 0.5);
       if (!this.missions.active) this.hud.toast(margin > 0.3 ? 'Beau saut !' : 'Saut réussi');
     });
-    b.on('obstacle:fault', () => {
+    b.on('obstacle:fault', ({ obstacle }) => {
       this.save.data.stats.faults++;
       if (!this.missions.active) {
         a.fault();
-        this.hud.toast('Barre !');
+        this.hud.toast(obstacle.solid ? 'Touché !' : 'Barre !');
       }
     });
     b.on('mission:complete', ({ run }) => {
@@ -1114,29 +1130,44 @@ export class Game {
     input.endFrame();
   }
 
-  // Séparation simple entre chevaux, et entre le joueur et les voitures.
+  // Séparation simple entre chevaux, et entre le joueur et les voitures ou les passants.
   _separate() {
     const hs = this.horses;
+    const p = this.player;
+    const mover = p.mode === 'ride' ? p.horse : null;
     for (let i = 0; i < hs.length; i++) {
       const a = hs[i];
       if (a.hiddenInTruck || !a.mesh.visible) continue;
       for (let j = i + 1; j < hs.length; j++) {
         const b = hs[j];
         if (b.hiddenInTruck || !b.mesh.visible) continue;
-        const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z;
-        const dd = dx * dx + dz * dz;
-        if (dd < 2.6 && dd > 1e-6) {
-          const dist = Math.sqrt(dd);
-          const push = (1.62 - dist) / 2;
-          const nx = dx / dist, nz = dz / dist;
-          a.pos.x -= nx * push;
-          a.pos.z -= nz * push;
-          b.pos.x += nx * push;
-          b.pos.z += nz * push;
+        if (Math.abs(b.pos.x - a.pos.x) > 3.2 || Math.abs(b.pos.z - a.pos.z) > 3.2) continue;
+        // Deux cercles par cheval (avant-main, arrière-main) : plus de nez dans la croupe du voisin. Le cheval monté
+        // par le joueur encaisse toute la poussée et ralentit (le voisin n'est pas traîné, sabots glissants).
+        const ax = Math.sin(a.heading) * 0.7, az = Math.cos(a.heading) * 0.7;
+        const bx = Math.sin(b.heading) * 0.7, bz = Math.cos(b.heading) * 0.7;
+        const ka = a === mover ? 1 : b === mover ? 0 : 0.5;
+        for (let sa = -1; sa <= 1; sa += 2) {
+          for (let sb = -1; sb <= 1; sb += 2) {
+            const dx = b.pos.x + bx * sb - a.pos.x - ax * sa, dz = b.pos.z + bz * sb - a.pos.z - az * sa;
+            const dd = dx * dx + dz * dz;
+            if (dd < 2.6 && dd > 1e-6) {
+              const dist = Math.sqrt(dd);
+              const push = 1.62 - dist;
+              const nx = dx / dist, nz = dz / dist;
+              a.pos.x -= nx * push * ka;
+              a.pos.z -= nz * push * ka;
+              b.pos.x += nx * push * (1 - ka);
+              b.pos.z += nz * push * (1 - ka);
+              if (mover === a || mover === b) {
+                const into = mover === a ? (ax * nx + az * nz) / 0.7 : -(bx * nx + bz * nz) / 0.7;
+                if (into > 0) mover.speed *= 1 - into * 0.4;
+              }
+            }
+          }
         }
       }
     }
-    const p = this.player;
     const ent = p.mode === 'ride' ? p.horse : p.mode === 'foot' ? p.human : null;
     if (!ent) return;
     const r = p.mode === 'ride' ? 1.0 : 0.4;
@@ -1168,6 +1199,27 @@ export class Game {
           ent.pos.x = cx + (dx / dist) * min;
           ent.pos.z = cz + (dz / dist) * min;
           if (p.mode === 'ride') ent.speed *= 0.6;
+        }
+      }
+    }
+    // Passants et PNJ à pied : le cheval monté (ou le personnage) ne les traverse plus — repoussé comme devant une
+    // voiture, sur trois cercles le long du cheval ; le passant, lui, ne bouge pas (il ne finit pas dans un mur).
+    const ride = p.mode === 'ride';
+    const fx = Math.sin(ent.heading), fz = Math.cos(ent.heading);
+    const er = ride ? 0.42 : 0.3;
+    for (const hu of this.humans) {
+      if (hu === p.human || hu.mounted || hu.hidden || !hu.mesh.visible) continue;
+      const ddx = hu.pos.x - ent.pos.x, ddz = hu.pos.z - ent.pos.z;
+      if (ddx * ddx + ddz * ddz > 9) continue;
+      for (let k = 0; k < (ride ? 3 : 1); k++) {
+        const off = ride ? HORSE_SEGS[k] : 0;
+        const cx = ent.pos.x + fx * off, cz = ent.pos.z + fz * off;
+        const dx = cx - hu.pos.x, dz = cz - hu.pos.z;
+        const dist = Math.hypot(dx, dz), min = er + hu.radius;
+        if (dist < min && dist > 1e-4) {
+          ent.pos.x += (dx / dist) * (min - dist);
+          ent.pos.z += (dz / dist) * (min - dist);
+          if (ride) ent.speed *= 0.6;
         }
       }
     }
