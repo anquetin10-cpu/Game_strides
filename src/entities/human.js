@@ -167,7 +167,8 @@ export class Human {
     this.anim.t += dt;
     if (this.mounted) return;
     if (this.ai) this.ai.update(this, dt);
-    this.pos.y = this.game.terrain.getHeight(this.pos.x, this.pos.z);
+    // Sol : terrain, ou pont du camion baissé (on y marche au lieu de s'y enfoncer).
+    this.pos.y = this.game.truck?.walkHeightAt(this.pos.x, this.pos.z) ?? this.game.terrain.getHeight(this.pos.x, this.pos.z);
     this.mesh.position.copy(this.pos);
     // Orientation entière (pas seulement le cap) : au volant, la cabine impose un quaternion dont les angles d'Euler
     // décomposés peuvent valoir ±90° en x/z ; ne réécrire que y coucherait le personnage en descendant du camion.

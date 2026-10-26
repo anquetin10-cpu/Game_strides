@@ -254,7 +254,7 @@ function localMatrix(b, out) {
 
 /**
  * Anime le cheval. state : { speed, phase, jump (-1 ou 0..1), turn, graze, rear, t, headYaw,
- *   vel (vitesse réelle m/s), lead (±1), ground(x, z) → hauteur monde, mounted, lod }
+ *   vel (vitesse réelle m/s), lead (±1), ground(x, z) → hauteur monde, mounted, lod, back (recule au pas) }
  * Renvoie { footfalls, landed: [indices des sabots posés], hooves: positions racine }.
  */
 export function animateHorse(bones, st, dt) {
@@ -466,7 +466,8 @@ export function animateHorse(bones, st, dt) {
         S.locked = false;
       }
       const s = (u - A.duty) / (1 - A.duty);
-      const landZ = nz + Ls * 0.5;
+      // Recul (st.back) : le sabot se pose derrière la position neutre au lieu de devant.
+      const landZ = nz + (st.back ? -0.5 : 0.5) * Ls;
       const prog = s * s * (3 - 2 * s);
       const reach = L.front ? 0.06 * K * Math.sin(Math.PI * Math.min(1, s * 1.15)) * (A.knee > 1.3 ? 1 : 0.5) : 0;
       pz = lerp(S.liftP.z, landZ, prog) + reach;

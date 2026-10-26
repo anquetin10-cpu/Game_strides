@@ -382,7 +382,8 @@ export function stableGeo({ w, d, h = 4.2, boxes = 8, wall = '#26272b', trim = P
   parts.push([box(0.16, postH, 0.16), trim, { x: w / 2, z: zf + 1.45 }]);
   // Dalle béton devant les boxes.
   parts.push([box(w + 1.2, 0.08, 2.0), '#a6a39b', { y: -0.04, z: zf + 1.0 }]);
-  return { body: partsToGeo(parts), glass: partsToGeo(glass), detail: partsToGeo(det) };
+  // eave / eaveY : débord du toit et hauteur de sa sous-face (pour que la caméra ne passe pas dans l'auvent).
+  return { body: partsToGeo(parts), glass: partsToGeo(glass), detail: partsToGeo(det), eave: 1.6, eaveY: h - 0.1 };
 }
 
 export function shedGeo({ w, d, h = 5, roof = '#5a4a3f', post = PALETTE.darkWood, hay = true }) {

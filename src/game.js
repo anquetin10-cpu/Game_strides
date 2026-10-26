@@ -991,6 +991,34 @@ export class Game {
         }
       }
     }
+    // À pied, le joueur ne traverse pas les chevaux (capsule croupe → poitrail de chaque cheval libre) : le cheval
+    // mené s'écarte surtout lui-même (il cède au meneur qui fait demi-tour), les autres ne bougent pas.
+    const tp = p.transport;
+    if (p.mode !== 'foot' || tp.seq) return;
+    for (const h of hs) {
+      if (h.hiddenInTruck || h.rider || !h.mesh.visible) continue;
+      const fx = Math.sin(h.heading), fz = Math.cos(h.heading);
+      const rx = ent.pos.x - h.pos.x, rz = ent.pos.z - h.pos.z;
+      const s = clamp(rx * fx + rz * fz, -0.85, 0.8);
+      const dx = rx - fx * s, dz = rz - fz * s;
+      const dist = Math.hypot(dx, dz);
+      const min = 0.68; // demi-largeur du corps (~0,33) + rayon du personnage (0,35)
+      if (dist >= min) continue;
+      // Sens de l'écart ; superposés : vers la gauche du cheval (côté du meneur).
+      const nx = dist > 1e-4 ? dx / dist : Math.cos(h.heading), nz = dist > 1e-4 ? dz / dist : -Math.sin(h.heading);
+      const led = tp.led && tp.led.horse === h;
+      const wH = led ? 0.75 : 0;
+      const push = min - dist;
+      h.pos.x -= nx * push * wH;
+      h.pos.z -= nz * push * wH;
+      ent.pos.x += nx * push * (1 - wH);
+      ent.pos.z += nz * push * (1 - wH);
+      h.mesh.position.x = h.pos.x;
+      h.mesh.position.z = h.pos.z;
+      ent.mesh.position.x = ent.pos.x;
+      ent.mesh.position.z = ent.pos.z;
+      if (led) h.speed *= 0.9;
+    }
   }
 
   _updateConfetti(dt) {

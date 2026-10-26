@@ -351,6 +351,24 @@ export class Truck {
     out.set(x, D.floor - 0.01 + Math.cos(ang) * L + Math.sin(ang) * 0.03, D.hingeZ - Math.sin(ang) * L + Math.cos(ang) * 0.03);
     return this.body.localToWorld(out);
   }
+  // Surface de marche des acteurs (piétons, chevaux menés ou à bord) : plancher du box dans son emprise, pont quand
+  // il est baissé ; hauteur monde au point (x, z), ou null hors du camion (sol du terrain). Sans allocation : appelé
+  // à chaque image, pour chaque sabot.
+  walkHeightAt(x, z) {
+    const h = this.sim.heading;
+    const dx = x - this.pos.x, dz = z - this.pos.z;
+    const xl = dx * Math.cos(h) - dz * Math.sin(h);
+    if (Math.abs(xl) >= D.rampW / 2 + 0.15) return null;
+    const zl = dx * Math.sin(h) + dz * Math.cos(h);
+    if (zl > D.hingeZ - 0.02) return Math.abs(xl) < 1.22 && zl < D.L / 2 ? this.body.localToWorld(_v.set(xl, D.floor + 0.02, zl)).y : null;
+    const r = this.ramp;
+    if (r.t < 0.98) return null;
+    const ang = r.angle * ease(r.t);
+    const reach = D.rampLen * Math.sin(ang);
+    const dzr = D.hingeZ - zl;
+    if (dzr > reach) return null;
+    return this.body.localToWorld(_v.set(xl, D.floor - 0.01 + Math.cos(ang) * D.rampLen * (dzr / reach) + 0.03, zl)).y;
+  }
   // Pied du pont (au sol, un peu en arrière) : point d'interaction arrière.
   rearPoint(out = new THREE.Vector3(), back = 1.2) {
     const h = this.sim.heading;

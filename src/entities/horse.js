@@ -20,8 +20,8 @@ export class Horse {
     this.mesh.scale.setScalar(0.94);
     this.bones = bones;
     this.anim = { speed: 0, phase: Math.random(), jump: -1, turn: 0, graze: 0, rear: 0, t: Math.random() * 10, headYaw: 0, vel: 0, mounted: false };
-    // Sabots adaptés au relief : hauteur du terrain sous chaque pied.
-    this.anim.ground = (x, z) => game.terrain.getHeight(x, z);
+    // Sabots adaptés au relief : hauteur du sol (terrain, ou pont du camion baissé) sous chaque pied.
+    this.anim.ground = (x, z) => this.groundAt(x, z);
     this.pos = new THREE.Vector3(opts.x || 0, 0, opts.z || 0);
     this.heading = opts.heading || 0;
     this.speed = 0;
@@ -77,8 +77,13 @@ export class Horse {
     this.snapToGround();
   }
 
+  // Hauteur du sol sous un point : terrain, ou surface de marche du camion (pont baissé, plancher).
+  groundAt(x, z) {
+    return this.game.truck?.walkHeightAt(x, z) ?? this.game.terrain.getHeight(x, z);
+  }
+
   snapToGround() {
-    this.groundY = this.game.terrain.getHeight(this.pos.x, this.pos.z);
+    this.groundY = this.groundAt(this.pos.x, this.pos.z);
     this.pos.y = this.groundY;
     this.mesh.position.set(this.pos.x, this.groundY, this.pos.z);
     this.mesh.rotation.set(0, this.heading, 0);
@@ -149,8 +154,8 @@ export class Horse {
 
     // Pente.
     const fw = this.forward;
-    const hf = g.terrain.getHeight(this.pos.x + fw.x * 1.1, this.pos.z + fw.z * 1.1);
-    const hb = g.terrain.getHeight(this.pos.x - fw.x * 1.1, this.pos.z - fw.z * 1.1);
+    const hf = this.groundAt(this.pos.x + fw.x * 1.1, this.pos.z + fw.z * 1.1);
+    const hb = this.groundAt(this.pos.x - fw.x * 1.1, this.pos.z - fw.z * 1.1);
     const slope = (hf - hb) / 2.2;
     if (slope > 0.25) desired *= clamp(1 - (slope - 0.25) * 1.2, 0.35, 1);
 
@@ -203,8 +208,9 @@ export class Horse {
     // Collision : centre un peu vers l'avant (le cheval est long).
     const cx = this.pos.x + fw.x * 0.45, cz = this.pos.z + fw.z * 0.45;
     const probe = { x: cx, z: cz };
-    const groundNow = g.terrain.getHeight(this.pos.x, this.pos.z);
-    const hit = g.colliders.resolve(probe, this.radius, groundNow + this.jumpY + (this.jumpT >= 0 ? 0.2 + this.mods.clearance : 0));
+    const groundNow = this.groundAt(this.pos.x, this.pos.z);
+    // En séquence de chargement, le camion laisse passer le cheval (sinon sa boîte le repousse et les sabots patinent).
+    const hit = g.colliders.resolve(probe, this.radius, groundNow + this.jumpY + (this.jumpT >= 0 ? 0.2 + this.mods.clearance : 0), g.truck?.passThrough.has(this) ? 'truck' : null);
     if (hit) {
       this.pos.x += probe.x - cx;
       this.pos.z += probe.z - cz;
@@ -224,7 +230,7 @@ export class Horse {
       this.speed *= 0.5;
     }
 
-    this.groundY = g.terrain.getHeight(this.pos.x, this.pos.z);
+    this.groundY = this.groundAt(this.pos.x, this.pos.z);
     this.pos.y = this.groundY + this.jumpY;
     this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
     this.mesh.rotation.set(-Math.atan(slope) * 0.85, this.heading, 0);

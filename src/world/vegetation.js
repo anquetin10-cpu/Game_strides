@@ -738,11 +738,13 @@ export class Vegetation {
       _sph.radius = P[i * 4 + 3] * 1.1;
       const inView = _frustum.intersectsSphere(_sph);
       const vi = this.vidx[i];
-      // f : part du maillage complet (1 = complet, 0 = imposteur).
+      // f : part du maillage complet (1 = complet, 0 = imposteur). Tout près de la caméra (perche orbitée dans un
+      // houppier ou contre un tronc), l'arbre s'efface par tramage sur 1,5-4 m, sans imposteur de relais.
       const f = d < near - band ? 1 : d > near ? 0 : (near - d) / band;
-      if (f > 0) {
+      const fn = d < 4 ? f * clamp((d - 1.5) / 2.5, 0, 1) : f;
+      if (fn > 0) {
         if (inView) {
-          V[vi].set.push(this.mats, i, this.tints, f);
+          V[vi].set.push(this.mats, i, this.tints, fn);
           V[vi].vis++;
         } else if (d < 42) shadowOnly[ns++] = i; // ombres portées depuis le hors-champ proche
       }

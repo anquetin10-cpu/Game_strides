@@ -227,7 +227,9 @@ body.desktop .joy-base { display: none; }
 .notif .n-actions button::after { content: ''; position: absolute; inset: -6px -4px; }
 
 /* Toasts et messages */
-.toasts { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+/* align-self: stretch — la colonne prend la largeur du bandeau central, sinon elle s'élargit à la longueur du texte et le
+   toast file sous le portefeuille. */
+.toasts { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; align-self: stretch; min-width: 0; }
 .toasts:empty { display: none; }
 .toast { padding: 7px 12px; border-radius: 14px; background: var(--st-surface-3); border: 1px solid var(--st-line-2); box-shadow: 0 8px 20px rgba(0,0,0,.22); font: 500 12.5px/1.25 var(--ui); animation: toastIn .35s ease-out; max-width: 260px; }
 .toast.money { font: 600 17px/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -723,8 +725,9 @@ body.phone-open .rotate { display: none !important; }
   .dialog .line { margin-top: 4px; font-size: 12.5px; line-height: 1.32; min-height: 0; }
 }
 @media (max-height: 420px) {
-  /* Écran bas : un seul toast, sur une ligne ; notification compacte (titre, détail, boutons). */
-  .toast { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Écran bas : un seul toast, sur deux lignes au plus (les messages du transport sont longs) ; notification compacte
+     (titre, détail, boutons). */
+  .toast { max-width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .notif { width: min(400px, 60vw); padding: 5px 10px 6px; border-radius: 14px; }
   .notif .n-head { display: none; }
   .notif .n-title { margin-top: 0; font-size: 12.5px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
