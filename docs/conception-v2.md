@@ -108,11 +108,12 @@ suivante ; invitation automatique unique vers la vraie app. Recette R07.
 
 | App | Contenu |
 | --- | --- |
-| Strides | Demandes (propositions), Écuries, Transport, Événements, Annuaire → « Je cherche un professionnel », Profil (réputation, avis). Pied de page : « Découvrir la vraie application Strides ». |
-| Mes chevaux | état, soins, affinité, progression (app « Chevaux » renommée). |
+| Strides | Demandes reçues (prestataire : accepter, refuser, contre-proposer), Recruter (client : « Je cherche un professionnel », profils comparables, confirmation à débit unique ; chauffeur pour un trajet avec son cheval), Profil (réputation, avis, compétences). Accès « Découvrir la vraie application Strides ». Rien d'autre : la vraie application ne propose ni pensions, ni annuaire de santé, ni boutique, ni concours (page officielle relue le 26/10/2026). |
+| Mes chevaux | état, soins, santé, chevaux à vendre (élevage local fictif). |
 | Carte | inchangée. |
-| Mon écurie | Aménagements (aire de pansage couverte, 350 € ; plus tard : box, couleurs), Équipe (Léa : prestations réalisées), Matériel (boutique de la Sellerie, déplacée ici), Compétences. |
-| Activités | Défis (dont le défi à conditions fixes), concours, résultats, records, carte de résultat. |
+| Mon écurie | Aménagements (aire de pansage couverte, 350 €), Équipe (Camille, Léa, Inès selon les prestations), Compétences, Matériel (Sellerie du Port, boutique fictive). |
+| Activités | Défi du Pôle (conditions fixes, record, carte de résultat), concours et courses (offres « Événements »), entraînements libres chronométrés. |
+| Guide local | Pensions et santé (vétérinaire, maréchal…), fictifs et hors Strides ; missions « Fer perdu » et « La pension parfaite ». |
 | Messages, Trophées, Météo, Photo, Réglages | inchangés ; Réglages : export / import de sauvegarde. |
 
 Au premier lancement de l'app Strides : bandeau « Missions, profils et sommes fictifs — rien n'est envoyé à la vraie
