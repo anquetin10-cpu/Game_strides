@@ -1,12 +1,13 @@
 // Cheval : physique (allures, endurance, saut, collisions) + comportements IA.
 import * as THREE from 'three';
-import { createHorseMesh, animateHorse, gaitIndex, setHorseLod, setHorseTack, setHorseWetness } from './horseModel.js';
+import { createHorseMesh, animateHorse, gaitIndex, GAIT_EDGES, setHorseLod, setHorseTack, setHorseWetness } from './horseModel.js';
 import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
 import { WORLD } from '../world/layout.js';
 import { HorseCondition, SIM } from '../gameplay/condition.js';
 
 const SPEEDS = HORSE.gaits.map((g) => g.speed);
+const CANTER_MAX = HORSE.gaits[3].max;
 // Hauteur du sol sous les sabots : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
 const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
@@ -169,11 +170,14 @@ export class Horse {
     if (!this.frozen && c.mag > 0.12 && !(this._rearT > 0)) {
       const desiredHeading = Math.atan2(c.x, c.z);
       const diff = angleDiff(this.heading, desiredHeading);
-      let gi = c.mag < 0.42 ? 1 : c.mag < 0.82 ? 2 : 3;
+      // Cavalier : pas, trot, puis galop dont la vitesse suit la poussée du joystick (galop de travail → galop allongé à
+      // 35 km/h, joystick à fond) ; le bouton BOOST (maintenu) lance le grand galop dès que le cheval avance.
+      const ridden = this.rider && this.rider.isPlayer;
+      let gi = ridden ? (c.mag < 0.35 ? 1 : c.mag < 0.6 ? 2 : 3) : c.mag < 0.42 ? 1 : c.mag < 0.82 ? 2 : 3;
       if (c.gaitOverride) gi = c.gaitOverride;
-      // Galop au joystick seul (à fond) ; le bouton BOOST (maintenu) lance le grand galop dès que le cheval avance.
       if (c.gallop && !this.exhausted) gi = 4;
       desired = SPEEDS[gi] * this.speedMul;
+      if (gi === 3 && ridden && !c.gaitOverride) desired = lerp(SPEEDS[3], CANTER_MAX, clamp((c.mag - 0.6) / 0.33, 0, 1)) * this.speedMul;
       if (c.speedOverride !== undefined) desired = c.speedOverride;
       const sp01 = clamp(this.speed / 16, 0, 1);
       const rate = lerp(2.8, 1.45, sp01) * (this.jumpT >= 0 ? 0.25 : 1);
@@ -213,8 +217,8 @@ export class Horse {
       if (this._brake > 0 && this.speed < 0.05) this.refuse();
     }
 
-    // Endurance (grand galop).
-    const galloping = this.speed > SPEEDS[3] * this.speedMul + 0.6;
+    // Endurance : le grand galop la consomme ; au galop allongé elle ne se recharge qu'à moitié.
+    const galloping = this.speed > GAIT_EDGES.canter * this.speedMul;
     if (galloping) {
       this.stamina -= HORSE.gallopDrain * dt;
       if (this.stamina <= 0) {
@@ -223,7 +227,7 @@ export class Horse {
         g.bus.emit('horse:exhausted', this);
       }
     } else {
-      const regen = HORSE.staminaRegen * (this.speed < 5 ? 1.5 : 1.0);
+      const regen = HORSE.staminaRegen * (this.speed < 5 ? 1.5 : this.speed > (SPEEDS[3] + 0.6) * this.speedMul ? 0.5 : 1.0);
       this.stamina = Math.min(this.maxStamina, this.stamina + regen * dt);
       if (this.exhausted && this.stamina > this.maxStamina * 0.35) this.exhausted = false;
     }

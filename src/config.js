@@ -39,7 +39,8 @@ export const HORSE = {
     { name: 'PAS', short: '1', speed: 1.9 },
     { name: 'TROT', short: '2', speed: 4.6 },
     // Galop de travail d'un parcours de CSO : 390 m/min (les parcours se courent à 350 – 400 m/min).
-    { name: 'GALOP', short: '3', speed: 6.5 },
+    // Le joystick du cavalier règle la cadence : du galop de travail (23 km/h) au galop allongé (max : 35 km/h).
+    { name: 'GALOP', short: '3', speed: 6.5, max: 9.72 },
     // Galop allongé d'un cheval de sport : ~50 km/h.
     { name: 'GRAND GALOP', short: '4', speed: 14 },
   ],

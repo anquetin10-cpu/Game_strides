@@ -13,8 +13,9 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 | Pas | 1,9 m/s (6,8 km/h) | 1,5 – 1,9 m/s (5,5 – 7 km/h) | conforme | `config.js`, `horse.test.js` |
 | Trot | 4,6 m/s (16,6 km/h) | 3,3 – 5 m/s (12 – 18 km/h) | conforme | idem |
 | Galop de travail | 6,5 m/s (390 m/min, 23 km/h) | parcours de CSO : 350 – 400 m/min | conforme | `realism.test.js` |
+| Galop allongé (joystick à fond) | jusqu'à 9,7 m/s (35 km/h, 583 m/min) ; la poussée du joystick règle la cadence entre 23 et 35 km/h, sans consommer l'endurance (récupération réduite de moitié) | galop de cross : 520 – 570 m/min | conforme | `realism.test.js`, `boost.mjs` |
 | Grand galop | 14 m/s (50 km/h) | cheval de sport : 45 – 55 km/h | conforme | `realism.test.js` |
-| Seuils d'allure (affichage et animation) | pas < 3,2 m/s ≤ trot < 5,6 ≤ galop < 10,5 ≤ grand galop : chaque vitesse d'allure est montrée comme cette allure (joystick à fond = galop, BOOST = grand galop) | transitions réelles trot → galop vers 5 – 6 m/s | conforme | `realism.test.js` |
+| Seuils d'allure (affichage et animation) | pas < 3,2 m/s ≤ trot < 5,6 ≤ galop < 10,5 ≤ grand galop : chaque vitesse d'allure est montrée comme cette allure (joystick poussé = galop de 23 à 35 km/h, BOOST = grand galop) | transitions réelles trot → galop vers 5 – 6 m/s | conforme | `realism.test.js` |
 | Ordre des posers | pas à 4 temps, trot diagonal, galop à 3 temps + suspension | idem | conforme | `horse.test.js` (« pose les sabots dans l'ordre réel de chaque allure ») |
 | Fréquence cardiaque | 36 bpm au repos, ~185 bpm à 11 m/s, ~205 bpm à 14 m/s | repos 28 – 44 bpm ; effort maximal 200 – 240 bpm | conforme | `condition.test.js` |
 | Récupération | chute rapide jusqu'à ~120 bpm, puis lente (< 64 bpm en une dizaine de minutes) | idem chez un cheval entraîné | conforme | `condition.test.js` |

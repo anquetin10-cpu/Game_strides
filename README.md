@@ -11,7 +11,7 @@ Jouable dans le navigateur, **pensé d'abord pour l'iPhone** (commandes tactiles
 
 | Tactile (iPhone) | Clavier |
 | --- | --- |
-| Joystick : poser le pouce n'importe où dans la moitié gauche et glisser — à fond : **galop** | ZQSD / WASD ou flèches (galop ; Ctrl : trot, Alt : pas) |
+| Joystick : poser le pouce n'importe où dans la moitié gauche et glisser — poussé : **galop** de 23 km/h à 35 km/h à fond | ZQSD / WASD ou flèches (galop ; Ctrl : trot, Alt : pas) |
 | Caméra : glisser dans la moitié droite | Glisser à la souris |
 | **SAUT** (à cheval) — l'anneau devient vert au bon moment | Espace |
 | **BOOST** (maintenir) : grand galop, anneau d'endurance autour du bouton / **COURIR** à pied | Maj |

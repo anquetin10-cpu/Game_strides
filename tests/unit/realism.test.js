@@ -27,6 +27,11 @@ describe('réalisme : allures du cheval', () => {
     expect(kmh(gait('GRAND GALOP'))).toBeGreaterThanOrEqual(45);
     expect(kmh(gait('GRAND GALOP'))).toBeLessThanOrEqual(55);
   });
+  it('galop classique au joystick : jusqu’à 35 km/h (galop allongé), sous le grand galop', () => {
+    const g = HORSE.gaits.find((x) => x.name === 'GALOP');
+    expect(kmh(g.max)).toBeCloseTo(35, 0);
+    expect(g.max).toBeLessThan(10.5);
+  });
   it('chaque vitesse d’allure est affichée et animée comme cette allure (joystick à fond = galop)', () => {
     HORSE.gaits.forEach((g, i) => expect(gaitIndex(g.speed)).toBe(i));
   });

@@ -186,7 +186,7 @@ export class Input {
       const trot = K.has('ControlLeft');
       const m = Math.hypot(x, y);
       if (m > 0) {
-        const s = walk ? 0.35 : trot ? 0.6 : 1;
+        const s = walk ? 0.25 : trot ? 0.5 : 1;
         this.move.x = (x / m) * s;
         this.move.y = (y / m) * s;
         this.move.mag = s;

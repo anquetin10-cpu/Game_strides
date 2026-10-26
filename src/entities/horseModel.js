@@ -4,7 +4,7 @@
 import { buildHorseMesh, setHorseLod, setHorseTack, setHorseWetness } from './horse/mesh.js';
 
 export { COATS } from './horse/coat.js';
-export { animateHorse, gaitIndex, hoofWorldPosition } from './horse/anim.js';
+export { animateHorse, gaitIndex, GAIT_EDGES, hoofWorldPosition } from './horse/anim.js';
 export { setHorseLod, setHorseTack, setHorseWetness };
 
 /**
