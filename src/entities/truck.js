@@ -524,7 +524,7 @@ export class Truck {
             this.pos.x -= fx * pushZ;
             this.pos.z -= fz * pushZ;
           }
-          if (Math.abs(s.vx) > bump) this._hitWhat = `véhicule ${v.kind || ''}`;
+          if (Math.abs(s.vx) > bump) this._hitWhat = `véhicule ${v.kind || ''} lx=${l.x.toFixed(1)} lz=${l.z.toFixed(1)} dh=${(((v.heading - h) % 6.283) + 6.283) % 6.283 > 3.14 ? ((((v.heading - h) % 6.283) + 6.283) % 6.283 - 6.283).toFixed(2) : ((((v.heading - h) % 6.283) + 6.283) % 6.283).toFixed(2)} vs=${(v.speed || 0).toFixed(1)}${v.uturn ? ' demi-tour' : ''}`;
           bump = Math.max(bump, Math.abs(s.vx));
         }
       }

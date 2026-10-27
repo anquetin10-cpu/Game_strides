@@ -157,6 +157,30 @@ class Car {
         gap = Math.min(gap, this._ahead(_pt, fx, fz, look));
       }
     }
+    // Carrefours : trajectoires qui se croisent dans les 3 prochaines secondes → la voiture cède le passage au véhicule
+    // du joueur (il ne suit pas le code de la route d'un automate) et, entre voitures, laisse la priorité à droite.
+    if (!this.uturn && this.speed > 0.5) {
+      const pv = g.player?.mode === 'drive' ? g.player.vehicle : null;
+      for (const v of g.vehicles) {
+        // L'avant du camion (repère « nose ») compte aussi : le camion est long.
+        if (v === this || v.parked || !v.pos || v.heading === undefined || v.pos.x === 1e6) continue;
+        const vs = v.speed || 0;
+        if (Math.abs(vs) < 0.5) continue;
+        const vfx = Math.sin(v.heading), vfz = Math.cos(v.heading);
+        if (Math.abs(fx * vfz - fz * vfx) < 0.3) continue; // même axe : géré par le couloir ci-dessus
+        const rx = v.pos.x - this.pos.x, rz = v.pos.z - this.pos.z;
+        if (rx * rx + rz * rz > 70 * 70) continue;
+        const fromRight = rx * -fz + rz * fx > 0;
+        if (v !== pv && !v.driver && !v.proxy && !fromRight) continue;
+        for (let t = 0.5; t <= 3; t += 0.5) {
+          const dx = rx + vfx * vs * t - fx * this.speed * t, dz = rz + vfz * vs * t - fz * this.speed * t;
+          if (dx * dx + dz * dz < 4.2 * 4.2) {
+            gap = Math.min(gap, Math.max(0, this.speed * t - 1.5));
+            break;
+          }
+        }
+      }
+    }
     // Code de la route : on croise et on dépasse les chevaux au pas (20 km/h), sans klaxonner.
     for (const h of g.horses) {
       if (h.hiddenInTruck || !h.pos) continue;
