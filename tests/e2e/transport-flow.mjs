@@ -571,7 +571,10 @@ async function driveRoute(f, to, from = null) {
         if (Math.abs(c.speed || 0) < 0.8) continue;
         const dx = c.pos.x - nx, dz = c.pos.z - nz;
         const closing = dx * Math.sin(c.heading) + dz * Math.cos(c.heading) < 0;
-        if (goT <= 0 && Math.hypot(dx, dz) < 16 && dx * fx + dz * fz > -3 && closing) vT = 0;
+        // Tourner en coupant la voie d'en face : céder le passage aux véhicules qui arrivent (un camion de 8,5 m met ~4 s
+        // à dégager la voie).
+        const yieldR = Math.abs(alpha) > 0.25 ? 35 : 16;
+        if (goT <= 0 && Math.hypot(dx, dz) < yieldR && dx * fx + dz * fz > -3 && closing) vT = 0;
       }
       if (t.speed < 0.4 && vT < 0.5 && left > 4) waitT += 1 / 30;
       else waitT = 0;

@@ -157,7 +157,7 @@ class Car {
         gap = Math.min(gap, this._ahead(_pt, fx, fz, look));
       }
     }
-    // Carrefours : trajectoires qui se croisent dans les 3 prochaines secondes → la voiture cède le passage au véhicule
+    // Carrefours : trajectoires qui se croisent dans les 4 prochaines secondes → la voiture cède le passage au véhicule
     // du joueur (il ne suit pas le code de la route d'un automate) et, entre voitures, laisse la priorité à droite.
     const pv = g.player?.mode === 'drive' ? g.player.vehicle : null;
     // Prudence près du véhicule du joueur qui manœuvre (tourne, entre sur un parking) : sa trajectoire ne se prédit
@@ -185,7 +185,7 @@ class Car {
         // Toute la longueur de l'autre véhicule (avant, centre, arrière) le long de sa trajectoire prévue.
         const half = Math.max(0, (v.L || v.spec?.L || 4) / 2 - 1);
         let hit = false;
-        for (let t = 0.5; t <= 3 && !hit; t += 0.5) {
+        for (let t = 0.5; t <= 4 && !hit; t += 0.5) {
           for (let o = -half; o <= half + 1e-6 && !hit; o += Math.max(half, 1)) {
             const dx = rx + vfx * (vs * t + o) - fx * this.speed * t, dz = rz + vfz * (vs * t + o) - fz * this.speed * t;
             if (dx * dx + dz * dz < 3.6 * 3.6) {
