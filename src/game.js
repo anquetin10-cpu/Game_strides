@@ -16,6 +16,7 @@ import { hoofWorldPosition } from './entities/horseModel.js';
 import { Human } from './entities/human.js';
 import { Truck } from './entities/truck.js';
 import { Vehicle } from './entities/vehicle.js';
+import { Online, boardById } from './core/online.js';
 import { FollowCamera } from './entities/camera.js';
 import { Player } from './gameplay/player.js';
 import { Interactions } from './gameplay/interact.js';
@@ -56,6 +57,9 @@ export class Game {
     this.state = 'loading';
     // Mesure locale (aucun envoi externe) : window.__metrics.log pour la vérification, console avec ?metrics=1.
     this.metrics = new Metrics(this.save);
+    // Sauvegarde dans le nuage et classements partagés (base de la page publiée sur claude.ai ; local ailleurs).
+    this.online = new Online(this);
+    this.save.onSaved = () => this.online.scheduleSave();
     if (typeof window !== 'undefined') {
       window.__metrics = this.metrics;
       if (/[?&]metrics=1/.test(location.search)) this.metrics.listeners.push((e) => console.info('[mesure]', e.name, e.params));
@@ -76,6 +80,8 @@ export class Game {
 
   async boot() {
     const d = this.save.load();
+    // Connexion en arrière-plan : le jeu démarre sans l'attendre.
+    this.online.init();
     document.body.classList.toggle('desktop', !IS_TOUCH);
     // Rendu.
     this.canvas = document.getElementById('game');
@@ -96,14 +102,20 @@ export class Game {
     this.resize();
     window.addEventListener('resize', () => this.resize());
     // iOS : sauvegarde à la mise en arrière-plan, rechargement si le contexte WebGL est perdu.
-    window.addEventListener('pagehide', () => this.saveNow());
+    window.addEventListener('pagehide', () => {
+      this.saveNow();
+      this.online.scheduleSave(true);
+    });
     // iOS peut suspendre l'audio : reprise au prochain geste.
     window.addEventListener('pointerup', () => {
       const c = this.audio.ctx;
       if (c && c.state !== 'running' && this.save.data.settings.sound) c.resume();
     });
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && this.state === 'play') this.saveNow();
+      if (document.hidden && this.state === 'play') {
+        this.saveNow();
+        this.online.scheduleSave(true);
+      }
       this.last = performance.now();
     });
     this.canvas.addEventListener('webglcontextlost', (e) => {
@@ -719,6 +731,52 @@ export class Game {
     this._storePositions();
     this.save.saveNow();
   }
+
+  // Une sauvegarde en ligne plus récente que celle de cet appareil (autre appareil, navigateur vidé) : on propose de
+  // la reprendre. Au titre, carte de choix ; en jeu, message (la reprise recharge la partie).
+  onCloudSave(online) {
+    const c = online.cloudNewer;
+    if (!c) return;
+    const when = new Date(c.savedAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+    const adopt = () => {
+      if (online.adoptCloudSave()) location.reload();
+    };
+    const keep = () => {
+      online.cloudNewer = null;
+      online.scheduleSave(true);
+    };
+    // Pendant le chargement : proposée dès que l'écran titre est affiché (sinon il la recouvrirait).
+    if (this.state === 'loading') {
+      this._cloudPending = true;
+      return;
+    }
+    if (this.state === 'play') {
+      this.message('Sauvegarde', 'S', `Une sauvegarde en ligne plus récente (${when}) existe. Pour la reprendre : Réglages → Sauvegarde automatique.`);
+      return;
+    }
+    this.screens.card({
+      top: true,
+      kicker: 'Sauvegarde en ligne',
+      title: 'Reprendre ta partie ?',
+      body: `Une sauvegarde plus récente que celle de cet appareil a été trouvée (${when}). Celle de cet appareil est gardée en copie de secours.`,
+      buttons: [
+        { label: 'Reprendre', primary: true, id: 'cloud-adopt', run: adopt },
+        { label: 'Garder cet appareil', ghost: true, id: 'cloud-keep', run: keep },
+      ],
+    });
+  }
+
+  // Performance à classer (défi, concours, chronos) : meilleur résultat enregistré en ligne, rang annoncé.
+  reportScore(boardId, perf) {
+    const b = boardById(boardId);
+    if (!b) return;
+    this.online
+      .submit(boardId, perf)
+      .then((r) => {
+        if (r && r.rank) this.hud.toast(`${r.improved ? 'Classement en ligne' : 'Classement'} · ${b.title} : ${r.rank === 1 ? '1er' : `${r.rank}e`} sur ${r.total}`, 'star');
+      })
+      .catch(() => {});
+  }
   _storePositions() {
     if (!this.player || this.state === 'title') return;
     const p = this.player;
@@ -922,6 +980,10 @@ export class Game {
     document.getElementById('touch').classList.add('hidden');
     const hasSave = this.save.hasSave();
     const issue = this.save.loadIssue;
+    if (this._cloudPending) {
+      this._cloudPending = false;
+      setTimeout(() => this.onCloudSave(this.online), 0);
+    }
     this.screens.showTitle({
       hasSave,
       issue,
@@ -929,7 +991,7 @@ export class Game {
       // Restauration : la copie est validée et migrée ; la page est rechargée pour repartir d'un état propre.
       onRestore: (key) => {
         if (this.save.restore(key)) location.reload();
-        else this.screens.card({ kicker: 'Sauvegarde', title: 'Copie illisible', body: 'Cette copie ne peut pas être restaurée non plus. Vous pouvez commencer une nouvelle partie ; la copie reste conservée dans le navigateur.', buttons: [{ label: 'Retour', primary: true, id: 'back' }] });
+        else this.screens.card({ top: true, kicker: 'Sauvegarde', title: 'Copie illisible', body: 'Cette copie ne peut pas être restaurée non plus. Vous pouvez commencer une nouvelle partie ; la copie reste conservée dans le navigateur.', buttons: [{ label: 'Retour', primary: true, id: 'back' }] });
       },
       onPlay: () => this.startGame(false),
       onNew: () => {

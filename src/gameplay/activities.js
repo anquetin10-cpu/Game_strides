@@ -101,6 +101,8 @@ export class Activities {
               const score = t + pen;
               const rec = !best || score < best;
               if (rec) game.save.data.bestTimes[a.id] = score;
+              // Classement en ligne : chrono et pénalités de cette performance.
+              game.reportScore(a.id, { pen, time: t, horse: game.player.horse?.name || '' });
               r.resultTitle = rec ? 'Nouveau record' : 'Chrono';
               r.resultTime = score;
               r.resultTimeLabel = a.penalties ? 'Temps + pénalités' : 'Chrono';

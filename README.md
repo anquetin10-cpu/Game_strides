@@ -47,6 +47,14 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Des jobs générés à l'infini** (coursier, transport, reconnaissance de parcours, soins), des **chronos libres**
   (plage, CSO, cross, hippodrome) et **20 fers d'or** cachés.
 - **Progression** : Groom → Cavalier → Pro vérifié → International → Légende 5★, avis clients étoilés, pourboires.
+- **Sauvegarde automatique** : la partie s'enregistre seule sur l'appareil (toutes les 12 s, à chaque mission, quand
+  on quitte la page). Dans le jeu publié sur claude.ai, une copie part aussi dans l'espace privé du joueur (au plus
+  toutes les 30 s) ; si elle est plus récente que celle de l'appareil, le jeu propose de la reprendre (la partie de
+  l'appareil est gardée en copie de secours).
+- **Classements en ligne** (app « Classements » du téléphone) : 8 épreuves (défi du Pôle, concours Amateur 2,
+  Amateur 1, Pro 2, parcours du Pôle, cross, sprint de la plage, tour de l'hippodrome), meilleur résultat de chaque
+  joueur (pénalités puis chrono), rang affiché à l'arrivée, mise à jour en direct, pseudonyme choisi. Un chrono
+  physiquement impossible n'est pas inscrit. Hors de claude.ai, l'app montre les records de l'appareil.
 - **Marque** : panneaux publicitaires, camion et tapis de selle Strides, ligne « Dans la vraie vie » après chaque mission,
   écran de fin et boutons « Découvrir l'app » / « Partager le jeu ».
 
@@ -79,6 +87,7 @@ node tests/e2e/missions.mjs   # pilote automatique : les 12 missions de l'histoi
 node tests/e2e/jobs.mjs       # 16 jobs générés
 node tests/e2e/features.mjs   # boutique, sifflet, transport, achat de cheval, fers d'or, chronos, photo
 node tests/e2e/ui.mjs se      # captures d'interface (se | i14 | max)
+node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)
 ```
 
 Pas d'assets externes : géométrie, textures et sons sont générés par le code (Three.js + WebAudio).

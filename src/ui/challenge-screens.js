@@ -260,6 +260,8 @@ export class ChallengeUI {
       }, 250);
     });
     input.addEventListener('keydown', (e) => e.key === 'Enter' && input.blur());
+    // Le même pseudonyme sert au classement en ligne : mis à jour quand on a fini de le saisir.
+    input.addEventListener('change', () => g.online?.renamed());
     const mode = shareMode();
     const side = h('div.rc-side', {},
       h('label.rc-label', { text: 'Pseudonyme sur la carte' }),

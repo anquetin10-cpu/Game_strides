@@ -337,6 +337,7 @@ export function competitionDef(level, startHour) {
             const ranked = rankResults([...field, me]);
             const rank = ranked.indexOf(me) + 1;
             r.data.rank = rank;
+            game.reportScore(`concours-${cls.id}`, { pen: me.faults, time: me.time, horse: me.horse });
             const prize = cls.prizes[rank - 1] || 0;
             r.payOverride = prize;
             r.resultTitle = rank === 1 ? 'Victoire au Pôle !' : `${ordinal(rank)} place — ${cls.name}`;

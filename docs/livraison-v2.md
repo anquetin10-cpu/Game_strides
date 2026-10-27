@@ -131,6 +131,25 @@ Voir la section 8 (résultats détaillés, environnement et limites).
 - **Paiements et récompenses** : registre `rewards` (`story:<mission>`, `hire:<mission>`, `upgrade:<id>`) ; une clé
   déjà présente ne verse ni ne débite plus rien.
 
+### Sauvegarde en ligne et classements (`src/core/online.js`)
+
+Uniquement dans la page publiée sur claude.ai (capacités `db` et `user`) ; ailleurs tout reste local, sans erreur.
+
+- **Sauvegarde** : document privé `data/users/<id>/save` (`json`, `savedAt`, `build`, `version`), écrit au plus toutes
+  les 30 s après une sauvegarde locale, et tout de suite quand on quitte la page. Au démarrage, une copie en ligne plus
+  récente d'au moins une minute est proposée (« Reprendre » / « Garder celle de l'appareil ») ; la reprise garde la
+  partie de l'appareil sous `strides-grand-tour-v1.backup.local`. Rien n'est envoyé tant qu'un choix est en attente.
+- **Classements** : collection `scores`, un document par joueur (`pseudo`, `boards.<épreuve> = {pen, time, score,
+  horse, at}`), lisible par tous, chacun n'écrivant que le sien (règles `scores` lecture `view` / écriture `owner`,
+  `scores/{self}` écriture `interact`). On n'écrit que lorsqu'un résultat bat son propre record. Note : pénalités ×
+  100 000 + chrono ; à égalité, le plus ancien devant. Chrono plus court que le minimum physique de l'épreuve : refusé.
+- **Qui peut inscrire un résultat** : la plateforme réserve l'écriture aux personnes ayant au moins l'accès
+  « Contributeur » à la page (propriétaire, invités, membres de l'organisation). Un visiteur extérieur arrivé par un
+  lien public voit le classement mais ne peut ni s'y inscrire ni sauvegarder en ligne (mode « lecture seule ») ; un
+  visiteur non connecté joue en local.
+- **Pas de contrôle serveur** : les résultats sont calculés dans le navigateur ; un joueur déterminé peut écrire un
+  faux chrono plausible dans sa propre ligne. Le minimum physique n'arrête que les valeurs aberrantes.
+
 ## 6. Destinations officielles et état réel de la mesure
 
 | Libellé dans le jeu | Destination | Vérification |
@@ -154,7 +173,7 @@ pendant la réalisation, à rapprocher de la liste du dossier.
 - Chapitres suivants sur le modèle du chapitre 1 (personnages récurrents, choix mémorisés, points de reprise),
   y compris pour les missions existantes qui n'ont pas encore de point de reprise.
 - Autres aménagements de l'écurie (boxes, couleurs) une fois leur intérêt de jeu défini.
-- Classement partagé du défi (nécessite un service en ligne et une politique de données).
+- ~~Classement partagé du défi~~ : réalisé (voir section 5, « Sauvegarde en ligne et classements »).
 - Branchement réel de la mesure sur un service choisi par Strides, avec consentement si nécessaire.
 - Liens profonds vers l'application si Strides en publie (aucun n'est inventé aujourd'hui).
 - Recette sur iPhone physique (Safari, partage natif avec fichier), accessibilité et performances sur appareils

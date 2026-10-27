@@ -13,10 +13,19 @@ import { sunTimes } from '../world/sun.js';
 import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard, appToast, isStridesOffer } from './requests.js';
 import { renderActivities } from './activities-app.js';
+import { renderRanking } from './ranking-app.js';
 
 export class Phone {
   constructor(game, root) {
     this.game = game;
+    // Classements en direct : l'app ouverte se met à jour quand un joueur inscrit un résultat (au plus 2 fois/s).
+    game.online?.listeners.push(() => {
+      if (!this.isOpen || (this.app !== 'ranking' && this.app !== 'settings') || this._rankT) return;
+      this._rankT = setTimeout(() => {
+        this._rankT = null;
+        if (this.isOpen && (this.app === 'ranking' || this.app === 'settings') && !this.screen.querySelector('input:focus')) this.show(this.app, { keepScroll: true });
+      }, 500);
+    });
     this.layer = h('div.phone-layer');
     this.screen = h('div.phone-content');
     this.clockEl = h('span.tab-num', { text: '9:41' });
@@ -112,6 +121,7 @@ export class Phone {
       guide: () => this.renderGuide(opts),
       weather: () => this.renderWeather(),
       activities: () => renderActivities(this, opts),
+      ranking: () => renderRanking(this, opts),
     }[app];
     this.screen.appendChild(fn ? fn() : this.renderHome());
     if (scroll) {
@@ -163,6 +173,7 @@ export class Phone {
         appIcon('ecurie', 'Mon écurie', 'home'),
         appIcon('activities', 'Activités', 'event', '', g.missions.offers.filter((o) => o.isNew && o.vertical === 'EVENEMENTS').length),
         appIcon('guide', 'Guide local', 'directory', '', g.missions.offers.filter((o) => o.isNew && (o.vertical === 'ANNUAIRE' || o.vertical === 'ECURIES')).length),
+        appIcon('ranking', 'Classements', 'podium'),
         appIcon('trophies', 'Trophées', 'trophy'),
         appIcon('weather', 'Météo', 'weather'),
         photo,
@@ -786,6 +797,24 @@ export class Phone {
       });
       return h('div.set-row', {}, h('span', { text: label }), t);
     };
+    // Sauvegarde : automatique sur l'appareil (toutes les 12 s et à chaque étape), copiée en ligne sur claude.ai.
+    {
+      const on = g.online;
+      const t = (ms) => new Date(ms).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+      const local = g.save.data.meta?.savedAt;
+      body.appendChild(h('div.section-t', { text: 'Sauvegarde automatique' }));
+      body.appendChild(h('div.kv', {}, h('span', { text: 'Sur cet appareil' }), h('b', { text: local ? t(local) : '—', 'data-id': 'save-local' })));
+      const cloud = on.state === 'online' ? (on.lastSync ? `à jour · ${t(on.cloudSavedAt || on.lastSync)}` : 'activée') : on.state === 'readonly' ? 'non disponible pour ce compte' : on.state === 'connecting' ? 'connexion…' : 'hors ligne (jeu publié sur claude.ai)';
+      body.appendChild(h('div.kv', {}, h('span', { text: 'En ligne' }), h('b', { text: cloud, 'data-id': 'save-cloud' })));
+      if (on.cloudNewer) {
+        const b = h('button.btn.small', { text: `Reprendre la sauvegarde en ligne (${t(on.cloudNewer.savedAt)})`, 'data-id': 'cloud-adopt' });
+        tap(b, () => {
+          if (on.adoptCloudSave()) location.reload();
+        });
+        body.appendChild(b);
+      }
+      body.appendChild(h('div.section-t', { text: 'Jeu', style: { marginTop: '14px' } }));
+    }
     body.appendChild(toggle('Son', 'sound', (v) => g.audio.setEnabled(v)));
     body.appendChild(toggle('Musique', 'music', (v) => g.audio.setMusic(v)));
     const seg = (label, key, options, onChange) => {

@@ -291,6 +291,8 @@ export class Challenges {
     g.metrics.track('challenge_completed', { attempt: res.attempt, challenge_version: cfg.id, course: cfg.course, mode: elim ? 'eliminated' : 'finished' });
     r.data.challengeResult = res;
     r.data.challengeRecord = rec;
+    // Classement en ligne du défi (conditions identiques pour tous) : seulement un parcours terminé.
+    if (!elim) g.reportScore(cfg.id, { pen: res.penalties, time: res.time, horse: res.horse });
     r.resultTitle = elim ? 'Éliminé' : rec.isRecord ? 'Nouveau record' : 'Parcours terminé';
     r.resultTime = st.t;
     r.resultTimeLabel = 'Chrono';

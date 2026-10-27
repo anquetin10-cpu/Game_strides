@@ -138,9 +138,10 @@ export class Screens {
 
   // ---------- Carte générique ----------
   // Fenêtre modale : contenu défilable + barre d'actions toujours visible (écrans courts, lecteur intégré).
-  card({ kicker, title, body, html, buttons = [], extra = [] }) {
+  // top : au-dessus des écrans plein cadre (titre), sinon sous eux.
+  card({ kicker, title, body, html, buttons = [], extra = [], top = false }) {
     const row = h('div.card-actions');
-    const ov = h('div.overlay');
+    const ov = h(`div.overlay${top ? '.top' : ''}`);
     for (const b of buttons) {
       const el = h(`button.btn${b.primary ? '.primary' : b.ghost ? '.ghost' : ''}`, { text: b.label, 'data-id': b.id || '' });
       tap(el, () => {

@@ -244,6 +244,8 @@ export class SaveSystem {
     if (!force && !this.data.started) return;
     this.data.meta = { ...(this.data.meta || {}), savedAt: Date.now(), build: BUILD };
     this._set(this.key, JSON.stringify(this.data));
+    // Copie en ligne (online.js) : planifiée, jamais bloquante.
+    this.onSaved?.();
   }
   // Récompense versée une seule fois par clé (offre, tentative, achat) : vrai si `fn` a été exécutée.
   grantOnce(key, fn) {
