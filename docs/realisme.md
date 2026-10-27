@@ -63,6 +63,17 @@ teinté laissant voir le conducteur et l'habitacle, son moteur propre (3 cylindr
 | Temps accordé | longueur du parcours du Pôle (245 m, tracé à main gauche, tournants de 8,5 m de rayon au moins) ÷ vitesse imposée : 42 s en national (350 m/min), 40 s en CSI (375), 37 s en Grand Prix (400) ; défi du Pôle v3 à 42 s (v1 à 75 s et v2 à 47 s archivées avec leurs records) | règlement : vitesse imposée selon l'épreuve | conforme | `realism.test.js` |
 | Cross | refus 20 pts, élimination au 3e refus sur un obstacle ou au 4e sur le parcours | règlement de concours complet : 20 / 40 pts, élimination au 3e refus | conforme (barème simplifié) | `courses.js` |
 
+## 3 bis. Personnes, circulation, économie
+
+| Grandeur | Jeu | Référence réelle | Statut | Vérification |
+| --- | --- | --- | --- | --- |
+| Circulation | 50 km/h en agglomération, 70 km/h sur les routes de campagne (avec un écart propre à chaque conducteur), 20 km/h en croisant ou en dépassant des chevaux, priorité à droite entre voitures, anticipation des croisements | Code de la route (et recommandation de croiser les chevaux au pas) | conforme | `npcs.js`, `transport-flow.mjs` |
+| Engagements en concours | Amateur 2 : 22 €, Amateur 1 : 28 €, Pro 2 : 36 € ; dotations de 80 à 650 € | engagements amateurs de 20 à 40 €, dotations modestes | conforme | `trip.js` |
+| Pensions | 420 à 690 € par mois (box et paddock, services) | Normandie : 350 à 700 € | conforme | `data.js` |
+| Missions | groom ~90 €, transport local ~260 €, concours : dotation | tarifs de prestataires indépendants | conforme (ordre de grandeur) | `story.js` |
+| Chevaux de concours | location pour la saison (1 800 à 5 500 €), valeur estimée affichée (25 000 à 150 000 €) | location de cheval de concours : de quelques milliers à plusieurs dizaines de milliers d'euros par saison selon le niveau | **adapté** : le haut de gamme est loué moins cher qu'en réalité, pour rester accessible après quelques heures de jeu | `data.js` |
+| Équipement | selles 380 et 900 € | selle de CSO : 1 500 à 6 000 € | **adapté** (progression du jeu) | `data.js` |
+
 ## 4. Monde, météo, marées, lumière
 
 | Grandeur | Jeu | Référence réelle | Statut | Vérification |

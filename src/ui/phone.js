@@ -698,18 +698,18 @@ export class Phone {
     const owned = SHOP.filter((s) => d.upgrades.includes(s.id));
     if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauvelle.' }));
     for (const s of owned) body.appendChild(h('div.kv', {}, h('span', { text: s.name }), h('b', { text: s.desc })));
-    // Chevaux à vendre : élevage local fictif (hors Strides).
-    body.appendChild(h('div.section-t', { text: 'Chevaux à vendre · élevage local (fictif)', style: { marginTop: '14px' } }));
+    // Chevaux proposés en location pour la saison par leurs propriétaires : élevage local fictif (hors Strides).
+    body.appendChild(h('div.section-t', { text: 'Chevaux en location · saison de concours (fictif)', style: { marginTop: '14px' } }));
     const forSale = h('div.cards');
     for (const hd of Object.values(HORSES)) {
       if (!hd.price) continue;
       const own = d.horses.includes(hd.id);
-      const buy = h(`button.btn.small${own ? '' : '.primary'}`, { text: own ? 'Acquis' : `Acheter · ${formatMoney(hd.price)}` });
+      const buy = h(`button.btn.small${own ? '' : '.primary'}`, { text: own ? 'Loué pour la saison' : `Louer la saison · ${formatMoney(hd.price)}` });
       if (!own)
         tap(buy, () => {
           if (g.buyHorse(hd.id)) this.refresh();
         });
-      forSale.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: `${hd.breed} · ${hd.age} ans` }), h('span.pay', { text: formatMoney(hd.price) })), h('div.title', { text: hd.name }), h('div.meta', { text: hd.desc }), this._horseBars(hd), h('div.acts', {}, buy)));
+      forSale.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: `${hd.breed} · ${hd.age} ans` }), h('span.pay', { text: formatMoney(hd.price) })), h('div.title', { text: hd.name }), h('div.meta', { text: `${hd.desc} Valeur estimée : ${formatMoney(hd.value)}.` }), this._horseBars(hd), h('div.acts', {}, buy)));
     }
     body.appendChild(forSale);
     const call = h('button.btn.small', { text: 'Siffler mon cheval', style: { marginTop: '12px' } });

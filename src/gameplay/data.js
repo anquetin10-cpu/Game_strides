@@ -1,11 +1,13 @@
 // Données de jeu : chevaux, boutique, annuaire, écuries, PNJ.
 import { POI } from '../world/layout.js';
 
+// Chevaux de concours : price = location pour la saison (pratique courante pour monter un cheval de propriétaire sans
+// l'acheter), value = valeur marchande estimée d'un cheval de ce niveau.
 export const HORSES = {
   comete: { id: 'comete', name: 'Comète', coat: 'bay', blaze: true, socks: [false, false, true, false], speed: 1.0, jump: 1.0, stamina: 1.0, price: 0, breed: 'Selle Français', age: 9, desc: 'Jument baie, fiable et courageuse. Ta partenaire depuis toujours.' },
-  ulysse: { id: 'ulysse', name: 'Ulysse', coat: 'grey', blaze: false, socks: [false, false, false, false], speed: 0.98, jump: 1.15, stamina: 1.12, price: 1800, breed: 'Selle Français', age: 11, desc: 'Hongre gris, très respectueux sur les barres.' },
-  onyx: { id: 'onyx', name: 'Onyx', coat: 'black', blaze: false, socks: [true, false, false, false], speed: 1.13, jump: 1.06, stamina: 1.0, price: 3200, breed: 'KWPN', age: 8, desc: 'Étalon noir explosif. Une fusée sur le plat.' },
-  saphir: { id: 'saphir', name: 'Saphir', coat: 'chestnut', blaze: true, socks: [true, true, true, true], speed: 1.1, jump: 1.24, stamina: 1.2, price: 5500, breed: 'Holsteiner', age: 10, desc: 'Jument alezane, gagnante en Grand Prix. La crème.' },
+  ulysse: { id: 'ulysse', name: 'Ulysse', coat: 'grey', blaze: false, socks: [false, false, false, false], speed: 0.98, jump: 1.15, stamina: 1.12, price: 1800, value: 25000, breed: 'Selle Français', age: 11, desc: 'Hongre gris, très respectueux sur les barres.' },
+  onyx: { id: 'onyx', name: 'Onyx', coat: 'black', blaze: false, socks: [true, false, false, false], speed: 1.13, jump: 1.06, stamina: 1.0, price: 3200, value: 45000, breed: 'KWPN', age: 8, desc: 'Étalon noir explosif. Une fusée sur le plat.' },
+  saphir: { id: 'saphir', name: 'Saphir', coat: 'chestnut', blaze: true, socks: [true, true, true, true], speed: 1.1, jump: 1.24, stamina: 1.2, price: 5500, value: 150000, breed: 'Holsteiner', age: 10, desc: 'Jument alezane, gagnante en Grand Prix. La crème.' },
 };
 
 export const SHOP = [

@@ -368,7 +368,7 @@ export class Game {
     d.horses.push(id);
     this.updateWallet();
     this.audio.coin();
-    this.message('Normandie Horse Transport', 'NH', `${hd.name} a été livré(e) à ton écurie. Sélectionne-le dans « Mes chevaux ».`);
+    this.message('Normandie Horse Transport', 'NH', `Location pour la saison signée : ${hd.name} a été livré(e) à ton écurie. Sélectionne-le dans « Mes chevaux ».`);
     this.saveNow();
     return true;
   }
