@@ -71,8 +71,8 @@ teinté laissant voir le conducteur et l'habitacle, son moteur propre (3 cylindr
 | Engagements en concours | Amateur 2 : 22 €, Amateur 1 : 28 €, Pro 2 : 36 € ; dotations de 80 à 650 € | engagements amateurs de 20 à 40 €, dotations modestes | conforme | `trip.js` |
 | Pensions | 420 à 690 € par mois (box et paddock, services) | Normandie : 350 à 700 € | conforme | `data.js` |
 | Missions | groom ~90 €, transport local ~260 €, concours : dotation | tarifs de prestataires indépendants | conforme (ordre de grandeur) | `story.js` |
-| Chevaux de concours | location pour la saison (1 800 à 5 500 €), valeur estimée affichée (25 000 à 150 000 €) | location de cheval de concours : de quelques milliers à plusieurs dizaines de milliers d'euros par saison selon le niveau | **adapté** : le haut de gamme est loué moins cher qu'en réalité, pour rester accessible après quelques heures de jeu | `data.js` |
-| Équipement | selles 380 et 900 € | selle de CSO : 1 500 à 6 000 € | **adapté** (progression du jeu) | `data.js` |
+| Chevaux de concours | location pour la saison (1 800 à 5 500 €), valeur estimée affichée (25 000 à 150 000 €) | location de cheval de concours : de quelques milliers à plusieurs dizaines de milliers d'euros par saison selon le niveau | **adapté** : le haut de gamme est loué moins cher qu'en réalité, pour rester accessible après quelques heures de jeu — validé par le porteur du projet (27/10/2026 : prix actuels conservés) | `data.js` |
+| Équipement | selles 380 et 900 € | selle de CSO : 1 500 à 6 000 € | **adapté** (progression du jeu) — validé par le porteur du projet (27/10/2026) | `data.js` |
 
 ## 4. Monde, météo, marées, lumière
 
