@@ -492,8 +492,16 @@ async function driveRoute(f, to, from = null) {
     const target = PARKS[to];
     g.gps.set(target, 'Parking', { radius: target.r });
     g.gps.updateRoute(true);
-    const R = (g.gps.route || [[t.pos.x, t.pos.z], [target.x, target.z]]).slice(1);
-    R.unshift([t.pos.x, t.pos.z]);
+    const R0 = (g.gps.route || [[t.pos.x, t.pos.z], [target.x, target.z]]).slice(1);
+    R0.unshift([t.pos.x, t.pos.z]);
+    // Conduite à droite : l'itinéraire du GPS suit l'axe de la chaussée ; le camion roule sur sa voie (1,3 m à droite
+    // de l'axe), sauf au départ et à l'arrivée (aires de stationnement).
+    const R = R0.map((p, k) => {
+      if (k === 0 || k === R0.length - 1) return p;
+      const a = R0[k - 1], b = R0[k + 1];
+      const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1;
+      return [p[0] - (dz / l) * 1.3, p[1] + (dx / l) * 1.3];
+    });
     const segLen = [], cum = [0];
     for (let k = 0; k < R.length - 1; k++) {
       segLen.push(Math.hypot(R[k + 1][0] - R[k][0], R[k + 1][1] - R[k][1]));
