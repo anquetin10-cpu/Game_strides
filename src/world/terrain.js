@@ -353,6 +353,13 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
         // Trottoirs et cours : dalles de calcaire.
         pv = textureGrad( paveSlab, p / 2.4, pdx / 2.4, pdy / 2.4 );
       }
+      // Au-delà de ~3 pixels par pierre, le motif se fond dans sa teinte moyenne (plus petit niveau de mip) : pas
+      // d'ondulations de moiré en vue rasante.
+      float pvLod = smoothstep( 0.22, 0.5, pxw / 0.11 );
+      if ( pvLod > 0.0 ) {
+        vec4 pvAvg = onPlaza > 0.5 ? textureGrad( paveSett, vec2( 0.5 ), vec2( 1.0, 0.0 ), vec2( 0.0, 1.0 ) ) : textureGrad( paveSlab, vec2( 0.5 ), vec2( 1.0, 0.0 ), vec2( 0.0, 1.0 ) );
+        pv = mix( pv, pvAvg, onPlaza > 0.5 ? pvLod : smoothstep( 0.22, 0.5, pxw / 0.4 ) );
+      }
       // Usure et patine : zones plus sombres et plus lisses (passage).
       float wear = smoothstep( 0.45, 0.8, dM.g * 0.6 + dL.r * 0.4 );
       vec3 pTint = pv.rgb * 1.25 * mix( 1.0, 0.93, wear ) * mix( 1.0, mix( 0.97, 1.03, dF.r ), fineW );

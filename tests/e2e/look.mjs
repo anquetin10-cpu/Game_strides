@@ -59,6 +59,10 @@ const VIEWS = {
   cabinsBack: (g) => ({ at: [-56.5, g.terrain.getHeight(-56.5, -366) + 1.3, -366], from: [-47, g.terrain.getHeight(-47, -353) + 1.7, -353] }),
   // Station-service, à l'entrée nord de la ville (route principale).
   station: (g) => ({ at: [-14, g.terrain.getHeight(-14, -142) + 1.5, -142], from: [-44, g.terrain.getHeight(-44, -160) + 3.5, -160] }),
+  // Personnage du joueur, de près (visage, tenue).
+  person: (g) => { const p = g.player.human.pos; const hd = g.player.human.heading ?? 0; return { at: [p.x, p.y + 1.45, p.z], from: [p.x + Math.sin(hd) * 2.6 + 0.8, p.y + 1.6, p.z + Math.cos(hd) * 2.6] }; },
+  // Passants en ville.
+  crowd: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x - 20, P.z + 12); return { at: [P.x - 20, y + 1.2, P.z], from: [P.x - 14, y + 1.7, P.z + 14] }; },
   cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).
   lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },

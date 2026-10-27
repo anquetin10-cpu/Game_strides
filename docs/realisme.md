@@ -88,6 +88,23 @@ teinté laissant voir le conducteur et l'habitacle, son moteur propre (3 cylindr
 | Durée d'une journée | au choix dans Réglages : « Réel · 24 h » ou « Jeu · 1 jour = 20 min » (par défaut) | 24 h | conforme en mode réel | `game.js`, Réglages |
 | Étendue du monde | 1,2 km × 1,2 km | Côte Fleurie : une vingtaine de kilomètres | **adapté** (compression des distances) — validé par le porteur du projet (26/10/2026 : monde conservé à 1,2 km pour la fluidité sur iPhone) | `layout.js` |
 
+## 4 bis. Revue visuelle de tout le monde du jeu (27 octobre 2026)
+
+Captures `tests/e2e/look.mjs` (rendu réel, logiciel SwiftShader, 960×432), une vue par lieu, de jour (15 h) et de nuit
+(22 h) pour la ville. Chaque défaut relevé a été corrigé puis recapturé.
+
+| Vue | Lieu | Défaut relevé | Correction |
+| --- | --- | --- | --- |
+| `town`, `fountain`, `crowd` | place de Deauvelle | sol lisse uniforme, fontaine « plastique », moiré des pavés en vue rasante | pavés de granit (cercles autour de la fontaine), calcaire patiné, motif fondu à sa teinte moyenne au loin |
+| `cross`, `lamp`, `road` | rues, trottoirs, entrée de ville | trottoirs en béton lisse | dalles de calcaire et bordures de granit |
+| `town` 22 h | place la nuit | place dans le noir | huit lanternes |
+| `cabins`, `cabinsBack`, `shore` | Planches, cabines | arrière des cabines : murs blancs nus | bardage à couvre-joints, aérations, soubassement |
+| `station` | entrée nord | (nouveau lieu) | station-service |
+| `horse`, `person`, `yard`, `home`, `truck`, `car` | Écurie du Val, cheval, cavalière, camion, 4x4 | aucun | — |
+| `arena`, `cso`, `hippo`, `entry`, `land`, `beach`, `traffic`, `field`, `plow`, `cliff` | carrières, Pôle International, hippodrome, campagne, mer, falaises | aucun (blé moissonné fin août, conforme au calendrier normand) | — |
+
+Arbres très proches de la caméra : tramés volontairement (fondu) pour ne pas masquer la vue.
+
 ## 5. Écarts restants (contraintes physiques)
 
 1. **Pente de l'estran** : la mer du jeu monte et descend de la hauteur réelle (7,1 m en vives-eaux, 3,7 m en
