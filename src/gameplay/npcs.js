@@ -223,6 +223,23 @@ class Car {
     // Vitesse visée : limitation, puis freinage doux (≈ 5 m/s²) pour s'arrêter 5 m avant l'obstacle.
     let target = limit;
     if (gap < Infinity) target = Math.min(target, Math.sqrt(Math.max(0, 10 * (gap - 5))));
+    // Nez à nez avec le véhicule du joueur (camion qui tourne, voiture mal placée) depuis 4 s : on recule de quelques
+    // mètres pour lui laisser la place, comme un automobiliste.
+    if (pv && !this.uturn && this.speed < 0.3 && !this.backT) {
+      const pp = pv.nose && pv.nose.pos.x !== 1e6 ? pv.nose.pos : pv.pos;
+      const dx = pp.x - this.pos.x, dz = pp.z - this.pos.z;
+      const ahead = dx * fx + dz * fz;
+      if (ahead > 0 && ahead < 9 && Math.abs(dx * fz - dz * fx) < 4) this.blockT = (this.blockT || 0) + dt;
+      else this.blockT = 0;
+      if (this.blockT > 4) {
+        this.backT = 2.6;
+        this.blockT = 0;
+      }
+    }
+    if (this.backT > 0) {
+      this.backT = Math.max(0, this.backT - dt);
+      target = this.backT > 0.4 ? -1.6 : 0;
+    }
     const prev = this.speed;
     this.speed += clamp(target - this.speed, -9 * dt, 2.6 * dt);
     this.accel = (this.speed - prev) / Math.max(dt, 1e-3);
@@ -248,7 +265,8 @@ class Car {
     this.pitch += (pt - this.pitch) * Math.min(1, dt * 5);
     this._place();
     this.mesh.visible = far < 300;
-    this.braking = this.accel < -0.8 || this.speed < 0.3;
+    this.braking = this.accel < -0.8 || (this.speed < 0.3 && this.speed > -0.2);
+    this.reversing = this.speed < -0.2;
   }
   // Pas de demi-tour tant que le joueur ou un cheval se trouve sur sa trajectoire.
   _turnClear() {
