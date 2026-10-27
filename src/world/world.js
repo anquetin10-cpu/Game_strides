@@ -6,17 +6,18 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
 import { mulberry32, polyDist, clamp } from '../core/math.js';
 import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shoreZ, forestDensity, isReserved, nearestRoad } from './layout.js';
-import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATION, homeBoxes } from './sites.js';
+import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATION, BARN_LAYOUTS } from './sites.js';
+import { barnGeo, clubHouseGeo } from './barns.js';
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail, paveTexture } from './terrainTexture.js';
-import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, INTERIOR_UNIFORMS } from './surfaces.js';
+import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, addIndoor, INTERIOR_UNIFORMS } from './surfaces.js';
 import { CAR_COLORS, CAR_MODELS, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky, CLOUD_UNIFORMS } from './sky.js';
 import { TIDE_EXTREMES } from './weather.js';
 import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
 import {
-  PALETTE, buildingGeo, stableGeo, shedGeo, fenceGeo, lampGeo, benchGeo, parasolGeo,
+  PALETTE, buildingGeo, shedGeo, fenceGeo, lampGeo, benchGeo, parasolGeo,
   roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, awningGeo, planterGeo, winBox, ensureWin,
 } from './builders.js';
 import { buildGrassMask, clearGrassUnder } from './grass.js';
@@ -176,6 +177,24 @@ export class World {
       const c = Math.cos(rot), s = Math.sin(rot);
       for (const [bx, bz, bhw, bhd] of geoPair.bays) this.colliders.addBox(x + bx * c + bz * s, z - bx * s + bz * c, bhw, bhd, rot, Infinity, kind);
     }
+    this.features.buildings.push({ x, z, w, d, rot, kind });
+    return y;
+  }
+
+  // Bâtiment où l'on entre (écurie à couloir, club-house) : géométrie, vitrages, éclairage, collisions des murs et
+  // cloisons (repère local du bâtiment), plafond pour la caméra.
+  placeBarn(g, x, z, rot, w, d, kind = 'stable') {
+    const y = this.groundAt(x, z, w / 2, d / 2, rot);
+    this.batch.add(g.body, null, x, y, z, rot);
+    if (g.detail) this.batch.addDetail(g.detail, null, x, y, z, rot);
+    if (g.glass) this.glass.add(ensureWin(g.glass), null, x, y, z, rot);
+    if (g.lights) this.lights.add(g.lights, null, x, y, z, rot);
+    const c = Math.cos(rot), s = Math.sin(rot);
+    for (const [bx, bz, bhw, bhd] of g.colliders) this.colliders.addBox(x + bx * c + bz * s, z - bx * s + bz * c, bhw, bhd, rot, Infinity, kind);
+    // Plafonds des locaux (sous le grenier) d'abord, puis sous-face du toit.
+    for (const r of g.rooms || []) this.colliders.addCeiling({ x: x + r.x * c + r.z * s, z: z - r.x * s + r.z * c, rot, y, hw: r.hw, hd: r.hd, h: r.h });
+    this.colliders.addCeiling({ x, z, rot, y, ...g.ceiling });
+    addIndoor({ x, z, rot, y, ...g.ceiling });
     this.features.buildings.push({ x, z, w, d, rot, kind });
     return y;
   }
@@ -404,7 +423,11 @@ export class World {
   // ---------- Sites ----------
   buildHome() {
     const B = HOME.barn;
-    this.place(stableGeo({ w: B.w, d: B.d, boxes: HOME.boxCount, wall: '#202125' }), B.x, B.z, 0, B.w, B.d, 'stable');
+    // Écurie à couloir central : bardage bois noir sur soubassement béton, couverture bac acier, charpente bois.
+    this.placeBarn(barnGeo({ w: B.w, d: B.d, cols: BARN_LAYOUTS.home, style: { wall: '#202125', trim: '#f2f1ec', roof: '#3a3d42', slide: '#202125' } }), B.x, B.z, 0, B.w, B.d);
+    const C = HOME.club;
+    this.placeBarn(clubHouseGeo({ w: C.w, d: C.d }), C.x, C.z, -Math.PI / 2, C.w, C.d, 'club');
+    this.signboard('CLUB-HOUSE', 'Écurie du Val', C.x + 2, C.z - C.w / 2 - 1.2, 0, { w: 3.2, h: 0.8, postH: 1.6 });
     this.place(buildingGeo({ w: HOME.house.w, d: HOME.house.d, h: 5.6, wall: '#f3efe7', roof: '#33363c', trim: '#202125', roofType: 'gable', doorColor: '#202125' }), HOME.house.x, HOME.house.z, 0, HOME.house.w, HOME.house.d, 'house');
     // Grange à foin ouverte vers l'est.
     const H = HOME.hay;
@@ -436,7 +459,6 @@ export class World {
     }
     this.colliders.addBox(-170.5, 192.8, 2.4, 1.6, 0, Infinity, 'bales');
     this.signboard('ÉCURIE DU VAL', 'Pension · Travail · Commerce', -40, 162, Math.PI / 2, { w: 5.2 });
-    for (const b of homeBoxes()) this.batch.add(box(0.5, 0.4, 0.3), '#3c3f45', b.x + 1.2, this.h(b.x, b.z) + 1.0, b.z + 0.2, 0);
     for (let i = 0; i < 6; i++) this.tree(i % 2 ? 'oak' : 'birch', -186 + this.rnd() * 6, 135 + i * 18, 1 + this.rnd() * 0.3);
     for (let i = 0; i < 5; i++) this.tree('poplar', -48 + i * 0.5, 192 + i * 10, 1.1);
   }
@@ -454,8 +476,11 @@ export class World {
       this.colliders.addCircle(g.x + dx, g.z, 0.8, Infinity, 'gate');
     }
     this.texturedPanel(signTexture('HARAS DE LA POMMERAIE', 'Élevage · Pension · Étalons', { dark: true }), 9.4, 1.6, g.x, this.h(g.x, g.z) + 5.4, g.z - 0.1, Math.PI, { doubleSided: true });
-    this.place(stableGeo({ w: HARAS.wingW.d, d: HARAS.wingW.w, boxes: 8, wall: '#2a2b2f' }), HARAS.wingW.x, HARAS.wingW.z, Math.PI / 2, HARAS.wingW.d, HARAS.wingW.w, 'stable');
-    this.place(stableGeo({ w: HARAS.wingE.d, d: HARAS.wingE.w, boxes: 8, wall: '#2a2b2f' }), HARAS.wingE.x, HARAS.wingE.z, -Math.PI / 2, HARAS.wingE.d, HARAS.wingE.w, 'stable');
+    // Écuries du haras (ailes de la cour) : murs enduits sur soubassement de pierre, ardoise, portes vert anglais,
+    // façades de box en chêne, comme les grandes écuries des haras normands.
+    const harasStyle = { kind: 'stone', wall: stone, plinth: '#b9ae98', trim: '#f6f3ec', roof: '#454a52', slide: '#2f4a3a', wood: '#6b4a30', steel: '#24342b', lining: '#a98258', truss: '#5b4330' };
+    this.placeBarn(barnGeo({ w: HARAS.wingW.d, d: HARAS.wingW.w, cols: BARN_LAYOUTS.haras, style: harasStyle }), HARAS.wingW.x, HARAS.wingW.z, Math.PI / 2, HARAS.wingW.d, HARAS.wingW.w);
+    this.placeBarn(barnGeo({ w: HARAS.wingE.d, d: HARAS.wingE.w, cols: BARN_LAYOUTS.haras, style: harasStyle }), HARAS.wingE.x, HARAS.wingE.z, -Math.PI / 2, HARAS.wingE.d, HARAS.wingE.w);
     const c = HARAS.court;
     this.batch.add(cyl(6, 6, 0.35, 16), '#78a957', c.x, this.h(c.x, c.z), c.z, 0);
     this.tree('oak', c.x, c.z, 1.4);
@@ -466,14 +491,16 @@ export class World {
 
   buildDunes() {
     const b = DUNES.barn;
-    this.place(stableGeo({ w: b.w, d: b.d, boxes: 6, wall: '#f2f1ec', trim: '#1b1c1f', door: '#1b1c1f', roof: '#2d3035' }), b.x, b.z, 0, b.w, b.d, 'stable');
+    // Écurie de bord de mer : bardage blanc, menuiseries noires, toit sombre.
+    this.placeBarn(barnGeo({ w: b.w, d: b.d, aisle: 3.2, cols: BARN_LAYOUTS.dunes, style: { wall: '#f2f1ec', trim: '#1b1c1f', roof: '#2d3035', slide: '#1b1c1f', wood: '#9b7650', lining: '#c9a273' } }), b.x, b.z, 0, b.w, b.d);
     this.rectFence(DUNES.paddock, { height: 1.15, rails: 3 }, 'n', 4, 0.2);
     this.signboard('ÉCURIE DES DUNES', 'Pension en bord de mer', 512, -330, 0, { w: 5 });
   }
 
   buildGatien() {
     const b = GATIEN.barn;
-    this.place(stableGeo({ w: b.w, d: b.d, boxes: 6, wall: '#5c4632', trim: '#efe6d2', roof: '#3c3f45', door: '#3c2c20' }), b.x, b.z, Math.PI, b.w, b.d, 'stable');
+    // Écurie forestière : bardage bois brun, menuiseries crème.
+    this.placeBarn(barnGeo({ w: b.w, d: b.d, aisle: 3.2, cols: BARN_LAYOUTS.gatien, style: { wall: '#5c4632', trim: '#efe6d2', roof: '#3c3f45', slide: '#3c2c20', wood: '#76563a' } }), b.x, b.z, 0, b.w, b.d);
     this.place(buildingGeo({ w: GATIEN.club.w, d: GATIEN.club.d, h: 4.5, wall: '#efe6d2', roof: '#4a4f57', timber: true }), GATIEN.club.x, GATIEN.club.z, Math.PI, GATIEN.club.w, GATIEN.club.d);
     // Arche de départ du cross.
     const s = GATIEN.start;
@@ -505,7 +532,8 @@ export class World {
     this.rectFence(POLE.warmup, { height: 1.0, board: true, color: '#f2f1ec' }, 'e', 6, 0.5);
     this.buildStands(POLE.stands, 0, true, 'PÔLE INTERNATIONAL');
     const S = POLE.stables;
-    this.place(stableGeo({ w: S.d, d: S.w, boxes: 12, wall: '#f2f1ec', trim: '#1b1c1f', door: '#1b1c1f', roof: '#e2e2de' }), S.x, S.z, -Math.PI / 2, S.d, S.w, 'stable');
+    // Écuries de concours sous tente (comme sur les CSI) : toile blanche, boxes démontables en acier galvanisé.
+    this.placeBarn(barnGeo({ w: S.d, d: S.w, aisle: 8.4, h: 3.6, cols: BARN_LAYOUTS.pole, windowsP: 'high', endDoors: [true, true], over: 0.3, style: { kind: 'tent', wall: '#eeeeea', trim: '#d8d6cf', roof: '#f4f4f0', slide: '#e2e1dc', wood: '#9ca1a6', steel: '#7d8287', lining: '#d8d6cf', truss: '#9ca1a6', aisle: '#c9b68b' } }), S.x, S.z, -Math.PI / 2, S.d, S.w);
     const C = POLE.club;
     this.place(buildingGeo({ w: C.w, d: C.d, h: 7, wall: '#1b1c1f', roof: '#2a2b2f', roofType: 'flat', trim: '#f2f1ec', floors: 2 }), C.x, C.z, 0, C.w, C.d, 'club');
     // Écran géant.

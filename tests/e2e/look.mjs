@@ -63,6 +63,16 @@ const VIEWS = {
   person: (g) => { const p = g.player.human.pos; const hd = g.player.human.heading ?? 0; return { at: [p.x, p.y + 1.45, p.z], from: [p.x + Math.sin(hd) * 2.6 + 0.8, p.y + 1.6, p.z + Math.cos(hd) * 2.6] }; },
   // Passants en ville.
   crowd: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x - 20, P.z + 12); return { at: [P.x - 20, y + 1.2, P.z], from: [P.x - 14, y + 1.7, P.z + 14] }; },
+  // Intérieur de l'écurie du Val : allée centrale vue depuis le pignon est, puis aire de pansage et sellerie.
+  aisle: (g) => { const y = g.terrain.getHeight(-120, 150); return { at: [-140, y + 1.3, 150], from: [-112.5, y + 1.75, 150.6] }; },
+  tack: (g) => { const y = g.terrain.getHeight(-100, 150); return { at: [-99, y + 1.3, 155.4], from: [-104.2, y + 1.7, 152.1] }; },
+  barn: (g) => { const y = g.terrain.getHeight(-120, 170); return { at: [-120, y + 3, 152], from: [-92, y + 4.5, 176] }; },
+  club: (g) => { const y = g.terrain.getHeight(-67, 205); return { at: [-67, y + 1.6, 205], from: [-82, y + 2.6, 198] }; },
+  harasBarn: (g) => { const y = g.terrain.getHeight(-395, -30); return { at: [-428, y + 3, -45], from: [-398, y + 3.2, -22] }; },
+  dunesBarn: (g) => { const y = g.terrain.getHeight(515, -285); return { at: [500, y + 2.5, -302], from: [520, y + 3, -282] }; },
+  gatienBarn: (g) => { const y = g.terrain.getHeight(-195, 300); return { at: [-212, y + 2.5, 284], from: [-192, y + 3, 302] }; },
+  poleTent: (g) => { const y = g.terrain.getHeight(395, -205); return { at: [420, y + 2.5, -226], from: [392, y + 3.5, -200] }; },
+  poleAisle: (g) => { const y = g.terrain.getHeight(420, -226); return { at: [420, y + 1.4, -250], from: [420.3, y + 1.8, -200] }; },
   cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).
   lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },

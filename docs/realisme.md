@@ -54,6 +54,30 @@ teinté laissant voir le conducteur et l'habitacle, son moteur propre (3 cylindr
 | Carburant | réservoirs d'origine (camion 150 l, citadine 42 l, compacte 50 l, berline 55 l, SUV 53 l, SUV 4x4 50 l, tracteur 160 l) ; consommation = frottements internes proportionnels au régime + puissance fournie × consommation spécifique (195 – 240 g/kWh) ÷ masse volumique ; injection coupée au frein moteur ; à 90 km/h stabilisés : citadine 5,5, compacte 5,4, berline 4,0, SUV 5,0, SUV 4x4 5,6 l/100 km, camion chargé ~24 l/100 km ; tracteur ~8 l/h sur route ; jauge, autonomie et consommation moyenne au tableau de bord ; plein payant à la station-service de l'entrée nord (gazole 1,72 €/l, SP95-E10 1,84 €/l, prix indicatifs) ; réserve sous 12 %, panne sèche (le moteur cale) et dépannage de 10 l | consommations stabilisées de ces motorisations ; 7,5 t carrossé : 20 – 28 l/100 km | conforme | `vehicles.test.js`, `fuel.mjs` |
 | Monter / sortir | bouton ACTION « Conduire » à la portière, « Sortir » à l'arrêt ; missions du camion réservées au camion Strides | — | conforme | `vehicles.mjs` |
 
+## 2 ter. Écuries
+
+Modèle commun (`src/world/barns.js`), inspiré des écuries « à l'américaine » de propriétaires et des grandes écuries
+des haras normands : bâtiment fermé traversé par un couloir central, où l'on entre à pied, en menant ou à cheval.
+
+| Élément | Jeu | Référence réelle | Statut |
+| --- | --- | --- | --- |
+| Box | 3,6 × 3,6 m (≈ 13 m²), litière de copeaux, abreuvoir automatique, mangeoire d'angle, anneau d'attache, lambris bas | 9 à 16 m² pour un cheval de sport (recommandations : 3 × 3 m au minimum) | conforme |
+| Façade de box | soubassement en planches jusqu'à 1,15 m, barreaux d'acier (entraxe 7,5 cm) jusqu'à 2,3 m, porte coulissante sur rail avec encolure (« yoke »), plaque nominative, porte-couverture, loquet | façades de box du commerce (bois + barreaudage) | conforme |
+| Séparations | planches jusqu'à 1,3 m, barreaux jusqu'à 2,3 m (les chevaux se voient) | idem | conforme |
+| Allée centrale | 3,6 m (3,2 m dans les petites écuries, 8,4 m sous la tente du Pôle), pavés caoutchouc, caniveau, réglettes suspendues, portes coulissantes aux pignons et sur l'allée transversale | allée de 3 à 4 m | conforme |
+| Fenêtres de box | côté cour : fenêtre ouvrante à volets et grille (le cheval sort la tête) ; côté opposé : châssis hauts | idem | conforme |
+| Locaux | aire de pansage (tapis, attaches croisées, étagère, caisse de pansage, miroir), douche (carrelage, potence et tuyau, lampe chauffante infrarouge), sellerie (porte-selles sur deux hauteurs avec selles et tapis, porte-filets, armoire, malle de concours, banc), salle d'aliments (coffres, sacs sur palette) ; grenier au-dessus des locaux | équipements courants d'une écurie de pension | conforme |
+| Bâtiment | soubassement béton, bardage bois ou murs enduits, couverture à 30°, faîtage ventilé, lanterneaux, châssis éclairants, charpente apparente (fermes tous les 3,6 m), gouttières | idem | conforme |
+| Club-house (Écurie du Val) | baie vitrée sur la carrière, terrasse, comptoir, tables, canapé, vitrine de trophées, mur de flots | idem | conforme |
+| Lumière intérieure | éclairage du ciel réduit et réchauffé sous le toit, plus franc vers les portes de pignon | idem | appréciation visuelle |
+
+Écurie du Val : 16 boxes, 2 aires de pansage, douche, salle d'aliments, 2 selleries ; Haras de la Pommeraie : deux
+ailes (murs enduits sur soubassement de pierre, ardoise, portes vert anglais, façades en chêne) ; Écurie des Dunes
+(bardage blanc), Domaine de Saint-Gatien (bardage brun) ; Pôle International : écuries de concours sous tente, boxes
+démontables en acier galvanisé, comme sur les CSI. Vérifications : `barn.mjs` (entrer, longer l'allée, façades
+infranchissables, sellerie, à cheval, caméra sous la charpente), `look.mjs` (vues `barn`, `aisle`, `tack`, `club`,
+`harasBarn`, `dunesBarn`, `gatienBarn`, `poleTent`, `poleAisle`).
+
 ## 3. Épreuves
 
 | Grandeur | Jeu | Référence réelle | Statut | Vérification |

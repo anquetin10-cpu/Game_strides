@@ -205,6 +205,45 @@ const SURFACE_MAIN = /* glsl */ `
 }
 `;
 
+// Intérieurs des bâtiments où l'on entre (écuries, club-house) : sous le toit, la lumière du ciel n'arrive que par les
+// portes et les fenêtres. L'éclairage indirect y est réduit et réchauffé (bois, litière), le reflet du ciel atténué.
+export const INDOOR_UNIFORMS = {
+  indoorN: { value: 0 },
+  indoorR: { value: Array.from({ length: 12 }, () => new THREE.Vector4()) }, // x, z, demi-longueur, demi-largeur
+  indoorP: { value: Array.from({ length: 12 }, () => new THREE.Vector4()) }, // cos, sin, y du plancher, h (murs)
+  indoorQ: { value: Array.from({ length: 12 }, () => new THREE.Vector2()) }, // rise (faîtage)
+};
+export function addIndoor(cl) {
+  const n = INDOOR_UNIFORMS.indoorN.value;
+  if (n >= 12) return;
+  INDOOR_UNIFORMS.indoorR.value[n].set(cl.x, cl.z, cl.hw, cl.hd);
+  INDOOR_UNIFORMS.indoorP.value[n].set(Math.cos(cl.rot || 0), Math.sin(cl.rot || 0), cl.y, cl.h);
+  INDOOR_UNIFORMS.indoorQ.value[n].set(cl.rise || 0, 0);
+  INDOOR_UNIFORMS.indoorN.value = n + 1;
+}
+const INDOOR_CHUNK = /* glsl */ `
+uniform int indoorN;
+uniform vec4 indoorR[12];
+uniform vec4 indoorP[12];
+uniform vec2 indoorQ[12];
+float sfIndoor( vec3 p ) {
+  float k = 0.0;
+  for ( int i = 0; i < 12; i++ ) {
+    if ( i >= indoorN ) break;
+    vec2 d = p.xz - indoorR[i].xy;
+    vec4 P = indoorP[i];
+    vec2 l = vec2( d.x * P.x - d.y * P.y, d.x * P.y + d.y * P.x );
+    vec2 q = abs( l ) - indoorR[i].zw;
+    if ( max( q.x, q.y ) > 0.02 ) continue;
+    float roof = P.z + P.w + indoorQ[i].x * max( 0.0, 1.0 - abs( l.y ) / indoorR[i].w ) + 0.15;
+    if ( p.y > roof || p.y < P.z - 0.6 ) continue;
+    // Fondu de 1,5 m vers les pignons (portes ouvertes) : la lumière du jour entre par les extrémités de l'allée.
+    k = max( k, smoothstep( 0.0, 1.5, -q.x ) * 0.85 + 0.15 );
+  }
+  return k;
+}
+`;
+
 // Applique le shader de surfaces à un matériau standard à couleurs de sommet (bâtiments, mobilier, décors).
 // getTerrain : fonction renvoyant le terrain (résolu à la compilation, une fois le monde construit).
 export function applySurfaces(material, detailTexture, getTerrain = null) {
@@ -222,7 +261,17 @@ export function applySurfaces(material, detailTexture, getTerrain = null) {
       .replace('#include <color_fragment>', `#include <color_fragment>\n${SURFACE_MAIN}`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = sfRough;')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = sfMetal;')
-      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = sfBump( -vViewPosition, normal, sfH * 0.012 );');
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = sfBump( -vViewPosition, normal, sfH * 0.012 );')
+      .replace('#include <common>', `#include <common>\n${INDOOR_CHUNK}`)
+      .replace('#include <lights_fragment_maps>', `#include <lights_fragment_maps>
+  {
+    float ins = sfIndoor( vSurfPos );
+    vec3 warm = mix( vec3( 1.0 ), vec3( 0.72, 0.66, 0.56 ), ins );
+    irradiance *= warm;
+    iblIrradiance *= warm;
+    radiance *= 1.0 - ins * 0.7;
+  }`);
+    Object.assign(shader.uniforms, INDOOR_UNIFORMS);
     addCloudShadows(shader, 'vSurfPos');
   };
   material.customProgramCacheKey = () => 'st-surfaces';

@@ -97,6 +97,12 @@ export class FollowCamera {
     let cz = tz + dirz * this.dist;
     const ground = this.game.terrain.getHeight(cx, cz) + 0.6;
     if (cy < ground) cy = ground;
+    // Dans un bâtiment (couloir d'écurie, club-house) : la caméra reste sous la charpente.
+    const ceil = this.game.colliders.ceilingAt(tx, tz);
+    if (ceil) {
+      const cmax = this.game.colliders.ceilingY(ceil, cx, cz);
+      if (cmax !== null && cy > cmax) cy = Math.max(cmax, ty - 0.2);
+    }
     // Collé à un véhicule (camion à la rampe…) : la caméra s'élève au-dessus de la caisse au lieu de la traverser.
     const vt = this.game.colliders.volumeTopAt(cx, cz, cy - 0.3);
     const lift = vt > -Infinity ? Math.max(0, vt + 0.7 - cy) : 0;

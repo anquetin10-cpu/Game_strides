@@ -449,6 +449,19 @@ export class Ambient {
         k++;
       }
     }
+    // Chevaux au box, tête passée par-dessus la porte coulissante sur l'allée (Écurie du Val, côté prés ; écuries de
+    // concours sous tente du Pôle).
+    const stabled = [
+      ...[1, 3, 6].map((i) => [HOME.barn.x - HOME.barn.w / 2 + 0.25 + 3.6 * (i + 0.5), HOME.barn.z - 3.1, 0]),
+      ...[1, 4].map((i) => [POLE.stables.x + 5.1, POLE.stables.z - POLE.stables.d / 2 + 0.25 + 3.6 * (i + 0.5), -Math.PI / 2]),
+    ];
+    for (const [x, z, hd] of stabled) {
+      const h = g.spawnHorse({ id: `box${k}`, coat: COATS[k % COATS.length], blaze: rnd() < 0.5, socks: [rnd() < 0.3, rnd() < 0.3, rnd() < 0.4, rnd() < 0.4] }, x, z, hd, { saddle: false });
+      h.frozen = true;
+      h.ai = null;
+      h.ambient = true;
+      k++;
+    }
     // Cavaliers à l'entraînement.
     const W = POLE.warmup;
     const warm = [[W.x - 14, W.z - 16], [W.x + 14, W.z - 16], [W.x + 14, W.z + 16], [W.x - 14, W.z + 16]];

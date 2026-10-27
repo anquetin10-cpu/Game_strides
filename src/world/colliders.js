@@ -146,6 +146,28 @@ export class Colliders {
     });
     return res;
   }
+  // Plafonds des bâtiments où l'on entre (écuries, club-house) : sous-face du toit à deux pans, h aux murs, h + rise au
+  // faîtage. La caméra reste dessous tant que le joueur est à l'intérieur.
+  addCeiling({ x, z, rot = 0, y = 0, hw, hd, h, rise = 0 }) {
+    (this.ceilings ||= []).push({ x, z, c: Math.cos(rot), s: Math.sin(rot), y, hw, hd, h, rise });
+  }
+  _inCeiling(cl, x, z, m = 0) {
+    const dx = x - cl.x, dz = z - cl.z;
+    const lx = dx * cl.c - dz * cl.s, lz = dx * cl.s + dz * cl.c;
+    return Math.abs(lx) < cl.hw + m && Math.abs(lz) < cl.hd + m ? lz : null;
+  }
+  ceilingAt(x, z) {
+    for (const cl of this.ceilings || []) if (this._inCeiling(cl, x, z) !== null) return cl;
+    return null;
+  }
+  // Hauteur maximale de la caméra sous ce plafond au point (x, z), ou null hors du bâtiment.
+  // (lz : position en travers, réservée aux plafonds en pente.)
+  ceilingY(cl, x, z, margin = 0.35) {
+    const lz = this._inCeiling(cl, x, z, 0.4);
+    if (lz === null) return null;
+    // Sous les entraits de la charpente (hauteur des murs) : la caméra ne traverse pas les fermes.
+    return cl.y + cl.h - margin;
+  }
   // Point à l'intérieur d'un obstacle haut (pour la caméra).
   blocked(x, z, y = 0) {
     let res = false;

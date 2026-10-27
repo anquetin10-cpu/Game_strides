@@ -8,17 +8,33 @@ export const HOME = {
   arena: { x: -100, z: 212, w: 46, d: 24 },
   paddock: { x: -162, z: 216, w: 30, d: 22 },
   house: { x: -72, z: 136, w: 13, d: 9 },
+  club: { x: -67, z: 205, w: 12, d: 8 }, // club-house, baie vitrée et terrasse sur la carrière
   yard: { x: -112, z: 174, w: 120, d: 30 },
   truck: { x: -64, z: 158, rot: Math.PI / 2 },
   spawn: { x: -104, z: 168, rot: 0.35 },
   horse: { x: -112, z: 165, rot: Math.PI / 2 },
 };
 
+// Plans des écuries à couloir central (barns, voir barns.js) : modules d'ouest en est, de chaque côté de l'allée
+// (p : côté +z, n : côté -z). Box de 3,6 m ; allée transversale « cross » ; sellerie (tack), aire de pansage (groom),
+// douche (wash), aliments (feed).
+const B4 = { p: 'box', n: 'box' };
+export const BARN_LAYOUTS = {
+  // Écurie du Val : 8 boxes côté cour (fenêtres de box sur la cour) et 8 côté prés, allée transversale, deux aires de
+  // pansage, douche, salle d'aliments, sellerie de l'écurie et sellerie des propriétaires.
+  home: [B4, B4, B4, B4, B4, B4, B4, B4, { cross: true, w: 4 }, { p: 'groom', n: 'wash' }, { p: 'groom', n: 'feed' }, { w: 7.2, p: 'tack', n: 'tack' }],
+  haras: [B4, B4, B4, B4, { cross: true, w: 4 }, { p: 'groom', n: 'wash' }, { p: 'groom', n: 'feed' }, B4, B4, { w: 6.7, p: 'tack', n: 'tack' }],
+  dunes: [B4, B4, B4, B4, { cross: true, w: 3.6 }, { p: 'groom', n: 'wash' }, { w: 6.3, p: 'tack', n: 'feed' }, B4],
+  gatien: [B4, B4, B4, B4, { cross: true, w: 3.6 }, { p: 'groom', n: 'wash' }, { w: 5.9, p: 'tack', n: 'feed' }],
+  pole: [B4, B4, B4, B4, B4, B4, B4, B4, { cross: true, w: 4 }, { p: 'groom', n: 'wash' }, { p: 'groom', n: 'wash' }, B4, B4, B4, B4, B4],
+};
+
+// Boxes de l'Écurie du Val ouvrant sur la cour : position devant la fenêtre de box (cheval placé à z - 1,4, tête
+// dehors). Box de 3,6 m à partir du pignon ouest (mur de 0,25 m).
 export function homeBoxes() {
   const out = [];
   const b = HOME.barn;
-  const step = b.w / HOME.boxCount;
-  for (let i = 0; i < HOME.boxCount; i++) out.push({ x: b.x - b.w / 2 + step * (i + 0.5), z: HOME.boxesZ });
+  for (let i = 0; i < HOME.boxCount; i++) out.push({ x: b.x - b.w / 2 + 0.25 + 3.6 * (i + 0.5), z: HOME.boxesZ });
   return out;
 }
 
