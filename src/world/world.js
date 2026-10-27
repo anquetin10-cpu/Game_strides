@@ -8,8 +8,8 @@ import { mulberry32, polyDist, clamp } from '../core/math.js';
 import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shoreZ, forestDensity, isReserved, nearestRoad } from './layout.js';
 import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBoxes } from './sites.js';
 import { Terrain } from './terrain.js';
-import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
-import { applySurfaces, applyRoadShader, applyInteriors, INTERIOR_UNIFORMS } from './surfaces.js';
+import { makeTerrainTexture, makeGroundDetail, paveTexture } from './terrainTexture.js';
+import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, INTERIOR_UNIFORMS } from './surfaces.js';
 import { CAR_COLORS, CAR_MODELS, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky, CLOUD_UNIFORMS } from './sky.js';
@@ -867,7 +867,7 @@ export class World {
       return 7;
     };
     const SW = 2.6;
-    const curb = '#cbc5b8';
+    const walkGeos = [];
     for (const [x0, x1, z0, z1] of TOWN_BLOCKS) {
       const iw = roadW(x0, x1, z0, z1, 'w') / 2, ie = roadW(x0, x1, z0, z1, 'e') / 2;
       const inn = roadW(x0, x1, z0, z1, 'n') / 2, is = roadW(x0, x1, z0, z1, 's') / 2;
@@ -880,7 +880,7 @@ export class World {
       ];
       for (const [cx, cz, w, d] of strips) {
         const y = this.h(cx, cz);
-        this.batch.add(box(w, 0.16, d), curb, cx, y - 0.02, cz, 0);
+        walkGeos.push(box(w, 0.16, d).translate(cx, y - 0.02, cz));
         this.walkways.push([cx - w / 2, cx + w / 2, cz - d / 2, cz + d / 2, y + 0.14]);
       }
       // Jardinières aux angles.
@@ -893,6 +893,10 @@ export class World {
         }
       }
     }
+    // Trottoirs : un seul maillage, dalles de calcaire et bordures de granit (matériau dédié).
+    const walkMesh = new THREE.Mesh(mergeGeometries(walkGeos.map((g) => (g.deleteAttribute('uv'), g)), false), applyPavement(new THREE.MeshStandardMaterial({ color: '#d8d2c4', roughness: 0.85 }), paveTexture('slab')));
+    walkMesh.receiveShadow = true;
+    this.group.add(walkMesh);
     const W = this.walkways;
     this.walkBox = [Math.min(...W.map((s) => s[0])), Math.max(...W.map((s) => s[1])), Math.min(...W.map((s) => s[2])), Math.max(...W.map((s) => s[3]))];
     // Passages piétons à chaque intersection du quadrillage.

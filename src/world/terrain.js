@@ -5,7 +5,7 @@ import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
 import { WORLD, ZONES, ROADS, POND, SIGN, BEACH, shoreZ, beachWig, beachHeight, isCliffRegion, zoneDist } from './layout.js';
 import { HOME, POLE, TOWN } from './sites.js';
-import { makePaveTexture } from './terrainTexture.js';
+import { paveTexture } from './terrainTexture.js';
 
 // Carrières en sable (centre x, z ; demi-largeur, demi-profondeur) : sol hersé et piste piétinée le long de la lice.
 const ARENAS = [POLE.arena, POLE.warmup, HOME.arena].map((a) => new THREE.Vector4(a.x, a.z, a.w / 2, a.d / 2));
@@ -17,7 +17,6 @@ const PAVES = [
   new THREE.Vector4(TOWN_ZONE.x, TOWN_ZONE.z, TOWN_ZONE.hw - 2, TOWN_ZONE.hd - 2),
 ];
 const PAVE_ROUND = new THREE.Vector3(TOWN.plaza.x, TOWN.plaza.z, 15);
-const PAVE_TEX = {};
 
 const n1 = createNoise2D(11);
 const n2 = createNoise2D(23);
@@ -255,8 +254,8 @@ export class Terrain {
         shader.uniforms.arenaR = { value: ARENAS };
         shader.uniforms.paveR = { value: PAVES };
         shader.uniforms.paveC = { value: PAVE_ROUND };
-        shader.uniforms.paveSett = { value: (PAVE_TEX.sett ||= makePaveTexture('sett')) };
-        shader.uniforms.paveSlab = { value: (PAVE_TEX.slab ||= makePaveTexture('slab')) };
+        shader.uniforms.paveSett = { value: paveTexture('sett') };
+        shader.uniforms.paveSlab = { value: paveTexture('slab') };
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNrm;')
           .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWorldNrm = normalize(mat3(modelMatrix) * objectNormal);');

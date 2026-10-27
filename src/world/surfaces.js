@@ -391,3 +391,41 @@ export function applyInteriors(material) {
   material.customProgramCacheKey = () => 'st-interiors';
   return material;
 }
+
+// Trottoirs de la ville : dessus en dalles de calcaire (même texture que les sols pavés du terrain, en coordonnées du
+// monde, avec leur relief), bordures de granit gris sur les faces latérales.
+export function applyPavement(material, slab) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.paveSlab = { value: slab };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vPvPos;\nvarying vec3 vPvNrm;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPvPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvPvNrm = normalize(mat3(modelMatrix) * objectNormal);');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform sampler2D paveSlab;
+varying vec3 vPvPos;
+varying vec3 vPvNrm;
+float pvH = 0.0;`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+{
+  float top = smoothstep( 0.7, 0.9, vPvNrm.y );
+  vec4 pv = texture2D( paveSlab, vPvPos.xz / 2.4 );
+  diffuseColor.rgb *= mix( vec3( 0.74, 0.75, 0.77 ), pv.rgb * 1.25, top );
+  pvH = pv.a * top;
+}`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix( 0.85, 0.72, pvH );')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+{
+  vec3 sp = -vViewPosition;
+  vec3 sx = dFdx( sp ), sy = dFdy( sp );
+  vec3 r1 = cross( sy, normal ), r2 = cross( normal, sx );
+  float det = dot( sx, r1 );
+  float hh = pvH * 0.012;
+  vec3 grad = sign( det ) * ( dFdx( hh ) * r1 + dFdy( hh ) * r2 );
+  normal = normalize( abs( det ) * normal - grad );
+}`);
+    addCloudShadows(shader, 'vPvPos');
+  };
+  material.customProgramCacheKey = () => 'pavement';
+  return material;
+}

@@ -464,7 +464,7 @@ export function makePaveTexture(kind, size = 512) {
         height = 0.05 * n;
       } else if (kind === 'sett') {
         // Granit : gris bleuté à beige rosé, grains noirs et blancs.
-        const base = [0.84 + 0.2 * id, 0.84 + 0.15 * id, 0.86 + 0.07 * id].map((c) => c * (0.93 + 0.1 * id2));
+        const base = [0.9 + 0.1 * id, 0.9 + 0.075 * id, 0.91 + 0.035 * id].map((c) => c * (0.96 + 0.06 * id2));
         const grain = n > 0.72 ? 0.8 : n < 0.25 ? 1.1 : 1;
         tone = base.map((c) => c * grain * (0.97 + 0.06 * st));
         height = smoothstep(0, 0.035, e - jw) * (0.7 + 0.3 * id2) + n * 0.12;
@@ -490,3 +490,7 @@ export function makePaveTexture(kind, size = 512) {
   tex.needsUpdate = true;
   return tex;
 }
+
+const PAVE_CACHE = {};
+// Une seule texture de chaque sol pavé, partagée par le terrain et les trottoirs.
+export const paveTexture = (kind) => (PAVE_CACHE[kind] ||= makePaveTexture(kind));
