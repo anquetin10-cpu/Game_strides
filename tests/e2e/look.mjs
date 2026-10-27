@@ -55,6 +55,8 @@ const VIEWS = {
   // Cabines de bain et Planches, depuis la plage.
   cabins: (g) => ({ at: [-60, g.terrain.getHeight(-60, -366) + 1.4, -366], from: [-40, g.terrain.getHeight(-40, -384) + 1.7, -384] }),
   // Falaises d'Aval depuis la plage.
+  // Cabines vues de l'arrière (côté route).
+  cabinsBack: (g) => ({ at: [-56.5, g.terrain.getHeight(-56.5, -366) + 1.3, -366], from: [-47, g.terrain.getHeight(-47, -353) + 1.7, -353] }),
   cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).
   lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },

@@ -1002,6 +1002,18 @@ export class World {
         parts.push([box(0.62, 0.16, 0.04), '#1d1e21', { x: cx, y: 2.1, z: -1.24 }]);
         parts.push([box(1.25, 0.08, 0.12), '#e9e6de', { x: cx, y: 1.95, z: -1.24 }]);
         if (k) parts.push([box(0.08, 2.7, 0.1), '#e9e6de', { x: -N * W / 2 + k * W, z: -1.22 }]);
+        // Arrière (côté route) : grille d'aération haute de chaque cabine.
+        parts.push([box(0.6, 0.28, 0.05), '#5d7480', { x: cx, y: 2.08, z: 1.23 }]);
+        for (let l = 0; l < 4; l++) parts.push([box(0.6, 0.025, 0.04), '#f4f3ef', { x: cx, y: 2.1 + l * 0.065, z: 1.26 }]);
+      }
+      // Bardage planches et couvre-joints peint en blanc à l'arrière et sur les pignons, poteaux d'angle entre
+      // cabines, soubassement peint (éclaboussures, sable).
+      for (let x = -N * W / 2 + 0.25; x < N * W / 2; x += 0.5) parts.push([box(0.05, 2.42, 0.03), '#ecebe6', { x, y: 0.28, z: 1.215 }]);
+      for (let k = 0; k <= N; k++) parts.push([box(0.14, 2.7, 0.06), '#e9e6de', { x: -N * W / 2 + k * W, z: 1.23 }]);
+      parts.push([box(N * W + 0.06, 0.28, 0.05), '#8f9a9e', { z: 1.225 }]);
+      for (const sx of [-1, 1]) {
+        for (let zz = -0.95; zz < 1.2; zz += 0.5) parts.push([box(0.03, 2.42, 0.05), '#ecebe6', { x: sx * (N * W / 2 + 0.015), y: 0.28, z: zz }]);
+        parts.push([box(0.05, 0.28, 2.42), '#8f9a9e', { x: sx * (N * W / 2 + 0.02) }]);
       }
       this.batch.add(partsToGeo(parts), null, xc, y, z, 0);
       // Collision : cabines et portique à colonnettes (z local -2,86 à +1,2).
