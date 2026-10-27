@@ -5,6 +5,7 @@ import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
 import { WORLD } from '../world/layout.js';
 import { HorseCondition, SIM } from '../gameplay/condition.js';
+import { boxCare } from '../gameplay/stabling.js';
 
 const SPEEDS = HORSE.gaits.map((g) => g.speed);
 const CANTER_MAX = HORSE.gaits[3].max;
@@ -234,6 +235,8 @@ export class Horse {
 
     this._slope = slope;
     this.cond.update(SIM.paused ? 0 : dt);
+    // Au box : repos, foin et eau à volonté (voir stabling.js).
+    if (this.inBox) boxCare(this.cond, SIM.paused ? 0 : dt);
 
     // Saut.
     if (c.jump) {

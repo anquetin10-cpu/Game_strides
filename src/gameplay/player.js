@@ -316,6 +316,10 @@ export class Player {
 
   whistle() {
     const h = this.horse;
+    if (h && h.inBox && this.mode === 'foot') {
+      this.game.hud.toast(`${h.name} est au box à l’Écurie du Val : va l’y chercher (« Sortir du box »).`);
+      return false;
+    }
     if (h && h.hiddenInTruck && this.mode === 'foot') {
       this.game.hud.toast(`${h.name} est dans le camion : ouvre la rampe pour la faire descendre.`);
       return false;

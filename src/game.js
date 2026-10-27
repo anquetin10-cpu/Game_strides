@@ -37,6 +37,7 @@ import { Particles } from './world/particles.js';
 import { installCare, HorseCondition, SIM } from './gameplay/condition.js';
 import { installFuel } from './gameplay/fuel.js';
 import { installRest } from './gameplay/rest.js';
+import { installStabling } from './gameplay/stabling.js';
 import { STABLE_UPGRADES, SKILL_LABEL } from './gameplay/data.js';
 import { buildStableUpgrades } from './world/upgrades.js';
 import { Birds } from './world/birds.js';
@@ -180,6 +181,7 @@ export class Game {
     installCare(this);
     installFuel(this);
     installRest(this);
+    installStabling(this);
     this._events();
     this.placeFromSave();
     this.updateWallet();
@@ -816,6 +818,8 @@ export class Game {
       this.player.human.setPosition(pos.x, pos.z, pos.heading);
       this.colliders.resolve(this.player.human.pos, 0.5, -Infinity);
       if (pos.horse) this.mainHorse.setPosition(pos.horse.x, pos.horse.z, pos.horse.heading);
+      // Cheval laissé au box de l'Écurie du Val.
+      if (this.save.data.horseInBox && this.save.data.horseInBox === this.mainHorse.id) this.stabling?.putIn(this.mainHorse, true);
     } else {
       this.player.human.setPosition(HOME.spawn.x, HOME.spawn.z, HOME.spawn.rot);
       this.mainHorse.setPosition(HOME.horse.x, HOME.horse.z, HOME.horse.rot);

@@ -68,6 +68,7 @@ des haras normands : bâtiment fermé traversé par un couloir central, où l'on
 | Fenêtres de box | côté cour : fenêtre ouvrante à volets et grille (le cheval sort la tête) ; côté opposé : châssis hauts | idem | conforme |
 | Locaux | aire de pansage (tapis, attaches croisées, étagère, caisse de pansage, miroir), douche (carrelage, potence et tuyau, lampe chauffante infrarouge), sellerie (porte-selles sur deux hauteurs avec selles et tapis, porte-filets, armoire, malle de concours, banc), salle d'aliments (coffres, sacs sur palette) ; grenier au-dessus des locaux | équipements courants d'une écurie de pension | conforme |
 | Bâtiment | soubassement béton, bardage bois ou murs enduits, couverture à 30°, faîtage ventilé, lanterneaux, châssis éclairants, charpente apparente (fermes tous les 3,6 m), gouttières | idem | conforme |
+| Box du cheval (Écurie du Val) | « Rentrer au box » / « Sortir du box » : au box, le cheval boit à l'abreuvoir automatique, mange son foin et se repose (récupération de l'énergie une fois le cœur revenu au calme) ; il ne vient pas au sifflet ; le box est mémorisé dans la sauvegarde | gestion quotidienne d’un cheval en pension | conforme (`barn.mjs`) |
 | Club-house (Écurie du Val) | baie vitrée sur la carrière, terrasse, comptoir, tables, canapé, vitrine de trophées, mur de flots | idem | conforme |
 | Lumière intérieure | éclairage du ciel réduit et réchauffé sous le toit, plus franc vers les portes de pignon | idem | appréciation visuelle |
 

@@ -50,6 +50,8 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Écuries à couloir central** : on entre dans les écuries (à pied ou à cheval) par les portes coulissantes ; boxes
   des deux côtés de l'allée, aire de pansage, douche, sellerie, salle d'aliments, charpente apparente ; club-house
   avec terrasse sur la carrière à l'Écurie du Val ; écuries de concours sous tente au Pôle International.
+- **Box du cheval** : à l'Écurie du Val, on rentre son cheval au box pour qu'il récupère (eau, foin, repos) et on
+  va l'y chercher.
 - **Concours de jour (ou le soir sous les projecteurs)** : épreuves de 8 h 30 à 21 h ; engagé en soirée, on passe le
   lendemain matin et on peut dormir à la maison de l'Écurie du Val jusqu'à 7 h.
 - **Carburant** : chaque véhicule consomme selon son moteur et sa conduite (jauge, autonomie et consommation moyenne au
