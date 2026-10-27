@@ -96,3 +96,70 @@ describe('véhicules : freinage et direction', () => {
     expect(s.vx).toBeLessThan(-0.5);
   });
 });
+
+describe('véhicules : consommation de carburant', () => {
+  // Stabilise à une vitesse (régulateur proportionnel), puis mesure la consommation moyenne sur 60 s (l/100 km).
+  const cruise = (kind, kmh, spec) => {
+    const s = spec ? new TruckSim(spec) : started(kind);
+    if (spec) {
+      s.engineOn = true;
+      s.rpm = s.spec.idle;
+    }
+    const v = kmh / 3.6;
+    const ctl = () => ({ throttle: clamp01((v - s.vx) * 0.6 + 0.25), steer: 0 });
+    for (let t = 0; t < 90; t += DT) s.step(DT, ctl());
+    s.resetTrip();
+    for (let t = 0; t < 60; t += DT) s.step(DT, ctl());
+    return { l100: s.avgL100, kmh: s.vx * 3.6 };
+  };
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  // [modèle, vitesse, l/100 km mini, maxi] : consommations stabilisées relevées sur ces motorisations.
+  const REF = [
+    ['clio', 90, 4.3, 6.2],
+    ['golf', 90, 4.3, 6.2],
+    ['p508', 90, 3.4, 5.0],
+    ['p3008', 90, 3.8, 5.6],
+    ['duster', 90, 4.0, 6.0],
+  ];
+  for (const [kind, kmh, lo, hi] of REF) {
+    it(`${kind} : ${lo} – ${hi} l/100 km à ${kmh} km/h stabilisés`, () => {
+      const r = cruise(kind, kmh);
+      expect(Math.abs(r.kmh - kmh)).toBeLessThan(4);
+      expect(r.l100).toBeGreaterThan(lo);
+      expect(r.l100).toBeLessThan(hi);
+    });
+  }
+  it('camion 7,5 t chargé de deux chevaux : 18 – 30 l/100 km à 90 km/h', async () => {
+    const { TRUCK_SPEC } = await import('../../src/entities/truckPhysics.js');
+    const s = new TruckSim(TRUCK_SPEC);
+    s.horses = 2;
+    s.engineOn = true;
+    s.rpm = 650;
+    const v = 25;
+    const ctl = () => ({ throttle: Math.max(0, Math.min(1, (v - s.vx) * 0.6 + 0.4)), steer: 0 });
+    for (let t = 0; t < 120; t += DT) s.step(DT, ctl());
+    s.resetTrip();
+    for (let t = 0; t < 60; t += DT) s.step(DT, ctl());
+    expect(s.vx * 3.6).toBeGreaterThan(84);
+    expect(s.avgL100).toBeGreaterThan(18);
+    expect(s.avgL100).toBeLessThan(30);
+  });
+  it('ralenti : moins de 1,5 l/h ; frein moteur : injection coupée', () => {
+    const s = started('golf');
+    for (let t = 0; t < 3; t += DT) s.step(DT, { throttle: 0, steer: 0 });
+    expect(s.fuelLph).toBeLessThan(1.5);
+    s.vx = 20;
+    s.gear = 4;
+    for (let t = 0; t < 1; t += DT) s.step(DT, { throttle: 0, steer: 0 });
+    expect(s.fuelLph).toBe(0);
+  });
+  it('panne sèche : le moteur cale, le plein le fait repartir', () => {
+    const s = started('clio');
+    s.fuelL = 0.002;
+    for (let t = 0; t < 5 && s.engineOn; t += DT) s.step(DT, { throttle: 1, steer: 0 });
+    expect(s.engineOn).toBe(false);
+    expect(s.dry).toBe(true);
+    expect(s.refuel()).toBeCloseTo(42, 1);
+    expect(s.dry).toBe(false);
+  });
+});

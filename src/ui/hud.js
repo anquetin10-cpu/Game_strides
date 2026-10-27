@@ -2,7 +2,7 @@
 import { h, tap } from './dom.js';
 import { icon } from './icons.js';
 import { Minimap } from './minimap.js';
-import { formatMoney, formatTime, dec } from '../core/math.js';
+import { formatMoney, formatTime, dec, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 
 export class HUD {
@@ -68,7 +68,11 @@ export class HUD {
     this.comfortBar = h('i');
     this.comfortTxt = h('span');
     this.comfortEl.append(this.comfortTxt, h('b', {}, this.comfortBar));
-    this.teleEl = h('div.telemetry.hidden', {}, this.gearEl, h('div.tele-col', {}, h('div.tele-row', {}, this.gaitEl, this.speedEl), this.staminaEl, this.hrEl, this.comfortEl));
+    // Jauge de carburant et ordinateur de bord (au volant).
+    this.fuelBar = h('i');
+    this.fuelTxt = h('span.tab-num');
+    this.fuelEl = h('div.fuel-line.hidden', {}, h('i.pump'), h('b', {}, this.fuelBar), this.fuelTxt);
+    this.teleEl = h('div.telemetry.hidden', {}, this.gearEl, h('div.tele-col', {}, h('div.tele-row', {}, this.gaitEl, this.speedEl), this.staminaEl, this.hrEl, this.fuelEl, this.comfortEl));
     this.el.appendChild(this.teleEl);
 
     // Boutons d'action.
@@ -232,12 +236,26 @@ export class HUD {
           c.classList.toggle('on', i < on);
           c.classList.toggle('red', i >= 9);
         });
+        // Carburant : niveau, autonomie ou consommation moyenne depuis le départ ; réserve sous 12 %.
+        if ((this._fuelT = (this._fuelT || 0) - dt) <= 0 && t.sim) {
+          this._fuelT = 0.5;
+          const sim = t.sim, tank = sim.spec.tank || 60;
+          const pct = clamp(sim.fuelL / tank, 0, 1);
+          this.fuelBar.style.width = `${Math.round(pct * 100)}%`;
+          const avg = sim.avgL100;
+          this.fuelTxt.textContent = `${Math.round(sim.fuelL)} l · ${avg ? `${dec(avg, 1)} l/100` : `${Math.round(sim.rangeKm)} km`}`;
+          this.fuelEl.classList.remove('hidden');
+          this.fuelEl.classList.toggle('low', pct < 0.12);
+        }
         if (t.blockedT > 0.5 && !this._blockedHint) {
           this._blockedHint = true;
           this.hint(t.door.t > 0 ? 'Porte de service ouverte.' : 'Rampe ouverte : <b>ferme-la</b> à l’arrière du camion avant de rouler.', 3500);
         } else if (!t.blockedT) this._blockedHint = false;
       }
-      if (mode !== 'drive') this.staminaEl.classList.remove('rpm');
+      if (mode !== 'drive') {
+        this.staminaEl.classList.remove('rpm');
+        this.fuelEl.classList.add('hidden');
+      }
       // Confort du cheval transporté (mission de transport ou cheval à bord).
       const tp = p.transport;
       const mc = g.missions?.comfort;

@@ -174,6 +174,13 @@ body.desktop .joy-base { display: none; }
 .hr-line .heart::before { left: -4.5px; top: 0; }
 .hr-line .heart::after { left: 0; top: -4.5px; }
 .hr-line.high .heart { background: #ff3b30; }
+.fuel-line { display: flex; align-items: center; gap: 5px; margin-top: 4px; font: 600 11px/1 var(--ui); color: var(--paper); }
+.fuel-line .pump { width: 8px; height: 10px; border: 1.5px solid var(--muted); border-radius: 1.5px; position: relative; }
+.fuel-line .pump::after { content: ''; position: absolute; right: -4px; top: 1px; width: 2px; height: 6px; border-right: 1.5px solid var(--muted); border-top: 1.5px solid var(--muted); }
+.fuel-line b { flex: 0 0 34px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.18); overflow: hidden; }
+.fuel-line b i { display: block; height: 100%; background: var(--paper); }
+.fuel-line.low b i { background: #ff9f0a; }
+.fuel-line.low .pump, .fuel-line.low .pump::after { border-color: #ff9f0a; }
 @keyframes heartbeat { 0%, 60%, 100% { transform: rotate(45deg) scale(0.85); } 15% { transform: rotate(45deg) scale(1.1); } 30% { transform: rotate(45deg) scale(0.95); } }
 .comfort { font: 600 10px/1 var(--ui); letter-spacing: .1em; color: var(--muted); }
 /* Camion : rapport (D3, R…), compte-tours, confort du cheval transporté. */

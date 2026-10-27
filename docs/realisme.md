@@ -51,6 +51,7 @@ teinté laissant voir le conducteur et l'habitacle, son moteur propre (3 cylindr
 | Tracteur | 110 ch, 480 N·m, 5,6 t avec chargeur, inverseur et 6 rapports sous charge, 40 km/h | tracteur 110 ch : 40 km/h homologué | conforme | `vehicles.test.js` |
 | Freinage des voitures | 100 → 0 km/h en 37 – 47 m (freins hydrauliques, ABS) | 35 – 45 m sur sec | conforme | `vehicles.test.js` |
 | Braquage | rayon 4,5 – 6 m (empattement 2,5 – 2,75 m) | diamètre de braquage 10 – 11,5 m | conforme | `vehicles.test.js` |
+| Carburant | réservoirs d'origine (camion 150 l, citadine 42 l, compacte 50 l, berline 55 l, SUV 53 l, SUV 4x4 50 l, tracteur 160 l) ; consommation = frottements internes proportionnels au régime + puissance fournie × consommation spécifique (195 – 240 g/kWh) ÷ masse volumique ; injection coupée au frein moteur ; à 90 km/h stabilisés : citadine 5,5, compacte 5,4, berline 4,0, SUV 5,0, SUV 4x4 5,6 l/100 km, camion chargé ~24 l/100 km ; tracteur ~8 l/h sur route ; jauge, autonomie et consommation moyenne au tableau de bord ; plein payant à la station-service de l'entrée nord (gazole 1,72 €/l, SP95-E10 1,84 €/l, prix indicatifs) ; réserve sous 12 %, panne sèche (le moteur cale) et dépannage de 10 l | consommations stabilisées de ces motorisations ; 7,5 t carrossé : 20 – 28 l/100 km | conforme | `vehicles.test.js`, `fuel.mjs` |
 | Monter / sortir | bouton ACTION « Conduire » à la portière, « Sortir » à l'arrêt ; missions du camion réservées au camion Strides | — | conforme | `vehicles.mjs` |
 
 ## 3. Épreuves

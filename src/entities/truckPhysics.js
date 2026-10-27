@@ -18,6 +18,9 @@ export const TRUCK_SPEC = {
   // Diesel 4 cylindres 5,1 l, 210 ch : couple max 750 N·m de 1 200 à 1 700 tr/min.
   torque: [[400, 250], [650, 380], [800, 520], [1000, 650], [1200, 750], [1700, 750], [2000, 705], [2300, 645], [2550, 520], [2700, 0]],
   maxTorque: 750,
+  // Carburant : réservoir de 150 l, gazole ; consommation = frottements internes (proportionnels au régime, 1 l/h au
+  // ralenti) + puissance fournie × consommation spécifique (195 g/kWh) : ~25 l/100 km à 90 km/h chargé.
+  fuel: 'diesel', tank: 150, idleLph: 1.0, bsfc: 195, refL100: 24,
   gears: [6.58, 3.81, 2.29, 1.48, 1.0, 0.73],
   gearTorque: [0.42, 0.5, 0.8, 1, 1, 1], // part du couple maxi autorisée par rapport
   reverse: 6.04,
@@ -59,7 +62,7 @@ export const VEHICLE_SPECS = {
   // Citadine type Clio V 1.0 TCe 90 (3 cylindres essence), 160 N·m, boîte 5 : 0-100 km/h 12,2 s, 178 km/h.
   clio: {
     ...CAR_BASE, name: 'Citadine', massEmpty: 1240, zFront: 1.2915, zRear: -1.2915, track: 1.51, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.31,
-    idle: 800, maxRpm: 6200, cutRpm: 6500, fuel: 'petrol', cyl: 3, drive: 'front',
+    idle: 800, maxRpm: 6200, cutRpm: 6500, fuel: 'petrol', tank: 42, idleLph: 0.45, bsfc: 240, refL100: 5.5, cyl: 3, drive: 'front',
     torque: [[700, 90], [1500, 140], [2250, 160], [3500, 160], [4500, 150], [5500, 128], [6200, 105], [6500, 0]], maxTorque: 160,
     gears: [3.73, 2.05, 1.39, 1.03, 0.82], reverse: 3.55, final: 4.21, shiftTime: 0.45,
     crr: 0.011, crrSoft: 0.045, cdA: 0.68, brakeDecel: 9.5, mu: 1.0, muSoft: 0.6,
@@ -70,7 +73,7 @@ export const VEHICLE_SPECS = {
   // 0-100 km/h 9,2 s, 214 km/h.
   golf: {
     ...CAR_BASE, name: 'Compacte', massEmpty: 1355, zFront: 1.318, zRear: -1.318, track: 1.55, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.316,
-    idle: 750, maxRpm: 6000, cutRpm: 6300, fuel: 'petrol', cyl: 4, drive: 'front',
+    idle: 750, maxRpm: 6000, cutRpm: 6300, fuel: 'petrol', tank: 50, idleLph: 0.5, bsfc: 235, refL100: 5.6, cyl: 4, drive: 'front',
     torque: [[700, 110], [1400, 200], [4000, 200], [5000, 182], [6000, 150], [6300, 0]], maxTorque: 200,
     gears: [3.77, 2.09, 1.47, 1.1, 0.88, 0.71], reverse: 3.6, final: 3.94, shiftTime: 0.35,
     crr: 0.01, crrSoft: 0.045, cdA: 0.61, brakeDecel: 9.8, mu: 1.0, muSoft: 0.6,
@@ -80,7 +83,7 @@ export const VEHICLE_SPECS = {
   // Berline type 508 II 1.5 BlueHDi 130 (diesel), 300 N·m, automatique 8 rapports : 0-100 km/h 10 s, ~208 km/h.
   p508: {
     ...CAR_BASE, name: 'Berline', massEmpty: 1505, zFront: 1.3965, zRear: -1.3965, track: 1.6, cgEmpty: 0.25, cgHeight: 0.52, wheelR: 0.335,
-    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
+    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', tank: 55, idleLph: 0.5, bsfc: 210, refL100: 4.6, cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
     torque: [[700, 150], [1000, 210], [1500, 280], [1750, 300], [2750, 300], [3750, 260], [4500, 200], [4800, 0]], maxTorque: 300,
     gears: [5.25, 3.03, 1.95, 1.46, 1.22, 1.0, 0.81, 0.67], reverse: 4.4, final: 2.9, shiftTime: 0.2,
     crr: 0.01, crrSoft: 0.045, cdA: 0.6, brakeDecel: 9.8, mu: 1.0, muSoft: 0.6,
@@ -90,7 +93,7 @@ export const VEHICLE_SPECS = {
   // SUV type 3008 II 1.5 BlueHDi 130 (diesel), 300 N·m, automatique 8 rapports : 0-100 km/h ~11,5 s, 192 km/h.
   p3008: {
     ...CAR_BASE, name: 'SUV', massEmpty: 1570, zFront: 1.3375, zRear: -1.3375, track: 1.6, cgEmpty: 0.25, cgHeight: 0.62, wheelR: 0.352,
-    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
+    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', tank: 53, idleLph: 0.5, bsfc: 210, refL100: 5.2, cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
     torque: [[700, 150], [1000, 210], [1500, 280], [1750, 300], [2750, 300], [3750, 260], [4500, 200], [4800, 0]], maxTorque: 300,
     gears: [5.25, 3.03, 1.95, 1.46, 1.22, 1.0, 0.81, 0.67], reverse: 4.4, final: 2.8, shiftTime: 0.25,
     crr: 0.011, crrSoft: 0.045, cdA: 0.84, brakeDecel: 9.3, mu: 0.97, muSoft: 0.62,
@@ -101,7 +104,7 @@ export const VEHICLE_SPECS = {
   // motrices : 0-100 km/h ~11,5 s, ~170 km/h ; bonne motricité hors route.
   duster: {
     ...CAR_BASE, name: 'SUV 4x4', massEmpty: 1485, zFront: 1.338, zRear: -1.338, track: 1.56, cgEmpty: 0.2, cgHeight: 0.68, wheelR: 0.345,
-    idle: 780, maxRpm: 4300, cutRpm: 4600, fuel: 'diesel', cyl: 4, awd: true,
+    idle: 780, maxRpm: 4300, cutRpm: 4600, fuel: 'diesel', tank: 50, idleLph: 0.5, bsfc: 215, refL100: 5.8, cyl: 4, awd: true,
     torque: [[700, 130], [1000, 190], [1500, 245], [1750, 260], [2500, 260], [3500, 225], [4300, 170], [4600, 0]], maxTorque: 260,
     gears: [4.45, 2.59, 1.66, 1.17, 0.9, 0.73], reverse: 4.2, final: 3.6, shiftTime: 0.35,
     crr: 0.012, crrSoft: 0.04, cdA: 1.0, brakeDecel: 9.0, mu: 0.95, muSoft: 0.72,
@@ -111,7 +114,7 @@ export const VEHICLE_SPECS = {
   // Tracteur 110 ch (4 cylindres diesel 4,5 l), 480 N·m, inverseur et 6 rapports sous charge, 40 km/h, 4 roues motrices.
   tractor: {
     ...CAR_BASE, name: 'Tracteur', massEmpty: 5600, zFront: 1.55, zRear: -0.95, track: 1.9, cgEmpty: 0.15, cgHeight: 1.1, wheelR: 0.82, wheelRFront: 0.52,
-    idle: 850, maxRpm: 2200, cutRpm: 2350, fuel: 'diesel', cyl: 4, awd: true,
+    idle: 850, maxRpm: 2200, cutRpm: 2350, fuel: 'diesel', tank: 160, idleLph: 1.1, bsfc: 220, refL100: 22, cyl: 4, awd: true,
     torque: [[700, 250], [1000, 400], [1400, 480], [1600, 480], [2000, 410], [2200, 350], [2350, 0]], maxTorque: 480,
     gears: [5.2, 3.6, 2.5, 1.7, 1.25, 1.0], reverse: 4.5, final: 17, shiftTime: 0.35,
     crr: 0.025, crrSoft: 0.05, cdA: 4.0, brakeDecel: 5.5, mu: 0.8, muSoft: 0.75,
@@ -121,6 +124,8 @@ export const VEHICLE_SPECS = {
 };
 
 const G = 9.81;
+// Masse volumique des carburants (kg/l).
+export const FUEL_DENSITY = { diesel: 0.835, petrol: 0.745 };
 const RPM_K = 60 / (2 * Math.PI);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -175,6 +180,12 @@ export class TruckSim {
     this.load = 0; // charge moteur 0..1
     this.wheelSpin = 0;
     this.braking = false;
+    // Carburant (litres), débit instantané (l/h), compteur partiel (m) et carburant consommé depuis le départ (l).
+    this.fuelL = this.spec.tank || 60;
+    this.fuelLph = 0;
+    this.tripM = 0;
+    this.tripL = 0;
+    this.dry = false; // panne sèche : le moteur cale et ne redémarre plus
   }
 
   get mass() {
@@ -186,6 +197,32 @@ export class TruckSim {
     const s = this.spec;
     const me = s.massEmpty, mh = this.horses * s.massHorse;
     return (me * s.cgEmpty + mh * (s.zRear + 0.35)) / (me + mh);
+  }
+
+  // Ordinateur de bord : consommation moyenne depuis le départ et instantanée (l/100 km), autonomie (km, d'après la
+  // moyenne, ou la consommation de référence du véhicule avant les premiers kilomètres).
+  get avgL100() {
+    return this.tripM > 300 ? (this.tripL / this.tripM) * 1e5 : null;
+  }
+  get instL100() {
+    const kmh = Math.abs(this.vx) * 3.6;
+    return kmh > 8 ? (this.fuelLph / kmh) * 100 : null;
+  }
+  get rangeKm() {
+    const avg = this.avgL100 || this.spec.refL100 || 8;
+    return (this.fuelL / avg) * 100;
+  }
+  // Plein (ou appoint) : renvoie les litres réellement versés.
+  refuel(litres = Infinity) {
+    const room = Math.max(0, (this.spec.tank || 60) - this.fuelL);
+    const add = Math.min(room, litres);
+    this.fuelL += add;
+    if (this.fuelL > 0.5) this.dry = false;
+    return add;
+  }
+  resetTrip() {
+    this.tripM = 0;
+    this.tripL = 0;
   }
 
   get gearLabel() {
@@ -217,6 +254,7 @@ export class TruckSim {
     const ax0 = this.ax;
     for (let i = 0; i < sub; i++) this._sub(h, input);
     this.jerk = (this.ax - ax0) / Math.max(dt, 1e-4);
+    this.tripM += Math.abs(this.vx) * dt;
     // Roues : rotation (affichage).
     this.wheelSpin += (this.vx / s.wheelR) * dt;
     if (this.wheelSpin > 1e4 || this.wheelSpin < -1e4) this.wheelSpin %= Math.PI * 2;
@@ -323,9 +361,21 @@ export class TruckSim {
       if (thr < 0.02 && wheelRpm > s.idle + 80 && this.shiftT <= 0) Te = -(s.engineBrake[0] + s.engineBrake[1] * (this.rpm - s.idle));
       this.load = clamp(thr * gov, 0, 1);
       Tw = Te * transmit * ratio * s.eff * (this.gear < 0 ? -1 : 1);
+      // Consommation : coupure d'injection au frein moteur, sinon frottements internes + puissance × consommation
+      // spécifique (g/kWh) ÷ masse volumique.
+      const P = Math.max(0, Te) * (this.rpm / RPM_K) / 1000;
+      this.fuelLph = Te < 0 ? 0 : (s.idleLph || 0.8) * (this.rpm / s.idle) + (P * (s.bsfc || 210)) / (FUEL_DENSITY[s.fuel || 'diesel'] * 1000);
+      this.fuelL -= (this.fuelLph * dt) / 3600;
+      this.tripL += (this.fuelLph * dt) / 3600;
+      if (this.fuelL <= 0) {
+        this.fuelL = 0;
+        this.dry = true;
+        this.engineOn = false;
+      }
     } else {
       this.rpm = Math.max(0, this.rpm - dt * 900);
       this.load = 0;
+      this.fuelLph = 0;
     }
 
     // --- Efforts longitudinaux. ---

@@ -445,6 +445,8 @@ export class Truck {
   // Démarrage / arrêt du moteur.
   startEngine() {
     if (this.sim.engineOn) return;
+    // Panne sèche : le démarreur tourne, le moteur ne part pas.
+    if (this.sim.dry) return;
     this.sim.engineOn = true;
     this.sim.rpm = 400;
     this.sim.gear = 2;

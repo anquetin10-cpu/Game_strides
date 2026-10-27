@@ -65,6 +65,7 @@ export const ZONES = [
   { id: 'haras', x: -380, z: -40, hw: 98, hd: 76, r: 12, fall: 35 },
   { id: 'dunes', x: 500, z: -290, hw: 46, hd: 36, r: 8, fall: 25 },
   { id: 'gatien', x: -228, z: 300, hw: 46, hd: 36, r: 8, fall: 25 },
+  { id: 'station', x: -13, z: -140, hw: 12, hd: 12, r: 3, fall: 10 }, // station-service (sites.js : STATION)
 ];
 export const zoneById = Object.fromEntries(ZONES.map((z) => [z.id, z]));
 

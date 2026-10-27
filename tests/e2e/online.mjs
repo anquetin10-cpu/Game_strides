@@ -44,7 +44,7 @@ page.setDefaultTimeout(240000);
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 // Autres joueurs déjà classés.
-await page.goto(`${base}/?autostart`);
+await page.goto(`${base}/?autostart`, { timeout: 180000 });
 await page.evaluate(() => {
   const sc = (pen, time, at) => ({ pen, time, score: pen * 100000 + time, horse: 'Ubris', at });
   localStorage.setItem('__fakedb', JSON.stringify({
@@ -161,7 +161,7 @@ check('sauvegarde en ligne plus récente reprise (copie de secours de l’appare
 const ctx2 = await b.newContext({ viewport: { width: 667, height: 308 } });
 const p2 = await ctx2.newPage();
 p2.on('pageerror', (e) => errors.push(e.message));
-await p2.goto(`${base}/?autostart`);
+await p2.goto(`${base}/?autostart`, { timeout: 180000 });
 await p2.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 300000 });
 const off = await p2.evaluate(async () => {
   const g = window.__game;

@@ -6,7 +6,7 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
 import { mulberry32, polyDist, clamp } from '../core/math.js';
 import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shoreZ, forestDensity, isReserved, nearestRoad } from './layout.js';
-import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBoxes } from './sites.js';
+import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATION, homeBoxes } from './sites.js';
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail, paveTexture } from './terrainTexture.js';
 import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, INTERIOR_UNIFORMS } from './surfaces.js';
@@ -103,6 +103,7 @@ export class World {
     this.buildTown();
     this.buildStreetscape();
     this.buildRoadSigns();
+    this.buildStation();
     this.buildBeach();
     this.buildCliffs();
     this.buildSignHill();
@@ -259,6 +260,50 @@ export class World {
     // Flaque de lumière au sol (la nuit), sous la lanterne décalée de 0,75 m. Posée au-dessus du trottoir (dessus à
     // +0,14 m) : à hauteur de chaussée, le trottoir la coupait net au bord et restait dans le noir.
     (this._lampPools ||= []).push([x + Math.cos(rot) * 0.75, y + 0.16, z - Math.sin(rot) * 0.75]);
+  }
+
+  // Station-service : auvent sur poteaux (bandeau et éclairage), îlots béton à bordure peinte, pompes à deux
+  // pistolets avec afficheur, boutique vitrée, totem des prix au bord de la route, bornes de protection.
+  buildStation() {
+    const S = STATION;
+    const cx = (S.islands[0] + S.islands[1]) / 2, cz = S.z;
+    const y = this.h(cx, cz);
+    const parts = [
+      [box(14, 0.55, 15), '#f2f1ec', { y: 4.6 }],
+      [box(14.1, 0.32, 15.1), '#2f6e4a', { y: 4.62 }],
+      [box(13.6, 0.04, 14.6), '#e4e0d4', { y: 4.56 }],
+    ];
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push([box(0.35, 4.6, 0.35), '#d9d4c9', { x: sx * 3, z: sz * 5.2 }]);
+    this.batch.add(partsToGeo(parts), null, cx, y, cz, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) this.colliders.addCircle(cx + sx * 3, cz + sz * 5.2, 0.3, Infinity, 'station');
+    for (const ix of S.islands) {
+      const isl = [
+        [box(1.3, 0.16, 9), '#c8c1b3'],
+        [box(1.34, 0.06, 0.4), '#d8443a', { y: 0.1, z: 4.5 }],
+        [box(1.34, 0.06, 0.4), '#d8443a', { y: 0.1, z: -4.5 }],
+      ];
+      for (const pz of S.pumpsZ) {
+        const lz = pz - cz;
+        isl.push([box(0.8, 1.75, 0.5), '#f2f1ec', { y: 0.16, z: lz }]);
+        isl.push([box(0.82, 0.3, 0.52), '#2f6e4a', { y: 1.6, z: lz }]);
+        isl.push([box(0.5, 0.28, 0.04), '#1d1e21', { y: 1.22, z: lz + 0.26 }]);
+        isl.push([box(0.5, 0.28, 0.04), '#1d1e21', { y: 1.22, z: lz - 0.26 }]);
+        for (const sx of [-1, 1]) {
+          isl.push([box(0.08, 0.22, 0.14), '#1d1e21', { x: sx * 0.44, y: 0.9, z: lz + 0.12 }]);
+          isl.push([box(0.06, 0.18, 0.12), sx < 0 ? '#e9c94a' : '#2f6e4a', { x: sx * 0.44, y: 0.72, z: lz - 0.1 }]);
+        }
+      }
+      for (const bz of [-4.9, 4.9]) isl.push([cyl(0.09, 0.09, 0.9, 10), '#e9c94a', { z: bz }]);
+      this.batch.add(partsToGeo(isl), null, ix, this.h(ix, cz), cz, 0);
+      this.colliders.addBox(ix, cz, 0.7, 5.0, 0, Infinity, 'pump');
+    }
+    // Boutique.
+    this.place(buildingGeo({ w: 6, d: 9, h: 3.4, wall: '#f2f1ec', roof: '#2f6e4a', roofType: 'flat', trim: '#2f6e4a', floors: 1, doorColor: '#1d1e21' }), -5, S.z - 4, -Math.PI / 2, 6, 9, 'shop');
+    // Totem des prix (indicatifs), lisible depuis la route.
+    const pr = (v) => v.toFixed(2).replace('.', ',');
+    this.signboard('CARBURANTS', `Gazole ${pr(S.prices.diesel)} €  ·  SP95-E10 ${pr(S.prices.petrol)} €`, -24.4, S.z + 9.5, Math.PI / 2, { w: 4.4, h: 1.0, postH: 2.6 });
+    // Éclairage de la piste la nuit.
+    this.lamp(-24.6, S.z - 9, 0);
   }
 
   // Halos des lampadaires : disques additifs au dégradé radial, un seul appel de dessin.

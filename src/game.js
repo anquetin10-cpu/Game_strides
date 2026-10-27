@@ -35,6 +35,7 @@ import { buildMapImage } from './ui/minimap.js';
 import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
 import { installCare, HorseCondition, SIM } from './gameplay/condition.js';
+import { installFuel } from './gameplay/fuel.js';
 import { STABLE_UPGRADES, SKILL_LABEL } from './gameplay/data.js';
 import { buildStableUpgrades } from './world/upgrades.js';
 import { Birds } from './world/birds.js';
@@ -176,6 +177,7 @@ export class Game {
     this.hud.minimap.setImage(this.mapImage);
     this._worldInteractions();
     installCare(this);
+    installFuel(this);
     this._events();
     this.placeFromSave();
     this.updateWallet();
@@ -790,10 +792,16 @@ export class Game {
     };
     // État du cheval (énergie, hydratation, soins…).
     if (this.mainHorse) (this.save.data.horseCare ||= {})[this.mainHorse.id] = this.mainHorse.cond.toJSON();
+    // Carburant du camion Strides.
+    this.save.data.fuel = { truck: Math.round(this.truck.sim.fuelL * 10) / 10 };
   }
 
   placeFromSave() {
     const pos = this.save.data.pos;
+    // Carburant du camion (nouvelle partie : réservoir aux trois quarts).
+    const ts = this.truck.sim;
+    ts.fuelL = Math.min(ts.spec.tank, Math.max(0, this.save.data.fuel?.truck ?? ts.spec.tank * 0.75));
+    ts.dry = ts.fuelL <= 0;
     if (pos && this.save.data.started) {
       if (pos.truck) this.truck.setPosition(pos.truck.x, pos.truck.z, pos.truck.heading);
       for (const sv of pos.vehicles || []) {

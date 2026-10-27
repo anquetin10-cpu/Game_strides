@@ -69,6 +69,14 @@ export const TOWN_BLOCKS = [
   [-205, -130, -232, -166], [-130, -30, -232, -166], [-30, 70, -232, -166], [70, 145, -232, -166],
 ];
 
+// Station-service à l'entrée nord de Deauvelle, le long de la route principale : auvent, deux îlots de deux pompes
+// (gazole et sans-plomb), boutique, totem des prix (indicatifs, ordre de grandeur des prix à la pompe en France).
+export const STATION = {
+  x: -13, z: -140, w: 24, d: 24,
+  islands: [-20, -14], pumpsZ: [-143, -137],
+  prices: { diesel: 1.72, petrol: 1.84 },
+};
+
 export const TOWN = {
   plaza: { x: 20, z: -266, w: 92, d: 60 },
   hotel: { x: -80, z: -330, w: 82, d: 30 },

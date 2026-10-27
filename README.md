@@ -47,6 +47,8 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Des jobs générés à l'infini** (coursier, transport, reconnaissance de parcours, soins), des **chronos libres**
   (plage, CSO, cross, hippodrome) et **20 fers d'or** cachés.
 - **Progression** : Groom → Cavalier → Pro vérifié → International → Légende 5★, avis clients étoilés, pourboires.
+- **Carburant** : chaque véhicule consomme selon son moteur et sa conduite (jauge, autonomie et consommation moyenne au
+  volant) ; plein à la station-service de l'entrée nord de Deauvelle, payé au litre ; panne sèche et dépannage.
 - **Sauvegarde automatique** : la partie s'enregistre seule sur l'appareil (toutes les 12 s, à chaque mission, quand
   on quitte la page). Dans le jeu publié sur claude.ai, une copie part aussi dans l'espace privé du joueur (au plus
   toutes les 30 s) ; si elle est plus récente que celle de l'appareil, le jeu propose de la reprendre (la partie de
@@ -87,6 +89,7 @@ node tests/e2e/missions.mjs   # pilote automatique : les 12 missions de l'histoi
 node tests/e2e/jobs.mjs       # 16 jobs générés
 node tests/e2e/features.mjs   # boutique, sifflet, transport, achat de cheval, fers d'or, chronos, photo
 node tests/e2e/ui.mjs se      # captures d'interface (se | i14 | max)
+node tests/e2e/fuel.mjs       # carburant : consommation, plein à la station, panne sèche
 node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)
 ```
 

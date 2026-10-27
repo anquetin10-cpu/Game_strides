@@ -4,7 +4,7 @@ import { createNoise2D } from '../core/noise.js';
 import { clamp, smoothstep } from '../core/math.js';
 import { WORLD, ROADS, PATHS, XC_PATH, POND, HIPPO, ZONES, BEACH, shoreZ, beachWig, forestDensity, isCliffRegion } from './layout.js';
 import { TIDE_EXTREMES } from './weather.js';
-import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS } from './sites.js';
+import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATION } from './sites.js';
 import { getFields } from './fields.js';
 
 
@@ -196,6 +196,8 @@ export function paintTerrainCanvas(terrain, size = 2048) {
   rect({ x: 330, z: -192, w: 60, d: 16 }, '#c8c1b3', 3);
   rect({ x: HIPPO_SITE.parking.x, z: HIPPO_SITE.parking.z, w: 70, d: 18 }, '#c8c1b3', 3);
   rect(DUNES.paddock, '#86b35e', 2);
+  // Piste de la station-service : enrobé, raccordé à la route principale.
+  rect({ x: STATION.x - 1, z: STATION.z, w: STATION.w + 2, d: STATION.d }, '#5b5c5e', 2);
   rect({ x: DUNES.barn.x, z: DUNES.barn.z + 6, w: 50, d: 24 }, '#d3c7aa', 4);
   rect({ x: GATIEN.barn.x, z: GATIEN.barn.z + 12, w: 60, d: 46 }, '#d3c7aa', 4);
 

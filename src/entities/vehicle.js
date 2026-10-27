@@ -24,6 +24,8 @@ export class Vehicle {
     this.pos = new THREE.Vector3(x, 0, z);
     this.sim.pos = this.pos;
     this.sim.heading = heading;
+    // Réservoir entamé (voiture du quotidien) : entre un tiers et neuf dixièmes.
+    this.sim.fuelL = (this.sim.spec.tank || 50) * (0.35 + Math.random() * 0.55);
     this.driver = null;
     this.atSpot = true; // à sa place de stationnement d'origine (la circulation l'ignore : il est garé hors voie)
     this.lastBump = 0;
@@ -183,6 +185,8 @@ export class Vehicle {
 
   startEngine() {
     if (this.sim.engineOn) return;
+    // Panne sèche : le démarreur tourne, le moteur ne part pas.
+    if (this.sim.dry) return;
     this.sim.engineOn = true;
     this.sim.rpm = this.sim.spec.idle * 0.6;
     this.sim.gear = this.sim.spec.startGear;
