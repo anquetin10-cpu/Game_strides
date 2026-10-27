@@ -167,7 +167,8 @@ class Car {
         if (!p || p.x === 1e6) continue;
         const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
         const ahead = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx);
-        if (ahead > -2 && ahead < 30 && lat < 8) limit = Math.min(limit, 2.5 + Math.max(0, ahead) * 0.3);
+        // Seulement s'il empiète sur notre voie : on croise normalement un camion arrêté au bord ou qui attend.
+        if (ahead > -2 && ahead < 30 && lat < 3.4) limit = Math.min(limit, 2.5 + Math.max(0, ahead) * 0.3);
       }
     }
     if (!this.uturn && this.speed > 0.5) {

@@ -561,8 +561,8 @@ async function driveRoute(f, to, from = null) {
         // Véhicule dans le couloir du camion (qui attend au carrefour, ou traverse en ralentissant) : on freine pour
         // s'arrêter derrière. Recouvrement réel des gabarits (camion 2,5 m, voiture 1,8 m) : une voiture sur la voie
         // d'en face ne bloque pas.
-        // Après 3 s d'attente réciproque, on repart (comme un conducteur à qui l'autre laisse le passage) ; un véhicule
-        // juste devant (moins de 6 m) reste un obstacle.
+        // Après 3 s d'attente réciproque derrière un véhicule arrêté, on repart (comme un conducteur à qui l'autre laisse
+        // le passage) ; un véhicule juste devant (moins de 6 m) reste un obstacle, une voiture qui arrive aussi.
         {
           const dx = c.pos.x - nx, dz = c.pos.z - nz;
           const ahead = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx);
@@ -574,7 +574,7 @@ async function driveRoute(f, to, from = null) {
         // Tourner en coupant la voie d'en face : céder le passage aux véhicules qui arrivent (un camion de 8,5 m met ~4 s
         // à dégager la voie).
         const yieldR = Math.abs(alpha) > 0.25 ? 35 : 16;
-        if (goT <= 0 && Math.hypot(dx, dz) < yieldR && dx * fx + dz * fz > -3 && closing) vT = 0;
+        if (Math.hypot(dx, dz) < yieldR && dx * fx + dz * fz > -3 && closing) vT = 0;
       }
       if (t.speed < 0.4 && vT < 0.5 && left > 4) waitT += 1 / 30;
       else waitT = 0;
