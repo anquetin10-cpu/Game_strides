@@ -182,11 +182,16 @@ class Car {
         if (rx * rx + rz * rz > 70 * 70) continue;
         const fromRight = rx * -fz + rz * fx > 0;
         if (v !== pv && !v.driver && !v.proxy && !fromRight) continue;
-        for (let t = 0.5; t <= 3; t += 0.5) {
-          const dx = rx + vfx * vs * t - fx * this.speed * t, dz = rz + vfz * vs * t - fz * this.speed * t;
-          if (dx * dx + dz * dz < 4.2 * 4.2) {
-            gap = Math.min(gap, Math.max(0, this.speed * t - 1.5));
-            break;
+        // Toute la longueur de l'autre véhicule (avant, centre, arrière) le long de sa trajectoire prévue.
+        const half = Math.max(0, (v.L || v.spec?.L || 4) / 2 - 1);
+        let hit = false;
+        for (let t = 0.5; t <= 3 && !hit; t += 0.5) {
+          for (let o = -half; o <= half + 1e-6 && !hit; o += Math.max(half, 1)) {
+            const dx = rx + vfx * (vs * t + o) - fx * this.speed * t, dz = rz + vfz * (vs * t + o) - fz * this.speed * t;
+            if (dx * dx + dz * dz < 3.6 * 3.6) {
+              gap = Math.min(gap, Math.max(0, this.speed * t - 1.5));
+              hit = true;
+            }
           }
         }
       }

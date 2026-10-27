@@ -523,7 +523,7 @@ async function driveRoute(f, to, from = null) {
       if (da > 0.12) corners.push({ s: cum[k], v: da > 1.2 ? 2.8 : da > 0.6 ? 4.5 : 9 });
     }
     const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-    let sCur = 0, time = 0, bumps = 0, maxKmh = 0, stuck = 0;
+    let sCur = 0, time = 0, bumps = 0, maxKmh = 0, stuck = 0, waitT = 0, goT = 0;
     const onBump = (e) => { bumps++; console.log('BUMP', JSON.stringify({ what: e.what, x: Math.round(e.x), z: Math.round(e.z), v: +e.speed.toFixed(1) })); };
     g.bus.on('truck:bump', onBump);
     tp.comfort = 100;
@@ -561,16 +561,21 @@ async function driveRoute(f, to, from = null) {
         // Véhicule dans le couloir du camion (qui attend au carrefour, ou traverse en ralentissant) : on freine pour
         // s'arrêter derrière. Recouvrement réel des gabarits (camion 2,5 m, voiture 1,8 m) : une voiture sur la voie
         // d'en face ne bloque pas.
-        {
+        // Après 3 s d'attente réciproque, on repart (comme un conducteur à qui l'autre laisse le passage).
+        if (goT <= 0) {
           const dx = c.pos.x - nx, dz = c.pos.z - nz;
           const ahead = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx);
-          if (lat < 2.0 && ahead > -2 && ahead < 30) vT = Math.min(vT, Math.sqrt(2 * 2 * Math.max(0, ahead - 3.5)));
+          if (lat < 2.0 && ahead > 3.5 && ahead < 30) vT = Math.min(vT, Math.sqrt(2 * 2 * Math.max(0, ahead - 3.5)));
         }
         if (Math.abs(c.speed || 0) < 0.8) continue;
         const dx = c.pos.x - nx, dz = c.pos.z - nz;
         const closing = dx * Math.sin(c.heading) + dz * Math.cos(c.heading) < 0;
-        if (Math.hypot(dx, dz) < 16 && dx * fx + dz * fz > -3 && closing) vT = 0;
+        if (goT <= 0 && Math.hypot(dx, dz) < 16 && dx * fx + dz * fz > -3 && closing) vT = 0;
       }
+      if (t.speed < 0.4 && vT < 0.5 && left > 4) waitT += 1 / 30;
+      else waitT = 0;
+      if (waitT > 3) { goT = 2.5; waitT = 0; }
+      if (goT > 0) { goT -= 1 / 30; vT = Math.max(vT, 3); }
       const aDes = Math.max(-2.2, Math.min(1.3, (vT - t.speed) * 1.1));
       const thr = vT < 0.3 && t.speed < 0.5 ? 0 : aDes > 0 ? Math.min(0.85, 0.15 + aDes / 1.6) : vT === 0 && t.speed < 0.5 ? -0.2 : Math.max(-0.6, aDes / 6.8 - 0.02);
       g.input.setVirtualMove(steerIn / 1.2, thr / 1.25);
