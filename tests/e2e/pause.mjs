@@ -28,9 +28,16 @@ await page.waitForTimeout(400);
 [a, z] = await span(2000);
 check('téléphone ouvert : heure, horloge et besoins suspendus', z.paused && z.t === a.t && z.clock === a.clock && z.sat === a.sat && z.hyd === a.hyd, JSON.stringify(z));
 await page.evaluate(() => window.__game.phone.close());
-await page.waitForTimeout(500);
-[a, z] = await span(1500);
-check('téléphone fermé : reprise', !z.paused && z.t > a.t);
+// L'état de pause est recalculé à chaque image : sous forte charge (SwiftShader), on attend la première image après la
+// fermeture avant de mesurer, et on note ce qui maintiendrait la pause (carte, dialogue) si elle persistait.
+await page.waitForFunction(() => !window.__game.simPaused, null, { timeout: 8000 }).catch(() => {});
+// Mesure sur au moins deux vraies images (le rendu logiciel des tests peut descendre sous 1 image/s).
+const f0 = await page.evaluate(() => window.__game.renderer.info.render.frame);
+a = await snap();
+await page.waitForFunction((f0) => window.__game.renderer.info.render.frame - f0 >= 2, f0, { timeout: 20000 }).catch(() => {});
+z = await snap();
+const why = await page.evaluate((f0) => ({ phone: window.__game.phone.isOpen, overlay: !!document.querySelector('.overlay'), dialog: !!window.__game.hud.dialogActive, state: window.__game.state, frames: window.__game.renderer.info.render.frame - f0, ov: [...document.querySelectorAll('.overlay')].map((o) => o.className).join('|') }), f0);
+check('téléphone fermé : reprise', !z.paused && z.t > a.t, JSON.stringify({ ...z, dt: +(z.t - a.t).toFixed(2), ...why }));
 await page.evaluate(() => window.__game.hud.dialog([{ who: 'Test', initials: 'T', text: 'Pause pendant le dialogue.' }]));
 await page.waitForTimeout(400);
 [a, z] = await span(2000);
