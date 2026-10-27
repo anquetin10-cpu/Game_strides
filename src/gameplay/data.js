@@ -16,7 +16,7 @@ export const SHOP = [
   { id: 'selle', name: 'Selle mixte carbone', desc: 'Puissance de saut +12 %', price: 380, effect: { jump: 0.12 } },
   { id: 'guetres', name: 'Guêtres de protection', desc: 'Tolérance sur les barres', price: 300, effect: { clearance: 0.08 } },
   { id: 'selle_pro', name: 'Selle CSO Pro', desc: 'Puissance de saut +12 %', price: 900, requires: 'selle', effect: { jump: 0.12 } },
-  { id: 'veste', name: 'Veste de concours', desc: 'Style de champion (cosmétique)', price: 150, effect: { outfit: 'competition' } },
+  { id: 'veste', name: 'Veste de concours', desc: 'Veste bleu marine portée en concours (cosmétique)', price: 150, effect: { outfit: 'competition' } },
 ];
 
 // Aménagements de l'écurie (application « Mon écurie ») : achetés avec les gains, visibles au Val, persistants.

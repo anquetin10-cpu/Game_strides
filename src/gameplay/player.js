@@ -3,7 +3,7 @@ import { Human } from '../entities/human.js';
 import { OUTFITS } from '../entities/humanModel.js';
 import { FollowAI } from '../entities/horse.js';
 import { clamp } from '../core/math.js';
-import { nearestRoad } from '../world/layout.js';
+import { nearestRoad, zoneById, zoneDist } from '../world/layout.js';
 import { Transport } from './transport.js';
 import { TRUCK_DIM } from '../entities/truckModel.js';
 import * as THREE from 'three';
@@ -23,7 +23,7 @@ export class Player {
   constructor(game, avatar = 'f') {
     this.game = game;
     this.avatar = avatar;
-    this.outfitKind = 'default';
+    this.outfitKind = 'work';
     this.human = new Human(game, this._outfit(avatar), { player: true });
     this.human.isPlayer = true;
     this.mode = 'foot';
@@ -37,11 +37,41 @@ export class Player {
     this.transport = new Transport(game, this);
   }
 
+  // Tenues selon l'activité (comme une vraie cavalière) :
+  // - « work » : à pied à l'écurie, au volant, en ville — culotte d'équitation de travail beige (grise pour un
+  //   cavalier), boots marron, polo bleu ou, le matin et sous la pluie, blouson softshell sombre ; pas de casque ;
+  // - « ride » : la même tenue, casque mis pour monter ;
+  // - « competition » : sur le terrain d'un concours (on se change en arrivant) — veste de concours (bleu marine si
+  //   la veste de la Sellerie est achetée, noire sinon), chemise blanche, culotte blanche, bottes noires, casque.
   _outfit(avatar, kind = this.outfitKind) {
     const base = avatar === 'm' ? OUTFITS.rider : OUTFITS.riderF;
-    const o = { ...base, helmet: '#16171a' };
-    if (kind === 'competition') Object.assign(o, { top: '#1f2b45', sleeve: '#1f2b45' });
+    const o = { ...base, style: 'rider' }; // coupe de concours par défaut
+    if (kind === 'competition') {
+      const jacket = this.game.save?.data?.upgrades?.includes('veste') ? '#1f2b45' : '#1b1c1f';
+      return Object.assign(o, { top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', helmet: '#16171a', logo: false });
+    }
+    const h = this.game.hour?.() ?? 12;
+    const wet = (this.game.weather?.rain ?? 0) > 0.15;
+    const top = wet || h < 9.5 || h > 20 ? '#2b3442' : '#2f5f8a';
+    // Coupe décontractée (polo ou blouson, pas de revers ni de chemise), culotte d'équitation, boots et mini-chaps.
+    Object.assign(o, { style: 'casual', top, sleeve: top, pants: avatar === 'm' ? '#9aa0a6' : '#c2b49a', boots: '#3b2a1e', tallBoots: true, breeches: true, logo: true });
+    o.helmet = kind === 'ride' ? '#16171a' : null;
     return o;
+  }
+
+  // Tenue voulue : concours (sur le terrain d'un concours ou d'un défi en cours), à cheval, ou travail.
+  desiredOutfit() {
+    const g = this.game;
+    const run = g.missions?.active;
+    const event = (run && run.offer?.vertical === 'EVENEMENTS') || !!g.challenge?.active;
+    if (event) {
+      const f = this.focusPos;
+      for (const id of ['pole', 'hippo', 'gatien']) {
+        const zn = zoneById[id];
+        if (zn && zoneDist(f.x, f.z, zn) < 12) return 'competition';
+      }
+    }
+    return this.mode === 'ride' ? 'ride' : 'work';
   }
 
   // Reconstruit le personnage (choix cavalière/cavalier, tenue).
@@ -391,6 +421,12 @@ export class Player {
 
   update(dt, input) {
     const g = this.game;
+    // Tenue : réévaluée quatre fois par seconde, changée seulement quand l'activité change.
+    if ((this._outfitT = (this._outfitT || 0) - dt) <= 0) {
+      this._outfitT = 0.25;
+      const want = this.desiredOutfit();
+      if (want !== this.outfitKind) this.setOutfit(want);
+    }
     const locked = this.locked;
     const mv = input.move;
     const dir = g.cam.worldDir(mv.x, mv.y);

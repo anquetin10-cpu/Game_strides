@@ -101,6 +101,16 @@ infranchissables, sellerie, à cheval, caméra sous la charpente), `look.mjs` (v
 | Chevaux de concours | location pour la saison (1 800 à 5 500 €), valeur estimée affichée (25 000 à 150 000 €) | location de cheval de concours : de quelques milliers à plusieurs dizaines de milliers d'euros par saison selon le niveau | **adapté** : le haut de gamme est loué moins cher qu'en réalité, pour rester accessible après quelques heures de jeu — validé par le porteur du projet (27/10/2026 : prix actuels conservés) | `data.js` |
 | Équipement | selles 380 et 900 € | selle de CSO : 1 500 à 6 000 € | **adapté** (progression du jeu) — validé par le porteur du projet (27/10/2026) | `data.js` |
 
+## 3 ter. Tenues du personnage
+
+| Activité | Tenue | Référence réelle | Statut |
+| --- | --- | --- | --- |
+| À pied (écurie, ville, au volant) | polo bleu (blouson softshell sombre le matin, le soir et sous la pluie), culotte d'équitation beige (grise pour un cavalier), ceinture, boots et mini-chaps marron, sans casque | tenue de travail d'écurie | conforme |
+| À cheval (travail, balade, plage, cross d'entraînement) | même tenue, casque mis pour monter, retiré en descendant | port du casque à cheval | conforme |
+| Concours (sur le terrain du Pôle, de l'hippodrome ou du cross pendant un concours ou un défi) | veste de concours noire (bleu marine avec la veste de la Sellerie du Port), chemise blanche, culotte blanche, bottes noires, casque ; on se change en arrivant sur le terrain, on repasse en tenue de travail ensuite | tenue réglementaire de CSO | conforme |
+
+Vérification : `outfit.mjs`.
+
 ## 4. Monde, météo, marées, lumière
 
 | Grandeur | Jeu | Référence réelle | Statut | Vérification |

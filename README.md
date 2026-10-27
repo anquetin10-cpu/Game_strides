@@ -50,6 +50,8 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Écuries à couloir central** : on entre dans les écuries (à pied ou à cheval) par les portes coulissantes ; boxes
   des deux côtés de l'allée, aire de pansage, douche, sellerie, salle d'aliments, charpente apparente ; club-house
   avec terrasse sur la carrière à l'Écurie du Val ; écuries de concours sous tente au Pôle International.
+- **Tenues selon l'activité** : tenue de travail à l'écurie (culotte beige, boots et mini-chaps), casque pour monter,
+  tenue de concours (veste, chemise et culotte blanches) seulement sur le terrain d'un concours.
 - **Box du cheval** : à l'Écurie du Val, on rentre son cheval au box pour qu'il récupère (eau, foin, repos) et on
   va l'y chercher.
 - **Concours de jour (ou le soir sous les projecteurs)** : épreuves de 8 h 30 à 21 h ; engagé en soirée, on passe le
@@ -96,6 +98,7 @@ node tests/e2e/missions.mjs   # pilote automatique : les 12 missions de l'histoi
 node tests/e2e/jobs.mjs       # 16 jobs générés
 node tests/e2e/features.mjs   # boutique, sifflet, transport, achat de cheval, fers d'or, chronos, photo
 node tests/e2e/ui.mjs se      # captures d'interface (se | i14 | max)
+node tests/e2e/outfit.mjs     # tenues : travail, à cheval (casque), concours sur le terrain
 node tests/e2e/barn.mjs       # écurie : entrer, allée, boxes, sellerie, caméra sous la charpente
 node tests/e2e/fuel.mjs       # carburant : consommation, plein à la station, panne sèche
 node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)

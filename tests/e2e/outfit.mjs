@@ -1,0 +1,58 @@
+// Tenue du personnage selon l'activité : travail à pied (sans casque), à cheval (casque), concours sur le terrain du
+// concours seulement (veste et culotte blanche). Usage : BASE=… node tests/e2e/outfit.mjs
+import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
+const base = process.env.BASE || 'http://127.0.0.1:5173';
+let fails = 0;
+const check = (label, cond, extra = '') => { console.log(`${cond ? '✔' : '✘'} ${label}${extra ? ` — ${extra}` : ''}`); if (!cond) fails++; };
+const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await b.newPage({ viewport: { width: 667, height: 308 } });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+await page.goto(`${base}/?autostart`, { timeout: 180000 });
+await page.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 300000 });
+await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
+const r = await page.evaluate(async () => {
+  const A = window.__auto, g = window.__game, p = g.player, h = g.mainHorse;
+  A.stopLoop(); A.closeCards(); while (g.hud.dialogActive) g.hud.advanceDialog(); g.missions.abandon?.(); A.closeCards();
+  const look = () => ({ kind: p.outfitKind, helmet: p.human.outfit?.helmet ?? p._outfit(p.avatar).helmet, pants: p._outfit(p.avatar).pants });
+  A.tick(10);
+  const foot = look();
+  h.setPosition(p.human.pos.x + 1.5, p.human.pos.z, 0);
+  A.tick(2);
+  const t0 = performance.now();
+  p.mount();
+  A.tick(10);
+  const rebuildMs = performance.now() - t0;
+  const ride = look();
+  p.dismount();
+  A.tick(10);
+  const back = look();
+  // Concours accepté : tenue de travail à l'écurie, tenue de concours au Pôle.
+  const { competitionDef } = await import('/src/gameplay/trip.js');
+  const def = competitionDef(1, 15);
+  const o = g.missions._offerFromDef(def, { id: 'event:concours' });
+  g.missions.start(o);
+  A.closeCards(); while (g.hud.dialogActive) g.hud.advanceDialog();
+  A.tick(10);
+  const atHome = look();
+  p.human.setPosition(320, -200, 0);
+  A.tick(10);
+  const atPole = look();
+  g.missions.abandon?.();
+  A.closeCards();
+  A.tick(10);
+  const after = look();
+  return { foot, ride, back, atHome, atPole, after, rebuildMs };
+});
+check('à pied : tenue de travail, sans casque', r.foot.kind === 'work' && !r.foot.helmet, JSON.stringify(r.foot));
+check('à cheval : casque mis', r.ride.kind === 'ride' && !!r.ride.helmet, JSON.stringify(r.ride));
+check('pied à terre : casque retiré', r.back.kind === 'work' && !r.back.helmet);
+check('concours accepté, encore à l’écurie : tenue de travail', r.atHome.kind === 'work', r.atHome.kind);
+check('sur le terrain du concours : veste et culotte blanche', r.atPole.kind === 'competition' && r.atPole.pants === '#f2f1ec', JSON.stringify(r.atPole));
+check('concours terminé : retour à la tenue de travail', r.after.kind === 'work', r.after.kind);
+console.log(`(changement de tenue au montoir : ${r.rebuildMs.toFixed(0)} ms, logique et rendu logiciel compris)`);
+check('aucune erreur', errors.length === 0, errors.slice(0, 3).join(' | '));
+await b.close();
+console.log(fails ? `TENUES : ${fails} échec(s)` : 'TENUES OK');
+process.exit(fails ? 1 : 0);

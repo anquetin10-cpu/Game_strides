@@ -388,7 +388,8 @@ export class Game {
     d.money -= s.price;
     d.upgrades.push(id);
     this.applyUpgrades(this.mainHorse);
-    if (s.effect.outfit) this.player.setOutfit('competition');
+    // Veste de concours : portée sur le terrain des concours (voir Player.desiredOutfit).
+    if (s.effect.outfit && this.player.outfitKind === 'competition') this.player._rebuild();
     this.updateWallet();
     this.audio.coin();
     this.hud.toast(`${s.name} : acheté !`);
@@ -1036,7 +1037,6 @@ export class Game {
       this.save.saveNow();
     } else {
       this.player.setAvatar(d.avatar);
-      if (d.upgrades.includes('veste')) this.player.setOutfit('competition');
     }
     this.state = 'play';
     this.hud.el.classList.remove('hidden');

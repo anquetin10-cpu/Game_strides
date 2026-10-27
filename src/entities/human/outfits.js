@@ -116,11 +116,12 @@ export function resolveOutfit(outfit = {}, name = '') {
   const pants = lin(outfit.pants || '#3a3d42');
   const shoes = lin(outfit.boots || '#2a2622', 0.02, 0.6);
   set(S.TOP, top, rider ? PBR.wool : outfit.logo ? PBR.tech : PBR.cotton);
-  set(S.TOP2, rider ? lin('#f3f2ee') : outfit.collar ? lin(outfit.collar) : top, PBR.cotton);
+  // Chemise blanche sous la veste de concours (coupe « rider ») ; polo ou blouson : col de la même couleur.
+  set(S.TOP2, style === 'rider' ? lin('#f3f2ee') : outfit.collar ? lin(outfit.collar) : top, PBR.cotton);
   set(S.LOGO, outfit.logo ? lin('#f2f1ec') : top, PBR.logo);
-  set(S.PANTS, pants, rider ? PBR.breeches : PBR.denim);
+  set(S.PANTS, pants, rider || outfit.breeches ? PBR.breeches : PBR.denim);
   set(S.BELT, lin(outfit.belt || (r() < 0.5 ? '#3b2a1e' : '#1b1a19'), 0.02, 0.5), PBR.leather);
-  set(S.SHOES, shoes, rider ? PBR.boots : PBR.leather);
+  set(S.SHOES, shoes, rider || outfit.tallBoots ? PBR.boots : PBR.leather);
   set(S.SOLE, lin(rider ? '#151413' : r() < 0.3 ? '#d8d4cc' : '#1f1d1b', 0.02, 0.7), PBR.rubber);
   set(S.GLOVES, lin(outfit.gloves || '#18181a'), PBR.gloves);
   set(S.HELMET, lin(outfit.helmet || '#16171a'), PBR.helmet);
@@ -145,7 +146,8 @@ export function resolveOutfit(outfit = {}, name = '') {
   m(Z.COLLAR, S.TOP2); m(Z.SHIRT, S.TOP2);
   for (const z of [Z.SEAT, Z.THIGH, Z.KNEE]) m(z, S.PANTS);
   m(Z.BELT, rider ? S.PANTS : S.BELT);
-  m(Z.CALF, rider ? S.SHOES : S.PANTS);
+  // Bottes d'équitation (ou boots et mini-chaps) : mollet chaussé.
+  m(Z.CALF, rider || outfit.tallBoots ? S.SHOES : S.PANTS);
   m(Z.FOOT, S.SHOES); m(Z.SOLE, S.SOLE);
   m(Z.HAND, rider || outfit.gloves ? S.GLOVES : S.SKIN);
   if (style === 'dress') {
