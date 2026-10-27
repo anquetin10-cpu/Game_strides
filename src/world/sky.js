@@ -33,6 +33,9 @@ export const CLOUD_UNIFORMS = {
   csWet: { value: 0 },
   // Lampadaire le plus proche du joueur : lanterne (xyz) et intensité (w, nulle le jour), voir World.update.
   lpPos: { value: new THREE.Vector4(0, -1e3, 0, 0) },
+  // Carrières éclairées par projecteurs (x, z, demi-longueur, demi-largeur) et intensité (nulle le jour).
+  flRect: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
+  flK: { value: 0 },
 };
 export const CLOUD_SHADOW_GLSL = /* glsl */ `
 uniform vec2 csWind;
@@ -44,6 +47,18 @@ float csNoise( vec2 p ) {
   vec2 i = floor( p ), f = fract( p );
   vec2 u = f * f * ( 3.0 - 2.0 * f );
   return mix( mix( csHash( i ), csHash( i + vec2( 1.0, 0.0 ) ), u.x ), mix( csHash( i + vec2( 0.0, 1.0 ) ), csHash( i + vec2( 1.0, 1.0 ) ), u.x ), u.y );
+}
+uniform vec4 flRect[4];
+uniform float flK;
+// Projecteurs : éclairement quasi uniforme sur la carrière, qui décroît sur ~10 m au-delà de la lice.
+float csFlood( vec3 wp ) {
+  if ( flK <= 0.0 ) return 0.0;
+  float k = 0.0;
+  for ( int i = 0; i < 4; i++ ) {
+    vec2 q = abs( wp.xz - flRect[i].xy ) - flRect[i].zw;
+    k = max( k, 1.0 - smoothstep( -3.0, 11.0, max( q.x, q.y ) ) );
+  }
+  return k * flK;
 }
 float csCloudShadow( vec3 wp ) {
   if ( csSun.y < 0.05 ) return 1.0;
@@ -68,6 +83,7 @@ const CS_VERTEX = /* glsl */ `
   #endif
   vec3 csW = ( modelMatrix * csP ).xyz;
   vCsShade = csCloudShadow( csW );
+  vFlood = csFlood( csW );
   LAMP_VERTEX
 }`;
 // Lampadaire (chevaux et cavaliers) : diffus enveloppant depuis la lanterne la plus proche du joueur, atténué avec
@@ -86,18 +102,21 @@ reflectedLight.directDiffuse += vLamp * vec3( 1.0, 0.72, 0.42 ) * BRDF_Lambert( 
 export function addCloudShadows(shader, worldPosExpr = null, lamp = false) {
   Object.assign(shader.uniforms, CLOUD_UNIFORMS);
   let shade = 'vCsShade';
+  let flood = 'vFlood';
   if (worldPosExpr) {
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}`);
     shade = `csCloudShadow( ${worldPosExpr} )`;
+    flood = `csFlood( ${worldPosExpr} )`;
   } else {
-    const varyings = lamp ? 'varying float vCsShade;\nvarying float vLamp;' : 'varying float vCsShade;';
+    const varyings = lamp ? 'varying float vCsShade;\nvarying float vFlood;\nvarying float vLamp;' : 'varying float vCsShade;\nvarying float vFlood;';
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}\n${lamp ? 'uniform vec4 lpPos;\n' : ''}${varyings}`)
       .replace('#include <project_vertex>', `#include <project_vertex>\n${CS_VERTEX.replace('LAMP_VERTEX', lamp ? LAMP_VERTEX : '')}`);
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${varyings}`);
   }
   // Le chunk des lumières est développé ici pour atténuer uniquement la lumière directe du soleil.
-  shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', `getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color *= ${shade};`) + (lamp ? LAMP_FRAGMENT : ''));
+  shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );', `getDirectionalLightInfo( directionalLight, directLight );\n\t\tdirectLight.color *= ${shade};`) + (lamp ? LAMP_FRAGMENT : '') + `
+reflectedLight.directDiffuse += ${flood} * vec3( 1.0, 0.97, 0.9 ) * BRDF_Lambert( material.diffuseColor );`);
 }
 
 // ---------- Modèle de Preetham (repris du Sky de three.js, licence MIT) ----------

@@ -7,10 +7,11 @@
 <style>
   html, body { margin: 0; height: 100%; background: #f3f3f1; overflow: hidden; }
   iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
-  /* Imitation de la barre du lecteur d'artifacts mobile (boutons flottants au-dessus de la page). */
-  .chrome { position: fixed; left: 0; right: 0; top: 0; height: 56px; pointer-events: none; z-index: 10; }
+  /* L'en-tête du lecteur d'artifacts mobile (fermer, commentaires, partage) est désormais au-dessus de la page, hors du
+     cadre du jeu : le harnais donne au jeu tout l'écran, comme le cadre réel. */
+  .chrome { display: none; }
   .chrome .x { position: absolute; left: 30px; top: 18px; width: 34px; height: 34px; border-radius: 50%; background: rgba(120,120,120,.85); pointer-events: auto; }
-  .chrome .t { position: absolute; left: 50%; top: 26px; transform: translateX(-50%); font: 600 14px system-ui; color: #fff; text-shadow: 0 1px 3px #000; }
+  .chrome .t { position: absolute; left: 50%; top: 26px; transform: translateX(-50%); font: 600 14px system-ui; color: #1b1c1f; }
   .chrome .r { position: absolute; right: 30px; top: 18px; width: 78px; height: 34px; border-radius: 17px; background: rgba(120,120,120,.85); pointer-events: auto; }
 </style>
 </head>

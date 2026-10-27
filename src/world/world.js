@@ -325,6 +325,31 @@ export class World {
     this.lamp(-24.6, S.z - 9, 0);
   }
 
+  // Projecteurs de carrière : mâts galvanisés aux angles (et au milieu des grands côtés), têtes de 3 projecteurs
+  // orientées vers le centre ; la carrière est éclairée la nuit (voir csFlood dans sky.js).
+  floodlights(r, H) {
+    const n = (CLOUD_UNIFORMS._flN ||= 0);
+    if (n < 4 && CLOUD_UNIFORMS.flRect) CLOUD_UNIFORMS.flRect.value[n].set(r.x, r.z, r.w / 2, r.d / 2);
+    CLOUD_UNIFORMS._flN = n + 1;
+    const pts = [];
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) pts.push([r.x + sx * (r.w / 2 + 2.2), r.z + sz * (r.d / 2 + 2.2)]);
+    if (r.w > 40) for (const sz of [-1, 1]) pts.push([r.x, r.z + sz * (r.d / 2 + 2.2)]);
+    for (const [x, z] of pts) {
+      const y = this.h(x, z);
+      const a = Math.atan2(r.x - x, r.z - z);
+      this.batch.add(cyl(0.16, 0.24, H, 8), '#b7bbbf', x, y, z, 0);
+      this.batch.add(box(0.7, 0.7, 0.7), '#9ca1a6', x, y, z, a);
+      const head = [];
+      for (const k of [-0.75, 0, 0.75]) head.push([box(0.62, 0.42, 0.3), '#2b2d31', { x: k, y: H + 0.2, z: 0.25, rx: 0.5 }]);
+      head.push([box(2.3, 0.1, 0.1), '#b7bbbf', { y: H + 0.1, z: 0.1 }]);
+      this.batch.add(partsToGeo(head), null, x, y, z, a);
+      const glow = [];
+      for (const k of [-0.75, 0, 0.75]) glow.push([box(0.54, 0.34, 0.03), '#fff6e0', { x: k, y: H + 0.24 - 0.08, z: 0.42 - 0.05, rx: 0.5 }]);
+      this.lights.add(partsToGeo(glow), null, x, y, z, a);
+      this.colliders.addCircle(x, z, 0.35, Infinity, 'mast');
+    }
+  }
+
   // Halos des lampadaires : disques additifs au dégradé radial, un seul appel de dessin.
   _buildLampPools() {
     const pools = this._lampPools || [];
@@ -439,6 +464,7 @@ export class World {
     // Carrière et paddock.
     this.rectFence(HOME.arena, { height: 1.1, board: true, color: '#f2f1ec' }, 'n', 5, 0.5);
     this.arenaLetters(HOME.arena);
+    this.floodlights(HOME.arena, 9);
     this.rectFence(HOME.paddock, { height: 1.15, rails: 3 }, 'e', 4, 0.3);
     // Abreuvoirs, montoir, brouette, fumière, tracteur, voiture, balles enrubannées.
     this.batch.add(troughGeo(), null, -150, this.h(-150, 205), 205, 0);
@@ -530,6 +556,8 @@ export class World {
       this.culled.push([m, x, z, 450]);
     }
     this.rectFence(POLE.warmup, { height: 1.0, board: true, color: '#f2f1ec' }, 'e', 6, 0.5);
+    this.floodlights(POLE.arena, 16);
+    this.floodlights(POLE.warmup, 12);
     this.buildStands(POLE.stands, 0, true, 'PÔLE INTERNATIONAL');
     const S = POLE.stables;
     // Écuries de concours sous tente (comme sur les CSI) : toile blanche, boxes démontables en acier galvanisé.
@@ -1369,6 +1397,8 @@ export class World {
     INTERIOR_UNIFORMS.inDay.value = (1 - night) * Math.min(1, 0.3 + sky.sun.intensity / 6);
     INTERIOR_UNIFORMS.inNight.value = night;
     this.lightMat.emissiveIntensity = 0.2 + night * 1.6;
+    // Projecteurs des carrières : allumés à la tombée de la nuit.
+    if (CLOUD_UNIFORMS.flK) CLOUD_UNIFORMS.flK.value = night > 0.05 ? night * 1.5 : 0;
     if (this.lampPools) {
       this.lampPools.visible = night > 0.05;
       this.poolMat.opacity = night;

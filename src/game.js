@@ -36,6 +36,7 @@ import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
 import { installCare, HorseCondition, SIM } from './gameplay/condition.js';
 import { installFuel } from './gameplay/fuel.js';
+import { installRest } from './gameplay/rest.js';
 import { STABLE_UPGRADES, SKILL_LABEL } from './gameplay/data.js';
 import { buildStableUpgrades } from './world/upgrades.js';
 import { Birds } from './world/birds.js';
@@ -178,6 +179,7 @@ export class Game {
     this._worldInteractions();
     installCare(this);
     installFuel(this);
+    installRest(this);
     this._events();
     this.placeFromSave();
     this.updateWallet();

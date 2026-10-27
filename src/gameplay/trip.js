@@ -206,6 +206,13 @@ export function secretariatProps(game) {
   };
 }
 
+// Épreuves de 8 h 30 à 21 h (le soir sous les projecteurs) : passage ~5 h après l'engagement (trajet, préparation,
+// reconnaissance), ou le lendemain matin pour un engagement pris en soirée ou la nuit.
+export function passageHour(h, rnd = Math.random) {
+  if (h >= 3.5 && h + 5 <= 21) return Math.max(8.5, h + 5);
+  return 8.5 + Math.floor(rnd() * 6) * 0.25;
+}
+
 export function competitionDef(level, startHour) {
   const cls = classFor(level);
   const total = cls.prizes.reduce((a, b) => a + b, 0);
@@ -216,7 +223,7 @@ export function competitionDef(level, startHour) {
     vertical: 'EVENEMENTS',
     category: 'CSO',
     title: `Concours du Pôle — ${cls.name} ${dec(cls.h, 2)} m`,
-    desc: `CSO au Pôle International, barème A au chrono (règlement FEI). Charge ton cheval dans le camion Strides, gare-toi au parking des camions, retire ton dossard au secrétariat, échauffe-toi puis entre en piste. Heure de passage vers ${hhmm(startHour)}. Engagement ${cls.fee} €.`,
+    desc: `CSO au Pôle International, barème A au chrono (règlement FEI). Charge ton cheval dans le camion Strides, gare-toi au parking des camions, retire ton dossard au secrétariat, échauffe-toi puis entre en piste. Épreuves de 8 h 30 à 21 h (en soirée sous les projecteurs) : passage environ 5 h après l’engagement, ou le lendemain matin (prochain passage possible : ${hhmm(startHour)}). Engagement ${cls.fee} €.`,
     client: { name: 'Pôle International', initials: 'PI', rating: 4.9, verified: true },
     place: { x: POI.pole.x, z: POI.pole.z },
     placeName: 'Pôle International',
@@ -244,7 +251,11 @@ export function competitionDef(level, startHour) {
       game.hud.hint('Pour rentrer : <b>Mener en main</b> ton cheval jusqu’au camion, <b>Faire monter le cheval</b>, puis cap sur l’Écurie du Val.', 8000);
     },
     steps(game, run, S) {
-      run.data.startHour ??= (game.hour() + 5) % 24;
+      if (run.data.startHour === undefined) {
+        run.data.startHour = passageHour(game.hour());
+        // Passage le lendemain matin : on peut dormir à la maison de l'Écurie du Val en attendant.
+        if (run.data.startHour < game.hour()) setTimeout(() => game.hud.hint(`Passage <b>demain à ${hhmm(run.data.startHour)}</b> : repose-toi à la maison de l’Écurie du Val (« Dormir jusqu’au matin »).`, 7000), 3200);
+      }
       run.data.bib ??= 30 + Math.floor(Math.random() * 60);
       const main = () => game.mainHorse;
       const nm = () => game.mainHorse?.name || 'ton cheval';
@@ -392,7 +403,7 @@ export class CompetitionOffers {
     if (m.offers.some((o) => o.id === 'event:concours')) return;
     if (m.refusedAt['event:concours'] !== undefined && g.time - m.refusedAt['event:concours'] < 120) return;
     if (g.time - this.lastDone < 90) return;
-    const def = competitionDef(m.levelInfo().level, (g.hour() + 5) % 24);
+    const def = competitionDef(m.levelInfo().level, passageHour(g.hour()));
     const o = m._offerFromDef(def, { id: 'event:concours' });
     m.offers.push(o);
     m.updateBadge();

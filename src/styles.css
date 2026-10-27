@@ -60,10 +60,9 @@
   color: var(--st-text);
 }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-body.embedded { --st: calc(max(10px, env(safe-area-inset-top, 0px)) + 54px); }
-/* Les fenêtres peuvent remonter un peu : les boutons du lecteur s'arrêtent à ~52 px. */
-body.embedded .overlay { padding-top: calc(var(--st) - 6px); }
-body.embedded .phone-layer { --ptop: calc(var(--st) - 6px); }
+/* Lecteur claude.ai : son en-tête (fermer, commentaires, partage) est au-dessus de la page, plus par-dessus : le HUD
+   reste collé en haut de l'écran de jeu, au-dessus du ciel, et laisse le centre dégagé. */
+body.embedded { --st: max(8px, env(safe-area-inset-top, 0px)); }
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper);
   font-family: var(--ui); -webkit-font-smoothing: antialiased; touch-action: none;
@@ -806,6 +805,17 @@ body.phone-open .rotate { display: none !important; }
   .minimap-wrap, .minimap { width: 76px; }
   .minimap { height: 76px; }
   .actions { transform: scale(.78); }
+}
+/* Écran court (iPhone en paysage dans le lecteur) : HUD compact. Portefeuille réduit au solde, objectif sur deux
+   lignes au plus et étroit, télémétrie plus petite et plus basse : la piste, le cheval et la route restent visibles. */
+@media (max-height: 420px) {
+  .level-line, .stars-line { display: none; }
+  .objective { max-width: min(100%, 330px); }
+  .objective .text { font-size: 12px; -webkit-line-clamp: 2; }
+  .telemetry { bottom: max(4px, calc(var(--sb) - 6px)); padding: 5px 10px; gap: 9px; }
+  .telemetry .gear { font-size: 28px; width: 26px; }
+  .telemetry .tele-col { min-width: 118px; gap: 4px; }
+  .telemetry.drive .tele-col { min-width: 124px; }
 }
 @media (max-width: 600px) {
   /* Écran étroit : portefeuille réduit au solde (niveau et note restent dans le téléphone), la carte de l'objectif garde sa largeur. */
