@@ -59,6 +59,8 @@ const VIEWS = {
   // Lampadaire (la nuit).
   lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },
   // Rue de Deauvelle, à hauteur d'homme.
+  // Fontaine de la place, de près (pierre, pavés en cercles).
+  fountain: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x, P.z); return { at: [P.x, y + 1.4, P.z], from: [P.x + 7.5, y + 1.7, P.z + 5] }; },
   town: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x, P.z); return { at: [P.x - 30, y + 4, P.z - 25], from: [P.x + 4, y + 1.7, P.z + 6] }; },
   // Route de campagne, à hauteur d'homme.
   road: (g) => { const r = window.__roads[1].pts; const [ax, az] = r[1], [bx, bz] = r[2]; const t = 0.5; const x = ax + (bx - ax) * t, z = az + (bz - az) * t; const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz); const y = g.terrain.getHeight(x, z); return { at: [x + (dx / l) * 25, y + 0.5, z + (dz / l) * 25], from: [x - (dz / l) * 1.2, y + 1.7, z + (dx / l) * 1.2] }; },

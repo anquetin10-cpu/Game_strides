@@ -690,11 +690,31 @@ export class World {
     // Place : fontaine, arbres, terrasse.
     const P = TOWN.plaza;
     const py = this.h(P.x, P.z);
-    // Fontaine en pierre calcaire (teinte classée « pierre de taille » par le shader de surfaces : grain, blocs,
-    // patine) : margelle moulurée, vasques superposées (la vasque médiane est creuse et retient l'eau), eau sombre et reflétante.
-    const lathe = (pts, seg = 40) => prep(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg));
-    this.batch.add(lathe([[4.3, 0], [5.35, 0], [5.45, 0.08], [5.45, 0.55], [5.25, 0.62], [5.25, 0.74], [4.95, 0.78], [4.85, 0.7], [4.4, 0.66], [4.3, 0.2]]), '#c9c1ae', P.x, py, P.z, 0);
-    this.batch.add(lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.89, 2.5], [1.8, 2.42], [0.4, 2.42], [0.32, 2.5], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]]), '#c9c1ae', P.x, py, P.z, 0);
+    // Fontaine en pierre calcaire patinée (texture dédiée : marbrures, piqûres, coulures, lichen, joints des blocs de
+    // la margelle) : margelle moulurée, vasques superposées (la vasque médiane est creuse et retient l'eau), eau sombre
+    // et reflétante ; dépôt verdâtre sous le niveau de l'eau, pied salis par les éclaboussures.
+    const lathe = (pts, seg = 48) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+    const stoneGeo = mergeGeometries([lathe([[4.3, 0], [5.35, 0], [5.45, 0.08], [5.45, 0.55], [5.25, 0.62], [5.25, 0.74], [4.95, 0.78], [4.85, 0.7], [4.4, 0.66], [4.3, 0.2]]), lathe([[0, 0.3], [1.05, 0.3], [0.9, 0.55], [0.55, 0.75], [0.5, 1.9], [0.62, 2.0], [0.62, 2.1], [0.3, 2.16], [1.9, 2.3], [2.05, 2.45], [2.0, 2.55], [1.89, 2.5], [1.8, 2.42], [0.4, 2.42], [0.32, 2.5], [0.32, 3.5], [0.45, 3.6], [1.05, 3.68], [1.1, 3.8], [0.9, 3.84], [0.25, 3.86], [0.16, 4.2], [0.22, 4.35], [0.08, 4.6], [0, 4.62]])], false);
+    {
+      const pos = stoneGeo.attributes.position;
+      const colr = new Float32Array(pos.count * 3);
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+        const r = Math.hypot(x, z);
+        let k = [1, 1, 1];
+        if (r > 4.2 && r < 4.9 && y < 0.62) k = [0.6, 0.62, 0.5]; // intérieur du bassin, sous l'eau
+        else if (r < 2.1 && y > 2.2 && y < 2.48) k = [0.7, 0.72, 0.62]; // vasque médiane, sous l'eau
+        else if (y < 0.12) k = [0.82, 0.8, 0.76]; // pied, éclaboussures et poussière
+        colr.set(k, i * 3);
+      }
+      stoneGeo.setAttribute('color', new THREE.BufferAttribute(colr, 3));
+    }
+    const stoneTex = limestoneTexture();
+    const stone = new THREE.Mesh(stoneGeo, new THREE.MeshStandardMaterial({ map: stoneTex, bumpMap: stoneTex, bumpScale: 2.2, vertexColors: true, roughness: 0.9 }));
+    stone.position.set(P.x, py, P.z);
+    stone.castShadow = stone.receiveShadow = true;
+    this.group.add(stone);
+    this.culled.push([stone, P.x, P.z, 620]);
     // Plans d'eau du bassin et de la vasque : un seul maillage (même matériau).
     const fw = new THREE.Mesh(mergeGeometries([
       new THREE.CircleGeometry(4.45, 48).rotateX(-Math.PI / 2).translate(0, 0.6, 0),
@@ -1300,6 +1320,62 @@ const PANTS = ['#2a3446', '#3a3b3f', '#c9c0ad', '#1f2023', '#46536b'];
 let _seat = null;
 // Siège baquet vide (assise + dossier d'un seul tenant, 8 triangles) : recto et verso ont chacun leurs sommets,
 // sinon leurs normales opposées s'annulent.
+// Calcaire de la fontaine : marbrures, piqûres, coulures sombres, taches de lichen, joint vertical en bord de motif
+// (8 blocs sur le tour de la margelle).
+function limestoneTexture() {
+  const S = 512;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const ctx = cv.getContext('2d');
+  const rnd = mulberry32(911);
+  ctx.fillStyle = '#c3bba7';
+  ctx.fillRect(0, 0, S, S);
+  const blob = (x, y, r, c) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, c);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    for (const dx of [-S, 0, S]) ctx.fillRect(x - r + dx, y - r, r * 2, r * 2);
+  };
+  for (let i = 0; i < 700; i++) blob(rnd() * S, rnd() * S, 8 + rnd() * 60, rnd() < 0.55 ? 'rgba(92,84,66,0.05)' : 'rgba(250,245,228,0.07)');
+  // Coulures : traînées verticales sombres qui pâlissent vers le bas.
+  for (let i = 0; i < 70; i++) {
+    const x = rnd() * S, y = rnd() * S * 0.6, h = 40 + rnd() * 220, w = 2 + rnd() * 9;
+    const g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, `rgba(70,66,56,${0.08 + rnd() * 0.14})`);
+    g.addColorStop(1, 'rgba(70,66,56,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, y, w, h);
+  }
+  // Piqûres et grains du calcaire.
+  for (let i = 0; i < 5000; i++) {
+    ctx.fillStyle = rnd() < 0.7 ? `rgba(70,62,50,${0.15 + rnd() * 0.3})` : 'rgba(255,252,240,0.35)';
+    const r = rnd() < 0.9 ? 1 : 2;
+    ctx.fillRect(rnd() * S, rnd() * S, r, r);
+  }
+  // Lichen : petites colonies gris-vert et jaunâtres.
+  for (let i = 0; i < 45; i++) {
+    const cx = rnd() * S, cy = rnd() * S;
+    const c = rnd() < 0.6 ? 'rgba(140,146,112,0.32)' : 'rgba(180,172,120,0.28)';
+    for (let k = 0; k < 6; k++) {
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(cx + (rnd() - 0.5) * 14, cy + (rnd() - 0.5) * 14, 1.5 + rnd() * 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  // Joint entre deux blocs (au bord du motif, répété 8 fois sur le tour).
+  ctx.fillStyle = 'rgba(78,72,60,0.75)';
+  ctx.fillRect(0, 0, 2, S);
+  ctx.fillRect(S - 2, 0, 2, S);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(8, 1);
+  tex.anisotropy = 8;
+  return tex;
+}
+
 function seatGeo() {
   if (_seat) return _seat;
   const v = [-0.21, 0, 0.2, 0.21, 0, 0.2, 0.21, 0, -0.14, -0.21, 0, -0.14, -0.21, 0.42, -0.2, 0.21, 0.42, -0.2];

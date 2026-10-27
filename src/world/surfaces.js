@@ -178,6 +178,13 @@ const SURFACE_MAIN = /* glsl */ `
     float blk = smoothstep( 0.04, 0.12, s.b );
     sfH = ( blk * 0.6 + dA.r * 0.3 ) * detW;
     tint = mix( 0.82, 1.08, s.g ) * mix( 0.88, 1.0, blk );
+    // Vieillissement : coulures sombres sous les arêtes (faces verticales), patine marbrée, taches de lichen
+    // gris-vert sur les pierres exposées.
+    float streak = texture2D( surfDetail, vec2( uv.x * 2.6, uv.y * 0.11 ) + 0.21 ).r;
+    tint *= mix( 1.0, 0.78, smoothstep( 0.55, 0.85, streak ) * ( 1.0 - ny ) );
+    tint *= mix( 0.84, 1.04, dB.g ) * mix( 0.93, 1.03, dA.g );
+    float lichen = smoothstep( 0.66, 0.74, dB.b * 0.7 + dA.r * 0.3 ) * detW;
+    diffuseColor.rgb *= mix( vec3( 1.0 ), vec3( 0.78, 0.82, 0.66 ), lichen * 0.7 );
     sfRough = 0.92;
   } else if ( mx < 0.2 && sat < 0.2 ) {
     // Métal peint sombre, menuiseries : satiné.

@@ -424,3 +424,69 @@ export function makeDetailTexture(size = 128) {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   return tex;
 }
+
+// Sols pavés de la ville, en texture répétable (mip-maps et filtrage anisotrope : nets de près, sans moiré au loin).
+// RGB = teinte de la pierre ou du joint (× 1,25 dans le shader), A = relief (pierre bombée, joint creux).
+// sett : pavés de granit de 11 × 14 cm (8 × 8 par motif) ; slab : dalles de calcaire de 60 × 40 cm (4 × 6).
+export const PAVE_TILES = {
+  sett: { cols: 8, rows: 8, w: 0.11, d: 0.14, joint: 0.008, round: 0.018 },
+  slab: { cols: 4, rows: 6, w: 0.6, d: 0.4, joint: 0.004, round: 0.006 },
+};
+export function makePaveTexture(kind, size = 512) {
+  const T = PAVE_TILES[kind];
+  const hash = (a, b, c = 0) => {
+    let x = Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  const stain = periodicNoise(size, 6, kind === 'sett' ? 41 : 43);
+  const fine = periodicNoise(size, 128, kind === 'sett' ? 47 : 53);
+  const data = new Uint8Array(size * size * 4);
+  for (let j = 0; j < size; j++) {
+    const fv = (j / size) * T.rows;
+    const row = Math.floor(fv);
+    const gv = fv - row;
+    for (let i = 0; i < size; i++) {
+      const fu = (i / size) * T.cols + (row % 2) * 0.5;
+      const col = Math.floor(fu) % T.cols;
+      const gu = fu - Math.floor(fu);
+      // Pierres taillées à la main : bords légèrement irréguliers, angles arrondis.
+      const id = hash(col, row), id2 = hash(col, row, 5);
+      const jw = T.joint * (0.75 + 0.5 * hash(col, row, 9));
+      const dx = Math.min(gu, 1 - gu) * T.w, dy = Math.min(gv, 1 - gv) * T.d;
+      const r = T.round;
+      const e = dx < r && dy < r ? r - Math.hypot(r - dx, r - dy) : Math.min(dx, dy);
+      const k = (j * size + i) * 4;
+      const n = fine[j * size + i], st = stain[j * size + i];
+      let tone, height;
+      if (e < jw) {
+        // Joint sablé.
+        tone = [0.6, 0.57, 0.51].map((c) => c * (0.9 + 0.2 * n));
+        height = 0.05 * n;
+      } else if (kind === 'sett') {
+        // Granit : gris bleuté à beige rosé, grains noirs et blancs.
+        const base = [0.84 + 0.2 * id, 0.84 + 0.15 * id, 0.86 + 0.07 * id].map((c) => c * (0.93 + 0.1 * id2));
+        const grain = n > 0.72 ? 0.8 : n < 0.25 ? 1.1 : 1;
+        tone = base.map((c) => c * grain * (0.97 + 0.06 * st));
+        height = smoothstep(0, 0.035, e - jw) * (0.7 + 0.3 * id2) + n * 0.12;
+      } else {
+        // Calcaire : beige clair, taches et patine (plus sombres là où l'eau stagne).
+        const b = (0.95 + 0.08 * id) * (0.97 + 0.05 * id2) * (0.94 + 0.08 * st);
+        tone = [b * 1.01, b, b * 0.97].map((c) => c * (0.985 + 0.03 * n));
+        height = smoothstep(0, 0.012, e - jw) * 0.6 + n * 0.08;
+      }
+      data[k] = clamp((tone[0] / 1.25) * 255, 0, 255);
+      data[k + 1] = clamp((tone[1] / 1.25) * 255, 0, 255);
+      data[k + 2] = clamp((tone[2] / 1.25) * 255, 0, 255);
+      data[k + 3] = clamp(height * 255, 0, 255);
+    }
+  }
+  const tex = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  tex.colorSpace = THREE.NoColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 8;
+  tex.needsUpdate = true;
+  return tex;
+}

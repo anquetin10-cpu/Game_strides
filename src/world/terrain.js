@@ -4,10 +4,20 @@ import { TIDE_UNIFORMS } from './weather.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
 import { WORLD, ZONES, ROADS, POND, SIGN, BEACH, shoreZ, beachWig, beachHeight, isCliffRegion, zoneDist } from './layout.js';
-import { HOME, POLE } from './sites.js';
+import { HOME, POLE, TOWN } from './sites.js';
+import { makePaveTexture } from './terrainTexture.js';
 
 // Carrières en sable (centre x, z ; demi-largeur, demi-profondeur) : sol hersé et piste piétinée le long de la lice.
 const ARENAS = [POLE.arena, POLE.warmup, HOME.arena].map((a) => new THREE.Vector4(a.x, a.z, a.w / 2, a.d / 2));
+// Sols pavés de la ville : place en pavés de granit (en cercles autour de la fontaine, dans un rond de 15 m bordé
+// d'une bordure de granit), trottoirs et cours en dalles de pierre calcaire.
+const TOWN_ZONE = ZONES.find((z) => z.id === 'town');
+const PAVES = [
+  new THREE.Vector4(TOWN.plaza.x, TOWN.plaza.z, TOWN.plaza.w / 2, TOWN.plaza.d / 2),
+  new THREE.Vector4(TOWN_ZONE.x, TOWN_ZONE.z, TOWN_ZONE.hw - 2, TOWN_ZONE.hd - 2),
+];
+const PAVE_ROUND = new THREE.Vector3(TOWN.plaza.x, TOWN.plaza.z, 15);
+const PAVE_TEX = {};
 
 const n1 = createNoise2D(11);
 const n2 = createNoise2D(23);
@@ -243,6 +253,10 @@ export class Terrain {
         shader.uniforms.detailMap = { value: detailTexture };
         shader.uniforms.splatMap = { value: splat };
         shader.uniforms.arenaR = { value: ARENAS };
+        shader.uniforms.paveR = { value: PAVES };
+        shader.uniforms.paveC = { value: PAVE_ROUND };
+        shader.uniforms.paveSett = { value: (PAVE_TEX.sett ||= makePaveTexture('sett')) };
+        shader.uniforms.paveSlab = { value: (PAVE_TEX.slab ||= makePaveTexture('slab')) };
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;\nvarying vec3 vWorldNrm;')
           .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWorldNrm = normalize(mat3(modelMatrix) * objectNormal);');
@@ -251,6 +265,10 @@ export class Terrain {
 uniform sampler2D detailMap;
 uniform sampler2D splatMap;
 uniform vec4 arenaR[3];
+uniform vec4 paveR[2];
+uniform vec3 paveC;
+uniform sampler2D paveSett;
+uniform sampler2D paveSlab;
 varying vec3 vWorldPos;
 varying vec3 vWorldNrm;
 float stH = 0.0;
@@ -299,9 +317,55 @@ vec3 stBump( vec3 surfPos, vec3 surfNorm, float h ) {
   float stones = smoothstep( 0.42, 0.12, dG.b );
   float hH = ( stones * 0.35 + dF.r * 0.1 ) * fineW + dM.r * 0.25 * midW;
   vec3 hTint = vec3( mix( 0.9, 1.07, dM.g ) * mix( 0.95, 1.04, dL.r ) * mix( 1.0, mix( 0.94, 1.06, stones ) * mix( 0.97, 1.03, dF.r ), fineW ) );
+  // Ville : pavés de granit sur la place (posés en cercles autour de la fontaine), dalles de calcaire ailleurs.
+  // Textures répétables lues avec les dérivées des coordonnées (mip-maps, filtrage anisotrope) : nettes de près,
+  // fondues à leur teinte moyenne au loin, sans moiré.
+  float paveRough = 0.82;
+  if ( wH > 0.01 ) {
+    vec2 q0 = abs( p - paveR[0].xy ) - paveR[0].zw;
+    vec2 q1 = abs( p - paveR[1].xy ) - paveR[1].zw;
+    float onPlaza = 1.0 - smoothstep( -0.25, 0.0, max( q0.x, q0.y ) );
+    float onTown = 1.0 - smoothstep( -0.25, 0.0, max( q1.x, q1.y ) );
+    if ( onTown > 0.01 ) {
+      vec4 pv;
+      vec2 dc = p - paveC.xy;
+      float rr = max( length( dc ), 1e-3 );
+      if ( onPlaza > 0.5 && rr < paveC.z + 0.35 ) {
+        // Anneaux concentriques : u = longueur d'arc sur le rayon médian de l'anneau, v = rayon ; dérivées
+        // par le jacobien de la projection polaire (pas de saut à la couture de l'angle).
+        float ring = ( floor( rr / 0.14 ) + 0.5 ) * 0.14;
+        vec2 tg = vec2( -dc.y, dc.x ) / ( rr * rr ), rd = dc / rr;
+        float k = rr > paveC.z ? paveC.z : ring;
+        vec2 uv = vec2( atan( dc.y, dc.x ) * k, rr );
+        // (dérivées majorées : les anneaux se fondent un peu plus tôt, sans moiré circulaire)
+        vec2 gx = vec2( dot( tg, pdx ) * k, dot( rd, pdx ) ) * 1.5;
+        vec2 gy = vec2( dot( tg, pdy ) * k, dot( rd, pdy ) ) * 1.5;
+        if ( rr > paveC.z ) {
+          // Bordure de granit du rond (dalles de 1 m × 35 cm) : motif des dalles, teinte du granit.
+          pv = textureGrad( paveSlab, ( uv - vec2( 0.0, paveC.z ) ) / vec2( 2.4, 2.1 ), gx / vec2( 2.4, 2.1 ), gy / vec2( 2.4, 2.1 ) );
+          pv.rgb *= vec3( 0.86, 0.87, 0.9 );
+        } else {
+          pv = textureGrad( paveSett, uv / vec2( 0.88, 1.12 ), gx / vec2( 0.88, 1.12 ), gy / vec2( 0.88, 1.12 ) );
+        }
+      } else if ( onPlaza > 0.5 ) {
+        // Pavés en rangées droites, le long de la place.
+        pv = textureGrad( paveSett, p.yx / vec2( 0.88, 1.12 ), pdx.yx / vec2( 0.88, 1.12 ), pdy.yx / vec2( 0.88, 1.12 ) );
+      } else {
+        // Trottoirs et cours : dalles de calcaire.
+        pv = textureGrad( paveSlab, p / 2.4, pdx / 2.4, pdy / 2.4 );
+      }
+      // Usure et patine : zones plus sombres et plus lisses (passage).
+      float wear = smoothstep( 0.45, 0.8, dM.g * 0.6 + dL.r * 0.4 );
+      vec3 pTint = pv.rgb * 1.25 * mix( 1.0, 0.93, wear ) * mix( 1.0, mix( 0.97, 1.03, dF.r ), fineW );
+      float pw = onTown * smoothstep( 0.3, 0.7, wH );
+      hTint = mix( hTint, pTint, pw );
+      hH = mix( hH, pv.a * 1.1 * midW, pw );
+      paveRough = mix( 0.82, mix( 0.7, 0.62, wear ), pw );
+    }
+  }
   vec3 tint = wG * gTint + wS * sTint + wA * aTint + wH * hTint;
   stH = ( wG * gH * 0.7 + wS * sH * 1.3 + wA * aH * 0.45 + wH * hH * 0.8 ) * stFade;
-  stRough = wG * 0.97 + wS * 1.0 + wA * 0.9 + wH * 0.82;
+  stRough = wG * 0.97 + wS * 1.0 + wA * 0.9 + wH * paveRough;
   // Cultures (blé, colza) : traces du pulvérisateur tous les 24 m, rangs de semis, et vagues du vent
   // qui courent sur les épis ; labours : sillons parallèles.
   float crop = smoothstep( 0.3, 0.45, wS ) * smoothstep( 0.3, 0.42, wG ) * ( 1.0 - smoothstep( 0.03, 0.08, wA + wH ) );
