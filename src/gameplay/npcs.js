@@ -69,6 +69,7 @@ const TOWN_BOX = (() => {
 // arrêt progressif devant un obstacle (distance de freinage selon la vitesse), roues qui tournent, caisse qui suit
 // la pente et plonge au freinage ; en bout de route, arrêt puis demi-tour lent d'une voie à l'autre (immédiat hors de vue).
 const LANE = 2.2;
+const _pt = { x: 0, z: 0 };
 class Car {
   constructor(game, road, color, offset, kind = 'clio') {
     this.game = game;
@@ -140,7 +141,22 @@ class Car {
     // Cavalier : la voiture attend derrière le cheval sans klaxonner.
     const byPlayer = gap < Infinity && g.player.mode !== 'ride';
     // Véhicules garés à leur place (hors voie) ignorés ; une voiture laissée sur la chaussée par le joueur arrête la circulation.
-    for (const v of g.vehicles) if (v !== this && v.pos && !v.parked) gap = Math.min(gap, this._ahead(v.pos, fx, fz, look));
+    // Toute la longueur des autres véhicules est surveillée (avant, centre, arrière) : un camion qui coupe la route
+    // n'est pas qu'un point.
+    for (const v of g.vehicles) {
+      if (v === this || !v.pos || v.parked) continue;
+      gap = Math.min(gap, this._ahead(v.pos, fx, fz, look));
+      const half = (v.L || v.spec?.L || 4) / 2 - 0.9;
+      if (half > 0.6 && v.heading !== undefined) {
+        const hx = Math.sin(v.heading) * half, hz = Math.cos(v.heading) * half;
+        _pt.x = v.pos.x + hx;
+        _pt.z = v.pos.z + hz;
+        gap = Math.min(gap, this._ahead(_pt, fx, fz, look));
+        _pt.x = v.pos.x - hx;
+        _pt.z = v.pos.z - hz;
+        gap = Math.min(gap, this._ahead(_pt, fx, fz, look));
+      }
+    }
     // Code de la route : on croise et on dépasse les chevaux au pas (20 km/h), sans klaxonner.
     for (const h of g.horses) {
       if (h.hiddenInTruck || !h.pos) continue;

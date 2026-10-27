@@ -24,7 +24,7 @@ async function openGame({ W = 844, H = 390, embedded = false, touch = false } = 
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, isMobile: touch, hasTouch: touch, deviceScaleFactor: touch ? 2 : 1 });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${e.message}\n${e.stack}`));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); else if (m.text().startsWith('BUMP')) console.log(m.text()); });
   await page.goto(embedded ? `${base}/tests/e2e/viewer-harness.html?autostart` : `${base}/?autostart`);
   const f = embedded ? await (await page.waitForSelector('iframe')).contentFrame() : page.mainFrame();
   await f.waitForFunction(() => window.__game && window.__game.state === 'play', null, { timeout: 240000 });
@@ -516,7 +516,7 @@ async function driveRoute(f, to, from = null) {
     }
     const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
     let sCur = 0, time = 0, bumps = 0, maxKmh = 0, stuck = 0;
-    const onBump = () => bumps++;
+    const onBump = (e) => { bumps++; console.log('BUMP', JSON.stringify({ what: e.what, x: Math.round(e.x), z: Math.round(e.z), v: +e.speed.toFixed(1) })); };
     g.bus.on('truck:bump', onBump);
     tp.comfort = 100;
     for (let i = 0; i < 30 * 240; i++) {
@@ -548,19 +548,29 @@ async function driveRoute(f, to, from = null) {
       const fx = Math.sin(t.heading), fz = Math.cos(t.heading);
       const nx = t.pos.x + fx * 4.5, nz = t.pos.z + fz * 4.5;
       for (const c of g.vehicles) {
-        if (c === t || c.proxy || Math.abs(c.speed || 0) < 0.8) continue;
+        if (c === t || c.proxy) continue;
+        if (c.parked) continue;
+        // Véhicule dans le couloir du camion (qui attend au carrefour, ou traverse en ralentissant) : on freine pour
+        // s'arrêter derrière. Recouvrement réel des gabarits (camion 2,5 m, voiture 1,8 m) : une voiture sur la voie
+        // d'en face ne bloque pas.
+        {
+          const dx = c.pos.x - nx, dz = c.pos.z - nz;
+          const ahead = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx);
+          if (lat < 2.0 && ahead > -2 && ahead < 30) vT = Math.min(vT, Math.sqrt(2 * 2 * Math.max(0, ahead - 3.5)));
+        }
+        if (Math.abs(c.speed || 0) < 0.8) continue;
         const dx = c.pos.x - nx, dz = c.pos.z - nz;
         const closing = dx * Math.sin(c.heading) + dz * Math.cos(c.heading) < 0;
         if (Math.hypot(dx, dz) < 16 && dx * fx + dz * fz > -3 && closing) vT = 0;
       }
       const aDes = Math.max(-2.2, Math.min(1.3, (vT - t.speed) * 1.1));
-      const thr = aDes > 0 ? Math.min(0.85, 0.15 + aDes / 1.6) : vT === 0 && t.speed < 0.5 ? -0.2 : Math.max(-0.6, aDes / 6.8 - 0.02);
+      const thr = vT < 0.3 && t.speed < 0.5 ? 0 : aDes > 0 ? Math.min(0.85, 0.15 + aDes / 1.6) : vT === 0 && t.speed < 0.5 ? -0.2 : Math.max(-0.6, aDes / 6.8 - 0.02);
       g.input.setVirtualMove(steerIn / 1.2, thr / 1.25);
       A.tick(1);
       time += 1 / 30;
       maxKmh = Math.max(maxKmh, t.speed * 3.6);
       const dEnd = Math.hypot(target.x - t.pos.x, target.z - t.pos.z);
-      if (Math.abs(t.speed) < 0.3 && left > 4 && vT > 0) stuck++; else stuck = 0;
+      if (Math.abs(t.speed) < 0.3 && left > 4 && vT > 0.5) stuck++; else stuck = 0;
       if (stuck > 30 * 8) break;
       if (dEnd < target.r && Math.abs(t.speed) < 0.3) break;
     }

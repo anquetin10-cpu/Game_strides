@@ -504,7 +504,9 @@ export class Truck {
           this.pos.x += p.x - cx;
           this.pos.z += p.z - cz;
           const into = -(fx * hit.nx + fz * hit.nz) * Math.sign(s.vx);
-          bump = Math.max(bump, Math.abs(s.vx) * clamp(into, 0.2, 1));
+          const b = Math.abs(s.vx) * clamp(into, 0.2, 1);
+          if (b > bump) this._hitWhat = hit.col?.tag || 'décor';
+          bump = Math.max(bump, b);
         }
       }
       for (const v of g.vehicles || []) {
@@ -522,6 +524,7 @@ export class Truck {
             this.pos.x -= fx * pushZ;
             this.pos.z -= fz * pushZ;
           }
+          if (Math.abs(s.vx) > bump) this._hitWhat = `véhicule ${v.kind || ''}`;
           bump = Math.max(bump, Math.abs(s.vx));
         }
       }
@@ -536,7 +539,7 @@ export class Truck {
     }
     if (bump > 2.5 && g.time - this.lastBump > 0.5) {
       this.lastBump = g.time;
-      g.bus.emit('truck:bump', { truck: this, speed: bump });
+      g.bus.emit('truck:bump', { truck: this, speed: bump, what: this._hitWhat, x: this.pos.x, z: this.pos.z });
       s.impact(-0.25);
       g.audio?.thud?.();
     } else if (bump > 0) s.vx *= 0.9;
