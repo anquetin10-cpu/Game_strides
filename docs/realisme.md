@@ -35,17 +35,19 @@ chiffrées sont vérifiées par `tests/unit/realism.test.js`.
 
 ## 2 bis. Autres véhicules (tous conduisibles)
 
-Voitures garées en ville, SUV et tracteur de l'Écurie du Val, voitures de la circulation arrêtées (on en prend le
-volant) : même modèle physique que le camion (moteur et courbe de couple, boîte automatique, embrayage au démarrage,
+Copies de modèles de série courants (sans logo ni nom de marque dans le jeu), dans leurs teintes d'origine : voitures
+garées en ville, SUV 4x4 et tracteur de l'Écurie du Val, voitures de la circulation arrêtées (on en prend le volant) : même modèle physique que le camion (moteur et courbe de couple, boîte automatique, embrayage au démarrage,
 frein moteur, pneus à adhérence limitée, direction asservie à la vitesse, épure d'Ackermann), roues motrices et
 directrices animées, suspension (plongée au freinage, roulis en virage), feux stop et de recul, phares la nuit, vitrage
 teinté laissant voir le conducteur et l'habitacle, son moteur propre (3 cylindres essence, diesel, tracteur).
 
 | Véhicule | Jeu | Référence réelle | Statut | Vérification |
 | --- | --- | --- | --- | --- |
-| Citadine essence | 1.0 3 cylindres 90 ch, 160 N·m, 1 200 kg, boîte pilotée 5 rapports, traction : 0-100 km/h en 11 – 14 s, ~175 km/h | citadine TCe 90 : 12,2 s, 178 km/h | conforme | `vehicles.test.js` |
-| Berline diesel | 1.5 130 ch, 300 N·m, 1 450 kg, automatique 6 rapports : 0-100 km/h en 9 – 12 s, 195 – 212 km/h | berline 130 ch diesel : ~10 s, 210 km/h | conforme | `vehicles.test.js` |
-| SUV diesel | 2.0 150 ch, 370 N·m, 1 750 kg, 4 roues motrices : 0-100 km/h en 9,5 – 12,5 s, < 192 km/h | SUV compact 150 ch : ~10,5 s, 190 km/h | conforme | `vehicles.test.js` |
+| Citadine (copie d'une Clio V) | 4,05 m, empattement 2,583 m, 1,44 m, 1,798 m, 195/55 R16 ; 1.0 3 cylindres 90 ch, 160 N·m, 5 rapports : 0-100 km/h en 10,8 – 13,8 s, 168 – 182 km/h ; optiques en « C » | fiche Clio V TCe 90 : 12,2 s, 178 km/h | conforme | `vehicles.test.js` |
+| Compacte (copie d'une Golf 8) | 4,284 m, empattement 2,636 m, 1,456 m, 1,789 m, 205/55 R16 ; 1.5 essence 130 ch, 200 N·m, 6 rapports : 0-100 km/h en 8,2 – 10,4 s, 200 – 218 km/h ; large montant arrière, bandeau lumineux | fiche constructeur : 9,2 s, 214 km/h | conforme | `vehicles.test.js` |
+| Berline (copie d'une 508 II) | 4,75 m, empattement 2,793 m, 1,403 m, 1,859 m, 235/45 R18 ; 1.5 diesel 130 ch, 300 N·m, automatique 8 : 0-100 km/h en 9 – 11,4 s, 198 – 212 km/h ; feux de jour « crocs », bandeau arrière noir à 3 griffes | fiche BlueHDi 130 EAT8 : 10 s | conforme | `vehicles.test.js` |
+| SUV (copie d'un 3008 II) | 4,447 m, empattement 2,675 m, porte-à-faux 0,923 / 0,849 m, 1,624 m, 1,841 m, 225/55 R18 ; 1.5 diesel 130 ch, automatique 8 : 0-100 km/h en 10,2 – 12,8 s, 182 – 196 km/h ; toit noir, calandre à damier, feux à griffes | fiche constructeur : 192 km/h | conforme | `vehicles.test.js` |
+| SUV 4x4 (copie d'un Duster II) | 4,341 m, empattement 2,676 m, porte-à-faux 0,822 / 0,843 m, 1,682 m, 1,804 m, 215/60 R17 ; 1.5 diesel 115 ch, 260 N·m, 6 rapports, 4 roues motrices : 0-100 km/h en 10,2 – 13,2 s ; barres de toit, sabots, protections | fiche Blue dCi 115 | conforme | `vehicles.test.js` |
 | Tracteur | 110 ch, 480 N·m, 5,6 t avec chargeur, inverseur et 6 rapports sous charge, 40 km/h | tracteur 110 ch : 40 km/h homologué | conforme | `vehicles.test.js` |
 | Freinage des voitures | 100 → 0 km/h en 37 – 47 m (freins hydrauliques, ABS) | 35 – 45 m sur sec | conforme | `vehicles.test.js` |
 | Braquage | rayon 4,5 – 6 m (empattement 2,5 – 2,75 m) | diamètre de braquage 10 – 11,5 m | conforme | `vehicles.test.js` |

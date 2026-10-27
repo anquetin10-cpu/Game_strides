@@ -6,7 +6,7 @@ import { HOME, HARAS, DUNES, POLE, TOWN_BLOCKS } from '../world/sites.js';
 import { ROADS, HIPPO } from '../world/layout.js';
 import { CHATTER } from './data.js';
 import { mulberry32, pick, polylineLength, pointAlong, dampAngle, clamp } from '../core/math.js';
-import { carGeo, carMaterial, unitWheelGeo, CARS } from '../world/props.js';
+import { carGeo, carMaterial, unitWheelGeo, CARS, CAR_COLORS, CAR_MODELS } from '../world/props.js';
 import { ovalPoint } from './courses.js';
 import { Vehicle } from '../entities/vehicle.js';
 import { addCloudShadows } from '../world/sky.js';
@@ -70,7 +70,7 @@ const TOWN_BOX = (() => {
 // la pente et plonge au freinage ; en bout de route, arrêt puis demi-tour lent d'une voie à l'autre (immédiat hors de vue).
 const LANE = 2.2;
 class Car {
-  constructor(game, road, color, offset, kind = 'sedan') {
+  constructor(game, road, color, offset, kind = 'clio') {
     this.game = game;
     this.color = color;
     this.road = road;
@@ -82,7 +82,7 @@ class Car {
     this.cruise = 0.88 + Math.random() * 0.2;
     this.wait = 0;
     this.kind = kind;
-    this.spec = CARS[kind] || CARS.sedan;
+    this.spec = CARS[kind] || CARS.clio;
     this.spin = 0;
     this.pitch = 0;
     this.slope = 0;
@@ -299,20 +299,20 @@ class TrafficFx {
       // Optiques : sur la caisse (avec son tangage).
       e.set(c.slope + c.pitch, c.heading, 0);
       car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
-      const yH = C.body[C.body.length - 2][1] - 0.06, yT = C.body[2][1] - 0.06;
+      const yH = C.head.y + C.head.h / 2, yT = C.tail.y + C.tail.h / 2, xH = (C.head.x0 + C.head.x1) / 2, xT = (Math.max(C.tail.x0, 0.2) + C.tail.x1) / 2;
       // Feux de la voiture : globaux pour la circulation, propres à chaque voiture conduisible (moteur, nuit).
       const lk = c.lightK ?? on;
       if (lk > maxLk) maxLk = lk;
       const tail = lk * 0.55 + (c.braking ? 0.9 : 0);
       k = 0;
       for (let sx = -1; sx <= 1; sx += 2) {
-        loc.compose(v.set(sx * (hw - 0.32), yH, C.L / 2 + 0.11), q.identity(), sc.set(1, 1, 1));
+        loc.compose(v.set(sx * xH, yH, C.tipF + 0.11), q.identity(), sc.set(1, 1, 1));
         this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
         let o = (i * 4 + k++) * 3;
         lc[o] = 1.6 * lk;
         lc[o + 1] = 1.45 * lk;
         lc[o + 2] = 1.15 * lk;
-        loc.makeRotationY(Math.PI).scale(sc.set(0.8, 0.8, 0.8)).setPosition(sx * (hw - 0.3), yT, -C.L / 2 - 0.11);
+        loc.makeRotationY(Math.PI).scale(sc.set(0.8, 0.8, 0.8)).setPosition(sx * xT, yT, C.tipR - 0.11);
         this.lights.setMatrixAt(i * 4 + k, m.multiplyMatrices(car, loc));
         o = (i * 4 + k++) * 3;
         // Feux de recul : blancs en marche arrière.
@@ -323,7 +323,7 @@ class TrafficFx {
       // Faisceau des phares sur la chaussée.
       e.set(c.slope, c.heading, 0);
       car.compose(c.pos, q.setFromEuler(e), sc.set(1, 1, 1));
-      loc.makeTranslation(0, 0.07, C.L / 2 - 0.3);
+      loc.makeTranslation(0, 0.07, C.tipF - 0.3);
       this.beams.setMatrixAt(i, m.multiplyMatrices(car, loc));
       bc[i * 3] = 0.2 * lk;
       bc[i * 3 + 1] = 0.185 * lk;
@@ -417,11 +417,13 @@ export class Ambient {
       this.people.push(p);
     }
     // Circulation.
-    const colors = ['#f2f1ec', '#1b1c1f', '#7a7d84', '#2f5f8a', '#b8322a', '#c8c3b5', '#1d3a2c'];
+    // Modèles de série courants en Normandie, dans leurs teintes d'origine.
     const roads = ['coast', 'main', 'ew', 'ew', 'main', 'hippo', 'coast'];
     roads.forEach((id, i) => {
       const road = ROADS.find((r) => r.id === id);
-      const c = new Car(g, road, colors[i % colors.length], (i * 0.37) % 1, ['sedan', 'hatch', 'suv'][i % 3]);
+      const kind = CAR_MODELS[(i * 2 + 1) % CAR_MODELS.length];
+      const cols = CAR_COLORS[kind];
+      const c = new Car(g, road, cols[i % cols.length], (i * 0.37) % 1, kind);
       this.cars.push(c);
       g.vehicles.push(c);
     });

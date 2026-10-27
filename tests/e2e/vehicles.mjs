@@ -72,10 +72,12 @@ const drive = (kind) => page.evaluate((kind) => {
   A.tick(3);
   const out = p.mode === 'foot' && !v.driver && !v.engineOn;
   const humanNear = Math.hypot(p.human.pos.x - v.pos.x, p.human.pos.z - v.pos.z);
+  // Retour à sa place : la ligne droite reste libre pour l'essai suivant.
+  if (v.home) { v.setPosition(v.home.x, v.home.z, v.home.heading); v.atSpot = true; }
   return { kind, offered, inside, hudGear, rev, vmax, maxGear, stopTicks: t, moved, wheelsTurn, exitOffered, out, humanNear, label: v.label };
 }, kind);
 
-for (const kind of ['suv', 'tractor', 'sedan', 'hatch']) {
+for (const kind of ['duster', 'tractor', 'p508', 'clio', 'golf', 'p3008']) {
   const r = await drive(kind);
   if (r.error) { check(`${kind} : trouvé`, false, r.error); continue; }
   check(`${r.label} : bouton « Conduire » proposé à la portière`, r.offered === 'vehicle-in', r.offered);
@@ -141,7 +143,7 @@ const tr = await page.evaluate(() => {
 check('camion Strides : toujours conduisible', tr.offered === 'truck-in' && tr.ok && tr.speed > 2, `${(tr.speed * 3.6).toFixed(0)} km/h`);
 
 // Captures : voiture avec conducteur visible, tracteur.
-for (const kind of ['sedan', 'tractor']) {
+for (const kind of ['p3008', 'tractor']) {
   await page.evaluate((kind) => {
     const A = window.__auto, g = window.__game, p = g.player;
     const v = g.drivables.find((d) => d.kind === kind);

@@ -10,7 +10,7 @@ import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, homeBo
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail } from './terrainTexture.js';
 import { applySurfaces, applyRoadShader, applyInteriors, INTERIOR_UNIFORMS } from './surfaces.js';
-import { troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
+import { CAR_COLORS, CAR_MODELS, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky, CLOUD_UNIFORMS } from './sky.js';
 import { TIDE_EXTREMES } from './weather.js';
@@ -383,7 +383,7 @@ export class World {
     // Tracteur et voiture de l'écurie : véhicules conduisibles (créés par le jeu, voir vehicle.js).
     this.parkedVehicles.push(
       { kind: 'tractor', color: '#a3271f', x: -158, z: 166, heading: -Math.PI / 2 - 0.25 },
-      { kind: 'suv', color: '#2b3a4a', x: -84, z: 146, heading: Math.PI / 2 },
+      { kind: 'duster', color: '#59603f', x: -84, z: 146, heading: Math.PI / 2 },
     );
     for (let i = 0; i < 6; i++) {
       const bx = -172 + (i % 3) * 1.5, bz = 192 + Math.floor(i / 3) * 1.6;
@@ -893,14 +893,16 @@ export class World {
       }
     }
     // Voitures garées.
-    const colors = ['#f2f1ec', '#1b1c1f', '#7a7d84', '#2f5f8a', '#7a2a2a', '#c8c3b5', '#2f5a3c'];
     const spots = [
       [-80, -296.2, Math.PI / 2], [-64, -296.2, Math.PI / 2], [20, -235.8, -Math.PI / 2], [36, -235.8, -Math.PI / 2],
       [-126.2, -210, 0], [-126.2, -190, 0], [66.2, -260, Math.PI], [66.2, -276, Math.PI], [100, -169.8, Math.PI / 2],
       [-170, -228.2, -Math.PI / 2], [-100, -169.8, Math.PI / 2], [120, -296.2, -Math.PI / 2],
     ];
     // Voitures conduisibles, créées par le jeu (vehicle.js) avec leur collision.
-    spots.forEach(([x, z, r], i) => this.parkedVehicles.push({ kind: ['sedan', 'hatch', 'suv'][i % 3], color: colors[i % colors.length], x, z, heading: r }));
+    spots.forEach(([x, z, r], i) => {
+      const kind = CAR_MODELS[i % CAR_MODELS.length];
+      this.parkedVehicles.push({ kind, color: CAR_COLORS[kind][(i * 3 + 1) % CAR_COLORS[kind].length], x, z, heading: r });
+    });
     // Statue équestre en bronze (« Le Galop »), devant Strides HQ.
     const sx = TOWN.hq.x - 30, sz = TOWN.hq.z + TOWN.hq.d / 2 + 6;
     const sy = this.h(sx, sz);

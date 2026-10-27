@@ -60,18 +60,68 @@ function wheel(r, w, rim = '#b9bcc0') {
   return parts;
 }
 
-export const CARS = {
-  // Caisse jusqu'à la ceinture de caisse, pavillon vitré plus étroit (rentré), toit.
-  sedan: { L: 4.45, W: 1.8, wb: 2.68, r: 0.31,
-    body: [[-2.2, 0.32], [-2.24, 0.5], [-2.18, 0.86], [-1.9, 0.99], [-1.25, 1.03], [1.0, 1.03], [2.06, 0.9], [2.24, 0.62], [2.18, 0.32]],
-    glass: [[-1.22, 1.0], [-0.62, 1.38], [0.45, 1.4], [1.04, 1.0]], roof: [[-0.66, 1.35], [-0.62, 1.44], [0.45, 1.45], [0.5, 1.36]] },
-  hatch: { L: 4.0, W: 1.75, wb: 2.5, r: 0.3,
-    body: [[-1.98, 0.32], [-2.02, 0.55], [-1.98, 1.02], [0.95, 1.03], [1.86, 0.9], [2.0, 0.62], [1.95, 0.32]],
-    glass: [[-1.96, 1.0], [-1.78, 1.4], [0.32, 1.42], [0.98, 1.0]], roof: [[-1.8, 1.36], [-1.78, 1.47], [0.33, 1.48], [0.4, 1.38]] },
-  suv: { L: 4.6, W: 1.88, wb: 2.75, r: 0.37,
-    body: [[-2.28, 0.42], [-2.32, 0.62], [-2.28, 1.22], [1.15, 1.23], [2.1, 1.1], [2.3, 0.75], [2.25, 0.42]],
-    glass: [[-2.22, 1.2], [-2.08, 1.68], [0.55, 1.7], [1.18, 1.2]], roof: [[-2.1, 1.64], [-2.08, 1.77], [0.56, 1.78], [0.62, 1.66]] },
+// Copies de modèles de série réels (sans logo ni nom de marque à l'écran), aux cotes des fiches techniques :
+// longueur, empattement, porte-à-faux, hauteur, largeur, pneus. Repère : origine au milieu de l'empattement, au sol,
+// x = longueur (avant +), y = hauteur. body : caisse jusqu'à la ceinture ; glass : pavillon vitré (de la lunette
+// arrière au pied du pare-brise) ; roof : toit. head / tail : optiques ; look : détails propres au modèle.
+const car = (c) => {
+  c.L = c.ohF + c.wb + c.ohR;
+  c.tipF = c.wb / 2 + c.ohF;
+  c.tipR = -(c.wb / 2 + c.ohR);
+  c.zc = (c.tipF + c.tipR) / 2;
+  return c;
 };
+export const CARS = {
+  // Citadine 5 portes type Clio V : 4,05 m, empattement 2,583 m, 1,44 m de haut, 1,798 m de large, 195/55 R16.
+  // Ceinture de caisse montante, hayon court, optiques à signature en « C ».
+  clio: car({ W: 1.798, wb: 2.583, ohF: 0.85, ohR: 0.617, r: 0.31,
+    body: [[-1.87, 0.3], [-1.91, 0.46], [-1.9, 0.7], [-1.85, 0.96], [-1.0, 0.99], [0.0, 0.96], [1.12, 0.91], [1.7, 0.83], [2.02, 0.7], [2.12, 0.56], [2.14, 0.4], [2.08, 0.28]],
+    glass: [[-1.83, 0.95], [-1.64, 1.3], [-1.35, 1.38], [0.38, 1.42], [1.12, 0.9]],
+    roof: [[-1.72, 1.31], [-1.68, 1.4], [-1.35, 1.425], [0.36, 1.44], [0.44, 1.39]],
+    head: { y: 0.64, h: 0.12, x0: 0.42, x1: 0.84 }, tail: { y: 0.78, h: 0.13, x0: 0.5, x1: 0.85 },
+    look: { drl: 'c', tailSig: 'c', grille: { w: 1.0, y: 0.44, h: 0.16 }, upper: { w: 0.7, y: 0.62, h: 0.05 } } }),
+  // Compacte 5 portes type Golf 8 : 4,284 m, empattement 2,636 m, 1,456 m, 1,789 m, 205/55 R16.
+  // Large montant arrière, phares effilés reliés par un bandeau lumineux sur la calandre.
+  golf: car({ W: 1.789, wb: 2.636, ohF: 0.87, ohR: 0.778, r: 0.316,
+    body: [[-2.05, 0.3], [-2.1, 0.48], [-2.09, 0.74], [-2.03, 0.97], [-1.2, 0.99], [0.0, 0.98], [1.18, 0.94], [1.75, 0.85], [2.07, 0.72], [2.17, 0.56], [2.19, 0.4], [2.13, 0.29]],
+    glass: [[-2.0, 0.97], [-1.8, 1.33], [-1.45, 1.41], [0.4, 1.44], [1.18, 0.94]],
+    roof: [[-1.86, 1.34], [-1.82, 1.42], [-1.45, 1.445], [0.38, 1.46], [0.46, 1.41]],
+    head: { y: 0.7, h: 0.08, x0: 0.36, x1: 0.85 }, tail: { y: 0.86, h: 0.1, x0: 0.25, x1: 0.86 },
+    look: { drl: 'bar', tailSig: 'wide', cPillar: true, grille: { w: 1.1, y: 0.36, h: 0.2 }, upper: { w: 0.72, y: 0.66, h: 0.06 } } }),
+  // Berline fastback type 508 II : 4,75 m, empattement 2,793 m, 1,403 m, 1,859 m, 235/45 R18.
+  // Capot long, vitres sans encadrement, feux de jour verticaux « crocs », bandeau arrière noir à trois griffes.
+  p508: car({ W: 1.859, wb: 2.793, ohF: 0.91, ohR: 1.047, r: 0.335,
+    body: [[-2.4, 0.29], [-2.45, 0.46], [-2.44, 0.72], [-2.36, 0.9], [-1.6, 0.96], [-0.4, 0.92], [1.25, 0.86], [1.85, 0.78], [2.17, 0.66], [2.28, 0.52], [2.31, 0.38], [2.25, 0.27]],
+    glass: [[-2.3, 0.9], [-1.25, 1.3], [-0.45, 1.38], [0.4, 1.38], [1.25, 0.86]],
+    roof: [[-1.3, 1.3], [-1.24, 1.39], [-0.45, 1.405], [0.38, 1.4], [0.45, 1.35]],
+    head: { y: 0.64, h: 0.07, x0: 0.52, x1: 0.88 }, tail: { y: 0.78, h: 0.12, x0: 0.0, x1: 0.9 },
+    look: { drl: 'fang', tailSig: 'claw-band', grille: { w: 1.2, y: 0.3, h: 0.3 }, frameless: true } }),
+  // SUV type 3008 II : 4,447 m, empattement 2,675 m, porte-à-faux 0,923 / 0,849 m, 1,624 m, 1,841 m, 225/55 R18.
+  // Capot haut et horizontal, toit noir flottant, calandre à damier, feux arrière à trois griffes, protections noires.
+  p3008: car({ W: 1.841, wb: 2.675, ohF: 0.923, ohR: 0.849, r: 0.352,
+    body: [[-2.14, 0.4], [-2.19, 0.58], [-2.18, 0.86], [-2.1, 1.12], [-1.2, 1.15], [0.0, 1.13], [1.35, 1.08], [1.85, 1.02], [2.14, 0.92], [2.25, 0.72], [2.26, 0.52], [2.2, 0.38]],
+    glass: [[-2.05, 1.12], [-1.88, 1.48], [-1.6, 1.57], [0.62, 1.58], [1.35, 1.08]],
+    roof: [[-1.92, 1.48], [-1.88, 1.58], [-1.6, 1.61], [0.6, 1.62], [0.68, 1.55]],
+    head: { y: 0.86, h: 0.1, x0: 0.5, x1: 0.88 }, tail: { y: 0.92, h: 0.13, x0: 0.45, x1: 0.88 },
+    look: { drl: 'under', tailSig: 'claw', grille: { w: 1.0, y: 0.6, h: 0.28, check: true }, cladding: true, roofColor: '#121316' } }),
+  // SUV 4x4 type Duster II : 4,341 m, empattement 2,676 m, porte-à-faux 0,822 / 0,843 m, 1,682 m (barres), 1,804 m,
+  // 215/60 R17. Caisse droite, barres de toit, sabots avant et arrière, protections de passages de roues, feux en « Y ».
+  duster: car({ W: 1.804, wb: 2.676, ohF: 0.822, ohR: 0.843, r: 0.345,
+    body: [[-2.14, 0.42], [-2.18, 0.6], [-2.18, 0.92], [-2.12, 1.12], [-1.2, 1.14], [0.0, 1.13], [1.3, 1.1], [1.8, 1.05], [2.08, 0.98], [2.15, 0.78], [2.16, 0.56], [2.1, 0.4]],
+    glass: [[-2.08, 1.12], [-1.98, 1.52], [-1.75, 1.58], [0.62, 1.59], [1.3, 1.1]],
+    roof: [[-2.02, 1.52], [-1.98, 1.61], [-1.75, 1.63], [0.6, 1.63], [0.68, 1.57]],
+    head: { y: 0.86, h: 0.13, x0: 0.5, x1: 0.86 }, tail: { y: 0.98, h: 0.16, x0: 0.6, x1: 0.88 },
+    look: { drl: 'y', tailSig: 'y', grille: { w: 0.95, y: 0.78, h: 0.2, bars: true }, cladding: true, skid: true, roofBars: true } }),
+};
+// Teintes d'origine des modèles (catalogues constructeurs).
+export const CAR_COLORS = {
+  clio: ['#d4571c', '#2e4a6b', '#eef0ef', '#8a8d90', '#a5161c'],
+  golf: ['#f0f0ee', '#8e9295', '#1d2c44', '#111213'],
+  p508: ['#8e0f1a', '#a9adb0', '#2a4b7c', '#121214', '#ece9e2'],
+  p3008: ['#2b4f86', '#a9adb0', '#ece9e2', '#121214', '#d45e1f'],
+  duster: ['#c8611f', '#6e7172', '#59603f', '#2e4a6b', '#eef0ef'],
+};
+export const CAR_MODELS = Object.keys(CARS);
 
 // Vitrage teinté des véhicules conduisibles (on devine le conducteur et l'habitacle).
 let _glassMat = null;
@@ -81,17 +131,52 @@ export function glassMaterial() {
   return _glassMat;
 }
 
-// Voiture réaliste (≈ 3k triangles) : carrosserie profilée, pavillon vitré, toit, montants, joints de portières et
-// poignées, roues, optiques.
+// Effilement en plan de la caisse (coins avant et arrière arrondis vus de dessus) : facteur de largeur au point z.
+export function carTaper(C, z) {
+  const f0 = C.wb / 2 - 0.1, r0 = -C.wb / 2 + 0.1;
+  if (z > f0) return 1 - 0.13 * ((z - f0) / (C.tipF - f0)) ** 2;
+  if (z < r0) return 1 - 0.09 * ((r0 - z) / (r0 - C.tipR)) ** 2;
+  return 1;
+}
+// Déforme une pièce extrudée : effilement en plan, galbe des flancs (épaules rentrées) et rentré du pavillon
+// (tumblehome : les vitres latérales s'inclinent vers l'intérieur en montant).
+function shapeBody(g, C, { y0 = 0, y1 = 10, tumble = 0, shoulder = 0 } = {}) {
+  // Normales transformées (inverse de l'échelle en x) : les arêtes vives de l'extrusion restent nettes.
+  const p = g.attributes.position, n = g.attributes.normal;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    let k = carTaper(C, z);
+    const t = Math.min(1, Math.max(0, (y - y0) / (y1 - y0)));
+    k *= 1 - tumble * t - shoulder * t * t;
+    p.setX(i, x * k);
+    const nx = n.getX(i) / k, ny = n.getY(i), nz = n.getZ(i), l = Math.hypot(nx, ny, nz) || 1;
+    n.setXYZ(i, nx / l, ny / l, nz / l);
+  }
+  return g;
+}
+
+// Montant central, montant arrière, pied de pare-brise (z) d'un modèle.
+export function carPillars(C) {
+  const zA = C.glass[C.glass.length - 1][0] - 0.06;
+  const zB = zA - 1.12;
+  const zR = Math.max(C.glass[0][0] + 0.3, -C.wb / 2 + C.r + 0.12);
+  return { zA, zB, zR };
+}
+
+// Voiture réaliste : carrosserie profilée aux cotes du modèle, pavillon vitré, toit, montants, joints de portières et
+// poignées, boucliers, calandre et optiques à la signature du modèle, détails (barres de toit, sabots, protections).
 // wheels = false : sans les roues (voitures en mouvement, roues animées à part).
 // split = true : renvoie { body, glass } — vitrage à part (matériau transparent) et habitacle (sièges, planche de bord,
 // volant à gauche) pour les véhicules conduisibles.
-export function carGeo(color, kind = 'sedan', { wheels = true, split = false } = {}) {
-  const C = CARS[kind] || CARS.sedan;
+export function carGeo(color, kind = 'clio', { wheels = true, split = false } = {}) {
+  const C = CARS[kind] || CARS.clio;
+  const K = C.look;
   const parts = [];
   const glassParts = split ? [] : parts;
   const hw = C.W / 2;
   const y0 = C.body[C.body.length - 1][1];
+  const dark = '#141517', black = '#0d0e10', plastic = '#1c1d20', chrome = '#b7bbbf';
+  const LIGHT = '#f4f6f8', DRL = '#ffffff', RED = '#b3141a', REDDARK = '#5a0b0e';
   // Position (z du centre) d'une pièce d'épaisseur t posée sur le bout de la caisse (s = 1 avant, -1 arrière)
   // entre les hauteurs ya et yb : elle dépasse de e du profil, arrondi du bevel (0,07) compris.
   const onTip = (s, ya, yb, t, e = 0.012) => {
@@ -104,48 +189,120 @@ export function carGeo(color, kind = 'sedan', { wheels = true, split = false } =
     }
     return s * (m + 0.07 + e - t / 2);
   };
-  parts.push([profile(C.body, C.W, 0.07, [C.wb / 2, -C.wb / 2, C.r, y0], 2), color, {}]);
-  glassParts.push([profile(C.glass, C.W - 0.26, 0.04, null, 2), '#121920', {}]);
-  parts.push([profile(C.roof, C.W - 0.2, 0.04, null, 1), color, {}]);
-  // Montant central et rétroviseurs.
+  // Pièce plaquée sur la face avant (s = 1) ou arrière (s = -1), centrée en x, à la hauteur y (bas), de hauteur h.
+  // Les pièces de face suivent l'effilement de la caisse (x rapproché de l'axe au bout de la voiture).
+  const face = (s, w, h, y, col, x = 0, t = 0.04, e = 0.012) => {
+    const z = onTip(s, y, y + h, t, e);
+    parts.push([box(w * (Math.abs(x) > 0.01 ? 1 : carTaper(C, z)), h, t), col, { x: x * carTaper(C, z), y, z }]);
+  };
+  const beltY = Math.max(...C.body.map((p) => p[1]));
+  const topY = Math.max(...C.glass.map((p) => p[1]));
+  // Caisse : effilée aux extrémités, flancs galbés au-dessus des passages de roues ; pavillon et toit rentrés.
+  parts.push([shapeBody(profile(C.body, C.W, 0.07, [C.wb / 2, -C.wb / 2, C.r, y0], 2), C, { y0: C.r + 0.25, y1: beltY, shoulder: 0.035 }), color, {}]);
+  glassParts.push([shapeBody(profile(C.glass, C.W - 0.2, 0.04, null, 2), C, { y0: C.glass[0][1], y1: topY, tumble: 0.14 }), '#121920', {}]);
+  parts.push([shapeBody(profile(C.roof, C.W - 0.2, 0.04, null, 1), C, { y0: C.glass[0][1], y1: topY, tumble: 0.14 }), K.roofColor || color, {}]);
+  const { zA, zB, zR } = carPillars(C);
   const gy = C.glass[0][1];
-  const zB = (C.glass[1][0] + C.glass[2][0]) / 2 - 0.1;
-  parts.push([box(C.W - 0.22, C.glass[2][1] - gy, 0.1), color, { y: gy, z: zB }]);
+  const roofY = Math.max(...C.glass.map((p) => p[1]));
+  const pillarCol = K.roofColor || (K.frameless ? black : color);
+  // Montant central (noir laqué sur les modèles à toit flottant ou vitres sans encadrement) et large montant arrière.
+  parts.push([box(C.W - 0.22, roofY - gy - 0.02, 0.1), K.roofColor || K.frameless ? black : color, { y: gy, z: zB }]);
+  if (K.cPillar) for (const s of [-1, 1]) parts.push([box(0.03, roofY - gy - 0.05, 0.42), color, { x: s * (hw - 0.115), y: gy + 0.02, z: C.glass[0][0] + 0.38 }]);
   // Joints de portières (avant, montant central, arrière) et poignées.
   const belt = Math.max(...C.body.map((p) => p[1])) - 0.06;
-  const zA = C.glass[3][0] - 0.06, zR = C.glass[0][0] + (kind === 'hatch' ? 0.55 : 0.3);
   for (const s of [-1, 1]) {
-    for (const zs of [zA, zB, zR]) parts.push([box(0.012, belt - y0 - 0.14, 0.014, true), '#0c0d0f', { x: s * (hw + 0.004), y: y0 + 0.12, z: zs }]);
-    for (const zh of [zB + 0.12, zR + 0.12]) parts.push([box(0.03, 0.04, 0.2), '#2a2c30', { x: s * (hw + 0.012), y: belt - 0.16, z: zh }]);
-    // Bas de caisse.
-    parts.push([box(0.04, 0.08, C.wb - 2 * C.r - 0.3), '#1b1c1f', { x: s * (hw - 0.01), y: y0 + 0.02, z: 0 }]);
+    for (const zs of [zA, zB, zR]) parts.push([box(0.012, belt - y0 - 0.14, 0.014, true), black, { x: s * (hw + 0.004), y: y0 + 0.12, z: zs }]);
+    for (const zh of [zB - 0.2, zR - 0.2]) parts.push([box(0.03, 0.04, 0.2), K.cladding ? plastic : chrome, { x: s * (hw + 0.012), y: belt - 0.16, z: zh }]);
+    // Bas de caisse (noir mat sur les SUV).
+    parts.push([box(0.05, K.cladding ? 0.16 : 0.08, C.wb - 2 * C.r - 0.3), K.cladding ? plastic : dark, { x: s * (hw - 0.01), y: y0 + 0.02, z: 0 }]);
+    // Protections de passages de roues.
+    if (K.cladding) for (const zw of [C.wb / 2, -C.wb / 2]) parts.push([prep(new THREE.TorusGeometry(C.r + 0.11, 0.06, 4, 14, Math.PI)), plastic, { x: s * (hw - 0.02), y: C.r + 0.02, z: zw, ry: Math.PI / 2 }]);
+    // Rétroviseurs (coques couleur caisse, noires sur toit noir).
+    parts.push([box(0.22, 0.13, 0.11), K.roofColor || color, { x: s * (hw + 0.07), y: gy + 0.03, z: zA - 0.06 }]);
+  }
+  if (K.roofBars) {
+    for (const s of [-1, 1]) {
+      parts.push([box(0.05, 0.05, 1.95), '#9a9ea3', { x: s * (hw - 0.2), y: roofY + 0.06, z: (C.roof[1][0] + C.roof[3][0]) / 2 }]);
+      for (const zl of [C.roof[1][0] + 0.15, C.roof[3][0] - 0.1]) parts.push([box(0.06, 0.07, 0.12), plastic, { x: s * (hw - 0.2), y: roofY, z: zl }]);
+    }
   }
   if (split) {
     // Habitacle : sièges avant et banquette, planche de bord, volant (conduite à gauche, x > 0).
     // Hanches du conducteur ~1,25 m derrière le pied du pare-brise (comme sur une voiture réelle).
-    const fl = y0 + 0.08, dark = '#24262a', zs = zA - 1.2;
+    const fl = y0 + 0.08, seat = '#24262a', zs = zA - 1.2;
     for (const sx of [0.36, -0.36]) {
-      parts.push([box(0.48, 0.16, 0.5), dark, { x: sx, y: fl + 0.16, z: zs }]);
-      parts.push([box(0.48, 0.62, 0.12), dark, { x: sx, y: fl + 0.3, z: zs - 0.3, rx: -0.2 }]);
-      parts.push([box(0.26, 0.18, 0.1), dark, { x: sx, y: fl + 0.92, z: zs - 0.42, rx: -0.2 }]);
+      parts.push([box(0.48, 0.16, 0.5), seat, { x: sx, y: fl + 0.16, z: zs }]);
+      parts.push([box(0.48, 0.62, 0.12), seat, { x: sx, y: fl + 0.3, z: zs - 0.3, rx: -0.2 }]);
+      parts.push([box(0.26, 0.18, 0.1), seat, { x: sx, y: fl + 0.92, z: zs - 0.42, rx: -0.2 }]);
     }
-    parts.push([box(C.W - 0.4, 0.5, 0.5), dark, { y: fl + 0.16, z: zs - 0.95 }]);
+    parts.push([box(C.W - 0.4, 0.5, 0.5), seat, { y: fl + 0.16, z: zs - 0.95 }]);
     parts.push([box(C.W - 0.3, 0.22, 0.55), '#1a1b1e', { y: belt - 0.26, z: zA - 0.2 }]);
     parts.push([prep(new THREE.TorusGeometry(0.18, 0.025, 6, 16)), '#111214', { x: 0.36, y: belt + 0.02, z: zA - 0.72, rx: -0.35 }]);
     parts.push([cyl(0.025, 0.025, 0.28, 6), '#111214', { x: 0.36, y: belt - 0.16, z: zA - 0.58, rx: 0.85 }]);
   }
-  for (const s of [-1, 1]) {
-    parts.push([box(0.2, 0.12, 0.1), color, { x: s * (hw + 0.06), y: gy + 0.02, z: C.glass[3][0] - 0.1 }]);
-    if (wheels) for (const zw of [C.wb / 2, -C.wb / 2]) parts.push(...wheel(C.r, 0.22).map(([g, c, tf]) => [g, c, { ...tf, x: s * (hw - 0.14), y: C.r, z: zw }]));
-    const yh = C.body[C.body.length - 2][1] - 0.12, yt = C.body[2][1] - 0.12;
-    parts.push([box(0.42, 0.13, 0.06), '#e9ecef', { x: s * (hw - 0.32), y: yh, z: onTip(1, yh, yh + 0.13, 0.06) }]);
-    parts.push([box(0.38, 0.12, 0.05), '#9d1f1f', { x: s * (hw - 0.3), y: yt, z: onTip(-1, yt, yt + 0.12, 0.05) }]);
+  if (wheels) for (const s of [-1, 1]) for (const zw of [C.wb / 2, -C.wb / 2]) parts.push(...wheel(C.r, 0.22).map(([g, c, tf]) => [g, c, { ...tf, x: s * (hw - 0.14), y: C.r, z: zw }]));
+
+  // ----- Face avant : boucliers, calandre, optiques à la signature du modèle. -----
+  face(1, C.W - 0.3, 0.1, y0 + 0.02, plastic);
+  const G = K.grille;
+  face(1, G.w, G.h, G.y, black);
+  if (G.check) for (let i = 0; i < 9; i++) for (let j = 0; j < 3; j++) face(1, 0.05, 0.05, G.y + 0.04 + j * 0.08, chrome, -G.w / 2 + 0.08 + i * ((G.w - 0.16) / 8), 0.02, 0.03);
+  if (G.bars) for (let j = 0; j < 3; j++) face(1, G.w - 0.06, 0.018, G.y + 0.04 + j * 0.06, chrome, 0, 0.02, 0.03);
+  if (K.upper) face(1, K.upper.w, K.upper.h, K.upper.y, black);
+  if (K.skid) {
+    face(1, 0.95, 0.14, y0 + 0.04, '#a9adb1', 0, 0.04, 0.03);
+    face(-1, 0.85, 0.12, y0 + 0.04, '#a9adb1', 0, 0.04, 0.03);
   }
-  // Calandre et plaques (en avant de la calandre).
-  const yc = C.body[C.body.length - 2][1] - 0.32;
-  parts.push([box(0.9, 0.18, 0.04), '#1b1c1f', { y: yc, z: onTip(1, yc, yc + 0.18, 0.04) }]);
-  parts.push([box(0.52, 0.11, 0.04), '#f2f1ec', { y: y0 + 0.1, z: onTip(1, Math.min(yc, y0 + 0.1), y0 + 0.21, 0.04, 0.025) }]);
-  parts.push([box(0.52, 0.11, 0.04), '#f2f1ec', { y: y0 + 0.24, z: onTip(-1, y0 + 0.24, y0 + 0.35, 0.04, 0.025) }]);
+  const H = C.head;
+  const hwid = H.x1 - H.x0, hx = (H.x0 + H.x1) / 2;
+  for (const s of [-1, 1]) {
+    // Optique : boîtier sombre et projecteur.
+    face(1, hwid, H.h, H.y, dark, s * hx, 0.05);
+    face(1, hwid * 0.42, H.h * 0.6, H.y + H.h * 0.2, LIGHT, s * (hx - hwid * 0.12), 0.02, 0.03);
+    // Feux de jour.
+    if (K.drl === 'c') {
+      face(1, hwid * 0.9, 0.022, H.y + H.h - 0.02, DRL, s * hx, 0.02, 0.035);
+      face(1, 0.022, 0.2, H.y - 0.1, DRL, s * (H.x1 - 0.02), 0.02, 0.035);
+      face(1, 0.18, 0.022, H.y - 0.1, DRL, s * (H.x1 - 0.1), 0.02, 0.035);
+    } else if (K.drl === 'fang') {
+      face(1, hwid * 0.9, 0.02, H.y + H.h - 0.018, DRL, s * hx, 0.02, 0.035);
+      face(1, 0.03, 0.3, H.y - 0.3, DRL, s * (H.x1 - 0.06), 0.02, 0.04);
+    } else if (K.drl === 'under') {
+      face(1, hwid * 0.95, 0.024, H.y - 0.04, DRL, s * hx, 0.02, 0.035);
+    } else if (K.drl === 'y') {
+      face(1, 0.026, H.h * 0.75, H.y + 0.01, DRL, s * (hx + hwid * 0.25), 0.02, 0.035);
+      face(1, hwid * 0.42, 0.024, H.y + H.h * 0.72, DRL, s * (hx + hwid * 0.05), 0.02, 0.035);
+      face(1, hwid * 0.42, 0.024, H.y + H.h * 0.12, DRL, s * (hx + hwid * 0.05), 0.02, 0.035);
+    }
+    // Antibrouillards / prises d'air latérales.
+    face(1, 0.2, 0.08, y0 + 0.14, black, s * (hw - 0.3));
+  }
+  if (K.drl === 'bar') face(1, 2 * H.x0 + 0.02, 0.016, H.y + H.h * 0.5, DRL, 0, 0.02, 0.04);
+
+  // ----- Face arrière : bouclier, feux à la signature du modèle. -----
+  face(-1, C.W - 0.3, 0.12, y0 + 0.02, plastic);
+  const T = C.tail;
+  if (K.tailSig === 'claw-band') face(-1, 2 * T.x1, T.h, T.y, black);
+  const twid = T.x1 - Math.max(T.x0, 0.2), tx = (Math.max(T.x0, 0.2) + T.x1) / 2;
+  for (const s of [-1, 1]) {
+    if (K.tailSig === 'claw' || K.tailSig === 'claw-band') {
+      face(-1, twid, T.h, T.y, K.tailSig === 'claw' ? REDDARK : black, s * tx, 0.05);
+      for (let k = 0; k < 3; k++) parts.push([box(0.025, T.h * 0.8, 0.02), RED, { x: s * (tx - twid * 0.3 + k * twid * 0.3), y: T.y + T.h * 0.1, z: onTip(-1, T.y, T.y + T.h, 0.02, 0.035), rz: s * 0.35 }]);
+    } else {
+      face(-1, twid, T.h, T.y, REDDARK, s * tx, 0.05);
+      if (K.tailSig === 'c') {
+        face(-1, twid * 0.8, 0.022, T.y + T.h - 0.025, RED, s * tx, 0.02, 0.035);
+        face(-1, twid * 0.8, 0.022, T.y + 0.005, RED, s * tx, 0.02, 0.035);
+        face(-1, 0.022, T.h, T.y, RED, s * (T.x1 - 0.03), 0.02, 0.035);
+      } else if (K.tailSig === 'y') {
+        face(-1, 0.03, T.h * 0.7, T.y, RED, s * tx, 0.02, 0.035);
+        face(-1, twid * 0.6, 0.026, T.y + T.h * 0.7, RED, s * tx, 0.02, 0.035);
+      } else face(-1, twid * 0.9, 0.03, T.y + T.h * 0.4, RED, s * tx, 0.02, 0.035);
+    }
+  }
+  // Plaques d'immatriculation (sans inscription).
+  face(1, 0.52, 0.11, y0 + 0.13, '#f2f1ec', 0, 0.03, 0.03);
+  face(-1, 0.52, 0.11, Math.max(y0 + 0.24, T.y - 0.24), '#f2f1ec', 0, 0.03, 0.03);
   if (split) return { body: partsToGeo(parts), glass: partsToGeo(glassParts) };
   return partsToGeo(parts);
 }

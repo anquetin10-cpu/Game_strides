@@ -56,35 +56,57 @@ const CAR_BASE = {
   massHorse: 0, gearTorque: [1, 1, 1, 1, 1, 1], eff: 0.92, rho: 1.2, beep: false, startGear: 1,
 };
 export const VEHICLE_SPECS = {
-  // Citadine 1.0 TCe 90 ch (3 cylindres essence), 160 N·m, boîte pilotée 5 rapports : 0-100 km/h ~12 s, 178 km/h.
-  hatch: {
-    ...CAR_BASE, name: 'Citadine', massEmpty: 1200, zFront: 1.25, zRear: -1.25, track: 1.5, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.3,
+  // Citadine type Clio V 1.0 TCe 90 (3 cylindres essence), 160 N·m, boîte 5 : 0-100 km/h 12,2 s, 178 km/h.
+  clio: {
+    ...CAR_BASE, name: 'Citadine', massEmpty: 1240, zFront: 1.2915, zRear: -1.2915, track: 1.51, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.31,
     idle: 800, maxRpm: 6200, cutRpm: 6500, fuel: 'petrol', cyl: 3, drive: 'front',
     torque: [[700, 90], [1500, 140], [2250, 160], [3500, 160], [4500, 150], [5500, 128], [6200, 105], [6500, 0]], maxTorque: 160,
     gears: [3.73, 2.05, 1.39, 1.03, 0.82], reverse: 3.55, final: 4.21, shiftTime: 0.45,
     crr: 0.011, crrSoft: 0.045, cdA: 0.68, brakeDecel: 9.5, mu: 1.0, muSoft: 0.6,
     maxSteer: 0.49, steerRate: 1.8, aLatSteer: 7, limiter: 50, cornerF: 9.5, cornerR: 11,
-    shiftUp: [2200, 5800], shiftDown: [1300, 2800], shiftDownBrake: 1700, launch: [1100, 2200], engineBrake: [12, 0.006], holdRpm: 1500,
+    shiftUp: [2200, 5800], shiftDown: [1300, 2800], shiftDownBrake: 1700, launch: [1100, 1900], engineBrake: [12, 0.006], holdRpm: 1500,
   },
-  // Berline 1.5 diesel 130 ch, 300 N·m, automatique 6 rapports : 0-100 km/h ~10 s, 210 km/h.
-  sedan: {
-    ...CAR_BASE, name: 'Berline', massEmpty: 1450, zFront: 1.34, zRear: -1.34, track: 1.57, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.33,
-    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', cyl: 4, drive: 'front',
+  // Compacte type Golf 8 1.5 TSI 130 (4 cylindres essence), 200 N·m de 1 400 à 4 000 tr/min, boîte 6 :
+  // 0-100 km/h 9,2 s, 214 km/h.
+  golf: {
+    ...CAR_BASE, name: 'Compacte', massEmpty: 1355, zFront: 1.318, zRear: -1.318, track: 1.55, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.316,
+    idle: 750, maxRpm: 6000, cutRpm: 6300, fuel: 'petrol', cyl: 4, drive: 'front',
+    torque: [[700, 110], [1400, 200], [4000, 200], [5000, 182], [6000, 150], [6300, 0]], maxTorque: 200,
+    gears: [3.77, 2.09, 1.47, 1.1, 0.88, 0.71], reverse: 3.6, final: 3.94, shiftTime: 0.35,
+    crr: 0.01, crrSoft: 0.045, cdA: 0.61, brakeDecel: 9.8, mu: 1.0, muSoft: 0.6,
+    maxSteer: 0.5, steerRate: 1.8, aLatSteer: 7.5, limiter: 60, cornerF: 10, cornerR: 12,
+    shiftUp: [2100, 5600], shiftDown: [1200, 2600], shiftDownBrake: 1600, launch: [1100, 2000], engineBrake: [12, 0.007], holdRpm: 1500,
+  },
+  // Berline type 508 II 1.5 BlueHDi 130 (diesel), 300 N·m, automatique 8 rapports : 0-100 km/h 10 s, ~208 km/h.
+  p508: {
+    ...CAR_BASE, name: 'Berline', massEmpty: 1505, zFront: 1.3965, zRear: -1.3965, track: 1.6, cgEmpty: 0.25, cgHeight: 0.52, wheelR: 0.335,
+    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
     torque: [[700, 150], [1000, 210], [1500, 280], [1750, 300], [2750, 300], [3750, 260], [4500, 200], [4800, 0]], maxTorque: 300,
-    gears: [4.04, 2.37, 1.56, 1.16, 0.85, 0.67], reverse: 3.6, final: 3.32, shiftTime: 0.25,
-    crr: 0.01, crrSoft: 0.045, cdA: 0.62, brakeDecel: 9.8, mu: 1.0, muSoft: 0.6,
-    maxSteer: 0.5, steerRate: 1.7, aLatSteer: 7.5, limiter: 58, cornerF: 10, cornerR: 12,
-    shiftUp: [1600, 4100], shiftDown: [1100, 2200], shiftDownBrake: 1400, launch: [1000, 1800], engineBrake: [15, 0.008], holdRpm: 1200,
+    gears: [5.25, 3.03, 1.95, 1.46, 1.22, 1.0, 0.81, 0.67], reverse: 4.4, final: 2.9, shiftTime: 0.2,
+    crr: 0.01, crrSoft: 0.045, cdA: 0.6, brakeDecel: 9.8, mu: 1.0, muSoft: 0.6,
+    maxSteer: 0.5, steerRate: 1.7, aLatSteer: 7.5, limiter: 57.8, cornerF: 10, cornerR: 12,
+    shiftUp: [1500, 3900], shiftDown: [1050, 2000], shiftDownBrake: 1300, launch: [1000, 1800], engineBrake: [15, 0.008], holdRpm: 1200,
   },
-  // SUV 2.0 diesel 150 ch, 370 N·m, automatique 6 rapports, 4 roues motrices : 0-100 km/h ~10,5 s, 190 km/h.
-  suv: {
-    ...CAR_BASE, name: 'SUV', massEmpty: 1750, zFront: 1.375, zRear: -1.375, track: 1.6, cgEmpty: 0.2, cgHeight: 0.7, wheelR: 0.36,
-    idle: 750, maxRpm: 4300, cutRpm: 4600, fuel: 'diesel', cyl: 4, awd: true,
-    torque: [[700, 180], [1000, 260], [1500, 350], [1750, 370], [2500, 370], [3500, 320], [4300, 240], [4600, 0]], maxTorque: 370,
-    gears: [4.6, 2.72, 1.86, 1.46, 1.22, 1.0], reverse: 4.1, final: 2.9, shiftTime: 0.25,
-    crr: 0.011, crrSoft: 0.04, cdA: 0.92, brakeDecel: 9.2, mu: 0.95, muSoft: 0.7,
-    maxSteer: 0.5, steerRate: 1.6, aLatSteer: 6.5, limiter: 53, cornerF: 9, cornerR: 10.5,
-    shiftUp: [1500, 3900], shiftDown: [1050, 2100], shiftDownBrake: 1350, launch: [950, 1700], engineBrake: [18, 0.01], holdRpm: 1100,
+  // SUV type 3008 II 1.5 BlueHDi 130 (diesel), 300 N·m, automatique 8 rapports : 0-100 km/h ~11,5 s, 192 km/h.
+  p3008: {
+    ...CAR_BASE, name: 'SUV', massEmpty: 1570, zFront: 1.3375, zRear: -1.3375, track: 1.6, cgEmpty: 0.25, cgHeight: 0.62, wheelR: 0.352,
+    idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
+    torque: [[700, 150], [1000, 210], [1500, 280], [1750, 300], [2750, 300], [3750, 260], [4500, 200], [4800, 0]], maxTorque: 300,
+    gears: [5.25, 3.03, 1.95, 1.46, 1.22, 1.0, 0.81, 0.67], reverse: 4.4, final: 2.8, shiftTime: 0.25,
+    crr: 0.011, crrSoft: 0.045, cdA: 0.84, brakeDecel: 9.3, mu: 0.97, muSoft: 0.62,
+    maxSteer: 0.5, steerRate: 1.6, aLatSteer: 6.8, limiter: 53.3, cornerF: 9.5, cornerR: 11,
+    shiftUp: [1500, 3900], shiftDown: [1050, 2000], shiftDownBrake: 1300, launch: [1000, 1800], engineBrake: [16, 0.009], holdRpm: 1200,
+  },
+  // SUV 4x4 type Duster II 1.5 Blue dCi 115 (diesel), 260 N·m à 1 750 tr/min, boîte 6 à première courte, 4 roues
+  // motrices : 0-100 km/h ~11,5 s, ~170 km/h ; bonne motricité hors route.
+  duster: {
+    ...CAR_BASE, name: 'SUV 4x4', massEmpty: 1485, zFront: 1.338, zRear: -1.338, track: 1.56, cgEmpty: 0.2, cgHeight: 0.68, wheelR: 0.345,
+    idle: 780, maxRpm: 4300, cutRpm: 4600, fuel: 'diesel', cyl: 4, awd: true,
+    torque: [[700, 130], [1000, 190], [1500, 245], [1750, 260], [2500, 260], [3500, 225], [4300, 170], [4600, 0]], maxTorque: 260,
+    gears: [4.45, 2.59, 1.66, 1.17, 0.9, 0.73], reverse: 4.2, final: 3.6, shiftTime: 0.35,
+    crr: 0.012, crrSoft: 0.04, cdA: 1.0, brakeDecel: 9.0, mu: 0.95, muSoft: 0.72,
+    maxSteer: 0.5, steerRate: 1.6, aLatSteer: 6.5, limiter: 50, cornerF: 9, cornerR: 10.5,
+    shiftUp: [1500, 3800], shiftDown: [1050, 2000], shiftDownBrake: 1350, launch: [950, 1700], engineBrake: [18, 0.01], holdRpm: 1100,
   },
   // Tracteur 110 ch (4 cylindres diesel 4,5 l), 480 N·m, inverseur et 6 rapports sous charge, 40 km/h, 4 roues motrices.
   tractor: {

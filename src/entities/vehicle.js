@@ -4,7 +4,7 @@
 // collisions et son moteur. Les roues et optiques des voitures sont dessinées par les effets de la circulation.
 import * as THREE from 'three';
 import { TruckSim, VEHICLE_SPECS } from './truckPhysics.js';
-import { carGeo, carMaterial, glassMaterial, CARS, tractorGeo, tractorWheelGeo, TRACTOR_WHEELS } from '../world/props.js';
+import { carGeo, carMaterial, glassMaterial, carPillars, CARS, tractorGeo, tractorWheelGeo, TRACTOR_WHEELS } from '../world/props.js';
 import { clamp } from '../core/math.js';
 import { WORLD, nearestRoad } from '../world/layout.js';
 
@@ -13,14 +13,14 @@ const TRACTOR = { L: 5.6, W: 2.4, wb: 2.5, r: 0.82, zc: 0.6 };
 let _uid = 0;
 
 export class Vehicle {
-  constructor(game, { kind = 'sedan', color = '#7a7d84', x = 0, z = 0, heading = 0 } = {}) {
+  constructor(game, { kind = 'clio', color = '#7a7d84', x = 0, z = 0, heading = 0 } = {}) {
     this.game = game;
     this.id = `veh${++_uid}`;
     this.kind = kind;
     this.color = color;
     this.isTractor = kind === 'tractor';
-    this.spec = this.isTractor ? TRACTOR : CARS[kind] || CARS.sedan;
-    this.sim = new TruckSim(VEHICLE_SPECS[kind] || VEHICLE_SPECS.sedan);
+    this.spec = this.isTractor ? TRACTOR : CARS[kind] || CARS.clio;
+    this.sim = new TruckSim(VEHICLE_SPECS[kind] || VEHICLE_SPECS.clio);
     this.pos = new THREE.Vector3(x, 0, z);
     this.sim.pos = this.pos;
     this.sim.heading = heading;
@@ -125,8 +125,7 @@ export class Vehicle {
     if (this.isTractor) return { x: 0, y: 1.25, z: -1.05 };
     const C = this.spec;
     const y0 = C.body[C.body.length - 1][1];
-    const zA = C.glass[3][0] - 0.06;
-    return { x: 0.36, y: y0 + 0.08 + 0.32 - 0.48, z: zA - 1.25 };
+    return { x: 0.36, y: y0 + 0.08 + 0.32 - 0.48, z: carPillars(C).zA - 1.25 };
   }
 
   setPosition(x, z, heading) {
