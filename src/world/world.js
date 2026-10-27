@@ -747,6 +747,11 @@ export class World {
       const bz = P.z + Math.sin(a) * 10;
       this.batch.add(bench, null, bx, this.h(bx, bz), bz, -a - Math.PI / 2);
     }
+    // Éclairage de la place : huit lanternes tournées vers la fontaine, entre les arbres.
+    for (let i = 0; i < 8; i++) {
+      const a = ((i + 0.5) / 8) * Math.PI * 2;
+      this.lamp(P.x + Math.cos(a) * 24, P.z + Math.sin(a) * 24, Math.PI - a);
+    }
     // Café « Le Galop » : kiosque et terrasse.
     this.place(buildingGeo({ w: 10, d: 7, h: 3.6, wall: '#1d1e21', roof: '#f2f1ec', roofType: 'flat', trim: '#f2f1ec', floors: 1, doorColor: '#c8a96e' }), P.x + 32, P.z - 18, Math.PI, 10, 7, 'cafe');
     for (let i = 0; i < 6; i++) {
