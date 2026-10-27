@@ -159,8 +159,18 @@ class Car {
     }
     // Carrefours : trajectoires qui se croisent dans les 3 prochaines secondes → la voiture cède le passage au véhicule
     // du joueur (il ne suit pas le code de la route d'un automate) et, entre voitures, laisse la priorité à droite.
+    const pv = g.player?.mode === 'drive' ? g.player.vehicle : null;
+    // Prudence près du véhicule du joueur qui manœuvre (tourne, entre sur un parking) : sa trajectoire ne se prédit
+    // pas en ligne droite ; on ralentit d'autant plus qu'on s'en approche (≈ 25 km/h à 15 m).
+    if (pv && Math.abs(pv.speed) < (pv === g.truck ? 9 : 4)) {
+      for (const p of [pv.pos, pv.nose?.pos]) {
+        if (!p || p.x === 1e6) continue;
+        const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
+        const ahead = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx);
+        if (ahead > -2 && ahead < 30 && lat < 8) limit = Math.min(limit, 2.5 + Math.max(0, ahead) * 0.3);
+      }
+    }
     if (!this.uturn && this.speed > 0.5) {
-      const pv = g.player?.mode === 'drive' ? g.player.vehicle : null;
       for (const v of g.vehicles) {
         // L'avant du camion (repère « nose ») compte aussi : le camion est long.
         if (v === this || v.parked || !v.pos || v.heading === undefined || v.pos.x === 1e6) continue;
