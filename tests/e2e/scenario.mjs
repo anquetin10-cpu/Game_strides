@@ -29,6 +29,8 @@ await shot('03-game');
 // Attendre la notification de la première mission.
 await page.waitForSelector('.notif.show', { timeout: 90000 });
 step('notification received');
+// Rendu logiciel lent : la notification ne doit pas se refermer seule (7 s) avant le toucher (comme request-flow.mjs).
+await G(() => clearTimeout(window.__game.hud._notifT));
 // « Répondre à la demande » ouvre l'écran de la demande ; « Accepter la mission » se confirme en deux touchers.
 // (On touche avant toute capture : la notification se referme après 7 s et une capture sous rendu logiciel est lente.)
 await page.waitForTimeout(300);

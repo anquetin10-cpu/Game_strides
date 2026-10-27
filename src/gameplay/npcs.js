@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GrazeAI, PathAI } from '../entities/horse.js';
 import { randomOutfit } from '../entities/humanModel.js';
-import { HOME, HARAS, DUNES, POLE, TOWN_BLOCKS } from '../world/sites.js';
+import { HOME, HARAS, DUNES, GATIEN, POLE, TOWN_BLOCKS } from '../world/sites.js';
 import { ROADS, HIPPO } from '../world/layout.js';
 import { CHATTER } from './data.js';
 import { mulberry32, pick, polylineLength, pointAlong, dampAngle, clamp } from '../core/math.js';
@@ -454,14 +454,25 @@ export class Ambient {
     const stabled = [
       ...[1, 3, 6].map((i) => [HOME.barn.x - HOME.barn.w / 2 + 0.25 + 3.6 * (i + 0.5), HOME.barn.z - 3.1, 0]),
       ...[1, 4].map((i) => [POLE.stables.x + 5.1, POLE.stables.z - POLE.stables.d / 2 + 0.25 + 3.6 * (i + 0.5), -Math.PI / 2]),
+      // Haras (aile ouest, boxes côté cour), Écurie des Dunes et Domaine de Saint-Gatien (côté prés).
+      ...[1, 3].map((i) => [HARAS.wingW.x + 3.1, HARAS.wingW.z + 17.95 - 3.6 * i, -Math.PI / 2]),
+      [DUNES.barn.x - 13.95 + 3.6, DUNES.barn.z - 2.5, 0],
+      [GATIEN.barn.x - 11.95 + 7.2, GATIEN.barn.z - 2.5, 0],
     ];
     for (const [x, z, hd] of stabled) {
       const h = g.spawnHorse({ id: `box${k}`, coat: COATS[k % COATS.length], blaze: rnd() < 0.5, socks: [rnd() < 0.3, rnd() < 0.3, rnd() < 0.4, rnd() < 0.4] }, x, z, hd, { saddle: false });
       h.frozen = true;
       h.ai = null;
       h.ambient = true;
+      // À l'intérieur de l'écurie : visible seulement de près (on ne le voit qu'en entrant).
+      h.visibleDist = 30;
       k++;
     }
+    // Palefreniers dans les allées des écuries (Val : jusqu'à la cour par l'allée transversale ; Haras ; tente du Pôle).
+    const B = HOME.barn;
+    this.walker([[B.x - 20, B.z + 0.4], [B.x + 6, B.z + 0.4], [B.x + 6, B.z + 8], [B.x + 6, B.z - 0.4], [B.x + 18, B.z - 0.4], [B.x - 20, B.z - 0.4]], 1.0);
+    this.walker([[HARAS.wingW.x, HARAS.wingW.z - 17], [HARAS.wingW.x, HARAS.wingW.z + 17]], 0.9);
+    this.walker([[POLE.stables.x, POLE.stables.z - 26], [POLE.stables.x - 1, POLE.stables.z + 26]], 1.1);
     // Cavaliers à l'entraînement.
     const W = POLE.warmup;
     const warm = [[W.x - 14, W.z - 16], [W.x + 14, W.z - 16], [W.x + 14, W.z + 16], [W.x - 14, W.z + 16]];

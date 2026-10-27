@@ -73,6 +73,7 @@ const VIEWS = {
   gatienBarn: (g) => { const y = g.terrain.getHeight(-195, 300); return { at: [-212, y + 2.5, 284], from: [-192, y + 3, 302] }; },
   poleTent: (g) => { const y = g.terrain.getHeight(395, -205); return { at: [420, y + 2.5, -226], from: [392, y + 3.5, -200] }; },
   poleAisle: (g) => { const y = g.terrain.getHeight(420, -226); return { at: [420, y + 1.4, -250], from: [420.3, y + 1.8, -200] }; },
+  harasAisle: (g) => { const y = g.terrain.getHeight(-428, -42); return { at: [-428, y + 1.3, -60], from: [-427.7, y + 1.75, -22] }; },
   cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).
   lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },
