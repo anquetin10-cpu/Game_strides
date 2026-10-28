@@ -1,6 +1,6 @@
 // Accessoires réalistes : voitures (carrosseries profilées), tracteur avec chargeur, matériel d'écurie.
 import * as THREE from 'three';
-import { box, cyl, ico, prep } from './shapes.js';
+import { box, cyl, ico, limb, prep } from './shapes.js';
 import { partsToGeo } from './builders.js';
 import { addCloudShadows } from './sky.js';
 
@@ -320,15 +320,40 @@ export function unitWheelGeo() {
 
 // Roues du tracteur, centrées sur l'axe (axe selon x) : arrière à crampons en chevrons, avant directrice.
 export const TRACTOR_WHEELS = { rear: { x: 1.0, z: -0.95, r: 0.82 }, front: { x: 0.92, z: 1.55, r: 0.52 } };
+
+// Pneu tourné (section arrondie, axe x) : rayon extérieur r, largeur w, rayon de jante ri.
+function tyre(r, w, ri) {
+  const e = Math.min(0.09, w * 0.2);
+  const pts = [[ri, -w / 2], [r - e, -w / 2], [r - e * 0.3, -w / 2 + e * 0.3], [r, -w / 2 + e], [r, w / 2 - e], [r - e * 0.3, w / 2 - e * 0.3], [r - e, w / 2], [ri, w / 2]];
+  const g = new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 40);
+  g.rotateZ(Math.PI / 2);
+  return prep(g);
+}
+// Jante à voile embouti (axe x) : couronne, voile creusé vers le moyeu, écrous ; côté extérieur s.
+function rimParts(ri, w, color, s = 1) {
+  const pts = [[ri * 0.98, -w / 2 + 0.02], [ri, -w / 2 + 0.04], [ri, w / 2 - 0.04], [ri * 0.98, w / 2 - 0.02], [ri * 0.9, w / 2 - 0.03], [ri * 0.55, 0.06], [ri * 0.3, 0.1], [0.001, 0.11]];
+  const g = new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 28);
+  g.rotateZ(-Math.PI / 2 * s);
+  const parts = [[prep(g), color, {}]];
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2;
+    parts.push([cyl(0.022, 0.022, 0.05, 6, false), '#8d9095', { x: s * 0.12, y: Math.sin(a) * ri * 0.22, z: Math.cos(a) * ri * 0.22, rz: Math.PI / 2 }]);
+  }
+  parts.push([cyl(ri * 0.13, ri * 0.13, 0.06, 12, false), '#55585c', { x: s * 0.13, rz: Math.PI / 2 }]);
+  return parts;
+}
+// Roue de tracteur (axe x, centre au moyeu) : pneu agraire à crampons en chevrons, jante crème.
 export function tractorWheelGeo(rear, s = 1) {
-  const parts = [];
-  if (rear) {
-    parts.push(...wheel(0.82, 0.52, '#c9c2b0'));
-    for (let k = 0; k < 18; k++) {
-      const a = (k / 18) * Math.PI * 2;
-      parts.push([box(0.24, 0.08, 0.1, false), '#151517', { x: 0.12 * ((k % 2) * 2 - 1) * 0.5, y: Math.sin(a) * 0.84, z: Math.cos(a) * 0.84, rx: -a, ry: s * 0.4 * ((k % 2) * 2 - 1) }]);
+  const r = rear ? 0.82 : 0.52, w = rear ? 0.52 : 0.36, ri = r * (rear ? 0.6 : 0.62);
+  const parts = [[tyre(r - 0.03, w, ri), '#141416', {}], ...rimParts(ri, w, '#cfc6ae', s)];
+  // Crampons : barres inclinées de l'épaule vers le centre, alternées d'un côté à l'autre (chevrons).
+  const n = rear ? 23 : 20, len = w * 0.56, h = rear ? 0.055 : 0.035;
+  for (let k = 0; k < n; k++) {
+    for (const side of [-1, 1]) {
+      const a = ((k + (side > 0 ? 0.5 : 0)) / n) * Math.PI * 2;
+      parts.push([box(len, h, rear ? 0.085 : 0.06, false), '#141416', { x: side * w * 0.22, y: Math.sin(a) * (r - 0.03 + h / 2), z: Math.cos(a) * (r - 0.03 + h / 2), rx: -a + Math.PI / 2, ry: side * s * 0.55 }]);
     }
-  } else parts.push(...wheel(0.52, 0.36, '#c9c2b0'));
+  }
   return partsToGeo(parts);
 }
 
@@ -337,41 +362,105 @@ export function tractorWheelGeo(rear, s = 1) {
 export function tractorGeo(color = '#a3271f', { split = false } = {}) {
   const parts = [];
   const glassParts = split ? [] : parts;
-  // Châssis, capot profilé, calandre.
-  parts.push([box(0.9, 0.5, 3.3), '#2b2c30', { y: 0.55, z: 0.25 }]);
-  parts.push([profile([[-0.2, 1.0], [-0.2, 1.62], [1.6, 1.58], [2.05, 1.38], [2.1, 0.95]], 0.95, 0.06), color, {}]);
-  parts.push([box(0.86, 0.6, 0.06), '#1b1c1f', { y: 0.98, z: 2.13 }]);
-  // Cabine : montants, toit, vitrage.
-  parts.push([box(1.5, 0.12, 1.6), color, { y: 2.85, z: -0.85 }]);
-  for (const sx of [-0.72, 0.72]) for (const sz of [-1.6, -0.12]) parts.push([box(0.07, 1.3, 0.07), '#1b1c1f', { x: sx, y: 1.55, z: sz }]);
-  glassParts.push([box(1.42, 1.25, 1.44), '#1a2229', { y: 1.58, z: -0.86 }]);
+  const dark = '#232427', frame = '#2b2c30', steel = '#55585c', chrome = '#b9bcc0';
+  // Châssis, carter moteur et pont avant.
+  parts.push([box(0.82, 0.42, 3.0), frame, { y: 0.5, z: 0.35 }]);
+  parts.push([box(0.7, 0.22, 1.4), dark, { y: 0.36, z: 1.0 }]);
+  parts.push([limb([-0.82, 0.52, 1.55], [0.82, 0.52, 1.55], 0.08, 0.08, 10), frame, {}]);
+  parts.push([limb([-1.0, 0.82, -0.95], [1.0, 0.82, -0.95], 0.12, 0.12, 12), frame, {}]);
+  // Capot arrondi (profil latéral lissé), flancs à ouïes, calandre à lames et phares.
+  parts.push([profile([[-0.15, 0.92], [-0.15, 1.6], [0.6, 1.62], [1.55, 1.57], [1.95, 1.48], [2.12, 1.3], [2.15, 0.95]], 0.98, 0.07, null, 2), color, {}]);
+  for (const sx of [-1, 1]) {
+    for (let k = 0; k < 7; k++) parts.push([box(0.02, 0.035, 0.42), dark, { x: sx * 0.5, y: 1.12 + k * 0.055, z: 1.25 }]);
+    parts.push([box(0.02, 0.06, 1.9), dark, { x: sx * 0.5, y: 0.94, z: 1.0 }]);
+  }
+  parts.push([box(0.82, 0.5, 0.05), '#121315', { y: 0.98, z: 2.16 }]);
+  for (let k = 0; k < 6; k++) parts.push([box(0.8, 0.025, 0.04), steel, { y: 1.02 + k * 0.075, z: 2.19 }]);
+  for (const sx of [-1, 1]) {
+    parts.push([box(0.2, 0.09, 0.05), '#e9e7dc', { x: sx * 0.3, y: 1.5, z: 2.08 }]);
+    parts.push([box(0.24, 0.13, 0.04), chrome, { x: sx * 0.3, y: 1.48, z: 2.06 }]);
+  }
+  // Échappement vertical (silencieux, coude, chapeau) et préfiltre à air.
+  parts.push([cyl(0.075, 0.075, 0.55, 12), dark, { x: 0.36, y: 1.6, z: 1.05 }]);
+  parts.push([cyl(0.055, 0.055, 0.9, 10), dark, { x: 0.36, y: 2.12, z: 1.05 }]);
+  parts.push([cyl(0.07, 0.055, 0.08, 10), steel, { x: 0.36, y: 3.0, z: 1.05, rx: 0.35 }]);
+  parts.push([cyl(0.11, 0.11, 0.3, 12), dark, { x: -0.3, y: 1.6, z: 0.95 }]);
+  // Cabine quatre montants : pavillon débordant arrondi, vitrage, portière, rétroviseurs, gyrophare, phares de travail.
+  parts.push([box(1.52, 0.1, 0.06), color, { y: 1.42, z: -0.12 }]);
+  for (const sx of [-0.72, 0.72]) {
+    for (const sz of [-1.62, -0.12]) parts.push([box(0.075, 1.36, 0.075), '#18191b', { x: sx, y: 1.5, z: sz }]);
+  }
+  parts.push([profile([[-1.78, 2.82], [-1.75, 2.95], [-0.86, 3.0], [0.04, 2.95], [0.07, 2.82]], 1.68, 0.05, null, 1), color, {}]);
+  parts.push([box(1.6, 0.04, 1.86), '#d9d9d2', { y: 2.83, z: -0.86 }]);
+  glassParts.push([box(1.4, 1.26, 0.02), '#1a2229', { y: 1.56, z: -0.1 }]); // pare-brise
+  glassParts.push([box(1.4, 1.26, 0.02), '#1a2229', { y: 1.56, z: -1.64 }]); // lunette
+  for (const sx of [-1, 1]) glassParts.push([box(0.02, 1.26, 1.46), '#1a2229', { x: sx * 0.71, y: 1.56, z: -0.87 }]);
+  parts.push([box(0.02, 0.05, 0.16), chrome, { x: 0.74, y: 2.0, z: -0.3 }]); // poignée
+  for (const sx of [-1, 1]) {
+    parts.push([limb([sx * 0.75, 2.45, -0.14], [sx * 1.05, 2.4, 0.05], 0.015, 0.015, 6), '#18191b', {}]);
+    parts.push([box(0.05, 0.3, 0.2), '#18191b', { x: sx * 1.08, y: 2.18, z: 0.06 }]);
+    parts.push([box(0.12, 0.08, 0.06), '#e9e7dc', { x: sx * 0.62, y: 2.86, z: 0.06 }]);
+    parts.push([box(0.12, 0.08, 0.06), '#e9e7dc', { x: sx * 0.62, y: 2.86, z: -1.78 }]);
+  }
+  parts.push([cyl(0.07, 0.08, 0.12, 12), '#e68a1f', { x: -0.4, y: 2.98, z: -1.2 }]);
   if (split) {
     parts.push([box(0.5, 0.12, 0.48), '#24262a', { y: 1.62, z: -1.12 }]);
     parts.push([box(0.5, 0.55, 0.1), '#24262a', { y: 1.7, z: -1.38, rx: -0.15 }]);
     parts.push([prep(new THREE.TorusGeometry(0.2, 0.025, 6, 16)), '#111214', { y: 2.05, z: -0.42, rx: -0.9 }]);
     parts.push([cyl(0.03, 0.03, 0.55, 6), '#111214', { y: 1.6, z: -0.32, rx: 0.5 }]);
   }
-  parts.push([box(1.4, 0.35, 1.45), color, { y: 1.22, z: -0.86 }]);
-  parts.push([cyl(0.06, 0.06, 1.2, 8), '#2b2c30', { x: 0.35, y: 1.6, z: 1.15 }]);
-  // Roues arrière (crampons en chevrons) et avant.
+  parts.push([box(1.42, 0.32, 1.48), color, { y: 1.12, z: -0.87 }]);
+  // Marchepied, réservoir, garde-boue arrière galbés (avec feux), garde-boue avant.
+  for (let k = 0; k < 3; k++) parts.push([box(0.34, 0.03, 0.22), steel, { x: 0.86, y: 0.38 + k * 0.28, z: -0.25 }]);
+  parts.push([limb([0.72, 0.36, -0.25], [0.72, 1.2, -0.25], 0.02, 0.02, 6), steel, {}]);
+  parts.push([cyl(0.28, 0.28, 0.7, 16, false), dark, { x: -0.66, y: 0.98, z: -0.2, rx: Math.PI / 2 }]);
   for (const s of [-1, 1]) {
-    if (!split) {
-      parts.push(...wheel(0.82, 0.52, '#c9c2b0').map(([g, c, tf]) => [g, c, { ...tf, x: s * 1.0, y: 0.82, z: -0.95 }]));
-      for (let k = 0; k < 18; k++) {
-        const a = (k / 18) * Math.PI * 2;
-        parts.push([box(0.24, 0.08, 0.1, false), '#151517', { x: s * (1.0 + 0.12 * ((k % 2) * 2 - 1) * 0.5), y: 0.82 + Math.sin(a) * 0.84, z: -0.95 + Math.cos(a) * 0.84, rx: -a, ry: s * 0.4 * ((k % 2) * 2 - 1) }]);
-      }
-      parts.push(...wheel(0.52, 0.36, '#c9c2b0').map(([g, c, tf]) => [g, c, { ...tf, x: s * 0.92, y: 0.52, z: 1.55 }]));
-    }
-    // Ailes.
-    parts.push([box(0.62, 0.06, 1.3), color, { x: s * 1.0, y: 1.72, z: -0.95 }]);
-    parts.push([box(0.4, 0.05, 0.75), '#1b1c1f', { x: s * 0.92, y: 1.08, z: 1.55 }]);
-    // Bras du chargeur.
-    parts.push([box(0.12, 0.2, 2.6, false), '#55585c', { x: s * 0.62, y: 1.45, z: 1.35, rx: 0.32 }]);
+    const fender = new THREE.CylinderGeometry(0.98, 0.98, 0.66, 28, 1, true, -Math.PI * 0.62, Math.PI * 1.02);
+    fender.rotateZ(Math.PI / 2);
+    parts.push([prep(fender), color, { x: s * 1.0, y: 0.82, z: -0.95 }]);
+    parts.push([box(0.62, 0.05, 0.2), color, { x: s * 1.0, y: 1.78, z: -0.6 }]);
+    parts.push([box(0.12, 0.08, 0.04), '#c22a1c', { x: s * 1.18, y: 1.62, z: -1.92 }]);
+    parts.push([box(0.12, 0.06, 0.04), '#e68a1f', { x: s * 1.18, y: 1.72, z: -1.92 }]);
+    const ff = new THREE.CylinderGeometry(0.62, 0.62, 0.42, 20, 1, true, -Math.PI * 0.5, Math.PI * 0.75);
+    ff.rotateZ(Math.PI / 2);
+    parts.push([prep(ff), dark, { x: s * 0.92, y: 0.52, z: 1.55 }]);
   }
-  // Godet.
-  parts.push([box(2.1, 0.55, 0.7), '#55585c', { y: 0.12, z: 3.1 }]);
-  parts.push([box(2.1, 0.06, 0.8), '#3d4044', { y: 0.06, z: 3.15 }]);
+  // Attelage trois points (bras inférieurs, troisième point) et prise de force.
+  for (const s of [-1, 1]) parts.push([limb([s * 0.32, 0.62, -1.3], [s * 0.42, 0.5, -2.05], 0.035, 0.035, 8), steel, {}]);
+  parts.push([limb([0, 1.05, -1.35], [0, 0.95, -1.95], 0.03, 0.03, 8), steel, {}]);
+  parts.push([cyl(0.04, 0.04, 0.18, 8, false), chrome, { y: 0.66, z: -1.42, rx: Math.PI / 2 }]);
+  // Chargeur frontal : bras tubulaires, vérins, traverse ; godet galbé à lame d'usure.
+  for (const s of [-1, 1]) {
+    const A = [s * 0.62, 1.95, 0.25], K = [s * 0.62, 1.55, 1.75], E = [s * 0.62, 0.52, 3.0];
+    parts.push([limb(A, K, 0.075, 0.075, 10), steel, {}]);
+    parts.push([limb(K, E, 0.07, 0.07, 10), steel, {}]);
+    parts.push([box(0.12, 0.6, 0.14), steel, { x: s * 0.62, y: 1.4, z: 0.25 }]);
+    parts.push([limb([s * 0.7, 1.0, 0.6], [s * 0.7, 1.45, 1.6], 0.045, 0.045, 8), dark, {}]);
+    parts.push([limb([s * 0.7, 1.32, 1.3], [s * 0.7, 1.52, 1.75], 0.025, 0.025, 8), chrome, {}]);
+  }
+  parts.push([limb([-0.62, 1.4, 1.95], [0.62, 1.4, 1.95], 0.06, 0.06, 10), steel, {}]);
+  const bucket = new THREE.Shape();
+  bucket.moveTo(0, 0);
+  bucket.lineTo(0.78, 0);
+  bucket.quadraticCurveTo(0.05, 0.05, 0, 0.62);
+  bucket.lineTo(-0.06, 0.62);
+  bucket.quadraticCurveTo(-0.02, -0.02, 0.78, -0.06);
+  bucket.lineTo(0, -0.06);
+  const bg = new THREE.ExtrudeGeometry(bucket, { depth: 2.1, bevelEnabled: false, curveSegments: 10 });
+  bg.translate(0, 0, -1.05);
+  bg.rotateY(-Math.PI / 2);
+  parts.push([prep(bg), steel, { y: 0.1, z: 2.85 }]);
+  for (const sx of [-1, 1]) parts.push([box(0.04, 0.62, 0.78), steel, { x: sx * 1.05, y: 0.06, z: 3.24 }]);
+  parts.push([box(2.12, 0.03, 0.12), '#3d4044', { y: 0.06, z: 3.62 }]);
+  // Roues complètes (tracteur décor, non conduisible).
+  if (!split) {
+    for (const s of [-1, 1]) {
+      for (const front of [false, true]) {
+        const w = TRACTOR_WHEELS[front ? 'front' : 'rear'];
+        parts.push([tractorWheelGeo(!front, s), null, { x: s * w.x, y: w.r, z: w.z }]);
+      }
+    }
+  }
   if (split) return { body: partsToGeo(parts), glass: partsToGeo(glassParts) };
   return partsToGeo(parts);
 }
