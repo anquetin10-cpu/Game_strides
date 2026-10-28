@@ -102,25 +102,35 @@ node tests/e2e/outfit.mjs     # tenues : travail, à cheval (casque), concours s
 node tests/e2e/barn.mjs       # écurie : entrer, allée, boxes, sellerie, caméra sous la charpente
 node tests/e2e/fuel.mjs       # carburant : consommation, plein à la station, panne sèche
 node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)
-node tests/e2e/real/realism.mjs # prototype réaliste : chargement, à cheval, au volant, retour au classique
+node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sabots au sol, volant, retour au classique
 ```
 
 Par défaut, pas d'assets externes : géométrie, textures et sons sont générés par le code (Three.js + WebAudio).
 Le build pèse environ 250 Ko gzip.
 
-### Prototype « personnages réalistes »
+### Prototype « modèles réalistes »
 
-Réglages du téléphone → **Personnages : Classique / Réaliste (prototype)**, ou `?real` dans l'adresse. En mode réaliste,
-le personnage du joueur est remplacé à l'affichage par un modèle humain réaliste (peau photographique, yeux, cils,
-cheveux, vêtements texturés, squelette à 53 os avec doigts) qui reprend les animations du personnage classique (marche,
-course, monte, conduite) et ses tenues (couleurs, casque). Le personnage classique reste en place, caché : revenir à
-« Classique » rétablit l'affichage d'origine. Le cheval, les autres personnages et les véhicules ne changent pas.
+Réglages du téléphone → **Modèles 3D : Classiques / Réalistes (prototype)**, ou `?real` dans l'adresse. En mode
+réaliste :
 
-Les modèles (`public/real/*.glb`, CC0, environ 2,5 Mo chacun, compression meshopt) sont chargés à part, seulement
-quand le mode réaliste est choisi. Ils se régénèrent avec `node scripts/real/build-humans.mjs` ; licences dans
-[`public/real/LICENSES.md`](public/real/LICENSES.md). Le fichier unique (`build:single`) charge à la place une copie
-glTF JSON (`real/*.gltf.json`, produite par `node scripts/real/to-json.mjs <dossier>`), pour les hébergements qui ne
-servent pas les `.glb`.
+- **le personnage du joueur** est remplacé à l'affichage par un modèle humain réaliste (peau photographique, yeux, cils,
+  cheveux, vêtements texturés, squelette à 53 os avec doigts) qui reprend ses animations (marche, course, monte,
+  conduite) et ses tenues (couleurs, casque) ;
+- **le cheval du joueur** (et le cheval monté) est remplacé par un cheval réaliste (poil photographique, crins en
+  mèches, sabots ferrés, selle et filet, squelette de 99 os) qui reprend toutes les allures du cheval du jeu (pas,
+  trot, galop, saut, refus, broute), avec la robe de chaque cheval (bai, alezan, gris, noir, balzanes, liste) et des
+  sabots posés au sol par cinématique inverse.
+
+Les modèles classiques restent en place, cachés : revenir à « Classiques » rétablit l'affichage d'origine. Les autres
+chevaux, les passants et les véhicules ne changent pas encore.
+
+Les modèles (`public/real/*.glb`, compression meshopt, textures WebP ; personnages ≈ 2,5 Mo chacun, cheval 3,4 Mo)
+sont chargés à part, seulement quand le mode réaliste est choisi. Ils se régénèrent avec
+`node scripts/real/build-humans.mjs` et `node scripts/real/build-horse.mjs` ; licences dans
+[`public/real/LICENSES.md`](public/real/LICENSES.md) (personnages CC0 ; cheval « Horse » de Henry S, CC BY 4.0,
+crédit affiché dans les réglages). Le fichier unique (`build:single`) charge à la place une copie glTF JSON
+(`real/*.gltf.json`, produite par `node scripts/real/to-json.mjs <dossier>`), pour les hébergements qui ne servent pas
+les `.glb`.
 
 ## Mise en ligne
 

@@ -538,6 +538,7 @@ body.phone-open .rotate { display: none !important; }
 .toggle.on::after { transform: translateX(18px); }
 .set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); font: 500 14px/1.2 var(--ui); }
 .set-row .seg { width: 230px; }
+.set-credit { padding: 6px 0 10px; border-bottom: 1px solid var(--line); font: 400 11px/1.35 var(--ui); opacity: .62; }
 .phone .set-row { flex-wrap: wrap; row-gap: 8px; }
 .phone .set-row .seg { flex: 1 0 100%; width: auto; }
 .set-row .seg button { height: 32px; font-size: 12px; }

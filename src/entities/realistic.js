@@ -6,6 +6,7 @@
 // squelette est recopié sur celui du modèle réaliste (reciblage des rotations). Revenir à « Classique » rétablit
 // l'affichage d'origine sans rien recharger.
 import * as THREE from 'three';
+import { RealHorse } from './realHorse.js';
 
 // Os du personnage classique → os du modèle réaliste (squelette « game_engine »).
 const SIDES = [['l', '_l'], ['r', '_r']];
@@ -40,9 +41,8 @@ async function loader() {
 }
 // Fichier unique (page claude.ai, qui ne sert pas les .glb) : copie glTF JSON (scripts/real/to-json.mjs).
 const EXT = import.meta.env?.MODE === 'single' ? 'gltf.json' : 'glb';
-// Modèle d'un sexe (chargé une fois, cloné pour chaque personnage).
-export async function loadRealHuman(sex) {
-  const id = sex === 'm' ? 'rider_m' : 'rider_f';
+// Modèle réaliste (chargé une fois, cloné pour chaque personnage ou cheval).
+export async function loadReal(id) {
   if (!cache[id]) {
     cache[id] = loader().then(({ l }) => l.loadAsync(new URL(`real/${id}.${EXT}`, document.baseURI).href));
   }
@@ -51,10 +51,13 @@ export async function loadRealHuman(sex) {
   const { clone } = await loader();
   return clone(gltf.scene);
 }
-export function realHumanNow(sex) {
-  const g = ready[sex === 'm' ? 'rider_m' : 'rider_f'];
+// Clone immédiat d'un modèle déjà chargé (sinon null).
+export function realNow(id) {
+  const g = ready[id];
   return g && cloneFn ? cloneFn(g.scene) : null;
 }
+export const loadRealHuman = (sex) => loadReal(sex === 'm' ? 'rider_m' : 'rider_f');
+export const realHumanNow = (sex) => realNow(sex === 'm' ? 'rider_m' : 'rider_f');
 
 const _q = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
@@ -246,6 +249,9 @@ export class Realism {
     this.body = null;
     this.loading = null;
     this.failed = false;
+    this.horses = new Map(); // cheval → RealHorse
+    this.horseFailed = false;
+    this.horseLoading = false;
   }
 
   get enabled() {
@@ -258,11 +264,51 @@ export class Realism {
       this.body.dispose();
       this.body = null;
     }
+    if (mode !== 'real') {
+      for (const r of this.horses.values()) r.dispose();
+      this.horses.clear();
+    }
+  }
+
+  // Chevaux réalistes : cheval du joueur et cheval monté (les autres chevaux restent procéduraux).
+  updateHorses() {
+    if (this.horseFailed) return;
+    const g = this.game;
+    const want = new Set([g.mainHorse, g.player?.horse].filter((h) => h && g.horses.includes(h)));
+    for (const [h, r] of this.horses) {
+      if (want.has(h)) continue;
+      r.dispose();
+      this.horses.delete(h);
+    }
+    for (const h of want) {
+      if (this.horses.has(h)) continue;
+      const root = realNow('horse');
+      if (root) {
+        this.horses.set(h, new RealHorse(h, root));
+        continue;
+      }
+      if (this.horseLoading) continue;
+      this.horseLoading = true;
+      loadReal('horse').then(
+        () => {
+          this.horseLoading = false;
+        },
+        (e) => {
+          console.warn('Cheval réaliste indisponible', e);
+          this.horseFailed = true;
+          this.horseLoading = false;
+          this.game.hud?.toast('Cheval réaliste indisponible : affichage classique.');
+        },
+      );
+    }
+    for (const r of this.horses.values()) r.update();
   }
 
   // Appelé à chaque image avant le rendu.
   update() {
-    if (!this.enabled || this.failed) return;
+    if (!this.enabled) return;
+    this.updateHorses();
+    if (this.failed) return;
     const human = this.game.player?.human;
     if (!human) return;
     // Nouveau personnage (changement de tenue, cavalière/cavalier) : nouveau modèle.
