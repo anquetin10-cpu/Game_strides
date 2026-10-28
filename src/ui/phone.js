@@ -832,9 +832,9 @@ export class Phone {
       }
       return h('div.set-row', {}, h('span', { text: label }), s);
     };
-    body.appendChild(seg('Qualité graphique', 'quality', [['auto', 'Auto'], ['high', 'Haute'], ['low', 'Économie']], (v) => g.applyQuality(v)));
-    // Prototype comparatif : personnage et cheval réalistes (modèles chargés à part) ou classiques.
-    body.appendChild(seg('Modèles 3D', 'characters', [['classic', 'Classiques'], ['real', 'Réalistes (prototype)']], (v) => g.realism?.set(v)));
+    body.appendChild(seg('Qualité graphique', 'quality', [['auto', 'Auto'], ['high', 'Haute'], ['low', 'Économie']], (v) => (g.applyQuality(v), g.realism?.refresh())));
+    // Modèles 3D : réalistes (chargés à part) si l'appareil suit (« Auto »), ou choix imposé.
+    body.appendChild(seg('Modèles 3D', 'characters', [['auto', 'Auto'], ['classic', 'Classiques'], ['real', 'Réalistes']], (v) => g.realism?.set(v)));
     body.appendChild(h('div.set-credit', { text: 'Modèles réalistes : cheval « Horse » de Henry S (Sketchfab), CC BY 4.0, robe et squelette adaptés ; personnages MakeHuman, CC0.' }));
     body.appendChild(seg('Écoulement du temps', 'timeScale', [['jeu', 'Jeu · 1 jour = 20 min'], ['reel', 'Réel · 24 h']]));
     body.appendChild(seg('Sensibilité caméra', 'camSens', [[0.7, 'Douce'], [1, 'Normale'], [1.4, 'Rapide']], (v) => (g.cam.sens = v)));

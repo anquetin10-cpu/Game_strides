@@ -1,4 +1,5 @@
-// Prototype « personnages réalistes » : par défaut le personnage classique est affiché ; en mode réaliste, le modèle
+// Modèles 3D réalistes : « Auto » par défaut (modèles réalistes), « Classiques » rétablit l'affichage d'origine ; en
+// mode réaliste, le modèle
 // réaliste est chargé à part (public/real/), suit le personnage à pied, à cheval et au volant, change de tenue ; le
 // retour au mode classique rétablit l'affichage d'origine. Usage : BASE=… node tests/e2e/real/realism.mjs
 import { chromium } from 'playwright';
@@ -49,7 +50,14 @@ const tick = (n) => step(`window.__auto.tick(${n})`);
 
 await tick(4);
 let s = await state();
-check('par défaut : personnage classique', s.mode === 'classic' && s.classicLayer === 1 && !s.real, JSON.stringify(s));
+await page.waitForFunction(() => { window.__auto.tick(1); return !!window.__game.realism.body || window.__game.realism.failed; }, null, { timeout: 60000, polling: 200 });
+await tick(4);
+s = await state();
+check('par défaut (Auto) : modèles réalistes', s.mode === 'auto' && s.real && s.classicLayer === 2 ** 31, JSON.stringify(s));
+await step(() => window.__game.realism.set('classic'));
+await tick(4);
+s = await state();
+check('« Classiques » : personnage classique', s.mode === 'classic' && s.classicLayer === 1 && !s.real && !s.horse.real, JSON.stringify(s));
 
 await step(() => window.__game.realism.set('real'));
 await page.waitForFunction(() => { window.__auto.tick(1); return !!window.__game.realism.body || window.__game.realism.failed; }, null, { timeout: 60000, polling: 200 });
@@ -134,6 +142,23 @@ await tick(4);
 s = await state();
 check('retour au classique : modèle retiré, classique affiché', !s.real && s.classicLayer === 1, JSON.stringify(s));
 check('retour au classique : cheval procédural affiché', !s.horse.real && s.horse.layer === 1, JSON.stringify(s.horse));
+
+// « Auto » : cadence trop basse (résolution déjà au minimum) → retour aux modèles classiques.
+const fb = await step(async () => {
+  const g = window.__game;
+  g.realism.set('auto');
+  for (let i = 0; i < 40 && !g.realism.body; i++) {
+    window.__auto.tick(1);
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  const before = !!g.realism.body;
+  g.pixelRatio = 1;
+  g._fpsAcc = { t: 0, n: 0 };
+  for (let i = 0; i < 31; i++) g._adapt(0.1); // 10 i/s pendant 3 s
+  window.__auto.tick(2);
+  return { before, after: !!g.realism.body, horses: g.realism.horses.size, layer: g.player.human.mesh.layers.mask };
+});
+check('Auto : cadence basse → modèles classiques', fb.before && !fb.after && fb.horses === 0 && fb.layer === 1, JSON.stringify(fb));
 
 check('aucune erreur', errors.length === 0, errors.slice(0, 3).join(' | '));
 await b.close();

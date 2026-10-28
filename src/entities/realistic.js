@@ -248,7 +248,7 @@ export class RealBody {
   }
 }
 
-// Gestion du réglage « Modèles 3D » : rendu réaliste du joueur, de son cheval, et des personnes et chevaux proches
+// Gestion du réglage « Modèles 3D » (Auto, Classiques, Réalistes) : rendu réaliste du joueur, de son cheval, et des personnes et chevaux proches
 // de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
 const NEAR = { humans: 8, horses: 5, humanDist: 30, horseDist: 45, margin: 10 };
 
@@ -262,8 +262,27 @@ export class Realism {
     this.loading = new Set();
   }
 
+  // « Réalistes » : toujours ; « Auto » : sauf qualité « Économie » ou cadence trop basse (voir autoFallback).
   get enabled() {
-    return this.game.save.data.settings.characters === 'real';
+    const st = this.game.save.data.settings;
+    if (st.characters === 'real') return true;
+    return st.characters === 'auto' && !this.autoOff && st.quality !== 'low';
+  }
+
+  // Mode « Auto » : l'appareil ne suit pas, modèles classiques pour le reste de la partie.
+  autoFallback() {
+    if (this.game.save.data.settings.characters !== 'auto' || this.autoOff) return;
+    this.autoOff = true;
+    if (!this.bodies.size && !this.horses.size) return;
+    this._clear();
+    this.game.hud?.toast('Modèles classiques pour garder la fluidité (réglage « Modèles 3D »).');
+  }
+
+  _clear() {
+    for (const r of this.bodies.values()) r.dispose();
+    for (const r of this.horses.values()) r.dispose();
+    this.bodies.clear();
+    this.horses.clear();
   }
 
   // Modèle réaliste du personnage du joueur (s'il est chargé).
@@ -272,12 +291,16 @@ export class Realism {
   }
 
   set(mode) {
-    this.game.save.data.settings.characters = mode;
-    if (mode === 'real') return;
-    for (const r of this.bodies.values()) r.dispose();
-    for (const r of this.horses.values()) r.dispose();
-    this.bodies.clear();
-    this.horses.clear();
+    const st = this.game.save.data.settings;
+    st.characters = mode;
+    st.charactersSet = true;
+    this.autoOff = false;
+    if (!this.enabled) this._clear();
+  }
+
+  // Qualité changée (« Économie » coupe les modèles réalistes en mode « Auto »).
+  refresh() {
+    if (!this.enabled) this._clear();
   }
 
   // Chargement en tâche de fond (une fois par fichier) ; échec : modèles classiques et message.

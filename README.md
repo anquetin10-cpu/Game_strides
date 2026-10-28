@@ -108,10 +108,12 @@ node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sa
 Par défaut, pas d'assets externes : géométrie, textures et sons sont générés par le code (Three.js + WebAudio).
 Le build pèse environ 250 Ko gzip.
 
-### Prototype « modèles réalistes »
+### Modèles 3D réalistes
 
-Réglages du téléphone → **Modèles 3D : Classiques / Réalistes (prototype)**, ou `?real` dans l'adresse. En mode
-réaliste :
+Réglages du téléphone → **Modèles 3D : Auto / Classiques / Réalistes**. Par défaut (**Auto**), les modèles réalistes
+sont affichés, sauf en qualité « Économie » ; si l'appareil ne suit pas (moins de 30 images/s alors que la résolution
+est déjà au minimum), le jeu repasse de lui-même aux modèles classiques pour le reste de la partie. `?real` ou
+`?classic` dans l'adresse imposent l'un ou l'autre. Avec les modèles réalistes :
 
 - **le personnage du joueur** est remplacé à l'affichage par un modèle humain réaliste (peau photographique, yeux, cils,
   cheveux, vêtements texturés, squelette à 53 os avec doigts) qui reprend ses animations (marche, course, monte,
@@ -120,18 +122,17 @@ réaliste :
   mèches, sabots ferrés, selle et filet, squelette de 99 os) qui reprend toutes les allures du cheval du jeu (pas,
   trot, galop, saut, refus, broute), avec la robe de chaque cheval (bai, alezan, gris, noir, balzanes, liste) et des
   sabots posés au sol par cinématique inverse, et le tapis de selle STRIDES (aux couleurs du tapis du cheval) ;
-
 - **les personnes et chevaux proches** (8 personnes à moins de 30 m, 5 chevaux à moins de 45 m, les plus proches de
   la caméra) passent aussi en réaliste, chacun avec sa tenue ou sa robe ; au-delà, modèles classiques ;
 - **bottes d'équitation** hautes moulées sur la jambe (pantalon rentré dedans), à la couleur de la tenue ; **veste de
   concours** (chemise blanche dessous) dans la tenue de concours ;
 - chevaux non sellés : **licol** (muserolle, montants, têtière) ; robe grise **pommelée**, tête plus claire.
 
-Les modèles classiques restent en place, cachés : revenir à « Classiques » rétablit l'affichage d'origine. Les
-véhicules ne changent pas encore.
+Les modèles classiques restent en place, cachés : « Classiques » rétablit l'affichage d'origine. Les véhicules ne
+changent pas encore.
 
 Les modèles (`public/real/*.glb`, compression meshopt, textures WebP ; personnages ≈ 2,5 Mo chacun, cheval 3,4 Mo)
-sont chargés à part, seulement quand le mode réaliste est choisi. Ils se régénèrent avec
+sont chargés à part, seulement quand les modèles réalistes sont affichés. Ils se régénèrent avec
 `node scripts/real/build-humans.mjs` et `node scripts/real/build-horse.mjs` ; licences dans
 [`public/real/LICENSES.md`](public/real/LICENSES.md) (personnages CC0 ; cheval « Horse » de Henry S, CC BY 4.0,
 crédit affiché dans les réglages). Le fichier unique (`build:single`) charge à la place une copie glTF JSON

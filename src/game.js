@@ -160,7 +160,11 @@ export class Game {
     this.missions = new MissionManager(this);
     this.player = new Player(this, d.avatar);
     // Prototype de personnage réaliste (réglage « Personnages »), chargé à part.
+    // Modèles 3D : « Auto » par défaut (réalistes si l'appareil suit) ; l'ancien défaut « Classiques » jamais choisi
+    // à la main passe en « Auto ».
+    if (!d.settings.charactersSet && d.settings.characters === 'classic') d.settings.characters = 'auto';
     if (this.params.has('real')) d.settings.characters = 'real';
+    if (this.params.has('classic')) d.settings.characters = 'classic';
     this.realism = new Realism(this);
     this.truck = new Truck(this, { x: HOME.truck.x, z: HOME.truck.z, heading: HOME.truck.rot });
     this.player.truck = this.truck;
@@ -245,6 +249,9 @@ export class Game {
     a.t = 0;
     a.n = 0;
     this.fps = fps;
+    // Modèles 3D en « Auto » : retour aux modèles classiques si la cadence reste basse une fois la résolution déjà
+    // au minimum (une fois par partie).
+    if (fps < 30 && this.pixelRatio <= 1) this.realism?.autoFallback();
     this._goodWin = fps > 50 ? (this._goodWin || 0) + 1 : 0;
     if (fps < 42 && this.pixelRatio > 1) {
       this.pixelRatio = Math.max(1, this.pixelRatio - 0.25);
