@@ -111,19 +111,21 @@ r = await page.evaluate(() => {
       maxRate = Math.max(maxRate, Math.abs(dh) * 30);
       const cp = g.camera.position, f = h.forward;
       const back = -((cp.x - h.pos.x) * f.x + (cp.z - h.pos.z) * f.z);
+      { const cp2 = g.camera.position; if (g.colliders.cameraBlocked(cp2.x, cp2.z, cp2.y) || cp2.y < g.terrain.getHeight(cp2.x, cp2.z) + 0.5) window.__camHits = (window.__camHits || 0) + 1; }
       if (h.speed > 4) { camN++; camBehind += back; camH += cp.y - h.groundY; if (camN % 30 === 1) window.__jw = Math.max(window.__jw || 0, document.querySelector('.btn-jump').getBoundingClientRect().width); }
       return false;
     },
   });
   for (let i = 0; i < 40 && !document.querySelector('.overlay [data-id="cso-retry"]'); i++) A.tick(1);
   const st = window.__course();
-  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), st: { t: st.t, faults: st.faults, timeFaults: st.timeFaults, finished: st.finished, log: st.log.length, attempt: st.attempt }, card: window.__card(), board: document.querySelector('.cso-board')?.className, cad: window.__cad, maxRate, cam: { behind: camBehind / camN, height: camH / camN, fov: g.camera.fov }, jumpW: window.__jw, jumpW0: 84 * (new DOMMatrix(getComputedStyle(document.querySelector('.actions')).transform).a || 1) };
+  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), st: { t: st.t, faults: st.faults, timeFaults: st.timeFaults, finished: st.finished, log: st.log.length, attempt: st.attempt }, card: window.__card(), board: document.querySelector('.cso-board')?.className, cad: window.__cad, maxRate, cam: { behind: camBehind / camN, height: camH / camN, fov: g.camera.fov, hits: window.__camHits || 0 }, jumpW: window.__jw, jumpW0: 84 * (new DOMMatrix(getComputedStyle(document.querySelector('.actions')).transform).a || 1) };
 });
 const order = ['1', '2', '3', '4', '5A', '5B', '6', '7', '8'];
 check('cadence au joystick : avant = plus vite, relâché = gardée, arrière = plus lent', r.cad.c0 === 6.2 && r.cad.c1 > 7 && r.cad.c2 === r.cad.c1 && r.cad.c3 < r.cad.c2, JSON.stringify(r.cad));
 check('gros bouton SAUT à droite pendant le parcours (plus grand qu’en balade)', r.jumpW > r.jumpW0 * 1.15, `${r.jumpW?.toFixed(0)} px`);
 check('courbes au galop : le cheval tourne progressivement (jamais plus de 1,3 rad/s)', r.maxRate <= 1.3, `${r.maxRate.toFixed(2)} rad/s`);
 check('caméra de concours : proche derrière le cheval, juste au-dessus du cavalier, champ fixe', r.cam.behind > 5 && r.cam.behind < 9.5 && r.cam.height > 2.6 && r.cam.height < 4.2 && Math.abs(r.cam.fov - 55) < 0.5, JSON.stringify(r.cam));
+check('caméra de concours : jamais dans un mur, une tribune ou le sol pendant le tour', r.cam.hits === 0, `${r.cam.hits} image(s)`);
 check('tour sans faute : 9 éléments franchis dans l’ordre', JSON.stringify(r.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(r.ev));
 check('chrono de la ligne de départ à l’arrivée, dans le temps accordé', r.st.finished && r.st.t > 45 && r.st.t < 65 && r.st.faults === 0 && r.st.timeFaults === 0, `${r.st.t.toFixed(2)} s`);
 check('bilan : chrono, fautes, pénalités de temps, total, classement, récompense', /Chrono/.test(r.card) && /Fautes aux obstacles/.test(r.card) && /Pénalités de temps/.test(r.card) && /Total/.test(r.card) && /Classement/.test(r.card) && /Récompense/.test(r.card) && /\d+(re|e) sur \d+/.test(r.card), r.card.slice(0, 200));
@@ -290,6 +292,19 @@ check('entraînement : vertical et oxer sautés, chaque saut expliqué (marge ou
 r = await page.evaluate(() => {
   const g = window.__game, A = window.__auto;
   const inTraining = { cam: !!g.course?.camera, ctl: g.course?.controls };
+  // Collision : cheval contre la lice nord, dos aux tribunes, puis contre la cabine du jury : la caméra se rapproche
+  // au lieu d'entrer dans le décor.
+  const PA = window.__O.CSO_GATE; // repère : centre de la carrière = entrée - (d/2 - 5)
+  const hz = g.player.horse;
+  const blocked = [];
+  for (const [x, z, rot] of [[PA.x - 20, PA.z - 66.5, 0], [PA.x + 59, PA.z - 41, -Math.PI / 2]]) {
+    hz.setPosition(x, z, rot);
+    g.cam.snap(hz.pos, rot);
+    for (let i = 0; i < 40; i++) A.tick(1);
+    const cp = g.camera.position;
+    blocked.push({ hit: g.colliders.cameraBlocked(cp.x, cp.z, cp.y), above: +(cp.y - g.terrain.getHeight(cp.x, cp.z)).toFixed(2), dist: +Math.hypot(cp.x - hz.pos.x, cp.z - hz.pos.z).toFixed(2) });
+  }
+  window.__wallCam = blocked;
   g.missions.abandon?.();
   A.closeCards();
   const h = g.player.horse;
@@ -300,8 +315,9 @@ r = await page.evaluate(() => {
   A.releaseInput();
   const cp = g.camera.position, f = h.forward;
   const disp = (sel) => getComputedStyle(document.querySelector(sel)).display;
-  return { inTraining, course: g.course, fov: g.camera.fov, behind: -((cp.x - h.pos.x) * f.x + (cp.z - h.pos.z) * f.z), cadence: g.player.csoCadence, boost: disp('.btn-gallop'), map: disp('.minimap-wrap'), light: document.querySelector('.hud').classList.contains('cso-ctl') };
+  return { wall: window.__wallCam, inTraining, course: g.course, fov: g.camera.fov, behind: -((cp.x - h.pos.x) * f.x + (cp.z - h.pos.z) * f.z), cadence: g.player.csoCadence, boost: disp('.btn-gallop'), map: disp('.minimap-wrap'), light: document.querySelector('.hud').classList.contains('cso-ctl') };
 });
+check('caméra de concours contre la lice (tribunes) et la cabine du jury : jamais dans le décor', r.wall.every((w) => !w.hit && w.above > 0.5), JSON.stringify(r.wall));
 check('sortie : caméra d’exploration, commandes et HUD du monde ouvert rétablis', r.inTraining.cam && r.inTraining.ctl === 'cso' && r.course === null && r.fov > 58 && r.cadence === undefined && r.boost !== 'none' && r.map !== 'none' && !r.light, JSON.stringify(r));
 
 // ---------- 6. Indépendance à la cadence d'image ----------
