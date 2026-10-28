@@ -61,7 +61,7 @@ export const POLE = {
   warmup: { x: 240, z: -232, w: 40, d: 46 },
   stables: { x: 420, z: -226, w: 16, d: 60 },
   club: { x: 410, z: -280, w: 34, d: 14 },
-  entrance: { x: 330, z: -178 },
+  entrance: { x: 330, z: -182 },
 };
 
 export const HIPPO_SITE = {

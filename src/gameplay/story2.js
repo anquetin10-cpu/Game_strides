@@ -7,7 +7,7 @@ import { POI } from '../world/layout.js';
 import { FollowAI } from '../entities/horse.js';
 import { courseSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
-import { csoHeights } from './csoCourse.js';
+import { csoHeights, CSO_TRACE } from './csoCourse.js';
 import { PARKS, SECRETARIAT, loadStep, unloadStep, driveStep, simulateField, rankResults, secretariatProps } from './trip.js';
 import { dec, formatMoney } from '../core/math.js';
 
@@ -311,7 +311,7 @@ const M2 = {
           },
           update: () => true,
         }),
-        recon([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
+        recon(CSO_TRACE.fences.map((_, i) => i + 1)),
         backHome,
         S.custom({
           text: '',

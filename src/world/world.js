@@ -575,7 +575,8 @@ export class World {
     for (let i = 0; i < 10; i++) {
       const x = A.x - 45 + i * 10;
       const z = A.z + A.d / 2 + 10;
-      if (Math.abs(x - A.x) < 8) continue; // allée vers l'entrée de piste
+      // Ni dans l'allée de l'entrée de piste, ni sur le parking des camions (à l'ouest de l'allée).
+      if (x > A.x - 38 && x < A.x + 10) continue;
       this.batch.add(flagGeo(i % 2 ? '#f2f1ec' : '#1b1c1f'), null, x, this.h(x, z), z, Math.PI / 2);
       this.colliders.addCircle(x, z, 0.15, Infinity, 'flag');
     }
