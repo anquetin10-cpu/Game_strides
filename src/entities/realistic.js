@@ -364,7 +364,9 @@ export class Realism {
   update() {
     if (!this.enabled) return;
     const g = this.game, P = g.player;
-    if (!this.horseFailed) {
+    // Chevaux : modèle procédural par défaut (préféré à l'essai), modèle réaliste sur demande (« Chevaux 3D »).
+    if (g.save.data.settings.horses !== 'real') this._sync(this.horses, new Set(), () => null);
+    else if (!this.horseFailed) {
       const want = this._wanted(g.horses, [g.mainHorse, P?.horse].filter((h) => h && g.horses.includes(h)), this.horses, NEAR.horses, NEAR.horseDist);
       this._sync(this.horses, want, (h, busy) => {
         const root = !busy || h === g.mainHorse ? realNow('horse') : null;

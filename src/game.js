@@ -164,6 +164,7 @@ export class Game {
     // à la main passe en « Auto ».
     if (!d.settings.charactersSet && d.settings.characters === 'classic') d.settings.characters = 'auto';
     if (this.params.has('real')) d.settings.characters = 'real';
+    if (this.params.has('realhorse')) d.settings.horses = 'real';
     if (this.params.has('classic')) d.settings.characters = 'classic';
     this.realism = new Realism(this);
     this.truck = new Truck(this, { x: HOME.truck.x, z: HOME.truck.z, heading: HOME.truck.rot });

@@ -54,12 +54,13 @@ await page.waitForFunction(() => { window.__auto.tick(1); return !!window.__game
 await tick(4);
 s = await state();
 check('par défaut (Auto) : modèles réalistes', s.mode === 'auto' && s.real && s.classicLayer === 2 ** 31, JSON.stringify(s));
+check('par défaut : cheval procédural (« Chevaux 3D » : Classiques)', !s.horse.real && s.horse.layer === 1, JSON.stringify(s.horse));
 await step(() => window.__game.realism.set('classic'));
 await tick(4);
 s = await state();
 check('« Classiques » : personnage classique', s.mode === 'classic' && s.classicLayer === 1 && !s.real && !s.horse.real, JSON.stringify(s));
 
-await step(() => window.__game.realism.set('real'));
+await step(() => { const g = window.__game; g.save.data.settings.horses = 'real'; g.realism.set('real'); });
 await page.waitForFunction(() => { window.__auto.tick(1); return !!window.__game.realism.body || window.__game.realism.failed; }, null, { timeout: 60000, polling: 200 });
 await tick(4);
 s = await state();

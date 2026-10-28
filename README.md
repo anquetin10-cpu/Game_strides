@@ -120,12 +120,14 @@ est déjà au minimum), le jeu repasse de lui-même aux modèles classiques pour
 - **le personnage du joueur** est remplacé à l'affichage par un modèle humain réaliste (peau photographique, yeux, cils,
   cheveux, vêtements texturés, squelette à 53 os avec doigts) qui reprend ses animations (marche, course, monte,
   conduite) et ses tenues (couleurs, casque) ;
-- **le cheval du joueur** (et le cheval monté) est remplacé par un cheval réaliste (poil photographique, crins en
+- **les chevaux** restent par défaut les chevaux procéduraux du jeu (préférés à l'essai) ; le réglage
+  **Chevaux 3D : Classiques / Réalistes** (ou `?realhorse` dans l'adresse) active le cheval réaliste :
+  **le cheval du joueur** (et le cheval monté) est alors remplacé par un cheval réaliste (poil photographique, crins en
   mèches, sabots ferrés, selle et filet, squelette de 99 os) qui reprend toutes les allures du cheval du jeu (pas,
   trot, galop, saut, refus, broute), avec la robe de chaque cheval (bai, alezan, gris, noir, balzanes, liste) et des
   sabots posés au sol par cinématique inverse, et le tapis de selle STRIDES (aux couleurs du tapis du cheval) ;
-- **les personnes et chevaux proches** (8 personnes à moins de 30 m, 5 chevaux à moins de 45 m, les plus proches de
-  la caméra) passent aussi en réaliste, chacun avec sa tenue ou sa robe ; au-delà, modèles classiques ;
+- **les personnes et chevaux proches** (8 personnes à moins de 30 m, 5 chevaux à moins de 45 m si « Chevaux 3D » est
+  sur Réalistes, les plus proches de la caméra) passent aussi en réaliste, chacun avec sa tenue ou sa robe ; au-delà, modèles classiques ;
 - **bottes d'équitation** hautes moulées sur la jambe (pantalon rentré dedans), à la couleur de la tenue ; **veste de
   concours** (chemise blanche dessous) dans la tenue de concours ;
 - chevaux non sellés : **licol** (muserolle, montants, têtière) ; robe grise **pommelée**, tête plus claire.
