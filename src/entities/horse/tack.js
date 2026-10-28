@@ -96,6 +96,12 @@ diffuseColor.rgb = tcol;
 `;
 
 const mats = new Map();
+// Texture du tapis (partagée avec le tapis du cheval réaliste).
+export function padTexture() {
+  if (!padTex) padTex = makePadTexture();
+  return padTex;
+}
+
 export function tackMaterial(pad = '#15161a', trim = '#f2f1ec') {
   const key = pad + trim;
   let m = mats.get(key);
@@ -120,6 +126,7 @@ export function tackMaterial(pad = '#15161a', trim = '#f2f1ec') {
     addCloudShadows(sh, null, true);
   };
   m.customProgramCacheKey = () => 'horse-tack-1';
+  m.userData.padColors = { pad, trim };
   mats.set(key, m);
   return m;
 }

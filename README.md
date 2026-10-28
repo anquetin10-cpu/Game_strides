@@ -119,7 +119,7 @@ réaliste :
 - **le cheval du joueur** (et le cheval monté) est remplacé par un cheval réaliste (poil photographique, crins en
   mèches, sabots ferrés, selle et filet, squelette de 99 os) qui reprend toutes les allures du cheval du jeu (pas,
   trot, galop, saut, refus, broute), avec la robe de chaque cheval (bai, alezan, gris, noir, balzanes, liste) et des
-  sabots posés au sol par cinématique inverse.
+  sabots posés au sol par cinématique inverse, et le tapis de selle STRIDES (aux couleurs du tapis du cheval) ;
 
 - **les personnes et chevaux proches** (8 personnes à moins de 30 m, 5 chevaux à moins de 45 m, les plus proches de
   la caméra) passent aussi en réaliste, chacun avec sa tenue ou sa robe ; au-delà, modèles classiques ;

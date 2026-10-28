@@ -6,6 +6,7 @@
 // le détail neutre du poil.
 import * as THREE from 'three';
 import { resolveCoat } from './horse/coat.js';
+import { padTexture } from './horse/tack.js';
 
 // Os du cheval procédural → os du modèle réaliste.
 const MAP = [
@@ -112,6 +113,36 @@ function coatMaterial(mat, coat, mk) {
   return { U, mane: c.mane };
 }
 
+// Tapis STRIDES : texture du tapis classique (matelassage, passepoil, logo), coupé en rectangle aux coins
+// arrondis (attribut _pad : u le long du tapis, v du dos vers le bas, côté).
+function padMaterial(mat, colors = {}) {
+  mat.map = padTexture();
+  mat.roughness = 0.85;
+  mat.metalness = 0;
+  mat.side = THREE.DoubleSide;
+  const U = { uPad: { value: new THREE.Color(colors.pad || '#15161a') }, uTrim: { value: new THREE.Color(colors.trim || '#f2f1ec') } };
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec3 _pad;\nvarying vec3 vPad;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPad = _pad;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uPad, uTrim;\nvarying vec3 vPad;')
+      .replace(
+        '#include <map_fragment>',
+        `vec2 pq = vec2( vPad.x, vPad.y * 2.0 );
+        if ( pq.x < 0.0 || pq.x > 1.0 || pq.y > 1.0 ) discard;
+        vec2 cq = vec2( max( 0.0, abs( pq.x - 0.5 ) - 0.42 ) / 0.08, max( 0.0, pq.y - 0.84 ) / 0.16 );
+        if ( length( cq ) > 1.0 ) discard;
+        vec3 mk = texture2D( map, vec2( pq.x, pq.y * 0.5 + 0.5 * step( 0.5, vPad.z ) ) ).rgb;
+        float trim = max( mk.r, mk.b );
+        diffuseColor.rgb = mix( uPad, uTrim, trim ) * ( 1.0 - 0.45 * mk.g * ( 1.0 - trim ) );`,
+      );
+  };
+  mat.customProgramCacheKey = () => 'realHorsePad';
+  mat.needsUpdate = true;
+}
+
 export class RealHorse {
   constructor(horse, root) {
     this.horse = horse;
@@ -128,9 +159,13 @@ export class RealHorse {
       o.frustumCulled = false;
       this.parts[o.name] = o;
       // Robe et crins propres à ce cheval (textures partagées).
-      if (o.material.name === 'Horse' || o.material.name === 'Hair') this.mats.push((o.material = o.material.clone()));
+      if (['Horse', 'Hair', 'Pad'].includes(o.material.name)) this.mats.push((o.material = o.material.clone()));
       const m = o.material;
       if (m.name === 'Horse') this.coat = coatMaterial(m, horse.def.coat, mk);
+      else if (m.name === 'Pad') {
+        padMaterial(m, horse.mesh.userData.tack?.material?.userData.padColors);
+        this.pad = o;
+      }
       else if (m.name === 'Hair') {
         m.alphaTest = 0.5;
         m.alphaToCoverage = true;
@@ -248,6 +283,7 @@ export class RealHorse {
     // Sellerie : selle et filet si le cheval est sellé.
     const saddled = H.mesh.userData.tack?.userData.cfg?.saddle !== false;
     for (const [name, p] of Object.entries(this.parts)) if (/Saddle1|Bridle/.test(name)) p.visible = saddled;
+    if (this.pad) this.pad.visible = saddled;
     H.mesh.updateMatrixWorld(true);
     this.root.getWorldQuaternion(_rootQ).invert();
     const sp = this.bones.BN_Spine_00_02;

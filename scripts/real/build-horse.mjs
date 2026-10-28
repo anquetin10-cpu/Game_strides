@@ -102,6 +102,61 @@ function coatZones(body, cornea) {
   return out;
 }
 
+// Tapis de selle STRIDES : peau du dos sous la selle, poussée vers l'extérieur (mêmes poids de peau), coupée en
+// rectangle aux coins arrondis par le jeu. Attribut _PAD : (u le long du tapis, v du dos vers le bas, côté 0/1),
+// conventions de la texture du tapis classique (logo lisible de chaque côté).
+function saddlePad(doc, body, saddle, mat) {
+  const P = body.getAttribute('POSITION').getArray();
+  const N = body.getAttribute('NORMAL').getArray();
+  const I = body.getIndices().getArray();
+  const S = saddle.getAttribute('POSITION').getArray();
+  let maxY = -1;
+  for (let i = 1; i < S.length; i += 3) maxY = Math.max(maxY, S[i]);
+  let zs = 0, zn = 0;
+  for (let i = 0; i < S.length; i += 3) if (Math.abs(S[i]) < 0.12 && S[i + 1] > maxY - 0.15) { zs += S[i + 2]; zn++; }
+  const zc = zs / zn;
+  const z0 = zc - 0.4, z1 = zc + 0.3;
+  let top = -1;
+  for (let i = 0; i < P.length; i += 3) if (P[i + 2] > z0 && P[i + 2] < z1 && Math.abs(P[i]) < 0.06) top = Math.max(top, P[i + 1]);
+  const depth = 0.5, bottom = top - depth;
+  const near = (v) => P[v * 3 + 2] > z0 - 0.05 && P[v * 3 + 2] < z1 + 0.05 && P[v * 3 + 1] > bottom - 0.05;
+  const keys = new Map(), pos = [], nrm = [], pad = [], src = [], idx = [];
+  for (let t = 0; t < I.length; t += 3) {
+    const tri = [I[t], I[t + 1], I[t + 2]];
+    if (!tri.some(near)) continue;
+    const side = P[tri[0] * 3] + P[tri[1] * 3] + P[tri[2] * 3] > 0 ? 0 : 1; // 0 : gauche (+x)
+    for (const v of tri) {
+      const key = v * 2 + side;
+      if (!keys.has(key)) {
+        keys.set(key, src.length);
+        src.push(v);
+        for (let k = 0; k < 3; k++) {
+          pos.push(P[v * 3 + k] + N[v * 3 + k] * 0.011);
+          nrm.push(N[v * 3 + k]);
+        }
+        const z = P[v * 3 + 2], y = P[v * 3 + 1];
+        pad.push(side ? (z - z0) / (z1 - z0) : (z1 - z) / (z1 - z0), ((top - y) / depth) * 0.5, side);
+      }
+      idx.push(keys.get(key));
+    }
+  }
+  const buf = doc.getRoot().listBuffers()[0];
+  const prim = doc.createPrimitive()
+    .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(pos)).setBuffer(buf))
+    .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(nrm)).setBuffer(buf))
+    .setAttribute('_PAD', doc.createAccessor().setType('VEC3').setArray(new Float32Array(pad)).setBuffer(buf))
+    .setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(idx)).setBuffer(buf))
+    .setMaterial(mat);
+  for (const sem of ['JOINTS_0', 'WEIGHTS_0']) {
+    const a = body.getAttribute(sem);
+    const arr = a.getArray();
+    const out = new arr.constructor(src.length * 4);
+    src.forEach((v, i) => out.set(arr.subarray(v * 4, v * 4 + 4), i * 4));
+    prim.setAttribute(sem, doc.createAccessor().setType('VEC4').setArray(out).setNormalized(a.getNormalized()).setBuffer(buf));
+  }
+  return prim;
+}
+
 // Robe neutre : détail du poil (luminance rapportée à la moyenne locale de sa propre zone de couleur), en gris
 // autour de 0,5 (linéaire) ; alpha = part de robe (1) ou couleur d'origine conservée (0 : bout du nez rose, œil).
 async function neutralCoat(png) {
@@ -182,6 +237,8 @@ const body = meshNamed('Stallion_Horse_0').listPrimitives()[0];
 const cornea = meshNamed('Stallion_Cornea_0').listPrimitives()[0];
 const zones = coatZones(body, cornea);
 body.setAttribute('_COAT', doc.createAccessor('coat').setType('VEC4').setArray(zones).setBuffer(root.listBuffers()[0]));
+const padPrim = saddlePad(doc, body, meshNamed('Saddle1_Saddle_0').listPrimitives()[0], doc.createMaterial('Pad').setRoughnessFactor(0.9).setMetallicFactor(0));
+meshNamed('Stallion_Horse_0').addPrimitive(padPrim);
 const bodyMat = body.getMaterial();
 const tex = bodyMat.getBaseColorTexture();
 tex.setImage(await neutralCoat(tex.getImage())).setMimeType('image/png').setName('TX_Horse_Coat');
