@@ -632,7 +632,7 @@ export const STORY = [
     },
     review: (s) => (s >= 5 ? 'Sans faute ! Qualification brillante.' : 'Qualifié(e) — rendez-vous au Grand Prix.'),
     steps(game, run, S) {
-      const judge = npcAt(game, run, OFFICIAL, POLE.arena.x - 44, POLE.arena.z + 20, Math.PI / 2, 'Julie');
+      const judge = npcAt(game, run, OFFICIAL, POLE.arena.x - POLE.arena.w / 2 - 3, POLE.arena.z + 20, Math.PI / 2, 'Julie');
       void judge;
       return courseSteps(game, run, S, {
         courseId: 'cso',

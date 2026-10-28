@@ -944,3 +944,11 @@ body.phone-open .rotate { display: none !important; }
 .rank-gap { text-align: center; color: var(--muted); padding: 2px 0; }
 .rank-empty, .rank-note { font: 400 12px/1.4 var(--ui); color: var(--muted); margin: 10px 0 0; }
 .rank-pseudo { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+/* Concours de CSO : HUD allégé pour dégager le cheval et l'abord — ni carte, ni portefeuille, ni BOOST (la cadence se
+   règle au joystick), ni sifflet ; gros bouton SAUT à droite ; télémétrie réduite à l'allure et à la vitesse. */
+.hud.cso-ctl .minimap-wrap, .hud.cso-ctl .wallet, .hud.cso-ctl .phone-btn, .hud.cso-ctl .btn-gallop, .hud.cso-ctl .btn-whistle,
+.hud.cso-ctl .hr-line, .hud.cso-ctl .stamina, .hud.cso-ctl .btn-action2 { display: none !important; }
+.hud.cso-ctl .btn-jump { width: 104px; height: 104px; right: 6px; bottom: 8px; }
+.hud.cso-ctl .btn-jump svg { width: 32px; height: 32px; }
+.hud.cso-ctl .btn-jump span { font-size: 11px; }
+.hud.cso-ctl .telemetry { opacity: .82; transform: scale(.88); transform-origin: bottom center; }

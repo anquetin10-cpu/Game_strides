@@ -19,6 +19,17 @@ function trafficDoor(c, side) {
   return _tdoor;
 }
 
+
+// Commandes à cheval en concours (réglages ajustables) : cadence et virages progressifs.
+export const CSO_RIDE = {
+  cadence: 6.2, // galop de concours par défaut (m/s ≈ 370 m/min, foulée ≈ 3,5 m)
+  maxSpeed: 8.0, // galop allongé au plus (m/s)
+  cadenceRate: 1.4, // variation de cadence joystick poussé à fond (m/s par seconde)
+  deadZone: 0.3, // part du joystick avant/arrière ignorée (on tourne sans changer de cadence)
+  minRadius: 6, // rayon de virage le plus court au galop, joystick à fond (m)
+  maxTurnRate: 1.2, // rad/s
+  minTurnRate: 0.7, // rad/s au pas ou à l'arrêt (volte, demi-tour)
+};
 export class Player {
   constructor(game, avatar = 'f') {
     this.game = game;
@@ -454,7 +465,25 @@ export class Player {
       tp.afterHuman();
     } else if (this.mode === 'ride') {
       const c = this.horse.control;
-      if (!locked) {
+      const cso = g.course?.controls === 'cso';
+      c.speedOverride = undefined;
+      c.turnRate = undefined;
+      if (!cso) this.csoCadence = undefined;
+      if (cso && !locked) {
+        // Concours : galop de concours stable par défaut ; joystick gauche/droite = tourner progressivement,
+        // avant/arrière = régler la cadence (gardée au relâchement) ; SAUT pendant que l'on tourne.
+        const R = CSO_RIDE;
+        if (this.csoCadence === undefined) this.csoCadence = R.cadence;
+        const thr = Math.abs(mv.y) > R.deadZone ? (mv.y - Math.sign(mv.y) * R.deadZone) / (1 - R.deadZone) : 0;
+        this.csoCadence = clamp(this.csoCadence + thr * R.cadenceRate * dt, 0, R.maxSpeed);
+        const steer = Math.abs(mv.x) > 0.06 ? mv.x : 0;
+        const v = this.horse.speed;
+        c.turnRate = -steer * Math.max(R.minTurnRate, Math.min(R.maxTurnRate, v / R.minRadius));
+        c.speedOverride = this.csoCadence;
+        c.mag = 1;
+        c.gallop = false;
+        if (input.wasPressed('jump')) c.jump = true;
+      } else if (!locked) {
         c.x = dl ? dir.x / dl : 0;
         c.z = dl ? dir.z / dl : 0;
         c.mag = mv.mag;
@@ -464,7 +493,6 @@ export class Player {
         c.mag = 0;
         c.gallop = false;
       }
-      c.speedOverride = undefined;
       this.human.animateRiding(dt);
     }
     // Le camion vit en permanence (pont, feux, moteur) ; commandes seulement au volant.

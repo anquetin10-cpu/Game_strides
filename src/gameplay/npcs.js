@@ -510,7 +510,7 @@ export class Ambient {
     // Spectateurs au bord de la carrière du Pôle.
     const A = POLE.arena;
     for (let i = 0; i < 8; i++) {
-      const x = A.x - 30 + i * 8.5;
+      const x = A.x - 30 + i * 8.5 + (i >= 4 ? 6 : -6); // entrée de piste dégagée
       const z = A.z + A.d / 2 + 2.6;
       const p = g.spawnHuman(randomOutfit(rnd), x, z, Math.PI, {});
       p.spectator = true;

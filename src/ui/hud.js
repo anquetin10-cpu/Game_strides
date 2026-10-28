@@ -326,6 +326,8 @@ export class HUD {
     const ci = g.course?.hud?.();
     this.csoEl.classList.toggle('hidden', !ci);
     this.el.classList.toggle('cso-on', !!ci);
+    // Commandes de concours : HUD allégé (BOOST remplacé par la cadence au joystick).
+    this.el.classList.toggle('cso-ctl', g.course?.controls === 'cso');
     if (ci) {
       const t = ci.started ? dec(ci.t, 2) : `Départ ${Math.max(0, Math.ceil(ci.bell))} s`;
       if (t !== this._csoT) this.csoT.textContent = this._csoT = t;

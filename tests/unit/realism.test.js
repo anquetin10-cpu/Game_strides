@@ -41,12 +41,12 @@ describe('réalisme : allures du cheval', () => {
 
 describe('réalisme : épreuves', () => {
   it('temps accordé = longueur / vitesse imposée (350 m/min national, 375 CSI, 400 Grand Prix)', () => {
-    expect(COURSE_LENGTH.cso).toBe(248);
-    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national)).toBe(43);
-    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)).toBe(40);
-    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp)).toBe(38);
-    // Parcours faisable au galop de travail réel sur le tracé mesuré.
-    expect(COURSE_LENGTH.cso / gait('GALOP')).toBeLessThan(43);
+    expect(COURSE_LENGTH.cso).toBe(375);
+    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national)).toBe(65);
+    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)).toBe(60);
+    expect(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp)).toBe(57);
+    // Parcours faisable au galop de concours réglé par défaut (6,2 m/s) sur le tracé mesuré.
+    expect(COURSE_LENGTH.cso / 6.2).toBeLessThan(65);
   });
   it('Grand Prix CSI 5★ entre 1,50 et 1,60 m ; qualificative jusqu’à 1,45 m', () => {
     const gp = STORY.find((s) => s.id === 'gp');
@@ -55,13 +55,14 @@ describe('réalisme : épreuves', () => {
     expect(csi3.desc).toMatch(/1,45 m/);
   });
   it('premier concours (M3) au temps réglementaire national', () => {
-    expect(CHAPTER1.m3.ta).toBe(43);
-    expect(CHAPTER1.m3.ta - CHAPTER1.m3.ambitiousCut).toBe(40);
+    expect(CHAPTER1.m3.ta).toBe(65);
+    expect(CHAPTER1.m3.ta - CHAPTER1.m3.ambitiousCut).toBe(60);
   });
-  it('défi du Pôle v4 au temps réglementaire du nouveau tracé, v1 à v3 conservées à part', () => {
-    expect(CURRENT_CHALLENGE.id).toBe('defi-pole-v4');
+  it('défi du Pôle v5 au temps réglementaire du nouveau tracé, v1 à v4 conservées à part', () => {
+    expect(CURRENT_CHALLENGE.id).toBe('defi-pole-v5');
     expect(CURRENT_CHALLENGE.timeAllowed).toBe(timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national));
-    expect(CURRENT_CHALLENGE.obstacles).toHaveLength(11);
+    expect(CURRENT_CHALLENGE.obstacles).toHaveLength(9);
+    expect(CHALLENGES['defi-pole-v4'].timeAllowed).toBe(43);
     expect(CHALLENGES['defi-pole-v3'].timeAllowed).toBe(42);
     expect(DEFI_POLE_V2.timeAllowed).toBe(47);
     expect(DEFI_POLE_V1.timeAllowed).toBe(75);
@@ -191,48 +192,68 @@ import { CSO_START } from '../../src/gameplay/obstacles.js';
 import { CSO_TRACE, CSO_DESIGN } from '../../src/gameplay/csoCourse.js';
 import { POLE } from '../../src/world/sites.js';
 describe('parcours du Pôle : tracé cohérent', () => {
-  // Positions relatives au centre de la carrière (84 × 52 m), cap de saut = (sin rot, cos rot).
+  // Positions relatives au centre de la carrière (120 × 76 m), cap de saut = (sin rot, cos rot).
   const { pts, fences, marks } = CSO_TRACE;
-  it('10 obstacles numérotés, dont un double 7A – 7B à une foulée', () => {
-    expect(fences.map((f) => f.label)).toEqual(['1', '2', '3', '4', '5', '6', '7A', '7B', '8', '9', '10']);
-    const a = fences[6], b = fences[7];
-    expect(Math.hypot(b.x - a.x, b.z - a.z)).toBeCloseTo(9, 5);
-    expect(Math.abs(a.rot - b.rot)).toBeLessThan(1e-9);
-    expect(fences.filter((f) => f.kind === 'o').length).toBeGreaterThanOrEqual(4);
-    expect(fences.filter((f) => f.kind === 'v').length).toBeGreaterThanOrEqual(4);
+  const STRIDE = 3.5; // foulée de galop de concours (m)
+  const HW = POLE.arena.w / 2, HD = POLE.arena.d / 2;
+  it('carrière aux dimensions d’un terrain international', () => {
+    expect(POLE.arena.w).toBeGreaterThanOrEqual(120);
+    expect(POLE.arena.d).toBeGreaterThanOrEqual(76);
   });
-  it('départ dans l’axe du 1, arrivée dans l’axe du 10, lignes placées dans la carrière', () => {
+  it('8 obstacles numérotés et un double 5A – 5B à deux foulées, éléments alignés', () => {
+    expect(fences.map((f) => f.label)).toEqual(['1', '2', '3', '4', '5A', '5B', '6', '7', '8']);
+    const a = fences[4], b = fences[5];
+    const d = Math.hypot(b.x - a.x, b.z - a.z);
+    expect(Math.abs(a.rot - b.rot)).toBeLessThan(1e-9);
+    // Réception (~2,4 m), deux foulées, nouvel appel (~2,4 m).
+    expect(d).toBeGreaterThanOrEqual(2.4 * 2 + 2 * STRIDE - 0.5);
+    expect(d).toBeLessThanOrEqual(2.4 * 2 + 2 * STRIDE + 1);
+    expect(fences.filter((f) => f.kind === 'o').length).toBeGreaterThanOrEqual(4);
+    expect(fences.filter((f) => f.kind === 'v').length).toBeGreaterThanOrEqual(3);
+  });
+  it('obstacle isolé : 5 foulées au moins d’approche en ligne droite, 8 m de réception dégagée', () => {
+    const cmds = CSO_DESIGN.cmds;
+    cmds.forEach((c, i) => {
+      if (c[0] !== 'J' || /B$/.test(c[1])) return;
+      let before = 0, after = 0;
+      for (let j = i - 1; j >= 0 && cmds[j][0] !== 'L' && cmds[j][0] !== 'R'; j--) if (cmds[j][0] === 'F') before += cmds[j][1];
+      for (let j = i + 1; j < cmds.length && cmds[j][0] !== 'L' && cmds[j][0] !== 'R'; j++) if (cmds[j][0] === 'F') after += cmds[j][1];
+      expect(before).toBeGreaterThanOrEqual(5 * STRIDE - 0.5);
+      if (!/A$/.test(c[1])) expect(after).toBeGreaterThanOrEqual(8);
+    });
+  });
+  it('départ dans l’axe du 1, arrivée dans l’axe du 8, lignes placées dans la carrière', () => {
     expect(CSO_START.x - POLE.arena.x).toBeCloseTo(marks.start.x, 6);
     const f1 = fences[0];
     expect(Math.abs(Math.sin(marks.start.rot) * (f1.z - marks.start.z) - Math.cos(marks.start.rot) * (f1.x - marks.start.x))).toBeLessThan(1e-6);
-    const f10 = fences[10];
-    expect(Math.abs(Math.sin(f10.rot) * (marks.finish.z - f10.z) - Math.cos(f10.rot) * (marks.finish.x - f10.x))).toBeLessThan(1e-6);
-    expect(marks.finish.s).toBeGreaterThan(f10.s + 6);
+    const last = fences[fences.length - 1];
+    expect(Math.abs(Math.sin(last.rot) * (marks.finish.z - last.z) - Math.cos(last.rot) * (marks.finish.x - last.x))).toBeLessThan(1e-6);
+    expect(marks.finish.s).toBeGreaterThan(last.s + 6);
   });
-  it('courbes de 6 m de rayon au moins, changements de main (courbes à gauche puis à droite)', () => {
+  it('grandes courbes (10 m de rayon au moins), changement de main', () => {
     const turns = CSO_DESIGN.cmds.filter((c) => c[0] === 'L' || c[0] === 'R');
-    for (const t of turns) expect(t[1]).toBeGreaterThanOrEqual(6);
+    for (const t of turns) expect(t[1]).toBeGreaterThanOrEqual(10);
     expect(turns.some((t) => t[0] === 'L')).toBe(true);
     expect(turns.some((t) => t[0] === 'R')).toBe(true);
   });
-  it('ligne du cavalier dans la carrière, obstacles à 7 m au moins de la lice', () => {
+  it('ligne du cavalier dans la carrière, obstacles à 8 m au moins de la lice', () => {
     for (const p of pts) {
-      expect(42 - Math.abs(p.x)).toBeGreaterThanOrEqual(6);
-      expect(26 - Math.abs(p.z)).toBeGreaterThanOrEqual(6);
+      expect(HW - Math.abs(p.x)).toBeGreaterThanOrEqual(6);
+      expect(HD - Math.abs(p.z)).toBeGreaterThanOrEqual(6);
     }
     for (const f of fences) {
-      expect(42 - Math.abs(f.x)).toBeGreaterThanOrEqual(7);
-      expect(26 - Math.abs(f.z)).toBeGreaterThanOrEqual(7);
+      expect(HW - Math.abs(f.x)).toBeGreaterThanOrEqual(8);
+      expect(HD - Math.abs(f.z)).toBeGreaterThanOrEqual(8);
     }
   });
-  it('la ligne ne frôle aucun autre obstacle (4 m au moins des barres et des ailes)', () => {
+  it('la ligne ne frôle aucun autre obstacle (4,5 m au moins des barres et des ailes)', () => {
     for (const f of fences) {
       const n = [Math.sin(f.rot), Math.cos(f.rot)], t = [Math.cos(f.rot), -Math.sin(f.rot)];
       for (const p of pts) {
-        if (Math.abs(p.s - f.s) < 6) continue;
+        if (Math.abs(p.s - f.s) < 8) continue;
         const dx = p.x - f.x, dz = p.z - f.z;
         const ds = Math.max(0, Math.abs(dx * n[0] + dz * n[1]) - 0.8), du = Math.max(0, Math.abs(dx * t[0] + dz * t[1]) - 3.0);
-        expect(Math.hypot(ds, du)).toBeGreaterThanOrEqual(4);
+        expect(Math.hypot(ds, du)).toBeGreaterThanOrEqual(4.5);
       }
     }
   });

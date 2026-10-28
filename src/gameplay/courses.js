@@ -63,8 +63,18 @@ export function courseSteps(game, run, S, opts) {
   run.data.course = state;
   const approach = (o) => ({ x: o.x - o.n.x * 7, z: o.z - o.n.z * 7 });
   const startApproach = startLine ? { x: startLine.x - Math.sin(startLine.rot ?? 0) * 8, z: startLine.z - Math.cos(startLine.rot ?? 0) * 8 } : start;
-  const classH = opts.height ?? (heights ? heights[Math.floor(heights.length / 2)] : null);
+  // Hauteur de l'épreuve : celle donnée, sinon la plus fréquente du parcours.
+  const classH = opts.height ?? (heights ? [...heights].sort((a, b) => heights.filter((x) => x === b).length - heights.filter((x) => x === a).length)[0] : null);
   const introLines = () => (typeof intro === 'function' ? intro() : intro) || [];
+
+  // Composition du parcours (lue sur la piste) : « 8 obstacles dont un double (5A – 5B) · 375 m ».
+  const parcoursText = () => {
+    const els = list();
+    const a = els.find((o) => /A$/.test(o.label || ''));
+    const doubles = els.filter((o) => /A$/.test(o.label || '')).length;
+    const n = els.length - doubles;
+    return `${n} obstacles${a ? ` dont un double (${a.label} – ${a.label.replace(/A$/, 'B')})` : ''} · ${COURSE_LENGTH.cso} m`;
+  };
 
   // ---------- Présentation et plan ----------
   const showPlan = (back) => {
@@ -82,7 +92,7 @@ export function courseSteps(game, run, S, opts) {
       ['Hauteur', classH ? `${dec(classH, 2)} m · difficulté ${difficultyOf(classH).toLowerCase()}` : '—'],
       ['Cheval engagé', h ? h.name : '—'],
       ['Temps accordé', `${timeAllowed} s`],
-      ['Parcours', `${list().length - 1} obstacles dont un double (7A – 7B) · ${COURSE_LENGTH.cso} m`],
+      ['Parcours', parcoursText()],
     ];
     const jury = introLines().map((l) => l.text).join(' ');
     game.screens.card({
@@ -140,7 +150,8 @@ export function courseSteps(game, run, S, opts) {
         state.running = true;
         if (!cso) state.started = true;
         game.cam.lastManual = -10;
-        game.course = { running: true, camera: true, jumpTiming: () => (aid() === 'off' ? 'none' : ob.timing(horse())), hud: hudInfo };
+        // Concours de CSO : caméra et commandes de concours (direction progressive, cadence) ; cross : monde ouvert.
+        game.course = { running: true, camera: cso, controls: cso ? 'cso' : null, jumpTiming: () => (aid() === 'off' ? 'none' : ob.timing(horse())), hud: hudInfo };
         aids = new CourseAids(game, courseId);
         const advance = () => {
           state.next++;
@@ -203,10 +214,12 @@ export function courseSteps(game, run, S, opts) {
               }
             }
             game.hud.toast(`Refus au ${labelOf(obstacle)} · +${pen}`);
+            // Après l'arrêt, on repart au trot pour la volte (le cavalier reprend sa cadence ensuite).
+            if (game.player.csoCadence !== undefined) game.player.csoCadence = Math.min(game.player.csoCadence, 4.6);
             if (state.refusals < maxRefusals && state.fenceRefusals < 3) game.hud.hint(msg, 3500);
           }),
         ];
-        if (cso) game.hud.hint('Franchis la <b>ligne de départ</b> : le chrono part. Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.', 5000);
+        if (cso) game.hud.hint('Joystick : <b>gauche/droite</b> pour tourner, <b>avant/arrière</b> pour la cadence (gardée). Franchis la <b>ligne de départ</b>, puis <b>SAUT</b> quand le bouton est <b>vert</b>.', 6000);
         else game.hud.hint('Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.', 4000);
       },
       update(r, dt) {

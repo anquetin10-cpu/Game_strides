@@ -3,6 +3,21 @@ import * as THREE from 'three';
 import { angleDiff, clamp, damp, lerp } from '../core/math.js';
 import { TIDE_UNIFORMS } from '../world/weather.js';
 
+
+// Profil de caméra des concours (activé par game.course.camera, rendu au monde ouvert dès la sortie, l'abandon ou
+// l'élimination) : derrière le cheval, juste au-dessus du cavalier, peu plongeante ; le couple occupe environ le tiers
+// de la hauteur de l'écran, en bas ; elle regarde devant le cheval pour montrer l'abord. Réglages ajustables.
+export const CAM_CSO = {
+  dist: 11.5, // distance au point visé (m) ; la caméra est à dist − lookAhead derrière le cheval
+  lookAhead: 4.2, // point visé devant le cheval (m)
+  height: 1.55, // hauteur du point visé au-dessus du sol (m)
+  pitch: 0.12, // inclinaison (rad) : peu plongeante
+  yawFollow: 2.2, // vitesse de recentrage derrière le cheval
+  yDamp: 2.5, // amortissement vertical (le saut ne secoue pas l'image)
+  jumpFollow: 0.3, // part de la hauteur du saut suivie par la caméra
+  manualHold: 0.9, // délai (s) avant de revenir derrière le cheval après un coup d'œil au doigt
+  fov: 55, // champ vertical fixe (pas de zoom ni de grand-angle)
+};
 export class FollowCamera {
   constructor(camera, game) {
     this.camera = camera;
@@ -45,10 +60,10 @@ export class FollowCamera {
       this.pitch = clamp(this.pitch + look.dy * 0.0045 * this.sens, -0.12, 1.15);
       this.lastManual = now;
     }
-    // Recentrage derrière le sujet quand il avance.
+    // Recentrage derrière le sujet quand il avance (concours : plus tôt après un coup d'œil, à vitesse réglée).
     const idle = now - this.lastManual;
-    if (focus.speed > 1.2 && idle > 1.4) {
-      const k = mode === 'drive' ? 2.4 : 1.4 + Math.min(focus.speed / 10, 1.6);
+    if (focus.speed > (course ? 0.6 : 1.2) && idle > (course ? CAM_CSO.manualHold : 1.4)) {
+      const k = mode === 'drive' ? 2.4 : course ? CAM_CSO.yawFollow : 1.4 + Math.min(focus.speed / 10, 1.6);
       // Grand recentrage (> ~70°, demi-tour au pied du camion…) : on tourne du côté où la perche est dégagée plutôt
       // que par le plus court chemin, qui peut balayer la caisse (perche écrasée, vue plongeante sur le toit), et on
       // garde ce sens jusqu'au bout.
@@ -59,16 +74,22 @@ export class FollowCamera {
         if (s !== this.swing) d -= s * 2 * Math.PI;
       } else this.swing = 0;
       this.yaw += d * (1 - Math.exp(-k * dt));
-      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : course ? 0.33 : 0.28, 1.2, dt);
+      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : course ? CAM_CSO.pitch : 0.28, 1.2, dt);
     } else this.swing = 0;
-    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? (course ? 8.2 : 6.6) : 4.6;
-    this.targetDist = base + (mode === 'ride' ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
+    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? (course ? CAM_CSO.dist : 6.6) : 4.6;
+    this.targetDist = base + (mode === 'ride' && !course ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
     // Hauteur du pivot lissée : monter ou descendre (de cheval, du camion) ne fait plus sauter la caméra d'une image à l'autre.
-    const height = mode === 'drive' ? (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? 2.6 : 2.35) : 1.55;
+    const height = mode === 'drive' ? (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? CAM_CSO.height : 2.35) : 1.55;
     this.height = instant ? height : damp(this.height, height, 4, dt);
-    this.smoothTarget.x = instant ? focus.pos.x : damp(this.smoothTarget.x, focus.pos.x, 18, dt);
-    this.smoothTarget.z = instant ? focus.pos.z : damp(this.smoothTarget.z, focus.pos.z, 18, dt);
-    this.smoothTarget.y = instant ? focus.pos.y : damp(this.smoothTarget.y, focus.pos.y, 10, dt);
+    // Concours : on vise un point devant le cheval (l'abord de l'obstacle suivant reste dans le champ) et la hauteur
+    // suit le sol plus qu'un saut (mouvement vertical amorti) ; transition douce à l'entrée et à la sortie.
+    const h = course ? this.game.player.horse : null;
+    this.ahead = damp(this.ahead || 0, course ? CAM_CSO.lookAhead : 0, 2, dt);
+    const fx = focus.pos.x + Math.sin(focus.heading) * this.ahead, fz = focus.pos.z + Math.cos(focus.heading) * this.ahead;
+    const fy = h ? h.groundY + h.jumpY * CAM_CSO.jumpFollow : focus.pos.y;
+    this.smoothTarget.x = instant ? fx : damp(this.smoothTarget.x, fx, course ? 8 : 18, dt);
+    this.smoothTarget.z = instant ? fz : damp(this.smoothTarget.z, fz, course ? 8 : 18, dt);
+    this.smoothTarget.y = instant ? fy : damp(this.smoothTarget.y, fy, course ? CAM_CSO.yDamp : 10, dt);
     const tx = this.smoothTarget.x, ty = this.smoothTarget.y + this.height, tz = this.smoothTarget.z;
     this.target.set(tx, ty, tz);
 
@@ -121,7 +142,7 @@ export class FollowCamera {
     this.shake = Math.max(0, this.shake - dt * 2);
     cam.position.set(cx, cy, cz);
     cam.lookAt(tx, ty + (mode === 'ride' ? 0.1 : 0), tz);
-    const fovTarget = 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);
+    const fovTarget = course ? CAM_CSO.fov : 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);
     this.fov = damp(this.fov, fovTarget, 3, dt);
     if (Math.abs(cam.fov - this.fov) > 0.05) {
       cam.fov = this.fov;

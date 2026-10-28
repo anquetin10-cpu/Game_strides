@@ -565,14 +565,17 @@ export class World {
     const C = POLE.club;
     this.place(buildingGeo({ w: C.w, d: C.d, h: 7, wall: '#1b1c1f', roof: '#2a2b2f', roofType: 'flat', trim: '#f2f1ec', floors: 2 }), C.x, C.z, 0, C.w, C.d, 'club');
     // Écran géant.
-    const sy = this.h(A.x + 36, A.z - 34);
-    this.batch.add(box(0.5, 6, 0.5), '#1b1c1f', A.x + 33, sy, A.z - 33, 0);
-    this.batch.add(box(0.5, 6, 0.5), '#1b1c1f', A.x + 39, sy, A.z - 35, 0);
-    this.texturedPanel(screenTexture(), 10, 5, A.x + 36, sy + 8.5, A.z - 34, -0.5, { back: '#111214', depth: 0.5 });
+    // Écran géant à l'angle nord-est de la carrière, entre la lice et les tribunes.
+    const scx = A.x + A.w / 2 - 6, scz = A.z - A.d / 2 - 5;
+    const sy = this.h(scx, scz);
+    this.batch.add(box(0.5, 6, 0.5), '#1b1c1f', scx - 3, sy, scz + 1, 0);
+    this.batch.add(box(0.5, 6, 0.5), '#1b1c1f', scx + 3, sy, scz - 1, 0);
+    this.texturedPanel(screenTexture(), 10, 5, scx, sy + 8.5, scz, -0.5, { back: '#111214', depth: 0.5 });
     // Drapeaux.
     for (let i = 0; i < 10; i++) {
       const x = A.x - 45 + i * 10;
-      const z = A.z + A.d / 2 + 16;
+      const z = A.z + A.d / 2 + 10;
+      if (Math.abs(x - A.x) < 8) continue; // allée vers l'entrée de piste
       this.batch.add(flagGeo(i % 2 ? '#f2f1ec' : '#1b1c1f'), null, x, this.h(x, z), z, Math.PI / 2);
       this.colliders.addCircle(x, z, 0.15, Infinity, 'flag');
     }

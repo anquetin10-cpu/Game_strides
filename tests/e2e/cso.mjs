@@ -37,10 +37,10 @@ await page.evaluate(async () => {
     out.push(pts[pts.length - 1]);
     return out;
   };
-  const { CSO_START: S, CSO_LINE } = window.__O;
-  const A0 = { x: S.x + 33, z: S.z - 12 }; // centre de la carrière
+  const { CSO_START: S, CSO_LINE, CSO_GATE: G } = window.__O;
+  // De l'entrée de piste à la ligne de départ (le long du côté sud, puis remontée vers le nord), puis le tracé.
   window.__toStart = window.__dense([
-    { x: A0.x, z: A0.z + 21 }, { x: A0.x - 18, z: A0.z + 21 }, { x: A0.x - 27, z: A0.z + 20.5 }, { x: A0.x - 32, z: A0.z + 18 }, { x: S.x, z: S.z + 4 }, { x: S.x, z: S.z },
+    { x: G.x, z: G.z }, { x: G.x - 30, z: G.z }, { x: S.x + 8, z: G.z }, { x: S.x + 2, z: G.z - 3 }, { x: S.x, z: S.z + 4 }, { x: S.x, z: S.z },
   ]).concat(CSO_LINE);
   window.__course = () => g.missions.active?.data.course;
   window.__card = () => document.querySelector('.overlay .card')?.textContent || '';
@@ -70,26 +70,62 @@ let r = await page.evaluate(() => {
   A.tick(60);
   const bell = document.querySelector('.big-msg .t')?.textContent;
   const board = document.querySelector('.cso-board')?.textContent;
-  return { pres, labels, legend, back, big, bell, board, st: { ...window.__course() }, cam: !!g.course?.camera };
+  const disp = (sel) => getComputedStyle(document.querySelector(sel)).display;
+  const hud = { light: document.querySelector('.hud').classList.contains('cso-ctl'), boost: disp('.btn-gallop'), map: disp('.minimap-wrap'), wallet: disp('.wallet'), jump: document.querySelector('.btn-jump').getBoundingClientRect().width };
+  return { pres, labels, legend, back, big, bell, board, hud, st: { ...window.__course() }, cam: !!g.course?.camera };
 });
-check('présentation : épreuve, hauteur, cheval engagé, temps accordé', /Prix STRIDES/.test(r.pres) && /1,10 m/.test(r.pres) && /Cheval engagé/.test(r.pres) && /43 s/.test(r.pres), r.pres.slice(0, 160));
-check('plan consultable, généré des données (10 obstacles, double 7A–7B, départ, arrivée)', ['1', '2', '3', '4', '5', '6', '7A', '7B', '8', '9', '10', 'Départ', 'Arrivée'].every((l) => r.labels.includes(l)) && /7A vertical · 7B oxer/.test(r.legend), r.legend);
+check('présentation : épreuve, hauteur, cheval engagé, temps accordé, double', /Prix STRIDES/.test(r.pres) && /1,10 m/.test(r.pres) && /Cheval engagé/.test(r.pres) && /65 s/.test(r.pres) && /8 obstacles dont un double \(5A – 5B\)/.test(r.pres), r.pres.slice(0, 220));
+check('plan consultable, généré des données (8 obstacles, double 5A–5B, départ, arrivée)', ['1', '2', '3', '4', '5A', '5B', '6', '7', '8', 'Départ', 'Arrivée'].every((l) => r.labels.includes(l)) && /5A vertical · 5B oxer/.test(r.legend) && /375 m/.test(r.legend), r.legend);
 check('retour du plan à la présentation', r.back);
 check('annonce du couple à l’entrée en piste', /N° \d+/.test(r.big || ''), r.big);
 check('cloche puis 45 s pour franchir la ligne de départ', r.bell === 'CLOCHE' && /Départ 4\d s/.test(r.board || ''), `${r.bell} | ${r.board}`);
+check('HUD de concours allégé : ni carte, ni portefeuille, ni BOOST', r.hud.light && r.hud.boost === 'none' && r.hud.map === 'none' && r.hud.wallet === 'none' && true, JSON.stringify(r.hud));
 check('chrono à l’arrêt tant que la ligne n’est pas franchie, caméra de parcours', !r.st.started && r.st.t === 0 && r.cam);
 
 // ---------- 2. Tour sans faute au joystick et au bouton SAUT ----------
 r = await page.evaluate(() => {
   const g = window.__game, A = window.__auto;
-  const ev = A.rideLine(window.__toStart, { maxTicks: 3200 });
+  // Cadence au joystick : avant pendant 1 s → plus vite ; relâché → gardée ; arrière → plus lent.
+  const p = g.player;
+  const c0 = p.csoCadence;
+  g.input.setVirtualMove(0, 1);
+  A.tick(30);
+  const c1 = p.csoCadence;
+  g.input.setVirtualMove(0, 0);
+  A.tick(30);
+  const c2 = p.csoCadence;
+  g.input.setVirtualMove(0, -1);
+  A.tick(30);
+  const c3 = p.csoCadence;
+  p.csoCadence = c0;
+  window.__cad = { c0, c1, c2, c3 };
+  // Pendant le tour : vitesse de rotation du cheval (jamais de pivot instantané), cadrage de la caméra.
+  const h = g.player.horse;
+  let prevH = h.heading, maxRate = 0, camN = 0, camBehind = 0, camH = 0;
+  const ev = A.rideLine(window.__toStart, {
+    maxTicks: 4800,
+    until: () => {
+      let dh = h.heading - prevH;
+      dh = (((dh + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+      prevH = h.heading;
+      maxRate = Math.max(maxRate, Math.abs(dh) * 30);
+      const cp = g.camera.position, f = h.forward;
+      const back = -((cp.x - h.pos.x) * f.x + (cp.z - h.pos.z) * f.z);
+      if (h.speed > 4) { camN++; camBehind += back; camH += cp.y - h.groundY; if (camN % 30 === 1) window.__jw = Math.max(window.__jw || 0, document.querySelector('.btn-jump').getBoundingClientRect().width); }
+      return false;
+    },
+  });
   for (let i = 0; i < 40 && !document.querySelector('.overlay [data-id="cso-retry"]'); i++) A.tick(1);
   const st = window.__course();
-  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), st: { t: st.t, faults: st.faults, timeFaults: st.timeFaults, finished: st.finished, log: st.log.length, attempt: st.attempt }, card: window.__card(), board: document.querySelector('.cso-board')?.className };
+  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), st: { t: st.t, faults: st.faults, timeFaults: st.timeFaults, finished: st.finished, log: st.log.length, attempt: st.attempt }, card: window.__card(), board: document.querySelector('.cso-board')?.className, cad: window.__cad, maxRate, cam: { behind: camBehind / camN, height: camH / camN, fov: g.camera.fov }, jumpW: window.__jw, jumpW0: 84 * (new DOMMatrix(getComputedStyle(document.querySelector('.actions')).transform).a || 1) };
 });
-const order = ['1', '2', '3', '4', '5', '6', '7A', '7B', '8', '9', '10'];
-check('tour sans faute : 11 éléments franchis dans l’ordre', JSON.stringify(r.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(r.ev));
-check('chrono de la ligne de départ à l’arrivée, dans le temps accordé', r.st.finished && r.st.t > 30 && r.st.t < 43 && r.st.faults === 0 && r.st.timeFaults === 0, `${r.st.t.toFixed(2)} s`);
+const order = ['1', '2', '3', '4', '5A', '5B', '6', '7', '8'];
+check('cadence au joystick : avant = plus vite, relâché = gardée, arrière = plus lent', r.cad.c0 === 6.2 && r.cad.c1 > 7 && r.cad.c2 === r.cad.c1 && r.cad.c3 < r.cad.c2, JSON.stringify(r.cad));
+check('gros bouton SAUT à droite pendant le parcours (plus grand qu’en balade)', r.jumpW > r.jumpW0 * 1.15, `${r.jumpW?.toFixed(0)} px`);
+check('courbes au galop : le cheval tourne progressivement (jamais plus de 1,3 rad/s)', r.maxRate <= 1.3, `${r.maxRate.toFixed(2)} rad/s`);
+check('caméra de concours : proche derrière le cheval, juste au-dessus du cavalier, champ fixe', r.cam.behind > 5 && r.cam.behind < 9.5 && r.cam.height > 2.6 && r.cam.height < 4.2 && Math.abs(r.cam.fov - 55) < 0.5, JSON.stringify(r.cam));
+check('tour sans faute : 9 éléments franchis dans l’ordre', JSON.stringify(r.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(r.ev));
+check('chrono de la ligne de départ à l’arrivée, dans le temps accordé', r.st.finished && r.st.t > 45 && r.st.t < 65 && r.st.faults === 0 && r.st.timeFaults === 0, `${r.st.t.toFixed(2)} s`);
 check('bilan : chrono, fautes, pénalités de temps, total, classement, récompense', /Chrono/.test(r.card) && /Fautes aux obstacles/.test(r.card) && /Pénalités de temps/.test(r.card) && /Total/.test(r.card) && /Classement/.test(r.card) && /Récompense/.test(r.card) && /\d+(re|e) sur \d+/.test(r.card), r.card.slice(0, 200));
 check('Recommencer, S’entraîner et Quitter proposés', /Recommencer/.test(r.card) && /S’entraîner/.test(r.card) && /Quitter/.test(r.card));
 
@@ -107,7 +143,16 @@ r = await page.evaluate(() => {
   // Départ, puis appel bien trop loin au 1 (vertical) et au 2 (oxer : les deux barres peuvent tomber, une seule faute).
   const ev = A.rideLine(window.__toStart, {
     maxTicks: 1600,
-    policy: (tg) => tg && (tg.o.label === '1' || tg.o.label === '2' ? tg.geo.rails[0].x <= 5.4 : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3),
+    policy: (tg) => {
+      const far = tg && (tg.o.label === '1' || tg.o.label === '2') && tg.geo.rails[0].x <= 5.4;
+      if (far && g.player.horse.jumpT < 0) (window.__dbg ||= []).push({ l: tg.o.label, x: +tg.geo.rails[0].x.toFixed(2), cos: +tg.geo.cosA.toFixed(3), u: +tg.geo.rails[0].u.toFixed(2), zone: tg.plan.zone, m: +tg.plan.margin.toFixed(2), ref: !!g.player.horse._refusing, sp: +g.player.horse.speed.toFixed(2) });
+      // Un seul appui par obstacle (comme un cavalier).
+      const done = (window.__pressed ||= new Set());
+      if (!tg || done.has(tg.o.label)) return false;
+      const go = tg.o.label === '1' || tg.o.label === '2' ? tg.geo.rails[0].x <= 5.4 : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
+      if (go) done.add(tg.o.label);
+      return go;
+    },
     until: () => window.__course().next >= 3,
   });
   const o2 = list[1];
@@ -154,29 +199,29 @@ r = await page.evaluate(() => {
   A.releaseInput();
   const reverse = st.next;
   const faultsNow = st.faults;
-  return { fresh, ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}:${e.cause || ''}`), after2, paused, next0, faults0, wrong, beside, reverse, faultsNow, jumpedBack };
+  return { dbg: (window.__dbg || []).slice(0, 6), fresh, ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}:${e.cause || ''}`), after2, paused, next0, faults0, wrong, beside, reverse, faultsNow, jumpedBack };
 });
 check('nouvelle tentative : état neuf, barres remontées', r.fresh);
-check('appel bien trop loin : barre au 1 et au 2, cause expliquée', r.ev[0] === 'fault:1:far' && /^fault:2:(far|short)$/.test(r.ev[1]), JSON.stringify(r.ev));
+check('appel bien trop loin : barre au 1 et au 2, cause expliquée', r.ev[0] === 'fault:1:far' && /^fault:2:(far|short)$/.test(r.ev[1]), JSON.stringify(r.ev) + JSON.stringify(r.dbg));
 check('oxer : une seule faute même si deux barres tombent', r.after2.faults === 8 && r.after2.log.filter((l) => l.startsWith('rail:2')).length === 1, `${r.after2.faults} pts, ${r.after2.oxerRails} barre(s) au sol au 2`);
 check('pause : chrono et cheval arrêtés ensemble', r.paused.dt === 0 && r.paused.moved < 0.01, JSON.stringify(r.paused));
 check('hors ordre : non validé, sans pénalité, erreur de parcours signalée', r.wrong.next === r.next0 && r.wrong.faults === r.faults0 && /Erreur de parcours/.test(r.wrong.toast), r.wrong.toast);
 check('passage à côté avec SAUT : non validé', r.beside === r.next0);
 check('saut dans le mauvais sens : non validé, sans pénalité', r.jumpedBack && r.reverse === r.next0 && r.faultsNow === r.faults0);
 
-// ---------- 4. Double : 7A puis 7B suivis séparément ; refus au 7B → on reprend au 7A ----------
+// ---------- 4. Double : 5A puis 5B suivis séparément ; refus au 5B → on reprend au 5A ----------
 r = await page.evaluate(() => {
   const g = window.__game, A = window.__auto;
   const st = window.__course();
   const list = g.obstacles.ofCourse('cso');
   // Le jury remonte les barres ; on reprend la tentative au 3 jusqu'au 6.
-  for (const n of [3, 4, 5, 6]) A.jumpObstacle(list[n - 1]);
+  for (const n of [3, 4]) A.jumpObstacle(list[n - 1]);
   const before = st.next;
-  // 7A sauté proprement, puis on approche 7B au pas sans appeler : refus.
-  A.jumpObstacle(list[6]);
+  // 5A sauté proprement, puis on approche 5B au pas sans appeler : refus.
+  A.jumpObstacle(list[4]);
   const afterA = st.next;
   const h = g.player.horse;
-  const o = list[7];
+  const o = list[5];
   h.setPosition(o.x - o.n.x * 6, o.z - o.n.z * 6, o.rot);
   g.cam.yaw = o.rot + Math.PI;
   h.speed = 1.9;
@@ -193,8 +238,8 @@ r = await page.evaluate(() => {
   A.releaseInput();
   return { before, afterA, refusals, faults, refusals2: st.refusals, faults2: st.faults, nextAfterRefusal: st.next, labelNext: list[st.next - 1]?.label, log: st.log.map((l) => `${l.kind}:${l.label}`) };
 });
-check('double : 7A validé, 7B attendu ensuite', r.afterA === r.before + 1, `${r.before} → ${r.afterA}`);
-check('refus au 7B : 4 points, on reprend le double au 7A', r.refusals === 1 && r.labelNext === '7A', JSON.stringify(r.log));
+check('double : 5A validé, 5B attendu ensuite', r.afterA === r.before + 1, `${r.before} → ${r.afterA}`);
+check('refus au 5B : 4 points, on reprend le double au 5A', r.refusals === 1 && r.labelNext === '5A', JSON.stringify(r.log));
 check('cheval arrêté face à l’obstacle : aucune pénalité répétée', r.refusals2 === r.refusals && r.faults2 === r.faults, `${r.refusals2} refus, ${r.faults2} pts`);
 
 // ---------- 5. Deuxième refus : élimination, bilan, entraînement ----------
@@ -240,6 +285,24 @@ r = await page.evaluate(async () => {
 check('2e refus : élimination, bilan « Éliminé » avec Recommencer / S’entraîner / Quitter', !!r.out && /Éliminé/.test(r.card) && /Recommencer/.test(r.card), r.out);
 check('S’entraîner : entraînement vertical + oxer lancé', r.train === 'cso_warmup', r.train);
 check('entraînement : vertical et oxer sautés, chaque saut expliqué (marge ou cause)', r.toasts.length === 2 && (r.lastToast.match(/marge|Barre/g) || []).length >= 2, `${JSON.stringify(r.toasts)} ${r.lastToast} ${r.mission}`);
+
+// ---------- 5b. Sortie de l'épreuve : caméra et commandes du monde ouvert rétablies ----------
+r = await page.evaluate(() => {
+  const g = window.__game, A = window.__auto;
+  const inTraining = { cam: !!g.course?.camera, ctl: g.course?.controls };
+  g.missions.abandon?.();
+  A.closeCards();
+  const h = g.player.horse;
+  for (let i = 0; i < 120; i++) {
+    g.input.setVirtualMove(0, 0.7);
+    A.tick(1);
+  }
+  A.releaseInput();
+  const cp = g.camera.position, f = h.forward;
+  const disp = (sel) => getComputedStyle(document.querySelector(sel)).display;
+  return { inTraining, course: g.course, fov: g.camera.fov, behind: -((cp.x - h.pos.x) * f.x + (cp.z - h.pos.z) * f.z), cadence: g.player.csoCadence, boost: disp('.btn-gallop'), map: disp('.minimap-wrap'), light: document.querySelector('.hud').classList.contains('cso-ctl') };
+});
+check('sortie : caméra d’exploration, commandes et HUD du monde ouvert rétablis', r.inTraining.cam && r.inTraining.ctl === 'cso' && r.course === null && r.fov > 58 && r.cadence === undefined && r.boost !== 'none' && r.map !== 'none' && !r.light, JSON.stringify(r));
 
 // ---------- 6. Indépendance à la cadence d'image ----------
 r = await page.evaluate(() => {

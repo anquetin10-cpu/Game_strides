@@ -12,11 +12,11 @@ import { BUILD } from '../config.js';
 // minTime : temps le plus court physiquement possible (longueur de l'épreuve au grand galop, 14 m/s, sans les
 // virages ni les sauts) ; un chrono plus court n'est pas inscrit au classement (le record reste sur l'appareil).
 export const BOARDS = [
-  { id: 'defi-pole-v4', title: 'Défi du Pôle', sub: '10 obstacles et un double à 1,10 m, même cheval et mêmes conditions pour tous', kind: 'cso', minTime: 17 },
-  { id: 'concours-am2', title: 'Concours Amateur 2', sub: 'CSO au Pôle International, 1,05 m', kind: 'cso', minTime: 17 },
-  { id: 'concours-am1', title: 'Concours Amateur 1', sub: 'CSO au Pôle International, 1,15 m', kind: 'cso', minTime: 17 },
-  { id: 'concours-pro2', title: 'Concours Pro 2', sub: 'CSO au Pôle International, 1,25 m', kind: 'cso', minTime: 17 },
-  { id: 'cso_train', title: 'Parcours du Pôle', sub: 'Entraînement chronométré, 10 obstacles et un double', kind: 'cso', minTime: 17 },
+  { id: 'defi-pole-v5', title: 'Défi du Pôle', sub: '8 obstacles et un double à 1,10 m, même cheval et mêmes conditions pour tous', kind: 'cso', minTime: 26 },
+  { id: 'concours-am2', title: 'Concours Amateur 2', sub: 'CSO au Pôle International, 1,05 m', kind: 'cso', minTime: 26 },
+  { id: 'concours-am1', title: 'Concours Amateur 1', sub: 'CSO au Pôle International, 1,15 m', kind: 'cso', minTime: 26 },
+  { id: 'concours-pro2', title: 'Concours Pro 2', sub: 'CSO au Pôle International, 1,25 m', kind: 'cso', minTime: 26 },
+  { id: 'cso_train', title: 'Parcours du Pôle', sub: 'Entraînement chronométré, 8 obstacles et un double', kind: 'cso', minTime: 26 },
   { id: 'xc_train', title: 'Cross de Saint-Gatien', sub: 'Entraînement chronométré, 10 obstacles', kind: 'cso', minTime: 54 },
   { id: 'beach_sprint', title: 'Sprint de la plage', sub: '8 anneaux au bord de l’eau', kind: 'time', minTime: 38 },
   { id: 'hippo_lap', title: 'Tour de l’hippodrome', sub: 'Un tour de piste', kind: 'time', minTime: 50 },

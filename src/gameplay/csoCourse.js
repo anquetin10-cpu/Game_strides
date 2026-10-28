@@ -1,31 +1,31 @@
-// Parcours de CSO du Pôle International, dessiné comme un vrai tracé : la ligne idéale du cavalier est une suite de
-// lignes droites et de courbes de rayon donné (8 à 9 m : le cheval tourne bien plus court, mais la courbe reste
-// fluide au galop et laisse voir l'obstacle suivant). Chaque obstacle est posé sur cette ligne, dans l'axe du saut.
-// Les obstacles, le plan, l'aide de tracé, la longueur du parcours (temps accordé) et le pilote des tests viennent
-// tous de ces mêmes données.
+// Parcours de CSO du Pôle International, dessiné comme un vrai tracé : on trace d'abord la ligne du cavalier (lignes
+// droites et grandes courbes de 10 à 12 m de rayon, que le cheval suit au galop sans pivoter), puis on pose chaque
+// obstacle dans l'axe de cette ligne. Obstacle isolé : 17 m au moins d'approche en ligne droite (5 foulées de 3,5 m
+// au galop de concours), 8 m au moins de réception dégagée avant le tournant suivant. Double : deux éléments alignés à
+// 11,5 m (réception, deux foulées, nouvel appel). Les obstacles, le plan, l'aide de tracé, la longueur du parcours
+// (temps accordé) et le pilote des tests viennent tous de ces mêmes données.
 //
-// Repère : centre de la carrière (84 × 52 m), x vers l’est, z vers le sud ; cap h : direction (sin h, cos h).
+// Repère : centre de la carrière (120 × 76 m), x vers l’est, z vers le sud ; cap h : direction (sin h, cos h).
 // Entrée de piste au milieu du grand côté sud (+z), tribunes au nord (-z, côté mer).
-//   S → 1 (vertical, piste ouest, vers le nord) → à main droite : ligne 2 (oxer) – 3 (vertical) le long des tribunes,
-//   4 (oxer, piste est, vers le sud) → 5 (mur, en diagonale) → changement de main, à main gauche → 6 (vertical) →
-//   double 7A (vertical) – 7B (oxer, une foulée) → 8 (oxer large) → ligne 9 (vertical) – 10 (oxer) → arrivée.
+//   S → 1 (vertical, piste ouest, vers le nord) → à main droite : ligne 2 (oxer) – 3 (vertical, 4 foulées) le long des
+//   tribunes → 4 (mur, en diagonale) → changement de main, à main gauche : double 5A (vertical) – 5B (oxer, deux
+//   foulées) le long du côté sud → 6 (oxer, piste est, vers le nord) → 7 (vertical) → 8 (oxer large) → arrivée.
 
 export const CSO_DESIGN = {
-  start: { x: -33, z: 12, h: Math.PI },
+  start: { x: -50, z: 26, h: Math.PI },
   // F d : ligne droite ; L/R r a : courbe à gauche/droite (pour le cavalier) de rayon r sur a degrés ; J : obstacle ;
   // M : ligne de départ ou d'arrivée.
   cmds: [
-    ['M', 'start'], ['F', 8], ['J', '1', 'v'], ['F', 14], ['R', 9, 90],
-    ['F', 6], ['J', '2', 'o', 1.2], ['F', 20], ['J', '3', 'v'], ['F', 22], ['R', 9, 90],
-    ['F', 6], ['J', '4', 'o', 1.3], ['F', 4], ['R', 9, 135],
-    ['F', 4], ['J', '5', 'w'], ['F', 6], ['L', 8, 135],
-    ['F', 1], ['J', '6', 'v'], ['F', 3], ['L', 7, 90],
-    ['F', 2], ['J', '7A', 'v'], ['F', 9], ['J', '7B', 'o', 1.2], ['F', 4], ['L', 6, 90],
-    ['F', 8], ['J', '8', 'o', 1.4], ['F', 4], ['L', 8, 90],
-    ['F', 4], ['J', '9', 'v'], ['F', 14], ['J', '10', 'o', 1.3], ['F', 8], ['M', 'finish'],
+    ['M', 'start'], ['F', 17], ['J', '1', 'v'], ['F', 27], ['R', 12, 90],
+    ['F', 17], ['J', '2', 'o', 1.25], ['F', 18.8], ['J', '3', 'v'], ['F', 8], ['R', 12, 135],
+    ['F', 17], ['J', '4', 'w'], ['F', 13], ['L', 10, 135],
+    ['F', 17], ['J', '5A', 'v'], ['F', 11.5], ['J', '5B', 'o', 1.25], ['F', 8], ['L', 10, 90],
+    ['F', 17], ['J', '6', 'o', 1.3], ['F', 8], ['L', 11, 90],
+    ['F', 24], ['J', '7', 'v'], ['F', 23], ['L', 12, 90],
+    ['F', 17], ['J', '8', 'o', 1.4], ['F', 9], ['M', 'finish'],
   ],
   // Profil des hauteurs autour de la hauteur de l'épreuve (m) : abords de début plus faciles, fin plus exigeante.
-  profile: { 1: -0.05, 2: 0, 3: -0.05, 4: 0, 5: 0, 6: 0, '7A': -0.05, '7B': 0, 8: 0.05, 9: 0, 10: 0.05 },
+  profile: { 1: -0.05, 2: 0, 3: -0.05, 4: 0, '5A': -0.05, '5B': 0, 6: 0, 7: 0, 8: 0.05 },
 };
 
 // Trace la ligne du cavalier : points tous les ~0,5 m { x, z, h, s }, obstacles et lignes posés dessus.

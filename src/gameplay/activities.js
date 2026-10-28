@@ -27,7 +27,7 @@ export class Activities {
         },
       },
       {
-        id: 'cso_train', name: 'Parcours du Pôle', kind: 'CSO', desc: '10 obstacles et un double au Pôle International, 1,10 m, barème A au chrono.',
+        id: 'cso_train', name: 'Parcours du Pôle', kind: 'CSO', desc: '8 obstacles et un double au Pôle International, 1,10 m, barème A au chrono.',
         start: { x: CSO_GATE.x, z: CSO_GATE.z },
         marker: { x: CSO_GATE.x + 6, z: CSO_GATE.z + 7 },
         build: (g, run, S) => courseSteps(g, run, S, {
@@ -158,7 +158,7 @@ function trainingSteps(game, run, S) {
       start(r) {
         ob.resetRails('warmup');
         const aidOn = () => game.save.data.settings.jumpAid || 'full';
-        game.course = { running: false, camera: true, jumpTiming: () => (aidOn() === 'off' ? 'none' : ob.timing(game.player.horse)) };
+        game.course = { running: false, camera: true, controls: 'cso', jumpTiming: () => (aidOn() === 'off' ? 'none' : ob.timing(game.player.horse)) };
         aids = new CourseAids(game, 'warmup');
         const say = (txt) => game.hud.toast(txt);
         offs = [

@@ -2,8 +2,9 @@
 // carrière, ligne du cavalier, obstacles numérotés (vertical : une barre, oxer : deux, mur : bloc), double, lignes de
 // départ et d'arrivée, entrée de piste et tribunes. Nord en haut (le nord du monde est vers -z).
 import { CSO_TRACE } from '../gameplay/csoCourse.js';
+import { POLE } from '../world/sites.js';
 
-const W = 84, D = 52;
+const W = POLE.arena.w, D = POLE.arena.d;
 
 export function coursePlanSvg({ heights = null, next = 0 } = {}) {
   const pad = 6;
@@ -13,8 +14,8 @@ export function coursePlanSvg({ heights = null, next = 0 } = {}) {
   parts.push(`<rect x="${-W / 2}" y="${-D / 2}" width="${W}" height="${D}" rx="1.5" fill="#e8dcc0" stroke="#1b1c1f" stroke-width="0.5"/>`);
   parts.push(`<rect x="-3.5" y="${D / 2 - 0.4}" width="7" height="0.8" fill="#e8dcc0"/>`);
   parts.push(`<text x="0" y="${D / 2 + 3.6}" font-size="2.6" text-anchor="middle" fill="#6b6a64">ENTRÉE</text>`);
-  parts.push(`<rect x="-39" y="${-D / 2 - 5.5}" width="78" height="3.2" fill="#c9c6bd"/>`);
-  parts.push(`<text x="0" y="${-D / 2 - 3.1}" font-size="2.2" text-anchor="middle" fill="#3a3a36">TRIBUNES · JURY</text>`);
+  parts.push(`<rect x="${-POLE.stands.w / 2}" y="${-D / 2 - 5.5}" width="${POLE.stands.w}" height="3.2" fill="#c9c6bd"/>`);
+  parts.push(`<text x="0" y="${-D / 2 - 3.1}" font-size="2.2" text-anchor="middle" fill="#3a3a36">TRIBUNES</text>`);
   // Ligne du cavalier (pointillés).
   const line = CSO_TRACE.pts.filter((_, i) => i % 2 === 0).map((p) => `${p.x.toFixed(1)},${p.z.toFixed(1)}`).join(' ');
   parts.push(`<polyline points="${line}" fill="none" stroke="#1b1c1f" stroke-opacity="0.45" stroke-width="0.45" stroke-dasharray="1.2 1"/>`);

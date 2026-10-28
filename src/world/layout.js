@@ -126,7 +126,7 @@ export const ARCH = { x: -545, z: -462 };
 export const POI = {
   home: { x: -110, z: 172, name: 'Écurie du Val', icon: 'home' },
   town: { x: 20, z: -266, name: 'Deauvelle', icon: 'town' },
-  pole: { x: 330, z: -192, name: 'Pôle International', icon: 'event' },
+  pole: { x: 330, z: -180, name: 'Pôle International', icon: 'event' },
   hippo: { x: 330, z: 140, name: 'Hippodrome de la Touques', icon: 'event' },
   haras: { x: -380, z: -96, name: 'Haras de la Pommeraie', icon: 'stable' },
   dunes: { x: 500, z: -318, name: 'Écurie des Dunes', icon: 'stable' },

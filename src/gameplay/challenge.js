@@ -67,8 +67,20 @@ export const DEFI_POLE_V4 = deepFreeze({
   timeLimit: 86,
 });
 
-export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4 };
-export const CURRENT_CHALLENGE = DEFI_POLE_V4;
+// Version 5 : carrière agrandie (120 × 76 m) et parcours redessiné à la manière d'un concours international : approches
+// de 5 foulées au moins, grandes courbes, double 5A – 5B à deux foulées ; galop de concours réglé au joystick.
+// Temps accordé réglementaire du nouveau tracé (≈ 375 m à 350 m/min).
+export const DEFI_POLE_V5 = deepFreeze({
+  ...JSON.parse(JSON.stringify(DEFI_POLE_V4)),
+  id: 'defi-pole-v5',
+  version: 5,
+  obstacles: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  timeAllowed: 65,
+  timeLimit: 130,
+});
+
+export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4, [DEFI_POLE_V5.id]: DEFI_POLE_V5 };
+export const CURRENT_CHALLENGE = DEFI_POLE_V5;
 export const SIGNATURE = 'STRIDES Grand Tour';
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.

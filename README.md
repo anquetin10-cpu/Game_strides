@@ -57,9 +57,19 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Box du cheval** : à l'Écurie du Val, on rentre son cheval au box pour qu'il récupère (eau, foin, repos) et on
   va l'y chercher.
 - **Épreuves de saut d'obstacles** (Pôle International), pensées pour l'iPhone à deux pouces :
-  - **parcours dessiné** de 10 obstacles numérotés (verticaux, oxers, mur) avec un **double 7A – 7B**, changement de
-    main, lignes, départ et arrivée matérialisés (fanions blancs à gauche, rouges à droite) ; obstacles, plan, tracé
-    conseillé au sol, longueur (248 m) et temps accordé viennent des mêmes données (`src/gameplay/csoCourse.js`) ;
+  - **parcours dessiné** dans une carrière de 120 × 76 m : la ligne du cavalier (grandes courbes de 10 à 12 m, lignes
+    droites) est tracée d'abord, puis les obstacles posés dans son axe ; 8 obstacles numérotés (verticaux, oxers,
+    mur) et un **double 5A – 5B** à deux foulées ; au moins 5 foulées d'approche (17 m) et 8 m de réception dégagée,
+    changement de main, départ et arrivée matérialisés (fanions blancs à gauche, rouges à droite) ; obstacles,
+    plan, tracé conseillé au sol, longueur (375 m) et temps accordé (65 s) viennent des mêmes données
+    (`src/gameplay/csoCourse.js`) ;
+  - **commandes de concours** (comme le saut d'obstacles d'Athènes 2004) : joystick gauche/droite pour tourner
+    progressivement (jamais de pivot), avant/arrière pour la cadence, gardée au relâchement (galop de concours stable
+    par défaut, 6,2 m/s) ; gros bouton SAUT à droite, utilisable en tournant ; clavier : flèches ou ZQSD + Espace ;
+    BOOST remplacé par la cadence ; réglages dans `CSO_RIDE` (`src/gameplay/player.js`) ;
+  - **caméra de concours** : proche derrière le cheval, juste au-dessus du cavalier, peu plongeante, regard porté
+    devant le cheval, saut amorti, champ fixe ; rétablie à la sortie (fin, abandon, élimination) ; réglages dans
+    `CAM_CSO` (`src/entities/camera.js`) ; **HUD allégé** (chrono, temps accordé, pénalités, obstacle suivant) ;
   - **déroulé de concours** : présentation (épreuve, hauteur, cheval, temps accordé) et plan consultable, annonce à
     l'entrée en piste, cloche (45 s pour prendre le départ), chrono au centième lancé à la ligne de départ, arrivée
     applaudie, bilan (chrono, fautes et leur cause, pénalités de temps, classement des concurrents, récompense une

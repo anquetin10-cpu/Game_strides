@@ -13,6 +13,16 @@
       g.renderer.setAnimationLoop((t) => g.frame(t));
     },
     steer(wx, wz, mag) {
+      // Concours de CSO : joystick gauche/droite = tourner (progressivement), comme le joueur ; la cadence (gardée)
+      // est réglée directement pour les tests (pas ≈ 0,3, trot ≈ 0,5, galop de concours ≈ 0,62 et plus).
+      if (g.course?.controls === 'cso' && g.player.mode === 'ride') {
+        const h = g.player.horse;
+        let d = Math.atan2(wx, wz) - h.heading;
+        d = (((d + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+        if (mag !== undefined) g.player.csoCadence = mag < 0.35 ? 1.9 : mag < 0.6 ? 4.6 : Math.min(8, 6.2 + Math.max(0, mag - 0.62) * 2.4);
+        g.input.setVirtualMove(Math.max(-1, Math.min(1, -d * 2.2)), 0);
+        return;
+      }
       const yaw = g.cam.yaw;
       const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
       const rx = -fz, rz = fx;

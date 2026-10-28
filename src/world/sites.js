@@ -54,12 +54,14 @@ export const HARAS = {
 };
 
 export const POLE = {
-  arena: { x: 330, z: -232, w: 84, d: 52 },
+  // Carrière de concours aux dimensions d'un terrain international (120 × 76 m) : de longues approches et de grandes
+  // courbes au galop entre les obstacles.
+  arena: { x: 330, z: -224, w: 120, d: 76 },
   stands: { x: 330, z: -273, w: 78, d: 14 },
-  warmup: { x: 252, z: -232, w: 40, d: 46 },
+  warmup: { x: 240, z: -232, w: 40, d: 46 },
   stables: { x: 420, z: -226, w: 16, d: 60 },
   club: { x: 410, z: -280, w: 34, d: 14 },
-  entrance: { x: 330, z: -188 },
+  entrance: { x: 330, z: -178 },
 };
 
 export const HIPPO_SITE = {

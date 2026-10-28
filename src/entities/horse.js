@@ -112,7 +112,9 @@ export class Horse {
     const tgt = this.isPlayerHorse ? this.game.obstacles?.target(this) : null;
     if (tgt && tgt.plan.zone !== 'none') {
       if (tgt.plan.zone === 'refuse') {
-        this.game.obstacles.refuse(this, tgt.o);
+        // Déjà dans l'obstacle (réception entre les barres d'un oxer après un appel bien trop long) : l'appui est
+        // ignoré. Tout contre la barre avant : plus la place d'enlever, refus.
+        if (tgt.geo.rails[0].x >= 0) this.game.obstacles.refuse(this, tgt.o);
         return false;
       }
       peak = tgt.plan.H;
@@ -190,7 +192,16 @@ export class Horse {
 
     let desired = 0;
     let turnInput = 0;
-    if (!this.frozen && c.mag > 0.12 && !(this._rearT > 0)) {
+    if (c.turnRate !== undefined && !this.frozen && !(this._rearT > 0)) {
+      // Concours : vitesse de virage commandée, prise progressivement (courbes naturelles, jamais de pivot
+      // instantané) ; en l'air le cheval garde presque son cap.
+      this._yawRate = damp(this._yawRate || 0, c.turnRate, 4, dt);
+      const r = this._yawRate * (this.jumpT >= 0 ? 0.25 : 1);
+      this.heading = wrapAngle(this.heading + r * dt);
+      turnInput = r;
+      desired = c.speedOverride ?? 0;
+    } else if (!this.frozen && c.mag > 0.12 && !(this._rearT > 0)) {
+      this._yawRate = 0;
       const desiredHeading = Math.atan2(c.x, c.z);
       const diff = angleDiff(this.heading, desiredHeading);
       // Cavalier : pas, trot, puis galop dont la vitesse suit la poussée du joystick (galop de travail → galop allongé à

@@ -18,7 +18,7 @@ export const PARKS = {
   pole: { x: 311, z: -177, r: 13, name: 'le parking des camions du Pôle International' },
 };
 // Secrétariat du concours (sous tente, à l'entrée du Pôle).
-export const SECRETARIAT = { x: 304, z: -198 };
+export const SECRETARIAT = { x: 288, z: -179 };
 
 const P = (g) => g.player;
 const T = (g) => g.player.truck;
