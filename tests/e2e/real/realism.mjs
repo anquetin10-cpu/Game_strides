@@ -64,6 +64,26 @@ s = await state();
 check('cheval réaliste rattaché, cheval procédural masqué', s.horse.real && s.horse.layer === 2 ** 31, JSON.stringify(s.horse));
 check('cheval à l’arrêt : quatre sabots au sol', s.horse.hooves?.every((y) => y > 0.05 && y < 0.14), JSON.stringify(s.horse.hooves));
 
+// Personnes et chevaux proches : réalistes aussi (nombre et distance limités), modèles retirés à leur départ.
+const near = await step(async () => {
+  const g = window.__game, P = g.player.human;
+  const npc = g.spawnHuman({ top: '#2b3a55', pants: '#d8c9a8', boots: '#3a2a1e', skin: '#c99a74', hair: '#2a1d14' }, P.pos.x + 3, P.pos.z + 2, 0, {});
+  const horse = g.spawnHorse({ id: 'test', name: 'Test', coat: 'grey' }, P.pos.x - 4, P.pos.z + 3, 0, { saddle: false });
+  for (let i = 0; i < 40 && !(g.realism.bodies.has(npc) && g.realism.horses.has(horse)); i++) {
+    window.__auto.tick(1);
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  const res = { npc: g.realism.bodies.has(npc) && npc.mesh.layers.mask === 2 ** 31, horse: g.realism.horses.has(horse) && horse.mesh.layers.mask === 2 ** 31 };
+  const grey = g.realism.horses.get(horse)?.coat?.U.uBody.value.getHexString();
+  g.despawn(npc);
+  g.despawn(horse);
+  window.__auto.tick(2);
+  return { ...res, grey, gone: !g.realism.bodies.has(npc) && !g.realism.horses.has(horse) };
+});
+check('passant proche : modèle réaliste', near.npc, JSON.stringify(near));
+check('cheval proche : modèle réaliste à sa robe (gris)', near.horse && near.grey === '8f8d89', near.grey);
+check('départ : modèles réalistes retirés', near.gone);
+
 // À cheval : nouveau personnage (tenue avec casque), modèle réaliste reconstruit sans attente.
 await step(() => { const g = window.__game, p = g.player; g.mainHorse.setPosition(p.human.pos.x + 1.5, p.human.pos.z, 0); window.__auto.tick(2); p.mount(); });
 await tick(10);

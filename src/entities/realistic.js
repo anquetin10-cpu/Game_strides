@@ -56,8 +56,6 @@ export function realNow(id) {
   const g = ready[id];
   return g && cloneFn ? cloneFn(g.scene) : null;
 }
-export const loadRealHuman = (sex) => loadReal(sex === 'm' ? 'rider_m' : 'rider_f');
-export const realHumanNow = (sex) => realNow(sex === 'm' ? 'rider_m' : 'rider_f');
 
 const _q = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
@@ -78,13 +76,16 @@ export class RealBody {
     this.human = human;
     this.root = root;
     this.bones = {};
+    this.mats = [];
     root.traverse((o) => {
       if (o.isBone) this.bones[o.name] = o;
       if (o.isMesh) {
         o.castShadow = true;
         o.receiveShadow = true;
         o.frustumCulled = false;
-        const m = o.material;
+        // Matériaux propres à ce personnage (teintes de sa tenue), textures partagées.
+        const m = (o.material = o.material.clone());
+        this.mats.push(m);
         if (/^Hair/.test(m.name) || /Eyelash|Eyebrow/.test(m.name)) {
           m.alphaTest = 0.45;
           m.alphaToCoverage = true;
@@ -115,7 +116,7 @@ export class RealBody {
       else if (mat.name === 'Eyebrow' && o.hair) tint(mat, `#${new THREE.Color(o.hair).multiplyScalar(0.7).getHexString()}`);
       else if (mat.name === 'Cloth_shirt') tint(mat, o.top);
       else if (mat.name === 'Cloth_jeans') tint(mat, o.pants);
-      else if (mat.name === 'Cloth_boots') tint(mat, o.boots);
+      else if (mat.name === 'Cloth_boots' || mat.name === 'Cloth_tallboots') tint(mat, o.boots);
     });
     this._helmet(o.helmet);
   }
@@ -239,113 +240,125 @@ export class RealBody {
   dispose() {
     this.root.parent?.remove(this.root);
     this.human.mesh.layers.set(0);
+    for (const m of this.mats) m.dispose();
   }
 }
 
-// Gestion du réglage : rendu réaliste du personnage du joueur (prototype comparatif).
+// Gestion du réglage « Modèles 3D » : rendu réaliste du joueur, de son cheval, et des personnes et chevaux proches
+// de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
+const NEAR = { humans: 8, horses: 5, humanDist: 30, horseDist: 45, margin: 10 };
+
 export class Realism {
   constructor(game) {
     this.game = game;
-    this.body = null;
-    this.loading = null;
-    this.failed = false;
+    this.bodies = new Map(); // personnage → RealBody
     this.horses = new Map(); // cheval → RealHorse
+    this.failed = false;
     this.horseFailed = false;
-    this.horseLoading = false;
+    this.loading = new Set();
   }
 
   get enabled() {
     return this.game.save.data.settings.characters === 'real';
   }
 
-  set(mode) {
-    this.game.save.data.settings.characters = mode;
-    if (mode !== 'real' && this.body) {
-      this.body.dispose();
-      this.body = null;
-    }
-    if (mode !== 'real') {
-      for (const r of this.horses.values()) r.dispose();
-      this.horses.clear();
-    }
+  // Modèle réaliste du personnage du joueur (s'il est chargé).
+  get body() {
+    return this.bodies.get(this.game.player?.human) || null;
   }
 
-  // Chevaux réalistes : cheval du joueur et cheval monté (les autres chevaux restent procéduraux).
-  updateHorses() {
-    if (this.horseFailed) return;
-    const g = this.game;
-    const want = new Set([g.mainHorse, g.player?.horse].filter((h) => h && g.horses.includes(h)));
-    for (const [h, r] of this.horses) {
-      if (want.has(h)) continue;
+  set(mode) {
+    this.game.save.data.settings.characters = mode;
+    if (mode === 'real') return;
+    for (const r of this.bodies.values()) r.dispose();
+    for (const r of this.horses.values()) r.dispose();
+    this.bodies.clear();
+    this.horses.clear();
+  }
+
+  // Chargement en tâche de fond (une fois par fichier) ; échec : modèles classiques et message.
+  _load(id, kind) {
+    if (this.loading.has(id)) return;
+    this.loading.add(id);
+    loadReal(id).then(
+      () => this.loading.delete(id),
+      (e) => {
+        console.warn('Modèle réaliste indisponible', id, e);
+        this.loading.delete(id);
+        if (kind === 'horse') this.horseFailed = true;
+        else this.failed = true;
+        this.game.hud?.toast(kind === 'horse' ? 'Cheval réaliste indisponible : affichage classique.' : 'Personnage réaliste indisponible : affichage classique.');
+      },
+    );
+  }
+
+  // Entités voulues : toujours `always`, puis les plus proches de la caméra (déjà réalistes : marge en plus).
+  _wanted(list, always, current, max, dist) {
+    const cam = this.game.camera.position;
+    const out = new Set(always.filter(Boolean));
+    const near = [];
+    for (const e of list) {
+      if (out.has(e) || !e.mesh?.parent) continue;
+      const d = Math.hypot(e.mesh.position.x - cam.x, e.mesh.position.z - cam.z);
+      const lim = dist + (current.has(e) ? NEAR.margin : 0);
+      if (d < lim) near.push([d, e]);
+    }
+    near.sort((a, b) => a[0] - b[0]);
+    for (const [, e] of near.slice(0, max)) out.add(e);
+    return out;
+  }
+
+  // Synchronise une famille (personnages ou chevaux) : retire, crée (une création par image au plus), met à jour.
+  _sync(map, want, make) {
+    for (const [e, r] of map) {
+      if (want.has(e)) continue;
       r.dispose();
-      this.horses.delete(h);
+      map.delete(e);
     }
-    for (const h of want) {
-      if (this.horses.has(h)) continue;
-      const root = realNow('horse');
-      if (root) {
-        this.horses.set(h, new RealHorse(h, root));
-        continue;
+    let created = false;
+    for (const e of want) {
+      if (map.has(e)) continue;
+      const r = make(e, created);
+      if (r) {
+        map.set(e, r);
+        created = true;
       }
-      if (this.horseLoading) continue;
-      this.horseLoading = true;
-      loadReal('horse').then(
-        () => {
-          this.horseLoading = false;
-        },
-        (e) => {
-          console.warn('Cheval réaliste indisponible', e);
-          this.horseFailed = true;
-          this.horseLoading = false;
-          this.game.hud?.toast('Cheval réaliste indisponible : affichage classique.');
-        },
-      );
     }
-    for (const r of this.horses.values()) r.update();
+    for (const r of map.values()) r.update();
   }
 
   // Appelé à chaque image avant le rendu.
   update() {
     if (!this.enabled) return;
-    this.updateHorses();
-    if (this.failed) return;
-    const human = this.game.player?.human;
-    if (!human) return;
-    // Nouveau personnage (changement de tenue, cavalière/cavalier) : nouveau modèle.
-    if (this.body && this.body.human !== human) {
-      this.body.dispose();
-      this.body = null;
+    const g = this.game, P = g.player;
+    if (!this.horseFailed) {
+      const want = this._wanted(g.horses, [g.mainHorse, P?.horse].filter((h) => h && g.horses.includes(h)), this.horses, NEAR.horses, NEAR.horseDist);
+      this._sync(this.horses, want, (h, busy) => {
+        const root = !busy || h === g.mainHorse ? realNow('horse') : null;
+        if (!root) {
+          this._load('horse', 'horse');
+          return null;
+        }
+        return new RealHorse(h, root);
+      });
     }
-    if (!this.body) {
-      const now = realHumanNow(human.sex);
-      if (now) {
-        this.loading = null;
-        this.body = new RealBody(human, now);
-        this.body.update();
-        return;
+    if (!this.failed) {
+      const want = this._wanted(g.humans, [P?.human], this.bodies, NEAR.humans, NEAR.humanDist);
+      this._sync(this.bodies, want, (hu, busy) => {
+        const id = hu.sex === 'm' ? 'rider_m' : 'rider_f';
+        // Le joueur change de personnage à chaque tenue : modèle reconstruit sans attendre.
+        const root = !busy || hu === P?.human ? realNow(id) : null;
+        if (!root) {
+          this._load(id, 'human');
+          return null;
+        }
+        return new RealBody(hu, root);
+      });
+      for (const [hu, r] of this.bodies) {
+        if (r.outfit === hu.outfit) continue;
+        r.outfit = hu.outfit;
+        r.applyOutfit(hu.outfit);
       }
-      if (this.loading?.human === human) return;
-      const job = { human };
-      this.loading = job;
-      loadRealHuman(human.sex).then(
-        (root) => {
-          if (this.loading !== job || this.game.player?.human !== human || !this.enabled) return;
-          this.loading = null;
-          this.body = new RealBody(human, root);
-        },
-        (e) => {
-          console.warn('Personnage réaliste indisponible', e);
-          this.failed = true;
-          this.loading = null;
-          this.game.hud?.toast('Personnage réaliste indisponible : affichage classique.');
-        },
-      );
-      return;
     }
-    if (this.body.outfit !== human.outfit) {
-      this.body.outfit = human.outfit;
-      this.body.applyOutfit(human.outfit);
-    }
-    this.body.update();
   }
 }

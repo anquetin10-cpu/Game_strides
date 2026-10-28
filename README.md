@@ -121,8 +121,12 @@ réaliste :
   trot, galop, saut, refus, broute), avec la robe de chaque cheval (bai, alezan, gris, noir, balzanes, liste) et des
   sabots posés au sol par cinématique inverse.
 
-Les modèles classiques restent en place, cachés : revenir à « Classiques » rétablit l'affichage d'origine. Les autres
-chevaux, les passants et les véhicules ne changent pas encore.
+- **les personnes et chevaux proches** (8 personnes à moins de 30 m, 5 chevaux à moins de 45 m, les plus proches de
+  la caméra) passent aussi en réaliste, chacun avec sa tenue ou sa robe ; au-delà, modèles classiques ;
+- **bottes d'équitation** hautes moulées sur la jambe (pantalon rentré dedans), à la couleur de la tenue.
+
+Les modèles classiques restent en place, cachés : revenir à « Classiques » rétablit l'affichage d'origine. Les
+véhicules ne changent pas encore.
 
 Les modèles (`public/real/*.glb`, compression meshopt, textures WebP ; personnages ≈ 2,5 Mo chacun, cheval 3,4 Mo)
 sont chargés à part, seulement quand le mode réaliste est choisi. Ils se régénèrent avec

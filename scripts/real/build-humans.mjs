@@ -85,19 +85,36 @@ function bakeMorphs(prim, names, weights) {
 
 // Squelette recalé sur la morphologie : têtes des os = position de base + Σ poids × décalage (sidecar joints.json),
 // rotations locales conservées, matrices de liaison recalculées.
-function refitSkeleton(doc, joints, weights) {
-  const skin = doc.getRoot().listSkins()[0];
-  const nodes = skin.listJoints();
+// Poids des formes pour le squelette : formes demandées + correctifs croisés.
+function jointWeights(joints, morphW) {
+  const jw = { ...morphW };
+  for (const k of Object.keys(joints.morphs)) {
+    const m = /^corr_(.+)__(.+)$/.exec(k);
+    if (m && morphW[m[1]] && morphW[m[2]]) jw[k] = morphW[m[1]] * morphW[m[2]];
+  }
+  return jw;
+}
+// Position de chaque os sur la morphologie choisie.
+function jointTargets(joints, morphW) {
+  const weights = jointWeights(joints, morphW);
   const target = {};
-  for (const n of nodes) {
-    const name = n.getName();
-    const p = (joints.bones[name] || [0, 0, 0]).slice();
+  for (const name of Object.keys(joints.bones)) {
+    const p = joints.bones[name].slice();
     for (const [m, w] of Object.entries(weights)) {
       const d = joints.morphs[m]?.[name];
       if (d && w) for (let k = 0; k < 3; k++) p[k] += w * d[k];
     }
     target[name] = p;
   }
+  return target;
+}
+
+function refitSkeleton(doc, joints, morphW) {
+  const skin = doc.getRoot().listSkins()[0];
+  const nodes = skin.listJoints();
+  const all = jointTargets(joints, morphW);
+  const target = {};
+  for (const n of nodes) target[n.getName()] = all[n.getName()] || [0, 0, 0];
   // Ordre parent → enfant (les nœuds hors squelette gardent leur matrice).
   const world = new Map();
   const visit = (n, parentW) => {
@@ -135,6 +152,70 @@ function hideCoveredSkin(prim, mask) {
   }
   idx.setArray(new Uint32Array(keep));
   return (ia.length - keep.length) / 3;
+}
+
+// Bottes d'équitation : tige moulée sur la jambe (peau du corps de la cheville au-dessous du genou, poussée vers
+// l'extérieur, mêmes poids de peau), évasée en haut ; pantalon rentré dans la botte (masqué sous la tige).
+function ridingBootShafts(doc, bodyPrim, target, mat) {
+  const P = bodyPrim.getAttribute('POSITION').getArray();
+  const N = bodyPrim.getAttribute('NORMAL').getArray();
+  const J = bodyPrim.getAttribute('JOINTS_0');
+  const W = bodyPrim.getAttribute('WEIGHTS_0');
+  const I = bodyPrim.getIndices().getArray();
+  const knee = (target.calf_l[1] + target.calf_r[1]) / 2;
+  const ankle = (target.foot_l[1] + target.foot_r[1]) / 2;
+  const top = knee - 0.045, bottom = ankle - 0.03;
+  const inside = (v) => P[v * 3 + 1] > bottom && P[v * 3 + 1] < top && Math.abs(P[v * 3]) > 0.02;
+  const map = new Map();
+  const idx = [];
+  for (let t = 0; t < I.length; t += 3) {
+    if (!inside(I[t]) || !inside(I[t + 1]) || !inside(I[t + 2])) continue;
+    for (let k = 0; k < 3; k++) {
+      const v = I[t + k];
+      if (!map.has(v)) map.set(v, map.size);
+      idx.push(map.get(v));
+    }
+  }
+  const n = map.size;
+  const pos = new Float32Array(n * 3), nrm = new Float32Array(n * 3);
+  const jn = new (J.getArray().constructor)(n * 4), wt = new Float32Array(n * 4);
+  const ja = J.getArray(), wa = W.getArray();
+  const wq = !W.getNormalized() ? 1 : W.getComponentType() === 5121 ? 1 / 255 : W.getComponentType() === 5123 ? 1 / 65535 : 1;
+  for (const [v, i] of map) {
+    const y = P[v * 3 + 1];
+    // Épaisseur : cuir et pantalon dessous ; tige évasée sur les derniers centimètres.
+    const off = 0.011 + 0.006 * Math.max(0, (y - (top - 0.06)) / 0.06);
+    for (let k = 0; k < 3; k++) {
+      pos[i * 3 + k] = P[v * 3 + k] + N[v * 3 + k] * off;
+      nrm[i * 3 + k] = N[v * 3 + k];
+    }
+    for (let k = 0; k < 4; k++) {
+      jn[i * 4 + k] = ja[v * 4 + k];
+      wt[i * 4 + k] = wa[v * 4 + k] * wq;
+    }
+  }
+  const buf = doc.getRoot().listBuffers()[0];
+  const prim = doc.createPrimitive()
+    .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(pos).setBuffer(buf))
+    .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(nrm).setBuffer(buf))
+    .setAttribute('JOINTS_0', doc.createAccessor().setType('VEC4').setArray(jn).setBuffer(buf))
+    .setAttribute('WEIGHTS_0', doc.createAccessor().setType('VEC4').setArray(wt).setBuffer(buf))
+    .setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(idx)).setBuffer(buf))
+    .setMaterial(mat);
+  return { prim, top, tris: idx.length / 3 };
+}
+
+// Retire les triangles d'un vêtement entièrement sous une hauteur (rentré dans la botte).
+function tuckBelow(prim, y) {
+  const P = prim.getAttribute('POSITION').getArray();
+  const idx = prim.getIndices();
+  const ia = idx.getArray();
+  const keep = [];
+  for (let t = 0; t < ia.length; t += 3) {
+    if (P[ia[t] * 3 + 1] < y && P[ia[t + 1] * 3 + 1] < y && P[ia[t + 2] * 3 + 1] < y) continue;
+    keep.push(ia[t], ia[t + 1], ia[t + 2]);
+  }
+  idx.setArray(new Uint32Array(keep));
 }
 
 async function build(id, cfg) {
@@ -184,13 +265,22 @@ async function build(id, cfg) {
   for (const mesh of root.listMeshes()) {
     const names = mesh.getExtras()?.targetNames || [];
     const w = weightsFor(names, morphW);
-    for (const prim of mesh.listPrimitives()) {
-      bakeMorphs(prim, names, w);
-      if (mesh.getName() === 'base') culled += hideCoveredSkin(prim, hidden);
-      prim.setAttribute('_CCZONE', null);
-    }
+    for (const prim of mesh.listPrimitives()) bakeMorphs(prim, names, w);
     mesh.setWeights([]);
     mesh.setExtras({});
+  }
+  // Bottes d'équitation (tige) sur la peau entière, avant de masquer la peau couverte.
+  const bodyMesh = root.listMeshes().find((m) => m.getName() === 'base');
+  const bootMat = doc.createMaterial('Cloth_tallboots').setBaseColorFactor([1, 1, 1, 1]).setRoughnessFactor(0.36).setMetallicFactor(0).setExtras({ tint: { default: '#121214', gain: 1 } });
+  const jointsNow = jointTargets(joints, cfg.morphs);
+  const shaft = ridingBootShafts(doc, bodyMesh.listPrimitives()[0], jointsNow, bootMat);
+  bodyMesh.addPrimitive(shaft.prim);
+  for (const mesh of root.listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      if (mesh.getName() === 'base' && prim !== shaft.prim) culled += hideCoveredSkin(prim, hidden);
+      if (/jeans/i.test(prim.getMaterial()?.getName() || '')) tuckBelow(prim, shaft.top - 0.02);
+      prim.setAttribute('_CCZONE', null);
+    }
   }
   for (const n of root.listNodes()) if (['Teeth', 'Tongue'].includes(n.getMesh()?.getName())) n.dispose();
   for (const a of root.listAnimations()) a.dispose();
@@ -201,20 +291,14 @@ async function build(id, cfg) {
     n.dispose();
   };
   for (const n of root.listNodes()) if (n.getName() === 'Root' && !keep.has(n)) drop(n);
-  const jw = {};
-  for (const [k, v] of Object.entries(morphW)) jw[k] = v;
-  for (const k of Object.keys(joints.morphs)) {
-    const m = /^corr_(.+)__(.+)$/.exec(k);
-    if (m && morphW[m[1]] && morphW[m[2]]) jw[k] = morphW[m[1]] * morphW[m[2]];
-  }
-  refitSkeleton(doc, joints, jw);
+  refitSkeleton(doc, joints, morphW);
   await doc.transform(unpartition(), prune(), dedup(), reorder({ encoder: MeshoptEncoder }), meshopt({ encoder: MeshoptEncoder, level: 'medium', quantizationVolume: 'scene' }));
   mkdirSync(OUT, { recursive: true });
   const file = join(OUT, `${id}.glb`);
   await io.write(file, doc);
   let tris = 0;
   for (const m of root.listMeshes()) for (const p of m.listPrimitives()) tris += p.getIndices().getCount() / 3;
-  console.log(`${id}: ${(readFileSync(file).length / 1e6).toFixed(2)} Mo, ${tris} triangles, ${culled} triangles de peau masqués`);
+  console.log(`${id}: ${(readFileSync(file).length / 1e6).toFixed(2)} Mo, ${tris} triangles, ${culled} triangles de peau masqués, bottes ${shaft.tris} triangles`);
 }
 
 for (const [id, cfg] of Object.entries(CHARACTERS)) await build(id, cfg);

@@ -118,6 +118,7 @@ export class RealHorse {
     this.root = root;
     this.bones = {};
     this.parts = {};
+    this.mats = [];
     const mk = horse.mesh.userData.markings;
     root.traverse((o) => {
       if (o.isBone) this.bones[o.name] = o;
@@ -126,6 +127,8 @@ export class RealHorse {
       o.receiveShadow = true;
       o.frustumCulled = false;
       this.parts[o.name] = o;
+      // Robe et crins propres à ce cheval (textures partagées).
+      if (o.material.name === 'Horse' || o.material.name === 'Hair') this.mats.push((o.material = o.material.clone()));
       const m = o.material;
       if (m.name === 'Horse') this.coat = coatMaterial(m, horse.def.coat, mk);
       else if (m.name === 'Hair') {
@@ -296,5 +299,6 @@ export class RealHorse {
     this.root.parent?.remove(this.root);
     this.setActive(false);
     this.root.visible = false;
+    for (const m of this.mats) m.dispose();
   }
 }
