@@ -48,7 +48,7 @@ await page.goto(`${base}/?autostart`, { timeout: 180000 });
 await page.evaluate(() => {
   const sc = (pen, time, at) => ({ pen, time, score: pen * 100000 + time, horse: 'Ubris', at });
   localStorage.setItem('__fakedb', JSON.stringify({
-    'scores/u_lea': { pseudo: 'Léa', boards: { beach_sprint: sc(0, 48.2, 1), 'defi-pole-v3': sc(0, 39.5, 1) }, updatedAt: 1 },
+    'scores/u_lea': { pseudo: 'Léa', boards: { beach_sprint: sc(0, 48.2, 1), 'defi-pole-v4': sc(0, 39.5, 1) }, updatedAt: 1 },
     'scores/u_max': { pseudo: 'Maxime', boards: { beach_sprint: sc(0, 75.0, 2) }, updatedAt: 2 },
     'scores/u_tom': { pseudo: 'Tom', boards: { beach_sprint: sc(0, 90.5, 3) }, updatedAt: 3 },
   }));

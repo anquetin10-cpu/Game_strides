@@ -56,6 +56,23 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   tenue de concours (veste, chemise et culotte blanches) seulement sur le terrain d'un concours.
 - **Box du cheval** : à l'Écurie du Val, on rentre son cheval au box pour qu'il récupère (eau, foin, repos) et on
   va l'y chercher.
+- **Épreuves de saut d'obstacles** (Pôle International), pensées pour l'iPhone à deux pouces :
+  - **parcours dessiné** de 10 obstacles numérotés (verticaux, oxers, mur) avec un **double 7A – 7B**, changement de
+    main, lignes, départ et arrivée matérialisés (fanions blancs à gauche, rouges à droite) ; obstacles, plan, tracé
+    conseillé au sol, longueur (248 m) et temps accordé viennent des mêmes données (`src/gameplay/csoCourse.js`) ;
+  - **déroulé de concours** : présentation (épreuve, hauteur, cheval, temps accordé) et plan consultable, annonce à
+    l'entrée en piste, cloche (45 s pour prendre le départ), chrono au centième lancé à la ligne de départ, arrivée
+    applaudie, bilan (chrono, fautes et leur cause, pénalités de temps, classement des concurrents, récompense une
+    seule fois), puis **Recommencer**, **S'entraîner** ou quitter ; barème A au chrono (4 points par barre ou premier
+    refus, élimination au second, 1 point par seconde entamée), erreurs de parcours signalées ;
+  - **saut qui dépend de la distance d'appel** (`src/gameplay/jumpModel.js`) : un appui = un saut, depuis la position,
+    la vitesse et le cap du moment ; la trajectoire (parabole, longueur ajustée par le cheval de −24 % à +12 %) est
+    jugée barre par barre (largeur de l'oxer comprise) : bon appel = saut propre, un peu long ou un peu près = ça
+    passe encore (barre effleurée qui tinte), bien trop loin ou trop près = barre, ou refus tout contre ; vitesse et
+    angle réduisent la marge ; même geste, même résultat ;
+  - **aide à l'appel** (Réglages → Aide au saut : complète, bouton seul, aucune) : bouton SAUT « Trop loin » (ambre
+    »), « Saute ! » (vert ✓), « Trop près » (rouge !), zone d'appel au sol calculée par le même modèle, repère du
+    prochain obstacle ; tracé au sol désactivable ; entraînement rapide vertical + oxer au paddock d'échauffement.
 - **Concours de jour (ou le soir sous les projecteurs)** : épreuves de 8 h 30 à 21 h ; engagé en soirée, on passe le
   lendemain matin et on peut dormir à la maison de l'Écurie du Val jusqu'à 7 h.
 - **Carburant** : chaque véhicule consomme selon son moteur et sa conduite (jauge, autonomie et consommation moyenne au
@@ -105,6 +122,8 @@ node tests/e2e/barn.mjs       # écurie : entrer, allée, boxes, sellerie, camé
 node tests/e2e/fuel.mjs       # carburant : consommation, plein à la station, panne sèche
 node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)
 node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sabots au sol, volant, retour au classique
+node tests/e2e/cso.mjs        # épreuve de CSO complète au joystick : sans faute, mauvais appels, double, refus, élimination
+node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans tests/e2e/out/cso/
 ```
 
 Par défaut, pas d'assets externes : géométrie, textures et sons sont générés par le code (Three.js + WebAudio).

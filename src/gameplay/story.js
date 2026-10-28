@@ -4,6 +4,7 @@ import { HOME, HARAS, POLE, DUNES, GATIEN, TOWN, homeBoxes, HIPPO_SITE } from '.
 import { POI, HIPPO } from '../world/layout.js';
 import { courseSteps, totalPenalties, checkpointSteps, beachRingPoints, pathLength, raceSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
+import { csoHeights } from './csoCourse.js';
 import { GrazeAI, FollowAI, FleeAI } from '../entities/horse.js';
 import { HORSES } from './data.js';
 import { formatMoney, dec } from '../core/math.js';
@@ -638,7 +639,7 @@ export const STORY = [
         start: { x: CSO_START.x, z: CSO_START.z },
         finish: CSO_FINISH,
         timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi),
-        heights: [1.35, 1.4, 1.35, 1.4, 1.4, 1.45, 1.4, 1.45, 1.4],
+        heights: csoHeights(1.4),
         intro: [{ who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: `Neuf obstacles jusqu’à 1,45 m, ${COURSE_LENGTH.cso} m à 375 m/min : temps accordé ${timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)} s. Suis les numéros et franchis la ligne d’arrivée après le 9. À toi !` }],
       }).concat([
         S.custom({
@@ -669,7 +670,7 @@ export const STORY = [
         start: { x: CSO_START.x, z: CSO_START.z },
         finish: CSO_FINISH,
         timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp),
-        heights: [1.5, 1.55, 1.5, 1.6, 1.55, 1.6, 1.55, 1.6, 1.55],
+        heights: csoHeights(1.55),
         intro: [
           { who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: `Grand Prix CSI 5★. Le meilleur temps provisoire : Van Dijk, 4 points en ${dec(bestRival.time)} s.` },
           { who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: 'Un sans-faute, ou 4 points plus vite que lui, et la victoire est à toi.' },

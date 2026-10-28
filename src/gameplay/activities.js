@@ -1,8 +1,10 @@
 // Activités libres chronométrées (entraînements) : départ sur place, meilleurs temps sauvegardés.
 import * as THREE from 'three';
 import { courseSteps, checkpointSteps, beachRingPoints, ovalPoint, hippoLapPoints, HIPPO_LAP, totalPenalties, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
-import { CSO_FINISH, CSO_START } from './obstacles.js';
-import { GATIEN } from '../world/sites.js';
+import { CSO_FINISH, CSO_START, CSO_GATE } from './obstacles.js';
+import { CourseAids } from './courseAids.js';
+import { csoHeights } from './csoCourse.js';
+import { GATIEN, POLE } from '../world/sites.js';
 import { HIPPO } from '../world/layout.js';
 import { formatTime } from '../core/math.js';
 import { box, cyl, partsToGeo } from '../world/builders.js';
@@ -25,10 +27,21 @@ export class Activities {
         },
       },
       {
-        id: 'cso_train', name: 'Parcours du Pôle', kind: 'CSO', desc: 'Les 9 obstacles du Pôle International, hauteur entraînement.',
-        start: { x: CSO_START.x, z: CSO_START.z },
-        build: (g, run, S) => courseSteps(g, run, S, { courseId: 'cso', start: CSO_START, finish: CSO_FINISH, timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: [1.1, 1.1, 1.1, 1.15, 1.1, 1.15, 1.1, 1.15, 1.1] }),
+        id: 'cso_train', name: 'Parcours du Pôle', kind: 'CSO', desc: '10 obstacles et un double au Pôle International, 1,10 m, barème A au chrono.',
+        start: { x: CSO_GATE.x, z: CSO_GATE.z },
+        marker: { x: CSO_GATE.x + 6, z: CSO_GATE.z + 7 },
+        build: (g, run, S) => courseSteps(g, run, S, {
+          courseId: 'cso', start: CSO_START, finish: CSO_FINISH, timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: csoHeights(1.1),
+          title: 'Prix STRIDES · Parcours du Pôle', className: 'Amateur 1,10 m', soft: true,
+          result: { cls: { id: 'am2', name: 'Prix STRIDES', prizes: [] }, seed: 5150, title: 'Prix STRIDES', continueLabel: 'Quitter l’épreuve' },
+        }),
         penalties: true,
+      },
+      {
+        id: 'cso_warmup', name: 'Entraînement à l’abord', kind: 'CSO', desc: 'Un vertical et un oxer au paddock du Pôle, sans enjeu : trouve la bonne distance d’appel.',
+        start: { x: POLE.warmup.x + 12, z: POLE.warmup.z },
+        build: (g, run, S) => trainingSteps(g, run, S),
+        noRecord: true,
       },
       {
         id: 'xc_train', name: 'Cross de Saint-Gatien', kind: 'Cross', desc: '10 obstacles en forêt, mare comprise.',
@@ -92,10 +105,13 @@ export class Activities {
       pay: 0, xp: 15, noReview: true, noCount: true,
       steps: (game, run, S) => {
         const steps = a.build(game, run, S);
+        if (a.noRecord) return steps;
         steps.push(
           S.custom({
             text: '',
             start(r) {
+              // Épreuve quittée après une élimination : pas de chrono à enregistrer.
+              if (r.data.course?.eliminated) return;
               const t = r.data.course ? r.data.course.t : r.t;
               const pen = a.penalties ? totalPenalties(r) : 0;
               const score = t + pen;
@@ -116,4 +132,72 @@ export class Activities {
     };
     g.missions.start({ id: `act:${a.id}`, def, story: false, vertical: 'EVENEMENTS', category: 'Entraînement', title: a.name, pay: 0, xp: 15, place: a.start, placeName: a.name });
   }
+
+  // Entraînement rapide (depuis le bilan d'une épreuve « S'entraîner », ou le poteau du paddock).
+  startTraining() {
+    const g = this.game;
+    if (g.missions.active) return;
+    this.start(this.defs.find((a) => a.id === 'cso_warmup'));
+  }
+}
+
+// Entraînement à l'abord : vertical et oxer du paddock d'échauffement, aide à l'appel et zone au sol, explication de
+// chaque saut (marge, ou cause de la faute) ; barres remontées aussitôt ; on termine quand on veut.
+function trainingSteps(game, run, S) {
+  const ob = game.obstacles;
+  const st = { jumps: 0, clean: 0, done: false };
+  run.data.training = st;
+  let aids = null;
+  let offs = [];
+  return [
+    S.goto({ x: POLE.warmup.x, z: POLE.warmup.z }, 'Rejoins le paddock d’échauffement du Pôle', { r: 18, mode: 'ride' }),
+    S.custom({
+      text: () => `Entraînement : ${st.clean} saut${st.clean > 1 ? 's' : ''} sans faute sur ${st.jumps}`,
+      hint: 'Vertical au sud, oxer au nord. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.',
+      hintMs: 7000,
+      start(r) {
+        ob.resetRails('warmup');
+        const aidOn = () => game.save.data.settings.jumpAid || 'full';
+        game.course = { running: false, camera: true, jumpTiming: () => (aidOn() === 'off' ? 'none' : ob.timing(game.player.horse)) };
+        aids = new CourseAids(game, 'warmup');
+        const say = (txt) => game.hud.toast(txt);
+        offs = [
+          game.bus.on('obstacle:clear', ({ obstacle, margin }) => {
+            if (obstacle.course !== 'warmup') return;
+            st.jumps++;
+            st.clean++;
+            say(`Sans faute · ${Math.round(margin * 100)} cm de marge${margin < 0.12 ? ' (juste : appel un peu long ou un peu près)' : ''}`);
+          }),
+          game.bus.on('obstacle:fault', ({ obstacle, causeText }) => {
+            if (obstacle.course !== 'warmup') return;
+            st.jumps++;
+            say(`Barre · ${causeText || 'appel à revoir'}`);
+          }),
+          game.bus.on('obstacle:refusal', ({ obstacle }) => {
+            if (obstacle.course !== 'warmup') return;
+            say('Refus : trop près, appelle plus tôt');
+          }),
+        ];
+        game.interact.add('train:end', { label: 'Terminer', icon: 'event', r: 999, priority: 2, modes: ['ride', 'foot'], getPos: () => game.player.focus.pos, action: () => (st.done = true) });
+      },
+      update() {
+        const h = game.player.horse;
+        const tg = ob.target(h);
+        const next = tg && tg.o.course === 'warmup' ? tg.o : null;
+        const aidMode = game.save.data.settings.jumpAid || 'full';
+        aids?.update(1 / 30, { next, showLine: false, showZone: aidMode === 'full' });
+        return st.done;
+      },
+      end(r) {
+        offs.forEach((f) => f());
+        offs = [];
+        aids?.dispose();
+        aids = null;
+        game.course = null;
+        game.interact.remove('train:end');
+        r.resultTitle = 'Entraînement terminé';
+        r.resultBody = `${st.clean} saut${st.clean > 1 ? 's' : ''} sans faute sur ${st.jumps}.`;
+      },
+    }),
+  ];
 }

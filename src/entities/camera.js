@@ -38,6 +38,8 @@ export class FollowCamera {
     }
     const mode = focus.mode;
     const now = this.game.time;
+    // Parcours de CSO : caméra un peu plus haute et plus reculée, pour voir l'abord et préparer l'obstacle suivant.
+    const course = mode === 'ride' && !!this.game.course?.camera;
     if (look.dx || look.dy) {
       this.yaw -= look.dx * 0.0062 * this.sens;
       this.pitch = clamp(this.pitch + look.dy * 0.0045 * this.sens, -0.12, 1.15);
@@ -57,12 +59,12 @@ export class FollowCamera {
         if (s !== this.swing) d -= s * 2 * Math.PI;
       } else this.swing = 0;
       this.yaw += d * (1 - Math.exp(-k * dt));
-      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : 0.28, 1.2, dt);
+      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : course ? 0.33 : 0.28, 1.2, dt);
     } else this.swing = 0;
-    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? 6.6 : 4.6;
+    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? (course ? 8.2 : 6.6) : 4.6;
     this.targetDist = base + (mode === 'ride' ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
     // Hauteur du pivot lissée : monter ou descendre (de cheval, du camion) ne fait plus sauter la caméra d'une image à l'autre.
-    const height = mode === 'drive' ? (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? 2.35 : 1.55;
+    const height = mode === 'drive' ? (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? 2.6 : 2.35) : 1.55;
     this.height = instant ? height : damp(this.height, height, 4, dt);
     this.smoothTarget.x = instant ? focus.pos.x : damp(this.smoothTarget.x, focus.pos.x, 18, dt);
     this.smoothTarget.z = instant ? focus.pos.z : damp(this.smoothTarget.z, focus.pos.z, 18, dt);

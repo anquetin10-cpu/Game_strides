@@ -1,4 +1,4 @@
-// Défi rejouable defi-pole-v3 (lot C) : accès par l'app Activités et par le panneau du Pôle, règles avant le départ,
+// Défi rejouable defi-pole-v4 (lot C) : accès par l'app Activités et par le panneau du Pôle, règles avant le départ,
 // tentative complète, résultat et record, relance aux conditions identiques, élimination, monde du joueur restauré,
 // chrono figé pendant téléphone / dialogue / écran de choix, carte de résultat téléchargée, mesure unique par
 // tentative, reprise après rechargement pendant un défi, affichage 667×308, 568×260 et 844×390.
@@ -34,7 +34,8 @@ const world = () => page.evaluate(() => {
   const g = window.__game; const p = g.player; const f = p.focus.pos;
   return { gameTime: g.save.data.gameTime, mode: p.mode, x: f.x, z: f.z, horse: p.horse?.def.id, main: g.mainHorse.def.id, active: g.save.data.activeHorse, onMain: p.horse === g.mainHorse, rain: g.sky.rain, wet: g.sky.wet, cso: g.obstacles.ofCourse('cso').map((o) => o.h), horses: g.horses.filter((h) => h.def.id === 'defi-onyx').length, resume: g.save.data.challenges.resume };
 });
-const sameWorld = (a, z) => Math.abs(a.gameTime - z.gameTime) < 1e-6 && a.mode === z.mode && Math.hypot(a.x - z.x, a.z - z.z) < 0.6 && a.horse === z.horse && a.active === z.active && z.onMain && Math.abs(a.rain - z.rain) < 1e-6 && Math.abs(a.wet - z.wet) < 1e-6 && JSON.stringify(a.cso) === JSON.stringify(z.cso) && z.horses === 0 && z.resume === null;
+// Heure : à une image près (une image réelle peut passer entre la capture et l'ouverture du téléphone).
+const sameWorld = (a, z) => Math.abs(a.gameTime - z.gameTime) < 0.5 && a.mode === z.mode && Math.hypot(a.x - z.x, a.z - z.z) < 0.6 && a.horse === z.horse && a.active === z.active && z.onMain && Math.abs(a.rain - z.rain) < 1e-6 && Math.abs(a.wet - z.wet) < 1e-6 && JSON.stringify(a.cso) === JSON.stringify(z.cso) && z.horses === 0 && z.resume === null;
 const completedEvents = () => page.evaluate(() => window.__metrics.log.filter((e) => e.name === 'challenge_completed').map((e) => e.params));
 
 await boot(`${base}/?autostart=1`);
@@ -73,22 +74,24 @@ await page.waitForTimeout(700);
 await page.screenshot({ path: `${OUT}/challenge-rules-667.png` });
 txt = await page.evaluate(() => document.querySelector('.overlay .card')?.textContent || '');
 check('règle de classement expliquée avant le départ', /4 points par barre/.test(txt) && /premier refus/.test(txt) && /second refus/.test(txt) && /seconde entamée/.test(txt) && /chrono/.test(txt));
-check('conditions affichées (Onyx, 1,10 m, 11 h, 42 s, aide au saut)', /Onyx/.test(txt) && /1,10 m/.test(txt) && /11 h/.test(txt) && /42 s/.test(txt) && /Aide au saut/.test(txt));
+check('conditions affichées (Onyx, 1,10 m, 11 h, 43 s, aide au saut)', /Onyx/.test(txt) && /1,10 m/.test(txt) && /11 h/.test(txt) && /43 s/.test(txt) && /Aide au saut/.test(txt));
 let fitsRules = await page.evaluate(() => { const c = document.querySelector('.overlay .card').getBoundingClientRect(); const go = document.querySelector('[data-id="challenge-go"]').getBoundingClientRect(); return c.top >= 0 && c.bottom <= innerHeight + 0.5 && go.bottom <= innerHeight && go.right <= innerWidth; });
 check('écran des règles tenu dans 667×308 (bouton Départ visible)', fitsRules);
 await page.tap('[data-id="challenge-go"]');
 await page.waitForTimeout(300);
 await stop();
 let st = await page.evaluate(() => { const g = window.__game; return { def: g.missions.active?.def.challenge, phone: g.phone.isOpen, cond: g.challenge.lastConditions, ev: window.__metrics.log.filter((e) => e.name === 'second_activity_started').map((e) => e.params) }; });
-check('défi lancé depuis Activités', st.def === 'defi-pole-v3' && !st.phone);
+check('défi lancé depuis Activités', st.def === 'defi-pole-v4' && !st.phone);
 const c1 = st.cond;
-check('conditions : Onyx sans équipement, 11 h, dégagé, sol sec, 8 obstacles à 1,10 m, 42 s', c1 && c1.horse.name === 'Onyx' && c1.horse.mods.jump === 0 && c1.horse.speedMul === 1.13 && Math.abs(c1.hour - 11) < 1e-6 && c1.weather === 'Ensoleillé' && c1.rain === 0 && c1.wet === 0 && c1.obstacles.length === 8 && c1.heights.every((x) => Math.abs(x - 1.1) < 1e-9) && c1.timeAllowed === 42, JSON.stringify(c1));
+check('conditions : Onyx sans équipement, 11 h, dégagé, sol sec, 10 obstacles et un double à 1,10 m, 43 s', c1 && c1.horse.name === 'Onyx' && c1.horse.mods.jump === 0 && c1.horse.speedMul === 1.13 && Math.abs(c1.hour - 11) < 1e-6 && c1.weather === 'Ensoleillé' && c1.rain === 0 && c1.wet === 0 && c1.obstacles.length === 11 && c1.heights.every((x) => Math.abs(x - 1.1) < 1e-9) && c1.timeAllowed === 43, JSON.stringify(c1));
 check('second_activity_started { course: cso } (une mission déjà terminée)', st.ev.length === 1 && st.ev[0].course === 'cso', JSON.stringify(st.ev));
 
 // 2) Chrono figé pendant le téléphone, un dialogue et un écran de choix.
 const toCourse = await page.evaluate(() => {
   const A = window.__auto, g = window.__game; const run = g.missions.active;
   for (let i = 0; i < 400 && !(run.step?.kind === 'course' && run.data.course.running); i++) { A.solveStep(run); A.tick(1); }
+  // Le chrono part au passage de la ligne de départ.
+  A.solveStep(run);
   A.tick(30);
   return { kind: run.step?.kind, t: run.data.course.t };
 });
@@ -115,14 +118,14 @@ const run1 = await page.evaluate(() => {
   let done = null; const off = g.bus.on('mission:complete', ({ result }) => (done = result));
   for (let i = 0; i < 3000 && !done; i++) { if (g.missions.active !== run) break; A.solveStep(run); A.tick(2); }
   off();
-  return { done: !!done, res: run.data.challengeResult, log: A.log.slice(-4), card: !!document.querySelector('.ch-result'), rec: g.save.data.challenges.records['defi-pole-v3'] };
+  return { done: !!done, res: run.data.challengeResult, log: A.log.slice(-4), card: !!document.querySelector('.ch-result'), rec: g.save.data.challenges.records['defi-pole-v4'] };
 });
 check('tentative terminée, écran de résultat du défi', run1.done && run1.card && run1.res && !run1.res.eliminated, JSON.stringify(run1.res || run1.log));
-check('record personnel enregistré pour defi-pole-v3', run1.rec?.best?.attempt === run1.res?.attempt && run1.rec.attempts === 1, JSON.stringify(run1.rec?.best));
+check('record personnel enregistré pour defi-pole-v4', run1.rec?.best?.attempt === run1.res?.attempt && run1.rec.attempts === 1, JSON.stringify(run1.rec?.best));
 let post = await world();
 check('monde restauré après le défi (heure, météo, Comète, position, mode, parcours)', sameWorld(pre, post), JSON.stringify({ pre, post }));
 let ev = await completedEvents();
-check('challenge_completed émis une fois pour la tentative', ev.length === 1 && ev[0].attempt === run1.res.attempt && ev[0].challenge_version === 'defi-pole-v3' && ev[0].course === 'cso', JSON.stringify(ev));
+check('challenge_completed émis une fois pour la tentative', ev.length === 1 && ev[0].attempt === run1.res.attempt && ev[0].challenge_version === 'defi-pole-v4' && ev[0].course === 'cso', JSON.stringify(ev));
 await shot('challenge-result-667');
 txt = await page.evaluate(() => document.querySelector('.ch-result .card').textContent);
 check('résultat : pénalités, temps, record', /Pénalités/.test(txt) && /Temps/.test(txt) && /Record/.test(txt), txt.slice(0, 140));
@@ -134,7 +137,7 @@ await page.tap('[data-id="challenge-retry"]');
 await page.waitForTimeout(400);
 await stop();
 st = await page.evaluate(() => ({ def: window.__game.missions.active?.def.challenge, cond: window.__game.challenge.lastConditions }));
-check('relance immédiate depuis le résultat', st.def === 'defi-pole-v3');
+check('relance immédiate depuis le résultat', st.def === 'defi-pole-v4');
 check('deux tentatives successives : conditions identiques', JSON.stringify(st.cond) === JSON.stringify(c1), JSON.stringify({ c1, c2: st.cond }));
 const run2 = await page.evaluate(() => {
   const A = window.__auto, g = window.__game; const run = g.missions.active;
@@ -142,7 +145,7 @@ const run2 = await page.evaluate(() => {
   A.tick(20);
   g.player.horse.speed = 0; g.player.dismount();
   A.tick(4);
-  return { res: run.data.challengeResult, card: !!document.querySelector('.ch-result'), rec: g.save.data.challenges.records['defi-pole-v3'], title: document.querySelector('.ch-result h2')?.textContent };
+  return { res: run.data.challengeResult, card: !!document.querySelector('.ch-result'), rec: g.save.data.challenges.records['defi-pole-v4'], title: document.querySelector('.ch-result h2')?.textContent };
 });
 check('élimination : résultat « Éliminé », record inchangé', run2.card && run2.res?.eliminated && run2.title === 'Éliminé' && run2.rec.best.attempt === run1.res.attempt && run2.rec.attempts === 2, JSON.stringify({ title: run2.title, res: run2.res }));
 post = await world();
@@ -164,9 +167,9 @@ const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }
 const file = `${OUT}/challenge-card-download.png`;
 await dl.saveAs(file);
 const head = readFileSync(file).subarray(0, 24);
-check('image téléchargée (PNG 1080×1350)', /^defi-pole-v3-.*\.png$/.test(dl.suggestedFilename()) && head.readUInt32BE(16) === 1080 && head.readUInt32BE(20) === 1350 && statSync(file).size > 20000, `${dl.suggestedFilename()} ${statSync(file).size} o`);
+check('image téléchargée (PNG 1080×1350)', /^defi-pole-v4-.*\.png$/.test(dl.suggestedFilename()) && head.readUInt32BE(16) === 1080 && head.readUInt32BE(20) === 1350 && statSync(file).size > 20000, `${dl.suggestedFilename()} ${statSync(file).size} o`);
 ev = await page.evaluate(() => window.__metrics.log.filter((e) => e.name === 'result_share_requested').map((e) => e.params));
-check('result_share_requested { challenge_version, mode: download }', ev.length === 1 && ev[0].mode === 'download' && ev[0].challenge_version === 'defi-pole-v3', JSON.stringify(ev));
+check('result_share_requested { challenge_version, mode: download }', ev.length === 1 && ev[0].mode === 'download' && ev[0].challenge_version === 'defi-pole-v4', JSON.stringify(ev));
 // La carte n'envoie rien d'autre : pas d'URL inventée, texte de partage avec l'adresse publique sans paramètres.
 const shareTxt = await page.evaluate(async () => { const m = await import('/src/gameplay/challenge.js'); const g = window.__game; return m.shareText(m.DEFI_POLE_V1, g.save.data.challenges.last, m.publicUrl(location), 'Testeur 42'); });
 check('texte de partage : adresse publique de la partie sans paramètres', shareTxt.endsWith(`${new URL(base).origin}/`) && !shareTxt.includes('?'), shareTxt);
@@ -200,7 +203,7 @@ const res0 = await page.evaluate(() => { window.__game.challenge.start(); return
 await page.waitForTimeout(1200);
 await page.evaluate(() => window.__game.saveNow());
 await boot(`${base}/?autostart=1`);
-const after = await page.evaluate((ks) => { const g = window.__game; const d = g.save.data; return { gameTime: d.gameTime, resume: d.challenges.resume, pos: d.pos, keys: Object.keys(d.metrics.unique).filter((k) => k.startsWith('challenge_completed:')), again: ks.map((k) => window.__metrics.track('challenge_completed', { attempt: k.split(':')[1], challenge_version: 'defi-pole-v3', course: 'cso' })) }; }, attempts);
+const after = await page.evaluate((ks) => { const g = window.__game; const d = g.save.data; return { gameTime: d.gameTime, resume: d.challenges.resume, pos: d.pos, keys: Object.keys(d.metrics.unique).filter((k) => k.startsWith('challenge_completed:')), again: ks.map((k) => window.__metrics.track('challenge_completed', { attempt: k.split(':')[1], challenge_version: 'defi-pole-v4', course: 'cso' })) }; }, attempts);
 // Heure rétablie : celle du départ du défi (quelques secondes de jeu après la mesure), pas celle du défi (11 h, jour 2).
 check('rechargement pendant le défi : heure et position du joueur rétablies', res0.active && res0.gameTime - preReload.gameTime >= 0 && res0.gameTime - preReload.gameTime < 150 && after.gameTime - res0.gameTime >= 0 && after.gameTime - res0.gameTime < 150 && after.resume === null && Math.hypot(after.pos.x - preReload.x, after.pos.z - preReload.z) < 1, JSON.stringify({ t: [preReload.gameTime, res0.gameTime, after.gameTime], pos: after.pos }));
 check('tentatives déjà comptées : jamais recomptées après rechargement', attempts.length === 2 && after.keys.length === 2 && after.again.every((x) => x === false), JSON.stringify(after));

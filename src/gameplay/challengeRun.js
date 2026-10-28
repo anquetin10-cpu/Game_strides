@@ -159,6 +159,11 @@ export class Challenges {
       timeAllowed: cfg.timeAllowed,
       heights: cfg.obstacles.map(() => cfg.height),
       maxRefusals: cfg.rules.refusalsToEliminate,
+      // Le défi a son propre écran de règles et de résultat : on part directement de la ligne de départ.
+      gate: CSO_START,
+      present: false,
+      title: cfg.name,
+      jumpAid: cfg.jumpAid !== false,
     });
     // Élimination : la tentative se termine avec un résultat (et non un échec de mission).
     const course = steps.find((s) => s.kind === 'course');

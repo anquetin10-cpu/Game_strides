@@ -520,6 +520,8 @@ export class MissionManager {
       irl: def.irl ? `<b>Dans la vraie vie</b> — ${def.irl}` : null,
       levelUp: after.level > before.level ? { title: after.title, perk: LEVEL_PERKS[after.level] } : null,
     };
+    // Écran de résultat propre à l'épreuve (CSO : bilan, classement, Recommencer…), déjà affiché par la mission.
+    if (run.resultCustom) result.custom = run.resultCustom;
     if (tip) g.hud.toast(`Pourboire 5★ : +${formatMoney(tip)}`, 'money');
     g.bus.emit('mission:complete', { run, result });
     g.updateWallet();

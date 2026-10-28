@@ -51,9 +51,15 @@ export class HUD {
     this.objEl = h('div.objective.off', {}, this.objMain, this.objTimer);
     this.hintEl = h('div.hint.off');
     this.toastsEl = h('div.toasts');
+    // Tableau du parcours de CSO : chrono au centième, temps accordé, pénalités, obstacle suivant.
+    this.csoT = h('b.tab-num', { text: '0,00' });
+    this.csoTa = h('span.ta.tab-num');
+    this.csoPen = h('span.pen.tab-num');
+    this.csoNext = h('span.next');
+    this.csoEl = h('div.cso-board.hidden', {}, h('span.clock-ico', { text: '⏱' }), this.csoT, this.csoTa, this.csoPen, this.csoNext);
 
     // Bandeau du haut : minimap | objectif, astuce, toasts | portefeuille. Le centre de l'écran reste dégagé.
-    this.topMid = h('div.top-mid', {}, this.objEl, this.hintEl, this.toastsEl);
+    this.topMid = h('div.top-mid', {}, this.csoEl, this.objEl, this.hintEl, this.toastsEl);
     this.el.appendChild(h('div.top-bar', {}, mmWrap, this.topMid, h('div.top-right', {}, wallet, this.phoneBtn, this.pauseBtn)));
 
     // Télémétrie.
@@ -83,6 +89,10 @@ export class HUD {
     };
     this.btnJump = mk('btn-jump', 'jump', 'jump', 'Saut');
     this.btnJump.prepend(h('div.ring'));
+    // Aide à l'appel : signe (en plus de la couleur) et libellé « Trop loin / Saute ! / Trop près ».
+    this.jumpSign = h('i.jt-sign');
+    this.btnJump.appendChild(this.jumpSign);
+    this.jumpLabel = this.btnJump.querySelector('span');
     this.btnGallop = mk('btn-gallop', 'gallop', 'boost', 'Boost');
     // Jauge d'endurance autour du bouton BOOST (grand galop).
     this.btnGallop.prepend(h('div.ring'));
@@ -304,10 +314,27 @@ export class HUD {
         this.btnAction.querySelector('div').innerHTML = icon(cur.icon || 'hand');
       }
     }
-    // Indicateur d'appel de saut.
+    // Indicateur d'appel de saut (mêmes calculs que le saut) : trop loin / bonne zone / trop près.
     const jt = g.course?.jumpTiming?.() || 'none';
-    this.btnJump.classList.toggle('good', jt === 'good');
-    this.btnJump.classList.toggle('near', jt === 'near');
+    if (jt !== this._jt) {
+      this._jt = jt;
+      for (const k of ['far', 'good', 'near']) this.btnJump.classList.toggle(k, jt === k);
+      this.jumpSign.textContent = jt === 'far' ? '»' : jt === 'good' ? '✓' : jt === 'near' ? '!' : '';
+      this.jumpLabel.textContent = jt === 'far' ? 'Trop loin' : jt === 'good' ? 'Saute !' : jt === 'near' ? 'Trop près' : 'Saut';
+    }
+    // Tableau du parcours.
+    const ci = g.course?.hud?.();
+    this.csoEl.classList.toggle('hidden', !ci);
+    this.el.classList.toggle('cso-on', !!ci);
+    if (ci) {
+      const t = ci.started ? dec(ci.t, 2) : `Départ ${Math.max(0, Math.ceil(ci.bell))} s`;
+      if (t !== this._csoT) this.csoT.textContent = this._csoT = t;
+      this.csoTa.textContent = ci.started ? `/ ${ci.ta} s` : `· accordé ${ci.ta} s`;
+      this.csoPen.textContent = `${ci.pen} pt${ci.pen > 1 ? 's' : ''}`;
+      this.csoNext.textContent = ci.finished ? 'Arrivée ✓' : ci.next === 'Arrivée' ? '▸ Arrivée' : `▸ ${ci.next}`;
+      this.csoEl.classList.toggle('over', ci.over);
+      this.csoEl.classList.toggle('faults', ci.pen > 0);
+    }
     this.minimap.draw(dt);
   }
 
@@ -353,8 +380,8 @@ export class HUD {
     if (!this.notifActive) this._nextNotif();
   }
   _nextNotif() {
-    // Téléphone ouvert : la file attend sa fermeture (voir le constructeur).
-    const n = this.game.phone?.isOpen ? null : this.notifQueue.shift();
+    // Téléphone ouvert, ou parcours chronométré en cours : la file attend (fermeture du téléphone, arrivée du parcours).
+    const n = this.game.phone?.isOpen || this.game.course?.running ? null : this.notifQueue.shift();
     if (!n) {
       this.notifActive = null;
       return;

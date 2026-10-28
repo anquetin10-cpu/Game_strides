@@ -585,6 +585,37 @@ export class World {
     }
     this.texturedPanel(logoTexture(true), 12.6, 3.1, E.x, ey + 6.5, E.z, 0, { doubleSided: true, back: '#1b1c1f' });
     this.signboard('PÔLE INTERNATIONAL', 'CSO · CSI 3★ · CSI 5★', 344, -150, 0, { w: 6 });
+    // Entrée de piste (ouverture de la lice au milieu du côté sud) : portique STRIDES et jardinières.
+    const gz = A.z + A.d / 2, gy = this.h(A.x, gz);
+    for (const dx of [-4.3, 4.3]) {
+      this.batch.add(box(0.32, 3.5, 0.32), '#1b1c1f', A.x + dx, gy, gz, 0);
+      this.colliders.addCircle(A.x + dx, gz, 0.3, Infinity, 'post');
+      const pl = planterGeo(dx < 0 ? '#c42e35' : '#e9c23c');
+      this.batch.add(pl.body, null, A.x + dx * 1.45, gy, gz + 0.9, 0);
+      this.detailBatch.add(pl.detail, null, A.x + dx * 1.45, gy, gz + 0.9, 0);
+    }
+    this.batch.add(box(9, 0.45, 0.36), '#1b1c1f', A.x, gy + 3.3, gz, 0);
+    this.texturedPanel(signTexture('ENTRÉE DE PISTE', 'PRIX STRIDES', { dark: true }), 5.6, 1.0, A.x, gy + 4.25, gz, Math.PI, { doubleSided: true });
+    // Cabine du jury et du chronométrage : sur pilotis au bord de la piste (côté est), baie vitrée face à la carrière.
+    const jx = A.x + A.w / 2 + 6.5, jz = A.z - 12, jy = this.h(jx, jz);
+    const jp = [];
+    for (const [lx, lz] of [[-1.9, -1.4], [1.9, -1.4], [-1.9, 1.4], [1.9, 1.4]]) jp.push([box(0.18, 1.9, 0.18), '#2b2c30', { x: lx, z: lz }]);
+    jp.push([box(4.2, 0.22, 3.2), '#2b2c30', { y: 1.9 }]);
+    jp.push([box(4.2, 2.4, 0.12), '#f2f1ec', { y: 2.12, z: -1.54 }]);
+    jp.push([box(0.12, 2.4, 3.2), '#f2f1ec', { x: -2.04, y: 2.12 }]);
+    jp.push([box(0.12, 2.4, 3.2), '#f2f1ec', { x: 2.04, y: 2.12 }]);
+    jp.push([box(4.2, 0.9, 0.12), '#f2f1ec', { y: 2.12, z: 1.54 }]);
+    jp.push([box(4.0, 1.3, 0.05), '#6f8794', { y: 3.05, z: 1.56 }]);
+    jp.push([box(4.6, 0.18, 3.7), '#1b1c1f', { y: 4.52 }]);
+    // Escalier d'accès à l'arrière.
+    for (let k = 0; k < 6; k++) jp.push([box(1.0, 0.16, 0.32), '#9ea3a8', { x: 1.4, y: 0.16 + k * 0.32, z: -1.75 - (5 - k) * 0.3 }]);
+    // Juges assis derrière la baie, chronomètre et cloche.
+    jp.push(...seatedPerson(this.rnd, -0.8, 2.56, 0.7), ...seatedPerson(this.rnd, 0.6, 2.56, 0.7));
+    jp.push([box(3.4, 0.08, 0.6), '#5d4632', { y: 2.9, z: 1.15 }]);
+    jp.push([cyl(0.12, 0.17, 0.2, 10), '#c9a24a', { x: 1.6, y: 3.0, z: 1.2 }]);
+    this.batch.add(partsToGeo(jp), null, jx, jy, jz, -Math.PI / 2);
+    this.colliders.addBox(jx, jz, 1.6, 2.1, 0, Infinity, 'building');
+    this.texturedPanel(signTexture('JURY', 'Chronométrage · STRIDES', { dark: true }), 3.2, 0.62, jx - 1.62, jy + 4.2, jz, -Math.PI / 2, { doubleSided: true });
   }
 
   // Tribune en gradins face à +Z (local) : marches béton, sièges baquets, escaliers, garde-corps vitré,

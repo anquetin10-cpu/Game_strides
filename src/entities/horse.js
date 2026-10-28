@@ -5,6 +5,7 @@ import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
 import { WORLD } from '../world/layout.js';
 import { HorseCondition, SIM } from '../gameplay/condition.js';
+import { speedFactor } from '../gameplay/jumpModel.js';
 import { boxCare } from '../gameplay/stabling.js';
 
 const SPEEDS = HORSE.gaits.map((g) => g.speed);
@@ -81,6 +82,9 @@ export class Horse {
     this.jumpY = 0;
     this._brake = 0;
     this._refusing = null;
+    this._lastJump = null;
+    this._pass = null;
+    this._jt0 = this._jt1 = -1;
     this.snapToGround();
   }
 
@@ -98,19 +102,37 @@ export class Horse {
 
   startJump() {
     if (this.jumpT >= 0 || this.speed < HORSE.minJumpSpeed) return false;
-    // Puissance d'appel : pleine au galop de concours (≥ 6,5 m/s, ~390 m/min), réduite au trot.
-    const k = 0.72 + 0.28 * smoothstep(3.5, 6.5, this.speed);
-    const peak = this.jumpPower * k;
-    // Clôture, haie, mur… sur la trajectoire que ce saut ne franchirait pas (appel trop tôt ou trop tard) : le cheval
-    // n'enlève pas et s'arrête devant (refus), au lieu de rester suspendu dans la barrière puis de la traverser.
-    const block = this._jumpBlocked(peak);
-    if (block >= 0) {
-      this.brake(block - 1.45);
-      return false;
+    // Refus engagé (le cheval a déjà décidé de s'arrêter) : trop tard pour sauter.
+    if (this._refusing) return false;
+    const L0 = Math.max(1.5, this.speed * HORSE.jumpDuration);
+    let peak = this.jumpPower * speedFactor(this.speed);
+    let len = L0;
+    // Obstacle de concours devant : le saut part d'ici, avec la vitesse et le cap du moment ; le cheval ajuste un peu sa
+    // longueur pour viser le milieu de l'obstacle (jumpModel.js). Trop près pour enlever : refus.
+    const tgt = this.isPlayerHorse ? this.game.obstacles?.target(this) : null;
+    if (tgt && tgt.plan.zone !== 'none') {
+      if (tgt.plan.zone === 'refuse') {
+        this.game.obstacles.refuse(this, tgt.o);
+        return false;
+      }
+      peak = tgt.plan.H;
+      len = tgt.plan.L;
+      this._lastJump = { o: tgt.o, plan: tgt.plan, t: this.game.time, land: null };
+    } else {
+      this._lastJump = null;
+      // Clôture, haie, mur… sur la trajectoire que ce saut ne franchirait pas (appel trop tôt ou trop tard) : le cheval
+      // n'enlève pas et s'arrête devant (refus), au lieu de rester suspendu dans la barrière puis de la traverser.
+      const block = this._jumpBlocked(peak);
+      if (block >= 0) {
+        this.brake(block - 1.45);
+        return false;
+      }
     }
     this.jumpPeak = peak;
+    this.jumpLen = len;
+    this.jumpDur = len / Math.max(this.speed, 1.5);
     this.jumpT = 0;
-    this._brake = 0; // appel tardif pendant un refus : le saut l'emporte
+    this._brake = 0;
     this.cond?.onJump();
     this.game.bus.emit('horse:jump', this);
     return true;
@@ -245,15 +267,21 @@ export class Horse {
         if (!this.startJump() && this.isPlayerHorse && this.speed < HORSE.minJumpSpeed) g.bus.emit('horse:tooSlow', this);
       }
     }
+    // Progression du saut avant et après cette image (le jugement des barres interpole entre les deux).
+    this._jt0 = this.jumpT;
     if (this.jumpT >= 0) {
-      this.jumpT += dt / HORSE.jumpDuration;
+      this.jumpT += dt / (this.jumpDur || HORSE.jumpDuration);
+      this._jt1 = this.jumpT;
       if (this.jumpT >= 1) {
         this.jumpT = -1;
         this.jumpY = 0;
-        this.speed *= 0.94;
+        // Réception : un saut allongé ou raccourci pour se recaler coûte un peu d'élan.
+        const dev = Math.abs((this.jumpLen || 0) / Math.max(1.5, this.speed * HORSE.jumpDuration) - 1);
+        this.speed *= 0.94 - Math.min(0.08, dev * 0.5);
+        if (this._lastJump) this._lastJump.land = g.time;
         g.bus.emit('horse:land', this);
       } else this.jumpY = Horse.jumpHeightAt(this.jumpPeak, this.jumpT);
-    }
+    } else this._jt1 = -1;
 
     // Déplacement.
     this.pos.x += Math.sin(this.heading) * this.speed * dt;

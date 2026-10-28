@@ -7,6 +7,7 @@ import { POI } from '../world/layout.js';
 import { FollowAI } from '../entities/horse.js';
 import { courseSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
+import { csoHeights } from './csoCourse.js';
 import { PARKS, SECRETARIAT, loadStep, unloadStep, driveStep, simulateField, rankResults, secretariatProps } from './trip.js';
 import { dec, formatMoney } from '../core/math.js';
 
@@ -266,7 +267,7 @@ const M2 = {
       return S.custom({
         text: () => {
           const left = obs().filter((o) => !run.data.seen?.includes(o.num));
-          return left.length ? `Reconnais le parcours du Pôle à pied : obstacle n°${left[0].num} (${nums.length - left.length + 1}/${nums.length})` : '';
+          return left.length ? `Reconnais le parcours du Pôle à pied : obstacle n°${left[0].label} (${nums.length - left.length + 1}/${nums.length})` : '';
         },
         target: () => {
           const left = obs().filter((o) => !run.data.seen?.includes(o.num));
@@ -286,7 +287,7 @@ const M2 = {
             if (Math.hypot(f.x - o.x, f.z - o.z) < 4.5) {
               r.data.seen.push(o.num);
               game.audio.tone(990, 0.08, 'sine', 0.08);
-              game.hud.toast(`Obstacle n°${o.num} reconnu`);
+              game.hud.toast(`Obstacle n°${o.label} reconnu`);
               r.applyWaypoint();
             }
           }
@@ -310,7 +311,7 @@ const M2 = {
           },
           update: () => true,
         }),
-        recon([1, 2, 3, 4, 5, 6, 7, 8, 9]),
+        recon([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
         backHome,
         S.custom({
           text: '',
@@ -449,7 +450,7 @@ const M2 = {
 };
 
 // ---------- M3 « Le premier concours en équipe » ----------
-const AMATEUR = { id: 'm3', name: 'Amateur', h: 1.1, heights: [1.05, 1.1, 1.05, 1.1, 1.1, 1.1, 1.05, 1.1, 1.1] };
+const AMATEUR = { id: 'm3', name: 'Amateur', h: 1.1, heights: csoHeights(1.1) };
 const MAXIME = { rider: 'M. Vidal', horse: 'Ubris de Mai', faults: 4 };
 const ordinal = (n) => (n === 1 ? '1re' : `${n}e`);
 

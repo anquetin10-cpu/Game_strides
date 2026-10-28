@@ -545,7 +545,9 @@ export function roundBaleGeo() {
 // Obstacle de saut d'obstacles (montants + barres), largeur w, hauteur h.
 // Chandeliers de CSO à ailes (montant intérieur, aile à lattes, pieds en croix, taquets métalliques),
 // remplissage (planche ou bac à fleurs) et fanions : rouge à droite, blanc à gauche dans le sens du saut (+z).
-export function showJumpGeo(w, h, colors = ['#f2f1ec', '#17181b'], oxer = false) {
+// Oxer : deux plans de chandeliers écartés de `spread` (m), centrés sur l'origine (z = ±spread/2) ; vertical : un seul plan en z = 0.
+export function showJumpGeo(w, h, colors = ['#f2f1ec', '#17181b'], oxer = false, spread = 1.2) {
+  const zf = oxer ? -spread / 2 : 0, zb = spread / 2;
   const parts = [];
   const [c0, c1] = colors;
   const postH = h + 0.75;
@@ -568,15 +570,15 @@ export function showJumpGeo(w, h, colors = ['#f2f1ec', '#17181b'], oxer = false)
       parts.push([box(0.95, 0.09, 0.035, false), k % 2 ? c1 : c0, { x: x + side * 0.475, y: y + 0.045, z }]);
     }
   };
-  standard(-1, 0);
-  standard(1, 0);
+  standard(-1, zf);
+  standard(1, zf);
   if (oxer) {
-    standard(-1, 1.2);
-    standard(1, 1.2);
+    standard(-1, zb);
+    standard(1, zb);
   }
-  // Taquets (coupelles) sous chaque barre.
-  for (const z of oxer ? [0, 1.2] : [0]) {
-    for (const hh of z ? [h + 0.05] : [h, h * 0.62, h * 0.3]) {
+  // Taquets (coupelles) sous chaque barre : barre avant de l'oxer 5 cm plus basse que l'arrière (oxer montant).
+  for (const z of oxer ? [zf, zb] : [zf]) {
+    for (const hh of z === zb && oxer ? [h] : [oxer ? h - 0.05 : h, h * 0.62, h * 0.3]) {
       for (const side of [-1, 1]) parts.push([box(0.06, 0.05, 0.13), '#9ea3a8', { x: side * (w / 2 + 0.02), y: hh - 0.085, z }]);
     }
   }
@@ -586,11 +588,11 @@ export function showJumpGeo(w, h, colors = ['#f2f1ec', '#17181b'], oxer = false)
     parts.push([box(w - 0.1, 0.05, 0.045), c0, { y: 0.22, z: 0.02 }]);
   } else {
     // Jardinière en bois : buis serrés et fleurs (géraniums, rudbeckias).
-    parts.push([box(w * 0.85, 0.32, 0.45), '#6b5039', { y: 0, z: -0.45 }]);
+    parts.push([box(w * 0.85, 0.32, 0.45), '#6b5039', { y: 0, z: zf - 0.45 }]);
     const n = Math.max(6, Math.floor(w * 4.5));
     for (let i = 0; i < n; i++) {
       const fx = -w * 0.41 + (i / (n - 1)) * w * 0.82;
-      const fz = -0.45 + (((i * 7) % 5) - 2) * 0.05;
+      const fz = zf - 0.45 + (((i * 7) % 5) - 2) * 0.05;
       parts.push([ico(0.11 + ((i * 3) % 4) * 0.012, 1), i % 2 ? '#2f4424' : '#34502a', { x: fx, y: 0.36, z: fz, sy: 0.75 }]);
       if (i % 2 === 0) parts.push([ico(0.035, 0), i % 6 === 0 ? '#e9c23c' : '#b3262b', { x: fx + 0.04, y: 0.45, z: fz + 0.03 }]);
       if (i % 3 === 1) parts.push([ico(0.03, 0), '#c42e35', { x: fx - 0.05, y: 0.44, z: fz - 0.06 }]);
@@ -599,8 +601,8 @@ export function showJumpGeo(w, h, colors = ['#f2f1ec', '#17181b'], oxer = false)
   // Fanions (rouge à droite, blanc à gauche quand on saute vers +z).
   for (const side of [-1, 1]) {
     const x = side * (w / 2 + 0.07);
-    parts.push([cyl(0.012, 0.012, 0.45, 4), '#d9d9d6', { x, y: postH }]);
-    parts.push([box(0.01, 0.2, 0.26, false), side < 0 ? '#c62b2b' : '#f4f3ee', { x, y: postH + 0.32, z: 0.13 }]);
+    parts.push([cyl(0.012, 0.012, 0.45, 4), '#d9d9d6', { x, y: postH, z: zf }]);
+    parts.push([box(0.01, 0.2, 0.26, false), side < 0 ? '#c62b2b' : '#f4f3ee', { x, y: postH + 0.32, z: zf + 0.13 }]);
   }
   return partsToGeo(parts);
 }

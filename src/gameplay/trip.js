@@ -5,10 +5,11 @@ import { POLE, HOME } from '../world/sites.js';
 import { POI } from '../world/layout.js';
 import { courseSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
-import { FIRST_NAMES, LAST_NAMES } from './data.js';
+import { csoHeights } from './csoCourse.js';
+import { simulateField, rankResults } from './ranking.js';
 import { box, cyl, compose } from '../world/shapes.js';
 import { signTexture } from '../world/textures.js';
-import { dec, formatMoney, mulberry32 } from '../core/math.js';
+import { dec, formatMoney } from '../core/math.js';
 
 // Aires de stationnement des camions.
 export const PARKS = {
@@ -138,11 +139,10 @@ export function driveStep(game, S, { to, text, timer = null, comfort = false, on
 
 // ---------- Sortie en concours (CSO au Pôle International) ----------
 const CLASSES = [
-  { id: 'am2', name: 'Amateur 2', h: 1.05, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: [1.0, 1.05, 1.0, 1.05, 1.05, 1.1, 1.05, 1.1, 1.05], prizes: [260, 180, 130, 100, 80], fee: 22 },
-  { id: 'am1', name: 'Amateur 1', h: 1.15, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: [1.1, 1.15, 1.1, 1.15, 1.15, 1.2, 1.15, 1.2, 1.15], prizes: [420, 290, 210, 160, 120, 90], fee: 28 },
-  { id: 'pro2', name: 'Pro 2', h: 1.25, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi), heights: [1.2, 1.25, 1.2, 1.25, 1.25, 1.3, 1.25, 1.3, 1.25], prizes: [650, 450, 320, 240, 180, 140], fee: 36 },
+  { id: 'am2', name: 'Amateur 2', h: 1.05, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: csoHeights(1.05), prizes: [260, 180, 130, 100, 80], fee: 22 },
+  { id: 'am1', name: 'Amateur 1', h: 1.15, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: csoHeights(1.15), prizes: [420, 290, 210, 160, 120, 90], fee: 28 },
+  { id: 'pro2', name: 'Pro 2', h: 1.25, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi), heights: csoHeights(1.25), prizes: [650, 450, 320, 240, 180, 140], fee: 36 },
 ];
-const HORSE_NAMES = ['Quartz du Val', 'Ubris de Mai', 'Vendôme', 'Tiara du Ter', 'Diamant Rouge', 'Saphir des Bois', 'Oural', 'Ninja Z', 'Belle d’Auge', 'Utopie', 'Kalimba', 'Rubis Blanc', 'Galaxie', 'Hermès du Lac'];
 const pad2 = (n) => String(n).padStart(2, '0');
 const hhmm = (h) => {
   const t = ((h % 24) + 24) % 24;
@@ -153,25 +153,7 @@ const hhmm = (h) => {
 const classFor = (level) => CLASSES[level >= 4 ? 2 : level >= 3 ? 1 : 0];
 const ordinal = (n) => (n === 1 ? '1re' : `${n}e`);
 
-// Classement simulé des autres engagés (barème A au chrono).
-export function simulateField(cls, seed, n = 14) {
-  const rnd = mulberry32(seed);
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    const r = rnd();
-    let faults = r < 0.34 ? 0 : r < 0.68 ? 4 : r < 0.86 ? 8 : r < 0.95 ? 12 : 16;
-    if (cls.id === 'am2' && faults > 0 && rnd() < 0.25) faults -= 4;
-    const t = cls.ta - 4 + (rnd() + rnd() + rnd() - 1.5) * 4.2 + faults * 0.15;
-    const timeFaults = Math.max(0, Math.ceil(t - cls.ta - 1e-9));
-    const rider = `${FIRST_NAMES[Math.floor(rnd() * FIRST_NAMES.length)][0]}. ${LAST_NAMES[Math.floor(rnd() * LAST_NAMES.length)]}`;
-    out.push({ rider, horse: HORSE_NAMES[(i + Math.floor(seed)) % HORSE_NAMES.length], faults: faults + timeFaults, time: Math.round(t * 100) / 100 });
-  }
-  return out;
-}
-
-export function rankResults(list) {
-  return [...list].sort((a, b) => a.faults - b.faults || a.time - b.time);
-}
+export { simulateField, rankResults };
 
 // Décor du concours : tente du secrétariat et panneau (le temps de la mission).
 export function secretariatProps(game) {
@@ -268,12 +250,27 @@ export function competitionDef(level, startHour) {
       const subPre = run.sub;
       const course = courseSteps(game, run, S, {
         courseId: 'cso',
-        start: { x: CSO_START.x, z: CSO_START.z },
+        start: CSO_START,
         finish: CSO_FINISH,
         timeAllowed: cls.ta,
         maxRefusals: 2,
         heights: cls.heights,
-        intro: () => [{ who: 'Jury · Pôle International', initials: 'PI', text: `Concurrent n° ${run.data.bib}, ${game.save.data.playerName} et ${nm()}. Barème A au chrono, temps accordé ${Math.floor(cls.ta / 60)}:${pad2(cls.ta % 60)}. Barre tombée ou premier refus : 4 points ; deuxième refus : élimination. La cloche va sonner !` }],
+        title: `${cls.name} · Pôle International`,
+        className: `${cls.name} ${dec(cls.h, 2)} m`,
+        height: cls.h,
+        stable: 'Écurie du Val',
+        intro: () => [{ who: 'Jury · Pôle International', initials: 'PI', text: `Concurrent n° ${run.data.bib}, ${game.save.data.playerName} et ${nm()}. Barème A au chrono, temps accordé ${Math.floor(cls.ta / 60)}:${pad2(cls.ta % 60)}.` }],
+        result: {
+          cls,
+          seed: Math.floor(game.time * 7 + run.data.bib),
+          title: `${cls.name} ${dec(cls.h, 2)} m`,
+          onResult: ({ run: r, rank, me, out }) => {
+            if (out) return;
+            if (r.data.rank === undefined || rank < r.data.rank) r.data.rank = rank;
+            game.reportScore(`concours-${cls.id}`, { pen: me.faults, time: me.time, horse: me.horse });
+            r.resultTitle = rank === 1 ? 'Victoire au Pôle !' : `${ordinal(rank)} place — ${cls.name}`;
+          },
+        },
       });
       const courseSub = run.sub;
       run.sub = subPre;
@@ -337,42 +334,6 @@ export function competitionDef(level, startHour) {
           update: () => true,
         }),
         ...course,
-        S.custom({
-          text: 'Résultats officiels…',
-          start(r) {
-            const st = r.data.course;
-            // Règlement FEI : 1 point par seconde entamée au-delà du temps accordé.
-            st.timeFaults = Math.max(0, Math.ceil(st.t - cls.ta - 1e-9));
-            const me = { rider: game.save.data.playerName, horse: main()?.name || 'Cheval', faults: st.faults + st.timeFaults, time: Math.round(st.t * 100) / 100, me: true };
-            const field = simulateField(cls, Math.floor(game.time * 7 + r.data.bib));
-            const ranked = rankResults([...field, me]);
-            const rank = ranked.indexOf(me) + 1;
-            r.data.rank = rank;
-            game.reportScore(`concours-${cls.id}`, { pen: me.faults, time: me.time, horse: me.horse });
-            const prize = cls.prizes[rank - 1] || 0;
-            r.payOverride = prize;
-            r.resultTitle = rank === 1 ? 'Victoire au Pôle !' : `${ordinal(rank)} place — ${cls.name}`;
-            r.resultBody = `${me.faults} pt${me.faults > 1 ? 's' : ''} en ${dec(me.time, 2)} s · ${ordinal(rank)} sur ${ranked.length}${prize ? ` · dotation ${formatMoney(prize)}` : ' · hors dotation'}`;
-            const rows = ranked.slice(0, 8);
-            if (!rows.includes(me)) rows.push(me);
-            const html = `<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px">${rows
-              .map((x) => {
-                const k = ranked.indexOf(x) + 1;
-                const st2 = x.me ? 'font-weight:700;background:rgba(201,162,74,.18)' : '';
-                return `<tr style="${st2}"><td style="padding:4px 6px">${k}</td><td style="padding:4px 6px">${x.rider} · ${x.horse}</td><td style="padding:4px 6px;text-align:right">${x.faults} pts</td><td style="padding:4px 6px;text-align:right">${dec(x.time, 2)} s</td><td style="padding:4px 6px;text-align:right">${cls.prizes[k - 1] ? `${cls.prizes[k - 1]} €` : ''}</td></tr>`;
-              })
-              .join('')}</table>`;
-            r.flags.results = false;
-            game.screens.card({
-              kicker: `Résultats officiels · ${cls.name} ${dec(cls.h, 2)} m`,
-              title: rank === 1 ? 'Victoire !' : `${ordinal(rank)} place`,
-              body: `Barème A au chrono · temps accordé ${cls.ta} s · ${ranked.length} partants.`,
-              html,
-              buttons: [{ label: 'Continuer', primary: true, id: 'results', run: () => (r.flags.results = true) }],
-            });
-          },
-          update: (r) => r.flags.results,
-        }),
       ];
     },
   };

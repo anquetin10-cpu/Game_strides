@@ -25,7 +25,7 @@ export function defaultSave() {
     bestTimes: {},
     stats: { jobs: 0, earned: 0, distance: 0, jumps: 0, faults: 0 },
     messages: [],
-    settings: { sound: true, music: true, quality: 'auto', camSens: 1, timeScale: 'jeu', characters: 'auto', horses: 'classic' },
+    settings: { sound: true, music: true, quality: 'auto', camSens: 1, timeScale: 'jeu', characters: 'auto', horses: 'classic', jumpAid: 'full', courseLine: true },
     gameTime: CONFIG.startHour * 3600,
     pos: null,
     // Récompenses déjà versées (clé = offre ou tentative) : un double appui ou un rechargement ne paie jamais deux fois.

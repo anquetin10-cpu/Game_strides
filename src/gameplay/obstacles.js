@@ -4,9 +4,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { showJumpGeo, railGeo, logJumpGeo, brushJumpGeo, partsToGeo, box } from '../world/builders.js';
 import { POLE, HOME } from '../world/sites.js';
 import { XC_PATH, POND } from '../world/layout.js';
-import { pointAlong, polylineLength, clamp, smoothstep } from '../core/math.js';
+import { pointAlong, polylineLength, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { signTexture } from '../world/textures.js';
+import { CSO_TRACE, csoHeights } from './csoCourse.js';
+import { planJump, railsAhead, arcY, JUMP, CAUSES } from './jumpModel.js';
 import { applySurfaces } from '../world/surfaces.js';
 import { addCloudShadows } from '../world/sky.js';
 
@@ -23,28 +25,20 @@ const COLORS = [
   ['#17181b', '#f2f1ec'],
 ];
 
-// Refus : longueur de l'avant-main (bout du nez devant l'origine du cheval), marge nez-obstacle à l'arrêt, durée du freinage.
-const NOSE = 1.6, REFUSE_GAP = 0.5, REFUSE_T = 0.3;
+// Refus : longueur de l'avant-main (bout du nez devant l'origine du cheval) ; point de référence du saut (épaules)
+// devant l'origine ; dépassement du nez au-delà de la face d'un obstacle sur un refus tout contre (il emporte la barre).
+const NOSE = 1.6, REF = 0.4, OVERRUN = 0.6;
 
-// Parcours de CSO du Pôle International (positions relatives au centre d'une carrière de 84 × 52 m ; cap de saut
-// rot : direction (sin rot, cos rot)). Tracé à main gauche (on tourne toujours du même côté), comme un vrai parcours : 1 en montant le long du petit côté
-// ouest, ligne 2–3 (24 m, 5 foulées) sur la grande piste nord, demi-volte vers le 4 en descendant le petit côté
-// est, ligne 5–6 (24 m) sur la piste sud, demi-tour vers la ligne centrale 7 → double 8–9 (20 m puis 8 m : une
-// foulée), arrivée dans l'alignement. Tournants de 8,5 m de rayon au moins, 8 m au moins entre la trajectoire et les
-// autres obstacles comme entre la trajectoire et la lice ; longueur du tracé ≈ 245 m.
-export const CSO_LAYOUT = [
-  [-32, 4, 0, 'v'],
-  [-8, 18, Math.PI / 2, 'o'],
-  [16, 18, Math.PI / 2, 'v'],
-  [32, 4, Math.PI, 'o'],
-  [10, -18, -Math.PI / 2, 'v'],
-  [-14, -18, -Math.PI / 2, 'o'],
-  [-12, -1, Math.PI / 2, 'w'],
-  [8, -1, Math.PI / 2, 'v'],
-  [16, -1, Math.PI / 2, 'o'],
-];
-export const CSO_FINISH = { x: POLE.arena.x + 24, z: POLE.arena.z - 1, rot: Math.PI / 2, w: 7 };
-export const CSO_START = { x: POLE.arena.x - 32, z: POLE.arena.z - 10, rot: 0 };
+// Parcours de CSO du Pôle International : voir csoCourse.js (tracé, obstacles, hauteurs). Positions dans la carrière.
+const A0 = POLE.arena;
+const toWorld = (p) => ({ ...p, x: A0.x + p.x, z: A0.z + p.z });
+export const CSO_LAYOUT = CSO_TRACE.fences.map(toWorld);
+export const CSO_START = { ...toWorld(CSO_TRACE.marks.start), w: 7 };
+export const CSO_FINISH = { ...toWorld(CSO_TRACE.marks.finish), w: 7 };
+export const CSO_LINE = CSO_TRACE.pts.map(toWorld);
+export const CSO_LENGTH = Math.round(CSO_TRACE.length);
+// Entrée de piste (milieu du grand côté sud) : point d'accueil juste à l'intérieur, face à la carrière.
+export const CSO_GATE = { x: A0.x, z: A0.z + A0.d / 2 - 5, rot: Math.PI };
 
 function xcLayout() {
   const L = polylineLength(XC_PATH);
@@ -71,29 +65,35 @@ export class Obstacles {
     this.list = [];
     this.group = new THREE.Group();
     game.scene.add(this.group);
-    this.fallen = [];
     this._build();
   }
 
   add(o) {
     const ob = {
-      w: 3.6, h: 1.1, depth: 0.3, kind: 'v', solid: false, colors: COLORS[0], course: null, num: 0, knocked: false,
-      prevS: null, ...o,
+      w: 3.6, h: 1.1, kind: 'v', spread: 0, solid: false, colors: COLORS[0], course: null, num: 0, label: '', knocked: false, ...o,
     };
+    if (ob.kind === 'o' && !ob.spread) ob.spread = 1.2;
+    if (!ob.label && ob.num) ob.label = String(ob.num);
     ob.ground = this.game.terrain.getHeight(ob.x, ob.z);
     ob.n = { x: Math.sin(ob.rot), z: Math.cos(ob.rot) };
     ob.t = { x: Math.cos(ob.rot), z: -Math.sin(ob.rot) };
     this._mesh(ob);
     // Chandeliers et ailes, hors de la largeur des barres : solides pour le cheval comme pour les piétons.
     if (ob.kind === 'v' || ob.kind === 'o') {
-      const oxer = ob.kind === 'o', u0 = ob.w / 2 + 0.5, u1 = ob.w / 2 + 1.06, sc = oxer ? 0.6 : 0;
+      const u0 = ob.w / 2 + 0.5, u1 = ob.w / 2 + 1.06;
       ob.cols = [-1, 1].map((side) => {
         const u = (side * (u0 + u1)) / 2;
-        return this.game.colliders.addBox(ob.x + ob.n.x * sc + ob.t.x * u, ob.z + ob.n.z * sc + ob.t.z * u, (u1 - u0) / 2, oxer ? 0.72 : 0.12, ob.rot, ob.ground + ob.h + 0.75, 'wing');
+        return this.game.colliders.addBox(ob.x + ob.t.x * u, ob.z + ob.t.z * u, (u1 - u0) / 2, ob.spread / 2 + 0.12, ob.rot, ob.ground + ob.h + 0.75, 'wing');
       });
     }
     this.list.push(ob);
     return ob;
+  }
+
+  // Barres jugées : position le long de l'axe de saut (s) et hauteur ; oxer montant (barre avant 5 cm plus basse).
+  _bars(ob) {
+    if (ob.kind === 'o') return [{ s: -ob.spread / 2, h: ob.h - 0.05 }, { s: ob.spread / 2, h: ob.h }];
+    return [{ s: 0, h: ob.h }];
   }
 
   _mesh(ob) {
@@ -102,14 +102,14 @@ export class Obstacles {
     g.rotation.y = ob.rot;
     // L'obstacle s'étend le long de l'axe local X (perpendiculaire au sens de saut).
     ob.rails = [];
+    ob.bars = this._bars(ob);
     if (ob.kind === 'log') {
       g.add(new THREE.Mesh(logJumpGeo(ob.w, ob.h), MAT));
     } else if (ob.kind === 'brush' || ob.kind === 'water') {
       g.add(new THREE.Mesh(brushJumpGeo(ob.w, ob.h), MAT));
     } else if (ob.kind === 'w') {
-      // Mur de CSO : blocs peints façon briques (joints blancs), couvertine, piliers.
+      // Mur de CSO : blocs peints façon briques (joints blancs), couvertine, piliers. La barre posée sur le mur tombe.
       wallMat ||= applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), this.game.world.detailTex, () => this.game.terrain);
-      // Mur et piliers : un seul maillage.
       g.add(new THREE.Mesh(partsToGeo([
         [box(ob.w, ob.h - 0.15, 0.5), '#a4553f'],
         [box(ob.w + 0.04, 0.1, 0.56), '#e9e6de', { y: ob.h - 0.25 }],
@@ -122,29 +122,35 @@ export class Obstacles {
       top.position.y = ob.h - 0.05;
       g.add(top);
       ob.rails.push(top);
+      ob.bars[0].mesh = top;
     } else {
       const oxer = ob.kind === 'o';
-      // Chandeliers, remplissage et barres qui ne tombent jamais (basses, arrière de l'oxer) : un seul maillage.
-      // Seule la barre du haut, celle que le cheval fait tomber, reste un objet à part.
-      const fixed = [showJumpGeo(ob.w, ob.h, ob.colors, oxer)];
-      for (const hh of [ob.h * 0.62, ob.h * 0.3]) fixed.push(railGeo(ob.w, ob.colors).translate(0, hh, 0));
-      if (oxer) {
-        fixed.push(railGeo(ob.w, ob.colors).translate(0, ob.h + 0.05, 1.2));
-        ob.depth = 1.4;
-      }
+      const zf = oxer ? -ob.spread / 2 : 0;
+      // Chandeliers, remplissage et barres basses (qui ne tombent pas) : un seul maillage. Les barres du haut, celles
+      // que le cheval fait tomber, restent des objets à part.
+      const fixed = [showJumpGeo(ob.w, ob.h, ob.colors, oxer, ob.spread)];
+      for (const hh of [ob.h * 0.62, ob.h * 0.3]) fixed.push(railGeo(ob.w, ob.colors).translate(0, hh, zf));
+      // Jardinières au pied des ailes (parcours de concours).
+      if (ob.course === 'cso') fixed.push(planterGeo(ob.w, ob.num));
       g.add(new THREE.Mesh(mergeGeometries(fixed, false), MAT));
-      const top = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
-      top.position.y = ob.h;
-      g.add(top);
-      ob.rails.push(top);
+      for (const bar of ob.bars) {
+        const top = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
+        top.position.set(0, bar.h, bar.s);
+        g.add(top);
+        ob.rails.push(top);
+        bar.mesh = top;
+      }
     }
-    // Faces avant et arrière (axe local Z) : jusqu'où le nez du cheval peut avancer avant un refus.
-    const hd = ob.kind === 'log' ? ob.h / 2 : ob.kind === 'brush' || ob.kind === 'water' ? 0.55 : ob.kind === 'w' ? 0.3 : 0.05;
-    ob.front = -hd;
-    ob.back = ob.kind === 'o' ? 1.25 : hd;
+    // Faces avant et arrière (axe local Z) : début et fin du franchissement ; le nez du cheval s'arrête devant sur un refus.
+    const hd = ob.kind === 'log' ? ob.h / 2 : ob.kind === 'brush' || ob.kind === 'water' ? 0.55 : ob.kind === 'w' ? 0.3 : 0.06;
+    ob.front = ob.kind === 'o' ? -ob.spread / 2 - 0.06 : -hd;
+    ob.back = ob.kind === 'o' ? ob.spread / 2 + 0.06 : hd;
+    ob.depth = ob.back - ob.front;
     if (ob.num) {
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: signTexture(String(ob.num), '', { dark: true, w: 128, h: 128 }), side: THREE.DoubleSide }));
-      sign.position.set(-ob.w / 2 - 0.65, ob.h + 0.75, 0);
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: signTexture(ob.label, '', { dark: true, w: 128, h: 128 }), side: THREE.DoubleSide }));
+      sign.position.set(-ob.w / 2 - 0.65, ob.h + 0.75, ob.front);
+      // Face imprimée tournée vers le cavalier qui arrive (côté -z local), lisible à l'endroit.
+      sign.rotation.y = Math.PI;
       g.add(sign);
       ob.sign = sign;
     }
@@ -163,15 +169,16 @@ export class Obstacles {
   }
 
   _build() {
-    const A = POLE.arena;
-    CSO_LAYOUT.forEach(([dx, dz, rot, kind], i) => {
-      this.add({ x: A.x + dx, z: A.z + dz, rot, kind, h: 1.15, w: 3.8, num: i + 1, course: 'cso', colors: COLORS[i % COLORS.length] });
+    const heights = csoHeights(1.15);
+    CSO_LAYOUT.forEach((f, i) => {
+      this.add({ x: f.x, z: f.z, rot: f.rot, kind: f.kind, spread: f.spread, h: heights[i], w: 3.8, num: i + 1, label: f.label, lineS: f.s, course: 'cso', colors: COLORS[i % COLORS.length] });
     });
     xcLayout().forEach((p, i) => {
       this.add({ x: p.x, z: p.z, rot: p.rot, kind: p.kind, h: p.kind === 'log' ? 0.95 : 1.05, w: 4.2, num: i + 1, course: 'xc', solid: true });
     });
-    // Lignes de départ et d'arrivée : fanions (rouge à droite, blanc à gauche) et cellules de chronométrage.
-    for (const L of [{ ...CSO_START, w: 7 }, CSO_FINISH]) this._timingLine(L);
+    // Lignes de départ et d'arrivée : fanions (rouge à droite, blanc à gauche), cellules de chronométrage, ligne au sol.
+    this._timingLine(CSO_START, 'DÉPART');
+    this._timingLine(CSO_FINISH, 'ARRIVÉE');
     const H = HOME.arena;
     this.add({ x: H.x - 9, z: H.z, rot: Math.PI / 2, kind: 'v', h: 0.75, w: 3.2, course: 'home', id: 'home1' });
     this.add({ x: H.x + 10, z: H.z, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.2, course: 'home', id: 'home2', colors: COLORS[1] });
@@ -180,10 +187,10 @@ export class Obstacles {
     this.add({ x: W.x, z: W.z + 10, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.4, course: 'warmup', colors: COLORS[1] });
   }
 
-  _timingLine(L) {
+  _timingLine(L, label) {
     const parts = [];
     for (const side of [-1, 1]) {
-      const x = side * L.w / 2;
+      const x = (side * L.w) / 2;
       parts.push([box(0.06, 1.6, 0.06), '#f2f1ec', { x }]);
       parts.push([box(0.012, 0.36, 0.5, false), side < 0 ? '#c62b2b' : '#f4f3ee', { x: x + 0.03 * side, y: 1.38, z: 0.25 }]);
       // Cellule photoélectrique sur trépied.
@@ -195,12 +202,22 @@ export class Obstacles {
       parts.push([box(0.12, 0.1, 0.16), '#f0c419', { x: cx, y: 0.9 }]);
       parts.push([box(0.05, 0.05, 0.02), '#c62b2b', { x: cx - side * 0.06, y: 0.93, z: 0.0 }]);
     }
+    // Ligne tracée au sol (sciure blanche), de fanion à fanion.
+    parts.push([box(L.w, 0.012, 0.12, false), '#f4f3ee', { y: 0.01 }]);
     const m = new THREE.Mesh(partsToGeo(parts), MAT);
-    m.position.set(L.x, this.game.terrain.getHeight(L.x, L.z), L.z);
+    const y = this.game.terrain.getHeight(L.x, L.z);
+    m.position.set(L.x, y, L.z);
     m.rotation.y = L.rot;
     m.castShadow = true;
     this.group.add(m);
     this.game.world.culled.push([m, L.x, L.z, 300]);
+    // Panneau DÉPART / ARRIVÉE sur le fanion de gauche, lisible à l'approche.
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.42), new THREE.MeshBasicMaterial({ map: signTexture(label, '', { dark: true, w: 256, h: 84 }), side: THREE.DoubleSide }));
+    const t = { x: Math.cos(L.rot), z: -Math.sin(L.rot) };
+    sign.position.set(L.x + (t.x * L.w) / 2, y + 1.95, L.z + (t.z * L.w) / 2);
+    sign.rotation.y = L.rot + Math.PI;
+    this.group.add(sign);
+    this.game.world.culled.push([sign, L.x, L.z, 200]);
   }
 
   ofCourse(id) {
@@ -218,14 +235,17 @@ export class Obstacles {
     }
   }
 
+  // Hauteurs (m) des obstacles d'un parcours, dans l'ordre (élément n = heights[n - 1]).
   setHeights(courseId, heights) {
-    for (const o of this.ofCourse(courseId)) {
+    for (const o of this.list.filter((x) => x.course === courseId)) {
       const nh = heights[o.num - 1] ?? o.h;
       if (Math.abs(nh - o.h) < 1e-3) continue;
       o.h = nh;
       for (const c of o.cols || []) c.top = o.ground + nh + 0.75;
+      const wasOn = !!o.group.parent;
       this.group.remove(o.group);
       this._mesh(o);
+      if (!wasOn) this.group.remove(o.group);
     }
   }
 
@@ -233,147 +253,199 @@ export class Obstacles {
     for (const o of this.list) if (!courseId || o.course === courseId) this._rest(o);
   }
 
-  // Barre remise sur ses taquets.
+  // Barres remises sur leurs taquets.
   _rest(o) {
     o.knocked = false;
+    o.rebuild = 0;
     for (const r of o.rails) {
       r.position.y = r.userData.rest.y;
       r.position.z = r.userData.rest.z;
       r.rotation.x = r.userData.rest.rx;
       r.rotation.z = 0;
       r.userData.fall = null;
+      r.userData.rattle = 0;
     }
   }
 
-  knock(o) {
-    if (o.knocked) return; // barre déjà au sol : elle ne remonte pas sur ses taquets pour retomber
+  // Barre renversée (une seule fois : déjà au sol, elle ne remonte pas sur ses taquets pour retomber). Elle part dans le
+  // sens du saut ; `bar` absent : la barre du haut (la plus haute).
+  knock(o, bar = null, dir = 1) {
+    const r = (bar || o.bars[o.bars.length - 1]).mesh;
     o.knocked = true;
-    const r = o.rails[0];
-    if (r) r.userData.fall = { t: 0, dir: Math.random() < 0.5 ? 1 : -1 };
+    // Entraînement : la barre est remontée dès que le cheval s'est éloigné.
+    if (o.course === 'warmup' || o.course === 'home') o.rebuild = this.game.time + 2.5;
+    if (!r || r.userData.fall) return;
+    r.userData.fall = { t: 0, dir };
+    this.game.audio?.railFall?.();
   }
 
   _localS(o, x, z) {
     return { s: (x - o.x) * o.n.x + (z - o.z) * o.n.z, u: (x - o.x) * o.t.x + (z - o.z) * o.t.z };
   }
 
-  // Aide à l'appel : renvoie 'good' | 'near' | 'none' pour l'obstacle devant.
-  timing(horse) {
-    if (!horse || horse.jumpT >= 0 || horse.speed < HORSE.minJumpSpeed) return this._nearAhead(horse) ? 'near' : 'none';
-    const o = this._nearAhead(horse);
-    if (!o) return 'none';
-    const f = horse.forward;
-    const p = { x: horse.pos.x + f.x * 0.4, z: horse.pos.z + f.z * 0.4 };
-    const { s } = this._localS(o, p.x, p.z);
-    const dir = f.x * o.n.x + f.z * o.n.z;
-    const dist = Math.abs(s) / Math.max(0.3, Math.abs(dir));
-    const tau = dist / horse.speed / HORSE.jumpDuration;
-    if (tau <= 0 || tau >= 1) return 'near';
-    const k = 0.72 + 0.28 * smoothstep(3.5, 6.5, horse.speed);
-    const peak = horse.jumpPower * k;
-    const clear = 4 * peak * tau * (1 - tau) + 0.2 + horse.mods.clearance;
-    return clear >= o.h + 0.04 ? 'good' : 'near';
+  _horseState(horse) {
+    return { v: horse.speed, power: horse.jumpPower, clearance: horse.mods.clearance };
   }
 
-  _nearAhead(horse) {
+  // Obstacle visé par un appel maintenant : le plus proche devant le cheval, abordable (angle, ligne entre les
+  // chandeliers). Renvoie { o, geo, plan } (plan : jumpModel.planJump) ou null.
+  target(horse) {
     if (!horse) return null;
     const f = horse.forward;
+    const px = horse.pos.x + f.x * REF, pz = horse.pos.z + f.z * REF;
     let best = null;
-    let bestD = 18;
+    const R = JUMP.reach + 4;
     for (const o of this.list) {
-      if (o.off) continue;
-      const dx = o.x - horse.pos.x, dz = o.z - horse.pos.z;
-      const d = Math.hypot(dx, dz);
-      if (d > bestD) continue;
-      const dir = f.x * o.n.x + f.z * o.n.z;
-      if (Math.abs(dir) < 0.6) continue;
-      const { s, u } = this._localS(o, horse.pos.x, horse.pos.z);
-      if (Math.abs(u) > o.w / 2 + 0.8) continue;
-      // Devant le cheval, dans le sens de sa marche.
-      if (s * Math.sign(dir) > -0.3) continue;
-      best = o;
-      bestD = d;
+      if (o.off || Math.abs(o.x - px) > R || Math.abs(o.z - pz) > R) continue;
+      const geo = railsAhead(o, px, pz, f.x, f.z);
+      if (geo.cosA < JUMP.maxAngle) continue;
+      const first = geo.rails[0], last = geo.rails[geo.rails.length - 1];
+      if (last.x < -0.3 || first.x > JUMP.reach) continue;
+      if (Math.abs((first.u + last.u) / 2) > o.w / 2 + 0.35) continue;
+      if (!best || first.x < best.geo.rails[0].x) best = { o, geo };
     }
+    if (!best) return null;
+    best.plan = planJump(this._horseState(horse), best.geo);
     return best;
+  }
+
+  // Aide à l'appel pour l'obstacle devant : 'far' | 'good' | 'near' | 'none' (mêmes calculs que le saut).
+  timing(horse) {
+    if (!horse || horse.jumpT >= 0 || horse._refusing || horse.speed < HORSE.minJumpSpeed) return 'none';
+    const t = this.target(horse);
+    if (!t) return 'none';
+    return t.plan.zone === 'refuse' ? 'near' : t.plan.zone;
+  }
+
+  // Refus décidé : le cheval freine pour s'arrêter devant l'obstacle (et, tout contre, emporte la barre).
+  refuse(horse, o) {
+    if (horse._refusing) return;
+    const f = horse.forward;
+    const { s } = this._localS(o, horse.pos.x + f.x * REF, horse.pos.z + f.z * REF);
+    const side = s < 0 ? -1 : 1;
+    const fn = f.x * o.n.x + f.z * o.n.z;
+    const toward = Math.max(0.3, -fn * side);
+    const nose = s + fn * (NOSE - REF);
+    const gap = side < 0 ? o.front - nose : nose - o.back;
+    horse._refusing = o;
+    horse.brake(Math.max(0.35, gap + OVERRUN * 0.7) / toward);
   }
 
   // Appelé après le déplacement du cheval du joueur.
   updateHorse(horse, prevX, prevZ) {
     const g = this.game;
     const f = horse.forward;
-    const px = horse.pos.x + f.x * 0.4, pz = horse.pos.z + f.z * 0.4;
-    const ppx = prevX + f.x * 0.4, ppz = prevZ + f.z * 0.4;
+    const px = horse.pos.x + f.x * REF, pz = horse.pos.z + f.z * REF;
+    const ppx = prevX + f.x * REF, ppz = prevZ + f.z * REF;
     // Après un refus, le cheval doit se détourner ou reprendre du champ avant qu'un nouveau refus compte.
     const ref = horse._refusal;
     if (ref && !ref.away) {
       const { s } = this._localS(ref.o, horse.pos.x, horse.pos.z);
       if ((f.x * ref.o.n.x + f.z * ref.o.n.z) * Math.sign(s) > 0 || Math.abs(s) > ref.o.depth / 2 + 6) ref.away = true;
     }
-    // Refus en cours (freinage, voir Horse.brake) : un saut tardif l'emporte ; à l'arrêt, le refus est compté.
-    if (horse._refusing) {
-      if (horse.jumpT >= 0) horse._refusing = null;
-      else if (!(horse._brake > 0)) this._count(horse, horse._refusing);
-    }
-    const airborne = horse.jumpT >= 0;
+    // Refus en cours (freinage, voir Horse.brake) : à l'arrêt, le refus est compté.
+    if (horse._refusing && !(horse._brake > 0)) this._count(horse, horse._refusing);
+    const airborne = horse.jumpT >= 0 || horse._jt0 >= 0;
+    const lj = horse._lastJump;
     for (const o of this.list) {
       if (o.off || Math.abs(o.x - px) > 12 || Math.abs(o.z - pz) > 12) continue;
       const a = this._localS(o, ppx, ppz);
       const b = this._localS(o, px, pz);
-      const half = o.w / 2 + 0.35;
-      const depth = o.depth / 2 + 0.1;
-      const crossing = (a.s < -depth && b.s >= -depth) || (a.s > depth && b.s <= depth);
-      const inWidth = Math.abs(b.u) < half;
-      if (!inWidth) continue;
-      if (!airborne) {
-        // Cheval qui arrive sur l'obstacle sans sauter : refus décidé dès que le nez entre dans la distance de freinage
-        // devant la face de l'obstacle ; il s'arrête progressivement, le nez à REFUSE_GAP des barres, jamais dedans.
-        const side = b.s < 0 ? -1 : 1;
-        const fn = f.x * o.n.x + f.z * o.n.z;
-        const toward = -fn * side; // part de la marche dirigée vers l'obstacle
-        if (toward > 0.3 && horse.speed > 0.5) {
-          const nose = b.s + fn * (NOSE - 0.4);
-          const gap = side < 0 ? o.front - nose : nose - o.back;
-          const vn = horse.speed * toward;
-          // Pas de refus décidé tant que l'appel est encore possible (anneau vert) : le cavalier garde toute la fenêtre d'appel,
-          // y compris devant un mur ou un oxer (face avant plus en avant) au galop de concours.
-          if (!horse._refusing && gap - REFUSE_GAP <= (vn * Math.max(REFUSE_T, (vn * REFUSE_T) / 9.5)) / 2 && (!horse.isPlayerHorse || this.timing(horse) !== 'good')) {
-            horse._refusing = o;
-            horse.brake((gap - REFUSE_GAP) / toward);
-          }
-          if (gap < REFUSE_GAP) {
-            // Garde-fou : le nez reste à la marge (poussée limitée par image, sans téléportation), maillage recalé.
-            const push = Math.min(REFUSE_GAP - gap, 0.3) * side;
-            horse.pos.x += o.n.x * push;
-            horse.pos.z += o.n.z * push;
-            horse.mesh.position.x = horse.pos.x;
-            horse.mesh.position.z = horse.pos.z;
-          }
-        }
-        if (crossing) {
-          // Cheval qui glisse presque parallèlement aux barres, ou au pas de fourmi (cas non couverts ci-dessus) :
-          // refus sur place, ramené juste devant l'obstacle.
-          const from = a.s < 0 ? -1 : 1;
-          const back = from * depth;
-          horse.pos.x = o.x + o.n.x * back + o.t.x * b.u - f.x * 0.4;
-          horse.pos.z = o.z + o.n.z * back + o.t.z * b.u - f.z * 0.4;
-          horse.mesh.position.x = horse.pos.x;
-          horse.mesh.position.z = horse.pos.z;
-          horse.refuse();
-          this._count(horse, o);
-        }
+      const inWidth = Math.abs(b.u) < o.w / 2 + 0.35;
+      // Saut en cours, ou réception juste avant l'obstacle visé (appel bien trop loin : il atterrit dedans).
+      const jumping = airborne || (lj && lj.o === o && lj.land !== null && g.time - lj.land < 0.6);
+      if (jumping) {
+        this._judge(horse, o, a, b, inWidth);
         continue;
       }
-      if (crossing) {
-        // Mesure de la hauteur au centre de l'obstacle.
-        const clear = horse.jumpY + 0.2 + horse.mods.clearance;
-        const dir = a.s < 0 ? 1 : -1;
-        if (clear >= o.h) {
-          g.bus.emit('obstacle:clear', { obstacle: o, dir, margin: clear - o.h });
-        } else {
-          if (!o.solid) this.knock(o);
-          g.bus.emit('obstacle:fault', { obstacle: o, dir, margin: clear - o.h });
-          if (o.solid) horse.speed *= 0.55;
+      if (!inWidth) continue;
+      const side = b.s < 0 ? -1 : 1;
+      const fn = f.x * o.n.x + f.z * o.n.z;
+      const toward = -fn * side; // part de la marche dirigée vers l'obstacle
+      if (toward > 0.3 && horse.speed > 0.5) {
+        const nose = b.s + fn * (NOSE - REF);
+        const gap = side < 0 ? o.front - nose : nose - o.back;
+        if (!horse._refusing) {
+          // Le cheval ne refuse que lorsque l'appel n'est plus possible : un saut maintenant ferait tomber la barre
+          // parce qu'il est trop près (ou n'a plus la place d'enlever). Toute la zone d'appel jouable reste au cavalier.
+          const geo = railsAhead(o, px, pz, f.x, f.z);
+          if (geo.cosA >= JUMP.maxAngle) {
+            const plan = planJump(this._horseState(horse), geo);
+            if (plan.zone === 'refuse' || (plan.margin < -JUMP.late && plan.ideal <= plan.L) || (horse.speed < HORSE.minJumpSpeed && gap < 1.5)) this.refuse(horse, o);
+          } else if (gap < (horse.speed * horse.speed) / 16 + 0.3) this.refuse(horse, o);
+        }
+        if (gap < -OVERRUN * 0.4 && horse._refusing === o && !o.knocked && !o.solid) {
+          // Refus tout contre : le cheval pile dans l'obstacle et emporte la barre (refus, pas de faute de barre ; le
+          // jury remonte l'obstacle).
+          this.knock(o, o.bars[0], side < 0 ? 1 : -1);
+          o.rebuild = g.time + 3;
+        }
+        if (gap < -OVERRUN) {
+          // Garde-fou : le nez ne va jamais plus loin (poussée limitée par image, sans téléportation), maillage recalé.
+          const push = Math.min(-OVERRUN - gap, 0.3) * side;
+          horse.pos.x += o.n.x * push;
+          horse.pos.z += o.n.z * push;
+          horse.mesh.position.x = horse.pos.x;
+          horse.mesh.position.z = horse.pos.z;
         }
       }
+      const depth = o.depth / 2 + 0.1;
+      const mid = (o.front + o.back) / 2;
+      if ((a.s - mid < -depth && b.s - mid >= -depth) || (a.s - mid > depth && b.s - mid <= depth)) {
+        // Cheval qui glisse presque parallèlement aux barres, ou au pas de fourmi (cas non couverts ci-dessus) :
+        // refus sur place, ramené juste devant l'obstacle.
+        const back = mid + (a.s < mid ? -depth : depth);
+        horse.pos.x = o.x + o.n.x * back + o.t.x * b.u - f.x * REF;
+        horse.pos.z = o.z + o.n.z * back + o.t.z * b.u - f.z * REF;
+        horse.mesh.position.x = horse.pos.x;
+        horse.mesh.position.z = horse.pos.z;
+        horse.refuse();
+        this._count(horse, o);
+      }
+    }
+  }
+
+  // Franchissement en l'air : chaque barre est jugée quand les épaules du cheval passent son plan, à la hauteur réelle
+  // de la trajectoire à cet instant (interpolée entre deux images : indépendant de la cadence d'affichage). Une faute
+  // par élément, quel que soit le nombre de barres tombées ; résultat annoncé à la sortie de l'obstacle.
+  _judge(horse, o, a, b, inWidth) {
+    if (a.s === b.s) return;
+    const dir = b.s > a.s ? 1 : -1;
+    let pass = horse._pass;
+    if (!pass || pass.o !== o || pass.done) {
+      const entry = dir > 0 ? o.front : o.back;
+      if (!((a.s - entry) * (b.s - entry) <= 0) || !inWidth) return;
+      pass = horse._pass = { o, dir, fault: false, cause: null, done: false, margin: Infinity };
+    }
+    const lj = horse._lastJump;
+    for (const bar of o.bars) {
+      if ((a.s - bar.s) * (b.s - bar.s) > 0) continue;
+      const q = clamp((bar.s - a.s) / (b.s - a.s), 0, 1);
+      // Progression du saut à l'instant du passage (0..1 ; hors de [0, 1] : au sol).
+      const t0 = horse._jt0 ?? -1, t1 = horse._jt1 ?? -1;
+      const tau = t0 >= 0 ? t0 + (t1 - t0) * q : -1;
+      const y = tau >= 0 ? arcY(horse.jumpPeak, 1, tau) : 0;
+      const margin = y + JUMP.lift + horse.mods.clearance - bar.h;
+      pass.margin = Math.min(pass.margin, margin);
+      if (margin < -JUMP.rub) {
+        if (!o.solid) this.knock(o, bar, dir);
+        if (!pass.fault) {
+          pass.fault = true;
+          const plan = lj && lj.o === o ? lj.plan : null;
+          pass.cause = tau < 0 ? 'short' : plan?.cause || (plan && plan.margin >= 0 ? 'angle' : 'far');
+          if (o.solid) horse.speed *= 0.55;
+        }
+      } else if (margin < 0.04 && bar.mesh && !o.solid) {
+        // Barre effleurée : elle tinte et vibre sur ses taquets, mais reste en place.
+        bar.mesh.userData.rattle = 1;
+        this.game.audio?.railTouch?.();
+      }
+    }
+    const exit = dir > 0 ? o.back : o.front;
+    if ((a.s - exit) * (b.s - exit) <= 0 && (b.s - exit) * dir >= 0) {
+      pass.done = true;
+      const ev = { obstacle: o, dir, margin: pass.margin, cause: pass.cause, causeText: pass.cause ? CAUSES[pass.cause] : '' };
+      this.game.bus.emit(pass.fault ? 'obstacle:fault' : 'obstacle:clear', ev);
     }
   }
 
@@ -394,30 +466,41 @@ export class Obstacles {
     for (const o of this.list) {
       if (o.off || Math.abs(o.x - human.pos.x) > 6 || Math.abs(o.z - human.pos.z) > 6) continue;
       const { s, u } = this._localS(o, human.pos.x, human.pos.z);
+      const mid = (o.front + o.back) / 2;
       const hd = o.depth / 2 + 0.35;
-      if (Math.abs(u) < o.w / 2 + 0.2 && Math.abs(s) < hd) {
-        const push = (Math.sign(s) || 1) * hd - s;
+      if (Math.abs(u) < o.w / 2 + 0.2 && Math.abs(s - mid) < hd) {
+        const push = (Math.sign(s - mid) || 1) * hd - (s - mid);
         human.pos.x += o.n.x * push;
         human.pos.z += o.n.z * push;
       }
     }
   }
 
-  // Chute d'une barre : un bout quitte son taquet, l'autre suit ; rebonds amortis puis roulement sur le sol.
+  // Chute d'une barre : un bout quitte son taquet, l'autre suit ; rebonds amortis puis roulement sur le sol. Barre
+  // effleurée : brève vibration. Obstacle emporté sur un refus : remonté par le jury quand le cheval s'est éloigné.
   update(dt) {
     const G = 9.81, R = 0.05;
+    const g = this.game;
     // Hors mission, une barre tombée est remise sur ses taquets une fois le joueur éloigné (l'obstacle reste jugé à sa hauteur).
-    const p = this.game.missions.active ? null : this.game.player.focusPos;
+    const p = g.missions.active ? null : g.player.focusPos;
+    const fp = g.player.focusPos;
     for (const o of this.list) {
-      if (p && o.knocked && (Math.abs(o.x - p.x) > 60 || Math.abs(o.z - p.z) > 60) && o.rails[0]?.userData.fall?.done) this._rest(o);
+      if (p && o.knocked && (Math.abs(o.x - p.x) > 60 || Math.abs(o.z - p.z) > 60) && o.rails.every((r) => !r.userData.fall || r.userData.fall.done)) this._rest(o);
+      if (o.rebuild && g.time > o.rebuild && fp && Math.hypot(o.x - fp.x, o.z - fp.z) > 5) this._rest(o);
       for (const r of o.rails) {
-        const f = r.userData.fall;
+        const ud = r.userData;
+        if (ud.rattle > 0 && !ud.fall) {
+          ud.rattle = Math.max(0, ud.rattle - dt * 2.5);
+          r.rotation.x = ud.rest.rx + Math.sin(ud.rattle * 40) * 0.05 * ud.rattle;
+          r.position.y = ud.rest.y + Math.abs(Math.sin(ud.rattle * 31)) * 0.012 * ud.rattle;
+        }
+        const f = ud.fall;
         if (!f || f.done) continue;
         if (!f.ends) {
-          const y0 = r.userData.rest.y;
+          const y0 = ud.rest.y;
           f.ends = [{ y: y0, vy: 0, t0: 0 }, { y: y0, vy: 0, t0: 0.08 + Math.random() * 0.14 }];
           if (Math.random() < 0.5) f.ends.reverse();
-          f.z = r.userData.rest.z;
+          f.z = ud.rest.z;
           f.vz = f.dir * (0.7 + Math.random() * 0.9);
           f.roll = 0;
         }
@@ -431,7 +514,7 @@ export class Obstacles {
             e.y = R;
             if (Math.abs(e.vy) > 0.6) {
               e.vy = -e.vy * 0.28;
-              if (!f.clonk) { f.clonk = true; this.game.audio?.thud?.(); }
+              if (!f.clonk) { f.clonk = true; g.audio?.thud?.(); }
             } else e.vy = 0;
           }
           if (e.y > R + 1e-3 || e.vy !== 0) resting = false;
@@ -443,23 +526,37 @@ export class Obstacles {
         }
         f.z += f.vz * dt;
         f.roll += (f.vz * dt) / R;
-        const w = o.w;
         r.position.y = (f.ends[0].y + f.ends[1].y) / 2;
         r.position.z = f.z;
-        r.rotation.z = Math.atan2(f.ends[1].y - f.ends[0].y, w);
+        r.rotation.z = Math.atan2(f.ends[1].y - f.ends[0].y, o.w);
         r.rotation.x = f.roll;
         if (resting && f.t > 0.5) f.done = true;
       }
     }
   }
 
-  // Marqueurs numérotés visibles seulement pendant un parcours.
+  // Numéro de l'obstacle suivant mis en évidence pendant un parcours.
   highlight(courseId, num) {
     for (const o of this.list) {
       if (!o.sign) continue;
       o.sign.material.color.set(o.course === courseId && o.num === num ? '#7dffc4' : '#ffffff');
     }
   }
+}
+
+// Jardinières au pied des ailes : bac en bois, buis et fleurs (côté extérieur des ailes, hors du passage).
+function planterGeo(w, seed = 0) {
+  const parts = [];
+  for (const side of [-1, 1]) {
+    const x = side * (w / 2 + 1.6);
+    parts.push([box(0.9, 0.34, 0.5), '#5d4632', { x }]);
+    for (let i = 0; i < 6; i++) {
+      const fx = x - 0.32 + (i % 3) * 0.32, fz = (i < 3 ? -0.1 : 0.1) + (((i + seed) * 7) % 3) * 0.02;
+      parts.push([box(0.2, 0.18, 0.2), (i + seed) % 2 ? '#2f4424' : '#3a5a2c', { x: fx, y: 0.34, z: fz }]);
+      if ((i + seed) % 2 === 0) parts.push([box(0.07, 0.07, 0.07), ['#c42e35', '#e9c23c', '#f2f1ec'][(i + seed) % 3], { x: fx + 0.03, y: 0.5, z: fz }]);
+    }
+  }
+  return partsToGeo(parts);
 }
 
 export { clamp };

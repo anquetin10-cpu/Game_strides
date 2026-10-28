@@ -600,7 +600,7 @@ export class Game {
       horse._lastBreathPh = ph;
     });
     b.on('horse:land', (h) => {
-      a.thud();
+      a.landing(h.isPlayerHorse ? 1 : 0.5);
       const surf = this.surfaceAt(h.pos.x, h.pos.z);
       this.particles.emit(surf === 'grass' ? 'grass' : 'sand', h.pos.x, h.groundY, h.pos.z, 10, h.forward.x * h.speed, h.forward.z * h.speed);
     });
@@ -636,11 +636,11 @@ export class Game {
       this.addSkill('equitation', 0.5);
       if (!this.missions.active) this.hud.toast(margin > 0.3 ? 'Beau saut !' : 'Saut réussi');
     });
-    b.on('obstacle:fault', ({ obstacle }) => {
+    b.on('obstacle:fault', ({ obstacle, causeText }) => {
       this.save.data.stats.faults++;
       if (!this.missions.active) {
         a.fault();
-        this.hud.toast(obstacle.solid ? 'Touché !' : 'Barre !');
+        this.hud.toast(`${obstacle.solid ? 'Touché !' : 'Barre !'}${causeText ? ` · ${causeText}` : ''}`);
       }
     });
     b.on('mission:complete', ({ run }) => {
@@ -1175,8 +1175,10 @@ export class Game {
     }
     const ph = this.player.mode === 'ride' ? this.player.horse : null;
     const prev = ph ? { x: ph.pos.x, z: ph.pos.z } : null;
-    this.player.update(dt, input);
-    for (const h of this.horses) h.update(dt, this.camera.position);
+    // Parcours chronométré : le cheval s'arrête avec le chrono (téléphone, carte, dialogue ouverts).
+    const hdt = this.course?.running && this.simPaused ? 0 : dt;
+    this.player.update(hdt, input);
+    for (const h of this.horses) h.update(hdt, this.camera.position);
     if (ph && prev) this.obstacles.updateHorse(ph, prev.x, prev.z);
     if (this.player.mode === 'foot') this.obstacles.blockHuman(this.player.human);
     for (const p of this.humans) if (!p.mounted) p.update(dt, this.camera.position);

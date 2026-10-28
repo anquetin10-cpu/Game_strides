@@ -56,8 +56,19 @@ export const DEFI_POLE_V3 = deepFreeze({
   timeLimit: 84,
 });
 
-export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3 };
-export const CURRENT_CHALLENGE = DEFI_POLE_V3;
+// Version 4 : parcours dessiné de 10 obstacles avec un double (7A – 7B), lignes de départ et d'arrivée chronométrées,
+// saut dépendant de la distance d'appel ; temps accordé réglementaire du tracé (≈ 248 m à 350 m/min).
+export const DEFI_POLE_V4 = deepFreeze({
+  ...JSON.parse(JSON.stringify(DEFI_POLE_V3)),
+  id: 'defi-pole-v4',
+  version: 4,
+  obstacles: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  timeAllowed: 43,
+  timeLimit: 86,
+});
+
+export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4 };
+export const CURRENT_CHALLENGE = DEFI_POLE_V4;
 export const SIGNATURE = 'STRIDES Grand Tour';
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.

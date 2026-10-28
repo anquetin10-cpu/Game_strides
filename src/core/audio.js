@@ -350,6 +350,48 @@ export class Audio {
     this.crowd.g.gain.setValueAtTime(0.28, t);
     this.crowd.g.gain.setTargetAtTime(0.0, t + 1.6, 0.8);
   }
+  // Cloche du jury (autorisation de départ, élimination) : bronze, partiels inharmoniques.
+  bell(n = 1) {
+    if (!this.ctx) return;
+    for (let k = 0; k < n; k++) {
+      const w = k * 0.55;
+      [[880, 0.16], [1210, 0.07], [1780, 0.05], [2340, 0.03]].forEach(([f, v]) => this.tone(f, 1.6, 'sine', v, w));
+      this._noiseBurst({ type: 'highpass', freq: 3500, vol: 0.04, attack: 0.002, decay: 0.05, when: w });
+    }
+  }
+  // Applaudissements : nuée de claquements secs, plus ou moins nourris, qui retombent.
+  applause(intensity = 1, dur = 3.2) {
+    if (!this.ctx) return;
+    const n = Math.round(90 * intensity * dur);
+    for (let i = 0; i < n; i++) {
+      const when = Math.random() * dur * (0.4 + 0.6 * Math.random());
+      const fade = 1 - when / dur;
+      this._noiseBurst({ type: 'bandpass', freq: 1400 + Math.random() * 1800, q: 1.4, vol: 0.05 * intensity * fade + 0.004, attack: 0.002, decay: 0.03 + Math.random() * 0.03, when });
+    }
+    this.cheer();
+  }
+  // « Oh ! » du public sur une barre : murmure grave qui monte puis retombe.
+  crowdOoh() {
+    if (!this.ctx) return;
+    this._noiseBurst({ type: 'bandpass', freq: 380, q: 2.2, vol: 0.12, attack: 0.18, decay: 0.9, sweep: 0.7 });
+    this._noiseBurst({ type: 'bandpass', freq: 620, q: 2.5, vol: 0.06, attack: 0.2, decay: 0.8, sweep: 0.75 });
+  }
+  // Barre effleurée : le bois tinte sur ses taquets ; barre qui tombe : choc mat sur le sable.
+  railTouch() {
+    this.tone(620, 0.09, 'triangle', 0.07);
+    this._noiseBurst({ type: 'bandpass', freq: 2200, q: 3, vol: 0.05, attack: 0.002, decay: 0.05 });
+  }
+  railFall() {
+    this.tone(420, 0.12, 'triangle', 0.08);
+    this._noiseBurst({ type: 'lowpass', freq: 900, vol: 0.14, attack: 0.004, decay: 0.22, when: 0.18 });
+    this.thud();
+  }
+  // Réception du saut : antérieurs puis postérieurs dans le sable.
+  landing(intensity = 1) {
+    if (!this.ctx) return;
+    this._noiseBurst({ type: 'lowpass', freq: 520, vol: 0.2 * intensity, attack: 0.003, decay: 0.09 });
+    this._noiseBurst({ type: 'lowpass', freq: 460, vol: 0.16 * intensity, attack: 0.003, decay: 0.09, when: 0.11 });
+  }
   // Musique d'ambiance procédurale (pads + arpèges, discrète).
   setMusic(on) {
     this.musicOn = on;

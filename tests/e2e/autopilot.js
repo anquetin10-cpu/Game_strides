@@ -146,15 +146,11 @@
         A.steer(o.n.x, o.n.z, 0.95);
         // Cross : galop de cross (grand galop), comme sur un vrai parcours de cross ; CSO : galop de travail.
         if (o.course === 'xc') g.input.held.add('gallop'); else g.input.held.delete('gallop');
-        if (!jumped && g.obstacles.timing(h) === 'good') {
-          // Viser le centre de la fenêtre : attendre un peu.
-          const f = h.forward;
-          const s = (h.pos.x + f.x * 0.4 - o.x) * o.n.x + (h.pos.z + f.z * 0.4 - o.z) * o.n.z;
-          const ideal = (h.speed * 0.8) / 2;
-          if (-s <= ideal + 0.6) {
-            g.input.pressed.add('jump');
-            jumped = true;
-          }
+        // Appel au cœur de la bonne zone (mêmes calculs que l'aide affichée) : sommet du saut au-dessus de l'obstacle.
+        const tg = g.obstacles.target(h);
+        if (!jumped && tg && tg.o === o && tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3) {
+          g.input.pressed.add('jump');
+          jumped = true;
         }
         A.tick(1);
         const s2 = (h.pos.x - o.x) * o.n.x + (h.pos.z - o.z) * o.n.z;
@@ -165,6 +161,38 @@
       }
       A.releaseInput();
       return false;
+    },
+    // Parcours monté pour de vrai : joystick virtuel le long de la ligne du tracé (poursuite d'un point 6 m devant),
+    // appel quand l'aide affiche la bonne zone et que le sommet du saut tombe sur l'obstacle (`lead` m d'avance :
+    // négatif = appel plus tôt, positif = plus tard). Renvoie le journal des événements d'obstacle.
+    rideLine(line, { maxTicks = 4000, lead = 0, until = () => false, mag = 0.62, policy = null, dt = DT } = {}) {
+      const h = g.player.horse;
+      const ev = [];
+      const offs = ['obstacle:clear', 'obstacle:fault', 'obstacle:refusal'].map((k) => g.bus.on(k, (e) => ev.push({ k, label: e.obstacle.label || String(e.obstacle.num), cause: e.cause || null, margin: e.margin })));
+      let k = 0;
+      try {
+        for (let i = 0; i < maxTicks; i++) {
+          // Point de la ligne le plus proche (fenêtre glissante), puis cible 6 m plus loin.
+          let best = k, bd = 1e9;
+          for (let j = k; j < Math.min(line.length, k + 60); j++) {
+            const d = Math.hypot(line[j].x - h.pos.x, line[j].z - h.pos.z);
+            if (d < bd) { bd = d; best = j; }
+          }
+          k = best;
+          const tgt = line[Math.min(line.length - 1, k + 12)];
+          A.steer(tgt.x - h.pos.x, tgt.z - h.pos.z, mag);
+          g.input.held.delete('gallop');
+          const tg = g.obstacles.target(h);
+          const press = policy ? policy(tg, h) : tg && tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3 + lead;
+          if (h.jumpT < 0 && press) g.input.pressed.add('jump');
+          g.update(dt);
+          if (until() || (k >= line.length - 2 && Math.hypot(line[line.length - 1].x - h.pos.x, line[line.length - 1].z - h.pos.z) < 2)) break;
+        }
+      } finally {
+        offs.forEach((f) => f());
+        A.releaseInput();
+      }
+      return ev;
     },
     rideTo(t, maxTicks = 3000, mag = 0.95, gallop = true) {
       const h = g.player.horse;
@@ -288,6 +316,22 @@
         A.ensureMode('ride');
         const st = run.data.course;
         const list = g.obstacles.ofCourse(s.courseId);
+        if (!st.started) {
+          // CSO : après la cloche, le chrono part au passage de la ligne de départ (fanions).
+          const S = s.startLine;
+          if (S) {
+            const n = { x: Math.sin(S.rot), z: Math.cos(S.rot) };
+            g.player.horse.setPosition(S.x - n.x * 5, S.z - n.z * 5, S.rot);
+            g.player.horse.speed = 6;
+            g.cam.yaw = S.rot + Math.PI;
+            for (let i = 0; i < 30 && !st.started; i++) {
+              A.steer(n.x, n.z, 0.62);
+              A.tick(1);
+            }
+            A.releaseInput();
+          } else A.tick(5);
+          return;
+        }
         if (st.next <= list.length) {
           const ok = A.jumpObstacle(list[st.next - 1]);
           if (!ok) A.log.push(`jump failed ${id} #${st.next}`);
