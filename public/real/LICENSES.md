@@ -32,6 +32,7 @@ Le crédit est affiché dans le jeu (téléphone → Réglages, sous « Modèles
 | --- | --- | --- | --- |
 | `car_defender.glb` | « [Land Rover Defender Grasmere](https://sketchfab.com/3d-models/land-rover-defender-edition-grasmere-green-b7596dc0abc749c3b076d1f830715a54) » | PROJECT CAR90 / Samuel Carvalho | CC BY 4.0 |
 | `car_punto.glb` | « [Fiat Punto GT 1995](https://sketchfab.com/3d-models/free-1995-fiat-punto-gt-48db6facb4b64e99b60f36b8c01185e1) » | Karol Miklas | CC BY 4.0 |
+| `car_ipace.glb` | « [Jaguar I-Pace](https://sketchfab.com/3d-models/jaguar-i-pace-296a97a6c07041cf9c48f8a303315ed2) » | GT Cars / Car2022 | CC BY 4.0 |
 
 Versions préparées redistribuées par [TonPlaygramBot/TonPlaygramWebApp](https://github.com/TonPlaygramBot/TonPlaygramWebApp/blob/ee96cdbe3b1faae07cb58d7ecf42c4e9407d8039/webapp/public/assets/tirana-streets/vehicle-collection/ATTRIBUTION.md)
 (commit `ee96cdb`). Licence : [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).

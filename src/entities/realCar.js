@@ -2,10 +2,9 @@
 // l'affichage par un modèle réaliste préparé par scripts/real/build-cars.mjs (sans logo ni plaque). Le véhicule garde
 // sa physique, ses collisions et sa suspension (le modèle est porté par la caisse classique) ; les roues du modèle
 // tournent et braquent comme celles du jeu, la peinture prend la couleur du véhicule.
-import * as THREE from 'three';
 
 // Type de véhicule du jeu → modèle réaliste.
-export const CAR_MODELS = { duster: 'car_defender', clio: 'car_punto' };
+export const CAR_MODELS = { duster: 'car_defender', clio: 'car_punto', golf: 'car_punto', p3008: 'car_ipace' };
 
 export class RealCar {
   constructor(vehicle, root) {

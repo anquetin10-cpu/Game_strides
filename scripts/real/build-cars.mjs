@@ -12,7 +12,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { prune, dedup, weld, simplifyPrimitive, meshopt, reorder, textureCompress, compactPrimitive } from '@gltf-transform/functions';
+import { prune, dedup, weld, join as joinPrims, simplifyPrimitive, meshopt, reorder, textureCompress, compactPrimitive } from '@gltf-transform/functions';
 import { MeshoptEncoder, MeshoptDecoder, MeshoptSimplifier } from 'meshoptimizer';
 import draco3d from 'draco3dgltf';
 import sharp from 'sharp';
@@ -28,6 +28,7 @@ const SRC = 'https://raw.githubusercontent.com/TonPlaygramBot/TonPlaygramWebApp/
 const CARS = {
   defender: { file: 'landrover.glb', remove: /^(logo|wire_087224198|mascara_negra_2|Pintura_\.001)/, paint: /^Pintura$/, tires: /^Borracha/, tris: 48000, front: 1 },
   punto: { file: 'fiat.glb', remove: /^gt_license/, paint: /^gt_body/, tires: /^gt_tire/, tris: 36000, tex: 512 },
+  ipace: { file: 'jaguar.glb', remove: /^(Jaguar_bleu|Ipace|Metal_alu)$/, cut: [[/^Chrome$/, [-0.11, 0.11, 0.45, 0.78, 2.0, 3]]], paint: /^Body(_blue)?$/, tires: /^Pneu$/, tail: /^Feux_(glass_red|rouge)/, keep: /^Body(_blue)?$|Vitre|Phare|Feux|^Chrome$/, tris: 100000 },
 };
 
 async function fetchSrc(name) {
@@ -108,7 +109,7 @@ async function build(id, cfg) {
   const tireBox = box(keep, (p) => cfg.tires.test(p.getMaterial()?.getName() || ''));
   // Sens de l'avant : feux arrière (verre « Freio » / « Lanterna », rouges) du côté arrière, sinon option front.
   let fwdSign = cfg.front ?? 1;
-  const tail = box(keep, (p) => /Freio|Lanterna|tail/i.test(p.getMaterial()?.getName() || ''));
+  const tail = box(keep, (p) => (cfg.tail || /Freio|Lanterna|tail/i).test(p.getMaterial()?.getName() || ''));
   if (cfg.front === undefined && tail.mx[lenAxis] > -1e8) fwdSign = (tail.mn[lenAxis] + tail.mx[lenAxis]) / 2 > (all.mn[lenAxis] + all.mx[lenAxis]) / 2 ? -1 : 1;
   // Roues : pneus regroupés par quadrant (gauche/droite, avant/arrière).
   const cen = [0, 1, 2].map((k) => (tireBox.mn[k] + tireBox.mx[k]) / 2);
@@ -221,11 +222,36 @@ async function build(id, cfg) {
     t.setImage(await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer()).setMimeType('image/png');
   }
   carNode.setExtras({ wb: Math.abs(W[0].c[2] - W[2].c[2]), r: W.reduce((s, w) => s + w.r, 0) / 4, track: Math.abs(W[0].c[0] - W[1].c[0]) });
+  // Écussons pris dans un matériau plus large : triangles retirés dans de petites boîtes (repère du jeu).
+  for (const [re, [x0, x1, y0, y1, z0, z1]] of cfg.cut || []) {
+    for (const m of root.listMeshes()) for (const p of m.listPrimitives()) {
+      if (!re.test(p.getMaterial()?.getName() || '')) continue;
+      const a = p.getAttribute('POSITION').getArray();
+      const idx = p.getIndices();
+      const ia = idx.getArray();
+      const inBox = (v) => a[v * 3] > x0 && a[v * 3] < x1 && a[v * 3 + 1] > y0 && a[v * 3 + 1] < y1 && a[v * 3 + 2] > z0 && a[v * 3 + 2] < z1;
+      const kept = [];
+      for (let t = 0; t < ia.length; t += 3) if (!(inBox(ia[t]) && inBox(ia[t + 1]) && inBox(ia[t + 2]))) kept.push(ia[t], ia[t + 1], ia[t + 2]);
+      idx.setArray(new Uint32Array(kept));
+    }
+  }
+  // Diagnostic : matériaux présents dans une boîte (DUMPBOX="id:x0,x1,y0,y1,z0,z1", repère du jeu).
+  const dump = (process.env.DUMPBOX || '').split(';').filter((d) => d.startsWith(`${id}:`));
+  for (const d of dump) {
+    const [x0, x1, y0, y1, z0, z1] = d.split(':')[1].split(',').map(Number);
+    const count = {};
+    for (const m of root.listMeshes()) for (const p of m.listPrimitives()) {
+      const a = p.getAttribute('POSITION').getArray();
+      const o = m.getName().startsWith('wheel') ? [0, 0, 0] : [0, 0, 0];
+      for (let i = 0; i < a.length; i += 3) if (a[i] > x0 && a[i] < x1 && a[i + 1] > y0 && a[i + 1] < y1 && a[i + 2] > z0 && a[i + 2] < z1) count[p.getMaterial()?.getName()] = (count[p.getMaterial()?.getName()] || 0) + 1 + o[0];
+    }
+    console.log(id, d, JSON.stringify(count));
+  }
   await doc.transform(prune(), dedup());
   // Simplification des seules pièces lourdes et peu visibles (pneus, soubassement, garnitures) : peinture, vitres,
   // optiques et chromes gardent leur maillage d'origine (normales nettes).
   await MeshoptSimplifier.ready;
-  const fixed = /Pintura$|Vidro|Cromados|gt_body|gt_windows/;
+  const fixed = cfg.keep || /Pintura$|Vidro|Cromados|gt_body|gt_windows/;
   const heavy = [];
   let fixedTris = 0;
   for (const m of root.listMeshes()) for (const p of m.listPrimitives()) {
@@ -237,8 +263,19 @@ async function build(id, cfg) {
   const ratio = !heavyTris ? 1 : Math.min(1, Math.max(0.05, (cfg.tris - fixedTris) / heavyTris));
   if (ratio < 1) {
     await doc.transform(weld());
-    for (const [p] of heavy) simplifyPrimitive(p, { simplifier: MeshoptSimplifier, ratio, error: 0.02 });
+    // Tolérance de forme (relative à la taille de la pièce) : maillages denses allégés sans déformer les pièces fines.
+    for (const [p] of heavy) simplifyPrimitive(p, { simplifier: MeshoptSimplifier, ratio: 0, error: cfg.error ?? 0.006 });
   }
+  // Moins d'appels de dessin : matériaux unis équivalents (couleur, métal, rugosité arrondis) fusionnés, puis
+  // primitives de même matériau réunies dans chaque maillage.
+  const canon = new Map();
+  for (const m of root.listMaterials()) {
+    if (m.getBaseColorTexture() || m.getNormalTexture() || m.getExtras()?.paint || m.listExtensions().length || m.getAlphaMode() !== 'OPAQUE') continue;
+    const key = [...m.getBaseColorFactor().slice(0, 3).map((v) => Math.round(Math.sqrt(v) * 12)), Math.round(m.getMetallicFactor() * 4), Math.round(m.getRoughnessFactor() * 5), m.getDoubleSided()].join();
+    if (!canon.has(key)) canon.set(key, m);
+    else for (const mesh of root.listMeshes()) for (const p of mesh.listPrimitives()) if (p.getMaterial() === m) p.setMaterial(canon.get(key));
+  }
+  await doc.transform(prune(), joinPrims({ keepNamed: true }));
   await doc.transform(
     prune(),
     textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 85, resize: [cfg.tex || 1024, cfg.tex || 1024] }),
@@ -249,7 +286,8 @@ async function build(id, cfg) {
   mkdirSync(OUT, { recursive: true });
   const file = join(OUT, `car_${id}.glb`);
   await io.write(file, doc);
-  console.log(`car_${id}: ${(readFileSync(file).length / 1e6).toFixed(2)} Mo, ${before} → ${tris(doc)} triangles, empattement ${carNode.getExtras().wb.toFixed(2)} m, roues r ${carNode.getExtras().r.toFixed(3)} m`);
+  const prims = root.listMeshes().reduce((n, m) => n + m.listPrimitives().length, 0);
+  console.log(`car_${id}: ${(readFileSync(file).length / 1e6).toFixed(2)} Mo, ${before} → ${tris(doc)} triangles, ${prims} primitives, empattement ${carNode.getExtras().wb.toFixed(2)} m, roues r ${carNode.getExtras().r.toFixed(3)} m`);
 }
 
 for (const [id, cfg] of Object.entries(CARS)) await build(id, cfg);
