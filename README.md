@@ -123,7 +123,9 @@ réaliste :
 
 - **les personnes et chevaux proches** (8 personnes à moins de 30 m, 5 chevaux à moins de 45 m, les plus proches de
   la caméra) passent aussi en réaliste, chacun avec sa tenue ou sa robe ; au-delà, modèles classiques ;
-- **bottes d'équitation** hautes moulées sur la jambe (pantalon rentré dedans), à la couleur de la tenue.
+- **bottes d'équitation** hautes moulées sur la jambe (pantalon rentré dedans), à la couleur de la tenue ; **veste de
+  concours** (chemise blanche dessous) dans la tenue de concours ;
+- chevaux non sellés : **licol** (muserolle, montants, têtière) ; robe grise **pommelée**, tête plus claire.
 
 Les modèles classiques restent en place, cachés : revenir à « Classiques » rétablit l'affichage d'origine. Les
 véhicules ne changent pas encore.

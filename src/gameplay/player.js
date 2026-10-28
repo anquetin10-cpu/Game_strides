@@ -48,7 +48,7 @@ export class Player {
     const o = { ...base, style: 'rider' }; // coupe de concours par défaut
     if (kind === 'competition') {
       const jacket = this.game.save?.data?.upgrades?.includes('veste') ? '#1f2b45' : '#1b1c1f';
-      return Object.assign(o, { top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', helmet: '#16171a', logo: false });
+      return Object.assign(o, { top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', helmet: '#16171a', logo: false, jacket: true });
     }
     const h = this.game.hour?.() ?? 12;
     const wet = (this.game.weather?.rain ?? 0) > 0.15;

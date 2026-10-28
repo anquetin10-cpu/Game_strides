@@ -114,7 +114,11 @@ export class RealBody {
       if (mat.name === 'Skin') tint(mat, o.skin);
       else if (/^Hair/.test(mat.name)) tint(mat, o.hair);
       else if (mat.name === 'Eyebrow' && o.hair) tint(mat, `#${new THREE.Color(o.hair).multiplyScalar(0.7).getHexString()}`);
-      else if (mat.name === 'Cloth_shirt') tint(mat, o.top);
+      else if (mat.name === 'Cloth_jacket') {
+        // Veste de concours (tenue de concours seulement), chemise blanche dessous.
+        m.visible = !!o.jacket;
+        tint(mat, o.top);
+      } else if (mat.name === 'Cloth_shirt') tint(mat, o.jacket ? '#f2f1ec' : o.top);
       else if (mat.name === 'Cloth_jeans') tint(mat, o.pants);
       else if (mat.name === 'Cloth_boots' || mat.name === 'Cloth_tallboots') tint(mat, o.boots);
     });

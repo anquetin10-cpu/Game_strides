@@ -23,17 +23,19 @@ const CACHE = join(ROOT, 'node_modules/.cache/real-src');
 const OUT = join(ROOT, 'public/real');
 const SRC = 'https://raw.githubusercontent.com/kblood/CharacterCreator/852e48f316b90a0937234886630e4fb4cdfd1f78/output';
 
-// Personnages : morphologie (poids des formes MakeHuman), cheveux, vêtements.
+// Personnages : morphologie (poids des formes MakeHuman), cheveux, vêtements. La veste (concours) est affichée par le
+// jeu selon la tenue : elle ne masque pas la peau (la chemise reste dessous).
+const OPTIONAL = new Set(['clothing_jacket']);
 const CHARACTERS = {
   rider_f: {
     morphs: { gender_female: 1, muscle_max: 0.3, weight_min: 0.2, proportions_ideal: 0.6, breast_cup_min: 0.3, height_tall: 0.1 },
     hair: 'hair_ponytail01',
-    clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots'],
+    clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots', 'clothing_jacket'],
   },
   rider_m: {
     morphs: { gender_male: 1, muscle_max: 0.45, weight_min: 0.1, proportions_ideal: 0.6, height_tall: 0.25 },
     hair: 'hair_short02',
-    clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots'],
+    clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots', 'clothing_jacket'],
   },
 };
 
@@ -242,7 +244,7 @@ async function build(id, cfg) {
       }
     }
     const item = zones.items.find((it) => `clothing_${it.id}` === part);
-    for (const zn of item?.hidesBodyZones || []) hidden |= zones.bodyZones[zn];
+    if (!OPTIONAL.has(part)) for (const zn of item?.hidesBodyZones || []) hidden |= zones.bodyZones[zn];
   }
   // Une seule scène : le squelette et les maillages du corps ; les copies de squelette des pièces fusionnées
   // disparaissent au nettoyage (plus référencées).

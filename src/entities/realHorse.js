@@ -84,6 +84,8 @@ function coatMaterial(mat, coat, mk) {
     uSocks: { value: new THREE.Vector4(...sock) },
     uPoints: { value: Math.max(c.points, 0.35) },
     uBlaze: { value: mk?.blaze?.[0] > 0 ? 1 : 0 },
+    uDapple: { value: c.dapple },
+    uLightHead: { value: c.lightHead },
   };
   mat.roughness = 0.62;
   mat.metalness = 0;
@@ -93,13 +95,24 @@ function coatMaterial(mat, coat, mk) {
       .replace('#include <common>', '#include <common>\nattribute vec4 _coat;\nvarying vec4 vCoat;')
       .replace('#include <uv_vertex>', '#include <uv_vertex>\nvCoat = _coat;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uBody, uLegs, uMuzzle, uHoof, uWhite;\nuniform vec4 uSocks;\nuniform float uPoints, uBlaze;\nvarying vec4 vCoat;')
+      .replace('#include <common>', '#include <common>\nuniform vec3 uBody, uLegs, uMuzzle, uHoof, uWhite;\nuniform vec4 uSocks;\nuniform float uPoints, uBlaze, uDapple, uLightHead;\nvarying vec4 vCoat;\nfloat dhash( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }')
       .replace(
         '#include <map_fragment>',
         `vec4 sd = texture2D( map, vMapUv );
         float h = vCoat.x;
         float leg = floor( vCoat.w * 4.0 + 0.5 );
         vec3 cc = mix( uBody, uLegs, uPoints * smoothstep( 0.62, 0.40, h ) );
+        // Pommelures (gris surtout) : taches claires cerclées d'un réseau plus sombre, sur le corps.
+        vec2 dg = vMapUv * 38.0;
+        vec2 di = floor( dg );
+        float dd = 1.0;
+        for ( int y = -1; y <= 1; y ++ ) for ( int x = -1; x <= 1; x ++ ) {
+          vec2 dc = di + vec2( float( x ), float( y ) );
+          dd = min( dd, length( dg - dc - vec2( dhash( dc ), dhash( dc + 19.1 ) ) ) );
+        }
+        float body = smoothstep( 0.45, 0.75, h ) * ( 1.0 - vCoat.y );
+        cc *= mix( 1.0, mix( 1.28, 0.78, smoothstep( 0.28, 0.55, dd ) ), uDapple * 0.6 * body );
+        cc = mix( cc, uWhite * 0.92, uLightHead * vCoat.y );
         cc = mix( cc, uMuzzle, vCoat.y );
         float sock = leg < 0.5 ? 0.0 : leg < 1.5 ? uSocks.x : leg < 2.5 ? uSocks.y : leg < 3.5 ? uSocks.z : uSocks.w;
         cc = mix( cc, uWhite, step( 0.01, sock ) * smoothstep( sock + 0.025, sock - 0.025, h ) );
@@ -162,7 +175,10 @@ export class RealHorse {
       if (['Horse', 'Hair', 'Pad'].includes(o.material.name)) this.mats.push((o.material = o.material.clone()));
       const m = o.material;
       if (m.name === 'Horse') this.coat = coatMaterial(m, horse.def.coat, mk);
-      else if (m.name === 'Pad') {
+      else if (m.name === 'Halter') {
+        m.side = THREE.DoubleSide;
+        this.halter = o;
+      } else if (m.name === 'Pad') {
         padMaterial(m, horse.mesh.userData.tack?.material?.userData.padColors);
         this.pad = o;
       }
@@ -284,6 +300,7 @@ export class RealHorse {
     const saddled = H.mesh.userData.tack?.userData.cfg?.saddle !== false;
     for (const [name, p] of Object.entries(this.parts)) if (/Saddle1|Bridle/.test(name)) p.visible = saddled;
     if (this.pad) this.pad.visible = saddled;
+    if (this.halter) this.halter.visible = !saddled;
     H.mesh.updateMatrixWorld(true);
     this.root.getWorldQuaternion(_rootQ).invert();
     const sp = this.bones.BN_Spine_00_02;

@@ -102,6 +102,127 @@ function coatZones(body, cornea) {
   return out;
 }
 
+// Repère de la tête (positions de liaison) : centre et axe des yeux, bout du nez, axe de la tête.
+function headFrame(body, cornea) {
+  const P = body.getAttribute('POSITION').getArray();
+  const C = cornea.getAttribute('POSITION').getArray();
+  let mx = 0;
+  for (let i = 0; i < C.length; i += 3) mx += C[i];
+  mx /= C.length / 3;
+  const eye = [[0, 0, 0, 0], [0, 0, 0, 0]];
+  for (let i = 0; i < C.length; i += 3) {
+    const e = eye[C[i] > mx ? 0 : 1];
+    e[0] += C[i]; e[1] += C[i + 1]; e[2] += C[i + 2]; e[3]++;
+  }
+  const [EL, ER] = eye.map((e) => [e[0] / e[3], e[1] / e[3], e[2] / e[3]]);
+  let tip = 0;
+  for (let i = 1; i < P.length / 3; i++) if (P[i * 3 + 2] > P[tip * 3 + 2]) tip = i;
+  const T = [P[tip * 3], P[tip * 3 + 1], P[tip * 3 + 2]];
+  const mid = [(EL[0] + ER[0]) / 2, (EL[1] + ER[1]) / 2, (EL[2] + ER[2]) / 2];
+  const lat = V.norm(V.sub(EL, ER));
+  const fwdRaw = V.sub(T, mid);
+  const len = Math.hypot(...fwdRaw);
+  const fwd = V.norm(fwdRaw.map((v, k) => v - V.dot(fwdRaw, lat) * lat[k]));
+  return { mid, lat, fwd, up: V.cross(fwd, lat), len, tip: T };
+}
+const V = {
+  sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  add: (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k],
+  dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  norm: (a) => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+};
+
+// Licol (cheval non sellé) : muserolle et têtière = contours de la tête coupée en travers (nez, derrière les
+// oreilles), montants le long des joues plaqués sur la peau ; sangles plates poussées hors de la peau, poids de
+// peau du sommet le plus proche.
+function halter(doc, body, cornea, mat) {
+  const P = body.getAttribute('POSITION').getArray();
+  const N = body.getAttribute('NORMAL').getArray();
+  const H = headFrame(body, cornea);
+  const n = P.length / 3;
+  const head = [];
+  for (let i = 0; i < n; i++) {
+    const p = [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]];
+    const a = V.dot(V.sub(p, H.mid), H.fwd);
+    if (a > -0.3 && a < H.len + 0.05 && Math.hypot(...V.sub(p, V.add(H.mid, H.fwd, a))) < 0.22) head.push(i);
+  }
+  const at = (i) => [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]];
+  const nearest = (q) => {
+    let best = head[0], bd = 1e9;
+    for (const i of head) {
+      const d = (P[i * 3] - q[0]) ** 2 + (P[i * 3 + 1] - q[1]) ** 2 + (P[i * 3 + 2] - q[2]) ** 2;
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  };
+  const OFF = 0.02, HALF = 0.012;
+  const pos = [], nrm = [], src = [], idx = [];
+  // Bande entre deux suites de points (même longueur), fermée ou non.
+  const band = (pts, across, closed) => {
+    const base = pos.length / 3;
+    pts.forEach((q, k) => {
+      const v = nearest(q);
+      const nv = [N[v * 3], N[v * 3 + 1], N[v * 3 + 2]];
+      const c = V.add(at(v), nv, OFF);
+      const w = across(k, nv);
+      for (const sgn of [-1, 1]) {
+        pos.push(...V.add(c, w, sgn * HALF));
+        nrm.push(...nv);
+        src.push(v);
+      }
+    });
+    const m = pts.length;
+    for (let k = 0; k < (closed ? m : m - 1); k++) {
+      const a = base + k * 2, b = base + ((k + 1) % m) * 2;
+      idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  };
+  // Contour de la tête dans le plan normal à l'axe, passant par c : rayon maximal par secteur angulaire.
+  const ring = (c, bins = 28) => {
+    const r = new Array(bins).fill(0);
+    for (const i of head) {
+      const d = V.sub(at(i), c);
+      if (Math.abs(V.dot(d, H.fwd)) > 0.014) continue;
+      const x = V.dot(d, H.lat), y = V.dot(d, H.up);
+      const k = Math.floor(((Math.atan2(y, x) / (2 * Math.PI)) + 1) * bins) % bins;
+      r[k] = Math.max(r[k], Math.hypot(x, y));
+    }
+    return r.map((rad, k) => {
+      const t = ((k + 0.5) / bins) * 2 * Math.PI;
+      const rr = rad || Math.max(...r) * 0.8;
+      return V.add(V.add(c, H.lat, Math.cos(t) * rr), H.up, Math.sin(t) * rr);
+    });
+  };
+  const nose = ring(V.add(H.mid, H.fwd, H.len * 0.6));
+  const crown = ring(V.add(H.mid, H.fwd, -0.12));
+  band(nose, () => H.fwd, true);
+  band(crown, () => H.fwd, true);
+  // Montants : du côté de la muserolle au côté de la têtière, de chaque côté.
+  for (const sgn of [1, -1]) {
+    const side = (pts) => pts.reduce((b, q) => (V.dot(V.sub(q, H.mid), H.lat) * sgn > V.dot(V.sub(b, H.mid), H.lat) * sgn ? q : b));
+    const a = side(nose), b = side(crown);
+    const pts = [];
+    for (let k = 0; k <= 10; k++) pts.push(V.add(a, V.sub(b, a), k / 10));
+    const dir = V.norm(V.sub(b, a));
+    band(pts, (k, nv) => V.norm(V.cross(dir, nv)), false);
+  }
+  const buf = doc.getRoot().listBuffers()[0];
+  const prim = doc.createPrimitive()
+    .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(pos)).setBuffer(buf))
+    .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(nrm)).setBuffer(buf))
+    .setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(idx)).setBuffer(buf))
+    .setMaterial(mat);
+  for (const sem of ['JOINTS_0', 'WEIGHTS_0']) {
+    const a = body.getAttribute(sem);
+    const arr = a.getArray();
+    const out = new arr.constructor(src.length * 4);
+    src.forEach((v, i) => out.set(arr.subarray(v * 4, v * 4 + 4), i * 4));
+    prim.setAttribute(sem, doc.createAccessor().setType('VEC4').setArray(out).setNormalized(a.getNormalized()).setBuffer(buf));
+  }
+  return prim;
+}
+
 // Tapis de selle STRIDES : peau du dos sous la selle, poussée vers l'extérieur (mêmes poids de peau), coupée en
 // rectangle aux coins arrondis par le jeu. Attribut _PAD : (u le long du tapis, v du dos vers le bas, côté 0/1),
 // conventions de la texture du tapis classique (logo lisible de chaque côté).
@@ -239,6 +360,7 @@ const zones = coatZones(body, cornea);
 body.setAttribute('_COAT', doc.createAccessor('coat').setType('VEC4').setArray(zones).setBuffer(root.listBuffers()[0]));
 const padPrim = saddlePad(doc, body, meshNamed('Saddle1_Saddle_0').listPrimitives()[0], doc.createMaterial('Pad').setRoughnessFactor(0.9).setMetallicFactor(0));
 meshNamed('Stallion_Horse_0').addPrimitive(padPrim);
+meshNamed('Stallion_Horse_0').addPrimitive(halter(doc, body, cornea, doc.createMaterial('Halter').setBaseColorFactor([0.06, 0.07, 0.09, 1]).setRoughnessFactor(0.7).setMetallicFactor(0)));
 const bodyMat = body.getMaterial();
 const tex = bodyMat.getBaseColorTexture();
 tex.setImage(await neutralCoat(tex.getImage())).setMimeType('image/png').setName('TX_Horse_Coat');
