@@ -267,6 +267,9 @@
         return;
       }
       if (A.pickChoice()) return;
+      // Épreuve de CSO : présentation (« Entrer en piste ») et bilan (« Continuer » / « Quitter »).
+      const enter = document.querySelector('.overlay [data-id="enter"]') || document.querySelector('.overlay [data-id="cso-done"]');
+      if (enter) return A.tap(enter);
       const id = run.def.id;
       const txt = run.text();
       // Chapitre 1 : recrutement (parcours client), reconnaissance à pied, monter, échauffement.

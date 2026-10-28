@@ -127,7 +127,7 @@ export function courseSteps(game, run, S, opts) {
         if (state.eliminated) return 'Éliminé';
         if (cso && !state.started) return 'Franchis la ligne de départ';
         const o = list()[state.next - 1];
-        return o ? `Obstacle ${labelOf(o)}${/A$/.test(o.label || '') ? ' · double' : ''} sur ${list().length}` : 'Passe la ligne d’arrivée !';
+        return o ? `Obstacle n°${labelOf(o)}${/A$/.test(o.label || '') ? ' · double' : ''} sur ${list().length}` : 'Passe la ligne d’arrivée !';
       },
       target: () => {
         if (cso && !state.started) return startApproach;
