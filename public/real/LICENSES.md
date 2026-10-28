@@ -25,3 +25,18 @@ STRIDES Grand Tour : animations d'origine retirées, robe pie rendue neutre (dé
 le jeu), zones de robe ajoutées par sommet, textures converties en WebP et redimensionnées, maillages compressés.
 Le crédit est affiché dans le jeu (téléphone → Réglages, sous « Modèles 3D »). Fichier produit par
 `node scripts/real/build-horse.mjs`.
+
+## Voitures
+
+| Fichier | Modèle d'origine | Auteur | Licence |
+| --- | --- | --- | --- |
+| `car_defender.glb` | « [Land Rover Defender Grasmere](https://sketchfab.com/3d-models/land-rover-defender-edition-grasmere-green-b7596dc0abc749c3b076d1f830715a54) » | PROJECT CAR90 / Samuel Carvalho | CC BY 4.0 |
+| `car_punto.glb` | « [Fiat Punto GT 1995](https://sketchfab.com/3d-models/free-1995-fiat-punto-gt-48db6facb4b64e99b60f36b8c01185e1) » | Karol Miklas | CC BY 4.0 |
+
+Versions préparées redistribuées par [TonPlaygramBot/TonPlaygramWebApp](https://github.com/TonPlaygramBot/TonPlaygramWebApp/blob/ee96cdbe3b1faae07cb58d7ecf42c4e9407d8039/webapp/public/assets/tirana-streets/vehicle-collection/ATTRIBUTION.md)
+(commit `ee96cdb`). Licence : [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
+Modifications par STRIDES Grand Tour : logos, lettrages et plaques retirés, intérieur ajouté par le redistributeur
+retiré, modèle réorienté et recentré, roues découpées en objets séparés, pièces lourdes peu visibles simplifiées,
+peinture rendue neutre (teinte appliquée par le jeu), textures converties en WebP, maillages compressés. Les noms des
+modèles d'origine désignent des véhicules réels ; aucune marque n'est affichée dans le jeu. Fichiers produits par
+`node scripts/real/build-cars.mjs`.

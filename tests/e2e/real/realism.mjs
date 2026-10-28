@@ -136,12 +136,44 @@ const drove = await step(() => {
 s = await state();
 check('volant puis sortie : réaliste conservé', s.real && drove === 'ok', `${drove} ${JSON.stringify(s)}`);
 
+// Voiture de l'écurie : modèle réaliste (sans logo), roues qui tournent et braquent, roues de la circulation masquées.
+const car = await step(async () => {
+  const g = window.__game, P = g.player;
+  const v = g.vehicles.find((x) => x.kind === 'duster');
+  P.human.setPosition(v.pos.x + 3, v.pos.z + 3, 0);
+  for (let i = 0; i < 60 && !g.realism.cars.has(v); i++) {
+    window.__auto.tick(1);
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  const rc = g.realism.cars.get(v);
+  if (!rc) return { real: false };
+  P.enterVehicle(v);
+  for (let i = 0; i < 60; i++) {
+    g.input.setVirtualMove(0.6, 0.8);
+    window.__auto.tick(1);
+  }
+  const front = rc.wheels.find((w) => w.userData.front);
+  const res = { real: true, wheels: rc.wheels.length, spin: +front.rotation.x.toFixed(2), steer: +front.rotation.y.toFixed(2), speed: +v.sim.vx.toFixed(1), realWheels: v.realWheels, classic: v.body.children.filter((c) => c !== rc.root).every((c) => c.layers.mask === 2 ** 31) };
+  g.input.setVirtualMove(0, 0);
+  for (let i = 0; i < 80; i++) window.__auto.tick(1);
+  P.exitVehicle();
+  window.__auto.tick(2);
+  return res;
+});
+check('voiture de l’écurie : modèle réaliste, caisse classique masquée', car.real && car.classic && car.realWheels, JSON.stringify(car));
+check('au volant : roues réalistes qui tournent et braquent', car.wheels === 4 && Math.abs(car.spin) > 0.5 && Math.abs(car.steer) > 0.02 && car.speed > 2, JSON.stringify(car));
+
 // Retour au classique : affichage d'origine.
 await step(() => window.__game.realism.set('classic'));
 await tick(4);
 s = await state();
 check('retour au classique : modèle retiré, classique affiché', !s.real && s.classicLayer === 1, JSON.stringify(s));
 check('retour au classique : cheval procédural affiché', !s.horse.real && s.horse.layer === 1, JSON.stringify(s.horse));
+const carBack = await step(() => {
+  const g = window.__game, v = g.vehicles.find((x) => x.kind === 'duster');
+  return { cars: g.realism.cars.size, realWheels: !!v.realWheels, layer: v.body.children[0].layers.mask };
+});
+check('retour au classique : voiture classique', carBack.cars === 0 && !carBack.realWheels && carBack.layer === 1, JSON.stringify(carBack));
 
 // « Auto » : cadence trop basse (résolution déjà au minimum) → retour aux modèles classiques.
 const fb = await step(async () => {

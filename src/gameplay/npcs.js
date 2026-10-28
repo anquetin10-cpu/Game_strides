@@ -366,7 +366,9 @@ class TrafficFx {
         for (let zw = C.wb / 2, n = 0; n < 2; n++, zw = -zw) {
           // Roues avant braquées (épure d'Ackermann des voitures conduisibles), x > 0 à gauche.
           const st = n === 0 ? (sx > 0 ? c.steerL : c.steerR) || 0 : 0;
-          loc.compose(v.set(sx * (hw - 0.14), C.r, zw), q.setFromEuler(e.set(c.spin, st, 0)), sc.set(C.r, C.r, C.r));
+          // Voiture réaliste : ses propres roues (instance réduite à rien).
+          const wr = c.realWheels ? 0 : C.r;
+          loc.compose(v.set(sx * (hw - 0.14), C.r, zw), q.setFromEuler(e.set(c.spin, st, 0)), sc.set(wr, wr, wr));
           this.wheels.setMatrixAt(i * 4 + k++, m.multiplyMatrices(car, loc));
         }
       }

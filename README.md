@@ -128,14 +128,18 @@ est déjà au minimum), le jeu repasse de lui-même aux modèles classiques pour
   concours** (chemise blanche dessous) dans la tenue de concours ;
 - chevaux non sellés : **licol** (muserolle, montants, têtière) ; robe grise **pommelée**, tête plus claire.
 
-Les modèles classiques restent en place, cachés : « Classiques » rétablit l'affichage d'origine. Les véhicules ne
-changent pas encore.
+- **voitures** : la voiture de l'écurie et les citadines garées deviennent des voitures réalistes (4 au plus à moins
+  de 60 m), sans logo ni plaque, à la couleur du véhicule ; roues qui tournent et braquent, suspension, physique et
+  collisions inchangées. Le camion STRIDES, le tracteur et la circulation gardent leurs modèles.
 
-Les modèles (`public/real/*.glb`, compression meshopt, textures WebP ; personnages ≈ 2,5 Mo chacun, cheval 3,4 Mo)
+Les modèles classiques restent en place, cachés : « Classiques » rétablit l'affichage d'origine.
+
+Les modèles (`public/real/*.glb`, compression meshopt, textures WebP ; personnages ≈ 2,5 Mo chacun, cheval 3,4 Mo,
+voitures 0,9 et 1,7 Mo)
 sont chargés à part, seulement quand les modèles réalistes sont affichés. Ils se régénèrent avec
-`node scripts/real/build-humans.mjs` et `node scripts/real/build-horse.mjs` ; licences dans
-[`public/real/LICENSES.md`](public/real/LICENSES.md) (personnages CC0 ; cheval « Horse » de Henry S, CC BY 4.0,
-crédit affiché dans les réglages). Le fichier unique (`build:single`) charge à la place une copie glTF JSON
+`node scripts/real/build-humans.mjs`, `node scripts/real/build-horse.mjs` et `node scripts/real/build-cars.mjs` ; licences dans
+[`public/real/LICENSES.md`](public/real/LICENSES.md) (personnages CC0 ; cheval et voitures CC BY 4.0, crédits
+affichés dans les réglages). Le fichier unique (`build:single`) charge à la place une copie glTF JSON
 (`real/*.gltf.json`, produite par `node scripts/real/to-json.mjs <dossier>`), pour les hébergements qui ne servent pas
 les `.glb`.
 

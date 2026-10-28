@@ -7,6 +7,7 @@
 // l'affichage d'origine sans rien recharger.
 import * as THREE from 'three';
 import { RealHorse } from './realHorse.js';
+import { RealCar, CAR_MODELS } from './realCar.js';
 
 // Os du personnage classique → os du modèle réaliste (squelette « game_engine »).
 const SIDES = [['l', '_l'], ['r', '_r']];
@@ -250,13 +251,15 @@ export class RealBody {
 
 // Gestion du réglage « Modèles 3D » (Auto, Classiques, Réalistes) : rendu réaliste du joueur, de son cheval, et des personnes et chevaux proches
 // de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
-const NEAR = { humans: 8, horses: 5, humanDist: 30, horseDist: 45, margin: 10 };
+const NEAR = { humans: 8, horses: 5, cars: 4, humanDist: 30, horseDist: 45, carDist: 60, margin: 10 };
 
 export class Realism {
   constructor(game) {
     this.game = game;
     this.bodies = new Map(); // personnage → RealBody
     this.horses = new Map(); // cheval → RealHorse
+    this.cars = new Map(); // véhicule → RealCar
+    this.carFailed = new Set();
     this.failed = false;
     this.horseFailed = false;
     this.loading = new Set();
@@ -273,7 +276,7 @@ export class Realism {
   autoFallback() {
     if (this.game.save.data.settings.characters !== 'auto' || this.autoOff) return;
     this.autoOff = true;
-    if (!this.bodies.size && !this.horses.size) return;
+    if (!this.bodies.size && !this.horses.size && !this.cars.size) return;
     this._clear();
     this.game.hud?.toast('Modèles classiques pour garder la fluidité (réglage « Modèles 3D »).');
   }
@@ -281,8 +284,10 @@ export class Realism {
   _clear() {
     for (const r of this.bodies.values()) r.dispose();
     for (const r of this.horses.values()) r.dispose();
+    for (const r of this.cars.values()) r.dispose();
     this.bodies.clear();
     this.horses.clear();
+    this.cars.clear();
   }
 
   // Modèle réaliste du personnage du joueur (s'il est chargé).
@@ -313,8 +318,9 @@ export class Realism {
         console.warn('Modèle réaliste indisponible', id, e);
         this.loading.delete(id);
         if (kind === 'horse') this.horseFailed = true;
+        else if (kind === 'car') this.carFailed.add(id);
         else this.failed = true;
-        this.game.hud?.toast(kind === 'horse' ? 'Cheval réaliste indisponible : affichage classique.' : 'Personnage réaliste indisponible : affichage classique.');
+        if (kind !== 'car') this.game.hud?.toast(kind === 'horse' ? 'Cheval réaliste indisponible : affichage classique.' : 'Personnage réaliste indisponible : affichage classique.');
       },
     );
   }
@@ -369,6 +375,17 @@ export class Realism {
         return new RealHorse(h, root);
       });
     }
+    // Voitures conduisibles des types qui ont un modèle réaliste.
+    const cars = g.vehicles.filter((v) => v.body && CAR_MODELS[v.kind] && !this.carFailed.has(CAR_MODELS[v.kind]));
+    this._sync(this.cars, this._wanted(cars, [P?.vehicle].filter((v) => v && cars.includes(v)), this.cars, NEAR.cars, NEAR.carDist), (v, busy) => {
+      const id = CAR_MODELS[v.kind];
+      const root = !busy ? realNow(id) : null;
+      if (!root) {
+        if (!busy) this._load(id, 'car');
+        return null;
+      }
+      return new RealCar(v, root);
+    });
     if (!this.failed) {
       const want = this._wanted(g.humans, [P?.human], this.bodies, NEAR.humans, NEAR.humanDist);
       this._sync(this.bodies, want, (hu, busy) => {
