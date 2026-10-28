@@ -251,7 +251,7 @@ export class RealBody {
 
 // Gestion du réglage « Modèles 3D » (Auto, Classiques, Réalistes) : rendu réaliste du joueur, de son cheval, et des personnes et chevaux proches
 // de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
-const NEAR = { humans: 8, horses: 5, cars: 4, humanDist: 30, horseDist: 45, carDist: 60, margin: 10 };
+const NEAR = { humans: 8, horses: 5, cars: 6, humanDist: 30, horseDist: 45, carDist: 60, margin: 10 };
 
 export class Realism {
   constructor(game) {
@@ -375,8 +375,8 @@ export class Realism {
         return new RealHorse(h, root);
       });
     }
-    // Voitures conduisibles des types qui ont un modèle réaliste.
-    const cars = g.vehicles.filter((v) => v.body && CAR_MODELS[v.kind] && !this.carFailed.has(CAR_MODELS[v.kind]));
+    // Voitures (garées, conduisibles et de la circulation) des types qui ont un modèle réaliste.
+    const cars = g.vehicles.filter((v) => v.mesh && v.spec && CAR_MODELS[v.kind] && !this.carFailed.has(CAR_MODELS[v.kind]));
     this._sync(this.cars, this._wanted(cars, [P?.vehicle].filter((v) => v && cars.includes(v)), this.cars, NEAR.cars, NEAR.carDist), (v, busy) => {
       const id = CAR_MODELS[v.kind];
       const root = !busy ? realNow(id) : null;

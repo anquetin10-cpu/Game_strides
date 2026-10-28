@@ -28,6 +28,9 @@ const SRC = 'https://raw.githubusercontent.com/TonPlaygramBot/TonPlaygramWebApp/
 const CARS = {
   defender: { file: 'landrover.glb', remove: /^(logo|wire_087224198|mascara_negra_2|Pintura_\.001)/, paint: /^Pintura$/, tires: /^Borracha/, tris: 48000, front: 1 },
   punto: { file: 'fiat.glb', remove: /^gt_license/, paint: /^gt_body/, tires: /^gt_tire/, tris: 36000, tex: 512 },
+  sclass: { file: 'benz.glb', remove: /badging|digits|bootok0071|wheel0021|s65glass0011/, cut: [[/doorlrok0041Mtl$/, [-0.09, 0.09, 0.8, 1.08, 2.0, 3]], [/doorlrok0041Mtl$/, [-0.11, 0.11, 0.48, 0.74, 2.2, 3]], [/doorlrok0041Mtl$/, [-0.09, 0.09, 0.82, 1.15, -3, -2.3]],
+    // Étoile des moyeux (repère propre de chaque roue : centre au moyeu).
+    [/doorlrok0041Mtl$/, [-0.4, 0.4, -0.07, 0.07, -0.07, 0.07]]], paint: /doorlrok0021Mtl$/, tires: 'auto', keep: /doorlrok0021|glass|fara|tlights/, tris: 90000 },
   ipace: { file: 'jaguar.glb', remove: /^(Jaguar_bleu|Ipace|Metal_alu)$/, cut: [[/^Chrome$/, [-0.11, 0.11, 0.45, 0.78, 2.0, 3]]], paint: /^Body(_blue)?$/, tires: /^Pneu$/, tail: /^Feux_(glass_red|rouge)/, keep: /^Body(_blue)?$|Vitre|Phare|Feux|^Chrome$/, tris: 100000 },
 };
 
@@ -106,30 +109,83 @@ async function build(id, cfg) {
   const up = ext[1] < ext[0] && ext[1] < ext[2] ? 1 : ext[2] < ext[0] ? 2 : 0;
   const lenAxis = [0, 1, 2].filter((k) => k !== up).sort((a, b) => ext[b] - ext[a])[0];
   const latAxis = [0, 1, 2].find((k) => k !== up && k !== lenAxis);
-  const tireBox = box(keep, (p) => cfg.tires.test(p.getMaterial()?.getName() || ''));
+  const tireBox = cfg.tires === 'auto' ? all : box(keep, (p) => cfg.tires.test(p.getMaterial()?.getName() || ''));
   // Sens de l'avant : feux arrière (verre « Freio » / « Lanterna », rouges) du côté arrière, sinon option front.
   let fwdSign = cfg.front ?? 1;
   const tail = box(keep, (p) => (cfg.tail || /Freio|Lanterna|tail/i).test(p.getMaterial()?.getName() || ''));
   if (cfg.front === undefined && tail.mx[lenAxis] > -1e8) fwdSign = (tail.mn[lenAxis] + tail.mx[lenAxis]) / 2 > (all.mn[lenAxis] + all.mx[lenAxis]) / 2 ? -1 : 1;
-  // Roues : pneus regroupés par quadrant (gauche/droite, avant/arrière).
-  const cen = [0, 1, 2].map((k) => (tireBox.mn[k] + tireBox.mx[k]) / 2);
+  // Roues : pneus regroupés par quadrant (gauche/droite, avant/arrière). Sans matériau désigné : pneus = matériau des
+  // points de contact au sol, limités au voisinage de chaque contact.
+  let tireTest = (p) => cfg.tires.test(p.getMaterial()?.getName() || '');
+  let near = () => true;
+  let cen = [0, 1, 2].map((k) => (tireBox.mn[k] + tireBox.mx[k]) / 2);
+  if (cfg.tires === 'auto') {
+    const low = all.mn[up];
+    const votes = new Map();
+    const contacts = [];
+    for (const p of keep) {
+      const a = p.getAttribute('POSITION').getArray();
+      for (let i = 0; i < a.length; i += 3) if (a[i + up] < low + 0.02) {
+        votes.set(p.getMaterial(), (votes.get(p.getMaterial()) || 0) + 1);
+        contacts.push([a[i], a[i + 1], a[i + 2]]);
+      }
+    }
+    const tireMat = [...votes.entries()].sort((x, y) => y[1] - x[1])[0][0];
+    tireTest = (p) => p.getMaterial() === tireMat;
+    const cb = { mn: [1e9, 1e9, 1e9], mx: [-1e9, -1e9, -1e9] };
+    for (const c of contacts) for (let k = 0; k < 3; k++) { cb.mn[k] = Math.min(cb.mn[k], c[k]); cb.mx[k] = Math.max(cb.mx[k], c[k]); }
+    cen = [0, 1, 2].map((k) => (cb.mn[k] + cb.mx[k]) / 2);
+    // Centre de chaque contact (quadrant).
+    const qc = [0, 1, 2, 3].map(() => [0, 0, 0, 0]);
+    for (const c of contacts) {
+      const q = ((c[lenAxis] - cen[lenAxis]) * fwdSign > 0 ? 0 : 2) + (c[latAxis] > cen[latAxis] ? 0 : 1);
+      qc[q][0] += c[lenAxis]; qc[q][1] += c[latAxis]; qc[q][3]++;
+    }
+    near = (q, v) => Math.abs(v[lenAxis] - qc[q][0] / qc[q][3]) < 0.5 && Math.abs(v[latAxis] - qc[q][1] / qc[q][3]) < 0.25 && v[up] < low + 1.0;
+  }
   const quad = [0, 1, 2, 3].map(() => ({ mn: [1e9, 1e9, 1e9], mx: [-1e9, -1e9, -1e9] }));
   for (const p of keep) {
-    if (!cfg.tires.test(p.getMaterial()?.getName() || '')) continue;
+    if (!tireTest(p)) continue;
     const a = p.getAttribute('POSITION').getArray();
     for (let i = 0; i < a.length; i += 3) {
       const q = (a[i + lenAxis] - cen[lenAxis]) * fwdSign > 0 ? 0 : 2;
       const s = a[i + latAxis] > cen[latAxis] ? 0 : 1;
+      if (!near(q + s, [a[i], a[i + 1], a[i + 2]])) continue;
       const Q = quad[q + s];
       for (let k = 0; k < 3; k++) { Q.mn[k] = Math.min(Q.mn[k], a[i + k]); Q.mx[k] = Math.max(Q.mx[k], a[i + k]); }
     }
   }
-  const wheels = quad.map((Q, k) => ({
+  let wheels = quad.map((Q, k) => ({
     c: Q.mn.map((v, j) => (v + Q.mx[j]) / 2),
     r: (Q.mx[up] - Q.mn[up]) / 2,
     hw: (Q.mx[latAxis] - Q.mn[latAxis]) / 2,
     front: k < 2,
   }));
+  if (cfg.tires === 'auto') {
+    // Rayon par la corde du pneu à h du sol : r = (c²/4 + h²) / 2h ; centre au milieu de la corde.
+    const low = all.mn[up], h = 0.12;
+    const band = [0, 1, 2, 3].map(() => ({ mn: [1e9, 1e9, 1e9], mx: [-1e9, -1e9, -1e9] }));
+    for (const p of keep) {
+      if (!tireTest(p)) continue;
+      const a = p.getAttribute('POSITION').getArray();
+      for (let i = 0; i < a.length; i += 3) {
+        if (Math.abs(a[i + up] - (low + h)) > 0.012) continue;
+        const v = [a[i], a[i + 1], a[i + 2]];
+        const q = ((v[lenAxis] - cen[lenAxis]) * fwdSign > 0 ? 0 : 2) + (v[latAxis] > cen[latAxis] ? 0 : 1);
+        if (!near(q, v)) continue;
+        for (let k = 0; k < 3; k++) { band[q].mn[k] = Math.min(band[q].mn[k], v[k]); band[q].mx[k] = Math.max(band[q].mx[k], v[k]); }
+      }
+    }
+    wheels = band.map((B, k) => {
+      const chord = B.mx[lenAxis] - B.mn[lenAxis];
+      const r = (chord * chord) / 4 / (2 * h) + h / 2;
+      const c = [0, 0, 0];
+      c[lenAxis] = (B.mn[lenAxis] + B.mx[lenAxis]) / 2;
+      c[latAxis] = (B.mn[latAxis] + B.mx[latAxis]) / 2;
+      c[up] = low + r;
+      return { c, r, hw: (B.mx[latAxis] - B.mn[latAxis]) / 2, front: k < 2 };
+    });
+  }
   // Changement de repère : x = latéral (gauche +), y = haut, z = avant ; origine au sol, au milieu de l'empattement.
   const wb = Math.abs(((wheels[0].c[lenAxis] + wheels[1].c[lenAxis]) - (wheels[2].c[lenAxis] + wheels[3].c[lenAxis])) / 2);
   const mid = [0, 1, 2].map((k) => wheels.reduce((s, w) => s + w.c[k], 0) / 4);

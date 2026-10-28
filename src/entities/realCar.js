@@ -1,15 +1,17 @@
-// Voitures réalistes (réglage « Modèles 3D ») : la caisse classique d'un véhicule conduisible est remplacée à
+// Voitures réalistes (réglage « Modèles 3D ») : la caisse classique d'une voiture (conduisible ou de la circulation) est remplacée à
 // l'affichage par un modèle réaliste préparé par scripts/real/build-cars.mjs (sans logo ni plaque). Le véhicule garde
 // sa physique, ses collisions et sa suspension (le modèle est porté par la caisse classique) ; les roues du modèle
 // tournent et braquent comme celles du jeu, la peinture prend la couleur du véhicule.
 
 // Type de véhicule du jeu → modèle réaliste.
-export const CAR_MODELS = { duster: 'car_defender', clio: 'car_punto', golf: 'car_punto', p3008: 'car_ipace' };
+export const CAR_MODELS = { duster: 'car_defender', clio: 'car_punto', golf: 'car_punto', p508: 'car_sclass', p3008: 'car_ipace' };
 
 export class RealCar {
   constructor(vehicle, root) {
     this.v = vehicle;
     this.root = root;
+    // Porteur : caisse suspendue des véhicules conduisibles, groupe de la voiture pour la circulation.
+    this.carrier = vehicle.body || vehicle.mesh;
     this.mats = [];
     const car = root.children[0] || root;
     const ex = car.userData || {};
@@ -44,14 +46,14 @@ export class RealCar {
         o.renderOrder = 3;
       }
     });
-    vehicle.body.add(root);
+    this.carrier.add(root);
     this.setActive(true);
   }
 
   setActive(on) {
     this.root.visible = on;
     // Caisse et vitres classiques retirées de l'affichage, roues de la circulation masquées pour ce véhicule.
-    for (const c of this.v.body.children) if (c !== this.root) c.layers.set(on ? 31 : 0);
+    for (const c of this.carrier.children) if (c !== this.root) c.layers.set(on ? 31 : 0);
     this.v.realWheels = on;
   }
 

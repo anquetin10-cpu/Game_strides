@@ -128,14 +128,14 @@ est déjà au minimum), le jeu repasse de lui-même aux modèles classiques pour
   concours** (chemise blanche dessous) dans la tenue de concours ;
 - chevaux non sellés : **licol** (muserolle, montants, têtière) ; robe grise **pommelée**, tête plus claire.
 
-- **voitures** : la voiture de l'écurie, les citadines et les SUV garés deviennent des voitures réalistes (4 au plus à
-  moins de 60 m), sans logo ni plaque, à la couleur du véhicule ; roues qui tournent et braquent, suspension, physique
-  et collisions inchangées. Le camion STRIDES, le tracteur, les berlines et la circulation gardent leurs modèles.
+- **voitures** : la voiture de l'écurie, les voitures garées et celles de la circulation deviennent des voitures
+  réalistes (6 au plus à moins de 60 m), sans logo ni plaque, à la couleur du véhicule ; roues qui tournent et
+  braquent, suspension, physique et collisions inchangées. Le camion STRIDES et le tracteur gardent leurs modèles.
 
 Les modèles classiques restent en place, cachés : « Classiques » rétablit l'affichage d'origine.
 
 Les modèles (`public/real/*.glb`, compression meshopt, textures WebP ; personnages ≈ 2,5 Mo chacun, cheval 3,4 Mo,
-voitures 1,1 à 1,8 Mo)
+voitures 1 à 2 Mo)
 sont chargés à part, seulement quand les modèles réalistes sont affichés. Ils se régénèrent avec
 `node scripts/real/build-humans.mjs`, `node scripts/real/build-horse.mjs` et `node scripts/real/build-cars.mjs` ; licences dans
 [`public/real/LICENSES.md`](public/real/LICENSES.md) (personnages CC0 ; cheval et voitures CC BY 4.0, crédits
