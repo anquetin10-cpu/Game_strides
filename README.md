@@ -102,10 +102,23 @@ node tests/e2e/outfit.mjs     # tenues : travail, à cheval (casque), concours s
 node tests/e2e/barn.mjs       # écurie : entrer, allée, boxes, sellerie, caméra sous la charpente
 node tests/e2e/fuel.mjs       # carburant : consommation, plein à la station, panne sèche
 node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)
+node tests/e2e/real/realism.mjs # prototype réaliste : chargement, à cheval, au volant, retour au classique
 ```
 
-Pas d'assets externes : géométrie, textures et sons sont générés par le code (Three.js + WebAudio).
+Par défaut, pas d'assets externes : géométrie, textures et sons sont générés par le code (Three.js + WebAudio).
 Le build pèse environ 250 Ko gzip.
+
+### Prototype « personnages réalistes »
+
+Réglages du téléphone → **Personnages : Classique / Réaliste (prototype)**, ou `?real` dans l'adresse. En mode réaliste,
+le personnage du joueur est remplacé à l'affichage par un modèle humain réaliste (peau photographique, yeux, cils,
+cheveux, vêtements texturés, squelette à 53 os avec doigts) qui reprend les animations du personnage classique (marche,
+course, monte, conduite) et ses tenues (couleurs, casque). Le personnage classique reste en place, caché : revenir à
+« Classique » rétablit l'affichage d'origine. Le cheval, les autres personnages et les véhicules ne changent pas.
+
+Les modèles (`public/real/*.glb`, CC0, environ 2,5 Mo chacun, compression meshopt) sont chargés à part, seulement
+quand le mode réaliste est choisi. Ils se régénèrent avec `node scripts/real/build-humans.mjs` ; licences dans
+[`public/real/LICENSES.md`](public/real/LICENSES.md).
 
 ## Mise en ligne
 

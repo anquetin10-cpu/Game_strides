@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:#888}</style></head><body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const q = new URLSearchParams(location.search);
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.9; document.body.appendChild(r.domElement);
+const s = new THREE.Scene(); s.background = new THREE.Color('#9aa3ab');
+s.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+const sun = new THREE.DirectionalLight('#fff4e6', 2.2); sun.position.set(2, 4, 3); s.add(sun);
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 50);
+const v = (q.get('view') || 'full');
+if (v === 'face') { cam.position.set(0.25, 1.62, 0.75); cam.lookAt(0, 1.58, 0); } else { cam.position.set(1.2, 1.1, 3.6); cam.lookAt(0, 0.9, 0); }
+const l = new GLTFLoader(); l.setMeshoptDecoder(MeshoptDecoder);
+l.load('/real/' + (q.get('m') || 'rider_f') + '.glb', (g) => { s.add(g.scene); window.__gltf = g; r.render(s, cam); window.__ready = true; });
+</script></body></html>

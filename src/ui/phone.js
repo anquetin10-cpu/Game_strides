@@ -833,6 +833,8 @@ export class Phone {
       return h('div.set-row', {}, h('span', { text: label }), s);
     };
     body.appendChild(seg('Qualité graphique', 'quality', [['auto', 'Auto'], ['high', 'Haute'], ['low', 'Économie']], (v) => g.applyQuality(v)));
+    // Prototype comparatif : personnage réaliste (modèle chargé à part) ou classique.
+    body.appendChild(seg('Personnages', 'characters', [['classic', 'Classique'], ['real', 'Réaliste (prototype)']], (v) => g.realism?.set(v)));
     body.appendChild(seg('Écoulement du temps', 'timeScale', [['jeu', 'Jeu · 1 jour = 20 min'], ['reel', 'Réel · 24 h']]));
     body.appendChild(seg('Sensibilité caméra', 'camSens', [[0.7, 'Douce'], [1, 'Normale'], [1.4, 'Rapide']], (v) => (g.cam.sens = v)));
     // Sauvegarde : copie à conserver soi-même (texte) et restauration depuis une copie ou une copie de secours.

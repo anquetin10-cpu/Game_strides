@@ -38,6 +38,7 @@ import { installCare, HorseCondition, SIM } from './gameplay/condition.js';
 import { installFuel } from './gameplay/fuel.js';
 import { installRest } from './gameplay/rest.js';
 import { installStabling } from './gameplay/stabling.js';
+import { Realism } from './entities/realistic.js';
 import { STABLE_UPGRADES, SKILL_LABEL } from './gameplay/data.js';
 import { buildStableUpgrades } from './world/upgrades.js';
 import { Birds } from './world/birds.js';
@@ -158,6 +159,9 @@ export class Game {
     this.gps = new GPS(this);
     this.missions = new MissionManager(this);
     this.player = new Player(this, d.avatar);
+    // Prototype de personnage réaliste (réglage « Personnages »), chargé à part.
+    if (this.params.has('real')) d.settings.characters = 'real';
+    this.realism = new Realism(this);
     this.truck = new Truck(this, { x: HOME.truck.x, z: HOME.truck.z, heading: HOME.truck.rot });
     this.player.truck = this.truck;
     this.vehicles.push(this.truck);
@@ -1089,6 +1093,7 @@ export class Game {
     try {
       if (this.state === 'play' || this.state === 'photo') this.update(dt);
       else if (this.state === 'title') this.updateTitle(dt);
+      this.realism?.update();
       this.renderer.render(this.scene, this.camera);
     } catch (e) {
       console.error(e);
