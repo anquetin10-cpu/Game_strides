@@ -9,6 +9,8 @@ Jouable dans le navigateur, **pensé d'abord pour l'iPhone** (commandes tactiles
 
 ## Jouer
 
+En ligne, sans compte : **https://anquetin10-cpu.github.io/Game_strides/** (GitHub Pages, mis à jour à chaque push).
+
 | Tactile (iPhone) | Clavier |
 | --- | --- |
 | Joystick : poser le pouce n'importe où dans la moitié gauche et glisser — poussé : **galop** de 23 km/h à 35 km/h à fond | ZQSD / WASD ou flèches (galop ; Ctrl : trot, Alt : pas) |
