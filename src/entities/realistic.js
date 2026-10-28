@@ -38,11 +38,13 @@ async function loader() {
   }
   return loaderP;
 }
+// Fichier unique (page claude.ai, qui ne sert pas les .glb) : copie glTF JSON (scripts/real/to-json.mjs).
+const EXT = import.meta.env?.MODE === 'single' ? 'gltf.json' : 'glb';
 // Modèle d'un sexe (chargé une fois, cloné pour chaque personnage).
 export async function loadRealHuman(sex) {
   const id = sex === 'm' ? 'rider_m' : 'rider_f';
   if (!cache[id]) {
-    cache[id] = loader().then(({ l }) => l.loadAsync(new URL(`real/${id}.glb`, document.baseURI).href));
+    cache[id] = loader().then(({ l }) => l.loadAsync(new URL(`real/${id}.${EXT}`, document.baseURI).href));
   }
   const gltf = await cache[id];
   ready[id] = gltf;

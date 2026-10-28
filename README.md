@@ -118,7 +118,9 @@ course, monte, conduite) et ses tenues (couleurs, casque). Le personnage classiq
 
 Les modèles (`public/real/*.glb`, CC0, environ 2,5 Mo chacun, compression meshopt) sont chargés à part, seulement
 quand le mode réaliste est choisi. Ils se régénèrent avec `node scripts/real/build-humans.mjs` ; licences dans
-[`public/real/LICENSES.md`](public/real/LICENSES.md).
+[`public/real/LICENSES.md`](public/real/LICENSES.md). Le fichier unique (`build:single`) charge à la place une copie
+glTF JSON (`real/*.gltf.json`, produite par `node scripts/real/to-json.mjs <dossier>`), pour les hébergements qui ne
+servent pas les `.glb`.
 
 ## Mise en ligne
 
