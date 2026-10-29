@@ -45,7 +45,21 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   | Fer perdu (trouver un maréchal vérifié dans l'annuaire) | Annuaire |
   | La pension parfaite (comparer les pensions) | Écuries |
   | Cross de Saint-Gatien · Derby de la Touques · Qualificative CSI 3★ · Grand Prix CSI 5★ | Événements |
+  | Finale : Grand Prix de Paris Indoor (Sprint puis Grand Prix, en salle à Paris) | Événements |
 
+- **Grand Prix de Paris Indoor** (finale, hommage fictif aux grands concours en salle au format « Formule 1 » : aucun
+  nom, logo ni identité visuelle réels) :
+  - **zone « Paris »** hors de la carte de Deauville : arène couverte de 80 × 40 m, tribunes pleines sur trois côtés,
+    cube d'écrans géants (couple en piste, chrono, résultats), faisceaux de spectacle ; paddock d'échauffement sous
+    projecteurs, écuries provisoires, accréditations, parking des camions, silhouettes de Paris au loin ;
+  - **voyage en camion** : à l'arrêt sur la bretelle de l'**autoroute A13** (bout est de la route Est-Ouest), le
+    trajet est proposé (200 km, 2 h 10, 46 l de gazole), chevaux à bord ; retour par la voie d'accès du parking de
+    Paris (refusé si le cheval resterait seul à Paris) ;
+  - **format** : un **Sprint à 1,50 m** (barème C : chrono, +4 s par barre) fixe la **grille de départ** du soir — le
+    plus rapide part en dernier —, présentation des 40 cavaliers sur les écrans, puis le **Grand Prix à 1,60 m**
+    (barème A au chrono, **barrage** des sans-faute), podium et dotation ; 39 concurrents simulés ;
+  - **défi à conditions fixes** « Défi du Grand Prix de Paris » dans l'app Activités : cheval fourni, 1,50 m,
+    20 h 30 en salle, départ directement dans l'arène, record par version.
 - **Des jobs générés à l'infini** (coursier, transport, reconnaissance de parcours, soins), des **chronos libres**
   (plage, CSO, cross, hippodrome) et **20 fers d'or** cachés.
 - **Progression** : Groom → Cavalier → Pro vérifié → International → Légende 5★, avis clients étoilés, pourboires.
