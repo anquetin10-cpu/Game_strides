@@ -292,7 +292,7 @@ export class HUD {
       this.btnGallop.querySelector('span').textContent = mode === 'ride' ? 'Boost' : 'Courir';
       this.btnGallop.querySelector('div:not(.ring)').innerHTML = icon(mode === 'ride' ? 'boost' : 'run');
     }
-    this.btnWhistle.classList.toggle('hide', !(mode === 'foot' && p.horse && !p.horse.hiddenInTruck && !g.missions?.noWhistle));
+    this.btnWhistle.classList.toggle('hide', !(mode === 'foot' && p.horse && !p.horse.hiddenInTruck && !g.missions?.noWhistle && !g.indoor));
     // Action secondaire du transport (calculée après l'action principale).
     const sec = mode === 'foot' && p.transport ? p.transport.secondary() : null;
     const l2 = sec ? sec.label : '';

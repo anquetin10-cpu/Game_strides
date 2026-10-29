@@ -27,6 +27,8 @@ import { Ambient } from './gameplay/npcs.js';
 import { Collectibles } from './gameplay/collectibles.js';
 import { Activities } from './gameplay/activities.js';
 import { Challenges } from './gameplay/challengeRun.js';
+import { Commerce } from './gameplay/commerce.js';
+import { ShopManager } from './gameplay/shops.js';
 import { HORSES, SHOP, FIRST_NAMES } from './gameplay/data.js';
 import { HUD } from './ui/hud.js';
 import { Phone } from './ui/phone.js';
@@ -158,6 +160,9 @@ export class Game {
     this.phone = new Phone(this, document.body);
     this.gps = new GPS(this);
     this.missions = new MissionManager(this);
+    // Achats et équipement (boutiques de Deauville City et application du téléphone).
+    this.commerce = new Commerce(this);
+    this.indoor = null;
     this.player = new Player(this, d.avatar);
     // Prototype de personnage réaliste (réglage « Personnages »), chargé à part.
     // Modèles 3D : « Auto » par défaut (réalistes si l'appareil suit) ; l'ancien défaut « Classiques » jamais choisi
@@ -187,6 +192,7 @@ export class Game {
     this.mapImage = buildMapImage(this.world);
     this.hud.minimap.setImage(this.mapImage);
     this._worldInteractions();
+    this.shops = new ShopManager(this);
     installCare(this);
     installFuel(this);
     installRest(this);
@@ -336,11 +342,12 @@ export class Game {
     }
   }
 
+  // Bonus du cheval : articles achetés sans emplacement, et articles équipés (une selle, un bridon…).
   applyUpgrades(horse) {
     const mods = { speed: 0, jump: 0, stamina: 0, clearance: 0 };
     for (const id of this.save.data.upgrades) {
       const s = SHOP.find((x) => x.id === id);
-      if (!s) continue;
+      if (!s || !this.commerce.isActive(id)) continue;
       for (const k of Object.keys(mods)) if (s.effect[k]) mods[k] += s.effect[k];
     }
     horse.mods = mods;
@@ -349,12 +356,30 @@ export class Game {
   spawnMainHorse(id, at = null) {
     const def = HORSES[id] || HORSES.comete;
     const pos = at || { x: HOME.horse.x, z: HOME.horse.z, heading: HOME.horse.rot };
-    const h = this.spawnHorse(def, pos.x, pos.z, pos.heading ?? 0, { player: true, cond: this.save.data.horseCare?.[id] });
+    // Tapis de selle équipé (Sellerie du Port).
+    const pad = this.commerce?.pad();
+    const h = this.spawnHorse(def, pos.x, pos.z, pos.heading ?? 0, { player: true, cond: this.save.data.horseCare?.[id], pad: pad?.pad, padTrim: pad?.trim });
     h.visibleDist = 600;
     this.applyUpgrades(h);
     this.mainHorse = h;
     this.player.setHorse(h);
     return h;
+  }
+
+  // Nouveau tapis équipé : le cheval est resellé sur place (position, cavalier, état conservés).
+  refreshTack() {
+    const old = this.mainHorse;
+    if (!old) return;
+    const wasRiding = this.player.mode === 'ride' && this.player.horse === old;
+    if (wasRiding) this.player.dismount(true);
+    const at = { x: old.pos.x, z: old.pos.z, heading: old.heading };
+    const cond = old.cond?.toJSON?.();
+    if (cond) (this.save.data.horseCare ||= {})[old.id] = cond;
+    const tied = old.tiedAt;
+    this.despawn(old);
+    const h = this.spawnMainHorse(old.def.id, at);
+    h.tiedAt = tied;
+    if (wasRiding) this.player.mount();
   }
 
   setActiveHorse(id) {
@@ -389,24 +414,9 @@ export class Game {
     return true;
   }
 
+  // Achat d'un article du catalogue (même règle partout : voir commerce.js).
   buyUpgrade(id) {
-    const d = this.save.data;
-    const s = SHOP.find((x) => x.id === id);
-    if (!s || d.upgrades.includes(id)) return false;
-    if (d.money < s.price) {
-      this.hud.toast('Solde insuffisant.');
-      return false;
-    }
-    d.money -= s.price;
-    d.upgrades.push(id);
-    this.applyUpgrades(this.mainHorse);
-    // Veste de concours : portée sur le terrain des concours (voir Player.desiredOutfit).
-    if (s.effect.outfit && this.player.outfitKind === 'competition') this.player._rebuild();
-    this.updateWallet();
-    this.audio.coin();
-    this.hud.toast(`${s.name} : acheté !`);
-    this.saveNow();
-    return true;
+    return this.commerce.purchase(id).ok;
   }
 
   // ---------- Chapitre 1 : compétences, recrutement, écurie, invitation ----------
@@ -521,7 +531,6 @@ export class Game {
   // ---------- Interactions du monde ----------
   _worldInteractions() {
     const g = this;
-    this.interact.add('shop', { label: 'Sellerie', icon: 'bag', r: 7, priority: 1, modes: ['foot', 'ride'], x: POI.sellerie.x, z: POI.sellerie.z, action: () => g.phone.open('shop') });
     this.interact.add('hq', {
       label: 'Strides HQ', icon: 'strides', r: 7, priority: 1, modes: ['foot', 'ride'], x: POI.hq.x, z: POI.hq.z,
       action: () => {
@@ -667,19 +676,19 @@ export class Game {
   zoneName(x, z, prev = null) {
     const keep = (name) => (name === prev ? 8 : 0);
     const named = [
-      ['town', 'Deauvelle'], ['pole', 'Pôle International'], ['hippo', 'Hippodrome de la Touques'], ['home', 'Écurie du Val'],
+      ['town', 'Deauville City'], ['pole', 'Pôle International'], ['hippo', 'Hippodrome de la Touques'], ['home', 'Écurie du Val'],
       ['haras', 'Haras de la Pommeraie'], ['dunes', 'Écurie des Dunes'], ['gatien', 'Domaine de Saint-Gatien'],
     ];
     for (const [id, name] of named) {
       const zn = ZONES.find((zz) => zz.id === id);
       if (zoneDist(x, z, zn) < 4 + keep(name)) return name;
     }
-    // Front de mer de Deauvelle (route côtière, cabines, Planches) : c'est la ville jusqu'au sable.
+    // Front de mer de Deauville City (route côtière, cabines, Planches) : c'est la ville jusqu'au sable.
     const town = ZONES.find((zz) => zz.id === 'town');
-    if (Math.abs(x - town.x) < town.hw + 4 + keep('Deauvelle') && z < town.z && z > -380 - keep('Deauvelle')) return 'Deauvelle';
+    if (Math.abs(x - town.x) < town.hw + 4 + keep('Deauville City') && z < town.z && z > -380 - keep('Deauville City')) return 'Deauville City';
     const ds = z - shoreZ(x);
     if (x < -430 + keep('Falaises d’Aval') && z < -250) return 'Falaises d’Aval';
-    if (ds < 70 + keep('Plage de Deauvelle')) return 'Plage de Deauvelle';
+    if (ds < 70 + keep('Plage de Deauville City')) return 'Plage de Deauville City';
     if (forestDensity(x, z) > (keep('Forêt de Saint-Gatien') ? 0.37 : 0.45)) return 'Forêt de Saint-Gatien';
     if (Math.hypot(x - 120, z - 500) < 120 + keep('Colline Strides')) return 'Colline Strides';
     return 'Pays d’Auge';
@@ -800,8 +809,10 @@ export class Game {
     if (!this.player || this.state === 'title') return;
     const p = this.player;
     const f = p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.vehicle.pos;
+    // Dans un commerce : la porte (trottoir), et le commerce à rouvrir à la reprise (save.data.indoorShop).
+    const door = this.shops?.savedPos();
     this.save.data.pos = {
-      x: f.x, z: f.z, heading: p.heading,
+      x: door ? door.x : f.x, z: door ? door.z : f.z, heading: door ? door.heading : p.heading,
       horse: this.mainHorse ? { x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, heading: this.mainHorse.heading } : null,
       truck: { x: this.truck.pos.x, z: this.truck.pos.z, heading: this.truck.heading },
       // Véhicules déplacés par le joueur (indice dans la liste des véhicules garés à l'origine).
@@ -1051,6 +1062,8 @@ export class Game {
       this.player.setAvatar(d.avatar);
     }
     this.state = 'play';
+    // Sauvegarde faite dans un commerce : retour à l'intérieur (ou devant sa porte si l'intérieur ne se charge pas).
+    if (!isNew) this.shops.resume();
     this.hud.el.classList.remove('hidden');
     document.getElementById('touch').classList.remove('hidden');
     this.metrics.track('game_started', { mode: isNew ? 'new' : 'continue' });
@@ -1061,7 +1074,7 @@ export class Game {
     if (isNew) {
       this.screens.card({
         kicker: 'Côte Fleurie · Normandie',
-        title: 'Bienvenue à Deauvelle',
+        title: 'Bienvenue à Deauville City',
         body: `${this.save.data.playerName}, tu arrives avec Comète, ta jument baie, et zéro euro en poche. Ici, tout le monde travaille avec STRIDES : les missions tombent sur ton téléphone. Accepte-les, réalise-les, construis ta réputation… jusqu’au Grand Prix.`,
         buttons: [{ label: 'En selle', primary: true, id: 'go', run: () => (this.missions.timer = 2.5) }],
       });
@@ -1081,7 +1094,7 @@ export class Game {
     }
     if (this.gps.target) out.push({ x: this.gps.target.x, z: this.gps.target.z, kind: 'waypoint', sticky: true, label: full ? this.gps.target.label : '' });
     const pois = [
-      [POI.home, 'home'], [POI.sellerie, 'shop'], [POI.pole, 'event'], [POI.hippo, 'event'], [POI.haras, 'stable'], [POI.dunes, 'stable'], [POI.gatien, 'stable'],
+      [POI.home, 'home'], [POI.sellerie, 'shop'], [POI.cafe, 'shop'], [POI.boutique, 'shop'], [POI.pole, 'event'], [POI.hippo, 'event'], [POI.haras, 'stable'], [POI.dunes, 'stable'], [POI.gatien, 'stable'],
       [POI.hq, 'strides'], [POI.forge, 'pro'], [POI.vet, 'pro'],
     ];
     for (const [p, kind] of pois) out.push({ x: p.x, z: p.z, kind, label: full ? p.name : '' });
@@ -1165,7 +1178,11 @@ export class Game {
     if (canAct && input.wasPressed('action')) {
       if (!this.hud.advanceDialog()) this.interact.trigger();
     }
-    if (canAct && input.wasPressed('whistle') && !this.missions.noWhistle) this.player.whistle();
+    // Dans un commerce, le cheval reste attaché dehors : le sifflet ne le fait pas venir entre les rayons.
+    if (canAct && input.wasPressed('whistle') && !this.missions.noWhistle) {
+      if (this.indoor) this.hud.toast(`${this.mainHorse?.name || 'Ton cheval'} t’attend dehors.`);
+      else this.player.whistle();
+    }
 
     // Joueur et monde.
     const frozenInput = !canAct || this.hud.dialogActive;
@@ -1191,6 +1208,7 @@ export class Game {
 
     // Gameplay.
     this._talker = this.player.mode !== 'drive' ? this.ambient.nearestTalker(this.player.focus.pos) : null;
+    this.shops.update();
     this.interact.update();
     this.missions.update(sdt);
     this.collectibles.update(dt);
@@ -1230,8 +1248,9 @@ export class Game {
       speed: Math.abs(this.player.speed),
       // Distance au rivage du moment (la mer se retire à plus de 100 m à basse mer de vives-eaux).
       seaDist: Math.max(0, f.z - this.seaLineZ(f.x)),
-      crowd: Math.hypot(f.x - POLE.arena.x, f.z - POLE.arena.z) < 90 ? 0.6 : 0,
+      crowd: this.indoor ? this.shops.murmur() : Math.hypot(f.x - POLE.arena.x, f.z - POLE.arena.z) < 90 ? 0.6 : 0,
       engine: this.player.mode === 'drive' ? Math.abs(this.player.vehicle.speed) : -1,
+      indoor: this.indoor ? 1 : 0,
     }, dt);
 
     // HUD.

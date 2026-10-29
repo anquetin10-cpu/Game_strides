@@ -82,10 +82,12 @@ export class Audio {
   }
 
   // Appelé à chaque image avec l'état du monde.
-  ambience({ speed = 0, seaDist = 999, crowd = 0, engine = -1, night = 0 }, dt) {
+  // indoor : 0 dehors, 1 dans un commerce (le vent et la mer s'atténuent, crowd = brouhaha de la salle).
+  ambience({ speed = 0, seaDist = 999, crowd = 0, engine = -1, night = 0, indoor = 0 }, dt) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    const wind = 0.02 + Math.min(speed / 16, 1) * 0.12;
+    if (indoor) seaDist = Math.max(seaDist, 160 * indoor);
+    const wind = (0.02 + Math.min(speed / 16, 1) * 0.12) * (1 - 0.85 * indoor);
     this.wind.g.gain.setTargetAtTime(wind, t, 0.3);
     this.wind.f.frequency.setTargetAtTime(400 + speed * 40, t, 0.3);
     const wv = Math.max(0, 1 - seaDist / 160) * (0.1 + 0.06 * Math.sin(t * 0.6));
@@ -102,6 +104,24 @@ export class Audio {
     this.musicTick();
     void dt;
     void night;
+  }
+
+  // Commerces : porte (loquet et clochette d'entrée), caisse, percolateur.
+  shopDoor() {
+    if (!this.ctx) return;
+    this.latch(0);
+    this.tone(2093, 0.35, 'sine', 0.045, 0.06);
+    this.tone(2637, 0.4, 'sine', 0.03, 0.13);
+  }
+  register() {
+    if (!this.ctx) return;
+    this.tone(1320, 0.08, 'square', 0.025, 0);
+    this.tone(1760, 0.12, 'square', 0.02, 0.08);
+    this.coin();
+  }
+  coffee() {
+    if (!this.ctx) return;
+    this._noiseBurst({ type: 'bandpass', freq: 1600, q: 0.6, vol: 0.09, attack: 0.15, decay: 1.6 });
   }
 
   _env(node, t, a, peak, d) {

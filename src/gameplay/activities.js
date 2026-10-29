@@ -17,7 +17,7 @@ export class Activities {
     const lapStart = ovalPoint(HIPPO.half - 25, HIPPO_LAP.r);
     this.defs = [
       {
-        id: 'beach_sprint', name: 'Sprint de la plage', kind: 'Galop', desc: '8 anneaux le long de la mer, de l’Écurie des Dunes à Deauvelle, sur le sable ferme au bord de l’eau (plus loin à marée basse).',
+        id: 'beach_sprint', name: 'Sprint de la plage', kind: 'Galop', desc: '8 anneaux le long de la mer, de l’Écurie des Dunes à Deauville City, sur le sable ferme au bord de l’eau (plus loin à marée basse).',
         start: { x: 505, z: -385 },
         build: (g, run, S) => {
           const xs = [];

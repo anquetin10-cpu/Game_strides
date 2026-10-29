@@ -18,6 +18,11 @@ export const CAM_CSO = {
   manualHold: 0.9, // délai (s) avant de revenir derrière le cheval après un coup d'œil au doigt
   fov: 55, // champ vertical fixe (pas de zoom ni de grand-angle)
 };
+// Profil de caméra des commerces (game.indoor, à pied) : plus proche et plus basse que dehors, recentrage plus
+// rapide derrière le personnage dans les allées ; les murs, le mobilier haut et le plafond la rapprochent (anti-collision
+// commune). Rétabli dès la sortie.
+export const CAM_INDOOR = { dist: 3.1, height: 1.5, pitch: 0.2, yawFollow: 2.4, manualHold: 1.0, fov: 62 };
+
 export class FollowCamera {
   constructor(camera, game) {
     this.camera = camera;
@@ -55,6 +60,7 @@ export class FollowCamera {
     const now = this.game.time;
     // Parcours de CSO : caméra un peu plus haute et plus reculée, pour voir l'abord et préparer l'obstacle suivant.
     const course = mode === 'ride' && !!this.game.course?.camera;
+    const indoor = mode === 'foot' && !!this.game.indoor;
     if (look.dx || look.dy) {
       this.yaw -= look.dx * 0.0062 * this.sens;
       this.pitch = clamp(this.pitch + look.dy * 0.0045 * this.sens, -0.12, 1.15);
@@ -62,8 +68,8 @@ export class FollowCamera {
     }
     // Recentrage derrière le sujet quand il avance (concours : plus tôt après un coup d'œil, à vitesse réglée).
     const idle = now - this.lastManual;
-    if (focus.speed > (course ? 0.6 : 1.2) && idle > (course ? CAM_CSO.manualHold : 1.4)) {
-      const k = mode === 'drive' ? 2.4 : course ? CAM_CSO.yawFollow : 1.4 + Math.min(focus.speed / 10, 1.6);
+    if (focus.speed > (course || indoor ? 0.6 : 1.2) && idle > (course ? CAM_CSO.manualHold : indoor ? CAM_INDOOR.manualHold : 1.4)) {
+      const k = mode === 'drive' ? 2.4 : course ? CAM_CSO.yawFollow : indoor ? CAM_INDOOR.yawFollow : 1.4 + Math.min(focus.speed / 10, 1.6);
       // Grand recentrage (> ~70°, demi-tour au pied du camion…) : on tourne du côté où la perche est dégagée plutôt
       // que par le plus court chemin, qui peut balayer la caisse (perche écrasée, vue plongeante sur le toit), et on
       // garde ce sens jusqu'au bout.
@@ -74,12 +80,12 @@ export class FollowCamera {
         if (s !== this.swing) d -= s * 2 * Math.PI;
       } else this.swing = 0;
       this.yaw += d * (1 - Math.exp(-k * dt));
-      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : course ? CAM_CSO.pitch : 0.28, 1.2, dt);
+      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : course ? CAM_CSO.pitch : indoor ? CAM_INDOOR.pitch : 0.28, 1.2, dt);
     } else this.swing = 0;
-    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? (course ? CAM_CSO.dist : 6.6) : 4.6;
+    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? (course ? CAM_CSO.dist : 6.6) : indoor ? CAM_INDOOR.dist : 4.6;
     this.targetDist = base + (mode === 'ride' && !course ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
     // Hauteur du pivot lissée : monter ou descendre (de cheval, du camion) ne fait plus sauter la caméra d'une image à l'autre.
-    const height = mode === 'drive' ? (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? CAM_CSO.height : 2.35) : 1.55;
+    const height = mode === 'drive' ? (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? CAM_CSO.height : 2.35) : indoor ? CAM_INDOOR.height : 1.55;
     this.height = instant ? height : damp(this.height, height, 4, dt);
     // Concours : on vise un point devant le cheval (l'abord de l'obstacle suivant reste dans le champ) et la hauteur
     // suit le sol plus qu'un saut (mouvement vertical amorti) ; transition douce à l'entrée et à la sortie.
@@ -142,7 +148,7 @@ export class FollowCamera {
     this.shake = Math.max(0, this.shake - dt * 2);
     cam.position.set(cx, cy, cz);
     cam.lookAt(tx, ty + (mode === 'ride' ? 0.1 : 0), tz);
-    const fovTarget = course ? CAM_CSO.fov : 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);
+    const fovTarget = course ? CAM_CSO.fov : indoor ? CAM_INDOOR.fov : 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);
     this.fov = damp(this.fov, fovTarget, 3, dt);
     if (Math.abs(cam.fov - this.fov) > 0.05) {
       cam.fov = this.fov;

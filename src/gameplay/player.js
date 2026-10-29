@@ -57,16 +57,23 @@ export class Player {
   _outfit(avatar, kind = this.outfitKind) {
     const base = avatar === 'm' ? OUTFITS.rider : OUTFITS.riderF;
     const o = { ...base, style: 'rider' }; // coupe de concours par défaut
+    // Articles portés (Sellerie du Port, Maison Lucette) et article essayé en boutique (previewItem).
+    const wear = this.game.commerce?.wear(this.previewItem) || {};
     if (kind === 'competition') {
       const jacket = this.game.save?.data?.upgrades?.includes('veste') ? '#1f2b45' : '#1b1c1f';
-      return Object.assign(o, { top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', helmet: '#16171a', logo: false, jacket: true });
+      return Object.assign(o, { top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', helmet: wear.helmet || '#16171a', logo: false, jacket: true });
     }
     const h = this.game.hour?.() ?? 12;
     const wet = (this.game.weather?.rain ?? 0) > 0.15;
     const top = wet || h < 9.5 || h > 20 ? '#2b3442' : '#2f5f8a';
     // Coupe décontractée (polo ou blouson, pas de revers ni de chemise), culotte d'équitation, boots et mini-chaps.
     Object.assign(o, { style: 'casual', top, sleeve: top, pants: avatar === 'm' ? '#9aa0a6' : '#c2b49a', boots: '#3b2a1e', tallBoots: true, breeches: true, logo: true });
-    o.helmet = kind === 'ride' ? '#16171a' : null;
+    // Haut acheté (sans le logo Strides du polo de travail), bottes ; casque à cheval, couvre-chef à pied.
+    if (wear.top) Object.assign(o, { top: wear.top, sleeve: wear.sleeve || wear.top, logo: false });
+    if (wear.collar) o.collar = wear.collar;
+    if (wear.boots) o.boots = wear.boots;
+    o.helmet = kind === 'ride' ? wear.helmet || '#16171a' : null;
+    if (kind !== 'ride' && wear.cap) o.cap = wear.cap;
     return o;
   }
 

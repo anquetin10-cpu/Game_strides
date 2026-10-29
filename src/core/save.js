@@ -21,6 +21,12 @@ export function defaultSave() {
     horses: ['comete'],
     activeHorse: 'comete',
     upgrades: [],
+    // Commerces de Deauville City : consommables (id → quantité), équipement choisi par emplacement (voir
+    // commerce.js), derniers achats, boutique où se trouvait le joueur à la sauvegarde (reprise devant sa porte).
+    inventory: {},
+    equipped: {},
+    purchases: [],
+    indoorShop: null,
     horseshoes: [],
     bestTimes: {},
     stats: { jobs: 0, earned: 0, distance: 0, jumps: 0, faults: 0 },

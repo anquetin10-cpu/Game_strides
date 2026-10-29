@@ -31,6 +31,20 @@
       const y = (wx / l) * fx + (wz / l) * fz;
       g.input.setVirtualMove(x * mag, y * mag);
     },
+    // Commerces : une cible à l'intérieur d'une boutique → pied à terre devant la porte et entrée ; une cible dehors
+    // alors qu'on est dans une boutique → sortie.
+    shopRoute(t) {
+      const sh = g.shops;
+      if (!sh || !t) return;
+      const id = ['sellerie', 'cafe', 'boutique'].find((k) => sh.inside(k, t.x, t.z));
+      if (sh.current && sh.current !== id) sh.exit({ instant: true });
+      if (id && sh.current !== id) {
+        A.ensureMode('foot');
+        A.goTo(sh.doorOut(id), 1);
+        sh.enter(id, { instant: true });
+        A.tick(2);
+      }
+    },
     tick(n = 1) {
       for (let i = 0; i < n; i++) g.update(DT);
     },
@@ -50,6 +64,8 @@
         n++;
       }
       for (const b of document.querySelectorAll('.overlay .btn.primary')) {
+        // Fiches des commerces : jamais les boutons d'achat, seulement « Fermer ».
+        if (b.closest('.shop-acts')) continue;
         A.tap(b);
         n++;
       }
@@ -92,7 +108,8 @@
         p.human.setPosition(x, z);
         const led = p.transport?.led?.horse;
         if (led) led.setPosition(x + 1, z + 1, led.heading);
-        if (p.horse && p.horse !== led && !p.horse.hiddenInTruck && !p.horse.frozen) p.horse.setPosition(x + 2.5, z + 2.5, 0);
+        // Dans un commerce, le cheval reste attaché dehors.
+        if (p.horse && p.horse !== led && !p.horse.hiddenInTruck && !p.horse.frozen && !g.indoor) p.horse.setPosition(x + 2.5, z + 2.5, 0);
       }
     },
     // Camion : charger / décharger un cheval par l'API du transport (séquence accélérée).
@@ -304,11 +321,13 @@
         return;
       }
       if (s.kind === 'goto') {
+        A.shopRoute(A.pos(s.target));
         A.ensureMode(s.mode || (g.player.mode === 'foot' ? 'foot' : g.player.mode));
         A.goTo(A.pos(s.target), 1);
         return;
       }
       if (s.kind === 'interact') {
+        A.shopRoute(A.pos(s.target));
         const mode = s.modes.includes(g.player.mode) ? g.player.mode : s.modes[0];
         A.ensureMode(mode);
         const t = A.pos(s.target);

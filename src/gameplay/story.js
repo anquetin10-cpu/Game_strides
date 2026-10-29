@@ -1,6 +1,7 @@
 // Missions de l'histoire : de groom à vainqueur du Grand Prix. Les textes « Dans la vraie vie » ne décrivent que ce
 // que propose réellement l'application Strides (mise en relation avec des professionnels du cheval).
-import { HOME, HARAS, POLE, DUNES, GATIEN, TOWN, homeBoxes, HIPPO_SITE } from '../world/sites.js';
+import { HOME, HARAS, POLE, DUNES, GATIEN, TOWN, homeBoxes, HIPPO_SITE, SHOPS3D } from '../world/sites.js';
+import { shopAnchor } from '../world/shopInteriors.js';
 import { POI, HIPPO } from '../world/layout.js';
 import { courseSteps, totalPenalties, checkpointSteps, beachRingPoints, pathLength, raceSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
@@ -161,12 +162,12 @@ export const STORY = [
     timeoutText: 'Trop tard : l’épreuve a commencé sans la selle.',
     rate: (run) => (run.data.left > 40 ? 5 : run.data.left > 25 ? 4 : run.data.left > 10 ? 3 : 2),
     steps(game, run, S) {
-      // Margaux attend devant la façade de la sellerie (côté rue, au nord de la ruelle qui mène à sa porte) : le point
-      // d'intérêt lui-même est dans l'emprise d'un immeuble voisin.
-      const seller = npcAt(game, run, { ...STAFF_F, top: '#c8a96e', sleeve: '#c8a96e' }, TOWN.sellerie.x + TOWN.sellerie.w / 2 + 1.6, TOWN.sellerie.z + 10, Math.PI / 2, 'Margaux');
+      // Margaux remet la selle au comptoir de la Sellerie du Port : on entre dans la boutique (à pied, le cheval
+      // attaché dehors) et on la retire au comptoir.
+      const counter = shopAnchor(SHOPS3D.sellerie, 'comptoir');
       const rider = npcAt(game, run, { top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#f2f1ec', boots: '#121214', skin: '#c99a74', hair: '#2a1d14', helmet: '#16171a', logo: true }, POLE.stables.x - 11, POLE.stables.z - 8, -Math.PI / 2, 'Clara');
       return [
-        S.interact(() => seller.pos, 'Prendre la selle', 'Va à la Sellerie du Port, à Deauvelle', { modes: ['foot', 'ride'], r: 5, icon: 'bag' }),
+        S.interact(counter, 'Retirer la selle', 'Retire la selle au comptoir de la Sellerie du Port, à Deauville City', { modes: ['foot'], r: 2.2, icon: 'bag' }),
         S.custom({
           text: '',
           start(r) {
@@ -459,7 +460,7 @@ export const STORY = [
           update: (r) => r.flags.contact,
         }),
         S.dialog([
-          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Hugo Lemaire, j’ai bien eu ton appel. Je suis à la forge, à Deauvelle.' },
+          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Hugo Lemaire, j’ai bien eu ton appel. Je suis à la forge, à Deauville City.' },
           { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Viens au pas, sans forcer. Je te la referre en dix minutes.' },
         ]),
         S.interact(() => hugo.pos, 'Faire ferrer', 'Rejoins la Forge Lemaire (au pas)', {
@@ -662,7 +663,7 @@ export const STORY = [
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 1500, xp: 900, duration: '~2 min',
     irl: EVENT_IRL,
     rate: (run) => (totalPenalties(run) === 0 ? 5 : 4),
-    review: () => 'Un Grand Prix d’anthologie. Deauvelle se souviendra de ce parcours.',
+    review: () => 'Un Grand Prix d’anthologie. Deauville City se souviendra de ce parcours.',
     steps(game, run, S) {
       const bestRival = { name: 'K. Van Dijk', faults: 4, time: Math.round((timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp) - 3.6) * 10) / 10 };
       return courseSteps(game, run, S, {

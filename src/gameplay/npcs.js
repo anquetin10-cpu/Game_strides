@@ -53,7 +53,7 @@ class WalkAI {
   }
 }
 
-// Agglomération de Deauvelle (limitation à 50 km/h), d'après l'emprise des îlots.
+// Agglomération de Deauville City (limitation à 50 km/h), d'après l'emprise des îlots.
 const TOWN_BOX = (() => {
   const b = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 };
   for (const [x0, x1, z0, z1] of TOWN_BLOCKS) {

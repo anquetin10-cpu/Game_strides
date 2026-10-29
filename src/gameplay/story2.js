@@ -240,7 +240,7 @@ const M1 = {
         title: 'Temps libre',
         body: 'Il te reste du temps ce matin : un galop sur la plage avec Comète ?',
         timeout: 10000,
-        actions: [{ label: 'Plus tard', run: () => {} }, { label: 'Itinéraire plage', primary: true, run: () => game.gps.set(POI.beach, 'Plage de Deauvelle') }],
+        actions: [{ label: 'Plus tard', run: () => {} }, { label: 'Itinéraire plage', primary: true, run: () => game.gps.set(POI.beach, 'Plage de Deauville City') }],
       });
     }
     if (ch === 'val') game.message(CAST.camille.name, 'CM', 'Au fait, Antoine m’a parlé d’une groom, Léa Morel, si un jour on manque de bras. Elle est sur Strides.');

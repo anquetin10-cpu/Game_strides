@@ -58,10 +58,19 @@ export function roadSignTexture(kind, text = '') {
     ctx.lineWidth = 26;
     ctx.strokeRect(13, 13, 486, 230);
     ctx.fillStyle = '#111';
-    ctx.font = 'bold 80px Arial, Helvetica, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, 256, 134, 440);
+    // Nom long (« DEAUVILLE CITY ») : sur deux lignes, comme les panneaux d'agglomération à nom composé.
+    const words = text.split(' ');
+    if (text.length > 10 && words.length > 1) {
+      ctx.font = 'bold 72px Arial, Helvetica, sans-serif';
+      const cut = Math.ceil(words.length / 2);
+      ctx.fillText(words.slice(0, cut).join(' '), 256, 96, 440);
+      ctx.fillText(words.slice(cut).join(' '), 256, 172, 440);
+    } else {
+      ctx.font = 'bold 80px Arial, Helvetica, sans-serif';
+      ctx.fillText(text, 256, 134, 440);
+    }
     if (kind === 'exit') {
       ctx.strokeStyle = '#c8102e';
       ctx.lineWidth = 22;
@@ -510,7 +519,7 @@ export function screenTexture() {
   ctx.fillRect(0, 0, 1024, 512);
   ctx.fillStyle = PAPER;
   ctx.font = `500 32px ${FONT_MONO}`;
-  ctx.fillText('CSI 5★ DEAUVELLE — GRAND PRIX', 60, 90);
+  ctx.fillText('CSI 5★ DEAUVILLE CITY — GRAND PRIX', 60, 90);
   ctx.font = `700 120px ${FONT_DISPLAY}`;
   ctx.fillText('LIVE', 60, 250);
   ctx.fillStyle = '#e8473f';
@@ -520,5 +529,181 @@ export function screenTexture() {
   drawLogo(ctx, 56, 330, 130, PAPER);
   const t = toTexture(cv);
   cache.set('screen', t);
+  return t;
+}
+
+// Bandeau de devanture peint : lettres capitales à empattements, filets, sous-titre (commerces de Deauville City).
+export function fasciaTexture(title, sub, bg, fg) {
+  const key = `fascia:${title}:${sub}:${bg}:${fg}`;
+  if (cache.has(key)) return cache.get(key);
+  const w = 2048, h = 256;
+  const cv = canvas(w, h);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+  // Panneau en relief : ombre et lumière des moulures.
+  const gr = ctx.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, 'rgba(255,255,255,0.07)');
+  gr.addColorStop(0.5, 'rgba(255,255,255,0)');
+  gr.addColorStop(1, 'rgba(0,0,0,0.18)');
+  ctx.fillStyle = gr;
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = fg;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(22, 22, w - 44, h - 44);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = fg;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  let size = 128;
+  ctx.font = `600 ${size}px Georgia, "Times New Roman", serif`;
+  const spaced = title.toUpperCase().split('').join(' ');
+  while (ctx.measureText(spaced).width > w * 0.82 && size > 40) {
+    size *= 0.94;
+    ctx.font = `600 ${size}px Georgia, "Times New Roman", serif`;
+  }
+  // Lettres dorées : léger relief (ombre portée sombre, reflet clair).
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillText(spaced, w / 2 + 3, (sub ? 108 : 132) + 4);
+  ctx.fillStyle = fg;
+  ctx.fillText(spaced, w / 2, sub ? 108 : 132);
+  if (sub) {
+    ctx.font = `italic 400 40px Georgia, "Times New Roman", serif`;
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(sub, w / 2, 196);
+  }
+  const t = toTexture(cv);
+  cache.set(key, t);
+  return t;
+}
+
+// Enseigne drapeau (perpendiculaire à la façade) : médaillon et pictogramme du métier.
+export function bladeTexture(kind, bg, fg) {
+  const key = `blade:${kind}:${bg}:${fg}`;
+  if (cache.has(key)) return cache.get(key);
+  const cv = canvas(256, 256);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.arc(128, 128, 124, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = fg;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.arc(128, 128, 108, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = fg;
+  ctx.strokeStyle = fg;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (kind === 'saddle') {
+    // Selle de profil : siège creusé, troussequin, quartier, étrivière et étrier.
+    ctx.beginPath();
+    ctx.moveTo(62, 104);
+    ctx.quadraticCurveTo(74, 132, 128, 132);
+    ctx.quadraticCurveTo(170, 132, 188, 98);
+    ctx.lineTo(196, 108);
+    ctx.quadraticCurveTo(178, 150, 128, 152);
+    ctx.quadraticCurveTo(70, 152, 54, 112);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(96, 146);
+    ctx.quadraticCurveTo(92, 182, 104, 196);
+    ctx.lineTo(150, 196);
+    ctx.quadraticCurveTo(156, 172, 150, 146);
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(126, 150);
+    ctx.lineTo(126, 204);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(126, 212, 14, 9, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (kind === 'cup') {
+    // Tasse fumante et croissant.
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo(78, 112);
+    ctx.lineTo(84, 168);
+    ctx.quadraticCurveTo(86, 182, 104, 182);
+    ctx.lineTo(140, 182);
+    ctx.quadraticCurveTo(158, 182, 160, 168);
+    ctx.lineTo(166, 112);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(170, 140, 16, -Math.PI / 2, Math.PI / 2);
+    ctx.stroke();
+    ctx.lineWidth = 6;
+    for (const x of [104, 124, 144]) {
+      ctx.beginPath();
+      ctx.moveTo(x, 98);
+      ctx.bezierCurveTo(x - 10, 84, x + 10, 74, x, 58);
+      ctx.stroke();
+    }
+    ctx.fillRect(66, 194, 112, 8);
+  } else {
+    // Cintre et robe.
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(128, 64, 12, Math.PI, Math.PI * 2.4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(128, 78);
+    ctx.lineTo(62, 112);
+    ctx.lineTo(194, 112);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(100, 112);
+    ctx.lineTo(112, 140);
+    ctx.lineTo(80, 206);
+    ctx.lineTo(176, 206);
+    ctx.lineTo(144, 140);
+    ctx.lineTo(156, 112);
+    ctx.closePath();
+    ctx.fill();
+  }
+  const t = toTexture(cv);
+  cache.set(key, t);
+  return t;
+}
+
+// Ardoise du café : menu écrit à la craie.
+export function chalkTexture(title, lines) {
+  const key = `chalk:${title}:${lines.join('|')}`;
+  if (cache.has(key)) return cache.get(key);
+  const cv = canvas(512, 640);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#23272a';
+  ctx.fillRect(0, 0, 512, 640);
+  // Traces d'effacement.
+  for (let i = 0; i < 40; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${0.012 + Math.random() * 0.02})`;
+    ctx.beginPath();
+    ctx.ellipse(Math.random() * 512, Math.random() * 640, 40 + Math.random() * 120, 10 + Math.random() * 30, Math.random(), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#f2efe6';
+  ctx.textAlign = 'center';
+  ctx.font = 'italic 600 54px Georgia, serif';
+  ctx.fillText(title, 256, 84);
+  ctx.fillRect(150, 104, 212, 3);
+  ctx.textAlign = 'left';
+  ctx.font = '400 32px Georgia, serif';
+  lines.forEach((l, i) => {
+    const [a, b] = l.split('…');
+    ctx.textAlign = 'left';
+    ctx.fillText(a, 40, 170 + i * 58);
+    if (b) {
+      ctx.textAlign = 'right';
+      ctx.fillText(b, 472, 170 + i * 58);
+    }
+  });
+  const t = toTexture(cv);
+  cache.set(key, t);
   return t;
 }

@@ -78,7 +78,7 @@ export function renderProHome(phone) {
   body.append(
     h('div.st-eyebrow', { text: `Bonjour, ${d.playerName}` }),
     h('div.st-h1', { text: 'Votre activité\ncette semaine.' }),
-    h('div.st-small', { text: `${DAYS[now.getDay()][0].toUpperCase()}${DAYS[now.getDay()].slice(1)} ${longDate(now)} · Deauvelle` })
+    h('div.st-small', { text: `${DAYS[now.getDay()][0].toUpperCase()}${DAYS[now.getDay()].slice(1)} ${longDate(now)} · Deauville City` })
   );
   const m = g.missions.active;
   if (m) {

@@ -6,11 +6,14 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
 import { mulberry32, polyDist, clamp } from '../core/math.js';
 import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shoreZ, forestDensity, isReserved, nearestRoad } from './layout.js';
-import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATION, BARN_LAYOUTS } from './sites.js';
+import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATION, BARN_LAYOUTS, SHOPS3D, LEGACY_SELLERIE } from './sites.js';
 import { barnGeo, clubHouseGeo } from './barns.js';
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail, paveTexture } from './terrainTexture.js';
-import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, addIndoor, INTERIOR_UNIFORMS } from './surfaces.js';
+import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, addIndoor, INTERIOR_UNIFORMS, applyShopLight, shopLightUniforms } from './surfaces.js';
+import { shopExterior, WALL_T, FLOOR_Y } from './shopGeo.js';
+import { buildInterior, shopLayout } from './shopInteriors.js';
+import { CAFE_MENU } from '../gameplay/data.js';
 import { CAR_COLORS, CAR_MODELS, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky, CLOUD_UNIFORMS } from './sky.js';
@@ -23,7 +26,7 @@ import {
 import { buildGrassMask, clearGrassUnder } from './grass.js';
 import { Vegetation } from './vegetation.js';
 import { createHorseMesh } from '../entities/horseModel.js';
-import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture } from './textures.js';
+import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture, fasciaTexture, bladeTexture, chalkTexture } from './textures.js';
 import { getFields, hedgeRuns, nearPath } from './fields.js';
 
 const font = new FontLoader().parse(fontJson);
@@ -86,7 +89,7 @@ export class World {
     this.group.add(this.terrainMesh);
     this.sky = new Sky(this.scene);
     this.water = new Water(this.scene, this.terrain);
-    progress(0.3, 'Routes de Deauvelle');
+    progress(0.3, 'Routes de Deauville City');
     await tick('roads');
     this.buildRoads();
     progress(0.38, 'Écuries et haras');
@@ -99,7 +102,7 @@ export class World {
     await tick('pole');
     this.buildPole();
     this.buildHippodrome();
-    progress(0.56, 'Deauvelle');
+    progress(0.56, 'Deauville City');
     await tick('town');
     this.buildTown();
     this.buildStreetscape();
@@ -131,7 +134,7 @@ export class World {
 
   // ---------- Utilitaires de placement ----------
   // Hauteur de marche en (x, z) : le terrain, ou le dessus d'une surface praticable surélevée (platelage des Planches,
-  // trottoirs de Deauvelle) — personnages et chevaux posent les pieds dessus, pas dedans.
+  // trottoirs de Deauville City) — personnages et chevaux posent les pieds dessus, pas dedans.
   walkHeight(x, z) {
     const P = TOWN.planches;
     if (z > P.z - 2 && z < P.z + 2 && x >= P.x0 && x <= P.x1) {
@@ -748,17 +751,23 @@ export class World {
     const specials = [
       { ...TOWN.hotel, rot: Math.PI },
       { ...TOWN.hq, rot: 0 },
-      { ...TOWN.sellerie, rot: Math.PI / 2 },
+      { ...LEGACY_SELLERIE, rot: Math.PI / 2 },
       { ...TOWN.forge, rot: Math.PI / 2 },
       { ...TOWN.vet, rot: -Math.PI / 2 },
       { ...TOWN.plaza, rot: 0 },
     ];
     const overlapsSpecial = (x, z, r) => specials.some((s) => Math.abs(x - s.x) < s.w / 2 + r && Math.abs(z - s.z) < s.d / 2 + r);
+    // Emprises des commerces (axes du monde) : une maison qui les chevauche n'est pas posée.
+    const shopRects = Object.values(SHOPS3D).map((s) => {
+      const q = Math.abs(Math.sin(s.rot)) > 0.5;
+      return { x: s.x, z: s.z, hx: (q ? s.d : s.w) / 2, hz: (q ? s.w : s.d) / 2 };
+    });
+    const shopReserved = (x, z, hx, hz) => shopRects.some((r) => Math.abs(x - r.x) < r.hx + hx - 0.5 && Math.abs(z - r.z) < r.hz + hz - 0.5);
     // Grand Hôtel (façade vers la mer).
     const ht = TOWN.hotel;
     // Lucarnes et avant-corps générés par buildingGeo (pas de lucarnes rapportées en plus).
     this.place(buildingGeo({ w: ht.w, d: ht.d, h: 14, wall: '#f1ebdf', roof: '#3f444b', roofType: 'hip', roofH: 7, timber: true, fill: 4, wood: 1, floors: 4, trim: '#f6f3ec' }), ht.x, ht.z, Math.PI, ht.w, ht.d, 'hotel');
-    this.signboard('GRAND HÔTEL', 'Deauvelle · 1912', -80, -300 - 9, 0, { w: 5, dark: false });
+    this.signboard('GRAND HÔTEL', 'Deauville City · 1912', -80, -300 - 9, 0, { w: 5, dark: false });
     // Strides HQ : verre noir, logotype 3D sur le toit.
     const hq = TOWN.hq;
     const hy = this.place(hqGeo(hq.w, hq.d, 15), hq.x, hq.z, 0, hq.w, hq.d, 'hq');
@@ -766,10 +775,14 @@ export class World {
     this.batch.add(t.geo, null, hq.x, hy + 15.4, hq.z + hq.d / 2 - 2, 0);
     this.texturedPanel(logoTexture(true), 16, 4, hq.x, hy + 9, hq.z - hq.d / 2 - 0.3, Math.PI, { back: '#111214', depth: 0.2 });
     this.texturedPanel(logoTexture(true), 14, 3.5, hq.x, hy + 4.6, hq.z + hq.d / 2 + 0.3, 0, { back: '#111214', depth: 0.2 });
-    // Sellerie.
-    const se = TOWN.sellerie;
-    const sy = this.place(buildingGeo({ w: se.d, d: se.w, h: 7, wall: '#1d1e21', roof: '#2a2c30', roofType: 'flat', trim: '#c8a96e', floors: 2, doorColor: '#c8a96e' }), se.x, se.z, Math.PI / 2, se.d, se.w, 'shop');
-    this.texturedPanel(signTexture('SELLERIE DU PORT', 'Équipement · Sellerie sur-mesure', { dark: true }), 10, 2.2, se.x + se.w / 2 + 0.3, sy + 4.9, se.z, Math.PI / 2, { depth: 0.2 });
+    // Commerces où l'on entre (sellerie, café-boulangerie, boutique) : à la place de maisons de la rue, voir buildShops.
+    // Cœur de l'îlot de l'ancienne sellerie : jardin (tirage à part, la suite du monde reste identique).
+    {
+      const rnd = this.rnd;
+      this.rnd = mulberry32(1921);
+      for (const [dx, dz] of [[-6, -6], [4, 3], [-2, 8]]) this.tree('beech', LEGACY_SELLERIE.x + dx, LEGACY_SELLERIE.z + dz, 0.8);
+      this.rnd = rnd;
+    }
     // Forge du maréchal-ferrant.
     const fo = TOWN.forge;
     const fy = this.place(buildingGeo({ w: fo.d, d: fo.w, h: 5.5, wall: PALETTE.brick[0], roof: '#4a4f57', timber: false, floors: 1, chimney: true }), fo.x, fo.z, Math.PI / 2, fo.d, fo.w, 'forge');
@@ -802,16 +815,19 @@ export class World {
           const cx = e.ax + dx * (s + w / 2) + nx * (inset + d / 2);
           const cz = e.az + dz * (s + w / 2) + nz * (inset + d / 2);
           if (!overlapsSpecial(cx, cz, 6)) {
+            // Maison remplacée par un commerce : mêmes tirages (le reste de la ville ne change pas), rien de posé.
+            const ext = Math.abs(Math.sin(e.rot)) > 0.5 ? [d / 2, w / 2] : [w / 2, d / 2];
+            const reserved = shopReserved(cx, cz, ext[0], ext[1]);
             const floors = 2 + (this.rnd() < 0.4 ? 1 : 0);
             const brick = this.rnd() < 0.22;
             const wall = brick ? PALETTE.brick[Math.floor(this.rnd() * 3)] : PALETTE.walls[Math.floor(this.rnd() * PALETTE.walls.length)];
             const geo = buildingGeo({ w, d, h: floors * 3.3, wall, roof: PALETTE.roofs[Math.floor(this.rnd() * PALETTE.roofs.length)], timber: !brick && this.rnd() < 0.6, floors, roofType: this.rnd() < 0.7 ? 'gable' : 'hip', chimney: this.rnd() < 0.5 });
-            const by = this.place(geo, cx, cz, e.rot, w, d);
+            const by = reserved ? 0 : this.place(geo, cx, cz, e.rot, w, d);
             if (this.rnd() < 0.45) {
               const AW = [['#1b1c1f', '#f2f1ec'], ['#2f5f8a', '#f2f1ec'], ['#7a2a2a', '#efe6d2'], ['#2f5a3c', '#efe6d2'], ['#1b1c1f', '#c8a96e']];
               const [c1, c2] = AW[Math.floor(this.rnd() * AW.length)];
               const fx = Math.sin(e.rot) * (d / 2), fz = Math.cos(e.rot) * (d / 2);
-              this.batch.add(awningGeo(Math.min(w - 2, 7), c1, c2), null, cx + fx, by, cz + fz, e.rot);
+              if (!reserved) this.batch.add(awningGeo(Math.min(w - 2, 7), c1, c2), null, cx + fx, by, cz + fz, e.rot);
             }
           }
           s += w + 0.4 + (this.rnd() < 0.2 ? 6 : 0);
@@ -888,15 +904,9 @@ export class World {
       const a = ((i + 0.5) / 8) * Math.PI * 2;
       this.lamp(P.x + Math.cos(a) * 24, P.z + Math.sin(a) * 24, Math.PI - a);
     }
-    // Café « Le Galop » : kiosque et terrasse.
-    this.place(buildingGeo({ w: 10, d: 7, h: 3.6, wall: '#1d1e21', roof: '#f2f1ec', roofType: 'flat', trim: '#f2f1ec', floors: 1, doorColor: '#c8a96e' }), P.x + 32, P.z - 18, Math.PI, 10, 7, 'cafe');
-    for (let i = 0; i < 6; i++) {
-      const x = P.x + 26 + (i % 3) * 4;
-      const z = P.z - 10 + Math.floor(i / 3) * 4;
-      this.batch.add(parasolGeo('#f2f1ec', '#1d1e21'), null, x, this.h(x, z), z, 0);
-      this.batch.add(cyl(0.45, 0.45, 0.75, 8), '#f2f1ec', x, this.h(x, z), z, 0);
-    }
-    this.signboard('LE GALOP', 'Café · Brasserie', P.x + 32, P.z - 13.5, 0, { w: 3.6, h: 0.9, postH: 1.6 });
+    // Café « Le Galop » : il occupe désormais le rez-de-chaussée d'une maison face à la place (buildShops), sa
+    // terrasse est au bord de la place.
+    this.buildShops();
     // Lampadaires.
     for (const road of ROADS.filter((r) => r.id.startsWith('t_') || r.id === 'coast' || r.id === 'main')) {
       const pts = road.pts;
@@ -920,15 +930,203 @@ export class World {
     }
   }
 
+  // ---------- Commerces où l'on entre (Deauville City) ----------
+  // Rez-de-chaussée commerçant à vraies ouvertures (lot statique), étages, vitrines en verre clair, enseignes peintes
+  // et enseigne drapeau, collisions des murs et du mobilier, plafond pour la caméra, plancher praticable ; terrasses
+  // du café, cours et barres d'attache pour les chevaux. Les intérieurs sont construits à l'approche du joueur
+  // (loadShopInterior) et libérés quand il s'éloigne (unloadShopInterior).
+  buildShops() {
+    this.shops = {};
+    const glass = [];
+    const mats = new Map();
+    const plane = (tex, w, h, x, y, z, ry, far = 260) => {
+      let m = mats.get(tex);
+      if (!m) mats.set(tex, (m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 })));
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+      p.position.set(x, y, z);
+      p.rotation.y = ry;
+      p.receiveShadow = true;
+      this.group.add(p);
+      this.culled.push([p, x, z, far]);
+      return p;
+    };
+    for (const spec of Object.values(SHOPS3D)) {
+      const { x, z, rot } = spec;
+      const y = this.groundAt(x, z, spec.w / 2, spec.d / 2, rot);
+      const c = Math.cos(rot), sn = Math.sin(rot);
+      const toW = (lx, lz) => ({ x: x + lx * c + lz * sn, z: z - lx * sn + lz * c });
+      const ext = shopExterior(spec);
+      this.batch.add(ext.body, null, x, y, z, rot);
+      if (ext.detail) this.batch.addDetail(ext.detail, null, x, y, z, rot);
+      if (ext.glow) this.lights.add(ext.glow, null, x, y, z, rot);
+      const up = ext.upper;
+      this.batch.add(up.body, null, x, y + spec.G, z, rot);
+      if (up.shutters) this.batch.addDetail(up.shutters, null, x, y + spec.G, z, rot, 1);
+      if (up.detail) this.batch.addDetail(up.detail, null, x, y + spec.G, z, rot);
+      if (up.glass) this.glass.add(ensureWin(up.glass), null, x, y + spec.G, z, rot);
+      glass.push(ext.glass.applyMatrix4(new THREE.Matrix4().makeRotationY(rot).setPosition(x, y, z)));
+      for (const [bx, bz, hw, hd] of ext.colliders) {
+        const p = toW(bx, bz);
+        this.colliders.addBox(p.x, p.z, hw, hd, rot, Infinity, 'shop');
+      }
+      const layout = shopLayout(spec.id);
+      for (const [bx, bz, hw, hd, top] of layout.colliders) {
+        const p = toW(bx, bz);
+        this.colliders.addBox(p.x, p.z, hw, hd, rot, y + FLOOR_Y + top, 'shopfix');
+      }
+      this.colliders.addCeiling({ x, z, rot, y, hw: spec.w / 2 - WALL_T, hd: spec.d / 2 - WALL_T, h: spec.G - 0.1 });
+      // Plancher (16 cm au-dessus du trottoir : la marche du seuil).
+      const q = Math.abs(sn) > 0.5;
+      const hx = (q ? spec.d : spec.w) / 2 - WALL_T, hz = (q ? spec.w : spec.d) / 2 - WALL_T;
+      this.walkways.push([x - hx, x + hx, z - hz, z + hz, y + FLOOR_Y]);
+      this.features.buildings.push({ x, z, w: spec.w, d: spec.d, rot, kind: 'shop' });
+      // Enseignes : bandeau peint, enseigne drapeau (deux faces).
+      for (const sg of ext.signs) {
+        const p = toW(sg.x, sg.z + (sg.kind === 'fascia' ? 0.004 : 0));
+        if (sg.kind === 'fascia') plane(fasciaTexture(spec.name, spec.sub, spec.front, spec.letters), sg.w, sg.h, p.x, y + sg.y, p.z, rot);
+        else {
+          const tex = bladeTexture(spec.blade, spec.front, spec.letters);
+          for (const sd of [1, -1]) {
+            const pp = toW(sg.bx + sd * 0.035, sg.z);
+            plane(tex, sg.w, sg.h, pp.x, y + sg.y, pp.z, rot + (sd * Math.PI) / 2, 200);
+          }
+        }
+      }
+      // Barre d'attache (deux poteaux, une lisse, un anneau) et seau d'eau à côté.
+      const [rx, rz, rr] = spec.rail;
+      const ry = this.h(rx, rz);
+      this.batch.add(partsToGeo([
+        [box(0.1, 1.05, 0.1), '#1b1c1f', { x: -1.1 }], [box(0.1, 1.05, 0.1), '#1b1c1f', { x: 1.1 }],
+        [cyl(0.03, 0.03, 2.4, 6), '#1b1c1f', { y: 1.0, rz: Math.PI / 2 }], [cyl(0.055, 0.055, 0.02, 10), '#b08d57', { y: 0.92, rx: Math.PI / 2 }],
+      ]), null, rx, ry, rz, rr);
+      this.batch.add(cyl(0.17, 0.14, 0.3, 10), '#2f5a3c', rx + Math.cos(rr) * 1.6, this.h(rx, rz), rz - Math.sin(rr) * 1.6, 0);
+      for (const sd of [-1, 1]) this.colliders.addCircle(rx + Math.cos(rr) * 1.1 * sd, rz - Math.sin(rr) * 1.1 * sd, 0.12, ry + 1.05, 'rail');
+      this.shops[spec.id] = { spec, y, toW, layout, interior: null };
+    }
+    // Vitrines et portes vitrées : verre clair qui reflète le ciel (un seul maillage).
+    const gm = new THREE.Mesh(mergeGeometries(glass, false), new THREE.MeshStandardMaterial({ color: '#dce7ec', transparent: true, opacity: 0.16, roughness: 0.03, metalness: 0, envMapIntensity: 1.2, depthWrite: false, side: THREE.DoubleSide }));
+    gm.renderOrder = 3;
+    gm.name = 'shop-glass';
+    this.group.add(gm);
+    // Cour pavée de la sellerie (barre d'attache).
+    {
+      const sp = SHOPS3D.sellerie;
+      const cx = sp.x, cz = sp.z - sp.w / 2 - 2.2;
+      this.batch.add(box(sp.d, 0.06, 4.2, false), '#a8a39a', cx, this.h(cx, cz) + 0.02, cz, 0);
+    }
+    // Terrasse du café : guéridons le long de la façade (passage libre sur le trottoir) et au bord de la place.
+    const cafe = this.shops.cafe;
+    const bistro = partsToGeo([
+      [cyl(0.22, 0.22, 0.03, 12), '#1b1c1f'], [cyl(0.03, 0.03, 0.72, 6), '#1b1c1f'], [cyl(0.32, 0.32, 0.035, 16), '#eeebe4', { y: 0.72 }],
+    ]);
+    const chair = partsToGeo([
+      [cyl(0.2, 0.2, 0.04, 12), '#c8a96e', { y: 0.45 }], [box(0.03, 0.45, 0.03), '#3a2516', { x: 0.14, z: 0.14 }], [box(0.03, 0.45, 0.03), '#3a2516', { x: -0.14, z: 0.14 }],
+      [box(0.03, 0.45, 0.03), '#3a2516', { x: 0.14, z: -0.14 }], [box(0.03, 0.45, 0.03), '#3a2516', { x: -0.14, z: -0.14 }], [box(0.36, 0.4, 0.03), '#3a2516', { y: 0.5, z: -0.17 }],
+    ]);
+    const cs = cafe.spec;
+    for (const lx of [-5.2, -3.0, 3.0, 5.2]) {
+      const p = cafe.toW(lx, cs.d / 2 + 0.7);
+      const gy = this.h(p.x, p.z) + 0.14; // dessus du trottoir
+      this.batch.add(bistro, null, p.x, gy, p.z, 0);
+      for (const sd of [-1, 1]) {
+        const q2 = cafe.toW(lx + sd * 0.58, cs.d / 2 + 0.7);
+        this.batch.add(chair, null, q2.x, gy, q2.z, cs.rot + (sd * Math.PI) / 2);
+      }
+      this.colliders.addCircle(p.x, p.z, 0.5, gy + 0.8, 'terrace');
+    }
+    for (const x of [12, 19, 26]) {
+      const z = -240.2;
+      const gy = this.h(x, z);
+      this.batch.add(parasolGeo('#1f2b45', '#efe6d2'), null, x, gy, z, 0);
+      for (const a of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+        const tx = x + Math.sin(a) * 1.15, tz = z + Math.cos(a) * 1.15;
+        this.batch.add(bistro, null, tx, gy, tz, 0);
+        this.batch.add(chair, null, tx + Math.sin(a) * 0.6, gy, tz + Math.cos(a) * 0.6, a + Math.PI);
+      }
+      this.colliders.addCircle(x, z, 1.9, gy + 0.8, 'terrace');
+    }
+  }
+
+  // Intérieur d'un commerce : géométries par matériau (bois et murs au shader de surfaces, cuir, tissu, métal, verre,
+  // ampoules), éclairage intérieur propre aux matériaux du commerce, ardoise du café. Renvoie le groupe.
+  loadShopInterior(id) {
+    const sh = this.shops?.[id];
+    if (!sh) throw new Error(`Commerce inconnu : ${id}`);
+    if (sh.interior) return sh.interior;
+    const spec = sh.spec;
+    const geos = buildInterior(spec);
+    const group = new THREE.Group();
+    group.name = `shop:${id}`;
+    group.position.set(spec.x, sh.y, spec.z);
+    group.rotation.y = spec.rot;
+    group.updateMatrixWorld(true);
+    // Points lumineux en coordonnées du monde.
+    const pts = sh.layout.lights.map(([lx, ly, lz, k]) => {
+      const p = sh.toW(lx, lz);
+      return [p.x, sh.y + ly, p.z, k];
+    });
+    const U = shopLightUniforms(pts, id === 'boutique' ? '#ffe7c4' : '#ffd5a0', id === 'cafe' ? 6.5 : 7);
+    const lit = (m) => applyShopLight(m, U);
+    const M = {
+      A: lit(applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, envMapIntensity: 0.35 }), this.detailTex, () => this.terrain)),
+      L: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.48, metalness: 0, envMapIntensity: 0.55 })),
+      F: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, envMapIntensity: 0.3 })),
+      M: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.28, metalness: 0.85, envMapIntensity: 0.8 })),
+      G: new THREE.MeshStandardMaterial({ color: '#e3eef2', transparent: true, opacity: 0.18, roughness: 0.04, depthWrite: false, side: THREE.DoubleSide }),
+      // Ampoules : plus lumineuses que le blanc (au-delà de 1 avant le tone mapping).
+      E: new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(2.6, 2.35, 2.0) }),
+    };
+    for (const [key, geo] of Object.entries(geos)) {
+      if (!geo) continue;
+      geo.computeBoundingSphere();
+      const mesh = new THREE.Mesh(geo, M[key]);
+      mesh.receiveShadow = key !== 'E' && key !== 'G';
+      mesh.castShadow = key === 'L' || key === 'F';
+      mesh.matrixAutoUpdate = false;
+      mesh.updateMatrix();
+      if (key === 'G') mesh.renderOrder = 3;
+      group.add(mesh);
+    }
+    for (const sg of sh.layout.signs || []) {
+      const tex = chalkTexture('Le Galop', CAFE_MENU.map((m) => `${m.name}…${m.price.toFixed(2).replace('.', ',')} €`));
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(sg.w, sg.h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
+      p.position.set(sg.x, sg.y, sg.z + 0.02);
+      p.rotation.y = sg.ry;
+      group.add(p);
+      const frame = new THREE.Mesh(box(sg.w + 0.1, sg.h + 0.1, 0.03).translate(0, -(sg.h + 0.1) / 2, 0), M.A);
+      frame.position.set(sg.x, sg.y, sg.z);
+      group.add(frame);
+      paint(frame.geometry, '#5b4330');
+    }
+    this.group.add(group);
+    sh.interior = { group, materials: Object.values(M) };
+    return sh.interior;
+  }
+
+  unloadShopInterior(id) {
+    const sh = this.shops?.[id];
+    if (!sh?.interior) return;
+    const { group, materials } = sh.interior;
+    group.traverse((o) => {
+      if (o.isMesh) {
+        o.geometry.dispose();
+        if (o.material.map) o.material.dispose();
+      }
+    });
+    materials.forEach((m) => m.dispose());
+    this.group.remove(group);
+    sh.interior = null;
+  }
+
   // Trottoirs, passages piétons, jardinières, voitures garées, statue.
-  // Signalisation : entrées/sorties de Deauvelle (agglomération) et limitations à 80 km/h hors agglomération.
+  // Signalisation : entrées/sorties de Deauville City (agglomération) et limitations à 80 km/h hors agglomération.
   buildRoadSigns() {
     const signs = [
       // [x, z, orientation de la face, type, texte]
       // À droite de la chaussée dans le sens de circulation (on roule à droite).
-      [-216, -346.2, -Math.PI / 2, 'entry', 'DEAUVELLE'], [-216, -357.8, Math.PI / 2, 'exit', 'DEAUVELLE'],
-      [156, -357.8, Math.PI / 2, 'entry', 'DEAUVELLE'], [156, -346.2, -Math.PI / 2, 'exit', 'DEAUVELLE'],
-      [-24.2, -154, 0, 'entry', 'DEAUVELLE'], [-35.8, -154, Math.PI, 'exit', 'DEAUVELLE'],
+      [-216, -346.2, -Math.PI / 2, 'entry', 'DEAUVILLE CITY'], [-216, -357.8, Math.PI / 2, 'exit', 'DEAUVILLE CITY'],
+      [156, -357.8, Math.PI / 2, 'entry', 'DEAUVILLE CITY'], [156, -346.2, -Math.PI / 2, 'exit', 'DEAUVILLE CITY'],
+      [-24.2, -154, 0, 'entry', 'DEAUVILLE CITY'], [-35.8, -154, Math.PI, 'exit', 'DEAUVILLE CITY'],
       [-260, -357.8, Math.PI / 2, 'speed', '80'], [200, -346.2, -Math.PI / 2, 'speed', '80'], [-35.8, -110, Math.PI, 'speed', '80'],
     ];
     // Faces regroupées dans un seul maillage (atlas : entrée | sortie | 80).
@@ -936,8 +1134,8 @@ export class World {
     atlas.width = 1280;
     atlas.height = 256;
     const actx = atlas.getContext('2d');
-    actx.drawImage(roadSignTexture('entry', 'DEAUVELLE').image, 0, 0);
-    actx.drawImage(roadSignTexture('exit', 'DEAUVELLE').image, 512, 0);
+    actx.drawImage(roadSignTexture('entry', 'DEAUVILLE CITY').image, 0, 0);
+    actx.drawImage(roadSignTexture('exit', 'DEAUVILLE CITY').image, 512, 0);
     actx.drawImage(roadSignTexture('speed', '80').image, 1024, 0);
     const region = { entry: [0, 0.4], exit: [0.4, 0.8], speed: [0.8, 1] };
     const faces = [];
@@ -1164,7 +1362,7 @@ export class World {
       // Collision : cabines et portique à colonnettes (z local -2,86 à +1,2).
       this.colliders.addBox(xc, z - 0.83, (N * W) / 2 + 0.15, 2.03, 0, Infinity, 'cabin');
     }
-    // Parasols de Deauvelle.
+    // Parasols de Deauville City.
     const cols = [['#b8322a', '#f2f1ec'], ['#2f5f8a', '#f2f1ec'], ['#e3b23c', '#f2f1ec'], ['#2f6e4a', '#f2f1ec'], ['#d46a2e', '#f2f1ec']];
     // Haut de plage, au pied des Planches : sable sec même aux plus hautes mers (au moins 0,3 m au-dessus).
     for (let row = 0; row < 3; row++) {
@@ -1242,7 +1440,7 @@ export class World {
     for (const p of parts) {
       const cx = x - p.width / 2;
       const y = this.h(cx, z) - 0.6;
-      // Lettres face au nord (vers la ville), lisibles depuis Deauvelle.
+      // Lettres face au nord (vers la ville), lisibles depuis Deauville City.
       this.batch.add(p.geo, null, cx, y, z, Math.PI, 1, 1, 1);
       this.batch.add(box(0.3, 2, 0.3), '#6d6f73', cx - p.width * 0.3, y - 1, z + 1.2, 0);
       this.batch.add(box(0.3, 2, 0.3), '#6d6f73', cx + p.width * 0.3, y - 1, z + 1.2, 0);

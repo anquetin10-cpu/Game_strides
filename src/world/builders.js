@@ -125,7 +125,7 @@ function pitchedRoof(parts, w, rise, d, ov, roofC, wallC, soffitC, tf) {
 export function buildingGeo({
   w, d, h, wall = PALETTE.walls[0], roof = PALETTE.roofs[0], roofType = 'gable', roofH = null,
   timber = false, floors = null, windows = true, door = true, doorColor = '#3b2f28', plinth = '#8f8a80', trim = null, chimney = false,
-  fill = null, wood = null, dormers = true, bays = true,
+  fill = null, wood = null, dormers = true, bays = true, sink = 2,
 }) {
   const body = [];
   const glass = [];
@@ -147,9 +147,10 @@ export function buildingGeo({
   const fh = h / fl;
   // Étage en encorbellement sur les maisons à pans de bois.
   const over = timber && fl > 1 ? 0.22 : 0;
-  body.push([box(w, (over ? fh : h) + 2, d), wallC, { y: -2 }]);
+  // sink : enfoncement sous le sol (terrain en pente) ; 0 pour des étages posés sur un rez-de-chaussée (commerces).
+  body.push([box(w, (over ? fh : h) + sink, d), wallC, { y: -sink }]);
   if (over) body.push([box(w + 2 * over, h - fh, d + 2 * over), wallC, { y: fh }]);
-  body.push([box(w + 0.2, 2.6, d + 0.2), plinth, { y: -2 }]);
+  if (plinth) body.push([box(w + 0.2, 0.6 + sink, d + 0.2), plinth, { y: -sink }]);
   const rh = roofH ?? Math.min(w, d) * 0.45;
   const along = w >= d;
   const L = along ? w : d, D = along ? d : w;
@@ -210,7 +211,7 @@ export function buildingGeo({
           bayCols.add(c0).add(c0 + 1);
           const bc = at(f, tb, f.off + proj / 2);
           bayRects.push([bc.x, bc.z, f.nx === 0 ? bw / 2 : proj / 2, f.nx === 0 ? proj / 2 : bw / 2]);
-          body.push([box(bw, h + 2, proj), wallC, { ...bc, y: -2, ry: f.ry }]);
+          body.push([box(bw, h + sink, proj), wallC, { ...bc, y: -sink, ry: f.ry }]);
           pitchedRoof(body, droof, rbh, bw, 0.35, roof, wallC, soffit, { ...at(f, tb, f.off + proj - droof / 2), y: h, ry: f.ry + Math.PI / 2 });
           if (trim) body.push([box(bw + 0.1, 0.22, 0.12), trim, { ...at(f, tb, f.off + proj + 0.02), y: h - 0.22, ry: f.ry }]);
         }

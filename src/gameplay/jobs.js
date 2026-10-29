@@ -1,12 +1,15 @@
 // Jobs ponctuels générés (le « marché » Strides vit en continu).
 import { FIRST_NAMES, LAST_NAMES } from './data.js';
 import { POI } from '../world/layout.js';
-import { HOME, homeBoxes } from '../world/sites.js';
+import { HOME, homeBoxes, SHOPS3D } from '../world/sites.js';
+import { shopAnchor } from '../world/shopInteriors.js';
 import { checkpointSteps } from './courses.js';
 import { pick } from '../core/math.js';
 
 const SPOTS = [
-  { id: 'sellerie', name: 'Sellerie du Port', x: POI.sellerie.x, z: POI.sellerie.z },
+  // Commerces de Deauville City : retrait et dépôt au comptoir, à l'intérieur (à pied).
+  { id: 'sellerie', name: 'Sellerie du Port', inShop: true, ...shopAnchor(SHOPS3D.sellerie, 'comptoir') },
+  { id: 'cafe', name: 'Le Galop (café-boulangerie)', inShop: true, ...shopAnchor(SHOPS3D.cafe, 'comptoir') },
   { id: 'vet', name: 'Clinique vétérinaire', x: POI.vet.x, z: POI.vet.z },
   { id: 'forge', name: 'Forge Lemaire', x: POI.forge.x, z: POI.forge.z },
   { id: 'hq', name: 'Strides HQ', x: POI.hq.x, z: POI.hq.z },
@@ -26,6 +29,8 @@ const ITEMS = [
   { from: 'hq', name: 'Contrat de vente', to: ['haras', 'pole', 'gatien'] },
   { from: 'haras', name: 'Paillettes d’étalon (glacière)', to: ['vet', 'dunes'] },
   { from: 'pole', name: 'Plaques de vainqueur', to: ['hq', 'sellerie'] },
+  { from: 'cafe', name: 'Viennoiseries pour l’équipe', to: ['home', 'pole', 'dunes', 'haras'] },
+  { from: 'cafe', name: 'Plateau de sandwichs', to: ['pole', 'hippo', 'gatien'] },
 ];
 
 const RECO = [
@@ -54,7 +59,9 @@ export function generateJob(game, seq, level) {
     const A = spot(it.from);
     const B = spot(pick(it.to));
     const dist = Math.hypot(A.x - B.x, A.z - B.z);
-    const limit = Math.round(dist / 8 + 30);
+    // Dépôt dans un commerce : le temps d'attacher son cheval et d'entrer.
+    const limit = Math.round(dist / 8 + 30 + (B.inShop ? 25 : 0));
+    const reach = (P) => (P.inShop ? { modes: ['foot'], r: 2.2 } : { modes: ['foot', 'ride', 'drive'], r: 6 });
     return {
       id: `c${seq}`, vertical: 'JOBS', category: 'Coursier', title: `Livraison : ${it.name}`,
       desc: `${A.name} → ${B.name} · ${Math.round(limit)} s pour livrer.`,
@@ -64,11 +71,10 @@ export function generateJob(game, seq, level) {
       rate: (run) => (run.data.left > limit * 0.35 ? 5 : run.data.left > limit * 0.2 ? 4 : run.data.left > limit * 0.08 ? 3 : 2),
       steps(g, run, S) {
         return [
-          S.interact(A, `Récupérer`, `Récupère « ${it.name} » — ${A.name}`, { modes: ['foot', 'ride', 'drive'], r: 6, icon: 'bag' }),
+          S.interact(A, `Récupérer`, `Récupère « ${it.name} » — ${A.name}${A.inShop ? ' (au comptoir)' : ''}`, { ...reach(A), icon: 'bag' }),
           S.custom({ text: '', start: (r) => (r.timer = limit), update: () => true }),
-          S.interact(B, 'Livrer', `Livre « ${it.name} » — ${B.name}`, {
-            modes: ['foot', 'ride', 'drive'],
-            r: 6,
+          S.interact(B, 'Livrer', `Livre « ${it.name} » — ${B.name}${B.inShop ? ' (au comptoir)' : ''}`, {
+            ...reach(B),
             icon: 'bag',
             onDo: (r) => {
               r.data.left = r.timer;
@@ -80,7 +86,7 @@ export function generateJob(game, seq, level) {
     };
   }
   if (type === 'transport') {
-    const opts = SPOTS.filter((s) => !['sellerie', 'vet', 'forge', 'hq'].includes(s.id));
+    const opts = SPOTS.filter((s) => !s.inShop && !['vet', 'forge', 'hq'].includes(s.id));
     const A = pick(opts);
     let B = pick(opts);
     while (B === A) B = pick(opts);

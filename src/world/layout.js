@@ -1,4 +1,4 @@
-// Carte du monde : Deauvelle et sa région (inspirée de la Côte Fleurie, Normandie).
+// Carte du monde : Deauville City et sa région (inspirée de la Côte Fleurie, Normandie).
 // Axe X : ouest (-) → est (+). Axe Z : nord (-, la mer) → sud (+).
 import { createNoise2D } from '../core/noise.js';
 import { polyDist, rectDist, smoothstep } from '../core/math.js';
@@ -8,7 +8,7 @@ export const WORLD = { size: 1200, half: 600, seaLevel: 0 };
 // Trait de côte de référence (limite de la plage et des terres : sable, prairies littorales, placement du décor).
 export const shoreZ = (x) => -430 + 12 * Math.sin(x / 95) + 6 * Math.sin(x / 37 + 1.3);
 
-// Plage de Deauvelle : profil en travers (hauteur au-dessus du niveau moyen de la mer, m), comme une plage de la baie
+// Plage de Deauville City : profil en travers (hauteur au-dessus du niveau moyen de la mer, m), comme une plage de la baie
 // de Seine à fort marnage, raccourci de moitié vers la mer (choix de jeu : plage moins large). Profil de référence
 // (distances avant raccourcissement) : du pied des Planches (perré, z ≈ -366), haut de plage sec en pente douce (2 %)
 // jusqu'à la crête de la laisse des pleines mers de vives-eaux (berme), puis estran concave (6 % en haut, 2,7 % en
@@ -125,17 +125,20 @@ export const ARCH = { x: -545, z: -462 };
 // Lieux nommés (minimap, GPS, missions).
 export const POI = {
   home: { x: -110, z: 172, name: 'Écurie du Val', icon: 'home' },
-  town: { x: 20, z: -266, name: 'Deauvelle', icon: 'town' },
+  town: { x: 20, z: -266, name: 'Deauville City', icon: 'town' },
   pole: { x: 330, z: -180, name: 'Pôle International', icon: 'event' },
   hippo: { x: 330, z: 140, name: 'Hippodrome de la Touques', icon: 'event' },
   haras: { x: -380, z: -96, name: 'Haras de la Pommeraie', icon: 'stable' },
   dunes: { x: 500, z: -318, name: 'Écurie des Dunes', icon: 'stable' },
   gatien: { x: -205, z: 300, name: 'Domaine de Saint-Gatien', icon: 'stable' },
-  sellerie: { x: -140, z: -266, name: 'Sellerie du Port', icon: 'shop' },
+  // Commerces : devant la porte, sur le trottoir.
+  sellerie: { x: -134.6, z: -266, name: 'Sellerie du Port', icon: 'shop' },
+  cafe: { x: 19, z: -227.3, name: 'Le Galop · Café-boulangerie', icon: 'shop' },
+  boutique: { x: -34.7, z: -262, name: 'Maison Lucette · Prêt-à-porter', icon: 'shop' },
   forge: { x: -140, z: -199, name: 'Forge Lemaire', icon: 'pro' },
   vet: { x: 80, z: -199, name: 'Clinique vétérinaire de la Côte', icon: 'pro' },
   hq: { x: 108, z: -306, name: 'Strides HQ', icon: 'strides' },
-  beach: { x: 40, z: -400, name: 'Plage de Deauvelle', icon: 'beach' },
+  beach: { x: 40, z: -400, name: 'Plage de Deauville City', icon: 'beach' },
   cliffs: { x: -505, z: -395, name: 'Phare d’Aval', icon: 'view' },
   sign: { x: 120, z: 470, name: 'Colline Strides', icon: 'view' },
 };

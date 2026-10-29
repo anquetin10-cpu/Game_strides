@@ -132,7 +132,7 @@ Captures `tests/e2e/look.mjs` (rendu réel, logiciel SwiftShader, 960×432), une
 
 | Vue | Lieu | Défaut relevé | Correction |
 | --- | --- | --- | --- |
-| `town`, `fountain`, `crowd` | place de Deauvelle | sol lisse uniforme, fontaine « plastique », moiré des pavés en vue rasante | pavés de granit (cercles autour de la fontaine), calcaire patiné, motif fondu à sa teinte moyenne au loin |
+| `town`, `fountain`, `crowd` | place de Deauville City | sol lisse uniforme, fontaine « plastique », moiré des pavés en vue rasante | pavés de granit (cercles autour de la fontaine), calcaire patiné, motif fondu à sa teinte moyenne au loin |
 | `cross`, `lamp`, `road` | rues, trottoirs, entrée de ville | trottoirs en béton lisse | dalles de calcaire et bordures de granit |
 | `town` 22 h | place la nuit | place dans le noir | huit lanternes |
 | `cabins`, `cabinsBack`, `shore` | Planches, cabines | arrière des cabines : murs blancs nus | bardage à couvre-joints, aérations, soubassement |

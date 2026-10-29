@@ -3,7 +3,7 @@
 Jeu en monde ouvert 3D inspiré de GTA, transposé dans l'univers du cheval, au service de la marque **STRIDES**.
 On y incarne un jeune talent du monde équestre qui arrive sur la Côte Fleurie avec sa jument, Comète, et zéro euro en poche.
 Les missions arrivent sur le téléphone du personnage, dans l'application Strides : on les **accepte** ou on les **refuse**,
-on les réalise, on est payé et noté… jusqu'à remporter le Grand Prix CSI 5★ de Deauvelle.
+on les réalise, on est payé et noté… jusqu'à remporter le Grand Prix CSI 5★ de Deauville City.
 
 Jouable dans le navigateur, **pensé d'abord pour l'iPhone** (commandes tactiles, paysage), et aussi au clavier sur ordinateur.
 
@@ -28,7 +28,7 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 
 ## Ce qu'il y a dedans
 
-- **Un monde ouvert de 1,2 km²** : Deauvelle (ville normande, place, Grand Hôtel, Strides HQ), la plage et ses Planches,
+- **Un monde ouvert de 1,2 km²** : Deauville City (ville normande, place, Grand Hôtel, Strides HQ), la plage et ses Planches,
   le Haras de la Pommeraie, le Pôle International (carrière de CSO, tribunes), l'hippodrome de la Touques, la forêt de
   Saint-Gatien et son cross, les falaises et le phare, le bocage, la colline « STRIDES ». Cycle jour/nuit, mer animée,
   herbe au vent, circulation, passants, chevaux au paddock, cavaliers à l'entraînement.
@@ -86,7 +86,7 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Concours de jour (ou le soir sous les projecteurs)** : épreuves de 8 h 30 à 21 h ; engagé en soirée, on passe le
   lendemain matin et on peut dormir à la maison de l'Écurie du Val jusqu'à 7 h.
 - **Carburant** : chaque véhicule consomme selon son moteur et sa conduite (jauge, autonomie et consommation moyenne au
-  volant) ; plein à la station-service de l'entrée nord de Deauvelle, payé au litre ; panne sèche et dépannage.
+  volant) ; plein à la station-service de l'entrée nord de Deauville City, payé au litre ; panne sèche et dépannage.
 - **Sauvegarde automatique** : la partie s'enregistre seule sur l'appareil (toutes les 12 s, à chaque mission, quand
   on quitte la page). Dans le jeu publié sur claude.ai, une copie part aussi dans l'espace privé du joueur (au plus
   toutes les 30 s) ; si elle est plus récente que celle de l'appareil, le jeu propose de la reprendre (la partie de
@@ -185,4 +185,4 @@ Le dossier `dist/` (ou le fichier unique `dist-single/index.html`) peut aussi ê
 
 ---
 
-Jeu de démonstration : Deauvelle, ses lieux et ses personnages sont fictifs.
+Jeu de démonstration : Deauville City, ses lieux et ses personnages sont fictifs.

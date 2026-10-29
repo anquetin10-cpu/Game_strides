@@ -1,4 +1,4 @@
-// Carburant : plein à la station-service de Deauvelle (gazole ou sans-plomb selon le véhicule, payé au litre), alerte
+// Carburant : plein à la station-service de Deauville City (gazole ou sans-plomb selon le véhicule, payé au litre), alerte
 // de réserve, panne sèche et dépannage, niveau du camion Strides conservé dans la sauvegarde.
 import { STATION } from '../world/sites.js';
 import { clamp, dec } from '../core/math.js';
@@ -64,7 +64,7 @@ export function installFuel(game) {
     const s = v.sim, tank = s.spec.tank || 60;
     if (s.fuelL < tank * 0.12 && !s.dry && !v._lowWarned) {
       v._lowWarned = true;
-      g.hud.hint(`<b>Réserve de carburant</b> : ${Math.round(s.fuelL)} l, environ ${Math.round(s.rangeKm)} km. Station-service à l’entrée nord de Deauvelle.`, 6000);
+      g.hud.hint(`<b>Réserve de carburant</b> : ${Math.round(s.fuelL)} l, environ ${Math.round(s.rangeKm)} km. Station-service à l’entrée nord de Deauville City.`, 6000);
     }
     if (s.dry && !assist) {
       assist = v;
@@ -75,7 +75,7 @@ export function installFuel(game) {
         assist.sim.refuel(ASSIST.litres);
         d.money -= pay;
         g.updateWallet();
-        g.message('Dépannage', 'DP', `Livraison de ${ASSIST.litres} l de ${FUEL_NAMES[assist.sim.spec.fuel || 'diesel']} sur place (${dec(pay, 2)} €). De quoi rejoindre la station-service à l’entrée nord de Deauvelle.`);
+        g.message('Dépannage', 'DP', `Livraison de ${ASSIST.litres} l de ${FUEL_NAMES[assist.sim.spec.fuel || 'diesel']} sur place (${dec(pay, 2)} €). De quoi rejoindre la station-service à l’entrée nord de Deauville City.`);
         if (g.player.vehicle === assist) assist.startEngine();
         assist = null;
       }, ASSIST.delay * 1000);

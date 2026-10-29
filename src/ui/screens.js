@@ -11,7 +11,7 @@ const TIPS = [
   'Joystick à fond : galop. Maintiens BOOST pour le grand galop, l’anneau du bouton montre l’endurance.',
   'Appuie sur SAUT au bon moment : l’anneau devient vert quand l’appel est idéal.',
   'Touche la minimap pour ouvrir la carte et placer un repère GPS.',
-  'Les fers d’or sont cachés dans tout Deauvelle. Trouve-les tous !',
+  'Les fers d’or sont cachés dans tout Deauville City. Trouve-les tous !',
   'Ton téléphone vibre ? Une nouvelle mission Strides t’attend.',
   'Le transport Strides peut t’emmener où tu veux, toi et ton cheval.',
 ];
@@ -219,8 +219,8 @@ export class Screens {
     const promo = g.phone.promo();
     promo.style.marginTop = '16px';
     this.card({
-      kicker: 'Grand Prix CSI 5★ de Deauvelle',
-      title: 'Légende de Deauvelle',
+      kicker: 'Grand Prix CSI 5★ de Deauville City',
+      title: 'Légende de Deauville City',
       body: `${d.playerName}, de groom à vainqueur du Grand Prix : ta carrière s’est construite mission après mission, avis après avis. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
       extra: [promo, h('div.irl', { text: 'Le monde reste ouvert : continue les missions, les chronos et la chasse aux fers d’or.' })],
       buttons: [

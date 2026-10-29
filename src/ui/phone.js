@@ -162,7 +162,7 @@ export class Phone {
     return h(
       'div.home-screen.scrollable',
       {},
-      h('div.home-top', {}, h('div', {}, h('div.clock.tab-num', { text: g.clockText() }), h('div.date', { text: `Deauvelle · ${g.weatherText()}` })), widget),
+      h('div.home-top', {}, h('div', {}, h('div.clock.tab-num', { text: g.clockText() }), h('div.date', { text: `Deauville City · ${g.weatherText()}` })), widget),
       h(
         'div.apps',
         {},
@@ -308,7 +308,7 @@ export class Phone {
     }
     // Chauffeur : trajet immédiat avec ton cheval (voyage rapide du jeu).
     body.appendChild(h('div.st-eyebrow.sec', { text: 'Chauffeur · trajet avec ton cheval' }));
-    const dests = STABLES.map((s) => s).concat([{ id: 'town', name: 'Deauvelle — centre', place: { x: 20, z: -240 } }, { id: 'beach', name: 'Plage de Deauvelle', place: { x: 60, z: -385 } }]);
+    const dests = STABLES.map((s) => s).concat([{ id: 'town', name: 'Deauville City — centre', place: { x: 20, z: -240 } }, { id: 'beach', name: 'Plage de Deauville City', place: { x: 60, z: -385 } }]);
     for (const s of dests) {
       const dist = g.distanceTo(s.place);
       const price = Math.round(15 + dist / 25);
@@ -696,7 +696,7 @@ export class Phone {
     }
     body.appendChild(h('div.section-t', { text: 'Équipement', style: { marginTop: '14px' } }));
     const owned = SHOP.filter((s) => d.upgrades.includes(s.id));
-    if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauvelle.' }));
+    if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauville City.' }));
     for (const s of owned) body.appendChild(h('div.kv', {}, h('span', { text: s.name }), h('b', { text: s.desc })));
     // Chevaux proposés en location pour la saison par leurs propriétaires : élevage local fictif (hors Strides).
     body.appendChild(h('div.section-t', { text: 'Chevaux en location · saison de concours (fictif)', style: { marginTop: '14px' } }));
@@ -727,7 +727,7 @@ export class Phone {
     const g = this.game;
     const d = g.save.data;
     const main = h('div.app-main');
-    main.appendChild(this._head('Trophées', 'Ta carrière à Deauvelle'));
+    main.appendChild(this._head('Trophées', 'Ta carrière à Deauville City'));
     const body = h('div.app-body.scrollable');
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
     body.appendChild(h('div.result-grid', {}, stat('Fers d’or', `${d.horseshoes.length}/${g.collectibles.total}`), stat('Missions', String(d.stats.jobs)), stat('Gains', formatMoney(d.stats.earned)), stat('Sauts', String(d.stats.jumps)), stat('Distance', `${dec(d.stats.distance / 1000)} km`), stat('Note', g.rating() ? `★ ${dec(g.rating())}` : '—')));
@@ -748,7 +748,7 @@ export class Phone {
     const w = wind(day, hr);
     const rain = rainTarget(day, hr);
     const hum = Math.round(Math.min(98, 62 + coverAt(day, hr) * 25 + rain * 20 - Math.max(0, temperature(day, hr) - 16) * 1.2));
-    main.appendChild(this._head('Météo', `Deauvelle · ${conditionText(day, hr)}`));
+    main.appendChild(this._head('Météo', `Deauville City · ${conditionText(day, hr)}`));
     const body = h('div.app-body.scrollable');
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
     body.appendChild(h('div.result-grid', {}, stat('Température', `${Math.round(temperature(day, hr))} °C`), stat('Vent', `${w.dir} ${w.kmh} km/h`), stat('Humidité', `${hum} %`)));
@@ -770,7 +770,7 @@ export class Phone {
     }
     const low = ev.find((e) => e.type === 'BM');
     const high = ev.find((e) => e.type === 'PM');
-    // Distance de la mer aux Planches (devant le Café, x = 40) : la plage de Deauvelle découvre plus de 150 m d'estran
+    // Distance de la mer aux Planches (devant le Café, x = 40) : la plage de Deauville City découvre plus de 150 m d'estran
     // en vives-eaux.
     const fromPlanches = (lv) => Math.round(-374 - this.game.terrain.waterlineZ(40, lv));
     const note = (text) => body.appendChild(h('p', { text, style: { margin: '10px 0 0', font: '400 12px/1.4 var(--ui)', color: 'var(--muted)' } }));

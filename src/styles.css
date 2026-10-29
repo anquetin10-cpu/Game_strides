@@ -952,3 +952,21 @@ body.phone-open .rotate { display: none !important; }
 .hud.cso-ctl .btn-jump svg { width: 32px; height: 32px; }
 .hud.cso-ctl .btn-jump span { font-size: 11px; }
 .hud.cso-ctl .telemetry { opacity: .82; transform: scale(.88); transform-origin: bottom center; }
+
+/* Commerces de Deauville City : fondu d'entrée/sortie, fiches produits. */
+.shop-fade { position: fixed; inset: 0; background: #0b0b0a; opacity: 0; pointer-events: none; transition: opacity .22s ease; z-index: 60; }
+.shop-fade.on { opacity: 1; }
+.shop-bal { font: 600 13px/1.2 var(--mono, monospace); color: var(--text-2); margin: 2px 0 6px; }
+.shop-list { display: flex; flex-direction: column; }
+.shop-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.shop-info { flex: 1; min-width: 0; }
+.shop-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.shop-row .n { font: 600 14.5px/1.2 var(--ui); letter-spacing: -.01em; }
+.shop-row .p { font: 600 14px/1.2 var(--ui); white-space: nowrap; }
+.shop-row .d { font: 400 12px/1.35 var(--ui); color: var(--text-2); margin-top: 3px; }
+.shop-row .e { font: 500 12.5px/1.35 var(--ui); margin-top: 3px; }
+.shop-row .s { font: 500 11.5px/1.3 var(--ui); color: var(--accent, #2f7d4f); margin-top: 3px; }
+.shop-acts { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.shop-acts .btn { min-width: 112px; padding: 8px 12px; font-size: 13px; }
+.shop-acts .btn:disabled { opacity: .45; }
+@media (max-height: 430px) { .shop-row { padding: 7px 0; } .shop-row .d { display: none; } }

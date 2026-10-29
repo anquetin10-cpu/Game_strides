@@ -478,3 +478,34 @@ float pvH = 0.0;`)
   material.customProgramCacheKey = () => 'pavement';
   return material;
 }
+
+// Éclairage des intérieurs de commerces (suspensions, rails de spots) : jusqu'à 6 points lumineux chauds ajoutés
+// au seul matériau de l'intérieur, sans lumière de scène supplémentaire (pas de recompilation de tous les matériaux
+// du monde ni de coût par pixel ailleurs). U = { shopL : vec4 (x, y, z monde, intensité), shopLN, shopLC }.
+export function shopLightUniforms(points, color = '#ffd9a8', gain = 7) {
+  const shopL = Array.from({ length: 6 }, (_, i) => new THREE.Vector4(...(points[i] || [0, -1000, 0, 0])));
+  return { shopL: { value: shopL }, shopLN: { value: Math.min(6, points.length) }, shopLC: { value: new THREE.Color(color).multiplyScalar(gain) } };
+}
+export function applyShopLight(material, U) {
+  const prev = material.onBeforeCompile;
+  const prevKey = material.customProgramCacheKey && material.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? material.customProgramCacheKey.bind(material) : null;
+  material.onBeforeCompile = (sh, r) => {
+    if (prev && prev !== THREE.Material.prototype.onBeforeCompile) prev.call(material, sh, r);
+    Object.assign(sh.uniforms, U);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec4 shopL[6];\nuniform int shopLN;\nuniform vec3 shopLC;')
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+      {
+        vec3 vpS = -vViewPosition;
+        for ( int i = 0; i < 6; i++ ) {
+          if ( i >= shopLN ) break;
+          vec3 L = ( viewMatrix * vec4( shopL[i].xyz, 1.0 ) ).xyz - vpS;
+          float d2 = dot( L, L );
+          float nl = max( dot( normal, L * inversesqrt( d2 ) ), 0.0 );
+          reflectedLight.directDiffuse += BRDF_Lambert( material.diffuseColor ) * shopLC * shopL[i].w * ( 0.25 + 0.75 * nl ) * ( 10.0 / ( d2 + 3.0 ) );
+        }
+      }`);
+  };
+  material.customProgramCacheKey = () => `${prevKey ? prevKey() : ''}|shoplight`;
+  return material;
+}

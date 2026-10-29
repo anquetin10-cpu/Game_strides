@@ -571,7 +571,7 @@ const LEVEL_PERKS = {
   2: 'Nouvelles missions : Transport, sorties cavalier, plage.',
   3: 'Référence locale — les clients te recommandent entre eux.',
   4: 'Engagements en CSI ouverts au Pôle International.',
-  5: 'Tu es la référence de Deauvelle.',
+  5: 'Tu es la référence de Deauville City.',
 };
 
 function defaultReview(stars) {
