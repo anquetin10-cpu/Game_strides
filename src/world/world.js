@@ -31,6 +31,13 @@ import { getFields, hedgeRuns, nearPath } from './fields.js';
 
 const font = new FontLoader().parse(fontJson);
 
+
+// Places de stationnement de Deauville City (voitures conduisibles garées) : [x, z, cap].
+const TOWN_PARKING = [
+  [-80, -296.2, Math.PI / 2], [-64, -296.2, Math.PI / 2], [20, -235.8, -Math.PI / 2], [36, -235.8, -Math.PI / 2],
+  [-126.2, -210, 0], [-126.2, -190, 0], [66.2, -260, Math.PI], [66.2, -276, Math.PI], [100, -169.8, Math.PI / 2],
+  [-170, -228.2, -Math.PI / 2], [-100, -169.8, Math.PI / 2], [120, -296.2, -Math.PI / 2],
+];
 export class World {
   constructor(scene, colliders) {
     this.scene = scene;
@@ -1177,12 +1184,17 @@ export class World {
           const y = this.h(x, z) + 0.14;
           // Pas devant une porte de commerce ni sur une terrasse.
           if (Object.values(SHOPS3D).some((sp) => Math.hypot(x - sp.x, z - sp.z) < Math.max(sp.w, sp.d) / 2 + 3)) continue;
+          // Ni sur une place de stationnement (portières et sortie de la voiture garée).
+          if (TOWN_PARKING.some(([px, pz]) => Math.abs(x + 0.7 - px) < 4.2 && Math.abs(z - pz) < 2.6)) continue;
           if (rnd() < 0.6) {
             this.batch.add(bench, null, x, y, z, sd.ry);
             this.colliders.addBox(x, z, 0.8, 0.3, sd.ry, y + 0.8, 'bench');
             this.batch.add(bin, null, x + 1.4, y, z, 0);
-          } else this.batch.add(bin, null, x, y, z, 0);
-          this.colliders.addCircle(x + 1.4, z, 0.25, y + 0.9, 'bin');
+            this.colliders.addCircle(x + 1.4, z, 0.25, y + 0.9, 'bin');
+          } else {
+            this.batch.add(bin, null, x, y, z, 0);
+            this.colliders.addCircle(x, z, 0.25, y + 0.9, 'bin');
+          }
         }
       }
     }
@@ -1465,14 +1477,8 @@ export class World {
         }
       }
     }
-    // Voitures garées.
-    const spots = [
-      [-80, -296.2, Math.PI / 2], [-64, -296.2, Math.PI / 2], [20, -235.8, -Math.PI / 2], [36, -235.8, -Math.PI / 2],
-      [-126.2, -210, 0], [-126.2, -190, 0], [66.2, -260, Math.PI], [66.2, -276, Math.PI], [100, -169.8, Math.PI / 2],
-      [-170, -228.2, -Math.PI / 2], [-100, -169.8, Math.PI / 2], [120, -296.2, -Math.PI / 2],
-    ];
-    // Voitures conduisibles, créées par le jeu (vehicle.js) avec leur collision.
-    spots.forEach(([x, z, r], i) => {
+    // Voitures conduisibles garées, créées par le jeu (vehicle.js) avec leur collision.
+    TOWN_PARKING.forEach(([x, z, r], i) => {
       const kind = CAR_MODELS[i % CAR_MODELS.length];
       this.parkedVehicles.push({ kind, color: CAR_COLORS[kind][(i * 3 + 1) % CAR_COLORS[kind].length], x, z, heading: r });
     });
