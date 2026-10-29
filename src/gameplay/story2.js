@@ -76,10 +76,13 @@ function prepSteps(game, S, { horse, text, name }) {
       start(r) {
         r.data.prep = prepTime(game);
         game.player.locked = true;
+        // Gestes enchaînés contre le cheval : brosse (épaule puis flanc), cure-pied (antérieur, postérieur), guêtre.
+        game.player.startGroom?.(horse(), 'prep', r.data.prep);
         game.audio.click();
       },
       update: (r) => r.stepT >= r.data.prep,
       end() {
+        game.player.stopGroom?.();
         game.player.locked = false;
         const c = horse()?.cond;
         if (c) {

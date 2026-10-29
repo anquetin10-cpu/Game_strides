@@ -13,6 +13,15 @@ export function makeSteps(game) {
     return Math.hypot(f.x - pos.x, f.z - pos.z);
   };
   const resolve = (v) => (typeof v === 'function' ? v() : v);
+  // Consigne de changement de mode (descendre, sortir du véhicule…) seulement près de la cible : de loin, l'objectif
+  // reste la destination (guidée par le GPS, au volant compris), avec la distance.
+  const NEAR = 45;
+  const far = (pos, r) => {
+    const p = resolve(pos);
+    const d = p ? dist(p) : 0;
+    return d > Math.max(NEAR, r + 30) ? d : 0;
+  };
+  const withDist = (t, d) => `${t} · ${d >= 1000 ? `${(d / 1000).toFixed(1).replace('.', ',')} km` : `${Math.round(d / 10) * 10} m`}`;
   const modeHint = (mode) => {
     // Une étape « au volant » est une étape du camion Strides (transport des chevaux).
     if (!mode || (mode === 'drive' ? P().inTruck : P().mode === mode)) return null;
@@ -45,7 +54,10 @@ export function makeSteps(game) {
       return {
         kind: 'goto',
         mode,
-        text: () => modeHint(mode) || resolve(text),
+        text: () => {
+          const d = far(pos, r);
+          return d ? withDist(resolve(text), d) : modeHint(mode) || resolve(text);
+        },
         target: pos,
         radius: r,
         beacon,
@@ -64,8 +76,9 @@ export function makeSteps(game) {
         interactId: id,
         modes,
         text: () => {
-          const need = !modes.includes(P().mode) ? modeHint(modes[0]) : null;
-          return need || resolve(text);
+          if (modes.includes(P().mode)) return resolve(text);
+          const d = far(pos, r);
+          return d ? withDist(resolve(text), d) : modeHint(modes[0]) || resolve(text);
         },
         target: pos,
         radius: r,
@@ -550,6 +563,9 @@ export class MissionManager {
     if (this.active) {
       this.active.update(dt);
       const run = this.active;
+      // GPS de mission toujours actif tant que l'étape a une destination (à pied, à cheval ou au volant) : s'il a été
+      // effacé (sortie de véhicule, carte du téléphone…), il est rétabli.
+      if (run && !run.finished && run.step?.target && !g.gps.target) run.applyWaypoint();
       if (run) {
         g.hud.setObjective({
           tag: `${run.offer.vertical === 'EVENEMENTS' ? 'Événement' : 'Mission'} · ${run.offer.title}`,

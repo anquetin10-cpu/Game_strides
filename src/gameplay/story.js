@@ -2,6 +2,7 @@
 // que propose réellement l'application Strides (mise en relation avec des professionnels du cheval).
 import { HOME, HARAS, POLE, DUNES, GATIEN, TOWN, homeBoxes, HIPPO_SITE, SHOPS3D } from '../world/sites.js';
 import { shopAnchor } from '../world/shopInteriors.js';
+import { HOME_BOX } from './stabling.js';
 import { POI, HIPPO } from '../world/layout.js';
 import { courseSteps, totalPenalties, checkpointSteps, beachRingPoints, pathLength, raceSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
@@ -43,28 +44,52 @@ export const STORY = [
   // l'échauffement du premier concours (M3).
   {
     id: 'tuto', story: true, vertical: 'JOBS', category: 'Prise en main', title: 'Premiers pas', level: 1,
-    desc: 'Monte Comète, fais un petit tour de carrière et reviens voir Camille.',
+    desc: 'Sors Comète de son box, fais un petit tour de carrière et reviens voir Camille.',
     client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 50, xp: 60, duration: '~2 min',
     irl: 'sur Strides, les écuries et cavaliers envoient des propositions de missions aux professionnels, qui acceptent celles qui leur conviennent — comme tu viens de le faire.',
     review: () => 'Bienvenue dans l’équipe ! Belle prise en main.',
+    // Comète attend dans son box : on va la chercher, on la sort en main de l'écurie, puis on monte.
+    keepInBox: true,
+    setup(game) {
+      const h = game.mainHorse;
+      if (h && !h.inBox && !h.rider && !h.hiddenInTruck) game.stabling?.putIn(h, true);
+    },
     steps(game, run, S) {
       const camille = npcAt(game, run, STAFF_F, -100, 166, Math.PI, 'Camille');
       const A = HOME.arena;
+      const B = HOME.barn;
+      const horse = () => game.mainHorse;
+      // Sortie de l'allée par le pignon ouest, à deux pas du box de Comète (bout ouest de l'allée).
+      const out = { x: B.x - B.w / 2 - 6, z: B.z };
       // Petit tour de carrière à l'écart des deux obstacles posés au milieu : entrée par la porte (5 m de large), piste
       // de gauche, puis retour par l'allée centrale, dans l'axe de la porte pour ressortir sans buter dans la lice.
       const tour = [[A.x, A.z - 7.5], [A.x - 16, A.z - 5], [A.x - 16, A.z + 6], [A.x - 4, A.z + 7], [A.x, A.z - 3]];
       return [
         S.dialog([
           { who: 'Camille Martin', initials: 'CM', text: `Salut ${game.save.data.playerName} ! Bienvenue à l’Écurie du Val. Ta première mission est simple : un petit tour avec Comète.` },
-          { who: 'Camille Martin', initials: 'CM', text: 'Elle t’attend devant les boxes. Approche-toi et touche ACTION pour monter en selle.' },
+          { who: 'Camille Martin', initials: 'CM', text: 'Elle est dans son box, tout au bout de l’allée de l’écurie. Va la chercher, sors-la, puis monte en selle dehors.' },
         ]),
         S.custom({
+          text: 'Va chercher Comète dans son box (bout de l’allée)',
+          target: HOME_BOX.door,
+          radius: 2.6,
+          hint: 'Joystick gauche : marcher · glisse à droite : tourner la caméra. Devant la porte du box : <b>ACTION</b>.',
+          hintMs: 9000,
+          update: () => !horse()?.inBox,
+          end() {
+            // Elle sort au licol et suit le joueur en main.
+            const h = horse();
+            if (h && game.player.mode === 'foot') game.player.transport?.lead(h);
+          },
+        }),
+        S.goto(out, 'Sors de l’écurie avec Comète (elle te suit en main)', { r: 3, hint: 'Comète marche à ton pas, à ta droite.', hintMs: 6000 }),
+        S.custom({
           text: 'Monte sur Comète',
-          target: () => game.player.horse.pos,
+          target: () => horse().pos,
           radius: 3,
           beacon: false,
-          hint: 'Joystick gauche : avancer · glisse à droite : tourner la caméra · <b>ACTION</b> près de Comète : monter.',
-          hintMs: 9000,
+          hint: 'Près de Comète : <b>ACTION</b> pour monter en selle.',
+          hintMs: 7000,
           update: () => game.player.mode === 'ride',
         }),
         S.goto({ x: A.x, z: A.z - 13 }, 'Suis la balise jusqu’à la carrière', { r: 5, mode: 'ride', hint: 'Un peu de joystick = <b>pas</b>, plus = <b>trot</b>. La balise et le GPS montrent toujours où aller.', hintMs: 9000 }),

@@ -63,9 +63,10 @@ export function installStabling(game) {
     }, 0.4),
   });
   // Une mission a besoin du cheval : il est sorti du box (prêt dans l'allée).
-  g.bus.on('mission:start', () => {
+  // (Sauf mission qui fait aller chercher le cheval au box : « Premiers pas ».)
+  g.bus.on('mission:start', (run) => {
     const h = horse();
-    if (h?.inBox) {
+    if (h?.inBox && !run?.offer?.def?.keepInBox) {
       takeOut(h, true);
       g.hud.hint(`${h.name} est sorti(e) du box : il ou elle t’attend dans l’allée de l’Écurie du Val.`, 5000);
     }

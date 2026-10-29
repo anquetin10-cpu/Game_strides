@@ -162,10 +162,11 @@ export class Colliders {
   }
   // Hauteur maximale de la caméra sous ce plafond au point (x, z), ou null hors du bâtiment.
   // (lz : position en travers, réservée aux plafonds en pente.)
-  ceilingY(cl, x, z, margin = 0.35) {
+  ceilingY(cl, x, z, margin = 0.9) {
     const lz = this._inCeiling(cl, x, z, 0.4);
     if (lz === null) return null;
-    // Sous les entraits de la charpente (hauteur des murs) : la caméra ne traverse pas les fermes.
+    // Sous les entraits de la charpente (hauteur des murs) et sous les plafonniers suspendus (~0,75 m sous la
+    // charpente) : passée juste au-dessus d'une réglette, la caméra la voyait de si près qu'elle emplissait l'écran.
     return cl.y + cl.h - margin;
   }
   // Point à l'intérieur d'un obstacle haut (pour la caméra).

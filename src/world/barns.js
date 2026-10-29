@@ -117,7 +117,7 @@ function bridle(parts, x, y, z, ry, leather) {
 // style : { wall, plinth, trim, roof, slide (portes coulissantes), wood (façades de box), steel, lining (habillage
 // intérieur), aisle (sol de l'allée), truss (charpente), kind: 'wood' | 'stone' | 'tent' }
 export function barnGeo({ w, d, h = 4.2, aisle = 3.6, cols, style, windowsP = 'dutch', windowsN = 'high', endDoors = [true, true], over = 0.9 }) {
-  const S = { wall: '#202125', plinth: '#8a877f', trim: '#f2f1ec', roof: '#3a3d42', slide: '#202125', wood: '#76563a', steel: '#1d1e21', lining: '#a98258', aisle: '#3b3c3e', truss: '#6e5236', kind: 'wood', ...style };
+  const S = { wall: '#202125', plinth: '#8a877f', trim: '#f2f1ec', roof: '#3a3d42', slide: '#202125', wood: '#76563a', steel: '#1d1e21', lining: '#a98258', aisle: '#4a4b4e', truss: '#6e5236', kind: 'wood', ...style };
   const body = [], det = [], glass = [], lights = [];
   const colliders = []; // [x, z, hw, hd] en repère local (boîtes alignées)
   const hd = d / 2, hw = w / 2;
@@ -140,9 +140,11 @@ export function barnGeo({ w, d, h = 4.2, aisle = 3.6, cols, style, windowsP = 'd
 
   // --- Sol : dalle béton, allée en pavés caoutchouc, litière de copeaux dans les boxes. ---
   body.push([box(w + 1.2, 0.35, d + 1.2), '#a6a39b', { y: -0.33 }]);
-  body.push([box(w - 2 * T, 0.03, aisle), S.aisle, { y: 0.0 }]);
+  // Sols posés au moins 4 cm au-dessus de la dalle (sommet à 0,02) : à 1 cm, la dalle grise transparaissait par
+  // plaques au loin (précision du tampon de profondeur).
+  body.push([box(w - 2 * T, 0.06, aisle), S.aisle, { y: 0.0 }]);
   // Caniveau central à grille.
-  det.push([box(w - 2 * T - 0.6, 0.012, 0.12), '#2a2b2d', { y: 0.03 }]);
+  det.push([box(w - 2 * T - 0.6, 0.012, 0.12), '#2a2b2d', { y: 0.06 }]);
 
   // --- Murs extérieurs : longs pans (ouvertures par module) et pignons (portes de l'allée). ---
   const opening = { P: [], N: [] };
@@ -349,7 +351,7 @@ export function barnGeo({ w, d, h = 4.2, aisle = 3.6, cols, style, windowsP = 'd
     light(cx);
     if (m.cross) {
       // Allée transversale : sol continu, extincteur et dévidoir.
-      body.push([box(W, 0.03, d - 2 * T), S.aisle, { x: cx }]);
+      body.push([box(W, 0.06, d - 2 * T), S.aisle, { x: cx }]);
       det.push([cyl(0.09, 0.09, 0.55, 8), '#c8322b', { x: m.xa + 0.25, y: 0.9, z: hd - 0.45 }]);
       det.push([cyl(0.25, 0.25, 0.12, 12), '#2f6e4a', { x: m.xb - 0.3, y: 1.4, z: -(hd - 0.35), rx: Math.PI / 2 }]);
       for (const [sd, s] of [['P', 1], ['N', -1]]) if (prev[sd]) sideWall(m.xa, s, S.lining);
@@ -371,7 +373,7 @@ export function barnGeo({ w, d, h = 4.2, aisle = 3.6, cols, style, windowsP = 'd
         colliders.push([cx, zc, W / 2, depth / 2]);
       } else if (kind === 'groom') {
         // Aire de pansage : tapis caoutchouc, attaches croisées, anneaux, étagère avec caisse de pansage et seau.
-        body.push([box(W - 0.1, 0.04, depth), '#232426', { x: cx, z: zc }]);
+        body.push([box(W - 0.1, 0.06, depth), '#232426', { x: cx, z: zc }]);
         const za = s * (A2 + depth * 0.55);
         for (const e of [m.xa + 0.08, m.xb - 0.08]) det.push([box(0.08, 0.08, 0.05), '#b7bbbf', { x: e, y: 1.7, z: za }]);
         for (const sx of [-1, 1]) det.push([barX(W / 2 - 0.35, 0.012), '#d9c27a', { x: cx + sx * (W / 4), y: 1.55, z: za, rz: sx * 0.08 }]);
@@ -382,10 +384,10 @@ export function barnGeo({ w, d, h = 4.2, aisle = 3.6, cols, style, windowsP = 'd
         colliders.push([cx, s * (zIn - 0.2), W / 2, 0.2]);
       } else if (kind === 'wash') {
         // Douche : carrelage, caniveau à grille, potence pivotante avec tuyau, lampe chauffante infrarouge.
-        body.push([box(W - 0.1, 0.04, depth), '#9aa1a6', { x: cx, z: zc }]);
+        body.push([box(W - 0.1, 0.06, depth), '#9aa1a6', { x: cx, z: zc }]);
         det.push([box(W - 0.2, 1.9, 0.04), '#e9ecee', { x: cx, z: s * (zIn - 0.06) }]);
         det.push([box(W - 0.2, 0.08, 0.05), '#5d7480', { x: cx, y: 1.9, z: s * (zIn - 0.06) }]);
-        det.push([box(W - 0.4, 0.015, 0.14), '#5b5f64', { x: cx, y: 0.04, z: s * (zIn - 0.5) }]);
+        det.push([box(W - 0.4, 0.015, 0.14), '#5b5f64', { x: cx, y: 0.06, z: s * (zIn - 0.5) }]);
         det.push([cyl(0.04, 0.04, 2.9, 6), '#b7bbbf', { x: m.xa + 0.2, z: s * (zIn - 0.2) }]);
         det.push([barX(1.6, 0.03), '#b7bbbf', { x: m.xa + 1.0, y: 2.85, z: s * (zIn - 0.2) }]);
         det.push([barZ(0.9, 0.02), '#2f6e4a', { x: m.xa + 1.75, y: 2.4, z: s * (zIn - 0.2), rx: 1.2 }]);
@@ -396,7 +398,7 @@ export function barnGeo({ w, d, h = 4.2, aisle = 3.6, cols, style, windowsP = 'd
       } else if (kind === 'tack') {
         // Sellerie : porte sur l'allée ; porte-selles sur trois hauteurs, filets, armoires, malles, banc, tapis.
         roomWall(m, s, true, S.lining);
-        body.push([box(W - 0.1, 0.03, depth), '#8a7a66', { x: cx, z: zc }]);
+        body.push([box(W - 0.1, 0.06, depth), '#8a7a66', { x: cx, z: zc }]);
         det.push([box(W - 0.2, RH - 0.1, 0.04), '#b08a5e', { x: cx, z: s * (zIn - 0.05) }]);
         const leathers = ['#4a2f1e', '#1d1c1b', '#5a3a24', '#3d2a1d'];
         const pads = ['#f2f1ec', '#1b2a44', '#2f5f8a', '#f2f1ec', '#7a1f2b', '#1b1c1f'];

@@ -312,6 +312,56 @@ function gestures(B, P, st, pose, info) {
       qEuler(P.q[BN[side].Hand], 0, sg * 0.4, sg * 0.2);
       qAxis(P.q[BN[side].Fing], Zv, sg * 0.2);
     }
+  } else if (pose === 'brush') {
+    // Pansage, face au flanc du cheval (≈ 0,45 m devant) : la main droite passe la brosse en longs coups dans le sens
+    // du poil (d'avant en arrière, appuyée), retour décollé ; la main gauche à plat sur le cheval. Le buste accompagne.
+    const w = t * 4.6;
+    const s = Math.sin(w), c = Math.cos(w);
+    qEuler(P.q.spine, 0.1, -0.06 * c, 0);
+    qEuler(P.q.chest, 0.06, -0.1 * c, 0.03 * c);
+    qEuler(P.q.neck, 0.12, -0.15 * c, 0);
+    forwardTrunk(B, P);
+    const cy = P.mp.chest.y;
+    P.hands.r.set(-0.08 + 0.22 * c, cy - 0.14 + 0.06 * s, 0.44 - 0.05 * Math.max(0, s));
+    solveArm(B, P, 'r', P.hands.r, _v4.set(-0.8, -0.5, -0.25).normalize(), null);
+    qEuler(P.q.rHand, 0.3, 0, -0.5 - 0.2 * s);
+    qAxis(P.q.rFing, Zv, 1.1);
+    P.hands.l.set(0.3, cy - 0.08, 0.46);
+    solveArm(B, P, 'l', P.hands.l, _v4.set(0.8, -0.5, -0.25).normalize(), null);
+    qEuler(P.q.lHand, 0.2, 0, 0.6);
+    qAxis(P.q.lFing, Zv, 0.1);
+  } else if (pose === 'hoof' || pose === 'boots') {
+    // Accroupi contre un membre du cheval, dos penché, tête baissée vers le pied.
+    // hoof : la main gauche tient le sabot levé, la droite gratte la sole au cure-pied (petits coups vers la pince) ;
+    // boots : les deux mains enroulent la protection autour du canon et serrent les attaches.
+    P.hips.set(0.04, 0.6, -0.16);
+    qEuler(P.q.hips, 0.3, 0, 0);
+    qEuler(P.q.spine, 0.32, 0, 0);
+    qEuler(P.q.chest, 0.18, 0, 0);
+    qEuler(P.q.neck, 0.35, 0, 0);
+    forwardTrunk(B, P);
+    for (const side of SIDES) {
+      const sg = side === 'l' ? 1 : -1;
+      const f = P.feet[side];
+      plantFoot(f.pos, f.q, info, sg * 0.2, side === 'l' ? 0.08 : -0.12, 0, side === 'l' ? 0 : -0.25, sg * 0.25);
+      solveLeg(B, P, side, f.pos, f.q, 0, _v5.set(sg * 0.35, 0.2, 1).normalize());
+    }
+    if (pose === 'hoof') {
+      const k = Math.sin(t * 9), k2 = Math.cos(t * 9);
+      P.hands.l.set(0.1, 0.42, 0.42);
+      P.hands.r.set(-0.04 + 0.05 * k, 0.4 + 0.035 * k2, 0.38);
+      qEuler(P.q.rHand, 0.6 + 0.3 * k, 0, -0.4);
+      qAxis(P.q.rFing, Zv, 1.2);
+      qAxis(P.q.lFing, Zv, 0.9);
+    } else {
+      const w = t * 5.5;
+      P.hands.l.set(0.07 + 0.05 * Math.cos(w), 0.36 + 0.06 * Math.sin(w), 0.4);
+      P.hands.r.set(-0.07 + 0.05 * Math.cos(w + Math.PI), 0.36 + 0.06 * Math.sin(w + Math.PI), 0.4);
+      qAxis(P.q.rFing, Zv, 0.6);
+      qAxis(P.q.lFing, Zv, -0.6);
+    }
+    solveArm(B, P, 'l', P.hands.l, _v4.set(0.7, -0.6, -0.3).normalize(), null);
+    solveArm(B, P, 'r', P.hands.r, _v4.set(-0.7, -0.6, -0.3).normalize(), null);
   } else if (pose === 'sit') {
     P.hips.set(0, 0.48, -0.05);
     qEuler(P.q.hips, -0.1, 0, 0);
@@ -472,7 +522,7 @@ export function animateHuman(B, pose, st, dt) {
       pose = ['cheer', 'clap', 'wave'][st._cheer];
     }
     const base = pose === 'carry' || pose === 'walk' || pose === 'stand' || pose === 'run' || pose === 'idle' ? pose : 'stand';
-    const sp = pose === 'wave' || pose === 'cheer' || pose === 'clap' || pose === 'sit' ? 0 : st.speed;
+    const sp = pose === 'wave' || pose === 'cheer' || pose === 'clap' || pose === 'sit' || pose === 'brush' || pose === 'hoof' || pose === 'boots' ? 0 : st.speed;
     const save = st.speed;
     st.speed = sp;
     const r = locomotion(B, P, st, dt, info, { carry: base === 'carry', lookRange: pose === 'stand' || pose === 'idle' || pose === 'walk' ? 0.9 : 0.4 });

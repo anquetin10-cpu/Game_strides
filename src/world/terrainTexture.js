@@ -191,9 +191,11 @@ export function paintTerrainCanvas(terrain, size = 2048) {
   rect(HARAS.court, '#d4c7a8', 4);
   for (const p of HARAS.paddocks) rect(p, '#80b05b', 2);
   rect({ x: POLE.arena.x, z: POLE.arena.z - 8, w: 210, d: 104 }, '#8fb26a', 6);
+  // Esplanade d'entrée avant le sable : la carrière agrandie (120 × 76 m) la recouvre en partie, et le sable doit
+  // rester d'une seule couleur jusqu'à la lice.
+  rect({ x: 330, z: -192, w: 60, d: 16 }, '#c8c1b3', 3);
   rect(POLE.arena, '#c9b08a', 2);
   rect(POLE.warmup, '#c0a881', 2);
-  rect({ x: 330, z: -192, w: 60, d: 16 }, '#c8c1b3', 3);
   rect({ x: HIPPO_SITE.parking.x, z: HIPPO_SITE.parking.z, w: 70, d: 18 }, '#c8c1b3', 3);
   rect(DUNES.paddock, '#86b35e', 2);
   // Piste de la station-service : enrobé, raccordé à la route principale.

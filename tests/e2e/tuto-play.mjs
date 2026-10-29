@@ -1,5 +1,6 @@
-// « Premiers pas » joué comme un joueur, sans téléportation : nouvelle partie, demande acceptée, marche jusqu'à
-// Comète, ACTION pour monter, joystick au trot jusqu'à la carrière, tour dans les anneaux, retour à Camille.
+// « Premiers pas » joué comme un joueur, sans téléportation : nouvelle partie, demande acceptée, marche jusqu'au box de
+// Comète (par le pignon ouest de l'écurie), « Sortir du box », sortie en main, ACTION pour monter, joystick au trot
+// jusqu'à la carrière, tour dans les anneaux, retour à Camille.
 // Vérifie que chaque étape se termine sans blocage (cheval coincé contre une lice, anneau inaccessible) et mesure la
 // durée de jeu. Captures dans tests/e2e/out/tuto/.
 // Usage : node tests/e2e/tuto-play.mjs [http://127.0.0.1:5173/]
@@ -41,6 +42,7 @@ await E(() => {
   A.tick(2);
 });
 check('mission « Premiers pas » démarrée', await E(() => window.__game.missions.active?.offer.title === 'Premiers pas'));
+check('Comète attend dans son box', await E(() => !!window.__game.mainHorse.inBox));
 await shot('01-dialogue');
 
 // Boucle de jeu : dialogue → toucher pour avancer ; cible → joystick vers la cible (au trot à cheval) ; bouton ACTION
@@ -62,14 +64,19 @@ const log = await E(async () => {
       A.releaseInput();
       g.hud.advanceDialog();
     } else if (s?.target) {
-      const t = typeof s.target === 'function' ? s.target() : s.target;
+      let t = typeof s.target === 'function' ? s.target() : s.target;
       const f = g.player.focus.pos;
+      // Écurie du Val : on y entre et on en sort par le pignon ouest (x ≈ -145), le long de l'allée (z = 150).
+      const inBarn = (p) => p.x > -145 && p.x < -95 && p.z > 144 && p.z < 156;
+      if (inBarn(f) && !inBarn(t)) t = { x: -152, z: 150 };
+      else if (!inBarn(f) && inBarn(t) && Math.abs(f.z - 150) > 1.2) t = { x: -149, z: 150 };
+      else if (inBarn(t) && inBarn(f) && Math.abs(f.z - 150) > 1.5 && Math.abs(f.x - t.x) > 2) t = { x: t.x, z: 150 };
       const d = Math.hypot(t.x - f.x, t.z - f.z);
       const it = g.interact.current;
-      if (it && (it.label === 'Monter' || it.label === 'Parler') && d < 6) {
+      if (it && ['Monter', 'Parler', 'Sortir du box'].includes(it.label) && d < 6) {
         A.releaseInput();
         g.input.pressed.add('action');
-      } else A.steer(t.x - f.x, t.z - f.z, g.player.mode === 'ride' ? (d > 25 ? 0.6 : 0.5) : 1);
+      } else A.steer(t.x - f.x, t.z - f.z, g.player.mode === 'ride' ? (d > 25 ? 0.6 : 0.5) : 0.75);
     }
     g.update(1 / 60);
     simT += 1 / 60;
@@ -77,8 +84,9 @@ const log = await E(async () => {
     if (last && Math.hypot(f.x - last.x, f.z - last.z) < 0.004 && !g.hud.dialogActive) still++;
     else still = 0;
     last = { x: f.x, z: f.z };
-    if (still > 180) return { steps, stuck: { at: { x: +f.x.toFixed(1), z: +f.z.toFixed(1) }, step: run.text() }, simT };
-    if (steps.length === 4 && !window.__ringShot && m.active?.step?.kind === 'rings' && m.active.step.ringState.i === 1) {
+    if (still > 180 && !g.player.transport?.led) return { steps, stuck: { at: { x: +f.x.toFixed(1), z: +f.z.toFixed(1) }, step: run.text() }, simT };
+    if (still > 400) return { steps, stuck: { at: { x: +f.x.toFixed(1), z: +f.z.toFixed(1) }, step: run.text() }, simT };
+    if (steps.length === 6 && !window.__ringShot && m.active?.step?.kind === 'rings' && m.active.step.ringState.i === 1) {
       window.__ringShot = true;
       return { steps, pause: 'rings', simT };
     }
@@ -108,7 +116,7 @@ const log2 = log.pause ? await E(async () => {
         g.input.pressed.add('action');
       } else A.steer(t.x - f.x, t.z - f.z, 0.5);
     }
-    if (run.i >= 5 && !window.__endShot && g.hud.dialogActive) {
+    if (run.i >= 7 && !window.__endShot && g.hud.dialogActive) {
       window.__endShot = true;
       return { simT, endDialog: true };
     }

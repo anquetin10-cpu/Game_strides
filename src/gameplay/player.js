@@ -2,11 +2,30 @@
 import { Human } from '../entities/human.js';
 import { OUTFITS } from '../entities/humanModel.js';
 import { FollowAI } from '../entities/horse.js';
-import { clamp } from '../core/math.js';
+import { clamp, dampAngle } from '../core/math.js';
 import { nearestRoad, zoneById, zoneDist } from '../world/layout.js';
 import { Transport } from './transport.js';
 import { TRUCK_DIM } from '../entities/truckModel.js';
 import * as THREE from 'three';
+
+// Phases d'un soin (w : part de la durée ; side / fwd : place du soigneur depuis le centre du cheval, en mètres).
+const GROOM_PHASES = {
+  brush: [
+    { pose: 'brush', tool: 'brush', side: 0.95, fwd: 0.35, w: 0.5 },
+    { pose: 'brush', tool: 'brush', side: 0.95, fwd: -0.2, w: 0.5 },
+  ],
+  hooves: [
+    { pose: 'hoof', tool: 'pick', side: 0.62, fwd: 0.72, w: 0.5 },
+    { pose: 'hoof', tool: 'pick', side: 0.62, fwd: -0.62, w: 0.5 },
+  ],
+  prep: [
+    { pose: 'brush', tool: 'brush', side: 0.95, fwd: 0.35, w: 0.25 },
+    { pose: 'brush', tool: 'brush', side: 0.95, fwd: -0.2, w: 0.2 },
+    { pose: 'hoof', tool: 'pick', side: 0.62, fwd: 0.72, w: 0.17 },
+    { pose: 'hoof', tool: 'pick', side: 0.62, fwd: -0.62, w: 0.15 },
+    { pose: 'boots', tool: 'boot', side: 0.62, fwd: 0.68, w: 0.23 },
+  ],
+};
 
 const _seatQ = new THREE.Quaternion();
 const _door = new THREE.Vector3();
@@ -238,6 +257,7 @@ export class Player {
   mount() {
     const h = this.horse;
     if (!h) return;
+    this.stopGroom();
     const tp = this.transport;
     if (tp) {
       if (tp.seq && tp.seq.horse === h) tp.abortSequence();
@@ -437,6 +457,52 @@ export class Player {
     this.game.cam.snap(this.focus.pos, heading);
   }
 
+  // Gestes de soin : le personnage se place contre le cheval (côté gauche, comme on le fait à l'écurie), face à lui,
+  // et enchaîne les phases sur la durée du soin, outil en main. kind : 'brush' (pansage), 'hooves' (pieds),
+  // 'prep' (pansage, pieds, protections).
+  startGroom(horse, kind, secs) {
+    if (!horse || this.mode !== 'foot') return;
+    // Côté où se trouve déjà le personnage (gauche de préférence) : il ne traverse pas le cheval pour s'y placer.
+    const lx = Math.cos(horse.heading), lz = -Math.sin(horse.heading);
+    const sd = (this.human.pos.x - horse.pos.x) * lx + (this.human.pos.z - horse.pos.z) * lz < -0.2 ? -1 : 1;
+    this.groom = { horse, phases: GROOM_PHASES[kind] || GROOM_PHASES.brush, secs: Math.max(0.5, secs), t: 0, sd };
+  }
+
+  stopGroom() {
+    if (!this.groom) return;
+    this.groom = null;
+    this.human.pose = 'walk';
+    this.human.holdTool(null);
+  }
+
+  _groomStep(dt) {
+    const G = this.groom, h = G.horse, hu = this.human;
+    G.t += dt;
+    if (G.t >= G.secs || h.rider || h.hiddenInTruck) return this.stopGroom();
+    let f = G.t / G.secs, ph = G.phases[G.phases.length - 1];
+    for (const p of G.phases) {
+      if (f < p.w) {
+        ph = p;
+        break;
+      }
+      f -= p.w;
+    }
+    // Côté gauche du cheval : (cos, -sin) du cap (inversé si l'on travaille à droite) ; avant : (sin, cos).
+    const lx = Math.cos(h.heading) * G.sd, lz = -Math.sin(h.heading) * G.sd, fx = Math.sin(h.heading), fz = Math.cos(h.heading);
+    const tx = h.pos.x + lx * ph.side + fx * ph.fwd, tz = h.pos.z + lz * ph.side + fz * ph.fwd;
+    const dx = tx - hu.pos.x, dz = tz - hu.pos.z, d = Math.hypot(dx, dz);
+    // Changement de place (épaule → antérieur → postérieur) : quelques pas, puis le geste.
+    const step = Math.min(d, 1.6 * dt);
+    if (d > 1e-3) {
+      hu.pos.x += (dx / d) * step;
+      hu.pos.z += (dz / d) * step;
+    }
+    hu.speed = d > 0.12 ? 1.4 : 0;
+    hu.heading = dampAngle(hu.heading, d > 0.35 ? Math.atan2(dx, dz) : Math.atan2(-lx, -lz), 8, dt);
+    hu.pose = d > 0.12 ? 'walk' : ph.pose;
+    hu.holdTool(d > 0.12 ? null : ph.tool);
+  }
+
   update(dt, input) {
     const g = this.game;
     // Tenue : réévaluée quatre fois par seconde, changée seulement quand l'activité change.
@@ -455,6 +521,9 @@ export class Player {
         // Séquence de chargement : le personnage suit le script.
         tp.driveHuman(dt);
         this.human.pose = 'walk';
+        this.human.update(dt, g.camera.position);
+      } else if (this.groom) {
+        this._groomStep(dt);
         this.human.update(dt, g.camera.position);
       } else {
         let sp = 0;

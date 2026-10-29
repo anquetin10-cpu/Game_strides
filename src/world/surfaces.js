@@ -212,6 +212,8 @@ export const INDOOR_UNIFORMS = {
   indoorR: { value: Array.from({ length: 12 }, () => new THREE.Vector4()) }, // x, z, demi-longueur, demi-largeur
   indoorP: { value: Array.from({ length: 12 }, () => new THREE.Vector4()) }, // cos, sin, y du plancher, h (murs)
   indoorQ: { value: Array.from({ length: 12 }, () => new THREE.Vector2()) }, // rise (faîtage)
+  // Plafonniers allumés la nuit (0 le jour), voir World.update.
+  inLamp: { value: 0 },
 };
 export function addIndoor(cl) {
   const n = INDOOR_UNIFORMS.indoorN.value;
@@ -226,6 +228,7 @@ uniform int indoorN;
 uniform vec4 indoorR[12];
 uniform vec4 indoorP[12];
 uniform vec2 indoorQ[12];
+uniform float inLamp;
 float sfIndoor( vec3 p ) {
   float k = 0.0;
   for ( int i = 0; i < 12; i++ ) {
@@ -270,6 +273,12 @@ export function applySurfaces(material, detailTexture, getTerrain = null) {
     irradiance *= warm;
     iblIrradiance *= warm;
     radiance *= 1.0 - ins * 0.7;
+    // La nuit, plafonniers allumés : lumière chaude et diffuse dans toute l'allée, boxes, sellerie et douche
+    // (sols un peu plus éclairés que les murs, sous-faces du toit dans la pénombre).
+    if ( inLamp > 0.0 && ins > 0.0 ) {
+      float up = inverseTransformDirection( normal, viewMatrix ).y;
+      irradiance += inLamp * smoothstep( 0.0, 0.3, ins ) * ( 0.62 + 0.38 * up ) * vec3( 1.0, 0.8, 0.56 );
+    }
   }`);
     Object.assign(shader.uniforms, INDOOR_UNIFORMS);
     addCloudShadows(shader, 'vSurfPos');

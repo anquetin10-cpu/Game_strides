@@ -111,11 +111,13 @@ export function installCare(game) {
     return h && !h.rider && !h.hiddenInTruck && !h.frozen && h.speed < 0.3 && !busy();
   };
   // Le geste s'applique au cheval soigné au départ, et ne libère le joueur que si personne d'autre ne l'a verrouillé entre-temps.
-  const care = (label, secs, apply, sound) => {
+  const care = (label, secs, apply, sound, groom = null) => {
     const p = g.player;
     const c = horse().cond;
     const lock = { care: label };
     p.locked = lock;
+    // Pansage, pieds : le personnage fait les gestes contre le cheval pendant toute la durée du soin.
+    if (groom) p.startGroom?.(horse(), groom, secs);
     g.hud.toast(`${label}…`);
     sound?.();
     setTimeout(() => {
@@ -137,13 +139,13 @@ export function installCare(game) {
     label: 'Panser', icon: 'hand', r: 2.8, priority: 2.5, modes: ['foot'],
     getPos: () => horse()?.pos || { x: 1e9, z: 1e9 },
     when: () => ready() && horse().cond.clean < 50,
-    action: () => care('Pansage : étrille, bouchon, brosse douce', g.save?.data.upgrades?.includes('aire') ? 3 : 4, (c) => { c.clean = 100; c.resting = false; g.hud.toast('Robe propre et brillante.'); }),
+    action: () => care('Pansage : étrille, bouchon, brosse douce', g.save?.data.upgrades?.includes('aire') ? 3 : 4, (c) => { c.clean = 100; c.resting = false; g.hud.toast('Robe propre et brillante.'); }, null, 'brush'),
   });
   g.interact.add('care-hooves', {
     label: 'Curer les pieds', icon: 'shoe', r: 2.8, priority: 2.4, modes: ['foot'],
     getPos: () => horse()?.pos || { x: 1e9, z: 1e9 },
     when: () => ready() && horse().cond.hooves < 50 && horse().cond.clean >= 50,
-    action: () => care('Curage des quatre pieds', 3, (c) => { c.hooves = 100; g.hud.toast('Pieds propres, fers bien en place.'); }),
+    action: () => care('Curage des quatre pieds', 3, (c) => { c.hooves = 100; g.hud.toast('Pieds propres, fers bien en place.'); }, null, 'hooves'),
   });
   g.interact.add('care-water', {
     label: 'Abreuver', icon: 'hand', r: 3.2, priority: 1.3, modes: ['foot'],

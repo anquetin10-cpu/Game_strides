@@ -1058,6 +1058,8 @@ export class Game {
       } else this.mainHorse.cond = new HorseCondition(this.mainHorse); // Comète repart reposée : rien de l'ancienne sauvegarde.
       this.applyUpgrades(this.mainHorse);
       this.placeFromSave();
+      // Première mission : Comète attend dans son box, au bout de l'allée de l'Écurie du Val.
+      this.stabling?.putIn(this.mainHorse, true);
       this.save.saveNow();
     } else {
       this.player.setAvatar(d.avatar);
@@ -1377,7 +1379,8 @@ export class Game {
     const tp = p.transport;
     if (p.mode !== 'foot' || tp.seq) return;
     for (const h of hs) {
-      if (h.hiddenInTruck || h.rider || !h.mesh.visible) continue;
+      // Cheval qu'on soigne : le personnage se place contre lui (pansage, pieds), voir Player.startGroom.
+      if (h.hiddenInTruck || h.rider || !h.mesh.visible || p.groom?.horse === h) continue;
       const fx = Math.sin(h.heading), fz = Math.cos(h.heading);
       const rx = ent.pos.x - h.pos.x, rz = ent.pos.z - h.pos.z;
       const s = clamp(rx * fx + rz * fz, -0.85, 0.8);

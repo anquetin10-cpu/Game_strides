@@ -10,7 +10,7 @@ import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATIO
 import { barnGeo, clubHouseGeo } from './barns.js';
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail, paveTexture } from './terrainTexture.js';
-import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, addIndoor, INTERIOR_UNIFORMS, applyShopLight, shopLightUniforms } from './surfaces.js';
+import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, addIndoor, INTERIOR_UNIFORMS, INDOOR_UNIFORMS, applyShopLight, shopLightUniforms } from './surfaces.js';
 import { shopExterior, streetShopfront, WALL_T, FLOOR_Y } from './shopGeo.js';
 import { buildInterior, shopLayout } from './shopInteriors.js';
 import { CAFE_MENU } from '../gameplay/data.js';
@@ -184,6 +184,15 @@ export class World {
     return y;
   }
 
+  // Bâtiment couvert (écurie, club-house) contenant le point (x, z), ou null.
+  indoorAt(x, z) {
+    for (const b of this.indoors || []) {
+      const dx = x - b.x, dz = z - b.z;
+      if (Math.abs(dx * b.c - dz * b.s) < b.hw && Math.abs(dx * b.s + dz * b.c) < b.hd) return b;
+    }
+    return null;
+  }
+
   // Bâtiment où l'on entre (écurie à couloir, club-house) : géométrie, vitrages, éclairage, collisions des murs et
   // cloisons (repère local du bâtiment), plafond pour la caméra.
   placeBarn(g, x, z, rot, w, d, kind = 'stable') {
@@ -198,6 +207,7 @@ export class World {
     for (const r of g.rooms || []) this.colliders.addCeiling({ x: x + r.x * c + r.z * s, z: z - r.x * s + r.z * c, rot, y, hw: r.hw, hd: r.hd, h: r.h });
     this.colliders.addCeiling({ x, z, rot, y, ...g.ceiling });
     addIndoor({ x, z, rot, y, ...g.ceiling });
+    (this.indoors ||= []).push({ x, z, c, s, y, hw: g.ceiling.hw, hd: g.ceiling.hd, h: g.ceiling.h });
     this.features.buildings.push({ x, z, w, d, rot, kind });
     return y;
   }
@@ -1828,6 +1838,8 @@ export class World {
     INTERIOR_UNIFORMS.inDay.value = (1 - night) * Math.min(1, 0.3 + sky.sun.intensity / 6);
     INTERIOR_UNIFORMS.inNight.value = night;
     this.lightMat.emissiveIntensity = 0.2 + night * 1.6;
+    // Écuries et club-houses : plafonniers allumés dès la tombée du jour.
+    INDOOR_UNIFORMS.inLamp.value = night > 0.05 ? night * 3.0 : 0;
     // Projecteurs des carrières : allumés à la tombée de la nuit.
     if (CLOUD_UNIFORMS.flK) CLOUD_UNIFORMS.flK.value = night > 0.05 ? night * 1.5 : 0;
     if (this.lampPools) {
@@ -1847,6 +1859,9 @@ export class World {
           const p = this._lampPools[bi];
           lp.set(p[0], p[1] + 3.6, p[2], night * 6);
         }
+        // Sous le toit d'une écurie : le plafonnier au-dessus du joueur éclaire chevaux et personnages.
+        const ind = this.indoorAt(focus.x, focus.z);
+        if (ind) lp.set(focus.x, ind.y + ind.h - 0.3, focus.z + 0.8, night * 7);
       }
     }
     if (this.beam) {

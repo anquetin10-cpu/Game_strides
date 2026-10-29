@@ -20,6 +20,21 @@ function itemGeo(kind) {
   ITEM_GEOS[kind] = g;
   return g;
 }
+// Outils de soin, tenus au creux du poing (repère de l'os de la main, doigts vers -y).
+const TOOL_GEOS = {};
+function toolGeo(kind) {
+  if (TOOL_GEOS[kind]) return TOOL_GEOS[kind];
+  let g;
+  // Brosse douce : dos en bois, poils noirs côté paume.
+  if (kind === 'brush') g = partsToGeo([[box(0.07, 0.035, 0.16, false), '#8a5a34'], [box(0.064, 0.03, 0.15, false), '#2a2522', { y: -0.03 }]]);
+  // Cure-pied : manche rouge, crochet métallique.
+  else if (kind === 'pick') g = partsToGeo([[box(0.026, 0.11, 0.026, false), '#c42e35'], [box(0.012, 0.012, 0.06, false), '#b7bbbf', { y: -0.06, z: 0.025 }]]);
+  // Guêtre bleu marine roulée dans la main.
+  else g = partsToGeo([[box(0.1, 0.16, 0.06, false), '#1f2b45'], [box(0.102, 0.03, 0.062, false), '#d9d9d6', { y: 0.05 }]]);
+  TOOL_GEOS[kind] = g;
+  return g;
+}
+
 // Objet tenu devant le ventre (repère de l'os « chest ») et prise des mains.
 const CARRY = {
   hay: { pos: [0, -0.26, 0.32], w: 0.56, y: -0.2, z: 0.3 },
@@ -110,6 +125,18 @@ export class Human {
     m.position.set(c.pos[0], c.pos[1], c.pos[2]);
     this.anim.carry = c;
     this.carrying = { kind, mesh: m };
+  }
+
+  // Outil de soin tenu en main droite (brosse, cure-pied) ou protection en main gauche ; null : mains libres.
+  holdTool(kind) {
+    if (this._tool?.kind === kind) return;
+    this._tool?.mesh.parent?.remove(this._tool.mesh);
+    this._tool = null;
+    if (!kind) return;
+    const m = new THREE.Mesh(toolGeo(kind), SKIN_MAT);
+    (kind === 'boot' ? this.bones.lHand : this.bones.rHand).add(m);
+    m.position.copy(FIST);
+    this._tool = { kind, mesh: m };
   }
 
   drop() {
