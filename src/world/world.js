@@ -945,6 +945,8 @@ export class World {
           const lx = x + nx * (road.w / 2 + 1.6) * side;
           const lz = z + nz * (road.w / 2 + 1.6) * side;
           if (overlapsSpecial(lx, lz, 1) && !(Math.abs(lx - P.x) < P.w / 2 && Math.abs(lz - P.z) < P.d / 2)) continue;
+          // Pas dans une rue transversale (carrefour) : le pied doit rester sur le trottoir.
+          if (nearestRoad(lx, lz).d < 1.0) continue;
           this.lamp(lx, lz, Math.atan2(nz * side, -nx * side));
         }
       }
