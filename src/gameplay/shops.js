@@ -88,16 +88,22 @@ export class ShopManager {
     const g = this.game;
     if (!this.world?.shops) return;
     const f = g.player.focusPos;
+    // Une étape par image : la géométrie d'abord, le personnel et les clients à l'image suivante.
+    let budget = 1;
+    for (const [id, s] of Object.entries(SHOPS3D)) {
+      const st = this.loaded.get(id);
+      if (st?.pending && budget-- > 0) this._spawnPeople(id);
+    }
     for (const [id, s] of Object.entries(SHOPS3D)) {
       const d = Math.hypot(f.x - s.x, f.z - s.z);
-      if (d < LOAD_R && !this.loaded.has(id)) this._load(id);
+      if (d < LOAD_R && !this.loaded.has(id) && budget-- > 0) this._load(id, { people: false });
       else if (d > UNLOAD_R && this.loaded.has(id) && this.current !== id) this._unload(id);
     }
     // Sécurité : le joueur a été déplacé hors du commerce (mission, téléportation) → plus à l'intérieur.
     if (this.current && !this.busy && !this.inside(this.current, g.player.human.pos.x, g.player.human.pos.z, 0.5)) this._leaveState();
   }
 
-  _load(id) {
+  _load(id, { people = true } = {}) {
     try {
       this.world.loadShopInterior(id);
     } catch (e) {
@@ -105,19 +111,7 @@ export class ShopManager {
       return false;
     }
     const L = this.layout(id);
-    const npcs = [];
     const g = this.game;
-    const s = SHOPS3D[id];
-    const spawn = (o, at, ry, name, pose) => {
-      const p = this.toW(id, at[0], at[1]);
-      const hm = g.spawnHuman(o, p.x, p.z, s.rot + ry, { name });
-      if (pose) hm.pose = pose;
-      hm.shopNpc = id;
-      npcs.push(hm);
-      return hm;
-    };
-    const staff = spawn(L.staff.outfit, L.seller.at, L.seller.ry, L.staff.name);
-    for (const e of L.extras || []) spawn(e.outfit, e.at, e.ry, e.name, e.pose);
     // Rayons, comptoir et sortie.
     for (const fx of L.fixtures) {
       const p = this.toW(id, fx.at[0], fx.at[1]);
@@ -134,8 +128,29 @@ export class ShopManager {
       when: () => this.current === id && !this.busy,
       action: () => this.exit(),
     });
-    this.loaded.set(id, { npcs, staff });
+    this.loaded.set(id, { npcs: [], staff: null, pending: true });
+    if (people) this._spawnPeople(id);
     return true;
+  }
+
+  // Personnel (derrière le comptoir) et clients du commerce.
+  _spawnPeople(id) {
+    const st = this.loaded.get(id);
+    if (!st?.pending) return;
+    st.pending = false;
+    const g = this.game;
+    const L = this.layout(id);
+    const s = SHOPS3D[id];
+    const spawn = (o, at, ry, name, pose) => {
+      const p = this.toW(id, at[0], at[1]);
+      const hm = g.spawnHuman(o, p.x, p.z, s.rot + ry, { name });
+      if (pose) hm.pose = pose;
+      hm.shopNpc = id;
+      st.npcs.push(hm);
+      return hm;
+    };
+    st.staff = spawn(L.staff.outfit, L.seller.at, L.seller.ry, L.staff.name);
+    for (const e of L.extras || []) spawn(e.outfit, e.at, e.ry, e.name, e.pose);
   }
 
   _unload(id) {
@@ -162,7 +177,8 @@ export class ShopManager {
   _tieHorse(id, wasRiding) {
     const g = this.game;
     const hs = g.mainHorse;
-    if (!hs) return;
+    // Cheval dans le camion ou au box : on n'y touche pas.
+    if (!hs || hs.hiddenInTruck || hs.inBox || hs.frozen) return;
     hs.ai = null;
     hs.control.mag = 0;
     const s = SHOPS3D[id];
@@ -187,8 +203,12 @@ export class ShopManager {
     try {
       const wasRiding = p.mode === 'ride';
       if (wasRiding) p.dismount(true);
+      // Cheval mené en main : on lâche la longe, il est attaché à la barre avant d'entrer.
+      const led = p.transport?.led?.horse === g.mainHorse;
+      if (led) p.transport.release(true);
       if (!this.loaded.has(id) && !this._load(id)) throw new Error('chargement');
-      this._tieHorse(id, wasRiding);
+      this._spawnPeople(id);
+      this._tieHorse(id, wasRiding || led);
       const L = this.layout(id);
       const sp = this.toW(id, L.spawn[0], L.spawn[1]);
       const s = SHOPS3D[id];
@@ -245,6 +265,7 @@ export class ShopManager {
   _leaveState() {
     const g = this.game;
     this._clearPreview();
+    this._greeted = null; // le vendeur salue à chaque visite
     this.current = null;
     g.indoor = null;
     g.save.data.indoorShop = null;

@@ -25,9 +25,10 @@ const results = await page.evaluate(() => {
   g.hud.advanceDialog();
   // Boutique.
   g.save.data.money = 2000;
-  g.player.human.setPosition(-140, -266);
+  // Sellerie du Port : on entre par la porte (action « Entrer » sur le trottoir).
+  { const dd = g.shops.doorOut('sellerie'); g.player.human.setPosition(dd.x, dd.z); }
   A.tick(3);
-  check('shop-available', g.interact.current?.label === 'Sellerie');
+  check('shop-available', g.interact.current?.label === 'Entrer');
   check('buy-selle', g.buyUpgrade('selle'));
   check('mods-applied', g.mainHorse.mods.jump > 0.1);
   check('cannot-buy-twice', !g.buyUpgrade('selle'));

@@ -118,7 +118,7 @@ function extremeTides() {
   return { ve, me };
 }
 
-describe('réalisme : la mer du jeu est la marée réelle (plage de Deauvelle)', () => {
+describe('réalisme : la mer du jeu est la marée réelle (plage de Deauville City)', () => {
   const terrain = new Terrain(200);
   const { ve, me } = extremeTides();
   const xs = [];

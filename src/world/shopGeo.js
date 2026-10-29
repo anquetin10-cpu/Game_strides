@@ -414,3 +414,36 @@ export function pendant(k, x, z, ceilY, { drop = 0.9, shadeColor = '#1f3a2c', ki
 export function tag(k, tf) {
   k.add('A', box(0.11, 0.07, 0.008), '#f7f4ed', tf);
 }
+
+// Devanture en applique ajoutée au rez-de-chaussée d'une maison de la ville (repère de buildingGeo : façade à +z,
+// à d / 2) : pilastres, soubassements, vitrines (vitrage à effet de pièce, voir applyInteriors), bandeau d'enseigne et
+// corniche, en saillie de 0,32 m sur le mur (devant les appuis des fenêtres peintes). La porte de la maison (colonne
+// doorT, largeur 1,5 m) reste l'entrée de la boutique. Renvoie { body, detail, glass : vitrines [{ x, y, z, w, h }],
+// sign : { w, h, x, y, z } }.
+export function streetShopfront(w, d, doorT, front) {
+  const k = new Kit();
+  const z0 = d / 2;
+  const P = 0.32; // saillie de la devanture
+  const top = 2.62; // bas du bandeau
+  const segs = [[-w / 2 + 0.35, doorT - 0.95], [doorT + 0.95, w / 2 - 0.35]].filter(([a, b]) => b - a > 0.9);
+  const glass = [];
+  const posts = [-w / 2 + 0.2, doorT - 0.85, doorT + 0.85, w / 2 - 0.2];
+  for (const x of posts) k.add('body', box(0.32, top, P + 0.04), front, { x, z: z0 + P / 2 });
+  for (const [a, b] of segs) {
+    const cx = (a + b) / 2, wd = b - a;
+    k.add('body', box(wd, 0.55, P), front, { x: cx, z: z0 + P / 2 });
+    k.add('detail', box(wd - 0.26, 0.3, 0.03), shade(front, 0.82), { x: cx, y: 0.12, z: z0 + P + 0.01 });
+    k.add('body', box(wd, 0.06, 0.06), front, { x: cx, y: top - 0.06, z: z0 + P - 0.03 });
+    k.add('detail', box(0.05, top - 0.55, 0.05), front, { x: cx, y: 0.55, z: z0 + P - 0.03 });
+    k.add('detail', box(wd, 0.05, 0.05), front, { x: cx, y: 0.55 + (top - 0.55) * 0.74, z: z0 + P - 0.03 });
+    glass.push({ x: cx, y: 0.56, z: z0 + P - 0.05, w: wd, h: top - 0.62 });
+  }
+  // Bandeau, corniche et retours latéraux.
+  k.add('body', box(w + 0.1, 0.62, P + 0.08), front, { y: top, z: z0 + (P + 0.08) / 2 });
+  k.add('body', box(w + 0.3, 0.12, P + 0.28), shade(front, 0.9), { y: top + 0.62, z: z0 + (P + 0.28) / 2 });
+  return {
+    body: k.geo('body'), detail: k.geo('detail'), glass,
+    sign: { w: w - 1.2, h: 0.44, x: 0, y: top + 0.31, z: z0 + P + 0.085 },
+    segs,
+  };
+}

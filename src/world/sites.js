@@ -119,9 +119,9 @@ export const SHOPS3D = {
   boutique: {
     id: 'boutique', name: 'Maison Lucette', sub: 'Prêt-à-porter · Deauville City', x: -41.7, z: -262, rot: Math.PI / 2, w: 10, d: 11, G: 3.9,
     openings: [[-4.4, -1.3, 'win'], [-0.7, 0.7, 'door'], [1.3, 4.4, 'win']],
-    front: '#e8e2d4', letters: '#1b1c1f', floor: '#a87b4f', walls: '#f3efe7', blade: 'hanger', awning: ['#1b1c1f', '#f2f1ec'],
+    front: '#232427', letters: '#d9bd7c', floor: '#a87b4f', walls: '#f3efe7', blade: 'hanger', awning: ['#1b1c1f', '#f2f1ec'],
     tie: [-21.8, -254.0, -Math.PI / 2], rail: [-24.0, -254.0, Math.PI / 2],
-    upper: { h: 6.4, floors: 2, wall: '#efe6d2', roof: '#4a4f57', roofType: 'hip', trim: '#f6f3ec' },
+    upper: { h: 6.4, floors: 2, wall: '#e3d3bb', roof: '#4a4f57', roofType: 'hip', trim: '#f6f3ec', chimney: true },
   },
 };
 // Ancienne emprise de la sellerie (cœur d'îlot) : gardée pour que le tirage des maisons de la ville reste identique.

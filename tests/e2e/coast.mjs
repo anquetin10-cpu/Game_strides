@@ -1,4 +1,4 @@
-// Marée et estran de la plage de Deauvelle : à pleine et basse mer de vives-eaux et de mortes-eaux, mesure le rivage,
+// Marée et estran de la plage de Deauville City : à pleine et basse mer de vives-eaux et de mortes-eaux, mesure le rivage,
 // l'excursion de la mer, la marge sous les Planches, la flottaison des bateaux, le galop sur l'estran découvert, la
 // sortie de l'eau à marée montante, et joue la mission « Galop sur la plage » à basse et à pleine mer.
 // Usage : node tests/e2e/coast.mjs [base]   (par défaut BASE ou http://localhost:5173/)

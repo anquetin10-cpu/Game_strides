@@ -34,6 +34,13 @@ export function winBox(w, h, d, kind = 1) {
   g.setAttribute('win', new THREE.BufferAttribute(a, 4));
   return g;
 }
+// Vitrine de commerce : même effet de pièce, toujours éclairée, avec des étagères garnies (hauteur codée négative).
+export function shopWinBox(w, h, d) {
+  const g = winBox(w, h, d, 1);
+  const a = g.attributes.win.array;
+  for (let i = 3; i < a.length; i += 4) a[i] = -h;
+  return g;
+}
 // Ajoute un attribut « win » nul aux vitrages qui n'en ont pas (fusion possible avec les autres).
 export function ensureWin(g) {
   if (g && !g.attributes.win) g.setAttribute('win', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 4), 4));
@@ -141,6 +148,10 @@ export function buildingGeo({
   const SHUTTERS = ['#5d7480', '#7d8b6a', '#e9e6de', '#4a5560', '#8c6d55', '#6f8fa0'];
   const shutter = SHUTTERS[Math.floor(Math.abs(Math.sin(w * 12.9898 + d * 78.233) * 43758.5453)) % SHUTTERS.length];
   const isShop = !!(trim && trim.toLowerCase() === '#c8a96e');
+  // Façades de brique (rouge orangé) : encadrements et chaînages en pierre calcaire ; enduits : encadrements peints.
+  const wc = new THREE.Color(wall);
+  const brickWall = wc.r > wc.b * 1.3 && wc.r > 0.35 && wc.g < wc.r * 0.75;
+  const surround = brickWall ? '#d9d1c1' : '#f4f1ea';
   const woodT = wood ?? [0, 0, 0, 0, 0, 1, 2][Math.floor(hsh(2) * 7)];
   const wallC = timber ? colombage(fill ?? [0, 0, 0, 1, 1, 1, 2, 3][Math.floor(hsh(1) * 8)], woodT) : wall;
   const beamC = colombage(5 + woodT, woodT);
@@ -229,8 +240,16 @@ export function buildingGeo({
         const tf = { ...at(f, t, k0 + 0.04), y: wy, ry: f.ry };
         const { x, z } = tf;
         if (isDoor) {
-          // Porte d'entrée : vantail à panneaux, imposte vitrée, seuil en pierre.
+          // Porte d'entrée : vantail à panneaux, imposte vitrée, seuil en pierre ; maisons maçonnées : encadrement de
+          // pierre et, une fois sur trois, marquise vitrée sur consoles.
           body.push([box(ww, wh, 0.14), doorColor, tf]);
+          if (!timber && !isShop) {
+            shut.push([flatBox(ww + 0.56, wh + 0.32, 0.06), surround, { ...tf, y: -0.02 }]);
+            if (hsh(7) < 0.34) {
+              body.push([box(ww + 0.9, 0.07, 0.75), '#2a2c30', { ...at(f, t, k0 + 0.38), y: wh + 0.38, ry: f.ry }]);
+              for (const sd of [-1, 1]) detail.push([box(0.04, 0.42, 0.55), '#2a2c30', { ...at(f, t + sd * (ww / 2 + 0.3), k0 + 0.28), y: wh, ry: f.ry, rx: -0.6 }]);
+            }
+          }
           detail.push([flatBox(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.12, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
           detail.push([flatBox(ww - 0.3, wh * 0.32, 0.03), doorColor, { ...tf, y: wy + wh * 0.52, z: z + f.nz * 0.08, x: x + f.nx * 0.08 }]);
           body.push([box(ww + 0.5, 0.12, 0.5), '#b9b4a8', { ...tf, y: -0.06 }]);
@@ -244,11 +263,36 @@ export function buildingGeo({
           const off = (kk) => ({ x: x + f.nx * kk, z: z + f.nz * kk });
           detail.push([flatBox(0.05, wh, 0.05), tc, { ...tf, ...off(0.07) }]);
           detail.push([flatBox(ww, 0.05, 0.05), tc, { ...tf, ...off(0.07), y: wy + wh * 0.62 }]);
+          if (!timber && !isShop) {
+            // Encadrement en pierre (ou peint, sur enduit), linteau saillant avec clé sur les façades de brique :
+            // la fenêtre prend du relief et porte une ombre sous le linteau.
+            shut.push([flatBox(ww + 0.46, wh + 0.4, 0.05), surround, { ...tf, y: wy - 0.2 }]);
+            body.push([box(ww + 0.56, 0.17, 0.13), surround, { ...tf, y: wy + wh + 0.16 }]);
+            if (brickWall) body.push([box(0.24, 0.26, 0.17), surround, { ...tf, y: wy + wh + 0.12 }]);
+            // Garde-corps de fer forgé au premier étage (une fenêtre sur trois environ, façade principale).
+            if (fl2 === 1 && fi === 0 && hsh(20 + c) < 0.38) {
+              const rail = '#1b1c1f';
+              const kr = k0 + 0.22;
+              detail.push([box(ww + 0.3, 0.035, 0.035), rail, { ...at(f, t, kr), y: wy + 0.5, ry: f.ry }]);
+              detail.push([box(ww + 0.3, 0.03, 0.03), rail, { ...at(f, t, kr), y: wy - 0.02, ry: f.ry }]);
+              for (let b = 0; b <= 8; b++) detail.push([box(0.015, 0.52, 0.015), rail, { ...at(f, t - ww / 2 - 0.12 + ((ww + 0.24) * b) / 8, kr), y: wy - 0.02, ry: f.ry }]);
+            }
+          }
           if (roofType !== 'flat' && !isShop && !timber) {
             const side = (kk) => (f.nx === 0 ? { x: x + kk * (f.nz > 0 ? 1 : -1), z: z + f.nz * 0.06 } : { x: x + f.nx * 0.06, z: z + kk * (f.nx > 0 ? -1 : 1) });
             for (const sd of [-1, 1]) shut.push([flatBox(ww * 0.52, wh + 0.12, 0.05), shutter, { ...tf, ...side(sd * (ww * 0.76 + 0.1)), y: wy - 0.06 }]);
           }
           glass.push([winBox(ww, wh, 0.16), PALETTE.glass, tf]);
+          // Jardinière de géraniums sous une fenêtre d'étage sur quatre environ (façade principale).
+          if (fl2 >= 1 && fi === 0 && hsh(40 + c * 3 + fl2) < 0.26 && !(fl2 === 1 && !timber && !isShop && hsh(20 + c) < 0.38)) {
+            const kb = (timber ? k0 : k0) + 0.2;
+            detail.push([box(ww + 0.1, 0.18, 0.2), '#5b4330', { ...at(f, t, kb), y: wy - 0.34, ry: f.ry }]);
+            for (let fl3 = 0; fl3 < 5; fl3++) {
+              const fx2 = -ww / 2 + 0.12 + ((ww - 0.24) * fl3) / 4;
+              detail.push([box(0.2, 0.16, 0.16), '#3f6a2e', { ...at(f, t + fx2, kb), y: wy - 0.17, ry: f.ry }]);
+              detail.push([box(0.1, 0.08, 0.1), fl3 % 2 ? '#c8102e' : '#e0405a', { ...at(f, t + fx2 + 0.04, kb + 0.04), y: wy - 0.06, ry: f.ry }]);
+            }
+          }
         }
       }
       if (timber) {

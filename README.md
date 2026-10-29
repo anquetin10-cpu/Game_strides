@@ -83,6 +83,28 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   - **aide à l'appel** (Réglages → Aide au saut : complète, bouton seul, aucune) : bouton SAUT « Trop loin » (ambre
     »), « Saute ! » (vert ✓), « Trop près » (rouge !), zone d'appel au sol calculée par le même modèle, repère du
     prochain obstacle ; tracé au sol désactivable ; entraînement rapide vertical + oxer au paddock d'échauffement.
+- **Deauville City et ses commerces** (`src/world/shopGeo.js`, `src/world/shopInteriors.js`, `src/gameplay/shops.js`) :
+  - **ville** : maisons à pans de bois, façades de brique à encadrements et linteaux de pierre, enduits clairs ;
+    garde-corps de fer forgé, jardinières de géraniums, portes à encadrement et marquise ; une partie des maisons a
+    une devanture peinte (enseigne, vitrines garnies, éclairées la nuit) ; plaques de rue émaillées, bancs, corbeilles,
+    bornes de la place Morny ;
+  - **trois commerces où l'on entre** (action « Entrer » devant la porte) : la **Sellerie du Port** (selles au mur et sur
+    chevalets, briderie, tapis par couleur, protections et fers, pansage et soins, équipement du cavalier, comptoir et
+    vendeuse, trois vitrines), le café-boulangerie **Le Galop** (comptoir en zinc, vitrine à pâtisseries, pains,
+    machine à café, salle et terrasses) et **Maison Lucette** (portant, étagères, mannequins, miroir, cabine) ;
+    devanture en bois peint, vitrines en verre clair, porte en retrait, enseigne drapeau ; intérieur à la taille de la
+    façade, chargé à l'approche et libéré au loin ; caméra intérieure ; ambiance sonore propre à chaque commerce ;
+  - **achats** : un seul catalogue (boutiques et application du téléphone, `SHOP` dans `src/gameplay/data.js`) ;
+    fiche produit (prix, description, effet réellement appliqué, possession, restriction) ; articles uniques,
+    consommables cumulables (utilisés près du cheval) et équipement par emplacement (selle, bridon, tapis visible sur
+    le cheval, guêtres, cloches, casque, bottes, haut, couvre-chef) ; essayage au miroir ; un double appui ne débite
+    qu'une fois, un solde insuffisant ne change rien, débit et attribution sont enregistrés ensemble (`commerce.js`) ;
+  - **cheval et véhicules dehors** : à cheval, on met pied à terre et le cheval est attaché à la barre du commerce ;
+    le sifflet ne le fait pas entrer ; on entre à pied (véhicule garé dehors) ;
+  - **missions** : la selle de « Selle sur-mesure » se retire au comptoir de la sellerie ; les livraisons de matériel
+    et les commandes du café se retirent ou se déposent au comptoir ;
+  - **reprise** : une sauvegarde faite dans un commerce y ramène le joueur (ou devant sa porte si l'intérieur ne peut
+    pas être reconstruit), achats, cheval et progression intacts.
 - **Concours de jour (ou le soir sous les projecteurs)** : épreuves de 8 h 30 à 21 h ; engagé en soirée, on passe le
   lendemain matin et on peut dormir à la maison de l'Écurie du Val jusqu'à 7 h.
 - **Carburant** : chaque véhicule consomme selon son moteur et sa conduite (jauge, autonomie et consommation moyenne au
@@ -125,7 +147,7 @@ Tests de bout en bout (Chromium, émulation iPhone, serveur de dev lancé sur le
 node tests/e2e/scenario.mjs   # partie réelle au doigt : titre, notification, joystick, téléphone
 node tests/e2e/missions.mjs   # pilote automatique : les 12 missions de l'histoire jusqu'au Grand Prix
 node tests/e2e/jobs.mjs       # 16 jobs générés
-node tests/e2e/features.mjs   # boutique, sifflet, transport, achat de cheval, fers d'or, chronos, photo
+node tests/e2e/features.mjs   # porte de la sellerie, achat, sifflet, transport, achat de cheval, fers d'or, chronos, photo
 node tests/e2e/ui.mjs se      # captures d'interface (se | i14 | max)
 node tests/e2e/outfit.mjs     # tenues : travail, à cheval (casque), concours sur le terrain
 node tests/e2e/barn.mjs       # écurie : entrer, allée, boxes, sellerie, caméra sous la charpente
@@ -135,7 +157,16 @@ node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sa
 node tests/e2e/cso.mjs        # épreuve de CSO complète au joystick : sans faute, mauvais appels, double, refus, élimination
 node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans tests/e2e/out/cso/
 node tests/e2e/cso-touch.mjs  # tour complet au doigt en émulation iPhone 13 (joystick + SAUT en multitouch)
+node tests/e2e/shops.mjs      # commerces (iPhone 13 émulé) : entrer, circuler, acheter, équiper, sortir, reprise
+node tests/e2e/town-shots.mjs apres   # vues fixes de Deauville City dans tests/e2e/out/town/apres/
+node tests/e2e/perf-town.mjs apres    # mesures dans les rues et les commerces (rendu logiciel : valeurs relatives)
 ```
+
+Réglages de Deauville City : `LOAD_R` / `UNLOAD_R` (distances de chargement des intérieurs, `src/gameplay/shops.js`),
+`CAM_INDOOR` (caméra des commerces, `src/entities/camera.js`), `shopLightUniforms` (couleur et puissance de
+l'éclairage intérieur, `src/world/surfaces.js`), `SHOPS3D` (emplacement, taille, couleurs, enseignes, étages des
+commerces, `src/world/sites.js`), `SHOP` et `CAFE_MENU` (catalogue et carte, `src/gameplay/data.js`), `streetShop`
+(devantures et enseignes des maisons, `src/world/world.js`).
 
 Par défaut, pas d'assets externes : géométrie, textures et sons sont générés par le code (Three.js + WebAudio).
 Le build pèse environ 250 Ko gzip.

@@ -695,9 +695,11 @@ export class Phone {
         h('div.meta', { text: 'À l’écurie : panser et curer les pieds près du cheval, abreuver à l’abreuvoir, foin à la grange.' })));
     }
     body.appendChild(h('div.section-t', { text: 'Équipement', style: { marginTop: '14px' } }));
-    const owned = SHOP.filter((s) => d.upgrades.includes(s.id));
+    const owned = SHOP.filter((s) => d.upgrades.includes(s.id) || (s.kind === 'consumable' && g.commerce.qty(s.id)));
     if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauville City.' }));
-    for (const s of owned) body.appendChild(h('div.kv', {}, h('span', { text: s.name }), h('b', { text: s.desc })));
+    const eqList = h('div.shop-list');
+    for (const s of owned) eqList.appendChild(g.shops._row(s, () => this.refresh()));
+    body.appendChild(eqList);
     // Chevaux proposés en location pour la saison par leurs propriétaires : élevage local fictif (hors Strides).
     body.appendChild(h('div.section-t', { text: 'Chevaux en location · saison de concours (fictif)', style: { marginTop: '14px' } }));
     const forSale = h('div.cards');
@@ -880,24 +882,21 @@ export class Phone {
     return h('div.app', {}, main);
   }
 
-  // ---------- Boutique (Sellerie) ----------
+  // ---------- Boutique (commandes en ligne aux commerces de Deauville City) ----------
+  // Même catalogue, mêmes prix et mêmes fiches que dans les boutiques (voir shops.js et commerce.js).
   renderShop() {
     const g = this.game;
     const d = g.save.data;
     const main = h('div.app-main');
-    main.appendChild(this._head('Sellerie du Port', `Solde : ${formatMoney(d.money)}`));
+    main.appendChild(this._head('Commerces de Deauville City', `Solde : ${formatMoney(d.money)}`));
     const body = h('div.app-body.scrollable');
-    for (const s of SHOP) {
-      const owned = d.upgrades.includes(s.id);
-      const locked = s.requires && !d.upgrades.includes(s.requires);
-      const btn = h(`button.btn${owned ? '' : '.primary'}`, { text: owned ? 'Acquis' : locked ? 'Verrouillé' : formatMoney(s.price), 'data-item': s.id });
-      if (!owned && !locked)
-        tap(btn, () => {
-          if (g.buyUpgrade(s.id)) this.refresh();
-        });
-      body.appendChild(h('div.shop-item', {}, h('div', { style: { flex: 1 } }, h('div.n', { text: s.name }), h('div.d', { text: `${s.desc}${locked ? ' · nécessite la selle mixte' : ''}` })), btn));
+    for (const [shop, title] of [['sellerie', 'Sellerie du Port'], ['boutique', 'Maison Lucette · prêt-à-porter']]) {
+      body.appendChild(h('div.section-t', { text: title, style: { marginTop: '10px' } }));
+      const list = h('div.shop-list');
+      for (const it of SHOP.filter((x) => x.shop === shop)) list.appendChild(g.shops._row(it, () => this.refresh()));
+      body.appendChild(list);
     }
-    body.appendChild(h('div.irl', { text: 'Boutique fictive du jeu : l’équipement n’est pas vendu sur Strides.' }));
+    body.appendChild(h('div.irl', { text: 'Commerces fictifs du jeu : rien n’est vendu sur Strides. Les essayages se font en boutique.' }));
     main.appendChild(body);
     return h('div.app', {}, main);
   }

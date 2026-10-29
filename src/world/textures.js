@@ -533,12 +533,14 @@ export function screenTexture() {
 }
 
 // Bandeau de devanture peint : lettres capitales à empattements, filets, sous-titre (commerces de Deauville City).
-export function fasciaTexture(title, sub, bg, fg) {
-  const key = `fascia:${title}:${sub}:${bg}:${fg}`;
+// scale : résolution (1 : 2048 × 256 ; 0,5 pour les enseignes des maisons de la ville, vues de moins près).
+export function fasciaTexture(title, sub, bg, fg, scale = 1) {
+  const key = `fascia:${title}:${sub}:${bg}:${fg}:${scale}`;
   if (cache.has(key)) return cache.get(key);
   const w = 2048, h = 256;
-  const cv = canvas(w, h);
+  const cv = canvas(w * scale, h * scale);
   const ctx = cv.getContext('2d');
+  ctx.scale(scale, scale);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
   // Panneau en relief : ombre et lumière des moulures.
@@ -703,6 +705,37 @@ export function chalkTexture(title, lines) {
       ctx.fillText(b, 472, 170 + i * 58);
     }
   });
+  const t = toTexture(cv);
+  cache.set(key, t);
+  return t;
+}
+
+// Plaque de rue émaillée : fond bleu, filet et lettres blanches.
+export function streetPlateTexture(name) {
+  const key = `plate:${name}`;
+  if (cache.has(key)) return cache.get(key);
+  const cv = canvas(512, 176);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#1f3b78';
+  ctx.fillRect(0, 0, 512, 176);
+  ctx.strokeStyle = '#f2f1ec';
+  ctx.lineWidth = 7;
+  ctx.strokeRect(14, 14, 484, 148);
+  ctx.fillStyle = '#f2f1ec';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const words = name.split(' ');
+  const kind = words[0].toUpperCase();
+  const rest = words.slice(1).join(' ').toUpperCase();
+  ctx.font = '500 34px Georgia, serif';
+  ctx.fillText(kind, 256, 52);
+  let size = 52;
+  ctx.font = `700 ${size}px Georgia, serif`;
+  while (ctx.measureText(rest).width > 440 && size > 20) {
+    size *= 0.92;
+    ctx.font = `700 ${size}px Georgia, serif`;
+  }
+  ctx.fillText(rest, 256, 112);
   const t = toTexture(cv);
   cache.set(key, t);
   return t;

@@ -11,22 +11,22 @@ import { barnGeo, clubHouseGeo } from './barns.js';
 import { Terrain } from './terrain.js';
 import { makeTerrainTexture, makeGroundDetail, paveTexture } from './terrainTexture.js';
 import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, addIndoor, INTERIOR_UNIFORMS, applyShopLight, shopLightUniforms } from './surfaces.js';
-import { shopExterior, WALL_T, FLOOR_Y } from './shopGeo.js';
+import { shopExterior, streetShopfront, WALL_T, FLOOR_Y } from './shopGeo.js';
 import { buildInterior, shopLayout } from './shopInteriors.js';
 import { CAFE_MENU } from '../gameplay/data.js';
 import { CAR_COLORS, CAR_MODELS, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
 import { Sky, CLOUD_UNIFORMS } from './sky.js';
 import { TIDE_EXTREMES } from './weather.js';
-import { StaticBatch, paint, prep, gableRoof } from './shapes.js';
+import { StaticBatch, paint, prep, gableRoof, sphere } from './shapes.js';
 import {
   PALETTE, buildingGeo, shedGeo, fenceGeo, lampGeo, benchGeo, parasolGeo,
-  roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, awningGeo, planterGeo, winBox, ensureWin,
+  roundBaleGeo, flagGeo, partsToGeo, box, cyl, cone, ico, awningGeo, planterGeo, winBox, shopWinBox, ensureWin,
 } from './builders.js';
 import { buildGrassMask, clearGrassUnder } from './grass.js';
 import { Vegetation } from './vegetation.js';
 import { createHorseMesh } from '../entities/horseModel.js';
-import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture, fasciaTexture, bladeTexture, chalkTexture } from './textures.js';
+import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture, fasciaTexture, bladeTexture, chalkTexture, streetPlateTexture } from './textures.js';
 import { getFields, hedgeRuns, nearPath } from './fields.js';
 
 const font = new FontLoader().parse(fontJson);
@@ -762,6 +762,10 @@ export class World {
       const q = Math.abs(Math.sin(s.rot)) > 0.5;
       return { x: s.x, z: s.z, hx: (q ? s.d : s.w) / 2, hz: (q ? s.w : s.d) / 2 };
     });
+    const posHash = (x, z) => {
+      const v = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
+      return v - Math.floor(v);
+    };
     const shopReserved = (x, z, hx, hz) => shopRects.some((r) => Math.abs(x - r.x) < r.hx + hx - 0.5 && Math.abs(z - r.z) < r.hz + hz - 0.5);
     // Grand Hôtel (façade vers la mer).
     const ht = TOWN.hotel;
@@ -826,8 +830,13 @@ export class World {
             if (this.rnd() < 0.45) {
               const AW = [['#1b1c1f', '#f2f1ec'], ['#2f5f8a', '#f2f1ec'], ['#7a2a2a', '#efe6d2'], ['#2f5a3c', '#efe6d2'], ['#1b1c1f', '#c8a96e']];
               const [c1, c2] = AW[Math.floor(this.rnd() * AW.length)];
-              const fx = Math.sin(e.rot) * (d / 2), fz = Math.cos(e.rot) * (d / 2);
-              if (!reserved) this.batch.add(awningGeo(Math.min(w - 2, 7), c1, c2), null, cx + fx, by, cz + fz, e.rot);
+              // Commerce au rez-de-chaussée (deux fois sur trois) : devanture peinte, vitrines et enseigne, à la place du
+              // store (tirages inchangés).
+              const shopfront = !reserved && w >= 9 && posHash(cx, cz) < 0.68;
+              const out = d / 2 + (shopfront ? 0.42 : 0);
+              const fx = Math.sin(e.rot) * out, fz = Math.cos(e.rot) * out;
+              if (shopfront) this.streetShop(cx, by, cz, e.rot, w, d, c1);
+              if (!reserved && !shopfront) this.batch.add(awningGeo(Math.min(w - 2, 7), c1, c2), null, cx + fx, by, cz + fz, e.rot);
             }
           }
           s += w + 0.4 + (this.rnd() < 0.2 ? 6 : 0);
@@ -907,6 +916,7 @@ export class World {
     // Café « Le Galop » : il occupe désormais le rez-de-chaussée d'une maison face à la place (buildShops), sa
     // terrasse est au bord de la place.
     this.buildShops();
+    this.buildStreetFurniture();
     // Lampadaires.
     for (const road of ROADS.filter((r) => r.id.startsWith('t_') || r.id === 'coast' || r.id === 'main')) {
       const pts = road.pts;
@@ -938,18 +948,7 @@ export class World {
   buildShops() {
     this.shops = {};
     const glass = [];
-    const mats = new Map();
-    const plane = (tex, w, h, x, y, z, ry, far = 260) => {
-      let m = mats.get(tex);
-      if (!m) mats.set(tex, (m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 })));
-      const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
-      p.position.set(x, y, z);
-      p.rotation.y = ry;
-      p.receiveShadow = true;
-      this.group.add(p);
-      this.culled.push([p, x, z, far]);
-      return p;
-    };
+    const plane = (...a) => this.signPlane(...a);
     for (const spec of Object.values(SHOPS3D)) {
       const { x, z, rot } = spec;
       const y = this.groundAt(x, z, spec.w / 2, spec.d / 2, rot);
@@ -1047,6 +1046,123 @@ export class World {
     }
   }
 
+  // Devanture d'une maison de la ville (voir streetShopfront) : couleur du store, enseigne d'un commerce de la liste
+  // (choisie d'après la position, toujours la même), vitrines au vitrage à effet de pièce.
+  streetShop(cx, by, cz, rot, w, d, color) {
+    const NAMES = [
+      ['Librairie du Port', 'Livres · Cartes · Presse'], ['Fromagerie Normande', 'Camembert · Livarot · Pont-l’Évêque'],
+      ['Galerie Morny', 'Peintures · Photographies'], ['Fleurs de la Touques', 'Fleuriste'], ['Agence de la Mer', 'Immobilier · Locations'],
+      ['Chocolaterie Colas', 'Chocolats · Caramels au beurre salé'], ['Pharmacie Morny', 'Pharmacie · Parapharmacie'],
+      ['Antiquités Le Hoc', 'Brocante · Objets de marine'], ['Cave à cidre', 'Cidres · Calvados · Pommeau'], ['Optique Gontaut', 'Opticien'],
+    ];
+    // Enseignes réparties à tour de rôle (ordre de construction fixe : toujours les mêmes maisons).
+    this._streetShopN = (this._streetShopN || 0) + 1;
+    const [name, sub] = NAMES[(this._streetShopN * 7) % NAMES.length];
+    const front = color === '#1b1c1f' ? '#22262b' : color;
+    const cols = Math.max(1, Math.floor(w / 3.4));
+    const doorT = -w / 2 + (w / cols) * (Math.floor(cols / 2) + 0.5);
+    const sf = streetShopfront(w, d, doorT, front);
+    this.batch.add(sf.body, null, cx, by, cz, rot);
+    if (sf.detail) this.batch.addDetail(sf.detail, null, cx, by, cz, rot);
+    for (const r of sf.glass) {
+      this.glass.add(shopWinBox(r.w, r.h, 0.02).translate(r.x, r.y, r.z), PALETTE.glass, cx, by, cz, rot);
+      // Rampe d'éclairage de vitrine (allumée la nuit avec les lanternes, voir lightMat).
+      this.lights.add(box(r.w - 0.2, 0.05, 0.05).translate(r.x, r.y + r.h - 0.14, r.z - 0.08), '#ffe6b0', cx, by, cz, rot);
+    }
+    (this.streetShops ||= []).push({ x: cx, z: cz, rot, w, d, name });
+    const c = Math.cos(rot), s = Math.sin(rot);
+    const sg = sf.sign;
+    this.signPlane(fasciaTexture(name, sub, front, '#e2c98f', 0.5), sg.w, sg.h, cx + sg.x * c + sg.z * s, by + sg.y, cz - sg.x * s + sg.z * c, rot, 180);
+  }
+
+  // Mobilier urbain de Deauville City (tirage à part : le reste du monde ne change pas) : plaques de rue émaillées aux
+  // carrefours, bancs et corbeilles le long des trottoirs des rues principales, bornes au bord de la place.
+  buildStreetFurniture() {
+    const rnd = mulberry32(1913);
+    const STREETS = { t_w: 'Rue Désiré Le Hoc', main: 'Rue Eugène Colas', t_e: 'Avenue Lucien Barrière', t_n: 'Rue Gontaut-Biron', t_s: 'Rue Hoche', t_b: 'Avenue de la République' };
+    const xs = [[-130, 't_w'], [-30, 'main'], [70, 't_e']];
+    const zs = [[-300, 't_n'], [-232, 't_s'], [-166, 't_b']];
+    const post = partsToGeo([[cyl(0.035, 0.035, 2.9, 6), '#1b1c1f'], [cyl(0.06, 0.06, 0.06, 8), '#1b1c1f', { y: 2.9 }]]);
+    for (const [x, sx] of xs) {
+      for (const [z, sz] of zs) {
+        // Poteau à l'angle nord-est du carrefour (sur le trottoir), deux plaques : une par rue.
+        const px = x + 6.2, pz = z + 6.2;
+        const py = this.h(px, pz) + 0.14;
+        this.batch.add(post, null, px, py, pz, 0);
+        this.colliders.addCircle(px, pz, 0.1, py + 2.9, 'post');
+        const along = (name, ry, dy) => {
+          const tex = streetPlateTexture(name);
+          this.batch.add(box(0.72, 0.26, 0.03, false), '#1f2b45', px, py + dy, pz, ry);
+          for (const sd of [1, -1]) this.signPlane(tex, 0.7, 0.24, px + Math.sin(ry) * 0.017 * sd, py + dy, pz + Math.cos(ry) * 0.017 * sd, ry + (sd < 0 ? Math.PI : 0), 120);
+        };
+        along(STREETS[sx], Math.PI / 2, 2.55);
+        along(STREETS[sz], 0, 2.22);
+      }
+    }
+    // Plaque de la place.
+    const P = TOWN.plaza;
+    {
+      const px = P.x - P.w / 2 + 1.0, pz = P.z + P.d / 2 - 1.0;
+      const py = this.h(px, pz);
+      this.batch.add(post, null, px, py, pz, 0);
+      this.batch.add(box(0.82, 0.3, 0.03, false), '#1f2b45', px, py + 2.45, pz, Math.PI / 4);
+      for (const sd of [1, -1]) this.signPlane(streetPlateTexture('Place Morny'), 0.8, 0.28, px + Math.sin(Math.PI / 4) * 0.017 * sd, py + 2.45, pz + Math.cos(Math.PI / 4) * 0.017 * sd, Math.PI / 4 + (sd < 0 ? Math.PI : 0), 120);
+    }
+    // Bancs (dos à la façade, face à la rue) et corbeilles, tous les 30 m environ sur les trottoirs.
+    const bench = benchGeo();
+    const bin = partsToGeo([[cyl(0.24, 0.22, 0.85, 12), '#2f4a3a'], [cyl(0.26, 0.26, 0.06, 12), '#1b1c1f', { y: 0.85 }], [cyl(0.03, 0.03, 0.85, 4), '#1b1c1f', { x: 0.26 }]]);
+    for (const [x0, x1, z0, z1] of TOWN_BLOCKS) {
+      // Côté rue de chaque îlot : bordure du trottoir (à 2,2 m du bord de l'îlot), banc face à la chaussée.
+      const sides = [
+        { ax: x0 + 14, az: z0 + 4.4, bx: x1 - 14, bz: z0 + 4.4, ry: Math.PI },
+        { ax: x0 + 14, az: z1 - 4.4, bx: x1 - 14, bz: z1 - 4.4, ry: 0 },
+      ];
+      for (const sd of sides) {
+        if (sd.az === -352 + 4.4) continue; // route côtière (plus large) : pas de mobilier côté chaussée
+        const len = Math.hypot(sd.bx - sd.ax, sd.bz - sd.az);
+        for (let s2 = 6 + rnd() * 10; s2 < len - 4; s2 += 28 + rnd() * 14) {
+          const x = sd.ax + ((sd.bx - sd.ax) * s2) / len, z = sd.az + ((sd.bz - sd.az) * s2) / len;
+          const y = this.h(x, z) + 0.14;
+          // Pas devant une porte de commerce ni sur une terrasse.
+          if (Object.values(SHOPS3D).some((sp) => Math.hypot(x - sp.x, z - sp.z) < Math.max(sp.w, sp.d) / 2 + 3)) continue;
+          if (rnd() < 0.6) {
+            this.batch.add(bench, null, x, y, z, sd.ry);
+            this.colliders.addBox(x, z, 0.8, 0.3, sd.ry, y + 0.8, 'bench');
+            this.batch.add(bin, null, x + 1.4, y, z, 0);
+          } else this.batch.add(bin, null, x, y, z, 0);
+          this.colliders.addCircle(x + 1.4, z, 0.25, y + 0.9, 'bin');
+        }
+      }
+    }
+    // Bornes de fonte au bord de la place (côté rues), un passage tous les 12 m.
+    const bollard = partsToGeo([[cyl(0.09, 0.11, 0.85, 8), '#1b1c1f'], [sphere(0.1, 8, 6), '#1b1c1f', { y: 0.88 }], [cyl(0.115, 0.115, 0.05, 8), '#b08d57', { y: 0.68 }]]);
+    const perim = [];
+    for (let x = P.x - P.w / 2 + 2; x <= P.x + P.w / 2 - 2; x += 2) perim.push([x, P.z - P.d / 2 + 0.6], [x, P.z + P.d / 2 - 0.6]);
+    for (let z = P.z - P.d / 2 + 2; z <= P.z + P.d / 2 - 2; z += 2) perim.push([P.x - P.w / 2 + 0.6, z], [P.x + P.w / 2 - 0.6, z]);
+    for (const [x, z] of perim) {
+      if (Math.round((x + z) / 2) % 6 === 0) continue;
+      // Terrasse du café et barres d'attache : place laissée libre.
+      if (z > P.z + P.d / 2 - 3 && x > 8 && x < 36) continue;
+      if (x < P.x - P.w / 2 + 2 && Math.abs(z + 254) < 3) continue;
+      const y = this.h(x, z);
+      this.detailBatch.add(bollard, null, x, y, z, 0);
+    }
+  }
+
+  // Enseigne peinte (plan texturé, matériau partagé par texture), masquée au-delà de far mètres.
+  signPlane(tex, w, h, x, y, z, ry, far = 260) {
+    this._signMats ||= new Map();
+    let m = this._signMats.get(tex);
+    if (!m) this._signMats.set(tex, (m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 })));
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+    p.position.set(x, y, z);
+    p.rotation.y = ry;
+    p.receiveShadow = true;
+    this.group.add(p);
+    this.culled.push([p, x, z, far]);
+    return p;
+  }
+
   // Intérieur d'un commerce : géométries par matériau (bois et murs au shader de surfaces, cuir, tissu, métal, verre,
   // ampoules), éclairage intérieur propre aux matériaux du commerce, ardoise du café. Renvoie le groupe.
   loadShopInterior(id) {
@@ -1065,17 +1181,7 @@ export class World {
       const p = sh.toW(lx, lz);
       return [p.x, sh.y + ly, p.z, k];
     });
-    const U = shopLightUniforms(pts, id === 'boutique' ? '#ffe7c4' : '#ffd5a0', id === 'cafe' ? 6.5 : 7);
-    const lit = (m) => applyShopLight(m, U);
-    const M = {
-      A: lit(applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, envMapIntensity: 0.35 }), this.detailTex, () => this.terrain)),
-      L: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.48, metalness: 0, envMapIntensity: 0.55 })),
-      F: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, envMapIntensity: 0.3 })),
-      M: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.28, metalness: 0.85, envMapIntensity: 0.8 })),
-      G: new THREE.MeshStandardMaterial({ color: '#e3eef2', transparent: true, opacity: 0.18, roughness: 0.04, depthWrite: false, side: THREE.DoubleSide }),
-      // Ampoules : plus lumineuses que le blanc (au-delà de 1 avant le tone mapping).
-      E: new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(2.6, 2.35, 2.0) }),
-    };
+    const M = this._shopMaterials(shopLightUniforms(pts, id === 'boutique' ? '#ffe7c4' : '#ffd5a0', id === 'cafe' ? 6.5 : 7));
     for (const [key, geo] of Object.entries(geos)) {
       if (!geo) continue;
       geo.computeBoundingSphere();
@@ -1088,6 +1194,15 @@ export class World {
       group.add(mesh);
     }
     for (const sg of sh.layout.signs || []) {
+      if (sg.kind === 'strides') {
+        // Présentoir Strides : carton plié posé sur le comptoir.
+        const tex = signTexture('STRIDES', 'Grooms · Cavaliers · Transport', { dark: true, w: 512, h: 256, mark: true });
+        const card = new THREE.Mesh(new THREE.PlaneGeometry(sg.w, sg.h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
+        card.position.set(sg.x, sg.y + sg.h / 2, sg.z);
+        card.rotation.set(-0.25, sg.ry, 0);
+        group.add(card);
+        continue;
+      }
       const tex = chalkTexture('Le Galop', CAFE_MENU.map((m) => `${m.name}…${m.price.toFixed(2).replace('.', ',')} €`));
       const p = new THREE.Mesh(new THREE.PlaneGeometry(sg.w, sg.h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
       p.position.set(sg.x, sg.y, sg.z + 0.02);
@@ -1101,6 +1216,43 @@ export class World {
     this.group.add(group);
     sh.interior = { group, materials: Object.values(M) };
     return sh.interior;
+  }
+
+  // Matériaux d'un intérieur (programmes partagés par les trois commerces : voir prewarmShops).
+  _shopMaterials(U) {
+    const lit = (m) => applyShopLight(m, U);
+    return {
+      A: lit(applySurfaces(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, envMapIntensity: 0.35 }), this.detailTex, () => this.terrain)),
+      L: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.48, metalness: 0, envMapIntensity: 0.55 })),
+      F: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, envMapIntensity: 0.3 })),
+      M: lit(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.28, metalness: 0.85, envMapIntensity: 0.8 })),
+      G: new THREE.MeshStandardMaterial({ color: '#e3eef2', transparent: true, opacity: 0.18, roughness: 0.04, depthWrite: false, side: THREE.DoubleSide }),
+      // Ampoules : plus lumineuses que le blanc (au-delà de 1 avant le tone mapping).
+      E: new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(2.6, 2.35, 2.0) }),
+    };
+  }
+
+  // Précompilation des matériaux des intérieurs pendant l'écran de chargement (petits maillages témoins, gardés
+  // invisibles : les programmes restent en cache) : entrer dans une boutique ne provoque plus d'à-coup de compilation.
+  prewarmShops(renderer, camera) {
+    const M = this._shopMaterials(shopLightUniforms([[0, -1000, 0, 0]]));
+    const geo = paint(box(0.01, 0.01, 0.01), '#ffffff');
+    const group = new THREE.Group();
+    for (const [k, m] of Object.entries(M)) {
+      const mesh = new THREE.Mesh(geo, m);
+      // Devant la caméra, dans les mêmes conditions que dans une boutique (ombres reçues, portées pour cuir et tissu).
+      mesh.position.copy(camera.position).addScaledVector(camera.getWorldDirection(new THREE.Vector3()), 2);
+      mesh.frustumCulled = false;
+      mesh.receiveShadow = true;
+      mesh.castShadow = k === 'L' || k === 'F';
+      group.add(mesh);
+    }
+    this.group.add(group);
+    renderer.compile(this.scene, camera);
+    // Un vrai dessin : la compilation (parfois asynchrone) se termine ici plutôt qu'à l'entrée dans une boutique.
+    renderer.render(this.scene, camera);
+    group.visible = false;
+    this._shopWarm = group;
   }
 
   unloadShopInterior(id) {

@@ -45,6 +45,8 @@ const LAYOUTS = {
     lights: [[-6, 3.0, -3.0, 1.0], [-1.0, 3.0, -3.0, 1.0], [4.0, 3.0, -2.6, 1.0], [4.6, 3.0, 2.4, 0.9], [-6.0, 3.0, 3.2, 0.9], [1.2, 3.0, 3.5, 0.9]],
     seller: { at: [4.6, 1.55], ry: 0 },
     extras: [{ at: [-7.9, -0.2], ry: -Math.PI / 2, outfit: CUSTOMER('#7d8b6a', '#c2b49a', 'f', '#7a4a28'), name: 'Cliente' }],
+    // Présentoir Strides sur le comptoir (carton plié).
+    signs: [{ kind: 'strides', w: 0.34, h: 0.17, x: 3.55, y: F + 1.1, z: 2.72, ry: 0 }],
   },
   // Le Galop (14 × 10 m) : comptoir et vitrine à pâtisseries à gauche, pains au mur, machine à café, salle à droite.
   cafe: {
@@ -64,8 +66,12 @@ const LAYOUTS = {
       { at: [5.0, -1.9], ry: Math.PI, outfit: CUSTOMER('#2f5f8a', '#c2b49a', 'f', '#7a4a28'), name: 'Cliente', pose: 'sit' },
       { at: [2.5, 1.5], ry: Math.PI, outfit: CUSTOMER('#4b4a33'), name: 'Client', pose: 'sit' },
       { at: [-4.8, -2.75], ry: 0, outfit: { ...CUSTOMER('#f2f1ec', '#2b3442', 'f', '#3b2717'), hairStyle: 'bun' }, name: 'Boulangère' },
+      // En terrasse : sur le trottoir et au bord de la place, en face.
+      { at: [-2.42, 5.7], ry: -Math.PI / 2, outfit: CUSTOMER('#c8a96e', '#2b3442', 'f', '#5a3a24'), name: 'Cliente', pose: 'sit' },
+      { at: [-1.75, 19.4], ry: Math.PI / 2, outfit: CUSTOMER('#1f2b45', '#c2b49a'), name: 'Client', pose: 'sit' },
+      { at: [8.75, 19.4], ry: -Math.PI / 2, outfit: CUSTOMER('#f2f1ec', '#2b3442', 'f', '#7a4a28'), name: 'Cliente', pose: 'sit' },
     ],
-    signs: [{ kind: 'chalk', w: 1.0, h: 1.25, x: 3.6, y: 1.95, z: -4.64, ry: 0 }],
+    signs: [{ kind: 'chalk', w: 1.0, h: 1.25, x: 3.6, y: 1.95, z: -4.64, ry: 0 }, { kind: 'strides', w: 0.3, h: 0.15, x: -0.55, y: F + 1.14, z: -1.32, ry: 0 }],
   },
   // Maison Lucette (10 × 11 m) : portant à gauche, étagères à droite, table centrale, miroir et cabine au fond.
   boutique: {
@@ -84,7 +90,11 @@ const LAYOUTS = {
     ],
     lights: [[-2.4, 2.9, -1.4, 0.95], [2.4, 2.9, -1.4, 0.95], [0, 2.9, 2.0, 0.9], [-2.4, 2.9, -4.0, 0.8], [2.6, 2.9, -3.6, 0.8], [0, 2.9, 4.2, 0.7]],
     seller: { at: [2.6, -4.35], ry: 0 },
-    extras: [{ at: [-3.2, -0.4], ry: -Math.PI / 2, outfit: CUSTOMER('#6e2433', '#2b3442', 'f', '#2a1d14'), name: 'Cliente' }],
+    extras: [
+      { at: [-3.2, -0.4], ry: -Math.PI / 2, outfit: CUSTOMER('#6e2433', '#2b3442', 'f', '#2a1d14'), name: 'Cliente' },
+      // Passante devant la vitrine, sur le trottoir.
+      { at: [2.9, 6.6], ry: Math.PI, outfit: CUSTOMER('#2f5f8a', '#e9e3d6', 'f', '#7a4a28'), name: 'Passante' },
+    ],
   },
 };
 

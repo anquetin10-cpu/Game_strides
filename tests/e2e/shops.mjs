@@ -249,6 +249,23 @@ await act();
 await waitIdle();
 check('café : sortie', !(await ev(() => window.__game.indoor)));
 
+// ---------- Échec de chargement : le joueur reste dehors et peut réessayer ----------
+const fail = await ev(async () => {
+  const g = window.__game, w = g.world, sh = g.shops;
+  sh._unload('boutique');
+  const d = sh.doorOut('boutique');
+  g.player.human.setPosition(d.x, d.z, 0);
+  const real = w.loadShopInterior.bind(w);
+  w.loadShopInterior = () => { throw new Error('test'); };
+  const ok1 = await sh.enter('boutique', { instant: true });
+  const p = g.player.human.pos;
+  const out1 = { ok1, indoor: g.indoor, outside: !sh.inside('boutique', p.x, p.z) };
+  w.loadShopInterior = real;
+  window.__auto.tick(2);
+  return out1;
+});
+check('chargement impossible : message, joueur dehors devant la porte', !fail.ok1 && !fail.indoor && fail.outside, JSON.stringify(fail));
+
 // ---------- Boutique : essayage, achat, tenue portée ----------
 await ev(() => { const g = window.__game, A = window.__auto; const d = g.shops.doorOut('boutique'); g.player.human.setPosition(d.x + 8, d.z + 2, -Math.PI / 2); g.cam.snap(g.player.human.pos, -Math.PI / 2); A.tick(4); });
 await shot('15-boutique-devanture');

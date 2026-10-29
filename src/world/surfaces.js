@@ -375,8 +375,10 @@ if ( abs( vWin.z ) > 0.01 ) {
     vec3 t = normalize( cross( vec3( 0.0, 1.0, 0.0 ), n ) );
     vec3 V = normalize( vWPos - cameraPosition );
     vec3 d = vec3( dot( V, t ), V.y, max( -dot( V, n ), 0.02 ) );
-    float W = abs( vWin.z ), H = vWin.w;
+    float W = abs( vWin.z ), H = abs( vWin.w );
     bool stall = vWin.z < 0.0;
+    // Vitrine de commerce (hauteur négative) : boutique toujours éclairée, étagères garnies au fond.
+    bool shop = vWin.w < 0.0;
     // Grandes baies (bureaux) : découpées en pièces de 4 m × 3,4 m.
     vec2 cellSz = W > 3.5 ? vec2( 4.0, 3.4 ) : vec2( W + 1.6, H + 1.5 );
     vec2 p = vWin.xy;
@@ -400,6 +402,13 @@ if ( abs( vWin.z ) > 0.01 ) {
       float boards = 0.85 + 0.15 * step( 0.5, fract( ( tm == tu ? hit.y : hit.x ) * 5.0 ) );
       col = tm == tv && d.y < 0.0 ? vec3( 0.55, 0.45, 0.25 ) : vec3( 0.18, 0.13, 0.09 ) * boards;
       if ( tm == td && abs( hit.x ) < 0.35 && hit.y > 0.5 && hit.y < 0.95 ) col = vec3( 1.2, 1.15, 1.0 );
+    } else if ( shop && ( tm == td || tm == tu ) ) {
+      // Murs de la boutique (fond et côtés) : étagères (planches claires) chargées d'articles de couleurs variées.
+      float hx = tm == td ? hit.x : hit.z;
+      float shelfY = fract( ( hit.y - floorY ) / 0.55 );
+      float item = inHash( vec3( floor( hx / 0.28 ), floor( ( hit.y - floorY ) / 0.55 ), id * 31.0 + ( tm == td ? 0.0 : 7.0 ) ) );
+      vec3 goods = mix( vec3( 0.75, 0.55, 0.35 ), mix( vec3( 0.25, 0.32, 0.5 ), vec3( 0.6, 0.2, 0.22 ), step( 0.5, item ) ), step( 0.33, item ) );
+      col = hit.y > ceilY - 0.5 ? wall : shelfY < 0.08 ? vec3( 0.62, 0.5, 0.36 ) : ( shelfY < 0.6 && fract( hx / 0.28 ) > 0.12 ? goods : wall * 0.85 );
     } else if ( tm == td ) {
       col = wall;
       // Mobilier bas (canapé, buffet) et cadre au mur.
@@ -414,10 +423,10 @@ if ( abs( vWin.z ) > 0.01 ) {
     }
     // Pénombre selon la profondeur ; rideaux sur une partie des fenêtres.
     col *= exp( -tm * 0.18 );
-    if ( !stall && id > 0.7 && abs( p.x ) > W * 0.18 ) col = mix( vec3( 0.82, 0.78, 0.7 ), vec3( 0.55, 0.6, 0.65 ), fract( id * 5.0 ) ) * 0.9;
+    if ( !stall && !shop && id > 0.7 && abs( p.x ) > W * 0.18 ) col = mix( vec3( 0.82, 0.78, 0.7 ), vec3( 0.55, 0.6, 0.65 ), fract( id * 5.0 ) ) * 0.9;
     // Éclairage : lumière du jour diffuse, pièces allumées le soir (une sur deux).
-    float lit = step( 0.5, fract( id * 3.7 ) );
-    inRoom = col * ( inDay * 0.55 + inNight * ( stall ? 0.35 : lit * 1.6 ) * vec3( 1.0, 0.82, 0.6 ) );
+    float lit = shop ? 1.3 : step( 0.5, fract( id * 3.7 ) );
+    inRoom = col * ( inDay * ( shop ? 0.75 : 0.55 ) + inNight * ( stall ? 0.35 : lit * 1.6 ) * vec3( 1.0, 0.82, 0.6 ) );
     inStall = stall ? 1.0 : 0.0;
     diffuseColor.rgb *= 0.12;
   }

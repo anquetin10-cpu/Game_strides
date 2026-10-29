@@ -32,7 +32,7 @@ const VIEWS = {
   // Cour de l'écurie : tracteur, voiture, matériel.
   yard: (g) => { const y = g.terrain.getHeight(-152, 170); return { at: [-158, y + 1.2, 166], from: [-150.5, y + 2.2, 173] }; },
   car: (g) => { const y = g.terrain.getHeight(-84, 146); return { at: [-84, y + 0.9, 146], from: [-79.5, y + 1.8, 150.5] }; },
-  // Entrée de Deauvelle (panneau d'agglomération).
+  // Entrée de Deauville City (panneau d'agglomération).
   entry: (g) => { const y = g.terrain.getHeight(-230, -353); return { at: [-216, y + 2.2, -346.2], from: [-232, y + 1.8, -350.5] }; },
   // Hippodrome de la Touques.
   hippo: (g) => { const y = g.terrain.getHeight(330, 168); return { at: [330, y + 2, 230], from: [300, y + 6, 160] }; },
@@ -77,7 +77,7 @@ const VIEWS = {
   cliff: (g) => ({ at: [-520, 20, -330], from: [-380, 6, -345] }),
   // Lampadaire (la nuit).
   lamp: (g) => { const [x, y, z] = g.world._lampPools[6]; return { at: [x, y + 0.5, z], from: [x + 9, y + 2.2, z + 7] }; },
-  // Rue de Deauvelle, à hauteur d'homme.
+  // Rue de Deauville City, à hauteur d'homme.
   // Fontaine de la place, de près (pierre, pavés en cercles).
   fountain: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x, P.z); return { at: [P.x, y + 1.4, P.z], from: [P.x + 7.5, y + 1.7, P.z + 5] }; },
   town: (g) => { const P = window.__sites.TOWN.plaza; const y = g.terrain.getHeight(P.x, P.z); return { at: [P.x - 30, y + 4, P.z - 25], from: [P.x + 4, y + 1.7, P.z + 6] }; },

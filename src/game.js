@@ -206,6 +206,7 @@ export class Game {
     this.sky.update(17.5, this.player.focus.pos, 0);
     this.sky.updateEnvironment(this.renderer, 0, true);
     this.renderer.compile(this.scene, this.camera);
+    this.world.prewarmShops(this.renderer, this.camera);
     this.screens.setLoading(1, 'Prêt');
     this.screens.hideLoading();
     this.last = performance.now();
@@ -1231,17 +1232,21 @@ export class Game {
     this.hoofPrints.update(dt);
     this.boats.update(dt);
     // Pluie (traînées autour de la caméra, bruit de pluie).
-    this.rainFx.update(dt, this.camera, this.sky.rain, (1 - this.sky.nightFactor) * 0.9 + 0.1, this.sky.windVec);
+    // Dans un commerce : pas de gouttes autour du personnage, pluie seulement entendue (atténuée) à travers les vitres.
+    this.rainFx.update(dt, this.camera, this.indoor ? 0 : this.sky.rain, (1 - this.sky.nightFactor) * 0.9 + 0.1, this.sky.windVec);
     this.weather.rain = this.sky.rain;
     this.weather.wetness = this.sky.wet;
-    this.audio.setRain?.(this.sky.rain);
+    this.audio.setRain?.(this.sky.rain * (this.indoor ? 0.25 : 1));
     // Ambiance sonore : oiseaux des haies le jour, goélands sur la côte.
     if ((this._birdT = (this._birdT ?? 4) - dt) <= 0 && this.sky.nightFactor < 0.5) {
       const fp = this.player.focus.pos;
       const coast = fp.z - shoreZ(fp.x) < 90;
       this._birdT = 3 + Math.random() * 7;
-      if (coast) this.audio.gull(0.035);
-      else if (zoneDist(fp.x, fp.z, ZONES.find((zz) => zz.id === 'town')) > 30) this.audio.birdsong(0.03);
+      // Pas d'oiseaux à l'intérieur d'un commerce.
+      if (!this.indoor) {
+        if (coast) this.audio.gull(0.035);
+        else if (zoneDist(fp.x, fp.z, ZONES.find((zz) => zz.id === 'town')) > 30) this.audio.birdsong(0.03);
+      }
     }
     const f = this.player.focus.pos;
     this.audio.ambience({

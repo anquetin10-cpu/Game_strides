@@ -17,8 +17,11 @@ const VIEWS = [
   ['place', 15, [-10, 4, -291], [24, 1.7, -260]],
   ['rue', 15, [-80, 3, -300], [-122, 1.7, -296]],
   ['hotel', 15, [-80, 6, -320], [-60, 1.7, -290]],
-  ['facade', 15, [-60, 4, -238], [-52, 1.7, -226]],
+  ['facade', 15, [-62, 4, -238], [-60, 1.7, -228.8]],
+  ['devanture', 15, [-56, 2.2, -294.5], [-47, 1.7, -298.5]],
+  ['cafe-face', 15, [19, 3.2, -226], [13, 1.7, -244]],
   ['rue-nuit', 21.5, [-80, 3, -300], [-122, 1.7, -296]],
+  ['devanture-nuit', 21.5, [-56, 2.2, -294.5], [-47, 1.7, -298.5]],
   ['sellerie-nuit', 21.5, [-148, 3.2, -266], [-124, 1.7, -254]],
 ].filter((v) => !only || only.includes(v[0]));
 
@@ -29,6 +32,7 @@ page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(`${base}/?autostart&quality=high`, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
+await page.addStyleTag({ content: '.hud, #touch { visibility: hidden !important; }' });
 await page.evaluate(() => { const g = window.__game; window.__auto.stopLoop(); window.__auto.closeCards(); while (g.hud.dialogActive) g.hud.advanceDialog(); g.missions.abandon?.(); window.__auto.closeCards(); });
 for (const [name, hr, at, from] of VIEWS) {
   const info = await page.evaluate(([hr, at, from]) => {
