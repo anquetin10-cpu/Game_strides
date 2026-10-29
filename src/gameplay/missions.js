@@ -41,7 +41,7 @@ export function makeSteps(game) {
         },
       };
     },
-    goto(pos, text, { r = 6, mode = null, hint = null, beacon = true } = {}) {
+    goto(pos, text, { r = 6, mode = null, hint = null, hintMs = null, beacon = true } = {}) {
       return {
         kind: 'goto',
         mode,
@@ -50,6 +50,7 @@ export function makeSteps(game) {
         radius: r,
         beacon,
         hint,
+        hintMs,
         update() {
           const p = resolve(pos);
           return dist(p) < r && (!mode || (mode === 'drive' ? P().inTruck : P().mode === mode));

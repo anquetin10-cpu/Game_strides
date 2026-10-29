@@ -38,67 +38,41 @@ const OFFICIAL = { top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#1b1c1f', boots: '
 const EVENT_IRL = 'les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.';
 
 export const STORY = [
-  // 0 — Tutoriel
+  // 0 — Tutoriel : une mission courte qui montre seulement la boucle du jeu (demande reçue sur Strides → acceptée →
+  // réalisée → payée et notée) et les gestes de base (monter, avancer, diriger). Le saut s'apprend plus tard, à
+  // l'échauffement du premier concours (M3).
   {
     id: 'tuto', story: true, vertical: 'JOBS', category: 'Prise en main', title: 'Premiers pas', level: 1,
-    desc: 'Monte Comète, prends tes marques en carrière et reviens voir Camille.',
-    client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 50, xp: 60, duration: '~3 min',
+    desc: 'Monte Comète, fais un petit tour de carrière et reviens voir Camille.',
+    client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 50, xp: 60, duration: '~2 min',
     irl: 'sur Strides, les écuries et cavaliers envoient des propositions de missions aux professionnels, qui acceptent celles qui leur conviennent — comme tu viens de le faire.',
     review: () => 'Bienvenue dans l’équipe ! Belle prise en main.',
     steps(game, run, S) {
       const camille = npcAt(game, run, STAFF_F, -100, 166, Math.PI, 'Camille');
+      const A = HOME.arena;
+      // Petit tour de carrière à l'écart des deux obstacles posés au milieu : entrée par la porte (5 m de large), piste
+      // de gauche, puis retour par l'allée centrale, dans l'axe de la porte pour ressortir sans buter dans la lice.
+      const tour = [[A.x, A.z - 7.5], [A.x - 16, A.z - 5], [A.x - 16, A.z + 6], [A.x - 4, A.z + 7], [A.x, A.z - 3]];
       return [
         S.dialog([
-          { who: 'Camille Martin', initials: 'CM', text: `Salut ${game.save.data.playerName} ! Bienvenue à l’Écurie du Val. Comète t’attend devant les boxes.` },
-          { who: 'Camille Martin', initials: 'CM', text: 'Approche-toi d’elle et touche ACTION pour monter en selle.' },
+          { who: 'Camille Martin', initials: 'CM', text: `Salut ${game.save.data.playerName} ! Bienvenue à l’Écurie du Val. Ta première mission est simple : un petit tour avec Comète.` },
+          { who: 'Camille Martin', initials: 'CM', text: 'Elle t’attend devant les boxes. Approche-toi et touche ACTION pour monter en selle.' },
         ]),
         S.custom({
           text: 'Monte sur Comète',
           target: () => game.player.horse.pos,
           radius: 3,
           beacon: false,
-          hint: 'Joystick : marcher · glisse à droite : caméra.',
+          hint: 'Joystick gauche : avancer · glisse à droite : tourner la caméra · <b>ACTION</b> près de Comète : monter.',
+          hintMs: 9000,
           update: () => game.player.mode === 'ride',
         }),
-        S.goto({ x: HOME.arena.x, z: HOME.arena.z - 13 }, 'Entre dans la carrière (porte au nord)', { r: 5, mode: 'ride', hint: 'Un peu de joystick = <b>pas</b>, plus = <b>trot</b>, à fond = <b>galop</b>.' }),
-        S.custom({
-          text: 'Saute le petit vertical de la carrière',
-          target: () => {
-            const o = game.obstacles.list.find((x) => x.id === 'home1');
-            return { x: o.x - o.n.x * 8, z: o.z - o.n.z * 8 };
-          },
-          radius: 3,
-          hint: 'Élan au trot ou au galop, puis <b>SAUT</b> quand l’anneau est <b>vert</b>.',
-          hintMs: 9000,
-          start(r) {
-            r.flags.jumped = false;
-            const off = game.bus.on('obstacle:clear', ({ obstacle }) => {
-              if (obstacle.course === 'home') r.flags.jumped = true;
-            });
-            const off2 = game.bus.on('obstacle:fault', ({ obstacle }) => {
-              if (obstacle.course === 'home') r.flags.jumped = true;
-            });
-            r.onCleanup(off);
-            r.onCleanup(off2);
-          },
-          update: (r) => r.flags.jumped,
-        }),
-        S.custom({
-          text: 'Passe au grand galop quelques secondes',
-          hint: 'Joystick à fond pour galoper, puis maintiens <b>BOOST</b> (Maj) pour le grand galop, et sors par la porte.',
-          hintMs: 8000,
-          start(r) {
-            r.flags.g = 0;
-          },
-          update(r, dt) {
-            if (game.player.mode === 'ride' && game.player.horse.gait === 4) r.flags.g += dt;
-            return r.flags.g > 2.2;
-          },
-        }),
+        S.goto({ x: A.x, z: A.z - 13 }, 'Suis la balise jusqu’à la carrière', { r: 5, mode: 'ride', hint: 'Un peu de joystick = <b>pas</b>, plus = <b>trot</b>. La balise et le GPS montrent toujours où aller.', hintMs: 9000 }),
+        checkpointSteps(game, run, S, tour, { text: 'Fais le tour de la carrière dans les anneaux', r: 4.5 }),
         S.interact(() => camille.pos, 'Parler', 'Reviens voir Camille devant les boxes', { modes: ['foot', 'ride'], r: 4, icon: 'talk' }),
         S.dialog([
-          { who: 'Camille Martin', initials: 'CM', text: 'Parfait ! Tu as la main. Ici, tout passe par Strides : les missions arrivent sur ton téléphone.' },
-          { who: 'Camille Martin', initials: 'CM', text: 'Tu acceptes, tu réalises, tu es payé. Et avis après avis, ta réputation grandit. Garde ton téléphone à l’œil !' },
+          { who: 'Camille Martin', initials: 'CM', text: 'Parfait, tu as la main ! Voilà comment ça marche ici : les demandes arrivent sur ton téléphone, dans Strides.' },
+          { who: 'Camille Martin', initials: 'CM', text: 'Tu acceptes, tu réalises la mission, tu es payé et noté. Avis après avis, ta réputation grandit. Garde ton téléphone à l’œil !' },
         ]),
       ];
     },

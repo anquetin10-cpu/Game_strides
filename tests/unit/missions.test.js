@@ -25,6 +25,8 @@ function mockGame() {
     gps: { set() {}, clear() {}, target: null },
     interact: { add() {}, remove() {}, list: new Map() },
     distanceTo: () => 250,
+    terrain: { getHeight: () => 0 },
+    scene: { add() {}, remove() {} },
     spawnHuman: (o, x, z) => ({ pos: { x, z }, pose: 'stand' }),
     spawnHorse: (d, x, z) => ({ id: d.id, pos: { x, z }, anim: {}, setPosition() {}, frozen: false }),
     despawn() {},
