@@ -526,7 +526,7 @@ export class Transport {
       const a = this.aboardOf(h);
       horse.x = D.stalls[stall].x;
       horse.z = D.stalls[stall].z;
-      horse.h = 0;
+      horse.h = D.stalls[stall].h || 0;
       this.seq.tied = true;
       void a;
     }
@@ -719,7 +719,9 @@ export class Transport {
   }
 
   _tieRing(stall, out) {
-    return this.truck.localToWorld(D.stalls[stall].x, D.floor + 1.45, D.bulkZ - 0.08, out);
+    const st = D.stalls[stall];
+    if (st.ring) return this.truck.localToWorld(st.ring.x, D.floor + 1.45, st.ring.z, out);
+    return this.truck.localToWorld(st.x, D.floor + 1.45, D.bulkZ - 0.08, out);
   }
 
   // Mise à jour du joueur pendant une séquence (appelée par Player avant l'animation).
@@ -832,6 +834,7 @@ export class Transport {
   // Chargement : approche, hésitation éventuelle, montée du pont, entrée dans la stalle, attache dans le couloir
   // de service, sortie du meneur par la porte de passage puis la porte de service (flanc droit).
   *_loadScript(h, stall) {
+    if (D.layout === 'herringbone') return yield* this._loadScriptHB(h, stall);
     const g = this.game;
     const t = this.truck;
     const s = this.seq;
@@ -892,6 +895,7 @@ export class Transport {
   // Déchargement : le meneur entre par la porte de service, rejoint la tête par le couloir, détache,
   // puis fait reculer le cheval hors de sa stalle et le long du pont, en restant à sa tête.
   *_unloadScript(h, stall) {
+    if (D.layout === 'herringbone') return yield* this._unloadScriptHB(h, stall);
     const g = this.game;
     const t = this.truck;
     const s = this.seq;
@@ -937,6 +941,107 @@ export class Transport {
     yield* this._all(this._stop(A, 0.4), this._stop(M, 0.3));
     // Le meneur se range à gauche de l'épaule pour repartir en main.
     yield* this._walk(M, lane + 0.95, footZ - 1.0, 0.8);
+    yield* this._turn(M, Math.PI, 3);
+  }
+
+  // Camion à stalles en épi (STX) : le cheval monte le pont, avance le long du couloir du groom (flanc droit), puis
+  // range ses hanches dans sa stalle, tête au couloir ; le meneur, toujours à la tête, l'attache à la barre de
+  // poitrail et sort par la porte d'habitation, au bout du couloir.
+  *_loadScriptHB(h, stall) {
+    const g = this.game;
+    const t = this.truck;
+    const s = this.seq;
+    yield;
+    const st = D.stalls[stall];
+    const cx = D.corridorX;
+    const lane = -0.35; // axe de montée sur le pont, un peu à droite
+    const footZ = D.hingeZ - D.rampLen * Math.sin(t.ramp.angle);
+    const doorZ = (D.doorZ[0] + D.doorZ[1]) / 2;
+    const A = s.actor, M = s.handler;
+    this._cam([-3.6, 2.8, HZ(-11.5)], [-0.2, 1.4, HZ(-5.2)]);
+    // Approche dans l'axe du pont, meneur à droite de l'épaule.
+    yield* this._all(this._walk(A, lane, footZ - 2.3, 1.45, { turn: 2.4 }), this._walk(M, lane - 0.6, footZ - 1.15, 1.5));
+    yield* this._all(this._turn(A, 0, 1.8), this._turn(M, 0, 3.5));
+    if (Math.random() < 0.65 || s.forceHesitate) {
+      yield* this._all(this._walk(A, lane, footZ - 1.55, 1.0), this._walk(M, lane - 0.6, footZ - 0.4, 1.0));
+      A.v = 0;
+      A.graze = 0.4;
+      g.audio.snort?.();
+      M.h = Math.PI * 0.85;
+      yield* this._wait(0.7 + Math.random() * 0.9);
+      A.graze = 0;
+      M.h = 0;
+      yield* this._wait(0.2);
+    }
+    // Montée au pas, le meneur devant l'épaule droite.
+    this._cam([-3.2, 2.9, HZ(-9.8)], [-0.3, 1.8, MZ()]);
+    yield* this._all(this._walk(A, lane, D.hingeZ + 0.9, 1.0, { stop: false }), this._walk(M, cx, D.hingeZ + 1.9, 1.0, { stop: false }));
+    // Le long du couloir jusqu'à hauteur de la stalle ; le meneur passe devant, puis se retourne vers la tête.
+    yield* this._all(this._walk(A, cx + 0.2, st.z - 0.15, 0.9, { turn: 1.6 }), this._walk(M, cx, st.z + 1.15, 1.0));
+    yield* this._turn(M, Math.PI, 4);
+    // Hanches dans la stalle : le cheval recule de côté en pivotant sur les épaules, tête au couloir.
+    yield* this._walk(A, st.x, st.z, 0.45, { back: true, turn: 1.1 });
+    yield* this._all(this._turn(A, st.h, 1.2), this._walk(M, cx, st.ring.z - 0.45, 0.6));
+    yield* this._turn(M, Math.PI * 0.25, 4);
+    // Attache à la barre de poitrail.
+    yield* this._wait(1.1);
+    s.holding = false;
+    s.tied = true;
+    g.audio.latch?.();
+    yield* this._wait(0.4);
+    // Sortie : au bout du couloir, porte d'habitation (flanc droit).
+    this._cam([-6.6, 2.6, DZ(-5.0)], [-0.9, 1.6, DZ(-1.4)]);
+    yield* this._walk(M, cx, doorZ, 1.2);
+    t.setDoor(true);
+    yield* this._wait(0.45);
+    yield* this._walk(M, -1.15, doorZ, 1.0, { stop: false });
+    yield* this._walk(M, -2.0, doorZ - 0.15, 1.1);
+    t.setDoor(false);
+    yield* this._turn(M, -Math.PI * 0.75, 4);
+    yield* this._wait(0.2);
+  }
+
+  // Déchargement en épi : le meneur entre par la porte d'habitation, remonte le couloir jusqu'à la tête, détache ; le
+  // cheval sort sa croupe de la stalle en pivotant, descend le couloir et le pont en avant, le meneur à sa tête.
+  *_unloadScriptHB(h, stall) {
+    const g = this.game;
+    const t = this.truck;
+    const s = this.seq;
+    yield;
+    const A = s.actor, M = s.handler;
+    const st = D.stalls[stall];
+    const cx = D.corridorX;
+    const doorZ = (D.doorZ[0] + D.doorZ[1]) / 2;
+    const footZ = D.hingeZ - D.rampLen * Math.sin(t.ramp.angle);
+    this._cam([-6.4, 2.8, DZ(-6.0)], [-0.9, 1.6, DZ(-1.8)]);
+    if (M.x > -1.4) yield* this._walk(M, -2.0, Math.min(M.z, D.hingeZ - 0.5), 1.6, { stop: false });
+    yield* this._walk(M, -2.0, doorZ, 1.6);
+    t.setDoor(true);
+    yield* this._wait(0.45);
+    yield* this._walk(M, -1.15, doorZ, 1.0, { stop: false });
+    yield* this._walk(M, cx, doorZ - 0.3, 1.0, { stop: false });
+    t.setDoor(false);
+    yield* this._walk(M, cx, st.ring.z - 0.45, 0.9);
+    yield* this._turn(M, Math.PI * 0.25, 4);
+    // Détacher.
+    yield* this._wait(1.0);
+    g.audio.latch?.();
+    s.tied = false;
+    s.holding = true;
+    this._removeAboard(h);
+    // Le meneur recule dans le couloir ; le cheval sort ses hanches de la stalle et se tourne vers l'arrière.
+    this._cam([-3.6, 3.0, HZ(-11)], [-0.3, 1.8, MZ()]);
+    yield* this._walk(M, cx, st.z - 1.9, 0.7, { back: true });
+    yield* this._all(this._walk(A, cx + 0.25, st.z - 0.2, 0.45, { turn: 1.0 }), this._turn(M, Math.PI, 3));
+    yield* this._turn(A, Math.PI, 1.2);
+    // Descente du couloir puis du pont, en avant, le meneur devant l'épaule droite (côté gauche du cheval qui
+    // regarde vers l'arrière : x croissant).
+    yield* this._all(this._walk(A, -0.35, D.hingeZ + 0.9, 0.85, { stop: false, turn: 1.4 }), this._walk(M, -0.95, D.hingeZ + 0.4, 0.85, { stop: false }));
+    this._cam([-4.6, 2.4, HZ(-12.5)], [0, 1.0, HZ(-6.2)]);
+    yield* this._all(this._walk(A, -0.35, footZ - 1.6, 0.8, { turn: 0.8 }), this._walk(M, -1.0, footZ - 2.2, 0.8));
+    yield* this._all(this._stop(A, 0.4), this._stop(M, 0.3));
+    // Le meneur se range à gauche de l'épaule pour repartir en main.
+    yield* this._walk(M, -1.25, footZ - 1.3, 0.8);
     yield* this._turn(M, Math.PI, 3);
   }
 
@@ -1031,11 +1136,12 @@ export class Transport {
     // Pose imposée : position et orientation de la caisse, avec roulis/tangage d'équilibre.
     t.localToWorld(st.x + sw.x, D.floor + 0.02, st.z + sw.z, h.pos);
     h.groundY = h.pos.y;
-    h.heading = t.heading;
+    // Stalle face à la route ou en épi (cap de la stalle par rapport au camion).
+    h.heading = t.heading + (st.h || 0);
     h.speed = 0;
     h.mesh.position.copy(h.pos);
     t.body.getWorldQuaternion(_q);
-    _q2.setFromEuler(_e.set(sw.z * 0.25, 0, -sw.x * 0.35));
+    _q2.setFromEuler(_e.set(sw.z * 0.25, st.h || 0, -sw.x * 0.35));
     h.mesh.quaternion.copy(_q).multiply(_q2);
     // Longe d'attache.
     this._halter(h, this._head);

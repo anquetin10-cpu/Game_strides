@@ -162,7 +162,9 @@ if (parts.includes('api')) {
     return out;
   });
   check('cheval à bord, attaché dans sa stalle', r2.aboard && r2.hidden && r2.visible && r2.inside, JSON.stringify({ inside: r2.inside, visible: r2.visible }));
-  check('debout sur le plancher du box', r2.floor > 0.75 && r2.floor < 1.1, r2.floor.toFixed(2));
+  // Plancher du camion en service (porteur d'origine 0,92 m, STX détaillé 1,105 m), à quelques centimètres près.
+  const floorRef = await f.evaluate(async () => (await import('/src/entities/truckModel.js')).TRUCK_DIM.floor);
+  check('debout sur le plancher du box', Math.abs(r2.floor - floorRef - 0.02) < 0.15, `${r2.floor.toFixed(2)} (plancher ${floorRef})`);
   check('sifflet désactivé, pas de repère cheval sur la carte', !r2.whistle && !r2.blip);
   check('fin de séquence : joueur libre à pied', !r2.locked && r2.mode === 'foot', `${n} images`);
   check('« Fermer la rampe » puis rampe fermée', r2.mainClose === 'Fermer la rampe' && r2.closed, r2.mainClose);

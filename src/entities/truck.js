@@ -222,6 +222,13 @@ export class Truck {
 
   _applyParts() {
     const M = this.model;
+    // Modèle détaillé (glTF, avant vers -Z, accroché en demi-tour) : la rampe s'ouvre en +X sur son pivot, la porte
+    // d'habitation en +Y (amplitude du fichier).
+    if (M.detailed) {
+      M.ramp.rotation.x = this.ramp.angle * ease(this.ramp.t);
+      M.door.rotation.y = M.doorOpen * ease(this.door.t);
+      return;
+    }
     M.ramp.rotation.x = -this.ramp.angle * ease(this.ramp.t);
     const gt = ease(this.gates.t);
     for (const gp of M.gates) gp.rotation.y = gp.userData.side * Math.PI * 0.97 * gt;
@@ -290,15 +297,18 @@ export class Truck {
     this._setLight(LIGHT.plate, LC.plate, pos * 0.35);
     this._setLight(LIGHT.side, LC.side, pos * 0.5);
     const brake = on && this.driver && s.brake > 0.05 && !(s.gear > 0 && s.throttle > 0.1);
-    // STX : feux arrière et stop dans le même bloc (position allumée la nuit, plein éclat au freinage).
-    this._setLight(LIGHT.brake, LC.brake, brake ? 1 : this.model.stx ? pos * 0.42 : 0);
+    this._setLight(LIGHT.brake, LC.brake, brake ? 1 : 0);
     this._setLight(LIGHT.rev, LC.rev, on && s.gear < 0 ? 1 : 0);
     const haz = this.hazard && blink;
     this._setLight(LIGHT.indL, LC.ind, haz ? 1 : 0);
     this._setLight(LIGHT.indR, LC.ind, haz ? 1 : 0);
     this._setLight(LIGHT.interior, LC.interior, this.interiorLight ? 1 : 0);
     this._setLight(LIGHT.dash, LC.dash, on ? 0.5 : 0);
-    if (this._lightDirty) {
+    // Modèle détaillé : émission de ses propres matériaux de feux (verres clairs, rouges, orange).
+    if (this.model.lights) {
+      if (this._lightDirty) this.model.lights.set(this.lightsOn, this.lightsOn, brake, haz);
+      this._lightDirty = false;
+    } else if (this._lightDirty) {
       this.model.lightData.set(this._light);
       this.model.lightTex.needsUpdate = true;
       this._lightDirty = false;
@@ -589,12 +599,19 @@ export class Truck {
     // Roues : rotation et braquage (épure d'Ackermann).
     const W = this.model.wheels;
     const [al, ar] = s.ackermann();
+    // Roues du modèle détaillé : roulement en -X local (avant du modèle vers -Z).
+    const spin = W.glbSpin ? -s.wheelSpin : s.wheelSpin;
     for (const fw of W.front) {
       fw.steer.rotation.y = fw.side > 0 ? al : ar;
-      fw.spin.rotation.x = s.wheelSpin;
+      fw.spin.rotation.x = spin;
     }
-    for (const r of W.rears || [W.rear]) r.rotation.x = s.wheelSpin;
+    for (const r of W.rears || [W.rear]) r.rotation.x = spin;
     this._animParts(dt);
+    // Modèle détaillé : intérieurs seulement de près (ou au volant, cabine), voir stxModel.js.
+    if (this.model.showInteriors) {
+      const cam = g.camera.position;
+      this.model.showInteriors(!!this.driver || (cam.x - this.pos.x) ** 2 + (cam.z - this.pos.z) ** 2 < 28 * 28);
+    }
     this._updateLights(dt, night);
     this.group.updateMatrixWorld(true);
     this._syncCollider();

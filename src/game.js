@@ -17,7 +17,7 @@ import { Human } from './entities/human.js';
 import { Truck } from './entities/truck.js';
 import { TRUCK_DIM } from './entities/truckModel.js';
 import { TRUCK_SPEC } from './entities/truckPhysics.js';
-import { loadStx, buildStxModel, STX_DIM } from './entities/stxModel.js';
+import { loadStx, buildStxModel, STX_DIM, STX_FILE } from './entities/stxModel.js';
 import { Vehicle } from './entities/vehicle.js';
 import { Online, boardById } from './core/online.js';
 import { FollowCamera } from './entities/camera.js';
@@ -175,18 +175,22 @@ export class Game {
     if (this.params.has('realhorse')) d.settings.horses = 'real';
     if (this.params.has('classic')) d.settings.characters = 'classic';
     this.realism = new Realism(this);
-    // Camion STRIDES : modèle STX Scania (glTF fourni) ; ses cotes remplacent celles du porteur procédural d'origine
-    // (box, pont, stalles, essieux), gardé en secours si le modèle ne se charge pas (?truck=classic pour le revoir).
+    // Camion STRIDES : modèle détaillé STX Scania fourni (glTF, voir stxModel.js) ; ses cotes remplacent celles du porteur
+    // procédural d'origine (box, rampe, stalles, essieux). Si le fichier ne se charge pas, l'erreur est signalée (console
+    // et message en jeu) et le porteur d'origine sert de camion de secours (?truck=classic pour le revoir exprès).
     let truckModel = null;
+    this.truckModelInfo = { file: STX_FILE, loaded: false, error: null };
     if (this.params.get('truck') !== 'classic') {
       try {
         truckModel = buildStxModel(await loadStx());
         Object.assign(TRUCK_DIM, STX_DIM);
-        // Mêmes réglages de conduite (moteur, boîte, masse) ; géométrie du STX : essieux, voie, roues de 0,47 m (pont
-        // rallongé d'autant, mêmes vitesses par rapport).
+        // Mêmes moteur, boîte et masse ; géométrie du STX : essieux, voie, roues de 0,535 m (pont rallongé d'autant :
+        // mêmes vitesses par rapport).
         Object.assign(TRUCK_SPEC, { zFront: STX_DIM.zFront, zRear: STX_DIM.zRear, track: STX_DIM.trackF, wheelR: STX_DIM.wheelR, final: (TRUCK_SPEC.final * STX_DIM.wheelR) / TRUCK_SPEC.wheelR, cgEmpty: 0.6 });
+        this.truckModelInfo.loaded = true;
       } catch (e) {
-        console.warn('Camion STX indisponible, porteur d’origine', e);
+        console.error(`Camion STX détaillé NON chargé (${STX_FILE}) : camion de secours affiché.`, e);
+        this.truckModelInfo.error = String(e?.message || e);
         truckModel = null;
       }
     }
@@ -1089,6 +1093,7 @@ export class Game {
     this.hud.el.classList.remove('hidden');
     document.getElementById('touch').classList.remove('hidden');
     this.metrics.track('game_started', { mode: isNew ? 'new' : 'continue' });
+    if (this.truckModelInfo?.error) this.hud.toast('Camion STX détaillé non chargé : camion de secours affiché.');
     buildStableUpgrades(this);
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);
