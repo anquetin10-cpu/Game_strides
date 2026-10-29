@@ -917,6 +917,7 @@ export class World {
     // terrasse est au bord de la place.
     this.buildShops();
     this.buildStreetFurniture();
+    this._flushSignAtlases();
     // Lampadaires.
     for (const road of ROADS.filter((r) => r.id.startsWith('t_') || r.id === 'coast' || r.id === 'main')) {
       const pts = road.pts;
@@ -1072,7 +1073,46 @@ export class World {
     (this.streetShops ||= []).push({ x: cx, z: cz, rot, w, d, name });
     const c = Math.cos(rot), s = Math.sin(rot);
     const sg = sf.sign;
-    this.signPlane(fasciaTexture(name, sub, front, '#e2c98f', 0.5), sg.w, sg.h, cx + sg.x * c + sg.z * s, by + sg.y, cz - sg.x * s + sg.z * c, rot, 180);
+    this.signPlane(fasciaTexture(name, sub, front, '#e2c98f', 0.5), sg.w, sg.h, cx + sg.x * c + sg.z * s, by + sg.y, cz - sg.x * s + sg.z * c, rot, 180, 'shops');
+  }
+
+  // Atlas d'enseignes : chaque texture distincte est copiée une fois dans un canevas commun (empilées), chaque plan
+  // reçoit les coordonnées de sa bande ; un maillage par atlas.
+  _flushSignAtlases() {
+    for (const [name, list] of Object.entries(this._atlasSigns || {})) {
+      const texs = [...new Set(list.map((sg) => sg.tex))];
+      const W = Math.max(...texs.map((t) => t.image.width));
+      const rows = texs.map((t) => ({ t, h: Math.round((t.image.height * W) / t.image.width) }));
+      const H = rows.reduce((a, r) => a + r.h, 0);
+      const cv = document.createElement('canvas');
+      cv.width = W;
+      cv.height = H;
+      const ctx = cv.getContext('2d');
+      const band = new Map();
+      let y0 = 0;
+      for (const r of rows) {
+        ctx.drawImage(r.t.image, 0, y0, W, r.h);
+        band.set(r.t, [1 - (y0 + r.h) / H, 1 - y0 / H]);
+        y0 += r.h;
+      }
+      const geos = list.map((sg) => {
+        const g = new THREE.PlaneGeometry(sg.w, sg.h);
+        const [vb, vt] = band.get(sg.tex);
+        const uv = g.attributes.uv;
+        for (let i = 0; i < uv.count; i++) uv.setY(i, vb + uv.getY(i) * (vt - vb));
+        g.applyMatrix4(new THREE.Matrix4().makeRotationY(sg.ry).setPosition(sg.x, sg.y, sg.z));
+        return g;
+      });
+      const tex = new THREE.CanvasTexture(cv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 4;
+      const mesh = new THREE.Mesh(mergeGeometries(geos, false), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }));
+      geos.forEach((g) => g.dispose());
+      mesh.name = `signs:${name}`;
+      mesh.receiveShadow = true;
+      this.group.add(mesh);
+    }
+    this._atlasSigns = null;
   }
 
   // Mobilier urbain de Deauville City (tirage à part : le reste du monde ne change pas) : plaques de rue émaillées aux
@@ -1093,7 +1133,7 @@ export class World {
         const along = (name, ry, dy) => {
           const tex = streetPlateTexture(name);
           this.batch.add(box(0.72, 0.26, 0.03, false), '#1f2b45', px, py + dy, pz, ry);
-          for (const sd of [1, -1]) this.signPlane(tex, 0.7, 0.24, px + Math.sin(ry) * 0.017 * sd, py + dy, pz + Math.cos(ry) * 0.017 * sd, ry + (sd < 0 ? Math.PI : 0), 120);
+          for (const sd of [1, -1]) this.signPlane(tex, 0.7, 0.24, px + Math.sin(ry) * 0.017 * sd, py + dy, pz + Math.cos(ry) * 0.017 * sd, ry + (sd < 0 ? Math.PI : 0), 120, 'plates');
         };
         along(STREETS[sx], Math.PI / 2, 2.55);
         along(STREETS[sz], 0, 2.22);
@@ -1106,7 +1146,7 @@ export class World {
       const py = this.h(px, pz);
       this.batch.add(post, null, px, py, pz, 0);
       this.batch.add(box(0.82, 0.3, 0.03, false), '#1f2b45', px, py + 2.45, pz, Math.PI / 4);
-      for (const sd of [1, -1]) this.signPlane(streetPlateTexture('Place Morny'), 0.8, 0.28, px + Math.sin(Math.PI / 4) * 0.017 * sd, py + 2.45, pz + Math.cos(Math.PI / 4) * 0.017 * sd, Math.PI / 4 + (sd < 0 ? Math.PI : 0), 120);
+      for (const sd of [1, -1]) this.signPlane(streetPlateTexture('Place Morny'), 0.8, 0.28, px + Math.sin(Math.PI / 4) * 0.017 * sd, py + 2.45, pz + Math.cos(Math.PI / 4) * 0.017 * sd, Math.PI / 4 + (sd < 0 ? Math.PI : 0), 120, 'plates');
     }
     // Bancs (dos à la façade, face à la rue) et corbeilles, tous les 30 m environ sur les trottoirs.
     const bench = benchGeo();
@@ -1150,7 +1190,13 @@ export class World {
   }
 
   // Enseigne peinte (plan texturé, matériau partagé par texture), masquée au-delà de far mètres.
-  signPlane(tex, w, h, x, y, z, ry, far = 260) {
+  // atlas : nom d'un atlas (enseignes des maisons, plaques de rue) : les plans de même atlas sont fusionnés en un seul
+  // maillage à la fin de la ville (un appel de dessin au lieu d'un par enseigne, voir _flushSignAtlases).
+  signPlane(tex, w, h, x, y, z, ry, far = 260, atlas = null) {
+    if (atlas) {
+      ((this._atlasSigns ||= {})[atlas] ||= []).push({ tex, w, h, x, y, z, ry });
+      return null;
+    }
     this._signMats ||= new Map();
     let m = this._signMats.get(tex);
     if (!m) this._signMats.set(tex, (m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 })));
