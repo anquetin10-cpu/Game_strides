@@ -157,6 +157,7 @@ node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sa
 node tests/e2e/cso.mjs        # épreuve de CSO complète au joystick : sans faute, mauvais appels, double, refus, élimination
 node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans tests/e2e/out/cso/
 node tests/e2e/cso-touch.mjs  # tour complet au doigt en émulation iPhone 13 (joystick + SAUT en multitouch)
+node tests/e2e/cso-framing.mjs # cadrage de la caméra de concours : part de la hauteur et position du couple à l’écran
 node tests/e2e/shops.mjs      # commerces (iPhone 13 émulé) : entrer, circuler, acheter, équiper, sortir, reprise
 node tests/e2e/town-shots.mjs apres   # vues fixes de Deauville City dans tests/e2e/out/town/apres/
 node tests/e2e/perf-town.mjs apres    # mesures dans les rues et les commerces (rendu logiciel : valeurs relatives)
