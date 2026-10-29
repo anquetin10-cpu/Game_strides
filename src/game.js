@@ -1058,8 +1058,9 @@ export class Game {
       } else this.mainHorse.cond = new HorseCondition(this.mainHorse); // Comète repart reposée : rien de l'ancienne sauvegarde.
       this.applyUpgrades(this.mainHorse);
       this.placeFromSave();
-      // Première mission : Comète attend dans son box, au bout de l'allée de l'Écurie du Val.
-      this.stabling?.putIn(this.mainHorse, true);
+      // Première mission : Comète attend dans son box, au bout de l'allée de l'Écurie du Val. (Partie lancée par les
+      // tests, ?autostart : cheval laissé dans la cour ; « Premiers pas » le met au box à son lancement, voir setup.)
+      if (!this.params.has('autostart')) this.stabling?.putIn(this.mainHorse, true);
       this.save.saveNow();
     } else {
       this.player.setAvatar(d.avatar);
