@@ -388,21 +388,14 @@
       }
       // Étapes personnalisées : heuristiques par mission.
       if (id === 'tuto' && /Monte sur/.test(txt)) return A.mount();
-      if (id === 'tuto' && /vertical/.test(txt)) {
-        A.mount();
-        return A.jumpObstacle(g.obstacles.list.find((o) => o.id === 'home1'));
-      }
-      if (id === 'tuto' && /grand galop/.test(txt)) {
-        A.mount();
-        const h = g.player.horse;
-        h.setPosition(-60, 260, 0);
-        for (let i = 0; i < 160; i++) {
-          A.steer(0, 1, 1);
-          g.input.held.add('gallop');
-          A.tick(1);
-          if (run.step !== s) break;
-        }
-        A.releaseInput();
+      // Premiers pas : Comète au box → « Sortir du box » devant la porte (elle suit ensuite en main).
+      if (id === 'tuto' && /box/.test(txt)) {
+        A.ensureMode('foot');
+        A.goTo(A.pos(s.target), 0.5);
+        A.tick(1);
+        // Action « Sortir du box » sans le fondu au noir (minuterie réelle).
+        if (g.mainHorse.inBox) g.stabling.takeOut(g.mainHorse);
+        A.tick(2);
         return;
       }
       if (id === 'fugueur' && /Rattrape/.test(txt)) {
