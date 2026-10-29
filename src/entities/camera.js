@@ -85,7 +85,7 @@ export class FollowCamera {
     const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? (course ? CAM_CSO.dist : 6.6) : indoor ? CAM_INDOOR.dist : 4.6;
     this.targetDist = base + (mode === 'ride' && !course ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
     // Hauteur du pivot lissée : monter ou descendre (de cheval, du camion) ne fait plus sauter la caméra d'une image à l'autre.
-    const height = mode === 'drive' ? (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? CAM_CSO.height : 2.35) : indoor ? CAM_INDOOR.height : 1.55;
+    const height = mode === 'drive' ? focus.camHeight || (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? CAM_CSO.height : 2.35) : indoor ? CAM_INDOOR.height : 1.55;
     this.height = instant ? height : damp(this.height, height, 4, dt);
     // Concours : on vise un point devant le cheval (l'abord de l'obstacle suivant reste dans le champ) et la hauteur
     // suit le sol plus qu'un saut (mouvement vertical amorti) ; transition douce à l'entrée et à la sortie.

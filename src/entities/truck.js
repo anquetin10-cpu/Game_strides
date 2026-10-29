@@ -36,15 +36,18 @@ function gradientTexture(radial) {
 }
 
 export class Truck {
-  constructor(game, { x, z, heading = 0, livery = 'strides' } = {}) {
+  constructor(game, { x, z, heading = 0, livery = 'strides', model = null } = {}) {
     this.game = game;
     this.livery = livery;
-    const M = buildTruckModel({ textureScale: IS_TOUCH ? 0.5 : 1 });
+    // Modèle fourni (camion STX, voir stxModel.js) ou modèle procédural d'origine.
+    const M = model || buildTruckModel({ textureScale: IS_TOUCH ? 0.5 : 1 });
     this.model = M;
     this.group = M.root;
     this.body = M.body;
     game.scene.add(this.group);
     this.L = D.L;
+    // Cercles de collision répartis sur la longueur (8,5 m d'origine, 13 m pour le STX).
+    this.probes = PROBES.map((p) => (p * (D.L / 2 - 0.85)) / 3.4);
     this.sim = new TruckSim();
     this.pos = new THREE.Vector3(x, 0, z);
     this.sim.pos = this.pos;
@@ -77,6 +80,14 @@ export class Truck {
     this.nose = { pos: new THREE.Vector3(1e6, 0, 1e6), heading, speed: 0, proxy: true };
     game.vehicles?.push(this.nose);
     this.snap();
+  }
+
+  // Caméra de conduite (camion STX de 13 m : plus loin et plus haut que derrière le porteur d'origine).
+  get camDist() {
+    return D.L > 10 ? 16 : undefined;
+  }
+  get camHeight() {
+    return D.L > 10 ? 4.3 : undefined;
   }
 
   // ---------- API compatible (vitesse, cap) ----------
@@ -194,7 +205,7 @@ export class Truck {
   // Angle d'ouverture pour que le bout du pont touche le sol (sol réel derrière le camion).
   _computeRampAngle() {
     this.group.updateMatrixWorld(true);
-    const hingeY = D.floor - 0.01;
+    const hingeY = D.hingeY ?? D.floor - 0.01;
     let ang = Math.PI / 2 + Math.asin(hingeY / D.rampLen);
     for (let i = 0; i < 2; i++) {
       // Bout du pont dans le repère de la caisse.
@@ -216,6 +227,7 @@ export class Truck {
     for (const gp of M.gates) gp.rotation.y = gp.userData.side * Math.PI * 0.97 * gt;
     M.partition.rotation.y = D.partitionOpen * ease(this.partition.t);
     M.door.rotation.y = 1.75 * ease(this.door.t);
+    if (M.doorOpening) M.doorOpening.visible = this.door.t > 0.01;
   }
 
   _animParts(dt) {
@@ -278,7 +290,8 @@ export class Truck {
     this._setLight(LIGHT.plate, LC.plate, pos * 0.35);
     this._setLight(LIGHT.side, LC.side, pos * 0.5);
     const brake = on && this.driver && s.brake > 0.05 && !(s.gear > 0 && s.throttle > 0.1);
-    this._setLight(LIGHT.brake, LC.brake, brake ? 1 : 0);
+    // STX : feux arrière et stop dans le même bloc (position allumée la nuit, plein éclat au freinage).
+    this._setLight(LIGHT.brake, LC.brake, brake ? 1 : this.model.stx ? pos * 0.42 : 0);
     this._setLight(LIGHT.rev, LC.rev, on && s.gear < 0 ? 1 : 0);
     const haz = this.hazard && blink;
     this._setLight(LIGHT.indL, LC.ind, haz ? 1 : 0);
@@ -313,7 +326,7 @@ export class Truck {
       const cone = new THREE.ConeGeometry(2.4, 16, 16, 1, true);
       cone.rotateX(-Math.PI / 2);
       const m = new THREE.Mesh(cone, this.beamMat);
-      m.position.set(s * 0.86, 1.05, 4.25 + 8);
+      m.position.set(s * (D.headX ?? 0.86), (D.headY ?? 1.11) - 0.06, (D.headZ ?? 4.25) + 8);
       m.rotation.x = 0.05;
       this.beams.add(m);
     }
@@ -321,17 +334,17 @@ export class Truck {
     // Flaque de lumière sur la chaussée : plus intense près du camion, portée ~30 m.
     const pool = new THREE.Mesh(new THREE.PlaneGeometry(9, 30), this.poolMat);
     pool.rotation.x = -Math.PI / 2;
-    pool.position.set(0, 0.06, 4.25 + 13);
+    pool.position.set(0, 0.06, (D.headZ ?? 4.25) + 13);
     this.beams.add(pool);
     this.haloMat = new THREE.SpriteMaterial({ map: radial, color: '#fff3dc', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
     this.tailHaloMat = new THREE.SpriteMaterial({ map: radial, color: '#ff2a12', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
     for (const s of [-1, 1]) {
       const h = new THREE.Sprite(this.haloMat);
-      h.position.set(s * 0.86, 1.11, 4.3);
+      h.position.set(s * (D.headX ?? 0.86), D.headY ?? 1.11, (D.headZ ?? 4.25) + 0.05);
       h.scale.setScalar(0.9);
       this.beams.add(h);
       const t = new THREE.Sprite(this.tailHaloMat);
-      t.position.set(s * 1.01, 0.64, -4.3);
+      t.position.set(s * (D.tailX ?? 1.01), D.tailY ?? 0.64, D.tailZ ?? -4.3);
       t.scale.setScalar(0.55);
       this.beams.add(t);
     }
@@ -348,7 +361,7 @@ export class Truck {
   rampPoint(u, x = 0, out = new THREE.Vector3()) {
     const ang = this.ramp.angle * ease(this.ramp.t);
     const L = D.rampLen * u;
-    out.set(x, D.floor - 0.01 + Math.cos(ang) * L + Math.sin(ang) * 0.03, D.hingeZ - Math.sin(ang) * L + Math.cos(ang) * 0.03);
+    out.set(x, (D.hingeY ?? D.floor - 0.01) + Math.cos(ang) * L + Math.sin(ang) * 0.03, D.hingeZ - Math.sin(ang) * L + Math.cos(ang) * 0.03);
     return this.body.localToWorld(out);
   }
   // Surface de marche des acteurs (piétons, chevaux menés ou à bord) : plancher du box dans son emprise, pont quand
@@ -367,7 +380,7 @@ export class Truck {
     const reach = D.rampLen * Math.sin(ang);
     const dzr = D.hingeZ - zl;
     if (dzr > reach) return null;
-    return this.body.localToWorld(_v.set(xl, D.floor - 0.01 + Math.cos(ang) * D.rampLen * (dzr / reach) + 0.03, zl)).y;
+    return this.body.localToWorld(_v.set(xl, (D.hingeY ?? D.floor - 0.01) + Math.cos(ang) * D.rampLen * (dzr / reach) + 0.03, zl)).y;
   }
   // Pied du pont (au sol, un peu en arrière) : point d'interaction arrière.
   rearPoint(out = new THREE.Vector3(), back = 1.2) {
@@ -382,9 +395,10 @@ export class Truck {
   doorPoint(side = 1, out = new THREE.Vector3()) {
     const h = this.sim.heading;
     const fx = Math.sin(h), fz = Math.cos(h), lx = Math.cos(h), lz = -Math.sin(h);
-    out.x = this.pos.x + fx * 3.4 + lx * side * 1.9;
+    const dz = D.cabDoorZ ?? 3.4, dx = D.W / 2 + 0.65;
+    out.x = this.pos.x + fx * dz + lx * side * dx;
     out.y = this.pos.y;
-    out.z = this.pos.z + fz * 3.4 + lz * side * 1.9;
+    out.z = this.pos.z + fz * dz + lz * side * dx;
     return out;
   }
   // Repère local (x, z) → monde, au sol.
@@ -497,7 +511,7 @@ export class Truck {
       const h = s.heading;
       const fx = Math.sin(h), fz = Math.cos(h);
       const p = { x: 0, z: 0 };
-      for (const off of PROBES) {
+      for (const off of this.probes) {
         const cx = this.pos.x + fx * off, cz = this.pos.z + fz * off;
         p.x = cx;
         p.z = cz;
@@ -553,7 +567,8 @@ export class Truck {
     this.snap();
     const nose = this.nose;
     if (driving) {
-      nose.pos.set(this.pos.x + Math.sin(s.heading) * 3.4, this.pos.y, this.pos.z + Math.cos(s.heading) * 3.4);
+      const nz = D.cabDoorZ ?? 3.4;
+      nose.pos.set(this.pos.x + Math.sin(s.heading) * nz, this.pos.y, this.pos.z + Math.cos(s.heading) * nz);
       nose.heading = s.heading;
       nose.speed = s.vx;
     } else if (nose.pos.x !== 1e6) nose.pos.set(1e6, 0, 1e6);
@@ -578,7 +593,7 @@ export class Truck {
       fw.steer.rotation.y = fw.side > 0 ? al : ar;
       fw.spin.rotation.x = s.wheelSpin;
     }
-    W.rear.rotation.x = s.wheelSpin;
+    for (const r of W.rears || [W.rear]) r.rotation.x = s.wheelSpin;
     this._animParts(dt);
     this._updateLights(dt, night);
     this.group.updateMatrixWorld(true);

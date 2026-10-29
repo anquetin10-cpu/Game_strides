@@ -9,6 +9,9 @@ import { CompetitionOffers } from './trip.js';
 import * as HorseModel from '../entities/horseModel.js';
 
 const D = TRUCK_DIM;
+const HZ = (z) => z + D.hingeZ + 4.2; // derrière le pont
+const DZ = (z) => z + (D.doorZ[0] + D.doorZ[1]) / 2 + 0.1; // porte de service
+const MZ = () => (D.hingeZ + D.stalls[0].z) / 2 - 0.25; // entre le pont et les stalles
 const ease = (t) => t * t * (3 - 2 * t);
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
@@ -664,7 +667,7 @@ export class Transport {
     const dz = D.hingeZ - zl;
     if (r.t > 0.98 && dz >= 0 && dz <= reach && Math.abs(xl) < D.rampW / 2 + 0.35) {
       const k = dz / reach;
-      const ry = t.localToWorld(xl, D.floor - 0.01 + Math.cos(ang) * D.rampLen * k + 0.03, zl, _u).y;
+      const ry = t.localToWorld(xl, (D.hingeY ?? D.floor - 0.01) + Math.cos(ang) * D.rampLen * k + 0.03, zl, _u).y;
       // Bord latéral du pont : on l'enjambe en quelques pas plutôt que de tomber d'un coup.
       const e = (Math.abs(xl) - D.rampW / 2) / 0.35;
       if (e <= 0) return ry;
@@ -735,11 +738,15 @@ export class Transport {
     hu.hidden = a.hidden;
     // Caméra cinématique.
     const g = this.game;
-    const cam = s.cam || { pos: [-3.4, 2.5, -10.8], look: [-0.3, 1.6, -3.4] };
+    const cam = s.cam || { pos: [-3.4, 2.5, HZ(-10.8)], look: [-0.3, 1.6, MZ()] };
     t.localToWorld(cam.pos[0], cam.pos[1], cam.pos[2], _w);
     // Bâtiment derrière le camion : le plan reste de ce côté-ci des murs (même principe que la caméra de suivi).
     const cs = g.colliders;
-    t.localToWorld(0, cam.pos[1], D.hingeZ - 0.4, _u);
+    // Le contrôle part de derrière le pont, ou du flanc pour un plan de côté (sinon, sur un camion long, la ligne
+    // traverserait la caisse et ramènerait la caméra dedans).
+    const side = Math.abs(cam.pos[0]) > D.W / 2 + 0.5 && cam.pos[2] > D.hingeZ;
+    if (side) t.localToWorld(Math.sign(cam.pos[0]) * (D.W / 2 + 0.45), cam.pos[1], cam.pos[2], _u);
+    else t.localToWorld(0, cam.pos[1], D.hingeZ - 0.4, _u);
     for (let q = 0.1; q <= 1.001; q += 0.1) {
       _v.lerpVectors(_u, _w, q);
       if (cs.blocked(_v.x, _v.z, _v.y - 0.5)) {
@@ -816,6 +823,8 @@ export class Transport {
       if (!live.length) break;
     }
   }
+  // Plans de caméra des séquences : réglés sur le porteur d'origine (pont à z = -4,2, stalles à -2,9, porte de
+  // service vers -0,1), recalés sur le camion en service (le STX est plus long).
   _cam(pos, look) {
     if (this.seq) this.seq.cam = { pos, look };
   }
@@ -835,7 +844,7 @@ export class Transport {
     const doorZ = (D.doorZ[0] + D.doorZ[1]) / 2;
     const pdx = (D.passDoor[0] + D.passDoor[1]) / 2;
     const A = s.actor, M = s.handler;
-    this._cam([-3.6, 2.6, -11.5], [-0.2, 1.4, -5.2]);
+    this._cam([-3.6, 2.6, HZ(-11.5)], [-0.2, 1.4, HZ(-5.2)]);
     // Approche : cheval dans l'axe de sa stalle, meneur à hauteur de l'épaule.
     yield* this._all(this._walk(A, lane, footZ - 2.3, 1.45, { turn: 2.4 }), this._walk(M, mx, footZ - 1.15, 1.5));
     yield* this._all(this._turn(A, 0, 1.8), this._turn(M, 0, 3.5));
@@ -852,7 +861,7 @@ export class Transport {
       yield* this._wait(0.2);
     }
     // Montée au pas, le meneur devant l'épaule.
-    this._cam([-3.2, 2.7, -9.8], [-0.2, 1.6, -3.8]);
+    this._cam([-3.2, 2.7, HZ(-9.8)], [-0.2, 1.6, MZ()]);
     yield* this._all(this._walk(A, lane, D.hingeZ + 0.8, 1.0, { stop: false }), this._walk(M, mx, D.hingeZ + 1.9, 1.0, { stop: false }));
     // Entrée dans la stalle ; le meneur remonte à la tête puis passe dans le couloir de service.
     yield* this._all(this._walk(A, st.x, st.z, 0.85, { turn: 1.4 }), this._walk(M, st.x + side * 0.55, D.corridor - 0.25, 0.95, { stop: false }));
@@ -865,7 +874,7 @@ export class Transport {
     g.audio.latch?.();
     yield* this._wait(0.4);
     // Sortie : porte de passage, espace de vie, porte de service.
-    this._cam([-6.6, 2.4, -5.0], [-0.9, 1.5, -1.4]);
+    this._cam([-6.6, 2.4, DZ(-5.0)], [-0.9, 1.5, DZ(-1.4)]);
     yield* this._walk(M, pdx, D.bulkZ - 0.25, 1.2, { stop: false });
     yield* this._walk(M, pdx, D.bulkZ + 0.3, 1.2, { stop: false });
     M.hidden = true;
@@ -893,7 +902,7 @@ export class Transport {
     const doorZ = (D.doorZ[0] + D.doorZ[1]) / 2;
     const pdx = (D.passDoor[0] + D.passDoor[1]) / 2;
     const footZ = D.hingeZ - D.rampLen * Math.sin(t.ramp.angle);
-    this._cam([-6.4, 2.6, -6.0], [-0.9, 1.5, -1.8]);
+    this._cam([-6.4, 2.6, DZ(-6.0)], [-0.9, 1.5, DZ(-1.8)]);
     // Vers la porte de service (en contournant l'arrière si besoin).
     if (M.x > -1.4) yield* this._walk(M, -1.95, Math.min(M.z, D.hingeZ - 0.5), 1.6, { stop: false });
     yield* this._walk(M, -1.95, doorZ, 1.6);
@@ -905,7 +914,7 @@ export class Transport {
     yield* this._walk(M, pdx, D.bulkZ + 0.3, 1.3, { stop: false });
     yield* this._walk(M, pdx, D.bulkZ - 0.3, 1.2, { stop: false });
     M.hidden = false;
-    this._cam([-3.4, 2.6, -10.5], [-0.2, 1.5, -3.2]);
+    this._cam([-3.4, 2.6, HZ(-10.5)], [-0.2, 1.5, MZ()]);
     yield* this._walk(M, st.x + side * 0.25, D.bulkZ - 0.33, 0.9);
     yield* this._turn(M, 0, 5);
     // Détacher.
@@ -918,12 +927,12 @@ export class Transport {
     yield* this._walk(M, st.x + side * 0.55, D.corridor - 0.25, 0.8);
     yield* this._turn(M, Math.PI, 5);
     const lane = st.x * 1.06;
-    this._cam([-4.4, 2.4, -11.8], [0, 1.2, -5.0]);
+    this._cam([-4.4, 2.4, HZ(-11.8)], [0, 1.2, HZ(-5.0)]);
     yield* this._all(this._walk(A, lane, D.hingeZ + 1.0, 0.62, { back: true, turn: 0.4 }), this._walk(M, lane + side * 0.6, D.hingeZ + 2.15, 0.62, { turn: 0.5 }));
     // Les postérieurs cherchent le pont : courte pause.
     A.v = 0;
     yield* this._wait(0.35 + Math.random() * 0.45);
-    this._cam([-4.6, 2.2, -12], [0, 1.0, -6.2]);
+    this._cam([-4.6, 2.2, HZ(-12)], [0, 1.0, HZ(-6.2)]);
     yield* this._all(this._walk(A, lane, footZ - 1.4, 0.68, { back: true, turn: 0.4 }), this._walk(M, lane + side * 0.6, footZ - 0.25, 0.68, { turn: 0.5 }));
     yield* this._all(this._stop(A, 0.4), this._stop(M, 0.3));
     // Le meneur se range à gauche de l'épaule pour repartir en main.

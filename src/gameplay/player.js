@@ -160,7 +160,7 @@ export class Player {
 
   get focus() {
     const pos = this.mode === 'ride' ? this.horse.pos : this.mode === 'drive' ? this.vehicle.pos : this.human.pos;
-    return { pos, heading: this.heading, speed: this.speed, mode: this.mode, camDist: this.mode === 'drive' ? this.vehicle.camDist : undefined };
+    return { pos, heading: this.heading, speed: this.speed, mode: this.mode, camDist: this.mode === 'drive' ? this.vehicle.camDist : undefined, camHeight: this.mode === 'drive' ? this.vehicle.camHeight : undefined };
   }
 
   _setupInteractions() {

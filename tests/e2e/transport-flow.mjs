@@ -542,7 +542,9 @@ async function driveRoute(f, to, from = null) {
       const look = at(sCur + Ld);
       const alpha = wrap(Math.atan2(look[0] - t.pos.x, look[1] - t.pos.z) - t.heading);
       const dl = Math.max(3, Math.hypot(look[0] - t.pos.x, look[1] - t.pos.z));
-      const delta = Math.abs(alpha) > 1.3 ? Math.sign(alpha) * 0.66 : Math.atan((2 * 4.2 * Math.sin(alpha)) / dl);
+      // Empattement et avant du camion en service (porteur d'origine ou STX, plus long).
+      const WB = t.sim.spec.zFront - t.sim.spec.zRear;
+      const delta = Math.abs(alpha) > 1.3 ? Math.sign(alpha) * 0.66 : Math.atan((2 * WB * Math.sin(alpha)) / dl);
       const steerIn = Math.max(-1, Math.min(1, -delta / t.sim.steerLimit(Math.abs(t.speed))));
       let vT = 16;
       for (const c of corners) {
@@ -554,7 +556,8 @@ async function driveRoute(f, to, from = null) {
       vT = Math.min(vT, Math.sqrt(2 * 1.2 * Math.max(0, left - 3)));
       if (Math.abs(alpha) > 0.9) vT = Math.min(vT, 2.5);
       const fx = Math.sin(t.heading), fz = Math.cos(t.heading);
-      const nx = t.pos.x + fx * 4.5, nz = t.pos.z + fz * 4.5;
+      const nose = t.L / 2 + 0.25;
+      const nx = t.pos.x + fx * nose, nz = t.pos.z + fz * nose;
       for (const c of g.vehicles) {
         if (c === t || c.proxy) continue;
         if (c.parked) continue;
