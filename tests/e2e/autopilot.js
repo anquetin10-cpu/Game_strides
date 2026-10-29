@@ -295,7 +295,7 @@
       }
       if (A.pickChoice()) return;
       // Épreuve de CSO : présentation (« Entrer en piste ») et bilan (« Continuer » / « Quitter »).
-      const enter = document.querySelector('.overlay [data-id="enter"]') || document.querySelector('.overlay [data-id="cso-done"]');
+      const enter = document.querySelector('.overlay [data-id="enter"]') || document.querySelector('.overlay [data-id="cso-done"]') || document.querySelector('.overlay [data-id="sprint-ok"], .overlay [data-id="gpparis-ok"], .overlay [data-id="travel-ok"]');
       if (enter) return A.tap(enter);
       const id = run.def.id;
       const txt = run.text();
@@ -313,11 +313,20 @@
         A.goTo(A.pos(s.target), 0.5);
         return;
       }
-      if (/^Monte (?!au volant|dans le camion)|pour t’échauffer/.test(txt)) return A.mount();
+      if (/^Monte (?!au volant|dans le camion)|pour t’échauffer|^Selle et monte/.test(txt)) return A.mount();
+      // Grand Prix de Paris : prendre l'autoroute A13 (écran de voyage sans fondu).
+      if (id === 'gpparis' && /bretelle/.test(txt)) {
+        const sf = g.syncFade;
+        g.syncFade = true;
+        if (g.player.mode !== 'drive') A.drive();
+        g.travel.go('paris');
+        g.syncFade = sf;
+        return;
+      }
       if (/^Résultats officiels/.test(txt)) return A.closeCards();
       if (/^Échauffe-toi/.test(txt)) {
         A.mount();
-        for (const o of g.obstacles.ofCourse('warmup')) A.jumpObstacle(o);
+        for (const o of g.obstacles.ofCourse(g.region === 'paris' ? 'paris_warm' : 'warmup')) A.jumpObstacle(o);
         return;
       }
       if (s.kind === 'goto') {
@@ -512,7 +521,7 @@
       const def = STORY.find((d) => d.id === id);
       for (const r of def.requires || []) if (!g.save.data.completed.includes(r)) g.save.data.completed.push(r);
       // Épreuves de haut niveau (1,40 – 1,60 m) : le pilote s'équipe comme un vrai cavalier (selles de saut).
-      if (['csi3', 'gp'].includes(id)) {
+      if (['csi3', 'gp', 'gpparis'].includes(id)) {
         for (const u of ['selle', 'selle_pro']) if (!g.save.data.upgrades.includes(u)) g.save.data.upgrades.push(u);
         g.applyUpgrades(g.mainHorse);
       }

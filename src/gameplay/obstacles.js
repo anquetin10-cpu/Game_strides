@@ -8,6 +8,8 @@ import { pointAlong, polylineLength, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { signTexture } from '../world/textures.js';
 import { CSO_TRACE, csoHeights } from './csoCourse.js';
+import { PARIS_COURSES, PARIS_WARM } from './parisCourse.js';
+import { PARIS } from '../world/sites.js';
 import { planJump, railsAhead, arcY, JUMP, CAUSES } from './jumpModel.js';
 import { applySurfaces } from '../world/surfaces.js';
 import { addCloudShadows } from '../world/sky.js';
@@ -131,7 +133,7 @@ export class Obstacles {
       const fixed = [showJumpGeo(ob.w, ob.h, ob.colors, oxer, ob.spread)];
       for (const hh of [ob.h * 0.62, ob.h * 0.3]) fixed.push(railGeo(ob.w, ob.colors).translate(0, hh, zf));
       // Jardinières au pied des ailes (parcours de concours).
-      if (ob.course === 'cso') fixed.push(planterGeo(ob.w, ob.num));
+      if (ob.course === 'cso' || ob.course === 'paris_gp' || ob.course === 'paris_sprint') fixed.push(planterGeo(ob.w, ob.num));
       g.add(new THREE.Mesh(mergeGeometries(fixed, false), MAT));
       for (const bar of ob.bars) {
         const top = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
@@ -185,6 +187,20 @@ export class Obstacles {
     const W = POLE.warmup;
     this.add({ x: W.x, z: W.z - 9, rot: Math.PI / 2, kind: 'v', h: 1.1, w: 3.4, course: 'warmup' });
     this.add({ x: W.x, z: W.z + 10, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.4, course: 'warmup', colors: COLORS[1] });
+    // Grand Prix de Paris Indoor : Sprint et Grand Prix dans l'arène (un seul des deux tracés en piste à la fois),
+    // lignes de départ et d'arrivée communes, et paddock d'échauffement.
+    for (const c of Object.values(PARIS_COURSES)) {
+      const hs = c.heights(1.45);
+      c.layout.forEach((f, i) => {
+        this.add({ x: f.x, z: f.z, rot: f.rot, kind: f.kind, spread: f.spread, h: hs[i], w: 3.8, num: i + 1, label: f.label, lineS: f.s, course: c.id, colors: COLORS[(i + 2) % COLORS.length] });
+      });
+    }
+    this.showParisCourse('paris_gp');
+    this._timingLine(PARIS_COURSES.paris_gp.start, 'DÉPART');
+    this._timingLine(PARIS_COURSES.paris_gp.finish, 'ARRIVÉE');
+    const PW = PARIS.warmup;
+    this.add({ x: PW.x - 8, z: PW.z, rot: Math.PI / 2, kind: 'v', h: 1.3, w: 3.4, course: PARIS_WARM });
+    this.add({ x: PW.x + 9, z: PW.z, rot: -Math.PI / 2, kind: 'o', h: 1.25, w: 3.4, course: PARIS_WARM, colors: COLORS[1] });
   }
 
   _timingLine(L, label) {
@@ -218,6 +234,15 @@ export class Obstacles {
     sign.rotation.y = L.rot + Math.PI;
     this.group.add(sign);
     this.game.world.culled.push([sign, L.x, L.z, 200]);
+  }
+
+  // Arène de Paris : un seul tracé en piste (Sprint ou Grand Prix), l'autre rangé.
+  showParisCourse(id) {
+    for (const c of Object.keys(PARIS_COURSES)) {
+      const nums = this.list.filter((o) => o.course === c).map((o) => o.num);
+      this.setOff(c, c === id ? [] : nums);
+    }
+    this.parisCourse = id;
   }
 
   ofCourse(id) {
@@ -273,7 +298,7 @@ export class Obstacles {
     const r = (bar || o.bars[o.bars.length - 1]).mesh;
     o.knocked = true;
     // Entraînement : la barre est remontée dès que le cheval s'est éloigné.
-    if (o.course === 'warmup' || o.course === 'home') o.rebuild = this.game.time + 2.5;
+    if (o.course === 'warmup' || o.course === 'home' || o.course === PARIS_WARM) o.rebuild = this.game.time + 2.5;
     if (!r || r.userData.fall) return;
     r.userData.fall = { t: 0, dir };
     this.game.audio?.railFall?.();

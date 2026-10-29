@@ -5,6 +5,26 @@ import { polyDist, rectDist, smoothstep } from '../core/math.js';
 
 export const WORLD = { size: 1200, half: 600, seaLevel: 0 };
 
+// Régions jouables : la carte de Deauville (carré de 1 200 m) et la zone « Paris » du Grand Prix de Paris Indoor, très
+// loin à l'est (voir sites.js : PARIS). Bornes des déplacements (personnages, chevaux, véhicules) selon la région.
+export const PARIS_X = 2000;
+export const regionOf = (x) => (x > PARIS_X ? 'paris' : 'deauville');
+let _parisBounds = null;
+export function setParisBounds(b) {
+  _parisBounds = b;
+}
+export function clampToRegion(p, margin = 6) {
+  if (p.x > PARIS_X && _parisBounds) {
+    const b = _parisBounds;
+    p.x = Math.min(b.x1 - margin, Math.max(b.x0 + margin, p.x));
+    p.z = Math.min(b.z1 - margin, Math.max(b.z0 + margin, p.z));
+    return;
+  }
+  const lim = WORLD.half - margin;
+  p.x = Math.min(lim, Math.max(-lim, p.x));
+  p.z = Math.min(lim, Math.max(-lim, p.z));
+}
+
 // Trait de côte de référence (limite de la plage et des terres : sable, prairies littorales, placement du décor).
 export const shoreZ = (x) => -430 + 12 * Math.sin(x / 95) + 6 * Math.sin(x / 37 + 1.3);
 

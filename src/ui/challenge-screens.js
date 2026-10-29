@@ -4,8 +4,7 @@
 import { h, tap } from './dom.js';
 import { BUILD } from '../config.js';
 import {
-  challengeStore, bestOf, conditionsList, rulesText, resultLine, fmtSeconds, fmtPenalties, fmtHeight, cleanPseudo, shareText, publicUrl, SIGNATURE,
-} from '../gameplay/challenge.js';
+  challengeStore, bestOf, conditionsList, rulesText, resultLine, fmtSeconds, fmtPenalties, fmtHeight, cleanPseudo, shareText, publicUrl, SIGNATURE, fmtHour } from '../gameplay/challenge.js';
 import { drawStridesMark, FONT_DISPLAY, FONT_UI, FONT_MONO } from '../world/textures.js';
 
 export const CARD_W = 1080;
@@ -109,7 +108,7 @@ export function drawResultCard(cv, { cfg, res, pseudo = '', build = BUILD, date 
   if (who) rows.push(['Pseudonyme', who]);
   rows.push(['Cheval', `${res.horse} (fourni, statistiques fixes)`]);
   rows.push(['Temps accordé', `${cfg.timeAllowed} s · temps réalisé ${fmtSeconds(res.time)}`]);
-  rows.push(['Météo', `${cfg.weather.label.toLowerCase()}, ${cfg.weather.hour} h, sol sec`]);
+  rows.push(['Météo', `${cfg.weather.label.toLowerCase()}, ${fmtHour(cfg.weather.hour)}, sol sec`]);
   let ry = Math.max(y, 884) + 62;
   for (const [k, v] of rows.slice(0, 4)) {
     ctx.fillStyle = MUTED;

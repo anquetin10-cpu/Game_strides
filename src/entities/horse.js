@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { createHorseMesh, animateHorse, gaitIndex, GAIT_EDGES, setHorseLod, setHorseTack, setHorseWetness } from './horseModel.js';
 import { HORSE } from '../config.js';
 import { angleDiff, clamp, damp, lerp, smoothstep, wrapAngle } from '../core/math.js';
-import { WORLD } from '../world/layout.js';
+import { clampToRegion } from '../world/layout.js';
 import { HorseCondition, SIM } from '../gameplay/condition.js';
 import { speedFactor } from '../gameplay/jumpModel.js';
 import { boxCare } from '../gameplay/stabling.js';
@@ -297,9 +297,7 @@ export class Horse {
     // Déplacement.
     this.pos.x += Math.sin(this.heading) * this.speed * dt;
     this.pos.z += Math.cos(this.heading) * this.speed * dt;
-    const lim = WORLD.half - 6;
-    this.pos.x = clamp(this.pos.x, -lim, lim);
-    this.pos.z = clamp(this.pos.z, -lim, lim);
+    clampToRegion(this.pos, 6);
     // Collision : centre un peu vers l'avant (le cheval est long). Un cheval immobilisé (box, stalle, attente) est placé
     // par la mission : pas de résolution, elle le pousserait hors du bâtiment où il se trouve.
     const cx = this.pos.x + fw.x * 0.45, cz = this.pos.z + fw.z * 0.45;

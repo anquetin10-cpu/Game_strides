@@ -5,7 +5,7 @@ import { h, tap } from './dom.js';
 import { icon } from './icons.js';
 import { formatMoney, formatTime } from '../core/math.js';
 import { requestCard } from './requests.js';
-import { bestOf, challengeStore, resultLine, fmtHeight } from '../gameplay/challenge.js';
+import { bestOf, challengeStore, resultLine, fmtHeight, fmtHour } from '../gameplay/challenge.js';
 
 function head(phone, title, sub) {
   const back = h('button.back', { html: icon('back'), 'aria-label': 'Retour' });
@@ -63,8 +63,8 @@ function challengeCard(phone, cfg) {
   return h(`div.mcard${running ? '.active' : ''}`, { 'data-challenge': cfg.id },
     h('div.top', {}, h('span.chip.story', { text: `Défi · v${cfg.version}` }), h('span.ch-best', { text: best ? `Record : ${resultLine(best)}` : 'Pas encore de record' })),
     h('div.title', { text: cfg.name }),
-    h('div.meta', { text: `${cfg.obstacles.length} obstacles · ${fmtHeight(cfg.height)} · ${cfg.horse.name} fourni · ${cfg.weather.label.toLowerCase()}, ${cfg.weather.hour} h · ${cfg.timeAllowed} s accordées` }),
-    h('div.meta', { text: last ? `Dernier résultat : ${resultLine(last)} · ${rec.attempts} tentative${rec.attempts > 1 ? 's' : ''}` : 'Aucune tentative pour l’instant. Aussi accessible au panneau d’entrée du Pôle.' }),
+    h('div.meta', { text: `${cfg.place} · ${cfg.obstacles.length} obstacles · ${fmtHeight(cfg.height)} · ${cfg.horse.name} fourni · ${cfg.weather.label.toLowerCase()}, ${fmtHour(cfg.weather.hour)} · ${cfg.timeAllowed} s accordées` }),
+    h('div.meta', { text: last ? `Dernier résultat : ${resultLine(last)} · ${rec.attempts} tentative${rec.attempts > 1 ? 's' : ''}` : `Aucune tentative pour l’instant. ${cfg.where || 'Aussi accessible au panneau d’entrée du Pôle.'}` }),
     acts.childNodes.length ? acts : null);
 }
 

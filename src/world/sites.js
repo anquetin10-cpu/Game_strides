@@ -64,6 +64,31 @@ export const POLE = {
   entrance: { x: 330, z: -182 },
 };
 
+// Grand Prix de Paris Indoor : zone « Paris », hors de la carte de Deauville (à 3,4 km à l'est, jamais visible depuis
+// la Normandie : au-delà de la profondeur de vue). On y arrive en camion par l'autoroute (écran de voyage).
+// Coordonnées monde. Arène couverte : piste de 80 × 40 m, tribunes sur trois côtés, porte des cavaliers à l'ouest
+// (côté paddock) ; paddock d'échauffement en plein air sous projecteurs, écuries provisoires sous tente, parking des
+// camions et retour vers l'autoroute à l'ouest.
+const PX = 4000, PZ = 0;
+export const PARIS = {
+  x: PX,
+  z: PZ,
+  y: 12, // niveau du sol (plat), recalé au chargement au-dessus du bord du terrain de Deauville (voir terrain.js)
+  bounds: { x0: PX - 215, x1: PX + 72, z0: PZ - 92, z1: PZ + 92 },
+  arena: { x: PX, z: PZ, w: 80, d: 40 },
+  hall: { x: PX, z: PZ, w: 112, d: 76, h: 21 },
+  // Porte des cavaliers dans le mur ouest (vers le paddock) et entrée de piste dans l'arène.
+  door: { x: PX - 56, z: PZ + 10, w: 6 },
+  gate: { x: PX - 35, z: PZ + 10, rot: Math.PI / 2 },
+  warmup: { x: PX - 90, z: PZ + 4, w: 40, d: 26 },
+  stables: { x: PX - 92, z: PZ - 44, w: 16, d: 48 },
+  park: { x: PX - 152, z: PZ + 6, r: 14, name: 'le parking des camions du Grand Prix de Paris' },
+  // Bretelle d'autoroute (retour vers Deauville), au bout de la voie d'accès.
+  exit: { x: PX - 198, z: PZ + 6 },
+  secretariat: { x: PX - 128, z: PZ - 12 },
+};
+export const inParis = (x) => x > PX - 1000;
+
 export const HIPPO_SITE = {
   stand: { x: 330, z: 147, w: 84, d: 14 },
   parking: { x: 330, z: 128 },

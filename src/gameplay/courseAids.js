@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { planJump, railsAhead, JUMP } from './jumpModel.js';
 import { CSO_LINE } from './obstacles.js';
+import { PARIS_COURSES } from './parisCourse.js';
 
 // Marquage du tracé : bords blancs en tirets et chevrons verts dans le sens de la marche, bien visibles sur le sable.
 const LINE_MAT = new THREE.MeshBasicMaterial({ color: '#fbfaf5', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide });
@@ -40,8 +41,10 @@ export class CourseAids {
     game.scene.add(this.group);
     // Tracé : bords en tirets posés sur le sol tout le long de la ligne ; seul le tronçon vers l'obstacle suivant est
     // affiché.
-    this.line = courseId === 'cso' ? this._dashes(CSO_LINE) : null;
-    this.chev = courseId === 'cso' ? this._chevrons(CSO_LINE) : null;
+    // Ligne du cavalier : parcours du Pôle ou de l'arène de Paris.
+    this.lineData = courseId === 'cso' ? CSO_LINE : PARIS_COURSES[courseId]?.line || null;
+    this.line = this.lineData ? this._dashes(this.lineData) : null;
+    this.chev = this.lineData ? this._chevrons(this.lineData) : null;
     if (this.line) this.group.add(this.line.mesh, this.chev.mesh);
     this._lineI = 0;
     this.good = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), GOOD_MAT);
@@ -132,7 +135,7 @@ export class CourseAids {
         let s0 = prevS;
         if (horse) {
           let bd = 1e9;
-          for (const p of CSO_LINE) {
+          for (const p of this.lineData) {
             if (p.s < prevS - 2 || p.s > s1) continue;
             const d = (p.x - horse.pos.x) ** 2 + (p.z - horse.pos.z) ** 2;
             if (d < bd) { bd = d; s0 = p.s; }

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { TruckSim, VEHICLE_SPECS } from './truckPhysics.js';
 import { carGeo, carMaterial, glassMaterial, carPillars, CARS, tractorGeo, tractorWheelGeo, TRACTOR_WHEELS } from '../world/props.js';
 import { clamp } from '../core/math.js';
-import { WORLD, nearestRoad } from '../world/layout.js';
+import { clampToRegion, nearestRoad } from '../world/layout.js';
 
 // Encombrement du tracteur (même interface que CARS pour les collisions et les points d'accès).
 const TRACTOR = { L: 5.6, W: 2.4, wb: 2.5, r: 0.82, zc: 0.6 };
@@ -252,9 +252,7 @@ export class Vehicle {
     s.step(dt, driving ? ctrl : { throttle: 0, steer: 0, park: !this.driver });
     this._wasMoving = moving;
     if (driving && s.shifted && g.audio?.gearShift) g.audio.gearShift(s.shifted === 2 ? 2 : 0);
-    const lim = WORLD.half - 8;
-    this.pos.x = clamp(this.pos.x, -lim, lim);
-    this.pos.z = clamp(this.pos.z, -lim, lim);
+    clampToRegion(this.pos, 8);
     // Collisions : cercles le long de l'axe contre le décor, boîtes des autres véhicules.
     const S = this.spec;
     let bump = 0;

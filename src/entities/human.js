@@ -6,7 +6,7 @@ import { clamp, dampAngle, wrapAngle } from '../core/math.js';
 import { box, partsToGeo } from '../world/builders.js';
 import { paint } from '../world/shapes.js';
 import { SKIN_MAT } from './rig.js';
-import { WORLD } from '../world/layout.js';
+import { clampToRegion } from '../world/layout.js';
 
 const ITEM_GEOS = {};
 function itemGeo(kind) {
@@ -161,9 +161,7 @@ export class Human {
     const prevX = this.pos.x, prevZ = this.pos.z;
     this.pos.x += mx;
     this.pos.z += mz;
-    const lim = WORLD.half - 6;
-    this.pos.x = clamp(this.pos.x, -lim, lim);
-    this.pos.z = clamp(this.pos.z, -lim, lim);
+    clampToRegion(this.pos, 6);
     g.colliders.resolve(this.pos, this.radius, g.terrain.getHeight(this.pos.x, this.pos.z));
     // Eau trop profonde : seul un pas qui l'approfondit est refusé (marée montante : on peut toujours regagner la plage).
     const deep = g.terrain.waterDepth(this.pos.x, this.pos.z);

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { buildTruckModel, TRUCK_DIM, LIGHT } from './truckModel.js';
 import { TruckSim } from './truckPhysics.js';
 import { clamp, smoothstep } from '../core/math.js';
-import { WORLD, nearestRoad } from '../world/layout.js';
+import { clampToRegion, nearestRoad } from '../world/layout.js';
 
 const IS_TOUCH = typeof matchMedia !== 'undefined' && (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);
 const D = TRUCK_DIM;
@@ -512,9 +512,7 @@ export class Truck {
     this.lateral = Math.abs(s.ay);
     this.yawRate = -s.r;
     // Limites du monde.
-    const lim = WORLD.half - 8;
-    this.pos.x = clamp(this.pos.x, -lim, lim);
-    this.pos.z = clamp(this.pos.z, -lim, lim);
+    clampToRegion(this.pos, 8);
     // Collisions avec le décor (cercles le long de l'axe) et les autres véhicules.
     let bump = 0;
     if (Math.abs(s.vx) > 0.01) {

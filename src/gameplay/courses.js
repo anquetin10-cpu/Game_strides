@@ -66,6 +66,8 @@ export function courseSteps(game, run, S, opts) {
   // Hauteur de l'épreuve : celle donnée, sinon la plus fréquente du parcours.
   const classH = opts.height ?? (heights ? [...heights].sort((a, b) => heights.filter((x) => x === b).length - heights.filter((x) => x === a).length)[0] : null);
   const introLines = () => (typeof intro === 'function' ? intro() : intro) || [];
+  // Longueur mesurée au tracé (Pôle par défaut, sinon celle du parcours donné).
+  const length = opts.length ?? COURSE_LENGTH.cso;
 
   // Composition du parcours (lue sur la piste) : « 8 obstacles dont un double (5A – 5B) · 375 m ».
   const parcoursText = () => {
@@ -73,7 +75,7 @@ export function courseSteps(game, run, S, opts) {
     const a = els.find((o) => /A$/.test(o.label || ''));
     const doubles = els.filter((o) => /A$/.test(o.label || '')).length;
     const n = els.length - doubles;
-    return `${n} obstacles${a ? ` dont un double (${a.label} – ${a.label.replace(/A$/, 'B')})` : ''} · ${COURSE_LENGTH.cso} m`;
+    return `${n} obstacles${a ? ` dont un double (${a.label} – ${a.label.replace(/A$/, 'B')})` : ''} · ${length} m`;
   };
 
   // ---------- Présentation et plan ----------
@@ -81,14 +83,14 @@ export function courseSteps(game, run, S, opts) {
     game.screens.card({
       kicker: 'Plan du parcours',
       title,
-      html: `${coursePlanSvg({ heights: heights || null })}<p class="plan-legend">${coursePlanLegend()} · ${COURSE_LENGTH.cso} m · temps accordé ${timeAllowed} s</p>`,
+      html: `${coursePlanSvg({ heights: heights || null, trace: opts.trace, venue: opts.venue })}<p class="plan-legend">${coursePlanLegend(opts.trace)} · ${length} m · temps accordé ${timeAllowed} s</p>`,
       buttons: [{ label: 'Retour', id: 'plan-back', primary: true, run: back }],
     });
   };
   const showPresentation = (done) => {
     const h = horse();
     const rows = [
-      ['Épreuve', `${opts.className ? `${opts.className} · ` : ''}barème A au chrono`],
+      ['Épreuve', `${opts.className ? `${opts.className} · ` : ''}${opts.table || 'barème A au chrono'}`],
       ['Hauteur', classH ? `${dec(classH, 2)} m · difficulté ${difficultyOf(classH).toLowerCase()}` : '—'],
       ['Cheval engagé', h ? h.name : '—'],
       ['Temps accordé', `${timeAllowed} s`],
@@ -98,7 +100,7 @@ export function courseSteps(game, run, S, opts) {
     game.screens.card({
       kicker: `STRIDES · ${opts.place || 'Pôle International'}`,
       title,
-      html: `<div class="cso-pres">${rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join('')}</div>${jury ? `<p class="cso-jury">${jury}</p>` : ''}<p class="cso-rules">Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.</p>`,
+      html: `<div class="cso-pres">${rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join('')}</div>${jury ? `<p class="cso-jury">${jury}</p>` : ''}<p class="cso-rules">${opts.rulesText || 'Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.'}</p>`,
       buttons: [
         { label: 'Voir le plan', id: 'plan', run: () => showPlan(() => showPresentation(done)) },
         { label: 'Entrer en piste', primary: true, id: 'enter', run: done },
@@ -417,7 +419,7 @@ export function courseSteps(game, run, S, opts) {
   };
 
   const steps = [];
-  if (cso) steps.push(S.goto(opts.gate ?? CSO_GATE, 'Entre en piste : rejoins l’entrée de la carrière', { r: 9, mode: 'ride' }));
+  if (cso) steps.push(S.goto(opts.gate ?? CSO_GATE, opts.gateText || 'Entre en piste : rejoins l’entrée de la carrière', { r: 9, mode: 'ride' }));
   else steps.push(S.goto(start, 'Rejoins le départ du cross', { r: 7, mode: 'ride' }));
   if (!cso && intro) steps.push(S.dialog(intro));
   if (maxH) steps.push(S.custom({

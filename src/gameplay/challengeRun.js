@@ -3,7 +3,10 @@
 // téléphone, dialogue, écran de choix), résultat et record, puis restauration du monde du joueur (heure, météo,
 // cheval actif, position, mode). Le panneau d'entrée du Pôle donne accès au défi depuis le monde.
 import * as THREE from 'three';
-import { CURRENT_CHALLENGE, makeResult, recordResult, challengeStore, newAttemptId } from './challenge.js';
+import { CURRENT_CHALLENGE, CURRENT_CHALLENGES, CHALLENGES, makeResult, recordResult, challengeStore, newAttemptId } from './challenge.js';
+import { PARIS_COURSES } from './parisCourse.js';
+import { PARIS } from '../world/sites.js';
+import { regionOf } from '../world/layout.js';
 import { courseSteps } from './courses.js';
 import { CSO_START, CSO_FINISH } from './obstacles.js';
 import { POLE } from '../world/sites.js';
@@ -16,6 +19,13 @@ import { ChallengeUI } from '../ui/challenge-screens.js';
 export const CHALLENGE_SIGN = { x: POLE.entrance.x + 11, z: POLE.entrance.z + 2.5, rot: 0 };
 
 const copy = (o) => (o == null ? o : JSON.parse(JSON.stringify(o)));
+
+// Lieu d'un défi : lignes de départ et d'arrivée, entrée de piste, tracé (plan, longueur).
+export function venueOf(cfg) {
+  const pc = PARIS_COURSES[cfg.courseId];
+  if (pc) return { start: pc.start, finish: pc.finish, gate: PARIS.gate, trace: pc.trace, length: pc.length, venue: 'paris', paris: true };
+  return { start: CSO_START, finish: CSO_FINISH, gate: CSO_START, trace: undefined, length: undefined, venue: 'pole', paris: false };
+}
 
 export class Challenges {
   constructor(game) {
@@ -30,12 +40,12 @@ export class Challenges {
     game.bus.on('mission:complete', ({ run, result }) => {
       const res = run.data?.challengeResult;
       if (!run.def.challenge || !res) return;
-      result.custom = (close) => this.ui.result(this.cfg, res, run.data.challengeRecord, close);
+      result.custom = (close) => this.ui.result(CHALLENGES[run.def.challenge] || this.cfg, res, run.data.challengeRecord, close);
     });
   }
 
   list() {
-    return [this.cfg];
+    return CURRENT_CHALLENGES;
   }
 
   // Page rechargée pendant un défi : le monde du joueur (heure, position, état du cheval) est rétabli.
@@ -120,6 +130,7 @@ export class Challenges {
     const attempt = newAttemptId(cfg);
     // Deuxième activité : un défi lancé après au moins une mission terminée (événement unique par partie).
     if (d.completed.length || d.stats.jobs) g.metrics.track('second_activity_started', { course: cfg.course });
+    const V = venueOf(cfg);
     const def = {
       id: cfg.id,
       challenge: cfg.id,
@@ -128,7 +139,7 @@ export class Challenges {
       title: cfg.name,
       desc: `${cfg.obstacles.length} obstacles à ${cfg.height} m, conditions fixes.`,
       client: null,
-      place: CSO_START,
+      place: V.start,
       placeName: cfg.place,
       pay: 0,
       xp: 0,
@@ -137,7 +148,7 @@ export class Challenges {
       setup: (game, run) => this._enter(cfg, run, attempt),
       steps: (game, run, S) => this._steps(cfg, run, S),
     };
-    g.missions.start({ id: `challenge:${cfg.id}`, def, story: false, vertical: 'EVENEMENTS', category: 'Défi', title: cfg.name, pay: 0, xp: 0, place: CSO_START, placeName: cfg.place });
+    g.missions.start({ id: `challenge:${cfg.id}`, def, story: false, vertical: 'EVENEMENTS', category: 'Défi', title: cfg.name, pay: 0, xp: 0, place: V.start, placeName: cfg.place });
     g.hud.big(cfg.name.toUpperCase(), `Défi rejouable · ${cfg.id}`, 2400);
     return true;
   }
@@ -152,15 +163,20 @@ export class Challenges {
 
   _steps(cfg, run, S) {
     const g = this.game;
+    const V = venueOf(cfg);
     const steps = courseSteps(g, run, S, {
       courseId: cfg.courseId,
-      start: CSO_START,
-      finish: CSO_FINISH,
+      start: V.start,
+      finish: V.finish,
+      length: V.length,
+      trace: V.trace,
+      venue: V.venue,
+      place: cfg.place,
       timeAllowed: cfg.timeAllowed,
       heights: cfg.obstacles.map(() => cfg.height),
       maxRefusals: cfg.rules.refusalsToEliminate,
       // Le défi a son propre écran de règles et de résultat : on part directement de la ligne de départ.
-      gate: CSO_START,
+      gate: V.start,
       present: false,
       title: cfg.name,
       jumpAid: cfg.jumpAid !== false,
@@ -200,7 +216,10 @@ export class Challenges {
     g._storePositions();
     const main = g.mainHorse;
     const all = g.obstacles.list.filter((o) => o.course === cfg.courseId).sort((a, b) => a.num - b.num);
+    const V = venueOf(cfg);
     const pre = {
+      region: g.region,
+      parisCourse: g.obstacles.parisCourse,
       mode: p.mode,
       vehicle: p.vehicle,
       human: { x: p.human.pos.x, z: p.human.pos.z, heading: p.human.heading },
@@ -228,17 +247,23 @@ export class Challenges {
       main.speed = 0;
       main.control.mag = 0;
     }
+    // Arène de Paris : on y est transporté directement (région, tracé en piste).
+    if (V.paris) {
+      g.setRegion('paris');
+      g.obstacles.showParisCourse(cfg.courseId);
+    }
     // Cheval fourni : statistiques de la version, sans équipement ni effet de la condition physique.
     // Derrière la ligne de départ, dans l'axe du premier obstacle.
-    const sx = CSO_START.x - Math.sin(CSO_START.rot) * 2.5, sz = CSO_START.z - Math.cos(CSO_START.rot) * 2.5;
-    const horse = g.spawnHorse({ ...cfg.horse, socks: [...cfg.horse.socks] }, sx, sz, CSO_START.rot, { player: true });
+    const S0 = V.start;
+    const sx = S0.x - Math.sin(S0.rot) * 2.5, sz = S0.z - Math.cos(S0.rot) * 2.5;
+    const horse = g.spawnHorse({ ...cfg.horse, socks: [...cfg.horse.socks] }, sx, sz, S0.rot, { player: true });
     horse.visibleDist = 600;
     horse.mods = { speed: 0, jump: 0, stamina: 0, clearance: 0 };
     Object.defineProperties(horse.cond, { speedMul: { get: () => 1 }, jumpMul: { get: () => 1 } });
     p.setHorse(horse);
     p.human.setPosition(sx + 1, sz + 1);
     p.mount();
-    p.teleport(sx, sz, CSO_START.rot);
+    p.teleport(sx, sz, S0.rot);
     horse.stamina = horse.maxStamina;
     horse.exhausted = false;
     // Parcours : obstacles retenus, hauteur unique, barres en place.
@@ -326,6 +351,8 @@ export class Challenges {
         Object.assign(main.cond, pre.main.cond);
       }
     }
+    g.setRegion(regionOf(pre.human.x));
+    if (pre.parisCourse) g.obstacles.showParisCourse(pre.parisCourse);
     p.human.setPosition(pre.human.x, pre.human.z, pre.human.heading);
     if (pre.mode === 'ride' && main && !main.hiddenInTruck) p.mount();
     else if (pre.mode === 'drive') p.enterVehicle(pre.vehicle || p.truck);

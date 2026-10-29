@@ -9,7 +9,9 @@ import { Input } from './core/input.js';
 import { clamp, formatMoney, mulberry32 } from './core/math.js';
 import { World } from './world/world.js';
 import { Colliders } from './world/colliders.js';
-import { POI, ZONES, shoreZ, forestDensity, nearestRoad, zoneDist } from './world/layout.js';
+import { POI, ZONES, shoreZ, forestDensity, nearestRoad, zoneDist, regionOf } from './world/layout.js';
+import { PARIS } from './world/sites.js';
+import { Travel, A13 } from './gameplay/travel.js';
 import { HOME, POLE, TOWN } from './world/sites.js';
 import { Horse } from './entities/horse.js';
 import { hoofWorldPosition } from './entities/horseModel.js';
@@ -145,6 +147,8 @@ export class Game {
     this.birds = new Birds(this.scene);
     this.hoofPrints = new HoofPrints(this.scene, this.terrain);
     this.boats = new Boats(this.scene);
+    this.setRegion('deauville');
+    this.travel = new Travel(this);
     this.rainFx = new Rain(this.scene);
     // Météo lue par les entités (robe mouillée du cheval) : intensité de pluie et humidité des surfaces.
     this.weather = { rain: 0, wetness: 0 };
@@ -697,6 +701,7 @@ export class Game {
   // prev : étiquette affichée ; elle garde une marge de 8 m avant de céder la place (pas de clignotement en longeant
   // une limite de zone).
   zoneName(x, z, prev = null) {
+    if (x > PARIS.x - 1000) return this.inParisHall({ x, z }) ? 'Grand Prix de Paris Indoor' : 'Paris';
     const keep = (name) => (name === prev ? 8 : 0);
     const named = [
       ['town', 'Deauville City'], ['pole', 'Pôle International'], ['hippo', 'Hippodrome de la Touques'], ['home', 'Écurie du Val'],
@@ -847,6 +852,29 @@ export class Game {
     this.save.data.fuel = { truck: Math.round(this.truck.sim.fuelL * 10) / 10 };
   }
 
+  // Région affichée : la carte de Deauville ou la zone « Paris » (hors carte). Les grands éléments de l'autre région
+  // (terrain, mer, herbe, oiseaux, bateaux) sont masqués ; les tuiles statiques le sont déjà par la distance.
+  setRegion(r) {
+    if (r === this.region) return;
+    this.region = r;
+    this.world.region = r;
+    const dv = r !== 'paris';
+    this.world.terrainMesh.visible = dv;
+    if (this.world.water.sea) this.world.water.sea.visible = dv;
+    if (this.world.water.pond) this.world.water.pond.visible = dv;
+    for (const m of this.grass.layers || []) m.visible = dv;
+    if (this.birds?.mesh) this.birds.mesh.visible = dv;
+    if (this.boats?.mesh) this.boats.mesh.visible = dv;
+    if (this.world.paris) this.world.paris.group.visible = !dv;
+    this.hud?.minimap?.setRegion?.(r);
+    this.bus.emit('region', r);
+  }
+
+  // Sous le toit de la salle du Grand Prix de Paris (pas de pluie, éclairage de salle).
+  inParisHall(p = this.player.focus.pos) {
+    return this.region === 'paris' && Math.abs(p.x - PARIS.hall.x) < PARIS.hall.w / 2 && Math.abs(p.z - PARIS.hall.z) < PARIS.hall.d / 2;
+  }
+
   placeFromSave() {
     const pos = this.save.data.pos;
     // Carburant du camion (nouvelle partie : réservoir aux trois quarts).
@@ -867,6 +895,8 @@ export class Game {
       if (pos.horse) this.mainHorse.setPosition(pos.horse.x, pos.horse.z, pos.horse.heading);
       // Cheval laissé au box de l'Écurie du Val.
       if (this.save.data.horseInBox && this.save.data.horseInBox === this.mainHorse.id) this.stabling?.putIn(this.mainHorse, true);
+      // Partie sauvegardée à Paris (Grand Prix de Paris Indoor) : on y reprend.
+      this.setRegion(regionOf(pos.x));
     } else {
       this.player.human.setPosition(HOME.spawn.x, HOME.spawn.z, HOME.spawn.rot);
       this.mainHorse.setPosition(HOME.horse.x, HOME.horse.z, HOME.horse.rot);
@@ -1238,6 +1268,7 @@ export class Game {
     this.shops.update();
     this.interact.update();
     this.missions.update(sdt);
+    this.travel.update();
     this.collectibles.update(dt);
     this.gps.update(dt);
     this.grass.update(dt, this.player.focus.pos);
@@ -1254,12 +1285,13 @@ export class Game {
     this.updateTide(dt);
     this.world.water.update(this.time, this.sky);
     this.world.update(dt, this.camera, this.sky, this.player.focus.pos);
-    this.birds.update(dt, this.sky.nightFactor);
+    if (this.region === 'paris') this.world.paris.update(dt, this);
+    else this.birds.update(dt, this.sky.nightFactor);
     this.hoofPrints.update(dt);
     this.boats.update(dt);
     // Pluie (traînées autour de la caméra, bruit de pluie).
     // Dans un commerce : pas de gouttes autour du personnage, pluie seulement entendue (atténuée) à travers les vitres.
-    this.rainFx.update(dt, this.camera, this.indoor ? 0 : this.sky.rain, (1 - this.sky.nightFactor) * 0.9 + 0.1, this.sky.windVec);
+    this.rainFx.update(dt, this.camera, this.indoor || this.inParisHall() ? 0 : this.sky.rain, (1 - this.sky.nightFactor) * 0.9 + 0.1, this.sky.windVec);
     this.weather.rain = this.sky.rain;
     this.weather.wetness = this.sky.wet;
     this.audio.setRain?.(this.sky.rain * (this.indoor ? 0.25 : 1));

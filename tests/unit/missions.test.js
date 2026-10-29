@@ -52,9 +52,11 @@ describe('données', () => {
 });
 
 describe('histoire', () => {
-  it('chaîne les 15 missions avec des prérequis valides (chapitre 1 : M1 à M3 après les premiers pas)', () => {
+  it('chaîne les 16 missions avec des prérequis valides (chapitre 1 : M1 à M3 après les premiers pas, finale à Paris)', () => {
     const ids = STORY.map((s) => s.id);
-    expect(ids.length).toBe(15);
+    expect(ids.length).toBe(16);
+    expect(ids.at(-1)).toBe('gpparis');
+    expect(STORY.at(-1).requires).toEqual(['gp']);
     expect(ids.slice(0, 5)).toEqual(['tuto', 'm1', 'm2', 'm3', 'groom']);
     expect(STORY.find((s) => s.id === 'groom').requires).toEqual(['m3']);
     for (const s of STORY) for (const r of s.requires || []) expect(ids.indexOf(r)).toBeLessThan(ids.indexOf(s.id));

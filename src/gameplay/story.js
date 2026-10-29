@@ -12,6 +12,7 @@ import { HORSES } from './data.js';
 import { formatMoney, dec } from '../core/math.js';
 import { PARKS, loadStep, unloadStep, driveStep } from './trip.js';
 import { CHAPTER1_MISSIONS } from './story2.js';
+import { PARIS_MISSION } from './parisGP.js';
 
 const C = {
   camille: { name: 'Camille Martin', initials: 'CM', rating: 4.9, verified: true },
@@ -696,6 +697,9 @@ export const STORY = [
       setTimeout(() => game.screens.ending(() => {}), 1800);
     },
   },
+
+  // Finale : Grand Prix de Paris Indoor (voir parisGP.js).
+  PARIS_MISSION,
 ];
 
 export { HORSES, formatMoney, HIPPO, HIPPO_SITE };

@@ -3,8 +3,8 @@ import { addCloudShadows } from './sky.js';
 import { TIDE_UNIFORMS } from './weather.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
-import { WORLD, ZONES, ROADS, POND, SIGN, BEACH, shoreZ, beachWig, beachHeight, isCliffRegion, zoneDist } from './layout.js';
-import { HOME, POLE, TOWN } from './sites.js';
+import { WORLD, ZONES, ROADS, POND, SIGN, BEACH, shoreZ, beachWig, beachHeight, isCliffRegion, zoneDist, PARIS_X, setParisBounds } from './layout.js';
+import { HOME, POLE, TOWN, PARIS } from './sites.js';
 import { paveTexture } from './terrainTexture.js';
 
 // Carrières en sable (centre x, z ; demi-largeur, demi-profondeur) : sol hersé et piste piétinée le long de la lice.
@@ -150,10 +150,17 @@ export class Terrain {
     }
     const rim = analyticHeight(POND.x + POND.r + 6, POND.z);
     POND.level = Math.min(rim, analyticHeight(POND.x - POND.r - 6, POND.z), analyticHeight(POND.x, POND.z + POND.r + 6)) - 0.45;
+    // Zone « Paris » : sol plat, au-dessus du bord est du terrain (les shaders des bâtiments lisent la hauteur du sol
+    // dans la carte des hauteurs, bloquée au bord : au-dessous, les pieds de murs s'assombriraient).
+    let edge = -Infinity;
+    for (let z = PARIS.bounds.z0 - 20; z <= PARIS.bounds.z1 + 20; z += this.cell) edge = Math.max(edge, this.getHeight(this.half, z));
+    PARIS.y = Math.max(PARIS.y, Math.ceil(edge + 1.5));
+    setParisBounds(PARIS.bounds);
   }
 
   // Exact height of the rendered triangle mesh at (x, z).
   getHeight(x, z) {
+    if (x > PARIS_X) return PARIS.y;
     const fx = clamp((x + this.half) / this.cell, 0, this.seg - 1e-4);
     const fz = clamp((z + this.half) / this.cell, 0, this.seg - 1e-4);
     const i = Math.floor(fx);

@@ -34,7 +34,7 @@ export const CLOUD_UNIFORMS = {
   // Lampadaire le plus proche du joueur : lanterne (xyz) et intensité (w, nulle le jour), voir World.update.
   lpPos: { value: new THREE.Vector4(0, -1e3, 0, 0) },
   // Carrières éclairées par projecteurs (x, z, demi-longueur, demi-largeur) et intensité (nulle le jour).
-  flRect: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
+  flRect: { value: Array.from({ length: 6 }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
   flK: { value: 0 },
 };
 export const CLOUD_SHADOW_GLSL = /* glsl */ `
@@ -48,13 +48,13 @@ float csNoise( vec2 p ) {
   vec2 u = f * f * ( 3.0 - 2.0 * f );
   return mix( mix( csHash( i ), csHash( i + vec2( 1.0, 0.0 ) ), u.x ), mix( csHash( i + vec2( 0.0, 1.0 ) ), csHash( i + vec2( 1.0, 1.0 ) ), u.x ), u.y );
 }
-uniform vec4 flRect[4];
+uniform vec4 flRect[6];
 uniform float flK;
 // Projecteurs : éclairement quasi uniforme sur la carrière, qui décroît sur ~10 m au-delà de la lice.
 float csFlood( vec3 wp ) {
   if ( flK <= 0.0 ) return 0.0;
   float k = 0.0;
-  for ( int i = 0; i < 4; i++ ) {
+  for ( int i = 0; i < 6; i++ ) {
     vec2 q = abs( wp.xz - flRect[i].xy ) - flRect[i].zw;
     k = max( k, 1.0 - smoothstep( -3.0, 11.0, max( q.x, q.y ) ) );
   }

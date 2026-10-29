@@ -1,7 +1,7 @@
 // Carte stylisée monochrome (minimap tournante + carte plein écran).
 import { WORLD, ROADS, PATHS, XC_PATH, POND, HIPPO, FORESTS, BEACH, shoreZ, beachWig, tideLineZ, isCliffRegion } from '../world/layout.js';
 import { TIDE_EXTREMES } from '../world/weather.js';
-import { HOME, HARAS, POLE, DUNES, TOWN } from '../world/sites.js';
+import { HOME, HARAS, POLE, DUNES, TOWN, PARIS } from '../world/sites.js';
 import { getFields } from '../world/fields.js';
 import { drawLogo, LOGO_MARK } from './logo.js';
 
@@ -9,6 +9,52 @@ const SIZE = 1024;
 const S = SIZE / WORLD.size;
 const px = (x) => (x + WORLD.half) * S;
 const pz = (z) => (z + WORLD.half) * S;
+
+// Zone « Paris » (Grand Prix de Paris Indoor) : plan propre, à la même échelle que la carte de Deauville.
+const PB = PARIS.bounds;
+export const PARIS_MAP = { x0: PB.x0 - 140, z0: (PB.z0 + PB.z1) / 2 - (PB.x1 - PB.x0 + 280) / 2, size: PB.x1 - PB.x0 + 280 };
+export function buildParisImage() {
+  const M = PARIS_MAP;
+  const n = 512;
+  const s = n / M.size;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = n;
+  const ctx = cv.getContext('2d');
+  const X = (x) => (x - M.x0) * s, Z = (z) => (z - M.z0) * s;
+  const rect = (r, fill) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(X(r.x - r.w / 2), Z(r.z - r.d / 2), r.w * s, r.d * s);
+  };
+  ctx.fillStyle = '#23262b';
+  ctx.fillRect(0, 0, n, n);
+  // Ville autour (îlots).
+  ctx.fillStyle = '#2d3036';
+  for (let i = 0; i < 70; i++) {
+    const a = (i / 70) * Math.PI * 2;
+    const r = 250 + (i % 3) * 30;
+    ctx.fillRect(X(PARIS.x - 70 + Math.cos(a) * r * 1.15) - 9, Z(PARIS.z + Math.sin(a) * r) - 6, 18, 12);
+  }
+  ctx.fillStyle = '#34373c';
+  ctx.fillRect(X(PB.x0), Z(PB.z0), (PB.x1 - PB.x0) * s, (PB.z1 - PB.z0) * s);
+  ctx.strokeStyle = '#5b5c5e';
+  ctx.lineWidth = 9 * s;
+  ctx.beginPath();
+  ctx.moveTo(X(M.x0), Z(PARIS.exit.z));
+  ctx.lineTo(X(PARIS.park.x), Z(PARIS.exit.z));
+  ctx.stroke();
+  rect({ x: PARIS.park.x, z: PARIS.park.z, w: 34, d: 30 }, '#3c3e42');
+  rect(PARIS.hall, '#15171a');
+  rect(PARIS.arena, '#a8916c');
+  rect(PARIS.warmup, '#8d7a5c');
+  rect(PARIS.stables, '#c9c6bd');
+  ctx.fillStyle = '#f4f3ef';
+  ctx.font = '700 15px Geist, Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('PARIS', X(PARIS.x), Z(PARIS.z + PARIS.hall.d / 2 + 22));
+  ctx.font = '600 11px Geist, Arial';
+  ctx.fillText('A13 · DEAUVILLE', X(PARIS.exit.x - 40), Z(PARIS.exit.z) - 10);
+  return cv;
+}
 
 export function buildMapImage(world) {
   const cv = document.createElement('canvas');
@@ -211,6 +257,10 @@ export class Minimap {
   setImage(img) {
     this.image = img;
   }
+  setRegion(r) {
+    this.region = r;
+    if (r === 'paris' && !this.parisImage) this.parisImage = buildParisImage();
+  }
   resize() {
     const r = this.canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -237,8 +287,13 @@ export class Minimap {
     ctx.fillRect(0, 0, W, H);
     ctx.translate(R, R);
     ctx.rotate(yaw);
-    const k = scale / S;
-    ctx.drawImage(this.image, -px(focus.pos.x) * k, -pz(focus.pos.z) * k, SIZE * k, SIZE * k);
+    if (this.region === 'paris') {
+      const M = PARIS_MAP;
+      ctx.drawImage(this.parisImage, -(focus.pos.x - M.x0) * scale, -(focus.pos.z - M.z0) * scale, M.size * scale, M.size * scale);
+    } else {
+      const k = scale / S;
+      ctx.drawImage(this.image, -px(focus.pos.x) * k, -pz(focus.pos.z) * k, SIZE * k, SIZE * k);
+    }
     ctx.restore();
     // Itinéraire GPS.
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
@@ -323,9 +378,15 @@ export function drawFullMap(canvas, game, view) {
   const scale = view.scale; // px écran par mètre
   const cx = view.x, cz = view.z;
   const toScreen = (x, z) => [W / 2 + (x - cx) * scale, H / 2 + (z - cz) * scale];
-  const [ox, oy] = toScreen(-WORLD.half, -WORLD.half);
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(img, ox, oy, WORLD.size * scale, WORLD.size * scale);
+  if (game.region === 'paris') {
+    const M = PARIS_MAP;
+    const [px0, pz0] = toScreen(M.x0, M.z0);
+    ctx.drawImage((game.hud.minimap.parisImage ||= buildParisImage()), px0, pz0, M.size * scale, M.size * scale);
+  } else {
+    const [ox, oy] = toScreen(-WORLD.half, -WORLD.half);
+    ctx.drawImage(img, ox, oy, WORLD.size * scale, WORLD.size * scale);
+  }
   const route = game.gps?.route;
   if (route && route.length > 1) {
     ctx.strokeStyle = '#f4f3ef';

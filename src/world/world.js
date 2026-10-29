@@ -1,4 +1,5 @@
 // Construction du monde : terrain, mer, routes, sites, bocage, forêts, signalétique Strides.
+import { ParisZone } from './paris.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
@@ -126,6 +127,9 @@ export class World {
     this.buildForests();
     this.buildRoadTrees();
     this.buildBillboards();
+    // Zone « Paris » du Grand Prix de Paris Indoor (loin à l'est, hors de la carte).
+    this.paris = new ParisZone();
+    this.paris.build(this);
     progress(0.86, 'Assemblage');
     await tick('assemble');
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
@@ -349,7 +353,7 @@ export class World {
   // orientées vers le centre ; la carrière est éclairée la nuit (voir csFlood dans sky.js).
   floodlights(r, H) {
     const n = (CLOUD_UNIFORMS._flN ||= 0);
-    if (n < 4 && CLOUD_UNIFORMS.flRect) CLOUD_UNIFORMS.flRect.value[n].set(r.x, r.z, r.w / 2, r.d / 2);
+    if (n < CLOUD_UNIFORMS.flRect.value.length) CLOUD_UNIFORMS.flRect.value[n].set(r.x, r.z, r.w / 2, r.d / 2);
     CLOUD_UNIFORMS._flN = n + 1;
     const pts = [];
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) pts.push([r.x + sx * (r.w / 2 + 2.2), r.z + sz * (r.d / 2 + 2.2)]);
@@ -1850,6 +1854,8 @@ export class World {
     INDOOR_UNIFORMS.inLamp.value = night > 0.05 ? night * 3.0 : 0;
     // Projecteurs des carrières : allumés à la tombée de la nuit.
     if (CLOUD_UNIFORMS.flK) CLOUD_UNIFORMS.flK.value = night > 0.05 ? night * 1.5 : 0;
+    // À Paris : salle éclairée en permanence (projecteurs de piste), paddock sous projecteurs dès le soir.
+    if (this.region === 'paris') CLOUD_UNIFORMS.flK.value = Math.max(CLOUD_UNIFORMS.flK.value, 0.9);
     if (this.lampPools) {
       this.lampPools.visible = night > 0.05;
       this.poolMat.opacity = night;

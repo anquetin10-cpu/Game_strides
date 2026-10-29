@@ -79,8 +79,31 @@ export const DEFI_POLE_V5 = deepFreeze({
   timeLimit: 130,
 });
 
-export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4, [DEFI_POLE_V5.id]: DEFI_POLE_V5 };
+// Défi du Grand Prix de Paris Indoor : le tracé du Grand Prix dans l'arène couverte de Paris (8 obstacles dont le double
+// 5A – 5B, ≈ 196 m), tous à 1,50 m, en soirée sous les projecteurs ; cheval fourni ; temps accordé réglementaire du tracé
+// (196 m à 350 m/min).
+export const DEFI_PARIS_V1 = deepFreeze({
+  id: 'defi-paris-v1',
+  version: 1,
+  name: 'Défi du Grand Prix de Paris',
+  course: 'cso',
+  place: 'Grand Prix de Paris Indoor',
+  courseId: 'paris_gp',
+  obstacles: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  height: 1.5,
+  timeAllowed: 34,
+  timeLimit: 68,
+  horse: { id: 'defi-lumiere', name: 'Lumière de Paris', coat: 'grey', blaze: true, socks: [true, true, false, false], speed: 1.15, jump: 1.24, stamina: 1.0, breed: 'Selle Français', age: 10 },
+  weather: { label: 'Soirée en salle', day: 2, hour: 20.5, rain: 0, wet: 0 },
+  jumpAid: true,
+  rules: { rail: 4, firstRefusal: 4, refusalsToEliminate: 2, timeFaultPerSecond: 1 },
+  where: 'Paris, arène couverte : départ directement en piste, sans trajet.',
+});
+
+export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4, [DEFI_POLE_V5.id]: DEFI_POLE_V5, [DEFI_PARIS_V1.id]: DEFI_PARIS_V1 };
 export const CURRENT_CHALLENGE = DEFI_POLE_V5;
+// Défis proposés (application Activités) : la version courante de chaque défi.
+export const CURRENT_CHALLENGES = [DEFI_POLE_V5, DEFI_PARIS_V1];
 export const SIGNATURE = 'STRIDES Grand Tour';
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.
@@ -169,6 +192,8 @@ export function cleanPseudo(s) {
 // Affichages.
 export const fmtSeconds = (t) => `${(Math.round(t * 100) / 100).toFixed(2).replace('.', ',')} s`;
 export const fmtHeight = (m) => `${m.toFixed(2).replace('.', ',')} m`;
+// Heure du défi : « 11 h », « 20 h 30 ».
+export const fmtHour = (h) => `${Math.floor(h)} h${h % 1 ? ` ${String(Math.round((h % 1) * 60)).padStart(2, '0')}` : ''}`;
 export const fmtPenalties = (p) => `${p} ${p > 1 ? 'pts' : 'pt'}`;
 
 export function resultLine(res) {
@@ -182,7 +207,7 @@ export function conditionsList(cfg) {
   return [
     ['Parcours', `${cfg.obstacles.length} obstacles · ${fmtHeight(cfg.height)}`],
     ['Cheval fourni', `${cfg.horse.name} · statistiques fixes`],
-    ['Météo', `${cfg.weather.label} · ${cfg.weather.hour} h · sol sec`],
+    ['Météo', `${cfg.weather.label} · ${fmtHour(cfg.weather.hour)} · sol sec`],
     ['Temps accordé', `${cfg.timeAllowed} s`],
     ['Aide au saut', cfg.jumpAid ? 'activée' : 'désactivée'],
   ];
