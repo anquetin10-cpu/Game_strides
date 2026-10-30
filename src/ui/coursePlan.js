@@ -3,6 +3,8 @@
 // départ et d'arrivée, entrée de piste et tribunes. Nord en haut (le nord du monde est vers -z).
 import { CSO_TRACE } from '../gameplay/csoCourse.js';
 import { POLE, PARIS } from '../world/sites.js';
+import { dec } from '../core/math.js';
+import { t } from '../core/i18n.js';
 
 // trace : tracé du parcours (Pôle par défaut) ; venue 'paris' : arène de Paris (86 × 46 m, entrée à l'ouest, tribunes
 // sur trois côtés).
@@ -17,14 +19,14 @@ export function coursePlanSvg({ heights = null, next = 0, trace = CSO_TRACE, ven
   if (paris) {
     const gz = PARIS.gate.z - PARIS.arena.z;
     parts.push(`<rect x="${-W / 2 - 0.4}" y="${gz - 2.8}" width="0.8" height="5.6" fill="#e8dcc0"/>`);
-    parts.push(`<text x="${-W / 2 - 1}" y="${gz + 6}" font-size="2.6" text-anchor="start" fill="#6b6a64">ENTRÉE</text>`);
+    parts.push(`<text x="${-W / 2 - 1}" y="${gz + 6}" font-size="2.6" text-anchor="start" fill="#6b6a64">${t('ENTRÉE')}</text>`);
     parts.push(`<rect x="${-W / 2 + 6}" y="${-D / 2 - 5.5}" width="${W - 6}" height="3.2" fill="#c9c6bd"/><rect x="${-W / 2 + 6}" y="${D / 2 + 2.3}" width="${W - 6}" height="3.2" fill="#c9c6bd"/>`);
-    parts.push(`<text x="0" y="${-D / 2 - 3.1}" font-size="2.2" text-anchor="middle" fill="#3a3a36">TRIBUNES</text>`);
+    parts.push(`<text x="0" y="${-D / 2 - 3.1}" font-size="2.2" text-anchor="middle" fill="#3a3a36">${t('TRIBUNES')}</text>`);
   } else {
     parts.push(`<rect x="-3.5" y="${D / 2 - 0.4}" width="7" height="0.8" fill="#e8dcc0"/>`);
-    parts.push(`<text x="0" y="${D / 2 + 3.6}" font-size="2.6" text-anchor="middle" fill="#6b6a64">ENTRÉE</text>`);
+    parts.push(`<text x="0" y="${D / 2 + 3.6}" font-size="2.6" text-anchor="middle" fill="#6b6a64">${t('ENTRÉE')}</text>`);
     parts.push(`<rect x="${-POLE.stands.w / 2}" y="${-D / 2 - 5.5}" width="${POLE.stands.w}" height="3.2" fill="#c9c6bd"/>`);
-    parts.push(`<text x="0" y="${-D / 2 - 3.1}" font-size="2.2" text-anchor="middle" fill="#3a3a36">TRIBUNES</text>`);
+    parts.push(`<text x="0" y="${-D / 2 - 3.1}" font-size="2.2" text-anchor="middle" fill="#3a3a36">${t('TRIBUNES')}</text>`);
   }
   // Ligne du cavalier (pointillés).
   const line = trace.pts.filter((_, i) => i % 2 === 0).map((p) => `${p.x.toFixed(1)},${p.z.toFixed(1)}`).join(' ');
@@ -33,7 +35,7 @@ export function coursePlanSvg({ heights = null, next = 0, trace = CSO_TRACE, ven
   for (const [k, m, col] of [['D', trace.marks.start, '#2f6e4a'], ['A', trace.marks.finish, '#b8322a']]) {
     const tx = Math.cos(m.rot) * 3.5, tz = -Math.sin(m.rot) * 3.5;
     parts.push(`<line x1="${(m.x - tx).toFixed(2)}" y1="${(m.z - tz).toFixed(2)}" x2="${(m.x + tx).toFixed(2)}" y2="${(m.z + tz).toFixed(2)}" stroke="${col}" stroke-width="0.7"/>`);
-    parts.push(`<text x="${(m.x + tx * 1.5).toFixed(2)}" y="${(m.z + tz * 1.5 + 1).toFixed(2)}" font-size="2.6" font-weight="700" text-anchor="middle" fill="${col}">${k === 'D' ? 'Départ' : 'Arrivée'}</text>`);
+    parts.push(`<text x="${(m.x + tx * 1.5).toFixed(2)}" y="${(m.z + tz * 1.5 + 1).toFixed(2)}" font-size="2.6" font-weight="700" text-anchor="middle" fill="${col}">${k === 'D' ? t('Départ') : t('Arrivée')}</text>`);
   }
   // Obstacles.
   trace.fences.forEach((f, i) => {
@@ -51,13 +53,13 @@ export function coursePlanSvg({ heights = null, next = 0, trace = CSO_TRACE, ven
     const lx = f.x - t.x * 3.6, lz = f.z - t.z * 3.6;
     parts.push(`<circle cx="${lx.toFixed(2)}" cy="${lz.toFixed(2)}" r="1.85" fill="${hot ? '#1a9b62' : '#1b1c1f'}"/>`);
     parts.push(`<text x="${lx.toFixed(2)}" y="${(lz + 0.85).toFixed(2)}" font-size="${f.label.length > 1 ? 1.9 : 2.4}" font-weight="700" text-anchor="middle" fill="#fbfaf5">${f.label}</text>`);
-    if (heights) parts.push(`<text x="${(lx).toFixed(2)}" y="${(lz + 3.6).toFixed(2)}" font-size="1.5" text-anchor="middle" fill="#55544f">${heights[i].toFixed(2).replace('.', ',')}</text>`);
+    if (heights) parts.push(`<text x="${(lx).toFixed(2)}" y="${(lz + 3.6).toFixed(2)}" font-size="1.5" text-anchor="middle" fill="#55544f">${dec(heights[i], 2)}</text>`);
   });
-  return `<svg class="course-plan" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Plan du parcours">${parts.join('')}</svg>`;
+  return `<svg class="course-plan" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${t('Plan du parcours')}">${parts.join('')}</svg>`;
 }
 
 // Légende textuelle (accessibilité, et vérifiée par les tests) : ordre et nature des obstacles.
 export function coursePlanLegend(trace = CSO_TRACE) {
-  const names = { v: 'vertical', o: 'oxer', w: 'mur' };
+  const names = { v: t('vertical'), o: t('oxer'), w: t('mur') };
   return trace.fences.map((f) => `${f.label} ${names[f.kind] || f.kind}`).join(' · ');
 }

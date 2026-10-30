@@ -5,15 +5,16 @@ import { formatMoney, formatTime } from '../core/math.js';
 import { CONFIG } from '../config.js';
 import { logoSvg } from './logo.js';
 import { stars } from './requests.js';
+import { t, T, LANG, switchLang } from '../core/i18n.js';
 
 const TIPS = [
-  'Sur Strides, chaque professionnel est vérifié avant de pouvoir proposer ses services.',
-  'Joystick à fond : galop. Maintiens BOOST pour le grand galop, l’anneau du bouton montre l’endurance.',
-  'Appuie sur SAUT au bon moment : l’anneau devient vert quand l’appel est idéal.',
-  'Touche la minimap pour ouvrir la carte et placer un repère GPS.',
-  'Les fers d’or sont cachés dans tout Deauville City. Trouve-les tous !',
-  'Ton téléphone vibre ? Une nouvelle mission Strides t’attend.',
-  'Le transport Strides peut t’emmener où tu veux, toi et ton cheval.',
+  t('Sur Strides, chaque professionnel est vérifié avant de pouvoir proposer ses services.'),
+  t('Joystick à fond : galop. Maintiens BOOST pour le grand galop, l’anneau du bouton montre l’endurance.'),
+  t('Appuie sur SAUT au bon moment : l’anneau devient vert quand l’appel est idéal.'),
+  t('Touche la minimap pour ouvrir la carte et placer un repère GPS.'),
+  t('Les fers d’or sont cachés dans tout Deauville City. Trouve-les tous !'),
+  t('Ton téléphone vibre ? Une nouvelle mission Strides t’attend.'),
+  t('Le transport Strides peut t’emmener où tu veux, toi et ton cheval.'),
 ];
 
 export class Screens {
@@ -23,7 +24,7 @@ export class Screens {
     this.fadeEl = h('div.fade');
     document.body.appendChild(this.fadeEl);
     document.body.appendChild(
-      h('div.rotate', {}, h('div', {}, h('div', { html: icon('phone') }), h('div.t', { text: 'Tourne ton téléphone' }), h('div.s', { text: 'STRIDES Grand Tour se joue à l’horizontale.' })))
+      h('div.rotate', {}, h('div', {}, h('div', { html: icon('phone') }), h('div.t', { text: t('Tourne ton téléphone') }), h('div.s', { text: t('STRIDES Grand Tour se joue à l’horizontale.') })))
     );
   }
 
@@ -34,10 +35,10 @@ export class Screens {
   // ---------- Chargement ----------
   showLoading() {
     this.loadBar = h('i');
-    this.loadMsg = h('div.load-msg', { text: 'Chargement…' });
+    this.loadMsg = h('div.load-msg', { text: t('Chargement…') });
     this.loadEl = h('div.screen.loading', {},
       this.brand(),
-      h('div.game-title', { style: { marginTop: '18px' } }, CONFIG.title, h('span', { text: 'UN JEU EN MONDE OUVERT · CÔTE FLEURIE' })),
+      h('div.game-title', { style: { marginTop: '18px' } }, CONFIG.title, h('span', { text: t('UN JEU EN MONDE OUVERT · CÔTE FLEURIE') })),
       h('div.progress', {}, this.loadBar),
       this.loadMsg,
       h('div.load-tip', { text: TIPS[Math.floor(Math.random() * TIPS.length)] }));
@@ -59,10 +60,10 @@ export class Screens {
     // Sauvegarde illisible, invalide ou d'une version inconnue : rien n'est écrasé, le joueur décide.
     let notice = null;
     if (issue) {
-      const why = { corrupt: 'Le fichier de sauvegarde n’a pas pu être lu.', invalid: `La sauvegarde contient des données incohérentes (${issue.detail}).`, version: 'Cette sauvegarde vient d’une version plus récente du jeu.', migration: 'La sauvegarde n’a pas pu être convertie.' }[issue.kind] || 'Sauvegarde inutilisable.';
-      notice = h('div.notice', {}, h('b', { text: 'Sauvegarde non chargée' }), h('span', { text: `${why} Une copie a été conservée ; rien n’a été écrasé. Restaurez une copie ou commencez une nouvelle partie.` }));
+      const why = { corrupt: t('Le fichier de sauvegarde n’a pas pu être lu.'), invalid: T`La sauvegarde contient des données incohérentes (${issue.detail}).`, version: t('Cette sauvegarde vient d’une version plus récente du jeu.'), migration: t('La sauvegarde n’a pas pu être convertie.') }[issue.kind] || t('Sauvegarde inutilisable.');
+      notice = h('div.notice', {}, h('b', { text: t('Sauvegarde non chargée') }), h('span', { text: T`${why} Une copie a été conservée ; rien n’a été écrasé. Restaurez une copie ou commencez une nouvelle partie.` }));
       backups.forEach((b, i) => {
-        const r = h('button.btn.small', { text: `Restaurer : ${b.label}`, 'data-id': `restore-${i}` });
+        const r = h('button.btn.small', { text: T`Restaurer : ${b.label}`, 'data-id': `restore-${i}` });
         tap(r, () => onRestore?.(b.key));
         notice.appendChild(r);
       });
@@ -73,22 +74,30 @@ export class Screens {
       menu.appendChild(b);
     };
     if (hasSave) {
-      add('Continuer', true, onPlay, 'continue');
-      add('Nouvelle partie', false, onNew, 'new');
-    } else add(issue ? 'Nouvelle partie' : 'Jouer', true, onNew, 'play');
-    const learn = h('button.btn.ghost', { 'data-id': 'learn' }, h('span', { text: 'Découvrir la vraie application Strides' }), h('span', { html: icon('external'), style: { width: '16px', height: '16px', display: 'inline-block' } }));
+      add(t('Continuer'), true, onPlay, 'continue');
+      add(t('Nouvelle partie'), false, onNew, 'new');
+    } else add(issue ? t('Nouvelle partie') : t('Jouer'), true, onNew, 'play');
+    const learn = h('button.btn.ghost', { 'data-id': 'learn' }, h('span', { text: t('Découvrir la vraie application Strides') }), h('span', { html: icon('external'), style: { width: '16px', height: '16px', display: 'inline-block' } }));
     tap(learn, () => this.game.openStrides('title', 'discover'));
     menu.appendChild(learn);
     // Pied de page : astuce « écran d’accueil » seulement dans Safari iOS (sans effet dans le lecteur intégré), raccourcis clavier seulement avec un pointeur fin.
     const embedded = document.body.classList.contains('embedded');
     const ios = !embedded && /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone;
-    const foot = ios ? 'Astuce : <b>Partager → Sur l’écran d’accueil</b> pour jouer en plein écran.' : matchMedia('(pointer: coarse)').matches ? '' : 'Clavier : ZQSD/WASD = galop (Ctrl trot, Alt pas) · Espace = saut · Maj = boost (grand galop) · E = action · P = téléphone';
+    const foot = ios ? t('Astuce : <b>Partager → Sur l’écran d’accueil</b> pour jouer en plein écran.') : matchMedia('(pointer: coarse)').matches ? '' : t('Clavier : ZQSD/WASD = galop (Ctrl trot, Alt pas) · Espace = saut · Maj = boost (grand galop) · E = action · P = téléphone');
+    // Langue : FR | EN en haut à droite. Le changement recharge le jeu (aucune partie en cours sur l'écran titre).
+    const lang = h('div.lang-toggle', { role: 'group', 'aria-label': t('Langue') });
+    for (const l of ['fr', 'en']) {
+      const b = h(`button${LANG === l ? '.on' : ''}`, { text: l.toUpperCase(), lang: l, 'aria-pressed': String(LANG === l), 'data-id': `title-lang-${l}` });
+      tap(b, () => l !== LANG && switchLang(l));
+      lang.appendChild(b);
+    }
     this.titleEl = h('div.screen.title-screen', {},
       this.brand(),
-      h('div.game-title', { style: { marginTop: '14px' } }, CONFIG.title, h('span', { text: 'LE MONDE ÉQUESTRE EN MONDE OUVERT' })),
+      h('div.game-title', { style: { marginTop: '14px' } }, CONFIG.title, h('span', { text: t('LE MONDE ÉQUESTRE EN MONDE OUVERT') })),
       notice,
       menu,
-      foot ? h('div.foot', { html: foot }) : null);
+      foot ? h('div.foot', { html: foot }) : null,
+      lang);
     document.body.appendChild(this.titleEl);
   }
   hideTitle() {
@@ -100,9 +109,9 @@ export class Screens {
   showSetup(onDone) {
     const d = this.game.save.data;
     let avatar = d.avatar || 'f';
-    const input = h('input', { value: d.playerName || 'Alex', maxlength: '16', autocomplete: 'off', 'aria-label': 'Prénom' });
+    const input = h('input', { value: d.playerName || 'Alex', maxlength: '16', autocomplete: 'off', 'aria-label': t('Prénom') });
     const seg = h('div.seg');
-    for (const [v, l] of [['f', 'Cavalière'], ['m', 'Cavalier']]) {
+    for (const [v, l] of [['f', t('Cavalière')], ['m', t('Cavalier')]]) {
       const b = h(`button${avatar === v ? '.on' : ''}`, { text: l });
       tap(b, () => {
         avatar = v;
@@ -111,12 +120,12 @@ export class Screens {
       });
       seg.appendChild(b);
     }
-    const go = h('button.btn.primary', { text: 'C’est parti', 'data-id': 'start' });
+    const go = h('button.btn.primary', { text: t('C’est parti'), 'data-id': 'start' });
     const content = h('div.card-body.scrollable', {},
-      h('div.kicker', { text: 'Ton profil Strides' }),
-      h('h2', { text: 'Qui monte en selle ?' }),
-      h('div.field', {}, h('label', { text: 'Prénom' }), input),
-      h('div.field', {}, h('label', { text: 'Personnage' }), seg));
+      h('div.kicker', { text: t('Ton profil Strides') }),
+      h('h2', { text: t('Qui monte en selle ?') }),
+      h('div.field', {}, h('label', { text: t('Prénom') }), input),
+      h('div.field', {}, h('label', { text: t('Personnage') }), seg));
     const row = h('div.card-actions', {}, go);
     const ov = h('div.overlay', {}, h('div.card.setup', {}, content, row));
     tap(go, () => {
@@ -166,30 +175,30 @@ export class Screens {
     const g = this.game;
     const extra = [];
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
-    extra.push(h('div.result-grid', {}, stat('Paiement', r.pay ? formatMoney(r.pay) : '—'), stat('Réputation', `+${r.xp} pts`), stat(r.timeLabel || 'Temps', r.time !== undefined ? formatTime(r.time) : r.extraValue || '—')));
+    extra.push(h('div.result-grid', {}, stat(t('Paiement'), r.pay ? formatMoney(r.pay) : '—'), stat(t('Réputation'), T`+${r.xp} pts`), stat(r.timeLabel || t('Temps'), r.time !== undefined ? formatTime(r.time) : r.extraValue || '—')));
     if (r.review) {
-      extra.push(h('div.review', {}, h('div.av', { text: r.review.initials }), h('div', {}, h('div.who', { text: r.review.name }), h('div.stars', {}, stars(r.stars)), h('div.q', { text: `« ${r.review.text} »` }))));
+      extra.push(h('div.review', {}, h('div.av', { text: r.review.initials }), h('div', {}, h('div.who', { text: r.review.name }), h('div.stars', {}, stars(r.stars)), h('div.q', { text: T`« ${r.review.text} »` }))));
     }
-    if (r.levelUp) extra.push(h('div.levelup', {}, h('span', { text: 'Nouveau palier de réputation' }), h('big', { text: r.levelUp.title.toUpperCase() }), h('span', { text: r.levelUp.perk || '' })));
+    if (r.levelUp) extra.push(h('div.levelup', {}, h('span', { text: t('Nouveau palier de réputation') }), h('big', { text: r.levelUp.title.toUpperCase() }), h('span', { text: r.levelUp.perk || '' })));
     if (r.irl) extra.push(h('div.irl', { html: r.irl }));
     this.card({
-      kicker: r.kicker || 'Mission Strides',
-      title: r.title || 'Mission réussie',
+      kicker: r.kicker || t('Mission Strides'),
+      title: r.title || t('Mission réussie'),
       body: r.body,
       extra,
-      buttons: [{ label: 'Continuer', primary: true, id: 'continue', run: onClose }],
+      buttons: [{ label: t('Continuer'), primary: true, id: 'continue', run: onClose }],
     });
     g.audio.success();
   }
 
   missionFailed(reason, onRetry, onLater) {
     this.card({
-      kicker: 'Mission',
-      title: 'Mission échouée',
+      kicker: t('Mission'),
+      title: t('Mission échouée'),
       body: reason,
       buttons: [
-        { label: 'Plus tard', run: onLater, id: 'later' },
-        { label: 'Réessayer', primary: true, run: onRetry, id: 'retry' },
+        { label: t('Plus tard'), run: onLater, id: 'later' },
+        { label: t('Réessayer'), primary: true, run: onRetry, id: 'retry' },
       ],
     });
     this.game.audio.fail();
@@ -198,16 +207,16 @@ export class Screens {
   // ---------- Pause ----------
   pause({ onResume, onTitle }) {
     const g = this.game;
-    const controls = h('div', { html: `<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>` });
+    const controls = h('div', { html: t(`<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>`) });
     return this.card({
-      kicker: 'Pause',
+      kicker: t('Pause'),
       title: 'STRIDES Grand Tour',
       extra: [controls, g.phone.promo()],
       buttons: [
-        { label: 'Écran titre', ghost: true, run: onTitle, id: 'title' },
-        { label: 'Découvrir la vraie application Strides', ghost: true, run: () => g.openStrides('pause', 'discover'), keep: true, id: 'strides' },
-        { label: 'Partager', run: () => g.share('pause'), keep: true, id: 'share' },
-        { label: 'Reprendre', primary: true, run: onResume, id: 'resume' },
+        { label: t('Écran titre'), ghost: true, run: onTitle, id: 'title' },
+        { label: t('Découvrir la vraie application Strides'), ghost: true, run: () => g.openStrides('pause', 'discover'), keep: true, id: 'strides' },
+        { label: t('Partager'), run: () => g.share('pause'), keep: true, id: 'share' },
+        { label: t('Reprendre'), primary: true, run: onResume, id: 'resume' },
       ],
     });
   }
@@ -219,13 +228,13 @@ export class Screens {
     const promo = g.phone.promo();
     promo.style.marginTop = '16px';
     this.card({
-      kicker: 'Grand Prix CSI 5★ de Deauville City',
-      title: 'Légende de Deauville City',
-      body: `${d.playerName}, de groom à vainqueur du Grand Prix : ta carrière s’est construite mission après mission, avis après avis. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
-      extra: [promo, h('div.irl', { text: 'Le monde reste ouvert : continue les missions, les chronos et la chasse aux fers d’or.' })],
+      kicker: t('Grand Prix CSI 5★ de Deauville City'),
+      title: t('Légende de Deauville City'),
+      body: T`${d.playerName}, de groom à vainqueur du Grand Prix : ta carrière s’est construite mission après mission, avis après avis. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
+      extra: [promo, h('div.irl', { text: t('Le monde reste ouvert : continue les missions, les chronos et la chasse aux fers d’or.') })],
       buttons: [
-        { label: 'Partager le jeu', run: () => g.share('ending'), keep: true, id: 'share' },
-        { label: 'Continuer à explorer', primary: true, run: onClose, id: 'continue' },
+        { label: t('Partager le jeu'), run: () => g.share('ending'), keep: true, id: 'share' },
+        { label: t('Continuer à explorer'), primary: true, run: onClose, id: 'continue' },
       ],
     });
   }
@@ -236,9 +245,9 @@ export class Screens {
 
   photoFrame(on, onExit) {
     if (on) {
-      const exit = h('button.btn.small.primary', { text: 'Quitter le mode photo' });
+      const exit = h('button.btn.small.primary', { text: t('Quitter le mode photo') });
       tap(exit, onExit);
-      const share = h('button.btn.small', { text: 'Partager le jeu', style: { background: 'rgba(18,19,22,.7)' } });
+      const share = h('button.btn.small', { text: t('Partager le jeu'), style: { background: 'rgba(18,19,22,.7)' } });
       tap(share, () => this.game.share('photo'));
       this.photoEl = h('div.photo-frame', {}, h('div.exit', { style: { display: 'flex', gap: '8px' } }, exit, share), h('div.wm', { html: logoSvg() }));
       document.body.appendChild(this.photoEl);

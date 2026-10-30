@@ -377,6 +377,11 @@ body.desktop .joy-base { display: none; }
 .title-screen .btn { flex: 0 0 auto; text-align: left; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; }
 .title-screen .foot { position: absolute; left: calc(var(--sl) + 18px); bottom: var(--sb); font: 400 11.5px/1.5 var(--ui); color: var(--muted); max-width: 46vw; }
 .title-screen .foot a { color: var(--paper); }
+/* Langue FR | EN : coin haut droit, au-dessus de la scène (le dégradé du titre y est transparent). */
+.title-screen .lang-toggle { position: absolute; top: var(--st); right: var(--sr); display: flex; align-items: center; padding: 3px; border-radius: 12px; background: rgba(247,244,237,.9); border: 1px solid var(--st-line-2); box-shadow: var(--st-shadow); }
+.title-screen .lang-toggle button { min-width: 40px; height: 30px; padding: 0 10px; border-radius: 9px; font: 500 12px/1 var(--mono); letter-spacing: .08em; color: var(--st-text-3); }
+.title-screen .lang-toggle button + button { margin-left: 2px; }
+.title-screen .lang-toggle button.on { background: var(--st-ink); color: var(--st-surface-3); }
 /* Carte ouverte depuis l'écran titre (« Découvrir l'app Strides ») : au-dessus de .screen (50), sous .fade (60). */
 .title-screen ~ .overlay { z-index: 55; }
 .setup .field { margin-top: 14px; }

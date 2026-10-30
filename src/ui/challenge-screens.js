@@ -6,6 +6,7 @@ import { BUILD } from '../config.js';
 import {
   challengeStore, bestOf, conditionsList, rulesText, resultLine, fmtSeconds, fmtPenalties, fmtHeight, cleanPseudo, shareText, publicUrl, SIGNATURE, fmtHour } from '../gameplay/challenge.js';
 import { drawStridesMark, FONT_DISPLAY, FONT_UI, FONT_MONO } from '../world/textures.js';
+import { t, T } from '../core/i18n.js';
 
 export const CARD_W = 1080;
 export const CARD_H = 1350;
@@ -63,26 +64,26 @@ export function drawResultCard(cv, { cfg, res, pseudo = '', build = BUILD, date 
   }
   ctx.fillStyle = STONE;
   ctx.font = `500 28px ${FONT_MONO}`;
-  ctx.fillText('STRIDES GRAND TOUR · DÉFI REJOUABLE', L + 84, 124);
+  ctx.fillText(t('STRIDES GRAND TOUR · DÉFI REJOUABLE'), L + 84, 124);
   ctx.fillStyle = SURFACE;
   fit(ctx, cfg.name.toUpperCase(), 600, 112, FONT_DISPLAY, W);
   ctx.fillText(cfg.name.toUpperCase(), L, 290);
   ctx.fillStyle = STONE;
   ctx.font = `400 34px ${FONT_UI}`;
-  ctx.fillText(`${cfg.place} · ${cfg.obstacles.length} obstacles · ${fmtHeight(cfg.height)}`, L, 360);
+  ctx.fillText(T`${cfg.place} · ${cfg.obstacles.length} obstacles · ${fmtHeight(cfg.height)}`, L, 360);
   ctx.font = `500 26px ${FONT_MONO}`;
   ctx.fillStyle = GOLD;
-  ctx.fillText(`${cfg.id.toUpperCase()} · CONDITIONS FIXES`, L, 430);
+  ctx.fillText(T`${cfg.id.toUpperCase()} · CONDITIONS FIXES`, L, 430);
 
   // Résultat.
   ctx.fillStyle = MUTED;
   ctx.font = `500 28px ${FONT_MONO}`;
-  ctx.fillText('RÉSULTAT', L, 566);
+  ctx.fillText(t('RÉSULTAT'), L, 566);
   ctx.fillStyle = INK;
   let y;
   if (res.eliminated) {
-    fit(ctx, 'ÉLIMINÉ', 600, 170, FONT_DISPLAY, W);
-    ctx.fillText('ÉLIMINÉ', L, 770);
+    fit(ctx, t('ÉLIMINÉ'), 600, 170, FONT_DISPLAY, W);
+    ctx.fillText(t('ÉLIMINÉ'), L, 770);
     ctx.fillStyle = MUTED;
     ctx.font = `400 36px ${FONT_UI}`;
     y = wrapText(ctx, res.eliminated, L, 836, W, 46, 2);
@@ -96,7 +97,7 @@ export function drawResultCard(cv, { cfg, res, pseudo = '', build = BUILD, date 
     ctx.textAlign = 'left';
     ctx.fillStyle = MUTED;
     ctx.font = `400 34px ${FONT_UI}`;
-    ctx.fillText(`Barres ${res.rails} · refus ${res.refusals} · pénalités de temps ${res.timeFaults}`, L, 836);
+    ctx.fillText(T`Barres ${res.rails} · refus ${res.refusals} · pénalités de temps ${res.timeFaults}`, L, 836);
     y = 870;
   }
   ctx.fillStyle = GOLD;
@@ -105,10 +106,10 @@ export function drawResultCard(cv, { cfg, res, pseudo = '', build = BUILD, date 
   // Détails.
   const rows = [];
   const who = cleanPseudo(pseudo);
-  if (who) rows.push(['Pseudonyme', who]);
-  rows.push(['Cheval', `${res.horse} (fourni, statistiques fixes)`]);
-  rows.push(['Temps accordé', `${cfg.timeAllowed} s · temps réalisé ${fmtSeconds(res.time)}`]);
-  rows.push(['Météo', `${cfg.weather.label.toLowerCase()}, ${fmtHour(cfg.weather.hour)}, sol sec`]);
+  if (who) rows.push([t('Pseudonyme'), who]);
+  rows.push([t('Cheval'), T`${res.horse} (fourni, statistiques fixes)`]);
+  rows.push([t('Temps accordé'), T`${cfg.timeAllowed} s · temps réalisé ${fmtSeconds(res.time)}`]);
+  rows.push([t('Météo'), T`${cfg.weather.label.toLowerCase()}, ${fmtHour(cfg.weather.hour)}, sol sec`]);
   let ry = Math.max(y, 884) + 62;
   for (const [k, v] of rows.slice(0, 4)) {
     ctx.fillStyle = MUTED;
@@ -129,9 +130,9 @@ export function drawResultCard(cv, { cfg, res, pseudo = '', build = BUILD, date 
   ctx.fillStyle = STONE;
   ctx.font = `500 24px ${FONT_MONO}`;
   const d = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-  ctx.fillText(`Défi ${cfg.id} · jeu v${build} · ${d}`, L, CARD_H - 42);
+  ctx.fillText(T`Défi ${cfg.id} · jeu v${build} · ${d}`, L, CARD_H - 42);
   ctx.textAlign = 'right';
-  ctx.fillText('JEU · RÉSULTAT LOCAL', R, CARD_H - 82);
+  ctx.fillText(t('JEU · RÉSULTAT LOCAL'), R, CARD_H - 82);
   ctx.textAlign = 'left';
   return cv;
 }
@@ -147,7 +148,7 @@ export function shareMode(nav = typeof navigator !== 'undefined' ? navigator : {
   return 'copy';
 }
 
-const MODE_LABEL = { share: 'Partager l’image', download: 'Télécharger l’image', copy: 'Copier le texte' };
+const MODE_LABEL = { share: t('Partager l’image'), download: t('Télécharger l’image'), copy: t('Copier le texte') };
 
 export class ChallengeUI {
   constructor(game, runner) {
@@ -161,17 +162,17 @@ export class ChallengeUI {
     const best = bestOf(g.save.data, cfg.id);
     const grid = h('div.ch-chips', {}, ...conditionsList(cfg).map(([k, v]) => h('span.ch-chip', {}, h('b', { text: k }), h('span', { text: v }))));
     const rules = h('ol.ch-rules', {}, ...rulesText(cfg).map((t) => h('li', { text: t })));
-    const rec = h('div.ch-note', { text: best ? `Ton record pour ${cfg.id} : ${resultLine(best)}.` : `Pas encore de record pour ${cfg.id}.` });
-    const note = h('div.ch-note.muted', { text: 'Barème de jeu inspiré du saut d’obstacles au chrono (adaptation, pas un règlement officiel). Mêmes conditions à chaque tentative.' });
+    const rec = h('div.ch-note', { text: best ? T`Ton record pour ${cfg.id} : ${resultLine(best)}.` : T`Pas encore de record pour ${cfg.id}.` });
+    const note = h('div.ch-note.muted', { text: t('Barème de jeu inspiré du saut d’obstacles au chrono (adaptation, pas un règlement officiel). Mêmes conditions à chaque tentative.') });
     const why = this.runner.blocker();
     const ov = g.screens.card({
-      kicker: `${cfg.name} · défi rejouable · ${cfg.id}`,
+      kicker: T`${cfg.name} · défi rejouable · ${cfg.id}`,
       title: cfg.name,
-      extra: [grid, h('div.section-t.ch-sec', { text: 'Classement : pénalités, puis chrono' }), rules, rec, note],
+      extra: [grid, h('div.section-t.ch-sec', { text: t('Classement : pénalités, puis chrono') }), rules, rec, note],
       buttons: [
-        { label: 'Plus tard', id: 'challenge-later' },
+        { label: t('Plus tard'), id: 'challenge-later' },
         {
-          label: why ? 'Indisponible' : 'Départ',
+          label: why ? t('Indisponible') : t('Départ'),
           primary: true,
           id: 'challenge-go',
           run: () => {
@@ -197,23 +198,23 @@ export class ChallengeUI {
     const best = bestOf(g.save.data, cfg.id);
     const stat = (k, v, cls = '') => h(`div.stat${cls}`, {}, h('div.k', { text: k }), h('div.v', { text: v }));
     const grid = h('div.result-grid', {},
-      stat('Pénalités', res.eliminated ? '—' : String(res.penalties)),
-      stat('Temps', fmtSeconds(res.time)),
-      stat(`Record ${cfg.id.split('-').pop()}`, best ? resultLine(best) : '—', '.small'));
+      stat(t('Pénalités'), res.eliminated ? '—' : String(res.penalties)),
+      stat(t('Temps'), fmtSeconds(res.time)),
+      stat(T`Record ${cfg.id.split('-').pop()}`, best ? resultLine(best) : '—', '.small'));
     const detail = res.eliminated
-      ? `${res.eliminated} Le record n’est pas modifié.`
-      : `Barres : ${res.rails} · refus : ${res.refusals} · pénalités de temps : ${res.timeFaults}. Cheval : ${res.horse}.`;
-    const title = res.eliminated ? 'Éliminé' : rec?.isRecord ? 'Nouveau record' : res.penalties === 0 ? 'Sans faute' : 'Parcours terminé';
+      ? T`${res.eliminated} Le record n’est pas modifié.`
+      : T`Barres : ${res.rails} · refus : ${res.refusals} · pénalités de temps : ${res.timeFaults}. Cheval : ${res.horse}.`;
+    const title = res.eliminated ? t('Éliminé') : rec?.isRecord ? t('Nouveau record') : res.penalties === 0 ? t('Sans faute') : t('Parcours terminé');
     const ov = g.screens.card({
       kicker: `${cfg.name} · ${cfg.id}`,
       title,
       body: detail,
       extra: [grid],
       buttons: [
-        { label: 'Quitter', ghost: true, id: 'challenge-quit', run: done },
-        { label: 'Carte de résultat', id: 'challenge-card', keep: true, run: () => this.share(cfg, res) },
+        { label: t('Quitter'), ghost: true, id: 'challenge-quit', run: done },
+        { label: t('Carte de résultat'), id: 'challenge-card', keep: true, run: () => this.share(cfg, res) },
         {
-          label: 'Recommencer',
+          label: t('Recommencer'),
           primary: true,
           id: 'challenge-retry',
           run: () => {
@@ -234,7 +235,7 @@ export class ChallengeUI {
     const g = this.game;
     const d = g.save.data;
     const store = challengeStore(d);
-    const cv = h('canvas.rc-canvas', { 'aria-label': 'Carte de résultat' });
+    const cv = h('canvas.rc-canvas', { 'aria-label': t('Carte de résultat') });
     let blob = null;
     let seq = 0;
     const draw = () => {
@@ -248,7 +249,7 @@ export class ChallengeUI {
     draw();
     // Les polices du jeu peuvent arriver après le premier dessin.
     document.fonts?.ready?.then(() => draw());
-    const input = h('input.rc-input', { value: store.pseudo || '', maxlength: '20', autocomplete: 'off', placeholder: 'Facultatif', 'aria-label': 'Pseudonyme', 'data-id': 'challenge-pseudo' });
+    const input = h('input.rc-input', { value: store.pseudo || '', maxlength: '20', autocomplete: 'off', placeholder: t('Facultatif'), 'aria-label': t('Pseudonyme'), 'data-id': 'challenge-pseudo' });
     let tm = null;
     input.addEventListener('input', () => {
       clearTimeout(tm);
@@ -263,9 +264,9 @@ export class ChallengeUI {
     input.addEventListener('change', () => g.online?.renamed());
     const mode = shareMode();
     const side = h('div.rc-side', {},
-      h('label.rc-label', { text: 'Pseudonyme sur la carte' }),
+      h('label.rc-label', { text: t('Pseudonyme sur la carte') }),
       input,
-      h('div.ch-note.muted', { text: 'Image créée sur ton appareil. Rien n’est envoyé sans ton action.' }),
+      h('div.ch-note.muted', { text: t('Image créée sur ton appareil. Rien n’est envoyé sans ton action.') }),
       h('div.ch-note', { text: `${cfg.name} · ${resultLine(res)} · ${res.horse}` }));
     const run = () => {
       clearTimeout(tm);
@@ -278,10 +279,10 @@ export class ChallengeUI {
       this._deliver(cfg, res, cv, () => blob, mode);
     };
     const ov = g.screens.card({
-      kicker: `Carte de résultat · ${cfg.id}`,
+      kicker: T`Carte de résultat · ${cfg.id}`,
       extra: [h('div.rc-wrap', {}, cv, side)],
       buttons: [
-        { label: 'Retour', id: 'challenge-card-back' },
+        { label: t('Retour'), id: 'challenge-card-back' },
         { label: MODE_LABEL[mode], primary: true, keep: true, id: 'challenge-share', run },
       ],
     });
@@ -302,7 +303,7 @@ export class ChallengeUI {
     };
     const copy = () => {
       track('copy');
-      const ok = () => g.hud.toast('Texte du résultat copié.');
+      const ok = () => g.hud.toast(t('Texte du résultat copié.'));
       if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(ok, () => this._showText(text));
       else this._showText(text);
     };
@@ -315,7 +316,7 @@ export class ChallengeUI {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
-      g.hud.toast(`Image enregistrée : ${name}`);
+      g.hud.toast(T`Image enregistrée : ${name}`);
     };
     if (mode === 'share') {
       const b = getBlob();
@@ -342,7 +343,7 @@ export class ChallengeUI {
   _showText(text) {
     const area = h('textarea.save-area', { readonly: true, rows: '3' });
     area.value = text;
-    this.game.screens.card({ kicker: 'Copier le résultat', extra: [area], buttons: [{ label: 'Fermer', primary: true }] });
+    this.game.screens.card({ kicker: t('Copier le résultat'), extra: [area], buttons: [{ label: t('Fermer'), primary: true }] });
     setTimeout(() => area.select?.(), 50);
   }
 }

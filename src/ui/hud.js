@@ -4,6 +4,7 @@ import { icon } from './icons.js';
 import { Minimap } from './minimap.js';
 import { formatMoney, formatTime, dec, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
+import { t, T, int } from '../core/i18n.js';
 
 export class HUD {
   constructor(game, root) {
@@ -32,12 +33,12 @@ export class HUD {
     this.minimap = new Minimap(this.mmCanvas, g);
 
     // Portefeuille + téléphone.
-    this.moneyEl = h('div.money.tab-num', { text: '0 €' });
+    this.moneyEl = h('div.money.tab-num', { text: formatMoney(0) });
     this.levelEl = h('span', { text: 'GROOM' });
     this.xpEl = h('i');
     this.starsEl = h('div.stars-line', { text: '' });
-    this.phoneBtn = h('button.phone-btn.clickable', { 'aria-label': 'Téléphone', html: icon('phone') }, h('span.badge', { text: '1' }));
-    this.pauseBtn = h('button.icon-btn.clickable', { 'aria-label': 'Pause', html: icon('pause') });
+    this.phoneBtn = h('button.phone-btn.clickable', { 'aria-label': t('Téléphone'), html: icon('phone') }, h('span.badge', { text: '1' }));
+    this.pauseBtn = h('button.icon-btn.clickable', { 'aria-label': t('Pause'), html: icon('pause') });
     const wallet = h('div.wallet', {}, this.moneyEl, h('div.level-line', {}, this.levelEl, h('div.xpbar', {}, this.xpEl)), this.starsEl);
     g.input.bindButton(this.phoneBtn, 'phone');
     g.input.bindButton(this.pauseBtn, 'pause');
@@ -52,7 +53,7 @@ export class HUD {
     this.hintEl = h('div.hint.off');
     this.toastsEl = h('div.toasts');
     // Tableau du parcours de CSO : chrono au centième, temps accordé, pénalités, obstacle suivant.
-    this.csoT = h('b.tab-num', { text: '0,00' });
+    this.csoT = h('b.tab-num', { text: dec(0, 2) });
     this.csoTa = h('span.ta.tab-num');
     this.csoPen = h('span.pen.tab-num');
     this.csoNext = h('span.next');
@@ -64,7 +65,7 @@ export class HUD {
 
     // Télémétrie.
     this.gearEl = h('div.gear', { text: 'N' });
-    this.gaitEl = h('div.gait-name', { text: 'ARRÊT' });
+    this.gaitEl = h('div.gait-name', { text: t('ARRÊT') });
     this.speedEl = h('div.speed.tab-num', { html: '0<small>km/h</small>' });
     this.staminaEl = h('div.stamina', {}, ...Array.from({ length: 10 }, () => h('i')));
     this.comfortEl = h('div.comfort.hidden');
@@ -87,16 +88,16 @@ export class HUD {
       g.input.bindButton(b, name);
       return b;
     };
-    this.btnJump = mk('btn-jump', 'jump', 'jump', 'Saut');
+    this.btnJump = mk('btn-jump', 'jump', 'jump', t('Saut'));
     this.btnJump.prepend(h('div.ring'));
     // Aide à l'appel : signe (en plus de la couleur) et libellé « Trop loin / Saute ! / Trop près ».
     this.jumpSign = h('i.jt-sign');
     this.btnJump.appendChild(this.jumpSign);
     this.jumpLabel = this.btnJump.querySelector('span');
-    this.btnGallop = mk('btn-gallop', 'gallop', 'boost', 'Boost');
+    this.btnGallop = mk('btn-gallop', 'gallop', 'boost', t('Boost'));
     // Jauge d'endurance autour du bouton BOOST (grand galop).
     this.btnGallop.prepend(h('div.ring'));
-    this.btnAction = mk('btn-action.hide', 'action', 'hand', 'Action');
+    this.btnAction = mk('btn-action.hide', 'action', 'hand', t('Action'));
     this.btnWhistle = mk('btn-whistle', 'whistle', 'whistle', '');
     this.btnWhistle.querySelector('span').remove();
     // Action secondaire contextuelle (mener en main, rampe…), à la place du bouton de saut quand on est à pied.
@@ -204,7 +205,7 @@ export class HUD {
           // Après le camion : le rapport (D3…) était en petit, l'allure reprend la grande taille.
           this.gearEl.classList.remove('small');
         }
-        this.gaitEl.textContent = gd.name;
+        this.gaitEl.textContent = t(gd.name);
         const st = p.horse.stamina / p.horse.maxStamina;
         const on = Math.ceil(st * 10);
         this.staminaEl.classList.remove('hidden');
@@ -230,37 +231,37 @@ export class HUD {
       } else {
         this.hrEl.classList.add('hidden');
         // Véhicule conduit : rapport engagé (boîte auto), régime moteur en barregraphe (zone rouge au régime maxi).
-        const t = p.vehicle || p.truck;
-        const gl = t.gearLabel;
+        const vh = p.vehicle || p.truck;
+        const gl = vh.gearLabel;
         if (this.gearEl.textContent !== gl) {
           this.gearEl.textContent = gl;
           this.gearEl.classList.toggle('small', gl.length > 1);
         }
-        const rpm = Math.round(t.rpm / 50) * 50;
-        const rt = `${rpm.toLocaleString('fr-FR')} tr/min`;
+        const rpm = Math.round(vh.rpm / 50) * 50;
+        const rt = T`${int(rpm)} tr/min`;
         if (this.gaitEl.textContent !== rt) this.gaitEl.textContent = rt;
         this.staminaEl.classList.remove('hidden', 'low');
         this.staminaEl.classList.add('rpm');
-        const on = Math.round((t.rpm / ((t.redline || 2450) * 1.06)) * 10);
+        const on = Math.round((vh.rpm / ((vh.redline || 2450) * 1.06)) * 10);
         [...this.staminaEl.children].forEach((c, i) => {
           c.classList.toggle('on', i < on);
           c.classList.toggle('red', i >= 9);
         });
         // Carburant : niveau, autonomie ou consommation moyenne depuis le départ ; réserve sous 12 %.
-        if ((this._fuelT = (this._fuelT || 0) - dt) <= 0 && t.sim) {
+        if ((this._fuelT = (this._fuelT || 0) - dt) <= 0 && vh.sim) {
           this._fuelT = 0.5;
-          const sim = t.sim, tank = sim.spec.tank || 60;
+          const sim = vh.sim, tank = sim.spec.tank || 60;
           const pct = clamp(sim.fuelL / tank, 0, 1);
           this.fuelBar.style.width = `${Math.round(pct * 100)}%`;
           const avg = sim.avgL100;
-          this.fuelTxt.textContent = `${Math.round(sim.fuelL)} l · ${avg ? `${dec(avg, 1)} l/100` : `${Math.round(sim.rangeKm)} km`}`;
+          this.fuelTxt.textContent = T`${Math.round(sim.fuelL)} l · ${avg ? T`${dec(avg, 1)} l/100` : `${Math.round(sim.rangeKm)} km`}`;
           this.fuelEl.classList.remove('hidden');
           this.fuelEl.classList.toggle('low', pct < 0.12);
         }
-        if (t.blockedT > 0.5 && !this._blockedHint) {
+        if (vh.blockedT > 0.5 && !this._blockedHint) {
           this._blockedHint = true;
-          this.hint(t.door.t > 0 ? 'Porte de service ouverte.' : 'Rampe ouverte : <b>ferme-la</b> à l’arrière du camion avant de rouler.', 3500);
-        } else if (!t.blockedT) this._blockedHint = false;
+          this.hint(vh.door.t > 0 ? t('Porte de service ouverte.') : t('Rampe ouverte : <b>ferme-la</b> à l’arrière du camion avant de rouler.'), 3500);
+        } else if (!vh.blockedT) this._blockedHint = false;
       }
       if (mode !== 'drive') {
         this.staminaEl.classList.remove('rpm');
@@ -273,7 +274,7 @@ export class HUD {
       const comfort = mc !== undefined && mc !== null ? mc : aboard ? tp.comfort : null;
       if (comfort !== null && mode === 'drive') {
         this.comfortEl.classList.remove('hidden');
-        const txt = `CONFORT${aboard ? ` · ${aboard.name.toUpperCase()}` : ' DU CHEVAL'} ${Math.round(comfort)} %`;
+        const txt = aboard ? T`CONFORT · ${aboard.name.toUpperCase()} ${Math.round(comfort)} %` : T`CONFORT DU CHEVAL ${Math.round(comfort)} %`;
         if (this.comfortTxt.textContent !== txt) this.comfortTxt.textContent = txt;
         this.comfortBar.style.width = `${Math.round(comfort)}%`;
         this.comfortEl.classList.toggle('warn', comfort < 70);
@@ -289,7 +290,7 @@ export class HUD {
       this.btnGallop.classList.toggle('hide', mode === 'drive');
       this.btnGallop.classList.toggle('boost', mode === 'ride');
       if (mode !== 'ride') this.btnGallop.classList.remove('boosting', 'empty');
-      this.btnGallop.querySelector('span').textContent = mode === 'ride' ? 'Boost' : 'Courir';
+      this.btnGallop.querySelector('span').textContent = mode === 'ride' ? t('Boost') : t('Courir');
       this.btnGallop.querySelector('div:not(.ring)').innerHTML = icon(mode === 'ride' ? 'boost' : 'run');
     }
     this.btnWhistle.classList.toggle('hide', !(mode === 'foot' && p.horse && !p.horse.hiddenInTruck && !g.missions?.noWhistle && !g.indoor));
@@ -320,7 +321,7 @@ export class HUD {
       this._jt = jt;
       for (const k of ['far', 'good', 'near']) this.btnJump.classList.toggle(k, jt === k);
       this.jumpSign.textContent = jt === 'far' ? '»' : jt === 'good' ? '✓' : jt === 'near' ? '!' : '';
-      this.jumpLabel.textContent = jt === 'far' ? 'Trop loin' : jt === 'good' ? 'Saute !' : jt === 'near' ? 'Trop près' : 'Saut';
+      this.jumpLabel.textContent = jt === 'far' ? t('Trop loin') : jt === 'good' ? t('Saute !') : jt === 'near' ? t('Trop près') : t('Saut');
     }
     // Tableau du parcours.
     const ci = g.course?.hud?.();
@@ -329,11 +330,11 @@ export class HUD {
     // Commandes de concours : HUD allégé (BOOST remplacé par la cadence au joystick).
     this.el.classList.toggle('cso-ctl', g.course?.controls === 'cso');
     if (ci) {
-      const t = ci.started ? dec(ci.t, 2) : `Départ ${Math.max(0, Math.ceil(ci.bell))} s`;
-      if (t !== this._csoT) this.csoT.textContent = this._csoT = t;
-      this.csoTa.textContent = ci.started ? `/ ${ci.ta} s` : `· accordé ${ci.ta} s`;
-      this.csoPen.textContent = `${ci.pen} pt${ci.pen > 1 ? 's' : ''}`;
-      this.csoNext.textContent = ci.finished ? 'Arrivée ✓' : ci.next === 'Arrivée' ? '▸ Arrivée' : `▸ ${ci.next}`;
+      const ct = ci.started ? dec(ci.t, 2) : T`Départ ${Math.max(0, Math.ceil(ci.bell))} s`;
+      if (ct !== this._csoT) this.csoT.textContent = this._csoT = ct;
+      this.csoTa.textContent = ci.started ? `/ ${ci.ta} s` : T`· accordé ${ci.ta} s`;
+      this.csoPen.textContent = ci.pen > 1 ? T`${ci.pen} pts` : T`${ci.pen} pt`;
+      this.csoNext.textContent = ci.finished ? t('Arrivée ✓') : ci.next === 'Arrivée' ? t('▸ Arrivée') : `▸ ${ci.next}`;
       this.csoEl.classList.toggle('over', ci.over);
       this.csoEl.classList.toggle('faults', ci.pen > 0);
     }
@@ -392,7 +393,7 @@ export class HUD {
     const el = this.notifEl;
     el.innerHTML = '';
     el.append(
-      h('div.n-head', {}, h('div.n-app', { html: icon('strides') }), h('span', { text: n.app || 'STRIDES' }), h('span.when', { text: 'maintenant' })),
+      h('div.n-head', {}, h('div.n-app', { html: icon('strides') }), h('span', { text: n.app || 'STRIDES' }), h('span.when', { text: t('maintenant') })),
       h('div.n-title', { text: n.title }),
       n.body ? h('div.n-body', { text: n.body }) : null
     );
@@ -455,7 +456,7 @@ export class HUD {
     const l = d.lines[0];
     this.dialogEl.innerHTML = '';
     this.dialogEl.append(
-      h('div.who', {}, h('div.av', { text: l.initials || (l.who || '?').slice(0, 2).toUpperCase() }), h('span', { text: l.who }), h('span.next', { text: d.lines.length > 1 ? 'Toucher pour continuer' : 'Toucher pour fermer' })),
+      h('div.who', {}, h('div.av', { text: l.initials || (l.who || '?').slice(0, 2).toUpperCase() }), h('span', { text: l.who }), h('span.next', { text: d.lines.length > 1 ? t('Toucher pour continuer') : t('Toucher pour fermer') })),
       h('div.line', { text: l.text })
     );
     // Écran court, texte long : si le dialogue remonte jusqu'à la plaque de zone, celle-ci s'efface le temps de la lecture.
