@@ -593,6 +593,7 @@ export class Transport {
     const h = s.horse;
     this.seq = null;
     h.anim.back = false;
+    t.setStallPartitions(-1);
     t.collisionOff = false;
     t.passThrough.delete(h);
     t.setDoor(false);
@@ -990,6 +991,9 @@ export class Transport {
       M.h = 0;
       yield* this._wait(0.2);
     }
+    // Bas-flancs derrière la stalle ouverts (couloir et stalle dégagés) avant de monter.
+    t.setStallPartitions(stall + 1);
+    for (let w = 0; w < 2.5 && !t.stallPartsSettled; w += yield);
     // Montée au pas, le meneur devant l'épaule droite.
     this._cam([-3.2, 2.9, HZ(-9.8)], [-0.3, 1.8, MZ()]);
     yield* this._all(this._walk(A, lane, D.hingeZ + 0.9, 1.0, { stop: false }), this._walk(M, cx, D.hingeZ + 1.9, 1.0, { stop: false }));
@@ -1000,6 +1004,8 @@ export class Transport {
     yield* this._walk(A, st.x, st.z, 0.45, { back: true, turn: 1.1 });
     yield* this._all(this._turn(A, st.h, 1.2), this._walk(M, cx, st.ring.z - 0.45, 0.6));
     yield* this._turn(M, Math.PI * 0.25, 4);
+    // Le cheval rangé : on referme les bas-flancs derrière lui.
+    t.setStallPartitions(-1);
     // Attache à la barre de poitrail.
     yield* this._wait(1.1);
     s.holding = false;
@@ -1046,6 +1052,9 @@ export class Transport {
     s.tied = false;
     s.holding = true;
     this._removeAboard(h);
+    // Bas-flancs derrière la stalle ouverts pour la sortie.
+    t.setStallPartitions(stall + 1);
+    for (let w = 0; w < 2.5 && !t.stallPartsSettled; w += yield);
     // Le meneur recule dans le couloir ; le cheval sort ses hanches de la stalle et se tourne vers l'arrière.
     this._cam([-3.6, 3.0, HZ(-11)], [-0.3, 1.8, MZ()]);
     yield* this._walk(M, cx, st.z - 1.9, 0.7, { back: true });
@@ -1055,6 +1064,8 @@ export class Transport {
     // regarde vers l'arrière : x croissant).
     yield* this._all(this._walk(A, -0.35, D.hingeZ + 0.9, 0.85, { stop: false, turn: 1.4 }), this._walk(M, -0.95, D.hingeZ + 0.4, 0.85, { stop: false }));
     this._cam([-4.6, 2.4, HZ(-12.5)], [0, 1.0, HZ(-6.2)]);
+    // Le cheval sur le pont : on referme les bas-flancs.
+    t.setStallPartitions(-1);
     yield* this._all(this._walk(A, -0.35, footZ - 1.6, 0.8, { turn: 0.8 }), this._walk(M, -1.0, footZ - 2.2, 0.8));
     yield* this._all(this._stop(A, 0.4), this._stop(M, 0.3));
     // Le meneur se range à gauche de l'épaule pour repartir en main.

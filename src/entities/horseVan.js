@@ -20,6 +20,7 @@ export class HorseVan extends Vehicle {
     this.ownModel = true; // roues et feux propres (pas ceux des effets de la circulation)
     this.sideDoor = { t: 0, target: 0 }; // pont latéral et volets
     this.rearDoor = { t: 0, target: 0 };
+    this.partition = { t: 0, target: 0 }; // bas-flanc central (ouvert pour charger la stalle du fond)
     this.interiorLight = false;
     this.horses = 0;
     this.sim.fuelL = this.sim.spec.tank * 0.8;
@@ -27,6 +28,24 @@ export class HorseVan extends Vehicle {
     this._lightsKey = '';
     model.setSide(0);
     model.setRear(0);
+    model.setPartition(0);
+  }
+
+  setPartition(open) {
+    if (this.partition.target === (open ? 1 : 0)) return;
+    this.partition.target = open ? 1 : 0;
+    this.game.audio?.latch?.();
+  }
+  // Bas-flanc posé immédiatement (séquence accélérée, chargement de partie).
+  setPartitionInstant(open) {
+    this.partition.t = this.partition.target = open ? 1 : 0;
+    this.M.setPartition(this.partition.t);
+  }
+  get partitionOpen() {
+    return this.partition.target === 1 && this.partition.t >= 1;
+  }
+  get partitionClosed() {
+    return this.partition.target === 0 && this.partition.t <= 0;
   }
 
   get label() {
@@ -97,6 +116,8 @@ export class HorseVan extends Vehicle {
   }
   // Ouverture immédiate (chargement de partie, tests).
   setPartsInstant(side, rear) {
+    this.partition.t = this.partition.target = 0;
+    this.M.setPartition(0);
     if (!!side !== (this.sideDoor.target === 1)) this._rampCollider(!!side);
     this.sideDoor.t = this.sideDoor.target = side ? 1 : 0;
     this.rearDoor.t = this.rearDoor.target = rear ? 1 : 0;
@@ -156,6 +177,13 @@ export class HorseVan extends Vehicle {
       p.t = clamp(p.t + Math.sign(p.target - p.t) * OPEN_RATE * dt, 0, 1);
       apply(ease(p.t));
       if (p.t === p.target) this.game.audio?.[p.target ? 'rampDown' : 'rampShut']?.();
+    }
+    // Bas-flanc : pivote en ~1,2 s, loquet en fin de course.
+    const pt = this.partition;
+    if (pt.t !== pt.target) {
+      pt.t = clamp(pt.t + Math.sign(pt.target - pt.t) * 0.85 * dt, 0, 1);
+      this.M.setPartition(ease(pt.t));
+      if (pt.t === pt.target) this.game.audio?.latch?.();
     }
     // Roues : roulement et braquage sur les pivots du fichier (roulement en -X local, avant du modèle vers -Z).
     const W = this.M.wheels;

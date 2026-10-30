@@ -13,6 +13,8 @@ const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
 // Cercles de collision le long de l'axe du camion (repère local).
 const PROBES = [-3.4, -1.7, 0, 1.7, 3.4];
+// Ouverture des bas-flancs (rotation autour de la verticale, repère du modèle : bout côté couloir vers l'arrière).
+const STALL_PART_OPEN = -65 * (Math.PI / 180);
 
 // Couleurs d'émission des feux (sRGB) et intensités relatives.
 const LC = {
@@ -63,6 +65,9 @@ export class Truck {
     this.gates = { t: 0, target: 0 };
     this.partition = { t: 0, target: 0 };
     this.door = { t: 0, target: 0 };
+    // Bas-flancs des stalles en épi (modèle détaillé) : de l'avant vers l'arrière ; ouverts, ils pivotent vers
+    // l'arrière sur leur charnière côté paroi gauche et dégagent le couloir et les stalles.
+    this.stallParts = (M.stallPartitions || []).map((p) => ({ ...p, t: 0, target: 0 }));
     this.hazard = false;
     this.interiorLight = false;
     this.lightsOn = false;
@@ -194,6 +199,28 @@ export class Truck {
     this.door.target = open ? 1 : 0;
     this.game.audio?.truckDoor?.(open);
   }
+  // Bas-flancs : ouvre ceux d'indice ≥ `from` (cloisons derrière une stalle), ferme les autres ; from < 0 : tous fermés.
+  setStallPartitions(from = -1) {
+    let changed = false;
+    this.stallParts.forEach((p, i) => {
+      const target = from >= 0 && i >= from ? 1 : 0;
+      if (p.target !== target) changed = true;
+      p.target = target;
+    });
+    if (changed) this.game.audio?.latch?.();
+  }
+  // Tous les bas-flancs à leur position demandée.
+  get stallPartsSettled() {
+    return this.stallParts.every((p) => p.t === p.target);
+  }
+  setStallPartitionsInstant(from = -1) {
+    this.setStallPartitions(from);
+    for (const p of this.stallParts) {
+      p.t = p.target;
+      p.pivot.rotation.y = STALL_PART_OPEN * p.t;
+    }
+  }
+
   // Ouverture/fermeture immédiate (chargement de partie, tests).
   setRampInstant(open) {
     this.ramp.target = this.ramp.t = open ? 1 : 0;
@@ -263,6 +290,13 @@ export class Truck {
     if (r.target === 0 && gs.t > 0) r.t = Math.max(r.t, prevT); // pont bloqué tant que les portillons sont ouverts
     for (const p of [this.partition, this.door]) {
       if (p.t !== p.target) p.t = clamp(p.t + Math.sign(p.target - p.t) * 1.4 * dt, 0, 1);
+    }
+    // Bas-flancs : ~1,2 s, l'un après l'autre (léger décalage selon la cloison).
+    for (const p of this.stallParts) {
+      if (p.t === p.target) continue;
+      p.t = clamp(p.t + Math.sign(p.target - p.t) * 0.85 * dt, 0, 1);
+      p.pivot.rotation.y = STALL_PART_OPEN * ease(p.t);
+      if (p.t === p.target) a?.latch?.();
     }
     this._applyParts();
   }

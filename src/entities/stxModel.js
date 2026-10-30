@@ -72,6 +72,101 @@ export function loadStx() {
   return gltfP;
 }
 
+// Bas-flancs (cloisons en épi entre les stalles) : dans le fichier, ils sont fondus dans les maillages du box
+// (interior_horses__Black_padding, __Brushed_steel, __Chrome). On les retrouve par composantes connexes (panneau,
+// rembourrage, main courante : de la paroi gauche, x_glb ≈ -1,08, au couloir, x_glb ≈ 0,63, sur moins de 0,5 m de
+// profondeur), regroupés par cloison ; leurs triangles passent dans des maillages propres (mêmes attributs, mêmes
+// matériaux), accrochés à une charnière côté paroi. La géométrie du fichier n'est ni modifiée ni redessinée.
+const PARTITION_MESHES = ['interior_horses__Black_padding', 'interior_horses__Brushed_steel', 'interior_horses__Chrome'];
+function extractPartitions(model) {
+  const clusters = [];
+  for (const name of PARTITION_MESHES) {
+    const mesh = model.getObjectByName(name);
+    if (!mesh?.geometry?.index) continue;
+    const geo = mesh.geometry;
+    const pos = geo.attributes.position.array;
+    const idx = geo.index.array;
+    const n = pos.length / 3;
+    // Composantes connexes (sommets soudés au millimètre).
+    const key = new Map(), id = new Int32Array(n);
+    for (let i = 0; i < n; i++) {
+      const k = `${Math.round(pos[i * 3] * 1000)},${Math.round(pos[i * 3 + 1] * 1000)},${Math.round(pos[i * 3 + 2] * 1000)}`;
+      if (!key.has(k)) key.set(k, key.size);
+      id[i] = key.get(k);
+    }
+    const par = new Int32Array(key.size).map((_, i) => i);
+    const find = (x) => {
+      while (par[x] !== x) x = par[x] = par[par[x]];
+      return x;
+    };
+    for (let t = 0; t < idx.length; t += 3) {
+      const a = find(id[idx[t]]);
+      par[find(id[idx[t + 1]])] = a;
+      par[find(id[idx[t + 2]])] = a;
+    }
+    const box = new Map();
+    for (let i = 0; i < n; i++) {
+      const r = find(id[i]);
+      let b = box.get(r);
+      if (!b) box.set(r, (b = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9, hz: 0, hn: 0 }));
+      const x = pos[i * 3], z = pos[i * 3 + 2];
+      b.x0 = Math.min(b.x0, x);
+      b.x1 = Math.max(b.x1, x);
+      b.z0 = Math.min(b.z0, z);
+      b.z1 = Math.max(b.z1, z);
+    }
+    for (const b of box.values()) b.part = b.x1 - b.x0 > 0.9 && b.x0 > -1.2 && b.x1 < 0.75 && b.z1 - b.z0 < 0.5;
+    // Charnière : profondeur moyenne des sommets côté paroi.
+    for (let i = 0; i < n; i++) {
+      const b = box.get(find(id[i]));
+      if (b.part && pos[i * 3] < b.x0 + 0.05) {
+        b.hz += pos[i * 3 + 2];
+        b.hn++;
+      }
+    }
+    const keep = [];
+    const moved = new Map(); // cluster → indices
+    for (let t = 0; t < idx.length; t += 3) {
+      const b = box.get(find(id[idx[t]]));
+      if (!b.part) {
+        keep.push(idx[t], idx[t + 1], idx[t + 2]);
+        continue;
+      }
+      const zc = (b.z0 + b.z1) / 2;
+      let c = clusters.find((q) => Math.abs(q.zc - zc) < 0.4);
+      if (!c) clusters.push((c = { zc, x0: b.x0, hz: b.hz / Math.max(1, b.hn), parts: [] }));
+      let list = moved.get(c);
+      if (!list) moved.set(c, (list = []));
+      list.push(idx[t], idx[t + 1], idx[t + 2]);
+    }
+    if (!moved.size) continue;
+    geo.setIndex(keep);
+    for (const [c, list] of moved) {
+      const g = new THREE.BufferGeometry();
+      for (const k of Object.keys(geo.attributes)) g.setAttribute(k, geo.attributes[k]);
+      g.setIndex(list);
+      const m = new THREE.Mesh(g, mesh.material);
+      m.name = `${mesh.name}__partition`;
+      m.castShadow = false;
+      m.receiveShadow = mesh.receiveShadow;
+      c.parts.push({ mesh: m, parent: mesh.parent });
+    }
+  }
+  // Charnières et pivots (repère du modèle) ; de l'avant (z_glb petit) vers l'arrière.
+  clusters.sort((a, b) => a.zc - b.zc);
+  return clusters.map((c) => {
+    const pivot = new THREE.Group();
+    pivot.name = 'stall_partition_hinge';
+    pivot.position.set(c.x0, 0, c.hz);
+    c.parts[0].parent.add(pivot);
+    for (const { mesh } of c.parts) {
+      mesh.position.set(-c.x0, 0, -c.hz);
+      pivot.add(mesh);
+    }
+    return { pivot, meshes: c.parts.map((p) => p.mesh), z: -c.zc };
+  });
+}
+
 export function buildStxModel(gltf) {
   const model = gltf.scene;
   model.name = 'STX_Scania_DETAILLE';
@@ -89,6 +184,9 @@ export function buildStxModel(gltf) {
     o.receiveShadow = !interior || /Rubber_floor|White_gloss/.test(o.name);
     mats.set(o.material.name, o.material);
   });
+  // Bas-flancs mobiles (voir extractPartitions) : intérieurs comme le reste du box.
+  const stallPartitions = extractPartitions(model);
+  for (const p of stallPartitions) interiors.push(...p.meshes);
   // Ombres des nuages du jeu sur le camion, comme sur le décor (le shader PBR du matériau est conservé).
   for (const m of mats.values()) {
     m.onBeforeCompile = (sh) => addCloudShadows(sh);
@@ -153,7 +251,7 @@ export function buildStxModel(gltf) {
   return {
     root, body, model,
     ramp: node('rear_ramp'), door: node('living_door'), roof: node('roof_shell'),
-    gates: [], partition: new THREE.Object3D(), wheels,
+    gates: [], partition: new THREE.Object3D(), wheels, stallPartitions,
     materials: { body: interiorMat },
     lights, stx: true, detailed: true, doorOpen: DOOR_OPEN,
     // Intérieurs (cabine, habitation, box) : affichés seulement à moins de `near` mètres de la caméra (visibles par

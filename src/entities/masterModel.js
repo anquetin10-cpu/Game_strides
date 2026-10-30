@@ -27,16 +27,22 @@ export const MASTER_DIM = {
   side: { hingeX: -1.177, hingeY: 0.58, z: -0.54, len: 1.38, w: 1.68 },
   // Ancres du fichier.
   sideLoad: { x: -1.287, z: -0.54 },
+  // Stalles : chevaux tête vers l'arrière (vers les portillons et la sellerie), comme dans un vrai van à pont latéral.
   stalls: [
-    { x: 0.55, z: -1.1 }, // stalle gauche (anchor_horse_L)
-    { x: -0.55, z: -1.1 }, // stalle droite (anchor_horse_R), côté pont
+    { x: 0.55, z: -1.1, h: Math.PI }, // stalle gauche, au fond (anchor_horse_L)
+    { x: -0.55, z: -1.1, h: Math.PI }, // stalle droite, côté pont (anchor_horse_R)
   ],
+  // Bas-flanc central : charnière arrière ; ouvert, son bout avant touche le flanc droit vers z = 0.
+  partition: { hingeZ: -2.455, openFrontZ: -0.02 },
   rearEntry: { x: 0, z: -3.25 },
   seat: { x: 0.54, y: 0.47, z: 1.8 }, // anchor_driver (assise à 0,95 m)
   exitDriver: { x: 1.65, z: 1.75 },
 };
 
-const NODES = ['steer_L', 'steer_R', 'wheel_front_L', 'wheel_front_R', 'wheel_rear_L', 'wheel_rear_R', 'side_ramp', 'upper_flap_front', 'upper_flap_rear', 'rear_door', 'anchor_horse_L', 'anchor_horse_R', 'anchor_side_load', 'anchor_driver'];
+// Charnière du bas-flanc central (bout arrière, z_glb) et ouverture (bout avant contre le flanc droit : 25°).
+const PARTITION_HINGE_Z = 2.455;
+const PARTITION_OPEN = -25 * (Math.PI / 180);
+const NODES = ['stall_partition', 'steer_L', 'steer_R', 'wheel_front_L', 'wheel_front_R', 'wheel_rear_L', 'wheel_rear_R', 'side_ramp', 'upper_flap_front', 'upper_flap_rear', 'rear_door', 'anchor_horse_L', 'anchor_horse_R', 'anchor_side_load', 'anchor_driver'];
 const CLIPS = ['OpenSideLoading', 'OpenRearDoor'];
 
 let gltfP = null;
@@ -119,6 +125,16 @@ export function buildMasterModel(gltf) {
     door: part('rear_door', 'OpenRearDoor'),
   };
   const set = (p, k) => p.node.quaternion.slerpQuaternions(p.closed, p.open, k);
+  // Bas-flanc central (stall_partition) : pivote sur sa charnière arrière (côté têtes, z_glb = 2,455), son bout avant
+  // venant contre le flanc droit (côté pont, x_glb > 0) pour dégager l'accès à la stalle du fond. Le fichier n'a pas
+  // d'animation pour lui : le pivot est posé à la charnière, sans toucher à sa géométrie.
+  const partition = node('stall_partition');
+  const pHinge = new THREE.Group();
+  pHinge.name = 'stall_partition_hinge';
+  pHinge.position.set(partition.position.x, partition.position.y, PARTITION_HINGE_Z);
+  partition.parent.add(pHinge);
+  pHinge.add(partition);
+  partition.position.set(0, 0, -PARTITION_HINGE_Z);
 
   // Feux : matériaux du modèle, émission pilotée par le jeu (phares, feux arrière/stop, clignotants).
   const lens = mats.get('Light_lens'), red = mats.get('Red_lens'), amber = mats.get('Amber'), led = mats.get('LED');
@@ -159,6 +175,9 @@ export function buildMasterModel(gltf) {
     },
     setRear(k) {
       set(parts.door, k);
+    },
+    setPartition(k) {
+      pHinge.rotation.y = PARTITION_OPEN * k;
     },
     // Intérieurs (cabine, box, sellerie) : affichés seulement près de la caméra.
     interiors,

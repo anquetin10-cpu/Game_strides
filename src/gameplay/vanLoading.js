@@ -1,8 +1,10 @@
 // Van porte-chevaux (STX Renault Master) : ouverture du pont latéral droit (et de ses volets) et de la porte arrière,
 // chargement / déchargement des chevaux par le pont latéral, chevaux attachés dans leurs stalles pendant le trajet,
 // sauvegarde et reprise. Le camion Strides (Scania) garde son propre transport (transport.js).
-// Chargement : cheval mené en main au pied du pont ouvert → il monte (perpendiculaire au van), se range dans la stalle
-// libre (gauche d'abord, puis droite côté pont) face à la route. Déchargement : l'inverse, puis il revient en main.
+// Chargement : cheval mené en main au pied du pont ouvert → il monte (perpendiculaire au van) par l'avant de l'ouverture,
+// pivote et avance dans la stalle libre tête vers l'arrière (stalle du fond d'abord : le bas-flanc central s'ouvre pour
+// le laisser passer, puis se referme ; ensuite la stalle côté pont). Déchargement : il recule hors de sa stalle, pivote
+// vers le pont et descend (bas-flanc ouvert pour la stalle du fond), puis il revient en main.
 import * as THREE from 'three';
 import { MASTER_DIM as MD } from '../entities/masterModel.js';
 import { clamp, damp, lerp, wrapAngle } from '../core/math.js';
@@ -11,12 +13,19 @@ import { t, T } from '../core/i18n.js';
 const S = MD.side;
 const _v = new THREE.Vector3();
 const _q = new THREE.Quaternion();
+const _q2 = new THREE.Quaternion();
+const _Y = new THREE.Vector3(0, 1, 0);
 const fem = (h) => /comete|saphir|tornade/.test(h?.id || '');
 const WALK = 1.05; // m/s, au pas, en main
 const TURN = 1.4; // rad/s, demi-tour sur place
 // Pied du pont (au sol, perpendiculaire au van) et dessus du pont.
-const FOOT = { x: S.hingeX - S.len * 0.9 - 2.2, z: S.z };
-const TOP = { x: MD.sideLoad.x + 0.2, z: S.z };
+// Couloir d'entrée : à l'avant de l'ouverture (le bas-flanc ouvert vient contre le flanc juste derrière).
+const LANE = 0.12;
+const FOOT = { x: S.hingeX - S.len * 0.9 - 2.2, z: LANE };
+const TOP = { x: MD.sideLoad.x + 0.2, z: LANE };
+// Point de pivot devant la stalle (z), cap du cheval dans le box en entrant (vers la gauche du van).
+const PIVOT_Z = -0.25;
+const IN = Math.PI / 2;
 
 export class VanLoading {
   constructor(game, van) {
@@ -122,13 +131,16 @@ export class VanLoading {
     // Départ : là où se trouve le cheval (ramené dans l'axe du pont s'il est de travers).
     const l = v.toLocal(h.pos.x, h.pos.z);
     const a = { x: Math.min(l.x, FOOT.x), z: l.z, h: wrapAngle(h.heading - v.heading) };
+    const far = stall === 0; // stalle du fond : bas-flanc à ouvrir
     const path = [
       { x: FOOT.x, z: FOOT.z },
-      { x: TOP.x, z: TOP.z },
-      { x: st.x, z: S.z }, // dans le box, encore de travers
-      { x: st.x, z: st.z, h: 0, turn: true }, // pivote face à la route et recule dans la stalle
+      { x: TOP.x, z: TOP.z, part: far }, // en haut du pont ; attend le bas-flanc ouvert
+      { x: far ? 0.2 : -0.45, z: LANE },
+      { x: st.x, z: PIVOT_Z, h: st.h, turn: true }, // pivote tête vers l'arrière en se rangeant
+      { x: st.x, z: st.z, close: far }, // avance dans la stalle ; le bas-flanc se referme
     ];
     this._begin('load', h, stall, a, path);
+    if (far) this.van.setPartition(true);
     if (fast) this.finishSequence();
     return true;
   }
@@ -137,15 +149,20 @@ export class VanLoading {
     const ab = this.aboard.find((x) => x.horse === h);
     const v = this.van;
     if (!ab || !v.sideOpen || this.seq || this.player.mode !== 'foot') return false;
+    const far = ab.stall === 0;
+    // Stalle du fond : la stalle côté pont doit être vide (on décharge d'abord le cheval côté pont).
+    if (far && this.aboard.some((x) => x.stall === 1)) return false;
     if (this.transport?.led) this.transport.release(true);
     const st = MD.stalls[ab.stall];
     this._removeAboard(h);
     const path = [
-      { x: st.x, z: S.z, h: -Math.PI / 2, turn: true }, // pivote vers le pont
-      { x: TOP.x, z: TOP.z },
+      { x: st.x, z: PIVOT_Z, back: true }, // recule hors de la stalle
+      { x: far ? 0.2 : -0.45, z: LANE, h: -IN, turn: true, part: far }, // pivote vers le pont (bas-flanc ouvert)
+      { x: TOP.x, z: TOP.z, close: far },
       { x: FOOT.x - 0.6, z: FOOT.z },
     ];
-    this._begin('unload', h, ab.stall, { x: st.x, z: st.z, h: 0 }, path);
+    this._begin('unload', h, ab.stall, { x: st.x, z: st.z, h: st.h }, path);
+    if (far) this.van.setPartition(true);
     if (fast) this.finishSequence();
     return true;
   }
@@ -166,42 +183,55 @@ export class VanLoading {
   // Avance la séquence en cours jusqu'à la fin (tests, chargement de partie).
   finishSequence() {
     let n = 0;
-    while (this.seq && n++ < 6000) this._stepSeq(1 / 30);
+    while (this.seq && n++ < 6000) {
+      // Bas-flanc sans animation : posé tout de suite dans l'état demandé.
+      if (this.van.partition.t !== this.van.partition.target) this.van.setPartitionInstant(this.van.partition.target === 1);
+      this._stepSeq(1 / 30);
+    }
+    this.van.setPartitionInstant(false);
   }
 
-  // Le cheval suit le chemin (repère du van) : marche vers chaque point, pivote sur place si demandé.
+  // Le cheval suit le chemin (repère du van) : marche vers chaque point (droit devant lui, ou à reculons), pivote en se
+  // déplaçant si demandé ; attend le bas-flanc ouvert avant d'entrer dans le box, le referme une fois rangé.
   _stepSeq(dt) {
     const s = this.seq;
     if (!s) return;
     const a = s.a;
     const pt = s.path[s.i];
     if (!pt) return this._end();
+    const v = this.van;
+    if (pt.part && s.i > 0 && !v.partitionOpen) {
+      a.v = 0;
+      a.back = false;
+      return;
+    }
     const dx = pt.x - a.x, dz = pt.z - a.z;
     const d = Math.hypot(dx, dz);
+    let dh = 0;
     if (pt.turn) {
-      // Pivot : cap d'abord, puis glissement court vers la stalle (au pas).
-      const dh = wrapAngle(pt.h - a.h);
-      if (Math.abs(dh) > 0.02) {
-        a.h += Math.sign(dh) * Math.min(Math.abs(dh), TURN * dt);
-        a.v = 0.4;
-        return;
-      }
-      a.h = pt.h;
-    } else if (d > 0.05) {
+      dh = wrapAngle(pt.h - a.h);
+      a.h += Math.sign(dh) * Math.min(Math.abs(dh), TURN * dt);
+    } else if (!pt.back && d > 0.05) {
       // Cap vers le point (le cheval marche droit devant lui).
-      const want = Math.atan2(dx, dz);
-      a.h += clamp(wrapAngle(want - a.h), -TURN * 2 * dt, TURN * 2 * dt);
+      a.h += clamp(wrapAngle(Math.atan2(dx, dz) - a.h), -TURN * 2 * dt, TURN * 2 * dt);
     }
-    if (d <= 0.05) {
+    a.back = !!pt.back;
+    if (d <= 0.05 && Math.abs(dh) <= 0.02) {
+      if (pt.turn) a.h = pt.h;
+      if (pt.close) v.setPartition(false);
       s.i++;
       a.v = 0;
       if (s.i >= s.path.length) this._end();
       return;
     }
-    const step = Math.min(d, WALK * dt);
-    a.x += (dx / d) * step;
-    a.z += (dz / d) * step;
-    a.v = WALK;
+    // Pivot : déplacement ralenti pendant que le cheval tourne.
+    const speed = pt.turn ? 0.45 : pt.back ? 0.6 : WALK;
+    const step = Math.min(d, speed * dt);
+    if (d > 0) {
+      a.x += (dx / d) * step;
+      a.z += (dz / d) * step;
+    }
+    a.v = Math.max(speed, pt.turn ? 0.35 : 0);
   }
 
   _end(aborted = false) {
@@ -212,6 +242,7 @@ export class VanLoading {
     const h = s.horse;
     this.seq = null;
     this.player.locked = false;
+    v.setPartition(false);
     h.isPlayerHorse = s.wasPlayerHorse;
     h.anim.back = false;
     if (!g.horses.includes(h) || aborted) {
@@ -286,6 +317,8 @@ export class VanLoading {
       c.gallop = false;
       h.heading = wh;
       h.speed = clamp(h.speed, 0, a.v + 0.3);
+      // À reculons : le soutien ramène le sabot vers l'arrière (anim.js).
+      h.anim.back = !!(a.back && moving);
       h._vanProto.call(h, dt, camPos);
       // Avant et arrière du cheval sur leur surface (pont incliné, plancher).
       const fx = Math.sin(a.h) * 0.75, fz = Math.cos(a.h) * 0.75;
@@ -319,10 +352,11 @@ export class VanLoading {
     h._vanProto.call(h, dt, camPos);
     v.localToWorld(st.x, MD.floor, st.z, h.pos);
     h.groundY = h.pos.y;
-    h.heading = v.heading;
+    // Tête vers l'arrière : cap de la stalle par rapport au van.
+    h.heading = v.heading + st.h;
     h.mesh.position.copy(h.pos);
     v.body.getWorldQuaternion(_q);
-    h.mesh.quaternion.copy(_q);
+    h.mesh.quaternion.copy(_q).multiply(_q2.setFromAxisAngle(_Y, st.h));
   }
 
   _setAboard(h, stall) {

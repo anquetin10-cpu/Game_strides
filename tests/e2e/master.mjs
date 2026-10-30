@@ -177,19 +177,31 @@ r = await E(() => {
   const lab2 = g.interact.update()?.label;
   g.interact.trigger();
   const started = L.busy;
-  let n = 0, maxY = -1e9;
-  const y0 = v.localToWorld(0, 0, 0).y;
-  while (L.busy && n++ < 30 * 20) {
-    A.tick(1);
-    maxY = Math.max(maxY, h.pos.y - y0);
-  }
-  const l = v.toLocal(h.pos.x, h.pos.z);
-  // Hauteur au-dessus du plancher de la stalle (van garé sur un terrain en pente : plancher incliné avec la caisse).
-  const fl = v.localToWorld(l.x, 0.63, l.z).y;
-  return { lab1, lab2, started, aboard: L.isAboard(h), hidden: h.hiddenInTruck, local: { x: +l.x.toFixed(2), z: +l.z.toFixed(2) }, aboveFloor: +(h.pos.y - fl).toFixed(3), pitch: +(v.slope * 57.3).toFixed(1), secs: n / 30, maxY: +maxY.toFixed(2) };
+  // Jusqu'à l'entrée dans le box (bas-flanc ouvert) : capture en cours de chargement.
+  let n = 0;
+  while (L.busy && L.seq.i < 3 && n++ < 30 * 20) A.tick(1);
+  for (let i = 0; i < 20 && L.busy; i++) A.tick(1);
+  window.__mid = { partition: v.partition.t, step: L.seq?.i };
+  return { lab1, lab2, started };
 });
 check('ACTION au pied du pont : « Ouvrir le pont latéral »', r.lab1 === 'Ouvrir le pont latéral', r.lab1);
 check('cheval mené au pied du pont : « Faire monter … »', /^Faire monter/.test(r.lab2 || '') && r.started, r.lab2);
+await shot('5b-chargement-bas-flanc-ouvert', [-6.2, 2.6, 1.6], [-0.2, 1.1, -0.9]);
+r = await E(() => {
+  const g = window.__game, A = window.__auto, v = g.van, L = g.vanLoading, h = g.mainHorse;
+  g.cam.override = null;
+  const mid = window.__mid;
+  let n = 0;
+  while (L.busy && n++ < 30 * 20) A.tick(1);
+  A.tick(45); // bas-flanc refermé
+  const l = v.toLocal(h.pos.x, h.pos.z);
+  const rel = Math.abs(((h.heading - v.heading) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI);
+  // Hauteur au-dessus du plancher de la stalle (van garé sur un terrain en pente : plancher incliné avec la caisse).
+  const fl = v.localToWorld(l.x, 0.63, l.z).y;
+  return { mid, aboard: L.isAboard(h), hidden: h.hiddenInTruck, local: { x: +l.x.toFixed(2), z: +l.z.toFixed(2) }, aboveFloor: +(h.pos.y - fl).toFixed(3), headingFromRear: +rel.toFixed(2), partitionAfter: v.partition.t, pitch: +(v.slope * 57.3).toFixed(1) };
+});
+check('stalle du fond : le bas-flanc central s’ouvre pendant le chargement, puis se referme', r.mid.partition > 0.99 && r.partitionAfter === 0, JSON.stringify({ mid: r.mid, after: r.partitionAfter }));
+check('cheval chargé tête vers l’arrière', r.headingFromRear < 0.05, `écart ${r.headingFromRear} rad`);
 check('séquence : le cheval monte le pont et se range dans sa stalle', r.aboard && r.hidden && Math.abs(Math.abs(r.local.x) - 0.55) < 0.1 && Math.abs(r.local.z + 1.1) < 0.15 && Math.abs(r.aboveFloor) < 0.03, JSON.stringify(r));
 await shot('6-cheval-charge', [-6.5, 2.3, 2.5], [-0.4, 1.2, -0.8]);
 // Cheval dans sa stalle (côté gauche, derrière la cloison) : vu de l'arrière, porte ouverte.
@@ -250,6 +262,31 @@ r = await E(() => {
   return { lab, aboard: L.isAboard(h), hidden: h.hiddenInTruck, led: p.transport.led?.horse === h, local: { x: +l.x.toFixed(2), z: +l.z.toFixed(2) }, onGround: Math.abs(h.pos.y - g.terrain.getHeight(h.pos.x, h.pos.z)) < 0.1 };
 });
 check('déchargement par le pont : le cheval descend et revient en main', /^Faire descendre/.test(r.lab || '') && !r.aboard && !r.hidden && r.led && r.local.x < -3 && r.onGround, JSON.stringify(r));
+
+// Deux chevaux : stalle du fond puis stalle côté pont ; on décharge d'abord celui côté pont.
+r = await E(() => {
+  const g = window.__game, A = window.__auto, v = g.van, p = g.player, h = g.mainHorse, L = g.vanLoading;
+  p.transport.release(true);
+  const q = g.spawnHorse({ id: 'testvan', name: 'Testeur', coat: 'grey' }, h.pos.x + 1, h.pos.z + 1, 0, { saddle: false });
+  A.tick(2);
+  const a = L.load(h, { fast: true });
+  const b = L.load(q, { fast: true });
+  A.tick(45);
+  const lh = v.toLocal(h.pos.x, h.pos.z), lq = v.toLocal(q.pos.x, q.pos.z);
+  const rear = (x) => Math.abs(((x.heading - v.heading) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI) < 0.05;
+  const bothRear = rear(h) && rear(q);
+  const dh = [+(h.heading - v.heading).toFixed(2), +(q.heading - v.heading).toFixed(2)];
+  const farBlocked = !L.unload(h, { fast: true }); // stalle du fond bloquée tant que l'autre est à bord
+  const u1 = L.unload(q, { fast: true });
+  const u2 = L.unload(h, { fast: true });
+  A.tick(45);
+  const out = { a, b, h: { x: +lh.x.toFixed(2), z: +lh.z.toFixed(2) }, q: { x: +lq.x.toFixed(2), z: +lq.z.toFixed(2) }, rear: bothRear, dh, farBlocked, u1, u2, empty: L.aboard.length === 0, partition: v.partition.t };
+  p.transport.release(true);
+  g.despawn(q);
+  return out;
+});
+check('deux chevaux : stalle du fond puis côté pont, tous deux tête vers l’arrière', r.a && r.b && r.h.x > 0.4 && r.q.x < -0.4 && r.rear, JSON.stringify(r));
+check('déchargement dans l’ordre (côté pont d’abord), bas-flanc refermé ensuite', r.farBlocked && r.u1 && r.u2 && r.empty && r.partition === 0, JSON.stringify(r));
 
 // ---------- 5. Collisions, sauvegarde, camion ----------
 r = await E(() => {
