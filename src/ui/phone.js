@@ -14,6 +14,7 @@ import { ion } from './ionicons.js';
 import { renderProHome, renderRequest, requestCard, appToast, isStridesOffer } from './requests.js';
 import { renderActivities } from './activities-app.js';
 import { renderRanking } from './ranking-app.js';
+import { t, T, LANG, euros, switchLang } from '../core/i18n.js';
 
 export class Phone {
   constructor(game, root) {
@@ -29,9 +30,9 @@ export class Phone {
     this.layer = h('div.phone-layer');
     this.screen = h('div.phone-content');
     this.clockEl = h('span.tab-num', { text: '9:41' });
-    const closeBtn = h('button.phone-close', { html: icon('close'), 'aria-label': 'Fermer' });
+    const closeBtn = h('button.phone-close', { html: icon('close'), 'aria-label': t('Fermer') });
     tap(closeBtn, () => this.close());
-    const homeBtn = h('button.home-btn', { 'aria-label': 'Accueil' });
+    const homeBtn = h('button.home-btn', { 'aria-label': t('Accueil') });
     // Barre d'accueil : on la balaie vers le haut, comme sur iOS (un toucher un peu bas sous « Accepter » ne quitte pas l'app).
     let swipeY = null;
     homeBtn.addEventListener('pointerdown', (e) => {
@@ -146,7 +147,7 @@ export class Phone {
       tap(el, () => this.show(id));
       return el;
     };
-    const photo = h('button.app-icon', {}, h('div.ic', { html: icon('camera') }), h('span', { text: 'Photo' }));
+    const photo = h('button.app-icon', {}, h('div.ic', { html: icon('camera') }), h('span', { text: t('Photo') }));
     tap(photo, () => {
       this.close();
       g.photoMode(true);
@@ -156,8 +157,8 @@ export class Phone {
     const rating = g.rating();
     const widget = h('button.widget', { 'data-app': 'strides-widget' },
       h('div.w-head', {}, h('span', { html: icon('strides') }), h('span', { text: 'STRIDES' })),
-      h('div.w-main', { text: m.active ? m.active.offer.title : `${avail} mission${avail > 1 ? 's' : ''} dispo` }),
-      h('div.w-sub', { text: m.active ? m.objectiveText() : `${g.levelInfo().title}${rating ? ` · ★ ${dec(rating)}` : ''} · ${g.save.data.stats.jobs} mission${g.save.data.stats.jobs > 1 ? 's' : ''} réalisée${g.save.data.stats.jobs > 1 ? 's' : ''}` }));
+      h('div.w-main', { text: m.active ? m.active.offer.title : avail > 1 ? T`${avail} missions dispo` : avail ? T`${avail} mission dispo` : t('0 mission dispo') }),
+      h('div.w-sub', { text: m.active ? m.objectiveText() : `${g.levelInfo().title}${rating ? ` · ★ ${dec(rating)}` : ''} · ${g.save.data.stats.jobs > 1 ? T`${g.save.data.stats.jobs} missions réalisées` : g.save.data.stats.jobs ? T`${g.save.data.stats.jobs} mission réalisée` : t('0 mission réalisée')}` }));
     tap(widget, () => this.show('strides'));
     return h(
       'div.home-screen.scrollable',
@@ -167,17 +168,17 @@ export class Phone {
         'div.apps',
         {},
         appIcon('strides', 'Strides', 'strides', 'strides', g.missions.offers.filter((o) => o.isNew && isStridesOffer(o)).length),
-        appIcon('map', 'Carte', 'map'),
-        appIcon('messages', 'Messages', 'message', '', unread),
-        appIcon('stable', 'Mes chevaux', 'horse'),
-        appIcon('ecurie', 'Mon écurie', 'home'),
-        appIcon('activities', 'Activités', 'event', '', g.missions.offers.filter((o) => o.isNew && o.vertical === 'EVENEMENTS').length),
-        appIcon('guide', 'Guide local', 'directory', '', g.missions.offers.filter((o) => o.isNew && (o.vertical === 'ANNUAIRE' || o.vertical === 'ECURIES')).length),
-        appIcon('ranking', 'Classements', 'podium'),
-        appIcon('trophies', 'Trophées', 'trophy'),
-        appIcon('weather', 'Météo', 'weather'),
+        appIcon('map', t('Carte'), 'map'),
+        appIcon('messages', t('Messages'), 'message', '', unread),
+        appIcon('stable', t('Mes chevaux'), 'horse'),
+        appIcon('ecurie', t('Mon écurie'), 'home'),
+        appIcon('activities', t('Activités'), 'event', '', g.missions.offers.filter((o) => o.isNew && o.vertical === 'EVENEMENTS').length),
+        appIcon('guide', t('Guide local'), 'directory', '', g.missions.offers.filter((o) => o.isNew && (o.vertical === 'ANNUAIRE' || o.vertical === 'ECURIES')).length),
+        appIcon('ranking', t('Classements'), 'podium'),
+        appIcon('trophies', t('Trophées'), 'trophy'),
+        appIcon('weather', t('Météo'), 'weather'),
         photo,
-        appIcon('settings', 'Réglages', 'settings')
+        appIcon('settings', t('Réglages'), 'settings')
       )
     );
   }
@@ -191,9 +192,9 @@ export class Phone {
     if (!['missions', 'recruter', 'profil'].includes(this.tab)) this.tab = 'missions';
     this.detail = opts.detail || null;
     const tabs = [
-      ['missions', 'Demandes', 'document-text-outline'],
-      ['recruter', 'Recruter', 'people-outline'],
-      ['profil', 'Profil', 'person-outline'],
+      ['missions', t('Demandes'), 'document-text-outline'],
+      ['recruter', t('Recruter'), 'people-outline'],
+      ['profil', t('Profil'), 'person-outline'],
     ];
     const rail = h('div.app-rail.scrollable', {}, h('div.logo', { html: icon('strides') }));
     const counts = this._tabCounts();
@@ -220,12 +221,12 @@ export class Phone {
   _stridesNotice() {
     const g = this.game;
     if (this.app !== 'strides' || this.screen.querySelector('.notice-sheet')) return;
-    const ok = h('button.btn.primary', { text: 'J’ai compris', 'data-id': 'notice-ok' });
+    const ok = h('button.btn.primary', { text: t('J’ai compris'), 'data-id': 'notice-ok' });
     const layer = h('div.sheet-layer.notice-sheet', {}, h('div.sheet', {}, h('div.handle'),
       h('div.sheet-body.scrollable', {},
-        h('div.st-h2', { text: 'Strides · version jeu' }),
-        h('div.st-body.mt4', { text: 'Missions, profils et sommes fictifs. Rien n’est envoyé, aucun paiement réel.' }),
-        h('div.req-cap.mt8', { text: 'Deux usages, comme dans la vraie application : recevoir des missions et recruter un professionnel.' })),
+        h('div.st-h2', { text: t('Strides · version jeu') }),
+        h('div.st-body.mt4', { text: t('Missions, profils et sommes fictifs. Rien n’est envoyé, aucun paiement réel.') }),
+        h('div.req-cap.mt8', { text: t('Deux usages, comme dans la vraie application : recevoir des missions et recruter un professionnel.') })),
       h('div.sheet-foot', {}, ok)));
     tap(ok, () => {
       g.save.data.flags.stridesNotice = true;
@@ -242,7 +243,7 @@ export class Phone {
 
   _head(title, sub, right) {
     // Retour à l'accueil du téléphone : la barre du bas reste une cible fine.
-    const back = h('button.back', { html: icon('back'), 'aria-label': 'Retour' });
+    const back = h('button.back', { html: icon('back'), 'aria-label': t('Retour') });
     tap(back, () => this.show('home'));
     return h('div.app-head', {}, back, h('div', {}, h('h3', { text: title }), sub ? h('div.sub', { text: sub }) : null), right ? h('div.right', {}, right) : null);
   }
@@ -251,7 +252,7 @@ export class Phone {
     const g = this.game;
     const m = g.missions.active;
     if (!m) return null;
-    const ab = h('button.btn.small.ghost', { text: 'Abandonner' });
+    const ab = h('button.btn.small.ghost', { text: t('Abandonner') });
     tap(ab, () => {
       g.missions.abandon();
       this.refresh();
@@ -262,7 +263,7 @@ export class Phone {
       this.close();
     });
     return h('div.mcard.active', {},
-      h('div.top', {}, h('span.chip.ok', { text: 'EN COURS' }), h('span.pay', { text: formatMoney(m.offer.pay) })),
+      h('div.top', {}, h('span.chip.ok', { text: t('EN COURS') }), h('span.pay', { text: formatMoney(m.offer.pay) })),
       h('div.title', { text: m.offer.title }),
       h('div.meta', { text: g.missions.objectiveText() || '' }),
       h('div.acts', {}, gps, ab));
@@ -274,56 +275,56 @@ export class Phone {
     const d = g.save.data;
     const pick = g.missions.hirePicker;
     const body = h('div.app-body.scrollable.st-home');
-    body.append(h('div.st-eyebrow', { text: 'Je cherche un professionnel' }), h('div.st-h1', { text: pick ? 'Votre besoin\ndu jour.' : 'Recruter\nun professionnel.' }));
+    body.append(h('div.st-eyebrow', { text: t('Je cherche un professionnel') }), h('div.st-h1', { text: pick ? t('Votre besoin\ndu jour.') : t('Recruter\nun professionnel.') }));
     if (pick) {
       body.append(
-        h('div.st-card', {}, h('div.st-eyebrow', { text: 'Besoin' }), h('div.st-body.mt4', { text: pick.need })),
-        h('div.st-eyebrow.sec', { text: `${pick.profiles.length} profils disponibles` })
+        h('div.st-card', {}, h('div.st-eyebrow', { text: t('Besoin') }), h('div.st-body.mt4', { text: pick.need })),
+        h('div.st-eyebrow.sec', { text: T`${pick.profiles.length} profils disponibles` })
       );
       for (const p of pick.profiles) {
-        const see = h('button.btn.small.primary', { text: 'Voir le profil', 'data-hire': p.id });
+        const see = h('button.btn.small.primary', { text: t('Voir le profil'), 'data-hire': p.id });
         tap(see, () => this._hireSheet(p));
         body.appendChild(h('div.st-card.hire-card', {},
           h('div.req-row', {}, h('div.st-av', { text: p.initials }), h('div.req-col', {},
             h('div.req-name', { text: p.name }),
-            h('div.req-cap', { text: `${p.job} · ★ ${dec(p.rating)} · ${p.reviews} avis` }),
+            h('div.req-cap', { text: T`${p.job} · ★ ${dec(p.rating)} · ${p.reviews} avis` }),
             h('div.req-cap', { text: `${p.offer} · ${p.avail}` }))),
-          h('div.req-foot', {}, h('span.acts', {}, see), h('span.req-amount', { text: `${p.price} €` }))));
+          h('div.req-foot', {}, h('span.acts', {}, see), h('span.req-amount', { text: euros(p.price) }))));
       }
-      const solo = h('button.btn.small', { text: 'Je m’organise seul·e', 'data-hire': 'solo' });
+      const solo = h('button.btn.small', { text: t('Je m’organise seul·e'), 'data-hire': 'solo' });
       tap(solo, () => {
         this.close();
         pick.onSolo();
       });
-      body.appendChild(h('div.st-card', {}, h('div.st-body.b', { text: 'Solution autonome' }), h('div.req-cap.mt4', { text: 'Préparation rapide, reconnaissance partielle du parcours, accueil du cheval : aucun débit.' }), h('div.mt8', {}, solo)));
-      body.appendChild(h('div.req-cap.mt8', { text: `Solde : ${formatMoney(d.money)} · profils et sommes fictifs, aucun paiement réel.` }));
+      body.appendChild(h('div.st-card', {}, h('div.st-body.b', { text: t('Solution autonome') }), h('div.req-cap.mt4', { text: t('Préparation rapide, reconnaissance partielle du parcours, accueil du cheval : aucun débit.') }), h('div.mt8', {}, solo)));
+      body.appendChild(h('div.req-cap.mt8', { text: T`Solde : ${formatMoney(d.money)} · profils et sommes fictifs, aucun paiement réel.` }));
     } else {
-      body.appendChild(h('div.st-card.empty-st', {}, h('div.st-body', { text: 'Aucun besoin en cours.' }), h('div.req-cap', { text: 'Quand l’écurie manque de bras, c’est ici que tu recrutes un groom ou un chauffeur.' })));
+      body.appendChild(h('div.st-card.empty-st', {}, h('div.st-body', { text: t('Aucun besoin en cours.') }), h('div.req-cap', { text: t('Quand l’écurie manque de bras, c’est ici que tu recrutes un groom ou un chauffeur.') })));
     }
     // Équipe déjà recrutée (prestations fictives réalisées).
     const team = Object.entries(d.hired || {}).filter(([, v]) => v && v !== 'solo');
     if (team.length) {
-      body.appendChild(h('div.st-eyebrow.sec', { text: 'Prestations réalisées' }));
-      for (const [k, v] of team) body.appendChild(h('div.kv', {}, h('span', { text: v === 'lea' ? 'Léa Morel · groom' : 'Inès Ferrand · groom' }), h('b', { text: k === 'm2' ? 'Renfort avant le concours' : k })));
+      body.appendChild(h('div.st-eyebrow.sec', { text: t('Prestations réalisées') }));
+      for (const [k, v] of team) body.appendChild(h('div.kv', {}, h('span', { text: v === 'lea' ? t('Léa Morel · groom') : t('Inès Ferrand · groom') }), h('b', { text: k === 'm2' ? t('Renfort avant le concours') : k })));
     }
     // Chauffeur : trajet immédiat avec ton cheval (voyage rapide du jeu).
-    body.appendChild(h('div.st-eyebrow.sec', { text: 'Chauffeur · trajet avec ton cheval' }));
-    const dests = STABLES.map((s) => s).concat([{ id: 'town', name: 'Deauville City — centre', place: { x: 20, z: -240 } }, { id: 'beach', name: 'Plage de Deauville City', place: { x: 60, z: -385 } }]);
+    body.appendChild(h('div.st-eyebrow.sec', { text: t('Chauffeur · trajet avec ton cheval') }));
+    const dests = STABLES.map((s) => s).concat([{ id: 'town', name: t('Deauville City — centre'), place: { x: 20, z: -240 } }, { id: 'beach', name: t('Plage de Deauville City'), place: { x: 60, z: -385 } }]);
     for (const s of dests) {
       const dist = g.distanceTo(s.place);
       const price = Math.round(15 + dist / 25);
-      const btn = h('button.btn.small.primary', { text: `Réserver · ${price} €` });
+      const btn = h('button.btn.small.primary', { text: T`Réserver · ${euros(price)}` });
       tap(btn, () => {
-        if (g.missions.active) return g.hud.toast('Termine ta mission en cours d’abord.');
-        if (g.player.mode === 'drive') return g.hud.toast(g.player.inTruck ? 'Sors du camion d’abord.' : 'Sors du véhicule d’abord.');
-        if (d.money < price) return g.hud.toast('Solde insuffisant.');
+        if (g.missions.active) return g.hud.toast(t('Termine ta mission en cours d’abord.'));
+        if (g.player.mode === 'drive') return g.hud.toast(g.player.inTruck ? t('Sors du camion d’abord.') : t('Sors du véhicule d’abord.'));
+        if (d.money < price) return g.hud.toast(t('Solde insuffisant.'));
         this.close();
         g.fastTravel(s.place, price, s.name);
       });
-      body.appendChild(h('div.st-card', {}, h('div.req-row', {}, h('div.req-col', {}, h('div.req-name', { text: s.name }), h('div.req-cap', { text: `${dec(dist / 1000)} km · toi + ton cheval` }))), h('div.req-foot', {}, h('span.acts', {}, btn))));
+      body.appendChild(h('div.st-card', {}, h('div.req-row', {}, h('div.req-col', {}, h('div.req-name', { text: s.name }), h('div.req-cap', { text: T`${dec(dist / 1000)} km · toi + ton cheval` }))), h('div.req-foot', {}, h('span.acts', {}, btn))));
     }
     body.appendChild(this.promo('recruter', 'pro'));
-    return [this._head('Recruter', 'Comparer des profils vérifiés, confirmer'), body];
+    return [this._head(t('Recruter'), t('Comparer des profils vérifiés, confirmer')), body];
   }
 
   // Fiche d'un profil : la confirmation (deux touchers) débite une seule fois ; quitter avant ne débite rien.
@@ -332,16 +333,16 @@ export class Phone {
     const pick = g.missions.hirePicker;
     if (!pick) return;
     const afford = g.save.data.money >= p.price;
-    const cancel = h('button.btn', { text: 'Retour' });
-    const ok = h(`button.btn${afford ? '.primary' : ''}`, { text: afford ? `Confirmer · ${p.price} €` : 'Solde insuffisant', 'data-id': 'confirm-hire' });
+    const cancel = h('button.btn', { text: t('Retour') });
+    const ok = h(`button.btn${afford ? '.primary' : ''}`, { text: afford ? T`Confirmer · ${euros(p.price)}` : t('Solde insuffisant'), 'data-id': 'confirm-hire' });
     const layer = h('div.sheet-layer', {}, h('div.sheet', {}, h('div.handle'),
       h('div.sheet-body.scrollable', {},
         h('div.st-h2', { text: p.name }),
-        h('div.req-cap.mt4', { text: `${p.job} · ★ ${dec(p.rating)} · ${p.reviews} avis · ${p.avail}` }),
+        h('div.req-cap.mt4', { text: T`${p.job} · ★ ${dec(p.rating)} · ${p.reviews} avis · ${p.avail}` }),
         h('div.st-body.mt8', { text: p.bio }),
-        h('div.kv-st.mt8', {}, h('span.req-cap', { text: 'Prestation' }), h('span.st-body', { text: p.offer })),
-        h('div.kv-st', {}, h('span.req-cap', { text: 'Montant' }), h('span.st-body', { text: `${p.price} € (débité à la confirmation)` })),
-        h('div.req-cap.mt8', { text: afford ? 'Profil et somme fictifs : aucun paiement réel.' : 'Solde insuffisant : tu peux revenir en arrière et t’organiser seul·e.' })),
+        h('div.kv-st.mt8', {}, h('span.req-cap', { text: t('Prestation') }), h('span.st-body', { text: p.offer })),
+        h('div.kv-st', {}, h('span.req-cap', { text: t('Montant') }), h('span.st-body', { text: T`${euros(p.price)} (débité à la confirmation)` })),
+        h('div.req-cap.mt8', { text: afford ? t('Profil et somme fictifs : aucun paiement réel.') : t('Solde insuffisant : tu peux revenir en arrière et t’organiser seul·e.') })),
       h('div.sheet-foot', {}, h('div.sheet-actions', {}, cancel, ok))));
     const close = () => {
       this._reqBusy = false;
@@ -350,24 +351,24 @@ export class Phone {
     let armed = 0;
     tap(cancel, close);
     tap(ok, () => {
-      if (!afford) return appToast(this, 'Solde insuffisant', 'Choisis « Je m’organise seul·e » ou un autre profil.', 'error');
+      if (!afford) return appToast(this, t('Solde insuffisant'), t('Choisis « Je m’organise seul·e » ou un autre profil.'), 'error');
       if (!armed) {
         armed = performance.now();
-        ok.textContent = `Confirmer le débit de ${p.price} € ?`;
+        ok.textContent = T`Confirmer le débit de ${euros(p.price)} ?`;
         return;
       }
       if (performance.now() - armed < 350) return;
       const res = g.hire(`hire:${pick.mission}`, p.price);
       if (res === 'error') {
         close();
-        return appToast(this, 'Échec technique', 'Rien n’a été débité. Réessaie.', 'error');
+        return appToast(this, t('Échec technique'), t('Rien n’a été débité. Réessaie.'), 'error');
       }
       if (res === 'funds') {
         close();
-        return appToast(this, 'Solde insuffisant', 'Rien n’a été débité.', 'error');
+        return appToast(this, t('Solde insuffisant'), t('Rien n’a été débité.'), 'error');
       }
       close();
-      appToast(this, 'Prestation confirmée', `${p.name} · ${p.price} € débités une seule fois.`);
+      appToast(this, t('Prestation confirmée'), T`${p.name} · ${euros(p.price)} débités une seule fois.`);
       setTimeout(() => {
         this.close();
         pick.onConfirm(p);
@@ -385,18 +386,18 @@ export class Phone {
     const body = h('div.app-body.scrollable');
     const initials = d.playerName.slice(0, 2).toUpperCase();
     body.append(
-      h('div.profile-head', {}, h('div.av', { text: initials }), h('div', {}, h('div.n', { text: d.playerName }), h('div.l', { text: `${lv.title} · ${rating ? `★ ${dec(rating)} · ${d.ratings.length} avis` : 'Pas encore d’avis'}` }))),
+      h('div.profile-head', {}, h('div.av', { text: initials }), h('div', {}, h('div.n', { text: d.playerName }), h('div.l', { text: `${lv.title} · ${rating ? (d.ratings.length === 1 ? T`★ ${dec(rating)} · 1 avis` : T`★ ${dec(rating)} · ${d.ratings.length} avis`) : t('Pas encore d’avis')}` }))),
       h('div', { style: { marginTop: '14px' } },
-        h('div.kv', {}, h('span', { text: 'Missions réalisées' }), h('b', { text: String(d.stats.jobs) })),
-        h('div.kv', {}, h('span', { text: 'Revenus (fictifs)' }), h('b', { text: formatMoney(d.stats.earned) })),
-        h('div.kv', {}, h('span', { text: 'Réputation' }), h('b', { text: `${d.reputation} pts${lv.next ? ` / ${lv.next.xp}` : ''}` })),
-        h('div.kv', {}, h('span', { text: 'Palier suivant' }), h('b', { text: lv.next ? lv.next.title : 'Palier maximum' }))
+        h('div.kv', {}, h('span', { text: t('Missions réalisées') }), h('b', { text: String(d.stats.jobs) })),
+        h('div.kv', {}, h('span', { text: t('Revenus (fictifs)') }), h('b', { text: formatMoney(d.stats.earned) })),
+        h('div.kv', {}, h('span', { text: t('Réputation') }), h('b', { text: `${d.reputation} pts${lv.next ? ` / ${lv.next.xp}` : ''}` })),
+        h('div.kv', {}, h('span', { text: t('Palier suivant') }), h('b', { text: lv.next ? lv.next.title : t('Palier maximum') }))
       ),
-      h('div.section-t', { text: 'Compétences', style: { marginTop: '14px' } }),
+      h('div.section-t', { text: t('Compétences'), style: { marginTop: '14px' } }),
       this._skillBars()
     );
     body.appendChild(this.promo());
-    return [this._head('Profil', 'Ton profil professionnel (jeu)'), body];
+    return [this._head(t('Profil'), t('Ton profil professionnel (jeu)')), body];
   }
 
   _skillBars() {
@@ -406,9 +407,9 @@ export class Phone {
 
   // Accès permanent et discret à la vraie application (libellé du dossier ; même page officielle).
   promo(placement = 'phone', intent = 'discover') {
-    const btn = h('button.btn', { text: 'Découvrir la vraie application Strides', 'data-cta': 'download' });
+    const btn = h('button.btn', { text: t('Découvrir la vraie application Strides'), 'data-cta': 'download' });
     tap(btn, () => this.game.openStrides(placement, intent));
-    return h('div.promo', {}, h('div', { style: { flex: 1 } }, h('div.t', { text: 'Cette app existe pour de vrai.' }), h('div.s', { text: 'Grooms, palefreniers, cavaliers, chauffeurs, enseignants : STRIDES met en relation les écuries et les pros du cheval.' })), btn);
+    return h('div.promo', {}, h('div', { style: { flex: 1 } }, h('div.t', { text: t('Cette app existe pour de vrai.') }), h('div.s', { text: t('Grooms, palefreniers, cavaliers, chauffeurs, enseignants : STRIDES met en relation les écuries et les pros du cheval.') })), btn);
   }
 
   // ---------- Mon écurie ----------
@@ -416,38 +417,38 @@ export class Phone {
     const g = this.game;
     const d = g.save.data;
     const main = h('div.app-main');
-    main.appendChild(this._head('Mon écurie', `Écurie du Val · solde ${formatMoney(d.money)}`));
+    main.appendChild(this._head(t('Mon écurie'), T`Écurie du Val · solde ${formatMoney(d.money)}`));
     const body = h('div.app-body.scrollable');
-    body.appendChild(h('div.section-t', { text: 'Aménagements' }));
+    body.appendChild(h('div.section-t', { text: t('Aménagements') }));
     for (const u of STABLE_UPGRADES) {
       const owned = d.upgrades.includes(u.id);
       const locked = u.requires && !d.flags[u.requires];
-      const btn = h(`button.btn.small${owned || locked ? '' : '.primary'}`, { text: owned ? 'Installée' : locked ? 'Pas encore disponible' : `Construire · ${formatMoney(u.price)}`, 'data-upgrade': u.id });
+      const btn = h(`button.btn.small${owned || locked ? '' : '.primary'}`, { text: owned ? t('Installée') : locked ? t('Pas encore disponible') : T`Construire · ${formatMoney(u.price)}`, 'data-upgrade': u.id });
       let armed = 0;
       if (!owned)
         tap(btn, () => {
           if (locked) return g.hud.toast(u.lockedText);
-          if (d.money < u.price) return g.hud.toast('Solde insuffisant.');
+          if (d.money < u.price) return g.hud.toast(t('Solde insuffisant.'));
           if (!armed) {
             armed = performance.now();
-            btn.textContent = `Confirmer · ${formatMoney(u.price)}`;
+            btn.textContent = T`Confirmer · ${formatMoney(u.price)}`;
             return;
           }
           if (performance.now() - armed < 350) return;
           if (g.buyStableUpgrade(u.id)) this.refresh();
         });
-      body.appendChild(h(`div.mcard${owned ? '.active' : ''}`, {}, h('div.top', {}, h('span.chip', { text: owned ? 'Au Val' : locked ? 'Après le premier concours' : 'Disponible' }), h('span.pay', { text: formatMoney(u.price) })), h('div.title', { text: u.name }), h('div.meta', { text: locked ? u.lockedText : u.desc }), h('div.acts', {}, btn)));
+      body.appendChild(h(`div.mcard${owned ? '.active' : ''}`, {}, h('div.top', {}, h('span.chip', { text: owned ? t('Au Val') : locked ? t('Après le premier concours') : t('Disponible') }), h('span.pay', { text: formatMoney(u.price) })), h('div.title', { text: u.name }), h('div.meta', { text: locked ? u.lockedText : u.desc }), h('div.acts', {}, btn)));
     }
-    body.appendChild(h('div.section-t', { text: 'Équipe', style: { marginTop: '14px' } }));
+    body.appendChild(h('div.section-t', { text: t('Équipe'), style: { marginTop: '14px' } }));
     const rel = d.relations || {};
     const member = (name, role, note) => h('div.kv', {}, h('span', { text: `${name} · ${role}` }), h('b', { text: note }));
-    body.appendChild(member('Camille Martin', 'responsable du Val', 'Toujours là'));
-    if (rel.lea?.met) body.appendChild(member('Léa Morel', 'groom', rel.lea.missions ? `${rel.lea.missions} prestation${rel.lea.missions > 1 ? 's' : ''}` : 'Contact'));
-    if (d.hired?.m2 === 'ines') body.appendChild(member('Inès Ferrand', 'groom freelance', '1 prestation'));
-    body.appendChild(h('div.section-t', { text: 'Compétences', style: { marginTop: '14px' } }));
+    body.appendChild(member('Camille Martin', t('responsable du Val'), t('Toujours là')));
+    if (rel.lea?.met) body.appendChild(member('Léa Morel', t('groom'), rel.lea.missions ? (rel.lea.missions > 1 ? T`${rel.lea.missions} prestations` : T`${rel.lea.missions} prestation`) : t('Contact')));
+    if (d.hired?.m2 === 'ines') body.appendChild(member('Inès Ferrand', t('groom freelance'), t('1 prestation')));
+    body.appendChild(h('div.section-t', { text: t('Compétences'), style: { marginTop: '14px' } }));
     body.appendChild(this._skillBars());
-    body.appendChild(h('div.section-t', { text: 'Matériel', style: { marginTop: '14px' } }));
-    const shop = h('button.btn.small.primary', { text: 'Sellerie du Port : équipement', 'data-id': 'open-shop' });
+    body.appendChild(h('div.section-t', { text: t('Matériel'), style: { marginTop: '14px' } }));
+    const shop = h('button.btn.small.primary', { text: t('Sellerie du Port : équipement'), 'data-id': 'open-shop' });
     tap(shop, () => this.show('shop'));
     body.appendChild(shop);
     main.appendChild(body);
@@ -459,24 +460,24 @@ export class Phone {
     const g = this.game;
     const pick = g.missions.stablePicker;
     const main = h('div.app-main');
-    main.appendChild(this._head('Guide local', 'Pensions et santé · fictif, hors Strides'));
+    main.appendChild(this._head(t('Guide local'), t('Pensions et santé · fictif, hors Strides')));
     const body = h('div.app-body.scrollable');
     const offers = g.missions.offers.filter((o) => o.vertical === 'ANNUAIRE' || o.vertical === 'ECURIES');
-    if (offers.length) body.append(h('div.section-t', { text: 'Demandes' }), h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
+    if (offers.length) body.append(h('div.section-t', { text: t('Demandes') }), h('div.req-list', {}, ...offers.map((o) => requestCard(this, o))));
     for (const o of offers) o.isNew = false;
     g.missions.updateBadge();
-    body.appendChild(h('div.section-t', { text: pick ? pick.prompt : 'Pensions à proximité', 'data-sec': 'pensions' }));
+    body.appendChild(h('div.section-t', { text: pick ? pick.prompt : t('Pensions à proximité'), 'data-sec': 'pensions' }));
     const list = h('div.cards');
     for (const s of STABLES) {
       const dist = g.distanceTo(s.place);
-      const gps = h('button.btn.small', { text: 'Itinéraire' });
+      const gps = h('button.btn.small', { text: t('Itinéraire') });
       tap(gps, () => {
         g.gps.set(s.place, s.name);
         this.close();
       });
       const acts = h('div.acts', {}, gps);
       if (pick) {
-        const choose = h('button.btn.small.primary', { text: 'Choisir', 'data-stable': s.id });
+        const choose = h('button.btn.small.primary', { text: t('Choisir'), 'data-stable': s.id });
         tap(choose, () => {
           pick.onPick(s);
           this.refresh();
@@ -484,23 +485,23 @@ export class Phone {
         acts.appendChild(choose);
       }
       list.appendChild(h('div.mcard', {},
-        h('div.top', {}, h('span.chip', { text: `${s.price} € / mois` }), h('span.client', {}, h('span.rating', { text: `★ ${dec(s.rating)}` }))),
+        h('div.top', {}, h('span.chip', { text: T`${euros(s.price)} / mois` }), h('span.client', {}, h('span.rating', { text: `★ ${dec(s.rating)}` }))),
         h('div.title', { text: s.name }),
         h('div.meta', { text: `${dec(dist / 1000)} km · ${s.desc}` }),
         h('div.meta', { text: s.services.join(' · ') }),
         acts));
     }
     body.appendChild(list);
-    body.appendChild(h('div.section-t', { text: 'Santé et soins', style: { marginTop: '14px' }, 'data-sec': 'sante' }));
+    body.appendChild(h('div.section-t', { text: t('Santé et soins'), style: { marginTop: '14px' }, 'data-sec': 'sante' }));
     const pros = h('div.cards');
     for (const p of PROS) {
       const dist = g.distanceTo(p.place);
-      const call = h('button.btn.small.primary', { text: 'Appeler', 'data-pro': p.id });
+      const call = h('button.btn.small.primary', { text: t('Appeler'), 'data-pro': p.id });
       tap(call, () => {
         this.close();
         g.contactPro(p);
       });
-      const gps = h('button.btn.small', { text: 'Itinéraire' });
+      const gps = h('button.btn.small', { text: t('Itinéraire') });
       tap(gps, () => {
         g.gps.set(p.place, p.name);
         this.close();
@@ -512,7 +513,7 @@ export class Phone {
         h('div.acts', {}, gps, call)));
     }
     body.appendChild(pros);
-    body.appendChild(h('div.irl', { text: 'Guide fictif du jeu : pensions, vétérinaires et maréchaux ne sont pas des services de l’application Strides.' }));
+    body.appendChild(h('div.irl', { text: t('Guide fictif du jeu : pensions, vétérinaires et maréchaux ne sont pas des services de l’application Strides.') }));
     main.appendChild(body);
     if (opts.section) requestAnimationFrame(() => body.querySelector(`[data-sec="${opts.section}"]`)?.scrollIntoView());
     return h('div.app', {}, main);
@@ -524,18 +525,18 @@ export class Phone {
     const wrap = h('div.map-app');
     const cv = h('canvas');
     wrap.appendChild(cv);
-    const back = h('button.back.st-back.map-back', { html: ion('chevron-back'), 'aria-label': 'Retour' });
+    const back = h('button.back.st-back.map-back', { html: ion('chevron-back'), 'aria-label': t('Retour') });
     tap(back, () => this.show('home'));
     wrap.appendChild(back);
     // Astuce affichée jusqu'au premier toucher sur la carte.
-    const tip = this.mapTipSeen ? null : wrap.appendChild(h('div.map-tip', { text: 'Touchez la carte pour placer un repère GPS' }));
+    const tip = this.mapTipSeen ? null : wrap.appendChild(h('div.map-tip', { text: t('Touchez la carte pour placer un repère GPS') }));
     // Légende : le picto réel de chaque repère.
     const key = (kind) => {
       const c = h('canvas', { width: 32, height: 32 });
       drawBlip(c.getContext('2d'), 16, 16, kind, 1.6);
       return c;
     };
-    wrap.appendChild(h('div.map-legend', {}, ...[['Mission', 'mission'], ['Écurie', 'stable'], ['Boutique', 'shop'], ['Événement', 'event']].map(([l, k]) => h('span', {}, key(k), l))));
+    wrap.appendChild(h('div.map-legend', {}, ...[[t('Mission'), 'mission'], [t('Écurie'), 'stable'], [t('Boutique'), 'shop'], [t('Événement'), 'event']].map(([l, k]) => h('span', {}, key(k), l))));
     requestAnimationFrame(() => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       // Taille de mise en page : l'animation d'ouverture du téléphone (scale .96) ne fausse plus le canvas.
@@ -602,8 +603,8 @@ export class Phone {
         if (pts.has(e.pointerId) && moved < 8 && pts.size === 1) {
           const r2 = cv.getBoundingClientRect();
           const w = api.toWorld(((e.clientX - r2.left) * cv.width) / r2.width, ((e.clientY - r2.top) * cv.height) / r2.height);
-          g.gps.set(w, 'Repère');
-          g.hud.toast('Repère GPS placé');
+          g.gps.set(w, t('Repère'));
+          g.hud.toast(t('Repère GPS placé'));
           redraw();
         }
         pts.delete(e.pointerId);
@@ -636,14 +637,14 @@ export class Phone {
       g.saveSoon();
       const back = h('button.back', { html: icon('back') });
       tap(back, () => this.show('messages'));
-      main.append(h('div.app-head', {}, back, h('div', {}, h('h3', { text: opts.conv }), h('div.sub', { text: 'Messages (fictifs)' }))));
+      main.append(h('div.app-head', {}, back, h('div', {}, h('h3', { text: opts.conv }), h('div.sub', { text: t('Messages (fictifs)') }))));
       const body = h('div.app-body.scrollable', {}, h('div.bubbles', {}, ...list.map((m) => h(`div.bubble${m.me ? '.me' : ''}`, { text: m.text }))));
       main.appendChild(body);
       requestAnimationFrame(() => (body.scrollTop = body.scrollHeight));
     } else {
-      main.appendChild(this._head('Messages', `${convs.size} conversation${convs.size > 1 ? 's' : ''}`));
+      main.appendChild(this._head(t('Messages'), convs.size > 1 ? T`${convs.size} conversations` : convs.size ? T`${convs.size} conversation` : t('0 conversation')));
       const body = h('div.app-body.scrollable.msg-list');
-      if (!convs.size) body.appendChild(h('div.empty', { text: 'Aucun message.' }));
+      if (!convs.size) body.appendChild(h('div.empty', { text: t('Aucun message.') }));
       for (const [from, list] of [...convs.entries()].reverse()) {
         const last = list[list.length - 1];
         const unread = list.some((m) => !m.read);
@@ -660,64 +661,64 @@ export class Phone {
   // ---------- Mes chevaux ----------
   _horseBars(hd) {
     const row = (k, v) => h('div.bar-row', {}, h('span', { text: k }), h('div.bar', {}, h('i', { style: { width: `${clamp((v - 0.8) / 0.5, 0.05, 1) * 100}%` } })), h('span', { text: `${Math.round(v * 100)}` }));
-    return h('div.bars', {}, row('Vitesse', hd.speed), row('Saut', hd.jump), row('Endurance', hd.stamina));
+    return h('div.bars', {}, row(t('Vitesse'), hd.speed), row(t('Saut'), hd.jump), row(t('Endurance'), hd.stamina));
   }
 
   renderStable() {
     const g = this.game;
     const d = g.save.data;
     const main = h('div.app-main');
-    main.appendChild(this._head('Mes chevaux', `${d.horses.length} cheval${d.horses.length > 1 ? 'aux' : ''} · équipement`));
+    main.appendChild(this._head(t('Mes chevaux'), d.horses.length > 1 ? T`${d.horses.length} chevaux · équipement` : T`${d.horses.length} cheval · équipement`));
     const body = h('div.app-body.scrollable');
     const cards = h('div.cards');
     const swatch = { bay: '#7a4a2b', grey: '#c9c6c0', black: '#24221f', chestnut: '#9a5a32', palomino: '#d2a965' };
     for (const id of d.horses) {
       const hd = HORSES[id];
       const active = d.activeHorse === id;
-      const btn = h(`button.btn.small${active ? '' : '.primary'}`, { text: active ? 'Monture actuelle' : 'Seller ce cheval' });
+      const btn = h(`button.btn.small${active ? '' : '.primary'}`, { text: active ? t('Monture actuelle') : t('Seller ce cheval') });
       if (!active)
         tap(btn, () => {
           g.setActiveHorse(id);
           this.refresh();
         });
-      cards.appendChild(h(`div.mcard${active ? '.active' : ''}`, {}, h('div.horse-card', {}, h('div.sw', { style: { background: swatch[hd.coat] || '#888' } }), h('div', {}, h('div.title', { text: hd.name }), h('div.meta', { text: `${hd.breed} · ${hd.age} ans` }))), this._horseBars(hd), h('div.acts', {}, btn)));
+      cards.appendChild(h(`div.mcard${active ? '.active' : ''}`, {}, h('div.horse-card', {}, h('div.sw', { style: { background: swatch[hd.coat] || '#888' } }), h('div', {}, h('div.title', { text: hd.name }), h('div.meta', { text: T`${hd.breed} · ${hd.age} ans` }))), this._horseBars(hd), h('div.acts', {}, btn)));
     }
     body.appendChild(cards);
     // Suivi de santé de la monture actuelle (comme un carnet de suivi d'écurie).
     const c = g.mainHorse?.cond;
     if (c) {
-      body.appendChild(h('div.section-t', { text: `Santé · ${g.mainHorse.name}`, style: { marginTop: '14px' } }));
-      const gauge = (k, v) => h('div.bar-row', {}, h('span', { text: k }), h('div.bar', {}, h('i', { style: { width: `${Math.max(4, v)}%` } })), h('span', { text: `${Math.round(v)} %` }));
+      body.appendChild(h('div.section-t', { text: T`Santé · ${g.mainHorse.name}`, style: { marginTop: '14px' } }));
+      const gauge = (k, v) => h('div.bar-row', {}, h('span', { text: k }), h('div.bar', {}, h('i', { style: { width: `${Math.max(4, v)}%` } })), h('span', { text: T`${Math.round(v)} %` }));
       body.appendChild(h('div.mcard', {},
         h('div.title', { text: c.status }),
-        h('div.meta', { text: `Fréquence cardiaque ${Math.round(c.hr)} bpm · Température ${dec(c.temp)} °C${c.sweat > 0.3 ? ' · en sueur' : ''}` }),
-        h('div.bars', {}, gauge('Énergie', c.energy), gauge('Hydratation', c.hydration), gauge('Alimentation', c.satiety), gauge('Propreté', c.clean), gauge('Pieds', c.hooves)),
-        h('div.meta', { text: 'À l’écurie : panser et curer les pieds près du cheval, abreuver à l’abreuvoir, foin à la grange.' })));
+        h('div.meta', { text: T`Fréquence cardiaque ${Math.round(c.hr)} bpm · Température ${dec(c.temp)} °C${c.sweat > 0.3 ? t(' · en sueur') : ''}` }),
+        h('div.bars', {}, gauge(t('Énergie'), c.energy), gauge(t('Hydratation'), c.hydration), gauge(t('Alimentation'), c.satiety), gauge(t('Propreté'), c.clean), gauge(t('Pieds'), c.hooves)),
+        h('div.meta', { text: t('À l’écurie : panser et curer les pieds près du cheval, abreuver à l’abreuvoir, foin à la grange.') })));
     }
-    body.appendChild(h('div.section-t', { text: 'Équipement', style: { marginTop: '14px' } }));
+    body.appendChild(h('div.section-t', { text: t('Équipement'), style: { marginTop: '14px' } }));
     const owned = SHOP.filter((s) => d.upgrades.includes(s.id) || (s.kind === 'consumable' && g.commerce.qty(s.id)));
-    if (!owned.length) body.appendChild(h('div.empty', { text: 'Aucun équipement. Passe à la Sellerie du Port, à Deauville City.' }));
+    if (!owned.length) body.appendChild(h('div.empty', { text: t('Aucun équipement. Passe à la Sellerie du Port, à Deauville City.') }));
     const eqList = h('div.shop-list');
     for (const s of owned) eqList.appendChild(g.shops._row(s, () => this.refresh()));
     body.appendChild(eqList);
     // Chevaux proposés en location pour la saison par leurs propriétaires : élevage local fictif (hors Strides).
-    body.appendChild(h('div.section-t', { text: 'Chevaux en location · saison de concours (fictif)', style: { marginTop: '14px' } }));
+    body.appendChild(h('div.section-t', { text: t('Chevaux en location · saison de concours (fictif)'), style: { marginTop: '14px' } }));
     const forSale = h('div.cards');
     for (const hd of Object.values(HORSES)) {
       if (!hd.price) continue;
       const own = d.horses.includes(hd.id);
-      const buy = h(`button.btn.small${own ? '' : '.primary'}`, { text: own ? 'Loué pour la saison' : `Louer la saison · ${formatMoney(hd.price)}` });
+      const buy = h(`button.btn.small${own ? '' : '.primary'}`, { text: own ? t('Loué pour la saison') : T`Louer la saison · ${formatMoney(hd.price)}` });
       if (!own)
         tap(buy, () => {
           if (g.buyHorse(hd.id)) this.refresh();
         });
-      forSale.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: `${hd.breed} · ${hd.age} ans` }), h('span.pay', { text: formatMoney(hd.price) })), h('div.title', { text: hd.name }), h('div.meta', { text: `${hd.desc} Valeur estimée : ${formatMoney(hd.value)}.` }), this._horseBars(hd), h('div.acts', {}, buy)));
+      forSale.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: T`${hd.breed} · ${hd.age} ans` }), h('span.pay', { text: formatMoney(hd.price) })), h('div.title', { text: hd.name }), h('div.meta', { text: T`${hd.desc} Valeur estimée : ${formatMoney(hd.value)}.` }), this._horseBars(hd), h('div.acts', {}, buy)));
     }
     body.appendChild(forSale);
-    const call = h('button.btn.small', { text: 'Siffler mon cheval', style: { marginTop: '12px' } });
+    const call = h('button.btn.small', { text: t('Siffler mon cheval'), style: { marginTop: '12px' } });
     tap(call, () => {
       this.close();
-      if (!g.player.whistle()) g.hud.toast('Descends de cheval ou du camion pour siffler.');
+      if (!g.player.whistle()) g.hud.toast(t('Descends de cheval ou du camion pour siffler.'));
     });
     body.appendChild(call);
     main.appendChild(body);
@@ -729,13 +730,13 @@ export class Phone {
     const g = this.game;
     const d = g.save.data;
     const main = h('div.app-main');
-    main.appendChild(this._head('Trophées', 'Ta carrière à Deauville City'));
+    main.appendChild(this._head(t('Trophées'), t('Ta carrière à Deauville City')));
     const body = h('div.app-body.scrollable');
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
-    body.appendChild(h('div.result-grid', {}, stat('Fers d’or', `${d.horseshoes.length}/${g.collectibles.total}`), stat('Missions', String(d.stats.jobs)), stat('Gains', formatMoney(d.stats.earned)), stat('Sauts', String(d.stats.jumps)), stat('Distance', `${dec(d.stats.distance / 1000)} km`), stat('Note', g.rating() ? `★ ${dec(g.rating())}` : '—')));
-    body.appendChild(h('div.section-t', { text: 'Meilleurs chronos', style: { marginTop: '14px' } }));
+    body.appendChild(h('div.result-grid', {}, stat(t('Fers d’or'), `${d.horseshoes.length}/${g.collectibles.total}`), stat(t('Missions'), String(d.stats.jobs)), stat(t('Gains'), formatMoney(d.stats.earned)), stat(t('Sauts'), String(d.stats.jumps)), stat(t('Distance'), `${dec(d.stats.distance / 1000)} km`), stat(t('Note'), g.rating() ? `★ ${dec(g.rating())}` : '—')));
+    body.appendChild(h('div.section-t', { text: t('Meilleurs chronos'), style: { marginTop: '14px' } }));
     for (const a of g.activities.list()) body.appendChild(h('div.kv', {}, h('span', { text: a.name }), h('b', { text: d.bestTimes[a.id] ? formatTime(d.bestTimes[a.id]) : '—' })));
-    body.appendChild(h('div.section-t', { text: 'Histoire', style: { marginTop: '14px' } }));
+    body.appendChild(h('div.section-t', { text: t('Histoire'), style: { marginTop: '14px' } }));
     for (const s of g.missions.storyList()) body.appendChild(h('div.kv', {}, h('span', { text: s.title }), h('b', { text: d.completed.includes(s.id) ? '✓' : '—' })));
     main.appendChild(body);
     return h('div.app', {}, main);
@@ -744,31 +745,31 @@ export class Phone {
   // ---------- Météo et marées ----------
   renderWeather() {
     const g = this.game;
-    const T = g.save.data.gameTime / 3600;
-    const day = Math.floor(T / 24), hr = T - day * 24;
+    const gt = g.save.data.gameTime / 3600;
+    const day = Math.floor(gt / 24), hr = gt - day * 24;
     const main = h('div.app-main');
     const w = wind(day, hr);
     const rain = rainTarget(day, hr);
     const hum = Math.round(Math.min(98, 62 + coverAt(day, hr) * 25 + rain * 20 - Math.max(0, temperature(day, hr) - 16) * 1.2));
-    main.appendChild(this._head('Météo', `Deauville City · ${conditionText(day, hr)}`));
+    main.appendChild(this._head(t('Météo'), `Deauville City · ${conditionText(day, hr)}`));
     const body = h('div.app-body.scrollable');
     const stat = (k, v) => h('div.stat', {}, h('div.k', { text: k }), h('div.v', { text: v }));
-    body.appendChild(h('div.result-grid', {}, stat('Température', `${Math.round(temperature(day, hr))} °C`), stat('Vent', `${w.dir} ${w.kmh} km/h`), stat('Humidité', `${hum} %`)));
+    body.appendChild(h('div.result-grid', {}, stat(t('Température'), `${Math.round(temperature(day, hr))} °C`), stat(t('Vent'), `${LANG === 'fr' ? w.dir : w.dir.replace(/O/g, 'W')} ${w.kmh} km/h`), stat(t('Humidité'), T`${hum} %`)));
     const sun = sunTimes();
-    body.appendChild(h('div.kv', { style: { marginTop: '10px' } }, h('span', { text: 'Soleil' }), h('b', { text: `lever ${hhmm(sun.sunrise)} · coucher ${hhmm(sun.sunset)}` })));
-    body.appendChild(h('div.section-t', { text: 'Prochaines heures', style: { marginTop: '14px' } }));
+    body.appendChild(h('div.kv', { style: { marginTop: '10px' } }, h('span', { text: t('Soleil') }), h('b', { text: T`lever ${hhmm(sun.sunrise)} · coucher ${hhmm(sun.sunset)}` })));
+    body.appendChild(h('div.section-t', { text: t('Prochaines heures'), style: { marginTop: '14px' } }));
     for (let k = 1; k <= 6; k++) {
-      const t = T + k * 2, d2 = Math.floor(t / 24), h2 = t - d2 * 24;
+      const tk = gt + k * 2, d2 = Math.floor(tk / 24), h2 = tk - d2 * 24;
       body.appendChild(h('div.kv', {}, h('span', { text: `${hhmm(Math.floor(h2))} · ${conditionText(d2, h2)}` }), h('b', { text: `${Math.round(temperature(d2, h2))} °C` })));
     }
     // Marées : état courant, prochaines pleines et basses mers, conseil pour le galop sur la plage.
-    const lvl = tideLevel(T);
-    const rising = tideLevel(T + 0.1) > lvl;
-    const ev = tideEvents(T, 26);
-    body.appendChild(h('div.section-t', { text: `Marée ${rising ? 'montante' : 'descendante'} · coefficient ${tideCoef(T)} · hauteur d’eau ${dec(realTideHeight(lvl), 1)} m`, style: { marginTop: '14px' } }));
+    const lvl = tideLevel(gt);
+    const rising = tideLevel(gt + 0.1) > lvl;
+    const ev = tideEvents(gt, 26);
+    body.appendChild(h('div.section-t', { text: rising ? T`Marée montante · coefficient ${tideCoef(gt)} · hauteur d’eau ${dec(realTideHeight(lvl), 1)} m` : T`Marée descendante · coefficient ${tideCoef(gt)} · hauteur d’eau ${dec(realTideHeight(lvl), 1)} m`, style: { marginTop: '14px' } }));
     for (const e of ev.slice(0, 4)) {
       const dd = Math.floor(e.t / 24) - day;
-      body.appendChild(h('div.kv', {}, h('span', { text: `${e.type === 'PM' ? 'Pleine mer' : 'Basse mer'}${dd > 0 ? ' (demain)' : ''}` }), h('b', { text: `${hhmm(e.t)} · ${dec(realTideHeight(e.level), 2)} m` })));
+      body.appendChild(h('div.kv', {}, h('span', { text: `${e.type === 'PM' ? t('Pleine mer') : t('Basse mer')}${dd > 0 ? t(' (demain)') : ''}` }), h('b', { text: `${hhmm(e.t)} · ${dec(realTideHeight(e.level), 2)} m` })));
     }
     const low = ev.find((e) => e.type === 'BM');
     const high = ev.find((e) => e.type === 'PM');
@@ -776,8 +777,8 @@ export class Phone {
     // en vives-eaux.
     const fromPlanches = (lv) => Math.round(-374 - this.game.terrain.waterlineZ(40, lv));
     const note = (text) => body.appendChild(h('p', { text, style: { margin: '10px 0 0', font: '400 12px/1.4 var(--ui)', color: 'var(--muted)' } }));
-    note(`La mer est en ce moment à ${fromPlanches(lvl)} m des Planches${low && high ? ` (${fromPlanches(high.level)} m à pleine mer, ${fromPlanches(low.level)} m à basse mer)` : ''}.`);
-    if (low) note(`Galop sur la plage : sable découvert et ferme autour de la basse mer, de ${hhmm(low.t - 2)} à ${hhmm(low.t + 2)}.`);
+    note(T`La mer est en ce moment à ${fromPlanches(lvl)} m des Planches${low && high ? T` (${fromPlanches(high.level)} m à pleine mer, ${fromPlanches(low.level)} m à basse mer)` : ''}.`);
+    if (low) note(T`Galop sur la plage : sable découvert et ferme autour de la basse mer, de ${hhmm(low.t - 2)} à ${hhmm(low.t + 2)}.`);
     main.appendChild(body);
     return h('div.app', {}, main);
   }
@@ -787,38 +788,52 @@ export class Phone {
     const g = this.game;
     const st = g.save.data.settings;
     const main = h('div.app-main');
-    main.appendChild(this._head('Réglages', ''));
+    main.appendChild(this._head(t('Réglages'), ''));
     const body = h('div.app-body.scrollable');
     const toggle = (label, key, onChange) => {
-      const t = h(`button.toggle${st[key] ? '.on' : ''}`, { 'aria-label': label });
-      tap(t, () => {
+      const btn = h(`button.toggle${st[key] ? '.on' : ''}`, { 'aria-label': label });
+      tap(btn, () => {
         st[key] = !st[key];
-        t.classList.toggle('on', st[key]);
+        btn.classList.toggle('on', st[key]);
         onChange?.(st[key]);
         g.saveSoon();
       });
-      return h('div.set-row', {}, h('span', { text: label }), t);
+      return h('div.set-row', {}, h('span', { text: label }), btn);
     };
+    // Langue : réglage de l'appareil (core/i18n.js), hors sauvegarde ; changer enregistre la partie puis recharge le jeu.
+    {
+      const s = h('div.seg');
+      for (const [v, l] of [['fr', 'Français'], ['en', 'English']]) {
+        const b = h(`button${LANG === v ? '.on' : ''}`, { text: l, 'data-id': `lang-${v}` });
+        tap(b, () => {
+          if (v === LANG) return;
+          g.saveNow();
+          switchLang(v);
+        });
+        s.appendChild(b);
+      }
+      body.appendChild(h('div.set-row', {}, h('span', { text: t('Langue') }), s));
+    }
     // Sauvegarde : automatique sur l'appareil (toutes les 12 s et à chaque étape), copiée en ligne sur claude.ai.
     {
       const on = g.online;
-      const t = (ms) => new Date(ms).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+      const when = (ms) => new Date(ms).toLocaleString(LANG === 'fr' ? 'fr-FR' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' });
       const local = g.save.data.meta?.savedAt;
-      body.appendChild(h('div.section-t', { text: 'Sauvegarde automatique' }));
-      body.appendChild(h('div.kv', {}, h('span', { text: 'Sur cet appareil' }), h('b', { text: local ? t(local) : '—', 'data-id': 'save-local' })));
-      const cloud = on.state === 'online' ? (on.lastSync ? `à jour · ${t(on.cloudSavedAt || on.lastSync)}` : 'activée') : on.state === 'readonly' ? 'non disponible pour ce compte' : on.state === 'connecting' ? 'connexion…' : 'hors ligne (jeu publié sur claude.ai)';
-      body.appendChild(h('div.kv', {}, h('span', { text: 'En ligne' }), h('b', { text: cloud, 'data-id': 'save-cloud' })));
+      body.appendChild(h('div.section-t', { text: t('Sauvegarde automatique') }));
+      body.appendChild(h('div.kv', {}, h('span', { text: t('Sur cet appareil') }), h('b', { text: local ? when(local) : '—', 'data-id': 'save-local' })));
+      const cloud = on.state === 'online' ? (on.lastSync ? T`à jour · ${when(on.cloudSavedAt || on.lastSync)}` : t('activée')) : on.state === 'readonly' ? t('non disponible pour ce compte') : on.state === 'connecting' ? t('connexion…') : t('hors ligne (jeu publié sur claude.ai)');
+      body.appendChild(h('div.kv', {}, h('span', { text: t('En ligne') }), h('b', { text: cloud, 'data-id': 'save-cloud' })));
       if (on.cloudNewer) {
-        const b = h('button.btn.small', { text: `Reprendre la sauvegarde en ligne (${t(on.cloudNewer.savedAt)})`, 'data-id': 'cloud-adopt' });
+        const b = h('button.btn.small', { text: T`Reprendre la sauvegarde en ligne (${when(on.cloudNewer.savedAt)})`, 'data-id': 'cloud-adopt' });
         tap(b, () => {
           if (on.adoptCloudSave()) location.reload();
         });
         body.appendChild(b);
       }
-      body.appendChild(h('div.section-t', { text: 'Jeu', style: { marginTop: '14px' } }));
+      body.appendChild(h('div.section-t', { text: t('Jeu'), style: { marginTop: '14px' } }));
     }
-    body.appendChild(toggle('Son', 'sound', (v) => g.audio.setEnabled(v)));
-    body.appendChild(toggle('Musique', 'music', (v) => g.audio.setMusic(v)));
+    body.appendChild(toggle(t('Son'), 'sound', (v) => g.audio.setEnabled(v)));
+    body.appendChild(toggle(t('Musique'), 'music', (v) => g.audio.setMusic(v)));
     const seg = (label, key, options, onChange) => {
       const s = h('div.seg');
       for (const [v, l] of options) {
@@ -834,50 +849,50 @@ export class Phone {
       }
       return h('div.set-row', {}, h('span', { text: label }), s);
     };
-    body.appendChild(seg('Qualité graphique', 'quality', [['auto', 'Auto'], ['high', 'Haute'], ['low', 'Économie']], (v) => (g.applyQuality(v), g.realism?.refresh())));
+    body.appendChild(seg(t('Qualité graphique'), 'quality', [['auto', t('Auto')], ['high', t('Haute')], ['low', t('Économie')]], (v) => (g.applyQuality(v), g.realism?.refresh())));
     // Modèles 3D : réalistes (chargés à part) si l'appareil suit (« Auto »), ou choix imposé.
-    body.appendChild(seg('Modèles 3D', 'characters', [['auto', 'Auto'], ['classic', 'Classiques'], ['real', 'Réalistes']], (v) => g.realism?.set(v)));
-    body.appendChild(seg('Chevaux 3D', 'horses', [['classic', 'Classiques'], ['real', 'Réalistes']]));
+    body.appendChild(seg(t('Modèles 3D'), 'characters', [['auto', t('Auto')], ['classic', t('Classiques')], ['real', t('Réalistes')]], (v) => g.realism?.set(v)));
+    body.appendChild(seg(t('Chevaux 3D'), 'horses', [['classic', t('Classiques')], ['real', t('Réalistes')]]));
     // Concours de CSO : aide à l'appel (bouton SAUT + zone au sol, bouton seul, aucune) et tracé conseillé au sol.
-    body.appendChild(seg('Aide au saut', 'jumpAid', [['full', 'Complète'], ['button', 'Bouton seul'], ['off', 'Aucune']]));
-    body.appendChild(seg('Tracé au sol (CSO)', 'courseLine', [[true, 'Affiché'], [false, 'Masqué']]));
-    body.appendChild(h('div.set-credit', { text: 'Modèles réalistes : cheval « Horse » de Henry S (Sketchfab), CC BY 4.0, robe et squelette adaptés ; voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.' }));
-    body.appendChild(seg('Écoulement du temps', 'timeScale', [['jeu', 'Jeu · 1 jour = 20 min'], ['reel', 'Réel · 24 h']]));
-    body.appendChild(seg('Sensibilité caméra', 'camSens', [[0.7, 'Douce'], [1, 'Normale'], [1.4, 'Rapide']], (v) => (g.cam.sens = v)));
+    body.appendChild(seg(t('Aide au saut'), 'jumpAid', [['full', t('Complète')], ['button', t('Bouton seul')], ['off', t('Aucune')]]));
+    body.appendChild(seg(t('Tracé au sol (CSO)'), 'courseLine', [[true, t('Affiché')], [false, t('Masqué')]]));
+    body.appendChild(h('div.set-credit', { text: t('Modèles réalistes : cheval « Horse » de Henry S (Sketchfab), CC BY 4.0, robe et squelette adaptés ; voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.') }));
+    body.appendChild(seg(t('Écoulement du temps'), 'timeScale', [['jeu', t('Jeu · 1 jour = 20 min')], ['reel', t('Réel · 24 h')]]));
+    body.appendChild(seg(t('Sensibilité caméra'), 'camSens', [[0.7, t('Douce')], [1, t('Normale')], [1.4, t('Rapide')]], (v) => (g.cam.sens = v)));
     // Sauvegarde : copie à conserver soi-même (texte) et restauration depuis une copie ou une copie de secours.
-    body.appendChild(h('div.section-t', { text: 'Sauvegarde', style: { marginTop: '14px' } }));
-    const exp = h('button.btn.small', { text: 'Copier ma sauvegarde', 'data-id': 'save-export' });
+    body.appendChild(h('div.section-t', { text: t('Sauvegarde'), style: { marginTop: '14px' } }));
+    const exp = h('button.btn.small', { text: t('Copier ma sauvegarde'), 'data-id': 'save-export' });
     tap(exp, () => {
       const json = g.save.exportSave();
-      const done = () => g.hud.toast('Sauvegarde copiée : collez-la dans une note pour la conserver.');
+      const done = () => g.hud.toast(t('Sauvegarde copiée : collez-la dans une note pour la conserver.'));
       if (navigator.clipboard?.writeText) navigator.clipboard.writeText(json).then(done, () => (area.value = json));
       else area.value = json;
     });
-    const area = h('textarea.save-area', { placeholder: 'Collez ici une sauvegarde copiée…', 'aria-label': 'Sauvegarde', rows: '3' });
-    const imp = h('button.btn.small', { text: 'Restaurer cette sauvegarde', 'data-id': 'save-import' });
+    const area = h('textarea.save-area', { placeholder: t('Collez ici une sauvegarde copiée…'), 'aria-label': t('Sauvegarde'), rows: '3' });
+    const imp = h('button.btn.small', { text: t('Restaurer cette sauvegarde'), 'data-id': 'save-import' });
     tap(imp, () => {
-      if (!area.value.trim()) return g.hud.toast('Collez d’abord une sauvegarde.');
+      if (!area.value.trim()) return g.hud.toast(t('Collez d’abord une sauvegarde.'));
       if (g.save.importSave(area.value.trim())) location.reload();
-      else g.hud.toast('Sauvegarde illisible : rien n’a été modifié.');
+      else g.hud.toast(t('Sauvegarde illisible : rien n’a été modifié.'));
     });
     body.appendChild(h('div.set-col', {}, exp, area, imp));
     for (const b of g.save.backups()) {
-      const r = h('button.btn.small.ghost', { text: `Restaurer : ${b.label}` });
-      tap(r, () => (g.save.restore(b.key) ? location.reload() : g.hud.toast('Copie illisible.')));
+      const r = h('button.btn.small.ghost', { text: T`Restaurer : ${b.label}` });
+      tap(r, () => (g.save.restore(b.key) ? location.reload() : g.hud.toast(t('Copie illisible.'))));
       body.appendChild(r);
     }
-    const reset = h('button.btn.small.ghost', { text: 'Recommencer la partie' });
+    const reset = h('button.btn.small.ghost', { text: t('Recommencer la partie') });
     let armed = 0;
     tap(reset, () => {
       // Confirmation en deux temps (pas de boîte de dialogue système).
       if (Date.now() - armed < 4000) return g.resetGame();
       armed = Date.now();
-      reset.textContent = 'Toucher encore pour tout effacer';
-      setTimeout(() => (reset.textContent = 'Recommencer la partie'), 4000);
+      reset.textContent = t('Toucher encore pour tout effacer');
+      setTimeout(() => (reset.textContent = t('Recommencer la partie')), 4000);
     });
-    body.appendChild(h('div.set-row', {}, h('span', { text: 'Progression' }), reset));
+    body.appendChild(h('div.set-row', {}, h('span', { text: t('Progression') }), reset));
     body.appendChild(this.promo());
-    body.appendChild(h('div.irl', { html: 'STRIDES Grand Tour — jeu de démonstration. Univers, lieux et personnages fictifs.' }));
+    body.appendChild(h('div.irl', { html: t('STRIDES Grand Tour — jeu de démonstration. Univers, lieux et personnages fictifs.') }));
     main.appendChild(body);
     return h('div.app', {}, main);
   }
@@ -888,15 +903,15 @@ export class Phone {
     const g = this.game;
     const d = g.save.data;
     const main = h('div.app-main');
-    main.appendChild(this._head('Commerces de Deauville City', `Solde : ${formatMoney(d.money)}`));
+    main.appendChild(this._head(t('Commerces de Deauville City'), T`Solde : ${formatMoney(d.money)}`));
     const body = h('div.app-body.scrollable');
-    for (const [shop, title] of [['sellerie', 'Sellerie du Port'], ['boutique', 'Maison Lucette · prêt-à-porter']]) {
+    for (const [shop, title] of [['sellerie', 'Sellerie du Port'], ['boutique', t('Maison Lucette · prêt-à-porter')]]) {
       body.appendChild(h('div.section-t', { text: title, style: { marginTop: '10px' } }));
       const list = h('div.shop-list');
       for (const it of SHOP.filter((x) => x.shop === shop)) list.appendChild(g.shops._row(it, () => this.refresh()));
       body.appendChild(list);
     }
-    body.appendChild(h('div.irl', { text: 'Commerces fictifs du jeu : rien n’est vendu sur Strides. Les essayages se font en boutique.' }));
+    body.appendChild(h('div.irl', { text: t('Commerces fictifs du jeu : rien n’est vendu sur Strides. Les essayages se font en boutique.') }));
     main.appendChild(body);
     return h('div.app', {}, main);
   }
