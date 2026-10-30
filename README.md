@@ -32,6 +32,16 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   le Haras de la Pommeraie, le Pôle International (carrière de CSO, tribunes), l'hippodrome de la Touques, la forêt de
   Saint-Gatien et son cross, les falaises et le phare, le bocage, la colline « STRIDES ». Cycle jour/nuit, mer animée,
   herbe au vent, circulation, passants, chevaux au paddock, cavaliers à l'entraînement.
+- **Bilingue français / anglais** : choix de la langue au premier lancement, puis à tout moment sur l'écran titre
+  (FR | EN) ou dans les Réglages du téléphone (la partie est enregistrée, le jeu se recharge dans l'autre langue). Tout
+  le texte du jeu passe par `src/core/i18n.js` (`t('…')`, gabarits `` T`…${x}…` ``) ; traductions anglaises dans
+  `src/i18n/en/*.js` (clé = texte français exact), conventions et glossaire équestre dans `src/i18n/GLOSSARY.md`,
+  vérification par `node scripts/i18n-check.mjs` (clés manquantes, gabarits, variables qui masqueraient `t`).
+- **Deux véhicules porte-chevaux** à l'Écurie du Val : le camion Strides (STX Scania, rampe arrière, stalles en épi)
+  et le **van STX Renault Master** (modèle fourni `src/assets/vehicles/STX_Renault_Master_STALLE5.glb`, importé tel
+  quel) : deux stalles, **pont latéral droit** et ses volets, porte arrière (amplitudes des animations du fichier),
+  roues et braquage sur les pivots du fichier, chargement / déchargement des chevaux par le pont, départ impossible
+  pont ou porte ouverts ; contrôle du modèle : `node scripts/verify-master.mjs`.
 - **Un cheval procédural** articulé (pas, trot, galop, grand galop, saut, refus, broute), endurance à gérer, quatre chevaux
   à acquérir (Comète, Ulysse, Onyx, Saphir) et des équipements à la Sellerie du Port.
 - **Le téléphone et l'app Strides** : notifications de missions (Refuser / Voir / Accepter), onglets Missions, Écuries,
@@ -173,6 +183,8 @@ node tests/e2e/fuel.mjs       # carburant : consommation, plein à la station, p
 node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)
 node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sabots au sol, volant, retour au classique
 node tests/e2e/cso.mjs        # épreuve de CSO complète au joystick : sans faute, mauvais appels, double, refus, élimination
+node tests/e2e/i18n.mjs       # bilingue : choix au premier lancement, bascule écran titre / réglages, missions en anglais
+node tests/e2e/master.mjs     # van STX Renault Master : modèle, conduite, pont latéral, chargement, sauvegarde, captures
 node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans tests/e2e/out/cso/
 node tests/e2e/cso-touch.mjs  # tour complet au doigt en émulation iPhone 13 (joystick + SAUT en multitouch)
 node tests/e2e/cso-framing.mjs # cadrage de la caméra de concours : part de la hauteur et position du couple à l’écran
