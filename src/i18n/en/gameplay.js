@@ -53,7 +53,7 @@ export default {
   'Copie illisible': 'Unreadable copy',
   'Cette copie ne peut pas être restaurée non plus. Vous pouvez commencer une nouvelle partie ; la copie reste conservée dans le navigateur.': 'This copy can’t be restored either. You can start a new game; the copy stays stored in the browser.',
   'Retour': 'Back',
-  'Camion STX détaillé non chargé : camion de secours affiché.': 'Detailed STX lorry not loaded: showing the backup lorry.',
+  'Camion STX détaillé non chargé : camion de secours affiché.': 'Detailed STX horsebox not loaded: showing the backup horsebox.',
   'Côte Fleurie · Normandie': 'Côte Fleurie · Normandy',
   'Bienvenue à Deauville City': 'Welcome to Deauville City',
   '{0}, tu arrives avec Comète, ta jument baie, et zéro euro en poche. Ici, tout le monde travaille avec STRIDES : les missions tombent sur ton téléphone. Accepte-les, réalise-les, construis ta réputation… jusqu’au Grand Prix.': '{0}, you arrive with Comète, your bay mare, and not a single euro in your pocket. Here, everyone works with STRIDES: missions land on your phone. Accept them, complete them, build your reputation… all the way to the Grand Prix.',
@@ -185,7 +185,7 @@ export default {
   'Tu termines {0}. Il faut finir dans le top 3.': 'You finished {0}. You need a top-3 finish.',
 
   // ---------- parisGP.js ----------
-  'L’invitation de ta carrière : 40 couples d’élite dans une arène couverte à Paris. Un Sprint à 1,50 m fixe la grille de départ, puis le Grand Prix à 1,60 m le soir, sous les projecteurs. Route en camion par l’autoroute A13.': 'The invitation of your career: 40 elite combinations in an indoor arena in Paris. A 1.50 m Sprint sets the starting order, then the 1.60 m Grand Prix in the evening, under the floodlights. Drive there by lorry on the A13 motorway.',
+  'L’invitation de ta carrière : 40 couples d’élite dans une arène couverte à Paris. Un Sprint à 1,50 m fixe la grille de départ, puis le Grand Prix à 1,60 m le soir, sous les projecteurs. Route en camion par l’autoroute A13.': 'The invitation of your career: 40 elite combinations in an indoor arena in Paris. A 1.50 m Sprint sets the starting order, then the 1.60 m Grand Prix in the evening, under the floodlights. Drive there by horsebox on the A13 motorway.',
   'Paris · arène couverte': 'Paris · indoor arena',
   'Dotation {0}': 'Prize money {0}',
   'les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.': 'shows are run outside Strides; on Strides, however, you can hire the show grooms, drivers and show staff who make them possible.',
@@ -274,7 +274,7 @@ export default {
   'Barrage': 'Jump-off',
   'Dotation': 'Prize money',
   'JO {0} {1} s': 'JO {0} {1} s',
-  'Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.': 'To head home: load your horse into the lorry, then drive to the A13 motorway, west of the lorry park.',
+  'Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.': 'To head home: load your horse into the horsebox, then drive to the A13 motorway, west of the lorry park.',
   'Merci pour ce Grand Prix ! Le parcours reste ouvert : retrouve-le dans l’app Activités, en défi à conditions fixes.': 'Thanks for this Grand Prix! The course stays open: find it in the Activities app, as a fixed-conditions challenge.',
 
   // ---------- challenge.js ----------
@@ -304,7 +304,7 @@ export default {
   'DÉFI REJOUABLE · CONDITIONS FIXES · V1': 'REPLAYABLE CHALLENGE · FIXED CONDITIONS · V1',
   'Reprends la partie d’abord.': 'Resume the game first.',
   'Termine ou abandonne ta mission en cours d’abord.': 'Finish or abandon your current mission first.',
-  'Termine d’abord le chargement du camion.': 'Finish loading the lorry first.',
+  'Termine d’abord le chargement du camion.': 'Finish loading the horsebox first.',
   'Lâche d’abord le cheval que tu mènes en main.': 'Let go of the horse you’re leading first.',
   'Pose d’abord ce que tu portes.': 'Put down what you’re carrying first.',
   '{0} obstacles à {1} m, conditions fixes.': '{0} fences at {1} m, fixed conditions.',
@@ -318,7 +318,7 @@ export default {
   'la bretelle de l’autoroute A13 (Paris)': 'the A13 motorway slip road (Paris)',
   'Monte au volant du camion Strides.': 'Get behind the wheel of the Strides horsebox.',
   'Pas assez de gazole pour {0} km ({1} l nécessaires) : fais le plein à la station-service.': 'Not enough diesel for {0} km ({1} l needed): fill up at the petrol station.',
-  'Charge d’abord {0} dans le camion : il ne rentre pas sans toi.': 'Load {0} into the lorry first: your horse isn’t going home without you.',
+  'Charge d’abord {0} dans le camion : il ne rentre pas sans toi.': 'Load {0} into the horsebox first: your horse isn’t going home without you.',
   'Autoroute A13': 'A13 motorway',
   'Direction Paris': 'Heading for Paris',
   'Retour en Normandie': 'Back to Normandy',

@@ -55,7 +55,7 @@ export default {
   'Plage de Deauville City': 'Deauville City beach',
   'Réserver · {0}': 'Book · {0}',
   'Termine ta mission en cours d’abord.': 'Finish your current mission first.',
-  'Sors du camion d’abord.': 'Get out of the lorry first.',
+  'Sors du camion d’abord.': 'Get out of the horsebox first.',
   'Sors du véhicule d’abord.': 'Get out of the vehicle first.',
   'Solde insuffisant.': 'Insufficient funds.',
   'Solde insuffisant': 'Insufficient funds',
@@ -161,7 +161,7 @@ export default {
   'Louer la saison · {0}': 'Lease for the season · {0}',
   '{0} Valeur estimée : {1}.': '{0} Estimated value: {1}.',
   'Siffler mon cheval': 'Whistle for my horse',
-  'Descends de cheval ou du camion pour siffler.': 'Dismount or get out of the lorry to whistle.',
+  'Descends de cheval ou du camion pour siffler.': 'Dismount or get out of the horsebox to whistle.',
 
   // Trophées
   'Ta carrière à Deauville City': 'Your career in Deauville City',

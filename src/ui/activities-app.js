@@ -95,7 +95,7 @@ export function renderActivities(phone) {
       g.gps.set(a.start, a.name);
       phone.close();
     });
-    tr.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: a.kind }), h('span.pay', { text: best ? formatTime(best) : '—' })), h('div.title', { text: a.name }), h('div.meta', { text: a.desc }), h('div.acts', {}, btn)));
+    tr.appendChild(h('div.mcard', {}, h('div.top', {}, h('span.chip', { text: t(a.kind) }), h('span.pay', { text: best ? formatTime(best) : '—' })), h('div.title', { text: a.name }), h('div.meta', { text: a.desc }), h('div.acts', {}, btn)));
   }
   body.appendChild(tr);
   main.appendChild(body);

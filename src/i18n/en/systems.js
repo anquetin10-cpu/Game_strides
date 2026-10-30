@@ -8,18 +8,18 @@ export default {
   'Faire descendre le cheval': 'Unload the horse',
   'Fermer la rampe': 'Close the ramp',
   'Mener en main': 'Lead in hand',
-  'Pas assez de place derrière le camion : avance de quelques mètres.': 'Not enough room behind the lorry: pull forward a few metres.',
+  'Pas assez de place derrière le camion : avance de quelques mètres.': 'Not enough room behind the horsebox: pull forward a few metres.',
   'Le cheval': 'The horse',
   'Rampe fermée — prêt à partir. Conduis en souplesse.': 'Ramp closed — ready to go. Drive smoothly.',
   '{0} s’est détaché.': '{0} has broken loose.',
   '{0} s’est détachée.': '{0} has broken loose.',
-  '{0} est attaché dans le camion. Ferme la rampe.': '{0} is tied up in the lorry. Close the ramp.',
-  '{0} est attachée dans le camion. Ferme la rampe.': '{0} is tied up in the lorry. Close the ramp.',
-  '{0} est descendu du camion.': '{0} is off the lorry.',
-  '{0} est descendue du camion.': '{0} is off the lorry.',
+  '{0} est attaché dans le camion. Ferme la rampe.': '{0} is tied up in the horsebox. Close the ramp.',
+  '{0} est attachée dans le camion. Ferme la rampe.': '{0} is tied up in the horsebox. Close the ramp.',
+  '{0} est descendu du camion.': '{0} is off the horsebox.',
+  '{0} est descendue du camion.': '{0} is off the horsebox.',
   'Choc ! {0} est secoué.': 'Bump! {0} got jolted.',
   'Choc ! {0} est secouée.': 'Bump! {0} got jolted.',
-  '{0} s’agite dans le camion — conduis plus en douceur.': '{0} is getting restless in the lorry — drive more gently.',
+  '{0} s’agite dans le camion — conduis plus en douceur.': '{0} is getting restless in the horsebox — drive more gently.',
 
   // Commerces (gameplay/shops.js)
   'Bonjour ! Bienvenue à la Sellerie du Port. Selles, briderie, tapis : tout est en rayon, et je fais les retouches à l’atelier.': 'Hello! Welcome to the Sellerie du Port. Saddles, bridles, saddle pads: it’s all on the shelves, and I do alterations in the workshop.',
@@ -109,7 +109,7 @@ export default {
   'Sortir du box': 'Take out of the stall',
   '{0} est sorti(e) du box : il ou elle t’attend dans l’allée de l’Écurie du Val.': '{0} is out of the stall and waiting for you in the Écurie du Val aisle.',
   '{0} est au box à l’Écurie du Val : va l’y chercher (« Sortir du box »).': '{0} is in the stall at the Écurie du Val: go and fetch them (“Take out of the stall”).',
-  '{0} est dans le camion : ouvre la rampe pour la faire descendre.': '{0} is in the lorry: open the ramp to unload them.',
+  '{0} est dans le camion : ouvre la rampe pour la faire descendre.': '{0} is in the horsebox: open the ramp to unload them.',
 
   // Interactions du joueur (gameplay/player.js)
   'Monter': 'Mount',
