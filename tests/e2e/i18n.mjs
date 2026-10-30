@@ -64,14 +64,17 @@ await page.tap('[data-id="title-lang-fr"]');
 await page.waitForFunction(() => document.documentElement.lang === 'fr' && window.__game?.screens?.titleEl, null, { timeout: 240000 });
 r = await E(() => ({ stored: localStorage.getItem('strides-lang'), title: document.querySelector('.title-screen')?.innerText || '' }));
 await shot('3-titre-fr');
+errors.length = 0; // erreurs de la page quittée pendant le rechargement (chargements interrompus)
 check('bascule en français depuis l’écran titre (rechargement, choix mémorisé)', r.stored === 'fr' && /Jouer|Continuer|Nouvelle partie/.test(r.title), JSON.stringify(r).slice(0, 200));
 await page.tap('[data-id="title-lang-en"]');
 await page.waitForFunction(() => document.documentElement.lang === 'en' && window.__game?.screens?.titleEl, null, { timeout: 240000 });
+errors.length = 0;
 check('retour à l’anglais depuis l’écran titre', await E(() => localStorage.getItem('strides-lang') === 'en'));
 
 // ---------- 3. Partie en anglais ----------
 await page.goto(`${base}/?autostart&lang=en`, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000 });
+errors.length = 0;
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
 await E(() => {
   const A = window.__auto, g = window.__game;
@@ -115,8 +118,8 @@ for (const id of MISSIONS) {
 r = await E(() => {
   const missing = [...(window.__i18nMissing || [])];
   // Mots et tournures typiques du français (noms propres connus exclus).
-  const PROPER = /Sellerie du Port|Selle Français|Français|CÔTE FLEURIE|piqué|Pôle|Écurie|Côte|Comète|Lumière|Pommeraie|Saint-Gatien|Gatien|Deauville|Normandie|Grand Prix de Paris|Haras|Hélène|Élise|Léa|Chloé|Zoé|Théo|Clément|Jérôme|Amélie|Noé|Mégane|Gaëlle|Héloïse|Stéphane|Frédéric|Rosé|Café|Bénédicte|Sébastien|Valérie|Émilie|Brûlé/g;
-  const FR = /\b(le|la|les|des|du|une|est|et|pour|avec|dans|sur|ton|ta|tes|tu|vous|pas|au|aux|ce|cette|il|elle|qui|que)\b|[éèêàùçâîôûœ’]/i;
+  const PROPER = /Écurie du Val|Écurie des Dunes|Haras de la Pommeraie|Domaine de Saint-Gatien|Hippodrome de la Touques|Pôle International|Sellerie du Port|Selle Français|Français|CÔTE FLEURIE|piqué|Piqué|Pôle|Écurie|Côte|Comète|Lumière|Pommeraie|Saint-Gatien|Gatien|Deauville|Normandie|Grand Prix de Paris|Haras|Hélène|Élise|Léa|Chloé|Zoé|Théo|Clément|Jérôme|Amélie|Noé|Mégane|Gaëlle|Héloïse|Stéphane|Frédéric|Rosé|Café|Bénédicte|Sébastien|Valérie|Émilie|Brûlé/g;
+  const FR = /\b(le|la|les|des|du|une|est|et|pour|avec|dans|sur|ton|ta|tes|tu|vous|pas|au|aux|ce|cette|il|elle|qui|que)\b|[éèêàùçâîôûœ]/i;
   // Feuilles de style et texte <noscript> (bilingue) : pas des textes du jeu.
   const frenchish = [...window.__seenText].filter((s) => !/--st-|\{\s|This game requires/.test(s)).filter((s) => {
     const x = s.replace(PROPER, '');
@@ -138,6 +141,7 @@ const money = await E(async () => {
   return m;
 });
 await page.waitForFunction(() => document.documentElement.lang === 'fr' && window.__game?.state === 'play', null, { timeout: 240000 });
+errors.length = 0;
 r = await E(() => ({ lang: document.documentElement.lang, money: window.__game.save.data.money, stored: localStorage.getItem('strides-lang') }));
 check('réglages : passage au français en cours de partie, sauvegarde conservée', r.lang === 'fr' && r.money === money, JSON.stringify({ ...r, expected: money }));
 await shot('7-jeu-fr');
