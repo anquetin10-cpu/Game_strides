@@ -47,13 +47,16 @@ export class RealCar {
       }
     });
     this.carrier.add(root);
+    vehicle.realCar = this;
+    // Portière conducteur déjà détachée sur la caisse classique : même découpe sur ce modèle.
+    vehicle.cutRealDoor?.(this);
     this.setActive(true);
   }
 
   setActive(on) {
     this.root.visible = on;
     // Caisse et vitres classiques retirées de l'affichage, roues de la circulation masquées pour ce véhicule.
-    for (const c of this.carrier.children) if (c !== this.root) c.layers.set(on ? 31 : 0);
+    for (const c of this.carrier.children) if (c !== this.root) c.traverse((o) => o.layers.set(on ? 31 : 0));
     this.v.realWheels = on;
   }
 
@@ -70,6 +73,7 @@ export class RealCar {
 
   dispose() {
     this.setActive(false);
+    if (this.v.realCar === this) this.v.realCar = null;
     this.root.parent?.remove(this.root);
     for (const m of this.mats) m.dispose();
   }

@@ -875,7 +875,8 @@ export class Game {
   _storePositions() {
     if (!this.player || this.state === 'title') return;
     const p = this.player;
-    const f = p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.vehicle.pos;
+    // Montée en cours : point d'approche (à pied, en lieu sûr) ; descente en cours : encore au volant.
+    const f = p.boarding?.safeFoot() || (p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.vehicle.pos);
     // Dans un commerce : la porte (trottoir), et le commerce à rouvrir à la reprise (save.data.indoorShop).
     const door = this.shops?.savedPos();
     this.save.data.pos = {
@@ -1423,7 +1424,8 @@ export class Game {
       }
     }
     const ent = p.mode === 'ride' ? p.horse : p.mode === 'foot' ? p.human : null;
-    if (!ent) return;
+    // Montée / descente d'un véhicule : la séquence place elle-même le personnage (contre la caisse, puis dedans).
+    if (!ent || p.boarding?.active) return;
     const r = p.mode === 'ride' ? 1.0 : 0.4;
     // Joueur à pied : les chevaux montés (cavaliers à l'entraînement) le contournent largement au lieu de le
     // traverser, hors séquences du camion (positions scénarisées) ; les chevaux libres sont traités plus bas.

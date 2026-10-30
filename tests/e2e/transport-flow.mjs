@@ -134,6 +134,8 @@ if (parts.includes('api')) {
     A.tick(3);
     out.mainDrive = g.interact.current?.label;
     g.interact.trigger();
+    // Séquence de montée dans la cabine (marchepieds, portière) : quelques secondes.
+    for (let i = 0; i < 1200 && p.mode !== 'drive'; i++) A.tick(1);
     out.drive = p.mode === 'drive' && t.engineOn;
     let maxV = 0;
     const start = { x: t.pos.x, z: t.pos.z };
@@ -158,6 +160,7 @@ if (parts.includes('api')) {
     out.comfort = tp.comfort;
     out.mainExit = g.interact.current?.label;
     g.interact.trigger();
+    for (let i = 0; i < 1200 && p.mode !== 'foot'; i++) A.tick(1);
     out.foot = p.mode === 'foot';
     return out;
   });
@@ -168,12 +171,12 @@ if (parts.includes('api')) {
   check('sifflet désactivé, pas de repère cheval sur la carte', !r2.whistle && !r2.blip);
   check('fin de séquence : joueur libre à pied', !r2.locked && r2.mode === 'foot', `${n} images`);
   check('« Fermer la rampe » puis rampe fermée', r2.mainClose === 'Fermer la rampe' && r2.closed, r2.mainClose);
-  check('« Conduire » à la portière, moteur démarré', r2.mainDrive === 'Conduire' && r2.drive, r2.mainDrive);
+  check('« Monter » à la portière, séquence de montée, moteur démarré', /^Monter/.test(r2.mainDrive) && r2.drive, r2.mainDrive);
   check('le camion roule (boîte auto)', r2.maxKmh > 12 && r2.dist > 10 && /^D[2-6]$/.test(r2.gear), `${r2.maxKmh.toFixed(0)} km/h, ${r2.gear}`);
   check('le cheval voyage dans le camion', r2.horseRides);
   check('jauge de confort affichée au volant', r2.comfortGauge);
   check('arrêt, confort préservé en conduite souple', r2.stopped && r2.comfort > 85, `${r2.comfort.toFixed(0)} %`);
-  check('« Sortir » du camion', r2.mainExit === 'Sortir' && r2.foot, r2.mainExit);
+  check('« Descendre » du camion (séquence par les marchepieds)', /^Descendre/.test(r2.mainExit) && r2.foot, r2.mainExit);
   await render(f);
   await page.screenshot({ path: `${OUT}/api-2-arrived.png` });
   const r3 = await f.evaluate(() => {
@@ -441,8 +444,12 @@ async function touchFlow(W, H, embedded) {
     p.human.setPosition(d.x, d.z, t.heading);
     A.tick(4);
   });
-  check(`[${tag}] action « Conduire »`, (await label('.btn-action')) === 'Conduire');
+  check(`[${tag}] action « Monter »`, /^Monter/.test(await label('.btn-action')));
   t = await tapSel('.btn-action');
+  await f.evaluate(() => {
+    const g = window.__game, A = window.__auto;
+    for (let i = 0; i < 1200 && g.player.mode !== 'drive'; i++) A.tick(1);
+  });
   check(`[${tag}] au volant`, await f.evaluate(() => window.__game.player.mode === 'drive'));
   await touch('touchStart', 110, H - 90);
   for (let k = 1; k <= 4; k++) {
@@ -469,7 +476,11 @@ async function touchFlow(W, H, embedded) {
   check(`[${tag}] joystick : accélère puis freine`, v > 8 && stop < 0.5, `${v.toFixed(0)} km/h · HUD ${hud.gear} ${hud.speed} ${hud.comfort}`);
   check(`[${tag}] HUD : rapport, vitesse, confort`, /^D\d|^R|^N/.test(hud.gear) && /km\/h/.test(hud.speed) && /CONFORT/.test(hud.comfort));
   t = await tapSel('.btn-action');
-  check(`[${tag}] toucher « Sortir »`, t.hit && (await f.evaluate(() => window.__game.player.mode === 'foot')));
+  await f.evaluate(() => {
+    const g = window.__game, A = window.__auto;
+    for (let i = 0; i < 1200 && g.player.mode !== 'foot'; i++) A.tick(1);
+  });
+  check(`[${tag}] toucher « Descendre »`, t.hit && (await f.evaluate(() => window.__game.player.mode === 'foot')));
   await ctx.close();
 }
 if (parts.includes('touch')) {

@@ -132,7 +132,8 @@ export class Colliders {
   cameraBlocked(x, z, y, pad = 0.45) {
     let res = false;
     this.query(x, z, 2.2, (col) => {
-      if (res || y - 0.5 > col.top) return;
+      // camPass : véhicule où le personnage monte ou descend (la caméra le cadre de près, il ne la repousse pas).
+      if (res || y - 0.5 > col.top || col.camPass) return;
       if (col.type === 'c') {
         if (Math.hypot(x - col.x, z - col.z) < col.r + pad) res = true;
       } else {

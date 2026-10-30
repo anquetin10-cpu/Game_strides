@@ -82,6 +82,17 @@ export class Defender extends Vehicle {
     return o;
   }
 
+  // Portière conducteur pilotée par la séquence de montée / descente (gameplay/boarding.js) : 0 fermée … 1 ouverte.
+  cabDoorK() {
+    return this.access.door_FL.t;
+  }
+  setCabDoor(k) {
+    const s = this.access.door_FL;
+    s.t = s.target = k;
+    s.auto = false;
+    this.M.setAccess('door_FL', k);
+  }
+
   setPaint(css) {
     this.paint = css || null;
     this.M.setPaint(this.paint);
@@ -108,7 +119,7 @@ export class Defender extends Vehicle {
   }
 
   // Point du repère de la caisse (x à gauche, z vers l'avant) → monde, au sol.
-  groundPoint(xl, zl, out) {
+  groundPoint(xl, zl, out = { x: 0, y: 0, z: 0 }) {
     const h = this.sim.heading;
     out.x = this.pos.x + Math.sin(h) * zl + Math.cos(h) * xl;
     out.y = this.pos.y;

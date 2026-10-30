@@ -7,6 +7,7 @@
 // Amplitudes d'ouverture : celles des animations du fichier (OpenSideLoading, OpenRearDoor), lues au chargement.
 import * as THREE from 'three';
 import { addCloudShadows } from '../world/sky.js';
+import { cutDoor, lineCab } from './doorCut.js';
 import masterUrl from '../assets/vehicles/STX_Renault_Master_STALLE5.glb?url';
 
 export const MASTER_FILE = 'src/assets/vehicles/STX_Renault_Master_STALLE5.glb';
@@ -136,6 +137,19 @@ export function buildMasterModel(gltf) {
   pHinge.add(partition);
   partition.position.set(0, 0, -PARTITION_HINGE_Z);
 
+  // Portière conducteur (avant gauche du jeu, x_glb < 0) : fait corps avec la caisse dans le fichier ; détachée selon
+  // son contour réel (repère du fichier : bord avant droit sous la ceinture, incliné le long de la vitre, bas qui suit
+  // le passage de roue, bord arrière au montant central) et montée sur un pivot à ses charnières.
+  const exterior = [];
+  model.traverse((o) => o.isMesh && o.name.startsWith('exterior__') && exterior.push(o));
+  const lining = new THREE.MeshStandardMaterial({ name: 'Cab_lining', color: '#3c3f43', roughness: 0.85 });
+  const cab = cutDoor(model, exterior, {
+    polys: [[[-2.18, 1.53], [-2.18, 1.15], [-1.99, 0.62], [-1.47, 0.53], [-1.47, 2.42], [-1.92, 2.42]]],
+    xMin: -1.25, xMax: -0.86, hinge: { x: -1.07, z: -2.18 }, lining, name: 'cab_door_L',
+  });
+  // Parois de la cabine vues de l'intérieur (portière ouverte : pas de vue au travers de la caisse).
+  lineCab(model, exterior, { x0: -1.2, x1: 1.2, y0: 0.5, y1: 2.46, z0: -2.62, z1: -1.4 }, lining, 'cab_lining');
+
   // Feux : matériaux du modèle, émission pilotée par le jeu (phares, feux arrière/stop, clignotants).
   const lens = mats.get('Light_lens'), red = mats.get('Red_lens'), amber = mats.get('Amber'), led = mats.get('LED');
   const amberBase = amber ? amber.emissive.clone() : null;
@@ -178,6 +192,11 @@ export function buildMasterModel(gltf) {
     },
     setPartition(k) {
       pHinge.rotation.y = PARTITION_OPEN * k;
+    },
+    // Portière cabine : 0 fermée … 1 ouverte (70°, bord arrière vers l'extérieur).
+    cabDoor: cab,
+    setCabDoor(k) {
+      cab.set(-1.2 * k);
     },
     // Intérieurs (cabine, box, sellerie) : affichés seulement près de la caméra.
     interiors,

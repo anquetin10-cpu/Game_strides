@@ -396,6 +396,11 @@ export class Truck {
     this.body.add(this.beams);
   }
 
+  // Portière cabine pilotée par la séquence de montée / descente (gameplay/boarding.js).
+  setCabDoor(k) {
+    this.model.setCabDoor?.(k);
+  }
+
   // ---------- Points utiles (monde) ----------
   // Point du repère de la caisse → monde.
   localToWorld(x, y, z, out = new THREE.Vector3()) {

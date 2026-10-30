@@ -31,6 +31,11 @@ export class HorseVan extends Vehicle {
     model.setPartition(0);
   }
 
+  // Portière cabine pilotée par la séquence de montée / descente (gameplay/boarding.js).
+  setCabDoor(k) {
+    this.M.setCabDoor(k);
+  }
+
   setPartition(open) {
     if (this.partition.target === (open ? 1 : 0)) return;
     this.partition.target = open ? 1 : 0;
@@ -126,7 +131,7 @@ export class HorseVan extends Vehicle {
   }
 
   // Point du repère de la caisse (x à gauche, z vers l'avant) → monde, au sol.
-  groundPoint(xl, zl, out) {
+  groundPoint(xl, zl, out = { x: 0, y: 0, z: 0 }) {
     const h = this.sim.heading;
     out.x = this.pos.x + Math.sin(h) * zl + Math.cos(h) * xl;
     out.y = this.pos.y;

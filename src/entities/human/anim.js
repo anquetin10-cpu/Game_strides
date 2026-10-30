@@ -488,6 +488,43 @@ function riding(B, P, st, dt, info) {
   }
 }
 
+// ---------- Montée / descente d'un véhicule et conduite (pose pilotée) ----------
+// st.board (repère du modèle, unités du modèle), rempli par gameplay/boarding.js à chaque image :
+//   hips (Vector3), trunk : { hx, hy, hz, sx, sy, cx, nx, ny, hdx, hdy } (angles bassin, colonne, buste, cou, tête),
+//   feet : { l, r } = { pos (Vector3, cheville), q (Quaternion, orientation modèle du pied), pole (Vector3, genou) },
+//   hands : { l, r } = { pos (Vector3) | null, pole (Vector3), grip (0 main ouverte … 1 poing) }.
+// Une main sans cible pend le long du corps (bras relâchés).
+function boardPose(B, P, st) {
+  const b = st.board;
+  if (!b) return;
+  P.hips.copy(b.hips);
+  const T = b.trunk;
+  qEuler(P.q.hips, T.hx, T.hy, T.hz);
+  qEuler(P.q.spine, T.sx, T.sy, 0);
+  qEuler(P.q.chest, T.cx, 0, 0);
+  qEuler(P.q.neck, T.nx, T.ny, 0);
+  qEuler(P.q.head, T.hdx, T.hdy, 0);
+  forwardTrunk(B, P);
+  for (const side of SIDES) {
+    const sg = side === 'l' ? 1 : -1;
+    const f = b.feet[side];
+    solveLeg(B, P, side, f.pos, f.q, f.toe || 0, f.pole);
+    P.feet[side].pos.copy(f.pos);
+    const h = b.hands[side];
+    if (h.pos && h.w > 0.001) {
+      // Poids < 1 : la main part du bras relâché (le long du corps) vers sa cible.
+      const t = P.hands[side];
+      if (h.w < 1) t.copy(P.mp[BN[side].Arm]).add(_v1.set(sg * 0.05, -0.56, 0.05)).lerp(h.pos, h.w);
+      else t.copy(h.pos);
+      solveArm(B, P, side, t, h.pole, null);
+      qEuler(P.q[BN[side].Hand], h.wx || 0, 0, -sg * 0.25);
+    } else armFK(P, side, 0.04, 0.08, 0.25);
+    qAxis(P.q[BN[side].Fing], Zv, -sg * (0.15 + 1.1 * (h.grip || 0)));
+    const up = h.pos && h.w > 0.001 && h.pos.y > P.mp.chest.y ? h.w : 0;
+    qEuler(P.q[BN[side].Clav], 0, h.pos ? -sg * 0.06 * (h.w || 0) : 0, sg * 0.14 * up);
+  }
+}
+
 // ---------- Queue de cheval : ressort amorti ----------
 function hairSpring(B, P, st, dt, drive) {
   const H = st._hair || (st._hair = { a: 0, v: 0, b: 0, w: 0 });
@@ -515,6 +552,8 @@ export function animateHuman(B, pose, st, dt) {
     riding(B, P, st, dt, info);
     const hsN = Math.min(1, (st.horseSpeed || 0) / 12);
     drive.set(0.15 + hsN * 0.55 + Math.sin(TAU * 2 * (st.horseGaitPhase || 0)) * 0.15 * hsN, 0, (st.turn || 0) * 0.2);
+  } else if (pose === 'board') {
+    boardPose(B, P, st);
   } else {
     // Spectateurs : chacun acclame à sa façon (bras levés, applaudissements, salut).
     if (pose === 'cheer') {
@@ -549,4 +588,9 @@ export function animateHuman(B, pose, st, dt) {
 // Positions modèle des mains (dernière pose calculée) pour les rênes.
 export function handTargets(st) {
   return st._P ? st._P.hands : null;
+}
+
+// Cheville et orientation d'un pied posé (repère du modèle) : point au sol (x, z), hauteur du sol, tangage, lacet.
+export function footTarget(info, out, outQ, x, z, ground, pitch, yaw) {
+  return plantFoot(out, outQ, info, x, z, ground, pitch, yaw);
 }

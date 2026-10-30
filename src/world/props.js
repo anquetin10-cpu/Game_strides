@@ -395,7 +395,7 @@ export function tractorGeo(color = '#a3271f', { split = false } = {}) {
   glassParts.push([box(1.4, 1.26, 0.02), '#1a2229', { y: 1.56, z: -0.1 }]); // pare-brise
   glassParts.push([box(1.4, 1.26, 0.02), '#1a2229', { y: 1.56, z: -1.64 }]); // lunette
   for (const sx of [-1, 1]) glassParts.push([box(0.02, 1.26, 1.46), '#1a2229', { x: sx * 0.71, y: 1.56, z: -0.87 }]);
-  parts.push([box(0.02, 0.05, 0.16), chrome, { x: 0.74, y: 2.0, z: -0.3 }]); // poignée
+  parts.push([box(0.03, 0.24, 0.04), chrome, { x: 0.745, y: 1.58, z: -0.3 }]); // poignée (barre verticale, à portée depuis le sol)
   for (const sx of [-1, 1]) {
     parts.push([limb([sx * 0.75, 2.45, -0.14], [sx * 1.05, 2.4, 0.05], 0.015, 0.015, 6), '#18191b', {}]);
     parts.push([box(0.05, 0.3, 0.2), '#18191b', { x: sx * 1.08, y: 2.18, z: 0.06 }]);

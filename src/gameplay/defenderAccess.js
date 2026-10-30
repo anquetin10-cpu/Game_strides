@@ -1,6 +1,6 @@
 // Defender 110 : accès à pied (bouton ACTION et action secondaire), comme le transport. Portières (la plus proche),
 // coffre (ouverture, rangement d'un objet porté, reprise), teinte de la carrosserie ; la montée au volant passe par
-// l'interaction commune des véhicules (« Conduire », player.js), la portière s'ouvrant et se refermant d'elle-même.
+// la séquence commune de montée (« Monter », gameplay/boarding.js), qui ouvre et referme la portière.
 // État conservé dans la sauvegarde (save.data.defender) : identifiant, type, teinte, accès ouverts, objet du coffre ;
 // la position est enregistrée avec celles des autres véhicules (save.data.pos.defender).
 import * as THREE from 'three';
@@ -45,7 +45,7 @@ export class DefenderAccess {
   _candidates() {
     const v = this.v, p = this.player, hu = p.human;
     const out = [];
-    if (p.mode !== 'foot' || v.driver || !v.stopped || p.transport?.leading || p.transport?.busy || this.game.indoor) return out;
+    if (p.mode !== 'foot' || v.driver || v.boardingBy || p.boarding?.active || !v.stopped || p.transport?.leading || p.transport?.busy || this.game.indoor) return out;
     const pos = hu.pos;
     if (Math.abs(pos.x - v.pos.x) > 7 || Math.abs(pos.z - v.pos.z) > 7) return out;
     const d = (pt) => Math.hypot(pos.x - pt.x, pos.z - pt.z);
@@ -60,13 +60,13 @@ export class DefenderAccess {
     }
     if (door) {
       const open = v.isOpen(door);
-      // Portière avant fermée : « Conduire » (1,4) reste l'action principale, celle-ci passe en secondaire ; portière
+      // Portière avant fermée : « Monter » (1,4) reste l'action principale, celle-ci passe en secondaire ; portière
       // arrière ou ouverte : action principale.
       const front = door === 'door_FL' || door === 'door_FR';
       out.push({ id: 'door', a: door, label: open ? t('Fermer la portière') : t('Ouvrir la portière'), icon: 'car', prio: open ? 1.45 : front ? 1.3 : 1.42 });
     }
     // Monter au volant (action secondaire quand la portière est l'action principale).
-    if (!hu.carrying && d(v.doorPoint(1, _a)) < 2.2) out.push({ id: 'enter', label: t('Conduire'), icon: 'car', prio: 1.0 });
+    if (!hu.carrying && d(v.doorPoint(1, _a)) < 2.2) out.push({ id: 'enter', label: t('Monter\u2060'), icon: 'car', prio: 1.0 });
     // Coffre : ouverture latérale à l'arrière ; rangement d'un objet porté.
     if (d(v.accessPoint('tailgate', _a)) < 2.2) {
       const open = v.isOpen('tailgate');
@@ -109,7 +109,7 @@ export class DefenderAccess {
         break;
       }
       case 'enter':
-        this.player.enterVehicle(v);
+        this.player.boarding.begin(v);
         break;
       case 'paint':
         v.setPaint(c.paint.css);
@@ -125,7 +125,7 @@ export class DefenderAccess {
     if (!c.length) return null;
     const cur = this.game.interact.current;
     if (cur && cur.id === 'defender') return c[1] || null;
-    // « Conduire » est déjà l'action principale (interaction commune des véhicules).
+    // « Monter » est déjà l'action principale (interaction commune des véhicules).
     const first = c.find((x) => !(cur?.id === 'vehicle-in' && x.id === 'enter'));
     return first || null;
   }

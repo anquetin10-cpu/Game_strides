@@ -19,6 +19,11 @@ export class Interactions {
     const p = this.game.player;
     const pos = p.focusPos;
     const mode = p.mode;
+    // Montée / descente d'un véhicule en cours : aucune autre action (pas de second déclenchement).
+    if (p.boarding?.active) {
+      this.current = null;
+      return null;
+    }
     let best = null;
     let bestScore = -Infinity;
     for (const it of this.list.values()) {

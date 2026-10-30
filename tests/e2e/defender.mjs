@@ -240,7 +240,7 @@ r = await E(() => {
   const f = p.focus;
   return { mode: p.mode, driver: v.driver === p, pose: p.human.pose, seat: [+seat.x.toFixed(2), +seat.z.toFixed(2)], camDist: f.camDist, camHeight: f.camHeight, collider: v.collider.enabled };
 });
-check('personnage assis au volant (repère anchor_driver), caméra 4x4', r.mode === 'drive' && r.driver && r.pose === 'sit' && Math.abs(r.seat[0] - 0.465) < 0.05 && r.camDist === 7.6 && !r.collider, JSON.stringify(r));
+check('personnage assis au volant (repère anchor_driver, pose de conduite pilotée), caméra 4x4', r.mode === 'drive' && r.driver && r.pose === 'board' && Math.abs(r.seat[0] - 0.465) < 0.05 && r.camDist === 7.6 && !r.collider, JSON.stringify(r));
 await shot('5-au-volant', [3.4, 1.75, 1.7], [0.45, 1.15, 0.1]);
 await shot('6-au-volant-route', [0, 2.9, -7.6], [0, 1.3, 2]);
 
@@ -288,9 +288,15 @@ r = await E(() => {
   A.tick(2);
   const label = g.interact.current?.label, id = g.interact.current?.id;
   g.interact.trigger();
+  // Séquence de montée : portière ouverte puis refermée, au volant à la fin.
+  let doorMax = 0;
+  for (let i = 0; i < 900 && p.mode !== 'drive'; i++) {
+    A.tick(1);
+    doorMax = Math.max(doorMax, v.access.door_FL.t);
+  }
   const entered = p.mode === 'drive' && p.vehicle === v;
-  const doorAnim = v.access.door_FL.target === 1 || v.access.door_FL.t > 0;
-  A.tick(80);
+  const doorAnim = doorMax > 0.95;
+  A.tick(5);
   const doorShut = v.access.door_FL.t === 0;
   // Descente normale : côté conducteur, au repère anchor_exit_driver.
   p.exitVehicle();
@@ -301,7 +307,7 @@ r = await E(() => {
 check('collision : arrêt contre un obstacle (enveloppe invisible, pas de traversée)', r.gap > -0.05 && r.gap < 1.2, `jeu avant ${r.gap.toFixed(2)} m · ${r.bumps} choc(s)`);
 check('descente sûre : sortie conducteur bloquée → côté passager, sur un point libre', r.side[0] < -1 && r.freeSpot, JSON.stringify(r.side));
 check('piéton repoussé hors de la caisse', r.pushed);
-check('ACTION à la portière conducteur : « Conduire », montée, portière ouverte puis refermée', r.id === 'vehicle-in' && /Conduire|Drive/.test(r.label) && r.entered && r.doorAnim && r.doorShut, `${r.id} « ${r.label} »`);
+check('ACTION à la portière conducteur : « Monter », séquence de montée, portière ouverte puis refermée', r.id === 'vehicle-in' && /Monter|Get in/.test(r.label) && r.entered && r.doorAnim && r.doorShut, `${r.id} « ${r.label} »`);
 check('descente au repère anchor_exit_driver (hors de l’enveloppe), caméra à pied rétablie', r.exitD[0] >= 1.3 && r.exitD[0] < 1.6 && Math.abs(r.exitD[1] - 0.42) < 0.15 && r.mode === 'foot' && r.cam === undefined, JSON.stringify(r.exitD));
 
 // ---------- 6. Coffre (objet porté), portières à pied, teinte, cheval ----------
@@ -335,7 +341,7 @@ r = await E(() => {
   at(v.groundPoint(0, v.spec.L / 2 + v.spec.zc + 0.9, { x: 0, y: 0, z: 0 }));
   act();
   const paint = v.paint;
-  // Action secondaire près de la portière conducteur ouverte : « Conduire ».
+  // Action secondaire près de la portière conducteur ouverte : « Monter ».
   v.setAccess('door_FL', true);
   A.tick(80);
   at(v.accessPoint('door_FL'));
@@ -347,7 +353,7 @@ r = await E(() => {
 check('coffre : ouverture à pied, objet porté rangé puis repris (système d’objets existant)', r.bootOpen && r.stored && r.taken, r.labels.join(' → '));
 check('portière arrière ouverte à pied', r.rl);
 check('teinte de carrosserie modifiable (Body_Paint seul)', !!r.paint, r.paint);
-check('portière conducteur ouverte : « Fermer la portière » + action secondaire « Conduire »', /Fermer la portière|Close door/.test(r.prim) && /Conduire|Drive/.test(r.sec), `${r.prim} / ${r.sec}`);
+check('portière conducteur ouverte : « Fermer la portière » + action secondaire « Monter »', /Fermer la portière|Close door/.test(r.prim) && /Monter|Get in/.test(r.sec), `${r.prim} / ${r.sec}`);
 check('état enregistré (teinte, coffre, portière ouverte)', r.saved.paint === r.paint && r.saved.boot === 'hay' && r.saved.access.door_RL === 1, JSON.stringify(r.saved));
 r = await E(() => {
   const g = window.__game, A = window.__auto, v = g.defender, p = g.player;

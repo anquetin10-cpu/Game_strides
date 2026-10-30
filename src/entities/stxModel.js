@@ -6,6 +6,7 @@
 // Les cotes de jeu (plancher, rampe, couloir, stalles en épi, porte) sont relevées sur ce fichier : STX_DIM.
 import * as THREE from 'three';
 import { addCloudShadows } from '../world/sky.js';
+import { cutDoor, lineCab } from './doorCut.js';
 import stxUrl from '../assets/vehicles/STX_Scania_DETAILLE.glb?url';
 
 export const STX_FILE = 'src/assets/vehicles/STX_Scania_DETAILLE.glb';
@@ -223,6 +224,43 @@ export function buildStxModel(gltf) {
   }
   wheels.rear = wheels.rears[0];
 
+  // Portière conducteur (cabine, x_glb < 0) : détachée de la caisse selon son contour réel (de la charnière avant à
+  // z_glb = -5,445 jusqu'au montant arrière à -4,23, du plancher de cabine à 1,31 m au cadre de vitre à 2,97 m) ; le
+  // rétroviseur, fixé au montant, reste sur la cabine. Doublure pour l'intérieur de la portière et les parois.
+  const exterior = [];
+  model.traverse((o) => o.isMesh && o.name.startsWith('exterior__') && exterior.push(o));
+  const lining = new THREE.MeshStandardMaterial({ name: 'Cab_lining', color: '#3a3c40', roughness: 0.85 });
+  const cab = cutDoor(model, exterior, {
+    polys: [[[-5.445, 1.31], [-4.23, 1.31], [-4.23, 2.97], [-5.445, 2.97]]],
+    xMin: -1.38, xMax: -1.0, hinge: { x: -1.24, z: -5.445 }, lining, name: 'cab_door_L',
+  });
+  lineCab(model, exterior, { x0: -1.32, x1: 1.32, y0: 1.2, y1: 3.45, z0: -6.12, z1: -4.08 }, lining, 'cab_lining');
+  // Marchepieds de cabine : les marches du fichier sont à l'avant du passage de roue, devant la charnière (masquées
+  // par la portière ouverte) ; deux marches et une poignée de maintien sont ajoutées sous le bord arrière de la
+  // portière, derrière la roue avant, dans les matières du modèle.
+  const dark = mats.get('Dark_metal') || lining, chrome = mats.get('Chrome') || dark;
+  const steps = new THREE.Group();
+  steps.name = 'cab_steps_L';
+  for (const [x, y, z] of [[-1.47, 0.52, -4.1], [-1.43, 0.93, -4.13]]) {
+    const tread = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.36), dark);
+    tread.position.set(x + 0.02, y - 0.02, z);
+    const bk = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.02), dark);
+    bk.position.set(x + 0.04, y - 0.08, z - 0.17);
+    const bk2 = bk.clone();
+    bk2.position.z = z + 0.17;
+    steps.add(tread, bk, bk2);
+  }
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.82, 10), chrome);
+  bar.position.set(-1.33, 1.96, -4.12);
+  const st1 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 8), chrome);
+  st1.rotation.z = Math.PI / 2;
+  st1.position.set(-1.3, 1.62, -4.12);
+  const st2 = st1.clone();
+  st2.position.y = 2.3;
+  steps.add(bar, st1, st2);
+  steps.traverse((o) => o.isMesh && ((o.castShadow = true), (o.receiveShadow = true)));
+  model.add(steps);
+
   // Feux : matériaux du modèle, émission pilotée par le jeu (phares et feux de gabarit, feux arrière/stop, orange).
   const lens = mats.get('Light_lens'), red = mats.get('Red_lens'), amber = mats.get('Amber');
   const amberBase = amber ? amber.emissive.clone() : null;
@@ -254,6 +292,11 @@ export function buildStxModel(gltf) {
     gates: [], partition: new THREE.Object3D(), wheels, stallPartitions,
     materials: { body: interiorMat },
     lights, stx: true, detailed: true, doorOpen: DOOR_OPEN,
+    // Portière cabine : 0 fermée … 1 ouverte (64°, bord arrière vers l'extérieur).
+    cabDoor: cab,
+    setCabDoor(k) {
+      cab.set(-1.12 * k);
+    },
     // Intérieurs (cabine, habitation, box) : affichés seulement à moins de `near` mètres de la caméra (visibles par
     // les vitres, la porte et la rampe), masqués au-delà (~25 000 triangles, ~25 appels de dessin).
     interiors,

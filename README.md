@@ -49,6 +49,19 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   (amplitudes des clips `Open_*`), montée par la portière conducteur, descente sûre, départ impossible coffre ouvert
   (portières refermées d'elles-mêmes), coffre pour un objet porté (botte de foin…), teinte modifiable ; pas de cheval
   à bord ; position, teinte, coffre et portières enregistrés (ajouté une seule fois aux sauvegardes existantes).
+- **Montée et descente animées dans tous les véhicules** (`src/gameplay/boarding.js`) : un seul appui sur « Monter »
+  enchaîne l'approche (contournement de la caisse si besoin), la main sur la poignée, l'ouverture, la montée (seuil,
+  marchepieds et prises de main pour les cabines hautes), l'assise, les jambes rentrées, la fermeture depuis
+  l'intérieur et les mains au volant ; « Descendre » fait l'inverse (descente à reculons, face à la cabine, pour le
+  camion et le tracteur). Pose squelettique pilotée (`anim.js`, pose `board`) : pieds et mains posés par cinématique
+  inverse sur les repères du véhicule, fondus, tout dépend du temps écoulé. Un profil par véhicule règle portière
+  (charnière, sens, angle), poignées, seuil, marches, prises, siège, pédalier, volant, points d'approche et caméra.
+  Les portières cabine du Master, du Scania, des voitures et du tracteur, d'une seule pièce avec la caisse dans leurs
+  modèles, en sont détachées au chargement selon leur contour réel (`src/entities/doorCut.js` : découpe exacte des
+  triangles, pivot aux charnières, doublure intérieure), sans modifier les fichiers fournis ; le Scania reçoit deux
+  marchepieds et une poignée de maintien sous sa portière (ses marches d'origine sont devant la charnière). Accès ou
+  sortie bloqués : indication, aucune animation au travers d'un obstacle ; sauvegarde pendant une séquence : reprise
+  à pied en lieu sûr. Tests : `node tests/e2e/boarding.mjs`, vidéos : `node tests/e2e/boarding-video.mjs`.
 - **Un cheval procédural** articulé (pas, trot, galop, grand galop, saut, refus, broute), endurance à gérer, quatre chevaux
   à acquérir (Comète, Ulysse, Onyx, Saphir) et des équipements à la Sellerie du Port.
 - **Le téléphone et l'app Strides** : notifications de missions (Refuser / Voir / Accepter), onglets Missions, Écuries,

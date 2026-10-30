@@ -8,6 +8,7 @@ import { carGeo, carMaterial, glassMaterial, carPillars, CARS, tractorGeo, tract
 import { clamp } from '../core/math.js';
 import { t } from '../core/i18n.js';
 import { clampToRegion, nearestRoad } from '../world/layout.js';
+import { cutDoor, lineCab } from './doorCut.js';
 
 // Encombrement du tracteur (même interface que CARS pour les collisions et les points d'accès).
 const TRACTOR = { L: 5.6, W: 2.4, wb: 2.5, r: 0.82, zc: 0.6 };
@@ -55,6 +56,7 @@ export class Vehicle {
       const gm = new THREE.Mesh(g.glass, glassMaterial());
       gm.renderOrder = 3;
       body.add(bm, gm);
+      this._shell = [bm, gm];
     }
     this.wheelMeshes = [];
     if (this.isTractor) {
@@ -174,6 +176,60 @@ export class Vehicle {
     const S = this.spec;
     const zl = this.isTractor ? -0.8 : this.seat.z + 0.35;
     const xl = side * (S.W / 2 + 0.75);
+    out.x = this.pos.x + Math.sin(h) * zl + Math.cos(h) * xl;
+    out.y = this.pos.y;
+    out.z = this.pos.z + Math.cos(h) * zl - Math.sin(h) * xl;
+    return out;
+  }
+  // Portière conducteur des voitures et du tracteur (modèles procéduraux d'une seule pièce) : détachée à la première
+  // montée selon le contour de leur vitrage (montant B → base du montant A, seuil → ligne de pavillon ; tracteur : panneau
+  // vitré gauche entre ses montants, charnière arrière), pivot sur ses charnières, doublure intérieure.
+  prepareCabDoor() {
+    if (this._cab !== undefined || !this._shell) return;
+    this._cab = null;
+    const lining = new THREE.MeshStandardMaterial({ color: '#2f3134', roughness: 0.85 });
+    if (this.isTractor) {
+      this._cab = cutDoor(this.body, this._shell, { polys: [[[-1.575, 0.9], [-0.165, 0.9], [-0.165, 2.22], [-1.575, 2.22]]], xMin: 0.62, xMax: 0.85, hinge: { x: 0.72, z: -1.6 }, lining, name: 'cab_door_L' });
+      this._cabOpen = 1.3;
+      return;
+    }
+    const C = this.spec;
+    const { zA, zB } = carPillars(C);
+    const g = C.glass;
+    const top = Math.min(g[3][1], g[2][1]) - 0.04;
+    const belt = C.body.reduce((y, [z, by]) => (Math.abs(z - zA) < Math.abs(y[0] - zA) ? [z, by] : y), [1e9, 0])[1] - 0.01;
+    const zTop = Math.min(zA - 0.12, g[3][0] + 0.02);
+    const poly = [[zB + 0.02, 0.27], [zA - 0.02, 0.27], [zA - 0.02, belt], [zTop, top], [zB + 0.02, top]];
+    this._cabCut = { polys: [poly], xMin: C.W / 2 - 0.22, hinge: { x: C.W / 2 - 0.04, z: zA - 0.02 }, lining, name: 'cab_door_L' };
+    this._cab = cutDoor(this.body, this._shell, this._cabCut);
+    this._cabLining = lineCab(this.body, [this._shell[0]], { x0: -C.W / 2 - 0.05, x1: C.W / 2 + 0.05, y0: 0.25, y1: top + 0.1, z0: zB - 0.9, z1: zA + 0.05 }, lining).group;
+    this._cabOpen = 1.1;
+    // Modèle réaliste affiché (réglage « Modèles 3D ») : même portière découpée dans son modèle, pièces classiques
+    // gardées hors de l'affichage comme le reste de la caisse classique.
+    if (this.realCar) this.cutRealDoor(this.realCar);
+    if (this.realWheels) this.hideClassicDoor(true);
+  }
+  cutRealDoor(rc) {
+    if (!this._cabCut || rc._cab) return;
+    const meshes = [];
+    rc.root.traverse((o) => o.isMesh && !/wheel/i.test(o.parent?.name || '') && meshes.push(o));
+    rc._cab = cutDoor(this.body, meshes, { ...this._cabCut, xMin: this._cabCut.xMin - 0.08, parent: rc.root });
+  }
+  hideClassicDoor(on) {
+    for (const g of [this._cab?.pivot, this._cabLining]) g?.traverse((o) => o.layers.set(on ? 31 : 0));
+  }
+  // 0 fermée … 1 ouverte (bord libre vers l'extérieur ; charnière avant, ou arrière pour le tracteur).
+  setCabDoor(k) {
+    if (!this._cab) return;
+    const a = (this.isTractor ? 1 : -1) * k * this._cabOpen;
+    this._cab.set(a);
+    // Pivot du modèle réaliste (dans son repère mis à l'échelle) : même axe vertical, même angle.
+    this.realCar?._cab?.set(a);
+  }
+
+  // Point du repère de la caisse (x à gauche, z vers l'avant) → monde, au sol.
+  groundPoint(xl, zl, out = new THREE.Vector3()) {
+    const h = this.sim.heading;
     out.x = this.pos.x + Math.sin(h) * zl + Math.cos(h) * xl;
     out.y = this.pos.y;
     out.z = this.pos.z + Math.cos(h) * zl - Math.sin(h) * xl;

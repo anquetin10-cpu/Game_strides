@@ -42,4 +42,11 @@ export default {
   'Bleu nuit': 'Midnight blue',
   'Sable': 'Sand',
   'Noir': 'Black',
+
+  // Montée / descente animées (boarding.js) ; « Monter » / « Descendre » des véhicules, distincts de ceux du cheval.
+  'Monter\u2060': 'Get in',
+  'Descendre\u2060': 'Get out',
+  'Pas la place d’ouvrir la portière : dégage l’accès conducteur.': 'Not enough room to open the door: clear the driver’s side.',
+  'Pas la place d’ouvrir la portière ici : avance ou recule le véhicule.': 'Not enough room to open the door here: move the vehicle forward or back.',
+  'Arrête-toi pour descendre.': 'Stop before getting out.',
 };

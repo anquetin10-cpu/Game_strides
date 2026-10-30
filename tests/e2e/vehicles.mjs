@@ -41,6 +41,8 @@ const drive = (kind) => page.evaluate((kind) => {
   g.interact.update();
   const offered = g.interact.current?.id;
   g.interact.trigger();
+  // Séquence de montée (approche, portière, installation) : quelques secondes.
+  for (let i = 0; i < 900 && p.mode !== 'drive'; i++) A.tick(1);
   A.tick(2);
   const inside = p.mode === 'drive' && p.vehicle === v && v.engineOn;
   const hudGear = document.querySelector('.telemetry')?.textContent || '';
@@ -69,6 +71,7 @@ const drive = (kind) => page.evaluate((kind) => {
   g.interact.update();
   const exitOffered = g.interact.current?.id;
   g.interact.trigger();
+  for (let i = 0; i < 900 && p.mode !== 'foot'; i++) A.tick(1);
   A.tick(3);
   const out = p.mode === 'foot' && !v.driver && !v.engineOn;
   const humanNear = Math.hypot(p.human.pos.x - v.pos.x, p.human.pos.z - v.pos.z);
@@ -103,6 +106,7 @@ const tk = await page.evaluate(() => {
   g.interact.update();
   const offered = g.interact.current?.id;
   g.interact.trigger();
+  for (let i = 0; i < 900 && p.mode !== 'drive'; i++) A.tick(1);
   A.tick(2);
   const v = p.vehicle;
   const ok = p.mode === 'drive' && v && v !== g.truck && g.ambient.cars.length === n0 - 1 && g.drivables.length === d0 + 1 && v.kind === c.kind && v.color === c.color;
@@ -116,7 +120,7 @@ const tk = await page.evaluate(() => {
   p.exitVehicle();
   return { offered, ok, speed, inTruck, mode: p.mode };
 });
-check('voiture de la circulation : bouton « Conduire »', tk.offered === 'vehicle-in', tk.offered);
+check('voiture de la circulation : bouton « Monter »', tk.offered === 'vehicle-in', tk.offered);
 check('voiture de la circulation : reprise au volant (même modèle, même couleur)', tk.ok);
 check('voiture de la circulation : roule', tk.speed > 8, `${(tk.speed * 3.6).toFixed(0)} km/h`);
 check('au volant d’une voiture, on n’est pas « dans le camion »', tk.inTruck === false && tk.mode === 'foot');
@@ -130,6 +134,7 @@ const tr = await page.evaluate(() => {
   g.interact.update();
   const offered = g.interact.current?.id;
   g.interact.trigger();
+  for (let i = 0; i < 1200 && p.mode !== 'drive'; i++) A.tick(1);
   A.tick(2);
   const ok = p.inTruck;
   for (let i = 0; i < 60; i++) { g.input.setVirtualMove(0, 1); A.tick(1); }

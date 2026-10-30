@@ -68,7 +68,8 @@ const info = await E(() => {
   }
   const mats = new Set();
   let tex = 0;
-  M.model.traverse((o) => { if (o.isMesh) { mats.add(o.material.name); if (o.material.map) tex++; } });
+  // Doublure intérieure ajoutée avec la portière cabine (boarding / doorCut.js) : pas un matériau du fichier.
+  M.model.traverse((o) => { if (o.isMesh && o.material.name !== 'Cab_lining') { mats.add(o.material.name); if (o.material.map) tex++; } });
   return { info: g.truckModelInfo, stx, procedural, wheelGap, mats: mats.size, texMeshes: tex, L: t.L };
 });
 check('modèle détaillé chargé (pas de camion de secours)', info.info.loaded && !info.info.error, info.info.file);
