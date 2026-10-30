@@ -2,6 +2,10 @@
 import * as THREE from 'three';
 import { horseshoeSpriteTexture } from '../world/textures.js';
 import { formatMoney } from '../core/math.js';
+import { t, T } from '../core/i18n.js';
+
+// Textes affichés (`t` est masqué par l'horloge locale dans update).
+const DONE = [t('COLLECTION COMPLÈTE'), t('Les 20 fers d’or · +500 €')];
 
 export const HORSESHOES = [
   [-498, -392], [-520, -417], [120, 487], [148, -370], [20, -276], [330, 230], [-515, 420], [-470, 520],
@@ -54,10 +58,10 @@ export class Collectibles {
         g.updateWallet();
         g.audio.coin();
         const n = d2.horseshoes.length;
-        g.hud.toast(`Fer d’or ${n}/${this.total} · +${formatMoney(25)}`, 'gold');
+        g.hud.toast(T`Fer d’or ${n}/${this.total} · +${formatMoney(25)}`, 'gold');
         if (n === this.total) {
           d2.money += 500;
-          g.hud.big('COLLECTION COMPLÈTE', 'Les 20 fers d’or · +500 €', 3500);
+          g.hud.big(DONE[0], DONE[1], 3500);
           g.audio.levelUp();
         }
         g.saveSoon();

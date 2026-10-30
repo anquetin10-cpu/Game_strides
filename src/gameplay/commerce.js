@@ -8,6 +8,7 @@
 // Un double appui (deux déclenchements à moins de 0,7 s pour le même article) ne produit qu'une transaction.
 import { SHOP, SLOTS } from './data.js';
 import { clamp } from '../core/math.js';
+import { t, T } from '../core/i18n.js';
 
 export const DOUBLE_TAP_MS = 700;
 
@@ -57,7 +58,7 @@ export class Commerce {
   }
   restriction(id) {
     const s = this.item(id);
-    if (s?.requires && !this.owned(s.requires)) return `Nécessite : ${this.item(s.requires)?.name || s.requires}`;
+    if (s?.requires && !this.owned(s.requires)) return T`Nécessite : ${this.item(s.requires)?.name || s.requires}`;
     return '';
   }
 
@@ -70,7 +71,7 @@ export class Commerce {
     const last = this._last.get(id);
     if (last !== undefined && now - last < DOUBLE_TAP_MS) return { ok: false, reason: 'dup' };
     if (s.kind !== 'consumable' && this.owned(id)) {
-      g.hud.toast(`${s.name} : déjà acquis.`);
+      g.hud.toast(T`${s.name} : déjà acquis.`);
       return { ok: false, reason: 'owned' };
     }
     if (s.requires && !this.owned(s.requires)) {
@@ -78,7 +79,7 @@ export class Commerce {
       return { ok: false, reason: 'locked' };
     }
     if (d.money < s.price) {
-      g.hud.toast('Solde insuffisant.');
+      g.hud.toast(t('Solde insuffisant.'));
       return { ok: false, reason: 'money' };
     }
     this._last.set(id, now);
@@ -101,7 +102,7 @@ export class Commerce {
     this._apply(s);
     g.updateWallet();
     g.audio.coin();
-    g.hud.toast(s.kind === 'consumable' ? `${s.name} : ${this.qty(id)} en stock` : `${s.name} : acheté !`, 'check');
+    g.hud.toast(s.kind === 'consumable' ? T`${s.name} : ${this.qty(id)} en stock` : T`${s.name} : acheté !`, 'check');
     g.bus?.emit('shop:purchase', { id, price: s.price });
     return { ok: true };
   }
@@ -114,7 +115,7 @@ export class Commerce {
     d.equipped[slot] = id || null;
     this.game.saveNow();
     this._apply(this.item(id) || { slot });
-    this.game.hud.toast(id ? `${this.item(id).name} : équipé` : `${SLOTS[slot] || slot} retiré`);
+    this.game.hud.toast(id ? T`${this.item(id).name} : équipé` : T`${SLOTS[slot] || slot} retiré`);
     return true;
   }
 
@@ -127,14 +128,14 @@ export class Commerce {
     const p = g.player;
     const near = h && (p.mode === 'ride' || Math.hypot(h.pos.x - p.human.pos.x, h.pos.z - p.human.pos.z) < 2.5);
     if (!near || !h.cond) {
-      g.hud.toast(`Approche-toi de ${h?.def?.name || 'ton cheval'} pour utiliser ce produit.`);
+      g.hud.toast(T`Approche-toi de ${h?.def?.name || t('ton cheval')} pour utiliser ce produit.`);
       return false;
     }
     for (const [k, v] of Object.entries(s.use)) h.cond[k] = clamp((h.cond[k] ?? 100) + v, 0, 100);
     this.data.inventory[id] -= 1;
     if (!this.data.inventory[id]) delete this.data.inventory[id];
     g.saveNow();
-    g.hud.toast(`${s.name} utilisé : ${s.desc}`, 'check');
+    g.hud.toast(T`${s.name} utilisé : ${s.desc}`, 'check');
     return true;
   }
 

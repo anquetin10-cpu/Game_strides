@@ -1,6 +1,7 @@
 // Repos : à la maison de l'Écurie du Val, le soir ou la nuit, « Dormir jusqu'au matin » avance l'heure à 7 h (cheval
 // reposé). Possible sans mission en cours, ou en attendant un passage en concours programmé le lendemain matin.
 import { HOME } from '../world/sites.js';
+import { t } from '../core/i18n.js';
 
 export const WAKE_HOUR = 7;
 
@@ -16,7 +17,7 @@ export function installRest(game) {
   const g = game;
   const door = { x: HOME.house.x, z: HOME.house.z + HOME.house.d / 2 + 1.2 };
   g.interact.add('rest', {
-    label: 'Dormir jusqu’au matin', icon: 'hand', r: 3.2, priority: 1.4, modes: ['foot'],
+    label: t('Dormir jusqu’au matin'), icon: 'hand', r: 3.2, priority: 1.4, modes: ['foot'],
     getPos: () => door,
     when: () => {
       const h = g.hour();
@@ -34,7 +35,7 @@ export function installRest(game) {
           c.resting = false;
         }
         g.player.locked = false;
-        g.hud.toast('Bonne nuit… Il est 7 h : le jour se lève.');
+        g.hud.toast(t('Bonne nuit… Il est 7 h : le jour se lève.'));
         g.saveNow();
       }, 1.2);
     },

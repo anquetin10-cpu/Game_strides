@@ -2,6 +2,7 @@
 // alimentation, propreté et pieds ; effets sur la performance ; gestes de soin à l'écurie.
 import { clamp, smoothstep } from '../core/math.js';
 import { HOME } from '../world/sites.js';
+import { t } from '../core/i18n.js';
 
 // Fréquence cardiaque d'effort selon la vitesse (m/s), d'après des mesures sur chevaux de sport.
 const HR_CURVE = [[0, 36], [1.7, 72], [4, 118], [7.5, 158], [11, 185], [14, 205], [17, 222]];
@@ -86,12 +87,12 @@ export class HorseCondition {
 
   // Bilan lisible (application « Chevaux »).
   get status() {
-    if (this.energy < 20) return 'Épuisé : repos au box nécessaire';
-    if (this.hydration < 30) return 'Assoiffé : à abreuver';
-    if (this.satiety < 30) return 'A faim : donner du foin';
-    if (this.temp > 39.2) return 'En sueur : à détendre au pas';
-    if (this.clean < 40) return 'Sale : à panser';
-    return 'En pleine forme';
+    if (this.energy < 20) return t('Épuisé : repos au box nécessaire');
+    if (this.hydration < 30) return t('Assoiffé : à abreuver');
+    if (this.satiety < 30) return t('A faim : donner du foin');
+    if (this.temp > 39.2) return t('En sueur : à détendre au pas');
+    if (this.clean < 40) return t('Sale : à panser');
+    return t('En pleine forme');
   }
 
   toJSON() {
@@ -136,28 +137,28 @@ export function installCare(game) {
   };
   // Un cheval sale ou aux pieds non curés se soigne avant d'être monté (priorité sur « Monter »).
   g.interact.add('care-groom', {
-    label: 'Panser', icon: 'hand', r: 2.8, priority: 2.5, modes: ['foot'],
+    label: t('Panser'), icon: 'hand', r: 2.8, priority: 2.5, modes: ['foot'],
     getPos: () => horse()?.pos || { x: 1e9, z: 1e9 },
     when: () => ready() && horse().cond.clean < 50,
-    action: () => care('Pansage : étrille, bouchon, brosse douce', g.save?.data.upgrades?.includes('aire') ? 3 : 4, (c) => { c.clean = 100; c.resting = false; g.hud.toast('Robe propre et brillante.'); }, null, 'brush'),
+    action: () => care(t('Pansage : étrille, bouchon, brosse douce'), g.save?.data.upgrades?.includes('aire') ? 3 : 4, (c) => { c.clean = 100; c.resting = false; g.hud.toast(t('Robe propre et brillante.')); }, null, 'brush'),
   });
   g.interact.add('care-hooves', {
-    label: 'Curer les pieds', icon: 'shoe', r: 2.8, priority: 2.4, modes: ['foot'],
+    label: t('Curer les pieds'), icon: 'shoe', r: 2.8, priority: 2.4, modes: ['foot'],
     getPos: () => horse()?.pos || { x: 1e9, z: 1e9 },
     when: () => ready() && horse().cond.hooves < 50 && horse().cond.clean >= 50,
-    action: () => care('Curage des quatre pieds', 3, (c) => { c.hooves = 100; g.hud.toast('Pieds propres, fers bien en place.'); }, null, 'hooves'),
+    action: () => care(t('Curage des quatre pieds'), 3, (c) => { c.hooves = 100; g.hud.toast(t('Pieds propres, fers bien en place.')); }, null, 'hooves'),
   });
   g.interact.add('care-water', {
-    label: 'Abreuver', icon: 'hand', r: 3.2, priority: 1.3, modes: ['foot'],
+    label: t('Abreuver'), icon: 'hand', r: 3.2, priority: 1.3, modes: ['foot'],
     getPos: () => ({ x: -141, z: 161.5 }),
     when: () => ready() && atHome() && near(horse().pos, -141, 161.5, 6) && horse().cond.hydration < 90,
-    action: () => care('Le cheval boit (une vingtaine de litres)', 4, (c) => { c.hydration = 100; }),
+    action: () => care(t('Le cheval boit (une vingtaine de litres)'), 4, (c) => { c.hydration = 100; }),
   });
   g.interact.add('care-hay', {
-    label: 'Donner du foin', icon: 'hand', r: 4, priority: 1.25, modes: ['foot'],
+    label: t('Donner du foin'), icon: 'hand', r: 4, priority: 1.25, modes: ['foot'],
     getPos: () => ({ x: HOME.hay.x + 7, z: HOME.hay.z }),
     when: () => ready() && near(horse().pos, HOME.hay.x + 7, HOME.hay.z, 9) && horse().cond.satiety < 90,
-    action: () => care('Une brassée de foin', 3, (c) => {
+    action: () => care(t('Une brassée de foin'), 3, (c) => {
       c.satiety = 100;
       c.resting = true;
       // Une nouvelle brassée relance la minute de repos.

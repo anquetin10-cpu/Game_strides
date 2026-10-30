@@ -2,6 +2,7 @@
 // abreuvoir automatique), on va l'y chercher (« Sortir du box »). Le box est celui du bout ouest de l'allée, côté prés ;
 // la plaque porte le nom du cheval. Le cheval au box ne vient pas au sifflet.
 import { HOME } from '../world/sites.js';
+import { t, T } from '../core/i18n.js';
 
 // Box n° 1 côté prés (repère de l'écurie du Val : boxes de 3,6 m depuis le pignon ouest, allée de 3,6 m).
 export const HOME_BOX = {
@@ -29,7 +30,7 @@ export function installStabling(game) {
     h.setPosition(HOME_BOX.x, HOME_BOX.z, 0);
     h.cond.resting = true;
     g.save.data.horseInBox = h.id;
-    if (!quiet) g.hud.toast(`${h.name} est au box : repos, foin et eau à volonté.`);
+    if (!quiet) g.hud.toast(T`${h.name} est au box : repos, foin et eau à volonté.`);
   };
   const takeOut = (h, quiet = false) => {
     h.inBox = false;
@@ -37,12 +38,12 @@ export function installStabling(game) {
     h.cond.resting = false;
     h.setPosition(HOME_BOX.door.x + 1.2, HOME_BOX.door.z + 0.3, Math.PI / 2);
     delete g.save.data.horseInBox;
-    if (!quiet) g.hud.toast(`${h.name} sort du box.`);
+    if (!quiet) g.hud.toast(T`${h.name} sort du box.`);
   };
   g.stabling = { putIn, takeOut };
 
   g.interact.add('box-in', {
-    label: 'Rentrer au box', icon: 'horse', r: 2.6, priority: 2.2, modes: ['foot'],
+    label: t('Rentrer au box'), icon: 'horse', r: 2.6, priority: 2.2, modes: ['foot'],
     getPos: () => HOME_BOX.door,
     when: () => {
       const h = horse();
@@ -54,7 +55,7 @@ export function installStabling(game) {
     }, 0.4),
   });
   g.interact.add('box-out', {
-    label: 'Sortir du box', icon: 'horse', r: 2.6, priority: 2.2, modes: ['foot'],
+    label: t('Sortir du box'), icon: 'horse', r: 2.6, priority: 2.2, modes: ['foot'],
     getPos: () => HOME_BOX.door,
     when: () => !!horse()?.inBox && !g.player.locked,
     action: () => g.fade(() => {
@@ -68,7 +69,7 @@ export function installStabling(game) {
     const h = horse();
     if (h?.inBox && !run?.offer?.def?.keepInBox) {
       takeOut(h, true);
-      g.hud.hint(`${h.name} est sorti(e) du box : il ou elle t’attend dans l’allée de l’Écurie du Val.`, 5000);
+      g.hud.hint(T`${h.name} est sorti(e) du box : il ou elle t’attend dans l’allée de l’Écurie du Val.`, 5000);
     }
   });
 }

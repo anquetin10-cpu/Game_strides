@@ -6,6 +6,7 @@ import { clamp, dampAngle } from '../core/math.js';
 import { nearestRoad, zoneById, zoneDist } from '../world/layout.js';
 import { Transport } from './transport.js';
 import { TRUCK_DIM } from '../entities/truckModel.js';
+import { t, T } from '../core/i18n.js';
 import * as THREE from 'three';
 
 // Phases d'un soin (w : part de la durée ; side / fwd : place du soigneur depuis le centre du cheval, en mètres).
@@ -166,7 +167,7 @@ export class Player {
   _setupInteractions() {
     const g = this.game;
     g.interact.add('mount', {
-      label: 'Monter',
+      label: t('Monter'),
       icon: 'horse',
       r: 3.2,
       priority: 2,
@@ -176,7 +177,7 @@ export class Player {
       action: () => this.mount(),
     });
     g.interact.add('dismount', {
-      label: 'Descendre',
+      label: t('Descendre'),
       icon: 'down',
       r: 1e9,
       priority: 0,
@@ -188,7 +189,7 @@ export class Player {
     // Monter au volant : près d'une portière de la cabine.
     const doorL = { x: 0, y: 0, z: 0 }, doorR = { x: 0, y: 0, z: 0 };
     g.interact.add('truck-in', {
-      label: 'Conduire',
+      label: t('Conduire'),
       icon: 'truck',
       r: 3.0,
       priority: 1.5,
@@ -208,7 +209,7 @@ export class Player {
     const door = { x: 0, y: 0, z: 0 };
     let near = null;
     g.interact.add('vehicle-in', {
-      label: 'Conduire',
+      label: t('Conduire'),
       icon: 'car',
       r: 2.6,
       priority: 1.4,
@@ -243,7 +244,7 @@ export class Player {
       },
     });
     g.interact.add('truck-out', {
-      label: 'Sortir',
+      label: t('Sortir'),
       icon: 'down',
       r: 1e9,
       priority: 0,
@@ -385,11 +386,11 @@ export class Player {
   whistle() {
     const h = this.horse;
     if (h && h.inBox && this.mode === 'foot') {
-      this.game.hud.toast(`${h.name} est au box à l’Écurie du Val : va l’y chercher (« Sortir du box »).`);
+      this.game.hud.toast(T`${h.name} est au box à l’Écurie du Val : va l’y chercher (« Sortir du box »).`);
       return false;
     }
     if (h && h.hiddenInTruck && this.mode === 'foot') {
-      this.game.hud.toast(`${h.name} est dans le camion : ouvre la rampe pour la faire descendre.`);
+      this.game.hud.toast(T`${h.name} est dans le camion : ouvre la rampe pour la faire descendre.`);
       return false;
     }
     if (!h || this.mode !== 'foot' || h.hiddenInTruck || h.frozen || this.transport?.busy) return false;

@@ -7,19 +7,20 @@
 // Hors de claude.ai (fichier local, autre hébergement, visiteur déconnecté), tout reste local et rien n'échoue :
 // le jeu affiche ses records personnels et explique où jouer en ligne.
 import { BUILD } from '../config.js';
+import { t } from './i18n.js';
 
 // Épreuves classées : `cso` = barème A (pénalités puis chrono), `time` = chrono seul.
 // minTime : temps le plus court physiquement possible (longueur de l'épreuve au grand galop, 14 m/s, sans les
 // virages ni les sauts) ; un chrono plus court n'est pas inscrit au classement (le record reste sur l'appareil).
 export const BOARDS = [
-  { id: 'defi-pole-v5', title: 'Défi du Pôle', sub: '8 obstacles et un double à 1,10 m, même cheval et mêmes conditions pour tous', kind: 'cso', minTime: 26 },
-  { id: 'concours-am2', title: 'Concours Amateur 2', sub: 'CSO au Pôle International, 1,05 m', kind: 'cso', minTime: 26 },
-  { id: 'concours-am1', title: 'Concours Amateur 1', sub: 'CSO au Pôle International, 1,15 m', kind: 'cso', minTime: 26 },
-  { id: 'concours-pro2', title: 'Concours Pro 2', sub: 'CSO au Pôle International, 1,25 m', kind: 'cso', minTime: 26 },
-  { id: 'cso_train', title: 'Parcours du Pôle', sub: 'Entraînement chronométré, 8 obstacles et un double', kind: 'cso', minTime: 26 },
-  { id: 'xc_train', title: 'Cross de Saint-Gatien', sub: 'Entraînement chronométré, 10 obstacles', kind: 'cso', minTime: 54 },
-  { id: 'beach_sprint', title: 'Sprint de la plage', sub: '8 anneaux au bord de l’eau', kind: 'time', minTime: 38 },
-  { id: 'hippo_lap', title: 'Tour de l’hippodrome', sub: 'Un tour de piste', kind: 'time', minTime: 50 },
+  { id: 'defi-pole-v5', title: t('Défi du Pôle'), sub: t('8 obstacles et un double à 1,10 m, même cheval et mêmes conditions pour tous'), kind: 'cso', minTime: 26 },
+  { id: 'concours-am2', title: t('Concours Amateur 2'), sub: t('CSO au Pôle International, 1,05 m'), kind: 'cso', minTime: 26 },
+  { id: 'concours-am1', title: t('Concours Amateur 1'), sub: t('CSO au Pôle International, 1,15 m'), kind: 'cso', minTime: 26 },
+  { id: 'concours-pro2', title: t('Concours Pro 2'), sub: t('CSO au Pôle International, 1,25 m'), kind: 'cso', minTime: 26 },
+  { id: 'cso_train', title: t('Parcours du Pôle'), sub: t('Entraînement chronométré, 8 obstacles et un double'), kind: 'cso', minTime: 26 },
+  { id: 'xc_train', title: t('Cross de Saint-Gatien'), sub: t('Entraînement chronométré, 10 obstacles'), kind: 'cso', minTime: 54 },
+  { id: 'beach_sprint', title: t('Sprint de la plage'), sub: t('8 anneaux au bord de l’eau'), kind: 'time', minTime: 38 },
+  { id: 'hippo_lap', title: t('Tour de l’hippodrome'), sub: t('Un tour de piste'), kind: 'time', minTime: 50 },
 ];
 export const boardById = (id) => BOARDS.find((b) => b.id === id) || null;
 
@@ -34,7 +35,7 @@ export function rankBoard(rows, boardId) {
   for (const r of rows) {
     const b = r.boards?.[boardId];
     if (!b || !Number.isFinite(b.score)) continue;
-    out.push({ id: r.id, pseudo: cleanName(r.pseudo) || 'Cavalier anonyme', horse: cleanName(b.horse), pen: b.pen || 0, time: b.time, score: b.score, at: b.at || 0 });
+    out.push({ id: r.id, pseudo: cleanName(r.pseudo) || t('Cavalier anonyme'), horse: cleanName(b.horse), pen: b.pen || 0, time: b.time, score: b.score, at: b.at || 0 });
   }
   out.sort((a, b) => a.score - b.score || a.at - b.at);
   out.forEach((e, i) => (e.rank = i + 1));

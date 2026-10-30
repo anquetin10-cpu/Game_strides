@@ -1,6 +1,7 @@
 // Sauvegarde locale versionnée : migration avec copie de secours, validation, échec explicite (jamais remplacée
 // en silence par une partie vide), export / import pour la récupération, registre des récompenses versées.
 import { CONFIG, REPUTATION, BUILD } from '../config.js';
+import { t, T } from './i18n.js';
 
 export const SAVE_VERSION = 2;
 
@@ -161,8 +162,8 @@ export class SaveSystem {
   // Copies disponibles pour une récupération : secours avant migration et dernière sauvegarde illisible.
   backups() {
     const out = [];
-    for (let v = 1; v < SAVE_VERSION; v++) if (this._get(this.backupKey(v))) out.push({ key: this.backupKey(v), label: `Copie de secours (v${v})` });
-    if (this._get(this.invalidKey)) out.push({ key: this.invalidKey, label: 'Dernière sauvegarde illisible' });
+    for (let v = 1; v < SAVE_VERSION; v++) if (this._get(this.backupKey(v))) out.push({ key: this.backupKey(v), label: T`Copie de secours (v${v})` });
+    if (this._get(this.invalidKey)) out.push({ key: this.invalidKey, label: t('Dernière sauvegarde illisible') });
     return out;
   }
   _quarantine(raw, kind, detail = '') {

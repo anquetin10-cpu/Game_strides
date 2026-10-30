@@ -1,4 +1,6 @@
 // Configuration globale du jeu. Modifier ici les liens marketing et le réglage gameplay.
+import { t } from './core/i18n.js';
+
 export const CONFIG = {
   brand: 'STRIDES',
   title: 'GRAND TOUR',
@@ -20,11 +22,11 @@ export const CONFIG = {
 // Paliers de réputation (commune à tous les métiers ; remplace l'ancienne hiérarchie de statuts).
 // Les seuils gardent l'économie actuelle ; `level` des missions = index du palier + 1.
 export const REPUTATION = [
-  { xp: 0, title: 'Premiers contrats', short: 'DÉBUT' },
-  { xp: 300, title: 'Professionnel apprécié', short: 'APPRÉCIÉ' },
-  { xp: 900, title: 'Référence locale', short: 'RÉFÉRENCE' },
-  { xp: 1800, title: 'Équipe reconnue', short: 'RECONNU' },
-  { xp: 3200, title: 'Réputation internationale', short: 'INTERNATIONAL' },
+  { xp: 0, title: t('Premiers contrats'), short: t('DÉBUT') },
+  { xp: 300, title: t('Professionnel apprécié'), short: t('APPRÉCIÉ') },
+  { xp: 900, title: t('Référence locale'), short: t('RÉFÉRENCE') },
+  { xp: 1800, title: t('Équipe reconnue'), short: t('RECONNU') },
+  { xp: 3200, title: t('Réputation internationale'), short: t('INTERNATIONAL') },
 ];
 export const LEVELS = REPUTATION; // alias de compatibilité
 

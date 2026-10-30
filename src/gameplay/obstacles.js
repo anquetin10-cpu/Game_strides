@@ -7,6 +7,7 @@ import { XC_PATH, POND } from '../world/layout.js';
 import { pointAlong, polylineLength, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { signTexture } from '../world/textures.js';
+import { t } from '../core/i18n.js';
 import { CSO_TRACE, csoHeights } from './csoCourse.js';
 import { PARIS_COURSES, PARIS_WARM } from './parisCourse.js';
 import { PARIS } from '../world/sites.js';
@@ -179,8 +180,8 @@ export class Obstacles {
       this.add({ x: p.x, z: p.z, rot: p.rot, kind: p.kind, h: p.kind === 'log' ? 0.95 : 1.05, w: 4.2, num: i + 1, course: 'xc', solid: true });
     });
     // Lignes de départ et d'arrivée : fanions (rouge à droite, blanc à gauche), cellules de chronométrage, ligne au sol.
-    this._timingLine(CSO_START, 'DÉPART');
-    this._timingLine(CSO_FINISH, 'ARRIVÉE');
+    this._timingLine(CSO_START, t('DÉPART'));
+    this._timingLine(CSO_FINISH, t('ARRIVÉE'));
     const H = HOME.arena;
     this.add({ x: H.x - 9, z: H.z, rot: Math.PI / 2, kind: 'v', h: 0.75, w: 3.2, course: 'home', id: 'home1' });
     this.add({ x: H.x + 10, z: H.z, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.2, course: 'home', id: 'home2', colors: COLORS[1] });
@@ -196,7 +197,7 @@ export class Obstacles {
       });
     }
     this.parisLines = {};
-    for (const c of Object.values(PARIS_COURSES)) this.parisLines[c.id] = [...this._timingLine(c.start, 'DÉPART'), ...this._timingLine(c.finish, 'ARRIVÉE')];
+    for (const c of Object.values(PARIS_COURSES)) this.parisLines[c.id] = [...this._timingLine(c.start, t('DÉPART')), ...this._timingLine(c.finish, t('ARRIVÉE'))];
     this.showParisCourse('paris_gp');
     const PW = PARIS.warmup;
     this.add({ x: PW.x - 8, z: PW.z, rot: Math.PI / 2, kind: 'v', h: 1.3, w: 3.4, course: PARIS_WARM });

@@ -15,20 +15,21 @@ import { SHOP, SHOP_CATS, SLOTS, CAFE_MENU } from './data.js';
 import { DOUBLE_TAP_MS } from './commerce.js';
 import { h, tap } from '../ui/dom.js';
 import { formatMoney } from '../core/math.js';
+import { t, T, LANG } from '../core/i18n.js';
 
 export const LOAD_R = 48;
 export const UNLOAD_R = 80;
 // Ambiance sonore de chaque commerce (brouhaha de la salle).
 const MURMUR = { sellerie: 0.18, cafe: 0.7, boutique: 0.12 };
 const GREET = {
-  sellerie: ['Bonjour ! Bienvenue à la Sellerie du Port. Selles, briderie, tapis : tout est en rayon, et je fais les retouches à l’atelier.', 'Prends ton temps. Chaque article porte son étiquette : approche-toi d’un rayon pour voir les prix.'],
-  cafe: ['Bonjour ! Qu’est-ce que je te sers ? Le pain sort du four, les croissants sont encore tièdes.'],
-  boutique: ['Bonjour, bienvenue chez Maison Lucette ! Le miroir est au fond : tu peux tout essayer.'],
+  sellerie: [t('Bonjour ! Bienvenue à la Sellerie du Port. Selles, briderie, tapis : tout est en rayon, et je fais les retouches à l’atelier.'), t('Prends ton temps. Chaque article porte son étiquette : approche-toi d’un rayon pour voir les prix.')],
+  cafe: [t('Bonjour ! Qu’est-ce que je te sers ? Le pain sort du four, les croissants sont encore tièdes.')],
+  boutique: [t('Bonjour, bienvenue chez Maison Lucette ! Le miroir est au fond : tu peux tout essayer.')],
 };
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // Prix avec centimes quand il y en a (carte du café).
-const euros = (v) => (Number.isInteger(v) ? formatMoney(v) : `${v.toFixed(2).replace('.', ',')} €`);
+const euros = (v) => (Number.isInteger(v) ? formatMoney(v) : LANG === 'fr' ? `${v.toFixed(2).replace('.', ',')} €` : `€${v.toFixed(2)}`);
 
 export class ShopManager {
   constructor(game) {
@@ -41,7 +42,7 @@ export class ShopManager {
     this._cardTap = 0;
     for (const id of Object.keys(SHOPS3D)) {
       this.game.interact.add(`shop-door:${id}`, {
-        label: 'Entrer', icon: 'bag', r: 2.4, priority: 2, modes: ['foot', 'ride'],
+        label: t('Entrer'), icon: 'bag', r: 2.4, priority: 2, modes: ['foot', 'ride'],
         getPos: () => this.doorOut(id),
         when: () => !this.current && !this.busy,
         action: () => this.enter(id),
@@ -116,7 +117,7 @@ export class ShopManager {
     for (const fx of L.fixtures) {
       const p = this.toW(id, fx.at[0], fx.at[1]);
       g.interact.add(`shop:${id}:${fx.id}`, {
-        label: fx.counter ? (id === 'cafe' ? 'Commander' : 'Parler') : fx.tryOn ? 'Essayer' : fx.label, icon: fx.counter ? 'talk' : 'bag', r: 1.9, priority: 1.5, modes: ['foot'],
+        label: fx.counter ? (id === 'cafe' ? t('Commander') : t('Parler')) : fx.tryOn ? t('Essayer') : fx.label, icon: fx.counter ? 'talk' : 'bag', r: 1.9, priority: 1.5, modes: ['foot'],
         x: p.x, z: p.z,
         when: () => this.current === id && !this.busy,
         action: () => (fx.counter ? this.counter(id, fx) : this.openRack(id, fx)),
@@ -124,7 +125,7 @@ export class ShopManager {
     }
     const ex = this.toW(id, L.exit[0], L.exit[1]);
     g.interact.add(`shop:${id}:exit`, {
-      label: 'Sortir', icon: 'back', r: 1.7, priority: 2.5, modes: ['foot'], x: ex.x, z: ex.z,
+      label: t('Sortir'), icon: 'back', r: 1.7, priority: 2.5, modes: ['foot'], x: ex.x, z: ex.z,
       when: () => this.current === id && !this.busy,
       action: () => this.exit(),
     });
@@ -225,7 +226,7 @@ export class ShopManager {
       ok = true;
     } catch (e) {
       console.warn('[shops] entrée impossible', id, e);
-      g.hud.toast('La boutique ne peut pas ouvrir pour le moment. Réessaie dans un instant.');
+      g.hud.toast(t('La boutique ne peut pas ouvrir pour le moment. Réessaie dans un instant.'));
     }
     if (!instant) {
       await wait(60);
@@ -308,14 +309,15 @@ export class ShopManager {
     const consumable = it.kind === 'consumable';
     const owned = !consumable && c.owned(it.id);
     const lines = [];
-    if (consumable) lines.push(`En stock : ${c.qty(it.id)}`);
-    else if (owned) lines.push(it.slot ? (c.isActive(it.id) ? `Possédé · équipé (${SLOTS[it.slot]})` : 'Possédé · non équipé') : 'Possédé');
+    if (consumable) lines.push(T`En stock : ${c.qty(it.id)}`);
+    else if (owned) lines.push(it.slot ? (c.isActive(it.id) ? T`Possédé · équipé (${SLOTS[it.slot]})` : t('Possédé · non équipé')) : t('Possédé'));
     const restr = c.restriction(it.id);
     if (restr && !owned) lines.push(restr);
-    if (this.preview === it.id) lines.push('Essayé en ce moment');
+    if (this.preview === it.id) lines.push(t('Essayé en ce moment'));
     const acts = h('div.shop-acts');
-    const btn = (label, cls, fn, disabled = false) => {
-      const b = h(`button.btn${cls}`, { text: label, 'data-act': label, 'data-item': it.id });
+    // `label` (français) reste l'attribut data-act ; `text` est le libellé affiché.
+    const btn = (label, cls, fn, disabled = false, text = label) => {
+      const b = h(`button.btn${cls}`, { text, 'data-act': label, 'data-item': it.id });
       if (disabled) b.disabled = true;
       tap(b, () => {
         if (b.disabled || !this._guard()) return;
@@ -325,13 +327,16 @@ export class ShopManager {
       });
       acts.appendChild(b);
     };
-    if (!owned) btn(consumable && c.qty(it.id) ? `Racheter · ${formatMoney(it.price)}` : `Acheter · ${formatMoney(it.price)}`, '.primary', () => c.purchase(it.id), st === 'locked' || st === 'poor');
-    if (owned && it.slot) {
-      if (c.isActive(it.id)) btn('Retirer', '.ghost', () => c.equip(null, it.slot));
-      else btn('Équiper', '.primary', () => c.equip(it.id));
+    if (!owned) {
+      const again = consumable && c.qty(it.id);
+      btn(again ? `Racheter · ${formatMoney(it.price)}` : `Acheter · ${formatMoney(it.price)}`, '.primary', () => c.purchase(it.id), st === 'locked' || st === 'poor', again ? T`Racheter · ${formatMoney(it.price)}` : T`Acheter · ${formatMoney(it.price)}`);
     }
-    if (consumable && c.qty(it.id) > 0) btn('Utiliser', '', () => c.use(it.id));
-    if (tryOn && it.wear && !(owned && c.isActive(it.id))) btn(this.preview === it.id ? 'Enlever' : 'Essayer', '.ghost', () => this.tryOn(this.preview === it.id ? null : it.id));
+    if (owned && it.slot) {
+      if (c.isActive(it.id)) btn('Retirer', '.ghost', () => c.equip(null, it.slot), false, t('Retirer'));
+      else btn('Équiper', '.primary', () => c.equip(it.id), false, t('Équiper'));
+    }
+    if (consumable && c.qty(it.id) > 0) btn('Utiliser', '', () => c.use(it.id), false, t('Utiliser'));
+    if (tryOn && it.wear && !(owned && c.isActive(it.id))) btn(this.preview === it.id ? 'Enlever' : 'Essayer', '.ghost', () => this.tryOn(this.preview === it.id ? null : it.id), false, this.preview === it.id ? t('Enlever') : t('Essayer'));
     return h('div.shop-row', { 'data-item': it.id },
       h('div.shop-info', {},
         h('div.shop-top', {}, h('span.n', { text: it.name }), h('span.p', { text: formatMoney(it.price) })),
@@ -349,15 +354,15 @@ export class ShopManager {
     const box = h('div.shop-list');
     const bal = h('div.shop-bal');
     const render = () => {
-      bal.textContent = `Solde : ${formatMoney(g.save.data.money)}`;
+      bal.textContent = T`Solde : ${formatMoney(g.save.data.money)}`;
       box.replaceChildren(...list.map((it) => this._row(it, render, { tryOn: !!fx.tryOn || id === 'boutique' })));
     };
     render();
     g.screens.card({
       kicker: s.name,
       title: fx.cats ? fx.cats.map((k) => SHOP_CATS[k]).join(' · ') : fx.label,
-      extra: [bal, box, h('div.irl', { text: 'Boutique fictive du jeu : rien n’est vendu sur Strides.' })],
-      buttons: [{ label: 'Fermer', primary: true, id: 'shop-close', run: () => this._clearPreview() }],
+      extra: [bal, box, h('div.irl', { text: t('Boutique fictive du jeu : rien n’est vendu sur Strides.') })],
+      buttons: [{ label: t('Fermer'), primary: true, id: 'shop-close', run: () => this._clearPreview() }],
     });
   }
 
@@ -370,7 +375,7 @@ export class ShopManager {
     const after = () => {
       if (st?.staff) st.staff.pose = 'stand';
       if (id === 'cafe') this.openCafe(fx);
-      else this.openRack(id, { label: 'Comptoir', cats: Object.keys(SHOP_CATS) }, SHOP.filter((it) => it.shop === id));
+      else this.openRack(id, { label: t('Comptoir'), cats: Object.keys(SHOP_CATS) }, SHOP.filter((it) => it.shop === id));
     };
     if (this._greeted === id) return after();
     this._greeted = id;
@@ -388,23 +393,23 @@ export class ShopManager {
     const bal = h('div.shop-bal');
     let last = { id: null, t: 0 };
     const render = () => {
-      bal.textContent = `Solde : ${formatMoney(g.save.data.money)}`;
+      bal.textContent = T`Solde : ${formatMoney(g.save.data.money)}`;
       box.replaceChildren(...CAFE_MENU.map((m) => {
-        const b = h('button.btn.primary', { text: `Commander · ${euros(m.price)}`, 'data-item': m.id });
+        const b = h('button.btn.primary', { text: T`Commander · ${euros(m.price)}`, 'data-item': m.id });
         if (g.save.data.money < m.price) b.disabled = true;
         tap(b, () => {
           const now = performance.now();
           if (b.disabled || (last.id === m.id && now - last.t < DOUBLE_TAP_MS)) return;
           last = { id: m.id, t: now };
           const d = g.save.data;
-          if (d.money < m.price) return g.hud.toast('Solde insuffisant.');
+          if (d.money < m.price) return g.hud.toast(t('Solde insuffisant.'));
           d.money = Math.round((d.money - m.price) * 100) / 100;
           d.stats.cafe = (d.stats.cafe || 0) + 1;
           g.saveNow();
           g.updateWallet();
           if (m.id === 'cafe' || m.id === 'creme') g.audio.coffee();
           g.audio.register();
-          g.hud.toast(`Paul te sert : ${m.name.toLowerCase()}. Bonne dégustation !`, 'check');
+          g.hud.toast(T`Paul te sert : ${m.name.toLowerCase()}. Bonne dégustation !`, 'check');
           render();
         });
         return h('div.shop-row', { 'data-item': m.id }, h('div.shop-info', {}, h('div.shop-top', {}, h('span.n', { text: m.name }), h('span.p', { text: euros(m.price) }))), h('div.shop-acts', {}, b));
@@ -412,10 +417,10 @@ export class ShopManager {
     };
     render();
     g.screens.card({
-      kicker: 'Le Galop · Café-boulangerie',
-      title: 'La carte',
-      extra: [bal, box, h('div.d', { text: 'Commandes pour une écurie : elles se retirent au comptoir quand une mission Strides le demande.' })],
-      buttons: [{ label: 'Fermer', primary: true, id: 'shop-close' }],
+      kicker: t('Le Galop · Café-boulangerie'),
+      title: t('La carte'),
+      extra: [bal, box, h('div.d', { text: t('Commandes pour une écurie : elles se retirent au comptoir quand une mission Strides le demande.') })],
+      buttons: [{ label: t('Fermer'), primary: true, id: 'shop-close' }],
     });
   }
 

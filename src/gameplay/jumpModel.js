@@ -5,6 +5,7 @@
 // (ou la seconde barre de l'oxer) ; trop près : la barre avant est franchie en montée, trop bas, ou le cheval n'a plus
 // la place d'enlever (refus). Vitesse et angle réduisent la hauteur disponible.
 import { clamp, smoothstep } from '../core/math.js';
+import { t } from '../core/i18n.js';
 
 export const JUMP = {
   T: 0.8, // durée naturelle du vol au galop (s) : longueur naturelle = vitesse × T
@@ -84,11 +85,11 @@ export function planJump(horse, geo) {
 }
 
 export const CAUSES = {
-  far: 'Appel trop loin',
-  near: 'Appel trop près',
-  tooClose: 'Trop près : plus de place pour sauter',
-  angle: 'Abord désaxé',
-  slow: 'Pas assez d’impulsion',
-  fast: 'Trop vite : saut à plat',
-  short: 'Saut trop court : atterrissage dans l’obstacle',
+  far: t('Appel trop loin'),
+  near: t('Appel trop près'),
+  tooClose: t('Trop près : plus de place pour sauter'),
+  angle: t('Abord désaxé'),
+  slow: t('Pas assez d’impulsion'),
+  fast: t('Trop vite : saut à plat'),
+  short: t('Saut trop court : atterrissage dans l’obstacle'),
 };

@@ -7,6 +7,7 @@ import { angleDiff, clamp, damp, lerp, wrapAngle } from '../core/math.js';
 import { CompetitionOffers } from './trip.js';
 // Espace de noms : setHorseTack n'existe que dans les modèles de cheval qui savent changer d'équipement.
 import * as HorseModel from '../entities/horseModel.js';
+import { t, T } from '../core/i18n.js';
 
 const D = TRUCK_DIM;
 const HZ = (z) => z + D.hingeZ + 4.2; // derrière le pont
@@ -20,6 +21,19 @@ const _q = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
 const _e = new THREE.Euler(0, 0, 0, 'YXZ');
 const fem = (h) => (/comete|saphir|tornade/.test(h?.id || '') ? 'e' : '');
+// Textes affichés (`t` est masqué par les variables locales du camion dans les méthodes).
+const TXT = {
+  wait: t('Rampe…'),
+  load: t('Faire monter le cheval'),
+  open: t('Ouvrir la rampe'),
+  release: t('Lâcher'),
+  unload: t('Faire descendre le cheval'),
+  close: t('Fermer la rampe'),
+  lead: t('Mener en main'),
+  noRoom: t('Pas assez de place derrière le camion : avance de quelques mètres.'),
+  horse: t('Le cheval'),
+  closed: t('Rampe fermée — prêt à partir. Conduis en souplesse.'),
+};
 
 // ---------- Longe : tube souple entre la main et le licol ----------
 class Rope {
@@ -243,28 +257,28 @@ export class Transport {
     const hp = p.human.pos;
     const atRear = t && t.stopped && !t.driver && this._distRear(hp) < 2.9;
     // Rampe en mouvement : l'action reste celle du camion (sinon « Monter » prendrait la main pendant l'animation).
-    if (atRear && !t.rampOpen && !t.rampClosed) out.push({ id: 'wait', label: 'Rampe…', icon: 'truck', prio: 2.9 });
+    if (atRear && !t.rampOpen && !t.rampClosed) out.push({ id: 'wait', label: TXT.wait, icon: 'truck', prio: 2.9 });
     if (this.led) {
       const h = this.led.horse;
-      if (atRear && t.rampOpen && this.freeStall() >= 0 && this._distRear(h.pos) < 7) out.push({ id: 'load', label: 'Faire monter le cheval', icon: 'horse', prio: 3.2 });
-      if (atRear && t.rampClosed) out.push({ id: 'open', label: 'Ouvrir la rampe', icon: 'down', prio: 2.9 });
-      out.push({ id: 'release', label: 'Lâcher', icon: 'hand', prio: 1.0 });
+      if (atRear && t.rampOpen && this.freeStall() >= 0 && this._distRear(h.pos) < 7) out.push({ id: 'load', label: TXT.load, icon: 'horse', prio: 3.2 });
+      if (atRear && t.rampClosed) out.push({ id: 'open', label: TXT.open, icon: 'down', prio: 2.9 });
+      out.push({ id: 'release', label: TXT.release, icon: 'hand', prio: 1.0 });
     } else {
       if (atRear) {
-        if (t.rampClosed) out.push({ id: 'open', label: 'Ouvrir la rampe', icon: 'down', prio: 2.9 });
+        if (t.rampClosed) out.push({ id: 'open', label: TXT.open, icon: 'down', prio: 2.9 });
         else if (t.rampOpen) {
           const loaded = this.aboard.length > 0;
           if (loaded && this.preferUnload) {
-            out.push({ id: 'unload', label: 'Faire descendre le cheval', icon: 'horse', prio: 3.2 });
-            out.push({ id: 'close', label: 'Fermer la rampe', icon: 'truck', prio: 3.0 });
+            out.push({ id: 'unload', label: TXT.unload, icon: 'horse', prio: 3.2 });
+            out.push({ id: 'close', label: TXT.close, icon: 'truck', prio: 3.0 });
           } else {
-            out.push({ id: 'close', label: 'Fermer la rampe', icon: 'truck', prio: 3.2 });
-            if (loaded) out.push({ id: 'unload', label: 'Faire descendre le cheval', icon: 'horse', prio: 3.0 });
+            out.push({ id: 'close', label: TXT.close, icon: 'truck', prio: 3.2 });
+            if (loaded) out.push({ id: 'unload', label: TXT.unload, icon: 'horse', prio: 3.0 });
           }
         }
       }
       const lh = this._nearLeadable(hp);
-      if (lh) out.push({ id: 'lead', label: 'Mener en main', icon: 'horse', prio: 1.9, horse: lh });
+      if (lh) out.push({ id: 'lead', label: TXT.lead, icon: 'horse', prio: 1.9, horse: lh });
     }
     out.sort((a, b) => b.prio - a.prio);
     return out;
@@ -302,7 +316,7 @@ export class Transport {
       for (let k = -1; k <= 1; k++) {
         t.groundPoint(k * 1.25, z, _u);
         if (c.blocked(_u.x, _u.z, y)) {
-          this.game.hud.toast('Pas assez de place derrière le camion : avance de quelques mètres.');
+          this.game.hud.toast(TXT.noRoom);
           return false;
         }
       }
@@ -454,7 +468,8 @@ export class Transport {
     this._halter(h, this._head);
     if (this._hand.distanceTo(this._head) > 6) {
       this.release();
-      this.game.hud.toast(`${h.name || 'Le cheval'} s’est détaché${fem(h)}.`);
+      const n = h.name || TXT.horse;
+      this.game.hud.toast(fem(h) ? T`${n} s’est détachée.` : T`${n} s’est détaché.`);
       return;
     }
     this.ropes[0].set(this._hand, this._head, 0.35, 0.42);
@@ -610,7 +625,8 @@ export class Transport {
     if (s.kind === 'load') {
       this._setAboard(h, s.stall);
       this.preferUnload = false;
-      g.hud.toast(`${h.name || 'Le cheval'} est attaché${fem(h)} dans le camion. Ferme la rampe.`);
+      const n = h.name || TXT.horse;
+      g.hud.toast(fem(h) ? T`${n} est attachée dans le camion. Ferme la rampe.` : T`${n} est attaché dans le camion. Ferme la rampe.`);
       g.audio.snort?.();
       g.bus.emit('transport:loaded', h);
     } else {
@@ -623,7 +639,8 @@ export class Transport {
       g.colliders.resolve(h.pos, 1, -Infinity);
       h.snapToGround();
       this.lead(h);
-      g.hud.toast(`${h.name || 'Le cheval'} est descendu${fem(h)} du camion.`);
+      const n = h.name || TXT.horse;
+      g.hud.toast(fem(h) ? T`${n} est descendue du camion.` : T`${n} est descendu du camion.`);
       g.bus.emit('transport:unloaded', h);
     }
     this._persist();
@@ -1181,7 +1198,8 @@ export class Transport {
     }
     this.game.audio.neigh?.();
     this.game.cam.shake = 0.15;
-    this.game.hud.toast(`Choc ! ${this.aboard[0].horse.name || 'Le cheval'} est secoué${fem(this.aboard[0].horse)}.`);
+    const h = this.aboard[0].horse, n = h.name || TXT.horse;
+    this.game.hud.toast(fem(h) ? T`Choc ! ${n} est secouée.` : T`Choc ! ${n} est secoué.`);
   }
 
   _updateComfort(dt) {
@@ -1215,7 +1233,7 @@ export class Transport {
       if (this.game.time - this._lastMood > 25) {
         this._lastMood = this.game.time;
         const h = this.aboard[0].horse;
-        this.game.hud.toast(`${h.name || 'Le cheval'} s’agite dans le camion — conduis plus en douceur.`);
+        this.game.hud.toast(T`${h.name || TXT.horse} s’agite dans le camion — conduis plus en douceur.`);
       }
     }
   }
@@ -1364,7 +1382,7 @@ export class Transport {
       if (t.partition.target === 1) t.setPartition(false);
       if (this._closeToast) {
         this._closeToast = false;
-        g.hud.toast('Rampe fermée — prêt à partir. Conduis en souplesse.');
+        g.hud.toast(TXT.closed);
       }
     }
     this._sweep(dt);
