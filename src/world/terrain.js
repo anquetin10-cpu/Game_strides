@@ -4,7 +4,7 @@ import { TIDE_UNIFORMS } from './weather.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, polyDist, smoothstep, pointAlong } from '../core/math.js';
 import { WORLD, ZONES, ROADS, POND, SIGN, BEACH, shoreZ, beachWig, beachHeight, isCliffRegion, zoneDist, PARIS_X, setParisBounds } from './layout.js';
-import { HOME, POLE, TOWN, PARIS } from './sites.js';
+import { HOME, POLE, TOWN, PARIS, parisFloor } from './sites.js';
 import { paveTexture } from './terrainTexture.js';
 
 // Carrières en sable (centre x, z ; demi-largeur, demi-profondeur) : sol hersé et piste piétinée le long de la lice.
@@ -160,7 +160,7 @@ export class Terrain {
 
   // Exact height of the rendered triangle mesh at (x, z).
   getHeight(x, z) {
-    if (x > PARIS_X) return PARIS.y;
+    if (x > PARIS_X) return PARIS.y + parisFloor(x, z);
     const fx = clamp((x + this.half) / this.cell, 0, this.seg - 1e-4);
     const fz = clamp((z + this.half) / this.cell, 0, this.seg - 1e-4);
     const i = Math.floor(fx);

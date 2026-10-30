@@ -155,6 +155,7 @@ export function courseSteps(game, run, S, opts) {
         // Concours de CSO : caméra et commandes de concours (direction progressive, cadence) ; cross : monde ouvert.
         game.course = { running: true, camera: cso, controls: cso ? 'cso' : null, jumpTiming: () => (aid() === 'off' ? 'none' : ob.timing(horse())), hud: hudInfo };
         aids = new CourseAids(game, courseId);
+        game.course.aids = aids;
         const advance = () => {
           state.next++;
           state.fenceRefusals = 0;

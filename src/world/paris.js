@@ -7,7 +7,7 @@
 // dessiné depuis Deauville, et inversement). Les éléments animés (écrans, faisceaux, public) sont mis à jour par
 // update(), seulement quand le joueur est à Paris.
 import * as THREE from 'three';
-import { PARIS } from './sites.js';
+import { PARIS, PARIS_FLOOR } from './sites.js';
 import { box, cyl } from './shapes.js';
 import { partsToGeo } from './builders.js';
 import { barnGeo } from './barns.js';
@@ -106,7 +106,7 @@ export class ParisZone {
     const gx = (b.x0 + b.x1) / 2, gz = (b.z0 + b.z1) / 2;
     // Enrobé (zone), sous la dalle de la salle et le parking ; trottoirs et marquages.
     B.add(box(b.x1 - b.x0 + 40, 0.6, b.z1 - b.z0 + 40), '#4f5052', gx, y - 0.6, gz, 0);
-    B.add(box(HALL.w + 14, 0.02, HALL.d + 14), '#a9a49a', X, y, Z, 0); // parvis de la salle
+    B.add(box(HALL.w + 14, PARIS_FLOOR.parvis, HALL.d + 14), '#a9a49a', X, y, Z, 0); // parvis de la salle
     for (let k = -3; k <= 3; k++) Dt.addDetail(box(0.15, 0.03, 8, false), '#e9e7e0', PARIS.park.x + k * 4.5, y + 0.01, PARIS.park.z - 9, 0, 1);
     // Voie d'accès vers l'autoroute (à l'ouest) et sa ligne médiane.
     B.add(box(70, 0.06, 9), '#3b3c3e', PARIS.exit.x + 28, y, PARIS.exit.z, 0);
@@ -115,8 +115,8 @@ export class ParisZone {
     // ---------- Salle ----------
     const ty = y; // sol de la salle
     // Piste : sable fibré clair ; contour du sol de la salle (gaine noire).
-    B.add(box(A.w, 0.06, A.d), '#cdb68f', X, ty + 0.03, Z, 0);
-    B.add(box(HALL.w - 1, 0.06, HALL.d - 1), '#2a2b2f', X, ty, Z, 0);
+    B.add(box(A.w, 0.06, A.d), '#cdb68f', X, ty + PARIS_FLOOR.sand - 0.06, Z, 0);
+    B.add(box(HALL.w - 1, 0.06, HALL.d - 1), '#2a2b2f', X, ty + PARIS_FLOOR.hall - 0.06, Z, 0);
     // Murs (bardage sombre) : ouvertures de la porte des cavaliers (ouest) et des entrées du public (sud).
     const wallH = HALL.h;
     const wall = (x, z, w, d) => {
@@ -287,7 +287,7 @@ export class ParisZone {
 
     // ---------- Paddock d'échauffement ----------
     const wu = PARIS.warmup;
-    B.add(box(wu.w, 0.06, wu.d), '#c0a881', wu.x, y + 0.02, wu.z, 0);
+    B.add(box(wu.w, 0.06, wu.d), '#c0a881', wu.x, y + PARIS_FLOOR.warm - 0.06, wu.z, 0);
     const gapPos = (PARIS.door.z - (wu.z - wu.d / 2)) / wu.d;
     W.rectFence(wu, { height: 1.0, board: true, color: '#f2f1ec' }, 'e', 6, Math.min(0.85, Math.max(0.15, gapPos)));
     W.floodlights(wu, 12);

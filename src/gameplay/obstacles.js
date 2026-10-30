@@ -188,16 +188,16 @@ export class Obstacles {
     this.add({ x: W.x, z: W.z - 9, rot: Math.PI / 2, kind: 'v', h: 1.1, w: 3.4, course: 'warmup' });
     this.add({ x: W.x, z: W.z + 10, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.4, course: 'warmup', colors: COLORS[1] });
     // Grand Prix de Paris Indoor : Sprint et Grand Prix dans l'arène (un seul des deux tracés en piste à la fois),
-    // lignes de départ et d'arrivée communes, et paddock d'échauffement.
+    // chacun avec ses lignes de départ et d'arrivée, et paddock d'échauffement.
     for (const c of Object.values(PARIS_COURSES)) {
       const hs = c.heights(1.45);
       c.layout.forEach((f, i) => {
         this.add({ x: f.x, z: f.z, rot: f.rot, kind: f.kind, spread: f.spread, h: hs[i], w: 3.8, num: i + 1, label: f.label, lineS: f.s, course: c.id, colors: COLORS[(i + 2) % COLORS.length] });
       });
     }
+    this.parisLines = {};
+    for (const c of Object.values(PARIS_COURSES)) this.parisLines[c.id] = [...this._timingLine(c.start, 'DÉPART'), ...this._timingLine(c.finish, 'ARRIVÉE')];
     this.showParisCourse('paris_gp');
-    this._timingLine(PARIS_COURSES.paris_gp.start, 'DÉPART');
-    this._timingLine(PARIS_COURSES.paris_gp.finish, 'ARRIVÉE');
     const PW = PARIS.warmup;
     this.add({ x: PW.x - 8, z: PW.z, rot: Math.PI / 2, kind: 'v', h: 1.3, w: 3.4, course: PARIS_WARM });
     this.add({ x: PW.x + 9, z: PW.z, rot: -Math.PI / 2, kind: 'o', h: 1.25, w: 3.4, course: PARIS_WARM, colors: COLORS[1] });
@@ -234,6 +234,7 @@ export class Obstacles {
     sign.rotation.y = L.rot + Math.PI;
     this.group.add(sign);
     this.game.world.culled.push([sign, L.x, L.z, 200]);
+    return [m, sign];
   }
 
   // Arène de Paris : un seul tracé en piste (Sprint ou Grand Prix), l'autre rangé.
@@ -241,6 +242,10 @@ export class Obstacles {
     for (const c of Object.keys(PARIS_COURSES)) {
       const nums = this.list.filter((o) => o.course === c).map((o) => o.num);
       this.setOff(c, c === id ? [] : nums);
+      for (const m of this.parisLines[c]) {
+        if (c === id) this.group.add(m);
+        else m.parent?.remove(m);
+      }
     }
     this.parisCourse = id;
   }

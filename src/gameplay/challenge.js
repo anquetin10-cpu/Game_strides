@@ -100,10 +100,22 @@ export const DEFI_PARIS_V1 = deepFreeze({
   where: 'Paris, arène couverte : départ directement en piste, sans trajet.',
 });
 
-export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4, [DEFI_POLE_V5.id]: DEFI_POLE_V5, [DEFI_PARIS_V1.id]: DEFI_PARIS_V1 };
+// Version 2 : arène agrandie (86 × 46 m) et Grand Prix redessiné (1 en diagonale depuis l'entrée, ligne nord, double
+// 4A – 4B au milieu, changement de main, mur et double 7A – 7B sur la ligne sud ; ≈ 240 m) ; marquage du tracé et zone
+// d'appel visibles sur le sable de l'arène. Temps accordé réglementaire du nouveau tracé (240 m à 350 m/min).
+export const DEFI_PARIS_V2 = deepFreeze({
+  ...JSON.parse(JSON.stringify(DEFI_PARIS_V1)),
+  id: 'defi-paris-v2',
+  version: 2,
+  obstacles: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  timeAllowed: 42,
+  timeLimit: 84,
+});
+
+export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4, [DEFI_POLE_V5.id]: DEFI_POLE_V5, [DEFI_PARIS_V1.id]: DEFI_PARIS_V1, [DEFI_PARIS_V2.id]: DEFI_PARIS_V2 };
 export const CURRENT_CHALLENGE = DEFI_POLE_V5;
 // Défis proposés (application Activités) : la version courante de chaque défi.
-export const CURRENT_CHALLENGES = [DEFI_POLE_V5, DEFI_PARIS_V1];
+export const CURRENT_CHALLENGES = [DEFI_POLE_V5, DEFI_PARIS_V2];
 export const SIGNATURE = 'STRIDES Grand Tour';
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.

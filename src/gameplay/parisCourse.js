@@ -1,33 +1,37 @@
-// Parcours du Grand Prix de Paris Indoor, dans l'arène couverte (piste de 80 × 40 m, voir sites.js : PARIS), tracés
-// comme celui du Pôle (csoCourse.js) : ligne du cavalier d'abord, obstacles posés dans son axe. En salle, trois lignes
-// droites (piste sud, milieu, piste nord) reliées par des demi-voltes de 7 m de rayon aux extrémités ; 14 m au moins
-// d'approche (4 foulées), 7 à 8 m de réception avant de tourner ; doubles à une foulée (8 m) ou deux foulées (11 m).
-// Départ et arrivée communs : départ sur la piste sud vers l'est, arrivée sur la piste nord vers l'est.
-//   Sprint (épreuve de vitesse, 1,50 m) : 1 oxer – 2 vertical, 3 oxer – 4 mur, 5 vertical – double 6A – 6B (1 foulée).
-//   Grand Prix (1,60 m) : 1 vertical – 2 oxer – 3 vertical, 4 mur – double 5A – 5B (2 foulées), 6 oxer – 7 vertical –
-//   8 oxer large.
+// Parcours du Grand Prix de Paris Indoor, dans l'arène couverte (piste de 86 × 46 m, voir sites.js : PARIS), tracés
+// comme celui du Pôle (csoCourse.js) : ligne du cavalier d'abord, obstacles posés dans son axe. 14 m au moins d'approche
+// droite (4 foulées), 7 m au moins de réception avant de tourner ; doubles à une foulée (8 m) ou deux foulées (11 m).
+// Entrée de piste au sud du petit côté ouest ; tribunes au nord, au sud et à l'est.
+//   Sprint (épreuve de vitesse, 1,50 m, tournants serrés de 7 m) : ligne sud vers l'est 1 oxer – 2 vertical, à main
+//   gauche 3 vertical sur le petit côté est, ligne nord vers l'ouest 4 oxer – 5 mur, demi-tour à gauche et diagonale
+//   finale vers l'arrivée : double 6A – 6B (une foulée).
+//   Grand Prix (1,60 m, tournants de 9 m) : 1 vertical en diagonale depuis l'entrée, à main droite ligne nord 2 oxer –
+//   3 vertical, demi-volte à droite et ligne du milieu vers l'ouest : double 4A – 4B (une foulée) puis 5 vertical,
+//   changement de main (demi-volte à gauche) et ligne sud vers l'est : 6 mur, double 7A – 7B (deux foulées), arrivée.
 // Repère local : centre de la piste, x vers l'est, z vers le sud ; cap h : direction (sin h, cos h).
 import { traceCourse } from './csoCourse.js';
 import { PARIS } from '../world/sites.js';
 
-const E = Math.PI / 2;
+const E = Math.PI / 2, DEG = Math.PI / 180;
 export const PARIS_SPRINT_DESIGN = {
-  start: { x: -28, z: 14.5, h: E },
+  start: { x: -30, z: 18, h: E },
   cmds: [
-    ['M', 'start'], ['F', 16], ['J', '1', 'o', 1.3], ['F', 17], ['J', '2', 'v'], ['F', 8], ['F', 9], ['L', 7, 180],
-    ['F', 16], ['J', '3', 'o', 1.4], ['F', 16], ['J', '4', 'w'], ['F', 8], ['F', 4], ['R', 7, 180],
-    ['F', 16], ['J', '5', 'v'], ['F', 17], ['J', '6A', 'v'], ['F', 8], ['J', '6B', 'o', 1.3], ['F', 11], ['M', 'finish'],
+    ['M', 'start'], ['F', 14], ['J', '1', 'o', 1.3], ['F', 19], ['J', '2', 'v'], ['F', 23], ['L', 7, 90],
+    ['F', 14], ['J', '3', 'v'], ['F', 7.2], ['L', 7, 90],
+    ['F', 14], ['J', '4', 'o', 1.4], ['F', 18], ['J', '5', 'w'], ['F', 8], ['L', 7, 150],
+    ['F', 14], ['J', '6A', 'v'], ['F', 8], ['J', '6B', 'o', 1.3], ['F', 10], ['M', 'finish'],
   ],
-  profile: { 1: -0.05, 2: 0, 3: 0, 4: 0, 5: 0, '6A': 0, '6B': 0 },
+  profile: { 1: -0.05 },
 };
 export const PARIS_GP_DESIGN = {
-  start: { x: -28, z: 14.5, h: E },
+  start: { x: -37, z: 16, h: 160 * DEG },
   cmds: [
-    ['M', 'start'], ['F', 14], ['J', '1', 'v'], ['F', 15], ['J', '2', 'o', 1.3], ['F', 15], ['J', '3', 'v'], ['F', 8], ['L', 7, 180],
-    ['F', 14], ['J', '4', 'w'], ['F', 14], ['J', '5A', 'v'], ['F', 11], ['J', '5B', 'o', 1.3], ['F', 8], ['R', 7, 180],
-    ['F', 14], ['J', '6', 'o', 1.4], ['F', 15], ['J', '7', 'v'], ['F', 15], ['J', '8', 'o', 1.4], ['F', 9], ['M', 'finish'],
+    ['M', 'start'], ['F', 14], ['J', '1', 'v'], ['F', 15.9], ['R', 9, 70],
+    ['F', 14.2], ['J', '2', 'o', 1.3], ['F', 19.5], ['J', '3', 'v'], ['F', 14.5], ['R', 9, 180],
+    ['F', 14], ['J', '4A', 'v'], ['F', 8], ['J', '4B', 'o', 1.3], ['F', 15], ['J', '5', 'v'], ['F', 8], ['L', 9, 180],
+    ['F', 14], ['J', '6', 'w'], ['F', 15], ['J', '7A', 'o', 1.3], ['F', 11], ['J', '7B', 'v'], ['F', 9], ['M', 'finish'],
   ],
-  profile: { 1: -0.05, 2: 0, 3: 0, 4: -0.05, '5A': 0, '5B': 0, 6: 0, 7: 0, 8: 0 },
+  profile: { 1: -0.05, '4A': -0.05 },
 };
 
 const toWorld = (p) => ({ ...p, x: PARIS.arena.x + p.x, z: PARIS.arena.z + p.z });

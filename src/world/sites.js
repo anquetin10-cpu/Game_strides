@@ -75,11 +75,11 @@ export const PARIS = {
   z: PZ,
   y: 12, // niveau du sol (plat), recalé au chargement au-dessus du bord du terrain de Deauville (voir terrain.js)
   bounds: { x0: PX - 215, x1: PX + 72, z0: PZ - 92, z1: PZ + 92 },
-  arena: { x: PX, z: PZ, w: 80, d: 40 },
+  arena: { x: PX, z: PZ, w: 86, d: 46 },
   hall: { x: PX, z: PZ, w: 112, d: 76, h: 21 },
   // Porte des cavaliers dans le mur ouest (vers le paddock) et entrée de piste dans l'arène.
   door: { x: PX - 56, z: PZ + 10, w: 6 },
-  gate: { x: PX - 35, z: PZ + 10, rot: Math.PI / 2 },
+  gate: { x: PX - 38, z: PZ + 10, rot: Math.PI / 2 },
   warmup: { x: PX - 90, z: PZ + 4, w: 40, d: 26 },
   stables: { x: PX - 92, z: PZ - 44, w: 16, d: 48 },
   park: { x: PX - 152, z: PZ + 6, r: 14, name: 'le parking des camions du Grand Prix de Paris' },
@@ -88,6 +88,18 @@ export const PARIS = {
   secretariat: { x: PX - 128, z: PZ - 12 },
 };
 export const inParis = (x) => x > PX - 1000;
+// Sols posés sur la dalle de Paris (paris.js) : sable de la piste et du paddock, sol de la salle, parvis. Hauteur de
+// leur dessus au-dessus de PARIS.y, pour que chevaux, obstacles et marquages au sol (tracé, zone d'appel) s'y posent.
+export const PARIS_FLOOR = { sand: 0.09, warm: 0.08, hall: 0.06, parvis: 0.02 };
+export function parisFloor(x, z) {
+  const dx = Math.abs(x - PARIS.x), dz = Math.abs(z - PARIS.z);
+  if (dx < PARIS.arena.w / 2 && dz < PARIS.arena.d / 2) return PARIS_FLOOR.sand;
+  if (dx < (PARIS.hall.w - 1) / 2 && dz < (PARIS.hall.d - 1) / 2) return PARIS_FLOOR.hall;
+  const w = PARIS.warmup;
+  if (Math.abs(x - w.x) < w.w / 2 && Math.abs(z - w.z) < w.d / 2) return PARIS_FLOOR.warm;
+  if (dx < PARIS.hall.w / 2 + 7 && dz < PARIS.hall.d / 2 + 7) return PARIS_FLOOR.parvis;
+  return 0;
+}
 
 export const HIPPO_SITE = {
   stand: { x: 330, z: 147, w: 84, d: 14 },
