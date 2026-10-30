@@ -262,7 +262,13 @@ export class Obstacles {
       o.off = nums.includes(o.num);
       if (o.off) o.group.parent?.remove(o.group);
       else if (!o.group.parent) this.group.add(o.group);
+      this._colsTop(o);
     }
+  }
+
+  // Ailes d'un obstacle : à la hauteur des barres, sans collision quand il est retiré de la piste.
+  _colsTop(o) {
+    for (const c of o.cols || []) c.top = o.off ? -Infinity : o.ground + o.h + 0.75;
   }
 
   // Hauteurs (m) des obstacles d'un parcours, dans l'ordre (élément n = heights[n - 1]).
@@ -271,7 +277,7 @@ export class Obstacles {
       const nh = heights[o.num - 1] ?? o.h;
       if (Math.abs(nh - o.h) < 1e-3) continue;
       o.h = nh;
-      for (const c of o.cols || []) c.top = o.ground + nh + 0.75;
+      this._colsTop(o);
       const wasOn = !!o.group.parent;
       this.group.remove(o.group);
       this._mesh(o);
