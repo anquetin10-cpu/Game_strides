@@ -25,7 +25,14 @@ function markEmbedded() {
 // l'écran titre et les réglages.
 function askLang() {
   // Tests automatisés (?autostart) : langue par défaut ou ?lang=, sans écran de choix.
-  if (langChosen() || /[?&]autostart\b/.test(location.search)) return Promise.resolve(LANG);
+  // Partie déjà sauvegardée (joueur d'avant le choix de langue) : français, modifiable dans l'écran titre.
+  let saved = false;
+  try {
+    saved = !!localStorage.getItem('strides-grand-tour-v1'); // CONFIG.saveKey (config.js n'est chargé qu'après le choix)
+  } catch {
+    /* stockage indisponible */
+  }
+  if (langChosen() || saved || /[?&]autostart\b/.test(location.search)) return Promise.resolve(LANG);
   return new Promise((done) => {
     const el = document.createElement('div');
     el.className = 'lang-picker';

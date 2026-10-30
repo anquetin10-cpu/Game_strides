@@ -586,10 +586,10 @@ export const STORY = [
           radius: 7,
           update() {
             const f = game.player.focus.pos;
-            const t = { x: DUNES.paddock.x, z: DUNES.paddock.z - DUNES.paddock.d / 2 - 3 };
+            const tg = { x: DUNES.paddock.x, z: DUNES.paddock.z - DUNES.paddock.d / 2 - 3 };
             const follows = Math.hypot(galant.pos.x - f.x, galant.pos.z - f.z) < 16;
             if (!follows && game.player.focus.speed > 9) game.hud.hint(t('Doucement : Galant n’arrive pas à suivre !'), 2000);
-            if (Math.hypot(f.x - t.x, f.z - t.z) < 8 && follows) {
+            if (Math.hypot(f.x - tg.x, f.z - tg.z) < 8 && follows) {
               galant.setPosition(DUNES.paddock.x, DUNES.paddock.z, 0);
               galant.ai = new GrazeAI(DUNES.paddock);
               return true;
@@ -682,10 +682,10 @@ export const STORY = [
           text: '',
           update(r) {
             const p = totalPenalties(r);
-            const t = r.data.course.t;
-            const win = p < bestRival.faults || (p === bestRival.faults && t < bestRival.time);
-            r.resultBody = T`Pénalités : ${p} · Chrono ${dec(t, 2)} s — Meilleur adversaire : ${bestRival.faults} pts en ${dec(bestRival.time)} s`;
-            if (!win) return { fail: T`${p} pénalités en ${dec(t)} s : ${bestRival.name} reste devant. Retente ta chance !` };
+            const ct = r.data.course.t;
+            const win = p < bestRival.faults || (p === bestRival.faults && ct < bestRival.time);
+            r.resultBody = T`Pénalités : ${p} · Chrono ${dec(ct, 2)} s — Meilleur adversaire : ${bestRival.faults} pts en ${dec(bestRival.time)} s`;
+            if (!win) return { fail: T`${p} pénalités en ${dec(ct)} s : ${bestRival.name} reste devant. Retente ta chance !` };
             r.resultTitle = t('Victoire en Grand Prix');
             game.audio.cheer();
             return true;

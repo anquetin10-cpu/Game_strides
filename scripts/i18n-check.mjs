@@ -28,6 +28,30 @@ const holes = (s) => [...s.matchAll(/\{(\d+)\}/g)].map((m) => m[1]).sort().join(
 const FRENCH = /[éèêàùçâîôûœÉÈÀÇ’«»]|\b(le|la|les|des|du|une|un|est|et|ton|ta|tes|vous|pour|avec|sur|dans|pas|au|aux|en)\b/i;
 const IGNORE = /^(#[0-9a-f]{3,8}|[a-z0-9_\-./:#?=&%]+|[A-Z0-9_]+|\s*)$/;
 
+// Noms déclarés par un motif (paramètre, déstructuration).
+const names = (pat, out = []) => {
+  if (!pat) return out;
+  if (pat.type === 'Identifier') out.push(pat.name);
+  else if (pat.type === 'ObjectPattern') pat.properties.forEach((p) => names(p.type === 'RestElement' ? p.argument : p.value, out));
+  else if (pat.type === 'ArrayPattern') pat.elements.forEach((e) => names(e, out));
+  else if (pat.type === 'AssignmentPattern') names(pat.left, out);
+  else if (pat.type === 'RestElement') names(pat.argument, out);
+  return out;
+};
+// Noms déclarés directement dans une portée (bloc, fonction, boucle, catch).
+function declared(n) {
+  const out = [];
+  const body = n.type === 'Program' || n.type === 'BlockStatement' || n.type === 'StaticBlock' ? n.body : n.type === 'SwitchCase' ? n.consequent : null;
+  if (body) for (const st of body) {
+    if (st.type === 'VariableDeclaration') st.declarations.forEach((d) => names(d.id, out));
+    else if ((st.type === 'FunctionDeclaration' || st.type === 'ClassDeclaration') && st.id) out.push(st.id.name);
+  }
+  if (/Function/.test(n.type)) n.params.forEach((p) => names(p, out));
+  if ((n.type === 'ForStatement' && n.init?.type === 'VariableDeclaration') || ((n.type === 'ForOfStatement' || n.type === 'ForInStatement') && n.left.type === 'VariableDeclaration')) (n.init || n.left).declarations.forEach((d) => names(d.id, out));
+  if (n.type === 'CatchClause') names(n.param, out);
+  return out;
+}
+
 let missing = 0, bad = 0, suspects = 0;
 for (const f of files) {
   const src = readFileSync(f, 'utf8');
@@ -42,8 +66,24 @@ for (const f of files) {
   const lineOf = (pos) => src.slice(0, pos).split('\n').length;
   const wrapped = new Set();
   const keys = [];
+  const scopes = [];
+  const shadowed = (name) => scopes.slice(1).some((sc) => sc.includes(name));
   const visit = (n, parent, pkey) => {
     if (!n || typeof n.type !== 'string') return;
+    const d = declared(n);
+    scopes.push(d);
+    try {
+      visitIn(n, parent, pkey);
+    } finally {
+      scopes.pop();
+    }
+  };
+  const visitIn = (n, parent, pkey) => {
+    // t() / T`` appelés là où une variable locale du même nom les masque : erreur à l'exécution.
+    if ((n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 't' && shadowed('t')) || (n.type === 'TaggedTemplateExpression' && n.tag.type === 'Identifier' && n.tag.name === 'T' && shadowed('T'))) {
+      console.log(`✘ ${relative(ROOT, f)}:${lineOf(n.start)} ${n.type === 'CallExpression' ? 't()' : 'T``'} masqué par une variable locale du même nom`);
+      bad++;
+    }
     if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 't' && n.arguments[0]) {
       const a = n.arguments[0];
       if (a.type === 'Literal' && typeof a.value === 'string') keys.push([a.value, n.start]), wrapped.add(a);
