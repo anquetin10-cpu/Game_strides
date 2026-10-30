@@ -143,6 +143,12 @@ export class Game {
     });
     this.canvas.addEventListener('webglcontextrestored', () => location.reload());
     window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 300));
+    // Écran « Tourne ton téléphone » (même condition que dans styles.css) : la partie est suspendue derrière lui.
+    this.rotateMq = typeof matchMedia !== 'undefined' ? matchMedia('(orientation: portrait) and (pointer: coarse)') : null;
+    this.rotateMq?.addEventListener?.('change', () => {
+      this.input?.releaseAll?.();
+      this.last = performance.now();
+    });
 
     // Monde.
     this.world = new World(this.scene, this.colliders);
@@ -455,10 +461,14 @@ export class Game {
     const wasRiding = this.player.mode === 'ride' && this.player.horse === old;
     if (wasRiding) this.player.dismount(true);
     const at = { x: old.pos.x, z: old.pos.z, heading: old.heading };
+    // État courant (énergie, hydratation, propreté…) enregistré avant de retirer le cheval : il le retrouvera tel quel.
+    const cond = old.cond?.toJSON?.();
+    if (cond) (d.horseCare ||= {})[old.def?.id || old.id] = cond;
     this.despawn(old);
     d.activeHorse = id;
     this.spawnMainHorse(id, at);
     if (wasRiding) this.player.mount();
+    this.bus.emit('horse:active', this.mainHorse);
     this.hud.toast(T`${HORSES[id].name} est sellé(e).`);
     this.saveSoon();
   }
@@ -1164,6 +1174,8 @@ export class Game {
     this.state = 'play';
     // Sauvegarde faite dans un commerce : retour à l'intérieur (ou devant sa porte si l'intérieur ne se charge pas).
     if (!isNew) this.shops.resume();
+    // Concours interrompu par un rechargement : engagement remboursé.
+    if (!isNew) this.missions.refundLostFee();
     this.hud.el.classList.remove('hidden');
     document.getElementById('touch').classList.remove('hidden');
     this.metrics.track('game_started', { mode: isNew ? 'new' : 'continue' });
@@ -1215,6 +1227,8 @@ export class Game {
     const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000) || 0.016);
     this.last = now;
     try {
+      // Portrait sur mobile : rien n'avance (chronos, heure du monde, déplacements) jusqu'au retour à l'horizontale.
+      if (this.rotateMq?.matches && this.state === 'play') return;
       if (this.state === 'play' || this.state === 'photo') this.update(dt);
       else if (this.state === 'title') this.updateTitle(dt);
       this.realism?.update();

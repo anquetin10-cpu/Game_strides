@@ -160,8 +160,11 @@ export class Input {
       KeyQ: 'whistle', KeyR: 'whistle', KeyP: 'phone', Tab: 'phone', KeyM: 'map', Escape: 'pause', KeyC: 'camera', KeyH: 'horn',
     };
     if (['Space', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(k)) e.preventDefault();
-    if (down) this.keys.add(k);
-    else this.keys.delete(k);
+    // Commandes désactivées (téléphone, pause, dialogue) : la touche n'est pas retenue, et sa répétition automatique
+    // ne la fait pas compter après la fermeture.
+    if (down) {
+      if (this.enabled && (!e.repeat || this.keys.has(k))) this.keys.add(k);
+    } else this.keys.delete(k);
     const name = map[k];
     if (name) {
       if (down && !e.repeat) {
@@ -232,7 +235,7 @@ export class Input {
   }
 
   setEnabled(v) {
+    if (v !== this.enabled) this.releaseAll();
     this.enabled = v;
-    if (!v) this.releaseAll();
   }
 }

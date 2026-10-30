@@ -222,15 +222,27 @@ export class Screens {
   }
 
   // ---------- Fin ----------
+  // Fin du chapitre de Deauville (Grand Prix CSI 5★) : la dernière étape, Paris, est annoncée.
+  chapterEnd(onClose = () => {}) {
+    const d = this.game.save.data;
+    this.card({
+      kicker: t('Grand Prix CSI 5★ de Deauville City'),
+      title: t('Vainqueur à Deauville'),
+      body: T`${d.playerName}, le Grand Prix de Deauville City est à toi. Dernière étape de la saison : le Grand Prix de Paris Indoor. L’invitation arrive sur Strides — le camion, l’A13 et 200 km t’en séparent.`,
+      buttons: [{ label: t('Continuer'), primary: true, run: onClose, id: 'chapter-ok' }],
+    });
+  }
+
+  // Fin de l'histoire principale : après le Grand Prix de Paris Indoor.
   ending(onClose) {
     const g = this.game;
     const d = g.save.data;
     const promo = g.phone.promo();
     promo.style.marginTop = '16px';
     this.card({
-      kicker: t('Grand Prix CSI 5★ de Deauville City'),
-      title: t('Légende de Deauville City'),
-      body: T`${d.playerName}, de groom à vainqueur du Grand Prix : ta carrière s’est construite mission après mission, avis après avis. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
+      kicker: t('Grand Prix de Paris Indoor'),
+      title: t('Légende du Grand Tour'),
+      body: T`${d.playerName}, de groom à vainqueur des Grands Prix de Deauville et de Paris : ta carrière s’est construite mission après mission, avis après avis. Tu as terminé l’histoire principale. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
       extra: [promo, h('div.irl', { text: t('Le monde reste ouvert : continue les missions, les chronos et la chasse aux fers d’or.') })],
       buttons: [
         { label: t('Partager le jeu'), run: () => g.share('ending'), keep: true, id: 'share' },

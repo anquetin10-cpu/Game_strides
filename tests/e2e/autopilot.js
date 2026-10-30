@@ -296,8 +296,9 @@
       if (A.pickChoice()) return;
       // Épreuve de CSO : présentation (« Entrer en piste ») et bilan (« Continuer » / « Quitter »).
       const enter = document.querySelector('.overlay [data-id="enter"]') || document.querySelector('.overlay [data-id="cso-done"]') || document.querySelector('.overlay [data-id="sprint-ok"], .overlay [data-id="gpparis-ok"], .overlay [data-id="travel-ok"]') ||
-        // Carte de fin d'histoire (« Légende de Deauville City », ouverte un peu après le Grand Prix) : « Continuer à explorer ».
-        document.querySelector('.overlay [data-id="share"] ~ [data-id="continue"]');
+        // Fin de chapitre (« Vainqueur à Deauville », un peu après le Grand Prix) et fin d'histoire (« Légende du Grand
+        // Tour », après Paris) : « Continuer » / « Continuer à explorer ».
+        document.querySelector('.overlay [data-id="chapter-ok"]') || document.querySelector('.overlay [data-id="share"] ~ [data-id="continue"]');
       if (enter) return A.tap(enter);
       const id = run.def.id;
       const txt = window.__i18nFr ? window.__i18nFr(run.text()) : run.text();
@@ -527,6 +528,8 @@
         for (const u of ['selle', 'selle_pro']) if (!g.save.data.upgrades.includes(u)) g.save.data.upgrades.push(u);
         g.applyUpgrades(g.mainHorse);
       }
+      // Mission à régler (ferrure, engagement) : le pilote dispose des fonds, comme un joueur qui l'accepte.
+      if (def.cost && g.save.data.money < def.cost) g.save.data.money = def.cost;
       const lvXp = [0, 300, 900, 1800, 3200][def.level - 1];
       if (g.save.data.reputation < lvXp) g.save.data.reputation = lvXp;
       g.missions.offers = [];

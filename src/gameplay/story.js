@@ -438,11 +438,29 @@ export const STORY = [
     id: 'fer', story: true, vertical: 'ANNUAIRE', category: 'Urgence', title: t('Fer perdu'), level: 2, requires: ['transport', 'plage'],
     desc: t('Comète a perdu un fer. Trouver un maréchal-ferrant dans le Guide local du téléphone.'),
     client: null, place: POI.forge, placeName: t('Guide local'), pay: 0, payLabel: t('Soins : 60 €'), xp: 220, duration: '~3 min', noReview: true,
+    cost: 60, costLabel: t('la ferrure coûte'),
     irl: t('le Guide local (maréchaux, vétérinaires…) est une fonction du jeu : ces métiers ne sont pas proposés sur Strides.'),
     steps(game, run, S) {
-      const horse = game.player.horse;
-      horse.lame = true;
-      run.onCleanup(() => (horse.lame = false));
+      // Le cheval boiteux est suivi par son identité, pas par l'objet : changer de monture (« Mes chevaux ») recrée
+      // l'objet cheval ; la boiterie le suit, et la forge attend ce cheval-là.
+      const lameId = game.player.horse.def?.id || game.player.horse.id;
+      const lameName = game.player.horse.name;
+      const lame = () => {
+        const h = game.mainHorse;
+        return h && (h.def?.id || h.id) === lameId ? h : null;
+      };
+      const mark = () => {
+        const h = lame();
+        if (h && run.data.shod !== true) h.lame = true;
+      };
+      mark();
+      const off = game.bus.on('horse:active', mark);
+      run.onCleanup(() => {
+        off();
+        const h = lame();
+        if (h) h.lame = false;
+      });
+      let hintT = -99;
       const hugo = npcAt(game, run, { top: '#3a3d42', sleeve: '#3a3d42', pants: '#2b3442', boots: '#2a2622', skin: '#c99a74', hair: '#2a1d14', logo: false }, TOWN.forge.x + TOWN.forge.w / 2 + 3, TOWN.forge.z + 2, Math.PI / 2, 'Hugo');
       return [
         S.dialog([{ who: 'Comète', initials: '🐴', text: t('(Comète boite. Un fer s’est détaché — impossible de travailler comme ça.)') }]),
@@ -468,14 +486,29 @@ export const STORY = [
           modes: ['ride', 'foot'],
           r: 5,
           icon: 'horse',
-          when: () => Math.hypot(horse.pos.x - hugo.pos.x, horse.pos.z - hugo.pos.z) < 12,
+          when: () => {
+            const h = lame();
+            // Autre monture sellée : Hugo attend le cheval qui a perdu son fer (reprise possible à tout moment).
+            if (!h) {
+              if (Math.hypot(game.player.focusPos.x - hugo.pos.x, game.player.focusPos.z - hugo.pos.z) < 8 && game.time - hintT > 6) {
+                hintT = game.time;
+                game.hud.hint(T`Hugo attend ${lameName} : selle-la de nouveau dans « Mes chevaux ».`, 4000);
+              }
+              return false;
+            }
+            return Math.hypot(h.pos.x - hugo.pos.x, h.pos.z - hugo.pos.z) < 12;
+          },
+          // Ferrure annoncée à 60 € : pas de travail sans de quoi la régler.
+          check: () => (game.save.data.money >= 60 ? true : T`Il te faut ${formatMoney(60)} pour la ferrure (solde : ${formatMoney(game.save.data.money)}). Reviens voir Hugo dès que tu peux la régler.`),
         }),
         S.custom({
           text: t('Ferrure en cours…'),
           start() {
             game.fade(() => {
-              horse.lame = false;
-              game.save.data.money = Math.max(0, game.save.data.money - 60);
+              const h = lame();
+              if (h) h.lame = false;
+              run.data.shod = true;
+              game.save.data.money -= 60;
               game.updateWallet();
             }, 1.6);
           },
@@ -625,7 +658,7 @@ export const STORY = [
   // 10 — Qualificative CSI 3★
   {
     id: 'csi3', story: true, vertical: 'EVENEMENTS', category: 'CSO', title: t('Qualificative CSI 3★'), level: 4, requires: ['derby', 'pension'],
-    desc: t('Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix.'),
+    desc: t('Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix. À cette hauteur, une selle d’obstacle aide beaucoup (Sellerie du Port).'),
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 500, xp: 450, duration: '~2 min',
     irl: EVENT_IRL,
     rate: (run) => {
@@ -693,9 +726,10 @@ export const STORY = [
         }),
       ]);
     },
+    // Fin de chapitre (la carrière se conclut au Grand Prix de Paris Indoor, voir parisGP.js).
     after(game) {
       game.celebrate();
-      setTimeout(() => game.screens.ending(() => {}), 1800);
+      setTimeout(() => game.screens.chapterEnd(), 1800);
     },
   },
 

@@ -49,4 +49,19 @@ export default {
   'Pas la place d’ouvrir la portière : dégage l’accès conducteur.': 'Not enough room to open the door: clear the driver’s side.',
   'Pas la place d’ouvrir la portière ici : avance ou recule le véhicule.': 'Not enough room to open the door here: move the vehicle forward or back.',
   'Arrête-toi pour descendre.': 'Stop before getting out.',
+
+  // Corrections du rapport QA (missions, carburant, ferrure).
+  'Solde insuffisant : {0} {1} (solde {2}).': 'Not enough money: {0} {1} (balance {2}).',
+  'il faut': 'you need',
+  'engagement': 'entry fee',
+  'la ferrure coûte': 'shoeing costs',
+  'Secrétariat du concours': 'Show office',
+  'Ton engagement ({0}) t’a été remboursé : le concours a été interrompu.': 'Your entry fee ({0}) has been refunded: the show was interrupted.',
+  'Hugo attend {0} : selle-la de nouveau dans « Mes chevaux ».': 'Hugo is waiting for {0}: tack them up again in “My horses”.',
+  'Il te faut {0} pour la ferrure (solde : {1}). Reviens voir Hugo dès que tu peux la régler.': 'You need {0} for the shoeing (balance: {1}). Come back to Hugo once you can pay.',
+  'l’aire de service de l’A13': 'the A13 service area',
+  'Pas assez de gazole pour {0} km ({1} l nécessaires) et pas assez d’argent pour le plein à l’aire de service ({2} €/l).': 'Not enough diesel for {0} km ({1} l needed) and not enough money to fill up at the service area (€{2}/l).',
+  'Plein avant la route': 'Fill up before the drive',
+  '{0} l dans le réservoir, {1} l nécessaires pour {2} km. Plein à {3} : {4} l de {5} à {6} €/l, soit {7} €.': '{0} l in the tank, {1} l needed for {2} km. Fill up at {3}: {4} l of {5} at €{6}/l, i.e. €{7}.',
+  'Plein : {0} l à {1} €/l · {2} €': 'Filled up: {0} l at €{1}/l · €{2}',
 };

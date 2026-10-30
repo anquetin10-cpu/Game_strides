@@ -206,6 +206,7 @@ node tests/e2e/cso.mjs        # épreuve de CSO complète au joystick : sans fau
 node tests/e2e/i18n.mjs       # bilingue : choix au premier lancement, bascule écran titre / réglages, missions en anglais
 node tests/e2e/master.mjs     # van STX Renault Master : modèle, conduite, pont latéral, chargement, sauvegarde, captures
 DEFENDER=full node tests/e2e/defender.mjs   # Defender 110 : modèle, portes, coffre, conduite, collisions, sauvegarde, captures
+node tests/e2e/qa-fixes.mjs                 # rejeu des 11 bugs du rapport QA du 30 octobre 2026 (comportement corrigé)
 node tests/e2e/defender-variants.mjs        # Defender 110 : variantes détaillée / mobile (chargement, triangles, appels de dessin)
 node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans tests/e2e/out/cso/
 node tests/e2e/cso-touch.mjs  # tour complet au doigt en émulation iPhone 13 (joystick + SAUT en multitouch)

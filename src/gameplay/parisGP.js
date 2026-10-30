@@ -324,9 +324,14 @@ export const PARIS_MISSION = {
       }),
     ];
   },
+  // Dernière mission de l'histoire : carrière terminée (enregistré avec la mission), écran de fin, puis le retour.
+  persist(game) {
+    game.save.data.flags.gameFinished = true;
+  },
   after(game) {
-    game.hud.hint(t('Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.'), 9000);
+    game.celebrate();
     game.message('Grand Prix de Paris Indoor', 'GP', t('Merci pour ce Grand Prix ! Le parcours reste ouvert : retrouve-le dans l’app Activités, en défi à conditions fixes.'));
+    setTimeout(() => game.screens.ending(() => game.hud.hint(t('Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking (plein possible à l’aire de service).'), 9000)), 1800);
   },
 };
 const r0 = (n) => Math.max(0, n);

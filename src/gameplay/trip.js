@@ -222,13 +222,17 @@ export function competitionDef(level, startHour) {
       return Math.max(2, (rk <= 3 ? 5 : rk <= 6 ? 4 : 3) - (run.data.late ? 1 : 0));
     },
     review: (s, run) => (run.data.rank === 1 ? t('Victoire au Pôle ! Un parcours de très haut niveau.') : s >= 4 ? t('Très beau parcours, classé(e) dans la dotation. Revenez vite !') : t('Merci pour votre participation, à bientôt sur nos terrains.')),
-    setup(game) {
+    // Engagement : exigé à l'acceptation (missions.accept), réglé au départ ; remboursé si la partie est rechargée
+    // avant la fin du concours (missions.refundLostFee).
+    cost: cls.fee,
+    costLabel: t('engagement'),
+    setup(game, run) {
       const d = game.save.data;
-      if (d.money >= cls.fee) {
-        d.money -= cls.fee;
-        game.updateWallet();
-        game.hud.toast(T`Engagement réglé au secrétariat du concours : ${cls.fee} €`);
-      }
+      d.money -= cls.fee;
+      d.pendingFee = { mission: run.def.id, fee: cls.fee };
+      game.updateWallet();
+      game.hud.toast(T`Engagement réglé au secrétariat du concours : ${cls.fee} €`);
+      game.saveSoon?.();
     },
     after(game) {
       game.hud.hint(t('Pour rentrer : <b>Mener en main</b> ton cheval jusqu’au camion, <b>Faire monter le cheval</b>, puis cap sur l’Écurie du Val.'), 8000);

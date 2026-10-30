@@ -131,7 +131,7 @@ export default {
   'Belle course, sur le podium !': 'Great race, on the podium!',
   'Victoire !': 'Victory!',
   'Qualificative CSI 3★': 'CSI 3★ Qualifier',
-  'Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix.': 'A 9-fence course up to 1.45 m at Pôle International. 8 faults maximum to qualify for the Grand Prix.',
+  'Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix. À cette hauteur, une selle d’obstacle aide beaucoup (Sellerie du Port).': 'A 9-fence course up to 1.45 m at Pôle International. 8 faults maximum to qualify for the Grand Prix. At this height, a jumping saddle helps a lot (Sellerie du Port).',
   'Sans faute ! Qualification brillante.': 'Clear round! A brilliant qualification.',
   'Qualifié(e) — rendez-vous au Grand Prix.': 'Qualified — see you at the Grand Prix.',
   'Julie Bonnet · Comité CSI': 'Julie Bonnet · CSI Committee',

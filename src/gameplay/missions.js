@@ -70,7 +70,8 @@ export function makeSteps(game) {
         },
       };
     },
-    interact(pos, label, text, { r = 3.2, modes = ['foot'], hint = null, icon = 'hand', onDo = null, when = null } = {}) {
+    // check : vrai si l'action est possible, sinon le motif affiché (l'étape reste en attente).
+    interact(pos, label, text, { r = 3.2, modes = ['foot'], hint = null, icon = 'hand', onDo = null, when = null, check = null } = {}) {
       const id = `mi${uid++}`;
       return {
         kind: 'interact',
@@ -95,6 +96,11 @@ export function makeSteps(game) {
             getPos: () => resolve(pos),
             when,
             action: () => {
+              const c = check?.(run);
+              if (c && c !== true) {
+                game.hud.hint(c, 4500);
+                return;
+              }
               run.flags[id] = true;
               onDo?.(run);
             },
@@ -400,6 +406,12 @@ export class MissionManager {
       g.hud.toast(t('Termine ou abandonne ta mission en cours d’abord.'));
       return false;
     }
+    // Mission à régler (engagement d'un concours, soins) : le solde doit couvrir son coût.
+    const cost = o.def?.cost || 0;
+    if (cost > g.save.data.money) {
+      g.hud.toast(T`Solde insuffisant : ${o.def.costLabel || t('il faut')} ${formatMoney(cost)} (solde ${formatMoney(g.save.data.money)}).`);
+      return false;
+    }
     this.offers.splice(this.offers.indexOf(o), 1);
     this.start(o);
     return true;
@@ -432,6 +444,19 @@ export class MissionManager {
     g.bus.emit('mission:start', run);
   }
 
+  // Engagement réglé pour une mission qui n'a pas survécu à un rechargement (les missions ordinaires ne sont pas
+  // reprises) : remboursé une fois, à la reprise de la partie.
+  refundLostFee() {
+    const g = this.game, d = g.save.data;
+    const f = d.pendingFee;
+    if (!f || this.active) return;
+    d.pendingFee = null;
+    d.money += f.fee;
+    g.updateWallet();
+    g.message(t('Secrétariat du concours'), 'SC', T`Ton engagement (${formatMoney(f.fee)}) t’a été remboursé : le concours a été interrompu.`);
+    g.saveSoon?.();
+  }
+
   // Point de reprise d'une mission à étapes (M1 à M3) : choix et paiements déjà faits ne sont jamais refaits.
   checkpoint(run, step, data = {}) {
     const d = this.game.save.data;
@@ -453,6 +478,7 @@ export class MissionManager {
     const run = this.active;
     if (!run) return;
     run.finished = true;
+    this.game.save.data.pendingFee = null;
     run.cleanup();
     this.active = null;
     this.clearCheckpoint(run.def.id);
@@ -468,6 +494,7 @@ export class MissionManager {
     const g = this.game;
     if (run.finished) return;
     run.finished = true;
+    g.save.data.pendingFee = null;
     run.cleanup();
     this.active = null;
     g.gps.clear();
@@ -516,6 +543,10 @@ export class MissionManager {
       if (def.id === 'm2') g.metrics?.track('hiring_mission_completed', { mission: 'm2', mode: run.data.hire });
     }
     const after = levelFor(d.reputation);
+    // Effets durables (relations, drapeaux d'histoire) enregistrés avec la mission : un rechargement pendant l'écran
+    // de résultat ne les perd pas. Les effets de présentation (messages, cartes) restent dans after().
+    if (fresh) def.persist?.(g, run);
+    d.pendingFee = null;
     run.cleanup();
     this.active = null;
     g.gps.clear();
@@ -545,6 +576,7 @@ export class MissionManager {
       def.after?.(g, run);
       this.timer = 6;
       this.refreshOffers(true);
+      g.saveSoon?.();
     };
     g.screens.missionResult(result, close);
     if (result.levelUp) setTimeout(() => g.audio.levelUp(), 600);

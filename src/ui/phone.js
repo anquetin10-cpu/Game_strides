@@ -599,8 +599,10 @@ export class Phone {
         }
         redraw();
       });
+      // Repère posé seulement à la fin d'un vrai toucher (pointerup) : un geste annulé par le système (pointercancel)
+      // ne fait rien.
       const up = (e) => {
-        if (pts.has(e.pointerId) && moved < 8 && pts.size === 1) {
+        if (e.type === 'pointerup' && pts.has(e.pointerId) && moved < 8 && pts.size === 1) {
           const r2 = cv.getBoundingClientRect();
           const w = api.toWorld(((e.clientX - r2.left) * cv.width) / r2.width, ((e.clientY - r2.top) * cv.height) / r2.height);
           g.gps.set(w, t('Repère'));

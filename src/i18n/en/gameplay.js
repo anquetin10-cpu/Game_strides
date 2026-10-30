@@ -274,7 +274,7 @@ export default {
   'Barrage': 'Jump-off',
   'Dotation': 'Prize money',
   'JO {0} {1} s': 'JO {0} {1} s',
-  'Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.': 'To head home: load your horse into the horsebox, then drive to the A13 motorway, west of the lorry park.',
+  'Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking (plein possible à l’aire de service).': 'To head home: load your horse into the horsebox, then drive to the A13 motorway, west of the lorry park (you can fill up at the service area).',
   'Merci pour ce Grand Prix ! Le parcours reste ouvert : retrouve-le dans l’app Activités, en défi à conditions fixes.': 'Thanks for this Grand Prix! The course stays open: find it in the Activities app, as a fixed-conditions challenge.',
 
   // ---------- challenge.js ----------

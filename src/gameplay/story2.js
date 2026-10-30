@@ -234,10 +234,12 @@ const M1 = {
       }),
     ];
   },
+  // Léa rencontrée : enregistré avec la mission (avant l'écran de résultat).
+  persist(game) {
+    (game.save.data.relations.lea ||= { met: false, missions: 0 }).met = true;
+  },
   after(game, run) {
-    const d = game.save.data;
     const ch = run.data.choice;
-    (d.relations.lea ||= { met: false, missions: 0 }).met = true;
     if (ch !== 'tournee') {
       // Mission unique : du temps libre pour une activité personnelle.
       game.hud.notify({
