@@ -314,6 +314,7 @@ export class Player {
     this.human.hidden = false;
     this.focusPos = v.pos;
     v.startEngine();
+    v.onEnter?.();
     this.game.cam.yaw = v.heading + Math.PI;
     this.game.bus.emit('player:drive', v);
   }
@@ -327,12 +328,15 @@ export class Player {
     v.stopEngine();
     v._syncCollider(true);
     this.vehicle = null;
-    const p = v.doorPoint(1);
-    this.human.setPosition(p.x, p.z, v.heading + Math.PI / 2);
+    // Point de descente : celui du véhicule s'il sait en chercher un libre (Defender), sinon la portière conducteur.
+    const p = v.exitPoint ? v.exitPoint() : v.doorPoint(1);
+    const side = p.side ?? 1;
+    this.human.setPosition(p.x, p.z, v.heading + (side * Math.PI) / 2);
     this.game.colliders.resolve(this.human.pos, 0.4, -Infinity);
     this.human.snap();
     this.focusPos = this.human.pos;
-    this.game.cam.yaw = v.heading + Math.PI / 2 + 0.6;
+    v.onExit?.(side);
+    this.game.cam.yaw = v.heading + (side * Math.PI) / 2 + 0.6 * side;
     this.game.bus.emit('player:exitVehicle', v);
   }
 
@@ -587,7 +591,10 @@ export class Player {
     tp.update(dt);
     // Action secondaire (bouton contextuel ou touche L).
     const keyL = input.keys.has('KeyL') && input.enabled;
-    if ((input.wasPressed('action2') || (keyL && !this._keyL)) && !locked && !g.hud.dialogActive && !g.phone.isOpen) tp.triggerSecondary();
+    if ((input.wasPressed('action2') || (keyL && !this._keyL)) && !locked && !g.hud.dialogActive && !g.phone.isOpen) {
+      if (tp._sec || !g.defenderAccess?._sec) tp.triggerSecondary();
+      else g.defenderAccess.triggerSecondary();
+    }
     this._keyL = keyL;
   }
 }

@@ -42,6 +42,13 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   quel) : deux stalles, **pont latéral droit** et ses volets, porte arrière (amplitudes des animations du fichier),
   roues et braquage sur les pivots du fichier, chargement / déchargement des chevaux par le pont, départ impossible
   pont ou porte ouverts ; contrôle du modèle : `node scripts/verify-master.mjs`.
+- **Le Defender 110 du personnage** (type `defender110_hero`), garé à l'Écurie du Val : modèle fourni importé tel quel
+  (`src/assets/vehicles/Defender110_STRIDES.glb`, ou la variante allégée `Defender110_STRIDES_MOBILE.glb` — une seule
+  chargée : la version en un seul fichier n'embarque que la variante mobile ; `?defender=full|mobile` en
+  développement). Roues et braquage d'Ackermann sur les pivots du fichier, volant, quatre portes et coffre latéral
+  (amplitudes des clips `Open_*`), montée par la portière conducteur, descente sûre, départ impossible coffre ouvert
+  (portières refermées d'elles-mêmes), coffre pour un objet porté (botte de foin…), teinte modifiable ; pas de cheval
+  à bord ; position, teinte, coffre et portières enregistrés (ajouté une seule fois aux sauvegardes existantes).
 - **Un cheval procédural** articulé (pas, trot, galop, grand galop, saut, refus, broute), endurance à gérer, quatre chevaux
   à acquérir (Comète, Ulysse, Onyx, Saphir) et des équipements à la Sellerie du Port.
 - **Le téléphone et l'app Strides** : notifications de missions (Refuser / Voir / Accepter), onglets Missions, Écuries,
@@ -185,6 +192,8 @@ node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sa
 node tests/e2e/cso.mjs        # épreuve de CSO complète au joystick : sans faute, mauvais appels, double, refus, élimination
 node tests/e2e/i18n.mjs       # bilingue : choix au premier lancement, bascule écran titre / réglages, missions en anglais
 node tests/e2e/master.mjs     # van STX Renault Master : modèle, conduite, pont latéral, chargement, sauvegarde, captures
+DEFENDER=full node tests/e2e/defender.mjs   # Defender 110 : modèle, portes, coffre, conduite, collisions, sauvegarde, captures
+node tests/e2e/defender-variants.mjs        # Defender 110 : variantes détaillée / mobile (chargement, triangles, appels de dessin)
 node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans tests/e2e/out/cso/
 node tests/e2e/cso-touch.mjs  # tour complet au doigt en émulation iPhone 13 (joystick + SAUT en multitouch)
 node tests/e2e/cso-framing.mjs # cadrage de la caméra de concours : part de la hauteur et position du couple à l’écran

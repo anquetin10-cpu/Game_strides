@@ -124,6 +124,18 @@ export const VEHICLE_SPECS = {
     maxSteer: 0.6, steerRate: 1.1, aLatSteer: 4.6, limiter: 30.5, cornerF: 8, cornerR: 10,
     shiftUp: [1500, 3500], shiftDown: [1050, 1900], shiftDownBrake: 1300, launch: [950, 1600], engineBrake: [22, 0.012], holdRpm: 1100,
   },
+  // 4x4 type Defender 110 D250 (6 cylindres diesel 3,0 l), ~570 N·m de 1 250 à 2 250 tr/min, automatique 8 rapports,
+  // transmission intégrale, ~2,4 t : 0-100 km/h ~8 s, ~188 km/h. Réglages de jeu (pas des données homologuées) ; essieux
+  // et roues du modèle fourni (defenderModel.js) : empattement 3,022 m, voie 1,706 m, roues de 0,407 m.
+  defender110_hero: {
+    ...CAR_BASE, name: t('Defender 110'), massEmpty: 2400, zFront: 1.534, zRear: -1.488, track: 1.706, cgEmpty: 0.1, cgHeight: 0.8, wheelR: 0.407,
+    idle: 750, maxRpm: 4400, cutRpm: 4700, fuel: 'diesel', tank: 90, idleLph: 0.7, bsfc: 215, refL100: 9, cyl: 6, awd: true, gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
+    torque: [[700, 260], [1000, 430], [1250, 570], [2250, 570], [3000, 520], [4000, 400], [4400, 300], [4700, 0]], maxTorque: 570,
+    gears: [4.71, 3.14, 2.11, 1.67, 1.29, 1.0, 0.84, 0.67], reverse: 3.3, final: 3.31, shiftTime: 0.22,
+    crr: 0.012, crrSoft: 0.035, cdA: 1.6, brakeDecel: 9.0, mu: 0.95, muSoft: 0.8,
+    maxSteer: 0.55, steerRate: 1.5, aLatSteer: 6.0, limiter: 52, cornerF: 9, cornerR: 10.5,
+    shiftUp: [1500, 4000], shiftDown: [1050, 2000], shiftDownBrake: 1300, launch: [950, 1700], engineBrake: [18, 0.01], holdRpm: 1100,
+  },
   // Tracteur 110 ch (4 cylindres diesel 4,5 l), 480 N·m, inverseur et 6 rapports sous charge, 40 km/h, 4 roues motrices.
   tractor: {
     ...CAR_BASE, name: t('Tracteur'), massEmpty: 5600, zFront: 1.55, zRear: -0.95, track: 1.9, cgEmpty: 0.15, cgHeight: 1.1, wheelR: 0.82, wheelRFront: 0.52,

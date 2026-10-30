@@ -13,6 +13,7 @@ export const HOME = {
   yard: { x: -112, z: 174, w: 120, d: 30 },
   truck: { x: -64, z: 158, rot: Math.PI / 2 },
   master: { x: -84, z: 180, rot: Math.PI / 2 }, // van STX Renault Master, à l'écart du camion ; pont latéral (droite) vers le sud
+  defender: { x: -97, z: 181, rot: Math.PI / 2 }, // Defender 110 du personnage : portière conducteur côté écurie
   spawn: { x: -104, z: 168, rot: 0.35 },
   horse: { x: -112, z: 165, rot: Math.PI / 2 },
 };

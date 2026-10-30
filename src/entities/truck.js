@@ -22,7 +22,7 @@ const LC = {
   ind: [255, 132, 0], side: [255, 120, 0], interior: [255, 236, 205], plate: [255, 250, 240], clearF: [255, 252, 245], clearR: [255, 24, 12], dash: [120, 200, 255],
 };
 
-function gradientTexture(radial) {
+export function gradientTexture(radial) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const x = c.getContext('2d');

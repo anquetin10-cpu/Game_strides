@@ -9,7 +9,7 @@ import { SKIN_MAT } from './rig.js';
 import { clampToRegion } from '../world/layout.js';
 
 const ITEM_GEOS = {};
-function itemGeo(kind) {
+export function itemGeo(kind) {
   if (ITEM_GEOS[kind]) return ITEM_GEOS[kind];
   let g;
   if (kind === 'hay') g = partsToGeo([[box(0.6, 0.38, 0.42, false), '#d6bf74'], [box(0.62, 0.03, 0.44, false), '#a8843f', { y: 0.08 }], [box(0.62, 0.03, 0.44, false), '#a8843f', { y: -0.08 }]]);

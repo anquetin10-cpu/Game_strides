@@ -25,6 +25,9 @@ import { loadStx, buildStxModel, STX_DIM, STX_FILE } from './entities/stxModel.j
 import { Vehicle } from './entities/vehicle.js';
 import { loadMaster, buildMasterModel, MASTER_FILE } from './entities/masterModel.js';
 import { HorseVan } from './entities/horseVan.js';
+import { loadDefender, buildDefenderModel, defenderVariant, DEFENDER_FILES } from './entities/defenderModel.js';
+import { Defender } from './entities/defender.js';
+import { DefenderAccess } from './gameplay/defenderAccess.js';
 import { VanLoading } from './gameplay/vanLoading.js';
 import { Online, boardById } from './core/online.js';
 import { FollowCamera } from './entities/camera.js';
@@ -227,6 +230,22 @@ export class Game {
       console.error(`Van STX Renault Master NON chargé (${MASTER_FILE}).`, e);
       this.vanModelInfo.error = String(e?.message || e);
       this.van = null;
+    }
+    // Defender 110 (modèle fourni, voir defenderModel.js) : véhicule personnel du personnage, garé à l'Écurie du Val.
+    // Une seule variante chargée et affichée (détaillée ou mobile) ; échec signalé (console et message en jeu).
+    const variant = defenderVariant();
+    this.defenderModelInfo = { file: DEFENDER_FILES[variant], variant, loaded: false, error: null };
+    try {
+      const M = buildDefenderModel(await loadDefender(variant));
+      this.defender = new Defender(this, M, { x: HOME.defender.x, z: HOME.defender.z, heading: HOME.defender.rot });
+      this.drivables.push(this.defender);
+      this.vehicles.push(this.defender);
+      this.defenderAccess = new DefenderAccess(this, this.defender);
+      Object.assign(this.defenderModelInfo, { loaded: true, loadMs: M.loadMs, triangles: M.triangles, meshes: M.meshes, materials: M.materials });
+    } catch (e) {
+      console.error(`Defender 110 NON chargé (${this.defenderModelInfo.file}).`, e);
+      this.defenderModelInfo.error = String(e?.message || e);
+      this.defender = null;
     }
     this.spawnMainHorse(d.activeHorse);
     this.ambient = new Ambient(this);
@@ -864,6 +883,7 @@ export class Game {
       horse: this.mainHorse ? { x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, heading: this.mainHorse.heading } : null,
       truck: { x: this.truck.pos.x, z: this.truck.pos.z, heading: this.truck.heading },
       master: this.van ? { x: this.van.pos.x, z: this.van.pos.z, heading: this.van.heading } : undefined,
+      defender: this.defender ? { x: this.defender.pos.x, z: this.defender.pos.z, heading: this.defender.heading } : undefined,
       // Véhicules déplacés par le joueur (indice dans la liste des véhicules garés à l'origine).
       vehicles: this.drivables.map((v, i) => (v.home && !v.atSpot ? { i: this.world.parkedVehicles.indexOf(v.home), x: v.pos.x, z: v.pos.z, heading: v.heading } : null)).filter((v) => v && v.i >= 0),
     };
@@ -905,6 +925,7 @@ export class Game {
     if (pos && this.save.data.started) {
       if (pos.truck) this.truck.setPosition(pos.truck.x, pos.truck.z, pos.truck.heading);
       if (pos.master && this.van) this.van.setPosition(pos.master.x, pos.master.z, pos.master.heading);
+      if (pos.defender && this.defender) this.defender.setPosition(pos.defender.x, pos.defender.z, pos.defender.heading);
       for (const sv of pos.vehicles || []) {
         const v = this.drivables.find((d) => d.home === this.world.parkedVehicles[sv.i]);
         if (v) {
@@ -1147,6 +1168,7 @@ export class Game {
     this.metrics.track('game_started', { mode: isNew ? 'new' : 'continue' });
     if (this.truckModelInfo?.error) this.hud.toast(t('Camion STX détaillé non chargé : camion de secours affiché.'));
     if (this.vanModelInfo?.error) this.hud.toast(t('Van STX Renault Master non chargé : modèle introuvable ou incomplet.'));
+    if (this.defenderModelInfo?.error) this.hud.toast(t('Defender 110 non chargé : modèle introuvable ou incomplet.'));
     buildStableUpgrades(this);
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);
@@ -1289,6 +1311,7 @@ export class Game {
     // Gameplay.
     this._talker = this.player.mode !== 'drive' ? this.ambient.nearestTalker(this.player.focus.pos) : null;
     this.shops.update();
+    this.defenderAccess?.update();
     this.interact.update();
     this.missions.update(sdt);
     this.travel.update();
