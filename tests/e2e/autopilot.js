@@ -295,7 +295,9 @@
       }
       if (A.pickChoice()) return;
       // Épreuve de CSO : présentation (« Entrer en piste ») et bilan (« Continuer » / « Quitter »).
-      const enter = document.querySelector('.overlay [data-id="enter"]') || document.querySelector('.overlay [data-id="cso-done"]') || document.querySelector('.overlay [data-id="sprint-ok"], .overlay [data-id="gpparis-ok"], .overlay [data-id="travel-ok"]');
+      const enter = document.querySelector('.overlay [data-id="enter"]') || document.querySelector('.overlay [data-id="cso-done"]') || document.querySelector('.overlay [data-id="sprint-ok"], .overlay [data-id="gpparis-ok"], .overlay [data-id="travel-ok"]') ||
+        // Carte de fin d'histoire (« Légende de Deauville City », ouverte un peu après le Grand Prix) : « Continuer à explorer ».
+        document.querySelector('.overlay [data-id="share"] ~ [data-id="continue"]');
       if (enter) return A.tap(enter);
       const id = run.def.id;
       const txt = window.__i18nFr ? window.__i18nFr(run.text()) : run.text();
