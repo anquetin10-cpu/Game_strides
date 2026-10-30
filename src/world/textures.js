@@ -1,6 +1,7 @@
 // Textures générées (logo Strides, panneaux publicitaires, enseignes, bannières) — design system STRIDES.
 import * as THREE from 'three';
 import { drawLogo, LOGO_FULL, LOGO_MARK } from '../ui/logo.js';
+import { t } from '../core/i18n.js';
 
 export const FONT_DISPLAY = 'Geist, -apple-system, "Helvetica Neue", Arial, sans-serif';
 export const FONT_UI = 'Geist, -apple-system, "Helvetica Neue", Arial, sans-serif';
@@ -113,7 +114,7 @@ function drawStoreBadge(ctx, x, y, h, dark = true) {
   ctx.fill((apple ??= new Path2D(APPLE_D)));
   ctx.restore();
   ctx.font = `400 ${h * 0.2}px ${FONT_UI}`;
-  ctx.fillText('Télécharger dans l’', x + h * 0.98, y + h * 0.4);
+  ctx.fillText(t('Télécharger dans l’'), x + h * 0.98, y + h * 0.4);
   ctx.font = `600 ${h * 0.36}px ${FONT_UI}`;
   ctx.fillText('App Store', x + h * 0.98, y + h * 0.78);
   ctx.restore();
@@ -136,11 +137,11 @@ export function logoTexture(dark = true) {
 
 // Affiches : textes du site strides-app.com.
 const ADS = [
-  { tag: 'TROUVER UN PROFESSIONNEL', title: 'Qui cherchez-vous\naujourd’hui ?', sub: 'Grooms, palefreniers, chauffeurs, enseignants — vérifiés.', color: '#b8953a' },
-  { tag: 'L’APPLICATION MOBILE', title: 'Emportez STRIDES\navec vous', sub: 'Disponible sur l’App Store et Google Play.', color: '#2d6a4f' },
-  { tag: 'NOS MÉTIERS', title: 'Groom concours,\ncavalier, chauffeur…', sub: 'Les métiers du cheval, au même endroit.', color: '#8f3a4a' },
-  { tag: 'PAIEMENT SÉCURISÉ', title: 'Chaque prestation\npayée et garantie.', sub: 'Paiement garanti et sécurisé, partout en France.', color: '#5a7a8f' },
-  { tag: 'REJOIGNEZ STRIDES', title: 'Vous êtes prestataire ?\nInscrivez-vous.', sub: 'Inscription gratuite · missions près de chez vous.', color: '#a14a38' },
+  { tag: t('TROUVER UN PROFESSIONNEL'), title: t('Qui cherchez-vous\naujourd’hui ?'), sub: t('Grooms, palefreniers, chauffeurs, enseignants — vérifiés.'), color: '#b8953a' },
+  { tag: t('L’APPLICATION MOBILE'), title: t('Emportez STRIDES\navec vous'), sub: t('Disponible sur l’App Store et Google Play.'), color: '#2d6a4f' },
+  { tag: t('NOS MÉTIERS'), title: t('Groom concours,\ncavalier, chauffeur…'), sub: t('Les métiers du cheval, au même endroit.'), color: '#8f3a4a' },
+  { tag: t('PAIEMENT SÉCURISÉ'), title: t('Chaque prestation\npayée et garantie.'), sub: t('Paiement garanti et sécurisé, partout en France.'), color: '#5a7a8f' },
+  { tag: t('REJOIGNEZ STRIDES'), title: t('Vous êtes prestataire ?\nInscrivez-vous.'), sub: t('Inscription gratuite · missions près de chez vous.'), color: '#a14a38' },
 ];
 export const AD_COUNT = ADS.length;
 
@@ -223,10 +224,10 @@ export function bannerTexture() {
   ctx.fillRect(400, 0, 10, 128);
   ctx.fillStyle = INK;
   ctx.font = `600 46px ${FONT_DISPLAY}`;
-  ctx.fillText('La plateforme des pros du cheval', 436, 80);
-  const t = toTexture(cv, true);
-  cache.set('banner', t);
-  return t;
+  ctx.fillText(t('La plateforme des pros du cheval'), 436, 80);
+  const tex = toTexture(cv, true);
+  cache.set('banner', tex);
+  return tex;
 }
 
 // ---------- Camion porte-chevaux : atlas de livrée et de matériaux ----------
@@ -315,10 +316,10 @@ export function truckTexture(scale = 1) {
     ctx.fillStyle = VINYL;
     ctx.textAlign = 'center';
     ctx.font = `500 40px ${FONT_MONO}`;
-    ctx.fillText('TRANSPORT DE CHEVAUX', x + w / 2, y + 640);
+    ctx.fillText(t('TRANSPORT DE CHEVAUX'), x + w / 2, y + 640);
     ctx.globalAlpha = 0.72;
     ctx.font = `400 29px ${FONT_UI}`;
-    ctx.fillText('Un chauffeur pour le concours ? Sur l’app', x + w / 2, y + 690);
+    ctx.fillText(t('Un chauffeur pour le concours ? Sur l’app'), x + w / 2, y + 690);
     ctx.globalAlpha = 1;
   }
   // Rampe arrière : marque, site, panneau « chevaux ».
@@ -344,7 +345,7 @@ export function truckTexture(scale = 1) {
     ctx.fillRect(sx + 10, sy + 10, sw - 20, sh - 20);
     ctx.fillStyle = '#16171a';
     ctx.font = `700 50px ${FONT_DISPLAY}`;
-    ctx.fillText('CHEVAUX', sx + sw / 2, sy + 64);
+    ctx.fillText(t('CHEVAUX'), sx + sw / 2, sy + 64);
   }
   // Portes de cabine.
   {
@@ -406,7 +407,7 @@ export function truckTexture(scale = 1) {
     ctx.textAlign = 'center';
     ctx.globalAlpha = 0.85;
     ctx.font = `500 44px ${FONT_MONO}`;
-    ctx.fillText('GROOMS · CAVALIERS · CHAUFFEURS · ENSEIGNANTS', x + w / 2, y + h / 2 + 15);
+    ctx.fillText(t('GROOMS · CAVALIERS · CHAUFFEURS · ENSEIGNANTS'), x + w / 2, y + h / 2 + 15);
     ctx.globalAlpha = 1;
   }
   const map = toTexture(cv);

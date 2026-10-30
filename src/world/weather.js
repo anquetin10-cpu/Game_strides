@@ -1,6 +1,7 @@
 // Météo et marées de la côte normande, calculées (déterministes) à partir du jour et de l'heure de jeu :
 // couverture nuageuse, averses, température, vent, hauteur d'eau, pleines et basses mers, coefficients.
 import { smoothstep, clamp } from '../core/math.js';
+import { t } from '../core/i18n.js';
 
 // Niveaux de marée partagés avec les shaders (terrain) et la physique (profondeur d'eau).
 export const TIDE_UNIFORMS = { tdLevel: { value: 0 }, tdWet: { value: 0 }, tdMark: { value: 0.3 } };
@@ -55,13 +56,13 @@ export function wind(day, hour = 12) {
 
 export function conditionText(day, hour, night = hour < 6 || hour > 21.5) {
   const c = coverAt(day, hour), r = rainTarget(day, hour);
-  if (r > 0.5) return 'Averses';
-  if (r > 0.08) return 'Pluie faible';
-  if (night) return c < 0.5 ? 'Nuit claire' : 'Nuit couverte';
-  if (c < 0.35) return 'Ensoleillé';
-  if (c < 0.55) return 'Éclaircies';
-  if (c < 0.7) return 'Nuageux';
-  return 'Couvert';
+  if (r > 0.5) return t('Averses');
+  if (r > 0.08) return t('Pluie faible');
+  if (night) return c < 0.5 ? t('Nuit claire') : t('Nuit couverte');
+  if (c < 0.35) return t('Ensoleillé');
+  if (c < 0.55) return t('Éclaircies');
+  if (c < 0.7) return t('Nuageux');
+  return t('Couvert');
 }
 
 // ---------- Marée ----------

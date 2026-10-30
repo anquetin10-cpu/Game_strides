@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { RealHorse } from './realHorse.js';
 import { RealCar, CAR_MODELS } from './realCar.js';
+import { t } from '../core/i18n.js';
 
 // Os du personnage classique → os du modèle réaliste (squelette « game_engine »).
 const SIDES = [['l', '_l'], ['r', '_r']];
@@ -278,7 +279,7 @@ export class Realism {
     this.autoOff = true;
     if (!this.bodies.size && !this.horses.size && !this.cars.size) return;
     this._clear();
-    this.game.hud?.toast('Modèles classiques pour garder la fluidité (réglage « Modèles 3D »).');
+    this.game.hud?.toast(t('Modèles classiques pour garder la fluidité (réglage « Modèles 3D »).'));
   }
 
   _clear() {
@@ -320,7 +321,7 @@ export class Realism {
         if (kind === 'horse') this.horseFailed = true;
         else if (kind === 'car') this.carFailed.add(id);
         else this.failed = true;
-        if (kind !== 'car') this.game.hud?.toast(kind === 'horse' ? 'Cheval réaliste indisponible : affichage classique.' : 'Personnage réaliste indisponible : affichage classique.');
+        if (kind !== 'car') this.game.hud?.toast(kind === 'horse' ? t('Cheval réaliste indisponible : affichage classique.') : t('Personnage réaliste indisponible : affichage classique.'));
       },
     );
   }

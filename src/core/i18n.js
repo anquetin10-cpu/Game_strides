@@ -57,10 +57,14 @@ const remember = (en, fr) => {
 
 const fill = (s, vals) => (vals && vals.length ? s.replace(/\{(\d+)\}/g, (m, i) => (i < vals.length ? String(vals[i]) : m)) : s);
 
+// Textes déjà traduits (valeurs anglaises) : un second t() sur une valeur traduite au chargement la laisse telle quelle.
+let enValues = null;
 function lookup(key) {
   if (LANG === 'fr') return key;
   const e = EN[key];
   if (e === undefined) {
+    enValues ||= new Set(Object.values(EN));
+    if (enValues.has(key)) return key;
     missing.add(key);
     return key;
   }

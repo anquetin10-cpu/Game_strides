@@ -6,6 +6,7 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
 import { mulberry32, polyDist, clamp } from '../core/math.js';
+import { t, T, LANG, num } from '../core/i18n.js';
 import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shoreZ, forestDensity, isReserved, nearestRoad } from './layout.js';
 import { HOME, HARAS, POLE, HIPPO_SITE, DUNES, GATIEN, TOWN, TOWN_BLOCKS, STATION, BARN_LAYOUTS, SHOPS3D, LEGACY_SELLERIE } from './sites.js';
 import { barnGeo, clubHouseGeo } from './barns.js';
@@ -84,10 +85,10 @@ export class World {
       last = now;
       return new Promise((r) => setTimeout(r, 0));
     };
-    progress(0.05, 'Relief de la Côte Fleurie');
+    progress(0.05, t('Relief de la Côte Fleurie'));
     await tick('terrain');
     this.terrain = new Terrain(200);
-    progress(0.15, 'Champs et plages');
+    progress(0.15, t('Champs et plages'));
     await tick('texture');
     const { texture, canvas, splat, splatData, splatSize } = makeTerrainTexture(this.terrain, this.textureSize || 2048);
     this.groundSplat = { data: splatData, size: splatSize };
@@ -97,10 +98,10 @@ export class World {
     this.group.add(this.terrainMesh);
     this.sky = new Sky(this.scene);
     this.water = new Water(this.scene, this.terrain);
-    progress(0.3, 'Routes de Deauville City');
+    progress(0.3, t('Routes de Deauville City'));
     await tick('roads');
     this.buildRoads();
-    progress(0.38, 'Écuries et haras');
+    progress(0.38, t('Écuries et haras'));
     await tick('stables');
     this.buildHome();
     this.buildHaras();
@@ -119,10 +120,10 @@ export class World {
     this.buildBeach();
     this.buildCliffs();
     this.buildSignHill();
-    progress(0.66, 'Bocage normand');
+    progress(0.66, t('Bocage normand'));
     await tick('country');
     this.buildCountryside();
-    progress(0.76, 'Forêts');
+    progress(0.76, t('Forêts'));
     await tick('forests');
     this.buildForests();
     this.buildRoadTrees();
@@ -130,7 +131,7 @@ export class World {
     // Zone « Paris » du Grand Prix de Paris Indoor (loin à l'est, hors de la carte).
     this.paris = new ParisZone();
     this.paris.build(this);
-    progress(0.86, 'Assemblage');
+    progress(0.86, t('Assemblage'));
     await tick('assemble');
     this.chunks.push(...this.batch.build(this.mat, this.group, { name: 'static' }));
     this.detailChunks = this.detailBatch.build(this.mat, this.group, { name: 'detail', castShadow: false });
@@ -140,7 +141,7 @@ export class World {
     this.chunks.push(...this.lights.build(this.lightMat, this.group, { castShadow: false, receiveShadow: false, name: 'lights' }));
     this.veg.build((x, z) => this.h(x, z));
     clearGrassUnder(this.grassMask, this.features.buildings);
-    progress(0.9, 'Prêt');
+    progress(0.9, t('Prêt'));
   }
 
   // ---------- Utilitaires de placement ----------
@@ -343,8 +344,8 @@ export class World {
     // Boutique.
     this.place(buildingGeo({ w: 6, d: 9, h: 3.4, wall: '#f2f1ec', roof: '#2f6e4a', roofType: 'flat', trim: '#2f6e4a', floors: 1, doorColor: '#1d1e21' }), -5, S.z - 4, -Math.PI / 2, 6, 9, 'shop');
     // Totem des prix (indicatifs), lisible depuis la route.
-    const pr = (v) => v.toFixed(2).replace('.', ',');
-    this.signboard('CARBURANTS', `Gazole ${pr(S.prices.diesel)} €  ·  SP95-E10 ${pr(S.prices.petrol)} €`, -24.4, S.z + 9.5, Math.PI / 2, { w: 4.4, h: 1.0, postH: 2.6 });
+    const pr = (v) => num(v, 2);
+    this.signboard(t('CARBURANTS'), T`Gazole ${pr(S.prices.diesel)} €  ·  SP95-E10 ${pr(S.prices.petrol)} €`, -24.4, S.z + 9.5, Math.PI / 2, { w: 4.4, h: 1.0, postH: 2.6 });
     // Éclairage de la piste la nuit.
     this.lamp(-24.6, S.z - 9, 0);
   }
@@ -476,7 +477,7 @@ export class World {
     this.placeBarn(barnGeo({ w: B.w, d: B.d, cols: BARN_LAYOUTS.home, style: { wall: '#202125', trim: '#f2f1ec', roof: '#3a3d42', slide: '#202125' } }), B.x, B.z, 0, B.w, B.d);
     const C = HOME.club;
     this.placeBarn(clubHouseGeo({ w: C.w, d: C.d }), C.x, C.z, -Math.PI / 2, C.w, C.d, 'club');
-    this.signboard('CLUB-HOUSE', 'Écurie du Val', C.x + 2, C.z - C.w / 2 - 1.2, 0, { w: 3.2, h: 0.8, postH: 1.6 });
+    this.signboard(t('CLUB-HOUSE'), 'Écurie du Val', C.x + 2, C.z - C.w / 2 - 1.2, 0, { w: 3.2, h: 0.8, postH: 1.6 });
     this.place(buildingGeo({ w: HOME.house.w, d: HOME.house.d, h: 5.6, wall: '#f3efe7', roof: '#33363c', trim: '#202125', roofType: 'gable', doorColor: '#202125' }), HOME.house.x, HOME.house.z, 0, HOME.house.w, HOME.house.d, 'house');
     // Grange à foin ouverte vers l'est.
     const H = HOME.hay;
@@ -508,7 +509,7 @@ export class World {
       this.batch.add(wrappedBaleGeo(i % 4 === 3 ? '#e9e8e2' : '#2e3a2f'), null, bx, this.h(bx, bz), bz, 0);
     }
     this.colliders.addBox(-170.5, 192.8, 2.4, 1.6, 0, Infinity, 'bales');
-    this.signboard('ÉCURIE DU VAL', 'Pension · Travail · Commerce', -40, 162, Math.PI / 2, { w: 5.2 });
+    this.signboard('ÉCURIE DU VAL', t('Pension · Travail · Commerce'), -40, 162, Math.PI / 2, { w: 5.2 });
     for (let i = 0; i < 6; i++) this.tree(i % 2 ? 'oak' : 'birch', -186 + this.rnd() * 6, 135 + i * 18, 1 + this.rnd() * 0.3);
     for (let i = 0; i < 5; i++) this.tree('poplar', -48 + i * 0.5, 192 + i * 10, 1.1);
   }
@@ -525,7 +526,7 @@ export class World {
       this.batch.add(box(1.6, 0.4, 1.6), '#f6f3ec', g.x + dx, this.h(g.x + dx, g.z) + 4.6, g.z, 0);
       this.colliders.addCircle(g.x + dx, g.z, 0.8, Infinity, 'gate');
     }
-    this.texturedPanel(signTexture('HARAS DE LA POMMERAIE', 'Élevage · Pension · Étalons', { dark: true }), 9.4, 1.6, g.x, this.h(g.x, g.z) + 5.4, g.z - 0.1, Math.PI, { doubleSided: true });
+    this.texturedPanel(signTexture('HARAS DE LA POMMERAIE', t('Élevage · Pension · Étalons'), { dark: true }), 9.4, 1.6, g.x, this.h(g.x, g.z) + 5.4, g.z - 0.1, Math.PI, { doubleSided: true });
     // Écuries du haras (ailes de la cour) : murs enduits sur soubassement de pierre, ardoise, portes vert anglais,
     // façades de box en chêne, comme les grandes écuries des haras normands.
     const harasStyle = { kind: 'stone', wall: stone, plinth: '#b9ae98', trim: '#f6f3ec', roof: '#454a52', slide: '#2f4a3a', wood: '#6b4a30', steel: '#24342b', lining: '#a98258', truss: '#5b4330' };
@@ -544,7 +545,7 @@ export class World {
     // Écurie de bord de mer : bardage blanc, menuiseries noires, toit sombre.
     this.placeBarn(barnGeo({ w: b.w, d: b.d, aisle: 3.2, cols: BARN_LAYOUTS.dunes, style: { wall: '#f2f1ec', trim: '#1b1c1f', roof: '#2d3035', slide: '#1b1c1f', wood: '#9b7650', lining: '#c9a273' } }), b.x, b.z, 0, b.w, b.d);
     this.rectFence(DUNES.paddock, { height: 1.15, rails: 3 }, 'n', 4, 0.2);
-    this.signboard('ÉCURIE DES DUNES', 'Pension en bord de mer', 512, -330, 0, { w: 5 });
+    this.signboard('ÉCURIE DES DUNES', t('Pension en bord de mer'), 512, -330, 0, { w: 5 });
   }
 
   buildGatien() {
@@ -559,8 +560,8 @@ export class World {
       this.batch.add(box(0.4, 4.2, 0.4), '#1b1c1f', s.x, y, s.z + dz, 0);
       this.colliders.addCircle(s.x, s.z + dz, 0.4, Infinity, 'post');
     }
-    this.texturedPanel(signTexture('CROSS DE SAINT-GATIEN', 'Départ · Arrivée', { dark: true }), 9.4, 1.3, s.x, y + 4.6, s.z, Math.PI / 2, { doubleSided: true });
-    this.signboard('DOMAINE DE SAINT-GATIEN', 'Cross · Pension · Balades', -182, 292, Math.PI / 2, { w: 5.6 });
+    this.texturedPanel(signTexture(t('CROSS DE SAINT-GATIEN'), t('Départ · Arrivée'), { dark: true }), 9.4, 1.3, s.x, y + 4.6, s.z, Math.PI / 2, { doubleSided: true });
+    this.signboard('DOMAINE DE SAINT-GATIEN', t('Cross · Pension · Balades'), -182, 292, Math.PI / 2, { w: 5.6 });
   }
 
   buildPole() {
@@ -612,7 +613,7 @@ export class World {
       this.colliders.addCircle(E.x + dx, E.z, 0.5, Infinity, 'post');
     }
     this.texturedPanel(logoTexture(true), 12.6, 3.1, E.x, ey + 6.5, E.z, 0, { doubleSided: true, back: '#1b1c1f' });
-    this.signboard('PÔLE INTERNATIONAL', 'CSO · CSI 3★ · CSI 5★', 344, -150, 0, { w: 6 });
+    this.signboard('PÔLE INTERNATIONAL', t('CSO · CSI 3★ · CSI 5★'), 344, -150, 0, { w: 6 });
     // Entrée de piste (ouverture de la lice au milieu du côté sud) : portique STRIDES et jardinières.
     const gz = A.z + A.d / 2, gy = this.h(A.x, gz);
     for (const dx of [-4.3, 4.3]) {
@@ -623,7 +624,7 @@ export class World {
       this.detailBatch.add(pl.detail, null, A.x + dx * 1.45, gy, gz + 0.9, 0);
     }
     this.batch.add(box(9, 0.45, 0.36), '#1b1c1f', A.x, gy + 3.3, gz, 0);
-    this.texturedPanel(signTexture('ENTRÉE DE PISTE', 'PRIX STRIDES', { dark: true }), 5.6, 1.0, A.x, gy + 4.25, gz, Math.PI, { doubleSided: true });
+    this.texturedPanel(signTexture(t('ENTRÉE DE PISTE'), 'PRIX STRIDES', { dark: true }), 5.6, 1.0, A.x, gy + 4.25, gz, Math.PI, { doubleSided: true });
     // Cabine du jury et du chronométrage : sur pilotis au bord de la piste (côté est), baie vitrée face à la carrière.
     const jx = A.x + A.w / 2 + 6.5, jz = A.z - 12, jy = this.h(jx, jz);
     const jp = [];
@@ -643,7 +644,7 @@ export class World {
     jp.push([cyl(0.12, 0.17, 0.2, 10), '#c9a24a', { x: 1.6, y: 3.0, z: 1.2 }]);
     this.batch.add(partsToGeo(jp), null, jx, jy, jz, -Math.PI / 2);
     this.colliders.addBox(jx, jz, 1.6, 2.1, 0, Infinity, 'building');
-    this.texturedPanel(signTexture('JURY', 'Chronométrage · STRIDES', { dark: true }), 3.2, 0.62, jx - 1.62, jy + 4.2, jz, -Math.PI / 2, { doubleSided: true });
+    this.texturedPanel(signTexture(t('JURY'), t('Chronométrage · STRIDES'), { dark: true }), 3.2, 0.62, jx - 1.62, jy + 4.2, jz, -Math.PI / 2, { doubleSided: true });
   }
 
   // Tribune en gradins face à +Z (local) : marches béton, sièges baquets, escaliers, garde-corps vitré,
@@ -765,7 +766,7 @@ export class World {
     for (let k = 0; k <= HIPPO.bays; k++) parts.push([box(3.2, 2.6, 0.2), '#2f6e4a', { z: -HIPPO.width / 2 + bw * k }]);
     parts.push([box(0.4, 0.4, HIPPO.bays * bw + 0.6), '#f2f1ec', { y: 2.6, z: -HIPPO.width / 2 + (HIPPO.bays * bw) / 2 }]);
     this.batch.add(partsToGeo(parts), null, sx, gy, sz, 0);
-    this.signboard('HIPPODROME DE LA TOUQUES', 'Courses de galop', 344, 118, 0, { w: 6 });
+    this.signboard('HIPPODROME DE LA TOUQUES', t('Courses de galop'), 344, 118, 0, { w: 6 });
   }
 
   buildTown() {
@@ -796,8 +797,8 @@ export class World {
     // Strides HQ : verre noir, logotype 3D sur le toit.
     const hq = TOWN.hq;
     const hy = this.place(hqGeo(hq.w, hq.d, 15), hq.x, hq.z, 0, hq.w, hq.d, 'hq');
-    const t = this.text3D('STRIDES', 4.6, 0.8, '#f4f3ef');
-    this.batch.add(t.geo, null, hq.x, hy + 15.4, hq.z + hq.d / 2 - 2, 0);
+    const word = this.text3D('STRIDES', 4.6, 0.8, '#f4f3ef');
+    this.batch.add(word.geo, null, hq.x, hy + 15.4, hq.z + hq.d / 2 - 2, 0);
     this.texturedPanel(logoTexture(true), 16, 4, hq.x, hy + 9, hq.z - hq.d / 2 - 0.3, Math.PI, { back: '#111214', depth: 0.2 });
     this.texturedPanel(logoTexture(true), 14, 3.5, hq.x, hy + 4.6, hq.z + hq.d / 2 + 0.3, 0, { back: '#111214', depth: 0.2 });
     // Commerces où l'on entre (sellerie, café-boulangerie, boutique) : à la place de maisons de la rue, voir buildShops.
@@ -811,12 +812,12 @@ export class World {
     // Forge du maréchal-ferrant.
     const fo = TOWN.forge;
     const fy = this.place(buildingGeo({ w: fo.d, d: fo.w, h: 5.5, wall: PALETTE.brick[0], roof: '#4a4f57', timber: false, floors: 1, chimney: true }), fo.x, fo.z, Math.PI / 2, fo.d, fo.w, 'forge');
-    this.texturedPanel(signTexture('FORGE LEMAIRE', 'Maréchal-ferrant', { dark: false }), 8, 1.8, fo.x + fo.w / 2 + 0.3, fy + 4.2, fo.z, Math.PI / 2, { depth: 0.2 });
+    this.texturedPanel(signTexture('FORGE LEMAIRE', t('Maréchal-ferrant'), { dark: false }), 8, 1.8, fo.x + fo.w / 2 + 0.3, fy + 4.2, fo.z, Math.PI / 2, { depth: 0.2 });
     this.batch.add(box(0.8, 0.8, 0.5), '#2a2b2f', fo.x + fo.w / 2 + 3, this.h(fo.x + fo.w / 2 + 3, fo.z + 4), fo.z + 4, 0);
     // Clinique vétérinaire.
     const ve = TOWN.vet;
     const vy = this.place(buildingGeo({ w: ve.d, d: ve.w, h: 8, wall: '#f4f3ef', roof: '#2a2c30', roofType: 'flat', trim: '#1b1c1f', floors: 2 }), ve.x, ve.z, -Math.PI / 2, ve.d, ve.w, 'vet');
-    this.texturedPanel(signTexture('CLINIQUE VÉTÉRINAIRE', 'Équine · Urgences 24/7', { dark: true }), 11, 2.2, ve.x - ve.w / 2 - 0.3, vy + 5.6, ve.z, -Math.PI / 2, { depth: 0.2 });
+    this.texturedPanel(signTexture(t('CLINIQUE VÉTÉRINAIRE'), t('Équine · Urgences 24/7'), { dark: true }), 11, 2.2, ve.x - ve.w / 2 - 0.3, vy + 5.6, ve.z, -Math.PI / 2, { depth: 0.2 });
 
     // Îlots génériques.
     const inset = 6.2;
@@ -1074,10 +1075,10 @@ export class World {
   // (choisie d'après la position, toujours la même), vitrines au vitrage à effet de pièce.
   streetShop(cx, by, cz, rot, w, d, color) {
     const NAMES = [
-      ['Librairie du Port', 'Livres · Cartes · Presse'], ['Fromagerie Normande', 'Camembert · Livarot · Pont-l’Évêque'],
-      ['Galerie Morny', 'Peintures · Photographies'], ['Fleurs de la Touques', 'Fleuriste'], ['Agence de la Mer', 'Immobilier · Locations'],
-      ['Chocolaterie Colas', 'Chocolats · Caramels au beurre salé'], ['Pharmacie Morny', 'Pharmacie · Parapharmacie'],
-      ['Antiquités Le Hoc', 'Brocante · Objets de marine'], ['Cave à cidre', 'Cidres · Calvados · Pommeau'], ['Optique Gontaut', 'Opticien'],
+      ['Librairie du Port', t('Livres · Cartes · Presse')], ['Fromagerie Normande', 'Camembert · Livarot · Pont-l’Évêque'],
+      ['Galerie Morny', t('Peintures · Photographies')], ['Fleurs de la Touques', t('Fleuriste')], ['Agence de la Mer', t('Immobilier · Locations')],
+      ['Chocolaterie Colas', t('Chocolats · Caramels au beurre salé')], ['Pharmacie Morny', t('Pharmacie · Parapharmacie')],
+      ['Antiquités Le Hoc', t('Brocante · Objets de marine')], ['Cave à cidre', t('Cidres · Calvados · Pommeau')], ['Optique Gontaut', t('Opticien')],
     ];
     // Enseignes réparties à tour de rôle (ordre de construction fixe : toujours les mêmes maisons).
     this._streetShopN = (this._streetShopN || 0) + 1;
@@ -1270,14 +1271,14 @@ export class World {
     for (const sg of sh.layout.signs || []) {
       if (sg.kind === 'strides') {
         // Présentoir Strides : carton plié posé sur le comptoir.
-        const tex = signTexture('STRIDES', 'Grooms · Cavaliers · Transport', { dark: true, w: 512, h: 256, mark: true });
+        const tex = signTexture('STRIDES', t('Grooms · Cavaliers · Transport'), { dark: true, w: 512, h: 256, mark: true });
         const card = new THREE.Mesh(new THREE.PlaneGeometry(sg.w, sg.h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
         card.position.set(sg.x, sg.y + sg.h / 2, sg.z);
         card.rotation.set(-0.25, sg.ry, 0);
         group.add(card);
         continue;
       }
-      const tex = chalkTexture('Le Galop', CAFE_MENU.map((m) => `${m.name}…${m.price.toFixed(2).replace('.', ',')} €`));
+      const tex = chalkTexture('Le Galop', CAFE_MENU.map((m) => `${m.name}…${LANG === 'fr' ? `${num(m.price, 2)} €` : `€${num(m.price, 2)}`}`));
       const p = new THREE.Mesh(new THREE.PlaneGeometry(sg.w, sg.h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
       p.position.set(sg.x, sg.y, sg.z + 0.02);
       p.rotation.y = sg.ry;

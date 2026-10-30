@@ -1,4 +1,5 @@
 // Plans détaillés des sites (partagés par la texture du sol, les bâtiments, la minimap et les missions).
+import { t } from '../core/i18n.js';
 
 export const HOME = {
   barn: { x: -120, z: 150, w: 50, d: 12 },
@@ -82,7 +83,7 @@ export const PARIS = {
   gate: { x: PX - 38, z: PZ + 10, rot: Math.PI / 2 },
   warmup: { x: PX - 90, z: PZ + 4, w: 40, d: 26 },
   stables: { x: PX - 92, z: PZ - 44, w: 16, d: 48 },
-  park: { x: PX - 152, z: PZ + 6, r: 14, name: 'le parking des camions du Grand Prix de Paris' },
+  park: { x: PX - 152, z: PZ + 6, r: 14, name: t('le parking des camions du Grand Prix de Paris') },
   // Bretelle d'autoroute (retour vers Deauville), au bout de la voie d'accès.
   exit: { x: PX - 198, z: PZ + 6 },
   secretariat: { x: PX - 128, z: PZ - 12 },
@@ -139,7 +140,7 @@ export const STATION = {
 // front : couleur de la devanture, letters : couleur des lettres de l'enseigne ; upper : étages (buildingGeo).
 export const SHOPS3D = {
   sellerie: {
-    id: 'sellerie', name: 'Sellerie du Port', sub: 'Sellier · Harnacheur depuis 1921', x: -143.2, z: -269.4, rot: Math.PI / 2, w: 20, d: 14, G: 4.1,
+    id: 'sellerie', name: 'Sellerie du Port', sub: t('Sellier · Harnacheur depuis 1921'), x: -143.2, z: -269.4, rot: Math.PI / 2, w: 20, d: 14, G: 4.1,
     openings: [[-9.0, -5.2, 'win'], [-4.1, -2.7, 'door'], [-1.6, 2.9, 'win'], [4.1, 8.6, 'win']],
     front: '#1f3a2c', letters: '#d9bd7c', floor: '#7b4f30', walls: '#ece3d2', blade: 'saddle',
     // Barre d'attache dans la cour pavée, au sud de la boutique : cheval (x, z, cap) face à la barre.
@@ -147,14 +148,14 @@ export const SHOPS3D = {
     upper: { h: 6.6, floors: 2, wall: '#a86a50', roof: '#4a4f57', roofType: 'gable', trim: '#ece6da', chimney: true },
   },
   cafe: {
-    id: 'cafe', name: 'Le Galop', sub: 'Café · Boulangerie · Pâtisserie', x: 19, z: -220.8, rot: Math.PI, w: 14, d: 10, G: 3.9,
+    id: 'cafe', name: 'Le Galop', sub: t('Café · Boulangerie · Pâtisserie'), x: 19, z: -220.8, rot: Math.PI, w: 14, d: 10, G: 3.9,
     openings: [[-6.2, -1.3, 'win'], [-0.7, 0.7, 'door'], [1.3, 6.2, 'win']],
     front: '#1f2b45', letters: '#e2c98f', floor: '#cfc6b6', walls: '#efe6d4', blade: 'cup', awning: ['#1f2b45', '#efe6d2'],
     tie: [33.2, -241.6, 0], rail: [33.2, -239.4, 0],
     upper: { h: 6.2, floors: 2, timber: true, fill: 0, wood: 0, roof: '#565a61', roofType: 'gable', chimney: true },
   },
   boutique: {
-    id: 'boutique', name: 'Maison Lucette', sub: 'Prêt-à-porter · Deauville City', x: -41.7, z: -262, rot: Math.PI / 2, w: 10, d: 11, G: 3.9,
+    id: 'boutique', name: 'Maison Lucette', sub: t('Prêt-à-porter · Deauville City'), x: -41.7, z: -262, rot: Math.PI / 2, w: 10, d: 11, G: 3.9,
     openings: [[-4.4, -1.3, 'win'], [-0.7, 0.7, 'door'], [1.3, 4.4, 'win']],
     front: '#232427', letters: '#d9bd7c', floor: '#a87b4f', walls: '#f3efe7', blade: 'hanger', awning: ['#1b1c1f', '#f2f1ec'],
     tie: [-21.8, -254.0, -Math.PI / 2], rail: [-24.0, -254.0, Math.PI / 2],

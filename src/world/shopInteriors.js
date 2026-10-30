@@ -4,6 +4,7 @@
 // les clients, le point d'arrivée et la sortie. Les collisions et les rayons ne dépendent pas de la géométrie :
 // layout(id) les donne sans rien construire.
 import { box, cyl, sphere } from './shapes.js';
+import { t } from '../core/i18n.js';
 import {
   Kit, WALL_T, FLOOR_Y, torus, lathe, capsule, roomShell, saddle, bridle, halter, padStack, bootsPair, helmet,
   ridingBoots, garment, mannequin, shelving, pendant, tag,
@@ -15,8 +16,8 @@ const DARK_OAK = '#4f3a28';
 
 // Personnel et clientèle (tenues des personnages non joueurs).
 const STAFF = {
-  sellerie: { name: 'Margaux Leroy', role: 'Sellière', initials: 'ML', outfit: { sex: 'f', top: '#c8a96e', sleeve: '#c8a96e', pants: '#3a3d42', boots: '#2a2622', skin: '#eac2a0', hair: '#7a4a28', ponytail: true, logo: false } },
-  cafe: { name: 'Paul Hamel', role: 'Boulanger', initials: 'PH', outfit: { sex: 'm', top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#2b3442', boots: '#2a2622', skin: '#dcab88', hair: '#3b2717', logo: false } },
+  sellerie: { name: 'Margaux Leroy', role: t('Sellière'), initials: 'ML', outfit: { sex: 'f', top: '#c8a96e', sleeve: '#c8a96e', pants: '#3a3d42', boots: '#2a2622', skin: '#eac2a0', hair: '#7a4a28', ponytail: true, logo: false } },
+  cafe: { name: 'Paul Hamel', role: t('Boulanger'), initials: 'PH', outfit: { sex: 'm', top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#2b3442', boots: '#2a2622', skin: '#dcab88', hair: '#3b2717', logo: false } },
   boutique: { name: 'Hélène Marchand', role: 'Maison Lucette', initials: 'HM', outfit: { sex: 'f', top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#e9e3d6', boots: '#1b1c1f', skin: '#e8bea0', hair: '#2a1d14', hairStyle: 'bun', logo: false } },
 };
 const CUSTOMER = (top, pants = '#2b3442', sex = 'm', hair = '#5a3a24') => ({ sex, top, sleeve: top, pants, boots: '#3b2a1e', skin: sex === 'f' ? '#e8bea0' : '#dcab88', hair, logo: false });
@@ -27,14 +28,14 @@ const LAYOUTS = {
   sellerie: {
     spawn: [-3.4, 5.1], exit: [-3.4, 5.7],
     fixtures: [
-      { id: 'selles', label: 'Selles', cats: ['selles'], at: [-3.6, -4.9] },
-      { id: 'selles2', label: 'Selles', cats: ['selles'], at: [-5.1, -1.2] },
-      { id: 'briderie', label: 'Briderie', cats: ['briderie'], at: [-8.1, -1.6] },
-      { id: 'tapis', label: 'Tapis', cats: ['tapis'], at: [8.1, -2.6] },
-      { id: 'protections', label: 'Protections', cats: ['protections'], at: [3.6, -0.5] },
-      { id: 'soins', label: 'Soins', cats: ['soins'], at: [8.0, 3.3] },
-      { id: 'cavalier', label: 'Cavalier', cats: ['cavalier'], at: [6.7, -4.9] },
-      { id: 'comptoir', label: 'Comptoir', counter: true, at: [4.6, 3.45] },
+      { id: 'selles', label: t('Selles'), cats: ['selles'], at: [-3.6, -4.9] },
+      { id: 'selles2', label: t('Selles'), cats: ['selles'], at: [-5.1, -1.2] },
+      { id: 'briderie', label: t('Briderie'), cats: ['briderie'], at: [-8.1, -1.6] },
+      { id: 'tapis', label: t('Tapis'), cats: ['tapis'], at: [8.1, -2.6] },
+      { id: 'protections', label: t('Protections'), cats: ['protections'], at: [3.6, -0.5] },
+      { id: 'soins', label: t('Soins'), cats: ['soins'], at: [8.0, 3.3] },
+      { id: 'cavalier', label: t('Cavalier'), cats: ['cavalier'], at: [6.7, -4.9] },
+      { id: 'comptoir', label: t('Comptoir'), counter: true, at: [4.6, 3.45] },
     ],
     colliders: [
       [-3.7, -6.25, 5.6, 0.45, 2.5], [-6.6, -2.6, 0.35, 0.55, 1.2], [-3.6, -2.6, 0.35, 0.55, 1.2],
@@ -44,7 +45,7 @@ const LAYOUTS = {
     ],
     lights: [[-6, 3.0, -3.0, 1.0], [-1.0, 3.0, -3.0, 1.0], [4.0, 3.0, -2.6, 1.0], [4.6, 3.0, 2.4, 0.9], [-6.0, 3.0, 3.2, 0.9], [1.2, 3.0, 3.5, 0.9]],
     seller: { at: [4.6, 1.55], ry: 0 },
-    extras: [{ at: [-7.9, -0.2], ry: -Math.PI / 2, outfit: CUSTOMER('#7d8b6a', '#c2b49a', 'f', '#7a4a28'), name: 'Cliente' }],
+    extras: [{ at: [-7.9, -0.2], ry: -Math.PI / 2, outfit: CUSTOMER('#7d8b6a', '#c2b49a', 'f', '#7a4a28'), name: t('Cliente') }],
     // Présentoir Strides sur le comptoir (carton plié).
     signs: [{ kind: 'strides', w: 0.34, h: 0.17, x: 3.55, y: F + 1.1, z: 2.72, ry: 0 }],
   },
@@ -52,8 +53,8 @@ const LAYOUTS = {
   cafe: {
     spawn: [0, 3.2], exit: [0, 3.9],
     fixtures: [
-      { id: 'comptoir', label: 'Comptoir', counter: true, at: [-1.6, -0.55] },
-      { id: 'vitrine', label: 'Vitrine', counter: true, at: [-4.4, -0.55] },
+      { id: 'comptoir', label: t('Comptoir'), counter: true, at: [-1.6, -0.55] },
+      { id: 'vitrine', label: t('Vitrine'), counter: true, at: [-4.4, -0.55] },
     ],
     colliders: [
       [-2.95, -1.6, 3.4, 0.4, 1.1], [-3.0, -4.25, 3.4, 0.38, 2.4], [6.35, -1.0, 0.32, 3.0, 0.9],
@@ -63,13 +64,13 @@ const LAYOUTS = {
     lights: [[-4.2, 2.9, -1.6, 0.9], [-1.2, 2.9, -1.6, 0.9], [3.7, 2.9, -2.6, 0.85], [3.7, 2.9, 0.8, 0.85], [-3.5, 2.9, 2.3, 0.8], [1.0, 2.9, 2.6, 0.7]],
     seller: { at: [-2.2, -2.75], ry: 0 },
     extras: [
-      { at: [5.0, -1.9], ry: Math.PI, outfit: CUSTOMER('#2f5f8a', '#c2b49a', 'f', '#7a4a28'), name: 'Cliente', pose: 'sit' },
-      { at: [2.5, 1.5], ry: Math.PI, outfit: CUSTOMER('#4b4a33'), name: 'Client', pose: 'sit' },
-      { at: [-4.8, -2.75], ry: 0, outfit: { ...CUSTOMER('#f2f1ec', '#2b3442', 'f', '#3b2717'), hairStyle: 'bun' }, name: 'Boulangère' },
+      { at: [5.0, -1.9], ry: Math.PI, outfit: CUSTOMER('#2f5f8a', '#c2b49a', 'f', '#7a4a28'), name: t('Cliente'), pose: 'sit' },
+      { at: [2.5, 1.5], ry: Math.PI, outfit: CUSTOMER('#4b4a33'), name: t('Client'), pose: 'sit' },
+      { at: [-4.8, -2.75], ry: 0, outfit: { ...CUSTOMER('#f2f1ec', '#2b3442', 'f', '#3b2717'), hairStyle: 'bun' }, name: t('Boulangère') },
       // En terrasse : sur le trottoir et au bord de la place, en face.
-      { at: [-2.42, 5.7], ry: -Math.PI / 2, outfit: CUSTOMER('#c8a96e', '#2b3442', 'f', '#5a3a24'), name: 'Cliente', pose: 'sit' },
-      { at: [-1.75, 19.4], ry: Math.PI / 2, outfit: CUSTOMER('#1f2b45', '#c2b49a'), name: 'Client', pose: 'sit' },
-      { at: [8.75, 19.4], ry: -Math.PI / 2, outfit: CUSTOMER('#f2f1ec', '#2b3442', 'f', '#7a4a28'), name: 'Cliente', pose: 'sit' },
+      { at: [-2.42, 5.7], ry: -Math.PI / 2, outfit: CUSTOMER('#c8a96e', '#2b3442', 'f', '#5a3a24'), name: t('Cliente'), pose: 'sit' },
+      { at: [-1.75, 19.4], ry: Math.PI / 2, outfit: CUSTOMER('#1f2b45', '#c2b49a'), name: t('Client'), pose: 'sit' },
+      { at: [8.75, 19.4], ry: -Math.PI / 2, outfit: CUSTOMER('#f2f1ec', '#2b3442', 'f', '#7a4a28'), name: t('Cliente'), pose: 'sit' },
     ],
     signs: [{ kind: 'chalk', w: 1.0, h: 1.25, x: 3.6, y: 1.95, z: -4.64, ry: 0 }, { kind: 'strides', w: 0.3, h: 0.15, x: -0.55, y: F + 1.14, z: -1.32, ry: 0 }],
   },
@@ -77,11 +78,11 @@ const LAYOUTS = {
   boutique: {
     spawn: [0, 4.4], exit: [0, 5.0],
     fixtures: [
-      { id: 'portant', label: 'Portant', cats: ['hauts'], at: [-3.3, -1.4] },
-      { id: 'etageres', label: 'Étagères', cats: ['accessoires', 'hauts'], at: [3.3, -1.8] },
-      { id: 'table', label: 'Table', cats: ['hauts', 'accessoires'], at: [0, 0.3] },
-      { id: 'miroir', label: 'Miroir', cats: ['hauts', 'accessoires'], tryOn: true, at: [-2.4, -3.9] },
-      { id: 'comptoir', label: 'Comptoir', counter: true, at: [2.6, -2.55] },
+      { id: 'portant', label: t('Portant'), cats: ['hauts'], at: [-3.3, -1.4] },
+      { id: 'etageres', label: t('Étagères'), cats: ['accessoires', 'hauts'], at: [3.3, -1.8] },
+      { id: 'table', label: t('Table'), cats: ['hauts', 'accessoires'], at: [0, 0.3] },
+      { id: 'miroir', label: t('Miroir'), cats: ['hauts', 'accessoires'], tryOn: true, at: [-2.4, -3.9] },
+      { id: 'comptoir', label: t('Comptoir'), counter: true, at: [2.6, -2.55] },
     ],
     colliders: [
       [-4.35, -1.3, 0.38, 3.3, 2.0], [4.35, -1.8, 0.35, 2.9, 2.3], [0, -0.8, 0.95, 0.5, 0.85],
@@ -91,9 +92,9 @@ const LAYOUTS = {
     lights: [[-2.4, 2.9, -1.4, 0.95], [2.4, 2.9, -1.4, 0.95], [0, 2.9, 2.0, 0.9], [-2.4, 2.9, -4.0, 0.8], [2.6, 2.9, -3.6, 0.8], [0, 2.9, 4.2, 0.7]],
     seller: { at: [2.6, -4.35], ry: 0 },
     extras: [
-      { at: [-3.2, -0.4], ry: -Math.PI / 2, outfit: CUSTOMER('#6e2433', '#2b3442', 'f', '#2a1d14'), name: 'Cliente' },
+      { at: [-3.2, -0.4], ry: -Math.PI / 2, outfit: CUSTOMER('#6e2433', '#2b3442', 'f', '#2a1d14'), name: t('Cliente') },
       // Passante devant la vitrine, sur le trottoir.
-      { at: [2.9, 6.6], ry: Math.PI, outfit: CUSTOMER('#2f5f8a', '#e9e3d6', 'f', '#7a4a28'), name: 'Passante' },
+      { at: [2.9, 6.6], ry: Math.PI, outfit: CUSTOMER('#2f5f8a', '#e9e3d6', 'f', '#7a4a28'), name: t('Passante') },
     ],
   },
 };

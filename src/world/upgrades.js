@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { box, cyl, compose, gableRoof } from './shapes.js';
 import { signTexture } from './textures.js';
+import { t } from '../core/i18n.js';
 
 // Aire de pansage couverte : dans la cour, entre l'abreuvoir et la grange.
 export const AIRE = { x: -131, z: 178, w: 6, d: 4, rot: 0 };
@@ -36,7 +37,7 @@ function buildAire(game) {
   roof.position.y = 2.72;
   roof.castShadow = roof.receiveShadow = true;
   group.add(roof);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.32), new THREE.MeshStandardMaterial({ map: signTexture('AIRE DE PANSAGE', '', { dark: true, w: 1024, h: 148 }) }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.32), new THREE.MeshStandardMaterial({ map: signTexture(t('AIRE DE PANSAGE'), '', { dark: true, w: 1024, h: 148 }) }));
   sign.position.set(0, 2.45, -hd - 0.08);
   sign.rotation.y = Math.PI;
   group.add(sign);

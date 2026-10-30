@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { TruckSim, VEHICLE_SPECS } from './truckPhysics.js';
 import { carGeo, carMaterial, glassMaterial, carPillars, CARS, tractorGeo, tractorWheelGeo, TRACTOR_WHEELS } from '../world/props.js';
 import { clamp } from '../core/math.js';
+import { t } from '../core/i18n.js';
 import { clampToRegion, nearestRoad } from '../world/layout.js';
 
 // Encombrement du tracteur (même interface que CARS pour les collisions et les points d'accès).
@@ -112,7 +113,7 @@ export class Vehicle {
     return !this.driver && this.atSpot;
   }
   get label() {
-    return VEHICLE_SPECS[this.kind]?.name || 'Voiture';
+    return VEHICLE_SPECS[this.kind]?.name || t('Voiture');
   }
   // Compte-tours : zone rouge au régime maxi.
   get redline() {

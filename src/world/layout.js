@@ -2,6 +2,7 @@
 // Axe X : ouest (-) → est (+). Axe Z : nord (-, la mer) → sud (+).
 import { createNoise2D } from '../core/noise.js';
 import { polyDist, rectDist, smoothstep } from '../core/math.js';
+import { t } from '../core/i18n.js';
 
 export const WORLD = { size: 1200, half: 600, seaLevel: 0 };
 
@@ -153,14 +154,14 @@ export const POI = {
   gatien: { x: -205, z: 300, name: 'Domaine de Saint-Gatien', icon: 'stable' },
   // Commerces : devant la porte, sur le trottoir.
   sellerie: { x: -134.6, z: -266, name: 'Sellerie du Port', icon: 'shop' },
-  cafe: { x: 19, z: -227.3, name: 'Le Galop · Café-boulangerie', icon: 'shop' },
-  boutique: { x: -34.7, z: -262, name: 'Maison Lucette · Prêt-à-porter', icon: 'shop' },
+  cafe: { x: 19, z: -227.3, name: t('Le Galop · Café-boulangerie'), icon: 'shop' },
+  boutique: { x: -34.7, z: -262, name: t('Maison Lucette · Prêt-à-porter'), icon: 'shop' },
   forge: { x: -140, z: -199, name: 'Forge Lemaire', icon: 'pro' },
-  vet: { x: 80, z: -199, name: 'Clinique vétérinaire de la Côte', icon: 'pro' },
+  vet: { x: 80, z: -199, name: t('Clinique vétérinaire de la Côte'), icon: 'pro' },
   hq: { x: 108, z: -306, name: 'Strides HQ', icon: 'strides' },
-  beach: { x: 40, z: -400, name: 'Plage de Deauville City', icon: 'beach' },
+  beach: { x: 40, z: -400, name: t('Plage de Deauville City'), icon: 'beach' },
   cliffs: { x: -505, z: -395, name: 'Phare d’Aval', icon: 'view' },
-  sign: { x: 120, z: 470, name: 'Colline Strides', icon: 'view' },
+  sign: { x: 120, z: 470, name: t('Colline Strides'), icon: 'view' },
 };
 
 const noise = createNoise2D(77);

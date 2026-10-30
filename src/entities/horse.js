@@ -7,6 +7,7 @@ import { clampToRegion } from '../world/layout.js';
 import { HorseCondition, SIM } from '../gameplay/condition.js';
 import { speedFactor } from '../gameplay/jumpModel.js';
 import { boxCare } from '../gameplay/stabling.js';
+import { t } from '../core/i18n.js';
 
 const SPEEDS = HORSE.gaits.map((g) => g.speed);
 const CANTER_MAX = HORSE.gaits[3].max;
@@ -18,7 +19,7 @@ export class Horse {
     this.game = game;
     this.def = def;
     this.id = def.id || opts.id || 'horse';
-    this.name = def.name || 'Cheval';
+    this.name = def.name || t('Cheval');
     const { mesh, bones } = createHorseMesh({ coat: def.coat, blaze: def.blaze, socks: def.socks, saddle: opts.saddle !== false, pad: opts.pad, padTrim: opts.padTrim });
     this.mesh = mesh;
     this.mesh.rotation.order = 'YXZ';

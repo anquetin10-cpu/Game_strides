@@ -2,6 +2,7 @@
 // boîte automatique 6 rapports, résistances, freins, frein moteur, direction asservie à la vitesse,
 // modèle cinématique à basse vitesse fondu dans un modèle bicyclette avec adhérence limitée des pneus.
 // Repère : cap h (avant = (sin h, cos h)), gauche = (cos h, -sin h). Lacet r > 0 : virage à gauche.
+import { t } from '../core/i18n.js';
 
 export const TRUCK_SPEC = {
   massEmpty: 5500, // kg, porteur 7,5 t carrossé, à vide
@@ -61,7 +62,7 @@ const CAR_BASE = {
 export const VEHICLE_SPECS = {
   // Citadine type Clio V 1.0 TCe 90 (3 cylindres essence), 160 N·m, boîte 5 : 0-100 km/h 12,2 s, 178 km/h.
   clio: {
-    ...CAR_BASE, name: 'Citadine', massEmpty: 1240, zFront: 1.2915, zRear: -1.2915, track: 1.51, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.31,
+    ...CAR_BASE, name: t('Citadine'), massEmpty: 1240, zFront: 1.2915, zRear: -1.2915, track: 1.51, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.31,
     idle: 800, maxRpm: 6200, cutRpm: 6500, fuel: 'petrol', tank: 42, idleLph: 0.45, bsfc: 240, refL100: 5.5, cyl: 3, drive: 'front',
     torque: [[700, 90], [1500, 140], [2250, 160], [3500, 160], [4500, 150], [5500, 128], [6200, 105], [6500, 0]], maxTorque: 160,
     gears: [3.73, 2.05, 1.39, 1.03, 0.82], reverse: 3.55, final: 4.21, shiftTime: 0.45,
@@ -72,7 +73,7 @@ export const VEHICLE_SPECS = {
   // Compacte type Golf 8 1.5 TSI 130 (4 cylindres essence), 200 N·m de 1 400 à 4 000 tr/min, boîte 6 :
   // 0-100 km/h 9,2 s, 214 km/h.
   golf: {
-    ...CAR_BASE, name: 'Compacte', massEmpty: 1355, zFront: 1.318, zRear: -1.318, track: 1.55, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.316,
+    ...CAR_BASE, name: t('Compacte'), massEmpty: 1355, zFront: 1.318, zRear: -1.318, track: 1.55, cgEmpty: 0.25, cgHeight: 0.55, wheelR: 0.316,
     idle: 750, maxRpm: 6000, cutRpm: 6300, fuel: 'petrol', tank: 50, idleLph: 0.5, bsfc: 235, refL100: 5.6, cyl: 4, drive: 'front',
     torque: [[700, 110], [1400, 200], [4000, 200], [5000, 182], [6000, 150], [6300, 0]], maxTorque: 200,
     gears: [3.77, 2.09, 1.47, 1.1, 0.88, 0.71], reverse: 3.6, final: 3.94, shiftTime: 0.35,
@@ -82,7 +83,7 @@ export const VEHICLE_SPECS = {
   },
   // Berline type 508 II 1.5 BlueHDi 130 (diesel), 300 N·m, automatique 8 rapports : 0-100 km/h 10 s, ~208 km/h.
   p508: {
-    ...CAR_BASE, name: 'Berline', massEmpty: 1505, zFront: 1.3965, zRear: -1.3965, track: 1.6, cgEmpty: 0.25, cgHeight: 0.52, wheelR: 0.335,
+    ...CAR_BASE, name: t('Berline'), massEmpty: 1505, zFront: 1.3965, zRear: -1.3965, track: 1.6, cgEmpty: 0.25, cgHeight: 0.52, wheelR: 0.335,
     idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', tank: 55, idleLph: 0.5, bsfc: 210, refL100: 4.6, cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
     torque: [[700, 150], [1000, 210], [1500, 280], [1750, 300], [2750, 300], [3750, 260], [4500, 200], [4800, 0]], maxTorque: 300,
     gears: [5.25, 3.03, 1.95, 1.46, 1.22, 1.0, 0.81, 0.67], reverse: 4.4, final: 2.9, shiftTime: 0.2,
@@ -92,7 +93,7 @@ export const VEHICLE_SPECS = {
   },
   // SUV type 3008 II 1.5 BlueHDi 130 (diesel), 300 N·m, automatique 8 rapports : 0-100 km/h ~11,5 s, 192 km/h.
   p3008: {
-    ...CAR_BASE, name: 'SUV', massEmpty: 1570, zFront: 1.3375, zRear: -1.3375, track: 1.6, cgEmpty: 0.25, cgHeight: 0.62, wheelR: 0.352,
+    ...CAR_BASE, name: t('SUV'), massEmpty: 1570, zFront: 1.3375, zRear: -1.3375, track: 1.6, cgEmpty: 0.25, cgHeight: 0.62, wheelR: 0.352,
     idle: 800, maxRpm: 4500, cutRpm: 4800, fuel: 'diesel', tank: 53, idleLph: 0.5, bsfc: 210, refL100: 5.2, cyl: 4, drive: 'front', gearTorque: [1, 1, 1, 1, 1, 1, 1, 1],
     torque: [[700, 150], [1000, 210], [1500, 280], [1750, 300], [2750, 300], [3750, 260], [4500, 200], [4800, 0]], maxTorque: 300,
     gears: [5.25, 3.03, 1.95, 1.46, 1.22, 1.0, 0.81, 0.67], reverse: 4.4, final: 2.8, shiftTime: 0.25,
@@ -103,7 +104,7 @@ export const VEHICLE_SPECS = {
   // SUV 4x4 type Duster II 1.5 Blue dCi 115 (diesel), 260 N·m à 1 750 tr/min, boîte 6 à première courte, 4 roues
   // motrices : 0-100 km/h ~11,5 s, ~170 km/h ; bonne motricité hors route.
   duster: {
-    ...CAR_BASE, name: 'SUV 4x4', massEmpty: 1485, zFront: 1.338, zRear: -1.338, track: 1.56, cgEmpty: 0.2, cgHeight: 0.68, wheelR: 0.345,
+    ...CAR_BASE, name: t('SUV 4x4'), massEmpty: 1485, zFront: 1.338, zRear: -1.338, track: 1.56, cgEmpty: 0.2, cgHeight: 0.68, wheelR: 0.345,
     idle: 780, maxRpm: 4300, cutRpm: 4600, fuel: 'diesel', tank: 50, idleLph: 0.5, bsfc: 215, refL100: 5.8, cyl: 4, awd: true,
     torque: [[700, 130], [1000, 190], [1500, 245], [1750, 260], [2500, 260], [3500, 225], [4300, 170], [4600, 0]], maxTorque: 260,
     gears: [4.45, 2.59, 1.66, 1.17, 0.9, 0.73], reverse: 4.2, final: 3.6, shiftTime: 0.35,
@@ -113,7 +114,7 @@ export const VEHICLE_SPECS = {
   },
   // Tracteur 110 ch (4 cylindres diesel 4,5 l), 480 N·m, inverseur et 6 rapports sous charge, 40 km/h, 4 roues motrices.
   tractor: {
-    ...CAR_BASE, name: 'Tracteur', massEmpty: 5600, zFront: 1.55, zRear: -0.95, track: 1.9, cgEmpty: 0.15, cgHeight: 1.1, wheelR: 0.82, wheelRFront: 0.52,
+    ...CAR_BASE, name: t('Tracteur'), massEmpty: 5600, zFront: 1.55, zRear: -0.95, track: 1.9, cgEmpty: 0.15, cgHeight: 1.1, wheelR: 0.82, wheelRFront: 0.52,
     idle: 850, maxRpm: 2200, cutRpm: 2350, fuel: 'diesel', tank: 160, idleLph: 1.1, bsfc: 220, refL100: 22, cyl: 4, awd: true,
     torque: [[700, 250], [1000, 400], [1400, 480], [1600, 480], [2000, 410], [2200, 350], [2350, 0]], maxTorque: 480,
     gears: [5.2, 3.6, 2.5, 1.7, 1.25, 1.0], reverse: 4.5, final: 17, shiftTime: 0.35,

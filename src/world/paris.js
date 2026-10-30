@@ -8,6 +8,7 @@
 // update(), seulement quand le joueur est à Paris.
 import * as THREE from 'three';
 import { PARIS, PARIS_FLOOR } from './sites.js';
+import { t, T, LANG, num } from '../core/i18n.js';
 import { box, cyl } from './shapes.js';
 import { partsToGeo } from './builders.js';
 import { barnGeo } from './barns.js';
@@ -152,7 +153,7 @@ export class ParisZone {
     // Enseignes rétroéclairées (lisibles de nuit).
     for (const [tex, w, x, yy, z, rot] of [
       [signTexture('GRAND PRIX DE PARIS INDOOR', 'CSI 5* · SPRINT · GRAND PRIX', { dark: true, w: 1024, h: 160 }), 34, X, ty + 10.5, Z + HD + 0.32, 0],
-      [signTexture('GRAND PRIX DE PARIS INDOOR', 'PADDOCK · ENTRÉE DES CAVALIERS', { dark: true, w: 1024, h: 160 }), 22, X - HW - 0.32, ty + 9.5, Z - 6, -Math.PI / 2],
+      [signTexture('GRAND PRIX DE PARIS INDOOR', t('PADDOCK · ENTRÉE DES CAVALIERS'), { dark: true, w: 1024, h: 160 }), 22, X - HW - 0.32, ty + 9.5, Z - 6, -Math.PI / 2],
     ]) {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, (w * 160) / 1024), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: '#d8d8d8' }));
       m.position.set(x + Math.sin(rot) * 0.05, yy, z + Math.cos(rot) * 0.05);
@@ -300,10 +301,10 @@ export class ParisZone {
 
     // ---------- Parking, éclairage, panneaux ----------
     for (const [lx, lz] of [[-176, -4], [-176, 18], [-150, -12], [-150, 24], [-124, -4], [-124, 18], [-60, 44], [-20, 44], [20, 44]]) W.lamp(X + lx, Z + lz, Math.PI / 2);
-    W.signboard('PARIS', 'Grand Prix de Paris Indoor · Paddock · Écuries', PARIS.park.x + 14, PARIS.park.z + 15, 0, { w: 5.6 });
-    W.signboard('A13 · DEAUVILLE CITY', 'Autoroute de Normandie · 200 km', PARIS.exit.x + 6, PARIS.exit.z - 7, Math.PI / 2, { w: 5.6 });
+    W.signboard('PARIS', t('Grand Prix de Paris Indoor · Paddock · Écuries'), PARIS.park.x + 14, PARIS.park.z + 15, 0, { w: 5.6 });
+    W.signboard('A13 · DEAUVILLE CITY', t('Autoroute de Normandie · 200 km'), PARIS.exit.x + 6, PARIS.exit.z - 7, Math.PI / 2, { w: 5.6 });
     // Côté Deauville : bretelle de l'autoroute au bout de la route Est-Ouest.
-    W.signboard('A13 · PARIS', 'Autoroute de Normandie · 200 km', 540, -110, -Math.PI / 2, { w: 5.2 });
+    W.signboard('A13 · PARIS', t('Autoroute de Normandie · 200 km'), 540, -110, -Math.PI / 2, { w: 5.2 });
 
     // ---------- Paris au loin ----------
     this._skyline(W, y);
@@ -406,10 +407,10 @@ export class ParisZone {
     if (hud) {
       c.font = '700 64px Inter, Helvetica, Arial, sans-serif';
       c.fillStyle = hud.over ? '#ff5a4a' : '#f4f3ef';
-      c.fillText(hud.started ? hud.t.toFixed(2).replace('.', ',') : `${Math.max(0, Math.ceil(hud.bell))}`, W / 2 - 60, 228);
+      c.fillText(hud.started ? num(hud.t, 2) : `${Math.max(0, Math.ceil(hud.bell))}`, W / 2 - 60, 228);
       c.font = '700 40px Inter, Helvetica, Arial, sans-serif';
       c.fillStyle = hud.pen ? '#ff5a4a' : '#5ad18a';
-      c.fillText(`${hud.pen} pt${hud.pen > 1 ? 's' : ''}`, W / 2 + 150, 222);
+      c.fillText(hud.pen > 1 || (LANG !== 'fr' && hud.pen === 0) ? T`${hud.pen} pts` : T`${hud.pen} pt`, W / 2 + 150, 222);
     } else if (info.big) {
       c.font = '700 48px Inter, Helvetica, Arial, sans-serif';
       c.fillStyle = '#f4f3ef';
