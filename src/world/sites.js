@@ -12,6 +12,7 @@ export const HOME = {
   club: { x: -67, z: 205, w: 12, d: 8 }, // club-house, baie vitrée et terrasse sur la carrière
   yard: { x: -112, z: 174, w: 120, d: 30 },
   truck: { x: -64, z: 158, rot: Math.PI / 2 },
+  master: { x: -64, z: 165.5, rot: Math.PI / 2 }, // van STX Renault Master, pont latéral (droite) vers la cour
   spawn: { x: -104, z: 168, rot: 0.35 },
   horse: { x: -112, z: 165, rot: Math.PI / 2 },
 };

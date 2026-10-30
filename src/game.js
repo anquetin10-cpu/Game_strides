@@ -23,6 +23,9 @@ import { TRUCK_DIM } from './entities/truckModel.js';
 import { TRUCK_SPEC } from './entities/truckPhysics.js';
 import { loadStx, buildStxModel, STX_DIM, STX_FILE } from './entities/stxModel.js';
 import { Vehicle } from './entities/vehicle.js';
+import { loadMaster, buildMasterModel, MASTER_FILE } from './entities/masterModel.js';
+import { HorseVan } from './entities/horseVan.js';
+import { VanLoading } from './gameplay/vanLoading.js';
 import { Online, boardById } from './core/online.js';
 import { FollowCamera } from './entities/camera.js';
 import { Player } from './gameplay/player.js';
@@ -209,6 +212,21 @@ export class Game {
       v.home = d;
       this.drivables.push(v);
       this.vehicles.push(v);
+    }
+    // Van porte-chevaux STX Renault Master (modèle fourni, voir masterModel.js) : véhicule distinct du camion Strides,
+    // garé à l'Écurie du Val, chargement des chevaux par son pont latéral. Fichier absent ou incomplet : erreur signalée
+    // (console et message en jeu), le reste du jeu continue sans le van.
+    this.vanModelInfo = { file: MASTER_FILE, loaded: false, error: null };
+    try {
+      this.van = new HorseVan(this, buildMasterModel(await loadMaster()), { x: HOME.master.x, z: HOME.master.z, heading: HOME.master.rot });
+      this.drivables.push(this.van);
+      this.vehicles.push(this.van);
+      this.vanLoading = new VanLoading(this, this.van);
+      this.vanModelInfo.loaded = true;
+    } catch (e) {
+      console.error(`Van STX Renault Master NON chargé (${MASTER_FILE}).`, e);
+      this.vanModelInfo.error = String(e?.message || e);
+      this.van = null;
     }
     this.spawnMainHorse(d.activeHorse);
     this.ambient = new Ambient(this);
@@ -845,6 +863,7 @@ export class Game {
       x: door ? door.x : f.x, z: door ? door.z : f.z, heading: door ? door.heading : p.heading,
       horse: this.mainHorse ? { x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, heading: this.mainHorse.heading } : null,
       truck: { x: this.truck.pos.x, z: this.truck.pos.z, heading: this.truck.heading },
+      master: this.van ? { x: this.van.pos.x, z: this.van.pos.z, heading: this.van.heading } : undefined,
       // Véhicules déplacés par le joueur (indice dans la liste des véhicules garés à l'origine).
       vehicles: this.drivables.map((v, i) => (v.home && !v.atSpot ? { i: this.world.parkedVehicles.indexOf(v.home), x: v.pos.x, z: v.pos.z, heading: v.heading } : null)).filter((v) => v && v.i >= 0),
     };
@@ -885,6 +904,7 @@ export class Game {
     ts.dry = ts.fuelL <= 0;
     if (pos && this.save.data.started) {
       if (pos.truck) this.truck.setPosition(pos.truck.x, pos.truck.z, pos.truck.heading);
+      if (pos.master && this.van) this.van.setPosition(pos.master.x, pos.master.z, pos.master.heading);
       for (const sv of pos.vehicles || []) {
         const v = this.drivables.find((d) => d.home === this.world.parkedVehicles[sv.i]);
         if (v) {
@@ -1126,6 +1146,7 @@ export class Game {
     document.getElementById('touch').classList.remove('hidden');
     this.metrics.track('game_started', { mode: isNew ? 'new' : 'continue' });
     if (this.truckModelInfo?.error) this.hud.toast(t('Camion STX détaillé non chargé : camion de secours affiché.'));
+    if (this.vanModelInfo?.error) this.hud.toast(t('Van STX Renault Master non chargé : modèle introuvable ou incomplet.'));
     buildStableUpgrades(this);
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);
@@ -1271,6 +1292,7 @@ export class Game {
     this.interact.update();
     this.missions.update(sdt);
     this.travel.update();
+    this.vanLoading?.update(sdt);
     this.collectibles.update(dt);
     this.gps.update(dt);
     this.grass.update(dt, this.player.focus.pos);

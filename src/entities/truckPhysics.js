@@ -112,6 +112,18 @@ export const VEHICLE_SPECS = {
     maxSteer: 0.5, steerRate: 1.6, aLatSteer: 6.5, limiter: 50, cornerF: 9, cornerR: 10.5,
     shiftUp: [1500, 3800], shiftDown: [1050, 2000], shiftDownBrake: 1350, launch: [950, 1700], engineBrake: [18, 0.01], holdRpm: 1100,
   },
+  // Van porte-chevaux 2 places sur Renault Master 2.3 dCi 165 (diesel), 380 N·m de 1 500 à 2 750 tr/min, boîte robotisée
+  // 6 rapports, 3,5 t en charge (≈ 2,4 t à vide carrossé + 2 chevaux) : 110 km/h avec des chevaux. Essieux et roues du
+  // modèle fourni (masterModel.js) : empattement 4,32 m, voie 2,04 m, roues de 0,365 m.
+  master: {
+    ...CAR_BASE, name: t('Van Master STX'), massEmpty: 2400, massHorse: 550, zFront: 2.4, zRear: -1.92, track: 2.04, cgEmpty: 0.45, cgHeight: 1.0, wheelR: 0.365,
+    idle: 800, maxRpm: 4000, cutRpm: 4300, fuel: 'diesel', tank: 80, idleLph: 0.8, bsfc: 215, refL100: 11, cyl: 4, drive: 'front',
+    torque: [[700, 160], [1000, 260], [1500, 380], [2750, 380], [3500, 330], [4000, 260], [4300, 0]], maxTorque: 380,
+    gears: [4.45, 2.59, 1.66, 1.17, 0.9, 0.73], reverse: 4.2, final: 3.9, shiftTime: 0.4,
+    crr: 0.009, crrSoft: 0.04, cdA: 3.6, brakeDecel: 7.6, mu: 0.95, muSoft: 0.6,
+    maxSteer: 0.6, steerRate: 1.1, aLatSteer: 4.6, limiter: 30.5, cornerF: 8, cornerR: 10,
+    shiftUp: [1500, 3500], shiftDown: [1050, 1900], shiftDownBrake: 1300, launch: [950, 1600], engineBrake: [22, 0.012], holdRpm: 1100,
+  },
   // Tracteur 110 ch (4 cylindres diesel 4,5 l), 480 N·m, inverseur et 6 rapports sous charge, 40 km/h, 4 roues motrices.
   tractor: {
     ...CAR_BASE, name: t('Tracteur'), massEmpty: 5600, zFront: 1.55, zRear: -0.95, track: 1.9, cgEmpty: 0.15, cgHeight: 1.1, wheelR: 0.82, wheelRFront: 0.52,

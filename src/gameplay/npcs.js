@@ -528,7 +528,7 @@ export class Ambient {
       g.vehicles.push(c);
     });
     // Effets partagés avec les voitures conduisibles (roues, optiques).
-    this.fx = new TrafficFx(g.scene, this.cars.length + (g.drivables || []).filter((v) => !v.isTractor).length);
+    this.fx = new TrafficFx(g.scene, this.cars.length + (g.drivables || []).filter((v) => !v.isTractor && !v.ownModel).length);
     this._fxList = [];
   }
 
@@ -575,7 +575,7 @@ export class Ambient {
     const list = this._fxList;
     list.length = 0;
     for (const c of this.cars) list.push(c);
-    for (const v of g.drivables || []) if (!v.isTractor) list.push(v);
+    for (const v of g.drivables || []) if (!v.isTractor && !v.ownModel) list.push(v);
     this.fx.update(list, clamp(g.sky.nightFactor * 1.6 + g.sky.rain * 0.8, 0, 1));
     for (const p of this.people) {
       if (p.spectator) {

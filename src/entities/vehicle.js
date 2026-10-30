@@ -14,13 +14,15 @@ const TRACTOR = { L: 5.6, W: 2.4, wb: 2.5, r: 0.82, zc: 0.6 };
 let _uid = 0;
 
 export class Vehicle {
-  constructor(game, { kind = 'clio', color = '#7a7d84', x = 0, z = 0, heading = 0 } = {}) {
+  // model / geo : modèle fourni ({ root, body }) et encombrement (L, W, H, zc, seat, camDist) d'un véhicule qui n'est pas
+  // dessiné par les effets de la circulation (van porte-chevaux, voir horseVan.js).
+  constructor(game, { kind = 'clio', color = '#7a7d84', x = 0, z = 0, heading = 0, model = null, geo = null } = {}) {
     this.game = game;
     this.id = `veh${++_uid}`;
     this.kind = kind;
     this.color = color;
     this.isTractor = kind === 'tractor';
-    this.spec = this.isTractor ? TRACTOR : CARS[kind] || CARS.clio;
+    this.spec = geo || (this.isTractor ? TRACTOR : CARS[kind] || CARS.clio);
     this.sim = new TruckSim(VEHICLE_SPECS[kind] || VEHICLE_SPECS.clio);
     this.pos = new THREE.Vector3(x, 0, z);
     this.sim.pos = this.pos;
@@ -42,16 +44,18 @@ export class Vehicle {
     this.lightK = 0;
     this.susp = { p: 0, pv: 0, r: 0, rv: 0 };
     // Maillages : caisse (peinture vernie) et vitrage teinté ; le tracteur porte aussi ses quatre roues.
-    const root = new THREE.Group();
-    const body = new THREE.Group();
-    root.add(body);
-    const geo = this.isTractor ? tractorGeo(color, { split: true }) : carGeo(color, kind, { wheels: false, split: true });
-    const bm = new THREE.Mesh(geo.body, carMaterial());
-    bm.castShadow = true;
-    bm.receiveShadow = true;
-    const gm = new THREE.Mesh(geo.glass, glassMaterial());
-    gm.renderOrder = 3;
-    body.add(bm, gm);
+    const root = model ? model.root : new THREE.Group();
+    const body = model ? model.body : new THREE.Group();
+    if (!model) {
+      root.add(body);
+      const g = this.isTractor ? tractorGeo(color, { split: true }) : carGeo(color, kind, { wheels: false, split: true });
+      const bm = new THREE.Mesh(g.body, carMaterial());
+      bm.castShadow = true;
+      bm.receiveShadow = true;
+      const gm = new THREE.Mesh(g.glass, glassMaterial());
+      gm.renderOrder = 3;
+      body.add(bm, gm);
+    }
     this.wheelMeshes = [];
     if (this.isTractor) {
       const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 });
@@ -121,10 +125,11 @@ export class Vehicle {
   }
   // Recul de la caméra derrière le véhicule.
   get camDist() {
-    return this.isTractor ? 8 : 6.8;
+    return this.spec.camDist ?? (this.isTractor ? 8 : 6.8);
   }
   // Poste de conduite (repère de la caisse : x > 0 à gauche) : origine du personnage assis.
   get seat() {
+    if (this.spec.seat) return this.spec.seat;
     if (this.isTractor) return { x: 0, y: 1.25, z: -1.05 };
     const C = this.spec;
     const y0 = C.body[C.body.length - 1][1];
@@ -201,7 +206,7 @@ export class Vehicle {
     const c = this.collider;
     const cs = this.game.colliders;
     c.enabled = !this.driver;
-    c.top = this.pos.y + (this.isTractor ? 3 : 1.6);
+    c.top = this.pos.y + (this.spec.H ?? (this.isTractor ? 3 : 1.6));
     const h = this.sim.heading;
     const zc0 = this.spec.zc || 0;
     if (!force && Math.abs(c.x - this.pos.x - Math.sin(h) * zc0) < 0.05 && Math.abs(c.z - this.pos.z - Math.cos(h) * zc0) < 0.05 && Math.abs(c.rot - h) < 0.005) return;
