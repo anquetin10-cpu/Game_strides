@@ -49,7 +49,7 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 
 - **Grand Prix de Paris Indoor** (finale, hommage fictif aux grands concours en salle au format « Formule 1 » : aucun
   nom, logo ni identité visuelle réels) :
-  - **zone « Paris »** hors de la carte de Deauville : arène couverte de 80 × 40 m, tribunes pleines sur trois côtés,
+  - **zone « Paris »** hors de la carte de Deauville : arène couverte de 86 × 46 m, tribunes pleines sur trois côtés,
     cube d'écrans géants (couple en piste, chrono, résultats), faisceaux de spectacle ; paddock d'échauffement sous
     projecteurs, écuries provisoires, accréditations, parking des camions, silhouettes de Paris au loin ;
   - **voyage en camion** : à l'arrêt sur la bretelle de l'**autoroute A13** (bout est de la route Est-Ouest), le
@@ -58,8 +58,12 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   - **format** : un **Sprint à 1,50 m** (barème C : chrono, +4 s par barre) fixe la **grille de départ** du soir — le
     plus rapide part en dernier —, présentation des 40 cavaliers sur les écrans, puis le **Grand Prix à 1,60 m**
     (barème A au chrono, **barrage** des sans-faute), podium et dotation ; 39 concurrents simulés ;
+  - **tracés** (même outil que le Pôle : ligne du cavalier d'abord, abords de 14 m au moins) : Sprint à tournants
+    serrés (lignes sud et nord, petit côté est, diagonale finale vers le double 6A – 6B) ; Grand Prix avec 1 en
+    diagonale depuis l'entrée, ligne nord, double 4A – 4B au milieu, changement de main, mur et double 7A – 7B ;
+    marquage du tracé et zone d'appel posés sur le sable de l'arène ;
   - **défi à conditions fixes** « Défi du Grand Prix de Paris » dans l'app Activités : cheval fourni, 1,50 m,
-    20 h 30 en salle, départ directement dans l'arène, record par version.
+    20 h 30 en salle, temps accordé 41 s (v2), départ directement dans l'arène, record par version.
 - **Des jobs générés à l'infini** (coursier, transport, reconnaissance de parcours, soins), des **chronos libres**
   (plage, CSO, cross, hippodrome) et **20 fers d'or** cachés.
 - **Progression** : Groom → Cavalier → Pro vérifié → International → Légende 5★, avis clients étoilés, pourboires.
