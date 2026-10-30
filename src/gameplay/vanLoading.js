@@ -69,14 +69,14 @@ export class VanLoading {
     });
     // Pont latéral et volets.
     g.interact.add('van-side', {
-      label: '', icon: 'truck', r: 2.8, priority: 2.6, modes: ['foot'],
+      label: '', icon: 'truck', r: 2.8, priority: 1.6, modes: ['foot'],
       getPos: () => v.sidePoint(side, 0.2),
       when: () => idle() && (v.sideDoor.target === 1 ? v.sideDoor.t >= 1 : v.sideDoor.t <= 0) && !(v.sideDoor.target === 1 && led() && this.freeStall() >= 0),
       action: () => this.toggleSide(),
     });
     // Porte arrière (sellerie).
     g.interact.add('van-rear', {
-      label: '', icon: 'truck', r: 2.4, priority: 2.5, modes: ['foot'],
+      label: '', icon: 'truck', r: 2.4, priority: 1.5, modes: ['foot'],
       getPos: () => v.rearPoint(rear, 0.9),
       when: () => idle() && (v.rearDoor.target === 1 ? v.rearDoor.t >= 1 : v.rearDoor.t <= 0),
       action: () => {
