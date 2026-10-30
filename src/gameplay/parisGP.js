@@ -6,12 +6,13 @@
 //   des sans-faute) → podium. Les 39 autres couples sont simulés (résultats reproductibles par graine).
 import { PARIS } from '../world/sites.js';
 import { PARIS_COURSES, PARIS_WARM } from './parisCourse.js';
-import { courseSteps, timeAllowedFor, COURSE_SPEED } from './courses.js';
+import { courseSteps, timeAllowedFor, COURSE_SPEED, ordinal } from './courses.js';
 import { loadStep, unloadStep, driveStep } from './trip.js';
 import { A13 } from './travel.js';
 import { FIRST_NAMES, LAST_NAMES } from './data.js';
 import { HORSE_NAMES } from './ranking.js';
 import { dec, formatMoney, mulberry32 } from '../core/math.js';
+import { t, T, LANG } from '../core/i18n.js';
 
 // Réglages de l'épreuve.
 export const PARIS_GP = {
@@ -25,8 +26,9 @@ export const PARIS_GP = {
 };
 
 const ORG = { who: 'Margot Delaunay · Grand Prix de Paris Indoor', initials: 'MD' };
-const ordinal = (n) => (n === 1 ? '1re' : `${n}e`);
 const say = (text) => ({ ...ORG, text });
+// Points d'une manche : « 4 pt » en français (invariable), « 1 pt » / « 4 pts » en anglais.
+const pt = (n) => (n === 1 || LANG === 'fr' ? T`${n} pt` : T`${n} pts`);
 
 // Concurrents simulés : 39 couples de niveau international (noms du jeu, fictifs).
 export function parisRivals(seed, n = PARIS_GP.riders - 1) {
@@ -80,15 +82,15 @@ function table(rows, cols, me) {
 
 export const PARIS_MISSION = {
   id: 'gpparis', story: true, vertical: 'EVENEMENTS', category: 'Grand Prix', title: 'Grand Prix de Paris Indoor', level: 4, requires: ['gp'],
-  desc: 'L’invitation de ta carrière : 40 couples d’élite dans une arène couverte à Paris. Un Sprint à 1,50 m fixe la grille de départ, puis le Grand Prix à 1,60 m le soir, sous les projecteurs. Route en camion par l’autoroute A13.',
+  desc: t('L’invitation de ta carrière : 40 couples d’élite dans une arène couverte à Paris. Un Sprint à 1,50 m fixe la grille de départ, puis le Grand Prix à 1,60 m le soir, sous les projecteurs. Route en camion par l’autoroute A13.'),
   client: { name: 'Grand Prix de Paris Indoor', initials: 'GP', rating: 5.0, verified: true },
-  place: { x: A13.deauville.x, z: A13.deauville.z }, placeName: 'Paris · arène couverte', pay: 0, payLabel: `Dotation ${formatMoney(PARIS_GP.prizes.reduce((a, b) => a + b, 0) + PARIS_GP.sprintPrize)}`, xp: 1500, duration: '~15 min',
-  irl: 'les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.',
+  place: { x: A13.deauville.x, z: A13.deauville.z }, placeName: t('Paris · arène couverte'), pay: 0, payLabel: T`Dotation ${formatMoney(PARIS_GP.prizes.reduce((a, b) => a + b, 0) + PARIS_GP.sprintPrize)}`, xp: 1500, duration: '~15 min',
+  irl: t('les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.'),
   rate: (run) => (run.data.final === 1 ? 5 : run.data.final <= 3 ? 5 : run.data.final <= 10 ? 4 : 3),
-  review: (s, run) => (run.data.final === 1 ? 'Paris debout pour toi : une victoire historique.' : run.data.final <= 3 ? 'Sur le podium à Paris ! Un très grand moment.' : 'Merci d’avoir fait le spectacle à Paris. À l’année prochaine !'),
+  review: (s, run) => (run.data.final === 1 ? t('Paris debout pour toi : une victoire historique.') : run.data.final <= 3 ? t('Sur le podium à Paris ! Un très grand moment.') : t('Merci d’avoir fait le spectacle à Paris. À l’année prochaine !')),
   steps(game, run, S) {
     const main = () => game.mainHorse;
-    const nm = () => game.mainHorse?.name || 'ton cheval';
+    const nm = () => game.mainHorse?.name || t('ton cheval');
     const inParis = () => game.region === 'paris';
     const paris = () => game.world.paris;
     const seed = (run.data.seed ??= 4000 + Math.floor(Math.random() * 5000));
@@ -97,19 +99,19 @@ export const PARIS_MISSION = {
     const notInParis = (st) => ({ ...st, text: () => (inParis() ? '' : typeof st.text === 'function' ? st.text() : st.text), update: (r, dt) => inParis() || st.update(r, dt) });
     let official = null;
     const sprintSteps = courseSteps(game, run, S, {
-      courseId: 'paris_sprint', start: PARIS_COURSES.paris_sprint.start, finish: PARIS_COURSES.paris_sprint.finish, gate: PARIS.gate, gateText: 'Entre en piste : passe la porte des cavaliers, à l’ouest de l’arène',
+      courseId: 'paris_sprint', start: PARIS_COURSES.paris_sprint.start, finish: PARIS_COURSES.paris_sprint.finish, gate: PARIS.gate, gateText: t('Entre en piste : passe la porte des cavaliers, à l’ouest de l’arène'),
       timeAllowed: PARIS_GP.sprint.ta, heights: PARIS_COURSES.paris_sprint.heights(PARIS_GP.sprint.h), height: PARIS_GP.sprint.h,
       length: PARIS_COURSES.paris_sprint.length, trace: PARIS_COURSES.paris_sprint.trace, venue: 'paris', soft: true,
-      title: 'Sprint · Grand Prix de Paris Indoor', className: 'Sprint 1,50 m', place: 'Grand Prix de Paris Indoor', table: 'barème C (vitesse)',
-      rulesText: 'Barème C : chaque barre ajoute 4 secondes au chrono · deuxième refus : élimination. Le classement fixe la grille du Grand Prix : le plus rapide part en dernier.',
+      title: 'Sprint · Grand Prix de Paris Indoor', className: t('Sprint 1,50 m'), place: 'Grand Prix de Paris Indoor', table: t('barème C (vitesse)'),
+      rulesText: t('Barème C : chaque barre ajoute 4 secondes au chrono · deuxième refus : élimination. Le classement fixe la grille du Grand Prix : le plus rapide part en dernier.'),
       stable: 'Écurie du Val', bib: run.data.bib,
     });
     const gpSteps = (barrage = false) => courseSteps(game, run, S, {
-      courseId: 'paris_gp', start: PARIS_COURSES.paris_gp.start, finish: PARIS_COURSES.paris_gp.finish, gate: PARIS.gate, gateText: 'Entre en piste : passe la porte des cavaliers',
+      courseId: 'paris_gp', start: PARIS_COURSES.paris_gp.start, finish: PARIS_COURSES.paris_gp.finish, gate: PARIS.gate, gateText: t('Entre en piste : passe la porte des cavaliers'),
       timeAllowed: barrage ? Math.ceil(PARIS_GP.gp.ta * 0.86) : PARIS_GP.gp.ta, heights: PARIS_COURSES.paris_gp.heights(PARIS_GP.gp.h), height: PARIS_GP.gp.h,
       length: PARIS_COURSES.paris_gp.length, trace: PARIS_COURSES.paris_gp.trace, venue: 'paris', soft: true, present: !barrage,
-      title: barrage ? 'Barrage · Grand Prix de Paris Indoor' : 'Grand Prix de Paris Indoor', className: 'Grand Prix 1,60 m', place: 'Grand Prix de Paris Indoor',
-      table: barrage ? 'barrage au chrono' : 'barème A au chrono, barrage',
+      title: barrage ? t('Barrage · Grand Prix de Paris Indoor') : 'Grand Prix de Paris Indoor', className: t('Grand Prix 1,60 m'), place: 'Grand Prix de Paris Indoor',
+      table: barrage ? t('barrage au chrono') : t('barème A au chrono, barrage'),
       stable: 'Écurie du Val', bib: run.data.bib,
     });
     const screen = (info) => {
@@ -117,14 +119,14 @@ export const PARIS_MISSION = {
     };
     return [
       S.dialog([
-        say(`${game.save.data.playerName}, après ta victoire au Grand Prix CSI 5★, le Grand Prix de Paris Indoor t’invite : 40 couples d’élite, une arène couverte et un format pensé comme une course de Formule 1.`),
-        say('Le principe : un Sprint à 1,50 m, au chrono pur, décide de la grille de départ. Le soir, le Grand Prix à 1,60 m : le plus rapide du Sprint part en dernier. Barrage pour les sans-faute.'),
-        say(`Charge ${nm()} dans le camion Strides et prends l’autoroute A13, au bout de la route Est-Ouest. On t’attend au parking des camions.`),
+        say(T`${game.save.data.playerName}, après ta victoire au Grand Prix CSI 5★, le Grand Prix de Paris Indoor t’invite : 40 couples d’élite, une arène couverte et un format pensé comme une course de Formule 1.`),
+        say(t('Le principe : un Sprint à 1,50 m, au chrono pur, décide de la grille de départ. Le soir, le Grand Prix à 1,60 m : le plus rapide du Sprint part en dernier. Barrage pour les sans-faute.')),
+        say(T`Charge ${nm()} dans le camion Strides et prends l’autoroute A13, au bout de la route Est-Ouest. On t’attend au parking des camions.`),
       ]),
       notInParis(loadStep(game, S, { horse: main, name: nm() })),
-      notInParis(driveStep(game, S, { to: A13.deauville, text: 'Roule jusqu’à l’autoroute A13 — au bout de la route Est-Ouest', comfort: true })),
+      notInParis(driveStep(game, S, { to: A13.deauville, text: t('Roule jusqu’à l’autoroute A13 — au bout de la route Est-Ouest'), comfort: true })),
       S.custom({
-        text: () => (inParis() ? '' : 'Arrêté sur la bretelle : prends l’autoroute vers Paris (bouton « Autoroute A13 »)'),
+        text: () => (inParis() ? '' : t('Arrêté sur la bretelle : prends l’autoroute vers Paris (bouton « Autoroute A13 »)')),
         target: { x: A13.deauville.x, z: A13.deauville.z },
         radius: 10,
         update: () => inParis(),
@@ -134,30 +136,30 @@ export const PARIS_MISSION = {
         text: '',
         start(r) {
           r.data.bib ??= 100 + Math.floor(Math.random() * 40);
-          official = game.spawnHuman({ top: '#15161a', sleeve: '#15161a', pants: '#15161a', boots: '#121214', skin: '#d9a982', hair: '#2a1d14', ponytail: true }, PARIS.secretariat.x, PARIS.secretariat.z, Math.PI / 2, { name: 'Accréditations' });
+          official = game.spawnHuman({ top: '#15161a', sleeve: '#15161a', pants: '#15161a', boots: '#121214', skin: '#d9a982', hair: '#2a1d14', ponytail: true }, PARIS.secretariat.x, PARIS.secretariat.z, Math.PI / 2, { name: t('Accréditations') });
           r.onCleanup(() => game.despawn(official));
-          screen({ title: 'GRAND PRIX DE PARIS INDOOR', line1: 'CE SOIR · 20 H', line2: '40 couples · Sprint puis Grand Prix' });
+          screen({ title: 'GRAND PRIX DE PARIS INDOOR', line1: t('CE SOIR · 20 H'), line2: t('40 couples · Sprint puis Grand Prix') });
         },
         update: () => true,
       }),
-      S.interact(() => official.pos, 'Accréditation', 'Accréditations — retire ton dossard (entrée du parking)', { modes: ['foot', 'ride'], r: 3.6, icon: 'talk', onDo: () => (official.pose = 'wave') }),
+      S.interact(() => official.pos, t('Accréditation'), t('Accréditations — retire ton dossard (entrée du parking)'), { modes: ['foot', 'ride'], r: 3.6, icon: 'talk', onDo: () => (official.pose = 'wave') }),
       S.dialog(() => [
-        say(`Bienvenue à Paris ! ${nm()}, dossard n° ${run.data.bib}. Ton box est sous la tente des écuries provisoires.`),
-        say('Échauffement au paddock, à l’ouest de l’arène : deux sauts, puis passe la porte des cavaliers. Le Sprint commence dès que tu entres en piste.'),
+        say(T`Bienvenue à Paris ! ${nm()}, dossard n° ${run.data.bib}. Ton box est sous la tente des écuries provisoires.`),
+        say(t('Échauffement au paddock, à l’ouest de l’arène : deux sauts, puis passe la porte des cavaliers. Le Sprint commence dès que tu entres en piste.')),
       ]),
       S.custom({
-        text: () => (game.player.mode === 'ride' && game.player.horse === main() ? '' : `Selle et monte ${nm()}`),
+        text: () => (game.player.mode === 'ride' && game.player.horse === main() ? '' : T`Selle et monte ${nm()}`),
         target: () => main()?.pos,
         radius: 3,
         beacon: false,
         update: () => game.player.mode === 'ride' && game.player.horse === main(),
       }),
       S.custom({
-        text: () => `Échauffe-toi au paddock de Paris : sauts ${Math.min(2, run.data.warm || 0)}/2`,
+        text: () => T`Échauffe-toi au paddock de Paris : sauts ${Math.min(2, run.data.warm || 0)}/2`,
         target: { x: PARIS.warmup.x, z: PARIS.warmup.z },
         radius: 8,
         beacon: false,
-        hint: 'Saute le vertical et l’oxer du paddock (au galop), puis rejoins la porte des cavaliers.',
+        hint: t('Saute le vertical et l’oxer du paddock (au galop), puis rejoins la porte des cavaliers.'),
         start(r) {
           r.data.warm = 0;
           game.obstacles.resetRails(PARIS_WARM);
@@ -175,13 +177,13 @@ export const PARIS_MISSION = {
         start() {
           game.obstacles.showParisCourse('paris_sprint');
           paris().showTarget = 0.4;
-          screen({ title: 'SPRINT · 1,50 M', line1: `${game.save.data.playerName} · ${nm()}`, line2: 'Barème C · grille du Grand Prix' });
+          screen({ title: t('SPRINT · 1,50 M'), line1: `${game.save.data.playerName} · ${nm()}`, line2: t('Barème C · grille du Grand Prix') });
         },
         update: () => true,
       }),
       ...sprintSteps,
       S.custom({
-        text: 'Classement du Sprint…',
+        text: t('Classement du Sprint…'),
         start(r) {
           const st = r.data.course;
           const me = { rider: game.save.data.playerName, horse: nm(), me: true, rails: railsOf(st), time: Math.round(st.t * 100) / 100 };
@@ -200,17 +202,17 @@ export const PARIS_MISSION = {
           r.flags.ok = false;
           game.screens.card({
             kicker: 'Sprint · Grand Prix de Paris Indoor',
-            title: st.eliminated ? 'Éliminé du Sprint' : rank === 1 ? 'Vainqueur du Sprint !' : `${ordinal(rank)} du Sprint`,
-            html: `<div class="cso-pres"><div class="k">Chrono</div><div class="v">${st.eliminated ? '—' : `${dec(me.time, 2)} s`}</div><div class="k">Barres</div><div class="v">${me.rails} (+${me.rails * PARIS_GP.sprint.railSeconds} s)</div><div class="k">Temps retenu</div><div class="v">${st.eliminated ? 'éliminé' : `${dec(me.score, 2)} s`}</div><div class="k">Grille du Grand Prix</div><div class="v">départ en ${ordinal(r.data.order)} position sur ${PARIS_GP.riders}${rank === 1 ? ' (le dernier : la meilleure place)' : ''}</div></div>${table(ranked.filter((x) => rows.includes(x)), [(x) => `${x.rails} b.`, (x) => (x.score > 900 ? 'élim.' : `${dec(x.score, 2)} s`)], me)}`,
-            buttons: [{ label: 'Vers le Grand Prix', primary: true, id: 'sprint-ok', run: () => (r.flags.ok = true) }],
+            title: st.eliminated ? t('Éliminé du Sprint') : rank === 1 ? t('Vainqueur du Sprint !') : T`${ordinal(rank)} du Sprint`,
+            html: `<div class="cso-pres"><div class="k">${t('Chrono')}</div><div class="v">${st.eliminated ? '—' : `${dec(me.time, 2)} s`}</div><div class="k">${t('Barres')}</div><div class="v">${me.rails} (+${me.rails * PARIS_GP.sprint.railSeconds} s)</div><div class="k">${t('Temps retenu')}</div><div class="v">${st.eliminated ? t('éliminé') : `${dec(me.score, 2)} s`}</div><div class="k">${t('Grille du Grand Prix')}</div><div class="v">${T`départ en ${ordinal(r.data.order)} position sur ${PARIS_GP.riders}${rank === 1 ? t(' (le dernier : la meilleure place)') : ''}`}</div></div>${table(ranked.filter((x) => rows.includes(x)), [(x) => T`${x.rails} b.`, (x) => (x.score > 900 ? t('élim.') : `${dec(x.score, 2)} s`)], me)}`,
+            buttons: [{ label: t('Vers le Grand Prix'), primary: true, id: 'sprint-ok', run: () => (r.flags.ok = true) }],
           });
-          screen({ title: 'SPRINT · RÉSULTATS', line1: `1. ${ranked[0].rider} · ${dec(ranked[0].score, 2)} s`, line2: `${game.save.data.playerName} : ${ordinal(rank)}` });
+          screen({ title: t('SPRINT · RÉSULTATS'), line1: `1. ${ranked[0].rider} · ${dec(ranked[0].score, 2)} s`, line2: T`${game.save.data.playerName} : ${ordinal(rank)}` });
         },
         update: (r) => r.flags.ok,
       }),
       // ---------- Soirée : présentation des cavaliers ----------
       S.custom({
-        text: 'Présentation des cavaliers…',
+        text: t('Présentation des cavaliers…'),
         start(r) {
           const d = game.save.data;
           const day = Math.floor(d.gameTime / 86400);
@@ -223,14 +225,14 @@ export const PARIS_MISSION = {
           r.data.intro = 0;
           const names = [...rivals.slice(0, 3).map((x) => `${x.rider} · ${x.horse}`), `${d.playerName} · ${nm()}`];
           r.data.names = names;
-          game.hud.big('GRAND PRIX DE PARIS INDOOR', '20 h · Présentation des 40 cavaliers', 2600);
+          game.hud.big('GRAND PRIX DE PARIS INDOOR', t('20 h · Présentation des 40 cavaliers'), 2600);
         },
         update(r) {
           const k = Math.floor(r.stepT / 1.6);
           if (k !== r.data.intro && k >= 1 && k <= r.data.names.length) {
             r.data.intro = k;
             const n = r.data.names[k - 1];
-            screen({ title: 'PRÉSENTATION DES CAVALIERS', line1: n, line2: k === r.data.names.length ? `Départ en ${ordinal(r.data.order)} position` : '' });
+            screen({ title: t('PRÉSENTATION DES CAVALIERS'), line1: n, line2: k === r.data.names.length ? T`Départ en ${ordinal(r.data.order)} position` : '' });
             game.hud.big(n.split(' · ')[0].toUpperCase(), n.split(' · ')[1], 1500);
             game.audio.applause?.(0.7, 1.4);
           }
@@ -245,20 +247,22 @@ export const PARIS_MISSION = {
         const before = gpField(rivals, seed).slice(0, r0(run.data.order - 1));
         const clear = before.filter((x) => x.faults === 0);
         run.data.before = before;
-        return [say(`Tu pars en ${ordinal(run.data.order)} position. ${before.length ? `${before.length} couple${before.length > 1 ? 's sont passés' : ' est passé'} : ${clear.length} sans-faute${clear.length > 1 ? 's' : ''} pour le barrage.` : 'Tu ouvres le bal !'} Un sans-faute et tu es au barrage.`)];
+        const passed = before.length > 1 ? T`${before.length} couples sont passés` : T`${before.length} couple est passé`;
+        const clears = clear.length > 1 || (clear.length === 0 && LANG !== 'fr') ? T`${clear.length} sans-fautes` : T`${clear.length} sans-faute`;
+        return [say(T`Tu pars en ${ordinal(run.data.order)} position. ${before.length ? T`${passed} : ${clears} pour le barrage.` : t('Tu ouvres le bal !')} Un sans-faute et tu es au barrage.`)];
       }),
       // ---------- Grand Prix ----------
       S.custom({
         text: '',
         start(r) {
-          screen({ title: 'GRAND PRIX · 1,60 M', line1: `${game.save.data.playerName} · ${nm()}`, line2: `Départ n° ${run.data.order} sur ${PARIS_GP.riders}` });
+          screen({ title: t('GRAND PRIX · 1,60 M'), line1: `${game.save.data.playerName} · ${nm()}`, line2: T`Départ n° ${run.data.order} sur ${PARIS_GP.riders}` });
           // Étapes du Grand Prix créées maintenant (le relevé du Sprint reste lu jusque-là dans run.data.course).
           r.steps.splice(r.i + 1, 0, ...gpSteps(false));
         },
         update: () => true,
       }),
       S.custom({
-        text: 'Résultats du Grand Prix…',
+        text: t('Résultats du Grand Prix…'),
         start(r) {
           const st = r.data.course;
           const me = { rider: game.save.data.playerName, horse: nm(), me: true, faults: st.eliminated ? 99 : st.faults + st.timeFaults, time: Math.round(st.t * 100) / 100 };
@@ -269,16 +273,16 @@ export const PARIS_MISSION = {
           if (me.faults === 0 && clear.length) {
             // Barrage : on remonte en piste, au chrono.
             r.data.barrage = true;
-            game.hud.big('BARRAGE !', `${clear.length + 1} sans-faute · au chrono`, 2600);
+            game.hud.big(t('BARRAGE !'), T`${clear.length + 1} sans-faute · au chrono`, 2600);
             game.audio.cheer();
-            screen({ title: 'BARRAGE', line1: `${clear.length + 1} couples sans faute`, line2: 'Le chrono décide' });
+            screen({ title: t('BARRAGE'), line1: T`${clear.length + 1} couples sans faute`, line2: t('Le chrono décide') });
             r.steps.splice(r.i + 1, 0, ...gpSteps(true));
           }
         },
         update: () => true,
       }),
       S.custom({
-        text: 'Podium…',
+        text: t('Podium…'),
         start(r) {
           const me = r.data.gpMe;
           const field = r.data.gpField;
@@ -301,19 +305,19 @@ export const PARIS_MISSION = {
           paris().cheer = top ? 10 : 3;
           if (top) {
             game.celebrate();
-            game.hud.big(rank === 1 ? 'VAINQUEUR DU GRAND PRIX DE PARIS' : `${ordinal(rank)} PLACE · PODIUM`, `${game.save.data.playerName} et ${nm()}`, 3600);
+            game.hud.big(rank === 1 ? t('VAINQUEUR DU GRAND PRIX DE PARIS') : T`${ordinal(rank)} PLACE · PODIUM`, T`${game.save.data.playerName} et ${nm()}`, 3600);
           }
-          screen({ title: rank === 1 ? 'VAINQUEUR' : 'GRAND PRIX · CLASSEMENT', line1: `1. ${ranked[0].rider} · ${ranked[0].horse}`, line2: `${game.save.data.playerName} : ${ordinal(rank)}`, big: rank === 1 ? 'PARIS !' : '' });
+          screen({ title: rank === 1 ? t('VAINQUEUR') : t('GRAND PRIX · CLASSEMENT'), line1: `1. ${ranked[0].rider} · ${ranked[0].horse}`, line2: T`${game.save.data.playerName} : ${ordinal(rank)}`, big: rank === 1 ? t('PARIS !') : '' });
           const rows = ranked.slice(0, 10);
           if (!rows.includes(me)) rows.push(me);
-          r.resultTitle = rank === 1 ? 'Vainqueur du Grand Prix de Paris Indoor !' : `${ordinal(rank)} du Grand Prix de Paris Indoor`;
-          r.resultBody = `${r.data.barrage ? `Barrage : ${me.joFaults > 90 ? 'éliminé' : `${me.joFaults} pt en ${dec(me.joTime, 2)} s`} · ` : ''}Manche : ${me.faults > 90 ? 'éliminé' : `${me.faults} pt en ${dec(me.time, 2)} s`} · dotation ${formatMoney(r.payOverride || 0)}`;
+          r.resultTitle = rank === 1 ? t('Vainqueur du Grand Prix de Paris Indoor !') : T`${ordinal(rank)} du Grand Prix de Paris Indoor`;
+          r.resultBody = `${r.data.barrage ? T`Barrage : ${me.joFaults > 90 ? t('éliminé') : T`${pt(me.joFaults)} en ${dec(me.joTime, 2)} s`} · ` : ''}${T`Manche : ${me.faults > 90 ? t('éliminé') : T`${pt(me.faults)} en ${dec(me.time, 2)} s`} · dotation ${formatMoney(r.payOverride || 0)}`}`;
           r.flags.ok = false;
           game.screens.card({
-            kicker: 'Grand Prix de Paris Indoor · 1,60 m',
-            title: rank === 1 ? 'Victoire à Paris !' : rank <= 3 ? `${ordinal(rank)} place : sur le podium !` : `${ordinal(rank)} place`,
-            html: `<div class="cso-pres"><div class="k">Grille</div><div class="v">départ en ${ordinal(r.data.order)} position (Sprint : ${ordinal(r.data.sprintRank)})</div><div class="k">Manche</div><div class="v">${me.faults > 90 ? 'éliminé' : `${me.faults} pt · ${dec(me.time, 2)} s`}</div>${r.data.barrage ? `<div class="k">Barrage</div><div class="v">${me.joFaults > 90 ? 'éliminé' : `${me.joFaults} pt · ${dec(me.joTime, 2)} s`}</div>` : ''}<div class="k">Dotation</div><div class="v">${formatMoney(r.payOverride || 0)}</div></div>${table(rows.sort((a, b) => ranked.indexOf(a) - ranked.indexOf(b)), [(x) => (x.joTime !== undefined ? `JO ${x.joFaults} pt ${dec(x.joTime, 2)} s` : x.faults > 90 ? 'élim.' : `${x.faults} pt`), (x) => `${dec(x.time, 2)} s`], me)}`,
-            buttons: [{ label: 'Continuer', primary: true, id: 'gpparis-ok', run: () => (r.flags.ok = true) }],
+            kicker: t('Grand Prix de Paris Indoor · 1,60 m'),
+            title: rank === 1 ? t('Victoire à Paris !') : rank <= 3 ? T`${ordinal(rank)} place : sur le podium !` : T`${ordinal(rank)} place`,
+            html: `<div class="cso-pres"><div class="k">${t('Grille')}</div><div class="v">${T`départ en ${ordinal(r.data.order)} position (Sprint : ${ordinal(r.data.sprintRank)})`}</div><div class="k">${t('Manche')}</div><div class="v">${me.faults > 90 ? t('éliminé') : `${pt(me.faults)} · ${dec(me.time, 2)} s`}</div>${r.data.barrage ? `<div class="k">${t('Barrage')}</div><div class="v">${me.joFaults > 90 ? t('éliminé') : `${pt(me.joFaults)} · ${dec(me.joTime, 2)} s`}</div>` : ''}<div class="k">${t('Dotation')}</div><div class="v">${formatMoney(r.payOverride || 0)}</div></div>${table(rows.sort((a, b) => ranked.indexOf(a) - ranked.indexOf(b)), [(x) => (x.joTime !== undefined ? T`JO ${pt(x.joFaults)} ${dec(x.joTime, 2)} s` : x.faults > 90 ? t('élim.') : pt(x.faults)), (x) => `${dec(x.time, 2)} s`], me)}`,
+            buttons: [{ label: t('Continuer'), primary: true, id: 'gpparis-ok', run: () => (r.flags.ok = true) }],
           });
         },
         update: (r) => r.flags.ok,
@@ -321,8 +325,8 @@ export const PARIS_MISSION = {
     ];
   },
   after(game) {
-    game.hud.hint('Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.', 9000);
-    game.message('Grand Prix de Paris Indoor', 'GP', 'Merci pour ce Grand Prix ! Le parcours reste ouvert : retrouve-le dans l’app Activités, en défi à conditions fixes.');
+    game.hud.hint(t('Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.'), 9000);
+    game.message('Grand Prix de Paris Indoor', 'GP', t('Merci pour ce Grand Prix ! Le parcours reste ouvert : retrouve-le dans l’app Activités, en défi à conditions fixes.'));
   },
 };
 const r0 = (n) => Math.max(0, n);

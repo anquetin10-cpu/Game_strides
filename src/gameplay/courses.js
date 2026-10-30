@@ -9,6 +9,7 @@ import { coursePlanSvg, coursePlanLegend } from '../ui/coursePlan.js';
 import { formatMoney, dec, clamp } from '../core/math.js';
 import { HORSE, CONFIG } from '../config.js';
 import { PathAI } from '../entities/horse.js';
+import { t, T, LANG, num, euros } from '../core/i18n.js';
 
 // ---------- Parcours d'obstacles ----------
 // Temps accordé réglementaire : longueur du parcours (mesurée au tracé du cavalier) divisée par la vitesse imposée
@@ -30,8 +31,17 @@ function lineCrossed(L, p0, p1) {
   return s0 < 0 && s1 >= 0 && u < (L.w || 6) / 2 + 0.3;
 }
 
-const difficultyOf = (h) => (h < 1.08 ? 'Facile' : h < 1.18 ? 'Moyenne' : h < 1.35 ? 'Difficile' : 'Très difficile');
-const ordinal = (n) => (n === 1 ? '1re' : `${n}e`);
+const difficultyOf = (h) => (h < 1.08 ? t('Facile') : h < 1.18 ? t('Moyenne') : h < 1.35 ? t('Difficile') : t('Très difficile'));
+// Ordinal anglais : 1st, 2nd, 3rd, 4th, 11th, 21st…
+export const enOrdinal = (n) => {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+export const ordinal = (n) => (LANG === 'fr' ? (n === 1 ? '1re' : `${n}e`) : enOrdinal(n));
+// Ordinal masculin (« 2e refus »).
+const nth = (n) => (LANG === 'fr' ? `${n}e` : enOrdinal(n));
+// Points : « 0 pt », « 1 pt », « 4 pts » (anglais : « 0 pts »).
+const ptsText = (n) => (n > 1 || (n === 0 && LANG !== 'fr') ? T`${n} pts` : T`${n} pt`);
 
 // Épreuve sur un parcours d'obstacles. CSO : présentation (plan consultable), entrée en piste annoncée, cloche, chrono
 // lancé au passage de la ligne de départ, barème A au chrono, arrivée, bilan et classement (opts.result). Cross : départ
@@ -54,7 +64,7 @@ export function courseSteps(game, run, S, opts) {
   // Aide à l'appel : réglage du joueur, ou imposée par l'épreuve (défi à conditions fixes : aide complète).
   const aid = () => (opts.jumpAid === false ? 'off' : opts.jumpAid === true ? 'full' : settings().jumpAid || 'full');
   const startLine = cso && start?.rot === undefined ? CSO_START : start;
-  const title = opts.title || (cso ? 'Parcours du Pôle International' : 'Cross de Saint-Gatien');
+  const title = opts.title || (cso ? t('Parcours du Pôle International') : t('Cross de Saint-Gatien'));
   const fresh = (attempt = 1) => ({
     faults: 0, refusals: 0, fenceRefusals: 0, next: 1, t: 0, running: false, started: false, finished: false, timeFaults: 0,
     log: [], wrong: new Set(), bell: BELL_DELAY, attempt, eliminated: null,
@@ -75,35 +85,35 @@ export function courseSteps(game, run, S, opts) {
     const a = els.find((o) => /A$/.test(o.label || ''));
     const doubles = els.filter((o) => /A$/.test(o.label || '')).length;
     const n = els.length - doubles;
-    return `${n} obstacles${a ? ` dont un double (${a.label} – ${a.label.replace(/A$/, 'B')})` : ''} · ${length} m`;
+    return T`${n} obstacles${a ? T` dont un double (${a.label} – ${a.label.replace(/A$/, 'B')})` : ''} · ${length} m`;
   };
 
   // ---------- Présentation et plan ----------
   const showPlan = (back) => {
     game.screens.card({
-      kicker: 'Plan du parcours',
+      kicker: t('Plan du parcours'),
       title,
-      html: `${coursePlanSvg({ heights: heights || null, trace: opts.trace, venue: opts.venue })}<p class="plan-legend">${coursePlanLegend(opts.trace)} · ${length} m · temps accordé ${timeAllowed} s</p>`,
-      buttons: [{ label: 'Retour', id: 'plan-back', primary: true, run: back }],
+      html: `${coursePlanSvg({ heights: heights || null, trace: opts.trace, venue: opts.venue })}<p class="plan-legend">${coursePlanLegend(opts.trace)} · ${length} m · ${T`temps accordé ${timeAllowed} s`}</p>`,
+      buttons: [{ label: t('Retour'), id: 'plan-back', primary: true, run: back }],
     });
   };
   const showPresentation = (done) => {
     const h = horse();
     const rows = [
-      ['Épreuve', `${opts.className ? `${opts.className} · ` : ''}${opts.table || 'barème A au chrono'}`],
-      ['Hauteur', classH ? `${dec(classH, 2)} m · difficulté ${difficultyOf(classH).toLowerCase()}` : '—'],
-      ['Cheval engagé', h ? h.name : '—'],
-      ['Temps accordé', `${timeAllowed} s`],
-      ['Parcours', parcoursText()],
+      [t('Épreuve'), `${opts.className ? `${opts.className} · ` : ''}${opts.table || t('barème A au chrono')}`],
+      [t('Hauteur'), classH ? T`${dec(classH, 2)} m · difficulté ${difficultyOf(classH).toLowerCase()}` : '—'],
+      [t('Cheval engagé'), h ? h.name : '—'],
+      [t('Temps accordé'), `${timeAllowed} s`],
+      [t('Parcours'), parcoursText()],
     ];
     const jury = introLines().map((l) => l.text).join(' ');
     game.screens.card({
       kicker: `STRIDES · ${opts.place || 'Pôle International'}`,
       title,
-      html: `<div class="cso-pres">${rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join('')}</div>${jury ? `<p class="cso-jury">${jury}</p>` : ''}<p class="cso-rules">${opts.rulesText || 'Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.'}</p>`,
+      html: `<div class="cso-pres">${rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join('')}</div>${jury ? `<p class="cso-jury">${jury}</p>` : ''}<p class="cso-rules">${opts.rulesText || t('Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.')}</p>`,
       buttons: [
-        { label: 'Voir le plan', id: 'plan', run: () => showPlan(() => showPresentation(done)) },
-        { label: 'Entrer en piste', primary: true, id: 'enter', run: done },
+        { label: t('Voir le plan'), id: 'plan', run: () => showPlan(() => showPresentation(done)) },
+        { label: t('Entrer en piste'), primary: true, id: 'enter', run: done },
       ],
     });
   };
@@ -136,10 +146,10 @@ export function courseSteps(game, run, S, opts) {
       finish: fin,
       startLine,
       text: () => {
-        if (state.eliminated) return 'Éliminé';
-        if (cso && !state.started) return 'Franchis la ligne de départ';
+        if (state.eliminated) return t('Éliminé');
+        if (cso && !state.started) return t('Franchis la ligne de départ');
         const o = list()[state.next - 1];
-        return o ? `Obstacle n°${labelOf(o)}${/A$/.test(o.label || '') ? ' · double' : ''} sur ${list().length}` : 'Passe la ligne d’arrivée !';
+        return o ? T`Obstacle n°${labelOf(o)}${/A$/.test(o.label || '') ? t(' · double') : ''} sur ${list().length}` : t('Passe la ligne d’arrivée !');
       },
       target: () => {
         if (cso && !state.started) return startApproach;
@@ -164,15 +174,15 @@ export function courseSteps(game, run, S, opts) {
         };
         const notStarted = () => {
           if (state.started) return false;
-          game.hud.hint('Le chrono n’est pas lancé : franchis d’abord la <b>ligne de départ</b>.', 3000);
+          game.hud.hint(t('Le chrono n’est pas lancé : franchis d’abord la <b>ligne de départ</b>.'), 3000);
           return true;
         };
         const wrongCourse = (o) => {
           if (state.wrong.has(o.num)) return;
           state.wrong.add(o.num);
           game.audio.fault();
-          game.hud.toast(`Erreur de parcours : ce n’est pas le ${labelOf(list()[state.next - 1])}`);
-          game.hud.hint(`Erreur de parcours : saute l’obstacle <b>${labelOf(list()[state.next - 1])}</b> (repère vert).`, 3500);
+          game.hud.toast(T`Erreur de parcours : ce n’est pas le ${labelOf(list()[state.next - 1])}`);
+          game.hud.hint(T`Erreur de parcours : saute l’obstacle <b>${labelOf(list()[state.next - 1])}</b> (repère vert).`, 3500);
         };
         offs = [
           game.bus.on('obstacle:clear', ({ obstacle, dir }) => {
@@ -190,7 +200,7 @@ export function courseSteps(game, run, S, opts) {
               state.log.push({ label: labelOf(obstacle), kind: 'rail', cause, causeText });
               game.audio.fault();
               game.audio.crowdOoh?.();
-              game.hud.toast(`${kind === 'xc' ? 'Touché' : 'Barre'} au ${labelOf(obstacle)} · +4${causeText ? ` · ${causeText}` : ''}`);
+              game.hud.toast(kind === 'xc' ? T`Touché au ${labelOf(obstacle)} · +4${causeText ? ` · ${causeText}` : ''}` : T`Barre au ${labelOf(obstacle)} · +4${causeText ? ` · ${causeText}` : ''}`);
               advance();
             } else if (dir > 0) wrongCourse(obstacle);
           }),
@@ -206,24 +216,24 @@ export function courseSteps(game, run, S, opts) {
             game.audio.fault();
             game.audio.crowdOoh?.();
             // Refus dans une combinaison : on reprend la combinaison à son premier élément.
-            let msg = 'Fais une <b>volte</b> pour reprendre ton élan, puis représente l’obstacle.';
+            let msg = t('Fais une <b>volte</b> pour reprendre ton élan, puis représente l’obstacle.');
             if (/B$/.test(obstacle.label || '')) {
               const a = list().find((o) => o.label === obstacle.label.replace(/B$/, 'A'));
               if (a) {
                 state.next = a.num;
                 ob.highlight(courseId, state.next);
                 r.applyWaypoint();
-                msg = `Refus dans le double : reprends-le au <b>${a.label}</b>.`;
+                msg = T`Refus dans le double : reprends-le au <b>${a.label}</b>.`;
               }
             }
-            game.hud.toast(`Refus au ${labelOf(obstacle)} · +${pen}`);
+            game.hud.toast(T`Refus au ${labelOf(obstacle)} · +${pen}`);
             // Après l'arrêt, on repart au trot pour la volte (le cavalier reprend sa cadence ensuite).
             if (game.player.csoCadence !== undefined) game.player.csoCadence = Math.min(game.player.csoCadence, 4.6);
             if (state.refusals < maxRefusals && state.fenceRefusals < 3) game.hud.hint(msg, 3500);
           }),
         ];
-        if (cso) game.hud.hint('Joystick : <b>gauche/droite</b> pour tourner, <b>avant/arrière</b> pour la cadence (gardée). Franchis la <b>ligne de départ</b>, puis <b>SAUT</b> quand le bouton est <b>vert</b>.', 6000);
-        else game.hud.hint('Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.', 4000);
+        if (cso) game.hud.hint(t('Joystick : <b>gauche/droite</b> pour tourner, <b>avant/arrière</b> pour la cadence (gardée). Franchis la <b>ligne de départ</b>, puis <b>SAUT</b> quand le bouton est <b>vert</b>.'), 6000);
+        else game.hud.hint(t('Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.'), 4000);
       },
       update(r, dt) {
         const h = horse();
@@ -239,7 +249,7 @@ export function courseSteps(game, run, S, opts) {
             r.applyWaypoint();
           } else if (state.bell <= 0) {
             state.started = true;
-            game.hud.toast(`${BELL_DELAY} s écoulées : le chrono est lancé`);
+            game.hud.toast(T`${BELL_DELAY} s écoulées : le chrono est lancé`);
             r.applyWaypoint();
           }
         } else if (!state.finished) state.t += dt;
@@ -254,16 +264,16 @@ export function courseSteps(game, run, S, opts) {
         // Élimination : échec de la mission, ou (épreuve « souple ») fin du parcours avec le motif, la suite continuant.
         const out = (reason) => {
           game.audio.bell?.(2);
-          game.hud.big('ÉLIMINÉ', reason, 2600);
+          game.hud.big(t('ÉLIMINÉ'), reason, 2600);
           if (!soft) return { fail: reason };
           state.eliminated = reason;
           return true;
         };
-        if (game.player.mode !== 'ride') return out('Tu es descendu de cheval : éliminé.');
-        if (state.refusals >= maxRefusals) return out(`${maxRefusals}e refus : éliminé du parcours.`);
-        if (kind === 'xc' && state.fenceRefusals >= 3) return out('3e refus sur le même obstacle : éliminé du parcours.');
+        if (game.player.mode !== 'ride') return out(t('Tu es descendu de cheval : éliminé.'));
+        if (state.refusals >= maxRefusals) return out(T`${nth(maxRefusals)} refus : éliminé du parcours.`);
+        if (kind === 'xc' && state.fenceRefusals >= 3) return out(t('3e refus sur le même obstacle : éliminé du parcours.'));
         // Temps limite : le double du temps accordé.
-        if (state.t > timeAllowed * 2) return out('Temps limite dépassé : éliminé.');
+        if (state.t > timeAllowed * 2) return out(t('Temps limite dépassé : éliminé.'));
         if (state.started && state.next > list().length) {
           const crossed = fin.rot === undefined ? Math.hypot(P.x - fin.x, P.z - fin.z) < (fin.w || 6) : lineCrossed(fin, p0, P);
           if (crossed) {
@@ -272,7 +282,7 @@ export function courseSteps(game, run, S, opts) {
             const pts = state.faults + (cso ? Math.ceil(over - 1e-9) : Math.round(over * 0.4));
             game.audio.applause?.(pts === 0 ? 1.3 : 0.55, pts === 0 ? 4 : 2.6);
             if (pts === 0) game.audio.cheer();
-            game.hud.big(pts === 0 ? 'SANS FAUTE !' : `${pts} POINT${pts > 1 ? 'S' : ''}`, `${dec(state.t, 2)} s`, 2600);
+            game.hud.big(pts === 0 ? t('SANS FAUTE !') : pts > 1 ? T`${pts} POINTS` : T`${pts} POINT`, `${dec(state.t, 2)} s`, 2600);
             return true;
           }
         }
@@ -292,7 +302,7 @@ export function courseSteps(game, run, S, opts) {
         // CSO (barème A) : 1 point par seconde entamée ; cross : 0,4 point par seconde.
         state.timeFaults = kind === 'xc' ? Math.round(over * 0.4) : Math.ceil(over - 1e-9);
         run.resultTime = state.t;
-        run.resultTimeLabel = 'Chrono';
+        run.resultTimeLabel = t('Chrono');
       },
     });
   };
@@ -300,13 +310,13 @@ export function courseSteps(game, run, S, opts) {
   // ---------- Bilan, classement, récompense ----------
   const resultStep = () =>
     S.custom({
-      text: 'Résultats…',
+      text: t('Résultats…'),
       start(r) {
         const res = opts.result;
         const st = state;
         const out = !!st.eliminated;
         const total = st.faults + st.timeFaults;
-        const me = { rider: game.save.data.playerName, horse: horse()?.name || 'Cheval', faults: total, time: Math.round(st.t * 100) / 100, me: true };
+        const me = { rider: game.save.data.playerName, horse: horse()?.name || t('Cheval'), faults: total, time: Math.round(st.t * 100) / 100, me: true };
         const cls = { ta: timeAllowed, ...res.cls };
         const field = simulateField(cls, (res.seed ?? 7) + st.attempt * 31, res.n ?? 14);
         const ranked = rankResults(out ? field : [...field, me]);
@@ -314,9 +324,9 @@ export function courseSteps(game, run, S, opts) {
         const prizes = cls.prizes || [];
         let prize = 0;
         let reward;
-        if (out) reward = 'aucune (éliminé)';
-        else if (!prizes[rank - 1]) reward = 'hors dotation';
-        else if (r.data.rewarded) reward = `${formatMoney(prizes[rank - 1])} — dotation déjà reçue pour ta première manche classée`;
+        if (out) reward = t('aucune (éliminé)');
+        else if (!prizes[rank - 1]) reward = t('hors dotation');
+        else if (r.data.rewarded) reward = T`${formatMoney(prizes[rank - 1])} — dotation déjà reçue pour ta première manche classée`;
         else {
           prize = prizes[rank - 1];
           r.data.rewarded = true;
@@ -324,30 +334,30 @@ export function courseSteps(game, run, S, opts) {
           reward = formatMoney(prize);
         }
         res.onResult?.({ run: r, rank, prize, me, out, ranked, state: st, total });
-        const faultsTxt = st.log.filter((l) => l.kind !== 'clear').map((l) => (l.kind === 'refusal' ? `refus au ${l.label}` : `barre au ${l.label}${l.causeText ? ` (${l.causeText.toLowerCase()})` : ''}`));
+        const faultsTxt = st.log.filter((l) => l.kind !== 'clear').map((l) => (l.kind === 'refusal' ? T`refus au ${l.label}` : T`barre au ${l.label}${l.causeText ? ` (${l.causeText.toLowerCase()})` : ''}`));
         const rows = ranked.slice(0, 8);
         if (rank && !rows.includes(me)) rows.push(me);
         const table = `<table class="cso-rank">${rows.map((x) => {
           const k = ranked.indexOf(x) + 1;
-          return `<tr${x.me ? ' class="me"' : ''}><td>${k}</td><td>${x.rider} · ${x.horse}</td><td>${x.faults} pt${x.faults > 1 ? 's' : ''}</td><td>${dec(x.time, 2)} s</td><td>${prizes[k - 1] ? `${prizes[k - 1]} €` : ''}</td></tr>`;
+          return `<tr${x.me ? ' class="me"' : ''}><td>${k}</td><td>${x.rider} · ${x.horse}</td><td>${ptsText(x.faults)}</td><td>${dec(x.time, 2)} s</td><td>${prizes[k - 1] ? (LANG === 'fr' ? `${prizes[k - 1]} €` : euros(prizes[k - 1])) : ''}</td></tr>`;
         }).join('')}</table>`;
         const bilan = [
-          ['Chrono', out ? '—' : `${dec(st.t, 2)} s (accordé ${timeAllowed} s)`],
-          ['Fautes aux obstacles', faultsTxt.length ? `${st.faults} pts : ${faultsTxt.join(', ')}` : '0 · aucune'],
-          ['Pénalités de temps', out ? '—' : `${st.timeFaults} pt${st.timeFaults > 1 ? 's' : ''}`],
-          ['Total', out ? 'Éliminé' : `${total} pt${total > 1 ? 's' : ''}`],
-          ['Classement', out ? `éliminé · ${st.eliminated}` : `${ordinal(rank)} sur ${ranked.length}`],
-          ['Récompense', reward],
+          [t('Chrono'), out ? '—' : T`${dec(st.t, 2)} s (accordé ${timeAllowed} s)`],
+          [t('Fautes aux obstacles'), faultsTxt.length ? T`${st.faults} pts : ${faultsTxt.join(', ')}` : t('0 · aucune')],
+          [t('Pénalités de temps'), out ? '—' : ptsText(st.timeFaults)],
+          [t('Total'), out ? t('Éliminé') : ptsText(total)],
+          [t('Classement'), out ? T`éliminé · ${st.eliminated}` : T`${ordinal(rank)} sur ${ranked.length}`],
+          [t('Récompense'), reward],
         ];
         r.flags.res = null;
         game.screens.card({
-          kicker: `Résultats · ${res.title || title}${st.attempt > 1 ? ` · manche ${st.attempt}` : ''}`,
-          title: out ? 'Éliminé' : rank === 1 ? (total === 0 ? 'Victoire, sans faute !' : 'Victoire !') : total === 0 ? `Sans faute · ${ordinal(rank)}` : `${ordinal(rank)} place`,
+          kicker: T`Résultats · ${res.title || title}${st.attempt > 1 ? T` · manche ${st.attempt}` : ''}`,
+          title: out ? t('Éliminé') : rank === 1 ? (total === 0 ? t('Victoire, sans faute !') : t('Victoire !')) : total === 0 ? T`Sans faute · ${ordinal(rank)}` : T`${ordinal(rank)} place`,
           html: `<div class="cso-pres">${bilan.map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join('')}</div>${table}`,
           buttons: [
-            { label: 'Recommencer', id: 'cso-retry', run: () => (r.flags.res = 'retry') },
-            { label: 'S’entraîner', id: 'cso-train', run: () => (r.flags.res = 'train') },
-            { label: res.continueLabel || 'Continuer', primary: true, id: 'cso-done', run: () => (r.flags.res = 'done') },
+            { label: t('Recommencer'), id: 'cso-retry', run: () => (r.flags.res = 'retry') },
+            { label: t('S’entraîner'), id: 'cso-train', run: () => (r.flags.res = 'train') },
+            { label: res.continueLabel || t('Continuer'), primary: true, id: 'cso-done', run: () => (r.flags.res = 'done') },
           ],
         });
       },
@@ -363,7 +373,7 @@ export function courseSteps(game, run, S, opts) {
         if (v === 'train') r.data.afterTrain = true;
         // Le bilan tient lieu d'écran de résultat de la mission.
         r.resultCustom = (close) => {
-          if (r.payOverride) game.hud.toast(`Dotation versée : +${formatMoney(r.payOverride)}`, 'money');
+          if (r.payOverride) game.hud.toast(T`Dotation versée : +${formatMoney(r.payOverride)}`, 'money');
           close();
           if (r.data.afterTrain) setTimeout(() => game.activities?.startTraining?.(), 300);
         };
@@ -377,14 +387,14 @@ export function courseSteps(game, run, S, opts) {
     if (cso) {
       steps.push(
         S.custom({
-          text: 'Entrée en piste…',
+          text: t('Entrée en piste…'),
           start(r) {
             if (heights) ob.setHeights(courseId, heights);
             ob.resetRails(courseId);
             ob.highlight(courseId, 1);
             const h = horse();
             const bib = opts.bib ?? run.data.bib ?? 40 + (Math.floor(game.time) % 50);
-            game.hud.big(`N° ${bib} · ${game.save.data.playerName}`, `et ${h?.name || 'son cheval'}${opts.stable ? ` · ${opts.stable}` : ''}`, 2400);
+            game.hud.big(T`N° ${bib} · ${game.save.data.playerName}`, T`et ${h?.name || t('son cheval')}${opts.stable ? ` · ${opts.stable}` : ''}`, 2400);
             game.audio.applause?.(0.5, 2.2);
             void r;
           },
@@ -394,7 +404,7 @@ export function courseSteps(game, run, S, opts) {
           text: '',
           start() {
             game.audio.bell?.();
-            game.hud.big('CLOCHE', `Tu as ${BELL_DELAY} s pour franchir la ligne de départ`, 2000);
+            game.hud.big(t('CLOCHE'), T`Tu as ${BELL_DELAY} s pour franchir la ligne de départ`, 2000);
           },
           update: () => true,
         })
@@ -402,7 +412,7 @@ export function courseSteps(game, run, S, opts) {
     } else {
       steps.push(
         S.custom({
-          text: 'Prends ton élan…',
+          text: t('Prends ton élan…'),
           start() {
             if (heights) ob.setHeights(courseId, heights);
             ob.resetRails(courseId);
@@ -420,8 +430,8 @@ export function courseSteps(game, run, S, opts) {
   };
 
   const steps = [];
-  if (cso) steps.push(S.goto(opts.gate ?? CSO_GATE, opts.gateText || 'Entre en piste : rejoins l’entrée de la carrière', { r: 9, mode: 'ride' }));
-  else steps.push(S.goto(start, 'Rejoins le départ du cross', { r: 7, mode: 'ride' }));
+  if (cso) steps.push(S.goto(opts.gate ?? CSO_GATE, opts.gateText || t('Entre en piste : rejoins l’entrée de la carrière'), { r: 9, mode: 'ride' }));
+  else steps.push(S.goto(start, t('Rejoins le départ du cross'), { r: 7, mode: 'ride' }));
   if (!cso && intro) steps.push(S.dialog(intro));
   if (maxH) steps.push(S.custom({
     text: '',
@@ -430,13 +440,13 @@ export function courseSteps(game, run, S, opts) {
       const reach = h ? h.jumpPower + 0.2 + (h.mods?.clearance || 0) : 99;
       if (reach < maxH + 0.04) {
         r.flags.capWarn = true;
-        game.hud.dialog([{ who: 'Entraîneur', initials: 'EN', text: `Obstacles jusqu’à ${maxH.toFixed(2).replace('.', ',')} m : avec ${h.name} et cet équipement, tu plafonnes vers ${reach.toFixed(2).replace('.', ',')} m. Il faudra un cheval plus puissant ou une selle adaptée (Sellerie du Port, « Mes chevaux »), sinon les barres tomberont.` }], () => (r.flags.capWarn = false));
+        game.hud.dialog([{ who: t('Entraîneur'), initials: 'EN', text: T`Obstacles jusqu’à ${num(maxH, 2)} m : avec ${h.name} et cet équipement, tu plafonnes vers ${num(reach, 2)} m. Il faudra un cheval plus puissant ou une selle adaptée (Sellerie du Port, « Mes chevaux »), sinon les barres tomberont.` }], () => (r.flags.capWarn = false));
       }
     },
     update: (r) => !r.flags.capWarn,
   }));
   if (cso && opts.present !== false) steps.push(S.custom({
-    text: 'Présentation de l’épreuve',
+    text: t('Présentation de l’épreuve'),
     start(r) {
       r.flags.pres = false;
       showPresentation(() => (r.flags.pres = true));
@@ -455,7 +465,7 @@ export function totalPenalties(run) {
 
 // ---------- Anneaux de passage ----------
 const RING_GEO = new THREE.TorusGeometry(3.2, 0.22, 8, 32);
-export function checkpointSteps(game, run, S, points, { text = 'Passe dans les anneaux', mode = 'ride', timeLimit = null, r = 5.5 } = {}) {
+export function checkpointSteps(game, run, S, points, { text = t('Passe dans les anneaux'), mode = 'ride', timeLimit = null, r = 5.5 } = {}) {
   const group = new THREE.Group();
   const meshes = points.map((p, i) => {
     const m = new THREE.Mesh(RING_GEO, new THREE.MeshBasicMaterial({ color: '#f4f3ef', transparent: true, opacity: i === 0 ? 0.95 : 0.35 }));
@@ -661,12 +671,12 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
   };
   return [
     // Rendez-vous sur la piste, dans la ligne droite des tribunes, juste avant les stalles de départ.
-    S.goto({ x: HIPPO.x - 70, z: HIPPO.z - HIPPO.radius }, 'Rejoins la piste de l’hippodrome (ligne droite des tribunes)', { r: 8, mode: 'ride' }),
+    S.goto({ x: HIPPO.x - 70, z: HIPPO.z - HIPPO.radius }, t('Rejoins la piste de l’hippodrome (ligne droite des tribunes)'), { r: 8, mode: 'ride' }),
     S.dialog([
-      { who: 'Victor Girard', initials: 'VG', text: 'Un tour de piste, cinq adversaires. Le grand galop ne dure pas : garde de l’endurance pour la dernière ligne droite !' },
+      { who: 'Victor Girard', initials: 'VG', text: t('Un tour de piste, cinq adversaires. Le grand galop ne dure pas : garde de l’endurance pour la dernière ligne droite !') },
     ]),
     S.custom({
-      text: 'Place-toi dans les stalles…',
+      text: t('Place-toi dans les stalles…'),
       start(r) {
         r.flags.setup = false;
         game.fade(() => {
@@ -683,19 +693,19 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
       kind: 'race',
       text: () => {
         const pos = 1 + race.rivals.filter((r) => r.prog > race.player.prog).length;
-        return race.player.offTrack ? 'Reste sur la piste !' : `Position ${pos}/6 · Termine dans le top 3`;
+        return race.player.offTrack ? t('Reste sur la piste !') : T`Position ${pos}/6 · Termine dans le top 3`;
       },
       start(r) {
         race.started = true;
         race.rivals.forEach((x) => (x.horse.frozen = false));
         game.audio.cheer();
-        game.hud.hint('Maintiens <b>BOOST</b> par à-coups : l’endurance se recharge au galop normal.', 5000);
+        game.hud.hint(t('Maintiens <b>BOOST</b> par à-coups : l’endurance se recharge au galop normal.'), 5000);
         r.data.finishPos = null;
         void r;
       },
       update(r, dt) {
         race.t += dt;
-        if (game.player.mode !== 'ride') return { fail: 'Tu es descendu de cheval.' };
+        if (game.player.mode !== 'ride') return { fail: t('Tu es descendu de cheval.') };
         const onTrack = progress(game.player.horse, race.player, dt);
         race.player.offTrack = !onTrack;
         for (const rv of race.rivals) {
@@ -710,19 +720,19 @@ export function raceSteps(game, run, S, { onFinish } = {}) {
           race.order.push('player');
           r.data.finishPos = race.order.length;
           r.resultTime = race.t;
-          r.resultTimeLabel = 'Chrono';
+          r.resultTimeLabel = t('Chrono');
           game.audio.cheer();
           return true;
         }
-        if (race.t > 160) return { fail: 'Course terminée sans toi…' };
+        if (race.t > 160) return { fail: t('Course terminée sans toi…') };
         return false;
       },
     }),
     S.custom({
-      text: 'Ralentis après la ligne',
+      text: t('Ralentis après la ligne'),
       update(r) {
         onFinish?.(r.data.finishPos);
-        if (r.data.finishPos > 3) return { fail: `Tu termines ${r.data.finishPos}e. Il faut finir dans le top 3.` };
+        if (r.data.finishPos > 3) return { fail: T`Tu termines ${nth(r.data.finishPos)}. Il faut finir dans le top 3.` };
         return r.stepT > 1.5;
       },
     }),

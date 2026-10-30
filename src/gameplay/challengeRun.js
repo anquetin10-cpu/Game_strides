@@ -14,6 +14,7 @@ import { conditionText } from '../world/weather.js';
 import { signTexture } from '../world/textures.js';
 import { box, partsToGeo } from '../world/builders.js';
 import { ChallengeUI } from '../ui/challenge-screens.js';
+import { t, T } from '../core/i18n.js';
 
 // Panneau du défi, à droite de l'arche d'entrée du Pôle (face à l'allée d'arrivée).
 export const CHALLENGE_SIGN = { x: POLE.entrance.x + 11, z: POLE.entrance.z + 2.5, rot: 0 };
@@ -80,7 +81,7 @@ export class Challenges {
     );
     posts.castShadow = true;
     group.add(posts);
-    const mat = new THREE.MeshStandardMaterial({ map: signTexture('DÉFI DU PÔLE', 'DÉFI REJOUABLE · CONDITIONS FIXES · V1', { dark: true }) });
+    const mat = new THREE.MeshStandardMaterial({ map: signTexture(t('DÉFI DU PÔLE'), t('DÉFI REJOUABLE · CONDITIONS FIXES · V1'), { dark: true }) });
     for (const side of [1, -1]) {
       const p = new THREE.Mesh(new THREE.PlaneGeometry(w, hh), mat);
       p.position.set(0, postH + hh / 2, side * 0.05);
@@ -95,7 +96,7 @@ export class Challenges {
     g.colliders.addCircle(S.x + w / 2 - 0.25, S.z, 0.2, Infinity, 'sign');
     this.signMesh = group;
     g.interact.add('challenge:defi-pole', {
-      label: 'Défi du Pôle',
+      label: t('Défi du Pôle'),
       icon: 'target',
       r: 6,
       priority: 1.2,
@@ -111,11 +112,11 @@ export class Challenges {
   blocker() {
     const g = this.game;
     const p = g.player;
-    if (g.state !== 'play') return 'Reprends la partie d’abord.';
-    if (g.missions.active) return 'Termine ou abandonne ta mission en cours d’abord.';
-    if (p.transport?.busy) return 'Termine d’abord le chargement du camion.';
-    if (p.transport?.leading) return 'Lâche d’abord le cheval que tu mènes en main.';
-    if (p.human.carrying) return 'Pose d’abord ce que tu portes.';
+    if (g.state !== 'play') return t('Reprends la partie d’abord.');
+    if (g.missions.active) return t('Termine ou abandonne ta mission en cours d’abord.');
+    if (p.transport?.busy) return t('Termine d’abord le chargement du camion.');
+    if (p.transport?.leading) return t('Lâche d’abord le cheval que tu mènes en main.');
+    if (p.human.carrying) return t('Pose d’abord ce que tu portes.');
     return null;
   }
 
@@ -137,7 +138,7 @@ export class Challenges {
       vertical: 'EVENEMENTS',
       category: 'Défi',
       title: cfg.name,
-      desc: `${cfg.obstacles.length} obstacles à ${cfg.height} m, conditions fixes.`,
+      desc: T`${cfg.obstacles.length} obstacles à ${cfg.height} m, conditions fixes.`,
       client: null,
       place: V.start,
       placeName: cfg.place,
@@ -149,7 +150,7 @@ export class Challenges {
       steps: (game, run, S) => this._steps(cfg, run, S),
     };
     g.missions.start({ id: `challenge:${cfg.id}`, def, story: false, vertical: 'EVENEMENTS', category: 'Défi', title: cfg.name, pay: 0, xp: 0, place: V.start, placeName: cfg.place });
-    g.hud.big(cfg.name.toUpperCase(), `Défi rejouable · ${cfg.id}`, 2400);
+    g.hud.big(cfg.name.toUpperCase(), T`Défi rejouable · ${cfg.id}`, 2400);
     return true;
   }
 
@@ -194,7 +195,7 @@ export class Challenges {
     };
     steps.push(
       S.custom({
-        text: 'Résultat',
+        text: t('Résultat'),
         start: (r) => this._finish(cfg, r),
         update: () => true,
       })
@@ -323,9 +324,9 @@ export class Challenges {
     r.data.challengeRecord = rec;
     // Classement en ligne du défi (conditions identiques pour tous) : seulement un parcours terminé.
     if (!elim) g.reportScore(cfg.id, { pen: res.penalties, time: res.time, horse: res.horse });
-    r.resultTitle = elim ? 'Éliminé' : rec.isRecord ? 'Nouveau record' : 'Parcours terminé';
+    r.resultTitle = elim ? t('Éliminé') : rec.isRecord ? t('Nouveau record') : t('Parcours terminé');
     r.resultTime = st.t;
-    r.resultTimeLabel = 'Chrono';
+    r.resultTimeLabel = t('Chrono');
   }
 
   // Restauration du monde du joueur (appelée au nettoyage de la tentative : fin, élimination ou abandon).

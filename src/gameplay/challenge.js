@@ -5,6 +5,7 @@
 // Règle de versionnage : une version publiée ne change plus. Toute modification d'une condition (parcours, hauteur,
 // cheval, météo, temps accordé, règle) crée une nouvelle version (`defi-pole-v2`…) avec son propre record.
 import { BUILD } from '../config.js';
+import { t, T, LANG, num, hourText } from '../core/i18n.js';
 
 const deepFreeze = (o) => {
   for (const v of Object.values(o)) if (v && typeof v === 'object') deepFreeze(v);
@@ -14,7 +15,7 @@ const deepFreeze = (o) => {
 export const DEFI_POLE_V1 = deepFreeze({
   id: 'defi-pole-v1',
   version: 1,
-  name: 'Défi du Pôle',
+  name: t('Défi du Pôle'),
   // Type de parcours (paramètre `course` de la mesure).
   course: 'cso',
   place: 'Pôle International',
@@ -28,7 +29,7 @@ export const DEFI_POLE_V1 = deepFreeze({
   // Cheval fourni : statistiques fixes, sans équipement ni amélioration, condition physique neutre.
   horse: { id: 'defi-onyx', name: 'Onyx', coat: 'black', blaze: false, socks: [true, false, false, false], speed: 1.13, jump: 1.06, stamina: 1.0, breed: 'KWPN', age: 8 },
   // Météo fixe : journée dégagée (jour 2 du cycle météo du jeu), 11 h, aucune pluie, sol sec.
-  weather: { label: 'Jour dégagé', day: 2, hour: 11, rain: 0, wet: 0 },
+  weather: { label: t('Jour dégagé'), day: 2, hour: 11, rain: 0, wet: 0 },
   // Aide au saut (anneau du bouton SAUT) activée.
   jumpAid: true,
   // Barème du défi (adaptation de jeu inspirée du barème A au chrono).
@@ -52,8 +53,8 @@ export const DEFI_POLE_V3 = deepFreeze({
   ...JSON.parse(JSON.stringify(DEFI_POLE_V2)),
   id: 'defi-pole-v3',
   version: 3,
-  timeAllowed: 41,
-  timeLimit: 82,
+  timeAllowed: 42,
+  timeLimit: 84,
 });
 
 // Version 4 : parcours dessiné de 10 obstacles avec un double (7A – 7B), lignes de départ et d'arrivée chronométrées,
@@ -85,7 +86,7 @@ export const DEFI_POLE_V5 = deepFreeze({
 export const DEFI_PARIS_V1 = deepFreeze({
   id: 'defi-paris-v1',
   version: 1,
-  name: 'Défi du Grand Prix de Paris',
+  name: t('Défi du Grand Prix de Paris'),
   course: 'cso',
   place: 'Grand Prix de Paris Indoor',
   courseId: 'paris_gp',
@@ -94,10 +95,10 @@ export const DEFI_PARIS_V1 = deepFreeze({
   timeAllowed: 34,
   timeLimit: 68,
   horse: { id: 'defi-lumiere', name: 'Lumière de Paris', coat: 'grey', blaze: true, socks: [true, true, false, false], speed: 1.15, jump: 1.24, stamina: 1.0, breed: 'Selle Français', age: 10 },
-  weather: { label: 'Soirée en salle', day: 2, hour: 20.5, rain: 0, wet: 0 },
+  weather: { label: t('Soirée en salle'), day: 2, hour: 20.5, rain: 0, wet: 0 },
   jumpAid: true,
   rules: { rail: 4, firstRefusal: 4, refusalsToEliminate: 2, timeFaultPerSecond: 1 },
-  where: 'Paris, arène couverte : départ directement en piste, sans trajet.',
+  where: t('Paris, arène couverte : départ directement en piste, sans trajet.'),
 });
 
 // Version 2 : arène agrandie (86 × 46 m) et Grand Prix redessiné (1 en diagonale depuis l'entrée, ligne nord, double
@@ -202,26 +203,27 @@ export function cleanPseudo(s) {
 }
 
 // Affichages.
-export const fmtSeconds = (t) => `${(Math.round(t * 100) / 100).toFixed(2).replace('.', ',')} s`;
-export const fmtHeight = (m) => `${m.toFixed(2).replace('.', ',')} m`;
+export const fmtSeconds = (s) => `${num(Math.round(s * 100) / 100, 2)} s`;
+export const fmtHeight = (m) => `${num(m, 2)} m`;
 // Heure du défi : « 11 h », « 20 h 30 ».
-export const fmtHour = (h) => `${Math.floor(h)} h${h % 1 ? ` ${String(Math.round((h % 1) * 60)).padStart(2, '0')}` : ''}`;
-export const fmtPenalties = (p) => `${p} ${p > 1 ? 'pts' : 'pt'}`;
+export const fmtHour = (h) => hourText(h);
+// Anglais : « 0 pts », « 1 pt », « 4 pts » (français : « 0 pt »).
+export const fmtPenalties = (p) => (p > 1 || (p === 0 && LANG !== 'fr') ? T`${p} pts` : T`${p} pt`);
 
 export function resultLine(res) {
   if (!res) return '—';
-  if (res.eliminated) return 'Éliminé';
+  if (res.eliminated) return t('Éliminé');
   return `${fmtPenalties(res.penalties)} · ${fmtSeconds(res.time)}`;
 }
 
 // Conditions lisibles (écran de départ, carte de résultat).
 export function conditionsList(cfg) {
   return [
-    ['Parcours', `${cfg.obstacles.length} obstacles · ${fmtHeight(cfg.height)}`],
-    ['Cheval fourni', `${cfg.horse.name} · statistiques fixes`],
-    ['Météo', `${cfg.weather.label} · ${fmtHour(cfg.weather.hour)} · sol sec`],
-    ['Temps accordé', `${cfg.timeAllowed} s`],
-    ['Aide au saut', cfg.jumpAid ? 'activée' : 'désactivée'],
+    [t('Parcours'), T`${cfg.obstacles.length} obstacles · ${fmtHeight(cfg.height)}`],
+    [t('Cheval fourni'), T`${cfg.horse.name} · statistiques fixes`],
+    [t('Météo'), T`${cfg.weather.label} · ${fmtHour(cfg.weather.hour)} · sol sec`],
+    [t('Temps accordé'), `${cfg.timeAllowed} s`],
+    [t('Aide au saut'), cfg.jumpAid ? t('activée') : t('désactivée')],
   ];
 }
 
@@ -229,16 +231,16 @@ export function conditionsList(cfg) {
 export function rulesText(cfg) {
   const r = cfg.rules;
   return [
-    `Pénalités d’abord : ${r.rail} points par barre tombée, ${r.firstRefusal} points au premier refus, élimination au ${r.refusalsToEliminate === 2 ? 'second' : `${r.refusalsToEliminate}e`} refus, ${r.timeFaultPerSecond} point par seconde entamée au-delà du temps accordé (${cfg.timeAllowed} s).`,
-    'Puis le chrono : à pénalités égales, le temps le plus court l’emporte.',
-    `Éliminé aussi si tu descends de cheval ou si tu dépasses ${cfg.timeLimit} s.`,
+    T`Pénalités d’abord : ${r.rail} points par barre tombée, ${r.firstRefusal} points au premier refus, élimination au ${r.refusalsToEliminate === 2 ? t('second') : T`${r.refusalsToEliminate}e`} refus, ${r.timeFaultPerSecond} point par seconde entamée au-delà du temps accordé (${cfg.timeAllowed} s).`,
+    t('Puis le chrono : à pénalités égales, le temps le plus court l’emporte.'),
+    T`Éliminé aussi si tu descends de cheval ou si tu dépasses ${cfg.timeLimit} s.`,
   ];
 }
 
 // Texte de partage (copie) : adresse publique de la partie sans paramètres ni ancre.
 export function shareText(cfg, res, url, pseudo = '') {
   const who = cleanPseudo(pseudo);
-  return `${cfg.name} (${cfg.id}) — ${res.eliminated ? 'éliminé' : `${fmtPenalties(res.penalties)} en ${fmtSeconds(res.time)}`} avec ${res.horse}${who ? ` · ${who}` : ''}. ${SIGNATURE} ${url}`;
+  return T`${cfg.name} (${cfg.id}) — ${res.eliminated ? t('éliminé') : T`${fmtPenalties(res.penalties)} en ${fmtSeconds(res.time)}`} avec ${res.horse}${who ? ` · ${who}` : ''}. ${SIGNATURE} ${url}`;
 }
 
 export function publicUrl(loc) {

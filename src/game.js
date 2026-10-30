@@ -7,6 +7,8 @@ import { Metrics } from './core/metrics.js';
 import { Audio } from './core/audio.js';
 import { Input } from './core/input.js';
 import { clamp, formatMoney, mulberry32 } from './core/math.js';
+import { t, T, LANG } from './core/i18n.js';
+import { enOrdinal } from './gameplay/courses.js';
 import { World } from './world/world.js';
 import { Colliders } from './world/colliders.js';
 import { POI, ZONES, shoreZ, forestDensity, nearestRoad, zoneDist, regionOf } from './world/layout.js';
@@ -153,7 +155,7 @@ export class Game {
     // Météo lue par les entités (robe mouillée du cheval) : intensité de pluie et humidité des surfaces.
     this.weather = { rain: 0, wetness: 0 };
     this.resize();
-    this.screens.setLoading(0.82, 'Chevaux et cavaliers');
+    this.screens.setLoading(0.82, t('Chevaux et cavaliers'));
     await new Promise((r) => setTimeout(r, 0));
 
     // Systèmes.
@@ -210,7 +212,7 @@ export class Game {
     }
     this.spawnMainHorse(d.activeHorse);
     this.ambient = new Ambient(this);
-    this.screens.setLoading(0.9, 'Fers d’or et parcours');
+    this.screens.setLoading(0.9, t('Fers d’or et parcours'));
     await new Promise((r) => setTimeout(r, 0));
     this.collectibles = new Collectibles(this);
     this.activities = new Activities(this);
@@ -227,13 +229,13 @@ export class Game {
     this.placeFromSave();
     this.updateWallet();
     this.audio.setEnabled(d.settings.sound);
-    this.screens.setLoading(0.97, 'Préparation des shaders');
+    this.screens.setLoading(0.97, t('Préparation des shaders'));
     await new Promise((r) => setTimeout(r, 0));
     this.sky.update(17.5, this.player.focus.pos, 0);
     this.sky.updateEnvironment(this.renderer, 0, true);
     this.renderer.compile(this.scene, this.camera);
     this.world.prewarmShops(this.renderer, this.camera);
-    this.screens.setLoading(1, 'Prêt');
+    this.screens.setLoading(1, t('Prêt'));
     this.screens.hideLoading();
     this.last = performance.now();
     this._fpsAcc = { t: 0, n: 0 };
@@ -420,7 +422,7 @@ export class Game {
     d.activeHorse = id;
     this.spawnMainHorse(id, at);
     if (wasRiding) this.player.mount();
-    this.hud.toast(`${HORSES[id].name} est sellé(e).`);
+    this.hud.toast(T`${HORSES[id].name} est sellé(e).`);
     this.saveSoon();
   }
 
@@ -429,14 +431,14 @@ export class Game {
     const hd = HORSES[id];
     if (d.horses.includes(id)) return false;
     if (d.money < hd.price) {
-      this.hud.toast('Solde insuffisant.');
+      this.hud.toast(t('Solde insuffisant.'));
       return false;
     }
     d.money -= hd.price;
     d.horses.push(id);
     this.updateWallet();
     this.audio.coin();
-    this.message('Normandie Horse Transport', 'NH', `Location pour la saison signée : ${hd.name} a été livré(e) à ton écurie. Sélectionne-le dans « Mes chevaux ».`);
+    this.message('Normandie Horse Transport', 'NH', T`Location pour la saison signée : ${hd.name} a été livré(e) à ton écurie. Sélectionne-le dans « Mes chevaux ».`);
     this.saveNow();
     return true;
   }
@@ -453,7 +455,7 @@ export class Game {
     if (!(name in sk) || !delta) return;
     const before = sk[name];
     sk[name] = Math.max(0, Math.min(100, Math.round((before + delta) * 10) / 10));
-    if (Math.floor(sk[name] / 10) > Math.floor(before / 10) && this.state === 'play') this.hud.toast(`Compétence ${SKILL_LABEL[name]} : ${Math.floor(sk[name])}/100`);
+    if (Math.floor(sk[name] / 10) > Math.floor(before / 10) && this.state === 'play') this.hud.toast(T`Compétence ${SKILL_LABEL[name]} : ${Math.floor(sk[name])}/100`);
     this.saveSoon();
   }
 
@@ -495,7 +497,7 @@ export class Game {
       return false;
     }
     if (d.money < u.price) {
-      this.hud.toast('Solde insuffisant.');
+      this.hud.toast(t('Solde insuffisant.'));
       return false;
     }
     this.save.grantOnce(`upgrade:${id}`, () => {
@@ -505,7 +507,7 @@ export class Game {
     this.updateWallet();
     this.audio.coin();
     buildStableUpgrades(this);
-    this.hud.toast(`${u.name} : installée au Val !`);
+    this.hud.toast(T`${u.name} : installée au Val !`);
     this.saveNow();
     return true;
   }
@@ -525,13 +527,13 @@ export class Game {
     this.saveNow();
     this.metrics.track('strides_cta_shown', { placement });
     this.screens.card({
-      kicker: 'Fin du chapitre 1',
-      title: 'Découvrir la vraie application Strides',
-      body: 'Ce que tu viens de jouer existe pour de vrai : sur Strides, les écuries et cavaliers trouvent des grooms, palefreniers, cavaliers et chauffeurs aux profils vérifiés, et les professionnels reçoivent des propositions de missions. Le jeu reste ouvert : ta partie est sauvegardée.',
+      kicker: t('Fin du chapitre 1'),
+      title: t('Découvrir la vraie application Strides'),
+      body: t('Ce que tu viens de jouer existe pour de vrai : sur Strides, les écuries et cavaliers trouvent des grooms, palefreniers, cavaliers et chauffeurs aux profils vérifiés, et les professionnels reçoivent des propositions de missions. Le jeu reste ouvert : ta partie est sauvegardée.'),
       buttons: [
-        { label: 'Plus tard', ghost: true, id: 'cta-later', run: () => ((d.flags.ctaDismissed = true), this.saveSoon()) },
-        { label: 'Je cherche un professionnel', id: 'cta-pro', run: () => ((d.flags.ctaClicked = true), this.openStrides(placement, 'pro')) },
-        { label: 'Je cherche des missions', primary: true, id: 'cta-missions', run: () => ((d.flags.ctaClicked = true), this.openStrides(placement, 'missions')) },
+        { label: t('Plus tard'), ghost: true, id: 'cta-later', run: () => ((d.flags.ctaDismissed = true), this.saveSoon()) },
+        { label: t('Je cherche un professionnel'), id: 'cta-pro', run: () => ((d.flags.ctaClicked = true), this.openStrides(placement, 'pro')) },
+        { label: t('Je cherche des missions'), primary: true, id: 'cta-missions', run: () => ((d.flags.ctaClicked = true), this.openStrides(placement, 'missions')) },
       ],
     });
     return true;
@@ -545,12 +547,12 @@ export class Game {
     const o = this.missions.offers.find((x) => x.id === `story:${cp.mission}`);
     if (!o) return;
     this.screens.card({
-      kicker: 'Mission en cours',
+      kicker: t('Mission en cours'),
       title: o.title,
-      body: 'Ta mission a été interrompue. Elle reprend au dernier point enregistré : tes choix et tes paiements sont conservés, rien n’est débité ni versé deux fois.',
+      body: t('Ta mission a été interrompue. Elle reprend au dernier point enregistré : tes choix et tes paiements sont conservés, rien n’est débité ni versé deux fois.'),
       buttons: [
-        { label: 'Plus tard', ghost: true, id: 'resume-later' },
-        { label: 'Reprendre', primary: true, id: 'resume-mission', run: () => this.missions.accept(o.id) },
+        { label: t('Plus tard'), ghost: true, id: 'resume-later' },
+        { label: t('Reprendre'), primary: true, id: 'resume-mission', run: () => this.missions.accept(o.id) },
       ],
     });
   }
@@ -563,9 +565,9 @@ export class Game {
       action: () => {
         g.player.locked = true;
         g.hud.dialog([
-          { who: 'Inès · Équipe Strides', initials: 'IS', text: `Bienvenue chez STRIDES, ${g.save.data.playerName} ! Ici, on construit l’app que tu utilises tous les jours.` },
-          { who: 'Inès · Équipe Strides', initials: 'IS', text: 'Grooms, palefreniers, cavaliers, chauffeurs, enseignants : sur Strides, les écuries et cavaliers trouvent le bon professionnel, au profil vérifié, avec un paiement sécurisé.' },
-          { who: 'Inès · Équipe Strides', initials: 'IS', text: 'Et dans la vraie vie, c’est pareil. Tu veux la découvrir ?' },
+          { who: t('Inès · Équipe Strides'), initials: 'IS', text: T`Bienvenue chez STRIDES, ${g.save.data.playerName} ! Ici, on construit l’app que tu utilises tous les jours.` },
+          { who: t('Inès · Équipe Strides'), initials: 'IS', text: t('Grooms, palefreniers, cavaliers, chauffeurs, enseignants : sur Strides, les écuries et cavaliers trouvent le bon professionnel, au profil vérifié, avec un paiement sécurisé.') },
+          { who: t('Inès · Équipe Strides'), initials: 'IS', text: t('Et dans la vraie vie, c’est pareil. Tu veux la découvrir ?') },
         ], () => {
           g.player.locked = false;
           g.openDownload('hq');
@@ -573,7 +575,7 @@ export class Game {
       },
     });
     this.interact.add('talk', {
-      label: 'Parler', icon: 'talk', r: 3.2, priority: 0.5, modes: ['foot', 'ride'],
+      label: t('Parler'), icon: 'talk', r: 3.2, priority: 0.5, modes: ['foot', 'ride'],
       getPos: () => this._talker?.pos || { x: 1e9, z: 1e9 },
       when: () => !!this._talker,
       action: () => {
@@ -651,9 +653,9 @@ export class Game {
       hintAt[key] = this.time;
       this.hud.hint(html, ms);
     };
-    b.on('horse:tooSlow', () => hintOnce('slow', 'Trop lent pour sauter : passe au <b>trot</b>.', 2500));
+    b.on('horse:tooSlow', () => hintOnce('slow', t('Trop lent pour sauter : passe au <b>trot</b>.'), 2500));
     b.on('horse:exhausted', (h) => {
-      if (this.player.mode === 'ride' && this.player.horse === h) hintOnce('tired', 'Cheval essoufflé : relâche <b>BOOST</b>.', 3500);
+      if (this.player.mode === 'ride' && this.player.horse === h) hintOnce('tired', t('Cheval essoufflé : relâche <b>BOOST</b>.'), 3500);
     });
     b.on('horse:bump', ({ horse }) => {
       if (horse.isPlayerHorse) {
@@ -665,18 +667,18 @@ export class Game {
     b.on('player:whistle', (h) => {
       a.whistle();
       setTimeout(() => a.neigh(), 700);
-      this.hud.toast(`${h.name} arrive !`);
+      this.hud.toast(T`${h.name} arrive !`);
     });
     b.on('obstacle:clear', ({ margin }) => {
       this.save.data.stats.jumps++;
       this.addSkill('equitation', 0.5);
-      if (!this.missions.active) this.hud.toast(margin > 0.3 ? 'Beau saut !' : 'Saut réussi');
+      if (!this.missions.active) this.hud.toast(margin > 0.3 ? t('Beau saut !') : t('Saut réussi'));
     });
     b.on('obstacle:fault', ({ obstacle, causeText }) => {
       this.save.data.stats.faults++;
       if (!this.missions.active) {
         a.fault();
-        this.hud.toast(`${obstacle.solid ? 'Touché !' : 'Barre !'}${causeText ? ` · ${causeText}` : ''}`);
+        this.hud.toast(`${obstacle.solid ? t('Touché !') : t('Barre !')}${causeText ? ` · ${causeText}` : ''}`);
       }
     });
     b.on('mission:complete', ({ run }) => {
@@ -793,7 +795,7 @@ export class Game {
   onCloudSave(online) {
     const c = online.cloudNewer;
     if (!c) return;
-    const when = new Date(c.savedAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+    const when = new Date(c.savedAt).toLocaleString(LANG === 'fr' ? 'fr-FR' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' });
     const adopt = () => {
       if (online.adoptCloudSave()) location.reload();
     };
@@ -807,17 +809,17 @@ export class Game {
       return;
     }
     if (this.state === 'play') {
-      this.message('Sauvegarde', 'S', `Une sauvegarde en ligne plus récente (${when}) existe. Pour la reprendre : Réglages → Sauvegarde automatique.`);
+      this.message('Sauvegarde', 'S', T`Une sauvegarde en ligne plus récente (${when}) existe. Pour la reprendre : Réglages → Sauvegarde automatique.`);
       return;
     }
     this.screens.card({
       top: true,
-      kicker: 'Sauvegarde en ligne',
-      title: 'Reprendre ta partie ?',
-      body: `Une sauvegarde plus récente que celle de cet appareil a été trouvée (${when}). Celle de cet appareil est gardée en copie de secours.`,
+      kicker: t('Sauvegarde en ligne'),
+      title: t('Reprendre ta partie ?'),
+      body: T`Une sauvegarde plus récente que celle de cet appareil a été trouvée (${when}). Celle de cet appareil est gardée en copie de secours.`,
       buttons: [
-        { label: 'Reprendre', primary: true, id: 'cloud-adopt', run: adopt },
-        { label: 'Garder cet appareil', ghost: true, id: 'cloud-keep', run: keep },
+        { label: t('Reprendre'), primary: true, id: 'cloud-adopt', run: adopt },
+        { label: t('Garder cet appareil'), ghost: true, id: 'cloud-keep', run: keep },
       ],
     });
   }
@@ -829,7 +831,7 @@ export class Game {
     this.online
       .submit(boardId, perf)
       .then((r) => {
-        if (r && r.rank) this.hud.toast(`${r.improved ? 'Classement en ligne' : 'Classement'} · ${b.title} : ${r.rank === 1 ? '1er' : `${r.rank}e`} sur ${r.total}`, 'star');
+        if (r && r.rank) this.hud.toast(T`${r.improved ? t('Classement en ligne') : t('Classement')} · ${b.title} : ${LANG !== 'fr' ? enOrdinal(r.rank) : r.rank === 1 ? '1er' : `${r.rank}e`} sur ${r.total}`, 'star');
       })
       .catch(() => {});
   }
@@ -908,13 +910,13 @@ export class Game {
     this.save.data.messages.push({ from, initials, text, read: false, t: Date.now() });
     this.saveSoon();
     if (this.state === 'play')
-      this.hud.notify({ app: 'MESSAGES', title: from, body: text, timeout: 7000, onTap: () => this.phone.open('messages', { conv: from }) });
+      this.hud.notify({ app: t('MESSAGES'), title: from, body: text, timeout: 7000, onTap: () => this.phone.open('messages', { conv: from }) });
   }
 
   contactPro(p) {
     this.bus.emit('pro:contact', p);
     if (this.missions.active?.def.id !== 'fer') {
-      this.hud.dialog([{ who: `${p.name} · ${p.job}`, initials: p.initials, text: `Bonjour ! J’ai bien reçu ta demande via Strides. ${p.avail}. Je t’envoie ma position.` }]);
+      this.hud.dialog([{ who: `${p.name} · ${p.job}`, initials: p.initials, text: T`Bonjour ! J’ai bien reçu ta demande via Strides. ${p.avail}. Je t’envoie ma position.` }]);
       this.gps.set(p.place, p.name);
     }
   }
@@ -938,12 +940,12 @@ export class Game {
     if (document.querySelector('.overlay [data-id="dl-back"]')) return;
     // Textes de strides-app.com : l'app est disponible sur l'App Store et Google Play.
     this.screens.card({
-      kicker: 'L’application mobile',
-      title: 'Emportez STRIDES avec vous',
-      body: 'Disponible sur l’App Store et Google Play. STRIDES connecte les écuries et cavaliers aux grooms, palefreniers, chauffeurs et enseignants vérifiés — partout en France, avec un paiement garanti et sécurisé pour chaque prestation.',
+      kicker: t('L’application mobile'),
+      title: t('Emportez STRIDES avec vous'),
+      body: t('Disponible sur l’App Store et Google Play. STRIDES connecte les écuries et cavaliers aux grooms, palefreniers, chauffeurs et enseignants vérifiés — partout en France, avec un paiement garanti et sécurisé pour chaque prestation.'),
       buttons: [
-        { label: 'Retour au jeu', id: 'dl-back' },
-        { label: 'Ouvrir strides-app.com', primary: true, id: 'dl-site', run: () => this.openSite() },
+        { label: t('Retour au jeu'), id: 'dl-back' },
+        { label: t('Ouvrir strides-app.com'), primary: true, id: 'dl-site', run: () => this.openSite() },
       ],
     });
   }
@@ -955,12 +957,12 @@ export class Game {
 
   share(source = 'game') {
     const url = location.href.split(/[?#]/)[0];
-    const data = { title: 'STRIDES Grand Tour', text: 'Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix. Par STRIDES.', url };
+    const data = { title: 'STRIDES Grand Tour', text: t('Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix. Par STRIDES.'), url };
     this.bus.emit('share', source);
     // En mode photo le HUD est masqué : le message s'affiche dans le cadre photo.
     const say = (m) => (this.state === 'photo' ? this.screens.photoToast(m) : this.hud.toast(m));
     const copy = () => {
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => say('Lien du jeu copié !'), () => say(url));
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => say(t('Lien du jeu copié !')), () => say(url));
       else say(url);
     };
     if (navigator.share) {
@@ -997,7 +999,7 @@ export class Game {
       }
       this.colliders.resolve(this.player.focus.pos, 1.2, -Infinity);
       this.player.locked = false;
-      this.hud.toast(`Transport Strides : arrivée — ${name}`);
+      this.hud.toast(T`Transport Strides : arrivée — ${name}`);
       this.saveNow();
     }, 0.8);
   }
@@ -1082,7 +1084,7 @@ export class Game {
       // Restauration : la copie est validée et migrée ; la page est rechargée pour repartir d'un état propre.
       onRestore: (key) => {
         if (this.save.restore(key)) location.reload();
-        else this.screens.card({ top: true, kicker: 'Sauvegarde', title: 'Copie illisible', body: 'Cette copie ne peut pas être restaurée non plus. Vous pouvez commencer une nouvelle partie ; la copie reste conservée dans le navigateur.', buttons: [{ label: 'Retour', primary: true, id: 'back' }] });
+        else this.screens.card({ top: true, kicker: t('Sauvegarde'), title: t('Copie illisible'), body: t('Cette copie ne peut pas être restaurée non plus. Vous pouvez commencer une nouvelle partie ; la copie reste conservée dans le navigateur.'), buttons: [{ label: t('Retour'), primary: true, id: 'back' }] });
       },
       onPlay: () => this.startGame(false),
       onNew: () => {
@@ -1123,17 +1125,17 @@ export class Game {
     this.hud.el.classList.remove('hidden');
     document.getElementById('touch').classList.remove('hidden');
     this.metrics.track('game_started', { mode: isNew ? 'new' : 'continue' });
-    if (this.truckModelInfo?.error) this.hud.toast('Camion STX détaillé non chargé : camion de secours affiché.');
+    if (this.truckModelInfo?.error) this.hud.toast(t('Camion STX détaillé non chargé : camion de secours affiché.'));
     buildStableUpgrades(this);
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);
     this.input.setEnabled(true);
     if (isNew) {
       this.screens.card({
-        kicker: 'Côte Fleurie · Normandie',
-        title: 'Bienvenue à Deauville City',
-        body: `${this.save.data.playerName}, tu arrives avec Comète, ta jument baie, et zéro euro en poche. Ici, tout le monde travaille avec STRIDES : les missions tombent sur ton téléphone. Accepte-les, réalise-les, construis ta réputation… jusqu’au Grand Prix.`,
-        buttons: [{ label: 'En selle', primary: true, id: 'go', run: () => (this.missions.timer = 2.5) }],
+        kicker: t('Côte Fleurie · Normandie'),
+        title: t('Bienvenue à Deauville City'),
+        body: T`${this.save.data.playerName}, tu arrives avec Comète, ta jument baie, et zéro euro en poche. Ici, tout le monde travaille avec STRIDES : les missions tombent sur ton téléphone. Accepte-les, réalise-les, construis ta réputation… jusqu’au Grand Prix.`,
+        buttons: [{ label: t('En selle'), primary: true, id: 'go', run: () => (this.missions.timer = 2.5) }],
       });
       this.missions.timer = 999;
     } else {
@@ -1156,7 +1158,7 @@ export class Game {
     ];
     for (const [p, kind] of pois) out.push({ x: p.x, z: p.z, kind, label: full ? p.name : '' });
     if (this.player.mode !== 'ride' && this.mainHorse && !this.mainHorse.hiddenInTruck) out.push({ x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, kind: 'horse', sticky: true, label: full ? this.mainHorse.name : '' });
-    if (!(this.player.mode === 'drive' && this.player.vehicle === this.truck)) out.push({ x: this.truck.pos.x, z: this.truck.pos.z, kind: 'truck', label: full ? 'Camion Strides' : '' });
+    if (!(this.player.mode === 'drive' && this.player.vehicle === this.truck)) out.push({ x: this.truck.pos.x, z: this.truck.pos.z, kind: 'truck', label: full ? t('Camion Strides') : '' });
     const f = this.player.focus.pos;
     for (const b of this.collectibles.blips()) if (Math.hypot(b.x - f.x, b.z - f.z) < 70) out.push(b);
     return out;
@@ -1237,7 +1239,7 @@ export class Game {
     }
     // Dans un commerce, le cheval reste attaché dehors : le sifflet ne le fait pas venir entre les rayons.
     if (canAct && input.wasPressed('whistle') && !this.missions.noWhistle) {
-      if (this.indoor) this.hud.toast(`${this.mainHorse?.name || 'Ton cheval'} t’attend dehors.`);
+      if (this.indoor) this.hud.toast(T`${this.mainHorse?.name || t('Ton cheval')} t’attend dehors.`);
       else this.player.whistle();
     }
 
@@ -1322,7 +1324,7 @@ export class Game {
     if (this._zoneT <= 0) {
       this._zoneT = 0.5;
       this._zone = this.zoneName(f.x, f.z, this._zone);
-      this.hud.setZone(this._zone);
+      this.hud.setZone(t(this._zone));
       this.phone.updateClock(this.clockText());
       if (this._pendingInvite) this.inviteStrides(this._pendingInvite);
     }

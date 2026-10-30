@@ -8,6 +8,7 @@ import { GATIEN, POLE } from '../world/sites.js';
 import { HIPPO } from '../world/layout.js';
 import { formatTime } from '../core/math.js';
 import { box, cyl, partsToGeo } from '../world/builders.js';
+import { t, T } from '../core/i18n.js';
 
 export class Activities {
   constructor(game) {
@@ -17,44 +18,44 @@ export class Activities {
     const lapStart = ovalPoint(HIPPO.half - 25, HIPPO_LAP.r);
     this.defs = [
       {
-        id: 'beach_sprint', name: 'Sprint de la plage', kind: 'Galop', desc: '8 anneaux le long de la mer, de l’Écurie des Dunes à Deauville City, sur le sable ferme au bord de l’eau (plus loin à marée basse).',
+        id: 'beach_sprint', name: t('Sprint de la plage'), kind: 'Galop', desc: t('8 anneaux le long de la mer, de l’Écurie des Dunes à Deauville City, sur le sable ferme au bord de l’eau (plus loin à marée basse).'),
         start: { x: 505, z: -385 },
         build: (g, run, S) => {
           const xs = [];
           for (let i = 0; i < 8; i++) xs.push(470 - i * 72);
           const pts = beachRingPoints(g, xs, { eta: (i) => 12 + i * 7, wobble: (i) => Math.sin(i * 1.7) * 4 });
-          return [checkpointSteps(g, run, S, pts, { text: 'Sprint de la plage', mode: 'ride' })];
+          return [checkpointSteps(g, run, S, pts, { text: t('Sprint de la plage'), mode: 'ride' })];
         },
       },
       {
-        id: 'cso_train', name: 'Parcours du Pôle', kind: 'CSO', desc: '8 obstacles et un double au Pôle International, 1,10 m, barème A au chrono.',
+        id: 'cso_train', name: t('Parcours du Pôle'), kind: 'CSO', desc: t('8 obstacles et un double au Pôle International, 1,10 m, barème A au chrono.'),
         start: { x: CSO_GATE.x, z: CSO_GATE.z },
         marker: { x: CSO_GATE.x + 6, z: CSO_GATE.z + 7 },
         build: (g, run, S) => courseSteps(g, run, S, {
           courseId: 'cso', start: CSO_START, finish: CSO_FINISH, timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), heights: csoHeights(1.1),
-          title: 'Prix STRIDES · Parcours du Pôle', className: 'Amateur 1,10 m', soft: true,
-          result: { cls: { id: 'am2', name: 'Prix STRIDES', prizes: [] }, seed: 5150, title: 'Prix STRIDES', continueLabel: 'Quitter l’épreuve' },
+          title: t('Prix STRIDES · Parcours du Pôle'), className: t('Amateur 1,10 m'), soft: true,
+          result: { cls: { id: 'am2', name: t('Prix STRIDES'), prizes: [] }, seed: 5150, title: t('Prix STRIDES'), continueLabel: t('Quitter l’épreuve') },
         }),
         penalties: true,
       },
       {
-        id: 'cso_warmup', name: 'Entraînement à l’abord', kind: 'CSO', desc: 'Un vertical et un oxer au paddock du Pôle, sans enjeu : trouve la bonne distance d’appel.',
+        id: 'cso_warmup', name: t('Entraînement à l’abord'), kind: 'CSO', desc: t('Un vertical et un oxer au paddock du Pôle, sans enjeu : trouve la bonne distance d’appel.'),
         start: { x: POLE.warmup.x + 12, z: POLE.warmup.z },
         build: (g, run, S) => trainingSteps(g, run, S),
         noRecord: true,
       },
       {
-        id: 'xc_train', name: 'Cross de Saint-Gatien', kind: 'Cross', desc: '10 obstacles en forêt, mare comprise.',
+        id: 'xc_train', name: t('Cross de Saint-Gatien'), kind: 'Cross', desc: t('10 obstacles en forêt, mare comprise.'),
         start: { x: GATIEN.start.x + 4, z: GATIEN.start.z },
         build: (g, run, S) => courseSteps(g, run, S, { courseId: 'xc', kind: 'xc', start: { x: GATIEN.start.x + 4, z: GATIEN.start.z }, finish: { x: GATIEN.start.x, z: GATIEN.start.z, w: 7 }, timeAllowed: 110 }),
         penalties: true,
       },
       {
-        id: 'hippo_lap', name: 'Tour de l’hippodrome', kind: 'Galop', desc: 'Un tour de piste chronométré. Gère l’endurance !',
+        id: 'hippo_lap', name: t('Tour de l’hippodrome'), kind: 'Galop', desc: t('Un tour de piste chronométré. Gère l’endurance !'),
         start: { x: lapStart[0], z: lapStart[1] },
         // Poteau du chrono derrière la lice extérieure (pas sur le sable de la piste).
         marker: { x: lapStart[0], z: HIPPO.z - HIPPO.radius - HIPPO.width / 2 - 1.5 },
-        build: (g, run, S) => [checkpointSteps(g, run, S, lap, { text: 'Tour de piste', mode: 'ride', r: HIPPO_LAP.pass })],
+        build: (g, run, S) => [checkpointSteps(g, run, S, lap, { text: t('Tour de piste'), mode: 'ride', r: HIPPO_LAP.pass })],
       },
     ];
     this._markers();
@@ -81,7 +82,7 @@ export class Activities {
       // Poteau fin : masqué au-delà de 300 m (un ou deux pixels), comme les obstacles.
       g.world.culled.push([m, m.position.x, m.position.z, 300]);
       g.interact.add(`act:${a.id}`, {
-        label: 'Chrono',
+        label: t('Chrono'),
         icon: 'target',
         r: 6,
         priority: 1,
@@ -112,17 +113,17 @@ export class Activities {
             start(r) {
               // Épreuve quittée après une élimination : pas de chrono à enregistrer.
               if (r.data.course?.eliminated) return;
-              const t = r.data.course ? r.data.course.t : r.t;
+              const tm = r.data.course ? r.data.course.t : r.t;
               const pen = a.penalties ? totalPenalties(r) : 0;
-              const score = t + pen;
+              const score = tm + pen;
               const rec = !best || score < best;
               if (rec) game.save.data.bestTimes[a.id] = score;
               // Classement en ligne : chrono et pénalités de cette performance.
-              game.reportScore(a.id, { pen, time: t, horse: game.player.horse?.name || '' });
-              r.resultTitle = rec ? 'Nouveau record' : 'Chrono';
+              game.reportScore(a.id, { pen, time: tm, horse: game.player.horse?.name || '' });
+              r.resultTitle = rec ? t('Nouveau record') : t('Chrono');
               r.resultTime = score;
-              r.resultTimeLabel = a.penalties ? 'Temps + pénalités' : 'Chrono';
-              r.resultBody = `${a.penalties ? `Pénalités : ${pen} · ` : ''}Meilleur : ${formatTime(Math.min(score, best || score))}`;
+              r.resultTimeLabel = a.penalties ? t('Temps + pénalités') : t('Chrono');
+              r.resultBody = `${a.penalties ? T`Pénalités : ${pen} · ` : ''}${T`Meilleur : ${formatTime(Math.min(score, best || score))}`}`;
             },
             update: () => true,
           })
@@ -150,10 +151,10 @@ function trainingSteps(game, run, S) {
   let aids = null;
   let offs = [];
   return [
-    S.goto({ x: POLE.warmup.x, z: POLE.warmup.z }, 'Rejoins le paddock d’échauffement du Pôle', { r: 18, mode: 'ride' }),
+    S.goto({ x: POLE.warmup.x, z: POLE.warmup.z }, t('Rejoins le paddock d’échauffement du Pôle'), { r: 18, mode: 'ride' }),
     S.custom({
-      text: () => `Entraînement : ${st.clean} saut${st.clean > 1 ? 's' : ''} sans faute sur ${st.jumps}`,
-      hint: 'Vertical au sud, oxer au nord. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.',
+      text: () => (st.clean > 1 ? T`Entraînement : ${st.clean} sauts sans faute sur ${st.jumps}` : T`Entraînement : ${st.clean} saut sans faute sur ${st.jumps}`),
+      hint: t('Vertical au sud, oxer au nord. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.'),
       hintMs: 7000,
       start(r) {
         ob.resetRails('warmup');
@@ -166,19 +167,19 @@ function trainingSteps(game, run, S) {
             if (obstacle.course !== 'warmup') return;
             st.jumps++;
             st.clean++;
-            say(`Sans faute · ${Math.round(margin * 100)} cm de marge${margin < 0.12 ? ' (juste : appel un peu long ou un peu près)' : ''}`);
+            say(margin < 0.12 ? T`Sans faute · ${Math.round(margin * 100)} cm de marge (juste : appel un peu long ou un peu près)` : T`Sans faute · ${Math.round(margin * 100)} cm de marge`);
           }),
           game.bus.on('obstacle:fault', ({ obstacle, causeText }) => {
             if (obstacle.course !== 'warmup') return;
             st.jumps++;
-            say(`Barre · ${causeText || 'appel à revoir'}`);
+            say(T`Barre · ${causeText || t('appel à revoir')}`);
           }),
           game.bus.on('obstacle:refusal', ({ obstacle }) => {
             if (obstacle.course !== 'warmup') return;
-            say('Refus : trop près, appelle plus tôt');
+            say(t('Refus : trop près, appelle plus tôt'));
           }),
         ];
-        game.interact.add('train:end', { label: 'Terminer', icon: 'event', r: 999, priority: 2, modes: ['ride', 'foot'], getPos: () => game.player.focus.pos, action: () => (st.done = true) });
+        game.interact.add('train:end', { label: t('Terminer'), icon: 'event', r: 999, priority: 2, modes: ['ride', 'foot'], getPos: () => game.player.focus.pos, action: () => (st.done = true) });
       },
       update() {
         const h = game.player.horse;
@@ -195,8 +196,8 @@ function trainingSteps(game, run, S) {
         aids = null;
         game.course = null;
         game.interact.remove('train:end');
-        r.resultTitle = 'Entraînement terminé';
-        r.resultBody = `${st.clean} saut${st.clean > 1 ? 's' : ''} sans faute sur ${st.jumps}.`;
+        r.resultTitle = t('Entraînement terminé');
+        r.resultBody = st.clean > 1 ? T`${st.clean} sauts sans faute sur ${st.jumps}.` : T`${st.clean} saut sans faute sur ${st.jumps}.`;
       },
     }),
   ];
