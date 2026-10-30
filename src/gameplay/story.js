@@ -13,6 +13,7 @@ import { formatMoney, dec } from '../core/math.js';
 import { PARKS, loadStep, unloadStep, driveStep } from './trip.js';
 import { CHAPTER1_MISSIONS } from './story2.js';
 import { PARIS_MISSION } from './parisGP.js';
+import { t, T } from '../core/i18n.js';
 
 const C = {
   camille: { name: 'Camille Martin', initials: 'CM', rating: 4.9, verified: true },
@@ -37,18 +38,18 @@ const STAFF_F = { ...STAFF, skin: '#eac2a0', hair: '#7a4a28', ponytail: true };
 const OFFICIAL = { top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#1b1c1f', boots: '#121214', skin: '#c99a74', hair: '#2a1d14' };
 
 // Compétitions : le jeu les met en scène, mais Strides ne gère ni engagements ni résultats (vérifié sur la page officielle).
-const EVENT_IRL = 'les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.';
+const EVENT_IRL = t('les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.');
 
 export const STORY = [
   // 0 — Tutoriel : une mission courte qui montre seulement la boucle du jeu (demande reçue sur Strides → acceptée →
   // réalisée → payée et notée) et les gestes de base (monter, avancer, diriger). Le saut s'apprend plus tard, à
   // l'échauffement du premier concours (M3).
   {
-    id: 'tuto', story: true, vertical: 'JOBS', category: 'Prise en main', title: 'Premiers pas', level: 1,
-    desc: 'Sors Comète de son box, fais un petit tour de carrière et reviens voir Camille.',
+    id: 'tuto', story: true, vertical: 'JOBS', category: 'Prise en main', title: t('Premiers pas'), level: 1,
+    desc: t('Sors Comète de son box, fais un petit tour de carrière et reviens voir Camille.'),
     client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 50, xp: 60, duration: '~2 min',
-    irl: 'sur Strides, les écuries et cavaliers envoient des propositions de missions aux professionnels, qui acceptent celles qui leur conviennent — comme tu viens de le faire.',
-    review: () => 'Bienvenue dans l’équipe ! Belle prise en main.',
+    irl: t('sur Strides, les écuries et cavaliers envoient des propositions de missions aux professionnels, qui acceptent celles qui leur conviennent — comme tu viens de le faire.'),
+    review: () => t('Bienvenue dans l’équipe ! Belle prise en main.'),
     // Comète attend dans son box : on va la chercher, on la sort en main de l'écurie, puis on monte.
     keepInBox: true,
     setup(game) {
@@ -67,14 +68,14 @@ export const STORY = [
       const tour = [[A.x, A.z - 7.5], [A.x - 16, A.z - 5], [A.x - 16, A.z + 6], [A.x - 4, A.z + 7], [A.x, A.z - 3]];
       return [
         S.dialog([
-          { who: 'Camille Martin', initials: 'CM', text: `Salut ${game.save.data.playerName} ! Bienvenue à l’Écurie du Val. Ta première mission est simple : un petit tour avec Comète.` },
-          { who: 'Camille Martin', initials: 'CM', text: 'Elle est dans son box, tout au bout de l’allée de l’écurie. Va la chercher, sors-la, puis monte en selle dehors.' },
+          { who: 'Camille Martin', initials: 'CM', text: T`Salut ${game.save.data.playerName} ! Bienvenue à l’Écurie du Val. Ta première mission est simple : un petit tour avec Comète.` },
+          { who: 'Camille Martin', initials: 'CM', text: t('Elle est dans son box, tout au bout de l’allée de l’écurie. Va la chercher, sors-la, puis monte en selle dehors.') },
         ]),
         S.custom({
-          text: 'Va chercher Comète dans son box (bout de l’allée)',
+          text: t('Va chercher Comète dans son box (bout de l’allée)'),
           target: HOME_BOX.door,
           radius: 2.6,
-          hint: 'Joystick gauche : marcher · glisse à droite : tourner la caméra. Devant la porte du box : <b>ACTION</b>.',
+          hint: t('Joystick gauche : marcher · glisse à droite : tourner la caméra. Devant la porte du box : <b>ACTION</b>.'),
           hintMs: 9000,
           update: () => !horse()?.inBox,
           end() {
@@ -83,22 +84,22 @@ export const STORY = [
             if (h && game.player.mode === 'foot') game.player.transport?.lead(h);
           },
         }),
-        S.goto(out, 'Sors de l’écurie avec Comète (elle te suit en main)', { r: 3, hint: 'Comète marche à ton pas, à ta droite.', hintMs: 6000 }),
+        S.goto(out, t('Sors de l’écurie avec Comète (elle te suit en main)'), { r: 3, hint: t('Comète marche à ton pas, à ta droite.'), hintMs: 6000 }),
         S.custom({
-          text: 'Monte sur Comète',
+          text: t('Monte sur Comète'),
           target: () => horse().pos,
           radius: 3,
           beacon: false,
-          hint: 'Près de Comète : <b>ACTION</b> pour monter en selle.',
+          hint: t('Près de Comète : <b>ACTION</b> pour monter en selle.'),
           hintMs: 7000,
           update: () => game.player.mode === 'ride',
         }),
-        S.goto({ x: A.x, z: A.z - 13 }, 'Suis la balise jusqu’à la carrière', { r: 5, mode: 'ride', hint: 'Un peu de joystick = <b>pas</b>, plus = <b>trot</b>. La balise et le GPS montrent toujours où aller.', hintMs: 9000 }),
-        checkpointSteps(game, run, S, tour, { text: 'Fais le tour de la carrière dans les anneaux', r: 4.5 }),
-        S.interact(() => camille.pos, 'Parler', 'Reviens voir Camille devant les boxes', { modes: ['foot', 'ride'], r: 4, icon: 'talk' }),
+        S.goto({ x: A.x, z: A.z - 13 }, t('Suis la balise jusqu’à la carrière'), { r: 5, mode: 'ride', hint: t('Un peu de joystick = <b>pas</b>, plus = <b>trot</b>. La balise et le GPS montrent toujours où aller.'), hintMs: 9000 }),
+        checkpointSteps(game, run, S, tour, { text: t('Fais le tour de la carrière dans les anneaux'), r: 4.5 }),
+        S.interact(() => camille.pos, t('Parler'), t('Reviens voir Camille devant les boxes'), { modes: ['foot', 'ride'], r: 4, icon: 'talk' }),
         S.dialog([
-          { who: 'Camille Martin', initials: 'CM', text: 'Parfait, tu as la main ! Voilà comment ça marche ici : les demandes arrivent sur ton téléphone, dans Strides.' },
-          { who: 'Camille Martin', initials: 'CM', text: 'Tu acceptes, tu réalises la mission, tu es payé et noté. Avis après avis, ta réputation grandit. Garde ton téléphone à l’œil !' },
+          { who: 'Camille Martin', initials: 'CM', text: t('Parfait, tu as la main ! Voilà comment ça marche ici : les demandes arrivent sur ton téléphone, dans Strides.') },
+          { who: 'Camille Martin', initials: 'CM', text: t('Tu acceptes, tu réalises la mission, tu es payé et noté. Avis après avis, ta réputation grandit. Garde ton téléphone à l’œil !') },
         ]),
       ];
     },
@@ -109,11 +110,11 @@ export const STORY = [
 
   // 1 — Groom du matin
   {
-    id: 'groom', story: true, vertical: 'JOBS', category: 'Groom', title: 'Groom du matin', level: 1, requires: ['m3'],
-    desc: 'Distribuer le foin à quatre chevaux avant la reprise de 10 h.',
+    id: 'groom', story: true, vertical: 'JOBS', category: 'Groom', title: t('Groom du matin'), level: 1, requires: ['m3'],
+    desc: t('Distribuer le foin à quatre chevaux avant la reprise de 10 h.'),
     client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 90, xp: 120, duration: '~2 min',
-    irl: 'les écuries trouvent un groom maison ou un palefrenier au profil vérifié, avec des disponibilités à la journée ou à la demi-journée.',
-    review: (s) => (s >= 5 ? 'Rapide et soigneux. Je recommande !' : s >= 4 ? 'Efficace, les chevaux étaient ravis.' : 'Le travail est fait, merci.'),
+    irl: t('les écuries trouvent un groom maison ou un palefrenier au profil vérifié, avec des disponibilités à la journée ou à la demi-journée.'),
+    review: (s) => (s >= 5 ? t('Rapide et soigneux. Je recommande !') : s >= 4 ? t('Efficace, les chevaux étaient ravis.') : t('Le travail est fait, merci.')),
     rate: (run) => byTime(run.t, 80, 105, 130),
     steps(game, run, S) {
       const boxes = homeBoxes();
@@ -129,21 +130,21 @@ export const STORY = [
         return hh;
       });
       const steps = [
-        S.dialog([{ who: 'Camille Martin', initials: 'CM', text: 'Quatre chevaux attendent leur foin. La réserve est dans la grange, à l’ouest. Chrono !' }]),
+        S.dialog([{ who: 'Camille Martin', initials: 'CM', text: t('Quatre chevaux attendent leur foin. La réserve est dans la grange, à l’ouest. Chrono !') }]),
         S.custom({ text: '', start: (r) => (r.timer = 150), update: () => true }),
       ];
       targets.forEach((b, i) => {
         steps.push(
-          S.interact(hay, 'Prendre du foin', `Prends une botte de foin (${i + 1}/4)`, { r: 3.4, onDo: () => game.player.human.carry('hay') })
+          S.interact(hay, t('Prendre du foin'), T`Prends une botte de foin (${i + 1}/4)`, { r: 3.4, onDo: () => game.player.human.carry('hay') })
         );
         steps.push(
-          S.interact({ x: b.x, z: b.z + 1.2 }, 'Donner le foin', `Apporte le foin au box n°${[2, 4, 5, 7][i]}`, {
+          S.interact({ x: b.x, z: b.z + 1.2 }, t('Donner le foin'), T`Apporte le foin au box n°${[2, 4, 5, 7][i]}`, {
             r: 2.8,
             onDo: () => {
               game.player.human.drop();
               game.audio.snort();
               horses[i].anim.graze = 0.6;
-              game.hud.toast(`Box ${[2, 4, 5, 7][i]} servi ✓`);
+              game.hud.toast(T`Box ${[2, 4, 5, 7][i]} servi ✓`);
             },
           })
         );
@@ -155,11 +156,11 @@ export const STORY = [
 
   // 2 — Coursier : selle sur-mesure
   {
-    id: 'livraison', story: true, vertical: 'JOBS', category: 'Coursier', title: 'Selle sur-mesure', level: 1, requires: ['groom'],
-    desc: 'Récupérer une selle à la Sellerie du Port et la livrer au Pôle International avant l’épreuve.',
+    id: 'livraison', story: true, vertical: 'JOBS', category: 'Coursier', title: t('Selle sur-mesure'), level: 1, requires: ['groom'],
+    desc: t('Récupérer une selle à la Sellerie du Port et la livrer au Pôle International avant l’épreuve.'),
     client: C.margaux, place: POI.sellerie, placeName: 'Sellerie du Port', pay: 120, xp: 150, duration: '~3 min',
-    irl: 'une selle à livrer n’est pas une mission Strides : la plateforme concerne les métiers du cheval — grooms, palefreniers, cavaliers, chauffeurs, enseignants, agents de concours et d’entretien.',
-    timeoutText: 'Trop tard : l’épreuve a commencé sans la selle.',
+    irl: t('une selle à livrer n’est pas une mission Strides : la plateforme concerne les métiers du cheval — grooms, palefreniers, cavaliers, chauffeurs, enseignants, agents de concours et d’entretien.'),
+    timeoutText: t('Trop tard : l’épreuve a commencé sans la selle.'),
     rate: (run) => (run.data.left > 40 ? 5 : run.data.left > 25 ? 4 : run.data.left > 10 ? 3 : 2),
     steps(game, run, S) {
       // Margaux remet la selle au comptoir de la Sellerie du Port : on entre dans la boutique (à pied, le cheval
@@ -167,16 +168,16 @@ export const STORY = [
       const counter = shopAnchor(SHOPS3D.sellerie, 'comptoir');
       const rider = npcAt(game, run, { top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#f2f1ec', boots: '#121214', skin: '#c99a74', hair: '#2a1d14', helmet: '#16171a', logo: true }, POLE.stables.x - 11, POLE.stables.z - 8, -Math.PI / 2, 'Clara');
       return [
-        S.interact(counter, 'Retirer la selle', 'Retire la selle au comptoir de la Sellerie du Port, à Deauville City', { modes: ['foot'], r: 2.2, icon: 'bag' }),
+        S.interact(counter, t('Retirer la selle'), t('Retire la selle au comptoir de la Sellerie du Port, à Deauville City'), { modes: ['foot'], r: 2.2, icon: 'bag' }),
         S.custom({
           text: '',
           start(r) {
-            game.hud.dialog([{ who: 'Margaux Leroy', initials: 'ML', text: 'La selle de Clara, faite sur-mesure. Elle rentre en piste dans 1 min 45 au Pôle International — file !' }], () => (r.flags.go = true));
+            game.hud.dialog([{ who: 'Margaux Leroy', initials: 'ML', text: t('La selle de Clara, faite sur-mesure. Elle rentre en piste dans 1 min 45 au Pôle International — file !') }], () => (r.flags.go = true));
           },
           update: (r) => r.flags.go,
         }),
         S.custom({ text: '', start: (r) => (r.timer = 105), update: () => true }),
-        S.interact(() => rider.pos, 'Livrer la selle', 'Livre la selle à Clara, aux écuries du Pôle', {
+        S.interact(() => rider.pos, t('Livrer la selle'), t('Livre la selle à Clara, aux écuries du Pôle'), {
           modes: ['foot', 'ride'],
           r: 4.5,
           icon: 'bag',
@@ -186,20 +187,20 @@ export const STORY = [
             rider.pose = 'wave';
           },
         }),
-        S.dialog([{ who: 'Clara Fournier', initials: 'CF', text: 'Juste à temps ! Merci, je file à l’échauffement.' }]),
+        S.dialog([{ who: 'Clara Fournier', initials: 'CF', text: t('Juste à temps ! Merci, je file à l’échauffement.') }]),
       ];
     },
   },
 
   // 3 — Le fugueur
   {
-    id: 'fugueur', story: true, vertical: 'JOBS', category: 'Urgence', title: 'Le fugueur', level: 1, requires: ['livraison'],
-    desc: 'Un étalon s’est échappé du haras. Le rattraper et le ramener au paddock.',
+    id: 'fugueur', story: true, vertical: 'JOBS', category: 'Urgence', title: t('Le fugueur'), level: 1, requires: ['livraison'],
+    desc: t('Un étalon s’est échappé du haras. Le rattraper et le ramener au paddock.'),
     client: C.antoine, place: POI.haras, placeName: 'Haras de la Pommeraie', pay: 160, xp: 200, duration: '~4 min',
-    irl: '« la solution aux urgences du quotidien » : sur Strides, on trouve rapidement un professionnel disponible.',
-    timeoutText: 'Tonnerre s’est enfui trop loin…',
+    irl: t('« la solution aux urgences du quotidien » : sur Strides, on trouve rapidement un professionnel disponible.'),
+    timeoutText: t('Tonnerre s’est enfui trop loin…'),
     rate: (run) => byTime(run.data.catchT || 99, 35, 55, 80),
-    review: (s) => (s >= 4 ? 'Sang-froid impressionnant. Tonnerre est rentré sans une égratignure.' : 'Merci d’avoir ramené Tonnerre !'),
+    review: (s) => (s >= 4 ? t('Sang-froid impressionnant. Tonnerre est rentré sans une égratignure.') : t('Merci d’avoir ramené Tonnerre !')),
     steps(game, run, S) {
       const P = HARAS.paddocks[0];
       const antoine = npcAt(game, run, STAFF, HARAS.gate.x + 3, HARAS.gate.z - 6, Math.PI, 'Antoine');
@@ -207,13 +208,13 @@ export const STORY = [
       let tonnerre = null;
       const bounds = { x: -330, z: 60, w: 300, d: 260 };
       return [
-        S.goto({ x: HARAS.gate.x, z: HARAS.gate.z - 8 }, 'Rejoins le Haras de la Pommeraie', { r: 9, mode: 'ride' }),
+        S.goto({ x: HARAS.gate.x, z: HARAS.gate.z - 8 }, t('Rejoins le Haras de la Pommeraie'), { r: 9, mode: 'ride' }),
         S.dialog([
-          { who: 'Antoine Roux', initials: 'AR', text: 'Tonnerre a sauté la clôture du paddock ! Il galope vers les champs, au sud.' },
-          { who: 'Antoine Roux', initials: 'AR', text: 'Rattrape-le à cheval, approche-toi et touche ACTION pour saisir sa longe. Vite !' },
+          { who: 'Antoine Roux', initials: 'AR', text: t('Tonnerre a sauté la clôture du paddock ! Il galope vers les champs, au sud.') },
+          { who: 'Antoine Roux', initials: 'AR', text: t('Rattrape-le à cheval, approche-toi et touche ACTION pour saisir sa longe. Vite !') },
         ]),
         S.custom({
-          text: 'Rattrape Tonnerre !',
+          text: t('Rattrape Tonnerre !'),
           target: () => (tonnerre ? tonnerre.pos : { x: -380, z: 80 }),
           radius: 2,
           beacon: false,
@@ -225,7 +226,7 @@ export const STORY = [
             r.timer = 130;
             r.flags.caught = false;
             game.interact.add('catch', {
-              label: 'Attraper',
+              label: t('Attraper'),
               icon: 'hand',
               r: 4.2,
               priority: 4,
@@ -242,7 +243,7 @@ export const STORY = [
               r.timer = null;
               game.interact.remove('catch');
               tonnerre.ai = new FollowAI(() => game.player.focus.pos, { stopDist: 3.5 });
-              game.hud.big('ATTRAPÉ !', 'Ramène Tonnerre au paddock', 1800);
+              game.hud.big(t('ATTRAPÉ !'), t('Ramène Tonnerre au paddock'), 1800);
               game.audio.neigh();
               return true;
             }
@@ -250,14 +251,14 @@ export const STORY = [
           },
         }),
         S.custom({
-          text: 'Ramène Tonnerre au paddock n°1 (il te suit)',
+          text: t('Ramène Tonnerre au paddock n°1 (il te suit)'),
           target: { x: P.x, z: P.z - P.d / 2 - 4 },
           radius: 6,
           update() {
             const f = game.player.focus.pos;
             const near = Math.hypot(f.x - P.x, f.z - (P.z - P.d / 2 - 4)) < 7;
             const follows = Math.hypot(tonnerre.pos.x - f.x, tonnerre.pos.z - f.z) < 14;
-            if (!follows && game.player.focus.speed > 9) game.hud.hint('Pas trop vite : Tonnerre doit pouvoir suivre !', 2000);
+            if (!follows && game.player.focus.speed > 9) game.hud.hint(t('Pas trop vite : Tonnerre doit pouvoir suivre !'), 2000);
             if (near && follows) {
               tonnerre.setPosition(P.x, P.z, 0);
               tonnerre.ai = new GrazeAI(P);
@@ -266,18 +267,18 @@ export const STORY = [
             return false;
           },
         }),
-        S.dialog([{ who: 'Antoine Roux', initials: 'AR', text: 'Bravo ! Je garde ton contact. Pour les urgences, c’est toi que j’appelle.' }]),
+        S.dialog([{ who: 'Antoine Roux', initials: 'AR', text: t('Bravo ! Je garde ton contact. Pour les urgences, c’est toi que j’appelle.') }]),
       ];
     },
   },
 
   // 4 — Galop sur la plage (cavalier, cheval de client)
   {
-    id: 'plage', story: true, vertical: 'JOBS', category: 'Cavalier', title: 'Galop sur la plage', level: 2, requires: ['fugueur'],
-    desc: 'Travailler Tornade en bord de mer : 7 anneaux sur la plage, puis retour à l’écurie.',
+    id: 'plage', story: true, vertical: 'JOBS', category: 'Cavalier', title: t('Galop sur la plage'), level: 2, requires: ['fugueur'],
+    desc: t('Travailler Tornade en bord de mer : 7 anneaux sur la plage, puis retour à l’écurie.'),
     client: C.helene, place: POI.dunes, placeName: 'Écurie des Dunes', pay: 180, xp: 250, duration: '~4 min',
-    irl: '« Vous cherchez un cavalier pour travailler vos chevaux ? » Les cavaliers maison et d’entraînement proposent leurs services sur Strides.',
-    timeoutText: 'Trop lent : Tornade n’a pas eu le travail prévu.',
+    irl: t('« Vous cherchez un cavalier pour travailler vos chevaux ? » Les cavaliers maison et d’entraînement proposent leurs services sur Strides.'),
+    timeoutText: t('Trop lent : Tornade n’a pas eu le travail prévu.'),
     rate: (run) => (run.data.left > 25 ? 5 : run.data.left > 15 ? 4 : run.data.left > 6 ? 3 : 2),
     steps(game, run, S) {
       const helene = npcAt(game, run, { ...STAFF_F, top: '#2f5f8a', sleeve: '#2f5f8a', hair: '#c9a46a' }, DUNES.barn.x - 6, DUNES.barn.z + 9, Math.PI, 'Hélène');
@@ -302,19 +303,19 @@ export const STORY = [
       const baseLen = pathLength([barn, ...rings, barn]);
       const tideLine = () => {
         const lv = game.tide?.level ?? 0;
-        if (lv < -1.2) return 'La mer est basse : les anneaux sont posés loin, sur le sable ferme au bord de l’eau. Idéal pour galoper !';
-        if (lv > 1.8) return 'La mer est haute : les anneaux sont sur la bande de sable au bord de l’eau. Reste sur le sable ferme.';
-        return `La marée ${game.tide?.rising ? 'monte' : 'descend'} : les anneaux suivent le bord de l’eau, sur le sable ferme.`;
+        if (lv < -1.2) return t('La mer est basse : les anneaux sont posés loin, sur le sable ferme au bord de l’eau. Idéal pour galoper !');
+        if (lv > 1.8) return t('La mer est haute : les anneaux sont sur la bande de sable au bord de l’eau. Reste sur le sable ferme.');
+        return game.tide?.rising ? t('La marée monte : les anneaux suivent le bord de l’eau, sur le sable ferme.') : t('La marée descend : les anneaux suivent le bord de l’eau, sur le sable ferme.');
       };
       return [
-        S.goto({ x: DUNES.barn.x - 4, z: DUNES.barn.z + 12 }, 'Rejoins l’Écurie des Dunes', { r: 9 }),
+        S.goto({ x: DUNES.barn.x - 4, z: DUNES.barn.z + 12 }, t('Rejoins l’Écurie des Dunes'), { r: 9 }),
         S.dialog(() => [
-          { who: 'Hélène Duval', initials: 'HD', text: 'Voici Tornade. Elle a besoin de se dépenser avant le concours de dimanche.' },
-          { who: 'Hélène Duval', initials: 'HD', text: 'Un galop sur la plage, sept anneaux, et tu me la ramènes. Ta jument reste ici en attendant.' },
+          { who: 'Hélène Duval', initials: 'HD', text: t('Voici Tornade. Elle a besoin de se dépenser avant le concours de dimanche.') },
+          { who: 'Hélène Duval', initials: 'HD', text: t('Un galop sur la plage, sept anneaux, et tu me la ramènes. Ta jument reste ici en attendant.') },
           { who: 'Hélène Duval', initials: 'HD', text: tideLine() },
         ]),
         S.custom({
-          text: () => (game.player.mode === 'ride' && game.player.horse !== tornade ? 'Descends de ta jument' : 'Monte sur Tornade'),
+          text: () => (game.player.mode === 'ride' && game.player.horse !== tornade ? t('Descends de ta jument') : t('Monte sur Tornade')),
           target: () => tornade.pos,
           radius: 3,
           beacon: false,
@@ -338,9 +339,9 @@ export const STORY = [
           },
           update: () => true,
         }),
-        checkpointSteps(game, run, S, rings, { text: 'Galop sur la plage : passe les anneaux', mode: 'ride' }),
+        checkpointSteps(game, run, S, rings, { text: t('Galop sur la plage : passe les anneaux'), mode: 'ride' }),
         S.custom({ text: '', start: (r) => (r.data.left = r.timer), update: () => true }),
-        S.goto({ x: DUNES.barn.x - 2, z: DUNES.barn.z + 12 }, 'Ramène Tornade à l’Écurie des Dunes', { r: 7, mode: 'ride' }),
+        S.goto({ x: DUNES.barn.x - 2, z: DUNES.barn.z + 12 }, t('Ramène Tornade à l’Écurie des Dunes'), { r: 7, mode: 'ride' }),
         S.custom({
           text: '',
           start(r) {
@@ -355,20 +356,20 @@ export const STORY = [
           },
           update: () => true,
         }),
-        S.dialog([{ who: 'Hélène Duval', initials: 'HD', text: 'Elle est détendue et heureuse. Je te réserve pour dimanche !' }]),
+        S.dialog([{ who: 'Hélène Duval', initials: 'HD', text: t('Elle est détendue et heureuse. Je te réserve pour dimanche !') }]),
       ];
     },
   },
 
   // 5 — Transport express : charger Quabar au haras, le livrer au Pôle en douceur, le décharger et le confier.
   {
-    id: 'transport', story: true, vertical: 'TRANSPORT', category: 'Transport', title: 'Transport express', level: 2, requires: ['fugueur'],
-    desc: 'Conduire le camion Strides : charger Quabar au haras et le livrer au Pôle International, en douceur.',
-    client: C.antoine, place: POI.home, placeName: 'Écurie du Val (camion)', pay: 260, xp: 300, duration: '~6 min',
-    irl: '« Besoin d’un chauffeur pour partir en concours ? » Sur Strides, des chauffeurs proposent le transport des chevaux vers les concours, aller-retour.',
-    timeoutText: 'Quabar est arrivé trop tard pour son épreuve.',
+    id: 'transport', story: true, vertical: 'TRANSPORT', category: 'Transport', title: t('Transport express'), level: 2, requires: ['fugueur'],
+    desc: t('Conduire le camion Strides : charger Quabar au haras et le livrer au Pôle International, en douceur.'),
+    client: C.antoine, place: POI.home, placeName: t('Écurie du Val (camion)'), pay: 260, xp: 300, duration: '~6 min',
+    irl: t('« Besoin d’un chauffeur pour partir en concours ? » Sur Strides, des chauffeurs proposent le transport des chevaux vers les concours, aller-retour.'),
+    timeoutText: t('Quabar est arrivé trop tard pour son épreuve.'),
     rate: (run) => (run.data.comfort >= 90 ? 5 : run.data.comfort >= 75 ? 4 : run.data.comfort >= 55 ? 3 : 2),
-    review: (s) => (s >= 5 ? 'Quabar est descendu du camion frais comme un gardon. Conduite parfaite.' : s >= 4 ? 'Bonne conduite, cheval serein.' : 'Arrivé, mais un peu secoué…'),
+    review: (s) => (s >= 5 ? t('Quabar est descendu du camion frais comme un gardon. Conduite parfaite.') : s >= 4 ? t('Bonne conduite, cheval serein.') : t('Arrivé, mais un peu secoué…')),
     steps(game, run, S) {
       const truck = game.player.truck;
       const tp = game.player.transport;
@@ -378,15 +379,15 @@ export const STORY = [
       const H = PARKS.haras;
       return [
         S.custom({
-          text: () => (game.player.inTruck ? '' : 'Monte dans le camion Strides (Écurie du Val)'),
+          text: () => (game.player.inTruck ? '' : t('Monte dans le camion Strides (Écurie du Val)')),
           target: () => truck.pos,
           radius: 5,
-          hint: 'Au volant : joystick vers le haut = accélérer, vers le bas = freiner puis reculer. Rampe fermée pour rouler.',
+          hint: t('Au volant : joystick vers le haut = accélérer, vers le bas = freiner puis reculer. Rampe fermée pour rouler.'),
           update: () => game.player.inTruck,
         }),
         driveStep(game, S, {
           to: H,
-          text: 'Va chercher Quabar au Haras de la Pommeraie',
+          text: t('Va chercher Quabar au Haras de la Pommeraie'),
           onArrive: (r) => {
             if (quabar) return;
             // Antoine attend avec Quabar, protections de transport mises.
@@ -400,11 +401,11 @@ export const STORY = [
           },
         }),
         S.dialog([
-          { who: 'Antoine Roux', initials: 'AR', text: 'Voilà Quabar, protections de transport mises. Ouvre la rampe, prends-le en main et fais-le monter calmement.' },
-          { who: 'Antoine Roux', initials: 'AR', text: 'Il a un concours au Pôle : roule en souplesse, il doit arriver frais.' },
+          { who: 'Antoine Roux', initials: 'AR', text: t('Voilà Quabar, protections de transport mises. Ouvre la rampe, prends-le en main et fais-le monter calmement.') },
+          { who: 'Antoine Roux', initials: 'AR', text: t('Il a un concours au Pôle : roule en souplesse, il doit arriver frais.') },
         ]),
         loadStep(game, S, { horse: () => quabar, name: 'Quabar' }),
-        driveStep(game, S, { to: PARKS.pole, text: 'Livre Quabar au Pôle International — parking des camions', timer: 170, comfort: true }),
+        driveStep(game, S, { to: PARKS.pole, text: t('Livre Quabar au Pôle International — parking des camions'), timer: 170, comfort: true }),
         S.custom({
           text: '',
           start() {
@@ -413,7 +414,7 @@ export const STORY = [
           update: () => true,
         }),
         unloadStep(game, S, { horse: () => quabar, name: 'Quabar' }),
-        S.interact(() => groom.pos, 'Confier Quabar', 'Confie Quabar à Manon, sa groom', {
+        S.interact(() => groom.pos, t('Confier Quabar'), t('Confie Quabar à Manon, sa groom'), {
           modes: ['foot'],
           r: 3.6,
           icon: 'hand',
@@ -427,50 +428,50 @@ export const STORY = [
             game.audio.snort();
           },
         }),
-        S.dialog(() => [{ who: 'Manon · Groom de Quabar', initials: 'MB', text: `Merci ! Confort du cheval pendant le trajet : ${Math.round(run.data.comfort ?? 100)} %. Il est arrivé frais.` }]),
+        S.dialog(() => [{ who: t('Manon · Groom de Quabar'), initials: 'MB', text: T`Merci ! Confort du cheval pendant le trajet : ${Math.round(run.data.comfort ?? 100)} %. Il est arrivé frais.` }]),
       ];
     },
   },
 
   // 6 — Fer perdu (Annuaire)
   {
-    id: 'fer', story: true, vertical: 'ANNUAIRE', category: 'Urgence', title: 'Fer perdu', level: 2, requires: ['transport', 'plage'],
-    desc: 'Comète a perdu un fer. Trouver un maréchal-ferrant dans le Guide local du téléphone.',
-    client: null, place: POI.forge, placeName: 'Guide local', pay: 0, payLabel: 'Soins : 60 €', xp: 220, duration: '~3 min', noReview: true,
-    irl: 'le Guide local (maréchaux, vétérinaires…) est une fonction du jeu : ces métiers ne sont pas proposés sur Strides.',
+    id: 'fer', story: true, vertical: 'ANNUAIRE', category: 'Urgence', title: t('Fer perdu'), level: 2, requires: ['transport', 'plage'],
+    desc: t('Comète a perdu un fer. Trouver un maréchal-ferrant dans le Guide local du téléphone.'),
+    client: null, place: POI.forge, placeName: t('Guide local'), pay: 0, payLabel: t('Soins : 60 €'), xp: 220, duration: '~3 min', noReview: true,
+    irl: t('le Guide local (maréchaux, vétérinaires…) est une fonction du jeu : ces métiers ne sont pas proposés sur Strides.'),
     steps(game, run, S) {
       const horse = game.player.horse;
       horse.lame = true;
       run.onCleanup(() => (horse.lame = false));
       const hugo = npcAt(game, run, { top: '#3a3d42', sleeve: '#3a3d42', pants: '#2b3442', boots: '#2a2622', skin: '#c99a74', hair: '#2a1d14', logo: false }, TOWN.forge.x + TOWN.forge.w / 2 + 3, TOWN.forge.z + 2, Math.PI / 2, 'Hugo');
       return [
-        S.dialog([{ who: 'Comète', initials: '🐴', text: '(Comète boite. Un fer s’est détaché — impossible de travailler comme ça.)' }]),
+        S.dialog([{ who: 'Comète', initials: '🐴', text: t('(Comète boite. Un fer s’est détaché — impossible de travailler comme ça.)') }]),
         S.custom({
-          text: 'Ouvre le Guide local et contacte un maréchal-ferrant',
-          hint: 'Touche le <b>téléphone</b> en haut à droite → <b>Guide local</b> → <b>Santé et soins</b>.',
+          text: t('Ouvre le Guide local et contacte un maréchal-ferrant'),
+          hint: t('Touche le <b>téléphone</b> en haut à droite → <b>Guide local</b> → <b>Santé et soins</b>.'),
           hintMs: 9000,
           start(r) {
             r.flags.contact = false;
             const off = game.bus.on('pro:contact', (p) => {
               if (p.id === 'lemaire') r.flags.contact = true;
-              else game.hud.toast(`${p.name} : « Désolé, ce n’est pas ma spécialité ! »`);
+              else game.hud.toast(T`${p.name} : « Désolé, ce n’est pas ma spécialité ! »`);
             });
             r.onCleanup(off);
           },
           update: (r) => r.flags.contact,
         }),
         S.dialog([
-          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Hugo Lemaire, j’ai bien eu ton appel. Je suis à la forge, à Deauville City.' },
-          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Viens au pas, sans forcer. Je te la referre en dix minutes.' },
+          { who: t('Hugo Lemaire · Maréchal-ferrant'), initials: 'HL', text: t('Hugo Lemaire, j’ai bien eu ton appel. Je suis à la forge, à Deauville City.') },
+          { who: t('Hugo Lemaire · Maréchal-ferrant'), initials: 'HL', text: t('Viens au pas, sans forcer. Je te la referre en dix minutes.') },
         ]),
-        S.interact(() => hugo.pos, 'Faire ferrer', 'Rejoins la Forge Lemaire (au pas)', {
+        S.interact(() => hugo.pos, t('Faire ferrer'), t('Rejoins la Forge Lemaire (au pas)'), {
           modes: ['ride', 'foot'],
           r: 5,
           icon: 'horse',
           when: () => Math.hypot(horse.pos.x - hugo.pos.x, horse.pos.z - hugo.pos.z) < 12,
         }),
         S.custom({
-          text: 'Ferrure en cours…',
+          text: t('Ferrure en cours…'),
           start() {
             game.fade(() => {
               horse.lame = false;
@@ -481,27 +482,27 @@ export const STORY = [
           update: (r) => r.stepT > 2.2,
         }),
         S.dialog([
-          { who: 'Hugo Lemaire · Maréchal-ferrant', initials: 'HL', text: 'Et voilà, quatre fers neufs. Tu me règles 60 €, facture dans ta boîte.' },
-          { who: 'Toi', initials: game.save.data.playerName.slice(0, 2).toUpperCase(), text: 'Merci Hugo ! Comète marche comme une horloge.' },
+          { who: t('Hugo Lemaire · Maréchal-ferrant'), initials: 'HL', text: t('Et voilà, quatre fers neufs. Tu me règles 60 €, facture dans ta boîte.') },
+          { who: t('Toi'), initials: game.save.data.playerName.slice(0, 2).toUpperCase(), text: t('Merci Hugo ! Comète marche comme une horloge.') },
         ]),
       ];
     },
     after(game) {
-      game.message('Hugo Lemaire', 'HL', 'Merci ! N’hésite pas à me rappeler pour la prochaine ferrure. Bonne saison !');
+      game.message('Hugo Lemaire', 'HL', t('Merci ! N’hésite pas à me rappeler pour la prochaine ferrure. Bonne saison !'));
     },
   },
 
   // 7 — Cross de Saint-Gatien
   {
-    id: 'cross', story: true, vertical: 'EVENEMENTS', category: 'Cross', title: 'Cross de Saint-Gatien', level: 3, requires: ['fer'],
-    desc: '10 obstacles fixes en forêt. Refus : +20 pénalités. Temps accordé : 1:50.',
+    id: 'cross', story: true, vertical: 'EVENEMENTS', category: 'Cross', title: t('Cross de Saint-Gatien'), level: 3, requires: ['fer'],
+    desc: t('10 obstacles fixes en forêt. Refus : +20 pénalités. Temps accordé : 1:50.'),
     client: C.paul, place: POI.gatien, placeName: 'Domaine de Saint-Gatien', pay: 320, xp: 350, duration: '~3 min',
     irl: EVENT_IRL,
     rate: (run) => {
       const p = totalPenalties(run);
       return p === 0 ? 5 : p <= 8 ? 4 : p <= 24 ? 3 : 2;
     },
-    review: (s) => (s >= 5 ? 'Sans faute et dans le temps. Du grand art.' : s >= 4 ? 'Très beau parcours !' : 'Parcours terminé, bravo pour le courage.'),
+    review: (s) => (s >= 5 ? t('Sans faute et dans le temps. Du grand art.') : s >= 4 ? t('Très beau parcours !') : t('Parcours terminé, bravo pour le courage.')),
     steps(game, run, S) {
       const paul = npcAt(game, run, OFFICIAL, GATIEN.start.x + 6, GATIEN.start.z - 7, -Math.PI / 2, 'Paul');
       void paul;
@@ -511,12 +512,12 @@ export const STORY = [
         start: { x: GATIEN.start.x + 4, z: GATIEN.start.z },
         finish: { x: GATIEN.start.x, z: GATIEN.start.z, w: 7 },
         timeAllowed: 110,
-        intro: [{ who: 'Paul Faure', initials: 'PF', text: 'Dix obstacles en forêt, dont l’entrée dans la mare. Suis les numéros, attention aux refus. Bonne chance !' }],
+        intro: [{ who: 'Paul Faure', initials: 'PF', text: t('Dix obstacles en forêt, dont l’entrée dans la mare. Suis les numéros, attention aux refus. Bonne chance !') }],
       }).concat([
         S.custom({
           text: '',
           start(r) {
-            r.resultBody = `Pénalités : ${totalPenalties(r)} · Chrono ${Math.round(r.data.course.t)} s`;
+            r.resultBody = T`Pénalités : ${totalPenalties(r)} · Chrono ${Math.round(r.data.course.t)} s`;
           },
           update: () => true,
         }),
@@ -526,31 +527,31 @@ export const STORY = [
 
   // 8 — La pension parfaite (Écuries)
   {
-    id: 'pension', story: true, vertical: 'ECURIES', category: 'Recherche', title: 'La pension parfaite', level: 3, requires: ['fer'],
-    desc: 'Trouver une pension pour Galant : box + paddock, accès plage, moins de 500 €/mois. Puis l’y conduire.',
-    client: C.chloe, place: POI.haras, placeName: 'Guide local › Pensions', pay: 170, xp: 250, duration: '~4 min',
-    irl: 'la recherche de pension est une fonction du jeu (Guide local) : elle n’est pas proposée sur Strides.',
+    id: 'pension', story: true, vertical: 'ECURIES', category: 'Recherche', title: t('La pension parfaite'), level: 3, requires: ['fer'],
+    desc: t('Trouver une pension pour Galant : box + paddock, accès plage, moins de 500 €/mois. Puis l’y conduire.'),
+    client: C.chloe, place: POI.haras, placeName: t('Guide local › Pensions'), pay: 170, xp: 250, duration: '~4 min',
+    irl: t('la recherche de pension est une fonction du jeu (Guide local) : elle n’est pas proposée sur Strides.'),
     rate: (run) => (run.data.wrong ? 4 : 5) - (run.t > 220 ? 1 : 0),
     steps(game, run, S) {
       let galant = null;
       return [
         S.custom({
-          text: 'Ouvre le Guide local › Pensions et choisis la bonne pension',
-          hint: 'Critères : <b>box + paddock</b>, <b>accès plage</b>, <b>moins de 500 €/mois</b>.',
+          text: t('Ouvre le Guide local › Pensions et choisis la bonne pension'),
+          hint: t('Critères : <b>box + paddock</b>, <b>accès plage</b>, <b>moins de 500 €/mois</b>.'),
           hintMs: 9000,
           start(r) {
-            game.message('Chloé Mercier', 'CM', 'Bonjour ! Je cherche une pension pour Galant : box + paddock, accès plage idéalement, moins de 500 €/mois. Tu connais le coin, tu peux m’aider ?');
+            game.message('Chloé Mercier', 'CM', t('Bonjour ! Je cherche une pension pour Galant : box + paddock, accès plage idéalement, moins de 500 €/mois. Tu connais le coin, tu peux m’aider ?'));
             game.missions.stablePicker = {
-              prompt: 'Galant : box + paddock · plage · < 500 €',
+              prompt: t('Galant : box + paddock · plage · < 500 €'),
               onPick: (s) => {
                 if (s.id === 'dunes') {
                   r.flags.ok = true;
                   game.missions.stablePicker = null;
                   game.phone.close();
-                  game.hud.toast('Écurie des Dunes : parfait !');
+                  game.hud.toast(t('Écurie des Dunes : parfait !'));
                 } else {
                   r.data.wrong = true;
-                  game.hud.toast(s.price >= 500 ? 'Trop cher pour Chloé.' : 'Pas d’accès plage…');
+                  game.hud.toast(s.price >= 500 ? t('Trop cher pour Chloé.') : t('Pas d’accès plage…'));
                 }
               },
             };
@@ -558,7 +559,7 @@ export const STORY = [
           update: (r) => r.flags.ok,
         }),
         S.custom({
-          text: 'Récupère Galant au Haras de la Pommeraie',
+          text: t('Récupère Galant au Haras de la Pommeraie'),
           target: { x: HARAS.court.x, z: HARAS.court.z + 6 },
           radius: 5,
           start(r) {
@@ -566,7 +567,7 @@ export const STORY = [
             galant.frozen = true;
             r.onCleanup(() => game.despawn(galant));
             r.flags.lead = false;
-            game.interact.add('lead', { label: 'Prendre en longe', icon: 'hand', r: 4, priority: 4, modes: ['ride', 'foot'], getPos: () => galant.pos, action: () => (r.flags.lead = true) });
+            game.interact.add('lead', { label: t('Prendre en longe'), icon: 'hand', r: 4, priority: 4, modes: ['ride', 'foot'], getPos: () => galant.pos, action: () => (r.flags.lead = true) });
             r.onCleanup(() => game.interact.remove('lead'));
           },
           update(r) {
@@ -580,14 +581,14 @@ export const STORY = [
           },
         }),
         S.custom({
-          text: 'Conduis Galant à l’Écurie des Dunes (il te suit)',
+          text: t('Conduis Galant à l’Écurie des Dunes (il te suit)'),
           target: { x: DUNES.paddock.x, z: DUNES.paddock.z - DUNES.paddock.d / 2 - 3 },
           radius: 7,
           update() {
             const f = game.player.focus.pos;
             const t = { x: DUNES.paddock.x, z: DUNES.paddock.z - DUNES.paddock.d / 2 - 3 };
             const follows = Math.hypot(galant.pos.x - f.x, galant.pos.z - f.z) < 16;
-            if (!follows && game.player.focus.speed > 9) game.hud.hint('Doucement : Galant n’arrive pas à suivre !', 2000);
+            if (!follows && game.player.focus.speed > 9) game.hud.hint(t('Doucement : Galant n’arrive pas à suivre !'), 2000);
             if (Math.hypot(f.x - t.x, f.z - t.z) < 8 && follows) {
               galant.setPosition(DUNES.paddock.x, DUNES.paddock.z, 0);
               galant.ai = new GrazeAI(DUNES.paddock);
@@ -596,26 +597,26 @@ export const STORY = [
             return false;
           },
         }),
-        S.dialog([{ who: 'Chloé Mercier', initials: 'CM', text: 'Galant a l’air ravi ! Je signe le contrat de pension avec l’écurie. Merci !' }]),
+        S.dialog([{ who: 'Chloé Mercier', initials: 'CM', text: t('Galant a l’air ravi ! Je signe le contrat de pension avec l’écurie. Merci !') }]),
       ];
     },
   },
 
   // 9 — Derby de la Touques
   {
-    id: 'derby', story: true, vertical: 'EVENEMENTS', category: 'Course', title: 'Derby de la Touques', level: 3, requires: ['cross'],
-    desc: 'Course de galop, un tour d’hippodrome contre cinq concurrents. Top 3 obligatoire.',
+    id: 'derby', story: true, vertical: 'EVENEMENTS', category: 'Course', title: t('Derby de la Touques'), level: 3, requires: ['cross'],
+    desc: t('Course de galop, un tour d’hippodrome contre cinq concurrents. Top 3 obligatoire.'),
     client: C.victor, place: POI.hippo, placeName: 'Hippodrome de la Touques', pay: 420, xp: 400, duration: '~3 min',
     irl: EVENT_IRL,
     rate: (run) => [5, 5, 4, 3][run.data.finishPos - 1] || 2,
-    review: (s) => (s >= 5 ? 'Une victoire tactique, magnifique !' : 'Belle course, sur le podium !'),
+    review: (s) => (s >= 5 ? t('Une victoire tactique, magnifique !') : t('Belle course, sur le podium !')),
     steps(game, run, S) {
       return raceSteps(game, run, S, {
         onFinish: (pos) => {
           // Gains au prorata du montant convenu (contre-proposition comprise) : 100 %, ~60 %, ~36 %.
           const base = run.offer.pay || 420;
           run.payOverride = [base, Math.round((base * 250) / 420), Math.round((base * 150) / 420)][pos - 1] ?? 0;
-          run.resultTitle = pos === 1 ? 'Victoire !' : `${pos}${pos === 1 ? 'er' : 'e'} place`;
+          run.resultTitle = pos === 1 ? t('Victoire !') : pos === 2 ? t('2e place') : pos === 3 ? t('3e place') : T`${pos}e place`;
         },
       });
     },
@@ -623,15 +624,15 @@ export const STORY = [
 
   // 10 — Qualificative CSI 3★
   {
-    id: 'csi3', story: true, vertical: 'EVENEMENTS', category: 'CSO', title: 'Qualificative CSI 3★', level: 4, requires: ['derby', 'pension'],
-    desc: 'Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix.',
+    id: 'csi3', story: true, vertical: 'EVENEMENTS', category: 'CSO', title: t('Qualificative CSI 3★'), level: 4, requires: ['derby', 'pension'],
+    desc: t('Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix.'),
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 500, xp: 450, duration: '~2 min',
     irl: EVENT_IRL,
     rate: (run) => {
       const p = totalPenalties(run);
       return p === 0 ? 5 : p <= 4 ? 4 : 3;
     },
-    review: (s) => (s >= 5 ? 'Sans faute ! Qualification brillante.' : 'Qualifié(e) — rendez-vous au Grand Prix.'),
+    review: (s) => (s >= 5 ? t('Sans faute ! Qualification brillante.') : t('Qualifié(e) — rendez-vous au Grand Prix.')),
     steps(game, run, S) {
       const judge = npcAt(game, run, OFFICIAL, POLE.arena.x - POLE.arena.w / 2 - 3, POLE.arena.z + 20, Math.PI / 2, 'Julie');
       void judge;
@@ -641,14 +642,14 @@ export const STORY = [
         finish: CSO_FINISH,
         timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi),
         heights: csoHeights(1.4),
-        intro: [{ who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: `Neuf obstacles jusqu’à 1,45 m, ${COURSE_LENGTH.cso} m à 375 m/min : temps accordé ${timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)} s. Suis les numéros et franchis la ligne d’arrivée après le 9. À toi !` }],
+        intro: [{ who: t('Julie Bonnet · Comité CSI'), initials: 'JB', text: T`Neuf obstacles jusqu’à 1,45 m, ${COURSE_LENGTH.cso} m à 375 m/min : temps accordé ${timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)} s. Suis les numéros et franchis la ligne d’arrivée après le 9. À toi !` }],
       }).concat([
         S.custom({
           text: '',
           update(r) {
             const p = totalPenalties(r);
-            r.resultBody = `Pénalités : ${p} · Chrono ${dec(r.data.course.t, 2)} s`;
-            if (p > 8) return { fail: `${p} pénalités : non qualifié(e). Il en faut 8 au maximum.` };
+            r.resultBody = T`Pénalités : ${p} · Chrono ${dec(r.data.course.t, 2)} s`;
+            if (p > 8) return { fail: T`${p} pénalités : non qualifié(e). Il en faut 8 au maximum.` };
             return true;
           },
         }),
@@ -658,12 +659,12 @@ export const STORY = [
 
   // 11 — Grand Prix CSI 5★
   {
-    id: 'gp', story: true, vertical: 'EVENEMENTS', category: 'Grand Prix', title: 'Grand Prix CSI 5★', level: 4, requires: ['csi3'],
-    desc: 'La finale. Obstacles de 1,50 m à 1,60 m, meilleurs cavaliers du circuit. Il faut gagner. Un cheval et un équipement à la hauteur sont indispensables.',
+    id: 'gp', story: true, vertical: 'EVENEMENTS', category: 'Grand Prix', title: t('Grand Prix CSI 5★'), level: 4, requires: ['csi3'],
+    desc: t('La finale. Obstacles de 1,50 m à 1,60 m, meilleurs cavaliers du circuit. Il faut gagner. Un cheval et un équipement à la hauteur sont indispensables.'),
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 1500, xp: 900, duration: '~2 min',
     irl: EVENT_IRL,
     rate: (run) => (totalPenalties(run) === 0 ? 5 : 4),
-    review: () => 'Un Grand Prix d’anthologie. Deauville City se souviendra de ce parcours.',
+    review: () => t('Un Grand Prix d’anthologie. Deauville City se souviendra de ce parcours.'),
     steps(game, run, S) {
       const bestRival = { name: 'K. Van Dijk', faults: 4, time: Math.round((timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp) - 3.6) * 10) / 10 };
       return courseSteps(game, run, S, {
@@ -673,8 +674,8 @@ export const STORY = [
         timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp),
         heights: csoHeights(1.55),
         intro: [
-          { who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: `Grand Prix CSI 5★. Le meilleur temps provisoire : Van Dijk, 4 points en ${dec(bestRival.time)} s.` },
-          { who: 'Julie Bonnet · Comité CSI', initials: 'JB', text: 'Un sans-faute, ou 4 points plus vite que lui, et la victoire est à toi.' },
+          { who: t('Julie Bonnet · Comité CSI'), initials: 'JB', text: T`Grand Prix CSI 5★. Le meilleur temps provisoire : Van Dijk, 4 points en ${dec(bestRival.time)} s.` },
+          { who: t('Julie Bonnet · Comité CSI'), initials: 'JB', text: t('Un sans-faute, ou 4 points plus vite que lui, et la victoire est à toi.') },
         ],
       }).concat([
         S.custom({
@@ -683,9 +684,9 @@ export const STORY = [
             const p = totalPenalties(r);
             const t = r.data.course.t;
             const win = p < bestRival.faults || (p === bestRival.faults && t < bestRival.time);
-            r.resultBody = `Pénalités : ${p} · Chrono ${dec(t, 2)} s — Meilleur adversaire : ${bestRival.faults} pts en ${dec(bestRival.time)} s`;
-            if (!win) return { fail: `${p} pénalités en ${dec(t)} s : ${bestRival.name} reste devant. Retente ta chance !` };
-            r.resultTitle = 'Victoire en Grand Prix';
+            r.resultBody = T`Pénalités : ${p} · Chrono ${dec(t, 2)} s — Meilleur adversaire : ${bestRival.faults} pts en ${dec(bestRival.time)} s`;
+            if (!win) return { fail: T`${p} pénalités en ${dec(t)} s : ${bestRival.name} reste devant. Retente ta chance !` };
+            r.resultTitle = t('Victoire en Grand Prix');
             game.audio.cheer();
             return true;
           },
