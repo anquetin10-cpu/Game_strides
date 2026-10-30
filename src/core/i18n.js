@@ -41,7 +41,19 @@ export let LANG = pick(fromUrl()) || pick(stored()) || 'fr';
 export const langChosen = () => !!(pick(fromUrl()) || pick(stored()));
 
 const missing = new Set();
-if (typeof window !== 'undefined') window.__i18nMissing = missing;
+// Texte anglais affiché → texte français d'origine (pour le pilote automatique des tests, qui lit les consignes en
+// français) ; borné.
+const frOf = new Map();
+if (typeof window !== 'undefined') {
+  window.__i18nMissing = missing;
+  window.__i18nFr = (s) => frOf.get(s) ?? s;
+}
+const remember = (en, fr) => {
+  if (LANG === 'fr' || en === fr) return en;
+  if (frOf.size > 20000) frOf.clear();
+  frOf.set(en, fr);
+  return en;
+};
 
 const fill = (s, vals) => (vals && vals.length ? s.replace(/\{(\d+)\}/g, (m, i) => (i < vals.length ? String(vals[i]) : m)) : s);
 
@@ -58,14 +70,14 @@ function lookup(key) {
 // Texte fixe ; `vals` remplace {0}, {1}… (même rôle que les ${…} de T).
 export function t(s, ...vals) {
   if (s == null || s === '') return s;
-  return fill(lookup(String(s)), vals);
+  return remember(fill(lookup(String(s)), vals), fill(String(s), vals));
 }
 
 // Gabarit : T`Obstacle n°${n} sur ${total}` → clé « Obstacle n°{0} sur {1} ».
 export function T(strings, ...vals) {
   let key = strings[0];
   for (let i = 1; i < strings.length; i++) key += `{${i - 1}}${strings[i]}`;
-  return fill(lookup(key), vals);
+  return remember(fill(lookup(key), vals), fill(key, vals));
 }
 
 // Choix de la langue avant le chargement du jeu (premier lancement) : sans rechargement.

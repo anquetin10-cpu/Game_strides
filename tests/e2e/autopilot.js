@@ -298,7 +298,7 @@
       const enter = document.querySelector('.overlay [data-id="enter"]') || document.querySelector('.overlay [data-id="cso-done"]') || document.querySelector('.overlay [data-id="sprint-ok"], .overlay [data-id="gpparis-ok"], .overlay [data-id="travel-ok"]');
       if (enter) return A.tap(enter);
       const id = run.def.id;
-      const txt = run.text();
+      const txt = window.__i18nFr ? window.__i18nFr(run.text()) : run.text();
       // Chapitre 1 : recrutement (parcours client), reconnaissance à pied, monter, échauffement.
       const pick = g.missions.hirePicker;
       if (pick && /Recruter/.test(txt)) {
