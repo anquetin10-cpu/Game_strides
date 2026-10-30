@@ -1,3 +1,4 @@
+import { LANG } from './i18n.js';
 export const TAU = Math.PI * 2;
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -84,9 +85,9 @@ export function pointAlong(pts, s) {
   return { x: pts[0][0], z: pts[0][1], dir: 0 };
 }
 
-// Nombre à virgule (français) : 4.9 → « 4,9 ».
-export const dec = (n, k = 1) => n.toFixed(k).replace('.', ',');
-export const formatMoney = (v) => `${Math.round(v).toLocaleString('fr-FR')} €`;
+// Nombre décimal dans la langue du jeu : 4.9 → « 4,9 » (français) ou « 4.9 » (anglais).
+export const dec = (n, k = 1) => (LANG === 'fr' ? n.toFixed(k).replace('.', ',') : n.toFixed(k));
+export const formatMoney = (v) => (LANG === 'fr' ? `${Math.round(v).toLocaleString('fr-FR')} €` : `${v < 0 ? '-' : ''}€${Math.abs(Math.round(v)).toLocaleString('en-GB')}`);
 export const formatTime = (s) => {
   s = Math.max(0, s);
   const m = Math.floor(s / 60);

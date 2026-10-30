@@ -970,3 +970,14 @@ body.phone-open .rotate { display: none !important; }
 .shop-acts .btn { min-width: 112px; padding: 8px 12px; font-size: 13px; }
 .shop-acts .btn:disabled { opacity: .45; }
 @media (max-height: 430px) { .shop-row { padding: 7px 0; } .shop-row .d { display: none; } }
+
+/* Choix de la langue au premier lancement (main.js). */
+.lang-picker { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: var(--st-bg); padding: 16px; }
+.lang-card { width: min(420px, 100%); text-align: center; color: var(--st-ink); }
+.lang-brand { font: 300 15px/1 var(--mono, monospace); letter-spacing: .28em; margin-bottom: 22px; }
+.lang-brand b { font-weight: 600; }
+.lang-card p { font: 600 24px/1.25 var(--ui, Geist, Arial); margin: 0 0 24px; }
+.lang-card p span { display: block; font-weight: 400; font-size: 17px; color: var(--st-text-3, #6b6a64); margin-top: 4px; }
+.lang-btns { display: flex; gap: 12px; }
+.lang-btns button { flex: 1; height: 54px; border-radius: 14px; font: 600 17px var(--ui, Geist, Arial); background: var(--st-ink); color: var(--st-bg); }
+.lang-btns button + button { background: rgba(247,244,237,.9); color: var(--st-ink); border: 1px solid var(--st-line-2); }
