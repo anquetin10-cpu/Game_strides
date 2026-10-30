@@ -115,9 +115,10 @@ for (const id of MISSIONS) {
 r = await E(() => {
   const missing = [...(window.__i18nMissing || [])];
   // Mots et tournures typiques du français (noms propres connus exclus).
-  const PROPER = /Pôle|Écurie|Côte|Comète|Lumière|Pommeraie|Saint-Gatien|Gatien|Deauville|Normandie|Grand Prix de Paris|Haras|Hélène|Élise|Léa|Chloé|Zoé|Théo|Clément|Jérôme|Amélie|Noé|Mégane|Gaëlle|Héloïse|Stéphane|Frédéric|Rosé|Café|Bénédicte|Sébastien|Valérie|Émilie|Brûlé/g;
+  const PROPER = /Sellerie du Port|Selle Français|Français|CÔTE FLEURIE|piqué|Pôle|Écurie|Côte|Comète|Lumière|Pommeraie|Saint-Gatien|Gatien|Deauville|Normandie|Grand Prix de Paris|Haras|Hélène|Élise|Léa|Chloé|Zoé|Théo|Clément|Jérôme|Amélie|Noé|Mégane|Gaëlle|Héloïse|Stéphane|Frédéric|Rosé|Café|Bénédicte|Sébastien|Valérie|Émilie|Brûlé/g;
   const FR = /\b(le|la|les|des|du|une|est|et|pour|avec|dans|sur|ton|ta|tes|tu|vous|pas|au|aux|ce|cette|il|elle|qui|que)\b|[éèêàùçâîôûœ’]/i;
-  const frenchish = [...window.__seenText].filter((s) => {
+  // Feuilles de style et texte <noscript> (bilingue) : pas des textes du jeu.
+  const frenchish = [...window.__seenText].filter((s) => !/--st-|\{\s|This game requires/.test(s)).filter((s) => {
     const x = s.replace(PROPER, '');
     return FR.test(x) && /[a-zA-Z]{3}/.test(x) && !/^[\d\s.,:/%€-]+$/.test(x);
   });

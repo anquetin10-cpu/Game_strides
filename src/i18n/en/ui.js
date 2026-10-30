@@ -172,7 +172,7 @@ export default {
   'Découvrir la vraie application Strides': 'Discover the real Strides app',
   'Astuce : <b>Partager → Sur l’écran d’accueil</b> pour jouer en plein écran.': 'Tip: <b>Share → Add to Home Screen</b> to play full screen.',
   'Clavier : ZQSD/WASD = galop (Ctrl trot, Alt pas) · Espace = saut · Maj = boost (grand galop) · E = action · P = téléphone': 'Keyboard: WASD/ZQSD = canter (Ctrl trot, Alt walk) · Space = jump · Shift = boost (gallop) · E = action · P = phone',
-  'LE MONDE ÉQUESTRE EN MONDE OUVERT': 'THE EQUESTRIAN WORLD, OPEN WORLD',
+  'LE MONDE ÉQUESTRE EN MONDE OUVERT': 'AN OPEN-WORLD EQUESTRIAN GAME',
   'Langue': 'Language',
   'Prénom': 'First name',
   'Cavalière': 'Female rider',
