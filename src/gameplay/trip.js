@@ -10,18 +10,19 @@ import { simulateField, rankResults } from './ranking.js';
 import { box, cyl, compose } from '../world/shapes.js';
 import { signTexture } from '../world/textures.js';
 import { dec, formatMoney } from '../core/math.js';
+import { t, T, LANG } from '../core/i18n.js';
 
 // Aires de stationnement des camions.
 export const PARKS = {
-  home: { x: HOME.truck.x, z: HOME.truck.z, r: 14, name: 'l’Écurie du Val' },
-  haras: { x: -380, z: -98, r: 12, name: 'le Haras de la Pommeraie' },
-  pole: { x: 311, z: -177, r: 13, name: 'le parking des camions du Pôle International' },
+  home: { x: HOME.truck.x, z: HOME.truck.z, r: 14, name: t('l’Écurie du Val') },
+  haras: { x: -380, z: -98, r: 12, name: t('le Haras de la Pommeraie') },
+  pole: { x: 311, z: -177, r: 13, name: t('le parking des camions du Pôle International') },
 };
 // Secrétariat du concours (sous tente, à l'entrée du Pôle).
 export const SECRETARIAT = { x: 288, z: -179 };
 
 const P = (g) => g.player;
-const T = (g) => g.player.truck;
+const TK = (g) => g.player.truck;
 const TP = (g) => g.player.transport;
 
 // ---------- Étapes réutilisables ----------
@@ -30,14 +31,14 @@ export function loadStep(game, S, { horse, name }) {
   const rear = new THREE.Vector3();
   const state = () => {
     const h = horse();
-    const tp = TP(game), t = T(game), p = P(game);
+    const tp = TP(game), tk = TK(game), p = P(game);
     if (!h) return 'wait';
-    if (tp.isAboard(h) && !tp.seq) return t.rampClosed ? 'done' : 'close';
+    if (tp.isAboard(h) && !tp.seq) return tk.rampClosed ? 'done' : 'close';
     if (tp.seq) return 'seq';
     if (p.mode === 'drive') return 'exit';
-    if (Math.hypot(h.pos.x - t.pos.x, h.pos.z - t.pos.z) > 30) return 'bring';
+    if (Math.hypot(h.pos.x - tk.pos.x, h.pos.z - tk.pos.z) > 30) return 'bring';
     if (p.mode === 'ride' && p.horse === h) return 'dismount';
-    if (t.rampClosed || t.ramp.target === 0) return 'open';
+    if (tk.rampClosed || tk.ramp.target === 0) return 'open';
     if (!tp.led || tp.led.horse !== h) return 'lead';
     return 'load';
   };
@@ -46,14 +47,14 @@ export function loadStep(game, S, { horse, name }) {
     horse,
     text: () => {
       switch (state()) {
-        case 'exit': return 'Arrête le camion et descends (ACTION)';
-        case 'dismount': return `Descends de ${name} pour le charger`;
-        case 'open': return 'Ouvre la rampe arrière du camion';
-        case 'bring': return `Ramène ${name} jusqu’au camion (monte-le ou mène-le en main)`;
-        case 'lead': return `Prends ${name} en main (« Mener en main »)`;
-        case 'load': return `Amène ${name} au pied de la rampe : « Faire monter le cheval »`;
-        case 'seq': return `Chargement de ${name}…`;
-        case 'close': return 'Ferme la rampe';
+        case 'exit': return t('Arrête le camion et descends (ACTION)');
+        case 'dismount': return T`Descends de ${name} pour le charger`;
+        case 'open': return t('Ouvre la rampe arrière du camion');
+        case 'bring': return T`Ramène ${name} jusqu’au camion (monte-le ou mène-le en main)`;
+        case 'lead': return T`Prends ${name} en main (« Mener en main »)`;
+        case 'load': return T`Amène ${name} au pied de la rampe : « Faire monter le cheval »`;
+        case 'seq': return T`Chargement de ${name}…`;
+        case 'close': return t('Ferme la rampe');
         default: return '';
       }
     },
@@ -63,11 +64,11 @@ export function loadStep(game, S, { horse, name }) {
       const p = P(game);
       const carried = p.mode === 'ride' ? p.horse === h : TP(game).led?.horse === h;
       if (h && (st === 'lead' || st === 'dismount' || (st === 'bring' && !carried))) return h.pos;
-      return T(game).rearPoint(rear, T(game).ramp.target === 1 ? 2.6 : 1.0);
+      return TK(game).rearPoint(rear, TK(game).ramp.target === 1 ? 2.6 : 1.0);
     },
     radius: 2.5,
     beacon: false,
-    hint: 'À pied derrière le camion : <b>Ouvrir la rampe</b>, puis <b>Mener en main</b> et <b>Faire monter le cheval</b>.',
+    hint: t('À pied derrière le camion : <b>Ouvrir la rampe</b>, puis <b>Mener en main</b> et <b>Faire monter le cheval</b>.'),
     hintMs: 7000,
     update: () => state() === 'done',
   });
@@ -78,12 +79,12 @@ export function unloadStep(game, S, { horse, name }) {
   const rear = new THREE.Vector3();
   const state = () => {
     const h = horse();
-    const tp = TP(game), t = T(game), p = P(game);
+    const tp = TP(game), tk = TK(game), p = P(game);
     if (!h) return 'wait';
     if (tp.seq) return 'seq';
     if (!tp.isAboard(h)) return 'done';
     if (p.mode === 'drive') return 'exit';
-    if (t.ramp.target === 0) return 'open';
+    if (tk.ramp.target === 0) return 'open';
     return 'unload';
   };
   return S.custom({
@@ -91,14 +92,14 @@ export function unloadStep(game, S, { horse, name }) {
     horse,
     text: () => {
       switch (state()) {
-        case 'exit': return 'Gare-toi et descends du camion (ACTION à l’arrêt)';
-        case 'open': return 'Ouvre la rampe arrière';
-        case 'unload': return `Fais descendre ${name}`;
-        case 'seq': return `Déchargement de ${name}…`;
+        case 'exit': return t('Gare-toi et descends du camion (ACTION à l’arrêt)');
+        case 'open': return t('Ouvre la rampe arrière');
+        case 'unload': return T`Fais descendre ${name}`;
+        case 'seq': return T`Déchargement de ${name}…`;
         default: return '';
       }
     },
-    target: () => T(game).rearPoint(rear, T(game).ramp.target === 1 ? 2.6 : 1.0),
+    target: () => TK(game).rearPoint(rear, TK(game).ramp.target === 1 ? 2.6 : 1.0),
     radius: 2.5,
     beacon: false,
     update: () => state() === 'done',
@@ -111,22 +112,22 @@ export function driveStep(game, S, { to, text, timer = null, comfort = false, on
     kind: 'tdrive',
     to,
     text: () => {
-      const p = P(game), t = T(game);
-      if (!p.inTruck) return p.mode === 'drive' ? 'Gare-toi et monte au volant du camion Strides' : t.rampClosed ? 'Monte au volant du camion' : 'Ferme la rampe et monte au volant';
-      const d = Math.hypot(t.pos.x - to.x, t.pos.z - to.z);
-      return d < to.r + 4 ? 'Gare le camion et arrête-toi' : text;
+      const p = P(game), tk = TK(game);
+      if (!p.inTruck) return p.mode === 'drive' ? t('Gare-toi et monte au volant du camion Strides') : tk.rampClosed ? t('Monte au volant du camion') : t('Ferme la rampe et monte au volant');
+      const d = Math.hypot(tk.pos.x - to.x, tk.pos.z - to.z);
+      return d < to.r + 4 ? t('Gare le camion et arrête-toi') : text;
     },
-    target: () => (P(game).inTruck ? to : T(game).pos),
+    target: () => (P(game).inTruck ? to : TK(game).pos),
     radius: to.r,
-    hint: comfort ? 'Accélère et freine en douceur, ralentis dans les virages : le <b>confort du cheval</b> compte.' : 'Joystick vers le haut : accélérer · vers le bas : freiner puis reculer.',
+    hint: comfort ? t('Accélère et freine en douceur, ralentis dans les virages : le <b>confort du cheval</b> compte.') : t('Joystick vers le haut : accélérer · vers le bas : freiner puis reculer.'),
     hintMs: 6000,
     start(r) {
       if (timer) r.timer = timer;
       if (comfort) TP(game).comfort = 100;
     },
     update(r) {
-      const t = T(game);
-      const ok = P(game).inTruck && Math.hypot(t.pos.x - to.x, t.pos.z - to.z) < to.r && Math.abs(t.speed) < 0.3;
+      const tk = TK(game);
+      const ok = P(game).inTruck && Math.hypot(tk.pos.x - to.x, tk.pos.z - to.z) < to.r && Math.abs(tk.speed) < 0.3;
       if (ok) {
         if (timer) r.timer = null;
         if (comfort) r.data.comfort = TP(game).comfort;
@@ -151,7 +152,7 @@ const hhmm = (h) => {
   return mm === 60 ? `${pad2((hh + 1) % 24)}:00` : `${pad2(hh)}:${pad2(mm)}`;
 };
 const classFor = (level) => CLASSES[level >= 4 ? 2 : level >= 3 ? 1 : 0];
-const ordinal = (n) => (n === 1 ? '1re' : `${n}e`);
+const ordinal = (n) => (LANG === 'fr' ? (n === 1 ? '1re' : `${n}e`) : `${n}${[11, 12, 13].includes(n % 100) ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`);
 
 export { simulateField, rankResults };
 
@@ -174,7 +175,7 @@ export function secretariatProps(game) {
   m.castShadow = true;
   m.receiveShadow = true;
   g.add(m);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.3), new THREE.MeshStandardMaterial({ map: signTexture('SECRÉTARIAT', '', { dark: true, w: 1024, h: 102 }) }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.3), new THREE.MeshStandardMaterial({ map: signTexture(t('SECRÉTARIAT'), '', { dark: true, w: 1024, h: 102 }) }));
   sign.position.set(0, 2.2, 1.375);
   g.add(sign);
   g.position.set(s.x, y, s.z);
@@ -204,49 +205,49 @@ export function competitionDef(level, startHour) {
     story: false,
     vertical: 'EVENEMENTS',
     category: 'CSO',
-    title: `Concours du Pôle — ${cls.name} ${dec(cls.h, 2)} m`,
-    desc: `CSO au Pôle International, barème A au chrono (règlement FEI). Charge ton cheval dans le camion Strides, gare-toi au parking des camions, retire ton dossard au secrétariat, échauffe-toi puis entre en piste. Épreuves de 8 h 30 à 21 h (en soirée sous les projecteurs) : passage environ 5 h après l’engagement, ou le lendemain matin (prochain passage possible : ${hhmm(startHour)}). Engagement ${cls.fee} €.`,
+    title: T`Concours du Pôle — ${cls.name} ${dec(cls.h, 2)} m`,
+    desc: T`CSO au Pôle International, barème A au chrono (règlement FEI). Charge ton cheval dans le camion Strides, gare-toi au parking des camions, retire ton dossard au secrétariat, échauffe-toi puis entre en piste. Épreuves de 8 h 30 à 21 h (en soirée sous les projecteurs) : passage environ 5 h après l’engagement, ou le lendemain matin (prochain passage possible : ${hhmm(startHour)}). Engagement ${cls.fee} €.`,
     client: { name: 'Pôle International', initials: 'PI', rating: 4.9, verified: true },
     place: { x: POI.pole.x, z: POI.pole.z },
     placeName: 'Pôle International',
     pay: 0,
-    payLabel: `Dotation ${formatMoney(total)}`,
+    payLabel: T`Dotation ${formatMoney(total)}`,
     xp: 240,
     duration: '~10 min',
     cls,
     startHour,
-    irl: 'les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.',
+    irl: t('les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.'),
     rate: (run) => {
       const rk = run.data.rank || 99;
       return Math.max(2, (rk <= 3 ? 5 : rk <= 6 ? 4 : 3) - (run.data.late ? 1 : 0));
     },
-    review: (s, run) => (run.data.rank === 1 ? 'Victoire au Pôle ! Un parcours de très haut niveau.' : s >= 4 ? 'Très beau parcours, classé(e) dans la dotation. Revenez vite !' : 'Merci pour votre participation, à bientôt sur nos terrains.'),
+    review: (s, run) => (run.data.rank === 1 ? t('Victoire au Pôle ! Un parcours de très haut niveau.') : s >= 4 ? t('Très beau parcours, classé(e) dans la dotation. Revenez vite !') : t('Merci pour votre participation, à bientôt sur nos terrains.')),
     setup(game) {
       const d = game.save.data;
       if (d.money >= cls.fee) {
         d.money -= cls.fee;
         game.updateWallet();
-        game.hud.toast(`Engagement réglé au secrétariat du concours : ${cls.fee} €`);
+        game.hud.toast(T`Engagement réglé au secrétariat du concours : ${cls.fee} €`);
       }
     },
     after(game) {
-      game.hud.hint('Pour rentrer : <b>Mener en main</b> ton cheval jusqu’au camion, <b>Faire monter le cheval</b>, puis cap sur l’Écurie du Val.', 8000);
+      game.hud.hint(t('Pour rentrer : <b>Mener en main</b> ton cheval jusqu’au camion, <b>Faire monter le cheval</b>, puis cap sur l’Écurie du Val.'), 8000);
     },
     steps(game, run, S) {
       if (run.data.startHour === undefined) {
         run.data.startHour = passageHour(game.hour());
         // Passage le lendemain matin : on peut dormir à la maison de l'Écurie du Val en attendant.
-        if (run.data.startHour < game.hour()) setTimeout(() => game.hud.hint(`Passage <b>demain à ${hhmm(run.data.startHour)}</b> : repose-toi à la maison de l’Écurie du Val (« Dormir jusqu’au matin »).`, 7000), 3200);
+        if (run.data.startHour < game.hour()) setTimeout(() => game.hud.hint(T`Passage <b>demain à ${hhmm(run.data.startHour)}</b> : repose-toi à la maison de l’Écurie du Val (« Dormir jusqu’au matin »).`, 7000), 3200);
       }
       run.data.bib ??= 30 + Math.floor(Math.random() * 60);
       const main = () => game.mainHorse;
-      const nm = () => game.mainHorse?.name || 'ton cheval';
+      const nm = () => game.mainHorse?.name || t('ton cheval');
       let official = null;
       const late = () => {
         const dh = (((game.hour() - run.data.startHour) % 24) + 24) % 24;
         return dh > 0 && dh < 12;
       };
-      run.sub = () => (run.data.course?.running || run.data.course?.finished ? null : `Heure de passage ${hhmm(run.data.startHour)} · il est ${hhmm(game.hour())}${late() ? ' · en retard !' : ''}`);
+      run.sub = () => (run.data.course?.running || run.data.course?.finished ? null : T`Heure de passage ${hhmm(run.data.startHour)} · il est ${hhmm(game.hour())}${late() ? t(' · en retard !') : ''}`);
       const subPre = run.sub;
       const course = courseSteps(game, run, S, {
         courseId: 'cso',
@@ -259,7 +260,7 @@ export function competitionDef(level, startHour) {
         className: `${cls.name} ${dec(cls.h, 2)} m`,
         height: cls.h,
         stable: 'Écurie du Val',
-        intro: () => [{ who: 'Jury · Pôle International', initials: 'PI', text: `Concurrent n° ${run.data.bib}, ${game.save.data.playerName} et ${nm()}. Barème A au chrono, temps accordé ${Math.floor(cls.ta / 60)}:${pad2(cls.ta % 60)}.` }],
+        intro: () => [{ who: t('Jury · Pôle International'), initials: 'PI', text: T`Concurrent n° ${run.data.bib}, ${game.save.data.playerName} et ${nm()}. Barème A au chrono, temps accordé ${Math.floor(cls.ta / 60)}:${pad2(cls.ta % 60)}.` }],
         result: {
           cls,
           seed: Math.floor(game.time * 7 + run.data.bib),
@@ -268,7 +269,7 @@ export function competitionDef(level, startHour) {
             if (out) return;
             if (r.data.rank === undefined || rank < r.data.rank) r.data.rank = rank;
             game.reportScore(`concours-${cls.id}`, { pen: me.faults, time: me.time, horse: me.horse });
-            r.resultTitle = rank === 1 ? 'Victoire au Pôle !' : `${ordinal(rank)} place — ${cls.name}`;
+            r.resultTitle = rank === 1 ? t('Victoire au Pôle !') : T`${ordinal(rank)} place — ${cls.name}`;
           },
         },
       });
@@ -278,7 +279,7 @@ export function competitionDef(level, startHour) {
         S.custom({
           text: '',
           start(r) {
-            game.message('Pôle International', 'PI', `Engagement confirmé : ${main()?.name || 'ton cheval'} et ${game.save.data.playerName}, épreuve ${cls.name} (${dec(cls.h, 2)} m), dossard n° ${r.data.bib}. Heure de passage ${hhmm(r.data.startHour)}. Dossard à retirer au secrétariat, à l’entrée du Pôle.`);
+            game.message('Pôle International', 'PI', T`Engagement confirmé : ${main()?.name || t('ton cheval')} et ${game.save.data.playerName}, épreuve ${cls.name} (${dec(cls.h, 2)} m), dossard n° ${r.data.bib}. Heure de passage ${hhmm(r.data.startHour)}. Dossard à retirer au secrétariat, à l’entrée du Pôle.`);
             const clean = secretariatProps(game);
             r.onCleanup(clean);
             official = game.spawnHuman({ top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#1b1c1f', boots: '#121214', skin: '#c99a74', hair: '#2a1d14' }, SECRETARIAT.x - 0.2, SECRETARIAT.z - 0.9, 0.15, { name: 'Secrétariat' });
@@ -287,9 +288,9 @@ export function competitionDef(level, startHour) {
           update: () => true,
         }),
         loadStep(game, S, { horse: main, name: nm() }),
-        driveStep(game, S, { to: PARKS.pole, text: 'Roule jusqu’au Pôle International — parking des camions', comfort: true }),
+        driveStep(game, S, { to: PARKS.pole, text: t('Roule jusqu’au Pôle International — parking des camions'), comfort: true }),
         unloadStep(game, S, { horse: main, name: nm() }),
-        S.interact(() => official.pos, 'Retirer le dossard', 'Secrétariat — retire ton dossard', {
+        S.interact(() => official.pos, t('Retirer le dossard'), t('Secrétariat — retire ton dossard'), {
           modes: ['foot', 'ride'],
           r: 3.6,
           icon: 'talk',
@@ -299,22 +300,22 @@ export function competitionDef(level, startHour) {
           },
         }),
         S.dialog(() => [
-          { who: 'Secrétariat du concours', initials: 'SC', text: `Bonjour ! ${main()?.name || 'Ton cheval'}, épreuve ${cls.name}, dossard n° ${run.data.bib}. ${run.data.late ? 'Tu as manqué ton heure : tu partiras en fin d’épreuve.' : 'Tu passes à l’heure prévue.'}` },
-          { who: 'Secrétariat du concours', initials: 'SC', text: 'Paddock d’échauffement à l’ouest de la carrière. Deux sauts pour te mettre en jambes, puis présente-toi à l’entrée de piste.' },
+          { who: t('Secrétariat du concours'), initials: 'SC', text: T`Bonjour ! ${main()?.name || t('Ton cheval')}, épreuve ${cls.name}, dossard n° ${run.data.bib}. ${run.data.late ? t('Tu as manqué ton heure : tu partiras en fin d’épreuve.') : t('Tu passes à l’heure prévue.')}` },
+          { who: t('Secrétariat du concours'), initials: 'SC', text: t('Paddock d’échauffement à l’ouest de la carrière. Deux sauts pour te mettre en jambes, puis présente-toi à l’entrée de piste.') },
         ]),
         S.custom({
-          text: () => (P(game).mode === 'ride' ? '' : `Selle et monte ${nm()}`),
+          text: () => (P(game).mode === 'ride' ? '' : T`Selle et monte ${nm()}`),
           target: () => main()?.pos,
           radius: 3,
           beacon: false,
           update: () => P(game).mode === 'ride' && P(game).horse === main(),
         }),
         S.custom({
-          text: () => `Échauffe-toi au paddock : sauts ${Math.min(2, run.data.warm || 0)}/2`,
+          text: () => T`Échauffe-toi au paddock : sauts ${Math.min(2, run.data.warm || 0)}/2`,
           target: { x: POLE.warmup.x + 12, z: POLE.warmup.z },
           radius: 6,
           beacon: false,
-          hint: 'Saute les deux obstacles du paddock d’échauffement (au trot ou au galop).',
+          hint: t('Saute les deux obstacles du paddock d’échauffement (au trot ou au galop).'),
           start(r) {
             r.data.warm = 0;
             const on = ({ obstacle }) => {

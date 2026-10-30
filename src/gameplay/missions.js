@@ -4,6 +4,7 @@ import { REPUTATION } from '../config.js';
 import { formatMoney, dec } from '../core/math.js';
 import { STORY } from './story.js';
 import { generateJob } from './jobs.js';
+import { t, T, num } from '../core/i18n.js';
 
 // ---------- Fabriques d'étapes ----------
 export function makeSteps(game) {
@@ -21,14 +22,14 @@ export function makeSteps(game) {
     const d = p ? dist(p) : 0;
     return d > Math.max(NEAR, r + 30) ? d : 0;
   };
-  const withDist = (t, d) => `${t} · ${d >= 1000 ? `${(d / 1000).toFixed(1).replace('.', ',')} km` : `${Math.round(d / 10) * 10} m`}`;
+  const withDist = (txt, d) => `${txt} · ${d >= 1000 ? `${num(d / 1000, 1)} km` : `${Math.round(d / 10) * 10} m`}`;
   const modeHint = (mode) => {
     // Une étape « au volant » est une étape du camion Strides (transport des chevaux).
     if (!mode || (mode === 'drive' ? P().inTruck : P().mode === mode)) return null;
-    const veh = P().vehicle && !P().inTruck ? 'du véhicule' : 'du camion';
-    if (mode === 'ride') return P().mode === 'drive' ? `Sors ${veh} puis monte à cheval.` : 'Monte sur ton cheval (siffle-le si besoin).';
-    if (mode === 'foot') return P().mode === 'ride' ? 'Descends de cheval (bouton ACTION à l’arrêt).' : `Sors ${veh} (ACTION à l’arrêt).`;
-    if (mode === 'drive') return P().mode === 'drive' ? 'Gare-toi et monte dans le camion Strides.' : 'Monte dans le camion Strides.';
+    const car = P().vehicle && !P().inTruck;
+    if (mode === 'ride') return P().mode === 'drive' ? (car ? t('Sors du véhicule puis monte à cheval.') : t('Sors du camion puis monte à cheval.')) : t('Monte sur ton cheval (siffle-le si besoin).');
+    if (mode === 'foot') return P().mode === 'ride' ? t('Descends de cheval (bouton ACTION à l’arrêt).') : car ? t('Sors du véhicule (ACTION à l’arrêt).') : t('Sors du camion (ACTION à l’arrêt).');
+    if (mode === 'drive') return P().mode === 'drive' ? t('Gare-toi et monte dans le camion Strides.') : t('Monte dans le camion Strides.');
     return null;
   };
   let uid = 0;
@@ -122,7 +123,7 @@ export function makeSteps(game) {
     countdown() {
       return {
         kind: 'countdown',
-        text: 'Prépare-toi…',
+        text: t('Prépare-toi…'),
         start(run) {
           run.flags.cd = 3.6;
           run.flags.cdShown = 4;
@@ -137,7 +138,7 @@ export function makeSteps(game) {
               game.hud.big(String(n), '', 700);
               game.audio.tone(660, 0.12, 'sine', 0.12);
             } else {
-              game.hud.big('PARTEZ !', '', 900);
+              game.hud.big(t('PARTEZ !'), '', 900);
               game.audio.tone(1320, 0.3, 'sine', 0.14);
             }
           }
@@ -216,7 +217,7 @@ class Run {
     if (!s) return;
     if (this.timer !== null && !this.timerPaused) {
       this.timer -= dt;
-      if (this.timer <= 0) return this.game.missions.fail(this, this.def.timeoutText || 'Temps écoulé !');
+      if (this.timer <= 0) return this.game.missions.fail(this, this.def.timeoutText || t('Temps écoulé !'));
     }
     const r = s.update ? s.update(this, dt) : true;
     if (this.finished) return;
@@ -311,7 +312,7 @@ export class MissionManager {
       if (this.refusedAt[id] !== undefined && g.time - this.refusedAt[id] < 40) continue;
       const o = this._offerFromDef(def);
       if (d.checkpoint?.mission === def.id) o.resume = true;
-      if (def.level > lv.level) o.locked = `Débloqué au palier « ${(REPUTATION[def.level - 1] || REPUTATION[REPUTATION.length - 1]).title} ».`;
+      if (def.level > lv.level) o.locked = T`Débloqué au palier « ${(REPUTATION[def.level - 1] || REPUTATION[REPUTATION.length - 1]).title} ».`;
       if (o.locked && this.offers.some((x) => x.locked)) continue;
       this.offers.push(o);
       if (!o.locked) added.push(o);
@@ -343,12 +344,12 @@ export class MissionManager {
     if (g.state !== 'play') return;
     const d = g.distanceTo(o.place);
     g.hud.notify({
-      title: `Nouvelle demande · ${o.client ? o.client.name : o.title}`,
-      body: `${o.title} · ${o.pay ? `~${o.pay} €` : o.payLabel || ''} · ${dec(d / 1000)} km`,
+      title: T`Nouvelle demande · ${o.client ? o.client.name : o.title}`,
+      body: `${o.title} · ${o.pay ? T`~${o.pay} €` : o.payLabel || ''} · ${dec(d / 1000)} km`,
       timeout: 11000,
       actions: [
-        { label: 'Plus tard', run: () => {} },
-        { label: 'Répondre à la demande', primary: true, run: () => g.phone.open('request', { id: o.id }) },
+        { label: t('Plus tard'), run: () => {} },
+        { label: t('Répondre à la demande'), primary: true, run: () => g.phone.open('request', { id: o.id }) },
       ],
     });
   }
@@ -367,16 +368,16 @@ export class MissionManager {
       // Réponse reçue : la demande n'est plus épinglée et repart pour une durée de vie complète.
       o.pinned = false;
       o.createdAt = g.simClock;
-      const who = o.client ? o.client.name : 'Le client';
+      const who = o.client ? o.client.name : t('Le client');
       if (yes) {
         o.pay = c.amount;
         o.counterAccepted = true;
       }
       g.hud.notify({
-        title: yes ? 'Contre-proposition acceptée' : 'Contre-proposition déclinée',
-        body: yes ? `${who} accepte ${c.amount} € · ${o.title}` : `${who} maintient ${o.pay} € · ${o.title}`,
+        title: yes ? t('Contre-proposition acceptée') : t('Contre-proposition déclinée'),
+        body: yes ? T`${who} accepte ${c.amount} € · ${o.title}` : T`${who} maintient ${o.pay} € · ${o.title}`,
         timeout: 9000,
-        actions: [{ label: 'Plus tard', run: () => {} }, { label: 'Répondre à la demande', primary: true, run: () => g.phone.open('request', { id: o.id }) }],
+        actions: [{ label: t('Plus tard'), run: () => {} }, { label: t('Répondre à la demande'), primary: true, run: () => g.phone.open('request', { id: o.id }) }],
       });
       g.phone?.refresh();
     }
@@ -396,7 +397,7 @@ export class MissionManager {
       return false;
     }
     if (this.active) {
-      g.hud.toast('Termine ou abandonne ta mission en cours d’abord.');
+      g.hud.toast(t('Termine ou abandonne ta mission en cours d’abord.'));
       return false;
     }
     this.offers.splice(this.offers.indexOf(o), 1);
@@ -409,7 +410,7 @@ export class MissionManager {
     if (!o) return;
     this.offers.splice(this.offers.indexOf(o), 1);
     this.refusedAt[id] = this.game.time;
-    if (!quiet) this.game.hud.toast(o.story ? 'Mission refusée — elle te sera reproposée.' : 'Offre refusée.');
+    if (!quiet) this.game.hud.toast(o.story ? t('Mission refusée — elle te sera reproposée.') : t('Offre refusée.'));
     this.updateBadge();
     this.timer = Math.min(this.timer, 25);
   }
@@ -422,8 +423,8 @@ export class MissionManager {
     const run = new Run(g, offer, offer.def);
     this.active = run;
     this.lastOffer = offer;
-    const label = { EVENEMENTS: 'Événement', ANNUAIRE: 'Guide local', ECURIES: 'Guide local' }[offer.vertical] || (offer.vertical === 'TRANSPORT' ? 'Mission Strides · Chauffeur' : 'Mission Strides');
-    g.hud.big(offer.title.toUpperCase(), `${label} · ${offer.category}`, 2600);
+    const label = { EVENEMENTS: t('Événement'), ANNUAIRE: t('Guide local'), ECURIES: t('Guide local') }[offer.vertical] || (offer.vertical === 'TRANSPORT' ? t('Mission Strides · Chauffeur') : t('Mission Strides'));
+    g.hud.big(offer.title.toUpperCase(), `${label} · ${t(offer.category)}`, 2600);
     g.audio.notify();
     offer.def.setup?.(g, run);
     run.begin();
@@ -448,7 +449,7 @@ export class MissionManager {
     this.abandon(text);
   }
 
-  abandon(text = 'Mission abandonnée.') {
+  abandon(text = t('Mission abandonnée.')) {
     const run = this.active;
     if (!run) return;
     run.finished = true;
@@ -522,7 +523,7 @@ export class MissionManager {
     g.saveNow();
     const review = def.client && !def.noReview ? { initials: def.client.initials, name: def.client.name, text: (def.review || defaultReview)(stars, run) } : null;
     const result = {
-      title: run.resultTitle || 'Mission réussie',
+      title: run.resultTitle || t('Mission réussie'),
       kicker: `${def.title} · ${def.client ? def.client.name : 'Strides'}`,
       body: run.resultBody,
       pay,
@@ -531,12 +532,12 @@ export class MissionManager {
       time: run.resultTime ?? run.t,
       timeLabel: run.resultTimeLabel,
       review,
-      irl: def.irl ? `<b>Dans la vraie vie</b> — ${def.irl}` : null,
+      irl: def.irl ? T`<b>Dans la vraie vie</b> — ${def.irl}` : null,
       levelUp: after.level > before.level ? { title: after.title, perk: LEVEL_PERKS[after.level] } : null,
     };
     // Écran de résultat propre à l'épreuve (CSO : bilan, classement, Recommencer…), déjà affiché par la mission.
     if (run.resultCustom) result.custom = run.resultCustom;
-    if (tip) g.hud.toast(`Pourboire 5★ : +${formatMoney(tip)}`, 'money');
+    if (tip) g.hud.toast(T`Pourboire 5★ : +${formatMoney(tip)}`, 'money');
     g.bus.emit('mission:complete', { run, result });
     g.updateWallet();
     const close = () => {
@@ -568,7 +569,7 @@ export class MissionManager {
       if (run && !run.finished && run.step?.target && !g.gps.target) run.applyWaypoint();
       if (run) {
         g.hud.setObjective({
-          tag: `${run.offer.vertical === 'EVENEMENTS' ? 'Événement' : 'Mission'} · ${run.offer.title}`,
+          tag: `${run.offer.vertical === 'EVENEMENTS' ? t('Événement') : t('Mission')} · ${run.offer.title}`,
           text: run.text(),
           timer: run.timer,
           sub: run.sub ? run.sub() : null,
@@ -585,15 +586,15 @@ export class MissionManager {
 }
 
 const LEVEL_PERKS = {
-  2: 'Nouvelles missions : Transport, sorties cavalier, plage.',
-  3: 'Référence locale — les clients te recommandent entre eux.',
-  4: 'Engagements en CSI ouverts au Pôle International.',
-  5: 'Tu es la référence de Deauville City.',
+  2: t('Nouvelles missions : Transport, sorties cavalier, plage.'),
+  3: t('Référence locale — les clients te recommandent entre eux.'),
+  4: t('Engagements en CSI ouverts au Pôle International.'),
+  5: t('Tu es la référence de Deauville City.'),
 };
 
 function defaultReview(stars) {
-  if (stars >= 5) return 'Parfait, rapide et pro. Je recommande sans hésiter.';
-  if (stars >= 4) return 'Très bon travail, merci !';
-  if (stars >= 3) return 'Correct, mais peut mieux faire.';
-  return 'Mission réalisée… de justesse.';
+  if (stars >= 5) return t('Parfait, rapide et pro. Je recommande sans hésiter.');
+  if (stars >= 4) return t('Très bon travail, merci !');
+  if (stars >= 3) return t('Correct, mais peut mieux faire.');
+  return t('Mission réalisée… de justesse.');
 }
