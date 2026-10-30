@@ -4,7 +4,7 @@
 import { CSO_TRACE } from '../gameplay/csoCourse.js';
 import { POLE, PARIS } from '../world/sites.js';
 
-// trace : tracé du parcours (Pôle par défaut) ; venue 'paris' : arène de Paris (80 × 40 m, entrée à l'ouest, tribunes
+// trace : tracé du parcours (Pôle par défaut) ; venue 'paris' : arène de Paris (86 × 46 m, entrée à l'ouest, tribunes
 // sur trois côtés).
 export function coursePlanSvg({ heights = null, next = 0, trace = CSO_TRACE, venue = 'pole' } = {}) {
   const paris = venue === 'paris';

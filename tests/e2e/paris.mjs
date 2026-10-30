@@ -132,7 +132,7 @@ r = await E(async () => {
   return { cards, intro: intro.slice(0, 700), horse: g.player.horse.name, region: g.region, hour: g.hour(), kind: run.step?.kind };
 });
 check('Activités : le défi de Paris parmi les défis à conditions fixes', r.cards.includes('defi-paris-v2') && r.cards.includes('defi-pole-v5'), JSON.stringify(r.cards));
-check('règles du défi : cheval fourni, 1,50 m, soirée en salle, 42 s', /Lumière de Paris/.test(r.intro) && /1,50 m/.test(r.intro) && /20 h 30/.test(r.intro) && /42 s/.test(r.intro), r.intro);
+check('règles du défi : cheval fourni, 1,50 m, soirée en salle, 41 s', /Lumière de Paris/.test(r.intro) && /1,50 m/.test(r.intro) && /20 h 30/.test(r.intro) && /41 s/.test(r.intro), r.intro);
 check('départ directement dans l’arène de Paris, cheval fourni, 20 h 30', r.region === 'paris' && r.horse === 'Lumière de Paris' && r.hour === 20.5 && r.kind === 'course', JSON.stringify(r));
 r = await E(async () => {
   const g = window.__game, A = window.__auto;
@@ -175,7 +175,7 @@ r = await E(async () => {
 });
 const order = ['1', '2', '3', '4A', '4B', '5', '6', '7A', '7B'];
 check('défi monté au joystick : 9 efforts franchis dans l’ordre, sans faute', JSON.stringify(r.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(r.ev));
-check('défi : dans le temps accordé (42 s)', r.t > 25 && r.t <= 42, `${r.t?.toFixed(2)} s`);
+check('défi : dans le temps accordé (41 s)', r.t > 25 && r.t <= 41, `${r.t?.toFixed(2)} s`);
 check('aides au saut visibles sur le sable : tracé au sol et zone d’appel, au-dessus du sable', r.lineSeen > r.n * 0.5 && r.zoneSeen > 60 && r.aidLow === 0, `tracé ${r.lineSeen}/${r.n} images, zone ${r.zoneSeen}, sous le sable ${r.aidLow}`);
 check('caméra de concours jamais dans un mur, une tribune ou le sol', r.camHits === 0, `${r.camHits} image(s)`);
 await shot('4-defi-arrivee');

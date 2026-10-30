@@ -52,8 +52,8 @@ export const DEFI_POLE_V3 = deepFreeze({
   ...JSON.parse(JSON.stringify(DEFI_POLE_V2)),
   id: 'defi-pole-v3',
   version: 3,
-  timeAllowed: 42,
-  timeLimit: 84,
+  timeAllowed: 41,
+  timeLimit: 82,
 });
 
 // Version 4 : parcours dessiné de 10 obstacles avec un double (7A – 7B), lignes de départ et d'arrivée chronométrées,
@@ -101,15 +101,15 @@ export const DEFI_PARIS_V1 = deepFreeze({
 });
 
 // Version 2 : arène agrandie (86 × 46 m) et Grand Prix redessiné (1 en diagonale depuis l'entrée, ligne nord, double
-// 4A – 4B au milieu, changement de main, mur et double 7A – 7B sur la ligne sud ; ≈ 240 m) ; marquage du tracé et zone
-// d'appel visibles sur le sable de l'arène. Temps accordé réglementaire du nouveau tracé (240 m à 350 m/min).
+// 4A – 4B au milieu, changement de main, mur et double 7A – 7B sur la ligne sud ; ≈ 236 m) ; marquage du tracé et zone
+// d'appel visibles sur le sable de l'arène. Temps accordé réglementaire du nouveau tracé (236 m à 350 m/min).
 export const DEFI_PARIS_V2 = deepFreeze({
   ...JSON.parse(JSON.stringify(DEFI_PARIS_V1)),
   id: 'defi-paris-v2',
   version: 2,
   obstacles: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-  timeAllowed: 42,
-  timeLimit: 84,
+  timeAllowed: 41,
+  timeLimit: 82,
 });
 
 export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4, [DEFI_POLE_V5.id]: DEFI_POLE_V5, [DEFI_PARIS_V1.id]: DEFI_PARIS_V1, [DEFI_PARIS_V2.id]: DEFI_PARIS_V2 };
