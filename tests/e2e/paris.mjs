@@ -146,7 +146,7 @@ r = await E(async () => {
   window.__parisSand = PARIS.y + PARIS_FLOOR.sand;
   h.setPosition(line[0].x, line[0].z, S.rot);
   g.cam.yaw = S.rot + Math.PI;
-  let camHits = 0, n = 0, zoneSeen = 0, lineSeen = 0, aidLow = 0;
+  let camHits = 0, camAt = [], n = 0, zoneSeen = 0, lineSeen = 0, aidLow = 0;
   const ev = A.rideLine(line.concat(C.line), {
     maxTicks: 3600,
     until: () => {
@@ -164,20 +164,23 @@ r = await E(async () => {
         const ys = aids.line.geo.attributes.position.array;
         if (n === 1) for (let i = 1; i < ys.length; i += 3) if (ys[i] < window.__parisSand + 0.02) { aidLow++; break; }
       }
-      if (g.colliders.cameraBlocked(cp.x, cp.z, cp.y) || cp.y < g.terrain.getHeight(cp.x, cp.z) + 0.5) camHits++;
+      if (g.colliders.cameraBlocked(cp.x, cp.z, cp.y) || cp.y < g.terrain.getHeight(cp.x, cp.z) + 0.5) {
+        camHits++;
+        if (camAt.length < 3) camAt.push(`${(cp.x - 4000).toFixed(1)},${cp.z.toFixed(1)},${cp.y.toFixed(1)}`);
+      }
       if (n === 520) window.__mid = true;
       return false;
     },
   });
   for (let i = 0; i < 60 && g.missions.active?.step?.kind === 'course'; i++) A.tick(1);
   const st = g.missions.active?.data.course || null;
-  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), camHits, t: st?.t, faults: st?.faults, zoneSeen, lineSeen, aidLow, n };
+  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), camHits, camAt, t: st?.t, faults: st?.faults, zoneSeen, lineSeen, aidLow, n };
 });
 const order = ['1', '2', '3', '4A', '4B', '5', '6', '7A', '7B'];
 check('défi monté au joystick : 9 efforts franchis dans l’ordre, sans faute', JSON.stringify(r.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(r.ev));
 check('défi : dans le temps accordé (41 s)', r.t > 25 && r.t <= 41, `${r.t?.toFixed(2)} s`);
 check('aides au saut visibles sur le sable : tracé au sol et zone d’appel, au-dessus du sable', r.lineSeen > r.n * 0.5 && r.zoneSeen > 60 && r.aidLow === 0, `tracé ${r.lineSeen}/${r.n} images, zone ${r.zoneSeen}, sous le sable ${r.aidLow}`);
-check('caméra de concours jamais dans un mur, une tribune ou le sol', r.camHits === 0, `${r.camHits} image(s)`);
+check('caméra de concours jamais dans un mur, une tribune ou le sol', r.camHits === 0, `${r.camHits} image(s) ${r.camAt.join(' | ')}`);
 await shot('4-defi-arrivee');
 r = await E(() => {
   const g = window.__game, A = window.__auto;
