@@ -8,6 +8,8 @@ let fails = 0;
 const check = (label, cond, extra = '') => { console.log(`${cond ? '✔' : '✘'} ${label}${extra ? ` — ${extra}` : ''}`); if (!cond) fails++; };
 const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const ctx = await b.newContext({ viewport: { width: 667, height: 308 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+// Langue déjà choisie (sinon le sélecteur FR | EN du premier lancement précède l'écran titre).
+await ctx.addInitScript(() => localStorage.setItem('strides-lang', 'fr'));
 const page = await ctx.newPage();
 page.setDefaultTimeout(180000);
 const errors = [];
