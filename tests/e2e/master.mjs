@@ -224,8 +224,9 @@ r = await E(() => {
   p.human.setPosition(sp.x, sp.z, v.heading + Math.PI / 2);
   A.tick(2);
   const lab = g.interact.update()?.label;
-  // Fermer : le pont latéral (le déchargement passe avant : on choisit l'action de fermeture).
-  g.vanLoading.toggleSide();
+  const lab2 = g.vanLoading.secondary()?.label;
+  // Fermer le pont : action principale après le chargement (AUD-02), « Faire descendre » reste en action secondaire.
+  g.interact.trigger();
   A.tick(75);
   p.enterVehicle(v);
   for (let i = 0; i < 120; i++) {
@@ -240,9 +241,9 @@ r = await E(() => {
   A.tick(5);
   const l = v.toLocal(h.pos.x, h.pos.z);
   p.exitVehicle();
-  return { lab, mass: v.sim.horses, local: { x: +l.x.toFixed(2), z: +l.z.toFixed(2) }, moved: true };
+  return { lab, lab2, mass: v.sim.horses, local: { x: +l.x.toFixed(2), z: +l.z.toFixed(2) }, moved: true };
 });
-check('à pied près du pont ouvert, cheval à bord : « Faire descendre … » proposé', /^Faire descendre/.test(r.lab || ''), r.lab);
+check('à pied près du pont ouvert, cheval à bord : « Fermer le pont latéral » et, en secondaire, « Faire descendre … »', r.lab === 'Fermer le pont latéral' && /^Faire descendre/.test(r.lab2 || ''), `${r.lab} · ${r.lab2}`);
 check('trajet : le cheval reste dans sa stalle (suit le van), masse prise en compte', r.mass === 1 && Math.abs(Math.abs(r.local.x) - 0.55) < 0.1 && Math.abs(r.local.z + 1.1) < 0.15, JSON.stringify(r));
 r = await E(() => {
   const g = window.__game, A = window.__auto, v = g.van, p = g.player, h = g.mainHorse, L = g.vanLoading;

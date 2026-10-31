@@ -40,6 +40,12 @@ const OFFICIAL = { top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#1b1c1f', boots: '
 // Compétitions : le jeu les met en scène, mais Strides ne gère ni engagements ni résultats (vérifié sur la page officielle).
 const EVENT_IRL = t('les concours se gèrent hors de Strides ; sur Strides, on recrute en revanche les grooms de concours, chauffeurs et agents de concours qui les rendent possibles.');
 
+// Point de reprise de « Premiers pas » enregistré dans la sauvegarde (start, briefed, out), sinon null.
+const tutoStep = (game) => {
+  const cp = game.save.data.checkpoint;
+  return cp?.mission === 'tuto' ? cp.step : null;
+};
+
 export const STORY = [
   // 0 — Tutoriel : une mission courte qui montre seulement la boucle du jeu (demande reçue sur Strides → acceptée →
   // réalisée → payée et notée) et les gestes de base (monter, avancer, diriger). Le saut s'apprend plus tard, à
@@ -53,10 +59,18 @@ export const STORY = [
     // Comète attend dans son box : on va la chercher, on la sort en main de l'écurie, puis on monte.
     keepInBox: true,
     setup(game) {
+      // Reprise après rechargement, Comète déjà sortie de son box : elle n'y est pas remise.
+      if (tutoStep(game) === 'out') return;
       const h = game.mainHorse;
       if (h && !h.inBox && !h.rider && !h.hiddenInTruck) game.stabling?.putIn(h, true);
     },
     steps(game, run, S) {
+      // Points de reprise : « briefed » (consignes de Camille lues), « out » (Comète sortie du box).
+      const resumed = tutoStep(game);
+      const mark = (step) => {
+        if (step === 'briefed' && tutoStep(game) === 'out') return;
+        game.missions.checkpoint(run, step);
+      };
       const camille = npcAt(game, run, STAFF_F, -100, 166, Math.PI, 'Camille');
       const A = HOME.arena;
       const B = HOME.barn;
@@ -67,21 +81,28 @@ export const STORY = [
       // de gauche, puis retour par l'allée centrale, dans l'axe de la porte pour ressortir sans buter dans la lice.
       const tour = [[A.x, A.z - 7.5], [A.x - 16, A.z - 5], [A.x - 16, A.z + 6], [A.x - 4, A.z + 7], [A.x, A.z - 3]];
       return [
-        S.dialog([
-          { who: 'Camille Martin', initials: 'CM', text: T`Salut ${game.save.data.playerName} ! Bienvenue à l’Écurie du Val. Ta première mission est simple : un petit tour avec Comète.` },
-          { who: 'Camille Martin', initials: 'CM', text: t('Elle est dans son box, tout au bout de l’allée de l’écurie. Va la chercher, sors-la, puis monte en selle dehors.') },
-        ]),
+        // Consignes déjà lues avant un rechargement : pas répétées.
+        ...(resumed === 'briefed' || resumed === 'out'
+          ? []
+          : [
+              S.dialog([
+                { who: 'Camille Martin', initials: 'CM', text: T`Salut ${game.save.data.playerName} ! Bienvenue à l’Écurie du Val. Ta première mission est simple : un petit tour avec Comète.` },
+                { who: 'Camille Martin', initials: 'CM', text: t('Elle est dans son box, tout au bout de l’allée de l’écurie. Va la chercher, sors-la, puis monte en selle dehors.') },
+              ]),
+            ]),
         S.custom({
           text: t('Va chercher Comète dans son box (bout de l’allée)'),
           target: HOME_BOX.door,
           radius: 2.6,
           hint: t('Joystick gauche : marcher · glisse à droite : tourner la caméra. Devant la porte du box : <b>ACTION</b>.'),
           hintMs: 9000,
+          start: () => mark('briefed'),
           update: () => !horse()?.inBox,
           end() {
             // Elle sort au licol et suit le joueur en main.
             const h = horse();
-            if (h && game.player.mode === 'foot') game.player.transport?.lead(h);
+            if (h && game.player.mode === 'foot' && !h.rider) game.player.transport?.lead(h);
+            mark('out');
           },
         }),
         S.goto(out, t('Sors de l’écurie avec Comète (elle te suit en main)'), { r: 3, hint: t('Comète marche à ton pas, à ta droite.'), hintMs: 6000 }),
@@ -443,8 +464,12 @@ export const STORY = [
     steps(game, run, S) {
       // Le cheval boiteux est suivi par son identité, pas par l'objet : changer de monture (« Mes chevaux ») recrée
       // l'objet cheval ; la boiterie le suit, et la forge attend ce cheval-là.
-      const lameId = game.player.horse.def?.id || game.player.horse.id;
+      // Reprise après rechargement, ferrure déjà réglée : il ne reste que le mot de Hugo.
+      const cp = game.save.data.checkpoint;
+      const done = cp?.mission === 'fer' && cp.data?.shod;
+      const lameId = done && cp.data.horse ? cp.data.horse : game.player.horse.def?.id || game.player.horse.id;
       const lameName = game.player.horse.name;
+      if (done) run.data.shod = true;
       const lame = () => {
         const h = game.mainHorse;
         return h && (h.def?.id || h.id) === lameId ? h : null;
@@ -462,6 +487,12 @@ export const STORY = [
       });
       let hintT = -99;
       const hugo = npcAt(game, run, { top: '#3a3d42', sleeve: '#3a3d42', pants: '#2b3442', boots: '#2a2622', skin: '#c99a74', hair: '#2a1d14', logo: false }, TOWN.forge.x + TOWN.forge.w / 2 + 3, TOWN.forge.z + 2, Math.PI / 2, 'Hugo');
+      const thanks = () =>
+        S.dialog([
+          { who: t('Hugo Lemaire · Maréchal-ferrant'), initials: 'HL', text: t('Et voilà, quatre fers neufs. Tu me règles 60 €, facture dans ta boîte.') },
+          { who: t('Toi'), initials: game.save.data.playerName.slice(0, 2).toUpperCase(), text: t('Merci Hugo ! Comète marche comme une horloge.') },
+        ]);
+      if (done) return [thanks()];
       return [
         S.dialog([{ who: 'Comète', initials: '🐴', text: t('(Comète boite. Un fer s’est détaché — impossible de travailler comme ça.)') }]),
         S.custom({
@@ -510,14 +541,13 @@ export const STORY = [
               run.data.shod = true;
               game.save.data.money -= 60;
               game.updateWallet();
+              // Ferrure réglée : enregistrée avec la mission (un rechargement ne la fait ni refaire ni repayer).
+              game.missions.checkpoint(run, 'shod', { shod: true, horse: lameId });
             }, 1.6);
           },
           update: (r) => r.stepT > 2.2,
         }),
-        S.dialog([
-          { who: t('Hugo Lemaire · Maréchal-ferrant'), initials: 'HL', text: t('Et voilà, quatre fers neufs. Tu me règles 60 €, facture dans ta boîte.') },
-          { who: t('Toi'), initials: game.save.data.playerName.slice(0, 2).toUpperCase(), text: t('Merci Hugo ! Comète marche comme une horloge.') },
-        ]),
+        thanks(),
       ];
     },
     after(game) {

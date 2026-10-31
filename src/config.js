@@ -33,6 +33,9 @@ export const LEVELS = REPUTATION; // alias de compatibilité
 // Mesure des résultats : aucun envoi externe tant que `endpoint` est vide (adaptateur local uniquement).
 export const METRICS = { endpoint: '', enabled: true };
 export const BUILD = '2.0.0';
+// Version construite (commit et date, injectés par vite.config.js) : identifie une version de test.
+// eslint-disable-next-line no-undef
+export const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
 
 // Réglages du cheval (valeurs de base, multipliées par les stats du cheval et les équipements).
 export const HORSE = {

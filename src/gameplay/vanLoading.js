@@ -34,6 +34,9 @@ export class VanLoading {
     this.aboard = []; // [{ horse, stall }]
     this.seq = null; // { kind, horse, stall, path, i, a: { x, z, h }, wait }
     this._savedRef = null;
+    // Pont ouvert avec un cheval à bord : action principale « Fermer le pont » (après un chargement), ou « Faire
+    // descendre » (pont ouvert à l'arrivée) ; l'autre reste proposée en action secondaire (comme le camion Scania).
+    this.preferUnload = false;
     this._setupInteractions();
   }
 
@@ -71,16 +74,19 @@ export class VanLoading {
     });
     // Déchargement : un cheval à bord, pont ouvert, mains libres.
     g.interact.add('van-unload', {
-      label: '', icon: 'truck', r: 3.4, priority: 2.9, modes: ['foot'],
+      label: '', icon: 'horse', r: 3.4, priority: 2.9, modes: ['foot'],
       getPos: () => v.sidePoint(side, 0.9),
       when: () => idle() && v.sideOpen && !led() && this.aboard.length > 0,
       action: () => this.unload(this.aboard[this.aboard.length - 1].horse),
     });
-    // Pont latéral et volets.
+    // Pont latéral et volets. Cheval à bord, pont ouvert : même zone au sol que « Faire descendre » (au pied du pont,
+    // hors de son emprise), priorité selon preferUnload (voir _labels).
+    const sideP = new THREE.Vector3();
     g.interact.add('van-side', {
       label: '', icon: 'truck', r: 2.8, priority: 1.6, modes: ['foot'],
-      getPos: () => v.sidePoint(side, 0.2),
-      when: () => idle() && (v.sideDoor.target === 1 ? v.sideDoor.t >= 1 : v.sideDoor.t <= 0) && !(v.sideDoor.target === 1 && led() && this.freeStall() >= 0),
+      getPos: () => (this.aboard.length && v.sideDoor.target === 1 ? v.sidePoint(sideP, 0.9) : v.sidePoint(sideP, 0.2)),
+      // (cheval mené au pied du pont ouvert : « Faire monter » passe devant, fermer reste l'action secondaire)
+      when: () => idle() && (v.sideDoor.target === 1 ? v.sideDoor.t >= 1 : v.sideDoor.t <= 0),
       action: () => this.toggleSide(),
     });
     // Porte arrière (sellerie).
@@ -100,6 +106,8 @@ export class VanLoading {
     const v = this.van;
     const open = v.sideDoor.target !== 1;
     if (!v.setSide(open)) return false;
+    // Pont ouvert à l'arrivée avec un cheval à bord : on vient le faire descendre.
+    if (open) this.preferUnload = this.aboard.length > 0;
     if (open) this.game.hud.toast(t('Pont latéral baissé : amène ton cheval en main au pied du pont.'));
     this._persist();
     return true;
@@ -114,6 +122,33 @@ export class VanLoading {
     unload.label = last ? T`Faire descendre ${last.name || t('le cheval')}` : '';
     side.label = v.sideDoor.target === 1 ? t('Fermer le pont latéral') : t('Ouvrir le pont latéral');
     rear.label = v.rearDoor.target === 1 ? t('Fermer la porte arrière') : t('Ouvrir la porte arrière');
+    // Pont ouvert, cheval à bord, mains libres : fermer et faire descendre sont deux actions distinctes au même endroit.
+    const both = this.aboard.length > 0 && v.sideDoor.target === 1;
+    side.r = both ? 3.4 : 2.8;
+    // Cheval mené au pied du pont fermé : « Ouvrir le pont » passe devant « Monter » à cheval (comme la rampe du camion).
+    const leading = !!h && v.sideDoor.target !== 1 && this.freeStall() >= 0;
+    // Pont ouvert, van vide, mains libres : « Fermer le pont » passe devant « Monter » sur un cheval laissé à côté.
+    side.priority = both ? (this.preferUnload ? 2.8 : 3.0) : leading ? 2.9 : v.sideDoor.target === 1 ? 2.1 : 1.6;
+  }
+
+  // Action secondaire pour le HUD et la touche L : l'autre des deux actions du pied du pont (fermer / faire descendre).
+  secondary() {
+    const g = this.game;
+    const cur = g.interact.current;
+    const [load, unload, side] = this._its;
+    const alt = cur === unload || cur === load ? side : cur === side ? unload : null;
+    if (!alt || this.game.player.mode !== 'foot' || !alt.when()) return null;
+    const ap = alt.getPos();
+    const fp = this.game.player.focusPos;
+    if (Math.hypot(ap.x - fp.x, ap.z - fp.z) > alt.r) return null;
+    return { id: alt.id, label: alt.label, icon: alt.icon, it: alt };
+  }
+  triggerSecondary() {
+    const s = this.secondary();
+    if (!s) return false;
+    s.it.action();
+    this.game.audio?.click();
+    return true;
   }
 
   // ---------- Séquences ----------
@@ -252,6 +287,7 @@ export class VanLoading {
     const n = h.name || t('Le cheval');
     if (s.kind === 'load') {
       this._setAboard(h, s.stall);
+      this.preferUnload = false;
       g.hud.toast(fem(h) ? T`${n} est attachée dans le van. Ferme le pont latéral avant de partir.` : T`${n} est attaché dans le van. Ferme le pont latéral avant de partir.`);
       g.audio.snort?.();
       g.bus.emit('van:loaded', h);
@@ -410,6 +446,7 @@ export class VanLoading {
     const d = g.save.data;
     if (this._savedRef === d) return;
     this._savedRef = d;
+    this.preferUnload = false;
     if (this.seq) this.abortSequence();
     for (const a of [...this.aboard]) {
       this._removeAboard(a.horse);

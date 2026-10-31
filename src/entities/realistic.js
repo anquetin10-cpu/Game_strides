@@ -225,7 +225,11 @@ export class RealBody {
 
   // Recopie de la pose courante (après l'animation du personnage classique, avant le rendu).
   update() {
-    if (!this.active || !this.human.mesh.visible) return;
+    if (!this.active) return;
+    // Personnage masqué (caméra contre sa tête, séquence où il est caché) : le modèle réaliste l'est aussi.
+    const vis = this.human.mesh.visible;
+    if (this.root.visible !== vis) this.root.visible = vis;
+    if (!vis) return;
     const H = this.human;
     H.mesh.updateMatrixWorld(true);
     this.root.getWorldQuaternion(_rootQ).invert();

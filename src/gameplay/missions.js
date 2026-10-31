@@ -432,6 +432,12 @@ export class MissionManager {
     const d = g.save.data;
     // Mesure : une deuxième activité commence (après une première mission terminée).
     if (d.stats.jobs >= 1) g.metrics?.track('second_activity_started', { mission: offer.def.id, course: offer.vertical === 'EVENEMENTS' ? offer.category : undefined });
+    // Mission d'histoire acceptée : enregistrée tout de suite (point de reprise « start »), elle survit à un
+    // rechargement ; un point déjà posé pour elle (reprise, choix ou paiement faits) est conservé tel quel.
+    if (offer.story && d.checkpoint?.mission !== offer.def.id) {
+      d.checkpoint = { mission: offer.def.id, step: 'start', data: {} };
+      g.saveNow();
+    }
     const run = new Run(g, offer, offer.def);
     this.active = run;
     this.lastOffer = offer;
@@ -495,6 +501,10 @@ export class MissionManager {
     if (run.finished) return;
     run.finished = true;
     g.save.data.pendingFee = null;
+    // Échec : la mission n'est plus en cours. Point de reprise sans rien à garder (ni choix ni paiement) effacé ;
+    // sinon conservé pour « Réessayer » (rien n'est refait ni redébité).
+    const cp = g.save.data.checkpoint;
+    if (cp?.mission === run.def.id && !Object.keys(cp.data || {}).length) this.clearCheckpoint(run.def.id);
     run.cleanup();
     this.active = null;
     g.gps.clear();

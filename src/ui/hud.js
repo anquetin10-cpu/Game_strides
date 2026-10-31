@@ -295,7 +295,7 @@ export class HUD {
     }
     this.btnWhistle.classList.toggle('hide', !(mode === 'foot' && p.horse && !p.horse.hiddenInTruck && !g.missions?.noWhistle && !g.indoor));
     // Action secondaire du transport (calculée après l'action principale).
-    const sec = mode === 'foot' && !p.boarding?.active ? p.transport?.secondary() || g.defenderAccess?.secondary() || null : null;
+    const sec = mode === 'foot' && !p.boarding?.active ? g.vanLoading?.secondary() || p.transport?.secondary() || g.defenderAccess?.secondary() || null : null;
     const l2 = sec ? sec.label : '';
     if (l2 !== this._lastAction2) {
       this._lastAction2 = l2;

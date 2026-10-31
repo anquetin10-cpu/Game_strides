@@ -192,6 +192,7 @@ export default {
   'Réessayer': 'Try again',
   '<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>': '<p style="margin-top:12px"><b>Touch</b> — joystick on the left (drag), camera: drag on the right. Joystick all the way = canter. Buttons: <b>Jump</b>, <b>Boost</b> (hold: gallop), <b>Action</b>, whistle.<br><b>Keyboard</b> — WASD/ZQSD (canter; Ctrl: trot, Alt: walk), Space (jump), Shift (boost: gallop), E (action), Q (whistle), P (phone), M (map), Esc (pause).</p>',
   'Pause': 'Pause',
+  'Version': 'Version',
   'Écran titre': 'Title screen',
   'Partager': 'Share',
   'Reprendre': 'Resume',

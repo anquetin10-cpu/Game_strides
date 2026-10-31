@@ -106,7 +106,12 @@ export class FollowCamera {
     const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
     const dirx = Math.sin(this.yaw) * cp, diry = sp, dirz = Math.cos(this.yaw) * cp;
     const cs = this.game.colliders;
-    for (let d = 1.2, last = false; !last; d += 0.4) {
+    // À pied sous un toit (allée d'écurie, club-house) : perche sondée dès 0,3 m et raccourcie jusqu'à 0,3 m. Dos à
+    // une façade de box, à moins de 1,2 m, la caméra se plaçait sinon dans la cloison (vue masquée par les grilles).
+    // Dehors, inchangé (premier point à 1,2 m : les lices basses ne rapprochent pas la caméra).
+    const ceil = this.game.colliders.ceilingAt(tx, tz);
+    const near = mode === 'foot' && !!ceil ? 0.3 : 1.2;
+    for (let d = near, last = false; !last; d += 0.4) {
       if (d >= this.targetDist) {
         d = this.targetDist;
         last = true;
@@ -116,7 +121,7 @@ export class FollowCamera {
       const vt = cs.volumeTopAt(x, z, y - 0.3);
       if (vt > -Infinity) y = Math.max(y, vt + 0.7);
       if (cs.cameraBlocked(x, z, y)) {
-        dist = Math.max(1.2, d - 0.45);
+        dist = Math.max(near, d - 0.45);
         break;
       }
     }
@@ -127,7 +132,6 @@ export class FollowCamera {
     const ground = this.game.terrain.getHeight(cx, cz) + 0.6;
     if (cy < ground) cy = ground;
     // Dans un bâtiment (couloir d'écurie, club-house) : la caméra reste sous la charpente.
-    const ceil = this.game.colliders.ceilingAt(tx, tz);
     if (ceil) {
       const cmax = this.game.colliders.ceilingY(ceil, cx, cz);
       if (cmax !== null && cy > cmax) cy = Math.max(cmax, ty - 0.2);
@@ -146,6 +150,12 @@ export class FollowCamera {
       cx += Math.sin(now * 23) * shake * 0.5;
     }
     this.shake = Math.max(0, this.shake - dt * 2);
+    // Perche très courte (dos à une cloison, sous un toit) : la caméra est contre la tête du personnage ; on masque
+    // son modèle (vue à la première personne) plutôt que de montrer l'intérieur de la tête. Les murs restent opaques.
+    // (Le personnage recalcule sa visibilité à chaque mise à jour, avant la caméra : masqué ici pour cette image,
+    // toujours animé.)
+    const hu = this.game.player?.human;
+    if (hu && mode === 'foot' && this.dist < 0.8) hu.mesh.visible = false;
     cam.position.set(cx, cy, cz);
     cam.lookAt(tx, ty + (mode === 'ride' ? 0.1 : 0), tz);
     const fovTarget = course ? CAM_CSO.fov : indoor ? CAM_INDOOR.fov : 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);

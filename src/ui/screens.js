@@ -2,7 +2,7 @@
 import { h, tap } from './dom.js';
 import { icon } from './icons.js';
 import { formatMoney, formatTime } from '../core/math.js';
-import { CONFIG } from '../config.js';
+import { CONFIG, BUILD, BUILD_ID } from '../config.js';
 import { logoSvg } from './logo.js';
 import { stars } from './requests.js';
 import { t, T, LANG, switchLang } from '../core/i18n.js';
@@ -208,10 +208,11 @@ export class Screens {
   pause({ onResume, onTitle }) {
     const g = this.game;
     const controls = h('div', { html: t(`<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>`) });
+    const ver = h('p.build-id', { text: `${t('Version')} ${BUILD} · ${BUILD_ID}`, style: { fontSize: '11px', opacity: 0.6, marginTop: '8px' } });
     return this.card({
       kicker: t('Pause'),
       title: 'STRIDES Grand Tour',
-      extra: [controls, g.phone.promo()],
+      extra: [controls, g.phone.promo(), ver],
       buttons: [
         { label: t('Écran titre'), ghost: true, run: onTitle, id: 'title' },
         { label: t('Découvrir la vraie application Strides'), ghost: true, run: () => g.openStrides('pause', 'discover'), keep: true, id: 'strides' },

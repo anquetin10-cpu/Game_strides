@@ -624,7 +624,9 @@ export class Player {
     // Action secondaire (bouton contextuel ou touche L).
     const keyL = input.keys.has('KeyL') && input.enabled;
     if ((input.wasPressed('action2') || (keyL && !this._keyL)) && !locked && !this.boarding.active && !g.hud.dialogActive && !g.phone.isOpen) {
-      if (tp._sec || !g.defenderAccess?._sec) tp.triggerSecondary();
+      if (g.vanLoading?.triggerSecondary()) {
+        // Van Master : fermer le pont / faire descendre (l'autre action du pied du pont).
+      } else if (tp._sec || !g.defenderAccess?._sec) tp.triggerSecondary();
       else g.defenderAccess.triggerSecondary();
     }
     this._keyL = keyL;
