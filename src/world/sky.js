@@ -33,6 +33,8 @@ export const CLOUD_UNIFORMS = {
   csWet: { value: 0 },
   // Lampadaire le plus proche du joueur : lanterne (xyz) et intensité (w, nulle le jour), voir World.update.
   lpPos: { value: new THREE.Vector4(0, -1e3, 0, 0) },
+  // Éclairage d'ambiance d'une pièce éclairée (intérieur d'un commerce) : chevaux et personnages, où qu'ils soient.
+  lpAmb: { value: 0 },
   // Carrières éclairées par projecteurs (x, z, demi-longueur, demi-largeur) et intensité (nulle le jour).
   flRect: { value: Array.from({ length: 6 }, () => new THREE.Vector4(0, -1e5, 0, 0)) },
   flK: { value: 0 },
@@ -92,7 +94,7 @@ const LAMP_VERTEX = /* glsl */ `
   vec3 lpD = lpPos.xyz - csW;
   float lpD2 = dot( lpD, lpD );
   float lpN = dot( inverseTransformDirection( transformedNormal, viewMatrix ), lpD * inversesqrt( lpD2 ) );
-  vLamp = lpPos.w * ( 0.3 + 0.7 * max( lpN, 0.0 ) ) * max( 1.0 - lpD2 / 90.0, 0.0 ) / ( 1.0 + lpD2 * 0.08 );`;
+  vLamp = lpPos.w * ( 0.3 + 0.7 * max( lpN, 0.0 ) ) * max( 1.0 - lpD2 / 90.0, 0.0 ) / ( 1.0 + lpD2 * 0.08 ) + lpAmb;`;
 const LAMP_FRAGMENT = /* glsl */ `
 reflectedLight.directDiffuse += vLamp * vec3( 1.0, 0.72, 0.42 ) * BRDF_Lambert( material.diffuseColor );`;
 // worldPosExpr : expression GLSL de la position monde dans le fragment (sol, routes, bâtiments). Sans elle,
@@ -110,7 +112,7 @@ export function addCloudShadows(shader, worldPosExpr = null, lamp = false) {
   } else {
     const varyings = lamp ? 'varying float vCsShade;\nvarying float vFlood;\nvarying float vLamp;' : 'varying float vCsShade;\nvarying float vFlood;';
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}\n${lamp ? 'uniform vec4 lpPos;\n' : ''}${varyings}`)
+      .replace('#include <common>', `#include <common>\n${CLOUD_SHADOW_GLSL}\n${lamp ? 'uniform vec4 lpPos;\nuniform float lpAmb;\n' : ''}${varyings}`)
       .replace('#include <project_vertex>', `#include <project_vertex>\n${CS_VERTEX.replace('LAMP_VERTEX', lamp ? LAMP_VERTEX : '')}`);
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${varyings}`);
   }

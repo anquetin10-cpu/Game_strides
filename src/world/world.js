@@ -1863,6 +1863,12 @@ export class World {
       // Lanterne la plus proche du joueur : éclaire chevaux et cavaliers la nuit (voir addCloudShadows).
       const lp = CLOUD_UNIFORMS.lpPos.value;
       lp.w = 0;
+      // Dans un commerce (sellerie, café, boutique) : ses plafonniers sont allumés jour et nuit ; leur éclairage, propre
+      // aux matériaux du commerce, n'atteignait pas les personnages (noirs la nuit). Plafonnier au-dessus du joueur.
+      const shop = this.activeShop ? this.shops?.[this.activeShop] : null;
+      if (shop) lp.set(focus.x, shop.y + 2.9, focus.z + 0.6, 3 + night * 5);
+      // Plafonniers de toute la pièce : la vendeuse au comptoir, les clients, pas seulement le joueur.
+      CLOUD_UNIFORMS.lpAmb.value = shop ? 0.5 + night * 0.9 : 0;
       if (night > 0.05) {
         let best = 400, bi = -1;
         for (let i = 0; i < this._lampPools.length; i++) {
@@ -1870,12 +1876,12 @@ export class World {
           const d = (p[0] - focus.x) * (p[0] - focus.x) + (p[2] - focus.z) * (p[2] - focus.z);
           if (d < best) { best = d; bi = i; }
         }
-        if (bi >= 0) {
+        if (bi >= 0 && !shop) {
           const p = this._lampPools[bi];
           lp.set(p[0], p[1] + 3.6, p[2], night * 6);
         }
         // Sous le toit d'une écurie : le plafonnier au-dessus du joueur éclaire chevaux et personnages.
-        const ind = this.indoorAt(focus.x, focus.z);
+        const ind = shop ? null : this.indoorAt(focus.x, focus.z);
         if (ind) lp.set(focus.x, ind.y + ind.h - 0.3, focus.z + 0.8, night * 7);
       }
     }

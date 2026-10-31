@@ -217,6 +217,7 @@ export class ShopManager {
       p.focusPos = p.human.pos;
       this.current = id;
       g.indoor = { id, spec: s };
+      g.world.activeShop = id;
       g.save.data.indoorShop = id;
       g.cam.snap(p.human.pos, s.rot + Math.PI);
       g.audio.shopDoor();
@@ -269,6 +270,7 @@ export class ShopManager {
     this._greeted = null; // le vendeur salue à chaque visite
     this.current = null;
     g.indoor = null;
+    g.world.activeShop = null;
     g.save.data.indoorShop = null;
     if (g.mainHorse) g.mainHorse.tiedAt = null;
   }

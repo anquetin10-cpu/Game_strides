@@ -6,6 +6,7 @@
 // squelette est recopié sur celui du modèle réaliste (reciblage des rotations). Revenir à « Classique » rétablit
 // l'affichage d'origine sans rien recharger.
 import * as THREE from 'three';
+import { addCloudShadows } from '../world/sky.js';
 import { RealHorse } from './realHorse.js';
 import { RealCar, CAR_MODELS } from './realCar.js';
 import { t } from '../core/i18n.js';
@@ -87,6 +88,9 @@ export class RealBody {
         o.frustumCulled = false;
         // Matériaux propres à ce personnage (teintes de sa tenue), textures partagées.
         const m = (o.material = o.material.clone());
+        // Comme les personnages classiques : lanterne / plafonnier proche et ombre des nuages (sinon noirs la nuit).
+        m.onBeforeCompile = (sh) => addCloudShadows(sh, null, true);
+        m.customProgramCacheKey = () => 'strides-real-body-lamp';
         this.mats.push(m);
         if (/^Hair/.test(m.name) || /Eyelash|Eyebrow/.test(m.name)) {
           m.alphaTest = 0.45;
