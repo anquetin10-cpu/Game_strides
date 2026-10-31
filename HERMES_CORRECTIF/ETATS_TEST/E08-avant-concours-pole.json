@@ -1,0 +1,32 @@
+{
+ "id": "E08-avant-concours-pole",
+ "titre": "Avant le concours du Pôle : camion garé au parking du Pôle, Comète à bord",
+ "usage": "COR-P01 : l’offre « Concours du Pôle » arrive dans Strides 15 à 35 s après « Continuer » ; accepter, monter au volant, décharger, dossard, échauffement, parcours, résultats.",
+ "origine": "Partie neuve ; chapitre 1 marqué terminé (tuto, M1–M3), solde 300 €, réputation 300 ; camion Scania placé au parking des camions du Pôle, Comète chargée (chargement immédiat), rampe fermée ; joueur à côté de la cabine ; Comète soignée (état par défaut d’une partie neuve), selle de base.",
+ "prerequis": "Aucun. L’engagement (22 € en Amateur 1) est débité à l’acceptation, remboursé si la page est rechargée avant la fin (BUG-08).",
+ "remiseAZero": "Recharger ce fichier (même clé, même contenu) : l’état repart à l’identique. Supprimer la clé strides-grand-tour-v1 pour revenir à une partie neuve.",
+ "build": {
+  "commit": "0265639",
+  "version": "2.0.0",
+  "sauvegarde": 2,
+  "creeLe": "2026-10-31T12:04:08.556Z"
+ },
+ "resume": {
+  "argent": 300,
+  "reputation": 300,
+  "terminees": [
+   "tuto",
+   "m1",
+   "m2",
+   "m3"
+  ],
+  "pointDeReprise": null,
+  "camion": null,
+  "joueur": {
+   "x": 316,
+   "z": -179
+  }
+ },
+ "cle": "strides-grand-tour-v1",
+ "sauvegarde": "{\"version\":2,\"started\":true,\"playerName\":\"Hermès\",\"avatar\":\"f\",\"money\":300,\"reputation\":300,\"skills\":{\"preparation\":0,\"equitation\":0,\"transport\":0,\"organisation\":0},\"completed\":[\"tuto\",\"m1\",\"m2\",\"m3\"],\"refused\":[],\"ratings\":[],\"horses\":[\"comete\"],\"activeHorse\":\"comete\",\"upgrades\":[],\"inventory\":{},\"equipped\":{},\"purchases\":[],\"indoorShop\":null,\"horseshoes\":[],\"bestTimes\":{},\"stats\":{\"jobs\":0,\"earned\":0,\"distance\":0,\"jumps\":0,\"faults\":0},\"messages\":[],\"settings\":{\"sound\":true,\"music\":true,\"quality\":\"auto\",\"camSens\":1,\"timeScale\":\"jeu\",\"characters\":\"auto\",\"horses\":\"classic\",\"jumpAid\":\"full\",\"courseLine\":true},\"gameTime\":37838.40000000002,\"pos\":{\"x\":315.6,\"z\":-178.99,\"heading\":0,\"horse\":{\"x\":310.37,\"z\":-177.18,\"heading\":-0.5292036732051035},\"truck\":{\"x\":311,\"z\":-177,\"heading\":1.5707963267948966},\"master\":{\"x\":-84,\"z\":180,\"heading\":1.5707963267948966},\"defender\":{\"x\":-97,\"z\":181,\"heading\":1.5707963267948966},\"vehicles\":[]},\"rewards\":{},\"flags\":{},\"choices\":{},\"relations\":{},\"hired\":{},\"checkpoint\":null,\"metrics\":{\"unique\":{}},\"challenges\":{\"records\":{},\"last\":null,\"pseudo\":\"\",\"resume\":null},\"meta\":{\"savedAt\":1793448248555,\"build\":\"2.0.0\"},\"defender\":{\"id\":\"defender110_hero-1\",\"type\":\"defender110_hero\",\"paint\":null,\"access\":{},\"boot\":null},\"horseCare\":{\"comete\":{\"energy\":100,\"hydration\":100,\"satiety\":100,\"clean\":100,\"hooves\":100,\"temp\":37.8}},\"fuel\":{\"truck\":112.5},\"transport\":{\"ramp\":0,\"aboard\":[{\"id\":\"comete\",\"stall\":0}]}}"
+}

@@ -1,0 +1,27 @@
+{
+ "id": "E01-devant-defender",
+ "titre": "Devant le Defender 110 (Écurie du Val)",
+ "usage": "COR-V01 : montée / descente, conduite, ouvertures du Defender.",
+ "origine": "Partie neuve ; joueur placé à 2,5 m de la portière conducteur du Defender garé à l’Écurie du Val.",
+ "prerequis": "Aucun. Pas de mission en cours.",
+ "remiseAZero": "Recharger ce fichier (même clé, même contenu) : l’état repart à l’identique. Supprimer la clé strides-grand-tour-v1 pour revenir à une partie neuve.",
+ "build": {
+  "commit": "0265639",
+  "version": "2.0.0",
+  "sauvegarde": 2,
+  "creeLe": "2026-10-31T12:01:11.872Z"
+ },
+ "resume": {
+  "argent": 0,
+  "reputation": 0,
+  "terminees": [],
+  "pointDeReprise": null,
+  "camion": null,
+  "joueur": {
+   "x": -98,
+   "z": 179
+  }
+ },
+ "cle": "strides-grand-tour-v1",
+ "sauvegarde": "{\"version\":2,\"started\":true,\"playerName\":\"Hermès\",\"avatar\":\"f\",\"money\":0,\"reputation\":0,\"skills\":{\"preparation\":0,\"equitation\":0,\"transport\":0,\"organisation\":0},\"completed\":[],\"refused\":[],\"ratings\":[],\"horses\":[\"comete\"],\"activeHorse\":\"comete\",\"upgrades\":[],\"inventory\":{},\"equipped\":{},\"purchases\":[],\"indoorShop\":null,\"horseshoes\":[],\"bestTimes\":{},\"stats\":{\"jobs\":0,\"earned\":0,\"distance\":0,\"jumps\":0,\"faults\":0},\"messages\":[],\"settings\":{\"sound\":true,\"music\":true,\"quality\":\"auto\",\"camSens\":1,\"timeScale\":\"jeu\",\"characters\":\"auto\",\"horses\":\"classic\",\"jumpAid\":\"full\",\"courseLine\":true},\"gameTime\":37828.80000000002,\"pos\":{\"x\":-98.03297408257446,\"z\":179.3654092890106,\"heading\":1.5707963267948966,\"horse\":{\"x\":-112,\"z\":165,\"heading\":1.5707963267948966},\"truck\":{\"x\":-64,\"z\":158,\"heading\":1.5707963267948966},\"master\":{\"x\":-84,\"z\":180,\"heading\":1.5707963267948966},\"defender\":{\"x\":-97,\"z\":181,\"heading\":1.5707963267948966},\"vehicles\":[]},\"rewards\":{},\"flags\":{},\"choices\":{},\"relations\":{},\"hired\":{},\"checkpoint\":null,\"metrics\":{\"unique\":{}},\"challenges\":{\"records\":{},\"last\":null,\"pseudo\":\"\",\"resume\":null},\"meta\":{\"savedAt\":1793448071870,\"build\":\"2.0.0\"},\"defender\":{\"id\":\"defender110_hero-1\",\"type\":\"defender110_hero\",\"paint\":null,\"access\":{},\"boot\":null},\"horseCare\":{\"comete\":{\"energy\":100,\"hydration\":100,\"satiety\":100,\"clean\":100,\"hooves\":100,\"temp\":37.8}},\"fuel\":{\"truck\":112.5}}"
+}

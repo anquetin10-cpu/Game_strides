@@ -1,0 +1,214 @@
+{
+ "tag": "avant",
+ "samples": 548,
+ "inside": 52,
+ "cut": 53,
+ "insideEx": [
+  {
+   "where": "P4 contre la porte du box de Comète · tour 12/24",
+   "cam": [
+    -143.87,
+    4.88,
+    148.05
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -14.84,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 13/24",
+   "cam": [
+    -143.65,
+    4.88,
+    147.84
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.1,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 14/24",
+   "cam": [
+    -143.38,
+    4.88,
+    147.7
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.36,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 15/24",
+   "cam": [
+    -143.09,
+    4.88,
+    147.64
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.62,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 16/24",
+   "cam": [
+    -142.79,
+    4.88,
+    147.65
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.88,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 17/24",
+   "cam": [
+    -142.5,
+    4.88,
+    147.74
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -16.15,
+   "dist": 1.2
+  }
+ ],
+ "cutEx": [
+  {
+   "where": "P4 contre la porte du box de Comète · tour 12/24",
+   "cam": [
+    -143.87,
+    4.88,
+    148.05
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -14.84,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 13/24",
+   "cam": [
+    -143.65,
+    4.88,
+    147.84
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.1,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 14/24",
+   "cam": [
+    -143.38,
+    4.88,
+    147.7
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.36,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 15/24",
+   "cam": [
+    -143.09,
+    4.88,
+    147.64
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.62,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 16/24",
+   "cam": [
+    -142.79,
+    4.88,
+    147.65
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -15.88,
+   "dist": 1.2
+  },
+  {
+   "where": "P4 contre la porte du box de Comète · tour 17/24",
+   "cam": [
+    -142.5,
+    4.88,
+    147.74
+   ],
+   "player": [
+    -142.99,
+    148.79
+   ],
+   "yaw": -16.15,
+   "dist": 1.2
+  }
+ ],
+ "perSpot": {
+  "P1 seuil intérieur": 0,
+  "P2 seuil extérieur": 0,
+  "P3 allée, milieu": 0,
+  "P4 contre la porte du box de Comète": 8,
+  "P5 contre les boxes d’en face": 7,
+  "P6 allée, plus loin": 0,
+  "P7 angle pignon / boxes": 8
+ },
+ "firstBad": {
+  "P4 contre la porte du box de Comète": {
+   "x": -143,
+   "z": 148.75,
+   "yaw": -14.84
+  },
+  "P5 contre les boxes d’en face": {
+   "x": -143,
+   "z": 151.25,
+   "yaw": -16.41
+  },
+  "P7 angle pignon / boxes": {
+   "x": -144.35,
+   "z": 148.75,
+   "yaw": -22.29
+  }
+ },
+ "shots": [
+  "01-devant-la-porte",
+  "02-seuil",
+  "03-devant-le-box",
+  "spot-P4-masque",
+  "spot-P5-masque",
+  "spot-P7-masque",
+  "04-sortie"
+ ],
+ "errors": []
+}

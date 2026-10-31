@@ -1,0 +1,134 @@
+{
+ "results": [
+  {
+   "id": "COR-P01a",
+   "label": "état E08 chargé : camion au parking du Pôle, Comète à bord, rampe fermée, 300 €",
+   "ok": true,
+   "extra": "{\"money\":300,\"aboard\":true,\"truck\":{\"x\":311,\"z\":-177},\"ramp\":true,\"mode\":\"foot\"}"
+  },
+  {
+   "id": "COR-P01b",
+   "label": "offre « Concours du Pôle » reçue (app Activités du téléphone), acceptée (2 touchers), engagement débité une fois",
+   "ok": true,
+   "extra": "{\"offer\":true,\"viaApp\":true,\"s\":{\"active\":\"concours\",\"text\":\"Monte au volant du camion\",\"i\":2,\"mode\":\"foot\",\"dialog\":false,\"card\":false,\"enter\":false},\"money\":278}"
+  },
+  {
+   "id": "COR-P01c",
+   "label": "déroulé joué : volant, rampe, déchargement, dossard, selle, échauffement (2 sauts), présentation, départ",
+   "ok": true,
+   "extra": "[\"Monte au volant du camion\",\"Gare-toi et descends du camion (ACTION à l’arrêt)\",\"Ouvre la rampe arrière\",\"Fais descendre Comète\",\"Déchargement de Comète…\",\"Secrétariat — retire ton dossard\",\"…\",\"Selle et monte Comète\",\"Échauffe-toi au paddock : sauts 0/2\",\"Entre en piste : rejoins l’entrée de la carrière · 80 m\",\"Présentation de l’épreuve\",\"Entrée en piste…\",\"Franchis la ligne de départ\",\"Résultats…\"]"
+  },
+  {
+   "id": "COR-P01d",
+   "label": "parcours : obstacles franchis dans l’ordre (1 → 8, double 5A/5B), arrivée passée",
+   "ok": false,
+   "extra": "{\"order\":[\"1\",\"2\",\"3\",\"4\",\"5A\",\"5B\",\"6\",\"7\",\"8\"],\"t\":60.19999999999914,\"faults\":0,\"elim\":null}"
+  },
+  {
+   "id": "COR-P01e",
+   "label": "résultats affichés (classement) et dotation versée selon le rang ; engagement soldé (pas de remboursement en attente)",
+   "ok": true,
+   "extra": "{\"card\":\"Résultats · Amateur 2 1,05 mSans faute · 3eChrono60,30 s (accordé 65 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement3e sur 15Récompens\",\"fin\":{\"money\":421,\"pendingFee\":null}}"
+  },
+  {
+   "id": "erreurs",
+   "label": "aucune erreur JavaScript",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "log": [
+  "Monte au volant du camion",
+  "Gare-toi et descends du camion (ACTION à l’arrêt)",
+  "Ouvre la rampe arrière",
+  "Fais descendre Comète",
+  "Déchargement de Comète…",
+  "Secrétariat — retire ton dossard",
+  "…",
+  "Selle et monte Comète",
+  "Échauffe-toi au paddock : sauts 0/2",
+  "Entre en piste : rejoins l’entrée de la carrière · 80 m",
+  "Présentation de l’épreuve",
+  "Entrée en piste…",
+  "Franchis la ligne de départ",
+  "Résultats…"
+ ],
+ "courseRes": {
+  "ev": [
+   {
+    "k": "obstacle:clear",
+    "label": "1",
+    "cause": null,
+    "margin": 0.5384015469705039
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "2",
+    "cause": null,
+    "margin": 0.4241841860880091
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "3",
+    "cause": null,
+    "margin": 0.5387521588158637
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "4",
+    "cause": null,
+    "margin": 0.49720676582293843
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "5A",
+    "cause": null,
+    "margin": 0.5384330228766039
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "5B",
+    "cause": null,
+    "margin": 0.40130089506284583
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "6",
+    "cause": null,
+    "margin": 0.3966066564472821
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "7",
+    "cause": null,
+    "margin": 0.48921189345492344
+   },
+   {
+    "k": "obstacle:clear",
+    "label": "8",
+    "cause": null,
+    "margin": 0.3455830546905332
+   }
+  ],
+  "finished": false,
+  "eliminated": null,
+  "t": 60.19999999999914,
+  "faults": 0,
+  "next": 10
+ },
+ "fin": {
+  "money": 421,
+  "active": null,
+  "pendingFee": null,
+  "stats": {
+   "jobs": 1,
+   "earned": 143,
+   "distance": 786.5876734243758,
+   "jumps": 11,
+   "faults": 0
+  },
+  "lastResult": null
+ },
+ "resultCard": "Résultats · Amateur 2 1,05 mSans faute · 3eChrono60,30 s (accordé 65 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement3e sur 15Récompense130 €1M. Faure · Oural0 pt59,39 s260 €2L. Martin · Rubis Blanc0 pt59,55 s180 €3Hermès · Comète0 pt60,30 s130 €4V. Girard · Galaxie0 pt60,57 s100 €5L. Blanc · Tiara du Ter0 pt60,79 s80 €6J. Faure · Kalimba0 pt62,30 s7V. Faure · Saphir des Bois0 pt62,97 s8L. Lefèvre · Utopie0 pt63,42 sRecommencerS’entraînerContinuer",
+ "endCard": ""
+}

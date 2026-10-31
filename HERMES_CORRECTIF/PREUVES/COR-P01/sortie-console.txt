@@ -1,0 +1,23 @@
+✔ COR-P01a état E08 chargé : camion au parking du Pôle, Comète à bord, rampe fermée, 300 € — {"money":300,"aboard":true,"truck":{"x":311,"z":-177},"ramp":true,"mode":"foot"}
+✔ COR-P01b offre « Concours du Pôle » reçue (app Activités du téléphone), acceptée (2 touchers), engagement débité une fois — {"offer":true,"viaApp":true,"s":{"active":"concours","text":"Monte au volant du camion","i":2,"mode":"foot","dialog":false,"card":false,"enter":false},"money":278}
+  étape : Monte au volant du camion · foot
+  étape : Gare-toi et descends du camion (ACTION à l’arrêt) · drive
+  étape : Ouvre la rampe arrière · foot
+  étape : Fais descendre Comète · foot
+  étape : Déchargement de Comète… · foot
+  étape : Secrétariat — retire ton dossard · foot
+  étape : … · foot
+  étape : Selle et monte Comète · foot
+  étape : Échauffe-toi au paddock : sauts 0/2 · ride
+  échauffement : {"ev":[{"k":"obstacle:clear","label":"0","cause":null,"margin":0.2746451665857892},{"k":"obstacle:clear","label":"0","cause":null,"margin":0.47087576523478836}],"warm":2}
+  étape : Entre en piste : rejoins l’entrée de la carrière · 80 m · ride
+  étape : Présentation de l’épreuve · ride
+  étape : Entrée en piste… · ride
+  étape : Franchis la ligne de départ · ride
+  parcours : {"ev":[{"k":"obstacle:clear","label":"1","cause":null,"margin":0.5384015469705039},{"k":"obstacle:clear","label":"2","cause":null,"margin":0.4241841860880091},{"k":"obstacle:clear","label":"3","cause":null,"margin":0.5387521588158637},{"k":"obstacle:clear","label":"4","cause":null,"margin":0.49720676582293843},{"k":"obstacle:clear","label":"5A","cause":null,"margin":0.5384330228766039},{"k":"obstacle:clear","label":"5B","cause":null,"margin":0.40130089506284583},{"k":"obstacle:clear","label":"6","cause":null,"margin":0.3966066564472821},{"k":"obstacle:clear","label":"7","cause":null,"margin":0.48921189345492344},{"k":"obstacle:clear","label":"8","cause":null,"margin":0.3455830546905332}],"finished":false,"eliminated":null,"t":60.19999999999914,"faults":0,"next":10}
+  étape : Résultats… · ride
+✔ COR-P01c déroulé joué : volant, rampe, déchargement, dossard, selle, échauffement (2 sauts), présentation, départ — ["Monte au volant du camion","Gare-toi et descends du camion (ACTION à l’arrêt)","Ouvre la rampe arrière","Fais descendre Comète","Déchargement de Comète…","Secrétariat — retire ton dossard","…","Selle et monte Comète","Échauffe-toi au paddock : sauts 0/2","Entre en piste : rejoins l’entrée de la carrière · 80 m","Présentation de l’épreuve","Entrée en piste…","Franchis la ligne de départ","Résultats…"]
+✘ COR-P01d parcours : obstacles franchis dans l’ordre (1 → 8, double 5A/5B), arrivée passée — {"order":["1","2","3","4","5A","5B","6","7","8"],"t":60.19999999999914,"faults":0,"elim":null}
+✔ COR-P01e résultats affichés (classement) et dotation versée selon le rang ; engagement soldé (pas de remboursement en attente) — {"card":"Résultats · Amateur 2 1,05 mSans faute · 3eChrono60,30 s (accordé 65 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement3e sur 15Récompens","fin":{"money":421,"pendingFee":null}}
+✔ erreurs aucune erreur JavaScript
+1 échec(s)

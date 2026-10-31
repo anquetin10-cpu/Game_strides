@@ -1,0 +1,152 @@
+[
+ {
+  "id": "COR-M00",
+  "label": "mise en place : Comète prise en main par le bouton ACTION",
+  "ok": true,
+  "extra": "« Mener en main » → {\"side\":0,\"t\":0,\"aboard\":false,\"busy\":false,\"led\":true,\"scania\":false,\"mode\":\"foot\",\"copies\":1}"
+ },
+ {
+  "id": "COR-M01.1a",
+  "label": "marche au pied du pont (cheval en main), ACTION « Ouvrir le pont latéral »",
+  "ok": true,
+  "extra": "{\"ok\":true} {\"a\":\"Ouvrir le pont latéral\",\"b\":\"Lâcher\"}"
+ },
+ {
+  "id": "COR-M04a",
+  "label": "pause pendant le chargement : séquence figée, reprise au même point",
+  "ok": true,
+  "extra": "{\"paused\":\"paused\",\"moved\":0,\"i\":[0,0],\"resumed\":true}"
+ },
+ {
+  "id": "COR-M01.1b",
+  "label": "chargement par « Faire monter Comète » (un seul cheval, pas de doublon)",
+  "ok": true,
+  "extra": "{\"loadLabel\":{\"a\":\"Faire monter Comète\",\"b\":\"Fermer le pont latéral\"},\"s3\":{\"side\":1,\"t\":1,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M01.1c",
+  "label": "cheval à bord, pont ouvert : ACTION « Fermer le pont latéral » et action secondaire « Faire descendre Comète »",
+  "ok": true,
+  "extra": "{\"a\":\"Fermer le pont latéral\",\"b\":\"Faire descendre Comète\"}"
+ },
+ {
+  "id": "COR-M01.0",
+  "label": "pont ouvert, cheval à bord : le van ne part pas (message)",
+  "ok": true,
+  "extra": "« Monter⁠ » {\"d\":0,\"hint\":\"Pont latéral ou porte arrière ouvert : descends et ferme-les avant de rouler.\"}"
+ },
+ {
+  "id": "COR-M04b",
+  "label": "pause pendant la fermeture : pont figé, reprise",
+  "ok": true,
+  "extra": "{\"t0\":0.76,\"t1\":0.76,\"resumed\":true}"
+ },
+ {
+  "id": "COR-M01.1d",
+  "label": "fermeture du pont, Comète reste à bord ; double appui sans effet (ni réouverture, ni déchargement)",
+  "ok": true,
+  "extra": "{\"c1\":{\"side\":0,\"t\":0.98,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1},\"c2\":{\"side\":0,\"t\":0.98,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1},\"c3\":{\"side\":0,\"t\":0,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M01.1e",
+  "label": "monter (« Monter »), rouler, s'arrêter : Comète voyage dans le van",
+  "ok": true,
+  "extra": "{\"w\":{\"ok\":true},\"b\":\"Monter⁠\",\"run\":{\"d\":19.923353262934256,\"stopped\":true},\"sDrive\":{\"side\":0,\"t\":0,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"drive\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M01.1f",
+  "label": "descendre (« Descendre »), retour au pont, ouverture : ACTION « Faire descendre », secondaire « Fermer le pont »",
+  "ok": true,
+  "extra": "{\"w\":{\"ok\":true},\"ob\":{\"a\":\"Ouvrir le pont latéral\",\"b\":\"\"},\"b\":{\"a\":\"Faire descendre Comète\",\"b\":\"Fermer le pont latéral\"}}"
+ },
+ {
+  "id": "COR-M01.1g",
+  "label": "déchargement : Comète descend et revient en main (un seul exemplaire)",
+  "ok": true,
+  "extra": "{\"side\":1,\"t\":1,\"aboard\":false,\"busy\":false,\"led\":true,\"scania\":false,\"mode\":\"foot\",\"copies\":1}"
+ },
+ {
+  "id": "COR-M01.2a",
+  "label": "marche au pied du pont (cheval en main), ACTION « Ouvrir le pont latéral »",
+  "ok": true,
+  "extra": "{\"ok\":true} {\"a\":\"Ouvrir le pont latéral\",\"b\":\"Lâcher\"}"
+ },
+ {
+  "id": "COR-M01.2b",
+  "label": "chargement par « Faire monter Comète » (un seul cheval, pas de doublon)",
+  "ok": true,
+  "extra": "{\"loadLabel\":{\"a\":\"Faire monter Comète\",\"b\":\"Fermer le pont latéral\"},\"s3\":{\"side\":1,\"t\":1,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M01.2c",
+  "label": "cheval à bord, pont ouvert : ACTION « Fermer le pont latéral » et action secondaire « Faire descendre Comète »",
+  "ok": true,
+  "extra": "{\"a\":\"Fermer le pont latéral\",\"b\":\"Faire descendre Comète\"}"
+ },
+ {
+  "id": "COR-M01.2d",
+  "label": "fermeture du pont, Comète reste à bord ; double appui sans effet (ni réouverture, ni déchargement)",
+  "ok": true,
+  "extra": "{\"c1\":{\"side\":0,\"t\":0.98,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1},\"c2\":{\"side\":0,\"t\":0.98,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1},\"c3\":{\"side\":0,\"t\":0,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M01.2e",
+  "label": "monter (« Monter »), rouler, s'arrêter : Comète voyage dans le van",
+  "ok": true,
+  "extra": "{\"w\":{\"ok\":true},\"b\":\"Monter⁠\",\"run\":{\"d\":19.393061201514314,\"stopped\":true},\"sDrive\":{\"side\":0,\"t\":0,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"drive\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M01.2f",
+  "label": "descendre (« Descendre »), retour au pont, ouverture : ACTION « Faire descendre », secondaire « Fermer le pont »",
+  "ok": true,
+  "extra": "{\"w\":{\"ok\":true},\"ob\":{\"a\":\"Ouvrir le pont latéral\",\"b\":\"\"},\"b\":{\"a\":\"Faire descendre Comète\",\"b\":\"Fermer le pont latéral\"}}"
+ },
+ {
+  "id": "COR-M02a",
+  "label": "action secondaire « Fermer le pont » à l'arrivée : fermé sans décharger, rouvert",
+  "ok": true,
+  "extra": "{\"side\":0,\"t\":0,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}"
+ },
+ {
+  "id": "COR-M01.2g",
+  "label": "déchargement : Comète descend et revient en main (un seul exemplaire)",
+  "ok": true,
+  "extra": "{\"side\":1,\"t\":1,\"aboard\":false,\"busy\":false,\"led\":true,\"scania\":false,\"mode\":\"foot\",\"copies\":1}"
+ },
+ {
+  "id": "COR-M02b",
+  "label": "cheval en main au pied du pont ouvert : secondaire « Fermer le pont latéral » (van vide)",
+  "ok": true,
+  "extra": "{\"ledClose\":{\"a\":\"Faire monter Comète\",\"b\":\"Fermer le pont latéral\"},\"s\":{\"side\":0,\"t\":0,\"aboard\":false,\"busy\":false,\"led\":true,\"scania\":false,\"mode\":\"foot\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M02c",
+  "label": "sans cheval, pont ouvert vide : ACTION « Fermer le pont latéral »",
+  "ok": true,
+  "extra": "{\"rel\":\"Lâcher\",\"b\":{\"a\":\"Fermer le pont latéral\",\"b\":\"Mener en main\"},\"s\":{\"side\":0,\"t\":0,\"aboard\":false,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M05a",
+  "label": "reprise : Comète dans le van (pont fermé), ni dans le Scania ni en double",
+  "ok": true,
+  "extra": "{\"saved\":{\"side\":0,\"rear\":0,\"aboard\":[{\"id\":\"comete\",\"stall\":0}]},\"r\":{\"side\":0,\"t\":0,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}}"
+ },
+ {
+  "id": "COR-M05b",
+  "label": "reprise pont ouvert, cheval à bord : les deux actions proposées (fermer / faire descendre)",
+  "ok": true,
+  "extra": "{\"r\":{\"side\":1,\"t\":1,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1},\"b\":{\"a\":\"Fermer le pont latéral\",\"b\":\"Faire descendre Comète\"}}"
+ },
+ {
+  "id": "COR-M05c",
+  "label": "fermeture après reprise : van prêt à partir, Comète à bord",
+  "ok": true,
+  "extra": "{\"side\":0,\"t\":0,\"aboard\":true,\"busy\":false,\"led\":false,\"scania\":false,\"mode\":\"foot\",\"copies\":1}"
+ },
+ {
+  "id": "erreurs",
+  "label": "aucune erreur JavaScript",
+  "ok": true,
+  "extra": ""
+ }
+]

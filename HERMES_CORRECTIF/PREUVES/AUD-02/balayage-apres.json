@@ -1,0 +1,14 @@
+{
+ "a1": "Ouvrir le pont latéral",
+ "a2": "Faire monter Comète",
+ "aboard": true,
+ "side": 1,
+ "reachable": 804,
+ "closeSeen": 408,
+ "labels": {
+  "- | 2e: -": 325,
+  "Fermer le pont latéral | 2e: Faire descendre Comète": 408,
+  "Ouvrir la porte arrière | 2e: -": 71
+ },
+ "base": "http://127.0.0.1:5173"
+}
