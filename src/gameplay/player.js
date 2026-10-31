@@ -550,7 +550,12 @@ export class Player {
       this._outfitT = 0.25;
       // (jamais au milieu d'une montée ou d'une descente : le personnage est reconstruit à l'identique ensuite)
       const want = this.desiredOutfit();
-      if (want !== this.outfitKind && !this.horseMount?.active && !this.boarding?.active) this.setOutfit(want);
+      if (want !== this.outfitKind && !this.horseMount?.active && !this.boarding?.active) {
+        // Reconstruction seulement si la tenue change vraiment (pas au démarrage, quand la signature est enregistrée
+        // pour la première fois : jeter et recréer le personnage recompilait ses matériaux, à-coup au démarrage).
+        if (JSON.stringify(this._outfit(this.avatar)) === JSON.stringify(this.human.outfit)) this.outfitKind = want;
+        else this.setOutfit(want);
+      }
     }
     const locked = this.locked;
     const mv = input.move;

@@ -274,8 +274,11 @@ export class Game {
     this.audio.setEnabled(d.settings.sound);
     this.screens.setLoading(0.97, t('Préparation des shaders'));
     await new Promise((r) => setTimeout(r, 0));
-    // Personnage réaliste du joueur chargé avant la première image (pas de personnage classique remplacé ensuite).
+    // Personnage réaliste du joueur chargé et créé avant la première image (pas de personnage classique remplacé
+    // ensuite) — et avant la compilation des shaders ci-dessous : ses matériaux (lanternes, plafonniers) sont compilés
+    // pendant l'écran de chargement, pas au premier rendu après « Continuer » (à-coup au démarrage).
     await this.realism?.preloadPlayer();
+    this.realism?.update();
     this.sky.update(17.5, this.player.focus.pos, 0);
     this.sky.updateEnvironment(this.renderer, 0, true);
     this.renderer.compile(this.scene, this.camera);

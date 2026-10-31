@@ -121,7 +121,26 @@ Un changement volontaire (polo blanc acheté et équipé) s'applique une fois, p
 - **Apparence** : `tests/e2e/avatar-consistency.mjs`, résultats AV-01 à AV-04.
 - **Non-régression** : `mesures/non-regression.txt`.
 
-## 5. Limites et points à décider
+## 5. À-coup au démarrage trouvé et corrigé pendant la recette
+
+La non-régression a révélé un blocage de plus de 30 s (rendu logiciel) au premier rendu après « Continuer », dans le scénario de reprise de mission (`mission-resume.mjs`).
+
+**Bissection** : le test passe sur `0265639` et sur `60da01d`, et échoue sur la version de travail.
+
+**Causes** :
+- le personnage était reconstruit une fois au démarrage, avec une apparence identique (signature de tenue enregistrée pour la première fois) ;
+- son modèle réaliste était alors jeté, ses shaders libérés puis recompilés ;
+- ses matériaux n'étaient pas compilés pendant l'écran de chargement.
+
+Sur iPhone, cela aurait donné un à-coup au démarrage.
+
+**Corrections** :
+- pas de reconstruction si la tenue calculée est identique à celle portée ;
+- modèle réaliste du joueur créé avant la précompilation des shaders.
+
+**Résultat** : `mission-resume.mjs` passe à 13/13.
+
+## 6. Limites et points à décider
 
 - **Pas d'iPhone réel.** La séquence ajoute au plus une pose par cinématique inverse par image et quelques transformations : c'est négligeable à côté du rendu, mais non mesuré sur appareil.
 - **Pas de clip d'animation enregistré** : le geste est entièrement procédural (images clés et cinématique inverse), comme la montée dans les véhicules. Un vrai clip de capture de mouvement donnerait un rendu encore plus naturel ; le projet n'en contient pas.
