@@ -1,0 +1,29 @@
+✔ R04 refus des deux propositions : aucune pénalité — {"avant":55,"apres":55}
+✔ R04 M1 reproposée après refus
+✔ R04 branche Val terminée : 90 € (+ pourboire 5★) — {"pay":99,"title":"Mission réussie"}
+✔ R04 choix mémorisé (choices.m1 = val), point de reprise effacé
+✔ R08 seconde validation de M1 : rien de versé
+✔ R08 après rechargement : solde identique, M1 non reproposée
+✔ mention fictive au premier lancement de Strides
+✔ R05 quitter avant confirmation : rien débité
+✔ R05 échec technique : remboursé, rien enregistré — {"money":400}
+✔ R05 confirmation : 120 € débités une seule fois — solde 280
+✔ R05 point de reprise « hired » enregistré — {"mission":"m2","step":"hired","data":{"hire":"lea"}}
+✔ R05 après rechargement : reprise sans nouveau débit
+✔ R05 M2 terminée avec Léa (hired.m2 = lea), paiement de Camille — {"pay":132,"title":"Mission réussie"}
+✔ M3 point de reprise après chargement — {"mission":"m3","step":"loaded","data":{"approach":"prudente","help":false}}
+✔ M3 reprise : cheval toujours à bord, mission reprise
+✔ R07 élimination : « Nouvelle tentative » et « Retrouver l’équipe » proposés
+✔ R07 chapitre terminé malgré l’élimination (participation 150 €) — {"pay":150,"title":"Premier concours terminé","body":"2e refus : éliminé du parcours. Participation 150 €."}
+✔ suite débloquée : « Groom du matin » proposée
+✔ invitation unique après le bilan : « Je cherche des missions » / « Je cherche un professionnel »
+✔ invitation non réaffichée
+✔ aire de pansage achetée une fois (350 €)
+✔ achat répété sans effet
+✔ R12 aire de pansage présente au Val après rechargement
+✔ R06 solde insuffisant : confirmation impossible, rien débité — Solde insuffisant
+✔ R06 branche autonome terminée sans débit — {"money":172,"pay":132}
+✔ R16 événements locaux sans doublon — ["game_started","first_mission_completed","hiring_mission_completed"]
+✔ R16 aucun envoi externe (adaptateur désactivé)
+ERRORS none
+CHAPITRE 1 OK

@@ -25,9 +25,34 @@
 | AUD-02 (P1) pont du Master | **Reproduit, corrigé** | « Fermer le pont » et « Faire descendre » sont deux actions distinctes au pied du pont ; le cycle complet passe deux fois au toucher | `PREUVES/AUD-02/` |
 | AUD-01 (P2) mission perdue au rechargement | **Reproduit, corrigé** | L'acceptation d'une mission d'histoire est enregistrée tout de suite ; la reprise se fait sans double débit ni double paiement | `PREUVES/AUD-01/` |
 | OBS-01 caméra dans une cloison | **Reproduit, corrigé** | 52 / 548 images dans une paroi avant correctif, 0 / 622 après ; murs restés opaques | `PREUVES/OBS-01/` |
-| FIN-13 concours | voir `MATRICE_RETEST.csv` (COR-P01) | Concours du Pôle joué de bout en bout depuis l'état E08 | `PREUVES/COR-P01/` |
+| FIN-13 concours | **Joué de bout en bout (catégorie B)** | Depuis l'état E08 : offre acceptée au téléphone, déchargement, dossard, échauffement, parcours 1 → 8 sans faute (60,30 s pour 65 s), carte de résultats et dotation | `PREUVES/COR-P01/` |
 | Recrutement | Portée documentée | Réservation de chauffeur : un débit (E09) ; rien d'autre généralisé | `TESTS_RESTANTS.md` |
 | Safari iPhone | **Non testé** | Aucun appareil | `TESTS_RESTANTS.md` |
+
+## Non-régression (à froid, sur la version corrigée)
+
+Serveur redémarré, aucune modification pendant la série (`PREUVES/NON-REGRESSION/synthese.txt`). Tout est vert :
+
+| Domaine | Suite | Résultat |
+|---|---|---|
+| Tests unitaires | — | 175 / 175 |
+| Correctif | master-ramp | 26 / 26 |
+| | mission-resume | 13 / 13 |
+| | camera-barn | 0 cas |
+| | contest-full | 6 / 6 |
+| 11 non-régressions historiques (BUG-01 à BUG-11) | qa-fixes | 19 / 19 |
+| Véhicules | master | 26 / 26 |
+| | transport-flow (Scania) | 65 / 65 |
+| | boarding | 72 / 72 |
+| | defender | 33 / 33 |
+| | vehicles | 48 / 48 |
+| | truck-exit | OK |
+| Missions et sauvegardes | chapter1 (M1–M3, reprises payantes) | 27 / 27 |
+| | save-guard | 11 / 11 |
+| | chaîne des 16 missions | 16 / 16 |
+| Interface | i18n | 19 / 19 |
+| | features | 20 / 20 |
+| | cso-touch (parcours au doigt) | 8 / 8 |
 
 ## Défauts trouvés et corrigés pendant la recette du correctif
 

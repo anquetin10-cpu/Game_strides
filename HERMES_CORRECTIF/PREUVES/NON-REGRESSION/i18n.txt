@@ -1,0 +1,20 @@
+✔ premier lancement : choix Français / English avant le jeu
+✔ écran titre en anglais après « English » — {"lang":"en","stored":"en","title":"GRAND TOUR\nAN OPEN-WORLD EQUESTRIAN GAME\nPlay\nDiscover the real Strides app\nFR\nEN"}
+✔ écran titre : sélecteur FR / EN
+✔ bascule en français depuis l’écran titre (rechargement, choix mémorisé) — {"stored":"fr","title":"GRAND TOUR\nLE MONDE ÉQUESTRE EN MONDE OUVERT\nJouer\nDécouvrir la vraie application Strides\nFR\nEN"}
+✔ retour à l’anglais depuis l’écran titre
+✔ réglages : choix de la langue — ["home","requests","map","activities","garage","stable","messages","profile","settings","shop","ranking","missions","agenda"]
+✔ mission « tuto » jouée en anglais
+✔ mission « m1 » jouée en anglais
+✔ mission « groom » jouée en anglais
+✔ mission « livraison » jouée en anglais
+✔ mission « fugueur » jouée en anglais
+✔ mission « plage » jouée en anglais
+✔ mission « transport » jouée en anglais
+✔ mission « cross » jouée en anglais
+✔ mission « csi3 » jouée en anglais
+✔ aucun texte sans traduction anglaise — 0 : []
+✔ aucun texte affiché qui ressemble à du français — 0/1373 : []
+✔ réglages : passage au français en cours de partie, sauvegarde conservée — {"lang":"fr","money":2268,"stored":"fr","expected":2268}
+✔ aucune erreur console
+I18N OK

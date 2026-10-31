@@ -1,0 +1,67 @@
+✔ « Monter » en action principale près du cheval — Monter
+✔ « Mener en main » en action secondaire — Mener en main
+✔ cheval mené en main
+✔ le cheval suit à côté du meneur — écart max 2.72 m
+✔ longe affichée
+✔ « Ouvrir la rampe » à l’arrière du camion — Ouvrir la rampe
+✔ rampe et portillons ouverts
+✔ « Faire monter le cheval » (et « Lâcher » en secondaire) — Faire monter le cheval / Lâcher
+✔ séquence de chargement lancée, joueur guidé
+✔ cheval à bord, attaché dans sa stalle — {"inside":true,"visible":true}
+✔ debout sur le plancher du box — 1.12 (plancher 1.105)
+✔ sifflet désactivé, pas de repère cheval sur la carte
+✔ fin de séquence : joueur libre à pied — 920 images
+✔ « Fermer la rampe » puis rampe fermée — Fermer la rampe
+✔ « Monter » à la portière, séquence de montée, moteur démarré — Monter⁠
+✔ le camion roule (boîte auto) — 22 km/h, D3
+✔ le cheval voyage dans le camion
+✔ jauge de confort affichée au volant
+✔ arrêt, confort préservé en conduite souple — 96 %
+✔ « Descendre » du camion (séquence par les marchepieds) — Descendre⁠
+✔ « Ouvrir la rampe » à l’arrivée — Ouvrir la rampe
+✔ « Faire descendre le cheval » proposé (« Fermer la rampe » en secondaire) — Faire descendre le cheval / Fermer la rampe
+✔ séquence de déchargement lancée
+✔ cheval descendu, en main derrière le camion — {"aboard":false,"hidden":false,"led":true,"behind":true,"blip":true,"mainMount":"Faire monter le cheval","ride":true}
+✔ repère du cheval de retour sur la carte
+✔ monter à cheval après le déchargement — Faire monter le cheval
+✔ état du camion sauvegardé — {"ramp":0,"aboard":[{"id":"comete","stall":0}]}
+✔ rechargement : le cheval est toujours dans le camion — {"aboard":true,"hidden":true,"inside":true,"closed":true}
+✔ cheval supprimé en pleine séquence : rien ne reste bloqué — {"mid":true,"seq":false,"locked":false,"override":false,"aboard":1}
+✔ offre de concours dans l’app Activités — Concours du Pôle — Amateur 1 1,15 m
+✔ concours terminé (classement, dotation) — Victoire au Pôle ! · undefined · 462 € · ★5
+✔ étapes : chargement, trajet, déchargement, dossard, échauffement, parcours — 13 étapes
+✔ classement barème A (points puis chrono)
+✔ [667x308-emb] bouton secondaire « Mener en main »
+✔ [667x308-emb] toucher « Mener en main »
+✔ [667x308-emb] joystick : le joueur marche avec son cheval
+✔ [667x308-emb] action « Ouvrir la rampe »
+✔ [667x308-emb] toucher « Ouvrir la rampe »
+✔ [667x308-emb] action « Faire monter le cheval »
+✔ [667x308-emb] toucher « Faire monter le cheval »
+✔ [667x308-emb] action « Fermer la rampe »
+✔ [667x308-emb] rampe fermée, cheval à bord
+✔ [667x308-emb] action « Monter »
+✔ [667x308-emb] au volant
+✔ [667x308-emb] joystick : accélère puis freine — 19 km/h · HUD D3 19km/h CONFORT · COMÈTE 100 %
+✔ [667x308-emb] HUD : rapport, vitesse, confort
+✔ [667x308-emb] toucher « Descendre »
+✔ [844x390] bouton secondaire « Mener en main »
+✔ [844x390] toucher « Mener en main »
+✔ [844x390] joystick : le joueur marche avec son cheval
+✔ [844x390] action « Ouvrir la rampe »
+✔ [844x390] toucher « Ouvrir la rampe »
+✔ [844x390] action « Faire monter le cheval »
+✔ [844x390] toucher « Faire monter le cheval »
+✔ [844x390] action « Fermer la rampe »
+✔ [844x390] rampe fermée, cheval à bord
+✔ [844x390] action « Monter »
+✔ [844x390] au volant
+✔ [844x390] joystick : accélère puis freine — 19 km/h · HUD D3 19km/h CONFORT · COMÈTE 100 %
+✔ [844x390] HUD : rapport, vitesse, confort
+✔ [844x390] toucher « Descendre »
+✔ vrai trajet Écurie du Val → parking du Pôle, cheval à bord — {"arrived":true,"dEnd":1,"time":92,"km":0.77,"maxKmh":58,"bumps":0,"comfort":93,"aboard":1,"inside":true,"gear":"N"}
+✔ conduite appliquée : aucun choc, confort ≥ 80 % — chocs 0 · confort 93 %
+✔ retour au Val (demi-tour sur le parking du Pôle) — {"arrived":true,"dEnd":1.3,"time":90,"km":0.76,"maxKmh":58,"bumps":0,"comfort":87,"aboard":1,"inside":true,"gear":"N"}
+✔ Haras de la Pommeraie → Pôle (mission « Transport express ») — {"arrived":true,"dEnd":1,"time":85,"km":0.81,"maxKmh":58,"bumps":0,"comfort":94,"aboard":1,"inside":true,"gear":"N"}
+ERRORS none
+TRANSPORT OK

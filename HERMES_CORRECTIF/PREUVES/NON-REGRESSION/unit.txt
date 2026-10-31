@@ -1,0 +1,36 @@
+
+ RUN  v3.2.7 /home/user/Game_strides
+
+ ✓ tests/unit/human.test.js (5 tests) 356ms
+ ✓ tests/unit/vehicles.test.js (20 tests) 455ms
+ ✓ tests/unit/horse.test.js (5 tests) 542ms
+ ✓ tests/unit/vegetation.test.js (4 tests) 273ms
+ ✓ tests/unit/truck.test.js (10 tests) 150ms
+ ✓ tests/unit/weather.test.js (7 tests) 50ms
+ ✓ tests/unit/world.test.js (9 tests) 222ms
+ ✓ tests/unit/condition.test.js (6 tests) 44ms
+ ✓ tests/unit/missions.test.js (12 tests) 46ms
+ ✓ tests/unit/realism.test.js (27 tests) 168ms
+ ✓ tests/unit/jump.test.js (10 tests) 28ms
+ ✓ tests/unit/challenge.test.js (13 tests) 14ms
+ ✓ tests/unit/core.test.js (14 tests) 52ms
+stderr | tests/unit/save.test.js > sauvegarde v2 > ne remplace pas en silence une sauvegarde illisible
+[sauvegarde] corrupt : Unexpected end of JSON input — copie conservée sous t.invalid
+
+stderr | tests/unit/save.test.js > sauvegarde v2 > signale une sauvegarde invalide et permet une restauration
+[sauvegarde] invalid : money — copie conservée sous t.invalid
+
+stderr | tests/unit/save.test.js > sauvegarde v2 > refuse une sauvegarde plus récente que le jeu
+[sauvegarde] version : sauvegarde v3 plus récente que le jeu (v2) — copie conservée sous t.invalid
+
+ ✓ tests/unit/save.test.js (9 tests) 19ms
+ ✓ tests/unit/online.test.js (6 tests) 9ms
+ ✓ tests/unit/commerce.test.js (11 tests) 16ms
+ ✓ tests/unit/transport.test.js (3 tests) 9ms
+ ✓ tests/unit/schedule.test.js (4 tests) 6ms
+
+ Test Files  18 passed (18)
+      Tests  175 passed (175)
+   Start at  12:38:16
+   Duration  4.63s (transform 1.44s, setup 0ms, collect 5.41s, tests 2.46s, environment 4ms, prepare 1.69s)
+

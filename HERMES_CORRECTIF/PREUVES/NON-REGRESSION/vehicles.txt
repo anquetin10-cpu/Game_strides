@@ -1,0 +1,49 @@
+✔ SUV 4x4 : bouton « Conduire » proposé à la portière — vehicle-in
+✔ SUV 4x4 : au volant, moteur démarré — N750 tr/min0km/h36 bpm22 l · 372 km
+✔ SUV 4x4 : marche arrière — {"gear":"R","speed":-3.023916865205282}
+✔ SUV 4x4 : accélère et passe les rapports — 64 km/h, rapport 3
+✔ SUV 4x4 : freine jusqu'à l'arrêt — 2.1 s
+✔ SUV 4x4 : roues qui tournent, sorti de sa place — 3 m
+✔ SUV 4x4 : sortie du véhicule — 1.5 m
+✔ Tracteur : bouton « Conduire » proposé à la portière — vehicle-in
+✔ Tracteur : au volant, moteur démarré — N800 tr/min0km/h36 bpm22 l · 371 km
+✔ Tracteur : marche arrière — {"gear":"R","speed":-2.6964551612076484}
+✔ Tracteur : accélère et passe les rapports — 28 km/h, rapport 5
+✔ Tracteur : freine jusqu'à l'arrêt — 1.5 s
+✔ Tracteur : roues qui tournent, sorti de sa place — 3 m
+✔ Tracteur : sortie du véhicule — 1.7 m
+✔ Berline : bouton « Conduire » proposé à la portière — vehicle-in
+✔ Berline : au volant, moteur démarré — N750 tr/min0km/h36 bpm35 l · 762 km
+✔ Berline : marche arrière — {"gear":"R","speed":-3.2644069348496836}
+✔ Berline : accélère et passe les rapports — 69 km/h, rapport 3
+✔ Berline : freine jusqu'à l'arrêt — 2.1 s
+✔ Berline : roues qui tournent, sorti de sa place — 3 m
+✔ Berline : sortie du véhicule — 1.5 m
+✔ Citadine : bouton « Conduire » proposé à la portière — vehicle-in
+✔ Citadine : au volant, moteur démarré — N750 tr/min0km/h36 bpm35 l · 761 km
+✔ Citadine : marche arrière — {"gear":"R","speed":-2.651400700725509}
+✔ Citadine : accélère et passe les rapports — 66 km/h, rapport 2
+✔ Citadine : freine jusqu'à l'arrêt — 2.1 s
+✔ Citadine : roues qui tournent, sorti de sa place — 2 m
+✔ Citadine : sortie du véhicule — 1.5 m
+✔ Compacte : bouton « Conduire » proposé à la portière — vehicle-in
+✔ Compacte : au volant, moteur démarré — N700 tr/min0km/h36 bpm25 l · 448 km
+✔ Compacte : marche arrière — {"gear":"R","speed":-2.8384959241281686}
+✔ Compacte : accélère et passe les rapports — 71 km/h, rapport 2
+✔ Compacte : freine jusqu'à l'arrêt — 2.1 s
+✔ Compacte : roues qui tournent, sorti de sa place — 2 m
+✔ Compacte : sortie du véhicule — 1.5 m
+✔ SUV : bouton « Conduire » proposé à la portière — vehicle-in
+✔ SUV : au volant, moteur démarré — N750 tr/min0km/h36 bpm27 l · 473 km
+✔ SUV : marche arrière — {"gear":"R","speed":-2.856757363951096}
+✔ SUV : accélère et passe les rapports — 66 km/h, rapport 3
+✔ SUV : freine jusqu'à l'arrêt — 2.1 s
+✔ SUV : roues qui tournent, sorti de sa place — 2 m
+✔ SUV : sortie du véhicule — 1.5 m
+✔ voiture de la circulation : bouton « Monter » — vehicle-in
+✔ voiture de la circulation : reprise au volant (même modèle, même couleur)
+✔ voiture de la circulation : roule — 45 km/h
+✔ au volant d’une voiture, on n’est pas « dans le camion »
+✔ camion Strides : toujours conduisible — 11 km/h
+✔ aucune erreur
+VÉHICULES OK

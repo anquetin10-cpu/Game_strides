@@ -1,0 +1,18 @@
+✔ tuto (231 ms) {"title":"Mission réussie","pay":55,"stars":5,"time":0.8666666666666666}
+✔ m1 (972 ms) {"title":"Mission réussie","pay":297,"stars":5,"time":12.933333333333298}
+✔ m2 (232 ms) {"title":"Mission réussie","pay":132,"stars":5,"time":0.9333333333333332}
+✔ m3 (1894 ms) {"title":"Victoire au premier concours !","pay":407,"stars":5,"body":"0 pt en 18,57 s · 1re sur 13 · participation 150 € + dotation 220 €","time":18.566666666666748}
+✔ groom (156 ms) {"title":"Mission réussie","pay":99,"stars":5,"time":0}
+✔ livraison (206 ms) {"title":"Mission réussie","pay":132,"stars":5,"time":0.3}
+✔ fugueur (108 ms) {"title":"Mission réussie","pay":176,"stars":5,"time":0.26666666666666666}
+✔ plage (140 ms) {"title":"Mission réussie","pay":198,"stars":5,"time":0.8666666666666666}
+✔ transport (104 ms) {"title":"Mission réussie","pay":286,"stars":5,"time":0.4666666666666666}
+✔ fer (204 ms) {"title":"Mission réussie","pay":0,"stars":5,"time":2.4666666666666677}
+✔ cross (994 ms) {"title":"Mission réussie","pay":352,"stars":5,"body":"Pénalités : 0 · Chrono 14 s","time":13.733333333333295}
+✔ pension (57 ms) {"title":"Mission réussie","pay":187,"stars":5,"time":0.2333333333333333}
+✔ derby (2960 ms) {"title":"Victoire !","pay":462,"stars":5,"time":71.96666666666515}
+✔ csi3 (1023 ms) {"title":"Mission réussie","pay":550,"stars":5,"body":"Pénalités : 0 · Chrono 18,57 s","time":18.566666666666748}
+✔ gp (1028 ms) {"title":"Victoire en Grand Prix","pay":1650,"stars":5,"body":"Pénalités : 0 · Chrono 18,57 s — Meilleur adversaire : 4 pts en 53,4 s","time":18.566666666666748}
+✔ gpparis (3646 ms) {"title":"9e du Grand Prix de Paris Indoor","pay":2700,"stars":4,"body":"Barrage : éliminé · Manche : 0 pt en 17,57 s · dotation 2 700 €","time":17.466666666666693}
+STATE {"money":7423,"reputation":5570,"completed":["tuto","m1","m2","m3","groom","livraison","fugueur","plage","transport","fer","cross","pension","derby","csi3","gp","gpparis"],"ratings":[5,5,5,5,5,5,5,5,5,5,5,5,5,5,4]}
+ERRORS none

@@ -1,0 +1,13 @@
+✔ sauvegarde v1 migrée (réputation = xp) — {"rep":950,"v":2,"issue":null,"backup":true,"stored":2,"cont":true}
+✔ copie de secours v1 conservée
+✔ bouton Continuer proposé
+✔ partie existante jouable, possessions conservées — {"money":1200,"horses":["comete"],"up":["fers"],"label":"Écurie du Val⏱0,001 200 €RÉFÉRENCE1"}
+✔ sauvegarde illisible signalée — {"issue":"corrupt","notice":true}
+✔ rien n’est écrasé
+✔ pas de « Continuer », « Nouvelle partie » explicite — Nouvelle partie
+✔ restauration de la copie de secours proposée
+✔ copie restaurée et jouable — {"rep":950,"cont":true}
+✔ export disponible dans Réglages
+✔ import appliqué après rechargement — 777
+ERRORS none
+SAUVEGARDE OK

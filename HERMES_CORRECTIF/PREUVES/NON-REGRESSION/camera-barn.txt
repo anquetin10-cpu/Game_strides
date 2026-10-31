@@ -1,0 +1,23 @@
+rejouée P4 contre la porte du box de Comète {"bad":false,"dist":0.32,"humanVisible":false,"layers":1,"real":["game","bodies","horses","cars","carFailed","failed","horseFailed","loading"]}
+rejouée P5 contre les boxes d’en face {"bad":false,"dist":2.93,"humanVisible":true,"layers":1,"real":["game","bodies","horses","cars","carFailed","failed","horseFailed","loading"]}
+rejouée P7 angle pignon / boxes {"bad":false,"dist":0.3,"humanVisible":false,"layers":1,"real":["game","bodies","horses","cars","carFailed","failed","horseFailed","loading"]}
+{
+ "tag": "apres",
+ "samples": 622,
+ "inside": 0,
+ "cut": 0,
+ "perSpot": {
+  "P1 seuil intérieur": 0,
+  "P2 seuil extérieur": 0,
+  "P3 allée, milieu": 0,
+  "P4 contre la porte du box de Comète": 0,
+  "P5 contre les boxes d’en face": 0,
+  "P6 allée, plus loin": 0,
+  "P7 angle pignon / boxes": 0,
+  "P4 contre la porte du box de Comète · angle avant": 0,
+  "P5 contre les boxes d’en face · angle avant": 0,
+  "P7 angle pignon / boxes · angle avant": 0
+ }
+}
+exemples caméra dans une paroi []
+exemples vue coupée []

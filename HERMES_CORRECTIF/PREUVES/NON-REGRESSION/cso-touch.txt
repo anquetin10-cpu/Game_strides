@@ -1,0 +1,9 @@
+✔ présentation et plan au doigt
+✔ tour complet au doigt : 9 éléments franchis sans faute, dans l’ordre — ["clear:1","clear:2","clear:3","clear:4","clear:5A","clear:5B","clear:6","clear:7","clear:8"]
+✔ chrono dans le temps accordé — 60.53 s
+✔ SAUT touché quand le bouton affichait « Saute ! » — 1:Saute ! 2:Saute ! 3:Saute ! 4:Saute ! 5A:Saute ! 5B:Saute ! 6:Saute ! 7:Saute ! 8:Saute !
+✔ le doigt gauche dirigeait encore pendant certains appuis sur SAUT (multitouch) — 5
+✔ bilan affiché à l’arrivée
+✔ retour à la caméra et au HUD d’exploration — {"course":null,"fov":59.95885126475489,"light":false}
+✔ aucune erreur
+CSO TACTILE OK

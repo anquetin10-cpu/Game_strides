@@ -1,0 +1,83 @@
+
+— defender
+✔ defender : « Monter » à la portière conducteur — vehicle-in « Monter⁠ »
+✔ defender : un appui lance la séquence ; double appui sans effet
+✔ defender : portière immobile pendant l'approche, main sur la poignée à l'ouverture — écart main-poignée 0.017 m
+✔ defender : ouverture complète, puis refermée
+✔ defender : tête sous le pavillon, pieds au-dessus du plancher — tête 0.00 · pieds 0.00
+✔ defender : assis au volant (bassin sur le siège, mains au volant), visible — 6.2 s · bassin 0.00 · main 0.02
+✔ defender : caméra sans coupure — 0.19 m/image au plus
+✔ defender : conduite après la montée, descente refusée en roulant — 6.6 m · 3 km/h · refus true
+✔ defender : « Descendre » : séquence complète, véhicule immobile — 5.0 s
+✔ defender : au sol, hors de l'enveloppe du véhicule et de la portière — x local 1.56 (enveloppe 1.12)
+✔ defender : second cycle depuis le côté passager (contournement, jamais au travers) — {"ok":true,"inside":0,"seated":true,"foot":true,"driver":false}
+✔ defender : portière bloquée → indication, pas de séquence, joueur libre — Pas la place d’ouvrir la portière : dégage l’accès conducteu
+✔ defender : sortie bloquée → indication, reste assis (pas de téléportation)
+✔ defender : téléphone ouvert → séquence suspendue, reprise ensuite — {"t0":1.0333333333333332,"t1":1.0333333333333332,"t2":2.033333333333336,"seated":true}
+
+— van
+✔ van : « Monter » à la portière conducteur — vehicle-in « Monter⁠ »
+✔ van : un appui lance la séquence ; double appui sans effet
+✔ van : portière immobile pendant l'approche, main sur la poignée à l'ouverture — écart main-poignée 0.041 m
+✔ van : ouverture complète, puis refermée
+✔ van : tête sous le pavillon, pieds au-dessus du plancher — tête 0.00 · pieds 0.00
+✔ van : assis au volant (bassin sur le siège, mains au volant), visible — 6.8 s · bassin 0.00 · main 0.02
+✔ van : caméra sans coupure — 0.18 m/image au plus
+✔ van : conduite après la montée, descente refusée en roulant — 8.4 m · 19 km/h · refus true
+✔ van : « Descendre » : séquence complète, véhicule immobile — 6.0 s
+✔ van : au sol, hors de l'enveloppe du véhicule et de la portière — x local 1.91 (enveloppe 1.50)
+✔ van : second cycle depuis le côté passager (contournement, jamais au travers) — {"ok":true,"inside":0,"seated":true,"foot":true,"driver":false}
+✔ van : portière bloquée → indication, pas de séquence, joueur libre — Pas la place d’ouvrir la portière : dégage l’accès conducteu
+✔ van : sortie bloquée → indication, reste assis (pas de téléportation)
+✔ van : téléphone ouvert → séquence suspendue, reprise ensuite — {"t0":1.0333333333333332,"t1":1.0333333333333332,"t2":2.033333333333336,"seated":true}
+
+— truck
+✔ truck : « Monter » à la portière conducteur — truck-in « Monter⁠ »
+✔ truck : un appui lance la séquence ; double appui sans effet
+✔ truck : portière immobile pendant l'approche, main sur la poignée à l'ouverture — écart main-poignée 0.137 m
+✔ truck : ouverture complète, puis refermée
+✔ truck : tête sous le pavillon, pieds au-dessus du plancher — tête 0.00 · pieds 0.00
+✔ truck : assis au volant (bassin sur le siège, mains au volant), visible — 8.7 s · bassin 0.00 · main 0.06
+✔ truck : caméra sans coupure — 0.31 m/image au plus
+✔ truck : conduite après la montée, descente refusée en roulant — 3.8 m · 9 km/h · refus true
+✔ truck : « Descendre » : séquence complète, véhicule immobile — 7.3 s
+✔ truck : au sol, hors de l'enveloppe du véhicule et de la portière — x local 1.81 (enveloppe 1.34)
+✔ truck : second cycle depuis le côté passager (contournement, jamais au travers) — {"ok":true,"inside":0,"seated":true,"foot":true,"driver":false}
+✔ truck : portière bloquée → indication, pas de séquence, joueur libre — Pas la place d’ouvrir la portière : dégage l’accès conducteu
+✔ truck : sortie bloquée → indication, reste assis (pas de téléportation)
+✔ truck : téléphone ouvert → séquence suspendue, reprise ensuite — {"t0":1.0333333333333332,"t1":1.0333333333333332,"t2":2.033333333333336,"seated":true}
+
+— car
+✔ car : « Monter » à la portière conducteur — vehicle-in « Monter⁠ »
+✔ car : un appui lance la séquence ; double appui sans effet
+✔ car : portière immobile pendant l'approche, main sur la poignée à l'ouverture — écart main-poignée 0.076 m
+✔ car : ouverture complète, puis refermée
+✔ car : tête sous le pavillon, pieds au-dessus du plancher — tête 0.00 · pieds 0.00
+✔ car : assis au volant (bassin sur le siège, mains au volant), visible — 5.7 s · bassin 0.00 · main 0.03
+✔ car : caméra sans coupure — 0.18 m/image au plus
+✔ car : conduite après la montée, descente refusée en roulant — 12.0 m · 26 km/h · refus true
+✔ car : « Descendre » : séquence complète, véhicule immobile — 4.7 s
+✔ car : au sol, hors de l'enveloppe du véhicule et de la portière — x local 1.45 (enveloppe 1.02)
+✔ car : second cycle depuis le côté passager (contournement, jamais au travers) — {"ok":true,"inside":0,"seated":true,"foot":true,"driver":false}
+✔ car : portière bloquée → indication, pas de séquence, joueur libre — Pas la place d’ouvrir la portière : dégage l’accès conducteu
+✔ car : sortie bloquée → indication, reste assis (pas de téléportation)
+✔ car : téléphone ouvert → séquence suspendue, reprise ensuite — {"t0":1.0333333333333332,"t1":1.0333333333333332,"t2":2.033333333333336,"seated":true}
+
+— tractor
+✔ tractor : « Monter » à la portière conducteur — vehicle-in « Monter⁠ »
+✔ tractor : un appui lance la séquence ; double appui sans effet
+✔ tractor : portière immobile pendant l'approche, main sur la poignée à l'ouverture — écart main-poignée 0.071 m
+✔ tractor : ouverture complète, puis refermée
+✔ tractor : tête sous le pavillon, pieds au-dessus du plancher — tête 0.00 · pieds 0.00
+✔ tractor : assis au volant (bassin sur le siège, mains au volant), visible — 9.4 s · bassin 0.00 · main 0.07
+✔ tractor : caméra sans coupure — 0.13 m/image au plus
+✔ tractor : conduite après la montée, descente refusée en roulant — 5.8 m · 12 km/h · refus true
+✔ tractor : « Descendre » : séquence complète, véhicule immobile — 8.3 s
+✔ tractor : au sol, hors de l'enveloppe du véhicule et de la portière — x local 1.72 (enveloppe 1.32)
+✔ tractor : second cycle depuis le côté passager (contournement, jamais au travers) — {"ok":true,"inside":0,"seated":true,"foot":true,"driver":false}
+✔ tractor : portière bloquée → indication, pas de séquence, joueur libre — Pas la place d’ouvrir la portière : dégage l’accès conducteu
+✔ tractor : sortie bloquée → indication, reste assis (pas de téléportation)
+✔ tractor : téléphone ouvert → séquence suspendue, reprise ensuite — {"t0":1.0333333333333332,"t1":1.0333333333333332,"t2":2.033333333333336,"seated":true}
+✔ sauvegarde en pleine montée → reprise à pied en lieu sûr, portière fermée, pas de conducteur — {"mid":{"door":0.6437264901620373,"phase":"enter"},"rl":{"mode":"foot","active":false,"door":0,"driver":false,"outX":1.6200000000000045,"free":true,"visible":true}}
+✔ aucune erreur console
+MONTÉE / DESCENTE OK

@@ -1,0 +1,34 @@
+✔ modèle fourni chargé (full) — {"file":"src/assets/vehicles/Defender110_STRIDES.glb","variant":"full","loaded":true,"error":null,"loadMs":98,"triangles":123498,"meshes":115,"materials":35}
+✔ un seul Defender (type defender110_hero) dans la scène et parmi les véhicules — 1 / 1
+✔ distinct du camion Strides (Scania) et du van Master, tous deux présents
+✔ nœuds du fichier : portes, coffre, roue de secours, volant, repères
+✔ matériaux et textures d’origine (35 matériaux, textures, vitres transparentes) — 35 matériaux · 10 maillages texturés · Glass_front:alpha:0.4 Glass_projector:opaque:1 Glass_tint:alpha:0.6784313725490196
+✔ pneus au sol (écart bas de roue / terrain < 3 cm) — [0,0,0,0]
+✔ garé à l’Écurie du Val, à l’écart du camion et du van — -97,181 · 13.0 m
+✔ quatre portes et coffre ouverts jusqu’à la pose finale des clips Open_* — {"door_FL":"0/1.05","door_FR":"0/1.05","door_RL":"0/1.05","door_RR":"0/1.05","tailgate":"0/1.6"}
+✔ départ bloqué coffre ouvert (message affiché) — 0.00 m · « Coffre ouvert : descends le fermer avant de rouler. »
+✔ tout refermé ensuite
+✔ portière ouverte : refermée automatiquement avant le départ, puis le Defender roule — 7.0 m · 33 images bloquées
+✔ coffre et portières ne s’ouvrent pas en roulant — 8 km/h
+✔ roulement relié à la distance parcourue (rayon 0,407 m) — 18.1 m · 44.4 rad · rapport 1.00
+✔ braquage d’Ackermann sur steer_FL / steer_FR (roue intérieure plus braquée) — [{"side":1,"y":0.086},{"side":-1,"y":0.082}]
+✔ marche arrière : le véhicule recule, roues en sens inverse — -23.3 km/h · -24.9 rad
+✔ personnage assis au volant (repère anchor_driver, pose de conduite pilotée), caméra 4x4 — {"mode":"drive","driver":true,"pose":"board","seat":[0.47,0.19],"camDist":7.6,"camHeight":2.7,"collider":false}
+✔ collision : arrêt contre un obstacle (enveloppe invisible, pas de traversée) — jeu avant 0.40 m · 1 choc(s)
+✔ descente sûre : sortie conducteur bloquée → côté passager, sur un point libre — [-1.52,0.42]
+✔ piéton repoussé hors de la caisse
+✔ ACTION à la portière conducteur : « Monter », séquence de montée, portière ouverte puis refermée — vehicle-in « Monter⁠ »
+✔ descente au repère anchor_exit_driver (hors de l’enveloppe), caméra à pied rétablie — [1.52,0.42]
+✔ coffre : ouverture à pied, objet porté rangé puis repris (système d’objets existant) — Ouvrir le coffre → Ranger dans le coffre → Prendre la botte de foin → Ranger dans le coffre → Ouvrir la portière → Teinte : Blanc glacier
+✔ portière arrière ouverte à pied
+✔ teinte de carrosserie modifiable (Body_Paint seul) — #e9ebe8
+✔ portière conducteur ouverte : « Fermer la portière » + action secondaire « Monter » — Fermer la portière / Monter⁠
+✔ état enregistré (teinte, coffre, portière ouverte) — {"id":"defender110_hero-1","type":"defender110_hero","paint":"#e9ebe8","access":{"door_RL":1,"tailgate":1},"boot":"hay"}
+✔ passages cheval → pied → Defender → pied, caméras rétablies — {"ride":{"mode":"ride"},"drive":{"mode":"drive","cam":7.6,"h":2.7},"foot":{"mode":"foot","focus":true},"noHorseInside":true}
+✔ aucun cheval dans le Defender
+✔ reprise : Defender à sa place, même orientation — {"x":-117.21,"z":183,"h":-1.5707963267948966}
+✔ reprise : teinte, objet du coffre et portière ouverte retrouvés, un seul exemplaire — {"paint":"#e9ebe8","boot":"hay","rl":1,"n":1}
+✔ reprise : camion Strides, van Master et solde inchangés
+✔ ancienne sauvegarde : Defender ajouté une fois à l’Écurie du Val, solde et camion conservés — {"pos":[-97,181],"instances":1,"money":1234,"def":{"id":"defender110_hero-1","type":"defender110_hero","paint":null,"access":{},"boot":null},"truck":{"x":-64,"z":158}}
+✔ aucune erreur console
+DEFENDER OK

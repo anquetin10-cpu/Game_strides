@@ -1,0 +1,20 @@
+✔ BUG-10 · « Fer perdu » refusé à l’acceptation sans les 60 € de la ferrure — Solde insuffisant : la ferrure coûte 60 € (solde 10 €).
+✔ BUG-01 · avec Ulysse : pas de ferrure, indication « Hugo attend Comète » — Hugo attend Comète : selle-la de nouveau dans « Mes chevaux ».
+✔ BUG-09 · Comète reprise : état courant conservé (12 / 23 / 34) — {"energy":12,"hydration":23,"satiety":100,"clean":34,"hooves":100,"temp":37.8}
+✔ BUG-01 · Comète reprise : toujours boiteuse, « Faire ferrer » proposé — Faire ferrer
+✔ BUG-10 · solde dépensé entre-temps : refus explicite, étape en attente — Il te faut 60 € pour la ferrure (solde : 30 €). Reviens voir Hugo dès 
+✔ BUG-01/10 · ferrure payée (100 → 40 €), mission terminée, Comète guérie — {"money":40,"done":true}
+✔ BUG-02 · M1 terminée, écran de résultat ouvert : « Léa rencontrée » déjà enregistré — {"resultOpen":true,"mem":true,"stored":true,"completed":true}
+✔ BUG-03 · concours payant refusé avec 0 € (message) — Solde insuffisant : engagement 22 € (solde 0 €).
+✔ BUG-03 · avec 100 € : accepté et engagement débité — 78 € · {"mission":"concours","fee":22}
+✔ BUG-08 · rechargement : concours non repris, engagement remboursé (message) — 100 € · Ton engagement (22 €) t’a été remboursé : le concours a été 
+✔ BUG-06 · Grand Prix de Deauville : fin de chapitre (Paris annoncé), pas l’écran de fin — Vainqueur à Deauville
+✔ BUG-06 · Grand Prix de Paris : écran de fin, carrière marquée terminée (sauvegardée) — Légende du Grand Tour
+✔ BUG-07 · 34 l à Paris : plein proposé à l’aire de service de l’A13 — Autoroute A13Plein avant la route34 l dans le réservoir, 46 
+✔ BUG-07 · après le plein : réservoir suffisant, « Rentrer à Deauville » proposé — 150 l · 284.24 €
+✔ BUG-05 · toucher annulé (pointercancel) : aucun repère ; toucher normal : repère posé — {"found":true,"afterCancel":false,"x":648.375,"y":195.32656860351562,"vh":390,"scroll":0,"afterTap":true}
+✔ BUG-11 · W pressée sous le téléphone : ignorée après la fermeture (pas de déplacement) — {"during":false,"after":false,"moved":0}
+✔ BUG-04 · portrait : écran « Tourne ton téléphone », temps du jeu et heure du monde arrêtés — {"p0":{"time":1.3319333333333363,"clock":0.9826666666666666,"gt":40467.552000000156,"overlay":"grid"},"p1":{"time":1.3319333333333363,"clock":0.9826666666666666,"gt":40467.552000000156}}
+✔ BUG-04 · retour en paysage : la partie reprend
+✔ aucune erreur console
+CORRECTIFS QA OK

@@ -21,14 +21,14 @@
   {
    "id": "COR-P01d",
    "label": "parcours : obstacles franchis dans l’ordre (1 → 8, double 5A/5B), arrivée passée",
-   "ok": false,
+   "ok": true,
    "extra": "{\"order\":[\"1\",\"2\",\"3\",\"4\",\"5A\",\"5B\",\"6\",\"7\",\"8\"],\"t\":60.19999999999914,\"faults\":0,\"elim\":null}"
   },
   {
    "id": "COR-P01e",
    "label": "résultats affichés (classement) et dotation versée selon le rang ; engagement soldé (pas de remboursement en attente)",
    "ok": true,
-   "extra": "{\"card\":\"Résultats · Amateur 2 1,05 mSans faute · 3eChrono60,30 s (accordé 65 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement3e sur 15Récompens\",\"fin\":{\"money\":421,\"pendingFee\":null}}"
+   "extra": "{\"card\":\"Résultats · Amateur 2 1,05 mSans faute · 4eChrono60,30 s (accordé 65 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement4e sur 15Récompens\",\"fin\":{\"money\":378,\"pendingFee\":null}}"
   },
   {
    "id": "erreurs",
@@ -117,18 +117,18 @@
   "next": 10
  },
  "fin": {
-  "money": 421,
+  "money": 378,
   "active": null,
   "pendingFee": null,
   "stats": {
    "jobs": 1,
-   "earned": 143,
+   "earned": 100,
    "distance": 786.5876734243758,
    "jumps": 11,
    "faults": 0
   },
   "lastResult": null
  },
- "resultCard": "Résultats · Amateur 2 1,05 mSans faute · 3eChrono60,30 s (accordé 65 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement3e sur 15Récompense130 €1M. Faure · Oural0 pt59,39 s260 €2L. Martin · Rubis Blanc0 pt59,55 s180 €3Hermès · Comète0 pt60,30 s130 €4V. Girard · Galaxie0 pt60,57 s100 €5L. Blanc · Tiara du Ter0 pt60,79 s80 €6J. Faure · Kalimba0 pt62,30 s7V. Faure · Saphir des Bois0 pt62,97 s8L. Lefèvre · Utopie0 pt63,42 sRecommencerS’entraînerContinuer",
+ "resultCard": "Résultats · Amateur 2 1,05 mSans faute · 4eChrono60,30 s (accordé 65 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement4e sur 15Récompense100 €1E. Fournier · Utopie0 pt58,68 s260 €2L. Lefèvre · Rubis Blanc0 pt59,68 s180 €3L. Lefèvre · Diamant Rouge0 pt59,82 s130 €4Hermès · Comète0 pt60,30 s100 €5A. Marchand · Kalimba0 pt62,65 s80 €6J. Blanc · Ubris de Mai4 pts59,78 s7A. Bonnet · Ninja Z4 pts60,24 s8P. Faure · Vendôme4 pts63,66 sRecommencerS’entraînerContinuer",
  "endCard": ""
 }

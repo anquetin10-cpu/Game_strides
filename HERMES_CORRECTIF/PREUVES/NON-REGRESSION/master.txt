@@ -1,0 +1,28 @@
+✔ modèle fourni chargé (src/assets/vehicles/STX_Renault_Master_STALLE5.glb) — "src/assets/vehicles/STX_Renault_Master_STALLE5.glb"
+✔ véhicule distinct du camion Strides (Scania STX conservé)
+✔ pièces mobiles du fichier présentes (pont latéral, volets, porte arrière, stalles)
+✔ quatre roues du fichier, roues avant sur leurs pivots de braquage
+✔ matériaux d’origine du fichier (non remplacés) — Amber, Black_padding, Black_plastic, Blue_LED, Body_Paint, Brushed_steel, Cab_lining, Chrome, Dark_metal, Gasket, Glass, Glass_dark, LED, Light_lens, Paint_Edge, Plate_front, Red_lens, Rim_shadow, Rubber_floor, STX_cap, STX_side_-1, STX_side_1, Screen, Screen_blue, Seat_leather, Tyre, Tyre_detail, White
+  triangles : 93580 · garé à (-84, 180), 29.7 m du camion
+✔ pont latéral, volets et porte arrière s’ouvrent (amplitudes des animations du fichier) — {"ok":true,"side":true,"rear":true,"rampQ":[0,0,-0.845,0.536],"target":[0,0,-0.845,0.536]}
+✔ départ bloqué pont latéral et porte arrière ouverts (message affiché) — 0.00 m · « Pont latéral ou porte arrière ouvert : descends et ferme-les avant de rouler. »
+✔ conduite une fois tout fermé : le van roule — 26.5 m
+✔ roues : roulement et braquage sur les pivots steer_L / steer_R — {"spin":72.6,"steer":[0.122,0.115]}
+✔ départ bloqué porte arrière seule ouverte — 0.00 m
+✔ ACTION au pied du pont : « Ouvrir le pont latéral » — Ouvrir le pont latéral
+✔ cheval mené au pied du pont : « Faire monter … » — Faire monter Comète
+✔ stalle du fond : le bas-flanc central s’ouvre pendant le chargement, puis se referme — {"mid":{"partition":1,"step":3},"after":0}
+✔ cheval chargé tête vers l’arrière — écart 0 rad
+✔ séquence : le cheval monte le pont et se range dans sa stalle — {"mid":{"partition":1,"step":3},"aboard":true,"hidden":true,"local":{"x":0.55,"z":-1.1},"aboveFloor":0,"headingFromRear":0,"partitionAfter":0,"pitch":0.2}
+✔ à pied près du pont ouvert, cheval à bord : « Fermer le pont latéral » et, en secondaire, « Faire descendre … » — Fermer le pont latéral · Faire descendre Comète
+✔ trajet : le cheval reste dans sa stalle (suit le van), masse prise en compte — {"lab":"Fermer le pont latéral","lab2":"Faire descendre Comète","mass":1,"local":{"x":0.55,"z":-1.09},"moved":true}
+✔ déchargement par le pont : le cheval descend et revient en main — {"lab":"Faire descendre Comète","aboard":false,"hidden":false,"led":true,"local":{"x":-5.2,"z":0.12},"onGround":true}
+✔ deux chevaux : stalle du fond puis côté pont, tous deux tête vers l’arrière — {"a":true,"b":true,"h":{"x":0.55,"z":-1.09},"q":{"x":-0.55,"z":-1.09},"rear":true,"dh":[3.14,3.14],"farBlocked":true,"u1":true,"u2":true,"empty":true,"partition":0}
+✔ déchargement dans l’ordre (côté pont d’abord), bas-flanc refermé ensuite — {"a":true,"b":true,"h":{"x":0.55,"z":-1.09},"q":{"x":-0.55,"z":-1.09},"rear":true,"dh":[3.14,3.14],"farBlocked":true,"u1":true,"u2":true,"empty":true,"partition":0}
+✔ collisions : piéton et cheval mené repoussés hors de la caisse — {"pushedRamp":true,"freeAfter":true,"foot":true,"horse":true,"saved":{"side":0,"rear":0,"aboard":[{"id":"comete","stall":0}]},"pos":{"x":-61.94971964472582,"z":162.67348333857163},"truck":{"x":-64,"z"
+✔ collisions : pont baissé contourné par le piéton, passage libre une fois relevé
+✔ reprise : van à sa place, cheval toujours à bord, pont fermé — {"pos":{"x":-61.94971964472582,"z":162.67348333857163},"aboard":true,"side":0,"truck":{"x":-64,"z":158},"scaniaAboard":false}
+✔ camion Strides inchangé à la reprise — {"x":-64,"z":158}
+✔ chargement du camion Strides toujours fonctionnel — {"ok":true,"aboard":true}
+✔ aucune erreur console
+MASTER OK
