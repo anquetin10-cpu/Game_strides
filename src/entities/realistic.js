@@ -280,14 +280,38 @@ export class Realism {
     if (st.characters === 'real') return true;
     return st.characters === 'auto' && !this.autoOff && st.quality !== 'low';
   }
+  // Personnage du joueur : il garde le même modèle pendant toute la partie. La baisse de cadence (autoFallback) ne
+  // le change pas — seul un réglage choisi par le joueur (« Modèles 3D », qualité « Économie ») le fait.
+  get playerEnabled() {
+    const st = this.game.save.data.settings;
+    if (st.characters === 'real') return true;
+    return st.characters === 'auto' && st.quality !== 'low';
+  }
 
-  // Mode « Auto » : l'appareil ne suit pas, modèles classiques pour le reste de la partie.
+  // Mode « Auto » : l'appareil ne suit pas, modèles classiques pour le reste de la partie — pour les passants, chevaux et
+  // voitures. Le joueur garde son modèle (avant : il passait d'un coup au personnage classique, autre visage, autres
+  // proportions, en pleine partie).
   autoFallback() {
     if (this.game.save.data.settings.characters !== 'auto' || this.autoOff) return;
     this.autoOff = true;
-    if (!this.bodies.size && !this.horses.size && !this.cars.size) return;
-    this._clear();
-    this.game.hud?.toast(t('Modèles classiques pour garder la fluidité (réglage « Modèles 3D »).'));
+    const me = this.game.player?.human;
+    for (const [hu, r] of this.bodies) {
+      if (hu === me) continue;
+      r.dispose();
+      this.bodies.delete(hu);
+    }
+    for (const r of this.horses.values()) r.dispose();
+    for (const r of this.cars.values()) r.dispose();
+    this.horses.clear();
+    this.cars.clear();
+  }
+
+  // Préchargement du modèle du joueur (écran de chargement) : la première image montre déjà le bon personnage.
+  async preloadPlayer(timeoutMs = 12000) {
+    if (!this.playerEnabled || this.failed) return;
+    const hu = this.game.player?.human;
+    const id = hu?.sex === 'm' ? 'rider_m' : 'rider_f';
+    await Promise.race([loadReal(id).catch(() => null), new Promise((r) => setTimeout(r, timeoutMs))]);
   }
 
   _clear() {
@@ -309,12 +333,12 @@ export class Realism {
     st.characters = mode;
     st.charactersSet = true;
     this.autoOff = false;
-    if (!this.enabled) this._clear();
+    if (!this.playerEnabled) this._clear();
   }
 
   // Qualité changée (« Économie » coupe les modèles réalistes en mode « Auto »).
   refresh() {
-    if (!this.enabled) this._clear();
+    if (!this.playerEnabled) this._clear();
   }
 
   // Chargement en tâche de fond (une fois par fichier) ; échec : modèles classiques et message.
@@ -371,8 +395,13 @@ export class Realism {
 
   // Appelé à chaque image avant le rendu.
   update() {
-    if (!this.enabled) return;
+    if (!this.playerEnabled) return;
     const g = this.game, P = g.player;
+    if (!this.enabled) {
+      // Cadence trop basse (Auto) : seul le joueur reste réaliste.
+      if (!this.failed) this._syncBodies(new Set([P?.human].filter(Boolean)));
+      return;
+    }
     // Chevaux : modèle procédural par défaut (préféré à l'essai), modèle réaliste sur demande (« Chevaux 3D »).
     if (g.save.data.settings.horses !== 'real') this._sync(this.horses, new Set(), () => null);
     else if (!this.horseFailed) {
@@ -397,8 +426,12 @@ export class Realism {
       }
       return new RealCar(v, root);
     });
-    if (!this.failed) {
-      const want = this._wanted(g.humans, [P?.human], this.bodies, NEAR.humans, NEAR.humanDist);
+    if (!this.failed) this._syncBodies(this._wanted(g.humans, [P?.human], this.bodies, NEAR.humans, NEAR.humanDist));
+  }
+
+  _syncBodies(want) {
+    const P = this.game.player;
+    {
       this._sync(this.bodies, want, (hu, busy) => {
         const id = hu.sex === 'm' ? 'rider_m' : 'rider_f';
         // Le joueur change de personnage à chaque tenue : modèle reconstruit sans attendre.

@@ -3,9 +3,10 @@ import { Human } from '../entities/human.js';
 import { OUTFITS } from '../entities/humanModel.js';
 import { FollowAI } from '../entities/horse.js';
 import { clamp, dampAngle } from '../core/math.js';
-import { nearestRoad, zoneById, zoneDist } from '../world/layout.js';
+import { nearestRoad } from '../world/layout.js';
 import { Transport } from './transport.js';
 import { Boarding } from './boarding.js';
+import { HorseMount } from './horseMount.js';
 import { t, T } from '../core/i18n.js';
 import * as THREE from 'three';
 
@@ -67,50 +68,41 @@ export class Player {
     this.transport = new Transport(game, this);
     // Montée / descente animées des véhicules (séquence commune, profil par véhicule).
     this.boarding = new Boarding(game, this);
+    // Montée / descente à cheval animées (étrier, appui, jambe au-dessus de la croupe) — voir horseMount.js.
+    this.horseMount = new HorseMount(game, this);
   }
 
-  // Tenues selon l'activité (comme une vraie cavalière) :
-  // - « work » : à pied à l'écurie, au volant, en ville — culotte d'équitation de travail beige (grise pour un
-  //   cavalier), boots marron, polo bleu ou, le matin et sous la pluie, blouson softshell sombre ; pas de casque ;
-  // - « ride » : la même tenue, casque mis pour monter ;
-  // - « competition » : sur le terrain d'un concours (on se change en arrivant) — veste de concours (bleu marine si
-  //   la veste de la Sellerie est achetée, noire sinon), chemise blanche, culotte blanche, bottes noires, casque.
-  _outfit(avatar, kind = this.outfitKind) {
+  // Tenue du joueur : une seule apparence, la même partout (à pied, à cheval, au volant, en mission, en ville, de jour
+  // comme de nuit, sous la pluie) — culotte d'équitation de travail beige (grise pour un cavalier), boots et
+  // mini-chaps, polo bleu Strides, casque. Elle ne change que par un choix du joueur (articles achetés et équipés à la
+  // Sellerie du Port ou chez Maison Lucette, essai en boutique, veste de concours achetée), jamais selon l'heure, la
+  // météo, la monte ou le lieu : avant, elle était recalculée à chaque changement d'activité (casque mis à cheval,
+  // tenue de concours sur les terrains, blouson le soir et sous la pluie), et le personnage changeait d'apparence.
+  _outfit(avatar) {
     const base = avatar === 'm' ? OUTFITS.rider : OUTFITS.riderF;
-    const o = { ...base, style: 'rider' }; // coupe de concours par défaut
+    const o = { ...base, style: 'rider' };
     // Articles portés (Sellerie du Port, Maison Lucette) et article essayé en boutique (previewItem).
     const wear = this.game.commerce?.wear(this.previewItem) || {};
-    if (kind === 'competition') {
-      const jacket = this.game.save?.data?.upgrades?.includes('veste') ? '#1f2b45' : '#1b1c1f';
-      return Object.assign(o, { top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', helmet: wear.helmet || '#16171a', logo: false, jacket: true });
-    }
-    const h = this.game.hour?.() ?? 12;
-    const wet = (this.game.weather?.rain ?? 0) > 0.15;
-    const top = wet || h < 9.5 || h > 20 ? '#2b3442' : '#2f5f8a';
-    // Coupe décontractée (polo ou blouson, pas de revers ni de chemise), culotte d'équitation, boots et mini-chaps.
+    const top = '#2f5f8a';
+    // Coupe décontractée (polo, pas de revers ni de chemise), culotte d'équitation, boots et mini-chaps.
     Object.assign(o, { style: 'casual', top, sleeve: top, pants: avatar === 'm' ? '#9aa0a6' : '#c2b49a', boots: '#3b2a1e', tallBoots: true, breeches: true, logo: true });
-    // Haut acheté (sans le logo Strides du polo de travail), bottes ; casque à cheval, couvre-chef à pied.
-    if (wear.top) Object.assign(o, { top: wear.top, sleeve: wear.sleeve || wear.top, logo: false });
+    // Veste de concours achetée : portée en permanence (plus de changement de tenue en arrivant sur un terrain).
+    if (this.game.save?.data?.upgrades?.includes('veste')) Object.assign(o, { top: '#1f2b45', sleeve: '#1f2b45', jacket: true, logo: false });
+    // Haut acheté (sans le logo Strides du polo de travail), bottes.
+    if (wear.top) Object.assign(o, { top: wear.top, sleeve: wear.sleeve || wear.top, logo: false, jacket: false });
     if (wear.collar) o.collar = wear.collar;
     if (wear.boots) o.boots = wear.boots;
-    o.helmet = kind === 'ride' ? wear.helmet || '#16171a' : null;
-    if (kind !== 'ride' && wear.cap) o.cap = wear.cap;
+    // Tête : couvre-chef équipé s'il y en a un, sinon le casque (équipé ou d'origine) — à pied comme à cheval.
+    if (wear.cap) o.cap = wear.cap;
+    else o.helmet = wear.helmet || '#16171a';
     return o;
   }
 
-  // Tenue voulue : concours (sur le terrain d'un concours ou d'un défi en cours), à cheval, ou travail.
+  // Signature de la tenue voulue (choix du joueur seulement) : le personnage n'est reconstruit que si elle change.
   desiredOutfit() {
-    const g = this.game;
-    const run = g.missions?.active;
-    const event = (run && run.offer?.vertical === 'EVENEMENTS') || !!g.challenge?.active;
-    if (event) {
-      const f = this.focusPos;
-      for (const id of ['pole', 'hippo', 'gatien']) {
-        const zn = zoneById[id];
-        if (zn && zoneDist(f.x, f.z, zn) < 12) return 'competition';
-      }
-    }
-    return this.mode === 'ride' ? 'ride' : 'work';
+    const w = this.game.commerce?.wear(this.previewItem) || {};
+    const veste = this.game.save?.data?.upgrades?.includes('veste') ? 1 : 0;
+    return `${w.top || ''}|${w.sleeve || ''}|${w.collar || ''}|${w.boots || ''}|${w.cap || ''}|${w.helmet || ''}|${veste}`;
   }
 
   // Reconstruit le personnage (choix cavalière/cavalier, tenue).
@@ -163,7 +155,8 @@ export class Player {
   get focus() {
     const pos = this.mode === 'ride' ? this.horse.pos : this.mode === 'drive' ? this.vehicle.pos : this.human.pos;
     const f = { pos, heading: this.heading, speed: this.speed, mode: this.mode, camDist: this.mode === 'drive' ? this.vehicle.camDist : undefined, camHeight: this.mode === 'drive' ? this.vehicle.camHeight : undefined };
-    // Montée / descente : caméra qui glisse entre le profil à pied et celui de conduite.
+    // Montée / descente : caméra qui glisse entre le profil à pied et celui de conduite (ou de monte).
+    if (this.horseMount?.active) return this.horseMount.focus(f);
     return this.boarding?.active ? this.boarding.focus(f) : f;
   }
 
@@ -176,8 +169,12 @@ export class Player {
       priority: 2,
       modes: ['foot'],
       getPos: () => this.horse?.pos || { x: 1e9, z: 1e9 },
-      when: () => this.horse && !this.horse.frozen && !this.human.carrying && !this.horse.hiddenInTruck && !this.transport?.busy,
-      action: () => this.mount(),
+      when: () => this.horse && !this.horse.frozen && !this.human.carrying && !this.horse.hiddenInTruck && !this.transport?.busy && !this.horseMount?.active,
+      // Un appui : séquence complète (approche, étrier, montée en selle).
+      action: () => {
+        this._prepMount(this.horse);
+        if (!this.horseMount.beginMount(this.horse)) this.mount();
+      },
     });
     g.interact.add('dismount', {
       label: t('Descendre'),
@@ -186,8 +183,9 @@ export class Player {
       priority: 0,
       modes: ['ride'],
       getPos: () => this.focusPos,
-      when: () => this.horse && this.horse.speed < 2.5 && this.horse.jumpT < 0 && !this.noDismount,
-      action: () => this.dismount(),
+      when: () => this.horse && this.horse.speed < 2.5 && this.horse.jumpT < 0 && !this.noDismount && !this.horseMount?.active,
+      // Un appui : le cheval s'arrête, puis descente complète.
+      action: () => this.horseMount.beginDismount(),
     });
     // Monter au volant : près d'une portière de la cabine.
     // « Monter » : un seul appui, séquence complète (approche, poignée, ouverture, montée, fermeture) — voir boarding.js.
@@ -257,8 +255,8 @@ export class Player {
     });
   }
 
-  mount() {
-    const h = this.horse;
+  // Préparation commune (montée immédiate ou animée) : pansage arrêté, cheval lâché, sorti du camion, sellé.
+  _prepMount(h) {
     if (!h) return;
     this.stopGroom();
     const tp = this.transport;
@@ -272,13 +270,23 @@ export class Player {
     h.control.mag = 0;
     h.control.speedOverride = undefined;
     h.anim.graze = 0;
-    this.human.mount(h);
+  }
+
+  // Montée immédiate (missions, défis, chargement de partie) ou fin de la séquence animée ({ animated: true } :
+  // le personnage est déjà à sa place en selle, la pose de cavalier prend le relais par un fondu court).
+  mount(opts = {}) {
+    const h = this.horse;
+    if (!h) return;
+    if (!opts.animated && this.horseMount?.active) this.horseMount.cancel();
+    this._prepMount(h);
+    this.human.mount(h, { keepPose: !!opts.animated });
     this.mode = 'ride';
     this.focusPos = h.pos;
     this.game.bus.emit('player:mount', h);
   }
 
   dismount(silent = false) {
+    if (this.horseMount?.active) this.horseMount.cancel();
     if (this.mode !== 'ride') return;
     const h = this.horse;
     h.control.mag = 0;
@@ -473,6 +481,7 @@ export class Player {
   // Téléportation (transport Strides, chargement de partie).
   teleport(x, z, heading = 0, withHorse = true) {
     this.boarding?.cancel();
+    this.horseMount?.cancel();
     if (this.mode === 'drive') {
       this.vehicle.setPosition(x, z, heading);
     } else if (this.mode === 'ride') {
@@ -539,8 +548,9 @@ export class Player {
     // Tenue : réévaluée quatre fois par seconde, changée seulement quand l'activité change.
     if ((this._outfitT = (this._outfitT || 0) - dt) <= 0) {
       this._outfitT = 0.25;
+      // (jamais au milieu d'une montée ou d'une descente : le personnage est reconstruit à l'identique ensuite)
       const want = this.desiredOutfit();
-      if (want !== this.outfitKind) this.setOutfit(want);
+      if (want !== this.outfitKind && !this.horseMount?.active && !this.boarding?.active) this.setOutfit(want);
     }
     const locked = this.locked;
     const mv = input.move;
@@ -548,7 +558,10 @@ export class Player {
     const dl = Math.hypot(dir.x, dir.z);
     const tp = this.transport;
     const boarding = this.boarding.active;
-    if (this.mode === 'foot') {
+    if (this.horseMount.active) {
+      // Montée / descente à cheval : le personnage et le cheval suivent la séquence (commandes ignorées).
+      this.horseMount.update(g.simPaused ? 0 : dt);
+    } else if (this.mode === 'foot') {
       if (boarding) {
         // Séquence de montée : le personnage suit l'animation (mise à jour après celle des véhicules, plus bas).
       } else if (tp.controlsHuman) {
@@ -623,7 +636,7 @@ export class Player {
     tp.update(dt);
     // Action secondaire (bouton contextuel ou touche L).
     const keyL = input.keys.has('KeyL') && input.enabled;
-    if ((input.wasPressed('action2') || (keyL && !this._keyL)) && !locked && !this.boarding.active && !g.hud.dialogActive && !g.phone.isOpen) {
+    if ((input.wasPressed('action2') || (keyL && !this._keyL)) && !locked && !this.boarding.active && !this.horseMount.active && !g.hud.dialogActive && !g.phone.isOpen) {
       if (g.vanLoading?.triggerSecondary()) {
         // Van Master : fermer le pont / faire descendre (l'autre action du pied du pont).
       } else if (tp._sec || !g.defenderAccess?._sec) tp.triggerSecondary();

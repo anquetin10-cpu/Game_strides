@@ -14,6 +14,8 @@ const CANTER_MAX = HORSE.gaits[3].max;
 // Hauteur du sol sous les sabots : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
 const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
+const _sv = new THREE.Vector3();
+
 export class Horse {
   constructor(game, def, opts = {}) {
     this.game = game;
@@ -179,6 +181,33 @@ export class Horse {
     this._brake = Math.max((v * v) / (2 * Math.max(dist, 0.02)), v / 0.5);
   }
 
+  // Étriers : celui où le cavalier a le pied suit ce pied (plante sur la grille) — en selle, et pendant la montée ou
+  // la descente dès que le pied y est ; sinon il pend à sa place (remonté sur l'étrivière sans cavalier).
+  _stirrupsFollow() {
+    const B = this.bones;
+    if (!B.stirL) return;
+    const R = this.rider || this.mountingBy;
+    const inS = R?.inStirrup;
+    let synced = false;
+    for (const [side, b] of [['l', B.stirL], ['r', B.stirR]]) {
+      const rest = b.userData.rest;
+      const toe = inS && inS[side] ? R.bones?.[`${side}Toe`] : null;
+      if (!toe) {
+        b.position.x = rest.x;
+        b.position.z = rest.z;
+        continue;
+      }
+      if (!synced) {
+        R.mesh.updateWorldMatrix(true, true);
+        b.parent.updateWorldMatrix(true, false);
+        synced = true;
+      }
+      toe.getWorldPosition(_sv);
+      _sv.y -= 0.015 * (R.scale || 1);
+      b.position.copy(b.parent.worldToLocal(_sv));
+    }
+  }
+
   update(dt, camPos) {
     const g = this.game;
     this.anim.t += dt;
@@ -338,7 +367,8 @@ export class Horse {
     this.anim.vel = this.speed; // vitesse réelle : longueur de foulée sans glissement des sabots
     this.anim.jump = this.jumpT;
     this.anim.turn = this.lastTurn;
-    this.anim.mounted = !!this.rider;
+    // Étriers descendus avec un cavalier, et pendant qu'il monte ou descend (mountingBy).
+    this.anim.mounted = !!this.rider || !!this.mountingBy;
     // Robe mouillée : transpiration (état du cheval, sinon estimée selon l'effort), pluie, eau des gués.
     const effort = this.speed > 7 ? (this.speed - 7) / 9 : -0.4;
     this._sweat = clamp((this._sweat || 0) + dt * (effort > 0 ? effort * 0.02 : effort * 0.006), 0, 1);
@@ -353,6 +383,7 @@ export class Horse {
     if (this.mesh.visible && (far < 120 || ((this._skip = (this._skip || 0) + 1) & 1))) {
       const r = animateHorse(this.bones, this.anim, far < 120 ? dt : dt * 2);
       if (r.footfalls && (this.isPlayerHorse || far < 45)) g.bus.emit('horse:step', { horse: this, n: r.footfalls, depth, hooves: r.landed });
+      this._stirrupsFollow();
     }
     this.speedNow = this.speed;
     this.distance = (this.distance || 0) + Math.hypot(this.pos.x - prevX, this.pos.z - prevZ);

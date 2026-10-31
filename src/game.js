@@ -274,6 +274,8 @@ export class Game {
     this.audio.setEnabled(d.settings.sound);
     this.screens.setLoading(0.97, t('Préparation des shaders'));
     await new Promise((r) => setTimeout(r, 0));
+    // Personnage réaliste du joueur chargé avant la première image (pas de personnage classique remplacé ensuite).
+    await this.realism?.preloadPlayer();
     this.sky.update(17.5, this.player.focus.pos, 0);
     this.sky.updateEnvironment(this.renderer, 0, true);
     this.renderer.compile(this.scene, this.camera);
@@ -886,7 +888,7 @@ export class Game {
     if (!this.player || this.state === 'title') return;
     const p = this.player;
     // Montée en cours : point d'approche (à pied, en lieu sûr) ; descente en cours : encore au volant.
-    const f = p.boarding?.safeFoot() || (p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.vehicle.pos);
+    const f = p.boarding?.safeFoot() || p.horseMount?.safeFoot() || (p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.vehicle.pos);
     // Dans un commerce : la porte (trottoir), et le commerce à rouvrir à la reprise (save.data.indoorShop).
     const door = this.shops?.savedPos();
     this.save.data.pos = {
@@ -1439,7 +1441,8 @@ export class Game {
     }
     const ent = p.mode === 'ride' ? p.horse : p.mode === 'foot' ? p.human : null;
     // Montée / descente d'un véhicule : la séquence place elle-même le personnage (contre la caisse, puis dedans).
-    if (!ent || p.boarding?.active) return;
+    // (de même pour la montée / descente à cheval : le personnage est contre le flanc, puis en selle)
+    if (!ent || p.boarding?.active || p.horseMount?.active) return;
     const r = p.mode === 'ride' ? 1.0 : 0.4;
     // Joueur à pied : les chevaux montés (cavaliers à l'entraînement) le contournent largement au lieu de le
     // traverser, hors séquences du camion (positions scénarisées) ; les chevaux libres sont traités plus bas.

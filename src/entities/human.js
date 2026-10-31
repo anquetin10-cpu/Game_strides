@@ -54,6 +54,7 @@ const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
 const _s = new THREE.Vector3();
 const FIST = new THREE.Vector3(0, -0.068, 0.012);
+const IN_BOTH = Object.freeze({ l: true, r: true });
 // Hauteur du sol sous les pieds : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
 const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
@@ -175,6 +176,8 @@ export class Human {
   // Niveau de détail selon la distance à la caméra (avec hystérésis).
   _lod(d) {
     const cur = this.model.lod;
+    // Joueur : toujours le modèle complet (au volant, caméra éloignée, il ne passait plus au modèle simplifié).
+    if (this.isPlayer) return this.model.setLOD(0);
     let l = d < LOD_DIST[0] ? 0 : d < LOD_DIST[1] ? 1 : 2;
     if (l > cur && d < LOD_DIST[l - 1] + 1.5) l = cur;
     this.model.setLOD(l);
@@ -246,13 +249,15 @@ export class Human {
     this.mesh.visible = true;
     this._rideFit = null;
     // Pose à cheval dès la première image (pas de fondu depuis la pose debout) ; filtre du rebond de selle réamorcé.
-    this.anim._init = false;
+    // Après la séquence de montée (keepPose) : le personnage est déjà assis, la pose de cavalier arrive par un fondu.
+    if (!opts.keepPose) this.anim._init = false;
     this.anim._ride = null;
   }
 
   dismount() {
     const horse = this.mounted;
     if (!horse) return;
+    this.inStirrup = null;
     this.mesh.parent?.remove(this.mesh);
     horse.rider = null;
     this.mounted = null;
@@ -322,6 +327,8 @@ export class Human {
     const rf = this._rideFit || (this._rideFit = {});
     for (const key in f) rf[key] = key === 'kneeOut' ? f[key] : f[key] * k;
     a.fit = rf;
+    // En selle : les deux pieds dans les étriers (les étriers suivent les pieds, voir Horse._stirrupsFollow).
+    this.inStirrup = IN_BOTH;
     animateHuman(this.bones, 'ride', a, step);
   }
 

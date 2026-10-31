@@ -1,0 +1,218 @@
+{
+ "tag": "avant",
+ "base": "http://127.0.0.1:5174",
+ "sigs": [
+  {
+   "label": "départ (11 h, à pied)",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": false,
+   "realOutfit": null,
+   "rebuilds": 0
+  },
+  {
+   "label": "marche, course, arrêt",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": false,
+   "realOutfit": null,
+   "rebuilds": 0
+  },
+  {
+   "label": "21 h 30, pluie",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": false,
+   "realOutfit": null,
+   "rebuilds": 0
+  },
+  {
+   "label": "à cheval (ride)",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":\"#16171a\",\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 1.0153,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 1
+  },
+  {
+   "label": "pas, trot, galop, saut",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":\"#16171a\",\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 1.0153,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 1
+  },
+  {
+   "label": "descente (foot)",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "Defender : au volant, caméra de conduite",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "Defender : montée, conduite, descente (drive → foot)",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "Master : au volant, caméra de conduite",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "Master : montée, conduite, descente (drive → foot)",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "Scania : au volant, caméra de conduite",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 1,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "Scania : montée, conduite, descente (drive → foot)",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "dans la boutique",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "sortie de la boutique",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 2
+  },
+  {
+   "label": "concours du Pôle en cours, sur le terrain",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#1b1c1f\",\"sleeve\":\"#1b1c1f\",\"pants\":\"#f2f1ec\",\"boots\":\"#121214\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":\"#16171a\",\"logo\":false,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"rider\",\"jacket\":true}",
+   "sex": "f",
+   "scale": 0.995,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 3
+  },
+  {
+   "label": "tour de caméra, baisse de cadence (Auto)",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": false,
+   "realOutfit": null,
+   "rebuilds": 4
+  },
+  {
+   "label": "région Paris, puis retour",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": false,
+   "realOutfit": null,
+   "rebuilds": 4
+  },
+  {
+   "label": "sauvegarde et rechargement",
+   "outfit": "{\"sex\":\"f\",\"top\":\"#2b3442\",\"sleeve\":\"#2b3442\",\"pants\":\"#c2b49a\",\"boots\":\"#3b2a1e\",\"skin\":\"#e8bea0\",\"hair\":\"#7a4a28\",\"helmet\":null,\"logo\":true,\"ponytail\":true,\"hairStyle\":\"bun\",\"style\":\"casual\",\"tallBoots\":true,\"breeches\":true}",
+   "sex": "f",
+   "scale": 0.968,
+   "lod": 0,
+   "real": true,
+   "realOutfit": true,
+   "rebuilds": 0
+  }
+ ],
+ "results": [
+  {
+   "id": "AV-01",
+   "label": "apparence identique dans toutes les situations (tenue, corps, échelle, détail, modèle réaliste)",
+   "ok": false,
+   "extra": "différente : à cheval (ride) · pas, trot, galop, saut · descente (foot) · Defender : au volant, caméra de conduite · Defender : montée, conduite, descente (drive → foot) · Master : au volant, caméra de conduite · Master : montée, conduite, descente (drive → foot) · Scania : au volant, caméra de conduite · Scania : montée, conduite, descente (drive → foot) · dans la boutique · sortie de la boutique · concours du Pôle en cours, sur le terrain · sauvegarde et rechargement"
+  },
+  {
+   "id": "AV-02",
+   "label": "aucune reconstruction involontaire du personnage pendant la partie",
+   "ok": false,
+   "extra": "4 reconstruction(s) (1 au démarrage : tenue initiale)"
+  },
+  {
+   "id": "AV-03",
+   "label": "rechargement : même apparence",
+   "ok": false,
+   "extra": "{\"avant\":true,\"real\":[false,true]}"
+  },
+  {
+   "id": "AV-04",
+   "label": "changement volontaire (polo blanc équipé) : appliqué une fois, conservé à cheval, à pied et au rechargement",
+   "ok": false,
+   "extra": "{\"change\":true,\"cheval\":false,\"recharge\":true}"
+  },
+  {
+   "id": "erreurs",
+   "label": "aucune erreur JavaScript",
+   "ok": true,
+   "extra": ""
+  }
+ ]
+}

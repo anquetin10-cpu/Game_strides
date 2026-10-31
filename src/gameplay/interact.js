@@ -21,7 +21,7 @@ export class Interactions {
     const mode = p.mode;
     // Montée / descente d'un véhicule en cours : aucune autre action (pas de second déclenchement).
     // (de même pendant le chargement / déchargement d'un cheval dans le van : ni « Monter » à cheval, ni second ordre)
-    if (p.boarding?.active || this.game.vanLoading?.busy) {
+    if (p.boarding?.active || p.horseMount?.active || this.game.vanLoading?.busy) {
       this.current = null;
       return null;
     }
