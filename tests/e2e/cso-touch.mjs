@@ -1,6 +1,7 @@
 // Tour complet de l'épreuve de CSO en émulation iPhone 13 (paysage 844 × 390, écran tactile) : vrais événements
-// tactiles — doigt gauche sur le joystick flottant (gauche/droite pour tourner), doigt droit sur le gros bouton SAUT
-// pendant que le gauche dirige ; présentation et bilan touchés au doigt. Captures dans tests/e2e/out/cso/touch-*.png.
+// tactiles — doigt gauche sur le joystick flottant (gauche/droite pour tourner, vers l'avant pour prendre la cadence :
+// le cheval part de l'arrêt à l'entrée de piste), doigt droit sur le gros bouton SAUT (un appui par obstacle) pendant
+// que le gauche dirige ; présentation et bilan touchés au doigt. Captures dans tests/e2e/out/cso/touch-*.png.
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 
@@ -48,18 +49,17 @@ await page.evaluate(async () => {
   g.player.horse.setPosition(O.CSO_GATE.x, O.CSO_GATE.z + 4, Math.PI);
   g.activities.start(g.activities.defs.find((a) => a.id === 'cso_train'));
   A.tick(6);
-  // Ligne suivie par le « cavalier » : de l'entrée à la ligne de départ, puis le tracé.
-  const { CSO_START: S, CSO_LINE, CSO_GATE: G } = O;
-  const pts = [{ x: G.x, z: G.z }, { x: G.x - 30, z: G.z }, { x: S.x + 8, z: G.z }, { x: S.x + 2, z: G.z - 3 }, { x: S.x, z: S.z + 4 }, { x: S.x, z: S.z }];
-  const dense = [];
-  for (let i = 0; i + 1 < pts.length; i++) {
-    const n = Math.max(1, Math.round(Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].z - pts[i].z) / 0.5));
-    for (let k = 0; k < n; k++) dense.push({ x: pts[i].x + ((pts[i + 1].x - pts[i].x) * k) / n, z: pts[i].z + ((pts[i + 1].z - pts[i].z) * k) / n });
-  }
-  window.__line = dense.concat(CSO_LINE);
+  // Ligne suivie par le « cavalier » : l'abord dessiné de l'entrée à la ligne de départ (CSO_TRACE.leadIn), puis le tracé.
+  const { CSO_TRACE } = await import('/src/gameplay/csoCourse.js');
+  const { POLE } = await import('/src/world/sites.js');
+  const lead = CSO_TRACE.leadIn.map((p) => ({ x: POLE.arena.x + p.x, z: POLE.arena.z + p.z }));
+  window.__line = lead.slice(0, -1).concat(O.CSO_LINE);
   window.__k = 0;
   window.__pressed = new Set();
-  // Ce que ferait le cavalier à cet instant : direction (joystick x) et appel (au cœur de la bonne zone, une fois).
+  window.__cad = { first: undefined, max: 0 };
+  // Ce que ferait le cavalier à cet instant : direction (joystick x), cadence (joystick y : vers l'avant tant qu'elle
+  // est sous le galop de concours, vers l'arrière au-dessus, relâché entre les deux) et appel (au cœur de la bonne
+  // zone, une fois par obstacle).
   window.__decide = () => {
     const h = g.player.horse, line = window.__line;
     let best = window.__k, bd = 1e9;
@@ -78,7 +78,12 @@ await page.evaluate(async () => {
       jump = true;
     }
     const st = g.missions.active?.data.course;
-    return { x: Math.max(-1, Math.min(1, -d * 2.2)), jump, done: !!st?.finished || !g.missions.active || st?.eliminated, R: g.input.R, label: tg?.o.label, btn: document.querySelector('.btn-jump span')?.textContent };
+    const cad = g.player.csoCadence ?? 0;
+    const C = window.__cad;
+    if (C.first === undefined) C.first = { cad, v: +h.speed.toFixed(2) };
+    C.max = Math.max(C.max, cad);
+    const y = cad < 6.12 ? 1 : cad > 6.45 ? -1 : 0;
+    return { x: Math.max(-1, Math.min(1, -d * 2.2)), y, jump, done: !!st?.finished || !g.missions.active || st?.eliminated, R: g.input.R, label: tg?.o.label, btn: document.querySelector('.btn-jump span')?.textContent };
   };
   window.__ev = [];
   for (const k of ['obstacle:clear', 'obstacle:fault', 'obstacle:refusal']) g.bus.on(k, (e) => window.__ev.push(`${k.split(':')[1]}:${e.obstacle.label}`));
@@ -106,7 +111,12 @@ let shots = 0, pressedWhileTurning = 0, labels = [];
 for (let i = 0; i < 2600; i++) {
   const dcs = await page.evaluate(() => window.__decide());
   if (dcs.done) break;
-  await finger('pointermove', 9001, JX + dcs.x * dcs.R * 0.9, JY);
+  // Doigt gauche : gauche/droite pour diriger, vers le haut pour la cadence ; jamais au-delà du bord du joystick (sa
+  // base flottante suivrait le doigt).
+  let jx = dcs.x * 0.9, jy = dcs.y * 0.9;
+  const jm = Math.hypot(jx, jy);
+  if (jm > 0.95) (jx *= 0.95 / jm), (jy *= 0.95 / jm);
+  await finger('pointermove', 9001, JX + jx * dcs.R, JY - jy * dcs.R);
   if (dcs.jump) {
     if (Math.abs(dcs.x) > 0.05) pressedWhileTurning++;
     labels.push(`${dcs.label}:${dcs.btn}`);
@@ -121,16 +131,20 @@ for (let i = 0; i < 2600; i++) {
   }
   await tick(2);
   if (shots === 0 && dcs.label === '2' && dcs.btn === 'Saute !') { await shot('abord'); shots++; }
-  if (shots === 1 && dcs.label === '5B') { await shot('double'); shots++; }
+  if (shots === 1 && dcs.label === '4B') { await shot('double'); shots++; }
   if (process.env.DBG && i % 25 === 0) console.log(i, JSON.stringify(await page.evaluate(() => { const h = window.__game.player.horse, A = window.__game.obstacles; return { k: window.__k, n: window.__line.length, x: +(h.pos.x - 330).toFixed(1), z: +(h.pos.z + 224).toFixed(1), hd: +h.heading.toFixed(2), sp: +h.speed.toFixed(1), mv: +window.__game.input.move.x.toFixed(2), cad: window.__game.player.csoCadence, next: window.__game.missions.active?.data.course?.next }; })));
 }
 await finger('pointerup', 9001, JX, JY);
 await tick(30);
 await shot('arrivee');
-const res = await page.evaluate(() => ({ ev: window.__ev, st: { ...window.__game.missions.active?.data.course, log: undefined, wrong: undefined }, card: document.querySelector('.overlay .card')?.textContent || '' }));
-check('tour complet au doigt : 9 éléments franchis sans faute, dans l’ordre', JSON.stringify(res.ev) === JSON.stringify(['1', '2', '3', '4', '5A', '5B', '6', '7', '8'].map((l) => `clear:${l}`)), JSON.stringify(res.ev));
-check('chrono dans le temps accordé', res.st.finished && res.st.t < 65 && res.st.faults === 0, `${res.st.t?.toFixed(2)} s`);
-check('SAUT touché quand le bouton affichait « Saute ! »', labels.length === 9 && labels.every((l) => l.endsWith('Saute !')), labels.join(' '));
+// (sortie de piste en mode concours, ~2,6 s après l'arrivée, puis le bilan)
+for (let i = 0; i < 120 && !(await page.evaluate(() => !!document.querySelector('.overlay [data-id="cso-done"]'))); i++) await tick(1);
+const res = await page.evaluate(() => ({ ev: window.__ev, cad: window.__cad, st: { ...window.__game.missions.active?.data.course, log: undefined, wrong: undefined }, card: document.querySelector('.overlay .card')?.textContent || '' }));
+const order = ['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'];
+check('cadence prise au doigt (joystick vers l’avant) depuis l’arrêt à l’entrée de piste', res.cad.first && res.cad.first.cad < 1 && res.cad.max >= 6.1 && res.cad.max < 6.8, JSON.stringify(res.cad));
+check('tour complet au doigt : 10 éléments franchis sans faute, dans l’ordre', JSON.stringify(res.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(res.ev));
+check('chrono dans le temps accordé', res.st.finished && res.st.t < 64 && res.st.faults === 0, `${res.st.t?.toFixed(2)} s`);
+check('SAUT touché une fois par obstacle, quand le bouton affichait « Saute ! »', labels.length === order.length && labels.every((l) => l.endsWith('Saute !')) && JSON.stringify(labels.map((l) => l.split(':')[0])) === JSON.stringify(order), labels.join(' '));
 check('le doigt gauche dirigeait encore pendant certains appuis sur SAUT (multitouch)', pressedWhileTurning > 0, String(pressedWhileTurning));
 check('bilan affiché à l’arrivée', /Classement/.test(res.card));
 await page.screenshot({ path: 'tests/e2e/out/cso/touch-bilan.png' });

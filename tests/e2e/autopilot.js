@@ -360,6 +360,11 @@
         A.ensureMode('ride');
         const st = run.data.course;
         const list = g.obstacles.ofCourse(s.courseId);
+        // CSO : arrivée passée, courte sortie de piste (commandes de concours gardées, retour au pas) avant le bilan.
+        if (st.finished) {
+          A.releaseInput();
+          return;
+        }
         if (!st.started) {
           // CSO : après la cloche, le chrono part au passage de la ligne de départ (fanions).
           const S = s.startLine;

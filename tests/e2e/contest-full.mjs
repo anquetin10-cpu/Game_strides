@@ -234,7 +234,7 @@ while (guard++ < 400) {
     console.log('  échauffement :', JSON.stringify(r));
     if (!warmDone) await tick(30);
   } else if (/Entre en piste/.test(t)) {
-    // Du paddock à l'entrée de la carrière (clôturée) : couloir à l'ouest, puis le long de la lice nord jusqu'à l'entrée.
+    // Du paddock à l'entrée de la carrière (clôturée) : couloir à l'ouest, puis le long de la lice sud jusqu'à l'entrée (milieu du grand côté sud).
     await E(async () => {
       const g = window.__game, P = window.__p, h = g.player.horse;
       const O = await import('/src/gameplay/obstacles.js');
@@ -245,16 +245,28 @@ while (guard++ < 400) {
     await tick(10);
   } else if (/Franchis la ligne de départ|Obstacle n°|ligne d’arrivée/.test(t)) {
     await shot('07-depart-parcours');
-    // Parcours : de l'entrée de piste à la ligne de départ, puis le tracé (joystick de concours, SAUT dans la bonne zone).
+    // Parcours : de l'entrée de piste à la ligne de départ par l'abord dessiné du tracé (CSO_TRACE.leadIn), puis le tracé
+    // (joystick de concours, SAUT dans la bonne zone).
     courseRes = await E(async () => {
       const g = window.__game, A = window.__auto;
       const O = await import('/src/gameplay/obstacles.js');
+      const { CSO_TRACE } = await import('/src/gameplay/csoCourse.js');
+      const { POLE } = await import('/src/world/sites.js');
       const h = g.player.horse, P = window.__p;
-      const { CSO_START: S, CSO_LINE, CSO_GATE: G } = O;
-      // Du paddock à l'entrée de piste (côté nord de la carrière, clôturée) : couloir à l'ouest, puis le long de la lice.
-      if (h.pos.z < -186 && h.pos.x < 270) P.go(264, -182, 2.5, 30 * 60, 0.6);
-      P.go(G.x, -181, 2.5, 30 * 60, 0.6);
-      const pts = [{ x: h.pos.x, z: h.pos.z }, { x: G.x, z: G.z }, { x: G.x - 30, z: G.z }, { x: S.x + 8, z: G.z }, { x: S.x + 2, z: G.z - 3 }, { x: S.x, z: S.z + 4 }, { x: S.x, z: S.z }];
+      const { CSO_LINE, CSO_GATE: G } = O;
+      const Ar = POLE.arena;
+      const inArena = () => Math.abs(h.pos.x - Ar.x) < Ar.w / 2 && Math.abs(h.pos.z - Ar.z) < Ar.d / 2;
+      if (!inArena()) {
+        // Du paddock à l'entrée de piste (milieu du côté sud de la carrière, clôturée) : couloir à l'ouest, puis le long
+        // de la lice jusqu'à l'entrée.
+        if (h.pos.z < -186 && h.pos.x < 270) P.go(264, -182, 2.5, 30 * 60, 0.6);
+        P.go(G.x, -181, 2.5, 30 * 60, 0.6);
+      }
+      // Abord : du cheval au point le plus proche de l'abord dessiné, puis l'abord jusqu'à la ligne de départ.
+      const lead = CSO_TRACE.leadIn.map((p) => ({ x: Ar.x + p.x, z: Ar.z + p.z }));
+      let j0 = 0, bd = 1e9;
+      lead.forEach((p, i) => { const d = (p.x - h.pos.x) ** 2 + (p.z - h.pos.z) ** 2; if (d < bd) (bd = d), (j0 = i); });
+      const pts = [{ x: h.pos.x, z: h.pos.z }, lead[j0]];
       const dense = [];
       for (let i = 0; i + 1 < pts.length; i++) {
         const n = Math.max(1, Math.round(Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].z - pts[i].z) / 0.5));
@@ -262,7 +274,7 @@ while (guard++ < 400) {
       }
       const run = g.missions.active;
       const st = () => run?.data.course;
-      const ev = A.rideLine(dense.concat(CSO_LINE), { maxTicks: 30 * 240, mag: 0.62, until: () => !!st()?.finished || !!st()?.eliminated || !g.missions.active });
+      const ev = A.rideLine(dense.concat(lead.slice(j0, -1), CSO_LINE), { maxTicks: 30 * 240, mag: 0.62, until: () => !!st()?.finished || !!st()?.eliminated || !g.missions.active });
       const c = st() || {};
       return { ev, finished: !!c.finished, eliminated: c.eliminated || null, t: c.t, faults: c.faults, next: c.next };
     });
@@ -288,7 +300,7 @@ const fin = await E(() => {
 });
 const order = (courseRes?.ev || []).filter((e) => e.k !== 'obstacle:refusal').map((e) => e.label);
 check('COR-P01c', 'déroulé joué : volant, rampe, déchargement, dossard, selle, échauffement (2 sauts), présentation, départ', log.some((x) => /dossard/.test(x)) && warmDone && log.some((x) => /Franchis la ligne de départ/.test(x)), JSON.stringify(log));
-check('COR-P01d', 'parcours : obstacles franchis dans l’ordre (1 → 8, double 5A/5B), arrivée passée', (!!courseRes?.finished || /Chrono/.test(resultCard)) && JSON.stringify(order) === JSON.stringify(['1', '2', '3', '4', '5A', '5B', '6', '7', '8']), JSON.stringify({ order, t: courseRes?.t, faults: courseRes?.faults, elim: courseRes?.eliminated }));
+check('COR-P01d', 'parcours : obstacles franchis dans l’ordre (1 → 8, doubles 4A/4B et 6A/6B), arrivée passée', (!!courseRes?.finished || /Chrono/.test(resultCard)) && JSON.stringify(order) === JSON.stringify(['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8']), JSON.stringify({ order, t: courseRes?.t, faults: courseRes?.faults, elim: courseRes?.eliminated }));
 check('COR-P01e', 'résultats affichés (classement) et dotation versée selon le rang ; engagement soldé (pas de remboursement en attente)', /Classement|place|Victoire/.test(card) && !fin.pendingFee && !fin.active && fin.money > money1, JSON.stringify({ card: card.slice(0, 160), fin: { money: fin.money, pendingFee: fin.pendingFee } }));
 check('erreurs', 'aucune erreur JavaScript', errors.length === 0, errors.slice(0, 3).join(' | '));
 writeFileSync(`${OUT}/journal.json`, JSON.stringify({ results, log, courseRes, fin, resultCard, endCard }, null, 1));

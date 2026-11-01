@@ -25,8 +25,9 @@ const res = await page.evaluate(async () => {
   const line = O.CSO_LINE;
   const S = O.CSO_START;
   const h = g.player.horse;
-  h.setPosition(S.x, S.z + 3, line[0].h);
-  g.cam.snap(h.pos, line[0].h);
+  // 3 m avant la ligne de départ, dans son axe (elle se franchit dans son sens).
+  h.setPosition(S.x - Math.sin(S.rot) * 3, S.z - Math.cos(S.rot) * 3, S.rot);
+  g.cam.snap(h.pos, S.rot);
   const frame = () => {
     // Silhouette du couple : sabots, croupe, tête du cheval (encolure tendue), casque du cavalier (2,55 m).
     const f = { x: Math.sin(h.heading), z: Math.cos(h.heading) };

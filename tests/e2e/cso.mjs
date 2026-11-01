@@ -26,22 +26,13 @@ await page.evaluate(async () => {
   g.missions.abandon?.();
   A.closeCards();
   window.__O = await import('/src/gameplay/obstacles.js');
-  // Ligne d'approche (0,5 m entre points) : de l'entrée de piste à la ligne de départ, puis le tracé.
-  window.__dense = (pts) => {
-    const out = [];
-    for (let i = 0; i + 1 < pts.length; i++) {
-      const [a, c] = [pts[i], pts[i + 1]];
-      const n = Math.max(1, Math.round(Math.hypot(c.x - a.x, c.z - a.z) / 0.5));
-      for (let k = 0; k < n; k++) out.push({ x: a.x + ((c.x - a.x) * k) / n, z: a.z + ((c.z - a.z) * k) / n });
-    }
-    out.push(pts[pts.length - 1]);
-    return out;
-  };
-  const { CSO_START: S, CSO_LINE, CSO_GATE: G } = window.__O;
-  // De l'entrée de piste à la ligne de départ (le long du côté sud, puis remontée vers le nord), puis le tracé.
-  window.__toStart = window.__dense([
-    { x: G.x, z: G.z }, { x: G.x - 30, z: G.z }, { x: S.x + 8, z: G.z }, { x: S.x + 2, z: G.z - 3 }, { x: S.x, z: S.z + 4 }, { x: S.x, z: S.z },
-  ]).concat(CSO_LINE);
+  const { CSO_LINE } = window.__O;
+  // De l'entrée de piste à la ligne de départ : l'abord dessiné du tracé (CSO_TRACE.leadIn, légère courbe à gauche
+  // depuis l'entrée), puis le tracé chronométré.
+  const { CSO_TRACE } = await import('/src/gameplay/csoCourse.js');
+  const { POLE } = await import('/src/world/sites.js');
+  const lead = CSO_TRACE.leadIn.map((p) => ({ x: POLE.arena.x + p.x, z: POLE.arena.z + p.z }));
+  window.__toStart = lead.slice(0, -1).concat(CSO_LINE);
   window.__course = () => g.missions.active?.data.course;
   window.__card = () => document.querySelector('.overlay .card')?.textContent || '';
   window.__tapId = (id) => A.tap(document.querySelector(`.overlay [data-id="${id}"]`));
@@ -65,29 +56,37 @@ let r = await page.evaluate(() => {
   window.__tapId('plan-back');
   const back = !!document.querySelector('.overlay [data-id="enter"]');
   window.__tapId('enter');
-  A.tick(30);
+  A.tick(2);
+  // Mode concours dès l'entrée en piste (avant la cloche, chrono non lancé) : caméra et commandes de concours.
+  const pre = { pre: !!g.course?.pre, running: g.course?.running, controls: g.course?.controls, kind: g.course?.kind, camera: !!g.course?.camera, cad: g.player.csoCadence, v: +g.player.horse.speed.toFixed(2) };
+  A.tick(28);
   const big = document.querySelector('.big-msg .t')?.textContent;
   A.tick(60);
   const bell = document.querySelector('.big-msg .t')?.textContent;
   const board = document.querySelector('.cso-board')?.textContent;
   const disp = (sel) => getComputedStyle(document.querySelector(sel)).display;
-  const hud = { light: document.querySelector('.hud').classList.contains('cso-ctl'), boost: disp('.btn-gallop'), map: disp('.minimap-wrap'), wallet: disp('.wallet'), jump: document.querySelector('.btn-jump').getBoundingClientRect().width };
-  return { pres, labels, legend, back, big, bell, board, hud, st: { ...window.__course() }, cam: !!g.course?.camera };
+  const hc = document.querySelector('.hud').classList;
+  const hud = { light: hc.contains('cso-ctl'), sober: hc.contains('cso-sober'), tele: disp('.telemetry'), action: disp('.btn-action'), boost: disp('.btn-gallop'), map: disp('.minimap-wrap'), wallet: disp('.wallet'), jump: document.querySelector('.btn-jump').getBoundingClientRect().width };
+  return { pres, labels, legend, back, pre, big, bell, board, hud, st: { ...window.__course() }, cam: !!g.course?.camera };
 });
-check('présentation : épreuve, hauteur, cheval engagé, temps accordé, double', /Prix STRIDES/.test(r.pres) && /1,10 m/.test(r.pres) && /Cheval engagé/.test(r.pres) && /65 s/.test(r.pres) && /8 obstacles dont un double \(5A – 5B\)/.test(r.pres), r.pres.slice(0, 220));
-check('plan consultable, généré des données (8 obstacles, double 5A–5B, départ, arrivée)', ['1', '2', '3', '4', '5A', '5B', '6', '7', '8', 'Départ', 'Arrivée'].every((l) => r.labels.includes(l)) && /5A vertical · 5B oxer/.test(r.legend) && /375 m/.test(r.legend), r.legend);
+check('présentation : épreuve, hauteur, cheval engagé, temps accordé, deux doubles', /Prix STRIDES/.test(r.pres) && /1,10 m/.test(r.pres) && /Cheval engagé/.test(r.pres) && /64 s/.test(r.pres) && /8 obstacles dont 2 doubles \(4A – 4B, 6A – 6B\) · 368 m/.test(r.pres), r.pres.slice(0, 260));
+check('plan consultable, généré des données (8 obstacles, doubles 4A–4B et 6A–6B, départ, arrivée)', ['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8', 'Départ', 'Arrivée'].every((l) => r.labels.includes(l)) && /4A vertical · 4B oxer/.test(r.legend) && /6A vertical · 6B oxer/.test(r.legend) && /368 m/.test(r.legend) && /temps accordé 64 s/.test(r.legend), r.legend);
 check('retour du plan à la présentation', r.back);
+check('entrée en piste : mode concours (caméra, commandes) avant la cloche, chrono non lancé', r.pre.pre && r.pre.running === false && r.pre.controls === 'cso' && r.pre.kind === 'cso' && r.pre.camera, JSON.stringify(r.pre));
 check('annonce du couple à l’entrée en piste', /N° \d+/.test(r.big || ''), r.big);
 check('cloche puis 45 s pour franchir la ligne de départ', r.bell === 'CLOCHE' && /Départ 4\d s/.test(r.board || ''), `${r.bell} | ${r.board}`);
-check('HUD de concours allégé : ni carte, ni portefeuille, ni BOOST', r.hud.light && r.hud.boost === 'none' && r.hud.map === 'none' && r.hud.wallet === 'none' && true, JSON.stringify(r.hud));
+check('HUD de concours sobre : ni carte, ni portefeuille, ni BOOST, ni télémétrie, ni bouton d’action', r.hud.light && r.hud.sober && r.hud.tele === 'none' && r.hud.action === 'none' && r.hud.boost === 'none' && r.hud.map === 'none' && r.hud.wallet === 'none', JSON.stringify(r.hud));
 check('chrono à l’arrêt tant que la ligne n’est pas franchie, caméra de parcours', !r.st.started && r.st.t === 0 && r.cam);
+const pre = r.pre;
 
 // ---------- 2. Tour sans faute au joystick et au bouton SAUT ----------
 r = await page.evaluate(() => {
   const g = window.__game, A = window.__auto;
-  // Cadence au joystick : avant pendant 1 s → plus vite ; relâché → gardée ; arrière → plus lent.
+  // Cadence au joystick : à la cloche, c'est la vitesse du cheval (aucun élan pris tout seul) ; avant pendant 1 s → plus
+  // vite ; relâché → gardée ; arrière → plus lent.
   const p = g.player;
   const c0 = p.csoCadence;
+  const v0 = p.horse.speed;
   g.input.setVirtualMove(0, 1);
   A.tick(30);
   const c1 = p.csoCadence;
@@ -98,13 +97,24 @@ r = await page.evaluate(() => {
   A.tick(30);
   const c3 = p.csoCadence;
   p.csoCadence = c0;
-  window.__cad = { c0, c1, c2, c3 };
+  window.__cad = { v0: +v0.toFixed(2), c0, c1, c2, c3 };
   // Pendant le tour : vitesse de rotation du cheval (jamais de pivot instantané), cadrage de la caméra.
   const h = g.player.horse;
   let prevH = h.heading, maxRate = 0, camN = 0, camBehind = 0, camH = 0;
+  // Sortie de piste après l'arrivée : mode concours gardé (caméra, commandes) ~2,6 s avant le bilan.
+  let n = 0, finAt = -1, cardAt = -1, exit = null;
+  const watchEnd = () => {
+    n++;
+    if (finAt < 0 && window.__course().finished) {
+      finAt = n;
+      exit = { controls: g.course?.controls, camera: !!g.course?.camera, running: g.course?.running, card: !!document.querySelector('.overlay') };
+    }
+    if (finAt >= 0 && cardAt < 0 && document.querySelector('.overlay [data-id="cso-retry"]')) cardAt = n;
+  };
   const ev = A.rideLine(window.__toStart, {
     maxTicks: 4800,
     until: () => {
+      watchEnd();
       let dh = h.heading - prevH;
       dh = (((dh + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
       prevH = h.heading;
@@ -116,18 +126,23 @@ r = await page.evaluate(() => {
       return false;
     },
   });
-  for (let i = 0; i < 40 && !document.querySelector('.overlay [data-id="cso-retry"]'); i++) A.tick(1);
+  for (let i = 0; i < 200 && !document.querySelector('.overlay [data-id="cso-retry"]'); i++) {
+    A.tick(1);
+    watchEnd();
+  }
   const st = window.__course();
-  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), st: { t: st.t, faults: st.faults, timeFaults: st.timeFaults, finished: st.finished, log: st.log.length, attempt: st.attempt }, card: window.__card(), board: document.querySelector('.cso-board')?.className, cad: window.__cad, maxRate, cam: { behind: camBehind / camN, height: camH / camN, fov: g.camera.fov, hits: window.__camHits || 0 }, jumpW: window.__jw, jumpW0: 84 * (new DOMMatrix(getComputedStyle(document.querySelector('.actions')).transform).a || 1) };
+  if (exit) exit.s = cardAt > 0 ? +((cardAt - finAt) / 30).toFixed(2) : null;
+  return { ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}`), st: { t: st.t, faults: st.faults, timeFaults: st.timeFaults, finished: st.finished, log: st.log.length, attempt: st.attempt }, exit, card: window.__card(), board: document.querySelector('.cso-board')?.className, cad: window.__cad, maxRate, cam: { behind: camBehind / camN, height: camH / camN, fov: g.camera.fov, hits: window.__camHits || 0 }, jumpW: window.__jw, jumpW0: 84 * (new DOMMatrix(getComputedStyle(document.querySelector('.actions')).transform).a || 1) };
 });
-const order = ['1', '2', '3', '4', '5A', '5B', '6', '7', '8'];
-check('cadence au joystick : avant = plus vite, relâché = gardée, arrière = plus lent', r.cad.c0 === 6.2 && r.cad.c1 > 7 && r.cad.c2 === r.cad.c1 && r.cad.c3 < r.cad.c2, JSON.stringify(r.cad));
+const order = ['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'];
+check('cadence au joystick : départ à la vitesse du cheval, avant = plus vite, relâché = gardée, arrière = plus lent', r.cad.c0 === pre.cad && Math.abs(r.cad.c0 - pre.v) < 0.15 && Math.abs(r.cad.c0 - r.cad.v0) < 0.15 && r.cad.c1 > r.cad.c0 + 1.5 && r.cad.c2 === r.cad.c1 && r.cad.c3 < r.cad.c2 - 1.5, JSON.stringify({ entree: pre, ...r.cad }));
 check('gros bouton SAUT à droite pendant le parcours (plus grand qu’en balade)', r.jumpW > r.jumpW0 * 1.15, `${r.jumpW?.toFixed(0)} px`);
 check('courbes au galop : le cheval tourne progressivement (jamais plus de 1,3 rad/s)', r.maxRate <= 1.3, `${r.maxRate.toFixed(2)} rad/s`);
-check('caméra de concours : proche derrière le cheval, juste au-dessus du cavalier, champ fixe', r.cam.behind > 5 && r.cam.behind < 9.5 && r.cam.height > 2.6 && r.cam.height < 4.2 && Math.abs(r.cam.fov - 55) < 0.5, JSON.stringify(r.cam));
+check('caméra de concours : proche derrière le cheval, juste au-dessus du cavalier, champ fixe', r.cam.behind > 5 && r.cam.behind < 9.5 && r.cam.height > 2.6 && r.cam.height < 4.2 && Math.abs(r.cam.fov - 58) < 0.5, JSON.stringify(r.cam));
 check('caméra de concours : jamais dans un mur, une tribune ou le sol pendant le tour', r.cam.hits === 0, `${r.cam.hits} image(s)`);
-check('tour sans faute : 9 éléments franchis dans l’ordre', JSON.stringify(r.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(r.ev));
-check('chrono de la ligne de départ à l’arrivée, dans le temps accordé', r.st.finished && r.st.t > 45 && r.st.t < 65 && r.st.faults === 0 && r.st.timeFaults === 0, `${r.st.t.toFixed(2)} s`);
+check('tour sans faute : 10 éléments franchis dans l’ordre (doubles 4A – 4B et 6A – 6B)', JSON.stringify(r.ev) === JSON.stringify(order.map((l) => `clear:${l}`)), JSON.stringify(r.ev));
+check('chrono de la ligne de départ à l’arrivée, dans le temps accordé', r.st.finished && r.st.t > 45 && r.st.t < 64 && r.st.faults === 0 && r.st.timeFaults === 0, `${r.st.t.toFixed(2)} s`);
+check('après l’arrivée : sortie de piste en mode concours (~2,6 s) puis bilan', !!r.exit && r.exit.controls === 'cso' && r.exit.camera && r.exit.running === false && !r.exit.card && r.exit.s >= 2.4 && r.exit.s <= 3.2, JSON.stringify(r.exit));
 check('bilan : chrono, fautes, pénalités de temps, total, classement, récompense', /Chrono/.test(r.card) && /Fautes aux obstacles/.test(r.card) && /Pénalités de temps/.test(r.card) && /Total/.test(r.card) && /Classement/.test(r.card) && /Récompense/.test(r.card) && /\d+(re|e) sur \d+/.test(r.card), r.card.slice(0, 200));
 check('Recommencer, S’entraîner et Quitter proposés', /Recommencer/.test(r.card) && /S’entraîner/.test(r.card) && /Quitter/.test(r.card));
 
@@ -142,16 +157,18 @@ r = await page.evaluate(() => {
   // Le cavalier revient à l'entrée de piste avant de repartir vers la ligne de départ.
   g.player.horse.setPosition(O.CSO_GATE.x, O.CSO_GATE.z, Math.PI);
   g.cam.yaw = 0;
-  // Départ, puis appel bien trop loin au 1 (vertical) et au 2 (oxer : les deux barres peuvent tomber, une seule faute).
+  // Départ, puis appel bien trop loin au 1 (vertical, à ~4,2 m : le saut redescend sur la barre) et au 2 (oxer, à ~5,4 m :
+  // le saut, plus court que l'abord, peut retomber dans l'obstacle ; les deux barres peuvent tomber, une seule faute).
+  const farAt = { 1: 4.2, 2: 5.4 };
   const ev = A.rideLine(window.__toStart, {
     maxTicks: 1600,
     policy: (tg) => {
-      const far = tg && (tg.o.label === '1' || tg.o.label === '2') && tg.geo.rails[0].x <= 5.4;
+      const far = tg && farAt[tg.o.label] && tg.geo.rails[0].x <= farAt[tg.o.label];
       if (far && g.player.horse.jumpT < 0) (window.__dbg ||= []).push({ l: tg.o.label, x: +tg.geo.rails[0].x.toFixed(2), cos: +tg.geo.cosA.toFixed(3), u: +tg.geo.rails[0].u.toFixed(2), zone: tg.plan.zone, m: +tg.plan.margin.toFixed(2), ref: !!g.player.horse._refusing, sp: +g.player.horse.speed.toFixed(2) });
       // Un seul appui par obstacle (comme un cavalier).
       const done = (window.__pressed ||= new Set());
       if (!tg || done.has(tg.o.label)) return false;
-      const go = tg.o.label === '1' || tg.o.label === '2' ? tg.geo.rails[0].x <= 5.4 : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
+      const go = farAt[tg.o.label] ? tg.geo.rails[0].x <= farAt[tg.o.label] : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
       if (go) done.add(tg.o.label);
       return go;
     },
@@ -167,20 +184,27 @@ r = await page.evaluate(() => {
   const paused = { dt: st.t - t0, moved: Math.hypot(h.pos.x - p0[0], h.pos.z - p0[1]) };
   g.phone.close();
   A.tick(2);
-  // Hors ordre : le 5 sauté alors que le 3 est attendu.
+  // Hors ordre : le 5 (mur) sauté alors que le 3 est attendu.
   const next0 = st.next, faults0 = st.faults;
-  A.jumpObstacle(list[4]);
+  A.jumpObstacle(list.find((o) => o.label === '5'));
   const wrong = { next: st.next, faults: st.faults, toast: document.querySelector('.toasts')?.textContent || '' };
   // Passer à côté du 3 (hors des chandeliers) en appuyant sur SAUT.
   const o3 = list[2];
   h.setPosition(o3.x - o3.n.x * 12 + o3.t.x * (o3.w / 2 + 2.6), o3.z - o3.n.z * 12 + o3.t.z * (o3.w / 2 + 2.6), o3.rot);
   h.speed = 6.5;
   g.cam.yaw = o3.rot + Math.PI;
+  // (aucun obstacle devant : l'appui est sans effet, le bouton l'indique — « Trop tôt »)
+  let early = 0, earlyLabel = '', jumps = 0;
+  const offE = g.bus.on('horse:jumpEarly', () => early++);
+  const offJ = g.bus.on('horse:jump', (hh) => hh === h && jumps++);
   for (let i = 0; i < 70; i++) {
     A.steer(o3.n.x, o3.n.z, 0.62);
     if (i % 10 === 5) g.input.pressed.add('jump');
     A.tick(1);
+    if (i === 5) earlyLabel = document.querySelector('.btn-jump span')?.textContent || '';
   }
+  offE();
+  offJ();
   A.releaseInput();
   const beside = st.next;
   // Le 3 sauté pour de vrai, mais dans le mauvais sens.
@@ -201,47 +225,63 @@ r = await page.evaluate(() => {
   A.releaseInput();
   const reverse = st.next;
   const faultsNow = st.faults;
-  return { dbg: (window.__dbg || []).slice(0, 6), fresh, ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}:${e.cause || ''}`), after2, paused, next0, faults0, wrong, beside, reverse, faultsNow, jumpedBack };
+  return { dbg: (window.__dbg || []).slice(0, 6), fresh, ev: ev.map((e) => `${e.k.split(':')[1]}:${e.label}:${e.cause || ''}`), after2, paused, next0, faults0, wrong, beside, besideJump: { early, earlyLabel, jumps }, reverse, faultsNow, jumpedBack };
 });
 check('nouvelle tentative : état neuf, barres remontées', r.fresh);
-check('appel bien trop loin : barre au 1 et au 2, cause expliquée', r.ev[0] === 'fault:1:far' && /^fault:2:(far|short)$/.test(r.ev[1]), JSON.stringify(r.ev) + JSON.stringify(r.dbg));
+check('appel bien trop loin : barre au 1 et au 2, cause expliquée (trop loin / saut trop court)', r.ev[0] === 'fault:1:far' && /^fault:2:(far|short)$/.test(r.ev[1]), JSON.stringify(r.ev) + JSON.stringify(r.dbg));
 check('oxer : une seule faute même si deux barres tombent', r.after2.faults === 8 && r.after2.log.filter((l) => l.startsWith('rail:2')).length === 1, `${r.after2.faults} pts, ${r.after2.oxerRails} barre(s) au sol au 2`);
 check('pause : chrono et cheval arrêtés ensemble', r.paused.dt === 0 && r.paused.moved < 0.01, JSON.stringify(r.paused));
 check('hors ordre : non validé, sans pénalité, erreur de parcours signalée', r.wrong.next === r.next0 && r.wrong.faults === r.faults0 && /Erreur de parcours/.test(r.wrong.toast), r.wrong.toast);
-check('passage à côté avec SAUT : non validé', r.beside === r.next0);
+check('passage à côté avec SAUT : non validé (aucun obstacle devant : appui sans effet, « Trop tôt »)', r.beside === r.next0 && r.besideJump.jumps === 0 && r.besideJump.early > 0 && r.besideJump.earlyLabel === 'Trop tôt', JSON.stringify(r.besideJump));
 check('saut dans le mauvais sens : non validé, sans pénalité', r.jumpedBack && r.reverse === r.next0 && r.faultsNow === r.faults0);
 
-// ---------- 4. Double : 5A puis 5B suivis séparément ; refus au 5B → on reprend au 5A ----------
+// ---------- 4. Double : 4A puis 4B suivis séparément ; refus au 4B → on reprend au 4A ----------
 r = await page.evaluate(() => {
   const g = window.__game, A = window.__auto;
   const st = window.__course();
   const list = g.obstacles.ofCourse('cso');
-  // Le jury remonte les barres ; on reprend la tentative au 3 jusqu'au 6.
-  for (const n of [3, 4]) A.jumpObstacle(list[n - 1]);
+  const byLabel = (l) => list.find((o) => o.label === l);
+  // Le jury remonte les barres ; on reprend la tentative au 3.
+  A.jumpObstacle(byLabel('3'));
   const before = st.next;
-  // 5A sauté proprement, puis on approche 5B au pas sans appeler : refus.
-  A.jumpObstacle(list[4]);
+  // 4A sauté proprement, puis on approche 4B au pas sans appeler : refus.
+  A.jumpObstacle(byLabel('4A'));
   const afterA = st.next;
-  const h = g.player.horse;
-  const o = list[5];
+  const labelA = list[afterA - 1]?.label;
+  const h = g.player.horse, p = g.player;
+  const o = byLabel('4B');
   h.setPosition(o.x - o.n.x * 6, o.z - o.n.z * 6, o.rot);
   g.cam.yaw = o.rot + Math.PI;
   h.speed = 1.9;
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 150 && st.refusals === 0; i++) {
     A.steer(o.n.x, o.n.z, 0.3);
     A.tick(1);
   }
   const refusals = st.refusals, faults = st.faults;
-  // Cheval toujours poussé vers l'obstacle : pas de nouvelle pénalité.
+  // Refus : la cadence tombe à zéro ; pendant le refus (cheval qui se cabre), le joystick vers l'avant ne la change pas.
+  const ref = { cad: p.csoCadence, rearing: h._rearT > 0 || !!h._refusing };
+  g.input.setVirtualMove(0, 1);
+  A.tick(12);
+  ref.cadRearing = p.csoCadence;
+  // Joystick relâché (seulement dirigé vers l'obstacle) : cadence gardée à zéro, le cheval reste arrêté.
+  for (let i = 0; i < 45; i++) {
+    A.steer(o.n.x, o.n.z);
+    A.tick(1);
+  }
+  ref.cadHeld = p.csoCadence;
+  ref.v = +h.speed.toFixed(2);
+  // Cheval de nouveau poussé vers l'obstacle (joystick vers l'avant), toujours face à lui : pas de nouvelle pénalité.
   for (let i = 0; i < 90; i++) {
-    A.steer(o.n.x, o.n.z, 0.3);
+    A.steer(o.n.x, o.n.z);
+    g.input.setVirtualMove(g.input.move.x, 1);
     A.tick(1);
   }
   A.releaseInput();
-  return { before, afterA, refusals, faults, refusals2: st.refusals, faults2: st.faults, nextAfterRefusal: st.next, labelNext: list[st.next - 1]?.label, log: st.log.map((l) => `${l.kind}:${l.label}`) };
+  return { before, afterA, labelA, refusals, faults, ref, refusals2: st.refusals, faults2: st.faults, nextAfterRefusal: st.next, labelNext: list[st.next - 1]?.label, log: st.log.map((l) => `${l.kind}:${l.label}`) };
 });
-check('double : 5A validé, 5B attendu ensuite', r.afterA === r.before + 1, `${r.before} → ${r.afterA}`);
-check('refus au 5B : 4 points, on reprend le double au 5A', r.refusals === 1 && r.labelNext === '5A', JSON.stringify(r.log));
+check('double : 4A validé, 4B attendu ensuite', r.afterA === r.before + 1 && r.labelA === '4B', `${r.before} → ${r.afterA} (${r.labelA})`);
+check('refus au 4B : 4 points, on reprend le double au 4A', r.refusals === 1 && r.labelNext === '4A', JSON.stringify(r.log));
+check('refus : cheval arrêté, cadence à zéro, figée pendant le refus et gardée au joystick relâché', r.ref.cad === 0 && r.ref.rearing && r.ref.cadRearing === 0 && r.ref.cadHeld === 0 && r.ref.v < 0.2, JSON.stringify(r.ref));
 check('cheval arrêté face à l’obstacle : aucune pénalité répétée', r.refusals2 === r.refusals && r.faults2 === r.faults, `${r.refusals2} refus, ${r.faults2} pts`);
 
 // ---------- 5. Deuxième refus : élimination, bilan, entraînement ----------
