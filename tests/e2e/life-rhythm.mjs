@@ -289,7 +289,10 @@ if (hasHome) {
   check('maison : « Entrer » à la porte, puis à l’intérieur', ent === 'Entrer' && (await ev(() => window.__game.home.inside)), ent);
   await shot('4-maison-entree');
   const bed = await ev(() => window.__game.home.anchor('bed'));
-  const reached = await walkTo(bed.x, bed.z, 900);
+  // Par les passages (salon → chambre), comme un joueur : repère local de la maison (origine = centre).
+  const O = { x: bed.x + 4.45, z: bed.z - 0.35 };
+  let reached = true;
+  for (const [lx, lz] of [[0.5, 0.3], [0.5, -1.05], [-1.5, -1.05], [-2.6, 1.2], [-4.45, 0.35]]) reached = (await walkTo(O.x + lx, O.z + lz, 600)) && reached;
   await ev(() => { const g = window.__game; g.interact.update(); });
   bedLabel = await ev(() => window.__game.interact.current?.label || null);
   await ev((b) => { const g = window.__game; if (b.heading !== undefined) g.player.human.heading = b.heading; g.cam.snap(g.player.human.pos, g.player.human.heading); window.__auto.tick(8); }, bed);
