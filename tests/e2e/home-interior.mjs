@@ -265,8 +265,11 @@ check('depuis la salle de bain, derrière la cloison : pas de « Se coucher »',
 await pose(-4.45, 0.35, -4.45, -1);
 await act();
 await tick(2);
-const toastBed = await ev(() => document.body.innerText.includes('Le lit est fait.'));
-check('sans système de repos : « Le lit est fait. »', toastBed);
+// Lit du jeu complet (rest.js) : menu du lit (nuit ou journée suivante, sieste, rester debout), refermé ensuite.
+const bedMenu = await ev(() => [...document.querySelectorAll('.overlay [data-choice]')].map((b) => b.dataset.choice));
+check('« Se coucher » ouvre le menu du lit (nuit ou journée suivante, sieste, rester debout)', bedMenu.includes('nap') && bedMenu.includes('cancel') && (bedMenu.includes('night') || bedMenu.includes('nextday')), bedMenu.join(','));
+await ev(() => window.__auto.tap(document.querySelector('.overlay [data-choice="cancel"]')));
+await tick(2);
 const opened = await ev(() => {
   const g = window.__game;
   const prev = g.rest;
