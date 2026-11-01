@@ -34,8 +34,8 @@ const OUTFIT = {
 export const CHAPTER1 = {
   m1: { val: { pay: 90, rep: 60 }, haras: { pay: 140, rep: 80 }, tournee: { pay: 90 + 140 + 40, rep: 120, bonus: 40 } },
   m2: { pay: 120, rep: 100, lea: 120, ines: 200 },
-  // Temps accordé réglementaire : 350 m/min (prudente) ; l'approche ambitieuse vise 375 m/min.
-  m3: { participation: 150, rep: 200, leaHelp: 80, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), ambitiousCut: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national) - timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi), ambitiousBonus: 0.5, prizes: [220, 160, 120, 90, 70] },
+  // Temps accordé réglementaire du tracé à 350 m/min (approche prudente) ; l'approche ambitieuse retire 5 s.
+  m3: { participation: 150, rep: 200, leaHelp: 80, ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national), ambitiousCut: 5, ambitiousBonus: 0.5, prizes: [220, 160, 120, 90, 70] },
   aire: { price: 350 },
 };
 // Durée d'une préparation regroupée (pansage, pieds, protections) : plus courte avec l'aire de pansage couverte.

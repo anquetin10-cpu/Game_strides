@@ -6,7 +6,7 @@ import { HOME_BOX } from './stabling.js';
 import { POI, HIPPO } from '../world/layout.js';
 import { courseSteps, totalPenalties, checkpointSteps, beachRingPoints, pathLength, raceSteps, COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } from './courses.js';
 import { CSO_FINISH, CSO_START } from './obstacles.js';
-import { csoHeights } from './csoCourse.js';
+import { csoHeights, courseNumbers } from './csoCourse.js';
 import { GrazeAI, FollowAI, FleeAI } from '../entities/horse.js';
 import { HORSES } from './data.js';
 import { formatMoney, dec } from '../core/math.js';
@@ -688,7 +688,7 @@ export const STORY = [
   // 10 — Qualificative CSI 3★
   {
     id: 'csi3', story: true, vertical: 'EVENEMENTS', category: 'CSO', title: t('Qualificative CSI 3★'), level: 4, requires: ['derby', 'pension'],
-    desc: t('Parcours de 9 obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix. À cette hauteur, une selle d’obstacle aide beaucoup (Sellerie du Port).'),
+    desc: T`Parcours de ${courseNumbers().length} obstacles jusqu’à 1,45 m au Pôle International. 8 pénalités maximum pour se qualifier au Grand Prix. À cette hauteur, une selle d’obstacle aide beaucoup (Sellerie du Port).`,
     client: C.julie, place: POI.pole, placeName: 'Pôle International', pay: 500, xp: 450, duration: '~2 min',
     irl: EVENT_IRL,
     rate: (run) => {
@@ -705,7 +705,7 @@ export const STORY = [
         finish: CSO_FINISH,
         timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi),
         heights: csoHeights(1.4),
-        intro: [{ who: t('Julie Bonnet · Comité CSI'), initials: 'JB', text: T`Neuf obstacles jusqu’à 1,45 m, ${COURSE_LENGTH.cso} m à 375 m/min : temps accordé ${timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)} s. Suis les numéros et franchis la ligne d’arrivée après le 9. À toi !` }],
+        intro: [{ who: t('Julie Bonnet · Comité CSI'), initials: 'JB', text: T`${courseNumbers().length} obstacles jusqu’à 1,45 m, ${COURSE_LENGTH.cso} m à 375 m/min : temps accordé ${timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.csi)} s. Suis les numéros et franchis la ligne d’arrivée après le ${courseNumbers().at(-1)}. À toi !` }],
       }).concat([
         S.custom({
           text: '',

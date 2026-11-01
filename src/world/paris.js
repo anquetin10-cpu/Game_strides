@@ -7,7 +7,7 @@
 // dessiné depuis Deauville, et inversement). Les éléments animés (écrans, faisceaux, public) sont mis à jour par
 // update(), seulement quand le joueur est à Paris.
 import * as THREE from 'three';
-import { PARIS, PARIS_FLOOR } from './sites.js';
+import { PARIS, PARIS_FLOOR, PARIS_STANDS } from './sites.js';
 import { t, T, LANG, num } from '../core/i18n.js';
 import { box, cyl } from './shapes.js';
 import { partsToGeo } from './builders.js';
@@ -238,11 +238,9 @@ export class ParisZone {
       g.translate(cx, ty, cz);
       this.group.add(new THREE.Mesh(g, this.crowdMat));
     };
-    const sd = HD - hz - 2.6; // profondeur des tribunes nord et sud
-    stand(X + 4, Z - hz - 2 - sd / 2, A.w - 6, sd, Math.PI);
-    stand(X + 4, Z + hz + 2 + sd / 2, A.w - 6, sd, 0);
-    const ed = HW - hx - 2.6;
-    stand(X + hx + 2 + ed / 2, Z, A.d + 2, ed, Math.PI / 2);
+    // Nord, sud et est (sites.js : PARIS_STANDS, mêmes rectangles que le lint des parcours) ; longueur des gradins le
+    // long de la piste, profondeur jusqu'au mur.
+    for (const st of PARIS_STANDS) stand(st.x, st.z, st.side === 'e' ? st.d : st.w, st.side === 'e' ? st.w : st.d, st.rot);
 
     // ---------- Écrans géants ----------
     this.screenCanvas = document.createElement('canvas');

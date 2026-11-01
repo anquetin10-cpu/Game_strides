@@ -28,9 +28,10 @@ export function coursePlanSvg({ heights = null, next = 0, trace = CSO_TRACE, ven
     parts.push(`<rect x="${-POLE.stands.w / 2}" y="${-D / 2 - 5.5}" width="${POLE.stands.w}" height="3.2" fill="#c9c6bd"/>`);
     parts.push(`<text x="0" y="${-D / 2 - 3.1}" font-size="2.2" text-anchor="middle" fill="#3a3a36">${t('TRIBUNES')}</text>`);
   }
-  // Ligne du cavalier (pointillés).
-  const line = trace.pts.filter((_, i) => i % 2 === 0).map((p) => `${p.x.toFixed(1)},${p.z.toFixed(1)}`).join(' ');
-  parts.push(`<polyline points="${line}" fill="none" stroke="#1b1c1f" stroke-opacity="0.45" stroke-width="0.45" stroke-dasharray="1.2 1"/>`);
+  // Ligne du cavalier (pointillés) ; abord conseillé depuis l'entrée de piste jusqu'au départ (plus discret).
+  const pl = (pts) => pts.filter((_, i) => i % 2 === 0).map((p) => `${p.x.toFixed(1)},${p.z.toFixed(1)}`).join(' ');
+  if (trace.leadIn?.length > 1) parts.push(`<polyline points="${pl(trace.leadIn)}" fill="none" stroke="#1b1c1f" stroke-opacity="0.22" stroke-width="0.35" stroke-dasharray="0.6 1"/>`);
+  parts.push(`<polyline points="${pl(trace.pts)}" fill="none" stroke="#1b1c1f" stroke-opacity="0.45" stroke-width="0.45" stroke-dasharray="1.2 1"/>`);
   // Lignes de départ et d'arrivée.
   for (const [k, m, col] of [['D', trace.marks.start, '#2f6e4a'], ['A', trace.marks.finish, '#b8322a']]) {
     const tx = Math.cos(m.rot) * 3.5, tz = -Math.sin(m.rot) * 3.5;

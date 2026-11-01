@@ -96,13 +96,15 @@ export function courseSteps(game, run, S, opts) {
   // Longueur mesurée au tracé (Pôle par défaut, sinon celle du parcours donné).
   const length = opts.length ?? COURSE_LENGTH.cso;
 
-  // Composition du parcours (lue sur la piste) : « 8 obstacles dont un double (5A – 5B) · 375 m ».
+  // Composition du parcours (lue sur la piste) : « 8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 m ».
   const parcoursText = () => {
     const els = list();
-    const a = els.find((o) => /A$/.test(o.label || ''));
-    const doubles = els.filter((o) => /A$/.test(o.label || '')).length;
-    const n = els.length - doubles;
-    return T`${n} obstacles${a ? T` dont un double (${a.label} – ${a.label.replace(/A$/, 'B')})` : ''} · ${length} m`;
+    const firsts = els.filter((o) => /A$/.test(o.label || ''));
+    const n = els.length - firsts.length;
+    const pair = (a) => `${a.label} – ${a.label.replace(/A$/, 'B')}`;
+    const a = firsts[0];
+    const dbl = firsts.length > 1 ? T` dont ${firsts.length} doubles (${firsts.map(pair).join(', ')})` : a ? T` dont un double (${a.label} – ${a.label.replace(/A$/, 'B')})` : '';
+    return T`${n} obstacles${dbl} · ${length} m`;
   };
 
   // ---------- Présentation et plan ----------

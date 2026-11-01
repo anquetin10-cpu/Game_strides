@@ -19,7 +19,8 @@ export const DEFI_POLE_V1 = deepFreeze({
   // Type de parcours (paramètre `course` de la mesure).
   course: 'cso',
   place: 'Pôle International',
-  // Parcours fixe : obstacles n° 1 à 8 du tracé du Pôle (le n° 9 est retiré de la piste pendant le défi).
+  // Parcours fixe : obstacles n° 1 à 8 du tracé du Pôle de l'époque (le n° 9 en était retiré pendant le défi). Les
+  // numéros d'une version renvoient toujours au tracé en piste quand elle a été publiée.
   courseId: 'cso',
   obstacles: [1, 2, 3, 4, 5, 6, 7, 8],
   height: 1.1,
@@ -113,10 +114,39 @@ export const DEFI_PARIS_V2 = deepFreeze({
   timeLimit: 82,
 });
 
-export const CHALLENGES = { [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4, [DEFI_POLE_V5.id]: DEFI_POLE_V5, [DEFI_PARIS_V1.id]: DEFI_PARIS_V1, [DEFI_PARIS_V2.id]: DEFI_PARIS_V2 };
-export const CURRENT_CHALLENGE = DEFI_POLE_V5;
+// Version 6 : parcours du Pôle redessiné selon les règles de tracé « CSO v2 » (courseLint.js) : 8 obstacles numérotés,
+// 10 sauts (double 4A – 4B à deux foulées, double 6A – 6B à une foulée), longues lignes et grandes courbes, changement
+// de main par une demi-volte ; tous les obstacles à 1,10 m, même cheval (Onyx). Temps accordé réglementaire du nouveau
+// tracé (368 m à 350 m/min).
+export const DEFI_POLE_V6 = deepFreeze({
+  ...JSON.parse(JSON.stringify(DEFI_POLE_V5)),
+  id: 'defi-pole-v6',
+  version: 6,
+  obstacles: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  timeAllowed: 64,
+  timeLimit: 128,
+});
+
+// Version 3 : Grand Prix de Paris redessiné (spirale sur quatre lignes droites, demi-voltes de 10,5 m de rayon au moins,
+// 7 obstacles numérotés, 9 sauts : double 3A – 3B à une foulée, double 5A – 5B à deux foulées), tous à 1,50 m ; temps
+// accordé réglementaire du nouveau tracé (310 m à 350 m/min).
+export const DEFI_PARIS_V3 = deepFreeze({
+  ...JSON.parse(JSON.stringify(DEFI_PARIS_V2)),
+  id: 'defi-paris-v3',
+  version: 3,
+  obstacles: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  timeAllowed: 54,
+  timeLimit: 108,
+});
+
+export const CHALLENGES = {
+  [DEFI_POLE_V1.id]: DEFI_POLE_V1, [DEFI_POLE_V2.id]: DEFI_POLE_V2, [DEFI_POLE_V3.id]: DEFI_POLE_V3, [DEFI_POLE_V4.id]: DEFI_POLE_V4,
+  [DEFI_POLE_V5.id]: DEFI_POLE_V5, [DEFI_POLE_V6.id]: DEFI_POLE_V6,
+  [DEFI_PARIS_V1.id]: DEFI_PARIS_V1, [DEFI_PARIS_V2.id]: DEFI_PARIS_V2, [DEFI_PARIS_V3.id]: DEFI_PARIS_V3,
+};
+export const CURRENT_CHALLENGE = DEFI_POLE_V6;
 // Défis proposés (application Activités) : la version courante de chaque défi.
-export const CURRENT_CHALLENGES = [DEFI_POLE_V5, DEFI_PARIS_V2];
+export const CURRENT_CHALLENGES = [DEFI_POLE_V6, DEFI_PARIS_V3];
 export const SIGNATURE = 'STRIDES Grand Tour';
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.

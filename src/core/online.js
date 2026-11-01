@@ -13,11 +13,11 @@ import { t } from './i18n.js';
 // minTime : temps le plus court physiquement possible (longueur de l'épreuve au grand galop, 14 m/s, sans les
 // virages ni les sauts) ; un chrono plus court n'est pas inscrit au classement (le record reste sur l'appareil).
 export const BOARDS = [
-  { id: 'defi-pole-v5', title: t('Défi du Pôle'), sub: t('8 obstacles et un double à 1,10 m, même cheval et mêmes conditions pour tous'), kind: 'cso', minTime: 26 },
+  { id: 'defi-pole-v6', title: t('Défi du Pôle'), sub: t('8 obstacles dont deux doubles à 1,10 m, même cheval et mêmes conditions pour tous'), kind: 'cso', minTime: 26 },
   { id: 'concours-am2', title: t('Concours Amateur 2'), sub: t('CSO au Pôle International, 1,05 m'), kind: 'cso', minTime: 26 },
   { id: 'concours-am1', title: t('Concours Amateur 1'), sub: t('CSO au Pôle International, 1,15 m'), kind: 'cso', minTime: 26 },
   { id: 'concours-pro2', title: t('Concours Pro 2'), sub: t('CSO au Pôle International, 1,25 m'), kind: 'cso', minTime: 26 },
-  { id: 'cso_train', title: t('Parcours du Pôle'), sub: t('Entraînement chronométré, 8 obstacles et un double'), kind: 'cso', minTime: 26 },
+  { id: 'cso_train', title: t('Parcours du Pôle'), sub: t('Entraînement chronométré, 8 obstacles dont deux doubles'), kind: 'cso', minTime: 26 },
   { id: 'xc_train', title: t('Cross de Saint-Gatien'), sub: t('Entraînement chronométré, 10 obstacles'), kind: 'cso', minTime: 54 },
   { id: 'beach_sprint', title: t('Sprint de la plage'), sub: t('8 anneaux au bord de l’eau'), kind: 'time', minTime: 38 },
   { id: 'hippo_lap', title: t('Tour de l’hippodrome'), sub: t('Un tour de piste'), kind: 'time', minTime: 50 },

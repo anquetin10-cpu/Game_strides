@@ -88,12 +88,13 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
   - **format** : un **Sprint à 1,50 m** (barème C : chrono, +4 s par barre) fixe la **grille de départ** du soir — le
     plus rapide part en dernier —, présentation des 40 cavaliers sur les écrans, puis le **Grand Prix à 1,60 m**
     (barème A au chrono, **barrage** des sans-faute), podium et dotation ; 39 concurrents simulés ;
-  - **tracés** (même outil que le Pôle : ligne du cavalier d'abord, abords de 14 m au moins) : Sprint à tournants
-    serrés (lignes sud et nord, petit côté est, diagonale finale vers le double 6A – 6B) ; Grand Prix avec 1 en
-    diagonale depuis l'entrée, ligne nord, double 4A – 4B au milieu, changement de main, mur et double 7A – 7B ;
-    marquage du tracé et zone d'appel posés sur le sable de l'arène ;
+  - **tracés** (même outil que le Pôle : ligne du cavalier d'abord, règles vérifiées par `courseLint.js` : abords de
+    14,5 m, réceptions de 10 m, courbes de 10,5 m de rayon au moins, ligne à 5,5 m des lices) : spirale à main droite
+    sur quatre lignes droites (≈ 310 m), départ loin de l'entrée ; Sprint en 7 sauts (double 2A – 2B à une foulée) ;
+    Grand Prix en 9 sauts (double 3A – 3B à une foulée, double 5A – 5B à deux foulées) ; marquage du tracé et zone
+    d'appel posés sur le sable de l'arène ;
   - **défi à conditions fixes** « Défi du Grand Prix de Paris » dans l'app Activités : cheval fourni, 1,50 m,
-    20 h 30 en salle, temps accordé 41 s (v2), départ directement dans l'arène, record par version.
+    20 h 30 en salle, temps accordé 54 s (v3), départ directement dans l'arène, record par version.
 - **Des jobs générés à l'infini** (coursier, transport, reconnaissance de parcours, soins), des **chronos libres**
   (plage, CSO, cross, hippodrome) et **20 fers d'or** cachés.
 - **Progression** : Groom → Cavalier → Pro vérifié → International → Légende 5★, avis clients étoilés, pourboires.
@@ -105,12 +106,14 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Box du cheval** : à l'Écurie du Val, on rentre son cheval au box pour qu'il récupère (eau, foin, repos) et on
   va l'y chercher.
 - **Épreuves de saut d'obstacles** (Pôle International), pensées pour l'iPhone à deux pouces :
-  - **parcours dessiné** dans une carrière de 120 × 76 m : la ligne du cavalier (grandes courbes de 10 à 12 m, lignes
-    droites) est tracée d'abord, puis les obstacles posés dans son axe ; 8 obstacles numérotés (verticaux, oxers,
-    mur) et un **double 5A – 5B** à deux foulées ; au moins 5 foulées d'approche (17 m) et 8 m de réception dégagée,
-    changement de main, départ et arrivée matérialisés (fanions blancs à gauche, rouges à droite) ; obstacles,
-    plan, tracé conseillé au sol, longueur (375 m) et temps accordé (65 s) viennent des mêmes données
-    (`src/gameplay/csoCourse.js`) ;
+  - **parcours dessiné** dans une carrière de 120 × 76 m : la ligne du cavalier (grandes courbes de 13 m de rayon au
+    moins, longues lignes droites) est tracée d'abord, puis les obstacles posés dans son axe ; 8 obstacles numérotés,
+    10 sauts (verticaux, oxers, mur) dont un **double 4A – 4B** à deux foulées et un **double 6A – 6B** à une foulée,
+    lignes en nombre entier de foulées ; 18 m au moins d'approche droite et 12 m de réception dégagée, changement de
+    main par une grande demi-volte, départ et arrivée matérialisés (fanions blancs à gauche, rouges à droite), abord
+    conseillé depuis l'entrée de piste ; obstacles, plan, tracé conseillé au sol, longueur (368 m) et temps accordé
+    (64 s) viennent des mêmes données (`src/gameplay/csoCourse.js`), et chaque tracé passe le lint de tracé
+    (`src/gameplay/courseLint.js`, tests `courses-lint.test.js`) ;
   - **commandes de concours** (comme le saut d'obstacles d'Athènes 2004) : joystick gauche/droite pour tourner
     progressivement (jamais de pivot), avant/arrière pour la cadence, gardée au relâchement (galop de concours stable
     par défaut, 6,2 m/s) ; gros bouton SAUT à droite, utilisable en tournant ; clavier : flèches ou ZQSD + Espace ;

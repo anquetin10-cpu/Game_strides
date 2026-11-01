@@ -189,9 +189,13 @@ export class Obstacles {
     const H = HOME.arena;
     this.add({ x: H.x - 9, z: H.z, rot: Math.PI / 2, kind: 'v', h: 0.75, w: 3.2, course: 'home', id: 'home1' });
     this.add({ x: H.x + 10, z: H.z, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.2, course: 'home', id: 'home2', colors: COLORS[1] });
+    // Paddock du Pôle (40 × 46 m, entrée au milieu du côté est) : deux lignes parallèles est-ouest à 10 m de part et
+    // d'autre du milieu (l'entrée reste libre entre elles), obstacles sautés en sens contraires et décalés, jamais face à
+    // face sur un même axe ; 14 m au moins d'abord droit depuis l'intérieur du paddock, un cercle à main droite les
+    // enchaîne. Vertical au nord vers l'est, oxer au sud vers l'ouest.
     const W = POLE.warmup;
-    this.add({ x: W.x, z: W.z - 9, rot: Math.PI / 2, kind: 'v', h: 1.1, w: 3.4, course: 'warmup' });
-    this.add({ x: W.x, z: W.z + 10, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.4, course: 'warmup', colors: COLORS[1] });
+    this.add({ x: W.x + 2, z: W.z - 10, rot: Math.PI / 2, kind: 'v', h: 1.1, w: 3.4, course: 'warmup' });
+    this.add({ x: W.x - 2, z: W.z + 10, rot: -Math.PI / 2, kind: 'o', h: 1.0, w: 3.4, course: 'warmup', colors: COLORS[1] });
     // Grand Prix de Paris Indoor : Sprint et Grand Prix dans l'arène (un seul des deux tracés en piste à la fois),
     // chacun avec ses lignes de départ et d'arrivée, et paddock d'échauffement.
     for (const c of Object.values(PARIS_COURSES)) {
@@ -203,9 +207,13 @@ export class Obstacles {
     this.parisLines = {};
     for (const c of Object.values(PARIS_COURSES)) this.parisLines[c.id] = [...this._timingLine(c.start, t('DÉPART')), ...this._timingLine(c.finish, t('ARRIVÉE'))];
     this.showParisCourse('paris_gp');
+    // Paddock de Paris (40 × 26 m, entrée à l'est côté sud) : deux lignes est-ouest écartées de 13 m, obstacles sautés en
+    // sens contraires et décalés de 6 m, jamais face à face sur un même axe ; 14 m au moins d'abord droit depuis
+    // l'intérieur, un cercle à main droite les enchaîne. Vertical au sud vers l'ouest (face à qui entre), oxer au nord
+    // vers l'est.
     const PW = PARIS.warmup;
-    this.add({ x: PW.x - 8, z: PW.z, rot: Math.PI / 2, kind: 'v', h: 1.3, w: 3.4, course: PARIS_WARM });
-    this.add({ x: PW.x + 9, z: PW.z, rot: -Math.PI / 2, kind: 'o', h: 1.25, w: 3.4, course: PARIS_WARM, colors: COLORS[1] });
+    this.add({ x: PW.x - 3, z: PW.z + 6.5, rot: -Math.PI / 2, kind: 'v', h: 1.3, w: 3.4, course: PARIS_WARM });
+    this.add({ x: PW.x + 3, z: PW.z - 6.5, rot: Math.PI / 2, kind: 'o', h: 1.25, w: 3.4, course: PARIS_WARM, colors: COLORS[1] });
   }
 
   _timingLine(L, label) {

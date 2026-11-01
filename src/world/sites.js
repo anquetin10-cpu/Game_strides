@@ -90,6 +90,15 @@ export const PARIS = {
   exit: { x: PX - 198, z: PZ + 6 },
   secretariat: { x: PX - 128, z: PZ - 12 },
 };
+// Tribunes de l'arène (paris.js) : gradins de 2 m du bord de piste jusqu'aux murs de la salle, au nord, au sud et à
+// l'est (l'ouest est le côté de la porte des cavaliers). Rectangles selon les axes du monde : centre (x, z), w selon x,
+// d selon z ; rot : orientation des gradins (face à la piste).
+const P_SD = PARIS.hall.d / 2 - PARIS.arena.d / 2 - 2.6, P_ED = PARIS.hall.w / 2 - PARIS.arena.w / 2 - 2.6;
+export const PARIS_STANDS = [
+  { side: 'n', x: PX + 4, z: PZ - PARIS.arena.d / 2 - 2 - P_SD / 2, w: PARIS.arena.w - 6, d: P_SD, rot: Math.PI },
+  { side: 's', x: PX + 4, z: PZ + PARIS.arena.d / 2 + 2 + P_SD / 2, w: PARIS.arena.w - 6, d: P_SD, rot: 0 },
+  { side: 'e', x: PX + PARIS.arena.w / 2 + 2 + P_ED / 2, z: PZ, w: P_ED, d: PARIS.arena.d + 2, rot: Math.PI / 2 },
+];
 export const inParis = (x) => x > PX - 1000;
 // Sols posés sur la dalle de Paris (paris.js) : sable de la piste et du paddock, sol de la salle, parvis. Hauteur de
 // leur dessus au-dessus de PARIS.y, pour que chevaux, obstacles et marquages au sol (tracé, zone d'appel) s'y posent.

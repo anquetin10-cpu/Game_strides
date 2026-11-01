@@ -131,7 +131,7 @@ export default {
 
   // Classements en ligne (core/online.js)
   'Défi du Pôle': 'Pôle Challenge',
-  '8 obstacles et un double à 1,10 m, même cheval et mêmes conditions pour tous': '8 fences and a double at 1.10 m, same horse and same conditions for everyone',
+  '8 obstacles dont deux doubles à 1,10 m, même cheval et mêmes conditions pour tous': '8 fences including two doubles at 1.10 m, same horse and same conditions for everyone',
   'Concours Amateur 2': 'Amateur 2 Show',
   'Concours Amateur 1': 'Amateur 1 Show',
   'Concours Pro 2': 'Pro 2 Show',
@@ -139,7 +139,7 @@ export default {
   'CSO au Pôle International, 1,15 m': 'Show jumping at the Pôle International, 1.15 m',
   'CSO au Pôle International, 1,25 m': 'Show jumping at the Pôle International, 1.25 m',
   'Parcours du Pôle': 'Pôle Course',
-  'Entraînement chronométré, 8 obstacles et un double': 'Timed training, 8 fences and a double',
+  'Entraînement chronométré, 8 obstacles dont deux doubles': 'Timed training, 8 fences including two doubles',
   'Cross de Saint-Gatien': 'Saint-Gatien Cross-Country',
   'Entraînement chronométré, 10 obstacles': 'Timed training, 10 fences',
   'Sprint de la plage': 'Beach Sprint',

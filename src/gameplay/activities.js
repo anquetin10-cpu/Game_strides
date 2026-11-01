@@ -28,7 +28,7 @@ export class Activities {
         },
       },
       {
-        id: 'cso_train', name: t('Parcours du Pôle'), kind: 'CSO', desc: t('8 obstacles et un double au Pôle International, 1,10 m, barème A au chrono.'),
+        id: 'cso_train', name: t('Parcours du Pôle'), kind: 'CSO', desc: t('8 obstacles dont deux doubles au Pôle International, 1,10 m, barème A au chrono.'),
         start: { x: CSO_GATE.x, z: CSO_GATE.z },
         marker: { x: CSO_GATE.x + 6, z: CSO_GATE.z + 7 },
         build: (g, run, S) => courseSteps(g, run, S, {
@@ -154,7 +154,7 @@ function trainingSteps(game, run, S) {
     S.goto({ x: POLE.warmup.x, z: POLE.warmup.z }, t('Rejoins le paddock d’échauffement du Pôle'), { r: 18, mode: 'ride' }),
     S.custom({
       text: () => (st.clean > 1 ? T`Entraînement : ${st.clean} sauts sans faute sur ${st.jumps}` : T`Entraînement : ${st.clean} saut sans faute sur ${st.jumps}`),
-      hint: t('Vertical au sud, oxer au nord. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.'),
+      hint: t('Vertical au nord (sauté vers l’est), oxer au sud (sauté vers l’ouest) : un cercle à main droite les enchaîne. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.'),
       hintMs: 7000,
       start(r) {
         ob.resetRails('warmup');
