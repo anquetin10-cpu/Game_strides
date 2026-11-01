@@ -122,6 +122,8 @@ const M1 = {
   desc: t('Deux propositions pour ce matin : préparer deux chevaux au Val (Camille) et sortir en main un cheval du Haras (Antoine). L’une, l’autre, ou les deux en tournée.'),
   client: { name: 'Camille Martin · Antoine Roux', initials: 'CA', rating: 4.9 },
   place: POI.home, placeName: 'Écurie du Val · Haras de la Pommeraie', pay: 90, payLabel: t('90 à 270 €'), xp: 60, duration: t('~2 à 6 min'),
+  // « Une matinée » : proposée de 6 h à 14 h.
+  hours: [6, 14],
   irl: t('sur Strides, les écuries et cavaliers envoient leurs propositions de missions aux professionnels, libres d’accepter celles qui leur conviennent.'),
   rate: () => 5,
   review: (s, run) => ({ val: t('Deux chevaux impeccables, à l’heure. Je note.'), haras: t('Sortie calme et sans histoire. Merci !'), tournee: t('Deux écuries dans la matinée sans rien bâcler : chapeau.') })[run.data.choice] || t('Merci !'),

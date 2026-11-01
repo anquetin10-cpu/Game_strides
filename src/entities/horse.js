@@ -61,7 +61,8 @@ export class Horse {
     return HORSE.stamina * (this.def.stamina || 1) * (1 + this.mods.stamina);
   }
   get speedMul() {
-    return (this.def.speed || 1) * (1 + this.mods.speed) * (this.lame ? 0.45 : 1) * (this.cond ? this.cond.speedMul : 1);
+    // riderFatigue : cavalier épuisé (energy.js), en monde ouvert seulement (1 en épreuve).
+    return (this.def.speed || 1) * (1 + this.mods.speed) * (this.lame ? 0.45 : 1) * (this.cond ? this.cond.speedMul : 1) * (this.riderFatigue ?? 1);
   }
   get jumpPower() {
     return HORSE.jumpPeak * (this.def.jump || 1) * (1 + this.mods.jump) * (this.cond ? this.cond.jumpMul : 1);

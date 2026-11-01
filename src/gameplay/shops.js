@@ -12,6 +12,9 @@
 import { SHOPS3D } from '../world/sites.js';
 import { shopLayout, shopAnchor } from '../world/shopInteriors.js';
 import { SHOP, SHOP_CATS, SLOTS, CAFE_MENU } from './data.js';
+
+// Boissons qui redonnent un peu d'énergie (voir energy.js : gain dégressif, plafonné).
+const COFFEES = ['cafe', 'creme'];
 import { DOUBLE_TAP_MS } from './commerce.js';
 import { h, tap } from '../ui/dom.js';
 import { formatMoney } from '../core/math.js';
@@ -396,8 +399,12 @@ export class ShopManager {
     let last = { id: null, t: 0 };
     const render = () => {
       bal.textContent = T`Solde : ${formatMoney(g.save.data.money)}`;
-      box.replaceChildren(...CAFE_MENU.map((m) => {
-        const b = h('button.btn.primary', { text: T`Commander · ${euros(m.price)}`, 'data-item': m.id });
+      // Énergie : le café en redonne un peu (moins à chaque tasse, jamais au-delà de 70 %), sans remplacer le sommeil.
+      const en = g.energy;
+      const next = en ? en.nextCoffee() : 0;
+      box.replaceChildren(...(en ? [h('div.shop-row.cafe-energy', {}, h('div.shop-info', {}, h('div.shop-top', {}, h('span.n', { text: T`Énergie ${Math.round(en.value)} %` })), h('div.e', { text: next > 0 ? T`Un café : +${Math.round(next)} (moins à chaque tasse, jamais au-delà de 70 %). Il ne remplace pas une nuit de sommeil.` : t('Le café n’a plus d’effet aujourd’hui : il te faut du repos (sieste ou nuit à la maison).') }))) ] : []), ...CAFE_MENU.map((m) => {
+        const coffee = COFFEES.includes(m.id);
+        const b = h('button.btn.primary', { text: coffee && m.id === 'cafe' ? T`Prendre un café · ${euros(m.price)}` : T`Commander · ${euros(m.price)}`, 'data-item': m.id });
         if (g.save.data.money < m.price) b.disabled = true;
         tap(b, () => {
           const now = performance.now();
@@ -409,12 +416,18 @@ export class ShopManager {
           d.stats.cafe = (d.stats.cafe || 0) + 1;
           g.saveNow();
           g.updateWallet();
-          if (m.id === 'cafe' || m.id === 'creme') g.audio.coffee();
+          if (coffee) g.audio.coffee();
           g.audio.register();
-          g.hud.toast(T`Paul te sert : ${m.name.toLowerCase()}. Bonne dégustation !`, 'check');
+          const got = coffee && en ? en.coffee() : 0;
+          if (coffee && en) {
+            g.saveSoon?.();
+            g.hud.toast(got > 0 ? T`Paul te sert : ${m.name.toLowerCase()}. Énergie +${Math.round(got)} (${Math.round(en.value)} %).` : T`Paul te sert : ${m.name.toLowerCase()}. Plus d’effet sur ta fatigue : il te faut du repos.`, 'check');
+          } else g.hud.toast(T`Paul te sert : ${m.name.toLowerCase()}. Bonne dégustation !`, 'check');
           render();
         });
-        return h('div.shop-row', { 'data-item': m.id }, h('div.shop-info', {}, h('div.shop-top', {}, h('span.n', { text: m.name }), h('span.p', { text: euros(m.price) }))), h('div.shop-acts', {}, b));
+        const info = [h('div.shop-top', {}, h('span.n', { text: m.name }), h('span.p', { text: euros(m.price) }))];
+        if (coffee && en) info.push(h('div.e', { text: next > 0 ? T`Énergie +${Math.round(next)}` : t('Plus d’effet sur la fatigue aujourd’hui') }));
+        return h('div.shop-row', { 'data-item': m.id }, h('div.shop-info', {}, ...info), h('div.shop-acts', {}, b));
       }));
     };
     render();

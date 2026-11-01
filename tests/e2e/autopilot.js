@@ -542,6 +542,19 @@
       const offer = g.missions.offers.find((o) => o.id === `story:${id}`);
       if (!offer) return { ok: false, error: 'offer not available' };
       if (offer.locked) return { ok: false, error: `locked: ${offer.locked}` };
+      // Horaires du client et énergie (energy.js) : comme un joueur, le pilote revient à une heure ouvrable (9 h le
+      // lendemain) ou après une nuit de sommeil quand la mission le demande.
+      for (let k = 0; k < 2; k++) {
+        const av = g.missions.availability?.(offer);
+        if (!av || av.ok) break;
+        A.log.push(`indisponible (${av.kind}) : ${av.reason}`);
+        if (av.kind === 'fatigue') g.energy.sleep(8);
+        else {
+          const d = g.save.data;
+          d.gameTime = (Math.floor(d.gameTime / 86400) + 1) * 86400 + 9 * 3600;
+          g.energy.sync();
+        }
+      }
       g.missions.accept(offer.id);
       const run = g.missions.active;
       let failed = null;

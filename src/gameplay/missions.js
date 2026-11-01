@@ -4,6 +4,7 @@ import { REPUTATION } from '../config.js';
 import { formatMoney, dec } from '../core/math.js';
 import { STORY } from './story.js';
 import { generateJob } from './jobs.js';
+import { missionAvailability, missionHours, inHours } from './energy.js';
 import { t, T, num } from '../core/i18n.js';
 
 // ---------- Fabriques d'étapes ----------
@@ -332,7 +333,8 @@ export class MissionManager {
       const n = this.offers.filter((o) => o.id.startsWith('job:')).length;
       if (n < 3) {
         const def = generateJob(g, this.jobSeq++, lv.level);
-        if (def) {
+        // Demandes reçues aux heures du client (la plupart en journée, quelques-unes le soir, aucune la nuit).
+        if (def && (!g.hour || inHours(missionHours(def), g.hour()))) {
           const o = this._offerFromDef(def, { id: `job:${def.id}` });
           this.offers.push(o);
           added.push(o);
@@ -395,6 +397,13 @@ export class MissionManager {
     this.game.hud?.setPhoneBadge(n, n > 0 && !this.active);
   }
 
+  // Horaires du client et énergie du personnage (energy.js) : { ok } ou { ok: false, kind, reason, short }.
+  availability(o) {
+    const g = this.game;
+    if (!g.energy || !g.hour) return { ok: true };
+    return missionAvailability(o, { hour: g.hour(), energy: g.energy.value });
+  }
+
   accept(id) {
     const g = this.game;
     const o = this.offers.find((x) => x.id === id);
@@ -405,6 +414,12 @@ export class MissionManager {
     }
     if (this.active) {
       g.hud.toast(t('Termine ou abandonne ta mission en cours d’abord.'));
+      return false;
+    }
+    // Hors des horaires du client, ou trop fatigué pour une mission exigeante : refus expliqué.
+    const av = this.availability(o);
+    if (!av.ok) {
+      g.hud.toast(av.reason);
       return false;
     }
     // Mission à régler (engagement d'un concours, soins) : le solde doit couvrir son coût.

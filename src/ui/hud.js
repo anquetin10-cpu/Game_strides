@@ -5,6 +5,15 @@ import { Minimap } from './minimap.js';
 import { formatMoney, formatTime, dec, clamp } from '../core/math.js';
 import { HORSE } from '../config.js';
 import { t, T, int } from '../core/i18n.js';
+import { periodOf, PERIOD_LABEL, tierOf } from '../gameplay/energy.js';
+
+// Pictogrammes des périodes : soleil levant (matin), soleil (après-midi), soleil couchant (soir), lune (nuit).
+const PERIOD_SVG = {
+  matin: '<svg viewBox="0 0 24 24"><path d="M4 17h16M7 17a5 5 0 0 1 10 0M12 6v3M5.6 9.6l2 2M18.4 9.6l-2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  apresmidi: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  soir: '<svg viewBox="0 0 24 24"><path d="M4 17h16M7.5 17a4.5 4.5 0 0 1 9 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 13V8m0 0-2.2 2.2M12 8l2.2 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" transform="rotate(180 12 10.5)"/></svg>',
+  nuit: '<svg viewBox="0 0 24 24"><path d="M15.5 3.5a8.5 8.5 0 1 0 5 13.6A7 7 0 0 1 15.5 3.5Z" fill="currentColor"/></svg>',
+};
 
 export class HUD {
   constructor(game, root) {
@@ -39,7 +48,14 @@ export class HUD {
     this.starsEl = h('div.stars-line', { text: '' });
     this.phoneBtn = h('button.phone-btn.clickable', { 'aria-label': t('Téléphone'), html: icon('phone') }, h('span.badge', { text: '1' }));
     this.pauseBtn = h('button.icon-btn.clickable', { 'aria-label': t('Pause'), html: icon('pause') });
-    const wallet = h('div.wallet', {}, this.moneyEl, h('div.level-line', {}, this.levelEl, h('div.xpbar', {}, this.xpEl)), this.starsEl);
+    // Rythme de vie : période et heure, jauge d'énergie (toucher : fiche Énergie).
+    this.lifeIco = h('i.life-ico');
+    this.lifeTxt = h('span.life-t.tab-num');
+    this.enBar = h('i');
+    this.enTxt = h('span.en-t.tab-num');
+    this.lifeEl = h('button.life-line.clickable', { 'data-id': 'life', 'aria-label': t('Heure et énergie') }, this.lifeIco, this.lifeTxt, h('b.en-bar', {}, this.enBar), this.enTxt);
+    tap(this.lifeEl, () => g.energy?.openCard());
+    const wallet = h('div.wallet', {}, this.moneyEl, h('div.level-line', {}, this.levelEl, h('div.xpbar', {}, this.xpEl)), this.lifeEl, this.starsEl);
     g.input.bindButton(this.phoneBtn, 'phone');
     g.input.bindButton(this.pauseBtn, 'pause');
 
@@ -192,10 +208,38 @@ export class HUD {
     this.phoneBtn.classList.toggle('ring', ringing);
   }
 
+  // Période, heure et énergie (rafraîchies deux fois par seconde, sans réécrire ce qui n'a pas changé).
+  _updateLife(dt) {
+    const g = this.game;
+    if ((this._lifeT = (this._lifeT || 0) - dt) > 0 || !g.energy) return;
+    this._lifeT = 0.5;
+    const hr = g.hour();
+    const per = periodOf(hr);
+    const txt = `${PERIOD_LABEL[per]} ${g.clockText()}`;
+    if (txt !== this._lifeTxt) this.lifeTxt.textContent = this._lifeTxt = txt;
+    if (per !== this._per) {
+      this._per = per;
+      this.lifeIco.innerHTML = PERIOD_SVG[per];
+      this.lifeEl.dataset.period = per;
+    }
+    const e = Math.round(g.energy.value);
+    if (e !== this._en) {
+      this._en = e;
+      this.enBar.style.width = `${e}%`;
+      this.enTxt.textContent = `${e} %`;
+      const tier = tierOf(e);
+      if (tier !== this._tier) {
+        this._tier = tier;
+        this.lifeEl.dataset.tier = tier;
+      }
+    }
+  }
+
   update(dt) {
     const g = this.game;
     const p = g.player;
     const mode = p.mode;
+    this._updateLife(dt);
     // Télémétrie.
     if (mode === 'ride' || mode === 'drive') {
       this.teleEl.classList.remove('hidden');

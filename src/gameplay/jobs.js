@@ -151,6 +151,8 @@ export function generateJob(game, seq, level) {
   return {
     id: `g${seq}`, vertical: 'JOBS', category: 'Groom', title: t('Soins du soir'), desc: t('Distribuer le foin à trois chevaux.'),
     client: { name: 'Camille Martin', initials: 'CM', rating: 4.9, verified: true }, place: { x: -110, z: 172 }, placeName: 'Écurie du Val', pay: 70, xp: 60, duration: '~2 min',
+    // Corvée du soir (seule demande ordinaire tard le soir).
+    hours: [16, 23],
     irl: t('les grooms indépendants remplissent leur planning grâce aux missions publiées par les écuries.'),
     rate: (run) => (run.t < 70 ? 5 : run.t < 95 ? 4 : 3),
     steps(g, run, S) {

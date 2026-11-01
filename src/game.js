@@ -52,6 +52,7 @@ import { Particles } from './world/particles.js';
 import { installCare, HorseCondition, SIM } from './gameplay/condition.js';
 import { installFuel } from './gameplay/fuel.js';
 import { installRest } from './gameplay/rest.js';
+import { Energy } from './gameplay/energy.js';
 import { installStabling } from './gameplay/stabling.js';
 import { Realism } from './entities/realistic.js';
 import { STABLE_UPGRADES, SKILL_LABEL } from './gameplay/data.js';
@@ -181,6 +182,8 @@ export class Game {
     this.phone = new Phone(this, document.body);
     this.gps = new GPS(this);
     this.missions = new MissionManager(this);
+    // Énergie du personnage (fatigue), périodes de la journée : voir energy.js.
+    this.energy = new Energy(this);
     // Achats et équipement (boutiques de Deauville City et application du téléphone).
     this.commerce = new Commerce(this);
     this.indoor = null;
@@ -1340,6 +1343,7 @@ export class Game {
     this.defenderAccess?.update();
     this.interact.update();
     this.missions.update(sdt);
+    this.energy.update();
     this.travel.update();
     this.vanLoading?.update(sdt);
     this.collectibles.update(dt);

@@ -608,8 +608,10 @@ export class Player {
       } else {
         let sp = 0;
         if (!locked && mv.mag > 0.1) {
-          sp = mv.mag < 0.55 ? 2.4 * (mv.mag / 0.55 + 0.25) : 5.4;
-          if (input.isHeld('gallop')) sp = 7.2;
+          // Fatigue (energy.js) : course et sprint un peu moins rapides quand l'énergie baisse.
+          const fm = g.energy?.malus;
+          sp = mv.mag < 0.55 ? 2.4 * (mv.mag / 0.55 + 0.25) : 5.4 * (fm?.run ?? 1);
+          if (input.isHeld('gallop')) sp = 7.2 * (fm?.sprint ?? 1);
           if (this.human.carrying) sp = Math.min(sp, 3.6);
           // Cheval en main : pas de course, on reste au pas ou au petit trot.
           if (tp.leading) sp = Math.min(sp, 3.3);

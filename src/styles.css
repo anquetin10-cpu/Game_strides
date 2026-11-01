@@ -1003,3 +1003,38 @@ body.phone-open .rotate { display: none !important; }
 .lang-btns { display: flex; gap: 12px; }
 .lang-btns button { flex: 1; height: 54px; border-radius: 14px; font: 600 17px var(--ui, Geist, Arial); background: var(--st-ink); color: var(--st-bg); }
 .lang-btns button + button { background: rgba(247,244,237,.9); color: var(--st-ink); border: 1px solid var(--st-line-2); }
+
+/* ---------- Rythme de vie : période, heure et énergie (portefeuille), fiche Énergie, demandes indisponibles ---------- */
+.life-line::after { content: ''; position: absolute; inset: -9px -8px -8px -10px; }
+.life-line { position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 5px; padding: 0; background: none; border: 0; color: var(--text-2); font: 600 10px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
+.life-line .life-ico { display: inline-grid; width: 13px; height: 13px; color: var(--gold); }
+.life-line[data-period="nuit"] .life-ico, .life-line[data-period="soir"] .life-ico { color: #4f6aa8; }
+.life-line .life-ico svg { width: 13px; height: 13px; }
+.life-line .en-bar { display: block; width: 46px; height: 5px; border-radius: 3px; background: var(--line-2); overflow: hidden; }
+.life-line .en-bar i { display: block; height: 100%; width: 100%; border-radius: 3px; background: var(--ok); transition: width .6s, background .4s; }
+.life-line .en-t { min-width: 30px; text-align: right; letter-spacing: .02em; color: var(--paper); }
+.life-line[data-tier="medium"] .en-bar i { background: var(--gold); }
+.life-line[data-tier="low"] .en-bar i { background: var(--st-orange); }
+.life-line[data-tier="critical"] .en-bar i { background: var(--bad); }
+.life-line[data-tier="critical"] .en-t { color: var(--bad); animation: lifePulse 1.6s ease-in-out infinite; }
+@keyframes lifePulse { 50% { opacity: .45; } }
+.en-meter { height: 8px; margin-top: 12px; border-radius: 4px; background: var(--fill-2); overflow: hidden; }
+.en-meter i { display: block; height: 100%; border-radius: 4px; background: var(--ok); }
+.en-meter[data-tier="medium"] i { background: var(--gold); }
+.en-meter[data-tier="low"] i { background: var(--st-orange); }
+.en-meter[data-tier="critical"] i { background: var(--bad); }
+.life-kvs { display: block; margin-top: 8px; }
+.life-kvs .kv { gap: 14px; }
+.life-kvs .kv b { text-align: right; }
+ul.newday { margin: 10px 0 0; padding-left: 18px; font: 400 13.5px/1.45 var(--ui); color: var(--text-2); }
+.cafe-energy .n { color: var(--gold); }
+.badge-st.v-danger { background: rgba(200,69,69,.08); border-color: rgba(200,69,69,.3); color: #9c2f2f; }
+.req-card.unavail { opacity: .72; }
+.unavail-card { display: flex; gap: 12px; align-items: flex-start; border-color: rgba(200,69,69,.35); }
+.unavail-card .ic { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 10px; background: rgba(200,69,69,.08); color: var(--st-red); display: grid; place-items: center; }
+.unavail-card .ic .ion { width: 18px; height: 18px; }
+.st-actions .req-cap.unavail { color: #9c2f2f; font-weight: 600; }
+@media (max-height: 360px) {
+  .life-line { margin-top: 3px; gap: 5px; font-size: 9px; }
+  .life-line .en-bar { width: 36px; }
+}

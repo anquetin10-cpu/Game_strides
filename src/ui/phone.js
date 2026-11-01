@@ -153,7 +153,7 @@ export class Phone {
       g.photoMode(true);
     });
     const m = g.missions;
-    const avail = m.offers.filter((o) => !o.locked).length;
+    const avail = m.offers.filter((o) => !o.locked && (m.availability?.(o).ok ?? true)).length;
     const rating = g.rating();
     const widget = h('button.widget', { 'data-app': 'strides-widget' },
       h('div.w-head', {}, h('span', { html: icon('strides') }), h('span', { text: 'STRIDES' })),

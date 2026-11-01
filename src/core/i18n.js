@@ -14,10 +14,11 @@ import ui from '../i18n/en/ui.js';
 import gameplay from '../i18n/en/gameplay.js';
 import world from '../i18n/en/world.js';
 import systems from '../i18n/en/systems.js';
+import life from '../i18n/en/life.js';
 
 export const LANGS = ['fr', 'en'];
 const KEY = 'strides-lang';
-const EN = Object.assign({}, common, story, story2, data, phone, ui, gameplay, world, systems);
+const EN = Object.assign({}, common, story, story2, data, phone, ui, gameplay, world, systems, life);
 
 function stored() {
   try {

@@ -34,6 +34,8 @@ export function defaultSave() {
     messages: [],
     settings: { sound: true, music: true, quality: 'auto', camSens: 1, timeScale: 'jeu', characters: 'auto', horses: 'classic', jumpAid: 'full', courseLine: true },
     gameTime: CONFIG.startHour * 3600,
+    // Rythme de vie (energy.js) : énergie du personnage, cafés et siestes depuis la dernière nuit, avertissements donnés.
+    life: { energy: 100, coffees: 0, naps: 0, lastSleep: null, notified: '' },
     pos: null,
     // Récompenses déjà versées (clé = offre ou tentative) : un double appui ou un rechargement ne paie jamais deux fois.
     rewards: {},

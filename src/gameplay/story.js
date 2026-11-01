@@ -134,6 +134,8 @@ export const STORY = [
     id: 'groom', story: true, vertical: 'JOBS', category: 'Groom', title: t('Groom du matin'), level: 1, requires: ['m3'],
     desc: t('Distribuer le foin à quatre chevaux avant la reprise de 10 h.'),
     client: C.camille, place: POI.home, placeName: 'Écurie du Val', pay: 90, xp: 120, duration: '~2 min',
+    // Groom du matin : proposé le matin (6 h – 12 h).
+    hours: [6, 12],
     irl: t('les écuries trouvent un groom maison ou un palefrenier au profil vérifié, avec des disponibilités à la journée ou à la demi-journée.'),
     review: (s) => (s >= 5 ? t('Rapide et soigneux. Je recommande !') : s >= 4 ? t('Efficace, les chevaux étaient ravis.') : t('Le travail est fait, merci.')),
     rate: (run) => byTime(run.t, 80, 105, 130),

@@ -4,6 +4,7 @@ import { h, tap } from './dom.js';
 import { ion } from './ionicons.js';
 import { formatMoney, dec } from '../core/math.js';
 import { t, T, LANG, euros } from '../core/i18n.js';
+import { missionDemand, missionCost, missionHours, DEMAND_LABEL, hhLabel } from '../gameplay/energy.js';
 
 // Métiers de l'app (couleur et pictogramme Ionicons) et correspondance avec les catégories du jeu.
 const JOBS = {
@@ -35,6 +36,12 @@ const tomorrow = () => new Date(Date.now() + 86400000);
 const reviewsOf = (c) => 6 + ([...(c?.name || '')].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 40);
 const initialsOf = (c) => c?.initials || (c?.name || t('Client')).split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
+// Horaires d'une mission (« de 8 h à 19 h », « À toute heure »).
+const hoursText = (def) => {
+  const hr = missionHours(def);
+  return hr ? T`De ${hhLabel(hr[0])} à ${hhLabel(hr[1])}` : t('À toute heure');
+};
+
 // Badge (statut) : variantes new, pending, verified, inactive, top, danger.
 export const badge = (text, v) => h(`span.badge-st.v-${v}`, { text });
 
@@ -44,8 +51,12 @@ export function stars(rating) {
   return row;
 }
 
-function statusOf(o) {
+// Disponibilité du moment (horaires du client, énergie du personnage).
+const availOf = (g, o) => g.missions.availability?.(o) || { ok: true };
+
+function statusOf(o, av = { ok: true }) {
   if (o.locked) return [t('VERROUILLÉE'), 'inactive'];
+  if (!av.ok) return av.kind === 'fatigue' ? [t('TROP FATIGANT'), 'danger'] : [t('HORS HORAIRES'), 'inactive'];
   if (o.resume) return [t('À REPRENDRE'), 'top'];
   if (o.counter) return [t('EN NÉGOCIATION'), 'new'];
   if (o.counterAccepted) return [t('PROPOSITION ACCEPTÉE'), 'verified'];
@@ -56,8 +67,9 @@ function statusOf(o) {
 export function requestCard(phone, o) {
   const c = o.client || { name: t('Client') };
   const job = jobOf(o);
-  const [st, v] = !o.opened && !o.resume && !o.locked && !o.counter && !o.counterAccepted ? [t('NOUVEAU'), 'new'] : statusOf(o);
-  const card = h('button.req-card', { 'data-offer': o.id },
+  const av = availOf(phone.game, o);
+  const [st, v] = av.ok && !o.opened && !o.resume && !o.locked && !o.counter && !o.counterAccepted ? [t('NOUVEAU'), 'new'] : statusOf(o, av);
+  const card = h(`button.req-card${av.ok ? '' : '.unavail'}`, { 'data-offer': o.id },
     h('div.req-row', {},
       h('div.st-av', { text: initialsOf(c) }),
       h('div.req-col', {},
@@ -66,7 +78,7 @@ export function requestCard(phone, o) {
         h('div.req-cap', { text: `${job.label} · ${o.title}` }),
         h('div.req-cap', { text: `${shortDate(new Date())} · ${o.placeName || ''}` }))),
     h('div.req-foot', {},
-      h('span.req-delay', { text: o.locked || (o.story ? t('Délai de réponse · 24h restantes') : t('Délai de réponse · expire bientôt')) }),
+      h('span.req-delay', { text: o.locked || (!av.ok ? av.short : o.story ? t('Délai de réponse · 24h restantes') : t('Délai de réponse · expire bientôt')) }),
       h('span.req-amount', { text: o.pay ? `~${eur(o.pay)}` : o.payLabel || '—' })));
   tap(card, () => phone.show('request', { id: o.id }));
   return card;
@@ -103,7 +115,10 @@ export function renderProHome(phone) {
         h('div.req-foot', {}, h('span.acts', {}, gps, ab), h('span.req-amount', { text: m.offer.pay ? `~${eur(m.offer.pay)}` : '—' }))));
   }
   const offers = g.missions.offers.filter(isStridesOffer);
-  body.appendChild(h('div.st-eyebrow.sec', { text: T`Demandes entrantes · ${offers.filter((o) => !o.locked).length}` }));
+  body.appendChild(h('div.st-eyebrow.sec', { text: T`Demandes entrantes · ${offers.filter((o) => !o.locked && availOf(g, o).ok).length}` }));
+  // Rythme de la journée : tard le soir ou épuisé, on le dit clairement.
+  const note = g.energy?.statusNote();
+  if (note) body.appendChild(h('div.st-card.unavail-card.mtS', { 'data-id': 'life-note' }, h('span.ic', { html: ion(note.kind === 'fatigue' ? 'alert-circle-outline' : 'time-outline') }), h('div.st-body', { text: note.text })));
   if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(phone, o))));
   else body.appendChild(h('div.st-card.empty-st', {}, h('div.st-body', { text: t('Aucune demande en attente.') }), h('div.req-cap', { text: t('Les demandes de vos clients arriveront ici.') })));
   body.append(
@@ -186,7 +201,8 @@ export function renderRequest(phone, opts = {}) {
   g.missions.updateBadge();
   const c = o.client || { name: t('Client'), rating: 0 };
   const job = jobOf(o);
-  const [st, v] = statusOf(o);
+  const av = availOf(g, o);
+  const [st, v] = statusOf(o, av);
   const d = g.distanceTo(o.place);
   const km = dec(d / 1000);
   const received = o.receivedClock || g.clockText();
@@ -214,8 +230,12 @@ export function renderRequest(phone, opts = {}) {
       kv(t('Lieu'), o.placeName || '—'),
       o.vertical === 'TRANSPORT' ? kv(t('Véhicule'), t('Camion · permis C')) : null,
       o.vertical === 'EVENEMENTS' ? kv(t('Niveau'), t(o.category)) : null,
-      kv(t('Durée estimée'), o.duration || '—'))
+      kv(t('Durée estimée'), o.duration || '—'),
+      kv(t('Horaires'), hoursText(o.def)),
+      kv(t('Effort'), T`${DEMAND_LABEL[missionDemand(o.def)]} · énergie −${missionCost(o.def)}`))
   );
+  // Indisponible maintenant : la raison, en clair, avant le reste.
+  if (!av.ok) frame.insertBefore(h('div.st-card.unavail-card', {}, h('span.ic', { html: ion(av.kind === 'fatigue' ? 'alert-circle-outline' : 'time-outline') }), h('div.st-body', { text: av.reason })), frame.children[1] || null);
   if (o.desc) frame.append(h('div.st-section', { text: t('Note du client') }), h('div.st-card', {}, h('div.st-body', { text: o.desc })));
   if (o.counter) {
     frame.append(h('div.st-section', { text: t('Votre contre-proposition') }),
@@ -241,7 +261,7 @@ export function renderRequest(phone, opts = {}) {
   );
   // Comme dans l'app : « Accepter la mission » (fixe en bas), puis contre-proposition et refus en fin de contenu.
   // Sur écran bas (zone de lecture d'une centaine de pixels), ils viennent juste après l'en-tête.
-  const act = actions(phone, o);
+  const act = actions(phone, o, av);
   if (act.more) frame.insertBefore(act.more, matchMedia('(max-height: 360px)').matches ? frame.children[1] : null);
   main.appendChild(h('div.app-body.scrollable', {}, frame));
   main.appendChild(act.bar);
@@ -255,11 +275,24 @@ function cond(icn, label, hint, value, tone = '') {
 }
 
 // Barre d'actions toujours visible : Refuser · contre-proposition · Accepter la mission (deux touchers).
-function actions(phone, o) {
+function actions(phone, o, av = { ok: true }) {
   const g = phone.game;
   const bar = h('div.st-actions');
   if (o.locked) {
     bar.appendChild(h('div.req-cap.center', { text: o.locked }));
+    return { bar };
+  }
+  // Hors horaires ou trop fatigant : pas d'acceptation possible, raison affichée (et la maison, si c'est la fatigue).
+  if (!av.ok) {
+    bar.appendChild(h('div.req-cap.center.unavail', { text: av.short, 'data-id': 'unavailable-request' }));
+    if (av.kind === 'fatigue') {
+      const home = h('button.btn.large', { text: t('Itinéraire vers la maison'), 'data-id': 'route-home' });
+      tap(home, () => {
+        g.energy?.routeHome();
+        phone.close();
+      });
+      bar.appendChild(h('div.st-actions-row', {}, home));
+    }
     return { bar };
   }
   const hint = h('div.confirm-hint.hidden');
