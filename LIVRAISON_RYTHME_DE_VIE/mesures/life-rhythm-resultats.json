@@ -1,0 +1,160 @@
+{
+ "results": [
+  {
+   "label": "HUD : période et heure lisibles (Matin 8:15, Après-midi 14:30, Soir 19:45, Nuit 23:30)",
+   "ok": true,
+   "extra": "Matin 8:15100 % | Après-midi 14:30100 % | Soir 19:45100 % | Nuit 23:30100 %"
+  },
+  {
+   "label": "jauge : 4 paliers (en forme, légère fatigue, fatigue, épuisement) signalés par la couleur",
+   "ok": true,
+   "extra": "8:critical 25:low 50:medium 85:high"
+  },
+  {
+   "label": "toucher la jauge : fiche Énergie (niveau, effets, nuit, sieste, café)",
+   "ok": true,
+   "extra": "Énergie 8 % · Épuisement"
+  },
+  {
+   "label": "baisse progressive sur une journée (7 h → 23 h, sans activité) : de 100 % à ~68 %, régulière, jamais brutale",
+   "ok": true,
+   "extra": "98 96 94 92 90 88 86 84 82 80 78 76 74 72 70 67"
+  },
+  {
+   "label": "courir coûte plus que rester immobile (même durée)",
+   "ok": true,
+   "extra": "{\"idle\":{\"lost\":0.4799999999988813,\"hours\":0.15999999999961195},\"sprint\":{\"lost\":0.8251999999972952,\"hours\":0.15999999999961195}}"
+  },
+  {
+   "label": "la nuit fatigue 1,5 fois plus que le jour",
+   "ok": true,
+   "extra": "3.50 / 5.25"
+  },
+  {
+   "label": "avertissements progressifs : léger (58 %), net (33 %), incitation à rentrer (12 %)",
+   "ok": true,
+   "extra": "{\"toasts\":[\"Un peu de fatigue : pense à rentrer te reposer ce soir.\"],\"hint\":\"<b>Fatigue</b> : tu cours un peu moins vite. Une sieste ou une nuit à la maison de l’Écurie du Val te remettra d’aplomb.\",\"notifs\":[\"Épuisement\"]}"
+  },
+  {
+   "label": "effets légers : course −5 % fatigué, −10 % épuisé (jamais bloquée)",
+   "ok": true,
+   "extra": "{\"high\":5.4,\"low\":5.13,\"critical\":4.86}"
+  },
+  {
+   "label": "demandes ordinaires : en journée, quelques-unes le soir, aucune la nuit",
+   "ok": true,
+   "extra": "{\"jobsDay\":[\"Coursier:Livraison : Contrat de vente\",\"Coursier:Livraison : Plaques de vainqueur\",\"Coursier:Livraison : Plaques de vainqueur\"],\"jobsEve\":[\"Groom:Soins du soir\",\"Groom:Soins du soir\"],\"jobsNight\":[]}"
+  },
+  {
+   "label": "téléphone : mission exigeante épuisé → « TROP FATIGANT », raison claire, pas de bouton Accepter, itinéraire vers la maison",
+   "ok": true,
+   "extra": "{\"badge\":\"TROP FATIGANT\",\"reason\":\"Énergie trop basse (9 %) pour une mission aussi exigeante. Repose-toi d’abord : une nuit à la maison de l’Écurie du Val, ou au moins une sieste.\",\"bar\":\"Trop fatigant pour l’instant\",\"accept\":false,\"home\":true}"
+  },
+  {
+   "label": "acceptation refusée épuisé, avec l’explication",
+   "ok": true,
+   "extra": "Énergie trop basse (9 %) pour une mission aussi exigeante. Repose-toi d’abord : une nuit à la maison de l’Écurie du Val, ou au moins une sieste."
+  },
+  {
+   "label": "hors horaires (23 h) : « HORS HORAIRES » et créneau du client",
+   "ok": true,
+   "extra": "{\"badge\":\"HORS HORAIRES\",\"reason\":\"Disponible de 7 h à 21 h : le client te recontactera demain. À la maison de l’Écurie du Val, le lit permet de passer à la journée suivante.\"}"
+  },
+  {
+   "label": "app Strides la nuit : « les clients te recontacteront demain matin »",
+   "ok": true,
+   "extra": "C’est la nuit : les clients te recontacteront demain matin. Ton lit t’attend à la maison de l’Écurie du Val."
+  },
+  {
+   "label": "mission légère acceptée même épuisé (liberté du joueur)",
+   "ok": true,
+   "extra": "{\"ok\":true,\"active\":\"groom\"}"
+  },
+  {
+   "label": "lit refusé pendant une mission (sans sauter le temps)",
+   "ok": true,
+   "extra": "Termine ou abandonne ta mission en cours avant de te coucher."
+  },
+  {
+   "label": "maison : « Entrer » à la porte, puis à l’intérieur",
+   "ok": true,
+   "extra": "Entrer"
+  },
+  {
+   "label": "chambre : le lit est atteint à pied et propose « Se coucher »",
+   "ok": true,
+   "extra": "true Se coucher"
+  },
+  {
+   "label": "lit en journée : passer à la journée suivante, sieste, nuit (grisée avant 19 h), rester debout",
+   "ok": true,
+   "extra": "nextday,nap,night(off),cancel"
+  },
+  {
+   "label": "sieste : +25 (30 % → 55 %), 1 h 30 plus tard (14:00 → 15:30), partie sauvegardée",
+   "ok": true,
+   "extra": "{\"n0\":{\"e\":30,\"tier\":\"low\",\"hour\":14,\"day\":0,\"coffees\":0,\"naps\":0,\"money\":200,\"chip\":\"Après-midi 14:0030 %\",\"period\":\"apresmidi\",\"chipTier\":\"low\"},\"n1\":{\"e\":55,\"tier\":\"medium\",\"hour\":15.502,\"day\":0,\"coffees\":0,\"naps\":1,\"money\":200,\"chip\":\"Après-midi 15:3055 %\",\"period\":\"apresmidi\",\"chipTier\":\"medium\"}}"
+  },
+  {
+   "label": "seconde sieste moins efficace (+15), plafond 80 %",
+   "ok": true,
+   "extra": "15.0"
+  },
+  {
+   "label": "café : « Prendre un café » 1,80 € chacun, +12, +7, +3 puis plus d’effet (ne remplace pas une nuit)",
+   "ok": true,
+   "extra": "[{\"gain\":12,\"paid\":1.8,\"label\":\"Prendre un café · 1,80 €\"},{\"gain\":7,\"paid\":1.8,\"label\":\"Prendre un café · 1,80 €\"},{\"gain\":3,\"paid\":1.8,\"label\":\"Prendre un café · 1,80 €\"},{\"gain\":0,\"paid\":1.8,\"label\":\"Prendre un café · 1,80 €\"}]"
+  },
+  {
+   "label": "café plafonné à 70 % (66 % → 70 %)",
+   "ok": true,
+   "extra": 4
+  },
+  {
+   "label": "lit le soir : dormir jusqu’au matin, sieste, rester debout",
+   "ok": true,
+   "extra": "night,nap,cancel"
+  },
+  {
+   "label": "nuit : réveil le lendemain à 7:00, énergie 100 %, cafés et siestes remis à zéro",
+   "ok": true,
+   "extra": "{\"e\":100,\"tier\":\"high\",\"hour\":7,\"day\":1,\"coffees\":0,\"naps\":0,\"money\":192.8,\"chip\":\"Matin 7:00100 %\",\"period\":\"matin\",\"chipTier\":\"high\"}"
+  },
+  {
+   "label": "nouvelle journée : carte claire (durée, énergie avant → après, sauvegarde)",
+   "ok": true,
+   "extra": "Jour 2 · 7:00Bonjour !Tu as dormi 8 h 30.Énergie 25 % → 100 %.Comète a récupéré aussi.Les cafés et les siestes retrouvent tout leur effet.Partie sauvegardée."
+  },
+  {
+   "label": "sauvegarde automatique au réveil (énergie et heure enregistrées)",
+   "ok": true,
+   "extra": "{\"e\":100,\"t\":111600}"
+  },
+  {
+   "label": "HUD au réveil : « Matin 7:00 », 100 %",
+   "ok": true,
+   "extra": "Matin 7:00100 %"
+  },
+  {
+   "label": "nuit courte (3 h → 7 h) : récupération partielle (20 % → 76 %)",
+   "ok": true,
+   "extra": "{\"e\":76,\"h\":7}"
+  },
+  {
+   "label": "le cheval aussi est reposé au réveil",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "label": "rechargement : énergie, cafés et siestes du jour conservés",
+   "ok": true,
+   "extra": "{\"e\":42.5,\"tier\":\"medium\",\"hour\":16.001,\"day\":1,\"coffees\":2,\"naps\":1,\"money\":192.8,\"chip\":\"Après-midi 16:0042 %\",\"period\":\"apresmidi\",\"chipTier\":\"medium\"}"
+  },
+  {
+   "label": "ancienne sauvegarde sans énergie : 100 % par défaut",
+   "ok": true,
+   "extra": "{\"e\":100,\"life\":\"{\\\"energy\\\":100,\\\"coffees\\\":0,\\\"naps\\\":0,\\\"lastSleep\\\":null,\\\"notified\\\":\\\"\\\"}\"}"
+  }
+ ],
+ "errors": []
+}
