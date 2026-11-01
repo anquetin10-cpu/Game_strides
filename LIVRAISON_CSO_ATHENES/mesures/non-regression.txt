@@ -1,0 +1,37 @@
+Non-régression — refonte des concours de CSO
+Chromium + SwiftShader (rendu logiciel), émulation iPhone 13 paysage pour le tactile. Pas d'iPhone réel. Séquentiel, à froid.
+
+unit (vitest) : 20 fichiers, 208 tests passés
+athens-pole-joystick exit=0 60s :: 9 ✔ / 0 ✘
+athens-pole-clavier exit=0 69s :: 9 ✔ / 0 ✘
+athens-pole-tactile exit=1 55s :: 0 ✔ / 0 ✘
+athens-paris-joystick exit=0 52s :: 9 ✔ / 0 ✘
+cso exit=0 49s :: 38 ✔ / 0 ✘
+cso-touch exit=0 69s :: 9 ✔ / 0 ✘
+contest-full exit=0 148s :: 6 ✔ / 0 ✘
+challenge exit=0 514s :: 37 ✔ / 0 ✘
+paris exit=0 67s :: 20 ✔ / 0 ✘
+boost exit=0 38s :: 7 ✔ / 0 ✘
+horse-mount exit=0 40s :: 18 ✔ / 0 ✘
+mission-resume exit=1 377s :: 10 ✔ / 0 ✘
+qa-fixes exit=1 79s :: 9 ✔ / 0 ✘
+master exit=0 136s :: 26 ✔ / 0 ✘
+master-ramp exit=0 435s :: 26 ✔ / 0 ✘
+transport-flow exit=1 255s :: 64 ✔ / 1 ✘ :: ÉCHECS : 1
+chapter1 exit=0 323s :: 27 ✔ / 0 ✘
+save-guard exit=0 307s :: 11 ✔ / 0 ✘
+boarding exit=0 120s :: 72 ✔ / 0 ✘
+defender exit=0 173s :: 33 ✔ / 0 ✘
+vehicles exit=0 46s :: 48 ✔ / 0 ✘
+truck-exit exit=0 34s :: 0 ✔ / 0 ✘
+i18n exit=0 273s :: 19 ✔ / 0 ✘
+features exit=0 33s :: 20 ✔ / 0 ✘
+camera-barn exit=0 62s :: 0 ✔ / 0 ✘
+shop-night exit=0 70s :: 0 ✔ / 0 ✘
+missions exit=0 105s :: 16 ✔ / 0 ✘
+avatar-consistency exit=0 136s :: 9 ✔ / 0 ✘
+
+Relances, machine au repos :
+- athens-pole-tactile : interrompu dans la suite par un rechargement du serveur de développement (modification d'un fichier source pendant la suite) ; relancé : 9 ✔ / 0 ✘, sans faute en 60,13 s, 10 appuis = 10 sauts.
+- mission-resume, qa-fixes : le toucher « Continuer » dépassait le délai de 30 s de Playwright. Mesuré sur les deux versions : 0,6 à 34 s (après la refonte), 6 à 37 s (avant la refonte, e259747) — compilation des shaders en rendu logiciel, sans régression. Délai porté à 120 s dans les tests qui rechargent une partie ; relancés : 13 ✔ / 0 ✘ et 19 ✔ / 0 ✘.
+- transport-flow : la référence du plancher du camion était lue dans une seconde copie du module, servie avec un horodatage de rechargement par le serveur de développement ; après redémarrage du serveur : 65 ✔ / 0 ✘.

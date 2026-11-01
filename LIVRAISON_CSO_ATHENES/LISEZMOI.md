@@ -237,13 +237,18 @@ Garde-fous vérifiés à chaque image :
 | Épreuve, commandes | Résultat | Caméra |
 |---|---|---|
 | Pôle, joystick | Sans faute, 59,9 s / 64 s, 10 appuis = 10 sauts | 7,11 m derrière, 3,4–3,5 m de haut, retard p95 4,9°, accélération max 1,3 rad/s², 58° fixe |
-| Pôle, tactile (iPhone 13 émulé) | voir `mesures/` | |
-| Pôle, clavier | voir `mesures/` | |
+| Pôle, tactile (iPhone 13 émulé, vrais touchers) | Sans faute, 60,1 s / 64 s, 10 = 10 | Retard p95 4,9°, accélération max 3,8 rad/s² |
+| Pôle, clavier (vraies touches) | Sans faute, 62,2 s / 64 s, 10 = 10 | Retard p95 4,8°, accélération max 3,8 rad/s² |
 | Paris Grand Prix (défi 1,50 m), joystick | Sans faute, 50,3 s / 54 s, 9 = 9 | Retard p95 6,5°, accélération max 1,8 rad/s² |
 
 Autres vérifications :
 - **Refus :** demi-tour sur place, nouvelle présentation, puis parcours terminé (refus compté, +4).
 - **Tests unitaires :** 208, dont conduite, saut v2 et règles de tracé.
+- **Non-régression complète :** 28 scénarios de jeu et les tests unitaires, au vert (`mesures/non-regression.txt`).
+  - Concours mis à jour : `cso` 38/38, `cso-touch` 9/9, `contest-full` 6/6, `challenge` 37/37, `paris` 20/20.
+  - Monde ouvert inchangé : `boost` (allures, galop à 35 km/h, BOOST), montée à cheval, véhicules, missions.
+  - Trois relances, toutes expliquées et au vert. Deux venaient d'un délai trop juste pour « Continuer » en rendu
+    logiciel, mesuré identique avant et après la refonte ; une venait du serveur de développement.
 - **Revue critique :** 17 relecteurs et vérificateurs. 13 défauts moyens ou graves ont été confirmés, puis tous
   corrigés (§ 7).
 
@@ -267,14 +272,22 @@ La colonne « Athens 2004 » se remplira avec votre vidéo (§ 6). Les colonnes 
 ## 6. Vidéos et vues comparatives
 
 **Vidéos :**
-- `videos/cso-cso-tactile.mp4` : parcours complet du Pôle au toucher, de l'entrée en piste à la sortie.
-- Moments clés : `videos/*.events.json`.
+- `videos/cso-cso-tactile.mp4` : parcours complet du Pôle joué aux vrais touchers, de l'entrée en piste à la sortie.
+  Joystick et bouton SAUT sont visibles ; sans faute en 60,1 s.
+- Moments clés : `videos/cso-cso-tactile.events.json`.
+- Planche de la vidéo : `captures/planche-video.jpg`.
 
-**Vues comparatives :** `comparaison/` (abord, appel, suspension, réception, courbe), avec l'emplacement de la référence
-à remplir. Pour produire les vues côte à côte avec votre vidéo d'Athens 2004 :
+**Vues comparatives** (abord, appel, suspension, réception, courbe) :
+- `comparaison/avant-apres/` : nouveau gameplay face à l'ancienne version (votre enregistrement du 28/10), à des moments
+  équivalents.
+- `comparaison/athens-2004/` : nouveau gameplay face à la référence, avec l'emplacement « vidéo à fournir ».
+
+Dès réception de votre vidéo d'Athens 2004, une commande produit les vues côte à côte. On lui donne les secondes
+correspondant à chaque moment dans la référence :
 
 ```
-node tests/e2e/athens-compare.mjs LIVRAISON_CSO_ATHENES/videos/cso-cso-tactile.mp4 reference.mp4 abord=12.3,appel=13.1,suspension=13.4,reception=13.9,courbe=16
+OUT=LIVRAISON_CSO_ATHENES/comparaison/athens-2004 node tests/e2e/athens-compare.mjs \
+  LIVRAISON_CSO_ATHENES/videos/cso-cso-tactile.mp4 reference.mp4 abord=12.3,appel=13.1,suspension=13.4,reception=13.9,courbe=16
 ```
 
 ## 7. Paramètres ajustables

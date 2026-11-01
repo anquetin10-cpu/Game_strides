@@ -1,0 +1,25 @@
+{
+ "fps": 15,
+ "events": [
+  {
+   "name": "abord",
+   "frame": 116
+  },
+  {
+   "name": "appel",
+   "frame": 137
+  },
+  {
+   "name": "suspension",
+   "frame": 141
+  },
+  {
+   "name": "reception",
+   "frame": 146
+  },
+  {
+   "name": "courbe",
+   "frame": 434
+  }
+ ]
+}
