@@ -1,6 +1,8 @@
 // Protection des sauvegardes (lot A) : sauvegarde v1 migrée, sauvegarde illisible signalée sans écrasement,
 // restauration de la copie de secours, export / import depuis Réglages. Usage : BASE=… node tests/e2e/save-guard.mjs [dossier captures]
 import { chromium } from 'playwright';
+// (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
+// sur cette machine, avant comme après la refonte des concours ; le délai de 30 s par défaut est trop juste.)
 const base = process.env.BASE || 'http://127.0.0.1:5173';
 const OUT = process.argv[2] || 'tests/e2e/out';
 const KEY = 'strides-grand-tour-v1';
@@ -26,7 +28,7 @@ let d = await page.evaluate(() => { const g = window.__game; return { rep: g.sav
 check('sauvegarde v1 migrée (réputation = xp)', d.rep === 950 && d.v === 2 && d.stored === 2, JSON.stringify(d));
 check('copie de secours v1 conservée', d.backup);
 check('bouton Continuer proposé', d.cont);
-await page.tap('[data-id="continue"]');
+await page.tap('[data-id="continue"]', { timeout: 120000 });
 await page.waitForFunction(() => window.__game.state === 'play', null, { timeout: 120000 });
 d = await page.evaluate(() => ({ money: window.__game.save.data.money, horses: window.__game.save.data.horses, up: window.__game.save.data.upgrades, label: document.querySelector('.level')?.textContent || document.querySelector('.top-bar')?.textContent }));
 check('partie existante jouable, possessions conservées', d.money === 1200 && d.up.includes('fers'), JSON.stringify(d));
@@ -48,7 +50,7 @@ await page.waitForFunction(() => window.__game && window.__game.state === 'title
 d = await page.evaluate(() => ({ rep: window.__game.save.data.reputation, cont: !!document.querySelector('[data-id="continue"]') }));
 check('copie restaurée et jouable', d.rep === 950 && d.cont, JSON.stringify(d));
 // 4) Export / import depuis Réglages.
-await page.tap('[data-id="continue"]');
+await page.tap('[data-id="continue"]', { timeout: 120000 });
 await page.waitForFunction(() => window.__game.state === 'play', null, { timeout: 120000 });
 await page.evaluate(() => { window.__game.phone.open('settings'); });
 await page.waitForTimeout(600);

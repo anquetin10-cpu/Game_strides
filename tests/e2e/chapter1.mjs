@@ -4,6 +4,8 @@
 // R08 double appui / rechargement sans double récompense · R12 amélioration visible après rechargement · reprise de
 // M3 au point enregistré · R16 mesure locale sans doublon. Usage : node tests/e2e/chapter1.mjs [base]
 import { chromium } from 'playwright';
+// (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
+// sur cette machine, avant comme après la refonte des concours ; le délai de 30 s par défaut est trop juste.)
 import { readFileSync } from 'node:fs';
 const base = process.argv[2] || 'http://127.0.0.1:5173/';
 const OUT = 'tests/e2e/out';
@@ -30,7 +32,7 @@ const reload = async () => {
   // Rechargement sans ?autostart : écran titre, puis « Continuer » (vraie reprise d'une partie sauvegardée).
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__game && window.__game.state === 'title', null, { timeout: 300000 });
-  await page.tap('[data-id="continue"]');
+  await page.tap('[data-id="continue"]', { timeout: 120000 });
   await page.waitForFunction(() => window.__game.state === 'play', null, { timeout: 120000 });
   await page.addScriptTag({ content: AUTO });
   await E(() => window.__auto.stopLoop());

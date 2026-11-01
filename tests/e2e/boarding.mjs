@@ -9,6 +9,8 @@
 // (séquence suspendue) ; sauvegarde pendant une séquence puis reprise (état stable).
 // Usage : BASE=http://127.0.0.1:5173 node tests/e2e/boarding.mjs [defender,van,truck,car,tractor]
 import { chromium } from 'playwright';
+// (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
+// sur cette machine, avant comme après la refonte des concours ; le délai de 30 s par défaut est trop juste.)
 import { readFileSync, mkdirSync } from 'node:fs';
 
 const base = process.env.BASE || 'http://127.0.0.1:5173';
@@ -267,7 +269,7 @@ const sv = await E(() => {
 });
 await page.goto(`${base}/?defender=mobile`, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'title', null, { timeout: 240000 });
-await page.tap('[data-id="continue"]');
+await page.tap('[data-id="continue"]', { timeout: 120000 });
 await ready();
 const rl = await E(() => {
   const g = window.__game, p = g.player, v = g.defender, hu = p.human;

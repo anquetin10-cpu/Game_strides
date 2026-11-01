@@ -10,6 +10,8 @@
 // Choix et paiements de M1 à M3 au rechargement : tests/e2e/chapter1.mjs (R04, R05, M3).
 // Usage : BASE=http://127.0.0.1:5173 node tests/e2e/mission-resume.mjs
 import { chromium } from 'playwright';
+// (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
+// sur cette machine, avant comme après la refonte des concours ; le délai de 30 s par défaut est trop juste.)
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const base = process.env.BASE || 'http://127.0.0.1:5173';
@@ -61,7 +63,7 @@ const reload = async ({ save = true } = {}) => {
   if (save) await E(() => window.__game.saveNow());
   await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 180000 });
   await page.waitForFunction(() => window.__game && window.__game.state === 'title', null, { timeout: 300000 });
-  await page.tap('[data-id="continue"]');
+  await page.tap('[data-id="continue"]', { timeout: 120000 });
   await page.waitForFunction(() => window.__game.state === 'play', null, { timeout: 120000 });
   await page.addScriptTag({ content: AUTO });
   await E(() => window.__auto.stopLoop());

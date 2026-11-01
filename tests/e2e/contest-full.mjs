@@ -9,6 +9,8 @@
 // épreuve d'entraînement) est couvert par tests/e2e/cso-touch.mjs.
 // Captures et journal dans tests/e2e/out/contest-full/. Usage : BASE=http://127.0.0.1:5173 node tests/e2e/contest-full.mjs
 import { chromium } from 'playwright';
+// (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
+// sur cette machine, avant comme après la refonte des concours ; le délai de 30 s par défaut est trop juste.)
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const base = process.env.BASE || 'http://127.0.0.1:5173';
@@ -68,7 +70,7 @@ await page.waitForFunction(() => window.__game?.state === 'title', null, { timeo
 await E(([k, v]) => localStorage.setItem(k, v), [STATE.cle, STATE.sauvegarde]);
 await page.goto(base, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'title', null, { timeout: 240000 });
-await page.tap('[data-id="continue"]');
+await page.tap('[data-id="continue"]', { timeout: 120000 });
 await page.waitForFunction(() => window.__game.state === 'play', null, { timeout: 120000 });
 await page.addScriptTag({ content: AUTO });
 // L'état de la sauvegarde (camion, chevaux à bord) est repris à la première image de jeu : on l'attend avant de relever.

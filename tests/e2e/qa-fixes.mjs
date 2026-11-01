@@ -6,6 +6,8 @@
 // BUG-10 ferrure refusée sans fonds · BUG-11 touche pressée sous le téléphone ignorée.
 // Émulation iPhone 13 paysage (tactile), rendu logiciel. Usage : BASE=http://127.0.0.1:5173 node tests/e2e/qa-fixes.mjs
 import { chromium } from 'playwright';
+// (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
+// sur cette machine, avant comme après la refonte des concours ; le délai de 30 s par défaut est trop juste.)
 import { readFileSync } from 'node:fs';
 
 const base = process.env.BASE || 'http://127.0.0.1:5173';
@@ -148,7 +150,7 @@ phase = 'reload';
 await page.goto(`${base}/`, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'title', null, { timeout: 240000 });
 phase = 'after-reload';
-await page.tap('[data-id="continue"]');
+await page.tap('[data-id="continue"]', { timeout: 120000 });
 await ready();
 r = await E(() => {
   const g = window.__game, d = g.save.data;

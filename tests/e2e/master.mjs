@@ -6,6 +6,8 @@
 // 5. collisions (piéton, cheval mené) ; sauvegarde et reprise (position, pont, cheval à bord) ; camion Strides intact.
 // Captures dans tests/e2e/out/master/. Usage : BASE=http://127.0.0.1:5173 node tests/e2e/master.mjs
 import { chromium } from 'playwright';
+// (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
+// sur cette machine, avant comme après la refonte des concours ; le délai de 30 s par défaut est trop juste.)
 import { readFileSync, mkdirSync } from 'node:fs';
 
 const base = process.env.BASE || 'http://127.0.0.1:5173';
@@ -328,7 +330,7 @@ check('collisions : pont baissé contourné par le piéton, passage libre une fo
 const saved = r;
 await page.goto(`${base}/`, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'title', null, { timeout: 240000 });
-await page.tap('[data-id="continue"]');
+await page.tap('[data-id="continue"]', { timeout: 120000 });
 await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
 r = await E(() => {
