@@ -27,11 +27,14 @@ export class Interactions {
     }
     let best = null;
     let bestScore = -Infinity;
+    // Dans un bâtiment fermé (maison) : rien de ce qui est dehors n'est proposé à travers les murs (cheval, voiture…).
+    const inside = this.game.indoor?.contains;
     for (const it of this.list.values()) {
       if (!it.modes.includes(mode)) continue;
       const ip = it.getPos ? it.getPos() : it;
       const d = Math.hypot(ip.x - pos.x, ip.z - pos.z);
       if (d > it.r) continue;
+      if (inside && !inside(ip.x, ip.z)) continue;
       if (it.when && !it.when()) continue;
       const score = it.priority * 100 - d;
       if (score > bestScore) {

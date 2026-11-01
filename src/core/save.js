@@ -28,6 +28,8 @@ export function defaultSave() {
     equipped: {},
     purchases: [],
     indoorShop: null,
+    // Maison de l'Écurie du Val : vrai si la partie a été enregistrée à l'intérieur (reprise dans la maison).
+    indoorHome: false,
     horseshoes: [],
     bestTimes: {},
     stats: { jobs: 0, earned: 0, distance: 0, jumps: 0, faults: 0 },

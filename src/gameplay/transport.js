@@ -253,7 +253,8 @@ export class Transport {
     out.length = 0;
     const p = this.player;
     const t = this.truck;
-    if (p.mode !== 'foot' || this.seq || p.locked || p.human.carrying) return out;
+    // (dans un commerce ou la maison, le cheval est dehors : ni longe ni camion à travers les murs)
+    if (p.mode !== 'foot' || this.seq || p.locked || p.human.carrying || this.game.indoor) return out;
     const hp = p.human.pos;
     const atRear = t && t.stopped && !t.driver && this._distRear(hp) < 2.9;
     // Rampe en mouvement : l'action reste celle du camion (sinon « Monter » prendrait la main pendant l'animation).
