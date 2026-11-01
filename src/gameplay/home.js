@@ -14,7 +14,11 @@ import { h } from '../ui/dom.js';
 import { t } from '../core/i18n.js';
 
 export const LOAD_R = 30;
-export const UNLOAD_R = 60;
+// Libéré loin de l'Écurie du Val seulement : pas de reconstruction à chaque retour dans la cour, au club-house ou à la
+// carrière (l'intérieur pèse environ 27 000 triangles, non dessinés tant que le joueur est dehors).
+export const UNLOAD_R = 140;
+// Épaisseur des murs : un point plus loin que cela à l'intérieur de l'emprise est dans les pièces.
+const WALL_IN = 0.45;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class HomeManager {
@@ -29,7 +33,8 @@ export class HomeManager {
     g.interact.add('home:door', {
       label: t('Entrer'), icon: 'home', r: 2.4, priority: 2, modes: ['foot'],
       getPos: () => this.anchor('door'),
-      when: () => !this._in && !this.busy && !g.player.locked && !g.shops?.current,
+      // (seulement du dehors : jamais à travers la façade, depuis le salon)
+      when: () => !this._in && !this.busy && !g.player.locked && !g.shops?.current && !this.contains(g.player.human.pos.x, g.player.human.pos.z),
       action: () => this.enter(),
     });
     g.interact.add('home:exit', {
@@ -116,6 +121,11 @@ export class HomeManager {
       const p = g.player.human.pos;
       if (g.player.mode !== 'foot' || !this.contains(p.x, p.z, 0.5) || (g.indoor && !g.indoor.home)) this._leaveState();
       else if (!g.indoor) this._setIndoor();
+    } else if (!this._in && !this.busy && g.player.mode === 'foot' && !g.shops?.current && !g.indoor) {
+      // Inverse : joueur à pied dans les pièces sans être « dedans » (retour d'un défi rejouable lancé de la maison,
+      // ancienne sauvegarde prise contre un pignon de l'ancienne maison, plus petite…) : il est dans la maison.
+      const p = g.player.human.pos;
+      if (this.contains(p.x, p.z, -WALL_IN)) this._adopt();
     }
   }
 
@@ -126,6 +136,54 @@ export class HomeManager {
       document.body.appendChild(this._fadeEl);
     }
     this._fadeEl.classList.toggle('on', on);
+  }
+
+  // Le joueur est (déjà) dans les pièces : état « dedans » rétabli sur place (intérieur chargé et visible).
+  _adopt() {
+    const g = this.game;
+    try {
+      this.world.loadHomeInterior().group.visible = true;
+    } catch (e) {
+      console.warn('[maison] intérieur non chargé', e);
+      return;
+    }
+    this._in = true;
+    this._setIndoor();
+    g.save.data.indoorHome = true;
+    g.cam.snap(g.player.human.pos, g.player.human.heading);
+  }
+
+  // Cheval ou véhicule laissé dans l'emprise de la maison (ancienne sauvegarde : la maison était plus petite) : remis
+  // à sa place habituelle, devant l'écurie.
+  evict() {
+    const g = this.game;
+    const hs = g.mainHorse;
+    if (hs && !hs.hiddenInTruck && !hs.inBox && this.contains(hs.pos.x, hs.pos.z, 1.0)) hs.setPosition(HOME.horse.x, HOME.horse.z, HOME.horse.rot);
+    const spots = [[g.truck, HOME.truck], [g.van, HOME.master], [g.defender, HOME.defender]];
+    for (const [v, s] of spots) if (v?.pos && this.contains(v.pos.x, v.pos.z, 2.6)) v.setPosition?.(s.x, s.z, s.rot);
+    for (const v of g.drivables || []) {
+      if (!v?.pos || spots.some(([w]) => w === v) || !this.contains(v.pos.x, v.pos.z, 2.6)) continue;
+      const hm = v.home;
+      if (hm && Number.isFinite(hm.x)) v.setPosition?.(hm.x, hm.z, hm.heading ?? hm.rot ?? 0);
+    }
+  }
+
+  // Point libre devant la façade, hors de l'emprise (un véhicule garé devant la porte ne repousse pas le joueur dedans).
+  _outsideSpot() {
+    const g = this.game;
+    const d = this.anchor('door');
+    const probe = { x: 0, y: 0, z: 0 };
+    for (const dz of [0, 0.8, 1.6, 2.4, 3.2]) {
+      for (const dx of [0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1, 2.8, -2.8, 3.5, -3.5]) {
+        probe.x = d.x + dx;
+        probe.z = d.z + dz;
+        probe.y = 0;
+        const x0 = probe.x, z0 = probe.z;
+        g.colliders.resolve(probe, 0.5, -Infinity);
+        if (Math.hypot(probe.x - x0, probe.z - z0) < 0.05 && !this.contains(probe.x, probe.z, 0.4)) return { x: x0, z: z0 };
+      }
+    }
+    return { x: HOME.spawn.x, z: HOME.spawn.z };
   }
 
   _setIndoor() {
@@ -139,6 +197,8 @@ export class HomeManager {
     const p = g.player;
     if (this.busy || this._in || p.mode === 'drive' || p.locked || g.shops?.current) return false;
     this.busy = true;
+    // Commandes verrouillées pendant le fondu : un double appui ne lance pas une autre action (« Monter »…).
+    p.locked = true;
     if (!instant) {
       this._fade(true);
       await wait(240);
@@ -174,6 +234,7 @@ export class HomeManager {
       await wait(60);
       this._fade(false);
     }
+    p.locked = false;
     this.busy = false;
     return ok;
   }
@@ -182,6 +243,8 @@ export class HomeManager {
     const g = this.game;
     if (!this._in || this.busy) return false;
     this.busy = true;
+    const wasLocked = g.player.locked;
+    g.player.locked = true;
     if (!instant) {
       this._fade(true);
       await wait(240);
@@ -190,6 +253,11 @@ export class HomeManager {
     const out = this.anchor('door');
     g.player.human.setPosition(out.x, out.z, out.heading);
     g.colliders.resolve(g.player.human.pos, 0.5, -Infinity);
+    // Repoussé dans la maison (véhicule garé contre la porte…) : premier point libre devant la façade.
+    if (this.contains(g.player.human.pos.x, g.player.human.pos.z, 0.4)) {
+      const s = this._outsideSpot();
+      g.player.human.setPosition(s.x, s.z, out.heading);
+    }
     this._leaveState();
     g.cam.snap(g.player.human.pos, out.heading);
     g.audio.shopDoor?.();
@@ -199,6 +267,7 @@ export class HomeManager {
       await wait(60);
       this._fade(false);
     }
+    g.player.locked = wasLocked;
     this.busy = false;
     return true;
   }
@@ -218,7 +287,7 @@ export class HomeManager {
   // Reprise d'une sauvegarde faite dans la maison : le joueur est devant la porte (position enregistrée) et rentre.
   async resume() {
     const g = this.game;
-    if (!g.save.data.indoorHome || g.shops?.current) return;
+    if (this._in || !g.save.data.indoorHome || g.shops?.current) return;
     const ok = await this.enter({ instant: true });
     if (!ok) g.save.data.indoorHome = false;
   }

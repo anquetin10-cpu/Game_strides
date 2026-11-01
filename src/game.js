@@ -962,6 +962,8 @@ export class Game {
       this.player.human.setPosition(pos.x, pos.z, pos.heading);
       this.colliders.resolve(this.player.human.pos, 0.5, -Infinity);
       if (pos.horse) this.mainHorse.setPosition(pos.horse.x, pos.horse.z, pos.horse.heading);
+      // Ancienne sauvegarde : cheval ou véhicule dans l'emprise de la maison (agrandie) → remis à sa place.
+      this.home?.evict();
       // Cheval laissé au box de l'Écurie du Val.
       if (this.save.data.horseInBox && this.save.data.horseInBox === this.mainHorse.id) this.stabling?.putIn(this.mainHorse, true);
       // Partie sauvegardée à Paris (Grand Prix de Paris Indoor) : on y reprend.
