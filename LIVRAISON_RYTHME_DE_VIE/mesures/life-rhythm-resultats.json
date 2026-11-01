@@ -43,7 +43,7 @@
   {
    "label": "demandes ordinaires : en journée, quelques-unes le soir, aucune la nuit",
    "ok": true,
-   "extra": "{\"jobsDay\":[\"Coursier:Livraison : Contrat de vente\",\"Coursier:Livraison : Plaques de vainqueur\",\"Coursier:Livraison : Plaques de vainqueur\"],\"jobsEve\":[\"Groom:Soins du soir\",\"Groom:Soins du soir\"],\"jobsNight\":[]}"
+   "extra": "{\"jobsDay\":[\"Coursier:Livraison : Vermifuges\",\"Coursier:Livraison : Fers de rechange\",\"Coursier:Livraison : Plaques de vainqueur\"],\"jobsEve\":[\"Groom:Soins du soir\"],\"jobsNight\":[]}"
   },
   {
    "label": "téléphone : mission exigeante épuisé → « TROP FATIGANT », raison claire, pas de bouton Accepter, itinéraire vers la maison",

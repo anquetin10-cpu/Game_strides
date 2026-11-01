@@ -91,7 +91,7 @@ await ev(() => {
   const g = window.__game, A = window.__auto, d = g.save.data;
   d.gameTime = Math.floor(d.gameTime / 86400) * 86400 + 15.5 * 3600;
   g.energy.sync();
-  g.energy.set(46);
+  g.energy.set(43.5);
   d.life.notified = 'medium,';
   g.energy._tier = 'medium';
   A.mount();
@@ -166,11 +166,21 @@ if (hasHome) {
   await ev(() => new Promise((r) => { const t0 = performance.now(); const w = () => (window.__game.home.inside || performance.now() - t0 > 4000 ? r() : setTimeout(w, 50)); w(); }));
   await hold(6);
   await caption('La maison : salon, cuisine, salle de bain… et la chambre');
-  // Vers le lit.
-  for (let i = 0; i < 160; i++) {
-    const done = await ev(() => { const g = window.__game, A = window.__auto, p = g.player.human.pos, t = g.home.anchor('bed'); const dd = Math.hypot(t.x - p.x, t.z - p.z); if (dd > 0.35) { A.steer((t.x - p.x) / dd, (t.z - p.z) / dd, 0.5); return false; } A.steer(0, 0, 0); return true; });
-    await frame();
-    if (done) break;
+  // Vers le lit, par le passage du salon à la chambre (repère local de la maison : origine au centre).
+  const route = [[0.5, 0.3], [0.5, -1.05], [-1.5, -1.05], [-2.6, 1.2], [-4.45, 0.35]];
+  for (const [lx, lz] of route) {
+    for (let i = 0; i < 90; i++) {
+      const done = await ev(([lx, lz]) => {
+        const g = window.__game, A = window.__auto, p = g.player.human.pos, b = g.home.anchor('bed');
+        const t = { x: b.x + 4.45 + lx, z: b.z - 0.35 + lz };
+        const dd = Math.hypot(t.x - p.x, t.z - p.z);
+        if (dd > 0.3) { A.steer((t.x - p.x) / dd, (t.z - p.z) / dd, 0.5); return false; }
+        A.steer(0, 0, 0);
+        return true;
+      }, [lx, lz]);
+      await frame();
+      if (done) break;
+    }
   }
   await ev(() => { const g = window.__game, b = g.home.anchor('bed'); if (b.heading !== undefined) g.player.human.heading = b.heading; window.__auto.steer(0, 0, 0); });
   await hold(8);
@@ -204,8 +214,9 @@ await ev(() => window.__auto.releaseInput());
 await hold(10);
 await mark('le matin');
 const mp4 = `${OUT}/rythme-de-vie.mp4`;
-execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${DIR}/%04d.jpg`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '23', '-movflags', '+faststart', mp4]);
 writeFileSync(`${OUT}/rythme-de-vie.events.json`, JSON.stringify({ frames: n, fps: 15, seconds: +(n / 15).toFixed(1), house: hasHome, events, errors }, null, 1));
+// (dimensions paires exigées par l'encodeur H.264)
+execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${DIR}/%04d.jpg`, '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '23', '-movflags', '+faststart', mp4]);
 console.log(`${n} images (${(n / 15).toFixed(1)} s) → ${mp4}`);
 console.log('événements', JSON.stringify(events));
 console.log('erreurs', errors.slice(0, 3));

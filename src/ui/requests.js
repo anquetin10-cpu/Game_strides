@@ -95,6 +95,9 @@ export function renderProHome(phone) {
     h('div.st-h1', { text: t('Votre activité\ncette semaine.') }),
     h('div.st-small', { text: `${DAYS[now.getDay()][0].toUpperCase()}${DAYS[now.getDay()].slice(1)} ${longDate(now)} · Deauville City` })
   );
+  // Rythme de la journée : tard le soir ou épuisé, on le dit clairement, en haut de l'écran.
+  const note = g.energy?.statusNote();
+  if (note) body.appendChild(h('div.st-card.unavail-card.mtS', { 'data-id': 'life-note' }, h('span.ic', { html: ion(note.kind === 'fatigue' ? 'alert-circle-outline' : 'time-outline') }), h('div.st-body', { text: note.text })));
   const m = g.missions.active;
   if (m) {
     const gps = h('button.btn.small', { text: t('Itinéraire') });
@@ -116,9 +119,6 @@ export function renderProHome(phone) {
   }
   const offers = g.missions.offers.filter(isStridesOffer);
   body.appendChild(h('div.st-eyebrow.sec', { text: T`Demandes entrantes · ${offers.filter((o) => !o.locked && availOf(g, o).ok).length}` }));
-  // Rythme de la journée : tard le soir ou épuisé, on le dit clairement.
-  const note = g.energy?.statusNote();
-  if (note) body.appendChild(h('div.st-card.unavail-card.mtS', { 'data-id': 'life-note' }, h('span.ic', { html: ion(note.kind === 'fatigue' ? 'alert-circle-outline' : 'time-outline') }), h('div.st-body', { text: note.text })));
   if (offers.length) body.appendChild(h('div.req-list', {}, ...offers.map((o) => requestCard(phone, o))));
   else body.appendChild(h('div.st-card.empty-st', {}, h('div.st-body', { text: t('Aucune demande en attente.') }), h('div.req-cap', { text: t('Les demandes de vos clients arriveront ici.') })));
   body.append(
