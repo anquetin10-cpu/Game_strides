@@ -57,10 +57,14 @@ export class HUD {
     this.csoTa = h('span.ta.tab-num');
     this.csoPen = h('span.pen.tab-num');
     this.csoNext = h('span.next');
-    this.csoEl = h('div.cso-board.hidden', {}, h('span.clock-ico', { text: '⏱' }), this.csoT, this.csoTa, this.csoPen, this.csoNext);
+    // Cadence (concours) : quelques crans discrets, affichés quand on la règle, puis estompés.
+    this.csoCad = h('span.cad', {}, ...Array.from({ length: 6 }, () => h('i')));
+    this.csoEl = h('div.cso-board.hidden', {}, h('span.clock-ico', { text: '⏱' }), this.csoT, this.csoTa, this.csoPen, this.csoNext, this.csoCad);
+    // Qualité de l'appel après chaque saut (« Appel parfait », « Un peu loin »…), sous le tableau.
+    this.jumpFbEl = h('div.jump-fb.off');
 
     // Bandeau du haut : minimap | objectif, astuce, toasts | portefeuille. Le centre de l'écran reste dégagé.
-    this.topMid = h('div.top-mid', {}, this.csoEl, this.objEl, this.hintEl, this.toastsEl);
+    this.topMid = h('div.top-mid', {}, this.csoEl, this.jumpFbEl, this.objEl, this.hintEl, this.toastsEl);
     this.el.appendChild(h('div.top-bar', {}, mmWrap, this.topMid, h('div.top-right', {}, wallet, this.phoneBtn, this.pauseBtn)));
 
     // Télémétrie.
@@ -142,7 +146,7 @@ export class HUD {
 
   // L'astuce se loge dans la carte de l'objectif (une ligne) quand il y en a une : un seul bloc en haut de l'écran.
   _placeHint() {
-    const inline = !this.objEl.classList.contains('off');
+    const inline = !this.objEl.classList.contains('off') && !this.el.classList.contains('cso-on');
     if (this.hintEl.classList.contains('inline') === inline && this.hintEl.parentNode) return;
     this.hintEl.classList.toggle('inline', inline);
     if (inline) this.objMain.appendChild(this.hintEl);
@@ -317,7 +321,7 @@ export class HUD {
     }
     // Indicateur d'appel de saut (mêmes calculs que le saut) : trop loin / bonne zone / trop près.
     const jt = g.course?.jumpTiming?.() || 'none';
-    if (jt !== this._jt) {
+    if (jt !== this._jt && this._jt !== 'early') {
       this._jt = jt;
       for (const k of ['far', 'good', 'near']) this.btnJump.classList.toggle(k, jt === k);
       this.jumpSign.textContent = jt === 'far' ? '»' : jt === 'good' ? '✓' : jt === 'near' ? '!' : '';
@@ -326,9 +330,28 @@ export class HUD {
     // Tableau du parcours.
     const ci = g.course?.hud?.();
     this.csoEl.classList.toggle('hidden', !ci);
-    this.el.classList.toggle('cso-on', !!ci);
-    // Commandes de concours : HUD allégé (BOOST remplacé par la cadence au joystick).
-    this.el.classList.toggle('cso-ctl', g.course?.controls === 'cso');
+    if (this.el.classList.contains('cso-on') !== !!ci) {
+      this.el.classList.toggle('cso-on', !!ci);
+      this._placeHint();
+    }
+    // Commandes de concours : HUD sobre (chrono, fautes, obstacle suivant, gros bouton SAUT).
+    const csoCtl = g.course?.controls === 'cso';
+    this.el.classList.toggle('cso-ctl', csoCtl);
+    // Épreuve (de l'entrée en piste à la sortie) : HUD sobre ; l'entraînement au paddock garde l'allure et « Terminer ».
+    this.el.classList.toggle('cso-sober', csoCtl && g.course?.kind === 'cso');
+    // Cadence : affichée deux secondes quand elle change (joystick avant/arrière), sinon discrète.
+    const cad = csoCtl ? p.csoCadence : undefined;
+    if (cad !== undefined) {
+      if (this._cad === undefined || Math.abs(cad - this._cad) > 0.01) this._cadT = 2;
+      this._cad = cad;
+      this._cadT = Math.max(0, (this._cadT || 0) - dt);
+      const n = Math.round((cad / 8) * 6);
+      if (n !== this._cadN) {
+        this._cadN = n;
+        [...this.csoCad.children].forEach((c, i) => c.classList.toggle('on', i < n));
+      }
+      this.csoCad.classList.toggle('show', this._cadT > 0);
+    } else this._cad = undefined;
     if (ci) {
       const ct = ci.started ? dec(ci.t, 2) : T`Départ ${Math.max(0, Math.ceil(ci.bell))} s`;
       if (ct !== this._csoT) this.csoT.textContent = this._csoT = ct;
@@ -338,7 +361,29 @@ export class HUD {
       this.csoEl.classList.toggle('over', ci.over);
       this.csoEl.classList.toggle('faults', ci.pen > 0);
     }
-    this.minimap.draw(dt);
+    if (!csoCtl) this.minimap.draw(dt);
+  }
+
+  // Retour après un saut (qualité de l'appel) : `kind` 'good' | 'ok' | 'bad'.
+  jumpFeedback(text, kind = 'ok') {
+    if (!text) return;
+    const el = this.jumpFbEl;
+    el.textContent = text;
+    el.className = `jump-fb ${kind}`;
+    clearTimeout(this._fbT);
+    this._fbT = setTimeout(() => el.classList.add('off'), 1500);
+  }
+
+  // Appui sur SAUT sans effet (obstacle encore loin) : le bouton l'indique brièvement.
+  jumpEarly() {
+    this.btnJump.classList.add('early');
+    this.jumpLabel.textContent = t('Trop tôt');
+    this._jt = 'early';
+    clearTimeout(this._earlyT);
+    this._earlyT = setTimeout(() => {
+      this.btnJump.classList.remove('early');
+      this._jt = null;
+    }, 600);
   }
 
   toast(text, kind = '') {

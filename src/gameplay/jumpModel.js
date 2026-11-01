@@ -8,17 +8,32 @@ import { clamp, smoothstep } from '../core/math.js';
 import { t } from '../core/i18n.js';
 
 export const JUMP = {
-  T: 0.8, // durée naturelle du vol au galop (s) : longueur naturelle = vitesse × T
+  T: 0.8, // durée naturelle du vol au galop (s), sauts libres et cross : longueur naturelle = vitesse × T
   lift: 0.2, // pieds repliés au-dessus du point de référence (m)
-  adapt: 0.12, // le cheval allonge son saut de 12 % au plus pour se recaler…
-  shorten: 0.24, // …et le raccourcit davantage (il se ramène, enlève plus droit) quand il arrive trop près
+  adapt: 0.06, // obstacles de CSO : le cheval allonge son saut de 6 % au plus pour se recaler…
+  shorten: 0.12, // …et le raccourcit de 12 % au plus quand il arrive un peu près (il enlève plus droit)
+  adaptXc: 0.12, // cross : recalage plus large (obstacles fixes, galop de cross)
+  shortenXc: 0.24,
   minFront: 0.55, // en deçà (m, de la barre avant), le cheval ne peut plus enlever : refus
-  good: 0.15, // marge (m) au-dessus de laquelle l'aide affiche la bonne zone
+  good: 0.15, // marge (m) au-dessus de laquelle l'appel est « bon »
   rub: 0.06, // barre effleurée jusqu'à 6 cm sous les pieds : elle tinte dans ses taquets mais reste en place
   late: 0.3, // trop près sans appel : le cheval refuse quand un saut ferait toucher la barre de plus de 30 cm
   maxAngle: 0.5, // cos minimal entre le cap et l'axe de l'obstacle (60°) : au-delà, pas d'appel possible
   reach: 13, // distance (m) à partir de laquelle l'aide s'intéresse à l'obstacle suivant
+  // CSO : le cheval saute ce que demande l'obstacle (pas plus haut que nécessaire) : sommet des pieds à `clear` au-dessus
+  // de la barre la plus haute, plus `spreadK` par mètre de largeur (oxer), dans la limite de sa puissance. La durée du
+  // vol suit la hauteur du saut (T0 + Tk × H, bornée) : 0,68 s environ sur 1,10–1,20 m, appel et réception à ~2,1 m.
+  clear: 0.32,
+  spreadK: 0.18,
+  T0: 0.56,
+  Tk: 0.1,
+  Tmin: 0.6,
+  Tmax: 0.74,
 };
+
+// Obstacles de saut d'obstacles (vertical, oxer, mur) : modèle v2 (hauteur adaptée, recalage limité). Les obstacles de
+// cross (troncs, haies, gué) gardent le modèle d'origine.
+const isCso = (kind) => !kind || kind === 'v' || kind === 'o' || kind === 'w';
 
 // Puissance utile selon la vitesse : pleine au galop de concours, réduite au trot, saut « à plat » au grand galop.
 export const speedFactor = (v) => (0.72 + 0.28 * smoothstep(3.5, 6.5, v)) * (1 - 0.16 * smoothstep(9, 12, v));
@@ -45,43 +60,73 @@ export function railsAhead(fence, px, pz, fx, fz) {
       return { s: r.s, h: r.h, x, u: uP + fu * x };
     })
     .sort((a, b) => a.x - b.x);
-  return { cosA, sign, rails };
+  return { cosA, sign, rails, kind: fence.kind };
+}
+
+// Hauteur (pieds, sans le repli) et longueur naturelle d'un saut pour cette vitesse, cet abord et cet obstacle.
+function shape(horse, v, cosA, rails, cso) {
+  const Hcap = horse.power * speedFactor(v) * angleFactor(cosA);
+  if (!cso || !rails.length) return { H: Hcap, L0: Math.max(1.5, v * JUMP.T), Hcap };
+  const top = Math.max(...rails.map((r) => r.h));
+  const spread = rails[rails.length - 1].x - rails[0].x;
+  const want = top + JUMP.clear + JUMP.spreadK * spread - JUMP.lift - (horse.clearance || 0);
+  const H = Math.min(Hcap, want);
+  const T = clamp(JUMP.T0 + JUMP.Tk * H, JUMP.Tmin, JUMP.Tmax);
+  return { H, L0: Math.max(1.5, v * T), Hcap };
 }
 
 // Plan du saut si le cavalier demande l'appel maintenant. `horse` : { v (m/s), power (hauteur de base du cheval),
 // clearance (bonus d'équipement) } ; `geo` : résultat de railsAhead. Renvoie la longueur L et la hauteur H (pieds) du
 // saut, la marge à chaque barre (m, négative = barre touchée), la marge la plus faible et la zone d'appel.
+// Le saut part toujours du point où le cavalier a appuyé : le cheval ne corrige que sa longueur, dans d'étroites limites.
 export function planJump(horse, geo) {
   const { v } = horse;
-  const L0 = Math.max(1.5, v * JUMP.T);
   const cosA = geo ? geo.cosA : 1;
-  const Hfull = horse.power * speedFactor(v) * angleFactor(cosA);
-  if (!geo || !geo.rails.length || cosA < JUMP.maxAngle) return { L: L0, H: Hfull, margins: [], margin: Infinity, zone: 'none', L0 };
-  const first = geo.rails[0].x, last = geo.rails[geo.rails.length - 1].x;
+  const cso = isCso(geo?.kind);
+  const rails = geo?.rails || [];
+  const base = shape(horse, v, cosA, rails, cso);
+  const L0 = base.L0;
+  if (!geo || !rails.length || cosA < JUMP.maxAngle) return { L: L0, H: base.H, margins: [], margin: Infinity, zone: 'none', L0 };
+  const first = rails[0].x, last = rails[rails.length - 1].x;
   // Sommet visé au-dessus du milieu de l'obstacle (entre les deux barres d'un oxer).
   const ideal = first + last;
-  const L = clamp(ideal, L0 * (1 - JUMP.shorten), L0 * (1 + JUMP.adapt));
+  const L = clamp(ideal, L0 * (1 - (cso ? JUMP.shorten : JUMP.shortenXc)), L0 * (1 + (cso ? JUMP.adapt : JUMP.adaptXc)));
   const dev = L / L0 - 1;
   // Saut recadré : un peu moins de hauteur (le cheval se grandit ou se raccourcit).
-  const H = Hfull * (1 - 1.5 * dev * dev);
+  const H = base.H * (1 - 1.5 * dev * dev);
   const lift = JUMP.lift + (horse.clearance || 0);
-  const margins = geo.rails.map((r) => arcY(H, L, r.x) + lift - r.h);
+  const margins = rails.map((r) => arcY(H, L, r.x) + lift - r.h);
   const margin = Math.min(...margins);
   let zone;
   if (first < JUMP.minFront) zone = 'refuse';
   else if (margin >= JUMP.good) zone = 'good';
   else zone = ideal > L ? 'far' : 'near';
-  // Cause d'une faute prévisible : distance, ou abord (vitesse, angle) quand la distance était bonne.
-  // La distance est-elle en cause ? Même appel, abord droit à bonne cadence : s'il passe, c'est l'abord.
+  // Cause d'une faute prévisible : la distance, l'abord en biais ou le manque d'impulsion (même appel, abord droit ou
+  // galop de concours : s'il passe, c'est l'abord ou l'allure qui est en cause).
   let cause = null;
   if (zone === 'refuse') cause = 'tooClose';
   else if (margin < -JUMP.rub) {
-    const Hok = horse.power * speedFactor(clamp(v, 6.5, 9)) * (1 - 1.5 * dev * dev);
-    const straight = Math.min(...geo.rails.map((r) => arcY(Hok, L, r.x) + lift - r.h));
-    if (straight >= -JUMP.rub) cause = cosA < 0.92 ? 'angle' : v < 6.5 ? 'slow' : 'fast';
+    const passesWith = (vv, cc) => {
+      const b = shape(horse, vv, cc, rails, cso);
+      const LL = clamp(ideal, b.L0 * (1 - (cso ? JUMP.shorten : JUMP.shortenXc)), b.L0 * (1 + (cso ? JUMP.adapt : JUMP.adaptXc)));
+      const dd = LL / b.L0 - 1;
+      const HH = b.H * (1 - 1.5 * dd * dd);
+      return Math.min(...rails.map((r) => arcY(HH, LL, r.x) + lift - r.h)) >= -JUMP.rub;
+    };
+    if (cosA < 0.94 && passesWith(v, 1)) cause = 'angle';
+    else if (speedFactor(v) < 0.97 && passesWith(Math.max(v, 6.5), cosA)) cause = 'slow';
     else cause = ideal > L ? 'far' : 'near';
   }
-  return { L, H, L0, margins, margin, zone, cause, ideal, cosA };
+  return { L, H, L0, margins, margin, zone, cause, ideal, cosA, dev };
+}
+
+// Qualité d'un appel, pour le retour au cavalier après le saut : 'perfect' | 'good' | 'bitFar' | 'bitNear' | 'far' |
+// 'near' | 'angle' | 'slow' | 'tooClose'.
+export function takeoffQuality(plan) {
+  if (!plan || plan.zone === 'none') return null;
+  if (plan.cause) return plan.cause === 'short' ? 'far' : plan.cause;
+  if (plan.zone === 'good') return Math.abs(plan.dev || 0) < 0.03 ? 'perfect' : 'good';
+  return plan.ideal > plan.L ? 'bitFar' : 'bitNear';
 }
 
 export const CAUSES = {

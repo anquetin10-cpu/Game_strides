@@ -1,25 +1,24 @@
-// Aides visuelles d'un parcours de CSO, désactivables (Réglages → Aide au saut, Tracé au sol) :
-// - marquage au sol de la trajectoire : couloir à deux bords blancs en tirets et chevrons verts au milieu, dans le sens
-//   de la marche, du cheval jusqu'après l'obstacle suivant, courbes comprises ; simple suggestion — le cavalier choisit
-//   ses courbes. Les bords encadrent le cheval : vus de la caméra (derrière lui), ils dépassent de part et d'autre de sa
-//   silhouette, qui cache le milieu du couloir dans les lignes droites ;
-// - zone d'appel : bande au sol devant l'obstacle suivant, calculée par le modèle de saut (jumpModel.js) pour la
-//   vitesse et l'abord du moment — vert : bonne zone, ambre : encore possible (saut moins confortable) ;
+// Aides visuelles d'un parcours de CSO, désactivables (Réglages → Tracé au sol, Aide au saut ; en épreuve : menu pause) :
+// - tracé au sol : une ligne discrète de petits repères (tirets courts) qui relie les obstacles dans l'ordre, courbes
+//   comprises, du cheval jusqu'après l'obstacle suivant — la suite, après l'obstacle, est plus pâle pour préparer la
+//   courbe dès la réception. Simple suggestion, jamais un rail : le cavalier choisit ses courbes et ses abords ;
+// - zone d'appel (Aide au saut « Complète ») : bande au sol devant l'obstacle suivant, calculée par le modèle de saut
+//   (jumpModel.js) pour la vitesse et l'abord du moment — vert : bonne zone, ambre : encore possible ;
 // - repère discret au-dessus de l'obstacle suivant.
 import * as THREE from 'three';
 import { planJump, railsAhead, JUMP } from './jumpModel.js';
 import { CSO_LINE } from './obstacles.js';
 import { PARIS_COURSES } from './parisCourse.js';
 
-// Marquage du tracé : bords blancs en tirets et chevrons verts dans le sens de la marche, bien visibles sur le sable.
-const LINE_MAT = new THREE.MeshBasicMaterial({ color: '#fbfaf5', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide });
-const CHEV_MAT = new THREE.MeshBasicMaterial({ color: '#7dffc4', transparent: true, opacity: 0.92, depthWrite: false, side: THREE.DoubleSide });
-// Réglages du marquage : largeur du couloir (entre les bords), largeur d'un bord, tirets, écart et taille des chevrons,
-// longueur affichée après l'obstacle suivant.
-export const LINE_MARK = { corridor: 1.9, width: 0.2, dash: 1.0, gap: 0.5, chevronEvery: 3.5, chevronSize: 0.6, after: 9 };
-const GOOD_MAT = new THREE.MeshBasicMaterial({ color: '#3ddc97', transparent: true, opacity: 0.32, depthWrite: false });
-const OK_MAT = new THREE.MeshBasicMaterial({ color: '#f0b33a', transparent: true, opacity: 0.22, depthWrite: false });
-const MARK_MAT = new THREE.MeshBasicMaterial({ color: '#7dffc4', transparent: true, opacity: 0.85, depthWrite: false });
+// Repères du tracé : tirets courts posés sur la ligne, blanc cassé (lisible sur le sable sans l'envahir).
+const LINE_MAT = new THREE.MeshBasicMaterial({ color: '#f7f3e8', transparent: true, opacity: 0.82, depthWrite: false, side: THREE.DoubleSide });
+const NEXT_MAT = new THREE.MeshBasicMaterial({ color: '#f7f3e8', transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide });
+// Réglages du tracé : longueur et largeur d'un repère, pas entre deux repères, longueur affichée après l'obstacle
+// suivant (plus pâle), repères masqués juste sous le cheval.
+export const LINE_MARK = { dash: 0.45, width: 0.16, every: 1.3, after: 12, hideNear: 1.5 };
+const GOOD_MAT = new THREE.MeshBasicMaterial({ color: '#3ddc97', transparent: true, opacity: 0.26, depthWrite: false });
+const OK_MAT = new THREE.MeshBasicMaterial({ color: '#f0b33a', transparent: true, opacity: 0.16, depthWrite: false });
+const MARK_MAT = new THREE.MeshBasicMaterial({ color: '#7dffc4', transparent: true, opacity: 0.8, depthWrite: false });
 
 // Plage de distances d'appel (m, du point d'appel au centre de l'obstacle, abord droit) où le saut passe / passe bien.
 export function takeoffZone(o, horse) {
@@ -43,15 +42,16 @@ export class CourseAids {
     // affiché.
     // Ligne du cavalier : parcours du Pôle ou de l'arène de Paris.
     this.lineData = courseId === 'cso' ? CSO_LINE : PARIS_COURSES[courseId]?.line || null;
-    this.line = this.lineData ? this._dashes(this.lineData) : null;
-    this.chev = this.lineData ? this._chevrons(this.lineData) : null;
-    if (this.line) this.group.add(this.line.mesh, this.chev.mesh);
+    this.line = this.lineData ? this._marks(this.lineData, LINE_MAT) : null;
+    // (deux géométries : la plage affichée se règle par géométrie)
+    this.after = this.lineData ? this._marks(this.lineData, NEXT_MAT) : null;
+    if (this.line) this.group.add(this.line.mesh, this.after.mesh);
     this._lineI = 0;
     this.good = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), GOOD_MAT);
     this.ok = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), OK_MAT);
     this.good.renderOrder = this.ok.renderOrder = 2;
     this.group.add(this.ok, this.good);
-    const tri = new THREE.ConeGeometry(0.22, 0.42, 3).rotateX(Math.PI);
+    const tri = new THREE.ConeGeometry(0.16, 0.3, 3).rotateX(Math.PI);
     this.mark = new THREE.Mesh(tri, MARK_MAT);
     this.group.add(this.mark);
     this._zoneT = 0;
@@ -75,40 +75,19 @@ export class CourseAids {
     return { mesh, geo, stepS: quads.map((q) => q.s) };
   }
 
-  // Bords du couloir : deux traits en tirets à ± corridor/2 de la ligne.
-  _dashes(pts) {
+  // Repères du tracé : tirets courts tous les LINE_MARK.every mètres, dans l'axe de la ligne.
+  _marks(pts, mat) {
     const M = LINE_MARK, quads = [];
+    let next = 1;
     for (let i = 0; i + 1 < pts.length; i++) {
-      const a = pts[i], b = pts[i + 1];
-      if (a.s % (M.dash + M.gap) > M.dash) continue;
-      const dx = b.x - a.x, dz = b.z - a.z, l = Math.hypot(dx, dz) || 1;
-      const ux = -dz / l, uz = dx / l;
-      for (const side of [-1, 1]) {
-        const o0 = side * M.corridor / 2 - M.width / 2, o1 = o0 + M.width;
-        quads.push({ s: a.s, c: [[a.x + ux * o0, a.z + uz * o0], [a.x + ux * o1, a.z + uz * o1], [b.x + ux * o1, b.z + uz * o1], [b.x + ux * o0, b.z + uz * o0]] });
-      }
-    }
-    return this._strip(quads, LINE_MAT);
-  }
-
-  // Chevrons « > » tous les quelques mètres, pointe dans le sens du parcours.
-  _chevrons(pts) {
-    const M = LINE_MARK, quads = [];
-    let next = 1.5;
-    for (const p of pts) {
+      const p = pts[i];
       if (p.s < next) continue;
-      next += M.chevronEvery;
+      next = p.s + M.every;
       const f = { x: Math.sin(p.h), z: Math.cos(p.h) }, t = { x: f.z, z: -f.x };
-      const c = M.chevronSize, th = 0.1;
-      const tip = { x: p.x + f.x * c * 0.6, z: p.z + f.z * c * 0.6 };
-      for (const side of [-1, 1]) {
-        const end = { x: p.x - f.x * c * 0.4 + t.x * side * c, z: p.z - f.z * c * 0.4 + t.z * side * c };
-        const dx = end.x - tip.x, dz = end.z - tip.z, l = Math.hypot(dx, dz);
-        const nx = (-dz / l) * th, nz = (dx / l) * th;
-        quads.push({ s: p.s, c: [[tip.x + nx, tip.z + nz], [tip.x - nx, tip.z - nz], [end.x - nx, end.z - nz], [end.x + nx, end.z + nz]] });
-      }
+      const l = M.dash / 2, w = M.width / 2;
+      quads.push({ s: p.s, c: [[p.x - f.x * l - t.x * w, p.z - f.z * l - t.z * w], [p.x - f.x * l + t.x * w, p.z - f.z * l + t.z * w], [p.x + f.x * l + t.x * w, p.z + f.z * l + t.z * w], [p.x + f.x * l - t.x * w, p.z + f.z * l - t.z * w]] });
     }
-    return this._strip(quads, CHEV_MAT);
+    return this._strip(quads, mat);
   }
 
   // Affiche les éléments d'un marquage dont l'indice de tracé est dans [s0, s1].
@@ -128,9 +107,10 @@ export class CourseAids {
     // la courbe à prendre.
     if (this.line) {
       const on = showLine && !!next;
-      this.line.mesh.visible = this.chev.mesh.visible = on;
+      this.line.mesh.visible = this.after.mesh.visible = on;
       if (on) {
-        const s1 = (next.lineS ?? 1e9) + LINE_MARK.after;
+        const sF = next.lineS ?? 1e9;
+        const s1 = sF + LINE_MARK.after;
         // Position du cheval sur le tracé (point le plus proche entre l'obstacle précédent et le suivant).
         let s0 = prevS;
         if (horse) {
@@ -141,18 +121,19 @@ export class CourseAids {
             if (d < bd) { bd = d; s0 = p.s; }
           }
           if (bd > 15 * 15) s0 = prevS; // loin du tracé (volte, départ) : tout le tronçon
-          s0 = Math.max(prevS, s0 - 1);
+          else s0 += LINE_MARK.hideNear; // (pas de repère sous les sabots)
+          s0 = Math.max(prevS, s0);
         }
-        this._range(this.line, s0, s1);
-        this._range(this.chev, s0, s1);
+        this._range(this.line, s0, sF);
+        this._range(this.after, Math.max(s0, sF), s1);
       }
     }
     // Repère au-dessus de l'obstacle suivant.
     this.mark.visible = !!next;
     if (next) {
       const t = g.time;
-      this.mark.position.set(next.x, next.ground + next.h + 1.25 + Math.sin(t * 3) * 0.08, next.z);
-      this.mark.rotation.y = t * 1.5;
+      this.mark.position.set(next.x, next.ground + next.h + 1.15 + Math.sin(t * 2.4) * 0.06, next.z);
+      this.mark.rotation.y = next.rot;
     }
     // Zone d'appel (recalculée quatre fois par seconde : elle suit la vitesse du cheval).
     const zoneOn = showZone && next && horse && g.player.mode === 'ride';
@@ -176,7 +157,7 @@ export class CourseAids {
       const x = next.x - next.n.x * mid, zz = next.z - next.n.z * mid;
       m.position.set(x, g.terrain.getHeight(x, zz) + 0.035, zz);
       m.rotation.y = next.rot;
-      m.scale.set(next.w, 1, len);
+      m.scale.set(Math.min(next.w, 2.2), 1, len);
       m.visible = true;
     };
     place(this.ok, z.pass);
@@ -187,7 +168,7 @@ export class CourseAids {
   dispose() {
     this.group.parent?.remove(this.group);
     this.line?.geo.dispose();
-    this.chev?.geo.dispose();
+    this.after?.geo.dispose();
     this.good.geometry.dispose();
     this.ok.geometry.dispose();
     this.mark.geometry.dispose();

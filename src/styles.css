@@ -956,7 +956,24 @@ body.phone-open .rotate { display: none !important; }
 .hud.cso-ctl .btn-jump { width: 104px; height: 104px; right: 6px; bottom: 8px; }
 .hud.cso-ctl .btn-jump svg { width: 32px; height: 32px; }
 .hud.cso-ctl .btn-jump span { font-size: 11px; }
-.hud.cso-ctl .telemetry { opacity: .82; transform: scale(.88); transform-origin: bottom center; }
+/* HUD sobre des épreuves : priorité à la vue du parcours — chrono, fautes, obstacle suivant ; ni télémétrie, ni bouton
+   d'action. La cadence n'apparaît que lorsqu'on la règle. */
+.hud.cso-sober .telemetry, .hud.cso-sober .btn-action { display: none !important; }
+.hud.cso-ctl .telemetry { opacity: .82; transform: translateX(-50%) scale(.88); transform-origin: bottom center; }
+.hud.cso-sober .cso-board .clock-ico { display: none; }
+.hud.cso-sober .cso-board .ta { font-size: 11px; opacity: .55; }
+.cso-board .cad { display: inline-flex; gap: 2px; align-items: flex-end; margin-left: 2px; opacity: 0; transition: opacity .4s; }
+.cso-board .cad.show { opacity: .9; }
+.cso-board .cad i { width: 4px; height: 6px; border-radius: 1px; background: rgba(255,255,255,.25); }
+.cso-board .cad i:nth-child(2) { height: 8px; } .cso-board .cad i:nth-child(3) { height: 10px; }
+.cso-board .cad i:nth-child(4) { height: 12px; } .cso-board .cad i:nth-child(5) { height: 14px; } .cso-board .cad i:nth-child(6) { height: 16px; }
+.cso-board .cad i.on { background: var(--paper); }
+.jump-fb { align-self: center; margin-top: 4px; padding: 3px 10px; border-radius: 9px; font: 600 12px/1.2 var(--ui); color: var(--paper);
+  background: var(--glass); border: 1px solid var(--line); pointer-events: none; transition: opacity .3s; }
+.jump-fb.off { opacity: 0; }
+.jump-fb.good { color: #7dffc4; }
+.jump-fb.bad { color: #ff9c8f; }
+.btn-jump.early .ring { border-color: rgba(255,255,255,.55); }
 
 /* Commerces de Deauville City : fondu d'entrée/sortie, fiches produits. */
 .shop-fade { position: fixed; inset: 0; background: #0b0b0a; opacity: 0; pointer-events: none; transition: opacity .22s ease; z-index: 60; }

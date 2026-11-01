@@ -7,6 +7,7 @@ import { nearestRoad } from '../world/layout.js';
 import { Transport } from './transport.js';
 import { Boarding } from './boarding.js';
 import { HorseMount } from './horseMount.js';
+import { csoRideStep, clearCsoControls } from './csoRide.js';
 import { t, T } from '../core/i18n.js';
 import * as THREE from 'three';
 
@@ -41,15 +42,8 @@ function trafficDoor(c, side) {
 
 
 // Commandes à cheval en concours (réglages ajustables) : cadence et virages progressifs.
-export const CSO_RIDE = {
-  cadence: 6.2, // galop de concours par défaut (m/s ≈ 370 m/min, foulée ≈ 3,5 m)
-  maxSpeed: 8.0, // galop allongé au plus (m/s)
-  cadenceRate: 1.4, // variation de cadence joystick poussé à fond (m/s par seconde)
-  deadZone: 0.3, // part du joystick avant/arrière ignorée (on tourne sans changer de cadence)
-  minRadius: 6, // rayon de virage le plus court au galop, joystick à fond (m)
-  maxTurnRate: 1.2, // rad/s
-  minTurnRate: 0.7, // rad/s au pas ou à l'arrêt (volte, demi-tour)
-};
+// Conduite des épreuves de CSO : voir csoRide.js (réglages CSO_RIDE).
+export { CSO_RIDE } from './csoRide.js';
 export class Player {
   constructor(game, avatar = 'f') {
     this.game = game;
@@ -628,23 +622,11 @@ export class Player {
     } else if (this.mode === 'ride') {
       const c = this.horse.control;
       const cso = g.course?.controls === 'cso';
-      c.speedOverride = undefined;
-      c.turnRate = undefined;
+      clearCsoControls(c);
       if (!cso) this.csoCadence = undefined;
       if (cso && !locked) {
-        // Concours : galop de concours stable par défaut ; joystick gauche/droite = tourner progressivement,
-        // avant/arrière = régler la cadence (gardée au relâchement) ; SAUT pendant que l'on tourne.
-        const R = CSO_RIDE;
-        if (this.csoCadence === undefined) this.csoCadence = R.cadence;
-        const thr = Math.abs(mv.y) > R.deadZone ? (mv.y - Math.sign(mv.y) * R.deadZone) / (1 - R.deadZone) : 0;
-        this.csoCadence = clamp(this.csoCadence + thr * R.cadenceRate * dt, 0, R.maxSpeed);
-        const steer = Math.abs(mv.x) > 0.06 ? mv.x : 0;
-        const v = this.horse.speed;
-        c.turnRate = -steer * Math.max(R.minTurnRate, Math.min(R.maxTurnRate, v / R.minRadius));
-        c.speedOverride = this.csoCadence;
-        c.mag = 1;
-        c.gallop = false;
-        if (input.wasPressed('jump')) c.jump = true;
+        // Concours : DIRIGER (joystick gauche/droite), RÉGLER LA VITESSE (avant/arrière, cadence gardée), SAUTER.
+        csoRideStep(this, input, dt);
       } else if (!locked) {
         c.x = dl ? dir.x / dl : 0;
         c.z = dl ? dir.z / dl : 0;

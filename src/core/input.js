@@ -177,6 +177,8 @@ export class Input {
 
   // Combine clavier et joystick (y = avant).
   poll() {
+    // Déplacement venu du clavier (la conduite de concours y amène la direction progressivement).
+    this.keyMove = false;
     if (this.joy.id === null) {
       const K = this.keys;
       let x = 0, y = 0;
@@ -189,6 +191,7 @@ export class Input {
       const trot = K.has('ControlLeft');
       const m = Math.hypot(x, y);
       if (m > 0) {
+        this.keyMove = true;
         const s = walk ? 0.25 : trot ? 0.5 : 1;
         this.move.x = (x / m) * s;
         this.move.y = (y / m) * s;

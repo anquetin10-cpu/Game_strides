@@ -695,8 +695,12 @@ export class Game {
       this.particles.emit(surf === 'grass' ? 'grass' : 'sand', h.pos.x, h.groundY, h.pos.z, 10, h.forward.x * h.speed, h.forward.z * h.speed);
     });
     b.on('horse:jump', (h) => {
-      if (h.isPlayerHorse) a.snort();
+      if (!h.isPlayerHorse) return;
+      a.snort();
+      // Épreuve : la poussée de l'appel (sabots qui quittent le sol), en plus du souffle.
+      if (this.course?.controls === 'cso') a.hoof?.(this.surfaceAt(h.pos.x, h.pos.z), 1.4);
     });
+    b.on('horse:jumpEarly', () => this.hud.jumpEarly?.());
     b.on('horse:refuse', () => a.neigh());
     // Astuces répétitives : au plus une fois toutes les 45 s (elles ne doivent pas encombrer l'écran).
     const hintAt = {};
@@ -712,7 +716,8 @@ export class Game {
     b.on('horse:bump', ({ horse }) => {
       if (horse.isPlayerHorse) {
         a.thud();
-        this.cam.shake = 0.12;
+        // (pas de tremblement en épreuve : la caméra de concours reste stable)
+        if (!this.course?.camera) this.cam.shake = 0.12;
       }
     });
     b.on('player:mount', () => a.snort());
@@ -1378,7 +1383,7 @@ export class Game {
       speed: Math.abs(this.player.speed),
       // Distance au rivage du moment (la mer se retire à plus de 100 m à basse mer de vives-eaux).
       seaDist: Math.max(0, f.z - this.seaLineZ(f.x)),
-      crowd: this.indoor ? this.shops.murmur() : Math.hypot(f.x - POLE.arena.x, f.z - POLE.arena.z) < 90 ? 0.6 : 0,
+      crowd: this.indoor ? this.shops.murmur() : Math.hypot(f.x - POLE.arena.x, f.z - POLE.arena.z) < 90 || this.course?.kind === 'cso' ? 0.6 : 0,
       engine: this.player.mode === 'drive' ? Math.abs(this.player.vehicle.speed) : -1,
       indoor: this.indoor ? 1 : 0,
     }, dt);

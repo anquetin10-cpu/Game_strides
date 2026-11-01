@@ -113,6 +113,12 @@ export class Horse {
     // Obstacle de concours devant : le saut part d'ici, avec la vitesse et le cap du moment ; le cheval ajuste un peu sa
     // longueur pour viser le milieu de l'obstacle (jumpModel.js). Trop près pour enlever : refus.
     const tgt = this.isPlayerHorse ? this.game.obstacles?.target(this) : null;
+    // Épreuve de CSO : on ne saute que vers l'obstacle à aborder. Pas de saut « en l'air » loin de tout obstacle, ni
+    // d'appui bien trop tôt (plus de ~2 longueurs de saut avant la barre) : l'appui est sans effet, le bouton l'indique.
+    if (this.isPlayerHorse && this.game.course?.controls === 'cso' && (!tgt || tgt.plan.zone === 'none' || tgt.geo.rails[0].x > tgt.plan.L0 * 1.9)) {
+      this.game.bus.emit('horse:jumpEarly', this);
+      return false;
+    }
     if (tgt && tgt.plan.zone !== 'none') {
       if (tgt.plan.zone === 'refuse') {
         // Déjà dans l'obstacle (réception entre les barres d'un oxer après un appel bien trop long) : l'appui est
@@ -225,8 +231,11 @@ export class Horse {
     if (c.turnRate !== undefined && !this.frozen && !(this._rearT > 0)) {
       // Concours : vitesse de virage commandée, prise progressivement (courbes naturelles, jamais de pivot
       // instantané) ; en l'air le cheval garde presque son cap.
-      this._yawRate = damp(this._yawRate || 0, c.turnRate, 4, dt);
-      const r = this._yawRate * (this.jumpT >= 0 ? 0.25 : 1);
+      const y0 = this._yawRate || 0;
+      let y1 = c.yawTau ? y0 + (c.turnRate - y0) * (1 - Math.exp(-dt / c.yawTau)) : damp(y0, c.turnRate, 4, dt);
+      if (c.yawAcc) y1 = y0 + clamp(y1 - y0, -c.yawAcc * dt, c.yawAcc * dt);
+      this._yawRate = y1;
+      const r = this._yawRate * (this.jumpT >= 0 ? c.airTurn ?? 0.25 : 1);
       this.heading = wrapAngle(this.heading + r * dt);
       turnInput = r;
       desired = c.speedOverride ?? 0;
@@ -317,8 +326,12 @@ export class Horse {
         this.jumpT = -1;
         this.jumpY = 0;
         // Réception : un saut allongé ou raccourci pour se recaler coûte un peu d'élan.
-        const dev = Math.abs((this.jumpLen || 0) / Math.max(1.5, this.speed * HORSE.jumpDuration) - 1);
-        this.speed *= 0.94 - Math.min(0.08, dev * 0.5);
+        // (concours : seul un saut recadré coûte un peu d'élan — une réception parfaite garde toute la cadence)
+        if (c.landingLoss !== undefined) this.speed *= 1 - Math.min(c.landingLoss, Math.abs(this._lastJump?.plan?.dev || 0) * 0.5);
+        else {
+          const dev = Math.abs((this.jumpLen || 0) / Math.max(1.5, this.speed * HORSE.jumpDuration) - 1);
+          this.speed *= 0.94 - Math.min(0.08, dev * 0.5);
+        }
         if (this._lastJump) this._lastJump.land = g.time;
         g.bus.emit('horse:land', this);
       } else this.jumpY = Horse.jumpHeightAt(this.jumpPeak, this.jumpT);

@@ -209,10 +209,35 @@ export class Screens {
     const g = this.game;
     const controls = h('div', { html: t(`<p style="margin-top:12px"><b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).</p>`) });
     const ver = h('p.build-id', { text: `${t('Version')} ${BUILD} · ${BUILD_ID}`, style: { fontSize: '11px', opacity: 0.6, marginTop: '8px' } });
+    // Épreuve de saut d'obstacles : rappel des trois gestes et réglages des aides, modifiables sans quitter la piste.
+    let comp = [];
+    if (g.course?.kind === 'cso') {
+      const st = g.save.data.settings;
+      const lineLabel = () => (st.courseLine !== false ? t('Tracé au sol : affiché') : t('Tracé au sol : masqué'));
+      const aids = { full: t('Aide au saut : complète'), button: t('Aide au saut : bouton seul'), off: t('Aide au saut : aucune') };
+      const aidLabel = () => aids[st.jumpAid || 'full'];
+      const bLine = h('button.btn.ghost', { text: lineLabel(), 'data-id': 'pause-line' });
+      bLine.addEventListener('click', () => {
+        st.courseLine = st.courseLine === false;
+        bLine.textContent = lineLabel();
+        g.saveSoon?.();
+      });
+      const bAid = h('button.btn.ghost', { text: aidLabel(), 'data-id': 'pause-aid' });
+      bAid.addEventListener('click', () => {
+        const order = ['full', 'button', 'off'];
+        st.jumpAid = order[(order.indexOf(st.jumpAid || 'full') + 1) % order.length];
+        bAid.textContent = aidLabel();
+        g.saveSoon?.();
+      });
+      comp = [
+        h('div', { html: t('<p style="margin-top:12px"><b>Épreuve</b> — <b>diriger</b> : joystick gauche/droite (←/→) · <b>cadence</b> : joystick avant/arrière (↑/↓), gardée quand on relâche · <b>SAUT</b> au bon moment (Espace).</p>') }),
+        h('div.pause-comp', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' } }, bLine, bAid),
+      ];
+    }
     return this.card({
       kicker: t('Pause'),
       title: 'STRIDES Grand Tour',
-      extra: [controls, g.phone.promo(), ver],
+      extra: [...comp, controls, g.phone.promo(), ver],
       buttons: [
         { label: t('Écran titre'), ghost: true, run: onTitle, id: 'title' },
         { label: t('Découvrir la vraie application Strides'), ghost: true, run: () => g.openStrides('pause', 'discover'), keep: true, id: 'strides' },

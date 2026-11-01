@@ -12,6 +12,7 @@
 // montée est la pose de cavalier, le rattachement à la selle (Human.mount) ne déplace ni ne tourne ni ne met à
 // l'échelle quoi que ce soit. La descente part du même repère.
 // Le personnage reste le même objet (même maillage, même squelette, même modèle réaliste) du début à la fin.
+import { clearCsoControls } from './csoRide.js';
 import * as THREE from 'three';
 import { animateHuman } from '../entities/human/anim.js';
 import { footTarget } from '../entities/human/anim.js';
@@ -359,8 +360,7 @@ export class HorseMount {
     h.ai = null;
     h.control.mag = 0;
     h.control.gallop = false;
-    h.control.speedOverride = undefined;
-    h.control.turnRate = undefined;
+    clearCsoControls(h.control);
   }
 
   // ---------- Mise à jour ----------

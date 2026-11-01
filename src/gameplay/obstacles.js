@@ -121,6 +121,7 @@ export class Obstacles {
         [box(0.6, 0.1, 0.7), '#e9e6de', { x: -ob.w / 2 - 0.3, y: ob.h + 0.35 }],
         [box(0.6, 0.1, 0.7), '#e9e6de', { x: ob.w / 2 + 0.3, y: ob.h + 0.35 }],
       ]), wallMat));
+      if (ob.num) g.add(new THREE.Mesh(flagsGeo(ob.w / 2 + 0.3, ob.h + 0.4, 0), MAT));
       const top = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
       top.position.y = ob.h - 0.05;
       g.add(top);
@@ -133,8 +134,11 @@ export class Obstacles {
       // que le cheval fait tomber, restent des objets à part.
       const fixed = [showJumpGeo(ob.w, ob.h, ob.colors, oxer, ob.spread)];
       for (const hh of [ob.h * 0.62, ob.h * 0.3]) fixed.push(railGeo(ob.w, ob.colors).translate(0, hh, zf));
-      // Jardinières au pied des ailes (parcours de concours).
-      if (ob.course === 'cso' || ob.course === 'paris_gp' || ob.course === 'paris_sprint') fixed.push(planterGeo(ob.w, ob.num));
+      // Jardinières au pied des ailes et fanions (parcours de concours).
+      if (ob.course === 'cso' || ob.course === 'paris_gp' || ob.course === 'paris_sprint') {
+        fixed.push(planterGeo(ob.w, ob.num));
+        fixed.push(flagsGeo(ob.w / 2 + 0.95, ob.h + 0.75, zf));
+      }
       g.add(new THREE.Mesh(mergeGeometries(fixed, false), MAT));
       for (const bar of ob.bars) {
         const top = new THREE.Mesh(railGeo(ob.w, ob.colors), MAT);
@@ -294,6 +298,7 @@ export class Obstacles {
   _rest(o) {
     o.knocked = false;
     o.rebuild = 0;
+    o._pendingKnock = null;
     for (const r of o.rails) {
       r.position.y = r.userData.rest.y;
       r.position.z = r.userData.rest.z;
@@ -306,13 +311,15 @@ export class Obstacles {
 
   // Barre renversée (une seule fois : déjà au sol, elle ne remonte pas sur ses taquets pour retomber). Elle part dans le
   // sens du saut ; `bar` absent : la barre du haut (la plus haute).
-  knock(o, bar = null, dir = 1) {
+  // `side` : côté (−1/+1, le long de l'axe des barres) où le cheval l'a touchée — ce bout quitte son taquet le premier ;
+  // `hit` : profondeur du contact (m), qui règle l'élan de la barre. Chute déterministe, liée au geste qui l'a causée.
+  knock(o, bar = null, dir = 1, side = 0, hit = 0.15) {
     const r = (bar || o.bars[o.bars.length - 1]).mesh;
     o.knocked = true;
     // Entraînement : la barre est remontée dès que le cheval s'est éloigné.
     if (o.course === 'warmup' || o.course === 'home' || o.course === PARIS_WARM) o.rebuild = this.game.time + 2.5;
     if (!r || r.userData.fall) return;
-    r.userData.fall = { t: 0, dir };
+    r.userData.fall = { t: 0, dir, side, hit: clamp(hit, 0.02, 0.5) };
     this.game.audio?.railFall?.();
   }
 
@@ -465,7 +472,13 @@ export class Obstacles {
       const margin = y + JUMP.lift + horse.mods.clearance - bar.h;
       pass.margin = Math.min(pass.margin, margin);
       if (margin < -JUMP.rub) {
-        if (!o.solid) this.knock(o, bar, dir);
+        if (!o.solid) {
+          // Contact en montée (appel trop près) : les antérieurs emportent la barre tout de suite. En descente (appel
+          // trop loin) : ce sont les postérieurs, qui passent la barre ~1,1 m plus loin — la barre tombe à ce moment-là.
+          const side = Math.sign(b.u) || 1;
+          if (tau > 0.5) o._pendingKnock = { bar, dir, side, hit: -margin, t: this.game.time + 1.1 / Math.max(horse.speed, 2) };
+          else this.knock(o, bar, dir, side, -margin);
+        }
         if (!pass.fault) {
           pass.fault = true;
           const plan = lj && lj.o === o ? lj.plan : null;
@@ -524,6 +537,11 @@ export class Obstacles {
     for (const o of this.list) {
       if (p && o.knocked && (Math.abs(o.x - p.x) > 60 || Math.abs(o.z - p.z) > 60) && o.rails.every((r) => !r.userData.fall || r.userData.fall.done)) this._rest(o);
       if (o.rebuild && g.time > o.rebuild && fp && Math.hypot(o.x - fp.x, o.z - fp.z) > 5) this._rest(o);
+      const pk = o._pendingKnock;
+      if (pk && g.time >= pk.t) {
+        o._pendingKnock = null;
+        this.knock(o, pk.bar, pk.dir, pk.side, pk.hit);
+      }
       for (const r of o.rails) {
         const ud = r.userData;
         if (ud.rattle > 0 && !ud.fall) {
@@ -534,11 +552,14 @@ export class Obstacles {
         const f = ud.fall;
         if (!f || f.done) continue;
         if (!f.ends) {
+          // Le bout touché (côté du cheval) quitte son taquet le premier ; l'autre suit d'autant plus vite que le
+          // contact était franc. La barre part dans le sens du saut, avec un élan fonction du contact.
           const y0 = ud.rest.y;
-          f.ends = [{ y: y0, vy: 0, t0: 0 }, { y: y0, vy: 0, t0: 0.08 + Math.random() * 0.14 }];
-          if (Math.random() < 0.5) f.ends.reverse();
+          const lag = 0.2 - 0.3 * clamp(f.hit, 0, 0.4);
+          f.ends = [{ y: y0, vy: 0, t0: 0 }, { y: y0, vy: 0, t0: Math.max(0.06, lag) }];
+          if ((f.side || 1) > 0) f.ends.reverse();
           f.z = ud.rest.z;
-          f.vz = f.dir * (0.7 + Math.random() * 0.9);
+          f.vz = f.dir * (0.7 + 2.2 * clamp(f.hit, 0, 0.4));
           f.roll = 0;
         }
         f.t += dt;
@@ -579,6 +600,19 @@ export class Obstacles {
       o.sign.material.color.set(o.course === courseId && o.num === num ? '#7dffc4' : '#ffffff');
     }
   }
+}
+
+// Fanions réglementaires au sommet des chandeliers extérieurs : rouge à droite, blanc à gauche dans le sens du saut
+// (droite du cavalier : axe local −X). `x` : écart au centre, `y` : sommet des chandeliers, `z` : plan des chandeliers.
+function flagsGeo(x, y, z = 0) {
+  const parts = [];
+  for (const [side, color] of [[-1, '#c8262c'], [1, '#f4f2ec']]) {
+    const px = side * x;
+    parts.push([box(0.03, 0.42, 0.03), '#d9d6cf', { x: px, y, z }]);
+    // Drapeau vers l'extérieur de l'obstacle, en haut de la hampe.
+    parts.push([box(0.3, 0.2, 0.012), color, { x: px + side * 0.16, y: y + 0.21, z }]);
+  }
+  return partsToGeo(parts);
 }
 
 // Jardinières au pied des ailes : bac en bois, buis et fleurs (côté extérieur des ailes, hors du passage).

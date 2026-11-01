@@ -159,7 +159,7 @@ function trainingSteps(game, run, S) {
       start(r) {
         ob.resetRails('warmup');
         const aidOn = () => game.save.data.settings.jumpAid || 'full';
-        game.course = { running: false, camera: true, controls: 'cso', jumpTiming: () => (aidOn() === 'off' ? 'none' : ob.timing(game.player.horse)) };
+        game.course = { running: false, kind: 'cso-train', courseId: 'warmup', next: null, camera: true, controls: 'cso', jumpTiming: () => (aidOn() === 'off' ? 'none' : ob.timing(game.player.horse)) };
         aids = new CourseAids(game, 'warmup');
         const say = (txt) => game.hud.toast(txt);
         offs = [
@@ -185,6 +185,7 @@ function trainingSteps(game, run, S) {
         const h = game.player.horse;
         const tg = ob.target(h);
         const next = tg && tg.o.course === 'warmup' ? tg.o : null;
+        if (game.course) game.course.next = next;
         const aidMode = game.save.data.settings.jumpAid || 'full';
         aids?.update(1 / 30, { next, showLine: false, showZone: aidMode === 'full' });
         return st.done;

@@ -4,6 +4,7 @@ import { HIPPO, BEACH, beachWig } from '../world/layout.js';
 import { tideLevel } from '../world/weather.js';
 import { CSO_FINISH, CSO_LENGTH, CSO_START, CSO_GATE } from './obstacles.js';
 import { CourseAids } from './courseAids.js';
+import { takeoffQuality } from './jumpModel.js';
 import { simulateField, rankResults } from './ranking.js';
 import { coursePlanSvg, coursePlanLegend } from '../ui/coursePlan.js';
 import { formatMoney, dec, clamp } from '../core/math.js';
@@ -22,14 +23,30 @@ export const timeAllowedFor = (length, speed) => Math.ceil((length / speed) * 60
 export const BELL_DELAY = 45;
 
 // Ligne orientée franchie entre deux positions (dans le sens de la ligne, entre les fanions).
-function lineCrossed(L, p0, p1) {
+// `heading` (facultatif) : cap du cheval, qui doit aller dans le sens de la ligne (à 60° près) — entrer en piste en
+// longeant une ligne ne lance pas le chrono.
+function lineCrossed(L, p0, p1, heading) {
   if (!p0) return false;
   const n = { x: Math.sin(L.rot), z: Math.cos(L.rot) };
+  if (heading !== undefined && Math.sin(heading) * n.x + Math.cos(heading) * n.z < 0.5) return false;
   const s0 = (p0.x - L.x) * n.x + (p0.z - L.z) * n.z;
   const s1 = (p1.x - L.x) * n.x + (p1.z - L.z) * n.z;
   const u = Math.abs((p1.x - L.x) * n.z - (p1.z - L.z) * n.x);
   return s0 < 0 && s1 >= 0 && u < (L.w || 6) / 2 + 0.3;
 }
+
+// Retour au cavalier après chaque saut (qualité de l'appel, jumpModel.takeoffQuality).
+export const TAKEOFF_TEXT = {
+  perfect: t('Appel parfait'),
+  good: t('Bon appel'),
+  bitFar: t('Un peu loin'),
+  bitNear: t('Un peu près'),
+  far: t('Appel trop loin'),
+  near: t('Appel trop près'),
+  angle: t('Abord en biais'),
+  slow: t('Manque d’impulsion'),
+  tooClose: t('Trop près'),
+};
 
 const difficultyOf = (h) => (h < 1.08 ? t('Facile') : h < 1.18 ? t('Moyenne') : h < 1.35 ? t('Difficile') : t('Très difficile'));
 // Ordinal anglais : 1st, 2nd, 3rd, 4th, 11th, 21st…
@@ -163,7 +180,7 @@ export function courseSteps(game, run, S, opts) {
         if (!cso) state.started = true;
         game.cam.lastManual = -10;
         // Concours de CSO : caméra et commandes de concours (direction progressive, cadence) ; cross : monde ouvert.
-        game.course = { running: true, camera: cso, controls: cso ? 'cso' : null, jumpTiming: () => (aid() === 'off' ? 'none' : ob.timing(horse())), hud: hudInfo };
+        game.course = { running: true, kind: cso ? 'cso' : kind, courseId, next: null, camera: cso, controls: cso ? 'cso' : null, jumpTiming: () => (aid() === 'off' ? 'none' : ob.timing(horse())), hud: hudInfo };
         aids = new CourseAids(game, courseId);
         game.course.aids = aids;
         const advance = () => {
@@ -176,6 +193,13 @@ export function courseSteps(game, run, S, opts) {
           if (state.started) return false;
           game.hud.hint(t('Le chrono n’est pas lancé : franchis d’abord la <b>ligne de départ</b>.'), 3000);
           return true;
+        };
+        // Qualité de l'appel (sauf aide « Aucune ») : un mot sous le chrono, le temps de préparer la courbe suivante.
+        const feedback = (o, clear) => {
+          if (!cso || aid() === 'off') return;
+          const lj = horse()?._lastJump;
+          const q = lj && lj.o === o ? takeoffQuality(lj.plan) : null;
+          if (q) game.hud.jumpFeedback?.(TAKEOFF_TEXT[q] || '', clear ? (q === 'perfect' || q === 'good' ? 'good' : 'ok') : 'bad');
         };
         const wrongCourse = (o) => {
           if (state.wrong.has(o.num)) return;
@@ -190,6 +214,7 @@ export function courseSteps(game, run, S, opts) {
             if (obstacle.num === state.next && dir > 0) {
               state.log.push({ label: labelOf(obstacle), kind: 'clear' });
               game.audio.tone(990, 0.06, 'sine', 0.06);
+              feedback(obstacle, true);
               advance();
             } else if (dir > 0) wrongCourse(obstacle);
           }),
@@ -198,6 +223,7 @@ export function courseSteps(game, run, S, opts) {
             if (obstacle.num === state.next && dir > 0) {
               state.faults += 4;
               state.log.push({ label: labelOf(obstacle), kind: 'rail', cause, causeText });
+              feedback(obstacle, false);
               game.audio.fault();
               game.audio.crowdOoh?.();
               game.hud.toast(kind === 'xc' ? T`Touché au ${labelOf(obstacle)} · +4${causeText ? ` · ${causeText}` : ''}` : T`Barre au ${labelOf(obstacle)} · +4${causeText ? ` · ${causeText}` : ''}`);
@@ -216,7 +242,7 @@ export function courseSteps(game, run, S, opts) {
             game.audio.fault();
             game.audio.crowdOoh?.();
             // Refus dans une combinaison : on reprend la combinaison à son premier élément.
-            let msg = t('Fais une <b>volte</b> pour reprendre ton élan, puis représente l’obstacle.');
+            let msg = t('Fais demi-tour, reprends ta <b>cadence</b> (joystick vers l’avant) et représente l’obstacle.');
             if (/B$/.test(obstacle.label || '')) {
               const a = list().find((o) => o.label === obstacle.label.replace(/B$/, 'A'));
               if (a) {
@@ -227,12 +253,12 @@ export function courseSteps(game, run, S, opts) {
               }
             }
             game.hud.toast(T`Refus au ${labelOf(obstacle)} · +${pen}`);
-            // Après l'arrêt, on repart au trot pour la volte (le cavalier reprend sa cadence ensuite).
-            if (game.player.csoCadence !== undefined) game.player.csoCadence = Math.min(game.player.csoCadence, 4.6);
+            // Après le refus, le cheval reste arrêté : demi-tour au joystick, puis le cavalier reprend sa cadence.
+            if (game.player.csoCadence !== undefined) game.player.csoCadence = 0;
             if (state.refusals < maxRefusals && state.fenceRefusals < 3) game.hud.hint(msg, 3500);
           }),
         ];
-        if (cso) game.hud.hint(t('Joystick : <b>gauche/droite</b> pour tourner, <b>avant/arrière</b> pour la cadence (gardée). Franchis la <b>ligne de départ</b>, puis <b>SAUT</b> quand le bouton est <b>vert</b>.'), 6000);
+        if (cso) game.hud.hint(t('<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.'), 6000);
         else game.hud.hint(t('Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.'), 4000);
       },
       update(r, dt) {
@@ -242,7 +268,7 @@ export function courseSteps(game, run, S, opts) {
         prevP = P;
         if (!state.started) {
           state.bell -= dt;
-          if (startLine && lineCrossed(startLine, p0, P)) {
+          if (startLine && lineCrossed(startLine, p0, P, cso ? h.heading : undefined)) {
             state.started = true;
             game.audio.tone(1568, 0.1, 'sine', 0.08);
             ob.highlight(courseId, state.next);
@@ -255,10 +281,19 @@ export function courseSteps(game, run, S, opts) {
         } else if (!state.finished) state.t += dt;
         const next = state.started ? list()[state.next - 1] : list()[0];
         const prevO = list()[state.next - 2];
+        if (game.course) game.course.next = state.finished ? null : next || null;
+        // Arrivée franchie : courte sortie de piste (caméra et commandes de concours gardées, retour au pas), puis bilan.
+        if (state.finished) {
+          state.exitT = (state.exitT || 0) + dt;
+          if (game.player.csoCadence !== undefined) game.player.csoCadence = Math.max(Math.min(game.player.csoCadence, 1.9), game.player.csoCadence - 1.6 * dt);
+          aids.update(dt, { next: null });
+          return state.exitT > 2.6 || game.player.mode !== 'ride';
+        }
         aids.update(dt, {
           next: state.finished ? null : next,
           prevS: !state.started || !prevO ? 0 : prevO.lineS ?? 0,
-          showLine: settings().courseLine !== false && aid() !== 'off',
+          // (tracé au sol : réglage indépendant de l'aide au saut)
+          showLine: settings().courseLine !== false,
           showZone: aid() === 'full',
         });
         // Élimination : échec de la mission, ou (épreuve « souple ») fin du parcours avec le motif, la suite continuant.
@@ -278,12 +313,15 @@ export function courseSteps(game, run, S, opts) {
           const crossed = fin.rot === undefined ? Math.hypot(P.x - fin.x, P.z - fin.z) < (fin.w || 6) : lineCrossed(fin, p0, P);
           if (crossed) {
             state.finished = true;
+            if (game.course) game.course.running = false;
             const over = Math.max(0, state.t - timeAllowed);
             const pts = state.faults + (cso ? Math.ceil(over - 1e-9) : Math.round(over * 0.4));
             game.audio.applause?.(pts === 0 ? 1.3 : 0.55, pts === 0 ? 4 : 2.6);
             if (pts === 0) game.audio.cheer();
             game.hud.big(pts === 0 ? t('SANS FAUTE !') : pts > 1 ? T`${pts} POINTS` : T`${pts} POINT`, `${dec(state.t, 2)} s`, 2600);
-            return true;
+            if (pts === 0 && cso) game.cheerT = 3.5;
+            // CSO : courte sortie de piste avant le bilan ; cross : bilan tout de suite.
+            return !cso;
           }
         }
         return false;
@@ -393,6 +431,8 @@ export function courseSteps(game, run, S, opts) {
             ob.resetRails(courseId);
             ob.highlight(courseId, 1);
             const h = horse();
+            // Caméra de concours et commandes de concours dès l'entrée en piste (pas de bascule au départ).
+            game.course = { running: false, kind: 'cso', courseId, pre: true, next: list()[0] || null, camera: true, controls: 'cso', jumpTiming: () => 'none' };
             const bib = opts.bib ?? run.data.bib ?? 40 + (Math.floor(game.time) % 50);
             game.hud.big(T`N° ${bib} · ${game.save.data.playerName}`, T`et ${h?.name || t('son cheval')}${opts.stable ? ` · ${opts.stable}` : ''}`, 2400);
             game.audio.applause?.(0.5, 2.2);

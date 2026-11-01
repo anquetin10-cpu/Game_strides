@@ -1,23 +1,35 @@
 // Caméra 3e personne : orbite au doigt, recentrage automatique derrière le cheval, anti-collision.
 import * as THREE from 'three';
-import { angleDiff, clamp, damp, lerp } from '../core/math.js';
+import { angleDiff, clamp, damp, lerp, smoothstep } from '../core/math.js';
 import { TIDE_UNIFORMS } from '../world/weather.js';
 
 
-// Profil de caméra des concours (activé par game.course.camera, rendu au monde ouvert dès la sortie, l'abandon ou
-// l'élimination) : derrière le cheval, juste au-dessus du cavalier, peu plongeante ; le couple occupe environ le tiers
-// de la hauteur de l'écran, en bas ; elle regarde devant le cheval pour montrer l'abord. Réglages ajustables.
-export const CAM_CSO = {
-  dist: 11.5, // distance au point visé (m) ; la caméra est à dist − lookAhead derrière le cheval
-  lookAhead: 4.2, // point visé devant le cheval (m)
-  height: 1.55, // hauteur du point visé au-dessus du sol (m)
-  pitch: 0.12, // inclinaison (rad) : peu plongeante
-  yawFollow: 2.2, // vitesse de recentrage derrière le cheval
-  yDamp: 2.5, // amortissement vertical (le saut ne secoue pas l'image)
-  jumpFollow: 0.3, // part de la hauteur du saut suivie par la caméra
-  manualHold: 0.9, // délai (s) avant de revenir derrière le cheval après un coup d'œil au doigt
-  fov: 55, // champ vertical fixe (pas de zoom ni de grand-angle)
+// Profil de caméra des épreuves de saut d'obstacles (activé par game.course.camera, rendu au monde ouvert dès la sortie,
+// l'abandon ou l'élimination), façon jeu de sport console : centrée derrière le cavalier, un peu surélevée, à distance
+// fixe ; le couple occupe le bas de l'écran et l'on voit au-dessus de lui la courbe et l'obstacle suivant. Elle tourne
+// avec le cheval (avec une légère anticipation dans les courbes), sans flottement ni rattrapage brutal, sans zoom
+// pendant les sauts, et ne traverse ni obstacle ni décor. Verrouillée derrière le cavalier (pas d'orbite au doigt).
+// Réglages ajustables :
+export const CAM_COMP = {
+  back: 6.6, // distance horizontale derrière le cheval (m)
+  up: 3.4, // hauteur de la caméra au-dessus du sol sous le cheval (m)
+  lookAhead: 9, // point visé devant le cheval (m)
+  lookUp: 1.1, // hauteur du point visé (m)
+  fenceBias: 0.22, // attirance du point visé vers l'obstacle suivant (devant, à moins de fenceRange)
+  fenceRange: 30, // (m)
+  lead: 0.18, // anticipation de la rotation (s) : la caméra accompagne la courbe sans prendre de retard
+  yawK: 5, // vitesse de recentrage derrière le cheval (1/s)
+  yawAcc: 4, // accélération angulaire maximale de la caméra (rad/s²) : jamais de rattrapage brutal
+  posK: 10, // suivi horizontal du cheval (1/s)
+  yK: 3, // suivi vertical (1/s)
+  jumpFollow: 0.12, // part de la hauteur du saut suivie (le saut ne secoue pas l'image)
+  fov: 58, // champ vertical fixe (°) : ni zoom au saut, ni grand-angle à la vitesse
+  minBack: 3.0, // contre une tribune, la caméra se rapproche, jamais devant le cheval (m)
+  fenceClear: 0.7, // marge au-dessus d'un obstacle survolé (m)
+  enter: 1.2, // fondu d'entrée depuis la caméra précédente (s)
 };
+// Ancien nom (réglages de la première version de la caméra de concours).
+export const CAM_CSO = CAM_COMP;
 // Profil de caméra des commerces (game.indoor, à pied) : plus proche et plus basse que dehors, recentrage plus
 // rapide derrière le personnage dans les allées ; les murs, le mobilier haut et le plafond la rapprochent (anti-collision
 // commune). Rétabli dès la sortie.
@@ -54,22 +66,25 @@ export class FollowCamera {
       const o = this.override;
       cam.position.lerp(o.pos, instant ? 1 : 1 - Math.exp(-3 * dt));
       cam.lookAt(o.look);
+      this._comp = null;
       return;
     }
+    // Épreuve de saut d'obstacles : caméra de concours (branche séparée : le monde ouvert n'est pas modifié).
+    const horse = this.game.player?.horse;
+    if (focus.mode === 'ride' && this.game.course?.camera && horse) return this._updateComp(dt, horse, instant);
+    this._comp = null;
     const mode = focus.mode;
     const now = this.game.time;
-    // Parcours de CSO : caméra un peu plus haute et plus reculée, pour voir l'abord et préparer l'obstacle suivant.
-    const course = mode === 'ride' && !!this.game.course?.camera;
     const indoor = mode === 'foot' && !!this.game.indoor;
     if (look.dx || look.dy) {
       this.yaw -= look.dx * 0.0062 * this.sens;
       this.pitch = clamp(this.pitch + look.dy * 0.0045 * this.sens, -0.12, 1.15);
       this.lastManual = now;
     }
-    // Recentrage derrière le sujet quand il avance (concours : plus tôt après un coup d'œil, à vitesse réglée).
+    // Recentrage derrière le sujet quand il avance.
     const idle = now - this.lastManual;
-    if (focus.speed > (course || indoor ? 0.6 : 1.2) && idle > (course ? CAM_CSO.manualHold : indoor ? CAM_INDOOR.manualHold : 1.4)) {
-      const k = mode === 'drive' ? 2.4 : course ? CAM_CSO.yawFollow : indoor ? CAM_INDOOR.yawFollow : 1.4 + Math.min(focus.speed / 10, 1.6);
+    if (focus.speed > (indoor ? 0.6 : 1.2) && idle > (indoor ? CAM_INDOOR.manualHold : 1.4)) {
+      const k = mode === 'drive' ? 2.4 : indoor ? CAM_INDOOR.yawFollow : 1.4 + Math.min(focus.speed / 10, 1.6);
       // Grand recentrage (> ~70°, demi-tour au pied du camion…) : on tourne du côté où la perche est dégagée plutôt
       // que par le plus court chemin, qui peut balayer la caisse (perche écrasée, vue plongeante sur le toit), et on
       // garde ce sens jusqu'au bout.
@@ -80,22 +95,20 @@ export class FollowCamera {
         if (s !== this.swing) d -= s * 2 * Math.PI;
       } else this.swing = 0;
       this.yaw += d * (1 - Math.exp(-k * dt));
-      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : course ? CAM_CSO.pitch : indoor ? CAM_INDOOR.pitch : 0.28, 1.2, dt);
+      this.pitch = damp(this.pitch, mode === 'drive' ? 0.24 : indoor ? CAM_INDOOR.pitch : 0.28, 1.2, dt);
     } else this.swing = 0;
-    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? (course ? CAM_CSO.dist : 6.6) : indoor ? CAM_INDOOR.dist : 4.6;
-    this.targetDist = base + (mode === 'ride' && !course ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
+    const base = mode === 'drive' ? focus.camDist || 11 : mode === 'ride' ? 6.6 : indoor ? CAM_INDOOR.dist : 4.6;
+    this.targetDist = base + (mode === 'ride' ? Math.min(focus.speed, 16) * 0.09 : 0) + (mode === 'drive' ? Math.abs(focus.speed) * 0.08 : 0);
     // Hauteur du pivot lissée : monter ou descendre (de cheval, du camion) ne fait plus sauter la caméra d'une image à l'autre.
-    const height = mode === 'drive' ? focus.camHeight || (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? (course ? CAM_CSO.height : 2.35) : indoor ? CAM_INDOOR.height : 1.55;
+    const height = mode === 'drive' ? focus.camHeight || (focus.camDist ? 2.1 : 2.8) : mode === 'ride' ? 2.35 : indoor ? CAM_INDOOR.height : 1.55;
     this.height = instant ? height : damp(this.height, height, 4, dt);
-    // Concours : on vise un point devant le cheval (l'abord de l'obstacle suivant reste dans le champ) et la hauteur
-    // suit le sol plus qu'un saut (mouvement vertical amorti) ; transition douce à l'entrée et à la sortie.
-    const h = course ? this.game.player.horse : null;
-    this.ahead = damp(this.ahead || 0, course ? CAM_CSO.lookAhead : 0, 2, dt);
+    // (Point visé devant le sujet : réservé à l'ancienne caméra de concours, ramené à zéro en douceur.)
+    this.ahead = damp(this.ahead || 0, 0, 2, dt);
     const fx = focus.pos.x + Math.sin(focus.heading) * this.ahead, fz = focus.pos.z + Math.cos(focus.heading) * this.ahead;
-    const fy = h ? h.groundY + h.jumpY * CAM_CSO.jumpFollow : focus.pos.y;
-    this.smoothTarget.x = instant ? fx : damp(this.smoothTarget.x, fx, course ? 8 : 18, dt);
-    this.smoothTarget.z = instant ? fz : damp(this.smoothTarget.z, fz, course ? 8 : 18, dt);
-    this.smoothTarget.y = instant ? fy : damp(this.smoothTarget.y, fy, course ? CAM_CSO.yDamp : 10, dt);
+    const fy = focus.pos.y;
+    this.smoothTarget.x = instant ? fx : damp(this.smoothTarget.x, fx, 18, dt);
+    this.smoothTarget.z = instant ? fz : damp(this.smoothTarget.z, fz, 18, dt);
+    this.smoothTarget.y = instant ? fy : damp(this.smoothTarget.y, fy, 10, dt);
     const tx = this.smoothTarget.x, ty = this.smoothTarget.y + this.height, tz = this.smoothTarget.z;
     this.target.set(tx, ty, tz);
 
@@ -158,12 +171,115 @@ export class FollowCamera {
     if (hu && mode === 'foot' && this.dist < 0.8) hu.mesh.visible = false;
     cam.position.set(cx, cy, cz);
     cam.lookAt(tx, ty + (mode === 'ride' ? 0.1 : 0), tz);
-    const fovTarget = course ? CAM_CSO.fov : indoor ? CAM_INDOOR.fov : 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);
+    const fovTarget = indoor ? CAM_INDOOR.fov : 60 + (mode === 'ride' ? clamp((focus.speed - 8) * 0.9, 0, 9) : mode === 'drive' ? clamp(Math.abs(focus.speed) * 0.3, 0, 7) : 0);
     this.fov = damp(this.fov, fovTarget, 3, dt);
     if (Math.abs(cam.fov - this.fov) > 0.05) {
       cam.fov = this.fov;
       cam.updateProjectionMatrix();
     }
+  }
+
+  // Caméra de concours (voir CAM_COMP). Tient à jour l'état de la caméra commune (lacet, inclinaison, distance, cible)
+  // pour que la sortie de l'épreuve se fasse sans saut d'image.
+  _updateComp(dt, h, instant) {
+    const C = CAM_COMP;
+    const cam = this.camera;
+    const g = this.game;
+    const yawRate = h.jumpT >= 0 ? 0 : h._yawRate || 0;
+    const want = h.heading + yawRate * C.lead;
+    let st = this._comp;
+    if (!st || instant) {
+      // Entrée : on part de la caméra actuelle (cap vers le cheval), fondu vers le cadrage de concours.
+      const ch = Math.atan2(h.pos.x - cam.position.x, h.pos.z - cam.position.z);
+      st = this._comp = {
+        cH: instant ? want : ch,
+        w: 0,
+        t: instant ? C.enter : 0,
+        ax: h.pos.x, az: h.pos.z, ay: h.groundY,
+        back: C.back,
+        from: cam.position.clone(),
+        fromLook: new THREE.Vector3(h.pos.x, h.groundY + 1.6, h.pos.z),
+        aim: null,
+      };
+    }
+    st.t += dt;
+    // Lacet : vitesse angulaire bornée (rattrapage progressif), recentrage à toutes les vitesses (aussi après un refus).
+    const d = angleDiff(st.cH, want);
+    const wWant = d * C.yawK + (instant ? 0 : yawRate);
+    st.w += clamp(wWant - st.w, -C.yawAcc * dt, C.yawAcc * dt);
+    st.cH = instant ? want : st.cH + st.w * dt;
+    // Ancrage : le cheval, suivi en douceur (au sol plus qu'en l'air).
+    const kp = instant ? 1 : 1 - Math.exp(-C.posK * dt);
+    st.ax += (h.pos.x - st.ax) * kp;
+    st.az += (h.pos.z - st.az) * kp;
+    const ay = h.groundY + Math.max(0, h.jumpY) * C.jumpFollow;
+    st.ay += (ay - st.ay) * (instant ? 1 : 1 - Math.exp(-C.yK * dt));
+    const fx = Math.sin(st.cH), fz = Math.cos(st.cH);
+    // Perche : de la tête du cavalier vers l'arrière ; tribune ou bâtiment sur le chemin : la caméra se rapproche.
+    const cs = g.colliders;
+    let back = C.back;
+    for (let q = 1.0; q <= C.back + 1e-6; q += 0.4) {
+      const x = st.ax - fx * q, z = st.az - fz * q;
+      const y = st.ay + 2.2 + (C.up - 2.2) * (q / C.back);
+      if (cs.cameraBlocked(x, z, y)) {
+        back = Math.max(C.minBack, q - 0.45);
+        break;
+      }
+    }
+    st.back = instant ? back : damp(st.back, back, back < st.back ? 10 : 2.5, dt);
+    let cx = st.ax - fx * st.back, cz = st.az - fz * st.back;
+    let cy = st.ay + C.up;
+    // Obstacle survolé (après une réception, dans une courbe) : la caméra passe au-dessus, jamais au travers.
+    for (const o of g.obstacles?.list || []) {
+      if (o.off || Math.abs(o.x - cx) > 4 || Math.abs(o.z - cz) > 4) continue;
+      const ls = (cx - o.x) * o.n.x + (cz - o.z) * o.n.z;
+      const lu = (cx - o.x) * o.t.x + (cz - o.z) * o.t.z;
+      if (Math.abs(lu) < o.w / 2 + 2.4 && Math.abs(ls) < (o.depth || 1) / 2 + 0.8) cy = Math.max(cy, o.ground + o.h + 0.75 + C.fenceClear);
+    }
+    cy = Math.max(cy, Math.max(h.groundY, g.terrain.getHeight(cx, cz)) + 0.8);
+    // Point visé : devant le cheval, légèrement attiré par l'obstacle suivant quand il est devant.
+    let lx = st.ax + fx * C.lookAhead, lz = st.az + fz * C.lookAhead;
+    const ly = st.ay + C.lookUp;
+    const nx = g.course?.next;
+    if (nx) {
+      const dx = nx.x - st.ax, dz = nx.z - st.az, dd = Math.hypot(dx, dz);
+      if (dd > 1 && dd < C.fenceRange && (dx * fx + dz * fz) / dd > 0.5) {
+        const k = C.fenceBias * (1 - smoothstep(C.fenceRange * 0.6, C.fenceRange, dd));
+        lx += (nx.x - lx) * k;
+        lz += (nx.z - lz) * k;
+      }
+    }
+    if (!st.aim || instant) st.aim = new THREE.Vector3(lx, ly, lz);
+    else {
+      const ka = 1 - Math.exp(-4 * dt);
+      st.aim.x += (lx - st.aim.x) * ka;
+      st.aim.y += (ly - st.aim.y) * ka;
+      st.aim.z += (lz - st.aim.z) * ka;
+    }
+    // Fondu d'entrée depuis la caméra précédente.
+    const e = smoothstep(0, C.enter, st.t);
+    const px = st.from.x + (cx - st.from.x) * e, py = st.from.y + (cy - st.from.y) * e, pz = st.from.z + (cz - st.from.z) * e;
+    cam.position.set(px, py, pz);
+    cam.lookAt(st.fromLook.x + (st.aim.x - st.fromLook.x) * e, st.fromLook.y + (st.aim.y - st.fromLook.y) * e, st.fromLook.z + (st.aim.z - st.fromLook.z) * e);
+    this.fov = instant ? C.fov : damp(this.fov, C.fov, 3, dt);
+    if (Math.abs(cam.fov - this.fov) > 0.05) {
+      cam.fov = this.fov;
+      cam.updateProjectionMatrix();
+    }
+    this.shake = 0;
+    // État commun recalé sur la position réelle : à la sortie de l'épreuve, la caméra du monde ouvert repart d'ici.
+    this.height = 2.35;
+    this.ahead = 0;
+    this.smoothTarget.set(h.pos.x, h.pos.y, h.pos.z);
+    const tx = h.pos.x, ty = h.pos.y + this.height, tz = h.pos.z;
+    const vx = px - tx, vy = py - ty, vz = pz - tz;
+    const dist = Math.max(0.5, Math.hypot(vx, vy, vz));
+    this.yaw = Math.atan2(vx, vz);
+    this.pitch = Math.asin(clamp(vy / dist, -1, 1));
+    this.dist = this.targetDist = dist;
+    this.target.set(tx, ty, tz);
+    this.swing = 0;
+    this.lastManual = this.game.time;
   }
 
   // Perche dégagée si l'on tourne du côté s : points à 25-100 % de la distance cible, à 0,6 et 1,2 rad du lacet
