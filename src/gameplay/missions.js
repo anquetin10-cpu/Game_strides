@@ -207,7 +207,8 @@ class Run {
     if (s.target) {
       const t = typeof s.target === 'function' ? s.target() : s.target;
       g.gps.set(t, this.offer.title, { beacon: s.beacon !== false, radius: s.radius });
-      if (typeof s.target === 'function') g.gps.target.follow = s.target;
+      // (cible absente — étape terminée, par exemple après la ligne d'arrivée : GPS éteint, rien à suivre)
+      if (typeof s.target === 'function' && g.gps.target) g.gps.target.follow = s.target;
     } else g.gps.clear();
   }
   text() {
