@@ -8,7 +8,8 @@ export const HOME = {
   hay: { x: -166, z: 176, w: 14, d: 18 },
   arena: { x: -100, z: 212, w: 46, d: 24 },
   paddock: { x: -162, z: 216, w: 30, d: 22 },
-  house: { x: -72, z: 136, w: 13, d: 9 },
+  // Maison du personnage : longère où l'on entre (homeGeo.js), porte sur la cour (+z).
+  house: { x: -72, z: 135.7, w: 18.4, d: 8.6 },
   club: { x: -67, z: 205, w: 12, d: 8 }, // club-house, baie vitrée et terrasse sur la carrière
   yard: { x: -112, z: 174, w: 120, d: 30 },
   truck: { x: -64, z: 158, rot: Math.PI / 2 },

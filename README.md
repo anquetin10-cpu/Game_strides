@@ -163,6 +163,13 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
     et les commandes du café se retirent ou se déposent au comptoir ;
   - **reprise** : une sauvegarde faite dans un commerce y ramène le joueur (ou devant sa porte si l'intérieur ne peut
     pas être reconstruit), achats, cheval et progression intacts.
+- **Maison de l'Écurie du Val** (longère enduite, porte sur la cour, action « Entrer » à pied) : salon avec cheminée,
+  bibliothèque, canapé, fauteuil club et vitrine à trophées ; cuisine (plan de travail, évier, plaque, réfrigérateur,
+  machine à café, table et deux chaises) ; chambre (lit double, chevets et lampes, armoire, commode, flots et photo de
+  cheval) où « Se coucher » ouvre le menu du sommeil ; salle de bain (douche à l'italienne, vasque et miroir, WC,
+  sèche-serviettes). Le cheval reste dehors ; rien du dehors n'est proposé à travers les murs ; intérieur construit à
+  l'approche (une étape par image), dessiné seulement joueur dedans ; reprise dans la maison après rechargement
+  (`src/gameplay/home.js`, `src/world/homeGeo.js`).
 - **Concours de jour (ou le soir sous les projecteurs)** : épreuves de 8 h 30 à 21 h ; engagé en soirée, on passe le
   lendemain matin et on peut dormir à la maison de l'Écurie du Val jusqu'à 7 h.
 - **Carburant** : chaque véhicule consomme selon son moteur et sa conduite (jauge, autonomie et consommation moyenne au
@@ -223,6 +230,7 @@ node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans 
 node tests/e2e/cso-touch.mjs  # tour complet au doigt en émulation iPhone 13 (joystick + SAUT en multitouch)
 node tests/e2e/cso-framing.mjs # cadrage de la caméra de concours : part de la hauteur et position du couple à l’écran
 node tests/e2e/shops.mjs      # commerces (iPhone 13 émulé) : entrer, circuler, acheter, équiper, sortir, reprise
+node tests/e2e/home-interior.mjs # maison de l'Écurie du Val : entrer, pièces, caméra, collisions, lit, jour/nuit, reprise
 node tests/e2e/town-shots.mjs apres   # vues fixes de Deauville City dans tests/e2e/out/town/apres/
 node tests/e2e/perf-town.mjs apres    # mesures dans les rues et les commerces (rendu logiciel : valeurs relatives)
 ```

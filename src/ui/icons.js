@@ -29,6 +29,7 @@ export const ICONS = {
   trophy: s('<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5a3 3 0 0 0 3.5 4M16 6h3.5a3 3 0 0 1-3.5 4M12 13v4M8.5 20.5h7M10 17h4l.5 3.5h-5z"/>'),
   camera: s('<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>'),
   home: s('<path d="M3 11 12 4l9 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'),
+  bed: s('<path d="M3 6v13M3 15h18v4"/><path d="M21 15v-2.5A2.5 2.5 0 0 0 18.5 10H10v5"/><circle cx="6.5" cy="12" r="1.7"/>'),
   bag: s('<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>'),
   event: s('<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'),
   stable: s('<path d="M3 10 12 4l9 6v10H3z"/><path d="M8 20v-6h8v6M12 14v6"/>'),

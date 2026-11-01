@@ -42,6 +42,7 @@ import { Activities } from './gameplay/activities.js';
 import { Challenges } from './gameplay/challengeRun.js';
 import { Commerce } from './gameplay/commerce.js';
 import { ShopManager } from './gameplay/shops.js';
+import { HomeManager } from './gameplay/home.js';
 import { HORSES, SHOP, FIRST_NAMES } from './gameplay/data.js';
 import { HUD } from './ui/hud.js';
 import { Phone } from './ui/phone.js';
@@ -264,6 +265,7 @@ export class Game {
     this.hud.minimap.setImage(this.mapImage);
     this._worldInteractions();
     this.shops = new ShopManager(this);
+    this.home = new HomeManager(this);
     installCare(this);
     installFuel(this);
     installRest(this);
@@ -898,7 +900,7 @@ export class Game {
     // Montée en cours : point d'approche (à pied, en lieu sûr) ; descente en cours : encore au volant.
     const f = p.boarding?.safeFoot() || p.horseMount?.safeFoot() || (p.mode === 'foot' ? p.human.pos : p.mode === 'ride' ? p.horse.pos : p.vehicle.pos);
     // Dans un commerce : la porte (trottoir), et le commerce à rouvrir à la reprise (save.data.indoorShop).
-    const door = this.shops?.savedPos();
+    const door = this.shops?.savedPos() || this.home?.savedPos();
     this.save.data.pos = {
       x: door ? door.x : f.x, z: door ? door.z : f.z, heading: door ? door.heading : p.heading,
       horse: this.mainHorse ? { x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, heading: this.mainHorse.heading } : null,
@@ -1184,6 +1186,7 @@ export class Game {
     this.state = 'play';
     // Sauvegarde faite dans un commerce : retour à l'intérieur (ou devant sa porte si l'intérieur ne se charge pas).
     if (!isNew) this.shops.resume();
+    if (!isNew) this.home.resume();
     // Concours interrompu par un rechargement : engagement remboursé.
     if (!isNew) this.missions.refundLostFee();
     this.hud.el.classList.remove('hidden');
@@ -1337,6 +1340,7 @@ export class Game {
     // Gameplay.
     this._talker = this.player.mode !== 'drive' ? this.ambient.nearestTalker(this.player.focus.pos) : null;
     this.shops.update();
+    this.home.update();
     this.defenderAccess?.update();
     this.interact.update();
     this.missions.update(sdt);

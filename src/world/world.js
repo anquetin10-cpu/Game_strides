@@ -15,6 +15,7 @@ import { makeTerrainTexture, makeGroundDetail, paveTexture } from './terrainText
 import { applySurfaces, applyRoadShader, applyInteriors, applyPavement, addIndoor, INTERIOR_UNIFORMS, INDOOR_UNIFORMS, applyShopLight, shopLightUniforms } from './surfaces.js';
 import { shopExterior, streetShopfront, WALL_T, FLOOR_Y } from './shopGeo.js';
 import { buildInterior, shopLayout } from './shopInteriors.js';
+import { houseExterior, houseLayout, houseInteriorSteps, HOUSE_T, CAM_CEIL } from './homeGeo.js';
 import { CAFE_MENU } from '../gameplay/data.js';
 import { CAR_COLORS, CAR_MODELS, troughGeo, mountingBlockGeo, wheelbarrowGeo, muckHeapGeo, wrappedBaleGeo } from './props.js';
 import { Water } from './water.js';
@@ -480,7 +481,7 @@ export class World {
     const C = HOME.club;
     this.placeBarn(clubHouseGeo({ w: C.w, d: C.d }), C.x, C.z, -Math.PI / 2, C.w, C.d, 'club');
     this.signboard(t('CLUB-HOUSE'), 'Écurie du Val', C.x + 2, C.z - C.w / 2 - 1.2, 0, { w: 3.2, h: 0.8, postH: 1.6 });
-    this.place(buildingGeo({ w: HOME.house.w, d: HOME.house.d, h: 5.6, wall: '#f3efe7', roof: '#33363c', trim: '#202125', roofType: 'gable', doorColor: '#202125' }), HOME.house.x, HOME.house.z, 0, HOME.house.w, HOME.house.d, 'house');
+    this.buildHouse();
     // Grange à foin ouverte vers l'est.
     const H = HOME.hay;
     const hy = this.groundAt(H.x, H.z, H.w / 2, H.d / 2);
@@ -1347,6 +1348,89 @@ export class World {
     sh.interior = null;
   }
 
+  // ---------- Maison de l'Écurie du Val (homeGeo.js) ----------
+  // Extérieur à vraies ouvertures dans le lot statique (vitrages à effet de pièce, allumés la nuit), murs, cloisons et
+  // mobilier en collision (porte fermée : on entre par l'action « Entrer »), plafond pour la caméra. L'intérieur est
+  // construit à l'approche, une étape par image (homeInteriorStep), avec les matériaux des commerces (programmes déjà
+  // compilés, voir prewarmShops), et libéré au loin (unloadHomeInterior).
+  buildHouse() {
+    const S = HOME.house;
+    const y = this.groundAt(S.x, S.z, S.w / 2, S.d / 2);
+    const ext = houseExterior();
+    this.batch.add(ext.body, null, S.x, y, S.z, 0);
+    if (ext.detail) this.batch.addDetail(ext.detail, null, S.x, y, S.z, 0);
+    if (ext.shutters) this.batch.addDetail(ext.shutters, null, S.x, y, S.z, 0, 1);
+    if (ext.glass) this.glass.add(ext.glass, null, S.x, y, S.z, 0);
+    if (ext.glow) this.lights.add(ext.glow, null, S.x, y, S.z, 0);
+    const layout = houseLayout();
+    for (const [bx, bz, hw, hd, top = Infinity] of [...ext.colliders, ...layout.colliders]) this.colliders.addBox(S.x + bx, S.z + bz, hw, hd, 0, top === Infinity ? Infinity : y + top, 'house');
+    this.colliders.addCeiling({ x: S.x, z: S.z, rot: 0, y, hw: S.w / 2 - HOUSE_T, hd: S.d / 2 - HOUSE_T, h: CAM_CEIL });
+    this.features.buildings.push({ x: S.x, z: S.z, w: S.w, d: S.d, rot: 0, kind: 'house' });
+    // Herbe en touffes : le masque (2,3 m par texel, interpolé) en laissait pousser à travers les sols près des murs.
+    clearGrassUnder(this.grassMask, [{ x: S.x, z: S.z, w: S.w + 4.6, d: S.d + 4.6, rot: 0 }]);
+    // lampH : plafonnier au-dessus du joueur pour l'éclairage des personnages (voir update).
+    this.house = { spec: S, y, layout, interior: null, steps: null, lampH: 2.5 };
+  }
+
+  // Une étape de construction de l'intérieur ; vrai quand il est prêt (maillages ajoutés à la scène).
+  homeInteriorStep() {
+    const H = this.house;
+    if (!H) throw new Error('Maison absente');
+    if (H.interior) return true;
+    H.steps ||= houseInteriorSteps();
+    let r;
+    try {
+      r = H.steps.next();
+    } catch (e) {
+      H.steps = null;
+      throw e;
+    }
+    if (!r.done) return false;
+    H.steps = null;
+    const S = H.spec;
+    const group = new THREE.Group();
+    group.name = 'home';
+    // Invisible du dehors : dessiné seulement le joueur dedans (HomeManager).
+    group.visible = false;
+    group.position.set(S.x, H.y, S.z);
+    group.updateMatrixWorld(true);
+    const pts = H.layout.lights.map(([lx, ly, lz, k]) => [S.x + lx, H.y + ly, S.z + lz, k]);
+    const U = shopLightUniforms(pts, '#ffd9a8', 6);
+    const M = this._shopMaterials(U);
+    for (const [key, geo] of Object.entries(r.value)) {
+      if (!geo) continue;
+      geo.computeBoundingSphere();
+      const mesh = new THREE.Mesh(geo, M[key]);
+      mesh.receiveShadow = key !== 'E' && key !== 'G';
+      mesh.castShadow = key === 'L' || key === 'F';
+      mesh.matrixAutoUpdate = false;
+      mesh.updateMatrix();
+      if (key === 'G') mesh.renderOrder = 3;
+      group.add(mesh);
+    }
+    this.group.add(group);
+    H.interior = { group, materials: Object.values(M), U, color: U.shopLC.value.clone() };
+    return true;
+  }
+
+  // Intérieur prêt tout de suite (entrée, reprise d'une sauvegarde) : étapes restantes d'un coup.
+  loadHomeInterior() {
+    while (!this.homeInteriorStep());
+    return this.house.interior;
+  }
+
+  unloadHomeInterior() {
+    const H = this.house;
+    if (!H) return;
+    H.steps = null;
+    if (!H.interior) return;
+    const { group, materials } = H.interior;
+    group.traverse((o) => o.isMesh && o.geometry.dispose());
+    materials.forEach((m) => m.dispose());
+    this.group.remove(group);
+    H.interior = null;
+  }
+
   // Trottoirs, passages piétons, jardinières, voitures garées, statue.
   // Signalisation : entrées/sorties de Deauville City (agglomération) et limitations à 80 km/h hors agglomération.
   buildRoadSigns() {
@@ -1867,8 +1951,8 @@ export class World {
       lp.w = 0;
       // Dans un commerce (sellerie, café, boutique) : ses plafonniers sont allumés jour et nuit ; leur éclairage, propre
       // aux matériaux du commerce, n'atteignait pas les personnages (noirs la nuit). Plafonnier au-dessus du joueur.
-      const shop = this.activeShop ? this.shops?.[this.activeShop] : null;
-      if (shop) lp.set(focus.x, shop.y + 2.9, focus.z + 0.6, 3 + night * 5);
+      const shop = this.activeShop ? this.shops?.[this.activeShop] : this.activeHome ? this.house : null;
+      if (shop) lp.set(focus.x, shop.y + (shop.lampH || 2.9), focus.z + 0.6, 3 + night * 5);
       // Plafonniers de toute la pièce : la vendeuse au comptoir, les clients, pas seulement le joueur.
       CLOUD_UNIFORMS.lpAmb.value = shop ? 0.5 + night * 0.9 : 0;
       if (night > 0.05) {

@@ -34,6 +34,17 @@ export default {
   'Sortir': 'Exit',
   'Comptoir': 'Counter',
   'La boutique ne peut pas ouvrir pour le moment. Réessaie dans un instant.': 'The shop can’t open right now. Try again in a moment.',
+
+  // Maison de l'Écurie du Val (gameplay/home.js)
+  'Se coucher': 'Go to bed',
+  'Le lit est fait.': 'The bed is made.',
+  'Boire un verre d’eau': 'Drink a glass of water',
+  'Un grand verre d’eau fraîche.': 'A big glass of cool water.',
+  'Se rafraîchir': 'Freshen up',
+  'Un peu d’eau fraîche sur le visage : ça réveille.': 'A splash of cool water on your face: that wakes you up.',
+  'Maison · Écurie du Val': 'Home · Écurie du Val',
+  'La porte est coincée. Réessaie dans un instant.': 'The door is stuck. Try again in a moment.',
+
   'En stock : {0}': 'In stock: {0}',
   'Possédé · équipé ({0})': 'Owned · equipped ({0})',
   'Possédé · non équipé': 'Owned · not equipped',
