@@ -28,6 +28,7 @@
       R.k = 0;
       R.pressed = new Set();
       R.log = [];
+      R.refusals = 0;
     },
     decide() {
       const p = g.player, h = p.horse;
@@ -41,6 +42,42 @@
         if (d < bd) { bd = d; best = i; }
       }
       R.k = best;
+      // Après un refus : volte comme un cavalier — demi-tour sur place, du champ au trot dans l'axe, demi-tour, puis
+      // on représente l'obstacle dans son axe.
+      if (st.refusals > (R.refusals || 0)) {
+        R.refusals = st.refusals;
+        R.volte = { o: g.course?.next, stage: 0, x0: 0, z0: 0 };
+      }
+      if (R.volte && R.volte.o) {
+        const V = R.volte, o = V.o;
+        const away = Math.atan2(-o.n.x, -o.n.z), back = Math.atan2(o.n.x, o.n.z);
+        const steerTo = (hd) => Math.max(-1, Math.min(1, -wrap(hd - h.heading) * 3));
+        const cad = p.csoCadence ?? 0;
+        if (V.stage === 0) {
+          // Demi-tour sur les hanches, cadence à zéro.
+          if (Math.abs(wrap(away - h.heading)) < 0.25 && !(h._rearT > 0)) { V.stage = 1; V.x0 = h.pos.x; V.z0 = h.pos.z; }
+          return { x: steerTo(away), y: cad > 0.1 ? -1 : 0, jump: false, done: false, label: o.label };
+        }
+        if (V.stage === 1) {
+          // Du champ au trot, dans l'axe.
+          if (Math.hypot(h.pos.x - V.x0, h.pos.z - V.z0) > 16) V.stage = 2;
+          return { x: steerTo(away), y: cad < 4.5 ? 1 : cad > 4.8 ? -1 : 0, jump: false, done: false, label: o.label };
+        }
+        // Demi-volte au trot pour revenir face à l'obstacle, puis reprise du tracé dans l'axe.
+        if (Math.abs(wrap(back - h.heading)) > 0.3) return { x: 1, y: 0, jump: false, done: false, label: o.label };
+        const line = window.__setup.line;
+        let j = line.findIndex((q) => (q.x - o.x) ** 2 + (q.z - o.z) ** 2 < 1);
+        if (j < 0) j = 0;
+        const dense = [];
+        const a = { x: h.pos.x, z: h.pos.z }, b = { x: o.x - o.n.x * 3, z: o.z - o.n.z * 3 };
+        const m = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.z - a.z) / 0.5));
+        for (let q = 0; q < m; q++) dense.push({ x: a.x + ((b.x - a.x) * q) / m, z: a.z + ((b.z - a.z) * q) / m });
+        R.path = dense.concat(line.slice(j));
+        R.k = 0;
+        R.volte = null;
+        // (le cavalier corrige son appel après le refus)
+        R.lead = 0;
+      }
       const v = Math.max(h.speed, 1);
       const Ld = 5 + v * 0.55;
       const ahead = Math.round(Ld / 0.5);

@@ -86,3 +86,48 @@ describe('saut : la distance d’appel décide du franchissement', () => {
     expect(arcY(1.3, 5, 6)).toBe(0);
   });
 });
+
+// Modèle v2 (saut d'obstacles) : le cheval saute ce que demande l'obstacle, le moment de l'appel compte.
+import { takeoffQuality } from '../../src/gameplay/jumpModel.js';
+describe('saut v2 : timing d’appel, difficulté progressive', () => {
+  const window = (f, v, power = 1.35) => {
+    const ok = [];
+    for (let d = 0; d <= 9; d += 0.02) {
+      const p = planJump({ v, power, clearance: 0 }, railsAhead(f, 0, -d, 0, 1));
+      if (p.zone !== 'refuse' && p.margin >= -JUMP.rub) ok.push(d);
+    }
+    return ok.length ? (Math.max(...ok) - Math.min(...ok)) / v : 0; // secondes
+  };
+  const V = (h) => ({ ...fence([{ s: 0, h }]), kind: 'v' });
+  const O = (h, sp = 1.25) => ({ ...fence([{ s: -sp / 2, h: h - 0.05 }, { s: sp / 2, h }]), kind: 'o' });
+  it('fenêtre d’appel réaliste : ~0,4 s sur un vertical de 1,15 m, plus étroite sur un oxer', () => {
+    const v = window(V(1.15), 6.2), o = window(O(1.15), 6.2);
+    expect(v).toBeGreaterThan(0.33);
+    expect(v).toBeLessThan(0.5);
+    expect(o).toBeGreaterThan(0.2);
+    expect(o).toBeLessThan(v);
+  });
+  it('plus haut : plus exigeant (fenêtre plus étroite à puissance égale)', () => {
+    expect(window(O(1.25), 6.2)).toBeLessThan(window(O(1.05), 6.2));
+  });
+  it('vitesse : trop lent, l’oxer devient difficile (manque d’impulsion)', () => {
+    expect(window(O(1.15), 5.0)).toBeLessThan(window(O(1.15), 6.2) * 0.7);
+  });
+  it('le cheval saute selon l’obstacle (pas plus haut que nécessaire) et part de là où l’on appuie', () => {
+    const low = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.0), 0, -2.1, 0, 1));
+    const high = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.2), 0, -2.1, 0, 1));
+    expect(low.H).toBeLessThan(high.H);
+    // Recalage de longueur limité (pas de correction automatique de l'appel).
+    const far = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.15), 0, -4.5, 0, 1));
+    expect(far.L / far.L0).toBeLessThanOrEqual(1 + JUMP.adapt + 1e-9);
+    expect(far.margin).toBeLessThan(0);
+  });
+  it('retour au cavalier : appel parfait, un peu loin, trop près…', () => {
+    const at = (d) => takeoffQuality(planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.15), 0, -d, 0, 1)));
+    const ideal = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.15), 0, -2, 0, 1)).L0 / 2;
+    expect(at(ideal)).toBe('perfect');
+    expect(['bitFar', 'far']).toContain(at(ideal + 1.25));
+    expect(at(6)).toBe('far');
+    expect(['bitNear', 'near', 'tooClose']).toContain(at(0.9));
+  });
+});

@@ -71,7 +71,8 @@ export function csoRideStep(player, input, dt) {
     player._kbdSteer = k + clamp(sx - k, -step, step);
     sx = player._kbdSteer;
   } else player._kbdSteer = 0;
-  player.csoCadence = clamp(player.csoCadence + cadenceDelta(mv.y, sx, player.csoCadence) * dt, 0, R.maxSpeed);
+  // Refus en cours (arrêt, cheval qui se cabre) : la cadence ne se règle pas — on repart une fois le cheval calmé.
+  if (!(h._rearT > 0) && !h._refusing) player.csoCadence = clamp(player.csoCadence + cadenceDelta(mv.y, sx, player.csoCadence) * dt, 0, R.maxSpeed);
   c.turnRate = steerRate(sx, h.speed);
   c.speedOverride = player.csoCadence;
   c.yawTau = R.yawTau;

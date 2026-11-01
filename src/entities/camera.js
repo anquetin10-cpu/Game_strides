@@ -24,7 +24,7 @@ export const CAM_COMP = {
   yK: 3, // suivi vertical (1/s)
   jumpFollow: 0.12, // part de la hauteur du saut suivie (le saut ne secoue pas l'image)
   fov: 58, // champ vertical fixe (°) : ni zoom au saut, ni grand-angle à la vitesse
-  minBack: 3.0, // contre une tribune, la caméra se rapproche, jamais devant le cheval (m)
+  minBack: 1.6, // contre une tribune ou un mât, la caméra se rapproche (jamais dans l'obstacle ni devant le cheval) (m)
   fenceClear: 0.7, // marge au-dessus d'un obstacle survolé (m)
   enter: 1.2, // fondu d'entrée depuis la caméra précédente (s)
 };

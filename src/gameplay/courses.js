@@ -258,6 +258,19 @@ export function courseSteps(game, run, S, opts) {
             if (state.refusals < maxRefusals && state.fenceRefusals < 3) game.hud.hint(msg, 3500);
           }),
         ];
+        // Départ lancé : déjà au-delà de la ligne de départ, dans son sens, à la cloche (entré en piste au galop) — le
+        // chrono part tout de suite, comme si la ligne venait d'être franchie.
+        if (cso && startLine?.rot !== undefined) {
+          const hh = horse();
+          const n = { x: Math.sin(startLine.rot), z: Math.cos(startLine.rot) };
+          const sP = (hh.pos.x - startLine.x) * n.x + (hh.pos.z - startLine.z) * n.z;
+          const uP = Math.abs((hh.pos.x - startLine.x) * n.z - (hh.pos.z - startLine.z) * n.x);
+          if (sP >= 0 && sP < 12 && uP < (startLine.w || 6) / 2 + 0.3 && Math.sin(hh.heading) * n.x + Math.cos(hh.heading) * n.z > 0.5) {
+            state.started = true;
+            game.audio.tone(1568, 0.1, 'sine', 0.08);
+            ob.highlight(courseId, state.next);
+          }
+        }
         if (cso) game.hud.hint(t('<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.'), 6000);
         else game.hud.hint(t('Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.'), 4000);
       },

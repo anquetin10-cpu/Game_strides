@@ -358,7 +358,9 @@ export class World {
     CLOUD_UNIFORMS._flN = n + 1;
     const pts = [];
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) pts.push([r.x + sx * (r.w / 2 + 2.2), r.z + sz * (r.d / 2 + 2.2)]);
-    if (r.w > 40) for (const sz of [-1, 1]) pts.push([r.x, r.z + sz * (r.d / 2 + 2.2)]);
+    // Mâts du milieu des grands côtés décalés de 12 m : l'axe de l'entrée de piste (au milieu du côté sud) reste dégagé
+    // pour la caméra de concours, placée derrière le cavalier qui entre.
+    if (r.w > 40) for (const sz of [-1, 1]) pts.push([r.x + 12, r.z + sz * (r.d / 2 + 2.2)]);
     for (const [x, z] of pts) {
       const y = this.h(x, z);
       const a = Math.atan2(r.x - x, r.z - z);

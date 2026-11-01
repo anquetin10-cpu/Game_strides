@@ -14,7 +14,11 @@ import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 const base = process.env.BASE || 'http://127.0.0.1:5173';
 const MODE = process.argv[2] || 'virtual';
 const COURSE = process.argv[3] || 'cso';
-const SHOTS = process.env.SHOTS !== '0';
+const SHOTS = process.env.SHOTS !== '0' && !process.env.VIDEO;
+// VIDEO=1 : vidéo continue de la manche (15 images/s, vitesse réelle), joystick et bouton SAUT visibles.
+const VIDEO = !!process.env.VIDEO;
+let vframe = 0;
+const vEvents = [];
 const OUT = 'tests/e2e/out/cso-athens';
 mkdirSync(OUT, { recursive: true });
 let fails = 0;
@@ -42,6 +46,12 @@ const shot = async (name) => {
   await page.screenshot({ path: `${OUT}/${COURSE}-${MODE}-${name}.jpg`, type: 'jpeg', quality: 85 });
 };
 
+const VDIR = `tests/e2e/out/videos/cso-${COURSE}-${MODE}`;
+if (VIDEO) { const { rmSync } = await import('node:fs'); rmSync(VDIR, { recursive: true, force: true }); mkdirSync(VDIR, { recursive: true }); }
+const frameShot = async () => {
+  await E(() => { const g = window.__game; g.sky.update(g.hour(), g.player.focus.pos, 0); g.sky.follow(g.camera); g.world.update(0, g.camera, g.sky); g.realism?.update(); g.renderer.render(g.scene, g.camera); });
+  await page.screenshot({ path: `${VDIR}/${String(vframe++).padStart(5, '0')}.jpg`, type: 'jpeg', quality: 84 });
+};
 // ---------- Mise en place (avant la manche : seul moment où l'on place le cheval) ----------
 const setup = await E(async (COURSE) => {
   const g = window.__game, A = window.__auto;
@@ -65,9 +75,9 @@ const setup = await E(async (COURSE) => {
     const c = P.PARIS_COURSES[COURSE];
     line = c.line; start = c.start; finish = c.finish;
     const ch = await import('/src/gameplay/challenge.js');
-    const cfg = Object.values(ch.CHALLENGES || {}).find((x) => x.course === COURSE) || null;
+    const cfg = Object.values(ch.CHALLENGES || {}).filter((x) => x.courseId === COURSE).sort((a, b) => b.version - a.version)[0] || null;
     if (!cfg) return { err: `pas de défi pour ${COURSE}` };
-    g.challenge.start(cfg.id);
+    g.challenge.start(cfg);
   }
   window.__setup = { line, start, finish };
   A.tick(6);
@@ -76,8 +86,25 @@ const setup = await E(async (COURSE) => {
 if (setup.err) { console.log(setup.err); process.exit(2); }
 // Présentation : « Entrer en piste ».
 await E(() => window.__auto.tap(document.querySelector('.overlay [data-id="enter"]')));
+// Séquence de l'entrée en piste (ENTRY=1) : passage de la caméra du monde ouvert à la caméra de concours.
+if (process.env.ENTRY) {
+  for (let i = 0; i < 16; i++) {
+    await tick(i === 0 ? 1 : 4);
+    await E(() => { const g = window.__game; g.sky.update(g.hour(), g.player.focus.pos, 0); g.sky.follow(g.camera); g.world.update(0, g.camera, g.sky); g.realism?.update(); g.renderer.render(g.scene, g.camera); });
+    await page.screenshot({ path: `${OUT}/entry-${String(i).padStart(2, '0')}.jpg`, type: 'jpeg', quality: 80 });
+  }
+}
+if (VIDEO) for (let i = 0; i < 40; i++) { await tick(2); await frameShot(); }
 await tick(4);
 await shot('0-entree');
+// Défi (Paris) : le jeu emmène le cavalier dans l'arène ; on attend qu'il y soit (mode concours actif) avant d'armer
+// les garde-fous et de lancer le cavalier.
+for (let i = 0; i < 400; i++) {
+  const ready = await E(() => !!window.__game.course && window.__game.player.mode === 'ride' && !document.querySelector('.overlay'));
+  if (ready) break;
+  await E(() => window.__auto.tap(document.querySelector('.overlay [data-id="enter"], .overlay .btn.primary')));
+  await tick(3);
+}
 // Garde-fous installés après la mise en place : aucune téléportation, aucun saut sans appui, aucune cadence non commandée.
 await E(() => {
   const g = window.__game, h = g.player.horse;
@@ -90,6 +117,9 @@ await E(() => {
   g.bus.on('horse:jump', (hh) => { if (hh.isPlayerHorse) { M.jumps++; M.takeoffs.push({ label: hh._lastJump?.o?.label, q: hh._lastJump?.plan?.zone, dev: +(hh._lastJump?.plan?.dev || 0).toFixed(3) }); } });
   window.__rider.init({ line: window.__setup.line, start: window.__setup.start, pre: 9 });
 });
+// Essais d'appel décalé (LEAD = mètres d'avance de l'appui, négatif = en retard) : on mesure les conséquences.
+const LEAD = Number(process.env.LEAD || 0);
+if (LEAD) await E((l) => (window.__rider.lead = l), LEAD);
 
 // ---------- Pilotage ----------
 const JX = 150, JY = 300;
@@ -112,6 +142,7 @@ if (MODE === 'keyboard') await E(() => window.__auto.releaseInput?.());
 const sample = () => E(() => {
   const g = window.__game, h = g.player.horse, cam = g.camera, M = window.__m;
   const st = g.missions.active?.data?.course;
+  if (st) window.__lastCourse = st;
   const cx = cam.position.x, cz = cam.position.z;
   const dx = h.pos.x - cx, dz = h.pos.z - cz;
   const camH = Math.atan2(dx, dz);
@@ -128,7 +159,7 @@ const sample = () => E(() => {
   return { started: !!st?.started, t: st?.t, next: st?.next, jumpT: h.jumpT, sp: h.speed, cad: g.player.csoCadence };
 });
 let prev = await E(() => { const h = window.__game.player.horse; return { x: h.pos.x, z: h.pos.z, sp: h.speed }; });
-let dec = null, n = 0, shotsDone = new Set();
+let dec = null, n = 0, shotsDone = new Set(), seqN = 0;
 for (n = 0; n < 5200; n++) {
   dec = await E(() => window.__rider.decide());
   if (dec.done) break;
@@ -157,11 +188,32 @@ for (n = 0; n < 5200; n++) {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   }
   const s = await sample();
+  if (process.env.DBG && n % 15 === 0) console.log(n, JSON.stringify(await E(() => { const g = window.__game, h = g.player.horse, st = g.missions.active?.data?.course, o = g.course?.next; return { x: +h.pos.x.toFixed(1), z: +h.pos.z.toFixed(1), hd: +h.heading.toFixed(2), sp: +h.speed.toFixed(2), cad: g.player.csoCadence, rear: h._rearT > 0, refusing: !!h._refusing, brake: h._brake, next: st?.next, started: st?.started, ref: st?.refusals, d: o ? +Math.hypot(o.x - h.pos.x, o.z - h.pos.z).toFixed(1) : null, k: window.__rider.k, mv: [+g.input.move.x.toFixed(2), +g.input.move.y.toFixed(2)] }; })), JSON.stringify(dec));
   // Continuité : déplacement par image ≤ vitesse × dt (+ marge) ; cadence : seulement par le joystick.
   const cur = await E(() => { const h = window.__game.player.horse; return { x: h.pos.x, z: h.pos.z, sp: h.speed }; });
   const step = Math.hypot(cur.x - prev.x, cur.z - prev.z);
   await E(([step, lim]) => { const M = window.__m; if (step > lim) M.bigSteps = (M.bigSteps || 0) + 1; M.maxStep = Math.max(M.maxStep, step); }, [step, Math.max(prev.sp, cur.sp) / 30 + 0.05]);
   prev = cur;
+  if (VIDEO && n % 2 === 1) {
+    // Moments clés (pour la comparaison avec la vidéo de référence) : abord, appel, réception, courbe.
+    const k = await E(() => { const g = window.__game, h = g.player.horse, o = g.course?.next; return { j: h.jumpT, d: o ? Math.hypot(o.x - h.pos.x, o.z - h.pos.z) : 99, yr: Math.abs(h._yawRate || 0) }; });
+    const mark = (name) => { if (!vEvents.some((e) => e.name === name)) vEvents.push({ name, frame: vframe }); };
+    if (s.started && k.d < 14 && k.j < 0) mark('abord');
+    if (k.j >= 0 && k.j < 0.15) mark('appel');
+    if (k.j > 0.45 && k.j < 0.6) mark('suspension');
+    if (k.j > 0.9) mark('reception');
+    if (s.started && k.yr > 0.45 && k.j < 0) mark('courbe');
+    await frameShot();
+  }
+  // Séquence image par image autour d'un obstacle (SEQ=étiquette) : appel, suspension, réception.
+  if (process.env.SEQ && (seqN > 0 || dec.label === process.env.SEQ) && seqN < 36) {
+    const d = await E(() => { const g = window.__game, h = g.player.horse, o = g.course?.next; return o ? Math.hypot(o.x - h.pos.x, o.z - h.pos.z) : 0; });
+    if (seqN > 0 || d < 7) {
+      seqN++;
+      await E(() => { const g = window.__game; g.sky.update(g.hour(), g.player.focus.pos, 0); g.sky.follow(g.camera); g.world.update(0, g.camera, g.sky); g.realism?.update(); g.renderer.render(g.scene, g.camera); });
+      await page.screenshot({ path: `${OUT}/seq-${String(seqN).padStart(2, '0')}.jpg`, type: 'jpeg', quality: 80 });
+    }
+  }
   if (SHOTS) {
     const lab = dec.label;
     if (s.started && !shotsDone.has('1-abord') && lab === '1' && s.jumpT < 0) {
@@ -180,7 +232,15 @@ for (n = 0; n < 5200; n++) {
 if (MODE === 'keyboard') for (const k of [...keys]) await setKey(k, false);
 await shot('6-arrivee');
 // Sortie de piste, puis bilan.
-await tick(100);
+if (VIDEO) {
+  for (let i = 0; i < 45; i++) { await tick(2); await frameShot(); }
+  const { execFileSync } = await import('node:child_process');
+  const label = MODE === 'touch' ? 'tactile' : MODE === 'keyboard' ? 'clavier' : 'joystick';
+  const mp4 = `tests/e2e/out/videos/cso-${COURSE}-${label}.mp4`;
+  execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${VDIR}/%05d.jpg`, '-vf', `drawtext=text='STRIDES Grand Tour · épreuve de CSO (${label}) · capture du jeu, rendu logiciel':x=12:y=h-28:fontsize=14:fontcolor=white:box=1:boxcolor=black@0.4:boxborderw=5`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '23', '-movflags', '+faststart', mp4]);
+  console.log(`vidéo : ${vframe} images → ${mp4}`);
+  writeFileSync(`tests/e2e/out/videos/cso-${COURSE}-${label}.events.json`, JSON.stringify({ fps: 15, events: vEvents }, null, 1));
+} else await tick(100);
 const res = await E(() => {
   const g = window.__game, M = window.__m, run = g.missions.active;
   const st = window.__lastCourse || run?.data?.course;
@@ -207,7 +267,8 @@ const summary = {
 };
 console.log(JSON.stringify(summary, null, 1));
 writeFileSync(`${OUT}/${COURSE}-${MODE}.json`, JSON.stringify({ summary, results }, null, 1));
-check('A1', 'parcours terminé, sans faute, avec les commandes normales', !!res.st?.finished && !res.st?.eliminated && res.st?.faults === 0, `${res.st?.t?.toFixed(2)} s, ${res.st?.faults} pts, ${res.st?.refusals} refus`);
+if (LEAD) console.log(`appel décalé de ${LEAD} m : ${JSON.stringify(res.st?.log?.map((l) => `${l.label}:${l.kind}${l.cause ? `(${l.cause})` : ''}`))} · refus ${res.st?.refusals} · ${res.st?.eliminated || ''}`);
+if (!LEAD) check('A1', 'parcours terminé, sans faute, avec les commandes normales', !!res.st?.finished && !res.st?.eliminated && res.st?.faults === 0, `${res.st?.t?.toFixed(2)} s, ${res.st?.faults} pts, ${res.st?.refusals} refus`);
 check('A2', 'aucune téléportation ni déplacement anormal pendant la manche', res.M.teleports === 0 && !(res.M.bigSteps > 0), `setPosition ${res.M.teleports}, pas max ${res.M.maxStep?.toFixed(3)} m`);
 check('A3', 'aucun saut sans appui : un appui par obstacle, autant de sauts que d’appuis', res.M.jumps === res.M.presses && res.M.presses === res.M.ev.length, `${res.M.presses} appuis, ${res.M.jumps} sauts, ${res.M.ev.length} obstacles`);
 check('C1', 'caméra derrière le cheval à distance stable', summary.cam.dist[1] - summary.cam.dist[0] < 2.2 && summary.cam.dist[0] > 3.5, JSON.stringify(summary.cam.dist));

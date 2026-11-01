@@ -15,7 +15,7 @@ const LINE_MAT = new THREE.MeshBasicMaterial({ color: '#f7f3e8', transparent: tr
 const NEXT_MAT = new THREE.MeshBasicMaterial({ color: '#f7f3e8', transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide });
 // Réglages du tracé : longueur et largeur d'un repère, pas entre deux repères, longueur affichée après l'obstacle
 // suivant (plus pâle), repères masqués juste sous le cheval.
-export const LINE_MARK = { dash: 0.45, width: 0.16, every: 1.3, after: 12, hideNear: 1.5 };
+export const LINE_MARK = { dash: 0.55, width: 0.2, every: 1.4, after: 12, hideNear: 1.5 };
 const GOOD_MAT = new THREE.MeshBasicMaterial({ color: '#3ddc97', transparent: true, opacity: 0.26, depthWrite: false });
 const OK_MAT = new THREE.MeshBasicMaterial({ color: '#f0b33a', transparent: true, opacity: 0.16, depthWrite: false });
 const MARK_MAT = new THREE.MeshBasicMaterial({ color: '#7dffc4', transparent: true, opacity: 0.8, depthWrite: false });
