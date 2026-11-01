@@ -114,13 +114,20 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
     conseillé depuis l'entrée de piste ; obstacles, plan, tracé conseillé au sol, longueur (368 m) et temps accordé
     (64 s) viennent des mêmes données (`src/gameplay/csoCourse.js`), et chaque tracé passe le lint de tracé
     (`src/gameplay/courseLint.js`, tests `courses-lint.test.js`) ;
-  - **commandes de concours** (comme le saut d'obstacles d'Athènes 2004) : joystick gauche/droite pour tourner
-    progressivement (jamais de pivot), avant/arrière pour la cadence, gardée au relâchement (galop de concours stable
-    par défaut, 6,2 m/s) ; gros bouton SAUT à droite, utilisable en tournant ; clavier : flèches ou ZQSD + Espace ;
-    BOOST remplacé par la cadence ; réglages dans `CSO_RIDE` (`src/gameplay/player.js`) ;
-  - **caméra de concours** : proche derrière le cheval, juste au-dessus du cavalier, peu plongeante, regard porté
-    devant le cheval, saut amorti, champ fixe ; rétablie à la sortie (fin, abandon, élimination) ; réglages dans
-    `CAM_CSO` (`src/entities/camera.js`) ; **HUD allégé** (chrono, temps accordé, pénalités, obstacle suivant) ;
+  - **commandes de concours** (philosophie du saut d'obstacles d'Athens 2004 : diriger, régler la vitesse, sauter) :
+    joystick gauche/droite pour diriger (courbe progressive, rayon qui grandit avec la vitesse : 6,3 m au trot, 7,6 m
+    au galop de concours, 9 m au galop allongé), avant/arrière pour la cadence, gardée au relâchement et partant de la
+    vitesse réelle du cheval ; gros bouton SAUT, dont le moment compte ; clavier : flèches ou ZQSD + Espace (direction
+    amenée progressivement) ; pas de BOOST ; réglages dans `CSO_RIDE` (`src/gameplay/csoRide.js`) ;
+  - **saut** (`src/gameplay/jumpModel.js`, en épreuve et à l'entraînement seulement) : le saut part de là où l'on
+    appuie, le cheval saute la hauteur que demande l'obstacle, recadrage limité (+6 % / −12 %) ; appel un peu tôt ou un
+    peu tard : franchi ; nettement trop tôt : barre en fin de trajectoire (postérieurs) ; trop tard : barre en montée ou
+    refus ; retour après chaque saut (« Appel parfait », « Un peu loin »…) ;
+  - **caméra de concours** (branche séparée, `CAM_COMP`, `src/entities/camera.js`) : centrée derrière le cavalier,
+    6,6 m derrière et 3,4 m de haut, champ fixe de 58°, verrouillée, rotation progressive avec une légère
+    anticipation, sans zoom ni secousse aux sauts, passe au-dessus des obstacles ; active de l'entrée en piste à la
+    sortie ; **HUD sobre** (chrono, fautes, obstacle suivant ; cadence affichée quand on la règle) ; **tracé au sol** :
+    ligne discrète de petits repères jusqu'à l'obstacle suivant, désactivable (Réglages ou menu pause) ;
   - **déroulé de concours** : présentation (épreuve, hauteur, cheval, temps accordé) et plan consultable, annonce à
     l'entrée en piste, cloche (45 s pour prendre le départ), chrono au centième lancé à la ligne de départ, arrivée
     applaudie, bilan (chrono, fautes et leur cause, pénalités de temps, classement des concurrents, récompense une
@@ -206,6 +213,7 @@ node tests/e2e/fuel.mjs       # carburant : consommation, plein à la station, p
 node tests/e2e/online.mjs     # sauvegarde en ligne et classements (base claude.ai simulée)
 node tests/e2e/real/realism.mjs # modèles réalistes : personnage et cheval, sabots au sol, volant, retour au classique
 node tests/e2e/cso.mjs        # épreuve de CSO complète au joystick : sans faute, mauvais appels, double, refus, élimination
+node tests/e2e/cso-athens.mjs [virtual|touch|keyboard] [cso|paris_gp]  # manche jouée aux seules commandes normales (VIDEO=1 : vidéo)
 node tests/e2e/i18n.mjs       # bilingue : choix au premier lancement, bascule écran titre / réglages, missions en anglais
 node tests/e2e/master.mjs     # van STX Renault Master : modèle, conduite, pont latéral, chargement, sauvegarde, captures
 DEFENDER=full node tests/e2e/defender.mjs   # Defender 110 : modèle, portes, coffre, conduite, collisions, sauvegarde, captures
