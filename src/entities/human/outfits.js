@@ -76,8 +76,12 @@ export function resolveOutfit(outfit = {}, name = '') {
   const key = sex + JSON.stringify(outfit);
   const hit = cache.get(key);
   if (hit) return hit;
-  const r = rng(hashStr(key) ^ 0x9e3779b9);
-  const rider = !!outfit.helmet || outfit.style === 'rider';
+  // Graine des traits tirés au hasard : l'identité du personnage si elle est donnée (le joueur : même visage, même
+  // taille, quelle que soit la tenue), sinon la tenue elle-même (passants).
+  const r = rng(hashStr(outfit.identity ? sex + outfit.identity : key) ^ 0x9e3779b9);
+  // Coupe de cavalier : donnée par le style quand il est précisé (casque mis à cheval sans changer de tenue),
+  // sinon déduite du casque (cavaliers et cavalières du décor).
+  const rider = outfit.style ? outfit.style === 'rider' : !!outfit.helmet;
   let style = outfit.style || (rider ? 'rider' : sex === 'f' && (outfit.dress || (!outfit.logo && !outfit.ponytail && r() < 0.0)) ? 'dress' : 'casual');
   if (style === 'dress' && sex === 'm') style = 'casual';
   const body = `${sex}_${style}`;

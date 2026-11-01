@@ -88,6 +88,15 @@ export class Human {
     this.snap();
   }
 
+  // Changement de tenue sur place (même sexe) : géométrie et couleurs du personnage classique ; le modèle réaliste
+  // suit (Realism compare la tenue). Faux si impossible (autre sexe).
+  restyle(outfit) {
+    if (!this.model.restyle?.(outfit)) return false;
+    this.outfit = outfit;
+    this.anim.hair = this.model.desc.hair === 'ponytail';
+    return true;
+  }
+
   // Prénom : celui donné au PNJ, sinon un prénom cohérent avec la morphologie (tiré au premier besoin).
   get name() {
     return this._name || (this._name = randomFirstName(this.sex));

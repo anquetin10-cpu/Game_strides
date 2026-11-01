@@ -56,7 +56,15 @@ const boot = async (url) => {
       g.realism?.update();
       const r2 = g.realism?.body;
       const o = { ...hu.outfit };
-      return { outfit: JSON.stringify(o), sex: hu.sex, scale: +hu.scale.toFixed(4), lod: hu.model?.lod ?? 0, real: !!r2, realOutfit: r2 ? r2.outfit === hu.outfit : null, rebuilds: g.player.__rb };
+      // Vêtements (sans le couvre-chef) ; casque porté (personnage classique et modèle réaliste).
+      const clothes = { ...o };
+      delete clothes.helmet;
+      delete clothes.cap;
+      return {
+        outfit: JSON.stringify(o), clothes: JSON.stringify(clothes), helmet: !!o.helmet, realHelmet: r2 ? !!r2.helmet : null,
+        mode: g.player.mode, comp: !!g.player.competitionOutfit?.(), hair: hu.model?.desc?.hair, mesh: hu.mesh.uuid,
+        sex: hu.sex, scale: +hu.scale.toFixed(4), lod: hu.model?.lod ?? 0, real: !!r2, realOutfit: r2 ? r2.outfit === hu.outfit : null, rebuilds: g.player.__rb,
+      };
     };
     S.ticks = (n, fn) => { for (let i = 0; i < n; i++) { fn?.(i); A.tick(1); g.realism?.update(); } };
     // Montée / descente à cheval par le bouton ACTION (séquence animée si elle existe, sinon montée immédiate).
@@ -168,6 +176,11 @@ await E(async () => {
   M.accept('event:concours');
   window.__auto.closeCards();
   while (g.hud.dialogActive) g.hud.advanceDialog();
+  S.ticks(10);
+});
+await snap('concours accepté (encore loin du Pôle)');
+await E(() => {
+  const g = window.__game, S = window.__S;
   g.player.teleport(300, -205, 0, false);
   S.ticks(40);
 });
@@ -201,12 +214,21 @@ await boot(base);
 const afterReload = await snap('sauvegarde et rechargement');
 
 // Comparaison : tout ce qui précède doit être identique à la signature de départ (hors compteur de reconstructions).
-const same = (a, b) => a.outfit === b.outfit && a.sex === b.sex && a.scale === b.scale && a.lod === b.lod && a.real === b.real && a.realOutfit !== false;
-const diffs = sigs.filter((s) => !same(s, ref)).map((s) => s.label);
-check('AV-01', 'apparence identique dans toutes les situations (tenue, corps, échelle, détail, modèle réaliste)', diffs.length === 0, diffs.length ? `différente : ${diffs.join(' · ')}` : `${sigs.length} situations`);
+// Identité (corps, visage, coiffure, taille, modèle) : partout la même.
+const ident = (a, b) => a.sex === b.sex && a.scale === b.scale && a.hair === b.hair && a.lod === b.lod && a.real === b.real && a.realOutfit !== false;
+const diffs = sigs.filter((s) => !ident(s, ref)).map((s) => s.label);
+check('AV-01', 'même personnage dans toutes les situations (corps, visage, coiffure, taille, niveau de détail, modèle réaliste)', diffs.length === 0, diffs.length ? `différent : ${diffs.join(' · ')}` : `${sigs.length} situations`);
+// Vêtements : la tenue de référence partout, sauf pendant une mission de concours (tenue de concours, où que l'on soit).
+const refClothes = ref.clothes;
+const clothesBad = sigs.filter((s) => (s.comp ? !/"jacket":true/.test(s.clothes) || !/f2f1ec/.test(s.clothes) : s.clothes !== refClothes)).map((s) => s.label);
+check('AV-01b', 'vêtements : tenue de référence (culotte beige) partout ; tenue de concours seulement en mission de concours', clothesBad.length === 0 && /c2b49a/.test(refClothes) && sigs.some((s) => s.comp), clothesBad.length ? clothesBad.join(' · ') : `${sigs.filter((s) => s.comp).length} situation(s) en concours`);
+// Casque : uniquement à cheval (personnage classique et modèle réaliste).
+const helmetBad = sigs.filter((s) => s.helmet !== (s.mode === 'ride') || (s.realHelmet !== null && s.realHelmet !== s.helmet)).map((s) => `${s.label} (${s.mode}, casque ${s.helmet})`);
+check('AV-01c', 'casque uniquement à cheval', helmetBad.length === 0, helmetBad.length ? helmetBad.join(' · ') : 'ok');
+check('AV-01d', 'même maillage du début à la fin de la partie (rhabillé sur place, jamais recréé)', new Set(sigs.filter((s) => s.label !== 'sauvegarde et rechargement').map((s) => s.mesh)).size === 1, String(new Set(sigs.map((s) => s.mesh)).size));
 const rebuilds = sigs.filter((s) => s.label !== 'sauvegarde et rechargement').reduce((m, s) => Math.max(m, s.rebuilds), 0);
-check('AV-02', 'aucune reconstruction involontaire du personnage pendant la partie', rebuilds <= 1, `${rebuilds} reconstruction(s) (1 au démarrage : tenue initiale)`);
-check('AV-03', 'rechargement : même apparence', same(afterReload, preReload), JSON.stringify({ avant: preReload.outfit === afterReload.outfit, real: [preReload.real, afterReload.real] }));
+check('AV-02', 'aucune reconstruction du personnage pendant la partie', rebuilds === 0, `${rebuilds} reconstruction(s)`);
+check('AV-03', 'rechargement : même apparence', ident(afterReload, preReload) && afterReload.outfit === preReload.outfit, JSON.stringify({ avant: preReload.outfit === afterReload.outfit, real: [preReload.real, afterReload.real] }));
 
 // Changement volontaire : polo blanc acheté et équipé → la tenue change une fois, puis reste la même partout.
 const vol = await E(() => {
@@ -227,7 +249,7 @@ const vol = await E(() => {
 });
 await boot(base);
 const s4 = await E(() => window.__S.sig());
-check('AV-04', 'changement volontaire (polo blanc équipé) : appliqué une fois, conservé à cheval, à pied et au rechargement', vol.s1.outfit !== vol.s0.outfit && /f2f1ec/.test(vol.s1.outfit) && vol.s2.outfit === vol.s1.outfit && vol.s3.outfit === vol.s1.outfit && s4.outfit === vol.s1.outfit, JSON.stringify({ change: vol.s1.outfit !== vol.s0.outfit, cheval: vol.s2.outfit === vol.s1.outfit, recharge: s4.outfit === vol.s1.outfit }));
+check('AV-04', 'changement volontaire (polo blanc équipé) : appliqué une fois, conservé à cheval, à pied et au rechargement', vol.s1.clothes !== vol.s0.clothes && /f2f1ec/.test(vol.s1.clothes) && vol.s2.clothes === vol.s1.clothes && vol.s2.helmet && vol.s3.clothes === vol.s1.clothes && !vol.s3.helmet && s4.clothes === vol.s1.clothes, JSON.stringify({ change: vol.s1.clothes !== vol.s0.clothes, cheval: vol.s2.clothes === vol.s1.clothes, casqueACheval: vol.s2.helmet, recharge: s4.clothes === vol.s1.clothes }));
 check('erreurs', 'aucune erreur JavaScript', errors.length === 0, errors.slice(0, 3).join(' | '));
 writeFileSync(`${OUT}/${tag}.json`, JSON.stringify({ tag, base, sigs, results }, null, 1));
 console.log(fails ? `${fails} échec(s)` : 'tout est vert');

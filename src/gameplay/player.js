@@ -54,7 +54,8 @@ export class Player {
   constructor(game, avatar = 'f') {
     this.game = game;
     this.avatar = avatar;
-    this.outfitKind = 'work';
+    this.outfitKind = null;
+    this.helmetOn = false;
     this.human = new Human(game, this._outfit(avatar), { player: true });
     this.human.isPlayer = true;
     this.mode = 'foot';
@@ -72,37 +73,65 @@ export class Player {
     this.horseMount = new HorseMount(game, this);
   }
 
-  // Tenue du joueur : une seule apparence, la même partout (à pied, à cheval, au volant, en mission, en ville, de jour
-  // comme de nuit, sous la pluie) — culotte d'équitation de travail beige (grise pour un cavalier), boots et
-  // mini-chaps, polo bleu Strides, casque. Elle ne change que par un choix du joueur (articles achetés et équipés à la
-  // Sellerie du Port ou chez Maison Lucette, essai en boutique, veste de concours achetée), jamais selon l'heure, la
-  // météo, la monte ou le lieu : avant, elle était recalculée à chaque changement d'activité (casque mis à cheval,
-  // tenue de concours sur les terrains, blouson le soir et sous la pluie), et le personnage changeait d'apparence.
+  // Tenue du joueur.
+  // - Identité fixe (graine, taille, yeux, coiffure, barbe) : le même visage et les mêmes proportions, quelle que soit
+  //   la tenue (avant, ces traits étaient tirés de la tenue entière et changeaient avec elle).
+  // - Tenue de référence : polo bleu Strides, culotte d'équitation beige, boots et mini-chaps ; les articles achetés et
+  //   équipés (Sellerie du Port, Maison Lucette) la remplacent pièce par pièce.
+  // - Casque : uniquement à cheval (mis pendant la montée, retiré après la descente — voir horseMount.js) ; à pied, le
+  //   couvre-chef équipé (casquette) ou rien.
+  // - Tenue de concours : automatiquement pendant toute mission de concours (où que l'on soit), jamais ailleurs —
+  //   veste (bleu marine si la veste de la Sellerie est achetée, noire sinon), chemise blanche, culotte blanche,
+  //   bottes noires.
+  // Rien ne dépend de l'heure, de la météo ni du lieu.
   _outfit(avatar) {
     const base = avatar === 'm' ? OUTFITS.rider : OUTFITS.riderF;
-    const o = { ...base, style: 'rider' };
+    const id = avatar === 'm'
+      ? { identity: 'joueur-m', scale: 1.0, eyes: '#4b5a3c', hairStyle: 'short', beard: false, belt: '#3b2a1e' }
+      : { identity: 'joueur-f', scale: 0.985, eyes: '#5b4632', hairStyle: 'bun', belt: '#3b2a1e' };
+    const o = { ...base, ...id };
+    delete o.helmet;
     // Articles portés (Sellerie du Port, Maison Lucette) et article essayé en boutique (previewItem).
     const wear = this.game.commerce?.wear(this.previewItem) || {};
+    const helmet = this.helmetOn ? wear.helmet || '#16171a' : null;
+    if (this.competitionOutfit()) {
+      const jacket = this.game.save?.data?.upgrades?.includes('veste') ? '#1f2b45' : '#1b1c1f';
+      return Object.assign(o, { style: 'rider', top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', logo: false, jacket: true, ...(helmet ? { helmet } : {}) });
+    }
     const top = '#2f5f8a';
-    // Coupe décontractée (polo, pas de revers ni de chemise), culotte d'équitation, boots et mini-chaps.
-    Object.assign(o, { style: 'casual', top, sleeve: top, pants: avatar === 'm' ? '#9aa0a6' : '#c2b49a', boots: '#3b2a1e', tallBoots: true, breeches: true, logo: true });
-    // Veste de concours achetée : portée en permanence (plus de changement de tenue en arrivant sur un terrain).
-    if (this.game.save?.data?.upgrades?.includes('veste')) Object.assign(o, { top: '#1f2b45', sleeve: '#1f2b45', jacket: true, logo: false });
-    // Haut acheté (sans le logo Strides du polo de travail), bottes.
-    if (wear.top) Object.assign(o, { top: wear.top, sleeve: wear.sleeve || wear.top, logo: false, jacket: false });
+    Object.assign(o, { style: 'casual', top, sleeve: top, pants: '#c2b49a', boots: '#3b2a1e', tallBoots: true, breeches: true, logo: true });
+    if (wear.top) Object.assign(o, { top: wear.top, sleeve: wear.sleeve || wear.top, logo: false });
     if (wear.collar) o.collar = wear.collar;
     if (wear.boots) o.boots = wear.boots;
-    // Tête : couvre-chef équipé s'il y en a un, sinon le casque (équipé ou d'origine) — à pied comme à cheval.
-    if (wear.cap) o.cap = wear.cap;
-    else o.helmet = wear.helmet || '#16171a';
+    if (helmet) o.helmet = helmet;
+    else if (wear.cap) o.cap = wear.cap;
     return o;
   }
 
-  // Signature de la tenue voulue (choix du joueur seulement) : le personnage n'est reconstruit que si elle change.
+  // Mission de concours en cours (concours du Pôle, cross, derby, CSI, Grands Prix, premier concours en équipe).
+  competitionOutfit() {
+    const run = this.game.missions?.active;
+    return !!run && (run.offer?.vertical === 'EVENEMENTS' || run.def?.category === 'CSO');
+  }
+
+  // Signature de la tenue voulue : le personnage n'est rhabillé que si elle change.
   desiredOutfit() {
-    const w = this.game.commerce?.wear(this.previewItem) || {};
-    const veste = this.game.save?.data?.upgrades?.includes('veste') ? 1 : 0;
-    return `${w.top || ''}|${w.sleeve || ''}|${w.collar || ''}|${w.boots || ''}|${w.cap || ''}|${w.helmet || ''}|${veste}`;
+    return JSON.stringify(this._outfit(this.avatar));
+  }
+
+  // Casque mis (à cheval) ou retiré : changement sur place, sans recréer le personnage.
+  setHelmet(on) {
+    if (!!on === !!this.helmetOn) return;
+    this.helmetOn = !!on;
+    this._restyle();
+  }
+
+  // Rhabille le personnage sur place (même maillage, même squelette, même modèle réaliste) ; reconstruction
+  // complète seulement si c'est impossible (changement cavalière / cavalier).
+  _restyle() {
+    const o = this._outfit(this.avatar);
+    this.outfitKind = JSON.stringify(o);
+    if (!this.human.restyle(o)) this._rebuild();
   }
 
   // Reconstruit le personnage (choix cavalière/cavalier, tenue).
@@ -127,8 +156,7 @@ export class Player {
 
   setOutfit(kind) {
     if (kind === this.outfitKind) return;
-    this.outfitKind = kind;
-    this._rebuild();
+    this._restyle();
   }
 
   setHorse(horse) {
@@ -279,6 +307,8 @@ export class Player {
     if (!h) return;
     if (!opts.animated && this.horseMount?.active) this.horseMount.cancel();
     this._prepMount(h);
+    // Casque mis (déjà mis par le geste de la séquence animée).
+    this.setHelmet(true);
     this.human.mount(h, { keepPose: !!opts.animated });
     this.mode = 'ride';
     this.focusPos = h.pos;
@@ -288,6 +318,7 @@ export class Player {
   dismount(silent = false) {
     if (this.horseMount?.active) this.horseMount.cancel();
     if (this.mode !== 'ride') return;
+    this.setHelmet(false);
     const h = this.horse;
     h.control.mag = 0;
     h.control.gallop = false;
@@ -551,10 +582,9 @@ export class Player {
       // (jamais au milieu d'une montée ou d'une descente : le personnage est reconstruit à l'identique ensuite)
       const want = this.desiredOutfit();
       if (want !== this.outfitKind && !this.horseMount?.active && !this.boarding?.active) {
-        // Reconstruction seulement si la tenue change vraiment (pas au démarrage, quand la signature est enregistrée
-        // pour la première fois : jeter et recréer le personnage recompilait ses matériaux, à-coup au démarrage).
-        if (JSON.stringify(this._outfit(this.avatar)) === JSON.stringify(this.human.outfit)) this.outfitKind = want;
-        else this.setOutfit(want);
+        // Rhabillé seulement si la tenue change vraiment (au démarrage, la signature est seulement enregistrée).
+        if (want === JSON.stringify(this.human.outfit)) this.outfitKind = want;
+        else this._restyle();
       }
     }
     const locked = this.locked;

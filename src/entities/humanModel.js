@@ -25,7 +25,7 @@ export const LOD_DIST = [11, 38];
  * Renvoie { mesh, bones } ; mesh.userData.human = { desc, rig, setLOD(i), lod }.
  */
 export function createHumanMesh(outfit = OUTFITS.rider, opts = {}) {
-  const desc = resolveOutfit(outfit, opts.name || '');
+  let desc = resolveOutfit(outfit, opts.name || '');
   const defs = boneDefs(desc.sex);
   const bones = {};
   const list = [];
@@ -72,6 +72,21 @@ export function createHumanMesh(outfit = OUTFITS.rider, opts = {}) {
       } else mesh.material = near;
     },
     triangles: (i = H.lod) => (lods[i] || humanGeometry(desc.body, desc.parts, i)).userData.triangles,
+    // Changement de tenue sur place (même sexe, même squelette) : géométrie et couleurs, sans recréer le personnage.
+    restyle(outfit2) {
+      const d2 = resolveOutfit(outfit2, opts.name || '');
+      if (d2.sex !== desc.sex) return false;
+      const lod = H.lod;
+      for (let i = 0; i < lods.length; i++) lods[i] = null;
+      desc = d2;
+      H.desc = d2;
+      lods[0] = humanGeometry(desc.body, desc.parts, 0);
+      if (lod) lods[lod] = humanGeometry(desc.body, desc.parts, lod);
+      mesh.geometry = lods[lod];
+      applyPalette(near, desc.zoneSlot, desc.slots);
+      if (far) applyPalette(far, desc.zoneSlot, desc.slots);
+      return true;
+    },
   };
   mesh.userData.human = H;
   Object.defineProperty(bones, '__rig', { value: { info: H.rig, desc, list, mesh }, enumerable: false });

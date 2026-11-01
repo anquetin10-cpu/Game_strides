@@ -85,7 +85,10 @@ await E(async () => {
   };
   S.identity = () => {
     const p = g.player, hu = p.human, r = g.realism?.body;
-    return { mesh: hu.mesh.uuid, bones: hu.bones.hips.uuid, real: r ? r.root.uuid : null, outfit: JSON.stringify(hu.outfit), scale: hu.scale, sex: hu.sex };
+    const clothes = { ...hu.outfit };
+    delete clothes.helmet;
+    delete clothes.cap;
+    return { mesh: hu.mesh.uuid, bones: hu.bones.hips.uuid, real: r ? r.root.uuid : null, clothes: JSON.stringify(clothes), scale: hu.scale, sex: hu.sex, hair: hu.model.desc.hair };
   };
 });
 
@@ -178,6 +181,8 @@ const runSeq = async (dir, opts = {}) => E(async ([dir, opts]) => {
   const q1 = new T3.Quaternion().fromArray(end.q), q2 = new T3.Quaternion().fromArray(after.q);
   r.endRot = q1.angleTo(q2);
   r.mode = p.mode;
+  r.helmet = !!p.human.outfit.helmet;
+  r.realHelmet = g.realism?.body ? !!g.realism.body.helmet : null;
   r.mounted = !!p.human.mounted;
   r.ids = [...r.ids].length;
   r.sameId = JSON.stringify(S.identity()) === JSON.stringify(id0);
@@ -213,7 +218,8 @@ for (let c = 1; c <= 3; c++) {
     check('HM-03', 'jambe droite au-dessus de la croupe, jamais dans le cheval (pénétration maximale de la jambe opposée)', up.minLeg > -0.02, `${(-up.minLeg * 100).toFixed(1)} cm`);
     check('HM-04', 'rattachement à la selle sans saut (position < 1 cm, rotation < 1°, échelle identique)', up.endJump < 0.01 && up.endRot < 0.0175 && Math.abs(up.endScale[0] - up.endScale[1]) < 1e-4 && up.mounted, show({ endJump: up.endJump, endRot: up.endRot, endScale: up.endScale }));
     check('HM-05', 'descente : jambe au-dessus de la croupe, au sol, à pied (contrôles à pied rétablis)', down.lab === 'Descendre' && down.mode === 'foot' && !down.mounted && down.minLeg > -0.02 && down.endJump < 0.05, show({ mode: down.mode, minLeg: down.minLeg, endJump: down.endJump }));
-    check('HM-06', 'même personnage du début à la fin (maillage, squelette, modèle réaliste, tenue, échelle)', up.sameId && down.sameId && up.ids === 1 && down.ids === 1, JSON.stringify(up.id0));
+    check('HM-06', 'même personnage du début à la fin (maillage, squelette, modèle réaliste, vêtements, échelle, coiffure)', up.sameId && down.sameId && up.ids === 1 && down.ids === 1, JSON.stringify(up.id0).slice(0, 200));
+    check('HM-06b', 'casque mis pendant la montée (geste de la main), retiré après la descente', up.helmet && up.realHelmet !== false && !down.helmet && down.realHelmet !== true, JSON.stringify({ aCheval: up.helmet, reel: up.realHelmet, aPied: down.helmet, reelAPied: down.realHelmet }));
     check('HM-07', 'caméra continue (saut < 0,35 m, champ < 1°), personnage sans téléportation (< 0,15 m par image)', Math.max(up.camJump, down.camJump) < 0.35 && Math.max(up.fovJump, down.fovJump) < 1 && Math.max(up.maxJump, down.maxJump) < 0.15, show({ cam: Math.max(up.camJump, down.camJump), fov: Math.max(up.fovJump, down.fovJump), perso: Math.max(up.maxJump, down.maxJump) }));
     check('HM-08a', 'durées : montée 1,5–2,5 s, descente 1,5–2,5 s (hors approche / arrêt)', up.seqT >= 1.5 && up.seqT <= 2.5 && down.seqT >= 1.5 && down.seqT <= 2.5, `montée ${up.seqT.toFixed(2)} s, descente ${down.seqT.toFixed(2)} s`);
   }

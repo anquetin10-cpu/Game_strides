@@ -74,6 +74,11 @@ function standKey(D, x, z, yaw, extra = {}) {
   };
 }
 
+// Main sur le casque (sommet du front) d'un cavalier debout en (x, z), cap yaw.
+function headPoint(D, x, z, yaw) {
+  return [x + Math.sin(yaw) * 0.07, -D.H + D.s * 1.6, z + Math.cos(yaw) * 0.07];
+}
+
 // Points de contact (repère du siège, côté gauche).
 function points(D) {
   const f = D.fit;
@@ -95,12 +100,12 @@ function mountKeys(D) {
   const P = points(D), S = new Seq();
   const sx = 0.62, sz = 0.12, yaw0 = -HALF_PI - 0.42; // face au flanc, tourné vers l'arrière du cheval
   const ride = D.seat, g = -D.H + D.Hs;
-  const k = 0.88; // cadence
+  const k = 0.84; // cadence
   // 0. Debout près de l'épaule, à hauteur de la selle.
   S.at(0, { ...standKey(D, sx, sz, yaw0), hn: null, hf: null, gn: 0, gf: 0 });
-  // 1-3. Main gauche aux rênes sur le garrot, main droite près du pommeau.
-  S.at(0.3 * k, { hn: P.withers, gn: 0.9, tr: { sx: 0.1, hy: 0.05 } });
-  S.at(0.2 * k, { hf: P.pommel, gf: 0.85, tr: { sx: 0.14, hy: 0.1 }, hips: [sx - 0.04, g - 0.02, sz - 0.01] });
+  // 1-3. Main gauche aux rênes sur le garrot ; main droite au casque (il est mis), puis près du pommeau.
+  S.at(0.4 * k, { hn: P.withers, gn: 0.9, hf: headPoint(D, sx, sz, yaw0), gf: 0.6, tr: { sx: 0.06, hy: 0.05, nx: -0.08 }, ev: 'helmetOn' });
+  S.at(0.26 * k, { hf: P.pommel, gf: 0.85, tr: { sx: 0.14, hy: 0.1 }, hips: [sx - 0.04, g - 0.02, sz - 0.01] });
   // 4. Pied gauche dans l'étrier (genou levé, appui sur la jambe droite).
   S.at(0.36 * k, { near: { s: 'iron' }, lift: { near: 0.12 }, hips: [sx - 0.08, g - 0.06, sz - 0.03], tr: { sx: 0.22 } });
   // 5. Flexion de la jambe d'appel, puis poussée : le poids passe sur l'étrier, le cavalier s'élève contre le flanc,
@@ -184,8 +189,10 @@ function dismountKeys(D) {
     far: { g: [0.6, 0.04, -HALF_PI + 0.1] }, near: { g: [0.55, 0.26, -HALF_PI + 0.2] }, lift: { near: 0.05 },
     hf: null, gf: 0, tr: { sx: 0.18 },
   });
-  // 7-8. Redressé, debout à l'épaule, rênes en main.
+  // 7-8. Redressé, debout à l'épaule, rênes en main ; main droite au casque (il est retiré), puis le long du corps.
   S.at(0.34 * k, { ...end, hn: P.withers, gn: 0.9, hf: null, tr: { sx: 0.04 } });
+  S.at(0.32 * k, { hf: headPoint(D, end.root[0], end.root[1], end.root[2]), gf: 0.6, tr: { sx: 0.02, nx: -0.06 }, ev: 'helmetOff' });
+  S.at(0.3 * k, { hf: null, gf: 0, tr: { sx: 0.02 } });
   return S.keys;
 }
 
@@ -323,6 +330,7 @@ export class HorseMount {
     }
     this.phase = 'seq';
     this.t = 0;
+    this._evI = 0;
   }
 
   // ---------- Descente ----------
@@ -374,11 +382,18 @@ export class HorseMount {
       this.keys = dismountKeys(this.D);
       this.phase = 'seq';
       this.t = 0;
+      this._evI = 0;
     }
     this._stopHorse(h);
     this.t += dt;
     const K = this.keys, end = K[K.length - 1].t;
     this._apply(Math.min(this.t, end), dt);
+    // Gestes ponctuels au passage des clés : casque mis (montée) ou retiré (descente).
+    while (this._evI < K.length && K[this._evI].t <= this.t) {
+      const ev = K[this._evI++].ev;
+      if (ev === 'helmetOn') this.player.setHelmet(true);
+      else if (ev === 'helmetOff') this.player.setHelmet(false);
+    }
     const u = clamp(this.t / end, 0, 1);
     this.camK = this.dir === 'up' ? ease(clamp((u - 0.35) / 0.65, 0, 1)) : 1 - ease(clamp(u / 0.75, 0, 1));
     if (this.t >= end) this.dir === 'up' ? this._finishMount() : this._finishDismount();
@@ -579,6 +594,7 @@ export class HorseMount {
       if (h) h.rider = null;
       pl.mode = 'foot';
       pl.focusPos = hu.pos;
+      pl.setHelmet(false);
       hu.mesh.scale.setScalar(hu.scale);
       hu.setPosition(hu.pos.x, hu.pos.z, hu.heading);
       this.game.colliders.resolve(hu.pos, hu.radius || 0.35, -Infinity);
