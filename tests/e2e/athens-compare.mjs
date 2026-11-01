@@ -13,7 +13,9 @@ if (!ours) {
   console.log('usage : node tests/e2e/athens-compare.mjs <strides.mp4> [reference.mp4 abord=…,appel=…]');
   process.exit(2);
 }
-const OUT = 'tests/e2e/out/compare';
+// REF_LABEL : nom de la référence (par défaut Athens 2004) ; OUT : dossier de sortie.
+const REF_LABEL = process.env.REF_LABEL || 'Référence Athens 2004';
+const OUT = process.env.OUT || 'tests/e2e/out/compare';
 mkdirSync(OUT, { recursive: true });
 const ev = JSON.parse(readFileSync(ours.replace(/\.mp4$/, '.events.json'), 'utf8'));
 const names = ['abord', 'appel', 'suspension', 'reception', 'courbe'];
@@ -24,14 +26,16 @@ const tiles = [];
 for (const n of names) {
   const e = ev.events.find((x) => x.name === n);
   if (!e) continue;
+  // Référence fournie sans ce moment : on le passe (pas d'emplacement vide).
+  if (ref && rt[n] === undefined) continue;
   const t = e.frame / ev.fps;
   const a = `${OUT}/${n}-strides.jpg`;
-  ff(['-ss', String(t), '-i', ours, '-frames:v', '1', '-vf', `scale=-2:${H},drawtext=text='STRIDES · ${n}':x=10:y=10:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5`, a]);
+  ff(['-ss', String(t), '-i', ours, '-frames:v', '1', '-vf', `scale=-2:${H},drawtext=text='STRIDES (nouveau) · ${n}':x=10:y=10:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5`, a]);
   const b = `${OUT}/${n}-reference.jpg`;
   if (ref && existsSync(ref) && rt[n] !== undefined) {
-    ff(['-ss', String(rt[n]), '-i', ref, '-frames:v', '1', '-vf', `scale=-2:${H},drawtext=text='Référence Athens 2004 · ${n}':x=10:y=10:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5`, b]);
+    ff(['-ss', String(rt[n]), '-i', ref, '-frames:v', '1', '-vf', `scale=-2:${H},drawtext=text='${REF_LABEL} · ${n}':x=10:y=10:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5`, b]);
   } else {
-    ff(['-f', 'lavfi', '-i', `color=c=0x1b1c1f:s=780x${H}`, '-frames:v', '1', '-vf', `drawtext=text='Référence Athens 2004 · ${n}\\: vidéo à fournir':x=(w-text_w)/2:y=(h-text_h)/2:fontsize=20:fontcolor=white`, b]);
+    ff(['-f', 'lavfi', '-i', `color=c=0x1b1c1f:s=780x${H}`, '-frames:v', '1', '-vf', `drawtext=text='${REF_LABEL} · ${n}\\: vidéo à fournir':x=(w-text_w)/2:y=(h-text_h)/2:fontsize=20:fontcolor=white`, b]);
   }
   const pair = `${OUT}/${n}.jpg`;
   ff(['-i', a, '-i', b, '-filter_complex', `[0]scale=780:${H}[x];[1]scale=780:${H}[y];[x][y]hstack`, pair]);

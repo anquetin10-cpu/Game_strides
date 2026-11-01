@@ -10,12 +10,13 @@ import { planJump, railsAhead, JUMP } from './jumpModel.js';
 import { CSO_LINE } from './obstacles.js';
 import { PARIS_COURSES } from './parisCourse.js';
 
-// Repères du tracé : tirets courts posés sur la ligne, blanc cassé (lisible sur le sable sans l'envahir).
-const LINE_MAT = new THREE.MeshBasicMaterial({ color: '#f7f3e8', transparent: true, opacity: 0.82, depthWrite: false, side: THREE.DoubleSide });
-const NEXT_MAT = new THREE.MeshBasicMaterial({ color: '#f7f3e8', transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide });
+// Repères du tracé : tirets courts posés sur la ligne, vert profond (un blanc se perd sur le sable clair vu de loin et
+// de biais ; ce vert reste lisible sans envahir l'écran).
+const LINE_MAT = new THREE.MeshBasicMaterial({ color: '#1d7a52', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide });
+const NEXT_MAT = new THREE.MeshBasicMaterial({ color: '#1d7a52', transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
 // Réglages du tracé : longueur et largeur d'un repère, pas entre deux repères, longueur affichée après l'obstacle
 // suivant (plus pâle), repères masqués juste sous le cheval.
-export const LINE_MARK = { dash: 0.55, width: 0.2, every: 1.4, after: 12, hideNear: 1.5 };
+export const LINE_MARK = { dash: 0.7, width: 0.26, every: 1.5, after: 12, hideNear: 1.5 };
 const GOOD_MAT = new THREE.MeshBasicMaterial({ color: '#3ddc97', transparent: true, opacity: 0.26, depthWrite: false });
 const OK_MAT = new THREE.MeshBasicMaterial({ color: '#f0b33a', transparent: true, opacity: 0.16, depthWrite: false });
 const MARK_MAT = new THREE.MeshBasicMaterial({ color: '#7dffc4', transparent: true, opacity: 0.8, depthWrite: false });

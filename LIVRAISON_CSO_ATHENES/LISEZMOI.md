@@ -137,7 +137,7 @@ cavalier) :
 
 ### 3.4 Guidage au sol (`src/gameplay/courseAids.js`, `LINE_MARK`)
 
-- Une ligne discrète de petits repères (tirets de 0,55 × 0,2 m tous les 1,4 m), blanc cassé.
+- Une ligne discrète de petits repères (tirets de 0,7 × 0,26 m tous les 1,5 m), vert profond. Le blanc cassé testé d'abord se perdait sur le sable clair, vu de loin et de biais.
 - Elle relie les obstacles dans l'ordre, courbes comprises, du cheval jusqu'à l'obstacle suivant.
 - La suite, au-delà de l'obstacle (12 m), est plus pâle : la courbe suivante se prépare dès la réception.
 - C'est une aide visuelle, pas un rail : le cheval n'est jamais dirigé.
