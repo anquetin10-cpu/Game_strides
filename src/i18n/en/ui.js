@@ -230,6 +230,7 @@ export default {
   'Aide au saut : complète': 'Jump aid: full',
   'Aide au saut : bouton seul': 'Jump aid: button only',
   'Aide au saut : aucune': 'Jump aid: none',
+  'Aide au saut : imposée par l’épreuve': 'Jump aid: set by the event',
   '<p style="margin-top:12px"><b>Épreuve</b> — <b>diriger</b> : joystick gauche/droite (←/→) · <b>cadence</b> : joystick avant/arrière (↑/↓), gardée quand on relâche · <b>SAUT</b> au bon moment (Espace).</p>': '<p style="margin-top:12px"><b>Competition</b> — <b>steer</b>: joystick left/right (←/→) · <b>pace</b>: joystick forward/back (↑/↓), held when you let go · <b>JUMP</b> at the right moment (Space).</p>',
   'Trop loin': 'Too far',
   'Saute !': 'Jump!',

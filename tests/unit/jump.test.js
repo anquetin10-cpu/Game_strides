@@ -93,7 +93,7 @@ describe('saut v2 : timing d’appel, difficulté progressive', () => {
   const window = (f, v, power = 1.35) => {
     const ok = [];
     for (let d = 0; d <= 9; d += 0.02) {
-      const p = planJump({ v, power, clearance: 0 }, railsAhead(f, 0, -d, 0, 1));
+      const p = planJump({ v, power, clearance: 0, cso: true }, railsAhead(f, 0, -d, 0, 1));
       if (p.zone !== 'refuse' && p.margin >= -JUMP.rub) ok.push(d);
     }
     return ok.length ? (Math.max(...ok) - Math.min(...ok)) / v : 0; // secondes
@@ -114,20 +114,37 @@ describe('saut v2 : timing d’appel, difficulté progressive', () => {
     expect(window(O(1.15), 5.0)).toBeLessThan(window(O(1.15), 6.2) * 0.7);
   });
   it('le cheval saute selon l’obstacle (pas plus haut que nécessaire) et part de là où l’on appuie', () => {
-    const low = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.0), 0, -2.1, 0, 1));
-    const high = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.2), 0, -2.1, 0, 1));
+    const low = planJump({ v: 6.2, power: 1.35, clearance: 0, cso: true }, railsAhead(V(1.0), 0, -2.1, 0, 1));
+    const high = planJump({ v: 6.2, power: 1.35, clearance: 0, cso: true }, railsAhead(V(1.2), 0, -2.1, 0, 1));
     expect(low.H).toBeLessThan(high.H);
     // Recalage de longueur limité (pas de correction automatique de l'appel).
-    const far = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.15), 0, -4.5, 0, 1));
+    const far = planJump({ v: 6.2, power: 1.35, clearance: 0, cso: true }, railsAhead(V(1.15), 0, -4.5, 0, 1));
     expect(far.L / far.L0).toBeLessThanOrEqual(1 + JUMP.adapt + 1e-9);
     expect(far.margin).toBeLessThan(0);
   });
   it('retour au cavalier : appel parfait, un peu loin, trop près…', () => {
-    const at = (d) => takeoffQuality(planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.15), 0, -d, 0, 1)));
-    const ideal = planJump({ v: 6.2, power: 1.35, clearance: 0 }, railsAhead(V(1.15), 0, -2, 0, 1)).L0 / 2;
+    const at = (d) => takeoffQuality(planJump({ v: 6.2, power: 1.35, clearance: 0, cso: true }, railsAhead(V(1.15), 0, -d, 0, 1)));
+    const ideal = planJump({ v: 6.2, power: 1.35, clearance: 0, cso: true }, railsAhead(V(1.15), 0, -2, 0, 1)).L0 / 2;
     expect(at(ideal)).toBe('perfect');
     expect(['bitFar', 'far']).toContain(at(ideal + 1.25));
     expect(at(6)).toBe('far');
     expect(['bitNear', 'near', 'tooClose']).toContain(at(0.9));
+  });
+});
+
+describe('monde ouvert : modèle d’origine inchangé', () => {
+  it('hors épreuve (pas de drapeau cso), un vertical de CSO garde le saut d’origine', () => {
+    const f = { ...fence([{ s: 0, h: 0.75 }]), kind: 'v' };
+    const open = planJump({ v: 6.5, power: 1.35, clearance: 0 }, railsAhead(f, 0, -2.5, 0, 1));
+    expect(open.L0).toBeCloseTo(6.5 * JUMP.T, 6);
+    expect(open.H).toBeCloseTo(1.35, 2);
+    const comp = planJump({ v: 6.5, power: 1.35, clearance: 0, cso: true }, railsAhead(f, 0, -2.5, 0, 1));
+    expect(comp.H).toBeLessThan(open.H);
+  });
+  it('les protections ajoutent leur marge en épreuve', () => {
+    const f = { ...fence([{ s: 0, h: 1.15 }]), kind: 'v' };
+    const a = planJump({ v: 6.2, power: 1.35, clearance: 0, cso: true }, railsAhead(f, 0, -2.1, 0, 1));
+    const b = planJump({ v: 6.2, power: 1.35, clearance: 0.08, cso: true }, railsAhead(f, 0, -2.1, 0, 1));
+    expect(b.margin).toBeGreaterThan(a.margin + 0.05);
   });
 });

@@ -17,7 +17,8 @@ import { t, T, LANG } from '../core/i18n.js';
 // Réglages de l'épreuve.
 export const PARIS_GP = {
   riders: 40,
-  sprint: { h: 1.5, ta: timeAllowedFor(PARIS_COURSES.paris_sprint.length, COURSE_SPEED.csi), railSeconds: 4 },
+  // (barème C : le temps accordé ne compte pas ; vitesse nationale en salle, comme le règlement)
+  sprint: { h: 1.5, ta: timeAllowedFor(PARIS_COURSES.paris_sprint.length, COURSE_SPEED.national), railSeconds: 4 },
   gp: { h: 1.6, ta: timeAllowedFor(PARIS_COURSES.paris_gp.length, COURSE_SPEED.national) },
   // Dotation du Grand Prix (10 premiers) et prime du Sprint (vainqueur).
   prizes: [12000, 8000, 5500, 4000, 3000, 2400, 1900, 1500, 1200, 1000],
@@ -47,7 +48,10 @@ export function sprintField(rivals, seed, ta = PARIS_GP.sprint.ta) {
   return rivals.map((r) => {
     const x = rnd();
     const rails = x < 0.56 ? 0 : x < 0.86 ? 1 : 2;
-    const t = Math.round((ta * (0.86 + (rnd() + rnd() - 1) * 0.06) / r.form ** 0.4) * 100) / 100;
+    // Chronos des concurrents : à la vitesse qu'un cavalier peut tenir sur ce tracé (galop allongé, courbes comprises :
+    // 7 m/s de moyenne environ ; le cheval du joueur va au plus à 8 m/s), selon leur forme.
+    void ta;
+    const t = Math.round(((PARIS_COURSES.paris_sprint.length / 7.0) * (1 + (rnd() + rnd() - 1) * 0.04) / r.form ** 0.3) * 100) / 100;
     return { ...r, rails, time: t, score: Math.round((t + rails * PARIS_GP.sprint.railSeconds) * 100) / 100 };
   });
 }
@@ -69,7 +73,9 @@ export function barrageField(clear, seed, ta) {
   return clear.map((r) => {
     const x = rnd();
     const faults = x < 0.62 ? 0 : x < 0.92 ? 4 : 8;
-    return { ...r, joFaults: faults, joTime: Math.round(ta * (0.8 + (rnd() + rnd() - 1) * 0.05) * 100) / 100 };
+    // Barrage : 7,2 m/s de moyenne environ (sans dépasser ce que permet le galop allongé du jeu).
+    void ta;
+    return { ...r, joFaults: faults, joTime: Math.round((PARIS_COURSES.paris_gp.length / 7.2) * (1 + (rnd() + rnd() - 1) * 0.04) * 100) / 100 };
   });
 }
 

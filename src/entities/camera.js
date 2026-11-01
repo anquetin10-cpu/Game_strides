@@ -71,7 +71,7 @@ export class FollowCamera {
     }
     // Épreuve de saut d'obstacles : caméra de concours (branche séparée : le monde ouvert n'est pas modifié).
     const horse = this.game.player?.horse;
-    if (focus.mode === 'ride' && this.game.course?.camera && horse) return this._updateComp(dt, horse, instant);
+    if (focus.mode === 'ride' && this.game.course?.camera && horse && this.game.state !== 'photo') return this._updateComp(dt, horse, instant);
     this._comp = null;
     const mode = focus.mode;
     const now = this.game.time;

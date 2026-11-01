@@ -222,8 +222,10 @@ export class Screens {
         bLine.textContent = lineLabel();
         g.saveSoon?.();
       });
-      const bAid = h('button.btn.ghost', { text: aidLabel(), 'data-id': 'pause-aid' });
+      const locked = !!g.course.aidLocked;
+      const bAid = h('button.btn.ghost', { text: locked ? t('Aide au saut : imposée par l’épreuve') : aidLabel(), 'data-id': 'pause-aid', disabled: locked });
       bAid.addEventListener('click', () => {
+        if (locked) return;
         const order = ['full', 'button', 'off'];
         st.jumpAid = order[(order.indexOf(st.jumpAid || 'full') + 1) % order.length];
         bAid.textContent = aidLabel();

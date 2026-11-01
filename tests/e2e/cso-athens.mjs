@@ -65,21 +65,25 @@ const setup = await E(async (COURSE) => {
   window.__CSO_RIDE = C.CSO_RIDE;
   A.mount();
   const h = g.player.horse;
-  let line, start, finish;
+  const Cc = await import('/src/gameplay/csoCourse.js');
+  const Si = await import('/src/world/sites.js');
+  let line, start, finish, lead = [];
   if (COURSE === 'cso') {
     h.setPosition(O.CSO_GATE.x, O.CSO_GATE.z + 4, Math.PI);
     g.activities.start(g.activities.defs.find((a) => a.id === 'cso_train'));
     line = O.CSO_LINE; start = O.CSO_START; finish = O.CSO_FINISH;
+    lead = (Cc.CSO_TRACE.leadIn || []).map((p) => ({ x: Si.POLE.arena.x + p.x, z: Si.POLE.arena.z + p.z }));
   } else {
     // Paris : défi de l'arène (même moteur d'épreuve), départ au portail d'entrée.
     const c = P.PARIS_COURSES[COURSE];
     line = c.line; start = c.start; finish = c.finish;
+    lead = (c.trace.leadIn || []).map((p) => ({ x: Si.PARIS.arena.x + p.x, z: Si.PARIS.arena.z + p.z }));
     const ch = await import('/src/gameplay/challenge.js');
     const cfg = Object.values(ch.CHALLENGES || {}).filter((x) => x.courseId === COURSE).sort((a, b) => b.version - a.version)[0] || null;
     if (!cfg) return { err: `pas de défi pour ${COURSE}` };
     g.challenge.start(cfg);
   }
-  window.__setup = { line, start, finish };
+  window.__setup = { line, start, finish, lead };
   A.tick(6);
   return { ok: true };
 }, COURSE);
@@ -115,7 +119,11 @@ await E(() => {
   g.input.pressed.add = (k) => { if (k === 'jump') M.presses++; return add(k); };
   for (const k of ['obstacle:clear', 'obstacle:fault', 'obstacle:refusal']) g.bus.on(k, (e) => M.ev.push(`${k.split(':')[1]}:${e.obstacle.label}`));
   g.bus.on('horse:jump', (hh) => { if (hh.isPlayerHorse) { M.jumps++; M.takeoffs.push({ label: hh._lastJump?.o?.label, q: hh._lastJump?.plan?.zone, dev: +(hh._lastJump?.plan?.dev || 0).toFixed(3) }); } });
-  window.__rider.init({ line: window.__setup.line, start: window.__setup.start, pre: 9 });
+  // Abord : du cheval au point le plus proche de l'abord dessiné, puis l'abord, puis le tracé.
+  const S = window.__setup, hp = g.player.horse.pos;
+  let j0 = 0, bd = 1e9;
+  S.lead.forEach((p, i) => { const d = (p.x - hp.x) ** 2 + (p.z - hp.z) ** 2; if (d < bd) { bd = d; j0 = i; } });
+  window.__rider.init({ line: S.line, start: S.start, pre: 9, via: S.lead.slice(j0) });
 });
 // Essais d'appel décalé (LEAD = mètres d'avance de l'appui, négatif = en retard) : on mesure les conséquences.
 const LEAD = Number(process.env.LEAD || 0);
@@ -188,7 +196,7 @@ for (n = 0; n < 5200; n++) {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   }
   const s = await sample();
-  if (process.env.DBG && n % 15 === 0) console.log(n, JSON.stringify(await E(() => { const g = window.__game, h = g.player.horse, st = g.missions.active?.data?.course, o = g.course?.next; return { x: +h.pos.x.toFixed(1), z: +h.pos.z.toFixed(1), hd: +h.heading.toFixed(2), sp: +h.speed.toFixed(2), cad: g.player.csoCadence, rear: h._rearT > 0, refusing: !!h._refusing, brake: h._brake, next: st?.next, started: st?.started, ref: st?.refusals, d: o ? +Math.hypot(o.x - h.pos.x, o.z - h.pos.z).toFixed(1) : null, k: window.__rider.k, mv: [+g.input.move.x.toFixed(2), +g.input.move.y.toFixed(2)] }; })), JSON.stringify(dec));
+  if (process.env.DBG && n % Number(process.env.DBG) === 0) console.log(n, JSON.stringify(await E(() => { const g = window.__game, h = g.player.horse, st = g.missions.active?.data?.course, o = g.course?.next; return { x: +h.pos.x.toFixed(1), z: +h.pos.z.toFixed(1), hd: +h.heading.toFixed(2), sp: +h.speed.toFixed(2), cad: g.player.csoCadence, rear: h._rearT > 0, refusing: !!h._refusing, brake: h._brake, next: st?.next, started: st?.started, ref: st?.refusals, d: o ? +Math.hypot(o.x - h.pos.x, o.z - h.pos.z).toFixed(1) : null, k: window.__rider.k, mv: [+g.input.move.x.toFixed(2), +g.input.move.y.toFixed(2)] }; })), JSON.stringify(dec));
   // Continuité : déplacement par image ≤ vitesse × dt (+ marge) ; cadence : seulement par le joystick.
   const cur = await E(() => { const h = window.__game.player.horse; return { x: h.pos.x, z: h.pos.z, sp: h.speed }; });
   const step = Math.hypot(cur.x - prev.x, cur.z - prev.z);

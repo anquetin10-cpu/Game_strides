@@ -28,10 +28,10 @@ export const LINE_BASE = 4.2;
 export const COMBI = { 1: [7.6, 8.0], 2: [11.2, 11.6] };
 // Largeur des barres des obstacles de concours, ailes et jardinières de chaque côté.
 export const FENCE_W = 3.8;
-export const WING = 1.9;
+export const WING = 2.05; // jardinières comprises : w/2 + 1,6 + 0,45
 
 const BASE = {
-  arc: 200, sBend: 10, fenceBoards: 2, fenceClear: 5, fenceGap: 4, zone: 8, start: [8, 15], finish: [8, 15],
+  arc: 200, sBend: 10, fenceBoards: 1.8, fenceClear: 5, fenceGap: 4, zone: 8, start: [8, 15], finish: [8, 15],
   camBack: 6.6, camOut: 1.5, speed: 350, refSpeed: 6.2, timeMargin: 4, lineTol: 0.4, lineStrides: [3, 7],
   gateExempt: 3, entryClear: 5, hug: 20, timingW: 7, postClear: 2, postLead: 1.2,
 };

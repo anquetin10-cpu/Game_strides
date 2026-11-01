@@ -212,8 +212,9 @@ export class Obstacles {
     // l'intérieur, un cercle à main droite les enchaîne. Vertical au sud vers l'ouest (face à qui entre), oxer au nord
     // vers l'est.
     const PW = PARIS.warmup;
-    this.add({ x: PW.x - 3, z: PW.z + 6.5, rot: -Math.PI / 2, kind: 'v', h: 1.3, w: 3.4, course: PARIS_WARM });
-    this.add({ x: PW.x + 3, z: PW.z - 6.5, rot: Math.PI / 2, kind: 'o', h: 1.25, w: 3.4, course: PARIS_WARM, colors: COLORS[1] });
+    // (lignes à 16 m l'une de l'autre : la boucle qui les relie se prend au galop, rayon 8 m)
+    this.add({ x: PW.x - 3, z: PW.z + 8, rot: -Math.PI / 2, kind: 'v', h: 1.3, w: 3.4, course: PARIS_WARM });
+    this.add({ x: PW.x + 3, z: PW.z - 8, rot: Math.PI / 2, kind: 'o', h: 1.25, w: 3.4, course: PARIS_WARM, colors: COLORS[1] });
   }
 
   _timingLine(L, label) {
@@ -306,7 +307,7 @@ export class Obstacles {
   _rest(o) {
     o.knocked = false;
     o.rebuild = 0;
-    o._pendingKnock = null;
+    o._pending = null;
     for (const r of o.rails) {
       r.position.y = r.userData.rest.y;
       r.position.z = r.userData.rest.z;
@@ -335,8 +336,9 @@ export class Obstacles {
     return { s: (x - o.x) * o.n.x + (z - o.z) * o.n.z, u: (x - o.x) * o.t.x + (z - o.z) * o.t.z };
   }
 
+  // État du cheval pour le modèle de saut ; `cso` : épreuve ou entraînement de CSO (modèle v2), sinon modèle d'origine.
   _horseState(horse) {
-    return { v: horse.speed, power: horse.jumpPower, clearance: horse.mods.clearance };
+    return { v: horse.speed, power: horse.jumpPower, clearance: horse.mods.clearance, cso: this.game.course?.controls === 'cso' };
   }
 
   // Obstacle visé par un appel maintenant : le plus proche devant le cheval, abordable (angle, ligne entre les
@@ -394,6 +396,20 @@ export class Obstacles {
     if (ref && !ref.away) {
       const { s } = this._localS(ref.o, horse.pos.x, horse.pos.z);
       if ((f.x * ref.o.n.x + f.z * ref.o.n.z) * Math.sign(s) > 0 || Math.abs(s) > ref.o.depth / 2 + 6) ref.away = true;
+    }
+    // Barres touchées par les postérieurs : elles tombent quand le cheval a avancé d'environ 1,1 m (ou s'est éloigné).
+    const step = Math.hypot(horse.pos.x - prevX, horse.pos.z - prevZ);
+    for (const o of this.list) {
+      if (!o._pending?.length) continue;
+      const far = Math.hypot(o.x - horse.pos.x, o.z - horse.pos.z) > 8;
+      for (let i = o._pending.length - 1; i >= 0; i--) {
+        const pk = o._pending[i];
+        pk.left -= step;
+        if (pk.left <= 0 || far) {
+          o._pending.splice(i, 1);
+          this.knock(o, pk.bar, pk.dir, pk.side, pk.hit);
+        }
+      }
     }
     // Refus en cours (freinage, voir Horse.brake) : à l'arrêt, le refus est compté.
     if (horse._refusing && !(horse._brake > 0)) this._count(horse, horse._refusing);
@@ -484,7 +500,8 @@ export class Obstacles {
           // Contact en montée (appel trop près) : les antérieurs emportent la barre tout de suite. En descente (appel
           // trop loin) : ce sont les postérieurs, qui passent la barre ~1,1 m plus loin — la barre tombe à ce moment-là.
           const side = Math.sign(b.u) || 1;
-          if (tau > 0.5) o._pendingKnock = { bar, dir, side, hit: -margin, t: this.game.time + 1.1 / Math.max(horse.speed, 2) };
+          // (une attente par barre ; déclenchée par la distance parcourue par le cheval : figée en pause)
+          if (tau > 0.5) (o._pending ||= []).push({ bar, dir, side, hit: -margin, left: 1.1 });
           else this.knock(o, bar, dir, side, -margin);
         }
         if (!pass.fault) {
@@ -545,11 +562,6 @@ export class Obstacles {
     for (const o of this.list) {
       if (p && o.knocked && (Math.abs(o.x - p.x) > 60 || Math.abs(o.z - p.z) > 60) && o.rails.every((r) => !r.userData.fall || r.userData.fall.done)) this._rest(o);
       if (o.rebuild && g.time > o.rebuild && fp && Math.hypot(o.x - fp.x, o.z - fp.z) > 5) this._rest(o);
-      const pk = o._pendingKnock;
-      if (pk && g.time >= pk.t) {
-        o._pendingKnock = null;
-        this.knock(o, pk.bar, pk.dir, pk.side, pk.hit);
-      }
       for (const r of o.rails) {
         const ud = r.userData;
         if (ud.rattle > 0 && !ud.fall) {

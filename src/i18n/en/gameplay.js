@@ -121,6 +121,7 @@ export default {
   'Touché au {0} · +4{1}': 'Hit at {0} · +4{1}',
   'Barre au {0} · +4{1}': 'Rail down at {0} · +4{1}',
   'Fais demi-tour, reprends ta <b>cadence</b> (joystick vers l’avant) et représente l’obstacle.': 'Turn around, pick up your <b>pace</b> again (joystick forward) and re-present at the fence.',
+  '<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment.': '<b>Left/right</b>: steer · <b>forward/back</b>: pace (held) · <b>JUMP</b> at the right moment.',
   '<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.': '<b>Left/right</b>: steer · <b>forward/back</b>: pace (held) · <b>JUMP</b> at the right moment. Cross the <b>start line</b>.',
   // Qualité de l'appel après un saut (gameplay/courses.js)
   'Appel parfait': 'Perfect take-off',

@@ -22,7 +22,7 @@ const MARK_MAT = new THREE.MeshBasicMaterial({ color: '#7dffc4', transparent: tr
 
 // Plage de distances d'appel (m, du point d'appel au centre de l'obstacle, abord droit) où le saut passe / passe bien.
 export function takeoffZone(o, horse) {
-  const st = { v: Math.max(horse.speed, 5.5), power: horse.jumpPower, clearance: horse.mods.clearance };
+  const st = { v: Math.max(horse.speed, 5.5), power: horse.jumpPower, clearance: horse.mods.clearance, cso: true };
   let pass = null, good = null;
   for (let d = 8; d >= 0; d -= 0.1) {
     const p = planJump(st, railsAhead(o, o.x - o.n.x * d, o.z - o.n.z * d, o.n.x, o.n.z));

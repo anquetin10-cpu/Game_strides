@@ -1320,7 +1320,8 @@ export class Game {
     const ph = this.player.mode === 'ride' ? this.player.horse : null;
     const prev = ph ? { x: ph.pos.x, z: ph.pos.z } : null;
     // Parcours chronométré : le cheval s'arrête avec le chrono (téléphone, carte, dialogue ouverts).
-    const hdt = this.course?.running && this.simPaused ? 0 : dt;
+    // (épreuve, entrée en piste, sortie et entraînement de CSO : le cheval est figé quand la simulation est en pause)
+    const hdt = (this.course?.running || this.course?.controls === 'cso') && this.simPaused ? 0 : dt;
     this.player.update(hdt, input);
     for (const h of this.horses) h.update(hdt, this.camera.position);
     if (ph && prev) this.obstacles.updateHorse(ph, prev.x, prev.z);

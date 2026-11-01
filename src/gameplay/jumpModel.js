@@ -31,8 +31,9 @@ export const JUMP = {
   Tmax: 0.74,
 };
 
-// Obstacles de saut d'obstacles (vertical, oxer, mur) : modèle v2 (hauteur adaptée, recalage limité). Les obstacles de
-// cross (troncs, haies, gué) gardent le modèle d'origine.
+// Modèle v2 (hauteur adaptée, recalage limité) : seulement en épreuve ou en entraînement de CSO (horse.cso, posé par
+// Obstacles._horseState quand les commandes de concours sont actives) et pour les obstacles de saut d'obstacles
+// (vertical, oxer, mur). En monde ouvert et au cross, le modèle d'origine s'applique, à l'identique.
 const isCso = (kind) => !kind || kind === 'v' || kind === 'o' || kind === 'w';
 
 // Puissance utile selon la vitesse : pleine au galop de concours, réduite au trot, saut « à plat » au grand galop.
@@ -69,7 +70,8 @@ function shape(horse, v, cosA, rails, cso) {
   if (!cso || !rails.length) return { H: Hcap, L0: Math.max(1.5, v * JUMP.T), Hcap };
   const top = Math.max(...rails.map((r) => r.h));
   const spread = rails[rails.length - 1].x - rails[0].x;
-  const want = top + JUMP.clear + JUMP.spreadK * spread - JUMP.lift - (horse.clearance || 0);
+  // (les protections — guêtres, cloches — ajoutent leur marge par-dessus : elles n'abaissent pas le saut voulu)
+  const want = top + JUMP.clear + JUMP.spreadK * spread - JUMP.lift;
   const H = Math.min(Hcap, want);
   const T = clamp(JUMP.T0 + JUMP.Tk * H, JUMP.Tmin, JUMP.Tmax);
   return { H, L0: Math.max(1.5, v * T), Hcap };
@@ -82,7 +84,7 @@ function shape(horse, v, cosA, rails, cso) {
 export function planJump(horse, geo) {
   const { v } = horse;
   const cosA = geo ? geo.cosA : 1;
-  const cso = isCso(geo?.kind);
+  const cso = !!horse.cso && isCso(geo?.kind);
   const rails = geo?.rails || [];
   const base = shape(horse, v, cosA, rails, cso);
   const L0 = base.L0;
@@ -97,15 +99,23 @@ export function planJump(horse, geo) {
   const lift = JUMP.lift + (horse.clearance || 0);
   const margins = rails.map((r) => arcY(H, L, r.x) + lift - r.h);
   const margin = Math.min(...margins);
+  // Côté de l'écart : par rapport à la longueur naturelle du saut (CSO), comme à l'origine sinon.
+  const farSide = cso ? ideal > L0 : ideal > L;
   let zone;
   if (first < JUMP.minFront) zone = 'refuse';
   else if (margin >= JUMP.good) zone = 'good';
-  else zone = ideal > L ? 'far' : 'near';
-  // Cause d'une faute prévisible : la distance, l'abord en biais ou le manque d'impulsion (même appel, abord droit ou
-  // galop de concours : s'il passe, c'est l'abord ou l'allure qui est en cause).
+  else zone = farSide ? 'far' : 'near';
   let cause = null;
   if (zone === 'refuse') cause = 'tooClose';
-  else if (margin < -JUMP.rub) {
+  else if (margin < -JUMP.rub && !cso) {
+    // Modèle d'origine : même appel, abord droit à bonne cadence — s'il passe, c'est l'abord (vitesse, angle).
+    const Hok = horse.power * speedFactor(clamp(v, 6.5, 9)) * (1 - 1.5 * dev * dev);
+    const straight = Math.min(...rails.map((r) => arcY(Hok, L, r.x) + lift - r.h));
+    if (straight >= -JUMP.rub) cause = cosA < 0.92 ? 'angle' : v < 6.5 ? 'slow' : 'fast';
+    else cause = ideal > L ? 'far' : 'near';
+  } else if (margin < -JUMP.rub) {
+    // CSO : la distance, l'abord en biais ou le manque d'impulsion (même appel, abord droit ou galop de concours :
+    // s'il passe, c'est l'abord ou l'allure qui est en cause).
     const passesWith = (vv, cc) => {
       const b = shape(horse, vv, cc, rails, cso);
       const LL = clamp(ideal, b.L0 * (1 - (cso ? JUMP.shorten : JUMP.shortenXc)), b.L0 * (1 + (cso ? JUMP.adapt : JUMP.adaptXc)));
@@ -115,9 +125,9 @@ export function planJump(horse, geo) {
     };
     if (cosA < 0.94 && passesWith(v, 1)) cause = 'angle';
     else if (speedFactor(v) < 0.97 && passesWith(Math.max(v, 6.5), cosA)) cause = 'slow';
-    else cause = ideal > L ? 'far' : 'near';
+    else cause = farSide ? 'far' : 'near';
   }
-  return { L, H, L0, margins, margin, zone, cause, ideal, cosA, dev };
+  return { L, H, L0, margins, margin, zone, cause, ideal, cosA, dev, cso };
 }
 
 // Qualité d'un appel, pour le retour au cavalier après le saut : 'perfect' | 'good' | 'bitFar' | 'bitNear' | 'far' |
@@ -126,7 +136,7 @@ export function takeoffQuality(plan) {
   if (!plan || plan.zone === 'none') return null;
   if (plan.cause) return plan.cause === 'short' ? 'far' : plan.cause;
   if (plan.zone === 'good') return Math.abs(plan.dev || 0) < 0.03 ? 'perfect' : 'good';
-  return plan.ideal > plan.L ? 'bitFar' : 'bitNear';
+  return plan.ideal > (plan.L0 ?? plan.L) ? 'bitFar' : 'bitNear';
 }
 
 export const CAUSES = {

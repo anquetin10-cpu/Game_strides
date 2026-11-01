@@ -18,7 +18,8 @@
     init({ line, start, pre = 10, via = [] }) {
       const h = g.player.horse;
       const n = { x: Math.sin(start.rot), z: Math.cos(start.rot) };
-      const pts = [{ x: h.pos.x, z: h.pos.z }, ...via, { x: start.x - n.x * pre, z: start.z - n.z * pre }, { x: start.x - n.x * 2, z: start.z - n.z * 2 }];
+      // Abord dessiné (de l'entrée de piste à la ligne de départ) quand le parcours en a un, sinon droit sur la ligne.
+      const pts = via.length ? [{ x: h.pos.x, z: h.pos.z }, ...via] : [{ x: h.pos.x, z: h.pos.z }, { x: start.x - n.x * pre, z: start.z - n.z * pre }, { x: start.x - n.x * 2, z: start.z - n.z * 2 }];
       const dense = [];
       for (let i = 0; i + 1 < pts.length; i++) {
         const m = Math.max(1, Math.round(Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].z - pts[i].z) / 0.5));
@@ -99,9 +100,11 @@
         const fx = Math.sin(h.heading), fz = Math.cos(h.heading);
         const rx = h.pos.x + fx * 0.4, rz = h.pos.z + fz * 0.4;
         const d = -((rx - o.x) * o.n.x + (rz - o.z) * o.n.z); // distance avant le centre de l'obstacle, le long de son axe
+        const u = (rx - o.x) * o.t.x + (rz - o.z) * o.t.z; // décalage latéral
+        const facing = fx * o.n.x + fz * o.n.z > 0.7 && Math.abs(u) < o.w / 2 + 0.6; // face à l'obstacle, entre les chandeliers
         const ideal = 0.5 * v * 0.69 + R.lead;
         const key = `${o.label}#${st.refusals}`;
-        if (!R.pressed.has(key) && d > 0 && d <= ideal) {
+        if (!R.pressed.has(key) && facing && d > 0 && d <= ideal) {
           R.pressed.add(key);
           jump = true;
           R.log.push({ label: o.label, d: +d.toFixed(2), v: +v.toFixed(2), x: +x.toFixed(2) });

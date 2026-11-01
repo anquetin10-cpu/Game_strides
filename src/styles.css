@@ -970,7 +970,7 @@ body.phone-open .rotate { display: none !important; }
 .cso-board .cad i.on { background: var(--paper); }
 .jump-fb { align-self: center; margin-top: 4px; padding: 3px 10px; border-radius: 9px; font: 600 12px/1.2 var(--ui); color: var(--paper);
   background: var(--glass); border: 1px solid var(--line); pointer-events: none; transition: opacity .3s; }
-.jump-fb.off { opacity: 0; }
+.jump-fb.off { display: none; }
 .jump-fb.good { color: #7dffc4; }
 .jump-fb.bad { color: #ff9c8f; }
 .btn-jump.early .ring { border-color: rgba(255,255,255,.55); }

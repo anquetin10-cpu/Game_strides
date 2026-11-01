@@ -342,7 +342,8 @@ export class HUD {
     // Cadence : affichée deux secondes quand elle change (joystick avant/arrière), sinon discrète.
     const cad = csoCtl ? p.csoCadence : undefined;
     if (cad !== undefined) {
-      if (this._cad === undefined || Math.abs(cad - this._cad) > 0.01) this._cadT = 2;
+      // (indépendant de la cadence d'affichage : la conduite signale qu'on règle la cadence)
+      if (this._cad === undefined || p._cadAdjust) this._cadT = 2;
       this._cad = cad;
       this._cadT = Math.max(0, (this._cadT || 0) - dt);
       const n = Math.round((cad / 8) * 6);
@@ -371,7 +372,10 @@ export class HUD {
     el.textContent = text;
     el.className = `jump-fb ${kind}`;
     clearTimeout(this._fbT);
-    this._fbT = setTimeout(() => el.classList.add('off'), 1500);
+    this._fbT = setTimeout(() => {
+      el.classList.add('off');
+      el.textContent = '';
+    }, 1500);
   }
 
   // Appui sur SAUT sans effet (obstacle encore loin) : le bouton l'indique brièvement.

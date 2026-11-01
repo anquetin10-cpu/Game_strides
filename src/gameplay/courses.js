@@ -4,7 +4,7 @@ import { HIPPO, BEACH, beachWig } from '../world/layout.js';
 import { tideLevel } from '../world/weather.js';
 import { CSO_FINISH, CSO_LENGTH, CSO_START, CSO_GATE } from './obstacles.js';
 import { CourseAids } from './courseAids.js';
-import { takeoffQuality } from './jumpModel.js';
+import { takeoffQuality, planJump, railsAhead, JUMP } from './jumpModel.js';
 import { simulateField, rankResults } from './ranking.js';
 import { coursePlanSvg, coursePlanLegend } from '../ui/coursePlan.js';
 import { formatMoney, dec, clamp } from '../core/math.js';
@@ -166,11 +166,13 @@ export function courseSteps(game, run, S, opts) {
       startLine,
       text: () => {
         if (state.eliminated) return t('Éliminé');
+        if (state.finished) return '';
         if (cso && !state.started) return t('Franchis la ligne de départ');
         const o = list()[state.next - 1];
         return o ? T`Obstacle n°${labelOf(o)}${/A$/.test(o.label || '') ? t(' · double') : ''} sur ${list().length}` : t('Passe la ligne d’arrivée !');
       },
       target: () => {
+        if (state.finished) return null;
         if (cso && !state.started) return startApproach;
         const o = list()[state.next - 1];
         return o ? approach(o) : fin;
@@ -182,7 +184,7 @@ export function courseSteps(game, run, S, opts) {
         if (!cso) state.started = true;
         game.cam.lastManual = -10;
         // Concours de CSO : caméra et commandes de concours (direction progressive, cadence) ; cross : monde ouvert.
-        game.course = { running: true, kind: cso ? 'cso' : kind, courseId, next: null, camera: cso, controls: cso ? 'cso' : null, jumpTiming: () => (aid() === 'off' ? 'none' : ob.timing(horse())), hud: hudInfo };
+        game.course = { running: true, kind: cso ? 'cso' : kind, courseId, next: null, camera: cso, controls: cso ? 'cso' : null, aidLocked: opts.jumpAid !== undefined, jumpTiming: () => (aid() === 'off' ? 'none' : ob.timing(horse())), hud: hudInfo };
         aids = new CourseAids(game, courseId);
         game.course.aids = aids;
         const advance = () => {
@@ -197,11 +199,15 @@ export function courseSteps(game, run, S, opts) {
           return true;
         };
         // Qualité de l'appel (sauf aide « Aucune ») : un mot sous le chrono, le temps de préparer la courbe suivante.
-        const feedback = (o, clear) => {
+        // (le mot suit le jugement réel : jamais « parfait » sur une barre, jamais une faute sur un franchissement)
+        const feedback = (o, clear, cause) => {
           if (!cso || aid() === 'off') return;
           const lj = horse()?._lastJump;
-          const q = lj && lj.o === o ? takeoffQuality(lj.plan) : null;
-          if (q) game.hud.jumpFeedback?.(TAKEOFF_TEXT[q] || '', clear ? (q === 'perfect' || q === 'good' ? 'good' : 'ok') : 'bad');
+          let q = lj && lj.o === o ? takeoffQuality(lj.plan) : null;
+          if (!clear) q = cause ? (cause === 'short' ? 'far' : cause === 'fast' ? 'far' : cause) : q && (q === 'perfect' || q === 'good' ? null : q);
+          else if (q === 'far') q = 'bitFar';
+          else if (q === 'near' || q === 'tooClose') q = 'bitNear';
+          if (q && TAKEOFF_TEXT[q]) game.hud.jumpFeedback?.(TAKEOFF_TEXT[q], clear ? (q === 'perfect' || q === 'good' ? 'good' : 'ok') : 'bad');
         };
         const wrongCourse = (o) => {
           if (state.wrong.has(o.num)) return;
@@ -225,7 +231,7 @@ export function courseSteps(game, run, S, opts) {
             if (obstacle.num === state.next && dir > 0) {
               state.faults += 4;
               state.log.push({ label: labelOf(obstacle), kind: 'rail', cause, causeText });
-              feedback(obstacle, false);
+              feedback(obstacle, false, cause);
               game.audio.fault();
               game.audio.crowdOoh?.();
               game.hud.toast(kind === 'xc' ? T`Touché au ${labelOf(obstacle)} · +4${causeText ? ` · ${causeText}` : ''}` : T`Barre au ${labelOf(obstacle)} · +4${causeText ? ` · ${causeText}` : ''}`);
@@ -244,7 +250,7 @@ export function courseSteps(game, run, S, opts) {
             game.audio.fault();
             game.audio.crowdOoh?.();
             // Refus dans une combinaison : on reprend la combinaison à son premier élément.
-            let msg = t('Fais demi-tour, reprends ta <b>cadence</b> (joystick vers l’avant) et représente l’obstacle.');
+            let msg = cso ? t('Fais demi-tour, reprends ta <b>cadence</b> (joystick vers l’avant) et représente l’obstacle.') : t('Fais une <b>volte</b> pour reprendre ton élan, puis représente l’obstacle.');
             if (/B$/.test(obstacle.label || '')) {
               const a = list().find((o) => o.label === obstacle.label.replace(/B$/, 'A'));
               if (a) {
@@ -273,7 +279,8 @@ export function courseSteps(game, run, S, opts) {
             ob.highlight(courseId, state.next);
           }
         }
-        if (cso) game.hud.hint(t('<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.'), 6000);
+        if (cso && state.started) game.hud.hint(t('<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment.'), 5000);
+        else if (cso) game.hud.hint(t('<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.'), 6000);
         else game.hud.hint(t('Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.'), 4000);
       },
       update(r, dt) {
@@ -329,6 +336,7 @@ export function courseSteps(game, run, S, opts) {
           if (crossed) {
             state.finished = true;
             if (game.course) game.course.running = false;
+            r.applyWaypoint(); // (plus de cible : la ligne d'arrivée est passée)
             const over = Math.max(0, state.t - timeAllowed);
             const pts = state.faults + (cso ? Math.ceil(over - 1e-9) : Math.round(over * 0.4));
             game.audio.applause?.(pts === 0 ? 1.3 : 0.55, pts === 0 ? 4 : 2.6);
@@ -493,7 +501,25 @@ export function courseSteps(game, run, S, opts) {
     start(r) {
       const h = horse();
       const reach = h ? h.jumpPower + 0.2 + (h.mods?.clearance || 0) : 99;
-      if (reach < maxH + 0.04) {
+      // Obstacle hors de portée d'après le modèle de saut de CSO (oxers compris) : aucun appel, du galop de concours au
+      // galop allongé, ne le franchit sans faute.
+      const hopeless = () => {
+        if (!h || !cso || !heights) return reach < maxH + 0.04;
+        const els = list();
+        return els.some((o, i) => {
+          const hh = heights[i] ?? o.h;
+          const bars = o.kind === 'o' ? [{ s: -o.spread / 2, h: hh - 0.05 }, { s: o.spread / 2, h: hh }] : [{ s: 0, h: hh }];
+          const f = { x: 0, z: 0, n: { x: 0, z: 1 }, t: { x: 1, z: 0 }, bars, kind: o.kind };
+          for (const v of [6.2, 7.0, 7.8]) {
+            for (let d = 0.6; d < 5; d += 0.1) {
+              const p = planJump({ v, power: h.jumpPower, clearance: h.mods?.clearance || 0, cso: true }, railsAhead(f, 0, -d, 0, 1));
+              if (p.zone !== 'refuse' && p.margin >= -JUMP.rub) return false;
+            }
+          }
+          return true;
+        });
+      };
+      if (hopeless()) {
         r.flags.capWarn = true;
         game.hud.dialog([{ who: t('Entraîneur'), initials: 'EN', text: T`Obstacles jusqu’à ${num(maxH, 2)} m : avec ${h.name} et cet équipement, tu plafonnes vers ${num(reach, 2)} m. Il faudra un cheval plus puissant ou une selle adaptée (Sellerie du Port, « Mes chevaux »), sinon les barres tomberont.` }], () => (r.flags.capWarn = false));
       }
