@@ -71,6 +71,8 @@ await page.waitForFunction(() => window.__game?.state === 'title', null, { timeo
 await page.tap('[data-id="continue"]');
 await page.waitForFunction(() => window.__game.state === 'play', null, { timeout: 120000 });
 await page.addScriptTag({ content: AUTO });
+// L'état de la sauvegarde (camion, chevaux à bord) est repris à la première image de jeu : on l'attend avant de relever.
+await E(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 const s0 = await E(() => {
   const g = window.__game, A = window.__auto, d = g.save.data, tk = g.truck;
   A.stopLoop();
