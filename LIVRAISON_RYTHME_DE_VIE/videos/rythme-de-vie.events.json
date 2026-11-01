@@ -1,0 +1,69 @@
+{
+ "frames": 472,
+ "fps": 15,
+ "seconds": 31.5,
+ "house": true,
+ "events": [
+  {
+   "t": 0,
+   "label": "à cheval, heure accélérée",
+   "hour": "15:30",
+   "energy": 43
+  },
+  {
+   "t": 7,
+   "label": "après la baisse (avertissement Fatigue)",
+   "hour": "19:29",
+   "energy": 34
+  },
+  {
+   "t": 11.67,
+   "label": "carte du café",
+   "hour": "19:45",
+   "energy": 33
+  },
+  {
+   "t": 12.73,
+   "label": "café 1",
+   "hour": "19:45",
+   "energy": 45
+  },
+  {
+   "t": 13.8,
+   "label": "café 2",
+   "hour": "19:45",
+   "energy": 52
+  },
+  {
+   "t": 15.67,
+   "label": "devant la maison",
+   "hour": "22:15",
+   "energy": 44
+  },
+  {
+   "t": 21.87,
+   "label": "au lit",
+   "hour": "22:22",
+   "energy": 44
+  },
+  {
+   "t": 23.87,
+   "label": "menu du lit",
+   "hour": "22:22",
+   "energy": 44
+  },
+  {
+   "t": 28,
+   "label": "nouvelle journée",
+   "hour": "7:00",
+   "energy": 100
+  },
+  {
+   "t": 31.47,
+   "label": "le matin",
+   "hour": "7:03",
+   "energy": 100
+  }
+ ],
+ "errors": []
+}

@@ -210,16 +210,21 @@ Toutes les captures sont des rendus logiciels SwiftShader en émulation d'iPhone
 | `12`, `13`, `14` | Menu du lit en journée et le soir, après une sieste. |
 | `15`, `16` | Café : « Prendre un café » (+12), puis plus d'effet. |
 | `17`, `18` | Carte « Bonjour ! », HUD au réveil (Matin 7:00, 100 %). |
-| `videos/rythme-de-vie.mp4` | La vidéo (voir ci-dessous). |
+| `videos/rythme-de-vie.mp4` | La vidéo (voir ci-dessous) ; `videos/planche-video.jpg` en résume les étapes. |
 
-La vidéo montre, dans l'ordre :
+La vidéo dure 31,5 s, à 15 images par seconde. L'heure du jeu est accélérée pendant le passage à cheval, comme
+l'indique la légende. Elle montre, dans l'ordre :
 
-1. fin d'après-midi à cheval, avec l'heure accélérée : l'énergie baisse et l'avertissement « Fatigue » apparaît ;
-2. café au Galop ;
-3. retour à la maison le soir, chambre, menu du lit, « Dormir jusqu'au matin » ;
-4. nouvelle journée et départ au petit matin.
+| Temps | Heure du jeu | Énergie | Étape |
+|---|---|---|---|
+| 0 – 7 s | 15:30 → 19:30 | 43 → 34 % | Galop à la carrière de l'Écurie du Val. La jauge passe à l'orange et l'avertissement « Fatigue » apparaît. |
+| 9 – 15 s | 19:45 | 33 → 45 → 52 % | Café au Galop : « Prendre un café », +12 puis +7, avec la carte et le gain affiché. |
+| 15,7 – 23 s | 22:15 | 44 % | Retour à la maison : entrée, salon, passage vers la chambre, lit, « Se coucher ». |
+| 23,9 s | 22:22 | 44 % | Menu du lit : « Dormir jusqu'au matin » (réveil 7 h, 8 h 37 de sommeil, 44 → 100 %), sieste (44 → 69 %), rester debout. |
+| 26 – 30 s | 7:00 | 100 % | Fondu, puis la carte « Bonjour ! » (Jour 2) : énergie 44 → 100 %, Comète a récupéré, partie sauvegardée. |
+| 30 – 31,5 s | 7:00 | 100 % | Sortie dans la cour au petit matin. |
 
-Le journal des événements de la vidéo est dans `videos/rythme-de-vie.events.json`.
+Le journal des événements (heure, énergie) est dans `videos/rythme-de-vie.events.json`.
 
 ## 10. Vérifications
 
