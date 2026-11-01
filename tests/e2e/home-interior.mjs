@@ -358,6 +358,37 @@ const tele = await ev(() => {
   return { before, after: g.home.inside, indoor: g.indoor, saved: g.save.data.indoorHome };
 });
 check('téléporté dehors par une mission : plus « dans la maison »', tele.before && !tele.after && !tele.indoor && tele.saved === false, JSON.stringify(tele));
+// Inverse : remis dans les pièces sans passer par la porte (retour d'un défi lancé de la maison, ancienne sauvegarde
+// contre un pignon de l'ancienne maison) : de nouveau « dans la maison », « Sortir » proposé, intérieur dessiné.
+const adopt = await ev(() => {
+  const g = window.__game, A = window.__auto, H = window.__H.HOME.house;
+  g.player.human.setPosition(H.x + 2.3, H.z + 1.0, 0);
+  A.tick(3);
+  return { inside: g.home.inside, indoor: g.indoor?.id, saved: g.save.data.indoorHome, visible: !!g.world.house.interior?.group.visible };
+});
+check('remis dans les pièces sans la porte : état « dedans » rétabli (intérieur dessiné)', adopt.inside && adopt.indoor === 'maison' && adopt.saved === true && adopt.visible, JSON.stringify(adopt));
+// Sifflet du téléphone dans la maison : le cheval reste dehors.
+const whistle = await ev(() => { const g = window.__game, h = g.mainHorse, p0 = { x: h.pos.x, z: h.pos.z }; const r = g.player.whistle(); window.__auto.tick(30); return { r, moved: +Math.hypot(h.pos.x - p0.x, h.pos.z - p0.z).toFixed(2) }; });
+check('sifflet (téléphone) dans la maison : le cheval attend dehors', whistle.r === false && whistle.moved < 0.6, JSON.stringify(whistle));
+// Véhicule garé contre la porte : « Sortir » met le joueur dehors, jamais repoussé dans le salon.
+const blockedDoor = await ev(async () => {
+  const g = window.__game, A = window.__auto, d = g.home.anchor('door'), v = g.defender;
+  if (!v) return { skip: true };
+  const v0 = { x: v.pos.x, z: v.pos.z, h: v.heading };
+  v.setPosition(d.x, d.z + 1.59, Math.PI);
+  A.tick(2);
+  const ex = g.home.anchor('exit');
+  g.player.human.setPosition(ex.x, ex.z, 0);
+  A.tick(2);
+  await g.home.exit({ instant: true });
+  A.tick(3);
+  const p = g.player.human.pos;
+  const r = { inside: g.home.inside, inHouse: g.home.contains(p.x, p.z, 0.2), dDoor: +Math.hypot(p.x - d.x, p.z - d.z).toFixed(2) };
+  v.setPosition(v0.x, v0.z, v0.h);
+  A.tick(2);
+  return r;
+});
+check('véhicule garé contre la porte : « Sortir » met dehors, à côté de la porte (pas de boucle)', blockedDoor.skip || (!blockedDoor.inside && !blockedDoor.inHouse && blockedDoor.dDoor < 5), JSON.stringify(blockedDoor));
 
 // ---------- Sauvegarde dans la maison puis rechargement ----------
 await ev(() => { const g = window.__game, d = g.home.anchor('door'); g.player.human.setPosition(d.x, d.z, Math.PI); window.__auto.tick(3); });

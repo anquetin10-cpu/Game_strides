@@ -451,6 +451,11 @@ export class Player {
 
   whistle() {
     const h = this.horse;
+    // Dans un commerce ou à la maison (sifflet du téléphone compris) : le cheval attend dehors.
+    if (this.game.indoor && this.mode === 'foot') {
+      this.game.hud.toast(T`${this.game.mainHorse?.name || t('Ton cheval')} t’attend dehors.`);
+      return false;
+    }
     if (h && h.inBox && this.mode === 'foot') {
       this.game.hud.toast(T`${h.name} est au box à l’Écurie du Val : va l’y chercher (« Sortir du box »).`);
       return false;

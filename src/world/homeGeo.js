@@ -326,7 +326,8 @@ export function houseExterior() {
       k.add('glass', pane(wd - 0.1, h - 0.1), GLASS, { y: o.y0 + 0.05, z: zr - 0.01 });
       // Façade sur la cour : brise-bise de lin (verre dépoli à la salle de bain), lumineux le soir (lot « lights »).
       if (o.side === 'front') k.add('glow', face(wd - 0.1, o.room === 'sdb' ? h - 0.1 : h / 3), '#efe3c8', { y: o.y0 + 0.05, z: zr + 0.012 });
-      k.add('body', box(wd + 0.22, 0.07, 0.24), SILL, { y: o.y0 - 0.07, z: -0.06 });
+      // (dessus de l'appui 3 cm au-dessus de l'allège : pas de faces confondues qui scintillent)
+      k.add('body', box(wd + 0.22, 0.07, 0.24), SILL, { y: o.y0 - 0.04, z: -0.06 });
       for (const sx of [-1, 1]) {
         const x = sx * (wd / 2 + wd / 4 + 0.05);
         k.add('shutters', box(wd / 2, h + 0.04, 0.035), SHUT, { x, y: o.y0 - 0.02, z: 0.02 });
@@ -429,7 +430,9 @@ export function houseExterior() {
   }
   const o = OPENINGS[2];
   const colliders = [
-    [0, D / 2 - T / 2, W / 2, T / 2], [0, -D / 2 + T / 2, W / 2, T / 2], [-W / 2 + T / 2, 0, T / 2, D / 2], [W / 2 - T / 2, 0, T / 2, D / 2],
+    // Murs : épaisseur de collision un peu plus large que la maçonnerie (+8 cm de chaque côté, comme les écuries) : la
+    // perche de la caméra ne traverse pas un mur de 32 cm quand le joueur s'y adosse.
+    [0, D / 2 - T / 2, W / 2 + 0.08, T / 2 + 0.08], [0, -D / 2 + T / 2, W / 2 + 0.08, T / 2 + 0.08], [-W / 2 + T / 2, 0, T / 2 + 0.08, D / 2 + 0.08], [W / 2 - T / 2, 0, T / 2 + 0.08, D / 2 + 0.08],
     // Pots de buis et banc devant la façade.
     [o.a - 0.42, D / 2 + 0.32, 0.22, 0.22, 0.95], [o.b + 0.42, D / 2 + 0.32, 0.22, 0.22, 0.95], [(OPENINGS[3].a + OPENINGS[3].b) / 2, D / 2 + 0.3, 0.72, 0.2, 0.47],
   ];
@@ -479,7 +482,7 @@ function shell(k, id, { floor, wall, accent = null, skirting = WHITE }) {
     if (o.room !== id || o.kind !== 'win') continue;
     const wd = o.b - o.a;
     k.push(openingFrameIn(o));
-    k.add('A', box(wd + 0.12, 0.04, T - 0.06), WHITE, { y: o.y0 - 0.04, z: -(T - 0.06) / 2 + 0.06 });
+    k.add('A', box(wd + 0.12, 0.04, T - 0.06), WHITE, { y: o.y0 - 0.03, z: -(T - 0.06) / 2 + 0.06 });
     k.add('G', box(wd - 0.1, o.y1 - o.y0 - 0.1, 0.01), '#ffffff', { y: o.y0 + 0.05, z: -T + 0.15 });
     k.pop();
     if (o.curtains) curtains(k, o, o.curtains);
@@ -608,6 +611,8 @@ function* buildSalon(k) {
   horsePhoto(k, { x: 0.15, y: 0.9, z: -0.05, rx: -0.12 }, 0.26, 0.32, { frame: BRASS, coat: '#7a4a2a', sky: '#d9c7a6' });
   horsePhoto(k, { x: 0.5, y: 0.9, z: 0.0, rx: -0.12, ry: -0.2 }, 0.2, 0.26, { frame: INK, coat: '#e9e2d6', sky: '#9fb7c9' });
   k.pop();
+  // (étape coupée en deux : pas d'à-coup à l'approche)
+  yield;
   // Tableau de flots au-dessus du buffet.
   for (let i = 0; i < 8; i++) rosette(k, { x: r.x1 - LT, y: 2.3 - Math.floor(i / 4) * 0.46, z: -3.2 + (i % 4) * 0.4, ry: -Math.PI / 2 }, fl[(i + 2) % 6], 0.075);
   k.add('A', cyl(0.2, 0.16, 0.4, 12), '#2a2c30', { x: 4.62, y: FLOOR, z: Z0 + 0.3 });
