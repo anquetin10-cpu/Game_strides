@@ -15,8 +15,6 @@ export default {
 
   // Disponibilité des missions.
   'Disponible de {0} à {1}': 'Available from {0} to {1}',
-  'Disponible de {0} à {1} : le client te recontactera dans la matinée.': 'Available from {0} to {1}: the client will get back to you in the morning.',
-  'Disponible de {0} à {1} : il est tard, le client te recontactera demain.': 'Available from {0} to {1}: it’s late, the client will get back to you tomorrow.',
   'Trop fatigant pour l’instant': 'Too tiring for now',
   'Énergie trop basse ({0} %) pour une mission aussi exigeante. Repose-toi d’abord : une nuit à la maison de l’Écurie du Val, ou au moins une sieste.': 'Energy too low ({0}%) for such a demanding job. Rest first: a night at the house at Écurie du Val, or at least a nap.',
   'À toute heure': 'Any time',
@@ -66,7 +64,6 @@ export default {
   'Pas pendant une épreuve.': 'Not during a class.',
   'Réveil à 7 h ({0} de sommeil) · énergie {1} → {2} · partie sauvegardée': 'Wake up at 7:00 ({0} of sleep) · energy {1} → {2} · game saved',
   'Passer à la journée suivante': 'Skip to the next day',
-  'La journée se termine : réveil demain à 7 h, énergie 100 % · partie sauvegardée': 'The day ends: wake up tomorrow at 7:00, energy 100% · game saved',
   'Faire une sieste': 'Take a nap',
   '1 h 30 · énergie {0} → {1} (une sieste ne vaut pas une nuit)': '1 h 30 · energy {0} → {1} (a nap is no substitute for a night)',
   '1 h 30 · tu as déjà assez d’énergie : une sieste n’apporterait rien de plus': '1 h 30 · you already have enough energy: a nap wouldn’t help',
@@ -93,6 +90,11 @@ export default {
 
   'Ton passage au Pôle était prévu à {0} : file au concours (ou abandonne-le) avant de te reposer.': 'Your round at the Pôle was due at {0}: hurry to the show (or withdraw) before resting.',
   'Ton passage au Pôle est à {0} : pas le temps de dormir maintenant.': 'Your round at the Pôle is at {0}: no time to sleep now.',
+
+  'Disponible de {0} à {1} : le client te recontactera dans la matinée. Pour avancer l’heure, repose-toi à la maison de l’Écurie du Val.': 'Available from {0} to {1}: the client will get back to you in the morning. To move time forward, rest at the house at Écurie du Val.',
+  'Disponible de {0} à {1} : le client te recontactera demain. À la maison de l’Écurie du Val, le lit permet de passer à la journée suivante.': 'Available from {0} to {1}: the client will get back to you tomorrow. At the house at Écurie du Val, the bed lets you skip to the next day.',
+  'Une demande attend son créneau : repose-toi à la maison de l’Écurie du Val (« Passer à la journée suivante ») pour la retrouver demain matin.': 'A request is waiting for its time slot: rest at the house at Écurie du Val (“Skip to the next day”) to find it tomorrow morning.',
+  'La journée se termine : réveil demain à 7 h, énergie {0} → {1} · partie sauvegardée': 'The day ends: wake up tomorrow at 7:00, energy {0} → {1} · game saved',
 
   // Café (Le Galop).
   'Énergie {0} %': 'Energy {0}%',

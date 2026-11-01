@@ -285,7 +285,7 @@ function actions(phone, o, av = { ok: true }) {
   // Hors horaires ou trop fatigant : pas d'acceptation possible, raison affichée (et la maison, si c'est la fatigue).
   if (!av.ok) {
     bar.appendChild(h('div.req-cap.center.unavail', { text: av.short, 'data-id': 'unavailable-request' }));
-    if (av.kind === 'fatigue') {
+    if (av.kind === 'fatigue' || o.story) {
       const home = h('button.btn.large', { text: t('Itinéraire vers la maison'), 'data-id': 'route-home' });
       tap(home, () => {
         g.energy?.routeHome();

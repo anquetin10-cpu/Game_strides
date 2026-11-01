@@ -1185,6 +1185,7 @@ export class Game {
       this.player.setAvatar(d.avatar);
     }
     this.state = 'play';
+    this.energy?.reset();
     // Sauvegarde faite dans un commerce : retour à l'intérieur (ou devant sa porte si l'intérieur ne se charge pas).
     if (!isNew) this.shops.resume();
     // Concours interrompu par un rechargement : engagement remboursé.

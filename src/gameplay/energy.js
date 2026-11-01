@@ -26,7 +26,7 @@ export const LIFE = {
   // Sieste d'1 h 30 : gain dégressif depuis la dernière nuit (25, 15, 8), jamais au-delà de 80 %.
   nap: { hours: 1.5, gains: [25, 15, 8], cap: 80 },
   // Nuit : réveil à 7 h ; énergie pleine après 6 h de sommeil, sinon 14 points par heure dormie.
-  sleep: { wake: 7, fullAfter: 6, perHour: 14, from: 19, to: 6 },
+  sleep: { wake: 7, fullAfter: 6, perHour: 14, from: 19, to: 7 },
   // Effets de la fatigue (hors épreuves de concours) : course à pied et vitesse du cheval monté en monde ouvert.
   malus: {
     high: { run: 1, sprint: 1, horse: 1 },
@@ -84,7 +84,7 @@ export function nextWake(gameTime, wake = LIFE.sleep.wake) {
   if (tw <= gameTime) tw += 86400;
   return tw;
 }
-// Heure du coucher pour une vraie nuit (de 19 h à 6 h).
+// Heure du coucher pour une vraie nuit (de 19 h jusqu'au réveil, 7 h).
 export const isBedtime = (hour) => {
   const h = wrapHour(hour);
   return h >= LIFE.sleep.from || h < LIFE.sleep.to;
@@ -149,8 +149,8 @@ export function missionAvailability(offer, { hour, energy }) {
       kind: 'hours',
       short: T`Disponible de ${hhLabel(hrs[0])} à ${hhLabel(hrs[1])}`,
       reason: later
-        ? T`Disponible de ${hhLabel(hrs[0])} à ${hhLabel(hrs[1])} : le client te recontactera dans la matinée.`
-        : T`Disponible de ${hhLabel(hrs[0])} à ${hhLabel(hrs[1])} : il est tard, le client te recontactera demain.`,
+        ? T`Disponible de ${hhLabel(hrs[0])} à ${hhLabel(hrs[1])} : le client te recontactera dans la matinée. Pour avancer l’heure, repose-toi à la maison de l’Écurie du Val.`
+        : T`Disponible de ${hhLabel(hrs[0])} à ${hhLabel(hrs[1])} : le client te recontactera demain. À la maison de l’Écurie du Val, le lit permet de passer à la journée suivante.`,
     };
   }
   if (energy !== undefined && tierOf(energy) === 'critical' && missionDemand(def) === 'heavy') {
@@ -175,6 +175,7 @@ export class Energy {
     this._tier = null;
     this._eveningDay = -1;
     this.paused = false;
+    this._wasChallenge = false;
     game.bus?.on('mission:complete', ({ run }) => this._afterMission(run, 1));
     game.bus?.on('mission:fail', (run) => this._afterMission(run, 0.5));
   }
@@ -196,6 +197,12 @@ export class Energy {
   // Recale l'horloge sans rien dépenser (sommeil, chargement, défi rejouable, retour d'un saut de temps).
   sync() {
     this.lastT = this.game.save.data.gameTime;
+  }
+  // Nouvelle partie ou reprise : horloge recalée à la première image, paliers repris sans avertissement.
+  reset() {
+    this.lastT = null;
+    this._tier = null;
+    this._wasChallenge = false;
   }
   set(v) {
     this.life.energy = clamp(v, 0, 100);
@@ -224,8 +231,17 @@ export class Energy {
   update() {
     const g = this.game;
     const d = g.save.data;
-    // Défi rejouable (monde figé, heure imposée) : l'énergie ne bouge pas.
-    if (this.paused || g.challenge?.active || g.state !== 'play') return this.sync();
+    // Défi rejouable (monde figé, heure imposée) : l'énergie ne bouge pas, ni pendant, ni au retour de l'heure du
+    // joueur à la sortie (première image après le défi : horloge recalée sans dépense).
+    if (g.challenge?.active) {
+      this._wasChallenge = true;
+      return this.sync();
+    }
+    if (this._wasChallenge) {
+      this._wasChallenge = false;
+      return this.sync();
+    }
+    if (this.paused || g.state !== 'play') return this.sync();
     if (this.lastT === null) return this.sync();
     const dh = (d.gameTime - this.lastT) / 3600;
     this.lastT = d.gameTime;
@@ -249,7 +265,8 @@ export class Energy {
   }
 
   _afterMission(run, k) {
-    if (!run?.def || this.game.challenge?.active) return;
+    // (défi rejouable : la tentative est déjà nettoyée quand l'événement arrive, d'où le marqueur du défi lui-même)
+    if (!run?.def || run.def.challenge || this._wasChallenge || this.game.challenge?.active) return;
     const before = this.life.energy;
     this.spend(missionCost(run.def) * k);
     this.game.saveSoon?.();
@@ -373,6 +390,9 @@ export class Energy {
     const p = periodOf(hr);
     if (p === 'nuit') return { kind: 'hours', text: t('C’est la nuit : les clients te recontacteront demain matin. Ton lit t’attend à la maison de l’Écurie du Val.') };
     if (wrapHour(hr) >= 20) return { kind: 'hours', text: t('La soirée avance : peu de nouvelles demandes avant demain matin.') };
+    // Une mission de l'histoire attend son créneau : on dit comment avancer.
+    const waiting = this.game.missions?.offers?.some((o) => o.story && !o.locked && this.game.missions.availability(o).kind === 'hours');
+    if (waiting) return { kind: 'hours', text: t('Une demande attend son créneau : repose-toi à la maison de l’Écurie du Val (« Passer à la journée suivante ») pour la retrouver demain matin.') };
     return null;
   }
 

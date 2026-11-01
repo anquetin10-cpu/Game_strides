@@ -359,6 +359,8 @@ export class Challenges {
     if (pre.mode === 'ride' && main && !main.hiddenInTruck) p.mount();
     else if (pre.mode === 'drive') p.enterVehicle(pre.vehicle || p.truck);
     d.gameTime = pre.gameTime;
+    // Retour à l'heure du joueur : pas compté comme du temps passé (energy.js).
+    g.energy?.sync();
     g.sky.rain = pre.rain;
     g.sky.wet = pre.wet;
     const ob = g.obstacles;

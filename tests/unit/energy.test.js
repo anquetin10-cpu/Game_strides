@@ -103,7 +103,8 @@ describe('récupération : café, sieste, nuit', () => {
     expect(nextWake(2 * 86400 + 14 * H)).toBe(3 * 86400 + 7 * H);
     expect(isBedtime(19)).toBe(true);
     expect(isBedtime(2)).toBe(true);
-    expect(isBedtime(6)).toBe(false);
+    expect(isBedtime(6.5)).toBe(true); // avant le réveil : une vraie (courte) nuit, pas « journée suivante »
+    expect(isBedtime(7)).toBe(false);
     expect(isBedtime(15)).toBe(false);
   });
 });
@@ -131,7 +132,10 @@ describe('missions : effort et horaires', () => {
     expect(evening).toBeGreaterThan(0);
     expect(evening).toBeLessThan(day);
     expect(night).toBeLessThanOrEqual(2); // premiers pas, fugueur (urgence)
-    expect(inHours(missionHours(byId('groom')), 15)).toBe(false);
+    expect(inHours(missionHours(byId('groom')), 15)).toBe(true);
+    expect(inHours(missionHours(byId('groom')), 19)).toBe(false);
+    // Première partie (9 h) : M1 reste proposée tout l'après-midi, même après un long tutoriel.
+    expect(inHours(missionHours(byId('m1')), 17)).toBe(true);
     expect(inHours([16, 23], 22)).toBe(true);
     expect(inHours([22, 30], 3)).toBe(true);
   });
@@ -228,6 +232,23 @@ describe('gestionnaire d’énergie (en jeu)', () => {
     const back = JSON.parse(JSON.stringify(g.save.data));
     expect(back.life.energy).toBe(41.5);
   });
+  it('défi rejouable : ni coût de tentative, ni dépense au retour de l’heure du joueur', () => {
+    const g = game(15);
+    g.save.data.gameTime = 4 * 86400 + 15 * H;
+    g.energy.update();
+    // Pendant le défi : heure imposée (jour 2, 11 h).
+    g.challenge = { active: { cfg: {} } };
+    g.save.data.gameTime = 2 * 86400 + 11 * H;
+    g.energy.update();
+    // Fin de tentative : le défi est nettoyé (heure du joueur rétablie) avant l'événement de fin de mission.
+    g.challenge.active = null;
+    g.save.data.gameTime = 4 * 86400 + 15 * H;
+    g.bus.emit('mission:complete', { run: { def: { id: 'cso-a', challenge: 'cso-a', vertical: 'EVENEMENTS', category: 'Défi' } } });
+    g.energy.update();
+    g.save.data.gameTime += 60;
+    g.energy.update();
+    expect(g.energy.value).toBeGreaterThan(99.9);
+  });
   it('avertissements progressifs, une fois par palier', () => {
     const g = game();
     g.energy.set(100);
@@ -235,5 +256,61 @@ describe('gestionnaire d’énergie (en jeu)', () => {
     g.energy.set(58);
     g.energy.set(54);
     expect(g.hud.toasts.length).toBe(1);
+  });
+});
+
+describe('lit et concours engagé (heure de passage absolue)', async () => {
+  const { Rest } = await import('../../src/gameplay/rest.js');
+  const mk = (hour, startHour, startAt) => {
+    const g = {
+      save: { data: defaultSave() },
+      interact: { add() {} },
+      player: { locked: false },
+      hour() { return (this.save.data.gameTime / 3600) % 24; },
+      missions: { active: { def: { id: 'concours' }, data: { startHour, startAt } } },
+    };
+    g.save.data.gameTime = 3 * 86400 + hour * H;
+    return new Rest(g);
+  };
+  it('engagé à 17 h pour 8 h 45 le lendemain : la nuit et la sieste sont permises le soir', () => {
+    const r = mk(20, 8.75, 4 * 86400 + 8.75 * H);
+    expect(r.passageConflict(11)).toBe(null); // coucher à 20 h, réveil 7 h, passage 8 h 45
+    expect(r.passageConflict(1.5)).toBe(null);
+  });
+  it('passage ce soir à 19 h 30 : pas de nuit ni de sieste à 18 h 30 ; en retard : pas de repos', () => {
+    const r = mk(18.5, 19.5, 3 * 86400 + 19.5 * H);
+    expect(r.passageConflict(12.5)).toMatch(/pas le temps/);
+    expect(r.passageConflict(1.5)).toMatch(/pas le temps/);
+    const late = mk(20, 19.5, 3 * 86400 + 19.5 * H);
+    expect(late.passageConflict(1.5)).toMatch(/était prévu/);
+  });
+});
+
+describe('notifications : seulement pour une demande acceptable maintenant', async () => {
+  const { MissionManager } = await import('../../src/gameplay/missions.js');
+  it('« Groom du matin » arrivée à 23 h : pas de notification ; notifiée au matin', () => {
+    const notifs = [];
+    const g = {
+      state: 'play', time: 0, simClock: 0,
+      save: { data: defaultSave() },
+      hud: { notify: (n) => notifs.push(n.title), toast() {}, setPhoneBadge() {} },
+      phone: { refresh() {} },
+      distanceTo: () => 100,
+      hour() { return (this.save.data.gameTime / 3600) % 24; },
+      levelInfo: () => ({ level: 1 }),
+    };
+    g.energy = new Energy({ ...g, bus: new Bus() });
+    g.energy.game = g;
+    const d = g.save.data;
+    d.completed.push('tuto', 'm1', 'm2', 'm3');
+    d.gameTime = 23 * H;
+    const m = new MissionManager(g);
+    m.refreshOffers(true);
+    expect(m.offers.some((o) => o.id === 'story:groom')).toBe(true);
+    expect(notifs.length).toBe(0);
+    d.gameTime = 86400 + 7 * H;
+    m.refreshOffers(true);
+    expect(notifs.length).toBe(1);
+    expect(notifs[0]).toMatch(/Camille/);
   });
 });

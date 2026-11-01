@@ -240,6 +240,9 @@ export function competitionDef(level, startHour) {
     steps(game, run, S) {
       if (run.data.startHour === undefined) {
         run.data.startHour = passageHour(game.hour());
+        // Heure de passage absolue (aujourd'hui, ou demain matin pour un engagement pris le soir).
+        const d0 = game.save.data.gameTime;
+        run.data.startAt = Math.floor(d0 / 86400) * 86400 + run.data.startHour * 3600 + (run.data.startHour < game.hour() ? 86400 : 0);
         // Passage le lendemain matin : on peut dormir à la maison de l'Écurie du Val en attendant.
         if (run.data.startHour < game.hour()) setTimeout(() => game.hud.hint(T`Passage <b>demain à ${hhmm(run.data.startHour)}</b> : repose-toi à la maison de l’Écurie du Val (« Dormir jusqu’au matin »).`, 7000), 3200);
       }
@@ -248,6 +251,7 @@ export function competitionDef(level, startHour) {
       const nm = () => game.mainHorse?.name || t('ton cheval');
       let official = null;
       const late = () => {
+        if (Number.isFinite(run.data.startAt)) return game.save.data.gameTime > run.data.startAt;
         const dh = (((game.hour() - run.data.startHour) % 24) + 24) % 24;
         return dh > 0 && dh < 12;
       };

@@ -342,7 +342,22 @@ export class MissionManager {
       }
     }
     this.offers.sort((a, b) => (b.story ? 1 : 0) - (a.story ? 1 : 0) || (a.locked ? 1 : 0) - (b.locked ? 1 : 0));
-    if (notify && added.length && !this.active) this.pushNotif(added.find((o) => o.story) || added[0]);
+    // Notification seulement pour une demande qu'on peut accepter maintenant ; une demande arrivée hors des horaires du
+    // client (ou trop exigeante pour l'énergie du moment) est notifiée quand elle le devient.
+    const ready = [];
+    for (const o of this.offers) {
+      if (o.locked) continue;
+      const ok = this.availability(o).ok;
+      if (added.includes(o)) {
+        if (ok) ready.push(o);
+        else o.waitAvail = true;
+      } else if (o.waitAvail && ok) {
+        o.waitAvail = false;
+        o.isNew = true;
+        ready.push(o);
+      }
+    }
+    if (notify && ready.length && !this.active) this.pushNotif(ready.find((o) => o.story) || ready[0]);
     this.updateBadge();
     g.phone?.refresh();
   }

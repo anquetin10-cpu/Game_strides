@@ -63,6 +63,10 @@ export class Rest {
     const g = this.game;
     const run = g.missions?.active;
     if (run?.def?.id !== 'concours' || run.data?.startHour === undefined) return null;
+    if (Number.isFinite(run.data.startAt)) {
+      const left = (run.data.startAt - g.save.data.gameTime) / 3600;
+      return left < 0 ? -1 : left;
+    }
     const until = (((run.data.startHour - g.hour()) % 24) + 24) % 24;
     // Même règle que l'épreuve (trip.js) : passé depuis moins de 12 h = en retard.
     return until > 12 ? -1 : until;
@@ -131,7 +135,7 @@ export class Rest {
       options.push({
         id: 'nextday',
         label: t('Passer à la journée suivante'),
-        sub: sleepClash || T`La journée se termine : réveil demain à 7 h, énergie 100 % · partie sauvegardée`,
+        sub: sleepClash || T`La journée se termine : réveil demain à 7 h, énergie ${pct(e)} → ${pct(nightE)} · partie sauvegardée`,
         right: '7:00',
         disabled: !!sleepClash,
         reason: sleepClash,
