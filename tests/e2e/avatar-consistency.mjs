@@ -185,6 +185,16 @@ await E(() => {
   S.ticks(40);
 });
 await snap('concours du Pôle en cours, sur le terrain');
+// Entraînement (rangé dans « Événements ») : ce n'est pas un concours, la tenue de référence reste.
+await E(() => {
+  const g = window.__game, S = window.__S;
+  g.missions.abandon?.();
+  window.__auto.closeCards();
+  g.activities.start(g.activities.list().find((a) => a.id === 'hippo_lap'));
+  window.__auto.closeCards();
+  S.ticks(10);
+});
+await snap('entraînement chronométré (pas un concours)');
 await E(() => {
   const g = window.__game, S = window.__S;
   g.missions.abandon?.();
@@ -222,6 +232,9 @@ check('AV-01', 'même personnage dans toutes les situations (corps, visage, coif
 const refClothes = ref.clothes;
 const clothesBad = sigs.filter((s) => (s.comp ? !/"jacket":true/.test(s.clothes) || !/f2f1ec/.test(s.clothes) : s.clothes !== refClothes)).map((s) => s.label);
 check('AV-01b', 'vêtements : tenue de référence (culotte beige) partout ; tenue de concours seulement en mission de concours', clothesBad.length === 0 && /c2b49a/.test(refClothes) && sigs.some((s) => s.comp), clothesBad.length ? clothesBad.join(' · ') : `${sigs.filter((s) => s.comp).length} situation(s) en concours`);
+const train = sigs.find((s) => s.label.startsWith('entraînement'));
+const inComp = sigs.filter((s) => s.label.startsWith('concours'));
+check('AV-01e', 'tenue de concours : oui en mission de concours (même loin du terrain), non pendant un entraînement', !!train && !train.comp && train.clothes === refClothes && inComp.length === 2 && inComp.every((s) => s.comp), JSON.stringify({ entrainement: train?.comp, concours: inComp.map((s) => s.comp) }));
 // Casque : uniquement à cheval (personnage classique et modèle réaliste).
 const helmetBad = sigs.filter((s) => s.helmet !== (s.mode === 'ride') || (s.realHelmet !== null && s.realHelmet !== s.helmet)).map((s) => `${s.label} (${s.mode}, casque ${s.helmet})`);
 check('AV-01c', 'casque uniquement à cheval', helmetBad.length === 0, helmetBad.length ? helmetBad.join(' · ') : 'ok');

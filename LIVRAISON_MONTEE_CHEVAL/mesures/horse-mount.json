@@ -22,7 +22,7 @@
    "id": "HM-02b",
    "label": "main gauche aux rênes sur le garrot (< 6 cm)",
    "ok": true,
-   "extra": "3.3 cm"
+   "extra": "2.8 cm"
   },
   {
    "id": "HM-03",
@@ -34,7 +34,7 @@
    "id": "HM-04",
    "label": "rattachement à la selle sans saut (position < 1 cm, rotation < 1°, échelle identique)",
    "ok": true,
-   "extra": "{\"endJump\":0,\"endRot\":0,\"endScale\":[0.9578432961180805,0.9578432961180805]}"
+   "extra": "{\"endJump\":0,\"endRot\":0,\"endScale\":[0.9849999999999999,0.9849999999999999]}"
   },
   {
    "id": "HM-05",
@@ -44,27 +44,33 @@
   },
   {
    "id": "HM-06",
-   "label": "même personnage du début à la fin (maillage, squelette, modèle réaliste, tenue, échelle)",
+   "label": "même personnage du début à la fin (maillage, squelette, modèle réaliste, vêtements, échelle, coiffure)",
    "ok": true,
-   "extra": "{\"mesh\":\"02541461-19d1-4574-9694-c43ee37bd3b8\",\"bones\":\"9d9fd081-584e-4b2b-8751-400904e585a0\",\"real\":\"70b47bf0-989e-44a7-abf3-f8e11ef61149\",\"outfit\":\"{\\\"sex\\\":\\\"f\\\",\\\"top\\\":\\\"#2f5f8a\\\",\\\"sleeve\\\":\\\"#2f5f8a\\\",\\\"pants\\\":\\\"#c2b49a\\\",\\\"boots\\\":\\\"#3b2a1e\\\",\\\"skin\\\":\\\"#e8bea0\\\",\\\"hair\\\":\\\"#7a4a28\\\",\\\"helmet\\\":\\\"#16171a\\\",\\\"logo\\\":true,\\\"ponytail\\\":true,\\\"hairStyle\\\":\\\"bun\\\",\\\"style\\\":\\\"casual\\\",\\\"tallBoots\\\":true,\\\"breeches\\\":true}\",\"scale\":0.9578432961180806,\"sex\":\"f\"}"
+   "extra": "{\"mesh\":\"8967ffcc-2c1b-46cc-aa2c-2275431fc318\",\"bones\":\"d5d39234-0cca-4fd8-a221-a43d369db07e\",\"real\":\"2e9fc775-6199-4afd-8e00-e78f5793f2de\",\"clothes\":\"{\\\"sex\\\":\\\"f\\\",\\\"top\\\":\\\"#2f5f8a\\\",\\\"sleeve\\\":\\\"#"
+  },
+  {
+   "id": "HM-06b",
+   "label": "casque mis pendant la montée (geste de la main), retiré après la descente",
+   "ok": true,
+   "extra": "{\"aCheval\":true,\"reel\":true,\"aPied\":false,\"reelAPied\":false}"
   },
   {
    "id": "HM-07",
    "label": "caméra continue (saut < 0,35 m, champ < 1°), personnage sans téléportation (< 0,15 m par image)",
    "ok": true,
-   "extra": "{\"cam\":0.106,\"fov\":0,\"perso\":0.121}"
+   "extra": "{\"cam\":0.109,\"fov\":0,\"perso\":0.121}"
   },
   {
    "id": "HM-08a",
    "label": "durées : montée 1,5–2,5 s, descente 1,5–2,5 s (hors approche / arrêt)",
    "ok": true,
-   "extra": "montée 2.47 s, descente 1.87 s"
+   "extra": "montée 2.50 s, descente 2.43 s"
   },
   {
    "id": "HM-08b",
    "label": "trois cycles successifs : tous complets, même personnage",
    "ok": true,
-   "extra": "2.47/1.87 s · 2.47/1.87 s · 2.47/1.87 s"
+   "extra": "2.50/2.43 s · 2.50/2.43 s · 2.50/2.43 s"
   },
   {
    "id": "HM-08c-ulysse",
@@ -82,7 +88,7 @@
    "id": "HM-08c-big",
    "label": "cheval big : montée et descente complètes, étrier, croupe, rattachement sans saut",
    "ok": true,
-   "extra": "{\"ball\":0.01,\"minLeg\":0,\"endJump\":0,\"upMode\":\"ride\",\"downMode\":\"foot\",\"started\":true,\"lab\":\"Monter\"}"
+   "extra": "{\"ball\":0.009,\"minLeg\":0,\"endJump\":0,\"upMode\":\"ride\",\"downMode\":\"foot\",\"started\":true,\"lab\":\"Monter\"}"
   },
   {
    "id": "HM-08d",
@@ -108,17 +114,17 @@
    "up": {
     "lab": "Monter",
     "started": true,
-    "frames": 98,
-    "seqT": 2.466666666666667,
-    "totalT": 3.2666666666666666,
-    "maxJump": 0.11187097354765506,
-    "camJump": 0.09443554203096505,
+    "frames": 99,
+    "seqT": 2.5,
+    "totalT": 3.3,
+    "maxJump": 0.11792307689686196,
+    "camJump": 0.09742376983912955,
     "fovJump": 0,
     "horseMoved": 0,
     "minLeg": 0,
     "stirrup": null,
-    "ball": 0.011572280835386032,
-    "handW": 0.032741018513104084,
+    "ball": 0.011509998362030193,
+    "handW": 0.02797425773485942,
     "handP": null,
     "ids": 1,
     "doublePress": null,
@@ -127,28 +133,30 @@
     "side": 1,
     "endJump": 0,
     "endScale": [
-     0.9578432961180805,
-     0.9578432961180805
+     0.9849999999999999,
+     0.9849999999999999
     ],
     "endRot": 0,
     "mode": "ride",
+    "helmet": true,
+    "realHelmet": true,
     "mounted": true,
     "sameId": true
    },
    "down": {
     "lab": "Descendre",
     "started": true,
-    "frames": 57,
-    "seqT": 1.8666666666666667,
-    "totalT": 1.9,
+    "frames": 74,
+    "seqT": 2.433333333333333,
+    "totalT": 2.466666666666667,
     "maxJump": 0.12093029659546295,
-    "camJump": 0.1056736865072068,
+    "camJump": 0.10940632966894388,
     "fovJump": 0,
     "horseMoved": 0,
     "minLeg": 0,
     "stirrup": null,
-    "ball": 0.00226979901570118,
-    "handW": 0.041549782474191804,
+    "ball": 0.003249110184304416,
+    "handW": 0.03737243537255009,
     "handP": null,
     "ids": 1,
     "doublePress": null,
@@ -157,11 +165,13 @@
     "side": 1,
     "endJump": 0,
     "endScale": [
-     0.9578432961180806,
-     0.9578432961180806
+     0.985,
+     0.985
     ],
-    "endRot": 0,
+    "endRot": 2.9802322387695312e-8,
     "mode": "foot",
+    "helmet": false,
+    "realHelmet": false,
     "mounted": false,
     "sameId": true
    }
@@ -170,47 +180,49 @@
    "up": {
     "lab": "Monter",
     "started": true,
-    "frames": 76,
-    "seqT": 2.466666666666667,
-    "totalT": 2.533333333333333,
-    "maxJump": 0.11187097354765506,
-    "camJump": 0.09442494586970161,
+    "frames": 77,
+    "seqT": 2.5,
+    "totalT": 2.566666666666667,
+    "maxJump": 0.11792307689686196,
+    "camJump": 0.09742116341650416,
     "fovJump": 0,
     "horseMoved": 0,
     "minLeg": 0,
     "stirrup": null,
-    "ball": 0.011572281471069285,
-    "handW": 0.03274101851284675,
+    "ball": 0.011509992932507925,
+    "handW": 0.027974257744116406,
     "handP": null,
     "ids": 1,
     "doublePress": null,
     "inputMoved": 0,
     "hipsDrop": 0,
     "side": 1,
-    "endJump": 0,
+    "endJump": 0.00011157970390115359,
     "endScale": [
-     0.9578432961180805,
-     0.9578432961180805
+     0.9849999999999999,
+     0.9849999999999999
     ],
-    "endRot": 0,
+    "endRot": 0.0003956727109390396,
     "mode": "ride",
+    "helmet": true,
+    "realHelmet": true,
     "mounted": true,
     "sameId": true
    },
    "down": {
     "lab": "Descendre",
     "started": true,
-    "frames": 57,
-    "seqT": 1.8666666666666667,
-    "totalT": 1.9,
-    "maxJump": 0.12093029659546295,
-    "camJump": 0.10567368660801905,
+    "frames": 74,
+    "seqT": 2.433333333333333,
+    "totalT": 2.466666666666667,
+    "maxJump": 0.12092241426564493,
+    "camJump": 0.10943512650525496,
     "fovJump": 0,
     "horseMoved": 0,
     "minLeg": 0,
     "stirrup": null,
-    "ball": 0.00226979901570118,
-    "handW": 0.041549782474191804,
+    "ball": 0.002916063520593744,
+    "handW": 0.03862931671765532,
     "handP": null,
     "ids": 1,
     "doublePress": null,
@@ -219,11 +231,13 @@
     "side": 1,
     "endJump": 0,
     "endScale": [
-     0.9578432961180806,
-     0.9578432961180806
+     0.985,
+     0.985
     ],
-    "endRot": 0,
+    "endRot": 2.9802322387695312e-8,
     "mode": "foot",
+    "helmet": false,
+    "realHelmet": false,
     "mounted": false,
     "sameId": true
    }
@@ -232,47 +246,49 @@
    "up": {
     "lab": "Monter",
     "started": true,
-    "frames": 76,
-    "seqT": 2.466666666666667,
-    "totalT": 2.533333333333333,
-    "maxJump": 0.11187097354765506,
-    "camJump": 0.09442494586957785,
+    "frames": 77,
+    "seqT": 2.5,
+    "totalT": 2.566666666666667,
+    "maxJump": 0.11791124010250713,
+    "camJump": 0.09747677441288233,
     "fovJump": 0,
     "horseMoved": 0,
     "minLeg": 0,
     "stirrup": null,
-    "ball": 0.01157228081231973,
-    "handW": 0.03274101852500225,
+    "ball": 0.012060381699889726,
+    "handW": 0.027469438799761187,
     "handP": null,
     "ids": 1,
     "doublePress": null,
     "inputMoved": 0,
     "hipsDrop": 0,
     "side": 1,
-    "endJump": 0,
+    "endJump": 1.2915344819183388e-9,
     "endScale": [
-     0.9578432961180805,
-     0.9578432961180805
+     0.985,
+     0.985
     ],
-    "endRot": 0,
+    "endRot": 4.2146848510894035e-8,
     "mode": "ride",
+    "helmet": true,
+    "realHelmet": true,
     "mounted": true,
     "sameId": true
    },
    "down": {
     "lab": "Descendre",
     "started": true,
-    "frames": 57,
-    "seqT": 1.8666666666666667,
-    "totalT": 1.9,
-    "maxJump": 0.12093029659546295,
-    "camJump": 0.10567368660801905,
+    "frames": 74,
+    "seqT": 2.433333333333333,
+    "totalT": 2.466666666666667,
+    "maxJump": 0.12091801284502919,
+    "camJump": 0.1094312361036644,
     "fovJump": 0,
     "horseMoved": 0,
     "minLeg": 0,
     "stirrup": null,
-    "ball": 0.00226979901570118,
-    "handW": 0.041549782474191804,
+    "ball": 0.0028957724064354795,
+    "handW": 0.038659936887357825,
     "handP": null,
     "ids": 1,
     "doublePress": null,
@@ -281,11 +297,13 @@
     "side": 1,
     "endJump": 0,
     "endScale": [
-     0.9578432961180806,
-     0.9578432961180806
+     0.985,
+     0.985
     ],
-    "endRot": 0,
+    "endRot": 2.9802322387695312e-8,
     "mode": "foot",
+    "helmet": false,
+    "realHelmet": false,
     "mounted": false,
     "sameId": true
    }

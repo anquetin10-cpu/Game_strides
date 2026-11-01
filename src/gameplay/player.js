@@ -109,9 +109,13 @@ export class Player {
   }
 
   // Mission de concours en cours (concours du Pôle, cross, derby, CSI, Grands Prix, premier concours en équipe).
+  // Les entraînements (sprint, tour de piste, abord) et les défis rejouables ne sont pas des concours.
   competitionOutfit() {
     const run = this.game.missions?.active;
-    return !!run && (run.offer?.vertical === 'EVENEMENTS' || run.def?.category === 'CSO');
+    if (!run) return false;
+    const cat = run.offer?.category ?? run.def?.category;
+    if (cat === 'Entraînement' || cat === 'Défi') return false;
+    return run.offer?.vertical === 'EVENEMENTS' || run.def?.category === 'CSO';
   }
 
   // Signature de la tenue voulue : le personnage n'est rhabillé que si elle change.
