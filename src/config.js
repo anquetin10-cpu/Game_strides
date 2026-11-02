@@ -2,8 +2,11 @@
 import { t } from './core/i18n.js';
 
 export const CONFIG = {
+  // Nom du jeu : « Equestrian Tour » dans le texte courant, « EQUESTRIAN TOUR » en titre (capitales d'affichage).
+  name: 'Equestrian Tour',
+  title: 'EQUESTRIAN TOUR',
+  // Plateforme réelle intégrée au téléphone du personnage (l'application Strides) : ce n'est pas le nom du jeu.
   brand: 'STRIDES',
-  title: 'GRAND TOUR',
   // Destinations officielles de la vraie plateforme Strides (relevées sur la page de présentation
   // https://get.strides-app.com/ le 26 octobre 2026 ; aucun lien profond inventé) :
   // - landingUrl : présentation des deux parcours (prestataire / client) ;
@@ -13,6 +16,7 @@ export const CONFIG = {
   siteUrl: 'https://strides-app.com',
   downloadUrl: 'https://apps.apple.com/fr/app/strides/id6793963102',
   playUrl: 'https://play.google.com/store/apps/details?id=com.stridesapp',
+  // Clé de stockage historique : inchangée (les sauvegardes existantes doivent se charger telles quelles).
   saveKey: 'strides-grand-tour-v1',
   // Durée d'une journée de jeu en secondes réelles.
   dayLength: 1200,

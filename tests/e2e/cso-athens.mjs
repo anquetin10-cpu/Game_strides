@@ -245,7 +245,7 @@ if (VIDEO) {
   const { execFileSync } = await import('node:child_process');
   const label = MODE === 'touch' ? 'tactile' : MODE === 'keyboard' ? 'clavier' : 'joystick';
   const mp4 = `tests/e2e/out/videos/cso-${COURSE}-${label}.mp4`;
-  execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${VDIR}/%05d.jpg`, '-vf', `drawtext=text='STRIDES Grand Tour · épreuve de CSO (${label}) · capture du jeu, rendu logiciel':x=12:y=h-28:fontsize=14:fontcolor=white:box=1:boxcolor=black@0.4:boxborderw=5`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '23', '-movflags', '+faststart', mp4]);
+  execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${VDIR}/%05d.jpg`, '-vf', `drawtext=text='Equestrian Tour · épreuve de CSO (${label}) · capture du jeu, rendu logiciel':x=12:y=h-28:fontsize=14:fontcolor=white:box=1:boxcolor=black@0.4:boxborderw=5`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '23', '-movflags', '+faststart', mp4]);
   console.log(`vidéo : ${vframe} images → ${mp4}`);
   writeFileSync(`tests/e2e/out/videos/cso-${COURSE}-${label}.events.json`, JSON.stringify({ fps: 15, events: vEvents }, null, 1));
 } else await tick(100);

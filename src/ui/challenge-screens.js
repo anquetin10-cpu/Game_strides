@@ -2,10 +2,10 @@
 // 1080×1350 générée sur l'appareil et partage volontaire (partage natif avec fichier, sinon téléchargement de
 // l'image, sinon copie d'un texte avec l'adresse publique de la partie).
 import { h, tap } from './dom.js';
-import { BUILD } from '../config.js';
+import { BUILD, CONFIG } from '../config.js';
 import {
   challengeStore, bestOf, conditionsList, rulesText, resultLine, fmtSeconds, fmtPenalties, fmtHeight, cleanPseudo, shareText, publicUrl, SIGNATURE, fmtHour } from '../gameplay/challenge.js';
-import { drawStridesMark, FONT_DISPLAY, FONT_UI, FONT_MONO } from '../world/textures.js';
+import { FONT_DISPLAY, FONT_UI, FONT_MONO } from '../world/textures.js';
 import { t, T } from '../core/i18n.js';
 
 export const CARD_W = 1080;
@@ -57,14 +57,10 @@ export function drawResultCard(cv, { cfg, res, pseudo = '', build = BUILD, date 
   ctx.fillRect(0, 0, CARD_W, CARD_H);
   ctx.fillStyle = INK;
   ctx.fillRect(0, 0, CARD_W, 500);
-  try {
-    drawStridesMark(ctx, L, 82, 62, SURFACE);
-  } catch {
-    /* marque facultative */
-  }
+  // Carte du jeu (Equestrian Tour) : pas de logo Strides, le défi est une épreuve du jeu.
   ctx.fillStyle = STONE;
   ctx.font = `500 28px ${FONT_MONO}`;
-  ctx.fillText(t('STRIDES GRAND TOUR · DÉFI REJOUABLE'), L + 84, 124);
+  ctx.fillText(T`${CONFIG.title} · DÉFI REJOUABLE`, L, 124);
   ctx.fillStyle = SURFACE;
   fit(ctx, cfg.name.toUpperCase(), 600, 112, FONT_DISPLAY, W);
   ctx.fillText(cfg.name.toUpperCase(), L, 290);
@@ -126,7 +122,7 @@ export function drawResultCard(cv, { cfg, res, pseudo = '', build = BUILD, date 
   ctx.fillRect(0, CARD_H - 150, CARD_W, 150);
   ctx.fillStyle = SURFACE;
   ctx.font = `600 44px ${FONT_DISPLAY}`;
-  ctx.fillText(SIGNATURE, L, CARD_H - 82);
+  ctx.fillText(CONFIG.title, L, CARD_H - 82);
   ctx.fillStyle = STONE;
   ctx.font = `500 24px ${FONT_MONO}`;
   const d = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;

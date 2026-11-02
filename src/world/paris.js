@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { PARIS, PARIS_FLOOR, PARIS_STANDS } from './sites.js';
 import { t, T, LANG, num } from '../core/i18n.js';
 import { box, cyl } from './shapes.js';
+import { drawLogo, LOGO_ASPECT } from '../ui/logo.js';
 import { partsToGeo } from './builders.js';
 import { barnGeo } from './barns.js';
 import { BARN_LAYOUTS } from './sites.js';
@@ -62,7 +63,10 @@ function crowdTexture() {
   return tex;
 }
 
-// Panneaux publicitaires de la lice (marques fictives).
+// Panneaux publicitaires de la lice (marques fictives ; Strides : son logo officiel, pas un lettrage). La texture
+// (2048 × 64) couvre BOARD_M[0] m × BOARD_M[1] m de lice : le logo y est dessiné resserré d'autant pour garder, une
+// fois posé, les proportions exactes du fichier.
+const BOARD_M = [40, 0.9];
 function boardTexture() {
   const cv = document.createElement('canvas');
   cv.width = 2048;
@@ -73,6 +77,15 @@ function boardTexture() {
   ads.forEach(([t, bg, fg], i) => {
     ctx.fillStyle = bg;
     ctx.fillRect(i * w, 0, w, 64);
+    if (t === 'STRIDES') {
+      const k = (BOARD_M[1] / 64) / (BOARD_M[0] / 2048);
+      ctx.save();
+      ctx.translate(i * w + w / 2, 12);
+      ctx.scale(k, 1);
+      drawLogo(ctx, -(40 * LOGO_ASPECT) / 2, 0, 40, fg);
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = fg;
     ctx.font = '700 34px Inter, Helvetica, Arial, sans-serif';
     ctx.textAlign = 'center';
@@ -198,9 +211,9 @@ export class ParisZone {
         nx = -nx;
         nz = -nz;
       }
-      const g = new THREE.PlaneGeometry(len, 0.9);
+      const g = new THREE.PlaneGeometry(len, BOARD_M[1]);
       const uv = g.attributes.uv;
-      for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * (len / 40));
+      for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * (len / BOARD_M[0]));
       g.rotateY(Math.atan2(nx, nz));
       g.translate(mx + nx * 0.07, 0.55, mz + nz * 0.07);
       boards.push(g);

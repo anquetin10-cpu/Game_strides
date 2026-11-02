@@ -1,6 +1,8 @@
-# STRIDES — Grand Tour
+# Equestrian Tour
 
-Jeu en monde ouvert 3D inspiré de GTA, transposé dans l'univers du cheval, au service de la marque **STRIDES**.
+Jeu en monde ouvert 3D inspiré de GTA, transposé dans l'univers du cheval. Le jeu s'appelle **Equestrian Tour** ;
+**Strides** est la vraie plateforme (application de missions et de recrutement des professionnels du cheval), utilisée
+dans le jeu par le téléphone du personnage — dans le jeu, profils, missions et paiements sont fictifs.
 On y incarne un jeune talent du monde équestre qui arrive sur la Côte Fleurie avec sa jument, Comète, et zéro euro en poche.
 Les missions arrivent sur le téléphone du personnage, dans l'application Strides : on les **accepte** ou on les **refuse**,
 on les réalise, on est payé et noté… jusqu'à remporter le Grand Prix CSI 5★ de Deauville City.
@@ -185,6 +187,17 @@ Astuce iPhone : dans Safari, **Partager → Sur l'écran d'accueil** pour jouer 
 - **Marque** : panneaux publicitaires, camion et tapis de selle Strides, ligne « Dans la vraie vie » après chaque mission,
   écran de fin et boutons « Découvrir l'app » / « Partager le jeu ».
 
+## Identité : Equestrian Tour et Strides
+
+- **Nom du jeu** : `CONFIG.name` (« Equestrian Tour », texte courant) et `CONFIG.title` (« EQUESTRIAN TOUR », titres)
+  dans [`src/config.js`](src/config.js). Les identifiants techniques historiques restent inchangés (clé de sauvegarde
+  `strides-grand-tour-v1`, nom du paquet, épreuves en ligne) : les sauvegardes et classements existants se chargent tels quels.
+- **Logo Strides** : toujours le fichier officiel (`src/assets/partners/strides/`, référencé par
+  `src/partners/partners.js`), affiché par [`src/ui/logo.js`](src/ui/logo.js) — `<img>` ou masque CSS dans
+  l'interface, `drawLogo()` (préchargé au démarrage) dans les textures du monde ; proportions du fichier, jamais redessiné.
+- **Icônes de l'application** (PWA, écran d'accueil) : monogramme typographique « ET » d'Equestrian Tour, généré par
+  `node scripts/make-icons.mjs`.
+
 ## Configuration marketing
 
 Le lien vers la vraie application se règle dans [`src/config.js`](src/config.js) :
@@ -229,6 +242,7 @@ node tests/e2e/defender-variants.mjs        # Defender 110 : variantes détaill�
 node tests/e2e/cso-shots.mjs  # captures de l'épreuve (iPhone 13 paysage) dans tests/e2e/out/cso/
 node tests/e2e/cso-touch.mjs  # tour complet au doigt en émulation iPhone 13 (joystick + SAUT en multitouch)
 node tests/e2e/cso-framing.mjs # cadrage de la caméra de concours : part de la hauteur et position du couple à l’écran
+node tests/e2e/identity.mjs   # identité : nom Equestrian Tour partout, logo Strides officiel (fichier d'origine) seulement
 node tests/e2e/shops.mjs      # commerces (iPhone 13 émulé) : entrer, circuler, acheter, équiper, sortir, reprise
 node tests/e2e/home-interior.mjs # maison de l'Écurie du Val : entrer, pièces, caméra, collisions, lit, jour/nuit, reprise
 node tests/e2e/town-shots.mjs apres   # vues fixes de Deauville City dans tests/e2e/out/town/apres/

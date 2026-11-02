@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { addCloudShadows } from '../world/sky.js';
 import { gradientTexture } from './truck.js';
+import { replaceStridesScreen } from '../world/textures.js';
 import mobileUrl from '../assets/vehicles/Defender110_STRIDES_MOBILE.glb?url';
 
 export const DEFENDER_FILES = {
@@ -132,6 +133,8 @@ export function buildDefenderModel(gltf) {
     o.castShadow = !inside && /^(Body_Paint|Roof_Black|Black_plastic|Tyre)$/.test(o.material.name);
     o.receiveShadow = !/Glass/i.test(o.material.name);
   });
+  // Écran de bord : logo officiel Strides à la place du lettrage du fichier.
+  replaceStridesScreen(mats.get('UI_Strides'));
   // Ombres des nuages du jeu, comme sur le décor (shader PBR du matériau conservé).
   for (const m of mats.values()) {
     m.onBeforeCompile = (sh) => addCloudShadows(sh);

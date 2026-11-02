@@ -1,7 +1,7 @@
 {
-  "name": "STRIDES Grand Tour",
-  "short_name": "Grand Tour",
-  "description": "Le monde équestre en monde ouvert, par STRIDES.",
+  "name": "Equestrian Tour",
+  "short_name": "Equestrian Tour",
+  "description": "Le monde équestre en monde ouvert, avec l'application Strides intégrée au téléphone du personnage.",
   "start_url": "./",
   "display": "fullscreen",
   "orientation": "landscape",

@@ -1,10 +1,11 @@
-// Icônes SVG (trait, 24×24, currentColor). « strides » : le S-tête de cheval du logo officiel.
-import { markSvg } from './logo.js';
+// Icônes SVG (trait, 24×24, currentColor). « strides » : le monogramme du logo officiel (fichier d'origine, recoloré en
+// currentColor par masque CSS, voir logo.js).
+import { markMask } from './logo.js';
 const s = (body, fill = false) =>
   `<svg viewBox="0 0 24 24" fill="${fill ? 'currentColor' : 'none'}" stroke="${fill ? 'none' : 'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 
 export const ICONS = {
-  strides: markSvg(),
+  strides: markMask(),
   phone: s('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>'),
   horse: s('<path d="M5 20v-5.5c0-2 1-3.5 3-4.5l4-2 1.5-4 2 2 3 1.5-1 2.5-2.5-.5-1.5 2.5V20"/><path d="M12 13.5 9 20"/>'),
   jump: s('<path d="M3 18c3-9 15-9 18 0"/><path d="M8 18v2M16 18v2M6 20h12"/><path d="M17 8.5l2-1.5.5 2.5" />'),

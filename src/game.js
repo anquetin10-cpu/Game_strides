@@ -48,6 +48,7 @@ import { HUD } from './ui/hud.js';
 import { Phone } from './ui/phone.js';
 import { Screens } from './ui/screens.js';
 import { buildMapImage } from './ui/minimap.js';
+import { loadBrandImages } from './ui/logo.js';
 import { Grass } from './world/grass.js';
 import { Particles } from './world/particles.js';
 import { installCare, HorseCondition, SIM } from './gameplay/condition.js';
@@ -152,6 +153,8 @@ export class Game {
       this.last = performance.now();
     });
 
+    // Logo officiel Strides (fichier d'origine) chargé avant les textures du monde qui le portent.
+    await loadBrandImages();
     // Monde.
     this.world = new World(this.scene, this.colliders);
     this.world.textureSize = IS_TOUCH ? 2048 : 2048;
@@ -1026,7 +1029,7 @@ export class Game {
 
   share(source = 'game') {
     const url = location.href.split(/[?#]/)[0];
-    const data = { title: 'STRIDES Grand Tour', text: t('Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix. Par STRIDES.'), url };
+    const data = { title: CONFIG.name, text: t('Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix.'), url };
     this.bus.emit('share', source);
     // En mode photo le HUD est masqué : le message s'affiche dans le cadre photo.
     const say = (m) => (this.state === 'photo' ? this.screens.photoToast(m) : this.hud.toast(m));

@@ -176,7 +176,7 @@ check('BUG-06 · Grand Prix de Deauville : fin de chapitre (Paris annoncé), pas
 await E(() => window.__auto.closeCards());
 r = await finish('gpparis');
 const stored = await E(() => JSON.parse(localStorage.getItem(window.__game.save.key)).flags?.gameFinished);
-check('BUG-06 · Grand Prix de Paris : écran de fin, carrière marquée terminée (sauvegardée)', /Légende du Grand Tour/.test(r.title) && r.finished && stored === true, r.title.slice(0, 60));
+check('BUG-06 · Grand Prix de Paris : écran de fin, carrière marquée terminée (sauvegardée)', /Légende de l’Equestrian Tour/.test(r.title) && r.finished && stored === true, r.title.slice(0, 60));
 await E(() => {
   const A = window.__auto;
   for (const b of document.querySelectorAll('.overlay [data-id="continue"]')) A.tap(b);

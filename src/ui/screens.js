@@ -3,7 +3,7 @@ import { h, tap } from './dom.js';
 import { icon } from './icons.js';
 import { formatMoney, formatTime } from '../core/math.js';
 import { CONFIG, BUILD, BUILD_ID } from '../config.js';
-import { logoSvg } from './logo.js';
+import { logoImg } from './logo.js';
 import { stars } from './requests.js';
 import { t, T, LANG, switchLang } from '../core/i18n.js';
 
@@ -24,12 +24,21 @@ export class Screens {
     this.fadeEl = h('div.fade');
     document.body.appendChild(this.fadeEl);
     document.body.appendChild(
-      h('div.rotate', {}, h('div', {}, h('div', { html: icon('phone') }), h('div.t', { text: t('Tourne ton téléphone') }), h('div.s', { text: t('STRIDES Grand Tour se joue à l’horizontale.') })))
+      h('div.rotate', {}, h('div', {}, h('div', { html: icon('phone') }), h('div.t', { text: t('Tourne ton téléphone') }), h('div.s', { text: T`${CONFIG.name} se joue à l’horizontale.` })))
     );
   }
 
-  brand() {
-    return h('div.brandmark', { html: logoSvg(), 'aria-label': 'STRIDES' });
+  // Titre du jeu (Equestrian Tour), composé dans la police d'affichage : le logo Strides n'en fait pas partie.
+  gameTitle(sub) {
+    return h('div.game-title', { 'data-id': 'game-title' }, CONFIG.title, h('span', { text: sub }));
+  }
+
+  // Mention de l'application intégrée : Strides (logo officiel) est la vraie plateforme, utilisée dans le jeu par le
+  // téléphone du personnage ; dans le jeu, missions et paiements sont fictifs.
+  appMention() {
+    return h('div.app-mention', { 'data-id': 'app-mention' },
+      h('div.am-head', {}, h('span.am-tag', { text: t('Application intégrée') }), h('span.am-logo', { html: logoImg() })),
+      h('div.am-text', { text: t('Avec l’application Strides intégrée au téléphone du personnage — missions et paiements fictifs dans le jeu.') }));
   }
 
   // ---------- Chargement ----------
@@ -37,8 +46,7 @@ export class Screens {
     this.loadBar = h('i');
     this.loadMsg = h('div.load-msg', { text: t('Chargement…') });
     this.loadEl = h('div.screen.loading', {},
-      this.brand(),
-      h('div.game-title', { style: { marginTop: '18px' } }, CONFIG.title, h('span', { text: t('UN JEU EN MONDE OUVERT · CÔTE FLEURIE') })),
+      this.gameTitle(t('UN JEU EN MONDE OUVERT · CÔTE FLEURIE')),
       h('div.progress', {}, this.loadBar),
       this.loadMsg,
       h('div.load-tip', { text: TIPS[Math.floor(Math.random() * TIPS.length)] }));
@@ -92,8 +100,8 @@ export class Screens {
       lang.appendChild(b);
     }
     this.titleEl = h('div.screen.title-screen', {},
-      this.brand(),
-      h('div.game-title', { style: { marginTop: '14px' } }, CONFIG.title, h('span', { text: t('LE MONDE ÉQUESTRE EN MONDE OUVERT') })),
+      this.gameTitle(t('LE MONDE ÉQUESTRE EN MONDE OUVERT')),
+      this.appMention(),
       notice,
       menu,
       foot ? h('div.foot', { html: foot }) : null,
@@ -122,7 +130,7 @@ export class Screens {
     }
     const go = h('button.btn.primary', { text: t('C’est parti'), 'data-id': 'start' });
     const content = h('div.card-body.scrollable', {},
-      h('div.kicker', { text: t('Ton profil Strides') }),
+      h('div.kicker', { text: t('Ton profil Strides · version jeu') }),
       h('h2', { text: t('Qui monte en selle ?') }),
       h('div.field', {}, h('label', { text: t('Prénom') }), input),
       h('div.field', {}, h('label', { text: t('Personnage') }), seg));
@@ -238,7 +246,7 @@ export class Screens {
     }
     return this.card({
       kicker: t('Pause'),
-      title: 'STRIDES Grand Tour',
+      title: CONFIG.name,
       extra: [...comp, controls, g.phone.promo(), ver],
       buttons: [
         { label: t('Écran titre'), ghost: true, run: onTitle, id: 'title' },
@@ -269,7 +277,7 @@ export class Screens {
     promo.style.marginTop = '16px';
     this.card({
       kicker: t('Grand Prix de Paris Indoor'),
-      title: t('Légende du Grand Tour'),
+      title: t('Légende de l’Equestrian Tour'),
       body: T`${d.playerName}, de groom à vainqueur des Grands Prix de Deauville et de Paris : ta carrière s’est construite mission après mission, avis après avis. Tu as terminé l’histoire principale. Dans la vraie vie aussi, c’est sur STRIDES que les pros du cheval se trouvent, se font confiance et avancent.`,
       extra: [promo, h('div.irl', { text: t('Le monde reste ouvert : continue les missions, les chronos et la chasse aux fers d’or.') })],
       buttons: [
@@ -289,7 +297,7 @@ export class Screens {
       tap(exit, onExit);
       const share = h('button.btn.small', { text: t('Partager le jeu'), style: { background: 'rgba(18,19,22,.7)' } });
       tap(share, () => this.game.share('photo'));
-      this.photoEl = h('div.photo-frame', {}, h('div.exit', { style: { display: 'flex', gap: '8px' } }, exit, share), h('div.wm', { html: logoSvg() }));
+      this.photoEl = h('div.photo-frame', {}, h('div.exit', { style: { display: 'flex', gap: '8px' } }, exit, share), h('div.wm', { text: CONFIG.title }));
       document.body.appendChild(this.photoEl);
     } else this.photoEl?.remove();
   }

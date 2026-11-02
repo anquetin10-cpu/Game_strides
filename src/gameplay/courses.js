@@ -127,7 +127,7 @@ export function courseSteps(game, run, S, opts) {
     ];
     const jury = introLines().map((l) => l.text).join(' ');
     game.screens.card({
-      kicker: `STRIDES · ${opts.place || 'Pôle International'}`,
+      kicker: `${CONFIG.title} · ${opts.place || 'Pôle International'}`,
       title,
       html: `<div class="cso-pres">${rows.map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join('')}</div>${jury ? `<p class="cso-jury">${jury}</p>` : ''}<p class="cso-rules">${opts.rulesText || t('Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.')}</p>`,
       buttons: [

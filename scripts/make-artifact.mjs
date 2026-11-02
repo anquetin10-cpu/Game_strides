@@ -9,9 +9,9 @@ const styles = grab(/<style[^>]*>[\s\S]*?<\/style>/g);
 const scripts = grab(/<script type="module"[^>]*>[\s\S]*?<\/script>/g);
 const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/)[1].replace(/<script[\s\S]*?<\/script>/g, '').trim();
 const out = [
-  '<title>Strides Grand Tour</title>',
+  '<title>Equestrian Tour</title>',
   '<meta name="claude:viewport-fit-sides" content="cover">',
-  '<meta name="description" content="Le monde équestre en monde ouvert, par STRIDES.">',
+  '<meta name="description" content="Equestrian Tour : le monde équestre en monde ouvert, avec l’application Strides intégrée au téléphone du personnage.">',
   ...preconnect,
   ...fonts,
   ...styles,

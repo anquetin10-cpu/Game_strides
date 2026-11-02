@@ -129,7 +129,7 @@ describe('carte et partage', () => {
     const t = shareText(cfg, res({ t: 68.42, faults: 4 }), url, 'Jo');
     expect(t).toContain('defi-pole-v1');
     expect(t).toContain('4 pts en 68,42 s');
-    expect(t).toContain('STRIDES Grand Tour https://exemple.test/jeu/');
+    expect(t).toContain('Equestrian Tour https://exemple.test/jeu/');
     expect(t).not.toContain('?');
   });
   it('identifiants de tentative uniques', () => {

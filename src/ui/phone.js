@@ -2,6 +2,7 @@
 // Trophées, Météo, Photo, Réglages). Seule l'app Strides reprend la vraie application ; les autres sont des fonctions du jeu.
 import { h, tap, esc } from './dom.js';
 import { icon } from './icons.js';
+import { logoImg } from './logo.js';
 import { drawBlip, drawFullMap } from './minimap.js';
 import { formatMoney, formatTime, clamp, dec } from '../core/math.js';
 import { HORSES, SHOP, PROS, STABLES, STABLE_UPGRADES, SKILL_LABEL } from '../gameplay/data.js';
@@ -210,6 +211,8 @@ export class Phone {
       profil: () => this._tabProfile(),
     }[this.tab];
     main.append(...render());
+    // En-tête : logo officiel de la vraie application et mention « version jeu » (profils, missions, sommes fictifs).
+    main.querySelector('.app-head')?.appendChild(h('div.st-brand', { 'data-id': 'strides-brand' }, h('span', { html: logoImg() }), h('span.tag', { text: t('Version jeu') })));
     for (const o of g.missions.offers) if (this.tab === 'missions' && isStridesOffer(o)) o.isNew = false;
     g.missions.updateBadge();
     const app = h('div.app', {}, rail, main);
@@ -894,7 +897,7 @@ export class Phone {
     });
     body.appendChild(h('div.set-row', {}, h('span', { text: t('Progression') }), reset));
     body.appendChild(this.promo());
-    body.appendChild(h('div.irl', { html: t('STRIDES Grand Tour — jeu de démonstration. Univers, lieux et personnages fictifs.') }));
+    body.appendChild(h('div.irl', { text: T`${CONFIG.name} — jeu de démonstration. Univers, lieux et personnages fictifs. Strides, l’application du téléphone, est une vraie plateforme : dans le jeu, profils, missions et paiements sont fictifs.` }));
     main.appendChild(body);
     return h('div.app', {}, main);
   }

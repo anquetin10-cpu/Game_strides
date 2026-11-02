@@ -50,6 +50,13 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* Logo officiel Strides (fichier d'origine, src/ui/logo.js) : la hauteur est fixée par l'emplacement, la largeur suit
+   les proportions du fichier (jamais étiré). .st-mask : même fichier en masque, recoloré en currentColor. */
+.st-logo { display: inline-block; flex: none; height: 1em; width: auto; max-width: none; vertical-align: middle; }
+.st-logo-full { aspect-ratio: 1247 / 355; }
+.st-logo-mark { aspect-ratio: 248 / 355; }
+.st-mask { background-color: currentColor; -webkit-mask: var(--strides-logo) center / contain no-repeat; mask: var(--strides-logo) center / contain no-repeat; }
+.st-mask.st-logo-mark { -webkit-mask-image: var(--strides-mark); mask-image: var(--strides-mark); }
 /* Surfaces claires STRIDES (cartes, téléphone, écrans, notifications, dialogues) : on inverse les jetons,
    les règles existantes (var(--paper) pour le texte, var(--ink-2) pour les fonds…) suivent. */
 .light, .card, .screen, .phone-screen, .notif, .dialog, .objective, .toast, .rotate, .wallet, .zone-name {
@@ -201,6 +208,7 @@ body.desktop .joy-base { display: none; }
 }
 .btn-round.down { transform: scale(0.92); background: var(--st-surface-2); color: var(--st-ink); }
 .btn-round svg { width: 26px; height: 26px; display: block; margin: 0 auto 3px; }
+.btn-round .st-logo { height: 26px; display: block; margin: 0 auto 3px; }
 .btn-jump { right: 4px; bottom: 6px; width: 84px; height: 84px; }
 .btn-jump .ring { position: absolute; inset: -6px; border-radius: 50%; border: 3px solid transparent; transition: border-color .1s; }
 .btn-jump.good .ring { border-color: var(--ok); box-shadow: 0 0 18px rgba(61,220,151,.55); }
@@ -268,6 +276,7 @@ body.desktop .joy-base { display: none; }
 .notif .n-head { display: flex; align-items: center; gap: 8px; font: 500 11px/1 var(--ui); letter-spacing: .02em; color: var(--muted); }
 .notif .n-head .n-app { width: 20px; height: 20px; border-radius: 5px; background: var(--st-ink); color: var(--st-surface-3); display: grid; place-items: center; }
 .notif .n-head .n-app svg { width: 14px; height: 14px; }
+.notif .n-head .n-app .st-logo { height: 14px; }
 .notif .n-head .when { margin-left: auto; }
 .notif .n-title { margin-top: 7px; font: 600 14px/1.25 var(--ui); letter-spacing: -.01em; }
 .notif .n-body { margin-top: 2px; font: 400 12.5px/1.3 var(--ui); color: var(--text-2); }
@@ -362,11 +371,16 @@ body.desktop .joy-base { display: none; }
 /* Écran titre / chargement */
 .screen { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; justify-content: center; padding: var(--st) calc(var(--sr) + 8px) var(--sb) calc(var(--sl) + 18px); }
 .loading { background: var(--ink); align-items: center; text-align: center; }
-.brandmark { display: flex; align-items: center; gap: 12px; }
-.brandmark svg { height: 28px; width: auto; }
-.brandmark .logo-full { height: 30px; width: auto; color: var(--st-ink); }
-.loading .brandmark { justify-content: center; }
-.game-title { font: 600 clamp(40px, 8.4vw, 88px)/0.95 var(--display); letter-spacing: -.045em; color: var(--st-text); }
+/* Titre du jeu (EQUESTRIAN TOUR) dans la police d'affichage, sur une ligne. */
+.game-title { font: 600 clamp(34px, min(6.6vw, 15vh), 76px)/0.95 var(--display); letter-spacing: -.045em; color: var(--st-text); white-space: nowrap; }
+.game-title span { white-space: normal; }
+/* Mention « application intégrée » : le logo officiel Strides n'apparaît qu'ici sur l'écran titre (pas comme logo du jeu). */
+.app-mention { margin-top: 14px; width: min(300px, 46vw); display: flex; flex-direction: column; gap: 5px; }
+.app-mention .am-head { display: flex; align-items: center; gap: 8px; }
+.app-mention .am-tag { font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--st-text-3); }
+.app-mention .am-logo { display: inline-flex; }
+.app-mention .am-logo .st-logo { height: 13px; }
+.app-mention .am-text { font: 400 11.5px/1.4 var(--ui); color: var(--st-text-2); }
 .game-title span { display: block; font: 500 clamp(10px, 1.4vw, 12px)/1.3 var(--mono); letter-spacing: .08em; color: var(--muted); margin-top: 12px; }
 .progress { width: min(320px, 70vw); height: 4px; background: var(--fill-2); border-radius: 2px; margin: 26px auto 10px; overflow: hidden; flex-shrink: 0; }
 .progress i { display: block; height: 100%; width: 0; background: var(--paper); transition: width .25s; }
@@ -401,8 +415,7 @@ body.desktop .joy-base { display: none; }
 .fade { position: fixed; inset: 0; background: var(--st-ink); z-index: 60; opacity: 0; pointer-events: none; transition: opacity .45s; }
 .fade.on { opacity: 1; pointer-events: auto; }
 .photo-frame { position: fixed; inset: 0; z-index: 35; pointer-events: none; border: 10px solid var(--st-surface-2); }
-.photo-frame .wm { position: absolute; right: 22px; bottom: 18px; color: var(--st-surface-3); filter: drop-shadow(0 2px 8px rgba(0,0,0,.45)); }
-.photo-frame .wm .logo-full { height: 26px; width: auto; display: block; }
+.photo-frame .wm { position: absolute; right: 22px; bottom: 18px; color: var(--st-surface-3); font: 600 20px/1 var(--display); letter-spacing: -.03em; text-shadow: 0 2px 8px rgba(0,0,0,.45); }
 /* Boutons du mode photo sous la barre du lecteur intégré (--st) et dans la zone sûre gauche. */
 .photo-frame .exit { position: absolute; left: calc(var(--sl) + 6px); top: calc(var(--st) - 2px); pointer-events: auto; }
 .photo-frame .photo-toast { position: absolute; left: calc(var(--sl) + 6px); top: calc(var(--st) + 44px); }
@@ -441,6 +454,7 @@ body.desktop .joy-base { display: none; }
 .widget { width: 100%; border-radius: 22px; padding: 12px 14px; background: rgba(251,250,245,.92); color: var(--st-text); text-align: left; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 8px 24px rgba(26,26,24,.16); border: 1px solid rgba(255,255,255,.7); }
 .widget .w-head { display: flex; align-items: center; gap: 8px; font: 500 10px/1 var(--mono); letter-spacing: .06em; color: var(--st-text-3); }
 .widget .w-head svg { width: auto; height: 16px; color: var(--st-ink); }
+.widget .w-head .st-logo { height: 16px; color: var(--st-ink); }
 .widget .w-main { font: 600 19px/1.15 var(--display); letter-spacing: -.03em; }
 .widget .w-main, .widget .w-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .widget .w-sub { font: 400 12px/1.35 var(--ui); color: var(--st-text-2); }
@@ -451,7 +465,7 @@ body.desktop .joy-base { display: none; }
 .app-icon .ic { width: 50px; height: 50px; border-radius: 13px; display: grid; place-items: center; background: var(--st-surface-3); color: var(--st-ink); position: relative; box-shadow: 0 4px 12px rgba(26,26,24,.16); }
 .app-icon .ic svg { width: 25px; height: 25px; }
 .app-icon .ic.strides { background: var(--st-ink); color: var(--st-surface-3); }
-.app-icon .ic.strides svg { width: auto; height: 30px; }
+.app-icon .ic.strides .st-logo { height: 30px; }
 .app-icon .ic .badge { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--bad); color: #fff; font: 700 11px/18px var(--ui); padding: 0 5px; }
 
 /* App générique : contenu puis, pour STRIDES, la barre d'onglets en pilule de l'app (icônes seules). */
@@ -473,6 +487,10 @@ body.desktop .joy-base { display: none; }
 .app-head .back { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: var(--ink-3); border: 1px solid var(--line); display: grid; place-items: center; }
 .app-head .back svg { width: 16px; height: 16px; }
 .app-head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+/* App Strides : logo officiel de la vraie application et mention « version jeu ». */
+.app-head .st-brand { margin-left: auto; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.app-head .st-brand .st-logo { height: 12px; }
+.app-head .st-brand .tag { font: 500 8px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--st-bronze-50); white-space: nowrap; }
 /* Écrans courts : barre d'état, en-têtes et onglets plus bas, accueil resserré. */
 @media (max-height: 360px) {
   .phone::before { top: 15px; height: 20px; }
@@ -491,6 +509,7 @@ body.desktop .joy-base { display: none; }
   .apps { gap: 10px 4px; margin-top: 12px; }
   .app-icon .ic { width: 44px; height: 44px; border-radius: 12px; }
   .app-icon .ic svg { width: 22px; height: 22px; }
+  .app-icon .ic.strides .st-logo { height: 26px; }
 }
 @media (max-height: 300px) {
   .phone::before { top: 13px; height: 17px; }
@@ -807,7 +826,8 @@ body.phone-open .rotate { display: none !important; }
   .setup input, .setup .seg button { height: 40px; }
   /* Titre et chargement compacts : tout tient sous la barre du lecteur ; menu en ligne, pied de page dans le flux
      (!important : margin-top en ligne posé par showTitle / showLoading). */
-  .title-screen .game-title, .loading .game-title { margin-top: 6px !important; font-size: min(18vh, 64px); }
+  .title-screen .game-title, .loading .game-title { margin-top: 6px !important; font-size: min(14vh, 50px); }
+  .title-screen .app-mention { margin-top: 8px; width: min(400px, 62vw); gap: 3px; }
   .title-screen .game-title span, .loading .game-title span { margin-top: 5px; }
   .title-screen .menu { flex-direction: row; gap: 8px; width: min(560px, 100%); margin-top: 12px; }
   .title-screen .btn { flex: 1 1 0; min-width: 0; padding: 0 14px; gap: 8px; line-height: 1.1; }

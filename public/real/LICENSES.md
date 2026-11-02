@@ -21,7 +21,7 @@ morphologie, squelette recalé, compression meshopt).
 | `horse.glb` | Cheval : corps, crins, cornées, fers, selle, filet, squelette de 99 os | CC BY 4.0 | « [Horse](https://sketchfab.com/3d-models/horse-a6f860e43e364619bccb174a1ac7d0c9) » de **Henry S** (henry_7, Sketchfab), version redistribuée par [miskibin/warbell](https://github.com/miskibin/warbell/blob/1c73afb4a5fd03744d3bf62483dae45a7bd7f0da/assets/CREDITS.md), commit `1c73afb` |
 
 Licence : [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). Modifications par
-STRIDES Grand Tour : animations d'origine retirées, robe pie rendue neutre (détail du poil seul, couleur appliquée par
+Equestrian Tour : animations d'origine retirées, robe pie rendue neutre (détail du poil seul, couleur appliquée par
 le jeu), zones de robe ajoutées par sommet, textures converties en WebP et redimensionnées, maillages compressés.
 Le crédit est affiché dans le jeu (téléphone → Réglages, sous « Modèles 3D »). Fichier produit par
 `node scripts/real/build-horse.mjs`.
@@ -37,7 +37,7 @@ Le crédit est affiché dans le jeu (téléphone → Réglages, sous « Modèles
 
 Versions préparées redistribuées par [TonPlaygramBot/TonPlaygramWebApp](https://github.com/TonPlaygramBot/TonPlaygramWebApp/blob/ee96cdbe3b1faae07cb58d7ecf42c4e9407d8039/webapp/public/assets/tirana-streets/vehicle-collection/ATTRIBUTION.md)
 (commit `ee96cdb`). Licence : [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
-Modifications par STRIDES Grand Tour : logos, lettrages et plaques retirés, intérieur ajouté par le redistributeur
+Modifications par Equestrian Tour : logos, lettrages et plaques retirés, intérieur ajouté par le redistributeur
 retiré, modèle réorienté et recentré, roues découpées en objets séparés, pièces lourdes peu visibles simplifiées,
 peinture rendue neutre (teinte appliquée par le jeu), textures converties en WebP, maillages compressés. Les noms des
 modèles d'origine désignent des véhicules réels ; aucune marque n'est affichée dans le jeu. Fichiers produits par
