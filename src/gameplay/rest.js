@@ -9,6 +9,8 @@ import { choiceCard } from './story2.js';
 import { h } from '../ui/dom.js';
 import { rainTarget } from '../world/weather.js';
 import { CONFIG } from '../config.js';
+import { playNight, preloadNightMedia } from '../ui/nightAds.js';
+import { NIGHT_SLOT } from '../partners/campaigns.js';
 
 export const WAKE_HOUR = LIFE.sleep.wake;
 
@@ -27,6 +29,8 @@ export class Rest {
   constructor(game) {
     this.game = game;
     const g = game;
+    // Médias de la transition de nuit préchargés à l'entrée dans la maison (pas de chargement bloquant au coucher).
+    g.bus?.on?.('home:enter', () => preloadNightMedia().catch(() => {}));
     // Porte de la maison (sans intérieur : on se repose depuis la porte).
     g.interact.add('rest', {
       label: t('Se reposer'),
@@ -104,11 +108,21 @@ export class Rest {
     }
   }
 
+  // Publicités de la nuit permises ? Seulement pour un vrai sommeil nocturne au lit, une fois par nuit de jeu, jamais
+  // pendant une mission (concours engagé compris), une épreuve, un défi ou la conduite.
+  adsAllowed(night) {
+    const g = this.game;
+    if (!NIGHT_SLOT.enabled) return false;
+    if (g.missions?.active || g.course || g.challenge?.active || g.player.mode !== 'foot') return false;
+    return g.save.data.ads?.lastNight !== night;
+  }
+
   // Menu du lit.
   openBed() {
     const g = this.game;
     const why = this.blocked();
     if (why) return g.hud.toast(why);
+    preloadNightMedia().catch(() => {});
     const E = g.energy;
     const hr = g.hour();
     const e = E.value;
@@ -181,9 +195,12 @@ export class Rest {
     const before = g.energy.value;
     g.player.locked = true;
     g.home?.lieDown?.(true);
-    g.fade(() => {
+    let hours = 0;
+    // La nuit : heure du réveil, énergie, cheval reposé, météo recalée, partie enregistrée (au plus noir de la
+    // transition : un rechargement pendant les publicités reprend au matin, sans les revoir).
+    const apply = () => {
       const wake = nextWake(d.gameTime);
-      const hours = (wake - d.gameTime) / 3600;
+      hours = (wake - d.gameTime) / 3600;
       d.gameTime = wake;
       g.energy.sleep(hours);
       this._afterJump(hours);
@@ -192,13 +209,43 @@ export class Rest {
         c.energy = 100;
         c.resting = false;
       }
-      g.home?.lieDown?.(false);
-      g.player.locked = false;
-      this.busy = false;
       // Nouvelles demandes du matin bientôt.
       if (g.missions) g.missions.timer = Math.min(g.missions.timer, 4);
       g.saveNow();
+    };
+    // Réveil dans le lit, puis debout à côté : nouvelle journée.
+    const finish = () => {
+      g.home?.lieDown?.(false);
+      g.player.locked = false;
+      this.busy = false;
       this._newDay(before, hours, kind);
+    };
+    // Nuit de jeu (jour du réveil) : au plus une séquence de publicités par nuit.
+    const night = Math.floor(nextWake(d.gameTime) / 86400);
+    if (kind === 'night' && this.adsAllowed(night)) {
+      // Marquée avant l'affichage : ni un rechargement ni une seconde interaction ne la rejouent.
+      d.ads = { ...(d.ads || {}), lastNight: night };
+      playNight(g, { ads: true, instant: !!g.syncFade, onDusk: apply })
+        .then(({ shown }) => {
+          const A = d.ads;
+          A.count = (A.count || 0) + 1;
+          A.log = [...(A.log || []), ...shown.map((s) => ({ night, ...s }))].slice(-10);
+          this.lastNight = { night, shown };
+        })
+        .catch((e) => {
+          console.warn('[nuit] transition', e);
+          if (!hours) apply();
+          document.querySelector('.night-seq')?.remove();
+        })
+        .finally(() => {
+          finish();
+          g.saveSoon?.();
+        });
+      return true;
+    }
+    g.fade(() => {
+      apply();
+      finish();
     }, 1.2);
     return true;
   }

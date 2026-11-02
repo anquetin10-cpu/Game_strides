@@ -1038,3 +1038,89 @@ ul.newday { margin: 10px 0 0; padding-left: 18px; font: 400 13.5px/1.45 var(--ui
   .life-line { margin-top: 3px; gap: 5px; font-size: 9px; }
   .life-line .en-bar { width: 36px; }
 }
+
+/* ---------- Nuit : transition du sommeil et emplacements publicitaires (src/ui/nightAds.js) ---------- */
+.overlay.night-seq { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; pointer-events: auto; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; }
+.night-seq .night-sky { position: absolute; inset: 0; opacity: 0; background: radial-gradient(120% 90% at 70% 10%, #1b2a4a 0%, #0b1224 45%, #05070f 100%); transition: opacity .8s ease, filter 1.2s ease; }
+.night-seq .night-sky::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; background: linear-gradient(to top, #f6b26b 0%, #f1c48f 18%, #e9b8a4 34%, #9fb3cf 62%, #5f7fae 100%); }
+.night-seq[data-phase="dusk"] .night-sky { opacity: .62; }
+.night-seq[data-phase="night"] .night-sky, .night-seq[data-phase^="ad"] .night-sky { opacity: 1; }
+.night-seq[data-phase="dawn"] .night-sky { opacity: 1; }
+.night-seq[data-phase="dawn"] .night-sky::after { opacity: 1; }
+.night-seq[data-phase="day"] .night-sky { opacity: 0; transition: opacity .7s ease; }
+.night-seq[data-phase="day"] .night-sky::after { opacity: 1; }
+.night-seq .moon { position: absolute; right: 12%; top: 12%; width: 54px; height: 54px; border-radius: 50%; box-shadow: -12px 8px 0 0 #f3ead2; transform: rotate(-20deg); opacity: .9; }
+.night-seq .star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; opacity: .7; animation: twinkle 2.4s ease-in-out infinite; }
+.night-seq[data-phase="dawn"] .moon, .night-seq[data-phase="dawn"] .star, .night-seq[data-phase="day"] .moon, .night-seq[data-phase="day"] .star { opacity: 0; transition: opacity .6s; }
+@keyframes twinkle { 50% { opacity: .2; } }
+.ad-frame { position: relative; width: min(760px, calc(100vw - 2 * var(--sl) - 24px)); height: min(320px, calc(100vh - 96px)); margin-bottom: 40px; }
+.ad-frame.hidden { display: none; }
+.night-stage { position: absolute; inset: 0; border-radius: 22px; overflow: hidden; box-shadow: 0 18px 60px rgba(0,0,0,.45); }
+.night-stage .ad { position: absolute; inset: 0; animation: adIn .45s ease-out; }
+@keyframes adIn { from { opacity: 0; transform: scale(.985); } }
+.ad-top { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+.ad-tag { padding: 3px 8px; border-radius: 6px; background: rgba(15,15,14,.55); color: #fbfaf5; font: 600 9.5px/1 var(--ui); letter-spacing: .14em; text-transform: uppercase; }
+.ad-count { padding: 3px 7px; border-radius: 6px; background: rgba(15,15,14,.45); color: #fbfaf5; font: 600 10px/1 var(--mono); }
+.ad-count:empty { display: none; }
+.ad-progress { position: absolute; left: 0; right: 0; bottom: -9px; height: 3px; border-radius: 2px; background: rgba(251,250,245,.18); overflow: hidden; }
+.ad-progress i { display: block; height: 100%; width: 0; background: rgba(251,250,245,.85); }
+.ad-actions { position: absolute; right: 0; bottom: -48px; display: flex; gap: 8px; }
+.ad-skip, .ad-cta { height: 34px; padding: 0 14px; border-radius: 17px; font: 600 12.5px/1 var(--ui); }
+.ad-skip { background: rgba(251,250,245,.92); color: #0f0f0e; }
+.ad-cta { background: transparent; color: #fbfaf5; border: 1px solid rgba(251,250,245,.55); }
+.ad-skip.hidden, .ad-cta.hidden { display: none; }
+/* Habillage neutre (annonceur non encore autorisé). */
+.ad-neutral { background: linear-gradient(135deg, #1d2a24 0%, #24342c 55%, #2c3f35 100%); color: #f4efe3; display: flex; align-items: center; }
+.ad-n-art { position: absolute; inset: 0; }
+.ad-n-line { position: absolute; left: -10%; right: -10%; height: 1px; background: linear-gradient(90deg, transparent, rgba(210,174,85,.55), transparent); top: 28%; transform: rotate(-8deg); }
+.ad-n-line.b { top: 52%; transform: rotate(-8deg); opacity: .6; }
+.ad-n-line.c { top: 76%; transform: rotate(-8deg); opacity: .35; }
+.ad-n-text { position: relative; padding: 0 42px; max-width: 70%; }
+.ad-kicker { font: 600 10px/1 var(--ui); letter-spacing: .2em; text-transform: uppercase; color: #d2ae55; }
+.ad-n-name { margin-top: 10px; font: 600 clamp(24px, 4.6vw, 38px)/1.05 var(--display); letter-spacing: -.02em; }
+.ad-n-sub { margin-top: 8px; font: 400 14px/1.35 var(--ui); color: rgba(244,239,227,.86); }
+.ad-n-hint { margin-top: 14px; font: 500 12px/1.35 var(--ui); color: rgba(244,239,227,.62); }
+/* Publicité image (campagne autorisée) : visuel plein cadre, jamais déformé. */
+.ad-image { background: #111; }
+.ad-img-pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ad-img-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 55%, transparent 100%); }
+.ad-img-text { position: absolute; left: 30px; bottom: 28px; max-width: 55%; color: #fff; }
+.ad-img-logo { height: 30px; width: auto; display: block; margin-bottom: 12px; }
+.ad-img-h { font: 600 clamp(20px, 3.6vw, 30px)/1.1 var(--display); }
+.ad-img-l { margin-top: 6px; font: 400 13px/1.35 var(--ui); opacity: .9; }
+/* Publicité Strides : identité réelle (crème, encre), application réelle, logo officiel. */
+.ad-strides { background: #efeae0; color: #0a0a09; }
+.as-need { position: absolute; left: 34px; top: 50%; transform: translateY(-50%); max-width: 52%; animation: asNeed 4.5s ease forwards; }
+.as-q { font: 600 clamp(19px, 3.4vw, 28px)/1.15 var(--display); letter-spacing: -.02em; }
+.as-q.b { margin-top: 10px; color: #605d56; animation: asIn .5s .55s ease both; }
+@keyframes asNeed { 0%, 30% { opacity: 1; } 38%, 100% { opacity: 0; visibility: hidden; } }
+@keyframes asIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.as-phone { position: absolute; right: 30px; top: 16px; bottom: 16px; aspect-ratio: 0.5; border-radius: 26px; background: #0f0f0e; padding: 7px; box-shadow: 0 14px 34px rgba(0,0,0,.28); animation: asPhone 4.5s ease both; }
+.as-notch { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); width: 34%; height: 14px; border-radius: 8px; background: #0f0f0e; z-index: 2; }
+.as-screen { width: 100%; height: 100%; border-radius: 20px; overflow: hidden; background: #efeae0; padding-top: 22px; box-sizing: border-box; }
+.as-screen img { width: 100%; height: auto; display: block; }
+@keyframes asPhone { 0%, 18% { opacity: 0; transform: translateX(40px); } 30%, 100% { opacity: 1; transform: none; } }
+.as-main { position: absolute; left: 34px; top: 50%; transform: translateY(-50%); max-width: calc(100% - 34px - 30px - 200px); animation: asMain 4.5s ease both; }
+@keyframes asMain { 0%, 34% { opacity: 0; transform: translateY(calc(-50% + 10px)); } 44%, 100% { opacity: 1; transform: translateY(-50%); } }
+.as-h { font: 600 clamp(19px, 3.3vw, 28px)/1.12 var(--display); letter-spacing: -.02em; }
+.as-steps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.as-steps span { padding: 5px 9px; border-radius: 8px; border: 1px solid rgba(10,10,9,.14); background: #f7f4ed; font: 600 11px/1 var(--ui); color: #46443e; opacity: 0; animation: asIn .4s ease forwards; }
+.as-steps span:nth-child(1) { animation-delay: 2.1s; }
+.as-steps span:nth-child(2) { animation-delay: 2.3s; }
+.as-steps span:nth-child(3) { animation-delay: 2.5s; }
+.as-brand { display: flex; align-items: center; gap: 12px; margin-top: 16px; opacity: 0; animation: asIn .5s 2.8s ease forwards; }
+.as-logo { height: 30px; width: auto; display: block; }
+.as-url { font: 500 12px/1 var(--ui); color: #605d56; }
+.as-fine { position: absolute; left: 34px; bottom: 12px; right: 240px; font: 400 9.5px/1.3 var(--ui); color: #76736b; }
+@media (max-height: 360px) {
+  .ad-frame { height: calc(100vh - 78px); margin-bottom: 34px; }
+  .night-stage { border-radius: 16px; }
+  .ad-actions { bottom: -42px; }
+  .as-need, .as-main { left: 22px; }
+  .as-phone { right: 18px; top: 10px; bottom: 10px; border-radius: 20px; padding: 5px; }
+  .as-screen { border-radius: 15px; }
+  .as-logo { height: 24px; }
+  .as-fine { left: 22px; bottom: 8px; font-size: 8.5px; }
+  .ad-n-text { padding: 0 26px; }
+  .ad-skip, .ad-cta { height: 30px; padding: 0 12px; font-size: 12px; }
+}

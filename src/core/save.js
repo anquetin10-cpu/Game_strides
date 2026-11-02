@@ -38,6 +38,9 @@ export function defaultSave() {
     gameTime: CONFIG.startHour * 3600,
     // Rythme de vie (energy.js) : énergie du personnage, cafés et siestes depuis la dernière nuit, avertissements donnés.
     life: { energy: 100, coffees: 0, naps: 0, lastSleep: null, notified: '' },
+    // Emplacements publicitaires de la nuit (src/partners/campaigns.js) : dernière nuit de jeu diffusée (une séquence
+    // par nuit au plus), nombre de séquences, dernières diffusions (campagne, durée, passée ou non).
+    ads: { lastNight: null, count: 0, log: [] },
     pos: null,
     // Récompenses déjà versées (clé = offre ou tentative) : un double appui ou un rechargement ne paie jamais deux fois.
     rewards: {},
