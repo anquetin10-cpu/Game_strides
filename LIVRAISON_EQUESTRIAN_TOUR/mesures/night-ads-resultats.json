@@ -1,0 +1,140 @@
+{
+ "results": [
+  {
+   "label": "dans la chambre, au bord du lit : « Se coucher »",
+   "ok": true,
+   "extra": "{\"inside\":true,\"cur\":\"Se coucher\"}"
+  },
+  {
+   "label": "le personnage se couche, commandes bloquées, simulation suspendue",
+   "ok": true,
+   "extra": "{\"lying\":true,\"locked\":true,\"paused\":true}"
+  },
+  {
+   "label": "publicité 1 : emplacement Kingsland (habillage neutre, mention « Partenaire »), « Passer » pas encore proposé",
+   "ok": true,
+   "extra": "{\"phase\":\"ad-1\",\"ad\":\"kingsland-aw26-nuit:neutre\",\"tag\":\"Partenaire\",\"skip\":false}"
+  },
+  {
+   "label": "habillage neutre : aucune marque ni logo Kingsland affiché",
+   "ok": true,
+   "extra": "DEAUVILLE CITY / Sellerie & Mode Équestre / Tenues d’équitation · Équipement du cheval / Boutique du jeu, en ville : essayer, acheter, s’équiper."
+  },
+  {
+   "label": "« Passer » proposé après 1 s",
+   "ok": true,
+   "extra": ""
+  },
+  {
+   "label": "publicité 2 : Strides, mention « Publicité », logo officiel (fichier d’origine), capture réelle de l’application",
+   "ok": true,
+   "extra": "{\"ad\":\"strides-nuit-v1\",\"tag\":\"Publicité\",\"logo\":\"/src/assets/partners/strides/strides-logo-full.png\",\"app\":\"/src/assets/partners/strides/app-accueil-capture.png\",\"cta\":\"Découvrir Strides\",\"ctaVisible\":true,\"fine\":\"Publicité pour la plateforme réelle Strides. Dans Equestrian Tour, missions, profils et paiements sont fictifs.\"}"
+  },
+  {
+   "label": "distinction jeu / plateforme réelle et invitation discrète (ouverture seulement au toucher)",
+   "ok": true,
+   "extra": "Publicité pour la plateforme réelle Strides. Dans Equestrian Tour, missions, profils et paiements sont fictifs."
+  },
+  {
+   "label": "réveil : 7:00, énergie 100 %, le personnage se relève, commandes rendues",
+   "ok": true,
+   "extra": "{\"sat\":99.99957333333339,\"hyd\":99.99946666666665,\"e\":100,\"hour\":7,\"day\":1,\"ads\":{\"lastNight\":1,\"count\":1,\"log\":[{\"night\":1,\"id\":\"kingsland-aw26-nuit:neutre\",\"advertiser\":\"kingsland\",\"neutral\":true,\"seconds\":4.51,\"skipped\":false},{\"night\":1,\"id\":\"strides-nuit-v1\",\"advertiser\":\"strides\",\"neutral\":false,\"seconds\":4.02,\"skipped\":true}]},\"saved\":{\"e\":100,\"t\":111600,\"last\":1},\"lying\":false,\"locked\":false}"
+  },
+  {
+   "label": "besoins du cheval inchangés pendant la nuit à l’écran (simulation suspendue)",
+   "ok": true,
+   "extra": "100.00 → 100.00"
+  },
+  {
+   "label": "nouvelle journée sauvegardée (énergie, heure, nuit diffusée)",
+   "ok": true,
+   "extra": "{\"e\":100,\"t\":111600,\"last\":1}"
+  },
+  {
+   "label": "journal : 2 diffusions (neutre, puis Strides — passée au bouton « Passer »)",
+   "ok": true,
+   "extra": "[{\"night\":1,\"id\":\"kingsland-aw26-nuit:neutre\",\"advertiser\":\"kingsland\",\"neutral\":true,\"seconds\":4.51,\"skipped\":false},{\"night\":1,\"id\":\"strides-nuit-v1\",\"advertiser\":\"strides\",\"neutral\":false,\"seconds\":4.02,\"skipped\":true}]"
+  },
+  {
+   "label": "« Passer » sur la dernière publicité : lever du jour aussitôt",
+   "ok": true,
+   "extra": "4.02"
+  },
+  {
+   "label": "durée de la séquence : nuit 1,6 s + publicités (4,5 s chacune, moins si « Passer ») + lever du jour 1,8 s",
+   "ok": true,
+   "extra": "11.9 s de séquence (temps réel mesuré par le test, captures comprises : 172.0 s)"
+  },
+  {
+   "label": "publicité 1 affichée 4,5 s (horloge de la séquence)",
+   "ok": true,
+   "extra": "4.51 s de séquence ; 34.1 s à l’horloge murale, captures d’écran comprises"
+  },
+  {
+   "label": "fluidité pendant la publicité 2 : au moins 8 images/s, captures d’écran comprises (rendu logiciel)",
+   "ok": true,
+   "extra": "{\"dusk\":0.2,\"night\":0.3,\"ad-1\":5.2,\"ad-2\":41.5,\"dawn\":1,\"day\":0.2}"
+  },
+  {
+   "label": "pendant la séquence (relevés toutes les 100 ms) : heure figée avant et après le passage à 7:00, besoins du cheval constants, simulation suspendue",
+   "ok": true,
+   "extra": "{\"n\":1227,\"dusk\":245,\"apres\":721,\"t\":[81019.19999999995,111600],\"sat\":[99.99957333333339,99.99957333333339]}"
+  },
+  {
+   "label": "scène 3D non redessinée pendant les publicités, rendu repris au lever du jour",
+   "ok": true,
+   "extra": "387 relevés pendant les publicités"
+  },
+  {
+   "label": "même nuit relancée : aucune publicité rejouée",
+   "ok": true,
+   "extra": "{\"seq\":false,\"count\":1}"
+  },
+  {
+   "label": "sieste (même la nuit) : aucune publicité",
+   "ok": true,
+   "extra": "{\"seq\":false,\"count\":1}"
+  },
+  {
+   "label": "« Passer à la journée suivante » : aucune publicité",
+   "ok": true,
+   "extra": "{\"seq\":false,\"count\":1}"
+  },
+  {
+   "label": "concours engagé (mission en cours) : sommeil possible, aucune publicité",
+   "ok": true,
+   "extra": "{\"ok\":true,\"seq\":false,\"count\":1,\"active\":\"concours\"}"
+  },
+  {
+   "label": "rechargement pendant les publicités : reprise au matin (nuit appliquée et sauvegardée), aucune publicité rejouée",
+   "ok": true,
+   "extra": "{\"mid\":{\"hour\":7,\"last\":1},\"re\":{\"hour\":7.002986,\"e\":99.99466799999999,\"seq\":false,\"last\":1,\"inside\":true}}"
+  },
+  {
+   "label": "capture Strides indisponible : publicité Strides sautée, emplacement 1 affiché, sommeil normal",
+   "ok": true,
+   "extra": "{\"hour\":7,\"e\":100,\"log\":[\"kingsland-aw26-nuit:neutre\"],\"card\":true}"
+  },
+  {
+   "label": "« Découvrir Strides » ouvre https://strides-app.com/ au toucher seulement",
+   "ok": true,
+   "extra": "https://strides-app.com/"
+  },
+  {
+   "label": "petit écran : cadre et « Passer » dans l’écran",
+   "ok": true,
+   "extra": "{\"f\":[28,22,639,252],\"s\":[576,264,639,294],\"c\":[28,264,154,294],\"vw\":667,\"vh\":308}"
+  },
+  {
+   "label": "« Découvrir Strides » à gauche, « Passer » à droite (jamais l’un sous l’autre)",
+   "ok": true,
+   "extra": "{\"cta\":[28,264,154,294],\"passer\":[576,264,639,294]}"
+  },
+  {
+   "label": "aucune erreur JavaScript",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "errors": []
+}

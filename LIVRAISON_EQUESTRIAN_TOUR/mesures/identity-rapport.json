@@ -1,0 +1,337 @@
+{
+  "base": "http://127.0.0.1:5173",
+  "rendu": "Chromium + SwiftShader (rendu logiciel, pas un vrai iPhone), 844×390, DPR 2",
+  "fails": 0,
+  "results": [
+    {
+      "label": "choix de la langue : « EQUESTRIAN TOUR »",
+      "ok": true,
+      "extra": "EQUESTRIAN TOUR"
+    },
+    {
+      "label": "métadonnées : titre, og:title, titre iOS, canvas = Equestrian Tour",
+      "ok": true,
+      "extra": "{\"brand\":\"EQUESTRIAN TOUR\",\"title\":\"Equestrian Tour\",\"og\":\"Equestrian Tour\",\"apple\":\"Equestrian Tour\",\"canvas\":\"Equestrian Tour\"}"
+    },
+    {
+      "label": "manifeste : nom Equestrian Tour, aucun « Grand Tour »",
+      "ok": true,
+      "extra": "Equestrian Tour / Equestrian Tour"
+    },
+    {
+      "label": "choix de la langue : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "chargement : titre « EQUESTRIAN TOUR », sans logo Strides",
+      "ok": true,
+      "extra": "{\"title\":\"EQUESTRIAN TOUR\",\"logos\":0,\"txt\":\"EQUESTRIAN TOURUN JEU EN MONDE OUVERT · CÔTE FLEURIEForêtsLes fers d’or sont cachés dans tout Deauville City. Trouve-les tous !\"}"
+    },
+    {
+      "label": "écran titre : grand titre « EQUESTRIAN TOUR » dans la police d’affichage",
+      "ok": true,
+      "extra": "EQUESTRIAN TOUR · Geist, -apple-system, BlinkMacSystemFont, \"Helvetica Neue\", Arial, sans-serif 600"
+    },
+    {
+      "label": "écran titre : mention « application intégrée » (Strides, missions et paiements fictifs)",
+      "ok": true,
+      "extra": "Application intégréeAvec l’application Strides intégrée au téléphone du personnage — missions et paiements fictifs dans le jeu."
+    },
+    {
+      "label": "écran titre : logo Strides seulement dans la mention, pas comme logo du jeu",
+      "ok": true,
+      "extra": "{\"logos\":1,\"dansMention\":1}"
+    },
+    {
+      "label": "écran titre : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "1 logo(s) : img 45.7×13 0.02%"
+    },
+    {
+      "label": "écran titre : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "création du personnage : « Ton profil Strides · version jeu »",
+      "ok": true,
+      "extra": "Ton profil Strides · version jeu"
+    },
+    {
+      "label": "création du personnage : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "consigne de rotation : « Equestrian Tour se joue à l’horizontale. »",
+      "ok": true,
+      "extra": "Tourne ton téléphoneEquestrian Tour se joue à l’horizontale."
+    },
+    {
+      "label": "logo officiel préchargé avant la construction du monde",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "HUD en jeu : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "0 logo(s) : "
+    },
+    {
+      "label": "notification : icône = monogramme officiel (masque du fichier)",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "notification (932×430) : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "1 logo(s) : mask·S 9.8×14 0.15%"
+    },
+    {
+      "label": "pause : titre « Equestrian Tour »",
+      "ok": true,
+      "extra": "Equestrian Tour"
+    },
+    {
+      "label": "pause : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "pause : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "1 logo(s) : mask·S(caché) 0×0 0%"
+    },
+    {
+      "label": "téléphone : icône de l’app Strides et widget = monogramme officiel",
+      "ok": true,
+      "extra": "{\"icon\":1,\"widget\":1}"
+    },
+    {
+      "label": "téléphone, accueil : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "3 logo(s) : mask·S(caché) 0×0 0%, mask·S 11.2×16 0.05%, mask·S 21×30 0.02%"
+    },
+    {
+      "label": "téléphone, accueil : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "app Strides : mention « version jeu » (missions, profils, sommes fictifs)",
+      "ok": true,
+      "extra": "Strides · version jeuMissions, profils et sommes fictifs. Rien n’est envoyé, aucun paiement réel.Deux usages, comme dans la vraie application : recevoir des mis"
+    },
+    {
+      "label": "app Strides : en-tête = logo officiel (fichier) + « Version jeu », titre sur une ligne",
+      "ok": true,
+      "extra": "{\"img\":\"/src/assets/partners/strides/strides-logo-full.png\",\"tag\":\"Version jeu\",\"oneLine\":true}"
+    },
+    {
+      "label": "app Strides : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "3 logo(s) : mask·S(caché) 0×0 0%, mask·S(caché) 0×0 0%, img 42.1×12 0.03%"
+    },
+    {
+      "label": "app Strides : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "app Strides (recruter) : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "3 logo(s) : mask·S(caché) 0×0 0%, mask·S(caché) 0×0 0%, img 42.1×12 0.03%"
+    },
+    {
+      "label": "app Strides (recruter) : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "app Strides (profil) : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "3 logo(s) : mask·S(caché) 0×0 0%, mask·S(caché) 0×0 0%, img 42.1×12 0.03%"
+    },
+    {
+      "label": "app Strides (profil) : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "réglages : « Equestrian Tour — jeu de démonstration », Strides = vraie plateforme, profils/missions/paiements fictifs",
+      "ok": true,
+      "extra": "Equestrian Tour — jeu de démonstration. Univers, lieux et personnages fictifs. Strides, l’application du téléphone, est une vraie plateforme : dans le jeu, profils, missions et paiements sont fictifs."
+    },
+    {
+      "label": "réglages : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "réglages : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "1 logo(s) : mask·S(caché) 0×0 0%"
+    },
+    {
+      "label": "défi : règles : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "défi : règles : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "1 logo(s) : mask·S(caché) 0×0 0%"
+    },
+    {
+      "label": "défi : texte de partage signé « Equestrian Tour »",
+      "ok": true,
+      "extra": "Défi du Pôle (defi-pole-v6) — 4 pts en 61,37 s avec Onyx · Jo. Equestrian Tour https://exemple.test/jeu/"
+    },
+    {
+      "label": "défi : résultat : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "défi : carte de résultat dessinée (1080×1350)",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "défi : carte de résultat : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "mode photo : signature « EQUESTRIAN TOUR » (pas le logo Strides)",
+      "ok": true,
+      "extra": "{\"wm\":\"EQUESTRIAN TOUR\",\"logos\":0}"
+    },
+    {
+      "label": "mode photo : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "écran de fin : « Légende de l’Equestrian Tour »",
+      "ok": true,
+      "extra": "Légende de l’Equestrian Tour"
+    },
+    {
+      "label": "écran de fin : aucun « Grand Tour » affiché",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "écran de fin : logos Strides = fichier officiel, proportions du fichier",
+      "ok": true,
+      "extra": "1 logo(s) : mask·S(caché) 0×0 0%"
+    },
+    {
+      "label": "texture « hq » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":1,\"err\":0,\"px\":\"690×196\"}"
+    },
+    {
+      "label": "texture « banner » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.973,\"err\":0.004,\"px\":\"324×92\"}"
+    },
+    {
+      "label": "texture « screen » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.986,\"err\":0.004,\"px\":\"457×130\"}"
+    },
+    {
+      "label": "texture « affiche0 » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.961,\"err\":0.008,\"px\":\"218×62\"}"
+    },
+    {
+      "label": "texture « affiche1 » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.961,\"err\":0.008,\"px\":\"218×62\"}"
+    },
+    {
+      "label": "texture « affiche2 » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.961,\"err\":0.008,\"px\":\"218×62\"}"
+    },
+    {
+      "label": "texture « affiche3 » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.961,\"err\":0.008,\"px\":\"218×62\"}"
+    },
+    {
+      "label": "texture « affiche4 » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.961,\"err\":0.008,\"px\":\"218×62\"}"
+    },
+    {
+      "label": "texture « presentoir » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.976,\"err\":0.005,\"px\":\"324×93\"}"
+    },
+    {
+      "label": "texture « camionFlanc » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":1,\"err\":0,\"px\":\"790×225\"}"
+    },
+    {
+      "label": "texture « camionArriere » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.993,\"err\":0.003,\"px\":\"534×152\"}"
+    },
+    {
+      "label": "texture « tapis » : logo officiel, proportions du fichier (IoU ≥ 0.8, écart ≤ 0.04)",
+      "ok": true,
+      "extra": "{\"iou\":0.947,\"err\":0.011,\"px\":\"124×26\"}"
+    },
+    {
+      "label": "texture « tapisDroit » : logo officiel, proportions du fichier (IoU ≥ 0.8, écart ≤ 0.04)",
+      "ok": true,
+      "extra": "{\"iou\":0.947,\"err\":0.011,\"px\":\"124×26\"}"
+    },
+    {
+      "label": "texture « tapisClassique » : logo officiel, proportions du fichier (IoU ≥ 0.8, écart ≤ 0.04)",
+      "ok": true,
+      "extra": "{\"iou\":0.91,\"err\":0.014,\"px\":\"124×21\"}"
+    },
+    {
+      "label": "texture « colline » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":1,\"err\":0,\"px\":\"2048×583\"}"
+    },
+    {
+      "label": "texture « parisLice » : logo officiel, proportions du fichier (IoU ≥ 0.8, écart ≤ 0.04)",
+      "ok": true,
+      "extra": "{\"iou\":0.903,\"err\":0.013,\"px\":\"102×40\"}"
+    },
+    {
+      "label": "texture « defenderEcran » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.959,\"err\":0.007,\"px\":\"204×84\"}"
+    },
+    {
+      "label": "texture « carte » : logo officiel, proportions du fichier (IoU ≥ 0.9, écart ≤ 0.03)",
+      "ok": true,
+      "extra": "{\"iou\":0.997,\"err\":0.001,\"px\":\"82×116\"}"
+    },
+    {
+      "label": "aucun avertissement « logo non chargé »",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "aucun « Grand Tour » parmi tous les textes affichés pendant le test",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "label": "aucune erreur de page",
+      "ok": true,
+      "extra": ""
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+Non-régression — Equestrian Tour (identité, logo officiel Strides, boutique, STX, publicités de nuit)
+Chromium + SwiftShader (rendu logiciel), émulation iPhone 13 paysage (844 × 390, tactile). Pas d'iPhone réel.
+Séquentiel, une seule page à la fois, serveur de développement Vite.
+
+Série complète (commit 5cca6ce, 2 novembre 2026) :
+  unit exit=0 8s ::  Tests 263 passed (263)
+  i18n-check exit=0 :: 1926 traductions · 0 clé(s) sans traduction · 0 incohérence(s) · 247 texte(s) français probable(s) hors t()/T
+  night-ads exit=0 502s :: 27 ✔ / 0 ✘
+  identity exit=0 172s :: 66 ✔ / 0 ✘
+  apparel-store exit=0 199s :: 23 ✔ / 0 ✘
+  stx-livery exit=0 113s :: 55 ✔ / 0 ✘
+  life-rhythm exit=0 146s :: 31 ✔ / 0 ✘
+  home-interior exit=0 196s :: 37 ✔ / 0 ✘
+  shops exit=0 159s :: 31 ✔ / 0 ✘
+  strides-links exit=1 301s :: 0 ✔ / 0 ✘
+  ui exit=0 69s :: 0 ✔ / 0 ✘
+  missions exit=0 117s :: 16 ✔ / 0 ✘
+  chapter1 exit=0 336s :: 27 ✔ / 0 ✘
+  contest-full exit=0 150s :: 6 ✔ / 0 ✘
+  challenge exit=0 500s :: 37 ✔ / 0 ✘
+  paris exit=0 78s :: 20 ✔ / 0 ✘
+  transport-flow exit=1 294s :: 64 ✔ / 1 ✘
+  master exit=0 154s :: 26 ✔ / 0 ✘
+  save-guard exit=0 357s :: 11 ✔ / 0 ✘
+  boarding exit=0 131s :: 72 ✔ / 0 ✘
+  defender exit=0 177s :: 33 ✔ / 0 ✘
+  vehicles exit=0 51s :: 48 ✔ / 0 ✘
+  i18n exit=1 299s :: 18 ✔ / 1 ✘
+  mission-resume exit=1 616s :: 7 ✔ / 6 ✘
+  request-flow exit=0 61s :: 20 ✔ / 0 ✘
+  pause exit=1 54s :: 6 ✔ / 1 ✘
+  fuel exit=0 39s :: 12 ✔ / 0 ✘
+  care exit=0 39s :: 8 ✔ / 0 ✘
+  avatar-consistency exit=0 148s :: 9 ✔ / 0 ✘
+  cso exit=0 43s :: 38 ✔ / 0 ✘
+  cso-touch exit=0 75s :: 9 ✔ / 0 ✘
+  athens-pole-joystick exit=0 84s :: 9 ✔ / 0 ✘
+  athens-paris-joystick exit=0 71s :: 9 ✔ / 0 ✘
+  qa-fixes exit=0 103s :: 19 ✔ / 0 ✘
+  features exit=0 39s :: 20 ✔ / 0 ✘
+  jobs exit=1 20s :: 2 ✔ / 0 ✘
+  horse-mount exit=0 41s :: 18 ✔ / 0 ✘
+  truck-exit exit=0 37s :: 0 ✔ / 0 ✘
+
+Relances, serveur redémarré (commit d13390d et précédents) :
+  i18n exit=0 320s :: 19 ✔ / 0 ✘
+  transport-flow exit=0 281s :: 65 ✔ / 0 ✘
+  strides-links exit=0 155s :: 13 ✔ / 0 ✘
+  mission-resume exit=0 545s :: 13 ✔ / 0 ✘
+  pause exit=1 60s :: 6 ✔ / 1 ✘
+  jobs exit=1 50s :: 13 ✔ / 3 ✘
+  identity exit=0 192s :: 66 ✔ / 0 ✘
+  apparel-store exit=0 224s :: 23 ✔ / 0 ✘
+  shops exit=0 172s :: 31 ✔ / 0 ✘
+  jobs exit=0 41s :: 16 ✔ / 0 ✘
+  pause exit=1 62s :: 5 ✔ / 2 ✘
+  pause exit=0 65s :: 7 ✔ / 0 ✘
+  pause exit=0 65s :: 7 ✔ / 0 ✘
+  identity exit=0 187s :: 66 ✔ / 0 ✘
+  apparel-store exit=0 172s :: 23 ✔ / 0 ✘
+
+Explication des échecs de la série complète (tous résolus à la relance, aucun ne venait du jeu) :
+- strides-links (exit 1, aucun contrôle) : le test datait d'avant l'écran de choix de la langue et attendait l'écran
+  titre sans avoir choisi de langue. Test corrigé (langue fixée) : 13 / 13.
+- transport-flow (1 échec, « debout sur le plancher du box : 1,12 (plancher 0,92) ») : le cheval était sur le
+  plancher du camion STX détaillé (1,105 m) ; le test a lu la référence 0,92 m du camion de secours dans une autre
+  instance du module (serveur de développement en service depuis plusieurs modifications de fichiers). Serveur
+  redémarré : 65 / 65.
+- i18n (1 échec) : en anglais, le nom neutre de la boutique restait en français dans le téléphone. Corrigé dans le
+  jeu (nom neutre traduit comme son sous-titre) : 19 / 19.
+- mission-resume (6 échecs, acceptation au téléphone non prise en compte sous charge) : 13 / 13 à la relance, comme
+  lors du lot précédent.
+- pause (1 échec, puis 1 et 2 sur d'autres contrôles à chaque relance) : fenêtres de mesure fixes de 1,5 à 2 s sans
+  aucune image calculée en rendu logiciel. Test rendu robuste (au moins deux vraies images par fenêtre, comme le
+  faisait déjà l'un de ses contrôles) : 7 / 7, deux fois.
+- jobs (exit 1) : test d'avant le rythme de vie ; après deux jobs, l'heure ou la fatigue faisait refuser la mission
+  suivante (refus voulu) et le pilote plantait. Chaque job est joué dans les horaires de son client, énergie pleine :
+  16 / 16.
+- ui, truck-exit : scripts de captures sans contrôle (0 / 0), exécutés sans erreur.
+
+Mesures de la séquence de nuit (night-ads, boucle du jeu active, relevés toutes les 100 ms) :
+- publicité 1 : 4,51 s sur l'horloge de la séquence (34 s à l'horloge murale : le processeur graphique émulé finit
+  les images 3D de la tombée de la nuit) ; publicité 2 : 3,98 s, passée au bouton « Passer » ;
+- séquence complète : 11,9 s ; heure du jeu figée avant et après le passage à 7:00, besoins du cheval constants,
+  simulation suspendue sur 1 091 relevés ;
+- images de l'écran par seconde : tombée de la nuit 0,2, nuit 0,3, publicité 1 5,2, publicité 2 41,5, lever du
+  jour 1,0 (rendu logiciel ; la scène 3D n'est dessinée qu'avant et après les publicités).

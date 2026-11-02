@@ -1,0 +1,36 @@
+{
+ "parts": {
+  "a": {
+   "frames": 111,
+   "seconds": 7.4
+  },
+  "b": {
+   "frames": 226,
+   "seconds": 15.1,
+   "virtualClock": true
+  },
+  "c": {
+   "frames": 38,
+   "seconds": 2.5
+  }
+ },
+ "ads": [
+  {
+   "night": 1,
+   "id": "kingsland-aw26-nuit:neutre",
+   "advertiser": "kingsland",
+   "neutral": true,
+   "seconds": 4.53,
+   "skipped": false
+  },
+  {
+   "night": 1,
+   "id": "strides-nuit-v1",
+   "advertiser": "strides",
+   "neutral": false,
+   "seconds": 4.53,
+   "skipped": false
+  }
+ ],
+ "errors": []
+}
