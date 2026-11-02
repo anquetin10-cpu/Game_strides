@@ -576,7 +576,8 @@ export class World {
     const banner = bannerTexture();
     for (const [x, z, rot, len] of [[A.x, A.z - A.d / 2 + 0.12, 0, A.w], [A.x - A.w / 2 + 0.12, A.z, Math.PI / 2, A.d], [A.x + A.w / 2 - 0.12, A.z, -Math.PI / 2, A.d]]) {
       const tex = banner.clone();
-      tex.repeat.set(Math.round(len / 12), 1);
+      // Une tuile aux proportions de la texture (1024 × 128 sur 0,55 m de haut) : logo officiel non déformé.
+      tex.repeat.set(Math.max(1, Math.round(len / (0.55 * 8))), 1);
       tex.needsUpdate = true;
       const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.55), new THREE.MeshStandardMaterial({ map: tex }));
       m.position.set(x, ay + 0.55, z);
@@ -616,7 +617,7 @@ export class World {
       this.batch.add(box(0.6, 6, 0.6), '#1b1c1f', E.x + dx, ey, E.z, 0);
       this.colliders.addCircle(E.x + dx, E.z, 0.5, Infinity, 'post');
     }
-    this.texturedPanel(logoTexture(true), 12.6, 3.1, E.x, ey + 6.5, E.z, 0, { doubleSided: true, back: '#1b1c1f' });
+    this.texturedPanel(logoTexture(true), 12.4, 3.1, E.x, ey + 6.5, E.z, 0, { doubleSided: true, back: '#1b1c1f' });
     this.signboard('PÔLE INTERNATIONAL', t('CSO · CSI 3★ · CSI 5★'), 344, -150, 0, { w: 6 });
     // Entrée de piste (ouverture de la lice au milieu du côté sud) : portique STRIDES et jardinières.
     const gz = A.z + A.d / 2, gy = this.h(A.x, gz);
@@ -798,11 +799,15 @@ export class World {
     // Lucarnes et avant-corps générés par buildingGeo (pas de lucarnes rapportées en plus).
     this.place(buildingGeo({ w: ht.w, d: ht.d, h: 14, wall: '#f1ebdf', roof: '#3f444b', roofType: 'hip', roofH: 7, timber: true, fill: 4, wood: 1, floors: 4, trim: '#f6f3ec' }), ht.x, ht.z, Math.PI, ht.w, ht.d, 'hotel');
     this.signboard('GRAND HÔTEL', 'Deauville City · 1912', -80, -300 - 9, 0, { w: 5, dark: false });
-    // Strides HQ : verre noir, logotype 3D sur le toit.
+    // Strides HQ : verre noir, enseigne de toit au logo officiel (caisson double face aux proportions de la texture,
+    // 4:1, sur deux pieds) à la place de l'ancien logotype redessiné en relief.
     const hq = TOWN.hq;
     const hy = this.place(hqGeo(hq.w, hq.d, 15), hq.x, hq.z, 0, hq.w, hq.d, 'hq');
-    const word = this.text3D('STRIDES', 4.6, 0.8, '#f4f3ef');
-    this.batch.add(word.geo, null, hq.x, hy + 15.4, hq.z + hq.d / 2 - 2, 0);
+    {
+      const rz = hq.z + hq.d / 2 - 2;
+      for (const dx of [-7, 7]) this.batch.add(box(0.4, 1.4, 0.4), '#26272b', hq.x + dx, hy + 15, rz, 0);
+      this.texturedPanel(logoTexture(true), 22, 5.5, hq.x, hy + 16.4 + 2.75, rz, 0, { doubleSided: true, back: '#111214', depth: 0.4 }).name = 'strides-hq-roof-logo';
+    }
     this.texturedPanel(logoTexture(true), 16, 4, hq.x, hy + 9, hq.z - hq.d / 2 - 0.3, Math.PI, { back: '#111214', depth: 0.2 });
     this.texturedPanel(logoTexture(true), 14, 3.5, hq.x, hy + 4.6, hq.z + hq.d / 2 + 0.3, 0, { back: '#111214', depth: 0.2 });
     // Commerces où l'on entre (sellerie, café-boulangerie, boutique) : à la place de maisons de la rue, voir buildShops.
@@ -1287,7 +1292,7 @@ export class World {
       }
       if (sg.kind === 'strides') {
         // Présentoir Strides : carton plié posé sur le comptoir.
-        const tex = signTexture('STRIDES', t('Grooms · Cavaliers · Transport'), { dark: true, w: 512, h: 256, mark: true });
+        const tex = signTexture('', t('Grooms · Cavaliers · Transport'), { dark: true, w: 512, h: 256, logo: true });
         const card = new THREE.Mesh(new THREE.PlaneGeometry(sg.w, sg.h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
         card.position.set(sg.x, sg.y + sg.h / 2, sg.z);
         card.rotation.set(-0.25, sg.ry, 0);

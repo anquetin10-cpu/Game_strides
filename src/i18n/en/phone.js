@@ -239,7 +239,8 @@ export default {
   'Recommencer la partie': 'Start a new game',
   'Toucher encore pour tout effacer': 'Tap again to erase everything',
   Progression: 'Progress',
-  'STRIDES Grand Tour — jeu de démonstration. Univers, lieux et personnages fictifs.': 'STRIDES Grand Tour — demo game. Fictional world, places and characters.',
+  '{0} — jeu de démonstration. Univers, lieux et personnages fictifs. Strides, l’application du téléphone, est une vraie plateforme : dans le jeu, profils, missions et paiements sont fictifs.': '{0} — demo game. Fictional world, places and characters. Strides, the phone app, is a real platform: in the game, profiles, missions and payments are fictional.',
+  'Version jeu': 'Game version',
 
   // Commerces
   'Commerces de Deauville City': 'Deauville City shops',

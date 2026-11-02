@@ -2,6 +2,7 @@
 // caoutchouc ; ensembles d'indices selon l'équipement (sellé, rênes en main ou sur l'encolure, licol, guêtres).
 import * as THREE from 'three';
 import { addCloudShadows } from '../../world/sky.js';
+import { drawLogo, LOGO_ASPECT } from '../../ui/logo.js';
 
 // Ordre et sens des matériaux : voir scripts/horse/tack.mjs (TACK_MAT).
 const PALETTE = [
@@ -54,15 +55,21 @@ function makePadTexture() {
     g.fillRect(S - 9, y0, 9, half);
     g.fillRect(0, y0 + half - 9, S, 9);
   }
-  // Bleu : logo STRIDES près du coin arrière-bas, lisible de chaque côté.
-  g.fillStyle = 'rgb(0,0,255)';
-  g.font = '800 34px "Helvetica Neue", Arial, sans-serif';
-  g.textBaseline = 'middle';
-  const word = 'S T R I D E S';
-  g.textAlign = 'right';
-  g.fillText(word, S - 30, half * 0.8); // côté gauche : arrière = u élevé
-  g.textAlign = 'left';
-  g.fillText(word, 30, half + half * 0.8); // côté droit : arrière = u faible
+  // Bleu : logo officiel Strides (fichier d'origine) près du coin arrière-bas, lisible de chaque côté, entre le bord
+  // arrière et le quartier de la selle / la sangle (environ 0,27 m de large). Une moitié de texture (512 × 256) couvre
+  // environ 0,70 m × 0,50 m de tapis (scripts/real/build-horse.mjs) : le logo est dessiné élargi d'autant pour garder,
+  // une fois posé, les proportions du fichier.
+  const lh = 40;
+  const lw = lh * LOGO_ASPECT * (0.5 / 256 / (0.7 / 512));
+  const logo = (x, y) => {
+    g.save();
+    g.translate(x, y);
+    g.scale(lw / (lh * LOGO_ASPECT), 1);
+    drawLogo(g, 0, 0, lh, 'rgb(0,0,255)');
+    g.restore();
+  };
+  logo(S - 20 - lw, half * 0.8 - lh / 2); // côté gauche : arrière = u élevé
+  logo(20, half + half * 0.8 - lh / 2); // côté droit : arrière = u faible
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.NoColorSpace;
   tex.flipY = false; // v = rangée du canevas (0 = dos)

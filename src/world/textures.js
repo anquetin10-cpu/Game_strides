@@ -1,4 +1,6 @@
 // Textures générées (logo Strides, panneaux publicitaires, enseignes, bannières) — design system STRIDES.
+// Le logo Strides est toujours le fichier officiel (src/ui/logo.js : drawLogo, préchargé au démarrage), aux proportions
+// du fichier, recoloré d'une seule teinte.
 import * as THREE from 'three';
 import { drawLogo, LOGO_FULL, LOGO_MARK } from '../ui/logo.js';
 import { t } from '../core/i18n.js';
@@ -86,7 +88,7 @@ export function roadSignTexture(kind, text = '') {
   return t;
 }
 
-// Marque STRIDES : le « S » en tête de cheval du logo officiel (hauteur h). Renvoie la largeur.
+// Marque STRIDES : le « S » en tête de cheval du logo officiel (fichier d'origine, hauteur h). Renvoie la largeur.
 export function drawStridesMark(ctx, x, y, h, color) {
   return drawLogo(ctx, x, y, h, color, true);
 }
@@ -135,6 +137,30 @@ export function logoTexture(dark = true) {
   return t;
 }
 
+// Écran de bord du Defender (matériau « UI_Strides » du modèle fourni) : son lettrage « STRIDES » en police générique
+// est remplacé par le logo officiel, même teinte, même définition, fond transparent. L'écran (0,254 × 0,041 m) étire
+// sa texture (512 × 120) d'un facteur 6,2 / 4,27 : le logo y est dessiné resserré d'autant pour garder, une fois posé,
+// les proportions du fichier. Renvoie true si la texture a été remplacée.
+export function replaceStridesScreen(mat, quad = 0.254 / 0.041) {
+  const old = mat?.map;
+  if (!old?.image || typeof document === 'undefined') return false;
+  const W = old.image.width || 512, H = old.image.height || 120;
+  const cv = canvas(W, H);
+  const ctx = cv.getContext('2d');
+  const lh = H * 0.7;
+  ctx.translate(W / 2, (H - lh) / 2);
+  ctx.scale(W / H / quad, 1);
+  drawLogo(ctx, -(lh * LOGO_FULL.w) / LOGO_FULL.h / 2, 0, lh, '#cedcd3');
+  const t = toTexture(cv);
+  t.flipY = old.flipY;
+  t.colorSpace = old.colorSpace;
+  t.name = 'strides-logo-officiel';
+  mat.map = t;
+  mat.needsUpdate = true;
+  old.dispose();
+  return true;
+}
+
 // Affiches : textes du site strides-app.com.
 const ADS = [
   { tag: t('TROUVER UN PROFESSIONNEL'), title: t('Qui cherchez-vous\naujourd’hui ?'), sub: t('Grooms, palefreniers, chauffeurs, enseignants — vérifiés.'), color: '#b8953a' },
@@ -154,9 +180,9 @@ export function adTexture(i) {
   const ctx = cv.getContext('2d');
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
-  // Grand « S » en filigrane et liseré de couleur du métier, comme les cartes de l'app.
+  // Grand « S » en filigrane (entier, dans l'affiche) et liseré de couleur du métier, comme les cartes de l'app.
   ctx.globalAlpha = 0.07;
-  drawLogo(ctx, W - 330, -30, 600, INK, true);
+  drawLogo(ctx, W - 20 - (470 * LOGO_MARK.w) / LOGO_MARK.h, 21, 470, INK, true);
   ctx.globalAlpha = 1;
   ctx.fillStyle = ad.color;
   ctx.fillRect(0, 0, 16, H);
@@ -176,8 +202,9 @@ export function adTexture(i) {
   return t;
 }
 
-export function signTexture(title, sub = '', { dark = true, w = 1024, h = 256, mark = false } = {}) {
-  const key = `sign:${title}:${sub}:${dark}:${w}x${h}:${mark}`;
+// logo : le logo officiel Strides à la place du titre (présentoirs, enseignes Strides).
+export function signTexture(title, sub = '', { dark = true, w = 1024, h = 256, logo = false } = {}) {
+  const key = `sign:${title}:${sub}:${dark}:${w}x${h}:${logo}`;
   if (cache.has(key)) return cache.get(key);
   const cv = canvas(w, h);
   const ctx = cv.getContext('2d');
@@ -195,15 +222,14 @@ export function signTexture(title, sub = '', { dark = true, w = 1024, h = 256, m
     size *= 0.92;
     ctx.font = `600 ${size}px ${FONT_DISPLAY}`;
   }
-  ctx.fillText(title, w / 2, sub ? h * 0.5 : h * 0.64);
+  if (logo) {
+    const lh = Math.min(h * (sub ? 0.36 : 0.5), (w * 0.8 * LOGO_FULL.h) / LOGO_FULL.w);
+    drawLogo(ctx, (w - (lh * LOGO_FULL.w) / LOGO_FULL.h) / 2, (sub ? h * 0.56 : h) / 2 - lh / 2 + h * 0.04, lh, dark ? PAPER : INK);
+  } else ctx.fillText(title, w / 2, sub ? h * 0.5 : h * 0.64);
   if (sub) {
     ctx.font = `500 ${h * 0.14}px ${FONT_MONO}`;
     ctx.globalAlpha = 0.75;
     ctx.fillText(sub, w / 2, h * 0.78);
-  }
-  if (mark) {
-    ctx.globalAlpha = 1;
-    drawStridesMark(ctx, h * 0.15, h * 0.2, h * 0.6, dark ? PAPER : INK);
   }
   const t = toTexture(cv);
   cache.set(key, t);
@@ -322,15 +348,13 @@ export function truckTexture(scale = 1) {
     ctx.fillText(t('Un chauffeur pour le concours ? Sur l’app'), x + w / 2, y + 690);
     ctx.globalAlpha = 1;
   }
-  // Rampe arrière : marque, site, panneau « chevaux ».
+  // Rampe arrière : logo officiel, site, panneau « chevaux ».
   {
     const [x, y, w] = R.rear;
-    const mh = 250;
-    drawLogo(ctx, x + w / 2 - (mh * LOGO_MARK.w) / LOGO_MARK.h / 2, y + 70, mh, VINYL, true);
+    const lw = w * 0.86;
+    drawLogo(ctx, x + (w - lw) / 2, y + 200, (lw * LOGO_FULL.h) / LOGO_FULL.w, VINYL);
     ctx.fillStyle = VINYL;
     ctx.textAlign = 'center';
-    ctx.font = `600 64px ${FONT_DISPLAY}`;
-    ctx.fillText('STRIDES', x + w / 2, y + 400);
     ctx.font = `500 26px ${FONT_MONO}`;
     ctx.globalAlpha = 0.75;
     ctx.fillText('STRIDES-APP.COM', x + w / 2, y + 446);

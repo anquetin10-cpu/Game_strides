@@ -36,7 +36,7 @@ function askLang() {
   return new Promise((done) => {
     const el = document.createElement('div');
     el.className = 'lang-picker';
-    el.innerHTML = `<div class="lang-card"><div class="lang-brand">STRIDES <b>GRAND TOUR</b></div>
+    el.innerHTML = `<div class="lang-card"><div class="lang-brand">EQUESTRIAN <b>TOUR</b></div>
       <p>Choisis ta langue<br><span>Choose your language</span></p>
       <div class="lang-btns"><button data-id="lang-fr" data-lang="fr">Français</button><button data-id="lang-en" data-lang="en">English</button></div></div>`;
     el.addEventListener('click', (e) => {

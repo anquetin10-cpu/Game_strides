@@ -46,7 +46,7 @@ export default {
   'Disponible sur l’App Store et Google Play. STRIDES connecte les écuries et cavaliers aux grooms, palefreniers, chauffeurs et enseignants vérifiés — partout en France, avec un paiement garanti et sécurisé pour chaque prestation.': 'Available on the App Store and Google Play. STRIDES connects stables and riders with verified grooms, stable hands, drivers and instructors — all over France, with guaranteed, secure payment for every job.',
   'Retour au jeu': 'Back to the game',
   'Ouvrir strides-app.com': 'Open strides-app.com',
-  'Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix. Par STRIDES.': 'The equestrian world, open world: from groom to Grand Prix winner. By STRIDES.',
+  'Le monde équestre en monde ouvert : de groom à vainqueur du Grand Prix.': 'The equestrian world, open world: from groom to Grand Prix winner.',
   'Lien du jeu copié !': 'Game link copied!',
   'Transport Strides : arrivée — {0}': 'Strides transport: arrived — {0}',
   'Sauvegarde': 'Save data',

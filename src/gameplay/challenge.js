@@ -4,7 +4,7 @@
 //
 // Règle de versionnage : une version publiée ne change plus. Toute modification d'une condition (parcours, hauteur,
 // cheval, météo, temps accordé, règle) crée une nouvelle version (`defi-pole-v2`…) avec son propre record.
-import { BUILD } from '../config.js';
+import { BUILD, CONFIG } from '../config.js';
 import { t, T, LANG, num, hourText } from '../core/i18n.js';
 
 const deepFreeze = (o) => {
@@ -147,7 +147,8 @@ export const CHALLENGES = {
 export const CURRENT_CHALLENGE = DEFI_POLE_V6;
 // Défis proposés (application Activités) : la version courante de chaque défi.
 export const CURRENT_CHALLENGES = [DEFI_POLE_V6, DEFI_PARIS_V3];
-export const SIGNATURE = 'STRIDES Grand Tour';
+// Signature du jeu (texte de partage, pied de la carte de résultat) : Equestrian Tour.
+export const SIGNATURE = CONFIG.name;
 
 // Pénalités de temps : 1 point par seconde entamée au-delà du temps accordé.
 export function timeFaults(t, allowed, perSecond = 1) {
