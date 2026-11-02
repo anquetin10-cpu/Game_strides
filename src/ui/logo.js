@@ -44,7 +44,7 @@ let loading = null;
 let warned = false;
 
 // Précharge les deux fichiers (une seule fois). Ne rejette jamais : un fichier illisible laisse l'emplacement neutre.
-export function loadBrandImages(timeoutMs = 15000) {
+export function loadBrandImages(timeoutMs = 6000) {
   if (loading) return loading;
   if (typeof Image === 'undefined') return (loading = Promise.resolve(false));
   const load = (src) =>
@@ -70,37 +70,42 @@ export function loadBrandImages(timeoutMs = 15000) {
 export const brandImagesReady = () => !!(images.full && images.mark);
 
 // Versions recolorées (une teinte unie, alpha d'origine) et réduites par moitiés successives pour un rendu net à
-// petite taille ; cache par fichier et par couleur.
+// petite taille. Seul le niveau réellement dessiné est gardé en cache (par fichier, couleur et niveau) : les étapes
+// intermédiaires sont libérées aussitôt (mémoire limitée sur iPhone).
 const tinted = new Map();
-function levels(which, color) {
-  const key = `${which}|${color}`;
-  let lv = tinted.get(key);
-  if (lv) return lv;
-  const im = images[which];
+function tintedLevel(which, color, target) {
   const l = which === 'mark' ? LOGO_MARK : LOGO_FULL;
-  const c = document.createElement('canvas');
+  // Niveau : la plus petite réduction dont la hauteur reste ≥ la hauteur dessinée (le fichier entier sinon).
+  let idx = 0;
+  for (let hh = l.h; hh > 24; idx++) {
+    const n = Math.max(1, Math.round(hh / 2));
+    if (n < target) break;
+    hh = n;
+  }
+  const key = `${which}|${color}|${idx}`;
+  let c = tinted.get(key);
+  if (c) return c;
+  c = document.createElement('canvas');
   c.width = l.w;
   c.height = l.h;
   const x = c.getContext('2d');
-  x.drawImage(im, 0, 0, l.w, l.h);
+  x.drawImage(images[which], 0, 0, l.w, l.h);
   x.globalCompositeOperation = 'source-in';
   x.fillStyle = color;
   x.fillRect(0, 0, l.w, l.h);
-  lv = [c];
-  let prev = c;
-  while (prev.height > 24) {
+  for (let i = 0; i < idx; i++) {
     const n = document.createElement('canvas');
-    n.width = Math.max(1, Math.round(prev.width / 2));
-    n.height = Math.max(1, Math.round(prev.height / 2));
+    n.width = Math.max(1, Math.round(c.width / 2));
+    n.height = Math.max(1, Math.round(c.height / 2));
     const nx = n.getContext('2d');
     nx.imageSmoothingEnabled = true;
     nx.imageSmoothingQuality = 'high';
-    nx.drawImage(prev, 0, 0, n.width, n.height);
-    lv.push(n);
-    prev = n;
+    nx.drawImage(c, 0, 0, n.width, n.height);
+    c.width = c.height = 0;
+    c = n;
   }
-  tinted.set(key, lv);
-  return lv;
+  tinted.set(key, c);
+  return c;
 }
 
 // Dessine le logo officiel (complet, ou le monogramme si mark) recoloré en `color`, coin haut-gauche (x, y), hauteur h,
@@ -117,13 +122,10 @@ export function drawLogo(ctx, x, y, h, color, mark = false) {
     }
     return w;
   }
-  const lv = levels(which, color);
   // Hauteur réelle en pixels du canevas (transformation courante) : niveau juste au-dessus, puis réduction finale.
   const m = ctx.getTransform ? ctx.getTransform() : null;
   const k = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1 : 1;
-  const target = h * k;
-  let src = lv[0];
-  for (const c of lv) if (c.height >= target) src = c;
+  const src = tintedLevel(which, color, h * k);
   ctx.save();
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';

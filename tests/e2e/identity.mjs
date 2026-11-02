@@ -422,6 +422,12 @@ r = await E(async () => {
   const lh = 40, k = 0.5 / 256 / (0.7 / 512);
   out.tapis = match(tack.padTexture().image, { x: 512 - 20 - lh * (1247 / 355) * k, y: 256 * 0.8 - lh / 2, h: lh, sx: k, chan: 2 });
   out.tapisDroit = match(tack.padTexture().image, { x: 20, y: 256 + 256 * 0.8 - lh / 2, h: lh, sx: k, chan: 2 });
+  // Cheval classique : même emprise, élargissement mesuré sur sa géométrie de tapis (1,77).
+  const kc = 1.77, lwc = lh * (1247 / 355) * k, lhc = lwc / ((1247 / 355) * kc);
+  out.tapisClassique = match(tack.tackMaterial().map.image, { x: 512 - 20 - lwc, y: 256 * 0.8 - lhc / 2, h: lhc, sx: kc, chan: 2 });
+  // Enseigne de la colline : logo découpé (transparence), à ses proportions.
+  const cut = T.logoCutoutTexture('#f4f3ef').image;
+  out.colline = match(cut, { x: 0, y: 8, h: cut.height - 16 });
   // Panneaux de la lice de Paris (texture du lot de la zone) : premier emplacement, logo resserré de k pour être juste
   // une fois posé sur 40 m × 0,9 m.
   let board = null;
@@ -475,6 +481,8 @@ await view('24-pole-bandeaux-lice', 13, [334, 0.7, -262], [322, 1.3, -249], 50);
 await view('25-pole-ecran-geant', 13, [384, 8.5, -267], [366, 3, -243], 55);
 await view('26-affiche-route', 13, [-12, 6.6, -92], [-18, 2.2, -74], 55);
 await view('27-paris-panneaux-lice', 13, [4010, 0.6, 23], [3998, 2, 8], 60);
+await view('27b-colline-logo-depuis-la-ville', 13, [120, 7, 480], [110, 9, -230], 22);
+await view('27c-colline-logo-de-pres', 13, [120, 7, 480], [112, 5, 418], 55);
 await E(() => window.__game.setRegion('deauville'));
 // Tapis de selle (Comète sellée, vue de profil).
 await E(() => {

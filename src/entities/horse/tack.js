@@ -19,8 +19,15 @@ const PALETTE = [
   ['#0f0f0f', 0.8, 0], // 9 caoutchouc (rênes, étriers)
 ];
 
-let padTex = null;
-function makePadTexture() {
+// Élargissement horizontal du logo pour qu'une fois posé sur le tapis il garde les proportions du fichier : rapport,
+// à l'emplacement du logo, entre la longueur de tapis couverte par un pixel de texture en hauteur (v) et en longueur (u).
+//   - cheval réaliste : une moitié de texture (512 × 256) couvre environ 0,70 m × 0,50 m (scripts/real/build-horse.mjs) ;
+//   - cheval classique : mesuré sur la géométrie du tapis (scripts/horse/tack.mjs), près du coin arrière-bas : 1,77.
+const WIDEN_REAL = 0.5 / 256 / (0.7 / 512);
+const WIDEN_CLASSIC = 1.77;
+let padTex = null; // cheval classique
+let padTexReal = null; // cheval réaliste
+function makePadTexture(widen) {
   if (typeof document === 'undefined') {
     const t = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
     t.needsUpdate = true;
@@ -56,11 +63,10 @@ function makePadTexture() {
     g.fillRect(0, y0 + half - 9, S, 9);
   }
   // Bleu : logo officiel Strides (fichier d'origine) près du coin arrière-bas, lisible de chaque côté, entre le bord
-  // arrière et le quartier de la selle / la sangle (environ 0,27 m de large). Une moitié de texture (512 × 256) couvre
-  // environ 0,70 m × 0,50 m de tapis (scripts/real/build-horse.mjs) : le logo est dessiné élargi d'autant pour garder,
-  // une fois posé, les proportions du fichier.
-  const lh = 40;
-  const lw = lh * LOGO_ASPECT * (0.5 / 256 / (0.7 / 512));
+  // arrière et le quartier de la selle / la sangle (même emprise en longueur sur les deux modèles), dessiné élargi de
+  // `widen` pour garder, une fois posé, les proportions du fichier (hauteur déduite de la largeur).
+  const lw = 40 * LOGO_ASPECT * WIDEN_REAL;
+  const lh = lw / (LOGO_ASPECT * widen);
   const logo = (x, y) => {
     g.save();
     g.translate(x, y);
@@ -103,10 +109,10 @@ diffuseColor.rgb = tcol;
 `;
 
 const mats = new Map();
-// Texture du tapis (partagée avec le tapis du cheval réaliste).
+// Texture du tapis du cheval réaliste (même dessin, logo à ses proportions sur ce modèle).
 export function padTexture() {
-  if (!padTex) padTex = makePadTexture();
-  return padTex;
+  if (!padTexReal) padTexReal = makePadTexture(WIDEN_REAL);
+  return padTexReal;
 }
 
 // boots : couleur des guêtres équipées (null : guêtres noires d'origine).
@@ -114,7 +120,7 @@ export function tackMaterial(pad = '#15161a', trim = '#f2f1ec', boots = null) {
   const key = pad + trim + (boots || '');
   let m = mats.get(key);
   if (m) return m;
-  if (!padTex) padTex = makePadTexture();
+  if (!padTex) padTex = makePadTexture(WIDEN_CLASSIC);
   m = new THREE.MeshStandardMaterial({ map: padTex, roughness: 1, metalness: 1 });
   const U = {
     uCol: { value: PALETTE.map((p, i) => new THREE.Color(i === 5 && boots ? boots : p[0])) },

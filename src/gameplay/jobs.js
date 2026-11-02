@@ -102,7 +102,7 @@ export function generateJob(game, seq, level) {
         const truck = g.player.truck;
         g.missions.noWhistle = true;
         return [
-          S.custom({ text: () => (g.player.inTruck ? '' : t('Monte dans le camion Strides')), target: () => truck.pos, radius: 4, update: () => g.player.inTruck }),
+          S.custom({ text: () => (g.player.inTruck ? '' : t('Monte dans le camion')), target: () => truck.pos, radius: 4, update: () => g.player.inTruck }),
           S.custom({ text: T`Va charger le cheval — ${A.name}`, target: A, radius: 10, update: () => g.player.inTruck && Math.hypot(truck.pos.x - A.x, truck.pos.z - A.z) < 12 && Math.abs(truck.speed) < 1.5 }),
           S.custom({
             text: t('Chargement…'),

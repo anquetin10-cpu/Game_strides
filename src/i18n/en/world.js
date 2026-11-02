@@ -46,7 +46,7 @@ export default {
   'CSO · CSI 3★ · CSI 5★': 'Show jumping · CSI 3★ · CSI 5★',
   'ENTRÉE DE PISTE': 'ARENA ENTRANCE',
   'JURY': 'JUDGES',
-  'Chronométrage · STRIDES': 'Timing · STRIDES',
+  'Chronométrage': 'Timing',
   'Courses de galop': 'Flat racing',
   'Maréchal-ferrant': 'Farrier',
   'CLINIQUE VÉTÉRINAIRE': 'VETERINARY CLINIC',

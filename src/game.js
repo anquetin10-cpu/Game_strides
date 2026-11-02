@@ -230,7 +230,7 @@ export class Game {
       this.drivables.push(v);
       this.vehicles.push(v);
     }
-    // Van porte-chevaux STX Renault Master (modèle fourni, voir masterModel.js) : véhicule distinct du camion Strides,
+    // Van porte-chevaux STX Renault Master (modèle fourni, voir masterModel.js) : véhicule distinct du camion,
     // garé à l'Écurie du Val, chargement des chevaux par son pont latéral. Fichier absent ou incomplet : erreur signalée
     // (console et message en jeu), le reste du jeu continue sans le van.
     this.vanModelInfo = { file: MASTER_FILE, loaded: false, error: null };
@@ -930,7 +930,7 @@ export class Game {
     };
     // État du cheval (énergie, hydratation, soins…).
     if (this.mainHorse) (this.save.data.horseCare ||= {})[this.mainHorse.id] = this.mainHorse.cond.toJSON();
-    // Carburant du camion Strides.
+    // Carburant du camion.
     this.save.data.fuel = { truck: Math.round(this.truck.sim.fuelL * 10) / 10 };
   }
 
@@ -1248,7 +1248,7 @@ export class Game {
     ];
     for (const [p, kind] of pois) out.push({ x: p.x, z: p.z, kind, label: full ? p.name : '' });
     if (this.player.mode !== 'ride' && this.mainHorse && !this.mainHorse.hiddenInTruck) out.push({ x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, kind: 'horse', sticky: true, label: full ? this.mainHorse.name : '' });
-    if (!(this.player.mode === 'drive' && this.player.vehicle === this.truck)) out.push({ x: this.truck.pos.x, z: this.truck.pos.z, kind: 'truck', label: full ? t('Camion Strides') : '' });
+    if (!(this.player.mode === 'drive' && this.player.vehicle === this.truck)) out.push({ x: this.truck.pos.x, z: this.truck.pos.z, kind: 'truck', label: full ? t('Camion de l’écurie') : '' });
     const f = this.player.focus.pos;
     for (const b of this.collectibles.blips()) if (Math.hypot(b.x - f.x, b.z - f.z) < 70) out.push(b);
     return out;
@@ -1263,6 +1263,14 @@ export class Game {
     try {
       // Portrait sur mobile : rien n'avance (chronos, heure du monde, déplacements) jusqu'au retour à l'horizontale.
       if (this.rotateMq?.matches && this.state === 'play') return;
+      // Écran entièrement couvert (publicités de la nuit) : la simulation est déjà suspendue ; ni la scène, ni le HUD,
+      // ni la carte ne sont mis à jour ou redessinés (rien n'en est visible : batterie). Seules les commandes sont lues,
+      // pour qu'aucun appui ne reste en attente.
+      if (this.renderHold && this.state === 'play') {
+        this.input.poll();
+        this.input.endFrame();
+        return;
+      }
       if (this.state === 'play' || this.state === 'photo') this.update(dt);
       else if (this.state === 'title') this.updateTitle(dt);
       this.realism?.update();

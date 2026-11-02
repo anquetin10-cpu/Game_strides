@@ -136,11 +136,11 @@ export const LAST_NAMES = ['Martin', 'Bernard', 'Duval', 'Lefèvre', 'Moreau', '
 // Répliques des passants (PNJ) — témoignages Strides façon GTA.
 export const CHATTER = [
   t('J’ai trouvé un groom en dix minutes sur Strides. Dix minutes !'),
-  t('Mon transporteur ? Réservé sur Strides. Suivi en direct, zéro stress.'),
-  t('Tu as vu le Grand Prix du Pôle ? Les inscriptions étaient sur l’app.'),
+  t('Mon chauffeur pour le concours ? Trouvé sur Strides, aller-retour.'),
+  t('Tu as vu le Grand Prix du Pôle ? Quel parcours !'),
   t('Le maréchal est passé ce matin. Profil vérifié, avis au top.'),
-  t('Je cherchais une pension avec paddock… Strides m’a sorti trois écuries en 2 secondes.'),
-  t('Mon cheval voyage mieux que moi. Merci Strides Transport.'),
+  t('Ma groom était malade : j’ai trouvé un renfort sur Strides, profil vérifié.'),
+  t('Mon cheval voyage mieux que moi. Merci au chauffeur !'),
   t('Si tu veux des missions, active tes notifications Strides.'),
   t('Ici, tout le monde est sur Strides. Même le boulanger a un cheval.'),
   t('Belle journée pour un galop sur la plage !'),

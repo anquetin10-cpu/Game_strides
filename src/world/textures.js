@@ -137,6 +137,20 @@ export function logoTexture(dark = true) {
   return t;
 }
 
+// Logo officiel découpé (une teinte, fond transparent, proportions du fichier) : enseigne de la colline, lue par
+// transparence (alphaTest). Fichier non chargé : texture vide (emplacement neutre, jamais un logo de substitution).
+export function logoCutoutTexture(color = '#f4f3ef') {
+  const key = `logoCut${color}`;
+  if (cache.has(key)) return cache.get(key);
+  const W = 2048, H = Math.round((W * LOGO_FULL.h) / LOGO_FULL.w) + 16;
+  const cv = canvas(W, H);
+  drawLogo(cv.getContext('2d'), 0, 8, H - 16, color);
+  const t = toTexture(cv);
+  t.generateMipmaps = true;
+  cache.set(key, t);
+  return t;
+}
+
 // Écran de bord du Defender (matériau « UI_Strides » du modèle fourni) : son lettrage « STRIDES » en police générique
 // est remplacé par le logo officiel, même teinte, même définition, fond transparent. L'écran (0,254 × 0,041 m) étire
 // sa texture (512 × 120) d'un facteur 6,2 / 4,27 : le logo y est dessiné resserré d'autant pour garder, une fois posé,

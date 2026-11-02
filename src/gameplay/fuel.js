@@ -1,5 +1,5 @@
 // Carburant : plein à la station-service de Deauville City (gazole ou sans-plomb selon le véhicule, payé au litre), alerte
-// de réserve, panne sèche et dépannage, niveau du camion Strides conservé dans la sauvegarde.
+// de réserve, panne sèche et dépannage, niveau du camion conservé dans la sauvegarde.
 import { STATION } from '../world/sites.js';
 import { clamp, dec } from '../core/math.js';
 import { t, T } from '../core/i18n.js';

@@ -1,5 +1,5 @@
 // Defender 110 STRIDES (type stable « defender110_hero ») : véhicule personnel principal du personnage, distinct du
-// camion Strides (Scania) et du van Master. Même dynamique que les autres véhicules (vehicle.js, caractéristiques
+// camion STX (Scania) et du van Master. Même dynamique que les autres véhicules (vehicle.js, caractéristiques
 // « defender110_hero » de truckPhysics.js), modèle fourni (defenderModel.js) : roues et pivots de braquage du fichier,
 // volant, quatre portes et coffre à ouverture latérale pilotés par le jeu (rotations des clips Open_*, une seule
 // écriture par pièce), feux. Pas de cheval à bord : déplacements, rencontres et objets légers rangés dans le coffre.

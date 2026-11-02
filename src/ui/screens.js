@@ -14,7 +14,7 @@ const TIPS = [
   t('Touche la minimap pour ouvrir la carte et placer un repère GPS.'),
   t('Les fers d’or sont cachés dans tout Deauville City. Trouve-les tous !'),
   t('Ton téléphone vibre ? Une nouvelle mission Strides t’attend.'),
-  t('Le transport Strides peut t’emmener où tu veux, toi et ton cheval.'),
+  t('Le camion de l’écurie peut t’emmener où tu veux, toi et ton cheval.'),
 ];
 
 export class Screens {

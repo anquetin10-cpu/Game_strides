@@ -387,7 +387,7 @@ export const STORY = [
   // 5 — Transport express : charger Quabar au haras, le livrer au Pôle en douceur, le décharger et le confier.
   {
     id: 'transport', story: true, vertical: 'TRANSPORT', category: 'Transport', title: t('Transport express'), level: 2, requires: ['fugueur'],
-    desc: t('Conduire le camion Strides : charger Quabar au haras et le livrer au Pôle International, en douceur.'),
+    desc: t('Conduire le camion : charger Quabar au haras et le livrer au Pôle International, en douceur.'),
     client: C.antoine, place: POI.home, placeName: t('Écurie du Val (camion)'), pay: 260, xp: 300, duration: '~6 min',
     irl: t('« Besoin d’un chauffeur pour partir en concours ? » Sur Strides, des chauffeurs proposent le transport des chevaux vers les concours, aller-retour.'),
     timeoutText: t('Quabar est arrivé trop tard pour son épreuve.'),
@@ -402,7 +402,7 @@ export const STORY = [
       const H = PARKS.haras;
       return [
         S.custom({
-          text: () => (game.player.inTruck ? '' : t('Monte dans le camion Strides (Écurie du Val)')),
+          text: () => (game.player.inTruck ? '' : t('Monte dans le camion (Écurie du Val)')),
           target: () => truck.pos,
           radius: 5,
           hint: t('Au volant : joystick vers le haut = accélérer, vers le bas = freiner puis reculer. Rampe fermée pour rouler.'),

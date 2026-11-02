@@ -67,7 +67,7 @@ const tapSel = async (page, sel) => {
   const bb = await page.locator(sel).first().boundingBox();
   await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2);
 };
-const phase = (page) => page.evaluate(() => { const o = document.querySelector('.night-seq'); return o ? { phase: o.dataset.phase, ad: o.dataset.ad || null, tag: o.querySelector('.ad-tag')?.textContent, skip: !o.querySelector('.ad-skip')?.classList.contains('hidden') } : null; });
+const phase = (page) => page.evaluate(() => { const o = document.querySelector('.night-seq'); return o ? { phase: o.dataset.phase, ad: o.dataset.ad || null, tag: o.querySelector('.ad-tag')?.textContent, skip: !!o.querySelector('.ad-skip') && !o.querySelector('.ad-skip').classList.contains('hidden') && !o.querySelector('.ad-skip').classList.contains('invisible') } : null; });
 const waitPhase = (page, re, ms = 15000) => page.waitForFunction((re) => new RegExp(re).test(document.querySelector('.night-seq')?.dataset.phase || ''), re, { timeout: ms });
 // Une image du jeu (la boucle est arrêtée : le test calcule les images aux étapes clés ; la séquence de nuit, elle,
 // avance en temps réel).
@@ -81,15 +81,27 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   await setup(page);
   const at = await toBed(page);
   check('dans la chambre, au bord du lit : « Se coucher »', at.inside && at.cur === 'Se coucher', JSON.stringify(at));
-  // La vraie boucle du jeu tourne (rendu de la scène derrière la transition).
-  await page.evaluate(() => { const g = window.__game; g.interact.update(); g.interact.trigger(); });
+  // La vraie boucle du jeu tourne pendant toute la nuit (simulation suspendue par la séquence elle-même, scène 3D
+  // non redessinée pendant les publicités) ; un relevé toutes les 100 ms (phase, heure du jeu, besoins du cheval).
+  await page.evaluate(() => {
+    const g = window.__game;
+    window.__auto.startLoop();
+    window.__nightSamples = [];
+    window.__nightSampler = setInterval(() => {
+      const o = document.querySelector('.night-seq');
+      if (!o) return;
+      const c = g.mainHorse.cond;
+      window.__nightSamples.push({ ph: o.dataset.phase, t: g.save.data.gameTime, sat: c.satiety, hyd: c.hydration, hold: !!g.renderHold, paused: !!g.simPaused });
+    }, 100);
+    g.interact.update();
+    g.interact.trigger();
+  });
   await page.waitForTimeout(500);
   await shot(page, '0-menu-du-lit');
   const before = await page.evaluate(() => { const g = window.__game, c = g.mainHorse.cond; return { sat: c.satiety, hyd: c.hydration, e: g.energy.value, t: g.save.data.gameTime, ads: { ...g.save.data.ads } }; });
   const t0 = Date.now();
   await tapSel(page, '.overlay [data-choice="night"]');
   await waitPhase(page, '^dusk$', 4000);
-  await render(page);
   await page.waitForTimeout(300);
   const lying = await page.evaluate(() => { const g = window.__game; return { lying: !!g.home.lying, locked: g.player.locked, paused: g.simPaused }; });
   await shot(page, '1-coucher-tombee-de-la-nuit');
@@ -99,7 +111,7 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   await page.waitForTimeout(600);
   const p1 = await phase(page);
   await shot(page, '2-publicite-1-emplacement-kingsland');
-  check('publicité 1 : emplacement Kingsland (habillage neutre, mention « Partenaire »)', p1.ad === 'kingsland-aw26-nuit:neutre' && p1.tag === 'Partenaire', JSON.stringify(p1));
+  check('publicité 1 : emplacement Kingsland (habillage neutre, mention « Partenaire »), « Passer » pas encore proposé', p1.ad === 'kingsland-aw26-nuit:neutre' && p1.tag === 'Partenaire' && !p1.skip, JSON.stringify(p1));
   const neutral = await page.evaluate(() => ({ text: document.querySelector('.ad-neutral')?.innerText || '', img: !!document.querySelector('.ad-neutral img') }));
   check('habillage neutre : aucune marque ni logo Kingsland affiché', !/kingsland/i.test(neutral.text) && !neutral.img, neutral.text.replace(/\n/g, ' / '));
   await page.waitForTimeout(800);
@@ -123,7 +135,6 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   const canSkip = (await phase(page))?.phase === 'ad-2';
   if (canSkip) await tapSel(page, '.ad-skip');
   await waitPhase(page, '^(dawn|day)$', 3000);
-  await render(page);
   await page.waitForTimeout(700);
   await shot(page, '4-lever-du-jour');
   await page.waitForFunction(() => !document.querySelector('.night-seq') && document.querySelector('.overlay [data-id="newday-ok"]'), null, { timeout: 8000 });
@@ -140,7 +151,16 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   // par exemple pendant une capture d'écran en rendu logiciel, sans rattrapage).
   const seqSecs = after.ads.log.reduce((a, x) => a + x.seconds, 0) + 1.6 + 1.8;
   check('durée de la séquence : nuit 1,6 s + publicités (4,5 s chacune, moins si « Passer ») + lever du jour 1,8 s', seqSecs <= 12.6 && seqSecs > 6, `${seqSecs.toFixed(1)} s de séquence (temps réel mesuré par le test, captures comprises : ${total.toFixed(1)} s)`);
+  // Relevés pendant la séquence : heure du jeu figée avant la nuit puis au matin (un seul saut, à l'écran noir),
+  // besoins du cheval constants, simulation suspendue partout, scène non redessinée pendant les publicités seulement.
+  const S = await page.evaluate(() => { clearInterval(window.__nightSampler); return window.__nightSamples; });
+  const pre = S.filter((x) => x.ph === 'dusk'), post = S.filter((x) => /^(ad-|dawn|day)/.test(x.ph)), ads = S.filter((x) => /^ad-/.test(x.ph));
+  const flat = (a, k) => a.length > 1 && a.every((x) => Math.abs(x[k] - a[0][k]) < 1e-4);
+  check('pendant la séquence (relevés toutes les 100 ms) : heure figée avant et après le passage à 7:00, besoins du cheval constants, simulation suspendue', flat(pre, 't') && flat(post, 't') && flat(S, 'sat') && flat(S, 'hyd') && S.every((x) => x.paused) && Math.abs(((post[0]?.t / 3600) % 24) - 7) < 0.01, JSON.stringify({ n: S.length, dusk: pre.length, apres: post.length, t: [pre[0]?.t, post[0]?.t], sat: [S[0]?.sat, S.at(-1)?.sat] }));
+  check('scène 3D non redessinée pendant les publicités, rendu repris au lever du jour', ads.length > 3 && ads.every((x) => x.hold) && S.filter((x) => /^(dusk|dawn|day)$/.test(x.ph)).every((x) => !x.hold) && !(await page.evaluate(() => window.__game.renderHold)), `${ads.length} relevés pendant les publicités`);
   await tapSel(page, '.overlay [data-id="newday-ok"]');
+  // Suite des cas : boucle arrêtée, images calculées par le test.
+  await page.evaluate(() => window.__auto.stopLoop());
 
   // ---------- 3. Pas de publicité ----------
   // Même nuit relancée (heure ramenée à 22:30 de la veille) : simple fondu.
@@ -254,6 +274,8 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   // « Découvrir Strides » : ouvre strides-app.com dans un nouvel onglet, seulement au toucher (la page est simulée
   // ici, sans réseau) ; la séquence continue.
   await ctx.route(/strides-app\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>Strides</title>' }));
+  // (le bouton ignore les touchers de la première demi-seconde de la publicité : pas d'ouverture involontaire)
+  await page.waitForTimeout(900);
   const popupP = ctx.waitForEvent('page', { timeout: 15000 }).catch(() => null);
   await tapSel(page, '.ad-cta');
   const popup = await popupP;
@@ -261,8 +283,9 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   await popup?.close();
   await page.waitForTimeout(1200);
   await shot(page, '6-petit-ecran-publicite-2');
-  const fit = await page.evaluate(() => { const f = document.querySelector('.ad-frame').getBoundingClientRect(), s = document.querySelector('.ad-skip').getBoundingClientRect(); return { f: [f.left, f.top, f.right, f.bottom].map(Math.round), s: [s.left, s.top, s.right, s.bottom].map(Math.round), vw: innerWidth, vh: innerHeight }; });
+  const fit = await page.evaluate(() => { const f = document.querySelector('.ad-frame').getBoundingClientRect(), s = document.querySelector('.ad-skip').getBoundingClientRect(), c = document.querySelector('.ad-cta').getBoundingClientRect(); return { f: [f.left, f.top, f.right, f.bottom].map(Math.round), s: [s.left, s.top, s.right, s.bottom].map(Math.round), c: [c.left, c.top, c.right, c.bottom].map(Math.round), vw: innerWidth, vh: innerHeight }; });
   check('petit écran : cadre et « Passer » dans l’écran', fit.f[0] >= 0 && fit.f[2] <= fit.vw && fit.s[3] <= fit.vh && fit.s[2] <= fit.vw && fit.f[1] >= 0, JSON.stringify(fit));
+  check('« Découvrir Strides » à gauche, « Passer » à droite (jamais l’un sous l’autre)', fit.c[2] + 40 < fit.s[0] && fit.c[0] >= 0, JSON.stringify({ cta: fit.c, passer: fit.s }));
   await ctx.close();
 }
 

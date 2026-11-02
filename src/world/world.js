@@ -2,9 +2,6 @@
 import { ParisZone } from './paris.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { FontLoader } from 'three/addons/loaders/FontLoader.js';
-import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
 import { mulberry32, polyDist, clamp } from '../core/math.js';
 import { t, T, LANG, num } from '../core/i18n.js';
 import { WORLD, ROADS, ZONES, HIPPO, XC_PATH, POND, SIGN, LIGHTHOUSE, ARCH, shoreZ, forestDensity, isReserved, nearestRoad } from './layout.js';
@@ -29,12 +26,10 @@ import {
 import { buildGrassMask, clearGrassUnder } from './grass.js';
 import { Vegetation } from './vegetation.js';
 import { createHorseMesh } from '../entities/horseModel.js';
-import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture, fasciaTexture, bladeTexture, chalkTexture, streetPlateTexture } from './textures.js';
+import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, logoCutoutTexture, roadSignTexture, fasciaTexture, bladeTexture, chalkTexture, streetPlateTexture } from './textures.js';
 import { getFields, hedgeRuns, nearPath } from './fields.js';
 import { storeFascia, storeBlade, storeDecal, decalMesh, storeSignMesh } from './storeBrand.js';
-
-const font = new FontLoader().parse(fontJson);
-
+import { LOGO_ASPECT } from '../ui/logo.js';
 
 // Places de stationnement de Deauville City (voitures conduisibles garées) : [x, z, cap].
 const TOWN_PARKING = [
@@ -407,16 +402,6 @@ export class World {
     this.group.add(mesh);
   }
 
-  text3D(str, size, depth, color) {
-    const g = new TextGeometry(str, { font, size, depth, curveSegments: 2, bevelEnabled: false });
-    g.computeBoundingBox();
-    const bb = g.boundingBox;
-    g.translate(-(bb.max.x + bb.min.x) / 2, 0, -depth / 2);
-    prep(g);
-    paint(g, color);
-    return { geo: g, width: bb.max.x - bb.min.x };
-  }
-
   // ---------- Routes ----------
   buildRoads() {
     const positions = [];
@@ -649,7 +634,7 @@ export class World {
     jp.push([cyl(0.12, 0.17, 0.2, 10), '#c9a24a', { x: 1.6, y: 3.0, z: 1.2 }]);
     this.batch.add(partsToGeo(jp), null, jx, jy, jz, -Math.PI / 2);
     this.colliders.addBox(jx, jz, 1.6, 2.1, 0, Infinity, 'building');
-    this.texturedPanel(signTexture(t('JURY'), t('Chronométrage · STRIDES'), { dark: true }), 3.2, 0.62, jx - 1.62, jy + 4.2, jz, -Math.PI / 2, { doubleSided: true });
+    this.texturedPanel(signTexture(t('JURY'), t('Chronométrage'), { dark: true }), 3.2, 0.62, jx - 1.62, jy + 4.2, jz, -Math.PI / 2, { doubleSided: true });
   }
 
   // Tribune en gradins face à +Z (local) : marches béton, sièges baquets, escaliers, garde-corps vitré,
@@ -1753,25 +1738,33 @@ export class World {
     this.batch.add(partsToGeo([[cone(5, 46, 6), '#e4e0d4'], [cone(1.4, 4, 6), '#7ea35a', { y: 44 }]]), null, A.x - 40, -6, A.z - 26, 0);
   }
 
+  // Enseigne de la colline, face à la ville : le logo officiel Strides découpé (fichier d'origine, une teinte, aux
+  // proportions du fichier) sur une ossature d'acier, à la place des anciennes lettres « STRIDES » en police générique.
+  // Panneau rigide (jamais recomposé lettre à lettre) : posé au-dessus du point le plus haut du terrain, pieds jusqu'au sol.
+  // Toujours dessiné (l'enseigne se voit depuis Deauville City, à environ 750 m).
   buildSignHill() {
-    const letters = 'STRIDES';
-    const size = 8.5;
-    const parts = letters.split('').map((ch) => this.text3D(ch, size, 1.2, '#f4f3ef'));
-    const gap = 2.2;
-    const total = parts.reduce((s, p) => s + p.width, 0) + gap * (letters.length - 1);
-    // Lettres face au nord : on les place d'est en ouest pour qu'elles se lisent depuis la ville.
-    let x = SIGN.x + total / 2;
+    const hgt = 12.5;
+    const w = hgt * LOGO_ASPECT;
     const z = SIGN.z - 40;
-    for (const p of parts) {
-      const cx = x - p.width / 2;
-      const y = this.h(cx, z) - 0.6;
-      // Lettres face au nord (vers la ville), lisibles depuis Deauville City.
-      this.batch.add(p.geo, null, cx, y, z, Math.PI, 1, 1, 1);
-      this.batch.add(box(0.3, 2, 0.3), '#6d6f73', cx - p.width * 0.3, y - 1, z + 1.2, 0);
-      this.batch.add(box(0.3, 2, 0.3), '#6d6f73', cx + p.width * 0.3, y - 1, z + 1.2, 0);
-      this.colliders.addBox(cx, z, p.width / 2, 0.8, 0, Infinity, 'letter');
-      x -= p.width + gap;
-    }
+    const xs = Array.from({ length: 9 }, (_, i) => SIGN.x - w / 2 + (w * i) / 8);
+    const ground = xs.map((x) => this.h(x, z));
+    const base = Math.max(...ground) + 0.4;
+    const mat = new THREE.MeshStandardMaterial({ map: logoCutoutTexture('#f4f3ef'), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.6 });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(w, hgt), mat);
+    sign.name = 'strides-hill-logo';
+    // Face lisible vers le nord (la ville) ; vue de dos, la découpe se lit en miroir, comme une enseigne réelle.
+    sign.position.set(SIGN.x, base + hgt / 2, z);
+    sign.rotation.y = Math.PI;
+    sign.receiveShadow = true;
+    this.group.add(sign);
+    // Ossature : longerons derrière le logo et pieds jusqu'au terrain.
+    this.batch.add(box(w * 0.96, 0.35, 0.35), '#6d6f73', SIGN.x, base + hgt * 0.22, z + 0.45, 0);
+    this.batch.add(box(w * 0.96, 0.35, 0.35), '#6d6f73', SIGN.x, base + hgt * 0.7, z + 0.45, 0);
+    xs.forEach((x, i) => {
+      const legH = base + hgt * 0.8 - ground[i] + 0.6;
+      this.batch.add(box(0.35, legH, 0.35), '#6d6f73', x === xs[0] ? x + 0.6 : x === xs[8] ? x - 0.6 : x, ground[i] - 0.6, z + 0.45, 0);
+    });
+    this.colliders.addBox(SIGN.x, z, w / 2, 0.8, 0, Infinity, 'letter');
   }
 
   buildCountryside() {

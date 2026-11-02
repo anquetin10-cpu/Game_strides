@@ -25,6 +25,13 @@ describe('marques et campagnes', () => {
     const k = CAMPAIGNS.find((c) => c.advertiser === 'kingsland');
     expect(campaignLive({ ...k, status: 'authorized' })).toBe(false); // marque non autorisée, pas de visuel
   });
+  it('campagne vidéo : diffusée seulement avec son film, marque et campagne autorisées', () => {
+    const v = { id: 'v', advertiser: 'strides', slot: 'night', order: 2, duration: 4.5, start: '2026-11-01', end: null, status: 'authorized', creative: { type: 'video', src: null } };
+    const now = Date.parse('2026-11-02T00:00:00Z');
+    expect(campaignLive(v, now)).toBe(false);
+    expect(campaignLive({ ...v, creative: { type: 'video', src: '/film.mp4' } }, now)).toBe(true);
+    expect(campaignLive({ ...v, advertiser: 'kingsland', creative: { type: 'video', src: '/film.mp4' } }, now)).toBe(false);
+  });
   it('durées configurables, « Passer » possible', () => {
     for (const c of CAMPAIGNS) expect(c.duration).toBeGreaterThanOrEqual(4);
     expect(NIGHT_SLOT.skipAfter).toBeLessThanOrEqual(1.5);

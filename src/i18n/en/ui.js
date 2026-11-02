@@ -153,7 +153,7 @@ export default {
   'Touche la minimap pour ouvrir la carte et placer un repère GPS.': 'Tap the minimap to open the map and drop a GPS marker.',
   'Les fers d’or sont cachés dans tout Deauville City. Trouve-les tous !': 'Golden horseshoes are hidden all over Deauville City. Find them all!',
   'Ton téléphone vibre ? Une nouvelle mission Strides t’attend.': 'Phone buzzing? A new Strides mission is waiting for you.',
-  'Le transport Strides peut t’emmener où tu veux, toi et ton cheval.': 'Strides transport can take you and your horse wherever you like.',
+  'Le camion de l’écurie peut t’emmener où tu veux, toi et ton cheval.': 'The stable horsebox can take you and your horse wherever you like.',
   'Tourne ton téléphone': 'Rotate your phone',
   '{0} se joue à l’horizontale.': '{0} is played in landscape.',
   'Application intégrée': 'Built-in app',

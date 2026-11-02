@@ -9,7 +9,7 @@ import { choiceCard } from './story2.js';
 import { h } from '../ui/dom.js';
 import { rainTarget } from '../world/weather.js';
 import { CONFIG } from '../config.js';
-import { playNight, preloadNightMedia } from '../ui/nightAds.js';
+import { playNight, preloadNightMedia, nightProgramIds } from '../ui/nightAds.js';
 import { NIGHT_SLOT } from '../partners/campaigns.js';
 
 export const WAKE_HOUR = LIFE.sleep.wake;
@@ -198,7 +198,11 @@ export class Rest {
     let hours = 0;
     // La nuit : heure du réveil, énergie, cheval reposé, météo recalée, partie enregistrée (au plus noir de la
     // transition : un rechargement pendant les publicités reprend au matin, sans les revoir).
+    let adNight = null;
     const apply = () => {
+      // Nuit à publicités : marquée avec la nuit appliquée (même sauvegarde) ; ni un rechargement ni une seconde
+      // interaction ne la rejouent.
+      if (adNight !== null) d.ads = { ...(d.ads || {}), lastNight: adNight };
       const wake = nextWake(d.gameTime);
       hours = (wake - d.gameTime) / 3600;
       d.gameTime = wake;
@@ -223,15 +227,23 @@ export class Rest {
     // Nuit de jeu (jour du réveil) : au plus une séquence de publicités par nuit.
     const night = Math.floor(nextWake(d.gameTime) / 86400);
     if (kind === 'night' && this.adsAllowed(night)) {
-      // Marquée avant l'affichage : ni un rechargement ni une seconde interaction ne la rejouent.
-      d.ads = { ...(d.ads || {}), lastNight: night };
-      playNight(g, { ads: true, instant: !!g.syncFade, onDusk: apply })
-        .then(({ shown }) => {
-          const A = d.ads;
-          A.count = (A.count || 0) + 1;
-          A.log = [...(A.log || []), ...shown.map((s) => ({ night, ...s }))].slice(-10);
-          this.lastNight = { night, shown };
-        })
+      adNight = night;
+      const log = (shown) => {
+        const A = d.ads;
+        A.count = (A.count || 0) + 1;
+        A.log = [...(A.log || []), ...shown.map((s) => ({ night, ...s }))].slice(-10);
+        this.lastNight = { night, shown };
+      };
+      // Tests pas à pas (transitions synchrones) : même enchaînement, sans affichage.
+      if (g.syncFade) {
+        apply();
+        log(nightProgramIds());
+        finish();
+        g.saveSoon?.();
+        return true;
+      }
+      playNight(g, { ads: true, onDusk: apply })
+        .then(({ shown }) => log(shown))
         .catch((e) => {
           console.warn('[nuit] transition', e);
           if (!hours) apply();

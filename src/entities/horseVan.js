@@ -1,4 +1,4 @@
-// Van porte-chevaux « STX Renault Master » : véhicule conduisible distinct du camion Strides (Scania), même dynamique
+// Van porte-chevaux « STX Renault Master » : véhicule conduisible distinct du camion (Scania), même dynamique
 // que les autres véhicules (vehicle.js, caractéristiques « master » de truckPhysics.js), avec son modèle fourni
 // (masterModel.js) : roues et braquage du fichier, pont latéral droit et ses volets, porte arrière, feux. Les chevaux
 // montent par le pont latéral (gameplay/vanLoading.js). Pas de départ tant que le pont ou la porte arrière est ouvert.

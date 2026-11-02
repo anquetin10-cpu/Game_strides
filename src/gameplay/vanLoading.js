@@ -1,6 +1,6 @@
 // Van porte-chevaux (STX Renault Master) : ouverture du pont latéral droit (et de ses volets) et de la porte arrière,
 // chargement / déchargement des chevaux par le pont latéral, chevaux attachés dans leurs stalles pendant le trajet,
-// sauvegarde et reprise. Le camion Strides (Scania) garde son propre transport (transport.js).
+// sauvegarde et reprise. Le camion STX (Scania) garde son propre transport (transport.js).
 // Chargement : cheval mené en main au pied du pont ouvert → il monte (perpendiculaire au van) par l'avant de l'ouverture,
 // pivote et avance dans la stalle libre tête vers l'arrière (stalle du fond d'abord : le bas-flanc central s'ouvre pour
 // le laisser passer, puis se referme ; ensuite la stalle côté pont). Déchargement : il recule hors de sa stalle, pivote

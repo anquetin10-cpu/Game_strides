@@ -127,7 +127,7 @@ export const PARIS_MISSION = {
       S.dialog([
         say(T`${game.save.data.playerName}, après ta victoire au Grand Prix CSI 5★, le Grand Prix de Paris Indoor t’invite : 40 couples d’élite, une arène couverte et un format pensé comme une course de Formule 1.`),
         say(t('Le principe : un Sprint à 1,50 m, au chrono pur, décide de la grille de départ. Le soir, le Grand Prix à 1,60 m : le plus rapide du Sprint part en dernier. Barrage pour les sans-faute.')),
-        say(T`Charge ${nm()} dans le camion Strides et prends l’autoroute A13, au bout de la route Est-Ouest. On t’attend au parking des camions.`),
+        say(T`Charge ${nm()} dans le camion et prends l’autoroute A13, au bout de la route Est-Ouest. On t’attend au parking des camions.`),
       ]),
       notInParis(loadStep(game, S, { horse: main, name: nm() })),
       notInParis(driveStep(game, S, { to: A13.deauville, text: t('Roule jusqu’à l’autoroute A13 — au bout de la route Est-Ouest'), comfort: true })),

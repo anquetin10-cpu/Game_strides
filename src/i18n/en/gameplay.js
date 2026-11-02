@@ -58,7 +58,7 @@ export default {
   'Bienvenue à Deauville City': 'Welcome to Deauville City',
   '{0}, tu arrives avec Comète, ta jument baie, et zéro euro en poche. Ici, tout le monde travaille avec STRIDES : les missions tombent sur ton téléphone. Accepte-les, réalise-les, construis ta réputation… jusqu’au Grand Prix.': '{0}, you arrive with Comète, your bay mare, and not a single euro in your pocket. Here, everyone works with STRIDES: missions land on your phone. Accept them, complete them, build your reputation… all the way to the Grand Prix.',
   'En selle': 'Saddle up',
-  'Camion Strides': 'Strides horsebox',
+  'Camion de l’écurie': 'Stable horsebox',
   '{0} t’attend dehors.': '{0} is waiting for you outside.',
   'Ton cheval': 'Your horse',
   // Noms de zones (game.zoneName, traduits à l'affichage).
@@ -215,7 +215,7 @@ export default {
   'barème A au chrono, barrage': 'Table A against the clock, jump-off',
   '{0}, après ta victoire au Grand Prix CSI 5★, le Grand Prix de Paris Indoor t’invite : 40 couples d’élite, une arène couverte et un format pensé comme une course de Formule 1.': '{0}, after your win in the CSI 5★ Grand Prix, the Grand Prix de Paris Indoor is inviting you: 40 elite combinations, an indoor arena and a format designed like a Formula 1 race.',
   'Le principe : un Sprint à 1,50 m, au chrono pur, décide de la grille de départ. Le soir, le Grand Prix à 1,60 m : le plus rapide du Sprint part en dernier. Barrage pour les sans-faute.': 'Here’s how it works: a 1.50 m Sprint, purely against the clock, decides the starting order. In the evening, the 1.60 m Grand Prix: the fastest in the Sprint goes last. Jump-off for the clear rounds.',
-  'Charge {0} dans le camion Strides et prends l’autoroute A13, au bout de la route Est-Ouest. On t’attend au parking des camions.': 'Load {0} into the Strides horsebox and take the A13 motorway, at the end of the East-West road. We’ll be waiting for you in the lorry park.',
+  'Charge {0} dans le camion et prends l’autoroute A13, au bout de la route Est-Ouest. On t’attend au parking des camions.': 'Load {0} into the horsebox and take the A13 motorway, at the end of the East-West road. We’ll be waiting for you in the lorry park.',
   'Roule jusqu’à l’autoroute A13 — au bout de la route Est-Ouest': 'Drive to the A13 motorway — at the end of the East-West road',
   'Arrêté sur la bretelle : prends l’autoroute vers Paris (bouton « Autoroute A13 »)': 'Stopped on the slip road: take the motorway to Paris (“A13 motorway” button)',
   'Accréditations': 'Accreditation',
@@ -327,7 +327,7 @@ export default {
   // ---------- travel.js ----------
   'la bretelle de l’autoroute A13 (sortie est)': 'the A13 motorway slip road (east exit)',
   'la bretelle de l’autoroute A13 (Paris)': 'the A13 motorway slip road (Paris)',
-  'Monte au volant du camion Strides.': 'Get behind the wheel of the Strides horsebox.',
+  'Monte au volant du camion.': 'Get behind the wheel of the horsebox.',
   'Pas assez de gazole pour {0} km ({1} l nécessaires) : fais le plein à la station-service.': 'Not enough diesel for {0} km ({1} l needed): fill up at the petrol station.',
   'Charge d’abord {0} dans le camion : il ne rentre pas sans toi.': 'Load {0} into the horsebox first: your horse isn’t going home without you.',
   'Autoroute A13': 'A13 motorway',

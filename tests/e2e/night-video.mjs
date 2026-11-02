@@ -2,7 +2,7 @@
 // pas une capture d'iPhone réel).
 //  A. image par image (15 images/s, une image tous les deux pas de 1/30 s) : retour à la maison le soir, chambre,
 //     « Se coucher », menu du lit, « Dormir jusqu'au matin » ;
-//  B. en temps réel (enregistrement vidéo du navigateur) : personnage couché, nuit, publicité 1 (emplacement
+//  B. en temps réel (enregistrement vidéo du navigateur, boucle du jeu active) : personnage couché, nuit, publicité 1 (emplacement
 //     Kingsland, habillage neutre), publicité 2 (Strides, laissée jusqu'au bout), lever du jour, carte « Bonjour ! » ;
 //  C. image par image : « Commencer la journée », le matin (7:00, énergie 100 %).
 // Usage : BASE=http://127.0.0.1:5173 node tests/e2e/night-video.mjs
@@ -90,31 +90,14 @@ await hold('a', 26);
 
 // ---------- B. La nuit, en temps réel ----------
 await caption('');
-// La scène derrière la transition est recalculée à chaque changement de phase (boucle du jeu arrêtée).
-await ev(() => {
-  const g = window.__game;
-  let last = '';
-  window.__nightWatch = setInterval(() => {
-    const o = document.querySelector('.night-seq');
-    const ph = o?.dataset.phase || '';
-    if (ph !== last) {
-      last = ph;
-      window.__auto.tick(1);
-      g.hud._lifeT = 0;
-      g.hud.update(0);
-      g.sky.update(g.hour(), g.player.focus.pos, 0);
-      g.sky.follow(g.camera);
-      g.sky.updateEnvironment(g.renderer, performance.now() / 1000, true);
-      g.renderer.render(g.scene, g.camera);
-    }
-  }, 50);
-});
+// La vraie boucle du jeu tourne pendant toute la nuit (comme en jeu : scène non redessinée pendant les publicités).
+await ev(() => window.__auto.startLoop());
 const tB0 = Date.now();
 await ev(() => window.__auto.tap(document.querySelector('.overlay [data-choice="night"]')));
 await page.waitForFunction(() => !document.querySelector('.night-seq') && document.querySelector('.overlay [data-id="newday-ok"]'), null, { timeout: 120000 });
 await page.waitForTimeout(2500);
 const tB1 = Date.now();
-await ev(() => clearInterval(window.__nightWatch));
+await ev(() => window.__auto.stopLoop());
 const log = await ev(() => window.__game.save.data.ads.log);
 
 // ---------- C. Le matin ----------

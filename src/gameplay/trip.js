@@ -113,7 +113,7 @@ export function driveStep(game, S, { to, text, timer = null, comfort = false, on
     to,
     text: () => {
       const p = P(game), tk = TK(game);
-      if (!p.inTruck) return p.mode === 'drive' ? t('Gare-toi et monte au volant du camion Strides') : tk.rampClosed ? t('Monte au volant du camion') : t('Ferme la rampe et monte au volant');
+      if (!p.inTruck) return p.mode === 'drive' ? t('Gare-toi et monte au volant du camion') : tk.rampClosed ? t('Monte au volant du camion') : t('Ferme la rampe et monte au volant');
       const d = Math.hypot(tk.pos.x - to.x, tk.pos.z - to.z);
       return d < to.r + 4 ? t('Gare le camion et arrête-toi') : text;
     },
@@ -206,7 +206,7 @@ export function competitionDef(level, startHour) {
     vertical: 'EVENEMENTS',
     category: 'CSO',
     title: T`Concours du Pôle — ${cls.name} ${dec(cls.h, 2)} m`,
-    desc: T`CSO au Pôle International, barème A au chrono (règlement FEI). Charge ton cheval dans le camion Strides, gare-toi au parking des camions, retire ton dossard au secrétariat, échauffe-toi puis entre en piste. Épreuves de 8 h 30 à 21 h (en soirée sous les projecteurs) : passage environ 5 h après l’engagement, ou le lendemain matin (prochain passage possible : ${hhmm(startHour)}). Engagement ${cls.fee} €.`,
+    desc: T`CSO au Pôle International, barème A au chrono (règlement FEI). Charge ton cheval dans le camion, gare-toi au parking des camions, retire ton dossard au secrétariat, échauffe-toi puis entre en piste. Épreuves de 8 h 30 à 21 h (en soirée sous les projecteurs) : passage environ 5 h après l’engagement, ou le lendemain matin (prochain passage possible : ${hhmm(startHour)}). Engagement ${cls.fee} €.`,
     client: { name: 'Pôle International', initials: 'PI', rating: 4.9, verified: true },
     place: { x: POI.pole.x, z: POI.pole.z },
     placeName: 'Pôle International',

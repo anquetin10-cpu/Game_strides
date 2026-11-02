@@ -37,8 +37,9 @@ export const CAMPAIGNS = [
     // Autorisation de la campagne (en plus de celle de la marque) : visuels de la collection automne-hiver 2026.
     status: 'pending',
     creative: {
+      // 'image' (photographie) ou 'video' (film muet, lu en ligne ; poster : image d'attente).
       type: 'image',
-      // Photographie de campagne officielle (format paysage, sans déformation des produits) : à fournir.
+      // Photographie (ou film) de campagne officielle (format paysage, sans déformation des produits) : à fournir.
       src: null,
       logo: null,
       // Texte court (lisible sur iPhone), validé avec la marque : pas de promotion ni de partenariat inventés.
@@ -62,7 +63,14 @@ export const CAMPAIGNS = [
       // Créa originale animée (voir src/ui/nightAds.js) : besoin équestre → application réelle → promesses réelles du
       // site officiel → logo officiel → invitation discrète. Textes repris de get.strides-app.com (21 octobre 2026).
       type: 'strides-story',
+      // Accroche : formulée par le porteur du projet dans sa demande (2 novembre 2026).
       headline: 'Ton prochain job dans le monde du cheval commence ici.',
+      // Provenance des autres textes (copie de get.strides-app.com du 21 octobre 2026, citée mot pour mot) :
+      //   - « Votre groom annule à la dernière minute ? », « Besoin d'un chauffeur pour partir en concours ? »
+      //     (section « Le bon réflexe — La solution aux urgences du quotidien ») ;
+      //   - « Profils vérifiés · Paiement sécurisé · Sans abonnement » (bandeau sous le titre principal).
+      // Visuels : logo officiel et capture authentique de l'application (BRANDS.strides.assets).
+      copySource: 'https://get.strides-app.com/ (21 octobre 2026)',
     },
     url: 'https://strides-app.com/',
     frequency: { perNight: 1 },
@@ -77,7 +85,7 @@ export function campaignLive(c, now = Date.now()) {
   const a = day(c.start), b = day(c.end);
   if (a !== null && now < a) return false;
   if (b !== null && now > b + 86400000) return false;
-  if (c.creative?.type === 'image' && !c.creative.src) return false;
+  if ((c.creative?.type === 'image' || c.creative?.type === 'video') && !c.creative.src) return false;
   return true;
 }
 

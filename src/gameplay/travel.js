@@ -1,5 +1,5 @@
 // Voyage en camion Deauville ↔ Paris (Grand Prix de Paris Indoor) : au bout de l'autoroute (sortie est de la route
-// Est-Ouest, côté Deauville ; voie d'accès du parking, côté Paris), le camion Strides à l'arrêt se voit proposer le
+// Est-Ouest, côté Deauville ; voie d'accès du parking, côté Paris), le camion à l'arrêt se voit proposer le
 // trajet. Écran de voyage (200 km, 2 h 10, gazole consommé), puis arrivée au parking de l'autre région, chevaux à bord.
 import { PARIS } from '../world/sites.js';
 import { regionOf } from '../world/layout.js';
@@ -50,7 +50,7 @@ export class Travel {
   blocker(from) {
     const g = this.game;
     const tk = g.truck;
-    if (!g.player.inTruck) return t('Monte au volant du camion Strides.');
+    if (!g.player.inTruck) return t('Monte au volant du camion.');
     if (tk.sim.fuelL < TRIP.fuelL + 2) {
       // Plein possible à l'aire de service (proposé sur la carte) ; sinon, solde insuffisant.
       const q = fillQuote(tk.sim, g.save.data.money, AIRE.prices);

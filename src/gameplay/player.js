@@ -186,7 +186,7 @@ export class Player {
     if (this.mode === 'drive') return this.vehicle.heading;
     return this.human.heading;
   }
-  // Au volant du camion Strides (les missions de transport l'exigent).
+  // Au volant du camion (les missions de transport l'exigent).
   get inTruck() {
     return this.mode === 'drive' && this.vehicle === this.truck;
   }
@@ -525,7 +525,7 @@ export class Player {
     return true;
   }
 
-  // Téléportation (transport Strides, chargement de partie).
+  // Téléportation (transport du camion, chargement de partie).
   teleport(x, z, heading = 0, withHorse = true) {
     this.boarding?.cancel();
     this.horseMount?.cancel();
