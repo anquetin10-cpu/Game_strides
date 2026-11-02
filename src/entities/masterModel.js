@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { addCloudShadows } from '../world/sky.js';
 import { cutDoor, lineCab } from './doorCut.js';
+import { buildStxLivery } from './livery.js';
 import masterUrl from '../assets/vehicles/STX_Renault_Master_STALLE5.glb?url';
 
 export const MASTER_FILE = 'src/assets/vehicles/STX_Renault_Master_STALLE5.glb';
@@ -178,9 +179,11 @@ export function buildMasterModel(gltf) {
   const interiorMat = mats.get('White') || new THREE.MeshStandardMaterial();
   interiorMat.emissive = new THREE.Color(1, 0.93, 0.82);
   interiorMat.emissiveIntensity = 0;
+  // Habillage STX des flancs du box (logo officiel s'il est autorisé, habillage neutre sinon) : voir livery.js.
+  const livery = buildStxLivery(model);
 
   return {
-    root, body, model, wheels, parts, lights, interiorMat,
+    root, body, model, wheels, parts, lights, interiorMat, livery,
     // Ouverture (0 fermé … 1 ouvert) : pont latéral et volets ensemble, porte arrière seule.
     setSide(k) {
       set(parts.ramp, k);

@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { addCloudShadows } from '../world/sky.js';
 import { cutDoor, lineCab } from './doorCut.js';
+import { buildStxLivery } from './livery.js';
 import stxUrl from '../assets/vehicles/STX_Scania_DETAILLE.glb?url';
 
 export const STX_FILE = 'src/assets/vehicles/STX_Scania_DETAILLE.glb';
@@ -285,9 +286,11 @@ export function buildStxModel(gltf) {
   const interiorMat = mats.get('White_gloss') || new THREE.MeshStandardMaterial();
   interiorMat.emissive = new THREE.Color(1, 0.93, 0.82);
   interiorMat.emissiveIntensity = 0;
+  // Habillage STX des flancs (logo officiel s'il est autorisé, habillage neutre sinon) : voir livery.js.
+  const livery = buildStxLivery(model);
 
   return {
-    root, body, model,
+    root, body, model, livery,
     ramp: node('rear_ramp'), door: node('living_door'), roof: node('roof_shell'),
     gates: [], partition: new THREE.Object3D(), wheels, stallPartitions,
     materials: { body: interiorMat },
