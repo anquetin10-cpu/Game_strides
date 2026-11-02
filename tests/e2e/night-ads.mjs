@@ -87,6 +87,10 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
     const g = window.__game;
     window.__auto.startLoop();
     window.__nightSamples = [];
+    // Images de l'écran par phase (fluidité).
+    window.__raf = {};
+    const raf = () => { const ph = document.querySelector('.night-seq')?.dataset.phase; if (ph) window.__raf[ph] = (window.__raf[ph] || 0) + 1; if (window.__nightSampler) requestAnimationFrame(raf); };
+    requestAnimationFrame(raf);
     window.__nightSampler = setInterval(() => {
       const o = document.querySelector('.night-seq');
       if (!o) return;
@@ -119,7 +123,7 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   check('« Passer » proposé après 1 s', skipShown);
   await waitPhase(page, '^ad-2$', 25000);
   const tAd2 = Date.now();
-  check('publicité 1 affichée environ 4,5 s', Math.abs((tAd2 - tAd1) / 1000 - 4.5) < 1.2, `${((tAd2 - tAd1) / 1000).toFixed(2)} s`);
+  const wallAd1 = (tAd2 - tAd1) / 1000;
   // Contenu lu dès le début de la publicité 2 (les captures sont lentes en rendu logiciel).
   const p2 = await page.evaluate(() => { const o = document.querySelector('.night-seq'); return { ad: o.dataset.ad, tag: o.querySelector('.ad-tag')?.textContent, logo: o.querySelector('.as-logo')?.getAttribute('src') || '', app: o.querySelector('.as-screen img')?.getAttribute('src') || '', cta: o.querySelector('.ad-cta')?.textContent, ctaVisible: !o.querySelector('.ad-cta')?.classList.contains('hidden'), fine: o.querySelector('.as-fine')?.textContent }; });
   check('publicité 2 : Strides, mention « Publicité », logo officiel (fichier d’origine), capture réelle de l’application', p2.ad === 'strides-nuit-v1' && p2.tag === 'Publicité' && /strides-logo-full/.test(p2.logo) && /app-accueil-capture/.test(p2.app), JSON.stringify({ ...p2, logo: p2.logo.slice(0, 60), app: p2.app.slice(0, 60) }));
@@ -153,7 +157,14 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
   check('durée de la séquence : nuit 1,6 s + publicités (4,5 s chacune, moins si « Passer ») + lever du jour 1,8 s', seqSecs <= 12.6 && seqSecs > 6, `${seqSecs.toFixed(1)} s de séquence (temps réel mesuré par le test, captures comprises : ${total.toFixed(1)} s)`);
   // Relevés pendant la séquence : heure du jeu figée avant la nuit puis au matin (un seul saut, à l'écran noir),
   // besoins du cheval constants, simulation suspendue partout, scène non redessinée pendant les publicités seulement.
-  const S = await page.evaluate(() => { clearInterval(window.__nightSampler); return window.__nightSamples; });
+  const S = await page.evaluate(() => { clearInterval(window.__nightSampler); window.__nightSampler = null; return window.__nightSamples; });
+  // Durée de la publicité 1 sur l'horloge de la séquence (en rendu logiciel, l'horloge murale s'allonge : voir plus bas).
+  check('publicité 1 affichée 4,5 s (horloge de la séquence)', Math.abs(after.ads.log[0].seconds - 4.5) < 0.3, `${after.ads.log[0].seconds} s de séquence ; ${wallAd1.toFixed(1)} s à l’horloge murale, captures d’écran comprises`);
+  // Fluidité : images de l'écran par seconde, par phase (relevés de 100 ms). Rendu logiciel : la tombée de la nuit
+  // dessine encore la scène 3D (lente ici) ; pendant les publicités, seule l'interface est composée.
+  const R = await page.evaluate(() => window.__raf);
+  const fps = Object.fromEntries(Object.entries(R).map(([ph, n]) => [ph, +(n / Math.max(0.1, S.filter((x) => x.ph === ph).length * 0.1)).toFixed(1)]).filter(Boolean));
+  check('fluidité pendant la publicité 2 : au moins 8 images/s, captures d’écran comprises (rendu logiciel)', (fps['ad-2'] || 0) >= 8, JSON.stringify(fps));
   const pre = S.filter((x) => x.ph === 'dusk'), post = S.filter((x) => /^(ad-|dawn|day)/.test(x.ph)), ads = S.filter((x) => /^ad-/.test(x.ph));
   const flat = (a, k) => a.length > 1 && a.every((x) => Math.abs(x[k] - a[0][k]) < 1e-4);
   check('pendant la séquence (relevés toutes les 100 ms) : heure figée avant et après le passage à 7:00, besoins du cheval constants, simulation suspendue', flat(pre, 't') && flat(post, 't') && flat(S, 'sat') && flat(S, 'hyd') && S.every((x) => x.paused) && Math.abs(((post[0]?.t / 3600) % 24) - 7) < 0.01, JSON.stringify({ n: S.length, dusk: pre.length, apres: post.length, t: [pre[0]?.t, post[0]?.t], sat: [S[0]?.sat, S.at(-1)?.sat] }));

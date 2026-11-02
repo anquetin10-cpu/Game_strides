@@ -481,7 +481,7 @@ await view('24-pole-bandeaux-lice', 13, [334, 0.7, -262], [322, 1.3, -249], 50);
 await view('25-pole-ecran-geant', 13, [384, 8.5, -267], [366, 3, -243], 55);
 await view('26-affiche-route', 13, [-12, 6.6, -92], [-18, 2.2, -74], 55);
 await view('27-paris-panneaux-lice', 13, [4010, 0.6, 23], [3998, 2, 8], 60);
-await view('27b-colline-logo-depuis-la-ville', 13, [120, 7, 480], [110, 9, -230], 22);
+await view('27b-colline-logo-de-loin', 13, [120, 7, 480], [112, 16, 190], 30);
 await view('27c-colline-logo-de-pres', 13, [120, 7, 480], [112, 5, 418], 55);
 await E(() => window.__game.setRegion('deauville'));
 // Tapis de selle (Comète sellée, vue de profil).
@@ -489,7 +489,10 @@ await E(() => {
   const A = window.__auto, g = window.__game;
   A.mount();
   g.player.horse.setPosition(-100, 178, Math.PI / 2);
-  A.tick(5);
+  // Montée à cheval jouée jusqu'au bout (cavalier assis).
+  A.tick(300);
+  g.player.horse.setPosition(-100, 178, Math.PI / 2);
+  A.tick(2);
 });
 const hp = await E(() => { const p = window.__game.player.horse.pos; return [p.x, p.z]; });
 await view('28-tapis-selle-gauche', 13, [hp[0] - 0.25, 1.35, hp[1]], [hp[0] - 0.2, 1.5, hp[1] - 3.2], 40);
