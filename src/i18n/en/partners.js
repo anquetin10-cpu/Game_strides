@@ -5,7 +5,6 @@ export default {
   'Passer': 'Skip',
   'En savoir plus': 'Learn more',
   'Sellerie & Mode Équestre': 'Saddlery & Equestrian Fashion',
-  'Tenues d’équitation · Équipement du cheval': 'Riding wear · Horse equipment',
   'Boutique du jeu, en ville : essayer, acheter, s’équiper.': 'An in-game shop in town: try on, buy, gear up.',
   'Découvrir Strides': 'Discover Strides',
   'Votre groom annule à la dernière minute ?': 'Your groom cancels at the last minute?',
