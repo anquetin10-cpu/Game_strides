@@ -286,6 +286,8 @@ const buy = async (fixId, item, price) => {
   await act();
   await tick(2);
   const m0 = await ev(() => window.__game.save.data.money);
+  // (un joueur met toujours plus de 250 ms entre deux achats : délai de la protection contre le double appui)
+  await page.waitForTimeout(300);
   const found = await doubleTap(`.overlay [data-item="${item}"] [data-act^="Acheter"]`);
   await tick(2);
   const r = await ev((item) => { const d = window.__game.save.data; return { money: d.money, n: d.upgrades.filter((x) => x === item).length, eq: Object.values(d.equipped || {}).includes(item), stored: JSON.parse(localStorage.getItem('strides-grand-tour-v1')).money }; }, item);
