@@ -59,14 +59,17 @@ export const BRANDS = {
     neutral: { name: 'Sellerie & Mode Équestre', sub: 'Tenues d’équitation · Équipement du cheval' },
   },
   // STX : constructeur des camions et vans de chevaux du jeu (modèles 3D fournis). Le logo officiel n'est pas fourni :
-  // les grands emplacements latéraux des carrosseries restent neutres (les lettrages « STX » des modèles fournis sont
-  // conservés tels quels).
+  // les grands emplacements latéraux des carrosseries (src/partners/liveries.js : Scania et Master, deux flancs)
+  // portent l'habillage neutre (les lettrages « STX » des modèles fournis sont conservés tels quels).
+  // Activation : fichier officiel dans src/assets/partners/stx/ (PNG transparent ≥ 2 048 px de large, ou SVG avec
+  // width/height), importé ici dans assets.sideLogo, status 'authorized', authorization renseignée ({ by, scope }).
   stx: {
     id: 'stx',
     name: 'STX',
     kind: 'advertiser',
     status: 'pending',
     authorization: null,
+    // sideLogo : grand logo latéral des carrosseries (inscrit à ses proportions dans chaque emplacement).
     assets: { sideLogo: null },
     references: [],
     url: null,
