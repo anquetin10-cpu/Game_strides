@@ -4,6 +4,7 @@ import { horseAssets } from './assets.js';
 import { bakeCoatColors, createCoatMaterial, markings } from './coat.js';
 import { hairMaterial } from './hair.js';
 import { tackMaterial, tackIndex } from './tack.js';
+import { bonnetGeometry, bonnetMaterial } from './bonnet.js';
 import { mulberry32 } from '../../core/math.js';
 
 const _id = new THREE.Matrix4();
@@ -39,7 +40,7 @@ export function buildBones(assets) {
 }
 
 /**
- * opts : { coat, blaze, socks, saddle, pad, padTrim, seed }
+ * opts : { coat, blaze, socks, saddle, pad, padTrim, bootsColor, bonnet: { color, trim } | null, seed }
  */
 export function buildHorseMesh(opts = {}) {
   const A = horseAssets();
@@ -107,9 +108,15 @@ export function buildHorseMesh(opts = {}) {
     const cfg = { saddle: opts.saddle !== false, mounted: false, boots: opts.boots ?? opts.saddle !== false, lod: 0 };
     tg.setIndex(tackIndex(T, cfg));
     safeDispose(tg, []);
-    const part = attachPart(mesh, tg, tackMaterial(opts.pad, opts.padTrim));
+    const part = attachPart(mesh, tg, tackMaterial(opts.pad, opts.padTrim, opts.bootsColor));
     part.userData.cfg = cfg;
     mesh.userData.tack = part;
+    // Bonnet anti-mouches équipé : porté avec la bride (cheval sellé).
+    if (opts.bonnet) {
+      const b = attachPart(mesh, bonnetGeometry(opts.bonnet), bonnetMaterial());
+      b.visible = cfg.saddle;
+      mesh.userData.bonnet = b;
+    }
   }
   return { mesh, bones, skeleton };
 }
@@ -131,6 +138,11 @@ function applyTack(mesh) {
   const idx = tackIndex(horseAssets().tack, part.userData.cfg);
   if (part.geometry.index !== idx) part.geometry.setIndex(idx);
   part.visible = idx.count > 0;
+  const b = mesh.userData.bonnet;
+  if (b) {
+    b.visible = !!part.userData.cfg.saddle;
+    b.castShadow = !part.userData.cfg.lod;
+  }
 }
 
 /** Change l'équipement : { saddle, mounted, boots } (seuls les champs fournis changent). */
@@ -142,6 +154,31 @@ export function setHorseTack(mesh, cfg) {
   if (next.saddle === c.saddle && next.mounted === c.mounted && next.boots === c.boots) return;
   part.userData.cfg = next;
   applyTack(mesh);
+}
+
+/**
+ * Équipement visible changé sur place (sans recréer le cheval) : tapis { pad, trim }, couleur des guêtres (boots),
+ * bonnet ({ color, trim } ou null). Faux si impossible (pas de sellerie, matériau remplacé de l'extérieur).
+ */
+export function setHorseDress(mesh, { pad, trim, boots = null, bonnet = null } = {}) {
+  const part = mesh.userData.tack;
+  if (!part || mesh.userData.external) return false;
+  part.material = tackMaterial(pad, trim, boots);
+  const old = mesh.userData.bonnet;
+  if (old) {
+    mesh.remove(old);
+    mesh.userData.parts = mesh.userData.parts.filter((p) => p !== old);
+    old.geometry.dispose();
+    mesh.userData.bonnet = null;
+  }
+  if (bonnet) {
+    const b = attachPart(mesh, bonnetGeometry(bonnet), bonnetMaterial());
+    // Même calque que la sellerie (masquée sous le modèle réaliste).
+    b.layers.mask = part.layers.mask;
+    mesh.userData.bonnet = b;
+  }
+  applyTack(mesh);
+  return true;
 }
 
 // Ajoute une pièce skinnée (crins, sellerie) partageant le squelette du cheval.

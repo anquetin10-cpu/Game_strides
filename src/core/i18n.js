@@ -16,10 +16,11 @@ import world from '../i18n/en/world.js';
 import systems from '../i18n/en/systems.js';
 import life from '../i18n/en/life.js';
 import partners from '../i18n/en/partners.js';
+import store from '../i18n/en/store.js';
 
 export const LANGS = ['fr', 'en'];
 const KEY = 'strides-lang';
-const EN = Object.assign({}, common, story, story2, data, phone, ui, gameplay, world, systems, life, partners);
+const EN = Object.assign({}, common, story, story2, data, phone, ui, gameplay, world, systems, life, partners, store);
 
 function stored() {
   try {

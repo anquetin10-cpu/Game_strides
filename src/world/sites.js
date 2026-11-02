@@ -1,5 +1,9 @@
 // Plans détaillés des sites (partagés par la texture du sol, les bâtiments, la minimap et les missions).
 import { t } from '../core/i18n.js';
+import { storeSkin } from './storeSkin.js';
+
+// Habillage de la boutique d'équitation (nom, sous-titre : neutres tant que la marque n'est pas autorisée).
+const STORE = storeSkin();
 
 export const HOME = {
   barn: { x: -120, z: 150, w: 50, d: 12 },
@@ -166,10 +170,13 @@ export const SHOPS3D = {
     tie: [33.2, -241.6, 0], rail: [33.2, -239.4, 0],
     upper: { h: 6.2, floors: 2, timber: true, fill: 0, wood: 0, roof: '#565a61', roofType: 'gable', chimney: true },
   },
+  // Boutique d'équitation (tenues du cavalier, équipement du cheval) : ancienne Maison Lucette (même bâtiment, même
+  // porte, même barre d'attache ; identifiant 'boutique' gardé pour les sauvegardes). Nom et enseigne : habillage de la
+  // marque partenaire (storeBrand.js, partners.js) — neutre tant que la marque n'est pas autorisée.
   boutique: {
-    id: 'boutique', name: 'Maison Lucette', sub: t('Prêt-à-porter · Deauville City'), x: -41.7, z: -262, rot: Math.PI / 2, w: 10, d: 11, G: 3.9,
+    id: 'boutique', name: STORE.name, sub: STORE.sub, brand: STORE.brand, x: -41.7, z: -262, rot: Math.PI / 2, w: 10, d: 11, G: 3.9,
     openings: [[-4.4, -1.3, 'win'], [-0.7, 0.7, 'door'], [1.3, 4.4, 'win']],
-    front: '#232427', letters: '#d9bd7c', floor: '#a87b4f', walls: '#f3efe7', blade: 'hanger', awning: ['#1b1c1f', '#f2f1ec'],
+    front: '#232427', letters: '#e2cfa2', floor: '#a07850', walls: '#f1ece2', blade: 'store', awning: ['#232427', '#efe9dc'], decals: true, panel: '#232427',
     tie: [-21.8, -254.0, -Math.PI / 2], rail: [-24.0, -254.0, Math.PI / 2],
     upper: { h: 6.4, floors: 2, wall: '#e3d3bb', roof: '#4a4f57', roofType: 'hip', trim: '#f6f3ec', chimney: true },
   },

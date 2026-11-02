@@ -17,6 +17,7 @@ import { Travel, A13 } from './gameplay/travel.js';
 import { HOME, POLE, TOWN } from './world/sites.js';
 import { Horse } from './entities/horse.js';
 import { hoofWorldPosition } from './entities/horseModel.js';
+import { setHorseDress } from './entities/horse/mesh.js';
 import { Human } from './entities/human.js';
 import { Truck } from './entities/truck.js';
 import { TRUCK_DIM } from './entities/truckModel.js';
@@ -438,9 +439,9 @@ export class Game {
   spawnMainHorse(id, at = null) {
     const def = HORSES[id] || HORSES.comete;
     const pos = at || { x: HOME.horse.x, z: HOME.horse.z, heading: HOME.horse.rot };
-    // Tapis de selle équipé (Sellerie du Port).
-    const pad = this.commerce?.pad();
-    const h = this.spawnHorse(def, pos.x, pos.z, pos.heading ?? 0, { player: true, cond: this.save.data.horseCare?.[id], pad: pad?.pad, padTrim: pad?.trim });
+    // Équipement visible équipé : tapis de selle, couleur des guêtres, bonnet (Sellerie du Port, boutique d'équitation).
+    const tk = this.commerce?.horseTack();
+    const h = this.spawnHorse(def, pos.x, pos.z, pos.heading ?? 0, { player: true, cond: this.save.data.horseCare?.[id], pad: tk?.pad, padTrim: tk?.trim, bootsColor: tk?.boots, bonnet: tk?.bonnet });
     h.visibleDist = 600;
     this.applyUpgrades(h);
     this.mainHorse = h;
@@ -448,10 +449,21 @@ export class Game {
     return h;
   }
 
-  // Nouveau tapis équipé : le cheval est resellé sur place (position, cavalier, état conservés).
+  // Nouveau tapis, guêtres ou bonnet équipés : changés sur le cheval tel qu'il est (au box, dans le camion, monté…) ;
+  // modèle réaliste recréé aux nouvelles couleurs. Sinon, le cheval est resellé sur place (position, cavalier, état
+  // conservés).
   refreshTack() {
     const old = this.mainHorse;
     if (!old) return;
+    const tk = this.commerce?.horseTack() || {};
+    if (setHorseDress(old.mesh, tk)) {
+      const r = this.realism?.horses.get(old);
+      if (r) {
+        r.dispose();
+        this.realism.horses.delete(old);
+      }
+      return;
+    }
     const wasRiding = this.player.mode === 'ride' && this.player.horse === old;
     if (wasRiding) this.player.dismount(true);
     const at = { x: old.pos.x, z: old.pos.z, heading: old.heading };

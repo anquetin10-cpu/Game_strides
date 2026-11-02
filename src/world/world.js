@@ -31,6 +31,7 @@ import { Vegetation } from './vegetation.js';
 import { createHorseMesh } from '../entities/horseModel.js';
 import { adTexture, signTexture, bannerTexture, roadTexture, screenTexture, logoTexture, roadSignTexture, fasciaTexture, bladeTexture, chalkTexture, streetPlateTexture } from './textures.js';
 import { getFields, hedgeRuns, nearPath } from './fields.js';
+import { storeFascia, storeBlade, storeDecal, decalMesh, storeSignMesh } from './storeBrand.js';
 
 const font = new FontLoader().parse(fontJson);
 
@@ -1007,12 +1008,19 @@ export class World {
       const hx = (q ? spec.d : spec.w) / 2 - WALL_T, hz = (q ? spec.w : spec.d) / 2 - WALL_T;
       this.walkways.push([x - hx, x + hx, z - hz, z + hz, y + FLOOR_Y]);
       this.features.buildings.push({ x, z, w: spec.w, d: spec.d, rot, kind: 'shop' });
-      // Enseignes : bandeau peint, enseigne drapeau (deux faces).
+      // Enseignes : bandeau peint, enseigne drapeau (deux faces), lettrage des vitrines ; boutique d'une marque
+      // partenaire (spec.brand) : habillage de la marque, neutre tant qu'elle n'est pas autorisée (storeBrand.js).
       for (const sg of ext.signs) {
         const p = toW(sg.x, sg.z + (sg.kind === 'fascia' ? 0.004 : 0));
-        if (sg.kind === 'fascia') plane(fasciaTexture(spec.name, spec.sub, spec.front, spec.letters), sg.w, sg.h, p.x, y + sg.y, p.z, rot);
-        else {
-          const tex = bladeTexture(spec.blade, spec.front, spec.letters);
+        if (sg.kind === 'fascia') plane(spec.brand ? storeFascia(spec) : fasciaTexture(spec.name, spec.sub, spec.front, spec.letters), sg.w, sg.h, p.x, y + sg.y, p.z, rot);
+        else if (sg.kind === 'decal') {
+          const m = decalMesh(storeDecal(sg.id, spec), sg.w, sg.h);
+          m.position.set(p.x, y + sg.y, p.z);
+          m.rotation.y = rot;
+          this.group.add(m);
+          this.culled.push([m, p.x, p.z, 120]);
+        } else {
+          const tex = spec.brand ? storeBlade(spec) : bladeTexture(spec.blade, spec.front, spec.letters);
           for (const sd of [1, -1]) {
             const pp = toW(sg.bx + sd * 0.035, sg.z);
             plane(tex, sg.w, sg.h, pp.x, y + sg.y, pp.z, rot + (sd * Math.PI) / 2, 200);
@@ -1272,6 +1280,11 @@ export class World {
       group.add(mesh);
     }
     for (const sg of sh.layout.signs || []) {
+      // Boutique d'équitation : bandeau rétroéclairé derrière le comptoir, caisson lumineux (storeBrand.js).
+      if (sg.kind === 'brand' || sg.kind === 'poster') {
+        group.add(storeSignMesh(sg, spec));
+        continue;
+      }
       if (sg.kind === 'strides') {
         // Présentoir Strides : carton plié posé sur le comptoir.
         const tex = signTexture('STRIDES', t('Grooms · Cavaliers · Transport'), { dark: true, w: 512, h: 256, mark: true });

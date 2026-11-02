@@ -11,15 +11,19 @@ export const HORSES = {
   saphir: { id: 'saphir', name: 'Saphir', coat: 'chestnut', blaze: true, socks: [true, true, true, true], speed: 1.1, jump: 1.24, stamina: 1.2, price: 5500, value: 150000, breed: 'Holsteiner', age: 10, desc: t('Jument alezane, gagnante en Grand Prix. La crème.') },
 };
 
-// Catalogue des commerces de Deauville City (Sellerie du Port, Maison Lucette), le même dans les boutiques et dans
-// l'application du téléphone : mêmes articles, mêmes prix, mêmes règles d'achat (voir commerce.js).
+// Catalogue des commerces de Deauville City (Sellerie du Port, boutique d'équitation), le même dans les boutiques et
+// dans l'application du téléphone : mêmes articles, mêmes prix, mêmes règles d'achat (voir commerce.js).
 // - cat : rayon (SHOP_CATS) ; shop : commerce qui le vend ;
 // - desc : effet réellement appliqué (résumé), about : description de l'article ;
 // - kind 'consumable' : achats cumulables (quantité), utilisés depuis l'application Profil ; sinon article unique ;
 // - slot : équipement porté (un article par emplacement, choisi avec « Équiper ») ; effect : bonus du cheval pris en
 //   compte seulement s'il est équipé (ou, pour un article sans emplacement, dès l'achat) ;
-// - pad/trim : couleurs du tapis de selle ; wear : champs de tenue du personnage (tenues, casque, bottes) ;
+// - pad/trim : couleurs du tapis de selle ; boots : couleur des guêtres ; bonnet : { color, trim } du bonnet du cheval ;
+// - wear : champs de tenue du personnage (top, sleeve, collar : haut ; jacket : veste de concours ; pants : pantalon ;
+//   gloves : gants ; cap : casquette ; helmet : casque ; boots : bottes) ; concours : pantalon admis en concours
+//   (blanc ou clair ; sinon pantalon blanc réglementaire en concours, voir player.js) ;
 // - use : soins appliqués au cheval monté par un consommable (énergie, hydratation, propreté, pieds).
+// Noms de produits génériques et prix fictifs : aucun nom de collection, de modèle ni de slogan d'une marque réelle.
 export const SHOP_CATS = {
   selles: t('Selles'),
   briderie: t('Briderie'),
@@ -27,8 +31,13 @@ export const SHOP_CATS = {
   protections: t('Protections & ferrure'),
   soins: t('Pansage & soins'),
   cavalier: t('Équipement du cavalier'),
-  hauts: t('Hauts & vestes'),
-  accessoires: t('Accessoires'),
+  // Boutique d'équitation.
+  vestes: t('Vestes de concours & softshells'),
+  hauts: t('Polos & hauts'),
+  pantalons: t('Pantalons d’équitation'),
+  accessoires: t('Gants & casquettes'),
+  casques: t('Bottes & casques'),
+  cheval: t('Équipement du cheval'),
 };
 export const SHOP = [
   { id: 'selle', shop: 'sellerie', cat: 'selles', slot: 'selle', name: t('Selle mixte carbone'), desc: t('Puissance de saut +12 %'), about: t('Arçon carbone, siège semi-creux, quartiers mi-longs : polyvalente, du travail sur le plat au parcours.'), price: 380, effect: { jump: 0.12 } },
@@ -48,7 +57,34 @@ export const SHOP = [
   { id: 'veste', shop: 'sellerie', cat: 'cavalier', name: t('Veste de concours'), desc: t('Cosmétique : veste bleu marine portée en concours'), about: t('Veste softshell à col blanc, coupe ajustée.'), price: 150, effect: { outfit: 'competition' } },
   { id: 'casque', shop: 'sellerie', cat: 'cavalier', slot: 'casque', name: t('Casque bleu nuit'), desc: t('Cosmétique : casque porté à cheval'), about: t('Casque ventilé aux normes VG1, visière courte.'), price: 290, wear: { helmet: '#1f2b45' }, effect: {} },
   { id: 'bottes', shop: 'sellerie', cat: 'cavalier', slot: 'bottes', name: t('Bottes en cuir noir'), desc: t('Cosmétique : bottes hautes noires'), about: t('Bottes d’équitation en cuir de veau, zip arrière.'), price: 240, wear: { boots: '#121214' }, effect: {} },
-  // Maison Lucette (prêt-à-porter) : tenues portées à pied, au volant et à cheval hors concours.
+  // Boutique d'équitation (ancienne Maison Lucette : ses articles restent en rayon, mêmes identifiants pour les
+  // sauvegardes). Tenues portées à pied, au volant et à cheval ; la veste de concours, le pantalon et les gants équipés
+  // le sont aussi en concours (voir player.js).
+  { id: 'veste_concours_marine', shop: 'boutique', cat: 'vestes', slot: 'veste', name: t('Veste de concours marine'), desc: t('Cosmétique : veste portée en concours, et partout tant qu’elle est équipée'), about: t('Tissu technique extensible et respirant, col blanc amovible, coupe cintrée.'), price: 189, wear: { jacket: '#1f2b45' }, effect: {} },
+  { id: 'veste_concours_noire', shop: 'boutique', cat: 'vestes', slot: 'veste', name: t('Veste de concours noire'), desc: t('Cosmétique : veste portée en concours, et partout tant qu’elle est équipée'), about: t('Tissu technique extensible et respirant, col blanc amovible, coupe cintrée.'), price: 189, wear: { jacket: '#17181b' }, effect: {} },
+  { id: 'veste_concours_bordeaux', shop: 'boutique', cat: 'vestes', slot: 'veste', name: t('Veste de concours bordeaux'), desc: t('Cosmétique : veste portée en concours, et partout tant qu’elle est équipée'), about: t('Tissu technique extensible, doublure en maille, boutons en métal sombre.'), price: 199, wear: { jacket: '#5e1f2b' }, effect: {} },
+  { id: 'softshell_noire', shop: 'boutique', cat: 'vestes', slot: 'haut', name: t('Softshell noire'), desc: t('Cosmétique : haut de la tenue de tous les jours'), about: t('Veste softshell coupe-vent et déperlante, doublure polaire légère, poches zippées.'), price: 119, wear: { top: '#1b1c1f', sleeve: '#1b1c1f', collar: '#1b1c1f' }, effect: {} },
+  { id: 'softshell_marine', shop: 'boutique', cat: 'vestes', slot: 'haut', name: t('Softshell marine'), desc: t('Cosmétique : haut de la tenue de tous les jours'), about: t('Veste softshell coupe-vent et déperlante, doublure polaire légère, poches zippées.'), price: 119, wear: { top: '#24324a', sleeve: '#24324a', collar: '#24324a' }, effect: {} },
+  { id: 'polo_tech_blanc', shop: 'boutique', cat: 'hauts', slot: 'haut', name: t('Polo technique blanc'), desc: t('Cosmétique : haut de la tenue de tous les jours'), about: t('Maille technique respirante, col boutonné : à l’entraînement comme sous la veste de concours.'), price: 59, wear: { top: '#f4f3ef', sleeve: '#f4f3ef', collar: '#f4f3ef' }, effect: {} },
+  { id: 'polo_tech_marine', shop: 'boutique', cat: 'hauts', slot: 'haut', name: t('Polo technique marine'), desc: t('Cosmétique : haut de la tenue de tous les jours'), about: t('Maille technique respirante, col blanc contrasté, manches courtes.'), price: 59, wear: { top: '#1f2b45', sleeve: '#1f2b45', collar: '#f2f1ec' }, effect: {} },
+  { id: 'pantalon_beige', shop: 'boutique', cat: 'pantalons', slot: 'bas', concours: true, name: t('Pantalon d’équitation beige'), desc: t('Cosmétique : porté tous les jours et en concours'), about: t('Tissu stretch, fond de peau en silicone, taille haute : tenue en selle et liberté de mouvement.'), price: 129, wear: { pants: '#d9c7a0' }, effect: {} },
+  { id: 'pantalon_blanc', shop: 'boutique', cat: 'pantalons', slot: 'bas', concours: true, name: t('Pantalon d’équitation blanc'), desc: t('Cosmétique : porté tous les jours et en concours'), about: t('Le blanc des épreuves officielles : tissu stretch épais, non transparent, fond de peau en silicone.'), price: 129, wear: { pants: '#f4f3ef' }, effect: {} },
+  { id: 'pantalon_marine', shop: 'boutique', cat: 'pantalons', slot: 'bas', name: t('Pantalon d’équitation marine'), desc: t('Cosmétique : porté tous les jours (en concours : pantalon blanc réglementaire)'), about: t('Tissu stretch, fond de peau en silicone, passants larges pour la ceinture.'), price: 119, wear: { pants: '#1f2b45' }, effect: {} },
+  { id: 'pantalon_noir', shop: 'boutique', cat: 'pantalons', slot: 'bas', name: t('Pantalon d’équitation noir'), desc: t('Cosmétique : porté tous les jours (en concours : pantalon blanc réglementaire)'), about: t('Tissu stretch, fond de peau en silicone, passants larges pour la ceinture.'), price: 119, wear: { pants: '#1b1c1f' }, effect: {} },
+  { id: 'gants_noirs', shop: 'boutique', cat: 'accessoires', slot: 'gants', name: t('Gants d’équitation noirs'), desc: t('Cosmétique : gants portés à pied, à cheval et en concours'), about: t('Paume en synthétique adhérent, dos en maille aérée, fermeture auto-agrippante.'), price: 35, wear: { gloves: '#17181b' }, effect: {} },
+  { id: 'gants_blancs', shop: 'boutique', cat: 'accessoires', slot: 'gants', name: t('Gants d’équitation blancs'), desc: t('Cosmétique : gants portés à pied, à cheval et en concours'), about: t('Les gants clairs des épreuves : paume adhérente, poignet élastique.'), price: 35, wear: { gloves: '#ecebe6' }, effect: {} },
+  { id: 'casquette_blanche', shop: 'boutique', cat: 'accessoires', slot: 'tete', name: t('Casquette technique blanche'), desc: t('Cosmétique : portée à pied (le casque la remplace à cheval)'), about: t('Toile technique légère, bande anti-transpiration, réglage à l’arrière.'), price: 29, wear: { cap: '#f2f1ec' }, effect: {} },
+  { id: 'casque_noir_mat', shop: 'boutique', cat: 'casques', slot: 'casque', name: t('Casque noir mat'), desc: t('Cosmétique : casque porté à cheval'), about: t('Coque ventilée, visière courte, harnais réglable, aux normes européennes.'), price: 249, wear: { helmet: '#1c1d20' }, effect: {} },
+  { id: 'bottes_havane', shop: 'boutique', cat: 'casques', slot: 'bottes', name: t('Bottes en cuir havane'), desc: t('Cosmétique : bottes hautes havane'), about: t('Bottes hautes en cuir pleine fleur, zip arrière, semelle crantée.'), price: 259, wear: { boots: '#4a2c1a' }, effect: {} },
+  { id: 'tapis_anthracite', shop: 'boutique', cat: 'cheval', slot: 'tapis', name: t('Tapis anthracite'), desc: t('Cosmétique : tapis anthracite, liseré écru'), about: t('Tapis de selle matelassé, doublure respirante, passants de sangle et de sanglon.'), price: 65, pad: '#3b3f45', trim: '#e9e6df', effect: {} },
+  { id: 'tapis_vert', shop: 'boutique', cat: 'cheval', slot: 'tapis', name: t('Tapis vert anglais'), desc: t('Cosmétique : tapis vert anglais, liseré or'), about: t('Tapis de selle matelassé, doublure respirante, passants de sangle et de sanglon.'), price: 65, pad: '#2f4a3a', trim: '#c8a96e', effect: {} },
+  { id: 'tapis_ciel', shop: 'boutique', cat: 'cheval', slot: 'tapis', name: t('Tapis bleu ciel'), desc: t('Cosmétique : tapis bleu ciel, liseré blanc'), about: t('Coton matelassé, doublure en maille 3D, liseré contrasté.'), price: 62, pad: '#7fa7c9', trim: '#f2f1ec', effect: {} },
+  { id: 'bonnet_marine', shop: 'boutique', cat: 'cheval', slot: 'bonnet', name: t('Bonnet anti-mouches marine'), desc: t('Cosmétique : bonnet porté par le cheval sellé'), about: t('Coton tricoté, oreilles doublées pour atténuer les bruits, cordon de finition blanc.'), price: 45, bonnet: { color: '#1f2b45', trim: '#f2f1ec' }, effect: {} },
+  { id: 'bonnet_blanc', shop: 'boutique', cat: 'cheval', slot: 'bonnet', name: t('Bonnet anti-mouches blanc'), desc: t('Cosmétique : bonnet porté par le cheval sellé'), about: t('Coton tricoté, oreilles doublées pour atténuer les bruits, cordon de finition marine.'), price: 45, bonnet: { color: '#eeede8', trim: '#1f2b45' }, effect: {} },
+  { id: 'bonnet_bordeaux', shop: 'boutique', cat: 'cheval', slot: 'bonnet', name: t('Bonnet anti-mouches bordeaux'), desc: t('Cosmétique : bonnet porté par le cheval sellé'), about: t('Coton tricoté, oreilles doublées pour atténuer les bruits, cordon de finition or.'), price: 49, bonnet: { color: '#5e1f2b', trim: '#c8a96e' }, effect: {} },
+  { id: 'guetres_marine', shop: 'boutique', cat: 'cheval', slot: 'guetres', name: t('Guêtres ouvertes marine'), desc: t('Tolérance sur les barres +8 % · guêtres bleu marine'), about: t('Coque rigide, doublure amortissante, fermetures élastiques : protègent les tendons à l’obstacle.'), price: 310, boots: '#1f2b45', effect: { clearance: 0.08 } },
+  { id: 'guetres_blanches', shop: 'boutique', cat: 'cheval', slot: 'guetres', name: t('Guêtres ouvertes blanches'), desc: t('Tolérance sur les barres +8 % · guêtres blanches'), about: t('Coque rigide, doublure amortissante, fermetures élastiques : protègent les tendons à l’obstacle.'), price: 310, boots: '#e9e8e2', effect: { clearance: 0.08 } },
+  // Articles de l'ancienne Maison Lucette, toujours en rayon (polos, pulls, casquettes).
   { id: 'polo_blanc', shop: 'boutique', cat: 'hauts', slot: 'haut', name: t('Polo piqué blanc'), desc: t('Cosmétique : haut de la tenue de tous les jours'), about: t('Coton piqué, col côtelé.'), price: 45, wear: { top: '#f2f1ec', sleeve: '#f2f1ec' }, effect: {} },
   { id: 'pull_marin', shop: 'boutique', cat: 'hauts', slot: 'haut', name: t('Pull marin'), desc: t('Cosmétique : haut de la tenue de tous les jours'), about: t('Laine bouillie bleu marine, boutonné à l’épaule.'), price: 79, wear: { top: '#1f2b45', sleeve: '#1f2b45' }, effect: {} },
   { id: 'sweat_gris', shop: 'boutique', cat: 'hauts', slot: 'haut', name: t('Sweat gris chiné'), desc: t('Cosmétique : haut de la tenue de tous les jours'), about: t('Molleton brossé, poignets côtelés.'), price: 65, wear: { top: '#8a8f96', sleeve: '#8a8f96' }, effect: {} },
@@ -58,7 +94,10 @@ export const SHOP = [
   { id: 'casquette_beige', shop: 'boutique', cat: 'accessoires', slot: 'tete', name: t('Casquette beige'), desc: t('Cosmétique : portée à pied (le casque la remplace à cheval)'), about: t('Toile de coton délavée.'), price: 25, wear: { cap: '#c8b48e' }, effect: {} },
 ];
 // Emplacements d'équipement (nom affiché).
-export const SLOTS = { selle: t('Selle'), bridon: t('Bridon'), tapis: t('Tapis'), guetres: t('Guêtres'), cloches: t('Cloches'), casque: t('Casque'), bottes: t('Bottes'), haut: t('Haut'), tete: t('Couvre-chef') };
+export const SLOTS = { selle: t('Selle'), bridon: t('Bridon'), tapis: t('Tapis'), guetres: t('Guêtres'), cloches: t('Cloches'), bonnet: t('Bonnet'), casque: t('Casque'), bottes: t('Bottes'), haut: t('Haut'), veste: t('Veste de concours'), bas: t('Pantalon'), gants: t('Gants'), tete: t('Couvre-chef') };
+// Emplacements portés par le personnage (tenue) et par le cheval (équipement visible).
+export const WEAR_SLOTS = ['haut', 'veste', 'bas', 'gants', 'tete', 'casque', 'bottes'];
+export const HORSE_LOOK_SLOTS = ['tapis', 'guetres', 'bonnet'];
 // Carte du café-boulangerie Le Galop (consommé sur place ou à emporter : pas d'inventaire).
 export const CAFE_MENU = [
   { id: 'cafe', name: t('Café'), price: 1.8 },

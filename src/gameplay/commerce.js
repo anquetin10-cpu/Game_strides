@@ -6,7 +6,7 @@
 // Le débit et l'attribution sont écrits ensemble, puis la sauvegarde est enregistrée tout de suite (une seule écriture
 // du document complet) : après une interruption, on retrouve soit l'état d'avant, soit l'achat entier.
 // Un double appui (deux déclenchements à moins de 0,7 s pour le même article) ne produit qu'une transaction.
-import { SHOP, SLOTS } from './data.js';
+import { SHOP, SLOTS, WEAR_SLOTS, HORSE_LOOK_SLOTS } from './data.js';
 import { clamp } from '../core/math.js';
 import { t, T } from '../core/i18n.js';
 
@@ -139,22 +139,24 @@ export class Commerce {
     return true;
   }
 
-  // Conséquences visibles : bonus du cheval, tapis, tenue.
+  // Conséquences visibles : bonus du cheval, équipement visible du cheval (tapis, guêtres, bonnet), tenue.
   _apply(s) {
     const g = this.game;
     if (!g.mainHorse) return;
     g.applyUpgrades(g.mainHorse);
-    if (s.slot === 'tapis') g.refreshTack?.();
-    if (s.wear || s.effect?.outfit || ['haut', 'tete', 'casque', 'bottes'].includes(s.slot)) g.player._rebuild();
+    if (HORSE_LOOK_SLOTS.includes(s.slot)) g.refreshTack?.();
+    if (s.wear || s.effect?.outfit || WEAR_SLOTS.includes(s.slot)) g.player._rebuild();
   }
 
-  // Champs de tenue portés (haut, couvre-chef, casque, bottes) ; preview : article essayé en boutique.
+  // Champs de tenue portés (haut, veste de concours, pantalon, gants, couvre-chef, casque, bottes) ; preview : article
+  // essayé en boutique (il remplace l'article de son emplacement). pantsConcours : pantalon admis en concours.
   wear(preview = null) {
     const o = {};
-    for (const slot of ['haut', 'tete', 'casque', 'bottes']) {
+    for (const slot of WEAR_SLOTS) {
       const id = preview && this.item(preview)?.slot === slot ? preview : this.equipped(slot);
       const s = id && this.item(id);
       if (s?.wear) Object.assign(o, s.wear);
+      if (slot === 'bas' && s?.wear) o.pantsConcours = !!s.concours;
     }
     return o;
   }
@@ -162,5 +164,13 @@ export class Commerce {
   pad() {
     const s = this.item(this.equipped('tapis'));
     return s ? { pad: s.pad, trim: s.trim } : null;
+  }
+  // Équipement visible du cheval : tapis (pad, trim), couleur des guêtres (boots, null : noires d'origine), bonnet
+  // ({ color, trim } ou null).
+  horseTack() {
+    const p = this.pad();
+    const gu = this.item(this.equipped('guetres'));
+    const bo = this.item(this.equipped('bonnet'));
+    return { pad: p?.pad, trim: p?.trim, boots: gu?.boots || null, bonnet: bo?.bonnet || null };
   }
 }

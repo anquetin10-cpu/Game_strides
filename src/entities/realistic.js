@@ -73,6 +73,38 @@ function tint(mat, hex) {
   mat.color.set(hex || t.default).multiplyScalar(Number(t.gain) || 1);
 }
 
+// Gants : part des mains de chaque sommet de la peau (somme des poids sur les os des mains et des doigts), calculée
+// une fois par géométrie (partagée par les clones). Faux si la peau n'est pas skinnée.
+const GLOVE_BONE = /^(hand|thumb|index|middle|ring|pinky)_/;
+function gloveAttr(mesh) {
+  const g = mesh.geometry;
+  if (g.attributes.aGlove) return true;
+  const si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bones = mesh.skeleton?.bones;
+  if (!si || !sw || !bones) return false;
+  const hand = bones.map((b) => GLOVE_BONE.test(b.name));
+  const a = new Float32Array(si.count);
+  for (let i = 0; i < si.count; i++) {
+    a[i] = (hand[si.getX(i)] ? sw.getX(i) : 0) + (hand[si.getY(i)] ? sw.getY(i) : 0) + (hand[si.getZ(i)] ? sw.getZ(i) : 0) + (hand[si.getW(i)] ? sw.getW(i) : 0);
+  }
+  g.setAttribute('aGlove', new THREE.BufferAttribute(a, 1));
+  return true;
+}
+function gloveShader(sh, U) {
+  Object.assign(sh.uniforms, U);
+  sh.vertexShader = sh.vertexShader
+    .replace('#include <common>', '#include <common>\nattribute float aGlove;\nvarying float vGlove;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlove = aGlove;');
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', '#include <common>\nuniform vec3 uGlove;\nuniform float uGloveOn;\nvarying float vGlove;')
+    .replace('#include <color_fragment>', '#include <color_fragment>\nfloat gloveK = uGloveOn * smoothstep( 0.4, 0.62, vGlove );\ndiffuseColor.rgb = mix( diffuseColor.rgb, uGlove, gloveK );')
+    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix( roughnessFactor, 0.62, gloveK );');
+}
+// Casquette : calotte (demi-sphère) et visière (demi-disque vers l'avant), partagées.
+const CAP_GEO = {
+  crown: new THREE.SphereGeometry(0.112, 24, 10, 0, Math.PI * 2, 0, Math.PI * 0.5),
+  brim: new THREE.CylinderGeometry(0.1, 0.1, 0.008, 20, 1, false, -Math.PI / 2, Math.PI),
+};
+
 // Modèle réaliste attaché à un personnage classique.
 export class RealBody {
   constructor(human, root) {
@@ -91,6 +123,15 @@ export class RealBody {
         // Comme les personnages classiques : lanterne / plafonnier proche et ombre des nuages (sinon noirs la nuit).
         m.onBeforeCompile = (sh) => addCloudShadows(sh, null, true);
         m.customProgramCacheKey = () => 'strides-real-body-lamp';
+        // Peau : gants (o.gloves) teints sur les mains (sommets pondérés sur les os des mains et des doigts).
+        if (m.name === 'Skin' && o.isSkinnedMesh && gloveAttr(o)) {
+          const U = (this.gloveU ||= { uGlove: { value: new THREE.Color('#18181a') }, uGloveOn: { value: 0 } });
+          m.onBeforeCompile = (sh) => {
+            addCloudShadows(sh, null, true);
+            gloveShader(sh, U);
+          };
+          m.customProgramCacheKey = () => 'strides-real-body-lamp-glove';
+        }
         this.mats.push(m);
         if (/^Hair/.test(m.name) || /Eyelash|Eyebrow/.test(m.name)) {
           m.alphaTest = 0.45;
@@ -128,7 +169,44 @@ export class RealBody {
       else if (mat.name === 'Cloth_jeans') tint(mat, o.pants);
       else if (mat.name === 'Cloth_boots' || mat.name === 'Cloth_tallboots') tint(mat, o.boots);
     });
+    if (this.gloveU) {
+      this.gloveU.uGloveOn.value = o.gloves ? 1 : 0;
+      if (o.gloves) this.gloveU.uGlove.value.set(o.gloves);
+    }
     this._helmet(o.helmet);
+    this._cap(o.helmet ? null : o.cap);
+  }
+
+  // Casquette (couvre-chef porté à pied) : calotte et visière, fixées à l'os de la tête comme le casque.
+  _cap(color) {
+    if (this.cap) {
+      this.cap.parent?.remove(this.cap);
+      this.cap.traverse((m) => m.isMesh && m.material.dispose());
+      this.cap = null;
+    }
+    if (!color || !this.bones.head) return;
+    const g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.86, metalness: 0 });
+    mat.onBeforeCompile = (sh) => addCloudShadows(sh, null, true);
+    mat.customProgramCacheKey = () => 'strides-real-cap';
+    const crown = new THREE.Mesh(CAP_GEO.crown, mat);
+    crown.scale.set(1, 0.84, 1.1);
+    const brim = new THREE.Mesh(CAP_GEO.brim, mat);
+    brim.position.set(0, 0.004, 0.07);
+    brim.rotation.x = 0.16;
+    brim.scale.set(1, 1, 0.95);
+    for (const m of [crown, brim]) {
+      m.castShadow = true;
+      g.add(m);
+    }
+    const head = this.bones.head;
+    head.getWorldPosition(_v);
+    this.root.worldToLocal(_v);
+    g.position.set(0, _v.y + 0.08, _v.z - 0.004);
+    this.root.add(g);
+    g.updateMatrixWorld(true);
+    head.attach(g);
+    this.cap = g;
   }
 
   // Casque d'équitation (coque, visière, harnais) fixé à l'os de la tête.
@@ -252,6 +330,7 @@ export class RealBody {
   }
 
   dispose() {
+    this._cap(null);
     this.root.parent?.remove(this.root);
     this.human.mesh.layers.set(0);
     for (const m of this.mats) m.dispose();

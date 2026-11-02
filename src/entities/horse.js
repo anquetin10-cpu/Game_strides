@@ -22,7 +22,7 @@ export class Horse {
     this.def = def;
     this.id = def.id || opts.id || 'horse';
     this.name = def.name || t('Cheval');
-    const { mesh, bones } = createHorseMesh({ coat: def.coat, blaze: def.blaze, socks: def.socks, saddle: opts.saddle !== false, pad: opts.pad, padTrim: opts.padTrim });
+    const { mesh, bones } = createHorseMesh({ coat: def.coat, blaze: def.blaze, socks: def.socks, saddle: opts.saddle !== false, pad: opts.pad, padTrim: opts.padTrim, bootsColor: opts.bootsColor, bonnet: opts.bonnet });
     this.mesh = mesh;
     this.mesh.rotation.order = 'YXZ';
     this.mesh.scale.setScalar(0.94);

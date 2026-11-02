@@ -113,6 +113,35 @@ describe('commerce', () => {
     expect(c.wear('pull_marin').top).toBe('#1f2b45');
   });
 
+  it('boutique d’équitation : veste, pantalon et gants équipés ; essai d’un pantalon ; pantalon admis en concours', () => {
+    g.save.data.money = 5000;
+    c.purchase('veste_concours_noire', { now: 0 });
+    c.purchase('pantalon_marine', { now: 1000 });
+    c.purchase('gants_blancs', { now: 2000 });
+    expect(g.save.data.money).toBe(5000 - 189 - 119 - 35);
+    const w = c.wear();
+    expect([w.jacket, w.pants, w.pantsConcours, w.gloves]).toEqual(['#17181b', '#1f2b45', false, '#ecebe6']);
+    const p = c.wear('pantalon_blanc');
+    expect([p.pants, p.pantsConcours, p.jacket]).toEqual(['#f4f3ef', true, '#17181b']);
+    c.equip(null, 'veste');
+    expect(c.wear().jacket).toBeUndefined();
+  });
+
+  it('équipement visible du cheval : tapis, couleur des guêtres, bonnet ; guêtres de la Sellerie : noires d’origine', () => {
+    expect(c.horseTack()).toEqual({ pad: undefined, trim: undefined, boots: null, bonnet: null });
+    g.save.data.money = 5000;
+    c.purchase('guetres', { now: 0 });
+    expect(c.horseTack().boots).toBeNull();
+    c.purchase('tapis_vert', { now: 1000 });
+    c.purchase('guetres_blanches', { now: 2000 });
+    c.purchase('bonnet_marine', { now: 3000 });
+    // Guêtres de la Sellerie déjà équipées : les neuves ne prennent pas leur place sans « Équiper ».
+    expect(c.horseTack()).toEqual({ pad: '#2f4a3a', trim: '#c8a96e', boots: null, bonnet: { color: '#1f2b45', trim: '#f2f1ec' } });
+    c.equip('guetres_blanches');
+    expect(c.horseTack().boots).toBe('#e9e8e2');
+    expect(c.isActive('guetres')).toBe(false);
+  });
+
   it('catalogue : chaque article a un prix, une catégorie, un commerce et un effet décrit', () => {
     for (const s of SHOP) {
       expect(s.price).toBeGreaterThan(0);

@@ -5,7 +5,7 @@
 // - sellerie : achat d'une selle (un seul débit malgré un double appui), solde insuffisant (rien ne change),
 //   équipement (bonus de saut, tapis visible), consommable cumulable puis utilisé près du cheval ;
 // - café : commande (un débit par commande), retrait d'une commande de mission au comptoir ;
-// - boutique : essayage puis achat d'une tenue portée par le personnage ;
+// - boutique d'équitation (voir aussi apparel-store.mjs) : essayage puis achat d'une tenue portée par le personnage ;
 // - entrée à cheval : le cheval reste attaché dehors, le sifflet ne le fait pas entrer ;
 // - sauvegarde faite dans un commerce puis rechargement : retour dans la boutique, achats conservés.
 // Captures dans tests/e2e/out/shops/.
@@ -23,6 +23,8 @@ const check = (label, cond, extra = '') => {
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
 const page = await ctx.newPage();
+// Rendu logiciel (SwiftShader) lent : délais généreux pour les captures.
+page.setDefaultTimeout(180000);
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(`${base}/?autostart`, { timeout: 180000 });
@@ -274,7 +276,9 @@ await act();
 await waitIdle();
 await tick(6);
 check('boutique : entrée', (await ev(() => window.__game.indoor?.id)) === 'boutique');
-await walkTo(...Object.values(await ev(() => window.__game.shops.toW('boutique', -2.4, -3.9))));
+// Par les allées (centre avant, centre arrière), jusqu'à la cabine d'essayage.
+for (const [x, z] of [[0.2, 0.5], [0.2, -1.6]]) await walkTo(...Object.values(await ev(([x, z]) => window.__game.shops.toW('boutique', x, z), [x, z])));
+await walkTo(...Object.values(await ev(() => window.__game.shops.anchor('boutique', 'cabine'))));
 const tl = await act();
 await tick(2);
 await ev(() => { const b = document.querySelector('.overlay [data-item="pull_marin"] [data-act="Essayer"]'); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); b.click?.(); });
@@ -286,7 +290,8 @@ const untried = await ev(() => { const g = window.__game; return { prev: g.shops
 check('fiche fermée : l’essai est retiré', !untried.prev && untried.top !== '#1f2b45', JSON.stringify(untried));
 const bought = await ev(() => { const g = window.__game; const r = g.commerce.purchase('pull_marin', { now: performance.now() + 20000 }); return { r, eq: g.save.data.equipped.haut, top: g.player._outfit(g.player.avatar).top, ride: g.player._outfit(g.player.avatar, 'ride').top }; });
 check('pull acheté : porté à pied et à cheval (hors concours)', bought.r.ok && bought.eq === 'pull_marin' && bought.top === '#1f2b45' && bought.ride === '#1f2b45', JSON.stringify(bought));
-for (const [name, [x, z], [lx, lz]] of [['16-boutique-portant', [1.0, 2.5], [-4.3, -1.5]], ['17-boutique-miroir', [0.5, -1.8], [-2.4, -5.1]]]) {
+for (const [name, [x, z], [lx, lz]] of [['16-boutique-portant', [1.0, 2.5], [-4.3, -1.5]], ['17-boutique-miroir', [0.5, -1.8], [-2.05, -5.1]]]) {
+  for (const [hx, hz] of [[0.2, -1.6], [0.2, 0.5]]) await walkTo(...Object.values(await ev(([x, z]) => window.__game.shops.toW('boutique', x, z), [hx, hz])));
   await walkTo(...Object.values(await ev(([x, z]) => window.__game.shops.toW('boutique', x, z), [x, z])));
   await ev(([lx, lz]) => { const g = window.__game, sh = g.shops; const t = sh.toW('boutique', lx, lz); const p = g.player.human.pos; g.player.human.heading = Math.atan2(t.x - p.x, t.z - p.z); g.cam.snap(p, g.player.human.heading); window.__auto.tick(8); }, [lx, lz]);
   await shot(name);

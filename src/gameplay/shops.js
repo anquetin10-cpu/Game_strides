@@ -1,4 +1,5 @@
-// Commerces visitables de Deauville City : Sellerie du Port, café-boulangerie Le Galop, Maison Lucette.
+// Commerces visitables de Deauville City : Sellerie du Port, café-boulangerie Le Galop, boutique d'équitation
+// (tenues du cavalier et équipement du cheval, enseigne de la marque partenaire ou habillage neutre : storeSkin.js).
 // - Entrée à pied par la porte (action « Entrer ») ; à cheval, le joueur met pied à terre et attache son cheval à la
 //   barre la plus proche ; en voiture ou en camion, il faut d'abord se garer. Une transition courte (fondu) place le
 //   personnage à l'intérieur, devant la porte ; « Sortir » le ramène sur le trottoir, face à la rue.
@@ -27,7 +28,7 @@ const MURMUR = { sellerie: 0.18, cafe: 0.7, boutique: 0.12 };
 const GREET = {
   sellerie: [t('Bonjour ! Bienvenue à la Sellerie du Port. Selles, briderie, tapis : tout est en rayon, et je fais les retouches à l’atelier.'), t('Prends ton temps. Chaque article porte son étiquette : approche-toi d’un rayon pour voir les prix.')],
   cafe: [t('Bonjour ! Qu’est-ce que je te sers ? Le pain sort du four, les croissants sont encore tièdes.')],
-  boutique: [t('Bonjour, bienvenue chez Maison Lucette ! Le miroir est au fond : tu peux tout essayer.')],
+  boutique: [t('Bonjour et bienvenue ! Vestes de concours, pantalons, polos, gants, et tout pour ton cheval : tapis, bonnets, guêtres.'), t('La cabine d’essayage est au fond, à gauche, devant le grand miroir : essaie ce que tu veux avant d’acheter.')],
 };
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -365,7 +366,7 @@ export class ShopManager {
     render();
     g.screens.card({
       kicker: s.name,
-      title: fx.cats ? fx.cats.map((k) => SHOP_CATS[k]).join(' · ') : fx.label,
+      title: fx.title || (fx.cats ? fx.cats.map((k) => SHOP_CATS[k]).join(' · ') : fx.label),
       extra: [bal, box, h('div.irl', { text: t('Boutique fictive du jeu : rien n’est vendu sur Strides.') })],
       buttons: [{ label: t('Fermer'), primary: true, id: 'shop-close', run: () => this._clearPreview() }],
     });
@@ -380,7 +381,10 @@ export class ShopManager {
     const after = () => {
       if (st?.staff) st.staff.pose = 'stand';
       if (id === 'cafe') this.openCafe(fx);
-      else this.openRack(id, { label: t('Comptoir'), cats: Object.keys(SHOP_CATS) }, SHOP.filter((it) => it.shop === id));
+      else {
+        const items = SHOP.filter((it) => it.shop === id);
+        this.openRack(id, { label: t('Comptoir'), title: t('Tout le magasin'), cats: [...new Set(items.map((it) => it.cat))] }, items);
+      }
     };
     if (this._greeted === id) return after();
     this._greeted = id;
@@ -439,7 +443,7 @@ export class ShopManager {
     });
   }
 
-  // Essayage (boutique) : la tenue est portée tant que la fiche est ouverte ; « Fermer » la retire.
+  // Essayage (boutique d'équitation) : la tenue est portée tant que la fiche est ouverte ; « Fermer » la retire.
   tryOn(itemId) {
     this.preview = itemId;
     this.game.player.previewItem = itemId;
