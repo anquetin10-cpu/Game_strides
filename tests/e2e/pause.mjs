@@ -19,7 +19,15 @@ await dismiss();
 await page.waitForTimeout(600);
 await dismiss();
 const snap = () => page.evaluate(() => { const g = window.__game; const c = g.mainHorse?.cond; return { t: g.save.data.gameTime, clock: g.simClock, sat: c?.satiety, hyd: c?.hydration, paused: g.simPaused, timer: g.missions.active?.timer ?? null }; });
-const span = async (ms) => { const a = await snap(); await page.waitForTimeout(ms); return [a, await snap()]; };
+// Fenêtre de mesure : au moins `ms` et au moins deux vraies images (le rendu logiciel des tests peut descendre sous
+// 1 image/s ; l'état de pause n'est recalculé qu'à chaque image).
+const span = async (ms) => {
+  const a = await snap();
+  const f0 = await page.evaluate(() => window.__game.renderer.info.render.frame);
+  await page.waitForTimeout(ms);
+  await page.waitForFunction((f0) => window.__game.renderer.info.render.frame - f0 >= 2, f0, { timeout: 20000 }).catch(() => {});
+  return [a, await snap()];
+};
 for (let i = 0; i < 8 && (await page.evaluate(() => window.__game.simPaused)); i++) { await dismiss(); await page.waitForTimeout(700); }
 let [a, z] = await span(1500);
 check('le temps passe en jeu', z.t > a.t && z.clock > a.clock && !z.paused, `${a.t.toFixed(1)} → ${z.t.toFixed(1)}`);

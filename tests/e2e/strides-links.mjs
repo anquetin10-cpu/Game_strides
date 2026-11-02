@@ -8,6 +8,8 @@ const check = (label, cond, extra = '') => { console.log(`${cond ? '✔' : '✘'
 const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const ctx = await b.newContext({ viewport: { width: 667, height: 308 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await ctx.addInitScript(() => {
+  // Langue déjà choisie (sinon l'écran de choix de la langue précède l'écran titre).
+  localStorage.setItem('strides-lang', 'fr');
   window.__opened = [];
   window.open = (url, target) => (window.__opened.push({ url, target }), { opener: 1 });
 });

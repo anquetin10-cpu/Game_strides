@@ -25,6 +25,8 @@ const PALETTE = [
 //   - cheval classique : mesuré sur la géométrie du tapis (scripts/horse/tack.mjs), près du coin arrière-bas : 1,77.
 const WIDEN_REAL = 0.5 / 256 / (0.7 / 512);
 const WIDEN_CLASSIC = 1.77;
+// Logo du tapis : largeur et marge arrière en pixels de texture (512 px = longueur du tapis).
+export const PAD_LOGO = { w: 124, margin: 12 };
 let padTex = null; // cheval classique
 let padTexReal = null; // cheval réaliste
 function makePadTexture(widen) {
@@ -62,11 +64,13 @@ function makePadTexture(widen) {
     g.fillRect(S - 9, y0, 9, half);
     g.fillRect(0, y0 + half - 9, S, 9);
   }
-  // Bleu : logo officiel Strides (fichier d'origine) près du coin arrière-bas, lisible de chaque côté, entre le bord
-  // arrière et le quartier de la selle / la sangle (même emprise en longueur sur les deux modèles), dessiné élargi de
-  // `widen` pour garder, une fois posé, les proportions du fichier (hauteur déduite de la largeur).
-  const lw = 40 * LOGO_ASPECT * WIDEN_REAL;
+  // Bleu : logo officiel Strides (fichier d'origine) au coin arrière-bas, lisible de chaque côté, cavalier en selle :
+  // entre le bord arrière et la jambe du cavalier (environ 0,17 m de large, comme une broderie de tapis ; même emprise
+  // en longueur sur les deux modèles), dessiné élargi de `widen` pour garder, une fois posé, les proportions du
+  // fichier (hauteur déduite de la largeur).
+  const lw = PAD_LOGO.w;
   const lh = lw / (LOGO_ASPECT * widen);
+  const m = PAD_LOGO.margin;
   const logo = (x, y) => {
     g.save();
     g.translate(x, y);
@@ -74,8 +78,8 @@ function makePadTexture(widen) {
     drawLogo(g, 0, 0, lh, 'rgb(0,0,255)');
     g.restore();
   };
-  logo(S - 20 - lw, half * 0.8 - lh / 2); // côté gauche : arrière = u élevé
-  logo(20, half + half * 0.8 - lh / 2); // côté droit : arrière = u faible
+  logo(S - m - lw, half * 0.8 - lh / 2); // côté gauche : arrière = u élevé
+  logo(m, half + half * 0.8 - lh / 2); // côté droit : arrière = u faible
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.NoColorSpace;
   tex.flipY = false; // v = rangée du canevas (0 = dos)

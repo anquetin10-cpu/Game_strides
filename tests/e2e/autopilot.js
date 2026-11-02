@@ -493,9 +493,16 @@
       g.save.data.completed.includes('tuto') || g.save.data.completed.push('tuto');
       const { generateJob } = window.__jobs;
       const def = generateJob(g, seq, level);
+      // Chaque job joué dans les horaires de son client (10 h par défaut), énergie pleine : sinon les horaires et la
+      // fatigue refusent la mission, comme en jeu.
+      const d = g.save.data;
+      const hr = Array.isArray(def.hours) ? def.hours[0] + 0.5 : 10;
+      d.gameTime = Math.floor(d.gameTime / 86400) * 86400 + hr * 3600;
+      g.energy?.sync?.();
+      g.energy?.set?.(100);
       const offer = { id: `job:${def.id}`, def, vertical: def.vertical, category: def.category, title: def.title, pay: def.pay, xp: def.xp, place: def.place, placeName: def.placeName, client: def.client };
       g.missions.offers.push(offer);
-      g.missions.accept(offer.id);
+      if (!g.missions.accept(offer.id) || !g.missions.active) return { ok: false, title: def.title, failed: 'mission refusée', log: A.log };
       return A.drive_(g.missions.active, 3000, def.title);
     },
     drive_(run, maxIter, title) {

@@ -153,6 +153,8 @@ const view = (name, hr, at, from, fov = 55) =>
     g.sky.follow(g.camera);
     g.sky.updateEnvironment(g.renderer, performance.now() / 1000, true);
     g.world.update(0, g.camera, g.sky, g.camera.position);
+    // Personnage réaliste calé sur la pose du jeu (comme à chaque image du jeu).
+    g.realism?.update();
     g.renderer.render(g.scene, g.camera);
     return g.renderer.info.render.calls;
   }, [hr, at, from, fov]).then(() => shot(name));
@@ -419,12 +421,14 @@ r = await E(async () => {
   out.camionFlanc = match(truck.map.image, { x: (940 - lw) / 2, y: 300, h: (lw * 355) / 1247, bg: '#1d1e20', fg: '#e8e6e0' });
   const rw = 620 * 0.86;
   out.camionArriere = match(truck.map.image, { x: 960 + (620 - rw) / 2, y: 200, h: (rw * 355) / 1247, bg: '#1d1e20', fg: '#e8e6e0' });
-  const lh = 40, k = 0.5 / 256 / (0.7 / 512);
-  out.tapis = match(tack.padTexture().image, { x: 512 - 20 - lh * (1247 / 355) * k, y: 256 * 0.8 - lh / 2, h: lh, sx: k, chan: 2 });
-  out.tapisDroit = match(tack.padTexture().image, { x: 20, y: 256 + 256 * 0.8 - lh / 2, h: lh, sx: k, chan: 2 });
-  // Cheval classique : même emprise, élargissement mesuré sur sa géométrie de tapis (1,77).
-  const kc = 1.77, lwc = lh * (1247 / 355) * k, lhc = lwc / ((1247 / 355) * kc);
-  out.tapisClassique = match(tack.tackMaterial().map.image, { x: 512 - 20 - lwc, y: 256 * 0.8 - lhc / 2, h: lhc, sx: kc, chan: 2 });
+  // Tapis : logo de PAD_LOGO.w px de large au coin arrière-bas, élargi de k (réaliste) ou kc (classique, mesuré sur sa
+  // géométrie de tapis) pour garder les proportions du fichier une fois posé.
+  const { w: plw, margin: pm } = tack.PAD_LOGO;
+  const k = 0.5 / 256 / (0.7 / 512), lh = plw / ((1247 / 355) * k);
+  out.tapis = match(tack.padTexture().image, { x: 512 - pm - plw, y: 256 * 0.8 - lh / 2, h: lh, sx: k, chan: 2 });
+  out.tapisDroit = match(tack.padTexture().image, { x: pm, y: 256 + 256 * 0.8 - lh / 2, h: lh, sx: k, chan: 2 });
+  const kc = 1.77, lhc = plw / ((1247 / 355) * kc);
+  out.tapisClassique = match(tack.tackMaterial().map.image, { x: 512 - pm - plw, y: 256 * 0.8 - lhc / 2, h: lhc, sx: kc, chan: 2 });
   // Enseigne de la colline : logo découpé (transparence), à ses proportions.
   const cut = T.logoCutoutTexture('#f4f3ef').image;
   out.colline = match(cut, { x: 0, y: 8, h: cut.height - 16 });

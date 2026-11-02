@@ -24,10 +24,12 @@ export function storeSkin(id = STORE_BRAND, brands = BRANDS) {
   const b = brands[id] || {};
   const ok = brands === BRANDS ? brandAuthorized(id) : b.status === 'authorized';
   const asset = (k) => (ok && b.assets?.[k] ? b.assets[k] : null);
+  const neutralName = brands === BRANDS ? brandName(id) : b.neutral?.name ?? '';
   return {
     brand: id,
     official: ok,
-    name: brands === BRANDS ? brandName(id) : ok ? b.name : b.neutral?.name ?? '',
+    // Nom officiel tel quel ; nom neutre traduit (comme son sous-titre et la publicité de nuit).
+    name: ok ? b.name : neutralName ? t(neutralName) : '',
     // Sous-titre descriptif du métier (jamais un slogan de la marque).
     sub: t(b.neutral?.sub || ''),
     logo: asset('logo'),
