@@ -227,7 +227,8 @@ const shot = async (page, name) => page.screenshot({ path: `${OUT}/${name}.png`,
 
 // ---------- 5. Média indisponible ----------
 {
-  const { ctx, page } = await open({}, async (p) => p.route(/app-accueil-capture/, (r) => r.abort()));
+  // (seule l'image est bloquée, pas l'import du module qui en donne l'adresse)
+  const { ctx, page } = await open({}, async (p) => p.route((u) => /app-accueil-capture\.png$/.test(u.pathname) && !u.search.includes('import'), (r) => r.abort()));
   await boot(page);
   await setup(page);
   await toBed(page);
