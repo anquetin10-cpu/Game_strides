@@ -3,7 +3,7 @@
 // 2. captures dans le jeu : avant, profil, arrière, pont latéral ouvert ;
 // 3. conduite : roues qui tournent, braquage sur les pivots du fichier ; départ bloqué pont ou porte arrière ouvert ;
 // 4. chargement par le pont latéral (cheval mené, séquence, stalle), trajet cheval à bord, déchargement ;
-// 5. collisions (piéton, cheval mené) ; sauvegarde et reprise (position, pont, cheval à bord) ; camion Strides intact.
+// 5. collisions (piéton, cheval mené) ; sauvegarde et reprise (position, pont, cheval à bord) ; camion STX intact.
 // Captures dans tests/e2e/out/master/. Usage : BASE=http://127.0.0.1:5173 node tests/e2e/master.mjs
 import { chromium } from 'playwright';
 // (« Continuer » : 120 s au plus — en rendu logiciel, la compilation des shaders au premier affichage prend de 1 à 37 s
@@ -79,7 +79,7 @@ let r = await E(() => {
   };
 });
 check('modèle fourni chargé (src/assets/vehicles/STX_Renault_Master_STALLE5.glb)', r.loaded, JSON.stringify(r.info || r.file));
-check('véhicule distinct du camion Strides (Scania STX conservé)', r.distinct);
+check('véhicule distinct du camion STX (Scania STX conservé)', r.distinct);
 check('pièces mobiles du fichier présentes (pont latéral, volets, porte arrière, stalles)', r.nodes);
 check('quatre roues du fichier, roues avant sur leurs pivots de braquage', r.wheels);
 check('matériaux d’origine du fichier (non remplacés)', r.mats.includes('Body_Paint') && r.mats.includes('Tyre') && r.mats.includes('Glass') && r.mats.includes('STX_side_1'), r.mats.join(', '));
@@ -341,7 +341,7 @@ r = await E(() => {
   return { pos: { x: v.pos.x, z: v.pos.z }, aboard: g.vanLoading.isAboard(h), side: v.sideDoor.target, truck: { x: g.truck.pos.x, z: g.truck.pos.z }, scaniaAboard: g.player.transport.isAboard(h) };
 });
 check('reprise : van à sa place, cheval toujours à bord, pont fermé', Math.hypot(r.pos.x - saved.pos.x, r.pos.z - saved.pos.z) < 0.5 && r.aboard && r.side === 0 && !r.scaniaAboard, JSON.stringify(r));
-check('camion Strides inchangé à la reprise', Math.hypot(r.truck.x - saved.truck.x, r.truck.z - saved.truck.z) < 0.5, JSON.stringify(r.truck));
+check('camion STX inchangé à la reprise', Math.hypot(r.truck.x - saved.truck.x, r.truck.z - saved.truck.z) < 0.5, JSON.stringify(r.truck));
 r = await E(() => {
   const g = window.__game, A = window.__auto, t = g.truck, tp = g.player.transport, h = g.mainHorse;
   g.vanLoading.unloadInstant(h);
@@ -353,7 +353,7 @@ r = await E(() => {
   t.setRampInstant(false);
   return { ok, aboard };
 });
-check('chargement du camion Strides toujours fonctionnel', r.ok && r.aboard, JSON.stringify(r));
+check('chargement du camion STX toujours fonctionnel', r.ok && r.aboard, JSON.stringify(r));
 check('aucune erreur console', errors.length === 0, errors.slice(0, 5).join(' | '));
 console.log(fails ? `ÉCHECS : ${fails}` : 'MASTER OK');
 await browser.close();

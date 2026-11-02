@@ -1,6 +1,6 @@
 // Véhicules conduisibles (iPhone paysage 667×308) : le personnage monte dans chaque type de véhicule par le bouton
 // ACTION (« Conduire »), roule, freine, sort ; prend aussi le volant d'une voiture de la circulation arrêtée.
-// Les missions du camion exigent toujours le camion Strides. Usage : BASE=… node tests/e2e/vehicles.mjs
+// Les missions du camion exigent toujours le camion STX. Usage : BASE=… node tests/e2e/vehicles.mjs
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 const base = process.env.BASE || 'http://127.0.0.1:5173';
@@ -125,7 +125,7 @@ check('voiture de la circulation : reprise au volant (même modèle, même coule
 check('voiture de la circulation : roule', tk.speed > 8, `${(tk.speed * 3.6).toFixed(0)} km/h`);
 check('au volant d’une voiture, on n’est pas « dans le camion »', tk.inTruck === false && tk.mode === 'foot');
 
-// Le camion Strides reste conduisible.
+// Le camion STX reste conduisible.
 const tr = await page.evaluate(() => {
   const A = window.__auto, g = window.__game, p = g.player, t = g.truck;
   const door = t.doorPoint(1);
@@ -145,7 +145,7 @@ const tr = await page.evaluate(() => {
   p.exitTruck();
   return { offered, ok, speed };
 });
-check('camion Strides : toujours conduisible', tr.offered === 'truck-in' && tr.ok && tr.speed > 2, `${(tr.speed * 3.6).toFixed(0)} km/h`);
+check('camion STX : toujours conduisible', tr.offered === 'truck-in' && tr.ok && tr.speed > 2, `${(tr.speed * 3.6).toFixed(0)} km/h`);
 
 // Captures : voiture avec conducteur visible, tracteur.
 for (const kind of ['p3008', 'tractor']) {

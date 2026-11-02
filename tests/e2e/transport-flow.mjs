@@ -1,4 +1,4 @@
-// Transport du cheval en camion Strides + sortie en concours, de bout en bout.
+// Transport du cheval en camion STX + sortie en concours, de bout en bout.
 // 1) API : mener en main, ouvrir la rampe, faire monter, fermer, rouler, ouvrir, faire descendre, monter à cheval,
 //    sauvegarde / rechargement avec le cheval à bord ;
 // 2) « Aller en concours » (offre de l'app, chargement, trajet, déchargement, dossard, échauffement, parcours FEI,

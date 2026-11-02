@@ -2,12 +2,13 @@
 // pas une capture d'iPhone réel).
 //  A. image par image (15 images/s, une image tous les deux pas de 1/30 s) : retour à la maison le soir, chambre,
 //     « Se coucher », menu du lit, « Dormir jusqu'au matin » ;
-//  B. en temps réel (enregistrement vidéo du navigateur, boucle du jeu active) : personnage couché, nuit, publicité 1 (emplacement
-//     Kingsland, habillage neutre), publicité 2 (Strides, laissée jusqu'au bout), lever du jour, carte « Bonjour ! » ;
+//  B. image par image sur une horloge virtuelle (vraies durées de la séquence, boucle du jeu appelée à chaque image) :
+//     personnage couché, nuit, publicité 1 (emplacement Kingsland, habillage neutre), publicité 2 (Strides, laissée
+//     jusqu'au bout), lever du jour, carte « Bonjour ! » ;
 //  C. image par image : « Commencer la journée », le matin (7:00, énergie 100 %).
 // Usage : BASE=http://127.0.0.1:5173 node tests/e2e/night-video.mjs
 import { chromium } from 'playwright';
-import { readFileSync, mkdirSync, rmSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const base = process.env.BASE || 'http://127.0.0.1:5173';
@@ -16,11 +17,9 @@ const DIR = `${OUT}/night`;
 rmSync(DIR, { recursive: true, force: true });
 mkdirSync(`${DIR}/a`, { recursive: true });
 mkdirSync(`${DIR}/c`, { recursive: true });
-mkdirSync(`${DIR}/rec`, { recursive: true });
 const W = 844, H = 390;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, recordVideo: { dir: `${DIR}/rec`, size: { width: W, height: H } } });
-const recStart = Date.now();
+const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
 await ctx.addInitScript(() => localStorage.setItem('strides-lang', 'fr'));
 const page = await ctx.newPage();
 const errors = [];
@@ -88,17 +87,53 @@ await caption('« Se coucher » → « Dormir jusqu’au matin »');
 await ev(() => { const g = window.__game; g.interact.update(); g.interact.trigger(); });
 await hold('a', 26);
 
-// ---------- B. La nuit, en temps réel ----------
+// ---------- B. La nuit, image par image sur une horloge virtuelle ----------
+// Le rendu logiciel est trop lent pour un enregistrement en temps réel fidèle (il étire la tombée de la nuit et les
+// publicités). Ici, l'horloge de la page (performance.now, requestAnimationFrame) et les animations CSS avancent
+// exactement d'1/15 s par image : la vidéo montre les vraies durées de la séquence (1,6 s de nuit, 4,5 s par
+// publicité, 1,8 s de lever du jour). La boucle du jeu est appelée à chaque image (g.frame), comme en jeu.
 await caption('');
-// La vraie boucle du jeu tourne pendant toute la nuit (comme en jeu : scène non redessinée pendant les publicités).
-await ev(() => window.__auto.startLoop());
-const tB0 = Date.now();
+await ev(() => {
+  const g = window.__game;
+  const vt = (window.__vt = { now: performance.now(), q: [], orig: { now: performance.now.bind(performance), raf: window.requestAnimationFrame } });
+  performance.now = () => vt.now;
+  window.requestAnimationFrame = (cb) => (vt.q.push(cb), vt.q.length);
+  g.last = vt.now;
+  for (const an of document.getAnimations()) an.pause();
+});
+const vstep = async () => {
+  await ev(() => {
+    const g = window.__game, vt = window.__vt, step = 1000 / 15;
+    vt.now += step;
+    const q = vt.q.splice(0);
+    for (const cb of q) cb(vt.now);
+    g.frame(vt.now);
+    for (const an of document.getAnimations()) {
+      if (!an.__v) {
+        an.pause();
+        an.__v = true;
+        an.currentTime = 0;
+      } else an.currentTime = (an.currentTime || 0) + step;
+    }
+  });
+  await page.screenshot({ path: `${DIR}/b/${String(nb++).padStart(4, '0')}.jpg`, type: 'jpeg', quality: 88, timeout: 120000 });
+};
+let nb = 0;
+mkdirSync(`${DIR}/b`, { recursive: true });
 await ev(() => window.__auto.tap(document.querySelector('.overlay [data-choice="night"]')));
-await page.waitForFunction(() => !document.querySelector('.night-seq') && document.querySelector('.overlay [data-id="newday-ok"]'), null, { timeout: 120000 });
-await page.waitForTimeout(2500);
-const tB1 = Date.now();
-await ev(() => window.__auto.stopLoop());
+for (let i = 0; i < 15 * 30; i++) {
+  await vstep();
+  if (await ev(() => !document.querySelector('.night-seq') && !!document.querySelector('.overlay [data-id="newday-ok"]'))) break;
+}
+// La carte « Bonjour ! » de la nouvelle journée, 2,5 s.
+for (let i = 0; i < 38; i++) await vstep();
 const log = await ev(() => window.__game.save.data.ads.log);
+await ev(() => {
+  const vt = window.__vt;
+  performance.now = vt.orig.now;
+  window.requestAnimationFrame = vt.orig.raf;
+  for (const an of document.getAnimations()) an.play();
+});
 
 // ---------- C. Le matin ----------
 await ev(() => window.__auto.tap(document.querySelector('.overlay [data-id="newday-ok"]')));
@@ -113,16 +148,14 @@ await hold('c', 12);
 
 await page.close();
 await ctx.close();
-const webm = readdirSync(`${DIR}/rec`).find((f) => f.endsWith('.webm'));
-const ss = Math.max(0, (tB0 - recStart) / 1000 - 0.3), dur = (tB1 - tB0) / 1000 + 0.3;
 const enc = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '22', '-r', '30', '-vf', `scale=${W}:${H}:flags=lanczos,setsar=1`];
 execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${DIR}/a/%04d.jpg`, ...enc, `${DIR}/a.mp4`]);
-execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-ss', ss.toFixed(2), '-i', `${DIR}/rec/${webm}`, '-t', dur.toFixed(2), ...enc, `${DIR}/b.mp4`]);
+execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${DIR}/b/%04d.jpg`, ...enc, `${DIR}/b.mp4`]);
 execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${DIR}/c/%04d.jpg`, ...enc, `${DIR}/c.mp4`]);
 writeFileSync(`${DIR}/list.txt`, ['a', 'b', 'c'].map((x) => `file '${x}.mp4'`).join('\n'));
 const mp4 = `${OUT}/nuit-coucher-publicites-reveil.mp4`;
 execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', `${DIR}/list.txt`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '22', '-movflags', '+faststart', mp4]);
-const info = { parts: { a: { frames: na, seconds: +(na / 15).toFixed(1) }, b: { seconds: +dur.toFixed(1), recordedRealTime: true }, c: { frames: nc, seconds: +(nc / 15).toFixed(1) } }, ads: log, errors };
+const info = { parts: { a: { frames: na, seconds: +(na / 15).toFixed(1) }, b: { frames: nb, seconds: +(nb / 15).toFixed(1), virtualClock: true }, c: { frames: nc, seconds: +(nc / 15).toFixed(1) } }, ads: log, errors };
 writeFileSync(`${OUT}/nuit-coucher-publicites-reveil.json`, JSON.stringify(info, null, 1));
 console.log(JSON.stringify(info));
 await browser.close();

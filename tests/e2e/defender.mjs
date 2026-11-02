@@ -1,7 +1,7 @@
 // Defender 110 STRIDES, véhicule personnel du personnage (iPhone 13 émulé, rendu logiciel SwiftShader ; ce n'est pas un
 // essai sur un vrai iPhone) :
 // 1. modèle fourni chargé tel quel (variante et chemin, nœuds, matériaux, textures, vitres), un seul exemplaire, garé
-//    à l'Écurie du Val, distinct du camion Strides et du van Master ; pneus au sol ;
+//    à l'Écurie du Val, distinct du camion STX et du van Master ; pneus au sol ;
 // 2. captures dans le jeu : avant, profil, arrière, accès ouverts, personnage au volant ;
 // 3. portes et coffre (amplitudes des clips du fichier), conduite bloquée accès ouverts, coffre fermé en roulant ;
 // 4. conduite : roulement lié à la distance (marche arrière comprise), braquage d'Ackermann par pivot, volant ;
@@ -103,7 +103,7 @@ let r = await E(() => {
 });
 check(`modèle fourni chargé (${variant})`, r.loaded && r.info.file.endsWith(variant === 'full' ? 'Defender110_STRIDES.glb' : 'Defender110_STRIDES_MOBILE.glb'), JSON.stringify(r.info));
 check('un seul Defender (type defender110_hero) dans la scène et parmi les véhicules', r.instances === 1 && r.count === 1 && r.kind === 'defender110_hero', `${r.instances} / ${r.count}`);
-check('distinct du camion Strides (Scania) et du van Master, tous deux présents', r.distinct);
+check('distinct du camion STX (Scania) et du van Master, tous deux présents', r.distinct);
 check('nœuds du fichier : portes, coffre, roue de secours, volant, repères', r.nodes.length === 0, r.nodes.join(', '));
 check('matériaux et textures d’origine (35 matériaux, textures, vitres transparentes)', r.mats === 35 && r.maps > 0 && r.glass.some((s) => /alpha/.test(s)), `${r.mats} matériaux · ${r.maps} maillages texturés · ${r.glass.join(' ')}`);
 check('pneus au sol (écart bas de roue / terrain < 3 cm)', r.ground.every((d) => Math.abs(d) < 0.03), JSON.stringify(r.ground));
@@ -403,7 +403,7 @@ r = await E(() => {
 });
 check('reprise : Defender à sa place, même orientation', Math.hypot(r.pos.x - saved.pos.x, r.pos.z - saved.pos.z) < 0.3 && Math.abs(r.pos.h - saved.pos.h) < 0.02, JSON.stringify(r.pos));
 check('reprise : teinte, objet du coffre et portière ouverte retrouvés, un seul exemplaire', r.paint === saved.def.paint && r.boot === 'hay' && r.bootMesh && r.rl === 1 && r.instances === 1, JSON.stringify({ paint: r.paint, boot: r.boot, rl: r.rl, n: r.instances }));
-check('reprise : camion Strides, van Master et solde inchangés', Math.hypot(r.truck.x - saved.truck.x, r.truck.z - saved.truck.z) < 0.3 && Math.hypot(r.van.x - saved.van.x, r.van.z - saved.van.z) < 0.3 && r.money === saved.money);
+check('reprise : camion STX, van Master et solde inchangés', Math.hypot(r.truck.x - saved.truck.x, r.truck.z - saved.truck.z) < 0.3 && Math.hypot(r.van.x - saved.van.x, r.van.z - saved.van.z) < 0.3 && r.money === saved.money);
 // Sauvegarde antérieure au Defender : ajouté une seule fois, à l'écurie, sans toucher au reste.
 await E(() => {
   const g = window.__game;

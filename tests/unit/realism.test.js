@@ -97,7 +97,7 @@ describe('réalisme : épreuves', () => {
   });
 });
 
-describe('réalisme : camion Strides', () => {
+describe('réalisme : camion STX', () => {
   it('porteur 7,5 t, limiteur 90 km/h, freinage d’urgence 6 – 8 m/s²', () => {
     expect(TRUCK_SPEC.massEmpty + 2 * TRUCK_SPEC.massHorse).toBeLessThanOrEqual(7500);
     expect(kmh(TRUCK_SPEC.limiter)).toBe(90);
