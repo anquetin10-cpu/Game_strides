@@ -3,6 +3,7 @@
 import { createNoise2D } from '../core/noise.js';
 import { polyDist, rectDist, smoothstep } from '../core/math.js';
 import { t } from '../core/i18n.js';
+import { storeSkin } from './storeSkin.js';
 
 export const WORLD = { size: 1200, half: 600, seaLevel: 0 };
 
@@ -155,7 +156,8 @@ export const POI = {
   // Commerces : devant la porte, sur le trottoir.
   sellerie: { x: -134.6, z: -266, name: 'Sellerie du Port', icon: 'shop' },
   cafe: { x: 19, z: -227.3, name: t('Le Galop · Café-boulangerie'), icon: 'shop' },
-  boutique: { x: -34.7, z: -262, name: t('Maison Lucette · Prêt-à-porter'), icon: 'shop' },
+  // Boutique d'équitation : nom de l'habillage de marque (neutre tant que la marque n'est pas autorisée).
+  boutique: { x: -34.7, z: -262, name: storeSkin().name, icon: 'shop' },
   forge: { x: -140, z: -199, name: 'Forge Lemaire', icon: 'pro' },
   vet: { x: 80, z: -199, name: t('Clinique vétérinaire de la Côte'), icon: 'pro' },
   hq: { x: 108, z: -306, name: 'Strides HQ', icon: 'strides' },

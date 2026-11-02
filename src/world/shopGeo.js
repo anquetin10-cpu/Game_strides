@@ -45,10 +45,11 @@ export class Kit {
     this.stack.pop();
     return this;
   }
+  // color null : la géométrie garde ses couleurs de sommets (pièce déjà peinte).
   add(matKey, geo, color, tf) {
     const g = geo.clone();
     g.applyMatrix4(tf ? this.top().clone().multiply(mat4(tf)) : this.top());
-    paint(g, color);
+    if (color !== null) paint(g, color);
     (this.lists[matKey] ||= []).push(g);
     return this;
   }
@@ -188,6 +189,15 @@ export function shopExterior(spec) {
   k.add('body', box(w + 0.38, 0.16, 0.36), front, { y: G - 0.3, z: zf + 0.17 });
   k.add('detail', box(w + 0.42, 0.03, 0.4), '#8d9296', { y: G - 0.14, z: zf + 0.19 });
   const signs = [{ kind: 'fascia', w: w - 0.9, h: 0.66, x: 0, y: hy + 0.43, z: zf + 0.165, ry: 0 }];
+  // Lettrage des vitrines et de la porte (spec.decals) : devant les petits bois, à hauteur des yeux.
+  if (spec.decals) {
+    let wi = 0;
+    for (const h of holes) {
+      const cx = (h.x0 + h.x1) / 2, wd = h.x1 - h.x0;
+      if (h.kind === 'win') signs.push({ kind: 'decal', id: `win${wi++}`, w: wd - 0.5, h: (wd - 0.5) / 4, x: cx, y: 1.55, z: zf - 0.17 + 0.066, ry: 0 });
+      else signs.push({ kind: 'decal', id: 'door', w: 0.9, h: 0.9 * (192 / 512), x: cx, y: 1.78, z: zf - T + 0.05 + 0.036, ry: 0 });
+    }
+  }
   // Store banne rayé sur toute la devanture (café, boutique).
   if (spec.awning) {
     const [c1, c2] = spec.awning;

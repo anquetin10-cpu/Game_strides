@@ -9,6 +9,7 @@ import {
   Kit, WALL_T, FLOOR_Y, torus, lathe, capsule, roomShell, saddle, bridle, halter, padStack, bootsPair, helmet,
   ridingBoots, garment, mannequin, shelving, pendant, tag,
 } from './shopGeo.js';
+import { STORE_LAYOUT, STORE_STAFF, buildStore } from './storeInterior.js';
 
 const F = FLOOR_Y;
 const OAK = '#8a6240';
@@ -18,7 +19,7 @@ const DARK_OAK = '#4f3a28';
 const STAFF = {
   sellerie: { name: 'Margaux Leroy', role: t('Sellière'), initials: 'ML', outfit: { sex: 'f', top: '#c8a96e', sleeve: '#c8a96e', pants: '#3a3d42', boots: '#2a2622', skin: '#eac2a0', hair: '#7a4a28', ponytail: true, logo: false } },
   cafe: { name: 'Paul Hamel', role: t('Boulanger'), initials: 'PH', outfit: { sex: 'm', top: '#f2f1ec', sleeve: '#f2f1ec', pants: '#2b3442', boots: '#2a2622', skin: '#dcab88', hair: '#3b2717', logo: false } },
-  boutique: { name: 'Hélène Marchand', role: 'Maison Lucette', initials: 'HM', outfit: { sex: 'f', top: '#1b1c1f', sleeve: '#1b1c1f', pants: '#e9e3d6', boots: '#1b1c1f', skin: '#e8bea0', hair: '#2a1d14', hairStyle: 'bun', logo: false } },
+  boutique: STORE_STAFF,
 };
 const CUSTOMER = (top, pants = '#2b3442', sex = 'm', hair = '#5a3a24') => ({ sex, top, sleeve: top, pants, boots: '#3b2a1e', skin: sex === 'f' ? '#e8bea0' : '#dcab88', hair, logo: false });
 
@@ -74,29 +75,8 @@ const LAYOUTS = {
     ],
     signs: [{ kind: 'chalk', w: 1.0, h: 1.25, x: 3.6, y: 1.95, z: -4.64, ry: 0 }, { kind: 'strides', w: 0.3, h: 0.15, x: -0.55, y: F + 1.14, z: -1.32, ry: 0 }],
   },
-  // Maison Lucette (10 × 11 m) : portant à gauche, étagères à droite, table centrale, miroir et cabine au fond.
-  boutique: {
-    spawn: [0, 4.4], exit: [0, 5.0],
-    fixtures: [
-      { id: 'portant', label: t('Portant'), cats: ['hauts'], at: [-3.3, -1.4] },
-      { id: 'etageres', label: t('Étagères'), cats: ['accessoires', 'hauts'], at: [3.3, -1.8] },
-      { id: 'table', label: t('Table'), cats: ['hauts', 'accessoires'], at: [0, 0.3] },
-      { id: 'miroir', label: t('Miroir'), cats: ['hauts', 'accessoires'], tryOn: true, at: [-2.4, -3.9] },
-      { id: 'comptoir', label: t('Comptoir'), counter: true, at: [2.6, -2.55] },
-    ],
-    colliders: [
-      [-4.35, -1.3, 0.38, 3.3, 2.0], [4.35, -1.8, 0.35, 2.9, 2.3], [0, -0.8, 0.95, 0.5, 0.85],
-      [-2.85, 4.25, 0.4, 0.4, 1.9], [2.85, 4.25, 0.4, 0.4, 1.9], [-2.4, 1.7, 0.3, 0.3, 1.9],
-      [-4.0, -4.6, 0.68, 0.6, 2.2], [2.6, -3.6, 1.15, 0.35, 1.0],
-    ],
-    lights: [[-2.4, 2.9, -1.4, 0.95], [2.4, 2.9, -1.4, 0.95], [0, 2.9, 2.0, 0.9], [-2.4, 2.9, -4.0, 0.8], [2.6, 2.9, -3.6, 0.8], [0, 2.9, 4.2, 0.7]],
-    seller: { at: [2.6, -4.35], ry: 0 },
-    extras: [
-      { at: [-3.2, -0.4], ry: -Math.PI / 2, outfit: CUSTOMER('#6e2433', '#2b3442', 'f', '#2a1d14'), name: t('Cliente') },
-      // Passante devant la vitrine, sur le trottoir.
-      { at: [2.9, 6.6], ry: Math.PI, outfit: CUSTOMER('#2f5f8a', '#e9e3d6', 'f', '#7a4a28'), name: t('Passante') },
-    ],
-  },
+  // Boutique d'équitation (ancienne Maison Lucette, 10 × 11 m) : voir storeInterior.js.
+  boutique: STORE_LAYOUT,
 };
 
 export function shopLayout(id) {
@@ -332,77 +312,7 @@ function buildCafe(k, spec) {
   for (const [x, , z] of LAYOUTS.cafe.lights) pendant(k, x, z, G - 0.1, { drop: 0.7, kind: 'globe' });
 }
 
-function buildBoutique(k, spec) {
-  const G = spec.G;
-  roomShell(k, spec, { floor: spec.floor, wall: spec.walls, skirting: '#e8e2d4' });
-  // Rails d'éclairage au plafond.
-  for (const x of [-2.4, 2.4]) {
-    k.add('M', box(0.05, 0.04, 8.6), '#1b1c1f', { x, y: G - 0.16, z: -0.4 });
-    for (let i = 0; i < 4; i++) {
-      k.add('M', cyl(0.045, 0.035, 0.16, 8), '#1b1c1f', { x, y: G - 0.32, z: -3.8 + i * 2.2, rx: 0.5 });
-      k.add('E', sphere(1, 8, 6), '#fff4dc', { x, y: G - 0.36, z: -3.72 + i * 2.2, sx: 0.03, sy: 0.03, sz: 0.03 });
-    }
-  }
-  // Tapis de laine au centre.
-  k.add('F', box(3.0, 0.012, 2.2), '#d9cdb8', { x: 0, y: F, z: 1.6 });
-  // Portant mural : vestes, pulls, polos (couleurs du catalogue).
-  k.add('M', cyl(0.016, 0.016, 6.4, 6), '#8d9296', { x: -4.32, y: F + 1.75, z: -1.3, rx: Math.PI / 2 });
-  for (const z of [-4.4, 1.8]) k.add('M', box(0.3, 0.03, 0.03), '#8d9296', { x: -4.5, y: F + 1.75, z });
-  const cols = [['#f2f1ec'], ['#1f2b45'], ['#8a8f96'], ['#6e2433', '#f2f1ec'], ['#4b4a33', '#5b4330'], ['#f2f1ec'], ['#1f2b45'], ['#8a8f96'], ['#6e2433', '#f2f1ec'], ['#4b4a33', '#5b4330'], ['#2f5f8a'], ['#c8b48e']];
-  cols.forEach(([c, col], i) => garment(k, { x: -4.32, y: F + 1.75, z: -4.1 + i * 0.5, ry: Math.PI / 2 }, c, { len: 0.62 + (i % 3) * 0.06, wid: 0.44, collar: col || null }));
-  // Étagères laquées : pulls pliés, casquettes en haut.
-  shelving(k, { x: 4.36, y: F, z: -1.8, ry: -Math.PI / 2 }, 5.8, 0.48, [0.1, 0.6, 1.1, 1.6, 2.1], '#efeae0', '#e2dbcd');
-  const fold = ['#1f2b45', '#f2f1ec', '#8a8f96', '#6e2433', '#4b4a33', '#2f5f8a', '#c8b48e'];
-  for (let s = 0; s < 3; s++) {
-    for (let c = 0; c < 6; c++) {
-      const col = fold[(s * 2 + c) % fold.length];
-      for (let j = 0; j < 4; j++) k.add('F', box(0.32, 0.06, 0.28), col, { x: 4.33, y: F + 0.14 + s * 0.5 + j * 0.062, z: -4.3 + c * 0.95 });
-    }
-  }
-  for (let c = 0; c < 8; c++) {
-    const col = c % 2 ? '#1f2b45' : '#c8b48e';
-    k.add('F', sphere(1, 10, 6), col, { x: 4.33, y: F + 1.66, z: -4.4 + c * 0.7, sx: 0.1, sy: 0.07, sz: 0.11 });
-    k.add('F', box(0.13, 0.012, 0.09), col, { x: 4.21, y: F + 1.64, z: -4.4 + c * 0.7, ry: Math.PI / 2 });
-  }
-  // Table centrale : polos pliés, casquettes, petit miroir.
-  k.push({ x: 0, y: F, z: -0.8 });
-  k.add('A', box(1.9, 0.05, 1.0), OAK, { y: 0.78 });
-  for (const [sx, sz] of [[-0.85, -0.42], [0.85, -0.42], [-0.85, 0.42], [0.85, 0.42]]) k.add('A', box(0.06, 0.78, 0.06), DARK_OAK, { x: sx, z: sz });
-  for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) k.add('F', box(0.3, 0.05, 0.26), fold[(i + j) % fold.length], { x: -0.7 + i * 0.46, y: 0.83 + j * 0.052, z: -0.2 });
-  for (let i = 0; i < 3; i++) {
-    k.add('F', sphere(1, 10, 6), i === 1 ? '#c8b48e' : '#1f2b45', { x: -0.5 + i * 0.5, y: 0.86, z: 0.25, sx: 0.1, sy: 0.07, sz: 0.11 });
-    k.add('F', box(0.13, 0.012, 0.09), i === 1 ? '#c8b48e' : '#1f2b45', { x: -0.5 + i * 0.5, y: 0.84, z: 0.37 });
-  }
-  k.pop();
-  // Mannequins en vitrine et près du portant.
-  for (const x of [-2.85, 2.85]) k.add('A', box(1.2, 0.15, 1.0), '#e8e2d4', { x, y: F, z: 4.25 });
-  mannequin(k, { x: -2.85, y: F + 0.15, z: 4.25, ry: Math.PI }, { top: '#1f2b45', bottom: '#e9e3d6' });
-  mannequin(k, { x: 2.85, y: F + 0.15, z: 4.25, ry: Math.PI }, { top: '#6e2433', bottom: '#2b3442', collar: '#f2f1ec', cap: '#1f2b45' });
-  mannequin(k, { x: -2.4, y: F, z: 1.7, ry: Math.PI / 2 }, { top: '#4b4a33', bottom: '#c2b49a', collar: '#5b4330', jacket: true });
-  // Miroir sur pied au fond, cabine d'essayage à rideau.
-  k.add('A', box(1.0, 2.1, 0.06), '#b08d57', { x: -2.4, y: F + 0.05, z: -5.12 });
-  k.add('M', box(0.88, 1.98, 0.02), '#c3ccd0', { x: -2.4, y: F + 0.11, z: -5.08 });
-  k.add('M', cyl(0.015, 0.015, 1.4, 6), '#8d9296', { x: -4.0, y: F + 2.2, z: -4.0, rz: Math.PI / 2 });
-  k.add('F', box(1.36, 2.05, 0.05), '#d9cdb8', { x: -4.0, y: F + 0.12, z: -4.0 });
-  k.add('F', box(0.05, 2.05, 1.18), '#d9cdb8', { x: -3.33, y: F + 0.12, z: -4.6 });
-  // Pouf.
-  k.add('L', cyl(0.3, 0.3, 0.42, 16), '#6e2433', { x: -1.2, y: F, z: -4.2 });
-  // Comptoir laqué : caisse, sacs en papier, bouquet.
-  k.push({ x: 2.6, y: F, z: -3.6 });
-  k.add('A', box(2.2, 0.92, 0.6), '#efeae0');
-  k.add('A', box(2.3, 0.05, 0.68), OAK, { y: 0.92 });
-  k.add('A', box(0.34, 0.12, 0.28), '#1b1c1f', { x: 0.6, y: 0.97 });
-  k.add('A', box(0.28, 0.2, 0.02), '#2a3a4a', { x: 0.6, y: 1.1, z: -0.06, rx: -0.3 });
-  for (let i = 0; i < 3; i++) k.add('A', box(0.3, 0.36, 0.12), '#e9e3d6', { x: -0.7 + i * 0.05, y: 0.97, z: -0.1 + i * 0.04 });
-  k.add('A', cyl(0.07, 0.06, 0.24, 10), '#f7f4ed', { x: -0.1, y: 0.97 });
-  k.add('A', sphere(1, 10, 8), '#e9c94a', { x: -0.1, y: 1.3, sx: 0.16, sy: 0.12, sz: 0.16 });
-  k.pop();
-  // Plante.
-  k.add('A', cyl(0.2, 0.16, 0.45, 12), '#1b1c1f', { x: 4.1, y: F, z: 3.9 });
-  k.add('A', sphere(1, 10, 8), '#4f7a3a', { x: 4.1, y: F + 0.95, z: 3.9, sx: 0.4, sy: 0.6, sz: 0.4 });
-}
-
-const BUILDERS = { sellerie: buildSellerie, cafe: buildCafe, boutique: buildBoutique };
+const BUILDERS = { sellerie: buildSellerie, cafe: buildCafe, boutique: buildStore };
 
 // Géométrie de l'intérieur (repère local) : { A, L, F, M, G, E } (géométries ou null).
 export function buildInterior(spec) {

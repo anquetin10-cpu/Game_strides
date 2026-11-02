@@ -8,6 +8,7 @@ import { HORSES, SHOP, PROS, STABLES, STABLE_UPGRADES, SKILL_LABEL } from '../ga
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
+import { SHOPS3D } from '../world/sites.js';
 import { conditionText, temperature, wind, rainTarget, coverAt, tideLevel, tideEvents, tideCoef, hhmm, realTideHeight } from '../world/weather.js';
 import { sunTimes } from '../world/sun.js';
 import { ion } from './ionicons.js';
@@ -907,7 +908,7 @@ export class Phone {
     const main = h('div.app-main');
     main.appendChild(this._head(t('Commerces de Deauville City'), T`Solde : ${formatMoney(d.money)}`));
     const body = h('div.app-body.scrollable');
-    for (const [shop, title] of [['sellerie', 'Sellerie du Port'], ['boutique', t('Maison Lucette · prêt-à-porter')]]) {
+    for (const [shop, title] of [['sellerie', 'Sellerie du Port'], ['boutique', `${SHOPS3D.boutique.name} · ${SHOPS3D.boutique.sub}`]]) {
       body.appendChild(h('div.section-t', { text: title, style: { marginTop: '10px' } }));
       const list = h('div.shop-list');
       for (const it of SHOP.filter((x) => x.shop === shop)) list.appendChild(g.shops._row(it, () => this.refresh()));

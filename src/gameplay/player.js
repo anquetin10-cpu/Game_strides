@@ -75,8 +75,11 @@ export class Player {
   // - Casque : uniquement à cheval (mis pendant la montée, retiré après la descente — voir horseMount.js) ; à pied, le
   //   couvre-chef équipé (casquette) ou rien.
   // - Tenue de concours : automatiquement pendant toute mission de concours (où que l'on soit), jamais ailleurs —
-  //   veste (bleu marine si la veste de la Sellerie est achetée, noire sinon), chemise blanche, culotte blanche,
-  //   bottes noires.
+  //   veste (celle équipée de la boutique d'équitation ; sinon bleu marine si la veste de la Sellerie est achetée,
+  //   noire sinon), chemise blanche, pantalon blanc (ou le pantalon équipé s'il est admis en concours : blanc ou
+  //   beige ; un pantalon foncé est remplacé par le blanc réglementaire), gants équipés, bottes noires.
+  // - Veste de concours équipée (boutique d'équitation) : portée aussi hors concours, sur chemise blanche, tant qu'elle
+  //   est équipée (« Retirer » revient au haut de tous les jours) ; pantalon et gants équipés : portés partout.
   // Rien ne dépend de l'heure, de la météo ni du lieu.
   _outfit(avatar) {
     const base = avatar === 'm' ? OUTFITS.rider : OUTFITS.riderF;
@@ -85,18 +88,28 @@ export class Player {
       : { identity: 'joueur-f', scale: 0.985, eyes: '#5b4632', hairStyle: 'bun', belt: '#3b2a1e' };
     const o = { ...base, ...id };
     delete o.helmet;
-    // Articles portés (Sellerie du Port, Maison Lucette) et article essayé en boutique (previewItem).
+    // Articles portés (Sellerie du Port, boutique d'équitation) et article essayé en boutique (previewItem).
     const wear = this.game.commerce?.wear(this.previewItem) || {};
-    const helmet = this.helmetOn ? wear.helmet || '#16171a' : null;
+    // Casque : à cheval ; aussi pendant l'essai d'un casque en boutique.
+    const tryHelmet = !!this.previewItem && this.game.commerce?.item(this.previewItem)?.slot === 'casque';
+    const helmet = this.helmetOn || tryHelmet ? wear.helmet || '#16171a' : null;
     if (this.competitionOutfit()) {
-      const jacket = this.game.save?.data?.upgrades?.includes('veste') ? '#1f2b45' : '#1b1c1f';
-      return Object.assign(o, { style: 'rider', top: jacket, sleeve: jacket, pants: '#f2f1ec', boots: '#121214', logo: false, jacket: true, ...(helmet ? { helmet } : {}) });
+      const jacket = wear.jacket || (this.game.save?.data?.upgrades?.includes('veste') ? '#1f2b45' : '#1b1c1f');
+      const pants = wear.pants && wear.pantsConcours ? wear.pants : '#f2f1ec';
+      return Object.assign(o, { style: 'rider', top: jacket, sleeve: jacket, pants, boots: '#121214', logo: false, jacket: true, ...(wear.gloves ? { gloves: wear.gloves } : {}), ...(helmet ? { helmet } : {}) });
     }
     const top = '#2f5f8a';
     Object.assign(o, { style: 'casual', top, sleeve: top, pants: '#c2b49a', boots: '#3b2a1e', tallBoots: true, breeches: true, logo: true });
     if (wear.top) Object.assign(o, { top: wear.top, sleeve: wear.sleeve || wear.top, logo: false });
     if (wear.collar) o.collar = wear.collar;
+    if (wear.pants) o.pants = wear.pants;
+    if (wear.gloves) o.gloves = wear.gloves;
     if (wear.boots) o.boots = wear.boots;
+    // Veste de concours équipée : coupe cavalier (veste, chemise blanche), par-dessus le haut de tous les jours.
+    if (wear.jacket) {
+      Object.assign(o, { style: 'rider', top: wear.jacket, sleeve: wear.jacket, jacket: true, logo: false });
+      delete o.collar;
+    }
     if (helmet) o.helmet = helmet;
     else if (wear.cap) o.cap = wear.cap;
     return o;

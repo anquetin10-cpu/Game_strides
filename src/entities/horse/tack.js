@@ -102,14 +102,15 @@ export function padTexture() {
   return padTex;
 }
 
-export function tackMaterial(pad = '#15161a', trim = '#f2f1ec') {
-  const key = pad + trim;
+// boots : couleur des guêtres équipées (null : guêtres noires d'origine).
+export function tackMaterial(pad = '#15161a', trim = '#f2f1ec', boots = null) {
+  const key = pad + trim + (boots || '');
   let m = mats.get(key);
   if (m) return m;
   if (!padTex) padTex = makePadTexture();
   m = new THREE.MeshStandardMaterial({ map: padTex, roughness: 1, metalness: 1 });
   const U = {
-    uCol: { value: PALETTE.map((p) => new THREE.Color(p[0])) },
+    uCol: { value: PALETTE.map((p, i) => new THREE.Color(i === 5 && boots ? boots : p[0])) },
     uRM: { value: PALETTE.map((p) => new THREE.Vector2(p[1], p[2])) },
     uPad: { value: new THREE.Color(pad) },
     uTrim: { value: new THREE.Color(trim) },
@@ -127,6 +128,7 @@ export function tackMaterial(pad = '#15161a', trim = '#f2f1ec') {
   };
   m.customProgramCacheKey = () => 'horse-tack-1';
   m.userData.padColors = { pad, trim };
+  m.userData.bootsColor = boots;
   mats.set(key, m);
   return m;
 }
