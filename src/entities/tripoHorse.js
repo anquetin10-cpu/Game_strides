@@ -37,7 +37,7 @@ const LEGS = [
 const PROC_SOLE = new THREE.Vector3(0, -0.06 * MODEL_SCALE, 0.01 * MODEL_SCALE);
 // Recalage sur le point le plus bas des sabots près du sol (sabot procédural à moins de 3 cm, fondu jusqu'à 10 cm) ;
 // plus haut (soutien du membre), sur le centre de la sole.
-const NEAR_GROUND = [0.03, 0.1];
+export const NEAR_GROUND = [0.03, 0.1];
 // Queue : la queue du modèle est longue (crins jusqu'à 15 cm du sol) ; les rotations de la queue courte du cheval
 // procédural sont modérées, de la base au bout, pour qu'elle reste pendante au lieu de se déployer d'un bloc.
 const TAIL_DAMP = { tail: 0.75, tail2: 0.7, tail3: 0.62, tail4: 0.55, tail5: 0.5, tail6: 0.45 };
