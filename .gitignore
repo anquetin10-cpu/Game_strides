@@ -5,3 +5,8 @@ dist-single
 tests/e2e/out
 *.log
 .claude/worktrees
+# Cheval Tripo (essai) : sorties intermédiaires régénérables (voir trial/README.md)
+trial/textures/
+trial/review/
+trial/debug/
+trial/tripo_clean_preview.glb

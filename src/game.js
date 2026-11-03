@@ -201,6 +201,11 @@ export class Game {
     if (this.params.has('realhorse')) d.settings.horses = 'real';
     if (this.params.has('classic')) d.settings.characters = 'classic';
     this.realism = new Realism(this);
+    // Essai du cheval Tripo (développement seulement, `?tripohorse`) : ne remplace pas le cheval du jeu.
+    if (import.meta.env.DEV && this.params.has('tripohorse')) {
+      d.settings.horses = 'real';
+      this.realism.horseModel = 'horse_tripo';
+    }
     // Camion STRIDES : modèle détaillé STX Scania fourni (glTF, voir stxModel.js) ; ses cotes remplacent celles du porteur
     // procédural d'origine (box, rampe, stalles, essieux). Si le fichier ne se charge pas, l'erreur est signalée (console
     // et message en jeu) et le porteur d'origine sert de camion de secours (?truck=classic pour le revoir exprès).
