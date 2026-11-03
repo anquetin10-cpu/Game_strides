@@ -2,10 +2,11 @@
 //
 // La génération Tripo a modelé le tapis et les quartiers dans la géométrie : dalle légèrement surélevée, bords
 // roulés, marches, coutures en creux et micro-replis. Les sommets de la zone (fournie par cleanTripoTextures,
-// result.geometry.zoneRelief) sont replacés sur la surface « bi-harmonique » qui prolonge le pelage voisin :
-// minimum de Σ|Δx|² (laplacien à poids de valeur moyenne, calculés sur la géométrie d'origine), sommets hors zone
-// fixes. La courbure du dos et des flancs est prolongée
-// en continuité C1 avec le pelage ; dalle, bords, coutures et replis disparaissent.
+// result.geometry.zoneRelief) sont replacés par moindres carrés sur les coordonnées laplaciennes :
+// minimum de Σ|Δx - δ|², laplacien à poids de valeur moyenne (calculés sur la géométrie d'origine), sommets hors
+// zone fixes. Dans la zone, la cible δ est la courbure d'origine lissée sur quelques centimètres : la courbure du
+// dos et du ventre est gardée (pas d'aplatissement), les bords, marches et coutures (courbures opposées très
+// rapprochées) s'annulent. Raccord C1 avec le pelage ; dalle, bords, coutures et replis disparaissent.
 // Résolution directe : une composante connexe de la zone à la fois, renumérotation de Cuthill-McKee inverse puis
 // Cholesky en bande. Indépendant de l'échelle et de l'origine (positions natives ou calées en mètres).
 // UV et index inchangés ; normales recalculées dans la zone, fondues sur quelques anneaux autour.
@@ -137,9 +138,10 @@ function resoudreBande(n, bw, A, b) {
  * @param {Float32Array} normals normales (modifiées en place)
  * @param {Uint32Array|Uint16Array} indices triangles
  * @param {Uint8Array} zone 1 = sommet libre (doublons de couture : un seul suffit)
- * @param {object} [o] { anneaux = 3 } anneaux de fondu des normales autour de la zone
+ * @param {object} [o] { anneaux = 3, rayon } anneaux de fondu des normales ; rayon du lissage de la courbure cible
+ *   (unités des positions ; par défaut 4 × la longueur médiane des arêtes de la zone)
  */
-export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3 } = {}) {
+export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3, rayon = 0 } = {}) {
   const t0 = Date.now();
   const P = positions, I = indices, nv = P.length / 3;
   const { weld, ng, deb, vois } = souder(P, I);
@@ -153,6 +155,45 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
   const W = poidsVCM(P, I, weld, deb, vois, rep);
   const somW = new Float64Array(ng);
   for (let g = 0; g < ng; g++) for (let k = deb[g]; k < deb[g + 1]; k++) somW[g] += W[k];
+  // Coordonnées laplaciennes d'origine δ0 = x - Σ w x_j / Σ w.
+  const delta0 = new Float64Array(ng * 3);
+  for (let g = 0; g < ng; g++) {
+    if (!(somW[g] > 0)) continue;
+    let sx = 0, sy = 0, sz = 0;
+    for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; sx += W[k] * X0[q * 3]; sy += W[k] * X0[q * 3 + 1]; sz += W[k] * X0[q * 3 + 2]; }
+    delta0[g * 3] = X0[g * 3] - sx / somW[g]; delta0[g * 3 + 1] = X0[g * 3 + 1] - sy / somW[g]; delta0[g * 3 + 2] = X0[g * 3 + 2] - sz / somW[g];
+  }
+  // Rayon du lissage : 4 × longueur médiane des arêtes de la zone (indépendant de l'échelle).
+  if (!(rayon > 0)) {
+    const aretes = [];
+    for (let g = 0; g < ng; g++) if (libre[g]) for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; aretes.push(Math.hypot(X0[q * 3] - X0[g * 3], X0[q * 3 + 1] - X0[g * 3 + 1], X0[q * 3 + 2] - X0[g * 3 + 2])); }
+    aretes.sort((a, b) => a - b);
+    rayon = 4 * (aretes[aretes.length >> 1] || 0);
+  }
+  // Normales soudées d'origine (contrôle d'orientation du lissage).
+  const nG = new Float64Array(ng * 3);
+  for (let v = 0; v < nv; v++) { const g = weld[v]; nG[g * 3] += normals[v * 3]; nG[g * 3 + 1] += normals[v * 3 + 1]; nG[g * 3 + 2] += normals[v * 3 + 2]; }
+  // Cible δ dans la zone : moyenne gaussienne (σ = rayon / 2) des δ0 voisins de même orientation.
+  const cs = rayon, cles = new Map(), cle = (a, b, c) => `${a},${b},${c}`;
+  for (let g = 0; g < ng; g++) { const k = cle(Math.floor(X0[g * 3] / cs), Math.floor(X0[g * 3 + 1] / cs), Math.floor(X0[g * 3 + 2] / cs)); let l = cles.get(k); if (!l) cles.set(k, (l = [])); l.push(g); }
+  const delta = Float64Array.from(delta0), s2 = 2 * (rayon / 2) ** 2;
+  for (let g = 0; g < ng; g++) {
+    if (!libre[g]) continue;
+    const ix = Math.floor(X0[g * 3] / cs), iy = Math.floor(X0[g * 3 + 1] / cs), iz = Math.floor(X0[g * 3 + 2] / cs);
+    let sw = 0, sx = 0, sy = 0, sz = 0;
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) {
+      const l = cles.get(cle(ix + a, iy + b, iz + c));
+      if (!l) continue;
+      for (const q of l) {
+        const d2 = (X0[q * 3] - X0[g * 3]) ** 2 + (X0[q * 3 + 1] - X0[g * 3 + 1]) ** 2 + (X0[q * 3 + 2] - X0[g * 3 + 2]) ** 2;
+        if (d2 > rayon * rayon) continue;
+        if (nG[q * 3] * nG[g * 3] + nG[q * 3 + 1] * nG[g * 3 + 1] + nG[q * 3 + 2] * nG[g * 3 + 2] < 0) continue;
+        const w = Math.exp(-d2 / s2);
+        sw += w; sx += w * delta0[q * 3]; sy += w * delta0[q * 3 + 1]; sz += w * delta0[q * 3 + 2];
+      }
+    }
+    if (sw > 0) { delta[g * 3] = sx / sw; delta[g * 3 + 1] = sy / sw; delta[g * 3 + 2] = sz / sw; }
+  }
   // Composantes connexes de la zone.
   const comp = new Int32Array(ng).fill(-1), comps = [];
   for (let g = 0; g < ng; g++) {
@@ -168,14 +209,14 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
     if (n < 4) continue;
     const loc = new Map();
     F.forEach((g, k) => loc.set(g, k));
-    // Lignes de l'énergie : sommets libres et leur premier anneau. Ligne i : x_i - moyenne(voisins).
+    // Lignes de l'énergie : sommets libres et leur premier anneau. Ligne i : x_i - moyenne pondérée(voisins) - δ_i.
     const lignes = new Set(F);
     for (const g of F) for (let k = deb[g]; k < deb[g + 1]; k++) lignes.add(vois[k]);
     const entrees = [], fixes = [];
     for (const i of lignes) {
       const d = somW[i];
       if (!(d > 0)) continue;
-      const e = [], f = [0, 0, 0];
+      const e = [], f = [-delta[i * 3], -delta[i * 3 + 1], -delta[i * 3 + 2]];
       const ajoute = (g, a) => {
         const k = loc.get(g);
         if (k !== undefined) e.push(k, a);
@@ -269,7 +310,7 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
     if (fx * nx + fy * ny + fz * nz < 0) contre++;
   }
   return {
-    sommetsLibres: nLib, composantes: statsComp,
+    sommetsLibres: nLib, composantes: statsComp, rayonCourbure: rayon,
     deplacement: { moyen: dMoy / Math.max(1, nLib), max: dMax, normalMax: nMax, tangentielMoyen: tMoy / Math.max(1, nLib), tangentielMax: tMax },
     facesContreNormalesZone: contre, tempsMs: Date.now() - t0,
   };
