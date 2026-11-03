@@ -37,6 +37,11 @@ export const DEFAUTS = {
       decalages: [[0, 0, -0.19], [0, 0, -0.21], [0, 0.0, -0.17]],
     },
   },
+  // Mèche de crinière couchée sur le garrot, à l'avant du tapis : relief au-dessus de la ligne du dos (hauteur par
+  // rapport aux côtés du dos à |x| ∈ cote). Gardée telle quelle (couleur et relief).
+  meche: { xMax: 0.03, z: [-0.04, 0.08], cote: [0.016, 0.026], pas: 0.002, seuilTexel: [0.003, 0.005], seuilSommet: 0.002 },
+  // Zone de relief à effacer dans le maillage (relief-plaques.mjs) : plaque + marge, hors mèche et toupet.
+  relief: { marge: 0.010, toupet: { zMin: 0.062, xMax: 0.04 } },
   // Points sombres : luminance (albédo) ou rugosité nettement inférieure à la médiane du voisinage 3D.
   points: { voxel: 0.006, ratio: 0.62, ecartMin: 28, tailleMax: 0.005, texelsMax: 400 },
   rugosite: { voxel: 0.006, ratio: 0.72, ecartMin: 30, tailleMax: 0.006, texelsMax: 200 },
@@ -201,6 +206,29 @@ function alphaPlaque(S, D, P, cfg, x, y, z) {
   const r = cfg.roi, f = 0.003;
   for (let k = 0; k < 3; k++) { const v = [x, y, z][k]; al *= smooth(r[k][0] - f, r[k][0] + f, v) * (1 - smooth(r[k][1] - f, r[k][1] + f, v)); }
   return al < 1 / 255 ? 0 : al; // sous le pas d'un masque 8 bits : inchangé
+}
+
+// ---------- Mèche de crinière sur le garrot ----------
+// Profil de la ligne du dos de part et d'autre de l'épine (sommets à |x| ∈ cote) par tranche de z ; la hauteur d'un
+// point au-dessus de ce profil distingue la mèche (≈ 1 cm de relief) de la crête naturelle du dos (2-3 mm).
+function profilMeche(pos, c) {
+  const nb = Math.ceil((c.z[1] - c.z[0]) / c.pas), g = new Float32Array(nb).fill(-1), d = new Float32Array(nb).fill(-1);
+  for (let v = 0; v < pos.length / 3; v++) {
+    const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2], ax = Math.abs(x);
+    if (z < c.z[0] || z >= c.z[1] || ax < c.cote[0] || ax > c.cote[1]) continue;
+    const k = Math.floor((z - c.z[0]) / c.pas), t = x > 0 ? g : d;
+    if (y > t[k]) t[k] = y;
+  }
+  const prof = new Float32Array(nb);
+  for (let k = 0; k < nb; k++) prof[k] = g[k] > 0 && d[k] > 0 ? (g[k] + d[k]) / 2 : Math.max(g[k], d[k]);
+  for (let k = 0; k < nb; k++) if (prof[k] < 0) { let q = 1; while (q < nb && !(prof[k - q] > 0) && !(prof[k + q] > 0)) q++; prof[k] = prof[k - q] > 0 ? prof[k - q] : prof[k + q] > 0 ? prof[k + q] : 0; }
+  const lisse = prof.map((v, k) => (prof[Math.max(0, k - 1)] + 2 * v + prof[Math.min(nb - 1, k + 1)]) / 4);
+  const hauteur = (x, y, z) => {
+    if (Math.abs(x) > c.xMax || z < c.z[0] || z >= c.z[1]) return -1;
+    const f = (z - c.z[0]) / c.pas - 0.5, k = Math.max(0, Math.min(nb - 2, Math.floor(f))), t = Math.max(0, Math.min(1, f - k));
+    return y - (lisse[k] * (1 - t) + lisse[k + 1] * t);
+  };
+  return { hauteur };
 }
 
 // ---------- Points sombres (texels) ----------
@@ -565,6 +593,27 @@ function mesureRelief(R, img, alphaHard, S, D) {
   return r;
 }
 
+// Zone de relief à effacer dans le maillage : sommets à moins de `marge` d'une plaque (distance 3D au masque de
+// segmentation), hors mèche de crinière et toupet du garrot.
+function zoneRelief(pos, plaques, P, meche) {
+  const nv = pos.length / 3, zone = new Uint8Array(nv), parPlaque = {};
+  const bornes = {};
+  for (let v = 0; v < nv; v++) {
+    const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2];
+    for (const [nom, p] of Object.entries(plaques)) {
+      if (distPlaque(p.S, p.D, x, y, z) > P.relief.marge) continue;
+      if (meche.hauteur(x, y, z) > P.meche.seuilSommet) continue;
+      if (nom === 'tapis' && z > P.relief.toupet.zMin && Math.abs(x) < P.relief.toupet.xMax) continue;
+      zone[v] = 1;
+      parPlaque[nom] = (parPlaque[nom] || 0) + 1;
+      const b = (bornes[nom] ||= [[1e9, -1e9], [1e9, -1e9], [1e9, -1e9]]);
+      for (let d = 0; d < 3; d++) { b[d][0] = Math.min(b[d][0], pos[v * 3 + d]); b[d][1] = Math.max(b[d][1], pos[v * 3 + d]); }
+      break;
+    }
+  }
+  return { zone, sommets: parPlaque, boites: Object.fromEntries(Object.entries(bornes).map(([k, b]) => [k, b.map((r) => r.map((v) => +v.toFixed(3)))])) };
+}
+
 // Géométrie : bosse locale des sommets (écart à la moyenne des voisins le long de la normale) selon la distance au
 // bord de la plaque ; faces dont l'orientation contredit les normales de sommets (micro-replis).
 function analyseGeometrie(positions, normals, indices, plaques, P) {
@@ -696,16 +745,32 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
     const S = segmenterPlaque(Rb, bc, cfg, P);
     plaques[nom] = { S, D: distanceMasque(S), cfg };
   }
+  // Mèche de crinière couchée à l'avant du tapis : gardée (alpha nul), ignorée par le champ basse fréquence.
+  const meche = profilMeche(pos, P.meche);
   const alphaPlaques = (R) => {
-    const N = R.W * R.H, a = new Float32Array(N), qui = new Int8Array(N).fill(-1), noms = Object.keys(plaques);
+    const N = R.W * R.H, a = new Float32Array(N), qui = new Int8Array(N).fill(-1), noms = Object.keys(plaques), ign = new Uint8Array(N);
+    let nMeche = 0;
     for (let i = 0; i < N; i++) {
       if (R.tri[i] < 0) continue;
       const x = R.pos[i * 3], y = R.pos[i * 3 + 1], z = R.pos[i * 3 + 2];
-      for (let k = 0; k < noms.length; k++) { const p = plaques[noms[k]]; const v = alphaPlaque(p.S, p.D, P, p.cfg, x, y, z); if (v > a[i]) { a[i] = v; qui[i] = k; } }
+      for (let k = 0; k < noms.length; k++) {
+        const p = plaques[noms[k]];
+        let v = alphaPlaque(p.S, p.D, P, p.cfg, x, y, z);
+        if (v > 0 && noms[k] === 'tapis') {
+          const h = meche.hauteur(x, y, z);
+          if (h > P.meche.seuilSommet) ign[i] = 1;
+          const m = smooth(P.meche.seuilTexel[0], P.meche.seuilTexel[1], h);
+          if (m > 0.5) nMeche++;
+          v *= 1 - m;
+          if (v < 1 / 255) v = 0;
+        }
+        if (v > a[i]) { a[i] = v; qui[i] = k; }
+      }
     }
-    return { a, qui, noms };
+    return { a, qui, noms, ign, nMeche };
   };
   const APb = alphaPlaques(Rb), APn = Rn === Rb ? APb : alphaPlaques(Rn), APm = Rm === Rb ? APb : alphaPlaques(Rm);
+  const zr = zoneRelief(pos, plaques, P, meche);
   tic('masquesPlaques', t);
 
   // 2) Points sombres : albédo (luminance) et rugosité (points brillants qui deviennent noirs avec le métal).
