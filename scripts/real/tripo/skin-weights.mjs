@@ -100,6 +100,8 @@ function weldGraph(P, I) {
     if (!map.has(k)) map.set(k, map.size);
     weld[i] = map.get(k);
   }
+  const pos = new Float32Array(map.size * 3);
+  for (let i = 0; i < weld.length; i++) pos.set([P[i * 3], P[i * 3 + 1], P[i * 3 + 2]], weld[i] * 3);
   const adj = Array.from({ length: map.size }, () => new Set());
   for (let t = 0; t < I.length; t += 3) {
     const a = weld[I[t]], b = weld[I[t + 1]], c = weld[I[t + 2]];
@@ -107,7 +109,49 @@ function weldGraph(P, I) {
     adj[b].add(a).add(c);
     adj[c].add(a).add(b);
   }
-  return { weld, n: map.size, adj: adj.map((s) => [...s]) };
+  return { weld, n: map.size, pos, adj: adj.map((s) => [...s]) };
+}
+
+// Crins pendants de la queue et postérieurs repérés sur la géométrie (graphe soudé), sans seuils fixes en x ou z.
+// Sous la ligne des fesses, la queue pendante est une pièce de surface séparée des membres, et chaque postérieur une
+// pièce séparée du reste. Remplissage depuis le bout de la queue (resp. chaque sabot postérieur) sous une hauteur
+// limite : la plus haute (pas de 1 cm, à partir de 0,80 m) où la pièce n'atteint ni un autre sabot ni le bout de la
+// queue et, pour la queue, reste dans son couloir (|x| < 0,16 m, z < −0,70 m) ; au-delà, elle rejoint le tronc.
+// Renvoie un libellé par sommet soudé (1 : crins de la queue, 2 : postérieur, 0 : ailleurs) et les hauteurs limites.
+const TAIL = 1, HIND = 2;
+function tailLegLabels(G, seeds) {
+  const flood = (s, cut) => {
+    const lab = new Uint8Array(G.n);
+    lab[s] = 1;
+    const st = [s];
+    let outside = false;
+    while (st.length) {
+      const v = st.pop();
+      if (Math.abs(G.pos[v * 3]) > 0.16 || G.pos[v * 3 + 2] > -0.7) outside = true;
+      for (const w of G.adj[v]) if (!lab[w] && G.pos[w * 3 + 1] < cut) {
+        lab[w] = 1;
+        st.push(w);
+      }
+    }
+    return { lab, outside };
+  };
+  const highest = (s, others, lane) => {
+    let best = null;
+    for (let c = 80; c <= 130; c++) {
+      const f = flood(s, c / 100);
+      if (others.some((o) => f.lab[o]) || (lane && f.outside)) break;
+      best = { cut: c / 100, lab: f.lab };
+    }
+    return best;
+  };
+  const { tail, hl, hr, fl, fr } = seeds;
+  const T = highest(tail, [hl, hr, fl, fr], true);
+  if (!T) throw new Error('poids : crins de la queue non séparés des membres sous 0,80 m (repérage géométrique impossible)');
+  const L = highest(hl, [hr, fl, fr, tail], false), R = highest(hr, [hl, fl, fr, tail], false);
+  if (!L || !R) throw new Error('poids : postérieurs non séparés du reste du maillage sous 0,80 m (repérage géométrique impossible)');
+  const lab = new Uint8Array(G.n);
+  for (let g = 0; g < G.n; g++) lab[g] = T.lab[g] ? TAIL : L.lab[g] || R.lab[g] ? HIND : 0;
+  return { lab, tailCut: T.cut, legCuts: [L.cut, R.cut] };
 }
 
 const smooth = (a, b, x) => {
@@ -116,8 +160,11 @@ const smooth = (a, b, x) => {
 };
 // Zone admise d'un os (facteur 0..1) : queue derrière la croupe et entre les cuisses seulement (les crins pendent
 // près des jarrets : sans cette limite, l'arrière des jarrets suivrait la queue) ; membres de leur côté seulement
-// (transition de quelques centimètres au milieu du poitrail et du périnée).
-function zone(name, x, y, z) {
+// (transition de quelques centimètres au milieu du poitrail et du périnée). Libellés géométriques (tailLegLabels) :
+// crins pendants de la queue → os de la queue seulement ; postérieurs → jamais la queue.
+function zone(name, x, y, z, lab = 0) {
+  if (lab === TAIL) return /^tail/.test(name) ? 1 : 0;
+  if (lab === HIND && /^tail/.test(name)) return 0;
   if (/^tail/.test(name)) return (1 - smooth(0.11, 0.14, Math.abs(x))) * (1 - smooth(-0.8, -0.72, z));
   // Postérieurs : jamais dans le couloir des crins de la queue (entre et derrière les fesses).
   const tailLane = /^h/.test(name) ? 1 - (1 - smooth(0.07, 0.1, Math.abs(x))) * smooth(-0.9, -0.94, z) : 1;
@@ -132,31 +179,51 @@ export function computeWeights(P, I, pos, ext, { power = 4, smoothPasses = 3, mi
   const names = segs.map((s) => s.name);
   const nb = neighbours(names);
   const nv = P.length / 3;
-  const D = new Float32Array(nv * segs.length);
+  // Graphe soudé et libellés géométriques (crins de la queue, postérieurs) : graines au bout de la queue et aux sabots.
+  const G = weldGraph(P, I);
+  const nearest = (q) => {
+    let b = 0, bd = 1e9;
+    for (let g = 0; g < G.n; g++) {
+      const d = Math.hypot(G.pos[g * 3] - q[0], G.pos[g * 3 + 1] - q[1], G.pos[g * 3 + 2] - q[2]);
+      if (d < bd) {
+        bd = d;
+        b = g;
+      }
+    }
+    return b;
+  };
+  const TL = tailLegLabels(G, { tail: nearest(ext.tailEnd), hl: nearest(pos.hlH), hr: nearest(pos.hrH), fl: nearest(pos.flH), fr: nearest(pos.frH) });
+  const label = Uint8Array.from(G.weld, (g) => TL.lab[g]);
+  // Distances avec les libellés (D) et sans (D0, pour les seuls rayons typiques).
+  const D = new Float32Array(nv * segs.length), D0 = new Float32Array(nv * segs.length);
   for (let v = 0; v < nv; v++) {
     const p = [P[v * 3], P[v * 3 + 1], P[v * 3 + 2]];
     for (let k = 0; k < segs.length; k++) {
-      const zf = zone(segs[k].name, p[0], p[1], p[2]);
+      const d = segDist(p, segs[k].A, segs[k].B) + 1e-4;
       // Hors zone : distance rendue prohibitive (jamais os principal).
-      D[v * segs.length + k] = (segDist(p, segs[k].A, segs[k].B) + 1e-4) / Math.max(zf, 1e-3);
+      D[v * segs.length + k] = d / Math.max(zone(segs[k].name, p[0], p[1], p[2], label[v]), 1e-3);
+      D0[v * segs.length + k] = d / Math.max(zone(segs[k].name, p[0], p[1], p[2]), 1e-3);
     }
   }
-  // Rayons typiques : médiane des distances des sommets attribués (2 itérations).
+  // Rayons typiques : médiane des distances des sommets attribués (2 itérations), estimés sans les libellés : sans les
+  // crins, la médiane de la jambe (tibia) tombe de 10 à 7 cm et le fémur prend le grasset et la jambe ; les rayons des
+  // membres restent donc ceux de l'estimation d'origine. Os principal final : avec les libellés.
   let R = new Float32Array(segs.length).fill(1);
   const primary = new Int16Array(nv);
   for (let it = 0; it < 3; it++) {
     const buckets = segs.map(() => []);
+    const DD = it < 2 ? D0 : D;
     for (let v = 0; v < nv; v++) {
       let bk = 0, bd = 1e9;
       for (let k = 0; k < segs.length; k++) {
-        const d = D[v * segs.length + k] / R[k];
+        const d = DD[v * segs.length + k] / R[k];
         if (d < bd) {
           bd = d;
           bk = k;
         }
       }
       primary[v] = bk;
-      buckets[bk].push(D[v * segs.length + bk]);
+      buckets[bk].push(DD[v * segs.length + bk]);
     }
     if (it === 2) break;
     R = Float32Array.from(buckets, (b, k) => {
@@ -185,7 +252,6 @@ export function computeWeights(P, I, pos, ext, { power = 4, smoothPasses = 3, mi
     for (let k = 0; k < segs.length; k++) W[v * segs.length + k] /= sum;
   }
   // Lissage sur le graphe des sommets soudés.
-  const G = weldGraph(P, I);
   const nk = segs.length;
   let Wg = new Float32Array(G.n * nk);
   const cnt = new Float32Array(G.n);
@@ -212,7 +278,7 @@ export function computeWeights(P, I, pos, ext, { power = 4, smoothPasses = 3, mi
     const g = G.weld[v];
     const top = [];
     for (let k = 0; k < nk; k++) {
-      const w = Wg[g * nk + k] * zone(segs[k].name, P[v * 3], P[v * 3 + 1], P[v * 3 + 2]);
+      const w = Wg[g * nk + k] * zone(segs[k].name, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], label[v]);
       if (w > 0.01) top.push([w, k]);
     }
     top.sort((a, b) => b[0] - a[0]);
@@ -223,5 +289,64 @@ export function computeWeights(P, I, pos, ext, { power = 4, smoothPasses = 3, mi
       weights[v * 4 + j] = w / s;
     });
   }
-  return { joints, weights, primary, radii: Object.fromEntries(segs.map((s, k) => [s.name, +R[k].toFixed(3)])), segments: segs };
+  return {
+    joints,
+    weights,
+    primary,
+    label,
+    cuts: { tail: TL.tailCut, hindLegs: TL.legCuts },
+    radii: Object.fromEntries(segs.map((s, k) => [s.name, +R[k].toFixed(3)])),
+    segments: segs,
+  };
+}
+
+// Contrôle à la construction : crins de la queue sans poids des postérieurs, postérieurs sans poids de la queue, pas
+// de poids d'un membre du côté opposé (hors de la transition médiane, |x| > 5 cm). Volume des crins : sommets libellés
+// crins et, indépendamment du libellé, le couloir |x| < 0,10 m, y < 0,80 m, z < −0,85 m. Lève une erreur au-delà de
+// 0,05 de poids ; renvoie les comptes (rapport).
+export function checkTailWeights(P, skin, limit = 0.05) {
+  const nv = P.length / 3;
+  const r = {
+    tailCut: skin.cuts.tail,
+    hindLegCuts: skin.cuts.hindLegs,
+    tailVolumeVerts: 0,
+    tailHairVerts: 0,
+    tailVolumeHindOver: 0,
+    maxHindInTail: 0,
+    hindLegVerts: 0,
+    hindLegTailOver: 0,
+    maxTailInHindLegs: 0,
+    crossSideOver: 0,
+    limit,
+  };
+  for (let v = 0; v < nv; v++) {
+    const x = P[v * 3], y = P[v * 3 + 1], z = P[v * 3 + 2];
+    let h = 0, t = 0, cross = 0;
+    for (let j = 0; j < 4; j++) {
+      const w = skin.weights[v * 4 + j];
+      if (!w) continue;
+      const n = BONES[skin.joints[v * 4 + j]].name;
+      if (/^h[lr]/.test(n)) h += w;
+      if (/^tail/.test(n)) t += w;
+      if ((x > 0.05 && /^[fh]r/.test(n)) || (x < -0.05 && /^[fh]l/.test(n))) cross += w;
+    }
+    if (skin.label[v] === TAIL) r.tailHairVerts++;
+    if (skin.label[v] === TAIL || (Math.abs(x) < 0.1 && y < 0.8 && z < -0.85)) {
+      r.tailVolumeVerts++;
+      r.maxHindInTail = Math.max(r.maxHindInTail, h);
+      if (h > limit) r.tailVolumeHindOver++;
+    }
+    if (skin.label[v] === HIND) {
+      r.hindLegVerts++;
+      r.maxTailInHindLegs = Math.max(r.maxTailInHindLegs, t);
+      if (t > limit) r.hindLegTailOver++;
+    }
+    if (cross > limit) r.crossSideOver++;
+  }
+  r.maxHindInTail = +r.maxHindInTail.toFixed(4);
+  r.maxTailInHindLegs = +r.maxTailInHindLegs.toFixed(4);
+  if (r.tailVolumeHindOver || r.hindLegTailOver || r.crossSideOver) {
+    throw new Error(`poids : fuite entre queue et postérieurs (${JSON.stringify(r)})`);
+  }
+  return r;
 }

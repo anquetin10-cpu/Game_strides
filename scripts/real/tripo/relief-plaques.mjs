@@ -50,8 +50,14 @@ function souder(P, I) {
 // Poids des coordonnées de valeur moyenne (Floater) sur des positions soudées X : toujours positifs,
 // précision linéaire dans le plan tangent. Le laplacien qui en découle ne fait presque pas glisser les sommets le
 // long de la surface (le laplacien uniforme les redistribue de plusieurs millimètres, et la texture avec eux).
+// Rendus robustes aux triangles dégénérés du maillage Tripo : demi-angle plafonné à 75°, arêtes d'au moins 0,3 ×
+// la longueur médiane (sinon un poids démesuré épingle le sommet et laisse un pli).
 function poidsVCM(X, I, weld, deb, vois) {
   const w = new Float64Array(vois.length);
+  const L = [];
+  for (let g = 0; g + 1 < deb.length; g += 7) for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; L.push(Math.hypot(X[q * 3] - X[g * 3], X[q * 3 + 1] - X[g * 3 + 1], X[q * 3 + 2] - X[g * 3 + 2])); }
+  L.sort((a, b) => a - b);
+  const lMin = 0.3 * (L[L.length >> 1] || 0), tMax = Math.tan((75 * Math.PI) / 180);
   const pos = (k, a, b) => { for (let q = deb[a]; q < deb[a + 1]; q++) if (vois[q] === b) return q; return -1; };
   for (let t = 0; t < I.length; t += 3) {
     const g = [weld[I[t]], weld[I[t + 1]], weld[I[t + 2]]];
@@ -64,10 +70,10 @@ function poidsVCM(X, I, weld, deb, vois) {
       const lu = Math.hypot(ux, uy, uz), lv = Math.hypot(vx, vy, vz);
       if (lu < 1e-12 || lv < 1e-12) continue;
       const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
-      const tanDemi = Math.hypot(cx, cy, cz) / (lu * lv + ux * vx + uy * vy + uz * vz + 1e-300);
+      const tanDemi = Math.min(tMax, Math.hypot(cx, cy, cz) / (lu * lv + ux * vx + uy * vy + uz * vz + 1e-300));
       const qj = pos(0, i, j), qk = pos(0, i, k);
-      if (qj >= 0) w[qj] += tanDemi / lu;
-      if (qk >= 0) w[qk] += tanDemi / lv;
+      if (qj >= 0) w[qj] += tanDemi / Math.max(lu, lMin);
+      if (qk >= 0) w[qk] += tanDemi / Math.max(lv, lMin);
     }
   }
   return w;
@@ -139,10 +145,9 @@ function resoudreBande(n, bw, A, b) {
  * @param {Uint32Array|Uint16Array} indices triangles
  * @param {Uint8Array} zone 1 = sommet libre (doublons de couture : un seul suffit)
  * @param {object} [o] { anneaux = 3, rayon } anneaux de fondu des normales ; rayon du lissage de la courbure cible
- *   (unités des positions ; par défaut 4 × la longueur médiane des arêtes de la zone) ; itérations de finition (Taubin
- *   selon la normale, dépliage des faces retournées)
+ *   (unités des positions ; par défaut 4 × la longueur médiane des arêtes de la zone)
  */
-export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3, rayon = 0, finition = 10 } = {}) {
+export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3, rayon = 0 } = {}) {
   const t0 = Date.now();
   const P = positions, I = indices, nv = P.length / 3;
   const { weld, ng, deb, vois } = souder(P, I);
@@ -258,8 +263,7 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
     for (let k = 0; k < n; k++) for (let d = 0; d < 3; d++) X[F[k] * 3 + d] = sol[d][perm[k]];
     statsComp.push({ sommets: n, bande: bw });
   }
-  // Finition : quelques pas de Taubin (λ/μ) dans la zone, limités à la composante normale (pas de glissement de la
-  // texture), sauf pour les sommets des faces retournées (replis du maillage d'origine), dépliés en plein.
+  // Contrôle : faces de la zone très inclinées sur la normale lissée de leurs sommets (replis résiduels).
   const tris = [];
   for (let t = 0; t < I.length; t += 3) {
     const a = weld[I[t]], b = weld[I[t + 1]], c = weld[I[t + 2]];
@@ -292,26 +296,7 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
     }
     return n;
   };
-  const libres = [];
-  for (let g = 0; g < ng; g++) if (libre[g]) libres.push(g);
-  const Dl = new Float64Array(libres.length * 3);
-  const pas = (f) => {
-    libres.forEach((g, j) => {
-      const n = deb[g + 1] - deb[g];
-      let dx = -X[g * 3], dy = -X[g * 3 + 1], dz = -X[g * 3 + 2];
-      for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; dx += X[q * 3] / n; dy += X[q * 3 + 1] / n; dz += X[q * 3 + 2] / n; }
-      if (!retourne[g]) { const d = dx * nZ[g * 3] + dy * nZ[g * 3 + 1] + dz * nZ[g * 3 + 2]; dx = d * nZ[g * 3]; dy = d * nZ[g * 3 + 1]; dz = d * nZ[g * 3 + 2]; }
-      Dl[j * 3] = dx * f; Dl[j * 3 + 1] = dy * f; Dl[j * 3 + 2] = dz * f;
-    });
-    libres.forEach((g, j) => { X[g * 3] += Dl[j * 3]; X[g * 3 + 1] += Dl[j * 3 + 1]; X[g * 3 + 2] += Dl[j * 3 + 2]; });
-  };
-  const replisAvantFinition = normalesZone();
-  for (let it = 0; it < finition; it++) {
-    pas(0.5);
-    pas(-0.53);
-    normalesZone();
-  }
-  const replisApresFinition = normalesZone();
+  const facesPliees = normalesZone();
   // Positions : tous les doublons d'un sommet soudé libre.
   for (let v = 0; v < nv; v++) {
     const g = weld[v];
@@ -371,6 +356,6 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
   return {
     sommetsLibres: nLib, composantes: statsComp, rayonCourbure: rayon,
     deplacement: { moyen: dMoy / Math.max(1, nLib), max: dMax, normalMax: nMax, tangentielMoyen: tMoy / Math.max(1, nLib), tangentielMax: tMax },
-    facesContreNormalesZone: contre, facesPliees: { avantFinition: replisAvantFinition, apresFinition: replisApresFinition }, tempsMs: Date.now() - t0,
+    facesContreNormalesZone: contre, facesPliees, tempsMs: Date.now() - t0,
   };
 }

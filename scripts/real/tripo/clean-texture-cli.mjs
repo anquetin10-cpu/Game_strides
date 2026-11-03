@@ -1,6 +1,6 @@
 // Interface en ligne de commande du nettoyage des textures Tripo.
 // Usage : node scripts/real/tripo/clean-texture-cli.mjs [source.glb] [dossier trial]
-// Écrit <trial>/textures/{basecolor,normal,mr}.png, les masques, report.json et deux GLB de revue :
+// Écrit <trial>/textures/{basecolor,normal,mr}.png, les masques, zone_relief.bin, report.json et deux GLB de revue :
 //   - <trial>/tripo_clean_preview.glb : maillage source inchangé + textures nettoyées (metallicFactor 0, sans
 //     KHR_materials_volume) ;
 //   - <trial>/tripo_clean_relief_preview.glb : idem + corrections géométriques prévues pour la construction :
@@ -44,6 +44,8 @@ writeFileSync(join(out, 'mr.png'), res.metallicRoughness);
 writeFileSync(join(out, 'mask_pad.png'), res.masks.pad);
 writeFileSync(join(out, 'mask_flap.png'), res.masks.flap);
 writeFileSync(join(out, 'mask_dots.png'), res.masks.dots);
+// Zone de relief (1 octet par sommet de la source, 1 = sommet à replacer).
+writeFileSync(join(out, 'zone_relief.bin'), res.geometry.zoneRelief);
 
 // GLB de revue : mêmes maillage et UV, textures remplacées (PNG), matériau non métallique.
 const remplace = (t, buf, nom) => { t.setImage(buf); t.setMimeType('image/png'); t.setURI(`${nom}.png`); t.setName(nom); };

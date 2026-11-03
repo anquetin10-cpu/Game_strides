@@ -762,14 +762,24 @@ function mesureRelief(R, img, alphaHard, S, D) {
 }
 
 // Zone de relief à effacer dans le maillage : sommets à moins de `marge` d'une plaque (distance 3D au masque de
-// segmentation), hors mèche de crinière et toupet du garrot.
-function zoneRelief(pos, plaques, P, meche) {
+// segmentation) ou d'un sommet de liseré / pli relevé par l'analyse géométrique (le bord modelé déborde parfois de
+// la couleur de quelques millimètres), hors mèche de crinière et toupet du garrot.
+function zoneRelief(pos, plaques, P, meche, geo) {
   const nv = pos.length / 3, zone = new Uint8Array(nv), parPlaque = {};
-  const bornes = {};
+  const bornes = {}, m = P.relief.marge, cle = (a, b, c) => `${a},${b},${c}`;
+  const proches = Object.fromEntries(Object.keys(plaques).map((nom) => {
+    const h = new Map(), r = geo.reliefPlaques[nom];
+    for (const q of [...r.sommetsMarques, ...r.plisInternes.sommets]) { const k = cle(Math.floor(q[0] / m), Math.floor(q[1] / m), Math.floor(q[2] / m)); let l = h.get(k); if (!l) h.set(k, (l = [])); l.push(q); }
+    return [nom, (x, y, z) => {
+      const i = Math.floor(x / m), j = Math.floor(y / m), k = Math.floor(z / m);
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) for (const q of h.get(cle(i + a, j + b, k + c)) || []) if ((q[0] - x) ** 2 + (q[1] - y) ** 2 + (q[2] - z) ** 2 <= m * m) return true;
+      return false;
+    }];
+  }));
   for (let v = 0; v < nv; v++) {
     const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2];
     for (const [nom, p] of Object.entries(plaques)) {
-      if (distPlaque(p.S, p.D, x, y, z) > P.relief.marge) continue;
+      if (distPlaque(p.S, p.D, x, y, z) > m && !proches[nom](x, y, z)) continue;
       if (meche.hauteur(x, y, z) > P.meche.seuilSommet) continue;
       if (nom === 'tapis' && z > P.relief.toupet.zMin && Math.abs(x) < P.relief.toupet.xMax) continue;
       zone[v] = 1;
@@ -939,8 +949,12 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
     return { a, qui, noms, ign, nMeche, bMeche: bMeche.map((r) => r.map((q) => +q.toFixed(3))) };
   };
   const APb = alphaPlaques(Rb), APn = Rn === Rb ? APb : alphaPlaques(Rn), APm = Rm === Rb ? APb : alphaPlaques(Rm);
-  const zr = zoneRelief(pos, plaques, P, meche);
   tic('masquesPlaques', t);
+  // Géométrie : analyse seule (aucune modification), puis zone de relief à replacer (relief-plaques.mjs).
+  t = Date.now();
+  const geo = analyseGeometrie(pos, normals, indices, plaques, P);
+  const zr = zoneRelief(pos, plaques, P, meche, geo);
+  tic('geometrie', t);
 
   // 2) Points sombres : albédo (luminance) et rugosité (points brillants qui deviennent noirs avec le métal).
   t = Date.now();
@@ -1028,10 +1042,6 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
   for (let i = 0; i < Nm; i++) { metalMaxAvant = Math.max(metalMaxAvant, mr.data[i * mr.C + 2]); mrOut[i * mr.C + 2] = 0; }
   tic('metalRugosite', t);
 
-  // 7) Géométrie (rapport seulement, aucune modification).
-  t = Date.now();
-  const geo = analyseGeometrie(pos, normals, indices, plaques, P);
-  tic('geometrie', t);
 
   // Sorties.
   t = Date.now();
