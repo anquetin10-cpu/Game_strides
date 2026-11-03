@@ -38,8 +38,8 @@ const TOL = {
   // quand celui du cheval du jeu ne s'enfonce pas de plus de 3 cm.
   sousJeu: 0.03,
   enfonce: 0.03,
-  // Semelle du Tripo sur celle du cheval du jeu (repère du cheval : hauteur, avant/arrière), au sol et en saut : 2,0 cm
-  // au plus mesurés aux quatre allures.
+  // Suivi du sabot du jeu, au sol et en saut : hauteur du point le plus bas au-dessus du sol sous chaque sabot (Tripo −
+  // jeu) et avant/arrière du centre de la sole (repère du cheval).
   suivi: 0.03,
   // En appui, sabot du cheval du jeu posé : point le plus bas du sabot du Tripo par rapport au sien (au-dessus / en
   // dessous ; +0,6 à +0,7 cm mesurés aux antérieurs au repos, écart de forme des sabots), et glissement de la semelle du Tripo par rapport à la sienne
@@ -162,6 +162,9 @@ const boot = await E(async (TOL) => {
   // Sabots du Tripo et du cheval du jeu, à cette image :
   //  t / p : point le plus bas du sabot (Tripo / cheval du jeu) au-dessus du sol de marche ;
   //  ps : centre de la sole du cheval du jeu (point d'appui de l'animation) au-dessus du sol ;
+  //  dh : hauteur du sabot du Tripo au-dessus du sol sous lui − celle du sabot du jeu au-dessus du sol sous lui (points
+  //  les plus bas) : le suivi en hauteur (les sabots n'ont ni la même longueur ni les mêmes aplombs, le sol sous eux
+  //  diffère en dévers ; c'est ce que la seconde passe de TripoHorse égalise) ;
   //  dy / dz : semelle du Tripo − semelle du cheval du jeu, repère du cheval (hauteur, avant/arrière) ; dx : écart
   //  latéral (aplombs propres au modèle, non recalés) ; gx : sol sous la semelle du Tripo − sol sous celle du jeu ;
   //  st : en appui selon l'animation du jeu (hors saut : sabot verrouillé au sol, pas de pas de recentrage, à plat) ;
@@ -179,9 +182,11 @@ const boot = await E(async (TOL) => {
       const a = R.soleWorld(i, new V()), b = window.__hoofW(h.bones, i, new V());
       const d = a.clone().sub(b), S = legs?.[i];
       const p = lowest(h, h.mesh, ps[i]), st = !!S && h.jumpT < 0 && S.locked && S.swingT < 0 && Math.abs(S.pitch) < 0.05;
+      const t = lowest(h, R.lods[0], ts[i]);
       return {
-        t: lowest(h, R.lods[0], ts[i]),
+        t,
         p,
+        dh: t - p,
         ps: b.y - h.groundAt(b.x, b.z),
         dy: d.dot(up),
         dz: d.dot(fw),
@@ -219,8 +224,9 @@ const boot = await E(async (TOL) => {
         if (!s) return;
         r.images++;
         s.forEach((q, i) => {
-          const at = (x = {}) => ({ ...c, sabot: i, tripo: f3(q.t), jeu: f3(q.p), appui: q.st, dy: f3(q.dy), dz: f3(q.dz), lateral: f3(q.dx), solTripoMoinsJeu: f3(q.gx), ...x });
-          if (Math.abs(q.dy) > r.suivi.dy) { r.suivi.dy = Math.abs(q.dy); r.suivi.ouY = at(); }
+          const at = (x = {}) => ({ ...c, sabot: i, tripo: f3(q.t), jeu: f3(q.p), appui: q.st, dh: f3(q.dh), dy: f3(q.dy), dz: f3(q.dz), lateral: f3(q.dx), solTripoMoinsJeu: f3(q.gx), ...x });
+          if (Math.abs(q.dh) > r.suivi.dy) { r.suivi.dy = Math.abs(q.dh); r.suivi.ouY = at(); }
+          r.suivi.centreSole = Math.max(r.suivi.centreSole || 0, Math.abs(q.dy));
           if (Math.abs(q.dz) > r.suivi.dz) { r.suivi.dz = Math.abs(q.dz); r.suivi.ouZ = at(); }
           if (q.st) {
             r.appui.n++;
@@ -414,10 +420,10 @@ if (RUN.has('A')) {
     // Pente du sol sous le cheval (en travers, en long) : explique l'écart des sabots dont l'aplomb diffère.
     const L = { x: Math.cos(h.heading), z: -Math.sin(h.heading) }, F = h.forward, x = h.pos.x, z = h.pos.z;
     const pente = { travers: +((h.groundAt(x + L.x * 0.5, z + L.z * 0.5) - h.groundAt(x - L.x * 0.5, z - L.z * 0.5)) / 1).toFixed(3), long: +((h.groundAt(x + F.x, z + F.z) - h.groundAt(x - F.x, z - F.z)) / 2).toFixed(3) };
-    return window.__soles(h).map((s) => ({ tripo: +s.t.toFixed(3), jeu: +s.p.toFixed(3), centreSole: +s.ps.toFixed(3), dy: +s.dy.toFixed(3), dz: +s.dz.toFixed(3), dx: +s.dx.toFixed(3), appui: s.pose, pente }));
+    return window.__soles(h).map((s) => ({ tripo: +s.t.toFixed(3), jeu: +s.p.toFixed(3), centreSole: +s.ps.toFixed(3), dh: +s.dh.toFixed(3), dy: +s.dy.toFixed(3), dz: +s.dz.toFixed(3), dx: +s.dx.toFixed(3), appui: s.pose, pente }));
   });
-  const restOk = rest.every((s) => Math.abs(s.dy) < TOL.suivi && Math.abs(s.dz) < TOL.suivi && (!s.appui || (s.tripo - s.jeu <= TOL.appuiHaut && s.tripo - s.jeu >= -TOL.appuiBas)));
-  check('A3', `au repos, semelle du Tripo sur celle du cheval du jeu (repère du cheval, ±${cm(TOL.suivi)}) ; sabots en appui posés comme ceux du cheval du jeu (+${cm(TOL.appuiHaut)} / −${cm(TOL.appuiBas)})`, restOk, JSON.stringify(rest));
+  const restOk = rest.every((s) => Math.abs(s.dh) < TOL.suivi && Math.abs(s.dz) < TOL.suivi && (!s.appui || (s.tripo - s.jeu <= TOL.appuiHaut && s.tripo - s.jeu >= -TOL.appuiBas)));
+  check('A3', `au repos, sabot du Tripo sur celui du cheval du jeu (hauteur au-dessus du sol et avant/arrière, ±${cm(TOL.suivi)}) ; sabots en appui posés comme ceux du cheval du jeu (+${cm(TOL.appuiHaut)} / −${cm(TOL.appuiBas)})`, restOk, JSON.stringify(rest));
   // Équipement et réglage d'origine.
   await E((setting) => {
     const g = window.__game, h = g.mainHorse;
@@ -471,7 +477,7 @@ if (RUN.has('B')) {
     const st = await E(() => { window.__game.input.held.delete('gallop'); return window.__st.result(); });
     gaitRes[name] = { ...r, ...st, partAppui: st.images ? +(st.appui.n / (4 * st.images)).toFixed(2) : 0 };
     check(`B-${name}`, `${name} : allure ${want}`, r.gait === want, `allure ${r.gait}, ${r.sp} m/s`);
-    check(`B-${name}-suivi`, `${name} : semelle du Tripo sur celle du cheval du jeu, repère du cheval (hauteur et avant/arrière ≤ ${cm(TOL.suivi)})`, st.suivi.dy <= TOL.suivi && st.suivi.dz <= TOL.suivi, `hauteur ${cm(st.suivi.dy)}, avant/arrière ${cm(st.suivi.dz)}`);
+    check(`B-${name}-suivi`, `${name} : sabot du Tripo sur celui du cheval du jeu (hauteur au-dessus du sol et avant/arrière ≤ ${cm(TOL.suivi)})`, st.suivi.dy <= TOL.suivi && st.suivi.dz <= TOL.suivi, `hauteur ${cm(st.suivi.dy)}, avant/arrière ${cm(st.suivi.dz)} (centre de la sole, repère du cheval : ${cm(st.suivi.centreSole || 0)})`);
     check(`B-${name}-appui`, `${name} : en appui (état de l'animation du jeu), sabot du Tripo posé comme celui du cheval du jeu (+${cm(TOL.appuiHaut)} / −${cm(TOL.appuiBas)}), sans glisser par rapport à lui (≤ ${cm(TOL.glisse)})`, appuiOk(st), `${appuiTxt(st)}, part d'appui ${gaitRes[name].partAppui} (service ${r.duty})`);
     check(`B-${name}-sol`, `${name} : sabot du Tripo jamais enfoncé dans le sol de plus de ${cm(TOL.sousJeu)} au-delà de celui du cheval du jeu, ni de plus de ${cm(TOL.enfonce)} quand celui du jeu ne l'est pas`, sousJeuOk(st), sousJeuTxt(st));
     info(`B-${name}-jeu`, `${name} : point le plus bas des sabots du cheval du jeu (animation procédurale)`, jeuInfo(st));
@@ -552,7 +558,7 @@ if (RUN.has('C')) {
   const jumped = jev.filter((e) => e === 'jump').length, cleared = jev.filter((e) => e.startsWith('clear:')).length;
   check('C1', 'sauts du Tripo sur la carrière d’échauffement : au moins 2 sauts franchis ; à chaque image du saut (appel, suspension, réception), modèle Tripo actif et affiché', jumped >= 2 && cleared >= 2 && jc.mauvaises === 0 && jc.images >= jumped * 30, `${jumped} sauts, ${cleared} franchis, ${jc.images} images vérifiées, ${jc.mauvaises} en défaut${jc.premiere ? ` (${JSON.stringify(jc.premiere)})` : ''} ; ${JSON.stringify(jev)}`);
   const P = jc.phases;
-  check('C2', `pendant les sauts, semelle du Tripo sur celle du cheval du jeu, repère du cheval (≤ ${cm(TOL.suivi)}) : appel, suspension, réception`, Object.values(P).every((s) => s.images > 0 && s.suivi.dy <= TOL.suivi && s.suivi.dz <= TOL.suivi), Object.entries(P).map(([k, s]) => `${k} ${s.images} img : hauteur ${cm(s.suivi.dy)}, avant/arrière ${cm(s.suivi.dz)}`).join(' ; '));
+  check('C2', `pendant les sauts, sabot du Tripo sur celui du cheval du jeu (hauteur au-dessus du sol et avant/arrière ≤ ${cm(TOL.suivi)}) : appel, suspension, réception`, Object.values(P).every((s) => s.images > 0 && s.suivi.dy <= TOL.suivi && s.suivi.dz <= TOL.suivi), Object.entries(P).map(([k, s]) => `${k} ${s.images} img : hauteur ${cm(s.suivi.dy)}, avant/arrière ${cm(s.suivi.dz)}`).join(' ; '));
   check('C3', `pendant les sauts, sabot du Tripo jamais enfoncé dans le sol de plus de ${cm(TOL.sousJeu)} au-delà de celui du cheval du jeu, ni de plus de ${cm(TOL.enfonce)} quand celui du jeu ne l'est pas`, sousJeuOk(jc.tout), Object.entries(P).map(([k, s]) => `${k} : ${sousJeuTxt(s)}`).join(' ; '));
   info('C-jeu', 'sauts : point le plus bas des sabots du cheval du jeu (animation procédurale)', jeuInfo(jc.tout));
   video('sauts');
@@ -625,7 +631,7 @@ if (RUN.has('D')) {
   check('D1', 'épreuve de CSO terminée avec le Tripo, sans élimination', cso.st?.finished && !cso.st?.eliminated, JSON.stringify(cso.st));
   check('D2', 'manche jouée avec le Tripo actif et affiché de bout en bout, sans téléportation', cso.tripoFrames === cso.frames && cso.frames > 0 && cso.teleports === 0, `${cso.tripoFrames}/${cso.frames} images, ${cso.teleports} téléportation`);
   check('D3', `pendant la manche (sauts compris), sabot du Tripo jamais enfoncé dans le sol de plus de ${cm(TOL.sousJeu)} au-delà de celui du cheval du jeu, ni de plus de ${cm(TOL.enfonce)} quand celui du jeu ne l'est pas`, sousJeuOk(S), `${sousJeuTxt(S)} ; pire : ${JSON.stringify(S.sousJeu.ou)}`);
-  check('D4', `pendant la manche, semelle du Tripo sur celle du cheval du jeu (repère du cheval, ≤ ${cm(TOL.suivi)}) ; en appui, posée comme celle du jeu (+${cm(TOL.appuiHaut)} / −${cm(TOL.appuiBas)}), sans glisser par rapport à elle (≤ ${cm(TOL.glisse)})`, S.suivi.dy <= TOL.suivi && S.suivi.dz <= TOL.suivi && appuiOk(S), `hauteur ${cm(S.suivi.dy)}, avant/arrière ${cm(S.suivi.dz)} ; ${appuiTxt(S)}`);
+  check('D4', `pendant la manche, sabot du Tripo sur celui du cheval du jeu (hauteur au-dessus du sol et avant/arrière ≤ ${cm(TOL.suivi)}) ; en appui, posée comme celle du jeu (+${cm(TOL.appuiHaut)} / −${cm(TOL.appuiBas)}), sans glisser par rapport à elle (≤ ${cm(TOL.glisse)})`, S.suivi.dy <= TOL.suivi && S.suivi.dz <= TOL.suivi && appuiOk(S), `hauteur ${cm(S.suivi.dy)}, avant/arrière ${cm(S.suivi.dz)} ; ${appuiTxt(S)}`);
   info('D-jeu', 'manche : point le plus bas des sabots du cheval du jeu (animation procédurale ; images depuis la dernière réception)', jeuInfo(S));
   video('cso', 23);
 }
