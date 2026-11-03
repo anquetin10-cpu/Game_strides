@@ -1,6 +1,10 @@
 // Rastérisation d'un maillage dans l'espace UV : pour chaque texel, triangle, position 3D et normale
 // interpolées (barycentriques), puis propagation vers le plus proche texel couvert (marges des îlots UV).
 // Convention glTF : u vers la droite, v vers le bas de l'image (pas d'inversion).
+// Triangles « orphelins » (aucun centre de texel couvert : UV dégénérés ou minuscules) : leurs points de lecture
+// (sommets, centre) tombent souvent dans la marge d'un autre îlot, loin en 3D. Les texels de marge lus en bilinéaire
+// autour de ces points (bloc 4×4, premier niveau de mip compris) sont renvoyés avec la position 3D du point
+// (relais.texel, relais.pos) ; l'appelant y recopie la valeur du texel couvert le plus proche en 3D.
 
 export function rasterizeUV({ positions, normals, uvs, indices }, W, H) {
   const N = W * H;
@@ -8,6 +12,7 @@ export function rasterizeUV({ positions, normals, uvs, indices }, W, H) {
   const pos = new Float32Array(N * 3);
   const nrm = new Float32Array(N * 3);
   const nt = indices.length / 3;
+  const couverts = new Uint32Array(nt);
   for (let t = 0; t < nt; t++) {
     const a = indices[t * 3], b = indices[t * 3 + 1], c = indices[t * 3 + 2];
     const ax = uvs[a * 2] * W, ay = uvs[a * 2 + 1] * H;
@@ -30,7 +35,9 @@ export function rasterizeUV({ positions, normals, uvs, indices }, W, H) {
         const w2 = 1 - w0 - w1;
         if (w0 < eps || w1 < eps || w2 < eps) continue;
         const i = y * W + x;
+        if (tri[i] >= 0) couverts[tri[i]]--;
         tri[i] = t;
+        couverts[t]++;
         for (let d = 0; d < 3; d++) {
           pos[i * 3 + d] = w0 * positions[a * 3 + d] + w1 * positions[b * 3 + d] + w2 * positions[c * 3 + d];
           nrm[i * 3 + d] = w0 * normals[a * 3 + d] + w1 * normals[b * 3 + d] + w2 * normals[c * 3 + d];
@@ -51,7 +58,25 @@ export function rasterizeUV({ positions, normals, uvs, indices }, W, H) {
     for (const j of nb) if (j >= 0 && src[j] < 0) { src[j] = src[i]; dist[j] = d; queue[qt++] = j; }
   }
   queue = null;
-  return { W, H, tri, pos, nrm, src, dist };
+  // Relais des triangles orphelins (premier triangle servi pour un texel donné).
+  const pris = new Uint8Array(N), rT = [], rP = [];
+  for (let t = 0; t < nt; t++) {
+    if (couverts[t]) continue;
+    const v = [indices[t * 3], indices[t * 3 + 1], indices[t * 3 + 2]];
+    const pts = [...v.map((q) => [uvs[q * 2], uvs[q * 2 + 1], positions[q * 3], positions[q * 3 + 1], positions[q * 3 + 2]]),
+      [0, 1, 2, 3, 4].map((k) => (k < 2 ? v.reduce((s, q) => s + uvs[q * 2 + k], 0) : v.reduce((s, q) => s + positions[q * 3 + k - 2], 0)) / 3)];
+    for (const [u, w, px, py, pz] of pts) {
+      const x0 = Math.floor(u * W - 0.5), y0 = Math.floor(w * H - 0.5);
+      for (let y = y0 - 1; y <= y0 + 2; y++) for (let x = x0 - 1; x <= x0 + 2; x++) {
+        if (x < 0 || y < 0 || x >= W || y >= H) continue;
+        const i = y * W + x;
+        if (tri[i] >= 0 || pris[i]) continue;
+        pris[i] = 1;
+        rT.push(i); rP.push(px, py, pz);
+      }
+    }
+  }
+  return { W, H, tri, pos, nrm, src, dist, relais: { texel: Int32Array.from(rT), pos: Float32Array.from(rP), orphelins: couverts.reduce((n, c) => n + (c ? 0 : 1), 0) } };
 }
 
 // Îlots UV (charts) : composantes connexes des texels couverts (8-voisinage). Retourne un label par texel

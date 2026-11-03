@@ -7,6 +7,7 @@
 // La géométrie n'est pas modifiée ici : la zone de relief des plaques (sommets) est renvoyée dans
 // result.geometry.zoneRelief pour relief-plaques.mjs.
 import sharp from 'sharp';
+import { createHash } from 'node:crypto';
 import { rasterizeUV } from './uv-raster.mjs';
 
 // Seuils en unités natives Tripo (+x = gauche du cheval, +y haut, +z avant ; 0,738 aux oreilles).
@@ -41,13 +42,19 @@ export const DEFAUTS = {
   },
   // Mèche de crinière couchée sur le garrot, à l'avant du tapis : relief au-dessus de la ligne du dos (hauteur par
   // rapport aux côtés du dos à |x| ∈ cote). Gardée telle quelle (couleur et relief).
-  meche: { xMax: 0.03, yMin: 0.5, z: [-0.04, 0.08], cote: [0.016, 0.026], pas: 0.002, seuilTexel: [0.003, 0.005], seuilSommet: 0.002 },
+  // Mèche gardée : cœur (hauteur > coeur, partie à mèches nettes), fondu en distance 3D au cœur (`fondu`) et en hauteur
+  // (`hFondu`) : la pointe effilée (sans mèches, teintée par le tapis) et le pied de la mèche passent au pelage.
+  meche: { xMax: 0.03, yMin: 0.5, z: [-0.04, 0.08], cote: [0.016, 0.026], pas: 0.002, voxel: 0.001, coeur: 0.01, fondu: [0.0005, 0.004], hFondu: [0.002, 0.006] },
+  // Triangles orphelins (sans texel propre) : relais des texels de marge dont la source est à plus de `seuil` en 3D.
+  relais: { seuil: 0.005 },
   // Zone de relief à effacer dans le maillage (relief-plaques.mjs) : plaque + marge, hors mèche et toupet.
   relief: { marge: 0.014, toupet: { zMin: 0.062, xMax: 0.04 } },
   // Grain transplanté : décalages candidats mélangés par un champ aléatoire (maille `cellule`, poids r^puissance) ;
   // bandes fine (flou rFin) et moyenne (flou rMoyen), en texels 2048 ; bornes en rapport (albédo) ; sources aberrantes
-  // (rapport hors `rejet`) écartées ; amplitude calée sur un anneau de pelage sain de largeur `anneau`.
-  grain: { cellule: 0.02, puissance: 4, rFin: 2, rMoyen: 7, snap: 0.03, germe: 0.003, bornesFin: [0.86, 1.16], bornesMoyen: [0.9, 1.1], rejet: [0.84, 1.2], anneau: 0.02, gainBornes: [0.6, 1.6], moyenNormales: 0.5 },
+  // (rapport hors `rejet`) écartées ; amplitude calée sur un anneau de pelage sain de largeur `anneau`. Sources : texel
+  // le plus proche exact (grille de pas `pasGrille`, jusqu'à `snap`), poids fondus à moins de `bord` texels (2048) d'un
+  // bord d'îlot.
+  grain: { cellule: 0.02, puissance: 4, rFin: 2, rMoyen: 7, snap: 0.03, pasGrille: 0.003, bord: [1, 5], bornesFin: [0.86, 1.16], bornesMoyen: [0.9, 1.1], rejet: [0.84, 1.2], anneau: 0.02, gainBornes: [0.6, 1.6], moyenNormales: 0.5 },
   // Contrôle après remplissage : taches sombres résiduelles dans les plaques (remises à la valeur sans grain).
   residus: { voxel: 0.006, ratio: 0.88, ecartMin: 10, tailleMax: 0.004, texelsMax: 80 },
   // Points sombres : luminance (albédo) ou rugosité nettement inférieure à la médiane du voisinage 3D.
@@ -238,7 +245,21 @@ function profilMeche(R, c) {
     const f = (z - c.z[0]) / c.pas - 0.5, k = Math.max(0, Math.min(nb - 2, Math.floor(f))), t = Math.max(0, Math.min(1, f - k));
     return y - (lisse[k] * (1 - t) + lisse[k + 1] * t);
   };
-  return { hauteur };
+  // Cœur de la mèche (texels à plus de `coeur` au-dessus du profil) et distance 3D à ce cœur (grille de `voxel`).
+  const G = grille([-c.xMax, c.yMin, c.z[0]], [c.xMax, c.yMin + 0.16, c.z[1]], c.voxel), coeur = new Uint8Array(G.n);
+  for (let v = 0; v < pos.length / 3; v++) {
+    if (!couvert(v) || hauteur(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]) <= c.coeur) continue;
+    const q = cellule(G, pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]);
+    if (q >= 0) coeur[q] = 1;
+  }
+  const S = { G, masque: coeur }, D = distanceMasque(S);
+  // Part gardée (0..1) de la couleur d'origine en un point.
+  const garde = (x, y, z) => {
+    const h = hauteur(x, y, z);
+    if (h <= c.hFondu[0]) return 0;
+    return (1 - smooth(c.fondu[0], c.fondu[1], distPlaque(S, D, x, y, z))) * smooth(c.hFondu[0], c.hFondu[1], h);
+  };
+  return { hauteur, garde };
 }
 
 // ---------- Points sombres (texels) ----------
@@ -523,77 +544,100 @@ function sourcesPossibles(R, invalide, zonesExclues) {
   return ok;
 }
 
-// Sources d'une plaque : pour chaque texel à remplir et chaque décalage candidat, texel sain le plus proche de
-// p + décalage (germe d'une grille de 3 mm, puis descente texel par texel dans l'atlas), même orientation.
+// Grille 3D dense de texels (tri par alvéole de pas h) : plus proche texel exact d'un point, par couronnes
+// croissantes (arrêt dès que la couronne suivante ne peut plus faire mieux), avec filtre d'orientation éventuel.
+function grilleTexels(R, garder, bmin, bmax, h) {
+  const nx = Math.max(1, Math.ceil((bmax[0] - bmin[0]) / h)), ny = Math.max(1, Math.ceil((bmax[1] - bmin[1]) / h)), nz = Math.max(1, Math.ceil((bmax[2] - bmin[2]) / h));
+  const N = R.W * R.H, cel = new Int32Array(N).fill(-1), deb = new Int32Array(nx * ny * nz + 1);
+  const idx = (x, y, z) => {
+    const i = Math.floor((x - bmin[0]) / h), j = Math.floor((y - bmin[1]) / h), k = Math.floor((z - bmin[2]) / h);
+    return i < 0 || j < 0 || k < 0 || i >= nx || j >= ny || k >= nz ? -1 : (i * ny + j) * nz + k;
+  };
+  for (let t = 0; t < N; t++) if (garder(t)) { const c = idx(R.pos[t * 3], R.pos[t * 3 + 1], R.pos[t * 3 + 2]); if (c >= 0) { cel[t] = c; deb[c + 1]++; } }
+  for (let c = 0; c < nx * ny * nz; c++) deb[c + 1] += deb[c];
+  const liste = new Int32Array(deb[nx * ny * nz]), rempli = deb.slice(0, -1);
+  for (let t = 0; t < N; t++) if (cel[t] >= 0) liste[rempli[cel[t]]++] = t;
+  const pos = R.pos, nrm = R.nrm;
+  // Renvoie l'indice du texel le plus proche (ou -1) ; dernier carré de distance dans d2.
+  const res = { d2: Infinity };
+  res.chercher = (x, y, z, qx, qy, qz, dotMin, dMax) => {
+    const ci = Math.floor((x - bmin[0]) / h), cj = Math.floor((y - bmin[1]) / h), ck = Math.floor((z - bmin[2]) / h);
+    let best = dMax * dMax, bj = -1;
+    const rMax = Math.ceil(dMax / h) + 1;
+    for (let r = 0; r <= rMax; r++) {
+      for (let a = -r; a <= r; a++) {
+        const i = ci + a; if (i < 0 || i >= nx) continue;
+        for (let b = -r; b <= r; b++) {
+          const j = cj + b; if (j < 0 || j >= ny) continue;
+          const bord = Math.abs(a) === r || Math.abs(b) === r;
+          for (let c = -r; c <= r; c += bord ? 1 : 2 * r || 1) {
+            const k = ck + c; if (k < 0 || k >= nz) continue;
+            const cc = (i * ny + j) * nz + k;
+            for (let q = deb[cc]; q < deb[cc + 1]; q++) {
+              const t = liste[q];
+              const d = (pos[t * 3] - x) ** 2 + (pos[t * 3 + 1] - y) ** 2 + (pos[t * 3 + 2] - z) ** 2;
+              if (d >= best) continue;
+              if (dotMin > -1 && nrm[t * 3] * qx + nrm[t * 3 + 1] * qy + nrm[t * 3 + 2] * qz < dotMin) continue;
+              best = d; bj = t;
+            }
+          }
+        }
+      }
+      if (bj >= 0 && best <= (r * h) ** 2) break;
+    }
+    res.d2 = best;
+    return bj;
+  };
+  return res;
+}
+
+// Distance (texels, plafonnée à 15) au bord d'îlot : texels couverts dont un voisin (4-voisinage) n'est pas couvert
+// ou est loin en 3D (couture entre îlots jointifs dans l'atlas). Mise en cache sur la rastérisation.
+function bordIlots(R, saut) {
+  if (R.bordIlots) return R.bordIlots;
+  const { W, H } = R, N = W * H, d = new Uint8Array(N).fill(255), file = new Int32Array(N);
+  let qt = 0;
+  const loin = (i, j) => (R.pos[i * 3] - R.pos[j * 3]) ** 2 + (R.pos[i * 3 + 1] - R.pos[j * 3 + 1]) ** 2 + (R.pos[i * 3 + 2] - R.pos[j * 3 + 2]) ** 2 > saut * saut;
+  for (let i = 0; i < N; i++) {
+    if (R.tri[i] < 0) continue;
+    const x = i % W;
+    const nb = [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i >= W ? i - W : -1, i + W < N ? i + W : -1];
+    if (nb.some((j) => j < 0 || R.tri[j] < 0 || loin(i, j))) { d[i] = 0; file[qt++] = i; }
+  }
+  for (let qh = 0; qh < qt; qh++) {
+    const i = file[qh], x = i % W;
+    if (d[i] >= 15) continue;
+    for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i >= W ? i - W : -1, i + W < N ? i + W : -1]) if (j >= 0 && R.tri[j] >= 0 && d[j] === 255) { d[j] = d[i] + 1; file[qt++] = j; }
+  }
+  for (let i = 0; i < N; i++) if (d[i] === 255) d[i] = 15;
+  return (R.bordIlots = d);
+}
+
+// Sources d'une plaque : pour chaque texel à remplir et chaque décalage candidat, texel sain le plus proche en 3D de
+// p + décalage (recherche exacte, jusqu'à `snap`), de même orientation. Poids = champ aléatoire lisse × fondu près des
+// bords d'îlot de la source (détail faussé par le flou à travers la couture, changement d'îlot) × fondu en distance :
+// le mélange varie continûment (plus de plages à bords en escalier).
 function sourcesGrain(R, ok, lignes, candidats, G) {
-  const { W } = R, K = candidats.length, n = lignes.length;
+  const K = candidats.length, n = lignes.length;
   const src = new Int32Array(n * K).fill(-1), w = new Float32Array(n * K);
   if (!n) return { src, w, couverture: 1 };
   const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
   for (const i of lignes) for (let d = 0; d < 3; d++) { mn[d] = Math.min(mn[d], R.pos[i * 3 + d]); mx[d] = Math.max(mx[d], R.pos[i * 3 + d]); }
-  const marge = 0.006;
+  const marge = G.snap + 0.003;
   const bmin = [0, 1, 2].map((d) => mn[d] + Math.min(...candidats.map((c) => c[d])) - marge), bmax = [0, 1, 2].map((d) => mx[d] + Math.max(...candidats.map((c) => c[d])) + marge);
-  const Gs = grille(bmin, bmax, G.germe), germe = new Int32Array(Gs.n).fill(-1);
-  for (let i = 0; i < ok.length; i++) {
-    if (!ok[i]) continue;
-    const c = cellule(Gs, R.pos[i * 3], R.pos[i * 3 + 1], R.pos[i * 3 + 2]);
-    if (c >= 0 && germe[c] < 0) germe[c] = i;
-  }
-  // Propagation du germe le plus proche du centre de chaque cellule (chanfrein, 2 allers-retours).
-  const centre = (c) => { const k = c % Gs.nz, j = ((c / Gs.nz) | 0) % Gs.ny, ii = (c / (Gs.ny * Gs.nz)) | 0; return [Gs.o[0] + (ii + 0.5) * Gs.h, Gs.o[1] + (j + 0.5) * Gs.h, Gs.o[2] + (k + 0.5) * Gs.h]; };
-  const d2c = (c, i) => { const p = centre(c); return (p[0] - R.pos[i * 3]) ** 2 + (p[1] - R.pos[i * 3 + 1]) ** 2 + (p[2] - R.pos[i * 3 + 2]) ** 2; };
-  const bd = new Float32Array(Gs.n).fill(Infinity);
-  for (let c = 0; c < Gs.n; c++) if (germe[c] >= 0) bd[c] = d2c(c, germe[c]);
-  for (let passe = 0; passe < 4; passe++) {
-    for (let t = 0; t < Gs.n; t++) {
-      const c = passe % 2 ? Gs.n - 1 - t : t;
-      const k = c % Gs.nz, j = ((c / Gs.nz) | 0) % Gs.ny, i = (c / (Gs.ny * Gs.nz)) | 0;
-      for (const [a, b, d] of OFF26) {
-        const ii = i + a, jj = j + b, kk = k + d;
-        if (ii < 0 || jj < 0 || kk < 0 || ii >= Gs.nx || jj >= Gs.ny || kk >= Gs.nz) continue;
-        const g = germe[(ii * Gs.ny + jj) * Gs.nz + kk];
-        if (g < 0 || g === germe[c]) continue;
-        const v = d2c(c, g);
-        if (v < bd[c]) { bd[c] = v; germe[c] = g; }
-      }
-    }
-  }
-  const snap2 = G.snap ** 2;
-  const chercher = (x, y, z, nx, ny, nz) => {
-    const c = cellule(Gs, x, y, z);
-    if (c < 0 || germe[c] < 0) return -1;
-    let j = germe[c];
-    const d2 = (q) => (R.pos[q * 3] - x) ** 2 + (R.pos[q * 3 + 1] - y) ** 2 + (R.pos[q * 3 + 2] - z) ** 2;
-    let best = d2(j);
-    for (let pas = 0; pas < 60; pas++) {
-      const u = j % W, v = (j / W) | 0;
-      let suivant = -1;
-      for (let dv = -1; dv <= 1; dv++) for (let du = -1; du <= 1; du++) {
-        if (!du && !dv) continue;
-        const uu = u + du, vv = v + dv;
-        if (uu < 0 || vv < 0 || uu >= W || vv >= R.H) continue;
-        const q = vv * W + uu;
-        if (!ok[q]) continue;
-        const dq = d2(q);
-        if (dq < best) { best = dq; suivant = q; }
-      }
-      if (suivant < 0) break;
-      j = suivant;
-    }
-    if (best > snap2) return -1;
-    if (R.nrm[j * 3] * nx + R.nrm[j * 3 + 1] * ny + R.nrm[j * 3 + 2] * nz < 0.5) return -1;
-    return j;
-  };
+  const kR = 2048 / R.W, bord = bordIlots(R, 0.004 * kR), b0 = G.bord[0] / kR, b1 = G.bord[1] / kR;
+  const grilleS = grilleTexels(R, (t) => ok[t] === 1, bmin, bmax, G.pasGrille);
   let couverts = 0;
   for (let r = 0; r < n; r++) {
     const i = lignes[r], x = R.pos[i * 3], y = R.pos[i * 3 + 1], z = R.pos[i * 3 + 2];
     let un = false;
     for (let k = 0; k < K; k++) {
       const D = candidats[k];
-      const j = chercher(x + D[0], y + D[1], z + D[2], R.nrm[i * 3], R.nrm[i * 3 + 1], R.nrm[i * 3 + 2]);
+      const j = grilleS.chercher(x + D[0], y + D[1], z + D[2], R.nrm[i * 3], R.nrm[i * 3 + 1], R.nrm[i * 3 + 2], 0.5, G.snap);
       if (j < 0) continue;
+      const fd = 1 - smooth(0.5 * G.snap, G.snap, Math.sqrt(grilleS.d2));
       src[r * K + k] = j;
-      w[r * K + k] = Math.max(1e-3, aleatoire(x, y, z, k, G.cellule)) ** G.puissance;
+      w[r * K + k] = Math.max(1e-3, aleatoire(x, y, z, k, G.cellule)) ** G.puissance * smooth(b0, b1, bord[j]) * fd;
       un = true;
     }
     if (un) couverts++;
@@ -612,7 +656,8 @@ function melange(S, r, bande, rejet) {
     s += w * bande[j];
     w2 += w * w;
   }
-  return w2 > 0 ? s / Math.sqrt(w2) : 0;
+  // Plancher : le grain s'efface quand toutes les sources sont faibles (bords d'îlots) au lieu d'être amplifié.
+  return w2 > 0 ? s / Math.sqrt(w2 + 0.0025) : 0;
 }
 
 // Sources de toutes les plaques d'une rastérisation : lignes = texels à remplir (alpha > 0, plaque k).
@@ -780,7 +825,7 @@ function zoneRelief(pos, plaques, P, meche, geo) {
     const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2];
     for (const [nom, p] of Object.entries(plaques)) {
       if (distPlaque(p.S, p.D, x, y, z) > m && !proches[nom](x, y, z)) continue;
-      if (meche.hauteur(x, y, z) > P.meche.seuilSommet) continue;
+      if (meche.garde(x, y, z) > 0.5) continue;
       if (nom === 'tapis' && z > P.relief.toupet.zMin && Math.abs(x) < P.relief.toupet.xMax) continue;
       zone[v] = 1;
       parPlaque[nom] = (parPlaque[nom] || 0) + 1;
@@ -887,6 +932,39 @@ function analyseGeometrie(positions, normals, indices, plaques, P) {
   return { trous: { aretesDeBord: bords.length, milieux: bords }, reliefPlaques: res, microReplis: { nombre: replis.length, parZone: replis.reduce((m, r) => ((m[r.zone] = (m[r.zone] || 0) + 1), m), {}), liste: replis } };
 }
 
+// Relais des triangles orphelins : texels de marge lus par un triangle sans texel propre (uv-raster) dont la source
+// de marge (texel couvert le plus proche dans l'atlas) est à plus de `seuil` en 3D du point lu : ils prennent la valeur
+// du texel couvert le plus proche de ce point en 3D. Renvoie les paires [texel de marge, texel source].
+function relaisOrphelins(R, seuil) {
+  const { texel, pos } = R.relais, loin = [];
+  for (let k = 0; k < texel.length; k++) {
+    const s = R.src[texel[k]];
+    if (s >= 0 && (R.pos[s * 3] - pos[k * 3]) ** 2 + (R.pos[s * 3 + 1] - pos[k * 3 + 1]) ** 2 + (R.pos[s * 3 + 2] - pos[k * 3 + 2]) ** 2 > seuil * seuil) loin.push(k);
+  }
+  if (!loin.length) return [];
+  const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+  for (const k of loin) for (let d = 0; d < 3; d++) { mn[d] = Math.min(mn[d], pos[k * 3 + d] - 0.03); mx[d] = Math.max(mx[d], pos[k * 3 + d] + 0.03); }
+  const g = grilleTexels(R, (t) => R.tri[t] >= 0, mn, mx, 0.004), paires = [];
+  for (const k of loin) {
+    const j = g.chercher(pos[k * 3], pos[k * 3 + 1], pos[k * 3 + 2], 0, 0, 0, -2, 0.02);
+    if (j >= 0) paires.push([texel[k], j]);
+  }
+  return paires;
+}
+const appliquerRelais = (paires, out, C) => { for (const [i, j] of paires) for (let c = 0; c < C; c++) out[i * C + c] = out[j * C + c]; };
+
+// Zones de relief des nettoyages de ce processus, indexées par l'empreinte des masques tapis + quartiers décodés
+// (niveaux de gris) : la construction retrouve la zone à partir des seuls masques (mesh-clean.smoothMaskedRelief).
+const zonesParMasques = new Map();
+const empreinte = (masques) => { const h = createHash('sha1'); for (const m of masques) { h.update(`${m.width}x${m.height}:`); h.update(m.data); } return h.digest('hex'); };
+async function grisBrut(png) { const { data, info } = await sharp(png).greyscale().raw().toBuffer({ resolveWithObject: true }); return { data, width: info.width, height: info.height }; }
+/** Zone de relief (Uint8Array par sommet) d'un nettoyage dont les masques [tapis, quartiers] sont ceux-ci, sinon null. */
+export function zoneReliefDesMasques(masques, nv) {
+  if (!Array.isArray(masques) || masques.length !== 2) return null;
+  const z = zonesParMasques.get(empreinte(masques));
+  return z && z.length === nv ? z : null;
+}
+
 async function pngGris(a, W, H) {
   const b = Buffer.alloc(W * H);
   for (let i = 0; i < W * H; i++) b[i] = Math.round(Math.min(1, a[i]) * 255);
@@ -936,9 +1014,8 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
         const p = plaques[noms[k]];
         let v = alphaPlaque(p.S, p.D, P, p.cfg, x, y, z);
         if (v > 0 && noms[k] === 'tapis') {
-          const h = meche.hauteur(x, y, z);
-          if (h > P.meche.seuilSommet) ign[i] = 1;
-          const m = smooth(P.meche.seuilTexel[0], P.meche.seuilTexel[1], h);
+          const m = meche.garde(x, y, z);
+          if (m > 0.02) ign[i] = 1;
           if (m > 0.5) { nMeche++; [x, y, z].forEach((q, d) => { bMeche[d][0] = Math.min(bMeche[d][0], q); bMeche[d][1] = Math.max(bMeche[d][1], q); }); }
           v *= 1 - m;
           if (v < 1 / 255) v = 0;
@@ -1043,6 +1120,12 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
   tic('metalRugosite', t);
 
 
+  // 7) Triangles orphelins : marges lues loin de leur source (après tous les remplissages).
+  t = Date.now();
+  const relB = relaisOrphelins(Rb, P.relais.seuil), relN = Rn === Rb ? relB : relaisOrphelins(Rn, P.relais.seuil), relM = Rm === Rb ? relB : relaisOrphelins(Rm, P.relais.seuil);
+  appliquerRelais(relB, bcOut, bc.C); appliquerRelais(relN, nmOut, nm.C); appliquerRelais(relM, mrOut, mr.C);
+  tic('relais', t);
+
   // Sorties.
   t = Date.now();
   const enc = (data, img) => sharp(data, { raw: { width: img.W, height: img.H, channels: img.C } }).png({ compressionLevel: 9 }).toBuffer();
@@ -1053,6 +1136,9 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
     if (APb.qui[s] === kTapis) maskPad[i] = APb.a[s]; else if (APb.qui[s] >= 0) maskFlap[i] = APb.a[s];
     maskDots[i] = ptsB.alpha[s];
   }
+  // Texels relayés (triangles orphelins) : masque des points à 1.
+  for (const [i] of relB) maskDots[i] = 1;
+  for (const [i] of relM) { const x = i % Rm.W, y = (i / Rm.W) | 0, f = Rb.W / Rm.W; for (let a = 0; a < f; a++) for (let b = 0; b < f; b++) maskDots[(y * f + a) * Rb.W + x * f + b] = 1; }
   // Points de rugosité reportés dans le masque des points (résolution de l'albédo, au plus proche).
   for (let y = 0; y < Rb.H; y++) for (let x = 0; x < Rb.W; x++) {
     const xm = Math.min(Rm.W - 1, Math.floor(x * Rm.W / Rb.W)), ym = Math.min(Rm.H - 1, Math.floor(y * Rm.H / Rb.H));
@@ -1087,6 +1173,7 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
     }])),
     meche: { texels: APb.nMeche, boite: APb.bMeche, note: 'mèche de crinière couchée sur le garrot (avant du tapis) : couleur gardée, exclue du champ basse fréquence et de la zone de relief' },
     residusGrain: { nombre: residus.liste.length, liste: residus.liste },
+    trianglesOrphelins: { triangles: Rb.relais.orphelins, texelsRelaisAlbedoNormales: relB.length, texelsRelaisRugosite: relM.length, seuil: P.relais.seuil, note: 'triangles sans texel propre (UV dégénérés) lisant une marge d\'un autre îlot : texels de marge recopiés depuis le texel couvert le plus proche en 3D (comptés dans le masque des points)', exemples: relB.slice(0, 8).map(([i, j]) => ({ texel: [i % Rb.W, (i / Rb.W) | 0], source: [j % Rb.W, (j / Rb.W) | 0], p: r3([Rb.pos[j * 3], Rb.pos[j * 3 + 1], Rb.pos[j * 3 + 2]]) })) },
     zoneRelief: { sommets: zr.sommets, boites: zr.boites, marge: P.relief.marge, note: 'sommets à replacer par relief-plaques.mjs (effacerReliefPlaques), indexés comme la source' },
     points: {
       albedo: { nombre: ptsB.liste.length, liste: ptsB.liste },
@@ -1100,5 +1187,6 @@ export async function cleanTripoTextures({ positions, normals, uvs, indices, bas
     geometrie: geo,
     tempsMs: { ...temps, total: Date.now() - t0 },
   };
+  zonesParMasques.set(empreinte([await grisBrut(mPad), await grisBrut(mFlap)]), zr.zone);
   return { baseColor: bcPng, normal: nmPng, metallicRoughness: mrPng, masks: { pad: mPad, flap: mFlap, dots: mDots }, geometry: { zoneRelief: zr.zone }, report };
 }

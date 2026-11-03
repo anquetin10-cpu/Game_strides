@@ -25,7 +25,7 @@ import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 import { SRC, makeIO, calibrated, SCALE, OFFSET } from './tripo/frame.mjs';
 import { straightenHead, fitSkeleton } from './tripo/skeleton-fit.mjs';
-import { computeWeights } from './tripo/skin-weights.mjs';
+import { computeWeights, checkTailWeights } from './tripo/skin-weights.mjs';
 import { fixWinding, repairNormals, smoothMaskedRelief, dropFoldedMicroFaces } from './tripo/mesh-clean.mjs';
 import { cleanTripoTextures } from './tripo/clean-texture.mjs';
 import { BONES } from '../../src/entities/horse/skeleton.js';
@@ -107,6 +107,8 @@ const ext = { muzzle, tailEnd, earTipL: fit.ears[1].tip, earTipR: fit.ears[-1].t
 const t0 = Date.now();
 const skin = computeWeights(P, m.indices, pos, ext);
 const tWeights = (Date.now() - t0) / 1000;
+// Crins de la queue sans poids des postérieurs (et réciproquement) : erreur sinon.
+const tailCheck = checkTailWeights(P, skin);
 
 // ---------- Réduction ----------
 await MeshoptSimplifier.ready;
@@ -199,8 +201,24 @@ await doc.transform(
   textureCompress({ encoder: sharp, targetFormat: 'webp', slots: /^(normal|metallicRoughness)/, quality: 88, resize: [1024, 1024] }),
   reorder({ encoder: MeshoptEncoder }),
   meshopt({ encoder: MeshoptEncoder, level: 'medium', quantizationVolume: 'scene' }),
+  // La quantification clone la peau (et ses matrices inverses) pour chaque maillage, puis fusionne les peaux : sans
+  // ce second élagage, l'accesseur « ibm » de la peau écartée resterait dans le fichier.
+  prune(),
 );
 const glb = await io.writeBinary(doc);
+// Contrôle du fichier écrit : une seule peau de 50 os, partagée par les deux niveaux de détail, un seul accesseur
+// « ibm », aucun accesseur orphelin.
+const out = (await io.readBinary(glb)).getRoot();
+const glbCheck = {
+  skins: out.listSkins().length,
+  joints: out.listSkins()[0]?.listJoints().length ?? 0,
+  lodMeshesSkinned: out.listNodes().filter((n) => /^TripoHorse_LOD/.test(n.getName()) && n.getMesh() && n.getSkin() === out.listSkins()[0]).length,
+  ibmAccessors: out.listAccessors().filter((a) => a.getName() === 'ibm').length,
+  orphanAccessors: out.listAccessors().filter((a) => a.listParents().every((p) => p === out)).length,
+};
+if (glbCheck.skins !== 1 || glbCheck.joints !== BONES.length || glbCheck.lodMeshesSkinned !== 2 || glbCheck.ibmAccessors !== 1 || glbCheck.orphanAccessors) {
+  throw new Error(`GLB : peau ou accesseurs inattendus (${JSON.stringify(glbCheck)})`);
+}
 writeFileSync(`${OUT}/horse_tripo.glb`, glb);
 const report = {
   source: SRC,
@@ -210,8 +228,11 @@ const report = {
   relief,
   bones: fit.bones,
   legs: fit.legs,
+  legsBeforeSymmetry: fit.legsRaw,
+  legGapsCm: fit.legGaps,
   ext,
-  weights: { seconds: tWeights, radii: skin.radii },
+  weights: { seconds: tWeights, radii: skin.radii, tail: tailCheck },
+  glbCheck,
   lods: lods.map((L) => ({ tris: L.tris, verts: L.verts, error: +L.err.toFixed(5), foldsDropped: L.foldsDropped, foldsKept: L.foldsKept })),
   texturesCleaned: T.cleaned,
   robe: ROBE === 'apercu' ? { variante: 'apercu', facteur: ROBE_FACTOR } : { variante: 'origine' },
@@ -226,4 +247,4 @@ const report = {
   bytes: glb.byteLength,
 };
 writeFileSync(`${OUT}/horse_tripo.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ lods: report.lods, bytes: report.bytes, straighten: straight, winding, relief, weightsSec: tWeights, cleaned: T.cleaned, radii: skin.radii }));
+console.log(JSON.stringify({ lods: report.lods, bytes: report.bytes, straighten: straight, winding, relief, weightsSec: tWeights, cleaned: T.cleaned, radii: skin.radii, tail: tailCheck, legGapsCm: fit.legGaps, glbCheck }));

@@ -7,7 +7,10 @@
 //   3. mélange seulement entre l'os principal et ses voisins dans la hiérarchie (parent, enfants, frères), poids
 //      ∝ (1/d)⁴ : pas de fuite entre membres ni de la queue vers les postérieurs ;
 //   4. lissage sur le maillage (3 passes, voisins par arêtes, sommets soudés par position : pas de coutures UV), puis
-//      4 influences au plus, normalisées.
+//      4 influences au plus, normalisées ;
+//   5. crins pendants de la queue et postérieurs repérés sur la géométrie (pièces séparées du maillage soudé sous la
+//      ligne des fesses) : crins sur les os de la queue seulement, postérieurs jamais sur la queue (checkTailWeights
+//      le vérifie à la construction).
 // Os non pondérés (comme pour le cheval du jeu) : root, breath, maneA/B, ancres (selle, rênes, étriers, licol),
 // paupières (pas de paupière dans le maillage) ; mâchoire : non pondérée dans cet essai (bouche fermée).
 import { BONES, BONE_INDEX } from '../../../src/entities/horse/skeleton.js';
@@ -205,10 +208,11 @@ export function computeWeights(P, I, pos, ext, { power = 4, smoothPasses = 3, mi
       D0[v * segs.length + k] = d / Math.max(zone(segs[k].name, p[0], p[1], p[2]), 1e-3);
     }
   }
-  // Rayons typiques : médiane des distances des sommets attribués (2 itérations), estimés sans les libellés : sans les
-  // crins, la médiane de la jambe (tibia) tombe de 10 à 7 cm et le fémur prend le grasset et la jambe ; les rayons des
-  // membres restent donc ceux de l'estimation d'origine. Os principal final : avec les libellés.
+  // Rayons typiques : médiane des distances des sommets attribués (2 itérations), estimés sans les libellés : avec eux,
+  // la médiane de la jambe (tibia) tombe de 10 à 7 cm et le fémur prend l'arrière de la jambe ; les rayons restent donc
+  // ceux de l'estimation d'origine (à la symétrie près, ci-dessous). Os principal final : avec les libellés.
   let R = new Float32Array(segs.length).fill(1);
+  const idx = Object.fromEntries(names.map((n, k) => [n, k]));
   const primary = new Int16Array(nv);
   for (let it = 0; it < 3; it++) {
     const buckets = segs.map(() => []);
@@ -233,9 +237,16 @@ export function computeWeights(P, I, pos, ext, { power = 4, smoothPasses = 3, mi
       if (/^tail/.test(segs[k].name)) return Math.min(0.08, Math.max(0.02, b[b.length >> 1]));
       return Math.max(0.02, b[b.length >> 1]);
     });
+    // Membres : rayon moyen des deux côtés (squelette symétrisé : poids symétriques ; sans cela, l'os de la jambe d'un
+    // côté peut prendre 12 cm de rayon et celui de l'autre 10 cm, selon la répartition des crins proches).
+    for (let k = 0; k < segs.length; k++) {
+      const n = segs[k].name;
+      if (!/^[fh]l/.test(n)) continue;
+      const j = idx[`${n[0]}r${n.slice(2)}`];
+      R[k] = R[j] = (R[k] + R[j]) / 2;
+    }
   }
   // Poids bruts : os principal et voisins dont la distance rapportée reste proche (facteur mix).
-  const idx = Object.fromEntries(names.map((n, k) => [n, k]));
   const W = new Float32Array(nv * segs.length);
   for (let v = 0; v < nv; v++) {
     const pk = primary[v];

@@ -5,10 +5,12 @@
 // modèle Tripo calé en mètres (frame.mjs). Les animations du jeu (rotations locales) s'y appliquent donc telles quelles.
 //
 // Positions :
-//   - membres : articulations mesurées sur des coupes horizontales de chaque membre (intersection triangle/plan) :
-//     sabot (y = 0,075), boulet (largeur maximale entre 0,15 et 0,28 m), genou (largeur maximale entre 0,42 et
-//     0,62 m), coude (axe de l'avant-bras prolongé jusqu'au tronc), jarret (sous la pointe du jarret, aux 2/5 de la
-//     profondeur depuis l'avant), grasset (axe de la jambe prolongé, en avant de la cuisse) ;
+//   - membres : articulations mesurées sur des coupes horizontales de chaque membre (intersection triangle/plan,
+//     points chaînés par les triangles) : sabot (y = 0,075), boulet (largeur maximale entre 0,15 et 0,28 m), genou
+//     (largeur maximale entre 0,42 et 0,62 m), coude (axe de l'avant-bras prolongé jusqu'au tronc), jarret (sous la
+//     pointe du jarret, aux 2/5 de la profondeur depuis l'avant), grasset (axe de la jambe prolongé, en avant de la
+//     cuisse) ; extremums pris au centre de leur plateau ; chaque côté ajusté seul puis symétrisé (y et z moyennés,
+//     x propre à chaque côté ; erreur au-delà de 1,5 cm d'écart gauche/droite) ;
 //   - tronc, encolure, queue : positions du cheval du jeu recalées sur la silhouette du modèle (lignes du dos et du
 //     ventre mesurées sur les deux) ;
 //   - tête (après redressement) : nuque, base des oreilles, mâchoire et yeux mesurés sur la géométrie.
@@ -36,43 +38,66 @@ export function contour(P, I, h) {
   return out;
 }
 
-// Grappes 2D (cellules de 2 cm, voisinage 8).
-function groups(pts) {
-  const cell = (x) => Math.floor(x / 0.02);
-  const grid = new Map();
-  pts.forEach((p, i) => {
-    const k = `${cell(p[0])},${cell(p[1])}`;
-    if (!grid.has(k)) grid.set(k, []);
-    grid.get(k).push(i);
-  });
-  const lab = new Int32Array(pts.length).fill(-1);
-  const out = [];
-  for (let i = 0; i < pts.length; i++) {
-    if (lab[i] >= 0) continue;
-    const st = [i];
-    lab[i] = out.length;
-    const g = [];
-    while (st.length) {
-      const a = st.pop();
-      g.push(pts[a]);
-      const cx = cell(pts[a][0]), cz = cell(pts[a][1]);
-      for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) for (const j of grid.get(`${cx + dx},${cz + dz}`) || []) if (lab[j] < 0) {
-        lab[j] = out.length;
-        st.push(j);
+// Coupes chaînées : les points d'intersection sont reliés par les triangles qu'ils traversent (arêtes des sommets
+// soudés par position : les coutures UV ne coupent pas une coupe). Une grappe = une courbe fermée de la surface ; deux
+// surfaces proches (jarret et crins de la queue) restent séparées quelle que soit la finesse du maillage.
+export function sections(P, I, h, weld) {
+  const idOf = new Map(), pts = [], parent = [];
+  const find = (a) => {
+    while (parent[a] !== a) a = parent[a] = parent[parent[a]];
+    return a;
+  };
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ya = P[a * 3 + 1], yb = P[b * 3 + 1], yc = P[c * 3 + 1];
+    if (Math.min(ya, yb, yc) > h || Math.max(ya, yb, yc) < h) continue;
+    const ids = [];
+    for (const [u, v, yu, yv] of [[a, b, ya, yb], [b, c, yb, yc], [c, a, yc, ya]]) {
+      if ((yu - h) * (yv - h) > 0 || yu === yv) continue;
+      const wu = weld[u], wv = weld[v], key = wu < wv ? wu * 1e7 + wv : wv * 1e7 + wu;
+      let id = idOf.get(key);
+      if (id === undefined) {
+        const s = (h - yu) / (yv - yu);
+        id = pts.length;
+        idOf.set(key, id);
+        parent.push(id);
+        pts.push([P[u * 3] + s * (P[v * 3] - P[u * 3]), P[u * 3 + 2] + s * (P[v * 3 + 2] - P[u * 3 + 2])]);
       }
+      ids.push(id);
     }
-    out.push(g);
+    for (let k = 1; k < ids.length; k++) {
+      const r1 = find(ids[0]), r2 = find(ids[k]);
+      if (r1 !== r2) parent[r1] = r2;
+    }
   }
-  return out;
+  const g = new Map();
+  pts.forEach((p, i) => {
+    const r = find(i);
+    if (!g.has(r)) g.set(r, []);
+    g.get(r).push(p);
+  });
+  return [...g.values()];
+}
+
+// Soudure des sommets par position (1e-5 m).
+function weldIndex(P) {
+  const map = new Map(), weld = new Int32Array(P.length / 3);
+  for (let i = 0; i < weld.length; i++) {
+    const k = `${Math.round(P[i * 3] * 1e5)},${Math.round(P[i * 3 + 1] * 1e5)},${Math.round(P[i * 3 + 2] * 1e5)}`;
+    if (!map.has(k)) map.set(k, map.size);
+    weld[i] = map.get(k);
+  }
+  return weld;
 }
 
 // Échantillons par membre : { AG|AD|PG|PD: [{ y, cx, cz, w, d, zf, zb }] } (un par hauteur).
 const LEG_GUESS = { AG: [0.15, 0.64], AD: [-0.15, 0.64], PG: [0.25, -0.72], PD: [-0.25, -0.72] };
 export function legSamples(P, I, y0 = 0.02, y1 = 0.96, dy = 0.01) {
   const res = { AG: [], AD: [], PG: [], PD: [] };
+  const weld = weldIndex(P);
   for (let y = y0; y <= y1 + 1e-9; y += dy) {
     const best = {};
-    for (const g of groups(contour(P, I, y))) {
+    for (const g of sections(P, I, y, weld)) {
       if (g.length < 6) continue;
       const xs = g.map((p) => p[0]), zs = g.map((p) => p[1]);
       const xmin = Math.min(...xs), xmax = Math.max(...xs), zmin = Math.min(...zs), zmax = Math.max(...zs);
@@ -97,7 +122,6 @@ export function legSamples(P, I, y0 = 0.02, y1 = 0.96, dy = 0.01) {
   return res;
 }
 
-const at = (S, y) => S.reduce((a, b) => (Math.abs(b.y - y) < Math.abs(a.y - y) ? b : a));
 // Lissage (moyenne glissante sur 3 échantillons) d'une grandeur.
 const sm = (S, i, key) => {
   let s = 0, n = 0;
@@ -107,21 +131,52 @@ const sm = (S, i, key) => {
   }
   return s / n;
 };
-const argmaxIn = (S, ya, yb, key) => {
-  let bi = -1, bv = -1e9;
+// Échantillon interpolé à la hauteur y (entre les deux coupes voisines) ; erreur s'il manque une coupe à moins de
+// 2 cm de part et d'autre (membre mal découpé) au lieu d'un résultat faux ou NaN.
+function sampleAt(S, y, what) {
+  let lo = null, hi = null;
+  for (const s of S) {
+    if (s.y <= y + 1e-9 && (!lo || s.y > lo.y)) lo = s;
+    if (s.y >= y - 1e-9 && (!hi || s.y < hi.y)) hi = s;
+  }
+  if (!lo || !hi || y - lo.y > 0.02 || hi.y - y > 0.02) {
+    throw new Error(`squelette : ${what} : pas de coupe du membre à moins de 2 cm de y = ${y.toFixed(3)} m`);
+  }
+  const t = hi.y > lo.y ? (y - lo.y) / (hi.y - lo.y) : 0;
+  const o = { y };
+  for (const k of ['cx', 'cz', 'w', 'd', 'zf', 'zb']) o[k] = lo[k] + t * (hi[k] - lo[k]);
+  return o;
+}
+// Hauteur de l'extremum d'une grandeur lissée entre ya et yb (sign 1 : maximum, −1 : minimum) : barycentre du plateau
+// (coupes contiguës à moins de tol de l'extremum, pondérées par leur marge) et non un argmax seul, mal conditionné
+// sur un profil plat (boulet : largeur à ±1 mm sur 4 cm). Erreur s'il y a trop peu de coupes ou si le plateau touche
+// un bord de la fenêtre (extremum hors de la fenêtre).
+function plateauCentre(S, ya, yb, key, sign, what, tol = 0.002) {
+  const R = [];
   S.forEach((s, i) => {
-    if (s.y < ya || s.y > yb) return;
-    const v = sm(S, i, key);
-    if (v > bv) {
-      bv = v;
-      bi = i;
-    }
+    if (s.y >= ya && s.y <= yb) R.push({ y: s.y, v: sign * sm(S, i, key) });
   });
-  return S[bi];
-};
-// Droite des moindres carrés x(y), z(y) des centres entre ya et yb, évaluée en y.
-function axisAt(S, ya, yb, y) {
+  if (R.length < 5) throw new Error(`squelette : ${what} : ${R.length} coupe(s) entre ${ya} et ${yb} m (5 au moins)`);
+  let im = 0;
+  R.forEach((r, i) => {
+    if (r.v > R[im].v) im = i;
+  });
+  const thr = R[im].v - tol;
+  let a = im, b = im;
+  while (a > 0 && R[a - 1].v >= thr) a--;
+  while (b < R.length - 1 && R[b + 1].v >= thr) b++;
+  if (a === 0 || b === R.length - 1) throw new Error(`squelette : ${what} : extremum au bord de la fenêtre ${ya}–${yb} m`);
+  let sw = 0, sy = 0;
+  for (let i = a; i <= b; i++) {
+    sw += R[i].v - thr;
+    sy += (R[i].v - thr) * R[i].y;
+  }
+  return sy / sw;
+}
+// Droite des moindres carrés x(y), z(y) des centres entre ya et yb, évaluée en y (3 coupes au moins, sinon erreur).
+function axisAt(S, ya, yb, y, what) {
   const pts = S.filter((s) => s.y >= ya && s.y <= yb);
+  if (pts.length < 3) throw new Error(`squelette : ${what} : ${pts.length} coupe(s) entre ${ya} et ${yb} m (3 au moins)`);
   const n = pts.length, my = pts.reduce((a, s) => a + s.y, 0) / n;
   const fit = (k) => {
     const m = pts.reduce((a, s) => a + s[k], 0) / n;
@@ -132,29 +187,59 @@ function axisAt(S, ya, yb, y) {
 }
 
 // Articulations d'un membre (positions de repos en mètres).
-export function fitLeg(S, front) {
-  const hoof = at(S, 0.075);
-  const fet = argmaxIn(S, 0.15, 0.28, 'w');
-  const out = { H: [hoof.cx, 0.075, hoof.cz], P: [fet.cx, fet.y, fet.cz] };
+export function fitLeg(S, front, name = 'membre') {
+  const hoof = sampleAt(S, 0.075, `${name}, sabot`);
+  const fy = plateauCentre(S, 0.15, 0.28, 'w', 1, `${name}, boulet`);
+  const fet = sampleAt(S, fy, `${name}, boulet`);
+  const out = { H: [hoof.cx, 0.075, hoof.cz], P: [fet.cx, fy, fet.cz] };
   if (front) {
-    const knee = argmaxIn(S, 0.42, 0.62, 'w');
-    out.L = [knee.cx, knee.y, knee.cz];
+    const ky = plateauCentre(S, 0.42, 0.62, 'w', 1, `${name}, genou`);
+    const knee = sampleAt(S, ky, `${name}, genou`);
+    out.L = [knee.cx, ky, knee.cz];
     // Coude : axe de l'avant-bras (0,62–0,82 m) prolongé jusqu'à 0,92 m.
-    out.U = axisAt(S, 0.62, 0.82, 0.92);
+    out.U = axisAt(S, 0.62, 0.82, 0.92, `${name}, coude`);
   } else {
-    // Pointe du jarret : point le plus en arrière entre 0,48 et 0,72 m ; articulation 3 cm plus bas, aux 2/5 de la
-    // profondeur depuis l'avant.
-    let ph = null;
-    for (const s of S) if (s.y >= 0.48 && s.y <= 0.72 && (!ph || s.zb < ph.zb)) ph = s;
-    const hk = at(S, ph.y - 0.03);
+    // Pointe du jarret : point le plus en arrière entre 0,48 et 0,72 m (centre du plateau) ; articulation 3 cm plus
+    // bas, aux 2/5 de la profondeur depuis l'avant.
+    const py = plateauCentre(S, 0.48, 0.72, 'zb', -1, `${name}, pointe du jarret`);
+    const hk = sampleAt(S, py - 0.03, `${name}, jarret`);
     out.C = [hk.cx, hk.y, hk.zf + 0.4 * (hk.zb - hk.zf)];
     // Grasset : axe de la jambe (0,68–0,88 m) prolongé jusqu'à 0,37 m au-dessus du jarret, avancé de 6 cm (le grasset
     // est à l'avant de la cuisse).
     const ys = out.C[1] + 0.37;
-    const a = axisAt(S, 0.68, 0.88, ys);
+    const a = axisAt(S, 0.68, 0.88, ys, `${name}, grasset`);
     out.L = [a[0], ys, a[2] + 0.06];
   }
   return out;
+}
+
+// Membres symétrisés : chaque côté est ajusté seul, puis la hauteur (y) et l'avant/arrière (z) de chaque articulation
+// sont moyennés entre gauche et droite (modèle symétrique : un écart vient de la mesure, et des segments de longueurs
+// différentes poseraient les sabots à des hauteurs différentes sous les mêmes rotations) ; le x (aplombs) reste propre à
+// chaque côté. Erreur si l'écart gauche/droite (y, z) d'une articulation dépasse 1,5 cm avant symétrisation.
+const SYM_MAX = 0.015;
+const JOINT = { H: 'sabot', P: 'boulet', L: 'genou/grasset', U: 'coude', C: 'jarret' };
+export function symmetriseLegs(raw) {
+  const legs = {}, gaps = {};
+  for (const [l, r] of [['AG', 'AD'], ['PG', 'PD']]) {
+    legs[l] = {};
+    legs[r] = {};
+    for (const j of Object.keys(raw[l])) {
+      const a = raw[l][j], b = raw[r][j];
+      const gap = Math.hypot(a[1] - b[1], a[2] - b[2]);
+      gaps[`${l}/${r} ${j}`] = +(gap * 100).toFixed(2);
+      if (gap > SYM_MAX) {
+        throw new Error(
+          `squelette : ${JOINT[j]} des membres ${l}/${r} asymétrique avant symétrisation (écart gauche/droite ` +
+            `${(gap * 100).toFixed(1)} cm en hauteur et avant/arrière, 1,5 cm au plus) : coupes ou fenêtres de recherche à vérifier`,
+        );
+      }
+      const y = (a[1] + b[1]) / 2, z = (a[2] + b[2]) / 2;
+      legs[l][j] = [a[0], y, z];
+      legs[r][j] = [b[0], y, z];
+    }
+  }
+  return { legs, gaps };
 }
 
 // ---------- Redressement de la tête ----------
@@ -178,25 +263,42 @@ export function headYaw(P) {
   const slope = xs.reduce((a, p) => a + (p[0] - mz) * (p[1] - mxv), 0) / xs.reduce((a, p) => a + (p[0] - mz) ** 2, 0);
   return Math.atan(slope); // > 0 : tête tournée vers +x (gauche du cheval)
 }
-// Distance signée au plan nuque–gorge (positive en avant, côté tête), dans le plan sagittal.
-export function headSide(y, z) {
+// Distance signée au plan nuque–gorge (positive en avant, côté tête), dans le plan sagittal. SIDE_N : normale du plan
+// orientée vers l'avant (gradient de la distance en y et z).
+const SIDE_N = (() => {
   const dz = THROAT[2] - POLL[2], dy = THROAT[1] - POLL[1];
   const L = Math.hypot(dz, dy);
-  const nz = -dy / L, ny = dz / L; // normale orientée vers l'avant
-  return (z - POLL[2]) * nz + (y - POLL[1]) * ny;
+  return { y: dz / L, z: -dy / L };
+})();
+export function headSide(y, z) {
+  return (z - POLL[2]) * SIDE_N.z + (y - POLL[1]) * SIDE_N.y;
 }
+// Rotation d'angle θ(p) = −ang·w(s(p)) autour de l'axe vertical de la nuque. Normales : transposée inverse de la
+// jacobienne, J = R + (dR/dθ · q) ∇θᵀ (q = p − nuque) ; dans la bande de transition l'angle varie avec la position
+// (cisaillement) et la seule rotation locale des normales les fausse (jusqu'à 33°). Pour une rotation autour de y :
+// J⁻ᵀ n = R (n − ∇θ (q_z n_x − q_x n_z) / (1 − ∂θ/∂z · q_x)), puis normalisation ; hors de la bande, ∇θ = 0.
 export function straightenHead(P, N) {
   const ang = headYaw(P);
+  const a = -0.06, b = 0.04;
   for (let i = 0; i < P.length; i += 3) {
-    const w = smooth(-0.06, 0.04, headSide(P[i + 1], P[i + 2]));
+    const s = headSide(P[i + 1], P[i + 2]);
+    const w = smooth(a, b, s);
     if (w <= 0) continue;
     const cw = Math.cos(-ang * w), sw = Math.sin(-ang * w);
     const x = P[i] - POLL[0], z = P[i + 2] - POLL[2];
     P[i] = POLL[0] + x * cw + z * sw;
     P[i + 2] = POLL[2] - x * sw + z * cw;
-    const nx = N[i], nz = N[i + 2];
-    N[i] = nx * cw + nz * sw;
-    N[i + 2] = -nx * sw + nz * cw;
+    // ∇θ = −ang · w'(s) · (0, SIDE_N.y, SIDE_N.z).
+    const t = (s - a) / (b - a);
+    const dw = t > 0 && t < 1 ? (6 * t * (1 - t)) / (b - a) : 0;
+    const gy = -ang * dw * SIDE_N.y, gz = -ang * dw * SIDE_N.z;
+    const k = (z * N[i] - x * N[i + 2]) / (1 - gz * x);
+    const mx = N[i], my = N[i + 1] - gy * k, mz = N[i + 2] - gz * k;
+    const nx = mx * cw + mz * sw, nz = -mx * sw + mz * cw;
+    const L = Math.hypot(nx, my, nz) || 1;
+    N[i] = nx / L;
+    N[i + 1] = my / L;
+    N[i + 2] = nz / L;
   }
   return { angleDeg: +((ang * 180) / Math.PI).toFixed(2), checkDeg: +((headYaw(P) * 180) / Math.PI).toFixed(2) };
 }
@@ -230,7 +332,13 @@ function headLandmarks(P) {
 // Renvoie [{ name, parent, pos }] dans l'ordre de BONES, et le détail des mesures.
 export function fitSkeleton(P, I) {
   const S = legSamples(P, I);
-  const legs = { AG: fitLeg(S.AG, true), AD: fitLeg(S.AD, true), PG: fitLeg(S.PG, false), PD: fitLeg(S.PD, false) };
+  const raw = {
+    AG: fitLeg(S.AG, true, 'antérieur gauche'),
+    AD: fitLeg(S.AD, true, 'antérieur droit'),
+    PG: fitLeg(S.PG, false, 'postérieur gauche'),
+    PD: fitLeg(S.PD, false, 'postérieur droit'),
+  };
+  const { legs, gaps } = symmetriseLegs(raw);
   const ears = headLandmarks(P);
   const pos = {};
   // Tronc, encolure, queue (x = 0) : positions du jeu recalées sur la silhouette (voir l'en-tête).
@@ -287,5 +395,5 @@ export function fitSkeleton(P, I) {
     if (!pos[b.name]) throw new Error(`os non placé : ${b.name}`);
     return { name: b.name, parent: b.parent, pos: pos[b.name].map((v) => +v.toFixed(4)) };
   });
-  return { bones, legs, ears, samples: S };
+  return { bones, legs, legsRaw: raw, legGaps: gaps, ears, samples: S };
 }

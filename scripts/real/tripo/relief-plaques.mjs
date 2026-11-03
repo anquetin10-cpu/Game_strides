@@ -144,10 +144,11 @@ function resoudreBande(n, bw, A, b) {
  * @param {Float32Array} normals normales (modifiées en place)
  * @param {Uint32Array|Uint16Array} indices triangles
  * @param {Uint8Array} zone 1 = sommet libre (doublons de couture : un seul suffit)
- * @param {object} [o] { anneaux = 3, rayon } anneaux de fondu des normales ; rayon du lissage de la courbure cible
- *   (unités des positions ; par défaut 4 × la longueur médiane des arêtes de la zone)
+ * @param {object} [o] { anneaux = 3, rayon, mode = 'exterieur' } anneaux de fondu des normales ; rayon du lissage de la
+ *   courbure cible (unités des positions ; par défaut 4 × la longueur médiane des arêtes de la zone) ; partie normale de
+ *   la cible : 'exterieur' (courbure du pelage autour, prolongée) ou 'moyenne' (moyenne des δ0 de la zone, ancienne)
  */
-export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3, rayon = 0 } = {}) {
+export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3, rayon = 0, mode = 'exterieur' } = {}) {
   const t0 = Date.now();
   const P = positions, I = indices, nv = P.length / 3;
   const { weld, ng, deb, vois } = souder(P, I);
@@ -180,29 +181,84 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
   // Normales soudées d'origine (contrôle d'orientation du lissage).
   const nG = new Float64Array(ng * 3);
   for (let v = 0; v < nv; v++) { const g = weld[v]; nG[g * 3] += normals[v * 3]; nG[g * 3 + 1] += normals[v * 3 + 1]; nG[g * 3 + 2] += normals[v * 3 + 2]; }
-  // Cible δ dans la zone et sur son premier anneau (lignes de l'énergie) : moyenne gaussienne (σ = rayon / 2) des δ0
-  // voisins de même orientation.
+  // Cible δ dans la zone et sur son premier anneau (lignes de l'énergie).
+  //  - partie tangentielle : moyenne gaussienne (σ = rayon / 2, voisins de même orientation) des δ0 (répartition des
+  //    sommets, glissement minimal) ;
+  //  - partie normale : courbure moyenne κ = δ0·n / f (f = ½ Σ w |xj - x|² / Σ w, taille locale des arêtes), δ·n = κ f.
+  //    Mode 'exterieur' (défaut) : κ du pelage autour de la zone (moyenne gaussienne pondérée par l'aire, sommets hors
+  //    zone), prolongé dans la zone par interpolation harmonique ; la courbure des plaques (dalle, marches, bords
+  //    roulés, coutures) n'entre plus du tout dans la cible, celle du tronc autour est gardée (pas d'aplatissement du
+  //    ventre). Mode 'moyenne' (ancien) : moyenne gaussienne des δ0 de la zone elle-même, qui gardait une marche adoucie.
   const cible = new Uint8Array(libre);
   for (let g = 0; g < ng; g++) if (libre[g]) for (let k = deb[g]; k < deb[g + 1]; k++) cible[vois[k]] = 1;
+  const nU = new Float64Array(ng * 3), kap = new Float64Array(ng), fLoc = new Float64Array(ng), aire = new Float64Array(ng);
+  for (let t = 0; t < I.length; t += 3) {
+    const a = weld[I[t]], b = weld[I[t + 1]], c = weld[I[t + 2]];
+    if (a === b || b === c || a === c) continue;
+    const ux = Xs[b * 3] - Xs[a * 3], uy = Xs[b * 3 + 1] - Xs[a * 3 + 1], uz = Xs[b * 3 + 2] - Xs[a * 3 + 2];
+    const vx = Xs[c * 3] - Xs[a * 3], vy = Xs[c * 3 + 1] - Xs[a * 3 + 1], vz = Xs[c * 3 + 2] - Xs[a * 3 + 2];
+    const ar = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 6;
+    aire[a] += ar; aire[b] += ar; aire[c] += ar;
+  }
+  for (let g = 0; g < ng; g++) {
+    const l = Math.hypot(nG[g * 3], nG[g * 3 + 1], nG[g * 3 + 2]) || 1;
+    nU[g * 3] = nG[g * 3] / l; nU[g * 3 + 1] = nG[g * 3 + 1] / l; nU[g * 3 + 2] = nG[g * 3 + 2] / l;
+    if (!(somW[g] > 0)) continue;
+    let f = 0;
+    for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; f += W[k] * ((Xs[q * 3] - Xs[g * 3]) ** 2 + (Xs[q * 3 + 1] - Xs[g * 3 + 1]) ** 2 + (Xs[q * 3 + 2] - Xs[g * 3 + 2]) ** 2); }
+    fLoc[g] = f / (2 * somW[g]);
+    if (fLoc[g] > 0) kap[g] = (delta0[g * 3] * nU[g * 3] + delta0[g * 3 + 1] * nU[g * 3 + 1] + delta0[g * 3 + 2] * nU[g * 3 + 2]) / fLoc[g];
+  }
   const cs = rayon, cles = new Map(), cle = (a, b, c) => `${a},${b},${c}`;
   for (let g = 0; g < ng; g++) { const k = cle(Math.floor(X0[g * 3] / cs), Math.floor(X0[g * 3 + 1] / cs), Math.floor(X0[g * 3 + 2] / cs)); let l = cles.get(k); if (!l) cles.set(k, (l = [])); l.push(g); }
   const delta = Float64Array.from(delta0), s2 = 2 * (rayon / 2) ** 2;
+  const moy = new Float64Array(ng * 3), nMoy = new Float64Array(ng * 3), kExt = new Float64Array(ng);
   for (let g = 0; g < ng; g++) {
     if (!cible[g]) continue;
     const ix = Math.floor(X0[g * 3] / cs), iy = Math.floor(X0[g * 3 + 1] / cs), iz = Math.floor(X0[g * 3 + 2] / cs);
-    let sw = 0, sx = 0, sy = 0, sz = 0;
+    let sw = 0, sx = 0, sy = 0, sz = 0, mx = 0, my = 0, mz = 0, ka = 0, kw = 0;
     for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) {
       const l = cles.get(cle(ix + a, iy + b, iz + c));
       if (!l) continue;
       for (const q of l) {
         const d2 = (X0[q * 3] - X0[g * 3]) ** 2 + (X0[q * 3 + 1] - X0[g * 3 + 1]) ** 2 + (X0[q * 3 + 2] - X0[g * 3 + 2]) ** 2;
         if (d2 > rayon * rayon) continue;
-        if (nG[q * 3] * nG[g * 3] + nG[q * 3 + 1] * nG[g * 3 + 1] + nG[q * 3 + 2] * nG[g * 3 + 2] < 0) continue;
+        if (nU[q * 3] * nU[g * 3] + nU[q * 3 + 1] * nU[g * 3 + 1] + nU[q * 3 + 2] * nU[g * 3 + 2] < 0) continue;
         const w = Math.exp(-d2 / s2);
         sw += w; sx += w * delta0[q * 3]; sy += w * delta0[q * 3 + 1]; sz += w * delta0[q * 3 + 2];
+        mx += w * nU[q * 3]; my += w * nU[q * 3 + 1]; mz += w * nU[q * 3 + 2];
+        if (!libre[q] && fLoc[q] > 0) { ka += w * aire[q] * kap[q]; kw += w * aire[q]; }
       }
     }
-    if (sw > 0) { delta[g * 3] = sx / sw; delta[g * 3 + 1] = sy / sw; delta[g * 3 + 2] = sz / sw; }
+    if (!(sw > 0)) continue;
+    moy[g * 3] = sx / sw; moy[g * 3 + 1] = sy / sw; moy[g * 3 + 2] = sz / sw;
+    // Normale lissée du disque (les parois des marches n'orientent pas la cible).
+    const ml = Math.hypot(mx, my, mz) || 1;
+    nMoy[g * 3] = mx / ml; nMoy[g * 3 + 1] = my / ml; nMoy[g * 3 + 2] = mz / ml;
+    kExt[g] = kw > 0 ? ka / kw : 0;
+  }
+  if (mode === 'moyenne') {
+    for (let g = 0; g < ng; g++) if (cible[g]) for (let d = 0; d < 3; d++) delta[g * 3 + d] = moy[g * 3 + d];
+  } else {
+    // Interpolation harmonique de κ dans la zone (Gauss-Seidel sur-relaxé), valeurs du premier anneau extérieur fixes.
+    const kT = Float64Array.from(kExt), ordre = [];
+    for (let g = 0; g < ng; g++) if (libre[g]) ordre.push(g);
+    let k0 = 0, n0 = 0;
+    for (let g = 0; g < ng; g++) if (cible[g] && !libre[g]) { k0 += kExt[g]; n0++; }
+    for (const g of ordre) kT[g] = n0 ? k0 / n0 : 0;
+    for (let it = 0; it < 600; it++) {
+      for (const g of ordre) {
+        let s = 0, n = 0;
+        for (let k = deb[g]; k < deb[g + 1]; k++) { s += kT[vois[k]]; n++; }
+        if (n) kT[g] += 1.9 * (s / n - kT[g]);
+      }
+    }
+    for (let g = 0; g < ng; g++) {
+      if (!cible[g]) continue;
+      const mx = nMoy[g * 3], my = nMoy[g * 3 + 1], mz = nMoy[g * 3 + 2];
+      const dn = moy[g * 3] * mx + moy[g * 3 + 1] * my + moy[g * 3 + 2] * mz, dN = kT[g] * fLoc[g];
+      delta[g * 3] = moy[g * 3] + (dN - dn) * mx; delta[g * 3 + 1] = moy[g * 3 + 1] + (dN - dn) * my; delta[g * 3 + 2] = moy[g * 3 + 2] + (dN - dn) * mz;
+    }
   }
   // Composantes connexes de la zone.
   const comp = new Int32Array(ng).fill(-1), comps = [];

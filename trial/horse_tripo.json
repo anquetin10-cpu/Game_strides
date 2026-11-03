@@ -20,8 +20,8 @@
   "facesAgainstAfter": 56
  },
  "relief": {
-  "zoneVertices": 5377,
-  "movedVertices": 9297,
+  "zoneVertices": 5267,
+  "movedVertices": 9237,
   "maxMoveMm": 25.8
  },
  "bones": [
@@ -247,7 +247,7 @@
    "pos": [
     0.1392,
     0.92,
-    0.6103
+    0.6099
    ]
   },
   {
@@ -256,24 +256,24 @@
    "pos": [
     -0.1563,
     0.92,
-    0.6095
+    0.6099
    ]
   },
   {
    "name": "flL",
    "parent": "flU",
    "pos": [
-    0.1187,
-    0.51,
-    0.5822
+    0.1184,
+    0.5141,
+    0.583
    ]
   },
   {
    "name": "frL",
    "parent": "frU",
    "pos": [
-    -0.1374,
-    0.51,
+    -0.1372,
+    0.5141,
     0.583
    ]
   },
@@ -281,36 +281,36 @@
    "name": "flP",
    "parent": "flL",
    "pos": [
-    0.1301,
+    0.1303,
     0.23,
-    0.5602
+    0.5593
    ]
   },
   {
    "name": "frP",
    "parent": "frL",
    "pos": [
-    -0.1481,
+    -0.1486,
     0.23,
-    0.5583
+    0.5593
    ]
   },
   {
    "name": "flH",
    "parent": "flP",
    "pos": [
-    0.1441,
+    0.1442,
     0.075,
-    0.6405
+    0.639
    ]
   },
   {
    "name": "frH",
    "parent": "frP",
    "pos": [
-    -0.1613,
+    -0.1612,
     0.075,
-    0.6402
+    0.639
    ]
   },
   {
@@ -335,36 +335,36 @@
    "name": "hlL",
    "parent": "hlU",
    "pos": [
-    0.1893,
-    0.95,
-    -0.599
+    0.1896,
+    0.9464,
+    -0.6004
    ]
   },
   {
    "name": "hrL",
    "parent": "hrU",
    "pos": [
-    -0.1879,
-    0.94,
-    -0.603
+    -0.1875,
+    0.9464,
+    -0.6004
    ]
   },
   {
    "name": "hlC",
    "parent": "hlL",
    "pos": [
-    0.1902,
-    0.58,
-    -0.8093
+    0.1903,
+    0.5764,
+    -0.8099
    ]
   },
   {
    "name": "hrC",
    "parent": "hrL",
    "pos": [
-    -0.1886,
-    0.57,
-    -0.8112
+    -0.188,
+    0.5764,
+    -0.8099
    ]
   },
   {
@@ -372,35 +372,35 @@
    "parent": "hlC",
    "pos": [
     0.216,
-    0.2,
-    -0.8146
+    0.2139,
+    -0.8154
    ]
   },
   {
    "name": "hrP",
    "parent": "hrC",
    "pos": [
-    -0.209,
-    0.22,
-    -0.8156
+    -0.2091,
+    0.2139,
+    -0.8154
    ]
   },
   {
    "name": "hlH",
    "parent": "hlP",
    "pos": [
-    0.2485,
+    0.2479,
     0.075,
-    -0.7408
+    -0.742
    ]
   },
   {
    "name": "hrH",
    "parent": "hrP",
    "pos": [
-    -0.2471,
+    -0.2462,
     0.075,
-    -0.7403
+    -0.742
    ]
   },
   {
@@ -479,19 +479,109 @@
  "legs": {
   "AG": {
    "H": [
-    0.14413965406010243,
+    0.14423611094241237,
     0.075,
-    0.6405089354879645
+    0.6389950786657943
    ],
    "P": [
-    0.1301131929567082,
-    0.23,
-    0.5601912446777526
+    0.13028507960958008,
+    0.22996633555374446,
+    0.5592634924227924
    ],
    "L": [
-    0.11867292330098306,
-    0.51,
-    0.5822490074266059
+    0.11835598624487885,
+    0.5141146003195036,
+    0.583005726701191
+   ],
+   "U": [
+    0.13922380240045232,
+    0.92,
+    0.6098765561210671
+   ]
+  },
+  "AD": {
+   "H": [
+    -0.1612491461970197,
+    0.075,
+    0.6389950786657943
+   ],
+   "P": [
+    -0.14859351543025395,
+    0.22996633555374446,
+    0.5592634924227924
+   ],
+   "L": [
+    -0.13721220276233856,
+    0.5141146003195036,
+    0.583005726701191
+   ],
+   "U": [
+    -0.1563018161799401,
+    0.92,
+    0.6098765561210671
+   ]
+  },
+  "PG": {
+   "H": [
+    0.2479243566059019,
+    0.075,
+    -0.7419747972468042
+   ],
+   "P": [
+    0.21596074546510213,
+    0.2139322063369896,
+    -0.8153974865216682
+   ],
+   "C": [
+    0.190283607017731,
+    0.5763806568171723,
+    -0.8098621814981413
+   ],
+   "L": [
+    0.18956015880704355,
+    0.9463806568171722,
+    -0.6003801689808069
+   ]
+  },
+  "PD": {
+   "H": [
+    -0.24617176501203708,
+    0.075,
+    -0.7419747972468042
+   ],
+   "P": [
+    -0.2091451749253485,
+    0.2139322063369896,
+    -0.8153974865216682
+   ],
+   "C": [
+    -0.18795144016017357,
+    0.5763806568171723,
+    -0.8098621814981413
+   ],
+   "L": [
+    -0.1874827199436273,
+    0.9463806568171722,
+    -0.6003801689808069
+   ]
+  }
+ },
+ "legsBeforeSymmetry": {
+  "AG": {
+   "H": [
+    0.14423611094241237,
+    0.075,
+    0.6391792136917659
+   ],
+   "P": [
+    0.13028507960958008,
+    0.22563780476535902,
+    0.5606704391030632
+   ],
+   "L": [
+    0.11835598624487885,
+    0.5138039285760739,
+    0.582781304507206
    ],
    "U": [
     0.13922380240045232,
@@ -501,19 +591,19 @@
   },
   "AD": {
    "H": [
-    -0.16129321356302015,
+    -0.1612491461970197,
     0.075,
-    0.6401837100047765
+    0.6388109436398228
    ],
    "P": [
-    -0.1481464306541706,
-    0.23,
-    0.5582601461059382
+    -0.14859351543025395,
+    0.23429486634212993,
+    0.5578565457425214
    ],
    "L": [
-    -0.13735584416077018,
-    0.51,
-    0.5829807527551019
+    -0.13721220276233856,
+    0.5144252720629332,
+    0.5832301488951759
    ],
    "U": [
     -0.1563018161799401,
@@ -523,48 +613,58 @@
   },
   "PG": {
    "H": [
-    0.2485421597256814,
+    0.2479243566059019,
     0.075,
-    -0.7408012841929736
+    -0.7422066598946914
    ],
    "P": [
-    0.21600143509957015,
-    0.2,
-    -0.8146365312590916
+    0.21596074546510213,
+    0.20887999992822615,
+    -0.8152248809317904
    ],
    "C": [
-    0.19015070651051458,
-    0.58,
-    -0.809306624060981
+    0.190283607017731,
+    0.5755059276932646,
+    -0.8103047039770507
    ],
    "L": [
-    0.1892734945453321,
-    0.95,
-    -0.5990307934694332
+    0.18956015880704355,
+    0.9455059276932646,
+    -0.6010424232688605
    ]
   },
   "PD": {
    "H": [
-    -0.24706280313574105,
+    -0.24617176501203708,
     0.075,
-    -0.7403190150373515
+    -0.7417429345989169
    ],
    "P": [
-    -0.20901109305575094,
-    0.22,
-    -0.8156390991795778
+    -0.2091451749253485,
+    0.21898441274575303,
+    -0.815570092111546
    ],
    "C": [
-    -0.18862620629182864,
-    0.57,
-    -0.8112480471977768
+    -0.18795144016017357,
+    0.57725538594108,
+    -0.8094196590192317
    ],
    "L": [
-    -0.18791183131886113,
-    0.94,
-    -0.6029759923561138
+    -0.1874827199436273,
+    0.9472553859410799,
+    -0.5997179146927534
    ]
   }
+ },
+ "legGapsCm": {
+  "AG/AD H": 0.04,
+  "AG/AD P": 0.91,
+  "AG/AD L": 0.08,
+  "AG/AD U": 0.08,
+  "PG/PD H": 0.05,
+  "PG/PD P": 1.01,
+  "PG/PD C": 0.2,
+  "PG/PD L": 0.22
  },
  "ext": {
   "muzzle": [
@@ -589,9 +689,9 @@
   ]
  },
  "weights": {
-  "seconds": 1.102,
+  "seconds": 1.447,
   "radii": {
-   "pelvis": 0.194,
+   "pelvis": 0.193,
    "loin": 0.196,
    "body": 0.326,
    "neck": 0.19,
@@ -606,44 +706,67 @@
    "tail4": 0.059,
    "tail5": 0.078,
    "tail6": 0.076,
-   "flSc": 0.07,
-   "flHu": 0.138,
-   "flU": 0.073,
+   "flSc": 0.072,
+   "flHu": 0.137,
+   "flU": 0.074,
    "flL": 0.047,
-   "flP": 0.049,
-   "flH": 0.07,
-   "hlU": 0.184,
-   "hlL": 0.106,
-   "hlC": 0.052,
-   "hlP": 0.048,
-   "hlH": 0.064,
-   "frSc": 0.073,
-   "frHu": 0.134,
-   "frU": 0.079,
+   "flP": 0.048,
+   "flH": 0.068,
+   "hlU": 0.186,
+   "hlL": 0.115,
+   "hlC": 0.053,
+   "hlP": 0.05,
+   "hlH": 0.065,
+   "frSc": 0.072,
+   "frHu": 0.137,
+   "frU": 0.074,
    "frL": 0.047,
    "frP": 0.048,
-   "frH": 0.067,
-   "hrU": 0.189,
-   "hrL": 0.102,
-   "hrC": 0.054,
-   "hrP": 0.048,
-   "hrH": 0.064
+   "frH": 0.068,
+   "hrU": 0.186,
+   "hrL": 0.115,
+   "hrC": 0.053,
+   "hrP": 0.05,
+   "hrH": 0.065
+  },
+  "tail": {
+   "tailCut": 1.05,
+   "hindLegCuts": [
+    1.01,
+    1.01
+   ],
+   "tailVolumeVerts": 17711,
+   "tailHairVerts": 17711,
+   "tailVolumeHindOver": 0,
+   "maxHindInTail": 0,
+   "hindLegVerts": 10509,
+   "hindLegTailOver": 0,
+   "maxTailInHindLegs": 0,
+   "crossSideOver": 0,
+   "limit": 0.05
   }
+ },
+ "glbCheck": {
+  "skins": 1,
+  "joints": 50,
+  "lodMeshesSkinned": 2,
+  "ibmAccessors": 1,
+  "orphanAccessors": 0
  },
  "lods": [
   {
-   "tris": 29975,
-   "verts": 21279,
-   "error": 0.00122,
-   "foldsDropped": 25,
-   "foldsKept": 45
+   "tris": 29979,
+   "verts": 21299,
+   "error": 0.00124,
+   "foldsDropped": 21,
+   "foldsKept": 49
   },
   {
    "tris": 7994,
-   "verts": 6830,
-   "error": 0.00506,
+   "verts": 6834,
+   "error": 0.00507,
    "foldsDropped": 6,
-   "foldsKept": 60
+   "foldsKept": 57
   }
  ],
  "texturesCleaned": true,
@@ -652,13 +775,13 @@
  },
  "textureCleaning": {
   "diagnostic": {
-   "tapis": "Tapis rosé (plus rouge que la robe : r/g ≥ 1.25 contre 1,11-1,24 sur le pelage voisin) à cheval sur la colonne, z -0.166…0.061, y 0.510…0.597, x -0.085…0.083 (unités natives) ; liseré et coutures en relief dans la carte de normales (|xy| 10.19 au bord contre 2.52 sur le pelage voisin, 3.05 après). Bord également modelé dans le maillage (845 sommets de liseré marqués) : géométrie non modifiée, voir geometrie.reliefPlaques.tapis.",
-   "quartiers": "Rectangles bruns sur chaque flanc, gauche z -0.150…0.027, y 0.330…0.447, x 0.046…0.121 (unités natives), droit z -0.150…0.027, y 0.330…0.450, x -0.124…-0.046 (unités natives) ; bord en relief dans la carte de normales (|xy| au bord 8.72 / 6.87 contre 3.16 / 2.92 autour ; 2.65 / 1.9 après) et dans le maillage (bord haut en marche d'environ 0,002 et plis internes) : géométrie non modifiée.",
-   "points": "Albédo : aucun point noir isolé sur la robe hors zones naturellement sombres ; 11 petites taches sombres corrigées (intérieur des cuisses, poitrail, membres). Rugosité : 75 points brillants (rugosité basse) corrigés ; avec metallicFactor 1, ces points et les micro-replis du maillage (69 faces retournées, liste dans geometrie.microReplis) apparaissent comme des points sombres selon l'éclairage. Les micro-replis relèvent de la géométrie (non modifiée).",
+   "tapis": "Tapis rosé (plus rouge que la robe : r/g ≥ 1.25 contre 1,11-1,24 sur le pelage voisin) à cheval sur la colonne, z -0.166…0.061, y 0.510…0.597, x -0.085…0.083 (unités natives) ; liseré et coutures en relief dans la carte de normales (|xy| 10.19 au bord contre 2.52 sur le pelage voisin, 2.02 après). Bord également modelé dans le maillage (845 sommets de liseré marqués) : géométrie non modifiée ici, zone à replacer fournie (geometry.zoneRelief, voir relief-plaques.mjs). Mèche de crinière couchée sur le garrot à l'avant du tapis (10201 texels) : couleur d'origine gardée.",
+   "quartiers": "Rectangles bruns sur chaque flanc, gauche z -0.150…0.027, y 0.330…0.447, x 0.046…0.121 (unités natives), droit z -0.150…0.027, y 0.330…0.450, x -0.124…-0.046 (unités natives) ; bord en relief dans la carte de normales (|xy| au bord 8.72 / 6.87 contre 3.16 / 2.92 autour ; 1.65 / 1.69 après) et dans le maillage (bord haut en marche d'environ 0,002 et plis internes) : géométrie non modifiée ici, zone à replacer fournie.",
+   "points": "Albédo : aucun point noir isolé sur la robe hors zones naturellement sombres ; 11 petites taches sombres corrigées (intérieur des cuisses, poitrail, membres). Rugosité : 75 points brillants (rugosité basse) corrigés ; avec metallicFactor 1, ces points et les micro-replis du maillage (69 faces retournées, liste dans geometrie.microReplis) apparaissent comme des points sombres selon l'éclairage. Les micro-replis relèvent de la géométrie (non modifiée ici). Après remplissage, 15 tache(s) sombre(s) résiduelle(s) du grain transplanté remise(s) à la valeur sans grain.",
    "metal": "Bleu (métal) du MR jusqu'à 104/255 avec metallicFactor 1 : mis à 0 partout ; vert (rugosité) conservé hors masques."
   },
   "texelsAlbedo": {
-   "tapis": 112856,
+   "tapis": 103087,
    "quartierG": 31075,
    "quartierD": 28490
   },
@@ -671,5 +794,5 @@
    "maxApres": 0
   }
  },
- "bytes": 959200
+ "bytes": 960704
 }

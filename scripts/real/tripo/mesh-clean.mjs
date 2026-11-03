@@ -1,3 +1,7 @@
+// Cheval Tripo (essai) : corrections du maillage source (faces, normales, relief des plaques, micro-replis).
+import { effacerReliefPlaques } from './relief-plaques.mjs';
+import { zoneReliefDesMasques } from './clean-texture.mjs';
+
 // Cheval Tripo (essai) : réorientation des faces retournées de la source.
 //
 // La source contient quelques triangles d'orientation opposée à leurs voisins (17 arêtes parcourues dans le même
@@ -92,6 +96,7 @@ export function fixWinding(P, I) {
 
 // Normales des sommets des faces qui les contredisent (faces réorientées, structures fines) : moyenne pondérée par
 // l'aire des normales géométriques des faces voisines (sommets soudés). Le lissage d'origine est gardé ailleurs.
+// Puis normales de couture incohérentes (voir repairSeamNormals).
 export function repairNormals(P, N, I) {
   const nv = P.length / 3, nt = I.length / 3;
   const fn = new Float32Array(nt * 3);
@@ -138,15 +143,80 @@ export function repairNormals(P, N, I) {
     const nx = N[a * 3] + N[b * 3] + N[c * 3], ny = N[a * 3 + 1] + N[b * 3 + 1] + N[c * 3 + 1], nz = N[a * 3 + 2] + N[b * 3 + 2] + N[c * 3 + 2];
     if (fn[t * 3] * nx + fn[t * 3 + 1] * ny + fn[t * 3 + 2] * nz < 0) after++;
   }
-  return { facesAgainst: against, normalsFixed: fixed, facesAgainstAfter: after };
+  return { facesAgainst: against, normalsFixed: fixed, facesAgainstAfter: after, ...repairSeamNormals(P, N, I) };
 }
 
-// Relief des plaques imprimées par la génération (tapis de selle et quartiers : bords modelés dans le maillage) :
-// lissage de Taubin (λ/μ, sans amaigrissement) limité aux zones des masques (texture, lus aux UV des sommets) et à
-// une marge de transition de quelques anneaux ; normales recalculées dans la zone (fondues avec celles d'origine sur
-// la marge). masks : [{ data, width, height }] en niveaux de gris (0..255).
-export function smoothMaskedRelief(P, N, I, UV, masks, { rings = 4, iterations = 30, lambda = 0.55, mu = -0.58 } = {}) {
+// Normales de couture : sur une surface lisse (faces voisines peu dispersées, moins de 25° en moyenne pondérée par
+// l'aire), un doublon UV d'une position dont la normale s'écarte de plus de 30° de la surface alors qu'un doublon
+// jumeau est cohérent (moins de 15°) prend la normale moyenne des jumeaux cohérents. Un sommet sans jumeau cohérent
+// écarté de plus de 45° prend la normale des faces. La source en compte un millier (fines lignes sombres ou claires le
+// long des coutures, par ex. sur l'encolure). Les arêtes vives (oreilles, crins, sabots) ne sont pas lisses : gardées.
+export function repairSeamNormals(P, N, I) {
   const nv = P.length / 3;
+  const key = (i) => `${Math.round(P[i * 3] * 1e6)},${Math.round(P[i * 3 + 1] * 1e6)},${Math.round(P[i * 3 + 2] * 1e6)}`;
+  const map = new Map(), weld = new Int32Array(nv), grp = [];
+  for (let v = 0; v < nv; v++) {
+    const k = key(v);
+    if (!map.has(k)) { map.set(k, map.size); grp.push([]); }
+    weld[v] = map.get(k);
+    grp[weld[v]].push(v);
+  }
+  const ng = map.size, acc = new Float64Array(ng * 3), fn = new Float64Array(I.length);
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    const ux = P[b * 3] - P[a * 3], uy = P[b * 3 + 1] - P[a * 3 + 1], uz = P[b * 3 + 2] - P[a * 3 + 2];
+    const vx = P[c * 3] - P[a * 3], vy = P[c * 3 + 1] - P[a * 3 + 1], vz = P[c * 3 + 2] - P[a * 3 + 2];
+    fn[t] = uy * vz - uz * vy; fn[t + 1] = uz * vx - ux * vz; fn[t + 2] = ux * vy - uy * vx;
+    for (const q of [a, b, c]) { const g = weld[q]; acc[g * 3] += fn[t]; acc[g * 3 + 1] += fn[t + 1]; acc[g * 3 + 2] += fn[t + 2]; }
+  }
+  // Dispersion des faces autour de chaque position : Σ A (1 - cos) / Σ A.
+  const sA = new Float64Array(ng), sD = new Float64Array(ng);
+  for (let t = 0; t < I.length; t += 3) {
+    const A = Math.hypot(fn[t], fn[t + 1], fn[t + 2]);
+    if (!(A > 0)) continue;
+    for (let k = 0; k < 3; k++) {
+      const g = weld[I[t + k]], l = Math.hypot(acc[g * 3], acc[g * 3 + 1], acc[g * 3 + 2]) || 1;
+      sA[g] += A; sD[g] += A - (fn[t] * acc[g * 3] + fn[t + 1] * acc[g * 3 + 1] + fn[t + 2] * acc[g * 3 + 2]) / l;
+    }
+  }
+  const cos = (d) => Math.cos((d * Math.PI) / 180), lisseMax = 1 - cos(25);
+  let jumeaux = 0, isoles = 0;
+  for (let g = 0; g < ng; g++) {
+    if (!(sA[g] > 0) || sD[g] / sA[g] > lisseMax) continue;
+    const l = Math.hypot(acc[g * 3], acc[g * 3 + 1], acc[g * 3 + 2]) || 1, fx = acc[g * 3] / l, fy = acc[g * 3 + 1] / l, fz = acc[g * 3 + 2] / l;
+    const c = grp[g].map((v) => (N[v * 3] * fx + N[v * 3 + 1] * fy + N[v * 3 + 2] * fz) / (Math.hypot(N[v * 3], N[v * 3 + 1], N[v * 3 + 2]) || 1));
+    let bx = 0, by = 0, bz = 0, nb = 0;
+    grp[g].forEach((v, k) => { if (c[k] > cos(15)) { bx += N[v * 3]; by += N[v * 3 + 1]; bz += N[v * 3 + 2]; nb++; } });
+    const bl = Math.hypot(bx, by, bz);
+    grp[g].forEach((v, k) => {
+      if (nb && bl > 0 && c[k] < cos(30)) { N[v * 3] = bx / bl; N[v * 3 + 1] = by / bl; N[v * 3 + 2] = bz / bl; jumeaux++; }
+      else if (!nb && c[k] < cos(45)) { N[v * 3] = fx; N[v * 3 + 1] = fy; N[v * 3 + 2] = fz; isoles++; }
+    });
+  }
+  return { seamNormalsFixed: jumeaux, isolatedNormalsFixed: isoles };
+}
+
+// Relief des plaques imprimées par la génération (tapis de selle et quartiers : bords modelés dans le maillage).
+// masks : [{ data, width, height }] en niveaux de gris (0..255), masques tapis et quartiers de cleanTripoTextures.
+// Si ces masques sont ceux d'un nettoyage de ce processus (empreinte identique) et que le maillage a le même nombre de
+// sommets que la source, la zone de relief calculée par le nettoyage (sommets à replacer, mèche et toupet exclus) est
+// effacée par relief-plaques.mjs (moindres carrés laplaciens, courbure du pelage voisin) : c'est le chemin de la
+// construction, identique à l'aperçu trial/tripo_clean_relief_preview.glb. Sinon (masques d'une autre origine,
+// ou { taubin: true }) : ancien lissage de Taubin (λ/μ) limité aux masques lus aux UV des sommets et à une marge de
+// quelques anneaux. Normales recalculées dans la zone dans les deux cas.
+export function smoothMaskedRelief(P, N, I, UV, masks, { rings = 4, iterations = 30, lambda = 0.55, mu = -0.58, taubin = false } = {}) {
+  const nv = P.length / 3;
+  const zone = taubin ? null : zoneReliefDesMasques(masks, nv);
+  if (zone) {
+    const r = effacerReliefPlaques(P, N, I, zone);
+    let moved = 0;
+    for (let v = 0; v < nv; v++) moved += zone[v];
+    return {
+      methode: 'relief-plaques (laplacien, courbure du pelage voisin)', zoneVertices: r.sommetsLibres, movedVertices: moved,
+      maxMoveMm: +(r.deplacement.max * 1000).toFixed(1), meanMoveMm: +(r.deplacement.moyen * 1000).toFixed(2),
+      tangentialMeanMm: +(r.deplacement.tangentielMoyen * 1000).toFixed(2), foldedFaces: r.facesPliees, ms: r.tempsMs,
+    };
+  }
   const key = (i) => `${Math.round(P[i * 3] * 1e6)},${Math.round(P[i * 3 + 1] * 1e6)},${Math.round(P[i * 3 + 2] * 1e6)}`;
   const map = new Map(), weld = new Int32Array(nv);
   for (let i = 0; i < nv; i++) {
@@ -253,7 +323,7 @@ export function smoothMaskedRelief(P, N, I, UV, masks, { rings = 4, iterations =
     const l2 = Math.hypot(nx, ny, nz) || 1;
     N.set([nx / l2, ny / l2, nz / l2], v * 3);
   }
-  return { zoneVertices: inZone, movedVertices: moved.length, maxMoveMm: +(maxMove * 1000).toFixed(1) };
+  return { methode: 'taubin', zoneVertices: inZone, movedVertices: moved.length, maxMoveMm: +(maxMove * 1000).toFixed(1) };
 }
 
 // Micro-replis : triangles minuscules (aire < maxArea, m²) dont la normale géométrique s'oppose à leurs normales de
