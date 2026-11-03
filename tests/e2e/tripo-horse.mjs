@@ -147,7 +147,8 @@ for (const [name, mag, gallop, want] of GAITS) {
     if (h.pos.z > 250) h.setPosition(140, 200, 0);
     // Endurance pleine (le grand galop est refusé à un cheval épuisé par les allures précédentes).
     h.stamina = h.maxStamina; h.exhausted = false;
-    for (let i = 0; i < 70; i++) { A.steer(0, 1, mag); if (gallop) g.input.held.add('gallop'); else g.input.held.delete('gallop'); A.tick(1); }
+    // Montée en vitesse : le grand galop n'est atteint qu'au-delà de ~10 m/s (≈ 80 pas de simulation depuis l'arrêt).
+    for (let i = 0; i < (gallop ? 130 : 70); i++) { A.steer(0, 1, mag); if (gallop) g.input.held.add('gallop'); else g.input.held.delete('gallop'); A.tick(1); }
     return { gait: h.gait, sp: +h.speed.toFixed(2) };
   }, [mag, gallop]);
   let minY = 9, stanceErr = 0, n = 0, relErr = 0;
@@ -230,6 +231,8 @@ if (!NO_CSO) {
     const O = await import('/src/gameplay/obstacles.js');
     const Cc = await import('/src/gameplay/csoCourse.js');
     const Si = await import('/src/world/sites.js');
+    // Constantes de conduite de concours lues par le cavalier de test (comme tests/e2e/cso-athens.mjs).
+    window.__CSO_RIDE = (await import('/src/gameplay/csoRide.js')).CSO_RIDE;
     A.mount();
     const h = g.player.horse;
     h.setPosition(O.CSO_GATE.x, O.CSO_GATE.z + 4, Math.PI);
