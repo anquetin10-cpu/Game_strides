@@ -60,6 +60,7 @@ const _x = new THREE.Vector3();
 const _t = new THREE.Vector3();
 const _n = new THREE.Vector3();
 const _s = new THREE.Vector3();
+const _dz = new THREE.Vector3();
 const _m = new THREE.Matrix4();
 const tackCache = new Map();
 
@@ -134,8 +135,8 @@ export class TripoHorse {
         sc: sc ? this.bones[sc] : null,
         scMax,
         // Dessous des deux sabots (modèle : niveau de détail proche ; cheval procédural : son maillage proche).
-        contour: TripoHorse.contour(this.lods[0], this.bones[distal[1]], 0.05, SOLE),
-        procContour: TripoHorse.contour(H.mesh, ours[distal[1]], 0.05 * MODEL_SCALE, PROC_SOLE, bodyLod0),
+        contour: TripoHorse.contour(this.lods[0], this.bones[distal[1]], 0.015, SOLE),
+        procContour: TripoHorse.contour(H.mesh, ours[distal[1]], 0.015 * MODEL_SCALE, PROC_SOLE, bodyLod0),
         // Portée utile : distance épaule → boulet au repos (membre jamais tendu au-delà de sa pose d'origine), en
         // fraction de la somme des deux segments.
         reach: A.distanceTo(E) / (A.distanceTo(Bm) + Bm.distanceTo(E)),
@@ -151,8 +152,9 @@ export class TripoHorse {
   }
 
   // Contour du dessous de chaque sabot (repère de l'os du sabot), mesuré sur le maillage : sommets liés surtout à l'os
-  // du sabot (index limité au niveau de détail proche si `range`), dans la bande `band` du bas ; le plus bas et huit
-  // points extrêmes autour (pince, talons, quartiers). Maillage sans sommets skinnés (outils de mesure) : `fallback`.
+  // du sabot (index limité au niveau de détail proche si `range`), dans la bande `band` du bas (le bord de la sole, pas
+  // les glomes des talons) ; le plus bas et seize points extrêmes autour (pince, talons, quartiers). Maillage sans
+  // sommets skinnés (outils de mesure) : `fallback`.
   static contour(mesh, bone, band, fallback, range = null) {
     const g = mesh?.geometry, P = g?.attributes.position, J = g?.attributes.skinIndex, W = g?.attributes.skinWeight;
     const sk = mesh?.skeleton, j = sk ? sk.bones.indexOf(bone) : -1;
@@ -173,8 +175,8 @@ export class TripoHorse {
     for (const p of pts) minY = Math.min(minY, p.y);
     const low = pts.filter((p) => p.y < minY + band);
     const sel = [low.reduce((a, b) => (b.y < a.y ? b : a))];
-    for (let q = 0; q < 8; q++) {
-      const cx = Math.cos((q * Math.PI) / 4), cz = Math.sin((q * Math.PI) / 4);
+    for (let q = 0; q < 16; q++) {
+      const cx = Math.cos((q * Math.PI) / 8), cz = Math.sin((q * Math.PI) / 8);
       sel.push(low.reduce((a, b) => (b.x * cx + b.z * cz > a.x * cx + a.z * cz ? b : a)));
     }
     return sel;
@@ -264,27 +266,29 @@ export class TripoHorse {
       for (const [ob, tb] of L.distal) this._copyWorld(ob, tb);
       if (pass) break;
       // Avant/arrière : centre de la sole du modèle sur celui du cheval procédural (repère du cheval ; aplombs latéraux
-      // du modèle conservés).
+      // du modèle conservés). Déplacement correspondant (monde), appliqué d'avance aux mesures de hauteur ci-dessous :
+      // le sabot du modèle sera là à la seconde passe.
       hoofWorldPosition(this.horse.bones, L.i, _s).applyMatrix4(_m);
       const [ob, hb] = L.distal[1];
       _c.copy(SOLE).applyMatrix4(hb.matrixWorld).applyMatrix4(_m);
-      _t.z += _s.z - _c.z;
-      // Hauteur : près du sol, point le plus bas du sabot du modèle au-dessus du sol sous lui égal à celui du sabot
-      // procédural ; en l'air, centre de la sole sur celui du cheval procédural ; fondu entre les deux.
+      const dz = _s.z - _c.z;
+      _t.z += dz;
+      _dz.copy(_c).applyMatrix4(mesh.matrixWorld);
+      _c.z += dz;
+      _dz.subVectors(_c.applyMatrix4(mesh.matrixWorld), _dz);
+      // Hauteur : près du sol, point le plus bas du sabot du modèle égal à celui du sabot procédural, chacun mesuré
+      // au-dessus du sol sous le centre de sa propre sole (aplombs et dévers propres à chaque sabot ; une marche sous
+      // le bord d'un sabot ne se reporte pas sur l'autre) ; en l'air, centre de la sole sur celui du cheval procédural ;
+      // fondu entre les deux.
       const gr = this._ground;
       ob.updateWorldMatrix(true, false);
-      let pLow = Infinity, tLow = Infinity;
-      for (const q of L.procContour) {
-        _v.copy(q).applyMatrix4(ob.matrixWorld);
-        pLow = Math.min(pLow, _v.y - gr(_v.x, _v.z));
-      }
-      for (const q of L.contour) {
-        _v.copy(q).applyMatrix4(hb.matrixWorld);
-        tLow = Math.min(tLow, _v.y - gr(_v.x, _v.z));
-      }
-      const w = 1 - THREE.MathUtils.smoothstep(pLow, NEAR_GROUND[0], NEAR_GROUND[1]);
       hoofWorldPosition(this.horse.bones, L.i, _a);
-      _b.copy(SOLE).applyMatrix4(hb.matrixWorld);
+      _b.copy(SOLE).applyMatrix4(hb.matrixWorld).add(_dz);
+      const gP = gr(_a.x, _a.z), gT = gr(_b.x, _b.z);
+      let pLow = Infinity, tLow = Infinity;
+      for (const q of L.procContour) pLow = Math.min(pLow, _v.copy(q).applyMatrix4(ob.matrixWorld).y - gP);
+      for (const q of L.contour) tLow = Math.min(tLow, _v.copy(q).applyMatrix4(hb.matrixWorld).y + _dz.y - gT);
+      const w = 1 - THREE.MathUtils.smoothstep(pLow, NEAR_GROUND[0], NEAR_GROUND[1]);
       // Correction verticale (monde) reportée dans le repère du cheval.
       _x.copy(_t).applyMatrix4(mesh.matrixWorld);
       _x.y += w * (pLow - tLow) + (1 - w) * (_a.y - _b.y);
@@ -294,15 +298,18 @@ export class TripoHorse {
 
   // Cible au-delà de la portée utile → l'épaule (ou la hanche) se rapproche d'elle de ce qui manque (scMax au plus).
   _reach(L, target) {
+    // Décalage recalculé depuis le repos à chaque passe (le plafond porte sur le total).
+    const sc = L.sc;
+    sc.position.copy(this.rest[sc.name]);
+    sc.updateMatrixWorld(true);
     L.A.getWorldPosition(_a);
     L.Bb.getWorldPosition(_b);
     L.E.getWorldPosition(_c);
     const reach = (_a.distanceTo(_b) + _b.distanceTo(_c)) * L.reach;
     const miss = _a.distanceTo(target) - reach;
     if (miss <= 0) return;
-    // Mètres du cheval → monde (échelle du cheval).
-    const k = this.horse.mesh.matrixWorld.getMaxScaleOnAxis();
-    const sc = L.sc, d = Math.min(miss, L.scMax * k);
+    // Monde en mètres (le cheval procédural est déjà à l'échelle réelle).
+    const d = Math.min(miss, L.scMax);
     sc.getWorldPosition(_v).addScaledVector(_v2.subVectors(target, _a).normalize(), d);
     sc.position.copy(sc.parent.worldToLocal(_v));
     sc.updateMatrixWorld(true);
