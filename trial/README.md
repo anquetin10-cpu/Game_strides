@@ -9,7 +9,7 @@ d'URL prévue pour l'essai.
 - **Ne remplace pas le cheval du jeu.** Il n'apparaît qu'en mode développement avec `?tripohorse`
   (ex. `http://127.0.0.1:5173/?tripohorse`). Sans cette option, et dans toute version construite, le jeu est
   inchangé.
-- **Construction.** `node scripts/real/build-tripo-horse.mjs` (environ 30 s). Source :
+- **Construction.** `node scripts/real/build-tripo-horse.mjs` (environ 45 s). Source :
   `assets-src/horse-tripo/Cheval_Tripo_Optimise_Qualite.glb`. Écrit `horse_tripo.glb` et `horse_tripo.json`
   (mesures, os, poids, réduction, nettoyage). La construction est reproductible : deux exécutions donnent le même
   fichier, octet pour octet.
@@ -23,6 +23,12 @@ d'URL prévue pour l'essai.
 - **Test.** `BASE=http://127.0.0.1:5173 node tests/e2e/tripo-horse.mjs [--no-cso]`.
 
 Rapport complet : `LIVRAISON_CHEVAL_TRIPO/LISEZMOI.md`.
+
+Nettoyage du modèle (tapis et quartiers peints et modelés, points sombres) : textures par
+`scripts/real/tripo/clean-texture.mjs`, relief des plaques effacé dans le maillage par `tripo/relief-plaques.mjs`
+(appelé par la construction via `mesh-clean.smoothMaskedRelief`, `relief.methode` dans `horse_tripo.json`), normales
+de couture incohérentes corrigées par `mesh-clean.repairNormals`. Revue : `bash tests/e2e/tmp/tripo-review.sh`
+(aperçus) et `bash tests/e2e/tmp/tripo-review.sh --sans-rendu --construction` (modèle construit, LOD0 et LOD1).
 
 Non versionnés (`.gitignore`) : `textures/`, `review/`, `debug/` et `tripo_clean_preview.glb`, qui sont les sorties
 intermédiaires du nettoyage et du calage. Ils se régénèrent avec :

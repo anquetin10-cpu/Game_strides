@@ -17,12 +17,18 @@
   "incoherent": 0,
   "facesAgainst": 79,
   "normalsFixed": 221,
-  "facesAgainstAfter": 56
+  "facesAgainstAfter": 56,
+  "seamNormalsFixed": 1061,
+  "isolatedNormalsFixed": 18
  },
  "relief": {
-  "zoneVertices": 5267,
-  "movedVertices": 9237,
-  "maxMoveMm": 25.8
+  "methode": "relief-plaques (laplacien, courbure du pelage voisin)",
+  "zoneVertices": 9068,
+  "weldedFree": 5755,
+  "maxMoveMm": 28.1,
+  "meanMoveMm": 6.93,
+  "tangentialMeanMm": 2.47,
+  "foldedFaces": 55
  },
  "bones": [
   {
@@ -689,12 +695,12 @@
   ]
  },
  "weights": {
-  "seconds": 1.447,
+  "seconds": 1.46,
   "radii": {
    "pelvis": 0.193,
-   "loin": 0.196,
-   "body": 0.326,
-   "neck": 0.19,
+   "loin": 0.194,
+   "body": 0.324,
+   "neck": 0.191,
    "neck2": 0.168,
    "neck3": 0.077,
    "head": 0.098,
@@ -704,11 +710,11 @@
    "tail2": 0.056,
    "tail3": 0.058,
    "tail4": 0.059,
-   "tail5": 0.078,
+   "tail5": 0.079,
    "tail6": 0.076,
    "flSc": 0.072,
-   "flHu": 0.137,
-   "flU": 0.074,
+   "flHu": 0.134,
+   "flU": 0.077,
    "flL": 0.047,
    "flP": 0.048,
    "flH": 0.068,
@@ -718,8 +724,8 @@
    "hlP": 0.05,
    "hlH": 0.065,
    "frSc": 0.072,
-   "frHu": 0.137,
-   "frU": 0.074,
+   "frHu": 0.134,
+   "frU": 0.077,
    "frL": 0.047,
    "frP": 0.048,
    "frH": 0.068,
@@ -735,8 +741,8 @@
     1.01,
     1.01
    ],
-   "tailVolumeVerts": 17711,
-   "tailHairVerts": 17711,
+   "tailVolumeVerts": 17708,
+   "tailHairVerts": 17708,
    "tailVolumeHindOver": 0,
    "maxHindInTail": 0,
    "hindLegVerts": 10509,
@@ -755,18 +761,18 @@
  },
  "lods": [
   {
-   "tris": 29979,
-   "verts": 21299,
+   "tris": 29982,
+   "verts": 21316,
    "error": 0.00124,
-   "foldsDropped": 21,
-   "foldsKept": 49
+   "foldsDropped": 18,
+   "foldsKept": 32
   },
   {
-   "tris": 7994,
-   "verts": 6834,
-   "error": 0.00507,
-   "foldsDropped": 6,
-   "foldsKept": 57
+   "tris": 7993,
+   "verts": 6852,
+   "error": 0.00516,
+   "foldsDropped": 5,
+   "foldsKept": 56
   }
  ],
  "texturesCleaned": true,
@@ -775,13 +781,13 @@
  },
  "textureCleaning": {
   "diagnostic": {
-   "tapis": "Tapis rosé (plus rouge que la robe : r/g ≥ 1.25 contre 1,11-1,24 sur le pelage voisin) à cheval sur la colonne, z -0.166…0.061, y 0.510…0.597, x -0.085…0.083 (unités natives) ; liseré et coutures en relief dans la carte de normales (|xy| 10.19 au bord contre 2.52 sur le pelage voisin, 2.02 après). Bord également modelé dans le maillage (845 sommets de liseré marqués) : géométrie non modifiée ici, zone à replacer fournie (geometry.zoneRelief, voir relief-plaques.mjs). Mèche de crinière couchée sur le garrot à l'avant du tapis (10201 texels) : couleur d'origine gardée.",
-   "quartiers": "Rectangles bruns sur chaque flanc, gauche z -0.150…0.027, y 0.330…0.447, x 0.046…0.121 (unités natives), droit z -0.150…0.027, y 0.330…0.450, x -0.124…-0.046 (unités natives) ; bord en relief dans la carte de normales (|xy| au bord 8.72 / 6.87 contre 3.16 / 2.92 autour ; 1.65 / 1.69 après) et dans le maillage (bord haut en marche d'environ 0,002 et plis internes) : géométrie non modifiée ici, zone à replacer fournie.",
-   "points": "Albédo : aucun point noir isolé sur la robe hors zones naturellement sombres ; 11 petites taches sombres corrigées (intérieur des cuisses, poitrail, membres). Rugosité : 75 points brillants (rugosité basse) corrigés ; avec metallicFactor 1, ces points et les micro-replis du maillage (69 faces retournées, liste dans geometrie.microReplis) apparaissent comme des points sombres selon l'éclairage. Les micro-replis relèvent de la géométrie (non modifiée ici). Après remplissage, 15 tache(s) sombre(s) résiduelle(s) du grain transplanté remise(s) à la valeur sans grain.",
+   "tapis": "Tapis rosé (plus rouge que la robe : r/g ≥ 1.25 contre 1,11-1,24 sur le pelage voisin) à cheval sur la colonne, z -0.166…0.061, y 0.510…0.597, x -0.085…0.083 (unités natives) ; liseré et coutures en relief dans la carte de normales (|xy| 10.19 au bord contre 2.52 sur le pelage voisin, 1.96 après). Bord également modelé dans le maillage (845 sommets de liseré marqués) : géométrie non modifiée ici, zone à replacer fournie (geometry.zoneRelief, voir relief-plaques.mjs ; la construction l'applique par mesh-clean.smoothMaskedRelief). Mèche de crinière couchée sur le garrot à l'avant du tapis : couleur d'origine gardée sur sa partie à mèches nettes (6707 texels à plus de 50 %), fondue vers le pelage sur 4 mm autour et au pied ; sa pointe effilée, teintée par le tapis, est remplie comme le tapis.",
+   "quartiers": "Rectangles bruns sur chaque flanc, gauche z -0.150…0.027, y 0.330…0.447, x 0.046…0.121 (unités natives), droit z -0.150…0.027, y 0.330…0.450, x -0.124…-0.046 (unités natives) ; bord en relief dans la carte de normales (|xy| au bord 8.72 / 6.87 contre 3.16 / 2.92 autour ; 1.65 / 1.65 après) et dans le maillage (bord haut en marche d'environ 0,002 et plis internes) : géométrie non modifiée ici, zone à replacer fournie.",
+   "points": "Albédo : aucun point noir isolé sur la robe hors zones naturellement sombres ; 11 petites taches sombres corrigées (intérieur des cuisses, poitrail, membres). Rugosité : 75 points brillants (rugosité basse) corrigés ; avec metallicFactor 1, ces points et les micro-replis du maillage (69 faces retournées, liste dans geometrie.microReplis) apparaissent comme des points sombres selon l'éclairage. Les micro-replis relèvent de la géométrie (non modifiée ici). Après remplissage, 22 tache(s) sombre(s) résiduelle(s) du grain transplanté remise(s) à la valeur sans grain. Triangles orphelins (UV dégénérés, 6257 triangles sans texel propre) : 149 texels de marge (albédo, normales) et 215 (rugosité) lus par eux loin de leur source sont recopiés depuis le texel le plus proche en 3D (sinon taches, par ex. sur le bord bas droit de l'ancien tapis). Lignes fines le long de coutures (encolure) : normales de sommets incohérentes entre doublons de couture, corrigées par mesh-clean.repairSeamNormals (géométrie, pas texture).",
    "metal": "Bleu (métal) du MR jusqu'à 104/255 avec metallicFactor 1 : mis à 0 partout ; vert (rugosité) conservé hors masques."
   },
   "texelsAlbedo": {
-   "tapis": 103087,
+   "tapis": 106508,
    "quartierG": 31075,
    "quartierD": 28490
   },
@@ -794,5 +800,5 @@
    "maxApres": 0
   }
  },
- "bytes": 960704
+ "bytes": 958280
 }

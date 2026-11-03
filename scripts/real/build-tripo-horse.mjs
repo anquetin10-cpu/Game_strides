@@ -26,7 +26,8 @@ import sharp from 'sharp';
 import { SRC, makeIO, calibrated, SCALE, OFFSET } from './tripo/frame.mjs';
 import { straightenHead, fitSkeleton } from './tripo/skeleton-fit.mjs';
 import { computeWeights, checkTailWeights } from './tripo/skin-weights.mjs';
-import { fixWinding, repairNormals, smoothMaskedRelief, dropFoldedMicroFaces } from './tripo/mesh-clean.mjs';
+import { fixWinding, repairNormals, dropFoldedMicroFaces } from './tripo/mesh-clean.mjs';
+import { effacerReliefPlaques } from './tripo/relief-plaques.mjs';
 import { cleanTripoTextures } from './tripo/clean-texture.mjs';
 import { BONES } from '../../src/entities/horse/skeleton.js';
 
@@ -80,16 +81,25 @@ const straight = straightenHead(m.positions, m.normals);
 const P = m.positions;
 // Faces retournées de la source réorientées (avant la réduction).
 const winding = { ...fixWinding(P, m.indices), ...repairNormals(P, m.normals, m.indices) };
-// Relief du tapis et des quartiers imprimés dans le maillage : lissage local guidé par les masques du nettoyage de
-// texture.
+// Relief du tapis et des quartiers modelés dans le maillage : sommets de la zone fournie par le nettoyage des textures
+// (même indexation que la source) replacés par tripo/relief-plaques.mjs (coordonnées laplaciennes, courbure du pelage
+// voisin). Zone absente ou de mauvaise taille : arrêt (pas de repli silencieux sur un autre lissage).
 let relief = null;
 if (clean) {
-  const masks = [];
-  for (const b of [clean.masks.pad, clean.masks.flap]) {
-    const { data, info } = await sharp(b).greyscale().raw().toBuffer({ resolveWithObject: true });
-    masks.push({ data, width: info.width, height: info.height });
-  }
-  relief = smoothMaskedRelief(P, m.normals, m.indices, m.uvs, masks, { rings: 6, iterations: 150 });
+  const zone = clean.geometry?.zoneRelief;
+  if (!zone || zone.length !== P.length / 3) throw new Error('Zone de relief des plaques absente ou incohérente : construction arrêtée.');
+  const r = effacerReliefPlaques(P, m.normals, m.indices, zone);
+  let zoneVertices = 0;
+  for (let v = 0; v < zone.length; v++) zoneVertices += zone[v] ? 1 : 0;
+  relief = {
+    methode: 'relief-plaques (laplacien, courbure du pelage voisin)',
+    zoneVertices,
+    weldedFree: r.sommetsLibres,
+    maxMoveMm: +(r.deplacement.max * 1000).toFixed(1),
+    meanMoveMm: +(r.deplacement.moyen * 1000).toFixed(2),
+    tangentialMeanMm: +(r.deplacement.tangentielMoyen * 1000).toFixed(2),
+    foldedFaces: r.facesPliees,
+  };
 }
 
 // ---------- Squelette ----------

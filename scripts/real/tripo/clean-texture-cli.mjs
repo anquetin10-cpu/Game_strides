@@ -82,7 +82,8 @@ res.report.apercuRelief = {
   relief: { ...relief, note: 'mm natifs (unités de la source ; × 2,72 pour des mm réels)' },
 };
 
-// Vérification : aucun texel modifié hors des masques (albédo : plaques + points ; normales : plaques ; MR : rugosité).
+// Vérification : aucun texel modifié hors des masques (albédo : plaques + points ; normales : plaques + relais des
+// triangles orphelins, comptés dans le masque des points ; MR : rugosité).
 const brut = async (b) => (await sharp(b).removeAlpha().raw().toBuffer({ resolveWithObject: true }));
 const [b0, b1, n0, n1, m0, m1] = await Promise.all([tex.bc, null, tex.nm, null, tex.mr, null].map((t, k) => brut([origBc, res.baseColor, origNm, res.normal, origMr, res.metallicRoughness][k])));
 const gris = async (b, W, H) => (await sharp(b).extractChannel(0).resize(W, H, { kernel: 'nearest' }).raw().toBuffer());
@@ -92,7 +93,7 @@ for (let i = 0; i < b0.info.width * b0.info.height; i++) {
   const C = b0.info.channels, d = Math.abs(b0.data[i * C] - b1.data[i * C]) + Math.abs(b0.data[i * C + 1] - b1.data[i * C + 1]) + Math.abs(b0.data[i * C + 2] - b1.data[i * C + 2]);
   if (d) verif.albedo[mp[i] || mf[i] || md[i] ? 'dansMasque' : 'horsMasque']++;
   const Cn = n0.info.channels, dn = Math.abs(n0.data[i * Cn] - n1.data[i * Cn]) + Math.abs(n0.data[i * Cn + 1] - n1.data[i * Cn + 1]) + Math.abs(n0.data[i * Cn + 2] - n1.data[i * Cn + 2]);
-  if (dn) verif.normales[mp[i] || mf[i] ? 'dansMasque' : 'horsMasque']++;
+  if (dn) verif.normales[mp[i] || mf[i] || md[i] ? 'dansMasque' : 'horsMasque']++;
 }
 const Wm = m0.info.width, Hm = m0.info.height;
 // Masques à la résolution MR : maximum sur le bloc de texels correspondant (évite les pertes du sous-échantillonnage).

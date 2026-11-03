@@ -4,9 +4,11 @@
 // roulés, marches, coutures en creux et micro-replis. Les sommets de la zone (fournie par cleanTripoTextures,
 // result.geometry.zoneRelief) sont replacés par moindres carrés sur les coordonnées laplaciennes :
 // minimum de Σ|Δx - δ|², laplacien à poids de valeur moyenne (calculés sur la géométrie d'origine), sommets hors
-// zone fixes. Dans la zone, la cible δ est la courbure d'origine lissée sur quelques centimètres : la courbure du
-// dos et du ventre est gardée (pas d'aplatissement), les bords, marches et coutures (courbures opposées très
-// rapprochées) s'annulent. Raccord C1 avec le pelage ; dalle, bords, coutures et replis disparaissent.
+// zone fixes. Dans la zone, la partie normale de la cible δ vient de la courbure moyenne du pelage qui entoure la
+// zone, prolongée à l'intérieur par interpolation harmonique : la courbure du dos et du ventre est gardée (pas
+// d'aplatissement) et rien de la plaque n'y entre (une moyenne lissée de sa propre courbure gardait une marche
+// adoucie au bord du tapis). Raccord C1 avec le pelage ; dalle, bords, coutures et replis disparaissent.
+// Utilisé par la construction via mesh-clean.smoothMaskedRelief (zone retrouvée par l'empreinte des masques).
 // Résolution directe : une composante connexe de la zone à la fois, renumérotation de Cuthill-McKee inverse puis
 // Cholesky en bande. Indépendant de l'échelle et de l'origine (positions natives ou calées en mètres).
 // UV et index inchangés ; normales recalculées dans la zone, fondues sur quelques anneaux autour.
