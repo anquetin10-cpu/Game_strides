@@ -1,13 +1,20 @@
 // Interface en ligne de commande du nettoyage des textures Tripo.
 // Usage : node scripts/real/tripo/clean-texture-cli.mjs [source.glb] [dossier trial]
-// Écrit <trial>/textures/{basecolor,normal,mr}.png, les masques, report.json et <trial>/tripo_clean_preview.glb
-// (maillage source + textures nettoyées, metallicFactor 0, sans KHR_materials_volume).
+// Écrit <trial>/textures/{basecolor,normal,mr}.png, les masques, report.json et deux GLB de revue :
+//   - <trial>/tripo_clean_preview.glb : maillage source inchangé + textures nettoyées (metallicFactor 0, sans
+//     KHR_materials_volume) ;
+//   - <trial>/tripo_clean_relief_preview.glb : idem + corrections géométriques prévues pour la construction :
+//     faces retournées et normales réparées (mesh-clean.mjs), relief des plaques effacé (relief-plaques.mjs),
+//     micro-replis retirés (mesh-clean.mjs). UV et textures identiques.
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { cleanTripoTextures } from './clean-texture.mjs';
+import { effacerReliefPlaques } from './relief-plaques.mjs';
+import { fixWinding, repairNormals, dropFoldedMicroFaces } from './mesh-clean.mjs';
+import { SCALE } from './frame.mjs';
 
 const src = process.argv[2] || 'assets-src/horse-tripo/Cheval_Tripo_Optimise_Qualite.glb';
 const trial = process.argv[3] || 'trial';
@@ -47,6 +54,24 @@ mat.setMetallicFactor(0);
 for (const e of root.listExtensionsUsed()) if (e.extensionName === 'KHR_materials_volume') e.dispose();
 await io.write(join(trial, 'tripo_clean_preview.glb'), doc);
 
+// Second aperçu : corrections géométriques (copies des tableaux ; même ordre des sommets, UV inchangés).
+const Pg = new Float32Array(prim.getAttribute('POSITION').getArray()), Ng = new Float32Array(prim.getAttribute('NORMAL').getArray());
+const Ig = new Uint32Array(prim.getIndices().getArray());
+const geo = { ...fixWinding(Pg, Ig), ...repairNormals(Pg, Ng, Ig) };
+const relief = effacerReliefPlaques(Pg, Ng, Ig, res.geometry.zoneRelief);
+// Seuil d'aire de la construction (2e-6 m²) ramené aux unités natives.
+const replis = dropFoldedMicroFaces(Pg, Ng, Ig, 2e-6 / SCALE ** 2);
+prim.getAttribute('POSITION').setArray(Pg);
+prim.getAttribute('NORMAL').setArray(Ng);
+prim.getIndices().setArray(replis.indices);
+await io.write(join(trial, 'tripo_clean_relief_preview.glb'), doc);
+const mm = (v) => +(v * 1000).toFixed(2);
+res.report.apercuRelief = {
+  fichier: join(trial, 'tripo_clean_relief_preview.glb'),
+  faces: { ...geo, microReplisRetires: replis.dropped, facesContreNormalesGardees: replis.keptAgainst },
+  relief: { ...relief, deplacement: Object.fromEntries(Object.entries(relief.deplacement).map(([k, v]) => [k + 'MmNatif', mm(v)])) },
+};
+
 // Vérification : aucun texel modifié hors des masques (albédo : plaques + points ; normales : plaques ; MR : rugosité).
 const brut = async (b) => (await sharp(b).removeAlpha().raw().toBuffer({ resolveWithObject: true }));
 const [b0, b1, n0, n1, m0, m1] = await Promise.all([tex.bc, null, tex.nm, null, tex.mr, null].map((t, k) => brut([origBc, res.baseColor, origNm, res.normal, origMr, res.metallicRoughness][k])));
@@ -75,7 +100,7 @@ for (let i = 0; i < Wm * Hm; i++) {
 }
 res.report.verification = verif;
 res.report.source = src;
-res.report.sorties = { textures: out, apercu: join(trial, 'tripo_clean_preview.glb') };
+res.report.sorties = { textures: out, apercu: join(trial, 'tripo_clean_preview.glb'), apercuRelief: join(trial, 'tripo_clean_relief_preview.glb') };
 res.report.tempsMs.cliTotal = Date.now() - t0;
 writeFileSync(join(out, 'report.json'), JSON.stringify(res.report, null, 1));
 const r = res.report;
@@ -85,5 +110,7 @@ console.log(JSON.stringify({
   points: { albedo: r.points.albedo.nombre, rugosite: r.points.rugosite.nombre },
   geometrie: { relief: Object.fromEntries(Object.entries(r.geometrie.reliefPlaques).map(([k, v]) => [k, { lisere: v.lisereEnRelief, ratioBosse: v.ratioBosse, ratioCassure: v.ratioCassure, n: v.sommetsLisereMarques, gauche: v.zoneGauche, droite: v.zoneDroite }])), microReplis: r.geometrie.microReplis.parZone, trous: r.geometrie.trous },
   verification: r.verification,
+  meche: r.meche.texels, residus: r.residusGrain.nombre, zoneRelief: r.zoneRelief,
+  apercuRelief: r.apercuRelief,
   temps: r.tempsMs,
 }));

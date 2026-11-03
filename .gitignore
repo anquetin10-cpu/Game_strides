@@ -9,4 +9,4 @@ tests/e2e/out
 trial/textures/
 trial/review/
 trial/debug/
-trial/tripo_clean_preview.glb
+trial/tripo_clean_*.glb
