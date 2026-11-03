@@ -86,7 +86,8 @@ export class HoofPrints {
   // Empreintes aux positions réelles des sabots posés (indices 0 AG, 1 AD, 2 PG, 3 PD).
   stepAt(horse, list, strength = 1) {
     for (const i of list) {
-      const p = hoofWorldPosition(horse.bones, i, this._v);
+      // Modèle affiché à la place du cheval procédural (essai) : ses propres sabots.
+      const p = horse.hoofAt ? horse.hoofAt(i, this._v) : hoofWorldPosition(horse.bones, i, this._v);
       this.add(p.x, p.z, horse.heading, strength);
     }
   }

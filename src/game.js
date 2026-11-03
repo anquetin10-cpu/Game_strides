@@ -202,10 +202,8 @@ export class Game {
     if (this.params.has('classic')) d.settings.characters = 'classic';
     this.realism = new Realism(this);
     // Essai du cheval Tripo (développement seulement, `?tripohorse`) : ne remplace pas le cheval du jeu.
-    if (import.meta.env.DEV && this.params.has('tripohorse')) {
-      d.settings.horses = 'real';
-      this.realism.horseModel = 'horse_tripo';
-    }
+    // Réglage forcé pour la session seulement (rien n'est écrit dans la sauvegarde).
+    if (import.meta.env.DEV && this.params.has('tripohorse')) this.realism.startTrial('horse_tripo');
     // Camion STRIDES : modèle détaillé STX Scania fourni (glTF, voir stxModel.js) ; ses cotes remplacent celles du porteur
     // procédural d'origine (box, rampe, stalles, essieux). Si le fichier ne se charge pas, l'erreur est signalée (console
     // et message en jeu) et le porteur d'origine sert de camion de secours (?truck=classic pour le revoir exprès).
@@ -688,7 +686,7 @@ export class Game {
           const y = horse.groundY + Math.max(0, depth);
           if (hooves && horse.bones) {
             for (const i of hooves) {
-              const hp = hoofWorldPosition(horse.bones, i, _hoof);
+              const hp = horse.hoofAt ? horse.hoofAt(i, _hoof) : hoofWorldPosition(horse.bones, i, _hoof);
               this.particles.emit('splash', hp.x, y, hp.z, Math.ceil(3 * k), vx, vz);
             }
           } else this.particles.emit('splash', bx, y, bz, Math.ceil((3 + n * 2) * k), vx, vz);

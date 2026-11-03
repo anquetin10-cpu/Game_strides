@@ -6,24 +6,31 @@
 // rotations locales os par os, la translation du thorax, puis une IK à deux segments par membre pose le boulet du
 // modèle sur celui du cheval procédural (écart de repos conservé : aplombs propres au modèle) et une seconde passe
 // recale la semelle en hauteur et en avant/arrière. Paturon et sabot reprennent l'orientation du cheval procédural.
+// Antérieurs : le membre du modèle, presque tendu au repos, est un peu plus court que celui du cheval procédural ; quand la
+// cible est hors d'atteinte (appui, membre tendu), l'épaule (omoplate) descend vers elle de ce qui manque, comme le thorax
+// qui s'abaisse entre les antérieurs à l'appui (5 cm au plus).
+// Ancrages de jeu : la longe s'attache au point du licol du modèle, les empreintes et éclaboussures suivent ses sabots.
 // Robe : celle du modèle (texture d'origine nettoyée), pas la recoloration par cheval du modèle réaliste.
 // Sellerie : tapis, selle, sangle et étriers du cheval procédural (calés sur le dos, à 1 cm près) ; filet, rênes,
 // licol, guêtres et bonnet masqués (faits pour la tête et les membres du cheval procédural).
 import * as THREE from 'three';
 import { MODEL_SCALE } from './horse/skeleton.js';
 import { horseAssets } from './horse/assets.js';
+import { refreshHorseTack } from './horse/mesh.js';
 import { hoofWorldPosition } from './horse/anim.js';
 
 // Os recopiés (rotations locales).
 const COPY = ['body', 'loin', 'pelvis', 'tail', 'tail2', 'tail3', 'tail4', 'tail5', 'tail6', 'neck', 'neck2', 'neck3', 'head', 'earL', 'earR', 'jaw'];
 for (const s of ['l', 'r']) COPY.push(`f${s}Sc`, `f${s}Hu`, `f${s}U`, `f${s}L`, `f${s}P`, `f${s}H`, `h${s}U`, `h${s}L`, `h${s}C`, `h${s}P`, `h${s}H`);
-// Membres : [A, B, E (boulet), indice du sabot procédural, signe de flexion, distaux].
+// Membres : [A, B, E (boulet), indice du sabot procédural, signe de flexion, distaux, os d'épaule (portée)].
 const LEGS = [
-  ['flU', 'flL', 'flP', 0, -1, ['flP', 'flH']],
-  ['frU', 'frL', 'frP', 1, -1, ['frP', 'frH']],
-  ['hlL', 'hlC', 'hlP', 2, 1, ['hlP', 'hlH']],
-  ['hrL', 'hrC', 'hrP', 3, 1, ['hrP', 'hrH']],
+  ['flU', 'flL', 'flP', 0, -1, ['flP', 'flH'], 'flSc'],
+  ['frU', 'frL', 'frP', 1, -1, ['frP', 'frH'], 'frSc'],
+  ['hlL', 'hlC', 'hlP', 2, 1, ['hlP', 'hlH'], null],
+  ['hrL', 'hrC', 'hrP', 3, 1, ['hrP', 'hrH'], null],
 ];
+// Abaissement maximal de l'épaule pour atteindre la cible (mètres du cheval).
+const SC_MAX = 0.05;
 // Queue : la queue du modèle est longue (crins jusqu'à 15 cm du sol) ; les rotations de la queue courte du cheval
 // procédural sont modérées, de la base au bout, pour qu'elle reste pendante au lieu de se déployer d'un bloc.
 const TAIL_DAMP = { tail: 0.75, tail2: 0.7, tail3: 0.62, tail4: 0.55, tail5: 0.5, tail6: 0.45 };
@@ -103,16 +110,25 @@ export class TripoHorse {
     }
     H.mesh.updateMatrixWorld(true);
     const meshPos = (o) => H.mesh.worldToLocal(o.getWorldPosition(new THREE.Vector3()));
-    this.legs = LEGS.map(([a, b, e, i, sign, distal]) => ({
-      A: this.bones[a],
-      Bb: this.bones[b],
-      E: this.bones[e],
-      op: ours[e],
-      i,
-      sign,
-      delta: meshPos(this.bones[e]).sub(meshPos(ours[e])),
-      distal: distal.map((n) => [ours[n], this.bones[n]]),
-    }));
+    this.legs = LEGS.map(([a, b, e, i, sign, distal, sc]) => {
+      const A = meshPos(this.bones[a]), Bm = meshPos(this.bones[b]), E = meshPos(this.bones[e]);
+      return {
+        A: this.bones[a],
+        Bb: this.bones[b],
+        E: this.bones[e],
+        op: ours[e],
+        i,
+        sign,
+        delta: E.clone().sub(meshPos(ours[e])),
+        distal: distal.map((n) => [ours[n], this.bones[n]]),
+        sc: sc ? this.bones[sc] : null,
+        // Portée utile : distance épaule → boulet au repos (membre jamais tendu au-delà de sa pose d'origine), en
+        // fraction de la somme des deux segments.
+        reach: A.distanceTo(E) / (A.distanceTo(Bm) + Bm.distanceTo(E)),
+      };
+    });
+    this.hooves = [];
+    for (const L of this.legs) this.hooves[L.i] = L.distal[1][1];
     for (const [n, b] of Object.entries(ours)) {
       b.quaternion.copy(saved[n][0]);
       b.position.copy(saved[n][1]);
@@ -128,7 +144,24 @@ export class TripoHorse {
     const layer = on ? 31 : 0;
     H.mesh.layers.set(layer);
     for (const p of ud.parts || []) if (p !== ud.tack) p.layers.set(layer);
-    if (!on && ud.tack && this._tackSrc) ud.tack.geometry.setIndex(this._tackSrc);
+    // Points de jeu : sabots du modèle pour les empreintes et éclaboussures.
+    if (on) H.hoofAt = (i, out) => this.soleWorld(i, out);
+    else {
+      if (H.hoofAt) delete H.hoofAt;
+      // Sellerie du cheval procédural recalculée pour son équipement et son niveau de détail actuels (index et
+      // visibilité, bonnet compris) ; licol à sa place d'origine.
+      this._tackKept = null;
+      refreshHorseTack(H.mesh);
+      const la = H.bones.leadAnchor;
+      if (la?.userData.rest) la.position.copy(la.userData.rest);
+    }
+  }
+
+  // Semelle d'un sabot du modèle (indice du cheval procédural : 0 AG, 1 AD, 2 PG, 3 PD), repère monde.
+  soleWorld(i, out = new THREE.Vector3()) {
+    const hb = this.hooves[i];
+    hb.updateWorldMatrix(true, false);
+    return out.copy(SOLE).applyMatrix4(hb.matrixWorld);
   }
 
   update() {
@@ -140,7 +173,6 @@ export class TripoHorse {
     if (tack) {
       const cur = tack.geometry.index;
       if (cur !== this._tackKept) {
-        this._tackSrc = cur;
         this._tackKept = tackIndexKept(tack.userData.cfg);
         tack.geometry.setIndex(this._tackKept);
         tack.visible = this._tackKept.count > 0;
@@ -162,8 +194,16 @@ export class TripoHorse {
     }
     const body = ours.body;
     B.body.position.copy(this.rest.body).addScaledVector(_v.copy(body.position).sub(body.userData.rest), 1 / MODEL_SCALE);
+    for (const L of this.legs) if (L.sc) L.sc.position.copy(this.rest[L.sc.name]);
     H.mesh.updateMatrixWorld(true);
     for (const L of this.legs) this._ik(L);
+    // Longe : anneau du licol du modèle (sous la ganache) reporté sur l'ancrage du cheval procédural.
+    const la = ours.leadAnchor, tla = B.leadAnchor;
+    if (la && tla) {
+      tla.getWorldPosition(_v);
+      la.position.copy(la.parent.worldToLocal(_v));
+      la.updateMatrixWorld(true);
+    }
   }
 
   // IK à deux segments (plan de flexion du membre), deux passes : boulet sur la cible, puis semelle recalée.
@@ -174,6 +214,7 @@ export class TripoHorse {
     _t.copy(L.op.getWorldPosition(_v)).applyMatrix4(_m).add(L.delta);
     for (let pass = 0; pass < 2; pass++) {
       _x.copy(_t).applyMatrix4(mesh.matrixWorld);
+      if (L.sc) this._reach(L, _x);
       this._solve(L, _x);
       // Distaux : orientation du cheval procédural.
       for (const [ob, tb] of L.distal) this._copyWorld(ob, tb);
@@ -185,6 +226,22 @@ export class TripoHorse {
       _t.y += _s.y - _c.y;
       _t.z += _s.z - _c.z;
     }
+  }
+
+  // Antérieur : cible au-delà de la portée utile → l'épaule descend vers elle de ce qui manque (SC_MAX au plus).
+  _reach(L, target) {
+    L.A.getWorldPosition(_a);
+    L.Bb.getWorldPosition(_b);
+    L.E.getWorldPosition(_c);
+    const reach = (_a.distanceTo(_b) + _b.distanceTo(_c)) * L.reach;
+    const miss = _a.distanceTo(target) - reach;
+    if (miss <= 0) return;
+    // Mètres du cheval → monde (échelle du cheval).
+    const k = this.horse.mesh.matrixWorld.getMaxScaleOnAxis();
+    const sc = L.sc, d = Math.min(miss, SC_MAX * k);
+    sc.getWorldPosition(_v).addScaledVector(_v2.subVectors(target, _a).normalize(), d);
+    sc.position.copy(sc.parent.worldToLocal(_v));
+    sc.updateMatrixWorld(true);
   }
 
   _solve(L, target) {

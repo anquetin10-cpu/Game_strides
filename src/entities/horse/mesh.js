@@ -145,6 +145,11 @@ function applyTack(mesh) {
   }
 }
 
+/** Sellerie recalculée pour l'équipement et le niveau de détail actuels (après un affichage qui l'a modifiée). */
+export function refreshHorseTack(mesh) {
+  if (mesh.userData.tack) applyTack(mesh);
+}
+
 /** Change l'équipement : { saddle, mounted, boots } (seuls les champs fournis changent). */
 export function setHorseTack(mesh, cfg) {
   const part = mesh.userData.tack;
