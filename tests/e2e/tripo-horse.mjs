@@ -235,10 +235,11 @@ const boot = await E(async (TOL) => {
             }
             // Cheval du jeu lui-même au-dessus du sol pendant l'appui (information).
             if (q.p > r.appui.jeuMax) { r.appui.jeuMax = q.p; r.appui.jeuOu = at({ centreSole: f3(q.ps) }); }
-            // Glissement pendant l'appui : semelle du Tripo par rapport à celle du cheval du jeu (ce qui dépend du
-            // Tripo) ; glissements propres de chacune relevés aussi.
+            // Glissement pendant l'appui, sabot du cheval du jeu posé : semelle du Tripo par rapport à celle du cheval du
+            // jeu (ce qui dépend du Tripo) ; glissements propres de chacune relevés aussi.
             const o = run[i];
-            if (!o) {
+            if (!q.pose) run[i] = null;
+            else if (!o) {
               run[i] = { x: q.x, z: q.z, px: q.px, pz: q.pz };
               r.glisse.appuis++;
             } else {
