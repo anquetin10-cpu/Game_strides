@@ -7,7 +7,7 @@
 //     réaliste actuel ; état d'affichage de chacun (calques, sellerie) ; sabots au repos ;
 //  B. allures montées (pas, trot, galop, grand galop) : allure, sabots du Tripo sur ceux du cheval du jeu (près du sol :
 //     point le plus bas au-dessus du sol sous chaque sabot ; en l'air : centre de la sole, repère du cheval), contact et
-//     glissement en appui (état d'appui de l'animation du jeu, à plat et en bascule sur la pince), sabots sous le sol ;
+//     glissement en appui à plat (état d'appui de l'animation du jeu), sabots sous le sol ;
 //  C. sauts sur la carrière d'échauffement du Pôle : Tripo vérifié à chaque image (appel, suspension, réception) ;
 //  D. épreuve de CSO complète (Pôle International) jouée avec les commandes normales (cavalier automatique de
 //     cso-rider.js, sans téléportation pendant la manche) ;
@@ -44,7 +44,6 @@ const TOL = {
   centreSole: 0.06,
   appuiHaut: 0.015,
   appuiBas: 0.015,
-  bascule: 0.02,
   glisse: 0.003,
 };
 // Sorties propres à chaque section.
@@ -177,10 +176,10 @@ const boot = await E(async (TOL) => {
   //  propres au modèle, non recalés) ; gx : sol sous la sole du Tripo − sol sous celle du jeu ;
   //  st : en appui selon l'animation du jeu (hors saut : sabot verrouillé au sol, pas de pas de recentrage, sans bascule
   //  en pince : |pitch| de l'animation < 0,05) ;
-  //  bascule : même appui, talons levés et sabot du jeu tournant autour de la pince (pitch ≤ −0,05 : fin d'appui,
+  //  bascule : sabot verrouillé de même, talons levés, tournant autour de la pince (pitch ≤ −0,05 : fin d'appui,
   //  postérieur au repos) ;
-  //  pose / basculePose : en appui (à plat / en bascule) et sabot du cheval du jeu réellement posé (point le plus bas à
-  //  ±2 cm du sol ; au début de l'appui, l'animation amortit encore le membre et le sabot verrouillé peut être plus haut).
+  //  pose : en appui et sabot du cheval du jeu réellement posé (point le plus bas à ±2 cm du sol ; au début de l'appui,
+  //  l'animation amortit encore le membre et le sabot verrouillé peut être plus haut).
   window.__soles = (h) => {
     const R = g.realism.horses.get(h);
     if (!R?.soleWorld || !R.lods?.[0]) return null;
@@ -211,7 +210,6 @@ const boot = await E(async (TOL) => {
         st,
         pose: st && Math.abs(p) <= 0.02,
         bascule: bas,
-        basculePose: bas && Math.abs(p) <= 0.02,
       };
     });
   };
@@ -229,7 +227,9 @@ const boot = await E(async (TOL) => {
       // borne indépendante (centres de sole en hauteur, toute image).
       suivi: { sol: 0, fondu: 0, air: 0, dz: 0, centreSole: 0, images: { sol: 0, fondu: 0, air: 0 }, ouSol: null, ouFondu: null, ouAir: null, ouZ: null, ouCentre: null },
       appui: { n: 0, poses: 0, haut: -9, bas: 9, ouHaut: null, ouBas: null, solMin: 9, solMax: -9, jeuMax: -9, jeuOu: null },
-      bascule: { n: 0, poses: 0, haut: -9, bas: 9, ouHaut: null, ouBas: null },
+      // Bascule sur la pince (fin d'appui, talons levés) : suivi en hauteur relevé à part (déjà soumis à la règle de sa
+      // part : le sabot du jeu y est le plus souvent déjà levé de 4 à 17 cm).
+      bascule: { n: 0, sol: 0, dh: 0, ou: null },
       glisse: { max: 0, tripo: 0, jeu: 0, appuis: 0, ou: null },
       sousJeu: { min: 9, ou: null },
       enfonce: { min: 9, ou: null },
@@ -250,13 +250,11 @@ const boot = await E(async (TOL) => {
           if (Math.abs(q.dh) > U[part]) { U[part] = Math.abs(q.dh); U[ou] = at(); }
           if (Math.abs(q.dy) > U.centreSole) { U.centreSole = Math.abs(q.dy); U.ouCentre = at(); }
           if (Math.abs(q.dz) > U.dz) { U.dz = Math.abs(q.dz); U.ouZ = at(); }
-          // En bascule sur la pince, sabot du cheval du jeu posé (pince au sol) : celui du Tripo aussi.
-          if (q.bascule) r.bascule.n++;
-          if (q.basculePose) {
-            const B = r.bascule, e = q.t - q.p;
-            B.poses++;
-            if (e > B.haut) { B.haut = e; B.ouHaut = at(); }
-            if (e < B.bas) { B.bas = e; B.ouBas = at(); }
+          if (q.bascule) {
+            const B = r.bascule;
+            B.n++;
+            if (q.w === 1) B.sol++;
+            if (Math.abs(q.dh) > B.dh) { B.dh = Math.abs(q.dh); B.ou = at(); }
           }
           if (q.st) {
             r.appui.n++;
@@ -309,7 +307,7 @@ const boot = await E(async (TOL) => {
         const o = JSON.parse(JSON.stringify(r));
         for (const k of ['sol', 'fondu', 'air', 'dz', 'centreSole']) o.suivi[k] = f3(o.suivi[k]);
         for (const k of ['haut', 'bas', 'solMin', 'solMax', 'jeuMax']) o.appui[k] = f3(o.appui[k]);
-        for (const k of ['haut', 'bas']) o.bascule[k] = f3(o.bascule[k]);
+        o.bascule.dh = f3(o.bascule.dh);
         for (const k of ['max', 'tripo', 'jeu']) o.glisse[k] = +o.glisse[k].toFixed(4);
         o.sousJeu.min = f3(o.sousJeu.min);
         o.enfonce.min = f3(o.enfonce.min);
@@ -380,11 +378,11 @@ const NG = boot.nearGround;
 // ses contours ni sa règle sol/air (borne indépendante).
 const suiviOk = (s) => s.suivi.sol <= TOL.contact && s.suivi.fondu <= TOL.fondu && s.suivi.air <= TOL.air && s.suivi.dz <= TOL.avant && s.suivi.centreSole <= TOL.centreSole;
 const suiviLbl = () => `sabot du Tripo sur celui du cheval du jeu, en hauteur selon la règle de la seconde passe de TripoHorse (près du sol, sabot du jeu à moins de ${cm(NG[0])} : point le plus bas au-dessus du sol, Tripo − jeu, ≤ ${cm(TOL.contact)} ; en l'air, au-delà de ${cm(NG[1])} : centre de la sole, repère du cheval, ≤ ${cm(TOL.air)} ; fondu entre les deux ≤ ${cm(TOL.fondu)}) et en avant/arrière (centre de la sole ≤ ${cm(TOL.avant)}) ; borne indépendante de cette règle : centres de sole en hauteur ≤ ${cm(TOL.centreSole)} à toute image`;
-const suiviTxt = (s) => `près du sol ${cm2(s.suivi.sol)} (${s.suivi.images.sol} sabots-images), fondu ${cm2(s.suivi.fondu)} (${s.suivi.images.fondu}), en l'air ${cm2(s.suivi.air)} (${s.suivi.images.air}) ; avant/arrière ${cm2(s.suivi.dz)} ; centres de sole en hauteur ${cm2(s.suivi.centreSole)}`;
-// Appui : sabot du jeu posé (à plat, ou en bascule sur la pince) → sabot du Tripo posé de même ; glissement net.
-const appuiOk = (s, bascule = true) => s.appui.poses > 0 && s.appui.haut <= TOL.appuiHaut && s.appui.bas >= -TOL.appuiBas && (!bascule || s.bascule.poses > 0) && s.bascule.haut <= TOL.bascule && s.bascule.bas >= -TOL.bascule && s.glisse.max <= TOL.glisse;
-const appuiLbl = () => `en appui (état de l'animation du jeu), sabot du Tripo posé comme celui du cheval du jeu : à plat (point le plus bas, Tripo − jeu, +${cm(TOL.appuiHaut)} / −${cm(TOL.appuiBas)}), en bascule sur la pince (±${cm(TOL.bascule)}), sans glisser par rapport à lui (≤ ${cm2(TOL.glisse)})`;
-const appuiTxt = (s) => `${s.appui.n} appuis-images à plat dont ${s.appui.poses} posés : Tripo − jeu ${cm2(s.appui.bas)} … ${cm2(s.appui.haut)} (Tripo au-dessus du sol ${s.appui.poses ? `${cm2(s.appui.solMin)} … ${cm2(s.appui.solMax)}` : '—'}) ; ${s.bascule.n} en bascule dont ${s.bascule.poses} posés : ${s.bascule.poses ? `${cm2(s.bascule.bas)} … ${cm2(s.bascule.haut)}` : '—'} ; glissement net du jeu ${cm2(s.glisse.max)} sur ${s.glisse.appuis} appuis (propres : Tripo ${cm2(s.glisse.tripo)}, cheval du jeu ${cm2(s.glisse.jeu)})`;
+const suiviTxt = (s) => `près du sol ${cm2(s.suivi.sol)} (${s.suivi.images.sol} sabots-images), fondu ${cm2(s.suivi.fondu)} (${s.suivi.images.fondu}), en l'air ${cm2(s.suivi.air)} (${s.suivi.images.air}), dont en bascule sur la pince ${cm2(s.bascule.dh)} (${s.bascule.n}, dont ${s.bascule.sol} près du sol) ; avant/arrière ${cm2(s.suivi.dz)} ; centres de sole en hauteur ${cm2(s.suivi.centreSole)}`;
+// Appui à plat : sabot du jeu posé → sabot du Tripo posé de même (plus serré que le suivi près du sol) ; glissement net.
+const appuiOk = (s) => s.appui.poses > 0 && s.appui.haut <= TOL.appuiHaut && s.appui.bas >= -TOL.appuiBas && s.glisse.max <= TOL.glisse;
+const appuiLbl = () => `en appui à plat (état de l'animation du jeu), sabot du Tripo posé comme celui du cheval du jeu (point le plus bas, Tripo − jeu, +${cm(TOL.appuiHaut)} / −${cm(TOL.appuiBas)}), sans glisser par rapport à lui (≤ ${cm2(TOL.glisse)})`;
+const appuiTxt = (s) => `${s.appui.n} appuis-images à plat dont ${s.appui.poses} posés : Tripo − jeu ${s.appui.poses ? `${cm2(s.appui.bas)} … ${cm2(s.appui.haut)}` : '—'} (Tripo au-dessus du sol ${s.appui.poses ? `${cm2(s.appui.solMin)} … ${cm2(s.appui.solMax)}` : '—'}) ; glissement net du jeu ${cm2(s.glisse.max)} sur ${s.glisse.appuis} appuis (propres : Tripo ${cm2(s.glisse.tripo)}, cheval du jeu ${cm2(s.glisse.jeu)})`;
 const sousJeuOk = (s) => s.sousJeu.min >= -TOL.sousJeu && s.enfonce.min >= -TOL.enfonce;
 const sousJeuTxt = (s) => `enfoncé ${cm2(-s.sousJeu.min)} de plus que le jeu, enfoncement ${s.enfonce.min < 9 ? cm2(s.enfonce.min) : '—'} (Tripo min ${cm(s.tripoMin)}, cheval du jeu min ${cm(s.jeuMin.min)})`;
 const jeuInfo = (s) => ({ min: s.jeuMin.min, ou: s.jeuMin.ou, imagesSous3cm: s.jeuMin.sous3cm, depuisReception: s.jeuMin.depuisReception, pires: s.jeuMin.pires.slice(0, 5), auDessusEnAppui: s.appui.jeuMax, auDessusOu: s.appui.jeuOu });
@@ -472,10 +470,10 @@ if (RUN.has('A')) {
     // Pente du sol sous le cheval (en travers, en long) : explique l'écart des sabots dont l'aplomb diffère.
     const L = { x: Math.cos(h.heading), z: -Math.sin(h.heading) }, F = h.forward, x = h.pos.x, z = h.pos.z;
     const pente = { travers: +((h.groundAt(x + L.x * 0.5, z + L.z * 0.5) - h.groundAt(x - L.x * 0.5, z - L.z * 0.5)) / 1).toFixed(3), long: +((h.groundAt(x + F.x, z + F.z) - h.groundAt(x - F.x, z - F.z)) / 2).toFixed(3) };
-    const sabots = window.__soles(h).map((s) => ({ tripo: +s.t.toFixed(3), jeu: +s.p.toFixed(3), centreSole: +s.ps.toFixed(3), w: +s.w.toFixed(3), dh: +s.dh.toFixed(3), dy: +s.dy.toFixed(3), dz: +s.dz.toFixed(3), dx: +s.dx.toFixed(3), appui: s.pose, bascule: s.basculePose }));
+    const sabots = window.__soles(h).map((s) => ({ tripo: +s.t.toFixed(3), jeu: +s.p.toFixed(3), centreSole: +s.ps.toFixed(3), w: +s.w.toFixed(3), dh: +s.dh.toFixed(3), dy: +s.dy.toFixed(3), dz: +s.dz.toFixed(3), dx: +s.dx.toFixed(3), appui: s.pose, bascule: s.bascule }));
     return { pente, sabots, bilan: S.result() };
   });
-  check('A3', `au repos, ${suiviLbl()} ; ${appuiLbl()}`, suiviOk(rest.bilan) && appuiOk(rest.bilan, false), `${suiviTxt(rest.bilan)} ; ${appuiTxt(rest.bilan)} ; pente ${JSON.stringify(rest.pente)} ; ${JSON.stringify(rest.sabots)}`);
+  check('A3', `au repos, ${suiviLbl()} ; ${appuiLbl()}`, suiviOk(rest.bilan) && appuiOk(rest.bilan), `${suiviTxt(rest.bilan)} ; ${appuiTxt(rest.bilan)} ; pente ${JSON.stringify(rest.pente)} ; ${JSON.stringify(rest.sabots)}`);
   // Équipement et réglage d'origine.
   await E((setting) => {
     const g = window.__game, h = g.mainHorse;
