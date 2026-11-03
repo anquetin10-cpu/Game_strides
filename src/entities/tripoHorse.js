@@ -9,10 +9,10 @@
 // Portée : le membre du modèle, presque tendu au repos, est un peu plus court que celui du cheval procédural ; quand la
 // cible est hors d'atteinte (appui, membre tendu, réception), l'épaule (omoplate) ou la hanche (fémur) se rapproche
 // d'elle de ce qui manque (5 et 4 cm au plus), comme le thorax qui s'abaisse entre les antérieurs à l'appui.
-// Contact : la seconde passe ne cale pas seulement le centre de la sole. Le point le plus bas du sabot du modèle (contour
-// mesuré sur son maillage : pince, talons, quartiers), rapporté au sol sous ce point, est mis à la hauteur du point le
-// plus bas du sabot procédural (centre de la sole ou pince), rapporté au sol sous lui : le sabot du modèle, plus long et
-// plus écarté, ne s'enfonce pas au basculement sur la pince ni en dévers.
+// Contact : près du sol, la seconde passe ne cale pas le centre de la sole mais le point le plus bas du sabot du modèle
+// (contour mesuré sur son maillage : pince, talons, quartiers), rapporté au sol sous ce point, à la hauteur du point le
+// plus bas du sabot procédural (contour mesuré de même), rapporté au sol sous lui : le sabot du modèle, plus long et plus
+// écarté, ne s'enfonce pas au basculement sur la pince ni en dévers. En l'air, centre de la sole ; fondu entre 3 et 10 cm.
 // Ancrages de jeu : la longe s'attache au point du licol du modèle, les empreintes et éclaboussures suivent ses sabots.
 // Robe : celle du modèle (texture d'origine nettoyée), pas la recoloration par cheval du modèle réaliste.
 // Sellerie : tapis, selle, sangle et étriers du cheval procédural (calés sur le dos, à 1 cm près) ; filet, rênes,
@@ -33,10 +33,11 @@ const LEGS = [
   ['hlL', 'hlC', 'hlP', 2, 1, ['hlP', 'hlH'], 'hlU', 0.04],
   ['hrL', 'hrC', 'hrP', 3, 1, ['hrP', 'hrH'], 'hrU', 0.04],
 ];
-// Sabot procédural (anim.js, repère de l'os du sabot, unités du modèle) : centre de la sole et pince.
+// Centre de la sole du sabot procédural (anim.js, repère de l'os du sabot, unités du modèle).
 const PROC_SOLE = new THREE.Vector3(0, -0.06 * MODEL_SCALE, 0.01 * MODEL_SCALE);
-const PROC_TOE = new THREE.Vector3(0, -0.06 * MODEL_SCALE, 0.075 * MODEL_SCALE);
-const PROC_PTS = [PROC_SOLE, PROC_TOE];
+// Recalage sur le point le plus bas des sabots près du sol (sabot procédural à moins de 3 cm, fondu jusqu'à 10 cm) ;
+// plus haut (soutien du membre), sur le centre de la sole.
+const NEAR_GROUND = [0.03, 0.1];
 // Queue : la queue du modèle est longue (crins jusqu'à 15 cm du sol) ; les rotations de la queue courte du cheval
 // procédural sont modérées, de la base au bout, pour qu'elle reste pendante au lieu de se déployer d'un bloc.
 const TAIL_DAMP = { tail: 0.75, tail2: 0.7, tail3: 0.62, tail4: 0.55, tail5: 0.5, tail6: 0.45 };
@@ -118,7 +119,7 @@ export class TripoHorse {
     }
     H.mesh.updateMatrixWorld(true);
     const meshPos = (o) => H.mesh.worldToLocal(o.getWorldPosition(new THREE.Vector3()));
-    const contours = this._hoofContours();
+    const bodyLod0 = horseAssets().body?.lod?.[0] || null;
     this.legs = LEGS.map(([a, b, e, i, sign, distal, sc, scMax]) => {
       const A = meshPos(this.bones[a]), Bm = meshPos(this.bones[b]), E = meshPos(this.bones[e]);
       return {
@@ -132,7 +133,9 @@ export class TripoHorse {
         distal: distal.map((n) => [ours[n], this.bones[n]]),
         sc: sc ? this.bones[sc] : null,
         scMax,
-        contour: contours[distal[1]],
+        // Dessous des deux sabots (modèle : niveau de détail proche ; cheval procédural : son maillage proche).
+        contour: TripoHorse.contour(this.lods[0], this.bones[distal[1]], 0.05, SOLE),
+        procContour: TripoHorse.contour(H.mesh, ours[distal[1]], 0.05 * MODEL_SCALE, PROC_SOLE, bodyLod0),
         // Portée utile : distance épaule → boulet au repos (membre jamais tendu au-delà de sa pose d'origine), en
         // fraction de la somme des deux segments.
         reach: A.distanceTo(E) / (A.distanceTo(Bm) + Bm.distanceTo(E)),
@@ -147,41 +150,34 @@ export class TripoHorse {
     H.mesh.updateMatrixWorld(true);
   }
 
-  // Contour du dessous de chaque sabot du modèle (repère de l'os du sabot) : sommets du niveau de détail proche liés
-  // surtout à cet os, dans les 5 cm du bas ; huit points extrêmes autour (pince, talons, quartiers) et le plus bas.
-  _hoofContours() {
-    const mesh = this.lods[0], out = {};
+  // Contour du dessous de chaque sabot (repère de l'os du sabot), mesuré sur le maillage : sommets liés surtout à l'os
+  // du sabot (index limité au niveau de détail proche si `range`), dans la bande `band` du bas ; le plus bas et huit
+  // points extrêmes autour (pince, talons, quartiers). Maillage sans sommets skinnés (outils de mesure) : `fallback`.
+  static contour(mesh, bone, band, fallback, range = null) {
     const g = mesh?.geometry, P = g?.attributes.position, J = g?.attributes.skinIndex, W = g?.attributes.skinWeight;
-    const sk = mesh?.skeleton, v = new THREE.Vector3(), m = new THREE.Matrix4();
-    for (const name of ['flH', 'frH', 'hlH', 'hrH']) {
-      // Maillage sans sommets skinnés (outils de mesure) : centre de la sole seul.
-      if (!P || !J || !W || !sk) {
-        out[name] = [SOLE.clone()];
-        continue;
-      }
-      const j = sk.bones.indexOf(this.bones[name]);
-      m.multiplyMatrices(sk.boneInverses[j], mesh.bindMatrix);
-      const pts = [];
-      for (let k = 0; k < P.count; k++) {
-        let w = 0;
-        for (let c = 0; c < 4; c++) if (J.getComponent(k, c) === j) w += W.getComponent(k, c);
-        if (w >= 0.5) pts.push(v.fromBufferAttribute(P, k).applyMatrix4(m).clone());
-      }
-      if (!pts.length) {
-        out[name] = [SOLE.clone()];
-        continue;
-      }
-      let minY = Infinity;
-      for (const p of pts) minY = Math.min(minY, p.y);
-      const band = pts.filter((p) => p.y < minY + 0.05);
-      const sel = [band.reduce((a, b) => (b.y < a.y ? b : a))];
-      for (let q = 0; q < 8; q++) {
-        const cx = Math.cos((q * Math.PI) / 4), cz = Math.sin((q * Math.PI) / 4);
-        sel.push(band.reduce((a, b) => (b.x * cx + b.z * cz > a.x * cx + a.z * cz ? b : a)));
-      }
-      out[name] = sel;
+    const sk = mesh?.skeleton, j = sk ? sk.bones.indexOf(bone) : -1;
+    if (!P || !J || !W || j < 0) return [fallback.clone()];
+    const m = new THREE.Matrix4().multiplyMatrices(sk.boneInverses[j], mesh.bindMatrix);
+    const seen = new Uint8Array(P.count), pts = [];
+    const take = (k) => {
+      if (seen[k]) return;
+      seen[k] = 1;
+      let w = 0;
+      for (let c = 0; c < 4; c++) if (J.getComponent(k, c) === j) w += W.getComponent(k, c);
+      if (w >= 0.5) pts.push(new THREE.Vector3().fromBufferAttribute(P, k).applyMatrix4(m));
+    };
+    if (range && g.index) for (let n = range[0]; n < range[0] + range[1]; n++) take(g.index.getX(n));
+    else for (let k = 0; k < P.count; k++) take(k);
+    if (!pts.length) return [fallback.clone()];
+    let minY = Infinity;
+    for (const p of pts) minY = Math.min(minY, p.y);
+    const low = pts.filter((p) => p.y < minY + band);
+    const sel = [low.reduce((a, b) => (b.y < a.y ? b : a))];
+    for (let q = 0; q < 8; q++) {
+      const cx = Math.cos((q * Math.PI) / 4), cz = Math.sin((q * Math.PI) / 4);
+      sel.push(low.reduce((a, b) => (b.x * cx + b.z * cz > a.x * cx + a.z * cz ? b : a)));
     }
-    return out;
+    return sel;
   }
 
   setActive(on) {
@@ -273,12 +269,12 @@ export class TripoHorse {
       const [ob, hb] = L.distal[1];
       _c.copy(SOLE).applyMatrix4(hb.matrixWorld).applyMatrix4(_m);
       _t.z += _s.z - _c.z;
-      // Hauteur : point le plus bas du sabot du modèle au-dessus du sol sous lui, égal à celui du sabot procédural.
+      // Hauteur : près du sol, point le plus bas du sabot du modèle au-dessus du sol sous lui égal à celui du sabot
+      // procédural ; en l'air, centre de la sole sur celui du cheval procédural ; fondu entre les deux.
       const gr = this._ground;
       ob.updateWorldMatrix(true, false);
       let pLow = Infinity, tLow = Infinity;
-      // (Contour du modèle indisponible : centres des soles seulement, de part et d'autre.)
-      for (const q of L.contour.length > 1 ? PROC_PTS : PROC_PTS.slice(0, 1)) {
+      for (const q of L.procContour) {
         _v.copy(q).applyMatrix4(ob.matrixWorld);
         pLow = Math.min(pLow, _v.y - gr(_v.x, _v.z));
       }
@@ -286,9 +282,12 @@ export class TripoHorse {
         _v.copy(q).applyMatrix4(hb.matrixWorld);
         tLow = Math.min(tLow, _v.y - gr(_v.x, _v.z));
       }
+      const w = 1 - THREE.MathUtils.smoothstep(pLow, NEAR_GROUND[0], NEAR_GROUND[1]);
+      hoofWorldPosition(this.horse.bones, L.i, _a);
+      _b.copy(SOLE).applyMatrix4(hb.matrixWorld);
       // Correction verticale (monde) reportée dans le repère du cheval.
       _x.copy(_t).applyMatrix4(mesh.matrixWorld);
-      _x.y += pLow - tLow;
+      _x.y += w * (pLow - tLow) + (1 - w) * (_a.y - _b.y);
       _t.copy(_x).applyMatrix4(_m);
     }
   }

@@ -162,9 +162,10 @@ const boot = await E(async (TOL) => {
   // Sabots du Tripo et du cheval du jeu, à cette image :
   //  t / p : point le plus bas du sabot (Tripo / cheval du jeu) au-dessus du sol de marche ;
   //  ps : centre de la sole du cheval du jeu (point d'appui de l'animation) au-dessus du sol ;
-  //  dh : hauteur du sabot du Tripo au-dessus du sol sous lui − celle du sabot du jeu au-dessus du sol sous lui (points
-  //  les plus bas) : le suivi en hauteur (les sabots n'ont ni la même longueur ni les mêmes aplombs, le sol sous eux
-  //  diffère en dévers ; c'est ce que la seconde passe de TripoHorse égalise) ;
+  //  dh : suivi en hauteur. Près du sol, hauteur du sabot du Tripo au-dessus du sol sous lui − celle du sabot du jeu
+  //  au-dessus du sol sous lui (points les plus bas : les sabots n'ont ni la même longueur ni les mêmes aplombs, le sol
+  //  sous eux diffère en dévers) ; en l'air (sabot du jeu à plus de 10 cm), écart des centres de sole en hauteur ; fondu
+  //  entre 3 et 10 cm (règle de la seconde passe de TripoHorse) ;
   //  dy / dz : semelle du Tripo − semelle du cheval du jeu, repère du cheval (hauteur, avant/arrière) ; dx : écart
   //  latéral (aplombs propres au modèle, non recalés) ; gx : sol sous la semelle du Tripo − sol sous celle du jeu ;
   //  st : en appui selon l'animation du jeu (hors saut : sabot verrouillé au sol, pas de pas de recentrage, à plat) ;
@@ -183,10 +184,13 @@ const boot = await E(async (TOL) => {
       const d = a.clone().sub(b), S = legs?.[i];
       const p = lowest(h, h.mesh, ps[i]), st = !!S && h.jumpT < 0 && S.locked && S.swingT < 0 && Math.abs(S.pitch) < 0.05;
       const t = lowest(h, R.lods[0], ts[i]);
+      // Près du sol (sabot du jeu à moins de 3 cm, fondu jusqu'à 10 cm) : hauteurs au-dessus du sol ; plus haut : centre
+      // de la sole (repère du cheval).
+      const k = Math.min(1, Math.max(0, (p - 0.03) / 0.07)), w = 1 - k * k * (3 - 2 * k);
       return {
         t,
         p,
-        dh: t - p,
+        dh: w * (t - p) + (1 - w) * d.dot(up),
         ps: b.y - h.groundAt(b.x, b.z),
         dy: d.dot(up),
         dz: d.dot(fw),
