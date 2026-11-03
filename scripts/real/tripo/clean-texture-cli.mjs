@@ -3,17 +3,17 @@
 // Écrit <trial>/textures/{basecolor,normal,mr}.png, les masques, zone_relief.bin, report.json et deux GLB de revue :
 //   - <trial>/tripo_clean_preview.glb : maillage source inchangé + textures nettoyées (metallicFactor 0, sans
 //     KHR_materials_volume) ;
-//   - <trial>/tripo_clean_relief_preview.glb : idem + corrections géométriques prévues pour la construction :
-//     faces retournées et normales réparées (mesh-clean.mjs), relief des plaques effacé (relief-plaques.mjs),
-//     micro-replis retirés (mesh-clean.mjs). UV et textures identiques.
+//   - <trial>/tripo_clean_relief_preview.glb : idem + corrections géométriques de la construction, par le même chemin
+//     qu'elle (mesh-clean.mjs) : faces retournées et normales réparées (y compris normales de couture incohérentes),
+//     relief des plaques effacé (smoothMaskedRelief avec les masques décodés comme dans build-tripo-horse.mjs, qui
+//     délègue à relief-plaques.mjs), micro-replis retirés. UV et textures identiques.
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { cleanTripoTextures } from './clean-texture.mjs';
-import { effacerReliefPlaques } from './relief-plaques.mjs';
-import { fixWinding, repairNormals, dropFoldedMicroFaces } from './mesh-clean.mjs';
+import { fixWinding, repairNormals, smoothMaskedRelief, dropFoldedMicroFaces } from './mesh-clean.mjs';
 import { SCALE } from './frame.mjs';
 
 const src = process.argv[2] || 'assets-src/horse-tripo/Cheval_Tripo_Optimise_Qualite.glb';
@@ -60,7 +60,15 @@ await io.write(join(trial, 'tripo_clean_preview.glb'), doc);
 const Pg = new Float32Array(prim.getAttribute('POSITION').getArray()), Ng = new Float32Array(prim.getAttribute('NORMAL').getArray());
 const Ig = new Uint32Array(prim.getIndices().getArray());
 const geo = { ...fixWinding(Pg, Ig), ...repairNormals(Pg, Ng, Ig) };
-const relief = effacerReliefPlaques(Pg, Ng, Ig, res.geometry.zoneRelief);
+// Chemin de la construction : masques PNG décodés en niveaux de gris, puis smoothMaskedRelief (zone retrouvée par
+// l'empreinte des masques) ; contrôle que la zone utilisée est bien celle du nettoyage.
+const masques = [];
+for (const b of [res.masks.pad, res.masks.flap]) {
+  const { data, info } = await sharp(b).greyscale().raw().toBuffer({ resolveWithObject: true });
+  masques.push({ data, width: info.width, height: info.height });
+}
+const relief = smoothMaskedRelief(Pg, Ng, Ig, prim.getAttribute('TEXCOORD_0').getArray(), masques, { rings: 6, iterations: 150 });
+if (!relief.methode.startsWith('relief-plaques')) throw new Error(`zone de relief introuvable depuis les masques (${relief.methode})`);
 // Seuil d'aire de la construction (2e-6 m²) ramené aux unités natives.
 const replis = dropFoldedMicroFaces(Pg, Ng, Ig, 2e-6 / SCALE ** 2);
 prim.getAttribute('POSITION').setArray(Pg);
@@ -71,7 +79,7 @@ const mm = (v) => +(v * 1000).toFixed(2);
 res.report.apercuRelief = {
   fichier: join(trial, 'tripo_clean_relief_preview.glb'),
   faces: { ...geo, microReplisRetires: replis.dropped, facesContreNormalesGardees: replis.keptAgainst },
-  relief: { ...relief, deplacement: Object.fromEntries(Object.entries(relief.deplacement).map(([k, v]) => [k + 'MmNatif', mm(v)])) },
+  relief: { ...relief, note: 'mm natifs (unités de la source ; × 2,72 pour des mm réels)' },
 };
 
 // Vérification : aucun texel modifié hors des masques (albédo : plaques + points ; normales : plaques ; MR : rugosité).
