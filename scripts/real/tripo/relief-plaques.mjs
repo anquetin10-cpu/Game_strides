@@ -47,10 +47,10 @@ function souder(P, I) {
   return { weld, ng, deb, vois: Int32Array.from(vois) };
 }
 
-// Poids des coordonnées de valeur moyenne (Floater) calculés sur la géométrie d'origine : toujours positifs,
+// Poids des coordonnées de valeur moyenne (Floater) sur des positions soudées X : toujours positifs,
 // précision linéaire dans le plan tangent. Le laplacien qui en découle ne fait presque pas glisser les sommets le
 // long de la surface (le laplacien uniforme les redistribue de plusieurs millimètres, et la texture avec eux).
-function poidsVCM(P, I, weld, deb, vois, rep) {
+function poidsVCM(X, I, weld, deb, vois) {
   const w = new Float64Array(vois.length);
   const pos = (k, a, b) => { for (let q = deb[a]; q < deb[a + 1]; q++) if (vois[q] === b) return q; return -1; };
   for (let t = 0; t < I.length; t += 3) {
@@ -58,9 +58,9 @@ function poidsVCM(P, I, weld, deb, vois, rep) {
     if (g[0] === g[1] || g[1] === g[2] || g[0] === g[2]) continue;
     for (let e = 0; e < 3; e++) {
       const i = g[e], j = g[(e + 1) % 3], k = g[(e + 2) % 3];
-      const vi = rep[i] * 3, vj = rep[j] * 3, vk = rep[k] * 3;
-      const ux = P[vj] - P[vi], uy = P[vj + 1] - P[vi + 1], uz = P[vj + 2] - P[vi + 2];
-      const vx = P[vk] - P[vi], vy = P[vk + 1] - P[vi + 1], vz = P[vk + 2] - P[vi + 2];
+      const vi = i * 3, vj = j * 3, vk = k * 3;
+      const ux = X[vj] - X[vi], uy = X[vj + 1] - X[vi + 1], uz = X[vj + 2] - X[vi + 2];
+      const vx = X[vk] - X[vi], vy = X[vk + 1] - X[vi + 1], vz = X[vk + 2] - X[vi + 2];
       const lu = Math.hypot(ux, uy, uz), lv = Math.hypot(vx, vy, vz);
       if (lu < 1e-12 || lv < 1e-12) continue;
       const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
@@ -139,9 +139,10 @@ function resoudreBande(n, bw, A, b) {
  * @param {Uint32Array|Uint16Array} indices triangles
  * @param {Uint8Array} zone 1 = sommet libre (doublons de couture : un seul suffit)
  * @param {object} [o] { anneaux = 3, rayon } anneaux de fondu des normales ; rayon du lissage de la courbure cible
- *   (unités des positions ; par défaut 4 × la longueur médiane des arêtes de la zone)
+ *   (unités des positions ; par défaut 4 × la longueur médiane des arêtes de la zone) ; itérations de finition (Taubin
+ *   selon la normale, dépliage des faces retournées)
  */
-export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3, rayon = 0 } = {}) {
+export function effacerReliefPlaques(positions, normals, indices, zone, { anneaux = 3, rayon = 0, finition = 10 } = {}) {
   const t0 = Date.now();
   const P = positions, I = indices, nv = P.length / 3;
   const { weld, ng, deb, vois } = souder(P, I);
@@ -152,16 +153,17 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
     if (rep[g] < 0) { rep[g] = v; X[g * 3] = P[v * 3]; X[g * 3 + 1] = P[v * 3 + 1]; X[g * 3 + 2] = P[v * 3 + 2]; }
   }
   X0.set(X);
-  const W = poidsVCM(P, I, weld, deb, vois, rep);
+  const Xs = X0;
+  const W = poidsVCM(Xs, I, weld, deb, vois);
   const somW = new Float64Array(ng);
   for (let g = 0; g < ng; g++) for (let k = deb[g]; k < deb[g + 1]; k++) somW[g] += W[k];
-  // Coordonnées laplaciennes d'origine δ0 = x - Σ w x_j / Σ w.
+  // Coordonnées laplaciennes de la référence δ0 = x - Σ w x_j / Σ w.
   const delta0 = new Float64Array(ng * 3);
   for (let g = 0; g < ng; g++) {
     if (!(somW[g] > 0)) continue;
     let sx = 0, sy = 0, sz = 0;
-    for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; sx += W[k] * X0[q * 3]; sy += W[k] * X0[q * 3 + 1]; sz += W[k] * X0[q * 3 + 2]; }
-    delta0[g * 3] = X0[g * 3] - sx / somW[g]; delta0[g * 3 + 1] = X0[g * 3 + 1] - sy / somW[g]; delta0[g * 3 + 2] = X0[g * 3 + 2] - sz / somW[g];
+    for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; sx += W[k] * Xs[q * 3]; sy += W[k] * Xs[q * 3 + 1]; sz += W[k] * Xs[q * 3 + 2]; }
+    delta0[g * 3] = Xs[g * 3] - sx / somW[g]; delta0[g * 3 + 1] = Xs[g * 3 + 1] - sy / somW[g]; delta0[g * 3 + 2] = Xs[g * 3 + 2] - sz / somW[g];
   }
   // Rayon du lissage : 4 × longueur médiane des arêtes de la zone (indépendant de l'échelle).
   if (!(rayon > 0)) {
@@ -173,12 +175,15 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
   // Normales soudées d'origine (contrôle d'orientation du lissage).
   const nG = new Float64Array(ng * 3);
   for (let v = 0; v < nv; v++) { const g = weld[v]; nG[g * 3] += normals[v * 3]; nG[g * 3 + 1] += normals[v * 3 + 1]; nG[g * 3 + 2] += normals[v * 3 + 2]; }
-  // Cible δ dans la zone : moyenne gaussienne (σ = rayon / 2) des δ0 voisins de même orientation.
+  // Cible δ dans la zone et sur son premier anneau (lignes de l'énergie) : moyenne gaussienne (σ = rayon / 2) des δ0
+  // voisins de même orientation.
+  const cible = new Uint8Array(libre);
+  for (let g = 0; g < ng; g++) if (libre[g]) for (let k = deb[g]; k < deb[g + 1]; k++) cible[vois[k]] = 1;
   const cs = rayon, cles = new Map(), cle = (a, b, c) => `${a},${b},${c}`;
   for (let g = 0; g < ng; g++) { const k = cle(Math.floor(X0[g * 3] / cs), Math.floor(X0[g * 3 + 1] / cs), Math.floor(X0[g * 3 + 2] / cs)); let l = cles.get(k); if (!l) cles.set(k, (l = [])); l.push(g); }
   const delta = Float64Array.from(delta0), s2 = 2 * (rayon / 2) ** 2;
   for (let g = 0; g < ng; g++) {
-    if (!libre[g]) continue;
+    if (!cible[g]) continue;
     const ix = Math.floor(X0[g * 3] / cs), iy = Math.floor(X0[g * 3 + 1] / cs), iz = Math.floor(X0[g * 3 + 2] / cs);
     let sw = 0, sx = 0, sy = 0, sz = 0;
     for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) {
@@ -253,6 +258,60 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
     for (let k = 0; k < n; k++) for (let d = 0; d < 3; d++) X[F[k] * 3 + d] = sol[d][perm[k]];
     statsComp.push({ sommets: n, bande: bw });
   }
+  // Finition : quelques pas de Taubin (λ/μ) dans la zone, limités à la composante normale (pas de glissement de la
+  // texture), sauf pour les sommets des faces retournées (replis du maillage d'origine), dépliés en plein.
+  const tris = [];
+  for (let t = 0; t < I.length; t += 3) {
+    const a = weld[I[t]], b = weld[I[t + 1]], c = weld[I[t + 2]];
+    if (a !== b && b !== c && a !== c && (libre[a] || libre[b] || libre[c])) tris.push(a, b, c);
+  }
+  const nZ = new Float64Array(ng * 3), retourne = new Uint8Array(ng);
+  const normalesZone = () => {
+    nZ.fill(0);
+    for (let t = 0; t < tris.length; t += 3) {
+      const a = tris[t], b = tris[t + 1], c = tris[t + 2];
+      const ux = X[b * 3] - X[a * 3], uy = X[b * 3 + 1] - X[a * 3 + 1], uz = X[b * 3 + 2] - X[a * 3 + 2];
+      const vx = X[c * 3] - X[a * 3], vy = X[c * 3 + 1] - X[a * 3 + 1], vz = X[c * 3 + 2] - X[a * 3 + 2];
+      const fx = uy * vz - uz * vy, fy = uz * vx - ux * vz, fz = ux * vy - uy * vx;
+      for (const g of [a, b, c]) { nZ[g * 3] += fx; nZ[g * 3 + 1] += fy; nZ[g * 3 + 2] += fz; }
+    }
+    // Normale lissée sur le premier anneau (une face retournée ne retourne pas la normale de ses sommets).
+    const nL = new Float64Array(nZ);
+    for (let g = 0; g < ng; g++) if (libre[g]) for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; nL[g * 3] += nZ[q * 3]; nL[g * 3 + 1] += nZ[q * 3 + 1]; nL[g * 3 + 2] += nZ[q * 3 + 2]; }
+    for (let g = 0; g < ng; g++) { const l = Math.hypot(nL[g * 3], nL[g * 3 + 1], nL[g * 3 + 2]) || 1; nZ[g * 3] = nL[g * 3] / l; nZ[g * 3 + 1] = nL[g * 3 + 1] / l; nZ[g * 3 + 2] = nL[g * 3 + 2] / l; }
+    retourne.fill(0);
+    let n = 0;
+    for (let t = 0; t < tris.length; t += 3) {
+      const a = tris[t], b = tris[t + 1], c = tris[t + 2];
+      const ux = X[b * 3] - X[a * 3], uy = X[b * 3 + 1] - X[a * 3 + 1], uz = X[b * 3 + 2] - X[a * 3 + 2];
+      const vx = X[c * 3] - X[a * 3], vy = X[c * 3 + 1] - X[a * 3 + 1], vz = X[c * 3 + 2] - X[a * 3 + 2];
+      const fx = uy * vz - uz * vy, fy = uz * vx - ux * vz, fz = ux * vy - uy * vx;
+      const mx = nZ[a * 3] + nZ[b * 3] + nZ[c * 3], my = nZ[a * 3 + 1] + nZ[b * 3 + 1] + nZ[c * 3 + 1], mz = nZ[a * 3 + 2] + nZ[b * 3 + 2] + nZ[c * 3 + 2];
+      const fl = Math.hypot(fx, fy, fz), ml = Math.hypot(mx, my, mz);
+      if (fl > 0 && (fx * mx + fy * my + fz * mz) / (fl * ml) < 0.5) { retourne[a] = retourne[b] = retourne[c] = 1; n++; }
+    }
+    return n;
+  };
+  const libres = [];
+  for (let g = 0; g < ng; g++) if (libre[g]) libres.push(g);
+  const Dl = new Float64Array(libres.length * 3);
+  const pas = (f) => {
+    libres.forEach((g, j) => {
+      const n = deb[g + 1] - deb[g];
+      let dx = -X[g * 3], dy = -X[g * 3 + 1], dz = -X[g * 3 + 2];
+      for (let k = deb[g]; k < deb[g + 1]; k++) { const q = vois[k]; dx += X[q * 3] / n; dy += X[q * 3 + 1] / n; dz += X[q * 3 + 2] / n; }
+      if (!retourne[g]) { const d = dx * nZ[g * 3] + dy * nZ[g * 3 + 1] + dz * nZ[g * 3 + 2]; dx = d * nZ[g * 3]; dy = d * nZ[g * 3 + 1]; dz = d * nZ[g * 3 + 2]; }
+      Dl[j * 3] = dx * f; Dl[j * 3 + 1] = dy * f; Dl[j * 3 + 2] = dz * f;
+    });
+    libres.forEach((g, j) => { X[g * 3] += Dl[j * 3]; X[g * 3 + 1] += Dl[j * 3 + 1]; X[g * 3 + 2] += Dl[j * 3 + 2]; });
+  };
+  const replisAvantFinition = normalesZone();
+  for (let it = 0; it < finition; it++) {
+    pas(0.5);
+    pas(-0.53);
+    normalesZone();
+  }
+  const replisApresFinition = normalesZone();
   // Positions : tous les doublons d'un sommet soudé libre.
   for (let v = 0; v < nv; v++) {
     const g = weld[v];
@@ -312,6 +371,6 @@ export function effacerReliefPlaques(positions, normals, indices, zone, { anneau
   return {
     sommetsLibres: nLib, composantes: statsComp, rayonCourbure: rayon,
     deplacement: { moyen: dMoy / Math.max(1, nLib), max: dMax, normalMax: nMax, tangentielMoyen: tMoy / Math.max(1, nLib), tangentielMax: tMax },
-    facesContreNormalesZone: contre, tempsMs: Date.now() - t0,
+    facesContreNormalesZone: contre, facesPliees: { avantFinition: replisAvantFinition, apresFinition: replisApresFinition }, tempsMs: Date.now() - t0,
   };
 }

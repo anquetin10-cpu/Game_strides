@@ -43,7 +43,7 @@ export const DEFAUTS = {
   // rapport aux côtés du dos à |x| ∈ cote). Gardée telle quelle (couleur et relief).
   meche: { xMax: 0.03, yMin: 0.5, z: [-0.04, 0.08], cote: [0.016, 0.026], pas: 0.002, seuilTexel: [0.003, 0.005], seuilSommet: 0.002 },
   // Zone de relief à effacer dans le maillage (relief-plaques.mjs) : plaque + marge, hors mèche et toupet.
-  relief: { marge: 0.010, toupet: { zMin: 0.062, xMax: 0.04 } },
+  relief: { marge: 0.014, toupet: { zMin: 0.062, xMax: 0.04 } },
   // Grain transplanté : décalages candidats mélangés par un champ aléatoire (maille `cellule`, poids r^puissance) ;
   // bandes fine (flou rFin) et moyenne (flou rMoyen), en texels 2048 ; bornes en rapport (albédo) ; sources aberrantes
   // (rapport hors `rejet`) écartées ; amplitude calée sur un anneau de pelage sain de largeur `anneau`.
