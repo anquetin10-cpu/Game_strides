@@ -26,11 +26,13 @@ Rapport complet : `LIVRAISON_CHEVAL_TRIPO/LISEZMOI.md`.
 
 Nettoyage du modèle (tapis et quartiers peints et modelés, points sombres) : textures par
 `scripts/real/tripo/clean-texture.mjs`, relief des plaques effacé dans le maillage par `tripo/relief-plaques.mjs`
-(appelé par la construction via `mesh-clean.smoothMaskedRelief`, `relief.methode` dans `horse_tripo.json`), normales
-de couture incohérentes corrigées par `mesh-clean.repairNormals`. Revue : `bash tests/e2e/tmp/tripo-review.sh`
-(aperçus) et `bash tests/e2e/tmp/tripo-review.sh --sans-rendu --construction` (modèle construit, LOD0 et LOD1).
+(la construction lui passe la zone fournie par le nettoyage et s'arrête si elle manque ; `relief` dans
+`horse_tripo.json`), normales
+de couture incohérentes corrigées par `mesh-clean.repairNormals`. Les planches de revue avant/après (aperçus et
+modèle construit) ont été rendues par des scripts locaux de `tests/e2e/tmp/` (non versionnés) ; les principales sont
+reprises dans `LIVRAISON_CHEVAL_TRIPO/captures/`.
 
-Non versionnés (`.gitignore`) : `textures/`, `review/`, `debug/` et `tripo_clean_preview.glb`, qui sont les sorties
+Non versionnés (`.gitignore`) : `textures/`, `review/`, `debug/` et les aperçus `tripo_clean_*.glb`, qui sont les sorties
 intermédiaires du nettoyage et du calage. Ils se régénèrent avec :
 
 - `node scripts/real/tripo/clean-texture-cli.mjs` ;
