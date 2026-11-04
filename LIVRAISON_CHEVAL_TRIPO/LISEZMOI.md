@@ -9,7 +9,9 @@ Demande : inspecter le GLB fourni et préparer une version optimisée et animabl
 
 À lire avant tout :
 
-- **Le cheval actuel n'est pas remplacé.** Le cheval Tripo ne s'affiche qu'en mode développement
+- **Le cheval actuel n'est pas remplacé.** Depuis la mise à jour ci-dessous, le Tripo est un deuxième cheval de
+  l'écurie (« Mes chevaux »). Les paragraphes suivants décrivent l'essai d'origine : le cheval Tripo ne s'affichait
+  qu'en mode développement
   (`npm run dev`), avec l'option `?tripohorse`, par exemple `http://127.0.0.1:5173/?tripohorse`.
   - L'essai ne dure que la session : rien n'est écrit dans la sauvegarde.
   - Seuls le cheval principal et celui que l'on monte prennent le modèle ; les autres chevaux gardent leur robe.
@@ -27,6 +29,44 @@ Demande : inspecter le GLB fourni et préparer une version optimisée et animabl
   - refaire la sellerie de tête ;
   - faire l'essai sur iPhone ;
   - confirmer les droits d'utilisation du modèle.
+
+## Mise à jour : deuxième cheval de l'écurie, avec un filet quand il est monté
+
+À votre demande, le Tripo est maintenant un **deuxième cheval utilisable**, pour que vous puissiez l'essayer avant de
+décider d'un remplacement. **Comète n'est pas remplacée**, et la version publique n'a pas changé.
+
+- **Où le trouver.** Téléphone → « Mes chevaux ». Le Tripo est listé après Comète, avec « Seller ce cheval »
+  (capture `captures/10-mes-chevaux.jpg`). On revient à Comète de la même façon.
+  - Il est disponible dans toutes les parties, nouvelles ou anciennes, sans rien réécrire dans la sauvegarde : seul
+    le choix de la monture est enregistré.
+  - Si on retire le Tripo du jeu, une partie qui le montait reprend avec Comète.
+- **Affichage.** Le Tripo est toujours montré avec son modèle, quels que soient les réglages « Modèles 3D »,
+  « Chevaux 3D » et qualité. Le modèle est chargé pendant l'écran de chargement, seulement si c'est la monture choisie.
+  - Le modèle est maintenant dans `public/real/` et fait partie des versions construites.
+  - Dans la version en fichier unique, il est converti en glTF JSON comme les autres modèles 3D.
+- **Filet quand il est monté.** Bridon à muserolle française, ajusté à la tête du Tripo (`scripts/real/tripo/bridle.mjs`,
+  capture `captures/11-filet-monte.jpg`) :
+  - têtière et montants derrière les oreilles, frontal, muserolle sous la crête faciale, sous-gorge lâche ;
+  - mors à anneaux aux commissures des lèvres ;
+  - rênes du mors aux poings du cavalier, à 2,5 mm près à toutes les allures et pendant les sauts ;
+  - le cuir reste à 0,8 mm au moins au-dessus de la peau en mouvement, à 0,1 mm près au pire d'un saut ;
+  - 3 770 triangles ;
+  - le filet est masqué à pied et au-delà de 25 m.
+- **Tests.**
+  - Nouveau test `tests/e2e/tripo-stable.mjs`, sur une partie neuve et sur une ancienne partie (Comète seule) : 18 contrôles
+    sur 18, en développement comme en version fichier unique. Il couvre la sélection par le téléphone, l'affichage
+    même avec les réglages classiques, la monte, les allures, le saut, le retour à Comète, la reprise après
+    rechargement et un échec de chargement simulé.
+  - `tests/e2e/tripo-horse.mjs` (sections A, B, C, E) : 36 contrôles sur 36, dont le filet visible seulement monté et les
+    rênes aux poings.
+  - Tests unitaires : 269 sur 269.
+  - Chaque partie a été revérifiée par un contrôleur indépendant, puis l'ensemble a été joué comme un joueur.
+- **Points restant ouverts.**
+  - À pied, le Tripo n'a rien sur la tête, alors que Comète garde son filet.
+  - Les textes de l'histoire disent encore « Comète » même si le Tripo est la monture choisie, comme pour les
+    chevaux loués.
+  - La version en fichier unique fait 15,5 Mo, près de la limite de 16 Mo d'une page claude.ai.
+  - Les conditions d'utilisation du modèle Tripo restent à confirmer avant toute publication.
 
 ## 1. Résultat en bref
 

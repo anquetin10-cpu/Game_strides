@@ -26,6 +26,23 @@ le jeu), zones de robe ajoutées par sommet, textures converties en WebP et redi
 Le crédit est affiché dans le jeu (téléphone → Réglages, sous « Modèles 3D »). Fichier produit par
 `node scripts/real/build-horse.mjs`.
 
+## Cheval à l'essai « Tripo »
+
+| Fichier | Contenu | Licence | Source |
+| --- | --- | --- | --- |
+| `horse_tripo.glb` | Cheval « Tripo » (deuxième cheval de l'écurie, à l'essai) : corps et crins en un maillage skinné à deux niveaux de détail (environ 30 000 et 8 000 triangles), squelette du cheval du jeu (50 os), textures couleur, normales et rugosité ; filet et rênes (affichés quand il est monté) | **Conditions d'utilisation à confirmer** | Modèle généré avec [Tripo AI](https://www.tripo3d.ai/), fourni par le propriétaire du projet (`assets-src/horse-tripo/`, versions optimisées « HD », « Qualité » et « Mobile ») |
+
+Droits : le modèle a été généré avec Tripo AI et fourni par le propriétaire du projet ; les conditions d'utilisation
+et de redistribution qui s'appliquent (offre du compte Tripo utilisé à la génération, attribution éventuelle) restent
+à confirmer par lui avant toute publication. Modifications par Equestrian Tour : source « Qualité » calée en mètres
+dans le repère du jeu, tête redressée, faces et normales incohérentes corrigées, tapis et quartiers de selle peints et
+modelés retirés (texture et relief), points sombres nettoyés, squelette du cheval du jeu ajouté avec poids de peau
+calculés, polygones réduits en deux niveaux de détail, textures converties en WebP, maillages compressés ; filet
+(bridon à muserolle française) et rênes ajoutés, modélisés par le projet et ajustés à sa tête
+(`scripts/real/tripo/bridle.mjs`, appelé par la construction). Le crédit est
+affiché dans le jeu (téléphone → Réglages, sous « Modèles 3D »). Fichier produit par
+`node scripts/real/build-tripo-horse.mjs` (environ 45 s ; rapport dans `trial/horse_tripo.json`).
+
 ## Voitures
 
 | Fichier | Modèle d'origine | Auteur | Licence |

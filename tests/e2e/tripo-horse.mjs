@@ -14,6 +14,8 @@
 //     cso-rider.js, sans téléportation pendant la manche) ;
 //  E. mesures : niveaux de détail (près, loin) et triangles rendus, appels de dessin, coût de la recopie de pose, taille
 //     du fichier ; erreurs JavaScript.
+// Filet du Tripo (TripoBridle, TripoReins) : masqué cheval non monté (A), affiché monté à toutes les allures avec le bout
+// des rênes à 3 cm au plus des poings du cavalier (B), masqué au-delà du niveau de détail réduit (E).
 // Sabots : point le plus bas de chaque sabot = sommets du bas du sabot (os du sabot, pose courante) au-dessus du sol de
 // marche (h.groundAt, sols des carrières compris), pour le Tripo comme pour le cheval du jeu. Le Tripo est jugé sur ce
 // qui dépend de lui, à la même image : pas enfoncé dans le sol au-delà du sabot du cheval du jeu (un enfoncement que
@@ -85,6 +87,8 @@ const TOL = {
   glisse: 0.0015,
   glisseVirage: 0.013,
   glisseCap: 0.0055,
+  // Bout des rênes du Tripo (os reinL / reinR recopiés de ceux du cheval du jeu, placés dans les poings) : écart au poing.
+  reneMain: 0.03,
 };
 // Sorties propres à chaque section.
 const OWN = { A: ['vues'], B: ['allures', 'allures.mp4'], C: ['sauts', 'sauts.mp4'], D: ['cso', 'cso.mp4'], E: [] };
@@ -377,6 +381,36 @@ const boot = await E(async ([TOL, POSE, VIRAGE]) => {
       },
     };
   };
+  // Filet et rênes du Tripo : maillages (TripoBridle, TripoReins) affichés ou non ; bout de chaque rêne = centre des
+  // sommets liés à 100 % à l'os reinL / reinR (pose courante, peau du maillage) ; écart aux poings du cavalier (positions
+  // du jeu, celles que game.js donne aux rênes).
+  window.__filet = (h) => {
+    const R = g.realism.horses.get(h), M = R?.bridle || [];
+    const ends = {};
+    for (const m of M) {
+      if (!m.visible) continue;
+      const G = m.geometry, P = G.attributes.position, SI = G.attributes.skinIndex, SW = G.attributes.skinWeight, B = m.skeleton.bones;
+      m.updateMatrixWorld(true);
+      for (const n of ['reinL', 'reinR']) {
+        const bi = B.findIndex((b) => b.name === n);
+        const ids = ((m.__bouts ||= {})[n] ||= [...Array(P.count).keys()].filter((k) => [0, 1, 2, 3].reduce((w, c) => w + (comp(SI, k, c) === bi ? comp(SW, k, c) : 0), 0) >= 0.999));
+        if (!ids.length) continue;
+        const a = new V();
+        for (const k of ids) a.add(m.applyBoneTransform(k, new V().fromBufferAttribute(P, k)).applyMatrix4(m.matrixWorld));
+        ends[n] = a.divideScalar(ids.length);
+      }
+    }
+    const rider = h.rider;
+    let dL = null, dR = null;
+    if (rider?.getHandWorldPositions && ends.reinL && ends.reinR) {
+      const [hl, hr] = rider.getHandWorldPositions(new V(), new V());
+      dL = ends.reinL.distanceTo(hl);
+      dR = ends.reinR.distanceTo(hr);
+    }
+    // Nom du nœud du GLB (une primitive par matériau : maillages « TripoBridle_1 », « TripoBridle_2 » sous « TripoBridle »).
+    const node = (m) => (/^Tripo(Bridle|Reins)/.exec(m.name) || /^Tripo(Bridle|Reins)/.exec(m.parent?.name || '') || [m.name])[0];
+    return { n: M.length, noms: [...new Set(M.map(node))], shown: M.map((m) => m.visible), monte: !!rider, dL, dR };
+  };
   // Caméra placée dans le repère du cheval (côté, hauteur, avant), visée (hauteur, avant) ; hauteurs comptées depuis la
   // hauteur réelle du cheval (sol de marche, saut compris).
   window.__cam = (h, s, u, f, ly, lf = 0) => {
@@ -536,6 +570,10 @@ if (RUN.has('A')) {
     return { pente, sabots, bilan: S.result() };
   });
   check('A3', `au repos, ${suiviLbl()} ; ${appuiLbl()}`, suiviOk(rest.bilan) && appuiOk(rest.bilan), `${suiviTxt(rest.bilan)} ; ${appuiTxt(rest.bilan)} ; pente ${JSON.stringify(rest.pente)} ; ${JSON.stringify(rest.sabots)}`);
+  // Cheval non monté : filet et rênes du Tripo présents dans le modèle mais masqués.
+  rest.filet = await E(() => window.__filet(window.__game.mainHorse));
+  const F0 = rest.filet;
+  check('A4', 'cheval non monté : filet et rênes du Tripo (TripoBridle, TripoReins) masqués', !F0.monte && F0.n >= 2 && F0.noms.includes('TripoBridle') && F0.noms.includes('TripoReins') && F0.shown.every((v) => !v), JSON.stringify(F0));
   // Équipement et réglage d'origine.
   await E((setting) => {
     const g = window.__game, h = g.mainHorse;
@@ -560,6 +598,7 @@ if (RUN.has('B')) {
       // Montée en vitesse : le grand galop n'est atteint qu'au-delà de ~10 m/s (≈ 80 pas de simulation depuis l'arrêt).
       for (let i = 0; i < (gallop ? 130 : 70); i++) { A.steer(0, 1, mag); if (gallop) g.input.held.add('gallop'); else g.input.held.delete('gallop'); A.tick(1); }
       window.__st = window.__stats();
+      window.__fil = { images: 0, affiche: 0, max: 0, ou: null };
       window.__skip = 0;
       return { gait: h.gait, sp: +h.speed.toFixed(2), duty: +h.anim._a.duty.toFixed(2) };
     }, [mag, gallop]);
@@ -575,16 +614,24 @@ if (RUN.has('B')) {
           A.tick(1);
           if (window.__skip > 0) { window.__skip--; S.cut(); continue; }
           S.add(window.__soles(h), window.__ctx(h));
+          // Filet affiché, bouts des rênes dans les poings du cavalier.
+          const f = window.__filet(h), Fi = window.__fil;
+          Fi.images++;
+          if (f.monte && f.n >= 2 && f.shown.every(Boolean)) Fi.affiche++;
+          const d = Math.max(f.dL ?? 9, f.dR ?? 9);
+          if (d > Fi.max) { Fi.max = d; Fi.ou = { ...window.__ctx(h), dL: f.dL == null ? null : +f.dL.toFixed(4), dR: f.dR == null ? null : +f.dR.toFixed(4) }; }
         }
       }, [mag, gallop]);
       await frame('allures');
     }
     const st = await E(() => { window.__game.input.held.delete('gallop'); return window.__st.result(); });
-    gaitRes[name] = { ...r, ...st, partAppui: st.images ? +(st.appui.n / (4 * st.images)).toFixed(2) : 0 };
+    const fil = await E(() => ({ ...window.__fil, max: +window.__fil.max.toFixed(4) }));
+    gaitRes[name] = { ...r, ...st, filet: fil, partAppui: st.images ? +(st.appui.n / (4 * st.images)).toFixed(2) : 0 };
     check(`B-${name}`, `${name} : allure ${want}`, r.gait === want, `allure ${r.gait}, ${r.sp} m/s`);
     check(`B-${name}-suivi`, `${name} : ${suiviLbl()}`, suiviOk(st), suiviTxt(st));
     check(`B-${name}-appui`, `${name} : ${appuiLbl()}`, appuiOk(st), `${appuiTxt(st)} ; part d'appui ${gaitRes[name].partAppui} (service ${r.duty})`);
     check(`B-${name}-sol`, `${name} : ${solLbl()}`, sousJeuOk(st), sousJeuTxt(st));
+    check(`B-${name}-filet`, `${name} : cheval monté, filet et rênes du Tripo affichés à chaque image ; bout de chaque rêne à ${cm(TOL.reneMain)} au plus du poing du cavalier`, fil.images > 0 && fil.affiche === fil.images && fil.max <= TOL.reneMain, `${fil.affiche}/${fil.images} images affichées ; écart rêne–poing max ${cm2(fil.max)} ${JSON.stringify(fil.ou)}`);
     info(`B-${name}-jeu`, `${name} : point le plus bas des sabots du cheval du jeu (animation procédurale)`, jeuInfo(st));
   }
   video('allures');
@@ -766,7 +813,7 @@ if (RUN.has('E')) {
       });
       g.renderer.info.reset();
       window.__render(false);
-      return { calls: g.renderer.info.render.calls, tris: g.renderer.info.render.triangles, lod, geo };
+      return { calls: g.renderer.info.render.calls, tris: g.renderer.info.render.triangles, lod, geo, filet: (R.bridle || []).map((m) => m.visible) };
     };
     const D = { pres: 4.2, avant: 22, apres: 28, loin: 40 };
     const lod = {};
@@ -784,7 +831,7 @@ if (RUN.has('E')) {
     const tex = [];
     R.root.traverse((o) => { if (o.isMesh) for (const k of ['map', 'normalMap', 'roughnessMap']) { const t = o.material[k]; if (t?.image && !tex.some((x) => x.k === k)) tex.push({ k, w: t.image.width, h: t.image.height }); } });
     const texMB = tex.reduce((a, t) => a + (t.w * t.h * 4 * 4) / 3 / 1048576, 0);
-    return { withTripo: tris.pres.auto, classicOnly: tris.pres.jeu, lod, tris, lodTris: R.lods.map((m) => m.geometry.index.count / 3), updMs: +updMs.toFixed(3), far: { lod0: lod.loin.lod[0], lod1: lod.loin.lod[1] }, tex, texMB: +texMB.toFixed(1), heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(0) : null };
+    return { monte: !!h.rider, withTripo: tris.pres.auto, classicOnly: tris.pres.jeu, lod, tris, lodTris: R.lods.map((m) => m.geometry.index.count / 3), updMs: +updMs.toFixed(3), far: { lod0: lod.loin.lod[0], lod1: lod.loin.lod[1] }, tex, texMB: +texMB.toFixed(1), heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(0) : null };
   });
   glbBytes = statSync('public/real/horse_tripo.glb').size;
   const L = perf.lod, T = perf.tris;
@@ -800,6 +847,10 @@ if (RUN.has('E')) {
   const ecartOk = perf.ecarts.pres === perf.ecarts.presAttendu && perf.ecarts.loin === perf.ecarts.loinAttendu && perf.ecarts.pres > perf.ecarts.loin;
   check('E1', 'niveau de détail : complet de près (4,2 m et 22 m), réduit au-delà de 25 m (28 m et 40 m) ; triangles rendus conformes au niveau affiché, écart au cheval du jeu seul conforme aux maillages (près, loin)', lodOk && trisOk && ecartOk, JSON.stringify({ lod: Object.fromEntries(Object.entries(L).map(([k, v]) => [k, v.lod])), tris: Object.fromEntries(Object.entries(T).map(([k, v]) => [k, Object.fromEntries(Object.entries(v).map(([m, x]) => [m, x.tris]))])), ecarts: perf.ecarts }));
   check('E2', 'recopie de pose bon marché (< 1 ms par image en rendu logiciel)', perf.updMs < 1, `${perf.updMs} ms`);
+  // Filet et rênes (cheval monté) : affichés avec le niveau complet (4,2 m et 22 m), masqués au-delà de 25 m (28 m, 40 m).
+  const fl = (k) => L[k].filet;
+  const filetOk = perf.monte && ['pres', 'avant'].every((k) => fl(k).length >= 2 && fl(k).every(Boolean)) && ['apres', 'loin'].every((k) => fl(k).length >= 2 && fl(k).every((v) => !v));
+  check('E4', 'cheval monté : filet et rênes du Tripo affichés de près (4,2 m et 22 m), masqués au-delà de 25 m (28 m et 40 m)', filetOk, JSON.stringify({ monte: perf.monte, filet: Object.fromEntries(Object.entries(L).map(([k, v]) => [k, v.filet])) }));
 }
 // Erreurs JavaScript de ce passage (toutes sections jouées).
 const e3 = FULL ? 'E3' : `E3-${SECS}`;

@@ -5,6 +5,7 @@ export default {
   'Hongre gris, très respectueux sur les barres.': 'Grey gelding, very careful over the poles.',
   'Étalon noir explosif. Une fusée sur le plat.': 'Explosive black stallion. A rocket on the flat.',
   'Jument alezane, gagnante en Grand Prix. La crème.': 'Chestnut mare, Grand Prix winner. The cream of the crop.',
+  'Hongre alezan clair à l’essai à l’écurie, avec un nouveau modèle 3D. Monte-le et compare-le à Comète.': 'Light chestnut gelding on trial at the stable, with a new 3D model. Ride him and compare him with Comète.',
 
   // ---------- Boutique : rayons ----------
   Selles: 'Saddles',

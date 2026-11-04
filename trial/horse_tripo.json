@@ -695,7 +695,7 @@
   ]
  },
  "weights": {
-  "seconds": 1.46,
+  "seconds": 1.533,
   "radii": {
    "pelvis": 0.193,
    "loin": 0.194,
@@ -756,8 +756,365 @@
   "skins": 1,
   "joints": 50,
   "lodMeshesSkinned": 2,
+  "tackMeshesSkinned": 2,
   "ibmAccessors": 1,
-  "orphanAccessors": 0
+  "orphanAccessors": 0,
+  "meshes": {
+   "TripoHorse_LOD0": [
+    {
+     "material": "TripoCoat",
+     "tris": 29982
+    }
+   ],
+   "TripoHorse_LOD1": [
+    {
+     "material": "TripoCoat",
+     "tris": 7993
+    }
+   ],
+   "TripoBridle": [
+    {
+     "material": "Tripo_leather",
+     "tris": 2290
+    },
+    {
+     "material": "Tripo_steel",
+     "tris": 448
+    }
+   ],
+   "TripoReins": [
+    {
+     "material": "Tripo_rubber",
+     "tris": 1032
+    }
+   ]
+  }
+ },
+ "bridle": {
+  "seconds": 5.029,
+  "reperes": {
+   "nuque": [
+    0,
+    1.9092,
+    1.2669
+   ],
+   "oreilles": {
+    "gauche": {
+     "base": [
+      0.0672,
+      1.8904,
+      1.2927
+     ],
+     "racineArriere": [
+      0.0545,
+      1.8825,
+      1.2782
+     ],
+     "racineAvant": [
+      0.0663,
+      1.8771,
+      1.3124
+     ],
+     "sommets": 344
+    },
+    "droite": {
+     "base": [
+      -0.0663,
+      1.8871,
+      1.3045
+     ],
+     "racineArriere": [
+      -0.0699,
+      1.8694,
+      1.2916
+     ],
+     "racineAvant": [
+      -0.0583,
+      1.8761,
+      1.3152
+     ],
+     "sommets": 397
+    }
+   },
+   "yeux": {
+    "gauche": [
+     0.1427,
+     1.66,
+     1.37
+    ],
+    "droit": [
+     -0.1248,
+     1.66,
+     1.37
+    ]
+   },
+   "cretesFaciales": {
+    "gauche": {
+     "saillie": [
+      0.1211,
+      1.5303,
+      1.3631
+     ],
+     "extremite": [
+      0.1071,
+      1.505,
+      1.3815
+     ]
+    },
+    "droite": {
+     "saillie": [
+      -0.1004,
+      1.5247,
+      1.3773
+     ],
+     "extremite": [
+      -0.09,
+      1.5098,
+      1.3952
+     ]
+    }
+   },
+   "commissures": {
+    "gauche": [
+     0.0887,
+     1.332,
+     1.468
+    ],
+    "droite": [
+     -0.0745,
+     1.331,
+     1.474
+    ]
+   },
+   "peauDesOreilles": {
+    "arriereZ": 1.2323,
+    "basY": 1.8223
+   },
+   "barbe": [
+    0,
+    1.3025,
+    1.4496
+   ],
+   "gorge": [
+    0,
+    1.4866,
+    1.1469
+   ],
+   "repereTete": {
+    "origine": [
+     0,
+     1.9092,
+     1.2669
+    ],
+    "F": [
+     0,
+     -0.9429,
+     0.3331
+    ],
+    "U": [
+     0,
+     0.3331,
+     0.9429
+    ]
+   }
+  },
+  "mors": {
+   "anneaux": {
+    "gauche": [
+     0.0985,
+     1.3324,
+     1.4686
+    ],
+    "droit": [
+     -0.0809,
+     1.3305,
+     1.4741
+    ]
+   },
+   "rayon": 0.03,
+   "fil": 0.0045,
+   "ecartCommissures": 0.1633
+  },
+  "muserolle": {
+   "sousCretes": 0.04,
+   "perimetre": 0.844
+  },
+  "pieces": {
+   "mors": {
+    "maillage": "bridle",
+    "triangles": 448,
+    "ecartMinMm": 2.3,
+    "ecartMinLod0Mm": 2.3,
+    "decollementMaxMm": 0
+   },
+   "tetiereMontants": {
+    "maillage": "bridle",
+    "triangles": 706,
+    "ecartMinMm": 2,
+    "ecartMinLod0Mm": 2,
+    "decollementMaxMm": 12.3,
+    "ouEcartMin": {
+     "t": 0.564,
+     "p": [
+      -0.061,
+      1.8665,
+      1.2019
+     ]
+    },
+    "ouDecollementMax": {
+     "t": 0.897,
+     "p": [
+      -0.0889,
+      1.4793,
+      1.4008
+     ]
+    }
+   },
+   "muserolle": {
+    "maillage": "bridle",
+    "triangles": 384,
+    "ecartMinMm": 2.8,
+    "ecartMinLod0Mm": 3,
+    "decollementMaxMm": 13.9,
+    "ouEcartMin": {
+     "t": 0.365,
+     "p": [
+      0.1057,
+      1.4388,
+      1.2781
+     ]
+    },
+    "ouDecollementMax": {
+     "t": 0.381,
+     "p": [
+      0.1003,
+      1.4322,
+      1.2956
+     ]
+    }
+   },
+   "teteMuserolle": {
+    "maillage": "bridle",
+    "triangles": 392,
+    "ecartMinMm": 2.1,
+    "ecartMinLod0Mm": 2.1,
+    "decollementMaxMm": 5.3,
+    "ouEcartMin": {
+     "t": 0.844,
+     "p": [
+      -0.0969,
+      1.746,
+      1.23
+     ]
+    },
+    "ouDecollementMax": {
+     "t": 0.094,
+     "p": [
+      0.1038,
+      1.4913,
+      1.357
+     ]
+    }
+   },
+   "frontal": {
+    "maillage": "bridle",
+    "triangles": 292,
+    "ecartMinMm": 2.1,
+    "ecartMinLod0Mm": 2,
+    "decollementMaxMm": 11.3,
+    "ouEcartMin": {
+     "t": 0.521,
+     "p": [
+      -0.0067,
+      1.7892,
+      1.3935
+     ]
+    },
+    "ouDecollementMax": {
+     "t": 0.438,
+     "p": [
+      0.0314,
+      1.7965,
+      1.3794
+     ]
+    }
+   },
+   "sousGorge": {
+    "maillage": "bridle",
+    "triangles": 516,
+    "ecartMinMm": 3.1,
+    "ecartMinLod0Mm": 3.1,
+    "decollementMaxMm": 12.4,
+    "ouEcartMin": {
+     "t": 0.359,
+     "p": [
+      0.1132,
+      1.5178,
+      1.1452
+     ]
+    },
+    "ouDecollementMax": {
+     "t": 0.922,
+     "p": [
+      -0.1074,
+      1.713,
+      1.2147
+     ]
+    }
+   },
+   "renes": {
+    "maillage": "reins",
+    "triangles": 1032,
+    "ecartMinMm": 2.5,
+    "ecartMinLod0Mm": 2.5,
+    "decollementMaxMm": 0,
+    "ouEcartMin": {
+     "t": 0.203,
+     "p": [
+      -0.0985,
+      1.4415,
+      1.2611
+     ]
+    }
+   }
+  },
+  "renes": {
+   "gauche": {
+    "longueur": 1.018,
+    "appuis": 22,
+    "echantillons": 65,
+    "attache": [
+     0.0997,
+     1.3461,
+     1.4399
+    ],
+    "main": [
+     0.07,
+     1.78,
+     0.52
+    ]
+   },
+   "droite": {
+    "longueur": 1.028,
+    "appuis": 24,
+    "echantillons": 65,
+    "attache": [
+     -0.0822,
+     1.344,
+     1.4453
+    ],
+    "main": [
+     -0.07,
+     1.78,
+     0.52
+    ]
+   }
+  },
+  "triangles": {
+   "filet": 2738,
+   "renes": 1032,
+   "total": 3770
+  }
  },
  "lods": [
   {
@@ -800,5 +1157,5 @@
    "maxApres": 0
   }
  },
- "bytes": 958280
+ "bytes": 993688
 }

@@ -5,7 +5,7 @@ import { icon } from './icons.js';
 import { logoImg } from './logo.js';
 import { drawBlip, drawFullMap } from './minimap.js';
 import { formatMoney, formatTime, clamp, dec } from '../core/math.js';
-import { HORSES, SHOP, PROS, STABLES, STABLE_UPGRADES, SKILL_LABEL } from '../gameplay/data.js';
+import { HORSES, SHOP, PROS, STABLES, STABLE_UPGRADES, SKILL_LABEL, ownedHorses, activeHorseId } from '../gameplay/data.js';
 import { CONFIG } from '../config.js';
 import { levelFor } from '../core/save.js';
 import { WORLD } from '../world/layout.js';
@@ -674,20 +674,25 @@ export class Phone {
     const g = this.game;
     const d = g.save.data;
     const main = h('div.app-main');
-    main.appendChild(this._head(t('Mes chevaux'), d.horses.length > 1 ? T`${d.horses.length} chevaux · équipement` : T`${d.horses.length} cheval · équipement`));
+    // Chevaux de l'écurie : ceux de la sauvegarde et le cheval à l'essai (voir ownedHorses, data.js).
+    const stable = ownedHorses(d);
+    const activeId = activeHorseId(d);
+    main.appendChild(this._head(t('Mes chevaux'), stable.length > 1 ? T`${stable.length} chevaux · équipement` : T`${stable.length} cheval · équipement`));
     const body = h('div.app-body.scrollable');
     const cards = h('div.cards');
     const swatch = { bay: '#7a4a2b', grey: '#c9c6c0', black: '#24221f', chestnut: '#9a5a32', palomino: '#d2a965' };
-    for (const id of d.horses) {
+    for (const id of stable) {
       const hd = HORSES[id];
-      const active = d.activeHorse === id;
-      const btn = h(`button.btn.small${active ? '' : '.primary'}`, { text: active ? t('Monture actuelle') : t('Seller ce cheval') });
+      const active = activeId === id;
+      const btn = h(`button.btn.small${active ? '' : '.primary'}`, { text: active ? t('Monture actuelle') : t('Seller ce cheval'), 'data-id': `horse-${id}` });
       if (!active)
         tap(btn, () => {
           g.setActiveHorse(id);
           this.refresh();
         });
-      cards.appendChild(h(`div.mcard${active ? '.active' : ''}`, {}, h('div.horse-card', {}, h('div.sw', { style: { background: swatch[hd.coat] || '#888' } }), h('div', {}, h('div.title', { text: hd.name }), h('div.meta', { text: T`${hd.breed} · ${hd.age} ans` }))), this._horseBars(hd), h('div.acts', {}, btn)));
+      // Robe sur mesure (objet) : sa couleur d'aperçu ; cheval à l'essai : sa présentation sous la race.
+      const sw = typeof hd.coat === 'object' ? hd.coat.swatch || hd.coat.body : swatch[hd.coat];
+      cards.appendChild(h(`div.mcard${active ? '.active' : ''}`, { 'data-horse': id }, h('div.horse-card', {}, h('div.sw', { style: { background: sw || '#888' } }), h('div', {}, h('div.title', { text: hd.name }), h('div.meta', { text: T`${hd.breed} · ${hd.age} ans` }))), hd.trial ? h('div.meta', { text: hd.desc }) : null, this._horseBars(hd), h('div.acts', {}, btn)));
     }
     body.appendChild(cards);
     // Suivi de santé de la monture actuelle (comme un carnet de suivi d'écurie).
@@ -863,6 +868,8 @@ export class Phone {
     body.appendChild(seg(t('Aide au saut'), 'jumpAid', [['full', t('Complète')], ['button', t('Bouton seul')], ['off', t('Aucune')]]));
     body.appendChild(seg(t('Tracé au sol (CSO)'), 'courseLine', [[true, t('Affiché')], [false, t('Masqué')]]));
     body.appendChild(h('div.set-credit', { text: t('Modèles réalistes : cheval « Horse » de Henry S (Sketchfab), CC BY 4.0, robe et squelette adaptés ; voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.') }));
+    // Cheval à l'essai : son modèle est sa robe, il ne dépend pas des réglages ci-dessus (voir realistic.js).
+    body.appendChild(h('div.set-credit', { text: t('Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; toujours affiché avec ce modèle, quels que soient les réglages.') }));
     body.appendChild(seg(t('Écoulement du temps'), 'timeScale', [['jeu', t('Jeu · 1 jour = 20 min')], ['reel', t('Réel · 24 h')]]));
     body.appendChild(seg(t('Sensibilité caméra'), 'camSens', [[0.7, t('Douce')], [1, t('Normale')], [1.4, t('Rapide')]], (v) => (g.cam.sens = v)));
     // Sauvegarde : copie à conserver soi-même (texte) et restauration depuis une copie ou une copie de secours.

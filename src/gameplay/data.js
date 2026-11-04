@@ -9,7 +9,43 @@ export const HORSES = {
   ulysse: { id: 'ulysse', name: 'Ulysse', coat: 'grey', blaze: false, socks: [false, false, false, false], speed: 0.98, jump: 1.15, stamina: 1.12, price: 1800, value: 25000, breed: 'Selle Français', age: 11, desc: t('Hongre gris, très respectueux sur les barres.') },
   onyx: { id: 'onyx', name: 'Onyx', coat: 'black', blaze: false, socks: [true, false, false, false], speed: 1.13, jump: 1.06, stamina: 1.0, price: 3200, value: 45000, breed: 'KWPN', age: 8, desc: t('Étalon noir explosif. Une fusée sur le plat.') },
   saphir: { id: 'saphir', name: 'Saphir', coat: 'chestnut', blaze: true, socks: [true, true, true, true], speed: 1.1, jump: 1.24, stamina: 1.2, price: 5500, value: 150000, breed: 'Holsteiner', age: 10, desc: t('Jument alezane, gagnante en Grand Prix. La crème.') },
+  // Cheval à l'essai (trial) : à l'écurie de toutes les parties sans être écrit dans la sauvegarde (voir ownedHorses),
+  // ni loué ni vendu ; mêmes aptitudes que Comète pour une comparaison juste. model : modèle 3D qui l'affiche toujours
+  // (public/real/horse_tripo.glb, piloté par TripoHorse, voir realistic.js). Robe du cheval du jeu (masqué sous le
+  // modèle, ou affiché si le modèle ne se charge pas) au plus près de la texture du modèle : alezan clair, liste,
+  // quatre balzanes basses.
+  tripo: {
+    id: 'tripo',
+    name: 'Tripo',
+    model: 'horse_tripo',
+    trial: true,
+    coat: { body: '#a38069', mane: '#8a5233', legs: '#95725b', muzzle: '#5e463a', hoof: '#57493e', points: 0, sheen: '#dfbaa0', dapple: 0.08, flaxen: 0.1, swatch: '#b08a72' },
+    blaze: true,
+    socks: [true, true, true, true],
+    speed: 1.0,
+    jump: 1.0,
+    stamina: 1.0,
+    price: 0,
+    breed: 'Selle Français',
+    age: 7,
+    desc: t('Hongre alezan clair à l’essai à l’écurie, avec un nouveau modèle 3D. Monte-le et compare-le à Comète.'),
+  },
 };
+
+// Chevaux de l'écurie du joueur : ceux de sa sauvegarde encore connus du jeu (un identifiant retiré du jeu est ignoré,
+// pas effacé), avec, en deuxième position, les chevaux à l'essai. La sauvegarde n'est pas modifiée : un cheval à l'essai
+// retiré plus tard du jeu disparaît simplement de l'écurie.
+export function ownedHorses(d) {
+  const out = (Array.isArray(d?.horses) ? d.horses : []).filter((id, i, a) => HORSES[id] && !HORSES[id].trial && a.indexOf(id) === i);
+  if (!out.length) out.push('comete');
+  const trial = Object.values(HORSES).filter((hd) => hd.trial).map((hd) => hd.id);
+  out.splice(Math.min(1, out.length), 0, ...trial);
+  return out;
+}
+// Monture active : celle de la sauvegarde si elle est encore à l'écurie, sinon Comète.
+export function activeHorseId(d) {
+  return ownedHorses(d).includes(d?.activeHorse) ? d.activeHorse : 'comete';
+}
 
 // Catalogue des commerces de Deauville City (Sellerie du Port, boutique d'équitation), le même dans les boutiques et
 // dans l'application du téléphone : mêmes articles, mêmes prix, mêmes règles d'achat (voir commerce.js).

@@ -1,5 +1,6 @@
-// Cheval Tripo (ESSAI, mode développement seulement : `?tripohorse`) : modèle Tripo optimisé et animable
-// (public/real/horse_tripo.glb, construit par scripts/real/build-tripo-horse.mjs), piloté par le cheval procédural.
+// Cheval Tripo (à l'essai : deuxième cheval de l'écurie, « Mes chevaux » ; aussi `?tripohorse` en développement) :
+// modèle Tripo optimisé et animable (public/real/horse_tripo.glb, construit par scripts/real/build-tripo-horse.mjs),
+// piloté par le cheval procédural ; Comète n'est pas remplacée.
 //
 // Le modèle porte le squelette du jeu (mêmes 50 os, mêmes noms, rotations de repos nulles) placé dans sa propre
 // anatomie : à chaque image, après l'animation du cheval procédural (masqué mais toujours animé), on recopie les
@@ -17,6 +18,15 @@
 // Robe : celle du modèle (texture d'origine nettoyée), pas la recoloration par cheval du modèle réaliste.
 // Sellerie : tapis, selle, sangle et étriers du cheval procédural (calés sur le dos, à 1 cm près) ; filet, rênes,
 // licol, guêtres et bonnet masqués (faits pour la tête et les membres du cheval procédural).
+// Filet du modèle (TripoBridle : bridon à muserolle française, mors à anneaux, ajusté à sa tête par
+// scripts/real/tripo/bridle.mjs) et rênes (TripoReins) : affichés seulement quand le cheval est monté (cavalier en
+// selle : horse.rider), masqués sinon. Les os reinL/reinR du modèle sont alors placés à chaque image dans les poings du
+// cavalier (Human.getHandWorldPositions : les points que game.js/_reins donne aux rênes des cavaliers du décor ; le
+// cavalier du joueur n'y passe pas) : les rênes finissent dans ses mains ; cavalier sans poings : position monde des os
+// reinL/reinR du cheval procédural. Au-delà de la distance du niveau de détail réduit (25 m), filet et rênes masqués,
+// comme le filet du cheval procédural au loin : lanières de 1,3 à 2,4 cm, moins d'un pixel à cette distance (environ
+// 2,7 cm par pixel sur un écran de 1 080 pixels de haut), donc invisibles mais coûteuses (trois appels de dessin
+// skinnés, ombres comprises).
 import * as THREE from 'three';
 import { MODEL_SCALE } from './horse/skeleton.js';
 import { horseAssets } from './horse/assets.js';
@@ -48,6 +58,9 @@ const SOLE = new THREE.Vector3(0, -0.075, 0.02);
 const LOD_DIST = 25;
 // Sellerie conservée (le reste est fait pour la tête et les membres du cheval procédural).
 const KEEP = { near: ['pad', 'saddle', 'girth', 'stirrups'], far: ['pad', 'saddle', 'girth'] };
+// Maillages du filet et des rênes du modèle (noms des nœuds du GLB ; une primitive par matériau).
+const TACK_NODES = /^Tripo(Bridle|Reins)/;
+const REINS = ['reinL', 'reinR'];
 
 const _q = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
@@ -62,6 +75,8 @@ const _n = new THREE.Vector3();
 const _s = new THREE.Vector3();
 const _dz = new THREE.Vector3();
 const _m = new THREE.Matrix4();
+const _hl = new THREE.Vector3();
+const _hr = new THREE.Vector3();
 const tackCache = new Map();
 
 function tackIndexKept(cfg) {
@@ -90,15 +105,21 @@ export class TripoHorse {
     this.root = root;
     this.bones = {};
     this.lods = [];
+    // Filet et rênes (affichés quand le cheval est monté).
+    this.bridle = [];
     root.traverse((o) => {
       if (o.isBone) this.bones[o.name] = o;
       if (o.isSkinnedMesh) {
         o.castShadow = true;
         o.receiveShadow = true;
         o.frustumCulled = false;
-        this.lods[/LOD1/.test(o.name) ? 1 : 0] = o;
+        if (TACK_NODES.test(o.name) || TACK_NODES.test(o.parent?.name || '')) {
+          o.visible = false;
+          this.bridle.push(o);
+        } else this.lods[/LOD1/.test(o.name) ? 1 : 0] = o;
       }
     });
+    this.bridleShown = false;
     // Le modèle est en mètres ; le cheval procédural en unités du modèle (× MODEL_SCALE) sous une échelle de 0,94.
     root.scale.setScalar(MODEL_SCALE);
     horse.mesh.add(root);
@@ -193,6 +214,8 @@ export class TripoHorse {
     // Points de jeu : sabots du modèle pour les empreintes et éclaboussures.
     if (on) H.hoofAt = (i, out) => this.soleWorld(i, out);
     else {
+      // Filet masqué, os des rênes du modèle à leur place de repos.
+      this._showBridle(false);
       if (H.hoofAt) delete H.hoofAt;
       // Sellerie du cheval procédural recalculée pour son équipement et son niveau de détail actuels (index et
       // visibilité, bonnet compris) ; licol à sa place d'origine.
@@ -250,6 +273,29 @@ export class TripoHorse {
       la.position.copy(la.parent.worldToLocal(_v));
       la.updateMatrixWorld(true);
     }
+    // Filet et rênes : cheval monté et proche ; bout des rênes dans les poings du cavalier.
+    const R = H.rider, show = !!R && !far && this.bridle.length > 0;
+    this._showBridle(show);
+    if (show) {
+      const hands = R.getHandWorldPositions ? R.getHandWorldPositions(_hl, _hr) : null;
+      REINS.forEach((n, k) => {
+        const tb = B[n];
+        if (!tb) return;
+        if (hands) _v.copy(hands[k]);
+        else if (ours[n]) ours[n].getWorldPosition(_v);
+        else return;
+        tb.position.copy(tb.parent.worldToLocal(_v));
+        tb.updateMatrixWorld(true);
+      });
+    }
+  }
+
+  // Filet et rênes affichés ou masqués ; masqués : os des rênes du modèle remis au repos.
+  _showBridle(on) {
+    if (on === this.bridleShown) return;
+    this.bridleShown = on;
+    for (const m of this.bridle) m.visible = on;
+    if (!on) for (const n of REINS) if (this.bones[n] && this.rest[n]) this.bones[n].position.copy(this.rest[n]);
   }
 
   // IK à deux segments (plan de flexion du membre), deux passes : boulet sur la cible, puis semelle recalée.

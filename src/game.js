@@ -44,7 +44,7 @@ import { Challenges } from './gameplay/challengeRun.js';
 import { Commerce } from './gameplay/commerce.js';
 import { ShopManager } from './gameplay/shops.js';
 import { HomeManager } from './gameplay/home.js';
-import { HORSES, SHOP, FIRST_NAMES } from './gameplay/data.js';
+import { HORSES, SHOP, FIRST_NAMES, ownedHorses, activeHorseId } from './gameplay/data.js';
 import { HUD } from './ui/hud.js';
 import { Phone } from './ui/phone.js';
 import { Screens } from './ui/screens.js';
@@ -264,7 +264,8 @@ export class Game {
       this.defenderModelInfo.error = String(e?.message || e);
       this.defender = null;
     }
-    this.spawnMainHorse(d.activeHorse);
+    // Monture choisie dans « Mes chevaux » (Comète si ce cheval n'est plus à l'écurie).
+    this.spawnMainHorse(activeHorseId(d));
     this.ambient = new Ambient(this);
     this.screens.setLoading(0.9, t('Fers d’or et parcours'));
     await new Promise((r) => setTimeout(r, 0));
@@ -290,6 +291,8 @@ export class Game {
     // ensuite) — et avant la compilation des shaders ci-dessous : ses matériaux (lanternes, plafonniers) sont compilés
     // pendant l'écran de chargement, pas au premier rendu après « Continuer » (à-coup au démarrage).
     await this.realism?.preloadPlayer();
+    // Cheval qui a son propre modèle 3D (cheval à l'essai) : chargé de même, affiché dès la première image.
+    await this.realism?.preloadHorses();
     this.realism?.update();
     this.sky.update(17.5, this.player.focus.pos, 0);
     this.sky.updateEnvironment(this.renderer, 0, true);
@@ -484,7 +487,7 @@ export class Game {
 
   setActiveHorse(id) {
     const d = this.save.data;
-    if (!d.horses.includes(id)) return;
+    if (!ownedHorses(d).includes(id)) return;
     const old = this.mainHorse;
     const wasRiding = this.player.mode === 'ride' && this.player.horse === old;
     if (wasRiding) this.player.dismount(true);
@@ -504,7 +507,8 @@ export class Game {
   buyHorse(id) {
     const d = this.save.data;
     const hd = HORSES[id];
-    if (d.horses.includes(id)) return false;
+    // Cheval à l'essai (déjà à l'écurie) ou inconnu : rien à louer.
+    if (!hd?.price || d.horses.includes(id)) return false;
     if (d.money < hd.price) {
       this.hud.toast(t('Solde insuffisant.'));
       return false;

@@ -9,7 +9,11 @@
 //   4. réduction des polygones (meshoptimizer, sommets d'origine conservés : UV et poids intacts) : LOD0 et LOD1 ;
 //   5. textures nettoyées par tripo/clean-texture.mjs (tapis et quartiers peints, points sombres ; métal 0), calculées
 //      à chaque construction (--brut : textures d'origine) ; WebP (couleur 2048, normales et rugosité 1024) ;
-//   6. GLB : un maillage skinné par niveau de détail, même squelette ; compression meshopt et quantification.
+//   6. filet (bridon à muserolle française, mors à anneaux) et rênes en main ajustés à la tête du modèle
+//      (tripo/bridle.mjs : repères mesurés sur le maillage complet, lanières posées sur la peau) ;
+//   7. GLB : un maillage skinné par niveau de détail, même squelette ; filet (TripoBridle : cuir et acier) et rênes
+//      (TripoReins : caoutchouc) en maillages skinnés à part sur la même peau (affichés par le jeu quand le cheval est
+//      monté) ; compression meshopt et quantification.
 //
 // Sortie : public/real/horse_tripo.glb (modèle du cheval « Tripo », deuxième cheval de l'écurie) et
 // trial/horse_tripo.json (rapport : mesures, os, poids, statistiques ; hors de public/, non publié).
@@ -29,6 +33,7 @@ import { computeWeights, checkTailWeights } from './tripo/skin-weights.mjs';
 import { fixWinding, repairNormals, dropFoldedMicroFaces } from './tripo/mesh-clean.mjs';
 import { effacerReliefPlaques } from './tripo/relief-plaques.mjs';
 import { cleanTripoTextures } from './tripo/clean-texture.mjs';
+import { buildBridle, BRIDLE_MATS } from './tripo/bridle.mjs';
 import { BONES } from '../../src/entities/horse/skeleton.js';
 
 const arg = (k, d) => {
@@ -136,6 +141,12 @@ const simplify = (target) => {
 };
 const lods = [simplify(LOD0), simplify(LOD1)];
 
+// ---------- Filet et rênes ----------
+// Ajustés au maillage complet (et vérifiés contre le niveau de détail proche, affiché de près).
+const tb0 = Date.now();
+const bridle = buildBridle({ P, N: m.normals, I: m.indices, lod0: lods[0].ind, joints: skin.joints, weights: skin.weights, bones: fit.bones, ears: fit.ears });
+const tBridle = (Date.now() - tb0) / 1000;
+
 // ---------- Document de sortie ----------
 const doc = new Document();
 const buf = doc.createBuffer();
@@ -203,6 +214,27 @@ lods.forEach((L, k) => {
   L.verts = n;
 });
 
+// Filet (cuir, acier) et rênes (caoutchouc) : maillages skinnés sur la même peau, une primitive par matériau.
+// Couleurs sRGB de la sellerie du jeu converties en facteurs linéaires (glTF).
+const linear = (hex) => [1, 3, 5].map((i) => {
+  const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+});
+const tackMats = Object.fromEntries(Object.entries(BRIDLE_MATS).map(([k, d]) => [k, doc.createMaterial(`Tripo_${k}`).setBaseColorFactor([...linear(d.color), 1]).setRoughnessFactor(d.roughness).setMetallicFactor(d.metalness)]));
+for (const [name, B] of [['TripoBridle', bridle.bridle], ['TripoReins', bridle.reins]]) {
+  const mesh = doc.createMesh(name);
+  for (const [mat, q] of Object.entries(B.prims)) {
+    mesh.addPrimitive(doc.createPrimitive()
+      .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(q.pos).setBuffer(buf))
+      .setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(q.nor).setBuffer(buf))
+      .setAttribute('JOINTS_0', doc.createAccessor().setType('VEC4').setArray(q.joints).setBuffer(buf))
+      .setAttribute('WEIGHTS_0', doc.createAccessor().setType('VEC4').setArray(q.weights).setBuffer(buf))
+      .setIndices(doc.createAccessor().setType('SCALAR').setArray(Uint16Array.from(q.indices)).setBuffer(buf))
+      .setMaterial(tackMats[mat]));
+  }
+  top.addChild(doc.createNode(name).setMesh(mesh).setSkin(skinDef));
+}
+
 await MeshoptEncoder.ready;
 await doc.transform(
   prune(),
@@ -216,17 +248,20 @@ await doc.transform(
   prune(),
 );
 const glb = await io.writeBinary(doc);
-// Contrôle du fichier écrit : une seule peau de 50 os, partagée par les deux niveaux de détail, un seul accesseur
-// « ibm », aucun accesseur orphelin.
+// Contrôle du fichier écrit : une seule peau de 50 os, partagée par les deux niveaux de détail, le filet et les rênes ;
+// un seul accesseur « ibm », aucun accesseur orphelin ; maillages listés (primitives, matériaux, triangles).
 const out = (await io.readBinary(glb)).getRoot();
+const skinned = (re) => out.listNodes().filter((n) => re.test(n.getName()) && n.getMesh() && n.getSkin() === out.listSkins()[0]);
 const glbCheck = {
   skins: out.listSkins().length,
   joints: out.listSkins()[0]?.listJoints().length ?? 0,
-  lodMeshesSkinned: out.listNodes().filter((n) => /^TripoHorse_LOD/.test(n.getName()) && n.getMesh() && n.getSkin() === out.listSkins()[0]).length,
+  lodMeshesSkinned: skinned(/^TripoHorse_LOD/).length,
+  tackMeshesSkinned: skinned(/^Tripo(Bridle|Reins)$/).length,
   ibmAccessors: out.listAccessors().filter((a) => a.getName() === 'ibm').length,
   orphanAccessors: out.listAccessors().filter((a) => a.listParents().every((p) => p === out)).length,
+  meshes: Object.fromEntries(out.listNodes().filter((n) => n.getMesh()).map((n) => [n.getName(), n.getMesh().listPrimitives().map((pr) => ({ material: pr.getMaterial()?.getName(), tris: pr.getIndices().getCount() / 3 }))])),
 };
-if (glbCheck.skins !== 1 || glbCheck.joints !== BONES.length || glbCheck.lodMeshesSkinned !== 2 || glbCheck.ibmAccessors !== 1 || glbCheck.orphanAccessors) {
+if (glbCheck.skins !== 1 || glbCheck.joints !== BONES.length || glbCheck.lodMeshesSkinned !== 2 || glbCheck.tackMeshesSkinned !== 2 || glbCheck.ibmAccessors !== 1 || glbCheck.orphanAccessors) {
   throw new Error(`GLB : peau ou accesseurs inattendus (${JSON.stringify(glbCheck)})`);
 }
 writeFileSync('public/real/horse_tripo.glb', glb);
@@ -243,6 +278,7 @@ const report = {
   ext,
   weights: { seconds: tWeights, radii: skin.radii, tail: tailCheck },
   glbCheck,
+  bridle: { seconds: tBridle, ...bridle.report },
   lods: lods.map((L) => ({ tris: L.tris, verts: L.verts, error: +L.err.toFixed(5), foldsDropped: L.foldsDropped, foldsKept: L.foldsKept })),
   texturesCleaned: T.cleaned,
   robe: ROBE === 'apercu' ? { variante: 'apercu', facteur: ROBE_FACTOR } : { variante: 'origine' },
@@ -257,4 +293,4 @@ const report = {
   bytes: glb.byteLength,
 };
 writeFileSync(`${OUT}/horse_tripo.json`, JSON.stringify(report, null, 1));
-console.log(JSON.stringify({ lods: report.lods, bytes: report.bytes, straighten: straight, winding, relief, weightsSec: tWeights, cleaned: T.cleaned, radii: skin.radii, tail: tailCheck, legGapsCm: fit.legGaps, glbCheck }));
+console.log(JSON.stringify({ lods: report.lods, bytes: report.bytes, straighten: straight, winding, relief, weightsSec: tWeights, cleaned: T.cleaned, radii: skin.radii, tail: tailCheck, legGapsCm: fit.legGaps, glbCheck, bridle: { seconds: tBridle, triangles: bridle.report.triangles, pieces: bridle.report.pieces } }));

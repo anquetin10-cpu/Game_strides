@@ -1,39 +1,39 @@
-# trial/ : modèles à l'essai (jamais publiés)
+# trial/ : rapport de construction du cheval Tripo
 
-Ce dossier est hors de `public/` : Vite ne le copie pas dans les versions construites (`npm run build`, version
-fichier unique). Les fichiers ne sont lus qu'en mode développement (`npm run dev`), et seulement avec l'option
-d'URL prévue pour l'essai.
+Ce dossier, hors de `public/`, n'est jamais copié dans les versions construites. Il contient `horse_tripo.json`,
+le rapport de la dernière construction du cheval Tripo : mesures, os, poids, réduction, nettoyage, filet.
 
-## horse_tripo.glb : cheval Tripo optimisé et animable (ESSAI)
+## Cheval Tripo : deuxième cheval de l'écurie (à l'essai)
 
-- **Ne remplace pas le cheval du jeu.** Il n'apparaît qu'en mode développement avec `?tripohorse`
-  (ex. `http://127.0.0.1:5173/?tripohorse`). Sans cette option, et dans toute version construite, le jeu est
-  inchangé.
-- **Construction.** `node scripts/real/build-tripo-horse.mjs` (environ 45 s). Source :
-  `assets-src/horse-tripo/Cheval_Tripo_Optimise_Qualite.glb`. Écrit `horse_tripo.glb` et `horse_tripo.json`
-  (mesures, os, poids, réduction, nettoyage). La construction est reproductible : deux exécutions donnent le même
-  fichier, octet pour octet.
+- **Comète n'est pas remplacée.** Le Tripo est un deuxième cheval, disponible dans toutes les parties, nouvelles
+  ou anciennes. Pour le monter : téléphone → « Mes chevaux » → « Seller ce cheval ».
+  - Il n'est pas écrit dans la liste des chevaux de la sauvegarde ; seul le choix de la monture l'est.
+  - Si on le retire du jeu, une partie qui le montait reprend avec Comète.
+- **Modèle.** `public/real/horse_tripo.glb`, construit par `node scripts/real/build-tripo-horse.mjs` (environ 45 s).
+  Source : `assets-src/horse-tripo/Cheval_Tripo_Optimise_Qualite.glb`. La construction est reproductible : deux
+  exécutions donnent le même fichier, octet pour octet.
 - **Contenu.**
   - deux niveaux de détail skinnés sur le même squelette : environ 30 000 et 8 000 triangles ;
   - squelette du jeu : 50 os, mêmes noms ;
   - textures nettoyées en WebP : couleur 2048, normales et rugosité 1024 ;
-  - taille : environ 0,96 Mo.
-- **Code d'essai.** `src/entities/tripoHorse.js`, chargé à la demande par `src/entities/realistic.js` en mode
-  développement uniquement.
-- **Test.** `BASE=http://127.0.0.1:5173 node tests/e2e/tripo-horse.mjs [--no-cso]`.
+  - filet et rênes ajustés à sa tête (`scripts/real/tripo/bridle.mjs`) : 3 770 triangles ;
+  - taille : environ 1,0 Mo.
+- **Affichage.**
+  - Le cheval dont la définition porte `model: 'horse_tripo'` est toujours montré avec ce modèle, quels que soient
+    les réglages d'affichage (`src/entities/realistic.js`, `src/entities/tripoHorse.js`).
+  - Le filet et les rênes n'apparaissent que lorsqu'il est monté.
+  - En mode développement, `?tripohorse` met aussi le modèle sur le cheval principal, pour l'essai technique.
+- **Tests.**
+  - `BASE=http://127.0.0.1:5173 node tests/e2e/tripo-stable.mjs` : écurie, sauvegardes, filet.
+  - `BASE=http://127.0.0.1:5173 node tests/e2e/tripo-horse.mjs [--only=A,B,C,D,E]` : allures, sauts, CSO, filet.
 
 Rapport complet : `LIVRAISON_CHEVAL_TRIPO/LISEZMOI.md`.
 
-Nettoyage du modèle (tapis et quartiers peints et modelés, points sombres) : textures par
-`scripts/real/tripo/clean-texture.mjs`, relief des plaques effacé dans le maillage par `tripo/relief-plaques.mjs`
-(la construction lui passe la zone fournie par le nettoyage et s'arrête si elle manque ; `relief` dans
-`horse_tripo.json`), normales
-de couture incohérentes corrigées par `mesh-clean.repairNormals`. Les planches de revue avant/après (aperçus et
-modèle construit) ont été rendues par des scripts locaux de `tests/e2e/tmp/` (non versionnés) ; les principales sont
-reprises dans `LIVRAISON_CHEVAL_TRIPO/captures/`.
+## Nettoyage du modèle
 
-Non versionnés (`.gitignore`) : `textures/`, `review/`, `debug/` et les aperçus `tripo_clean_*.glb`, qui sont les sorties
-intermédiaires du nettoyage et du calage. Ils se régénèrent avec :
+- **Textures.** Le tapis et les quartiers peints et modelés, ainsi que les points sombres, sont nettoyés par
+  `scripts/real/tripo/clean-texture.mjs`.
+- **Relief des plaques.** Il est effacé dans le maillage par `scripts/real/tripo/relief-plaques.mjs`.
+- **Normales.** Les normales de couture incohérentes sont corrigées par `scripts/real/tripo/mesh-clean.mjs`.
 
-- `node scripts/real/tripo/clean-texture-cli.mjs` ;
-- `node scripts/real/tripo/debug-skeleton.mjs`.
+Les sorties intermédiaires (`textures/`, `review/`, `debug/`, aperçus `tripo_clean_*.glb`) ne sont pas versionnées.

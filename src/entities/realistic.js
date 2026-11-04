@@ -340,6 +340,9 @@ export class RealBody {
 // Gestion du réglage « Modèles 3D » (Auto, Classiques, Réalistes) : rendu réaliste du joueur, de son cheval, et des personnes et chevaux proches
 // de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
 const NEAR = { humans: 8, horses: 5, cars: 6, humanDist: 30, horseDist: 45, carDist: 60, margin: 10 };
+// Modèles propres de chevaux (def.model d'un cheval de data.js, ou essai de développement) : fichier public/real/<id> et
+// classe qui le pilote, chargée à la demande (module à part, seulement quand un tel cheval est dans le jeu).
+const HORSE_MODELS = { horse_tripo: () => import('./tripoHorse.js').then((m) => m.TripoHorse) };
 
 export class Realism {
   constructor(game) {
@@ -351,27 +354,68 @@ export class Realism {
     this.failed = false;
     this.horseFailed = false;
     this.loading = new Set();
+    // Modèles propres de chevaux : id → { id, cls, loading, failed } (classe chargée une fois, échec retenu).
+    this.models = {};
   }
 
   // Essai d'un modèle de cheval (développement seulement : game.js, `?tripohorse` → 'horse_tripo', piloté par
   // TripoHorse chargé à la demande). Pour la session, sans rien écrire dans la sauvegarde : le cheval principal et
   // celui du joueur prennent le modèle d'essai, les autres chevaux gardent leur affichage habituel ; ni le réglage des
-  // personnages, ni la qualité, ni la baisse de cadence (Auto) ne le retirent.
+  // personnages, ni la qualité, ni la baisse de cadence (Auto) ne le retirent. Même chargement et même règle
+  // d'affichage qu'un cheval qui a son propre modèle (def.model, voir _syncHorses) : l'essai porte son état.
   startTrial(id) {
     if (!import.meta.env.DEV) return;
     this.stopTrial();
-    this.trial = { id, cls: null, loading: null, failed: false };
+    this.trial = this._model(id);
   }
 
   stopTrial() {
     if (!import.meta.env.DEV || !this.trial) return;
     const cls = this.trial.cls;
+    // Les chevaux qui ont eux-mêmes ce modèle (def.model) le gardent.
     for (const [h, r] of this.horses) {
-      if (!cls || r.constructor !== cls) continue;
+      if (!cls || r.constructor !== cls || h.def?.model) continue;
       r.dispose();
       this.horses.delete(h);
     }
     this.trial = null;
+  }
+
+  // État d'un modèle propre de cheval ; la classe qui le pilote est chargée au premier appel.
+  _model(id) {
+    let m = this.models[id];
+    if (m) return m;
+    m = this.models[id] = { id, cls: null, loading: null, failed: false };
+    const load = HORSE_MODELS[id];
+    if (!load) this._modelFailed(m, new Error('aucune classe pour ce modèle'));
+    else m.loading = load().then((cls) => (m.cls = cls), (e) => this._modelFailed(m, e));
+    return m;
+  }
+
+  // Modèle propre impossible à charger (classe ou fichier) : le cheval du jeu reste affiché, avec un message (une fois).
+  _modelFailed(m, e) {
+    if (m.failed) return;
+    console.warn('Modèle de cheval indisponible', m.id, e);
+    m.failed = true;
+    m.loading = null;
+    this.game.hud?.toast(t('Modèle 3D du cheval indisponible : affichage classique.'));
+  }
+
+  // Modèle propre attendu pour un cheval (null : affichage habituel) : le sien (def.model), sinon, en développement,
+  // celui de l'essai pour le cheval principal et celui du joueur.
+  _modelOf(h) {
+    const g = this.game;
+    const trial = import.meta.env.DEV ? this.trial : null;
+    const id = h.def?.model || (trial && (h === g.mainHorse || h === g.player?.horse) ? trial.id : null);
+    return id ? this._model(id) : null;
+  }
+
+  // Préchargement (écran de chargement) des modèles propres des chevaux présents : la première image les montre déjà.
+  async preloadHorses(timeoutMs = 12000) {
+    const ids = [...new Set(this.game.horses.map((h) => h.def?.model).filter(Boolean))];
+    if (!ids.length) return;
+    const all = ids.map((id) => Promise.all([this._model(id).loading, loadReal(id)]));
+    await Promise.race([Promise.all(all).catch(() => null), new Promise((r) => setTimeout(r, timeoutMs))]);
   }
 
   // « Réalistes » : toujours ; « Auto » : sauf qualité « Économie » ou cadence trop basse (voir autoFallback).
@@ -400,10 +444,19 @@ export class Realism {
       r.dispose();
       this.bodies.delete(hu);
     }
-    for (const r of this.horses.values()) r.dispose();
+    this._dropHorses();
     for (const r of this.cars.values()) r.dispose();
-    this.horses.clear();
     this.cars.clear();
+  }
+
+  // Retire les modèles des chevaux, sauf ceux des chevaux qui ont leur propre modèle (def.model) : il est leur
+  // apparence, aucun réglage ne le retire (pas d'image intermédiaire avec le cheval du jeu).
+  _dropHorses() {
+    for (const [h, r] of this.horses) {
+      if (h.def?.model && r.constructor === this.models[h.def.model]?.cls) continue;
+      r.dispose();
+      this.horses.delete(h);
+    }
   }
 
   // Préchargement du modèle du joueur (écran de chargement) : la première image montre déjà le bon personnage.
@@ -416,10 +469,9 @@ export class Realism {
 
   _clear() {
     for (const r of this.bodies.values()) r.dispose();
-    for (const r of this.horses.values()) r.dispose();
+    this._dropHorses();
     for (const r of this.cars.values()) r.dispose();
     this.bodies.clear();
-    this.horses.clear();
     this.cars.clear();
   }
 
@@ -450,8 +502,8 @@ export class Realism {
       (e) => {
         console.warn('Modèle réaliste indisponible', id, e);
         this.loading.delete(id);
-        if (import.meta.env.DEV && kind === 'trial') {
-          if (this.trial?.id === id) this._trialFailed(this.trial, e);
+        if (kind === 'model') {
+          this._modelFailed(this._model(id), e);
           return;
         }
         if (kind === 'horse') this.horseFailed = true;
@@ -500,19 +552,23 @@ export class Realism {
   // Appelé à chaque image avant le rendu.
   update() {
     const trial = import.meta.env.DEV ? this.trial : null;
-    if (!this.playerEnabled && !trial) return;
     const g = this.game, P = g.player;
+    // Chevaux qui ont leur propre modèle (def.model, cheval à l'essai) : toujours affichés avec lui, quels que soient les
+    // réglages « Modèles 3D » et « Chevaux 3D », la qualité ou la baisse de cadence (Auto) ; essai : chevaux du joueur.
+    const own = g.horses.filter((h) => h.def?.model);
+    if (!this.playerEnabled && !trial && !own.length && !this.horses.size) return;
     const lead = [g.mainHorse, P?.horse].filter((h) => h && g.horses.includes(h));
+    if (import.meta.env.DEV && trial) for (const h of lead) if (!own.includes(h)) own.push(h);
     if (!this.enabled || !this.playerEnabled) {
-      // Cadence trop basse (Auto) : seul le joueur reste réaliste (essai : ses chevaux aussi).
+      // Cadence trop basse (Auto) : seul le joueur reste réaliste (et les chevaux qui ont leur propre modèle).
       if (this.playerEnabled && !this.failed) this._syncBodies(new Set([P?.human].filter(Boolean)));
-      if (import.meta.env.DEV && trial) this._syncHorses(new Set(lead), trial);
+      this._syncHorses(new Set(own));
       return;
     }
     // Chevaux : modèle procédural par défaut, modèle réaliste sur demande (« Chevaux 3D »).
     const want = g.save.data.settings.horses === 'real' && !this.horseFailed ? this._wanted(g.horses, lead, this.horses, NEAR.horses, NEAR.horseDist) : new Set();
-    if (import.meta.env.DEV && trial) for (const h of lead) want.add(h);
-    this._syncHorses(want, trial);
+    for (const h of own) want.add(h);
+    this._syncHorses(want);
     // Voitures (garées, conduisibles et de la circulation) des types qui ont un modèle réaliste.
     const cars = g.vehicles.filter((v) => v.mesh && v.spec && CAR_MODELS[v.kind] && !this.carFailed.has(CAR_MODELS[v.kind]));
     this._sync(this.cars, this._wanted(cars, [P?.vehicle].filter((v) => v && cars.includes(v)), this.cars, NEAR.cars, NEAR.carDist), (v, busy) => {
@@ -527,45 +583,32 @@ export class Realism {
     if (!this.failed) this._syncBodies(this._wanted(g.humans, [P?.human], this.bodies, NEAR.humans, NEAR.humanDist));
   }
 
-  // Chevaux voulus : modèle réaliste, ou modèle d'essai (développement) pour le cheval principal et celui du joueur.
-  _syncHorses(want, trial) {
+  // Chevaux voulus : modèle réaliste (RealHorse), ou modèle propre du cheval (def.model, essai) piloté par sa classe.
+  _syncHorses(want) {
     const g = this.game;
-    const isTrial = (h) => !!trial && (h === g.mainHorse || h === g.player?.horse);
-    if (import.meta.env.DEV && trial) {
-      // Classe chargée à la demande (absente des versions construites) ; échec : message, cheval du jeu affiché.
-      if (!trial.cls && !trial.loading && !trial.failed) {
-        trial.loading = import('./tripoHorse.js').then(
-          (m) => (trial.cls = m.TripoHorse),
-          (e) => this._trialFailed(trial, e),
-        );
-      }
-      // Modèle à changer quand un cheval devient (ou cesse d'être) celui de l'essai.
-      for (const [h, r] of this.horses) {
-        if (isTrial(h) === (!!trial.cls && r.constructor === trial.cls)) continue;
-        r.dispose();
-        this.horses.delete(h);
-      }
-      if (!trial.cls || trial.failed) for (const h of [...want]) if (isTrial(h)) want.delete(h);
+    // Classe attendue pour un cheval : celle de son modèle propre (null tant qu'elle n'est pas chargée, ou en cas
+    // d'échec : cheval du jeu affiché), sinon RealHorse.
+    const clsOf = (h) => {
+      const m = this._modelOf(h);
+      return m ? (m.failed ? null : m.cls) : RealHorse;
+    };
+    // Modèle à changer quand un cheval prend (ou perd) un modèle propre.
+    for (const [h, r] of this.horses) {
+      if (r.constructor === clsOf(h)) continue;
+      r.dispose();
+      this.horses.delete(h);
     }
+    for (const h of [...want]) if (!clsOf(h)) want.delete(h);
     this._sync(this.horses, want, (h, busy) => {
-      const t = import.meta.env.DEV && isTrial(h);
-      const id = t ? trial.id : 'horse';
+      const m = this._modelOf(h);
+      const id = m ? m.id : 'horse';
       const root = !busy || h === g.mainHorse ? realNow(id) : null;
       if (!root) {
-        this._load(id, t ? 'trial' : 'horse');
+        this._load(id, m ? 'model' : 'horse');
         return null;
       }
-      return t ? new trial.cls(h, root) : new RealHorse(h, root);
+      return m ? new m.cls(h, root) : new RealHorse(h, root);
     });
-  }
-
-  // Essai (développement) impossible à charger : le cheval du jeu reste affiché, avec un message.
-  _trialFailed(trial, e) {
-    if (!import.meta.env.DEV) return;
-    console.warn('Modèle de cheval à l’essai indisponible', trial.id, e);
-    trial.failed = true;
-    trial.loading = null;
-    this.game.hud?.toast('Cheval à l’essai indisponible : cheval du jeu affiché.');
   }
 
   _syncBodies(want) {
