@@ -10,6 +10,7 @@ import { addCloudShadows } from '../world/sky.js';
 import { RealHorse } from './realHorse.js';
 import { RealCar, CAR_MODELS } from './realCar.js';
 import { t } from '../core/i18n.js';
+import { inlineData } from '../core/gltfInline.js';
 
 // Os du personnage classique → os du modèle réaliste (squelette « game_engine »).
 const SIDES = [['l', '_l'], ['r', '_r']];
@@ -36,6 +37,7 @@ async function loader() {
     loaderP = Promise.all([import('three/addons/loaders/GLTFLoader.js'), import('three/addons/libs/meshopt_decoder.module.js'), import('three/addons/utils/SkeletonUtils.js')]).then(([g, m, s]) => {
       const l = new g.GLTFLoader();
       l.setMeshoptDecoder(m.MeshoptDecoder);
+      inlineData(l); // fichier unique : tampons et images base64 décodés sans requête (refusée sur iPhone)
       cloneFn = s.clone;
       return { l, clone: s.clone };
     });

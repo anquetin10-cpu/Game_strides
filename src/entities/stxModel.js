@@ -9,6 +9,7 @@ import { addCloudShadows } from '../world/sky.js';
 import { cutDoor, lineCab } from './doorCut.js';
 import { buildStxLivery } from './livery.js';
 import stxUrl from '../assets/vehicles/STX_Scania_DETAILLE.glb?url';
+import { loadGLTF } from '../core/gltfInline.js';
 
 export const STX_FILE = 'src/assets/vehicles/STX_Scania_DETAILLE.glb';
 
@@ -64,7 +65,7 @@ let gltfP = null;
 export function loadStx() {
   if (!gltfP) {
     gltfP = import('three/addons/loaders/GLTFLoader.js')
-      .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(stxUrl))
+      .then(({ GLTFLoader }) => loadGLTF(new GLTFLoader(), stxUrl))
       .then((gltf) => {
         const missing = NODES.filter((n) => !gltf.scene.getObjectByName(n));
         if (!gltf.scene.getObjectByName('interior_living__Oak') || missing.length) throw new Error(`Modèle STX inattendu (${STX_FILE}) : nœuds absents ${missing.join(', ') || 'interior_living__Oak'}`);

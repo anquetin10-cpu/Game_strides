@@ -10,6 +10,7 @@ import { addCloudShadows } from '../world/sky.js';
 import { cutDoor, lineCab } from './doorCut.js';
 import { buildStxLivery } from './livery.js';
 import masterUrl from '../assets/vehicles/STX_Renault_Master_STALLE5.glb?url';
+import { loadGLTF } from '../core/gltfInline.js';
 
 export const MASTER_FILE = 'src/assets/vehicles/STX_Renault_Master_STALLE5.glb';
 
@@ -53,7 +54,7 @@ let gltfP = null;
 export function loadMaster() {
   if (!gltfP) {
     gltfP = import('three/addons/loaders/GLTFLoader.js')
-      .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(masterUrl))
+      .then(({ GLTFLoader }) => loadGLTF(new GLTFLoader(), masterUrl))
       .then((gltf) => {
         const missing = NODES.filter((n) => !gltf.scene.getObjectByName(n)).concat(CLIPS.filter((c) => !gltf.animations.some((a) => a.name === c)));
         if (missing.length) throw new Error(`Modèle Master inattendu (${MASTER_FILE}) : absents ${missing.join(', ')}`);

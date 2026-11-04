@@ -12,6 +12,7 @@ import { addCloudShadows } from '../world/sky.js';
 import { gradientTexture } from './truck.js';
 import { replaceStridesScreen } from '../world/textures.js';
 import mobileUrl from '../assets/vehicles/Defender110_STRIDES_MOBILE.glb?url';
+import { loadGLTF } from '../core/gltfInline.js';
 
 export const DEFENDER_FILES = {
   full: 'src/assets/vehicles/Defender110_STRIDES.glb',
@@ -67,7 +68,7 @@ export function loadDefender(variant = defenderVariant()) {
       ? import('../assets/vehicles/Defender110_STRIDES.glb?url').then((m) => m.default)
       : Promise.resolve(mobileUrl);
     gltfP = Promise.all([import('three/addons/loaders/GLTFLoader.js'), urlP])
-      .then(([{ GLTFLoader }, url]) => new GLTFLoader().loadAsync(url))
+      .then(([{ GLTFLoader }, url]) => loadGLTF(new GLTFLoader(), url))
       .then((gltf) => {
         const missing = NODES.filter((n) => !gltf.scene.getObjectByName(n)).concat(ACCESSES.flatMap((a) => [`Open_${a}`, `Close_${a}`]).filter((c) => !gltf.animations.some((x) => x.name === c)));
         if (missing.length) throw new Error(`Modèle Defender 110 inattendu (${DEFENDER_FILES[variant]}) : absents ${missing.join(', ')}`);
