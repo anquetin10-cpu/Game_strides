@@ -1,5 +1,5 @@
 // Cheval Tripo (ESSAI, mode développement seulement : `?tripohorse`) : modèle Tripo optimisé et animable
-// (trial/horse_tripo.glb, construit par scripts/real/build-tripo-horse.mjs), piloté par le cheval procédural.
+// (public/real/horse_tripo.glb, construit par scripts/real/build-tripo-horse.mjs), piloté par le cheval procédural.
 //
 // Le modèle porte le squelette du jeu (mêmes 50 os, mêmes noms, rotations de repos nulles) placé dans sa propre
 // anatomie : à chaque image, après l'animation du cheval procédural (masqué mais toujours animé), on recopie les

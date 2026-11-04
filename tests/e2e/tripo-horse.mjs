@@ -1,4 +1,4 @@
-// Essai du cheval Tripo (trial/horse_tripo.glb) dans le jeu, SANS remplacer le cheval actuel (mode développement,
+// Essai du cheval Tripo (public/real/horse_tripo.glb) dans le jeu, SANS remplacer le cheval actuel (mode développement,
 // `?tripohorse` : essai pour la session seulement, réglages et sauvegarde inchangés ; seuls le cheval principal et celui
 // du joueur prennent le modèle d'essai). Rendu logiciel SwiftShader, écran d'iPhone 13 en paysage émulé : pas un essai
 // sur iPhone réel.
@@ -786,7 +786,7 @@ if (RUN.has('E')) {
     const texMB = tex.reduce((a, t) => a + (t.w * t.h * 4 * 4) / 3 / 1048576, 0);
     return { withTripo: tris.pres.auto, classicOnly: tris.pres.jeu, lod, tris, lodTris: R.lods.map((m) => m.geometry.index.count / 3), updMs: +updMs.toFixed(3), far: { lod0: lod.loin.lod[0], lod1: lod.loin.lod[1] }, tex, texMB: +texMB.toFixed(1), heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(0) : null };
   });
-  glbBytes = statSync('trial/horse_tripo.glb').size;
+  glbBytes = statSync('public/real/horse_tripo.glb').size;
   const L = perf.lod, T = perf.tris;
   const lodOk = L.pres.lod[0] && !L.pres.lod[1] && L.avant.lod[0] && !L.avant.lod[1] && !L.apres.lod[0] && L.apres.lod[1] && !L.loin.lod[0] && L.loin.lod[1];
   // Triangles rendus : niveau choisi par le jeu = niveau complet de près, niveau réduit au loin ; écart entre les deux

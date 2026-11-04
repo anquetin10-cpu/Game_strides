@@ -11,11 +11,11 @@
 //      à chaque construction (--brut : textures d'origine) ; WebP (couleur 2048, normales et rugosité 1024) ;
 //   6. GLB : un maillage skinné par niveau de détail, même squelette ; compression meshopt et quantification.
 //
-// Sortie : trial/horse_tripo.glb (hors de public/ : jamais copié dans les versions publiques) et
-// trial/horse_tripo.json (mesures, os, poids, statistiques).
+// Sortie : public/real/horse_tripo.glb (modèle du cheval « Tripo », deuxième cheval de l'écurie) et
+// trial/horse_tripo.json (rapport : mesures, os, poids, statistiques ; hors de public/, non publié).
 // Variante de robe (--robe apercu) : robe assombrie (facteur 0,52 en sRGB) pour se rapprocher de l'aperçu du fournisseur
 // (Apercu_Cheval_HD.png, rendu plus sombre que la texture), balzanes, liste et autres marques blanches conservées. Par
-// défaut : texture d'origine (nettoyée), sans changement de teinte. La variante remplace trial/horse_tripo.glb (le
+// défaut : texture d'origine (nettoyée), sans changement de teinte. La variante remplace public/real/horse_tripo.glb (le
 // fichier versionné est la robe d'origine) ; horse_tripo.json indique la variante construite.
 // Usage : node scripts/real/build-tripo-horse.mjs [--lod0 30000] [--lod1 8000] [--brut] [--robe apercu]
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -229,7 +229,7 @@ const glbCheck = {
 if (glbCheck.skins !== 1 || glbCheck.joints !== BONES.length || glbCheck.lodMeshesSkinned !== 2 || glbCheck.ibmAccessors !== 1 || glbCheck.orphanAccessors) {
   throw new Error(`GLB : peau ou accesseurs inattendus (${JSON.stringify(glbCheck)})`);
 }
-writeFileSync(`${OUT}/horse_tripo.glb`, glb);
+writeFileSync('public/real/horse_tripo.glb', glb);
 const report = {
   source: SRC,
   calibration: { scale: SCALE, offset: OFFSET },

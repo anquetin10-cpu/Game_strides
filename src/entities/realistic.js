@@ -44,12 +44,10 @@ async function loader() {
 }
 // Fichier unique (page claude.ai, qui ne sert pas les .glb) : copie glTF JSON (scripts/real/to-json.mjs).
 const EXT = import.meta.env?.MODE === 'single' ? 'gltf.json' : 'glb';
-// Modèles d'essai (mode développement seulement, jamais copiés dans les versions construites) : trial/.
-const TRIAL = import.meta.env.DEV ? { horse_tripo: 'trial/horse_tripo.glb' } : {};
 // Modèle réaliste (chargé une fois, cloné pour chaque personnage ou cheval).
 export async function loadReal(id) {
   if (!cache[id]) {
-    cache[id] = loader().then(({ l }) => l.loadAsync(new URL(TRIAL[id] || `real/${id}.${EXT}`, document.baseURI).href));
+    cache[id] = loader().then(({ l }) => l.loadAsync(new URL(`real/${id}.${EXT}`, document.baseURI).href));
   }
   const gltf = await cache[id];
   ready[id] = gltf;
