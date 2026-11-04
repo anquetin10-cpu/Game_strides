@@ -44,10 +44,25 @@ async function loader() {
 }
 // Fichier unique (page claude.ai, qui ne sert pas les .glb) : copie glTF JSON (scripts/real/to-json.mjs).
 const EXT = import.meta.env?.MODE === 'single' ? 'gltf.json' : 'glb';
+// État du chargement de chaque modèle (affiché dans les réglages du téléphone : chargé, en cours, indisponible et pourquoi).
+export const realStatus = {};
 // Modèle réaliste (chargé une fois, cloné pour chaque personnage ou cheval).
 export async function loadReal(id) {
   if (!cache[id]) {
-    cache[id] = loader().then(({ l }) => l.loadAsync(new URL(`real/${id}.${EXT}`, document.baseURI).href));
+    const t0 = performance.now();
+    realStatus[id] = { state: 'loading', t0 };
+    cache[id] = loader()
+      .then(({ l }) => l.loadAsync(new URL(`real/${id}.${EXT}`, document.baseURI).href))
+      .then(
+        (gltf) => {
+          realStatus[id] = { state: 'ok', ms: performance.now() - t0 };
+          return gltf;
+        },
+        (e) => {
+          realStatus[id] = { state: 'failed', ms: performance.now() - t0, error: String(e?.message || e?.type || e).slice(0, 160) };
+          throw e;
+        },
+      );
   }
   const gltf = await cache[id];
   ready[id] = gltf;

@@ -248,4 +248,15 @@ export default {
   'Solde : {0}': 'Balance: {0}',
   'Maison Lucette · prêt-à-porter': 'Maison Lucette · ready-to-wear',
   'Commerces fictifs du jeu : rien n’est vendu sur Strides. Les essayages se font en boutique.': 'The game’s fictional shops: nothing is sold on Strides. Fittings are done in store.',
+  // État des modèles 3D (réglages).
+  'cavalière': 'rider (female)',
+  'cavalier': 'rider (male)',
+  'cheval réaliste': 'realistic horse',
+  'chargé': 'loaded',
+  'en cours': 'loading',
+  'indisponible': 'unavailable',
+  'classique (échec du chargement)': 'classic (loading failed)',
+  'réaliste': 'realistic',
+  'classique (réglage)': 'classic (setting)',
+  'État des modèles 3D : personnage {0} · réglage {1}, qualité {2}{3}': '3D models: character {0} · setting {1}, quality {2}{3}',
 };

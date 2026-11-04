@@ -17,6 +17,7 @@ import { renderProHome, renderRequest, requestCard, appToast, isStridesOffer } f
 import { renderActivities } from './activities-app.js';
 import { renderRanking } from './ranking-app.js';
 import { t, T, LANG, euros, switchLang } from '../core/i18n.js';
+import { realStatus } from '../entities/realistic.js';
 
 export class Phone {
   constructor(game, root) {
@@ -868,6 +869,19 @@ export class Phone {
     body.appendChild(seg(t('Aide au saut'), 'jumpAid', [['full', t('Complète')], ['button', t('Bouton seul')], ['off', t('Aucune')]]));
     body.appendChild(seg(t('Tracé au sol (CSO)'), 'courseLine', [[true, t('Affiché')], [false, t('Masqué')]]));
     body.appendChild(h('div.set-credit', { text: t('Modèles réalistes : cheval « Horse » de Henry S (Sketchfab), CC BY 4.0, robe et squelette adaptés ; voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.') }));
+    // État du chargement des modèles 3D sur cet appareil (chargé, en cours, indisponible et pourquoi).
+    {
+      const names = { rider_f: t('cavalière'), rider_m: t('cavalier'), horse: t('cheval réaliste'), horse_tripo: 'Tripo' };
+      const parts = [];
+      for (const [id, st] of Object.entries(realStatus)) {
+        if (!names[id]) continue;
+        const sec = st.ms !== undefined ? ` (${dec(st.ms / 1000)} s)` : ` (${dec((performance.now() - st.t0) / 1000)} s)`;
+        parts.push(`${names[id]} : ${st.state === 'ok' ? t('chargé') : st.state === 'loading' ? t('en cours') : t('indisponible')}${sec}${st.error ? ` — ${st.error}` : ''}`);
+      }
+      const R = g.realism, set = g.save.data.settings;
+      const mode = R ? (R.playerEnabled ? (R.failed ? t('classique (échec du chargement)') : t('réaliste')) : t('classique (réglage)')) : '—';
+      body.appendChild(h('div.set-credit', { 'data-id': 'models-status', text: T`État des modèles 3D : personnage ${mode} · réglage ${set.characters}, qualité ${set.quality}${parts.length ? ' · ' + parts.join(' · ') : ''}` }));
+    }
     // Cheval à l'essai : son modèle est sa robe, il ne dépend pas des réglages ci-dessus (voir realistic.js).
     body.appendChild(h('div.set-credit', { text: t('Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; toujours affiché avec ce modèle, quels que soient les réglages.') }));
     body.appendChild(seg(t('Écoulement du temps'), 'timeScale', [['jeu', t('Jeu · 1 jour = 20 min')], ['reel', t('Réel · 24 h')]]));
