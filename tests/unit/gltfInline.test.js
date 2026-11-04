@@ -63,6 +63,7 @@ function browser() {
   const bitmap = vi.fn(async (blob) => ({ width: 1, height: 1, type: blob.type, size: blob.size, close() {} }));
   vi.stubGlobal('fetch', fetch);
   vi.stubGlobal('createImageBitmap', bitmap);
+  vi.stubGlobal('self', globalThis); // chemin d'origine du GLTFLoader (self.URL)
   return { fetch, bitmap };
 }
 const mapOf = (gltf) => {
@@ -128,12 +129,88 @@ describe('Modèles glTF intégrés (version en un seul fichier)', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('hors version en un seul fichier : chargeur inchangé', async () => {
-    const { inlineData, INLINE } = await load('production');
+  it('image data: non base64 : texture absente, modèle chargé (comme le GLTFLoader)', async () => {
+    const { inlineData } = await load('single');
+    const { bitmap } = browser();
+    const json = triangle({ image: { uri: 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22/%3E' } });
+    json.buffers[0].uri = `data:application/octet-stream;base64,${b64(positions)}`;
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const gltf = await inlineData(new GLTFLoader()).parseAsync(JSON.stringify(json), '');
+    err.mockRestore();
+    let mesh = null;
+    gltf.scene.traverse((o) => o.isMesh && (mesh = o));
+    expect(mesh.geometry.attributes.position.count).toBe(3);
+    expect(mesh.material.map).toBeNull();
+    expect(bitmap).not.toHaveBeenCalled();
+  });
+
+  it('une image pour deux échantillonneurs : décodée une fois, deux textures', async () => {
+    const { inlineData } = await load('single');
+    const { bitmap } = browser();
+    const json = triangle({ image: { uri: `data:image/png;base64,${PNG_1PX}` } });
+    json.buffers[0].uri = `data:application/octet-stream;base64,${b64(positions)}`;
+    json.samplers = [{ wrapS: 33071 }, { wrapS: 10497 }];
+    json.textures = [{ source: 0, sampler: 0 }, { source: 0, sampler: 1 }];
+    json.materials[0].emissiveTexture = { index: 1 };
+    const gltf = await inlineData(new GLTFLoader()).parseAsync(JSON.stringify(json), '');
+    let m = null;
+    gltf.scene.traverse((o) => o.isMesh && (m = o.material));
+    expect(bitmap).toHaveBeenCalledTimes(1);
+    expect(m.map).not.toBe(m.emissiveMap);
+    expect([m.map.wrapS, m.emissiveMap.wrapS]).toEqual([1001, 1000]); // ClampToEdgeWrapping, RepeatWrapping
+  });
+
+  it('navigateur sans createImageBitmap (TextureLoader : <img>, aucun fetch) : images par le chemin du GLTFLoader', async () => {
+    const { inlineData, loadGLTF } = await load('single');
+    const fetch = vi.fn(() => Promise.reject(new TypeError('Failed to fetch (adresse refusée)')));
+    vi.stubGlobal('fetch', fetch);
+    vi.stubGlobal('createImageBitmap', undefined);
+    vi.stubGlobal('self', globalThis);
+    const srcs = [];
+    class Img {
+      constructor() {
+        this.on = {};
+        this.width = this.height = 0;
+      }
+      addEventListener(t, f) {
+        this.on[t] = f;
+      }
+      removeEventListener() {}
+      set src(v) {
+        this._src = v;
+        srcs.push(v.slice(0, 15));
+        setTimeout(() => {
+          this.width = this.height = 1;
+          (this.onload || this.on.load)?.call(this);
+        }, 0);
+      }
+      get src() {
+        return this._src;
+      }
+    }
+    vi.stubGlobal('Image', Img);
+    vi.stubGlobal('document', { createElementNS: () => new Img() });
+    const json = triangle({ image: { uri: `data:image/png;base64,${PNG_1PX}` }, webp: { uri: `data:image/webp;base64,${PNG_1PX}` } });
+    json.buffers[0].uri = `data:application/octet-stream;base64,${b64(positions)}`;
+    const gltf = await inlineData(new GLTFLoader()).parseAsync(JSON.stringify(json), '');
+    expect(mapOf(gltf).image).toBeInstanceOf(Img);
+    expect(mapOf(gltf).userData.mimeType).toBe('image/webp');
+    expect(srcs).toEqual(['data:image/webp', 'data:image/webp']); // test WebP du GLTFLoader, puis la texture
+    const glbGltf = await loadGLTF(new GLTFLoader(), `data:model/gltf-binary;base64,${glb().toString('base64')}`);
+    expect(mapOf(glbGltf).image.src.startsWith('blob:')).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('hors version en un seul fichier : chargeur inchangé, chargement habituel', async () => {
+    const { inlineData, loadGLTF, INLINE } = await load('production');
     const l = new GLTFLoader();
     const n = l.pluginCallbacks.length;
     expect(INLINE).toBe(false);
     expect(inlineData(l)).toBe(l);
     expect(l.pluginCallbacks.length).toBe(n);
+    const loadAsync = vi.spyOn(l, 'loadAsync').mockResolvedValue('ok');
+    const url = `data:model/gltf-binary;base64,${glb().toString('base64')}`;
+    expect(await loadGLTF(l, url)).toBe('ok');
+    expect(loadAsync).toHaveBeenCalledWith(url);
   });
 });
