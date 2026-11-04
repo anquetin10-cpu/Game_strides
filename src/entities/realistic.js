@@ -437,6 +437,7 @@ export class Realism {
 
   // « Réalistes » : toujours ; « Auto » : sauf qualité « Économie » ou cadence trop basse (voir autoFallback).
   get enabled() {
+    if (this.game.safeMode) return false; // mode sûr après un arrêt brutal (voir Game._safeStart)
     const st = this.game.save.data.settings;
     if (st.characters === 'real') return true;
     return st.characters === 'auto' && !this.autoOff && st.quality !== 'low';
@@ -444,6 +445,7 @@ export class Realism {
   // Personnage du joueur : il garde le même modèle pendant toute la partie. La baisse de cadence (autoFallback) ne
   // le change pas — seul un réglage choisi par le joueur (« Modèles 3D », qualité « Économie ») le fait.
   get playerEnabled() {
+    if (this.game.safeMode) return false;
     const st = this.game.save.data.settings;
     if (st.characters === 'real') return true;
     return st.characters === 'auto' && st.quality !== 'low';

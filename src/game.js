@@ -31,6 +31,7 @@ import { Defender } from './entities/defender.js';
 import { DefenderAccess } from './gameplay/defenderAccess.js';
 import { VanLoading } from './gameplay/vanLoading.js';
 import { Online, boardById } from './core/online.js';
+import { startCrashGuard } from './core/crashGuard.js';
 import { FollowCamera } from './entities/camera.js';
 import { Player } from './gameplay/player.js';
 import { Interactions } from './gameplay/interact.js';
@@ -103,6 +104,10 @@ export class Game {
 
   async boot() {
     const d = this.save.load();
+    // Arrêt brutal au lancement précédent (page arrêtée par le système, mémoire de l'iPhone dépassée, voir
+    // crashGuard.js) : démarrage en mode sûr, pour ne pas s'arrêter de nouveau au même endroit.
+    this.crash = startCrashGuard();
+    if (this.crash.crashes) this._safeStart(d);
     // Connexion en arrière-plan : le jeu démarre sans l'attendre.
     this.online.init();
     document.body.classList.toggle('desktop', !IS_TOUCH);
@@ -121,7 +126,7 @@ export class Game {
     this.uiRoot = document.getElementById('ui');
     this.screens = new Screens(this, this.uiRoot);
     this.screens.showLoading();
-    this.applyQuality(d.settings.quality, true);
+    this.applyQuality(this.safeMode ? 'low' : d.settings.quality, true);
     this.resize();
     window.addEventListener('resize', () => this.resize());
     // iOS : sauvegarde à la mise en arrière-plan, rechargement si le contexte WebGL est perdu.
@@ -1186,6 +1191,19 @@ export class Game {
     });
   }
 
+  // Mode sûr après un arrêt brutal. Cheval qui a son propre modèle 3D (Tripo, à l'essai) : Comète resellée (choix
+  // enregistré). Sinon, ou au deuxième arrêt de suite : cette partie seulement, sans modèles réalistes et en qualité
+  // Économie (réglages du joueur inchangés, rétablis au lancement suivant).
+  _safeStart(d) {
+    const own = HORSES[activeHorseId(d)]?.model ? HORSES[d.activeHorse] : null;
+    if (own) d.activeHorse = 'comete';
+    if (!own || this.crash.crashes >= 2) this.safeMode = true;
+    this._safeNote = own
+      ? T`Le jeu s’est arrêté brutalement au dernier lancement (mémoire de l’appareil). ${own.name} a été remplacé par Comète.`
+      : t('Le jeu s’est arrêté brutalement au dernier lancement (mémoire de l’appareil) : modèles 3D allégés pour cette partie.');
+    if (own && this.safeMode) this._safeNote += ` ${t('Modèles 3D allégés pour cette partie.')}`;
+  }
+
   startGame(isNew, cfg = null) {
     this.audio.unlock();
     this.audio.setEnabled(this.save.data.settings.sound);
@@ -1223,6 +1241,8 @@ export class Game {
     if (this.truckModelInfo?.error) this.hud.toast(t('Camion STX détaillé non chargé : camion de secours affiché.'));
     if (this.vanModelInfo?.error) this.hud.toast(t('Van STX Renault Master non chargé : modèle introuvable ou incomplet.'));
     if (this.defenderModelInfo?.error) this.hud.toast(t('Defender 110 non chargé : modèle introuvable ou incomplet.'));
+    if (this._safeNote) this.hud.toast(this._safeNote);
+    this._safeNote = null;
     buildStableUpgrades(this);
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);
