@@ -882,8 +882,8 @@ export class Phone {
       const mode = R ? (R.playerEnabled ? (R.failed ? t('classique (échec du chargement)') : t('réaliste')) : t('classique (réglage)')) : '—';
       body.appendChild(h('div.set-credit', { 'data-id': 'models-status', text: T`État des modèles 3D : personnage ${mode} · réglage ${set.characters}, qualité ${set.quality}${parts.length ? ' · ' + parts.join(' · ') : ''}` }));
     }
-    // Cheval à l'essai : son modèle est sa robe, il ne dépend pas des réglages ci-dessus (voir realistic.js).
-    body.appendChild(h('div.set-credit', { text: t('Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; toujours affiché avec ce modèle, quels que soient les réglages.') }));
+    // Cheval à l'essai : son modèle est sa robe, il ne dépend pas des réglages ci-dessus, sauf la qualité Économie (voir realistic.js).
+    body.appendChild(h('div.set-credit', { text: t('Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; affiché avec ce modèle quels que soient les réglages des modèles 3D, sauf en qualité Économie.') }));
     body.appendChild(seg(t('Écoulement du temps'), 'timeScale', [['jeu', t('Jeu · 1 jour = 20 min')], ['reel', t('Réel · 24 h')]]));
     body.appendChild(seg(t('Sensibilité caméra'), 'camSens', [[0.7, t('Douce')], [1, t('Normale')], [1.4, t('Rapide')]], (v) => (g.cam.sens = v)));
     // Sauvegarde : copie à conserver soi-même (texte) et restauration depuis une copie ou une copie de secours.

@@ -10,8 +10,8 @@ export const HORSES = {
   onyx: { id: 'onyx', name: 'Onyx', coat: 'black', blaze: false, socks: [true, false, false, false], speed: 1.13, jump: 1.06, stamina: 1.0, price: 3200, value: 45000, breed: 'KWPN', age: 8, desc: t('Étalon noir explosif. Une fusée sur le plat.') },
   saphir: { id: 'saphir', name: 'Saphir', coat: 'chestnut', blaze: true, socks: [true, true, true, true], speed: 1.1, jump: 1.24, stamina: 1.2, price: 5500, value: 150000, breed: 'Holsteiner', age: 10, desc: t('Jument alezane, gagnante en Grand Prix. La crème.') },
   // Cheval à l'essai (trial) : à l'écurie de toutes les parties sans être écrit dans la sauvegarde (voir ownedHorses),
-  // ni loué ni vendu ; mêmes aptitudes que Comète pour une comparaison juste. model : modèle 3D qui l'affiche toujours
-  // (public/real/horse_tripo.glb, piloté par TripoHorse, voir realistic.js). Robe du cheval du jeu (masqué sous le
+  // ni loué ni vendu ; mêmes aptitudes que Comète pour une comparaison juste. model : modèle 3D qui l'affiche (sauf en
+  // qualité Économie et en mode sûr ; public/real/horse_tripo.glb, piloté par TripoHorse, voir realistic.js). Robe du cheval du jeu (masqué sous le
   // modèle, ou affiché si le modèle ne se charge pas) au plus près de la texture du modèle : alezan clair, liste,
   // quatre balzanes basses.
   tripo: {

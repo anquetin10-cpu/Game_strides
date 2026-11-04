@@ -220,7 +220,7 @@ export default {
   Affiché: 'Shown',
   Masqué: 'Hidden',
   'Modèles réalistes : cheval « Horse » de Henry S (Sketchfab), CC BY 4.0, robe et squelette adaptés ; voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.': 'Realistic models: “Horse” by Henry S (Sketchfab), CC BY 4.0, coat and rig adapted; cars by PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 and supercarmodels (Sketchfab), CC BY 4.0, logos removed; MakeHuman characters, CC0.',
-  'Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; toujours affiché avec ce modèle, quels que soient les réglages.': 'Tripo, the horse on trial: model generated with Tripo AI, supplied by the project owner, skeleton and textures adapted; always shown with this model, whatever the settings.',
+  'Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; affiché avec ce modèle quels que soient les réglages des modèles 3D, sauf en qualité Économie.': 'Tripo, the horse on trial: model generated with Tripo AI, supplied by the project owner, skeleton and textures adapted; shown with this model whatever the 3D model settings, except in Saver quality.',
   'Écoulement du temps': 'Passage of time',
   'Jeu · 1 jour = 20 min': 'Game · 1 day = 20 min',
   'Réel · 24 h': 'Real · 24 h',

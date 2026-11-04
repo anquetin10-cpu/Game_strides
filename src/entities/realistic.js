@@ -530,7 +530,8 @@ export class Realism {
   }
 
   // Retire les modèles des chevaux, sauf ceux des chevaux qui ont leur propre modèle (def.model) : il est leur
-  // apparence, aucun réglage ne le retire (pas d'image intermédiaire avec le cheval du jeu).
+  // apparence, les réglages des modèles ne le retirent pas (pas d'image intermédiaire avec le cheval du jeu) ; seuls la
+  // qualité « Économie » et le mode sûr le font (voir ownAllowed).
   _dropHorses() {
     for (const [h, r] of this.horses) {
       if (this.ownAllowed && h.def?.model && r.constructor === this.models[h.def.model]?.cls) continue;
@@ -634,10 +635,14 @@ export class Realism {
   update() {
     const trial = import.meta.env.DEV ? this.trial : null;
     const g = this.game, P = g.player;
-    // Chevaux qui ont leur propre modèle (def.model, cheval à l'essai) : toujours affichés avec lui, quels que soient les
-    // réglages « Modèles 3D » et « Chevaux 3D », la qualité ou la baisse de cadence (Auto) ; essai : chevaux du joueur.
+    // Chevaux qui ont leur propre modèle (def.model, cheval à l'essai) : affichés avec lui quels que soient les réglages
+    // « Modèles 3D » et « Chevaux 3D » ou la baisse de cadence (Auto), sauf en qualité « Économie » et en mode sûr
+    // (voir ownAllowed) ; essai : chevaux du joueur.
     const own = this.ownAllowed ? g.horses.filter((h) => h.def?.model) : [];
-    if (!this.playerEnabled && !trial && !own.length && !this.horses.size) return;
+    if (!this.playerEnabled && !trial && !own.length && !this.horses.size) {
+      this._releaseOwn(); // modèle propre arrivé après le départ de son dernier cheval
+      return;
+    }
     const lead = [g.mainHorse, P?.horse].filter((h) => h && g.horses.includes(h));
     if (import.meta.env.DEV && trial) for (const h of lead) if (!own.includes(h)) own.push(h);
     if (!this.enabled || !this.playerEnabled) {
@@ -693,8 +698,10 @@ export class Realism {
     this._releaseOwn();
   }
 
-  // Modèle propre qu'aucun cheval n'affiche ni n'attend plus : rendu à la mémoire (voir releaseReal).
+  // Modèle propre qu'aucun cheval n'affiche ni n'attend plus : rendu à la mémoire (voir releaseReal). Appareils
+  // tactiles seulement (mémoire limitée) ; ailleurs il reste chargé et revient sans image intermédiaire.
   _releaseOwn() {
+    if (!TOUCH) return;
     for (const m of Object.values(this.models)) {
       if (!m.cls) continue;
       const used = [...this.horses.values()].some((r) => r.constructor === m.cls) || this.game.horses.some((h) => this._modelOf(h) === m);
