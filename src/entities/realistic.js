@@ -48,6 +48,36 @@ async function loader() {
 const EXT = import.meta.env?.MODE === 'single' ? 'gltf.json' : 'glb';
 // État du chargement de chaque modèle (affiché dans les réglages du téléphone : chargé, en cours, indisponible et pourquoi).
 export const realStatus = {};
+// Téléphones et tablettes (mémoire limitée : sur iPhone, Safari arrête la page qui la dépasse) : textures de certains
+// modèles réduites au chargement, avant leur envoi à la carte graphique (côté en pixels : couleur, autres cartes).
+// Cheval Tripo : 2048 → 1024 (couleur), 1024 → 512 (normales, rugosité) ; environ 24 Mo de moins sur la carte
+// graphique et autant d'images décodées libérées.
+const TOUCH = typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in globalThis);
+const SHRINK = { horse_tripo: { map: 1024, other: 512 } };
+function shrinkTextures(gltf, { map, other }) {
+  const done = new Set();
+  gltf.scene.traverse((o) => {
+    for (const m of [].concat(o.material || [])) {
+      for (const [k, tex] of Object.entries(m)) {
+        if (!tex?.isTexture || done.has(tex.source)) continue;
+        done.add(tex.source);
+        const img = tex.image, max = k === 'map' ? map : other;
+        if (!img?.width || Math.max(img.width, img.height) <= max) continue;
+        const s = max / Math.max(img.width, img.height);
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        const cx = c.getContext('2d');
+        if (!cx) continue;
+        cx.imageSmoothingQuality = 'high';
+        cx.drawImage(img, 0, 0, c.width, c.height);
+        img.close?.(); // image décodée d'origine libérée (ImageBitmap)
+        tex.image = c;
+        tex.needsUpdate = true;
+      }
+    }
+  });
+}
 // Modèle réaliste (chargé une fois, cloné pour chaque personnage ou cheval).
 export async function loadReal(id) {
   if (!cache[id]) {
@@ -57,6 +87,7 @@ export async function loadReal(id) {
       .then(({ l }) => l.loadAsync(new URL(`real/${id}.${EXT}`, document.baseURI).href))
       .then(
         (gltf) => {
+          if (TOUCH && SHRINK[id]) shrinkTextures(gltf, SHRINK[id]);
           realStatus[id] = { state: 'ok', ms: performance.now() - t0 };
           return gltf;
         },
@@ -67,6 +98,7 @@ export async function loadReal(id) {
       );
   }
   const gltf = await cache[id];
+  if (gltf.userData.released) return loadReal(id); // libéré entre-temps (voir releaseReal) : rechargé
   ready[id] = gltf;
   const { clone } = await loader();
   return clone(gltf.scene);
@@ -75,6 +107,30 @@ export async function loadReal(id) {
 export function realNow(id) {
   const g = ready[id];
   return g && cloneFn ? cloneFn(g.scene) : null;
+}
+// Modèle qui n'est plus affiché nulle part (cheval Tripo quand Comète est resellée) : géométries, matériaux et
+// textures rendus (carte graphique et images décodées) ; rechargé s'il revient.
+export function releaseReal(id) {
+  const gltf = ready[id];
+  if (!gltf) return;
+  gltf.userData.released = true;
+  delete ready[id];
+  delete cache[id];
+  delete realStatus[id];
+  const seen = new Set();
+  gltf.scene.traverse((o) => {
+    o.geometry?.dispose();
+    o.skeleton?.dispose();
+    for (const m of [].concat(o.material || [])) {
+      for (const tex of Object.values(m)) {
+        if (!tex?.isTexture || seen.has(tex)) continue;
+        seen.add(tex);
+        tex.dispose();
+        tex.image?.close?.();
+      }
+      m.dispose();
+    }
+  });
 }
 
 const _q = new THREE.Quaternion();
@@ -423,13 +479,18 @@ export class Realism {
   _modelOf(h) {
     const g = this.game;
     const trial = import.meta.env.DEV ? this.trial : null;
-    const id = h.def?.model || (trial && (h === g.mainHorse || h === g.player?.horse) ? trial.id : null);
+    const id = (this.ownAllowed && h.def?.model) || (trial && (h === g.mainHorse || h === g.player?.horse) ? trial.id : null);
     return id ? this._model(id) : null;
+  }
+  // Modèles propres des chevaux : retirés (cheval du jeu affiché) en qualité « Économie » et en mode sûr après un
+  // arrêt brutal (voir Game._safeStart) ; les autres réglages ne les retirent pas.
+  get ownAllowed() {
+    return !this.game.safeMode && this.game.save.data.settings.quality !== 'low';
   }
 
   // Préchargement (écran de chargement) des modèles propres des chevaux présents : la première image les montre déjà.
   async preloadHorses(timeoutMs = 12000) {
-    const ids = [...new Set(this.game.horses.map((h) => h.def?.model).filter(Boolean))];
+    const ids = this.ownAllowed ? [...new Set(this.game.horses.map((h) => h.def?.model).filter(Boolean))] : [];
     if (!ids.length) return;
     const all = ids.map((id) => Promise.all([this._model(id).loading, loadReal(id)]));
     await Promise.race([Promise.all(all).catch(() => null), new Promise((r) => setTimeout(r, timeoutMs))]);
@@ -472,10 +533,11 @@ export class Realism {
   // apparence, aucun réglage ne le retire (pas d'image intermédiaire avec le cheval du jeu).
   _dropHorses() {
     for (const [h, r] of this.horses) {
-      if (h.def?.model && r.constructor === this.models[h.def.model]?.cls) continue;
+      if (this.ownAllowed && h.def?.model && r.constructor === this.models[h.def.model]?.cls) continue;
       r.dispose();
       this.horses.delete(h);
     }
+    this._releaseOwn();
   }
 
   // Préchargement du modèle du joueur (écran de chargement) : la première image montre déjà le bon personnage.
@@ -574,7 +636,7 @@ export class Realism {
     const g = this.game, P = g.player;
     // Chevaux qui ont leur propre modèle (def.model, cheval à l'essai) : toujours affichés avec lui, quels que soient les
     // réglages « Modèles 3D » et « Chevaux 3D », la qualité ou la baisse de cadence (Auto) ; essai : chevaux du joueur.
-    const own = g.horses.filter((h) => h.def?.model);
+    const own = this.ownAllowed ? g.horses.filter((h) => h.def?.model) : [];
     if (!this.playerEnabled && !trial && !own.length && !this.horses.size) return;
     const lead = [g.mainHorse, P?.horse].filter((h) => h && g.horses.includes(h));
     if (import.meta.env.DEV && trial) for (const h of lead) if (!own.includes(h)) own.push(h);
@@ -628,6 +690,16 @@ export class Realism {
       }
       return m ? new m.cls(h, root) : new RealHorse(h, root);
     });
+    this._releaseOwn();
+  }
+
+  // Modèle propre qu'aucun cheval n'affiche ni n'attend plus : rendu à la mémoire (voir releaseReal).
+  _releaseOwn() {
+    for (const m of Object.values(this.models)) {
+      if (!m.cls) continue;
+      const used = [...this.horses.values()].some((r) => r.constructor === m.cls) || this.game.horses.some((h) => this._modelOf(h) === m);
+      if (!used) releaseReal(m.id);
+    }
   }
 
   _syncBodies(want) {

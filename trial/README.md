@@ -21,8 +21,16 @@ le rapport de la dernière construction du cheval Tripo : mesures, os, poids, r�
 - **Affichage.**
   - Le cheval dont la définition porte `model: 'horse_tripo'` est toujours montré avec ce modèle, quels que soient
     les réglages d'affichage (`src/entities/realistic.js`, `src/entities/tripoHorse.js`).
+  - Exceptions : qualité « Économie » et mode sûr (ci-dessous) ; le cheval du jeu est alors affiché.
   - Le filet et les rênes n'apparaissent que lorsqu'il est monté.
   - En mode développement, `?tripohorse` met aussi le modèle sur le cheval principal, pour l'essai technique.
+- **Mémoire (iPhone).** Sur un appareil tactile, les textures du modèle sont réduites au chargement : couleur 1024,
+  normales et rugosité 512. Le Tripo ajoute alors environ 9 Mo de textures au lieu de 34. Quand plus aucun cheval ne
+  l'affiche (Comète resellée), le modèle est libéré (`releaseReal`, `src/entities/realistic.js`).
+- **Arrêt brutal.** Si Safari arrête la page (« Un problème récurrent est survenu »), le lancement suivant démarre en
+  mode sûr (`src/core/crashGuard.js`, `Game._safeStart`) :
+  - Tripo sellé : Comète est resellée ;
+  - sinon, ou au deuxième arrêt de suite : partie sans modèles réalistes, en qualité Économie, pour cette session.
 - **Tests.**
   - `BASE=http://127.0.0.1:5173 node tests/e2e/tripo-stable.mjs` : écurie, sauvegardes, filet.
   - `BASE=http://127.0.0.1:5173 node tests/e2e/tripo-horse.mjs [--only=A,B,C,D,E]` : allures, sauts, CSO, filet.

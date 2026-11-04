@@ -397,5 +397,8 @@ export class TripoHorse {
     this.root.parent?.remove(this.root);
     this.setActive(false);
     this.root.visible = false;
+    // Squelettes propres à ce clone (textures d'os sur la carte graphique) ; géométries, matériaux et textures sont
+    // partagés avec le modèle chargé (rendus par releaseReal quand plus aucun cheval ne l'affiche).
+    for (const m of [...this.lods, ...this.bridle]) m?.skeleton?.dispose();
   }
 }
