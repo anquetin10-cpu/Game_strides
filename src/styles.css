@@ -142,6 +142,10 @@ body.desktop .joy-base { display: none; }
   background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .objective.off { display: none; }
+/* Objectif d'attente : plus discret qu'une consigne de mission, touchable (ouvre Strides). */
+.objective.idle { pointer-events: auto; cursor: pointer; padding: 5px 11px 6px; opacity: .9; }
+.objective.idle .text { font-size: 12.5px; -webkit-line-clamp: 1; }
+.objective.idle .tag { color: var(--st-gold); }
 .objective, .hint { transition: opacity .25s; }
 .hud.big-on .objective, .hud.big-on .hint, .hud.big-on .wallet { opacity: 0; }
 .objective.changed { animation: objIn .6s ease-out; }
@@ -164,6 +168,10 @@ body.desktop .joy-base { display: none; }
 .gear { font: 600 36px/0.9 var(--display); letter-spacing: -.04em; width: 30px; text-align: center; }
 .tele-col { display: flex; flex-direction: column; gap: 5px; min-width: 136px; }
 .telemetry.drive .tele-col { min-width: 144px; }
+/* À cheval : bandeau bas et étroit (la piste et les obstacles devant le cheval restent visibles). */
+.telemetry.ride { padding: 5px 11px; gap: 9px; background: rgba(15, 15, 14, .42); }
+.telemetry.ride .gear { font-size: 26px; width: 24px; }
+.telemetry.ride .tele-col { min-width: 112px; gap: 4px; }
 .tele-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .gait-name { font: 500 10px/1 var(--mono); letter-spacing: .08em; color: var(--muted); }
 .speed { font: 600 18px/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -262,6 +270,10 @@ body.desktop .joy-base { display: none; }
 .btn-action2 { right: 12px; bottom: 12px; width: 70px; height: 70px; }
 .btn-action2 span { max-width: 62px; font-size: 8.5px; letter-spacing: .02em; text-align: center; line-height: 1.1; }
 .btn-whistle svg { width: 20px; height: 20px; margin: 0 auto; }
+/* Accessibilité au toucher : libellés des actions contextuelles lisibles (le groupe est réduit à 88 % sur iPhone en
+   paysage), zone tactile du sifflet élargie sans changer son dessin ni sa place (au moins 44 px une fois réduit). */
+.btn-action span, .btn-action2 span { font-size: 9.5px; font-weight: 700; letter-spacing: .01em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.btn-whistle::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; }
 .btn-round.hide { opacity: 0; transform: scale(.6); pointer-events: none; transition: opacity .15s, transform .15s; }
 
 /* Notification iOS */

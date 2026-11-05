@@ -66,6 +66,8 @@ export class HUD {
     this.objTimer = h('div.timer.tab-num.hidden');
     this.objMain = h('div.obj-main', {}, this.objTag, this.objText, this.objSub);
     this.objEl = h('div.objective.off', {}, this.objMain, this.objTimer);
+    // Objectif d'attente (aucune mission en cours) : un toucher ouvre l'application indiquée (Strides).
+    tap(this.objEl, () => this._objApp && g.phone?.open(this._objApp));
     this.hintEl = h('div.hint.off');
     this.toastsEl = h('div.toasts');
     // Tableau du parcours de CSO : chrono au centième, temps accordé, pénalités, obstacle suivant.
@@ -183,6 +185,8 @@ export class HUD {
     }
     // Appelé à chaque image : n'écrire dans le DOM que ce qui change.
     const set = (el, v) => el.textContent !== v && (el.textContent = v);
+    this._objApp = o.app || null;
+    this.objEl.classList.toggle('idle', !!o.idle);
     set(this.objTag, o.tag || '');
     const text = o.text || '';
     if (this.objText.textContent !== text) {
@@ -243,6 +247,8 @@ export class HUD {
     // Télémétrie.
     if (mode === 'ride' || mode === 'drive') {
       this.teleEl.classList.remove('hidden');
+      // À cheval : bandeau compact (allure, vitesse, endurance) pour dégager la piste devant le cheval.
+      this.teleEl.classList.toggle('ride', mode === 'ride');
       const sp = Math.abs(p.speed) * 3.6;
       this.speedEl.innerHTML = `${Math.round(sp)}<small>km/h</small>`;
       if (mode === 'ride') {
@@ -272,7 +278,8 @@ export class HUD {
           this._hrT = 0.5;
           const bpm = Math.round(cond.hr);
           this.hrVal.textContent = String(bpm);
-          this.hrEl.classList.remove('hidden');
+          // Fréquence cardiaque : affichée seulement à l'effort (au-delà de 120 bpm), utile pour doser le galop.
+          this.hrEl.classList.toggle('hidden', bpm <= 120);
           this.hrEl.classList.toggle('high', bpm > 180);
           this.hrEl.style.setProperty('--beat', `${(60 / bpm).toFixed(2)}s`);
         }

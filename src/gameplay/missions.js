@@ -654,6 +654,9 @@ export class MissionManager {
         this.timer = 55 + Math.random() * 35;
         this.refreshOffers(true);
       }
+      // Sans mission en cours : prochaine étape discrète (missions disponibles sur Strides), touchée → application.
+      const n = g.course ? 0 : this.offers.filter((o) => !o.locked).length;
+      g.hud.setObjective(n ? { tag: t('Prochaine étape · touche pour ouvrir'), text: n > 1 ? T`${n} missions t’attendent sur Strides` : t('Une mission t’attend sur Strides'), idle: true, app: 'strides' } : null);
     }
   }
 }
