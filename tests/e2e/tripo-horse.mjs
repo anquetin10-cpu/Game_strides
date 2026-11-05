@@ -490,7 +490,7 @@ const frame = async (dir, view = [4.2, 1.5, 0.2, 1.15, 0.2]) => {
 const video = (dir, crf = 22) => execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', '15', '-i', `${OUT}/${dir}/%05d.jpg`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', String(crf), '-movflags', '+faststart', `${OUT}/${dir}.mp4`]);
 const shot = async (dir, name) => page.screenshot({ path: `${OUT}/${dir}/${name}.jpg`, type: 'jpeg', quality: 88 });
 
-// ---------- A. Vues au repos (cheval principal dessellé), trois modèles dans la même pose ----------
+// ---------- A. Vues au repos (cheval principal dessellé), Tripo et cheval du jeu dans la même pose ----------
 let vueRes = null, rest = null;
 if (RUN.has('A')) {
   const VUES = { 'profil-gauche': [4.6, 1.5, 0.2, 1.15, 0.2], 'profil-droit': [-4.6, 1.5, 0.2, 1.15, 0.2], face: [0.0, 1.55, 4.8, 1.2, 0.3], 'trois-quarts-avant': [3.4, 1.7, 3.2, 1.15, 0.3], 'trois-quarts-arriere': [3.0, 1.8, -3.6, 1.1, -0.2], tete: [1.3, 1.85, 2.1, 1.75, 1.3] };
@@ -523,7 +523,7 @@ if (RUN.has('A')) {
   vueRes = {};
   for (const m of ['tripo', 'classique']) {
     const d = await setModel(m);
-    // Même pose pour les trois modèles : pose du cheval du jeu relevée au premier modèle, remise avant chaque vue.
+    // Même pose pour les deux modèles : pose du cheval du jeu relevée au premier modèle, remise avant chaque vue.
     const pose = await E((first) => {
       const g = window.__game, h = g.mainHorse;
       if (first) window.__pose = Object.values(h.bones).map((b) => [b, b.position.clone(), b.quaternion.clone(), b.scale.clone()]);

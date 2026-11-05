@@ -92,7 +92,9 @@ check('départ : modèles réalistes retirés', near.gone);
 await step(() => { const g = window.__game, p = g.player; g.mainHorse.setPosition(p.human.pos.x + 1.5, p.human.pos.z, 0); window.__auto.tick(2); p.mount(); });
 await tick(10);
 s = await state();
-check('à cheval : modèle réaliste suivi, casque', s.real && s.kind === 'ride' && s.helmet, JSON.stringify(s));
+// Tenue décrite par l'objet de tenue du personnage (outfitKind, JSON) : casque mis à cheval, retiré à pied.
+const outfitOf = (s) => JSON.parse(s.kind || '{}');
+check('à cheval : modèle réaliste suivi, casque', s.real && !!outfitOf(s).helmet && s.helmet, JSON.stringify(s));
 const gal = await step(() => {
   const g = window.__game, h = g.mainHorse;
   for (let i = 0; i < 120; i++) {
@@ -108,7 +110,7 @@ check('à cheval : toujours réaliste après les allures, cheval du jeu', s.real
 await step(() => window.__game.player.dismount());
 await tick(10);
 s = await state();
-check('pied à terre : réaliste, tenue de travail', s.real && s.kind === 'work', JSON.stringify(s));
+check('pied à terre : réaliste, casque retiré', s.real && !outfitOf(s).helmet && !s.helmet, JSON.stringify(s));
 
 // Au volant : le personnage entre dans le véhicule et en ressort sans erreur.
 const drove = await step(() => {
@@ -164,7 +166,8 @@ const carBack = await step(() => {
 });
 check('retour au classique : voiture classique', carBack.cars === 0 && !carBack.realWheels && carBack.layer === 1, JSON.stringify(carBack));
 
-// « Auto » : cadence trop basse (résolution déjà au minimum) → retour aux modèles classiques.
+// « Auto » : cadence trop basse (résolution déjà au minimum) → les autres personnes repassent en classique ; le joueur
+// garde son modèle pendant toute la partie (même visage, voir Realism.autoFallback).
 const fb = await step(async () => {
   const g = window.__game;
   g.realism.set('auto');
@@ -177,9 +180,9 @@ const fb = await step(async () => {
   g._fpsAcc = { t: 0, n: 0 };
   for (let i = 0; i < 31; i++) g._adapt(0.1); // 10 i/s pendant 3 s
   window.__auto.tick(2);
-  return { before, after: !!g.realism.body, horses: g.realism.horses.size, layer: g.player.human.mesh.layers.mask };
+  return { before, after: !!g.realism.body, autoOff: g.realism.autoOff, bodies: g.realism.bodies.size, horses: g.realism.horses.size, layer: g.player.human.mesh.layers.mask };
 });
-check('Auto : cadence basse → modèles classiques', fb.before && !fb.after && fb.horses === 0 && fb.layer === 1, JSON.stringify(fb));
+check('Auto : cadence basse → seul le joueur reste réaliste', fb.before && fb.after && fb.autoOff && fb.bodies === 1 && fb.horses === 0 && fb.layer === 2 ** 31, JSON.stringify(fb));
 
 check('aucune erreur', errors.length === 0, errors.slice(0, 3).join(' | '));
 await b.close();
