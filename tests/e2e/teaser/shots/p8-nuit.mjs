@@ -8,6 +8,8 @@ const HOUR = +(process.env.HOUR || 22.2);
 const NAME = process.env.NAME || 'p8-nuit';
 const N = 96;
 const s = await open({ hour: HOUR });
+// Teaser : pas de poussière de nuit (elle forme des carrés sombres à l'image).
+await s.ev(() => { const g = window.__game, em = g.particles.emit.bind(g.particles); g.particles.emit = (k, ...r) => (['sand', 'mud', 'spray'].includes(k) ? undefined : em(k, ...r)); });
 const setup = await s.ev((HOUR) => {
   const g = window.__game, A = window.__auto, C = window.__cine;
   C.lockHour = HOUR;

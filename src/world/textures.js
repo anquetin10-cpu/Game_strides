@@ -263,8 +263,12 @@ export function bannerTexture() {
   ctx.fillStyle = GOLD;
   ctx.fillRect(400, 0, 10, 128);
   ctx.fillStyle = INK;
-  ctx.font = `600 46px ${FONT_DISPLAY}`;
-  ctx.fillText(t('La plateforme des pros du cheval'), 436, 80);
+  // Accroche ajustée à la place disponible (en français comme en anglais) : sinon la fin est coupée sur les panneaux.
+  const line = t('La plateforme des pros du cheval'), room = 1024 - 436 - 28;
+  let px = 46;
+  ctx.font = `600 ${px}px ${FONT_DISPLAY}`;
+  while (px > 26 && ctx.measureText(line).width > room) ctx.font = `600 ${(px -= 2)}px ${FONT_DISPLAY}`;
+  ctx.fillText(line, 436, 64 + px * 0.35);
   const tex = toTexture(cv, true);
   cache.set('banner', tex);
   return tex;

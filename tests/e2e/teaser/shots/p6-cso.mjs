@@ -61,6 +61,8 @@ const P = {
 };
 
 const s = await open({ hour: HOUR });
+// Teaser : sable projeté allégé (une projection sur trois, une particule) ; les bouffées du jeu ressemblent à de la fumée.
+await s.ev(() => { const g = window.__game, em = g.particles.emit.bind(g.particles); let n = 0; g.particles.emit = (k, x, y, z, c, vx, vz) => (k === 'sand' ? (n++ % 3 === 0 ? em(k, x, y, z, 1, vx, vz) : undefined) : em(k, x, y, z, c, vx, vz)); });
 const info = await s.ev(([h0, P]) => {
   const C = window.__cine, g = window.__game, A = window.__auto;
   C.lockHour = h0;

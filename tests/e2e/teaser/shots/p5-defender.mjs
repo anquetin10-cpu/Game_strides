@@ -58,6 +58,8 @@ const P = JSON.parse(E.P || '[2.4, -10.5, 3.4, -4.4, 1.35, 1.05, 1.6, 0.4, 0.95,
 const MOVE = JSON.parse(E.MOVE || '[[66.2, -260, 66.2, -289]]');
 
 const s = await open({ hour: HOUR });
+// Teaser : marques non autorisées masquées (inscriptions SCANIA et STX du camion, DEFENDER et badges 110 du 4×4).
+await s.ev(() => window.__game.scene.traverse((o) => { if (/Scania_lettering|STX_capucine|DEFENDER_|Badge_110/.test(o.name)) o.visible = false; }));
 const info = await s.ev(async ([HOUR, ROAD, S0, DIR, V, P, MOVE]) => {
   const g = window.__game, A = window.__auto, C = window.__cine;
   const { ROADS } = await import('/src/world/layout.js');

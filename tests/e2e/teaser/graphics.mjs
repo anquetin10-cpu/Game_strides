@@ -21,7 +21,7 @@ export const CAPTIONS = [
   ['cap-p5', 'En route', 'Prends le volant'],
   ['cap-p6', 'Pôle International', 'Saute en concours'],
   ['cap-p6b', 'Paris Indoor', 'Vise le Grand Prix'],
-  ['cap-p7', 'Application intégrée', 'Tes missions arrivent sur Strides'],
+  ['cap-p7', 'Application intégrée', 'Tes missions sur Strides'],
   ['cap-p8', 'Rythme de vie', 'La vie d’écurie, jour et nuit'],
 ];
 
@@ -58,8 +58,9 @@ const end = page(
      <div class="bar"></div>
      <div class="tag mono">Le monde équestre en monde ouvert</div>
      <div class="with"><span>Avec l’application</span><img src="${logo}"><span>intégrée</span></div>
-     <div class="play">Jouable sur iPhone, dans le navigateur</div>
-   </div>`,
+     <div class="play">Jouable dans le navigateur, sur iPhone comme sur ordinateur</div>
+   </div>
+   <div class="note mono">Images du jeu en cours de développement</div>`,
   `.c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
    .title { font-size: 150px; letter-spacing: .06em; line-height: 1; }
    .title .l { font-weight: 300; } .title .b { font-weight: 700; }
@@ -67,7 +68,8 @@ const end = page(
    .tag { font-size: 30px; letter-spacing: .36em; text-transform: uppercase; color: #efeae0; padding-left: .36em; }
    .with { display: flex; align-items: center; gap: 22px; margin-top: 110px; font-size: 34px; color: #c8c3b5; }
    .with img { height: 54px; filter: invert(1) brightness(.98) sepia(.08); }
-   .play { margin-top: 28px; font-size: 28px; color: #b5b0a2; letter-spacing: .02em; }`,
+   .play { margin-top: 28px; font-size: 28px; color: #b5b0a2; letter-spacing: .02em; }
+   .note { position: absolute; left: 0; right: 0; bottom: 54px; text-align: center; font-size: 18px; letter-spacing: .18em; text-transform: uppercase; color: #7d796f; }`,
   'radial-gradient(ellipse at 50% 42%, #23221f 0%, #0f0f0e 62%)',
 );
 
