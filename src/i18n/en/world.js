@@ -123,7 +123,6 @@ export default {
   'SUV 4x4': '4x4 SUV',
   'Tracteur': 'Tractor',
   'Modèles classiques pour garder la fluidité (réglage « Modèles 3D »).': 'Classic models to keep things smooth (“3D models” setting).',
-  'Cheval réaliste indisponible : affichage classique.': 'Realistic horse unavailable: using classic display.',
   'Personnage réaliste indisponible : affichage classique.': 'Realistic character unavailable: using classic display.',
   'Modèle 3D du cheval indisponible : affichage classique.': 'Horse 3D model unavailable: using classic display.',
 };

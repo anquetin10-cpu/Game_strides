@@ -7,7 +7,6 @@
 // l'affichage d'origine sans rien recharger.
 import * as THREE from 'three';
 import { addCloudShadows } from '../world/sky.js';
-import { RealHorse } from './realHorse.js';
 import { RealCar, CAR_MODELS } from './realCar.js';
 import { t } from '../core/i18n.js';
 import { inlineData } from '../core/gltfInline.js';
@@ -50,7 +49,7 @@ const EXT = import.meta.env?.MODE === 'single' ? 'gltf.json' : 'glb';
 export const realStatus = {};
 // Téléphones et tablettes (mémoire limitée : sur iPhone, Safari arrête la page qui la dépasse) : textures des modèles
 // réalistes (cavaliers, chevaux, voitures, Tripo) réduites au chargement, avant leur envoi à la carte graphique : couleur
-// 1024 px au plus, autres cartes (normales, rugosité…) 512. Cavalière : environ 61 → 15 Mo ; cheval réaliste : 54 → 14.
+// 1024 px au plus, autres cartes (normales, rugosité…) 512. Cavalière : environ 61 → 40 Mo.
 // Le résultat redevient une image (ImageBitmap) et le canevas de travail est vidé aussitôt : Safari limite aussi la
 // mémoire totale des canevas. Couleurs avec transparence (cheveux, cils) gardées telles quelles : le canevas, qui
 // prémultiplie l'alpha, assombrirait leurs bords.
@@ -427,9 +426,10 @@ export class RealBody {
   }
 }
 
-// Gestion du réglage « Modèles 3D » (Auto, Classiques, Réalistes) : rendu réaliste du joueur, de son cheval, et des personnes et chevaux proches
-// de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
-const NEAR = { humans: 8, horses: 5, cars: 6, humanDist: 30, horseDist: 45, carDist: 60, margin: 10 };
+// Gestion du réglage « Modèles 3D » (Auto, Classiques, Réalistes) : rendu réaliste du joueur, des personnes et des voitures
+// proches de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
+// Chevaux : toujours le cheval du jeu (le cheval réaliste a été retiré), sauf ceux qui ont leur propre modèle (Tripo).
+const NEAR = { humans: 8, cars: 6, humanDist: 30, carDist: 60, margin: 10 };
 // Modèles propres de chevaux (def.model d'un cheval de data.js, ou essai de développement) : fichier public/real/<id> et
 // classe qui le pilote, chargée à la demande (module à part, seulement quand un tel cheval est dans le jeu).
 const HORSE_MODELS = { horse_tripo: () => import('./tripoHorse.js').then((m) => m.TripoHorse) };
@@ -438,11 +438,10 @@ export class Realism {
   constructor(game) {
     this.game = game;
     this.bodies = new Map(); // personnage → RealBody
-    this.horses = new Map(); // cheval → RealHorse
+    this.horses = new Map(); // cheval → modèle propre (TripoHorse)
     this.cars = new Map(); // véhicule → RealCar
     this.carFailed = new Set();
     this.failed = false;
-    this.horseFailed = false;
     this.loading = new Set();
     // Modèles propres de chevaux : id → { id, cls, loading, failed } (classe chargée une fois, échec retenu).
     this.models = {};
@@ -605,10 +604,9 @@ export class Realism {
           this._modelFailed(this._model(id), e);
           return;
         }
-        if (kind === 'horse') this.horseFailed = true;
-        else if (kind === 'car') this.carFailed.add(id);
+        if (kind === 'car') this.carFailed.add(id);
         else this.failed = true;
-        if (kind !== 'car') this.game.hud?.toast(kind === 'horse' ? t('Cheval réaliste indisponible : affichage classique.') : t('Personnage réaliste indisponible : affichage classique.'));
+        if (kind !== 'car') this.game.hud?.toast(t('Personnage réaliste indisponible : affichage classique.'));
       },
     );
   }
@@ -653,7 +651,7 @@ export class Realism {
     const trial = import.meta.env.DEV ? this.trial : null;
     const g = this.game, P = g.player;
     // Chevaux qui ont leur propre modèle (def.model, cheval à l'essai) : affichés avec lui quels que soient les réglages
-    // « Modèles 3D » et « Chevaux 3D » ou la baisse de cadence (Auto), sauf en qualité « Économie » et en mode sûr
+    // « Modèles 3D » ou la baisse de cadence (Auto), sauf en qualité « Économie » et en mode sûr
     // (voir ownAllowed) ; essai : chevaux du joueur.
     const own = this.ownAllowed ? g.horses.filter((h) => h.def?.model) : [];
     if (!this.playerEnabled && !trial && !own.length && !this.horses.size) {
@@ -668,12 +666,10 @@ export class Realism {
       this._syncHorses(new Set(own));
       return;
     }
-    // Mode sûr, niveau 1 (voir Game._safeStart) : seuls le personnage du joueur et sa monture restent réalistes.
+    // Mode sûr, niveau 1 (voir Game._safeStart) : seul le personnage du joueur reste réaliste.
     const leadOnly = g.safeMode === 1;
-    // Chevaux : modèle procédural par défaut, modèle réaliste sur demande (« Chevaux 3D »).
-    const want = g.save.data.settings.horses === 'real' && !this.horseFailed ? (leadOnly ? new Set(lead) : this._wanted(g.horses, lead, this.horses, NEAR.horses, NEAR.horseDist)) : new Set();
-    for (const h of own) want.add(h);
-    this._syncHorses(want);
+    // Chevaux : cheval du jeu, sauf ceux qui ont leur propre modèle (Tripo).
+    this._syncHorses(new Set(own));
     if (leadOnly) {
       this._sync(this.cars, new Set(), () => null);
       if (!this.failed) this._syncBodies(new Set([P?.human].filter(Boolean)));
@@ -693,14 +689,14 @@ export class Realism {
     if (!this.failed) this._syncBodies(this._wanted(g.humans, [P?.human], this.bodies, NEAR.humans, NEAR.humanDist));
   }
 
-  // Chevaux voulus : modèle réaliste (RealHorse), ou modèle propre du cheval (def.model, essai) piloté par sa classe.
+  // Chevaux voulus : modèle propre du cheval (def.model, essai) piloté par sa classe.
   _syncHorses(want) {
     const g = this.game;
-    // Classe attendue pour un cheval : celle de son modèle propre (null tant qu'elle n'est pas chargée, ou en cas
-    // d'échec : cheval du jeu affiché), sinon RealHorse.
+    // Classe attendue pour un cheval : celle de son modèle propre (null sans modèle propre, tant qu'elle n'est pas
+    // chargée, ou en cas d'échec : cheval du jeu affiché).
     const clsOf = (h) => {
       const m = this._modelOf(h);
-      return m ? (m.failed ? null : m.cls) : RealHorse;
+      return m && !m.failed ? m.cls : null;
     };
     // Modèle à changer quand un cheval prend (ou perd) un modèle propre.
     for (const [h, r] of this.horses) {
@@ -711,13 +707,12 @@ export class Realism {
     for (const h of [...want]) if (!clsOf(h)) want.delete(h);
     this._sync(this.horses, want, (h, busy) => {
       const m = this._modelOf(h);
-      const id = m ? m.id : 'horse';
-      const root = !busy || h === g.mainHorse ? realNow(id) : null;
+      const root = !busy || h === g.mainHorse ? realNow(m.id) : null;
       if (!root) {
-        this._load(id, m ? 'model' : 'horse');
+        this._load(m.id, 'model');
         return null;
       }
-      return m ? new m.cls(h, root) : new RealHorse(h, root);
+      return new m.cls(h, root);
     });
     this._releaseOwn();
   }

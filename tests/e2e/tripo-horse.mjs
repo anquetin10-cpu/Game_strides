@@ -3,8 +3,8 @@
 // du joueur prennent le modèle d'essai). Rendu logiciel SwiftShader, écran d'iPhone 13 en paysage émulé : pas un essai
 // sur iPhone réel.
 //  A. vues au repos réellement rendues par le jeu (profil gauche/droit, face, trois-quarts avant/arrière, tête), cheval
-//     principal dessellé, dans la même pose pour les trois modèles : Tripo, procédural (classique, avec son licol) et
-//     réaliste actuel ; état d'affichage de chacun (calques, sellerie) ; sabots au repos ;
+//     principal dessellé, dans la même pose pour les deux modèles : Tripo et procédural (classique, avec son licol) ;
+//     état d'affichage de chacun (calques, sellerie) ; sabots au repos ;
 //  B. allures montées (pas, trot, galop, grand galop) : allure ; sabots du Tripo sur ceux du cheval du jeu (près du sol :
 //     point le plus bas au-dessus du sol sous chaque sabot ; en l'air : centre de la sole, repère du cheval) ; en appui
 //     posé (sabot du jeu verrouillé, sans bascule en pince selon l'animation du jeu, à ±2 cm du sol), sabot du Tripo posé
@@ -141,8 +141,6 @@ const boot = await E(async ([TOL, POSE, VIRAGE]) => {
   g.missions.timer = 1e6;
   g.save.data.gameTime = Math.floor(g.save.data.gameTime / 86400) * 86400 + 13 * 3600;
   g.sky.rain = 0; g.sky.wet = 0;
-  // Réglage choisi par le joueur avant l'essai (l'essai ne doit pas l'écrire).
-  const horsesSetting = g.save.data.settings.horses;
   g.realism.set('real');
   // Compteur d'images de simulation ; appels et réceptions du cheval du joueur (phase d'une image : images depuis la
   // dernière réception).
@@ -457,13 +455,13 @@ const boot = await E(async ([TOL, POSE, VIRAGE]) => {
   return {
     cls: R?.constructor?.name, trial: g.realism.trial ? { id: g.realism.trial.id, cls: !!g.realism.trial.cls, failed: g.realism.trial.failed } : null,
     lods: R?.lods?.map((m) => m.geometry.index.count / 3), bones: Object.keys(R?.bones || {}).length, layer: h.mesh.layers.mask, tris0: tris(R?.lods?.[0]),
-    horsesSetting, horsesSettingNow: g.save.data.settings.horses, others,
+    others,
     soleVerts: { tripo: R.__sole?.map((s) => s.length), jeu: h.__sole?.map((s) => s.length) }, solesMs: +solesMs.toFixed(2),
     nearGround: NG,
   };
 }, [TOL, POSE, VIRAGE]);
 check('A0', 'cheval Tripo chargé (essai de session) et piloté par le cheval du jeu (TripoHorse, 50 os, 2 niveaux de détail)', boot.cls === 'TripoHorse' && boot.trial?.id === 'horse_tripo' && boot.trial.cls && !boot.trial.failed && boot.bones === 50 && boot.lods?.length === 2, JSON.stringify(boot));
-check('A1', 'rien n’est remplacé : cheval du jeu masqué mais animé, réglage « Chevaux 3D » inchangé, aucun autre cheval en Tripo', boot.layer === 2 ** 31 && boot.horsesSetting === 'classic' && boot.horsesSettingNow === 'classic' && boot.others === 0, `calque ${boot.layer}, réglage ${boot.horsesSetting} → ${boot.horsesSettingNow}, autres ${boot.others}`);
+check('A1', 'rien n’est remplacé : cheval du jeu masqué mais animé, aucun autre cheval en Tripo', boot.layer === 2 ** 31 && boot.others === 0, `calque ${boot.layer}, autres ${boot.others}`);
 
 // Bilan d'une suite d'images de sabots : checks communs aux sections A (repos), B, C et D.
 const NG = boot.nearGround;
@@ -496,14 +494,13 @@ const shot = async (dir, name) => page.screenshot({ path: `${OUT}/${dir}/${name}
 let vueRes = null, rest = null;
 if (RUN.has('A')) {
   const VUES = { 'profil-gauche': [4.6, 1.5, 0.2, 1.15, 0.2], 'profil-droit': [-4.6, 1.5, 0.2, 1.15, 0.2], face: [0.0, 1.55, 4.8, 1.2, 0.3], 'trois-quarts-avant': [3.4, 1.7, 3.2, 1.15, 0.3], 'trois-quarts-arriere': [3.0, 1.8, -3.6, 1.1, -0.2], tete: [1.3, 1.85, 2.1, 1.75, 1.3] };
-  // Modèle affiché sur le cheval principal : essai Tripo (session), procédural (« Chevaux 3D » : classiques) ou réaliste
-  // (« Chevaux 3D » : réalistes) ; renvoie l'état d'affichage.
+  // Modèle affiché sur le cheval principal : essai Tripo (session) ou procédural (cheval du jeu) ; renvoie l'état
+  // d'affichage. (Le cheval réaliste, troisième modèle comparé auparavant, a été retiré du jeu.)
   const setModel = (m) => E(async (m) => {
     const g = window.__game, h = g.mainHorse, Rz = g.realism;
     if (m === 'tripo') { if (!Rz.trial) Rz.startTrial('horse_tripo'); }
     else Rz.stopTrial();
-    g.save.data.settings.horses = m === 'realiste' ? 'real' : 'classic';
-    const want = { tripo: 'TripoHorse', classique: 'classique', realiste: 'RealHorse' }[m];
+    const want = { tripo: 'TripoHorse', classique: 'classique' }[m];
     for (let i = 0; i < 300; i++) {
       window.__auto.tick(1);
       if ((Rz.horses.get(h)?.constructor?.name || 'classique') === want) break;
@@ -524,7 +521,7 @@ if (RUN.has('A')) {
   });
   await E(() => { window.__fov0 = window.__game.camera.fov; window.__fov = 30; });
   vueRes = {};
-  for (const m of ['tripo', 'classique', 'realiste']) {
+  for (const m of ['tripo', 'classique']) {
     const d = await setModel(m);
     // Même pose pour les trois modèles : pose du cheval du jeu relevée au premier modèle, remise avant chaque vue.
     const pose = await E((first) => {
@@ -551,10 +548,9 @@ if (RUN.has('A')) {
   const okD = {
     tripo: (d) => d.cls === 'TripoHorse' && d.actif && d.racine && d.calque === top && d.calquesParties.every((x) => x === top) && d.sellerie.calque === 1 && !d.sellerie.visible && d.lods[0] && !d.lods[1] && d.hoofAt && d.autres > 0,
     classique: (d) => d.cls === 'classique' && d.calque === 1 && d.calquesParties.every((x) => x === 1) && d.sellerie.calque === 1 && d.sellerie.visible && !d.sellerie.selle && d.sellerie.n === d.sellerie.licol && !d.hoofAt && d.autres === 0,
-    realiste: (d) => d.cls === 'RealHorse' && d.actif && d.racine && d.calque === top && d.calquesParties.every((x) => x === top) && d.sellerie.calque === top && d.licolReel === true && d.selleReelle === false && !d.hoofAt && d.autres > 0,
   };
-  const samePose = JSON.stringify(D.tripo.pose) === JSON.stringify(D.classique.pose) && JSON.stringify(D.tripo.pose) === JSON.stringify(D.realiste.pose);
-  check('A2', 'vues au repos rendues dans la même pose pour le Tripo, le cheval du jeu (licol visible) et le cheval réaliste actuel ; calques et sellerie de chaque modèle', okD.tripo(D.tripo) && okD.classique(D.classique) && okD.realiste(D.realiste) && samePose, JSON.stringify({ tripo: okD.tripo(D.tripo), classique: okD.classique(D.classique), realiste: okD.realiste(D.realiste), memePose: samePose, etats: Object.fromEntries(Object.entries(D).map(([k, v]) => [k, { ...v, pose: undefined }])) }));
+  const samePose = JSON.stringify(D.tripo.pose) === JSON.stringify(D.classique.pose);
+  check('A2', 'vues au repos rendues dans la même pose pour le Tripo et le cheval du jeu (licol visible) ; calques et sellerie de chaque modèle', okD.tripo(D.tripo) && okD.classique(D.classique) && samePose, JSON.stringify({ tripo: okD.tripo(D.tripo), classique: okD.classique(D.classique), memePose: samePose, etats: Object.fromEntries(Object.entries(D).map(([k, v]) => [k, { ...v, pose: undefined }])) }));
   await setModel('tripo');
   // Repos : sabots du Tripo sur ceux du cheval du jeu (mêmes règles qu'aux allures, sur 30 images) ; sabots en appui posés
   // comme ceux du cheval du jeu.
@@ -574,13 +570,12 @@ if (RUN.has('A')) {
   rest.filet = await E(() => window.__filet(window.__game.mainHorse));
   const F0 = rest.filet;
   check('A4', 'cheval non monté : filet et rênes du Tripo (TripoBridle, TripoReins) masqués', !F0.monte && F0.n >= 2 && F0.noms.includes('TripoBridle') && F0.noms.includes('TripoReins') && F0.shown.every((v) => !v), JSON.stringify(F0));
-  // Équipement et réglage d'origine.
-  await E((setting) => {
-    const g = window.__game, h = g.mainHorse;
+  // Équipement d'origine.
+  await E(() => {
+    const h = window.__game.mainHorse;
     window.__horseMesh.setHorseTack(h.mesh, window.__tackCfg);
-    g.save.data.settings.horses = setting;
     window.__auto.tick(2);
-  }, boot.horsesSetting);
+  });
 }
 
 // ---------- B. Allures montées ----------

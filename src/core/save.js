@@ -34,7 +34,7 @@ export function defaultSave() {
     bestTimes: {},
     stats: { jobs: 0, earned: 0, distance: 0, jumps: 0, faults: 0 },
     messages: [],
-    settings: { sound: true, music: true, quality: 'auto', camSens: 1, timeScale: 'jeu', characters: 'auto', horses: 'classic', jumpAid: 'full', courseLine: true },
+    settings: { sound: true, music: true, quality: 'auto', camSens: 1, timeScale: 'jeu', characters: 'auto', jumpAid: 'full', courseLine: true },
     gameTime: CONFIG.startHour * 3600,
     // Rythme de vie (energy.js) : énergie du personnage, cafés et siestes depuis la dernière nuit, avertissements donnés.
     life: { energy: 100, coffees: 0, naps: 0, lastSleep: null, notified: '' },

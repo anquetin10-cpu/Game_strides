@@ -7,7 +7,7 @@
 // HM-05 descente : arrêt du cheval, jambe au-dessus de la croupe, réception au sol, debout à l'épaule, contrôles à pied
 // HM-06 même personnage du début à la fin (même maillage, même squelette, même modèle réaliste, même tenue, même échelle)
 // HM-07 caméra continue (aucun saut de position ni de champ) ; cheval immobile pendant la séquence
-// HM-08 trois cycles successifs ; chevaux différents (Ulysse, Onyx, échelle 1,06, cheval réaliste) ; côté droit en miroir
+// HM-08 trois cycles successifs ; chevaux différents (Ulysse, Onyx, échelle 1,06) ; côté droit en miroir
 //       quand un mur longe le flanc gauche ; durées
 // Usage : BASE=http://127.0.0.1:5173 node tests/e2e/horse-mount.mjs
 import { chromium } from 'playwright';
@@ -262,24 +262,6 @@ const mirror = await E(() => {
 const mu = await runSeq('up');
 const md = await runSeq('down');
 check('HM-08d', 'mur le long du flanc gauche : montée et descente par la droite (miroir), sans traverser le mur', mirror.side === -1 && mu.side === -1 && mu.mode === 'ride' && md.mode === 'foot' && mu.minLeg > -0.02, show({ side: mirror.side, ball: mu.ball, minLeg: mu.minLeg }));
-
-// ---------- Cheval réaliste (réglage « Chevaux 3D ») ----------
-const realH = await E(async () => {
-  const g = window.__game, S = window.__S, p = g.player;
-  g.save.data.settings.horses = 'real';
-  S.place(g.mainHorse, -104, 190, Math.PI / 2, 1, 1.6);
-  for (let i = 0; i < 40; i++) {
-    g.realism.update();
-    if (g.realism.horses.size) break;
-    await new Promise((r) => setTimeout(r, 400));
-    window.__auto.tick(1);
-  }
-  return g.realism.horses.size;
-});
-const ru = await runSeq('up');
-const rd = await runSeq('down');
-await E(() => (window.__game.save.data.settings.horses = 'classic'));
-check('HM-08e', 'cheval réaliste affiché : séquence complète (même rig de selle)', ru.mode === 'ride' && rd.mode === 'foot' && ru.endJump < 0.01, show({ realHorses: realH, ball: ru.ball, endJump: ru.endJump }));
 
 check('erreurs', 'aucune erreur JavaScript', errors.length === 0, errors.slice(0, 3).join(' | '));
 writeFileSync(`${OUT}/resultats.json`, JSON.stringify({ results, cycles: cycles.map((c) => ({ up: { ...c.up, id0: undefined }, down: { ...c.down, id0: undefined } })) }, null, 1));

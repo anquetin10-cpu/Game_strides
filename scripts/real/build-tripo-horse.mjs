@@ -164,7 +164,7 @@ const T = clean
       mr: tex('tripo_rough', await sharp(Buffer.from(smat.getMetallicRoughnessTexture().getImage())).png().toBuffer(), 'image/png'),
       cleaned: false,
     };
-// Matériau : pas nommé « Horse » (la recoloration de robe du cheval réaliste ne s'y applique pas : robe d'origine).
+// Matériau : nommé TripoCoat (robe d'origine du modèle, sans recoloration par le jeu).
 const mat = doc.createMaterial('TripoCoat').setBaseColorTexture(T.base).setNormalTexture(T.normal).setMetallicRoughnessTexture(T.mr).setMetallicFactor(0).setRoughnessFactor(1);
 
 // Os : nœuds nommés comme le squelette du jeu, positions locales (repos sans rotation).

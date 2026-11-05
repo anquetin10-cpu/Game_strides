@@ -209,7 +209,6 @@ export class Game {
     // à la main passe en « Auto ».
     if (!d.settings.charactersSet && d.settings.characters === 'classic') d.settings.characters = 'auto';
     if (this.params.has('real')) d.settings.characters = 'real';
-    if (this.params.has('realhorse')) d.settings.horses = 'real';
     if (this.params.has('classic')) d.settings.characters = 'classic';
     this.realism = new Realism(this);
     // Essai du cheval Tripo (développement seulement, `?tripohorse`) : ne remplace pas le cheval du jeu.

@@ -20,15 +20,12 @@ const PALETTE = [
 ];
 
 // Élargissement horizontal du logo pour qu'une fois posé sur le tapis il garde les proportions du fichier : rapport,
-// à l'emplacement du logo, entre la longueur de tapis couverte par un pixel de texture en hauteur (v) et en longueur (u).
-//   - cheval réaliste : une moitié de texture (512 × 256) couvre environ 0,70 m × 0,50 m (scripts/real/build-horse.mjs) ;
-//   - cheval classique : mesuré sur la géométrie du tapis (scripts/horse/tack.mjs), près du coin arrière-bas : 1,77.
-const WIDEN_REAL = 0.5 / 256 / (0.7 / 512);
+// à l'emplacement du logo, entre la longueur de tapis couverte par un pixel de texture en hauteur (v) et en longueur (u),
+// mesuré sur la géométrie du tapis (scripts/horse/tack.mjs), près du coin arrière-bas : 1,77.
 const WIDEN_CLASSIC = 1.77;
 // Logo du tapis : largeur et marge arrière en pixels de texture (512 px = longueur du tapis).
 export const PAD_LOGO = { w: 124, margin: 12 };
-let padTex = null; // cheval classique
-let padTexReal = null; // cheval réaliste
+let padTex = null;
 function makePadTexture(widen) {
   if (typeof document === 'undefined') {
     const t = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
@@ -113,12 +110,6 @@ diffuseColor.rgb = tcol;
 `;
 
 const mats = new Map();
-// Texture du tapis du cheval réaliste (même dessin, logo à ses proportions sur ce modèle).
-export function padTexture() {
-  if (!padTexReal) padTexReal = makePadTexture(WIDEN_REAL);
-  return padTexReal;
-}
-
 // boots : couleur des guêtres équipées (null : guêtres noires d'origine).
 export function tackMaterial(pad = '#15161a', trim = '#f2f1ec', boots = null) {
   const key = pad + trim + (boots || '');

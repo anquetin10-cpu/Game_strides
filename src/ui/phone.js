@@ -870,14 +870,13 @@ export class Phone {
     body.appendChild(seg(t('Qualité graphique'), 'quality', [['auto', t('Auto')], ['high', t('Haute')], ['low', t('Économie')]], (v) => (retry(), g.applyQuality(v), g.realism?.refresh())));
     // Modèles 3D : réalistes (chargés à part) si l'appareil suit (« Auto »), ou choix imposé.
     body.appendChild(seg(t('Modèles 3D'), 'characters', [['auto', t('Auto')], ['classic', t('Classiques')], ['real', t('Réalistes')]], (v) => (retry(), g.realism?.set(v))));
-    body.appendChild(seg(t('Chevaux 3D'), 'horses', [['classic', t('Classiques')], ['real', t('Réalistes')]]));
     // Concours de CSO : aide à l'appel (bouton SAUT + zone au sol, bouton seul, aucune) et tracé conseillé au sol.
     body.appendChild(seg(t('Aide au saut'), 'jumpAid', [['full', t('Complète')], ['button', t('Bouton seul')], ['off', t('Aucune')]]));
     body.appendChild(seg(t('Tracé au sol (CSO)'), 'courseLine', [[true, t('Affiché')], [false, t('Masqué')]]));
-    body.appendChild(h('div.set-credit', { text: t('Modèles réalistes : cheval « Horse » de Henry S (Sketchfab), CC BY 4.0, robe et squelette adaptés ; voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.') }));
+    body.appendChild(h('div.set-credit', { text: t('Modèles réalistes : voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.') }));
     // État du chargement des modèles 3D sur cet appareil (chargé, en cours, indisponible et pourquoi).
     {
-      const names = { rider_f: t('cavalière'), rider_m: t('cavalier'), horse: t('cheval réaliste'), horse_tripo: 'Tripo' };
+      const names = { rider_f: t('cavalière'), rider_m: t('cavalier'), horse_tripo: 'Tripo' };
       const parts = [];
       for (const [id, st] of Object.entries(realStatus)) {
         if (!names[id]) continue;

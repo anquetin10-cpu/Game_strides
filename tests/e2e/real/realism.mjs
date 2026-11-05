@@ -37,13 +37,10 @@ const state = () => step(() => {
     helmet: !!body?.helmet,
     horse: horseState(),
   };
-  // Cheval réaliste : rattaché au cheval du joueur, cheval procédural masqué, sabots au sol (articulation du sabot
-  // à ~9 cm au-dessus du sol) quand le cheval est à l'arrêt.
+  // Cheval du joueur : toujours le cheval du jeu (le cheval réaliste a été retiré), affiché sur le calque 1.
   function horseState() {
     const h = g.mainHorse, r = g.realism.horses?.get(h);
-    if (!r) return { real: false, layer: h.mesh.layers.mask };
-    const ys = ['BN_L_Toe_042', 'BN_R_Toe_047', 'BN_L_Toe_2_055', 'BN_R_Toe_2_059'].map((n) => r.bones[n].getWorldPosition(new head.position.constructor()).y - h.pos.y);
-    return { real: r.root.parent === h.mesh && r.root.visible, layer: h.mesh.layers.mask, hooves: ys.map((y) => +y.toFixed(3)) };
+    return { real: !!r, layer: h.mesh.layers.mask };
   }
 });
 const tick = (n) => step(`window.__auto.tick(${n})`);
@@ -54,43 +51,41 @@ await page.waitForFunction(() => { window.__auto.tick(1); return !!window.__game
 await tick(4);
 s = await state();
 check('par défaut (Auto) : modèles réalistes', s.mode === 'auto' && s.real && s.classicLayer === 2 ** 31, JSON.stringify(s));
-check('par défaut : cheval procédural (« Chevaux 3D » : Classiques)', !s.horse.real && s.horse.layer === 1, JSON.stringify(s.horse));
+check('par défaut : cheval du jeu', !s.horse.real && s.horse.layer === 1, JSON.stringify(s.horse));
 await step(() => window.__game.realism.set('classic'));
 await tick(4);
 s = await state();
 check('« Classiques » : personnage classique', s.mode === 'classic' && s.classicLayer === 1 && !s.real && !s.horse.real, JSON.stringify(s));
 
-await step(() => { const g = window.__game; g.save.data.settings.horses = 'real'; g.realism.set('real'); });
+await step(() => { const g = window.__game; g.save.data.settings.horses = 'real'; g.realism.set('real'); }); // ancien réglage « Chevaux 3D » d'une sauvegarde : sans effet
 await page.waitForFunction(() => { window.__auto.tick(1); return !!window.__game.realism.body || window.__game.realism.failed; }, null, { timeout: 60000, polling: 200 });
 await tick(4);
 s = await state();
 check('mode réaliste : modèle chargé et rattaché', s.real && s.attached, JSON.stringify(s));
 check('mode réaliste : personnage classique masqué', s.classicLayer === 2 ** 31, String(s.classicLayer));
 check('tête à hauteur d’adulte', s.headAbove > 1.4 && s.headAbove < 1.9, String(s.headAbove?.toFixed(2)));
-await page.waitForFunction(() => { window.__auto.tick(1); return window.__game.realism.horses.size > 0 || window.__game.realism.horseFailed; }, null, { timeout: 60000, polling: 200 });
 await tick(30);
 s = await state();
-check('cheval réaliste rattaché, cheval procédural masqué', s.horse.real && s.horse.layer === 2 ** 31, JSON.stringify(s.horse));
-check('cheval à l’arrêt : quatre sabots au sol', s.horse.hooves?.every((y) => y > 0.05 && y < 0.14), JSON.stringify(s.horse.hooves));
+check('modèles réalistes : le cheval reste le cheval du jeu (cheval réaliste retiré)', !s.horse.real && s.horse.layer === 1, JSON.stringify(s.horse));
 
-// Personnes et chevaux proches : réalistes aussi (nombre et distance limités), modèles retirés à leur départ.
+// Personnes proches : réalistes aussi (nombre et distance limités), modèles retirés à leur départ ; chevaux proches :
+// cheval du jeu.
 const near = await step(async () => {
   const g = window.__game, P = g.player.human;
   const npc = g.spawnHuman({ top: '#2b3a55', pants: '#d8c9a8', boots: '#3a2a1e', skin: '#c99a74', hair: '#2a1d14' }, P.pos.x + 3, P.pos.z + 2, 0, {});
   const horse = g.spawnHorse({ id: 'test', name: 'Test', coat: 'grey' }, P.pos.x - 4, P.pos.z + 3, 0, { saddle: false });
-  for (let i = 0; i < 40 && !(g.realism.bodies.has(npc) && g.realism.horses.has(horse)); i++) {
+  for (let i = 0; i < 40 && !g.realism.bodies.has(npc); i++) {
     window.__auto.tick(1);
     await new Promise((r) => setTimeout(r, 50));
   }
-  const res = { npc: g.realism.bodies.has(npc) && npc.mesh.layers.mask === 2 ** 31, horse: g.realism.horses.has(horse) && horse.mesh.layers.mask === 2 ** 31 };
-  const grey = g.realism.horses.get(horse)?.coat?.U.uBody.value.getHexString();
+  const res = { npc: g.realism.bodies.has(npc) && npc.mesh.layers.mask === 2 ** 31, horse: !g.realism.horses.has(horse) && horse.mesh.layers.mask === 1 };
   g.despawn(npc);
   g.despawn(horse);
   window.__auto.tick(2);
-  return { ...res, grey, gone: !g.realism.bodies.has(npc) && !g.realism.horses.has(horse) };
+  return { ...res, gone: !g.realism.bodies.has(npc) && !g.realism.horses.has(horse) };
 });
 check('passant proche : modèle réaliste', near.npc, JSON.stringify(near));
-check('cheval proche : modèle réaliste à sa robe (gris)', near.horse && near.grey === '8f8d89', near.grey);
+check('cheval proche : cheval du jeu', near.horse, JSON.stringify(near));
 check('départ : modèles réalistes retirés', near.gone);
 
 // À cheval : nouveau personnage (tenue avec casque), modèle réaliste reconstruit sans attente.
@@ -99,24 +94,17 @@ await tick(10);
 s = await state();
 check('à cheval : modèle réaliste suivi, casque', s.real && s.kind === 'ride' && s.helmet, JSON.stringify(s));
 const gal = await step(() => {
-  const g = window.__game, h = g.mainHorse, r = g.realism.horses.get(h);
-  let low = 9, n = 0;
+  const g = window.__game, h = g.mainHorse;
   for (let i = 0; i < 120; i++) {
     g.input.setVirtualMove(0, 1);
     window.__auto.tick(1);
-    if (i < 60) continue;
-    // Au galop : le sabot le plus bas de chaque image touche le sol (ni enfoncé ni flottant).
-    const ys = ['BN_L_Toe_042', 'BN_R_Toe_047', 'BN_L_Toe_2_055', 'BN_R_Toe_2_059'].map((b) => r.bones[b].getWorldPosition(h.pos.clone()).y - h.groundY);
-    low = Math.min(low, Math.min(...ys));
-    n++;
   }
   g.input.setVirtualMove(0, 0);
   for (let i = 0; i < 90; i++) window.__auto.tick(1);
-  return { speed: h.speed, low: +low.toFixed(3), n };
+  return { speed: h.speed };
 });
 s = await state();
-check('à cheval : toujours réaliste après les allures', s.real && s.classicLayer === 2 ** 31 && s.horse.real);
-check('au galop : sabots jamais enfoncés dans le sol', gal.low > 0.03, JSON.stringify(gal));
+check('à cheval : toujours réaliste après les allures, cheval du jeu', s.real && s.classicLayer === 2 ** 31 && !s.horse.real && s.horse.layer === 1, JSON.stringify({ s, gal }));
 await step(() => window.__game.player.dismount());
 await tick(10);
 s = await state();

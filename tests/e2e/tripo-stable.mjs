@@ -1,6 +1,6 @@
 // Cheval à l'essai Tripo, deuxième cheval de l'écurie (Comète n'est pas remplacée) : listé dans « Mes chevaux »,
-// sellé par l'interface du téléphone, toujours affiché avec son modèle (TripoHorse) même avec les réglages « Modèles 3D :
-// Classiques » et « Chevaux 3D : Classiques », monté quelques secondes, puis Comète resellée ; choix conservé au
+// sellé par l'interface du téléphone, toujours affiché avec son modèle (TripoHorse) même avec le réglage « Modèles 3D :
+// Classiques », monté quelques secondes, puis Comète resellée ; choix conservé au
 // rechargement. Deux parties : une partie neuve, et une ancienne sauvegarde (Comète seule, montée) qui doit se charger
 // sans changement, sinon l'accès à Tripo.
 // Usage : BASE=http://127.0.0.1:5173 node tests/e2e/tripo-stable.mjs   (OUT=dossier des captures, facultatif)
@@ -268,7 +268,7 @@ await pick('tripo');
 await waitModel('TripoHorse');
 let d1 = await display();
 check('N3', 'Tripo sellé par l’interface : cheval principal et monture du joueur, choix dans activeHorse, liste de la sauvegarde inchangée', d1.main === 'tripo' && d1.name === 'Tripo' && d1.playerHorse === 'tripo' && d1.active_id === 'tripo' && JSON.stringify(d1.horses) === '["comete"]', JSON.stringify({ main: d1.main, player: d1.playerHorse, active: d1.active_id, horses: d1.horses }));
-check('N4', 'Tripo affiché avec son modèle (TripoHorse) malgré « Modèles 3D : Classiques » et « Chevaux 3D : Classiques » ; cheval du jeu masqué mais animé ; aucun autre cheval changé ; pas d’essai de développement', d1.cls === 'TripoHorse' && d1.active && d1.root && d1.layer === 2 ** 31 && d1.hoofAt && d1.settings.characters === 'classic' && d1.settings.horses === 'classic' && !d1.playerEnabled && d1.others.length === 0 && d1.trial === null, JSON.stringify(d1));
+check('N4', 'Tripo affiché avec son modèle (TripoHorse) malgré « Modèles 3D : Classiques » ; cheval du jeu masqué mais animé ; aucun autre cheval changé ; pas d’essai de développement', d1.cls === 'TripoHorse' && d1.active && d1.root && d1.layer === 2 ** 31 && d1.hoofAt && d1.settings.characters === 'classic' && !d1.playerEnabled && d1.others.length === 0 && d1.trial === null, JSON.stringify(d1));
 check('N5', 'Tripo sellé comme Comète : selle, tapis, sangle et étriers gardés sur son dos ; mêmes bonus d’équipement', d1.saddle && d1.tackVisible && d1.tackLayer === 1 && d1.tackTris > 0 && JSON.stringify(d1.mods) === JSON.stringify(d0.mods) && d1.pad === d0.pad, JSON.stringify({ saddle: d1.saddle, visible: d1.tackVisible, layer: d1.tackLayer, tris: d1.tackTris, mods: [d0.mods, d1.mods], pad: [d0.pad, d1.pad] }));
 await saddledShot('neuve-tripo-selle');
 let rd = await ride('neuve-tripo');
@@ -311,12 +311,12 @@ await page.reload({ waitUntil: 'domcontentloaded' });
 first = await boot();
 const a2 = await display();
 check('O6', 'rechargement : Tripo toujours sellé et affiché avec son modèle dès la première image (préchargé)', first.main === 'tripo' && first.cls === 'TripoHorse' && first.layer === 2 ** 31 && a2.main === 'tripo' && a2.cls === 'TripoHorse' && a2.active_id === 'tripo', JSON.stringify({ first, cls: a2.cls }));
-// Réglages « Réalistes » : Tripo garde son modèle, les autres chevaux suivent leur règle habituelle (RealHorse proches).
-await E(() => { const g = window.__game; g.realism.set('real'); g.save.data.settings.horses = 'real'; });
+// Réglages « Réalistes » : Tripo garde son modèle ; les autres chevaux restent le cheval du jeu (cheval réaliste retiré).
+await E(() => { const g = window.__game; g.realism.set('real'); });
 await page.waitForTimeout(4000);
 const a3 = await display();
 check('O7', 'réglages « Réalistes » : Tripo garde son modèle ; aucun autre cheval ne prend le modèle Tripo', a3.cls === 'TripoHorse' && a3.active && !a3.others.includes('TripoHorse'), JSON.stringify({ cls: a3.cls, others: a3.others }));
-await E(() => { const g = window.__game; g.realism.set('classic'); g.save.data.settings.horses = 'classic'; });
+await E(() => { const g = window.__game; g.realism.set('classic'); });
 await saddledShot('ancienne-tripo-selle');
 await openStable();
 await pick('comete');
