@@ -117,7 +117,7 @@ export async function open({ hour = 17.5, keepUI = false, query = '', save = nul
         if (keep) window.__cine.render();
       }, [src, i, n, keep]);
       if (!keep) continue;
-      await page.screenshot({ path: join(dir, `${String(k++).padStart(5, '0')}.jpg`), type: 'jpeg', quality });
+      await page.screenshot({ path: join(dir, `${String(k++).padStart(5, '0')}.jpg`), type: 'jpeg', quality, timeout: 240000 });
     }
     const s = ((Date.now() - t0) / 1000).toFixed(0);
     console.log(`${name} : ${k} images en ${s} s → ${dir}`);
