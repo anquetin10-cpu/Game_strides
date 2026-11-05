@@ -107,7 +107,8 @@ export class Game {
     // Arrêt brutal au lancement précédent (page arrêtée par le système, mémoire de l'iPhone dépassée, voir
     // crashGuard.js) : démarrage en mode sûr, pour ne pas s'arrêter de nouveau au même endroit.
     this.crash = startCrashGuard();
-    if (this.crash.crashes) this._safeStart(d);
+    this.safeMode = 0;
+    if (this.crash.crashes || this.params.has('secours')) this._safeStart(d);
     // Connexion en arrière-plan : le jeu démarre sans l'attendre.
     this.online.init();
     document.body.classList.toggle('desktop', !IS_TOUCH);
@@ -161,9 +162,10 @@ export class Game {
 
     // Logo officiel Strides (fichier d'origine) chargé avant les textures du monde qui le portent.
     await loadBrandImages();
-    // Monde.
+    // Monde (mode sûr : texture du terrain réduite).
+    this.crash.stage(t('construction du monde'));
     this.world = new World(this.scene, this.colliders);
-    this.world.textureSize = IS_TOUCH ? 2048 : 2048;
+    this.world.textureSize = this.safeMode ? 1024 : 2048;
     await this.world.build((p, m) => this.screens.setLoading(p * 0.8, m));
     this.terrain = this.world.terrain;
     this.sky = this.world.sky;
@@ -212,9 +214,11 @@ export class Game {
     // Camion STRIDES : modèle détaillé STX Scania fourni (glTF, voir stxModel.js) ; ses cotes remplacent celles du porteur
     // procédural d'origine (box, rampe, stalles, essieux). Si le fichier ne se charge pas, l'erreur est signalée (console
     // et message en jeu) et le porteur d'origine sert de camion de secours (?truck=classic pour le revoir exprès).
+    // Mode sûr minimal : camion de secours, sans van ni Defender (modèles détaillés non chargés).
+    this.crash.stage(t('véhicules'));
     let truckModel = null;
     this.truckModelInfo = { file: STX_FILE, loaded: false, error: null };
-    if (this.params.get('truck') !== 'classic') {
+    if (this.params.get('truck') !== 'classic' && this.safeMode < 2) {
       try {
         truckModel = buildStxModel(await loadStx());
         Object.assign(TRUCK_DIM, STX_DIM);
@@ -242,7 +246,8 @@ export class Game {
     // garé à l'Écurie du Val, chargement des chevaux par son pont latéral. Fichier absent ou incomplet : erreur signalée
     // (console et message en jeu), le reste du jeu continue sans le van.
     this.vanModelInfo = { file: MASTER_FILE, loaded: false, error: null };
-    try {
+    if (this.safeMode >= 2) this.van = null;
+    else try {
       this.van = new HorseVan(this, buildMasterModel(await loadMaster()), { x: HOME.master.x, z: HOME.master.z, heading: HOME.master.rot });
       this.drivables.push(this.van);
       this.vehicles.push(this.van);
@@ -257,7 +262,8 @@ export class Game {
     // Une seule variante chargée et affichée (détaillée ou mobile) ; échec signalé (console et message en jeu).
     const variant = defenderVariant();
     this.defenderModelInfo = { file: DEFENDER_FILES[variant], variant, loaded: false, error: null };
-    try {
+    if (this.safeMode >= 2) this.defender = null;
+    else try {
       const M = buildDefenderModel(await loadDefender(variant));
       this.defender = new Defender(this, M, { x: HOME.defender.x, z: HOME.defender.z, heading: HOME.defender.rot });
       this.drivables.push(this.defender);
@@ -295,14 +301,20 @@ export class Game {
     // Personnage réaliste du joueur chargé et créé avant la première image (pas de personnage classique remplacé
     // ensuite) — et avant la compilation des shaders ci-dessous : ses matériaux (lanternes, plafonniers) sont compilés
     // pendant l'écran de chargement, pas au premier rendu après « Continuer » (à-coup au démarrage).
+    this.crash.stage(t('personnages 3D'));
     await this.realism?.preloadPlayer();
     // Cheval qui a son propre modèle 3D (cheval à l'essai) : chargé de même, affiché dès la première image.
     await this.realism?.preloadHorses();
     this.realism?.update();
     this.sky.update(17.5, this.player.focus.pos, 0);
     this.sky.updateEnvironment(this.renderer, 0, true);
-    this.renderer.compile(this.scene, this.camera);
-    this.world.prewarmShops(this.renderer, this.camera);
+    // Compilation de tous les shaders d'un coup (évite les à-coups des premières images) : sautée en mode sûr, les
+    // shaders sont alors compilés au fur et à mesure.
+    this.crash.stage(t('préparation des shaders'));
+    if (!this.safeMode) {
+      this.renderer.compile(this.scene, this.camera);
+      this.world.prewarmShops(this.renderer, this.camera);
+    }
     this.screens.setLoading(1, t('Prêt'));
     this.screens.hideLoading();
     this.last = performance.now();
@@ -1173,6 +1185,7 @@ export class Game {
       this._cloudPending = false;
       setTimeout(() => this.onCloudSave(this.online), 0);
     }
+    this.crash?.stage(t('écran titre'));
     this.screens.showTitle({
       hasSave,
       issue,
@@ -1189,19 +1202,34 @@ export class Game {
         this.screens.showSetup((cfg) => this.startGame(true, cfg));
       },
     });
+    // Arrêt brutal au lancement précédent : ce qui s'est passé et ce que le mode sûr change, lisible sur l'écran titre.
+    if (this._safeNote && this.screens.titleEl) {
+      const el = document.createElement('div');
+      el.className = 'notice';
+      el.dataset.id = 'safe-note';
+      el.textContent = this._safeNote;
+      this.screens.titleEl.querySelector('.menu')?.before(el);
+    }
   }
 
-  // Mode sûr après un arrêt brutal. Cheval qui a son propre modèle 3D (Tripo, à l'essai) : Comète resellée (choix
-  // enregistré). Sinon, ou au deuxième arrêt de suite : cette partie seulement, sans modèles réalistes et en qualité
-  // Économie (réglages du joueur inchangés, rétablis au lancement suivant).
+  // Mode sûr après un arrêt brutal (ou demandé par `?secours`), pour cette partie seulement : réglages du joueur
+  // inchangés, rétablis au lancement suivant sans arrêt.
+  // - Cheval qui a son propre modèle 3D (Tripo, à l'essai) : Comète resellée (choix enregistré).
+  // - Niveau 1 : sans modèles réalistes, qualité Économie, texture du terrain réduite, shaders compilés au fil de l'eau.
+  // - Niveau 2 (arrêts répétés, ou `?secours`) : en plus, camion de secours, sans van ni Defender.
+  // Le premier arrêt avec le Tripo sellé ne change que le cheval ; chaque arrêt suivant monte d'un niveau.
   _safeStart(d) {
     const own = HORSES[activeHorseId(d)]?.model ? HORSES[d.activeHorse] : null;
     if (own) d.activeHorse = 'comete';
-    if (!own || this.crash.crashes >= 2) this.safeMode = true;
-    this._safeNote = own
-      ? T`Le jeu s’est arrêté brutalement au dernier lancement (mémoire de l’appareil). ${own.name} a été remplacé par Comète.`
-      : t('Le jeu s’est arrêté brutalement au dernier lancement (mémoire de l’appareil) : modèles 3D allégés pour cette partie.');
-    if (own && this.safeMode) this._safeNote += ` ${t('Modèles 3D allégés pour cette partie.')}`;
+    const n = this.crash.crashes;
+    this.safeMode = this.params.has('secours') ? 2 : Math.min(2, own ? n - 1 : n);
+    const parts = [];
+    if (n) parts.push(T`Le jeu s’est arrêté brutalement au lancement précédent (${n} fois de suite), à l’étape « ${this.crash.last || t('inconnue')} ».`);
+    else parts.push(t('Mode secours demandé.'));
+    if (own) parts.push(T`${own.name} a été remplacé par Comète.`);
+    if (this.safeMode >= 1) parts.push(t('Mode sûr pour cette partie : modèles 3D allégés, qualité Économie.'));
+    if (this.safeMode >= 2) parts.push(t('Mode sûr minimal : sans les modèles détaillés du camion, du van et du Defender.'));
+    this._safeNote = parts.join(' ');
   }
 
   startGame(isNew, cfg = null) {
@@ -1243,6 +1271,13 @@ export class Game {
     if (this.defenderModelInfo?.error) this.hud.toast(t('Defender 110 non chargé : modèle introuvable ou incomplet.'));
     if (this._safeNote) this.hud.toast(this._safeNote);
     this._safeNote = null;
+    // Journal d'arrêt brutal : durée de la partie, mise à jour régulièrement (voir crashGuard.js).
+    const t0 = performance.now();
+    this.crash.stage(T`partie (${0} min)`);
+    clearInterval(this._playClock);
+    this._playClock = setInterval(() => {
+      if (this.state === 'play') this.crash.stage(T`partie (${Math.floor((performance.now() - t0) / 60000)} min)`);
+    }, 15000);
     buildStableUpgrades(this);
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);

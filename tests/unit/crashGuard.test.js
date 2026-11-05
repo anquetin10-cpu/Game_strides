@@ -32,6 +32,20 @@ describe('Relance après un arrêt brutal', () => {
     expect(startCrashGuard().crashes).toBe(2);
   });
 
+  it('étape atteinte retenue et rendue au lancement suivant après un arrêt', () => {
+    const g = startCrashGuard();
+    expect(g.last).toBeNull();
+    g.stage('préparation des shaders');
+    expect(mark().stage).toBe('préparation des shaders');
+    const g2 = startCrashGuard(); // la page précédente s'est arrêtée à cette étape
+    expect(g2.crashes).toBe(1);
+    expect(g2.last).toBe('préparation des shaders');
+    document.visibilityState = 'hidden';
+    docL.visibilitychange();
+    g2.stage('partie (3 min)'); // page masquée : pas de marque reposée
+    expect(store.has(KEY)).toBe(false);
+  });
+
   it('page quittée ou masquée : marque retirée, lancement suivant normal', () => {
     startCrashGuard();
     document.visibilityState = 'hidden';
