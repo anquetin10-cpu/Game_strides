@@ -60,9 +60,9 @@ segs.forEach((s, i) => {
     chains.push(`[${i}:v]scale=2112:1188,zoompan=z='1+${z}*on/${Math.round(s.dur * FPS)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=${FPS},format=yuv420p,setsar=1${i === 0 ? `,fade=t=in:st=0:d=0.8` : ''}[v${i}]`);
   } else {
     args.push('-framerate', String(FPS), '-start_number', String(s.from), '-i', join(s.dir, '%05d.jpg'));
-    const capIdx = s.cap ? null : -1;
-    chains.push(`[${i}:v]trim=end_frame=${s.to - s.from},setpts=PTS-STARTPTS,scale=1920:1080:flags=lanczos,eq=contrast=1.04:saturation=1.08:gamma=0.98,unsharp=5:5:0.35,format=yuv420p,setsar=1[b${i}]`);
-    s.capIdx = capIdx;
+    // Étalonnage : par défaut léger contraste et saturation ; `grade` (filtres ffmpeg) le remplace pour un plan.
+    const grade = s.grade || 'eq=contrast=1.04:saturation=1.08:gamma=0.98';
+    chains.push(`[${i}:v]trim=end_frame=${s.to - s.from},setpts=PTS-STARTPTS,scale=1920:1080:flags=lanczos,${grade},unsharp=5:5:0.35,format=yuv420p,setsar=1[b${i}]`);
   }
 });
 // Sous-titres : une entrée PNG par plan sous-titré, superposée en fondu (apparition 0,5 s après le début, disparition
@@ -75,7 +75,8 @@ segs.forEach((s, i) => {
     return;
   }
   args.push('-loop', '1', '-framerate', String(FPS), '-t', String(s.dur), '-i', join(G, `${s.cap}.png`));
-  const a = 0.5, b = Math.max(a + 0.8, s.dur - 0.6);
+  // capEnd : fin du sous-titre (s depuis le début du plan), par ex. avant un ralenti.
+  const a = 0.5, b = Math.max(a + 0.8, (s.capEnd ?? s.dur) - 0.6);
   chains.push(`[${k}:v]format=rgba,fade=t=in:st=${a}:d=0.45:alpha=1,fade=t=out:st=${b}:d=0.45:alpha=1[c${i}]`);
   chains.push(`[b${i}][c${i}]overlay=0:0:shortest=1,format=yuv420p[v${i}]`);
   k++;

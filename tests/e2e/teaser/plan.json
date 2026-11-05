@@ -1,0 +1,18 @@
+{
+  "output": "teaser-equestrian-tour.mp4",
+  "crossfade": 0.35,
+  "jumpAt": 2.83,
+  "segments": [
+    { "kind": "card", "png": "card-intro.png", "dur": 3.5, "zoom": 0.025 },
+    { "kind": "shot", "id": "p1-aerien", "cap": "cap-p1", "grade": "colortemperature=temperature=5200:mix=0.7,eq=contrast=1.1:saturation=1.15:gamma=0.96" },
+    { "kind": "shot", "id": "p2-ecurie", "cap": "cap-p2", "grade": "colortemperature=temperature=5800:mix=0.5,eq=contrast=1.05:saturation=1.1:gamma=0.98" },
+    { "kind": "shot", "id": "p3-galop-plage", "cap": "cap-p3", "grade": "colortemperature=temperature=5000:mix=0.7,eq=contrast=1.08:saturation=1.15:gamma=0.97" },
+    { "kind": "shot", "id": "p4-camion", "cap": "cap-p4" },
+    { "kind": "shot", "id": "p5-defender", "cap": "cap-p5", "grade": "colortemperature=temperature=5600:mix=0.5,eq=contrast=1.06:saturation=1.1:gamma=0.98" },
+    { "kind": "shot", "id": "p6-cso", "cap": "cap-p6", "capEnd": 2.3, "grade": "colortemperature=temperature=5600:mix=0.4,eq=contrast=1.06:saturation=1.1:gamma=0.98" },
+    { "kind": "shot", "id": "p6b-paris", "cap": "cap-p6b", "grade": "eq=contrast=1.08:saturation=1.1:gamma=1.04" },
+    { "kind": "shot", "id": "p7-telephone", "cap": "cap-p7" },
+    { "kind": "shot", "id": "p8-nuit", "cap": "cap-p8", "grade": "eq=brightness=0.03:contrast=1.06:saturation=1.08:gamma=1.16" },
+    { "kind": "card", "png": "card-end.png", "dur": 8.5, "zoom": 0.04 }
+  ]
+}
