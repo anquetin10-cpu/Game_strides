@@ -31,7 +31,7 @@ import { Defender } from './entities/defender.js';
 import { DefenderAccess } from './gameplay/defenderAccess.js';
 import { VanLoading } from './gameplay/vanLoading.js';
 import { Online, boardById } from './core/online.js';
-import { startCrashGuard } from './core/crashGuard.js';
+import { startCrashGuard, keptSafeLevel, keepSafeLevel } from './core/crashGuard.js';
 import { FollowCamera } from './entities/camera.js';
 import { Player } from './gameplay/player.js';
 import { Interactions } from './gameplay/interact.js';
@@ -108,7 +108,8 @@ export class Game {
     // crashGuard.js) : démarrage en mode sûr, pour ne pas s'arrêter de nouveau au même endroit.
     this.crash = startCrashGuard();
     this.safeMode = 0;
-    if (this.crash.crashes || this.params.has('secours')) this._safeStart(d);
+    if (this.crash.crashes || keptSafeLevel() || this.params.has('secours')) this._safeStart(d);
+    this.crash.level(this.safeMode);
     // Connexion en arrière-plan : le jeu démarre sans l'attendre.
     this.online.init();
     document.body.classList.toggle('desktop', !IS_TOUCH);
@@ -162,13 +163,16 @@ export class Game {
 
     // Logo officiel Strides (fichier d'origine) chargé avant les textures du monde qui le portent.
     await loadBrandImages();
-    // Monde (mode sûr : texture du terrain réduite).
+    // Monde (téléphones et mode sûr : texture du terrain 1024, environ 25 Mo de moins).
     this.crash.stage(t('construction du monde'));
     this.world = new World(this.scene, this.colliders);
-    this.world.textureSize = this.safeMode ? 1024 : 2048;
+    this.world.textureSize = this.safeMode || IS_TOUCH ? 1024 : 2048;
     await this.world.build((p, m) => this.screens.setLoading(p * 0.8, m));
     this.terrain = this.world.terrain;
     this.sky = this.world.sky;
+    // Qualité appliquée de nouveau maintenant que le ciel existe : ombres (taille de la carte, coupées en Économie).
+    // Avant, la première application, faite sans ciel, laissait la carte en 2048 et les ombres actives en Économie.
+    this.applyQuality(this.quality, true);
     this.grass = new Grass(this.scene, this.terrain, this.world.grassMask, IS_TOUCH ? 3200 : 4500);
     this.particles = new Particles(this.scene);
     this.birds = new Birds(this.scene);
@@ -1212,23 +1216,29 @@ export class Game {
     }
   }
 
-  // Mode sûr après un arrêt brutal (ou demandé par `?secours`), pour cette partie seulement : réglages du joueur
-  // inchangés, rétablis au lancement suivant sans arrêt.
+  // Mode sûr après un arrêt brutal (ou demandé par `?secours`). Réglages du joueur inchangés.
   // - Cheval qui a son propre modèle 3D (Tripo, à l'essai) : Comète resellée (choix enregistré).
-  // - Niveau 1 : sans modèles réalistes, qualité Économie, texture du terrain réduite, shaders compilés au fil de l'eau.
-  // - Niveau 2 (arrêts répétés, ou `?secours`) : en plus, camion de secours, sans van ni Defender.
-  // Le premier arrêt avec le Tripo sellé ne change que le cheval ; chaque arrêt suivant monte d'un niveau.
+  // - Niveau 1 : seuls le personnage du joueur et sa monture restent réalistes (pas les autres cavaliers, chevaux et
+  //   voitures), qualité Économie (sans ombres), shaders compilés au fil de l'eau.
+  // - Niveau 2 : sans aucun modèle réaliste ; camion de secours, sans van ni Defender.
+  // Chaque arrêt monte d'un niveau (le premier arrêt avec le Tripo sellé ne change que le cheval). Le niveau atteint est
+  // gardé sur cet appareil (lancements suivants) jusqu'à ce que le joueur change la qualité ou les modèles 3D ; `?secours`
+  // donne le niveau 2 pour cette partie seulement.
   _safeStart(d) {
     const own = HORSES[activeHorseId(d)]?.model ? HORSES[d.activeHorse] : null;
     if (own) d.activeHorse = 'comete';
-    const n = this.crash.crashes;
-    this.safeMode = this.params.has('secours') ? 2 : Math.min(2, own ? n - 1 : n);
+    const n = this.crash.crashes, kept = keptSafeLevel();
+    const after = n ? Math.min(2, this.crash.lastLevel + (own ? 0 : 1)) : 0;
+    this.safeMode = Math.max(kept, after);
+    if (n) keepSafeLevel(this.safeMode);
+    if (this.params.has('secours')) this.safeMode = 2;
     const parts = [];
     if (n) parts.push(T`Le jeu s’est arrêté brutalement au lancement précédent (${n} fois de suite), à l’étape « ${this.crash.last || t('inconnue')} ».`);
-    else parts.push(t('Mode secours demandé.'));
+    else if (this.params.has('secours')) parts.push(t('Mode secours demandé.'));
+    else parts.push(t('Mode allégé gardé sur cet appareil après un arrêt brutal (Réglages : changer la qualité graphique pour réessayer).'));
     if (own) parts.push(T`${own.name} a été remplacé par Comète.`);
-    if (this.safeMode >= 1) parts.push(t('Mode sûr pour cette partie : modèles 3D allégés, qualité Économie.'));
-    if (this.safeMode >= 2) parts.push(t('Mode sûr minimal : sans les modèles détaillés du camion, du van et du Defender.'));
+    if (this.safeMode === 1) parts.push(t('Mode sûr : seuls ton personnage et ta monture restent en 3D réaliste, qualité Économie.'));
+    if (this.safeMode >= 2) parts.push(t('Mode sûr minimal : sans modèles 3D réalistes, ni modèles détaillés du camion, du van et du Defender.'));
     this._safeNote = parts.join(' ');
   }
 

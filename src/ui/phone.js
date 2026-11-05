@@ -18,6 +18,7 @@ import { renderActivities } from './activities-app.js';
 import { renderRanking } from './ranking-app.js';
 import { t, T, LANG, euros, switchLang } from '../core/i18n.js';
 import { realStatus } from '../entities/realistic.js';
+import { keepSafeLevel } from '../core/crashGuard.js';
 
 export class Phone {
   constructor(game, root) {
@@ -861,9 +862,14 @@ export class Phone {
       }
       return h('div.set-row', {}, h('span', { text: label }), s);
     };
-    body.appendChild(seg(t('Qualité graphique'), 'quality', [['auto', t('Auto')], ['high', t('Haute')], ['low', t('Économie')]], (v) => (g.applyQuality(v), g.realism?.refresh())));
+    // Choisir la qualité ou les modèles 3D, c'est réessayer : le mode allégé gardé après un arrêt brutal est levé.
+    const retry = () => {
+      keepSafeLevel(0);
+      if (g.safeMode === 1) g.safeMode = 0;
+    };
+    body.appendChild(seg(t('Qualité graphique'), 'quality', [['auto', t('Auto')], ['high', t('Haute')], ['low', t('Économie')]], (v) => (retry(), g.applyQuality(v), g.realism?.refresh())));
     // Modèles 3D : réalistes (chargés à part) si l'appareil suit (« Auto »), ou choix imposé.
-    body.appendChild(seg(t('Modèles 3D'), 'characters', [['auto', t('Auto')], ['classic', t('Classiques')], ['real', t('Réalistes')]], (v) => g.realism?.set(v)));
+    body.appendChild(seg(t('Modèles 3D'), 'characters', [['auto', t('Auto')], ['classic', t('Classiques')], ['real', t('Réalistes')]], (v) => (retry(), g.realism?.set(v))));
     body.appendChild(seg(t('Chevaux 3D'), 'horses', [['classic', t('Classiques')], ['real', t('Réalistes')]]));
     // Concours de CSO : aide à l'appel (bouton SAUT + zone au sol, bouton seul, aucune) et tracé conseillé au sol.
     body.appendChild(seg(t('Aide au saut'), 'jumpAid', [['full', t('Complète')], ['button', t('Bouton seul')], ['off', t('Aucune')]]));

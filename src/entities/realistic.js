@@ -48,20 +48,24 @@ async function loader() {
 const EXT = import.meta.env?.MODE === 'single' ? 'gltf.json' : 'glb';
 // État du chargement de chaque modèle (affiché dans les réglages du téléphone : chargé, en cours, indisponible et pourquoi).
 export const realStatus = {};
-// Téléphones et tablettes (mémoire limitée : sur iPhone, Safari arrête la page qui la dépasse) : textures de certains
-// modèles réduites au chargement, avant leur envoi à la carte graphique (côté en pixels : couleur, autres cartes).
-// Cheval Tripo : 2048 → 1024 (couleur), 1024 → 512 (normales, rugosité) ; environ 24 Mo de moins sur la carte
-// graphique et autant d'images décodées libérées.
+// Téléphones et tablettes (mémoire limitée : sur iPhone, Safari arrête la page qui la dépasse) : textures des modèles
+// réalistes (cavaliers, chevaux, voitures, Tripo) réduites au chargement, avant leur envoi à la carte graphique : couleur
+// 1024 px au plus, autres cartes (normales, rugosité…) 512. Cavalière : environ 61 → 15 Mo ; cheval réaliste : 54 → 14.
+// Le résultat redevient une image (ImageBitmap) et le canevas de travail est vidé aussitôt : Safari limite aussi la
+// mémoire totale des canevas. Couleurs avec transparence (cheveux, cils) gardées telles quelles : le canevas, qui
+// prémultiplie l'alpha, assombrirait leurs bords.
 const TOUCH = typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in globalThis);
-const SHRINK = { horse_tripo: { map: 1024, other: 512 } };
-function shrinkTextures(gltf, { map, other }) {
-  const done = new Set();
+const SHRINK = { map: 1024, other: 512 };
+async function shrinkTextures(gltf, { map, other }) {
+  const done = new Set(), jobs = [];
   gltf.scene.traverse((o) => {
     for (const m of [].concat(o.material || [])) {
+      const alpha = m.transparent || m.alphaTest > 0;
       for (const [k, tex] of Object.entries(m)) {
         if (!tex?.isTexture || done.has(tex.source)) continue;
         done.add(tex.source);
-        const img = tex.image, max = k === 'map' ? map : other;
+        if (alpha && (k === 'map' || k === 'alphaMap')) continue;
+        const img = tex.image, max = k === 'map' || k === 'emissiveMap' ? map : other;
         if (!img?.width || Math.max(img.width, img.height) <= max) continue;
         const s = max / Math.max(img.width, img.height);
         const c = document.createElement('canvas');
@@ -74,9 +78,22 @@ function shrinkTextures(gltf, { map, other }) {
         img.close?.(); // image décodée d'origine libérée (ImageBitmap)
         tex.image = c;
         tex.needsUpdate = true;
+        if (typeof createImageBitmap === 'function') {
+          jobs.push(
+            createImageBitmap(c).then(
+              (bm) => {
+                tex.image = bm;
+                tex.needsUpdate = true;
+                c.width = c.height = 0;
+              },
+              () => {},
+            ),
+          );
+        }
       }
     }
   });
+  await Promise.all(jobs);
 }
 // Modèle réaliste (chargé une fois, cloné pour chaque personnage ou cheval).
 export async function loadReal(id) {
@@ -86,8 +103,8 @@ export async function loadReal(id) {
     cache[id] = loader()
       .then(({ l }) => l.loadAsync(new URL(`real/${id}.${EXT}`, document.baseURI).href))
       .then(
-        (gltf) => {
-          if (TOUCH && SHRINK[id]) shrinkTextures(gltf, SHRINK[id]);
+        async (gltf) => {
+          if (TOUCH) await shrinkTextures(gltf, SHRINK).catch((e) => console.warn('Textures non réduites', id, e));
           realStatus[id] = { state: 'ok', ms: performance.now() - t0 };
           return gltf;
         },
@@ -498,7 +515,7 @@ export class Realism {
 
   // « Réalistes » : toujours ; « Auto » : sauf qualité « Économie » ou cadence trop basse (voir autoFallback).
   get enabled() {
-    if (this.game.safeMode) return false; // mode sûr après un arrêt brutal (voir Game._safeStart)
+    if (this.game.safeMode >= 2) return false; // mode sûr après un arrêt brutal (voir Game._safeStart)
     const st = this.game.save.data.settings;
     if (st.characters === 'real') return true;
     return st.characters === 'auto' && !this.autoOff && st.quality !== 'low';
@@ -506,7 +523,7 @@ export class Realism {
   // Personnage du joueur : il garde le même modèle pendant toute la partie. La baisse de cadence (autoFallback) ne
   // le change pas — seul un réglage choisi par le joueur (« Modèles 3D », qualité « Économie ») le fait.
   get playerEnabled() {
-    if (this.game.safeMode) return false;
+    if (this.game.safeMode >= 2) return false;
     const st = this.game.save.data.settings;
     if (st.characters === 'real') return true;
     return st.characters === 'auto' && st.quality !== 'low';
@@ -651,10 +668,17 @@ export class Realism {
       this._syncHorses(new Set(own));
       return;
     }
+    // Mode sûr, niveau 1 (voir Game._safeStart) : seuls le personnage du joueur et sa monture restent réalistes.
+    const leadOnly = g.safeMode === 1;
     // Chevaux : modèle procédural par défaut, modèle réaliste sur demande (« Chevaux 3D »).
-    const want = g.save.data.settings.horses === 'real' && !this.horseFailed ? this._wanted(g.horses, lead, this.horses, NEAR.horses, NEAR.horseDist) : new Set();
+    const want = g.save.data.settings.horses === 'real' && !this.horseFailed ? (leadOnly ? new Set(lead) : this._wanted(g.horses, lead, this.horses, NEAR.horses, NEAR.horseDist)) : new Set();
     for (const h of own) want.add(h);
     this._syncHorses(want);
+    if (leadOnly) {
+      this._sync(this.cars, new Set(), () => null);
+      if (!this.failed) this._syncBodies(new Set([P?.human].filter(Boolean)));
+      return;
+    }
     // Voitures (garées, conduisibles et de la circulation) des types qui ont un modèle réaliste.
     const cars = g.vehicles.filter((v) => v.mesh && v.spec && CAR_MODELS[v.kind] && !this.carFailed.has(CAR_MODELS[v.kind]));
     this._sync(this.cars, this._wanted(cars, [P?.vehicle].filter((v) => v && cars.includes(v)), this.cars, NEAR.cars, NEAR.carDist), (v, busy) => {
