@@ -1,3 +1,4 @@
+import { makeRidingHelmet } from './ridingHelmet.js';
 // Prototype « rendu réaliste » des personnages (réglage « Personnages : Classique / Réaliste ») : le personnage du
 // joueur est remplacé à l'écran par un modèle réaliste (corps MakeHuman CC0, peau photographique, yeux, cils,
 // cheveux, vêtements texturés, squelette de 53 os avec doigts), chargé à part (public/real/, voir
@@ -311,19 +312,7 @@ export class RealBody {
       this.helmet = null;
     }
     if (!color || !this.bones.head) return;
-    const g = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.42, metalness: 0.05 });
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.118, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.56), mat);
-    shell.scale.set(1, 0.92, 1.16);
-    const peak = new THREE.Mesh(new THREE.SphereGeometry(0.12, 20, 6, -Math.PI * 0.32, Math.PI * 0.64, Math.PI * 0.53, Math.PI * 0.06), mat);
-    peak.scale.set(1, 0.6, 1.5);
-    const strap = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.006, 6, 24, Math.PI), new THREE.MeshStandardMaterial({ color: '#1b1c1f', roughness: 0.8 }));
-    strap.rotation.set(0, Math.PI / 2, Math.PI);
-    strap.position.set(0, -0.005, 0.015);
-    for (const m of [shell, peak, strap]) {
-      m.castShadow = true;
-      g.add(m);
-    }
+    const g = makeRidingHelmet(color, 0.118, 0.10856, 0.13688);
     // Placé en pose de référence au sommet du crâne, puis rattaché à l'os de la tête (transformation conservée).
     const head = this.bones.head;
     head.getWorldPosition(_v);
