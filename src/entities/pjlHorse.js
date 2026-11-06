@@ -64,9 +64,9 @@ const CADENCE = { walk: [0.55, 1.15], trot: [1.1, 1.75], canter: [1.3, 2.6] };
 const PUSH = 0.12;
 // Hors de ce rayon (m) : étrivières, rênes simplifiées masquées (moins d'un pixel), comme le filet procédural au loin.
 const DETAIL_DIST = 30;
-// Écart de l'axe du bas de jambe au flanc (m, au plus large du tronc sur les poses jouées) : demi-épaisseur de la jambe
-// et de la botte, plus le roulis du cheval que le cavalier ne suit pas entièrement (il reste d'aplomb).
-const LEG_CLEAR = 0.08;
+// Marge supplémentaire sur l’enveloppe maximale du tronc déjà échantillonnée aux deux mains.
+// Ne pas cumuler une seconde marge de roulis : elle écarterait artificiellement les mollets.
+const LEG_CLEAR = 0.025;
 
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _e = new THREE.Euler();
@@ -222,7 +222,9 @@ export class PjlHorse {
     const iron = k.ironL ? this._restAnchor('ironL') : null;
     if (iron) {
       // RIDER_FIT : repère de la selle (x vers la gauche, y vers le haut, z vers l'avant), pied (étrier) relatif au siège.
-      const stirrupY = clamp(iron.y - seat.y + 0.03, -0.85, -0.55), stirrupZ = clamp(iron.z - seat.z, -0.1, 0.25);
+      // Descente de jambe de CSO : l’ancre de la sellerie seule donnait des étriers trop courts
+      // et trop en avant. Le pied reste sous le bassin ; les étriers visibles le suivent.
+      const stirrupY = clamp(iron.y - seat.y - 0.06, -0.85, -0.64), stirrupZ = clamp(iron.z - seat.z - 0.09, -0.1, 0.16);
       const b = PjlHorse.halfWidth(A, seat, seat.y + stirrupY + 0.04, seat.y - 0.16, seat.z + stirrupZ - 0.3, seat.z + stirrupZ + 0.08);
       // Siège recentré sur l'axe du tronc (le point d'assise de la sellerie en est décalé de quelques centimètres).
       this.seatShift = clamp(b.center - seat.x, -0.05, 0.05);

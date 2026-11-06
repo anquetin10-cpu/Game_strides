@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { createHumanMesh, animateHuman, OUTFITS, randomOutfit } from '../../src/entities/humanModel.js';
 import { resolveOutfit, inferSex } from '../../src/entities/human/outfits.js';
 import { humanGeometry } from '../../src/entities/human/assets.js';
+import { RIDER_FIT } from '../../src/entities/human.js';
 
 const finiteBones = (bones) => Object.values(bones).every((b) => Number.isFinite(b.quaternion.x) && Number.isFinite(b.quaternion.w) && Number.isFinite(b.position.y));
 
@@ -58,6 +59,42 @@ describe('personnages réalistes', () => {
       st.pitch = -0.3 * Math.sin(Math.PI * j);
       animateHuman(bones, 'ride', st, 1 / 30);
       expect(finiteBones(bones)).toBe(true);
+    }
+  });
+
+  it('garde les genoux près du cheval et les talons bas pour les deux morphologies', () => {
+    for (const outfit of [OUTFITS.rider, OUTFITS.riderF]) {
+      const { bones, mesh } = createHumanMesh(outfit);
+      // Selle du cheval PJL : dimensions observées, en plus du réglage classique.
+      for (const fit of [RIDER_FIT, { ...RIDER_FIT, stirrupX: 0.386, stirrupY: -0.64, stirrupZ: 0.101 }]) {
+        const st = { t: 0, horseSpeed: 0, horseGaitPhase: 0, jump: -1, bob: 0, pitch: 0, turn: 0, fit };
+        animateHuman(bones, 'ride', st, 1 / 60);
+        mesh.updateMatrixWorld(true);
+        for (const side of ['l', 'r']) {
+          const hip = bones[side + 'Thigh'].getWorldPosition(new THREE.Vector3());
+          const knee = bones[side + 'Shin'].getWorldPosition(new THREE.Vector3());
+          const ankle = bones[side + 'Foot'].getWorldPosition(new THREE.Vector3());
+          // Cuisses descendantes, pas de genoux en ailes au-delà des chevilles.
+          expect(hip.y - knee.y).toBeGreaterThan(0.2);
+          expect(Math.abs(knee.x)).toBeLessThan(Math.abs(ankle.x) + 0.015);
+        }
+        for (const [speed, jump] of [[0, -1], [1.9, -1], [4.6, -1], [7, -1], [12, -1], [7, 0.45]]) {
+          Object.assign(st, { horseSpeed: speed, jump });
+          for (let i = 0; i < 60; i++) {
+            st.horseGaitPhase = i / 60;
+            animateHuman(bones, 'ride', st, 1 / 60);
+            mesh.updateMatrixWorld(true);
+            for (const side of ['l', 'r']) {
+              const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(bones[side + 'Foot'].getWorldQuaternion(new THREE.Quaternion()));
+              expect(forward.y).toBeGreaterThan(0.05);
+              // Réserve de flexion : pas de jambe verrouillée à l’obstacle / au grand galop.
+              const shin = bones[side + 'Shin'].quaternion;
+              expect(2 * Math.acos(Math.min(1, Math.abs(shin.w)))).toBeGreaterThan(0.6);
+            }
+            expect(finiteBones(bones)).toBe(true);
+          }
+        }
+      }
     }
   });
 

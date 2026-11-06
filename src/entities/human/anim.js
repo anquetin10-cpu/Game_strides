@@ -394,7 +394,7 @@ function carryArms(B, P, st) {
 
 // ---------- Équitation ----------
 // st : horseSpeed (allure normalisée), horseGaitPhase, jump (-1 ou 0..1), wave, turn, bob (m), pitch (rad), fit
-const DEFAULT_FIT = { stirrupX: 0.33, stirrupY: -0.64, stirrupZ: 0.06, kneeOut: 0.55, handX: 0.06, handY: 0.3, handZ: 0.36 };
+const DEFAULT_FIT = { stirrupX: 0.33, stirrupY: -0.64, stirrupZ: 0.06, kneeOut: 0.45, handX: 0.06, handY: 0.3, handZ: 0.36 };
 function riding(B, P, st, dt, info) {
   const fit = st.fit || DEFAULT_FIT;
   const hs = st.horseSpeed || 0;
@@ -453,14 +453,31 @@ function riding(B, P, st, dt, info) {
   qEuler(P.q.head, -totalPitch * 0.42 + 0.06 - R.jumpK * 0.08, 0, turn * 0.08);
   forwardTrunk(B, P);
   // Jambes : pied dans l'étrier (plante), talon bas, genou contre la selle, jambe à la sangle.
+  // Garder une réserve de flexion aux genoux, même pour la petite morphologie en suspension.
+  const maxReach = (info.thighLen + info.shinLen) * 0.93;
+  let lowerSeat = 0;
   for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const f = P.feet[side];
-    const heel = 0.32 + two * 0.12 + R.jumpK * 0.1;
-    qEuler(f.q, heel, sg * 0.18, sg * 0.06);
+    const heel = 0.14 + two * 0.06 + R.jumpK * 0.04;
+    // +Z pointe vers l’avant : tangage négatif = pointe relevée, talon descendu.
+    qEuler(f.q, -heel, sg * 0.10, 0);
     // la plante sur la grille de l'étrier → cheville
     _v1.set(0, -info.ankleY + 0.012, info.toe[2] - 0.005).applyQuaternion(f.q);
     f.pos.set(sg * fit.stirrupX, fit.stirrupY + R.post * 0.012 + two * 0.02, fit.stirrupZ - two * 0.02).sub(_v1);
+    const hip = P.mp[BN[side].Thigh];
+    const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
+    const maxDrop = Math.sqrt(Math.max(0, maxReach * maxReach - lateral2));
+    lowerSeat = Math.max(lowerSeat, hip.y - f.pos.y - maxDrop);
+  }
+  if (lowerSeat > 0) {
+    // Adapter la hauteur de suspension au cavalier, sans déplacer ses pieds hors des étriers.
+    P.hips.y -= lowerSeat;
+    forwardTrunk(B, P);
+  }
+  for (const side of SIDES) {
+    const sg = side === 'l' ? 1 : -1;
+    const f = P.feet[side];
     solveLeg(B, P, side, f.pos, f.q, 0, _v5.set(sg * fit.kneeOut, -0.05, 1).normalize());
   }
   // Bras : mains au-dessus du garrot, rênes ajustées, main qui accompagne l'encolure ; rendre la main à l'obstacle.

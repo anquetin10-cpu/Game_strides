@@ -48,7 +48,7 @@ const CARRY = {
 export const RIDER_SEAT = { saddle: new THREE.Vector3(0, 0, 0), body: new THREE.Vector3(0, 0.575, 0.0) };
 // Ajustement de la position à cheval (mètres, repère de la selle, relatif au point d'assise) ; surchargeable par
 // horse.riderFit ou mount(horse, { fit }).
-export const RIDER_FIT = { stirrupX: 0.38, stirrupY: -0.69, stirrupZ: 0.06, kneeOut: 1.3, handX: 0.065, handY: 0.2, handZ: 0.36 };
+export const RIDER_FIT = { stirrupX: 0.38, stirrupY: -0.69, stirrupZ: 0.06, kneeOut: 0.45, handX: 0.065, handY: 0.2, handZ: 0.36 };
 
 const _v = new THREE.Vector3();
 const _w = new THREE.Vector3();
