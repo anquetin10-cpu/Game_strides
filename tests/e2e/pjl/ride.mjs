@@ -248,7 +248,7 @@ if (PJL) {
 }
 const penUp = Math.max(...mountFrames.map((f) => f.pen || 0));
 if (PJL) console.log('montée, pénétration par pas :', mountFrames.map((f) => `${f.pen}${f.where ? `@${f.where.side}${f.where.seg}` : ''}`).join(' '));
-check('PJ-02', 'montée animée (bouton ACTION) jusqu’en selle' + (PJL ? ', jambes jamais dans le corps WildMesh (< 2 cm)' : ''), mountPress.active && m2.mode === 'ride' && (!PJL || penUp < 0.02), `${mountPress.lab}${PJL ? ` ; pénétration max ${(penUp * 100).toFixed(1)} cm` : ''}`);
+check('PJ-02', 'montée animée (bouton ACTION) jusqu’en selle' + (PJL ? ', jambes jamais dans le corps WildMesh (< 1 cm)' : ''), mountPress.active && m2.mode === 'ride' && (!PJL || penUp < 0.01), `${mountPress.lab}${PJL ? ` ; pénétration max ${(penUp * 100).toFixed(1)} cm` : ''}`);
 // ---------- PJ-03 allures
 const ride = async (name, mag, ticks, { gallop = false, turn = 0, cam = [5.5, 1.3, 0], n = 3 } = {}) => {
   const rows = [];
@@ -290,7 +290,7 @@ if (PJL) {
   const seated = [...idle, ...walk, ...trot, ...canter, ...gallop, ...turnL, ...turnR];
   const pm = Math.max(...seated.map((r) => r.pen || 0));
   console.log('en selle, pénétration par prise :', seated.map((r) => `${r.pen}${r.pen > 0.02 && r.where ? `@${r.where.side}${r.where.seg}:${r.where.t}` : ''}`).join(' '));
-  check('PJ-03c', 'en selle (repos, allures, virages) : jambes hors du corps WildMesh (< 2 cm)', pm < 0.02, `max ${(pm * 100).toFixed(1)} cm`);
+  check('PJ-03c', 'en selle (repos, allures, virages) : jambes hors du corps WildMesh (< 1 cm)', pm < 0.01, `max ${(pm * 100).toFixed(1)} cm`);
 }
 const gaitOk = idle[0].gait === 'idle' && last(walk).gait === 'walk' && last(trot).gait === 'trot' && ['canter', 'gallop'].includes(last(canter).gait);
 check('PJ-03', 'allures repos → pas → trot → galop → grand galop', gaitOk, `${idle[0].gait}/${last(walk).gait}/${last(trot).gait}/${last(canter).gait}/${last(gallop).gait} ; clips ${PJL ? JSON.stringify(last(canter).clips) : '—'}`);
@@ -367,7 +367,7 @@ const dismountFrames = await seqShots('12-descente');
 const m6 = await st();
 const penDown = Math.max(...dismountFrames.map((f) => f.pen || 0));
 if (PJL) console.log('descente, pénétration par pas :', dismountFrames.map((f) => `${f.pen}${f.where ? `@${f.where.side}${f.where.seg}` : ''}`).join(' '));
-check('PJ-06', 'descente animée (bouton ACTION) : à pied à côté du cheval' + (PJL ? ', jambes hors du corps WildMesh' : ''), dismountPress.active && m6.mode === 'foot' && (!PJL || penDown < 0.02), `${dismountPress.lab} ; ${dismountFrames.length} pas de 0,2 s${PJL ? ` ; pénétration max ${(penDown * 100).toFixed(1)} cm` : ''}`);
+check('PJ-06', 'descente animée (bouton ACTION) : à pied à côté du cheval' + (PJL ? ', jambes hors du corps WildMesh' : ''), dismountPress.active && m6.mode === 'foot' && (!PJL || penDown < 0.01), `${dismountPress.lab} ; ${dismountFrames.length} pas de 0,2 s${PJL ? ` ; pénétration max ${(penDown * 100).toFixed(1)} cm` : ''}`);
 // ---------- PJ-08 mesures (avec / sans cheval WildMesh, même vue)
 const perf = await E(async () => {
   const g = window.__game, K = window.__K, A = window.__auto;
@@ -419,7 +419,7 @@ const dPress = await pressE();
 const dFrames = await seqShots('15-descente-droite');
 const penMirror = Math.max(...[...mFrames, ...dFrames].map((f) => f.pen || 0));
 const m6b = await st();
-check('PJ-06b', 'montée et descente par la droite (mur à gauche)' + (PJL ? ', jambes hors du corps WildMesh' : ''), mirror.side === -1 && mPress.active && dPress.active && m6b.mode === 'foot' && (!PJL || penMirror < 0.02), PJL ? `pénétration max ${(penMirror * 100).toFixed(1)} cm` : '');
+check('PJ-06b', 'montée et descente par la droite (mur à gauche)' + (PJL ? ', jambes hors du corps WildMesh' : ''), mirror.side === -1 && mPress.active && dPress.active && m6b.mode === 'foot' && (!PJL || penMirror < 0.01), PJL ? `pénétration max ${(penMirror * 100).toFixed(1)} cm` : '');
 // ---------- PJ-07 reprise
 await E(() => window.__game.save.save?.());
 await page.reload({ timeout: 180000 });

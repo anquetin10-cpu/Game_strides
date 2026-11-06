@@ -1,8 +1,8 @@
-care exit=0 33s
-horse-mount exit=0 30s
-tripo-horse exit=124 1500s
-transport-flow exit=0 223s
-cso exit=0 31s
-save-guard exit=0 247s
-mission-resume exit=0 394s
-DONE
+horse-mount 17/17
+care 8/8
+cso 38/38
+transport-flow 65/65
+save-guard 11/11
+mission-resume 13/13
+tripo-horse (A–E, --cso-sans-images) : toutes vérifications passées ; référence 7695dcf : B-trot-appui en échec (préexistant)
+unitaires 283/283

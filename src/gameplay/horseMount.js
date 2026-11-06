@@ -495,6 +495,16 @@ export class HorseMount {
       const sg = sideName === 'l' ? 1 : -1;
       const inSaddle = b[role].s || a[role].s;
       F.pole.set(sg * (inSaddle ? 1.3 : 0.25), inSaddle ? -0.05 : 0.1, 1).normalize();
+      // Cheval large (réglage du cheval riderFit.mountKneeOut, donné par le cheval WildMesh) : hors de la selle, chaque
+      // genou est orienté vers l'extérieur du flanc du côté où se trouve son pied (repère du personnage, qui fait face au
+      // flanc : sinon la composante « avant » du pôle pousse le genou dans le cheval quand le pied entre dans l'étrier,
+      // ou quand la jambe opposée pend derrière elle pendant la poussée).
+      const kOut = D.fit.mountKneeOut || 0;
+      if (kOut > 0 && tilt < 0.95) {
+        _w.set(1, 0, 0).applyAxisAngle(_Y, -s * ryaw); // gauche du cheval, repère du personnage
+        const footX = s * rx + F.pos.dot(_w) * hu.scale; // pied, repère du siège (m ; clés écrites côté gauche)
+        F.pole.addScaledVector(_w, Math.sign(footX || s) * kOut * (1 - tilt)).normalize();
+      }
       F.toe = 0;
     }
     // Pied dans l'étrier (arrivé dedans, pas encore sorti) : l'étrier le suit (Horse._stirrupsFollow).

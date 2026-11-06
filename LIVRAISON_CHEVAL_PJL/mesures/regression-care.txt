@@ -1,4 +1,4 @@
-✔ FC de repos — 40
+✔ FC de repos — 38
 ✔ FC au galop — 206 bpm à 50 km/h
 ✔ FC affichée dans la télémétrie — 207
 ✔ récupération après 2 min 30 — 73

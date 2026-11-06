@@ -1,14 +1,14 @@
-✔ PJ-01 cheval WildMesh pour Comète au démarrage, sans erreur — préparation 1125 ms, fichier 245 ms
+✔ PJ-01 cheval WildMesh pour Comète au démarrage, sans erreur — préparation 1125 ms, fichier 287 ms
 ✔ PJ-00b contrôle du détecteur de pénétration (bassin du cheval dedans, point au-dessus du garrot dehors) — {"dedans":0.09,"dessus":0}
-✘ PJ-02 montée animée (bouton ACTION) jusqu’en selle, jambes jamais dans le corps WildMesh (< 2 cm) — Monter ; pénétration max 16.5 cm
-✘ PJ-03c en selle (repos, allures, virages) : jambes hors du corps WildMesh (< 2 cm) — max 4.0 cm
+✔ PJ-02 montée animée (bouton ACTION) jusqu’en selle, jambes jamais dans le corps WildMesh (< 1 cm) — Monter ; pénétration max 0.0 cm
+✔ PJ-03c en selle (repos, allures, virages) : jambes hors du corps WildMesh (< 1 cm) — max 0.0 cm
 ✔ PJ-03 allures repos → pas → trot → galop → grand galop — idle/walk/trot/canter/gallop ; clips {"canter_M":0.99}
 ✔ PJ-03b virage à gauche : galop à gauche (clips en miroir), à droite : galop à droite (clips d’origine) — gauche : canter_M,canter_L90_M ; droite : canter,canter_R90
-✔ PJ-05a sabots au sol à l’appui (articulation du sabot entre -6 et +16 cm du sol) — 0.028 / 0.026 / 0.007 / 0.07
+✔ PJ-05a sabots au sol à l’appui (articulation du sabot entre -6 et +16 cm du sol) — 0.021 / 0.014 / 0.017 / 0.071
 ✔ PJ-04 saut : envol, réception, retour aux allures — clip de saut 1 au plus ; clips en fin : {"jump_gallop":1}
-✔ PJ-05b pente 11 % au pas : sabots près du sol — 0.093 / 0.068 / 0.129 / 0.102
-✘ PJ-06 descente animée (bouton ACTION) : à pied à côté du cheval, jambes hors du corps WildMesh — Descendre ; 13 pas de 0,2 s ; pénétration max 8.8 cm
-mesures (SwiftShader, CPU de la machine de test : ordre de grandeur, pas une cadence iPhone) {"on":{"msMedian":5.1,"msP90":7.4,"calls":50,"tris":413905,"geometries":588,"textures":120,"programs":104,"heapMB":265},"off":{"msMedian":3.5,"msP90":6,"calls":23,"tris":344861,"geometries":585,"textures":118,"programs":90,"heapMB":284},"pjlNow":1}
-✘ PJ-06b montée et descente par la droite (mur à gauche), jambes hors du corps WildMesh — pénétration max 12.9 cm
+✔ PJ-05b pente 11 % au pas : sabots près du sol — 0.089 / 0.066 / 0.094 / 0.098
+✔ PJ-06 descente animée (bouton ACTION) : à pied à côté du cheval, jambes hors du corps WildMesh — Descendre ; 13 pas de 0,2 s ; pénétration max 0.0 cm
+mesures (SwiftShader, CPU de la machine de test : ordre de grandeur, pas une cadence iPhone) {"on":{"msMedian":5.2,"msP90":7.6,"calls":50,"tris":413901,"geometries":588,"textures":120,"programs":104,"heapMB":253},"off":{"msMedian":3.4,"msP90":5.2,"calls":23,"tris":344859,"geometries":585,"textures":118,"programs":90,"heapMB":254},"pjlNow":1}
+✔ PJ-06b montée et descente par la droite (mur à gauche), jambes hors du corps WildMesh — pénétration max 0.0 cm
 ✔ PJ-07 reprise : cheval WildMesh de nouveau affiché — {"state":"play","pjl":["Comète","Cheval","Cheval"]}
 ✔ PJ-00 aucune erreur JavaScript

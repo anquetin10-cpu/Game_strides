@@ -10,13 +10,13 @@
 ✔ cheval à bord, attaché dans sa stalle — {"inside":true,"visible":true}
 ✔ debout sur le plancher du box — 1.12 (plancher 1.105)
 ✔ sifflet désactivé, pas de repère cheval sur la carte
-✔ fin de séquence : joueur libre à pied — 874 images
+✔ fin de séquence : joueur libre à pied — 939 images
 ✔ « Fermer la rampe » puis rampe fermée — Fermer la rampe
 ✔ « Monter » à la portière, séquence de montée, moteur démarré — Monter⁠
 ✔ le camion roule (boîte auto) — 22 km/h, D3
 ✔ le cheval voyage dans le camion
 ✔ jauge de confort affichée au volant
-✔ arrêt, confort préservé en conduite souple — 97 %
+✔ arrêt, confort préservé en conduite souple — 96 %
 ✔ « Descendre » du camion (séquence par les marchepieds) — Descendre⁠
 ✔ « Ouvrir la rampe » à l’arrivée — Ouvrir la rampe
 ✔ « Faire descendre le cheval » proposé (« Fermer la rampe » en secondaire) — Faire descendre le cheval / Fermer la rampe
@@ -59,7 +59,7 @@
 ✔ [844x390] joystick : accélère puis freine — 19 km/h · HUD D3 19km/h CONFORT · COMÈTE 100 %
 ✔ [844x390] HUD : rapport, vitesse, confort
 ✔ [844x390] toucher « Descendre »
-✔ vrai trajet Écurie du Val → parking du Pôle, cheval à bord — {"arrived":true,"dEnd":1,"time":92,"km":0.77,"maxKmh":58,"bumps":0,"comfort":93,"aboard":1,"inside":true,"gear":"N"}
-✔ conduite appliquée : aucun choc, confort ≥ 80 % — chocs 0 · confort 93 %
+✔ vrai trajet Écurie du Val → parking du Pôle, cheval à bord — {"arrived":true,"dEnd":1,"time":92,"km":0.77,"maxKmh":58,"bumps":0,"comfort":94,"aboard":1,"inside":true,"gear":"N"}
+✔ conduite appliquée : aucun choc, confort ≥ 80 % — chocs 0 · confort 94 %
 ✔ retour au Val (demi-tour sur le parking du Pôle) — {"arrived":true,"dEnd":1.3,"time":90,"km":0.76,"maxKmh":58,"bumps":0,"comfort":89,"aboard":1,"inside":true,"gear":"N"}
-✔ Haras de la Pommeraie → Pôle (mission « Transport express ») — {"arrived":true,"dEnd":1,"time":85,"km":0.81,"maxKmh":58,"bumps":0,"comfort":94,"aboard":1,"inside":true,"gear":"N"}
+✔ Haras de la Pommeraie → Pôle (mission « Transport express ») — {"arrived":true,"dEnd":1,"time":87,"km":0.81,"maxKmh":58,"bumps":0,"comfort":94,"aboard":1,"inside":true,"gear":"N"}

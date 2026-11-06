@@ -66,7 +66,7 @@ const PUSH = 0.12;
 const DETAIL_DIST = 30;
 // Écart de l'axe du bas de jambe au flanc (m, au plus large du tronc sur les poses jouées) : demi-épaisseur de la jambe
 // et de la botte, plus le roulis du cheval que le cavalier ne suit pas entièrement (il reste d'aplomb).
-const LEG_CLEAR = 0.08;
+const LEG_CLEAR = 0.1;
 
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _e = new THREE.Euler();
@@ -226,7 +226,8 @@ export class PjlHorse {
       const b = PjlHorse.halfWidth(A, seat, seat.y + stirrupY + 0.04, seat.y - 0.16, seat.z + stirrupZ - 0.3, seat.z + stirrupZ + 0.08);
       // Siège recentré sur l'axe du tronc (le point d'assise de la sellerie en est décalé de quelques centimètres).
       this.seatShift = clamp(b.center - seat.x, -0.05, 0.05);
-      this.fit = { stirrupX: clamp(b.half + LEG_CLEAR, 0.3, 0.55), stirrupY, stirrupZ };
+      // mountKneeOut : genou côté montoir tourné vers l'extérieur pendant la montée et la descente (gameplay/horseMount.js).
+      this.fit = { stirrupX: clamp(b.half + LEG_CLEAR, 0.3, 0.55), stirrupY, stirrupZ, mountKneeOut: 3 };
       this.barrel = b;
       if (PjlHorse.logFit) {
         PjlHorse.logFit = false;
@@ -464,7 +465,17 @@ export class PjlHorse {
     const sb = B.saddle;
     if (sb?.parent) {
       V.anchorWorld('seat', _v);
-      if (this.seatShift) _v.addScaledVector(_w.set(1, 0, 0).applyQuaternion(this.holder.getWorldQuaternion(_q)), this.seatShift);
+      // Siège recentré, image par image, sur l'axe du tronc à hauteur des étriers : milieu des deux ancres d'étrier
+      // (liées à la peau des flancs, donc à la pose courante). Le point d'assise suit le dos, qui se balance d'un côté à
+      // l'autre dans les clips de galop (jusqu'à 6 cm) bien plus que le tronc ; sans ce recentrage, la cheville du côté
+      // opposé rentrait dans le flanc au grand galop. Lissé pour ne pas faire trembler le cavalier.
+      V.anchorWorld('ironL', _a);
+      V.anchorWorld('ironR', _b);
+      this.holder.worldToLocal(_v);
+      const mid = this.holder.worldToLocal(_a.add(_b).multiplyScalar(0.5)).x;
+      this.seatX = this.seatX === undefined ? mid : damp(this.seatX, mid, 12, this._dt || 1 / 60);
+      _v.x = this.seatX;
+      this.holder.localToWorld(_v);
       // Tangage du dos (garrot → bassin) par rapport au repos, inclinaison de la vue ; repère du cheval du jeu.
       V.boneWorld('spine_04', _a);
       V.boneWorld('pelvis', _b);
