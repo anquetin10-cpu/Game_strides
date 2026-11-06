@@ -94,8 +94,13 @@ async function shrinkTextures(gltf, { map, other }) {
   });
   await Promise.all(jobs);
 }
+// glTF chargé d'un modèle réaliste (scène et animations, sans clonage) : cheval WildMesh, préparé par pjl/asset.js.
+export async function loadRealGltf(id) {
+  await loadReal(id, false);
+  return ready[id];
+}
 // Modèle réaliste (chargé une fois, cloné pour chaque personnage ou cheval).
-export async function loadReal(id) {
+export async function loadReal(id, cloneIt = true) {
   if (!cache[id]) {
     const t0 = performance.now();
     realStatus[id] = { state: 'loading', t0 };
@@ -116,6 +121,7 @@ export async function loadReal(id) {
   const gltf = await cache[id];
   if (gltf.userData.released) return loadReal(id); // libéré entre-temps (voir releaseReal) : rechargé
   ready[id] = gltf;
+  if (!cloneIt) return null;
   const { clone } = await loader();
   return clone(gltf.scene);
 }
@@ -429,7 +435,7 @@ export class RealBody {
 // Gestion du réglage « Modèles 3D » (Auto, Classiques, Réalistes) : rendu réaliste du joueur, des personnes et des voitures
 // proches de la caméra (nombre limité, avec hystérésis pour ne pas recharger en bordure ; au-delà, modèles classiques).
 // Chevaux : toujours le cheval du jeu (le cheval réaliste a été retiré), sauf ceux qui ont leur propre modèle (Tripo).
-const NEAR = { humans: 8, cars: 6, humanDist: 30, carDist: 60, margin: 10 };
+const NEAR = { humans: 8, cars: 6, humanDist: 30, carDist: 60, margin: 10, pjl: 3, pjlTouch: 2, pjlDist: 32 };
 // Modèles propres de chevaux (def.model d'un cheval de data.js, ou essai de développement) : fichier public/real/<id> et
 // classe qui le pilote, chargée à la demande (module à part, seulement quand un tel cheval est dans le jeu).
 const HORSE_MODELS = { horse_tripo: () => import('./tripoHorse.js').then((m) => m.TripoHorse) };
@@ -440,6 +446,9 @@ export class Realism {
     this.bodies = new Map(); // personnage → RealBody
     this.horses = new Map(); // cheval → modèle propre (TripoHorse)
     this.cars = new Map(); // véhicule → RealCar
+    // Chevaux WildMesh (Jumping League Sim) : cheval → PjlHorse ; état du chargement de l'asset partagé.
+    this.pjl = new Map();
+    this.pjlState = { asset: null, loading: null, failed: false, cls: null };
     this.carFailed = new Set();
     this.failed = false;
     this.loading = new Set();
@@ -506,10 +515,94 @@ export class Realism {
 
   // Préchargement (écran de chargement) des modèles propres des chevaux présents : la première image les montre déjà.
   async preloadHorses(timeoutMs = 12000) {
+    // Cheval WildMesh : chargé et préparé pendant l'écran de chargement (sinon : cheval du jeu, puis remplacement).
+    if (this.pjlAllowed) await Promise.race([this._pjlLoad(), new Promise((r) => setTimeout(r, timeoutMs + 6000))]);
     const ids = this.ownAllowed ? [...new Set(this.game.horses.map((h) => h.def?.model).filter(Boolean))] : [];
     if (!ids.length) return;
     const all = ids.map((id) => Promise.all([this._model(id).loading, loadReal(id)]));
     await Promise.race([Promise.all(all).catch(() => null), new Promise((r) => setTimeout(r, timeoutMs))]);
+  }
+
+  // Chevaux WildMesh : sauf qualité « Économie », réglage « Classiques » et mode sûr (repli : cheval du jeu).
+  get pjlAllowed() {
+    const st = this.game.save.data.settings;
+    return !this.game.safeMode && st.quality !== 'low' && st.characters !== 'classic' && !this.pjlState.failed;
+  }
+
+  // Chargement (une fois) du fichier et de la classe, préparation de l'asset (miroirs, sellerie…). Échec : cheval du jeu
+  // affiché, message une fois ; rien n'est retenté pendant la partie.
+  _pjlLoad() {
+    const P = this.pjlState;
+    if (P.asset || P.failed) return Promise.resolve(P.asset);
+    if (!P.loading) {
+      P.loading = Promise.all([import('./pjl/asset.js'), import('./pjlHorse.js')])
+        .then(([a, c]) => {
+          P.cls = c.PjlHorse;
+          return a.loadHorseAsset(() => loadRealGltf('horse_pjl'));
+        })
+        .then(
+          (asset) => {
+            P.asset = asset;
+            P.loading = null;
+            return asset;
+          },
+          (e) => {
+            console.warn('Cheval WildMesh indisponible', e);
+            P.failed = true;
+            P.loading = null;
+            realStatus.horse_pjl = { ...(realStatus.horse_pjl || {}), state: 'failed', error: String(e?.message || e).slice(0, 160) };
+            this._dropPjl();
+            this.game.hud?.toast(t('Modèle 3D du cheval indisponible : affichage classique.'));
+            return null;
+          },
+        );
+    }
+    return P.loading;
+  }
+
+  // Retire les chevaux WildMesh (tous, ou un seul : nouvelle sellerie, cheval retiré du jeu).
+  _dropPjl(only = null) {
+    for (const [h, r] of this.pjl) {
+      if (only && h !== only) continue;
+      r.dispose();
+      this.pjl.delete(h);
+    }
+  }
+  dropPjl(h) {
+    this._dropPjl(h);
+  }
+
+  // Chevaux WildMesh voulus : cheval du joueur et cheval principal, puis les plus proches de la caméra (nombre limité) ;
+  // pas ceux qui ont leur propre modèle (Tripo). Une création par image au plus.
+  _syncPjl(lowFps) {
+    const g = this.game, P = this.pjlState;
+    const ok = this.pjlAllowed && (g.state === 'play' || g.state === 'photo');
+    if (!ok) {
+      if (this.pjl.size) this._dropPjl();
+      return;
+    }
+    if (!P.asset) {
+      this._pjlLoad();
+      return;
+    }
+    // Chevaux qui ont (ou attendent) leur propre modèle — Tripo, essai de développement compris — : jamais en WildMesh.
+    const own = (h) => !!h.def?.model || (this.ownAllowed && !!this._modelOf(h)) || this.horses.has(h);
+    const pool = g.horses.filter((h) => !own(h) && h.mesh && h.game);
+    const always = [g.player?.horse, g.mainHorse].filter((h) => h && pool.includes(h));
+    const max = lowFps ? 0 : TOUCH ? NEAR.pjlTouch : NEAR.pjl;
+    const want = this._wanted(pool, always, this.pjl, max, NEAR.pjlDist);
+    for (const h of [...want]) if (own(h) || !g.horses.includes(h)) want.delete(h);
+    for (const [h, r] of this.pjl) {
+      if (want.has(h)) continue;
+      r.dispose();
+      this.pjl.delete(h);
+    }
+    for (const h of want) {
+      if (this.pjl.has(h)) continue;
+      const tack = h === g.mainHorse ? g.commerce?.horseTack?.() || {} : {};
+      this.pjl.set(h, new P.cls(h, P.asset, tack));
+      break;
+    }
   }
 
   // « Réalistes » : toujours ; « Auto » : sauf qualité « Économie » ou cadence trop basse (voir autoFallback).
@@ -650,6 +743,9 @@ export class Realism {
   update() {
     const trial = import.meta.env.DEV ? this.trial : null;
     const g = this.game, P = g.player;
+    // Chevaux WildMesh (indépendants des modèles réalistes des personnages) ; cadence trop basse (Auto) : seuls le
+    // cheval du joueur et le cheval principal le gardent.
+    this._syncPjl(this.autoOff);
     // Chevaux qui ont leur propre modèle (def.model, cheval à l'essai) : affichés avec lui quels que soient les réglages
     // « Modèles 3D » ou la baisse de cadence (Auto), sauf en qualité « Économie » et en mode sûr
     // (voir ownAllowed) ; essai : chevaux du joueur.

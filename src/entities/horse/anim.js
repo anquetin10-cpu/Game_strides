@@ -24,6 +24,8 @@ const GAIT = {
   gallopL: { off: [0.5, 0.38, 0.11, 0.0], f: (v) => clamp(1.4 + 0.056 * v, 1.95, 2.55), duty: (v) => clamp(0.36 - 0.0095 * v, 0.17, 0.3), lift: [0.26, 0.22], knee: 1.85, fet: 1.6 },
   gallopR: { off: [0.38, 0.5, 0.0, 0.11], f: null, duty: null, lift: null },
 };
+// Instants de poser par allure (lecture seule : calage d'autres modèles de cheval sur la foulée, voir pjlHorse.js).
+export const GAIT_OFFSETS = Object.freeze(Object.fromEntries(Object.entries(GAIT).map(([k, g]) => [k, Object.freeze(g.off.slice())])));
 GAIT.canterR.f = GAIT.canterL.f;
 GAIT.canterR.duty = GAIT.canterL.duty;
 GAIT.canterR.lift = GAIT.canterL.lift;

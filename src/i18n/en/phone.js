@@ -219,6 +219,8 @@ export default {
   Affiché: 'Shown',
   Masqué: 'Hidden',
   'Modèles réalistes : voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.': 'Realistic models: cars by PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 and supercarmodels (Sketchfab), CC BY 4.0, logos removed; MakeHuman characters, CC0.',
+  'cheval WildMesh': 'WildMesh horse',
+  'Chevaux : « Realistic Animated Horse » par WildMesh 3D (sketchfab.com/WildMesh_3D), CC BY 4.0 ; modifié : sellerie d’origine retirée, robes paramétriques, compression, sélection et miroir des animations, sellerie anglaise ajoutée (repris de Jumping League Sim) ; affiché sauf en qualité Économie et avec les modèles Classiques.': 'Horses: “Realistic Animated Horse” by WildMesh 3D (sketchfab.com/WildMesh_3D), CC BY 4.0; modified: original tack removed, parametric coats, compression, animation selection and mirroring, English tack added (from Jumping League Sim); shown except in Saver quality and with Classic models.',
   'Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; affiché avec ce modèle quels que soient les réglages des modèles 3D, sauf en qualité Économie.': 'Tripo, the horse on trial: model generated with Tripo AI, supplied by the project owner, skeleton and textures adapted; shown with this model whatever the 3D model settings, except in Saver quality.',
   'Écoulement du temps': 'Passage of time',
   'Jeu · 1 jour = 20 min': 'Game · 1 day = 20 min',

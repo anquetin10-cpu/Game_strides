@@ -398,12 +398,16 @@ export class Horse {
       const r = animateHorse(this.bones, this.anim, far < 120 ? dt : dt * 2);
       if (r.footfalls && (this.isPlayerHorse || far < 45)) g.bus.emit('horse:step', { horse: this, n: r.footfalls, depth, hooves: r.landed });
       this._stirrupsFollow();
+      // Cheval WildMesh affiché à sa place (voir pjlHorse.js) : animé sur cet état, cavalier posé sur sa selle.
+      this.pjl?.update(far < 120 ? dt : dt * 2);
     }
     this.speedNow = this.speed;
     this.distance = (this.distance || 0) + Math.hypot(this.pos.x - prevX, this.pos.z - prevZ);
   }
 
   dispose() {
+    // Cheval WildMesh attaché (pjlHorse.js) retiré d'abord : ses géométries sont partagées entre les chevaux.
+    this.pjl?.dispose();
     this.game.scene.remove(this.mesh);
     // Seules les ressources propres à ce cheval sont libérées (géométries partagées préservées).
     this.mesh.traverse((o) => o.isMesh && o.geometry.dispose());

@@ -1,0 +1,8 @@
+✔ FC de repos — 40
+✔ FC au galop — 206 bpm à 50 km/h
+✔ FC affichée dans la télémétrie — 207
+✔ récupération après 2 min 30 — 73
+✔ action « Panser » proposée près du cheval sale — Panser
+✔ robe propre après pansage — 99.99998
+✔ action suivante « Curer les pieds » — Curer les pieds
+✔ fiche santé dans l’application Chevaux

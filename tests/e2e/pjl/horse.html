@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cheval WildMesh — test isolé</title>
+<style>html,body{margin:0;height:100%;background:#cfd6d2;overflow:hidden}canvas{display:block}#t{position:fixed;left:8px;top:6px;font:12px monospace;color:#123}</style></head>
+<body><div id="t"></div>
+<script type="module">
+// Test isolé du cheval WildMesh (sans le jeu) : asset préparé comme dans le jeu (pjl/asset.js), vue (pjl/view.js)
+// pilotée par un état de simulation écrit à la main. window.__pjl : mesures (longueurs d'os, sol, appuis, saut).
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadHorseAsset, baseName } from '/src/entities/pjl/asset.js';
+import { HorseView, COM_CANTER_HEIGHT } from '/src/entities/pjl/view.js';
+import { coatOf } from '/src/entities/pjlHorse.js';
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(1);
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#cfd6d2');
+scene.add(new THREE.HemisphereLight('#eef4ff', '#6b5a44', 1.6));
+const sun = new THREE.DirectionalLight('#fff4e0', 2.6);
+sun.position.set(4, 8, 5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 });
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: '#b9a582', roughness: 1 }));
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+const grid = new THREE.GridHelper(40, 40, '#7d6d55', '#9d8c70');
+grid.position.y = 0.002;
+scene.add(grid);
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 200);
+const t0 = performance.now();
+const asset = await loadHorseAsset(() => new GLTFLoader().loadAsync('/real/horse_pjl.glb'));
+const prepMs = performance.now() - t0;
+const view = new HorseView(asset, coatOf({ coat: 'bay', blaze: true, socks: [false, false, true, false] }));
+scene.add(view.root);
+// ---- Mesures sur l'asset
+const W = (b) => new THREE.Vector3().setFromMatrixPosition(b.matrixWorld);
+const mixer = new THREE.AnimationMixer(asset.scene);
+function measureLengths(clipName) {
+  // Longueur de chaque os (distance au parent) au fil du clip, rapportée à celle de la pose de repos.
+  const bones = []; asset.scene.traverse((o) => o.isBone && o.parent?.isBone && bones.push(o));
+  asset.scene.updateMatrixWorld(true);
+  const rest = bones.map((b) => b.position.length());
+  mixer.stopAllAction();
+  const a = mixer.clipAction(asset.clips.get(clipName)); a.reset().play();
+  const d = asset.clips.get(clipName).duration;
+  let worst = { r: 1, bone: '' };
+  for (let f = 0; f <= 24; f++) {
+    mixer.setTime((f / 24) * d);
+    bones.forEach((b, i) => {
+      if (rest[i] < 1e-4) return;
+      const r = b.position.length() / rest[i];
+      if (Math.abs(Math.log(r)) > Math.abs(Math.log(worst.r))) worst = { r, bone: baseName(b.name), t: +(f / 24 * d).toFixed(3) };
+    });
+  }
+  mixer.uncacheAction(asset.clips.get(clipName));
+  return worst;
+}
+const lengths = {};
+for (const c of ['canter', 'canter_M', 'gallop', 'gallop_M', 'trot', 'trot_M', 'jump_canter', 'jump_canter_M', 'jump_gallop_M', 'canter_L90_M', 'canter_R90_M']) if (asset.clips.has(c)) lengths[c] = measureLengths(c);
+mixer.stopAllAction();
+// Postérieurs : longueur canon + paturon (hanche → sabot) original vs miroir, en pose courante (vue).
+const S = {
+  set(o) { Object.assign(state, o); },
+};
+const state = { x: 0, z: 0, y: COM_CANTER_HEIGHT, heading: 0, roll: 0, speed: 0, gait: 'halt', lead: 'R', phase: 0, strideLen: 3.42, turnRate: 0, mode: 'ride', jt: 0, jT: 0, landingTimer: 9 };
+function step(dt) { view.update(state, dt); view.root.updateMatrixWorld(true); }
+function hoofHeights() {
+  const out = {};
+  for (const [k, n] of [['AG', 'fingers_02_l'], ['AD', 'fingers_02_r'], ['PG', 'toes_02_l'], ['PD', 'toes_02_r']]) out[k] = +view.boneWorld(n).y.toFixed(3);
+  return out;
+}
+// Segments des membres en pose (vue) : longueur monde de chaque os des quatre membres, pour comparer gauche et droite.
+function limbLengths() {
+  const out = {};
+  for (const n of ['upperleg_l', 'lowerleg_l', 'foot_l', 'toes_01_l', 'upperleg_r', 'lowerleg_r', 'foot_r', 'toes_01_r', 'upperarm_l', 'lowerarm_l', 'hand_l', 'upperarm_r', 'lowerarm_r', 'hand_r']) {
+    const b = view.bones.get(n);
+    if (!b || !b.children[0]) continue;
+    const c = b.children.find((x) => x.isBone) || b.children[0];
+    out[n] = +W(b).distanceTo(W(c)).toFixed(4);
+  }
+  return out;
+}
+function frame(cam, target) {
+  camera.position.set(...cam);
+  camera.lookAt(...target);
+  renderer.render(scene, camera);
+}
+window.__pjl = { THREE, asset, view, state, step, hoofHeights, limbLengths, frame, prepMs, lengths, renderer, info: () => renderer.info,
+  summary: () => ({ prepMs: Math.round(prepMs), stats: asset.stats, scale: asset.scale, groundY: asset.groundY, gaitContacts: asset.gaitContacts, jumps: Object.fromEntries([...asset.jumps].map(([k, j]) => [k, { toeOff: j.toeOff, foreLand: j.foreLand, hindLand: j.hindLand, nextFore: j.nextFore, end: j.end }])), clips: [...asset.clips.keys()], lengths, anchors: Object.fromEntries(Object.entries(asset.tack.anchors).map(([k, v]) => [k, v.toArray().map((x) => +x.toFixed(3))])) }) };
+document.getElementById('t').textContent = `WildMesh prêt en ${Math.round(prepMs)} ms`;
+step(0.016);
+frame([3.4, 1.6, 2.4], [0, 0.95, 0]);
+</script></body></html>

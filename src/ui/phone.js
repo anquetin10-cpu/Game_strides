@@ -876,7 +876,7 @@ export class Phone {
     body.appendChild(h('div.set-credit', { text: t('Modèles réalistes : voitures de PROJECT CAR90 / Samuel Carvalho, Karol Miklas, GT Cars / Car2022 et supercarmodels (Sketchfab), CC BY 4.0, logos retirés ; personnages MakeHuman, CC0.') }));
     // État du chargement des modèles 3D sur cet appareil (chargé, en cours, indisponible et pourquoi).
     {
-      const names = { rider_f: t('cavalière'), rider_m: t('cavalier'), horse_tripo: 'Tripo' };
+      const names = { rider_f: t('cavalière'), rider_m: t('cavalier'), horse_tripo: 'Tripo', horse_pjl: t('cheval WildMesh') };
       const parts = [];
       for (const [id, st] of Object.entries(realStatus)) {
         if (!names[id]) continue;
@@ -887,6 +887,8 @@ export class Phone {
       const mode = R ? (R.playerEnabled ? (R.failed ? t('classique (échec du chargement)') : t('réaliste')) : t('classique (réglage)')) : '—';
       body.appendChild(h('div.set-credit', { 'data-id': 'models-status', text: T`État des modèles 3D : personnage ${mode} · réglage ${set.characters}, qualité ${set.quality}${parts.length ? ' · ' + parts.join(' · ') : ''}` }));
     }
+    // Cheval WildMesh (Jumping League Sim) : attribution exigée par la licence CC BY 4.0.
+    body.appendChild(h('div.set-credit', { text: t('Chevaux : « Realistic Animated Horse » par WildMesh 3D (sketchfab.com/WildMesh_3D), CC BY 4.0 ; modifié : sellerie d’origine retirée, robes paramétriques, compression, sélection et miroir des animations, sellerie anglaise ajoutée (repris de Jumping League Sim) ; affiché sauf en qualité Économie et avec les modèles Classiques.') }));
     // Cheval à l'essai : son modèle est sa robe, il ne dépend pas des réglages ci-dessus, sauf la qualité Économie (voir realistic.js).
     body.appendChild(h('div.set-credit', { text: t('Cheval à l’essai Tripo : modèle généré avec Tripo AI, fourni par le propriétaire du projet, squelette et textures adaptés ; affiché avec ce modèle quels que soient les réglages des modèles 3D, sauf en qualité Économie.') }));
     body.appendChild(seg(t('Écoulement du temps'), 'timeScale', [['jeu', t('Jeu · 1 jour = 20 min')], ['reel', t('Réel · 24 h')]]));

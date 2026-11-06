@@ -1,0 +1,42 @@
+{
+ "walk": {
+  "solMin": [
+   0.089,
+   0.092,
+   0.106,
+   0.108
+  ],
+  "gaucheDroite": 1
+ },
+ "trot": {
+  "solMin": [
+   0.099,
+   0.1,
+   0.107,
+   0.089
+  ],
+  "gaucheDroite": 1
+ },
+ "canterR": {
+  "solMin": [
+   0.094,
+   0.101,
+   0.095,
+   0.102
+  ],
+  "gaucheDroite": 1
+ },
+ "canterL": {
+  "solMin": [
+   0.095,
+   0.077,
+   0.066,
+   0.049
+  ],
+  "gaucheDroite": 1
+ },
+ "jump": {
+  "gaucheDroite": 1,
+  "sabotsMaxEnVol": 1.209
+ }
+}

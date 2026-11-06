@@ -1,0 +1,2517 @@
+{
+ "viewport": "667x300",
+ "pjl": true,
+ "bootS": 13.02,
+ "results": [
+  {
+   "id": "PJ-01",
+   "label": "cheval WildMesh pour Comète au démarrage, sans erreur",
+   "ok": true,
+   "extra": "préparation 1081 ms, fichier 312 ms"
+  },
+  {
+   "id": "PJ-00b",
+   "label": "contrôle du détecteur de pénétration (bassin du cheval dedans, point au-dessus du garrot dehors)",
+   "ok": true,
+   "extra": "{\"dedans\":0.09,\"dessus\":0}"
+  },
+  {
+   "id": "PJ-02",
+   "label": "montée animée (bouton ACTION) jusqu’en selle, jambes jamais dans le corps WildMesh (< 2 cm)",
+   "ok": false,
+   "extra": "Monter ; pénétration max 16.5 cm"
+  },
+  {
+   "id": "PJ-03c",
+   "label": "en selle (repos, allures, virages) : jambes hors du corps WildMesh (< 2 cm)",
+   "ok": false,
+   "extra": "max 4.8 cm"
+  },
+  {
+   "id": "PJ-03",
+   "label": "allures repos → pas → trot → galop → grand galop",
+   "ok": true,
+   "extra": "idle/walk/trot/canter/gallop ; clips {\"canter_M\":0.99}"
+  },
+  {
+   "id": "PJ-03b",
+   "label": "virage à gauche : galop à gauche (clips en miroir), à droite : galop à droite (clips d’origine)",
+   "ok": true,
+   "extra": "gauche : canter_M,canter_L90_M ; droite : canter,canter_R90"
+  },
+  {
+   "id": "PJ-05a",
+   "label": "sabots au sol à l’appui (articulation du sabot entre -6 et +16 cm du sol)",
+   "ok": true,
+   "extra": "0.02 / 0.031 / 0.01 / 0.062"
+  },
+  {
+   "id": "PJ-04",
+   "label": "saut : envol, réception, retour aux allures",
+   "ok": true,
+   "extra": "clip de saut 1 au plus ; clips en fin : {\"jump_gallop\":1}"
+  },
+  {
+   "id": "PJ-05b",
+   "label": "pente 11 % au pas : sabots près du sol",
+   "ok": true,
+   "extra": "0.1 / 0.091 / 0.121 / 0.11"
+  },
+  {
+   "id": "PJ-06",
+   "label": "descente animée (bouton ACTION) : à pied à côté du cheval, jambes hors du corps WildMesh",
+   "ok": false,
+   "extra": "Descendre ; 13 pas de 0,2 s ; pénétration max 8.8 cm"
+  },
+  {
+   "id": "PJ-06b",
+   "label": "montée et descente par la droite (mur à gauche), jambes hors du corps WildMesh",
+   "ok": false,
+   "extra": "pénétration max 12.9 cm"
+  },
+  {
+   "id": "PJ-07",
+   "label": "reprise : cheval WildMesh de nouveau affiché",
+   "ok": true,
+   "extra": "{\"state\":\"play\",\"pjl\":[\"Comète\",\"Cheval\",\"Cheval\"]}"
+  },
+  {
+   "id": "PJ-00",
+   "label": "aucune erreur JavaScript",
+   "ok": true,
+   "extra": ""
+  }
+ ],
+ "perf": {
+  "on": {
+   "msMedian": 4.9,
+   "msP90": 5.7,
+   "calls": 50,
+   "tris": 413907,
+   "geometries": 589,
+   "textures": 120,
+   "programs": 104,
+   "heapMB": 258
+  },
+  "off": {
+   "msMedian": 3.4,
+   "msP90": 5.7,
+   "calls": 23,
+   "tris": 344863,
+   "geometries": 586,
+   "textures": 118,
+   "programs": 90,
+   "heapMB": 261
+  },
+  "pjlNow": 1
+ },
+ "logs": [
+  "[horse] ground: hoof soles -0.7724 hoof joints 9.2233",
+  "[horse] tack built in 223 ms",
+  "[horse] Equestrian Tour : préparation {loadMs: 312, prepareMs: 1081, bones: 419, clips: 28}",
+  "[horse] Equestrian Tour : calage des clips sur les allures du jeu {walk: 0.714 (écart 0.047), trot: 0.485 (écart 0.027), canterR: 0.944 (écart 0.031), canterL: 0.999 (écart 0.140), gallopR: 0.961 (écart 0.062)} clips d’origine à main droite",
+  "[horse] Equestrian Tour : étriers du cavalier {\"stirrupX\":0.4409648793935776,\"stirrupY\":-0.55,\"stirrupZ\":0.19100193444314523,\"flancG\":0.356,\"flancD\":-0.366,\"recentrage\":-0.024}",
+  "[horse] ground: hoof soles -0.7724 hoof joints 9.2233",
+  "[horse] tack built in 208 ms",
+  "[horse] Equestrian Tour : préparation {loadMs: 245, prepareMs: 1140, bones: 419, clips: 28}",
+  "[horse] Equestrian Tour : calage des clips sur les allures du jeu {walk: 0.714 (écart 0.047), trot: 0.485 (écart 0.027), canterR: 0.944 (écart 0.031), canterL: 0.999 (écart 0.140), gallopR: 0.961 (écart 0.062)} clips d’origine à main droite",
+  "[horse] Equestrian Tour : étriers du cavalier {\"stirrupX\":0.4409648793935776,\"stirrupY\":-0.55,\"stirrupZ\":0.19100193444314523,\"flancG\":0.356,\"flancD\":-0.366,\"recentrage\":-0.024}"
+ ],
+ "errors": [],
+ "mountFrames": [
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0.13
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0.33
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0.53
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0.73
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 0.93
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0.098,
+   "where": {
+    "side": "l",
+    "seg": 0,
+    "t": 1,
+    "d": 0.098,
+    "p": [
+     159.74,
+     -1.83,
+     -457.61
+    ]
+   },
+   "seqT": 1.13
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0.165,
+   "where": {
+    "side": "l",
+    "seg": 0,
+    "t": 1,
+    "d": 0.038,
+    "p": [
+     159.85,
+     -1.39,
+     -457.58
+    ]
+   },
+   "seqT": 1.33
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0.028,
+   "where": {
+    "side": "l",
+    "seg": 0,
+    "t": 1,
+    "d": 0.013,
+    "p": [
+     159.82,
+     -1.38,
+     -457.56
+    ]
+   },
+   "seqT": 1.53
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 1.73
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 1.93
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 2.13
+  },
+  {
+   "mode": "foot",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": true,
+   "gap": null,
+   "pen": 0,
+   "where": null,
+   "seqT": 2.33
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "idle",
+   "lead": 1,
+   "speed": 0,
+   "jumpT": -1,
+   "clipJump": 0,
+   "active": false,
+   "gap": 0.024,
+   "pen": 0,
+   "where": null,
+   "seqT": 2.5
+  }
+ ],
+ "gaits": {
+  "idle": [
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "idle",
+    "lead": 1,
+    "speed": 0,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "idle": 1
+    },
+    "hooves": [
+     [
+      0.096,
+      0.118,
+      0.092,
+      0.134
+     ],
+     [
+      0.096,
+      0.118,
+      0.092,
+      0.134
+     ],
+     [
+      0.096,
+      0.118,
+      0.092,
+      0.134
+     ],
+     [
+      0.096,
+      0.118,
+      0.092,
+      0.134
+     ],
+     [
+      0.096,
+      0.118,
+      0.092,
+      0.134
+     ],
+     [
+      0.096,
+      0.118,
+      0.092,
+      0.134
+     ],
+     [
+      0.095,
+      0.117,
+      0.092,
+      0.134
+     ],
+     [
+      0.095,
+      0.117,
+      0.092,
+      0.134
+     ],
+     [
+      0.095,
+      0.117,
+      0.092,
+      0.134
+     ],
+     [
+      0.095,
+      0.117,
+      0.092,
+      0.134
+     ],
+     [
+      0.095,
+      0.117,
+      0.092,
+      0.134
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   }
+  ],
+  "walk": [
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "walk",
+    "lead": 1,
+    "speed": 1.9,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "walk": 1
+    },
+    "hooves": [
+     [
+      0.134,
+      0.113,
+      0.178,
+      0.124
+     ],
+     [
+      0.15,
+      0.113,
+      0.15,
+      0.124
+     ],
+     [
+      0.168,
+      0.113,
+      0.125,
+      0.124
+     ],
+     [
+      0.189,
+      0.114,
+      0.112,
+      0.125
+     ],
+     [
+      0.219,
+      0.114,
+      0.104,
+      0.129
+     ],
+     [
+      0.238,
+      0.114,
+      0.101,
+      0.134
+     ],
+     [
+      0.228,
+      0.114,
+      0.099,
+      0.149
+     ],
+     [
+      0.208,
+      0.115,
+      0.099,
+      0.17
+     ],
+     [
+      0.181,
+      0.115,
+      0.1,
+      0.198
+     ],
+     [
+      0.16,
+      0.115,
+      0.099,
+      0.228
+     ],
+     [
+      0.149,
+      0.115,
+      0.099,
+      0.241
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "walk",
+    "lead": 1,
+    "speed": 1.9,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "walk": 1
+    },
+    "hooves": [
+     [
+      0.144,
+      0.115,
+      0.099,
+      0.24
+     ],
+     [
+      0.127,
+      0.115,
+      0.099,
+      0.235
+     ],
+     [
+      0.11,
+      0.118,
+      0.099,
+      0.231
+     ],
+     [
+      0.097,
+      0.128,
+      0.099,
+      0.231
+     ],
+     [
+      0.093,
+      0.15,
+      0.099,
+      0.219
+     ],
+     [
+      0.093,
+      0.17,
+      0.099,
+      0.198
+     ],
+     [
+      0.093,
+      0.193,
+      0.099,
+      0.175
+     ],
+     [
+      0.093,
+      0.218,
+      0.099,
+      0.151
+     ],
+     [
+      0.094,
+      0.244,
+      0.099,
+      0.135
+     ],
+     [
+      0.094,
+      0.251,
+      0.099,
+      0.124
+     ],
+     [
+      0.094,
+      0.229,
+      0.105,
+      0.124
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "walk",
+    "lead": 1,
+    "speed": 1.9,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "walk": 1
+    },
+    "hooves": [
+     [
+      0.095,
+      0.215,
+      0.116,
+      0.124
+     ],
+     [
+      0.095,
+      0.207,
+      0.14,
+      0.124
+     ],
+     [
+      0.096,
+      0.198,
+      0.179,
+      0.123
+     ],
+     [
+      0.096,
+      0.187,
+      0.214,
+      0.124
+     ],
+     [
+      0.096,
+      0.176,
+      0.224,
+      0.124
+     ],
+     [
+      0.101,
+      0.155,
+      0.217,
+      0.124
+     ],
+     [
+      0.11,
+      0.131,
+      0.203,
+      0.124
+     ],
+     [
+      0.122,
+      0.116,
+      0.189,
+      0.124
+     ],
+     [
+      0.14,
+      0.114,
+      0.172,
+      0.125
+     ],
+     [
+      0.156,
+      0.113,
+      0.142,
+      0.125
+     ],
+     [
+      0.175,
+      0.114,
+      0.12,
+      0.125
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   }
+  ],
+  "trot": [
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "trot",
+    "lead": 1,
+    "speed": 4.6,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "trot_M": 0.98
+    },
+    "hooves": [
+     [
+      0.219,
+      0.112,
+      0.11,
+      0.203
+     ],
+     [
+      0.209,
+      0.128,
+      0.134,
+      0.23
+     ],
+     [
+      0.211,
+      0.144,
+      0.169,
+      0.255
+     ],
+     [
+      0.217,
+      0.182,
+      0.214,
+      0.259
+     ],
+     [
+      0.221,
+      0.232,
+      0.251,
+      0.249
+     ],
+     [
+      0.204,
+      0.275,
+      0.277,
+      0.22
+     ],
+     [
+      0.165,
+      0.313,
+      0.292,
+      0.191
+     ],
+     [
+      0.138,
+      0.315,
+      0.288,
+      0.165
+     ],
+     [
+      0.121,
+      0.276,
+      0.252,
+      0.138
+     ],
+     [
+      0.098,
+      0.221,
+      0.222,
+      0.122
+     ],
+     [
+      0.079,
+      0.175,
+      0.181,
+      0.108
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "trot",
+    "lead": 1,
+    "speed": 4.6,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "trot_M": 0.99
+    },
+    "hooves": [
+     [
+      0.178,
+      0.3,
+      0.293,
+      0.197
+     ],
+     [
+      0.145,
+      0.313,
+      0.293,
+      0.17
+     ],
+     [
+      0.128,
+      0.285,
+      0.264,
+      0.143
+     ],
+     [
+      0.108,
+      0.237,
+      0.237,
+      0.127
+     ],
+     [
+      0.088,
+      0.182,
+      0.201,
+      0.111
+     ],
+     [
+      0.076,
+      0.153,
+      0.144,
+      0.104
+     ],
+     [
+      0.084,
+      0.131,
+      0.094,
+      0.097
+     ],
+     [
+      0.123,
+      0.11,
+      0.064,
+      0.123
+     ],
+     [
+      0.178,
+      0.08,
+      0.049,
+      0.162
+     ],
+     [
+      0.229,
+      0.083,
+      0.065,
+      0.178
+     ],
+     [
+      0.24,
+      0.093,
+      0.084,
+      0.185
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "trot",
+    "lead": 1,
+    "speed": 4.6,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "trot_M": 1
+    },
+    "hooves": [
+     [
+      0.079,
+      0.135,
+      0.108,
+      0.102
+     ],
+     [
+      0.11,
+      0.115,
+      0.072,
+      0.104
+     ],
+     [
+      0.161,
+      0.088,
+      0.053,
+      0.155
+     ],
+     [
+      0.213,
+      0.076,
+      0.057,
+      0.173
+     ],
+     [
+      0.239,
+      0.089,
+      0.078,
+      0.183
+     ],
+     [
+      0.233,
+      0.101,
+      0.099,
+      0.191
+     ],
+     [
+      0.219,
+      0.111,
+      0.121,
+      0.206
+     ],
+     [
+      0.208,
+      0.127,
+      0.147,
+      0.23
+     ],
+     [
+      0.211,
+      0.149,
+      0.187,
+      0.25
+     ],
+     [
+      0.219,
+      0.194,
+      0.233,
+      0.251
+     ],
+     [
+      0.222,
+      0.242,
+      0.265,
+      0.235
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   }
+  ],
+  "canter": [
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": 1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter_M": 0.99
+    },
+    "hooves": [
+     [
+      0.337,
+      0.239,
+      0.254,
+      0.28
+     ],
+     [
+      0.406,
+      0.19,
+      0.184,
+      0.198
+     ],
+     [
+      0.442,
+      0.14,
+      0.139,
+      0.148
+     ],
+     [
+      0.414,
+      0.096,
+      0.092,
+      0.106
+     ],
+     [
+      0.375,
+      0.096,
+      0.078,
+      0.07
+     ],
+     [
+      0.328,
+      0.129,
+      0.128,
+      0.105
+     ],
+     [
+      0.248,
+      0.161,
+      0.178,
+      0.176
+     ],
+     [
+      0.174,
+      0.225,
+      0.273,
+      0.232
+     ],
+     [
+      0.134,
+      0.302,
+      0.401,
+      0.274
+     ],
+     [
+      0.1,
+      0.347,
+      0.459,
+      0.309
+     ],
+     [
+      0.107,
+      0.354,
+      0.414,
+      0.345
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": 1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter_M": 1
+    },
+    "hooves": [
+     [
+      0.119,
+      0.318,
+      0.434,
+      0.285
+     ],
+     [
+      0.094,
+      0.359,
+      0.463,
+      0.328
+     ],
+     [
+      0.137,
+      0.344,
+      0.384,
+      0.348
+     ],
+     [
+      0.247,
+      0.295,
+      0.309,
+      0.328
+     ],
+     [
+      0.362,
+      0.226,
+      0.241,
+      0.261
+     ],
+     [
+      0.414,
+      0.177,
+      0.173,
+      0.185
+     ],
+     [
+      0.451,
+      0.129,
+      0.133,
+      0.142
+     ],
+     [
+      0.4,
+      0.091,
+      0.085,
+      0.093
+     ],
+     [
+      0.368,
+      0.102,
+      0.09,
+      0.072
+     ],
+     [
+      0.313,
+      0.137,
+      0.142,
+      0.118
+     ],
+     [
+      0.23,
+      0.17,
+      0.194,
+      0.189
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": 1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter_M": 0.99
+    },
+    "hooves": [
+     [
+      0.354,
+      0.116,
+      0.112,
+      0.084
+     ],
+     [
+      0.281,
+      0.143,
+      0.157,
+      0.147
+     ],
+     [
+      0.199,
+      0.2,
+      0.232,
+      0.215
+     ],
+     [
+      0.144,
+      0.264,
+      0.349,
+      0.256
+     ],
+     [
+      0.115,
+      0.33,
+      0.451,
+      0.293
+     ],
+     [
+      0.094,
+      0.357,
+      0.452,
+      0.332
+     ],
+     [
+      0.156,
+      0.337,
+      0.369,
+      0.345
+     ],
+     [
+      0.275,
+      0.287,
+      0.3,
+      0.323
+     ],
+     [
+      0.373,
+      0.213,
+      0.225,
+      0.244
+     ],
+     [
+      0.422,
+      0.169,
+      0.163,
+      0.176
+     ],
+     [
+      0.446,
+      0.12,
+      0.124,
+      0.132
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   }
+  ],
+  "gallop": [
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "gallop",
+    "lead": 1,
+    "speed": 13.85,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "gallop_M": 1
+    },
+    "hooves": [
+     [
+      0.513,
+      0.14,
+      0.066,
+      0.104
+     ],
+     [
+      0.497,
+      0.083,
+      0.085,
+      0.131
+     ],
+     [
+      0.421,
+      0.107,
+      0.152,
+      0.215
+     ],
+     [
+      0.238,
+      0.158,
+      0.234,
+      0.279
+     ],
+     [
+      0.138,
+      0.258,
+      0.39,
+      0.346
+     ],
+     [
+      0.101,
+      0.416,
+      0.453,
+      0.391
+     ],
+     [
+      0.097,
+      0.504,
+      0.432,
+      0.458
+     ],
+     [
+      0.269,
+      0.502,
+      0.42,
+      0.483
+     ],
+     [
+      0.448,
+      0.444,
+      0.372,
+      0.418
+     ],
+     [
+      0.578,
+      0.356,
+      0.28,
+      0.289
+     ],
+     [
+      0.533,
+      0.256,
+      0.185,
+      0.171
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "gallop",
+    "lead": 1,
+    "speed": 14,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "gallop_M": 1
+    },
+    "hooves": [
+     [
+      0.53,
+      0.227,
+      0.157,
+      0.146
+     ],
+     [
+      0.52,
+      0.155,
+      0.076,
+      0.108
+     ],
+     [
+      0.503,
+      0.087,
+      0.073,
+      0.119
+     ],
+     [
+      0.436,
+      0.094,
+      0.139,
+      0.203
+     ],
+     [
+      0.264,
+      0.151,
+      0.219,
+      0.27
+     ],
+     [
+      0.147,
+      0.238,
+      0.371,
+      0.342
+     ],
+     [
+      0.105,
+      0.394,
+      0.447,
+      0.381
+     ],
+     [
+      0.091,
+      0.494,
+      0.434,
+      0.448
+     ],
+     [
+      0.242,
+      0.509,
+      0.425,
+      0.487
+     ],
+     [
+      0.422,
+      0.456,
+      0.384,
+      0.438
+     ],
+     [
+      0.558,
+      0.369,
+      0.293,
+      0.311
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "gallop",
+    "lead": 1,
+    "speed": 14,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "gallop_M": 0.97
+    },
+    "hooves": [
+     [
+      0.557,
+      0.335,
+      0.255,
+      0.266
+     ],
+     [
+      0.528,
+      0.243,
+      0.169,
+      0.16
+     ],
+     [
+      0.522,
+      0.172,
+      0.087,
+      0.112
+     ],
+     [
+      0.514,
+      0.1,
+      0.063,
+      0.115
+     ],
+     [
+      0.459,
+      0.09,
+      0.125,
+      0.194
+     ],
+     [
+      0.298,
+      0.141,
+      0.193,
+      0.26
+     ],
+     [
+      0.163,
+      0.226,
+      0.345,
+      0.342
+     ],
+     [
+      0.113,
+      0.375,
+      0.437,
+      0.377
+     ],
+     [
+      0.085,
+      0.482,
+      0.431,
+      0.44
+     ],
+     [
+      0.212,
+      0.521,
+      0.427,
+      0.498
+     ],
+     [
+      0.395,
+      0.474,
+      0.396,
+      0.467
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "l",
+     "seg": 0,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      159.82,
+      -1.38,
+      -457.56
+     ]
+    }
+   }
+  ],
+  "turnL": [
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": 1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter_M": 0.15,
+     "canter_L90_M": 0.85
+    },
+    "hooves": [
+     [
+      0.363,
+      0.043,
+      0.065,
+      0.08
+     ],
+     [
+      0.339,
+      0.048,
+      0.121,
+      0.105
+     ],
+     [
+      0.28,
+      0.085,
+      0.193,
+      0.158
+     ],
+     [
+      0.186,
+      0.144,
+      0.288,
+      0.216
+     ],
+     [
+      0.124,
+      0.213,
+      0.394,
+      0.25
+     ],
+     [
+      0.087,
+      0.283,
+      0.475,
+      0.27
+     ],
+     [
+      0.066,
+      0.318,
+      0.483,
+      0.275
+     ],
+     [
+      0.116,
+      0.304,
+      0.406,
+      0.266
+     ],
+     [
+      0.237,
+      0.255,
+      0.313,
+      0.221
+     ],
+     [
+      0.366,
+      0.187,
+      0.229,
+      0.148
+     ],
+     [
+      0.412,
+      0.136,
+      0.145,
+      0.062
+     ]
+    ],
+    "pen": 0.014,
+    "where": {
+     "side": "r",
+     "seg": 1,
+     "t": 1,
+     "d": 0.014,
+     "p": [
+      36.53,
+      -1.06,
+      -442.19
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": 1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter_M": 0.15,
+     "canter_L90_M": 0.85
+    },
+    "hooves": [
+     [
+      0.215,
+      0.169,
+      0.32,
+      0.23
+     ],
+     [
+      0.153,
+      0.243,
+      0.413,
+      0.254
+     ],
+     [
+      0.113,
+      0.316,
+      0.474,
+      0.276
+     ],
+     [
+      0.094,
+      0.339,
+      0.437,
+      0.294
+     ],
+     [
+      0.168,
+      0.323,
+      0.346,
+      0.289
+     ],
+     [
+      0.297,
+      0.276,
+      0.267,
+      0.246
+     ],
+     [
+      0.398,
+      0.212,
+      0.187,
+      0.154
+     ],
+     [
+      0.442,
+      0.167,
+      0.126,
+      0.094
+     ],
+     [
+      0.44,
+      0.117,
+      0.084,
+      0.082
+     ],
+     [
+      0.395,
+      0.058,
+      0.061,
+      0.072
+     ],
+     [
+      0.385,
+      0.066,
+      0.118,
+      0.095
+     ]
+    ],
+    "pen": 0.048,
+    "where": {
+     "side": "r",
+     "seg": 1,
+     "t": 1,
+     "d": 0.048,
+     "p": [
+      41.94,
+      -1.51,
+      -449.48
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": 1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter_M": 0.15,
+     "canter_L90_M": 0.85
+    },
+    "hooves": [
+     [
+      0.109,
+      0.339,
+      0.416,
+      0.307
+     ],
+     [
+      0.213,
+      0.304,
+      0.325,
+      0.279
+     ],
+     [
+      0.335,
+      0.234,
+      0.244,
+      0.214
+     ],
+     [
+      0.415,
+      0.184,
+      0.166,
+      0.114
+     ],
+     [
+      0.434,
+      0.13,
+      0.113,
+      0.09
+     ],
+     [
+      0.399,
+      0.084,
+      0.069,
+      0.084
+     ],
+     [
+      0.371,
+      0.031,
+      0.079,
+      0.089
+     ],
+     [
+      0.344,
+      0.065,
+      0.156,
+      0.131
+     ],
+     [
+      0.266,
+      0.123,
+      0.244,
+      0.203
+     ],
+     [
+      0.186,
+      0.182,
+      0.357,
+      0.247
+     ],
+     [
+      0.13,
+      0.261,
+      0.455,
+      0.266
+     ]
+    ],
+    "pen": 0.027,
+    "where": {
+     "side": "r",
+     "seg": 1,
+     "t": 1,
+     "d": 0.027,
+     "p": [
+      34.37,
+      -1.19,
+      -444.56
+     ]
+    }
+   }
+  ],
+  "turnR": [
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": -1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter": 0.15,
+     "canter_R90": 0.85
+    },
+    "hooves": [
+     [
+      0.224,
+      0.385,
+      0.01,
+      0.233
+     ],
+     [
+      0.183,
+      0.384,
+      0.033,
+      0.195
+     ],
+     [
+      0.11,
+      0.333,
+      0.057,
+      0.122
+     ],
+     [
+      0.045,
+      0.323,
+      0.106,
+      0.112
+     ],
+     [
+      0.021,
+      0.271,
+      0.187,
+      0.137
+     ],
+     [
+      0.031,
+      0.195,
+      0.252,
+      0.175
+     ],
+     [
+      0.095,
+      0.139,
+      0.274,
+      0.251
+     ],
+     [
+      0.181,
+      0.102,
+      0.254,
+      0.332
+     ],
+     [
+      0.258,
+      0.079,
+      0.228,
+      0.372
+     ],
+     [
+      0.298,
+      0.124,
+      0.2,
+      0.341
+     ],
+     [
+      0.298,
+      0.244,
+      0.145,
+      0.307
+     ]
+    ],
+    "pen": 0,
+    "where": {
+     "side": "r",
+     "seg": 1,
+     "t": 1,
+     "d": 0.027,
+     "p": [
+      34.37,
+      -1.19,
+      -444.56
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": -1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter": 0.15,
+     "canter_R90": 0.85
+    },
+    "hooves": [
+     [
+      0.063,
+      0.303,
+      0.144,
+      0.115
+     ],
+     [
+      0.051,
+      0.237,
+      0.224,
+      0.13
+     ],
+     [
+      0.093,
+      0.162,
+      0.279,
+      0.18
+     ],
+     [
+      0.164,
+      0.116,
+      0.284,
+      0.255
+     ],
+     [
+      0.255,
+      0.096,
+      0.271,
+      0.337
+     ],
+     [
+      0.313,
+      0.092,
+      0.251,
+      0.349
+     ],
+     [
+      0.331,
+      0.173,
+      0.216,
+      0.313
+     ],
+     [
+      0.322,
+      0.296,
+      0.163,
+      0.294
+     ],
+     [
+      0.284,
+      0.385,
+      0.085,
+      0.261
+     ],
+     [
+      0.25,
+      0.411,
+      0.056,
+      0.229
+     ],
+     [
+      0.194,
+      0.394,
+      0.074,
+      0.186
+     ]
+    ],
+    "pen": 0.002,
+    "where": {
+     "side": "l",
+     "seg": 1,
+     "t": 1,
+     "d": 0.002,
+     "p": [
+      33.33,
+      -1.39,
+      -447.43
+     ]
+    }
+   },
+   {
+    "mode": "ride",
+    "pjl": true,
+    "hidden": false,
+    "gait": "canter",
+    "lead": -1,
+    "speed": 8.45,
+    "jumpT": -1,
+    "clipJump": 0,
+    "clips": {
+     "canter": 0.15,
+     "canter_R90": 0.85
+    },
+    "hooves": [
+     [
+      0.174,
+      0.101,
+      0.282,
+      0.339
+     ],
+     [
+      0.246,
+      0.074,
+      0.245,
+      0.389
+     ],
+     [
+      0.286,
+      0.1,
+      0.212,
+      0.367
+     ],
+     [
+      0.291,
+      0.214,
+      0.159,
+      0.329
+     ],
+     [
+      0.26,
+      0.337,
+      0.091,
+      0.295
+     ],
+     [
+      0.241,
+      0.414,
+      0.012,
+      0.259
+     ],
+     [
+      0.197,
+      0.412,
+      0.029,
+      0.22
+     ],
+     [
+      0.141,
+      0.364,
+      0.061,
+      0.155
+     ],
+     [
+      0.053,
+      0.34,
+      0.104,
+      0.115
+     ],
+     [
+      0.027,
+      0.3,
+      0.168,
+      0.131
+     ],
+     [
+      0.02,
+      0.233,
+      0.245,
+      0.163
+     ]
+    ],
+    "pen": 0.013,
+    "where": {
+     "side": "l",
+     "seg": 1,
+     "t": 1,
+     "d": 0.013,
+     "p": [
+      30.29,
+      -0.81,
+      -438.91
+     ]
+    }
+   }
+  ]
+ },
+ "jump": [
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.08,
+   "clipJump": 0.7,
+   "clips": {
+    "canter": 0.52,
+    "canter_L90": 0.12,
+    "jump_gallop": 0.37
+   },
+   "y": 0.42
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.17,
+   "clipJump": 0.91,
+   "clips": {
+    "canter": 0.26,
+    "canter_L90": 0.06,
+    "jump_gallop": 0.68
+   },
+   "y": 0.77
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.25,
+   "clipJump": 0.97,
+   "clips": {
+    "canter": 0.12,
+    "jump_gallop": 0.85
+   },
+   "y": 1.03
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.33,
+   "clipJump": 0.99,
+   "clips": {
+    "canter": 0.05,
+    "jump_gallop": 0.94
+   },
+   "y": 1.23
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.42,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 0.97
+   },
+   "y": 1.34
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.5,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 0.99
+   },
+   "y": 1.38
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.58,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 1.34
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.67,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 1.23
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.75,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 1.03
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.83,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 0.77
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 0.92,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 0.42
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.45,
+   "jumpT": 1,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 0
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.06,
+   "jumpT": -1,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 0
+  },
+  {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "canter",
+   "lead": -1,
+   "speed": 8.3,
+   "jumpT": -1,
+   "clipJump": 1,
+   "clips": {
+    "jump_gallop": 1
+   },
+   "y": 0
+  }
+ ],
+ "slope": {
+  "x": -60,
+  "z": -440.903489688943,
+  "s": 0.11015377442042051,
+  "hooves": [
+   [
+    0.171,
+    0.297,
+    0.24,
+    0.188
+   ],
+   [
+    0.124,
+    0.207,
+    0.236,
+    0.152
+   ],
+   [
+    0.107,
+    0.166,
+    0.226,
+    0.123
+   ],
+   [
+    0.103,
+    0.154,
+    0.236,
+    0.11
+   ],
+   [
+    0.1,
+    0.158,
+    0.251,
+    0.112
+   ],
+   [
+    0.1,
+    0.154,
+    0.264,
+    0.116
+   ],
+   [
+    0.103,
+    0.143,
+    0.261,
+    0.119
+   ],
+   [
+    0.11,
+    0.124,
+    0.249,
+    0.122
+   ],
+   [
+    0.12,
+    0.101,
+    0.231,
+    0.122
+   ],
+   [
+    0.134,
+    0.091,
+    0.216,
+    0.125
+   ],
+   [
+    0.153,
+    0.091,
+    0.194,
+    0.126
+   ],
+   [
+    0.169,
+    0.091,
+    0.16,
+    0.127
+   ],
+   [
+    0.189,
+    0.092,
+    0.139,
+    0.129
+   ],
+   [
+    0.213,
+    0.094,
+    0.129,
+    0.131
+   ],
+   [
+    0.239,
+    0.095,
+    0.124,
+    0.136
+   ],
+   [
+    0.253,
+    0.097,
+    0.121,
+    0.144
+   ],
+   [
+    0.226,
+    0.098,
+    0.122,
+    0.164
+   ],
+   [
+    0.201,
+    0.099,
+    0.123,
+    0.187
+   ],
+   [
+    0.17,
+    0.1,
+    0.124,
+    0.217
+   ]
+  ],
+  "st": {
+   "mode": "ride",
+   "pjl": true,
+   "hidden": false,
+   "gait": "walk",
+   "lead": -1,
+   "speed": 1.9,
+   "jumpT": -1,
+   "clipJump": 0
+  }
+ }
+}

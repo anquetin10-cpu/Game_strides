@@ -31,6 +31,33 @@ calculés, polygones réduits en deux niveaux de détail, textures converties en
 affiché dans le jeu (téléphone → Réglages, sous « Modèles 3D »). Fichier produit par
 `node scripts/real/build-tripo-horse.mjs` (environ 45 s ; rapport dans `trial/horse_tripo.json`).
 
+## Cheval WildMesh (repris de Jumping League Sim)
+
+| Fichier | Contenu | Licence | Source |
+| --- | --- | --- | --- |
+| `horse_pjl.glb` (6,4 Mo) | Cheval réaliste riggé (419 os), 17 animations (pas, trot, galop, grand galop, virages à 90°, sauts au galop et au grand galop, arrêt glissé, repos) | **CC BY 4.0** (preuve : métadonnées `asset.extras` écrites par l'exportateur Sketchfab, conservées dans le fichier) | « [Realistic Animated Horse](https://sketchfab.com/3d-models/realistic-animated-horse-75ca409fb4da47c9ae4725046e9bfa1e) » par **WildMesh 3D** ([sketchfab.com/WildMesh_3D](https://sketchfab.com/WildMesh_3D)) |
+
+Fichier copié tel quel (octet pour octet, SHA-256 `06d8cb42e983f551b492a70e760fd19fce9f29d1c07e01faa1a6097dd406e714`) depuis le jeu
+Jumping League Sim du même propriétaire (dépôt `anquetin10-cpu/PGL_Game-`, branche `claude/pjl-jumping-game`, commit
+`afa56f9c84ab0cfbac47e77b8f0b38f17c7e5999`, `public/assets/models/horse.glb`), avec le code qui le prépare et l'anime
+(`src/entities/pjl/`, converti de TypeScript). Modifications faites par Jumping League Sim (documentées dans son
+`docs/ASSETS.md`) : sellerie western d'origine retirée, matériaux convertis en metal-rough, animations triées et
+rééchantillonnées, textures WebP, géométrie quantifiée. Modifications au chargement (code repris) : mouvement de la racine
+retiré des clips, clips à main gauche construits en miroir (longueurs d'os conservées), robes paramétriques par shader,
+sellerie anglaise (tapis, selle, sangle, filet, mors, guêtres, bonnet) générée sur la surface du cheval. Ajouts
+d'Equestrian Tour : étrivières, étriers et rênes dessinés par le jeu, calage des clips sur les allures du jeu.
+
+Texte d'attribution (affiché dans le jeu : téléphone → Réglages, sous « Modèles 3D ») :
+
+> Chevaux : « Realistic Animated Horse » par WildMesh 3D (sketchfab.com/WildMesh_3D), CC BY 4.0
+> (https://creativecommons.org/licenses/by/4.0/) ; modifié : sellerie d'origine retirée, robes paramétriques,
+> compression, sélection et miroir des animations, sellerie anglaise ajoutée.
+
+Point d'attention relevé par Jumping League Sim : l'auteur a depuis republié le modèle (« 2.0 ») et présente la
+version gratuite comme « personal use only ». La copie utilisée a été reçue sous CC BY 4.0 (licence irrévocable pour
+cette copie, attribution ci-dessus). Pour une diffusion commerciale sans ambiguïté, une licence commerciale de
+WildMesh 3D reste à décider par le propriétaire du projet ; **rien n'a été acheté**.
+
 ## Voitures
 
 | Fichier | Modèle d'origine | Auteur | Licence |

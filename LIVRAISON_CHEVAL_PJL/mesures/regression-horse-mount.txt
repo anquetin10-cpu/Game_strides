@@ -1,0 +1,17 @@
+✔ HM-00 contrôle du détecteur de pénétration (point dans la croupe détecté, point au-dessus non) — {"dedans":0.2729682163062168,"dessus":0}
+✔ HM-01 un appui sur « Monter » lance toute la séquence ; double appui et joystick ignorés ; cheval immobile — {"lab":"Monter","mode":"ride","horseMoved":0}
+✔ HM-02a pied gauche dans l’étrier : plante du pied sur la grille (< 6 cm) — 1.0 cm
+✔ HM-02b main gauche aux rênes sur le garrot (< 6 cm) — 2.9 cm
+✔ HM-03 jambe droite au-dessus de la croupe, jamais dans le cheval (pénétration maximale de la jambe opposée) — 0.1 cm
+✔ HM-04 rattachement à la selle sans saut (position < 1 cm, rotation < 1°, échelle identique) — {"endJump":0,"endRot":0,"endScale":[0.9849999999999999,0.9849999999999999]}
+✔ HM-05 descente : jambe au-dessus de la croupe, au sol, à pied (contrôles à pied rétablis) — {"mode":"foot","minLeg":0,"endJump":0}
+✔ HM-06 même personnage du début à la fin (maillage, squelette, modèle réaliste, vêtements, échelle, coiffure) — {"mesh":"02651b3a-75b0-4562-90b9-dcf0200de502","bones":"3ee6a0ad-0913-4ff3-b032-53269098399d","real":"ad719496-a31e-
+✔ HM-06b casque mis pendant la montée (geste de la main), retiré après la descente — {"aCheval":true,"reel":true,"aPied":false,"reelAPied":false}
+✔ HM-07 caméra continue (saut < 0,35 m, champ < 1°), personnage sans téléportation (< 0,15 m par image) — {"cam":0.118,"fov":0,"perso":0.134}
+✔ HM-08a durées : montée 1,5–2,5 s, descente 1,5–2,5 s (hors approche / arrêt) — montée 2.50 s, descente 2.43 s
+✔ HM-08b trois cycles successifs : tous complets, même personnage — 2.50/2.43 s · 2.50/2.43 s · 2.50/2.43 s
+✔ HM-08c-ulysse cheval ulysse : montée et descente complètes, étrier, croupe, rattachement sans saut — {"ball":0.011,"minLeg":0,"endJump":0,"upMode":"ride","downMode":"foot","started":true,"lab":"Monter"}
+✔ HM-08c-onyx cheval onyx : montée et descente complètes, étrier, croupe, rattachement sans saut — {"ball":0.01,"minLeg":-0.002,"endJump":0,"upMode":"ride","downMode":"foot","started":true,"lab":"Monter"}
+✔ HM-08c-big cheval big : montée et descente complètes, étrier, croupe, rattachement sans saut — {"ball":0.01,"minLeg":0,"endJump":0,"upMode":"ride","downMode":"foot","started":true,"lab":"Monter"}
+✔ HM-08d mur le long du flanc gauche : montée et descente par la droite (miroir), sans traverser le mur — {"side":-1,"ball":0.009,"minLeg":0}
+✔ erreurs aucune erreur JavaScript

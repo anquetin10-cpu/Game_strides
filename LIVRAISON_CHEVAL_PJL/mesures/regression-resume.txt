@@ -1,0 +1,8 @@
+care exit=0 33s
+horse-mount exit=0 30s
+tripo-horse exit=124 1500s
+transport-flow exit=0 223s
+cso exit=0 31s
+save-guard exit=0 247s
+mission-resume exit=0 394s
+DONE

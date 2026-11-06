@@ -486,6 +486,8 @@ export class Game {
     if (!old) return;
     const tk = this.commerce?.horseTack() || {};
     if (setHorseDress(old.mesh, tk)) {
+      // Cheval WildMesh recréé aux nouvelles couleurs (tapis, guêtres, bonnet).
+      this.realism?.dropPjl(old);
       const r = this.realism?.horses.get(old);
       if (r) {
         r.dispose();
