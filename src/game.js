@@ -983,6 +983,9 @@ export class Game {
       }
       this.scene.add(v.mesh);
     };
+    // Page quittée ou rechargée pendant un téléchargement : requête interrompue par le navigateur, pas une erreur.
+    let leaving = false;
+    addEventListener('pagehide', () => (leaving = true), { once: true });
     const run = async () => {
       if (this.safeMode >= 2) return;
       await new Promise((r) => setTimeout(r, 1500));
@@ -997,6 +1000,7 @@ export class Game {
         this.vanLoading = new VanLoading(this, van);
         Object.assign(this.vanModelInfo, { loaded: true, pending: false });
       } catch (e) {
+        if (leaving) return;
         console.error(`Van STX Renault Master NON chargé (${MASTER_FILE}).`, e);
         Object.assign(this.vanModelInfo, { error: String(e?.message || e), pending: false });
         if (this.state === 'play') this.hud.toast(t('Van STX Renault Master non chargé : modèle introuvable ou incomplet.'));
@@ -1013,6 +1017,7 @@ export class Game {
         this.defenderAccess = new DefenderAccess(this, def);
         Object.assign(this.defenderModelInfo, { loaded: true, pending: false, loadMs: M.loadMs, triangles: M.triangles, meshes: M.meshes, materials: M.materials });
       } catch (e) {
+        if (leaving) return;
         console.error(`Defender 110 NON chargé (${this.defenderModelInfo.file}).`, e);
         Object.assign(this.defenderModelInfo, { error: String(e?.message || e), pending: false });
         if (this.state === 'play') this.hud.toast(t('Defender 110 non chargé : modèle introuvable ou incomplet.'));
