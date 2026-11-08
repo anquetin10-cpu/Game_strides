@@ -64,6 +64,10 @@ export class Phone {
   open(app = 'home', opts = {}) {
     const g = this.game;
     if (g.state !== 'play') return;
+    // Aucune offre encore générée (téléphone ouvert avant la première échéance, simulation suspendue) : offres du
+    // moment générées à l'ouverture, sans notification, plutôt qu'une application vide.
+    const m = g.missions;
+    if (m && !m.active && !m.offers.some((o) => !o.locked)) m.refreshOffers(false);
     this.isOpen = true;
     document.body.classList.add('phone-open');
     g.input.setEnabled(false);

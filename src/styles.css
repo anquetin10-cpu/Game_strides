@@ -505,8 +505,8 @@ body:has(.overlay.night-seq) .rotate { z-index: 9500; }
 .app-head .st-brand { margin-left: auto; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .app-head .st-brand .st-logo { height: 12px; }
 .app-head .st-brand .tag { font: 500 8px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--st-bronze-50); white-space: nowrap; }
-/* Écrans courts : barre d'état, en-têtes et onglets plus bas, accueil resserré. */
-@media (max-height: 360px) {
+/* Écrans courts (iPhone en paysage : 375 à 430 px de haut) : barre d'état, en-têtes et onglets plus bas, accueil resserré. */
+@media (max-height: 430px) {
   .phone::before { top: 15px; height: 20px; }
   .status-bar { flex-basis: 32px; padding-top: 3px; font-size: 12px; }
   .app-head { padding: 6px 12px; }

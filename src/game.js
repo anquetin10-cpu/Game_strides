@@ -1342,7 +1342,9 @@ export class Game {
         kicker: t('Côte Fleurie · Normandie'),
         title: t('Bienvenue à Deauville City'),
         body: T`${this.save.data.playerName}, tu arrives avec Comète, ta jument baie, et zéro euro en poche. Ici, tout le monde travaille avec STRIDES : les missions tombent sur ton téléphone. Accepte-les, réalise-les, construis ta réputation… jusqu’au Grand Prix.`,
-        buttons: [{ label: t('En selle'), primary: true, id: 'go', run: () => (this.missions.timer = 2.5) }],
+        // Première offre (« Premiers pas ») tout de suite : le compte à rebours des offres est suspendu tant que le
+        // téléphone est ouvert, il ne doit pas laisser l'application vide si le joueur l'ouvre aussitôt.
+        buttons: [{ label: t('En selle'), primary: true, id: 'go', run: () => { this.missions.timer = 55; this.missions.refreshOffers(true); } }],
       });
       this.missions.timer = 999;
     } else {
