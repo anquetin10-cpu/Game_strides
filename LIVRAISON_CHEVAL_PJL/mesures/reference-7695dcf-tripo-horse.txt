@@ -1,0 +1,42 @@
+✔ A0 cheval Tripo chargé (essai de session) et piloté par le cheval du jeu (TripoHorse, 50 os, 2 niveaux de détail) — {"cls":"TripoHorse","trial":{"id":"horse_tripo","cls":true,"failed":false},"lods":[29982,7993],"bones":50,"layer":2
+✔ A1 rien n’est remplacé : cheval du jeu masqué mais animé, aucun autre cheval en Tripo — calque 2147483648, autres 0
+✔ A2 vues au repos rendues dans la même pose pour le Tripo et le cheval du jeu (licol visible, ou cheval WildMesh seul affiché, dessellé) ; calques, sellerie et exclusivité de chaque modèle — {"tripo":true,"classique":true,"memePos
+✔ A3 au repos, sabot du Tripo sur celui du cheval du jeu : en hauteur, hors appui posé, grandeur que la seconde passe de TripoHorse annule (près du sol, sabot du jeu à moins de 3.0 cm : point le plus bas de tous les sommets du bas de c
+✔ A4 cheval non monté : filet et rênes du Tripo (TripoBridle, TripoReins) masqués — {"n":3,"noms":["TripoBridle","TripoReins"],"shown":[false,false,false],"monte":false,"dL":null,"dR":null}
+✔ B-pas pas : allure 1 — allure 1, 1.9 m/s
+✔ B-pas-suivi pas : sabot du Tripo sur celui du cheval du jeu : en hauteur, hors appui posé, grandeur que la seconde passe de TripoHorse annule (près du sol, sabot du jeu à moins de 3.0 cm : point le plus bas de tous les sommets du bas
+✔ B-pas-appui pas : en appui posé (sabot du jeu verrouillé, sans bascule en pince selon l'animation du jeu, point le plus bas à ±2.0 cm du sol), sabot du Tripo posé comme lui (point le plus bas au-dessus du sol, Tripo − jeu, entre 
+✔ B-pas-sol pas : sabot du Tripo jamais enfoncé dans le sol de plus de 1.2 cm au-delà de celui du cheval du jeu — enfoncé au plus 0.46 cm au-delà du sabot du jeu (information : point le plus bas jusqu'à -1.6 cm du sol pour le Tripo
+✔ B-pas-filet pas : cheval monté, filet et rênes du Tripo affichés à chaque image ; bout de chaque rêne à 3.0 cm au plus du poing du cavalier — 90/90 images affichées ; écart rêne–poing max 0.25 cm {"n":391,"jt":-1,"sp":1.9,"
+ℹ B-pas-jeu pas : point le plus bas des sabots du cheval du jeu (animation procédurale) — {"min":-0.021,"ou":{"n":368,"jt":-1,"sp":1.9,"allure":"walk","depuisReception":null,"depuisAppel":null,"sabot":0,"tripo":-0.013,"jeu":-0.021,"app
+✔ B-trot trot : allure 2 — allure 2, 4.6 m/s
+✔ B-trot-suivi trot : sabot du Tripo sur celui du cheval du jeu : en hauteur, hors appui posé, grandeur que la seconde passe de TripoHorse annule (près du sol, sabot du jeu à moins de 3.0 cm : point le plus bas de tous les sommets du b
+✘ B-trot-appui trot : en appui posé (sabot du jeu verrouillé, sans bascule en pince selon l'animation du jeu, point le plus bas à ±2.0 cm du sol), sabot du Tripo posé comme lui (point le plus bas au-dessus du sol, Tripo − jeu, entr
+✔ B-trot-sol trot : sabot du Tripo jamais enfoncé dans le sol de plus de 1.2 cm au-delà de celui du cheval du jeu — enfoncé au plus 0.52 cm au-delà du sabot du jeu (information : point le plus bas jusqu'à -1.5 cm du sol pour le Tri
+✔ B-trot-filet trot : cheval monté, filet et rênes du Tripo affichés à chaque image ; bout de chaque rêne à 3.0 cm au plus du poing du cavalier — 90/90 images affichées ; écart rêne–poing max 0.25 cm {"n":490,"jt":-1,"sp":4.6
+ℹ B-trot-jeu trot : point le plus bas des sabots du cheval du jeu (animation procédurale) — {"min":-0.0206,"ou":{"n":506,"jt":-1,"sp":4.6,"allure":"trot","depuisReception":null,"depuisAppel":null,"sabot":0,"tripo":-0.012,"jeu":-0.021,"
+✔ B-galop galop : allure 3 — allure 3, 9.72 m/s
+✔ B-galop-suivi galop : sabot du Tripo sur celui du cheval du jeu : en hauteur, hors appui posé, grandeur que la seconde passe de TripoHorse annule (près du sol, sabot du jeu à moins de 3.0 cm : point le plus bas de tous les sommets du
+✔ B-galop-appui galop : en appui posé (sabot du jeu verrouillé, sans bascule en pince selon l'animation du jeu, point le plus bas à ±2.0 cm du sol), sabot du Tripo posé comme lui (point le plus bas au-dessus du sol, Tripo − jeu, en
+✔ B-galop-sol galop : sabot du Tripo jamais enfoncé dans le sol de plus de 1.2 cm au-delà de celui du cheval du jeu — enfoncé au plus 0.68 cm au-delà du sabot du jeu (information : point le plus bas jusqu'à -3.5 cm du sol pour le T
+✔ B-galop-filet galop : cheval monté, filet et rênes du Tripo affichés à chaque image ; bout de chaque rêne à 3.0 cm au plus du poing du cavalier — 90/90 images affichées ; écart rêne–poing max 0.25 cm {"n":682,"jt":-1,"sp":9
+ℹ B-galop-jeu galop : point le plus bas des sabots du cheval du jeu (animation procédurale) — {"min":-0.0338,"ou":{"n":670,"jt":-1,"sp":9.7,"allure":"canter","depuisReception":null,"depuisAppel":null,"sabot":0,"tripo":-0.035,"jeu":-0.0
+✔ B-grand-galop grand-galop : allure 4 — allure 4, 14 m/s
+✔ B-grand-galop-suivi grand-galop : sabot du Tripo sur celui du cheval du jeu : en hauteur, hors appui posé, grandeur que la seconde passe de TripoHorse annule (près du sol, sabot du jeu à moins de 3.0 cm : point le plus bas de tous le
+✔ B-grand-galop-appui grand-galop : en appui posé (sabot du jeu verrouillé, sans bascule en pince selon l'animation du jeu, point le plus bas à ±2.0 cm du sol), sabot du Tripo posé comme lui (point le plus bas au-dessus du sol, Tripo
+✔ B-grand-galop-sol grand-galop : sabot du Tripo jamais enfoncé dans le sol de plus de 1.2 cm au-delà de celui du cheval du jeu — enfoncé au plus 0.66 cm au-delà du sabot du jeu (information : point le plus bas jusqu'à -4.0 cm du s
+✔ B-grand-galop-filet grand-galop : cheval monté, filet et rênes du Tripo affichés à chaque image ; bout de chaque rêne à 3.0 cm au plus du poing du cavalier — 90/90 images affichées ; écart rêne–poing max 0.25 cm {"n":940,"j
+ℹ B-grand-galop-jeu grand-galop : point le plus bas des sabots du cheval du jeu (animation procédurale) — {"min":-0.0375,"ou":{"n":927,"jt":-1,"sp":14,"allure":"gallop","depuisReception":null,"depuisAppel":null,"sabot":0,"tripo":-0.04,
+✔ C1 sauts du Tripo sur la carrière d’échauffement : au moins 2 sauts franchis ; à chaque image du saut (appel, suspension, réception), modèle Tripo actif et affiché — 2 sauts, 2 franchis, 84 images vérifiées, 0 en défaut ; [
+✔ C2 pendant les sauts (appel, suspension, réception), sabot du Tripo sur celui du cheval du jeu : en hauteur, hors appui posé, grandeur que la seconde passe de TripoHorse annule (près du sol, sabot du jeu à moins de 3.0 cm : point le
+✔ C3 pendant les sauts, sabot du Tripo jamais enfoncé dans le sol de plus de 1.2 cm au-delà de celui du cheval du jeu — appel : enfoncé au plus 0.00 cm au-delà du sabot du jeu (information : point le plus bas jusqu'à 7.1 cm du sol 
+ℹ C-jeu sauts : point le plus bas des sabots du cheval du jeu (animation procédurale) — {"min":-0.0751,"ou":{"n":995,"jt":-1,"sp":8.4,"allure":"canter","depuisReception":0,"depuisAppel":26,"sabot":1,"tripo":-0.076,"jeu":-0.075,"appui":
+✔ D1 épreuve de CSO terminée avec le Tripo, sans élimination — {"t":59.86666666666583,"faults":0,"refusals":0,"finished":true,"eliminated":null}
+✔ D2 manche jouée avec le Tripo actif et affiché de bout en bout, sans téléportation — 1943/1943 images, 0 téléportation
+✔ D3 pendant la manche (sauts compris), sabot du Tripo jamais enfoncé dans le sol de plus de 1.2 cm au-delà de celui du cheval du jeu — enfoncé au plus 0.29 cm au-delà du sabot du jeu (information : point le plus bas jusqu'à -10.6 
+✔ D4 pendant la manche (sauts compris), sabot du Tripo sur celui du cheval du jeu : en hauteur, hors appui posé, grandeur que la seconde passe de TripoHorse annule (près du sol, sabot du jeu à moins de 3.0 cm : point le plus bas de tou
+ℹ D-jeu manche : point le plus bas des sabots du cheval du jeu (animation procédurale ; images depuis la dernière réception) — {"min":-0.1064,"ou":{"n":1293,"jt":-1,"sp":5.9,"allure":"canter","depuisReception":0,"depuisAppel":18,"sab
+✔ E1 niveau de détail : complet de près (4,2 m et 22 m), réduit au-delà de 25 m (28 m et 40 m) ; triangles rendus conformes au niveau affiché, écart au cheval du jeu seul conforme aux maillages (près, loin) — {"lod":{"pres":[true
+✔ E2 recopie de pose bon marché (< 1 ms par image en rendu logiciel) — 0.328 ms
+✔ E4 cheval monté : filet et rênes du Tripo affichés de près (4,2 m et 22 m), masqués au-delà de 25 m (28 m et 40 m) — {"monte":true,"filet":{"pres":[true,true,true],"avant":[true,true,true],"apres":[false,false,false],"loin":[fal
+✔ E3 aucune erreur JavaScript

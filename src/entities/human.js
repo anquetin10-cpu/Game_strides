@@ -334,7 +334,16 @@ export class Human {
     const f = this._fit || RIDER_FIT;
     const k = 1 / this.scale;
     const rf = this._rideFit || (this._rideFit = {});
-    for (const key in f) rf[key] = key === 'kneeOut' ? f[key] : f[key] * k;
+    // (kneeOut, mountKneeOut : directions, pas des longueurs ; flank : tableau de longueurs, voir human/anim.js flankAt)
+    for (const key in f) {
+      const v = f[key];
+      if (Array.isArray(v)) {
+        const arr = rf[key] && rf[key].length === v.length ? rf[key] : (rf[key] = new Array(v.length));
+        for (let i = 0; i < v.length; i++) arr[i] = v[i] * k;
+      } else rf[key] = key === 'kneeOut' || key === 'mountKneeOut' ? v : v * k;
+    }
+    // Réglages retirés (cheval WildMesh remplacé par le cheval du jeu) : plus de profil de flanc.
+    for (const key in rf) if (!(key in f)) delete rf[key];
     a.fit = rf;
     // En selle : les deux pieds dans les étriers (les étriers suivent les pieds, voir Horse._stirrupsFollow).
     this.inStirrup = IN_BOTH;

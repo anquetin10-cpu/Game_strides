@@ -34,6 +34,8 @@ const OUT = 'tests/e2e/out/tripo-horse';
 const onlyArg = process.argv.find((a) => a.startsWith('--only='));
 const RUN = new Set((onlyArg ? onlyArg.slice(7) : 'A,B,C,D,E').toUpperCase().split(',').map((s) => s.trim()).filter((s) => s && 'ABCDE'.includes(s)));
 if (process.argv.includes('--no-cso')) RUN.delete('D');
+// --cso-sans-images : manche de CSO (D) jouée et mesurée sans les captures (environ 0,8 capture/s en rendu logiciel).
+const CSO_SHOTS = !process.argv.includes('--cso-sans-images');
 const SECS = [...RUN].sort().join('');
 const FULL = SECS === 'ABCDE';
 // Sabot du cheval du jeu « posé » : en appui sans bascule en pince selon l'animation du jeu, point le plus bas à ±2 cm
@@ -439,6 +441,8 @@ const boot = await E(async ([TOL, POSE, VIRAGE]) => {
       lods: R?.lods ? R.lods.map((l) => l.visible) : null,
       hoofAt: !!h.hoofAt,
       autres,
+      // Cheval WildMesh (pjlHorse.js) qui remplace l'affichage du cheval du jeu quand il n'a pas de modèle propre.
+      pjl: h.pjl ? { actif: !!h.pjl.active, racine: h.pjl.holder.visible && h.pjl.holder.parent === h.mesh, selle: h.pjl.view.tackMeshes.some((m) => /saddle|pad|girth/.test(m.name) && m.visible), filet: h.pjl.view.tackMeshes.some((m) => /bridle|bit/.test(m.name) && m.visible) } : null,
     };
   };
   const h = g.mainHorse;
@@ -545,12 +549,19 @@ if (RUN.has('A')) {
   }
   await E(() => { window.__fov = window.__fov0; });
   const D = vueRes, top = 2 ** 31;
+  // Hors modèle propre, le cheval du jeu est affiché avec le cheval WildMesh (pjlHorse.js) s'il est chargé : cheval du
+  // jeu masqué (corps, parties, sellerie), WildMesh seul affiché, attaché au cheval, sans selle ni filet (dessellé),
+  // sabots du WildMesh. Sans WildMesh (repli) : cheval du jeu affiché avec son licol, comme avant.
   const okD = {
-    tripo: (d) => d.cls === 'TripoHorse' && d.actif && d.racine && d.calque === top && d.calquesParties.every((x) => x === top) && d.sellerie.calque === 1 && !d.sellerie.visible && d.lods[0] && !d.lods[1] && d.hoofAt && d.autres > 0,
-    classique: (d) => d.cls === 'classique' && d.calque === 1 && d.calquesParties.every((x) => x === 1) && d.sellerie.calque === 1 && d.sellerie.visible && !d.sellerie.selle && d.sellerie.n === d.sellerie.licol && !d.hoofAt && d.autres === 0,
+    tripo: (d) => d.cls === 'TripoHorse' && d.actif && d.racine && d.calque === top && d.calquesParties.every((x) => x === top) && d.sellerie.calque === 1 && !d.sellerie.visible && d.lods[0] && !d.lods[1] && d.hoofAt && d.autres > 0 && !d.pjl,
+    classique: (d) =>
+      d.cls === 'classique' &&
+      (d.pjl
+        ? d.pjl.actif && d.pjl.racine && !d.pjl.selle && !d.pjl.filet && d.calque === top && d.calquesParties.every((x) => x === top) && d.sellerie.calque === top && !d.sellerie.selle && d.hoofAt && d.autres > 0
+        : d.calque === 1 && d.calquesParties.every((x) => x === 1) && d.sellerie.calque === 1 && d.sellerie.visible && !d.sellerie.selle && d.sellerie.n === d.sellerie.licol && !d.hoofAt && d.autres === 0),
   };
   const samePose = JSON.stringify(D.tripo.pose) === JSON.stringify(D.classique.pose);
-  check('A2', 'vues au repos rendues dans la même pose pour le Tripo et le cheval du jeu (licol visible) ; calques et sellerie de chaque modèle', okD.tripo(D.tripo) && okD.classique(D.classique) && samePose, JSON.stringify({ tripo: okD.tripo(D.tripo), classique: okD.classique(D.classique), memePose: samePose, etats: Object.fromEntries(Object.entries(D).map(([k, v]) => [k, { ...v, pose: undefined }])) }));
+  check('A2', 'vues au repos rendues dans la même pose pour le Tripo et le cheval du jeu (licol visible, ou cheval WildMesh seul affiché, dessellé) ; calques, sellerie et exclusivité de chaque modèle', okD.tripo(D.tripo) && okD.classique(D.classique) && samePose, JSON.stringify({ tripo: okD.tripo(D.tripo), classique: okD.classique(D.classique), memePose: samePose, etats: Object.fromEntries(Object.entries(D).map(([k, v]) => [k, { ...v, pose: undefined }])) }));
   await setModel('tripo');
   // Repos : sabots du Tripo sur ceux du cheval du jeu (mêmes règles qu'aux allures, sur 30 images) ; sabots en appui posés
   // comme ceux du cheval du jeu.
@@ -767,12 +778,12 @@ if (RUN.has('D')) {
       // Toutes les images de la manche, sauts compris.
       M.stats.add(window.__soles(h), window.__ctx(h));
     }, [dec.x, dec.y, dec.jump]);
-    if (n % 2 === 1) {
+    if (n % 2 === 1 && CSO_SHOTS) {
       await E(() => window.__render());
       await page.screenshot({ path: `${OUT}/cso/${String(vf++).padStart(5, '0')}.jpg`, type: 'jpeg', quality: 82 });
     }
   }
-  for (let i = 0; i < 30; i++) { await E(() => window.__auto.tick(2)); await E(() => window.__render()); await page.screenshot({ path: `${OUT}/cso/${String(vf++).padStart(5, '0')}.jpg`, type: 'jpeg', quality: 82 }); }
+  for (let i = 0; i < 30; i++) { await E(() => window.__auto.tick(2)); if (!CSO_SHOTS) continue; await E(() => window.__render()); await page.screenshot({ path: `${OUT}/cso/${String(vf++).padStart(5, '0')}.jpg`, type: 'jpeg', quality: 82 }); }
   cso = await E(() => { const M = window.__m, st = window.__lastCourse; return { st: st ? { t: st.t, faults: st.faults, refusals: st.refusals, finished: st.finished, eliminated: st.eliminated } : null, teleports: M.teleports, jumps: M.jumps, presses: M.presses, ev: M.ev, tripoFrames: M.tripo, frames: M.frames, sabots: M.stats.result() }; });
   const S = cso.sabots;
   check('D1', 'épreuve de CSO terminée avec le Tripo, sans élimination', cso.st?.finished && !cso.st?.eliminated, JSON.stringify(cso.st));
@@ -780,7 +791,7 @@ if (RUN.has('D')) {
   check('D3', `pendant la manche (sauts compris), ${solLbl()}`, sousJeuOk(S), `${sousJeuTxt(S)} ; pire : ${JSON.stringify(S.sousJeu.ou)}`);
   check('D4', `pendant la manche (sauts compris), ${suiviLbl()} ; ${appuiLbl()}`, suiviOk(S) && appuiOk(S), `${suiviTxt(S)} ; ${appuiTxt(S)}`);
   info('D-jeu', 'manche : point le plus bas des sabots du cheval du jeu (animation procédurale ; images depuis la dernière réception)', jeuInfo(S));
-  video('cso', 23);
+  if (CSO_SHOTS) video('cso', 23);
 }
 
 // ---------- E. Mesures ----------

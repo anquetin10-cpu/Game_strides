@@ -98,6 +98,64 @@ describe('personnages réalistes', () => {
     }
   });
 
+  it('longe le flanc fourni par le cheval sans y entrer, sans genoux en ailes ni jambe verrouillée', () => {
+    // Profil de flanc synthétique (cheval large, type WildMesh) : demi-largeur 0,22 m sous le siège, 0,38 m au ventre.
+    const flank = [-1.0, 0.05];
+    for (let y = -1.0; y <= -0.049; y += 0.05) flank.push(y > -0.25 ? 0.22 : y > -0.4 ? 0.3 : y > -0.75 ? 0.38 : 0.3);
+    const fit = { ...RIDER_FIT, stirrupX: 0.386, stirrupY: -0.64, stirrupZ: 0.101, flank, legClear: 0.05 };
+    const flankAt = (y) => {
+      const u = Math.min(flank.length - 3, Math.max(0, (y - flank[0]) / flank[1]));
+      const i = Math.min(flank.length - 4, Math.floor(u));
+      return flank[2 + i] + (flank[3 + i] - flank[2 + i]) * (u - i);
+    };
+    for (const outfit of [OUTFITS.rider, OUTFITS.riderF]) {
+      const { bones, mesh } = createHumanMesh(outfit);
+      const st = { t: 0, horseSpeed: 0, horseGaitPhase: 0, jump: -1, bob: 0, pitch: 0, turn: 0, fit };
+      for (const [speed, jump] of [[0, -1], [1.9, -1], [4.6, -1], [7, -1], [12, -1], [7, 0.45]]) {
+        Object.assign(st, { horseSpeed: speed, jump });
+        for (let i = 0; i < 40; i++) {
+          st.horseGaitPhase = i / 40;
+          animateHuman(bones, 'ride', st, 1 / 60);
+          mesh.updateMatrixWorld(true);
+          const inv = mesh.matrixWorld.clone().invert(); // repère du personnage (le profil y est exprimé)
+          for (const side of ['l', 'r']) {
+            const sg = side === 'l' ? 1 : -1;
+            const knee = bones[side + 'Shin'].getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
+            const ankle = bones[side + 'Foot'].getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
+            // Genou, tibia et cheville hors du flanc, à l'épaisseur de la jambe (5 cm ; 5 mm de tolérance numérique).
+            for (const t of [0, 0.35, 0.65, 1]) {
+              const p = knee.clone().lerp(ankle, t);
+              expect(p.x * sg).toBeGreaterThan(flankAt(p.y) + 0.05 - 0.005);
+            }
+            // Réglages de Julien conservés : pas de genoux en ailes, réserve de flexion, talon bas.
+            expect(Math.abs(knee.x)).toBeLessThan(Math.abs(ankle.x) + 0.015);
+            const shin = bones[side + 'Shin'].quaternion;
+            expect(2 * Math.acos(Math.min(1, Math.abs(shin.w)))).toBeGreaterThan(0.6);
+            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(bones[side + 'Foot'].getWorldQuaternion(new THREE.Quaternion()));
+            expect(forward.y).toBeGreaterThan(0.05);
+          }
+          expect(finiteBones(bones)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('un flanc éloigné des jambes ne change ni l’écart ni l’avance des pieds', () => {
+    const run = (fit) => {
+      const { bones, mesh } = createHumanMesh(OUTFITS.riderF);
+      const st = { t: 0, horseSpeed: 7, horseGaitPhase: 0.3, jump: -1, bob: 0, pitch: 0, turn: 0, fit };
+      for (let i = 0; i < 20; i++) animateHuman(bones, 'ride', st, 1 / 60);
+      mesh.updateMatrixWorld(true);
+      return ['l', 'r'].flatMap((s) => bones[s + 'Foot'].getWorldPosition(new THREE.Vector3()).toArray());
+    };
+    // Flanc étroit (loin des jambes) : x et z des chevilles identiques ; seule la hauteur peut suivre la règle du cheval
+    // large (bassin abaissé de quelques centimètres au plus, le pied remonte au-delà).
+    const narrow = [-1.0, 0.05, ...new Array(20).fill(0.05)];
+    const a = run({ ...RIDER_FIT }), b = run({ ...RIDER_FIT, flank: narrow, legClear: 0.05 });
+    for (const i of [0, 2, 3, 5]) expect(b[i]).toBeCloseTo(a[i], 6);
+    for (const i of [1, 4]) expect(Math.abs(b[i] - a[i])).toBeLessThan(0.05);
+  });
+
   it('trot enlevé : le bassin monte puis redescend une fois par foulée', () => {
     const { bones } = createHumanMesh(OUTFITS.riderF);
     const st = { t: 0, horseSpeed: 4.6, horseGaitPhase: 0, jump: -1, bob: 0, pitch: 0, turn: 0 };

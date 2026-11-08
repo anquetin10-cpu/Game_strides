@@ -46,8 +46,9 @@ Le cheval procédural du jeu reste la simulation. Il continue d'avancer, de saut
 - Terrain : le cheval suit la pente du jeu ; les sabots sont mesurés près du sol.
 
 **Cavalier (apparence d'Equestrian Tour inchangée)**
-- L'os `saddle` du cheval du jeu est placé chaque image au point d'assise WildMesh, recentré de 2,4 cm sur l'axe du tronc, avec le tangage du dos et l'inclinaison. Le cavalier, la montée et la descente sont exprimés dans ce repère.
-- Étriers : écartés à la demi-largeur du tronc WildMesh mesurée sur les poses jouées (36 cm), plus 8 cm.
+- L'os `saddle` du cheval du jeu est placé chaque image au point d'assise WildMesh, avec le tangage du dos et l'inclinaison. Il est recentré, image par image, sur l'axe du tronc : le milieu des deux ancres d'étrier skinnées. Le dos se balance jusqu'à 6 cm dans les clips de galop, le tronc beaucoup moins. Le cavalier, la montée et la descente sont exprimés dans ce repère.
+- Étriers : écartés à la demi-largeur du tronc WildMesh mesurée sur les poses jouées (36 cm), plus 10 cm (demi-épaisseur de la jambe et de la botte, et mouvement du tronc). Pendant la montée et la descente, les étriers « qui pendent » sont ceux de la selle WildMesh.
+- Montée et descente (`gameplay/horseMount.js`) : sur un cheval qui le demande (`riderFit.mountKneeOut`, donné seulement par le WildMesh), chaque genou hors de la selle est tourné vers l'extérieur du flanc du côté où se trouve son pied. Sans ce réglage, le pôle du genou pointait vers le cheval, que la cavalière regarde en montant. Le cheval procédural garde exactement le comportement d'avant.
 - Étrivières et étriers sont dessinés depuis les portes-étrivières WildMesh. Les rênes vont du mors WildMesh aux poings ; la longe est attachée au mors.
 
 **Chargement**
@@ -79,9 +80,13 @@ Toutes les vérifications ont été faites dans Chromium avec rendu logiciel Swi
 | Sabots au sol à l'appui, sur plat et sur une pente de 11 % | ✔ |
 | Reprise après rechargement | ✔ |
 | Erreurs JavaScript | aucune |
-| Montée et descente au bouton ACTION, séquence du jeu | ✔ |
-| Jambes hors du corps WildMesh pendant la montée et la descente | ✘ 8,8 à 16,5 cm, pendant environ 0,4 s : debout dans l'étrier et passage de la jambe |
-| Jambes hors du corps WildMesh en selle | ✘ 0 cm au repos, au pas, au trot et au galop de travail ; 4 à 4,8 cm à la cheville au grand galop et en virage |
+| Montée et descente au bouton ACTION, séquence du jeu, côté gauche et côté droit (mur à gauche) | ✔ |
+| Jambes hors du corps WildMesh pendant la montée et la descente (< 1 cm), des deux côtés | ✔ 0,0 cm (commit 3d2b003 : 16,5 cm à la montée, 8,8 cm à la descente, 12,9 cm côté droit) |
+| Jambes hors du corps WildMesh en selle (< 1 cm) : repos, allures, grand galop, virages | ✔ 0,0 cm (3d2b003 : 4 à 4,8 cm au grand galop et en virage) |
+
+Détecteur de pénétration : un point (cuisse, jambe, pied, sur l'os) est dans le corps si six rayons le rencontrent tous (maillage skinné en pose courante). Profondeur = surface la plus proche. Son propre contrôle passe : bassin du cheval dedans (9 cm), point au-dessus du garrot dehors.
+
+Comparaison ciblée (`tests/e2e/pjl/legs.mjs`, mêmes instants et mêmes vues, captures dans `captures/jambes-avant-apres.jpg`) : montée 16,5 → 0 cm, descente 8,2 → 0 cm, grand galop en ligne droite 1,0 → 0 cm.
 
 ### Non-régression (tests existants)
 
@@ -91,10 +96,8 @@ Toutes les vérifications ont été faites dans Chromium avec rendu logiciel Swi
 - CSO : ✔
 - Sauvegardes : ✔
 - Reprise de mission : ✔
-- Cheval Tripo :
-  - A0 à C3 passent ;
-  - A2 échoue comme prévu : sa vue « classique » de Comète suppose le cheval procédural, et Comète est maintenant affichée en WildMesh ;
-  - la partie D (manche de CSO) a dépassé la limite de 25 min du test (voir `mesures/`).
+- Cheval Tripo (`tripo-horse.mjs`, parties A à E, manche D sans captures : `--cso-sans-images`) : ✔, toutes les vérifications passent. A2 a été adapté : la vue « classique » de Comète est attendue en WildMesh. Le test exige alors le cheval du jeu masqué (corps, parties, sellerie), le WildMesh actif, attaché, seul affiché et dessellé, et des sabots WildMesh. La vue Tripo exige l'absence de WildMesh. Sans WildMesh, les anciens contrôles s'appliquent. La version de référence 7695dcf échoue sur B-trot-appui (glissement de 0,16 cm pour un seuil de 0,15) : c'est un défaut préexistant, pas une régression.
+- Partie D (manche de CSO) : elle n'était pas bloquée mais lente, à cause de ses captures (environ 0,8 par seconde en rendu logiciel, près de 1 000 captures). Elle dépassait les limites de temps. Sans captures : 30 s, et D1 à D4 passent sur la référence comme sur la nouvelle version (manche terminée sans élimination, Tripo affiché sur toutes les images, aucune téléportation).
 - Tests unitaires : 283 sur 283.
 
 ### Mesures
@@ -103,10 +106,10 @@ Même vue au galop, CPU de la machine de test : ordres de grandeur, ni une caden
 
 | | Avant (7695dcf) | Après |
 | --- | --- | --- |
-| Temps CPU d'une image, médiane | 3,9 ms | 4,9 à 5,2 ms |
+| Temps CPU d'une image, médiane | 3,9 ms | 5,2 ms |
 | Appels de dessin | 37 | 50 |
 | Triangles | 369 000 | 414 000 |
-| Tas JavaScript | ≈ 205 Mo | ≈ 240 à 265 Mo |
+| Tas JavaScript | ≈ 205 Mo | ≈ 255 Mo |
 
 Le fichier pèse 6,4 Mo. Préparation au chargement : 1,1 s environ (miroirs, sellerie, appuis).
 
@@ -117,5 +120,6 @@ Le fichier pèse 6,4 Mo. Préparation au chargement : 1,1 s environ (miroirs, se
 - Le cheval n'a ni licol ni empreinte dédiée au box. La longe s'attache au mors. Le filet n'est affiché que si le cheval est sellé.
 - Robes : les chevaux du jeu à robe personnalisée (couleurs libres) prennent la robe baie de la source.
 - Clips à main gauche (miroir corrigé de la source) : sabots 3 à 4 cm plus bas à l'appui et cadence un peu différente de la main droite. C'est le comportement de la source, conservé.
-- La séquence de montée et de descente est réglée pour le cheval du jeu, plus étroit : la jambe traverse le flanc WildMesh pendant environ 0,4 s.
+- La mesure de pénétration porte sur l'axe des os de la jambe (seuil 1 cm, mesuré : 0 cm partout), pas sur la surface des bottes : un léger contact de la botte avec le flanc ou le quartier reste possible, comme en réalité.
+- Pendant la montée, le genou côté montoir est nettement ouvert vers l'extérieur : c'est la condition pour ne pas traverser ce cheval large.
 - Licence : la copie du cheval a été reçue sous CC BY 4.0, avec l'attribution affichée dans le jeu. L'auteur présente désormais la version gratuite comme « personal use only » : une licence commerciale reste à décider par le propriétaire. Rien n'a été acheté.

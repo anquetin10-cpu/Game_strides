@@ -13,6 +13,7 @@ import { gradientTexture } from './truck.js';
 import { replaceStridesScreen } from '../world/textures.js';
 import mobileUrl from '../assets/vehicles/Defender110_STRIDES_MOBILE.glb?url';
 import { loadGLTF } from '../core/gltfInline.js';
+import { HOOKS } from '../core/devHooks.js';
 
 export const DEFENDER_FILES = {
   full: 'src/assets/vehicles/Defender110_STRIDES.glb',
@@ -49,7 +50,7 @@ export const ACCESSES = ['door_FL', 'door_FR', 'door_RL', 'door_RR', 'tailgate']
 export function defenderVariant() {
   let v = null;
   try {
-    v = new URLSearchParams(location.search).get('defender');
+    if (HOOKS) v = new URLSearchParams(location.search).get('defender');
   } catch {
     /* pas d'adresse */
   }

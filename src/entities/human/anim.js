@@ -395,6 +395,58 @@ function carryArms(B, P, st) {
 // ---------- Équitation ----------
 // st : horseSpeed (allure normalisée), horseGaitPhase, jump (-1 ou 0..1), wave, turn, bob (m), pitch (rad), fit
 const DEFAULT_FIT = { stirrupX: 0.33, stirrupY: -0.64, stirrupZ: 0.06, kneeOut: 0.45, handX: 0.06, handY: 0.3, handZ: 0.36 };
+// ---------- Jambe le long du flanc (cheval qui fournit son profil, voir pjlHorse.js) ----------
+// fit.flank = [y0, pas, d0, d1, …] : demi-largeur du tronc (axe du siège → flanc) par tranche de hauteur sous le siège,
+// unités du personnage ; fit.legClear : demi-épaisseur du mollet et de la botte. Interpolation linéaire, bornée.
+function flankAt(flank, y) {
+  const n = flank.length - 2;
+  const u = Math.min(n - 1, Math.max(0, (y - flank[0]) / flank[1]));
+  const i = Math.min(n - 2, Math.floor(u));
+  return flank[2 + i] + (flank[3 + i] - flank[2 + i]) * (u - i);
+}
+const _hk = new THREE.Vector3(), _hd = new THREE.Vector3(), _hu = new THREE.Vector3(), _hv = new THREE.Vector3(), _hp = new THREE.Vector3();
+// Genou que donnera ik2 (même géométrie) pour la hanche, la cheville et le pôle donnés.
+function kneeOf(hip, foot, pole, a, b, out) {
+  _hd.copy(foot).sub(hip);
+  const d = _hd.length() || 1e-6;
+  const dc = clamp(d, Math.abs(a - b) + 1e-4, (a + b) * 0.9995);
+  _hu.copy(_hd).divideScalar(d);
+  _hv.copy(pole).addScaledVector(_hu, -pole.dot(_hu));
+  if (_hv.lengthSq() < 1e-8) _hv.set(0, 0, 1);
+  _hv.normalize();
+  const cosA = clamp((a * a + dc * dc - b * b) / (2 * a * dc), -1, 1);
+  return out.copy(_hu).multiplyScalar(cosA * a).addScaledVector(_hv, Math.sqrt(1 - cosA * cosA) * a).add(hip);
+}
+// Profil du côté de la jambe : flankL / flankR (profil par côté, mis à jour à chaque image par le cheval), sinon flank.
+const flankOf = (fit, sg) => (sg > 0 ? fit.flankL : fit.flankR) || fit.flank || null;
+// Jambe « collée sans traverser » : le genou et le tibia restent hors du profil du flanc, à l'épaisseur de la jambe,
+// comme un cavalier dont le genou appuie sur le quartier et le mollet longe le tronc : genou trop près → il s'ouvre (pôle),
+// jamais au-delà de la cheville (pas de genoux « en ailes ») ; tibia trop près → le pied s'écarte du strict nécessaire.
+// Hauteur et avance de l'étrier, talon : inchangés.
+function hugFlank(P, side, sg, foot, pole, flank, clr, info) {
+  const hip = P.mp[BN[side].Thigh];
+  const a = info.thighLen, b = info.shinLen;
+  // < 0 : dans le flanc (1 cm de marge : le genou réel diffère de quelques millimètres de son estimation après le
+  // réajustement du bassin)
+  const gap = (p) => p.x * sg - (flankAt(flank, p.y) + clr + 0.01);
+  for (let it = 0; it < 32; it++) {
+    kneeOf(hip, foot, pole, a, b, _hk);
+    const gk = gap(_hk);
+    let gs = 0, push = 0;
+    for (const t of [0.35, 0.65]) {
+      _hp.copy(_hk).lerp(foot, t);
+      const g = gap(_hp);
+      if (g < gs) (gs = g), (push = -g / Math.max(t, 0.5));
+    }
+    if (gk >= -1e-4 && gs >= -1e-4) return;
+    const kneeRoom = _hk.x * sg < foot.x * sg + 0.01; // le genou peut encore s'ouvrir sans dépasser la cheville
+    if (gk < -1e-4 && kneeRoom) {
+      pole.x += sg * 0.15;
+      pole.normalize();
+    } else foot.x += sg * Math.min(Math.max(push, gk < -1e-4 ? -gk : 0, 0.004), 0.03);
+  }
+}
+
 function riding(B, P, st, dt, info) {
   const fit = st.fit || DEFAULT_FIT;
   const hs = st.horseSpeed || 0;
@@ -465,20 +517,53 @@ function riding(B, P, st, dt, info) {
     // la plante sur la grille de l'étrier → cheville
     _v1.set(0, -info.ankleY + 0.012, info.toe[2] - 0.005).applyQuaternion(f.q);
     f.pos.set(sg * fit.stirrupX, fit.stirrupY + R.post * 0.012 + two * 0.02, fit.stirrupZ - two * 0.02).sub(_v1);
+    // Cheval qui fournit le profil de son flanc (fit.flank) : cheville hors du flanc, à l'épaisseur de la botte.
+    const fl = flankOf(fit, sg);
+    if (fl) {
+      f.pos.x = sg * Math.max(Math.abs(f.pos.x), flankAt(fl, f.pos.y) + (fit.legClear || 0));
+      // Écart du pied décidé avant l'abaissement du bassin ci-dessous, qui garde ainsi la réserve de flexion du genou.
+      hugFlank(P, side, sg, f.pos, _v4.set(sg * fit.kneeOut, -0.05, 1).normalize(), fl, fit.legClear || 0, info);
+    }
     const hip = P.mp[BN[side].Thigh];
     const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
     const maxDrop = Math.sqrt(Math.max(0, maxReach * maxReach - lateral2));
     lowerSeat = Math.max(lowerSeat, hip.y - f.pos.y - maxDrop);
   }
+  // Cheval large (profil de flanc fourni) : le bassin ne descend que de quelques centimètres, sinon les cuisses
+  // entreraient dans le dos du cheval ; au-delà, c'est le pied qui remonte dans l'étrier (étrier un peu plus court).
+  const wide = !!(flankOf(fit, 1) || flankOf(fit, -1));
+  if (wide) lowerSeat = Math.min(lowerSeat, 0.035 * (info.thighLen + info.shinLen) / 0.9);
   if (lowerSeat > 0) {
     // Adapter la hauteur de suspension au cavalier, sans déplacer ses pieds hors des étriers.
     P.hips.y -= lowerSeat;
     forwardTrunk(B, P);
   }
+  if (wide) {
+    for (const side of SIDES) {
+      const f = P.feet[side], hip = P.mp[BN[side].Thigh];
+      const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
+      const minY = hip.y - Math.sqrt(Math.max(0, maxReach * maxReach - lateral2));
+      if (f.pos.y < minY) f.pos.y = minY;
+    }
+  }
   for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const f = P.feet[side];
-    solveLeg(B, P, side, f.pos, f.q, 0, _v5.set(sg * fit.kneeOut, -0.05, 1).normalize());
+    const pole = _v5.set(sg * fit.kneeOut, -0.05, 1).normalize();
+    const fl = flankOf(fit, sg);
+    if (fl) {
+      hugFlank(P, side, sg, f.pos, pole, fl, fit.legClear || 0, info);
+      // Pied hors d'atteinte après l'écart (bassin levé à l'obstacle) : il remonte, sans se rapprocher du flanc.
+      // En remontant, le pied peut arriver à une hauteur où le flanc est plus large : écart recalculé (quelques passes).
+      const hip = P.mp[BN[side].Thigh];
+      for (let k = 0; k < 4; k++) {
+        const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
+        const minY = hip.y - Math.sqrt(Math.max(0, maxReach * maxReach - lateral2));
+        if (f.pos.y < minY) f.pos.y = minY;
+        f.pos.x = sg * Math.max(Math.abs(f.pos.x), flankAt(fl, f.pos.y) + (fit.legClear || 0) + 0.005);
+      }
+    }
+    solveLeg(B, P, side, f.pos, f.q, 0, pole);
   }
   // Bras : mains au-dessus du garrot, rênes ajustées, main qui accompagne l'encolure ; rendre la main à l'obstacle.
   const nod = (walk * 0.025 + canter * 0.035 + gallop * 0.03) * Math.sin(TAU * (walk > 0.5 ? 2 : 1) * ph + 1.2);

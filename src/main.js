@@ -1,5 +1,6 @@
 import './styles.css';
 import { LANG, langChosen, chooseLang } from './core/i18n.js';
+import { HOOKS } from './core/devHooks.js';
 
 function webglAvailable() {
   try {
@@ -32,7 +33,7 @@ function askLang() {
   } catch {
     /* stockage indisponible */
   }
-  if (langChosen() || saved || /[?&]autostart\b/.test(location.search)) return Promise.resolve(LANG);
+  if (langChosen() || saved || (HOOKS && /[?&]autostart\b/.test(location.search))) return Promise.resolve(LANG);
   return new Promise((done) => {
     const el = document.createElement('div');
     el.className = 'lang-picker';

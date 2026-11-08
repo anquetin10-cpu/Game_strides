@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-single
+dist-e2e
 .DS_Store
 tests/e2e/out
 *.log

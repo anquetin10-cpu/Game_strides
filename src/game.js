@@ -66,6 +66,7 @@ import { HoofPrints } from './world/hoofprints.js';
 import { Boats } from './world/boats.js';
 import { Rain } from './world/rain.js';
 import { TIDE_UNIFORMS, tideLevel, tideState, temperature, conditionText } from './world/weather.js';
+import { HOOKS } from './core/devHooks.js';
 const _rein = new THREE.Vector3();
 const _hoof = new THREE.Vector3();
 // Séparation du cheval monté et des passants : cercles le long du cheval (encolure, garrot, croupe).
@@ -85,8 +86,8 @@ export class Game {
     this.online = new Online(this);
     this.save.onSaved = () => this.online.scheduleSave();
     if (typeof window !== 'undefined') {
-      window.__metrics = this.metrics;
-      if (/[?&]metrics=1/.test(location.search)) this.metrics.listeners.push((e) => console.info('[mesure]', e.name, e.params));
+      if (HOOKS) window.__metrics = this.metrics;
+      if (HOOKS && /[?&]metrics=1/.test(location.search)) this.metrics.listeners.push((e) => console.info('[mesure]', e.name, e.params));
     }
     this.time = 0;
     // Horloge de simulation : suspendue (avec l'heure du monde, les besoins, la météo, les marées, les délais et
@@ -99,7 +100,7 @@ export class Game {
     this.drivables = []; // véhicules conduisibles autres que le camion
     this.cheerT = 0;
     this.params = new URLSearchParams(location.search);
-    this.debug = this.params.has('debug');
+    this.debug = HOOKS && this.params.has('debug');
   }
 
   async boot() {
@@ -208,8 +209,8 @@ export class Game {
     // Modèles 3D : « Auto » par défaut (réalistes si l'appareil suit) ; l'ancien défaut « Classiques » jamais choisi
     // à la main passe en « Auto ».
     if (!d.settings.charactersSet && d.settings.characters === 'classic') d.settings.characters = 'auto';
-    if (this.params.has('real')) d.settings.characters = 'real';
-    if (this.params.has('classic')) d.settings.characters = 'classic';
+    if (HOOKS && this.params.has('real')) d.settings.characters = 'real';
+    if (HOOKS && this.params.has('classic')) d.settings.characters = 'classic';
     this.realism = new Realism(this);
     // Essai du cheval Tripo (développement seulement, `?tripohorse`) : ne remplace pas le cheval du jeu.
     // Réglage forcé pour la session seulement (rien n'est écrit dans la sauvegarde).
@@ -221,7 +222,7 @@ export class Game {
     this.crash.stage(t('véhicules'));
     let truckModel = null;
     this.truckModelInfo = { file: STX_FILE, loaded: false, error: null };
-    if (this.params.get('truck') !== 'classic' && this.safeMode < 2) {
+    if (!(HOOKS && this.params.get('truck') === 'classic') && this.safeMode < 2) {
       try {
         truckModel = buildStxModel(await loadStx());
         Object.assign(TRUCK_DIM, STX_DIM);
@@ -323,8 +324,8 @@ export class Game {
     this.last = performance.now();
     this._fpsAcc = { t: 0, n: 0 };
     this.renderer.setAnimationLoop((t) => this.frame(t));
-    window.__game = this;
-    if (this.params.has('autostart')) this.startGame(!this.save.hasSave(), { name: 'Test', avatar: 'f' });
+    if (HOOKS) window.__game = this;
+    if (HOOKS && this.params.has('autostart')) this.startGame(!this.save.hasSave(), { name: 'Test', avatar: 'f' });
     else this.showTitle();
   }
 
@@ -1262,7 +1263,7 @@ export class Game {
       this.placeFromSave();
       // Première mission : Comète attend dans son box, au bout de l'allée de l'Écurie du Val. (Partie lancée par les
       // tests, ?autostart : cheval laissé dans la cour ; « Premiers pas » le met au box à son lancement, voir setup.)
-      if (!this.params.has('autostart')) this.stabling?.putIn(this.mainHorse, true);
+      if (!(HOOKS && this.params.has('autostart'))) this.stabling?.putIn(this.mainHorse, true);
       this.save.saveNow();
     } else {
       this.player.setAvatar(d.avatar);
