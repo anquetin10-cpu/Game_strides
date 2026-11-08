@@ -1,0 +1,6 @@
+✔ vrai trajet Écurie du Val → parking du Pôle, cheval à bord — {"arrived":true,"dEnd":1,"time":93,"km":0.77,"maxKmh":58,"bumps":0,"comfort":92,"aboard":1,"inside":true,"gear":"N"}
+✔ conduite appliquée : aucun choc, confort ≥ 80 % — chocs 0 · confort 92 %
+✔ retour au Val (demi-tour sur le parking du Pôle) — {"arrived":true,"dEnd":1.3,"time":90,"km":0.76,"maxKmh":58,"bumps":0,"comfort":89,"aboard":1,"inside":true,"gear":"N"}
+✔ Haras de la Pommeraie → Pôle (mission « Transport express ») — {"arrived":true,"dEnd":1,"time":84,"km":0.81,"maxKmh":58,"bumps":0,"comfort":95,"aboard":1,"inside":true,"gear":"N"}
+ERRORS none
+TRANSPORT OK

@@ -1,0 +1,28 @@
+
+=== 844x390
+✔ FM-01 nouvelle partie lancée par les touchers
+✔ FM-02 widget Strides : au moins une mission dès l'ouverture — 1 mission dispo
+✔ FM-06 accueil du téléphone : 12 applications accessibles — {"ok":true,"n":12,"hidden":[],"scroll":0,"h":337}
+✔ FM-02 « Premiers pas » listée dans Strides
+✔ FM-03 mission démarrée, téléphone rangé
+✔ FM-04 « Premiers pas » terminée — {"title":"Mission réussie","pay":55,"xp":60}
+✔ FM-04 récompense versée une fois (argent et réputation) — argent +55, réputation +60
+✔ FM-05 reprise : argent, réputation et mission terminée conservés — {"money":55,"rep":60,"done":true,"active":false}
+✔ véhicules chargés après la prise en main (van, Defender) — {"van":{"file":"src/assets/vehicles/STX_Renault_Master_STALLE5.glb","loaded":true,"error":null,"pending":false},"def":true}
+✔ aucune erreur de page
+
+=== 667x300
+✔ FM-01 nouvelle partie lancée par les touchers
+✔ FM-02 widget Strides : au moins une mission dès l'ouverture — 1 mission dispo
+✔ FM-06 accueil du téléphone : 12 applications accessibles — {"ok":true,"n":12,"hidden":[],"scroll":59,"h":253}
+✔ FM-02 « Premiers pas » listée dans Strides
+✔ FM-03 mission démarrée, téléphone rangé
+✔ FM-04 « Premiers pas » terminée — {"title":"Mission réussie","pay":55,"xp":60}
+✔ FM-04 récompense versée une fois (argent et réputation) — argent +55, réputation +60
+✔ FM-05 reprise : argent, réputation et mission terminée conservés — {"money":55,"rep":60,"done":true,"active":false}
+✔ véhicules chargés après la prise en main (van, Defender) — {"van":{"file":"src/assets/vehicles/STX_Renault_Master_STALLE5.glb","loaded":true,"error":null,"pending":false},"def":true}
+✔ aucune erreur de page
+✔ FM-06 667x375 accueil du téléphone : 12 applications accessibles — {"ok":true,"n":12,"hidden":[],"scroll":0,"h":322}
+✔ FM-06 932x430 accueil du téléphone : 12 applications accessibles — {"ok":true,"n":12,"hidden":[],"scroll":0,"h":377}
+
+Tout est conforme

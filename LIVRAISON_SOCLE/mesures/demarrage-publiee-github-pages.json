@@ -1,0 +1,156 @@
+{
+ "url": "https://anquetin10-cpu.github.io/Game_strides/",
+ "conditions": "Chromium SwiftShader, émulation tactile 844×390 (pas un iPhone réel), cache vide, réseau local non bridé",
+ "avantDeJouerMo": 10.55,
+ "priseEnMainMo": 0,
+ "enJeu20sMo": 0,
+ "titreS": 18.2,
+ "priseEnMainS": 37.4,
+ "imagesMs": {
+  "mediane": 1533.2,
+  "p90": 3299.9,
+  "max": 3385.6,
+  "n": 13
+ },
+ "parType": {
+  "titre · glb": 9.81,
+  "titre · js": 1.377,
+  "titre · image": 0.111,
+  "titre · autre": 0.074
+ },
+ "requetes": [
+  {
+   "phase": "titre",
+   "mo": 2.93,
+   "url": "/Game_strides/real/horse_pjl.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 2.528,
+   "url": "/Game_strides/real/rider_f.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 1.949,
+   "url": "/Game_strides/assets/STX_Scania_DETAILLE-BPlF2lHH.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 1.271,
+   "url": "/Game_strides/assets/game-BcW4NYm7.js",
+   "mime": "application/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.901,
+   "url": "/Game_strides/assets/STX_Renault_Master_STALLE5-mSnHFbM1.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.822,
+   "url": "/Game_strides/real/car_defender.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.68,
+   "url": "/Game_strides/assets/Defender110_STRIDES_MOBILE-GkBHDWhn.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.059,
+   "url": "/Game_strides/assets/index-CIgtBzX3.js",
+   "mime": "application/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.048,
+   "url": "/Game_strides/assets/strides-logo-full-prHOltK7.png",
+   "mime": "image/png"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.048,
+   "url": "/Game_strides/assets/strides-logo-full-prHOltK7.png",
+   "mime": "image/png"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.03,
+   "url": "/s/geist/v5/gyByhwUxId8gMEwcGFU.woff2",
+   "mime": "font/woff2"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.024,
+   "url": "/s/geistmono/v6/or3nQ6H-1_WfwkMZI_qYFrcdmg.woff2",
+   "mime": "font/woff2"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.017,
+   "url": "/Game_strides/assets/index-CSJU7b5A.css",
+   "mime": "text/css"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.015,
+   "url": "/Game_strides/assets/strides-mark-DG2UpZGa.png",
+   "mime": "image/png"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.014,
+   "url": "/Game_strides/assets/GLTFLoader-Bth026xi.js",
+   "mime": "application/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.012,
+   "url": "/Game_strides/assets/pjlHorse-CgVgihw1.js",
+   "mime": "application/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.011,
+   "url": "/Game_strides/assets/asset-Cs16ht0O.js",
+   "mime": "application/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.007,
+   "url": "/Game_strides/assets/meshopt_decoder.module-BbCP70j-.js",
+   "mime": "application/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.002,
+   "url": "/Game_strides/assets/SkeletonUtils-Dv5ueiYV.js",
+   "mime": "application/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.002,
+   "url": "/Game_strides/",
+   "mime": "text/html"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.001,
+   "url": "/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap",
+   "mime": "text/css"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.001,
+   "url": "/Game_strides/assets/names-D3jDsoft.js",
+   "mime": "application/javascript"
+  }
+ ],
+ "erreurs": []
+}

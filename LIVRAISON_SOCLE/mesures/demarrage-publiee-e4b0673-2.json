@@ -1,0 +1,156 @@
+{
+ "url": "http://127.0.0.1:4402/",
+ "conditions": "Chromium SwiftShader, émulation tactile 844×390 (pas un iPhone réel), cache vide, réseau local non bridé",
+ "avantDeJouerMo": 11.44,
+ "priseEnMainMo": 0,
+ "enJeu20sMo": 0,
+ "titreS": 13.8,
+ "priseEnMainS": 29.7,
+ "imagesMs": {
+  "mediane": 916.6,
+  "p90": 2587.8,
+  "max": 4866.4,
+  "n": 17
+ },
+ "parType": {
+  "titre · glb": 9.895,
+  "titre · js": 1.367,
+  "titre · image": 0.108,
+  "titre · autre": 0.072
+ },
+ "requetes": [
+  {
+   "phase": "titre",
+   "mo": 3.004,
+   "url": "/real/horse_pjl.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 2.527,
+   "url": "/real/rider_f.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 1.956,
+   "url": "/assets/STX_Scania_DETAILLE-BPlF2lHH.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 1.266,
+   "url": "/assets/game-UbHlKYOx.js",
+   "mime": "text/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.902,
+   "url": "/assets/STX_Renault_Master_STALLE5-mSnHFbM1.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.823,
+   "url": "/real/car_defender.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.683,
+   "url": "/assets/Defender110_STRIDES_MOBILE-GkBHDWhn.glb",
+   "mime": "model/gltf-binary"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.058,
+   "url": "/assets/index-CwkDhuTW.js",
+   "mime": "text/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.047,
+   "url": "/assets/strides-logo-full-prHOltK7.png",
+   "mime": "image/png"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.047,
+   "url": "/assets/strides-logo-full-prHOltK7.png",
+   "mime": "image/png"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.03,
+   "url": "/s/geist/v5/gyByhwUxId8gMEwcGFU.woff2",
+   "mime": "font/woff2"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.024,
+   "url": "/s/geistmono/v6/or3nQ6H-1_WfwkMZI_qYFrcdmg.woff2",
+   "mime": "font/woff2"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.016,
+   "url": "/assets/index-CSJU7b5A.css",
+   "mime": "text/css"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.014,
+   "url": "/assets/strides-mark-DG2UpZGa.png",
+   "mime": "image/png"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.014,
+   "url": "/assets/GLTFLoader-BQhKfHbj.js",
+   "mime": "text/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.011,
+   "url": "/assets/pjlHorse-Vv2eO0y5.js",
+   "mime": "text/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.01,
+   "url": "/assets/asset-DbAVG5ke.js",
+   "mime": "text/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.006,
+   "url": "/assets/meshopt_decoder.module-BbCP70j-.js",
+   "mime": "text/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.002,
+   "url": "/assets/SkeletonUtils-DDedN3Iq.js",
+   "mime": "text/javascript"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.001,
+   "url": "/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap",
+   "mime": "text/css"
+  },
+  {
+   "phase": "titre",
+   "mo": 0.001,
+   "url": "/",
+   "mime": "text/html"
+  },
+  {
+   "phase": "titre",
+   "mo": 0,
+   "url": "/assets/names-D3jDsoft.js",
+   "mime": "text/javascript"
+  }
+ ],
+ "erreurs": []
+}

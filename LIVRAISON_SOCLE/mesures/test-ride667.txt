@@ -1,0 +1,20 @@
+démarrage 13 s ; WildMesh : Comète, Cheval, Cheval ; préparation {"loadMs":235,"prepareMs":850,"bones":419,"clips":28}
+✔ PJ-01 cheval WildMesh pour Comète au démarrage, sans erreur — préparation 850 ms, fichier 235 ms
+montée : {"lab":"Monter","active":true} 16 pas de 0,2 s
+✔ PJ-00b contrôle du détecteur de pénétration (bassin du cheval dedans, point au-dessus du garrot dehors) — {"dedans":0.09,"dessus":0}
+montée, pénétration par pas : 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+✔ PJ-02 montée animée (bouton ACTION) jusqu’en selle, jambes jamais dans le corps WildMesh (< 1 cm) — Monter ; pénétration max 0.0 cm
+en selle, pénétration par prise : 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+✔ PJ-03c en selle (repos, allures, virages) : jambes hors du corps WildMesh (< 1 cm) — max 0.0 cm
+✔ PJ-03 allures repos → pas → trot → galop → grand galop — idle/walk/trot/canter/gallop ; clips {"canter_M":0.99}
+✔ PJ-03b virage à gauche : galop à gauche (clips en miroir), à droite : galop à droite (clips d’origine) — gauche : canter_M,canter_L90_M ; droite : canter,canter_R90
+✔ PJ-05a sabots au sol à l’appui (articulation du sabot entre -6 et +16 cm du sol) — 0.003 / 0.012 / 0.016 / 0.069
+✔ PJ-04 saut : envol, réception, retour aux allures — clip de saut 1 au plus ; clips en fin : {"jump_gallop":1}
+✔ PJ-05b pente 11 % au pas : sabots près du sol — 0.083 / 0.089 / 0.082 / 0.125
+descente, pénétration par pas : 0 0 0 0 0 0 0 0 0 0 0 0 0
+✔ PJ-06 descente animée (bouton ACTION) : à pied à côté du cheval, jambes hors du corps WildMesh — Descendre ; 13 pas de 0,2 s ; pénétration max 0.0 cm
+mesures (SwiftShader, CPU de la machine de test : ordre de grandeur, pas une cadence iPhone) {"on":{"msMedian":6.6,"msP90":11.7,"calls":71,"tris":424733,"geometries":412,"textures":108,"programs":104,"heapMB":231},"off":{"msMedian":4.8,"msP90":6.4,"calls":23,"tris":344851,"geometries":409,"textures":107,"programs":91,"heapMB":229},"pjlNow":1}
+✔ PJ-06b montée et descente par la droite (mur à gauche), jambes hors du corps WildMesh — pénétration max 0.0 cm
+✔ PJ-07 reprise : cheval WildMesh de nouveau affiché — {"state":"play","pjl":["Comète","Cheval","Cheval"]}
+✔ PJ-00 aucune erreur JavaScript
+13/13 ; journal : [horse] ground: hoof soles -0.7724 hoof joints 9.2233 | [horse] tack built in 177 ms | [horse] Equestrian Tour : préparation {loadMs: 235, prepareMs: 850, bones: 419, clips: 28} | [horse] Equestrian Tour : calage des clips sur les allures du jeu {walk: 0.714 (écart 0.047), trot: 0.485 (écart 0.027), canterR: 0.944 (écart 0.031), canterL: 0.999 (écart 0.140), gallopR: 0.961 (écart 0.062)} clips d’origine à main droite | [horse] Equestrian Tour : étriers du cavalier {"stirrupX":0.40163337588310244,"stirrupY":-0.64,"stirrupZ":0.10100193444314523,"mountKneeOut":3,"flankL":[-1,0.05,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"flankR":[-1,0.05,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"legClear":0.05,"flancG":0.367,"flancD":-0.386,"recentrage":-0.029} | [horse] ground: hoof soles -0.7724 hoof joints 9.2233 | [horse] tack built in 191 ms | [horse] Equestrian Tour : préparation {loadMs: 225, prepare

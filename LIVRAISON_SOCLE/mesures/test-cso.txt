@@ -1,0 +1,39 @@
+✔ présentation : épreuve, hauteur, cheval engagé, temps accordé, deux doubles — EQUESTRIAN TOUR · Pôle InternationalPrix STRIDES · Parcours du PôleÉpreuveAmateur 1,10 m · barème A au chronoHauteur1,10 m · difficulté moyenneCheval engagéComèteTemps accordé64 sParcours8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 mBarre ou premier ref
+✔ plan consultable, généré des données (8 obstacles, doubles 4A–4B et 6A–6B, départ, arrivée) — 1 vertical · 2 oxer · 3 vertical · 4A vertical · 4B oxer · 5 mur · 6A vertical · 6B oxer · 7 vertical · 8 oxer · 368 m · temps accordé 64 s
+✔ retour du plan à la présentation
+✔ entrée en piste : mode concours (caméra, commandes) avant la cloche, chrono non lancé — {"pre":true,"running":false,"controls":"cso","kind":"cso","camera":true,"cad":0,"v":0}
+✔ annonce du couple à l’entrée en piste — N° 40 · Test
+✔ cloche puis 45 s pour franchir la ligne de départ — CLOCHE | ⏱Départ 45 s· accordé 64 s0 pt▸ 1
+✔ HUD de concours sobre : ni carte, ni portefeuille, ni BOOST, ni télémétrie, ni bouton d’action — {"light":true,"sober":true,"tele":"none","action":"none","boost":"none","map":"none","wallet":"none","jump":91.51995849609375}
+✔ chrono à l’arrêt tant que la ligne n’est pas franchie, caméra de parcours
+✔ cadence au joystick : départ à la vitesse du cheval, avant = plus vite, relâché = gardée, arrière = plus lent — {"entree":{"pre":true,"running":false,"controls":"cso","kind":"cso","camera":true,"cad":0,"v":0},"v0":0,"c0":0,"c1":2.199999999999999,"c2":2.199999999999999,"c3":0}
+✔ gros bouton SAUT à droite pendant le parcours (plus grand qu’en balade) — 92 px
+✔ courbes au galop : le cheval tourne progressivement (jamais plus de 1,3 rad/s) — 0.54 rad/s
+✔ caméra de concours : proche derrière le cheval, juste au-dessus du cavalier, champ fixe — {"behind":7.112275676233308,"height":3.411740484601828,"fov":58.03663127777747,"hits":0}
+✔ caméra de concours : jamais dans un mur, une tribune ou le sol pendant le tour — 0 image(s)
+✔ tour sans faute : 10 éléments franchis dans l’ordre (doubles 4A – 4B et 6A – 6B) — ["clear:1","clear:2","clear:3","clear:4A","clear:4B","clear:5","clear:6A","clear:6B","clear:7","clear:8"]
+✔ chrono de la ligne de départ à l’arrivée, dans le temps accordé — 60.00 s
+✔ après l’arrivée : sortie de piste en mode concours (~2,6 s) puis bilan — {"controls":"cso","camera":true,"running":false,"card":false,"s":2.6}
+✔ bilan : chrono, fautes, pénalités de temps, total, classement, récompense — Résultats · Prix STRIDESSans faute · 5eChrono60,00 s (accordé 64 s)Fautes aux obstacles0 · aucunePénalités de temps0 ptTotal0 ptClassement5e sur 15Récompensehors dotation1M. Mercier · Rubis Blanc0 pt5
+✔ Recommencer, S’entraîner et Quitter proposés
+✔ nouvelle tentative : état neuf, barres remontées
+✔ appel bien trop loin : barre au 1 et au 2, cause expliquée (trop loin / saut trop court) — ["fault:1:far","fault:2:short"][{"l":"1","x":4.07,"cos":0.999,"u":0.05,"zone":"far","m":-0.49,"ref":false,"sp":6.2},{"l":"2","x":5.22,"cos":0.999,"u":-0.02,"zone":"far","m":-0.9,"ref":false,"sp":6.2},{"l":"2","x":0.47,"cos":0.999,"u":-0.02,"zone":"refuse","m":-0.26,"ref":false,"sp":6.01},{"l":"2","x":0.27,"cos":0.999,"u":-0.02,"zone":"refuse","m":-0.5,"ref":false,"sp":6.13},{"l":"2","x":0.06,"cos":0.999,"u":-0.02,"zone":"refuse","m":-0.77,"ref":false,"sp":6.2},{"l":"2","x":-0.15,"cos":0.999,"u":-0.02,"zone":"refuse","m":-0.85,"ref":false,"sp":6.2}]
+✔ oxer : une seule faute même si deux barres tombent — 8 pts, 2 barre(s) au sol au 2
+✔ pause : chrono et cheval arrêtés ensemble — {"dt":0,"moved":0}
+✔ hors ordre : non validé, sans pénalité, erreur de parcours signalée — Erreur de parcours : ce n’est pas le 3
+✔ passage à côté avec SAUT : non validé (aucun obstacle devant : appui sans effet, « Trop tôt ») — {"early":7,"earlyLabel":"Trop tôt","jumps":0}
+✔ saut dans le mauvais sens : non validé, sans pénalité
+✔ double : 4A validé, 4B attendu ensuite — 4 → 5 (4B)
+✔ refus au 4B : 4 points, on reprend le double au 4A — ["rail:1","rail:2","clear:3","clear:4A","refusal:4B"]
+✔ refus : cheval arrêté, cadence à zéro, figée pendant le refus et gardée au joystick relâché — {"cad":0,"rearing":true,"cadRearing":0,"cadHeld":0,"v":0}
+✔ cheval arrêté face à l’obstacle : aucune pénalité répétée — 1 refus, 12 pts
+✔ 2e refus : élimination, bilan « Éliminé » avec Recommencer / S’entraîner / Quitter — 2e refus : éliminé du parcours.
+✔ S’entraîner : entraînement vertical + oxer lancé — cso_warmup
+✔ entraînement : vertical et oxer sautés, chaque saut expliqué (marge ou cause) — ["clear","clear"] Sans faute · 32 cm de marge / Sans faute · 42 cm de marge cso_warmup:1:ride
+✔ caméra de concours contre la lice (tribunes) et la cabine du jury : jamais dans le décor — [{"hit":false,"above":3.39,"dist":6.52},{"hit":false,"above":3.39,"dist":6.52}]
+✔ sortie : caméra d’exploration, commandes et HUD du monde ouvert rétablis — {"wall":[{"hit":false,"above":3.39,"dist":6.52},{"hit":false,"above":3.39,"dist":6.52}],"inTraining":{"cam":true,"ctl":"cso"},"course":null,"fov":59.96141350057194,"behind":7.295334820021651,"boost":"grid","map":"block","light":false}
+✔ franchissement indépendant de la cadence (30 / 60 i/s) — 0.517 / 0.517 m
+✔ progression conservée (missions, défis, chevaux, argent)
+✔ réglages d’aide présents (aide au saut, tracé au sol) — {"jumpAid":"full","courseLine":true}
+✔ aucune erreur
+CSO OK

@@ -76,7 +76,7 @@ for (const [W, H] of SIZES) {
   await page.waitForTimeout(500);
   // Première ouverture de Strides : notice « version jeu » (sommes fictifs), fermée par « J'ai compris ».
   const notice = page.locator('[data-id="notice-ok"]');
-  if (await notice.isVisible().catch(() => false)) {
+  if (await notice.waitFor({ state: 'visible', timeout: 4000 }).then(() => true, () => false)) {
     await shot('04a-notice');
     await notice.tap();
     await page.waitForTimeout(500);
