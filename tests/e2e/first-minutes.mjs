@@ -74,6 +74,13 @@ for (const [W, H] of SIZES) {
   await shot('03-telephone');
   await page.locator('[data-app="strides"]').first().tap();
   await page.waitForTimeout(500);
+  // Première ouverture de Strides : notice « version jeu » (sommes fictifs), fermée par « J'ai compris ».
+  const notice = page.locator('[data-id="notice-ok"]');
+  if (await notice.isVisible().catch(() => false)) {
+    await shot('04a-notice');
+    await notice.tap();
+    await page.waitForTimeout(500);
+  }
   const card = page.locator('.req-card[data-offer="story:tuto"]');
   check('FM-02 « Premiers pas » listée dans Strides', await card.isVisible().catch(() => false));
   await shot('04-strides');

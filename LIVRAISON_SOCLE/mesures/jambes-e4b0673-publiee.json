@@ -1,0 +1,186 @@
+{
+ "base": "http://127.0.0.1:5302",
+ "res": [
+  {
+   "name": "montee-1.0s",
+   "pen": 0,
+   "gapL": 0.017,
+   "gapR": null
+  },
+  {
+   "name": "montee-1.4s",
+   "pen": 0.012,
+   "gapL": 0.001,
+   "gapR": null
+  },
+  {
+   "name": "montee-1.8s",
+   "pen": 0,
+   "gapL": 0.053,
+   "gapR": null
+  },
+  {
+   "name": "montee-2.2s",
+   "pen": 0,
+   "gapL": 0.054,
+   "gapR": 0.132
+  },
+  {
+   "name": "montee-sequence",
+   "pen": 0.164
+  },
+  {
+   "name": "repos-30img",
+   "gait": "idle",
+   "lead": 1,
+   "pen": 0,
+   "gapMinL": 0.039,
+   "gapMinR": 0.004
+  },
+  {
+   "name": "repos",
+   "pen": 0,
+   "gapL": 0.039,
+   "gapR": 0.005
+  },
+  {
+   "name": "pas-30img",
+   "gait": "walk",
+   "lead": 1,
+   "pen": 0.039,
+   "gapMinL": 0,
+   "gapMinR": 0
+  },
+  {
+   "name": "pas",
+   "pen": 0,
+   "gapL": 0.004,
+   "gapR": 0.038
+  },
+  {
+   "name": "trot-30img",
+   "gait": "trot",
+   "lead": 1,
+   "pen": 0.06,
+   "gapMinL": 0.058,
+   "gapMinR": 0.53
+  },
+  {
+   "name": "trot",
+   "pen": 0.056,
+   "gapL": 0.082,
+   "gapR": 0.535
+  },
+  {
+   "name": "galop-gauche-30img",
+   "gait": "canter",
+   "lead": 1,
+   "pen": 0.14,
+   "gapMinL": 0.13,
+   "gapMinR": 0.491
+  },
+  {
+   "name": "galop-gauche",
+   "pen": 0.106,
+   "gapL": 0.141,
+   "gapR": 0.516
+  },
+  {
+   "name": "galop-droite-30img",
+   "gait": "canter",
+   "lead": -1,
+   "pen": 0.13,
+   "gapMinL": 0.52,
+   "gapMinR": 0.102
+  },
+  {
+   "name": "galop-droite",
+   "pen": 0.098,
+   "gapL": 0.52,
+   "gapR": 0.13
+  },
+  {
+   "name": "grand-galop-30img",
+   "gait": "gallop",
+   "lead": 1,
+   "pen": 0.101,
+   "gapMinL": 0.07,
+   "gapMinR": 0.516
+  },
+  {
+   "name": "grand-galop",
+   "pen": 0.081,
+   "gapL": 0.106,
+   "gapR": 0.525
+  },
+  {
+   "name": "virage-gauche-30img",
+   "gait": "canter",
+   "lead": 1,
+   "pen": 0.158,
+   "gapMinL": 0.129,
+   "gapMinR": 0.489
+  },
+  {
+   "name": "virage-gauche",
+   "pen": 0.119,
+   "gapL": 0.147,
+   "gapR": 0.499
+  },
+  {
+   "name": "virage-droite-30img",
+   "gait": "canter",
+   "lead": -1,
+   "pen": 0.129,
+   "gapMinL": 0.01,
+   "gapMinR": 0.034
+  },
+  {
+   "name": "virage-droite",
+   "pen": 0.094,
+   "gapL": 0.527,
+   "gapR": 0.127
+  },
+  {
+   "name": "saut-appel",
+   "pen": 0.074,
+   "gapL": 0.115,
+   "gapR": 0.546
+  },
+  {
+   "name": "saut-sommet",
+   "pen": 0.027,
+   "gapL": 0.051,
+   "gapR": 0.548
+  },
+  {
+   "name": "saut-reception",
+   "pen": 0.018,
+   "gapL": 0.038,
+   "gapR": 0.002
+  },
+  {
+   "name": "descente-0.4s",
+   "pen": 0,
+   "gapL": 0.073,
+   "gapR": 0.017
+  },
+  {
+   "name": "descente-0.8s",
+   "pen": 0,
+   "gapL": 0.041,
+   "gapR": null
+  },
+  {
+   "name": "descente-1.2s",
+   "pen": 0.046,
+   "gapL": 0.001,
+   "gapR": null
+  },
+  {
+   "name": "descente-sequence",
+   "pen": 0.093
+  }
+ ],
+ "errors": []
+}

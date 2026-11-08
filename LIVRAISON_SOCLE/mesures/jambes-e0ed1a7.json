@@ -1,0 +1,186 @@
+{
+ "base": "http://127.0.0.1:5173",
+ "res": [
+  {
+   "name": "montee-1.0s",
+   "pen": 0,
+   "gapL": 0.102,
+   "gapR": null
+  },
+  {
+   "name": "montee-1.4s",
+   "pen": 0,
+   "gapL": 0.085,
+   "gapR": null
+  },
+  {
+   "name": "montee-1.8s",
+   "pen": 0,
+   "gapL": 0.07,
+   "gapR": null
+  },
+  {
+   "name": "montee-2.2s",
+   "pen": 0,
+   "gapL": 0.047,
+   "gapR": 0.151
+  },
+  {
+   "name": "montee-sequence",
+   "pen": 0
+  },
+  {
+   "name": "repos-30img",
+   "gait": "idle",
+   "lead": 1,
+   "pen": 0,
+   "gapMinL": 0.063,
+   "gapMinR": 0.055
+  },
+  {
+   "name": "repos",
+   "pen": 0,
+   "gapL": 0.063,
+   "gapR": 0.055
+  },
+  {
+   "name": "pas-30img",
+   "gait": "walk",
+   "lead": 1,
+   "pen": 0,
+   "gapMinL": 0.062,
+   "gapMinR": 0.072
+  },
+  {
+   "name": "pas",
+   "pen": 0,
+   "gapL": 0.08,
+   "gapR": 0.094
+  },
+  {
+   "name": "trot-30img",
+   "gait": "trot",
+   "lead": 1,
+   "pen": 0,
+   "gapMinL": 0.067,
+   "gapMinR": 0.07
+  },
+  {
+   "name": "trot",
+   "pen": 0,
+   "gapL": 0.093,
+   "gapR": 0.061
+  },
+  {
+   "name": "galop-gauche-30img",
+   "gait": "canter",
+   "lead": 1,
+   "pen": 0.004,
+   "gapMinL": 0.125,
+   "gapMinR": 0
+  },
+  {
+   "name": "galop-gauche",
+   "pen": 0.002,
+   "gapL": 0.146,
+   "gapR": 0.003
+  },
+  {
+   "name": "galop-droite-30img",
+   "gait": "canter",
+   "lead": -1,
+   "pen": 0.01,
+   "gapMinL": 0.003,
+   "gapMinR": 0.123
+  },
+  {
+   "name": "galop-droite",
+   "pen": 0,
+   "gapL": 0.076,
+   "gapR": 0.126
+  },
+  {
+   "name": "grand-galop-30img",
+   "gait": "gallop",
+   "lead": 1,
+   "pen": 0,
+   "gapMinL": 0.089,
+   "gapMinR": 0.042
+  },
+  {
+   "name": "grand-galop",
+   "pen": 0,
+   "gapL": 0.092,
+   "gapR": 0.12
+  },
+  {
+   "name": "virage-gauche-30img",
+   "gait": "canter",
+   "lead": 1,
+   "pen": 0.002,
+   "gapMinL": 0.108,
+   "gapMinR": 0.003
+  },
+  {
+   "name": "virage-gauche",
+   "pen": 0,
+   "gapL": 0.136,
+   "gapR": 0.046
+  },
+  {
+   "name": "virage-droite-30img",
+   "gait": "canter",
+   "lead": -1,
+   "pen": 0.013,
+   "gapMinL": 0,
+   "gapMinR": 0.123
+  },
+  {
+   "name": "virage-droite",
+   "pen": 0.004,
+   "gapL": 0.016,
+   "gapR": 0.143
+  },
+  {
+   "name": "saut-appel",
+   "pen": 0,
+   "gapL": 0.089,
+   "gapR": 0.088
+  },
+  {
+   "name": "saut-sommet",
+   "pen": 0,
+   "gapL": 0.089,
+   "gapR": 0.141
+  },
+  {
+   "name": "saut-reception",
+   "pen": 0,
+   "gapL": 0.064,
+   "gapR": 0.18
+  },
+  {
+   "name": "descente-0.4s",
+   "pen": 0,
+   "gapL": 0.071,
+   "gapR": 0.035
+  },
+  {
+   "name": "descente-0.8s",
+   "pen": 0,
+   "gapL": 0.07,
+   "gapR": null
+  },
+  {
+   "name": "descente-1.2s",
+   "pen": 0,
+   "gapL": 0.098,
+   "gapR": null
+  },
+  {
+   "name": "descente-sequence",
+   "pen": 0
+  }
+ ],
+ "errors": []
+}
