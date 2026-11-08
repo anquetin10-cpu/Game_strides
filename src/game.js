@@ -986,9 +986,16 @@ export class Game {
     // Page quittée ou rechargée pendant un téléchargement : requête interrompue par le navigateur, pas une erreur.
     let leaving = false;
     addEventListener('pagehide', () => (leaving = true), { once: true });
+    // Préparation (lecture du fichier, construction, shaders) : quelques centaines de millisecondes sur le fil principal.
+    // Jamais pendant que le joueur se sert du téléphone, d'un dialogue ou d'une carte (touchers retardés, confirmation
+    // « Accepter » ignorée) : 6 s après la prise en main, puis dès que le jeu est de nouveau en cours.
+    const calm = async () => {
+      while (this.state !== 'play' || this.simPaused) await new Promise((r) => setTimeout(r, 500));
+    };
     const run = async () => {
       if (this.safeMode >= 2) return;
-      await new Promise((r) => setTimeout(r, 1500));
+      await new Promise((r) => setTimeout(r, 6000));
+      await calm();
       this.crash.stage(t('van'));
       try {
         const van = new HorseVan(this, buildMasterModel(await loadMaster()), { x: HOME.master.x, z: HOME.master.z, heading: HOME.master.rot });
@@ -1005,6 +1012,7 @@ export class Game {
         Object.assign(this.vanModelInfo, { error: String(e?.message || e), pending: false });
         if (this.state === 'play') this.hud.toast(t('Van STX Renault Master non chargé : modèle introuvable ou incomplet.'));
       }
+      await calm();
       this.crash.stage(t('Defender'));
       try {
         const M = buildDefenderModel(await loadDefender(this.defenderModelInfo.variant));
