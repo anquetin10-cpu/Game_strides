@@ -12,7 +12,7 @@ import { writeFileSync } from 'node:fs';
 const URL = process.argv[2] || 'http://127.0.0.1:4401/';
 const OUT = process.argv[3] || 'tests/e2e/out/startup.json';
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
 await ctx.addInitScript(() => localStorage.setItem('strides-lang', 'fr'));
 const page = await ctx.newPage();
 const errors = [];
