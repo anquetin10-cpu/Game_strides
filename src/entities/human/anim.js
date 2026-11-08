@@ -423,7 +423,7 @@ const flankOf = (fit, sg) => (sg > 0 ? fit.flankL : fit.flankR) || fit.flank || 
 // comme un cavalier dont le genou appuie sur le quartier et le mollet longe le tronc : genou trop près → il s'ouvre (pôle),
 // jamais au-delà de la cheville (pas de genoux « en ailes ») ; tibia trop près → le pied s'écarte du strict nécessaire.
 // Hauteur et avance de l'étrier, talon : inchangés.
-function hugFlank(P, side, sg, foot, pole, flank, clr, info) {
+function hugFlank(P, side, sg, foot, pole, flank, clr, info, xMax = Infinity) {
   const hip = P.mp[BN[side].Thigh];
   const a = info.thighLen, b = info.shinLen;
   // < 0 : dans le flanc (1 cm de marge : le genou réel diffère de quelques millimètres de son estimation après le
@@ -438,11 +438,18 @@ function hugFlank(P, side, sg, foot, pole, flank, clr, info) {
       const g = gap(_hp);
       if (g < gs) (gs = g), (push = -g / Math.max(t, 0.5));
     }
-    if (gk >= -1e-4 && gs >= -1e-4) return;
+    // Pôle déjà tourné vers l'extérieur : l'ouvrir davantage ne déplace plus le genou. Le genou reste alors appuyé contre
+    // le quartier de la selle (la cuisse ne s'écarte pas plus) ; seul le tibia est encore écarté du flanc, par le pied, et
+    // de 4 cm au plus au-delà de sa place naturelle (xMax) : jamais de jambes en « A ».
+    const poleOpen = pole.x * sg >= 0.9;
+    if (gs >= -1e-4 && (gk >= -1e-4 || poleOpen)) return;
     const kneeRoom = _hk.x * sg < foot.x * sg + 0.01; // le genou peut encore s'ouvrir sans dépasser la cheville
-    if (gk < -1e-4 && kneeRoom) {
+    if (gk < -1e-4 && kneeRoom && !poleOpen) {
       pole.x += sg * 0.15;
       pole.normalize();
+    } else if (poleOpen) {
+      if (foot.x * sg >= xMax - 1e-4) return;
+      foot.x = sg * Math.min(foot.x * sg + Math.min(Math.max(push, 0.004), 0.03), xMax);
     } else foot.x += sg * Math.min(Math.max(push, gk < -1e-4 ? -gk : 0, 0.004), 0.03);
   }
 }
@@ -521,8 +528,10 @@ function riding(B, P, st, dt, info) {
     const fl = flankOf(fit, sg);
     if (fl) {
       f.pos.x = sg * Math.max(Math.abs(f.pos.x), flankAt(fl, f.pos.y) + (fit.legClear || 0));
+      // Place naturelle du pied (étrier, cheville hors du flanc) : le tibia ne l'écarte que de 4 cm au plus.
+      f.xMax = Math.abs(f.pos.x) + 0.04 * (fit.legClear ? fit.legClear / 0.05 : 1);
       // Écart du pied décidé avant l'abaissement du bassin ci-dessous, qui garde ainsi la réserve de flexion du genou.
-      hugFlank(P, side, sg, f.pos, _v4.set(sg * fit.kneeOut, -0.05, 1).normalize(), fl, fit.legClear || 0, info);
+      hugFlank(P, side, sg, f.pos, _v4.set(sg * fit.kneeOut, -0.05, 1).normalize(), fl, fit.legClear || 0, info, f.xMax);
     }
     const hip = P.mp[BN[side].Thigh];
     const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
@@ -552,15 +561,20 @@ function riding(B, P, st, dt, info) {
     const pole = _v5.set(sg * fit.kneeOut, -0.05, 1).normalize();
     const fl = flankOf(fit, sg);
     if (fl) {
-      hugFlank(P, side, sg, f.pos, pole, fl, fit.legClear || 0, info);
-      // Pied hors d'atteinte après l'écart (bassin levé à l'obstacle) : il remonte, sans se rapprocher du flanc.
-      // En remontant, le pied peut arriver à une hauteur où le flanc est plus large : écart recalculé (quelques passes).
+      // Pied hors d'atteinte après l'écart (bassin levé à l'obstacle, dos qui monte au galop) : il remonte, sans se
+      // rapprocher du flanc. En remontant, le genou et le tibia changent de place et peuvent arriver à une hauteur où le
+      // flanc est plus large : genou, tibia et cheville recontrôlés à chaque passe (pas seulement la cheville).
       const hip = P.mp[BN[side].Thigh];
-      for (let k = 0; k < 4; k++) {
-        const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
-        const minY = hip.y - Math.sqrt(Math.max(0, maxReach * maxReach - lateral2));
-        if (f.pos.y < minY) f.pos.y = minY;
-        f.pos.x = sg * Math.max(Math.abs(f.pos.x), flankAt(fl, f.pos.y) + (fit.legClear || 0) + 0.005);
+      for (let pass = 0; pass < 3; pass++) {
+        hugFlank(P, side, sg, f.pos, pole, fl, fit.legClear || 0, info, f.xMax ?? Infinity);
+        let raised = false;
+        for (let k = 0; k < 4; k++) {
+          const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
+          const minY = hip.y - Math.sqrt(Math.max(0, maxReach * maxReach - lateral2));
+          if (f.pos.y < minY - 1e-4) (f.pos.y = minY), (raised = true);
+          f.pos.x = sg * Math.max(Math.abs(f.pos.x), flankAt(fl, f.pos.y) + (fit.legClear || 0) + 0.005);
+        }
+        if (!raised) break;
       }
     }
     solveLeg(B, P, side, f.pos, f.q, 0, pole);
@@ -677,15 +691,20 @@ export function animateHuman(B, pose, st, dt) {
   const rate = P.blendT < 0.45 ? 9 : 40;
   const k = st._init ? 1 - Math.exp(-rate * dt) : 1;
   st._init = true;
+  // En selle sur un cheval qui fournit le profil de son flanc (« collée sans traverser », voir hugFlank), transition
+  // finie : bassin et jambes appliqués tels que résolus. Lissés, ils traîneraient derrière la solution (un quart du
+  // mouvement de chaque image à 30 images/s, la moitié à 60) et le tibia rentrerait dans le flanc qui se gonfle au galop.
+  const exact = pose === 'ride' && P.blendT >= 0.45 && !!(st.fit && (st.fit.flankL || st.fit.flankR || st.fit.flank));
   for (const n of NAMES) {
     const b = B[n];
     if (!b) continue;
-    if (k >= 1) b.quaternion.copy(P.q[n]);
+    if (k >= 1 || (exact && LEG_CHAIN.has(n))) b.quaternion.copy(P.q[n]);
     else b.quaternion.slerp(P.q[n], k);
   }
-  if (k >= 1) B.hips.position.copy(P.hips);
+  if (k >= 1 || exact) B.hips.position.copy(P.hips);
   else B.hips.position.lerp(P.hips, k);
 }
+const LEG_CHAIN = new Set(['hips', 'lThigh', 'lShin', 'lFoot', 'lToe', 'rThigh', 'rShin', 'rFoot', 'rToe']);
 
 // Positions modèle des mains (dernière pose calculée) pour les rênes.
 export function handTargets(st) {
