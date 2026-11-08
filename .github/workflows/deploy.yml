@@ -41,7 +41,8 @@ jobs:
 
   # Série courte de bout en bout (tests/e2e/smoke.mjs) : Chromium en rendu logiciel, émulation tactile ; pas un iPhone.
   e2e-smoke:
-    runs-on: ubuntu-latest
+    # Version d'Ubuntu prise en charge par Playwright 1.56 (ubuntu-latest est passé en 26.04, non pris en charge).
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
