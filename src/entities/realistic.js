@@ -435,6 +435,9 @@ export class Realism {
     this.bodies = new Map(); // personnage → RealBody
     this.horses = new Map(); // cheval → modèle propre (TripoHorse)
     this.cars = new Map(); // véhicule → RealCar
+    // Voitures réalistes : seulement après la prise en main et le chargement du van et du Defender (voir
+    // Game._loadVehiclesLater) ; jusque-là, les voitures du jeu sont affichées.
+    this.carsReady = false;
     // Chevaux WildMesh (Jumping League Sim) : cheval → PjlHorse ; état du chargement de l'asset partagé.
     this.pjl = new Map();
     this.pjlState = { asset: null, loading: null, failed: false, cls: null };
@@ -761,7 +764,7 @@ export class Realism {
       return;
     }
     // Voitures (garées, conduisibles et de la circulation) des types qui ont un modèle réaliste.
-    const cars = g.vehicles.filter((v) => v.mesh && v.spec && CAR_MODELS[v.kind] && !this.carFailed.has(CAR_MODELS[v.kind]));
+    const cars = this.carsReady ? g.vehicles.filter((v) => v.mesh && v.spec && CAR_MODELS[v.kind] && !this.carFailed.has(CAR_MODELS[v.kind])) : [];
     this._sync(this.cars, this._wanted(cars, [P?.vehicle].filter((v) => v && cars.includes(v)), this.cars, NEAR.cars, NEAR.carDist), (v, busy) => {
       const id = CAR_MODELS[v.kind];
       const root = !busy ? realNow(id) : null;

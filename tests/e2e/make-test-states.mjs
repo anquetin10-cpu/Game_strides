@@ -21,7 +21,7 @@ const fresh = async () => {
   await ctx.addInitScript(() => localStorage.setItem('strides-lang', 'fr'));
   const page = await ctx.newPage();
   await page.goto(`${base}/?autostart`, { timeout: 180000 });
-  await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000 });
+  await page.waitForFunction(() => window.__game?.state === 'play' && window.__game.vehiclesReady, null, { timeout: 240000 });
   await page.addScriptTag({ content: AUTO });
   await page.evaluate(() => {
     const A = window.__auto, g = window.__game;

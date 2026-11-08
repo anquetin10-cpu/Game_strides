@@ -27,7 +27,7 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(`${base}/?autostart`, { timeout: 180000 });
-await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 300000 });
+await page.waitForFunction(() => window.__game?.state === 'play' && window.__game.vehiclesReady, null, { timeout: 300000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
 const ev = (fn, arg) => page.evaluate(fn, arg);
 const tick = (n = 1) => ev((k) => window.__auto.tick(k), n);
@@ -399,7 +399,7 @@ const saved = await ev(() => { const g = window.__game; g.saveNow(); const d = J
 check('sauvegarde dans la maison : indoorHome et porte enregistrés', saved.home === true && Math.hypot(saved.pos.x - saved.door.x, saved.pos.z - saved.door.z) < 0.1, JSON.stringify(saved));
 const reload = async () => {
   await page.reload();
-  await page.waitForFunction(() => window.__game?.state === 'title' || window.__game?.state === 'play', null, { timeout: 240000 });
+  await page.waitForFunction(() => window.__game?.state === 'title' || window.__game?.state === 'play' && window.__game.vehiclesReady, null, { timeout: 240000 });
   await page.evaluate(() => { if (window.__game.state === 'title') window.__game.startGame(false); });
   await page.waitForFunction(() => window.__game?.state === 'play' && !window.__game.home.busy, null, { timeout: 120000 });
   await page.waitForTimeout(500);

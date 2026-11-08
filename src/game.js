@@ -246,39 +246,13 @@ export class Game {
       this.drivables.push(v);
       this.vehicles.push(v);
     }
-    // Van porte-chevaux STX Renault Master (modèle fourni, voir masterModel.js) : véhicule distinct du camion,
-    // garé à l'Écurie du Val, chargement des chevaux par son pont latéral. Fichier absent ou incomplet : erreur signalée
-    // (console et message en jeu), le reste du jeu continue sans le van.
-    this.vanModelInfo = { file: MASTER_FILE, loaded: false, error: null };
-    if (this.safeMode >= 2) this.van = null;
-    else try {
-      this.van = new HorseVan(this, buildMasterModel(await loadMaster()), { x: HOME.master.x, z: HOME.master.z, heading: HOME.master.rot });
-      this.drivables.push(this.van);
-      this.vehicles.push(this.van);
-      this.vanLoading = new VanLoading(this, this.van);
-      this.vanModelInfo.loaded = true;
-    } catch (e) {
-      console.error(`Van STX Renault Master NON chargé (${MASTER_FILE}).`, e);
-      this.vanModelInfo.error = String(e?.message || e);
-      this.van = null;
-    }
-    // Defender 110 (modèle fourni, voir defenderModel.js) : véhicule personnel du personnage, garé à l'Écurie du Val.
-    // Une seule variante chargée et affichée (détaillée ou mobile) ; échec signalé (console et message en jeu).
+    // Van STX Renault Master et Defender 110 : chargés après la prise en main (voir _loadVehiclesLater), pas avant le
+    // premier écran ; leurs emplacements sauvegardés sont conservés en attendant.
+    this.van = null;
+    this.defender = null;
+    this.vanModelInfo = { file: MASTER_FILE, loaded: false, error: null, pending: this.safeMode < 2 };
     const variant = defenderVariant();
-    this.defenderModelInfo = { file: DEFENDER_FILES[variant], variant, loaded: false, error: null };
-    if (this.safeMode >= 2) this.defender = null;
-    else try {
-      const M = buildDefenderModel(await loadDefender(variant));
-      this.defender = new Defender(this, M, { x: HOME.defender.x, z: HOME.defender.z, heading: HOME.defender.rot });
-      this.drivables.push(this.defender);
-      this.vehicles.push(this.defender);
-      this.defenderAccess = new DefenderAccess(this, this.defender);
-      Object.assign(this.defenderModelInfo, { loaded: true, loadMs: M.loadMs, triangles: M.triangles, meshes: M.meshes, materials: M.materials });
-    } catch (e) {
-      console.error(`Defender 110 NON chargé (${this.defenderModelInfo.file}).`, e);
-      this.defenderModelInfo.error = String(e?.message || e);
-      this.defender = null;
-    }
+    this.defenderModelInfo = { file: DEFENDER_FILES[variant], variant, loaded: false, error: null, pending: this.safeMode < 2 };
     // Monture choisie dans « Mes chevaux » (Comète si ce cheval n'est plus à l'écurie).
     this.spawnMainHorse(activeHorseId(d));
     this.ambient = new Ambient(this);
@@ -953,8 +927,9 @@ export class Game {
       x: door ? door.x : f.x, z: door ? door.z : f.z, heading: door ? door.heading : p.heading,
       horse: this.mainHorse ? { x: this.mainHorse.pos.x, z: this.mainHorse.pos.z, heading: this.mainHorse.heading } : null,
       truck: { x: this.truck.pos.x, z: this.truck.pos.z, heading: this.truck.heading },
-      master: this.van ? { x: this.van.pos.x, z: this.van.pos.z, heading: this.van.heading } : undefined,
-      defender: this.defender ? { x: this.defender.pos.x, z: this.defender.pos.z, heading: this.defender.heading } : undefined,
+      // Van ou Defender pas encore chargés (voir _loadVehiclesLater) : emplacement sauvegardé conservé.
+      master: this.van ? { x: this.van.pos.x, z: this.van.pos.z, heading: this.van.heading } : this.save.data.pos?.master,
+      defender: this.defender ? { x: this.defender.pos.x, z: this.defender.pos.z, heading: this.defender.heading } : this.save.data.pos?.defender,
       // Véhicules déplacés par le joueur (indice dans la liste des véhicules garés à l'origine).
       vehicles: this.drivables.map((v, i) => (v.home && !v.atSpot ? { i: this.world.parkedVehicles.indexOf(v.home), x: v.pos.x, z: v.pos.z, heading: v.heading } : null)).filter((v) => v && v.i >= 0),
     };
@@ -985,6 +960,72 @@ export class Game {
   // Sous le toit de la salle du Grand Prix de Paris (pas de pluie, éclairage de salle).
   inParisHall(p = this.player.focus.pos) {
     return this.region === 'paris' && Math.abs(p.x - PARIS.hall.x) < PARIS.hall.w / 2 && Math.abs(p.z - PARIS.hall.z) < PARIS.hall.d / 2;
+  }
+
+  // Van porte-chevaux STX Renault Master (modèle fourni, voir masterModel.js : véhicule distinct du camion, pont
+  // latéral) et Defender 110 (defenderModel.js : véhicule personnel, une seule variante chargée), garés à l'Écurie du
+  // Val. Chargés l'un après l'autre en tâche de fond une fois le joueur aux commandes (téléchargement et préparation
+  // hors du démarrage), chacun sous le journal d'étapes (crashGuard) ; jamais en mode sûr minimal. Fichier absent ou
+  // incomplet : erreur signalée (console et message en jeu), le reste du jeu continue sans ce véhicule.
+  _loadVehiclesLater() {
+    if (this._vehiclesLater) return this._vehiclesLater;
+    const place = (v, key) => {
+      const p = this.save.data.started && this.save.data.pos?.[key];
+      if (p) v.setPosition(p.x, p.z, p.heading);
+    };
+    // Shaders préparés avant la première image où le véhicule apparaît (pas d'à-coup à son arrivée).
+    const show = async (v) => {
+      this.scene.remove(v.mesh);
+      try {
+        await this.renderer.compileAsync?.(v.mesh, this.camera, this.scene);
+      } catch {
+        /* compilé au premier rendu */
+      }
+      this.scene.add(v.mesh);
+    };
+    const run = async () => {
+      if (this.safeMode >= 2) return;
+      await new Promise((r) => setTimeout(r, 1500));
+      this.crash.stage(t('van'));
+      try {
+        const van = new HorseVan(this, buildMasterModel(await loadMaster()), { x: HOME.master.x, z: HOME.master.z, heading: HOME.master.rot });
+        place(van, 'master');
+        await show(van);
+        this.van = van;
+        this.drivables.push(van);
+        this.vehicles.push(van);
+        this.vanLoading = new VanLoading(this, van);
+        Object.assign(this.vanModelInfo, { loaded: true, pending: false });
+      } catch (e) {
+        console.error(`Van STX Renault Master NON chargé (${MASTER_FILE}).`, e);
+        Object.assign(this.vanModelInfo, { error: String(e?.message || e), pending: false });
+        if (this.state === 'play') this.hud.toast(t('Van STX Renault Master non chargé : modèle introuvable ou incomplet.'));
+      }
+      this.crash.stage(t('Defender'));
+      try {
+        const M = buildDefenderModel(await loadDefender(this.defenderModelInfo.variant));
+        const def = new Defender(this, M, { x: HOME.defender.x, z: HOME.defender.z, heading: HOME.defender.rot });
+        place(def, 'defender');
+        await show(def);
+        this.defender = def;
+        this.drivables.push(def);
+        this.vehicles.push(def);
+        this.defenderAccess = new DefenderAccess(this, def);
+        Object.assign(this.defenderModelInfo, { loaded: true, pending: false, loadMs: M.loadMs, triangles: M.triangles, meshes: M.meshes, materials: M.materials });
+      } catch (e) {
+        console.error(`Defender 110 NON chargé (${this.defenderModelInfo.file}).`, e);
+        Object.assign(this.defenderModelInfo, { error: String(e?.message || e), pending: false });
+        if (this.state === 'play') this.hud.toast(t('Defender 110 non chargé : modèle introuvable ou incomplet.'));
+      }
+      this.home?.evict?.();
+      this.crash.stage(T`partie (${Math.floor((performance.now() - (this._playT0 || performance.now())) / 60000)} min)`);
+    };
+    this._vehiclesLater = run().finally(() => {
+      // Voitures réalistes (circulation, voitures garées) : après les véhicules, jamais avant la prise en main.
+      if (this.realism) this.realism.carsReady = true;
+      this.vehiclesReady = true;
+    });
+    return this._vehiclesLater;
   }
 
   placeFromSave() {
@@ -1285,6 +1326,7 @@ export class Game {
     this._safeNote = null;
     // Journal d'arrêt brutal : durée de la partie, mise à jour régulièrement (voir crashGuard.js).
     const t0 = performance.now();
+    this._playT0 = t0;
     this.crash.stage(T`partie (${0} min)`);
     clearInterval(this._playClock);
     this._playClock = setInterval(() => {
@@ -1294,6 +1336,7 @@ export class Game {
     this.updateWallet();
     this.cam.snap(this.player.focus.pos, this.player.heading);
     this.input.setEnabled(true);
+    this._loadVehiclesLater();
     if (isNew) {
       this.screens.card({
         kicker: t('Côte Fleurie · Normandie'),

@@ -10,7 +10,7 @@ const out = process.argv[2] || 'tests/e2e/out/aud02-sweep.json';
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await (await browser.newContext({ viewport: { width: 844, height: 390 } })).newPage();
 await page.goto(`${base}/?autostart`, { timeout: 180000 });
-await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000 });
+await page.waitForFunction(() => window.__game?.state === 'play' && window.__game.vehiclesReady, null, { timeout: 240000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
 const r = await page.evaluate(() => {
   const A = window.__auto, g = window.__game, v = g.van, p = g.player, L = g.vanLoading, h = g.mainHorse;

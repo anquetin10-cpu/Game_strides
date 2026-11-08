@@ -18,7 +18,7 @@ for (const variant of ['full', 'mobile']) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(`${base}/?autostart&defender=${variant}`, { timeout: 180000 });
-  await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000 });
+  await page.waitForFunction(() => window.__game?.state === 'play' && window.__game.vehiclesReady, null, { timeout: 240000 });
   await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
   const r = await page.evaluate(() => {
     const g = window.__game, A = window.__auto, v = g.defender;

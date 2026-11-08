@@ -29,7 +29,7 @@ page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 const E = (f, a) => page.evaluate(f, a);
 const ready = async () => {
-  await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000 });
+  await page.waitForFunction(() => window.__game?.state === 'play' && window.__game.vehiclesReady, null, { timeout: 240000 });
   await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
   await E(() => {
     const A = window.__auto, g = window.__game;
