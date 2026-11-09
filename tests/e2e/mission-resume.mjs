@@ -58,6 +58,22 @@ const tapSel = async (sel) => {
   await tick(2);
   return true;
 };
+// « Accepter la mission » : deux touchers réels à 600 ms d'intervalle, comme un joueur. Le premier arme la
+// confirmation pendant 5 s ; sans attente entre les deux (immobilité du bouton, images du jeu), le second reste dans
+// cette fenêtre même quand la page rend lentement (CI en rendu logiciel). Position relue avant chaque toucher.
+const doubleTapAccept = async () => {
+  await page.waitForSelector('[data-id="accept-request"]', { timeout: 15000 }).catch(() => {});
+  for (let k = 0; k < 2; k++) {
+    const r = await E(() => {
+      const b = document.querySelector('[data-id="accept-request"]')?.getBoundingClientRect();
+      return b && { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+    });
+    if (!r) return false;
+    await page.touchscreen.tap(r.x, r.y);
+    if (!k) await page.waitForTimeout(600);
+  }
+  return true;
+};
 const state = () => E(() => {
   const g = window.__game, d = g.save.data, run = g.missions.active;
   return { active: run?.def.id || null, text: run?.text() || null, dialog: !!g.hud.dialogActive, money: d.money, rep: d.reputation, completed: [...d.completed], cp: d.checkpoint, pendingFee: d.pendingFee, inBox: !!g.mainHorse?.inBox, led: g.player.transport.led?.horse === g.mainHorse, offers: g.missions.offers.map((o) => o.id) };
@@ -119,8 +135,7 @@ let s0 = await state();
 await tapSel('.notif.show .n-actions button.primary');
 await page.waitForFunction(() => window.__game.phone.isOpen && window.__game.phone.app === 'request', null, { timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(500);
-await tapSel('[data-id="accept-request"]');
-await tapSel('[data-id="accept-request"]');
+await doubleTapAccept();
 await page.waitForTimeout(1600);
 await tick(4);
 let s = await state();

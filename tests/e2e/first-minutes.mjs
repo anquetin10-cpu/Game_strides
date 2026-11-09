@@ -91,9 +91,13 @@ for (const [W, H] of SIZES) {
   await card.tap();
   await page.locator('[data-id="accept-request"]').waitFor({ state: 'visible', timeout: 10000 });
   await shot('05-demande');
-  await page.locator('[data-id="accept-request"]').tap();
-  await page.waitForTimeout(600);
-  await page.locator('[data-id="accept-request"]').tap();
+  // Deux touchers réels à 600 ms d'intervalle, dans la fenêtre de confirmation de 5 s (sans attendre que le bouton,
+  // décalé par l'aide, soit immobile : en rendu logiciel lent, cette attente dépassait 5 s). Position relue à chaque fois.
+  for (let k = 0; k < 2; k++) {
+    const r = await E(() => { const b = document.querySelector('[data-id="accept-request"]')?.getBoundingClientRect(); return b && { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    if (r) await page.touchscreen.tap(r.x, r.y);
+    if (!k) await page.waitForTimeout(600);
+  }
   await page.waitForFunction(() => window.__game.missions.active?.offer.id === 'story:tuto' && !window.__game.phone.isOpen, null, { timeout: 15000 }).catch(() => {});
   check('FM-03 mission démarrée, téléphone rangé', await E(() => window.__game.missions.active?.offer.id === 'story:tuto' && !window.__game.phone.isOpen));
   const before = await E(() => ({ money: window.__game.save.data.money, rep: window.__game.save.data.reputation }));
