@@ -118,3 +118,12 @@ Branche `claude/et-socle`, partie de la version publiée `e4b0673`, sans publica
 **Limites**
 - La CI n'émule pas Safari.
 - Les tests de rendu logiciel restent lents (environ 1 image par seconde au Val sur cette machine).
+- L'à-coup de préparation du van et du Defender reste à juger sur iPhone (étape 9 du protocole).
+
+**CI verte** sur `claude/et-socle` (run 42566354232, commit `7e8032d`) : build et tests unitaires, contrôle des accès de test, série courte 5/5 (premières minutes, sauvegardes, montée/descente, reprise de mission, cheval et cavalier) ; publication sautée.
+
+**Correctifs apparus en vérifiant** (régressions du chargement différé, trouvées par les tests) :
+- van et Defender préparés 6 s après la prise en main, jamais téléphone, dialogue ou carte ouverts ;
+- confirmation « Accepter la mission » : écart entre les deux touchers mesuré à l'instant réel du toucher (deux touchers retardés par une préparation étaient rejetés comme un double toucher) ;
+- page quittée pendant un téléchargement : pas d'erreur signalée ;
+- CI : Ubuntu 24.04 pour Playwright, échauffement du serveur, captures jamais bloquantes.
