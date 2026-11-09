@@ -64,16 +64,22 @@ const tapSel = async (sel) => {
 const doubleTapAccept = async () => {
   await page.waitForSelector('[data-id="accept-request"]', { timeout: 15000 }).catch(() => {});
   for (let k = 0; k < 2; k++) {
-    const r = await E(() => {
-      const b = document.querySelector('[data-id="accept-request"]')?.getBoundingClientRect();
-      return b && { x: b.left + b.width / 2, y: b.top + b.height / 2 };
-    });
+    const r = await acceptUnderFinger();
     if (!r) return false;
     await page.touchscreen.tap(r.x, r.y);
     if (!k) await page.waitForTimeout(600);
   }
   return true;
 };
+// Centre du bouton « Accepter » une fois qu'il est réellement sous le doigt (écran de demande fini de s'ouvrir,
+// rien par-dessus) : un joueur le touche quand il le voit.
+const acceptUnderFinger = () => page.waitForFunction(() => {
+  const btn = document.querySelector('[data-id="accept-request"]');
+  if (!btn) return null;
+  const b = btn.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+  const top = document.elementFromPoint(x, y);
+  return top && (top === btn || btn.contains(top)) ? { x, y } : null;
+}, null, { timeout: 15000, polling: 100 }).then((h) => h.jsonValue(), () => null);
 const state = () => E(() => {
   const g = window.__game, d = g.save.data, run = g.missions.active;
   return { active: run?.def.id || null, text: run?.text() || null, dialog: !!g.hud.dialogActive, money: d.money, rep: d.reputation, completed: [...d.completed], cp: d.checkpoint, pendingFee: d.pendingFee, inBox: !!g.mainHorse?.inBox, led: g.player.transport.led?.horse === g.mainHorse, offers: g.missions.offers.map((o) => o.id) };

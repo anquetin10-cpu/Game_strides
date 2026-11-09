@@ -94,7 +94,14 @@ for (const [W, H] of SIZES) {
   // Deux touchers réels à 600 ms d'intervalle, dans la fenêtre de confirmation de 5 s (sans attendre que le bouton,
   // décalé par l'aide, soit immobile : en rendu logiciel lent, cette attente dépassait 5 s). Position relue à chaque fois.
   for (let k = 0; k < 2; k++) {
-    const r = await E(() => { const b = document.querySelector('[data-id="accept-request"]')?.getBoundingClientRect(); return b && { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    // Bouton réellement sous le doigt (écran de demande fini de s'ouvrir, rien par-dessus).
+    const r = await page.waitForFunction(() => {
+      const btn = document.querySelector('[data-id="accept-request"]');
+      if (!btn) return null;
+      const b = btn.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+      const top = document.elementFromPoint(x, y);
+      return top && (top === btn || btn.contains(top)) ? { x, y } : null;
+    }, null, { timeout: 15000, polling: 100 }).then((h) => h.jsonValue(), () => null);
     if (r) await page.touchscreen.tap(r.x, r.y);
     if (!k) await page.waitForTimeout(600);
   }
