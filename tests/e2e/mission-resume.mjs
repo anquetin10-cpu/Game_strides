@@ -31,7 +31,11 @@ await ctx.addInitScript(() => localStorage.setItem('strides-lang', 'fr'));
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+// Rechargement volontaire du test pendant le téléchargement du van ou du Defender (chargés après la prise en main) :
+// la page quittée annule ses textures en cours (« Couldn't load texture blob: »). Ignoré pendant ces rechargements
+// seulement ; toute autre erreur compte.
+let reloading = false;
+page.on('console', (m) => m.type() === 'error' && !(reloading && /Couldn't load texture blob:/.test(m.text())) && errors.push(m.text()));
 const E = (f, a) => page.evaluate(f, a);
 const tick = (n = 4) => E((k) => window.__auto.tick(k), n);
 const shot = async (name) => {
@@ -61,7 +65,9 @@ const state = () => E(() => {
 // Rechargement : écran titre, « Continuer » (vraie reprise d'une partie sauvegardée).
 const reload = async ({ save = true } = {}) => {
   if (save) await E(() => window.__game.saveNow());
+  reloading = true;
   await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 180000 });
+  reloading = false;
   await page.waitForFunction(() => window.__game && window.__game.state === 'title', null, { timeout: 300000 });
   await page.tap('[data-id="continue"]', { timeout: 120000 });
   await page.waitForFunction(() => window.__game.state === 'play', null, { timeout: 120000 });
