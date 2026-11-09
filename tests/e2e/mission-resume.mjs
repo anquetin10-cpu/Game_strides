@@ -116,6 +116,26 @@ await page.waitForTimeout(1600);
 await tick(4);
 let s = await state();
 const accepted = s.active === 'tuto' && s.cp?.mission === 'tuto' && s.cp.step === 'start';
+// Diagnostic si l'acceptation échoue (CI) : état du téléphone, de l'écran de demande, des offres et des messages,
+// et capture dans tests/e2e/out/smoke (publiée en artefact par la CI).
+if (!accepted) {
+  const dbg = await E(() => {
+    const g = window.__game, m = g.missions;
+    return {
+      hour: g.hour?.(), active: m.active?.offer.id || null, offers: m.offers.map((o) => o.id),
+      phone: g.phone.isOpen, app: g.phone.app, reqBusy: g.phone._reqBusy,
+      btn: document.querySelector('[data-id="accept-request"]')?.textContent || null,
+      bar: document.querySelector('.req-cap')?.textContent || null,
+      toasts: [...document.querySelectorAll('.toast, .app-toast, .hud-toast')].map((x) => x.textContent.slice(0, 120)),
+      notifs: [...document.querySelectorAll('.notif')].map((x) => x.className + ':' + x.textContent.slice(0, 60)),
+      overlay: !!document.querySelector('.overlay'), dialog: !!g.hud.dialogActive, simPaused: g.simPaused,
+      vehicles: { van: !!g.van, def: !!g.defender, ready: !!g.vehiclesReady },
+    };
+  });
+  console.log('DIAGNOSTIC COR-S01a', JSON.stringify(dbg));
+  try { mkdirSync('tests/e2e/out/smoke', { recursive: true }); } catch {}
+  await page.screenshot({ path: 'tests/e2e/out/smoke/reprise-mission-S01a.jpg', type: 'jpeg', quality: 75, timeout: 120000 }).catch(() => {});
+}
 // Consignes de Camille : appuis réels sur ACTION (touche E) jusqu'à la fin du dialogue.
 for (let i = 0; i < 6 && (await E(() => !!window.__game.hud.dialogActive)); i++) {
   await page.keyboard.press('KeyE');

@@ -66,7 +66,9 @@ for (const [W, H] of SIZES) {
   await page.waitForTimeout(400);
   check('FM-01 nouvelle partie lancée par les touchers', await E(() => window.__game.state === 'play' && !document.querySelector('.card')));
   // FM-02 : téléphone ouvert tout de suite (bouton du HUD).
-  await page.locator('.phone-btn').tap();
+  // Le bouton « sonne » (animation continue) quand une demande arrive : toucher réel à ses coordonnées, sans attendre
+  // qu'il s'immobilise (un joueur touche un bouton qui bouge).
+  await page.locator('.phone-btn').tap({ force: true });
   await page.waitForTimeout(500);
   const w = await E(() => document.querySelector('[data-app="strides-widget"] .w-main')?.textContent || '');
   check('FM-02 widget Strides : au moins une mission dès l\'ouverture', /[1-9]\d* missions? dispo/.test(w), w);
