@@ -52,7 +52,8 @@ for (const [W, H] of SIZES) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const E = (f, a) => page.evaluate(f, a);
-  const shot = (n) => page.screenshot({ path: `${OUT}/${tag}-${n}.jpg`, type: 'jpeg', quality: 80 });
+  // Captures : preuve visuelle, jamais une cause d'échec (rendu logiciel lent, serveur qui démarre).
+  const shot = (n) => page.screenshot({ path: `${OUT}/${tag}-${n}.jpg`, type: 'jpeg', quality: 80, timeout: 120000 }).catch((e) => console.log(`(capture ${n} non prise : ${e.message.split('\n')[0]})`));
   await page.goto(`${BASE}/`, { timeout: 180000 });
   await page.locator('[data-id="play"]').waitFor({ state: 'visible', timeout: 400000 });
   await shot('01-titre');
@@ -145,7 +146,7 @@ for (const [W, H] of LAYOUTS) {
   await page.waitForTimeout(600);
   const lay = await phoneLayout(page);
   check(`FM-06 ${W}x${H} accueil du téléphone : 12 applications accessibles`, lay.ok, JSON.stringify(lay));
-  await page.screenshot({ path: `${OUT}/${W}x${H}-telephone.jpg`, type: 'jpeg', quality: 80 });
+  await page.screenshot({ path: `${OUT}/${W}x${H}-telephone.jpg`, type: 'jpeg', quality: 80, timeout: 120000 }).catch(() => console.log(`(capture ${W}x${H} non prise)`));
   await ctx.close();
 }
 console.log(fails ? `\n${fails} échec(s)` : '\nTout est conforme');

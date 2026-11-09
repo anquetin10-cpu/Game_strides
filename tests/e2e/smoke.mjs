@@ -16,6 +16,18 @@ const TESTS = [
   ['cheval-cavalier', ['tests/e2e/pjl/ride.mjs', `${OUT}/cheval-cavalier`, '844x390'], { SHOTS: '0' }],
 ];
 const only = process.argv[2]?.split(',');
+// Échauffement (non compté) : premier chargement du serveur de développement (préparation des modules), pour que le
+// premier test ne paie pas ce délai.
+{
+  const { chromium } = await import('playwright');
+  const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const p = await b.newPage();
+  const t0 = Date.now();
+  await p.goto(`${process.env.BASE || 'http://127.0.0.1:5173'}/?autostart`, { timeout: 300000 }).catch(() => {});
+  await p.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 400000 }).catch(() => {});
+  await b.close();
+  console.log(`échauffement : ${Math.round((Date.now() - t0) / 1000)} s`);
+}
 const results = [];
 for (const [name, args, env = {}] of TESTS) {
   if (only && !only.includes(name)) continue;
