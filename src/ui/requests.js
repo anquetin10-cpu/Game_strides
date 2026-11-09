@@ -313,10 +313,13 @@ function actions(phone, o, av = { ok: true }) {
     accept.textContent = o.counter ? T`Accepter à ${eur(o.pay)}` : t('Accepter la mission');
     hint.classList.add('hidden');
   };
-  tap(accept, () => {
+  // Écart entre les deux touchers mesuré à l'instant réel du toucher (horodatage de l'événement) : si le jeu est occupé
+  // (préparation d'un véhicule), deux touchers bien espacés mais traités coup sur coup restent une confirmation.
+  tap(accept, (e) => {
+    const at = e?.timeStamp ?? performance.now();
     if (!confirming) {
       confirming = true;
-      armedAt = performance.now();
+      armedAt = at;
       phone._reqBusy = true;
       accept.textContent = o.counter ? T`Confirmer à ${eur(o.pay)} ?` : t('Confirmer l’acceptation ?');
       hint.textContent = o.counter ? t('Touchez à nouveau pour confirmer — vous renoncez à votre contre-proposition.') : t('Touchez à nouveau pour confirmer — le client sera informé.');
@@ -329,7 +332,7 @@ function actions(phone, o, av = { ok: true }) {
       return;
     }
     // Double toucher trop rapide (< 350 ms) : ce n'est pas une confirmation volontaire.
-    if (performance.now() - armedAt < 350) return;
+    if (at - armedAt < 350) return;
     clearTimeout(timer);
     if (g.missions.active) {
       reset();
