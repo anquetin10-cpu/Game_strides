@@ -101,6 +101,14 @@ await E(() => {
   A.closeCards();
   // Comète au box (partie neuve normale ; ?autostart la laisse dans la cour).
   g.stabling.putIn(g.mainHorse, true);
+  // « En selle » a déjà poussé sa notification « Premiers pas » (lot 3) : file vidée et bannière fermée, pour que la
+  // seule bannière soit celle du test (sinon deux bannières se suivent et le toucher tombe pendant l'échange).
+  g.hud.notifQueue.length = 0;
+  if (g.hud.notifActive) g.hud._closeNotif();
+});
+await page.waitForTimeout(700);
+await E(() => {
+  const g = window.__game;
   g.missions.offers = [];
   g.missions.refreshOffers(false);
   g.missions.pushNotif(g.missions.offers.find((o) => o.id === 'story:tuto'));
@@ -109,6 +117,7 @@ await E(() => {
 await page.waitForTimeout(700);
 let s0 = await state();
 await tapSel('.notif.show .n-actions button.primary');
+await page.waitForFunction(() => window.__game.phone.isOpen && window.__game.phone.app === 'request', null, { timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(500);
 await tapSel('[data-id="accept-request"]');
 await tapSel('[data-id="accept-request"]');
