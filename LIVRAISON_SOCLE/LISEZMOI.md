@@ -127,3 +127,11 @@ Branche `claude/et-socle`, partie de la version publiée `e4b0673`, sans publica
 - confirmation « Accepter la mission » : écart entre les deux touchers mesuré à l'instant réel du toucher (deux touchers retardés par une préparation étaient rejetés comme un double toucher) ;
 - page quittée pendant un téléchargement : pas d'erreur signalée ;
 - CI : Ubuntu 24.04 pour Playwright, échauffement du serveur, captures jamais bloquantes.
+
+**Mise à jour (candidat iPhone).** Candidat d'essai : `a9dc7cb`, publié en page privée claude.ai (voir `ESSAI_IPHONE.md`). CI verte sur `d23b877` (run 42591574288 : build, tests unitaires, accès de test absents, série courte 5/5 ; publication sautée). Les échecs intermédiaires de la CI venaient des tests, pas du jeu :
+- bouton du téléphone qui « sonne » (attente d'immobilité sans fin) ;
+- deux bannières « Nouvelle demande » successives depuis le lot 3 (le test poussait la sienne) ;
+- premier toucher « Accepter » envoyé pendant l'ouverture de l'écran de demande ;
+- second toucher hors de la fenêtre de confirmation de 5 s en rendu logiciel lent.
+
+Les commits postérieurs à `a9dc7cb` ne changent que les tests et la documentation : le candidat reste valable.
