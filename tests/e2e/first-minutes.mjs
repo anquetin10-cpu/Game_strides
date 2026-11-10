@@ -105,6 +105,15 @@ for (const [W, H] of SIZES) {
     if (r) await page.touchscreen.tap(r.x, r.y);
     if (!k) await page.waitForTimeout(600);
   }
+  // Second toucher perdu pendant une image longue (rendu logiciel) : bouton encore « Confirmer… », aucune mission ;
+  // le joueur touche une fois de plus, dans la fenêtre de 5 s.
+  await page.waitForTimeout(800);
+  const still = await E(() => !window.__game.missions.active && /Confirm/.test(document.querySelector('[data-id="accept-request"]')?.textContent || ''));
+  if (still) {
+    console.log('(second toucher non pris en compte : nouveau toucher)');
+    const b = await page.locator('[data-id="accept-request"]').boundingBox().catch(() => null);
+    if (b) await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+  }
   await page.waitForFunction(() => window.__game.missions.active?.offer.id === 'story:tuto' && !window.__game.phone.isOpen, null, { timeout: 15000 }).catch(() => {});
   check('FM-03 mission démarrée, téléphone rangé', await E(() => window.__game.missions.active?.offer.id === 'story:tuto' && !window.__game.phone.isOpen));
   const before = await E(() => ({ money: window.__game.save.data.money, rep: window.__game.save.data.reputation }));

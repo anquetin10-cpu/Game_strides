@@ -61,11 +61,22 @@ const tapSel = async (sel) => {
 // « Accepter la mission » : deux touchers réels à 600 ms d'intervalle, comme un joueur. Le premier arme la
 // confirmation pendant 5 s ; sans attente entre les deux (immobilité du bouton, images du jeu), le second reste dans
 // cette fenêtre même quand la page rend lentement (CI en rendu logiciel). Position relue avant chaque toucher.
+// Si le second toucher n'a pas été pris (bouton encore « Confirmer… », aucune mission : en rendu logiciel lent, un
+// toucher peut se perdre pendant une image longue), le joueur touche encore une fois, dans la fenêtre de 5 s.
+const armed = () => E(() => !window.__game.missions.active && /Confirm/.test(document.querySelector('[data-id="accept-request"]')?.textContent || ''));
 const doubleTapAccept = async () => {
   await page.waitForSelector('[data-id="accept-request"]', { timeout: 15000 }).catch(() => {});
-  for (let k = 0; k < 2; k++) {
+  for (let k = 0; k < 3; k++) {
+    if (k === 2) {
+      await page.waitForTimeout(800);
+      if (!(await armed())) break;
+      console.log('(second toucher non pris en compte : nouveau toucher)');
+    }
     const r = await acceptUnderFinger();
-    if (!r) return false;
+    if (!r) {
+      console.log(`(toucher ${k + 1} : bouton « Accepter » pas sous le doigt)`);
+      return false;
+    }
     await page.touchscreen.tap(r.x, r.y);
     if (!k) await page.waitForTimeout(600);
   }
