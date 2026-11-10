@@ -166,7 +166,7 @@ function dismountKeys(D) {
   // 0. Position de cavalier.
   S.at(0, { root: [0, 0, 0], ry: 0, tilt: 1, hips: [0, ride, 0], tr: { ...TR_RIDE }, near: { s: 1 }, far: { s: 1 }, hn: P.handN, hf: P.handF, gn: 0.9, gf: 0.9 });
   // 1-2. Pied droit libéré, rênes dans la main gauche sur le garrot, main droite sur le pommeau.
-  S.at(0.28 * k, { far: { a: [-D.fit.stirrupX - 0.05, D.fit.stirrupY + 0.03, D.fit.stirrupZ - 0.06] }, hn: P.withers, hf: P.pommel, tr: { ...TR_RIDE, sx: 0.16 } });
+  S.at(0.28 * k, { far: { a: [-D.fit.stirrupX - 0.08, D.fit.stirrupY + 0.03, D.fit.stirrupZ - 0.06] }, hn: P.withers, hf: P.pommel, tr: { ...TR_RIDE, sx: 0.16 } });
   // 3. Appui sur l'étrier gauche : le bassin se soulève, buste penché sur l'encolure.
   S.at(0.3 * k, { root: [0.05, 0, -0.2], ry: -0.05, tilt: 0.7, hips: [0.06, ride + 0.08, 0], near: { s: 'iron' }, tr: { sx: 0.35, cx: 0.08 } });
   // 4. Jambe droite lancée en arc : dehors du flanc droit, haut au-dessus de la croupe, dehors du flanc gauche ;
