@@ -95,6 +95,15 @@ function points(D) {
   };
 }
 
+// Trajet du pied droit par-dessus la croupe (repère du siège, côté gauche) : en arrière le long du flanc gauche, juste
+// au-dessus de la croupe (dos à y ≈ −0,05 à z −0,5…−0,7), puis en descendant le long du flanc droit (demi-largeur
+// ≈ 0,27 m à y −0,2) ; jamais tendu à l'horizontale sur le côté.
+const ARC = [
+  [0.48, -0.1, -0.52],
+  [0.0, 0.18, -0.76],
+  [-0.46, -0.1, -0.42],
+];
+
 // Montée (durée ~2,3 s à l'arrêt, plus l'approche). Debout dans l'étrier, le cavalier reste sur le flanc, le bassin à
 // hauteur de la selle et le buste penché par-dessus (jamais debout sur le dos du cheval).
 function mountKeys(D) {
@@ -115,7 +124,7 @@ function mountKeys(D) {
   S.at(0.42 * k, {
     root: [0.42, sz - 0.02, yaw0 + 0.1], ry: -D.H * 0.5,
     hips: [0.42, ride + 0.06, 0.04],
-    far: { a: [0.44, D.fit.stirrupY + 0.08, -0.14] }, lift: { far: 0.05 },
+    far: { a: [0.5, D.fit.stirrupY + 0.1, -0.16] }, lift: { far: 0.05 },
     tr: { sx: 0.42, cx: 0.12 },
   });
   // 6. Jambe droite lancée en arc autour de la croupe : dehors et en arrière du flanc gauche, haut au-dessus de la
@@ -123,22 +132,22 @@ function mountKeys(D) {
   S.at(0.18 * k, {
     root: [0.28, -0.03, -1.35], ry: -D.H * 0.35, tilt: 0.15,
     hips: [0.26, ride + 0.1, 0],
-    far: { a: [0.62, 0.12, -0.58] }, tr: { sx: 0.48, cx: 0.14, hy: 0.06 },
+    far: { a: ARC[0] }, tr: { sx: 0.48, cx: 0.14, hy: 0.06 },
   });
   S.at(0.22 * k, {
     root: [0.2, -0.05, -1.0], ry: -D.H * 0.25, tilt: 0.3,
     hips: [0.2, ride + 0.12, -0.02],
-    far: { a: [-0.02, 0.5, -0.88] }, tr: { sx: 0.5, cx: 0.15, hy: 0.1 },
+    far: { a: ARC[1] }, lift: { far: 0.08 }, tr: { sx: 0.5, cx: 0.15, hy: 0.1 },
   });
   S.at(0.18 * k, {
     root: [0.1, -0.02, -0.5], ry: -0.1, tilt: 0.55,
     hips: [0.1, ride + 0.1, -0.01],
-    far: { a: [-0.6, 0.14, -0.55] }, tr: { sx: 0.38, cx: 0.1, hy: 0.06 },
+    far: { a: ARC[2] }, tr: { sx: 0.38, cx: 0.1, hy: 0.06 },
   });
   S.at(0.22 * k, {
     root: [0.05, 0, -0.2], ry: -0.05, tilt: 0.7,
     hips: [0.06, ride + 0.08, 0],
-    far: { a: [-D.fit.stirrupX - 0.08, D.fit.stirrupY + 0.22, D.fit.stirrupZ - 0.1] },
+    far: { a: [-D.fit.stirrupX - 0.03, D.fit.stirrupY + 0.08, D.fit.stirrupZ - 0.05] },
     tr: { sx: 0.3, cx: 0.08, hy: 0.04 },
   });
   // 7. Descente douce dans la selle.
@@ -157,7 +166,7 @@ function dismountKeys(D) {
   // 0. Position de cavalier.
   S.at(0, { root: [0, 0, 0], ry: 0, tilt: 1, hips: [0, ride, 0], tr: { ...TR_RIDE }, near: { s: 1 }, far: { s: 1 }, hn: P.handN, hf: P.handF, gn: 0.9, gf: 0.9 });
   // 1-2. Pied droit libéré, rênes dans la main gauche sur le garrot, main droite sur le pommeau.
-  S.at(0.28 * k, { far: { a: [-D.fit.stirrupX - 0.04, D.fit.stirrupY + 0.06, D.fit.stirrupZ + 0.08] }, hn: P.withers, hf: P.pommel, tr: { ...TR_RIDE, sx: 0.16 } });
+  S.at(0.28 * k, { far: { a: [-D.fit.stirrupX - 0.05, D.fit.stirrupY + 0.03, D.fit.stirrupZ - 0.06] }, hn: P.withers, hf: P.pommel, tr: { ...TR_RIDE, sx: 0.16 } });
   // 3. Appui sur l'étrier gauche : le bassin se soulève, buste penché sur l'encolure.
   S.at(0.3 * k, { root: [0.05, 0, -0.2], ry: -0.05, tilt: 0.7, hips: [0.06, ride + 0.08, 0], near: { s: 'iron' }, tr: { sx: 0.35, cx: 0.08 } });
   // 4. Jambe droite lancée en arc : dehors du flanc droit, haut au-dessus de la croupe, dehors du flanc gauche ;
@@ -165,30 +174,30 @@ function dismountKeys(D) {
   S.at(0.18 * k, {
     root: [0.1, -0.02, -0.5], ry: -0.1, tilt: 0.55,
     hips: [0.1, ride + 0.1, -0.01],
-    far: { a: [-0.6, 0.14, -0.55] }, tr: { sx: 0.38, cx: 0.1, hy: 0.06 },
+    far: { a: ARC[2] }, tr: { sx: 0.38, cx: 0.1, hy: 0.06 },
   });
   S.at(0.22 * k, {
     root: [0.2, -0.05, -1.0], ry: -D.H * 0.25, tilt: 0.3,
     hips: [0.2, ride + 0.12, -0.02],
-    far: { a: [-0.02, 0.5, -0.88] }, tr: { sx: 0.5, cx: 0.15, hy: 0.1 },
+    far: { a: ARC[1] }, lift: { far: 0.08 }, tr: { sx: 0.5, cx: 0.15, hy: 0.1 },
   });
   S.at(0.18 * k, {
     root: [0.28, -0.03, -1.35], ry: -D.H * 0.35, tilt: 0.15,
     hips: [0.26, ride + 0.1, 0],
-    far: { a: [0.62, 0.12, -0.58] }, tr: { sx: 0.48, cx: 0.14, hy: 0.06 },
+    far: { a: ARC[0] }, tr: { sx: 0.48, cx: 0.14, hy: 0.06 },
   });
   // 5. Transfert du poids à gauche : jambe droite le long de la gauche, buste penché sur la selle.
   S.at(0.26 * k, {
     root: [0.42, 0.04, -HALF_PI - 0.32], ry: -D.H * 0.5, tilt: 0,
     hips: [0.42, ride + 0.04, 0.04],
-    far: { a: [0.46, D.fit.stirrupY - 0.05, -0.08] }, tr: { sx: 0.42, cx: 0.1 },
+    far: { a: [0.46, D.fit.stirrupY - 0.05, -0.08] }, tr: { sx: 0.3, cx: 0.08 },
   });
   // 6. Pied gauche libéré, descente contrôlée, réception genoux fléchis.
   S.at(0.38 * k, {
     root: [0.57, 0.14, -HALF_PI + 0.05], ry: -D.H,
-    hips: [0.57, -D.H + D.Hs - 0.14, 0.15],
+    hips: [0.57, -D.H + D.Hs - 0.06, 0.15],
     far: { g: [0.6, 0.04, -HALF_PI + 0.1] }, near: { g: [0.55, 0.26, -HALF_PI + 0.2] }, lift: { near: 0.05 },
-    hf: null, gf: 0, tr: { sx: 0.18 },
+    hf: null, gf: 0, tr: { sx: 0.08 },
   });
   // 7-8. Redressé, debout à l'épaule, rênes en main ; main droite au casque (il est retiré), puis le long du corps.
   S.at(0.34 * k, { ...end, hn: P.withers, gn: 0.9, hf: null, tr: { sx: 0.04 } });
@@ -493,17 +502,26 @@ export class HorseMount {
       const lift = b.lift?.[role] || 0;
       if (lift) F.pos.y += (Math.sin(Math.PI * u) * lift) / hu.scale;
       const sg = sideName === 'l' ? 1 : -1;
-      const inSaddle = b[role].s || a[role].s;
-      F.pole.set(sg * (inSaddle ? 1.3 : 0.25), inSaddle ? -0.05 : 0.1, 1).normalize();
-      // Cheval large (réglage du cheval riderFit.mountKneeOut, donné par le cheval WildMesh) : hors de la selle, chaque
-      // genou est orienté vers l'extérieur du flanc du côté où se trouve son pied (repère du personnage, qui fait face au
-      // flanc : sinon la composante « avant » du pôle pousse le genou dans le cheval quand le pied entre dans l'étrier,
-      // ou quand la jambe opposée pend derrière elle pendant la poussée).
-      const kOut = D.fit.mountKneeOut || 0;
-      if (kOut > 0 && tilt < 0.95) {
+      // Orientation du genou (vers l'extérieur) : pied à l'étrier qui pend (« iron », debout contre le flanc) bien
+      // dehors ; en selle, celle de la pose de cavalier (fit.kneeOut : pas de saut au passage à la pose « ride ») ;
+      // en l'air ou au sol, à peine dehors. Interpolée d'une clé à l'autre : la jambe qui quitte l'étrier ou y entre
+      // ne bascule pas d'un coup à l'horizontale.
+      const latOf = (spec) => (spec.s === 'iron' ? 1.3 : spec.s ? D.fit.kneeOut ?? 0.45 : 0.25);
+      const ironA = a[role].s === 'iron', ironB = b[role].s === 'iron';
+      F.pole.set(sg * lerp(latOf(a[role]), latOf(b[role]), e), ironA || ironB ? -0.05 : 0.1, 1).normalize();
+      // Cheval large (réglage du cheval riderFit.mountKneeOut, donné par le cheval WildMesh) : tant que le pied côté
+      // montoir est dans l'étrier qui pend, son genou est orienté vers l'extérieur du flanc (sinon la composante
+      // « avant » du pôle pousse le genou dans le cheval) ; l'autre jambe aussi tant qu'elle pend de ce côté pendant la
+      // poussée. Jamais pendant l'enjambée ni à la réception (jambes « en ailes »).
+      const kOut = Math.min(D.fit.mountKneeOut || 0, 1.5);
+      const nearIron = (k) => k.near.s === 'iron';
+      if (kOut > 0 && tilt < 0.95 && (role === 'near' ? ironA || ironB : nearIron(a) && nearIron(b))) {
         _w.set(1, 0, 0).applyAxisAngle(_Y, -s * ryaw); // gauche du cheval, repère du personnage
         const footX = s * rx + F.pos.dot(_w) * hu.scale; // pied, repère du siège (m ; clés écrites côté gauche)
-        F.pole.addScaledVector(_w, Math.sign(footX || s) * kOut * (1 - tilt)).normalize();
+        if (role === 'near' || Math.sign(footX) === s) {
+          const w = role === 'near' ? (ironA && ironB ? 1 : ironA ? 1 - e : e) : 1;
+          F.pole.addScaledVector(_w, Math.sign(footX || s) * kOut * (1 - tilt) * w).normalize();
+        }
       }
       F.toe = 0;
     }
