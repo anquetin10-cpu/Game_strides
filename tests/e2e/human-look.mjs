@@ -18,6 +18,12 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 const E = (f, a) => page.evaluate(f, a);
+// REAL_GLB=<fichier.glb> : le modèle réaliste du personnage choisi est remplacé par ce fichier (par exemple l'export Blender
+// de scripts/humans/bpy/roundtrip.py), pour vérifier qu'il s'affiche et s'anime dans le jeu comme l'original.
+if (process.env.REAL_GLB) {
+  const body = readFileSync(process.env.REAL_GLB);
+  await page.route(`**/real/rider_${AVATAR}.glb*`, (r) => r.fulfill({ body, contentType: 'model/gltf-binary' }));
+}
 await page.goto(`${BASE}/?autostart${process.env.CLASSIC ? '&classic' : ''}`, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 400000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
