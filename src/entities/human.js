@@ -329,6 +329,13 @@ export class Human {
     // un autre cheval peut décaler sa convention avec horse.riderPostOffset.
     a.horseGaitPhase = (h.anim.phase + (h.riderPostOffset || 0) + 1) % 1;
     a.jump = h.jumpT;
+    // Réception (événements du cheval, pour l'accompagnement du saut) : temps depuis le poser des antérieurs (fin du vol
+    // du jeu) et postérieurs reposés (cheval WildMesh : contact mesuré ; autre cheval : le cavalier attend RIDE.holdMax).
+    if (h.jumpT >= 0) a.landT = -1;
+    else if (a._wasJump) a.landT = 0;
+    else if (a.landT >= 0) a.landT += step;
+    a._wasJump = h.jumpT >= 0;
+    a.hindDown = !!h.pjl?.hindDown;
     a.turn = clamp((h.lastTurn || 0) * 1.4, -1, 1);
     a.wave = this.wave;
     // Ajustement exprimé en mètres → unités du modèle (taille du cavalier).
