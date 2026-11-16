@@ -424,8 +424,8 @@ export class PjlHorse {
 
   // Temps de saut donné à la vue (convention de la source : jt < 0 avant le décollage des postérieurs, 0 → T de leur
   // décollage à la réception des antérieurs, réparti linéairement sur le clip). Le vol du jeu est une parabole
-  // symétrique (sommet à mi-vol) : le clip est réparti en deux morceaux pour que son sommet (bassin le plus haut entre
-  // décollage et réception) tombe au sommet du jeu ; départ des postérieurs (PUSH s avant) et réception des
+  // symétrique (sommet à mi-vol) : le clip est réparti en deux morceaux pour que son sommet (centre du tronc le plus haut
+  // entre décollage et réception : approximation du centre de masse, pas le bassin seul) tombe au sommet du jeu ; départ des postérieurs (PUSH s avant) et réception des
   // antérieurs restent calés sur le début et la fin du vol.
   _jumpTime(tau, T, speed) {
     const j = this.asset.jumps.get(speed > 8 ? 'jump_gallop' : 'jump_canter') || this.asset.jumps.get('jump_gallop');
@@ -433,7 +433,7 @@ export class PjlHorse {
     if (j._apex === undefined) {
       let best = j.toeOff, hi = -Infinity;
       for (let f = Math.ceil(j.toeOff * 24); f <= Math.floor(j.foreLand * 24); f++) {
-        const r = j.pelvisRise[f];
+        const r = (j.trunkRise ?? j.pelvisRise)[f];
         if (r !== undefined && r > hi) (hi = r), (best = f / 24);
       }
       j._apex = Math.min(Math.max(best, j.toeOff + 0.05), j.foreLand - 0.05);

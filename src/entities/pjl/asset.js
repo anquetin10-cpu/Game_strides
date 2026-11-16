@@ -173,10 +173,15 @@ async function prepare(loadGltf) {
     // ---- Jump clip analysis (contacts from hoof heights)
     const jumps = new Map();
     pose('canter', 0);
-    let canterPelvis = 0;
+    let canterPelvis = 0, canterTrunk = 0;
+    // ET : centre du tronc = milieu bassin – garrot (spine_04). Hypothèse de simulation : approximation du centre de
+    // masse pour caler le clip sur la trajectoire du jeu (le bassin seul monte tard, avec la bascule, et n'est pas le
+    // centre de masse).
+    const trunkY = () => (wpos(bone('pelvis')).y + wpos(bone('spine_04')).y) / 2;
     for (let i = 0; i < 17; i++) {
         pose('canter', i / FPS);
         canterPelvis += wpos(bone('pelvis')).y / 17;
+        canterTrunk += trunkY() / 17;
     }
     for (const jn of ['jump_canter', 'jump_gallop']) {
         const clip = clips.get(jn);
@@ -184,7 +189,7 @@ async function prepare(loadGltf) {
             continue;
         const n = Math.round(clip.duration * FPS) + 1;
         const H = { LF: [], RF: [], LH: [], RH: [] };
-        const rise = [];
+        const rise = [], trunkRise = [];
         for (let i = 0; i < n; i++) {
             pose(jn, Math.min(clip.duration, i / FPS));
             H.LF.push(wpos(bone('fingers_02_l')).y);
@@ -192,6 +197,7 @@ async function prepare(loadGltf) {
             H.LH.push(wpos(bone('toes_02_l')).y);
             H.RH.push(wpos(bone('toes_02_r')).y);
             rise.push(wpos(bone('pelvis')).y - canterPelvis);
+            trunkRise.push(trunkY() - canterTrunk);
         }
         const contact = (arr) => {
             const mn = Math.min(...arr);
@@ -223,6 +229,7 @@ async function prepare(loadGltf) {
             nextFore: Math.min(nextFore, n - 1) / FPS,
             end: clip.duration,
             pelvisRise: rise,
+            trunkRise,
         });
     }
     tmpMixer.stopAllAction();

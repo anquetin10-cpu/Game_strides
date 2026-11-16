@@ -352,11 +352,16 @@ export class HorseView {
         this.body.rotation.z = damp(this.body.rotation.z, -lean, 8, dt);
         this.secondary?.update(s, dt, this.approaching);
     }
+    // ET : montée du corps dans le clip, annulée pour que la trajectoire du jeu porte seule le déplacement vertical
+    // (pas de double déplacement). Centre du tronc (bassin – garrot) plutôt que bassin seul : le bassin est bas pendant
+    // la poussée et ne culmine qu'à la réception des antérieurs (bascule) ; l'annuler soulevait les postérieurs pendant
+    // l'appel et enfonçait les antérieurs dans le sol à la réception.
     pelvisRise(j, t) {
-        const f = clamp(t * 24, 0, j.pelvisRise.length - 1);
+        const R = j.trunkRise ?? j.pelvisRise;
+        const f = clamp(t * 24, 0, R.length - 1);
         const i = Math.floor(f);
         const k = f - i;
-        return lerp(j.pelvisRise[i], j.pelvisRise[Math.min(i + 1, j.pelvisRise.length - 1)], k);
+        return lerp(R[i], R[Math.min(i + 1, R.length - 1)], k);
     }
     /** World position of a bone (by base name). */
     boneWorld(base, out = new THREE.Vector3()) {
