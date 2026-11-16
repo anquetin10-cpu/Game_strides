@@ -14,6 +14,8 @@ const TESTS = [
   ['montee-descente', ['tests/e2e/horse-mount.mjs']],
   ['reprise-mission', ['tests/e2e/mission-resume.mjs']],
   ['cheval-cavalier', ['tests/e2e/pjl/ride.mjs', `${OUT}/cheval-cavalier`, '844x390'], { SHOTS: '0' }],
+  // Sabots et membres du cheval face aux barres de CSO : cohérence contact visible / chute de barre / jugement.
+  ['sabots-barres', ['tests/e2e/pjl/bars-check.mjs', `${OUT}/sabots-barres`]],
 ];
 const only = process.argv[2]?.split(',');
 // Échauffement (non compté) : premier chargement du serveur de développement (préparation des modules), pour que le

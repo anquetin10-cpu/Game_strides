@@ -147,4 +147,6 @@ export const CAUSES = {
   slow: t('Pas assez d’impulsion'),
   fast: t('Trop vite : saut à plat'),
   short: t('Saut trop court : atterrissage dans l’obstacle'),
+  foreRail: t('Barre touchée par les antérieurs'),
+  hindRail: t('Barre touchée par les postérieurs'),
 };

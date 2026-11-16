@@ -11,6 +11,7 @@
     "preview": "vite preview --host",
     "test": "vitest run",
     "e2e": "node tests/e2e/smoke.mjs",
+    "e2e:barres": "node tests/e2e/pjl/bars-check.mjs tests/e2e/out/bars-check",
     "build:artifact": "vite build --mode single && node scripts/make-artifact.mjs"
   },
   "dependencies": {

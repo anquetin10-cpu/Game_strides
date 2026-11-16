@@ -112,6 +112,8 @@ export default {
   'Pas assez d’impulsion': 'Not enough impulsion',
   'Trop vite : saut à plat': 'Too fast: flat jump',
   'Saut trop court : atterrissage dans l’obstacle': 'Jump too short: landed in the fence',
+  'Barre touchée par les antérieurs': 'Rail hit by the front legs',
+  'Barre touchée par les postérieurs': 'Rail hit by the hind legs',
 
   // Box (gameplay/stabling.js, gameplay/player.js)
   '{0} est au box : repos, foin et eau à volonté.': '{0} is in the stall: rest, plus unlimited hay and water.',

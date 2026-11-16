@@ -31,6 +31,9 @@ const COLORS = [
 // Refus : longueur de l'avant-main (bout du nez devant l'origine du cheval) ; point de référence du saut (épaules)
 // devant l'origine ; dépassement du nez au-delà de la face d'un obstacle sur un refus tout contre (il emporte la barre).
 const NOSE = 1.6, REF = 0.4, OVERRUN = 0.6;
+// Distance (m) du point de référence (épaules) aux postérieurs, avec une marge : au-delà de la sortie de l'obstacle, les
+// quatre membres l'ont passé.
+const HIND_TRAIL = 2.2;
 
 // Parcours de CSO du Pôle International : voir csoCourse.js (tracé, obstacles, hauteurs). Positions dans la carrière.
 const A0 = POLE.arena;
@@ -397,6 +400,14 @@ export class Obstacles {
       const { s } = this._localS(ref.o, horse.pos.x, horse.pos.z);
       if ((f.x * ref.o.n.x + f.z * ref.o.n.z) * Math.sign(s) > 0 || Math.abs(s) > ref.o.depth / 2 + 6) ref.away = true;
     }
+    // Résultat en attente (membres visibles jugés) : annoncé quand les postérieurs ont passé l'obstacle (le point de
+    // référence est à HIND_TRAIL au-delà de la sortie), ou au plus tard 1,2 s après la sortie des épaules.
+    const ps = horse._pass;
+    if (ps && !ps.done && ps.exitT) {
+      const exit = ps.dir > 0 ? ps.o.back : ps.o.front;
+      const { s } = this._localS(ps.o, px, pz);
+      if ((s - exit) * ps.dir > HIND_TRAIL || g.time - ps.exitT > 1.2) this._finishPass(ps);
+    }
     // Barres touchées par les postérieurs : elles tombent quand le cheval a avancé d'environ 1,1 m (ou s'est éloigné).
     const step = Math.hypot(horse.pos.x - prevX, horse.pos.z - prevZ);
     for (const o of this.list) {
@@ -517,10 +528,45 @@ export class Obstacles {
       }
     }
     const exit = dir > 0 ? o.back : o.front;
-    if ((a.s - exit) * (b.s - exit) <= 0 && (b.s - exit) * dir >= 0) {
-      pass.done = true;
-      const ev = { obstacle: o, dir, margin: pass.margin, cause: pass.cause, causeText: pass.cause ? CAUSES[pass.cause] : '' };
-      this.game.bus.emit(pass.fault ? 'obstacle:fault' : 'obstacle:clear', ev);
+    if (!pass.exitT && (a.s - exit) * (b.s - exit) <= 0 && (b.s - exit) * dir >= 0) {
+      // Membres visibles jugés (cheval WildMesh du joueur) : le résultat attend que les postérieurs aient passé
+      // l'obstacle (voir limbContact) ; sinon il est annoncé dès la sortie des épaules, comme avant.
+      if (this._limbJudged(horse)) pass.exitT = this.game.time;
+      else this._finishPass(pass);
+    }
+  }
+
+  // Le cheval du joueur affiché en WildMesh signale les contacts réels de ses membres avec les barres (PjlHorse
+  // _limbContacts) : ils comptent comme ceux de la trajectoire.
+  _limbJudged(horse) {
+    return !!(horse?.isPlayerHorse && horse.pjl?.active);
+  }
+
+  _finishPass(pass) {
+    if (pass.done) return;
+    pass.done = true;
+    const ev = { obstacle: pass.o, dir: pass.dir, margin: pass.margin, cause: pass.cause, causeText: pass.cause ? CAUSES[pass.cause] : '' };
+    this.game.bus.emit(pass.fault ? 'obstacle:fault' : 'obstacle:clear', ev);
+  }
+
+  // Contact réel d'un membre visible avec une barre du haut (mesuré sur la pose affichée, voir PjlHorse._limbContacts) :
+  // la barre tombe du côté où le membre la pousse, la faute est comptée (une seule par élément), la marge devient
+  // négative de la profondeur du contact. Un membre qui touche la barre fait donc toujours tomber la barre ; et une
+  // barre ne tombe pas sans contact d'un membre ou de la trajectoire.
+  limbContact(horse, o, bar, hit) {
+    if (o.off || !bar || bar.mesh?.userData.fall) return;
+    let pass = horse._pass;
+    if (!pass || pass.o !== o || pass.done) {
+      // Antérieurs sur la barre avant, avant que les épaules aient franchi l'entrée de l'obstacle.
+      const f = horse.forward;
+      pass = horse._pass = { o, dir: f.x * o.n.x + f.z * o.n.z >= 0 ? 1 : -1, fault: false, cause: null, done: false, margin: Infinity };
+    }
+    pass.margin = Math.min(pass.margin, -hit.depth);
+    if (!o.solid) this.knock(o, bar, pass.dir, Math.sign(hit.u) || 1, Math.max(0.05, hit.depth));
+    if (!pass.fault) {
+      pass.fault = true;
+      pass.cause = hit.hind ? 'hindRail' : 'foreRail';
+      if (o.solid) horse.speed *= 0.55;
     }
   }
 

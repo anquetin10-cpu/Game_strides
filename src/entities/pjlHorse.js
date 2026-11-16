@@ -28,6 +28,7 @@ import { refreshHorseTack } from './horse/mesh.js';
 import { RIDER_FIT } from './human.js';
 import { clamp, damp, smoothstep } from '../core/math.js';
 import { JUMP } from '../gameplay/jumpModel.js';
+import { toLocal, sweepRail } from '../gameplay/limbContact.js';
 
 const wrap01 = (u) => u - Math.floor(u);
 // Écart circulaire moyen (0..1) entre deux séries de phases, et résidu (0 = calage parfait).
@@ -66,7 +67,15 @@ const PUSH = 0.12;
 // Part du vol (jumpT) sur laquelle l'abaissement d'appel se résorbe après le décollage des postérieurs (hypothèse de
 // gameplay).
 const PUSH_RELEASE = 0.25;
-const _hp = new THREE.Vector3(), _pv = new THREE.Vector3();
+const _hp = new THREE.Vector3(), _tax = new THREE.Vector3(), _tfw = new THREE.Vector3();
+const _tq = new THREE.Quaternion(), _tq2 = new THREE.Quaternion(), _tq3 = new THREE.Quaternion();
+// Repli maximal d'un membre au-dessus d'une barre (rad, ~34° : cuisse autour de la hanche, canon autour du genou),
+// et membres concernés : [clé, os du sabot, os qui tourne, pivots de la bascule associée].
+const TUCK_MAX = 0.6;
+const TUCK = [
+  ['PG', 'toes_02_l', 'upperleg_l', ['fingers_02_l', 'fingers_02_r']], ['PD', 'toes_02_r', 'upperleg_r', ['fingers_02_l', 'fingers_02_r']],
+  ['AG', 'fingers_02_l', 'hand_l', ['toes_02_l', 'toes_02_r']], ['AD', 'fingers_02_r', 'hand_r', ['toes_02_l', 'toes_02_r']],
+];
 // Postérieurs face aux barres (voir _hindClear) : bas du sabot sous l'articulation mesurée (m, approximation), rayon
 // des barres (world/builders.js railGeo), marge visée plafonnée, bascule maximale (rad, ~12°), relevé maximal en vol (m).
 const HOOF_SOLE = 0.08;
@@ -74,6 +83,15 @@ const RAIL_R = 0.05;
 const HIND_CLEAR_MAX = 0.2;
 const HIND_TILT_MAX = 0.21;
 const HIND_LIFT_MAX = 0.25;
+// Relevé de l'avant-main autour des postérieurs (rad, ~15°) quand un antérieur approche une barre jugée franchie.
+const FORE_TILT_MAX = 0.26;
+// Contacts membres / barres : canon et paturon–sabot de chaque membre (os du cheval WildMesh), rayons des capsules (m),
+// pénétration en deçà de laquelle on ne compte pas de contact (m : approximation du volume des membres).
+const LIMBS = [
+  ['AG', 'hand_l', 'fingers_01_l', 'fingers_end_l'], ['AD', 'hand_r', 'fingers_01_r', 'fingers_end_r'],
+  ['PG', 'foot_l', 'toes_01_l', 'toes_end_l'], ['PD', 'foot_r', 'toes_01_r', 'toes_end_r'],
+];
+const R_CANON = 0.045, R_HOOF = 0.055, CONTACT_TOL = 0.01;
 // Hors de ce rayon (m) : étrivières, rênes simplifiées masquées (moins d'un pixel), comme le filet procédural au loin.
 const DETAIL_DIST = 30;
 // Marge supplémentaire sur l’enveloppe maximale du tronc déjà échantillonnée aux deux mains (écartement de base des
@@ -493,7 +511,7 @@ export class PjlHorse {
   // cours avec la marge jugée (plafonnée), en anticipant la hauteur au passage d'après la vitesse du sabot ; bras de
   // levier entre ce sabot et les antérieurs (bascule) ; poids d'approche le plus fort d'un sabot trop bas (0..1). Barres
   // jugées tombées ou touchées (marge < -JUMP.rub) : ignorées.
-  _barNeed(names, lj) {
+  _barNeed(names, lj, pivotNames = ['fingers_02_l', 'fingers_02_r'], tag = '') {
     const H = this.horse, V = this.view, o = lj.o;
     const dt = Math.max(1e-3, this._dt || 1 / 60);
     const prev = this._hprev || (this._hprev = {});
@@ -501,12 +519,12 @@ export class PjlHorse {
       V.boneWorld(n, _hp);
       return { s: (_hp.x - o.x) * o.n.x + (_hp.z - o.z) * o.n.z, u: (_hp.x - o.x) * o.t.x + (_hp.z - o.z) * o.t.z, y: _hp.y - o.ground - HOOF_SOLE, x: _hp.x, z: _hp.z };
     };
-    const fl = ws('fingers_02_l'), fr = ws('fingers_02_r');
+    const fl = ws(pivotNames[0]), fr = ws(pivotNames[1]);
     let lift = 0, lever = 1, wmax = 0;
     for (const n of names) {
-      const hp = n === 'fingers_02_l' ? fl : n === 'fingers_02_r' ? fr : ws(n);
-      const q = prev[n];
-      prev[n] = { y: hp.y, s: hp.s, o, t: H.game.time };
+      const hp = ws(n);
+      const q = prev[tag + n];
+      prev[tag + n] = { y: hp.y, s: hp.s, o, t: H.game.time };
       if (Math.abs(hp.u) > o.w / 2 + 0.2) continue;
       // Vitesses mesurées sur l'image précédente (même obstacle, pose sans correction de cette image).
       // (mesure de l'image précédente seulement : pas à travers un déplacement instantané du cheval)
@@ -530,17 +548,19 @@ export class PjlHorse {
         }
       }
     }
-    return { lift, lever, w: wmax, pivot: _pv.set((fl.x + fr.x) / 2, 0, (fl.z + fr.z) / 2) };
+    return { lift, lever, w: wmax, pivot: new THREE.Vector3((fl.x + fr.x) / 2, (fl.y + fr.y) / 2 + o.ground + HOOF_SOLE, (fl.z + fr.z) / 2) };
   }
 
-  // Postérieurs face aux barres (CSO). Le jeu juge chaque barre au passage des épaules (jumpModel.arcY : trajectoire
-  // des pieds) ; les postérieurs passent la même barre 1 à 1,5 m plus tard, quand la trajectoire redescend, parfois
-  // après la réception des antérieurs : sans correction, le sabot visible traversait la barre d'un saut jugé sans faute.
-  // Quand un postérieur approche une barre jugée franchie, le corps bascule autour des antérieurs (croupe plus haute)
-  // juste assez pour que ce sabot passe au-dessus du dessus de la barre avec la marge jugée (plafonnée). Barre jugée
-  // tombée ou touchée : rien (le contact visible est alors cohérent). Hypothèse de gameplay (posture), sans effet sur
-  // la trajectoire, les collisions ni le jugement.
-  _hindClear() {
+  // Membres face aux barres (CSO). Le jeu juge la trajectoire au point de référence (épaules, jumpModel.arcY) ; les
+  // membres visibles passent les barres à d'autres instants : antérieurs avant les épaules (en montée), postérieurs
+  // 1 à 1,5 m après (en descente, parfois après la réception des antérieurs). Coordination de la posture, bornée :
+  //  - antérieurs qui approchent une barre jugée franchie (marge du modèle ≥ −JUMP.rub) : l'avant-main se relève autour
+  //    des postérieurs (bascule vers le haut à l'appel, FORE_TILT_MAX au plus) ;
+  //  - postérieurs : la croupe se relève autour des antérieurs (HIND_TILT_MAX au plus) et, en vol seulement, un léger
+  //    relevé du corps complète (HIND_LIFT_MAX au plus).
+  // Ce que ces bornes ne permettent pas de dégager reste visible et touche la barre : _limbContacts le signale au jeu,
+  // qui fait tomber la barre et compte la faute (Obstacles.limbContact). Hypothèse de gameplay (posture).
+  _barClear() {
     const H = this.horse, V = this.view, B = V.body;
     const lj = H._lastJump;
     const near = lj?.o && lj.geo && (H.jumpT >= 0 || (lj.land !== null && H.game.time - lj.land < 0.8));
@@ -550,41 +570,128 @@ export class PjlHorse {
       B.position.z = 0;
       this.holder.updateMatrixWorld(true);
     }
-    let lift = 0, lever = 1, pivot = null;
+    let hind = null, fore = null;
+    if (near) this._limbTuck(lj);
+    else this._tuck = null;
     if (near) {
-      const r = this._barNeed(['toes_02_l', 'toes_02_r'], lj);
-      lift = r.lift;
-      lever = r.lever;
-      // Pivot : antérieurs (hauteur de leurs articulations).
-      V.boneWorld('fingers_02_l', _hp);
-      const y = _hp.y;
-      V.boneWorld('fingers_02_r', _hp);
-      pivot = r.pivot.setY((y + _hp.y) / 2);
+      hind = this._barNeed(['toes_02_l', 'toes_02_r'], lj, ['fingers_02_l', 'fingers_02_r']);
+      fore = H.jumpT >= 0 ? this._barNeed(['fingers_02_l', 'fingers_02_r'], lj, ['toes_02_l', 'toes_02_r']) : null;
     }
-    // Bascule bornée (au-delà, le cheval « plonge » de façon peu crédible) ; le reste, en vol seulement, par un léger
-    // relevé du corps (borné aussi) : après la réception, les antérieurs restent au sol. Lissés, sans à-coup.
     const dt = this._dt || 1 / 60;
-    const tiltWant = Math.min(HIND_TILT_MAX, Math.asin(clamp(lift / lever, 0, 1)));
-    const rest = H.jumpT >= 0 ? Math.min(HIND_LIFT_MAX, Math.max(0, lift - lever * Math.sin(tiltWant))) : 0;
-    this._clrA = damp(this._clrA || 0, tiltWant, 24, dt);
-    this._clrY = damp(this._clrY || 0, rest, 24, dt);
-    if (this._clrA < 1e-3 && this._clrY < 1e-3) {
-      this._clrA = 0;
-      this._clrY = 0;
+    const tiltH = hind ? Math.min(HIND_TILT_MAX, Math.asin(clamp(hind.lift / hind.lever, 0, 1))) : 0;
+    const restH = hind && H.jumpT >= 0 ? Math.min(HIND_LIFT_MAX, Math.max(0, hind.lift - hind.lever * Math.sin(tiltH))) : 0;
+    const tiltF = fore ? Math.min(FORE_TILT_MAX, Math.asin(clamp(fore.lift / fore.lever, 0, 1))) : 0;
+    this._clrA = damp(this._clrA || 0, tiltH, 24, dt);
+    this._clrY = damp(this._clrY || 0, restH, 24, dt);
+    this._clrF = damp(this._clrF || 0, tiltF, 30, dt);
+    if (this._clrA < 1e-3 && this._clrY < 1e-3 && this._clrF < 1e-3) {
+      this._clrA = this._clrY = this._clrF = 0;
       this._clr = false;
       return;
     }
     this._clr = true;
-    // Rotation autour de l'axe latéral passant par les antérieurs (repère du parent du corps).
-    if (pivot) this._clrPivot = B.parent.worldToLocal(pivot.clone());
-    const P = this._clrPivot;
-    if (!P) return;
-    const a = this._clrA;
-    const oy = B.position.y - P.y, oz = B.position.z - P.z;
-    B.rotation.x = a;
-    B.position.y = P.y + oy * Math.cos(a) - oz * Math.sin(a) + this._clrY;
-    B.position.z = P.z + oy * Math.sin(a) + oz * Math.cos(a);
+    // Pivots dans le repère du parent du corps : antérieurs (bascule de la croupe), postérieurs (relevé de l'avant-main).
+    if (hind) this._pivF = B.parent.worldToLocal(hind.pivot.clone());
+    if (fore) this._pivH = B.parent.worldToLocal(fore.pivot.clone());
+    // Rotation autour de l'axe latéral (x) d'angle a, de pivot P, appliquée à la position O du corps.
+    const rot = (O, P, a) => {
+      const oy = O.y - P.y, oz = O.z - P.z;
+      O.y = P.y + oy * Math.cos(a) - oz * Math.sin(a);
+      O.z = P.z + oy * Math.sin(a) + oz * Math.cos(a);
+    };
+    const O = { y: B.position.y, z: B.position.z };
+    if (this._clrA > 0 && this._pivF) rot(O, this._pivF, this._clrA);
+    if (this._clrF > 0 && this._pivH) rot(O, this._pivH, -this._clrF);
+    B.rotation.x = this._clrA - this._clrF;
+    B.position.y = O.y + this._clrY;
+    B.position.z = O.z;
     this.holder.updateMatrixWorld(true);
+  }
+
+  // Membres repliés au-dessus d'une barre jugée franchie : postérieur, la cuisse (upperleg) tourne autour de la hanche ;
+  // antérieur, le canon se plie au genou (os hand, carpe) ; chaque os tourne autour de son attache pour lever le sabot de ce qu'il faut (hauteur prévue au
+  // passage, voir _barNeed), TUCK_MAX au plus, sens choisi pour lever le sabot. Chaque membre pour lui-même (antérieurs
+  // en vol seulement) ; repart à chaque image de la pose du clip (le mélangeur la remet).
+  _limbTuck(lj) {
+    const V = this.view, H = this.horse, dt = this._dt || 1 / 60;
+    const T = this._tuck || (this._tuck = {});
+    this.holder.getWorldQuaternion(_tq);
+    _tax.set(1, 0, 0).applyQuaternion(_tq); // axe latéral du cheval (monde)
+    for (const [key, toe, upper, pivots] of TUCK) {
+      const bone = V.bones.get(upper);
+      if (!bone || (key[0] === 'A' && !(H.jumpT >= 0))) {
+        T[key] = 0;
+        continue;
+      }
+      const need = this._barNeed([toe], lj, pivots, 'tuck:').lift;
+      const rotate = (a) => {
+        // Rotation monde d'angle a autour de l'axe latéral, à l'attache du membre : q' = Wp⁻¹ · R · Wp · q.
+        bone.parent.getWorldQuaternion(_tq2);
+        _tq3.setFromAxisAngle(_tax, a);
+        bone.quaternion.premultiply(_tq2).premultiply(_tq3).premultiply(_tq2.invert());
+        bone.updateMatrixWorld(true);
+      };
+      const y0 = V.boneWorld(toe, _hp).y;
+      // Sens du repli (essai de 0,1 rad dans chaque sens) : postérieur, celui qui lève le sabot ; antérieur (pliure au
+      // genou), celui qui ramène le sabot vers l'arrière (flexion : jamais vers la barre). Puis angle par dichotomie
+      // jusqu'à la hauteur voulue.
+      let want = 0, sg = T['s' + key] || 1;
+      if (need > 0.005) {
+        const p0 = V.boneWorld(toe, new THREE.Vector3());
+        rotate(0.1);
+        const d = V.boneWorld(toe, new THREE.Vector3()).sub(p0);
+        rotate(-0.1);
+        _tfw.set(0, 0, 1).applyQuaternion(_tq);
+        sg = key[0] === 'A' ? (d.dot(_tfw) <= 0 ? 1 : -1) : d.y >= 0 ? 1 : -1;
+        let lo = 0, hi = TUCK_MAX;
+        for (let k = 0; k < 8; k++) {
+          const mid = (lo + hi) / 2;
+          rotate(mid * sg);
+          const dy = V.boneWorld(toe, _hp).y - y0;
+          rotate(-mid * sg);
+          if (dy < need) lo = mid;
+          else hi = mid;
+        }
+        want = hi;
+      }
+      T['s' + key] = sg;
+      const cur = T[key] || 0;
+      T[key] = want > cur ? damp(cur, want, 30, dt) : damp(cur, want, 10, dt);
+      if (T[key] > 1e-3) rotate(T[key] * sg);
+    }
+  }
+
+  // Contacts réels entre les membres visibles (pose finale de l'image, toutes transformations comprises) et les barres du
+  // haut de l'obstacle sauté : canon et paturon–sabot de chaque membre en capsules, barre en cylindre, passage entre
+  // l'image précédente et celle-ci balayé (gameplay/limbContact.js). Chaque contact est transmis au jeu, qui fait tomber
+  // la barre et compte la faute : ce que l'on voit et ce qui est jugé restent d'accord.
+  _limbContacts() {
+    const H = this.horse, V = this.view, lj = H._lastJump, obs = H.game?.obstacles;
+    const judging = H.isPlayerHorse && obs && lj?.o && !lj.o.off && (H.jumpT >= 0 || (lj.land !== null && H.game.time - lj.land < 0.8));
+    // Pose précédente gardée dès l'abord (obstacle visé à moins de 4 m) : un antérieur déjà sur la barre à l'appel est
+    // compté dès la première image du saut.
+    const tg = !judging && H.isPlayerHorse && obs ? obs.target(H) : null;
+    const o = judging ? lj.o : tg && tg.geo.rails[0]?.x < 4 ? tg.o : null;
+    if (!o) {
+      this._limbPrev = null;
+      return;
+    }
+    const cur = LIMBS.map(([k, a, b, c]) => ({ k, hind: k[0] === 'P', p: [a, b, c].map((n) => toLocal(o, V.boneWorld(n, new THREE.Vector3()))) }));
+    const prev = this._limbPrev;
+    this._limbPrev = { o, cur, t: H.game.time };
+    if (!judging || !prev || prev.o !== o || H.game.time - prev.t > 0.1) return;
+    for (const bar of o.bars) {
+      if (!bar.mesh || bar.mesh.userData.fall) continue;
+      let best = null;
+      for (let i = 0; i < cur.length; i++) {
+        const c = cur[i], p = prev.cur[i];
+        for (const [ia, ib, r] of [[0, 1, R_CANON], [1, 2, R_HOOF]]) {
+          const hit = sweepRail(p.p[ia], p.p[ib], c.p[ia], c.p[ib], r, bar, o.w / 2, 6);
+          if (hit && hit.depth > CONTACT_TOL && (!best || hit.depth > best.depth)) best = { ...hit, limb: c.k, hind: c.hind };
+        }
+      }
+      if (best) obs.limbContact(H, o, bar, best);
+    }
   }
 
   _setContact(off) {
@@ -639,7 +746,8 @@ export class PjlHorse {
     if (U) V.setWet(Math.min(1, Math.max(U.uWet.value, U.uSweat.value * 0.6)));
     this.holder.updateMatrixWorld(true);
     this._pushContact();
-    this._hindClear();
+    this._barClear();
+    this._limbContacts();
     this._attachRider(cfg);
     if (this.fit && (H.rider || H.mountingBy)) this._flankUpdate();
     this._straps(cfg);
