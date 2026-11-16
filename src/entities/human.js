@@ -367,6 +367,9 @@ export class Human {
 
   // Positions monde des poings (prise des rênes). Met à jour les matrices du squelette.
   getHandWorldPositions(outL = this.handL, outR = this.handR) {
+    // Modèle réaliste affiché : creux de ses poings (ses mains sont plus grandes que celles du personnage classique).
+    const rb = this._realBody;
+    if (rb?.active && rb.root.visible && rb.gripPoint('l', outL) && rb.gripPoint('r', outR)) return [outL, outR];
     this.mesh.updateWorldMatrix(true, true);
     outL.copy(FIST).applyMatrix4(this.bones.lHand.matrixWorld);
     outR.copy(FIST).applyMatrix4(this.bones.rHand.matrixWorld);

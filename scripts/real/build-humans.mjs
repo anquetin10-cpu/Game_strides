@@ -60,6 +60,61 @@ function weightsFor(names, base) {
   return w;
 }
 
+// Formes gardées comme cibles glTF (shape keys) et jouées par le jeu (src/entities/realistic.js) :
+//  - visage (variations par personnage) : cibles signées (augmenter − diminuer) / 2, poids de -1 à 1 ;
+//  - clignements et regard (yeux et paupières) ;
+//  - corps : poids et musculature (signées), sur tous les maillages pour que vêtements et cheveux suivent la peau.
+// (Méthode des skills tiers blender-facial-shapekeys / character-artist : visages différenciés et paupières vivantes à
+// partir de formes, pas de géométrie en plus.)
+// (front, oreilles et taille des yeux exclus : ces formes déplacent le cuir chevelu, les oreilles ou les paupières sans
+// les cheveux ni les globes oculaires, qui les traversaient)
+export const KEEP_FACE = ['nose_width', 'nose_length', 'nose_height', 'jaw_width', 'chin', 'cheekbones', 'eye_spacing', 'lips', 'mouth_width'];
+export const KEEP_EYES = ['blink_left', 'blink_right', 'look_left', 'look_right', 'look_up', 'look_down'];
+export const KEEP_BODY = [['weight', 'weight_min', 'weight_max'], ['muscle', 'muscle_min', 'muscle_max']];
+const HEAD_MESHES = new Set(['base', 'Eyebrows', 'Eyelashes', 'Eyes']);
+// Liste [nom gardé, [[nom source, coefficient], …]] pour un maillage.
+function keptTargets(meshName) {
+  const out = [];
+  if (HEAD_MESHES.has(meshName)) {
+    for (const f of KEEP_FACE) out.push([`face_${f}`, [[`face_${f}_incr`, 0.5], [`face_${f}_decr`, -0.5]]]);
+    for (const e of KEEP_EYES) out.push([e, [[e, 1]]]);
+  }
+  for (const [n, lo, hi] of KEEP_BODY) out.push([`body_${n}`, [[hi, 0.5], [lo, -0.5]]]);
+  return out;
+}
+// Décalages d'une cible en mètres (Float32), attribut POSITION ou NORMAL.
+function targetDelta(t, sem) {
+  const d = t.getAttribute(sem);
+  if (!d) return null;
+  const da = d.getArray();
+  const ct = d.getComponentType();
+  const q = !d.getNormalized() ? 1 : ct === 5122 ? 1 / 32767 : ct === 5120 ? 1 / 127 : ct === 5123 ? 1 / 65535 : ct === 5121 ? 1 / 255 : 1;
+  const f = new Float32Array(da.length);
+  for (let k = 0; k < da.length; k++) f[k] = da[k] * q;
+  return f;
+}
+// Construit les cibles gardées (avant la cuisson, qui retire toutes les cibles d'origine).
+function keepMorphs(doc, prim, names, kept) {
+  const res = [];
+  const n = prim.getAttribute('POSITION').getCount();
+  for (const [name, parts] of kept) {
+    const t = doc.createPrimitiveTarget(name);
+    for (const sem of ['POSITION', 'NORMAL']) {
+      if (!prim.getAttribute(sem)) continue;
+      const acc = new Float32Array(n * 3);
+      for (const [src, c] of parts) {
+        const i = names.indexOf(src);
+        if (i < 0) continue;
+        const d = targetDelta(prim.listTargets()[i], sem);
+        if (d) for (let k = 0; k < acc.length; k++) acc[k] += c * d[k];
+      }
+      t.setAttribute(sem, doc.createAccessor().setType('VEC3').setArray(acc));
+    }
+    res.push(t);
+  }
+  return res;
+}
+
 // Applique les poids aux positions et normales puis retire toutes les formes.
 function bakeMorphs(prim, names, weights) {
   for (const sem of ['POSITION', 'NORMAL']) {
@@ -267,15 +322,29 @@ async function build(id, cfg) {
   for (const mesh of root.listMeshes()) {
     const names = mesh.getExtras()?.targetNames || [];
     const w = weightsFor(names, morphW);
-    for (const prim of mesh.listPrimitives()) bakeMorphs(prim, names, w);
-    mesh.setWeights([]);
-    mesh.setExtras({});
+    const kept = keptTargets(mesh.getName());
+    for (const prim of mesh.listPrimitives()) {
+      const keepT = names.length ? keepMorphs(doc, prim, names, kept) : [];
+      bakeMorphs(prim, names, w);
+      for (const t of keepT) prim.addTarget(t);
+    }
+    const keptNames = names.length ? kept.map((k) => k[0]) : [];
+    mesh.setWeights(keptNames.map(() => 0));
+    mesh.setExtras(keptNames.length ? { targetNames: keptNames } : {});
   }
   // Bottes d'équitation (tige) sur la peau entière, avant de masquer la peau couverte.
   const bodyMesh = root.listMeshes().find((m) => m.getName() === 'base');
   const bootMat = doc.createMaterial('Cloth_tallboots').setBaseColorFactor([1, 1, 1, 1]).setRoughnessFactor(0.36).setMetallicFactor(0).setExtras({ tint: { default: '#121214', gain: 1 } });
   const jointsNow = jointTargets(joints, cfg.morphs);
   const shaft = ridingBootShafts(doc, bodyMesh.listPrimitives()[0], jointsNow, bootMat);
+  // Tige des bottes : mêmes cibles que la peau (toutes les primitives d'un maillage glTF en ont autant), nulles.
+  for (const t of bodyMesh.listPrimitives()[0].listTargets()) {
+    const z = doc.createPrimitiveTarget(t.getName());
+    const nv = shaft.prim.getAttribute('POSITION').getCount();
+    z.setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(nv * 3)));
+    if (shaft.prim.getAttribute('NORMAL')) z.setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(new Float32Array(nv * 3)));
+    shaft.prim.addTarget(z);
+  }
   bodyMesh.addPrimitive(shaft.prim);
   for (const mesh of root.listMeshes()) {
     for (const prim of mesh.listPrimitives()) {

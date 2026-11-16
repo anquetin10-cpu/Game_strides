@@ -156,6 +156,21 @@ export function releaseReal(id) {
   });
 }
 
+// Variations de visage (formes signées gardées dans les modèles), amplitude du tirage par personnage ; corps des PNJ ;
+// gain du regard (1 = forme MakeHuman entière).
+// Doigts (_grip) : fermeture de la main du personnage classique pour un poing (rad), doigts, angles des trois phalanges
+// à poing fermé (doigts autour des rênes, pouce posé dessus), légère flexion d'une main détendue.
+const GRIP_FULL = 1.25;
+const GRIP_FINGERS = ['index', 'middle', 'ring', 'pinky', 'thumb'];
+const GRIP_ANGLES = [[1.25, 1.3, 0.75], [0, 0.25, 0.2]];
+// Pouce : part du chemin entre sa direction de repos et celle de l'index (1 = le long de l'index).
+const THUMB_ALONG = 0.75;
+const GRIP_RELAXED = [0.15, 0.25, 0.15];
+const _gQ = new THREE.Quaternion(), _gP = new THREE.Vector3();
+const FACE_KEYS = ['nose_width', 'nose_length', 'nose_height', 'jaw_width', 'chin', 'cheekbones', 'eye_spacing', 'lips', 'mouth_width'];
+const FACE_RANGE = 0.8;
+const BODY_RANGE = { weight: 0.45, muscle: 0.4 };
+const LOOK_GAIN = 0.45;
 const _q = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
 const _rootQ = new THREE.Quaternion();
@@ -244,6 +259,35 @@ function realClothShader(sh, kind, unit) {
     .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n' + nrm);
 }
 
+// Peau du modèle réaliste : la texture d'origine est normalisée en gris (teintée par le jeu), donc sans rougeurs ni cernes.
+// Couches discrètes, repérées autour des yeux (mètres) : rougeurs des joues, du nez, des oreilles et des lèvres, ombre
+// sous les yeux, marbrure fine, lumière directe un peu réchauffée (diffusion sous la peau). Méthode des skills tiers
+// blender-texturing (couches de surface) et realistic-style (diffusion plus chaude que la couleur de base).
+function realSkinShader(sh, unit, eyeC) {
+  sh.vertexShader = sh.vertexShader
+    .replace('#include <common>', '#include <common>\nvarying vec3 vFace;')
+    .replace('#include <begin_vertex>', `#include <begin_vertex>\nvFace = (position - vec3(${eyeC.x.toFixed(5)}, ${eyeC.y.toFixed(5)}, ${eyeC.z.toFixed(5)})) * ${unit.toFixed(4)};`);
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', '#include <common>\nvarying vec3 vFace;\nfloat skBlob(vec3 p, vec3 c, vec3 r) { vec3 d = (p - c) / r; return exp(-dot(d, d)); }')
+    .replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+  {
+    vec3 q = vec3(abs(vFace.x), vFace.y, vFace.z);
+    float red = 0.55 * skBlob(q, vec3(0.038, -0.03, 0.025), vec3(0.022, 0.018, 0.02))   // pommettes
+              + 0.45 * skBlob(q, vec3(0.0, -0.028, 0.06), vec3(0.012, 0.014, 0.02))      // bout du nez
+              + 0.5 * skBlob(q, vec3(0.072, -0.01, -0.035), vec3(0.012, 0.03, 0.03))    // oreilles
+              + 0.35 * skBlob(q, vec3(0.0, -0.06, 0.045), vec3(0.02, 0.008, 0.02));      // lèvres
+    float under = skBlob(q, vec3(0.032, -0.012, 0.03), vec3(0.015, 0.006, 0.015));       // sous les yeux
+    diffuseColor.rgb *= mix(vec3(1.0), vec3(1.0, 0.8, 0.78), clamp(red, 0.0, 1.0) * 0.85);
+    diffuseColor.rgb *= mix(vec3(1.0), vec3(0.9, 0.86, 0.9), under * 0.6);
+    diffuseColor.rgb *= 1.0 + (rlNoise(vFace * 260.0) - 0.5) * 0.05;
+  }`,
+    )
+    .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n  reflectedLight.directDiffuse *= vec3(1.04, 0.97, 0.94);');
+  if (!sh.fragmentShader.includes('float rlNoise')) sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + REAL_NOISE.replace('varying vec3 vRl;', ''));
+}
+
 // Casquette : calotte (demi-sphère) et visière (demi-disque vers l'avant), partagées.
 const CAP_GEO = {
   crown: new THREE.SphereGeometry(0.112, 24, 10, 0, Math.PI * 2, 0, Math.PI * 0.5),
@@ -266,6 +310,14 @@ export class RealBody {
         unit = 1.7 / Math.max(0.5, bb.max.y + 1); // (environ 1,7 m du dessous des bottes au sommet du crâne)
       }
     });
+    // Centre des yeux (repère du modèle) : repère des zones du visage pour la peau (realSkinShader).
+    const eyeC = new THREE.Vector3(0, 0.9, 0.07);
+    root.traverse((o) => {
+      if (o.isMesh && o.material?.name === 'Eye') {
+        o.geometry.computeBoundingBox();
+        o.geometry.boundingBox.getCenter(eyeC);
+      }
+    });
     root.traverse((o) => {
       if (o.isBone) this.bones[o.name] = o;
       if (o.isMesh) {
@@ -283,8 +335,9 @@ export class RealBody {
           m.onBeforeCompile = (sh) => {
             addCloudShadows(sh, null, true);
             gloveShader(sh, U);
+            realSkinShader(sh, unit, eyeC);
           };
-          m.customProgramCacheKey = () => 'strides-real-body-lamp-glove';
+          m.customProgramCacheKey = () => 'strides-real-body-lamp-glove-skin';
         }
         this.mats.push(m);
         if (/^Hair/.test(m.name) || /Eyelash|Eyebrow/.test(m.name)) {
@@ -306,12 +359,14 @@ export class RealBody {
         if (m.name === 'Skin') m.roughness = 0.58;
       }
     });
+    this._initFace(root);
     this.outfit = human.outfit;
     this.applyOutfit(human.outfit);
     // Le modèle réaliste suit le personnage classique (position, cap, montée à cheval) à sa taille naturelle.
     human.mesh.add(root);
     root.scale.setScalar(1 / human.mesh.scale.x);
     root.updateMatrixWorld(true);
+    this._fingerAxes();
     this._calibrate();
     this.setActive(true);
   }
@@ -338,6 +393,144 @@ export class RealBody {
     }
     this._helmet(o.helmet);
     this._cap(o.helmet ? null : o.cap);
+  }
+
+  // Axes de flexion des doigts, relevés en pose de repos (bras en A, paumes tournées vers le corps : analyse du squelette
+  // par scripts/humans/bpy/hand_axes.py) : pour chaque phalange, axe perpendiculaire à sa direction et à la normale de
+  // la paume, exprimé dans le repère local de l'os. Une rotation positive autour de cet axe referme le doigt vers la paume.
+  _fingerAxes() {
+    this.fingers = [];
+    for (const [o, t] of SIDES) {
+      const hand = this.bones['hand' + t];
+      if (!hand) continue;
+      hand.getWorldPosition(_v);
+      this.root.worldToLocal(_v);
+      const palm = new THREE.Vector3(-Math.sign(_v.x || (o === 'l' ? 1 : -1)), -0.6, 0).normalize(); // vers le corps, un peu vers le bas
+      for (const f of GRIP_FINGERS) {
+        for (let j = 1; j <= 3; j++) {
+          const b = this.bones[`${f}_0${j}${t}`];
+          const c = b?.children.find((x) => x.isBone);
+          if (!b || !c) break;
+          const p0 = this.root.worldToLocal(b.getWorldPosition(new THREE.Vector3()));
+          const p1 = this.root.worldToLocal(c.getWorldPosition(new THREE.Vector3()));
+          const d = p1.sub(p0).normalize();
+          const axisRoot = new THREE.Vector3().crossVectors(d, palm).normalize();
+          // repère local de l'os : rotation monde de l'os ramenée au repère du modèle
+          const rq = this.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(b.getWorldQuaternion(new THREE.Quaternion()));
+          const axis = axisRoot.applyQuaternion(rq.invert());
+          this.fingers.push({ b, side: o, f, j, rest: b.quaternion.clone(), axis, d: d.clone(), rq: rq.clone().invert() });
+        }
+      }
+      // Pouce posé sur le dessus du poing, le long de l'index (tenue des rênes) : rotation de la première phalange qui
+      // amène sa direction de repos vers celle de l'index, exprimée dans le repère local de l'os.
+      const th = this.fingers.find((F) => F.side === o && F.f === 'thumb' && F.j === 1);
+      const ix = this.fingers.find((F) => F.side === o && F.f === 'index' && F.j === 1);
+      if (th && ix) {
+        const target = th.d.clone().lerp(ix.d, THUMB_ALONG).normalize();
+        const qRoot = new THREE.Quaternion().setFromUnitVectors(th.d, target);
+        th.thumbQ = th.rq.clone().invert().multiply(qRoot).multiply(th.rq); // repère local de l’os : R⁻¹ · q · R
+      }
+    }
+  }
+
+  // Creux du poing (monde) : milieu des deuxièmes phalanges de l'index, du majeur et de l'auriculaire, et de la base du
+  // majeur ; null si le modèle n'a pas ces os.
+  gripPoint(side, out) {
+    const t = side === 'l' ? '_l' : '_r';
+    const ns = [`index_02${t}`, `middle_02${t}`, `pinky_02${t}`, `middle_01${t}`];
+    out.set(0, 0, 0);
+    for (const n of ns) {
+      const b = this.bones[n];
+      if (!b) return null;
+      out.add(b.getWorldPosition(_gP));
+    }
+    return out.multiplyScalar(1 / ns.length);
+  }
+
+  // Doigts autour des rênes (poing fermé du personnage classique), mains détendues à pied : angle par phalange × fermeture
+  // de la main du personnage classique (os « Fing »).
+  _grip() {
+    if (!this.fingers?.length) return;
+    const kOf = {};
+    for (const [o] of SIDES) {
+      const fing = this.human.bones[o + 'Fing'];
+      const a = fing ? 2 * Math.acos(Math.min(1, Math.abs(fing.quaternion.w))) : 0;
+      kOf[o] = Math.min(1, a / GRIP_FULL);
+    }
+    for (const F of this.fingers) {
+      const k = kOf[F.side];
+      const ang = GRIP_ANGLES[F.f === 'thumb' ? 1 : 0][F.j - 1] * k + (F.f === 'thumb' ? 0 : GRIP_RELAXED[F.j - 1] * (1 - k));
+      F.b.quaternion.copy(F.rest);
+      if (F.thumbQ) F.b.quaternion.multiply(_gQ.identity().slerp(F.thumbQ, k));
+      F.b.quaternion.multiply(_gQ.setFromAxisAngle(F.axis, ang));
+    }
+  }
+
+  // Visage et corps propres à chaque personnage (formes MakeHuman gardées par scripts/real/build-humans.mjs), paupières et
+  // regard vivants (skills tiers blender-facial-shapekeys, animation : clignements sobres et non synchronisés, regard qui
+  // précède la tête). Tirage déterministe d'après l'identité du personnage (le joueur garde toujours le même visage).
+  _initFace(root) {
+    this.morphMeshes = [];
+    root.traverse((o) => o.isMesh && o.morphTargetDictionary && o.morphTargetInfluences && this.morphMeshes.push(o));
+    const H = this.human;
+    const key = H.outfit?.identity || H._name || JSON.stringify(H.outfit || {});
+    let h = 2166136261;
+    for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+    const rnd = () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)) >>> 0) / 4294967296;
+    const F = (this.faceW = {});
+    for (const n of FACE_KEYS) F['face_' + n] = (rnd() * 2 - 1) * FACE_RANGE;
+    const npc = !H.isPlayer;
+    F.body_weight = npc ? (rnd() * 2 - 1) * BODY_RANGE.weight : 0;
+    F.body_muscle = npc ? (rnd() * 2 - 1) * BODY_RANGE.muscle : 0;
+    this.eye = { blink: 0, next: 1 + rnd() * 4, t: 0, phase: 0, lx: 0, ly: 0, tx: 0, ty: 0, sacc: rnd() * 2, rnd };
+    this._setMorphs(F);
+  }
+
+  _setMorphs(W) {
+    for (const m of this.morphMeshes) {
+      const D = m.morphTargetDictionary, I = m.morphTargetInfluences;
+      for (const k in W) if (D[k] !== undefined) I[D[k]] = W[k];
+    }
+  }
+
+  // Clignements (fermeture 70 ms, ouverture 110 ms, toutes les 2 à 6 s, parfois double) et regard : vers la caméra quand
+  // elle est proche et devant le visage, sinon petites saccades autour de la direction de la tête.
+  _eyes(dt) {
+    const E = this.eye;
+    if (!E || !this.morphMeshes.length) return;
+    E.t += dt;
+    if (E.phase === 0 && E.t >= E.next) (E.phase = 1), (E.t = 0);
+    if (E.phase === 1) {
+      E.blink = Math.min(1, E.t / 0.07);
+      if (E.t >= 0.07) (E.phase = 2), (E.t = 0);
+    } else if (E.phase === 2) {
+      E.blink = Math.max(0, 1 - E.t / 0.11);
+      if (E.t >= 0.11) (E.phase = 0), (E.t = 0), (E.next = E.rnd() < 0.15 ? 0.25 : 2 + E.rnd() * 4);
+    }
+    E.sacc -= dt;
+    const head = this.bones.head, cam = this.human.game.camera;
+    let tx = E.tx, ty = E.ty;
+    if (head && cam) {
+      head.getWorldPosition(_v);
+      _v2.copy(cam.position).sub(_v);
+      const d = _v2.length();
+      head.getWorldQuaternion(_q).invert();
+      _v2.applyQuaternion(_q).normalize();
+      // repère de la tête : +z devant, +x à gauche du personnage, +y en haut
+      if (d < 7 && _v2.z > 0.35) (tx = Math.max(-1, Math.min(1, _v2.x * 1.6))), (ty = Math.max(-0.6, Math.min(0.6, _v2.y * 1.6)));
+      else if (E.sacc <= 0) (E.sacc = 0.6 + E.rnd() * 2.2), (E.tx = (E.rnd() - 0.5) * 0.7), (E.ty = (E.rnd() - 0.5) * 0.35), (tx = E.tx), (ty = E.ty);
+    }
+    // saccade : rattrapage rapide (≈ 50 ms)
+    const k = 1 - Math.exp(-dt * 20);
+    E.lx += (tx - E.lx) * k;
+    E.ly += (ty - E.ly) * k;
+    const W = this._eyeW || (this._eyeW = {});
+    W.blink_left = W.blink_right = E.blink;
+    W.look_left = Math.max(0, E.lx) * LOOK_GAIN;
+    W.look_right = Math.max(0, -E.lx) * LOOK_GAIN;
+    W.look_up = Math.max(0, E.ly) * LOOK_GAIN;
+    W.look_down = Math.max(0, -E.ly) * LOOK_GAIN;
+    this._setMorphs(W);
   }
 
   // Casquette (couvre-chef porté à pied) : calotte et visière, fixées à l'os de la tête comme le casque.
@@ -451,6 +644,9 @@ export class RealBody {
   setActive(on) {
     this.active = on;
     this.root.visible = on;
+    // Points des rênes : creux des poings de ce modèle quand il est affiché (Human.getHandWorldPositions).
+    if (on) this.human._realBody = this;
+    else if (this.human._realBody === this) this.human._realBody = null;
     // Le personnage classique est retiré de l'affichage (calque 31) mais reste animé : ses os portent le modèle
     // réaliste, les objets tenus et les points des rênes.
     this.human.mesh.layers.set(on ? 31 : 0);
@@ -478,6 +674,10 @@ export class RealBody {
       tb.quaternion.copy(_q2.multiply(_q));
       tb.updateMatrixWorld(true);
     }
+    this._grip();
+    const now = this.human.anim?.t ?? 0;
+    this._eyes(Math.min(0.1, Math.max(0, now - (this._tPrev ?? now))));
+    this._tPrev = now;
   }
 
   dispose() {

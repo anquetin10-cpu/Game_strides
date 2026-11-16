@@ -80,7 +80,7 @@ await E(() => {
   for (let i = 0; i < 200 && g.player.horseMount.active; i++) window.__K.step(1);
   window.__K.step(30);
 });
-const R = { profil: [[3.0, 2.0, 0.1], [0, 1.95, 0.1], 36], troisquarts: [[2.2, 2.4, 2.4], [0, 1.95, 0.2], 36], buste: [[1.1, 2.45, 1.1], [0, 2.3, 0.05], 32], dos: [[0.6, 2.4, -2.6], [0, 2.0, 0], 36] };
+const R = { mains: [[0.45, 2.25, 1.15], [0, 2.02, 0.42], 24], mainsCote: [[0.9, 2.15, 0.55], [0, 2.02, 0.42], 26], profil: [[3.0, 2.0, 0.1], [0, 1.95, 0.1], 36], troisquarts: [[2.2, 2.4, 2.4], [0, 1.95, 0.2], 36], buste: [[1.1, 2.45, 1.1], [0, 2.3, 0.05], 32], dos: [[0.6, 2.4, -2.6], [0, 2.0, 0], 36] };
 for (const [k, v] of Object.entries(R)) await shot(`selle-${k}`, ([v]) => { const g = window.__game, h = g.mainHorse; window.__K.step(1); return window.__K.cam(h.pos, h.heading, ...v); }, [v]);
 await shot('selle-jeu', () => { const g = window.__game, A = window.__auto, h = g.mainHorse; for (let i = 0; i < 70; i++) { const tx = h.pos.x - 12; A.steer(tx - h.pos.x, g.terrain.waterlineZ(tx) + 8 - h.pos.z, 0.3); window.__K.step(1); } return window.__K.game(); });
 // PNJ : les plus proches du personnage dans le monde (vue trois-quarts du premier groupe trouvé).
@@ -94,6 +94,28 @@ await shot('pnj', () => {
   p._lod(3);
   return { ...window.__K.cam(p.pos, p.heading, [1.6, 1.5, 2.6], [0, 1.0, 0], 34), outfit: p.model.desc.body, n: npcs.length };
 });
+// Galerie : quatre PNJ côte à côte devant la caméra (tenues tirées au hasard, graine fixe), affichés avec le modèle du
+// réglage courant ; plans d'ensemble et visages.
+await E(async () => {
+  const g = window.__game, hu = g.player.human;
+  const { randomOutfit } = await import('/src/entities/humanModel.js');
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const c = Math.cos(hu.heading), s2 = Math.sin(hu.heading);
+  window.__gal = [];
+  for (let i = 0; i < 4; i++) {
+    const o = randomOutfit(rnd);
+    const lat = (i - 1.5) * 0.9;
+    const p = g.spawnHuman(o, hu.pos.x + c * lat + s2 * 6, hu.pos.z - s2 * lat + c * 6, hu.heading + Math.PI, { name: ['Inès', 'Paul', 'Chloé', 'Marc'][i] });
+    p.pose = 'stand';
+    window.__gal.push(p);
+  }
+  for (let i = 0; i < 90; i++) { window.__K.step(1); await new Promise((r) => setTimeout(r, 30)); }
+});
+for (let i = 0; i < 4; i++) {
+  await shot(`galerie-visage-${i}`, (i) => { const p = window.__gal[i]; window.__K.step(1); return window.__K.cam(p.pos, p.heading, [0, 1.6, 0.8], [0, 1.57, 0], 26); }, i);
+}
+await shot('galerie', () => { const g = window.__game, hu = g.player.human; window.__K.step(1); return window.__K.cam(hu.pos, hu.heading, [0, 1.3, 1.5], [0, 1.1, 6], 50); });
 writeFileSync(join(OUT, 'mesures.json'), JSON.stringify({ base: BASE, info, metrics, errors }, null, 1));
 console.log(JSON.stringify(metrics));
 console.log('erreurs', errors.slice(0, 3));

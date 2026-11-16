@@ -413,6 +413,9 @@ export const RIDE = {
   landFold: 0.6, hindFold: 0.4,
   // Attente vivante : fréquence de respiration (Hz), amplitudes (rad) du buste et des épaules, transfert de poids.
   breathRate: 0.25, breathChest: 0.012, breathShoulder: 0.012, idleShift: 0.018,
+  // Écart supplémentaire de chaque main (m) ajouté au réglage handX (inchangé, celui de Julien) : avec les mains du modèle
+  // réaliste, les deux poings se touchaient (« mains jointes »). 0 rétablit exactement la position précédente.
+  handSpread: 0.02,
   // Bras : allongement maximal (bras + avant-bras ; 0,97 ≈ coude à 150°, jamais verrouillé) ; poignet au-dessus du
   // dessus de l'encolure (m), quand le cheval fournit ce profil (fit.crest).
   handReach: 0.97, handClear: 0.1,
@@ -714,7 +717,7 @@ function riding(B, P, st, dt, info) {
   const nod = (walk * 0.025 + canter * 0.035 + gallop * 0.03) * Math.sin(TAU * (walk > 0.5 ? 2 : 1) * ph + 1.2);
   for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
-    let hx = sg * fit.handX, hY = fit.handY - two * 0.07 - R.rel * 0.12, hZ = fit.handZ + two * 0.13 + R.rel * 0.22 + nod + R.post * 0.02;
+    let hx = sg * (fit.handX + RIDE.handSpread), hY = fit.handY - two * 0.07 - R.rel * 0.12, hZ = fit.handZ + two * 0.13 + R.rel * 0.22 + nod + R.post * 0.02;
     if (st.wave && side === 'l') hx = 0.01;
     const hp = P.hands[side].set(hx, hY - bobHP * 0.3, hZ);
     // Poignet au-dessus de l'encolure (main rendue à l'obstacle, buste penché) : auparavant les poings entraient
