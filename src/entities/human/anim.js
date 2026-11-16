@@ -411,6 +411,8 @@ export const RIDE = {
   foldIn: 0.18, releaseIn: [0.12, 0.35], holdMax: 0.45, recover: 0.5, handBack: 0.4,
   // Part de la position d'obstacle gardée au poser des antérieurs (fin du vol) et à celui des postérieurs.
   landFold: 0.6, hindFold: 0.4,
+  // Attente vivante : fréquence de respiration (Hz), amplitudes (rad) du buste et des épaules, transfert de poids.
+  breathRate: 0.25, breathChest: 0.012, breathShoulder: 0.012, idleShift: 0.018,
   // Bras : allongement maximal (bras + avant-bras ; 0,97 ≈ coude à 150°, jamais verrouillé) ; poignet au-dessus du
   // dessus de l'encolure (m), quand le cheval fournit ce profil (fit.crest).
   handReach: 0.97, handClear: 0.1,
@@ -601,13 +603,25 @@ function riding(B, P, st, dt, info) {
   // (à la montée, cheval cabré : le buste le suit ; à la descente et à la réception, nez en bas : le buste reste
   // d'aplomb au lieu de se coucher sur l'encolure)
   const comp = -pitchW * 0.85 * (1 - (pitchW < 0 ? 0.75 : 0.25) * R.jumpK);
-  qEuler(P.q.hips, 0.08 + two * 0.35 + R.jumpK * 0.15 + comp * 0.5 + walkRock * 0.04 + canterRock * 0.07, 0, -turn * 0.06);
-  qEuler(P.q.spine, torso * 0.35 + comp * 0.25 - canterRock * 0.04, 0, -turn * 0.04);
-  qEuler(P.q.chest, torso * 0.3 + comp * 0.25, 0, 0);
+  // Attente vivante (skills tiers blender-animation / animation : jamais de personnage figé ; respiration, transfert de
+  // poids, regard) : à l'arrêt et au pas, respiration du buste et des épaules, appui qui glisse lentement d'un ischion à
+  // l'autre, regard qui se promène ; atténués aux allures rapides et à l'obstacle. (Auparavant : rotation nulle à l'arrêt.)
+  const still = (1 - sstep(0.3, 1.6, hs)) * (1 - R.jumpK);
+  const idle = still + 0.35 * walk;
+  const breath = Math.sin(t * RIDE.breathRate * TAU);
+  const shiftW = Math.sin(t * 0.11 * TAU + 1.3) * still;
+  if (!R.look) R.look = { a: 0, to: 0, t: 0 };
+  R.look.t -= dt;
+  if (R.look.t <= 0) (R.look.t = 2.5 + 3.5 * frac(Math.sin(t * 12.9898) * 43758.5)), (R.look.to = (frac(Math.sin(t * 78.233) * 12345.6) - 0.5) * 0.6);
+  R.look.a = lerp(R.look.a, R.look.to * still, 1 - Math.exp(-1.8 * dt));
+  qEuler(P.q.hips, 0.08 + two * 0.35 + R.jumpK * 0.15 + comp * 0.5 + walkRock * 0.04 + canterRock * 0.07, 0, -turn * 0.06 + shiftW * RIDE.idleShift);
+  qEuler(P.q.spine, torso * 0.35 + comp * 0.25 - canterRock * 0.04 + breath * 0.006 * idle, 0, -turn * 0.04 - shiftW * RIDE.idleShift * 0.8);
+  qEuler(P.q.chest, torso * 0.3 + comp * 0.25 - breath * RIDE.breathChest * idle, R.look.a * 0.15, 0);
+  for (const side of SIDES) qEuler(P.q[BN[side].Clav], 0, 0, (side === 'l' ? 1 : -1) * breath * RIDE.breathShoulder * idle);
   // Regard devant, entre les oreilles (plus haut à l'obstacle).
   const totalPitch = 0.08 + two * 0.35 + R.jumpK * 0.15 + torso * 0.65 + comp;
-  qEuler(P.q.neck, -totalPitch * 0.45, 0, 0);
-  qEuler(P.q.head, -totalPitch * 0.42 + 0.06 - R.jumpK * 0.08, 0, turn * 0.08);
+  qEuler(P.q.neck, -totalPitch * 0.45, R.look.a * 0.35, 0);
+  qEuler(P.q.head, -totalPitch * 0.42 + 0.06 - R.jumpK * 0.08, R.look.a * 0.5, turn * 0.08);
   forwardTrunk(B, P);
   // Jambes : pied dans l'étrier (plante), talon bas, genou contre la selle, jambe à la sangle. Les étriers sont posés
   // d'après le cavalier assis (étrivières de longueur fixe) : quand le bassin se soulève (trot enlevé, suspension,

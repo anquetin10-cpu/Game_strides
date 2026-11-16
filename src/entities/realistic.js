@@ -195,6 +195,55 @@ function gloveShader(sh, U) {
     .replace('#include <color_fragment>', '#include <color_fragment>\nfloat gloveK = uGloveOn * smoothstep( 0.4, 0.62, vGlove );\ndiffuseColor.rgb = mix( diffuseColor.rgb, uGlove, gloveK );')
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix( roughnessFactor, 0.62, gloveK );');
 }
+// Surfaces des vêtements du modèle réaliste (méthodes des skills tiers blender-texturing / blender-clothing,
+// EL4CTEO/blender-skills, et materials, arjun988/blender-skills, transposées dans le shader, sans modifier le fichier) :
+//  - culotte : la texture d'origine est un jean (poches, coutures, délavage) seulement teinté ; son motif est atténué
+//    (REAL_LOOK.breechesDetail) et sa rugosité baissée, pour une culotte d'équitation extensible ;
+//  - bottes hautes (sans texture, rugosité uniforme) : cuir ciré à rugosité variable, plis souples au cou-de-pied,
+//    poussière déposée sur le dessus du pied ;
+//  - tous les tissus : rugosité jamais uniforme (bruit en coordonnées du modèle, collé au corps qui bouge).
+export const REAL_LOOK = { breechesDetail: 0.35, breechesRough: 0.7, bootRough: 0.3 };
+const REAL_NOISE = `
+varying vec3 vRl;
+float rlHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float rlNoise(vec3 x) {
+  vec3 i = floor(x), f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(rlHash(i), rlHash(i + vec3(1, 0, 0)), f.x), mix(rlHash(i + vec3(0, 1, 0)), rlHash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(rlHash(i + vec3(0, 0, 1)), rlHash(i + vec3(1, 0, 1)), f.x), mix(rlHash(i + vec3(0, 1, 1)), rlHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+vec3 rlBump(vec3 pos, vec3 n, float h) {
+  vec3 sx = dFdx(pos), sy = dFdy(pos);
+  vec3 r1 = cross(sy, n), r2 = cross(n, sx);
+  float det = dot(sx, r1);
+  vec3 g = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+  return normalize(abs(det) * n - g);
+}`;
+// unit : mètres par unité de position du modèle (positions quantifiées en [-1, 1], pieds à -1).
+function realClothShader(sh, kind, unit) {
+  sh.vertexShader = sh.vertexShader
+    .replace('#include <common>', '#include <common>\nvarying vec3 vRl;')
+    .replace('#include <begin_vertex>', `#include <begin_vertex>\nvRl = (position + vec3(0.0, 1.0, 0.0)) * ${unit.toFixed(4)};`);
+  let color = '', rough = '', nrm = '';
+  if (kind === 'breeches') {
+    // motif du jean ramené vers sa teinte moyenne (texture normalisée en gris moyen 0,5 × gain, voir tint())
+    color = `diffuseColor.rgb = mix(diffuseColor.rgb, diffuse * 0.5, ${(1 - REAL_LOOK.breechesDetail).toFixed(2)});`;
+    rough = `roughnessFactor = ${REAL_LOOK.breechesRough.toFixed(2)} * (0.9 + 0.2 * rlNoise(vRl * 30.0));`;
+  } else if (kind === 'boots') {
+    const dust = `smoothstep(0.16, 0.0, vRl.y) * smoothstep(0.35, 0.8, rlNoise(vRl * 26.0 + 5.0))`;
+    color = `float rlDust = ${dust}; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.4, 0.34, 0.26), rlDust * 0.35);`;
+    rough = `roughnessFactor = ${REAL_LOOK.bootRough.toFixed(2)} * (0.75 + 0.5 * rlNoise(vRl * 18.0)) + rlDust * 0.4;`;
+    nrm = `{ float k = smoothstep(0.28, 0.16, vRl.y) * smoothstep(0.05, 0.12, vRl.y); normal = rlBump(-vViewPosition, normal, k * (sin(vRl.y * 260.0 + rlNoise(vRl * 40.0) * 3.0) * 0.0006)); }`;
+  } else {
+    rough = 'roughnessFactor *= 0.88 + 0.24 * rlNoise(vRl * 30.0);';
+  }
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', '#include <common>\n' + REAL_NOISE)
+    .replace('#include <color_fragment>', '#include <color_fragment>\n' + color)
+    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n' + rough)
+    .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n' + nrm);
+}
+
 // Casquette : calotte (demi-sphère) et visière (demi-disque vers l'avant), partagées.
 const CAP_GEO = {
   crown: new THREE.SphereGeometry(0.112, 24, 10, 0, Math.PI * 2, 0, Math.PI * 0.5),
@@ -208,6 +257,15 @@ export class RealBody {
     this.root = root;
     this.bones = {};
     this.mats = [];
+    // Mètres par unité de position (positions quantifiées) : hauteur réelle du personnage / hauteur du maillage du corps.
+    let unit = 0.85;
+    root.traverse((o) => {
+      if (o.isMesh && o.material?.name === 'Skin') {
+        o.geometry.computeBoundingBox();
+        const bb = o.geometry.boundingBox;
+        unit = 1.7 / Math.max(0.5, bb.max.y + 1); // (environ 1,7 m du dessous des bottes au sommet du crâne)
+      }
+    });
     root.traverse((o) => {
       if (o.isBone) this.bones[o.name] = o;
       if (o.isMesh) {
@@ -235,7 +293,16 @@ export class RealBody {
           m.transparent = false;
           m.side = THREE.DoubleSide;
         }
-        if (/^Cloth/.test(m.name)) m.side = THREE.DoubleSide;
+        if (/^Cloth/.test(m.name)) {
+          m.side = THREE.DoubleSide;
+          const kind = m.name === 'Cloth_jeans' ? 'breeches' : /boots/.test(m.name) ? 'boots' : 'cloth';
+          m.onBeforeCompile = (sh) => {
+            addCloudShadows(sh, null, true);
+            realClothShader(sh, kind, unit);
+          };
+          m.customProgramCacheKey = () => 'strides-real-cloth-' + kind;
+          if (kind === 'breeches' && m.normalScale) m.normalScale.multiplyScalar(0.5);
+        }
         if (m.name === 'Skin') m.roughness = 0.58;
       }
     });

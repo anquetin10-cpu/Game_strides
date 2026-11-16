@@ -1,7 +1,7 @@
 // Corps humain (anatomie + vêtements modelés dans la forme) décrit en primitives SDF par os.
 // Variantes : 'rider' (veste de concours, culotte, bottes hautes), 'casual' (haut ajusté, pantalon, chaussures),
 // 'dress' (robe). Chaque variante fournit aussi la fonction de zones (régions de matière).
-import { skeletonXf, prim, union, sub, offset, mask, loft, ellipsoid, sphere, roundCone, capsule, roundBox, smoothstep, clamp } from './sdf.mjs';
+import { skeletonXf, prim, union, sub, offset, mask, displace, loft, ellipsoid, sphere, roundCone, capsule, roundBox, smoothstep, clamp } from './sdf.mjs';
 import { buildHead, hairlineY } from './head.mjs';
 import { Z } from '../../src/entities/human/zones.js';
 
@@ -29,6 +29,12 @@ const LEG = {
   f: [[-0.05, 0.08, 0.075, -0.01, 0], [0.02, 0.088, 0.086, -0.004, 0.004], [0.08, 0.088, 0.088, -0.004, 0.008], [0.16, 0.081, 0.083, -0.006, 0.012], [0.24, 0.073, 0.075, -0.008, 0.014], [0.31, 0.063, 0.065, -0.01, 0.014], [0.36, 0.056, 0.058, -0.01, 0.012], [0.405, 0.054, 0.056, -0.01, 0.01], [0.45, 0.049, 0.051, -0.01, 0], [0.52, 0.053, 0.058, -0.01, -0.014], [0.58, 0.05, 0.055, -0.009, -0.016], [0.65, 0.042, 0.045, -0.007, -0.01], [0.72, 0.032, 0.034, -0.004, -0.004], [0.77, 0.029, 0.031, -0.002, 0], [0.795, 0.031, 0.034, 0, 0]],
   m: [[-0.05, 0.085, 0.08, -0.01, 0], [0.02, 0.092, 0.09, -0.004, 0.004], [0.09, 0.091, 0.092, -0.004, 0.008], [0.18, 0.083, 0.086, -0.006, 0.012], [0.26, 0.075, 0.078, -0.008, 0.014], [0.33, 0.065, 0.067, -0.01, 0.014], [0.39, 0.058, 0.058, -0.01, 0.012], [0.435, 0.057, 0.06, -0.01, 0.01], [0.48, 0.052, 0.053, -0.01, 0], [0.56, 0.057, 0.062, -0.01, -0.015], [0.62, 0.054, 0.058, -0.009, -0.016], [0.7, 0.044, 0.047, -0.007, -0.01], [0.78, 0.033, 0.036, -0.004, -0.004], [0.825, 0.031, 0.034, -0.002, 0], [0.85, 0.034, 0.037, 0, 0]],
 };
+
+// Vêtements du cavalier (m) : aisance de la veste (buste, manches), évasement des basques à l'ourlet, épaisseur du cuir
+// des bottes (skill tiers blender-clothing : veste 10–20 mm, cuir 5–10 mm). Valeurs d'avant : 6,5 / 6,5 / 0 / 3,5 mm.
+const JACKET_EASE = 0.011, SLEEVE_EASE = 0.009, JACKET_FLARE = 0.018, BOOT_LEATHER = 0.005;
+// Haut ajusté (polo, t-shirt, buste de robe) : coton ajusté 5–10 mm (4 mm auparavant : effet seconde peau).
+const TOP_EASE = 0.0065;
 
 // Poids le long d'une chaîne d'os : transitions lissées autour des articulations (s croissant).
 function chain(bones, joints, widths) {
@@ -264,7 +270,14 @@ export function buildHuman(sex, variant, opts = {}) {
     const shirt = mask(0.002, offset(0.0035, union(0.03, [torsoCloth(), neck])), (x, y) => Math.max(k(1.17, 1.25) - y, y - (neckBase + k(0.05, 0.055))));
     // Veste ajustée, basques sur les hanches, ouverture en V, revers, poignets.
     const vBottom = k(1.205, 1.285);
-    const jacketTorso = mask(0.0025, offset(0.0065, torsoCloth()), (x, y, z) => {
+    // Aisance de la veste (skill tiers blender-clothing : 10–20 mm pour une veste ; 6,5 mm auparavant, la veste se lisait
+    // comme un pull moulant) et basques qui s'écartent du corps sous la taille (jusqu'à JACKET_FLARE à l'ourlet, davantage
+    // dans le dos), comme une veste de concours.
+    const flare = (x, y, z) => {
+      const t = clamp((waistY - 0.03 - y) / (waistY - 0.03 - hemRider), 0, 1);
+      return -JACKET_FLARE * t * t * (3 - 2 * t) * (0.55 + 0.45 * clamp(-z / 0.1, 0, 1));
+    };
+    const jacketTorso = mask(0.0025, displace(offset(JACKET_EASE, torsoCloth()), flare, JACKET_FLARE), (x, y, z) => {
       // basques : coupées en arrondi devant (sous le dernier bouton), plus longues derrière
       const fr = Math.max(0, z - 0.01) / (Math.hypot(x, z - 0.01) + 1e-6);
       const hem = hemRider - 0.012 * Math.max(0, -z) / 0.12 + k(0.165, 0.17) * smoothstep(0.42, 0.97, fr) - y;
@@ -272,7 +285,7 @@ export function buildHuman(sex, variant, opts = {}) {
       const vOpen = Math.min((y - vBottom) * 0.3 - Math.abs(x) + 0.004, z - 0.01);
       return Math.max(hem, top, vOpen);
     });
-    const jacketArm = (sd) => mask(0.002, offset(0.0065, arms[sd]), (x, y, z, ev) => armS(ev, sd, x, y, z) - cuffS);
+    const jacketArm = (sd) => mask(0.002, offset(SLEEVE_EASE, arms[sd]), (x, y, z, ev) => armS(ev, sd, x, y, z) - cuffS);
     const jacket = union(0.018, [jacketTorso, jacketArm(1), jacketArm(-1)]);
     // Culotte d'équitation (très ajustée) puis bottes hautes cirées.
     const breechesG = union(0.028, [torso, legs[1], legs[-1]]);
@@ -288,12 +301,12 @@ export function buildHuman(sex, variant, opts = {}) {
       const lw = chain([I[Th], I[nm(sd, 'Shin')], I[nm(sd, 'Foot')]], [kneeS, legLen - 0.004], [0.042, 0.018]);
       return P(Th, loft(hj, [0, -1, 0], [sd, 0, 0], [0, 0, 1], secs, { cap: 0.01 }), { tag: 'boot', part: nm(sd, 'leg'), w: (q) => lw(hj[1] - q[1]) });
     };
-    const boot = (sd) => mask(0.0015, offset(0.0035, union(0.02, [legs[sd], shaft(sd), feet[sd]])), (x, y, z, ev) => bootTop - 0.016 * clamp(legLat(ev, sd, x, y, z) / 0.05, -1, 1) - legS(ev, sd, x, y, z));
+    const boot = (sd) => mask(0.0015, offset(BOOT_LEATHER, union(0.02, [legs[sd], shaft(sd), feet[sd]])), (x, y, z, ev) => bootTop - 0.016 * clamp(legLat(ev, sd, x, y, z) / 0.05, -1, 1) - legS(ev, sd, x, y, z));
     const boots = union(0.004, [boot(1), boot(-1)]);
     Object.assign(layers, { shirt, jacket, breeches, boots });
   } else if (variant === 'casual') {
     // Haut ajusté rentré (polo / t-shirt / pull), pantalon droit, ceinture, chaussures.
-    const top = mask(0.002, offset(0.004, union(0.016, [torsoCloth(), arms[1], arms[-1]])), (x, y, z, ev) => {
+    const top = mask(0.002, offset(TOP_EASE, union(0.016, [torsoCloth(), arms[1], arms[-1]])), (x, y, z, ev) => {
       const hem = waistY - 0.012 - y;
       const neckL = neckHole(x, y, z, k(0.072, 0.082), 0.03);
       const cuff = Math.abs(x) > 0.25 ? armS(ev, x > 0 ? 1 : -1, x, y, z) - (wristS - 0.004) : -1;
@@ -319,7 +332,7 @@ export function buildHuman(sex, variant, opts = {}) {
     Object.assign(layers, { top, pants, belt, shoes });
   } else if (variant === 'dress') {
     // Robe : buste ajusté, mancherons, jupe trapèze au-dessus du genou ; jambes nues, ballerines.
-    const bodice = mask(0.002, offset(0.004, union(0.016, [torsoCloth(), arms[1], arms[-1]])), (x, y, z, ev) => {
+    const bodice = mask(0.002, offset(TOP_EASE, union(0.016, [torsoCloth(), arms[1], arms[-1]])), (x, y, z, ev) => {
       const neckL = neckHole(x, y, z, 0.105, 0.085);
       const sl = Math.abs(x) > 0.14 ? Math.max(Math.min(armS(ev, 1, x, y, z), 2), Math.min(armS(ev, -1, x, y, z), 2)) - 0.1 : -1;
       return Math.max(neckL, sl, k(0.98, 1.04) - y);
