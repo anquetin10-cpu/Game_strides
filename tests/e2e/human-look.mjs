@@ -90,6 +90,8 @@ await shot('pnj', () => {
   const p = npcs.sort((a, b) => a.pos.distanceTo(g.player.focus.pos) - b.pos.distanceTo(g.player.focus.pos))[0];
   if (!p) return null;
   p.pose = 'stand';
+  // Niveau de détail choisi pour la distance réelle de la caméra de la vue (comme le jeu le ferait à cette distance).
+  p._lod(3);
   return { ...window.__K.cam(p.pos, p.heading, [1.6, 1.5, 2.6], [0, 1.0, 0], 34), outfit: p.model.desc.body, n: npcs.length };
 });
 writeFileSync(join(OUT, 'mesures.json'), JSON.stringify({ base: BASE, info, metrics, errors }, null, 1));
