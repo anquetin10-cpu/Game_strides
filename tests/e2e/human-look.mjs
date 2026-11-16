@@ -38,6 +38,8 @@ const info = await E(async (AVATAR) => {
   st.textContent = 'body > *:not(canvas) { visibility: hidden !important; }';
   document.head.appendChild(st);
   if (g.player.avatar !== AVATAR && g.player.setAvatar) g.player.setAvatar(AVATAR);
+  // Notifications du téléphone (bannières) masquées, quel que soit leur chemin d'affichage.
+  st.textContent += ' .notif, .phone-notif, [class*="notif"] { display: none !important; }';
   const K = (window.__K = {});
   K.step = (n) => { for (let i = 0; i < n; i++) { g.update(1 / 30); g.realism?.update(); } };
   // Caméra posée dans le repère d'un objet (cap h, position p) : [côté (+ gauche), hauteur, avant] → visée.
@@ -60,8 +62,13 @@ const info = await E(async (AVATAR) => {
   const hu = g.player.human;
   hu.setPosition(h.pos.x + 4, h.pos.z + 3, 0.6);
   K.step(30);
+  // Modèle réaliste du personnage choisi : chargé après le changement d'avatar (jusqu'à 60 s), sinon le personnage procédural
+  // serait photographié à sa place (réglage « Auto » seulement).
+  if (!new URLSearchParams(location.search).has('classic')) {
+    for (let i = 0; i < 600 && !g.realism?.body; i++) { K.step(1); await new Promise((r) => setTimeout(r, 100)); }
+  }
   const H = hu.model;
-  return { sex: hu.sex, scale: hu.scale, tris: [0, 1, 2].map((i) => H.triangles(i)), geomBytes: (() => { const gg = hu.mesh.geometry; let b = 0; for (const k in gg.attributes) b += gg.attributes[k].array.byteLength; return b + (gg.index?.array.byteLength || 0); })() };
+  return { realistic: !!g.realism?.body, sex: hu.sex, scale: hu.scale, tris: [0, 1, 2].map((i) => H.triangles(i)), geomBytes: (() => { const gg = hu.mesh.geometry; let b = 0; for (const k in gg.attributes) b += gg.attributes[k].array.byteLength; return b + (gg.index?.array.byteLength || 0); })() };
 }, AVATAR);
 console.log('personnage', JSON.stringify(info));
 const metrics = {};
