@@ -55,6 +55,8 @@ const _w = new THREE.Vector3();
 const _s = new THREE.Vector3();
 const FIST = new THREE.Vector3(0, -0.068, 0.012);
 const IN_BOTH = Object.freeze({ l: true, r: true });
+// Vitesse maximale (m/s) à laquelle le profil du flanc vu par le cavalier se resserre (voir animateRiding).
+const FLANK_RELAX = 0.3;
 // Hauteur du sol sous les pieds : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
 const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
@@ -346,8 +348,13 @@ export class Human {
     for (const key in f) {
       const v = f[key];
       if (Array.isArray(v)) {
-        const arr = rf[key] && rf[key].length === v.length ? rf[key] : (rf[key] = new Array(v.length));
-        for (let i = 0; i < v.length; i++) arr[i] = v[i] * k;
+        const keep = rf[key] && rf[key].length === v.length;
+        const arr = keep ? rf[key] : (rf[key] = new Array(v.length));
+        // Profil du flanc : il peut s'élargir tout de suite (la jambe ne doit pas y entrer), mais ne se resserre que de
+        // FLANK_RELAX m/s au plus : au changement de pied ou d'allure, le tronc du cheval passe d'un côté à l'autre en
+        // deux ou trois images, et le genou qui s'était ouvert se refermait d'autant en une image (à-coups de 25 à 40°).
+        const env = keep && (key === 'flankL' || key === 'flankR' || key === 'flank');
+        for (let i = 0; i < v.length; i++) arr[i] = env && i >= 2 ? Math.max(v[i] * k, arr[i] - FLANK_RELAX * k * step) : v[i] * k;
       } else rf[key] = key === 'kneeOut' || key === 'mountKneeOut' ? v : v * k;
     }
     // Réglages retirés (cheval WildMesh remplacé par le cheval du jeu) : plus de profil de flanc.
