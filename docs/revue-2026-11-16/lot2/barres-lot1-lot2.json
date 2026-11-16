@@ -1,0 +1,242 @@
+[
+ {
+  "cas": "vertical 1.10 m 6.5 ideal",
+  "ant_lot1": 0.242,
+  "ant_lot2": 0.243,
+  "post_lot1": 0.033,
+  "post_lot2": 0.21,
+  "marge": 0.31230300734570404,
+  "bascule": 6,
+  "releve": 0
+ },
+ {
+  "cas": "vertical 1.10 m 6.5 tot",
+  "ant_lot1": 0.062,
+  "ant_lot2": 0.058,
+  "post_lot1": -0.291,
+  "post_lot2": 0.201,
+  "marge": 0.19913306800308272,
+  "bascule": 12,
+  "releve": 0.12
+ },
+ {
+  "cas": "vertical 1.10 m 6.5 tard",
+  "ant_lot1": -0.257,
+  "ant_lot2": 0.154,
+  "post_lot1": 0.378,
+  "post_lot2": 0.378,
+  "marge": 0.07750906019454584,
+  "bascule": 1,
+  "releve": 0
+ },
+ {
+  "cas": "vertical 1.10 m 8 ideal",
+  "ant_lot1": 0.261,
+  "ant_lot2": 0.258,
+  "post_lot1": 0.074,
+  "post_lot2": 0.214,
+  "marge": 0.3133929839504106,
+  "bascule": 5,
+  "releve": 0
+ },
+ {
+  "cas": "oxer 1.00 m 6.5 ideal",
+  "ant_lot1": 0.32,
+  "ant_lot2": 0.32,
+  "post_lot1": -0.158,
+  "post_lot2": 0.282,
+  "marge": 0.4480875133783966,
+  "bascule": 11,
+  "releve": 0
+ },
+ {
+  "cas": "oxer 1.00 m 6.5 tot",
+  "ant_lot1": -0.023,
+  "ant_lot2": -0.024,
+  "post_lot1": -0.231,
+  "post_lot2": 0.164,
+  "marge": 0.17160024464385182,
+  "bascule": 12,
+  "releve": 0.14
+ },
+ {
+  "cas": "oxer 1.00 m 6.5 tard",
+  "ant_lot1": -0.392,
+  "ant_lot2": -0.614,
+  "post_lot1": 0.014,
+  "post_lot2": 0.233,
+  "marge": 0.07537709136626836,
+  "bascule": 6,
+  "releve": 0
+ },
+ {
+  "cas": "oxer 1.00 m 8 ideal",
+  "ant_lot1": 0.332,
+  "ant_lot2": 0.328,
+  "post_lot1": -0.175,
+  "post_lot2": 0.282,
+  "marge": 0.4572212989053084,
+  "bascule": 10,
+  "releve": 0
+ },
+ {
+  "cas": "vertical 1.40 m 6.5 ideal",
+  "ant_lot1": 0.26,
+  "ant_lot2": 0.263,
+  "post_lot1": -0.068,
+  "post_lot2": 0.222,
+  "marge": 0.3144802457702667,
+  "bascule": 9,
+  "releve": 0
+ },
+ {
+  "cas": "vertical 1.40 m 6.5 tot",
+  "ant_lot1": 0.092,
+  "ant_lot2": 0.087,
+  "post_lot1": -0.541,
+  "post_lot2": 0.219,
+  "marge": 0.2136317107487733,
+  "bascule": 12,
+  "releve": 0.21
+ },
+ {
+  "cas": "vertical 1.40 m 6.5 tard",
+  "ant_lot1": 0.254,
+  "ant_lot2": 0.246,
+  "post_lot1": -0.686,
+  "post_lot2": -0.333,
+  "marge": 0.2857622161171962,
+  "bascule": 12,
+  "releve": 0.2
+ },
+ {
+  "cas": "vertical 1.40 m 8 ideal",
+  "ant_lot1": 0.228,
+  "ant_lot2": 0.223,
+  "post_lot1": -0.155,
+  "post_lot2": 0.244,
+  "marge": 0.307957790483512,
+  "bascule": 10,
+  "releve": 0
+ },
+ {
+  "cas": "oxer 1.45 m 6.5 ideal",
+  "ant_lot1": 0.292,
+  "ant_lot2": 0.294,
+  "post_lot1": -0.587,
+  "post_lot2": 0.189,
+  "marge": 0.4100337036057289,
+  "bascule": 12,
+  "releve": 0.22
+ },
+ {
+  "cas": "oxer 1.45 m 6.5 tot",
+  "ant_lot1": 0.025,
+  "ant_lot2": 0.024,
+  "post_lot1": -0.664,
+  "post_lot2": -0.214,
+  "marge": 0.17917573775266993,
+  "bascule": 12,
+  "releve": 0.2
+ },
+ {
+  "cas": "oxer 1.45 m 6.5 tard",
+  "ant_lot1": -0.044,
+  "ant_lot2": -1.013,
+  "post_lot1": -0.43,
+  "post_lot2": 0.311,
+  "marge": -0.0032231682355938762,
+  "bascule": 12,
+  "releve": 0.13
+ },
+ {
+  "cas": "oxer 1.45 m 8 ideal",
+  "ant_lot1": 0.32,
+  "ant_lot2": 0.32,
+  "post_lot1": -0.55,
+  "post_lot2": 0.242,
+  "marge": 0.4343980162283345,
+  "bascule": 12,
+  "releve": 0.22
+ },
+ {
+  "cas": "vertical 1.60 m 6.5 ideal",
+  "ant_lot1": 0.226,
+  "ant_lot2": 0.226,
+  "post_lot1": -0.232,
+  "post_lot2": 0.251,
+  "marge": 0.3071266693649708,
+  "bascule": 11,
+  "releve": 0.07
+ },
+ {
+  "cas": "vertical 1.60 m 6.5 tot",
+  "ant_lot1": 0.034,
+  "ant_lot2": 0.029,
+  "post_lot1": -0.753,
+  "post_lot2": -0.017,
+  "marge": 0.1530944143752695,
+  "bascule": 12,
+  "releve": 0.23
+ },
+ {
+  "cas": "vertical 1.60 m 6.5 tard",
+  "ant_lot1": 0.044,
+  "ant_lot2": -0.141,
+  "post_lot1": 0.21,
+  "post_lot2": 0.212,
+  "marge": 0.06320435027157534,
+  "bascule": 1,
+  "releve": 0
+ },
+ {
+  "cas": "vertical 1.60 m 8 ideal",
+  "ant_lot1": 0.238,
+  "ant_lot2": 0.247,
+  "post_lot1": -0.178,
+  "post_lot2": 0.246,
+  "marge": 0.30993573401777263,
+  "bascule": 11,
+  "releve": 0.01
+ },
+ {
+  "cas": "oxer 1.60 m 6.5 ideal",
+  "ant_lot1": 0.254,
+  "ant_lot2": 0.252,
+  "post_lot1": -0.783,
+  "post_lot2": -0.049,
+  "marge": 0.3780329699408229,
+  "bascule": 12,
+  "releve": 0.23
+ },
+ {
+  "cas": "oxer 1.60 m 6.5 tot",
+  "ant_lot1": 0.114,
+  "ant_lot2": 0.113,
+  "post_lot1": -0.803,
+  "post_lot2": -0.304,
+  "marge": 0.2533305476975636,
+  "bascule": 12,
+  "releve": 0.21
+ },
+ {
+  "cas": "oxer 1.60 m 6.5 tard",
+  "ant_lot1": -0.04,
+  "ant_lot2": -0.619,
+  "post_lot1": -0.784,
+  "post_lot2": -0.037,
+  "marge": 0.08855448747398276,
+  "bascule": 12,
+  "releve": 0.23
+ },
+ {
+  "cas": "oxer 1.60 m 8 ideal",
+  "ant_lot1": 0.286,
+  "ant_lot2": 0.288,
+  "post_lot1": -0.757,
+  "post_lot2": 0.031,
+  "marge": 0.4082989390475542,
+  "bascule": 12,
+  "releve": 0.23
+ }
+]

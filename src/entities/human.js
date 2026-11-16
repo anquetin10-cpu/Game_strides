@@ -321,7 +321,8 @@ export class Human {
     bone.updateWorldMatrix(true, false);
     const e = bone.matrixWorld.elements;
     const fl = Math.hypot(e[8], e[9], e[10]) || 1;
-    a.bob = e[13] - h.pos.y;
+    // (abaissement d'appel du cheval WildMesh exclu : le cavalier suit la selle, ce n'est pas une secousse à amortir)
+    a.bob = e[13] - h.pos.y - (h.pjl?.view?.contactOff || 0);
     a.pitch = -Math.asin(clamp(e[9] / fl, -1, 1));
     a.horseSpeed = h.anim.speed;
     // Phase de foulée : 0 = poser du diagonal antérieur gauche / postérieur droit au trot (horseModel actuel) ;

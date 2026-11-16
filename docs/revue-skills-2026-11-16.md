@@ -125,3 +125,98 @@ Les chiffres « après » proviennent de la passe avec captures et vidéo (`jump
 2. **S3** : fiche de conception d'une préparation à l'appel, qui garde le contact des postérieurs sans modifier le temps de vol ni le jugement. Hypothèses explicites ; aucun protocole mesuré à 1 m transposé en constantes pour 1,60 m.
 3. **C2** : confirmer le retard de la caméra pendant le vol, à vitesse réelle et sur iPhone.
 4. **S6** : faire juger la posture du cavalier au sommet par Julien.
+
+## 4. Lot 2 (même jour, validé par Julien) : appel, sabots et barres, caméra
+
+Même branche `claude/gt-revue-skills`, rien n'est publié. Chromium émulé en rendu logiciel, pas Safari sur iPhone.
+
+Couches du saut, conformément à equine-jump-gameplay :
+- **trajectoire** : `jumpY`, jumpModel `arcY`, collisions et jugement. **Inchangée.**
+- **posture** : corps du clip WildMesh et ses corrections. **Modifiée.**
+- **membres et contacts** : sabots mesurés.
+
+Les seuils ci-dessous sont des hypothèses de gameplay, pas des mesures biomécaniques. Aucune valeur de compétition n'est modifiée (hauteur, durée et longueur de saut, `JUMP.*`, jugement), et aucune assistance invisible n'est ajoutée.
+
+### 4.1 Appel (S3) : corrigé dans la posture
+
+- **Défaut.** La trajectoire monte dès l'appui ; or le clip montre encore les postérieurs en appui, jusqu'à leur décollage (`toeOff`). Ils flottaient de 0,49 à 0,53 m au-dessus du sol pendant la poussée.
+- **Correction** (`src/entities/pjlHorse.js`, `_pushContact`). Tant que le clip montre les postérieurs en appui :
+  - le corps est abaissé de ce qu'il faut pour que le postérieur le plus bas reste au sol ;
+  - la mesure se fait sur la pose de l'image, sans enfoncer les antérieurs ;
+  - après le décollage, l'abaissement se résorbe sur 0,25 du vol (`PUSH_RELEASE`), avant les barres.
+
+  Lecture retenue (hypothèse) : la trajectoire du jeu décrit la hauteur des pieds, et les antérieurs quittent le sol en premier.
+- **Hors correction.** L'abaissement n'est pas appliqué si les antérieurs sont à moins de 1,6 m d'une barre au décollage, avec un fondu jusqu'à 2,6 m : il les ferait passer plus bas.
+- **Cavalier** (`src/entities/human.js`). L'abaissement est exclu du rebond de selle qu'il amortit. Sinon, il levait le bassin de 30 cm au lieu de suivre la selle.
+- **Commande.** Aucun délai ajouté : le saut part à l'appui, comme avant.
+
+| Saut libre, `jump-pose.mjs` | Lot 1 | Lot 2 |
+|---|---|---|
+| Postérieurs, maximum pendant la poussée, galop / grand galop | 0,525 / 0,486 m | 0 / 0 m |
+| Antérieur le plus bas à la réception | −0,001 / −0,004 m | −0,001 / −0,004 m (correction du lot 1 conservée) |
+| Vitesse verticale du corps, galop (images 0 à 6) | — | 0,4 → 5,9 → 6,8 → 7,0 → 6,5 → 5,3 m/s, continue |
+| Écart bassin du cavalier – siège, maximum | 0,24 m | 0,24 à 0,25 m |
+| Jambes du cavalier dans le cheval | 0 | 0 |
+
+### 4.2 Sabots face aux barres en CSO (S5) : défaut confirmé, très réduit, pas éliminé
+
+Test : `tests/e2e/pjl/bars.mjs`.
+- Entraînement de CSO, donc commandes de concours et modèle de saut v2.
+- Obstacles : vertical 1,10 m, oxer 1,00 m, plus des obstacles d'essai ajoutés pour le test (vertical 1,40 et 1,60 m, oxers 1,45 et 1,60 m). Pour ces hauteurs, la puissance de saut du cheval est montée par le test à un niveau Grand Prix.
+- Vitesses : 6,5 et 8 m/s.
+- Appels : idéal, tôt (début de la bonne zone) et tard (zone « trop près »).
+- Mesure : bas du sabot visible (articulation moins son niveau d'appui) au passage de chaque barre, moins le dessus de la barre.
+
+**Constat.** Le jeu juge chaque barre au passage des épaules. Les postérieurs passent 1 à 1,5 m plus loin, souvent après la réception des antérieurs. Au lot 1, ils traversaient la barre jusqu'à −0,80 m sur des sauts jugés sans faute.
+
+**Correction** (`_hindClear`, `_barNeed`). Quand un postérieur approche une barre jugée franchie ou effleurée :
+- le corps bascule autour des antérieurs, croupe vers le haut, de 12° au plus ;
+- en vol seulement, un relevé de 0,25 m au plus complète, si nécessaire ;
+- la marge visée est la marge jugée, plafonnée à 0,20 m ;
+- la hauteur de passage est anticipée d'après la vitesse du sabot.
+
+Barre jugée tombée : aucune correction. La caméra n'est pas utilisée pour masquer.
+
+Une bascule ajoutée de 25° a été essayée puis rejetée : le cheval plongeait à la réception, comme une ruade.
+
+| Cas (marge jugée) | Antérieurs, lot 1 → lot 2 | Postérieurs, lot 1 → lot 2 |
+|---|---|---|
+| Vertical 1,10 m, appel idéal (+0,31) | +0,24 → +0,24 | +0,03 → +0,21 |
+| Vertical 1,10 m, tôt (+0,20) | +0,06 → +0,06 | −0,29 → +0,20 |
+| Oxer 1,00 m, idéal (+0,45) | +0,32 → +0,32 | −0,16 → +0,28 |
+| Vertical 1,40 m, tôt (+0,21) | +0,09 → +0,09 | −0,54 → +0,22 |
+| Oxer 1,45 m, idéal (+0,41) | +0,29 → +0,29 | −0,59 → +0,19 |
+| Oxer 1,45 m, tôt (+0,18) | +0,03 → +0,02 | −0,66 → −0,21 |
+| Vertical 1,60 m, tôt (+0,15) | +0,03 → +0,03 | −0,75 → −0,02 |
+| Oxer 1,60 m, idéal (+0,38) | +0,25 → +0,25 | −0,78 → −0,05 |
+| Oxer 1,60 m, tôt (+0,25) | +0,11 → +0,11 | −0,80 → −0,30 |
+| Oxer 1,60 m, 8 m/s, idéal (+0,41) | +0,29 → +0,29 | −0,76 → +0,03 |
+| Appels tardifs (zone « trop près »), tous obstacles | de −0,39 à +0,25 → de −0,73 à +0,25, selon le point d'appel exact | de −0,78 à +0,38 → de −0,33 à +0,38 |
+
+Tableau complet : `docs/revue-2026-11-16/lot2/barres-lot1-lot2.json`.
+
+**Défauts restants.**
+- **S5-a (G2).** Oxers de 1,45 et 1,60 m avec appel tôt : un postérieur passe encore de 21 à 30 cm sous le dessus de la barre arrière, après la réception. La bascule bornée ne suffit pas.
+- **S5-b (G2, existait avant).** Appel dans la zone « trop près » : un antérieur est déjà au droit de la barre avant au décollage et la traverse, alors que le saut est jugé sans faute ou « effleuré ». Le résultat varie beaucoup d'un essai à l'autre selon le point d'appel exact (par exemple −0,73 puis −1,01 m sur le même cas) ; la comparaison avec le lot 1 n'est donc pas significative.
+- **Origine commune.** La géométrie de jugement : barres jugées aux épaules (`REF`), distance minimale d'appel `JUMP.minFront` de 0,55 m. La lever exige une décision de gameplay, hors du mandat :
+  - juger aussi les postérieurs et les antérieurs ;
+  - ou reculer la distance minimale d'appel ;
+  - ou transformer ces appels en faute ou en refus.
+
+### 4.3 Caméra en vol (C2) : retard non confirmé, pas de modification
+
+Saut libre, caméra du jeu :
+- distance horizontale caméra-cheval constante pendant le vol : 7,37 à 7,41 m au galop, 8,06 à 8,13 m au grand galop ;
+- hauteur relative : décalage d'environ ±0,4 m, dû au lissage voulu de la hauteur visée (`smoothTarget.y`, `damp` 10).
+
+Le rétrécissement apparent de la silhouette vient du repli des membres et de la bascule, pas du cadrage. Données : `lot2/saut-libre-camera.json`.
+
+En CSO, la caméra de concours ne suit volontairement que 12 % de la hauteur du saut (`jumpFollow`) ; ce choix n'est pas modifié.
+
+### 4.4 Vidéos avant/après, lot 1 en haut, lot 2 en bas (`docs/revue-2026-11-16/lot2/`)
+
+Chaque vidéo existe en vitesse réelle (`-reel`, 30 i/s) et au ralenti (`-ralenti`, ×3,75).
+- **Saut libre** : `saut-libre-{galop,grand-galop}-{jeu,profil,troisquarts}`. Elles montrent l'appel, la montée, le sommet, la descente et la réception, avec le cheval, le cavalier et la caméra du jeu.
+- **CSO, profil fixe** :
+  - `cso-5-6.5-ideal` et `cso-5-6.5-tot` : oxer de 1,60 m ;
+  - `cso-0-6.5-ideal` et `cso-0-6.5-tard` : vertical de 1,10 m.

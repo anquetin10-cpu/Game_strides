@@ -80,11 +80,19 @@ await E(async () => {
       }
     }
     const tr = W('neck').sub(hips).normalize();
+    // Caméra du jeu (position de cette image) : distance horizontale au cheval, hauteur relative, hauteur du cheval à
+    // l'écran (part de la hauteur de l'image entre le garrot et le sabot le plus bas).
+    const C = g.camera;
+    const cd = Math.hypot(C.position.x - h.pos.x, C.position.z - h.pos.z);
+    const ndc = (v) => v.clone().project(C).y;
+    const low = ['fingers_02_l', 'fingers_02_r', 'toes_02_l', 'toes_02_r'].map((n) => V.boneWorld(n, new T.Vector3())).reduce((a, b) => (b.y < a.y ? b : a));
+    const scr = +((ndc(sp) - ndc(low)) / 2).toFixed(3);
     return {
+      camDist: +cd.toFixed(2), camUp: +(C.position.y - h.pos.y).toFixed(2), screenH: scr,
       jumpT: +h.jumpT.toFixed(3), jumpY: +(h.jumpY || 0).toFixed(3), speed: +h.speed.toFixed(2), hooves, pitch,
       seatUp: +rel.y.toFixed(3), seatFwd: +rel.dot(fw).toFixed(3),
       trunk: Math.round((Math.acos(Math.max(-1, Math.min(1, tr.y))) * 180) / Math.PI),
-      pen: +pen.toFixed(3), penAt, jw: +(V.jumpWeight || 0).toFixed(2), clipT: +(V.jumpTime || 0).toFixed(3),
+      pen: +pen.toFixed(3), penAt, off: +(V.contactOff || 0).toFixed(3), bodyY: +(V.body.getWorldPosition(new T.Vector3()).y - h.groundY).toFixed(3), jw: +(V.jumpWeight || 0).toFixed(2), clipT: +(V.jumpTime || 0).toFixed(3),
     };
   };
   // Vue « jeu » : caméra du joueur telle que la simulation l'a placée (aucune surcharge).
@@ -154,6 +162,9 @@ for (const name of CASES) {
     const due = m === undefined ? false : typeof m === 'number' ? r.jumpT >= m : m === 'land' ? landF === f : landF >= 0 && f === landF + 9;
     // VIDEO=1 : une image à chaque pas (1/30 s), vues profil et trois-quarts, pour vidéo à vitesse réelle et au ralenti.
     if (process.env.VIDEO && (r.jumpT >= 0 || (landF >= 0 && f <= landF + 12) || f < 3)) {
+      mkdirSync(join(OUT, `video-${name}-jeu`), { recursive: true });
+      await E(() => window.__K.gameView());
+      await page.screenshot({ path: join(OUT, `video-${name}-jeu`, `${String(f).padStart(3, '0')}.jpg`), type: 'jpeg', quality: 82, timeout: 240000 });
       for (const v of ['profil', 'troisquarts']) {
         await E((v) => window.__K.cam(...window.__K.VIEW[v]), v);
         mkdirSync(join(OUT, `video-${name}-${v}`), { recursive: true });

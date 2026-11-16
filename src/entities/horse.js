@@ -129,7 +129,7 @@ export class Horse {
       }
       peak = tgt.plan.H;
       len = tgt.plan.L;
-      this._lastJump = { o: tgt.o, plan: tgt.plan, t: this.game.time, land: null };
+      this._lastJump = { o: tgt.o, plan: tgt.plan, geo: tgt.geo, t: this.game.time, land: null };
     } else {
       this._lastJump = null;
       // Clôture, haie, mur… sur la trajectoire que ce saut ne franchirait pas (appel trop tôt ou trop tard) : le cheval

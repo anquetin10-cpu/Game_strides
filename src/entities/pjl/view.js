@@ -25,6 +25,8 @@ export class HorseView {
     actions = new Map();
     weights = new Map();
     jumpWeight = 0;
+    contactOff = 0;
+    bodyBaseY = undefined;
     jumpClip = null;
     jumpMirror = false;
     jumpTime = 0;
@@ -345,9 +347,12 @@ export class HorseView {
         }
         this.mixer.update(0);
         // ---- Body: vertical offset & lean into turns
-        this.body.position.y = damp(this.body.position.y, rootY, 30, dt);
-        if (Math.abs(this.body.position.y - rootY) > 0.25)
-            this.body.position.y = rootY;
+        // ET : hauteur du corps lissée, plus l'abaissement d'appel (contactOff, posé par PjlHorse après la pose : appliqué
+        // tel quel, hors du lissage).
+        this.bodyBaseY = damp(this.bodyBaseY ?? this.body.position.y, rootY, 30, dt);
+        if (Math.abs(this.bodyBaseY - rootY) > 0.25)
+            this.bodyBaseY = rootY;
+        this.body.position.y = this.bodyBaseY + this.contactOff;
         const lean = clamp(s.roll, -0.3, 0.3) * 0.75 * (1 - this.jumpWeight);
         this.body.rotation.z = damp(this.body.rotation.z, -lean, 8, dt);
         this.secondary?.update(s, dt, this.approaching);

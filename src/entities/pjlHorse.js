@@ -27,6 +27,7 @@ import { GAIT_OFFSETS } from './horse/anim.js';
 import { refreshHorseTack } from './horse/mesh.js';
 import { RIDER_FIT } from './human.js';
 import { clamp, damp, smoothstep } from '../core/math.js';
+import { JUMP } from '../gameplay/jumpModel.js';
 
 const wrap01 = (u) => u - Math.floor(u);
 // Écart circulaire moyen (0..1) entre deux séries de phases, et résidu (0 = calage parfait).
@@ -62,6 +63,17 @@ export function coatOf(def = {}) {
 const CADENCE = { walk: [0.55, 1.15], trot: [1.1, 1.75], canter: [1.3, 2.6] };
 // Départ du clip de saut avant le décollage des postérieurs (s) : poussée visible des postérieurs à l'appel.
 const PUSH = 0.12;
+// Part du vol (jumpT) sur laquelle l'abaissement d'appel se résorbe après le décollage des postérieurs (hypothèse de
+// gameplay).
+const PUSH_RELEASE = 0.25;
+const _hp = new THREE.Vector3(), _pv = new THREE.Vector3();
+// Postérieurs face aux barres (voir _hindClear) : bas du sabot sous l'articulation mesurée (m, approximation), rayon
+// des barres (world/builders.js railGeo), marge visée plafonnée, bascule maximale (rad, ~12°), relevé maximal en vol (m).
+const HOOF_SOLE = 0.08;
+const RAIL_R = 0.05;
+const HIND_CLEAR_MAX = 0.2;
+const HIND_TILT_MAX = 0.21;
+const HIND_LIFT_MAX = 0.25;
 // Hors de ce rayon (m) : étrivières, rênes simplifiées masquées (moins d'un pixel), comme le filet procédural au loin.
 const DETAIL_DIST = 30;
 // Marge supplémentaire sur l’enveloppe maximale du tronc déjà échantillonnée aux deux mains (écartement de base des
@@ -422,6 +434,166 @@ export class PjlHorse {
     return s;
   }
 
+  // Appel. La trajectoire du jeu (hauteur des pieds, jumpModel.arcY) monte dès l'appui : ce sont les antérieurs qui
+  // quittent le sol en premier, pendant que les postérieurs poussent encore. Tant que le clip montre les postérieurs en
+  // appui (avant leur décollage, toeOff), le corps est abaissé de ce qu'il faut pour que le plus bas reste au sol
+  // (mesuré sur la pose de cette image, appliqué à cette image) ; après leur décollage, cet abaissement se résorbe en
+  // douceur sur PUSH_RELEASE du vol, avant le passage des barres. Hypothèse de gameplay (posture) : la trajectoire du
+  // jeu, les collisions et le jugement des barres ne changent pas.
+  _pushContact() {
+    const H = this.horse, V = this.view, j = V.jumpClip;
+    const P = this._push || (this._push = { off: 0, tau: 0, jumping: false });
+    const lj = H._lastJump;
+    const nearBar = !!(lj?.o && lj.geo && (H.jumpT >= 0 || (lj.land !== null && H.game.time - lj.land < 0.8)));
+    if (!(H.jumpT >= 0) || !j) {
+      P.jumping = false;
+      if (V.contactOff) this._setContact(0);
+      return;
+    }
+    let off = 0;
+    if (!P.jumping) {
+      // Appel tout près d'un obstacle de CSO : les antérieurs passent la barre avant pendant la poussée ; l'abaissement
+      // d'appel les ferait passer plus bas. Décidé au décollage d'après la distance des antérieurs à la première barre
+      // (pleinement appliqué au-delà de 2,6 m, plus du tout en deçà de 1,6 m).
+      let k = 1;
+      if (nearBar) {
+        const o = lj.o, sg = Math.sign(lj.geo.sign || 1);
+        let d = -Infinity;
+        for (const n of ['fingers_02_l', 'fingers_02_r']) {
+          V.boneWorld(n, _hp);
+          const sh = (_hp.x - o.x) * o.n.x + (_hp.z - o.z) * o.n.z;
+          // (la barre la plus proche devant ; une barre déjà atteinte compte pour 0)
+          for (const bar of o.bars) d = Math.max(d, Math.min(0, (sh - bar.s) * sg));
+        }
+        if (d > -Infinity) k = smoothstep(-1.6, -2.6, d);
+      }
+      Object.assign(P, { off: 0, tau: H.jumpT, jumping: true, k });
+    }
+    if (V.jumpTime < j.toeOff) {
+      const low = (names) => {
+        let m = Infinity;
+        for (const n of names) {
+          V.boneWorld(n, _hp);
+          m = Math.min(m, _hp.y - H.groundAt(_hp.x, _hp.z));
+        }
+        return m;
+      };
+      // Postérieurs au sol, sans enfoncer les antérieurs (déjà levés ou sur le point de l'être). Hauteurs mesurées sur
+      // la pose de cette image, abaissement d'appel compris : on le retire.
+      const cur = V.contactOff;
+      const hind = low(['toes_02_l', 'toes_02_r']), fore = low(['fingers_02_l', 'fingers_02_r']);
+      P.off = Math.min(0, cur - Math.min(hind, Math.max(0, fore)));
+      P.tau = H.jumpT;
+      off = P.off;
+    } else off = P.off * (1 - smoothstep(P.tau, P.tau + PUSH_RELEASE, H.jumpT));
+    this._setContact(off * P.k);
+  }
+
+  // Hauteur à ajouter (m, pose courante) pour que les sabots `names` passent au-dessus des barres de l'obstacle du saut en
+  // cours avec la marge jugée (plafonnée), en anticipant la hauteur au passage d'après la vitesse du sabot ; bras de
+  // levier entre ce sabot et les antérieurs (bascule) ; poids d'approche le plus fort d'un sabot trop bas (0..1). Barres
+  // jugées tombées ou touchées (marge < -JUMP.rub) : ignorées.
+  _barNeed(names, lj) {
+    const H = this.horse, V = this.view, o = lj.o;
+    const dt = Math.max(1e-3, this._dt || 1 / 60);
+    const prev = this._hprev || (this._hprev = {});
+    const ws = (n) => {
+      V.boneWorld(n, _hp);
+      return { s: (_hp.x - o.x) * o.n.x + (_hp.z - o.z) * o.n.z, u: (_hp.x - o.x) * o.t.x + (_hp.z - o.z) * o.t.z, y: _hp.y - o.ground - HOOF_SOLE, x: _hp.x, z: _hp.z };
+    };
+    const fl = ws('fingers_02_l'), fr = ws('fingers_02_r');
+    let lift = 0, lever = 1, wmax = 0;
+    for (const n of names) {
+      const hp = n === 'fingers_02_l' ? fl : n === 'fingers_02_r' ? fr : ws(n);
+      const q = prev[n];
+      prev[n] = { y: hp.y, s: hp.s, o, t: H.game.time };
+      if (Math.abs(hp.u) > o.w / 2 + 0.2) continue;
+      // Vitesses mesurées sur l'image précédente (même obstacle, pose sans correction de cette image).
+      // (mesure de l'image précédente seulement : pas à travers un déplacement instantané du cheval)
+      const ok = q && q.o === o && H.game.time > q.t && H.game.time - q.t < 0.1 && Math.abs(hp.s - q.s) < 1;
+      const vy = ok ? clamp((hp.y - q.y) / dt, -10, 10) : 0, vs = ok ? Math.abs(hp.s - q.s) / dt : 0;
+      for (const bar of o.bars) {
+        if (!bar.mesh || bar.mesh.userData.fall) continue;
+        const i = lj.geo.rails.findIndex((r) => Math.abs(r.s - bar.s) < 1e-3);
+        const m = i >= 0 ? lj.plan.margins[i] : undefined;
+        if (m === undefined || m < -JUMP.rub) continue;
+        // Avant la barre (dans l'axe de saut) : la correction monte de 1,6 m à 0,5 m ; après, elle retombe.
+        const d = (hp.s - bar.s) * Math.sign(lj.geo.sign || 1);
+        const w = smoothstep(-1.6, -0.5, d) * (1 - smoothstep(0.15, 0.6, d));
+        const tc = d < 0 && vs > 1 ? Math.min(0.35, -d / vs) : 0;
+        const y = hp.y + Math.min(0, vy) * tc;
+        const need = (bar.h + RAIL_R + clamp(m, 0, HIND_CLEAR_MAX) - y) * w;
+        if (need > 0) wmax = Math.max(wmax, w);
+        if (need > lift) {
+          lift = need;
+          lever = Math.max(0.8, Math.hypot(hp.x - (fl.x + fr.x) / 2, hp.z - (fl.z + fr.z) / 2));
+        }
+      }
+    }
+    return { lift, lever, w: wmax, pivot: _pv.set((fl.x + fr.x) / 2, 0, (fl.z + fr.z) / 2) };
+  }
+
+  // Postérieurs face aux barres (CSO). Le jeu juge chaque barre au passage des épaules (jumpModel.arcY : trajectoire
+  // des pieds) ; les postérieurs passent la même barre 1 à 1,5 m plus tard, quand la trajectoire redescend, parfois
+  // après la réception des antérieurs : sans correction, le sabot visible traversait la barre d'un saut jugé sans faute.
+  // Quand un postérieur approche une barre jugée franchie, le corps bascule autour des antérieurs (croupe plus haute)
+  // juste assez pour que ce sabot passe au-dessus du dessus de la barre avec la marge jugée (plafonnée). Barre jugée
+  // tombée ou touchée : rien (le contact visible est alors cohérent). Hypothèse de gameplay (posture), sans effet sur
+  // la trajectoire, les collisions ni le jugement.
+  _hindClear() {
+    const H = this.horse, V = this.view, B = V.body;
+    const lj = H._lastJump;
+    const near = lj?.o && lj.geo && (H.jumpT >= 0 || (lj.land !== null && H.game.time - lj.land < 0.8));
+    // Repartir de la pose sans bascule (la vue ne remet que y et le roulis à chaque image).
+    if (this._clr) {
+      B.rotation.x = 0;
+      B.position.z = 0;
+      this.holder.updateMatrixWorld(true);
+    }
+    let lift = 0, lever = 1, pivot = null;
+    if (near) {
+      const r = this._barNeed(['toes_02_l', 'toes_02_r'], lj);
+      lift = r.lift;
+      lever = r.lever;
+      // Pivot : antérieurs (hauteur de leurs articulations).
+      V.boneWorld('fingers_02_l', _hp);
+      const y = _hp.y;
+      V.boneWorld('fingers_02_r', _hp);
+      pivot = r.pivot.setY((y + _hp.y) / 2);
+    }
+    // Bascule bornée (au-delà, le cheval « plonge » de façon peu crédible) ; le reste, en vol seulement, par un léger
+    // relevé du corps (borné aussi) : après la réception, les antérieurs restent au sol. Lissés, sans à-coup.
+    const dt = this._dt || 1 / 60;
+    const tiltWant = Math.min(HIND_TILT_MAX, Math.asin(clamp(lift / lever, 0, 1)));
+    const rest = H.jumpT >= 0 ? Math.min(HIND_LIFT_MAX, Math.max(0, lift - lever * Math.sin(tiltWant))) : 0;
+    this._clrA = damp(this._clrA || 0, tiltWant, 24, dt);
+    this._clrY = damp(this._clrY || 0, rest, 24, dt);
+    if (this._clrA < 1e-3 && this._clrY < 1e-3) {
+      this._clrA = 0;
+      this._clrY = 0;
+      this._clr = false;
+      return;
+    }
+    this._clr = true;
+    // Rotation autour de l'axe latéral passant par les antérieurs (repère du parent du corps).
+    if (pivot) this._clrPivot = B.parent.worldToLocal(pivot.clone());
+    const P = this._clrPivot;
+    if (!P) return;
+    const a = this._clrA;
+    const oy = B.position.y - P.y, oz = B.position.z - P.z;
+    B.rotation.x = a;
+    B.position.y = P.y + oy * Math.cos(a) - oz * Math.sin(a) + this._clrY;
+    B.position.z = P.z + oy * Math.sin(a) + oz * Math.cos(a);
+    this.holder.updateMatrixWorld(true);
+  }
+
+  _setContact(off) {
+    const V = this.view;
+    V.body.position.y += off - V.contactOff;
+    V.contactOff = off;
+    this.holder.updateMatrixWorld(true);
+  }
+
   // Temps de saut donné à la vue (convention de la source : jt < 0 avant le décollage des postérieurs, 0 → T de leur
   // décollage à la réception des antérieurs, réparti linéairement sur le clip). Le vol du jeu est une parabole
   // symétrique (sommet à mi-vol) : le clip est réparti en deux morceaux pour que son sommet (centre du tronc le plus haut
@@ -466,6 +638,8 @@ export class PjlHorse {
     const U = H.mesh.userData.coat?.uniforms;
     if (U) V.setWet(Math.min(1, Math.max(U.uWet.value, U.uSweat.value * 0.6)));
     this.holder.updateMatrixWorld(true);
+    this._pushContact();
+    this._hindClear();
     this._attachRider(cfg);
     if (this.fit && (H.rider || H.mountingBy)) this._flankUpdate();
     this._straps(cfg);
