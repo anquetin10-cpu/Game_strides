@@ -181,7 +181,8 @@
         }
         A.tick(1);
         const s2 = (h.pos.x - o.x) * o.n.x + (h.pos.z - o.z) * o.n.z;
-        if (jumped && h.jumpT < 0 && s2 > 2) {
+        // (résultat du saut annoncé : il attend que les postérieurs aient passé l'obstacle)
+        if (jumped && h.jumpT < 0 && s2 > 2 && (!h._pass || h._pass.o !== o || h._pass.done)) {
           A.releaseInput();
           return true;
         }

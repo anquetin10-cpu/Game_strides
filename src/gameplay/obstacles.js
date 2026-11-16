@@ -494,6 +494,8 @@ export class Obstacles {
     if (!pass || pass.o !== o || pass.done) {
       const entry = dir > 0 ? o.front : o.back;
       if (!((a.s - entry) * (b.s - entry) <= 0) || !inWidth) return;
+      // Résultat précédent encore en attente (postérieurs) : annoncé avant d'aborder cet obstacle.
+      if (pass && !pass.done) this._finishPass(pass);
       pass = horse._pass = { o, dir, fault: false, cause: null, done: false, margin: Infinity };
     }
     const lj = horse._lastJump;
@@ -557,7 +559,9 @@ export class Obstacles {
     if (o.off || !bar || bar.mesh?.userData.fall) return;
     let pass = horse._pass;
     if (!pass || pass.o !== o || pass.done) {
-      // Antérieurs sur la barre avant, avant que les épaules aient franchi l'entrée de l'obstacle.
+      // Antérieurs sur la barre avant, avant que les épaules aient franchi l'entrée de l'obstacle (résultat précédent
+      // encore en attente : annoncé d'abord).
+      if (pass && !pass.done) this._finishPass(pass);
       const f = horse.forward;
       pass = horse._pass = { o, dir: f.x * o.n.x + f.z * o.n.z >= 0 ? 1 : -1, fault: false, cause: null, done: false, margin: Infinity };
     }
@@ -565,7 +569,11 @@ export class Obstacles {
     if (!o.solid) this.knock(o, bar, pass.dir, Math.sign(hit.u) || 1, Math.max(0.05, hit.depth));
     if (!pass.fault) {
       pass.fault = true;
-      pass.cause = hit.hind ? 'hindRail' : 'foreRail';
+      // Cause expliquée au cavalier : celle de l'appel quand le modèle la donne (trop loin, trop près, abord…), ou la zone
+      // d'appel ; sinon le membre qui a touché.
+      const lj = horse._lastJump;
+      const plan = lj && lj.o === o ? lj.plan : null;
+      pass.cause = plan?.cause || (plan?.zone === 'far' ? 'far' : plan?.zone === 'near' ? 'near' : hit.hind ? 'hindRail' : 'foreRail');
       if (o.solid) horse.speed *= 0.55;
     }
   }

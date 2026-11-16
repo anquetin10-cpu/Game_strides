@@ -220,3 +220,161 @@ Chaque vidéo existe en vitesse réelle (`-reel`, 30 i/s) et au ralenti (`-ralen
 - **CSO, profil fixe** :
   - `cso-5-6.5-ideal` et `cso-5-6.5-tot` : oxer de 1,60 m ;
   - `cso-0-6.5-ideal` et `cso-0-6.5-tard` : vertical de 1,10 m.
+
+## 5. Lot 3 (même jour, validé par Julien) : cohérence pose visible, trajectoire et jugement des barres
+
+Branche `claude/gt-revue-skills`. Rien n'est publié ni fusionné. Chromium émulé en rendu logiciel, sans aucun essai sur iPhone réel.
+
+### 5.1 Statut réel du lot 2 (`ceecd92`)
+
+- **CI**, run 43855576624 :
+  - build et tests unitaires : réussis ;
+  - série courte de bout en bout : 5/5 ;
+  - publication : sautée.
+- **Tests locaux** : CSO 38/38, montée/descente 17/17, cheval et cavalier 13/13, jambes du cavalier : 0 cm.
+- **Limite**, relevée par la revue indépendante : `tests/e2e/pjl/bars.mjs` mesurait sans rien affirmer et ne tournait pas en CI. Une CI verte ne couvrait donc pas la traversée des barres.
+- **Mesure déterministe faite dans ce lot** (§ 5.4), sur le même code : 36 échecs de cohérence, dont 18 sauts jugés sans faute avec un membre réellement dans la barre (pénétration jusqu'à 0,10 m).
+
+### 5.2 Cause
+
+Le jeu jugeait chaque barre au seul point de référence, aux épaules, sur la trajectoire `arcY` + 0,20 m de repli. Les membres visibles passent la barre à d'autres instants :
+- les antérieurs, avant les épaules, en montée ;
+- les postérieurs, 1 à 1,5 m plus loin, en descente, souvent après la réception des antérieurs.
+
+Rien ne reliait ce que voit le joueur à ce qui est jugé.
+
+### 5.3 Correction (cause, puis posture)
+
+1. **Les contacts réels jugent comme la trajectoire.**
+   - `src/gameplay/limbContact.js` (géométrie seule, sous tests unitaires) :
+     - chaque membre est fait de deux capsules, le canon (rayon 4,5 cm) et le paturon–sabot (5,5 cm) ;
+     - la barre du haut est un cylindre de 5 cm sur la largeur de l'obstacle ;
+     - le passage entre deux images est balayé en 6 positions.
+   - `PjlHorse._limbContacts` mesure ces contacts sur la pose finale de l'image, après toutes les transformations de rendu.
+   - Tout contact de plus de 1 cm est transmis à `Obstacles.limbContact` :
+     - la barre tombe, du côté où le membre la pousse ;
+     - la faute est comptée une fois par élément ;
+     - la cause expliquée est celle de l'appel si le modèle la donne (trop loin, trop près…), sinon le membre qui a touché.
+   - Le résultat est annoncé quand les postérieurs ont passé l'obstacle : point de référence 2,2 m après la sortie, ou 1,2 s au plus. Un résultat encore en attente est annoncé avant d'aborder l'obstacle suivant.
+   - Le jugement par la trajectoire (`arcY`) est inchangé, de même que les valeurs `JUMP`, le temps de vol et le point d'appel.
+2. **Posture coordonnée avec les barres jugées franchies**, hypothèse de gameplay bornée :
+   - repli des postérieurs : rotation de la cuisse, 34° au plus ;
+   - repli des antérieurs : pliure au genou, toujours vers l'arrière, jamais vers la barre ;
+   - bascule de la croupe autour des antérieurs : 12° au plus ;
+   - relevé de l'avant-main autour des postérieurs : 15° au plus ;
+   - léger relevé du corps en vol : 0,25 m au plus.
+
+   Ce que ces bornes ne dégagent pas reste visible, touche la barre et devient une faute. Rien n'est masqué par la caméra, et aucune tolérance n'a été élargie.
+3. **Défauts trouvés en vérifiant, et corrigés :**
+   - un pivot partagé entre les deux bascules faisait tourner la croupe autour des postérieurs, ce qui enfonçait un antérieur de 49 cm dans le sol ;
+   - le premier repli des antérieurs, par rotation du bras, portait le sabot vers la barre ;
+   - aucun contact n'était compté à la première image du vol.
+
+### 5.4 Test de régression bloquant
+
+Le test `tests/e2e/pjl/bars-check.mjs` se lance avec `npm run e2e:barres`. Il fait aussi partie de la série courte de la CI : étape `sabots-barres` de `tests/e2e/smoke.mjs`.
+
+**Conditions du test**
+- 6 obstacles : verticaux de 1,10, 1,40 et 1,60 m ; oxers de 1,00, 1,45 et 1,60 m.
+- 2 vitesses : 6,5 et 9 m/s.
+- 4 appels : tôt, normal, trop près, trop loin. La distance de chaque appel est tirée du modèle de saut du jeu.
+- Au total, 42 sauts déterministes :
+  - couloir dégagé vérifié avec les collisions du jeu ;
+  - élan tenu 40 images ;
+  - appel déclenché à une image précise.
+- La mesure est indépendante du jeu : elle est réimplémentée dans le test, sur les os en coordonnées monde, avec un balayage en 8 positions.
+
+**Assertions**
+
+| Code | Vérifie |
+|---|---|
+| B1 | Saut effectué et jugé une fois, ou refus compté |
+| B2 | Saut sans faute : aucun membre dans ou sous une barre |
+| B3 | Barre touchée : elle tombe, la faute est comptée |
+| B4 | Barre tombée : un membre l'a touchée |
+| B5 | Appel normal à 6,5 m/s : sans faute |
+| B6 | Appel fautif selon le modèle : faute |
+| B7 | Passage de chaque sabot au-dessus de chaque barre mesuré |
+
+**Tolérances**
+- 1 cm de pénétration, qui correspond à l'approximation des volumes ;
+- 2 cm pour le bout de l'os du sabot par rapport à la sole.
+
+**Preuves**
+
+| Version | Code de sortie | Résultat |
+|---|---|---|
+| `ceecd92` (avant) | 1 | 36 échecs : 18 B2, 18 B3 |
+| Régression contrôlée (envoi des contacts au jeu coupé) | 1 | 10 échecs : 5 B2, 5 B3 |
+| Lot 3 | 0 | 139/139 vérifications conformes |
+
+### 5.5 Avant / après (mêmes conditions)
+
+| Cas | Modèle à l’appel : zone, marge (m) | `ceecd92` : jugement · pénétration max (m) · sabot le plus bas (m) | Lot 3 : idem |
+|---|---|---|---|
+| v110 6.5 m/s normal | good +0.28 | sans faute · 0.00 · +0.23 | sans faute · 0.00 · +0.23 |
+| v110 6.5 m/s tot | good +0.23 | sans faute · 0.02 · +0.04 | sans faute · 0.00 · +0.13 |
+| v110 6.5 m/s pres | near -0.16 | faute · 0.08 · -0.50 | faute · 0.00 · -0.52 |
+| v110 6.5 m/s loin | far +0.01 | sans faute · 0.10 · -0.14 | faute · 0.00 · -0.35 |
+| v110 9 m/s normal | good +0.32 | sans faute · 0.00 · +0.31 | sans faute · 0.00 · +0.26 |
+| v110 9 m/s tot | far -0.04 | faute · 0.00 · -0.32 | faute · 0.00 · -0.32 |
+| v110 9 m/s pres | near +0.10 | sans faute · 0.10 · -0.10 | sans faute · 0.00 · +0.17 |
+| o100 6.5 m/s normal | good +0.36 | sans faute · 0.00 · +0.28 | sans faute · 0.00 · +0.27 |
+| o100 6.5 m/s tot | good +0.27 | sans faute · 0.00 · +0.11 | sans faute · 0.00 · +0.19 |
+| o100 6.5 m/s pres | near -0.04 | sans faute · 0.09 · -0.77 | faute · 0.00 · -0.77 |
+| o100 6.5 m/s loin | far +0.06 | sans faute · 0.10 · -0.08 | sans faute · 0.00 · +0.08 |
+| o100 9 m/s normal | good +0.48 | sans faute · 0.00 · +0.35 | sans faute · 0.00 · +0.36 |
+| o100 9 m/s tot | far -0.14 | faute · 0.08 · -0.32 | faute · 0.00 · -0.30 |
+| o100 9 m/s pres | good +0.21 | sans faute · 0.06 · +0.01 | sans faute · 0.00 · +0.38 |
+| v140 6.5 m/s normal | good +0.27 | sans faute · 0.00 · +0.20 | sans faute · 0.00 · +0.21 |
+| v140 6.5 m/s tot | good +0.23 | sans faute · 0.00 · +0.05 | sans faute · 0.00 · +0.12 |
+| v140 6.5 m/s pres | near -0.26 | faute · 0.09 · -0.62 | faute · 0.00 · -0.59 |
+| v140 6.5 m/s loin | far +0.03 | sans faute · 0.10 · -0.12 | faute · 0.00 · -0.59 |
+| v140 9 m/s normal | good +0.32 | sans faute · 0.00 · +0.29 | sans faute · 0.00 · +0.24 |
+| v140 9 m/s tot | far -0.06 | faute · 0.00 · -0.55 | faute · 0.00 · -0.55 |
+| v140 9 m/s pres | near +0.06 | sans faute · 0.10 · -0.17 | sans faute · 0.00 · +0.12 |
+| o145 6.5 m/s normal | good +0.28 | sans faute · 0.08 · -0.02 | sans faute · 0.00 · +0.27 |
+| o145 6.5 m/s tot | good +0.29 | sans faute · 0.09 · -0.04 | sans faute · 0.00 · +0.15 |
+| o145 6.5 m/s pres | near -0.28 | faute · 0.02 · -1.21 | faute · 0.00 · -0.70 |
+| o145 6.5 m/s loin | far +0.08 | sans faute · 0.09 · -0.24 | sans faute · 0.00 · +0.13 |
+| o145 9 m/s normal | good +0.49 | sans faute · 0.00 · +0.28 | sans faute · 0.00 · +0.34 |
+| o145 9 m/s tot | far -0.18 | faute · 0.05 · -0.72 | faute · 0.00 · -0.69 |
+| o145 9 m/s pres | near +0.14 | sans faute · 0.07 · -0.01 | sans faute · 0.00 · +0.30 |
+| v160 6.5 m/s normal | good +0.27 | sans faute · 0.00 · +0.24 | sans faute · 0.00 · +0.24 |
+| v160 6.5 m/s tot | good +0.23 | sans faute · 0.00 · +0.06 | sans faute · 0.00 · +0.13 |
+| v160 6.5 m/s pres | near -0.30 | faute · 0.07 · -1.12 | faute · 0.00 · -1.08 |
+| v160 6.5 m/s loin | far +0.04 | sans faute · 0.10 · -0.19 | faute · 0.00 · -0.73 |
+| v160 9 m/s normal | good +0.32 | sans faute · 0.00 · +0.27 | sans faute · 0.00 · +0.21 |
+| v160 9 m/s tot | far -0.07 | faute · 0.00 · -0.70 | faute · 0.00 · -0.70 |
+| v160 9 m/s pres | near +0.03 | sans faute · 0.10 · -0.12 | sans faute · 0.00 · +0.10 |
+| o160 6.5 m/s normal | good +0.19 | sans faute · 0.08 · -0.97 | sans faute · 0.00 · +0.23 |
+| o160 6.5 m/s tot | good +0.30 | sans faute · 0.10 · -0.17 | sans faute · 0.00 · +0.17 |
+| o160 6.5 m/s pres | near -0.34 | refus · 0.00 · -1.61 | refus · 0.00 · -1.61 |
+| o160 6.5 m/s loin | far +0.09 | sans faute · 0.09 · -0.36 | faute · 0.00 · +0.04 |
+| o160 9 m/s normal | good +0.48 | sans faute · 0.00 · +0.31 | sans faute · 0.00 · +0.33 |
+| o160 9 m/s tot | far -0.21 | faute · 0.05 · -0.87 | faute · 0.00 · -0.85 |
+| o160 9 m/s pres | near +0.13 | sans faute · 0.09 · -0.05 | sans faute · 0.00 · +0.30 |
+
+Données : `docs/revue-2026-11-16/lot3/barres-avant-apres.json`.
+
+**Effets de jeu à connaître**
+- Dans la zone « far » ou « near », un appel dont la marge du modèle est légèrement positive (+0,01 à +0,09) est maintenant une faute **si un membre touche visiblement la barre**. Avant, il était jugé sans faute alors que la jambe traversait la barre. Cas concernés :
+  - verticaux appelés trop loin ;
+  - oxer de 1,00 m appelé trop près (marge −0,04, dans la tolérance « effleurée » du modèle).
+- Tous les appels de la zone « good » restent sans faute, avec le sabot le plus bas entre +0,11 et +0,36 m au-dessus de la barre.
+
+**Compromis et limites**
+- **Couplage rendu / jugement.** Le jugement dépend désormais de la pose affichée du cheval WildMesh du joueur. Une autre vue, ou un cheval non joueur, garde le seul jugement par la trajectoire.
+- **Cadence.** La pose est mise à jour à chaque image et le contact est balayé entre deux images. Aucune autre cadence que le pas de 1/30 s n'a été mesurée.
+- **Refus « tout contre »** (oxer de 1,60 m, appel très près) : la barre tombe par la règle existante du refus, le cheval pilant dans l'obstacle, et non par un contact de membre mesuré.
+- **Volumes approchés.** Les membres sont des capsules et le sabot est estimé à partir de ses os ; ce n'est pas le maillage réel.
+
+### 5.6 Vidéos avant / après (`docs/revue-2026-11-16/lot3/`)
+
+- **Cas.** Avant (`ceecd92`) en haut, lot 3 en bas, mêmes conditions que le test :
+  - `cso-o160-6.5-normal` : oxer de 1,60 m, appel normal ;
+  - `cso-o145-6.5-tot` : oxer de 1,45 m, appel tôt ;
+  - `cso-v110-6.5-pres` : vertical de 1,10 m, appel trop près, faute attendue.
+- **Vues.** Profil fixe (`-profil`) et caméra du jeu (`-jeu`).
+- **Vitesses.** Réelle, 30 i/s (`-reel`), et ralenti ×3,75 (`-ralenti`).
+- **Mesures incrustées.** Temps depuis l'appel, progression du saut, distance et hauteur de chaque sabot par rapport à la barre la plus proche, barres tombées, jugement.

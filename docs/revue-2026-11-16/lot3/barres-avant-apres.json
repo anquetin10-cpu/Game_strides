@@ -1,0 +1,1518 @@
+{
+ "apres": [
+  {
+   "cas": "v110 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.8,
+    "zone": "good",
+    "margin": 0.283,
+    "L": 3.97,
+    "H": 1.19
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.235,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v110 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.04,
+    "zone": "good",
+    "margin": 0.225,
+    "L": 4.79,
+    "H": 1.21
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.131,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v110 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.76,
+    "zone": "near",
+    "margin": -0.161,
+    "L": 3.97,
+    "H": 1.19
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.517,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v110 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 3.58,
+    "zone": "far",
+    "margin": 0.015,
+    "L": 4.79,
+    "H": 1.21
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.347,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v110 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 3.12,
+    "zone": "good",
+    "margin": 0.315,
+    "L": 6.24,
+    "H": 1.22
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.261,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v110 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.84,
+    "zone": "far",
+    "margin": -0.039,
+    "L": 6.29,
+    "H": 1.21
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.318,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v110 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.56,
+    "zone": "near",
+    "margin": 0.1,
+    "L": 5.22,
+    "H": 1.19
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.167,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.24,
+    "zone": "good",
+    "margin": 0.362,
+    "L": 4.04,
+    "H": 1.31
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.268,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 2.3,
+    "zone": "good",
+    "margin": 0.274,
+    "L": 4.87,
+    "H": 1.33
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.194,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.66,
+    "zone": "near",
+    "margin": -0.035,
+    "L": 4.04,
+    "H": 1.31
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.771,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o100 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 2.68,
+    "zone": "far",
+    "margin": 0.059,
+    "L": 4.87,
+    "H": 1.33
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.079,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 2.56,
+    "zone": "good",
+    "margin": 0.484,
+    "L": 6.32,
+    "H": 1.33
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.358,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.26,
+    "zone": "far",
+    "margin": -0.136,
+    "L": 6.4,
+    "H": 1.33
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.299,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o100 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.28,
+    "zone": "good",
+    "margin": 0.207,
+    "L": 5.31,
+    "H": 1.31
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.382,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.88,
+    "zone": "good",
+    "margin": 0.274,
+    "L": 4.15,
+    "H": 1.49
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.215,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.08,
+    "zone": "good",
+    "margin": 0.23,
+    "L": 5,
+    "H": 1.51
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.121,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.82,
+    "zone": "near",
+    "margin": -0.256,
+    "L": 4.15,
+    "H": 1.49
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.593,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v140 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 3.58,
+    "zone": "far",
+    "margin": 0.028,
+    "L": 5,
+    "H": 1.51
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.586,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v140 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 3.22,
+    "zone": "good",
+    "margin": 0.316,
+    "L": 6.44,
+    "H": 1.52
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.238,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.9,
+    "zone": "far",
+    "margin": -0.055,
+    "L": 6.57,
+    "H": 1.51
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.551,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v140 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.66,
+    "zone": "near",
+    "margin": 0.06,
+    "L": 5.45,
+    "H": 1.49
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.117,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.26,
+    "zone": "good",
+    "margin": 0.275,
+    "L": 4.31,
+    "H": 1.78
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.265,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 2.2,
+    "zone": "good",
+    "margin": 0.291,
+    "L": 5.19,
+    "H": 1.81
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.152,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.66,
+    "zone": "near",
+    "margin": -0.275,
+    "L": 4.31,
+    "H": 1.78
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.705,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o145 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 2.54,
+    "zone": "far",
+    "margin": 0.077,
+    "L": 5.19,
+    "H": 1.81
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.134,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 2.64,
+    "zone": "good",
+    "margin": 0.488,
+    "L": 6.68,
+    "H": 1.82
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.338,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.2,
+    "zone": "far",
+    "margin": -0.183,
+    "L": 6.82,
+    "H": 1.81
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.688,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o145 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.42,
+    "zone": "near",
+    "margin": 0.139,
+    "L": 5.67,
+    "H": 1.78
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.3,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.94,
+    "zone": "good",
+    "margin": 0.269,
+    "L": 4.26,
+    "H": 1.68
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.237,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.12,
+    "zone": "good",
+    "margin": 0.232,
+    "L": 5.14,
+    "H": 1.71
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.129,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.88,
+    "zone": "near",
+    "margin": -0.298,
+    "L": 4.26,
+    "H": 1.68
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -1.084,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v160 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 3.6,
+    "zone": "far",
+    "margin": 0.035,
+    "L": 5.14,
+    "H": 1.71
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.73,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v160 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 3.3,
+    "zone": "good",
+    "margin": 0.317,
+    "L": 6.6,
+    "H": 1.72
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.207,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.96,
+    "zone": "far",
+    "margin": -0.066,
+    "L": 6.75,
+    "H": 1.71
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.7,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v160 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.72,
+    "zone": "near",
+    "margin": 0.032,
+    "L": 5.6,
+    "H": 1.68
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.105,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.16,
+    "zone": "good",
+    "margin": 0.19,
+    "L": 4.31,
+    "H": 1.96
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.235,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 1.98,
+    "zone": "good",
+    "margin": 0.304,
+    "L": 5.19,
+    "H": 1.99
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.174,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.66,
+    "zone": "near",
+    "margin": -0.335,
+    "L": 4.31,
+    "H": 1.96
+   },
+   "ev": [
+    "refusal"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -1.614,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o160 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 2.3,
+    "zone": "far",
+    "margin": 0.088,
+    "L": 5.19,
+    "H": 1.99
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.039,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o160 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 2.54,
+    "zone": "good",
+    "margin": 0.482,
+    "L": 6.68,
+    "H": 2
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.325,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.98,
+    "zone": "far",
+    "margin": -0.213,
+    "L": 6.82,
+    "H": 1.99
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.848,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o160 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.44,
+    "zone": "near",
+    "margin": 0.134,
+    "L": 5.67,
+    "H": 1.96
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.298,
+   "barres_tombees": 0
+  }
+ ],
+ "avant": [
+  {
+   "cas": "v110 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.8,
+    "zone": "good",
+    "margin": 0.283,
+    "L": 3.97,
+    "H": 1.19
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.229,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v110 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.04,
+    "zone": "good",
+    "margin": 0.225,
+    "L": 4.79,
+    "H": 1.21
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 3,
+   "penetration_max": 0.018,
+   "sabot_le_plus_bas": 0.04,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v110 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.76,
+    "zone": "near",
+    "margin": -0.161,
+    "L": 3.97,
+    "H": 1.19
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 10,
+   "penetration_max": 0.084,
+   "sabot_le_plus_bas": -0.502,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v110 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 3.58,
+    "zone": "far",
+    "margin": 0.015,
+    "L": 4.79,
+    "H": 1.21
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 17,
+   "penetration_max": 0.098,
+   "sabot_le_plus_bas": -0.145,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v110 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 3.12,
+    "zone": "good",
+    "margin": 0.315,
+    "L": 6.24,
+    "H": 1.22
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.309,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v110 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.84,
+    "zone": "far",
+    "margin": -0.039,
+    "L": 6.29,
+    "H": 1.21
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.318,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v110 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.56,
+    "zone": "near",
+    "margin": 0.1,
+    "L": 5.22,
+    "H": 1.19
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 5,
+   "penetration_max": 0.103,
+   "sabot_le_plus_bas": -0.099,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.24,
+    "zone": "good",
+    "margin": 0.362,
+    "L": 4.04,
+    "H": 1.31
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.278,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 2.3,
+    "zone": "good",
+    "margin": 0.274,
+    "L": 4.87,
+    "H": 1.33
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.111,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.66,
+    "zone": "near",
+    "margin": -0.035,
+    "L": 4.04,
+    "H": 1.31
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 7,
+   "penetration_max": 0.092,
+   "sabot_le_plus_bas": -0.773,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 2.68,
+    "zone": "far",
+    "margin": 0.059,
+    "L": 4.87,
+    "H": 1.33
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 18,
+   "penetration_max": 0.102,
+   "sabot_le_plus_bas": -0.077,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 2.56,
+    "zone": "good",
+    "margin": 0.484,
+    "L": 6.32,
+    "H": 1.33
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.346,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o100 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.26,
+    "zone": "far",
+    "margin": -0.136,
+    "L": 6.4,
+    "H": 1.33
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 15,
+   "penetration_max": 0.08,
+   "sabot_le_plus_bas": -0.318,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o100 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.28,
+    "zone": "good",
+    "margin": 0.207,
+    "L": 5.31,
+    "H": 1.31
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 3,
+   "penetration_max": 0.06,
+   "sabot_le_plus_bas": 0.007,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.88,
+    "zone": "good",
+    "margin": 0.274,
+    "L": 4.15,
+    "H": 1.49
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.202,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.08,
+    "zone": "good",
+    "margin": 0.23,
+    "L": 5,
+    "H": 1.51
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.053,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.82,
+    "zone": "near",
+    "margin": -0.256,
+    "L": 4.15,
+    "H": 1.49
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 15,
+   "penetration_max": 0.085,
+   "sabot_le_plus_bas": -0.616,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v140 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 3.58,
+    "zone": "far",
+    "margin": 0.028,
+    "L": 5,
+    "H": 1.51
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 24,
+   "penetration_max": 0.1,
+   "sabot_le_plus_bas": -0.119,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 3.22,
+    "zone": "good",
+    "margin": 0.316,
+    "L": 6.44,
+    "H": 1.52
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.287,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v140 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.9,
+    "zone": "far",
+    "margin": -0.055,
+    "L": 6.57,
+    "H": 1.51
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.551,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v140 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.66,
+    "zone": "near",
+    "margin": 0.06,
+    "L": 5.45,
+    "H": 1.49
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 9,
+   "penetration_max": 0.103,
+   "sabot_le_plus_bas": -0.175,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.26,
+    "zone": "good",
+    "margin": 0.275,
+    "L": 4.31,
+    "H": 1.78
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 9,
+   "penetration_max": 0.076,
+   "sabot_le_plus_bas": -0.021,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 2.2,
+    "zone": "good",
+    "margin": 0.291,
+    "L": 5.19,
+    "H": 1.81
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 9,
+   "penetration_max": 0.093,
+   "sabot_le_plus_bas": -0.041,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.66,
+    "zone": "near",
+    "margin": -0.275,
+    "L": 4.31,
+    "H": 1.78
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 1,
+   "penetration_max": 0.016,
+   "sabot_le_plus_bas": -1.209,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o145 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 2.54,
+    "zone": "far",
+    "margin": 0.077,
+    "L": 5.19,
+    "H": 1.81
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 14,
+   "penetration_max": 0.087,
+   "sabot_le_plus_bas": -0.238,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 2.64,
+    "zone": "good",
+    "margin": 0.488,
+    "L": 6.68,
+    "H": 1.82
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.28,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o145 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.2,
+    "zone": "far",
+    "margin": -0.183,
+    "L": 6.82,
+    "H": 1.81
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 10,
+   "penetration_max": 0.054,
+   "sabot_le_plus_bas": -0.716,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o145 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.42,
+    "zone": "near",
+    "margin": 0.139,
+    "L": 5.67,
+    "H": 1.78
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 4,
+   "penetration_max": 0.07,
+   "sabot_le_plus_bas": -0.006,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.94,
+    "zone": "good",
+    "margin": 0.269,
+    "L": 4.26,
+    "H": 1.68
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.236,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.12,
+    "zone": "good",
+    "margin": 0.232,
+    "L": 5.14,
+    "H": 1.71
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.058,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.88,
+    "zone": "near",
+    "margin": -0.298,
+    "L": 4.26,
+    "H": 1.68
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 4,
+   "penetration_max": 0.065,
+   "sabot_le_plus_bas": -1.125,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v160 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 3.6,
+    "zone": "far",
+    "margin": 0.035,
+    "L": 5.14,
+    "H": 1.71
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 17,
+   "penetration_max": 0.095,
+   "sabot_le_plus_bas": -0.187,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 3.3,
+    "zone": "good",
+    "margin": 0.317,
+    "L": 6.6,
+    "H": 1.72
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.268,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "v160 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 4.96,
+    "zone": "far",
+    "margin": -0.066,
+    "L": 6.75,
+    "H": 1.71
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -0.7,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "v160 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.72,
+    "zone": "near",
+    "margin": 0.032,
+    "L": 5.6,
+    "H": 1.68
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 11,
+   "penetration_max": 0.1,
+   "sabot_le_plus_bas": -0.119,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 6.5 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 1.16,
+    "zone": "good",
+    "margin": 0.19,
+    "L": 4.31,
+    "H": 1.96
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 13,
+   "penetration_max": 0.084,
+   "sabot_le_plus_bas": -0.973,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 6.5 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 1.98,
+    "zone": "good",
+    "margin": 0.304,
+    "L": 5.19,
+    "H": 1.99
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 8,
+   "penetration_max": 0.103,
+   "sabot_le_plus_bas": -0.173,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 6.5 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 0.66,
+    "zone": "near",
+    "margin": -0.335,
+    "L": 4.31,
+    "H": 1.96
+   },
+   "ev": [
+    "refusal"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": -1.615,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o160 6.5 m/s loin",
+   "plan": {
+    "target": "ok",
+    "x": 2.3,
+    "zone": "far",
+    "margin": 0.088,
+    "L": 5.19,
+    "H": 1.99
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 20,
+   "penetration_max": 0.089,
+   "sabot_le_plus_bas": -0.363,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 9 m/s normal",
+   "plan": {
+    "target": "ok",
+    "x": 2.54,
+    "zone": "good",
+    "margin": 0.482,
+    "L": 6.68,
+    "H": 2
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 0,
+   "penetration_max": 0,
+   "sabot_le_plus_bas": 0.306,
+   "barres_tombees": 0
+  },
+  {
+   "cas": "o160 9 m/s tot",
+   "plan": {
+    "target": "ok",
+    "x": 3.98,
+    "zone": "far",
+    "margin": -0.213,
+    "L": 6.82,
+    "H": 1.99
+   },
+   "ev": [
+    "fault"
+   ],
+   "contacts_debout": 11,
+   "penetration_max": 0.051,
+   "sabot_le_plus_bas": -0.871,
+   "barres_tombees": 1
+  },
+  {
+   "cas": "o160 9 m/s pres",
+   "plan": {
+    "target": "ok",
+    "x": 1.44,
+    "zone": "near",
+    "margin": 0.134,
+    "L": 5.67,
+    "H": 1.96
+   },
+   "ev": [
+    "clear"
+   ],
+   "contacts_debout": 5,
+   "penetration_max": 0.088,
+   "sabot_le_plus_bas": -0.053,
+   "barres_tombees": 0
+  }
+ ]
+}

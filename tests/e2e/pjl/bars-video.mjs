@@ -133,9 +133,10 @@ for (const c of CASES) {
     };
     window.__side = () => {
       const C = g.camera;
-      C.position.set(o.x + o.t.x * 7.5, o.ground + 1.7, o.z + o.t.z * 7.5);
-      C.fov = 45; C.updateProjectionMatrix();
-      C.lookAt(o.x, o.ground + 1.2, o.z);
+      // Cadrage : du sol au sommet du saut (≈ 3,5 m), obstacle au centre.
+      C.position.set(o.x + o.t.x * 9, o.ground + 2.0, o.z + o.t.z * 9);
+      C.fov = 50; C.updateProjectionMatrix();
+      C.lookAt(o.x, o.ground + 1.6, o.z);
       C.updateMatrixWorld();
       g.sky.follow(C);
       g.renderer.render(g.scene, C);
