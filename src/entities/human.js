@@ -57,6 +57,8 @@ const FIST = new THREE.Vector3(0, -0.068, 0.012);
 const IN_BOTH = Object.freeze({ l: true, r: true });
 // Vitesse maximale (m/s) à laquelle le profil du flanc vu par le cavalier se resserre (voir animateRiding).
 const FLANK_RELAX = 0.3;
+// Anticipation de l'élargissement du flanc (part de la variation de la dernière image ajoutée, voir animateRiding).
+const FLANK_LEAD = 2;
 // Hauteur du sol sous les pieds : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
 const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
@@ -354,7 +356,18 @@ export class Human {
         // FLANK_RELAX m/s au plus : au changement de pied ou d'allure, le tronc du cheval passe d'un côté à l'autre en
         // deux ou trois images, et le genou qui s'était ouvert se refermait d'autant en une image (à-coups de 25 à 40°).
         const env = keep && (key === 'flankL' || key === 'flankR' || key === 'flank');
-        for (let i = 0; i < v.length; i++) arr[i] = env && i >= 2 ? Math.max(v[i] * k, arr[i] - FLANK_RELAX * k * step) : v[i] * k;
+        // Le cavalier est animé avant la mise à jour du cheval : profil de l'image précédente. Élargissement en cours prolongé
+        // d'une image (FLANK_LEAD), pour que la jambe ne rentre pas dans un flanc qui gonfle (changement de pied en virage).
+        const raw = env ? (this._flankRaw ||= {})[key] || ((this._flankRaw[key] = v.slice())) : null;
+        for (let i = 0; i < v.length; i++) {
+          if (!env || i < 2) {
+            arr[i] = v[i] * k;
+            continue;
+          }
+          const grow = Math.max(0, v[i] - raw[i]) * FLANK_LEAD;
+          arr[i] = Math.max((v[i] + grow) * k, arr[i] - FLANK_RELAX * k * step);
+          raw[i] = v[i];
+        }
       } else rf[key] = key === 'kneeOut' || key === 'mountKneeOut' ? v : v * k;
     }
     // Réglages retirés (cheval WildMesh remplacé par le cheval du jeu) : plus de profil de flanc.

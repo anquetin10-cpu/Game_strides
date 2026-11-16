@@ -275,6 +275,42 @@ function tuckBelow(prim, y) {
   idx.setArray(new Uint32Array(keep));
 }
 
+// Aisance des vêtements du haut (méthode du skill tiers blender-clothing, garment.py : vêtement décalé le long de ses
+// normales, aisance 5–10 mm pour un coton ajusté, 10–20 mm pour une veste ; col et poignets gardés près du corps) : la
+// chemise d'origine collait au corps comme une seconde peau et marquait la jonction épaule–bras. Aisance par zone selon
+// les poids de peau (bras, avant-bras), réduite près du col et des poignets ; la peau couverte est masquée (pas de
+// traversée possible par l'intérieur). Les cibles gardées ne changent pas (décalages relatifs).
+export const EASE = {
+  Cloth_shirt: { torso: 0.006, upper: 0.012, lower: 0.008, edge: 0.002 },
+  Cloth_jacket: { torso: 0.011, upper: 0.016, lower: 0.012, edge: 0.004 },
+};
+function easeGarment(prim, jointNames, e) {
+  const P = prim.getAttribute('POSITION'), N = prim.getAttribute('NORMAL');
+  const J = prim.getAttribute('JOINTS_0'), W = prim.getAttribute('WEIGHTS_0');
+  if (!P || !N || !J || !W) return 0;
+  const pa = P.getArray().slice(), na = N.getArray();
+  const part = jointNames.map((n) => (/^upperarm/.test(n) ? 1 : /^lowerarm/.test(n) ? 2 : /^hand|^(thumb|index|middle|ring|pinky)_/.test(n) ? 3 : /^neck|^head/.test(n) ? 4 : 0));
+  const j = [0, 0, 0, 0], w = [0, 0, 0, 0];
+  for (let i = 0; i < P.getCount(); i++) {
+    J.getElement(i, j);
+    W.getElement(i, w);
+    let up = 0, lo = 0, edge = 0;
+    for (let k = 0; k < 4; k++) {
+      const pt = part[j[k]];
+      if (pt === 1) up += w[k];
+      else if (pt === 2) lo += w[k];
+      else if (pt >= 3) edge += w[k];
+    }
+    const torso = Math.max(0, 1 - up - lo - edge);
+    let d = torso * e.torso + up * e.upper + lo * e.lower + edge * e.edge;
+    // près des poignets (influence de la main) et du col (cou) : aisance ramenée vers le bord
+    d = d * (1 - Math.min(1, edge * 3)) + e.edge * Math.min(1, edge * 3);
+    for (let c = 0; c < 3; c++) pa[i * 3 + c] += na[i * 3 + c] * d;
+  }
+  P.setArray(pa);
+  return P.getCount();
+}
+
 async function build(id, cfg) {
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
   const zones = JSON.parse(readFileSync(await fetchSrc('clothing.json'), 'utf8'));
@@ -350,6 +386,8 @@ async function build(id, cfg) {
     for (const prim of mesh.listPrimitives()) {
       if (mesh.getName() === 'base' && prim !== shaft.prim) culled += hideCoveredSkin(prim, hidden);
       if (/jeans/i.test(prim.getMaterial()?.getName() || '')) tuckBelow(prim, shaft.top - 0.02);
+      const ease = EASE[prim.getMaterial()?.getName()];
+      if (ease) easeGarment(prim, bodyJoints.map((jn) => jn.getName()), ease);
       prim.setAttribute('_CCZONE', null);
     }
   }

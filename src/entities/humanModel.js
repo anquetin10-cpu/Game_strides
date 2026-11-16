@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { boneDefs, BIND_POSE, BONES, rigInfo } from './human/skeleton.js';
 import { humanGeometry, LOD_COUNT } from './human/assets.js';
-import { createHumanMaterial, applyPalette } from './human/material.js';
+import { createHumanMaterial, applyPalette, applyVariation } from './human/material.js';
 import { resolveOutfit, randomOutfit } from './human/outfits.js';
 import { animateHuman as animate } from './human/anim.js';
 
@@ -40,6 +40,11 @@ export function createHumanMesh(outfit = OUTFITS.rider, opts = {}) {
   const geo0 = humanGeometry(desc.body, desc.parts, 0);
   const near = createHumanMaterial(true);
   applyPalette(near, desc.zoneSlot, desc.slots);
+  // Graine de la morphologie : prénom et tenue (le joueur et chaque PNJ gardent leur silhouette et leur visage).
+  const key = (opts.name || '') + JSON.stringify(outfit);
+  let seed = 2166136261;
+  for (let i = 0; i < key.length; i++) seed = Math.imul(seed ^ key.charCodeAt(i), 16777619);
+  applyVariation(near, seed);
   const mesh = new THREE.SkinnedMesh(geo0, near);
   mesh.add(list[0]);
   // Liaison dans la pose du maillage (bras en A), puis retour au repos.

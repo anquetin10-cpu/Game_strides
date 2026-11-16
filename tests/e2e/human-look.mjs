@@ -2,6 +2,7 @@
 // Vues fixes du personnage du joueur à pied (visage, face, profil, dos, trois-quarts) et en selle (profil, trois-quarts,
 // buste), caméra du jeu à pied et à cheval, groupe de PNJ ; mesures de rendu (appels, triangles, géométries).
 // Usage : BASE=http://127.0.0.1:5176 node tests/e2e/human-look.mjs <dossier> [f|m]
+// CLASSIC=1 : personnages procéduraux seulement (réglage « Classiques »).
 import { chromium } from 'playwright';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,7 +18,7 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 const E = (f, a) => page.evaluate(f, a);
-await page.goto(`${BASE}/?autostart`, { timeout: 180000 });
+await page.goto(`${BASE}/?autostart${process.env.CLASSIC ? '&classic' : ''}`, { timeout: 180000 });
 await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 400000 });
 await page.addScriptTag({ content: readFileSync('tests/e2e/autopilot.js', 'utf8') });
 const info = await E(async (AVATAR) => {
