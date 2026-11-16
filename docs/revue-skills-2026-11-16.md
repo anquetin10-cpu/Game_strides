@@ -110,6 +110,15 @@ Les chiffres « après » proviennent de la passe avec captures et vidéo (`jump
   - pied gauche et pied droit séparés ;
   - Safari sur iPhone.
 
+## 2.6 Résultats des tests sur `cdf75b4`
+
+- Tests unitaires (`npx vitest run`) : 28 fichiers, 286/286.
+- `npm run build` : vert.
+- `tests/e2e/pjl/ride.mjs` 844 × 390 : 13/13, dont PJ-04 (saut, réception, retour aux allures) et PJ-05a (sabots au sol à l'appui).
+- `tests/e2e/pjl/legs.mjs` : pénétration des jambes du cavalier de 0 cm en montée, pendant le saut (appel, sommet, réception) et en descente.
+- `tests/e2e/cso.mjs` : 38/38.
+- `tests/e2e/horse-mount.mjs` : 17/17.
+
 ## 3. Suite proposée
 
 1. **S5** : mesurer les sabots contre les barres en CSO (vertical, oxer, appel proche et loin), sans changer le jugement.
