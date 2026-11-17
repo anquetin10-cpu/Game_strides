@@ -159,7 +159,7 @@ function plantFoot(out, outQ, info, x, z, ground, pitch, yaw) {
 // personnage, fournis par Human.update (absent : pas de verrouillage, comportement d'origine).
 const _lk = { x: 0, z: 0, yaw: 0, lift: 0 };
 const STEP_DUR = 0.22; // pas forcé (s)
-const STEP_DEV = 0.22; // écart d'un pied posé à sa place naturelle qui déclenche un pas forcé (unités du modèle ≈ m)
+const STEP_DEV = 0.15; // écart d'un pied posé à sa place naturelle qui déclenche un pas forcé (unités du modèle ≈ m)
 function lockFoot(st, FL, side, stance, u, duty, x, z, yawF, dt, v) {
   const W = st.world;
   _lk.x = x; _lk.z = z; _lk.yaw = yawF; _lk.lift = 0;
@@ -171,6 +171,13 @@ function lockFoot(st, FL, side, stance, u, duty, x, z, yawF, dt, v) {
   if (!L) L = FL[side] = { wx: 0, wz: 0, wh: 0, on: false, lift: null, step: null, cw: null, cwh: 0 };
   const other = FL[side === 'l' ? 'r' : 'l'];
   const done = () => { L.cw = toW(_lk.x, _lk.z, L.cw || {}); L.cwh = W.h + _lk.yaw; return _lk; };
+  // Personnage déplacé d'un coup (téléportation, sortie de véhicule, descente de cheval) ou animation suspendue : pied
+  // trop loin de sa place (> 50 cm) : il y est replacé, sans pas (sinon fente ou genou à terre).
+  const ref = L.step ? { x: L.step.wx, z: L.step.wz } : L.on ? { x: L.wx, z: L.wz } : L.lift ? { x: L.lift.wx, z: L.lift.wz } : null;
+  if (ref) {
+    const q = toL(ref.x, ref.z, {});
+    if (Math.hypot(q.x - x, q.z - z) > 0.5) { L.step = null; L.on = false; L.lift = null; L.cw = null; }
+  }
   // Pas forcé en cours (pied trop décalé : demi-tour, arrêt brusque) : du point de départ à la place naturelle, en arc.
   if (L.step) {
     L.step.t += dt;

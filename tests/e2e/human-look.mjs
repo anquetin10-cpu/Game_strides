@@ -127,7 +127,17 @@ await E(async () => {
   for (let i = 0; i < 90; i++) { window.__K.step(1); await new Promise((r) => setTimeout(r, 30)); }
 });
 for (let i = 0; i < 4; i++) {
-  await shot(`galerie-visage-${i}`, (i) => { const p = window.__gal[i]; window.__K.step(1); return window.__K.cam(p.pos, p.heading, [0, 1.6, 0.8], [0, 1.57, 0], 26); }, i);
+  await shot(`galerie-visage-${i}`, (i) => {
+    const g = window.__game, p = window.__gal[i];
+    window.__K.step(1);
+    // Tête (modèle réaliste, sinon squelette) dans le repère du PNJ : hauteur et avance (contrôle du cadrage).
+    const hb = g.realism?.bodies?.get(p)?.bones?.head || p.bones?.head;
+    let head = null;
+    if (hb) { hb.updateWorldMatrix(true, false); const e = hb.matrixWorld.elements, dx = e[12] - p.pos.x, dz = e[14] - p.pos.z; head = { y: +(e[13] - p.pos.y).toFixed(3), fwd: +(dx * Math.sin(p.heading) + dz * Math.cos(p.heading)).toFixed(3) }; }
+    // Cadrage sur la tête réelle (hommes plus grands que la caméra fixe à 1,6 m d'avant le lot v3).
+    const hy = head ? head.y + 0.08 : 1.57;
+    return { ...window.__K.cam(p.pos, p.heading, [0, hy + 0.03, 0.8], [0, hy, 0], 26), head, heading: +p.heading.toFixed(3) };
+  }, i);
 }
 await shot('galerie', () => { const g = window.__game, hu = g.player.human; window.__K.step(1); return window.__K.cam(hu.pos, hu.heading, [0, 1.3, 1.5], [0, 1.1, 6], 50); });
 writeFileSync(join(OUT, 'mesures.json'), JSON.stringify({ base: BASE, info, metrics, errors }, null, 1));

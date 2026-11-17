@@ -169,7 +169,7 @@ const GRIP_RELAXED = [0.15, 0.25, 0.15];
 const _gQ = new THREE.Quaternion(), _gP = new THREE.Vector3();
 const FACE_KEYS = ['nose_width', 'nose_length', 'nose_height', 'jaw_width', 'chin', 'cheekbones', 'eye_spacing', 'lips', 'mouth_width'];
 const FACE_RANGE = 0.8;
-const BODY_RANGE = { weight: 0.45, muscle: 0.4 };
+const BODY_RANGE = { weight: 0.45, muscle: 0.4, age: 0.62, breast: 0.35 };
 const LOOK_GAIN = 0.45;
 const _q = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
@@ -263,12 +263,17 @@ function realClothShader(sh, kind, unit) {
 // Couches discrètes, repérées autour des yeux (mètres) : rougeurs des joues, du nez, des oreilles et des lèvres, ombre
 // sous les yeux, marbrure fine, lumière directe un peu réchauffée (diffusion sous la peau). Méthode des skills tiers
 // blender-texturing (couches de surface) et realistic-style (diffusion plus chaude que la couleur de base).
-function realSkinShader(sh, unit, eyeC) {
+// Lot v3 : attribut _FACE (scripts/humans/bpy/face_enhance.py) : R occlusion ambiante calculée sur la géométrie
+// (portée 8 cm), G peau sous les cheveux, B tête et cou. L'occlusion assombrit surtout la lumière ambiante (orbites,
+// narines, commissures, oreilles, sous le menton) ; la peau sous les cheveux prend la couleur des racines (uHairRoot) :
+// plus de liseré clair au bord des cheveux. Modèle sans _FACE (ancien fichier) : valeurs neutres.
+function realSkinShader(sh, unit, eyeC, U) {
+  sh.uniforms.uHairRoot = U.uHairRoot;
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', '#include <common>\nvarying vec3 vFace;')
-    .replace('#include <begin_vertex>', `#include <begin_vertex>\nvFace = (position - vec3(${eyeC.x.toFixed(5)}, ${eyeC.y.toFixed(5)}, ${eyeC.z.toFixed(5)})) * ${unit.toFixed(4)};`);
+    .replace('#include <common>', '#include <common>\nvarying vec3 vFace;\nattribute vec4 _face;\nvarying vec4 vFaceM;')
+    .replace('#include <begin_vertex>', `#include <begin_vertex>\nvFaceM = _face;\nvFace = (position - vec3(${eyeC.x.toFixed(5)}, ${eyeC.y.toFixed(5)}, ${eyeC.z.toFixed(5)})) * ${unit.toFixed(4)};`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\nvarying vec3 vFace;\nfloat skBlob(vec3 p, vec3 c, vec3 r) { vec3 d = (p - c) / r; return exp(-dot(d, d)); }')
+    .replace('#include <common>', '#include <common>\nvarying vec3 vFace;\nvarying vec4 vFaceM;\nuniform vec3 uHairRoot;\nfloat skBlob(vec3 p, vec3 c, vec3 r) { vec3 d = (p - c) / r; return exp(-dot(d, d)); }')
     .replace(
       '#include <color_fragment>',
       `#include <color_fragment>
@@ -277,14 +282,28 @@ function realSkinShader(sh, unit, eyeC) {
     float red = 0.55 * skBlob(q, vec3(0.038, -0.03, 0.025), vec3(0.022, 0.018, 0.02))   // pommettes
               + 0.45 * skBlob(q, vec3(0.0, -0.028, 0.06), vec3(0.012, 0.014, 0.02))      // bout du nez
               + 0.5 * skBlob(q, vec3(0.072, -0.01, -0.035), vec3(0.012, 0.03, 0.03))    // oreilles
-              + 0.35 * skBlob(q, vec3(0.0, -0.06, 0.045), vec3(0.02, 0.008, 0.02));      // lèvres
+              + 0.12 * skBlob(q, vec3(0.0, -0.06, 0.045), vec3(0.02, 0.008, 0.02));      // lèvres (lot v3 : la texture suffit)
     float under = skBlob(q, vec3(0.032, -0.012, 0.03), vec3(0.015, 0.006, 0.015));       // sous les yeux
     diffuseColor.rgb *= mix(vec3(1.0), vec3(1.0, 0.8, 0.78), clamp(red, 0.0, 1.0) * 0.85);
     diffuseColor.rgb *= mix(vec3(1.0), vec3(0.9, 0.86, 0.9), under * 0.6);
     diffuseColor.rgb *= 1.0 + (rlNoise(vFace * 260.0) - 0.5) * 0.05;
+    // Peau sous les cheveux : couleur des racines (attribut absent : vFaceM = 0, rien ne change).
+    diffuseColor.rgb = mix(diffuseColor.rgb, uHairRoot, clamp(vFaceM.g, 0.0, 1.0) * 0.9);
   }`,
     )
-    .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n  reflectedLight.directDiffuse *= vec3(1.04, 0.97, 0.94);');
+    .replace(
+      '#include <lights_fragment_end>',
+      `#include <lights_fragment_end>
+  reflectedLight.directDiffuse *= vec3(1.04, 0.97, 0.94);
+  {
+    // Occlusion géométrique, tête et cou seulement (vFaceM.a = 0 : attribut absent, pas d'occlusion).
+    float occ = mix(1.0, smoothstep(0.08, 0.9, vFaceM.r), clamp(vFaceM.b, 0.0, 1.0) * step(0.5, vFaceM.a));
+    vec3 occC = pow(vec3(occ), vec3(0.8, 1.0, 1.15)); // ombre chaude (diffusion sous la peau)
+    reflectedLight.indirectDiffuse *= occC;
+    reflectedLight.directDiffuse *= mix(vec3(1.0), occC, 0.45);
+    reflectedLight.indirectSpecular *= occ;
+  }`,
+    );
   if (!sh.fragmentShader.includes('float rlNoise')) sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + REAL_NOISE.replace('varying vec3 vRl;', ''));
 }
 
@@ -331,13 +350,13 @@ export class RealBody {
         m.customProgramCacheKey = () => 'strides-real-body-lamp';
         // Peau : gants (o.gloves) teints sur les mains (sommets pondérés sur les os des mains et des doigts).
         if (m.name === 'Skin' && o.isSkinnedMesh && gloveAttr(o)) {
-          const U = (this.gloveU ||= { uGlove: { value: new THREE.Color('#18181a') }, uGloveOn: { value: 0 } });
+          const U = (this.gloveU ||= { uGlove: { value: new THREE.Color('#18181a') }, uGloveOn: { value: 0 }, uHairRoot: { value: new THREE.Color('#3b2a1e') } });
           m.onBeforeCompile = (sh) => {
             addCloudShadows(sh, null, true);
             gloveShader(sh, U);
-            realSkinShader(sh, unit, eyeC);
+            realSkinShader(sh, unit, eyeC, U);
           };
-          m.customProgramCacheKey = () => 'strides-real-body-lamp-glove-skin';
+          m.customProgramCacheKey = () => 'strides-real-body-lamp-glove-skin-v3';
         }
         this.mats.push(m);
         if (/^Hair/.test(m.name) || /Eyelash|Eyebrow/.test(m.name)) {
@@ -357,6 +376,9 @@ export class RealBody {
           if (kind === 'breeches' && m.normalScale) m.normalScale.multiplyScalar(0.5);
         }
         if (m.name === 'Skin') m.roughness = 0.58;
+        // Blanc de l'œil (lot v3) : jamais blanc pur (albédo réel de la sclérotique ≈ 0,75, légèrement chaud) ; un œil trop
+        // blanc paraît vitreux et artificiel.
+        if (m.name === 'Eye') m.color.setRGB(0.84, 0.8, 0.78);
       }
     });
     this._initFace(root);
@@ -388,6 +410,8 @@ export class RealBody {
       else if (mat.name === 'Cloth_boots' || mat.name === 'Cloth_tallboots') tint(mat, o.boots);
     });
     if (this.gloveU) {
+      // Racines des cheveux : teinte des cheveux assombrie (peau qui transparaît sous la chevelure).
+      this.gloveU.uHairRoot.value.set(o.hair || '#3b2a1e').multiplyScalar(0.55);
       this.gloveU.uGloveOn.value = o.gloves ? 1 : 0;
       if (o.gloves) this.gloveU.uGlove.value.set(o.gloves);
     }
@@ -482,7 +506,15 @@ export class RealBody {
     const npc = !H.isPlayer;
     F.body_weight = npc ? (rnd() * 2 - 1) * BODY_RANGE.weight : 0;
     F.body_muscle = npc ? (rnd() * 2 - 1) * BODY_RANGE.muscle : 0;
+    // Lot v3 : âge (de la vingtaine à la cinquantaine : forme MakeHuman « age_old », visage et corps ensemble), poitrine,
+    // asymétrie légère propre à chacun (face_asym, scripts/humans/bpy/face_enhance.py). Le joueur : adulte, inchangé
+    // d'une partie à l'autre.
+    F.body_age = npc ? BODY_RANGE.age * Math.pow(rnd(), 1.4) : 0.06;
+    F.body_breast = npc && H.sex !== 'm' ? (rnd() * 2 - 1) * BODY_RANGE.breast : 0;
+    F.face_asym = rnd() * 2 - 1;
     this.eye = { blink: 0, next: 1 + rnd() * 4, t: 0, phase: 0, lx: 0, ly: 0, tx: 0, ty: 0, sacc: rnd() * 2, rnd };
+    // Expressions (formes de face_enhance.py) : humeur de fond propre au personnage, micro-expressions, sourire social.
+    this.expr = { cur: { face_smile: 0, face_frown: 0, lips_press: 0, brow_up: 0, brow_frown: 0 }, base: 0.04 + rnd() * 0.14, micro: null, nextMicro: 2 + rnd() * 5, social: 0, flash: 0, rnd };
     this._setMorphs(F);
   }
 
@@ -517,6 +549,7 @@ export class RealBody {
       head.getWorldQuaternion(_q).invert();
       _v2.applyQuaternion(_q).normalize();
       // repère de la tête : +z devant, +x à gauche du personnage, +y en haut
+      this._camNear = d < 3.5 && _v2.z > 0.6;
       if (d < 7 && _v2.z > 0.35) (tx = Math.max(-1, Math.min(1, _v2.x * 1.6))), (ty = Math.max(-0.6, Math.min(0.6, _v2.y * 1.6)));
       else if (E.sacc <= 0) (E.sacc = 0.6 + E.rnd() * 2.2), (E.tx = (E.rnd() - 0.5) * 0.7), (E.ty = (E.rnd() - 0.5) * 0.35), (tx = E.tx), (ty = E.ty);
     }
@@ -530,7 +563,52 @@ export class RealBody {
     W.look_right = Math.max(0, -E.lx) * LOOK_GAIN;
     W.look_up = Math.max(0, E.ly) * LOOK_GAIN;
     W.look_down = Math.max(0, -E.ly) * LOOK_GAIN;
+    this._expressions(dt, W);
     this._setMorphs(W);
+  }
+
+  // Expressions discrètes (formes ajoutées par scripts/humans/bpy/face_enhance.py ; sans elles, rien ne bouge) :
+  //  - humeur de fond (léger sourire propre à chacun) ;
+  //  - sourire social et bref haussement de sourcils quand la caméra arrive près du visage, de face (salut) ;
+  //  - micro-expressions toutes les 3 à 9 s : lèvres pincées, sourcils froncés ou levés, sourire passager ;
+  //  - concentration en selle (allure vive, saut) : sourcils froncés, lèvres pincées, pas de sourire.
+  _expressions(dt, W) {
+    const X = this.expr;
+    if (!X) return;
+    const H = this.human, E = this.eye;
+    const near = Math.abs(E.lx) < 1 && this._camNear;
+    if (near && X.social < 0.05) X.flash = 1;
+    X.social += ((near ? 1 : 0) - X.social) * (1 - Math.exp(-dt * (near ? 2.5 : 1)));
+    X.flash = Math.max(0, X.flash - dt * 1.6);
+    X.nextMicro -= dt;
+    if (X.nextMicro <= 0) {
+      const r = X.rnd();
+      X.micro = { key: r < 0.35 ? 'lips_press' : r < 0.55 ? 'brow_frown' : r < 0.75 ? 'brow_up' : 'face_smile', amp: 0.25 + X.rnd() * 0.35, t: 0, dur: 0.8 + X.rnd() * 1.6 };
+      X.nextMicro = 3 + X.rnd() * 6;
+    }
+    const T = { face_smile: X.base, face_frown: 0, lips_press: 0, brow_up: 0, brow_frown: 0 };
+    if (X.micro) {
+      const m = X.micro;
+      m.t += dt;
+      const env = Math.sin(Math.PI * Math.min(1, m.t / m.dur));
+      T[m.key] += m.amp * env;
+      if (m.t >= m.dur) X.micro = null;
+    }
+    T.face_smile += 0.5 * X.social;
+    T.brow_up += 0.55 * Math.sin(Math.PI * Math.min(1, (1 - X.flash)) ) * (X.flash > 0 ? 1 : 0);
+    const horse = H.mounted;
+    const effort = horse ? Math.min(1, Math.max(0, ((horse.speed || 0) - 5) / 6) + (horse.jumpT >= 0 ? 0.8 : 0)) : 0;
+    if (effort > 0) {
+      T.face_smile *= 1 - effort;
+      T.brow_frown = Math.max(T.brow_frown, 0.45 * effort);
+      T.lips_press = Math.max(T.lips_press, 0.55 * effort);
+    }
+    // Les muscles du visage ne sautent pas : approche en ~0,15 s.
+    const k = 1 - Math.exp(-dt * 7);
+    for (const key in T) {
+      X.cur[key] += (Math.min(1, T[key]) - X.cur[key]) * k;
+      W[key] = X.cur[key];
+    }
   }
 
   // Casquette (couvre-chef porté à pied) : calotte et visière, fixées à l'os de la tête comme le casque.

@@ -14,7 +14,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
-import { mergeDocuments, prune, dedup, unpartition, meshopt, reorder } from '@gltf-transform/functions';
+import { mergeDocuments, prune, dedup, unpartition, meshopt, reorder, dequantize } from '@gltf-transform/functions';
 import { MeshoptEncoder, MeshoptDecoder } from 'meshoptimizer';
 import { mat4, vec3 } from './mat.mjs';
 
@@ -28,12 +28,13 @@ const SRC = 'https://raw.githubusercontent.com/kblood/CharacterCreator/852e48f31
 const OPTIONAL = new Set(['clothing_jacket']);
 const CHARACTERS = {
   rider_f: {
-    morphs: { gender_female: 1, muscle_max: 0.3, weight_min: 0.2, proportions_ideal: 0.6, breast_cup_min: 0.3, height_tall: 0.1 },
+    // age_old 0,18 (lot v3) : adulte d'une trentaine d'années au lieu du visage poupin par défaut (25 ans MakeHuman).
+    morphs: { gender_female: 1, muscle_max: 0.3, weight_min: 0.2, proportions_ideal: 0.6, breast_cup_min: 0.3, height_tall: 0.1, age_old: 0.18, face_cheekbones_incr: 0.35, face_jaw_width_decr: 0.15 },
     hair: 'hair_ponytail01',
     clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots', 'clothing_jacket'],
   },
   rider_m: {
-    morphs: { gender_male: 1, muscle_max: 0.45, weight_min: 0.1, proportions_ideal: 0.6, height_tall: 0.25 },
+    morphs: { gender_male: 1, muscle_max: 0.45, weight_min: 0.1, proportions_ideal: 0.6, height_tall: 0.25, age_old: 0.22, face_cheekbones_incr: 0.3, face_chin_incr: 0.25 },
     hair: 'hair_short02',
     clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots', 'clothing_jacket'],
   },
@@ -70,7 +71,8 @@ function weightsFor(names, base) {
 // les cheveux ni les globes oculaires, qui les traversaient)
 export const KEEP_FACE = ['nose_width', 'nose_length', 'nose_height', 'jaw_width', 'chin', 'cheekbones', 'eye_spacing', 'lips', 'mouth_width'];
 export const KEEP_EYES = ['blink_left', 'blink_right', 'look_left', 'look_right', 'look_up', 'look_down'];
-export const KEEP_BODY = [['weight', 'weight_min', 'weight_max'], ['muscle', 'muscle_min', 'muscle_max']];
+// Âge (signé : vieillir > 0 ; le jeu ne l'emploie que vers l'âge mûr) et poitrine : diversité des PNJ (lot v3).
+export const KEEP_BODY = [['weight', 'weight_min', 'weight_max'], ['muscle', 'muscle_min', 'muscle_max'], ['age', 'age_child', 'age_old'], ['breast', 'breast_cup_min', 'breast_cup_max']];
 const HEAD_MESHES = new Set(['base', 'Eyebrows', 'Eyelashes', 'Eyes']);
 // Liste [nom gardé, [[nom source, coefficient], …]] pour un maillage.
 function keptTargets(meshName) {
@@ -93,12 +95,58 @@ function targetDelta(t, sem) {
   for (let k = 0; k < da.length; k++) f[k] = da[k] * q;
   return f;
 }
+// Âge (lot v3) : la forme MakeHuman change aussi la stature (tête plus basse), alors que le squelette du jeu ne suit pas
+// les formes : appliquée telle quelle, elle étirait le cou. Gardée seulement sur la tête (poids de l'os head), moins le
+// déplacement moyen de la tête (mesuré une fois sur la peau, le même pour cheveux, yeux, sourcils et cils) : les traits
+// vieillissent, le crâne reste en place.
+const AGE = { headIndex: -1, mean: null };
+function headWeights(prim) {
+  const J = prim.getAttribute('JOINTS_0'), W = prim.getAttribute('WEIGHTS_0');
+  const n = prim.getAttribute('POSITION').getCount();
+  const out = new Float32Array(n);
+  if (!J || !W || AGE.headIndex < 0) return out;
+  const j = [], w = [];
+  for (let i = 0; i < n; i++) {
+    J.getElement(i, j); W.getElement(i, w);
+    for (let k = 0; k < 4; k++) if (j[k] === AGE.headIndex) out[i] += w[k];
+  }
+  return out;
+}
+function ageDelta(prim, names, sem) {
+  const acc = new Float32Array(prim.getAttribute('POSITION').getCount() * 3);
+  for (const [src, c] of [['age_old', 0.5], ['age_child', -0.5]]) {
+    const i = names.indexOf(src);
+    if (i < 0) continue;
+    const d = targetDelta(prim.listTargets()[i], sem);
+    if (d) for (let k = 0; k < acc.length; k++) acc[k] += c * d[k];
+  }
+  return acc;
+}
+function measureAge(prim, names) {
+  const hw = headWeights(prim), d = ageDelta(prim, names, 'POSITION');
+  const m = [0, 0, 0];
+  let n = 0;
+  for (let i = 0; i < hw.length; i++) if (hw[i] > 0.95) (m[0] += d[i * 3]), (m[1] += d[i * 3 + 1]), (m[2] += d[i * 3 + 2]), n++;
+  AGE.mean = n ? m.map((v) => v / n) : [0, 0, 0];
+}
+
 // Construit les cibles gardées (avant la cuisson, qui retire toutes les cibles d'origine).
 function keepMorphs(doc, prim, names, kept) {
   const res = [];
   const n = prim.getAttribute('POSITION').getCount();
   for (const [name, parts] of kept) {
     const t = doc.createPrimitiveTarget(name);
+    if (name === 'body_age') {
+      const hw = headWeights(prim);
+      for (const sem of ['POSITION', 'NORMAL']) {
+        if (!prim.getAttribute(sem)) continue;
+        const d = ageDelta(prim, names, sem);
+        for (let i = 0; i < n; i++) for (let c = 0; c < 3; c++) d[i * 3 + c] = (d[i * 3 + c] - (sem === 'POSITION' ? AGE.mean[c] : 0)) * hw[i];
+        t.setAttribute(sem, doc.createAccessor().setType('VEC3').setArray(d));
+      }
+      res.push(t);
+      continue;
+    }
     for (const sem of ['POSITION', 'NORMAL']) {
       if (!prim.getAttribute(sem)) continue;
       const acc = new Float32Array(n * 3);
@@ -355,6 +403,11 @@ async function build(id, cfg) {
   // Morphologie figée, peau masquée, bouche fermée.
   const morphW = cfg.morphs;
   let culled = 0;
+  AGE.headIndex = bodyJoints.findIndex((j) => j.getName() === 'head');
+  {
+    const base = root.listMeshes().find((m) => m.getName() === 'base');
+    measureAge(base.listPrimitives()[0], base.getExtras()?.targetNames || []);
+  }
   for (const mesh of root.listMeshes()) {
     const names = mesh.getExtras()?.targetNames || [];
     const w = weightsFor(names, morphW);
@@ -401,6 +454,17 @@ async function build(id, cfg) {
   };
   for (const n of root.listNodes()) if (n.getName() === 'Root' && !keep.has(n)) drop(n);
   refitSkeleton(doc, joints, morphW);
+  // Étape intermédiaire (STAGE=raw) : GLB non compressé pour Blender (scripts/humans/bpy/face_enhance.py), puis
+  // scripts/real/finalize-humans.mjs compresse son export vers public/real.
+  if (process.env.STAGE === 'raw') {
+    await doc.transform(unpartition(), prune(), dedup(), dequantize());
+    for (const e of root.listExtensionsUsed()) if (/quantization|meshopt/i.test(e.extensionName)) e.dispose();
+    const dir = join(ROOT, 'node_modules/.cache/real-build');
+    mkdirSync(dir, { recursive: true });
+    await io.write(join(dir, `${id}.raw.glb`), doc);
+    console.log(`${id}: étape intermédiaire ${join(dir, id + '.raw.glb')}`);
+    return;
+  }
   await doc.transform(unpartition(), prune(), dedup(), reorder({ encoder: MeshoptEncoder }), meshopt({ encoder: MeshoptEncoder, level: 'medium', quantizationVolume: 'scene' }));
   mkdirSync(OUT, { recursive: true });
   const file = join(OUT, `${id}.glb`);
