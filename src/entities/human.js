@@ -228,6 +228,10 @@ export class Human {
     this._lastHeading = this.heading;
     this.anim.turnRate = this.anim.turnRate * 0.6 + (dh / step) * 0.4;
     const pose = this.carrying ? 'carry' : this.pose === 'stand' || this.pose === 'walk' ? 'walk' : this.pose;
+    // Repère du monde pour les pieds posés (anim.js, lockFoot) : seulement au sol, à pied (pas au volant, pas porté).
+    const W = (this.anim.world ||= { x: 0, z: 0, h: 0, s: 1 });
+    W.x = this.pos.x; W.z = this.pos.z; W.h = this.heading; W.s = this.mesh.scale.x;
+    if (this.mesh.parent !== this.game.scene) this.anim.world = null;
     animateHuman(this.bones, pose, this.anim, step);
   }
 

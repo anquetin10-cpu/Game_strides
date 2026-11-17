@@ -50,16 +50,17 @@ await E((AVATAR) => {
     g.renderer.render(g.scene, g.camera);
   };
   for (let i = 0; i < 20; i++) K.step();
-  // Pieds : os des pieds (squelette du jeu) pour mesurer le glissement d'un pied posé.
+  // Pieds : os des orteils (squelette du jeu) pour mesurer le glissement d'un pied posé.
   K.feet = () => {
     const out = [];
     hu.mesh.updateMatrixWorld(true);
-    hu.mesh.skeleton.bones.forEach((b) => { if (/foot/i.test(b.name)) { const e = b.matrixWorld.elements; out.push([e[12], e[13], e[14]]); } });
+    hu.mesh.skeleton.bones.forEach((b) => { if (/toe/i.test(b.name)) { const e = b.matrixWorld.elements; out.push([e[12], e[13] - g.terrain.getHeight(e[12], e[14]), e[14]]); } });
     return out;
   };
 }, AVATAR);
 // Plan : [nombre d'images, consigne (cap en x, intensité)] — départ, marche, course, ralentissement, arrêt, demi-tour, attente.
-const PLAN = [[20, 0, 0], [70, -1, 0.4], [60, -1, 1], [20, -1, 0.4], [30, 0, 0], [45, 1, 0.4], [30, 0, 0]];
+// Dernière étape : demi-tour sur place (cap imposé à 2,6 rad/s, sans avancer), comme un PNJ qui se tourne vers le joueur.
+const PLAN = [[20, 0, 0], [70, -1, 0.4], [60, -1, 1], [20, -1, 0.4], [30, 0, 0], [45, 1, 0.4], [30, 0, 0], [40, 0, -1], [30, 0, 0]];
 const VIEWS = { profil: [[0, 1.1, 4.2], 32], troisquarts: [[-2.6, 1.5, 3.2], 34] };
 for (const v of Object.keys(VIEWS)) mkdirSync(join(OUT, v), { recursive: true });
 const rows = [];
@@ -68,30 +69,33 @@ for (const [n, dx, mag] of PLAN) {
   for (let i = 0; i < n; i++, k++) {
     const r = await E(([dx, mag]) => {
       const g = window.__game, A = window.__auto;
-      if (mag) A.steer(dx, 0, mag); else g.input.setVirtualMove(0, 0);
+      if (mag > 0) A.steer(dx, 0, mag); else g.input.setVirtualMove(0, 0);
+      // Rotation sur place : le cap tourne, la position reste (le joueur ne bouge pas : vitesse nulle).
+      if (mag < 0) { const hu = g.player.human; hu.heading += 2.6 / 30; if (g.player.setHeading) g.player.setHeading(hu.heading); }
       window.__K.step();
       const hu = g.player.human;
       return { x: hu.pos.x, speed: hu.speed ?? null, feet: window.__K.feet() };
     }, [dx, mag]);
     rows.push({ k, mag, ...r });
-    for (const [v, [off, fov]] of Object.entries(VIEWS)) {
+    if (!process.env.NOSHOT) for (const [v, [off, fov]] of Object.entries(VIEWS)) {
       await E(([off, fov]) => window.__K.cam(off, fov), [off, fov]);
       await page.screenshot({ path: join(OUT, v, `${String(k).padStart(4, '0')}.jpg`), type: 'jpeg', quality: 82, timeout: 240000 });
     }
   }
 }
-// Glissement : un pied posé (cheville à moins de 1,5 cm au-dessus de sa hauteur la plus basse sur ce sol plat, sur deux
-// images de suite) ne devrait pas avancer ; on mesure son déplacement horizontal d'une image à l'autre.
+// Glissement : un pied posé (os des orteils, qui reste au sol quand le talon se lève, à moins de 2 cm au-dessus de sa hauteur la plus basse au-dessus du terrain, sur deux
+// trois images de suite : un pied qui se pose ou se lève ne compte pas) ne devrait pas avancer ; on mesure son déplacement horizontal d'une image à l'autre.
 const nf = rows[0].feet.length;
-const minY = Array.from({ length: nf }, (_, j) => Math.min(...rows.map((r) => r.feet[j][1])));
+const minY = Array.from({ length: nf }, (_, j) => { const a = rows.map((r) => r.feet[j][1]).sort((x, y) => x - y); return a[Math.floor(a.length * 0.05)]; }); // 5e centile : une image aberrante ne fausse pas la référence
 const slips = [];
-for (let i = 1; i < rows.length; i++) for (let j = 0; j < nf; j++) {
+for (let i = 1; i < rows.length - 1; i++) for (let j = 0; j < nf; j++) {
   const a = rows[i - 1].feet[j], b = rows[i].feet[j];
-  if (a[1] - minY[j] < 0.015 && b[1] - minY[j] < 0.015) slips.push({ k: i, mag: rows[i].mag, s: Math.hypot(b[0] - a[0], b[2] - a[2]) });
+  const n = rows[i + 1].feet[j];
+  if (a[1] - minY[j] < 0.02 && b[1] - minY[j] < 0.02 && n[1] - minY[j] < 0.02) slips.push({ k: i, mag: rows[i].mag, s: Math.hypot(b[0] - a[0], b[2] - a[2]) });
 }
 const byMag = {};
 for (const s of slips) (byMag[s.mag] ||= []).push(s.s);
 const stats = Object.fromEntries(Object.entries(byMag).map(([m, a]) => [m, { n: a.length, median_cm: +(a.sort((x, y) => x - y)[a.length >> 1] * 100).toFixed(2), max_cm: +(Math.max(...a) * 100).toFixed(2) }]));
-writeFileSync(join(OUT, 'mesures.json'), JSON.stringify({ base: BASE, frames: k, slip: stats, errors }, null, 1));
+writeFileSync(join(OUT, 'mesures.json'), JSON.stringify({ base: BASE, frames: k, slip: stats, errors, rows: rows.map((r) => ({ k: r.k, mag: r.mag, x: +r.x.toFixed(3), feet: r.feet.map((f) => f.map((v) => +v.toFixed(3))) })) }));
 console.log('images', k, 'glissement du pied posé (cm/image) par intensité', JSON.stringify(stats), 'erreurs', errors.slice(0, 3));
 await browser.close();

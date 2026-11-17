@@ -151,6 +151,79 @@ function plantFoot(out, outQ, info, x, z, ground, pitch, yaw) {
   return out;
 }
 
+// ---------- Pieds posés (verrouillage au sol) ----------
+// Le pied en appui garde sa position et son orientation dans le monde (repère du terrain), quelle que soit la rotation
+// ou l'accélération du corps : plus de pied qui glisse en virage, au départ ou à l'arrêt, ni de pivot sur place glissé.
+// En suspension, le pied part de là où il s'est levé et rejoint la cible de pose (courbe douce) ; à l'arrêt, un pied
+// trop décalé (corps qui a tourné ou dérivé) déclenche un pas. st.world = { x, z, h, s } : position, cap et échelle du
+// personnage, fournis par Human.update (absent : pas de verrouillage, comportement d'origine).
+const _lk = { x: 0, z: 0, yaw: 0, lift: 0 };
+const STEP_DUR = 0.22; // pas forcé (s)
+const STEP_DEV = 0.22; // écart d'un pied posé à sa place naturelle qui déclenche un pas forcé (unités du modèle ≈ m)
+function lockFoot(st, FL, side, stance, u, duty, x, z, yawF, dt, v) {
+  const W = st.world;
+  _lk.x = x; _lk.z = z; _lk.yaw = yawF; _lk.lift = 0;
+  if (!W) return _lk;
+  const c = Math.cos(W.h), s = Math.sin(W.h), sc = W.s || 1;
+  const toW = (lx, lz, o) => { o.x = W.x + sc * (lx * c + lz * s); o.z = W.z + sc * (-lx * s + lz * c); return o; };
+  const toL = (wx, wz, o) => { const dx = (wx - W.x) / sc, dz = (wz - W.z) / sc; o.x = dx * c - dz * s; o.z = dx * s + dz * c; return o; };
+  let L = FL[side];
+  if (!L) L = FL[side] = { wx: 0, wz: 0, wh: 0, on: false, lift: null, step: null, cw: null, cwh: 0 };
+  const other = FL[side === 'l' ? 'r' : 'l'];
+  const done = () => { L.cw = toW(_lk.x, _lk.z, L.cw || {}); L.cwh = W.h + _lk.yaw; return _lk; };
+  // Pas forcé en cours (pied trop décalé : demi-tour, arrêt brusque) : du point de départ à la place naturelle, en arc.
+  if (L.step) {
+    L.step.t += dt;
+    const k = Math.min(1, L.step.t / STEP_DUR), e = k * k * (3 - 2 * k);
+    const q = toL(L.step.wx, L.step.wz, {});
+    _lk.x = q.x + (x - q.x) * e;
+    _lk.z = q.z + (z - q.z) * e;
+    _lk.yaw = wrap(L.step.wh - W.h) * (1 - e) + yawF * e;
+    _lk.lift = 0.07 * Math.sin(Math.PI * k);
+    if (k >= 1) {
+      L.step = null;
+      const w = toW(x, z, {});
+      L.wx = w.x; L.wz = w.z; L.wh = W.h + yawF; L.on = true; L.lift = null;
+    }
+    return done();
+  }
+  const idle = !(v > 0.05 || FL.need > 0 || stance);
+  if (stance || idle) {
+    if (!L.on) {
+      // Posé là où le pied se trouve (fin de suspension, ou pied arrêté en l'air à l'arrêt), jamais téléporté.
+      const w = L.cw && L.lift ? L.cw : toW(x, z, {});
+      L.wx = w.x; L.wz = w.z; L.wh = L.cw && L.lift ? L.cwh : W.h + yawF; L.on = true; L.lift = null;
+    }
+    toL(L.wx, L.wz, _lk);
+    _lk.yaw = wrap(L.wh - W.h);
+    const dev = Math.hypot(_lk.x - x, _lk.z - z), dyaw = Math.abs(wrap(_lk.yaw - yawF));
+    // Trop loin de sa place (le corps a tourné ou changé de sens) : pas forcé, un pied à la fois.
+    if ((dev > STEP_DEV || dyaw > 0.9) && !(other && other.step)) {
+      L.step = { wx: L.wx, wz: L.wz, wh: L.wh, t: 0 };
+      L.on = false;
+      return done();
+    }
+    // À l'arrêt : un pas dès que le pied posé s'écarte de sa place naturelle (6 cm) ou a tourné de plus de 20°.
+    if (idle && (dev > 0.06 || dyaw > 0.35) && FL.need <= 0) FL.need = 1.2;
+    return done();
+  }
+  // Suspension : du point de lever (fixé dans le monde) à la cible de pose, au rythme de la suspension.
+  if (L.on) { L.lift = { wx: L.wx, wz: L.wz, wh: L.wh }; L.on = false; }
+  if (!L.lift) return done();
+  const k = Math.min(1, Math.max(0, (u - duty) / (1 - duty)));
+  const e = k * k * (3 - 2 * k);
+  const q = toL(L.lift.wx, L.lift.wz, {});
+  _lk.x = q.x + (x - q.x) * e;
+  _lk.z = q.z + (z - q.z) * e;
+  _lk.yaw = wrap(L.lift.wh - W.h) * (1 - e) + yawF * e;
+  return done();
+}
+function wrap(a) {
+  while (a > Math.PI) a -= TAU;
+  while (a < -Math.PI) a += TAU;
+  return a;
+}
+
 // ---------- Locomotion ----------
 function locomotion(B, P, st, dt, info, opts) {
   const v = Math.max(0, st.speed || 0);
@@ -158,7 +231,11 @@ function locomotion(B, P, st, dt, info, opts) {
   const run = sstep(2.2, 3.1, v);
   // pas sur place quand on pivote à l'arrêt (évite les pieds qui glissent)
   const pivot = sstep(0.9, 2.6, Math.abs(st.turnRate || 0)) * (1 - sstep(0.2, 0.5, v));
-  const moving = Math.max(sstep(0.05, 0.35, v), pivot * 0.75);
+  // Pieds verrouillés au sol (voir lockFoot) : à l'arrêt, un pied que le corps a trop fait tourner ou dériver déclenche
+  // un vrai pas (au lieu de glisser) ; le pas dure un cycle complet.
+  const FL = st._fl || (st._fl = { l: null, r: null, need: 0, u: { l: 0, r: 0 } });
+  if (FL.need > 0) FL.need -= dt;
+  const moving = Math.max(sstep(0.05, 0.35, v), pivot * 0.75, FL.need > 0 ? 0.75 : 0);
   // cadence (foulées/s) et facteur de service d'après les données de marche et de course
   const fw = 0.6 + 0.2 * Math.min(v, 2.6);
   const fr = 1.15 + 0.075 * Math.min(v, 8);
@@ -230,7 +307,8 @@ function locomotion(B, P, st, dt, info, opts) {
     const x = sg * stepW;
     const yawF = sg * (0.1 + 0.04 * idle);
     const foot = P.feet[side];
-    plantFoot(foot.pos, foot.q, info, x, z, y * moving, pitch * moving, yawF);
+    const lk = lockFoot(st, FL, side, u < duty && moving > 0.02, u, duty, x, z, yawF, dt, v);
+    plantFoot(foot.pos, foot.q, info, lk.x, lk.z, y * moving + lk.lift, pitch * moving, lk.yaw);
     foot.toe = toe * moving;
   }
   // Abaisser le bassin si une cheville est hors de portée.
@@ -462,6 +540,10 @@ const flankOf = (fit, sg) => (sg > 0 ? fit.flankL : fit.flankR) || fit.flank || 
 // Recherche continue (dichotomie) de la plus petite ouverture du genou, puis du plus petit écart du pied : la solution
 // varie continûment avec le profil du flanc. (Auparavant, ouverture et écart avançaient par crans de 0,15 et de 0,4 à
 // 3 cm, en nombre variable d'une image à l'autre : le genou pivotait de 15 à 35° en une image au galop.)
+const THIGH_MARGIN = 0.02;
+// Cuisse à mi-longueur et aux trois quarts (vers le genou) ; au-dessus, elle repose sur la selle.
+const _ht = new THREE.Vector3();
+const thighGap = (gap, hip, knee) => Math.min(gap(_ht.copy(hip).lerp(knee, 0.5)), gap(_ht.copy(hip).lerp(knee, 0.75))) - THIGH_MARGIN;
 const POLE_OPEN = 0.9; // composante latérale du pôle au-delà de laquelle ouvrir le genou ne le déplace plus
 function hugFlank(P, side, sg, foot, pole, flank, clr, info, xMax = Infinity) {
   const hip = P.mp[BN[side].Thigh];
@@ -473,7 +555,11 @@ function hugFlank(P, side, sg, foot, pole, flank, clr, info, xMax = Infinity) {
     kneeOf(hip, foot, pole, a, b, _hk);
     let gs = 0;
     for (const t of [0.35, 0.65]) gs = Math.min(gs, gap(_hp.copy(_hk).lerp(foot, t)));
-    return { gk: gap(_hk), gs };
+    // Cuisse (aux trois quarts, près du genou) : contrôlée avec le genou, que l'ouverture écarte aussi (la cuisse
+    // traversait le flanc en virage à droite, audit v2 : 2 à 3 cm).
+    // Marge de 2 cm en plus : le profil du flanc (fourni par le cheval, inchangé) est relevé autour de l'étrier, la cuisse
+    // passe plus en avant, où le tronc est plus large.
+    return { gk: Math.min(gap(_hk), thighGap(gap, hip, _hk)), gs };
   };
   let g = gaps();
   if (g.gs >= -1e-4 && g.gk >= -1e-4) return;
@@ -530,6 +616,39 @@ function hugFlank(P, side, sg, foot, pole, flank, clr, info, xMax = Infinity) {
   let lo = pxNow, hi = lim;
   for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; setPole(m); if (gaps().gs >= -1e-4) hi = m; else lo = m; }
   setPole(hi);
+}
+
+// Continuité dans le temps de la jambe collée au flanc (hugFlank cherche à chaque image la plus petite ouverture du genou
+// et le plus petit écart du pied : quand le flanc respire ou change de côté, cette solution minimale basculait de 20 à 30°
+// en une image, même au pas en ligne droite — audit v2). Mémoire par côté : la jambe se referme progressivement
+// (HUG_RELAX, FOOT_RELAX : sans risque, une jambe plus ouverte est plus loin du flanc) et s'ouvre à vitesse limitée
+// (HUG_OPEN, FOOT_OPEN) sauf si la limite laissait le genou ou le tibia à plus de 1 cm dans le flanc : la solution exacte
+// est alors appliquée (pas de traversée pour lisser).
+const HUG_OPEN = 2.4, HUG_RELAX = 0.12; // composante latérale du pôle du genou, par seconde (refermeture lente : la jambe garde l'ouverture de son cycle de foulée)
+const FOOT_OPEN = 0.6, FOOT_RELAX = 0.02; // écart latéral du pied, m/s
+function hugMemory(R, P, side, sg, foot, pole, flank, clr, info, dt, t) {
+  const M = (R.hug ||= {});
+  const m = M[side];
+  const py = pole.y;
+  const px = pole.x * sg, fx = foot.x * sg;
+  if (m && t - m.t < 0.25 && dt > 0) {
+    const apx = px < m.px ? Math.max(px, m.px - HUG_RELAX * dt) : Math.min(px, m.px + HUG_OPEN * dt);
+    const afx = fx < m.fx ? Math.max(fx, m.fx - FOOT_RELAX * dt) : Math.min(fx, m.fx + FOOT_OPEN * dt);
+    const cpx = Math.min(apx, 0.97);
+    pole.set(sg * cpx, py, Math.sqrt(Math.max(0.0001, 1 - cpx * cpx - py * py)));
+    foot.x = sg * afx;
+    // Contrôle : genou et tibia (35 et 65 %) hors du flanc à 1 cm près ; sinon, solution exacte.
+    const hip = P.mp[BN[side].Thigh];
+    kneeOf(hip, foot, pole, info.thighLen, info.shinLen, _hk);
+    const gap = (p) => p.x * sg - (flankAt(flank, p.y) + clr);
+    let g = Math.min(gap(_hk), thighGap(gap, hip, _hk));
+    for (const k of [0.35, 0.65]) g = Math.min(g, gap(_hp.copy(_hk).lerp(foot, k)));
+    if (g < -0.01) {
+      pole.set(sg * px, py, Math.sqrt(Math.max(0.0001, 1 - px * px - py * py)));
+      foot.x = sg * fx;
+    }
+  }
+  M[side] = { px: pole.x * sg, fx: foot.x * sg, t };
 }
 
 function riding(B, P, st, dt, info) {
@@ -710,6 +829,7 @@ function riding(B, P, st, dt, info) {
         }
         if (!raised) break;
       }
+      hugMemory(R, P, side, sg, f.pos, pole, fl, fit.legClear || 0, info, dt, st.t || 0);
     }
     solveLeg(B, P, side, f.pos, f.q, 0, pole);
   }
