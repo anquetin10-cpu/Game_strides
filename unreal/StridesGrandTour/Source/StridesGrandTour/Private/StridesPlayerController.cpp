@@ -28,6 +28,7 @@ void AStridesPlayerController::SetupInputComponent()
 	GaitDownAction = MakeAction(this, TEXT("GaitDown"), EInputActionValueType::Boolean);
 	SaveAction = MakeAction(this, TEXT("Save"), EInputActionValueType::Boolean);
 	LoadAction = MakeAction(this, TEXT("Load"), EInputActionValueType::Boolean);
+	DemoCourseAction = MakeAction(this, TEXT("DemoCourse"), EInputActionValueType::Boolean);
 	// Clavier ZQSD/WASD et flèches, manette (stick gauche / droit, A, X), tactile : joystick virtuel (axes de manette).
 	auto Axis = [this](const FKey& K, bool SwizzleY, bool Negate)
 	{
@@ -50,6 +51,7 @@ void AStridesPlayerController::SetupInputComponent()
 	Context->MapKey(GaitDownAction, EKeys::LeftControl);
 	Context->MapKey(SaveAction, EKeys::F5);
 	Context->MapKey(LoadAction, EKeys::F9);
+	Context->MapKey(DemoCourseAction, EKeys::F8);
 	if (UEnhancedInputComponent* EI = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		EI->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AStridesPlayerController::OnMove);
@@ -61,6 +63,7 @@ void AStridesPlayerController::SetupInputComponent()
 		EI->BindAction(GaitDownAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnGaitDown);
 		EI->BindAction(SaveAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnSave);
 		EI->BindAction(LoadAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnLoad);
+		EI->BindAction(DemoCourseAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnDemoCourse);
 	}
 	InstallInputContext();
 }
@@ -126,3 +129,4 @@ void AStridesPlayerController::OnGaitUp() { if (AStridesHorse* H = Cast<AStrides
 void AStridesPlayerController::OnGaitDown() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ChangeGait(-1); }
 void AStridesPlayerController::OnSave() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->SaveNow(this); }
 void AStridesPlayerController::OnLoad() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->LoadNow(this); }
+void AStridesPlayerController::OnDemoCourse() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ToggleDemoCourse(); }

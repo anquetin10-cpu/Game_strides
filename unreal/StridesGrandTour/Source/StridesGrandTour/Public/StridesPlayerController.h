@@ -25,6 +25,7 @@ private:
 	void OnGaitDown();
 	void OnSave();
 	void OnLoad();
+	void OnDemoCourse();
 	UPROPERTY() TObjectPtr<class UInputMappingContext> Context;
 	UPROPERTY() TObjectPtr<class UInputAction> MoveAction;
 	UPROPERTY() TObjectPtr<class UInputAction> LookAction;
@@ -34,5 +35,6 @@ private:
 	UPROPERTY() TObjectPtr<class UInputAction> GaitDownAction;
 	UPROPERTY() TObjectPtr<class UInputAction> SaveAction;
 	UPROPERTY() TObjectPtr<class UInputAction> LoadAction;
+	UPROPERTY() TObjectPtr<class UInputAction> DemoCourseAction;
 	class AStridesRider* Rider() const;
 };

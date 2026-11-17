@@ -39,6 +39,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Strides") int32 TimeAllowed() const { return Allowed; }
 	UFUNCTION(BlueprintPure, Category = "Strides") FString StatusText() const;
 	const strides::CourseJudge* Judge() const { return JudgePtr.get(); }
+	const strides::CourseTrace& CourseTraceData() const { return Trace; }
 
 private:
 	bool LineCrossed(const strides::TraceMark& M, double X0, double Z0, double X1, double Z1, double Heading) const;

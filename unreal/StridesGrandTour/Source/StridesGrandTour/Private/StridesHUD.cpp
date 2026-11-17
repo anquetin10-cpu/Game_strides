@@ -31,8 +31,9 @@ void AStridesHUD::DrawHUD()
 		const FString Gait = D && D->Gaits.IsValidIndex(H->GaitIndex) ? D->Gaits[H->GaitIndex].Name.ToString() : TEXT("?");
 		Line(FString::Printf(TEXT("À cheval · %s · %.1f m/s (%.0f m/min) · cadence %.1f"), *Gait, H->SpeedMS, H->SpeedMS * 60, H->CadenceMS));
 		if (H->Course) Line(H->Course->StatusText());
+		if (H->IsDemoCourseActive()) Line(TEXT("DÉMONSTRATION AUTOMATIQUE DU PARCOURS"), FLinearColor(0.4f, 0.9f, 1.f));
 		if (!H->LastTakeoff.IsEmpty()) Line(FString::Printf(TEXT("Dernier appel : %s"), *H->LastTakeoff));
-		Line(TEXT("Joystick : direction / cadence · SAUT : Espace / A · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
+		Line(TEXT("Joystick : direction / cadence · SAUT : Espace / A · Démo parcours : F8 · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
 	}
 	else Line(TEXT("À pied · Monter à cheval : E (à moins de 3 m)"));
 	if (EventT > 0) Line(LastEvent, FLinearColor(1.f, 0.85f, 0.3f));

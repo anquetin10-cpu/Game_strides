@@ -14,6 +14,7 @@ class STRIDESGRANDTOUR_API AStridesRider : public ACharacter
 public:
 	AStridesRider();
 	virtual void Tick(float Dt) override;
+	virtual void BeginPlay() override;
 	// Monte si un cheval est à moins de 3 m : rejoint le siège en 0,8 s (transition provisoire, voir relais), puis le
 	// contrôleur prend le cheval.
 	bool TryMount(class APlayerController* PC);
@@ -28,4 +29,10 @@ private:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> Camera;
 	float MountT = -1.f;
 	FTransform MountFrom;
+	void UpdateMountedAnimation();
+	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
+	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpCanterAnimation;
+	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpGallopAnimation;
+	int32 LastAnimationGait = INDEX_NONE;
+	bool bLastAnimationJumping = false;
 };

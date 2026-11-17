@@ -41,6 +41,8 @@ public:
 	double WebZ() const { return Z; }
 	double Heading() const { return H; }
 	bool IsJumping() const { return bJumping; }
+	bool IsDemoCourseActive() const { return bDemoCourse; }
+	void ToggleDemoCourse();
 	// Point d'assise du cavalier (repère monde Unreal).
 	FTransform SeatTransform() const;
 
@@ -72,4 +74,6 @@ private:
 	TWeakObjectPtr<AStridesFence> JumpFence;
 	int32 JumpDir = 1;
 	float RefuseT = 0.f;
+	bool bDemoCourse = false;
+	int32 DemoPoint = 1;
 };

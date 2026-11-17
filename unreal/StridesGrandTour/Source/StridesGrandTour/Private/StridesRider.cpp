@@ -1,4 +1,5 @@
 #include "StridesRider.h"
+#include "Animation/AnimationAsset.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -36,6 +37,11 @@ AStridesRider::AStridesRider()
 		PartMesh->SetLeaderPoseComponent(MainMesh);
 		MeshParts.Add(PartMesh);
 	}
+	const FString AnimRoot = TEXT("/Game/Characters/Riders/Female/rider_f_unreal/AnimationsFBX/Rider_");
+	for (const TCHAR* Name : {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")})
+		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".Rider_") + Name)));
+	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.Rider_jump_canter")));
+	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.Rider_jump_gallop")));
 	UCharacterMovementComponent* M = GetCharacterMovement();
 	M->MaxWalkSpeed = 140.f;  // marche 1,4 m/s (anim.js, vitesse du joueur à pied ; course : tranche suivante)
 	M->bOrientRotationToMovement = true;
@@ -52,6 +58,30 @@ AStridesRider::AStridesRider()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Boom);
 	Camera->FieldOfView = 55.f;
+}
+
+void AStridesRider::BeginPlay()
+{
+	Super::BeginPlay();
+	GetMesh()->PlayAnimation(GaitAnimations.IsValidIndex(0) ? GaitAnimations[0].Get() : nullptr, true);
+}
+
+void AStridesRider::UpdateMountedAnimation()
+{
+	if (!MountedOn || !GetMesh()->GetSkeletalMeshAsset()) return;
+	const bool bJumping = MountedOn->IsJumping();
+	const int32 Gait = MountedOn->GaitIndex;
+	if (bJumping == bLastAnimationJumping && (bJumping || Gait == LastAnimationGait)) return;
+	UAnimationAsset* Next = bJumping
+		? (MountedOn->SpeedMS >= 7.f ? JumpGallopAnimation.Get() : JumpCanterAnimation.Get())
+		: (GaitAnimations.IsValidIndex(Gait) ? GaitAnimations[Gait].Get() : nullptr);
+	if (Next)
+	{
+		GetMesh()->PlayAnimation(Next, !bJumping);
+		GetMesh()->SetPlayRate(1.f);
+	}
+	LastAnimationGait = Gait;
+	bLastAnimationJumping = bJumping;
 }
 
 bool AStridesRider::TryMount(APlayerController* PC)
@@ -71,6 +101,9 @@ bool AStridesRider::TryMount(APlayerController* PC)
 	SetActorEnableCollision(false);
 	MountFrom = GetActorTransform();
 	MountT = 0.f;
+	LastAnimationGait = INDEX_NONE;
+	bLastAnimationJumping = false;
+	UpdateMountedAnimation();
 	if (PC) PC->Possess(Best);
 	return true;
 }
@@ -90,6 +123,9 @@ void AStridesRider::Dismount(APlayerController* PC)
 	SetActorEnableCollision(true);
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	MountT = -1.f;
+	LastAnimationGait = INDEX_NONE;
+	bLastAnimationJumping = false;
+	if (GaitAnimations.IsValidIndex(0) && GaitAnimations[0]) GetMesh()->PlayAnimation(GaitAnimations[0], true);
 	if (PC) PC->Possess(this);
 }
 
@@ -97,6 +133,7 @@ void AStridesRider::Tick(float Dt)
 {
 	Super::Tick(Dt);
 	if (!MountedOn) return;
+	UpdateMountedAnimation();
 	FTransform Seat = MountedOn->SeatTransform();
 	// La forme du cavalier est déjà en pose montée. Une inclinaison globale
 	// légère accompagne la vitesse ; au saut elle avance le buste avec le cheval.

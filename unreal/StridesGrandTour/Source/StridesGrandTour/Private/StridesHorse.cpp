@@ -105,13 +105,32 @@ void AStridesHorse::ChangeGait(int32 Delta)
 	GaitIndex = FMath::Clamp(GaitIndex + Delta, 0, N - 1);
 }
 
+void AStridesHorse::ToggleDemoCourse()
+{
+	bDemoCourse = !bDemoCourse;
+	DemoPoint = 1;
+	if (bDemoCourse)
+	{
+		GaitIndex = 4;
+		UE_LOG(LogTemp, Display, TEXT("Strides demo course started"));
+	}
+	else
+	{
+		Move = FVector2D::ZeroVector;
+		UE_LOG(LogTemp, Display, TEXT("Strides demo course stopped"));
+	}
+}
+
 FTransform AStridesHorse::SeatTransform() const
 {
 	// Le cheval PJL fournit un repère de monte et un os de selle. Les lire sur
 	// le composant animé synchronise le cavalier avec chaque foulée et le saut.
 	if (Mesh && Mesh->GetSkeletalMeshAsset())
 	{
-		for (const FName SeatBone : {FName(TEXT("mountpoint_01_0179")), FName(TEXT("saddle_0168")), FName(TEXT("SaddleSeat"))})
+		// `mountpoint_01_0179` part du bas du squelette (environ 65 cm) : ce
+		// n'est pas l'assise malgré son nom. L'os de selle est au vrai contact
+		// du dos (environ 173 cm) et conserve le rebond animé des allures.
+		for (const FName SeatBone : {FName(TEXT("saddle_0168")), FName(TEXT("mountpoint_01_0179")), FName(TEXT("SaddleSeat"))})
 			if (Mesh->DoesSocketExist(SeatBone)) return Mesh->GetSocketTransform(SeatBone, RTS_World);
 	}
 	return FTransform(GetActorRotation(), GetActorLocation() + FVector(0, 0, 175 + (Body ? Body->GetRelativeLocation().Z - 125 : 0)));
@@ -148,6 +167,49 @@ void AStridesHorse::Tick(float Dt)
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
 	const strides::JumpParams& JP = Data ? Data->Jump() : strides::jumpDefaults();
+	if (bDemoCourse && Course)
+	{
+		const strides::CourseTrace& T = Course->CourseTraceData();
+		const int32 LeadCount = static_cast<int32>(T.leadIn.size());
+		const int32 Total = LeadCount + static_cast<int32>(T.pts.size());
+		auto PointAt = [&T, LeadCount](int32 Index) -> const strides::TracePoint&
+		{
+			return Index < LeadCount ? T.leadIn[Index] : T.pts[Index - LeadCount];
+		};
+		if (Total > 1)
+		{
+			DemoPoint = FMath::Clamp(DemoPoint, 0, Total - 1);
+			// Se recaler sur le point le plus proche devant nous évite de faire
+			// demi-tour après avoir dépassé un échantillon de 50 cm à 8 m/s.
+			int32 Nearest = DemoPoint;
+			double NearestD2 = TNumericLimits<double>::Max();
+			for (int32 I = DemoPoint; I <= FMath::Min(DemoPoint + 40, Total - 1); ++I)
+			{
+				const strides::TracePoint& P = PointAt(I);
+				const double D2 = FMath::Square(P.x - X) + FMath::Square(P.z - Z);
+				if (D2 < NearestD2) { NearestD2 = D2; Nearest = I; }
+			}
+			DemoPoint = FMath::Max(DemoPoint, Nearest);
+			// Viser environ 6 m plus loin lisse le cap dans les grandes courbes.
+			const int32 TargetIndex = FMath::Min(DemoPoint + 12, Total - 1);
+			const strides::TracePoint& Target = PointAt(TargetIndex);
+			const double Dx = Target.x - X, Dz = Target.z - Z;
+			const double Desired = FMath::Atan2(Dx, Dz);
+			const double Error = FMath::UnwindRadians(Desired - H);
+			// steerRate inverse le signe de l'axe (joystick droit => cap qui
+			// diminue) : une erreur de cap positive demande donc un axe négatif.
+			Move = FVector2D(FMath::Clamp(-Error * 1.8, -1.0, 1.0), 1.0);
+			GaitIndex = 4;
+			if (!bJumping && RefuseT <= 0 && SpeedMS >= (Data ? Data->MinJumpSpeed : 3.2f)
+				&& Course->FenceAhead(X, Z, H, JP.reach * 0.9)) bJumpRequested = true;
+		}
+		if (const strides::CourseJudge* J = Course->Judge(); J && (J->finished() || J->eliminated() != strides::Elim::None))
+		{
+			bDemoCourse = false;
+			Move = FVector2D::ZeroVector;
+			UE_LOG(LogTemp, Display, TEXT("Strides demo course completed: %s"), *Course->StatusText());
+		}
+	}
 	const double X0 = X, Z0 = Z;
 	if (RefuseT > 0) RefuseT -= Dt;
 	// Vitesse : cadence de concours (csoRide.js) ou allure du monde ouvert (config.js), accélération bornée.
