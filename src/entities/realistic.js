@@ -171,6 +171,7 @@ const FACE_KEYS = ['nose_width', 'nose_length', 'nose_height', 'jaw_width', 'chi
 const FACE_RANGE = 0.8;
 const BODY_RANGE = { weight: 0.45, muscle: 0.4, age: 0.62, breast: 0.35 };
 const LOOK_GAIN = 0.45;
+const SKIN_LUM_MAX = 0.62;
 const _q = new THREE.Quaternion();
 const _q2 = new THREE.Quaternion();
 const _rootQ = new THREE.Quaternion();
@@ -375,7 +376,12 @@ export class RealBody {
           m.customProgramCacheKey = () => 'strides-real-cloth-' + kind;
           if (kind === 'breeches' && m.normalScale) m.normalScale.multiplyScalar(0.5);
         }
-        if (m.name === 'Skin') m.roughness = 0.58;
+        // Peau (lot v3) : reflets doux sur le nez, le front et les pommettes (rugosité 0,47), grain de peau de la carte de
+        // normales un peu plus marqué.
+        if (m.name === 'Skin') {
+          m.roughness = 0.47;
+          if (m.normalScale) m.normalScale.setScalar(1.35);
+        }
         // Blanc de l'œil (lot v3) : jamais blanc pur (albédo réel de la sclérotique ≈ 0,75, légèrement chaud) ; un œil trop
         // blanc paraît vitreux et artificiel.
         if (m.name === 'Eye') m.color.setRGB(0.84, 0.8, 0.78);
@@ -398,7 +404,13 @@ export class RealBody {
     this.root.traverse((m) => {
       if (!m.isMesh) return;
       const mat = m.material;
-      if (mat.name === 'Skin') tint(mat, o.skin);
+      if (mat.name === 'Skin') {
+        tint(mat, o.skin);
+        // Albédo de peau plafonné (lot v3) : teinte × gain de la texture dépassait 0,85 en linéaire pour les peaux claires
+        // (visage blanc, aspect plastique) ; une peau claire réelle reste sous ≈ 0,6 (canal vert).
+        const L = mat.color.r * 0.2126 + mat.color.g * 0.7152 + mat.color.b * 0.0722;
+        if (L > SKIN_LUM_MAX) mat.color.multiplyScalar(SKIN_LUM_MAX / L);
+      }
       else if (/^Hair/.test(mat.name)) tint(mat, o.hair);
       else if (mat.name === 'Eyebrow' && o.hair) tint(mat, `#${new THREE.Color(o.hair).multiplyScalar(0.7).getHexString()}`);
       else if (mat.name === 'Cloth_jacket') {
