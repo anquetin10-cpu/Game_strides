@@ -33,7 +33,8 @@ void AStridesHUD::DrawHUD()
 		if (H->Course) Line(H->Course->StatusText());
 		if (H->IsDemoCourseActive()) Line(TEXT("DÉMONSTRATION AUTOMATIQUE DU PARCOURS"), FLinearColor(0.4f, 0.9f, 1.f));
 		if (!H->LastTakeoff.IsEmpty()) Line(FString::Printf(TEXT("Dernier appel : %s"), *H->LastTakeoff));
-		Line(TEXT("Joystick : direction / cadence · SAUT : Espace / A · Démo parcours : F8 · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
+		if (PLATFORM_IOS) Line(TEXT("Joystick : direction / cadence · boutons : SAUT, MONTER, ALLURE"), FLinearColor(0.8f, 0.8f, 0.8f));
+		else Line(TEXT("Joystick : direction / cadence · SAUT : Espace / A · Démo parcours : F8 · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
 	}
 	else Line(TEXT("À pied · Monter à cheval : E (à moins de 3 m)"));
 	if (EventT > 0) Line(LastEvent, FLinearColor(1.f, 0.85f, 0.3f));

@@ -33,7 +33,7 @@ void AStridesGameMode::StartPlay()
 	Ground->SetActorScale3D(FVector(140, 96, 1));  // plan de base : 1 m de côté
 	// Soleil (mobile : ombres en cascade limitées, DefaultEngine.ini) et lumière du ciel.
 	ADirectionalLight* Sun = W->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-42, 35, 0));
-	Sun->GetComponent()->SetIntensity(6.f);
+	Sun->GetLightComponent()->SetIntensity(6.f);
 	ASkyLight* Sky = W->SpawnActor<ASkyLight>();
 	Sky->GetLightComponent()->SetIntensity(1.f);
 	Sky->GetLightComponent()->bRealTimeCapture = false;

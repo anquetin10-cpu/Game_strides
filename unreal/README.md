@@ -4,7 +4,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 
 | Dossier | Contenu |
 |---|---|
-| `StridesGrandTour/StridesGrandTour.uproject` | projet Unreal (UE 5.6, à confirmer avec la chaîne Apple), cibles iOS et Mac |
+| `StridesGrandTour/StridesGrandTour.uproject` | projet Unreal UE 5.8.4, cibles iOS et Mac |
 | `StridesGrandTour/Config/` | rendu mobile (sans Lumen, Nanite ni ombres virtuelles), iOS paysage, Enhanced Input |
 | `StridesGrandTour/Source/StridesCore/` | **cœur C++17 sans type Unreal** : saut, conduite CSO, parcours et jugement, sauvegarde native |
 | `StridesGrandTour/Source/StridesGrandTour/` | module de jeu : cheval, cavalier, obstacles, parcours, données, sauvegarde, commandes, HUD, tests d'automatisation |
@@ -39,10 +39,16 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 | Véhicules, transport du cheval, carburant | à faire |
 | PNJ, foule, cavaliers PNJ | à faire |
 | Audio, traductions FR/EN | à faire (export) |
-| Interface tactile UMG | à faire (joystick virtuel du moteur en attendant) |
+| Interface tactile UMG | **portée et compilée pour iOS** : joystick moteur, saut, monter/descendre, allures, sauvegarde et chargement ; test sur appareil réel requis |
+
+## Distribution iOS
+
+- Identité : `Equestrian Tour`, `com.strides.equestriantour`, version marketing `1.0.0`, iOS 16 minimum.
+- Archive arm64 non signée validée avec les données cuites du jeu, les icônes et le manifeste de confidentialité.
+- Procédure, état vérifié et blocages Apple : [`docs/testflight.md`](docs/testflight.md).
 
 ## Prochaine tranche
 1. Sur Mac : approfondir la revue visuelle de la posture de la cavalière au galop et au saut.
 2. Animation : finaliser l'Animation Blueprint du cheval (virages et transitions — logique de `pjlHorse.js`)
    et l'animation squelettique du cavalier (mains, étriers — `human/anim.js`).
-3. Puis : interface UMG (HUD, téléphone), monde du Pôle et de l'Écurie du Val, missions et progression.
+3. Puis : HUD et téléphone UMG, monde du Pôle et de l'Écurie du Val, missions et progression.

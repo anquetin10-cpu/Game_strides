@@ -1,6 +1,6 @@
 // Commandes (Enhanced Input, créées dans le code : aucune ressource binaire nécessaire) : déplacement / conduite,
-// regard, saut, monter-descendre, allure, sauvegarder, recharger. Tactile : joystick virtuel du moteur (DefaultInput.ini)
-// pour la première tranche ; l'interface tactile UMG du jeu (boutons SAUT, MONTER…) vient à la tranche « écrans ».
+// regard, saut, monter-descendre, allure, sauvegarder, recharger. Sur iOS, le joystick virtuel du moteur est complété
+// par des boutons UMG explicites pour que toutes les actions essentielles restent accessibles sans clavier.
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
@@ -11,6 +11,13 @@ UCLASS()
 class STRIDESGRANDTOUR_API AStridesPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+public:
+	void TouchJump();
+	void TouchInteract();
+	void TouchGaitUp();
+	void TouchGaitDown();
+	void TouchSave();
+	void TouchLoad();
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -36,5 +43,6 @@ private:
 	UPROPERTY() TObjectPtr<class UInputAction> SaveAction;
 	UPROPERTY() TObjectPtr<class UInputAction> LoadAction;
 	UPROPERTY() TObjectPtr<class UInputAction> DemoCourseAction;
+	UPROPERTY() TObjectPtr<class UUserWidget> TouchControls;
 	class AStridesRider* Rider() const;
 };

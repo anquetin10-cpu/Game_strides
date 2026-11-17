@@ -5,9 +5,12 @@
 #include "InputMappingContext.h"
 #include "InputModifiers.h"
 #include "EngineUtils.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "StridesHorse.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
+#include "StridesTouchControls.h"
 
 static UInputAction* MakeAction(UObject* Outer, const TCHAR* Name, EInputActionValueType Type)
 {
@@ -72,6 +75,17 @@ void AStridesPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	InstallInputContext();
+	if (PLATFORM_IOS || FParse::Param(FCommandLine::Get(), TEXT("TouchControls")))
+	{
+		bEnableTouchEvents = true;
+		TouchControls = CreateWidget<UStridesTouchControls>(this, UStridesTouchControls::StaticClass());
+		if (TouchControls) TouchControls->AddToViewport(100);
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetHideCursorDuringCapture(false);
+		SetInputMode(InputMode);
+		if (!PLATFORM_IOS) bShowMouseCursor = true;
+	}
 }
 
 void AStridesPlayerController::InstallInputContext()
@@ -130,3 +144,10 @@ void AStridesPlayerController::OnGaitDown() { if (AStridesHorse* H = Cast<AStrid
 void AStridesPlayerController::OnSave() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->SaveNow(this); }
 void AStridesPlayerController::OnLoad() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->LoadNow(this); }
 void AStridesPlayerController::OnDemoCourse() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ToggleDemoCourse(); }
+
+void AStridesPlayerController::TouchJump() { OnJump(); }
+void AStridesPlayerController::TouchInteract() { OnInteract(); }
+void AStridesPlayerController::TouchGaitUp() { OnGaitUp(); }
+void AStridesPlayerController::TouchGaitDown() { OnGaitDown(); }
+void AStridesPlayerController::TouchSave() { OnSave(); }
+void AStridesPlayerController::TouchLoad() { OnLoad(); }
