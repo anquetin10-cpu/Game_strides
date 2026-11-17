@@ -43,12 +43,15 @@ AStridesRider::AStridesRider()
 	bUseControllerRotationYaw = false;
 	Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Boom"));
 	Boom->SetupAttachment(GetCapsuleComponent());
-	Boom->TargetArmLength = 300.f;
+	Boom->TargetArmLength = 420.f;
 	Boom->SetRelativeLocation(FVector(0, 0, 95));
 	Boom->SetRelativeRotation(FRotator(-8, 0, 0));
-	Boom->bUsePawnControlRotation = true;
+	// La vue d'attente reste en poursuite fixe : la rotation de contrôle peut
+	// conserver un pitch extrême après une reprise de possession.
+	Boom->bUsePawnControlRotation = false;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Boom);
+	Camera->FieldOfView = 55.f;
 }
 
 bool AStridesRider::TryMount(APlayerController* PC)

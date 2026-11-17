@@ -51,13 +51,15 @@ AStridesHorse::AStridesHorse()
 	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.horse_pjl_unrealjump_gallop")));
 	Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Boom"));
 	Boom->SetupAttachment(Root);
-	Boom->TargetArmLength = 400.f;
+	// Garder la caméra hors du volume du cheval importé pour éviter le clipping.
+	Boom->TargetArmLength = 650.f;
 	Boom->SetRelativeLocation(FVector(0, 0, 185));
 	Boom->SetRelativeRotation(FRotator(-9, 0, 0));
 	Boom->bEnableCameraLag = true;
 	Boom->CameraLagSpeed = 6.f;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Boom);
+	Camera->FieldOfView = 55.f;
 }
 
 void AStridesHorse::BeginPlay()
