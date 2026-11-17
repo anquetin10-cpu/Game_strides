@@ -594,7 +594,7 @@ export class RealBody {
       T[m.key] += m.amp * env;
       if (m.t >= m.dur) X.micro = null;
     }
-    T.face_smile += 0.5 * X.social;
+    T.face_smile += 0.38 * X.social;
     T.brow_up += 0.55 * Math.sin(Math.PI * Math.min(1, (1 - X.flash)) ) * (X.flash > 0 ? 1 : 0);
     const horse = H.mounted;
     const effort = horse ? Math.min(1, Math.max(0, ((horse.speed || 0) - 5) / 6) + (horse.jumpT >= 0 ? 0.8 : 0)) : 0;

@@ -29,12 +29,12 @@ const OPTIONAL = new Set(['clothing_jacket']);
 const CHARACTERS = {
   rider_f: {
     // age_old 0,18 (lot v3) : adulte d'une trentaine d'années au lieu du visage poupin par défaut (25 ans MakeHuman).
-    morphs: { gender_female: 1, muscle_max: 0.3, weight_min: 0.2, proportions_ideal: 0.6, breast_cup_min: 0.3, height_tall: 0.1, age_old: 0.18, face_cheekbones_incr: 0.35, face_jaw_width_decr: 0.15 },
+    morphs: { gender_female: 1, muscle_max: 0.3, weight_min: 0.2, proportions_ideal: 0.6, breast_cup_min: 0.3, height_tall: 0.1, age_old: 0.18, face_jaw_width_decr: 0.2, face_chin_incr: 0.1 },
     hair: 'hair_ponytail01',
     clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots', 'clothing_jacket'],
   },
   rider_m: {
-    morphs: { gender_male: 1, muscle_max: 0.45, weight_min: 0.1, proportions_ideal: 0.6, height_tall: 0.25, age_old: 0.22, face_cheekbones_incr: 0.3, face_chin_incr: 0.25 },
+    morphs: { gender_male: 1, muscle_max: 0.45, weight_min: 0.1, proportions_ideal: 0.6, height_tall: 0.25, age_old: 0.22, face_chin_incr: 0.25, face_jaw_width_incr: 0.1 },
     hair: 'hair_short02',
     clothes: ['clothing_shirt', 'clothing_jeans', 'clothing_boots', 'clothing_jacket'],
   },

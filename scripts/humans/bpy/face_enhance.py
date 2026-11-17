@@ -88,10 +88,10 @@ lipSet = set(lips)
 def f_smile(p, i):
     d = Vector()
     for s, c in ((1, cornerL), (-1, cornerR)):
-        w = fall((p - c).length, 0.03)
-        d += w * Vector((s * 0.0025, 0.0012, 0.0035))
-        cc = c + Vector((s * 0.012, -0.004, 0.024))  # pommette : remonte et avance
-        d += fall((p - cc).length, 0.028) * Vector((s * 0.0006, -0.0018, 0.0016))
+        w = fall((p - c).length, 0.026)
+        d += w * Vector((s * 0.003, 0.0014, 0.0038))
+        cc = c + Vector((s * 0.012, -0.004, 0.024))  # pommette : remonte à peine (sans gonfler la joue)
+        d += fall((p - cc).length, 0.024) * Vector((s * 0.0003, -0.0007, 0.0012))
     for e in (eyeL, eyeR):  # paupière inférieure (yeux qui sourient)
         le = e + Vector((0, -0.006, -0.012))
         d += fall(ell(p, le, 0.018, 0.012, 0.007), 1) * Vector((0, 0, 0.0011))
