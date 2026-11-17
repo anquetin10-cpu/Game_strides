@@ -106,6 +106,46 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		PoleDesign = Design;
 	for (const auto& P : J->GetObjectField(TEXT("speeds"))->Values) CourseSpeeds.Add(FString(P.Key), P.Value->AsNumber());
 	}
+	if (LoadJson(TEXT("world_architecture.json"), J))
+	{
+		const TSharedPtr<FJsonObject> W = J->GetObjectField(TEXT("world"));
+		WorldSize = W->GetNumberField(TEXT("size"));
+		const TArray<TSharedPtr<FJsonValue>>& Spawn = W->GetArrayField(TEXT("spawn"));
+		WorldSpawn = FVector(Spawn[0]->AsNumber(), Spawn[1]->AsNumber(), Spawn[2]->AsNumber());
+		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("regions")))
+		{
+			const TSharedPtr<FJsonObject> O = V->AsObject(); FStridesWorldRegion R;
+			R.Id = O->GetStringField(TEXT("id")); R.Name = O->GetStringField(TEXT("name")); R.Kind = O->GetStringField(TEXT("kind"));
+			R.Center = FVector2D(O->GetNumberField(TEXT("x")), O->GetNumberField(TEXT("z")));
+			R.Size = FVector2D(O->GetNumberField(TEXT("w")), O->GetNumberField(TEXT("d"))); WorldRegions.Add(R);
+		}
+		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("poi")))
+		{
+			const TSharedPtr<FJsonObject> O = V->AsObject(); FStridesPoi P;
+			P.Id = O->GetStringField(TEXT("id")); P.Name = O->GetStringField(TEXT("name")); P.Icon = O->GetStringField(TEXT("icon"));
+			P.Position = FVector2D(O->GetNumberField(TEXT("x")), O->GetNumberField(TEXT("z"))); PointsOfInterest.Add(P);
+		}
+		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("roads")))
+		{
+			const TSharedPtr<FJsonObject> O = V->AsObject(); FStridesRoad R;
+			R.Id = O->GetStringField(TEXT("id")); R.Width = O->GetNumberField(TEXT("width"));
+			for (const TSharedPtr<FJsonValue>& PV : O->GetArrayField(TEXT("points"))) { const TArray<TSharedPtr<FJsonValue>>& A = PV->AsArray(); R.Points.Add(FVector2D(A[0]->AsNumber(), A[1]->AsNumber())); }
+			Roads.Add(R);
+		}
+		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("missions")))
+		{
+			const TSharedPtr<FJsonObject> O = V->AsObject(); FStridesMissionDefinition M;
+			M.Id = O->GetStringField(TEXT("id")); M.Title = O->GetStringField(TEXT("title")); M.Category = O->GetStringField(TEXT("category")); M.Place = O->GetStringField(TEXT("place"));
+			M.Pay = O->GetIntegerField(TEXT("pay")); M.Xp = O->GetIntegerField(TEXT("xp"));
+			for (const TSharedPtr<FJsonValue>& R : O->GetArrayField(TEXT("requires"))) M.Requires.Add(R->AsString()); Missions.Add(M);
+		}
+		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("progression")))
+		{
+			const TSharedPtr<FJsonObject> O = V->AsObject(); FStridesProgressionLevel L;
+			L.Id = O->GetStringField(TEXT("id")); L.Name = O->GetStringField(TEXT("name")); L.Reputation = O->GetIntegerField(TEXT("reputation")); Progression.Add(L);
+		}
+		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("phoneApps"))) PhoneApps.Add(V->AsString());
+	}
 }
 
 const FStridesHorseProfile* UStridesDataSubsystem::FindHorse(const FString& Id) const

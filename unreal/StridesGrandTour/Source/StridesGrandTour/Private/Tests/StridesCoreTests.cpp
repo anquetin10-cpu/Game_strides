@@ -1,6 +1,11 @@
 // Tests d'automatisation Unreal (Session Frontend > Automation, ou ligne de commande, voir unreal/docs/relais-mac.md) :
 // rejouent dans le moteur les mêmes contrôles que unreal/core (tracé, jugement, sauvegarde, conversions d'axes).
 #include "Misc/AutomationTest.h"
+#include "Dom/JsonObject.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/SaveGame.h"
@@ -46,5 +51,23 @@ bool FStridesSaveTest::RunTest(const FString&)
 	std::string Err;
 	TestTrue(TEXT("relecture"), strides::SaveGame::fromJson(S.toJson(), R, Err));
 	TestTrue(TEXT("position relue"), R.pose.valid && R.pose.mode == "ride" && FMath::IsNearlyEqual(R.pose.z, -2.5));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesWorldArchitectureTest, "Strides.World.Architecture", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesWorldArchitectureTest::RunTest(const FString&)
+{
+	FString Text;
+	TestTrue(TEXT("world_architecture.json présent"), FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/world_architecture.json"))));
+	TSharedPtr<FJsonObject> Root;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Text);
+	TestTrue(TEXT("architecture lisible"), FJsonSerializer::Deserialize(Reader, Root) && Root.IsValid());
+	if (!Root.IsValid()) return false;
+	TestEqual(TEXT("carte 1,2 km"), Root->GetObjectField(TEXT("world"))->GetNumberField(TEXT("size")), 1200.0);
+	TestEqual(TEXT("8 régions structurantes"), Root->GetArrayField(TEXT("regions")).Num(), 8);
+	TestEqual(TEXT("14 lieux nommés"), Root->GetArrayField(TEXT("poi")).Num(), 14);
+	TestEqual(TEXT("16 missions de carrière"), Root->GetArrayField(TEXT("missions")).Num(), 16);
+	TestEqual(TEXT("5 rangs de progression"), Root->GetArrayField(TEXT("progression")).Num(), 5);
+	TestEqual(TEXT("10 applications du téléphone"), Root->GetArrayField(TEXT("phoneApps")).Num(), 10);
 	return true;
 }

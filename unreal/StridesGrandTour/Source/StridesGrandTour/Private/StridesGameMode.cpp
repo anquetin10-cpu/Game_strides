@@ -14,6 +14,7 @@
 #include "StridesPlayerController.h"
 #include "StridesRider.h"
 #include "StridesUnits.h"
+#include "StridesWorldDirector.h"
 
 AStridesGameMode::AStridesGameMode()
 {
@@ -26,26 +27,20 @@ void AStridesGameMode::StartPlay()
 {
 	UWorld* W = GetWorld();
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	// Sol de la carrière (120 × 76 m, POLE.arena) et un peu de marge.
-	AStaticMeshActor* Ground = W->SpawnActor<AStaticMeshActor>();
-	Ground->SetMobility(EComponentMobility::Movable);
-	Ground->GetStaticMeshComponent()->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")));
-	Ground->SetActorScale3D(FVector(140, 96, 1));  // plan de base : 1 m de côté
+	AStridesWorldDirector* WorldDirector = W->SpawnActor<AStridesWorldDirector>();
+	WorldDirector->BuildWorld();
 	// Soleil (mobile : ombres en cascade limitées, DefaultEngine.ini) et lumière du ciel.
 	ADirectionalLight* Sun = W->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-42, 35, 0));
 	Sun->GetLightComponent()->SetIntensity(6.f);
 	ASkyLight* Sky = W->SpawnActor<ASkyLight>();
 	Sky->GetLightComponent()->SetIntensity(1.f);
 	Sky->GetLightComponent()->bRealTimeCapture = false;
-	// Parcours du Pôle, à 1,10 m (épreuve nationale).
-	AStridesCourse* Course = W->SpawnActor<AStridesCourse>();
-	if (Data) Course->Build(Data->PoleCourse(), *Data);
-	// Cheval à l'entrée de piste (premier point de l'abord), cap du tracé.
+	// Le jeu commence à l'Écurie du Val, comme la version Strides complète. Le parcours reste au Pôle.
+	AStridesCourse* Course = WorldDirector->PoleCourse;
 	AStridesHorse* Horse = W->SpawnActor<AStridesHorse>();
 	Horse->Course = Course;
-	const strides::CourseTrace T = strides::traceCourse(Data ? Data->PoleCourse() : strides::poleDesign());
-	const strides::TracePoint& P0 = T.leadIn.empty() ? T.pts.front() : T.leadIn.front();
-	Horse->PlaceAt(P0.x, P0.z, P0.h);
+	const FVector Spawn = Data ? Data->WorldSpawn : FVector(-104.f, 168.f, .35f);
+	Horse->PlaceAt(Spawn.X, Spawn.Y, Spawn.Z);
 	Super::StartPlay();
 	// Cavalier à pied, 2 m à gauche du cheval (côté montoir).
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0))

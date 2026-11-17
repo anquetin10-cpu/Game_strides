@@ -35,6 +35,58 @@ struct FStridesHorseProfile
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) float StaminaMul = 1.f;
 };
 
+USTRUCT(BlueprintType)
+struct FStridesWorldRegion
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly) FString Id;
+	UPROPERTY(BlueprintReadOnly) FString Name;
+	UPROPERTY(BlueprintReadOnly) FString Kind;
+	UPROPERTY(BlueprintReadOnly) FVector2D Center = FVector2D::ZeroVector;
+	UPROPERTY(BlueprintReadOnly) FVector2D Size = FVector2D::ZeroVector;
+};
+
+USTRUCT(BlueprintType)
+struct FStridesPoi
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly) FString Id;
+	UPROPERTY(BlueprintReadOnly) FString Name;
+	UPROPERTY(BlueprintReadOnly) FString Icon;
+	UPROPERTY(BlueprintReadOnly) FVector2D Position = FVector2D::ZeroVector;
+};
+
+USTRUCT(BlueprintType)
+struct FStridesRoad
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly) FString Id;
+	UPROPERTY(BlueprintReadOnly) float Width = 6.f;
+	UPROPERTY(BlueprintReadOnly) TArray<FVector2D> Points;
+};
+
+USTRUCT(BlueprintType)
+struct FStridesMissionDefinition
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly) FString Id;
+	UPROPERTY(BlueprintReadOnly) FString Title;
+	UPROPERTY(BlueprintReadOnly) FString Category;
+	UPROPERTY(BlueprintReadOnly) FString Place;
+	UPROPERTY(BlueprintReadOnly) int32 Pay = 0;
+	UPROPERTY(BlueprintReadOnly) int32 Xp = 0;
+	UPROPERTY(BlueprintReadOnly) TArray<FString> Requires;
+};
+
+USTRUCT(BlueprintType)
+struct FStridesProgressionLevel
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly) FString Id;
+	UPROPERTY(BlueprintReadOnly) FString Name;
+	UPROPERTY(BlueprintReadOnly) int32 Reputation = 0;
+};
+
 UCLASS()
 class STRIDESGRANDTOUR_API UStridesDataSubsystem : public UGameInstanceSubsystem
 {
@@ -44,6 +96,14 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") TArray<FStridesGait> Gaits;
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") TArray<FStridesHorseProfile> Horses;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") float WorldSize = 1200.f;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") FVector WorldSpawn = FVector(-104.f, 168.f, .35f);
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FStridesWorldRegion> WorldRegions;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FStridesPoi> PointsOfInterest;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FStridesRoad> Roads;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FStridesMissionDefinition> Missions;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FStridesProgressionLevel> Progression;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FString> PhoneApps;
 	// Hauteur de base du saut (m) : HORSE.jumpPeak du jeu web, multipliée par le profil du cheval.
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") float JumpPeak = 1.35f;
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") float MinJumpSpeed = 3.2f;
