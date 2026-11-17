@@ -97,7 +97,12 @@ void AStridesRider::Tick(float Dt)
 {
 	Super::Tick(Dt);
 	if (!MountedOn) return;
-	const FTransform Seat = MountedOn->SeatTransform();
+	FTransform Seat = MountedOn->SeatTransform();
+	// La forme du cavalier est déjà en pose montée. Une inclinaison globale
+	// légère accompagne la vitesse ; au saut elle avance le buste avec le cheval.
+	const float LeanDeg = MountedOn->IsJumping() ? -14.f : FMath::GetMappedRangeValueClamped(FVector2D(5.f, 8.f), FVector2D(0.f, -5.f), MountedOn->SpeedMS);
+	Seat.ConcatenateRotation(FQuat(FRotator(LeanDeg, 0.f, 0.f)));
+	if (MountedOn->IsJumping()) Seat.AddToTranslation(MountedOn->GetActorForwardVector() * 8.f + FVector(0, 0, 4.f));
 	if (MountT >= 0.f && MountT < 0.8f)
 	{
 		MountT += Dt;

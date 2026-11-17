@@ -41,14 +41,11 @@ AStridesHorse::AStridesHorse()
 	HairMesh->SetupAttachment(Mesh);
 	HairMesh->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_428.Object_428"))));
 	HairMesh->SetLeaderPoseComponent(Mesh);
-	const FString AnimRoot = FString(HorseAssetRoot) + TEXT("horse_pjl_unreal");
+	const FString AnimRoot = TEXT("/Game/Characters/Horse/horse_pjl_unreal/AnimationsFBX/Horse_");
 	for (const TCHAR* Name : {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")})
-		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".") + TEXT("horse_pjl_unreal") + Name)));
-	// L'animation idle du GLB importé déforme le squelette dans Unreal. Une image
-	// figée du trot conserve une pose d'attente correcte jusqu'à son retargeting.
-	if (GaitAnimations.IsValidIndex(2) && GaitAnimations[2]) GaitAnimations[0] = GaitAnimations[2];
-	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.horse_pjl_unrealjump_canter")));
-	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.horse_pjl_unrealjump_gallop")));
+		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".Horse_") + Name)));
+	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.Horse_jump_canter")));
+	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.Horse_jump_gallop")));
 	Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Boom"));
 	Boom->SetupAttachment(Root);
 	// Garder la caméra hors du volume du cheval importé pour éviter le clipping.
@@ -80,8 +77,7 @@ void AStridesHorse::UpdateAnimation()
 		if (Next)
 		{
 			Mesh->PlayAnimation(Next, !bJumping);
-			Mesh->SetPlayRate(!bJumping && GaitIndex == 0 ? 0.f : 1.f);
-			if (!bJumping && GaitIndex == 0) Mesh->SetPosition(0.f);
+			Mesh->SetPlayRate(1.f);
 		}
 		LastAnimationGait = GaitIndex;
 		bLastAnimationJumping = bJumping;
@@ -111,8 +107,13 @@ void AStridesHorse::ChangeGait(int32 Delta)
 
 FTransform AStridesHorse::SeatTransform() const
 {
-	// Assise au-dessus du tronc provisoire ; avec le cheval importé : socket « SaddleSeat » du squelette.
-	if (Mesh && Mesh->GetSkeletalMeshAsset() && Mesh->DoesSocketExist(TEXT("SaddleSeat"))) return Mesh->GetSocketTransform(TEXT("SaddleSeat"));
+	// Le cheval PJL fournit un repère de monte et un os de selle. Les lire sur
+	// le composant animé synchronise le cavalier avec chaque foulée et le saut.
+	if (Mesh && Mesh->GetSkeletalMeshAsset())
+	{
+		for (const FName SeatBone : {FName(TEXT("mountpoint_01_0179")), FName(TEXT("saddle_0168")), FName(TEXT("SaddleSeat"))})
+			if (Mesh->DoesSocketExist(SeatBone)) return Mesh->GetSocketTransform(SeatBone, RTS_World);
+	}
 	return FTransform(GetActorRotation(), GetActorLocation() + FVector(0, 0, 175 + (Body ? Body->GetRelativeLocation().Z - 125 : 0)));
 }
 
@@ -200,6 +201,8 @@ void AStridesHorse::Tick(float Dt)
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
 	if (Course) Course->TrackHorse(X0, Z0, X, Z, H, Dt);
 	const double Spd = SpeedMS;
-	GaitIndex = bCsoControls ? (Spd < 0.2 ? 0 : Spd < 3.2 ? 1 : Spd < 5.5 ? 2 : Spd < 10 ? 3 : 4) : GaitIndex;
+	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop doit donc
+	// rester atteignable. Il est aligné avec le choix du clip de saut rapide.
+	GaitIndex = bCsoControls ? (Spd < 0.2 ? 0 : Spd < 3.2 ? 1 : Spd < 5.5 ? 2 : Spd < 7.0 ? 3 : 4) : GaitIndex;
 	UpdateAnimation();
 }

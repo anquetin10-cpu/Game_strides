@@ -12,6 +12,7 @@ trial/review/
 trial/debug/
 trial/tripo_clean_*.glb
 /build/
+/.tmp/
 
 # Unreal Engine : sorties locales régénérables
 unreal/StridesGrandTour/Binaries/

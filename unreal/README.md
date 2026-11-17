@@ -33,7 +33,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 | Parcours du Pôle, temps accordé, fautes, refus, éliminations, classement | **portés, testés et branchés** ; parcours complet à valider visuellement |
 | Sauvegarde | **schéma natif v1 + import de l'export web, testés** ; sauvegarde/rechargement vérifiés à l'écran |
 | Déplacement à pied, monter, descendre | **compilé et vérifié à l'écran**, transition 0,8 s |
-| Cheval PJL (modèle, 17 clips), cavalier réaliste (visages, mains, posture) | **importés et positionnés** ; retargeting et synchronisation des animations à finir |
+| Cheval PJL (modèle, 17 clips), cavalier réaliste (visages, mains, posture) | **importés et positionnés** ; 17 animations cheval normalisées, allures/sauts branchés ; cavalier ancré sur le point de selle animé, animation squelettique à finir |
 | Monde (Deauville, Pôle, Paris, écuries, maison, boutiques), météo, jour/nuit | à faire |
 | Missions, histoire, téléphone Strides, progression, réputation, compétences, énergie | à faire (logique pure, portable) |
 | Véhicules, transport du cheval, carburant | à faire |
@@ -42,7 +42,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 | Interface tactile UMG | à faire (joystick virtuel du moteur en attendant) |
 
 ## Prochaine tranche
-1. Sur Mac : retargeter et contrôler visuellement chaque allure, le saut et la synchronisation cheval-cavalière.
-2. Animation : finaliser l'Animation Blueprint du cheval (choix des clips selon allure, virage, saut — logique de `pjlHorse.js`)
-   et posture du cavalier (selle, mains, étriers — `human/anim.js`).
+1. Sur Mac : approfondir la revue visuelle de la posture de la cavalière au galop et au saut.
+2. Animation : finaliser l'Animation Blueprint du cheval (virages et transitions — logique de `pjlHorse.js`)
+   et l'animation squelettique du cavalier (mains, étriers — `human/anim.js`).
 3. Puis : interface UMG (HUD, téléphone), monde du Pôle et de l'Écurie du Val, missions et progression.
