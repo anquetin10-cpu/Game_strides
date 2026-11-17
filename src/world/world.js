@@ -2085,48 +2085,94 @@ function dropGroups(g, drop) {
   g.clearGroups();
   return prep(g);
 }
-// Formes du public, partagées : buste sans fond (posé sur les cuisses), cuisses sans dessous ni arrière,
-// tibias sans arrière, tête dont les faces du haut et de l'arrière portent les cheveux.
+// Formes du public, partagées (lot v3 : anatomie lisible même de loin) : bassin, buste à épaules, cou, tête (cheveux sur
+// le haut et l'arrière), deux cuisses, deux tibias, pieds, bras et avant-bras. Faces jamais vues retirées (dessous,
+// arrière des membres posés), environ 120 triangles par spectateur.
 let _crowd = null;
 function crowdShapes() {
   if (_crowd) return _crowd;
-  const head = prep(new THREE.IcosahedronGeometry(0.1, 0));
+  const head = prep(new THREE.IcosahedronGeometry(0.095, 0));
   const p = head.attributes.position.array;
   const hair = [];
   for (let f = 0; f < p.length; f += 9) {
     const cy = (p[f + 1] + p[f + 4] + p[f + 7]) / 3, cz = (p[f + 2] + p[f + 5] + p[f + 8]) / 3;
-    hair.push(cy > 0.03 || (cz < -0.04 && cy > -0.03));
+    hair.push(cy > 0.028 || (cz < -0.035 && cy > -0.03));
   }
   _crowd = {
-    torso: dropGroups(new THREE.CylinderGeometry(0.16, 0.13, 0.52, 5, 1), [2]),
-    thigh: dropGroups(new THREE.BoxGeometry(0.32, 0.13, 0.42), [3, 5]),
-    shin: dropGroups(new THREE.BoxGeometry(0.3, 0.42, 0.12), [5]),
+    pelvis: dropGroups(new THREE.BoxGeometry(0.34, 0.16, 0.26), [3]),
+    torso: dropGroups(new THREE.CylinderGeometry(0.175, 0.145, 0.46, 6, 1), [2]),
+    neck: dropGroups(new THREE.CylinderGeometry(0.048, 0.055, 0.11, 5, 1), [1, 2]),
+    thigh: dropGroups(new THREE.BoxGeometry(0.135, 0.13, 0.44), [3]),
+    shin: dropGroups(new THREE.BoxGeometry(0.11, 0.42, 0.115), [2, 3]),
+    foot: dropGroups(new THREE.BoxGeometry(0.1, 0.07, 0.23), [3, 5]),
+    arm: dropGroups(new THREE.BoxGeometry(0.085, 0.3, 0.09), [2, 3]),
+    fore: dropGroups(new THREE.BoxGeometry(0.075, 0.075, 0.28), [3]),
     head,
     hair,
   };
   return _crowd;
 }
 
+// Spectateur assis (origine : dessus du siège, face à +z). Mêmes six tirages que l'ancienne silhouette, dans le même
+// ordre (le générateur du monde n'est pas décalé) ; les variations en plus (attitude, écart des genoux, tête tournée,
+// chaussures) viennent d'un générateur local tiré de ces valeurs.
 function seatedPerson(rnd, x, y, z) {
   const pick = (a) => a[Math.floor(rnd() * a.length)];
   const skin = pick(SKIN), top = pick(TOPS), pants = pick(PANTS), hair = pick(HAIR);
-  const lean = (rnd() - 0.5) * 0.12;
-  const sh = 0.92 + rnd() * 0.16;
-  // Silhouette vue de loin (~50 triangles) : buste, tête et cheveux, jambes.
+  const r5 = rnd(), r6 = rnd();
+  const lean = (r5 - 0.5) * 0.12;
+  const sh = 0.92 + r6 * 0.16;
+  let h = (Math.floor(r5 * 1e6) * 31 + Math.floor(r6 * 1e6)) >>> 0 || 1;
+  const lr = () => ((h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)) >>> 0) / 4294967296;
+  const pose = lr(); // < 0,55 mains sur les cuisses ; < 0,8 bras croisés ; < 0,93 coudes sur les genoux ; sinon un bras levé
+  const splay = 0.07 + lr() * 0.05;
+  const yaw = (lr() - 0.5) * 0.7;
+  const shoes = lr() < 0.5 ? '#1c1c1e' : lr() < 0.5 ? '#efeee9' : '#5a3b28';
   const S = crowdShapes();
   const head = S.head.clone();
   paint(head, skin);
   const c = head.attributes.color.array;
   const hc = new THREE.Color(hair);
-  S.hair.forEach((h, f) => {
-    if (h) for (let k = f * 9; k < f * 9 + 9; k += 3) hc.toArray(c, k);
+  S.hair.forEach((hh, f) => {
+    if (hh) for (let k = f * 9; k < f * 9 + 9; k += 3) hc.toArray(c, k);
   });
-  return [
-    [S.torso, top, { x, y: y + 0.3 * sh, z: z - 0.04, rx: -0.06 + lean, sx: sh, sy: sh, sz: 0.72 * sh }],
-    [head, null, { x, y: y + 0.68 * sh, z: z - 0.03, sx: sh, sy: 1.15 * sh, sz: sh }],
-    [S.thigh, pants, { x, y: y + 0.05, z: z + 0.18 }],
-    [S.shin, pants, { x, y: y - 0.17, z: z + 0.36 }],
+  const fwd = pose >= 0.8 && pose < 0.93 ? 0.32 : lean; // penché en avant, coudes sur les genoux
+  const torsoY = y + 0.37 * sh, shY = y + 0.58 * sh;
+  const bz = z - 0.04 + Math.sin(fwd) * 0.2; // épaules avancées quand on se penche
+  const out = [
+    [S.pelvis, pants, { x, y: y + 0.07, z: z - 0.03, sx: sh, sz: sh }],
+    [S.torso, top, { x, y: torsoY, z: z - 0.04 + Math.sin(fwd) * 0.1, rx: fwd - 0.04, sx: sh, sy: sh, sz: 0.66 * sh }],
+    [S.neck, skin, { x, y: shY + 0.07 * sh, z: bz + 0.01, rx: fwd * 0.5 }],
+    [head, null, { x, y: shY + 0.19 * sh, z: bz + 0.02, ry: yaw, rx: fwd * 0.3, sx: sh, sy: 1.12 * sh, sz: 1.04 * sh }],
   ];
+  for (const sg of [-1, 1]) {
+    const kx = x + sg * splay;
+    out.push([S.thigh, pants, { x: x + sg * (splay * 0.6 + 0.03), y: y + 0.07, z: z + 0.19, ry: sg * (splay - 0.07) * 1.2 }]);
+    out.push([S.shin, pants, { x: kx, y: y - 0.16, z: z + 0.39 }]);
+    out.push([S.foot, shoes, { x: kx, y: y - 0.39, z: z + 0.44 }]);
+    const sx0 = x + sg * 0.2 * sh;
+    if (pose < 0.55) {
+      // Mains posées sur les cuisses.
+      out.push([S.arm, top, { x: sx0, y: shY - 0.15, z: bz + 0.04, rx: -0.35 }]);
+      out.push([S.fore, skin, { x: x + sg * 0.15, y: y + 0.19, z: z + 0.2, rx: 0.25 }]);
+    } else if (pose < 0.8) {
+      // Bras croisés devant la poitrine.
+      out.push([S.arm, top, { x: sx0, y: shY - 0.13, z: bz + 0.05, rx: -0.25 }]);
+      out.push([S.fore, top, { x: x + sg * 0.02, y: torsoY - 0.02 + sg * 0.03, z: bz + 0.17, ry: sg * 1.45 }]);
+    } else if (pose < 0.93) {
+      // Coudes sur les genoux, mains jointes.
+      out.push([S.arm, top, { x: sx0 - sg * 0.03, y: shY - 0.12, z: bz + 0.13, rx: -0.7 }]);
+      out.push([S.fore, skin, { x: x + sg * 0.07, y: y + 0.2, z: z + 0.36, ry: -sg * 0.5 }]);
+    } else if (sg > 0) {
+      // Bras levé (salut, encouragement).
+      out.push([S.arm, top, { x: sx0 + 0.02, y: shY + 0.12, z: bz, rz: -0.25 }]);
+      out.push([S.fore, skin, { x: sx0 + 0.07, y: shY + 0.38, z: bz + 0.02, rx: -1.45 }]);
+    } else {
+      out.push([S.arm, top, { x: sx0, y: shY - 0.15, z: bz + 0.04, rx: -0.35 }]);
+      out.push([S.fore, skin, { x: x - 0.15, y: y + 0.19, z: z + 0.2, rx: 0.25 }]);
+    }
+  }
+  return out;
 }
 
 function pointInPoly(x, z, poly) {
