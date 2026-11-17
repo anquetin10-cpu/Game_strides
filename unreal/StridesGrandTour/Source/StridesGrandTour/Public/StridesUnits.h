@@ -11,5 +11,5 @@ namespace StridesUnits
 	inline void UEToWeb(const FVector& V, double& X, double& Y, double& Z) { X = V.X / CmPerM; Y = V.Z / CmPerM; Z = V.Y / CmPerM; }
 	// Cap web h (rad) ↔ lacet Unreal (degrés) : direction web (sin h, cos h) = direction Unreal (X, Y).
 	inline double HeadingToYawDeg(double H) { return 90.0 - FMath::RadiansToDegrees(H); }
-	inline double YawDegToHeading(double Yaw) { return UE_HALF_PI - FMath::DegreesToRadians(Yaw); }
+	inline double YawDegToHeading(double Yaw) { return UE_DOUBLE_HALF_PI - FMath::DegreesToRadians(Yaw); }
 }

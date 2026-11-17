@@ -7,13 +7,14 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "StridesCore/Api.h"
 
 namespace strides {
 
 struct SaveRecord { bool eliminated = false; int penalties = 0; double time = 0; };
 struct SavePose { std::string mode = "foot"; double x = 0, y = 0, z = 0, heading = 0; bool valid = false; };
 
-struct SaveGame {
+struct STRIDESCORE_API SaveGame {
   static constexpr int kVersion = 1;
   int version = kVersion;
   std::string playerName = "Alex", avatar = "f", activeHorse = "comete", lang = "fr";

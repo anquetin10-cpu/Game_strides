@@ -8,7 +8,7 @@ public class StridesCore : ModuleRules
 	public StridesCore(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		CppStandard = CppStandardVersion.Cpp17;
+		CppStandard = CppStandardVersion.Cpp20;
 		// Le lecteur JSON du cœur signale les fichiers abîmés par exception (attrapée dans SaveGame) : exceptions activées
 		// pour ce module seulement.
 		bEnableExceptions = true;

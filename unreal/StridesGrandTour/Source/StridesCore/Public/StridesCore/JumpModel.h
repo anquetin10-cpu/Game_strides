@@ -6,6 +6,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "StridesCore/Api.h"
 
 namespace strides {
 
@@ -14,7 +15,7 @@ struct JumpParams {
          good = 0.15, rub = 0.06, late = 0.3, maxAngle = 0.5, reach = 13, clear = 0.32, spreadK = 0.18, T0 = 0.56,
          Tk = 0.1, Tmin = 0.6, Tmax = 0.74;
 };
-const JumpParams& jumpDefaults();
+STRIDESCORE_API const JumpParams& jumpDefaults();
 
 struct Vec2 { double x = 0, z = 0; };
 struct Bar { double s = 0, h = 0; };
@@ -37,15 +38,15 @@ struct JumpPlan {
   Cause cause = Cause::None;
 };
 
-double speedFactor(double v);
-double angleFactor(double cosA);
-double arcY(double H, double L, double x);
-FenceGeo railsAhead(const Fence& f, double px, double pz, double fx, double fz);
-JumpPlan planJump(const JumpHorse& horse, const FenceGeo* geo, const JumpParams& P = jumpDefaults());
-Quality takeoffQuality(const JumpPlan& plan);
+STRIDESCORE_API double speedFactor(double v);
+STRIDESCORE_API double angleFactor(double cosA);
+STRIDESCORE_API double arcY(double H, double L, double x);
+STRIDESCORE_API FenceGeo railsAhead(const Fence& f, double px, double pz, double fx, double fz);
+STRIDESCORE_API JumpPlan planJump(const JumpHorse& horse, const FenceGeo* geo, const JumpParams& P = jumpDefaults());
+STRIDESCORE_API Quality takeoffQuality(const JumpPlan& plan);
 
-const char* zoneName(Zone);
-const char* causeName(Cause);
-const char* qualityName(Quality);
+STRIDESCORE_API const char* zoneName(Zone);
+STRIDESCORE_API const char* causeName(Cause);
+STRIDESCORE_API const char* qualityName(Quality);
 
 }  // namespace strides

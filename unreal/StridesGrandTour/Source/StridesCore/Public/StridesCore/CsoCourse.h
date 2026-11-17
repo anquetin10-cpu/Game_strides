@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "StridesCore/Api.h"
 
 namespace strides {
 
@@ -17,20 +18,20 @@ struct TraceFence { std::string label, kind; double spread, x, z, rot, s; };
 struct TraceMark { double x, z, rot, s; };
 struct CourseTrace { std::vector<TracePoint> pts, leadIn; std::vector<TraceFence> fences; std::map<std::string, TraceMark> marks; double length = 0; };
 
-CourseDesign poleDesign();  // tracé du Pôle International (csoCourse.js, CSO_DESIGN)
-CourseTrace traceCourse(const CourseDesign& d, double step = 0.5);
-std::vector<double> courseHeights(const CourseDesign& d, const CourseTrace& t, double h);
+STRIDESCORE_API CourseDesign poleDesign();  // tracé du Pôle International (csoCourse.js, CSO_DESIGN)
+STRIDESCORE_API CourseTrace traceCourse(const CourseDesign& d, double step = 0.5);
+STRIDESCORE_API std::vector<double> courseHeights(const CourseDesign& d, const CourseTrace& t, double h);
 
-int timeAllowedFor(double length, double speedMPerMin);
-int timeFaults(double t, double allowed, int perSecond = 1);
+STRIDESCORE_API int timeAllowedFor(double length, double speedMPerMin);
+STRIDESCORE_API int timeFaults(double t, double allowed, int perSecond = 1);
 
 struct RunResult { bool eliminated = false; int penalties = 0; double time = 0; };
 // < 0 si a est meilleur : terminé avant éliminé, puis moins de pénalités, puis meilleur chrono.
-int compareResults(const RunResult& a, const RunResult& b);
+STRIDESCORE_API int compareResults(const RunResult& a, const RunResult& b);
 
 // Juge d'une épreuve (CSO ou cross) : reçoit les événements du parcours et tient fautes, refus, chrono, élimination.
 enum class Elim { None, Refusals, FenceRefusals, TimeLimit, Dismounted };
-class CourseJudge {
+class STRIDESCORE_API CourseJudge {
  public:
   CourseJudge(std::vector<std::string> labels, double timeAllowed, bool cross = false, int maxRefusals = -1);
   void startCrossed();                            // ligne de départ franchie : le chrono part

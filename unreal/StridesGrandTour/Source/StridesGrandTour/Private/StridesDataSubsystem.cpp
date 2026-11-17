@@ -104,7 +104,7 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 		for (const auto& P : D->GetObjectField(TEXT("profile"))->Values) Design.profile[TCHAR_TO_UTF8(*P.Key)] = P.Value->AsNumber();
 		PoleDesign = Design;
-		for (const auto& P : J->GetObjectField(TEXT("speeds"))->Values) CourseSpeeds.Add(P.Key, P.Value->AsNumber());
+	for (const auto& P : J->GetObjectField(TEXT("speeds"))->Values) CourseSpeeds.Add(FString(P.Key), P.Value->AsNumber());
 	}
 }
 
