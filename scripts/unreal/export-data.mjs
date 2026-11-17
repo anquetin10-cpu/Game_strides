@@ -15,6 +15,7 @@ import { timeFaults, compareResults } from '../../src/gameplay/challenge.js';
 import { COURSE_SPEED, COURSE_LENGTH, timeAllowedFor } from '../../src/gameplay/courses.js';
 import { HORSE } from '../../src/config.js';
 import { POLE } from '../../src/world/sites.js';
+import { HORSES } from '../../src/gameplay/data.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const DATA = join(ROOT, 'unreal/StridesGrandTour/Content/Data');
@@ -26,6 +27,7 @@ const src = (f) => `src/${f}`;
 
 // ---------- Données ----------
 write(DATA, 'horse_gaits.json', { schema: 'strides.horse_gaits/1', source: src('config.js'), units: 'm/s', gaits: HORSE.gaits.map((g) => ({ id: g.short, name: g.name, speed: g.speed, max: g.max ?? null })), jumpPeak: HORSE.jumpPeak, jumpDuration: HORSE.jumpDuration, minJumpSpeed: HORSE.minJumpSpeed, stamina: HORSE.stamina, gallopDrain: HORSE.gallopDrain, staminaRegen: HORSE.staminaRegen });
+write(DATA, 'horse_profiles.json', { schema: 'strides.horse_profiles/1', source: src('gameplay/data.js'), horses: Object.values(HORSES).map((h) => ({ id: h.id, name: h.name, breed: h.breed, age: h.age, coat: h.coat, blaze: !!h.blaze, socks: h.socks, speed: h.speed, jump: h.jump, stamina: h.stamina, price: h.price ?? 0, value: h.value ?? 0, desc: h.desc })) });
 write(DATA, 'jump_model.json', { schema: 'strides.jump_model/1', source: src('gameplay/jumpModel.js'), units: 'm, s', ...JUMP });
 write(DATA, 'cso_ride.json', { schema: 'strides.cso_ride/1', source: src('gameplay/csoRide.js'), units: 'm, s, rad', ...CSO_RIDE });
 write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: 4, firstRefusal: 4, refusalsToEliminate: 2, timeFaultPerSecond: 1 } });
