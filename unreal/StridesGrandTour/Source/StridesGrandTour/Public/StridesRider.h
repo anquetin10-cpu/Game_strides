@@ -23,6 +23,7 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UStaticMeshComponent> Body;
+	UPROPERTY(VisibleAnywhere) TArray<TObjectPtr<class USkeletalMeshComponent>> MeshParts;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USpringArmComponent> Boom;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> Camera;
 	float MountT = -1.f;

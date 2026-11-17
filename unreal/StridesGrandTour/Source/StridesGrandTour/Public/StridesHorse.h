@@ -48,12 +48,20 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USceneComponent> Root;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UStaticMeshComponent> Body;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USkeletalMeshComponent> Mesh;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<class USkeletalMeshComponent> EyesMesh;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<class USkeletalMeshComponent> HairMesh;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USpringArmComponent> Boom;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> Camera;
 
 private:
 	void StartJump(AStridesFence* Fence);
+	void UpdateAnimation();
 	double JumpPower() const;
+	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
+	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpCanterAnimation;
+	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpGallopAnimation;
+	int32 LastAnimationGait = INDEX_NONE;
+	bool bLastAnimationJumping = false;
 	double X = 0, Z = 0, H = 0, YawRate = 0;
 	FVector2D Move = FVector2D::ZeroVector;
 	bool bJumpRequested = false;

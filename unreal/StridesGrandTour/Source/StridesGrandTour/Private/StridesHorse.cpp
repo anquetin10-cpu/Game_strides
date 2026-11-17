@@ -1,4 +1,5 @@
 #include "StridesHorse.h"
+#include "Animation/AnimationAsset.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -25,11 +26,34 @@ AStridesHorse::AStridesHorse()
 	Body->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(Root);
+	const TCHAR* HorseAssetRoot = TEXT("/Game/Characters/Horse/horse_pjl_unreal/SkeletalMeshes/");
+	if (USkeletalMesh* HorseBody = LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_426.Object_426"))))
+	{
+		Mesh->SetSkeletalMesh(HorseBody);
+		Body->SetVisibility(false);
+		Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	EyesMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("EyesMesh"));
+	EyesMesh->SetupAttachment(Mesh);
+	EyesMesh->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_427.Object_427"))));
+	EyesMesh->SetLeaderPoseComponent(Mesh);
+	HairMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HairMesh"));
+	HairMesh->SetupAttachment(Mesh);
+	HairMesh->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_428.Object_428"))));
+	HairMesh->SetLeaderPoseComponent(Mesh);
+	const FString AnimRoot = FString(HorseAssetRoot) + TEXT("horse_pjl_unreal");
+	for (const TCHAR* Name : {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")})
+		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".") + TEXT("horse_pjl_unreal") + Name)));
+	// L'animation idle du GLB importé déforme le squelette dans Unreal. Une image
+	// figée du trot conserve une pose d'attente correcte jusqu'à son retargeting.
+	if (GaitAnimations.IsValidIndex(2) && GaitAnimations[2]) GaitAnimations[0] = GaitAnimations[2];
+	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.horse_pjl_unrealjump_canter")));
+	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.horse_pjl_unrealjump_gallop")));
 	Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Boom"));
 	Boom->SetupAttachment(Root);
-	Boom->TargetArmLength = 650.f;
-	Boom->SetRelativeLocation(FVector(0, 0, 220));
-	Boom->SetRelativeRotation(FRotator(-14, 0, 0));
+	Boom->TargetArmLength = 400.f;
+	Boom->SetRelativeLocation(FVector(0, 0, 185));
+	Boom->SetRelativeRotation(FRotator(-9, 0, 0));
 	Boom->bEnableCameraLag = true;
 	Boom->CameraLagSpeed = 6.f;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -40,6 +64,26 @@ void AStridesHorse::BeginPlay()
 {
 	Super::BeginPlay();
 	SetActorTickEnabled(true);
+	UpdateAnimation();
+}
+
+void AStridesHorse::UpdateAnimation()
+{
+	if (!Mesh || !Mesh->GetSkeletalMeshAsset()) return;
+	if (bJumping != bLastAnimationJumping || (!bJumping && GaitIndex != LastAnimationGait))
+	{
+		UAnimationAsset* Next = bJumping
+			? (SpeedMS >= 7.f ? JumpGallopAnimation.Get() : JumpCanterAnimation.Get())
+			: (GaitAnimations.IsValidIndex(GaitIndex) ? GaitAnimations[GaitIndex].Get() : nullptr);
+		if (Next)
+		{
+			Mesh->PlayAnimation(Next, !bJumping);
+			Mesh->SetPlayRate(!bJumping && GaitIndex == 0 ? 0.f : 1.f);
+			if (!bJumping && GaitIndex == 0) Mesh->SetPosition(0.f);
+		}
+		LastAnimationGait = GaitIndex;
+		bLastAnimationJumping = bJumping;
+	}
 }
 
 void AStridesHorse::PlaceAt(double WebX, double WebZ, double Heading)
@@ -155,4 +199,5 @@ void AStridesHorse::Tick(float Dt)
 	if (Course) Course->TrackHorse(X0, Z0, X, Z, H, Dt);
 	const double Spd = SpeedMS;
 	GaitIndex = bCsoControls ? (Spd < 0.2 ? 0 : Spd < 3.2 ? 1 : Spd < 5.5 ? 2 : Spd < 10 ? 3 : 4) : GaitIndex;
+	UpdateAnimation();
 }

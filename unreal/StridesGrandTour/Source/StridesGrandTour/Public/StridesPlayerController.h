@@ -15,6 +15,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 private:
+	void InstallInputContext();
 	void OnMove(const FInputActionValue& V);
 	void OnMoveDone(const FInputActionValue& V);
 	void OnLook(const FInputActionValue& V);

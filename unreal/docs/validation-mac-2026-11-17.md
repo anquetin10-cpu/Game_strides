@@ -8,10 +8,12 @@
 - Cœur compilé avec AppleClang 21, Debug, `-Werror`, Ninja.
 - CTest : 1 suite réussie, **4 944 vérifications, zéro échec**. Journal : `build/core-mac/Testing/Temporary/LastTest.log`.
 - Unreal Engine **5.8.4** installé par Epic dans `/Users/Shared/Epic Games/UE_5.8`; UE 5.6 retiré. UnrealBuildTool accepte Xcode 26.6 et compile avec le SDK Mac 26.5.
+- Composant Metal Toolchain Apple installé et reconnu par Unreal (`metal` 32023.883, toolchain 17F109).
 - Cible `StridesGrandTourEditor Mac Development` compilée avec succès. Bibliothèques produites : `libUnrealEditor-StridesCore.dylib` et `libUnrealEditor-StridesGrandTour.dylib`.
 - Tests dans le moteur : `Strides.Core.Course`, `Strides.Core.Save` et `Strides.Units` réussis, sortie `EXIT CODE: 0`. Journal de contrôle : `/tmp/grandtour-unreal-tests-rerun-14868.log`.
-- Démarrage en mode jeu vérifié : carte `/Engine/Maps/Entry`, classe `StridesGameMode`, monde amené en jeu puis arrêt propre avec code 0. Journal : `/tmp/grandtour-game-start-14868.log`.
-- Modèles présents : `public/real/horse_pjl.glb`, `rider_f.glb`, `rider_m.glb`.
+- Démarrage graphique en mode jeu vérifié : carte `/Engine/Maps/Entry`, classe `StridesGameMode` et HUD visibles.
+- Boucle contrôlée à l'écran : monter, accélérer jusqu'au galop à 8,0 m/s, descendre, sauvegarder puis recharger. L'installation du contexte Enhanced Input a été fiabilisée dans `SetupInputComponent` et `BeginPlay`.
+- Modèles cheval PJL et cavalière convertis puis importés dans `Content/Characters`. Leur échelle, leur orientation et leur placement en selle ont été contrôlés sur une capture montée. La pose d'attente utilise provisoirement la première image du trot, car le clip `idle` importé déforme le squelette.
 
 ## Commandes reproductibles
 ```sh
@@ -29,10 +31,10 @@ UE="/Users/Shared/Epic Games/UE_5.8"
 ```
 
 ## Blocages réels
-- Le disque ne conserve qu’environ **1,7 Gio libres** après installation et compilation. Le serveur de cache Zen refuse les écritures (`Insufficient Storage 507`) ; compilation et tests passent néanmoins. Il faut libérer de l’espace avant import des modèles, cuisson ou package iOS.
+- Le nettoyage et la sauvegarde ont porté la marge disque à environ **26 Gio** ; le stockage ne bloque plus la tranche Mac actuelle.
 - L’outil `idevice_id` fourni avec UE 5.8 est Intel et échoue sur ce Mac Apple Silicon (`Bad CPU type in executable`). La plateforme iOS est reconnue valide par Unreal, mais la détection d’un appareil par cet outil reste à corriger ou contourner.
 - Aucun appareil iOS détecté par `xcrun devicectl list devices`.
-- Aucun modèle importé dans Unreal ; aucun Blueprint d’animation validé ; aucun package iOS produit.
+- Les clips importés restent à retargeter et à valider en mouvement (notamment attente, saut et synchronisation cavalier-cheval). Aucun package iOS produit.
 
 ## Stockage : diagnostic, aucune suppression
 - Cache uv : environ 3,2 Gio ; à contrôler avant nettoyage, puis à retélécharger si nécessaire.
@@ -42,8 +44,8 @@ UE="/Users/Shared/Epic Games/UE_5.8"
 - Corbeille vide ; téléchargements environ 99 Mio : ne résoudront pas le problème.
 - En attente du choix de Julien : SSD externe existant ou sélection explicite de données à libérer. Aucun achat, aucune suppression, aucune publication.
 
-## Reprise après déblocage
-1. Libérer une marge disque suffisante pour le cache, les imports et la cuisson.
-2. Importer cheval/cavaliers via Interchange, configurer les Blueprints et animations, puis contrôler visuellement la boucle jouable.
+## Prochaine reprise
+1. Retargeter les animations cheval et cavalier, puis valider visuellement chaque allure et le saut.
+2. Finaliser un parcours complet à l'écran avec obstacles et jugement.
 3. Corriger ou contourner `idevice_id`, connecter un appareil et vérifier la détection.
 4. Construire et tester sur appareil ; compilation et tests moteur ne prouvent pas encore le package iOS ni la performance réelle.

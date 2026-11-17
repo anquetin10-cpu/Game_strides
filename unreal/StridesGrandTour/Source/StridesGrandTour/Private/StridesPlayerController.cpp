@@ -62,13 +62,24 @@ void AStridesPlayerController::SetupInputComponent()
 		EI->BindAction(SaveAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnSave);
 		EI->BindAction(LoadAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnLoad);
 	}
+	InstallInputContext();
 }
 
 void AStridesPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	InstallInputContext();
+}
+
+void AStridesPlayerController::InstallInputContext()
+{
+	if (!Context) return;
 	if (UEnhancedInputLocalPlayerSubsystem* S = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		S->RemoveMappingContext(Context);
 		S->AddMappingContext(Context, 0);
+		UE_LOG(LogTemp, Display, TEXT("Strides input context installed"));
+	}
 }
 
 AStridesRider* AStridesPlayerController::Rider() const

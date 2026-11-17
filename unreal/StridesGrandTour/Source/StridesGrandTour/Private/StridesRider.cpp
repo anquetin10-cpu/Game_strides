@@ -2,6 +2,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -19,6 +20,22 @@ AStridesRider::AStridesRider()
 	Body->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")));
 	Body->SetRelativeScale3D(FVector(0.45, 0.3, 1.68));
 	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	const FString RiderRoot = TEXT("/Game/Characters/Riders/Female/rider_f_unreal/SkeletalMeshes/");
+	USkeletalMeshComponent* MainMesh = GetMesh();
+	if (USkeletalMesh* RiderBody = LoadObject<USkeletalMesh>(nullptr, *(RiderRoot + TEXT("Body.Body"))))
+	{
+		MainMesh->SetSkeletalMesh(RiderBody);
+		MainMesh->SetRelativeLocation(FVector(0, 0, -84));
+		Body->SetVisibility(false);
+	}
+	for (const TCHAR* Part : {TEXT("Cloth_boots"), TEXT("Cloth_jacket"), TEXT("Cloth_jeans"), TEXT("Cloth_shirt"), TEXT("Eyebrows"), TEXT("Eyelashes"), TEXT("Eyes"), TEXT("Hair_ponytail01")})
+	{
+		USkeletalMeshComponent* PartMesh = CreateDefaultSubobject<USkeletalMeshComponent>(FName(FString(TEXT("Rider_")) + Part));
+		PartMesh->SetupAttachment(MainMesh);
+		PartMesh->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, *(RiderRoot + Part + TEXT(".") + Part)));
+		PartMesh->SetLeaderPoseComponent(MainMesh);
+		MeshParts.Add(PartMesh);
+	}
 	UCharacterMovementComponent* M = GetCharacterMovement();
 	M->MaxWalkSpeed = 140.f;  // marche 1,4 m/s (anim.js, vitesse du joueur à pied ; course : tranche suivante)
 	M->bOrientRotationToMovement = true;
@@ -26,7 +43,9 @@ AStridesRider::AStridesRider()
 	bUseControllerRotationYaw = false;
 	Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Boom"));
 	Boom->SetupAttachment(GetCapsuleComponent());
-	Boom->TargetArmLength = 420.f;
+	Boom->TargetArmLength = 300.f;
+	Boom->SetRelativeLocation(FVector(0, 0, 95));
+	Boom->SetRelativeRotation(FRotator(-8, 0, 0));
 	Boom->bUsePawnControlRotation = true;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Boom);
