@@ -186,7 +186,7 @@
   "unreal": "Géométrie exportée (architecture.glb) ; centre de carrière exporté par scripts/unreal/export-data.mjs:33 (cso_course_pole.json arena) et lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:87 ; parcours posé dessus par AStridesWorldDirector::BuildWorld (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test du site ni du centre de carrière (PoleArena) : Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119) ne vérifie que le sol aplani à 3 m en (330, -224), qui relève de monde.relief-analytique ; le placement du parcours n'est pas comparé au web ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; capture isolée 03_pole_carriere.png non comparée.",
+  "preuve": "Centre de carrière des données (Content/Data/cso_course_pole.json, arena) recoupé avec le web en cours d'exécution : ligne de départ CSO_START du jeu web (unreal/core/tests/oracles/cso_runs.json, setup.start) = repère du tracé + arena à 2e-6 près (unreal/core/tests/test_core.cpp:205-292) ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119) ne vérifie que le sol aplani à 3 m en (330, -224), qui relève de monde.relief-analytique ; le placement Unreal du parcours (AStridesCourse) n'est pas comparé au web ; module compilé (UBT du 18/11/2026 : Result: Succeeded).",
   "ecart": "Projecteurs sans lumière (pas de nuit) ; aucune comparaison d'aspect.",
   "tranche": "c"
  },

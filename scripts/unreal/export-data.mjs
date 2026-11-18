@@ -56,14 +56,26 @@ for (const v of [0, 0.5, 1, 3, 4.6, 6.2, 8]) for (const x of [-1, -0.5, -0.05, 0
 for (const c of [2, 4.6, 6.2]) for (const [y, x] of [[1, 0], [0.5, 0], [0.3, 0], [-1, 0], [0.8, 0.9], [-0.6, 0.2]]) ride.push({ fn: 'cadenceDelta', in: [y, x, c], out: cadenceDelta(y, x, c) });
 for (const v of [0, 0.5, 1, 4.6, 6.2, 9]) ride.push({ fn: 'minRadius', in: [v], out: minRadius(v) }, { fn: 'maxTurnRate', in: [v], out: maxTurnRate(v) });
 write(ORA, 'cso_ride.json', { schema: 'strides.oracle.cso_ride/1', source: src('gameplay/csoRide.js'), cases: ride });
-// Tracé du parcours et règles de temps.
+// Tracé du parcours et règles de temps. `design` : le tracé complet tel que le JS le déclare (départ, commandes,
+// profil de hauteurs), pour vérifier que le jeu, qui le lit dans Content/Data/cso_course_pole.json, trace la même chose.
 const tr = traceCourse();
+const tf = [];
+for (const a of [45, 56, 59, 64]) for (const d of [-5, -1e-10, 0, 1e-12, 1e-10, 1e-8, 0.01, 0.5, 0.99, 1, 1.0000001, 2.2, 7.5, 15]) tf.push([a + d, a, 1]);
+for (const [t, a] of [[66.2, 64], [70, 64], [128, 64]]) tf.push([t, a, 2]);
+const R = (penalties, time, eliminated) => (eliminated ? { eliminated } : { penalties, time });
+const cmp = [
+  [R(0, 50), R(4, 40)], [R(4, 40), R(4, 41)], [R(null, null, 'r'), R(12, 80)],
+  [R(12, 80), R(null, null, 'r')], [R(null, null, 'r'), R(null, null, 't')], [R(4, 61.37), R(4, 61.37)],
+  [R(4, 61.38), R(4, 61.37)], [R(0, 99.99), R(1, 40)], [R(8, 70), R(4, 90)], [R(0, 63.5), R(0, 63.49)],
+  [R(3, 66.2), R(3, 66.2)], [R(0, 0), R(0, 0.01)],
+];
 write(ORA, 'cso_course.json', {
   schema: 'strides.oracle.cso_course/1', source: src('gameplay/csoCourse.js'),
+  design: CSO_DESIGN,
   length: tr.length, fences: tr.fences.map((f) => ({ label: f.label, kind: f.kind, spread: f.spread, x: f.x, z: f.z, rot: f.rot, s: f.s })), marks: tr.marks,
-  samplePts: tr.pts.filter((_, i) => i % 25 === 0), heights110: csoHeights(1.1),
+  samplePts: tr.pts.filter((_, i) => i % 25 === 0), leadIn: tr.leadIn, heights110: csoHeights(1.1),
   timeAllowed: Object.fromEntries(Object.entries(COURSE_SPEED).map(([k, sp]) => [k, timeAllowedFor(COURSE_LENGTH.cso, sp)])),
-  timeFaults: [[40, 45], [45, 45], [45.01, 45], [46, 45], [47.5, 45], [60, 45]].map(([t, a]) => ({ t, allowed: a, out: timeFaults(t, a) })),
-  compare: [[{ penalties: 0, time: 50 }, { penalties: 4, time: 40 }], [{ penalties: 4, time: 40 }, { penalties: 4, time: 41 }], [{ eliminated: 'r' }, { penalties: 12, time: 80 }]].map(([a, b]) => ({ a, b, out: Math.sign(compareResults(a, b)) })),
+  timeFaults: tf.map(([t, a, k]) => ({ t, allowed: a, perSecond: k, out: timeFaults(t, a, k) })),
+  compare: cmp.map(([a, b]) => ({ a, b, out: Math.sign(compareResults(a, b)) })),
 });
 console.log('données :', DATA, '\noracles :', ORA, '\nsauts', jump.length, 'conduite', ride.length, 'obstacles', tr.fences.length);

@@ -86,27 +86,17 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		if (const TSharedPtr<FJsonObject>* A; J->TryGetObjectField(TEXT("arena"), A))
 			PoleArena = FVector2D((*A)->GetNumberField(TEXT("x")), (*A)->GetNumberField(TEXT("z")));
-		const TSharedPtr<FJsonObject> D = J->GetObjectField(TEXT("design"));
-		const TSharedPtr<FJsonObject> S = D->GetObjectField(TEXT("start"));
+		// Tracé : lecture du cœur (strides::parseCourseFile), la même que celle que les tests du cœur comparent à
+		// l'oracle cso_course.json (unreal/core/tests/test_core.cpp, testCourseData).
+		FString Text;
 		strides::CourseDesign Design;
-		Design.x = S->GetNumberField(TEXT("x"));
-		Design.z = S->GetNumberField(TEXT("z"));
-		Design.h = S->GetNumberField(TEXT("h"));
-		for (const TSharedPtr<FJsonValue>& V : D->GetArrayField(TEXT("cmds")))
-		{
-			const TArray<TSharedPtr<FJsonValue>>& C = V->AsArray();
-			const FString Op = C[0]->AsString();
-			strides::CourseCmd Cmd;
-			Cmd.op = (char)Op[0];
-			if (Op == TEXT("F")) Cmd.a = C[1]->AsNumber();
-			else if (Op == TEXT("L") || Op == TEXT("R")) { Cmd.a = C[1]->AsNumber(); Cmd.b = C[2]->AsNumber(); }
-			else if (Op == TEXT("J")) { Cmd.label = TCHAR_TO_UTF8(*C[1]->AsString()); Cmd.kind = TCHAR_TO_UTF8(*C[2]->AsString()); Cmd.spread = C.Num() > 3 ? C[3]->AsNumber() : 0; }
-			else if (Op == TEXT("M")) Cmd.label = TCHAR_TO_UTF8(*C[1]->AsString());
-			Design.cmds.push_back(Cmd);
-		}
-		for (const auto& P : D->GetObjectField(TEXT("profile"))->Values) Design.profile[TCHAR_TO_UTF8(*P.Key)] = P.Value->AsNumber();
-		PoleDesign = Design;
-	for (const auto& P : J->GetObjectField(TEXT("speeds"))->Values) CourseSpeeds.Add(FString(P.Key), P.Value->AsNumber());
+		std::string Err = "fichier illisible";
+		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/cso_course_pole.json")))
+			&& strides::parseCourseFile(std::string(TCHAR_TO_UTF8(*Text)), Design, Err))
+			PoleDesign = Design;
+		else
+			LoadLog.Add(FString::Printf(TEXT("cso_course_pole.json : tracé illisible (%s), tracé compilé utilisé"), UTF8_TO_TCHAR(Err.c_str())));
+		for (const auto& P : J->GetObjectField(TEXT("speeds"))->Values) CourseSpeeds.Add(FString(P.Key), P.Value->AsNumber());
 	}
 	if (LoadJson(TEXT("world_architecture.json"), J))
 	{

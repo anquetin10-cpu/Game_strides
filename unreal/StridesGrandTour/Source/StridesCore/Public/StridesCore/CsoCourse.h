@@ -7,6 +7,8 @@
 #include <vector>
 #include "StridesCore/Api.h"
 
+struct J;  // StridesCore/MiniJson.h
+
 namespace strides {
 
 // Commande de tracé : F d (droite), L/R r a (courbe à gauche/droite, rayon r, a degrés), J label kind [spread] (obstacle),
@@ -19,6 +21,12 @@ struct TraceMark { double x, z, rot, s; };
 struct CourseTrace { std::vector<TracePoint> pts, leadIn; std::vector<TraceFence> fences; std::map<std::string, TraceMark> marks; double length = 0; };
 
 STRIDESCORE_API CourseDesign poleDesign();  // tracé du Pôle International (csoCourse.js, CSO_DESIGN)
+// Tracé lu dans les données exportées du JS (objet "design" : start {x, z, h}, cmds [["F", d] | ["L"/"R", r, a] |
+// ["J", label, kind, spread?] | ["M", name]], profile {label: Δh}). C'est le chemin du jeu (StridesDataSubsystem lit
+// Content/Data/cso_course_pole.json) ; les tests le comparent à l'oracle cso_course.json. Exception si mal formé.
+STRIDESCORE_API CourseDesign courseDesignFromJson(const J& design);
+// Fichier complet (texte JSON avec la clé "design") : faux et message d'erreur si illisible, sans exception.
+STRIDESCORE_API bool parseCourseFile(const std::string& text, CourseDesign& out, std::string& err);
 STRIDESCORE_API CourseTrace traceCourse(const CourseDesign& d, double step = 0.5);
 STRIDESCORE_API std::vector<double> courseHeights(const CourseDesign& d, const CourseTrace& t, double h);
 

@@ -280,11 +280,11 @@
    "src/gameplay/challenge.js",
    "src/gameplay/courses.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:83-86 (timeFaults), 136-139 (CourseJudge::points, utilisé par le HUD)",
-  "etat": "partiel",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:123-126 (timeFaults), 176-179 (CourseJudge::points, utilisé par le HUD)",
+  "etat": "identique_prouve",
   "niveau": "teste",
-  "preuve": "cso_course.json : 6 cas timeFaults (40 à 60 s pour 45 s accordées) comparés par unreal/core/tests/test_core.cpp:103, rejoué le 18/11/2026 (4 944 vérifications, 0 échec) ; mais strides::timeFaults n'est appelé par aucun code du module de jeu (rg) : le score du jeu passe par CourseJudge::points (CsoCourse.cpp:136-139), copie de la formule couverte par un seul scénario manuel (66,2 s → 3 points, test_core.cpp:134-135), sans oracle.",
-  "ecart": "La fonction prouvée (timeFaults) n'est pas celle qu'utilise le jeu ; CourseJudge::points n'est pas comparé à l'oracle ; règle du cross dans cso.cross-regles.",
+  "preuve": "cso_course.json : 59 cas timeFaults (temps accordés 45 / 56 / 59 / 64 s ; écarts −5 s, −1e-10, 0, 1e-12, 1e-10, 1e-8, 0,01 à 15 s ; 1 et 2 points par seconde) comparés par unreal/core/tests/test_core.cpp:167-177 ; les 56 cas à 1 point par seconde rejoués aussi par CourseJudge::points (départ, tick du temps, points), la fonction du jeu ; ctest du 18/11/2026 : 8 022 vérifications, 0 échec.",
+  "ecart": "Oracle tiré de challenge.js (timeFaults) ; le jeu web en épreuve calcule ceil(max(0, t − TA) − 1e-9) (courses.js:148, 341, 364), égal à timeFaults pour 1 point par seconde par lecture du code, pas par un oracle séparé ; règle du cross dans cso.cross-regles.",
   "tranche": "a"
  },
  {
@@ -426,11 +426,11 @@
    "src/gameplay/csoCourse.js",
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:11-71 (poleDesign, traceCourse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:83-110 (lecture de cso_course_pole.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:12-24",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:11-30 (poleDesign), 13-49 (courseDesignFromJson, parseCourseFile : lecture du tracé exporté), 72-111 (traceCourse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:89-98 (le jeu lit Content/Data/cso_course_pole.json par strides::parseCourseFile) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:12-24",
   "etat": "identique_prouve",
   "niveau": "teste",
-  "preuve": "cso_course.json : longueur, 10 obstacles (libellé, nature, écart, x, z, cap, abscisse à 1e-7), repères départ / arrivée, un point sur 25, comparés par unreal/core/tests/test_core.cpp:79-99 ; Strides.Core.Course (StridesCoreTests.cpp:21-23) réussi le 17/11 ; Content/Data/cso_course_pole.json régénéré identique ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
-  "ecart": "Tronçons (segs) non portés (utiles à l'aide de tracé et au lint, eux-mêmes absents) ; placement dans le monde (centre de carrière x 330, z −224) non testé ; leadIn non comparé à l'oracle (seuls longueur, obstacles, repères et un point sur 25 du tracé chronométré le sont) ; le jeu lit le tracé dans cso_course_pole.json (StridesDataSubsystem.cpp:85-110) alors que les tests utilisent poleDesign() compilé : cette lecture n'est pas testée.",
+  "preuve": "cso_course.json (régénéré par scripts/unreal/export-data.mjs, clé design = CSO_DESIGN complet) : unreal/core/tests/test_core.cpp:91-107 (checkDesign : départ, 28 commandes, profil) et :111-145 (checkTrace : longueur, 10 obstacles libellé / nature / écart / x / z / cap / s, repères départ et arrivée x / z / cap / s, un point sur 25 avec le cap, les 35 points de l'abord, hauteurs) appliqués à poleDesign() ET au tracé lu dans Content/Data/cso_course_pole.json par parseCourseFile, la fonction du jeu (:147-160) ; fichier altéré (une commande F 11 → 11,1) : 42 échecs (contrôle de mutation du 18/11/2026) ; ctest du 18/11/2026 : 8 022 vérifications, 0 échec ; décalage monde : la ligne de départ du web en cours d'exécution (cso_runs.json, setup.start, CSO_START de obstacles.js) = repère du tracé + centre de carrière de Content/Data à 2e-6 près (unreal/core/tests/test_core.cpp:205-292, testRuns).",
+  "ecart": "Tronçons (segs) non portés (utiles à l'aide de tracé et au lint, eux-mêmes absents) ; la conversion monde du module de jeu (AStridesCourse, StridesWorldDirector : arène + tracé, cm) n'est pas testée, seul le décalage des données l'est.",
   "tranche": "a"
  },
  {
@@ -673,8 +673,8 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:87-92 (compareResults)",
   "etat": "identique_prouve",
   "niveau": "teste",
-  "preuve": "cso_course.json : 3 cas compare (unreal/core/tests/test_core.cpp:104-108) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
-  "ecart": "Trois cas seulement ; le web accepte un résultat absent (null), pas le C++ ; le tri rankResults de ranking.js (fautes puis chrono) n'est pas porté.",
+  "preuve": "cso_course.json : 12 cas compare (terminé / éliminé dans les deux sens, deux éliminés, égalités exactes, écart d'un centième, pénalités contre chrono) comparés par unreal/core/tests/test_core.cpp:178-182 ; ctest du 18/11/2026 : 8 022 vérifications, 0 échec ; oracle régénéré depuis le JS actuel par scripts/unreal/export-data.mjs.",
+  "ecart": "Le web accepte un résultat absent (null), pas le C++ ; le tri rankResults de ranking.js (fautes puis chrono) n'est pas porté.",
   "tranche": "a"
  },
  {

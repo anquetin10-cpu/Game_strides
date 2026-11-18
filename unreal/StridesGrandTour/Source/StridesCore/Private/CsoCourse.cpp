@@ -1,12 +1,52 @@
 // Portage de csoCourse.js / courses.js / challenge.js (voir CsoCourse.h).
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/MathUtil.h"
+#include "StridesCore/MiniJson.h"
 
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <stdexcept>
 
 namespace strides {
+
+CourseDesign courseDesignFromJson(const J& j) {
+  if (j.t != J::Obj) throw std::runtime_error("tracé : objet attendu");
+  const J& st = j["start"];
+  CourseDesign d;
+  d.x = st["x"].num();
+  d.z = st["z"].num();
+  d.h = st["h"].num();
+  for (const J& c : j["cmds"].a) {
+    if (c.t != J::Arr || c.a.empty() || c[0].t != J::Str || c[0].s.size() != 1) throw std::runtime_error("tracé : commande mal formée");
+    CourseCmd k;
+    k.op = c[0].s[0];
+    if (k.op == 'F') k.a = c[1].num();
+    else if (k.op == 'L' || k.op == 'R') { k.a = c[1].num(); k.b = c[2].num(); }
+    else if (k.op == 'J') {
+      if (c[1].t != J::Str || c[2].t != J::Str) throw std::runtime_error("tracé : obstacle mal formé");
+      k.label = c[1].s; k.kind = c[2].s; k.spread = c.a.size() > 3 ? c[3].num() : 0;
+    } else if (k.op == 'M') {
+      if (c[1].t != J::Str) throw std::runtime_error("tracé : repère mal formé");
+      k.label = c[1].s;
+    }
+    else throw std::runtime_error("tracé : commande inconnue " + c[0].s);
+    d.cmds.push_back(k);
+  }
+  for (const auto& [label, dh] : j["profile"].o) d.profile[label] = dh.num();
+  return d;
+}
+
+bool parseCourseFile(const std::string& text, CourseDesign& out, std::string& err) {
+  try {
+    const J j = JParser(text).parse();
+    out = courseDesignFromJson(j["design"]);
+    return true;
+  } catch (const std::exception& e) {
+    err = e.what();
+    return false;
+  }
+}
 
 CourseDesign poleDesign() {
   // POLE (src/world/sites.js) : entrée x 330 (carrière x 330) → start.x = 0 ; carrière d = 76 → start.z = 76/2 − 5.

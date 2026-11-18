@@ -14,4 +14,5 @@ endif()
 enable_testing()
 add_executable(strides_core_tests tests/test_core.cpp)
 target_link_libraries(strides_core_tests strides_core)
-add_test(NAME oracles COMMAND strides_core_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles)
+# Arguments : oracles exportés du JS, puis données lues par le jeu (Content/Data) pour tester le chemin du jeu.
+add_test(NAME oracles COMMAND strides_core_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
