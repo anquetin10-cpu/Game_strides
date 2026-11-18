@@ -84,6 +84,8 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	PoleDesign = strides::poleDesign();
 	if (LoadJson(TEXT("cso_course_pole.json"), J))
 	{
+		if (const TSharedPtr<FJsonObject>* A; J->TryGetObjectField(TEXT("arena"), A))
+			PoleArena = FVector2D((*A)->GetNumberField(TEXT("x")), (*A)->GetNumberField(TEXT("z")));
 		const TSharedPtr<FJsonObject> D = J->GetObjectField(TEXT("design"));
 		const TSharedPtr<FJsonObject> S = D->GetObjectField(TEXT("start"));
 		strides::CourseDesign Design;
@@ -146,6 +148,54 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("phoneApps"))) PhoneApps.Add(V->AsString());
 	}
+	LoadScene();
+}
+
+void UStridesDataSubsystem::LoadScene()
+{
+	TSharedPtr<FJsonObject> J;
+	if (!LoadJson(TEXT("World/world_scene.json"), J)) return;
+	const TSharedPtr<FJsonObject> T = J->GetObjectField(TEXT("terrain"));
+	const int32 N = T->GetIntegerField(TEXT("n"));
+	const TArray<TSharedPtr<FJsonValue>>& O = T->GetArrayField(TEXT("origin"));
+	TerrainOrigin = FVector2D(O[0]->AsNumber(), O[1]->AsNumber());
+	TerrainStep = T->GetNumberField(TEXT("step"));
+	TArray<uint8> Bytes;
+	const FString Bin = FPaths::ProjectContentDir() / TEXT("Data/World") / T->GetStringField(TEXT("file"));
+	if (!FFileHelper::LoadFileToArray(Bytes, *Bin) || Bytes.Num() != N * N * (int32)sizeof(float))
+	{
+		LoadLog.Add(FString::Printf(TEXT("%s : relief illisible (%d octets, %d attendus)"), *Bin, Bytes.Num(), N * N * (int32)sizeof(float)));
+		return;
+	}
+	TerrainHeights.SetNumUninitialized(N * N);
+	FMemory::Memcpy(TerrainHeights.GetData(), Bytes.GetData(), Bytes.Num());  // float32 petit-boutiste (iOS et Mac aussi)
+	TerrainN = N;
+	for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("roads")))
+	{
+		const TSharedPtr<FJsonObject> R = V->AsObject(); FStridesRoad Road;
+		Road.Id = R->GetStringField(TEXT("id")); Road.Width = R->GetNumberField(TEXT("w"));
+		for (const TSharedPtr<FJsonValue>& PV : R->GetArrayField(TEXT("pts"))) { const TArray<TSharedPtr<FJsonValue>>& A = PV->AsArray(); Road.Points.Add(FVector2D(A[0]->AsNumber(), A[1]->AsNumber())); }
+		SceneRoads.Add(Road);
+	}
+	if (const TSharedPtr<FJsonObject>* P; J->TryGetObjectField(TEXT("pond"), P))
+	{
+		Pond = FVector((*P)->GetNumberField(TEXT("x")), (*P)->GetNumberField(TEXT("z")), (*P)->GetNumberField(TEXT("r")));
+		PondLevel = (*P)->GetNumberField(TEXT("level"));
+	}
+	LoadLog.Add(FString::Printf(TEXT("relief %d x %d (pas %.1f m), %d routes"), N, N, TerrainStep, SceneRoads.Num()));
+}
+
+double UStridesDataSubsystem::TerrainHeight(double X, double Z) const
+{
+	if (!HasTerrain()) return 0.0;
+	const double Fx = FMath::Clamp((X - TerrainOrigin.X) / TerrainStep, 0.0, TerrainN - 1.0001);
+	const double Fz = FMath::Clamp((Z - TerrainOrigin.Y) / TerrainStep, 0.0, TerrainN - 1.0001);
+	const int32 I = (int32)Fx, K = (int32)Fz;
+	const double U = Fx - I, V = Fz - K;
+	const float* H = TerrainHeights.GetData() + K * TerrainN + I;
+	// Même découpage en triangles que le maillage du sol (diagonale de (i+1, k) à (i, k+1)).
+	if (U + V <= 1.0) return H[0] + (H[1] - H[0]) * U + (H[TerrainN] - H[0]) * V;
+	return H[TerrainN + 1] + (H[TerrainN] - H[TerrainN + 1]) * (1.0 - U) + (H[1] - H[TerrainN + 1]) * (1.0 - V);
 }
 
 const FStridesHorseProfile* UStridesDataSubsystem::FindHorse(const FString& Id) const

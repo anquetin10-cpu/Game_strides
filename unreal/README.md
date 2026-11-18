@@ -34,7 +34,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 | Sauvegarde | **schéma natif v1 + import de l'export web, testés** ; sauvegarde/rechargement vérifiés à l'écran |
 | Déplacement à pied, monter, descendre | **compilé et vérifié à l'écran**, transition 0,8 s |
 | Cheval PJL (modèle, 17 clips), cavalier réaliste (visages, mains, posture) | **importés et positionnés** ; 17 animations cheval normalisées, allures/sauts branchés ; cavalier ancré sur le point de selle animé, animation squelettique à finir |
-| Monde (Deauville, Pôle, Paris, écuries, maison, boutiques), météo, jour/nuit | à faire |
+| Monde (Deauville, Pôle, écuries, maison, ville, plage, bocage, forêts) | **exporté du jeu web et rhabillé en matériaux photo**, relief à collisions, cheval sur le relief : [`docs/decors.md`](docs/decors.md) ; Paris, intérieurs, météo, jour/nuit à faire |
 | Missions, histoire, téléphone Strides, progression, réputation, compétences, énergie | à faire (logique pure, portable) |
 | Véhicules, transport du cheval, carburant | à faire |
 | PNJ, foule, cavaliers PNJ | à faire |

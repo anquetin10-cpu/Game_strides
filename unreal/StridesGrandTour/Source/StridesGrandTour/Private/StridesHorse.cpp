@@ -91,7 +91,15 @@ void AStridesHorse::UpdateAnimation()
 void AStridesHorse::PlaceAt(double WebX, double WebZ, double Heading)
 {
 	X = WebX; Z = WebZ; H = Heading;
-	SetActorLocationAndRotation(StridesUnits::WebToUE(X, 0, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z), Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+}
+
+double AStridesHorse::GroundAt(double WebX, double WebZ) const
+{
+	// Sol du relief exporté du jeu web (Content/Data/World) ; la parabole du saut s'y ajoute.
+	const UGameInstance* GI = GetGameInstance();
+	const UStridesDataSubsystem* Data = GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	return Data ? Data->TerrainHeight(WebX, WebZ) : 0.0;
 }
 
 double AStridesHorse::JumpPower() const
@@ -266,7 +274,7 @@ void AStridesHorse::Tick(float Dt)
 			if (FMath::Abs(Plan.dev) > 0.02) SpeedMS *= (float)(1 - R.landingLoss);
 		}
 	}
-	SetActorLocationAndRotation(StridesUnits::WebToUE(X, Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
 	if (Course) Course->TrackHorse(X0, Z0, X, Z, H, Dt);
 	const double Spd = SpeedMS;
 	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop doit donc

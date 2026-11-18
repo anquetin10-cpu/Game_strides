@@ -110,6 +110,24 @@ public:
 	// Fichiers lus, ou la raison d'un échec (affichée par le HUD : jamais de valeurs inventées en silence).
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") TArray<FString> LoadLog;
 
+	// Décor exporté du jeu web (Content/Data/World, scripts/unreal/world-export.js) : relief sur une grille régulière
+	// (m, repère web), tracé exact des routes, étang. Le relief est la référence de hauteur du cheval, des obstacles et
+	// des repères ; hors du carré du monde, la hauteur du bord est prolongée.
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") int32 TerrainN = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") float TerrainStep = 2.f;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") FVector2D TerrainOrigin = FVector2D(-600.f, -600.f);
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FStridesRoad> SceneRoads;
+	// Étang : centre (x, z), rayon et niveau de l'eau (m) ; niveau moyen de la mer : 0 m.
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") FVector Pond = FVector(-515.f, 420.f, 15.f);
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") float PondLevel = 0.f;
+	// Centre de la carrière du Pôle (repère du tracé du parcours, cso_course_pole.json : arena).
+	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") FVector2D PoleArena = FVector2D(330.f, -224.f);
+	// Lit le décor exporté (appelé par Initialize ; public pour les tests).
+	void LoadScene();
+	bool HasTerrain() const { return TerrainN > 1 && TerrainHeights.Num() == TerrainN * TerrainN; }
+	// Hauteur du sol (m) en (x, z) web, interpolée dans la cellule de la grille.
+	UFUNCTION(BlueprintCallable, Category = "Strides|World") double TerrainHeight(double X, double Z) const;
+
 	const strides::JumpParams& Jump() const { return JumpP; }
 	const strides::CsoRideParams& Ride() const { return RideP; }
 	const strides::CourseDesign& PoleCourse() const { return PoleDesign; }
@@ -118,6 +136,7 @@ public:
 
 private:
 	bool LoadJson(const FString& File, TSharedPtr<class FJsonObject>& Out);
+	TArray<float> TerrainHeights;
 	strides::JumpParams JumpP;
 	strides::CsoRideParams RideP;
 	strides::CourseDesign PoleDesign;

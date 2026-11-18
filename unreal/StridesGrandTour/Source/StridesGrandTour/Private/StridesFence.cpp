@@ -1,7 +1,9 @@
 #include "StridesFence.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "StridesDataSubsystem.h"
 #include "StridesUnits.h"
+#include "Engine/GameInstance.h"
 #include "UObject/ConstructorHelpers.h"
 
 static UStaticMesh* BasicMesh(const TCHAR* Path)
@@ -28,7 +30,9 @@ void AStridesFence::Setup(const FString& InLabel, const FString& Kind, float InH
 	Core.bars.clear();
 	if (Kind == TEXT("o")) { Core.bars.push_back({-SpreadM / 2.0, HeightM - 0.05}); Core.bars.push_back({SpreadM / 2.0, HeightM}); }
 	else Core.bars.push_back({0.0, HeightM});
-	SetActorLocation(StridesUnits::WebToUE(WebX, 0, WebZ));
+	// Pied de l'obstacle sur le sol de la carrière (relief exporté du jeu web ; 0 sans relief).
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	SetActorLocation(StridesUnits::WebToUE(WebX, Data ? Data->TerrainHeight(WebX, WebZ) : 0.0, WebZ));
 	SetActorRotation(FRotator(0, StridesUnits::HeadingToYawDeg(RotRad), 0));
 	UStaticMesh* Cyl = BasicMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	UStaticMesh* Cube = BasicMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));

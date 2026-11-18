@@ -17,6 +17,7 @@
 #include "StridesHorse.h"
 #include "StridesPlayerController.h"
 #include "StridesRider.h"
+#include "StridesShots.h"
 #include "StridesUnits.h"
 #include "StridesWorldDirector.h"
 
@@ -42,17 +43,21 @@ void AStridesGameMode::StartPlay()
 	Sun->SetActorRotation(FRotator(-42, 35, 0));
 	SunLight->SetIntensity(10.f);  // lux
 	SunLight->SetAtmosphereSunLight(true);
+	// Ombres portées nettes jusqu'à 250 m (cascades), au-delà ombres lointaines : le relief et les arbres se lisent.
+	SunLight->SetDynamicShadowDistanceMovableLight(25000.f);
+	SunLight->SetDynamicShadowCascades(3);
+	SunLight->SetCascadeDistributionExponent(2.4f);
 	W->SpawnActor<ASkyAtmosphere>();
 	AExponentialHeightFog* Fog = W->SpawnActor<AExponentialHeightFog>();
 	UExponentialHeightFogComponent* FogComponent = Fog->GetComponent();
-	FogComponent->SetFogDensity(.006f);
+	FogComponent->SetFogDensity(.0035f);
 	FogComponent->SetFogHeightFalloff(.12f);
 	FogComponent->SetFogInscatteringColor(FLinearColor(.45f, .58f, .75f));
 	ASkyLight* Sky = W->SpawnActor<ASkyLight>();
 	USkyLightComponent* SkyLight = Sky->GetLightComponent();
 	SkyLight->SetMobility(EComponentMobility::Movable);
 	SkyLight->bRealTimeCapture = false;
-	SkyLight->SetIntensity(1.f);
+	SkyLight->SetIntensity(1.5f);
 	SkyLight->RecaptureSky();
 	APostProcessVolume* Post = W->SpawnActor<APostProcessVolume>();
 	Post->bUnbound = true;
@@ -62,7 +67,20 @@ void AStridesGameMode::StartPlay()
 	PP.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
 	PP.AutoExposureApplyPhysicalCameraExposure = false;
 	PP.bOverride_AutoExposureBias = true;
-	PP.AutoExposureBias = -.6f;
+	PP.AutoExposureBias = -1.f;
+	// Occlusion ambiante d'écran (rendu Mac ; le rendu mobile l'ignore) et léger halo, comme une photo de plein jour.
+	PP.bOverride_AmbientOcclusionIntensity = true;
+	PP.AmbientOcclusionIntensity = .65f;
+	PP.bOverride_AmbientOcclusionRadius = true;
+	PP.AmbientOcclusionRadius = 180.f;
+	PP.bOverride_BloomIntensity = true;
+	PP.BloomIntensity = .35f;
+	PP.bOverride_VignetteIntensity = true;
+	PP.VignetteIntensity = .25f;
+	PP.bOverride_ColorSaturation = true;
+	PP.ColorSaturation = FVector4(1.04f, 1.04f, 1.04f, 1.f);
+	PP.bOverride_ColorContrast = true;
+	PP.ColorContrast = FVector4(1.06f, 1.06f, 1.06f, 1.f);
 	// Le jeu commence à l'Écurie du Val, comme la version Strides complète. Le parcours reste au Pôle.
 	AStridesCourse* Course = WorldDirector->PoleCourse;
 	AStridesHorse* Horse = W->SpawnActor<AStridesHorse>();
@@ -74,4 +92,5 @@ void AStridesGameMode::StartPlay()
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0))
 		if (APawn* Pawn = PC->GetPawn())
 			Pawn->SetActorLocationAndRotation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 200.0 + FVector(0, 0, 90), Horse->GetActorRotation());
+	if (AStridesShots::Requested()) W->SpawnActor<AStridesShots>();
 }

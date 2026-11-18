@@ -9,6 +9,7 @@
 	],
 	"Plugins": [
 		{ "Name": "EnhancedInput", "Enabled": true },
+		{ "Name": "ProceduralMeshComponent", "Enabled": true },
 		{ "Name": "ModelingToolsEditorMode", "Enabled": false },
 		{ "Name": "AndroidFileServer", "Enabled": false },
 		{ "Name": "PixelStreaming2", "Enabled": true, "PlatformAllowList": [ "Mac" ] }

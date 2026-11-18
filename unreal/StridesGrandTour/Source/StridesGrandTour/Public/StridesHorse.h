@@ -37,6 +37,8 @@ public:
 	void RequestJump() { bJumpRequested = true; }
 	void ChangeGait(int32 Delta);
 	void PlaceAt(double WebX, double WebZ, double Heading);
+	// Hauteur du sol (m, repère web) sous un point.
+	double GroundAt(double WebX, double WebZ) const;
 	double WebX() const { return X; }
 	double WebZ() const { return Z; }
 	double Heading() const { return H; }

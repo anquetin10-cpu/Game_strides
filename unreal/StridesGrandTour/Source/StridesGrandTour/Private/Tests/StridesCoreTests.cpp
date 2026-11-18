@@ -10,6 +10,10 @@
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/SaveGame.h"
 #include "StridesUnits.h"
+#include "StridesDataSubsystem.h"
+#include "Engine/StaticMesh.h"
+#include "UObject/Package.h"
+#include "Engine/GameInstance.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCoreCourseTest, "Strides.Core.Course", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
 bool FStridesCoreCourseTest::RunTest(const FString&)
@@ -100,5 +104,37 @@ bool FStridesCareerGraphTest::RunTest(const FString&)
 	TestEqual(TEXT("chaîne complète de 16 missions"), SeenMissions.Num(), 16);
 	TestEqual(TEXT("récompenses de carrière"), TotalPay, 7520);
 	TestEqual(TEXT("réputation de carrière"), TotalXp, 5980);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesWorldSceneryTest, "Strides.World.Scenery", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesWorldSceneryTest::RunTest(const FString&)
+{
+	// Relief exporté du jeu web : mêmes hauteurs qu'analyticHeight (src/world/terrain.js) aux nœuds de la grille.
+	UGameInstance* GI = NewObject<UGameInstance>(GetTransientPackage());
+	UStridesDataSubsystem* Data = NewObject<UStridesDataSubsystem>(GI);
+	Data->LoadScene();
+	TestTrue(TEXT("relief chargé (601 x 601, pas de 2 m)"), Data->HasTerrain() && Data->TerrainN == 601 && Data->TerrainStep == 2.f);
+	TestTrue(TEXT("Écurie du Val à 3 m"), FMath::IsNearlyEqual(Data->TerrainHeight(-110, 180), 3.0, 1e-3));
+	TestTrue(TEXT("carrière du Pôle à 3 m"), FMath::IsNearlyEqual(Data->TerrainHeight(330, -224), 3.0, 1e-3));
+	TestTrue(TEXT("fond marin au nord (-13,98 m)"), FMath::IsNearlyEqual(Data->TerrainHeight(0, -560), -13.9775, 1e-3));
+	TestTrue(TEXT("Colline Strides (59,28 m)"), FMath::IsNearlyEqual(Data->TerrainHeight(120, 520), 59.2831, 1e-3));
+	TestEqual(TEXT("14 routes du jeu web"), Data->SceneRoads.Num(), 14);
+	TestTrue(TEXT("étang au-dessus de la mer"), Data->PondLevel > 10.f);
+	// Manifeste des décors importés : chaque maillage référencé existe.
+	FString Text;
+	TestTrue(TEXT("world_assets.json présent"), FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/World/world_assets.json"))));
+	TSharedPtr<FJsonObject> Root;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Text);
+	if (!TestTrue(TEXT("manifeste lisible"), FJsonSerializer::Deserialize(Reader, Root) && Root.IsValid())) return false;
+	int32 Missing = 0, Total = 0;
+	for (const TCHAR* Key : {TEXT("architecture"), TEXT("trees"), TEXT("hedges")})
+		for (const TSharedPtr<FJsonValue>& V : Root->GetArrayField(Key))
+		{
+			Total++;
+			if (!LoadObject<UStaticMesh>(nullptr, *V->AsObject()->GetStringField(TEXT("mesh")))) Missing++;
+		}
+	TestEqual(TEXT("maillages de décor introuvables"), Missing, 0);
+	TestTrue(TEXT("au moins 200 maillages de décor"), Total >= 200);
 	return true;
 }
