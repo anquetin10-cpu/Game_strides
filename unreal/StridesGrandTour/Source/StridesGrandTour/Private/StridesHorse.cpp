@@ -26,10 +26,14 @@ AStridesHorse::AStridesHorse()
 	Body->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(Root);
-	const TCHAR* HorseAssetRoot = TEXT("/Game/Characters/Horse/horse_pjl_unreal/SkeletalMeshes/");
+	// Rig normalisé (scripts/unreal/normalize-horse-glb.py puis import-horse-glb.py) : maillage, squelette
+	// et clips partagent l'échelle du GLB, ~100 fois trop grande ; l'échelle 0,01 ramène le cheval à 1,5 m
+	// au bassin. L'ancien rig (horse_pjl_unreal) avait des os 100 fois plus loin que ses sommets.
+	const TCHAR* HorseAssetRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/");
 	if (USkeletalMesh* HorseBody = LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_426.Object_426"))))
 	{
 		Mesh->SetSkeletalMesh(HorseBody);
+		Mesh->SetRelativeScale3D(FVector(0.01f));
 		Body->SetVisibility(false);
 		Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
@@ -41,7 +45,7 @@ AStridesHorse::AStridesHorse()
 	HairMesh->SetupAttachment(Mesh);
 	HairMesh->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_428.Object_428"))));
 	HairMesh->SetLeaderPoseComponent(Mesh);
-	const FString AnimRoot = TEXT("/Game/Characters/Horse/horse_pjl_unreal/AnimationsFBX/Horse_");
+	const FString AnimRoot = FString(HorseAssetRoot) + TEXT("Horse_");
 	for (const TCHAR* Name : {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")})
 		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".Horse_") + Name)));
 	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.Horse_jump_canter")));
@@ -131,7 +135,9 @@ FTransform AStridesHorse::SeatTransform() const
 		// n'est pas l'assise malgré son nom. L'os de selle est au vrai contact
 		// du dos (environ 173 cm) et conserve le rebond animé des allures.
 		for (const FName SeatBone : {FName(TEXT("saddle_0168")), FName(TEXT("mountpoint_01_0179")), FName(TEXT("SaddleSeat"))})
-			if (Mesh->DoesSocketExist(SeatBone)) return Mesh->GetSocketTransform(SeatBone, RTS_World);
+			// Position de l'os seulement : le maillage est à l'échelle 0,01 et l'axe local de l'os
+			// n'est pas celui du cavalier ; l'orientation suit l'acteur cheval.
+			if (Mesh->DoesSocketExist(SeatBone)) return FTransform(GetActorRotation(), Mesh->GetSocketLocation(SeatBone));
 	}
 	return FTransform(GetActorRotation(), GetActorLocation() + FVector(0, 0, 175 + (Body ? Body->GetRelativeLocation().Z - 125 : 0)));
 }
