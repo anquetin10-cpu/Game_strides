@@ -1,0 +1,1290 @@
+[
+ {
+  "id": "interface.telemetrie-allure",
+  "domaine": "Interface",
+  "fonction": "À cheval ou au volant, bandeau de télémétrie : rapport ou allure en grand (N, 1, 2, 3, 4), nom traduit de l'allure (ARRÊT, PAS, TROT, GALOP, GRAND GALOP) et vitesse en km/h (|v| × 3,6 arrondi) ; bandeau compact à cheval, masqué à pied.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "AStridesHUD::DrawHUD, ligne « À cheval · <allure> · x m/s (y m/min) · cadence z » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:36) ; noms d'allure lus de Content/Data/horse_gaits.json exporté du web (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:31-38)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md ligne 18 : allures PAS, TROT, GALOP, GRAND GALOP déclenchées en jeu et « confirmées par le HUD ». Noms d'allure exportés par scripts/unreal/export-data.mjs:29 ; aucun test d'affichage, aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ligne de texte Canvas au lieu du bandeau ; vitesse en m/s et m/min (pas en km/h) avec point décimal ; pas de grand indicateur N/1/2/3/4 ; cadence affichée en permanence ; à pied, ligne fixe « À pied · Monter à cheval : E (à moins de 3 m) » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:43) ; aucun mode véhicule.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.jauge-endurance-boost",
+  "domaine": "Interface",
+  "fonction": "Jauge d'endurance du cheval en 10 segments (état bas sous 25 % ou cheval essoufflé) et anneau d'endurance autour du bouton BOOST (pourcentage, allumé pendant le grand galop, éteint quand le cheval est essoufflé).",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:35) ; pas d'essoufflement, pas d'anneau BOOST.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.frequence-cardiaque",
+  "domaine": "Interface",
+  "fonction": "Cardiofréquencemètre du cheval affiché seulement au-delà de 120 bpm, état « élevé » au-delà de 180 bpm, cœur qui bat à la période 60/bpm s, rafraîchi toutes les 0,5 s.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune condition physiologique du cheval (fréquence cardiaque) dans le portage.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.telemetrie-vehicule",
+  "domaine": "Interface",
+  "fonction": "Au volant : rapport engagé, régime en tr/min arrondi à 50, barregraphe de 10 crans avec zone rouge (crans 9 et 10, plein à 1,06 × le régime maxi, 2 450 tr/min par défaut), carburant (litres, consommation moyenne l/100 ou autonomie en km, réserve sous 12 %), astuce « Porte de service ouverte » ou « Rampe ouverte » si le véhicule reste bloqué plus de 0,5 s.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun véhicule (Defender, Master, camion STX) dans le portage.",
+  "tranche": "f"
+ },
+ {
+  "id": "interface.confort-transport",
+  "domaine": "Interface",
+  "fonction": "Au volant avec un cheval à bord ou en mission de transport : « CONFORT · <NOM> xx % » ou « CONFORT DU CHEVAL xx % », jauge, alerte sous 70 % et état mauvais sous 45 %.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni transport du cheval ni confort dans le portage.",
+  "tranche": "f"
+ },
+ {
+  "id": "interface.portefeuille-reputation",
+  "domaine": "Interface",
+  "fonction": "En haut à droite : solde en euros (« 14 850 € » / « €14,850 »), palier de réputation abrégé (DÉBUT, APPRÉCIÉ, RÉFÉRENCE, RECONNU, INTERNATIONAL à 0 / 300 / 900 / 1 800 / 3 200 pts, src/config.js:28-34) avec barre de progression, et note « ★ x,x · STRIDES » dès le premier avis.",
+  "js": [
+   "src/ui/hud.js",
+   "src/config.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) ; ligne HUD « <rang> · N crédits · N réputation » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de l'affichage. Paliers lus de Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; Strides.World.Architecture (StridesCoreTests.cpp:74) ne vérifie que leur nombre (5), sans oracle JS.",
+  "ecart": "Paliers différents du web : Groom 0, Cavalier 500, Pro vérifié 1 500, International 3 500, Légende 5★ 7 000 ; « crédits » au lieu d'euros formatés ; pas de barre de progression ni de note ★.",
+  "tranche": "e"
+ },
+ {
+  "id": "interface.heure-energie",
+  "domaine": "Interface",
+  "fonction": "Ligne de vie : pictogramme de la période (matin, après-midi, soir, nuit), libellé de période et heure du jeu, barre et pourcentage d'énergie avec palier coloré, rafraîchis toutes les 0,5 s ; un toucher ouvre la fiche Énergie.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni heure de jeu affichée, ni énergie du personnage dans le portage.",
+  "tranche": "d"
+ },
+ {
+  "id": "interface.objectif",
+  "domaine": "Interface",
+  "fonction": "Carte d'objectif en haut au centre : étiquette, consigne (petit flash quand elle change), détail facultatif, chrono à droite (alerte sous 10 s) ; sans mission, objectif d'attente dont un toucher ouvre l'application indiquée (Strides).",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::MissionStatus (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:49-57) affiché en ligne jaune (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:50)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test (MissionStatus non couvert) ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Une ligne « <titre> · rejoindre <identifiant de lieu> » (identifiant brut, ex. « home », pas le nom du lieu) ou « Aucune mission active » ; pas d'étiquette, de détail, de chrono, d'alerte, d'animation ni de toucher.",
+  "tranche": "e"
+ },
+ {
+  "id": "interface.astuces",
+  "domaine": "Interface",
+  "fonction": "Astuce contextuelle (HTML) affichée 4,5 s par défaut, logée dans la carte d'objectif quand celle-ci est visible hors parcours, sinon sous le bandeau ; effaçable par le jeu.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Seules des lignes d'aide fixes sur les commandes existent (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:40-41, 43), sans lien avec le contexte de jeu.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.toasts",
+  "domaine": "Interface",
+  "fonction": "Messages brefs (toasts) au centre haut : 2 au plus (1 seul sur un écran de 420 px de haut ou moins), chacun retiré après 3,2 s.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "Messages persistants UStridesProgressionSubsystem::LastMessage et UStridesSaveSubsystem::LastMessage affichés en lignes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:46, 51 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:64, 90)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune durée : le dernier message reste affiché indéfiniment ; pas de file ni de limite selon la hauteur d'écran ; la ligne de sauvegarde ajoute « (F5 sauvegarder · F9 recharger) ».",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.grand-message",
+  "domaine": "Interface",
+  "fonction": "Grand message central (titre et sous-titre) 2,2 s par défaut, avec animation ; la carte d'objectif s'efface pendant l'affichage et revient 400 ms après (compte à rebours 3-2-1 sans clignotement).",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "AStridesHUD::OnCourseEvent : texte d'événement affiché 3 s en ligne jaune (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:19-23, 44), émis par AStridesCourse (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:48-56, 84-92, 97)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de l'affichage ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Réservé aux événements du parcours (départ, barre, refus, erreur, arrivée, élimination) ; une ligne en haut à gauche, sans titre/sous-titre centré ; 3 s au lieu de 2,2 s ; objectif non masqué.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.notifications",
+  "domaine": "Interface",
+  "fonction": "Bannière de notification façon iOS (en-tête STRIDES, « maintenant », titre, corps, boutons d'action ou toucher), file d'attente retenue tant que le téléphone est ouvert ou qu'un parcours chronométré court, son de notification, fermeture après 9 s (7 s au plus sur un écran de 420 px ou moins).",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune notification ni file d'attente ; le portage n'a pas d'offres de mission à annoncer.",
+  "tranche": "e"
+ },
+ {
+  "id": "interface.dialogues",
+  "domaine": "Interface",
+  "fonction": "Dialogue en bas d'écran : avatar d'initiales, nom, réplique, « Toucher pour continuer » ou « Toucher pour fermer », clic sonore à chaque réplique, rappel en fin ; masque la télémétrie, et la plaque de zone si le texte remonte jusqu'à elle.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun dialogue de PNJ ni d'histoire dans le portage.",
+  "tranche": "e"
+ },
+ {
+  "id": "interface.aide-appel-bouton-saut",
+  "domaine": "Interface",
+  "fonction": "Bouton SAUT avec aide à l'appel (mêmes calculs que le saut) : anneau et signe « » » Trop loin, « ✓ » Saute !, « ! » Trop près ; appui sans effet : « Trop tôt » pendant 600 ms.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Le bouton tactile « SAUT » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:43) et la touche Espace / A (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:52-53) existent mais sans aucune indication d'appel avant le saut.",
+  "tranche": "a"
+ },
+ {
+  "id": "interface.retour-qualite-appel",
+  "domaine": "Interface",
+  "fonction": "En épreuve CSO (sauf aide « Aucune »), après un franchissement ou une faute sur l'obstacle attendu, qualité de l'appel en clair sous le tableau du parcours (« Appel parfait », « Un peu loin »…, TAKEOFF_TEXT de src/gameplay/courses.js:39-49) pendant 1,5 s, teintée bon / correct / mauvais ; le mot est réconcilié avec le jugement réel (far devient bitFar sur un franchissement, jamais « parfait » sur une barre, cause de la faute sinon : src/gameplay/courses.js:203-210).",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "AStridesHorse : LastTakeoff = qualityName(takeoffQuality(Plan)) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163), affiché « Dernier appel : … » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:39) et repris dans l'événement « <obstacle> franchi · appel <q> » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:85)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Le classement de la qualité est comparé à l'oracle JS unreal/core/tests/oracles/jump.json (unreal/core/tests/test_core.cpp:58 ; CTest 4 944 vérifications, 0 échec, unreal/docs/validation-mac-2026-11-17.md ligne 9) ; l'affichage lui-même n'est couvert par aucun test ni capture côte à côte. Capture non comparative Saved/Screenshots/Strides/09_jeu.png (18/11/2026) : « Dernier appel : far ».",
+  "ecart": "Affiche l'identifiant interne anglais (perfect, bitFar, far…) au lieu des libellés français ; reste affiché indéfiniment au lieu de 1,5 s ; aucune couleur selon la qualité ; qualité brute écrite dès l'appel (AStridesHorse::StartJump, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163), y compris juste avant un refus, sans la réconciliation web avec le jugement.",
+  "tranche": "a"
+ },
+ {
+  "id": "interface.tableau-cso",
+  "domaine": "Interface",
+  "fonction": "Tableau du parcours : chrono au centième, « / TA s » (avant le départ : « Départ N s · accordé TA s », compte à rebours de la cloche), pénalités « N pt » / « N pts », obstacle suivant « ▸ 5 » ou « ▸ Arrivée », « Arrivée ✓ » à la fin, états temps dépassé et fautes.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "AStridesCourse::StatusText (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:103-112) affiché par AStridesHUD::DrawHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:37)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Libellés d'obstacles et temps accordé comparés à l'oracle JS unreal/core/tests/oracles/cso_course.json (test_core.cpp:79-110) ; fautes et obstacle suivant viennent de CourseJudge, testé par scénarios écrits à la main (test_core.cpp:112 et suivantes, sans oracle) ; le texte du tableau n'est couvert par aucun test ni capture côte à côte.",
+  "ecart": "Pas de compte à rebours de cloche (« Franchis la ligne de départ · temps accordé N s ») ; après le départ, temps accordé non rappelé ; « N pts » sans singulier ; « prochain : <libellé> » ; pas d'état temps dépassé ; « Éliminé » ou « Terminé : N pts en x s » ; point décimal.",
+  "tranche": "a"
+ },
+ {
+  "id": "interface.cadence-cso",
+  "domaine": "Interface",
+  "fonction": "Commandes de concours : cadence affichée en 6 crans (arrondi de cadence / 8 × 6), visible 2 s quand on la règle au joystick avant/arrière, puis estompée.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "Valeur numérique « cadence x.x » dans la ligne de télémétrie (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:36)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Nombre brut affiché en permanence au lieu de crans temporaires.",
+  "tranche": "a"
+ },
+ {
+  "id": "interface.hud-sobre-cso",
+  "domaine": "Interface",
+  "fonction": "En épreuve de CSO, HUD sobre : minimap masquée et plus redessinée, seuls chrono, fautes, obstacle suivant et gros bouton SAUT ; l'astuce sort de la carte d'objectif ; à l'entraînement au paddock, l'allure et « Terminer » restent.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Pendant le parcours, la minicarte, la progression, la mission et l'aide des commandes restent affichées.",
+  "tranche": "a"
+ },
+ {
+  "id": "interface.bouton-action-contextuel",
+  "domaine": "Interface",
+  "fonction": "Bouton ACTION au libellé et pictogramme de l'interaction proche (monter, panser, parler…), action secondaire contextuelle (mener en main, rampe, accès Defender) à la place du SAUT à pied, et sifflet affiché à pied quand le cheval est sorti.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "Bouton tactile « MONTER » et touche E / bouton gauche de manette : monter ou descendre seulement (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:44 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:54-55, 143-150)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; non vérifié sur écran tactile (unreal/docs/validation-mac-2026-11-17.md lignes 45-46 : aucun appareil iOS, aucun package).",
+  "ecart": "Une seule interaction (monter/descendre à moins de 3 m) au libellé fixe « MONTER » ; ni action secondaire, ni sifflet, ni pictogramme.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.bouton-boost",
+  "domaine": "Interface",
+  "fonction": "Bouton BOOST à cheval (maintenir : grand galop) qui devient « Courir » à pied ; masqué au volant.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "Boutons tactiles « ALLURE + » / « ALLURE - » et Maj / Ctrl gauches (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:45-46 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:56-57, 151-152)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; non vérifié sur écran tactile.",
+  "ecart": "Changement d'allure cran par cran au lieu d'un maintien pour le grand galop ; pas de course à pied ; libellés non adaptés au mode.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.commandes-tactiles",
+  "domaine": "Interface",
+  "fonction": "Disposition tactile paysage : joystick à gauche (glisser, à fond = galop), caméra en glissant à droite, boutons ronds Saut, Boost, Action et sifflet en bas à droite, téléphone et pause en haut à droite.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "UStridesTouchControls (UMG, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:31-60) : SAUT, MONTER, ALLURE +/-, SAUVER, CHARGER, TÉLÉPHONE, MISSION ; joysticks virtuels par défaut du moteur (unreal/StridesGrandTour/Config/DefaultInput.ini:4-5) ; activés sur iOS ou avec -TouchControls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:87-97)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; non vérifié à l'écran tactile (unreal/docs/validation-mac-2026-11-17.md lignes 45-46 : aucun appareil iOS détecté, aucun package iOS produit).",
+  "ecart": "Boutons rectangulaires en texte sans icônes ; ajoute SAUVER, CHARGER et MISSION absents du web ; TÉLÉPHONE (avec MISSION) en bas au centre alors que le bouton téléphone du web est en haut à droite (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:49-50) ; pas de BOOST maintenu, d'ACTION contextuelle, de sifflet ni de pause ; zones sûres non traitées.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.bouton-telephone-badge",
+  "domaine": "Interface",
+  "fonction": "Bouton téléphone en haut à droite avec pastille du nombre de nouveautés et animation de sonnerie ; touche P.",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "Bouton tactile « TÉLÉPHONE », touche P et bouton spécial droit de manette (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:49 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:61-62, 156)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Pas de pastille ni de sonnerie (aucune notion de nouveauté).",
+  "tranche": "e"
+ },
+ {
+  "id": "interface.plaque-zone",
+  "domaine": "Interface",
+  "fonction": "Nom de la zone traversée affiché sous la minimap (mis à jour seulement quand il change).",
+  "js": [
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun nom de zone affiché ; seuls les noms des lieux apparaissent sur la minicarte.",
+  "tranche": "h"
+ },
+ {
+  "id": "minicarte.vue-tournante",
+  "domaine": "Minicarte",
+  "fonction": "Minimap ronde centrée sur le joueur qui tourne avec la caméra ; rayon visible lissé (5 % par image) vers 150 m + 6 m par m/s (jusqu'à 16 m/s) à pied ou à cheval, 260 m au volant ; redessinée à 30 images/s au plus.",
+  "js": [
+   "src/ui/minimap.js",
+   "src/ui/hud.js"
+  ],
+  "unreal": "AStridesHUD::DrawMinimap (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:81-192) : carré de 240 px en haut à droite, nord en haut, rayon fixe 160 m (lignes 86-87)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test. Capture non comparative Saved/Screenshots/Strides/09_jeu.png (18/11/2026) montrant la minicarte carrée ; non retenue, aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Carte fixe nord en haut, carrée, sans rotation ni zoom selon la vitesse ou le véhicule ; redessinée à chaque image.",
+  "tranche": "h"
+ },
+ {
+  "id": "minicarte.fond-de-carte",
+  "domaine": "Minicarte",
+  "fonction": "Fond de carte stylisé monochrome précalculé (1 024 px pour 1,2 km) : parcelles teintées par culture, forêts, mer au niveau moyen, estran entre pleines et basses mers de vives-eaux, haut de plage, falaises, carrières du Pôle et du Val, paddocks, place de la ville, hippodrome, chemins et parcours de cross en pointillés, étang, bâtiments (siège Strides en blanc), routes bordées.",
+  "js": [
+   "src/ui/minimap.js"
+  ],
+  "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:118-132), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:111-147)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test d'affichage ; Strides.World.Architecture (StridesCoreTests.cpp:61-77) ne vérifie que des effectifs (8 régions, 14 lieux) d'un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export).",
+  "ecart": "Ni parcelles, forêts, mer, estran, falaises, chemins, bâtiments ni hippodrome ; 8 routes recopiées à la main au lieu des 14 tracés exportés dans Content/Data/World/world_scene.json ; palette verte et brune au lieu du monochrome web.",
+  "tranche": "h"
+ },
+ {
+  "id": "minicarte.reperes",
+  "domaine": "Minicarte",
+  "fonction": "Repères : offres de mission (pastille encre au monogramme Strides), GPS (losange), maison H, boutiques €, événements ★, écuries É, pros +, siège Strides S, cheval (quand on n'est pas en selle), camion, fers d'or à moins de 70 m ; repères collants (histoire, GPS, cheval) ramenés au bord quand ils sortent du cadre.",
+  "js": [
+   "src/ui/minimap.js",
+   "src/game.js"
+  ],
+  "unreal": "14 lieux de world_architecture.json en carrés de 8 px de 3 couleurs avec leur nom (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:138-150), obstacles en points blancs (133-137), autres chevaux en carrés bruns (151-156)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; lieux issus d'un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export).",
+  "ecart": "Pas de pictogrammes ni de monogramme Strides ; ni offres de mission, ni camion, ni fers d'or ; aucun repère collant au bord ; noms affichés en permanence sauf à moins de 30 px du bord droit (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:145) ; obstacles du parcours dessinés (absents du web).",
+  "tranche": "h"
+ },
+ {
+  "id": "minicarte.gps",
+  "domaine": "Minicarte",
+  "fonction": "Itinéraire GPS tracé en pointillés sur la minimap et sur la carte (route calculée par le GPS du jeu), cible en losange gardée au bord ; cible posée par une mission, une pension, un pro, une activité ou le joueur.",
+  "js": [
+   "src/ui/minimap.js"
+  ],
+  "unreal": "Cible de la mission active : carré orange ramené au bord du cadre et distance à vol d'oiseau « GPS N m » sous la carte (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:157-169 ; ActiveTarget, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-81) ; balise 3D au-dessus de la cible (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:61-67)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Pas d'itinéraire le long des routes ; cible limitée à la mission active (aucun repère posé par le joueur, ni pension, pro ou activité).",
+  "tranche": "h"
+ },
+ {
+  "id": "minicarte.joueur-nord",
+  "domaine": "Minicarte",
+  "fonction": "Flèche du joueur orientée selon son cap relatif à la caméra et pastille « N » qui tourne sur le bord du cercle.",
+  "js": [
+   "src/ui/minimap.js"
+  ],
+  "unreal": "Flèche de cap triangulaire, « N » fixe en haut, barre d'échelle 50 m et titre « CARTE » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:170-191)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "« N » fixe (carte non tournante) ; échelle et titre ajoutés, absents du web.",
+  "tranche": "h"
+ },
+ {
+  "id": "minicarte.paris",
+  "domaine": "Minicarte",
+  "fonction": "Région Paris (Grand Prix de Paris Indoor) : plan propre à la même échelle (îlots, palais, carrière, détente, écuries, parking, sortie « A13 · DEAUVILLE ») utilisé par la minimap et la carte du téléphone.",
+  "js": [
+   "src/ui/minimap.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Paris n'existe pas dans le portage.",
+  "tranche": "c"
+ },
+ {
+  "id": "minicarte.toucher-ouvre-carte",
+  "domaine": "Minicarte",
+  "fonction": "Un toucher sur la minimap ouvre l'application Carte du téléphone.",
+  "js": [
+   "src/ui/minimap.js",
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "La minicarte Unreal est dessinée sur le Canvas du HUD, sans interaction.",
+  "tranche": "h"
+ },
+ {
+  "id": "telephone.ouverture",
+  "domaine": "Téléphone",
+  "fonction": "Téléphone en surimpression : ouvert seulement en jeu, commandes du personnage désactivées, offres générées si aucune n'existe, clic sonore ; fermeture par la croix ou un toucher hors du téléphone ; la barre d'accueil balayée vers le haut de plus de 16 px ramène à l'écran d'accueil sans fermer (src/ui/phone.js:47-49) ; clic sonore aussi à la fermeture ; toasts de l'app effacés à la fermeture.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "AStridesPlayerController::OnPhone bascule bPhoneOpen (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:156) ; panneau dessiné par AStridesHUD::DrawHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:56-75)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Simple bascule P / TÉLÉPHONE ; le jeu reçoit toujours les commandes ; panneau non interactif, sans son.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.accueil",
+  "domaine": "Téléphone",
+  "fonction": "Écran d'accueil : barre d'état (heure, 5G, batterie), heure et « Deauville City · météo », widget Strides (mission en cours ou « N missions dispo », palier, note, missions réalisées), 12 icônes (Strides, Carte, Messages, Mes chevaux, Mon écurie, Activités, Guide local, Classements, Trophées, Météo, Photo, Réglages) avec pastilles de nouveautés.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:63-69 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:149), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:70-74)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Architecture (StridesCoreTests.cpp:75) vérifie seulement 10 applications dans un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; résultat de ce test non consigné dans unreal/docs/validation-mac-2026-11-17.md (seuls Course, Save et Units y figurent) : à confirmer.",
+  "ecart": "Liste différente (Missions, Écuries, Transport, Événements, Annuaire, Carte, Messages, Trophées, Profil, Réglages) ; libellés non touchables ; ni horloge, ni météo, ni widget, ni pastilles.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.strides-demandes",
+  "domaine": "Téléphone",
+  "fonction": "App Strides, onglet Demandes : « Bonjour, <prénom> », jour et date, note de rythme (tard ou épuisé), carte « Prochaine mission » (métier, consigne, Itinéraire, Abandonner, montant), « Demandes entrantes · N » disponibles, liste des demandes, carte « Revenus via Strides » (missions réalisées, montants fictifs), lien vers la vraie app.",
+  "js": [
+   "src/ui/requests.js",
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Pas d'offres de mission : le portage enchaîne un graphe fixe de 16 missions (StartNextMission).",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.carte-demande",
+  "domaine": "Téléphone",
+  "fonction": "Carte de demande : initiales du client, statut (NOUVEAU, EN ATTENTE, VERROUILLÉE, TROP FATIGANT, HORS HORAIRES, À REPRENDRE, EN NÉGOCIATION, PROPOSITION ACCEPTÉE), métier Strides déduit de la catégorie (6 métiers : groom concours, groom maison, palefrenier, cavalier maison, cavalier d'entraînement, chauffeur), date, lieu, délai de réponse, montant « ~N € ».",
+  "js": [
+   "src/ui/requests.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni clients, ni statuts, ni métiers ; la catégorie des missions est chargée (StridesDataSubsystem.cpp:140) mais jamais affichée.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.demande-recue",
+  "domaine": "Téléphone",
+  "fonction": "Écran « Demande reçue » : client, montant et distance en km, note en étoiles (pleine dès 0,8) et nombre d'avis stable (6 + somme des codes du nom modulo 40), réception et expiration (lendemain), créneau Matin avant 13 h sinon Après-midi, détails (mission, lieu, « Camion · permis C » pour un transport, niveau, durée, horaires, effort et coût d'énergie), raison d'indisponibilité, note du client, conditions du prestataire (rayon 15 km, frais inclus, paiement en séquestre garanti, TVA non applicable art. 293 B).",
+  "js": [
+   "src/ui/requests.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun écran de demande.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.accepter-mission",
+  "domaine": "Téléphone",
+  "fonction": "« Accepter la mission » en deux touchers : le premier arme la confirmation pendant 5 s (« Confirmer l'acceptation ? »), un second toucher à moins de 350 ms est ignoré ; refus si une mission est déjà en cours ; toast « Demande acceptée », téléphone rangé et mission lancée après 1,3 s.",
+  "js": [
+   "src/ui/requests.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::StartNextMission, lancé par M, bouton tactile MISSION ou haut de la croix directionnelle de manette (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:63-64, 157-160 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:50)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de StartNextMission ; Strides.World.CareerGraph (StridesCoreTests.cpp:79-108) vérifie seulement l'ordre des prérequis du JSON écrit à la main.",
+  "ecart": "Lance directement la première mission disponible du graphe : pas de choix d'offre, pas de confirmation en deux touchers, pas de délai ; garde-fou commun : refus si une mission est active (« Une mission est déjà active »).",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.refus-demande",
+  "domaine": "Téléphone",
+  "fonction": "Refus d'une demande dans une feuille du bas : message facultatif par pastilles (« Déjà réservé sur ces dates », « Mission trop loin », « Tarif trop bas ») avec compteur n / 1 000, client informé, toast « Demande refusée ».",
+  "js": [
+   "src/ui/requests.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun refus possible : les missions ne sont pas proposées.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.contre-proposition",
+  "domaine": "Téléphone",
+  "fonction": "Contre-proposition : montant réglable par pas de 5 € entre 5 € et 2 × le montant demandé, message par pastilles, refus « Rien à proposer » si rien ne change, demande épinglée (n'expire plus) au statut EN NÉGOCIATION ; acceptation du client affichée ; proposition remplaçable.",
+  "js": [
+   "src/ui/requests.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune négociation.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.indisponibilite-demande",
+  "domaine": "Téléphone",
+  "fonction": "Demande hors horaires du client ou trop fatigante : raison en clair en tête d'écran, acceptation impossible, bouton « Itinéraire vers la maison » si c'est la fatigue ou une mission d'histoire.",
+  "js": [
+   "src/ui/requests.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni horaires de mission ni énergie dans le portage.",
+  "tranche": "d"
+ },
+ {
+  "id": "telephone.strides-recruter",
+  "domaine": "Téléphone",
+  "fonction": "Onglet Recruter : besoin du jour, profils comparables (métier, note, avis, offre, disponibilité, prix), fiche profil avec débit unique confirmé en deux touchers (350 ms au moins entre eux), solde insuffisant signalé, option « Je m'organise seul·e » sans débit, prestations réalisées listées.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun recrutement.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.chauffeur-trajet",
+  "domaine": "Téléphone",
+  "fonction": "Chauffeur Strides : trajet immédiat avec le cheval vers les pensions, le centre de Deauville City ou la plage, prix 15 € + distance (m) / 25 arrondi ; refusé si une mission est en cours, si l'on conduit ou si le solde est insuffisant.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun voyage rapide ni transport du cheval.",
+  "tranche": "f"
+ },
+ {
+  "id": "telephone.strides-profil",
+  "domaine": "Téléphone",
+  "fonction": "Onglet Profil : initiales et prénom, titre du palier, note et nombre d'avis, missions réalisées, revenus fictifs, réputation « N pts / seuil suivant », palier suivant, barres de compétences.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "Données seulement : rang, crédits et réputation sur une ligne du HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49) ; libellé « Profil » dans la grille du téléphone (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:68)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Pas d'écran Profil, ni compétences, ni note, ni revenus ; paliers recopiés à la main et différents du web.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.strides-mention-version-jeu",
+  "domaine": "Téléphone",
+  "fonction": "À la première ouverture de Strides, feuille « Strides · version jeu » (missions, profils et sommes fictifs, rien n'est envoyé, aucun paiement réel) mémorisée dans la sauvegarde ; logo officiel et étiquette « Version jeu » dans l'en-tête de l'app.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Le panneau téléphone écrit « STRIDES » en texte (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:61), sans logo ni mention de fiction.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.lien-vraie-app",
+  "domaine": "Téléphone",
+  "fonction": "Bouton « Découvrir la vraie application Strides » (encart : grooms, palefreniers, cavaliers, chauffeurs, enseignants) dans Profil, Recruter, Demandes, Réglages, pause, fin d'histoire et écran titre, ouvrant la page officielle selon l'emplacement.",
+  "js": [
+   "src/ui/phone.js",
+   "src/ui/requests.js",
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun lien sortant vers Strides.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.mon-ecurie",
+  "domaine": "Téléphone",
+  "fonction": "App Mon écurie : aménagements du Val à construire (prix, confirmation en deux touchers, verrouillés jusqu'au premier concours), équipe (Camille Martin, et Léa Morel, Inès Ferrand selon la sauvegarde), compétences, accès à la Sellerie du Port.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni aménagements, ni équipe, ni compétences.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.guide-local",
+  "domaine": "Téléphone",
+  "fonction": "App Guide local (hors Strides) : demandes Annuaire et Écuries, pensions à proximité (prix par mois, note, distance, services, Itinéraire, Choisir si une pension est à choisir), santé et soins (pros, distance, disponibilité, Appeler, Itinéraire).",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "« Annuaire » et « Écuries » ne sont que des libellés de la grille du téléphone.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.messages",
+  "domaine": "Téléphone",
+  "fonction": "App Messages : conversations groupées par expéditeur, point des non-lus, bulles, lecture qui marque lu et sauvegarde ; pastille du nombre de non-lus sur l'icône.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "« Messages » n'est qu'un libellé ; aucun message dans la sauvegarde Unreal.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.mes-chevaux",
+  "domaine": "Téléphone",
+  "fonction": "App Mes chevaux : chevaux de l'écurie (robe, race, âge, barres vitesse, saut, endurance), choix de la monture, santé de la monture (fréquence cardiaque, température, sueur, énergie, hydratation, alimentation, propreté, pieds), équipement, location de chevaux pour la saison, « Siffler mon cheval ».",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Un seul cheval, sans écran de gestion.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.trophees",
+  "domaine": "Téléphone",
+  "fonction": "App Trophées : fers d'or trouvés / total, missions, gains, sauts, distance en km, note ; meilleurs chronos par activité ; étapes de l'histoire cochées.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "« Trophées » n'est qu'un libellé ; seul « Carrière : n / 16 missions » est affiché (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:74).",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.meteo-marees",
+  "domaine": "Téléphone",
+  "fonction": "App Météo : température, vent (direction, O traduit en W en anglais, km/h), humidité calculée (62 + couverture × 25 + pluie × 20 − excès de chaleur, plafonnée à 98 %), lever et coucher du soleil, 6 prévisions de 2 h en 2 h ; marée montante ou descendante, coefficient, hauteur d'eau, 4 prochaines pleines et basses mers, distance de la mer aux Planches, créneau de galop sur la plage de 2 h avant à 2 h après la basse mer.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni météo, ni marées, ni application Météo.",
+  "tranche": "d"
+ },
+ {
+  "id": "telephone.reglages-jeu",
+  "domaine": "Téléphone",
+  "fonction": "Réglages : langue, son, musique, qualité graphique (Auto, Haute, Économie), modèles 3D (Auto, Classiques, Réalistes), aide au saut (Complète, Bouton seul, Aucune), tracé au sol CSO, écoulement du temps (1 jour = 20 min, ou réel), sensibilité caméra (0,7 / 1 / 1,4), crédits de licences (voitures CC BY 4.0, MakeHuman CC0, cheval WildMesh CC BY 4.0, Tripo) et état de chargement des modèles 3D.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "« Réglages » n'est qu'un libellé. Aucune attribution du cheval WildMesh (CC BY 4.0) n'est affichée dans le portage alors que ce modèle y est importé (rg WildMesh dans Source et Config : aucun résultat) : obligation de licence à traiter.",
+  "tranche": "h"
+ },
+ {
+  "id": "telephone.reglages-sauvegarde",
+  "domaine": "Téléphone",
+  "fonction": "Réglages, section sauvegarde : date de la sauvegarde automatique locale, état de la copie en ligne (à jour, hors ligne, lecture seule), reprise d'une sauvegarde en ligne plus récente, copie texte et restauration par collage, restauration des copies de secours, « Recommencer la partie » confirmé par un second toucher dans les 4 s.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "UStridesSaveSubsystem::SaveNow / LoadNow par F5 / F9 et boutons SAUVER / CHARGER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:58-59, 153-154 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:47-48 ; messages unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:64, 90)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md ligne 15 : « sauvegarder puis recharger » contrôlé à l'écran ; test Strides.Core.Save réussi (ligne 13, scénario écrit à la main). Aucun écran de réglages, aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Sauvegarde et rechargement manuels seulement ; ni date affichée, ni copie en ligne, ni export/import texte, ni copies de secours, ni remise à zéro.",
+  "tranche": "socle"
+ },
+ {
+  "id": "telephone.commerces",
+  "domaine": "Téléphone",
+  "fonction": "App Commerces de Deauville City : catalogue de la Sellerie du Port et de la boutique d'équitation (mêmes prix et fiches qu'en magasin), solde affiché, commande depuis le téléphone.",
+  "js": [
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni boutique ni catalogue dans le portage.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.activites",
+  "domaine": "Téléphone",
+  "fonction": "App Activités : épreuve d'événement en cours (GPS, Abandonner), défis à conditions fixes (version, record, dernier résultat, tentatives, lieu, obstacles, hauteur, cheval fourni, météo, heure, temps accordé, « Carte de résultat », « Règles et départ »), concours et courses ouverts selon la réputation, entraînements libres chronométrés (meilleur temps, Itinéraire).",
+  "js": [
+   "src/ui/activities-app.js",
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "« Événements » n'est qu'un libellé ; le seul parcours est la démonstration du Pôle (F8), sans défi, record ni engagement.",
+  "tranche": "e"
+ },
+ {
+  "id": "telephone.photo",
+  "domaine": "Téléphone",
+  "fonction": "Icône Photo : range le téléphone et passe en mode photo ; cadre photo avec « Quitter le mode photo », « Partager le jeu », filigrane du titre et messages brefs de 2,6 s.",
+  "js": [
+   "src/ui/phone.js",
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Pas de mode photo joueur ; AStridesShots (StridesShots.cpp, option -StridesShots) n'est qu'un outil de captures de développement.",
+  "tranche": "h"
+ },
+ {
+  "id": "telephone.carte-plein-ecran",
+  "domaine": "Téléphone",
+  "fonction": "App Carte : carte plein écran (fond de la minimap, ou plan de Paris), déplacement au doigt, pincement ou molette (× 1,15 / × 0,87) entre 0,9 et 8 fois la vue d'ensemble, repères triés par priorité, libellés posés sans chevauchement (pros et boutique à partir du zoom × 4), légende Mission / Écurie / Boutique / Événement, astuce jusqu'au premier toucher, toucher = repère GPS « Repère GPS placé ».",
+  "js": [
+   "src/ui/phone.js",
+   "src/ui/minimap.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "« Carte » n'est qu'un libellé du téléphone ; aucun repère posé par le joueur.",
+  "tranche": "e"
+ },
+ {
+  "id": "ecrans.chargement",
+  "domaine": "Écrans",
+  "fonction": "Écran de chargement : titre du jeu, « UN JEU EN MONDE OUVERT · CÔTE FLEURIE », barre de progression, message d'étape, astuce tirée au hasard parmi 7.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Démarrage moteur sans écran de chargement propre au jeu.",
+  "tranche": "h"
+ },
+ {
+  "id": "ecrans.titre",
+  "domaine": "Écrans",
+  "fonction": "Écran titre : titre Equestrian Tour, mention de l'application Strides intégrée (logo officiel), Continuer / Nouvelle partie (ou Jouer), « Découvrir la vraie application Strides », avertissement de sauvegarde illisible avec restauration des copies, astuce plein écran iOS ou raccourcis clavier, bascule FR | EN.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Le jeu démarre directement en partie (AStridesGameMode) ; « Equestrian Tour » n'apparaît que dans unreal/StridesGrandTour/Config/DefaultGame.ini:3.",
+  "tranche": "h"
+ },
+ {
+  "id": "ecrans.creation-personnage",
+  "domaine": "Écrans",
+  "fonction": "Création du profil : prénom (16 caractères au plus, « Alex » par défaut) et choix Cavalière / Cavalier avant la première partie.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Pas de prénom ; seule la cavalière est utilisée (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26) bien que Content/Characters/Riders/Male soit importé.",
+  "tranche": "b"
+ },
+ {
+  "id": "ecrans.fenetre-modale",
+  "domaine": "Écrans",
+  "fonction": "Fenêtre modale générique : surtitre, titre, texte, contenu défilable avec ombre tant qu'il reste à lire, barre d'actions toujours visible, commandes relâchées à l'ouverture.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune fenêtre modale UMG.",
+  "tranche": "h"
+ },
+ {
+  "id": "ecrans.resultat-mission",
+  "domaine": "Écrans",
+  "fonction": "Carte de résultat de mission : paiement, réputation « +N pts », temps, avis client (initiales, étoiles, citation), nouveau palier de réputation et son avantage, mention réelle, « Continuer », son de réussite ; écran propre aux défis.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "Message « <titre> terminée · +N crédits · +N réputation » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:43) affiché en ligne (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:51) ; mission close à 18 m de la cible (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:70-71)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de CompleteActiveMission ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ligne de texte persistante au lieu d'une carte ; ni temps, ni avis, ni étoiles, ni annonce de palier, ni son.",
+  "tranche": "e"
+ },
+ {
+  "id": "ecrans.mission-echouee",
+  "domaine": "Écrans",
+  "fonction": "Carte « Mission échouée » avec la raison, « Plus tard » et « Réessayer », son d'échec.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune mission ne peut échouer dans le portage.",
+  "tranche": "e"
+ },
+ {
+  "id": "ecrans.pause",
+  "domaine": "Écrans",
+  "fonction": "Pause (bouton du HUD, Échap) : aide des commandes tactiles et clavier ; en épreuve de CSO, rappel des trois gestes et bascules « Tracé au sol » et « Aide au saut » (Complète → Bouton seul → Aucune, verrouillée si l'épreuve l'impose) ; version et identifiant de build, lien Strides, Écran titre, Partager, Reprendre.",
+  "js": [
+   "src/ui/screens.js",
+   "src/ui/hud.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni pause ni bouton pause ; aides au saut inexistantes.",
+  "tranche": "h"
+ },
+ {
+  "id": "ecrans.fin-chapitre",
+  "domaine": "Écrans",
+  "fonction": "Fin du chapitre de Deauville : carte « Vainqueur à Deauville » (Grand Prix CSI 5★) annonçant l'invitation au Grand Prix de Paris Indoor (camion, A13, 200 km).",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Pas de Grand Prix ni de chapitres.",
+  "tranche": "e"
+ },
+ {
+  "id": "ecrans.fin-histoire",
+  "domaine": "Écrans",
+  "fonction": "Fin de l'histoire principale (après Paris) : carte « Légende de l'Equestrian Tour », texte de carrière personnalisé, lien Strides, « Partager le jeu », « Continuer à explorer » (le monde reste ouvert).",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "Statut « Carrière terminée » quand les 16 missions sont faites (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:29, 54)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Simple ligne de statut, sans carte, texte, partage ni lien.",
+  "tranche": "e"
+ },
+ {
+  "id": "ecrans.fondu",
+  "domaine": "Écrans",
+  "fonction": "Fondu au noir plein écran pour les transitions.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun fondu.",
+  "tranche": "h"
+ },
+ {
+  "id": "ecrans.orientation",
+  "domaine": "Écrans",
+  "fonction": "Téléphone en portrait : écran « Tourne ton téléphone » (le jeu se joue à l'horizontale) et simulation suspendue.",
+  "js": [
+   "src/ui/screens.js"
+  ],
+  "unreal": "Orientation iOS limitée au paysage gauche et droit (unreal/StridesGrandTour/Config/DefaultEngine.ini:30-33)",
+  "etat": "partiel",
+  "niveau": "code_ecrit",
+  "preuve": "Réglage de configuration non vérifié sur appareil (unreal/docs/validation-mac-2026-11-17.md lignes 45-46 : aucun appareil, aucun package iOS).",
+  "ecart": "Rotation imposée par le système au lieu d'un message ; iPhone et iPad non testés.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.infra-dom-tap",
+  "domaine": "Interface",
+  "fonction": "Utilitaires d'interface : h() construit le DOM, esc() échappe le HTML, tap() déclenche l'action au relâcher si le doigt a bougé de moins de 12 px (sans délai de clic, annulé par pointercancel).",
+  "js": [
+   "src/ui/dom.js"
+  ],
+  "unreal": "UButton::OnClicked des widgets UMG (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:52-59)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; non vérifié sur écran tactile.",
+  "ecart": "Comportement de clic du moteur ; seuil de glissement de 12 px non reproduit (à confirmer) ; h() et esc() sans objet en UMG.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.icones",
+  "domaine": "Interface",
+  "fonction": "Jeu de 42 icônes SVG au trait (24 × 24, couleur courante) : téléphone, saut, boost, sifflet, carte, messages, trophée, météo, pause…, dont le monogramme Strides par masque.",
+  "js": [
+   "src/ui/icons.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "HUD et boutons uniquement textuels, aucune icône importée.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.ionicons",
+  "domaine": "Interface",
+  "fonction": "48 icônes Ionicons (MIT, paquet ionicons 8.1.0), la famille de l'application Strides réelle (chevrons, étoiles, coche, onglets, conditions…).",
+  "js": [
+   "src/ui/ionicons.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune icône dans le portage.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.logo-strides",
+  "domaine": "Interface",
+  "fonction": "Logo officiel Strides affiché tel quel (fichier 1 247 × 355, monogramme 248 × 355 découpé du même fichier, jamais déformé : largeur déduite de la hauteur), en noir ou recoloré par masque CSS ; point d'entrée unique du logo.",
+  "js": [
+   "src/ui/logo.js",
+   "src/partners/partners.js",
+   "src/assets/partners/strides/strides-logo-full.png",
+   "src/assets/partners/strides/strides-mark.png"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun fichier de logo dans Content (find -iname '*logo*' : rien) ; « STRIDES » écrit en texte (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:61) ; CompanyName=STRIDES dans Config/DefaultGame.ini:4.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.logo-textures-monde",
+  "domaine": "Interface",
+  "fonction": "Logo Strides dessiné dans les textures du monde (enseignes, Paris, tapis de selle) après préchargement au démarrage, recoloré et réduit par moitiés successives pour rester net ; rien n'est dessiné si le fichier n'est pas chargé.",
+  "js": [
+   "src/ui/logo.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne pose le logo ; l'export du décor ne précharge pas le logo (scripts/unreal/world-export.js:47-55).",
+  "ecart": "Les enseignes exportées (scripts/unreal/world-export.js:219-234, matériaux sign_* dans Content/World/Meshes/Architecture) viennent d'un World construit sans loadBrandImages (seul src/game.js:166 l'appelle) : drawLogo n'y dessine rien, donc enseignes sans logo (à confirmer à l'écran) ; tapis de selle du cheval importé non vérifié (à confirmer).",
+  "tranche": "c"
+ },
+ {
+  "id": "langues.choix-et-bascule",
+  "domaine": "Langues",
+  "fonction": "Français par défaut ou anglais, choisi au premier lancement, par ?lang= ou mémorisé (clé strides-lang) ; bascule FR | EN sur l'écran titre et Français / English dans les réglages : la partie est sauvegardée puis le jeu rechargé pour que tout (panneaux et enseignes 3D compris) change de langue.",
+  "js": [
+   "src/core/i18n.js",
+   "src/ui/screens.js",
+   "src/ui/phone.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Textes français écrits en dur dans le C++ (TEXT(...), FString::Printf) et dans les JSON (allures, missions, lieux) ; aucune version anglaise ; enseignes exportées en français seulement.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.en-interface",
+  "domaine": "Langues",
+  "fonction": "Dictionnaire anglais de l'interface et du téléphone (clé = texte français exact) : ui.js 331 entrées, phone.js 237, common.js 57.",
+  "js": [
+   "src/i18n/en/ui.js",
+   "src/i18n/en/phone.js",
+   "src/i18n/en/common.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Aucune table de chaînes ; ces textes n'existent pas non plus en français côté Unreal pour la plupart.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.en-histoire",
+  "domaine": "Langues",
+  "fonction": "Dictionnaire anglais de l'histoire et des missions scénarisées : story.js 164 entrées, story2.js 181.",
+  "js": [
+   "src/i18n/en/story.js",
+   "src/i18n/en/story2.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Ni histoire ni traduction ; titres de mission en français dans world_architecture.json.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.en-gameplay",
+  "domaine": "Langues",
+  "fonction": "Dictionnaire anglais des règles et systèmes : gameplay.js 376 entrées (CSO, consignes), systems.js 151, life.js 93 (énergie, périodes, lit, café, disponibilité des missions).",
+  "js": [
+   "src/i18n/en/gameplay.js",
+   "src/i18n/en/systems.js",
+   "src/i18n/en/life.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Événements du parcours en français en dur (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:48-97) ; aucune traduction.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.en-donnees-monde",
+  "domaine": "Langues",
+  "fonction": "Dictionnaire anglais des données et du monde : data.js 278 entrées (chevaux, catalogue, lieux, pros), world.js 108 (panneaux et enseignes), store.js 79 (boutique d'équitation).",
+  "js": [
+   "src/i18n/en/data.js",
+   "src/i18n/en/world.js",
+   "src/i18n/en/store.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Données exportées en français seulement (horse_gaits.json, world_architecture.json) ; enseignes cuites en français dans les textures exportées.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.en-partenaires",
+  "domaine": "Langues",
+  "fonction": "Dictionnaire anglais des partenaires et des publicités de nuit : partners.js 15 entrées.",
+  "js": [
+   "src/i18n/en/partners.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Ni partenaires ni publicités dans le portage.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.formats",
+  "domaine": "Langues",
+  "fonction": "Formats selon la langue : virgule décimale en français et point en anglais ; milliers « 14 850 » / « 14,850 » ; euros « 14 850 € » / « €14,850 » ; heures « 20 h 30 » / « 8:30 pm » ; mois et jours traduits dans les demandes.",
+  "js": [
+   "src/core/i18n.js",
+   "src/ui/requests.js"
+  ],
+  "unreal": "Formats C++ fixes : « %.1f m/s » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:36), « %.2f s » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:108, 111), « %d crédits » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de format.",
+  "ecart": "Point décimal dans des textes français (« 8.0 m/s » au lieu de « 8,0 ») ; pas de séparateur de milliers ; montants en « crédits » sans symbole euro ; aucune variante anglaise ni d'heure.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.glossaire",
+  "domaine": "Langues",
+  "fonction": "Conventions de traduction : anglais britannique concis, tutoiement traduit par « you », noms propres inchangés (STRIDES, Deauville City, Pôle International, Écurie du Val…), pluriels en deux textes, nombres par num/int/euros/hourText, glossaire équestre de 50 termes (CSO → show jumping, refus → refusal, barrage → jump-off…).",
+  "js": [
+   "src/i18n/GLOSSARY.md"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Aucune convention de localisation côté Unreal.",
+  "tranche": "h"
+ },
+ {
+  "id": "langues.controle-traductions",
+  "domaine": "Langues",
+  "fonction": "Contrôle des traductions : clés sans traduction relevées dans window.__i18nMissing et vérifiées par les tests (tests/e2e/i18n.mjs, scripts/i18n-check.mjs) ; correspondance anglais → français pour le pilote automatique des tests.",
+  "js": [
+   "src/core/i18n.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
+  "ecart": "Aucun contrôle de chaînes manquantes.",
+  "tranche": "socle"
+ },
+ {
+  "id": "partenaires.registre-marques",
+  "domaine": "Partenaires",
+  "fonction": "Registre des marques : Strides (plateforme autorisée : logo, monogramme et capture d'accueil officiels, liens App Store et Google Play), Kingsland (en attente : habillage neutre « Sellerie & Mode Équestre »), STX (en attente) ; une marque tierce n'apparaît que si elle est autorisée et que sa ressource officielle est fournie (brandAuthorized, brandName).",
+  "js": [
+   "src/partners/partners.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune notion de marque ni d'autorisation ; aucune marque tierce affichée.",
+  "tranche": "socle"
+ },
+ {
+  "id": "partenaires.campagnes-nuit",
+  "domaine": "Partenaires",
+  "fonction": "Campagnes de l'emplacement de nuit : 2 places (1 : Kingsland « kingsland-aw26-nuit », en attente ; 2 : Strides « strides-nuit-v1 », autorisée depuis le 01/11/2026), 4,5 s chacune ; diffusée seulement si la campagne et la marque sont autorisées, entre ses dates (fin incluse) et avec son média, sinon habillage neutre ; une séquence par nuit de jeu au plus.",
+  "js": [
+   "src/partners/campaigns.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni nuit, ni sommeil, ni campagnes dans le portage.",
+  "tranche": "d"
+ },
+ {
+  "id": "partenaires.livrees-stx",
+  "domaine": "Partenaires",
+  "fonction": "Emplacements du logo STX sur les carrosseries (camion Scania et van Master, deux flancs chacun) : zone utile moins la garde, logo inscrit sans déformation (hauteur visée 1,0 m ou 0,62 m, largeur bornée), habillage neutre en double filet graphite (7,5 cm + 2 cm + 1,2 cm, au tiers inférieur) tant que STX n'est pas autorisé, pièces à ne jamais recouvrir.",
+  "js": [
+   "src/partners/liveries.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun véhicule dans le portage.",
+  "tranche": "f"
+ },
+ {
+  "id": "nuit.sequence",
+  "domaine": "Pubs de nuit",
+  "fonction": "« Dormir jusqu'au matin » : écran de nuit posé tout de suite (simulation et commandes suspendues), tombée de la nuit 1,6 s en deux moitiés, nuit appliquée, rendu 3D suspendu pendant les publicités, lever du jour 1,8 s (60 % puis 40 %) ; nuit possible sans publicité.",
+  "js": [
+   "src/ui/nightAds.js",
+   "src/partners/campaigns.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Ni lit, ni nuit, ni sommeil dans le portage.",
+  "tranche": "d"
+ },
+ {
+  "id": "nuit.pub-strides",
+  "domaine": "Pubs de nuit",
+  "fonction": "Publicité Strides originale : deux besoins (« Votre groom annule à la dernière minute ? », « Besoin d'un chauffeur pour partir en concours ? »), téléphone montrant la capture réelle de l'app, accroche, trois promesses (Profils vérifiés, Paiement sécurisé, Sans abonnement), logo officiel, strides-app.com, mention de fiction, bouton « Découvrir Strides ».",
+  "js": [
+   "src/ui/nightAds.js",
+   "src/partners/campaigns.js",
+   "src/assets/partners/strides/app-accueil-capture.png"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune créa ni capture de l'app dans Content.",
+  "tranche": "d"
+ },
+ {
+  "id": "nuit.pub-image-video",
+  "domaine": "Pubs de nuit",
+  "fonction": "Publicité d'une campagne autorisée en image ou en vidéo muette lue en ligne (poster d'attente), plein cadre sans déformation avec cadrage réglable, logo autorisé, accroche et ligne validées par la marque.",
+  "js": [
+   "src/ui/nightAds.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucune lecture de média publicitaire.",
+  "tranche": "d"
+ },
+ {
+  "id": "nuit.habillage-neutre",
+  "domaine": "Pubs de nuit",
+  "fonction": "Habillage neutre (annonceur non autorisé ou média absent) : « Sellerie & Mode Équestre », « Tenues d'équitation · Équipement du cheval », renvoi vers la boutique du jeu en ville, mention « Partenaire ».",
+  "js": [
+   "src/ui/nightAds.js",
+   "src/partners/partners.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun emplacement publicitaire.",
+  "tranche": "d"
+ },
+ {
+  "id": "nuit.cadre-passer",
+  "domaine": "Pubs de nuit",
+  "fonction": "Cadre de publicité : mention « Publicité » ou « Partenaire », compteur i/n, barre de progression, « Passer » visible après 1,0 s (passe à la suivante, la dernière mène au matin), destination externe ouverte seulement si le joueur touche le bouton après 0,6 s ; publicités vues et passées consignées.",
+  "js": [
+   "src/ui/nightAds.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun emplacement publicitaire.",
+  "tranche": "d"
+ },
+ {
+  "id": "nuit.medias-robustesse",
+  "domaine": "Pubs de nuit",
+  "fonction": "Préchargement des médias à l'entrée de la maison, chaque média attendu au plus 1,2 s ; média manquant : habillage neutre ou publicité sautée, jamais d'écran noir prolongé ; temps piloté par les images (0,5 s au plus par image), arrêté quand l'onglet est caché ou le téléphone en portrait ; programme instantané pour les tests (nightProgramIds).",
+  "js": [
+   "src/ui/nightAds.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
+  "ecart": "Aucun emplacement publicitaire.",
+  "tranche": "d"
+ }
+]

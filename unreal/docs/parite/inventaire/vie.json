@@ -1,0 +1,1330 @@
+[
+ {
+  "id": "missions.offres",
+  "domaine": "Missions",
+  "fonction": "Publie dans l'app Strides les missions d'histoire disponibles et, après « Premiers pas », jusqu'à 3 jobs générés ; actualisation toutes les 55 à 90 s sans mission en cours (première à 5 s ; à la fermeture du résultat d'une mission, actualisation immédiate puis de nouveau à 6 s ; à 20 s après un abandon), tri histoire d'abord puis offres verrouillées (une seule verrouillée visible), notification push « Nouvelle demande » de 11 s avec paie et distance et bouton « Répondre à la demande », pastille du téléphone.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::StartNextMission (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31) prend la première mission disponible dans l'ordre du JSON ; déclenchée par M ou la croix haut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:63-64, 157-160) et le bouton tactile MISSION (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:50) ; téléphone = 10 noms d'applications non interactifs (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:57-75).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du sous-système ; Strides.World.Architecture compte seulement 16 missions et 10 applications dans le JSON. testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
+  "ecart": "Pas de liste d'offres ni de jobs, pas de minuterie d'actualisation, pas de notification ni de pastille ; le joueur ne choisit pas : la mission suivante de la chaîne est imposée.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.accepter-refuser",
+  "domaine": "Missions",
+  "fonction": "Accepter est refusé avec un message si l'offre est verrouillée, si une mission est déjà en cours, hors des horaires du client, en épuisement pour une mission exigeante, ou si le solde ne couvre pas le coût de la mission ; refuser retire l'offre, une mission d'histoire refusée revient après 40 s et la prochaine actualisation passe à 25 s au plus.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "StartNextMission refuse seulement si une mission est active (« Une mission est déjà active », unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:14-18).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test.",
+  "ecart": "Pas de refus possible, aucun contrôle d'horaires, d'énergie ni de solde, pas de délai de 40 s.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.verrou-palier",
+  "domaine": "Missions",
+  "fonction": "Une mission d'histoire dont le niveau requis (1 à 4) dépasse le palier de réputation du joueur apparaît verrouillée (« Débloqué au palier « … » ») et ne peut pas être acceptée.",
+  "js": [
+   "src/gameplay/missions.js",
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10) ne lit que les prérequis ; world_architecture.json n'a pas de champ level.",
+  "ecart": "Les niveaux web (plage, transport, fer : 2 ; cross, pension, derby : 3 ; csi3, gp, gpparis : 4) n'existent pas côté Unreal.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.prerequis",
+  "domaine": "Missions",
+  "fonction": "Une mission d'histoire est disponible si elle n'est pas terminée et si toutes ses missions requises le sont ; graphe non linéaire (transport après fugueur, fer après transport et plage, cross et pension après fer, csi3 après derby et pension).",
+  "js": [
+   "src/gameplay/missions.js",
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:137-143).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:79-108) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement que chaque prérequis est défini plus haut dans le JSON : il resterait vert avec les arêtes du web (transport après fugueur, etc.) comme avec IsAvailable cassé. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
+  "ecart": "Graphe rendu linéaire et différent : transport requiert plage (web : fugueur), fer requiert transport seul (web : transport + plage), cross requiert pension (web : fer), csi3 requiert derby seul (web : derby + pension).",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.etape-destination",
+  "domaine": "Missions",
+  "fonction": "Étape « aller à » : réussie quand le joueur est à moins du rayon de la cible (6 m par défaut) et dans le mode demandé (à pied, à cheval, au volant du camion) ; le texte affiche la distance (arrondie à 10 m, en km au-delà de 1 000 m) et, à moins de 45 m, la consigne de changement de mode (descendre, sortir du véhicule, monter dans le camion).",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "AStridesWorldDirector::Tick (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:48-72) : toutes les 0,25 s, la mission active est terminée dès que le pion est à 18 m ou moins de la cible.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test.",
+  "ecart": "Une seule étape par mission, rayon 18 m au lieu de 6 m, mode jamais vérifié, pas de consigne de mode. Le départ (-104, 168 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:86-89) est à 7,2 m du lieu home (-110, 172) : dans l'enchaînement normal, tuto et m1 (lieu home) se terminent dès leur lancement ; groom (lancée après m3 au Pôle) et transport (après plage) se terminent dès le retour à 18 m de l'Écurie du Val.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.etapes-scenarisees",
+  "domaine": "Missions",
+  "fonction": "Déroulé en étapes successives : dialogue bloquant (personnage verrouillé), interaction à un point (rayon 3,2 m, modes, condition « check » dont le motif s'affiche 4,5 s), attente, compte à rebours 3-2-1 « PARTEZ ! » (3,6 s, bips 660 puis 1 320 Hz), étapes sur mesure ; indice de l'étape affiché 6 s.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (makeSteps, dialog, countdown, interact de mission) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun dialogue, aucune interaction de mission, aucune attente ni compte à rebours.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.chrono-echec",
+  "domaine": "Missions",
+  "fonction": "Chronomètre visible de mission : à zéro, échec avec le texte propre à la mission (« Temps écoulé ! » par défaut) ; une étape peut aussi renvoyer un échec motivé.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (timer, timeout, fail de mission) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune mission Unreal ne peut échouer ni n'a de chrono.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.objectif-hud",
+  "domaine": "Missions",
+  "fonction": "Bandeau d'objectif : « Mission · titre » (ou « Événement · titre »), texte de l'étape, minuteur et sous-texte ; sans mission, « N missions t'attendent sur Strides », touchable pour ouvrir l'app.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::MissionStatus (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:49-57) affiché par AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:50 et 72) : « titre · rejoindre <identifiant du lieu> ».",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture. testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
+  "ecart": "Identifiant brut du lieu (home, sellerie…) au lieu de son nom, pas de distance dans le texte (seulement « GPS N m » sous la minicarte), pas de minuteur, simple ligne de texte du HUD Canvas, sans mission : « Aucune mission active ».",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.gps-balise",
+  "domaine": "Missions",
+  "fonction": "GPS de mission : cible de l'étape avec balise et rayon, rétablie si elle a été effacée (sortie de véhicule, carte du téléphone), cible mobile suivie (cheval en fuite, camion).",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "Colonne orange tournante de 1,2 × 1,2 × 18 m posée au sol de la cible (centre à 9 m au-dessus du relief) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:37-39, 61-67), cible et distance sur la minicarte (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:158-168), position via ActiveTarget (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-81).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; minicarte annoncée fonctionnelle par le commit ffe6d53a, sans mention dans validation-mac-2026-11-17.md.",
+  "ecart": "Cible fixe par mission (lieu, sinon centre de région, Pôle pour Paris) ; pas de cible par étape, pas de cible mobile, pas d'itinéraire.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.echec-reessayer",
+  "domaine": "Missions",
+  "fonction": "Échec : écran « Mission échouée » avec Réessayer (relance la même offre sans redébiter ni refaire les choix, grâce au point de reprise) ou Quitter (une mission d'histoire est reproposée) ; coût d'énergie réduit de moitié.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (missionFailed, retry) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun écran d'échec.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.abandon",
+  "domaine": "Missions",
+  "fonction": "Abandonner la mission en cours : nettoyage, point de reprise effacé, sauvegarde, GPS et objectif effacés, message « Mission abandonnée. », mission d'histoire reproposée après 40 s, prochaine offre dans 20 s.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (abandon) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Une mission Unreal lancée ne peut pas être abandonnée.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.recompense",
+  "domaine": "Missions",
+  "fonction": "Mission terminée : note de 1 à 5 étoiles propre à la mission, paie = montant négocié sinon tarif de l'offre, pourboire de 10 % à 5 étoiles, réputation = xp ; versement unique pour une mission d'histoire (grantOnce) ; gains et nombre de missions comptés, mission ajoutée aux terminées, note ajoutée aux avis, +2 en compétence Organisation.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::CompleteActiveMission (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:33-47) : Credits += Pay, Reputation += Xp, CompletedMissions.AddUnique.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du sous-système.",
+  "ecart": "Pas d'étoiles, de pourboire, de statistiques, d'avis ni de compétence ; montants des missions différents du web (voir histoire.catalogue) ; « crédits » entiers au lieu d'euros.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.ecran-resultat",
+  "domaine": "Missions",
+  "fonction": "Carte de résultat : titre (« Mission réussie », « Nouveau record »…), mission et client, gain, réputation, étoiles, temps, avis du client, encadré « Dans la vraie vie », passage de palier ; à la fermeture, effets after() de la mission puis actualisation immédiate des offres, et de nouveau 6 s plus tard.",
+  "js": [
+   "src/gameplay/missions.js",
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Message LastMessage « titre terminée · +N crédits · +N réputation » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:43) affiché en ligne du HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:51).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture.",
+  "ecart": "Pas de carte, d'étoiles, d'avis ni d'encadré « Dans la vraie vie » ; pas d'effets après mission (messages, célébration, fin de chapitre).",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.avis-clients",
+  "domaine": "Missions",
+  "fonction": "Avis du client écrit selon la note (5 : « Parfait, rapide et pro… », 4 : « Très bon travail », 3 : « Correct… », moins : « … de justesse ») ou propre à la mission, note conservée dans les avis du profil.",
+  "js": [
+   "src/gameplay/missions.js",
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (review, ratings) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun avis ni note.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.paliers-reputation",
+  "domaine": "Missions",
+  "fonction": "Paliers de réputation : 0 « Premiers contrats », 300 « Professionnel apprécié », 900 « Référence locale », 1 800 « Équipe reconnue », 3 200 « Réputation internationale », avec progression vers le palier suivant (src/config.js, src/core/save.js reputationTier).",
+  "js": [
+   "src/gameplay/missions.js",
+   "src/config.js",
+   "src/core/save.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:144-148), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:61-77) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement qu'il y a 5 rangs : ni seuils, ni noms, ni RankName ne sont testés. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
+  "ecart": "Seuils et noms différents : 0 Groom, 500 Cavalier, 1 500 Pro vérifié, 3 500 International, 7 000 Légende 5★ ; pas de progression vers le palier suivant.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.passage-palier",
+  "domaine": "Missions",
+  "fonction": "Passage de palier annoncé sur la carte de résultat avec son avantage (2 : missions Transport, sorties cavalier, plage ; 3 : recommandations entre clients ; 4 : engagements en CSI au Pôle ; 5 : référence de Deauville City), son de montée de niveau 600 ms après.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (levelUp, LEVEL_PERKS) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Le rang change silencieusement dans la ligne du HUD.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.sauvegarde-carriere",
+  "domaine": "Missions",
+  "fonction": "Argent, réputation, missions terminées, choix, drapeaux, statistiques et avis écrits dans la sauvegarde unique à chaque fin de mission (saveNow).",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "UStridesSaveSubsystem::SaveNow et LoadNow (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:56-61, 74-76) : Credits, Reputation, ActiveMissionId et CompletedMissions dans des UPROPERTY de UStridesSaveGame (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesSaveSubsystem.h:15-18), hors du JSON strides::SaveGame ; Restore borne à 0 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:90-97).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de la carrière sauvegardée (Strides.Core.Save ne lit que le JSON du cœur). testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
+  "ecart": "Deux sources de vérité : strides::SaveGame.money et .reputation ne sont pas reliés à Credits et Reputation ; sauvegarde manuelle seulement (F5 ou bouton tactile SAUVER, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:47) ; l'import de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:83-105, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:94-106) ne reprend ni completed ni checkpoint et ne remplit pas la carrière ; choix, drapeaux, statistiques et avis absents.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.point-de-reprise",
+  "domaine": "Missions",
+  "fonction": "Point de reprise d'une mission d'histoire (mission, étape, données) enregistré dès l'acceptation puis aux étapes clés (tuto : start, briefed, out ; M3 : chosen, prepared, loaded, arrived, unloaded, result) : après rechargement l'offre est marquée à reprendre, jamais bloquée par l'heure ou l'énergie, et ni choix ni paiement ne sont refaits.",
+  "js": [
+   "src/gameplay/missions.js",
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "ActiveMissionId sauvegardé et restauré (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:60, 76).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test.",
+  "ecart": "Seule l'identité de la mission active survit, sans étape ni données.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.engagement-rembourse",
+  "domaine": "Missions",
+  "fonction": "Mission payante (ferrure 60 €, engagement de concours) : solde vérifié à l'acceptation ; un engagement réglé pour une mission perdue au rechargement est remboursé une fois avec un message du secrétariat du concours.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (cost, pendingFee, refundLostFee) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune mission ne coûte d'argent côté Unreal.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.contre-proposition",
+  "domaine": "Missions",
+  "fonction": "Contre-proposition sur le tarif : réponse du client 7 s plus tard, acceptée jusqu'à +10 %, ou jusqu'à +25 % si (longueur de l'identifiant + montant) est pair ; notification et offre relancée pour une durée de vie complète ; pas de réponse pendant une mission.",
+  "js": [
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (counter, contre-proposition) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune négociation.",
+  "tranche": "e"
+ },
+ {
+  "id": "missions.mesures",
+  "domaine": "Missions",
+  "fonction": "Mesures d'usage envoyées : second_activity_started, first_mission_completed, hiring_mission_completed (mode de recrutement de M2).",
+  "js": [
+   "src/gameplay/missions.js",
+   "src/gameplay/activities.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (metrics, track) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune mesure d'usage.",
+  "tranche": "socle"
+ },
+ {
+  "id": "histoire.catalogue",
+  "domaine": "Histoire",
+  "fonction": "16 missions d'histoire (tuto, m1, m2, m3, groom, livraison, fugueur, plage, transport, fer, cross, pension, derby, csi3, gp, gpparis) avec titre, catégorie, client, lieu, paie de base et réputation : 4 130 € de paie de base (hors dotations, choix de M1, pourboires et ferrure à -60 €) et 5 510 de réputation au total.",
+  "js": [
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js",
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:137-143.",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Architecture et Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:61-108) : journal Automation du 18/11/2026 16:17 UTC (/private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt) : Result=Success, EXIT CODE 0 ; ils comptent 16 missions et totalisent 7 520 crédits et 5 980 de réputation, valeurs du JSON. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
+  "ecart": "12 missions sur 16 diffèrent du web en paie, réputation, prérequis ou lieu ; seules tuto, groom, livraison et derby concordent ; titres de m1, m2, m3 différents (« Première mission », « Trouver un professionnel », « Premier concours ») ; catégories différentes pour 10 missions sur 16 (m1 « Jobs » au lieu de « Groom », m2 « Annuaire » au lieu de « Groom », m3 « Événements » au lieu de « CSO », fer « Annuaire » au lieu d'« Urgence », cross « Événements » au lieu de « Cross », pension « Écuries » au lieu de « Recherche », derby « Événements » au lieu de « Course », csi3 « Événements » au lieu de « CSO », gp « Événements » au lieu de « Grand Prix », gpparis « Finale » au lieu de « Grand Prix ») ; ni description, client, palier, durée, horaires ni texte « Dans la vraie vie ».",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.tuto",
+  "domaine": "Histoire",
+  "fonction": "« Premiers pas » (50 €, 60 rep, toute heure) : aller chercher Comète laissée au box, la sortir en main de l'écurie, monter, faire un tour de carrière et revenir voir Camille ; points de reprise briefed et out.",
+  "js": [
+   "src/gameplay/story.js",
+   "src/gameplay/stabling.js"
+  ],
+  "unreal": "Entrée tuto (home, 50, 60) de world_architecture.json, jouée comme simple destination (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:68-71).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé ; seules les données sont vérifiées par Strides.World.CareerGraph.",
+  "ecart": "Aucune étape (box, sortie en main, carrière, Camille) ; départ à 7,2 m du lieu home : la mission se termine dès son lancement.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.m1",
+  "domaine": "Histoire",
+  "fonction": "« Deux écuries, une matinée » : choisir entre préparer deux chevaux au Val (90 €, 60 rep), sortir en main un cheval du Haras (140 €, 80 rep) ou la tournée des deux (270 € dont 40 € de bonus, 120 rep) ; proposée de 6 h à 20 h ; préparation regroupée de 6 s (4 s avec l'aire de pansage).",
+  "js": [
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "Entrée m1 « Première mission » (home, 90 crédits, 100 rep) de world_architecture.json.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Ni choix, ni chevaux à préparer, ni Haras ; 100 de réputation au lieu de 60 à 120 selon le choix ; se termine au lancement (lieu home).",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.m2",
+  "domaine": "Histoire",
+  "fonction": "« Un renfort avant le concours » (120 €, 100 rep) : reconnaître le parcours du Pôle et préparer Comète ; recruter un renfort dans Strides › Recruter (Léa 120 €, Inès 200 €) ou s'organiser seul ; choix enregistré.",
+  "js": [
+   "src/gameplay/story2.js",
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "Entrée m2 « Trouver un professionnel » (town, 120 crédits, 130 rep) de world_architecture.json.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Lieu Deauville City au lieu de l'Écurie du Val, 130 de réputation au lieu de 100, ni recrutement ni reconnaissance.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.m3",
+  "domaine": "Histoire",
+  "fonction": "« Le premier concours en équipe » (Amateur 1,10 m) : choisir l'approche (prudente, ou ambitieuse à -5 s) et l'aide de Léa (80 €), préparer, embarquer, conduire le camion, débarquer, courir le parcours du Pôle au temps accordé à 350 m/min contre un champ simulé ; participation 150 €, dotation 220/160/120/90/70 € aux 5 premiers, 200 rep ; débloque l'aire de pansage (350 €).",
+  "js": [
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "Entrée m3 « Premier concours » (pole, 180 crédits, 200 rep) ; le parcours du Pôle existe (AStridesCourse) mais n'est pas relié à la mission.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Validée en arrivant à 18 m du point Pôle (330, -180) sans courir ; paie fixe 180 au lieu de 150 + dotation ; ni camion, ni classement, ni déblocage de l'aire.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.groom",
+  "domaine": "Histoire",
+  "fonction": "« Groom du matin » (90 €, 120 rep) : distribuer le foin à quatre chevaux avant la reprise de 10 h, chrono 150 s, proposée de 6 h à 18 h, note selon le temps (5★ sous 80 s, 4★ sous 105 s, 3★ sous 130 s).",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée groom (home, 90, 120) de world_architecture.json, mêmes montants.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Ni foin ni chevaux, pas de chrono ; validée dès le retour à 18 m de l'Écurie du Val (lancée normalement depuis le Pôle après m3), immédiatement si lancée sur place.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.livraison",
+  "domaine": "Histoire",
+  "fonction": "« Selle sur-mesure » (120 €, 150 rep) : prendre une selle au comptoir de la Sellerie du Port et la livrer au Pôle en 105 s ; note selon le temps restant (40/25/10 s).",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée livraison (sellerie, 120, 150), mêmes montants.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Validée en arrivant devant la Sellerie : ni retrait, ni livraison au Pôle, ni chrono.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.fugueur",
+  "domaine": "Histoire",
+  "fonction": "« Le fugueur » (160 €, 200 rep, toute heure) : rattraper l'étalon Tonnerre échappé du Haras de la Pommeraie et le ramener au paddock en 130 s ; note selon le temps de capture (35/55/80 s).",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée fugueur (haras, 150, 180).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "150/180 au lieu de 160/200 ; pas de cheval en fuite, de capture ni de chrono.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.plage",
+  "domaine": "Histoire",
+  "fonction": "« Galop sur la plage » (180 €, 250 rep, palier 2) : travailler Tornade depuis l'Écurie des Dunes, 7 anneaux sur la plage puis retour, chrono 95 s allongé selon la longueur du tracé (marée), note selon le temps restant (25/15/6 s).",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée plage (région beach, 170, 200).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Cible au centre de la région plage au lieu de l'Écurie des Dunes ; 170/200 au lieu de 180/250 ; ni anneaux ni chrono.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.transport",
+  "domaine": "Histoire",
+  "fonction": "« Transport express » (260 €, 300 rep, palier 2, après fugueur) : conduire le camion, charger Quabar au Haras et le livrer au Pôle en douceur ; note selon le confort du cheval (90/75/55).",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée transport (home, 260, 260, après plage).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "260 de réputation au lieu de 300, prérequis plage au lieu de fugueur ; ni camion, ni chargement, ni confort ; validée dès le retour à 18 m de l'Écurie du Val (lancée normalement depuis la plage), immédiatement si lancée sur place.",
+  "tranche": "f"
+ },
+ {
+  "id": "histoire.fer",
+  "domaine": "Histoire",
+  "fonction": "« Fer perdu » (Urgence, palier 2, après transport et plage) : trouver un maréchal-ferrant dans le Guide local du téléphone, régler la ferrure 60 € (paie 0 €, 220 rep, sans avis), puis message de remerciement d'Hugo Lemaire.",
+  "js": [
+   "src/gameplay/story.js",
+   "src/gameplay/data.js"
+  ],
+  "unreal": "Entrée fer (forge, 200 crédits, 220 rep, après transport).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Rapporte 200 crédits au lieu de coûter 60 € ; pas de Guide local ; prérequis plage manquant.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.cross",
+  "domaine": "Histoire",
+  "fonction": "« Cross de Saint-Gatien » (320 €, 350 rep, palier 3) : 10 obstacles fixes en forêt, refus +20 pénalités, temps accordé 1:50, note 5★ sans faute, 4★ jusqu'à 8, 3★ jusqu'à 24 pénalités.",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée cross (gatien, 300, 320, après pension).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "300/320 au lieu de 320/350, prérequis pension au lieu de fer ; aucun parcours de cross.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.pension",
+  "domaine": "Histoire",
+  "fonction": "« La pension parfaite » (170 €, 250 rep, palier 3) : trouver pour Galant une pension box + paddock, accès plage, moins de 500 €/mois dans Guide local › Pensions, puis l'y conduire ; mauvais choix ou plus de 220 s : une étoile de moins.",
+  "js": [
+   "src/gameplay/story.js",
+   "src/gameplay/data.js"
+  ],
+  "unreal": "Entrée pension (dunes, 220, 240, après fer).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Lieu Écurie des Dunes au lieu du Haras, 220/240 au lieu de 170/250 ; ni recherche de pension ni cheval à conduire.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.derby",
+  "domaine": "Histoire",
+  "fonction": "« Derby de la Touques » (420 €, 400 rep, palier 3) : course de galop d'un tour d'hippodrome contre cinq concurrents, top 3 obligatoire, gain de 100 %, environ 60 % (250/420) ou 36 % (150/420) selon la place, note [5, 5, 4, 3].",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée derby (hippo, 420, 400), mêmes montants de base.",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Ni course ni concurrents ; gain fixe quelle que soit la place.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.csi3",
+  "domaine": "Histoire",
+  "fonction": "« Qualificative CSI 3★ » (500 €, 450 rep, palier 4, après derby et pension) : parcours du Pôle jusqu'à 1,45 m, échec au-delà de 8 pénalités, 5★ sans faute, 4★ jusqu'à 4 points.",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée csi3 (pole, 650, 600, après derby).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "650/600 au lieu de 500/450, prérequis pension manquant ; validée à l'arrivée au Pôle, sans parcours ni qualification.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.gp",
+  "domaine": "Histoire",
+  "fonction": "« Grand Prix CSI 5★ » (1 500 €, 900 rep, palier 4) : obstacles de 1,50 à 1,60 m, il faut devancer le meilleur rival sinon échec ; 5★ sans faute ; à la fin, célébration puis écran de fin de chapitre.",
+  "js": [
+   "src/gameplay/story.js"
+  ],
+  "unreal": "Entrée gp (pole, 1 500, 1 000).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "1 000 de réputation au lieu de 900 ; ni Grand Prix ni rivaux ; pas d'écran de fin de chapitre.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.gpparis",
+  "domaine": "Histoire",
+  "fonction": "« Grand Prix de Paris Indoor » (finale, palier 4, après gp) : route en camion par l'A13, 40 couples, Sprint à 1,50 m pour la grille puis Grand Prix à 1,60 m ; dotation affichée 42 000 € (10 prix de 12 000 à 1 000 € + Sprint 1 500 €), paie de base 0 €, 1 500 rep.",
+  "js": [
+   "src/gameplay/story.js",
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "Entrée gpparis (lieu paris, 3 000 crédits, 1 800 rep) ; balise placée au Pôle faute de lieu Paris (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:76-77) ; « Carrière terminée » quand les 16 sont faites (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:29).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test du déroulé.",
+  "ecart": "Paie fixe 3 000 au lieu d'une dotation au classement, 1 800 au lieu de 1 500 rep ; ni Paris, ni A13, ni épreuves.",
+  "tranche": "e"
+ },
+ {
+  "id": "histoire.personnages",
+  "domaine": "Histoire",
+  "fonction": "Clients et personnages récurrents (Camille Martin, Léa Morel, Antoine Roux, Maxime Vidal, Hugo Lemaire…) placés dans le monde pendant les missions avec leur tenue, dialogues et messages reçus dans le téléphone après certaines missions.",
+  "js": [
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (npcAt, spawnHuman, message) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun personnage de mission ni message.",
+  "tranche": "g"
+ },
+ {
+  "id": "histoire.choix-drapeaux",
+  "domaine": "Histoire",
+  "fonction": "Choix du chapitre 1 (choices.m1, m2, m3) et drapeau chapter1Done enregistrés et réutilisés par les missions suivantes (M2 lit le choix de M1) et par Mon écurie (aire de pansage).",
+  "js": [
+   "src/gameplay/story2.js",
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (choices, flags, chapter1Done) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun choix ni drapeau d'histoire.",
+  "tranche": "e"
+ },
+ {
+  "id": "metiers.generation",
+  "domaine": "Métiers",
+  "fonction": "Après « Premiers pas », jusqu'à 3 jobs générés en continu : coursier (2 tirages sur 4), reconnaissance, groom, plus 2 tirages transport à partir du palier 2 ; client aléatoire (prénom + nom, note 4,4 à 5,0, vérifié à 85 %) ; une offre non épinglée expire après 300 s ; une offre n'arrive qu'aux horaires du client.",
+  "js": [
+   "src/gameplay/jobs.js",
+   "src/gameplay/missions.js",
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (generateJob, jobs) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun job généré : seules les 16 missions fixes existent.",
+  "tranche": "e"
+ },
+ {
+  "id": "metiers.coursier",
+  "domaine": "Métiers",
+  "fonction": "Livraison : 9 objets entre 11 lieux (comptoir de la Sellerie et du Galop à pied à 2,2 m, ailleurs à pied, à cheval ou en véhicule à 6 m), délai = distance/8 + 30 s (+25 s si dépôt en commerce), paie arrondie à 5 € de 45 + 0,09 × distance, 70 rep, note selon le temps restant (35/20/8 % du délai).",
+  "js": [
+   "src/gameplay/jobs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (coursier, ITEMS, SPOTS) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune livraison.",
+  "tranche": "e"
+ },
+ {
+  "id": "metiers.transport",
+  "domaine": "Métiers",
+  "fonction": "Transport d'un cheval en camion de A à B : paie arrondie à 5 € de 110 + 0,16 × distance, 140 rep ; confort de 100 qui baisse aux chocs (6 + 1,5 × vitesse, 30 au plus) et en virage (au-delà de 5,5 de latéral) ; échec à 0 ; note 90/75/55.",
+  "js": [
+   "src/gameplay/jobs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (transport, comfort, truck) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Ni camion ni transport de cheval.",
+  "tranche": "f"
+ },
+ {
+  "id": "metiers.reconnaissance",
+  "domaine": "Métiers",
+  "fonction": "Reconnaissance d'un tracé de balade : 5 balises à cheval (rayon 7 m) dans l'une des 5 zones (Plage est, Bocage de la Touques, Plateau du phare, Lisière de Saint-Gatien, Vergers du haras), paie arrondie à 5 € de 85 + 0 à 40, 90 rep, note sous 70 s puis 100 s.",
+  "js": [
+   "src/gameplay/jobs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (reco, checkpointSteps) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune balise.",
+  "tranche": "e"
+ },
+ {
+  "id": "metiers.soins-du-soir",
+  "domaine": "Métiers",
+  "fonction": "« Soins du soir » à l'Écurie du Val : prendre du foin au fenil et le donner à trois boxes, 70 €, 60 rep, proposé de 16 h à 23 h, note sous 70 s puis 95 s.",
+  "js": [
+   "src/gameplay/jobs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (carry hay, groom job) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun portage de foin.",
+  "tranche": "e"
+ },
+ {
+  "id": "activites.poteaux-chrono",
+  "domaine": "Activités",
+  "fonction": "Cinq activités libres lancées à cheval depuis un poteau « Chrono » (rayon 6 m, hors mission, poteau masqué au-delà de 300 m) ; chacune rapporte 15 de réputation, sans paie ni avis, et enregistre le meilleur temps (sauf l'entraînement à l'abord).",
+  "js": [
+   "src/gameplay/activities.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (Chrono, bestTimes, activities) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun poteau ni activité libre.",
+  "tranche": "e"
+ },
+ {
+  "id": "activites.parcours-pole",
+  "domaine": "Activités",
+  "fonction": "« Prix STRIDES · Parcours du Pôle » : 8 obstacles dont deux doubles, Amateur 1,10 m, barème A au chrono, temps accordé à 350 m/min ; record = plus petit temps + pénalités, non enregistré après élimination ; score envoyé au classement en ligne.",
+  "js": [
+   "src/gameplay/activities.js"
+  ],
+  "unreal": "AStridesCourse au Pôle, chrono lancé au franchissement de la ligne de départ (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:45-48) ; record « cso_pole » gardé s'il est meilleur selon compareResults, seulement lors de la sauvegarde manuelle (F5 ou bouton SAUVER) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:44-53).",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Tracé, hauteurs, temps accordé et compareResults comparés à l'oracle JS unreal/core/tests/oracles/cso_course.json par unreal/core/tests/test_core.cpp:79-111 (CTest : 4 944 vérifications, zéro échec, validation-mac-2026-11-17.md l.9) ; la règle de record de l'activité (temps + pénalités) n'a pas d'oracle.",
+  "ecart": "Pas de poteau ni de lancement d'activité ; record classé par élimination, pénalités puis temps (challenge.js) au lieu du score temps + pénalités ; clé cso_pole au lieu de bestTimes.cso_train ; enregistré seulement à la sauvegarde ; ni classement en ligne ni carte « Nouveau record ».",
+  "tranche": "a"
+ },
+ {
+  "id": "activites.entrainement-abord",
+  "domaine": "Activités",
+  "fonction": "« Entraînement à l'abord » au paddock du Pôle : un vertical et un oxer, aide à l'appel (bouton vert, zone au sol en aide complète), explication de chaque saut (marge en cm, signalée juste sous 12 cm, ou cause de la faute ; refus : appeler plus tôt), barres remontées, compteur de sauts sans faute, « Terminer » à volonté.",
+  "js": [
+   "src/gameplay/activities.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (warmup, CourseAids, trainingSteps) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Pas de paddock d'entraînement ni d'aide à l'appel.",
+  "tranche": "a"
+ },
+ {
+  "id": "activites.sprint-plage",
+  "domaine": "Activités",
+  "fonction": "« Sprint de la plage » : 8 anneaux le long de la mer, de l'Écurie des Dunes à Deauville City, sur le sable ferme au bord de l'eau (plus loin à marée basse).",
+  "js": [
+   "src/gameplay/activities.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (beach_sprint, beachRingPoints) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun anneau ni marée.",
+  "tranche": "e"
+ },
+ {
+  "id": "activites.cross",
+  "domaine": "Activités",
+  "fonction": "« Cross de Saint-Gatien » en entraînement : 10 obstacles en forêt, mare comprise, pénalités ajoutées au temps.",
+  "js": [
+   "src/gameplay/activities.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (xc_train) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun parcours de cross.",
+  "tranche": "e"
+ },
+ {
+  "id": "activites.tour-hippodrome",
+  "domaine": "Activités",
+  "fonction": "« Tour de l'hippodrome » : un tour de piste chronométré, départ 25 m avant le poteau dans la ligne droite des tribunes, endurance à gérer.",
+  "js": [
+   "src/gameplay/activities.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (hippo_lap) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune piste chronométrée.",
+  "tranche": "e"
+ },
+ {
+  "id": "energie.depense",
+  "domaine": "Énergie",
+  "fonction": "Énergie du personnage de 0 à 100 : dépense par heure de jeu de 2 + activité (marche 0,1, course 0,8, sprint 1,5, à cheval 0,4, petit galop 0,8, galop 1,5, conduite 0,4), multipliée par 1,5 la nuit ; un saut de temps de plus de 0,5 h est compté au repos sur 6 h au plus ; rien en pause, en défi ni au retour d'un défi ; état dans save.data.life.",
+  "js": [
+   "src/gameplay/energy.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (energy, fatigue, life) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune énergie du personnage ; une sauvegarde web importée n'en garde que le texte brut (legacyJson, unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:28).",
+  "tranche": "d"
+ },
+ {
+  "id": "energie.periodes",
+  "domaine": "Énergie",
+  "fonction": "Périodes de la journée : matin 6-12 h, après-midi 12-18 h, soir 18-22 h, nuit 22-6 h, utilisées pour la dépense, les horaires des clients et les messages.",
+  "js": [
+   "src/gameplay/energy.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Seul gameTime (7 h par défaut) est sérialisé (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:22) ; aucun code ne le fait avancer ni ne le découpe en périodes.",
+  "ecart": "Pas d'horloge de jeu ni de périodes.",
+  "tranche": "d"
+ },
+ {
+  "id": "energie.paliers",
+  "domaine": "Énergie",
+  "fonction": "Paliers : en forme ≥ 60, légère fatigue 35-60, fatigue 15-35, épuisement < 15 ; en descendant, toast, puis indice de 7 s, puis notification « Épuisement » avec « Itinéraire vers la maison », une fois par palier et par journée.",
+  "js": [
+   "src/gameplay/energy.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (tierOf, Épuisement) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun palier ni avertissement.",
+  "tranche": "d"
+ },
+ {
+  "id": "energie.malus",
+  "domaine": "Énergie",
+  "fonction": "Effets de la fatigue hors épreuve : course × 0,95 et sprint × 0,9 en fatigue ; course × 0,9, sprint × 0,8 et cheval monté × 0,93 en épuisement.",
+  "js": [
+   "src/gameplay/energy.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (malus, riderFatigue) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun effet de fatigue sur la vitesse.",
+  "tranche": "d"
+ },
+ {
+  "id": "energie.cout-missions",
+  "domaine": "Énergie",
+  "fonction": "Coût d'énergie d'une mission terminée selon son effort : léger 3 (entraînement, 2 min ou moins), normal 5, important 8 (événements, transports, 7 min ou plus) ; moitié en cas d'échec ; toast « Énergie -N ».",
+  "js": [
+   "src/gameplay/energy.js",
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (missionCost, missionDemand) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Les missions Unreal ne coûtent pas d'énergie.",
+  "tranche": "d"
+ },
+ {
+  "id": "energie.horaires-missions",
+  "domaine": "Énergie",
+  "fonction": "Horaires des clients : urgence 6-23 h (fugueur à toute heure), événements 7-21 h, transport 6-21 h, coursier 8-19 h, cavalier 7-20 h, autres 6-23 h, tuto et entraînements à toute heure ; hors horaires, ou en épuisement pour une mission importante, acceptation refusée avec la raison et la solution (se reposer à la maison).",
+  "js": [
+   "src/gameplay/energy.js",
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (missionHours, missionAvailability) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Toute mission Unreal se lance à toute heure.",
+  "tranche": "d"
+ },
+ {
+  "id": "energie.recuperation",
+  "domaine": "Énergie",
+  "fonction": "Récupération : café 12, 7 puis 3 points depuis la dernière nuit, jamais au-delà de 70 % ; sieste de 1 h 30 : 25, 15, 8 puis 4, jamais au-delà de 80 % ; nuit : 100 après 6 h de sommeil, sinon 14 par heure dormie ; réveil à 7 h, compteurs remis à zéro.",
+  "js": [
+   "src/gameplay/energy.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (coffeeGain, napGain, sleepEnergy) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune récupération.",
+  "tranche": "d"
+ },
+ {
+  "id": "energie.fiche-rappels",
+  "domaine": "Énergie",
+  "fonction": "Fiche « Énergie » ouverte depuis la jauge du HUD (niveau, effets, gain de la prochaine sieste et du prochain café, cafés et siestes du jour, itinéraire vers la maison), note dans l'app Strides (épuisement, nuit, soirée, demande en attente de créneau) et rappel du soir entre 21 h 30 et 23 h 30 si l'énergie est sous 70.",
+  "js": [
+   "src/gameplay/energy.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (openCard, statusNote, jauge d'énergie) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Ni jauge ni fiche d'énergie.",
+  "tranche": "d"
+ },
+ {
+  "id": "cheval.frequence-cardiaque",
+  "domaine": "Cheval",
+  "fonction": "Fréquence cardiaque du cheval selon la vitesse (36 bpm à l'arrêt, 118 à 4 m/s, 185 à 11 m/s, 222 à 17 m/s), augmentée par le saut (+18, 30 au plus), la montée, la fatigue et la chaleur ; montée en environ 8 s, récupération 22 s puis 160 s divisés par la forme (endurance du profil bornée entre 0,7 et 1,4).",
+  "js": [
+   "src/gameplay/condition.js",
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent ; StaminaMul est lu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:61) mais jamais utilisé ; stamina, gallopDrain et staminaRegen sont exportés dans horse_gaits.json (scripts/unreal/export-data.mjs:29) mais non lus.",
+  "ecart": "Aucune physiologie du cheval.",
+  "tranche": "d"
+ },
+ {
+  "id": "cheval.energie",
+  "domaine": "Cheval",
+  "fonction": "Énergie du cheval : dépense au-delà de 90 bpm (((fc - 90)/130)² × 0,3 par seconde, divisée par la forme), récupération sous 80 bpm de 0,25/s au repos (0,06 sinon), -0,5 par saut ; remise à 100 après une nuit du joueur, +15 après une sieste.",
+  "js": [
+   "src/gameplay/condition.js",
+   "src/gameplay/rest.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (cond.energy, HorseCondition) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Le cheval Unreal ne se fatigue jamais.",
+  "tranche": "d"
+ },
+ {
+  "id": "cheval.temperature-besoins",
+  "domaine": "Cheval",
+  "fonction": "Température (37,8 °C, jusqu'à +2,6 °C à l'effort), sudation entre 38,5 et 39,7 °C ; hydratation, satiété et propreté qui baissent avec le temps et la sueur ; pieds -2 tous les 400 m ; état enregistré par cheval (horseCare, arrondi au dixième).",
+  "js": [
+   "src/gameplay/condition.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (hydration, satiety, sweat, hooves) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Ni température, ni sueur, ni besoins.",
+  "tranche": "d"
+ },
+ {
+  "id": "cheval.effets-performance",
+  "domaine": "Cheval",
+  "fonction": "Effets de l'état sur la performance : vitesse × (0,86 + 0,14 × lissage de l'énergie entre 0 et 40), -4 % si hydratation < 25 ; saut × (0,92 + 0,08 × lissage entre 10 et 60) + 0,8 % si propre, + 0,8 % si pieds soignés, + 0,6 % si rassasié.",
+  "js": [
+   "src/gameplay/condition.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:108-110).",
+  "ecart": "Performance indépendante de l'état du cheval.",
+  "tranche": "d"
+ },
+ {
+  "id": "cheval.bilan",
+  "domaine": "Cheval",
+  "fonction": "Bilan lisible de l'état dans l'app Chevaux : Épuisé (énergie < 20), Assoiffé (hydratation < 30), A faim (satiété < 30), En sueur (> 39,2 °C), Sale (propreté < 40), sinon En pleine forme.",
+  "js": [
+   "src/gameplay/condition.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (status, app Chevaux) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun bilan de l'état.",
+  "tranche": "d"
+ },
+ {
+  "id": "cheval.soins-ecurie",
+  "domaine": "Cheval",
+  "fonction": "Soins à pied, cheval libre et arrêté : Panser si propreté < 50 (4 s, 3 s avec l'aire), Curer les pieds si < 50 (3 s), Abreuver à l'abreuvoir du Val si hydratation < 90 (4 s), Donner du foin au fenil si satiété < 90 (3 s, repos 60 s) ; le personnage fait les gestes, +1 en compétence Préparation.",
+  "js": [
+   "src/gameplay/condition.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (installCare, Panser, Abreuver) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun geste de soin.",
+  "tranche": "d"
+ },
+ {
+  "id": "cheval.box",
+  "domaine": "Cheval",
+  "fonction": "Box n° 1 de l'Écurie du Val : « Rentrer au box » (porte à 2,6 m, cheval à moins de 8 m, hors mission) et « Sortir du box », avec fondu ; au box, hydratation +0,5/s, satiété +0,15/s, repos, ne vient pas au sifflet ; sorti automatiquement au début d'une mission sauf « Premiers pas » ; état enregistré (horseInBox).",
+  "js": [
+   "src/gameplay/stabling.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (HOME_BOX, inBox, boxCare) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Le cheval reste toujours dehors, au point de départ.",
+  "tranche": "d"
+ },
+ {
+  "id": "maison.entrer-sortir",
+  "domaine": "Maison",
+  "fonction": "Maison de l'Écurie du Val : « Entrer » à pied par la porte (2,4 m), à cheval on met pied à terre et le cheval mené est lâché ; fondu, caméra intérieure, intérieur construit à moins de 30 m et libéré au-delà de 140 m, rien de l'extérieur proposé à travers les murs ; position dans la maison enregistrée et restaurée.",
+  "js": [
+   "src/gameplay/home.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun intérieur ni action de porte. Les façades du Val viennent peut-être des lots statiques exportés (scripts/unreal/world-export.js, Content/World/Meshes/Architecture) : à confirmer à l'écran.",
+  "ecart": "Maison non visitable.",
+  "tranche": "c"
+ },
+ {
+  "id": "maison.gestes",
+  "domaine": "Maison",
+  "fonction": "Dans la maison : « Se coucher » au lit de la chambre (ouvre le menu du sommeil), « Boire un verre d'eau » à la cuisine, « Se rafraîchir » à la salle de bain (sans effet sur la partie).",
+  "js": [
+   "src/gameplay/home.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (home:bed, home:sink) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun geste domestique.",
+  "tranche": "c"
+ },
+ {
+  "id": "repos.menu-lit",
+  "domaine": "Repos",
+  "fonction": "Menu du lit (ou « Se reposer » à la porte si la maison n'a pas d'intérieur) : « Dormir jusqu'au matin » de 19 h à 7 h, « Passer à la journée suivante » en journée, « Faire une sieste » (1 h 30), « Rester debout » ; refusé pendant une mission (sauf concours engagé en attente) ou une épreuve, et si le sommeil ferait manquer le passage au concours (réveil au moins 1 h avant).",
+  "js": [
+   "src/gameplay/rest.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (openBed, Se reposer) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun repos possible.",
+  "tranche": "d"
+ },
+ {
+  "id": "repos.dormir",
+  "domaine": "Repos",
+  "fonction": "Dormir : l'heure saute au prochain 7 h, énergie selon la durée, cheval remis à 100, pluie et sol mouillé recalés, offres attendues 4 s au plus, sauvegarde ; carte « Bonjour ! » ou « Une nouvelle journée commence » avec le numéro du jour et le bilan d'énergie.",
+  "js": [
+   "src/gameplay/rest.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (sleep, nextWake, _newDay) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Pas de nuit ni de nouvelle journée.",
+  "tranche": "d"
+ },
+ {
+  "id": "repos.sieste",
+  "domaine": "Repos",
+  "fonction": "Sieste : +1 h 30 d'heure de jeu, gain de sieste dégressif (25/15/8), cheval +15 d'énergie, sauvegarde et toast « Sieste de 1 h 30 · énergie A → B · il est HH:MM ».",
+  "js": [
+   "src/gameplay/rest.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (nap) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Pas de sieste.",
+  "tranche": "d"
+ },
+ {
+  "id": "repos.programme-nuit",
+  "domaine": "Repos",
+  "fonction": "Transition de nuit avec programmes partenaires, une fois par nuit de jeu, seulement au lit à pied, jamais pendant une mission, une épreuve, un défi ou la conduite ; journal des 10 dernières diffusions dans la sauvegarde.",
+  "js": [
+   "src/gameplay/rest.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (playNight, NIGHT_SLOT) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune séquence de nuit.",
+  "tranche": "d"
+ },
+ {
+  "id": "economie.solde",
+  "domaine": "Économie",
+  "fonction": "Argent du joueur en euros (save.data.money, départ à 0, centimes gérés), affiché dans le portefeuille et sur chaque fiche de commerce (« Solde : … »), crédité ou débité par les missions, les achats, le carburant et la collection.",
+  "js": [
+   "src/gameplay/commerce.js",
+   "src/gameplay/shops.js",
+   "src/gameplay/missions.js"
+  ],
+  "unreal": "Credits entiers du sous-système de progression, affichés « N crédits » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49) ; strides::SaveGame.money (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:21) sérialisé et importé de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:69, 91).",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:170-191 (testSave, écrit à la main) relit money = 1 250 et importe money = 90 d'un export web ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle JS.",
+  "ecart": "Deux compteurs non reliés (Credits affiché, money sauvegardé) ; unité « crédits » au lieu d'euros ; entiers (le web gère les centimes : café 1,80 €, carburant au litre) ; aucune dépense possible.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.achat",
+  "domaine": "Économie",
+  "fonction": "Achat d'un article (même catalogue en boutique et dans le téléphone) : article unique refusé s'il est déjà acquis, consommable cumulé en stock, prérequis vérifié, solde suffisant ; double appui de moins de 0,7 s ignoré ; débit et attribution écrits ensemble puis sauvegarde immédiate ; journal des 50 derniers achats ; son de pièce et toast.",
+  "js": [
+   "src/gameplay/commerce.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (purchase, inventory, upgrades) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun achat.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.equipement",
+  "domaine": "Économie",
+  "fonction": "Équipement par emplacement (selle, bridon, tapis, guêtres, cloches, bonnet, casque, bottes, haut, veste, bas, gants, tête) : l'achat équipe l'article si l'emplacement est libre, puis « Équiper » / « Retirer » ; tenue du personnage, tapis, guêtres et bonnet du cheval mis à jour ; pantalon blanc imposé en concours sauf pantalon admis.",
+  "js": [
+   "src/gameplay/commerce.js",
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (equip, equipped, SLOTS, horseTack) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Ni équipement ni tenue modifiable.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.consommables",
+  "domaine": "Économie",
+  "fonction": "Consommables (shampoing : propreté +45, graisse à sabots : pieds +35, électrolytes : hydratation +35, friandises : énergie +8) utilisés sur le cheval monté ou à moins de 2,5 m, une unité retirée.",
+  "js": [
+   "src/gameplay/commerce.js",
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (use, consumable) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun consommable.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.effets-articles",
+  "domaine": "Économie",
+  "fonction": "Effets des articles possédés ou équipés : selle mixte saut +12 %, selle CSO Pro +24 %, bridon endurance +6 %, guêtres tolérance sur les barres +8 %, cloches +3 %, fers aluminium vitesse +6 %, complément endurance +35 %.",
+  "js": [
+   "src/gameplay/data.js",
+   "src/gameplay/commerce.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:108-110).",
+  "ecart": "Aucun bonus d'équipement.",
+  "tranche": "e"
+ },
+ {
+  "id": "boutiques.catalogue",
+  "domaine": "Boutiques",
+  "fonction": "Catalogue de 48 articles (17 à la Sellerie du Port, 31 à la boutique d'équitation) en 12 rayons, dont 4 consommables, prix fictifs ; carte du café Le Galop : café 1,80 €, café crème 3,20 €, croissant 1,30 €, part de teurgoule 3,50 €.",
+  "js": [
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun export ni chargement (unreal/docs/MATRICE.md l.29 : « boutique, cafés : à faire », vérifié dans scripts/unreal/export-data.mjs et StridesDataSubsystem).",
+  "ecart": "Aucun catalogue.",
+  "tranche": "e"
+ },
+ {
+  "id": "boutiques.visite",
+  "domaine": "Boutiques",
+  "fonction": "Trois commerces visitables de Deauville City (Sellerie du Port, Le Galop, boutique d'équitation) : entrée à pied ou à cheval (pied à terre, cheval attaché à la barre s'il est à moins de 25 m), impossible en véhicule ; intérieur construit à moins de 48 m et libéré au-delà de 80 m avec personnel et clients, ambiance sonore, sifflet sans effet, position dans le commerce enregistrée.",
+  "js": [
+   "src/gameplay/shops.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun intérieur ni action de porte ; façades peut-être présentes dans les lots statiques exportés (à confirmer à l'écran).",
+  "ecart": "Commerces non visitables.",
+  "tranche": "c"
+ },
+ {
+  "id": "boutiques.rayons-comptoir",
+  "domaine": "Boutiques",
+  "fonction": "Rayons : fiche des articles (prix, description, effet, possession, restriction) avec Acheter / Racheter / Équiper / Retirer / Utiliser / Essayer ; comptoir : accueil du vendeur et tout le magasin ; au café, « Commander » ; mention « Boutique fictive du jeu ».",
+  "js": [
+   "src/gameplay/shops.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (openRack, counter) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune fiche de rayon.",
+  "tranche": "c"
+ },
+ {
+  "id": "boutiques.essayage",
+  "domaine": "Boutiques",
+  "fonction": "Essayage à la boutique d'équitation : la tenue essayée est portée tant que la fiche est ouverte et retirée à la fermeture.",
+  "js": [
+   "src/gameplay/shops.js",
+   "src/gameplay/commerce.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (tryOn, preview) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Pas d'essayage.",
+  "tranche": "c"
+ },
+ {
+  "id": "boutiques.cafe-energie",
+  "domaine": "Boutiques",
+  "fonction": "Café Le Galop : commande payée au centime, le café et le café crème redonnent de l'énergie (gain dégressif plafonné à 70 %, affiché avant l'achat), compteur de cafés dans les statistiques.",
+  "js": [
+   "src/gameplay/shops.js",
+   "src/gameplay/energy.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (openCafe, CAFE_MENU) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Pas de café.",
+  "tranche": "d"
+ },
+ {
+  "id": "economie.amenagements-ecurie",
+  "domaine": "Économie",
+  "fonction": "Aménagement « Aire de pansage couverte » (350 €) acheté dans Mon écurie après le chapitre 1 : préparation regroupée 6 s → 4 s, pansage 4 s → 3 s.",
+  "js": [
+   "src/gameplay/data.js",
+   "src/gameplay/story2.js",
+   "src/gameplay/condition.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (STABLE_UPGRADES, aire) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun aménagement.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.annuaire-pensions",
+  "domaine": "Économie",
+  "fonction": "Guide local : 6 professionnels (maréchal, vétérinaire, ostéopathe, dentiste, sellier, transporteur, avec note et nombre d'avis) et 5 pensions (420 à 890 €/mois, services, étiquettes), utilisés par les missions fer et pension.",
+  "js": [
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Seuls les noms d'applications « Annuaire » et « Écuries » sont affichés (world_architecture.json phoneApps, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:64-68), sans contenu.",
+  "ecart": "Ni professionnels ni pensions.",
+  "tranche": "e"
+ },
+ {
+  "id": "progression.competences",
+  "domaine": "Progression",
+  "fonction": "Quatre compétences de 0 à 100 (Préparation, Équitation, Transport, Organisation), message à chaque dizaine franchie : +2 Organisation à la première réussite d'une mission, +1 Préparation par soin donné au cheval, +4 Préparation par préparation regroupée du chapitre 1, +0,5 Équitation par obstacle franchi, Transport après un trajet en camion selon le confort (confort/20 arrondi, au moins +1), Organisation +5 avec un renfort recruté ou +3 seul (M2) et +6 à la fin du chapitre 1.",
+  "js": [
+   "src/gameplay/data.js",
+   "src/gameplay/missions.js",
+   "src/gameplay/condition.js",
+   "src/game.js",
+   "src/gameplay/story2.js"
+  ],
+  "unreal": "strides::SaveGame.skills avec les 4 clés à 0 (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:23), écrites et importées de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:27-28, 73, 95).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ne lit skills.",
+  "ecart": "Aucun gain ni affichage de compétence : valeurs seulement conservées.",
+  "tranche": "e"
+ },
+ {
+  "id": "donnees.profils-chevaux",
+  "domaine": "Données",
+  "fonction": "Profils des chevaux : Comète (vitesse 1,0, saut 1,0, endurance 1,0, offerte), Ulysse (0,98 / 1,15 / 1,12, 1 800 €), Onyx (1,13 / 1,06 / 1,0, 3 200 €), Saphir (1,1 / 1,24 / 1,2, 5 500 €), Tripo à l'essai (1,0) ; race, âge, robe, prix, valeur, description.",
+  "js": [
+   "src/gameplay/data.js"
+  ],
+  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:30, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:47-64 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:108-110).",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Export automatique depuis le JS (valeurs relues identiques à data.js le 18/11/2026), mais aucun test C++ ne compare ces profils à un oracle.",
+  "ecart": "SpeedMul et StaminaMul chargés mais non appliqués ; prix, valeur, description et robe détaillée de Tripo ignorés ; un seul cheval dans le monde (ProfileId comete, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:25).",
+  "tranche": "socle"
+ },
+ {
+  "id": "donnees.ecurie-joueur",
+  "domaine": "Données",
+  "fonction": "Chevaux du joueur : ceux de la sauvegarde encore connus du jeu (doublons et chevaux retirés ignorés, Comète par défaut), chevaux à l'essai insérés en 2e position sans être écrits ; monture active = celle de la sauvegarde si elle est à l'écurie, sinon Comète.",
+  "js": [
+   "src/gameplay/data.js"
+  ],
+  "unreal": "strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:43).",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:175-183 (écrit à la main) relit la liste horses ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle de ownedHorses ni de activeHorseId.",
+  "ecart": "Pas de filtre des identifiants inconnus ni de cheval à l'essai ; activeHorse jamais réappliqué au chargement ; ni achat ni changement de cheval.",
+  "tranche": "e"
+ },
+ {
+  "id": "donnees.noms-repliques",
+  "domaine": "Données",
+  "fonction": "20 prénoms et 16 noms pour les clients générés, 10 répliques de passants façon témoignages Strides.",
+  "js": [
+   "src/gameplay/data.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (FIRST_NAMES, CHATTER) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Ni clients générés ni répliques.",
+  "tranche": "g"
+ },
+ {
+  "id": "vehicules.plein",
+  "domaine": "Véhicules",
+  "fonction": "Station-service de Deauville City : « Faire le plein » véhicule arrêté à une pompe, gazole 1,72 €/l ou sans-plomb 1,84 €/l selon le véhicule, litres limités par l'argent disponible, moteur coupé 1,5 à 4 s (40 l/min), toast plein ou appoint avec prix.",
+  "js": [
+   "src/gameplay/fuel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (fuel, STATION, refuel) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun véhicule ni carburant.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.reserve-panne",
+  "domaine": "Véhicules",
+  "fonction": "Alerte de réserve sous 12 % du réservoir avec autonomie en km ; panne sèche : dépanneur qui livre 10 l après 6 s pour 35 € (ou ce qui reste), message « Dépannage » ; niveau de carburant enregistré.",
+  "js": [
+   "src/gameplay/fuel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (dry, rangeKm, assist) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucune réserve ni panne.",
+  "tranche": "f"
+ },
+ {
+  "id": "collection.fers-or",
+  "domaine": "Collection",
+  "fonction": "20 fers d'or à positions fixes dans le monde, visibles à moins de 220 m et sur la carte, ramassés à moins de 2,6 m : +25 € chacun (« Fer d'or n/20 »), +500 € et « COLLECTION COMPLÈTE » au 20e ; liste enregistrée (horseshoes).",
+  "js": [
+   "src/gameplay/collectibles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun équivalent : rg (horseshoes, HORSESHOES, fers d'or) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
+  "ecart": "Aucun objet à collectionner ; une sauvegarde web importée garde la liste seulement dans legacyJson.",
+  "tranche": "e"
+ },
+ {
+  "id": "socle.interactions",
+  "domaine": "Socle",
+  "fonction": "Registre d'actions contextuelles du bouton ACTION : chaque point a un rayon, une priorité, des modes (à pied, à cheval, au volant) et une condition ; l'action proposée maximise priorité × 100 - distance, rien de l'extérieur depuis l'intérieur, rien pendant une montée en selle, un embarquement ou un chargement ; clic sonore au déclenchement.",
+  "js": [
+   "src/gameplay/interact.js"
+  ],
+  "unreal": "AStridesPlayerController::OnInteract (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:143-149), liée à E et au bouton de face gauche (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:54-55) : seulement monter sur le cheval le plus proche à moins de 3 m (AStridesRider::TryMount, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:90-99) ou descendre ; bouton tactile MONTER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:44).",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "validation-mac-2026-11-17.md l.15 : « monter, accélérer jusqu'au galop à 8,0 m/s, descendre » contrôlé à l'écran ; aucun test du choix d'action.",
+  "ecart": "Pas de registre ni de priorité : une seule action câblée ; aucune autre action du web (box, soins, maison, commerces, plein, missions, Chrono) n'existe.",
+  "tranche": "socle"
+ }
+]

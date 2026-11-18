@@ -1,6 +1,8 @@
 # Relais local (Mac) — ouvrir, compiler, jouer, construire pour iPhone/iPad
 
-État vérifié sur le Mac de développement le 17 novembre 2026.
+État vérifié sur le Mac de développement le 17 novembre 2026, revérifié le 18 novembre 2026 : module compilé avec
+UE 5.8.4 (recompilation complète des modules du projet, 0 erreur, 0 avertissement), cœur en **C++20**, 6 tests
+Automation `Strides` réussis. Inventaire de parité avec le jeu web : [`PARITE.md`](PARITE.md).
 
 | Étape | État |
 |---|---|
@@ -42,7 +44,8 @@ La compilation Mac et iOS est vérifiée. Toute régression doit être corrigée
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides; Quit" -unattended -nullrhi -log
 ```
-Attendu : `Strides.Core.Course`, `Strides.Core.Save`, `Strides.Units` réussis.
+Attendu (18/11/2026) : 6 tests réussis — `Strides.Core.Course`, `Strides.Core.Save`, `Strides.Units`,
+`Strides.World.Architecture`, `Strides.World.CareerGraph`, `Strides.World.Scenery`.
 
 ## 5. Boucle jouable (éditeur, Play)
 Scène construite au lancement (carte `Entry` du moteur, `AStridesGameMode`) : carrière 140 × 96 m, parcours du Pôle à

@@ -5,6 +5,10 @@ les branches de travail existantes (socle, cheval PJL, interface iPhone, cavalie
 migration : `claude/unreal-port`. Le jeu web reste intact (`src/`, `public/`, `tests/`) : c'est la **référence de
 comportement**.
 
+**État de compilation (18/11/2026)** : module Unreal compilé avec UE 5.8.4, cœur `StridesCore` en C++20 (moteur et
+hors moteur). L'état fonction par fonction, avec preuves, est tenu dans [`PARITE.md`](PARITE.md) ; cette matrice garde
+les décisions de migration.
+
 **Mesure** (script dans le commit, fichier par fichier de `src/`) : 52 897 lignes de JS ; 11 743 lignes sans Three.js ni
 API du navigateur (règles, données, missions, traductions) ; 35 219 lignes dépendantes de Three.js (rendu, scènes,
 modèles procéduraux) ; 5 935 lignes dépendantes du DOM ou du navigateur (interface, entrées, stockage).

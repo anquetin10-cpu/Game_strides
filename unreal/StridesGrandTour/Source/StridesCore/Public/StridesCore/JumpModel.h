@@ -1,5 +1,5 @@
 // Modèle de saut d'obstacle (CSO) — portage C++ de src/gameplay/jumpModel.js (spécification : le code JS et ses tests ;
-// oracles : unreal/core/tests/oracles/jump.json). C++17 standard, sans dépendance à Unreal : utilisé tel quel par le
+// oracles : unreal/core/tests/oracles/jump.json). C++20 standard, sans dépendance à Unreal : utilisé tel quel par le
 // module Unreal (StridesGrandTour) et testé hors moteur (unreal/core/tests).
 // Unités SI : mètres, secondes, m/s. Repère horizontal (x, z) du jeu web ; la conversion Unreal (cm, axes) est faite par
 // l'appelant (voir unreal/docs/conventions.md).

@@ -1,4 +1,4 @@
-// Module Unreal du cœur Strides : règles de jeu en C++17 standard (saut, conduite CSO, parcours et jugement, sauvegarde),
+// Module Unreal du cœur Strides : règles de jeu en C++20 standard (saut, conduite CSO, parcours et jugement, sauvegarde),
 // sans type Unreal, testées hors moteur contre les oracles du jeu web (unreal/core). Les modules de jeu l'utilisent
 // à travers StridesGrandTour (conversion cm/axes, UObject, Blueprints).
 using UnrealBuildTool;

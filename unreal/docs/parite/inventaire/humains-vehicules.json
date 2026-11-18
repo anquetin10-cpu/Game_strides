@@ -1,0 +1,1061 @@
+[
+ {
+  "id": "humain.squelette-proportions",
+  "domaine": "Humains",
+  "fonction": "Squelette humain commun de 25 os (root, bassin, colonne, buste, cou, tête, queue de cheveux, clavicules, bras, avant-bras, mains, doigts, cuisses, tibias, pieds, orteils), proportions ~7,5 têtes : cavalière 1,68 m, cavalier 1,80 m ; pose de liaison bras en A (±0,78 rad), cuisses écartées de 0,085 rad ; ischions → os du bassin 0,115 m (f) / 0,12 m (m) en selle.",
+  "js": [
+   "src/entities/human/skeleton.js",
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:18 (capsule 25 × 84 cm, soit 1,68 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26-35 (squelette du modèle réaliste rider_f_animated, Body_Skeleton)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; unreal/docs/validation-mac-2026-11-17.md:16 contrôle l'échelle de la cavalière importée, pas les proportions du squelette web.",
+  "ecart": "Le squelette procédural de 25 os n'est pas porté : Unreal utilise celui du modèle réaliste (53 os selon realistic.js:2-4, à confirmer sur Body_Skeleton.uasset). Hauteur 1,68 m reprise pour la seule cavalière ; cavalier 1,80 m jamais instancié ; aucune mesure rigInfo (seatToHips, longueurs de segments) côté C++.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.corps-generes",
+  "domaine": "Humains",
+  "fonction": "Corps humains générés hors ligne (scripts/humans) et embarqués en base64 compressé : 5 corps (cavalière, cavalier, femme et homme en tenue de ville, robe) et 11 pièces de tête (casque, casquette, chignon, queue de cheval, carré, long, pixie, court, raie de côté, filet, nuque), fusionnés en une géométrie skinnée par combinaison et par niveau de détail (3 niveaux).",
+  "js": [
+   "src/entities/human/assets.js",
+   "src/entities/human/data/f_rider.js",
+   "src/entities/human/data/m_rider.js",
+   "src/entities/human/data/f_casual.js",
+   "src/entities/human/data/m_casual.js",
+   "src/entities/human/data/f_dress.js",
+   "src/entities/human/data/hair.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:40 : « PNJ, foule, cavaliers PNJ : à faire ». MATRICE.md:72 : personnages procéduraux « à réévaluer ».",
+  "ecart": "Aucun des 5 corps ni des 11 pièces de tête n'est exporté ; seuls les modèles réalistes rider_f (utilisé) et rider_m (inutilisé) sont importés dans Content/Characters/Riders.",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.codec-maillages",
+  "domaine": "Infra",
+  "fonction": "Infra : décodage paresseux des maillages humains générés (positions quantifiées 14 bits en deltas zigzag, normales octaédriques sur 2 octets, peau 6 bits d'os + 8 bits de poids, zone, occlusion, indices « niveau d'eau », le tout DEFLATE).",
+  "js": [
+   "src/entities/human/codec.js",
+   "src/entities/human/assets.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Sans objet tant que les corps procéduraux ne sont pas exportés : le format Unreal natif (.uasset) le remplacerait.",
+  "tranche": "socle"
+ },
+ {
+  "id": "humain.niveaux-detail",
+  "domaine": "Humains",
+  "fonction": "Niveaux de détail : LOD0 < 11 m < LOD1 < 38 m < LOD2 avec hystérésis de 1,5 m ; zones de matière fusionnées au loin (yeux, lèvres, logo, revers, sourcils) ; matériau standard sans sheen ni vernis en LOD2 ; joueur toujours en LOD0 ; personnage masqué au-delà de 170 m ; animation à chaque image sous 22 m, une sur deux sous 55 m, une sur quatre au-delà (pas plafonné à 0,2 s).",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/humanModel.js",
+   "src/entities/human/zones.js",
+   "src/entities/human/material.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:40 : « PNJ, foule, cavaliers PNJ : à faire ».",
+  "ecart": "Aucun réglage de LOD, de distance d'affichage ni de cadence d'animation dans StridesRider.cpp ; une seule cavalière, animée à chaque image ; LOD éventuellement générés à l'import Interchange : à confirmer (.uasset illisible).",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.materiau-zones",
+  "domaine": "Humains",
+  "fonction": "Matière PBR procédurale des personnages classiques : un seul matériau (un appel de dessin) par personne, 40 zones de sommets associées à 21 emplacements de palette (couleur linéaire, rugosité, sheen tissu, vernis cuir/yeux), occlusion par sommet, détail sans texture (rugosité ±15 %, trame du tissu 2,5 mm, plis 4 cm, poussière sur le bas des bottes, saleté dans les creux, peau plus chaude dans les creux), ombre des nuages.",
+  "js": [
+   "src/entities/human/material.js",
+   "src/entities/human/zones.js",
+   "src/entities/human/outfits.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Non porté : la cavalière Unreal affiche les matériaux texturés importés du GLB réaliste (Skin, Cloth_*, Hair_*) ; aucun matériau à zones, aucune palette par personnage, pas d'ombre des nuages.",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.variation-morphologique",
+  "domaine": "Humains",
+  "fonction": "Variation propre à chaque personnage tirée d'une graine (prénom + tenue, hachage FNV) : largeur des épaules et des hanches ±4 %, visage ±2,5 mm, appliquée en pose de liaison avant le skinning ; le joueur et chaque PNJ gardent silhouette et visage d'une image à l'autre.",
+  "js": [
+   "src/entities/human/material.js",
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:40 : « PNJ, foule, cavaliers PNJ : à faire ».",
+  "ecart": "Une seule silhouette (cavalière importée) ; aucune graine ni variation.",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.tenue-resolution",
+  "domaine": "Humains",
+  "fonction": "Résolution d'une tenue ({ top, sleeve, pants, boots, skin, hair, helmet, logo, ponytail, cap, dress… }) en morphologie f/m, corps (cavalier, ville, robe), coiffure, coiffe et palette PBR linéaire : sexe tiré du champ sex, sinon du prénom (20 prénoms féminins), de la queue de cheval ou de la robe, sinon au hasard (62 % de femmes si casque, 50 % sinon) ; cavalière casquée en chignon ; sous le casque seuls filet ou nuque restent visibles ; barbe d'homme tirée (rasé, ombre, courte) ; chemise blanche sous la veste de concours ; bottes d'équitation ou boots et mini-chaps ; cache par contenu.",
+  "js": [
+   "src/entities/human/outfits.js",
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg -i 'outfit|tenue|palette|helmet|casque|beard|barbe' dans unreal/StridesGrandTour/Source et scripts/unreal : aucun code. StridesRider.cpp:36-43 charge une liste fixe de pièces du GLB (Cloth_boots, Cloth_jacket, Cloth_jeans, Cloth_shirt, Eyebrows, Eyelashes, Eyes, Hair_ponytail01), sans aucune résolution. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune résolution de tenue : la cavalière porte toujours la même combinaison de pièces, sans palette, sans choix de coiffure (queue de cheval au lieu du chignon de OUTFITS.riderF), sans casque, sans barbe ni sexe déduit ; tests/unit/human.test.js côté web non exporté.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.tenues-types",
+  "domaine": "Humains",
+  "fonction": "Tenues types : cavalier (haut et manches #1b1c1f, culotte #f2f1ec, bottes #121214, casque #16171a, logo), cavalière (mêmes couleurs, peau #e8bea0, cheveux #7a4a28, chignon), groom (haut noir logoté, pantalon #2b3442, queue de cheval), spectateur (haut #2f5f8a, pantalon #2b3442, chaussures #3b2a1e).",
+  "js": [
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:36-43 (cavalière seule, pièces du GLB non teintées)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture côte à côte. Capture Unreal seule (hors unreal/docs/parite) : unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_05.png montre une veste brun-olive et un jean bleu, pas le haut #1b1c1f ni la culotte #f2f1ec.",
+  "ecart": "Seule une cavalière existe : ni cavalier, ni groom, ni spectateur ; couleurs natives des textures du GLB (veste brun-olive, jean bleu sur la capture) au lieu de la palette riderF ; culotte blanche remplacée par la pièce Cloth_jeans non teintée ; queue de cheval au lieu du chignon ; pas de casque ni de logo.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.tenue-aleatoire-pnj",
+  "domaine": "PNJ",
+  "fonction": "Tenue aléatoire des passants : sexe 50/50, haut parmi 15 couleurs, manches couleur peau 55 % du temps, pantalon parmi 10, chaussures parmi 6, peau parmi 8 teintes, cheveux parmi 8 (gris ou blancs 8 %), casquette 14 %, robe pour 30 % des femmes ; coiffures femmes (carré, long, chignon, queue de cheval ×2, pixie) et hommes (court ×2, raie, ras, chauve).",
+  "js": [
+   "src/entities/human/outfits.js",
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:40 : « PNJ, foule, cavaliers PNJ : à faire ».",
+  "ecart": "Aucun passant ni tirage de tenue.",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.prenoms",
+  "domaine": "PNJ",
+  "fonction": "Prénom d'un PNJ : celui qui lui est donné, sinon tiré au premier besoin parmi 20 prénoms féminins ou 15 masculins selon sa morphologie ; le prénom sert aussi à déduire le sexe d'un PNJ nommé.",
+  "js": [
+   "src/entities/human/outfits.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:40 : « PNJ, foule, cavaliers PNJ : à faire ».",
+  "ecart": "Aucun PNJ, aucune liste de prénoms.",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.changement-tenue",
+  "domaine": "Humains",
+  "fonction": "Changement de tenue sur place (même sexe, même squelette) : géométries des niveaux de détail et palette recalculées sans recréer le personnage ; refusé si la tenue impose l'autre sexe ; le modèle réaliste suit (Realism compare la tenue).",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune API de changement de tenue : pièces chargées une fois dans le constructeur (StridesRider.cpp:36-43).",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.deplacement-collisions",
+  "domaine": "Humains",
+  "fonction": "Déplacement à pied dans une direction monde : cap amorti (constante 12), accélération 14 m/s² et freinage 18 m/s², maintien dans la région à 6 m du bord, collision en cercle de rayon 0,35 m contre le décor, eau de plus de 1,0 m refusée seulement si le pas l'approfondit (marée montante : on regagne toujours la plage).",
+  "js": [
+   "src/entities/human.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:18 (capsule de rayon 25 cm), :49-53 (CharacterMovement : 140 cm/s, orientation vers le déplacement à 540°/s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:109,201 (collisions du relief)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; unreal/docs/validation-mac-2026-11-17.md ne cite pas la marche à pied. Manque : oracle de Human.move (trajectoire, eau) et capture côte à côte.",
+  "ecart": "Rayon 0,25 m au lieu de 0,35 m ; accélération et freinage par défaut du CharacterMovementComponent (non réglés) ; aucune limite de région ; aucune règle d'eau profonde ni de marée.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.sol-praticable",
+  "domaine": "Humains",
+  "fonction": "Hauteur des pieds : terrain, surfaces praticables surélevées (platelage des Planches, trottoirs) via world.walkHeight, plancher et pont baissé du camion (truck.walkHeightAt) où l'on marche au lieu de s'y enfoncer.",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/truck.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:93,109,201 (relief et maillages de décor en collision BlockAll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:128 (mode de marche rétabli à la descente)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de la hauteur des pieds ni capture ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:110-121) vérifie seulement la donnée de relief (4 hauteurs écrites à la main, sans oracle exporté), ni walkHeight ni le contact de la capsule ; unreal/docs/validation-mac-2026-11-17.md ne cite pas la marche sur les surfaces.",
+  "ecart": "Hauteur donnée par les collisions physiques du décor exporté, non comparée à world.walkHeight ; pas de camion, donc ni plancher ni pont praticables.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.face-au-joueur",
+  "domaine": "PNJ",
+  "fonction": "PNJ statique sans IA (ni spectateur, ni assis) : se tourne vers le joueur qui approche à moins de 8 m (cap amorti, constante 4), avec pas sur place joué par l'animation d'après le taux de rotation.",
+  "js": [
+   "src/entities/human.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:40 : « PNJ, foule, cavaliers PNJ : à faire ».",
+  "ecart": "Aucun PNJ.",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.port-objets",
+  "domaine": "Humains",
+  "fonction": "Port d'objet devant le ventre (repère du buste), mains de chaque côté : foin (0,6 × 0,38 × 0,42 m), selle, sac, carton ; objet lâché à la montée à cheval ; géométries partagées (itemGeo).",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun objet portable ni pose de port.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.outils-soins",
+  "domaine": "Humains",
+  "fonction": "Outils et gestes de soin : brosse en main droite (longs coups dans le sens du poil, main gauche à plat sur le cheval, face au flanc à ~0,45 m), cure-pied (accroupi, main gauche tient le sabot, la droite gratte vers la pince), guêtre bleu marine roulée en main gauche puis enroulée des deux mains autour du canon.",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. Voir aussi deplacement.json joueur.pansage (absent).",
+  "ecart": "Aucun outil, aucune pose de pansage, de cure-pied ni de pose de protections.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.locomotion",
+  "domaine": "Humains",
+  "fonction": "Locomotion procédurale à pieds posés : attaque talon, déroulé, poussée des orteils ; cadence 0,6 + 0,2·min(v ; 2,6) foulée/s à la marche et 1,15 + 0,075·min(v ; 8) en course (mélange de 2,2 à 3,1 m/s) ; facteur de service de 0,62 à 0,36 ; bassin et buste en contre-rotation, balancier des bras ; pieds verrouillés au sol, pas forcé de 0,22 s si un pied s'écarte de 0,15 m ; pas sur place en pivotant à l'arrêt.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. Le clip Rider_walk est une marche montée (scripts/unreal/export-rider-animations.py:3, :50).",
+  "ecart": "À pied, la cavalière joue en boucle le clip monté Rider_idle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:70, :132) : jambes en position de selle, aucun cycle de marche ni de course, aucun pied posé.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.repos-vivant",
+  "domaine": "Humains",
+  "fonction": "Attente debout vivante : transfert d'appui lent (contrapposto, fréquence tirée entre 0,09 et 0,14 Hz par personnage), respiration, regard qui se promène (amplitude 0,9 debout ou en marche, 0,4 sinon).",
+  "js": [
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune pose debout : à pied, clip monté Rider_idle (respiration seule, jambes en selle).",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.gestes-public",
+  "domaine": "PNJ",
+  "fonction": "Gestes : salut (bras droit levé à ~150° d'abduction, avant-bras qui balaie à 8,5 rad/s), acclamation (deux bras levés, petits sauts du bassin d'environ 4 cm), applaudissements ; un spectateur en acclamation choisit au hasard l'un des trois ; pose assise (public des tribunes).",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/humanModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:40 : « PNJ, foule, cavaliers PNJ : à faire ».",
+  "ecart": "Aucun spectateur ni geste.",
+  "tranche": "g"
+ },
+ {
+  "id": "humain.queue-cheval",
+  "domaine": "Humains",
+  "fonction": "Queue de cheval (os hairTail) en ressort amorti (raideur 60, amortissement 7), entraînée par la vitesse à pied, et en selle par l'allure, la phase de foulée et le virage du cheval ; bornes −0,6 à 0,9 rad en tangage, ±0,5 rad en roulis.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "La pièce Hair_ponytail01 (et son PhysicsAsset importé) suit seulement la pose du corps (SetLeaderPoseComponent, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:41) : aucun ressort ni simulation.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.transitions-poses",
+  "domaine": "Humains",
+  "fonction": "Transitions entre poses lissées (taux 9 pendant 0,45 s puis 40, interpolation sphérique os par os) ; pose à cheval dès la première image après une montée directe ; en selle sur un cheval qui fournit son flanc, bassin et jambes appliqués exactement (sans lissage) une fois la transition finie.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:73-89 (changement de clip par PlayAnimation à chaque changement d'allure ou de saut)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7).",
+  "ecart": "Coupure sèche entre clips (PlayAnimation, sans fondu ni Animation Blueprint) ; le clip de saut repart toujours de sa première image.",
+  "tranche": "b"
+ },
+ {
+  "id": "humain.pose-volant",
+  "domaine": "Humains",
+  "fonction": "Pose pilotée pour monter dans un véhicule, en descendre et conduire (st.board rempli par gameplay/boarding.js) : bassin, angles du tronc, pieds par IK, mains vers leur cible avec fermeture du poing ; main sans cible pendante le long du corps.",
+  "js": [
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule ni pose de conduite.",
+  "tranche": "f"
+ },
+ {
+  "id": "cavaliere.attache-selle",
+  "domaine": "Cavalière",
+  "fonction": "Monter : le personnage devient enfant de l'os « saddle » du cheval (sinon « body ») au point d'assise (body : +0,575 m), échelle du cheval compensée (taille réelle), réglages fusionnés RIDER_FIT + horse.riderFit + opts.fit ; il suit ainsi rebond et tangage du dos ; objet porté lâché ; pose à cheval dès la première image (fondu seulement après la séquence de montée) ; hauteur assise → hanche = (seatToHips − (hipsY − hipJointY)) × échelle.",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/human/anim.js",
+   "src/entities/human/skeleton.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m, possession du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:136-156 (Tick : SetActorTransform sur SeatTransform, fondu SmoothStep de 0,8 s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:136-152 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179, orientation de l'acteur cheval)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15-16 et :19 (montée et placement en selle contrôlés sur la version antérieure : os mountpoint_01_0179 d'abord, transformée complète de l'os, modèle rider_f_unreal) ; unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09). Aucun oracle ni capture côte à côte.",
+  "ecart": "Position de l'os seulement depuis f2c1de09 (la version validée le 17/11 prenait la transformée complète de l'os) : le tangage du dos n'est pas suivi (orientation = cap de l'acteur) ; pas de décalage RIDER_SEAT ni de réglage fit ; ordre des os inversé depuis la validation (saddle_0168 d'abord) ; glissement de 0,8 s de la position à pied vers la selle (SmoothStep sur la transformée de l'acteur) au lieu d'un placement immédiat, le clip monté partant, lui, dès la première image.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.amorti-dos",
+  "domaine": "Cavalière",
+  "fonction": "Amorti du mouvement vertical du dos : assis, le bassin suit la selle (filtre bobAvg amorcé sur la première hauteur de selle, pour ne pas enfoncer le cavalier pendant ~2 s) ; hors de la selle (trot enlevé, suspension, obstacle), genoux et chevilles absorbent le rebond et les pieds restent dans les étriers.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Le corps entier est translaté avec l'os de selle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:155) : aucun amorti par les jambes, pieds solidaires du bassin.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.allures",
+  "domaine": "Cavalière",
+  "fonction": "Posture mélangée en continu selon la vitesse d'animation du cheval (vitesse divisée par max(0,6, multiplicateur de vitesse du cheval), horse.js:379) : pas (montée de 0,4 à 1,2), trot (de 2,8 à 3,6), galop (de 5,2 à 5,9), grand galop (de 9,8 à 11,8), chaque poids s'effaçant au seuil suivant ; bercement du bassin au pas et au galop.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js",
+   "src/entities/horse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:44-46 et :73-89 (un clip par allure : idle, walk, trot, canter, gallop, choisi par AStridesHorse::GaitIndex) ; scripts/unreal/export-rider-animations.py:48-56 (7 clips, énergie 0 / 0,08 / 0,16 / 0,28 / 0,40)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7). Captures Unreal seules : unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_00 à 10_galop_18.png (19 images, sans pendant web, hors unreal/docs/parite).",
+  "ecart": "Clips discrets, sans mélange : en commandes CSO (bCsoControls vrai par défaut, StridesHorse.h:27, jamais mis à faux), l'index d'allure est recalculé à chaque image d'après la vitesse brute avec des seuils propres au portage (0,2 / 3,2 / 5,5 / 7,0 m/s, StridesHorse.cpp:282), différents des seuils web et sans division par le multiplicateur du cheval ; ChangeGait (StridesHorse.cpp:117) est écrasé ; clips joués à vitesse 1,0 sans calage sur la phase de foulée du cheval (horseGaitPhase) ; pas de bercement du bassin.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.trot-enleve",
+  "domaine": "Cavalière",
+  "fonction": "Trot enlevé : une montée du bassin (0,085 m) par foulée, synchronisée sur le diagonal (montée de u = 0,02 à 0,2, retour de 0,34 à 0,5 de la phase), lissage exp(−30·dt) ; changement de diagonal : rester assis un temps de plus quand le cheval tourne de l'autre côté (|virage| > 0,25, effectif après 1,2 s).",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "scripts/unreal/export-rider-animations.py:51 et :68-107 (clip Rider_trot, 24 images à 30 i/s : flexion du buste et oscillation des cibles mains/pieds) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:81",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture du trot ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7).",
+  "ecart": "Aucune montée du bassin dans le clip (seules colonne, cou et cibles IK bougent, scripts/unreal/export-rider-animations.py:80-105) ; cycle de 0,8 s non calé sur le diagonal du cheval ; pas de changement de diagonal en virage.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.suspension-galop",
+  "domaine": "Cavalière",
+  "fonction": "Galop : position de suspension (bassin 0,10 m au-dessus de l'assise, en arrière, buste incliné), jambe allongée jusqu'à 95 % de sa longueur hors de la selle (93 % assis), bassin limité par la portée des jambes.",
+  "js": [
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "scripts/unreal/export-rider-animations.py:52-53 (Rider_canter 30 images, énergie 0,28 ; Rider_gallop 24 images, énergie 0,40 : flexion de colonne fold × 0,30 et × 0,24) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:144 (inclinaison de 0 à −5° entre 5 et 8 m/s)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (légère inclinaison liée à la vitesse, jeu stable à 8 m/s ; code d'inclinaison inchangé depuis) ; clips de galop postérieurs à cette validation, joués ensuite dans le parcours de démonstration (unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09)) sans évaluation de la posture. Aucun oracle.",
+  "ecart": "Bassin jamais soulevé de la selle : flexion de colonne seulement ; réserve de flexion (93/95 %) absente ; inclinaison globale de l'acteur au lieu d'une posture articulée.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.buste-assiette",
+  "domaine": "Cavalière",
+  "fonction": "Buste : inclinaison par rapport à la verticale qui compense le tangage de la selle (reste d'aplomb), sauf à l'obstacle où il suit le cheval à la montée et reste d'aplomb à la descente ; en virage, bassin (−0,06 × virage), colonne (−0,04) et tête (+0,08) s'inclinent ; regard devant, entre les oreilles, plus haut à l'obstacle.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:142-146 (inclinaison de tout l'acteur : 0 à −5° de 5 à 8 m/s, −14° au saut)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (légère inclinaison liée à la vitesse et au saut). Valeurs écrites à la main, sans oracle.",
+  "ecart": "Rotation de tout le corps autour du siège, non articulée ; tangage de la selle non lu donc non compensé ; aucune inclinaison en virage ; pas de regard.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.saut",
+  "domaine": "Cavalière",
+  "fonction": "Accompagnement du saut sur les événements du cheval : flexion pendant l'appel (0 à 18 % du vol), main rendue de 12 à 35 % du vol, ouverture dès la descente (60 % de la position gardée au poser des antérieurs, 40 % au poser des postérieurs, attendu 0,45 s au plus), redressement en 0,5 s, main ramenée en 0,4 s ; bassin +0,05 m.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:79-81 (Rider_jump_gallop si SpeedMS ≥ 7 m/s, sinon Rider_jump_canter), :144-146 (−14°, +8 cm vers l'avant, +4 cm) ; scripts/unreal/export-rider-animations.py:54-55 et :71-73 (pli et main rendue selon la phase du clip : 0–0,28 et 0,12–0,42)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (inclinaison au saut, jeu stable après le saut, avant l'ajout des clips) ; unreal/docs/decors.md:38-39 (parcours de 10 obstacles joué à cheval le 18/11/2026, après l'ajout des clips de saut), sans évaluation des phases. Aucun oracle des phases.",
+  "ecart": "Phases calées sur la durée fixe du clip (42 ou 34 images), pas sur jumpT, landT ni le poser des postérieurs ; pas de maintien jusqu'aux postérieurs ni de redressement progressif ; seuil de 7 m/s propre au portage.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.jambes-etriers",
+  "domaine": "Cavalière",
+  "fonction": "Jambes : plante du pied sur la grille de l'étrier, talon bas, genou contre la selle, jambe à la sangle ; étrivières de longueur fixe posées d'après le cavalier assis (étrier x 0,38 m, y −0,69 m, z 0,06 m, genou ouvert 0,45) ; deux pieds chaussés (inStirrup) et étriers du cheval qui suivent les pieds.",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "scripts/unreal/export-rider-animations.py:36-45 et :82-96 (IK Blender cuite : cheville à x ±0,39, y 0,292, z 0,22 − 0,018 × énergie ; pôle du genou ±0,56 / 0,58 / 0,55)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; unreal/docs/validation-mac-2026-11-17.md:19 : « la qualité fine des contacts mains/étriers reste à revoir visuellement » ; :57 (animations mains, jambes, étriers à créer).",
+  "ecart": "Cibles fixes cuites hors ligne, non reliées aux étriers du cheval PJL ; aucune IK à l'exécution ; valeurs du repère Blender non comparées à RIDER_FIT ; les étriers du cheval ne suivent pas les pieds.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.flanc",
+  "domaine": "Cavalière",
+  "fonction": "Jambe « collée sans traverser » quand le cheval fournit le profil de son flanc (cheval PJL) : genou, tibia et cheville gardés hors du flanc à l'épaisseur de la botte (marge 2 cm), ouverture du genou 2,4/s et refermeture 0,12/s, écart du pied 0,6 m/s puis 0,02 m/s ; profil qui s'élargit aussitôt mais ne se resserre qu'à 0,3 m/s, élargissement anticipé de 2 images ; sur cheval large, le pied remonte dans l'étrier plutôt que les cuisses n'entrent dans le dos.",
+  "js": [
+   "src/entities/human/anim.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun profil de flanc lu sur le cheval Unreal ni IK à l'exécution : la jambe peut traverser le flanc (non vérifié).",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.mains-renes",
+  "domaine": "Cavalière",
+  "fonction": "Mains au-dessus du garrot, rênes ajustées, main qui accompagne l'encolure : poings à x 0,065 + 0,02 m d'écart, y 0,2 m, z 0,36 m du siège, bras jamais tendu (97 % de sa longueur, coude ~150°), poignet 0,1 m au-dessus du dessus de l'encolure si le cheval fournit ce profil ; poing fermé pouce dessus ; positions monde des poings fournies pour dessiner les rênes.",
+  "js": [
+   "src/entities/human.js",
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "scripts/unreal/export-rider-animations.py:80-86 et :92-93 (IK cuite : poignets à x ±0,14, y 1,02 + 0,018 × onde, z 0,30 + 0,05 × énergie + 0,18 × main rendue ; pôle du coude ±0,62)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; unreal/docs/validation-mac-2026-11-17.md:19 (contacts des mains à revoir).",
+  "ecart": "Pas de rênes (socle.json cheval.renes : absent), pas de point de prise exporté ; mains fixes cuites, sans suivi de l'encolure ni garde au-dessus du dessus d'encolure ; doigts non fermés.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.attente-vivante",
+  "domaine": "Cavalière",
+  "fonction": "En selle à l'arrêt et au pas : respiration à 0,25 Hz (buste 0,012 rad, épaules 0,012 rad), appui qui glisse d'un ischion à l'autre (0,018), regard qui se promène ; atténués aux allures vives et à l'obstacle.",
+  "js": [
+   "src/entities/human/anim.js"
+  ],
+  "unreal": "scripts/unreal/export-rider-animations.py:49 et :99-104 (Rider_idle : 60 images à 30 i/s, respiration ±0,012 rad sur spine_01)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7).",
+  "ecart": "Respiration à 0,5 Hz (cycle de 2 s) au lieu de 0,25 Hz ; ni transfert d'appui ni regard ; boucle identique à chaque cycle.",
+  "tranche": "b"
+ },
+ {
+  "id": "cavaliere.descente-cote",
+  "domaine": "Cavalière",
+  "fonction": "Descendre : à gauche du cheval à 1,3 m ; si une clôture ou un mur coupe ce côté (6 points testés à 0,3 m du sol), à droite, sinon derrière à 1,6 m ; position résolue contre les collisions ; cap du cheval ; pose debout dès la première image au sol.",
+  "js": [
+   "src/entities/human.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-134 (Dismount : refusé pendant un saut, élimination si épreuve en cours, 120 cm à gauche et 90 cm plus haut, cap du cheval, clip idle)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (descendre contrôlé à l'écran). Aucun oracle.",
+  "ecart": "1,2 m au lieu de 1,3 m ; aucun test de côté bloqué ni repli à droite ou derrière ; pas de résolution des collisions (capsule posée telle quelle) ; « pose debout » = clip monté idle.",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.modele-importe",
+  "domaine": "Cavalière",
+  "fonction": "Modèle réaliste du joueur (cavalière ou cavalier MakeHuman CC0, peau photographique, yeux, cils, cheveux, vêtements texturés, 53 os avec doigts) chargé à part depuis public/real/rider_f.glb et rider_m.glb, cloné par personnage, à sa taille naturelle.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "Content/Characters/Riders/Female/rider_f_animated (Body, Cloth_*, Eyes, Eyebrows, Eyelashes, Hair_ponytail01, 7 clips) ; Content/Characters/Riders/Male/rider_m_unreal ; scripts/unreal/prepare-import.mjs, scripts/unreal/export-rider-animations.py, scripts/unreal/import-rider-animations.py ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26-43",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:16 (ancien import rider_f_unreal : échelle, orientation et placement en selle contrôlés sur une capture montée) ; modèle actuel rider_f_animated (réexport Blender, dfe2eb27, avec rotation de −90° ajoutée en StridesRider.cpp:33) affiché dans unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09). Aucune capture côte à côte web/Unreal.",
+  "ecart": "Cavalier rider_m importé mais référencé par aucun code ; ancien import rider_f_unreal toujours présent mais plus référencé ; version du GLB source (lot humains v3 ou antérieur) à confirmer : unreal/ImportSource/rider_f_unreal.glb ; présence des formes de visage (face_*, blink_*, look_*) après import Interchange : à confirmer (.uasset).",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.reciblage",
+  "domaine": "Cavalière",
+  "fonction": "Le personnage classique reste animé mais masqué (calque 31) ; chaque image, son squelette est recopié sur le modèle réaliste (rotations de 21 os, chaînes de membres calées sur la pose de repos, déplacement du bassin mis à l'échelle) ; objets tenus et points des rênes portés par les os classiques ; le modèle réaliste est masqué avec lui.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Pas de personnage classique ni de reciblage : la posture vient de clips cuits dans Blender sur le squelette réaliste (scripts/unreal/export-rider-animations.py), donc aucune pose procédurale (marche, gestes, conduite, soins) n'est disponible.",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.doigts-prise",
+  "domaine": "Cavalière",
+  "fonction": "Doigts du modèle réaliste : poing fermé autour des rênes (phalanges 1,25 / 1,3 / 0,75 rad, pouce posé le long de l'index à 75 %), main détendue à pied (0,15 / 0,25 / 0,15 rad), proportionnels à la fermeture de la main classique ; creux du poing (milieu des deuxièmes phalanges de l'index, du majeur et de l'auriculaire) donné comme point des rênes.",
+  "js": [
+   "src/entities/realistic.js",
+   "src/entities/human.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune clé sur les os des doigts dans scripts/unreal/export-rider-animations.py (seuls poignets et chevilles par IK, colonne et cou).",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.visage-corps",
+  "domaine": "Cavalière",
+  "fonction": "Visage et corps propres à chaque personnage, tirés de façon déterministe de son identité : 9 formes de visage (largeur, longueur et hauteur du nez, mâchoire, menton, pommettes, écart des yeux, lèvres, bouche) à ±0,8, corps des PNJ (poids 0,45, muscle 0,4, âge 0,62, poitrine 0,35), légère asymétrie ; le joueur garde toujours le même visage adulte.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun pilotage de morph targets ; visage unique de la cavalière importée.",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.yeux-regard",
+  "domaine": "Cavalière",
+  "fonction": "Paupières et regard vivants : clignements (fermeture 70 ms, ouverture 110 ms, toutes les 2 à 6 s, parfois doubles, non synchronisés entre personnages), regard vers la caméra quand elle est proche et devant le visage, sinon petites saccades (rattrapage ~50 ms) autour de la direction de la tête ; gain du regard 0,45.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Yeux fixes : aucun clignement ni regard.",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.expressions",
+  "domaine": "Cavalière",
+  "fonction": "Expressions discrètes : humeur de fond (léger sourire propre à chacun), sourire social et haussement de sourcils quand la caméra arrive de face près du visage, micro-expressions toutes les 3 à 9 s (lèvres pincées, sourcils froncés ou levés, sourire passager), concentration en selle aux allures vives et au saut ; approche en ~0,15 s.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Visage figé.",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.peau-matieres",
+  "domaine": "Cavalière",
+  "fonction": "Matières du modèle réaliste (lot v3) : albédo de peau plafonné à 0,62 de luminance, reflets doux nez/front/pommettes (rugosité 0,47), sclérotique à ≈ 0,75, racines des cheveux assombries (× 0,55), gants teints sur les mains, culotte (détail 0,35, rugosité 0,7) et bottes (rugosité 0,3) au bruit procédural, lanternes et ombre des nuages ; textures réduites sur tactile (couleur 1 024 px, autres 512 : cavalière ~61 → 40 Mo).",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "Content/Characters/Riders/Female/rider_f_animated/rider_f_animated/Materials et Textures (Skin, Cloth_*, Hair_ponytail01, skin_albedo, skin_normal… importés par Interchange), chargés via unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26-43",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture côte à côte ; contenu .uasset illisible : réglages des matériaux importés à confirmer.",
+  "ecart": "Matériaux importés tels quels : aucun plafonnement d'albédo, réglage de rugosité, bruit de tissu, gants ni racines assombries portés ; réduction des textures pour mobile non faite côté projet (à confirmer dans les groupes de textures).",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.teintes-tenue",
+  "domaine": "Cavalière",
+  "fonction": "Couleurs de la tenue appliquées au modèle réaliste : peau, cheveux, sourcils (cheveux × 0,7), haut, culotte (pièce Cloth_jeans), bottes ; veste de concours visible seulement en tenue de concours, chemise blanche #f2f1ec dessous, sinon chemise à la couleur du haut ; gants ; casque ou casquette.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg -i 'tint|SetVectorParameter|CreateDynamicMaterial|outfit' dans unreal/StridesGrandTour/Source : seul StridesWorldDirector.cpp:23 teinte un matériau, aucun sur la cavalière. StridesRider.cpp:36-43 affiche toutes les pièces avec les couleurs natives des textures. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune teinte appliquée (veste brun-olive et jean bleu sur unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_05.png) ; veste Cloth_jacket toujours visible (au lieu de la seule tenue de concours) ; pas de gants, de casque ni de casquette.",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.casque-casquette",
+  "domaine": "Cavalière",
+  "fonction": "Casque d'équitation procédural (étude d'après photos d'un Samshield 2.0 : coque 0,105 × 0,11 × 0,128 m, insert de calotte à liseré, visière courte, badge, grille d'aération et extracteurs, harnais en Y autour des oreilles) fixé à l'os de la tête ; à pied, casquette (calotte et visière) à la place ; sous le casque, seuls filet ou nuque restent visibles.",
+  "js": [
+   "src/entities/ridingHelmet.js",
+   "src/entities/realistic.js",
+   "src/entities/human/outfits.js",
+   "src/entities/human/data/hair.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. Voir aussi deplacement.json monte.casque (absent).",
+  "ecart": "Aucun maillage de casque ni de casquette parmi les pièces de la cavalière (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:36).",
+  "tranche": "b"
+ },
+ {
+  "id": "realiste.reglage-modeles",
+  "domaine": "Socle",
+  "fonction": "Réglage « Modèles 3D » (Auto, Classiques, Réalistes) : modèles réalistes pour le joueur, au plus 8 personnes à moins de 30 m et 6 voitures à moins de 60 m (marge de 10 m, une création par image) ; Auto : coupés en qualité « Économie » ou si la cadence est trop basse (le joueur garde son modèle) ; mode sûr après arrêt brutal : seul le joueur ; préchargement du modèle du joueur pendant l'écran de chargement ; échec : modèles classiques et message ; état du chargement affiché dans les réglages du téléphone.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Une seule cavalière réaliste toujours affichée : ni réglage, ni repli classique, ni limite par distance, ni état de chargement (modèles cuits dans le paquet).",
+  "tranche": "socle"
+ },
+ {
+  "id": "realiste.chevaux-pjl",
+  "domaine": "Socle",
+  "fonction": "Affichage des chevaux WildMesh (PJL) : cheval du joueur et cheval principal, puis les plus proches de la caméra (3 au plus, 2 sur tactile, à moins de 32 m), une création par image ; retirés en qualité « Économie », réglage « Classiques » et mode sûr ; cadence basse : seuls cheval du joueur et principal ; chevaux à modèle propre (Tripo, essai ?tripohorse) pilotés par leur classe chargée à la demande et libérés de la mémoire sur tactile.",
+  "js": [
+   "src/entities/realistic.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:32-46 (un seul cheval, maillage PJL normalisé toujours chargé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:86 (cheval unique)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de sélection ; unreal/docs/validation-mac-2026-11-17.md:16-17 porte sur l'import du cheval, pas sur la gestion de plusieurs chevaux.",
+  "ecart": "Un seul cheval, toujours en modèle PJL : pas de choix par distance, de limite, de repli vers le cheval du jeu ni de modèle propre (Tripo).",
+  "tranche": "socle"
+ },
+ {
+  "id": "realiste.voitures",
+  "domaine": "Véhicules",
+  "fonction": "Voitures réalistes : la caisse classique d'une voiture conduisible ou de la circulation est remplacée à l'affichage par un modèle sans logo ni plaque (citadine et compacte → car_punto, berline → car_sclass, SUV → car_ipace, SUV 4x4 → car_defender), mis à l'échelle de l'empattement du jeu, roues qui tournent et braquent comme celles du jeu, peinture à la couleur du véhicule ; activées seulement après le chargement du van et du Defender.",
+  "js": [
+   "src/entities/realCar.js",
+   "src/entities/realistic.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». MATRICE.md:71 (public/real/car_*.glb : tranche véhicules).",
+  "ecart": "Aucune voiture.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.voitures-conduisibles",
+  "domaine": "Véhicules",
+  "fonction": "Véhicules conduisibles autres que le camion : voitures garées, voiture et tracteur de l'écurie, voitures de la circulation reprises au volant ; même dynamique que le camion avec les caractéristiques de chaque type ; tracteur 5,6 × 2,4 m, empattement 2,5 m, roues 0,82 m (avant 0,52 m) ; réservoir des voitures du quotidien entamé (entre un tiers et neuf dixièmes) ; poste de conduite, recul de caméra et libellé par type.",
+  "js": [
+   "src/entities/vehicle.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule ; le plugin ChaosVehicles n'est pas activé (StridesGrandTour.uproject : EnhancedInput, ProceduralMeshComponent, PixelStreaming2).",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.dynamique-camion",
+  "domaine": "Véhicules",
+  "fonction": "Dynamique du porteur 7,5 t (5 500 kg à vide, +600 kg par cheval) : diesel 5,1 l 210 ch, 750 N·m de 1 200 à 1 700 tr/min, boîte automatique 6 rapports (6,58 à 0,73) aux passages selon la charge, frein moteur, limiteur 90 km/h, direction asservie à la vitesse, modèle cinématique à basse vitesse fondu dans un modèle bicyclette à adhérence limitée, bip de recul.",
+  "js": [
+   "src/entities/truckPhysics.js",
+   "src/entities/truck.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». Oracle possible : tests/unit/truck.test.js (web).",
+  "ecart": "Aucune simulation de conduite.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.caracteristiques",
+  "domaine": "Véhicules",
+  "fonction": "Caractéristiques des 8 autres véhicules : citadine (1 240 kg, 160 N·m, boîte 5, 0-100 km/h 12,2 s, 178 km/h), compacte (1 355 kg, 200 N·m, 214 km/h), berline (1 505 kg), SUV (1 570 kg, 300 N·m, auto 8, 192 km/h), SUV 4x4 (1 485 kg, 260 N·m, 4 roues motrices), van Master STX (2 400 kg + 550 kg par cheval, 380 N·m), Defender 110 (2 400 kg, ~570 N·m, auto 8, 4x4), tracteur (5 600 kg, 110 ch, 480 N·m, 40 km/h, inverseur sous charge).",
+  "js": [
+   "src/entities/truckPhysics.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». Oracle possible : tests/unit/vehicles.test.js (web).",
+  "ecart": "Aucune donnée véhicule exportée dans Content/Data.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.carburant",
+  "domaine": "Véhicules",
+  "fonction": "Carburant : consommation au ralenti plus puissance × consommation spécifique (camion 195 g/kWh, ~25 l/100 km à 90 km/h chargé, réservoir 150 l ; citadine 42 l), densités diesel 0,835 et essence 0,745, consommations moyenne et instantanée, autonomie, plein, remise à zéro du trajet ; panne sèche : le démarreur tourne, le moteur ne part pas.",
+  "js": [
+   "src/entities/truckPhysics.js",
+   "src/entities/truck.js",
+   "src/entities/vehicle.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Ni carburant, ni démarrage ou arrêt du moteur.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.adherence-sol",
+  "domaine": "Véhicules",
+  "fonction": "Adhérence et résistance au roulement selon le revêtement (route, herbe, terre), échantillonnées à 4 Hz.",
+  "js": [
+   "src/entities/truck.js",
+   "src/entities/vehicle.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.collisions",
+  "domaine": "Véhicules",
+  "fonction": "Collisions des véhicules : cercles le long de l'axe contre le décor (sur 8,5 m pour le porteur d'origine, 13 m pour le STX), boîtes des autres véhicules (voiture ≈ cercle de 0,95 m), limites du monde, eau trop profonde refusée seulement si elle s'approfondit (le tracteur en passe un peu plus) ; garé, le véhicule est un obstacle statique pour piétons, chevaux et caméra (désactivé au volant) ; second point d'encombrement (cabine) qui fait freiner la circulation ; choc amorti (impact).",
+  "js": [
+   "src/entities/truck.js",
+   "src/entities/vehicle.js",
+   "src/entities/truckPhysics.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.suspension-roues",
+  "domaine": "Véhicules",
+  "fonction": "Suspension visuelle (tangage au freinage et à l'accélération, roulis en virage, voiture plus souple que le camion), vibrations de la route (plus marquées sur la terre), roues qui roulent sur la distance réellement parcourue et braquent selon l'épure d'Ackermann (petit train avant du tracteur plus rapide), volant du Defender démultiplié 15:1.",
+  "js": [
+   "src/entities/vehicle.js",
+   "src/entities/truck.js",
+   "src/entities/truckPhysics.js",
+   "src/entities/defender.js",
+   "src/entities/horseVan.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.feux",
+  "domaine": "Véhicules",
+  "fonction": "Feux : émission des matériaux de feux des modèles fournis (verres clairs, rouges, orange), faisceaux et halos de nuit (dégradé gradientTexture), flaque de lumière sur la chaussée (portée ~30 m), plafonnier du box ; mis à jour seulement quand leur état change.",
+  "js": [
+   "src/entities/truck.js",
+   "src/entities/vehicle.js",
+   "src/entities/defender.js",
+   "src/entities/horseVan.js",
+   "src/entities/truckModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule ni feu.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.son-moteur",
+  "domaine": "Véhicules",
+  "fonction": "Son moteur synthétisé : un seul moteur de voiture (celui qu'on conduit ou le plus proche qui tourne), celui du camion le plus proche de la caméra ; soupir des freins à air à l'arrêt complet du camion.",
+  "js": [
+   "src/entities/vehicle.js",
+   "src/entities/truck.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». Voir aussi socle.json audio.vehicules (absent).",
+  "ecart": "Aucun son de véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.portiere-decoupee",
+  "domaine": "Véhicules",
+  "fonction": "Portière conducteur articulée tirée d'un modèle d'une seule pièce (voitures, tracteur, van Master, camion Scania) : triangles de la peau extérieure dans le contour réel de la portière détachés par découpage exact (sommets, normales, UV, couleurs interpolés), accrochés à un pivot sur l'axe des charnières (charnière arrière pour le tracteur), doublure intérieure ; même découpe sur le modèle réaliste ; ouverture 0 à 1 pilotée par la séquence de montée.",
+  "js": [
+   "src/entities/doorCut.js",
+   "src/entities/vehicle.js",
+   "src/entities/truck.js",
+   "src/entities/horseVan.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule ni portière.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.camera-conduite",
+  "domaine": "Véhicules",
+  "fonction": "Caméra de conduite propre à chaque véhicule : camion STX 16 m derrière et 4,3 m de haut ; van Master 10 m / 3,4 m ; Defender 7,6 m / 2,7 m ; voitures selon leur encombrement.",
+  "js": [
+   "src/entities/truck.js",
+   "src/entities/horseVan.js",
+   "src/entities/defender.js",
+   "src/entities/vehicle.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucune caméra de conduite.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.points-acces",
+  "domaine": "Véhicules",
+  "fonction": "Points d'accès et repères : portière conducteur (gauche) ou passager, point au sol d'un repère de caisse, conversions monde ↔ repère local ; Defender : repères anchor_exit_* du fichier, descente côté conducteur s'il est libre, sinon passager, puis devant ou derrière (décor, autres véhicules, eau profonde).",
+  "js": [
+   "src/entities/vehicle.js",
+   "src/entities/truck.js",
+   "src/entities/defender.js",
+   "src/entities/horseVan.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicule.securite-depart",
+  "domaine": "Véhicules",
+  "fonction": "Règle de départ : frein de parc serré, pas de départ (volant libre) tant que le pont du camion, le pont latéral ou la porte arrière du van, une porte ou le coffre du Defender est ouvert ; rien ne s'ouvre en roulant ; les portes latérales du Defender se ferment d'elles-mêmes à la demande d'accélérer, le coffre se ferme à pied.",
+  "js": [
+   "src/entities/truck.js",
+   "src/entities/horseVan.js",
+   "src/entities/defender.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "camion.modele-stx",
+  "domaine": "Véhicules",
+  "fonction": "Camion STRIDES : modèle fourni STX Scania (STX_Scania_DETAILLE.glb, 4 350 624 octets) chargé tel quel, demi-tour autour de Y sans changement d'échelle ; cotes de jeu relevées sur le fichier (box du pont z = −6,03 à la cloison z = 0,91, cinq stalles en épi d'~1 m dont le jeu utilise les deux avant, couloir du groom côté droit, chevaux à ~30° de la perpendiculaire) ; intérieurs affichés seulement de près ou au volant.",
+  "js": [
+   "src/entities/stxModel.js",
+   "src/entities/truck.js",
+   "src/assets/vehicles/STX_Scania_DETAILLE.glb"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun modèle de camion importé (Content/World et Content/Characters ne contiennent aucun véhicule).",
+  "tranche": "f"
+ },
+ {
+  "id": "camion.modele-procedural",
+  "domaine": "Véhicules",
+  "fonction": "Modèle procédural d'origine du camion : porteur 7,5 t à cabine avancée, carrosserie 2 chevaux avec capucine, espace de vie, porte de service, pont arrière à portillons, intérieur (sol caoutchouc, parois matelassées, bat-flanc, barres de poitrail, anneaux, filets à foin), pièces statiques fusionnées sous un matériau PBR à atlas, pièces animées séparées.",
+  "js": [
+   "src/entities/truckModel.js",
+   "src/entities/truck.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Non porté (repli du modèle STX côté web).",
+  "tranche": "f"
+ },
+ {
+  "id": "camion.pont-portillons",
+  "domaine": "Véhicules",
+  "fonction": "Pont arrière : ouverture ~2,8 s ralentie en fin de course (vérins), angle calculé pour que le bout du pont touche le sol réel derrière le camion, portillons qui attendent le pont et se rangent avant qu'il remonte ; STX : rampe sur son pivot (+X) et porte d'habitation (+Y, amplitude du fichier) ; ouverture immédiate au chargement de partie.",
+  "js": [
+   "src/entities/truck.js",
+   "src/entities/stxModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». Voir aussi deplacement.json transport.rampe-camion (absent).",
+  "ecart": "Aucun camion ni pont.",
+  "tranche": "f"
+ },
+ {
+  "id": "camion.bat-flancs",
+  "domaine": "Véhicules",
+  "fonction": "Bat-flanc et bas-flancs des stalles en épi : ouverts, ils pivotent vers l'arrière sur leur charnière côté paroi gauche et dégagent couloir et stalles, ~1,2 s chacun, l'un après l'autre ; ouverture à partir d'une stalle donnée ; porte de service.",
+  "js": [
+   "src/entities/truck.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun camion.",
+  "tranche": "f"
+ },
+ {
+  "id": "camion.surface-marche",
+  "domaine": "Véhicules",
+  "fonction": "Surface de marche du camion pour piétons, chevaux menés et chevaux à bord : plancher du box dans son emprise, pont quand il est baissé (u = 0 à la charnière, 1 au sol), calcul sans allocation pour chaque sabot ; point au pied du pont (1,2 m en arrière) ; un cercle (piéton, cheval) est repoussé hors de l'emprise.",
+  "js": [
+   "src/entities/truck.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun camion.",
+  "tranche": "f"
+ },
+ {
+  "id": "camion.chevaux-a-bord",
+  "domaine": "Véhicules",
+  "fonction": "Chevaux à bord : nombre de chevaux affichés dans les stalles et masse embarquée (600 kg par cheval dans le camion, 550 kg dans le van) prise en compte par la dynamique.",
+  "js": [
+   "src/entities/truck.js",
+   "src/entities/horseVan.js",
+   "src/entities/truckPhysics.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». Voir aussi deplacement.json transport.cheval-a-bord (absent).",
+  "ecart": "Aucun transport.",
+  "tranche": "f"
+ },
+ {
+  "id": "camion.livree-stx",
+  "domaine": "Véhicules",
+  "fonction": "Habillage STX des carrosseries (camion Scania, van Master) aux emplacements de src/partners/liveries.js : logo officiel STX s'il est autorisé et fourni, habillage neutre sinon ; décor projeté (DecalGeometry) sur les triangles extérieurs, décollé de 1,5 mm, alpha découpé (alphaTest + alphaToCoverage), un maillage par véhicule qui suit roulis et tangage ; pièces mobiles non visées.",
+  "js": [
+   "src/entities/livery.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucune livrée ni décalque.",
+  "tranche": "f"
+ },
+ {
+  "id": "van.modele-master",
+  "domaine": "Véhicules",
+  "fonction": "Van porte-chevaux STX Renault Master (STX_Renault_Master_STALLE5.glb, 2 664 228 octets) : deux stalles, pont latéral droit, volets hauts, porte arrière ; modèle chargé tel quel, demi-tour autour de Y, amplitudes d'ouverture lues dans ses animations (OpenSideLoading, OpenRearDoor) ; empattement 4,32 m, voie 2,04 m, roues de 0,365 m.",
+  "js": [
+   "src/entities/masterModel.js",
+   "src/entities/horseVan.js",
+   "src/assets/vehicles/STX_Renault_Master_STALLE5.glb"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun modèle de van importé.",
+  "tranche": "f"
+ },
+ {
+  "id": "van.pont-lateral",
+  "domaine": "Véhicules",
+  "fonction": "Van : pont latéral et volets, porte arrière (1,7 s, vitesse des animations du fichier), manœuvrés à l'arrêt et personne au volant ; pont baissé = obstacle bas pour les piétons ; bas-flanc qui pivote en ~1,2 s avec loquet en fin de course ; pied du pont à 0,8 m de son bout, point devant la porte arrière à 1,3 m.",
+  "js": [
+   "src/entities/horseVan.js",
+   "src/entities/masterModel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». Voir aussi deplacement.json van.pont-portes (absent).",
+  "ecart": "Aucun van.",
+  "tranche": "f"
+ },
+ {
+  "id": "defender.modele",
+  "domaine": "Véhicules",
+  "fonction": "Defender 110 STRIDES, véhicule personnel : modèle fourni en deux variantes (Defender110_STRIDES.glb, 123 498 triangles, 3,78 Mo ; _MOBILE.glb, 67 926 triangles, 2,28 Mo), une seule chargée (mobile sur écran tactile et dans la version fichier unique, détaillée sinon ; ?defender=full|mobile) ; pivots de roues et de braquage, volant, quatre portes, coffre ; intérieur seulement de près, petits éléments masqués au-delà de 45 m ; pas de cheval à bord.",
+  "js": [
+   "src/entities/defenderModel.js",
+   "src/entities/defender.js",
+   "src/assets/vehicles/Defender110_STRIDES.glb",
+   "src/assets/vehicles/Defender110_STRIDES_MOBILE.glb"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ».",
+  "ecart": "Aucun modèle de Defender importé.",
+  "tranche": "f"
+ },
+ {
+  "id": "defender.portes-coffre",
+  "domaine": "Véhicules",
+  "fonction": "Defender : quatre portes et coffre à ouverture latérale à la vitesse des clips Open_* du fichier, porte du conducteur ouverte puis refermée d'elle-même à la montée et à la descente ; coffre : un objet léger posé sur le plancher (repère anchor_boot), solidaire de la caisse ; teinte de carrosserie modifiable ; état posé immédiatement au chargement de partie.",
+  "js": [
+   "src/entities/defender.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. unreal/README.md:39 : « Véhicules, transport du cheval, carburant : à faire » ; MATRICE.md:50 : tranche « véhicules et transport ». Voir aussi deplacement.json defender.portieres, defender.coffre, defender.teinte (absents).",
+  "ecart": "Aucun Defender.",
+  "tranche": "f"
+ }
+]

@@ -1,0 +1,988 @@
+[
+ {
+  "id": "cso.plan-saut",
+  "domaine": "CSO",
+  "fonction": "Plan de saut (planJump) : longueur L = première + dernière distance aux barres, bornée à [L0 × (1 − 0,12), L0 × (1 + 0,06)] en CSO ([−0,24, +0,12] hors CSO), hauteur H = Hbase × (1 − 1,5 × dev²), marge par barre = arc + 0,20 m (lift) + dégagement − hauteur, zones good (marge ≥ 0,15 m) / far / near / refuse (première barre à moins de 0,55 m), causes tooClose, far, near, angle, slow, fast.",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:23-125 (railsAhead, shape, minMargin, planJump) ; paramètres lus dans Content/Data/jump_model.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:65-73)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/jump.json : 576 appels (vertical 1,10 m, oxer 1,20 m écart 1,3, vertical 1,45 m, mur 1,00 m ; 9 distances, 4 vitesses, 2 angles, CSO ou non) comparés par unreal/core/tests/test_core.cpp:31-62 (L, H, marge, marges, zone, cause à 1e-9) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/ ; test moteur Strides.Core.Course (StridesCoreTests.cpp:25-30) réussi le 17/11 (validation-mac-2026-11-17.md, commit 285404cc).",
+  "ecart": "Chemins non couverts par l'oracle : saut sans obstacle (geo nul) et abord à plus de 60° (cosA < 0,5) ; les cas exportés n'ont que cosA = 1 ou 0,9394 (cap à 0,35 rad) : la cause « angle » hors CSO (cosA < 0,92) et la zone none ne sont jamais exercées. Content/Data/jump_model.json régénéré identique.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.facteurs-vitesse-angle",
+  "domaine": "CSO",
+  "fonction": "Capacité de saut Hcap = puissance × speedFactor(v) (0,72 à 1 entre 3,5 et 6,5 m/s, −16 % entre 9 et 12 m/s) × angleFactor (1 − 0,6 × (1 − cosA)) ; en CSO hauteur visée = barre la plus haute + 0,32 + 0,18 × écart − 0,20 m, durée T = clamp(0,56 + 0,1 × H, 0,60, 0,74) s, L0 = max(1,5, v × T).",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:17-19 (speedFactor, angleFactor, arcY), 47-57 (shape)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "jump.json : 10 valeurs de speedFactor (0 à 14 m/s) et 3 d'angleFactor (unreal/core/tests/test_core.cpp:33-36), plus les 576 cas qui passent par shape() ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "Aucun sur la fonction ; la puissance donnée par le jeu Unreal diffère (voir cso.declenchement-saut).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.qualite-appel",
+  "domaine": "CSO",
+  "fonction": "Qualité de l'appel (takeoffQuality) : la cause du modèle si elle existe (tooClose, far, near, angle, slow, fast ; 'short' ramené à far), sinon perfect (|dev| < 0,03) ou good en zone good, sinon bitFar / bitNear selon que l'idéal dépasse L0.",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:127-140 (takeoffQuality), 142-176 (noms)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "jump.json : qualité comparée sur les 576 cas (unreal/core/tests/test_core.cpp:58) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "La cause 'short' n'existe pas dans l'énumération C++ (JumpModel.h:30) : planJump ne la produit jamais, elle vient du jugement des barres du web (obstacles.js:523), non porté.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.retour-appel",
+  "domaine": "CSO",
+  "fonction": "Après chaque saut de CSO (sauf aide « Aucune »), un mot s'affiche sous le chrono (Appel parfait, Bon appel, Un peu loin, Un peu près, Appel trop loin, Appel trop près, Abord en biais, Manque d'impulsion, Trop près), corrigé par le jugement réel : sur une barre la cause l'emporte (short et fast donnent « Appel trop loin »), jamais « parfait » ni « bon », far → Un peu loin et near / tooClose → Un peu près sur un franchissement, couleur good / ok / bad.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163 (LastTakeoff = nom brut de la qualité) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:39 (« Dernier appel : … ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:83-85 (« X franchi · appel <qualité> »)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni vérification à l'écran citée de cet affichage.",
+  "ecart": "Identifiants anglais bruts (perfect, bitFar…) au lieu des textes français ; aucune correction selon le jugement réel ; pas de couleur ; affiché même aide coupée (réglage jumpAid jamais lu) ; le dernier mot reste affiché sans limite de durée (jamais effacé, un saut libre ne le met pas à jour : StridesHorse.cpp:158-163).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cause-barre",
+  "domaine": "CSO",
+  "fonction": "Barre tombée : toast « Barre au X · +4 · <cause> » avec la cause en clair (Appel trop loin, Appel trop près, Trop près : plus de place pour sauter, Abord désaxé, Pas assez d'impulsion, Trop vite : saut à plat, Saut trop court : atterrissage dans l'obstacle, Barre touchée par les antérieurs / postérieurs), reprise en minuscules dans le bilan.",
+  "js": [
+   "src/gameplay/jumpModel.js",
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:85 (« X barre +4 · appel <qualité> »)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test.",
+  "ecart": "La cause n'est pas traduite en texte (CAUSES non porté) ; seule la qualité d'appel en anglais est jointe ; causes short / foreRail / hindRail inexistantes ; pas de relevé des fautes pour un bilan.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.direction",
+  "domaine": "CSO",
+  "fonction": "Direction de concours (steerRate) : zone morte 0,06, courbe expo 1,35, rotation maximale v / R(v) avec R(v) = 2,6 + 0,8 v (6,3 m au trot, 7,6 m au galop de concours, 9 m au galop allongé), pivot de 0,8 rad/s à l'arrêt interpolé jusqu'à 1 m/s.",
+  "js": [
+   "src/gameplay/csoRide.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRide.cpp:12-23 (minRadius, maxTurnRate, steerRate) ; paramètres lus dans Content/Data/cso_ride.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:74-82)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_ride.json : 42 cas steerRate, 6 minRadius, 6 maxTurnRate comparés à 1e-9 par unreal/core/tests/test_core.cpp:64-77 ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/ ; cso_ride.json de Content/Data régénéré identique.",
+  "ecart": "Aucun sur la fonction ; l'application au cheval diffère (voir cso.conduite-integration).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cadence",
+  "domaine": "CSO",
+  "fonction": "Cadence de concours (cadenceDelta) : variation de cadence nulle si le joystick avant / arrière ne dépasse pas 0,35 ou n'est pas franchement vertical (|y| ≤ 0,65 |x|), proportionnelle au-delà de la zone morte, au plus 1,2 m/s² au galop et 2,2 m/s² quand la cadence est sous 4,6 m/s ; nulle joystick relâché.",
+  "js": [
+   "src/gameplay/csoRide.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRide.cpp:24-29 (cadenceDelta) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:231-234 (appel dans l'intégration, voir cso.conduite-integration)",
+  "etat": "identique_prouve",
+  "niveau": "joue_ecran",
+  "preuve": "cso_ride.json : 18 cas cadenceDelta (unreal/core/tests/test_core.cpp:71) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/ ; à l'écran : « accélérer jusqu'au galop à 8,0 m/s » (validation-mac-2026-11-17.md, Boucle contrôlée à l'écran).",
+  "ecart": "Fonction identique ; le plafond de 8 m/s et la cadence gardée joystick relâché relèvent de csoRideStep (intégration, non couverte par l'oracle) et sont décrits dans cso.conduite-integration.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.conduite-integration",
+  "domaine": "CSO",
+  "fonction": "Conduite de concours appliquée au cheval (csoRideStep et horse.js) : cadence de départ = vitesse réelle arrondie au dixième, direction clavier amenée progressivement (3,2 par seconde, double en retour), cadence bornée entre 0 et 8 m/s (galop allongé) et gardée quand on lâche le joystick, figée pendant un refus ou un cabrer, vitesse qui rejoint la cadence à 4,5 m/s² sous 5 m/s, 3,6 m/s² au-delà et 9 m/s² en ralentissant (horse.js:289), inchangée en l'air, rotation figée pendant le cabrer, rotation qui rejoint la consigne en exp(−dt / 0,2 s) bornée à 3 rad/s², 30 % de la rotation réelle gardée en l'air, perte d'élan à la réception de min(4 %, |dev| × 0,5), commandes retirées en sortie d'épreuve (clearCsoControls) et réservées aux épreuves et entraînements de CSO.",
+  "js": [
+   "src/gameplay/csoRide.js",
+   "src/entities/horse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:229-243 (cadence, rotation), 273-274 (réception) ; unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:27 (bCsoControls = true)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Galop à 8,0 m/s et saut contrôlés à l'écran (validation-mac-2026-11-17.md) ; les virages y sont notés « à améliorer » ; aucun test de cette intégration.",
+  "ecart": "Rotation : accélération (consigne − actuelle) / 0,2 bornée à 3 rad/s², au lieu d'une approche exponentielle puis bornage ; airTurn appliqué à la consigne et non à la rotation réelle ; réception : −4 % fixe dès que |dev| > 0,02 au lieu de min(4 %, |dev| × 0,5) ; kbdRamp lu mais jamais utilisé (pas de rampe clavier) ; cadence de départ non reprise de la vitesse ; vitesse qui rejoint la cadence à 3 m/s² constants en accélération comme en freinage (StridesHorse.cpp:237) au lieu de 4,5 / 3,6 / 9 m/s² ; rotation non figée pendant le refus ; commandes et modèle de saut de concours actifs en permanence, y compris hors épreuve (bCsoControls jamais remis à faux, pas d'équivalent de clearCsoControls).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.declenchement-saut",
+  "domaine": "CSO",
+  "fonction": "Bouton SAUT : saut accepté au-dessus de 3,2 m/s et hors refus engagé ; l'obstacle visé est celui dont la première barre est la plus proche devant les épaules (point 0,4 m devant l'origine), première barre à 13 m au plus et dernière pas plus de 0,3 m derrière, abord à moins de 60° (cosA ≥ 0,5), milieu des barres dans la largeur ± 0,35 m ; avec les commandes de concours (épreuve ou entraînement de CSO), appui sans effet (horse:jumpEarly) sans obstacle visé ou si la première barre est à plus de 1,9 × L0 ; sinon, saut libre ; puissance = jumpPeak × saut du cheval × (1 + équipement) × état, dégagement donné par l'équipement.",
+  "js": [
+   "src/gameplay/obstacles.js",
+   "src/gameplay/csoRide.js",
+   "src/entities/horse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:52-53, 139-141 (Espace / bouton A) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:43, 62 (bouton tactile SAUT) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:105-111 (JumpPower), 153-176 (StartJump), 245-247 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:60-74 (FenceAhead)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Saut déclenché à l'écran après accélération à 8 m/s (validation-mac-2026-11-17.md), sans obstacle précisé ; sélection de l'obstacle jamais testée.",
+  "ecart": "railsAhead reçoit l'origine du cheval et non les épaules (distances d'appel décalées de 0,4 m ; position réelle des épaules du modèle PJL à confirmer) ; sélection sur le centre de l'obstacle (écart latéral < 2,5 m) au lieu du milieu des barres (< 2,25 m) ; aucun filtre d'angle : un abord à plus de 60° donne un plan sans marge, compté franchi ; aucun rejet de l'appui trop tôt : sans obstacle à 13 m le cheval fait un saut libre, et un appui jusqu'à 13 m du centre de l'obstacle (au-delà de 1,9 × L0) part et retombe avant la barre, comptée tombée ; puissance sans équipement ni état et dégagement toujours nul.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.trajectoire-saut",
+  "domaine": "CSO",
+  "fonction": "Trajectoire du saut : parabole arcY(H, L, x) = 4 H x (L − x) / L² sur la longueur et la hauteur du plan, phase du saut menée par le temps (jumpT) ; hauteur réelle = arc + levée 0,20 m + dégagement, utilisée pour juger chaque barre.",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:19 (arcY) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:261-276 (avance en distance, hauteur arcY, fin du saut) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:76-87 (clip de saut selon la vitesse)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "arcY couvert indirectement par les marges de jump.json ; saut vu à l'écran (validation-mac-2026-11-17.md : « stable après accélération à 8 m/s et saut », clips de saut choisis selon la vitesse).",
+  "ecart": "Phase menée par la distance parcourue depuis l'appel et non par le temps (équivalent tant que la vitesse ne change pas en l'air, ce qui est le cas des deux côtés) ; le corps affiché sans levée ni dégagement est conforme au web (horse.js:372, pos.y = sol + jumpY) ; la trajectoire ne sert pas à juger chaque barre (voir cso.jugement-barres) ; dégagement toujours nul ; saut libre (plan sans obstacle) non couvert par l'oracle ; calage entre clip animé et parabole non vérifié.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.jugement-barres",
+  "domaine": "CSO",
+  "fonction": "Jugement en l'air (obstacles._judge) : chaque barre est jugée quand les épaules passent son plan, à la hauteur réelle de la trajectoire interpolée entre deux images ; marge < −0,06 m = barre tombée, une seule faute par élément, résultat annoncé à la sortie de l'obstacle (ou quand les postérieurs l'ont passé, 1,2 s au plus) ; cheval au sol au passage = cause 'short'.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:76-86 (JumpLanded : barre si marge du plan < −rub) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:269-272",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Seuil rub = 0,06 m prouvé dans planJump (jump.json) ; jugement du jeu non testé ; .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md) : une faute à chacun des 10 obstacles, « Terminé : 63 pts en 86.61 s ».",
+  "ecart": "Faute décidée à la réception d'après la marge du plan calculée à l'appel, pas au passage réel de chaque barre : un virage en l'air ne change rien ; seul l'obstacle visé à l'appel est jugé (un obstacle franchi sans appel ou hors sélection ne l'est pas) ; pas de cause 'short' ; la démonstration automatique appelle dès 11,7 m (StridesHorse.cpp:217-218), d'où une barre partout.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.effleurement",
+  "domaine": "CSO",
+  "fonction": "Barre effleurée (marge entre −0,06 et +0,04 m) : la barre tinte et vibre sur ses taquets mais reste en place.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Ni vibration ni son.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.contact-membres",
+  "domaine": "CSO",
+  "fonction": "Contact réel des membres (limbContact.js) : canon, paturon et sabot en capsules contre la barre (cylindre de rayon 0,05 m) dans le plan de l'obstacle, balayage en 6 positions entre deux images ; un membre qui touche fait tomber la barre du côté poussé et compte la faute (cause antérieurs ou postérieurs), pour le cheval WildMesh du joueur.",
+  "js": [
+   "src/gameplay/limbContact.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code (unreal/docs/MATRICE.md : « contact des membres : à faire »).",
+  "ecart": "Aucun contact membre / barre ; la barre ne tombe que par la marge du plan.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.chute-barre",
+  "domaine": "CSO",
+  "fonction": "Chute d'une barre : un bout quitte son taquet puis l'autre, dans le sens du saut, élan réglé par la profondeur du contact, rebonds amortis puis roulement au sol ; antérieurs : chute immédiate, postérieurs : après 1,1 m ; une seule chute ; barres remises en début de manche (resetRails), hors mission quand le joueur s'éloigne, et obstacle emporté sur un refus remonté par le jury après 3 s.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:76-81 (KnockTopBar)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni vérification à l'écran citée.",
+  "ecart": "La barre du haut est déplacée d'un coup (40 cm en avant, 6 cm du sol), sans animation ni côté, toujours vers +X local quel que soit le sens du saut ; sur un mur, c'est tout le bloc qui est déplacé ; toujours la barre du haut ; jamais remise en place (ni resetRails, ni remontée par le jury).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.refus-decision",
+  "domaine": "CSO",
+  "fonction": "Décision de refus (obstacles.updateHorse) : face à l'obstacle (part de marche vers lui > 0,3, vitesse > 0,5 m/s, dans la largeur), refus si le plan donne la zone refuse, ou marge < −0,30 m avec un appel trop près, ou vitesse < 3,2 m/s à moins de 1,5 m, ou abord à plus de 60° à moins de v²/16 + 0,3 m ; le cheval freine jusqu'à l'arrêt devant la face (nez à 1,6 m), le refus compte à l'arrêt ; tout contre, il emporte la barre (refus, pas faute de barre) ; un cheval qui glisse le long des barres est arrêté devant.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:164-169 (appel en zone refuse), 249-259 (arrivée sans appel) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:88-93",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Zone refuse prouvée dans planJump (jump.json) ; décision de refus du jeu non testée ; unreal/docs/relais-mac.md la range dans « à vérifier sur appareil réel ».",
+  "ecart": "Refus seulement quand la première barre est à moins de 0,55 m de l'origine du cheval (bien plus près que le web) ; le test marge < −0,30 m (StridesHorse.cpp:256) est inatteignable, la première barre étant déjà à moins de 0,55 m (planJump rend alors toujours refuse) ; arrêt instantané (vitesse et cadence à 0) sans freinage ; aucun cas « trop lent » ni « abord oblique » : au-delà de 60° le cheval saute de lui-même (StridesHorse.cpp:257) et l'obstacle est compté franchi ; pas de barre emportée ; saut automatique à l'arrivée sans équivalent web.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.refus-unique",
+  "domaine": "CSO",
+  "fonction": "Un refus n'est compté qu'une fois tant que le cheval reste face au même obstacle : il doit se détourner, reculer à plus de profondeur / 2 + 6 m ou attendre 5 s avant qu'un nouveau refus compte.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:167, 228, 249 (délai RefuseT de 1,2 s)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test.",
+  "ecart": "Seul un délai de 1,2 s sépare deux refus : un cheval relancé droit sur l'obstacle peut cumuler deux refus (donc l'élimination) sans s'être détourné.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.refus-penalite",
+  "domaine": "CSO",
+  "fonction": "Refus compté seulement devant l'obstacle attendu et dans son sens : +4 points (cross +20), refus dans un double (élément B) → reprise au A, cadence remise à 0 et consigne de demi-tour ; 2e refus = élimination en CSO (cross : 4e refus ou 3e au même obstacle).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:116-129 (CourseJudge::refusal) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:88-93 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:167, 256",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Scénarios écrits à la main dans unreal/core/tests/test_core.cpp:137-147 (refus au 4B → reprise au 4A, refus de dos ignoré, 2e refus éliminé) et 159-166 (cross), passés le 18/11/2026 ; aucun oracle exporté du JS.",
+  "ecart": "Règles codées en dur (4 et 2) : le bloc rules de cso_course_pole.json n'est pas lu ; pas de consigne de demi-tour ; « 2e refus : éliminé » au lieu de « 2e refus : éliminé du parcours. » ; pas de nombre de refus réglable par épreuve (défi).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.ordre-fautes",
+  "domaine": "CSO",
+  "fonction": "Obstacle attendu franchi dans son sens : passage au suivant (+4 si barre, une faute par élément) ; avant la ligne de départ aucun saut ne compte (consigne « franchis d'abord la ligne de départ ») ; mauvais obstacle : « Erreur de parcours : saute l'obstacle <attendu> (repère vert) », une fois par obstacle, sans pénalité.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:103-115 (advance, clear, rail) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:76-86",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Scénarios manuels unreal/core/tests/test_core.cpp:118-136 (obstacle avant le départ ignoré, deux barres = 8 points, erreur de parcours), passés le 18/11/2026 ; aucun oracle.",
+  "ecart": "Le message d'erreur nomme l'obstacle sauté (Fence->Label, StridesCourse.cpp:84) au lieu de l'obstacle attendu ; erreur comptée à chaque passage (pas de dédoublonnage) ; aucune consigne avant le départ.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.temps-accorde",
+  "domaine": "CSO",
+  "fonction": "Temps accordé = ⌈longueur / vitesse × 60⌉ avec 350 m/min (national), 375 (CSI), 400 (Grand Prix CSI 5*), 420 (cross amateur) ; parcours du Pôle 368 m → 64 s au national.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:82 (timeAllowedFor) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:25-27 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:109, 206-210 (vitesses lues dans cso_course_pole.json)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json (timeAllowed des 4 niveaux) comparé par unreal/core/tests/test_core.cpp:100-102 ; StridesCoreTests.cpp:24 (64 s) réussi le 17/11 (validation-mac-2026-11-17.md) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "Le jeu Unreal n'utilise que le niveau national à 1,10 m (StridesCourse.h:22-23) ; le web fixe le temps accordé par épreuve (classe, défi, Paris).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.penalites-temps",
+  "domaine": "CSO",
+  "fonction": "Pénalités de temps du barème A : 1 point par seconde entamée au-delà du temps accordé (⌈t − TA − 1e-9⌉, 0 en deçà).",
+  "js": [
+   "src/gameplay/challenge.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:83-86 (timeFaults), 136-139 (CourseJudge::points, utilisé par le HUD)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "cso_course.json : 6 cas timeFaults (40 à 60 s pour 45 s accordées) comparés par unreal/core/tests/test_core.cpp:103, rejoué le 18/11/2026 (4 944 vérifications, 0 échec) ; mais strides::timeFaults n'est appelé par aucun code du module de jeu (rg) : le score du jeu passe par CourseJudge::points (CsoCourse.cpp:136-139), copie de la formule couverte par un seul scénario manuel (66,2 s → 3 points, test_core.cpp:134-135), sans oracle.",
+  "ecart": "La fonction prouvée (timeFaults) n'est pas celle qu'utilise le jeu ; CourseJudge::points n'est pas comparé à l'oracle ; règle du cross dans cso.cross-regles.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.temps-limite",
+  "domaine": "CSO",
+  "fonction": "Temps limite : élimination au-delà du double du temps accordé (128 s pour 64 s), « Temps limite dépassé : éliminé. »",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:98-102 (tick) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:50-52",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Scénario manuel unreal/core/tests/test_core.cpp:148-153 (128,5 s → éliminé), passé le 18/11/2026 ; aucun oracle.",
+  "ecart": "Pas de cloche ni d'affichage ÉLIMINÉ en grand ; limite des défis (timeLimit) non portée.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.elimination-descente",
+  "domaine": "CSO",
+  "fonction": "Cavalier descendu de cheval pendant l'épreuve : « Tu es descendu de cheval : éliminé. »",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-119 (Dismount) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:95-98 ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:130",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Scénario manuel unreal/core/tests/test_core.cpp:154-158, passé le 18/11/2026 ; aucun oracle.",
+  "ecart": "Le web contrôle le mode à chaque image ; l'Unreal seulement à l'appel de Dismount, refusé pendant un saut, et seulement après la ligne de départ (StridesCourse.cpp:97 exige started), alors que le web élimine dès le début du parcours ; message « Descendu de cheval : éliminé ».",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.elimination-affichage",
+  "domaine": "CSO",
+  "fonction": "Élimination : cloche à deux coups, « ÉLIMINÉ » en grand avec le motif pendant 2,6 s ; épreuve avec classement (souple) : le parcours s'arrête et le bilan suit, sinon échec de la mission.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:52, 92, 97, 107 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:19-23, 44",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni vérification à l'écran citée.",
+  "ecart": "Une ligne de texte pendant 3 s dans le HUD Canvas ; pas de cloche, pas de bilan, aucun lien avec une mission.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.ligne-depart",
+  "domaine": "CSO",
+  "fonction": "Chrono lancé au franchissement de la ligne de départ dans son sens (cap à moins de 60°) entre les fanions (demi-largeur 3,8 m pour une ligne de 7 m), avec un bip ; départ lancé : déjà au-delà de la ligne (moins de 12 m) et dans le bon sens à la cloche → chrono lancé aussitôt ; chrono au centième.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:30-49 (LineCrossed, TrackHorse) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:97",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Non testé ; .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md) montre le passage de « Franchis la ligne de départ » au chrono.",
+  "ecart": "Demi-largeur 6 m au lieu de 3,8 m ; pas de départ lancé ; pas de son ; parcours armé en permanence dans le monde (aucune entrée en piste) : toute traversée de la ligne lance le chrono, et l'épreuve ne peut plus être recommencée ensuite.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cloche",
+  "domaine": "CSO",
+  "fonction": "Cloche après l'entrée en piste : « CLOCHE · Tu as 45 s pour franchir la ligne de départ » ; au-delà de 45 s le chrono part de lui-même (« 45 s écoulées : le chrono est lancé »).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Ni cloche ni délai de 45 s.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.entree-piste",
+  "domaine": "CSO",
+  "fonction": "Entrée en piste : rejoindre à cheval l'entrée de la carrière (rayon 9 m), puis annonce « N° <dossard> · <joueur> et <cheval> » (dossard 40 à 89), applaudissements, hauteurs posées et barres remises, obstacle 1 mis en évidence, caméra et commandes de concours dès l'entrée.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Le parcours Unreal est construit au lancement et reste actif au Pôle (StridesWorldDirector.cpp:40-45) ; aucune étape d'entrée, de dossard ni d'annonce.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.capacite-cheval",
+  "domaine": "CSO",
+  "fonction": "Avant l'entrée en piste, l'entraîneur prévient si aucun appel (galop 6,2 / 7,0 / 7,8 m/s, de 0,6 à 5 m) ne franchit sans faute l'un des obstacles avec ce cheval et cet équipement : « tu plafonnes vers X m ».",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun avertissement de capacité.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.presentation",
+  "domaine": "CSO",
+  "fonction": "Présentation de l'épreuve : barème (A au chrono), hauteur et difficulté (Facile sous 1,08 m, Moyenne sous 1,18, Difficile sous 1,35, sinon Très difficile), cheval engagé, temps accordé, composition « 8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 m », texte du jury, règles, boutons Voir le plan et Entrer en piste.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/csoCourse.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Seule la ligne « Franchis la ligne de départ · temps accordé 64 s » (StridesCourse.cpp:109) évoque l'épreuve ; courseNumbers non porté.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.plan-parcours",
+  "domaine": "CSO",
+  "fonction": "Plan du parcours (SVG) dessiné depuis le tracé : carrière (Pôle 120 × 76 m ou arène de Paris 86 × 46 m), ligne du cavalier, obstacles numérotés (vertical une barre, oxer deux, mur un bloc), doubles, lignes de départ et d'arrivée, entrée et tribunes, nord en haut, hauteurs ; légende « 1 vertical · 2 oxer · … », longueur et temps accordé.",
+  "js": [
+   "src/ui/coursePlan.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun plan ; la mini-carte n'affiche les obstacles qu'en carrés blancs de 4 px (StridesHUD.cpp:133-137).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.trace-pole",
+  "domaine": "CSO",
+  "fonction": "Tracé du Pôle (traceCourse de CSO_DESIGN) : ligne du cavalier échantillonnée tous les 0,5 m, abord depuis l'entrée (leadIn), départ, 8 obstacles numérotés et 10 sauts (double 4A – 4B à 11,4 m, double 6A – 6B à 7,8 m, oxers de 1,2 à 1,5 m d'écart, mur au 5), arrivée ; longueur 368,44 m (368 m retenus).",
+  "js": [
+   "src/gameplay/csoCourse.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:11-71 (poleDesign, traceCourse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:83-110 (lecture de cso_course_pole.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:12-24",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json : longueur, 10 obstacles (libellé, nature, écart, x, z, cap, abscisse à 1e-7), repères départ / arrivée, un point sur 25, comparés par unreal/core/tests/test_core.cpp:79-99 ; Strides.Core.Course (StridesCoreTests.cpp:21-23) réussi le 17/11 ; Content/Data/cso_course_pole.json régénéré identique ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "Tronçons (segs) non portés (utiles à l'aide de tracé et au lint, eux-mêmes absents) ; placement dans le monde (centre de carrière x 330, z −224) non testé ; leadIn non comparé à l'oracle (seuls longueur, obstacles, repères et un point sur 25 du tracé chronométré le sont) ; le jeu lit le tracé dans cso_course_pole.json (StridesDataSubsystem.cpp:85-110) alors que les tests utilisent poleDesign() compilé : cette lecture n'est pas testée.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.hauteurs-profil",
+  "domaine": "CSO",
+  "fonction": "Hauteurs d'une épreuve de hauteur h : h + profil (obstacles 1 et 4A −5 cm, 8 +5 cm), arrondi au centimètre.",
+  "js": [
+   "src/gameplay/csoCourse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:73-80 (courseHeights) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:15",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json (heights110) comparé par unreal/core/tests/test_core.cpp:98-99 ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "Seule la hauteur 1,10 m est vérifiée ; le jeu Unreal fixe 1,10 m (StridesCourse.h:22) alors que le web règle la hauteur par épreuve (setHeights).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-geometrie",
+  "domaine": "CSO",
+  "fonction": "Obstacles jugés : vertical (une barre), oxer (deux barres, l'avant 5 cm plus bas, écart 1,2 m par défaut), mur ; largeur 3,8 m en CSO ; axe de saut n = (sin rot, cos rot), axe des barres t = (cos rot, −sin rot) ; posés au sol du relief ; faces avant / arrière et profondeur servant au refus et au jugement.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:20-36 (Setup)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Code relu conforme à obstacles._bars et add() pour les barres et les axes ; aucun test sur AStridesFence.",
+  "ecart": "Pas d'écart par défaut de 1,2 m pour un oxer sans écart ; faces avant / arrière et profondeur (front, back, depth) non modélisées.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-habillage",
+  "domaine": "CSO",
+  "fonction": "Habillage des obstacles de concours : barres en bois peint (palette par obstacle), chandeliers et ailes, jardinières au pied des ailes, fanions réglementaires (rouge à droite, blanc à gauche), lignes de départ et d'arrivée avec cellules sur trépied, ligne de sciure au sol et panneaux DÉPART / ARRIVÉE.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:37-73 (cylindres et cubes de base du moteur)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Formes de base ; aucune capture côte à côte (unreal/docs/parite/<systeme>/ absent).",
+  "ecart": "Pas de couleurs, d'ailes, de jardinières, de fanions ni de matériel de chronométrage ; lignes de départ et d'arrivée invisibles.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-collisions",
+  "domaine": "CSO",
+  "fonction": "Chandeliers et ailes solides pour le cheval et les piétons (boîtes de collision hors de la largeur des barres) ; à pied, les obstacles sont des murets (blockHuman).",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code ne bloque : barres en requête seule avec chevauchement du Pawn (StridesFence.cpp:60, unreal/StridesGrandTour/Config/DefaultEngine.ini:47), montants sans collision (StridesFence.cpp:72).",
+  "ecart": "On traverse les obstacles à pied comme à cheval (cheval déplacé sans balayage).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-entrainement",
+  "domaine": "CSO",
+  "fonction": "Obstacles hors épreuve : paddock du Pôle (vertical 1,10 m et oxer 1,00 m, largeur 3,4 m, sautés en sens contraires), obstacles de la maison (vertical 0,75 m, oxer 1,00 m, largeur 3,2 m), paddock de Paris (vertical 1,30 m, oxer 1,25 m) ; barres tombées remontées dès que le cheval s'éloigne.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Seuls les 10 obstacles du parcours du Pôle existent.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.guidage-prochain",
+  "domaine": "CSO",
+  "fonction": "Pendant le parcours : consigne « Obstacle n°X · double sur N », « Franchis la ligne de départ », « Passe la ligne d'arrivée ! », cible de guidage 7 m avant l'obstacle suivant, numéro de l'obstacle suivant mis en évidence.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:103-112 (StatusText : « prochain : X »)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Texte relevé dans .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md).",
+  "ecart": "Pas de mise en évidence de l'obstacle ni de cible de guidage ; ni « double » ni nombre total.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.tableau-chrono",
+  "domaine": "CSO",
+  "fonction": "Tableau de chrono : décompte de la cloche avant le départ, puis temps, temps accordé, points (fautes + pénalités de temps en direct, signal de dépassement), obstacle suivant, état terminé ou éliminé.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:103-112 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:37",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Texte relevé dans .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md) (« 75.48 s · 32 pts · prochain : 7 »).",
+  "ecart": "Points en course sans les pénalités de temps (faults() seul) ; temps accordé affiché seulement avant le départ ; pas de signal de dépassement ni de décompte ; texte de débogage Canvas, pas l'interface du web.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.camera-concours",
+  "domaine": "CSO",
+  "fonction": "Caméra de concours dès l'entrée en piste (game.course.camera), caméra manuelle rendue à l'automatique au départ.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/entities/camera.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:53-60 (bras de caméra générique : 6,5 m, 1,85 m de haut, −9°, retard 6)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Caméra de suivi visible sur les captures montées (validation-mac-2026-11-17.md) ; aucun comportement de concours vérifié.",
+  "ecart": "Pas de caméra dédiée au concours (profil de concours de camera.js, 6,6 m derrière le cheval) : même caméra partout.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.aide-trace-sol",
+  "domaine": "CSO",
+  "fonction": "Tracé au sol (réglage « Tracé au sol ») : tirets vert profond de 0,7 × 0,26 m tous les 1,5 m sur la ligne du cavalier, du cheval jusqu'à 12 m après l'obstacle suivant (suite plus pâle), masqués à 1,5 m sous le cheval.",
+  "js": [
+   "src/gameplay/courseAids.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucune aide visuelle de tracé.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.aide-zone-appel",
+  "domaine": "CSO",
+  "fonction": "Zone d'appel (aide « Complète ») : bande au sol devant l'obstacle suivant, verte où le saut passe bien et ambre où il passe encore, calculée par planJump à max(v, 5,5 m/s) entre 0 et 8 m, recalculée 4 fois par seconde et posée sous les antérieurs ; repère triangulaire au-dessus de l'obstacle suivant.",
+  "js": [
+   "src/gameplay/courseAids.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucune zone d'appel ni repère.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.aide-bouton-saut",
+  "domaine": "CSO",
+  "fonction": "Aide à l'appel sur le bouton SAUT : état far / good / near / none de l'obstacle devant (mêmes calculs que le saut ; none en l'air, pendant un refus ou sous 3,2 m/s), réglage Complète ou Aucune, imposé par un défi.",
+  "js": [
+   "src/gameplay/obstacles.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Réglage jumpAid conservé dans la sauvegarde (SaveGame.h:26) mais lu nulle part ; bouton tactile SAUT sans indicateur (StridesTouchControls.cpp:43).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.arrivee",
+  "domaine": "CSO",
+  "fonction": "Arrivée : tous les obstacles passés puis ligne d'arrivée franchie (sans condition de cap) → « SANS FAUTE ! », « 1 POINT » ou « N POINTS » avec le chrono, applaudissements et ovation sur un sans-faute ; en CSO, sortie de piste de 2,6 s (cadence ramenée à 1,9 m/s) avant le bilan.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:53-57 ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:131-135 (finishCrossed)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "finishCrossed et points couverts par les scénarios manuels unreal/core/tests/test_core.cpp:118-136 ; .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md) : « Terminé : 63 pts en 86.61 s ».",
+  "ecart": "Arrivée exigée dans le sens (cap à moins de 60°) et sur 6 m de demi-largeur ; « 1 POINTS » au lieu de « 1 POINT » ; pas de chrono dans le message ; ni sortie de piste ni applaudissements.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.bilan",
+  "domaine": "CSO",
+  "fonction": "Bilan de manche : chrono (et temps accordé), détail des fautes (barre au X (cause), refus au Y), pénalités de temps, total (totalPenalties), classement « Ne sur N », récompense ; titre Victoire, sans faute ! / Ne place / Éliminé ; boutons Recommencer, S'entraîner, Continuer.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:108 (« Terminé : %d pts en %.2f s »)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; ligne de statut relevée dans .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md).",
+  "ecart": "Une ligne de statut ; ni détail des fautes, ni classement, ni récompense, ni boutons.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.recommencer",
+  "domaine": "CSO",
+  "fonction": "Recommencer : nouvelle manche (état remis à zéro, manche n + 1, nouveau tirage des concurrents) ; S'entraîner : ouvre l'entraînement après le bilan.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Le juge est créé une seule fois (StridesCourse.cpp:27) sans remise à zéro : après une arrivée ou une élimination, le parcours n'est plus jugé jusqu'au redémarrage du jeu.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.classement-simule",
+  "domaine": "Classements",
+  "fonction": "Classement simulé d'une épreuve : 14 concurrents tirés par graine (mulberry32, graine + 31 × manche) : 34 % à 0, 34 % à 4, 18 % à 8, 9 % à 12, 5 % à 16 points (classe am2 : 25 % de chances de 4 points de moins), chrono autour du temps accordé − 4 s ; tri par fautes puis chrono ; joueur classé sauf s'il est éliminé, 8 premiers plus le joueur affichés.",
+  "js": [
+   "src/gameplay/ranking.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun concurrent simulé ; compareResults n'est utilisé que pour le record (voir cso.comparaison-resultats).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.dotation",
+  "domaine": "Classements",
+  "fonction": "Récompense de la manche : dotation selon le rang (prix de la classe), versée une seule fois (« dotation déjà reçue pour ta première manche classée »), toast « Dotation versée ».",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Les missions de concours Unreal (m3 Premier concours, csi3, gp) se valident en arrivant à 18 m du lieu (StridesWorldDirector.cpp:70-71) avec un gain fixe de world_architecture.json, sans parcours ni rang.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.comparaison-resultats",
+  "domaine": "Classements",
+  "fonction": "Comparaison de deux résultats : parcours terminé devant éliminé, puis moins de pénalités, puis meilleur chrono.",
+  "js": [
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:87-92 (compareResults)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json : 3 cas compare (unreal/core/tests/test_core.cpp:104-108) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "Trois cas seulement ; le web accepte un résultat absent (null), pas le C++ ; le tri rankResults de ranking.js (fautes puis chrono) n'est pas porté.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.record-personnel",
+  "domaine": "Défis",
+  "fonction": "Record personnel par défi et par version : meilleur résultat (jamais une élimination), nombre de tentatives, dernier résultat, tentative comptée une seule fois (30 identifiants gardés), « Nouveau record » à l'écran de fin.",
+  "js": [
+   "src/gameplay/challenge.js",
+   "src/gameplay/challengeRun.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:44-53 (record « cso_pole » gardé s'il est meilleur, à la sauvegarde F5) ; unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:14, 25",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Relecture d'un record testée à la main (unreal/core/tests/test_core.cpp:176, 188) ; décision du record non testée.",
+  "ecart": "Un seul record « cso_pole », sans version de défi ; pris seulement lors d'une sauvegarde manuelle ; pas de compteur de tentatives, de dernier résultat ni de dédoublonnage ; pas d'annonce « Nouveau record » ; sans record existant, une élimination est enregistrée comme record (StridesSaveSubsystem.cpp:52), ce que le web exclut.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.resultat-tentative",
+  "domaine": "Défis",
+  "fonction": "Résultat d'une tentative (makeResult) : défi, version, tentative, cheval, motif d'élimination, barres = max(0, arrondi((fautes − 4 × refus) / 4)), refus, fautes, pénalités de temps et total (nuls si éliminé), chrono au centième, date, version du jeu.",
+  "js": [
+   "src/gameplay/challenge.js",
+   "src/gameplay/challengeRun.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:140 (CourseJudge::result : éliminé, pénalités, chrono au centième)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "result().eliminated vérifié dans les scénarios manuels (unreal/core/tests/test_core.cpp:124, 146) ; aucun oracle.",
+  "ecart": "Ni barres, ni refus, ni pénalités de temps séparées, ni identifiant, date ou version ; pénalités à 0 (et non nulles) si éliminé.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defis-versions",
+  "domaine": "Défis",
+  "fonction": "Défis rejouables à conditions figées et versionnées : Pôle v1 à v6 (courant v6 : 10 sauts à 1,10 m, temps accordé 64 s, limite 128 s, Onyx KWPN 8 ans vitesse 1,13 saut 1,06, jour 2 à 11 h sans pluie, aide au saut activée) et Paris v1 à v3 (courant v3 : 9 sauts à 1,50 m, 54 s, limite 108 s, Lumière de Paris à 20 h 30) ; une version publiée ne change plus.",
+  "js": [
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Le parcours permanent Unreal (1,10 m, 64 s) reprend les chiffres du défi Pôle v6 mais sans défi, version, cheval fourni ni conditions.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-deroule",
+  "domaine": "Défis",
+  "fonction": "Déroulé d'un défi : départ refusé avec motif (partie en pause, mission en cours, camion en chargement, cheval mené en main, objet porté), cheval fourni sans équipement ni effet de forme, placé 8 m derrière la ligne de départ dans l'axe du 1, obstacles retenus (setOff) à hauteur unique, heure et météo réappliquées à chaque image, élimination convertie en résultat, puis monde du joueur rétabli (heure, météo, cheval, position, mode), y compris après rechargement ; Paris : transport direct dans l'arène.",
+  "js": [
+   "src/gameplay/challengeRun.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucune tentative isolée du monde du joueur.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-acces",
+  "domaine": "Défis",
+  "fonction": "Accès aux défis : panneau à droite de l'arche d'entrée du Pôle (x + 11 m, z + 2,5 m) et application Activités du téléphone (défis courants Pôle v6 et Paris v3).",
+  "js": [
+   "src/gameplay/challengeRun.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Le téléphone Unreal liste 10 applications sans Activités ni défi (Content/Data/world_architecture.json, phoneApps).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-ecrans",
+  "domaine": "Défis",
+  "fonction": "Écrans du défi : règles et conditions avant le départ (4 points par barre, 4 au premier refus, élimination au second, 1 point par seconde entamée, puis le chrono ; éliminé si descendu ou au-delà de la limite ; cheval fourni, météo, temps accordé, aide au saut), écran de fin avec Recommencer et record précédent, ligne de résultat « N pts · S s » ou « Éliminé ».",
+  "js": [
+   "src/ui/challenge-screens.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun écran de défi.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-carte-partage",
+  "domaine": "Défis",
+  "fonction": "Carte de résultat 1080 × 1350 générée sur l'appareil (défi, résultat, cheval, pseudonyme facultatif de 20 caractères au plus, signature Equestrian Tour, versions) et partage volontaire : partage natif avec fichier, sinon téléchargement de l'image, sinon texte à copier avec l'adresse publique de la partie (sans paramètres ni ancre).",
+  "js": [
+   "src/ui/challenge-screens.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucune carte ni partage.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.classements-app",
+  "domaine": "Classements",
+  "fonction": "Application « Classements » du téléphone : meilleures performances par épreuve (défi du Pôle, concours, entraînements chronométrés), mises à jour en direct, mon rang, pseudonyme ; hors ligne, records de l'appareil et explication ; format « 4 pts · 45,32 s » (barème A) ou « 1:12,40 » (chrono) ; score d'un défi terminé envoyé au classement en ligne.",
+  "js": [
+   "src/ui/ranking-app.js",
+   "src/gameplay/challengeRun.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Pas d'application Classements parmi les 10 du téléphone (StridesHUD.cpp:64-69) ; service en ligne non choisi (unreal/docs/MATRICE.md : core/online.js à remplacer, rien de payant engagé).",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.cross-regles",
+  "domaine": "Épreuves",
+  "fonction": "Règles du cross : départ au compte à rebours sans cloche ni présentation, 20 points par refus, élimination au 4e refus ou au 3e sur un même obstacle, 0,4 point par seconde au-delà du temps accordé (arrondi), « Touché au X · +4 », obstacles fixes qui freinent le cheval (vitesse × 0,55).",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:94-95, 116-129, 136-139 (CourseJudge en mode cross)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Scénario manuel unreal/core/tests/test_core.cpp:159-166 (20 points par refus, 3e refus au même obstacle), passé le 18/11/2026 ; aucun oracle ; aucun parcours de cross construit.",
+  "ecart": "Juge seul : ni compte à rebours, ni obstacles fixes, ni freinage ; pénalité de temps 0,4 / s jamais testée (lround et Math.round coïncident pour des valeurs positives).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cross-trace",
+  "domaine": "Épreuves",
+  "fonction": "Parcours de cross de Saint-Gatien : 10 obstacles fixes le long du chemin (troncs 0,95 m, haies 1,05 m, largeur 4,2 m), saut d'entrée dans la mare 3 m avant l'eau, longueur 760 m, vitesse cross amateur 420 m/min.",
+  "js": [
+   "src/gameplay/obstacles.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "La mission « cross » de world_architecture.json se valide à l'arrivée à 18 m (StridesWorldDirector.cpp:70-71), sans parcours.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.anneaux",
+  "domaine": "Épreuves",
+  "fonction": "Anneaux de passage (checkpointSteps) : tores de 3,2 m de rayon franchis dans l'ordre à moins de 5,5 m, anneau suivant opaque et les autres à 35 %, note montante à chaque passage, limite de temps facultative, à cheval.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun anneau.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.anneaux-plage",
+  "domaine": "Épreuves",
+  "fonction": "Anneaux de galop sur la plage : posés sur le sable ferme, 14 m en retrait du plus haut rivage que la marée montante atteindra au passage prévu (25 s + 7 s par anneau), jamais au pied des Planches ; longueur d'un tracé (pathLength).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "La mission « plage » de world_architecture.json se valide à l'arrivée à 18 m, sans anneaux ni marée.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.hippodrome",
+  "domaine": "Épreuves",
+  "fonction": "Course d'hippodrome : 5 adversaires nommés en stalles (casaques), départ au compte à rebours, adversaires à 67-76 % du grand galop de 14 m/s, position en direct, ordre d'arrivée au poteau ; tour d'entraînement de 12 anneaux à 61 m du centre (ovalLength, ovalPoint, ovalProject).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "La mission « derby » de world_architecture.json se valide à l'arrivée à 18 m, sans course.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-traces",
+  "domaine": "Paris",
+  "fonction": "Tracés de Paris dans l'arène de 86 × 46 m (abord depuis la porte ouest) : Sprint de 7 efforts (1, double 2A – 2B à une foulée, 3, mur 4, 5, oxer large 6) et Grand Prix de 9 efforts (doubles 3A – 3B et 5A – 5B), 310 m chacun ; un seul tracé en piste à la fois ; hauteurs avec profil.",
+  "js": [
+   "src/gameplay/parisCourse.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "traceCourse (CsoCourse.cpp:32-71) est générique mais aucun tracé de Paris n'est exporté ni construit, et l'arène n'existe pas côté Unreal.",
+  "tranche": "c"
+ },
+ {
+  "id": "cso.paris-sprint",
+  "domaine": "Paris",
+  "fonction": "Sprint du Grand Prix de Paris à 1,50 m, barème C : chrono + 4 s par barre (temps accordé de 54 s sans effet), 2e refus éliminatoire ; son classement fixe la grille du Grand Prix (le plus rapide part en dernier) ; prime de 1 500 € au vainqueur.",
+  "js": [
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun barème C.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-gp-barrage",
+  "domaine": "Paris",
+  "fonction": "Grand Prix de Paris à 1,60 m, barème A au chrono (temps accordé 54 s), barrage des sans-faute (temps accordé ⌈54 × 0,86⌉ = 47 s), podium, dotation des 10 premiers de 12 000 à 1 000 € (42 000 € avec le Sprint).",
+  "js": [
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun barrage ni podium.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-concurrents",
+  "domaine": "Paris",
+  "fonction": "39 couples simulés reproductibles par graine (parisRivals, forme de 0,85 à 1,15) : Sprint (56 % sans barre, 30 % une, 14 % deux, environ 7 m/s), Grand Prix (fautes selon la forme, chrono vers 93 % du temps accordé), barrage (62 % sans faute, environ 7,2 m/s).",
+  "js": [
+   "src/gameplay/parisGP.js",
+   "src/gameplay/ranking.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun concurrent simulé.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-deroule",
+  "domaine": "Paris",
+  "fonction": "Mission finale « Grand Prix de Paris Indoor » (après le Grand Prix CSI 5*) : invitation, camion par l'A13, accréditation, échauffement de 2 sauts au paddock, Sprint, présentation des 40 cavaliers sur écrans géants, Grand Prix le soir (20 h), barrage, podium ; 1 500 de réputation.",
+  "js": [
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code du déroulé.",
+  "ecart": "Seule une entrée « gpparis » existe dans Content/Data/world_architecture.json (pay 3000, xp 1800, lieu paris ; web : dotation 42 000 €, xp 1500 — origine de ces valeurs à confirmer), validée à l'arrivée à 18 m (StridesWorldDirector.cpp:70-71).",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.lint-trace",
+  "domaine": "Outils",
+  "fonction": "Lint des tracés (courseLint) : approche droite (Pôle 18 m, Paris 14,5 m), réception 12 / 10 m, rayon au moins 13 / 10,5 m, virage de 200° au plus, pas de S, combinaisons 7,6 – 8,0 m (une foulée) et 11,2 – 11,6 m (deux), lignes 4,2 + n × 3,56 m ± 0,4 (n = 3 à 7), distances aux lices et aux autres obstacles, caméra hors tribunes, départ et arrivée à 8 – 15 m, longueur / 6,2 m/s ≤ temps accordé − 4 s ; tableau des mesures.",
+  "js": [
+   "src/gameplay/courseLint.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Inutile tant que les tracés viennent de l'export JS (cso_course_pole.json) ; nécessaire si un tracé est un jour édité côté Unreal.",
+  "tranche": "socle"
+ },
+ {
+  "id": "cso.textes-score",
+  "domaine": "Interface",
+  "fonction": "Textes de score bilingues : ordinaux 1re / 2e (anglais 1st, 2nd, 3rd, 11th, 21st), « 2e refus », points « 0 pt / 1 pt / 4 pts » (anglais « 0 pts »), secondes et hauteurs à la virgule (« 45,32 s », « 1,10 m »), heure « 20 h 30 ».",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/challenge.js",
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:56, 92, 108-111 (chaînes françaises en dur)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md) montre « 86.61 s ».",
+  "ecart": "Français seul ; « %d POINTS » sans singulier ; nombres au point décimal (« 86.61 s ») au lieu de la virgule ; pas d'ordinaux ni d'anglais.",
+  "tranche": "h"
+ },
+ {
+  "id": "cso.sons-parcours",
+  "domaine": "Interface",
+  "fonction": "Sons du parcours : bip aigu (1 568 Hz) au départ, note de 990 Hz sur un obstacle franchi, son de faute et « oh » du public sur barre ou refus, cloche (un coup au départ, deux à l'élimination), applaudissements à l'entrée et à l'arrivée (plus forts sur un sans-faute), ovation, tintement d'une barre effleurée.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code audio dans unreal/StridesGrandTour/Source.",
+  "ecart": "Parcours muet.",
+  "tranche": "h"
+ }
+]
