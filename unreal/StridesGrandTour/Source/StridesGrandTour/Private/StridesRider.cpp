@@ -37,11 +37,10 @@ AStridesRider::AStridesRider()
 		PartMesh->SetLeaderPoseComponent(MainMesh);
 		MeshParts.Add(PartMesh);
 	}
-	const FString AnimRoot = TEXT("/Game/Characters/Riders/Female/rider_f_unreal/AnimationsFBX/Rider_");
-	for (const TCHAR* Name : {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")})
-		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".Rider_") + Name)));
-	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.Rider_jump_canter")));
-	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.Rider_jump_gallop")));
+	// Animations FBX du cavalier désactivées : leur os Root porte une échelle 100 et des translations
+	// en mètres, alors que le squelette Body est en centimètres. Jouées, elles gonflent le maillage
+	// à ~100 m et la caméra se retrouve dans le corps (écran noir, carte invisible). Le cavalier
+	// reste en pose de référence jusqu'à un réimport à la bonne échelle.
 	UCharacterMovementComponent* M = GetCharacterMovement();
 	M->MaxWalkSpeed = 140.f;  // marche 1,4 m/s (anim.js, vitesse du joueur à pied ; course : tranche suivante)
 	M->bOrientRotationToMovement = true;
