@@ -14,10 +14,10 @@ Ce qui a été fait **dans la session cloud (Linux, sans Unreal ni Xcode)** et c
 | Installé et testé sur iPhone / iPad réel | **non vérifié** |
 
 ## 1. Prérequis (Mac)
-- **Unreal Engine 5.6** (`EngineAssociation` du `.uproject`), installé par le lanceur Epic avec la plateforme **iOS**.
+- **Unreal Engine 5.8** (`EngineAssociation` du `.uproject`), installé par le lanceur Epic avec la plateforme **iOS**.
   Si une autre version stable est déjà installée, changer `EngineAssociation` et refaire l'étape 3 ; le code n'utilise
   que des API stables (Enhanced Input, sous-systèmes, USaveGame, FJsonSerializer).
-- **Xcode** dans la version que la documentation Epic indique pour UE 5.6 et iOS (page « iOS, iPadOS and tvOS
+- **Xcode** dans la version que la documentation Epic indique pour UE 5.8 et iOS (page « iOS, iPadOS and tvOS
   Development Requirements » de la version) ; à confirmer avant tout achat de matériel : aucun achat n'est engagé.
 - Compte Apple Developer pour signer sur appareil (gratuit pour un appareil personnel, payant pour TestFlight/App Store :
   **ne pas engager sans mandat**).
@@ -32,7 +32,7 @@ cmake -S unreal/core -B build/core && cmake --build build/core && ctest --test-d
 
 ## 3. Compiler et ouvrir
 ```
-UE=/Users/Shared/Epic\ Games/UE_5.6
+UE=/Users/Shared/Epic\ Games/UE_5.8
 "$UE/Engine/Build/BatchFiles/Mac/GenerateProjectFiles.sh" -project="$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" -game
 "$UE/Engine/Build/BatchFiles/Mac/Build.sh" StridesGrandTourEditor Mac Development -project="$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject"
 open unreal/StridesGrandTour/StridesGrandTour.uproject

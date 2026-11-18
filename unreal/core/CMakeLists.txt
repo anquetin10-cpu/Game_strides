@@ -1,9 +1,9 @@
-# Cœur Strides en C++17 standard (règles de jeu portées du jeu web), compilé seul pour les tests hors moteur ; les mêmes
+# Cœur Strides en C++ standard (20, comme Unreal) (règles de jeu portées du jeu web), compilé seul pour les tests hors moteur ; les mêmes
 # sources SONT celles du module Unreal StridesGrandTour/Source/StridesCore (une seule copie). Usage :
 #   cmake -S unreal/core -B build/core && cmake --build build/core && ctest --test-dir build/core --output-on-failure
 cmake_minimum_required(VERSION 3.20)
 project(StridesCore CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)  # comme Unreal 5.3+ (le code reste compatible C++17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CORE ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Source/StridesCore)
 add_library(strides_core ${CORE}/Private/JumpModel.cpp ${CORE}/Private/CsoRide.cpp ${CORE}/Private/CsoCourse.cpp ${CORE}/Private/SaveGame.cpp)

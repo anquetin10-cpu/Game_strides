@@ -4,7 +4,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 
 | Dossier | Contenu |
 |---|---|
-| `StridesGrandTour/StridesGrandTour.uproject` | projet Unreal (UE 5.6, à confirmer avec la chaîne Apple), cibles iOS et Mac |
+| `StridesGrandTour/StridesGrandTour.uproject` | projet Unreal (UE 5.8, à confirmer avec la chaîne Apple), cibles iOS et Mac |
 | `StridesGrandTour/Config/` | rendu mobile (sans Lumen, Nanite ni ombres virtuelles), iOS paysage, Enhanced Input |
 | `StridesGrandTour/Source/StridesCore/` | **cœur C++17 sans type Unreal** : saut, conduite CSO, parcours et jugement, sauvegarde native |
 | `StridesGrandTour/Source/StridesGrandTour/` | module de jeu : cheval, cavalier, obstacles, parcours, données, sauvegarde, commandes, HUD, tests d'automatisation |
