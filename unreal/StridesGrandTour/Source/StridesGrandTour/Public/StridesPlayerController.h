@@ -18,6 +18,9 @@ public:
 	void TouchGaitDown();
 	void TouchSave();
 	void TouchLoad();
+	void TouchPhone();
+	void TouchMission();
+	bool IsPhoneOpen() const { return bPhoneOpen; }
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -33,6 +36,8 @@ private:
 	void OnSave();
 	void OnLoad();
 	void OnDemoCourse();
+	void OnPhone();
+	void OnMission();
 	UPROPERTY() TObjectPtr<class UInputMappingContext> Context;
 	UPROPERTY() TObjectPtr<class UInputAction> MoveAction;
 	UPROPERTY() TObjectPtr<class UInputAction> LookAction;
@@ -43,6 +48,9 @@ private:
 	UPROPERTY() TObjectPtr<class UInputAction> SaveAction;
 	UPROPERTY() TObjectPtr<class UInputAction> LoadAction;
 	UPROPERTY() TObjectPtr<class UInputAction> DemoCourseAction;
+	UPROPERTY() TObjectPtr<class UInputAction> PhoneAction;
+	UPROPERTY() TObjectPtr<class UInputAction> MissionAction;
 	UPROPERTY() TObjectPtr<class UUserWidget> TouchControls;
+	bool bPhoneOpen = false;
 	class AStridesRider* Rider() const;
 };

@@ -7,6 +7,7 @@
 #include "StridesCore/SaveGame.h"
 #include "StridesCourse.h"
 #include "StridesHorse.h"
+#include "StridesProgressionSubsystem.h"
 #include "StridesRider.h"
 #include "StridesUnits.h"
 
@@ -52,6 +53,13 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 			}
 	UStridesSaveGame* S = Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
 	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
+	if (const UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
+	{
+		S->Credits = Progress->Credits;
+		S->Reputation = Progress->Reputation;
+		S->ActiveMissionId = Progress->ActiveMissionId;
+		S->CompletedMissions = Progress->CompletedMissions;
+	}
 	const bool Ok = UGameplayStatics::SaveGameToSlot(S, Slot, 0);
 	LastMessage = Ok ? TEXT("Partie sauvegardée") : TEXT("Échec de la sauvegarde");
 	return Ok;
@@ -63,6 +71,9 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	if (!ReadCore(Core, LastMessage)) return false;
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W || !Core.pose.valid) { LastMessage = TEXT("Sauvegarde sans position"); return false; }
+	if (UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(Slot, 0)))
+		if (UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
+			Progress->Restore(Saved->Credits, Saved->Reputation, Saved->ActiveMissionId, Saved->CompletedMissions);
 	AStridesHorse* Horse = nullptr;
 	for (TActorIterator<AStridesHorse> It(W); It; ++It) Horse = *It;
 	AStridesRider* Rider = nullptr;

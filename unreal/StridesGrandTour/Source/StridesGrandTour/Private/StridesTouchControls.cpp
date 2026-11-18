@@ -46,6 +46,8 @@ void UStridesTouchControls::NativeOnInitialized()
 	UButton* GaitDownButton = AddTouchButton(WidgetTree, Canvas, TEXT("GaitDown"), TEXT("ALLURE -"), BottomRight, FVector2D(-198, -242), FVector2D(142, 68), AlignRight);
 	UButton* SaveButton = AddTouchButton(WidgetTree, Canvas, TEXT("Save"), TEXT("SAUVER"), TopRight, FVector2D(-32, 32), FVector2D(124, 54), FVector2D(1.f, 0.f));
 	UButton* LoadButton = AddTouchButton(WidgetTree, Canvas, TEXT("Load"), TEXT("CHARGER"), TopRight, FVector2D(-168, 32), FVector2D(124, 54), FVector2D(1.f, 0.f));
+	UButton* PhoneButton = AddTouchButton(WidgetTree, Canvas, TEXT("Phone"), TEXT("TÉLÉPHONE"), FAnchors(.5f, 1.f), FVector2D(-82, -32), FVector2D(164, 58), FVector2D(.5f, 1.f));
+	UButton* MissionButton = AddTouchButton(WidgetTree, Canvas, TEXT("Mission"), TEXT("MISSION"), FAnchors(.5f, 1.f), FVector2D(-82, -102), FVector2D(164, 58), FVector2D(.5f, 1.f));
 
 	JumpButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Jump);
 	InteractButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Interact);
@@ -53,6 +55,8 @@ void UStridesTouchControls::NativeOnInitialized()
 	GaitDownButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitDown);
 	SaveButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Save);
 	LoadButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Load);
+	PhoneButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Phone);
+	MissionButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Mission);
 }
 
 void UStridesTouchControls::Jump() { if (Controller) Controller->TouchJump(); }
@@ -61,3 +65,5 @@ void UStridesTouchControls::GaitUp() { if (Controller) Controller->TouchGaitUp()
 void UStridesTouchControls::GaitDown() { if (Controller) Controller->TouchGaitDown(); }
 void UStridesTouchControls::Save() { if (Controller) Controller->TouchSave(); }
 void UStridesTouchControls::Load() { if (Controller) Controller->TouchLoad(); }
+void UStridesTouchControls::Phone() { if (Controller) Controller->TouchPhone(); }
+void UStridesTouchControls::Mission() { if (Controller) Controller->TouchMission(); }

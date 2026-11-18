@@ -9,7 +9,8 @@
 	],
 	"Plugins": [
 		{ "Name": "EnhancedInput", "Enabled": true },
-		{ "Name": "ModelingToolsEditorMode", "Enabled": false }
+		{ "Name": "ModelingToolsEditorMode", "Enabled": false },
+		{ "Name": "AndroidFileServer", "Enabled": false }
 	],
 	"TargetPlatforms": [ "IOS", "Mac" ]
 }

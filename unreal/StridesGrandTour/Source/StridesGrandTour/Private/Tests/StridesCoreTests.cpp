@@ -71,3 +71,34 @@ bool FStridesWorldArchitectureTest::RunTest(const FString&)
 	TestEqual(TEXT("10 applications du téléphone"), Root->GetArrayField(TEXT("phoneApps")).Num(), 10);
 	return true;
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCareerGraphTest, "Strides.World.CareerGraph", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesCareerGraphTest::RunTest(const FString&)
+{
+	FString Text;
+	TestTrue(TEXT("architecture présente"), FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/world_architecture.json"))));
+	TSharedPtr<FJsonObject> Root;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Text);
+	if (!FJsonSerializer::Deserialize(Reader, Root) || !Root.IsValid()) return false;
+	TSet<FString> KnownPlaces;
+	for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("poi"))) KnownPlaces.Add(Value->AsObject()->GetStringField(TEXT("id")));
+	for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("regions"))) KnownPlaces.Add(Value->AsObject()->GetStringField(TEXT("id")));
+	TSet<FString> SeenMissions;
+	int32 TotalPay = 0, TotalXp = 0;
+	for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("missions")))
+	{
+		const TSharedPtr<FJsonObject> Mission = Value->AsObject();
+		const FString Id = Mission->GetStringField(TEXT("id"));
+		const FString Place = Mission->GetStringField(TEXT("place"));
+		TestTrue(*FString::Printf(TEXT("lieu de %s connu"), *Id), KnownPlaces.Contains(Place) || Place == TEXT("paris"));
+		for (const TSharedPtr<FJsonValue>& Required : Mission->GetArrayField(TEXT("requires")))
+			TestTrue(*FString::Printf(TEXT("prérequis de %s déjà défini"), *Id), SeenMissions.Contains(Required->AsString()));
+		SeenMissions.Add(Id);
+		TotalPay += Mission->GetIntegerField(TEXT("pay"));
+		TotalXp += Mission->GetIntegerField(TEXT("xp"));
+	}
+	TestEqual(TEXT("chaîne complète de 16 missions"), SeenMissions.Num(), 16);
+	TestEqual(TEXT("récompenses de carrière"), TotalPay, 7520);
+	TestEqual(TEXT("réputation de carrière"), TotalXp, 5980);
+	return true;
+}

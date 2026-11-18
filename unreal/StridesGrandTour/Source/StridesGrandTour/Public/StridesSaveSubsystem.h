@@ -12,6 +12,10 @@ class STRIDESGRANDTOUR_API UStridesSaveGame : public USaveGame
 	GENERATED_BODY()
 public:
 	UPROPERTY() FString Json;
+	UPROPERTY() int32 Credits = 0;
+	UPROPERTY() int32 Reputation = 0;
+	UPROPERTY() FString ActiveMissionId;
+	UPROPERTY() TArray<FString> CompletedMissions;
 };
 
 UCLASS()

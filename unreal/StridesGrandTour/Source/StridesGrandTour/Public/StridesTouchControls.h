@@ -19,6 +19,8 @@ private:
 	UFUNCTION() void GaitDown();
 	UFUNCTION() void Save();
 	UFUNCTION() void Load();
+	UFUNCTION() void Phone();
+	UFUNCTION() void Mission();
 
 	UPROPERTY() TObjectPtr<class AStridesPlayerController> Controller;
 };

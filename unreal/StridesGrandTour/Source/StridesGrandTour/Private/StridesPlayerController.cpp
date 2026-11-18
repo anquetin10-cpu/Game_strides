@@ -10,6 +10,7 @@
 #include "StridesHorse.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
+#include "StridesProgressionSubsystem.h"
 #include "StridesTouchControls.h"
 
 static UInputAction* MakeAction(UObject* Outer, const TCHAR* Name, EInputActionValueType Type)
@@ -32,6 +33,8 @@ void AStridesPlayerController::SetupInputComponent()
 	SaveAction = MakeAction(this, TEXT("Save"), EInputActionValueType::Boolean);
 	LoadAction = MakeAction(this, TEXT("Load"), EInputActionValueType::Boolean);
 	DemoCourseAction = MakeAction(this, TEXT("DemoCourse"), EInputActionValueType::Boolean);
+	PhoneAction = MakeAction(this, TEXT("Phone"), EInputActionValueType::Boolean);
+	MissionAction = MakeAction(this, TEXT("Mission"), EInputActionValueType::Boolean);
 	// Clavier ZQSD/WASD et flèches, manette (stick gauche / droit, A, X), tactile : joystick virtuel (axes de manette).
 	auto Axis = [this](const FKey& K, bool SwizzleY, bool Negate)
 	{
@@ -55,6 +58,10 @@ void AStridesPlayerController::SetupInputComponent()
 	Context->MapKey(SaveAction, EKeys::F5);
 	Context->MapKey(LoadAction, EKeys::F9);
 	Context->MapKey(DemoCourseAction, EKeys::F8);
+	Context->MapKey(PhoneAction, EKeys::P);
+	Context->MapKey(PhoneAction, EKeys::Gamepad_Special_Right);
+	Context->MapKey(MissionAction, EKeys::M);
+	Context->MapKey(MissionAction, EKeys::Gamepad_DPad_Up);
 	if (UEnhancedInputComponent* EI = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		EI->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AStridesPlayerController::OnMove);
@@ -67,6 +74,8 @@ void AStridesPlayerController::SetupInputComponent()
 		EI->BindAction(SaveAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnSave);
 		EI->BindAction(LoadAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnLoad);
 		EI->BindAction(DemoCourseAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnDemoCourse);
+		EI->BindAction(PhoneAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnPhone);
+		EI->BindAction(MissionAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnMission);
 	}
 	InstallInputContext();
 }
@@ -144,6 +153,11 @@ void AStridesPlayerController::OnGaitDown() { if (AStridesHorse* H = Cast<AStrid
 void AStridesPlayerController::OnSave() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->SaveNow(this); }
 void AStridesPlayerController::OnLoad() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->LoadNow(this); }
 void AStridesPlayerController::OnDemoCourse() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ToggleDemoCourse(); }
+void AStridesPlayerController::OnPhone() { bPhoneOpen = !bPhoneOpen; }
+void AStridesPlayerController::OnMission()
+{
+	if (UStridesProgressionSubsystem* P = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>()) P->StartNextMission();
+}
 
 void AStridesPlayerController::TouchJump() { OnJump(); }
 void AStridesPlayerController::TouchInteract() { OnInteract(); }
@@ -151,3 +165,5 @@ void AStridesPlayerController::TouchGaitUp() { OnGaitUp(); }
 void AStridesPlayerController::TouchGaitDown() { OnGaitDown(); }
 void AStridesPlayerController::TouchSave() { OnSave(); }
 void AStridesPlayerController::TouchLoad() { OnLoad(); }
+void AStridesPlayerController::TouchPhone() { OnPhone(); }
+void AStridesPlayerController::TouchMission() { OnMission(); }

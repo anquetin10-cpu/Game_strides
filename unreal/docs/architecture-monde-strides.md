@@ -29,10 +29,13 @@ CSO : il doit reproduire la boucle complète « monde ouvert équestre + télép
 
 - `world_architecture.json` : carte, régions, routes, POI, progression, applications et graphe des missions.
 - `UStridesDataSubsystem` : charge les données et les expose à C++/Blueprint.
-- `AStridesWorldDirector` : construit le socle spatial et installe les systèmes de zone.
-- `UStridesSaveSubsystem` : sauvegarde versionnée compatible avec l'export web.
-- Étapes suivantes : mission director, téléphone UMG, GPS/minimap, interactions, véhicules, commerces/intérieurs,
-  cycle de vie et streaming des décors définitifs.
+- `AStridesWorldDirector` : construit le socle spatial, les routes, les lieux, le Pôle et le guidage de mission.
+- `UStridesProgressionSubsystem` : chaîne les 16 missions, leurs prérequis, récompenses, réputation et rangs.
+- `AStridesHUD` : téléphone Strides, état de carrière, minicarte et cible GPS.
+- `UStridesSaveSubsystem` : sauvegarde versionnée compatible avec l'export web, étendue à la carrière native.
+- Étapes artistiques après la bêta : véhicules pilotables, commerces/intérieurs, cycle de vie et remplacement des
+  volumes procéduraux par les décors définitifs.
 
-Les volumes procéduraux du premier palier sont des repères de structure et de collision. Ils ne constituent pas les
-décors finaux ; leur intérêt est de figer immédiatement l'échelle et les coordonnées avant les imports artistiques.
+Les volumes procéduraux colorés constituent le décor fonctionnel de la bêta : ils rendent les zones et bâtiments
+lisibles, mais ne sont pas les décors définitifs. Leur intérêt est de valider la boucle complète, l'échelle et les
+coordonnées sur appareil avant les imports artistiques lourds.
