@@ -1,4 +1,4 @@
-"""Crée sept clips squelettiques de cavalière et les exporte en FBX animation-only.
+"""Crée sept clips squelettiques de cavalière et les exporte dans un GLB avec le maillage.
 
 La pose source est déjà montée. Des cibles IK placent les poignets sur les
 rênes et les chevilles dans les étriers ; les allures ajoutent respiration,
@@ -121,26 +121,41 @@ for clip, (count, energy, jumping) in CLIPS.items():
         bpy.context.scene.frame_set(frame)
         set_pose(frame, count, energy, jumping)
 
+    # Cuisson : chaque action reçoit la pose finale des os (IK comprise), image par image.
     bpy.ops.object.select_all(action="DESELECT")
     armature.select_set(True)
     bpy.context.view_layer.objects.active = armature
-    target = OUTPUT / f"rider_{clip}.fbx"
-    bpy.ops.export_scene.fbx(
-        filepath=str(target),
-        use_selection=True,
-        object_types={"ARMATURE"},
-        axis_forward="-Z",
-        axis_up="Y",
-        apply_unit_scale=True,
-        apply_scale_options="FBX_SCALE_UNITS",
-        add_leaf_bones=False,
-        bake_anim=True,
-        bake_anim_use_all_bones=True,
-        bake_anim_use_nla_strips=False,
-        bake_anim_use_all_actions=False,
-        bake_anim_force_startend_keying=True,
-        bake_anim_simplify_factor=0.0,
-    )
-    exported.append((clip, target.stat().st_size))
+    bpy.ops.object.mode_set(mode="POSE")
+    bpy.ops.nla.bake(frame_start=1, frame_end=count, only_selected=False, visual_keying=True,
+                     clear_constraints=False, use_current_action=True, bake_types={"POSE"})
+    bpy.ops.object.mode_set(mode="OBJECT")
+    action.use_fake_user = True
+    exported.append((clip, count))
 
-print("RIDER_ANIMATIONS_EXPORTED", exported)
+# Un seul GLB : maillages, armature et sept actions. Le maillage et les clips partagent ainsi la
+# même convention d'import dans Unreal (Interchange). Les anciens FBX animation-only donnaient à
+# l'os Root une échelle 100 et des translations en mètres, incompatibles avec le maillage.
+for bone in armature.pose.bones:
+    for constraint in list(bone.constraints):
+        if constraint.name == "StridesIK":
+            bone.constraints.remove(constraint)
+armature.animation_data.action = None
+for obj in [*targets.values(), *poles.values()]:
+    obj.animation_data_clear()
+bpy.ops.object.select_all(action="DESELECT")
+armature.select_set(True)
+for child in armature.children:
+    if child.type == "MESH":
+        child.select_set(True)
+target = OUTPUT / "rider_f_animated.glb"
+bpy.ops.export_scene.gltf(
+    filepath=str(target),
+    export_format="GLB",
+    use_selection=True,
+    export_animations=True,
+    export_animation_mode="ACTIONS",
+    export_force_sampling=True,
+    export_frame_range=False,
+    export_yup=True,
+)
+print("RIDER_ANIMATIONS_EXPORTED", target, target.stat().st_size, exported)

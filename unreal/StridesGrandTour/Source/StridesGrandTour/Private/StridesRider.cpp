@@ -21,12 +21,16 @@ AStridesRider::AStridesRider()
 	Body->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")));
 	Body->SetRelativeScale3D(FVector(0.45, 0.3, 1.68));
 	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	const FString RiderRoot = TEXT("/Game/Characters/Riders/Female/rider_f_unreal/SkeletalMeshes/");
+	// Maillages et clips issus d'un même GLB Blender (scripts/unreal/export-rider-animations.py puis
+	// import-rider-animations.py) : une seule convention d'os, Root à l'échelle 1, bassin à 88 cm.
+	const FString RiderRoot = TEXT("/Game/Characters/Riders/Female/rider_f_animated/rider_f_animated/SkeletalMeshes/");
 	USkeletalMeshComponent* MainMesh = GetMesh();
 	if (USkeletalMesh* RiderBody = LoadObject<USkeletalMesh>(nullptr, *(RiderRoot + TEXT("Body.Body"))))
 	{
 		MainMesh->SetSkeletalMesh(RiderBody);
 		MainMesh->SetRelativeLocation(FVector(0, 0, -84));
+		// Le GLB regarde vers +Y une fois importé ; l'acteur avance selon +X.
+		MainMesh->SetRelativeRotation(FRotator(0, -90, 0));
 		Body->SetVisibility(false);
 	}
 	for (const TCHAR* Part : {TEXT("Cloth_boots"), TEXT("Cloth_jacket"), TEXT("Cloth_jeans"), TEXT("Cloth_shirt"), TEXT("Eyebrows"), TEXT("Eyelashes"), TEXT("Eyes"), TEXT("Hair_ponytail01")})
@@ -37,10 +41,11 @@ AStridesRider::AStridesRider()
 		PartMesh->SetLeaderPoseComponent(MainMesh);
 		MeshParts.Add(PartMesh);
 	}
-	// Animations FBX du cavalier désactivées : leur os Root porte une échelle 100 et des translations
-	// en mètres, alors que le squelette Body est en centimètres. Jouées, elles gonflent le maillage
-	// à ~100 m et la caméra se retrouve dans le corps (écran noir, carte invisible). Le cavalier
-	// reste en pose de référence jusqu'à un réimport à la bonne échelle.
+	const FString AnimRoot = RiderRoot + TEXT("Rider_");
+	for (const TCHAR* Name : {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")})
+		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".Rider_") + Name)));
+	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.Rider_jump_canter")));
+	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.Rider_jump_gallop")));
 	UCharacterMovementComponent* M = GetCharacterMovement();
 	M->MaxWalkSpeed = 140.f;  // marche 1,4 m/s (anim.js, vitesse du joueur à pied ; course : tranche suivante)
 	M->bOrientRotationToMovement = true;
