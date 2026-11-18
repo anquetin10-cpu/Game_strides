@@ -1,5 +1,9 @@
 #include "StridesGameMode.h"
 #include "Components/DirectionalLightComponent.h"
+#include "Components/ExponentialHeightFogComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Engine/PostProcessVolume.h"
 #include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DirectionalLight.h"
@@ -29,12 +33,36 @@ void AStridesGameMode::StartPlay()
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 	AStridesWorldDirector* WorldDirector = W->SpawnActor<AStridesWorldDirector>();
 	WorldDirector->BuildWorld();
-	// Soleil (mobile : ombres en cascade limitées, DefaultEngine.ini) et lumière du ciel.
-	ADirectionalLight* Sun = W->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-42, 35, 0));
-	Sun->GetLightComponent()->SetIntensity(6.f);
+	// Ciel lisible : soleil lié à une atmosphère physique, brouillard de hauteur léger, lumière du ciel
+	// capturée sur cette atmosphère, exposition fixe. Sans atmosphère ni capture, le ciel restait noir
+	// et les faces à l'ombre n'avaient aucune lumière ambiante. Tout est compatible avec le rendu mobile.
+	ADirectionalLight* Sun = W->SpawnActor<ADirectionalLight>();
+	UDirectionalLightComponent* SunLight = CastChecked<UDirectionalLightComponent>(Sun->GetLightComponent());
+	SunLight->SetMobility(EComponentMobility::Movable);
+	Sun->SetActorRotation(FRotator(-42, 35, 0));
+	SunLight->SetIntensity(10.f);  // lux
+	SunLight->SetAtmosphereSunLight(true);
+	W->SpawnActor<ASkyAtmosphere>();
+	AExponentialHeightFog* Fog = W->SpawnActor<AExponentialHeightFog>();
+	UExponentialHeightFogComponent* FogComponent = Fog->GetComponent();
+	FogComponent->SetFogDensity(.006f);
+	FogComponent->SetFogHeightFalloff(.12f);
+	FogComponent->SetFogInscatteringColor(FLinearColor(.45f, .58f, .75f));
 	ASkyLight* Sky = W->SpawnActor<ASkyLight>();
-	Sky->GetLightComponent()->SetIntensity(1.f);
-	Sky->GetLightComponent()->bRealTimeCapture = false;
+	USkyLightComponent* SkyLight = Sky->GetLightComponent();
+	SkyLight->SetMobility(EComponentMobility::Movable);
+	SkyLight->bRealTimeCapture = false;
+	SkyLight->SetIntensity(1.f);
+	SkyLight->RecaptureSky();
+	APostProcessVolume* Post = W->SpawnActor<APostProcessVolume>();
+	Post->bUnbound = true;
+	FPostProcessSettings& PP = Post->Settings;
+	PP.bOverride_AutoExposureMethod = true;
+	PP.AutoExposureMethod = AEM_Manual;
+	PP.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+	PP.AutoExposureApplyPhysicalCameraExposure = false;
+	PP.bOverride_AutoExposureBias = true;
+	PP.AutoExposureBias = -.6f;
 	// Le jeu commence à l'Écurie du Val, comme la version Strides complète. Le parcours reste au Pôle.
 	AStridesCourse* Course = WorldDirector->PoleCourse;
 	AStridesHorse* Horse = W->SpawnActor<AStridesHorse>();

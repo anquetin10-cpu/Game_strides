@@ -14,6 +14,8 @@ public:
 	virtual void BeginPlay() override;
 	UFUNCTION() void OnCourseEvent(const FString& Kind, const FString& Text);
 private:
+	// Minicarte nord en haut, centrée sur le joueur : zones, routes, lieux, obstacles, cheval, cap et GPS.
+	void DrawMinimap(const APawn* P, const class UStridesProgressionSubsystem* Progress);
 	FString LastEvent;
 	float EventT = 0.f;
 };
