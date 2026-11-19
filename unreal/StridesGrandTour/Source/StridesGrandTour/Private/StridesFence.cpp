@@ -17,26 +17,22 @@ AStridesFence::AStridesFence()
 	SetRootComponent(Root);
 }
 
-void AStridesFence::Setup(const FString& InLabel, const FString& Kind, float InHeightM, float SpreadM, double WebX, double WebZ, double RotRad, int32 InNum)
+void AStridesFence::Setup(const FString& InLabel, const FString& Kind, double InHeightM, double SpreadM, double WebX, double WebZ, double RotRad, int32 InNum, double WidthM)
 {
 	Label = InLabel;
 	Num = InNum;
 	HeightM = InHeightM;
-	// Repère de l'obstacle (obstacles.js) : n = (sin rot, cos rot) axe de saut, t = (cos rot, −sin rot) le long des barres.
-	Core.pos = {WebX, WebZ};
-	Core.n = {FMath::Sin(RotRad), FMath::Cos(RotRad)};
-	Core.t = {FMath::Cos(RotRad), -FMath::Sin(RotRad)};
-	Core.kind = TCHAR_TO_UTF8(*Kind);
-	Core.bars.clear();
-	if (Kind == TEXT("o")) { Core.bars.push_back({-SpreadM / 2.0, HeightM - 0.05}); Core.bars.push_back({SpreadM / 2.0, HeightM}); }
-	else Core.bars.push_back({0.0, HeightM});
+	// Obstacle du cœur (obstacles.js add / _bars / faces) : repère n = (sin rot, cos rot) axe de saut, t = (cos rot,
+	// −sin rot) le long des barres ; barres, faces avant / arrière (refus), largeur (visée entre les chandeliers).
+	Obstacle = strides::makeCsoObstacle(TCHAR_TO_UTF8(*Kind), WebX, WebZ, RotRad, InHeightM, WidthM, SpreadM, TCHAR_TO_UTF8(*InLabel), InNum, "cso");
+	Core = Obstacle.fence();
 	// Pied de l'obstacle sur le sol de la carrière (relief exporté du jeu web ; 0 sans relief).
 	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
 	SetActorLocation(StridesUnits::WebToUE(WebX, Data ? Data->TerrainHeight(WebX, WebZ) : 0.0, WebZ));
 	SetActorRotation(FRotator(0, StridesUnits::HeadingToYawDeg(RotRad), 0));
 	UStaticMesh* Cyl = BasicMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	UStaticMesh* Cube = BasicMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
-	const float Width = 3.8f;  // m (parcours du Pôle, obstacles.js)
+	const double Width = Obstacle.w;  // m (cso_horse.json : largeur des obstacles du parcours, obstacles.js)
 	for (const strides::Bar& B : Core.bars)
 	{
 		UStaticMeshComponent* Bar = NewObject<UStaticMeshComponent>(this);
@@ -68,7 +64,7 @@ void AStridesFence::Setup(const FString& InLabel, const FString& Kind, float InH
 		Post->RegisterComponent();
 		Post->SetStaticMesh(Cube);
 		Post->SetRelativeLocation(FVector(0, Side * (Width * 50.0 + 10.0), (HeightM + 0.3) * 50.0));
-		Post->SetRelativeScale3D(FVector(0.12 + SpreadM, 0.12, HeightM + 0.3));
+		Post->SetRelativeScale3D(FVector(0.12 + Obstacle.spread, 0.12, HeightM + 0.3));
 		Post->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }

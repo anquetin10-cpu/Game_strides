@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/GameInstance.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCourse.h"
@@ -88,10 +89,42 @@ void AStridesHorse::UpdateAnimation()
 	}
 }
 
-void AStridesHorse::PlaceAt(double WebX, double WebZ, double Heading)
+void AStridesHorse::PlaceAt(double WebX, double WebZ, double Heading, double InSpeedMS)
 {
 	X = WebX; Z = WebZ; H = Heading;
+	// horse.js setPosition : arrêt, saut, freinage, refus et dernier saut oubliés.
+	Sim.x = WebX; Sim.z = WebZ; Sim.heading = Heading;
+	Sim.speed = InSpeedMS;
+	Sim.jumpT = -1; Sim.jumpY = 0; Sim.brake = 0; Sim.refusing = -1;
+	Sim.hasLastJump = false; Sim.lastJumpObstacle = -1;
+	Sim.jt0 = Sim.jt1 = -1;
+	// Cadence de concours reprise de la vitesse réelle à l'image suivante (csoRide.js:65).
+	Sim.hasCadence = false;
+	SpeedMS = (float)InSpeedMS;
+	bJumping = false;
+	JumpFence = nullptr;
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z), Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+}
+
+void AStridesHorse::Halt()
+{
+	Sim.speed = 0; Sim.hasCadence = false; Sim.kbdSteer = 0;
+	SpeedMS = 0; CadenceMS = 0;
+	Move = FVector2D::ZeroVector;
+}
+
+const UStridesDataSubsystem* AStridesHorse::DataSub() const
+{
+	const UGameInstance* GI = GetGameInstance();
+	return GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+}
+
+strides::Zone AStridesHorse::JumpTiming() const
+{
+	if (!Course || !bCsoControls) return strides::Zone::None;
+	const UStridesDataSubsystem* Data = DataSub();
+	return strides::csoTiming(Course->Obstacles(), Sim, JumpPower(), 0.0, true, Data ? Data->Jump() : strides::jumpDefaults(),
+		Data ? Data->HorseParams() : strides::csoHorseDefaults());
 }
 
 double AStridesHorse::GroundAt(double WebX, double WebZ) const
@@ -104,7 +137,7 @@ double AStridesHorse::GroundAt(double WebX, double WebZ) const
 
 double AStridesHorse::JumpPower() const
 {
-	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+	const UStridesDataSubsystem* Data = DataSub();
 	const FStridesHorseProfile* P = Data ? Data->FindHorse(ProfileId) : nullptr;
 	// horse.js : jumpPower = HORSE.jumpPeak × jump du cheval × (1 + équipement) × état (équipement et état : tranches suivantes).
 	return (Data ? Data->JumpPeak : 1.35) * (P ? P->JumpMul : 1.0);
@@ -112,18 +145,21 @@ double AStridesHorse::JumpPower() const
 
 void AStridesHorse::ChangeGait(int32 Delta)
 {
-	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+	const UStridesDataSubsystem* Data = DataSub();
 	const int32 N = Data ? Data->Gaits.Num() : 5;
 	GaitIndex = FMath::Clamp(GaitIndex + Delta, 0, N - 1);
 }
 
 void AStridesHorse::ToggleDemoCourse()
 {
+#if UE_BUILD_SHIPPING
+	// Démonstration automatique (F8, -StridesShots) : outil de développement, absente des versions publiées.
+	UE_LOG(LogTemp, Display, TEXT("Strides demo course unavailable in shipping builds"));
+#else
 	bDemoCourse = !bDemoCourse;
 	DemoPoint = 1;
 	if (bDemoCourse)
 	{
-		GaitIndex = 4;
 		UE_LOG(LogTemp, Display, TEXT("Strides demo course started"));
 	}
 	else
@@ -131,6 +167,7 @@ void AStridesHorse::ToggleDemoCourse()
 		Move = FVector2D::ZeroVector;
 		UE_LOG(LogTemp, Display, TEXT("Strides demo course stopped"));
 	}
+#endif
 }
 
 FTransform AStridesHorse::SeatTransform() const
@@ -150,114 +187,162 @@ FTransform AStridesHorse::SeatTransform() const
 	return FTransform(GetActorRotation(), GetActorLocation() + FVector(0, 0, 175 + (Body ? Body->GetRelativeLocation().Z - 125 : 0)));
 }
 
-void AStridesHorse::StartJump(AStridesFence* Fence)
+// Démonstration automatique du parcours (outil de développement : F8, captures -StridesShots) : suit le tracé, garde la
+// cadence de référence et appuie sur SAUT selon la règle du pilote des tests web (tests/e2e/autopilot.js : bonne zone et
+// sommet du saut sur l'obstacle). Le saut lui-même passe par le cœur, comme un appui du joueur.
+void AStridesHorse::TickDemo()
 {
-	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	const strides::JumpParams& P = Data ? Data->Jump() : strides::jumpDefaults();
-	strides::JumpHorse JH{(double)SpeedMS, JumpPower(), 0.0, bCsoControls};
-	if (Fence)
+#if !UE_BUILD_SHIPPING
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
+	const strides::CourseTrace& T = Course->CourseTraceData();
+	const int32 LeadCount = static_cast<int32>(T.leadIn.size());
+	const int32 Total = LeadCount + static_cast<int32>(T.pts.size());
+	auto PointAt = [&T, LeadCount](int32 Index) -> const strides::TracePoint&
 	{
-		const strides::FenceGeo Geo = strides::railsAhead(Fence->CoreFence(), X, Z, FMath::Sin(H), FMath::Cos(H));
-		Plan = strides::planJump(JH, &Geo, P);
-		JumpDir = Geo.sign;
-		LastTakeoff = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Plan)));
-		if (Plan.zone == strides::Zone::Refuse)
+		return Index < LeadCount ? T.leadIn[Index] : T.pts[Index - LeadCount];
+	};
+	if (Total > 1)
+	{
+		DemoPoint = FMath::Clamp(DemoPoint, 0, Total - 1);
+		// Se recaler sur le point le plus proche devant nous évite de faire demi-tour après avoir dépassé un échantillon.
+		int32 Nearest = DemoPoint;
+		double NearestD2 = TNumericLimits<double>::Max();
+		for (int32 I = DemoPoint; I <= FMath::Min(DemoPoint + 40, Total - 1); ++I)
 		{
-			// Plus de place pour enlever : refus (le cheval s'arrête net, le cavalier fait demi-tour).
-			SpeedMS = 0; CadenceMS = 0; RefuseT = 1.2f;
-			if (Course) Course->Refused(Fence, JumpDir);
-			return;
+			const strides::TracePoint& P = PointAt(I);
+			const double D2 = FMath::Square(P.x - Sim.x) + FMath::Square(P.z - Sim.z);
+			if (D2 < NearestD2) { NearestD2 = D2; Nearest = I; }
 		}
+		DemoPoint = FMath::Max(DemoPoint, Nearest);
+		// Viser environ 6 m plus loin lisse le cap dans les grandes courbes.
+		const strides::TracePoint& Target = PointAt(FMath::Min(DemoPoint + 12, Total - 1));
+		const double Error = FMath::UnwindRadians(FMath::Atan2(Target.x - Sim.x, Target.z - Sim.z) - Sim.heading);
+		// steerRate : joystick à droite => cap qui diminue ; une erreur de cap positive demande donc un axe négatif.
+		Move = FVector2D(FMath::Clamp(-Error * 1.8, -1.0, 1.0), Sim.hasCadence && Sim.cadence >= R.cadence ? 0.0 : 1.0);
+		bKeyMove = false;
+		const strides::CsoTarget Tg = strides::csoTarget(Course->Obstacles(), Sim, JumpPower(), 0.0, true,
+			Data ? Data->Jump() : strides::jumpDefaults(), Data ? Data->HorseParams() : strides::csoHorseDefaults());
+		if (Sim.jumpT < 0 && Tg.index >= 0 && Tg.plan.zone == strides::Zone::Good && Tg.plan.ideal <= Tg.plan.L + 0.3) bJumpRequested = true;
 	}
-	else Plan = strides::planJump(JH, nullptr, P);
-	bJumping = true;
-	JumpX = 0;
-	JumpFence = Fence;
+	if (const strides::CourseJudge* J = Course->Judge(); J && (J->finished() || J->eliminated() != strides::Elim::None))
+	{
+		bDemoCourse = false;
+		Move = FVector2D::ZeroVector;
+		UE_LOG(LogTemp, Display, TEXT("Strides demo course completed: %s"), *Course->StatusText());
+	}
+#endif
 }
 
 void AStridesHorse::Tick(float Dt)
 {
 	Super::Tick(Dt);
-	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+	if (bCsoControls) TickCso(Dt);
+	else TickOpenWorld(Dt);
+	UpdateAnimation();
+}
+
+// Concours : une image du cœur (csoRideStep + Horse.update), puis ce que fait Obstacles.updateHorse pour la visée et le
+// refus (comptage du refus à l'arrêt, refus décidé à l'abord) ; le jugement des barres reste celui de la réception
+// (provisoire, tranche T3).
+void AStridesHorse::TickCso(float Dt)
+{
+	const UStridesDataSubsystem* Data = DataSub();
 	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
 	const strides::JumpParams& JP = Data ? Data->Jump() : strides::jumpDefaults();
-	if (bDemoCourse && Course)
+	const strides::CsoHorseParams& HP = Data ? Data->HorseParams() : strides::csoHorseDefaults();
+	static const std::vector<strides::CsoObstacle> NoObstacles;
+	const std::vector<strides::CsoObstacle>& Obs = Course ? Course->Obstacles() : NoObstacles;
+	if (bDemoCourse && Course) TickDemo();
+	strides::CsoFrameInput In;
+	In.dt = Dt;
+	In.moveX = Move.X;
+	In.moveY = Move.Y;
+	In.keyMove = bKeyMove;
+	In.jumpPressed = bJumpRequested;
+	In.csoControls = true;
+	In.power = JumpPower();
+	In.time = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	// Pente devant le cheval (horse.js : sol à ±1,1 m sur le cap).
+	const double Fx = FMath::Sin(Sim.heading), Fz = FMath::Cos(Sim.heading);
+	In.slope = (GroundAt(Sim.x + Fx * 1.1, Sim.z + Fz * 1.1) - GroundAt(Sim.x - Fx * 1.1, Sim.z - Fz * 1.1)) / 2.2;
+	bJumpRequested = false;
+	const double X0 = Sim.x, Z0 = Sim.z;
+	Events.clear();
+	strides::csoHorseStep(Sim, In, Obs, Events, R, JP, HP);
+	FrameEvents.Reset();
+	for (const strides::CsoHorseEvent E : Events)
 	{
-		const strides::CourseTrace& T = Course->CourseTraceData();
-		const int32 LeadCount = static_cast<int32>(T.leadIn.size());
-		const int32 Total = LeadCount + static_cast<int32>(T.pts.size());
-		auto PointAt = [&T, LeadCount](int32 Index) -> const strides::TracePoint&
+		FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
+		if (E == strides::CsoHorseEvent::Jump)
 		{
-			return Index < LeadCount ? T.leadIn[Index] : T.pts[Index - LeadCount];
-		};
-		if (Total > 1)
+			JumpFence = Course && Sim.hasLastJump ? Course->FenceAt(Sim.lastJumpObstacle) : nullptr;
+			JumpDir = Sim.lastGeo.sign;
+			if (Sim.hasLastJump) LastTakeoff = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Sim.lastPlan)));
+		}
+		else if (E == strides::CsoHorseEvent::Land)
 		{
-			DemoPoint = FMath::Clamp(DemoPoint, 0, Total - 1);
-			// Se recaler sur le point le plus proche devant nous évite de faire
-			// demi-tour après avoir dépassé un échantillon de 50 cm à 8 m/s.
-			int32 Nearest = DemoPoint;
-			double NearestD2 = TNumericLimits<double>::Max();
-			for (int32 I = DemoPoint; I <= FMath::Min(DemoPoint + 40, Total - 1); ++I)
+			if (Course && JumpFence.IsValid() && Sim.hasLastJump) Course->JumpLanded(JumpFence.Get(), Sim.lastPlan, JumpDir);
+			JumpFence = nullptr;
+		}
+	}
+	// Refus engagé et arrêté (plus de freinage) : compté, comme Obstacles._count.
+	if (Sim.refusing >= 0 && !(Sim.brake > 0))
+	{
+		if (Course)
+			if (AStridesFence* F = Course->FenceAt(Sim.refusing))
 			{
-				const strides::TracePoint& P = PointAt(I);
-				const double D2 = FMath::Square(P.x - X) + FMath::Square(P.z - Z);
-				if (D2 < NearestD2) { NearestD2 = D2; Nearest = I; }
+				const strides::CsoObstacle& O = Obs[Sim.refusing];
+				const double S = (Sim.x - O.x) * O.n.x + (Sim.z - O.z) * O.n.z;
+				Course->Refused(F, S < 0 ? 1 : -1);
 			}
-			DemoPoint = FMath::Max(DemoPoint, Nearest);
-			// Viser environ 6 m plus loin lisse le cap dans les grandes courbes.
-			const int32 TargetIndex = FMath::Min(DemoPoint + 12, Total - 1);
-			const strides::TracePoint& Target = PointAt(TargetIndex);
-			const double Dx = Target.x - X, Dz = Target.z - Z;
-			const double Desired = FMath::Atan2(Dx, Dz);
-			const double Error = FMath::UnwindRadians(Desired - H);
-			// steerRate inverse le signe de l'axe (joystick droit => cap qui
-			// diminue) : une erreur de cap positive demande donc un axe négatif.
-			Move = FVector2D(FMath::Clamp(-Error * 1.8, -1.0, 1.0), 1.0);
-			GaitIndex = 4;
-			if (!bJumping && RefuseT <= 0 && SpeedMS >= (Data ? Data->MinJumpSpeed : 3.2f)
-				&& Course->FenceAhead(X, Z, H, JP.reach * 0.9)) bJumpRequested = true;
-		}
-		if (const strides::CourseJudge* J = Course->Judge(); J && (J->finished() || J->eliminated() != strides::Elim::None))
-		{
-			bDemoCourse = false;
-			Move = FVector2D::ZeroVector;
-			UE_LOG(LogTemp, Display, TEXT("Strides demo course completed: %s"), *Course->StatusText());
-		}
+		Sim.refusing = -1;
 	}
+	// Refus décidé à l'abord (cheval arrivé sur l'obstacle sans appel possible) : freinage jusqu'à l'arrêt, puis cabré.
+	const int32 Ref = strides::csoApproachRefusal(Sim, Obs, In.power, In.clearance, true, In.time, JP, HP);
+	if (Ref >= 0) strides::csoRefuse(Sim, Obs, Ref, HP);
+	X = Sim.x; Z = Sim.z; H = Sim.heading;
+	SpeedMS = (float)Sim.speed;
+	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
+	bJumping = Sim.jumpT >= 0;
+	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Sim.jumpY, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+	if (Course) Course->TrackHorse(X0, Z0, X, Z, H, Dt);
+	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop reste atteignable (aligné sur le clip de saut rapide).
+	const double Spd = SpeedMS;
+	GaitIndex = Spd < 0.2 ? 0 : Spd < 3.2 ? 1 : Spd < 5.5 ? 2 : Spd < 7.0 ? 3 : 4;
+}
+
+// Monde ouvert (hors épreuve) : allures du joueur, code d'origine (le monde ouvert du jeu web, dirigé par rapport à la
+// caméra, n'est pas porté). Visée : obstacle du cœur (target), sinon saut libre.
+void AStridesHorse::StartOpenWorldJump()
+{
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::JumpParams& P = Data ? Data->Jump() : strides::jumpDefaults();
+	strides::CsoHorseState Probe = Sim;
+	Probe.x = X; Probe.z = Z; Probe.heading = H; Probe.speed = SpeedMS;
+	const strides::CsoTarget T = Course ? strides::csoTarget(Course->Obstacles(), Probe, JumpPower(), 0.0, false, P,
+		Data ? Data->HorseParams() : strides::csoHorseDefaults()) : strides::CsoTarget();
+	Plan = T.index >= 0 ? T.plan : strides::planJump(strides::JumpHorse{(double)SpeedMS, JumpPower(), 0.0, false}, nullptr, P);
+	if (T.index >= 0 && Plan.zone == strides::Zone::Refuse) return;
+	bJumping = true;
+	JumpX = 0;
+	JumpFence = T.index >= 0 && Course ? Course->FenceAt(T.index) : nullptr;
+	JumpDir = T.geo.sign;
+}
+
+void AStridesHorse::TickOpenWorld(float Dt)
+{
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
 	const double X0 = X, Z0 = Z;
-	if (RefuseT > 0) RefuseT -= Dt;
-	// Vitesse : cadence de concours (csoRide.js) ou allure du monde ouvert (config.js), accélération bornée.
-	double Target = 0;
-	if (bCsoControls)
-	{
-		if (RefuseT <= 0) CadenceMS = (float)FMath::Clamp((double)CadenceMS + strides::cadenceDelta(Move.Y, Move.X, CadenceMS, R) * Dt, 0.0, R.maxSpeed);
-		Target = CadenceMS;
-	}
-	else if (Data && Data->Gaits.IsValidIndex(GaitIndex)) Target = Data->Gaits[GaitIndex].Speed;
+	const double Target = Data && Data->Gaits.IsValidIndex(GaitIndex) ? Data->Gaits[GaitIndex].Speed : 0.0;
 	if (!bJumping) SpeedMS = FMath::FInterpConstantTo(SpeedMS, (float)Target, Dt, 3.0f);
-	// Direction : vitesse de rotation visée (droite du joystick → virage à droite), réponse yawTau, accélération yawAcc ;
-	// en l'air, part réduite (airTurn).
 	const double Want = strides::steerRate(Move.X, SpeedMS, R) * (bJumping ? R.airTurn : 1.0);
 	const double Acc = FMath::Clamp((Want - YawRate) / FMath::Max(R.yawTau, 1e-3), -R.yawAcc, R.yawAcc);
 	YawRate += Acc * Dt;
 	H += YawRate * Dt;
-	// Saut demandé : obstacle devant à portée, sinon saut libre (au-dessus de la vitesse minimale).
-	if (bJumpRequested && !bJumping && RefuseT <= 0 && SpeedMS >= (Data ? Data->MinJumpSpeed : 3.2f))
-		StartJump(Course ? Course->FenceAhead(X, Z, H, JP.reach) : nullptr);
+	if (bJumpRequested && !bJumping && SpeedMS >= (Data ? Data->MinJumpSpeed : 3.2f)) StartOpenWorldJump();
 	bJumpRequested = false;
-	// Arrivé sur l'obstacle sans appel : refus si un saut ferait toucher la barre de plus de JUMP.late (jumpModel.js).
-	if (!bJumping && Course && SpeedMS > 0.5 && RefuseT <= 0)
-		if (AStridesFence* F = Course->FenceAhead(X, Z, H, JP.minFront + 0.4))
-		{
-			const strides::FenceGeo Geo = strides::railsAhead(F->CoreFence(), X, Z, FMath::Sin(H), FMath::Cos(H));
-			if (!Geo.rails.empty() && Geo.rails.front().x < JP.minFront)
-			{
-				const strides::JumpPlan Try = strides::planJump(strides::JumpHorse{(double)SpeedMS, JumpPower(), 0.0, bCsoControls}, &Geo, JP);
-				if (Try.zone == strides::Zone::Refuse || (Try.hasMargin && Try.margin < -JP.late)) { SpeedMS = 0; CadenceMS = 0; RefuseT = 1.2f; Course->Refused(F, Geo.sign); }
-				else StartJump(F);
-			}
-		}
-	// Déplacement (m) et hauteur du saut : même parabole que le jugement (arcY).
 	const double Step = SpeedMS * Dt;
 	X += FMath::Sin(H) * Step;
 	Z += FMath::Cos(H) * Step;
@@ -266,19 +351,9 @@ void AStridesHorse::Tick(float Dt)
 	{
 		JumpX += Step;
 		Y = strides::arcY(Plan.H, Plan.L, JumpX);
-		if (JumpX >= Plan.L)
-		{
-			bJumping = false;
-			if (Course && JumpFence.IsValid()) Course->JumpLanded(JumpFence.Get(), Plan, JumpDir);
-			// Perte d'élan à la réception si le saut a dû être recadré (csoRide.js, landingLoss).
-			if (FMath::Abs(Plan.dev) > 0.02) SpeedMS *= (float)(1 - R.landingLoss);
-		}
+		if (JumpX >= Plan.L) { bJumping = false; JumpFence = nullptr; }
 	}
+	Sim.x = X; Sim.z = Z; Sim.heading = H; Sim.speed = SpeedMS; Sim.jumpT = bJumping ? 0 : -1; Sim.hasCadence = false;
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
 	if (Course) Course->TrackHorse(X0, Z0, X, Z, H, Dt);
-	const double Spd = SpeedMS;
-	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop doit donc
-	// rester atteignable. Il est aligné avec le choix du clip de saut rapide.
-	GaitIndex = bCsoControls ? (Spd < 0.2 ? 0 : Spd < 3.2 ? 1 : Spd < 5.5 ? 2 : Spd < 7.0 ? 3 : 4) : GaitIndex;
-	UpdateAnimation();
 }

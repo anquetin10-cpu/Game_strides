@@ -355,6 +355,25 @@ Principes communs :
 - **Dépendances / risques** : T1. Accumulation d'écarts d'arrondi sur des centaines d'images (`Math.exp` / `std::exp`
   peuvent différer d'un ulp) : tolérance relative et rejeu image par image avec recalage optionnel à documenter ; la
   puissance dépend de l'équipement et de l'état, non portés (relevés comme entrées de l'oracle, port complet ailleurs).
+- **Livré (19/11/2026)** : `SCh/CsoHorse.h`, `SC/CsoHorse.cpp` (`csoHorseStep` = `csoRideStep` + `Horse.update` jusqu'au
+  déplacement ; `startJump`, `brake`, `refuse` du cheval ; `makeCsoObstacle`, `csoTarget`, `csoTiming`, `csoRefuse` de
+  `obstacles.js` ; `keyboardMove` de `input.js` ; `csoApproachRefusal` = décision de refus à l'abord extraite de
+  `updateHorse`, seule partie de T3 avancée). `scripts/unreal/export-cso-runs.mjs` relève un canal « ch » en pleine
+  précision (entrées vues par `player.update` et `horse.update`, état complet, corrections extérieures au pas du cheval
+  signalées, aide et cible après chaque image) et 8 scénarios « pose » après la cloche (`bonne-zone`, `virage-serre`,
+  `rampe-clavier`, `ctrl-alt`, `appui-10m`, `appui-3ms`, `abord-70`, `refus`), plus `ORA/cso_target.json` (8 980 poses) ;
+  deux exécutions donnent des fichiers identiques octet pour octet ; « droit » est inchangé hors des nouveaux champs.
+  `REF`, `NOSE`, `OVERRUN`, `HIND_TRAIL` et la largeur 3,8 m sont extraits du source par `EXP` dans
+  `Content/Data/cso_horse.json`. `TC` (`testHorseRuns`, `testTarget`) : les 8 scénarios requis sont rejoués en chaîne
+  sans recalage, écart maximal 8,9e-16 (cap) et 4,4e-16 (saut), mêmes événements ; le scénario `refus` est recalé aux 9
+  images où `updateHorse` (T3) agit ; ctest 11 312 vérifications, 0 échec ; quatre mutations du portage sont détectées.
+  Jeu : `AStridesHorse` délègue au cœur (`FenceAhead`, saut libre et saut automatique en épreuve supprimés ; refus à
+  l'abord par le cœur ; démo F8 hors `UE_BUILD_SHIPPING`, appui selon la règle de `tests/e2e/autopilot.js`). Tests moteur
+  `Strides.Parite.CsoHorse` (miroir) et `Strides.Cso.HorseInGame` (acteurs réels dans un monde de test : appui à 10 m
+  sans saut, appui en bonne zone suivi du saut, refus sans appel) : Result={Success}. Démonstration `-StridesShots` en
+  rendu GPU (Metal, bureau) : parcours complet « Terminé : 0 pts en 60.42 s ». Restent hors T2 : jugement des barres au
+  passage, glissade, garde-fou du nez, comptage unique des refus (T3) ; affichage « Trop tôt » / « Trop lent » (T7, T9) ;
+  puissance sans équipement ni état ; commandes de concours toujours actives hors épreuve (T4, T10).
 
 ### T3. Obstacles : jugement au passage, refus, chute des barres (StridesCore)
 

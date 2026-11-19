@@ -34,11 +34,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:237 (FInterpConstantTo vers la consigne à 3 m/s², hors saut)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:328-332 (concours : 4,5 / 3,6 / 9 m/s², freinage du refus) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:333-360 (monde ouvert, code d'origine)",
   "etat": "partiel",
-  "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (accélération jusqu'au galop à 8,0 m/s contrôlée à l'écran) ; aucun test des taux.",
-  "ecart": "3 m/s² dans les deux sens au lieu de 4,5 / 3,6 m/s² à l'accélération et 9 m/s² au freinage : départs plus lents, arrêts trois fois plus longs.",
+  "niveau": "teste",
+  "preuve": "Concours : vitesse rejouée image par image dans les 10 scénarios de cso_runs.json (test_core.cpp:394, écart 0 m/s) ; la mutation « 3 m/s² dans les deux sens » est détectée (39 à 41 images en écart).",
+  "ecart": "Identique en épreuve ; hors épreuve (bCsoControls faux, jamais le cas aujourd'hui) le code d'origine rejoint l'allure à 3 m/s² dans les deux sens.",
   "tranche": "socle"
  },
  {
@@ -48,11 +48,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:240-243 (Acc = (consigne − YawRate) / yawTau bornée à ±yawAcc puis intégrée ; × airTurn en l'air)",
-  "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "steerRate est comparée à l'oracle unreal/core/tests/oracles/cso_ride.json (42 cas de steerRate sur les 72 de l'oracle, unreal/core/tests/test_core.cpp:64-77, 0 échec au journal build/core-mac/Testing/Temporary/LastTest.log du 18/11) ; l'intégration du lacet propre au cheval n'a ni oracle ni test.",
-  "ecart": "Intégration d'Euler explicite au lieu du filtre exponentiel (écart d'autant plus grand que dt approche 0,2 s) ; la direction reste active pendant les 1,2 s de refus (RefuseT).",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:303-316 (approche exponentielle τ 0,2 s puis bornage 3 rad/s², airTurn sur la rotation effective, rien pendant le cabré)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs.json (canal « ch » exporté du jeu web en cours d'exécution par scripts/unreal/export-cso-runs.mjs, identique octet pour octet sur deux exécutions, sha256 a0086b08…) rejoué image par image par unreal/core/tests/test_core.cpp:394 (testHorseRuns) : 8 scénarios requis (droit fr et en, bonne-zone, virage-serre, rampe-clavier, ctrl-alt, appui-10m, appui-3ms, abord-70) sans aucun recalage, écart maximal 8,9e-16 rad sur le cap et 4,4e-16 sur le saut, 0 m / 0 m/s sur la position et la vitesse, mêmes événements horse:* ; ctest 19/11/2026 : 11 312 vérifications, 0 échec ; miroir moteur Strides.Parite.CsoHorse (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoHorseTests.cpp:80) Result={Success} ; virages au joystick (virage-serre) et au clavier (rampe-clavier, ctrl-alt), rotation en l'air (droit, bonne-zone, appui-10m), direction coupée pendant le cabré (refus).",
+  "ecart": "Aucun dans le cœur ; le lacet du monde ouvert (code d'origine, hors épreuve) reste une intégration d'Euler.",
   "tranche": "a"
  },
  {
@@ -62,11 +62,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:245-247 (appel au-dessus de MinJumpSpeed 3,2 m/s, obstacle cherché à moins de reach 13 m et à ±2,5 m de l'axe par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:60-74) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:153-176 (StartJump : planJump, refus en zone Refuse)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:203-252 (startJump), 334-340 (appel et horse:tooSlow) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:248-314",
   "etat": "partiel",
-  "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (saut déclenché à l'écran après accélération à 8 m/s, cavalière restée en selle) ; planJump et railsAhead comparés à l'oracle unreal/core/tests/oracles/jump.json (576 cas, test_core.cpp:31-62, 0 échec) ; la règle d'appel du cheval elle-même n'a pas de test.",
-  "ecart": "Pas de refus d'appui « trop tôt » : sans obstacle à moins de 13 m, le cheval fait un saut libre même en épreuve ; critère 1,9 × L0 absent ; aucun message « trop lent » ni « trop tôt ».",
+  "niveau": "teste",
+  "preuve": "Scénarios appui-10m, appui-3ms, abord-70, bonne-zone, droit (cso_runs.json, test_core.cpp:394) : mêmes événements horse:jump / jumpEarly / tooSlow à la même image, même plan ; Strides.Cso.HorseInGame (appui à 10 m sans saut dans le jeu).",
+  "ecart": "Règle d'appui identique ; textes non affichés : astuce « Trop lent pour sauter : passe au trot. » (2 500 ms, une fois par 45 s) et bouton « Trop tôt » (600 ms) absents (tranches T7 / T9) ; puissance sans équipement ni état.",
   "tranche": "a"
  },
  {
@@ -104,11 +104,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:274",
-  "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test ; landingLoss (0,04) est lu de Content/Data/cso_ride.json mais la formule n'est comparée à aucun oracle.",
-  "ecart": "Perte de 4 % entière dès que |dev| > 0,02, au lieu de |dev| × 0,5 plafonné à 4 % (un recadrage de 3 % coûte 4 % au lieu de 1,5 %).",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:346-357",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "Vitesse à la réception rejouée sans écart : droit (dev 0,038 → 6,22 à 6,101 m/s), bonne-zone (dev 0,06 → 6,2 à 6,014 m/s), appui-10m (dev 0,051) (cso_runs.json, test_core.cpp:394).",
+  "ecart": "Le plafond de 4 % (|dev| > 0,08) n'est atteint dans aucun scénario : branche couverte par le code porté, pas par l'oracle.",
   "tranche": "a"
  },
  {
@@ -118,11 +118,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:164-170 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:256 (SpeedMS = 0, CadenceMS = 0, RefuseT = 1,2 s) puis unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:88-93 (Refused)",
-  "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test du comportement du cheval ; le jugement des refus (CourseJudge) est rejoué par unreal/core/tests/test_core.cpp:113 (scénarios écrits à la main, hors de ce domaine).",
-  "ecart": "Arrêt instantané sans freinage, pas de cabrer, 1,2 s d'immobilité au lieu de 1,1 s ; direction active pendant le refus ; aucun son.",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:129-160 (csoBrake, csoRear, csoRefuse), 296-299 et 318-332 (cabré, freinage, arrêt) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:289-303",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "Scénario « refus » (cso_runs.json) : freinage max(v²/2d ; v/0,5), arrêt sous 0,05 m/s, cabré de 1,1 s, horse:refuse à la même image (deux refus), cadence figée et direction coupée pendant le cabré, rejoués sans écart (recalage seulement sur les décisions et corrections de Obstacles.updateHorse, tranche T3) ; Strides.Cso.HorseInGame : refus et arrêt devant l'obstacle dans le jeu.",
+  "ecart": "Hennissement (son de horse:refuse) absent (T12) ; comptage du refus : voir cso.refus-decision.",
   "tranche": "a"
  },
  {
@@ -216,11 +216,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:91-95 (PlaceAt : position, cap, hauteur du sol)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:92-107 (PlaceAt : position, cap, vitesse, saut, freinage, refus, dernier saut, cadence remis à zéro, hauteur du sol)",
   "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test ; PlaceAt est appelé au démarrage (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:89) par le rechargement d'une sauvegarde faite à cheval (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:85) et par le banc de captures (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:87) ; la boucle sauvegarder-recharger de la validation Mac (ligne 15) a été faite à pied, donc sans PlaceAt du cheval.",
-  "ecart": "SpeedMS, CadenceMS, bJumping et RefuseT ne sont pas remis à zéro : un placement pendant un saut ou à pleine vitesse continue le mouvement.",
+  "niveau": "teste",
+  "preuve": "PlaceAt utilisé par Strides.Cso.HorseInGame (deux placements successifs, dont un à 6,2 m/s, Result={Success}) ; aucune comparaison à un oracle du placement lui-même.",
+  "ecart": "Remise à zéro de setPosition pour les champs portés ; _pass (jugement en cours, T3) et pose du maillage au sol (snapToGround) sans équivalent testé.",
   "tranche": "socle"
  },
  {

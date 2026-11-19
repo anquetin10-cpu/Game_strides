@@ -1,12 +1,16 @@
-// Cheval monté : allures (monde ouvert), conduite de concours (strides::steerRate / cadenceDelta), saut
-// (strides::planJump : la même trajectoire anime le cheval et juge les barres), refus, siège du cavalier.
+// Cheval monté. Conduite de concours, visée, déclenchement du saut, refus engagé, cabré : délégués au cœur
+// (strides::csoHorseStep, portage de csoRide.js + horse.js + obstacles.js target / timing / refuse, prouvé par les
+// oracles du jeu web : unreal/core/tests/oracles/cso_runs.json, cso_target.json). Monde ouvert (allures) : code d'origine,
+// hors du périmètre du portage. Siège du cavalier.
 // Simulation en unités SI dans le repère web (x, z, cap h), convertie à chaque image (StridesUnits.h). Le maillage est
 // une forme de base tant que le cheval PJL n'est pas importé (voir unreal/docs/relais-mac.md) : la simulation ne dépend
 // pas du maillage (clips sur place, pas de root motion).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "StridesCore/CsoHorse.h"
 #include "StridesCore/JumpModel.h"
+#include <vector>
 #include "StridesHorse.generated.h"
 
 class AStridesCourse;
@@ -32,17 +36,27 @@ public:
 	UPROPERTY() TObjectPtr<AStridesCourse> Course;
 	UPROPERTY() TObjectPtr<AStridesRider> Rider;
 
-	// Commandes (−1..1), écrites par le contrôleur : x direction (droite > 0), y avant/arrière.
-	void SetMoveInput(const FVector2D& In) { Move = In; }
+	// Commandes (−1..1), écrites par le contrôleur : x direction (droite > 0), y avant/arrière ; bKeyboard : venues du
+	// clavier (input.js keyMove : la direction de concours y monte progressivement).
+	void SetMoveInput(const FVector2D& In, bool bKeyboard = false) { Move = In; bKeyMove = bKeyboard; }
 	void RequestJump() { bJumpRequested = true; }
 	void ChangeGait(int32 Delta);
-	void PlaceAt(double WebX, double WebZ, double Heading);
+	// Pose le cheval (horse.js setPosition : arrêt, saut et refus oubliés) ; SpeedMS : vitesse donnée ensuite (scénarios
+	// de test, comme le banc web : la cadence de concours repart de cette vitesse arrondie au dixième).
+	void PlaceAt(double WebX, double WebZ, double Heading, double InSpeedMS = 0);
+	// Pied à terre : arrêt, cadence de concours oubliée (player.js : commandes de concours retirées).
+	void Halt();
+	// État du cœur (simulation de concours) et événements de la dernière image ("horse:jump", "horse:jumpEarly", …).
+	const strides::CsoHorseState& CsoState() const { return Sim; }
+	const TArray<FString>& LastEvents() const { return FrameEvents; }
+	// Aide à l'appel (obstacles.js timing) : zone affichée par le bouton SAUT (tranche T9).
+	strides::Zone JumpTiming() const;
 	// Hauteur du sol (m, repère web) sous un point.
 	double GroundAt(double WebX, double WebZ) const;
 	double WebX() const { return X; }
 	double WebZ() const { return Z; }
 	double Heading() const { return H; }
-	bool IsJumping() const { return bJumping; }
+	bool IsJumping() const { return Sim.jumpT >= 0; }
 	bool IsDemoCourseActive() const { return bDemoCourse; }
 	void ToggleDemoCourse();
 	// Point d'assise du cavalier (repère monde Unreal).
@@ -58,9 +72,13 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> Camera;
 
 private:
-	void StartJump(AStridesFence* Fence);
+	void TickCso(float Dt);
+	void TickOpenWorld(float Dt);
+	void TickDemo();
+	void StartOpenWorldJump();
 	void UpdateAnimation();
 	double JumpPower() const;
+	const class UStridesDataSubsystem* DataSub() const;
 	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
 	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpCanterAnimation;
 	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpGallopAnimation;
@@ -68,14 +86,19 @@ private:
 	bool bLastAnimationJumping = false;
 	double X = 0, Z = 0, H = 0, YawRate = 0;
 	FVector2D Move = FVector2D::ZeroVector;
+	bool bKeyMove = false;
 	bool bJumpRequested = false;
-	// Saut en cours : distance parcourue depuis l'appel, plan du cœur, obstacle visé, sens de franchissement.
+	// Concours : état du cœur, événements de l'image.
+	strides::CsoHorseState Sim;
+	std::vector<strides::CsoHorseEvent> Events;
+	TArray<FString> FrameEvents;
+	// Saut en cours : obstacle visé et sens de franchissement (jugement à la réception, provisoire jusqu'à T3).
 	bool bJumping = false;
-	double JumpX = 0;
-	strides::JumpPlan Plan;
 	TWeakObjectPtr<AStridesFence> JumpFence;
 	int32 JumpDir = 1;
-	float RefuseT = 0.f;
+	// Monde ouvert (code d'origine) : distance parcourue depuis l'appel, plan du saut.
+	double JumpX = 0;
+	strides::JumpPlan Plan;
 	bool bDemoCourse = false;
 	int32 DemoPoint = 1;
 };

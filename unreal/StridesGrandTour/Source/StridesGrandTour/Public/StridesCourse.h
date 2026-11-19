@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "StridesCore/CsoCourse.h"
+#include "StridesCore/CsoHorse.h"
 #include "StridesCore/JumpModel.h"
 #include <memory>
 #include "StridesCourse.generated.h"
@@ -24,10 +25,14 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Strides") FStridesCourseEvent OnCourseEvent;
 
 	void Build(const strides::CourseDesign& Design, const class UStridesDataSubsystem& Data);
+	// Même construction sans le sous-système de données : vitesse du niveau (m/s) et largeur des obstacles (m).
+	void BuildWith(const strides::CourseDesign& Design, double CourseSpeedMS, double FenceWidthM);
 	// Appelé par le cheval : position et cap (repère web, m / rad), avant et après l'image.
 	void TrackHorse(double X0, double Z0, double X1, double Z1, double Heading, float Dt);
-	// Obstacle le plus proche devant le cheval (dans la portée du modèle de saut), ou nul.
-	AStridesFence* FenceAhead(double X, double Z, double Heading, double Reach) const;
+	// Obstacles vus par le cheval (visée, aide à l'appel, refus : strides::csoTarget / csoTiming / csoApproachRefusal),
+	// dans l'ordre du parcours ; l'indice d'un obstacle du cœur est celui de son acteur (FenceAt).
+	const std::vector<strides::CsoObstacle>& Obstacles() const { return CoreObstacles; }
+	AStridesFence* FenceAt(int32 Index) const { return Fences.IsValidIndex(Index) ? Fences[Index].Get() : nullptr; }
 	// Fin d'un saut (plan du cœur) ou refus devant un obstacle.
 	void JumpLanded(AStridesFence* Fence, const strides::JumpPlan& Plan, int32 Dir);
 	void Refused(AStridesFence* Fence, int32 Dir);
@@ -45,6 +50,7 @@ private:
 	bool LineCrossed(const strides::TraceMark& M, double X0, double Z0, double X1, double Z1, double Heading) const;
 	strides::CourseTrace Trace;
 	std::unique_ptr<strides::CourseJudge> JudgePtr;
+	std::vector<strides::CsoObstacle> CoreObstacles;
 	int32 Allowed = 64;
 	UPROPERTY() TArray<TObjectPtr<AStridesFence>> Fences;
 };

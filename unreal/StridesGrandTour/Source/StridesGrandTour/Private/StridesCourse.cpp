@@ -11,19 +11,26 @@ AStridesCourse::AStridesCourse()
 
 void AStridesCourse::Build(const strides::CourseDesign& Design, const UStridesDataSubsystem& Data)
 {
+	BuildWith(Design, Data.CourseSpeed(SpeedLevel), Data.CsoFenceWidth);
+}
+
+void AStridesCourse::BuildWith(const strides::CourseDesign& Design, double CourseSpeedMS, double FenceWidthM)
+{
 	Trace = strides::traceCourse(Design);
+	CoreObstacles.clear();
 	const std::vector<double> Heights = strides::courseHeights(Design, Trace, CourseHeight);
 	std::vector<std::string> Labels;
 	for (size_t i = 0; i < Trace.fences.size(); i++)
 	{
 		const strides::TraceFence& F = Trace.fences[i];
 		AStridesFence* Fence = GetWorld()->SpawnActor<AStridesFence>();
-		Fence->Setup(UTF8_TO_TCHAR(F.label.c_str()), UTF8_TO_TCHAR(F.kind.c_str()), Heights[i], F.spread, F.x, F.z, F.rot, (int32)i + 1);
+		Fence->Setup(UTF8_TO_TCHAR(F.label.c_str()), UTF8_TO_TCHAR(F.kind.c_str()), Heights[i], F.spread, F.x, F.z, F.rot, (int32)i + 1, FenceWidthM);
 		Fences.Add(Fence);
+		CoreObstacles.push_back(Fence->CoreObstacle());
 		Labels.push_back(F.label);
 	}
 	// Temps accordé : longueur arrondie au mètre (obstacles.js, CSO_LENGTH) à la vitesse du niveau.
-	Allowed = strides::timeAllowedFor(FMath::RoundToDouble(Trace.length), Data.CourseSpeed(SpeedLevel));
+	Allowed = strides::timeAllowedFor(FMath::RoundToDouble(Trace.length), CourseSpeedMS);
 	JudgePtr = std::make_unique<strides::CourseJudge>(Labels, Allowed);
 }
 
@@ -55,22 +62,6 @@ void AStridesCourse::TrackHorse(double X0, double Z0, double X1, double Z1, doub
 		const int32 Pts = J.points();
 		OnCourseEvent.Broadcast(TEXT("finish"), Pts == 0 ? TEXT("SANS FAUTE !") : FString::Printf(TEXT("%d POINTS"), Pts));
 	}
-}
-
-AStridesFence* AStridesCourse::FenceAhead(double X, double Z, double Heading, double Reach) const
-{
-	AStridesFence* Best = nullptr;
-	double BestD = Reach;
-	const double Fx = FMath::Sin(Heading), Fz = FMath::Cos(Heading);
-	for (AStridesFence* F : Fences)
-	{
-		const strides::Fence& C = F->CoreFence();
-		const double Dx = C.pos.x - X, Dz = C.pos.z - Z;
-		const double Along = Dx * Fx + Dz * Fz;  // devant le cheval seulement
-		const double Side = FMath::Abs(Dx * Fz - Dz * Fx);
-		if (Along > 0 && Along < BestD && Side < 2.5) { BestD = Along; Best = F; }
-	}
-	return Best;
 }
 
 void AStridesCourse::JumpLanded(AStridesFence* Fence, const strides::JumpPlan& Plan, int32 Dir)

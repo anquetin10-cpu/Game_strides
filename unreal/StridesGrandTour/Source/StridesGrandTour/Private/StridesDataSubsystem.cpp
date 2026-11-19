@@ -80,6 +80,14 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		N(TEXT("radiusK"), RideP.radiusK); N(TEXT("pivot"), RideP.pivot); N(TEXT("yawTau"), RideP.yawTau); N(TEXT("yawAcc"), RideP.yawAcc);
 		N(TEXT("airTurn"), RideP.airTurn); N(TEXT("kbdRamp"), RideP.kbdRamp); N(TEXT("landingLoss"), RideP.landingLoss);
 	}
+	if (LoadJson(TEXT("cso_horse.json"), J))
+	{
+		auto N = [&J](const TCHAR* K, double& Out) { J->TryGetNumberField(K, Out); };
+		N(TEXT("ref"), HorseP.ref); N(TEXT("nose"), HorseP.nose); N(TEXT("overrun"), HorseP.overrun);
+		N(TEXT("jumpDuration"), HorseP.jumpDuration); N(TEXT("minJumpSpeed"), HorseP.minJumpSpeed);
+		double W = 0;
+		if (J->TryGetNumberField(TEXT("csoFenceWidth"), W)) CsoFenceWidth = W;
+	}
 	// Parcours : tracé du fichier (commandes F/L/R/J/M) ; à défaut, le tracé du Pôle compilé dans StridesCore.
 	PoleDesign = strides::poleDesign();
 	if (LoadJson(TEXT("cso_course_pole.json"), J))

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "StridesCore/CsoCourse.h"
+#include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesDataSubsystem.generated.h"
@@ -107,6 +108,9 @@ public:
 	// Hauteur de base du saut (m) : HORSE.jumpPeak du jeu web, multipliée par le profil du cheval.
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") float JumpPeak = 1.35f;
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") float MinJumpSpeed = 3.2f;
+	// Cheval de concours (cso_horse.json, extrait de obstacles.js par scripts/unreal/export-data.mjs) : largeur des
+	// obstacles du parcours de CSO (m) ; REF / NOSE / OVERRUN et constantes du saut dans HorseParams().
+	UPROPERTY(BlueprintReadOnly, Category = "Strides") double CsoFenceWidth = 3.8;
 	// Fichiers lus, ou la raison d'un échec (affichée par le HUD : jamais de valeurs inventées en silence).
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") TArray<FString> LoadLog;
 
@@ -130,6 +134,7 @@ public:
 
 	const strides::JumpParams& Jump() const { return JumpP; }
 	const strides::CsoRideParams& Ride() const { return RideP; }
+	const strides::CsoHorseParams& HorseParams() const { return HorseP; }
 	const strides::CourseDesign& PoleCourse() const { return PoleDesign; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
@@ -139,6 +144,7 @@ private:
 	TArray<float> TerrainHeights;
 	strides::JumpParams JumpP;
 	strides::CsoRideParams RideP;
+	strides::CsoHorseParams HorseP;
 	strides::CourseDesign PoleDesign;
 	TMap<FString, float> CourseSpeeds;
 };

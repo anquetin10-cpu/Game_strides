@@ -940,11 +940,11 @@
   "js": [
    "src/core/input.js"
   ],
-  "unreal": "Axes Move : W, Z, ↑ / S, ↓ / D, → / A, Q, ← (StridesPlayerController.cpp:45-48)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:73-91 (keyboardMove, portage de input.js poll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:118-133 (OnMove : déplacement clavier du cœur, drapeau clavier transmis au cheval)",
   "etat": "partiel",
-  "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter, accélérer jusqu'au galop à 8,0 m/s, descendre).",
-  "ecart": "Vitesse pilotée comme une cadence de concours (bCsoControls toujours vrai, StridesHorse.cpp:231-233) : avant / arrière font monter ou baisser la cadence jusqu'à 8 m/s au lieu de donner le galop à fond ; Maj / Ctrl liés à allure +/- (StridesPlayerController.cpp:56-57, 151-152) mais sans effet durable, l'allure étant recalculée depuis la vitesse à chaque image (StridesHorse.cpp:282) ; pas de pas ou trot maintenus par Alt / Ctrl ; touches logiques Z et Q ajoutées (StridesPlayerController.cpp:45, 48) au lieu de codes physiques, Q déplaçant à gauche alors qu'il siffle dans le web.",
+  "niveau": "teste",
+  "preuve": "keyboardMove comparé aux 258 images au clavier des scénarios rampe-clavier et ctrl-alt (input.move et keyMove relevés après input.poll, test_core.cpp:394, 0 écart) ; le branchement dans le contrôleur est compilé, pas joué.",
+  "ecart": "Diagonale normalisée et amplitudes Ctrl 0,5 / Alt 0,25 identiques ; touches logiques W et Z, A et Q doublées au lieu des codes physiques (Q déplace à gauche alors qu'il siffle dans le web) ; Ctrl reste aussi lié à « allure − » (sans effet en concours) ; hors épreuve, l'avant / arrière règle toujours une cadence (bCsoControls toujours vrai) ; tranche T8.",
   "tranche": "socle"
  },
  {

@@ -118,7 +118,19 @@ AStridesRider* AStridesPlayerController::Rider() const
 void AStridesPlayerController::OnMove(const FInputActionValue& V)
 {
 	const FVector2D In = V.Get<FVector2D>();
-	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) { H->SetMoveInput(In); return; }
+	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn()))
+	{
+		// Clavier : déplacement de input.js (poll, portage strides::keyboardMove) : diagonale normalisée, Ctrl gauche
+		// = amplitude 0,5, Alt gauche = 0,25, et drapeau clavier (la direction de concours y monte progressivement).
+		// Touches par caractère (W et Z, A et Q) en attendant les codes physiques (tranche T8).
+		const strides::KeyboardMove K = strides::keyboardMove(
+			IsInputKeyDown(EKeys::W) || IsInputKeyDown(EKeys::Z) || IsInputKeyDown(EKeys::Up), IsInputKeyDown(EKeys::S) || IsInputKeyDown(EKeys::Down),
+			IsInputKeyDown(EKeys::D) || IsInputKeyDown(EKeys::Right), IsInputKeyDown(EKeys::A) || IsInputKeyDown(EKeys::Q) || IsInputKeyDown(EKeys::Left),
+			IsInputKeyDown(EKeys::LeftControl), IsInputKeyDown(EKeys::LeftAlt));
+		if (K.keyMove) H->SetMoveInput(FVector2D(K.x, K.y), true);
+		else H->SetMoveInput(In, false);
+		return;
+	}
 	if (APawn* P = GetPawn())
 	{
 		const FRotator Yaw(0, GetControlRotation().Yaw, 0);

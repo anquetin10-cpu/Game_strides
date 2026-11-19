@@ -119,7 +119,7 @@ void AStridesRider::Dismount(APlayerController* PC)
 	if (H->Course) H->Course->RiderDismounted();
 	MountedOn = nullptr;
 	H->Rider = nullptr;
-	H->SpeedMS = 0; H->CadenceMS = 0;
+	H->Halt();
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	// Côté montoir : gauche du cheval (−Y local Unreal), 0,9 m du flanc, au sol.
 	const FVector Left = -H->GetActorRightVector();
