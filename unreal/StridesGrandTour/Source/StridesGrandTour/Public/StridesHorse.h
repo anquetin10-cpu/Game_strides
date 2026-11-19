@@ -9,6 +9,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "StridesCore/CsoHorse.h"
+#include "StridesCore/CsoRun.h"
 #include "StridesCore/JumpModel.h"
 #include <vector>
 #include "StridesHorse.generated.h"
@@ -48,6 +49,8 @@ public:
 	void Halt();
 	// État du cœur (simulation de concours) et événements de la dernière image ("horse:jump", "horse:jumpEarly", …).
 	const strides::CsoHorseState& CsoState() const { return Sim; }
+	// Entrées d'une image de l'épreuve (strides::CsoRun) : pas, heure, cheval, point suivi, monté ou non.
+	strides::CsoRunFrame RunFrame(double Dt, double Time) const;
 	const TArray<FString>& LastEvents() const { return FrameEvents; }
 	// Aide à l'appel (obstacles.js timing) : zone affichée par le bouton SAUT (tranche T9).
 	strides::Zone JumpTiming() const;

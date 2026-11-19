@@ -251,11 +251,11 @@
    "src/gameplay/player.js",
    "src/gameplay/courses.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:119 → StridesCourse.cpp:95-98 → unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:130 (CourseJudge::dismounted)",
-  "etat": "partiel",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp (RunFrame : cavalier en selle lu à chaque image) → unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (courseUpdate)",
+  "etat": "identique_prouve",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:155-157 (« descendu : éliminé ») : scénario écrit à la main, sans oracle JS ; suite CTest réussie (4 944 vérifications, validation-mac l.9).",
-  "ecart": "Règle portée mais prouvée par un test manuel seulement ; aucun oracle exporté de courses.js pour ce cas ; message différent (« Descendu de cheval : éliminé », StridesCourse.cpp:97, au lieu de « Tu es descendu de cheval : éliminé. ») ; chaîne StridesRider → StridesCourse ni testée ni vérifiée à l'écran pendant une épreuve.",
+  "preuve": "Scénario t4-descente de cso_runs.json (fr et en) rejoué sans écart par testCsoRuns et Strides.Parite.CsoRun ; Strides.Cso.RunInGame : AStridesRider::Dismount pendant le parcours → éliminé.",
+  "ecart": "Descente refusée pendant un saut, sans la séquence animée du web.",
   "tranche": "a"
  },
  {

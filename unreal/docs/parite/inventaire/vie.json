@@ -673,11 +673,11 @@
   "js": [
    "src/gameplay/activities.js"
   ],
-  "unreal": "AStridesCourse au Pôle, chrono lancé au franchissement de la ligne de départ (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:45-48) ; record « cso_pole » gardé s'il est meilleur selon compareResults, seulement lors de la sauvegarde manuelle (F5 ou bouton SAUVER) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:44-53).",
+  "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé au démarrage (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp) ; record « cso_pole » gardé s'il est meilleur selon compareResults, seulement lors de la sauvegarde manuelle (F5 ou bouton SAUVER) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Tracé, hauteurs, temps accordé et compareResults comparés à l'oracle JS unreal/core/tests/oracles/cso_course.json par unreal/core/tests/test_core.cpp:79-111 (CTest : 4 944 vérifications, zéro échec, validation-mac-2026-11-17.md l.9) ; la règle de record de l'activité (temps + pénalités) n'a pas d'oracle.",
-  "ecart": "Pas de poteau ni de lancement d'activité ; record classé par élimination, pénalités puis temps (challenge.js) au lieu du score temps + pénalités ; clé cso_pole au lieu de bestTimes.cso_train ; enregistré seulement à la sauvegarde ; ni classement en ligne ni carte « Nouveau record ».",
+  "ecart": "Pas de poteau ni de lancement d'activité (T10 : activité lancée au démarrage) ; record classé par élimination, pénalités puis temps (challenge.js) au lieu du score temps + pénalités ; clé cso_pole au lieu de bestTimes.cso_train ; enregistré seulement à la sauvegarde ; ni classement en ligne ni carte « Nouveau record ».",
   "tranche": "a"
  },
  {

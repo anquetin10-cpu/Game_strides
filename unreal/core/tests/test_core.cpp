@@ -13,6 +13,8 @@
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRide.h"
+#include "StridesCore/CsoRun.h"
+#include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/SaveGame.h"
 #include "StridesCore/MiniJson.h"
@@ -203,6 +205,22 @@ static std::string dump(const J& x) {
   return "";
 }
 
+// Événements du bus sans ceux des autres chevaux (cavaliers du décor) : d.horse est l'identifiant du cheval
+// (horse:exhausted) ou son résumé { horse: id } (horse:step) ; texte de cause des fautes retiré.
+static std::string playerEvents(const J& ev, const std::string& horseId) {
+  std::string s;
+  for (const J& e : ev.a) {
+    const J& h = e["d"]["horse"];
+    const std::string id = h.t == J::Str ? h.s : h.t == J::Obj && h["horse"].t == J::Str ? h["horse"].s : horseId;
+    if (id != horseId) continue;
+    // Texte de la cause d'une faute (obstacle:fault, causeText) : traduit, seul champ qui dépend de la langue.
+    J c = e;
+    if (c.o.count("d")) c.o["d"].o.erase("causeText");
+    s += dump(c) + ";";
+  }
+  return s;
+}
+
 // Oracles de scénario du banc de parité (scripts/unreal/export-cso-runs.mjs) : contrôle de schéma image par image, puis
 // recoupements avec le cœur : ligne de départ du jeu web = repère du tracé + décalage de la carrière lu dans
 // Content/Data, bip de départ à l'image où le cheval franchit cette ligne, et même simulation en français et en anglais
@@ -257,7 +275,9 @@ static void testRuns() {
       bool ok = num(f["f"]) && (size_t)f["f"].num() == i;
       ok = ok && in.t == J::Obj && vec(in["move"], 2) && strs(in["keys"]) && strs(in["held"]) && in["jump"].t == J::Bool && (in["ui"].isNull() || in["ui"].t == J::Str);
       ok = ok && num(h["x"]) && num(h["y"]) && num(h["z"]) && num(h["h"]) && num(h["v"]) && num(h["jumpT"]) && num(h["jumpY"]) && (h["cad"].isNull() || num(h["cad"])) && h["mode"].t == J::Str;
-      ok = ok && vec(c["eye"], 3) && vec(c["target"], 3) && vec(c["dir"], 3) && num(c["fov"]) && num(c["aspect"]);
+      // Scénarios légers (tranche T4) : ni caméra ni canal « ch », canal « ep » à chaque image.
+      if (su["lite"].b) ok = ok && c.isNull() && f["ch"].isNull() && f["ep"].t == J::Obj && num(f["ep"]["dt"]) && num(f["ep"]["x"]) && f["ep"]["mode"].t == J::Str;
+      else ok = ok && vec(c["eye"], 3) && vec(c["target"], 3) && vec(c["dir"], 3) && num(c["fov"]) && num(c["aspect"]);
       ok = ok && calls(f["ev"], "e") && calls(f["hud"], "fn") && calls(f["audio"], "fn");
       ok = ok && (f["run"].isNull() || f["run"].t == J::Obj) && (f["course"].isNull() || f["course"].t == J::Obj) && (f["board"].isNull() || f["board"].t == J::Obj);
       ok = ok && f["rails"].t == J::Arr;
@@ -287,8 +307,12 @@ static void testRuns() {
     CHECK(a.a.size() == fr.a.size(), "%s : %zu images / %zu selon la langue", w, a.a.size(), fr.a.size());
     int textDiff = 0;
     for (size_t i = 0; i < a.a.size() && i < fr.a.size(); i++) {
-      for (const char* k : {"in", "horse", "cam", "rails", "audio", "ev", "course"})
+      for (const char* k : {"in", "horse", "cam", "rails", "audio", "course"})
         CHECK(dump(a[i][k]) == dump(fr[i][k]), "%s : image %zu, « %s » dépend de la langue", w, i, k);
+      // Événements du bus : ceux des chevaux des cavaliers du décor (d.horse d'un autre cheval que celui du joueur)
+      // ne sont pas comparés d'une langue à l'autre (constaté sur t4-sans-faute : foulées et fatigue d'un cavalier de
+      // l'ambiance décalées de quelques images après 47 s ; sans effet sur l'épreuve).
+      CHECK(playerEvents(a[i]["ev"], su["horseId"].s) == playerEvents(fr[i]["ev"], su["horseId"].s), "%s : image %zu, « ev » dépend de la langue", w, i);
       textDiff += dump(a[i]["hud"]) != dump(fr[i]["hud"]);
     }
     CHECK(textDiff > 0, "%s : aucun texte traduit entre les langues", w);
@@ -416,6 +440,7 @@ static void testHorseRuns() {
   std::map<std::string, int> airYaw, decelCap, lossCap;
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
+    if (r["setup"]["lite"].b) continue;  // scénarios légers de la tranche T4 : pas de canal « ch » (testCsoRuns)
     const J& ch0 = r["setup"]["ch0"];
     CHECK(ch0.t == J::Obj && ch0["s"].t == J::Obj && ch0["obs"].t == J::Arr, "%s : état initial du cheval absent", who.c_str());
     if (ch0.t != J::Obj) continue;
@@ -749,6 +774,7 @@ static void testFenceRuns() {
   double railDevMax = 0;
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
+    if (r["setup"]["lite"].b) continue;  // scénarios légers de la tranche T4 : pas de canal « ch » (testCsoRuns)
     const J& ch0 = r["setup"]["ch0"];
     if (ch0["ob"].isNull()) { CHECK(false, "%s : état initial des obstacles absent (oracle antérieur à T3)", who.c_str()); continue; }
     std::vector<CsoObstacle> obs = obstaclesFrom(ch0["obs"], who);
@@ -1012,6 +1038,259 @@ static void testSave() {
   std::printf("sauvegarde : %zu octets\n", txt.size());
 }
 
+
+// ---------- Textes et formats (tranche T4) : cso_text.json (dec, ordinaux, pluriels, gabarits) ----------
+static TextTable g_text;
+static void loadText() {
+  const std::string raw = readFile(DATA + "/strings_cso.json");
+  std::string err;
+  CHECK(g_text.parse(raw, err), "strings_cso.json illisible : %s", err.c_str());
+}
+static void testText() {
+  const J o = loadJson(ORA + "/cso_text.json");
+  CHECK(o["schema"].s == "strides.oracle.cso_text/1", "cso_text : schéma « %s »", o["schema"].s.c_str());
+  int n = 0, bad = 0;
+  auto same = [&](const std::string& got, const std::string& want, const char* what, const std::string& in) {
+    n++;
+    if (got != want) {
+      bad++;
+      if (bad < 8) std::printf("  %s(%s) : « %s » / « %s »\n", what, in.c_str(), got.c_str(), want.c_str());
+    }
+  };
+  for (const char* ln : {"fr", "en"}) {
+    const Lang L = langFromName(ln);
+    const J& c = o[ln];
+    char b[64];
+    for (const J& e : c["dec"].a) {
+      std::snprintf(b, sizeof b, "%.17g, %d, %s", e["n"].num(), (int)e["k"].num(), ln);
+      same(dec(e["n"].num(), (int)e["k"].num(), L), e["out"].s, "dec", b);
+    }
+    for (const J& e : c["ordinal"].a) same(ordinal((long long)e["n"].num(), L), e["out"].s, "ordinal", std::to_string((long long)e["n"].num()) + " " + ln);
+    for (const J& e : c["enOrdinal"].a) same(enOrdinal((long long)e["n"].num()), e["out"].s, "enOrdinal", std::to_string((long long)e["n"].num()));
+    for (const J& e : c["nth"].a) same(nth((long long)e["n"].num(), L), e["out"].s, "nth", std::to_string((long long)e["n"].num()) + " " + ln);
+    for (const J& e : c["ptsText"].a) same(ptsText((long long)e["n"].num(), L, g_text), e["out"].s, "ptsText", std::to_string((long long)e["n"].num()) + " " + ln);
+    for (const J& e : c["templates"].a) {
+      CHECK(g_text.has(e["key"].s), "strings_cso.json : clé absente « %s »", e["key"].s.c_str());
+      if (e["vals"].isNull()) same(g_text.t(e["key"].s, L), e["out"].s, "t", e["key"].s + " " + ln);
+      else {
+        std::vector<std::string> v;
+        for (const J& x : e["vals"].a) v.push_back(x.t == J::Num ? jsInt((long long)x.num()) : x.s);
+        same(g_text.T(e["key"].s, v, L), e["out"].s, "T", e["key"].s + " " + ln);
+      }
+    }
+  }
+  CHECK(bad == 0, "cso_text : %d cas sur %d différents du jeu web", bad, n);
+  std::printf("textes et formats : %d cas (dec, ordinaux, pluriels, %zu clés de gabarits et textes fixes, fr et en), %d écarts\n", n, o["fr"]["templates"].a.size(), bad);
+}
+
+// ---------- Déroulé d'épreuve (tranche T4) : strides::CsoRun rejoué sur le canal « ep » de cso_runs.json ----------
+// Entrées réinjectées : trajectoire et mode du joueur vus par Run.update, bouton « Entrer en piste », événements
+// d'obstacle émis avant Run.update ; comparés image par image : étape, objectif, état de l'épreuve, mode de concours,
+// tableau de chrono (données et textes), cadence réécrite, appels hud.* et audio.* faits par courses.js (et
+// hud.clearHint du déroulé de mission).
+static double R6(double v) { return std::floor(v * 1e6 + 0.5) / 1e6; }  // Math.round(v * 1e6) / 1e6
+static std::string callStr(const std::string& fn, const std::vector<std::string>& args) {
+  std::string s = fn + "(";
+  for (size_t i = 0; i < args.size(); i++) s += (i ? ", " : "") + args[i];
+  return s + ")";
+}
+static std::string argStr(const J& a) {
+  if (a.t == J::Num) { char b[40]; std::snprintf(b, sizeof b, "%.17g", a.n); return b; }
+  if (a.t == J::Str) return "\"" + a.s + "\"";
+  return dump(a);
+}
+static std::vector<std::string> oracleCalls(const J& list, bool hud) {
+  std::vector<std::string> v;
+  for (const J& c : list.a) {
+    const std::string& src = c["src"].s;
+    const std::string& fn = c["fn"].s;
+    const bool keep = hud ? (src == "gameplay/courses.js" && fn != "jumpFeedback") || (src == "gameplay/missions.js" && fn == "clearHint") : src == "gameplay/courses.js";
+    if (!keep) continue;
+    std::vector<std::string> a;
+    for (const J& x : c["args"].a) a.push_back(argStr(x));
+    v.push_back(callStr(fn, a));
+  }
+  return v;
+}
+static std::vector<std::string> coreCalls(const std::vector<CsoCall>& calls) {
+  std::vector<std::string> v;
+  for (const CsoCall& c : calls) {
+    std::vector<std::string> a;
+    for (const CsoArg& x : c.args) {
+      if (x.isNum) { char b[40]; std::snprintf(b, sizeof b, "%.17g", x.n); a.push_back(b); }
+      else a.push_back("\"" + x.s + "\"");
+    }
+    v.push_back(callStr(c.fn, a));
+  }
+  return v;
+}
+static void testCsoRuns() {
+  J o = loadJson(ORA + "/cso_runs.json");
+  const J data = loadJson(DATA + "/cso_course_pole.json");
+  CourseDesign d;
+  std::string err;
+  CHECK(parseCourseFile(readFile(DATA + "/cso_course_pole.json"), d, err), "cso_course_pole.json : %s", err.c_str());
+  d.x += data["arena"]["x"].num();
+  d.z += data["arena"]["z"].num();
+  const CourseTrace tr = traceCourse(d);
+  std::vector<std::string> labels;
+  for (const TraceFence& f : tr.fences) labels.push_back(f.label);
+  const CsoRunConfig base = csoRunConfigFromJson(data, labels);
+  // Lignes du jeu web (données exportées) = repères du tracé lu par le jeu, décalés de la carrière.
+  CHECK(std::abs(base.start.x - tr.marks.at("start").x) < 1e-9 && std::abs(base.start.z - tr.marks.at("start").z) < 1e-9 && std::abs(base.start.rot - tr.marks.at("start").rot) < 1e-12 &&
+            std::abs(base.finish.x - tr.marks.at("finish").x) < 1e-9 && std::abs(base.finish.z - tr.marks.at("finish").z) < 1e-9 && std::abs(base.finish.rot - tr.marks.at("finish").rot) < 1e-12,
+        "lignes de départ / d'arrivée des données différentes du tracé");
+  const char* required[] = {"droit", "t4-sans-faute", "t4-depart-lance", "t4-cloche", "t4-erreur-parcours", "t4-deux-refus", "t4-temps-limite", "t4-descente", "t4-saute-avant-depart", "t4-arrivee-barre", "t4-lignes"};
+  std::map<std::string, int> clean;  // « id lang » → images rejouées sans écart
+  int frames = 0, hudN = 0, audioN = 0, boardN = 0;
+  for (const J& r : o["runs"].a) {
+    const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
+    const J& su = r["setup"];
+    // Rejoués : scénarios enregistrés depuis le lancement de l'activité (première étape en cours, aucune image avant).
+    if (su["run0"].isNull() || su["run0"]["i"].isNull() || su["run0"]["i"].num() != 0 || r["frames"].a.empty() || r["frames"][0]["ep"].isNull() ||
+        r["frames"][0]["ep"]["i"].num() != 0)
+      continue;
+    CHECK(std::abs(su["finish"]["x"].num() - base.finish.x) < 1e-9 && std::abs(su["finish"]["z"].num() - base.finish.z) < 1e-9 && su["finish"]["w"].num() == base.finish.w &&
+              std::abs(su["start"]["x"].num() - base.start.x) < 2e-6 && su["start"]["w"].num() == base.start.w && su["gate"]["x"].num() == base.gateX && su["gate"]["z"].num() == base.gateZ,
+          "%s : lignes ou entrée de piste du jeu différentes des données", who.c_str());
+    CsoRunConfig cfg = base;
+    cfg.playerName = su["playerName"].s;
+    cfg.horseName = su["horseName"].s;
+    cfg.lang = langFromName(lang);
+    CsoRun run(cfg, g_text);
+    run.begin();
+    int bad = 0, n = 0;
+    auto diff = [&](int f, const std::string& what) {
+      bad++;
+      if (bad < 6) std::printf("  %s image %d : %s\n", who.c_str(), f, what.c_str());
+    };
+    {
+      const std::vector<std::string> got = coreCalls(run.takeHud()), want = oracleCalls(su["calls"]["hud"], true);
+      if (got != want) diff(-1, "appels hud au lancement");
+    }
+    std::vector<std::string> hudAll, audioAll;
+    for (const J& f : r["frames"].a) {
+      const int fi = (int)f["f"].num();
+      const J& ep = f["ep"];
+      if (ep.isNull()) { if (!run.finished()) diff(fi, "Run.update absent"); continue; }
+      if (f["in"]["ui"].s == "enter") run.enter();
+      // Événements d'obstacle de l'image émis avant Run.update. Un refus compté remet la cadence à 0 (courses.js:265) :
+      // la cadence vue ensuite par Run.update (ep.cad) doit être nulle, et le portage doit l'avoir remise.
+      const int refusals0 = run.state().refusals;
+      CsoCadence cadEv{!ep["cad"].isNull(), -12345.0};
+      for (size_t k = 0; k < (size_t)ep["e0"].num() && k < f["ev"].a.size(); k++) {
+        const J& e = f["ev"][k];
+        const std::string& en = e["e"].s;
+        if (en != "obstacle:clear" && en != "obstacle:fault" && en != "obstacle:refusal") continue;
+        const J& ob = e["d"]["obstacle"];
+        if (ob["course"].s != "cso") continue;
+        const CsoObstacleEventKind kind = en == "obstacle:clear" ? CsoObstacleEventKind::Clear : en == "obstacle:fault" ? CsoObstacleEventKind::Fault : CsoObstacleEventKind::Refusal;
+        CHECK(labels[(size_t)ob["num"].num() - 1] == ob["label"].s, "%s : obstacle %s de rang %g", who.c_str(), ob["label"].s.c_str(), ob["num"].num());
+        run.obstacleEvent(kind, (int)ob["num"].num(), (int)e["d"]["dir"].num(), e["d"]["cause"].isNull() ? "" : e["d"]["cause"].s, e["d"]["causeText"].isNull() ? "" : e["d"]["causeText"].s, cadEv);
+      }
+      if (run.state().refusals != refusals0 && cadEv.has && !(cadEv.v == 0 && ep["cad"].num() == 0)) diff(fi, "cadence remise à 0 par le refus compté");
+      if (run.state().refusals == refusals0 && cadEv.v != -12345.0) diff(fi, "cadence réécrite sans refus compté");
+      CsoRunFrame in;
+      in.dt = ep["dt"].num();
+      in.time = ep["gt"].num();
+      in.x = ep["x"].num();
+      in.z = ep["z"].num();
+      in.heading = ep["h"].num();
+      in.focusX = ep["fx"].isNull() ? in.x : ep["fx"].num();
+      in.focusZ = ep["fz"].isNull() ? in.z : ep["fz"].num();
+      in.riding = ep["mode"].s == "ride";
+      CsoCadence cad{!ep["cad"].isNull(), ep["cad"].isNull() ? 0 : ep["cad"].num()};
+      CHECK((int)ep["i"].num() == run.stepIndex(), "%s image %d : étape %d avant Run.update / %d", who.c_str(), fi, (int)ep["i"].num(), run.stepIndex());
+      run.update(in, cad);
+      n++;
+      // Cadence réécrite (sortie de piste) et étape après l'image.
+      if (cad.has != !ep["cad1"].isNull() || (cad.has && cad.v != ep["cad1"].num())) diff(fi, "cadence après l'image");
+      if ((int)ep["i1"].num() != run.stepIndex()) diff(fi, "étape " + std::to_string(run.stepIndex()) + " / " + std::to_string((int)ep["i1"].num()));
+      // Appels de l'interface et sons.
+      const std::vector<std::string> gh = coreCalls(run.takeHud()), wh = oracleCalls(f["hud"], true);
+      const std::vector<std::string> ga = coreCalls(run.takeAudio()), wa = oracleCalls(f["audio"], false);
+      if (gh != wh) {
+        std::string s = "hud :";
+        for (const auto& x : gh) s += " " + x;
+        s += " / web :";
+        for (const auto& x : wh) s += " " + x;
+        diff(fi, s);
+      }
+      if (ga != wa) {
+        std::string s = "audio :";
+        for (const auto& x : ga) s += " " + x;
+        s += " / web :";
+        for (const auto& x : wa) s += " " + x;
+        diff(fi, s);
+      }
+      hudN += (int)wh.size();
+      audioN += (int)wa.size();
+      for (const auto& x : wh) hudAll.push_back(x);
+      for (const auto& x : wa) audioAll.push_back(x);
+      // Étape, objectif, état de l'épreuve.
+      const J& rr = f["run"];
+      if ((int)rr["i"].num() != run.stepIndex() || rr["text"].s != run.text() || R6(run.stepT()) != rr["stepT"].num()) diff(fi, "étape / objectif « " + run.text() + " » / « " + rr["text"].s + " »");
+      const J& c = rr["course"];
+      const CsoRunState& s = run.state();
+      const bool elimWant = !c["eliminated"].isNull();
+      if (c["started"].b != s.started || R6(s.t) != c["t"].num() || (int)c["next"].num() != s.next || (int)c["faults"].num() != s.faults || (int)c["refusals"].num() != s.refusals ||
+          (int)c["fenceRefusals"].num() != s.fenceRefusals || c["finished"].b != s.finished || elimWant != s.eliminated || (elimWant && c["eliminated"].s != s.eliminatedReason) ||
+          (int)c["timeFaults"].num() != s.timeFaults || R6(s.bell) != c["bell"].num() || (int)c["attempt"].num() != s.attempt || c["running"].b != s.running)
+        diff(fi, "état de l'épreuve");
+      // Mode de concours (game.course).
+      const J& gc = f["course"];
+      const CsoCourseMode& m = run.course();
+      if (gc.isNull() != !m.active) diff(fi, "mode de concours présent / absent");
+      else if (m.active) {
+        const int wantNext = gc["next"].isNull() ? -1 : (int)gc["next"]["num"].num() - 1;
+        if (gc["running"].b != m.running || gc["pre"].b != m.pre || gc["controls"].s != "cso" || wantNext != m.next) diff(fi, "mode de concours");
+      }
+      // Tableau de chrono : données (hudInfo) et textes (hud.js).
+      CsoBoard b;
+      const bool has = run.board(b);
+      const J& wb = f["board"];
+      if (wb.isNull() != !has) diff(fi, "tableau présent / absent");
+      else if (has) {
+        boardN++;
+        if (wb["started"].b != b.started || R6(b.bell) != wb["bell"].num() || R6(b.t) != wb["t"].num() || (int)wb["ta"].num() != b.ta || (int)wb["pen"].num() != b.pen ||
+            wb["over"].b != b.over || wb["next"].s != b.next || wb["finished"].b != b.finished || wb["eliminated"].b != b.eliminated)
+          diff(fi, "tableau (données)");
+        for (int k = 0; k < 4; k++)
+          if (wb["txt"][(size_t)k].s != b.txt[k]) diff(fi, "tableau « " + b.txt[k] + " » / « " + wb["txt"][(size_t)k].s + " »");
+      }
+    }
+    frames += n;
+    CHECK(bad == 0, "%s : rejeu du déroulé d'épreuve : %d écarts", who.c_str(), bad);
+    if (bad == 0 && n > 0) clean[id + " " + lang] = n;
+    const CsoRunState& s = run.state();
+    std::printf("épreuve %-22s %-2s : %4d images, %d écarts ; étape %d, %s, t %.2f s, prochain %d, fautes %d, refus %d, points %d%s%s ; %zu appels d'interface, %zu sons\n", id.c_str(), lang.c_str(), n, bad,
+                run.stepIndex(), s.started ? "parti" : "pas parti", s.t, s.next, s.faults, s.refusals, run.points(), s.finished ? ", arrivé" : "", s.eliminated ? (", éliminé : " + s.eliminatedReason).c_str() : "", hudAll.size(), audioAll.size());
+    // Comportements attendus des scénarios (en plus de l'identité au jeu web).
+    auto has = [&](const std::vector<std::string>& v, const std::string& sub) { int k = 0; for (const auto& x : v) k += x.find(sub) != std::string::npos; return k; };
+    const bool fr = lang == "fr";
+    if (id == "t4-sans-faute") CHECK(s.finished && s.faults == 0 && run.points() == 0 && has(hudAll, fr ? "SANS FAUTE !" : "CLEAR ROUND!") == 1 && has(audioAll, "cheer(") == 1 && s.timeFaults == 0, "%s : sans-faute", who.c_str());
+    if (id == "t4-depart-lance") CHECK(s.started && has(audioAll, "tone(1568") == 1 && s.next == 2, "%s : départ lancé", who.c_str());
+    if (id == "t4-cloche") CHECK(s.started && has(hudAll, fr ? "45 s écoulées" : "45 s up") == 1 && has(audioAll, "tone(1568") == 0, "%s : chrono lancé par la cloche", who.c_str());
+    if (id == "t4-erreur-parcours") CHECK(s.wrong.size() == 1 && has(hudAll, fr ? "Erreur de parcours" : "Wrong course") == 2 && has(hudAll, fr ? "ce n’est pas le 1" : "not fence 1") == 1 && s.next == 2 && s.faults == 0, "%s : une erreur annoncée une fois", who.c_str());
+    if (id == "t4-deux-refus") CHECK(s.eliminated && s.refusals == 2 && has(hudAll, fr ? "2e refus : éliminé du parcours." : "2nd refusal") == 1 && has(hudAll, fr ? "reprends-le au <b>4A</b>" : "4A") >= 1, "%s : deux refus, reprise au 4A", who.c_str());
+    if (id == "t4-temps-limite") CHECK(s.eliminated && s.t > 128 && s.faults == 0 && has(hudAll, fr ? "Temps limite dépassé" : "Time limit") == 1, "%s : temps limite", who.c_str());
+    if (id == "t4-descente") CHECK(s.eliminated && !s.started && has(hudAll, fr ? "Tu es descendu de cheval" : "You dismounted") == 1, "%s : descente avant le départ", who.c_str());
+    if (id == "t4-saute-avant-depart") CHECK(s.started && s.next == 1 && has(hudAll, fr ? "Le chrono n’est pas lancé" : "clock") >= 1, "%s : obstacle sauté avant le départ ignoré", who.c_str());
+    if (id == "t4-lignes") CHECK(s.started && has(audioAll, "tone(1568") == 1 && s.t < 1, "%s : ligne franchie de biais puis hors de la marge (rien), puis dans la marge (chrono lancé)", who.c_str());
+    if (id == "t4-arrivee-barre") CHECK(s.finished && s.faults == 4 && run.points() == 4 && has(hudAll, fr ? "4 POINTS" : "4 FAULTS") == 1 && has(hudAll, fr ? "Barre au 1 · +4" : "at 1 · +4") == 1, "%s : arrivée avec une barre", who.c_str());
+  }
+  int ok = 0;
+  for (const char* id : required)
+    for (const char* lang : {"fr", "en"}) {
+      CHECK(clean.count(std::string(id) + " " + lang), "scénario %s (%s) : absent ou en écart", id, lang);
+      ok += (int)clean.count(std::string(id) + " " + lang);
+    }
+  std::string miss;
+  for (const auto& k : g_text.missing()) miss += " « " + k + " »";
+  CHECK(g_text.missing().empty(), "textes demandés absents de strings_cso.json :%s", miss.c_str());
+  std::printf("déroulé d'épreuve : %d exécutions requises rejouées sans écart (%zu au total), %d images, %d appels d'interface et %d sons de courses.js comparés, %d tableaux\n", ok, clean.size(), frames, hudN, audioN, boardN);
+}
+
 int main(int argc, char** argv) {
   ORA = argc > 1 ? argv[1] : "oracles";
   DATA = argc > 2 ? argv[2] : "../../StridesGrandTour/Content/Data";
@@ -1026,6 +1305,9 @@ int main(int argc, char** argv) {
     testPress();
     testJudge();
     testSave();
+    loadText();
+    testText();
+    testCsoRuns();
   } catch (const std::exception& e) {
     std::printf("exception : %s\n", e.what());
     return 2;

@@ -475,6 +475,61 @@ Principes communs :
 - **Preuve visuelle** : aucune (logique et textes) ; les textes sont rendus en T7.
 - **Dépendances / risques** : T1 pour le test (rejeu de la trajectoire web, indépendant de T2 / T3) ; branchement dans
   le jeu après T3. Extraction automatique des clés `t('…')` du code à fiabiliser (gabarits `T\`…\``).
+- **Livré (19/11/2026)** : `SCh/CsoRun.h`, `SC/CsoRun.cpp` (`strides::CsoRun` = `courseSteps` de `courses.js` tel que
+  `cso_train` le construit, plus le déroulé de mission qui l'exécute : `Run.next` / `update` / `text` de `missions.js`,
+  étape `goto`) : étapes goto, capacité, présentation, entrée en piste (dossard, annonce, applaudissements, barres
+  remises, n° 1 surligné, mode concours `pre`), cloche, parcours (lignes à w/2 + 0,3, cap au départ seulement, départ
+  lancé, 45 s, chrono à partir de l'image suivant le départ, points en direct, écouteurs d'obstacle : obstacle attendu,
+  sens, chrono pas lancé, erreur de parcours dédoublonnée, refus +4 avec reprise au A et cadence remise à 0, barre +4
+  avec la cause ; éliminations à chaque image ; arrivée sans cap, grand message, sons, sortie 2,6 s avec cadence → 1,9),
+  bilan (attente du choix ; « Recommencer » insère une manche neuve, sans oracle) ; appels `hud.*` / `audio.*` restitués
+  dans l'ordre du jeu ; tableau de chrono (`hudInfo` et textes de `hud.js:407-412`). `SCh/Text.h`, `SC/Text.cpp` :
+  `t` / `T` (table), `toFixed` du JS (développement décimal exact, égalité vers le haut), `dec`, `enOrdinal`, `ordinal`,
+  `nth`, `ptsText`, gabarits. `EXP` : `Content/Data/strings_cso.json` (190 clés extraites par analyse syntaxique —
+  `rollup/parseAst` — de `courses.js`, `missions.js`, `hud.js`, `jumpModel.js` ; anglais donné par `i18n.js` lui-même ;
+  7 clés sans traduction, dont « · double ») ; `ORA/cso_text.json` (12 168 cas : `dec` sur 1 366 valeurs × 4 précisions,
+  ordinaux, `nth` et `ptsText` évalués depuis leur source extraite, 190 gabarits, fr et en) ; objet `run` de
+  `cso_course_pole.json` (`maxRefusals`, `pen`, `rail`, rayon de l'entrée de piste extraits du source, `BELL_DELAY`,
+  `CSO_GATE`, `CSO_START`, `CSO_FINISH`, temps accordé ; le bloc `rules` écrit à la main en vient désormais, mêmes
+  valeurs). `scripts/unreal/export-cso-runs.mjs` : canal « ep » (entrées de `Run.update` en pleine précision), fichier
+  appelant de chaque appel `hud.*` / `audio.*` (`src`, pile d'appel), images « légères » (sans caméra ni « ch », sans les
+  événements des chevaux du décor), et 10 scénarios `t4-*` en français et en anglais enregistrés depuis le lancement de
+  l'activité (`t4-sans-faute` : parcours complet à la poursuite du tracé ; `t4-depart-lance` ; `t4-cloche` ;
+  `t4-erreur-parcours` ; `t4-deux-refus` avec reprise du double au 4A ; `t4-temps-limite` ; `t4-descente` ;
+  `t4-saute-avant-depart` ; `t4-arrivee-barre`, arrivée de biais à 3 m/s ; `t4-lignes` : ligne de départ franchie à 70°,
+  puis à 3,95 m du milieu, puis à 3,65 m) ; les 27 exécutions
+  antérieures sont inchangées hors des nouveaux champs (comparées champ à champ) et `cso_target.json` est identique à
+  l'octet ; deux exécutions complètes de l'exporteur donnent un `cso_runs.json` identique octet pour octet (sha256
+  45b3d102…) ; il passe de 8,6 à 31,3 Mo. `TC` (`testText`, `testCsoRuns`) : 12 168 cas de format, 0 écart ;
+  22 exécutions (les 10 `t4-*` et « droit », fr et en) rejouées sans écart en réinjectant trajectoire, mode et
+  événements d'obstacle : 21 146 images, 212 appels d'interface et 142 sons de `courses.js` identiques, étape, objectif,
+  état (`started`, `t`, `next`, fautes, refus, `eliminated` et son motif, pénalités), mode de concours, 19 348 tableaux
+  (données et textes) et cadence réécrite identiques image par image ; aucune clé demandée absente de la table ; ctest
+  133 412 vérifications, 0 échec ; `scripts/unreal/mutations-cso-run.py` : 33 mutations de `CsoRun.cpp` et
+  `Text.cpp`, toutes détectées (la marge de 0,3 m et le cap de 60° de la ligne de départ et le plancher de 1,9 m/s de la
+  sortie ne l'étaient pas avant l'ajout de `t4-lignes` et de l'arrivée lente de `t4-arrivee-barre`) ; mutations du
+  cheval (14 sur 14) et des obstacles (34 sur 37, les 3 mêmes branches non discriminées) inchangées. Jeu : `AStridesCourse` remplace `CourseJudge` par `CsoRun` (`Build` prépare règles et
+  textes des données, `StartRun` lancé par `AStridesGameMode`, `TickRun` appelé par le cheval après le cœur et les
+  obstacles, `HandleFenceOut` transmet les événements avec la cause traduite, barres remises à l'entrée en piste,
+  journaux `HudLog` / `AudioLog`, tableau de chrono dans `StatusText`) ; `AStridesHorse::RunFrame` lit à chaque image si
+  le cavalier est en selle (`StridesRider` n'appelle plus le parcours : descente éliminatoire à tout moment du parcours,
+  avant le départ compris) ; record de `StridesSaveSubsystem` tiré de `CsoRun`. Tests moteur `Strides.Parite.CsoRun`
+  (mêmes 22 exécutions par l'acteur du jeu, cause traduite par le jeu) et `Strides.Cso.RunInGame` (cheval, cavalier et
+  parcours réels : entrée, annonce, cloche, ligne franchie, descente pendant le parcours → éliminé) : Result={Success},
+  comme les 11 autres tests Strides (le test miroir `Strides.Parite.CsoHorse` saute les scénarios légers). Démonstration
+  `-StridesShots` en rendu GPU (Metal, bureau, fenêtre 844 × 390) : la conduite automatique part de l'entrée de piste,
+  le parcours s'ouvre (« Départ 45 s · accordé 64 s 0 pt ▸ 1 · Franchis la ligne de départ » à la première capture) et
+  se termine sans faute (« 60,50 / 64 s 0 pt Arrivée ✓ » dans le journal).
+  Constats :
+  (1) les foulées des chevaux des cavaliers du décor varient d'une exécution à l'autre au-delà de 47 s de parcours
+  (`t4-sans-faute`, deux exécutions complètes comparées : seuls ces événements et leur compte `e0` différaient) ; ils ne
+  sont plus relevés dans les scénarios légers et sont exclus de la comparaison entre langues (`testRuns`), sans effet
+  sur l'épreuve ; (2) le texte de cause d'une faute (`causeText`) voyage traduit dans l'événement ; (3) le déroulé web compte
+  une 8e étape après le bilan (enregistrement du record, `activities.js`), hors de cette tranche (T11). Restent hors T4 :
+  poteau et carte de présentation (le jeu entre en piste aussitôt), grille et dialogue de capacité (T10) ; carte de
+  bilan et boutons (T11 : le jeu reste au bilan) ; interface d'épreuve (T7 : les appels vont au HUD de débogage) ; sons
+  (T12) ; mot d'appel `jumpFeedback` (T7) ; gel en pause et téléphone (T8) ; commandes de concours toujours actives
+  hors épreuve et hauteurs posées à la construction (T10) ; cible GPS ; joueur et langue d'une sauvegarde neuve.
 
 ### T5. Obstacles, lignes et poteau visibles (géométrie exportée du web)
 

@@ -32,7 +32,7 @@ M = [
  ('startJump : seuil 1,9 -> 2,1', 'tgt.plan.L0 * 1.9', 'tgt.plan.L0 * 2.1'),
 ]
 os.makedirs(out, exist_ok=True)
-others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoFences.cpp', 'SaveGame.cpp')]
+others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'Text.cpp', 'SaveGame.cpp')]
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 undetected = 0

@@ -12,7 +12,12 @@ import { JUMP, planJump, railsAhead, takeoffQuality, speedFactor, angleFactor } 
 import { CSO_RIDE, steerRate, cadenceDelta, minRadius, maxTurnRate } from '../../src/gameplay/csoRide.js';
 import { CSO_DESIGN, traceCourse, csoHeights } from '../../src/gameplay/csoCourse.js';
 import { timeFaults, compareResults } from '../../src/gameplay/challenge.js';
-import { COURSE_SPEED, COURSE_LENGTH, timeAllowedFor } from '../../src/gameplay/courses.js';
+import { COURSE_SPEED, COURSE_LENGTH, timeAllowedFor, BELL_DELAY, ordinal, enOrdinal } from '../../src/gameplay/courses.js';
+import { CSO_GATE, CSO_START, CSO_FINISH } from '../../src/gameplay/obstacles.js';
+import { dec } from '../../src/core/math.js';
+import { t as i18nT, T as i18nTpl, chooseLang } from '../../src/core/i18n.js';
+import { CAUSES } from '../../src/gameplay/jumpModel.js';
+import { parseAst } from 'rollup/parseAst';
 import { HORSE } from '../../src/config.js';
 import { POLE } from '../../src/world/sites.js';
 import { HORSES } from '../../src/gameplay/data.js';
@@ -47,7 +52,26 @@ write(DATA, 'cso_horse.json', {
   csoFenceWidth: srcConst(/CSO_LAYOUT\.forEach\(\(f, i\) => \{\s*this\.add\(\{[^}]*\bw: ([\d.]+)[^}]*course: 'cso'/, 'largeur des obstacles de CSO'),
   jumpDuration: HORSE.jumpDuration, minJumpSpeed: HORSE.minJumpSpeed, jumpPeak: HORSE.jumpPeak,
 });
-write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: 4, firstRefusal: 4, refusalsToEliminate: 2, timeFaultPerSecond: 1 } });
+// Déroulé d'épreuve (tranche T4) : règles de courseSteps (courses.js) extraites du source (valeurs par défaut écrites dans
+// la fonction, jamais recopiées), délai de la cloche, entrée de piste et lignes de départ / d'arrivée du jeu (repère monde,
+// pleine précision) ; recoupés par les scénarios t4-* de cso_runs.json (élimination au deuxième refus, +4, 45 s).
+const COURSES_SRC = readFileSync(join(ROOT, 'src/gameplay/courses.js'), 'utf8');
+const srcMatch = (re, what) => {
+  const m = COURSES_SRC.match(re);
+  if (!m) throw new Error(`courses.js : ${what} introuvable`);
+  return m;
+};
+const maxRef = srcMatch(/opts\.maxRefusals \?\? \(kind === 'xc' \? (\d+) : (\d+)\)/, 'maxRefusals');
+const penM = srcMatch(/const pen = kind === 'xc' \? (\d+) : (\d+);/, 'pen');
+const railM = srcMatch(/obstacle\.num === state\.next && dir > 0\) \{\s*state\.faults \+= (\d+);/, 'faute de barre');
+const csoRun = {
+  bellDelay: BELL_DELAY,
+  maxRefusals: Number(maxRef[2]), maxRefusalsXc: Number(maxRef[1]), pen: Number(penM[2]), penXc: Number(penM[1]), rail: Number(railM[1]),
+  gate: { ...CSO_GATE, r: Number(srcMatch(/S\.goto\(opts\.gate \?\? CSO_GATE, .*?\{ r: (\d+), mode: 'ride' \}\)/, 'rayon de l’entrée de piste')[1]) },
+  start: CSO_START, finish: CSO_FINISH,
+  timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national),
+};
+write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: csoRun.rail, firstRefusal: csoRun.pen, refusalsToEliminate: csoRun.maxRefusals, timeFaultPerSecond: timeFaults(65, 64, 1) }, run: csoRun });
 
 // ---------- Oracles ----------
 // Saut : grille d'appels devant un vertical et un oxer, plusieurs vitesses, angles, puissances.
@@ -96,3 +120,90 @@ write(ORA, 'cso_course.json', {
   compare: cmp.map(([a, b]) => ({ a, b, out: Math.sign(compareResults(a, b)) })),
 });
 console.log('données :', DATA, '\noracles :', ORA, '\nsauts', jump.length, 'conduite', ride.length, 'obstacles', tr.fences.length);
+
+// ---------- Textes de l'épreuve (tranche T4) ----------
+// Clés françaises extraites du code par analyse syntaxique (rollup/parseAst) : appels t('…') à texte littéral et gabarits
+// T`…${x}…` (clé : ${…} remplacés par {0}, {1}… dans l'ordre, règle de src/core/i18n.js). Traduction anglaise donnée
+// par i18n.js lui-même (chooseLang('en') puis t(clé)) : rien n'est recopié. Fichiers : déroulé de l'épreuve
+// (courses.js), étapes de mission (missions.js : « goto », consignes de mode), tableau de chrono (hud.js), causes de
+// faute (jumpModel.js).
+const TEXT_FILES = ['gameplay/courses.js', 'gameplay/missions.js', 'ui/hud.js', 'gameplay/jumpModel.js'];
+const walk = (node, fn) => {
+  if (!node || typeof node.type !== 'string') return;
+  fn(node);
+  for (const k of Object.keys(node)) {
+    const v = node[k];
+    if (Array.isArray(v)) v.forEach((c) => c && typeof c === 'object' && walk(c, fn));
+    else if (v && typeof v === 'object' && typeof v.type === 'string') walk(v, fn);
+  }
+};
+const keyFiles = new Map(); // clé → fichiers
+const ast = {};
+for (const f of TEXT_FILES) {
+  const code = readFileSync(join(ROOT, 'src', f), 'utf8');
+  const tree = parseAst(code);
+  ast[f] = { code, tree };
+  walk(tree, (n) => {
+    let key = null;
+    if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 't' && n.arguments[0]?.type === 'Literal' && typeof n.arguments[0].value === 'string') key = n.arguments[0].value;
+    else if (n.type === 'TaggedTemplateExpression' && n.tag.type === 'Identifier' && n.tag.name === 'T') key = n.quasi.quasis.map((q, i) => (i ? `{${i - 1}}` : '') + q.value.cooked).join('');
+    if (key === null || key === '') return;
+    if (!keyFiles.has(key)) keyFiles.set(key, new Set());
+    keyFiles.get(key).add(f);
+  });
+}
+// Fonctions privées de courses.js (non exportées) : source extraite telle quelle et évaluée avec LANG, enOrdinal et T.
+const privFn = (name) => {
+  const { code, tree } = ast['gameplay/courses.js'];
+  let init = null;
+  walk(tree, (n) => {
+    if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier' && n.id.name === name && n.init) init = n.init;
+  });
+  if (!init) throw new Error(`courses.js : ${name} introuvable`);
+  const body = code.slice(init.start, init.end);
+  return (lang) => new Function('LANG', 'enOrdinal', 'T', `return (${body});`)(lang, enOrdinal, i18nTpl);
+};
+const nthOf = privFn('nth'), ptsOf = privFn('ptsText');
+// Cas de format : dec (Number.prototype.toFixed, virgule en français), ordinaux, pluriels, gabarits.
+const decVals = [0, -0, 0.5, 1.5, 2.5, -2.5, 0.005, 0.015, 0.025, 0.045, 0.125, 0.375, 1.005, 1.255, 2.675, 10.235, 63.995, 64.004999, 64.005, 127.995, 128.005,
+  1e-7, -0.004, -1.5, 0.1 + 0.2, 1 / 3, 2 / 3, 45, 99.999, 123.456, 1234.5678, 59.99999999, 0.0049999999];
+let acc = 0;
+for (let i = 1; i <= 4000; i++) {
+  acc += 1 / 30; // chrono : somme des pas de 1/30 s (courses.js : state.t += dt)
+  if (i % 3 === 0) decVals.push(acc);
+}
+const ordN = [...Array(131).keys(), 200, 1000, 1001, 1011, 1012, 1013, 1021, 1111];
+const keys = [...keyFiles.keys()].sort();
+const textCases = (lang) => ({
+  dec: decVals.flatMap((n) => [0, 1, 2, 3].map((k) => ({ n, k, out: dec(n, k) }))),
+  ordinal: ordN.map((n) => ({ n, out: ordinal(n) })),
+  enOrdinal: ordN.map((n) => ({ n, out: enOrdinal(n) })),
+  nth: ordN.map((n) => ({ n, out: nthOf(lang)(n) })),
+  ptsText: [...Array(13).keys()].map((n) => ({ n, out: ptsOf(lang)(n) })),
+  // Gabarit : valeurs d'essai distinctes ; texte fixe : t(clé).
+  templates: keys.map((key) => {
+    const parts = key.split(/\{\d+\}/);
+    if (parts.length === 1) return { key, out: i18nT(key) };
+    const vals = parts.slice(1).map((_, i) => (i % 2 ? 40 + i : `«v${i}»`));
+    const strs = Object.assign([...parts], { raw: [...parts] });
+    return { key, vals, out: i18nTpl(strs, ...vals) };
+  }),
+});
+const fr = textCases('fr');
+chooseLang('en'); // langue vivante de i18n.js (dec, ordinal, t et T la lisent à l'appel)
+const en = textCases('en');
+const strings = {};
+const missing = [];
+for (const key of keys) {
+  strings[key] = i18nT(key);
+  if (strings[key] === key && !/^[\s\d{}·:+./–-]*$/.test(key)) missing.push(key);
+}
+chooseLang('fr');
+write(DATA, 'strings_cso.json', {
+  schema: 'strides.strings_cso/1', source: TEXT_FILES.map(src).concat([src('core/i18n.js'), 'src/i18n/en/*.js']),
+  doc: 'clé = texte français exact du code (gabarit : {0}, {1}… dans l’ordre des ${…}) ; valeur = texte anglais (i18n.js, t(clé)) ; une clé sans traduction vaut elle-même (missing)',
+  strings, missing, files: Object.fromEntries(keys.map((k) => [k, [...keyFiles.get(k)].sort()])),
+  causes: CAUSES,
+});
+write(ORA, 'cso_text.json', { schema: 'strides.oracle.cso_text/1', source: ['src/core/math.js', 'src/core/i18n.js', 'src/gameplay/courses.js'], fr, en });
+console.log('textes :', keys.length, 'clés,', missing.length, 'sans traduction ;', fr.dec.length, 'formats dec par langue');

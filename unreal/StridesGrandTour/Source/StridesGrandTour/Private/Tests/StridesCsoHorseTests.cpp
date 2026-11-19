@@ -93,6 +93,9 @@ bool FStridesPariteCsoHorseTest::RunTest(const FString&)
 	{
 		const TSharedPtr<FJsonObject> R = RV->AsObject();
 		const FString Id = R->GetStringField(TEXT("id"));
+		// Scénarios légers de la tranche T4 (déroulé d'épreuve) : pas de canal « ch », rejoués par Strides.Parite.CsoRun.
+		bool bLite = false;
+		if (R->GetObjectField(TEXT("setup"))->TryGetBoolField(TEXT("lite"), bLite) && bLite) continue;
 		const TSharedPtr<FJsonObject> Ch0 = R->GetObjectField(TEXT("setup"))->GetObjectField(TEXT("ch0"));
 		std::vector<strides::CsoObstacle> Obs = ObstaclesFrom(Ch0->GetArrayField(TEXT("obs")));
 		strides::CsoHorseState S;

@@ -116,7 +116,8 @@ void AStridesRider::Dismount(APlayerController* PC)
 {
 	AStridesHorse* H = MountedOn;
 	if (!H || H->IsJumping()) return;
-	if (H->Course) H->Course->RiderDismounted();
+	// Plus d'appel au parcours : l'épreuve lit à chaque image si le cavalier est en selle (AStridesHorse::RunFrame) et
+	// élimine à tout moment du parcours, avant le départ compris (courses.js:329).
 	MountedOn = nullptr;
 	H->Rider = nullptr;
 	H->Halt();

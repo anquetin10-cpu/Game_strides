@@ -1,0 +1,801 @@
+{
+ "schema": "strides.strings_cso/1",
+ "source": [
+  "src/gameplay/courses.js",
+  "src/gameplay/missions.js",
+  "src/ui/hud.js",
+  "src/gameplay/jumpModel.js",
+  "src/core/i18n.js",
+  "src/i18n/en/*.js"
+ ],
+ "doc": "clé = texte français exact du code (gabarit : {0}, {1}… dans l’ordre des ${…}) ; valeur = texte anglais (i18n.js, t(clé)) ; une clé sans traduction vaut elle-même (missing)",
+ "strings": {
+  " dont un double ({0} – {1})": " including a double ({0} – {1})",
+  " dont {0} doubles ({1})": " including {0} doubles ({1})",
+  " · double": " · double",
+  " · manche {0}": " · round {0}",
+  "0 · aucune": "0 · none",
+  "3e refus sur le même obstacle : éliminé du parcours.": "Third refusal at the same fence: eliminated from the course.",
+  "<b>Dans la vraie vie</b> — {0}": "<b>In real life</b> — {0}",
+  "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment.": "<b>Left/right</b>: steer · <b>forward/back</b>: pace (held) · <b>JUMP</b> at the right moment.",
+  "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.": "<b>Left/right</b>: steer · <b>forward/back</b>: pace (held) · <b>JUMP</b> at the right moment. Cross the <b>start line</b>.",
+  "ARRÊT": "HALT",
+  "Abord désaxé": "Crooked approach",
+  "Abord en biais": "Crooked approach",
+  "Action": "Action",
+  "Appel parfait": "Perfect take-off",
+  "Appel trop loin": "Took off too far",
+  "Appel trop près": "Took off too close",
+  "Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.": "Press <b>JUMP</b> when the button is <b>green</b>.",
+  "Arrivée ✓": "Finish ✓",
+  "Barre au {0} · +4{1}": "Rail down at {0} · +4{1}",
+  "Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.": "Rail down or first refusal: 4 faults · second refusal: elimination · 1 fault per second (or part of a second) over the time allowed.",
+  "Barre touchée par les antérieurs": "Rail hit by the front legs",
+  "Barre touchée par les postérieurs": "Rail hit by the hind legs",
+  "Bon appel": "Good take-off",
+  "Boost": "Boost",
+  "CLOCHE": "BELL",
+  "CONFORT DU CHEVAL {0} %": "HORSE COMFORT {0}%",
+  "CONFORT · {0} {1} %": "COMFORT · {0} {1}%",
+  "Cheval": "Horse",
+  "Cheval engagé": "Horse entered",
+  "Chrono": "Time",
+  "Classement": "Leaderboard",
+  "Continuer": "Continue",
+  "Contre-proposition acceptée": "Counter-offer accepted",
+  "Contre-proposition déclinée": "Counter-offer declined",
+  "Correct, mais peut mieux faire.": "Fine, but could do better.",
+  "Courir": "Run",
+  "Course terminée sans toi…": "The race finished without you…",
+  "Cross de Saint-Gatien": "Saint-Gatien Cross-Country",
+  "Descends de cheval (bouton ACTION à l’arrêt).": "Dismount (ACTION button when stopped).",
+  "Difficile": "Hard",
+  "Dotation versée : +{0}": "Prize money paid: +{0}",
+  "Débloqué au palier « {0} ».": "Unlocked at the “{0}” tier.",
+  "Départ {0} s": "Start {0} s",
+  "Engagements en CSI ouverts au Pôle International.": "CSI entries open at Pôle International.",
+  "Entraîneur": "Coach",
+  "Entre en piste : rejoins l’entrée de la carrière": "Enter the arena: head to the arena entrance",
+  "Entrer en piste": "Enter the arena",
+  "Entrée en piste…": "Entering the arena…",
+  "Erreur de parcours : ce n’est pas le {0}": "Wrong course: that’s not fence {0}",
+  "Erreur de parcours : saute l’obstacle <b>{0}</b> (repère vert).": "Wrong course: jump fence <b>{0}</b> (green marker).",
+  "Facile": "Easy",
+  "Fais demi-tour, reprends ta <b>cadence</b> (joystick vers l’avant) et représente l’obstacle.": "Turn around, pick up your <b>pace</b> again (joystick forward) and re-present at the fence.",
+  "Fais une <b>volte</b> pour reprendre ton élan, puis représente l’obstacle.": "Ride a <b>circle</b> to build momentum again, then re-present at the fence.",
+  "Fautes aux obstacles": "Jumping faults",
+  "Franchis la ligne de départ": "Cross the start line",
+  "Gare-toi et monte dans le camion.": "Park and get into the horsebox.",
+  "Guide local": "Local Guide",
+  "Hauteur": "Height",
+  "Heure et énergie": "Time and energy",
+  "Le chrono n’est pas lancé : franchis d’abord la <b>ligne de départ</b>.": "The clock hasn’t started: cross the <b>start line</b> first.",
+  "Le client": "The client",
+  "Maintiens <b>BOOST</b> par à-coups : l’endurance se recharge au galop normal.": "Hold <b>BOOST</b> in bursts: stamina recovers at a normal canter.",
+  "Manque d’impulsion": "Lacking impulsion",
+  "Mission": "Mission",
+  "Mission Strides": "Strides mission",
+  "Mission Strides · Chauffeur": "Strides mission · Driver",
+  "Mission abandonnée.": "Mission abandoned.",
+  "Mission refusée — elle te sera reproposée.": "Mission declined — it will be offered to you again.",
+  "Mission réalisée… de justesse.": "Mission done… just about.",
+  "Mission réussie": "Mission complete",
+  "Monte dans le camion.": "Get into the horsebox.",
+  "Monte sur ton cheval (siffle-le si besoin).": "Mount your horse (whistle for it if needed).",
+  "Moyenne": "Medium",
+  "Nouvelle demande · {0}": "New request · {0}",
+  "Nouvelles missions : Transport, sorties cavalier, plage.": "New missions: transport, rider outings, beach.",
+  "N° {0} · {1}": "No. {0} · {1}",
+  "Obstacle n°{0}{1} sur {2}": "Fence {0}{1} of {2}",
+  "Obstacles jusqu’à {0} m : avec {1} et cet équipement, tu plafonnes vers {2} m. Il faudra un cheval plus puissant ou une selle adaptée (Sellerie du Port, « Mes chevaux »), sinon les barres tomberont.": "Fences up to {0} m: with {1} and this tack, you top out at around {2} m. You’ll need a more powerful horse or a suitable saddle (Sellerie du Port, “My horses”), or the rails will come down.",
+  "Offre refusée.": "Offer declined.",
+  "PARTEZ !": "GO!",
+  "Parcours": "Course",
+  "Parcours du Pôle International": "Pôle International course",
+  "Parfait, rapide et pro. Je recommande sans hésiter.": "Perfect, quick and professional. Highly recommended.",
+  "Pas assez d’impulsion": "Not enough impulsion",
+  "Passe dans les anneaux": "Ride through the rings",
+  "Passe la ligne d’arrivée !": "Cross the finish line!",
+  "Pause": "Pause",
+  "Place-toi dans les stalles…": "Get into the starting stalls…",
+  "Plan du parcours": "Course plan",
+  "Plus tard": "Later",
+  "Porte de service ouverte.": "Side door open.",
+  "Position {0}/6 · Termine dans le top 3": "Position {0}/6 · Finish in the top 3",
+  "Pourboire 5★ : +{0}": "5★ tip: +{0}",
+  "Prends ton élan…": "Build up speed…",
+  "Prochaine étape · touche pour ouvrir": "Next step · tap to open",
+  "Prépare-toi…": "Get ready…",
+  "Présentation de l’épreuve": "Class presentation",
+  "Pénalités de temps": "Time faults",
+  "Ralentis après la ligne": "Slow down after the line",
+  "Rampe ouverte : <b>ferme-la</b> à l’arrière du camion avant de rouler.": "Ramp down: <b>close it</b> at the back of the horsebox before driving off.",
+  "Recommencer": "Try again",
+  "Refus au {0} · +{1}": "Refusal at {0} · +{1}",
+  "Refus dans le double : reprends-le au <b>{0}</b>.": "Refusal in the double: start it again from <b>{0}</b>.",
+  "Rejoins la piste de l’hippodrome (ligne droite des tribunes)": "Head to the racecourse track (home straight by the stands)",
+  "Rejoins le départ du cross": "Head to the cross-country start",
+  "Reste sur la piste !": "Stay on the track!",
+  "Retour": "Back",
+  "Récompense": "Reward",
+  "Référence locale — les clients te recommandent entre eux.": "Local go-to — clients recommend you to each other.",
+  "Répondre à la demande": "Respond to request",
+  "Résultats · {0}{1}": "Results · {0}{1}",
+  "Résultats…": "Results…",
+  "SANS FAUTE !": "CLEAR ROUND!",
+  "Sans faute · {0}": "Clear round · {0}",
+  "Saut": "Jump",
+  "Saut trop court : atterrissage dans l’obstacle": "Jump too short: landed in the fence",
+  "Saute !": "Jump!",
+  "Secrétariat du concours": "Show office",
+  "Solde insuffisant : {0} {1} (solde {2}).": "Not enough money: {0} {1} (balance {2}).",
+  "Sors du camion (ACTION à l’arrêt).": "Get out of the horsebox (ACTION when stopped).",
+  "Sors du camion puis monte à cheval.": "Get out of the horsebox, then mount your horse.",
+  "Sors du véhicule (ACTION à l’arrêt).": "Get out of the vehicle (ACTION when stopped).",
+  "Sors du véhicule puis monte à cheval.": "Get out of the vehicle, then mount your horse.",
+  "S’entraîner": "Practise",
+  "Temps accordé": "Time allowed",
+  "Temps limite dépassé : éliminé.": "Time limit exceeded: eliminated.",
+  "Temps écoulé !": "Time’s up!",
+  "Termine ou abandonne ta mission en cours d’abord.": "Finish or abandon your current mission first.",
+  "Ton engagement ({0}) t’a été remboursé : le concours a été interrompu.": "Your entry fee ({0}) has been refunded: the show was interrupted.",
+  "Total": "Total",
+  "Toucher pour continuer": "Tap to continue",
+  "Toucher pour fermer": "Tap to close",
+  "Touché au {0} · +4{1}": "Hit at {0} · +4{1}",
+  "Trop loin": "Too far",
+  "Trop près": "Too close",
+  "Trop près : plus de place pour sauter": "Too close: no room left to jump",
+  "Trop tôt": "Too early",
+  "Trop vite : saut à plat": "Too fast: flat jump",
+  "Très bon travail, merci !": "Very good work, thank you!",
+  "Très difficile": "Very hard",
+  "Tu as {0} s pour franchir la ligne de départ": "You have {0} s to cross the start line",
+  "Tu es descendu de cheval : éliminé.": "You dismounted: eliminated.",
+  "Tu es descendu de cheval.": "You dismounted.",
+  "Tu es la référence de Deauville City.": "You’re the go-to name in Deauville City.",
+  "Tu termines {0}. Il faut finir dans le top 3.": "You finished {0}. You need a top-3 finish.",
+  "Téléphone": "Phone",
+  "Un peu loin": "A little far",
+  "Un peu près": "A little close",
+  "Un tour de piste, cinq adversaires. Le grand galop ne dure pas : garde de l’endurance pour la dernière ligne droite !": "One lap, five rivals. A full gallop doesn’t last: save some stamina for the final straight!",
+  "Une mission t’attend sur Strides": "A mission is waiting on Strides",
+  "Victoire !": "Victory!",
+  "Victoire, sans faute !": "Victory, with a clear round!",
+  "Voir le plan": "View the plan",
+  "aucune (éliminé)": "none (eliminated)",
+  "barre au {0}{1}": "rail down at {0}{1}",
+  "barème A au chrono": "Table A against the clock",
+  "et {0}{1}": "and {0}{1}",
+  "hors dotation": "outside the prize money",
+  "il faut": "you need",
+  "maintenant": "now",
+  "refus au {0}": "refusal at {0}",
+  "son cheval": "their horse",
+  "temps accordé {0} s": "time allowed {0} s",
+  "{0} POINT": "{0} FAULT",
+  "{0} POINTS": "{0} FAULTS",
+  "{0} accepte {1} € · {2}": "{0} accepts €{1} · {2}",
+  "{0} l · {1}": "{0} L · {1}",
+  "{0} l/100": "{0} L/100",
+  "{0} m · difficulté {1}": "{0} m · {1} difficulty",
+  "{0} maintient {1} € · {2}": "{0} sticks to €{1} · {2}",
+  "{0} missions t’attendent sur Strides": "{0} missions are waiting on Strides",
+  "{0} obstacles{1} · {2} m": "{0} fences{1} · {2} m",
+  "{0} place": "{0} place",
+  "{0} pt": "{0} fault",
+  "{0} pts": "{0} faults",
+  "{0} pts : {1}": "{0} faults: {1}",
+  "{0} refus : éliminé du parcours.": "{0} refusal: eliminated from the course.",
+  "{0} s (accordé {1} s)": "{0} s (allowed {1} s)",
+  "{0} s écoulées : le chrono est lancé": "{0} s up: the clock has started",
+  "{0} sur {1}": "{0} of {1}",
+  "{0} tr/min": "{0} rpm",
+  "{0} — dotation déjà reçue pour ta première manche classée": "{0} — prize money already received for your first placed round",
+  "~{0} €": "~€{0}",
+  "· accordé {0} s": "· allowed {0} s",
+  "ÉLIMINÉ": "ELIMINATED",
+  "Éliminé": "Eliminated",
+  "Épreuve": "Class",
+  "Événement": "Event",
+  "éliminé · {0}": "eliminated · {0}",
+  "▸ Arrivée": "▸ Finish"
+ },
+ "missing": [
+  " · double",
+  "Action",
+  "Boost",
+  "Mission",
+  "Pause",
+  "Total",
+  "{0} place"
+ ],
+ "files": {
+  " dont un double ({0} – {1})": [
+   "gameplay/courses.js"
+  ],
+  " dont {0} doubles ({1})": [
+   "gameplay/courses.js"
+  ],
+  " · double": [
+   "gameplay/courses.js"
+  ],
+  " · manche {0}": [
+   "gameplay/courses.js"
+  ],
+  "0 · aucune": [
+   "gameplay/courses.js"
+  ],
+  "3e refus sur le même obstacle : éliminé du parcours.": [
+   "gameplay/courses.js"
+  ],
+  "<b>Dans la vraie vie</b> — {0}": [
+   "gameplay/missions.js"
+  ],
+  "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment.": [
+   "gameplay/courses.js"
+  ],
+  "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.": [
+   "gameplay/courses.js"
+  ],
+  "ARRÊT": [
+   "ui/hud.js"
+  ],
+  "Abord désaxé": [
+   "gameplay/jumpModel.js"
+  ],
+  "Abord en biais": [
+   "gameplay/courses.js"
+  ],
+  "Action": [
+   "ui/hud.js"
+  ],
+  "Appel parfait": [
+   "gameplay/courses.js"
+  ],
+  "Appel trop loin": [
+   "gameplay/courses.js",
+   "gameplay/jumpModel.js"
+  ],
+  "Appel trop près": [
+   "gameplay/courses.js",
+   "gameplay/jumpModel.js"
+  ],
+  "Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.": [
+   "gameplay/courses.js"
+  ],
+  "Arrivée ✓": [
+   "ui/hud.js"
+  ],
+  "Barre au {0} · +4{1}": [
+   "gameplay/courses.js"
+  ],
+  "Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.": [
+   "gameplay/courses.js"
+  ],
+  "Barre touchée par les antérieurs": [
+   "gameplay/jumpModel.js"
+  ],
+  "Barre touchée par les postérieurs": [
+   "gameplay/jumpModel.js"
+  ],
+  "Bon appel": [
+   "gameplay/courses.js"
+  ],
+  "Boost": [
+   "ui/hud.js"
+  ],
+  "CLOCHE": [
+   "gameplay/courses.js"
+  ],
+  "CONFORT DU CHEVAL {0} %": [
+   "ui/hud.js"
+  ],
+  "CONFORT · {0} {1} %": [
+   "ui/hud.js"
+  ],
+  "Cheval": [
+   "gameplay/courses.js"
+  ],
+  "Cheval engagé": [
+   "gameplay/courses.js"
+  ],
+  "Chrono": [
+   "gameplay/courses.js"
+  ],
+  "Classement": [
+   "gameplay/courses.js"
+  ],
+  "Continuer": [
+   "gameplay/courses.js"
+  ],
+  "Contre-proposition acceptée": [
+   "gameplay/missions.js"
+  ],
+  "Contre-proposition déclinée": [
+   "gameplay/missions.js"
+  ],
+  "Correct, mais peut mieux faire.": [
+   "gameplay/missions.js"
+  ],
+  "Courir": [
+   "ui/hud.js"
+  ],
+  "Course terminée sans toi…": [
+   "gameplay/courses.js"
+  ],
+  "Cross de Saint-Gatien": [
+   "gameplay/courses.js"
+  ],
+  "Descends de cheval (bouton ACTION à l’arrêt).": [
+   "gameplay/missions.js"
+  ],
+  "Difficile": [
+   "gameplay/courses.js"
+  ],
+  "Dotation versée : +{0}": [
+   "gameplay/courses.js"
+  ],
+  "Débloqué au palier « {0} ».": [
+   "gameplay/missions.js"
+  ],
+  "Départ {0} s": [
+   "ui/hud.js"
+  ],
+  "Engagements en CSI ouverts au Pôle International.": [
+   "gameplay/missions.js"
+  ],
+  "Entraîneur": [
+   "gameplay/courses.js"
+  ],
+  "Entre en piste : rejoins l’entrée de la carrière": [
+   "gameplay/courses.js"
+  ],
+  "Entrer en piste": [
+   "gameplay/courses.js"
+  ],
+  "Entrée en piste…": [
+   "gameplay/courses.js"
+  ],
+  "Erreur de parcours : ce n’est pas le {0}": [
+   "gameplay/courses.js"
+  ],
+  "Erreur de parcours : saute l’obstacle <b>{0}</b> (repère vert).": [
+   "gameplay/courses.js"
+  ],
+  "Facile": [
+   "gameplay/courses.js"
+  ],
+  "Fais demi-tour, reprends ta <b>cadence</b> (joystick vers l’avant) et représente l’obstacle.": [
+   "gameplay/courses.js"
+  ],
+  "Fais une <b>volte</b> pour reprendre ton élan, puis représente l’obstacle.": [
+   "gameplay/courses.js"
+  ],
+  "Fautes aux obstacles": [
+   "gameplay/courses.js"
+  ],
+  "Franchis la ligne de départ": [
+   "gameplay/courses.js"
+  ],
+  "Gare-toi et monte dans le camion.": [
+   "gameplay/missions.js"
+  ],
+  "Guide local": [
+   "gameplay/missions.js"
+  ],
+  "Hauteur": [
+   "gameplay/courses.js"
+  ],
+  "Heure et énergie": [
+   "ui/hud.js"
+  ],
+  "Le chrono n’est pas lancé : franchis d’abord la <b>ligne de départ</b>.": [
+   "gameplay/courses.js"
+  ],
+  "Le client": [
+   "gameplay/missions.js"
+  ],
+  "Maintiens <b>BOOST</b> par à-coups : l’endurance se recharge au galop normal.": [
+   "gameplay/courses.js"
+  ],
+  "Manque d’impulsion": [
+   "gameplay/courses.js"
+  ],
+  "Mission": [
+   "gameplay/missions.js"
+  ],
+  "Mission Strides": [
+   "gameplay/missions.js"
+  ],
+  "Mission Strides · Chauffeur": [
+   "gameplay/missions.js"
+  ],
+  "Mission abandonnée.": [
+   "gameplay/missions.js"
+  ],
+  "Mission refusée — elle te sera reproposée.": [
+   "gameplay/missions.js"
+  ],
+  "Mission réalisée… de justesse.": [
+   "gameplay/missions.js"
+  ],
+  "Mission réussie": [
+   "gameplay/missions.js"
+  ],
+  "Monte dans le camion.": [
+   "gameplay/missions.js"
+  ],
+  "Monte sur ton cheval (siffle-le si besoin).": [
+   "gameplay/missions.js"
+  ],
+  "Moyenne": [
+   "gameplay/courses.js"
+  ],
+  "Nouvelle demande · {0}": [
+   "gameplay/missions.js"
+  ],
+  "Nouvelles missions : Transport, sorties cavalier, plage.": [
+   "gameplay/missions.js"
+  ],
+  "N° {0} · {1}": [
+   "gameplay/courses.js"
+  ],
+  "Obstacle n°{0}{1} sur {2}": [
+   "gameplay/courses.js"
+  ],
+  "Obstacles jusqu’à {0} m : avec {1} et cet équipement, tu plafonnes vers {2} m. Il faudra un cheval plus puissant ou une selle adaptée (Sellerie du Port, « Mes chevaux »), sinon les barres tomberont.": [
+   "gameplay/courses.js"
+  ],
+  "Offre refusée.": [
+   "gameplay/missions.js"
+  ],
+  "PARTEZ !": [
+   "gameplay/missions.js"
+  ],
+  "Parcours": [
+   "gameplay/courses.js"
+  ],
+  "Parcours du Pôle International": [
+   "gameplay/courses.js"
+  ],
+  "Parfait, rapide et pro. Je recommande sans hésiter.": [
+   "gameplay/missions.js"
+  ],
+  "Pas assez d’impulsion": [
+   "gameplay/jumpModel.js"
+  ],
+  "Passe dans les anneaux": [
+   "gameplay/courses.js"
+  ],
+  "Passe la ligne d’arrivée !": [
+   "gameplay/courses.js"
+  ],
+  "Pause": [
+   "ui/hud.js"
+  ],
+  "Place-toi dans les stalles…": [
+   "gameplay/courses.js"
+  ],
+  "Plan du parcours": [
+   "gameplay/courses.js"
+  ],
+  "Plus tard": [
+   "gameplay/missions.js"
+  ],
+  "Porte de service ouverte.": [
+   "ui/hud.js"
+  ],
+  "Position {0}/6 · Termine dans le top 3": [
+   "gameplay/courses.js"
+  ],
+  "Pourboire 5★ : +{0}": [
+   "gameplay/missions.js"
+  ],
+  "Prends ton élan…": [
+   "gameplay/courses.js"
+  ],
+  "Prochaine étape · touche pour ouvrir": [
+   "gameplay/missions.js"
+  ],
+  "Prépare-toi…": [
+   "gameplay/missions.js"
+  ],
+  "Présentation de l’épreuve": [
+   "gameplay/courses.js"
+  ],
+  "Pénalités de temps": [
+   "gameplay/courses.js"
+  ],
+  "Ralentis après la ligne": [
+   "gameplay/courses.js"
+  ],
+  "Rampe ouverte : <b>ferme-la</b> à l’arrière du camion avant de rouler.": [
+   "ui/hud.js"
+  ],
+  "Recommencer": [
+   "gameplay/courses.js"
+  ],
+  "Refus au {0} · +{1}": [
+   "gameplay/courses.js"
+  ],
+  "Refus dans le double : reprends-le au <b>{0}</b>.": [
+   "gameplay/courses.js"
+  ],
+  "Rejoins la piste de l’hippodrome (ligne droite des tribunes)": [
+   "gameplay/courses.js"
+  ],
+  "Rejoins le départ du cross": [
+   "gameplay/courses.js"
+  ],
+  "Reste sur la piste !": [
+   "gameplay/courses.js"
+  ],
+  "Retour": [
+   "gameplay/courses.js"
+  ],
+  "Récompense": [
+   "gameplay/courses.js"
+  ],
+  "Référence locale — les clients te recommandent entre eux.": [
+   "gameplay/missions.js"
+  ],
+  "Répondre à la demande": [
+   "gameplay/missions.js"
+  ],
+  "Résultats · {0}{1}": [
+   "gameplay/courses.js"
+  ],
+  "Résultats…": [
+   "gameplay/courses.js"
+  ],
+  "SANS FAUTE !": [
+   "gameplay/courses.js"
+  ],
+  "Sans faute · {0}": [
+   "gameplay/courses.js"
+  ],
+  "Saut": [
+   "ui/hud.js"
+  ],
+  "Saut trop court : atterrissage dans l’obstacle": [
+   "gameplay/jumpModel.js"
+  ],
+  "Saute !": [
+   "ui/hud.js"
+  ],
+  "Secrétariat du concours": [
+   "gameplay/missions.js"
+  ],
+  "Solde insuffisant : {0} {1} (solde {2}).": [
+   "gameplay/missions.js"
+  ],
+  "Sors du camion (ACTION à l’arrêt).": [
+   "gameplay/missions.js"
+  ],
+  "Sors du camion puis monte à cheval.": [
+   "gameplay/missions.js"
+  ],
+  "Sors du véhicule (ACTION à l’arrêt).": [
+   "gameplay/missions.js"
+  ],
+  "Sors du véhicule puis monte à cheval.": [
+   "gameplay/missions.js"
+  ],
+  "S’entraîner": [
+   "gameplay/courses.js"
+  ],
+  "Temps accordé": [
+   "gameplay/courses.js"
+  ],
+  "Temps limite dépassé : éliminé.": [
+   "gameplay/courses.js"
+  ],
+  "Temps écoulé !": [
+   "gameplay/missions.js"
+  ],
+  "Termine ou abandonne ta mission en cours d’abord.": [
+   "gameplay/missions.js"
+  ],
+  "Ton engagement ({0}) t’a été remboursé : le concours a été interrompu.": [
+   "gameplay/missions.js"
+  ],
+  "Total": [
+   "gameplay/courses.js"
+  ],
+  "Toucher pour continuer": [
+   "ui/hud.js"
+  ],
+  "Toucher pour fermer": [
+   "ui/hud.js"
+  ],
+  "Touché au {0} · +4{1}": [
+   "gameplay/courses.js"
+  ],
+  "Trop loin": [
+   "ui/hud.js"
+  ],
+  "Trop près": [
+   "gameplay/courses.js",
+   "ui/hud.js"
+  ],
+  "Trop près : plus de place pour sauter": [
+   "gameplay/jumpModel.js"
+  ],
+  "Trop tôt": [
+   "ui/hud.js"
+  ],
+  "Trop vite : saut à plat": [
+   "gameplay/jumpModel.js"
+  ],
+  "Très bon travail, merci !": [
+   "gameplay/missions.js"
+  ],
+  "Très difficile": [
+   "gameplay/courses.js"
+  ],
+  "Tu as {0} s pour franchir la ligne de départ": [
+   "gameplay/courses.js"
+  ],
+  "Tu es descendu de cheval : éliminé.": [
+   "gameplay/courses.js"
+  ],
+  "Tu es descendu de cheval.": [
+   "gameplay/courses.js"
+  ],
+  "Tu es la référence de Deauville City.": [
+   "gameplay/missions.js"
+  ],
+  "Tu termines {0}. Il faut finir dans le top 3.": [
+   "gameplay/courses.js"
+  ],
+  "Téléphone": [
+   "ui/hud.js"
+  ],
+  "Un peu loin": [
+   "gameplay/courses.js"
+  ],
+  "Un peu près": [
+   "gameplay/courses.js"
+  ],
+  "Un tour de piste, cinq adversaires. Le grand galop ne dure pas : garde de l’endurance pour la dernière ligne droite !": [
+   "gameplay/courses.js"
+  ],
+  "Une mission t’attend sur Strides": [
+   "gameplay/missions.js"
+  ],
+  "Victoire !": [
+   "gameplay/courses.js"
+  ],
+  "Victoire, sans faute !": [
+   "gameplay/courses.js"
+  ],
+  "Voir le plan": [
+   "gameplay/courses.js"
+  ],
+  "aucune (éliminé)": [
+   "gameplay/courses.js"
+  ],
+  "barre au {0}{1}": [
+   "gameplay/courses.js"
+  ],
+  "barème A au chrono": [
+   "gameplay/courses.js"
+  ],
+  "et {0}{1}": [
+   "gameplay/courses.js"
+  ],
+  "hors dotation": [
+   "gameplay/courses.js"
+  ],
+  "il faut": [
+   "gameplay/missions.js"
+  ],
+  "maintenant": [
+   "ui/hud.js"
+  ],
+  "refus au {0}": [
+   "gameplay/courses.js"
+  ],
+  "son cheval": [
+   "gameplay/courses.js"
+  ],
+  "temps accordé {0} s": [
+   "gameplay/courses.js"
+  ],
+  "{0} POINT": [
+   "gameplay/courses.js"
+  ],
+  "{0} POINTS": [
+   "gameplay/courses.js"
+  ],
+  "{0} accepte {1} € · {2}": [
+   "gameplay/missions.js"
+  ],
+  "{0} l · {1}": [
+   "ui/hud.js"
+  ],
+  "{0} l/100": [
+   "ui/hud.js"
+  ],
+  "{0} m · difficulté {1}": [
+   "gameplay/courses.js"
+  ],
+  "{0} maintient {1} € · {2}": [
+   "gameplay/missions.js"
+  ],
+  "{0} missions t’attendent sur Strides": [
+   "gameplay/missions.js"
+  ],
+  "{0} obstacles{1} · {2} m": [
+   "gameplay/courses.js"
+  ],
+  "{0} place": [
+   "gameplay/courses.js"
+  ],
+  "{0} pt": [
+   "gameplay/courses.js",
+   "ui/hud.js"
+  ],
+  "{0} pts": [
+   "gameplay/courses.js",
+   "ui/hud.js"
+  ],
+  "{0} pts : {1}": [
+   "gameplay/courses.js"
+  ],
+  "{0} refus : éliminé du parcours.": [
+   "gameplay/courses.js"
+  ],
+  "{0} s (accordé {1} s)": [
+   "gameplay/courses.js"
+  ],
+  "{0} s écoulées : le chrono est lancé": [
+   "gameplay/courses.js"
+  ],
+  "{0} sur {1}": [
+   "gameplay/courses.js"
+  ],
+  "{0} tr/min": [
+   "ui/hud.js"
+  ],
+  "{0} — dotation déjà reçue pour ta première manche classée": [
+   "gameplay/courses.js"
+  ],
+  "~{0} €": [
+   "gameplay/missions.js"
+  ],
+  "· accordé {0} s": [
+   "ui/hud.js"
+  ],
+  "ÉLIMINÉ": [
+   "gameplay/courses.js"
+  ],
+  "Éliminé": [
+   "gameplay/courses.js"
+  ],
+  "Épreuve": [
+   "gameplay/courses.js"
+  ],
+  "Événement": [
+   "gameplay/missions.js"
+  ],
+  "éliminé · {0}": [
+   "gameplay/courses.js"
+  ],
+  "▸ Arrivée": [
+   "ui/hud.js"
+  ]
+ },
+ "causes": {
+  "far": "Appel trop loin",
+  "near": "Appel trop près",
+  "tooClose": "Trop près : plus de place pour sauter",
+  "angle": "Abord désaxé",
+  "slow": "Pas assez d’impulsion",
+  "fast": "Trop vite : saut à plat",
+  "short": "Saut trop court : atterrissage dans l’obstacle",
+  "foreRail": "Barre touchée par les antérieurs",
+  "hindRail": "Barre touchée par les postérieurs"
+ }
+}

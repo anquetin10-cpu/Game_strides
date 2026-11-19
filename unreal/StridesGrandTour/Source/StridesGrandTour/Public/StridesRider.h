@@ -18,7 +18,8 @@ public:
 	// Monte si un cheval est à moins de 3 m : rejoint le siège en 0,8 s (transition provisoire, voir relais), puis le
 	// contrôleur prend le cheval.
 	bool TryMount(class APlayerController* PC);
-	// Descend du côté montoir (gauche du cheval), 0,9 m du flanc ; épreuve en cours : éliminé (règle de courses.js).
+	// Descend du côté montoir (gauche du cheval), 0,9 m du flanc ; pendant l'épreuve, le parcours le lit à l'image
+	// suivante (cavalier à pied) et élimine, avant le départ compris (règle de courses.js).
 	void Dismount(class APlayerController* PC);
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") TObjectPtr<AStridesHorse> MountedOn;
 

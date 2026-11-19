@@ -147,7 +147,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "AStridesHUD::OnCourseEvent : texte d'événement affiché 3 s en ligne jaune (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:19-23, 44), émis par AStridesCourse (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:48-56, 84-92, 97)",
+  "unreal": "AStridesHUD::OnCourseEvent : texte d'événement affiché 3 s en ligne jaune (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp), émis par AStridesCourse::FlushRunCalls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp) pour les appels big / toast / hint de strides::CsoRun",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de l'affichage ; aucune capture côte à côte dans unreal/docs/parite/.",
@@ -203,7 +203,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "AStridesHorse : LastTakeoff = qualityName(takeoffQuality(Plan)) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163), affiché « Dernier appel : … » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:39) et repris dans l'événement « <obstacle> franchi · appel <q> » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:85)",
+  "unreal": "AStridesHorse : LastTakeoff = qualityName(takeoffQuality(Plan)) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp), affiché « Dernier appel : … » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp) ; plus repris dans les messages du parcours (textes de courses.js depuis T4)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Le classement de la qualité est comparé à l'oracle JS unreal/core/tests/oracles/jump.json (unreal/core/tests/test_core.cpp:58 ; CTest 4 944 vérifications, 0 échec, unreal/docs/validation-mac-2026-11-17.md ligne 9) ; l'affichage lui-même n'est couvert par aucun test ni capture côte à côte. Capture non comparative Saved/Screenshots/Strides/09_jeu.png (18/11/2026) : « Dernier appel : far ».",
@@ -217,11 +217,11 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "AStridesCourse::StatusText (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:103-112) affiché par AStridesHUD::DrawHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:37)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (StatusText : textes du tableau calculés par strides::CsoRun::board) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp",
   "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Libellés d'obstacles et temps accordé comparés à l'oracle JS unreal/core/tests/oracles/cso_course.json (test_core.cpp:79-110) ; fautes et obstacle suivant viennent de CourseJudge, testé par scénarios écrits à la main (test_core.cpp:112 et suivantes, sans oracle) ; le texte du tableau n'est couvert par aucun test ni capture côte à côte.",
-  "ecart": "Pas de compte à rebours de cloche (« Franchis la ligne de départ · temps accordé N s ») ; après le départ, temps accordé non rappelé ; « N pts » sans singulier ; « prochain : <libellé> » ; pas d'état temps dépassé ; « Éliminé » ou « Terminé : N pts en x s » ; point décimal.",
+  "niveau": "teste",
+  "preuve": "Textes du tableau identiques au jeu web à chaque image (testCsoRuns, français et anglais).",
+  "ecart": "Une ligne de texte du HUD de débogage, sans mise en page ni ambre (tranche T7).",
   "tranche": "a"
  },
  {
@@ -1077,11 +1077,11 @@
    "src/i18n/en/systems.js",
    "src/i18n/en/life.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "rg LOCTEXT, NSLOCTEXT, StringTable, Culture, Localization dans unreal/StridesGrandTour (Source, Config, Content) : aucun résultat ; aucun dossier Content/Localization.",
-  "ecart": "Événements du parcours en français en dur (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:48-97) ; aucune traduction.",
+  "unreal": "Content/Data/strings_cso.json (clés françaises extraites du code, anglais donné par i18n.js) lu par strides::TextTable ; AStridesCourse::Lang",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Textes de l'épreuve en anglais identiques au jeu web (testCsoRuns, testText).",
+  "ecart": "Seuls les textes de l'épreuve de CSO (courses.js, missions.js, tableau de hud.js, causes de jumpModel.js) ; langue fixée à « fr » au démarrage (pas de réglage).",
   "tranche": "h"
  },
  {
@@ -1122,11 +1122,11 @@
    "src/core/i18n.js",
    "src/ui/requests.js"
   ],
-  "unreal": "Formats C++ fixes : « %.1f m/s » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:36), « %.2f s » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:108, 111), « %d crédits » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49)",
+  "unreal": "Épreuve de CSO : dec / toFixed du jeu web (unreal/StridesGrandTour/Source/StridesCore/Private/Text.cpp, chrono « 12,34 » / « 12.34 »). Ailleurs, formats C++ fixes : « %.1f m/s » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp), « %d crédits » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de format.",
-  "ecart": "Point décimal dans des textes français (« 8.0 m/s » au lieu de « 8,0 ») ; pas de séparateur de milliers ; montants en « crédits » sans symbole euro ; aucune variante anglaise ni d'heure.",
+  "ecart": "Hors épreuve : point décimal dans des textes français (« 8.0 m/s » au lieu de « 8,0 ») ; pas de séparateur de milliers ; montants en « crédits » sans symbole euro ; ni heure.",
   "tranche": "h"
  },
  {

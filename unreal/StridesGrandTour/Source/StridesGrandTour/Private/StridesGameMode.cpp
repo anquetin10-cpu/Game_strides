@@ -1,4 +1,5 @@
 #include "StridesGameMode.h"
+#include "StridesCore/SaveGame.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
@@ -85,6 +86,17 @@ void AStridesGameMode::StartPlay()
 	AStridesCourse* Course = WorldDirector->PoleCourse;
 	AStridesHorse* Horse = W->SpawnActor<AStridesHorse>();
 	Horse->Course = Course;
+	// Épreuve du Pôle (tranche T4) : activité lancée au démarrage (le poteau « Chrono » et la carte de présentation
+	// relèvent de la tranche T10) ; première étape : rejoindre l'entrée de la carrière à cheval. Joueur et langue : ceux
+	// d'une sauvegarde neuve (strides::SaveGame, comme save.js) ; cheval : profil du cheval du joueur.
+	if (Course)
+	{
+		const strides::SaveGame Fresh;
+		FString HorseName;
+		if (Data) for (const FStridesHorseProfile& P : Data->Horses) if (P.Id == Horse->ProfileId) HorseName = P.Name;
+		Course->Lang = UTF8_TO_TCHAR(Fresh.lang.c_str());
+		Course->StartRun(UTF8_TO_TCHAR(Fresh.playerName.c_str()), HorseName);
+	}
 	const FVector Spawn = Data ? Data->WorldSpawn : FVector(-104.f, 168.f, .35f);
 	Horse->PlaceAt(Spawn.X, Spawn.Y, Spawn.Z);
 	Super::StartPlay();

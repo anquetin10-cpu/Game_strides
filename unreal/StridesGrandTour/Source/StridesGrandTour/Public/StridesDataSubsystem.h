@@ -8,6 +8,8 @@
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRide.h"
+#include "StridesCore/CsoRun.h"
+#include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesDataSubsystem.generated.h"
 
@@ -139,6 +141,11 @@ public:
 	// Obstacles de concours (cso_horse.json : HIND_TRAIL de obstacles.js, tranche T3).
 	const strides::CsoFenceParams& FenceParams() const { return FenceP; }
 	const strides::CourseDesign& PoleCourse() const { return PoleDesign; }
+	// Déroulé de l'épreuve du Pôle (tranche T4) : règles, lignes et entrée de piste de cso_course_pole.json (objet
+	// « run »), libellés des obstacles dans l'ordre du tracé ; faux si absent ou illisible.
+	bool PoleRunConfig(const std::vector<std::string>& Labels, strides::CsoRunConfig& Out) const;
+	// Textes de l'épreuve (strings_cso.json : clés françaises du code, traductions anglaises) ; nul si absents.
+	const strides::TextTable* CsoText() const { return bCsoText ? &CsoTextTable : nullptr; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
 
@@ -151,4 +158,7 @@ private:
 	strides::CsoFenceParams FenceP;
 	strides::CourseDesign PoleDesign;
 	TMap<FString, float> CourseSpeeds;
+	std::string PoleCourseJson;
+	strides::TextTable CsoTextTable;
+	bool bCsoText = false;
 };

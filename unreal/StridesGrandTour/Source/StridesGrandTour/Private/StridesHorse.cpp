@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCourse.h"
@@ -121,6 +122,28 @@ const UStridesDataSubsystem* AStridesHorse::DataSub() const
 	return GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
 }
 
+strides::CsoRunFrame AStridesHorse::RunFrame(double Dt, double Time) const
+{
+	// Entrées de l'épreuve vues par missions.update : cheval du joueur, point suivi (cheval monté, sinon le cavalier
+	// à pied), mode monté ou non (descente = élimination à tout moment du parcours, courses.js:329).
+	strides::CsoRunFrame F;
+	F.dt = Dt;
+	F.time = Time;
+	F.x = X;
+	F.z = Z;
+	F.heading = H;
+	F.riding = Rider != nullptr;
+	F.focusX = X;
+	F.focusZ = Z;
+	if (!F.riding)
+		if (const APawn* Pawn = GetWorld() ? GetWorld()->GetFirstPlayerController() ? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr : nullptr)
+		{
+			double Y;
+			StridesUnits::UEToWeb(Pawn->GetActorLocation(), F.focusX, Y, F.focusZ);
+		}
+	return F;
+}
+
 strides::Zone AStridesHorse::JumpTiming() const
 {
 	if (!Course || !bCsoControls) return strides::Zone::None;
@@ -227,7 +250,7 @@ void AStridesHorse::TickDemo()
 			Data ? Data->Jump() : strides::jumpDefaults(), Data ? Data->HorseParams() : strides::csoHorseDefaults());
 		if (Sim.jumpT < 0 && Tg.index >= 0 && Tg.plan.zone == strides::Zone::Good && Tg.plan.ideal <= Tg.plan.L + 0.3) bJumpRequested = true;
 	}
-	if (const strides::CourseJudge* J = Course->Judge(); J && (J->finished() || J->eliminated() != strides::Elim::None))
+	if (const strides::CsoRun* Run = Course->Run(); Run && (Run->state().finished || Run->state().eliminated))
 	{
 		bDemoCourse = false;
 		Move = FVector2D::ZeroVector;
@@ -294,7 +317,11 @@ void AStridesHorse::TickCso(float Dt)
 		strides::CsoFenceOut Out;
 		strides::csoFencesUpdateHorse(Sim, Obs, Course->FenceStates(), U, Out, JP, HP, Data ? Data->FenceParams() : strides::csoFenceDefaults());
 		for (const strides::CsoHorseEvent E : Out.horse) FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
-		Course->HandleFenceOut(Out);
+		// Événements d'obstacle vus par l'épreuve (courses.js) : un refus compté remet la cadence à 0.
+		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
+		Course->HandleFenceOut(Out, Cad);
+		Sim.hasCadence = Cad.has;
+		Sim.cadence = Cad.v;
 		Course->UpdateFences(Dt, In.time, Sim.x, Sim.z);
 	}
 	X = Sim.x; Z = Sim.z; H = Sim.heading;
@@ -302,7 +329,16 @@ void AStridesHorse::TickCso(float Dt)
 	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
 	bJumping = Sim.jumpT >= 0;
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Sim.jumpY, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
-	if (Course) Course->TrackHorse(X0, Z0, X, Z, H, Dt);
+	if (Course)
+	{
+		// Déroulé de l'épreuve (Run.update) après le cheval et les obstacles ; la sortie de piste ramène la cadence vers
+		// 1,9 m/s.
+		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
+		Course->TickRun(RunFrame(Dt, In.time), Cad);
+		Sim.hasCadence = Cad.has;
+		Sim.cadence = Cad.v;
+	}
+	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
 	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop reste atteignable (aligné sur le clip de saut rapide).
 	const double Spd = SpeedMS;
 	GaitIndex = Spd < 0.2 ? 0 : Spd < 3.2 ? 1 : Spd < 5.5 ? 2 : Spd < 7.0 ? 3 : 4;
@@ -330,7 +366,6 @@ void AStridesHorse::TickOpenWorld(float Dt)
 {
 	const UStridesDataSubsystem* Data = DataSub();
 	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
-	const double X0 = X, Z0 = Z;
 	const double Target = Data && Data->Gaits.IsValidIndex(GaitIndex) ? Data->Gaits[GaitIndex].Speed : 0.0;
 	if (!bJumping) SpeedMS = FMath::FInterpConstantTo(SpeedMS, (float)Target, Dt, 3.0f);
 	const double Want = strides::steerRate(Move.X, SpeedMS, R) * (bJumping ? R.airTurn : 1.0);
@@ -353,7 +388,8 @@ void AStridesHorse::TickOpenWorld(float Dt)
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
 	if (Course)
 	{
-		Course->TrackHorse(X0, Z0, X, Z, H, Dt);
+		strides::CsoCadence Cad;
+		Course->TickRun(RunFrame(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0), Cad);
 		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.
 		Course->UpdateFences(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, X, Z);
 	}

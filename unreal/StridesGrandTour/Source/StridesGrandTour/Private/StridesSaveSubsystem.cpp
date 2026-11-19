@@ -43,10 +43,12 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	if (Horse) Core.activeHorse = TCHAR_TO_UTF8(*Horse->ProfileId);
 	// Record du parcours : seulement s'il est meilleur (challenge.js : compareResults).
 	for (TActorIterator<AStridesCourse> It(W); It; ++It)
-		if (const strides::CourseJudge* J = It->Judge())
-			if (J->finished() || J->eliminated() != strides::Elim::None)
+		if (const strides::CsoRun* Run = It->Run())
+			if (Run->state().finished || Run->state().eliminated)
 			{
-				const strides::RunResult R = J->result();
+				// Résultat de la manche (épreuve du cœur, tranche T4) : éliminé, fautes + pénalités de temps, chrono au centième.
+				const strides::CsoRunState& St = Run->state();
+				const strides::RunResult R{St.eliminated, St.eliminated ? 0 : Run->points(), std::round(St.t * 100) / 100};
 				auto Cur = Core.records.find("cso_pole");
 				const strides::RunResult Old = Cur == Core.records.end() ? strides::RunResult{true, 0, 0} : strides::RunResult{Cur->second.eliminated, Cur->second.penalties, Cur->second.time};
 				if (Cur == Core.records.end() || strides::compareResults(R, Old) < 0) Core.records["cso_pole"] = {R.eliminated, R.penalties, R.time};

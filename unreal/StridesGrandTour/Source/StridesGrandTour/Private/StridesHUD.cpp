@@ -18,6 +18,8 @@ void AStridesHUD::BeginPlay()
 
 void AStridesHUD::OnCourseEvent(const FString& Kind, const FString& Text)
 {
+	// Épreuve : grand message, toast, astuce (l'interface d'épreuve est en tranche T7) ; clearHint n'a pas de texte.
+	if (Text.IsEmpty()) return;
 	LastEvent = Text;
 	EventT = 3.f;
 }

@@ -176,5 +176,34 @@
   "firstRefusal": 4,
   "refusalsToEliminate": 2,
   "timeFaultPerSecond": 1
+ },
+ "run": {
+  "bellDelay": 45,
+  "maxRefusals": 2,
+  "maxRefusalsXc": 4,
+  "pen": 4,
+  "penXc": 20,
+  "rail": 4,
+  "gate": {
+   "x": 330,
+   "z": -191,
+   "rot": 3.141592653589793,
+   "r": 9
+  },
+  "start": {
+   "x": 321.0626378983364,
+   "z": -205.06619199146718,
+   "rot": 3.926990816987246,
+   "s": 0,
+   "w": 7
+  },
+  "finish": {
+   "x": 374.9280144530407,
+   "z": -195.78582813241596,
+   "rot": 1.5707963267948912,
+   "s": 368.44003310371414,
+   "w": 7
+  },
+  "timeAllowed": 64
  }
 }

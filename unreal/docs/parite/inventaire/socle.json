@@ -558,7 +558,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Fin de parcours annoncée par texte seulement (« SANS FAUTE ! », StridesCourse.cpp:56).",
+  "ecart": "Fin de parcours annoncée par texte seulement (« SANS FAUTE ! » de strides::CsoRun) ; ovation demandée (takeCheer) mais ni public en liesse ni son.",
   "tranche": "a"
  },
  {
@@ -709,11 +709,11 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "Messages du parcours du Pôle seulement : « <obstacle> franchi / barre +4 · appel <qualité> » (StridesCourse.cpp:84-85) affichés 3 s par le HUD (StridesHUD.cpp:16-22)",
+  "unreal": "Messages du parcours du Pôle seulement (toasts de courses.js portés par strides::CsoRun : « Barre au X · +4 · cause », erreur de parcours, refus) affichés 3 s par le HUD (StridesHUD.cpp)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de ces messages ; parcours complet non cité dans unreal/docs/validation-mac-2026-11-17.md.",
-  "ecart": "Pas d'obstacles hors parcours, ni statistiques, ni compétence, ni son de faute ; libellés différents.",
+  "ecart": "Pas d'obstacles hors parcours, ni statistiques, ni compétence, ni son de faute.",
   "tranche": "a"
  },
  {
@@ -1164,7 +1164,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Les événements de parcours existent (StridesCourse.cpp:48-92) mais ne jouent aucun son.",
+  "ecart": "Les sons de l'épreuve sont demandés par strides::CsoRun et journalisés (AStridesCourse::AudioLog) mais aucun n'est joué (tranche T12).",
   "tranche": "a"
  },
  {
@@ -1236,7 +1236,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Textes Unreal en français codés en dur (TEXT / FString, ex. StridesHUD.cpp:35-49, StridesTouchControls.cpp:43-50, StridesCourse.cpp:48-111) ; aucune table de chaînes.",
+  "ecart": "Table de chaînes pour l'épreuve de CSO seulement (Content/Data/strings_cso.json, strides::TextTable) ; ailleurs, textes Unreal en français codés en dur (StridesHUD.cpp, StridesTouchControls.cpp).",
   "tranche": "h"
  },
  {
@@ -1247,11 +1247,11 @@
    "src/core/i18n.js",
    "src/core/math.js"
   ],
-  "unreal": "Formats printf fixes : « %.1f m/s » (StridesHUD.cpp:36), « %.2f s » (StridesCourse.cpp:108, 111), « %d crédits » (StridesHUD.cpp:49)",
+  "unreal": "Épreuve de CSO : dec / toFixed du jeu web (StridesCore Text.cpp). Ailleurs : « %.1f m/s » (StridesHUD.cpp), « %d crédits » (StridesHUD.cpp)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de format.",
-  "ecart": "Point décimal en français, ni séparateur de milliers, ni euros, ni heure ; chrono en secondes au centième, formatTime (m:ss.d) non porté.",
+  "ecart": "Hors épreuve : point décimal en français, ni séparateur de milliers, ni euros, ni heure ; formatTime (m:ss.d) non porté.",
   "tranche": "h"
  },
  {
@@ -1397,7 +1397,7 @@
    "src/core/bus.js",
    "src/game.js"
   ],
-  "unreal": "Délégué OnCourseEvent (StridesCourse.h:24 ; diffusé StridesCourse.cpp:48-97) écouté par le HUD (StridesHUD.cpp:16-22) ; sinon appels directs",
+  "unreal": "Délégué OnCourseEvent (StridesCourse.h) diffusé par AStridesCourse::FlushRunCalls (appels d'interface de strides::CsoRun) et écouté par le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp) ; sinon appels directs",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; infra.",

@@ -102,10 +102,24 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		std::string Err = "fichier illisible";
 		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/cso_course_pole.json")))
 			&& strides::parseCourseFile(std::string(TCHAR_TO_UTF8(*Text)), Design, Err))
+		{
 			PoleDesign = Design;
+			PoleCourseJson = std::string(TCHAR_TO_UTF8(*Text));
+		}
 		else
 			LoadLog.Add(FString::Printf(TEXT("cso_course_pole.json : tracé illisible (%s), tracé compilé utilisé"), UTF8_TO_TCHAR(Err.c_str())));
 		for (const auto& P : J->GetObjectField(TEXT("speeds"))->Values) CourseSpeeds.Add(FString(P.Key), P.Value->AsNumber());
+	}
+	// Textes de l'épreuve (tranche T4) : table lue par le cœur (strides::TextTable), la même que testCsoRuns.
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
+		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/strings_cso.json"))) && CsoTextTable.parse(std::string(TCHAR_TO_UTF8(*Text)), Err))
+		{
+			bCsoText = true;
+			LoadLog.Add(FString::Printf(TEXT("strings_cso.json : %d textes"), (int32)CsoTextTable.size()));
+		}
+		else LoadLog.Add(FString::Printf(TEXT("strings_cso.json : illisible (%s)"), UTF8_TO_TCHAR(Err.c_str())));
 	}
 	if (LoadJson(TEXT("world_architecture.json"), J))
 	{
@@ -200,6 +214,12 @@ double UStridesDataSubsystem::TerrainHeight(double X, double Z) const
 const FStridesHorseProfile* UStridesDataSubsystem::FindHorse(const FString& Id) const
 {
 	return Horses.FindByPredicate([&Id](const FStridesHorseProfile& H) { return H.Id == Id; });
+}
+
+bool UStridesDataSubsystem::PoleRunConfig(const std::vector<std::string>& Labels, strides::CsoRunConfig& Out) const
+{
+	std::string Err;
+	return !PoleCourseJson.empty() && strides::csoRunConfigFromFile(PoleCourseJson, Labels, Out, Err);
 }
 
 float UStridesDataSubsystem::CourseSpeed(const FString& Level) const
