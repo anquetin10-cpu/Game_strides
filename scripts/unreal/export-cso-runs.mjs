@@ -13,7 +13,8 @@
 //    octet (critère T1 de unreal/docs/parite/cso-ecarts.md).
 //    Canal « ch » (tranche T2, cheval de concours) : état complet du cheval en pleine précision, rejoué par
 //    unreal/core/tests/test_core.cpp (testHorseRuns).
-//  - unreal/core/tests/oracles/cso_target.json : grille de visée (obstacles.target / timing du jeu) pour 8 980 poses.
+//  - unreal/core/tests/oracles/cso_target.json : grille de visée (obstacles.target / timing du jeu) pour 11 220 poses,
+//    appuis SAUT (Horse.startJump) et refus décidés (Obstacles.refuse) sur des poses du cheval.
 //    --only=id1,id2 : seulement ces scénarios (et « target » pour la grille), à écrire ailleurs avec --out.
 //  - avec --shots : unreal/docs/parite/cso/poses.json (pose du cheval, œil, cible, FOV vertical, soleil, viewport) et la
 //    capture web de chaque pose (unreal/docs/parite/cso/<pose>-web.png, 844 × 390, deviceScaleFactor 1) ; la capture
@@ -70,6 +71,15 @@ const SCENARIOS = [
     desc: 'Abord du vertical 4A à 70° de son axe, 6,2 m/s, ligne de marche passant par son centre : SAUT à 7 m du point de passage (aucun obstacle visé : bien trop tôt) ; arrêt de l’enregistrement à 4 m (avant le chandelier).' },
   { id: 'refus', type: 'pose', langs: ['fr'], pose: { x: -36, z: 28.21, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
     desc: 'Abord droit du vertical 6A à 6,2 m/s sans appui : refus décidé par Obstacles.updateHorse (tranche T3, recalé), freinage, cabré ; joystick avant pendant le freinage, avant-droite pendant le cabré (cadence figée, direction coupée), puis arrière-gauche 20 images après.' },
+  // Compléments du contrôle de T2 : branches du pas du cheval qu'aucun scénario précédent n'exerçait.
+  { id: 'virage-en-lair', type: 'pose', langs: ['fr'], pose: { x: -19.67, z: -28.78, h: Math.PI / 2, v: 6.23 }, maxFrames: 300,
+    desc: 'Abord droit de l’oxer 2 comme « bonne-zone » ; SAUT à la première image où l’aide affiche la bonne zone ; joystick à fond à droite pendant tout le vol (lacet pris en l’air, rotation réduite à airTurn), relâché à la réception ; jusqu’à 1 s après la réception.' },
+  { id: 'survitesse', type: 'pose', langs: ['fr'], pose: { x: 36, z: 12, h: Math.PI, v: 9.6 }, maxFrames: 60,
+    desc: 'Cheval posé à 9,6 m/s (grand galop), au-dessus de la cadence maximale de concours (8 m/s) : cadence de départ bornée à 8, vitesse ramenée à 8 m/s sous le plafond de ralentissement de 9 m/s² (horse.js:289) ; joystick relâché, 1 s.' },
+  { id: 'abord-61', type: 'pose', langs: ['fr'], pose: { x: 19.83 + 10 * Math.cos((61 * Math.PI) / 180), z: 2.22 - 10 * Math.sin((61 * Math.PI) / 180), h: -Math.PI / 2 + (61 * Math.PI) / 180, v: 4.6 }, cross: { x: 19.83, z: 2.22 }, maxFrames: 200,
+    desc: 'Abord du vertical 4A à 61° de son axe (hors de l’angle de saut), 4,6 m/s, ligne de marche coupant le plan de l’obstacle à 2 m de son centre, côté opposé à l’arrivée : les épaules entrent dans la largeur loin de la barre ; refus décidé par Obstacles.updateHorse quand l’écart passe sous v²/16 + 0,3 (tranche T3), freinage, cabré ; joystick relâché ; jusqu’à la fin du cabré.' },
+  { id: 'appel-pres', type: 'pose', langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 300,
+    desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où l’obstacle visé est en zone « près » (saut raccourci au plus, perte d’élan à la réception plafonnée à 4 %) ; jusqu’à 10 m après le 3.' },
 ];
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -376,6 +386,31 @@ function PAGE() {
       if (st.ref !== undefined) return { move: [0, 1] };
       return {};
     },
+    'virage-en-lair': (st) => {
+      const h = st.h;
+      const press = !st.jumped && h.jumpT < 0 && g.obstacles.timing(h) === 'good';
+      if (press) st.jumped = true;
+      if (st.jumped && h.jumpT >= 0) st.air = true;
+      if (st.air && h.jumpT < 0 && st.land === undefined) st.land = st.k;
+      if (st.land !== undefined && st.k - st.land >= 30) return null;
+      return { jump: press, move: [st.air && st.land === undefined ? 1 : 0, 0] };
+    },
+    survitesse: (st) => (st.k >= 30 ? null : {}),
+    'abord-61': (st) => {
+      const h = st.h;
+      if (st.rear === undefined && h._rearT > 0) st.rear = st.k;
+      if (st.rear !== undefined && !(h._rearT > 0)) return null;
+      if (st.k >= 150) return null;
+      return {};
+    },
+    'appel-pres': (st) => {
+      const o = F('3'), h = st.h;
+      const tg = g.obstacles.target(h);
+      const press = !st.jumped && h.jumpT < 0 && !h._refusing && tg && tg.o === o && tg.plan.zone === 'near';
+      if (press) st.jumped = true;
+      if (st.jumped && h.jumpT < 0 && sAlong(o, h) > 10) return null;
+      return { jump: press };
+    },
   };
   P.runPose = (sc) => {
     const h = g.player.horse, p = g.player;
@@ -436,7 +471,65 @@ function PAGE() {
       rec([idx(o), 1, 0, 0, 3, 'en l’air'], o.x - o.n.x * 3.4, o.z - o.n.z * 3.4, hd, 6.2, { jumpT: 0.5 });
       rec([idx(o), 1, 0, 0, 3, 'refus'], o.x - o.n.x * 3.4, o.z - o.n.z * 3.4, hd, 6.2, { refusing: o });
     }
-    return { ch0, power: h.jumpPower, clearance: h.mods.clearance, cso: g.course?.controls === 'cso', cases };
+    // Pose du cheval : épaules à d du point de passage (axe décalé de u0), marche à a degrés de l'axe de saut, sens dir.
+    const poseAt = (o, dir, a, u0, d) => {
+      const ar = (a * Math.PI) / 180;
+      const nx = o.n.x * dir, nz = o.n.z * dir;
+      const fx = nx * Math.cos(ar) + o.t.x * Math.sin(ar), fz = nz * Math.cos(ar) + o.t.z * Math.sin(ar);
+      const cx = o.x + o.t.x * u0, cz = o.z + o.t.z * u0;
+      return [cx - fx * (d + REFD), cz - fz * (d + REFD), Math.atan2(fx, fz)];
+    };
+    // Contrôle de T2 : décalages latéraux de part et d'autre de la tolérance « milieu des barres dans la largeur ± 0,35 m »
+    // (demi-largeur 1,9 m), ajoutés après la grille d'origine (inchangée).
+    for (const o of list)
+      for (const dir of [1, -1])
+        for (const a of [0, 35])
+          for (const u0 of [2.1, -2.2])
+            for (const d of [0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 13, 14])
+              for (const v of [6.2, 7.6]) rec([idx(o), dir, a, u0, d], ...poseAt(o, dir, a, u0, d), v);
+    // Appui SAUT (Horse.startJump appelé seul, cheval du joueur, commandes de concours) : valeur rendue, événements du
+    // bus, état du saut et du refus juste après. L'état de forme du cheval (cond.onJump) est remis après chaque appui
+    // pour que la puissance reste celle du jeu ; la puissance et le bonus de franchissement sont relevés à chaque cas.
+    const press = [];
+    const cond = h.cond;
+    const cond0 = cond ? { energy: cond.energy, jumpBoost: cond.jumpBoost } : null;
+    const pressAt = (ref, x, z, hd, v, extra = {}) => {
+      h.setPosition(x, z, hd);
+      h.speed = v;
+      if (extra.jumpT !== undefined) h.jumpT = extra.jumpT;
+      if (extra.refusing) h._refusing = extra.refusing;
+      const pow = h.jumpPower, clr = h.mods.clearance, t = g.time;
+      cur = { ev: [], hud: [], audio: [] };
+      const ok = h.startJump();
+      const ev = cur.ev.map((e) => e.e);
+      cur = null;
+      press.push({ ref, x, z, h: hd, v, pow, clr, t, jT0: extra.jumpT ?? -1, rf0: idx(extra.refusing ?? null), ok, ev, jT: h.jumpT, jP: ok ? h.jumpPeak : null, jL: ok ? h.jumpLen : null, jD: ok ? h.jumpDur : null, bk: h._brake, rf: idx(h._refusing), lj: h._lastJump ? idx(h._lastJump.o) : null });
+      h.setPosition(x, z, hd);
+      if (cond0) Object.assign(cond, cond0);
+    };
+    for (const o of list) {
+      for (const dir of [1, -1])
+        for (const a of [0, 35])
+          for (const d of [-1.2, -0.6, -0.3, 0, 0.3, 0.6, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 14])
+            for (const v of [3.0, 4.6, 6.2, 7.6]) pressAt([idx(o), dir, a, 0, d], ...poseAt(o, dir, a, 0, d), v);
+      pressAt([idx(o), 1, 0, 0, 3, 'en l’air'], ...poseAt(o, 1, 0, 0, 3), 6.2, { jumpT: 0.5 });
+      pressAt([idx(o), 1, 0, 0, 3, 'refus'], ...poseAt(o, 1, 0, 0, 3), 6.2, { refusing: o });
+    }
+    // Refus décidé (Obstacles.refuse appelé seul) : freinage et obstacle refusé, des deux côtés de l'obstacle, de face
+    // et en biais, de presque arrêté à 7,6 m/s.
+    const refuse = [];
+    for (const o of list)
+      for (const a of [0, 40, 61, 80])
+        for (const d of [-1, -0.3, 0.3, 1, 2, 4])
+          for (const v of [0.6, 3.1, 6.2, 7.6]) {
+            const [x, z, hd] = poseAt(o, 1, a, 0, d);
+            h.setPosition(x, z, hd);
+            h.speed = v;
+            O.refuse(h, o);
+            refuse.push({ ref: [idx(o), 1, a, 0, d], x, z, h: hd, v, o: idx(o), bk: h._brake, rf: idx(h._refusing) });
+            h.setPosition(x, z, hd);
+          }
+    return { ch0, power: h.jumpPower, clearance: h.mods.clearance, cso: g.course?.controls === 'cso', cases, press, refuse };
   };
 
   // Mise en place commune : boucle de rendu arrêtée, fiches et dialogues fermés, hasard à graine, temps de jeu fixés,
@@ -649,14 +742,18 @@ if (!ONLY.length || ONLY.includes('target')) {
     source: ['src/gameplay/obstacles.js', 'src/gameplay/jumpModel.js', 'src/entities/horse.js'],
     frame: 'repère web : x est, z sud ; cap h -> (sin h, cos h) ; m, rad, m/s',
     cases: 'ref = [rang de l’obstacle posé, sens (1 : selon n), angle de marche (degrés), décalage latéral du point de passage (m), distance épaules → point de passage (m, approchée)] ; x, z, h, v = pose exacte du cheval (origine) ; jT, rf = saut en cours, obstacle refusé ; tm = timing() ; tg = target() résumé (o rang, x0 première barre, cosA, zone, L0, L, H, m marge, ideal, dev, cause) ou null',
+    press: 'appui SAUT : Horse.startJump() appelé seul sur la pose (cheval du joueur, commandes de concours) ; ref, x, z, h, v comme cases ; pow, clr, t = jumpPower, bonus de franchissement, heure de jeu ; jT0, rf0 = saut en cours, obstacle refusé avant l’appui ; ok = valeur rendue ; ev = événements du bus ; jT, jP, jL, jD = saut après l’appui (jP, jL, jD seulement si ok) ; bk = _brake ; rf = obstacle refusé ; lj = obstacle du dernier saut',
+    refuse: 'refus décidé : Obstacles.refuse(cheval, obstacle o) appelé seul sur la pose ; ref, x, z, h, v comme cases ; bk = _brake (freinage) ; rf = obstacle refusé',
     power: grid.power, clearance: grid.clearance, cso: grid.cso,
     obs: grid.ch0.obs,
   };
   let tout = JSON.stringify(th, null, 1).replace(/\n}$/, ',\n "list": [\n');
-  tout += grid.cases.map((c) => JSON.stringify(c)).join(',\n') + '\n]}\n';
+  tout += grid.cases.map((c) => JSON.stringify(c)).join(',\n') + '\n],\n "press": [\n';
+  tout += grid.press.map((c) => JSON.stringify(c)).join(',\n') + '\n],\n "refuse": [\n';
+  tout += grid.refuse.map((c) => JSON.stringify(c)).join(',\n') + '\n]}\n';
   JSON.parse(tout);
   writeFileSync(TOUT, tout);
-  console.log('oracle :', TOUT, `${grid.cases.length} cas, ${(tout.length / 1024).toFixed(0)} Kio`);
+  console.log('oracle :', TOUT, `${grid.cases.length} cas, ${grid.press.length} appuis, ${grid.refuse.length} refus, ${(tout.length / 1024).toFixed(0)} Kio`);
   await ctx.close();
 }
 
