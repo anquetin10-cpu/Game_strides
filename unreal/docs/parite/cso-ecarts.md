@@ -770,7 +770,9 @@ Principes communs :
   `Strides.Parite.CsoHud` (mêmes rejeux par le module), `Strides.Cso.HudWidget` (textes affichés par le widget égaux à
   l'oracle : tableau, CLOCHE, toast, mot, 5 crans), `Strides.Parite.CsoRun` (540 appels d'interface dont les mots
   d'appel), `Strides.Cso.RunInGame` (modèle nourri en jeu : classes, « Départ … s », CLOCHE, HUD de débogage et boutons
-  masqués en épreuve puis rendus au bilan) : 20 tests Strides en Result={Success}. Montages `cso/hud-<état>-844x390.png`
+  masqués en épreuve puis rendus au bilan) : 20 tests Strides en Result={Success}. `scripts/unreal/mutations-cso-hud.py` :
+  45 mutations, 44 détectées ; la 45e (ordre des temporisations à échéance égale) est équivalente par construction
+  (rappels commutatifs, `ATTENDUES`). Montages `cso/hud-<état>-844x390.png`
   et `-667x308.png` (web à gauche) pour 8 états : cloche (« Départ 45 s · accordé 64 s », CLOCHE), avant le départ,
   en course « ▸ 4A », dépassement en ambre (« 64,57 », 1 pt rouge, « Arrivée ✓ »), « Barre au 1 · +4 · Appel trop
   loin » avec le mot, « Appel parfait », crans de cadence, ÉLIMINÉ ; état rejoué identique à l'état du DOM du web pour

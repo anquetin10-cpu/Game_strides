@@ -9,7 +9,7 @@ mutation doit faire échouer le banc (code de sortie non nul) ; le script sort e
 des mutations listées dans ATTENDUES (raison donnée) — et aussi si l'une de celles-ci devient détectée.
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
-  python3 scripts/unreal/mutations-cso-hud.py [dossier des oracles] [dossier de travail]
+  [MUT_ONLY=<texte>] python3 scripts/unreal/mutations-cso-hud.py [dossier des oracles] [dossier de travail]
 Défauts : unreal/core/tests/oracles et build/mutations-hud.
 """
 import subprocess, sys, os
@@ -75,7 +75,14 @@ M = [
 ]
 # Mutations qu'aucun oracle ne peut départager (raison donnée) : listées pour mémoire, pas comme des succès.
 ATTENDUES = {
+ 'temporisations : ordre de création inversé à échéance égale':
+  'équivalente par construction : les rappels des temporisations du HUD commutent (retrait d’un toast par son identifiant, '
+  'astuce masquée, grand message masqué puis big-on retiré 400 ms plus tard, mot d’appel effacé : états disjoints ou '
+  'affectations identiques), leur ordre à échéance égale ne change aucun état observable',
 }
+# MUT_ONLY=<texte> : seulement les mutations dont le nom contient ce texte (contrôle ciblé).
+only = os.environ.get('MUT_ONLY')
+if only: M = [m for m in M if only in m[1]]
 os.makedirs(out, exist_ok=True)
 allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'Text.cpp', 'SaveGame.cpp')
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
@@ -100,7 +107,7 @@ for file, name, a, b in M:
     if not r.returncode: undetected.append(name)
     print(f'{name} : {status} (code {r.returncode}, {last}){" ; " + fails[0][:160] if fails else ""}', flush=True)
 unexpected = [n for n in undetected if n not in ATTENDUES]
-now_detected = [n for n in ATTENDUES if n not in undetected]
+now_detected = [n for n in ATTENDUES if n not in undetected and any(m[1] == n for m in M)]
 print(f'{len(M)} mutations, {len(M) - len(undetected)} détectées, {len(undetected)} non détectées' + (' : ' + ' ; '.join(undetected) if undetected else ''))
 for n in undetected:
     if n in ATTENDUES: print(f'  attendue : {n} ({ATTENDUES[n]})')
