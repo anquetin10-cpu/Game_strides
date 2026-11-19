@@ -26,9 +26,9 @@ node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs 
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --only=t4-cloche,target
 ```
 
-- Déterministe (graine, horloges virtuelles, pas fixe de 1/30 s) : deux exports donnent les mêmes octets. Un fichier
-  dont le contenu ne change pas n'est pas réécrit : après un export, `git status` ne montre que les scénarios touchés.
-  Ne recommiter que ceux-là.
+- Déterministe (graine, horloges virtuelles, pas fixe de 1/30 s, cheval du joueur et cavaliers du décor remis à neuf
+  au `setup`) : deux exports donnent les mêmes octets. Un fichier dont le contenu ne change pas n'est pas réécrit :
+  après un export, `git status` ne montre que les scénarios touchés. Ne recommiter que ceux-là.
 - `--only=id1,id2` : seulement ces scénarios (`target`, `goto` : les grilles) ; les autres entrées de l'index restent.
   `--out=<dossier>` : autre dossier d'exécutions (les grilles vont dans son dossier parent ; `--goto-out=<fichier>`).
 - Format (`scripts/unreal/cso-runs-io.mjs`) : chaque fichier d'exécution est `{ id, lang, desc, setup, frames }`,

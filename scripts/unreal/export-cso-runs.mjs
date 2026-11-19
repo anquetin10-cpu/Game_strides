@@ -1183,6 +1183,20 @@ function PAGE() {
       Object.assign(h.pjl, { ph: 0, stride: 3.42, roll: 0, landT: 9, wasJump: false });
       for (const k of ['_clrA', '_clrY', '_clrF', 'dPitch']) delete h.pjl[k];
     }
+    // Cavaliers du décor (Ambient.rider de npcs.js : cheval à PathAI) remis à leur état d'apparition. Sinon ils gardent
+    // l'état atteint pendant les images jouées en temps réel avant stopLoop (vitesse, position au centimètre), qui varie
+    // d'un chargement à l'autre : l'épuisement du cheval du cavalier de l'hippodrome (horse:exhausted, rider230, scénario
+    // t3-refus-5s) tombait à l'image 428, 429 ou 430 selon l'export.
+    for (const o of g.horses) {
+      if (o === h || !o.ambient || !o.ai?.points?.length) continue;
+      o.setPosition(o.ai.points[0][0], o.ai.points[0][1], 0);
+      Object.assign(o, { stamina: o.maxStamina, exhausted: false, _yawRate: 0, lastTurn: 0 });
+      Object.assign(o.ai, { i: 0, laps: 0, finished: false });
+      if (o.anim) {
+        Object.assign(o.anim, { phase: 0, t: 0, jump: -1, turn: 0, graze: 0, rear: 0, headYaw: 0, vel: 0, speed: 0 });
+        delete o.anim._a;
+      }
+    }
     g.player.csoCadence = undefined;
     g.cam.snap(h.pos, h.heading);
     g.scene.updateMatrixWorld();

@@ -338,6 +338,11 @@ Principes communs :
   `strides.oracle.cso_runs/2`, liste des exécutions) et un fichier par scénario et par langue, `<id>.<lang>.json`
   (le plus gros ~4 Mo), écrits par `scripts/unreal/cso-runs-io.mjs` ; un fichier inchangé n'est pas réécrit. Les
   mentions de `cso_runs.json` ci-dessous datent d'avant ce découpage ; mode d'emploi : `unreal/docs/parite/README.md`.
+  Écart de `t3-refus-5s` (événement `horse:exhausted` de `rider230`, voir T4) : cause établie le 19/11/2026. Les
+  cavaliers du décor (`Ambient.rider`, `npcs.js:552-560`) gardaient l'état atteint pendant les images jouées en temps
+  réel avant `stopLoop` : `rider230` relevé au `setup` à 0,447 puis 0,522 m/s selon l'export, épuisement à l'image
+  428, 429 ou 430. L'exporteur les remet à leur état d'apparition (point 0 de leur trajet, arrêt, endurance pleine) :
+  trois exports isolés identiques à l'octet, épuisement à l'image 432.
 
 ### T2. Cheval de concours dans StridesCore (conduite intégrée, visée, déclenchement du saut)
 
