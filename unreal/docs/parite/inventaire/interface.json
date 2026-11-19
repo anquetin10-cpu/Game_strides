@@ -9,7 +9,7 @@
   "unreal": "AStridesHUD::DrawHUD, ligne « À cheval · <allure> · x m/s (y m/min) · cadence z » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:36) ; noms d'allure lus de Content/Data/horse_gaits.json exporté du web (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:31-38)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md ligne 18 : allures PAS, TROT, GALOP, GRAND GALOP déclenchées en jeu et « confirmées par le HUD ». Noms d'allure exportés par scripts/unreal/export-data.mjs:29 ; aucun test d'affichage, aucune capture côte à côte dans unreal/docs/parite/.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md ligne 18 : allures PAS, TROT, GALOP, GRAND GALOP déclenchées en jeu et « confirmées par le HUD ». Noms d'allure exportés par scripts/unreal/export-data.mjs:30 ; aucun test d'affichage, aucune capture côte à côte dans unreal/docs/parite/.",
   "ecart": "Ligne de texte Canvas au lieu du bandeau ; vitesse en m/s et m/min (pas en km/h) avec point décimal ; pas de grand indicateur N/1/2/3/4 ; cadence affichée en permanence ; à pied, ligne fixe « À pied · Monter à cheval : E (à moins de 3 m) » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:43) ; aucun mode véhicule.",
   "tranche": "h"
  },
@@ -206,7 +206,7 @@
   "unreal": "AStridesHorse : LastTakeoff = qualityName(takeoffQuality(Plan)) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp), affiché « Dernier appel : … » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp) ; plus repris dans les messages du parcours (textes de courses.js depuis T4)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Le classement de la qualité est comparé à l'oracle JS unreal/core/tests/oracles/jump.json (unreal/core/tests/test_core.cpp:58 ; CTest 4 944 vérifications, 0 échec, unreal/docs/validation-mac-2026-11-17.md ligne 9) ; l'affichage lui-même n'est couvert par aucun test ni capture côte à côte. Capture non comparative Saved/Screenshots/Strides/09_jeu.png (18/11/2026) : « Dernier appel : far ».",
+  "preuve": "Le classement de la qualité est comparé à l'oracle JS unreal/core/tests/oracles/jump.json (unreal/core/tests/test_core.cpp:59 ; CTest 4 944 vérifications, 0 échec, unreal/docs/validation-mac-2026-11-17.md ligne 9) ; l'affichage lui-même n'est couvert par aucun test ni capture côte à côte. Capture non comparative Saved/Screenshots/Strides/09_jeu.png (18/11/2026) : « Dernier appel : far ».",
   "ecart": "Affiche l'identifiant interne anglais (perfect, bitFar, far…) au lieu des libellés français ; reste affiché indéfiniment au lieu de 1,5 s ; aucune couleur selon la qualité ; qualité brute écrite dès l'appel (AStridesHorse::StartJump, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163), y compris juste avant un refus, sans la réconciliation web avec le jugement.",
   "tranche": "a"
  },

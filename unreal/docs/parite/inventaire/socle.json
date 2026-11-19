@@ -599,7 +599,7 @@
   "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:36-43 : mode foot/ride, x, y, z, cap ; à cheval, position du cheval) et LoadNow (83-89 : cheval replacé et cavalier remis en selle, ou cavalier à pied) ; conversions StridesUnits.h:10-14",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 ; relecture de la pose testée à la main par unreal/core/tests/test_core.cpp:177-183 et StridesCoreTests.cpp:57-67 (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; Strides.Core.Save réussi selon unreal/docs/validation-mac-2026-11-17.md:13) ; aucun oracle JS.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 ; relecture de la pose testée à la main par unreal/core/tests/test_core.cpp:178-184 et StridesCoreTests.cpp:57-67 (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; Strides.Core.Save réussi selon unreal/docs/validation-mac-2026-11-17.md:13) ; aucun oracle JS.",
   "ecart": "Une seule pose : à pied, le cheval n'est ni sauvé ni replacé ; aucun véhicule, état du cheval, carburant, box ou commerce.",
   "tranche": "socle"
  },
@@ -809,7 +809,7 @@
   "js": [
    "src/config.js"
   ],
-  "unreal": "horse_gaits.json exporté par scripts/unreal/export-data.mjs:29, lu par StridesDataSubsystem.cpp:31-46 ; seuls servent les noms d'allure (HUD, StridesHUD.cpp:35), jumpPeak (StridesHorse.cpp:110) et minJumpSpeed (StridesHorse.cpp:245) ; la vitesse cible par allure (StridesHorse.cpp:236) est une branche morte, bCsoControls valant toujours vrai (StridesHorse.h:27, jamais remis à faux dans Source/)",
+  "unreal": "horse_gaits.json exporté par scripts/unreal/export-data.mjs:30, lu par StridesDataSubsystem.cpp:31-46 ; seuls servent les noms d'allure (HUD, StridesHUD.cpp:35), jumpPeak (StridesHorse.cpp:110) et minJumpSpeed (StridesHorse.cpp:245) ; la vitesse cible par allure (StridesHorse.cpp:236) est une branche morte, bCsoControls valant toujours vrai (StridesHorse.h:27, jamais remis à faux dans Source/)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:18 (PAS, TROT, GALOP, GRAND GALOP déclenchés et lus au HUD) ; données exportées du JS mais aucun test C++ ne les compare.",
@@ -827,7 +827,7 @@
   "unreal": "strides::SaveGame, schéma « strides.save » v1 (SaveGame.h:17-29 ; SaveGame.cpp:22-81)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:170-192 (testSave) et StridesCoreTests.cpp:57-67 (Strides.Core.Save), écrits à la main sans oracle JS, passés (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; unreal/docs/validation-mac-2026-11-17.md:9, 13).",
+  "preuve": "unreal/core/tests/test_core.cpp:171-193 (testSave) et StridesCoreTests.cpp:57-67 (Strides.Core.Save), écrits à la main sans oracle JS, passés (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; unreal/docs/validation-mac-2026-11-17.md:9, 13).",
   "ecart": "Sous-ensemble : nom, avatar, langue, argent, réputation, heure, cheval actif, compétences, chevaux, records, 3 réglages, pose ; heure par défaut 7 h au lieu de 9 h ; réglages son, musique, camSens, timeScale, courseLine absents ; le reste n'existe que dans legacyJson après un import.",
   "tranche": "socle"
  },
@@ -841,7 +841,7 @@
   "unreal": "SaveGame::fromWebExport (SaveGame.cpp:86-92 : web v1 → réputation = xp) ; SaveGame::fromJson refuse une version < 1 ou > 1 (SaveGame.cpp:62-63)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:186-189 (import v1 xp 340 → réputation 340 ; version 99 refusée), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec) ; tests/unit/save.test.js non exporté en oracle.",
+  "preuve": "unreal/core/tests/test_core.cpp:187-190 (import v1 xp 340 → réputation 340 ; version 99 refusée), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec) ; tests/unit/save.test.js non exporté en oracle.",
   "ecart": "Pas de copie de secours avant migration ; pas de chaîne de migrations du schéma natif (v1 seule).",
   "tranche": "socle"
  },
@@ -855,7 +855,7 @@
   "unreal": "SaveGame::fromJson (SaveGame.cpp:58-81) : schéma et version seulement",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:189-190 (version future et texte non JSON refusés), écrit à la main, passé.",
+  "preuve": "unreal/core/tests/test_core.cpp:190-191 (version future et texte non JSON refusés), écrit à la main, passé.",
   "ecart": "Aucun contrôle de type : champ absent ou mal typé lu comme 0 ou chaîne vide (MiniJson.h:21-25) ; liste de chevaux vide acceptée ; pas de started.",
   "tranche": "socle"
  },
@@ -899,7 +899,7 @@
   "unreal": "SaveGame::fromWebExport (SaveGame.cpp:83-105) ; UStridesSaveSubsystem::ImportWebExport(Path) (StridesSaveSubsystem.cpp:94-106)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:186-187 (import v1, reste conservé dans legacyJson), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec).",
+  "preuve": "unreal/core/tests/test_core.cpp:187-188 (import v1, reste conservé dans legacyJson), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec).",
   "ecart": "Pas d'export natif ; ImportWebExport n'a aucun appelant (ni bouton ni commande) ; argent et réputation importés ignorés par la progression (Credits / Reputation du USaveGame laissés à 0 puis relus par LoadNow : StridesSaveSubsystem.cpp:74-76, 101-103) ; un défi sans record (best null) devient 0 pénalité en 0 s (SaveGame.cpp:98-101) ; échappements \\r, \\b, \\f relus comme r, b, f (MiniJson.h:68).",
   "tranche": "socle"
  },
@@ -943,7 +943,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:73-91 (keyboardMove, portage de input.js poll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:118-133 (OnMove : déplacement clavier du cœur, drapeau clavier transmis au cheval)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "keyboardMove comparé aux 258 images au clavier des scénarios rampe-clavier et ctrl-alt (input.move et keyMove relevés après input.poll, test_core.cpp:445, 0 écart) ; le branchement dans le contrôleur est compilé, pas joué.",
+  "preuve": "keyboardMove comparé aux 258 images au clavier des scénarios rampe-clavier et ctrl-alt (input.move et keyMove relevés après input.poll, test_core.cpp:446, 0 écart) ; le branchement dans le contrôleur est compilé, pas joué.",
   "ecart": "Diagonale normalisée et amplitudes Ctrl 0,5 / Alt 0,25 identiques ; touches logiques W et Z, A et Q doublées au lieu des codes physiques (Q déplace à gauche alors qu'il siffle dans le web) ; Ctrl reste aussi lié à « allure − » (sans effet en concours) ; hors épreuve, l'avant / arrière règle toujours une cadence (bCsoControls toujours vrai) ; tranche T8.",
   "tranche": "socle"
  },

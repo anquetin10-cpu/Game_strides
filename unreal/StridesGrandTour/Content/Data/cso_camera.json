@@ -1,0 +1,21 @@
+{
+ "schema": "strides.cso_camera/1",
+ "source": "src/entities/camera.js",
+ "units": "m, s, rad, degrés (fov vertical)",
+ "back": 6.6,
+ "up": 3.4,
+ "lookAhead": 9,
+ "lookUp": 1.1,
+ "fenceBias": 0.22,
+ "fenceRange": 30,
+ "lead": 0.18,
+ "yawK": 5,
+ "yawAcc": 4,
+ "posK": 10,
+ "yK": 3,
+ "jumpFollow": 0.12,
+ "fov": 58,
+ "minBack": 1.6,
+ "fenceClear": 0.7,
+ "enter": 1.2
+}

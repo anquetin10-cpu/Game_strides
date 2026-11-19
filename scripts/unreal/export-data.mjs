@@ -21,6 +21,7 @@ import { parseAst } from 'rollup/parseAst';
 import { HORSE } from '../../src/config.js';
 import { POLE } from '../../src/world/sites.js';
 import { HORSES } from '../../src/gameplay/data.js';
+import { CAM_COMP } from '../../src/entities/camera.js';
 import { readFileSync } from 'node:fs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -52,6 +53,9 @@ write(DATA, 'cso_horse.json', {
   csoFenceWidth: srcConst(/CSO_LAYOUT\.forEach\(\(f, i\) => \{\s*this\.add\(\{[^}]*\bw: ([\d.]+)[^}]*course: 'cso'/, 'largeur des obstacles de CSO'),
   jumpDuration: HORSE.jumpDuration, minJumpSpeed: HORSE.minJumpSpeed, jumpPeak: HORSE.jumpPeak,
 });
+// Caméra de concours (tranche T6) : réglages CAM_COMP de camera.js (FOV vertical, degrés), lus par le jeu
+// (UStridesDataSubsystem::CameraParams) et comparés aux valeurs par défaut de StridesCore/CsoCamera.h par les tests.
+write(DATA, 'cso_camera.json', { schema: 'strides.cso_camera/1', source: src('entities/camera.js'), units: 'm, s, rad, degrés (fov vertical)', ...CAM_COMP });
 // Déroulé d'épreuve (tranche T4) : règles de courseSteps (courses.js) extraites du source (valeurs par défaut écrites dans
 // la fonction, jamais recopiées), délai de la cloche, entrée de piste et lignes de départ / d'arrivée du jeu (repère monde,
 // pleine précision) ; recoupés par les scénarios t4-* de cso_runs/ (élimination au deuxième refus, +4, 45 s).

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 
+#include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
@@ -1502,6 +1503,204 @@ static void testCsoGoto() {
   std::printf("étape goto : %d cas, %d écarts, %zu textes distincts\n", n, bad, texts.size());
 }
 
+// ---------- Caméra de concours (tranche T6) : strides::csoCamStep rejoué sur le canal « cc » de cso_runs/ ----------
+
+// Obstacles relevés par le canal (cc0.obs, cc.obs) : [x, z, n.x, n.z, t.x, t.z, w, depth (null : absent), ground, h, off].
+static std::vector<CsoCamFence> camFences(const J& obs) {
+  std::vector<CsoCamFence> v;
+  for (const J& o : obs.a) {
+    CsoCamFence f;
+    f.x = o[0].num(); f.z = o[1].num(); f.nx = o[2].num(); f.nz = o[3].num(); f.tx = o[4].num(); f.tz = o[5].num();
+    f.w = o[6].num(); f.depth = o[7].isNull() ? 0 : o[7].num(); f.ground = o[8].num(); f.h = o[9].num(); f.off = o[10].b;
+    v.push_back(f);
+  }
+  return v;
+}
+static CsoVec3 vec3(const J& a) { return CsoVec3{a[0].num(), a[1].num(), a[2].num()}; }
+
+// Mesure du cadrage de tests/e2e/cso-framing.mjs:31-39 avec une caméra Three.js (lookAt, haut = +y, FOV vertical) :
+// ordonnée d'écran (0 = haut, 1 = bas) de chaque point de la silhouette.
+static std::vector<double> framingYs(const CsoVec3& eye, const CsoVec3& look, double fovDeg, const J& pts, const J& pose) {
+  const double hx = pose[0].num(), hz = pose[1].num(), head = pose[2].num(), gy = pose[3].num(), jy = pose[4].num();
+  // Object3D.lookAt d'une caméra : z = normalize(œil − cible), x = normalize(haut × z), y = z × x.
+  double zx = eye.x - look.x, zy = eye.y - look.y, zz = eye.z - look.z;
+  const double zl = std::sqrt(zx * zx + zy * zy + zz * zz);
+  zx /= zl; zy /= zl; zz /= zl;
+  double xx = zz, xy = 0, xz = -zx;  // (0, 1, 0) × z
+  const double xl = std::sqrt(xx * xx + xz * xz);
+  xx /= xl; xz /= xl;
+  const double yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+  const double t = std::tan(fovDeg * kPi / 360);
+  std::vector<double> ys;
+  for (const J& p : pts.a) {
+    const double a = p[0].num(), y = p[1].num();
+    const double px = hx + std::sin(head) * a - eye.x, py = gy + jy + y - eye.y, pz = hz + std::cos(head) * a - eye.z;
+    const double cy = px * yx + py * yy + pz * yz, cz = px * zx + py * zy + pz * zz;
+    ys.push_back((1 - (cy / -cz) / t) / 2);
+  }
+  return ys;
+}
+
+// Rejeu chaîné, sans recalage : état de départ setup.cc0, puis chaque appel (ccp hors image, cc de l'image) avec les
+// entrées relevées (cheval vu par la caméra, obstacle suivant) ; la sonde de la perche et le sol sous la caméra
+// répondent ce que le jeu web a répondu (pb, th), après contrôle des points interrogés. Sorties comparées à 1e-6 près
+// (critère T6) : œil, point visé, FOV appliqué, FOV lissé, recul retenu, points sondés.
+static void testCamRuns() {
+  J o = loadRuns();
+  const J cam = loadJson(DATA + "/cso_camera.json");
+  const CsoCamParams& C = csoCamDefaults();
+  CHECK(cam["schema"].s == "strides.cso_camera/1" && cam["back"].num() == C.back && cam["up"].num() == C.up && cam["lookAhead"].num() == C.lookAhead &&
+            cam["lookUp"].num() == C.lookUp && cam["fenceBias"].num() == C.fenceBias && cam["fenceRange"].num() == C.fenceRange &&
+            cam["lead"].num() == C.lead && cam["yawK"].num() == C.yawK && cam["yawAcc"].num() == C.yawAcc && cam["posK"].num() == C.posK &&
+            cam["yK"].num() == C.yK && cam["jumpFollow"].num() == C.jumpFollow && cam["fov"].num() == C.fov && cam["minBack"].num() == C.minBack &&
+            cam["fenceClear"].num() == C.fenceClear && cam["enter"].num() == C.enter,
+        "cso_camera.json : réglages CAM_COMP différents du portage");
+  int calls = 0, runs = 0, entries = 0, snaps = 0, blocked = 0, minBack = 0, closer = 0, farther = 0, fenceLift = 0, biased = 0;
+  double devPos = 0, devFov = 0, devBack = 0;
+  std::map<std::string, int> clean;
+  std::vector<std::string> marksOk;
+  for (const J& r : o["runs"].a) {
+    const std::string id = r["id"].s, who = id + " (" + r["lang"].s + ")";
+    if (r["setup"]["lite"].b) continue;  // scénarios légers (T4) : pas de canal caméra
+    const J& c0 = r["setup"]["cc0"];
+    CHECK(c0.t == J::Obj, "%s : état de départ de la caméra (cc0) absent", who.c_str());
+    if (c0.t != J::Obj) continue;
+    runs++;
+    CsoCamState s;
+    s.eye = vec3(c0["eye"]);
+    s.fov = c0["fov"].num();
+    s.camFov = c0["camFov"].num();
+    if (!c0["st"].isNull()) {
+      const J& st = c0["st"];
+      s.active = true;
+      s.cH = st["cH"].num(); s.w = st["w"].num(); s.t = st["t"].num();
+      s.ax = st["ax"].num(); s.az = st["az"].num(); s.ay = st["ay"].num(); s.back = st["back"].num();
+      s.from = vec3(st["from"]); s.fromLook = vec3(st["fromLook"]);
+      s.hasAim = !st["aim"].isNull();
+      if (s.hasAim) s.aim = vec3(st["aim"]);
+    }
+    std::vector<CsoCamFence> fences = camFences(c0["obs"]);
+    int bad = 0, n = 0;
+    std::string first;
+    auto call = [&](const J& c, int f) {
+      CsoCamInput in;
+      in.dt = c["dt"].isNull() ? 1.0 / 30 : c["dt"].num();
+      in.instant = c["i"].b;
+      const J& hz = c["hz"];
+      in.horse = CsoCamHorse{hz[0].num(), hz[1].num(), hz[2].num(), orZero(hz[3]), hz[4].num(), hz[5].num(), hz[6].num()};
+      std::string why;
+      char b[160];
+      // Entrée dans la branche concours : le jeu web relève la caméra précédente ; le cœur doit la (re)créer au même appel.
+      const bool created = !c["e0"].isNull();
+      if (created != (!s.active || in.instant)) why += created ? " entrée non vue par le cœur" : " entrée inattendue";
+      if (created) {
+        s.eye = vec3(c["e0"]);
+        s.fov = c["f0"][0].num();
+        s.camFov = c["f0"][1].num();
+        if (in.instant) snaps++; else entries++;
+      }
+      if (!c["obs"].isNull()) fences = camFences(c["obs"]);
+      in.fences = &fences;
+      if (!c["nx"].isNull()) {
+        const size_t k = (size_t)c["nx"].num();
+        in.hasNext = k < fences.size();
+        if (in.hasNext) { in.nextX = fences[k].x; in.nextZ = fences[k].z; }
+        else why += " obstacle suivant hors liste";
+      }
+      // Sonde : réponse du jeu web (pb), points interrogés comparés à pq quand il est relevé.
+      const int pb = (int)c["pb"].num();
+      const J& pq = c["pq"];
+      int k = 0;
+      double devQ = 0;
+      in.blocked = [&](double x, double y, double z) {
+        if (!pq.isNull() && (size_t)k < pq.a.size())
+          devQ = std::max({devQ, std::abs(x - pq[k][0].num()), std::abs(y - pq[k][1].num()), std::abs(z - pq[k][2].num())});
+        return k++ == pb;
+      };
+      const J& th = c["th"];
+      double devT = 0;
+      in.ground = [&](double x, double z) {
+        devT = std::max({devT, std::abs(x - th[0].num()), std::abs(z - th[1].num())});
+        return th[2].num();
+      };
+      const double back0 = s.back;
+      const CsoCamOut out = csoCamStep(s, in, C);
+      auto d = [&](const char* k2, double a, double e, double& slot) {
+        const double x = std::abs(a - e);
+        slot = std::max(slot, x);
+        if (!(x <= 1e-6)) { std::snprintf(b, sizeof b, " %s %.12g/%.12g", k2, a, e); why += b; }
+      };
+      d("eye.x", out.eye.x, c["eye"][0].num(), devPos); d("eye.y", out.eye.y, c["eye"][1].num(), devPos); d("eye.z", out.eye.z, c["eye"][2].num(), devPos);
+      d("look.x", out.look.x, c["look"][0].num(), devPos); d("look.y", out.look.y, c["look"][1].num(), devPos); d("look.z", out.look.z, c["look"][2].num(), devPos);
+      d("fov", out.fov, c["fov"].num(), devFov);
+      d("fov lissé", s.fov, c["fs"].num(), devFov);
+      d("recul", s.back, c["bk"].num(), devBack);
+      if (out.probeCount != (int)c["pn"].num() || out.probeHit != pb) { std::snprintf(b, sizeof b, " sonde %d/%d points, bloqué %d/%d", out.probeCount, (int)c["pn"].num(), out.probeHit, pb); why += b; }
+      if (devQ > 1e-6) { std::snprintf(b, sizeof b, " points sondés à %.3g", devQ); why += b; }
+      if (devT > 1e-6) { std::snprintf(b, sizeof b, " sol interrogé à %.3g", devT); why += b; }
+      // Témoins des branches exercées (relevés dans l'oracle).
+      if (pb >= 0) blocked++;
+      if (pb >= 0 && out.probeBack == C.minBack) minBack++;
+      if (!in.instant && s.back < back0 - 1e-9) closer++;
+      if (!in.instant && s.back > back0 + 1e-9) farther++;
+      if (out.eye.y > s.ay + C.up + 1e-9 && created == false) fenceLift++;
+      if (in.hasNext) {
+        const double dx = in.nextX - s.ax, dz = in.nextZ - s.az, dd = std::hypot(dx, dz);
+        if (dd > 1 && dd < C.fenceRange && (dx * std::sin(s.cH) + dz * std::cos(s.cH)) / dd > 0.5) biased++;
+      }
+      calls++;
+      n++;
+      if (!why.empty()) {
+        bad++;
+        if (first.empty()) first = "image " + std::to_string(f) + " :" + why;
+      }
+      return out;
+    };
+    for (const J& f : r["frames"].a) {
+      const int fi = (int)f["f"].num();
+      for (const J& c : f["ccp"].a) call(c, fi);
+      if (f["cc"].isNull()) { csoCamLeave(s); continue; }  // branche concours non prise (this._comp = null)
+      const CsoCamOut out = call(f["cc"], fi);
+      // Scénario « cadrage » : mesure du cadrage de cso-framing.mjs recalculée avec la caméra du cœur.
+      const J& fr = f["fr"];
+      if (!fr.isNull()) {
+        const std::vector<double> ys = framingYs(out.eye, out.look, out.fov, r["setup"]["framing"]["pts"], fr["pose"]);
+        double dev = 0;
+        for (size_t k = 0; k < ys.size(); k++) dev = std::max(dev, std::abs(ys[k] - fr["ys"][k].num()));
+        const double top = std::max(0.0, *std::min_element(ys.begin(), ys.end())), bot = std::min(1.0, *std::max_element(ys.begin(), ys.end()));
+        CHECK(dev <= 1e-6 && std::abs((bot - top) - fr["part"].num()) <= 1e-6, "%s image %d : cadrage du cœur %.6f (haut %.4f, bas %.4f) / web %.6f, écart des points %.3g",
+              who.c_str(), fi, bot - top, top, bot, fr["part"].num(), dev);
+        char b[96];
+        std::snprintf(b, sizeof b, "%d%s:%.4f", fi, fr["jump"].b ? "(saut)" : "", bot - top);
+        marksOk.push_back(b);
+      }
+    }
+    CHECK(bad == 0, "%s : caméra, %d appels sur %d en écart ; premier : %s", who.c_str(), bad, n, first.c_str());
+    if (bad == 0) clean[id] = n;
+  }
+  // Scénarios requis : parcours droit (entrée en piste, fondu d'entrée), cheval et obstacles (snap), contre le décor
+  // (sonde bloquée, recul minimal), entrée depuis une caméra décalée, relief et obstacle survolé hors de la carrière, et
+  // le cadrage de cso-framing.mjs (6 instants mesurés).
+  for (const char* id : {"droit", "bonne-zone", "virage-serre", "virage-en-lair", "refus", "t3-refus-5s", "t6-tribunes", "t6-mat", "t6-entree", "t6-relief", "t6-survol", "cadrage"})
+    CHECK(clean.count(id) && clean[id] > 0, "caméra : scénario %s absent ou en écart", id);
+  const J* cad = nullptr;
+  for (const J& r : o["runs"].a) if (r["id"].s == "cadrage") cad = &r;
+  if (cad) {
+    std::set<int> want;
+    for (const J& m : (*cad)["setup"]["framing"]["marks"].a) want.insert((int)m.num());
+    int seen = 0;
+    for (const J& f : (*cad)["frames"].a) if (!f["fr"].isNull() && want.count((int)f["f"].num())) seen++;
+    CHECK(want.size() == 6 && seen == 6, "cadrage : %d instants de cso-framing.mjs mesurés sur %zu", seen, want.size());
+  }
+  CHECK(entries > 0 && snaps > 0 && blocked > 0 && minBack > 0 && closer > 0 && farther > 0 && biased > 0,
+        "caméra : branche non exercée (entrées %d, snaps %d, sonde bloquée %d, recul minimal %d, rapprochement %d, éloignement %d, point visé attiré %d)",
+        entries, snaps, blocked, minBack, closer, farther, biased);
+  std::string mk;
+  for (const std::string& m : marksOk) mk += " " + m;
+  std::printf("caméra de concours : %d scénarios, %d appels rejoués, écarts max œil/visée %.3g m, FOV %.3g°, recul %.3g m ; entrées %d, snaps %d, sonde bloquée %d (recul minimal %d), rapprochements %d, éloignements %d, œil relevé (obstacle survolé ou relief) %d, visée attirée %d ; cadrage du cœur (image:part)%s\n",
+              runs, calls, devPos, devFov, devBack, entries, snaps, blocked, minBack, closer, farther, fenceLift, biased, mk.c_str());
+}
+
 int main(int argc, char** argv) {
   ORA = argc > 1 ? argv[1] : "oracles";
   DATA = argc > 2 ? argv[2] : "../../StridesGrandTour/Content/Data";
@@ -1520,6 +1719,7 @@ int main(int argc, char** argv) {
     testText();
     testCsoRuns();
     testCsoGoto();
+    testCamRuns();
   } catch (const std::exception& e) {
     std::printf("exception : %s\n", e.what());
     return 2;

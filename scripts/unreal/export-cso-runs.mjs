@@ -15,6 +15,9 @@
 //    Canal « ch » (tranche T2, cheval de concours) : état complet du cheval en pleine précision, rejoué par
 //    unreal/core/tests/test_core.cpp (testHorseRuns). Canal « ep » (tranche T4, déroulé d'épreuve) : entrées de la
 //    mission (Run.update) rejouées par testCsoRuns ; scénarios t4-* en français et en anglais, images « légères ».
+//    Canal « cc » (tranche T6, caméra de concours) : appels de FollowCamera._updateComp en pleine précision (cheval vu
+//    par la caméra, obstacle suivant, réponses de la sonde de la perche et du sol, œil, point visé, FOV), rejoué par
+//    testCamRuns ; scénario « cadrage » = tests/e2e/cso-framing.mjs au pas fixe, mesures du cadrage (fr) à ses instants.
 //  - unreal/core/tests/oracles/cso_target.json : grille de visée (obstacles.target / timing du jeu) pour 11 220 poses,
 //    appuis SAUT (Horse.startJump) et refus décidés (Obstacles.refuse) sur des poses du cheval.
 //  - unreal/core/tests/oracles/cso_goto.json : étape « rejoindre l'entrée » (grille de points suivis, fr et en).
@@ -25,14 +28,15 @@
 //    capture web de chaque pose (unreal/docs/parite/cso/<pose>-web.png, 844 × 390, deviceScaleFactor 1) ; la capture
 //    Unreal jumelle est faite par -StridesShots=cso, le montage par scripts/unreal/parite-montage.py.
 //    --shots=carriere : seulement les poses de la carrière (vue aérienne, lignes de départ et d'arrivée, poteau
-//    « Chrono », tranche T5) ; --shots=chute : seulement la chute de barre (T3) ; les autres poses sont gardées.
+//    « Chrono », tranche T5) ; --shots=chute : seulement la chute de barre (T3) ; --shots=cadrage : seulement la caméra
+//    de concours aux 6 instants de tests/e2e/cso-framing.mjs (T6) ; les autres poses sont gardées.
 //  - avec --fences (tranche T5) : géométrie des obstacles du parcours, des lignes et du poteau « Chrono » construite par
 //    le jeu web (scripts/unreal/cso-export.js, chargé dans la page), comparée au jeu réel hors épreuve et en épreuve :
 //    .tmp/unreal-import/cso/ (cso_fences.glb, sign_*.png, importés par scripts/unreal/import-cso-fences.py) et le
 //    manifeste unreal/StridesGrandTour/Content/World/Cso/cso_fences.json (relu par le jeu et le test Strides.Parite.CsoScenery).
 //
 // Usage (serveur Vite sur BASE, défaut http://127.0.0.1:5173 ; Chrome installé, aucun téléchargement) :
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute]] [--fences] [--only=…] [--out=dossier]
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute|cadrage]] [--fences] [--only=…] [--out=dossier]
 // Mode d'emploi du banc (oracles, captures, montages, PARITE.md) : unreal/docs/parite/README.md.
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -202,7 +206,58 @@ const SCENARIOS = [
     acts: [{ do: 'line', until: 'started' }, ...['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
       { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'wait', frames: 10 }, { do: 'mode', to: 'foot', frames: 3 }, { do: 'card', extra: 5 }],
     desc: 'Sortie de piste écourtée : départ, les 10 éléments sautés (cheval posé devant chacun), cheval posé 4 m avant le milieu de la ligne d’arrivée à 3 m/s, arrivée ; 10 images plus tard, pied à terre (A.foot) : la sortie de piste s’arrête là, sans élimination, bilan.' },
+  // Scénarios de la tranche T6 (caméra de concours) contre le décor (repère : entrée de piste CSO_GATE ; le parcours ne
+  // fait jamais toucher la perche) : la sonde bloque la perche, le recul se raccourcit (amorti 10 /s) puis s'allonge
+  // (amorti 2,5 /s). Tribunes : boîte « stands » au nord de la carrière ; mât : mât « mast » de la lice nord.
+  { id: 't6-tribunes', type: 'pose', langs: ['fr'], pose: { from: 'gate', x: -20, z: -69, h: Math.PI / 2, v: 0 }, maxFrames: 200,
+    desc: 'Caméra de concours contre les tribunes : cheval arrêté à l’entrée de piste + (−20 ; −69), 4 m au sud de la lice nord, tourné vers l’est (perche libre), caméra recalée ; joystick à droite et un peu en avant 1,5 s (le cheval tourne vers le sud, la perche passe sur les tribunes et se raccourcit), relâché 1 s, puis à gauche et un peu en avant 1,5 s (la perche se dégage et s’allonge), relâché 1 s.' },
+  { id: 't6-mat', type: 'pose', langs: ['fr'], pose: { from: 'gate', x: 12, z: -71.3, h: 0, v: 0 }, maxFrames: 200,
+    desc: 'Caméra de concours contre un mât de la lice nord : cheval arrêté à l’entrée de piste + (12 ; −71,3), cap 0 (vers le sud), le mât 1,9 m derrière lui (perche bloquée dès 1,4 m : recul minimal 1,6 m), caméra recalée ; joystick en avant 2,5 s (le cheval s’éloigne, la perche se dégage), relâché 1 s.' },
+  // Entrée en piste depuis une caméra du monde ouvert décalée du cap du cheval (cap initial de la caméra de concours).
+  { id: 't6-entree', type: 'entry', langs: ['fr'], turn: 0.9, after: 75, maxFrames: 400,
+    desc: 'Entrée de la caméra de concours depuis une caméra décalée : Parcours du Pôle lancé, cheval à l’arrêt 16 m avant la ligne de départ, tourné sur place de 0,9 rad (la caméra du monde ouvert reste derrière l’ancien cap) ; présentation, Entrer en piste, 75 images (fondu d’entrée de 1,2 s, cap initial vers le cheval).' },
+  // Branches de hauteur que la carrière n'atteint pas (cheval posé hors de la carrière, épreuve en cours ; obstacles à
+  // moins de 60 m relevés) : relief sous la caméra plus haut que le cheval de plus de 2,6 m ; obstacle de cross survolé
+  // dont le sommet + 1,45 m dépasse la caméra (pied de l'obstacle plus haut que le cheval).
+  { id: 't6-relief', type: 'pose', langs: ['fr'], obsNear: true, pose: { from: 'abs', x: 528, z: -240, h: Math.PI, v: 0 }, maxFrames: 60,
+    desc: 'Caméra de concours au pied d’un talus : épreuve en cours (après la cloche), cheval posé à l’arrêt en (528 ; −240), cap π, relief 6,6 m derrière lui plus haut de 3,2 m (repéré dans le jeu) ; caméra recalée, 30 images sans entrée.' },
+  { id: 't6-survol', type: 'pose', langs: ['fr'], obsNear: true, pose: { from: 'obstacle', label: '4', course: 'xc', s: -1, d: 6.6, v: 0 }, maxFrames: 60,
+    desc: 'Caméra de concours au-dessus d’un obstacle de cross plus haut que le cheval : épreuve en cours (après la cloche), cheval posé à l’arrêt 6,6 m devant la haie 4 du cross (côté −n, dos à l’obstacle, pied de la haie plus haut de 1,26 m, repéré dans le jeu) ; caméra recalée, 30 images sans entrée.' },
+  // Scénario de la tranche T6 (caméra de concours) : tests/e2e/cso-framing.mjs rejoué au pas fixe (réglages relus dans
+  // le test, voir readFraming), cheval WildMesh comme dans le test ; canaux « ch » et « cc », mesures du cadrage (fr)
+  // aux instants du test.
+  { id: 'cadrage', type: 'framing', langs: ['fr'], at: { dx: 0, dz: 4, h: Math.PI }, maxFrames: 600,
+    desc: 'Cadrage de la caméra de concours (tests/e2e/cso-framing.mjs) : cheval monté posé 4 m au sud de l’entrée de piste, cap π ; Parcours du Pôle lancé, 6 images, Entrer en piste, 80 images ; cheval posé 3 m avant la ligne de départ dans son axe, caméra recalée (snap) ; 460 images : pilote des tests le long de la ligne du tracé (point 12 échantillons devant, cadence de concours 6,2 m/s), SAUT dans la bonne zone quand le sommet du saut tombe sur l’obstacle ; mesures du cadrage (part de la hauteur de l’écran occupée par le couple) aux images 40, 120, 200, 280, 360, 440 et à deux instants en l’air.' },
 ];
+
+// Réglages du scénario « cadrage » relus dans tests/e2e/cso-framing.mjs (le test fait foi, aucune valeur recopiée).
+function readFraming() {
+  const t = readFileSync(join(ROOT, 'tests/e2e/cso-framing.mjs'), 'utf8');
+  const m = (re, what) => {
+    const r = re.exec(t);
+    if (!r) throw new Error(`cso-framing.mjs : ${what} introuvable`);
+    return r;
+  };
+  const num = (re, what) => Number(m(re, what)[1]);
+  const jt = m(/h\.jumpT > ([\d.]+) && h\.jumpT < ([\d.]+) && out\.filter\(\(o\) => o\.jump\)\.length < (\d+)/, 'mesures en l’air');
+  return {
+    source: 'tests/e2e/cso-framing.mjs',
+    pre: num(/A\.tick\((\d+)\);\s*\n\s*A\.tap\(document\.querySelector\('\.overlay \[data-id="enter"\]'\)\);/, 'images avant Entrer en piste'),
+    post: num(/data-id="enter"\]'\)\);\s*\n\s*A\.tick\((\d+)\);/, 'images après Entrer en piste'),
+    back: num(/S\.x - Math\.sin\(S\.rot\) \* ([\d.]+)/, 'recul avant la ligne de départ'),
+    mag: num(/A\.steer\(t\.x - h\.pos\.x, t\.z - h\.pos\.z, ([\d.]+)\)/, 'amplitude du pilote'),
+    win: num(/j < Math\.min\(line\.length, k \+ (\d+)\)/, 'fenêtre de recherche sur la ligne'),
+    ahead: num(/line\[Math\.min\(line\.length - 1, k \+ (\d+)\)\]/, 'avance sur la ligne'),
+    n: num(/for \(let i = 0; i < (\d+); i\+\+\)/, 'nombre d’images'),
+    marks: JSON.parse(m(/const marks = new Set\((\[[\d,\s]+\])\)/, 'instants mesurés')[1]),
+    jT0: Number(jt[1]),
+    jT1: Number(jt[2]),
+    jumps: Number(jt[3]),
+    pts: JSON.parse(m(/const pts = (\[\[.*?\]\])\.map/, 'silhouette du couple')[1]),
+  };
+}
+const FRAMING = readFraming();
+for (const sc of SCENARIOS) if (sc.type === 'framing') sc.framing = FRAMING;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Code injecté dans la page : banc d'enregistrement (window.__parite).
@@ -302,6 +357,7 @@ function PAGE() {
       return emit(evt, data);
     };
     P.installHorse();
+    P.installCam();
     return audioNames;
   };
   const railState = () => {
@@ -349,6 +405,7 @@ function PAGE() {
   const frames = [];
   const step = (inp) => {
     cur = { f: frames.length, in: inp, ev: [], hud: [], audio: [] };
+    if (ccPending.length) cur.ccp = ccPending.splice(0); // tranche T6 : appels de la caméra entre deux images (snap)
     apply(inp);
     clock += DT * 1000;
     g.update(DT);
@@ -372,7 +429,7 @@ function PAGE() {
   // seulement s'il diffère de la fin de l'image précédente), collision (col), aide à l'appel (tm = timing, tg = cible).
   // Les obstacles sont repérés par leur rang dans `obs` (obstacles à moins de 80 / 60 m du centre de la carrière),
   // liste relevée en entier à chaque image où l'un d'eux change (hauteur, présence).
-  let ARENA = null, JM = null;
+  let ARENA = null, JM = null, GATE = null; // GATE : entrée de piste (CSO_GATE), repère des poses `from: 'gate'` (tranche T6)
   let obsList = [], lastSig = null, lastS = null, inHorse = false, col = false;
   const obsSig = () => JSON.stringify(obsList.map((o) => [o.x, o.z, o.rot, o.w, o.h, o.spread, o.kind, !!o.off]));
   const obsDump = () => obsList.map((o) => ({ label: o.label, course: o.course, num: o.num, kind: o.kind, x: o.x, z: o.z, rot: o.rot, w: o.w, h: o.h, spread: o.spread, front: o.front, back: o.back, solid: !!o.solid, off: !!o.off, bars: o.bars.map((b) => [b.s, b.h]) }));
@@ -432,11 +489,106 @@ function PAGE() {
     ch.ob = { ...passState(h), fs: fenceState() };
   };
   const chStart = () => {
-    obsList = g.obstacles.list.filter((o) => Math.abs(o.x - ARENA.x) < 80 && Math.abs(o.z - ARENA.z) < 60);
+    // Tranche T6 (scénarios obsNear, cheval posé hors de la carrière) : aussi les obstacles à moins de 60 m du cheval.
+    const hp = g.player.horse.pos;
+    obsList = g.obstacles.list.filter((o) => (Math.abs(o.x - ARENA.x) < 80 && Math.abs(o.z - ARENA.z) < 60) || (P.obsNear && Math.hypot(o.x - hp.x, o.z - hp.z) < 60));
     lastSig = obsSig();
     const s = hstate();
     lastS = JSON.stringify(s);
     return { s, obs: obsDump(), ob: { ...passState(g.player.horse), fs: fenceState() } };
+  };
+
+  // ---- Canal « cc » (caméra de concours, tranche T6) : appels de FollowCamera._updateComp en pleine précision ----
+  // Par appel (un par image en épreuve) : hz = cheval vu par la caméra [pos.x, pos.z, heading, _yawRate (null :
+  // indéfini), jumpT, jumpY, groundY] ; dt s'il diffère du pas ; i = instant (snap) ; e0 = camera.position et f0 =
+  // [this.fov, camera.fov] avant l'appel quand l'état de concours est (re)créé ; nx = rang dans cc0.obs de
+  // game.course.next (null : aucun) ; sonde de la perche (colliders.cameraBlocked) : pn = points sondés, pb = rang du
+  // premier point bloqué (−1 : aucun), pq = points [x, y, z] sondés (premier appel de l'exécution et appels bloqués) ;
+  // th = [x, z, hauteur] rendus par terrain.getHeight (sol sous la caméra) ; sorties : eye = camera.position, look =
+  // arguments de camera.lookAt, fov = camera.fov (appliqué), fs = this.fov (lissé), bk = _comp.back (recul retenu, amorti).
+  // obs = obstacles relus [x, z, n.x, n.z, t.x, t.z, w, depth (null : absent), ground, h, off] quand l'un d'eux change.
+  // Appels hors image (snap entre deux images) : ccp de l'image suivante, dans l'ordre. État de départ : setup.cc0.
+  let inComp = false, ccProbe = [], ccTerrain = [], ccLook = null, ccPending = [], ccObsSig = null, ccFirst = true, ccOn = false;
+  const ccObsDump = () => obsList.map((o) => [o.x, o.z, o.n.x, o.n.z, o.t.x, o.t.z, o.w, o.depth ?? null, o.ground, o.h, !!o.off]);
+  const ccState = () => {
+    const s = g.cam._comp;
+    return s ? { cH: s.cH, w: s.w, t: s.t, ax: s.ax, az: s.az, ay: s.ay, back: s.back, from: [s.from.x, s.from.y, s.from.z], fromLook: [s.fromLook.x, s.fromLook.y, s.fromLook.z], aim: s.aim ? [s.aim.x, s.aim.y, s.aim.z] : null } : null;
+  };
+  const ccStart = () => {
+    const cam = g.camera;
+    const o = ccObsDump();
+    ccObsSig = JSON.stringify(o);
+    ccPending = [];
+    ccFirst = true;
+    ccOn = true;
+    return { st: ccState(), eye: [cam.position.x, cam.position.y, cam.position.z], fov: g.cam.fov, camFov: cam.fov, obs: o };
+  };
+  P.installCam = () => {
+    const C = g.cam, cam = g.camera;
+    const uc = C._updateComp.bind(C);
+    C._updateComp = (dt, h, instant) => {
+      if (P.lite || !ccOn) return uc(dt, h, instant);
+      const rec = { hz: [h.pos.x, h.pos.z, h.heading, nul(h._yawRate), h.jumpT, h.jumpY, h.groundY] };
+      if (dt !== DT) rec.dt = dt;
+      if (instant) rec.i = true;
+      if (!C._comp || instant) {
+        rec.e0 = [cam.position.x, cam.position.y, cam.position.z];
+        rec.f0 = [C.fov, cam.fov];
+      }
+      const o = ccObsDump(), sig = JSON.stringify(o);
+      if (sig !== ccObsSig) {
+        rec.obs = o;
+        ccObsSig = sig;
+      }
+      const nx = g.course?.next;
+      rec.nx = nx ? obsList.indexOf(nx) : null;
+      if (rec.nx === -1) throw new Error('caméra : obstacle suivant hors de la liste relevée');
+      // Obstacles hors de la liste relevée : aucun ne doit pouvoir être survolé (boîte de 4 m autour de la caméra, à
+      // moins de 6,6 m du cheval).
+      for (const b of g.obstacles.list) if (!b.off && !obsList.includes(b) && Math.abs(b.x - h.pos.x) < 16 && Math.abs(b.z - h.pos.z) < 16) throw new Error(`caméra : obstacle ${b.label} hors de la liste relevée près du cheval`);
+      ccProbe = [];
+      ccTerrain = [];
+      ccLook = null;
+      inComp = true;
+      try {
+        uc(dt, h, instant);
+      } finally {
+        inComp = false;
+      }
+      rec.pn = ccProbe.length;
+      rec.pb = ccProbe.findIndex((p) => p[3]);
+      if (rec.pb >= 0 && rec.pb !== ccProbe.length - 1) throw new Error('caméra : sonde poursuivie après un point bloqué');
+      if (ccFirst || rec.pb >= 0) rec.pq = ccProbe.map((p) => [p[0], p[2], p[1]]);
+      ccFirst = false;
+      if (ccTerrain.length !== 1 || !ccLook) throw new Error(`caméra : ${ccTerrain.length} lectures du sol, lookAt ${ccLook ? 'appelé' : 'absent'}`);
+      rec.th = ccTerrain[0];
+      rec.eye = [cam.position.x, cam.position.y, cam.position.z];
+      rec.look = ccLook;
+      rec.fov = cam.fov;
+      rec.fs = C.fov;
+      rec.bk = C._comp.back;
+      if (cur) {
+        if (cur.cc) throw new Error('caméra : deux appels dans la même image');
+        cur.cc = rec;
+      } else ccPending.push(rec);
+    };
+    const cb = g.colliders.cameraBlocked.bind(g.colliders);
+    g.colliders.cameraBlocked = (x, z, y, pad) => {
+      const r = cb(x, z, y, pad);
+      if (inComp) ccProbe.push([x, z, y, r]);
+      return r;
+    };
+    const gh = g.terrain.getHeight.bind(g.terrain);
+    g.terrain.getHeight = (x, z) => {
+      const v = gh(x, z);
+      if (inComp) ccTerrain.push([x, z, v]);
+      return v;
+    };
+    const la = cam.lookAt.bind(cam);
+    cam.lookAt = (...a) => {
+      if (inComp) ccLook = a.length === 1 ? [a[0].x, a[0].y, a[0].z] : [a[0], a[1], a[2]];
+      return la(...a);
+    };
   };
   P.installHorse = () => {
     const p = g.player;
@@ -743,6 +895,11 @@ function PAGE() {
       return {};
     },
     // Glissades répétées : fin 45 images après le deuxième cabré (ou 450 images).
+    // Tranche T6 : cheval arrêté, 40 images (caméra de concours contre le décor, tests/e2e/cso.mjs:337-345).
+    't6-tribunes': (st) => (st.k >= 150 ? null : st.k < 45 ? { move: [1, 0.3] } : st.k < 75 ? {} : st.k < 120 ? { move: [-1, 0.3] } : {}),
+    't6-mat': (st) => (st.k >= 105 ? null : st.k < 75 ? { move: [0, 1] } : {}),
+    't6-relief': (st) => (st.k >= 30 ? null : {}),
+    't6-survol': (st) => (st.k >= 30 ? null : {}),
     't3-glissade': (st) => {
       st.n = (st.n || 0) + lastEv('horse:refuse');
       if (st.n >= 2) {
@@ -754,22 +911,39 @@ function PAGE() {
   };
   // Mise en place d'un scénario « pose » (entrée en piste, cheval posé), partagée par runPose et par les captures prises
   // pendant un scénario (posesDuring).
+  // Pose du cheval d'un scénario « pose » : repère de la carrière (défaut), de l'entrée de piste (from: 'gate'), absolu
+  // (from: 'abs'), ou à d m d'un obstacle le long de son axe de saut, côté s, dos à l'obstacle (from: 'obstacle', label,
+  // course : tranche T6, caméra au-dessus de l'obstacle).
+  const posePlace = (ps) => {
+    if (ps.from === 'abs') return { x: ps.x, z: ps.z, h: ps.h };
+    if (ps.from === 'obstacle') {
+      const o = g.obstacles.list.find((b) => b.label === ps.label && b.course === ps.course);
+      if (!o) throw new Error(`obstacle ${ps.course}/${ps.label} introuvable`);
+      return { x: o.x + o.n.x * ps.s * ps.d, z: o.z + o.n.z * ps.s * ps.d, h: Math.atan2(o.n.x * ps.s, o.n.z * ps.s) };
+    }
+    const B = ps.from === 'gate' ? GATE : ARENA;
+    return { x: B.x + ps.x, z: B.z + ps.z, h: ps.h };
+  };
   const poseStart = (sc) => {
     const h = g.player.horse, p = g.player;
     enterRing();
-    h.setPosition(ARENA.x + sc.pose.x, ARENA.z + sc.pose.z, sc.pose.h);
+    const q = posePlace(sc.pose);
+    h.setPosition(q.x, q.z, q.h);
     h.speed = sc.pose.v;
+    P.obsNear = !!sc.obsNear;
     p.csoCadence = undefined; // cadence de départ reprise de la vitesse réelle (csoRide.js:65)
-    g.cam.snap(h.pos, h.heading);
-    g.scene.updateMatrixWorld();
-    if (!g.camera.parent) g.camera.updateMatrixWorld();
     frames.length = 0;
     rails0 = railState();
     // État initial des barres (rails0 est ensuite remplacé à chaque image par railDelta : avant T3, setup.rails des
     // scénarios « pose » donnait par erreur l'état final).
     const railsInit = rails0;
     const ch0 = chStart();
-    return { railsInit, ch0, st: { k: 0, h, sc } };
+    // Tranche T6 : le snap de la caméra est relevé (ccp de la première image) et rejoué, au lieu d'être fondu dans cc0.
+    const cc0 = ccStart();
+    g.cam.snap(h.pos, h.heading);
+    g.scene.updateMatrixWorld();
+    if (!g.camera.parent) g.camera.updateMatrixWorld();
+    return { railsInit, ch0, cc0, st: { k: 0, h, sc } };
   };
   // Une image du scénario ; faux quand la règle des entrées l'arrête.
   const poseStep = (st) => {
@@ -781,14 +955,85 @@ function PAGE() {
   };
   P.runPose = (sc) => {
     const h = g.player.horse;
-    const { railsInit, ch0, st } = poseStart(sc);
+    const { railsInit, ch0, cc0, st } = poseStart(sc);
     while (poseStep(st)) {
       if (frames.length > sc.maxFrames) {
         if (sc.lenient) break; // --lenient : mise au point d'un scénario (images enregistrées malgré tout)
         throw new Error(`scénario ${sc.id} trop long`);
       }
     }
-    return { pose: { x: h.pos.x, z: h.pos.z }, horse: { x: R6(ARENA.x + sc.pose.x), z: R6(ARENA.z + sc.pose.z), h: R6(sc.pose.h), v: R6(sc.pose.v) }, rails: railsInit, ch0, frames };
+    const q = posePlace(sc.pose);
+    return { pose: { x: h.pos.x, z: h.pos.z }, horse: { x: R6(q.x), z: R6(q.z), h: R6(q.h), v: R6(sc.pose.v) }, rails: railsInit, ch0, cc0, frames };
+  };
+
+  // ---- Scénario « cadrage » (tranche T6, caméra de concours) : tests/e2e/cso-framing.mjs au pas fixe de 1/30 s ----
+  // Réglages relus dans le test par le script (sc.framing, voir readFraming) : images avant « Entrer en piste » (pre)
+  // et jusqu'à la pose (post, appui compris), recul avant la ligne de départ (back), amplitude du pilote (mag), fenêtre
+  // et avance sur la ligne du tracé (win, ahead), nombre d'images (n), instants mesurés (marks), sauts mesurés
+  // (jT0 < jumpT < jT1, au plus `jumps` mesures en l'air), silhouette du couple (pts). Le cheval part de l'entrée de piste
+  // + 4 m (setup, sc.at) comme dans le test ; la direction vient du pilote des tests (A.steer de tests/e2e/autopilot.js :
+  // cadence de concours posée, joystick x), l'appui SAUT de la règle du test.
+  const framingMeasure = (pts) => {
+    // cso-framing.mjs:31-39 : points de la silhouette projetés par la caméra du jeu (0 = haut de l'écran, 1 = bas).
+    const h = g.player.horse, V = g.camera.position.constructor;
+    const f = { x: Math.sin(h.heading), z: Math.cos(h.heading) };
+    const y0 = h.groundY + (h.jumpY || 0);
+    const ys = pts.map(([a, y]) => (1 - new V(h.pos.x + f.x * a, y0 + y, h.pos.z + f.z * a).project(g.camera).y) / 2);
+    const top = Math.max(0, Math.min(...ys)), bottom = Math.min(1, Math.max(...ys));
+    return { part: bottom - top, top, bottom, jump: h.jumpT >= 0, ys, asp: g.camera.aspect, pose: [h.pos.x, h.pos.z, h.heading, h.groundY, h.jumpY, h.jumpT] };
+  };
+  const framingStep = (st) => {
+    const F = st.sc.framing, h = st.h, line = st.line;
+    if (st.i >= F.n) return false;
+    let best = st.k, bd = 1e9;
+    for (let j = st.k; j < Math.min(line.length, st.k + F.win); j++) {
+      const d = Math.hypot(line[j].x - h.pos.x, line[j].z - h.pos.z);
+      if (d < bd) {
+        bd = d;
+        best = j;
+      }
+    }
+    st.k = best;
+    const t = line[Math.min(line.length - 1, st.k + F.ahead)];
+    A.steer(t.x - h.pos.x, t.z - h.pos.z, F.mag);
+    const move = [g.input.move.x, g.input.move.y];
+    const tg = g.obstacles.target(h);
+    const jump = !!(h.jumpT < 0 && tg && tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3);
+    const rec = step(input({ move, jump }));
+    if (F.marks.includes(st.i) || (h.jumpT > F.jT0 && h.jumpT < F.jT1 && st.jumps < F.jumps)) {
+      rec.fr = framingMeasure(F.pts);
+      if (rec.fr.jump) st.jumps++;
+    }
+    st.i++;
+    return true;
+  };
+  const framingStart = async (sc) => {
+    const F = sc.framing;
+    const O = await import('/src/gameplay/obstacles.js');
+    const h = g.player.horse;
+    for (let k = 0; k < F.pre; k++) step(input());
+    if (!document.querySelector('.overlay [data-id="enter"]')) throw new Error('cadrage : présentation absente');
+    step(input({ ui: 'enter' }));
+    for (let k = 1; k < F.post; k++) step(input());
+    const S = O.CSO_START;
+    h.setPosition(S.x - Math.sin(S.rot) * F.back, S.z - Math.cos(S.rot) * F.back, S.rot);
+    frames.length = 0;
+    rails0 = railState();
+    const railsInit = rails0;
+    const ch0 = chStart();
+    // Le snap de la caméra est relevé (ccp de la première image : pas, entrées, caméra précédente) au lieu d'être fondu
+    // dans l'état de départ cc0 : le rejeu le refait.
+    const cc0 = ccStart();
+    g.cam.snap(h.pos, S.rot);
+    g.scene.updateMatrixWorld();
+    if (!g.camera.parent) g.camera.updateMatrixWorld();
+    const start = { x: h.pos.x, z: h.pos.z, h: h.heading, course: !!g.course?.camera, step: g.missions.active?.i ?? null };
+    return { railsInit, ch0, cc0, start, st: { i: 0, k: 0, h, sc, line: O.CSO_LINE, jumps: 0 }, step: framingStep };
+  };
+  P.runFraming = async (sc) => {
+    const d = await framingStart(sc);
+    while (framingStep(d.st)) if (frames.length > sc.maxFrames) throw new Error(`scénario ${sc.id} trop long`);
+    return { rails: d.railsInit, ch0: d.ch0, cc0: d.cc0, start: d.start, frames };
   };
 
   // ---- Scénarios de la tranche T4 (déroulé d'épreuve) ----
@@ -1176,7 +1421,7 @@ function PAGE() {
     // vers elle.
     const GA0 = O.CSO_GATE;
     const pose = sc.at
-      ? { x: GA0.x + sc.at.dx, z: GA0.z + sc.at.dz, h: Math.atan2(-sc.at.dx, -sc.at.dz) }
+      ? { x: GA0.x + sc.at.dx, z: GA0.z + sc.at.dz, h: sc.at.h ?? Math.atan2(-sc.at.dx, -sc.at.dz) }
       : { x: S.x - Math.sin(S.rot) * before, z: S.z - Math.cos(S.rot) * before, h: S.rot };
     h.setPosition(pose.x, pose.z, pose.h);
     h.speed = 0;
@@ -1220,7 +1465,9 @@ function PAGE() {
     frames.length = 0;
     rails0 = railState();
     ARENA = (await import('/src/world/sites.js')).POLE.arena;
+    GATE = O.CSO_GATE;
     const ch0 = chStart();
+    const cc0 = ccStart();
     const FI = O.CSO_FINISH, GA = O.CSO_GATE;
     return {
       seed, dt: DT, day, gameTime: g.save.data.gameTime, time: g.time, playerName: g.save.data.playerName, horseName: h.name, horseId: h.id,
@@ -1234,7 +1481,24 @@ function PAGE() {
       calls: { ev: startCalls.ev, hud: startCalls.hud, audio: startCalls.audio },
       rails: rails0,
       ch0,
+      cc0,
     };
+  };
+
+  // Scénario « entrée » (tranche T6) : cheval tourné sur place de sc.turn rad après le lancement (la caméra du monde
+  // ouvert, à l'arrêt, ne recentre pas : elle reste derrière l'ancien cap), puis présentation, Entrer en piste et
+  // sc.after images : la caméra de concours part de cette caméra décalée (cap initial vers le cheval, fondu de 1,2 s).
+  P.runEntry = (sc) => {
+    const h = g.player.horse;
+    h.setPosition(h.pos.x, h.pos.z, h.heading + sc.turn);
+    let k = 0;
+    while (!document.querySelector('.overlay [data-id="enter"]')) {
+      step(input());
+      if (++k > 120) throw new Error('présentation absente');
+    }
+    step(input({ ui: 'enter' }));
+    for (k = 0; k < sc.after; k++) step(input());
+    return frames;
   };
 
   // Scénario « droit » (voir SCENARIOS dans le script).
@@ -1308,13 +1572,13 @@ function PAGE() {
   // Captures prises pendant un scénario (tranche T3, chute des barres) : le scénario avance image par image (mêmes appels
   // que runPose) ; aux images voulues, caméra de pose, rendu, puis caméra de jeu rétablie avant l'image suivante.
   let during = null;
-  P.duringStart = (sc) => {
-    during = poseStart(sc);
+  P.duringStart = async (sc) => {
+    during = sc.type === 'framing' ? await framingStart(sc) : { ...poseStart(sc), step: poseStep };
     return true;
   };
   // Avance jusqu'à la fin de l'image k ; renvoie l'état utile à la pose (cheval, barres de l'obstacle `label`).
   P.duringTo = (k, label) => {
-    while (frames.length <= k) if (!poseStep(during.st)) throw new Error(`scénario terminé avant l’image ${k}`);
+    while (frames.length <= k) if (!during.step(during.st)) throw new Error(`scénario terminé avant l’image ${k}`);
     const h = g.player.horse, o = F(label);
     return {
       f: frames[k].f, ch: frames[k].ch.s, horse: { x: h.pos.x, z: h.pos.z, h: h.heading, jumpY: h.jumpY, jumpT: h.jumpT },
@@ -1357,6 +1621,15 @@ function PAGE() {
   };
   // Images enregistrées pendant les captures (comparées à l'oracle par le script : la capture ne change pas la partie).
   P.duringFrames = () => frames.map((f) => JSON.stringify(f.ch.s));
+  // Tranche T6 : avance jusqu'à la fin de l'image k du scénario « cadrage » ; caméra du jeu (œil, point visé, FOV
+  // appliqué) et mesure du cadrage à cette image.
+  P.duringCam = (k) => {
+    while (frames.length <= k) if (!during.step(during.st)) throw new Error(`scénario terminé avant l’image ${k}`);
+    const f = frames[k], h = g.player.horse;
+    if (!f.cc || !f.fr) throw new Error(`cadrage : image ${k} sans caméra de concours ou sans mesure`);
+    return { horse: { x: h.pos.x, z: h.pos.z, h: h.heading, jumpY: h.jumpY, jumpT: h.jumpT }, eye: f.cc.eye, look: f.cc.look, fov: f.cc.fov, fr: f.fr };
+  };
+  P.duringCamFrames = () => frames.map((f) => JSON.stringify([f.ch.s, f.cc ?? null, f.ccp ?? null]));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1392,9 +1665,17 @@ for (const sc of SCENARIOS) {
     if (sc.type === 'pose') {
       const r = await page.evaluate((s) => window.__parite.runPose(s), sc);
       frames = r.frames;
-      Object.assign(setup, { horse: r.horse, rails: r.rails, ch0: r.ch0, pose: { ...sc.pose, cross: sc.cross ?? null } });
+      Object.assign(setup, { horse: r.horse, rails: r.rails, ch0: r.ch0, cc0: r.cc0, pose: { ...sc.pose, cross: sc.cross ?? null } });
+    } else if (sc.type === 'entry') {
+      frames = await page.evaluate((s) => window.__parite.runEntry(s), sc);
+      setup.turn = sc.turn;
+    } else if (sc.type === 'framing') {
+      const r = await page.evaluate((s) => window.__parite.runFraming(s), sc);
+      frames = r.frames;
+      Object.assign(setup, { rails: r.rails, ch0: r.ch0, cc0: r.cc0, posed: r.start, framing: sc.framing });
     } else if (sc.type === 't4') {
       frames = await page.evaluate((s) => window.__parite.runT4(s), sc);
+      delete setup.cc0; // images légères : pas de canal caméra
       Object.assign(setup, { lite: true, acts: sc.acts, pose: sc.pose ?? null, ...(sc.pre ? { pre: sc.pre, at: sc.at ?? null } : {}), ...(sc.ent ? { ent: sc.ent } : {}) });
     } else frames = await page.evaluate((s) => window.__parite.runDroit(s), sc);
     if (sc.classic) setup.classic = true;
@@ -1421,6 +1702,8 @@ const head = {
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
   lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action)',
   ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
+  cc: 'canal de la caméra de concours (tranche T6), nombres en pleine précision, un appel de FollowCamera._updateComp par image en épreuve : hz = cheval vu par la caméra [pos.x, pos.z, heading, _yawRate (null : indéfini), jumpT, jumpY, groundY] ; dt s’il diffère du pas ; i = instant (snap) ; e0 = camera.position et f0 = [this.fov, camera.fov] avant l’appel quand l’état de concours est (re)créé ; nx = rang dans cc0.obs de game.course.next (null : aucun) ; sonde de la perche (colliders.cameraBlocked) : pn = points sondés, pb = rang du premier point bloqué (−1 : aucun), pq = points [x, y, z] sondés (premier appel de l’exécution et appels bloqués) ; th = [x, z, hauteur] rendus par terrain.getHeight (sol sous la caméra) ; eye = camera.position, look = arguments de camera.lookAt, fov = camera.fov (vertical, appliqué), fs = this.fov (lissé), bk = _comp.back (recul retenu, amorti) ; obs = obstacles [x, z, n.x, n.z, t.x, t.z, w, depth (null : absent), ground, h, off] quand l’un d’eux change ; ccp = appels hors image (snap) avant l’image ; setup.cc0 = état de départ { st = _comp (cH, w, t, ax, az, ay, back, from, fromLook, aim) ou null, eye, fov = this.fov, camFov = camera.fov, obs }',
+  fr: 'scénario « cadrage » (tranche T6) : mesure de tests/e2e/cso-framing.mjs:31-39 après l’image (silhouette setup.framing.pts projetée par la caméra du jeu, matrices à jour comme au rendu) : part, top, bottom (0 = haut de l’écran), jump (en l’air), ys (ordonnées des points), asp = camera.aspect, pose = [pos.x, pos.z, heading, groundY, jumpY, jumpT] ; setup.framing = réglages relus dans le test, setup.posed = cheval posé avant la première image (x, z, h, course = caméra de concours active, step = étape de la mission)',
   audioRecorded,
   audioIgnored: AUDIO_IGNORED,
   hudMethods: HUD_METHODS,
@@ -1545,7 +1828,7 @@ if (FENCES) {
 // Poses de capture. Groupe « carriere » (tranches T1 et T5) : vue aérienne de la carrière, lignes de départ et
 // d'arrivée, poteau « Chrono », dans l'état d'épreuve après la cloche (comme le scénario), puis caméra posée ; chaque
 // pose relève l'état des obstacles du jeu (hauteurs, numéro surligné). Groupe « chute » (tranche T3).
-const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : 'carriere');
+const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : 'carriere');
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
   const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
@@ -1692,8 +1975,58 @@ if (SHOTS) {
     }
     await ctx.close();
   }
-  // Ordre stable : poses de la carrière, puis de la chute.
-  doc.poses = ['carriere', 'chute'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
+  // Tranche T6 : caméra de concours aux instants de tests/e2e/cso-framing.mjs (scénario « cadrage », marks), vue de la
+  // caméra du jeu à la fin de l'image (œil, point visé, FOV vertical appliqué), HUD masqué. Côté Unreal (camRun), la
+  // caméra n'est pas posée : le jeu la recalcule en rejouant l'exécution de l'oracle jusqu'à cette image.
+  if (!SHOTS_ONLY || SHOTS_ONLY === 'cadrage') {
+    const sc = SCENARIOS.find((x) => x.id === 'cadrage');
+    const { ctx, page } = await openGame('fr', !!sc.classic);
+    await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [sc, 20261118]);
+    await page.evaluate((s) => window.__parite.duringStart(s), sc);
+    let last = 0;
+    for (const k of sc.framing.marks) {
+      const r = await page.evaluate(([kk]) => window.__parite.duringCam(kk), [k]);
+      last = k;
+      const name = `cadrage-${String(k).padStart(3, '0')}`;
+      const ps = {
+        name,
+        desc: `Caméra de concours à l’image ${k} du scénario « cadrage » (tests/e2e/cso-framing.mjs : parcours suivi au pilote des tests depuis 3 m avant la ligne de départ${r.fr.jump ? ', cheval en l’air' : ''}), vue de la caméra du jeu (œil, point visé, FOV vertical appliqué), 15 h, HUD masqué ; couple sur ${(r.fr.part * 100).toFixed(1).replace('.', ',')} % de la hauteur de l’écran.`,
+        hour: 15,
+        eye: r.eye,
+        target: r.look,
+        fovV: r.fov,
+        viewport: { w: VIEW.width, h: VIEW.height },
+        horse: r.horse,
+        frame: k,
+        camRun: { file: `unreal/core/tests/oracles/cso_runs/${runFile(sc.id, 'fr')}`, frame: k },
+        framing: { source: sc.framing.source, pts: sc.framing.pts, part: r.fr.part, top: r.fr.top, bottom: r.fr.bottom, jump: r.fr.jump, ys: r.fr.ys },
+      };
+      const info = await page.evaluate((p) => window.__parite.duringView(p), ps);
+      await page.waitForTimeout(3000);
+      await page.evaluate(() => window.__parite.render());
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: join(PARITE, `${name}-web.png`) });
+      await page.evaluate(() => window.__parite.duringRestore());
+      const st = await liveCso(page);
+      const course = { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 };
+      doc.poses.push({ ...ps, ...info, course, web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png` });
+      console.log('pose', name, 'image', k, `couple ${(r.fr.part * 100).toFixed(1)} % (haut ${r.fr.top.toFixed(3)}, bas ${r.fr.bottom.toFixed(3)})${r.fr.jump ? ' en l’air' : ''}`);
+    }
+    // La partie jouée pendant les captures est celle de l'oracle (cheval, caméra, snap identiques image par image).
+    const played = await page.evaluate(() => window.__parite.duringCamFrames());
+    try {
+      const ora = JSON.parse(readFileSync(join(OUT, runFile(sc.id, 'fr')), 'utf8'));
+      const diff = played.filter((sj, i) => i <= last && (!ora.frames[i] || JSON.stringify([ora.frames[i].ch.s, ora.frames[i].cc ?? null, ora.frames[i].ccp ?? null]) !== sj)).length;
+      console.log(`cadrage : ${played.length} images jouées, ${diff} différentes de l’oracle ${sc.id}`);
+      if (diff) throw new Error('cadrage : partie différente de l’oracle');
+    } catch (e) {
+      if (e.message.startsWith('cadrage')) throw e;
+      console.log('cadrage : oracle illisible, comparaison non faite', e.message);
+    }
+    await ctx.close();
+  }
+  // Ordre stable : poses de la carrière, de la chute, puis du cadrage.
+  doc.poses = ['carriere', 'chute', 'cadrage'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
   writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
   console.log('poses :', join(PARITE, 'poses.json'));
 }
