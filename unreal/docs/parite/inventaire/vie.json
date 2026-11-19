@@ -55,7 +55,7 @@
   "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:137-143).",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:79-108) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement que chaque prérequis est défini plus haut dans le JSON : il resterait vert avec les arêtes du web (transport après fugueur, etc.) comme avec IsAvailable cassé. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
+  "preuve": "Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:87-116) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement que chaque prérequis est défini plus haut dans le JSON : il resterait vert avec les arêtes du web (transport après fugueur, etc.) comme avec IsAvailable cassé. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
   "ecart": "Graphe rendu linéaire et différent : transport requiert plage (web : fugueur), fer requiert transport seul (web : transport + plage), cross requiert pension (web : fer), csi3 requiert derby seul (web : derby + pension).",
   "tranche": "e"
  },
@@ -214,7 +214,7 @@
   "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:144-148), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49).",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:61-77) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement qu'il y a 5 rangs : ni seuils, ni noms, ni RankName ne sont testés. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
+  "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:69-85) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement qu'il y a 5 rangs : ni seuils, ni noms, ni RankName ne sont testés. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
   "ecart": "Seuils et noms différents : 0 Groom, 500 Cavalier, 1 500 Pro vérifié, 3 500 International, 7 000 Légende 5★ ; pas de progression vers le palier suivant.",
   "tranche": "e"
  },
@@ -317,7 +317,7 @@
   "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:137-143.",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Architecture et Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:61-108) : journal Automation du 18/11/2026 16:17 UTC (/private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt) : Result=Success, EXIT CODE 0 ; ils comptent 16 missions et totalisent 7 520 crédits et 5 980 de réputation, valeurs du JSON. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
+  "preuve": "Strides.World.Architecture et Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:69-116) : journal Automation du 18/11/2026 16:17 UTC (/private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt) : Result=Success, EXIT CODE 0 ; ils comptent 16 missions et totalisent 7 520 crédits et 5 980 de réputation, valeurs du JSON. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
   "ecart": "12 missions sur 16 diffèrent du web en paie, réputation, prérequis ou lieu ; seules tuto, groom, livraison et derby concordent ; titres de m1, m2, m3 différents (« Première mission », « Trouver un professionnel », « Premier concours ») ; catégories différentes pour 10 missions sur 16 (m1 « Jobs » au lieu de « Groom », m2 « Annuaire » au lieu de « Groom », m3 « Événements » au lieu de « CSO », fer « Annuaire » au lieu d'« Urgence », cross « Événements » au lieu de « Cross », pension « Écuries » au lieu de « Recherche », derby « Événements » au lieu de « Course », csi3 « Événements » au lieu de « CSO », gp « Événements » au lieu de « Grand Prix », gpparis « Finale » au lieu de « Grand Prix ») ; ni description, client, palier, durée, horaires ni texte « Dans la vraie vie ».",
   "tranche": "e"
  },
@@ -659,11 +659,11 @@
   "js": [
    "src/gameplay/activities.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun équivalent : rg (Chrono, bestTimes, activities) dans unreal/StridesGrandTour/Source, Content/Data, scripts/unreal et unreal/core sans résultat. Pour prouver : porter la règle dans StridesCore puis la comparer à un oracle exporté du JS (scripts/unreal/export-data.mjs).",
-  "ecart": "Aucun poteau ni activité libre.",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:60-101 (BuildProps : poteau de l'activité cso_train, géométrie exportée du jeu web, tranche T5)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Poteau de cso_train seulement : géométrie relevée dans le jeu web (scripts/unreal/cso-export.js, comparée au maillage du jeu réel), pièces (mât, panneau) vérifiées par le test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:210-414 (Strides.Parite.CsoScenery) ; montage unreal/docs/parite/cso/poteau-chrono.png.",
+  "ecart": "Un seul poteau (cso_train) affiché, sans interaction ni libellé « Chrono » (T10) ; les quatre autres activités, le meilleur temps et la réputation ne sont pas portés.",
   "tranche": "e"
  },
  {

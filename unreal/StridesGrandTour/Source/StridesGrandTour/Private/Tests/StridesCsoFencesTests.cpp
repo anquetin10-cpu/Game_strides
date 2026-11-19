@@ -226,6 +226,9 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 				const FVector WantUE((C[1] + Z2) * 100.0, -X2 * 100.0, (C[0] + Y2) * 100.0);
 				const FVector A = T.TransformPosition(FVector(0, 0, 50)), B = T.TransformPosition(FVector(0, 0, -50));
 				MaxErr = FMath::Max(MaxErr, FMath::Min((A - WantUE).Size(), (B - WantUE).Size()));
+				// Barre exportée du jeu web (tranche T5, maillage importé : x web → X du maillage, en cm) : même bout.
+				const FVector E = AStridesFence::RailMeshTransform(C[0], C[1], C[2], C[3]).TransformPosition(FVector(Ex * 100.0, 0, 0));
+				MaxErr = FMath::Max(MaxErr, (E - WantUE).Size());
 			}
 		}
 		TestTrue(FString::Printf(TEXT("transformée des barres : bouts à %.3g cm de la géométrie du web"), MaxErr), MaxErr < 1e-6);
@@ -335,7 +338,7 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 			Horse->Tick(Dt);
 			const strides::CsoRail& R = Course->FenceStates()[Three].rails[0];
 			bFell |= R.falling;
-			FTransform Want = AStridesFence::RailTransform(R.y, R.z, R.rx, R.rz);
+			const FTransform Want = Course->FenceAt(Three)->RailDisplayTransform(R.y, R.z, R.rx, R.rz);
 			const FTransform Got = Course->FenceAt(Three)->RailComponent(0)->GetRelativeTransform();
 			MaxDev = FMath::Max(MaxDev, (Got.GetLocation() - Want.GetLocation()).Size() + Got.GetRotation().AngularDistance(Want.GetRotation()));
 		}

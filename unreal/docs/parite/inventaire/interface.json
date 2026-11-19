@@ -24,7 +24,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:35) ; pas d'essoufflement, pas d'anneau BOOST.",
+  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:36) ; pas d'essoufflement, pas d'anneau BOOST.",
   "tranche": "h"
  },
  {
@@ -80,7 +80,7 @@
   "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) ; ligne HUD « <rang> · N crédits · N réputation » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test de l'affichage. Paliers lus de Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; Strides.World.Architecture (StridesCoreTests.cpp:74) ne vérifie que leur nombre (5), sans oracle JS.",
+  "preuve": "Aucun test de l'affichage. Paliers lus de Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; Strides.World.Architecture (StridesCoreTests.cpp:82) ne vérifie que leur nombre (5), sans oracle JS.",
   "ecart": "Paliers différents du web : Groom 0, Cavalier 500, Pro vérifié 1 500, International 3 500, Légende 5★ 7 000 ; « crédits » au lieu d'euros formatés ; pas de barre de progression ni de note ★.",
   "tranche": "e"
  },
@@ -347,7 +347,7 @@
   "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:118-132), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:111-147)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test d'affichage ; Strides.World.Architecture (StridesCoreTests.cpp:61-77) ne vérifie que des effectifs (8 régions, 14 lieux) d'un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export).",
+  "preuve": "Aucun test d'affichage ; Strides.World.Architecture (StridesCoreTests.cpp:69-85) ne vérifie que des effectifs (8 régions, 14 lieux) d'un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export).",
   "ecart": "Ni parcelles, forêts, mer, estran, falaises, chemins, bâtiments ni hippodrome ; 8 routes recopiées à la main au lieu des 14 tracés exportés dans Content/Data/World/world_scene.json ; palette verte et brune au lieu du monochrome web.",
   "tranche": "h"
  },
@@ -447,7 +447,7 @@
   "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:63-69 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:149), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:70-74)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Strides.World.Architecture (StridesCoreTests.cpp:75) vérifie seulement 10 applications dans un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; résultat de ce test non consigné dans unreal/docs/validation-mac-2026-11-17.md (seuls Course, Save et Units y figurent) : à confirmer.",
+  "preuve": "Strides.World.Architecture (StridesCoreTests.cpp:83) vérifie seulement 10 applications dans un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; résultat de ce test non consigné dans unreal/docs/validation-mac-2026-11-17.md (seuls Course, Save et Units y figurent) : à confirmer.",
   "ecart": "Liste différente (Missions, Écuries, Transport, Événements, Annuaire, Carte, Messages, Trophées, Profil, Réglages) ; libellés non touchables ; ni horloge, ni météo, ni widget, ni pastilles.",
   "tranche": "e"
  },
@@ -504,7 +504,7 @@
   "unreal": "UStridesProgressionSubsystem::StartNextMission, lancé par M, bouton tactile MISSION ou haut de la croix directionnelle de manette (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:63-64, 157-160 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:50)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test de StartNextMission ; Strides.World.CareerGraph (StridesCoreTests.cpp:79-108) vérifie seulement l'ordre des prérequis du JSON écrit à la main.",
+  "preuve": "Aucun test de StartNextMission ; Strides.World.CareerGraph (StridesCoreTests.cpp:87-116) vérifie seulement l'ordre des prérequis du JSON écrit à la main.",
   "ecart": "Lance directement la première mission disponible du graphe : pas de choix d'offre, pas de confirmation en deux touchers, pas de délai ; garde-fou commun : refus si une mission est active (« Une mission est déjà active »).",
   "tranche": "e"
  },

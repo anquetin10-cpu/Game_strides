@@ -1,6 +1,8 @@
 // Épreuve de CSO : tracé (strides::traceCourse, données Content/Data/cso_course_pole.json), obstacles, déroulé de
 // l'épreuve (strides::CsoRun, tranche T4 : entrée de piste, entrée en piste, cloche, lignes, chrono, points en direct,
-// refus, erreurs de parcours, éliminations, arrivée, sortie de piste, textes fr / en de Content/Data/strings_cso.json).
+// refus, erreurs de parcours, éliminations, arrivée, sortie de piste, textes fr / en de Content/Data/strings_cso.json),
+// géométrie exportée du jeu web (tranche T5 : obstacles, lignes de départ et d'arrivée, poteau « Chrono », hauteurs
+// hors épreuve puis de l'épreuve, numéro attendu surligné ; Content/World/Cso/cso_fences.json).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -74,8 +76,24 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Strides") FString StatusText() const;
 	const strides::CourseTrace& CourseTraceData() const { return Trace; }
 
+	// Hauteurs des obstacles (m, ordre du parcours) posées sur le cœur et sur les pièces (Obstacles.setHeights), barres
+	// au repos. Build pose les hauteurs hors épreuve (manifeste : csoHeights(base) de obstacles.js _build), l'entrée en
+	// piste celles de l'épreuve (CourseHeight, courses.js:453).
+	void ApplyHeights(const std::vector<double>& Heights);
+	// Hauteurs du profil du parcours pour une hauteur de base (csoHeights : base + profil, arrondi au centimètre).
+	std::vector<double> HeightsFor(double Base) const { return strides::courseHeights(DesignData, Trace, Base); }
+	std::vector<double> FenceHeights() const;
+	// Numéro attendu mis en évidence (Obstacles.highlight du parcours, suivi du déroulé) ; -1 : aucun.
+	void SetHighlight(int32 InNum);
+	int32 Highlight() const { return HighlightNum; }
+	// Composantes des lignes de départ et d'arrivée et du poteau « Chrono » (étiquettes : groupe « start », « finish » ou
+	// « cso_train », puis catégorie de la pièce).
+	const TArray<TObjectPtr<class UStaticMeshComponent>>& PropComponents() const { return Props; }
+
 private:
 	void FlushRunCalls();
+	void BuildProps(const class UStridesDataSubsystem& Data);
+	void RefreshPropSigns();
 	strides::CourseTrace Trace;
 	std::vector<strides::CsoObstacle> CoreObstacles;
 	std::vector<strides::CsoFenceState> CoreStates;
@@ -86,4 +104,9 @@ private:
 	strides::TextTable RunText;  // copie : CsoRun en garde une référence
 	std::unique_ptr<strides::CsoRun> RunPtr;
 	UPROPERTY() TArray<TObjectPtr<AStridesFence>> Fences;
+	strides::CourseDesign DesignData;
+	std::vector<double> CourseHeightsV;  // hauteurs de l'épreuve (CourseHeight + profil)
+	int32 HighlightNum = -1, RunHighlight = -1;
+	UPROPERTY() TArray<TObjectPtr<class UStaticMeshComponent>> Props;
+	TArray<FString> PropTex, PropTexEn;  // textures des panneaux des lignes (vide : autre pièce)
 };

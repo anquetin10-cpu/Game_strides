@@ -254,6 +254,13 @@ void AStridesShots::LoadPoses()
 			P.FenceHit = (*Fe)->GetNumberField(TEXT("hit"));
 			P.FenceFrames = (int32)(*Fe)->GetNumberField(TEXT("frames"));
 		}
+		const TSharedPtr<FJsonObject>* Co = nullptr;
+		if (O->TryGetObjectField(TEXT("course"), Co))
+		{
+			P.bHasCourse = true;
+			for (const TSharedPtr<FJsonValue>& Hv : (*Co)->GetArrayField(TEXT("heights"))) P.CourseHeights.Add(Hv->AsNumber());
+			P.CourseHighlight = (int32)(*Co)->GetNumberField(TEXT("highlight"));
+		}
 		// -StridesPose=<préfixe> : seulement les poses dont le nom commence ainsi.
 		FString Only;
 		if (FParse::Value(FCommandLine::Get(), TEXT("StridesPose="), Only) && !P.Name.StartsWith(Only)) continue;
@@ -268,6 +275,14 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 	if (Horse)
 	{
 		Horse->PlaceAt(P.HorseX, P.HorseZ, P.HorseH);
+		if (P.bHasCourse && Horse->Course)
+		{
+			// État des obstacles du jeu web à la capture : hauteurs (Obstacles.setHeights) et numéro surligné.
+			std::vector<double> H(P.CourseHeights.GetData(), P.CourseHeights.GetData() + P.CourseHeights.Num());
+			if (Horse->Course->FenceHeights() != H) Horse->Course->ApplyHeights(H);
+			Horse->Course->SetHighlight(P.CourseHighlight);
+			UE_LOG(LogTemp, Display, TEXT("Strides parite: obstacles %d hauteurs posées, n° %d surligné"), P.CourseHeights.Num(), P.CourseHighlight);
+		}
 		if (P.bHasFence && Horse->Course)
 		{
 			// Chute de barre : cheval figé à la pose (en l'air), barre renversée et tombée par le cœur, comme en jeu.

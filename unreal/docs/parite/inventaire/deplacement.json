@@ -110,7 +110,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:36-42 (pose 'ride' / 'foot' sauvegardée) et :82-89 (rechargement : descente, cheval replacé puis TryMount, ou cavalier replacé à pied)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (sauvegarder puis recharger vérifié à l'écran) ; Strides.Core.Save (Private/Tests/StridesCoreTests.cpp:49-58) et unreal/core/tests/test_core.cpp testSave : aller-retour de la pose écrit à la main, sans oracle JS.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (sauvegarder puis recharger vérifié à l'écran) ; Strides.Core.Save (Private/Tests/StridesCoreTests.cpp:57-66) et unreal/core/tests/test_core.cpp testSave : aller-retour de la pose écrit à la main, sans oracle JS.",
   "ecart": "Au rechargement, remise en selle (TryMount, transition de 0,8 s) quand la pose sauvegardée est 'ride', alors que le web reprend toujours à pied ; position du cheval non sauvegardée : à pied, le cheval reste où il est (ni à sa position sauvegardée, ni à côté du joueur) ; transport et mode volant absents ; pas de recalage caméra explicite ; le Dismount du rechargement notifie aussi le parcours (élimination si une épreuve est en cours, StridesSaveSubsystem.cpp:82 → StridesRider.cpp:119).",
   "tranche": "socle"
  },
@@ -904,7 +904,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-88 (ActiveTarget / HasActiveTarget : lieu de la mission active, POI ou centre de région, Paris → Pôle)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test de la cible ; Strides.World.CareerGraph (Private/Tests/StridesCoreTests.cpp:79-107) vérifie seulement que chaque lieu de mission existe et n'est pas cité comme réussi dans validation-mac.",
+  "preuve": "Aucun test de la cible ; Strides.World.CareerGraph (Private/Tests/StridesCoreTests.cpp:87-115) vérifie seulement que chaque lieu de mission existe et n'est pas cité comme réussi dans validation-mac.",
   "ecart": "Cible limitée à la mission active ; ni libellé, ni rayon paramétrable (arrivée fixe à 18 m, StridesWorldDirector.cpp:70), ni cible mobile, ni fonctions poser / effacer.",
   "tranche": "e"
  },

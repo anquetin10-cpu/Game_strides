@@ -599,7 +599,7 @@
   "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:36-43 : mode foot/ride, x, y, z, cap ; à cheval, position du cheval) et LoadNow (83-89 : cheval replacé et cavalier remis en selle, ou cavalier à pied) ; conversions StridesUnits.h:10-14",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 ; relecture de la pose testée à la main par unreal/core/tests/test_core.cpp:177-183 et StridesCoreTests.cpp:49-59 (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; Strides.Core.Save réussi selon unreal/docs/validation-mac-2026-11-17.md:13) ; aucun oracle JS.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 ; relecture de la pose testée à la main par unreal/core/tests/test_core.cpp:177-183 et StridesCoreTests.cpp:57-67 (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; Strides.Core.Save réussi selon unreal/docs/validation-mac-2026-11-17.md:13) ; aucun oracle JS.",
   "ecart": "Une seule pose : à pied, le cheval n'est ni sauvé ni replacé ; aucun véhicule, état du cheval, carburant, box ou commerce.",
   "tranche": "socle"
  },
@@ -798,7 +798,7 @@
   "unreal": "UStridesProgressionSubsystem::RankName (StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Strides.World.Architecture compte 5 rangs (StridesCoreTests.cpp:74) sans vérifier les valeurs, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13 ; aucun oracle JS.",
+  "preuve": "Strides.World.Architecture compte 5 rangs (StridesCoreTests.cpp:82) sans vérifier les valeurs, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13 ; aucun oracle JS.",
   "ecart": "Paliers et noms différents : 0 / 500 / 1 500 / 3 500 / 7 000 (Groom, Cavalier, Pro vérifié, International, Légende 5★) ; ni libellé court, ni progression.",
   "tranche": "e"
  },
@@ -827,7 +827,7 @@
   "unreal": "strides::SaveGame, schéma « strides.save » v1 (SaveGame.h:17-29 ; SaveGame.cpp:22-81)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:170-192 (testSave) et StridesCoreTests.cpp:49-59 (Strides.Core.Save), écrits à la main sans oracle JS, passés (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; unreal/docs/validation-mac-2026-11-17.md:9, 13).",
+  "preuve": "unreal/core/tests/test_core.cpp:170-192 (testSave) et StridesCoreTests.cpp:57-67 (Strides.Core.Save), écrits à la main sans oracle JS, passés (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; unreal/docs/validation-mac-2026-11-17.md:9, 13).",
   "ecart": "Sous-ensemble : nom, avatar, langue, argent, réputation, heure, cheval actif, compétences, chevaux, records, 3 réglages, pose ; heure par défaut 7 h au lieu de 9 h ; réglages son, musique, camSens, timeScale, courseLine absents ; le reste n'existe que dans legacyJson après un import.",
   "tranche": "socle"
  },
@@ -1439,10 +1439,10 @@
   "js": [
    "src/core/noise.js"
   ],
-  "unreal": "Pas de bruit : relief échantillonné dans la grille exportée (scripts/unreal/world-export.js:64-66 → terrain.bin ; StridesDataSubsystem.cpp:170-188, TerrainHeight)",
+  "unreal": "Pas de bruit : relief échantillonné dans la grille exportée (scripts/unreal/world-export.js:64-66 → terrain.bin ; StridesDataSubsystem.cpp:179-197, TerrainHeight)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Strides.World.Scenery (StridesCoreTests.cpp:110-123) compare 4 hauteurs de la grille à des valeurs recopiées à la main d'analyticHeight, sans oracle exporté, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13.",
+  "preuve": "Strides.World.Scenery (StridesCoreTests.cpp:118-131) compare 4 hauteurs de la grille à des valeurs recopiées à la main d'analyticHeight, sans oracle exporté, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13.",
   "ecart": "Effets figés à l'export ; densité de forêt (nom de zone « Forêt de Saint-Gatien ») et nuages du ciel non reproduits.",
   "tranche": "socle"
  },

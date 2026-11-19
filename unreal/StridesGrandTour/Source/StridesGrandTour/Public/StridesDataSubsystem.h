@@ -11,6 +11,7 @@
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
+#include "StridesCsoScenery.h"
 #include "StridesDataSubsystem.generated.h"
 
 USTRUCT(BlueprintType)
@@ -146,6 +147,9 @@ public:
 	bool PoleRunConfig(const std::vector<std::string>& Labels, strides::CsoRunConfig& Out) const;
 	// Textes de l'épreuve (strings_cso.json : clés françaises du code, traductions anglaises) ; nul si absents.
 	const strides::TextTable* CsoText() const { return bCsoText ? &CsoTextTable : nullptr; }
+	// Géométrie du parcours exportée du jeu web (tranche T5) : Content/World/Cso/cso_fences.json et cso_assets.json ;
+	// IsLoaded() faux si absente (obstacles en formes de base, lignes et poteau invisibles).
+	const FStridesCsoScenery& CsoScenery() const { return CsoSceneryData; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
 
@@ -161,4 +165,5 @@ private:
 	std::string PoleCourseJson;
 	strides::TextTable CsoTextTable;
 	bool bCsoText = false;
+	FStridesCsoScenery CsoSceneryData;
 };

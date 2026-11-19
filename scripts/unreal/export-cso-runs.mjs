@@ -24,9 +24,15 @@
 //  - avec --shots : unreal/docs/parite/cso/poses.json (pose du cheval, œil, cible, FOV vertical, soleil, viewport) et la
 //    capture web de chaque pose (unreal/docs/parite/cso/<pose>-web.png, 844 × 390, deviceScaleFactor 1) ; la capture
 //    Unreal jumelle est faite par -StridesShots=cso, le montage par scripts/unreal/parite-montage.py.
+//    --shots=carriere : seulement les poses de la carrière (vue aérienne, lignes de départ et d'arrivée, poteau
+//    « Chrono », tranche T5) ; --shots=chute : seulement la chute de barre (T3) ; les autres poses sont gardées.
+//  - avec --fences (tranche T5) : géométrie des obstacles du parcours, des lignes et du poteau « Chrono » construite par
+//    le jeu web (scripts/unreal/cso-export.js, chargé dans la page), comparée au jeu réel hors épreuve et en épreuve :
+//    .tmp/unreal-import/cso/ (cso_fences.glb, sign_*.png, importés par scripts/unreal/import-cso-fences.py) et le
+//    manifeste unreal/StridesGrandTour/Content/World/Cso/cso_fences.json (relu par le jeu et le test Strides.Parite.CsoScenery).
 //
 // Usage (serveur Vite sur BASE, défaut http://127.0.0.1:5173 ; Chrome installé, aucun téléchargement) :
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots] [--only=…] [--out=dossier]
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute]] [--fences] [--only=…] [--out=dossier]
 // Mode d'emploi du banc (oracles, captures, montages, PARITE.md) : unreal/docs/parite/README.md.
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -40,6 +46,11 @@ const BASE = process.env.BASE || 'http://127.0.0.1:5173';
 const SHOTS_ARG = process.argv.find((a) => a === '--shots' || a.startsWith('--shots='));
 const SHOTS = !!SHOTS_ARG;
 const SHOTS_ONLY = SHOTS_ARG && SHOTS_ARG.includes('=') ? SHOTS_ARG.slice(8) : null;
+// --fences : export de la géométrie des obstacles (tranche T5) ; seul, ou avec --shots, il ne rejoue aucun scénario.
+const FENCES = process.argv.includes('--fences');
+const NO_RUNS = !!SHOTS_ONLY || FENCES;
+const FENCES_OUT = join(ROOT, '.tmp/unreal-import/cso');
+const FENCES_MANIFEST = join(ROOT, 'unreal/StridesGrandTour/Content/World/Cso/cso_fences.json');
 const OUT = (process.argv.find((a) => a.startsWith('--out=')) || '').slice(6) || join(ROOT, 'unreal/core/tests/oracles/cso_runs');
 const ORA = dirname(OUT); // grilles cso_target.json et cso_goto.json, à côté du dossier des exécutions
 const PARITE = join(ROOT, 'unreal/docs/parite/cso');
@@ -1369,7 +1380,7 @@ const runs = [];
 let audioRecorded = null;
 const ONLY = (process.argv.find((a) => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
 for (const sc of SCENARIOS) {
-  if (SHOTS_ONLY) break;
+  if (NO_RUNS) break;
   if (ONLY.length && !ONLY.includes(sc.id)) continue;
   for (const lang of sc.langs || ['fr', 'en']) {
     const t0 = Date.now();
@@ -1415,7 +1426,7 @@ const head = {
   hudMethods: HUD_METHODS,
   hudDedupe: HUD_DEDUPE,
 };
-if (!SHOTS_ONLY && runs.length) {
+if (!NO_RUNS && runs.length) {
   const order = SCENARIOS.flatMap((sc) => (sc.langs || ['fr', 'en']).map((lang) => [sc.id, lang]));
   const res = writeRuns(OUT, head, runs, order);
   console.log('oracle :', OUT, `${runs.length} exécutions exportées, ${res.written.length} fichiers réécrits (${res.written.join(' ') || 'aucun'}), ${res.kept.length} inchangés`);
@@ -1424,7 +1435,7 @@ if (!SHOTS_ONLY && runs.length) {
 
 // ---------------------------------------------------------------------------------------------------------------
 // Grille de visée (oracle cso_target.json) : obstacles.target(h) et timing(h) du jeu en cours d'exécution.
-if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('target'))) {
+if (!NO_RUNS && (!ONLY.length || ONLY.includes('target'))) {
   const { ctx, page } = await openGame('fr');
   await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
   const grid = await page.evaluate(() => window.__parite.targetGrid());
@@ -1455,7 +1466,7 @@ if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('target'))) {
 // goto du jeu, en français et en anglais, sur une grille de points suivis (distances autour des seuils r = 9 m,
 // max(45, r + 30) m, arrondi à la dizaine, passage au kilomètre ; dans l'axe nord-sud de l'entrée et à 37°) et de modes
 // du joueur (à pied, à cheval, au volant du camion, au volant d'un autre véhicule).
-if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('goto'))) {
+if (!NO_RUNS && (!ONLY.length || ONLY.includes('goto'))) {
   const D = [0, 5, 8.99, 9, 9.01, 20, 38.99, 39, 39.01, 44.99, 45, 45.01, 54.99, 55, 55.01, 64.99, 65, 120, 994.99, 995, 999.99, 1000, 1049.99, 1050, 1234.5, 15000];
   const MODES = [{ mode: 'foot' }, { mode: 'ride' }, { mode: 'drive' }, { mode: 'drive', car: true }];
   const cases = [];
@@ -1491,19 +1502,80 @@ if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('goto'))) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Poses de capture (vue aérienne de la carrière) : état d'épreuve après la cloche, comme le scénario, puis caméra posée.
+// Géométrie des obstacles, des lignes et du poteau « Chrono » (tranche T5) : construite par le jeu web dans la page
+// (scripts/unreal/cso-export.js), comparée au jeu réel hors épreuve (avant le lancement de l'activité) et en épreuve
+// (après l'entrée en piste et la cloche, comme les poses de la carrière).
+// Entrée en piste et cloche (mêmes images que le scénario « droit », sans le galop) : présentation → Entrer en piste.
+const enterCourse = (page) => page.evaluate(() => {
+  const A = window.__auto;
+  for (let i = 0; i < 120 && !document.querySelector('.overlay [data-id="enter"]'); i++) A.tick(1);
+  A.tap(document.querySelector('.overlay [data-id="enter"]'));
+  A.tick(80);
+});
+const liveCso = (page) => page.evaluate(async () => (await import('/scripts/unreal/cso-export.js')).live(window.__game));
+if (FENCES) {
+  const { ctx, page } = await openGame('fr');
+  const off = await liveCso(page);
+  await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
+  await enterCourse(page);
+  const inn = await liveCso(page);
+  console.log('hauteurs hors épreuve', off.heights.join(' '), '; en épreuve', inn.heights.join(' '), '; surligné', inn.highlight.join(' '));
+  const r = await page.evaluate(
+    async (o) => (await import('/scripts/unreal/cso-export.js')).exportCso(window.__game, o),
+    { inHeights: inn.heights, liveOff: off.sig, liveIn: inn.sig, liveLines: inn.lines, liveMarker: inn.marker },
+  );
+  await ctx.close();
+  mkdirSync(FENCES_OUT, { recursive: true });
+  for (const [name, b64] of Object.entries(r.files)) writeFileSync(join(FENCES_OUT, name), Buffer.from(b64, 'base64'));
+  mkdirSync(dirname(FENCES_MANIFEST), { recursive: true });
+  const text = JSON.stringify(r.manifest, null, 1) + '\n';
+  let prev = null;
+  try {
+    prev = readFileSync(FENCES_MANIFEST, 'utf8');
+  } catch {}
+  if (prev !== text) writeFileSync(FENCES_MANIFEST, text);
+  const M = r.manifest;
+  console.log(`obstacles : ${M.fences.length} obstacles, ${Object.keys(M.meshes).length} maillages uniques, ${Object.keys(M.textures).length} textures, triangles ${JSON.stringify(M.triangles)} ; manifeste ${prev === text ? 'inchangé' : 'écrit'} (${FENCES_MANIFEST}), fichiers dans ${FENCES_OUT}`);
+  for (const f of M.fences) console.log(`  ${f.label} ${f.kind} : ${Object.entries(f.states).map(([k, st]) => `${k} h ${st.h} ${JSON.stringify(st.counts)}`).join(' | ')}`);
+  for (const l of M.lines) console.log(`  ligne ${l.id} : ${JSON.stringify(l.counts)}`);
+  console.log(`  poteau ${M.marker.activity} : ${JSON.stringify(M.marker.counts)}`);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Poses de capture. Groupe « carriere » (tranches T1 et T5) : vue aérienne de la carrière, lignes de départ et
+// d'arrivée, poteau « Chrono », dans l'état d'épreuve après la cloche (comme le scénario), puis caméra posée ; chaque
+// pose relève l'état des obstacles du jeu (hauteurs, numéro surligné). Groupe « chute » (tranche T3).
+const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : 'carriere');
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
-  const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
-  // --shots=chute : les poses existantes de poses.json sont gardées, celles de la chute remplacées.
+  const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
+  // --shots=<groupe> : les poses existantes des autres groupes sont gardées, celles du groupe remplacées.
   if (SHOTS_ONLY) {
     try {
-      doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => !p.name.startsWith('chute-'));
+      doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => poseGroup(p.name) !== SHOTS_ONLY);
     } catch {
       doc.poses = [];
     }
   }
-  if (!SHOTS_ONLY) {
+  if (!SHOTS_ONLY || SHOTS_ONLY === 'carriere') {
+    const { ctx, page } = await openGame('fr');
+    const setup = await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
+    await enterCourse(page);
+    // Repères des poses de la tranche T5, lus dans le jeu : lignes (CSO_START, CSO_FINISH), poteau de l'activité.
+    const mk = await page.evaluate(async () => {
+      const O = await import('/src/gameplay/obstacles.js');
+      const g = window.__game;
+      const def = g.activities.defs.find((a) => a.id === 'cso_train');
+      const m = def.marker || { x: def.start.x + 3, z: def.start.z };
+      const G = (x, z) => g.terrain.getHeight(x, z);
+      const L = (l) => ({ x: l.x, z: l.z, rot: l.rot, w: l.w, y: G(l.x, l.z) });
+      return { start: L(O.CSO_START), finish: L(O.CSO_FINISH), marker: { x: m.x, z: m.z, y: G(m.x, m.z) } };
+    });
+    // Vue d'une ligne depuis l'abord (8 m avant, 2,2 m au-dessus du sol), visée au milieu de la ligne à 0,9 m.
+    const lineView = (l) => ({
+      eye: [l.x - Math.sin(l.rot) * 8, l.y + 2.2, l.z - Math.cos(l.rot) * 8],
+      target: [l.x, l.y + 0.9, l.z],
+    });
     const POSES = [
       {
         name: 'carriere-aerienne',
@@ -1514,16 +1586,32 @@ if (SHOTS) {
         fovV: 58,
         viewport: { w: VIEW.width, h: VIEW.height },
       },
+      {
+        name: 'ligne-depart',
+        desc: 'Ligne de départ (CSO_START) vue depuis l’abord, 8 m avant la ligne dans son axe, œil à 2,2 m du sol, visée au milieu de la ligne à 0,9 m : poteaux, fanions, cellules sur trépied, ligne de sciure, panneau DÉPART ; après la cloche, 15 h, HUD masqué.',
+        hour: 15,
+        ...lineView(mk.start),
+        fovV: 45,
+        viewport: { w: VIEW.width, h: VIEW.height },
+      },
+      {
+        name: 'ligne-arrivee',
+        desc: 'Ligne d’arrivée (CSO_FINISH) vue depuis l’abord, 8 m avant la ligne dans son axe, œil à 2,2 m du sol, visée au milieu de la ligne à 0,9 m : poteaux, fanions, cellules sur trépied, ligne de sciure, panneau ARRIVÉE ; après la cloche, 15 h, HUD masqué.',
+        hour: 15,
+        ...lineView(mk.finish),
+        fovV: 45,
+        viewport: { w: VIEW.width, h: VIEW.height },
+      },
+      {
+        name: 'poteau-chrono',
+        desc: 'Poteau « Chrono » de l’activité Parcours du Pôle (cso_train), vu de l’entrée de la carrière (5,5 m à l’ouest, 3,5 m au sud du mât, œil à 1,7 m du sol), visée à 1,8 m au milieu du mât et du panneau, carrière en arrière-plan ; après la cloche, 15 h, HUD masqué.',
+        hour: 15,
+        eye: [mk.marker.x - 5.5, mk.marker.y + 1.7, mk.marker.z + 3.5],
+        target: [mk.marker.x, mk.marker.y + 1.8, mk.marker.z + 0.35],
+        fovV: 50,
+        viewport: { w: VIEW.width, h: VIEW.height },
+      },
     ];
-    const { ctx, page } = await openGame('fr');
-    const setup = await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
-    // Présentation → Entrer en piste → cloche (mêmes images que le scénario « droit », sans le galop).
-    await page.evaluate(() => {
-      const A = window.__auto;
-      for (let i = 0; i < 120 && !document.querySelector('.overlay [data-id="enter"]'); i++) A.tick(1);
-      A.tap(document.querySelector('.overlay [data-id="enter"]'));
-      A.tick(80);
-    });
     for (const ps of POSES) {
       const horse = setup.horse;
       const full = { ...ps, horse };
@@ -1534,8 +1622,10 @@ if (SHOTS) {
       await page.waitForTimeout(500);
       const file = join(PARITE, `${ps.name}-web.png`);
       await page.screenshot({ path: file });
-      doc.poses.push({ ...full, ...info, web: `unreal/docs/parite/cso/${ps.name}-web.png`, unreal: `unreal/docs/parite/cso/${ps.name}-unreal.png` });
-      console.log('pose', ps.name, JSON.stringify(info));
+      const st = await liveCso(page);
+      const course = { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 };
+      doc.poses.push({ ...full, ...info, course, web: `unreal/docs/parite/cso/${ps.name}-web.png`, unreal: `unreal/docs/parite/cso/${ps.name}-unreal.png` });
+      console.log('pose', ps.name, JSON.stringify(info), JSON.stringify(course));
     }
     await ctx.close();
   }
@@ -1583,7 +1673,10 @@ if (SHOTS) {
       await page.waitForTimeout(500);
       await page.screenshot({ path: join(PARITE, `${name}-web.png`) });
       await page.evaluate(() => window.__parite.duringRestore());
-      doc.poses.push({ ...ps, ...info, web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png` });
+      // État des obstacles à la capture (tranche T5 : hauteurs de l'épreuve, numéro surligné), relu par -StridesShots=cso.
+      const st = await liveCso(page);
+      const course = { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 };
+      doc.poses.push({ ...ps, ...info, course, web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png` });
       console.log('pose', name, 'image', k, 'barre', JSON.stringify(r.rails[knock.bar]));
     }
     // La partie jouée pendant les captures est celle de l'oracle (états du cheval identiques image par image).
@@ -1599,6 +1692,8 @@ if (SHOTS) {
     }
     await ctx.close();
   }
+  // Ordre stable : poses de la carrière, puis de la chute.
+  doc.poses = ['carriere', 'chute'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
   writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
   console.log('poses :', join(PARITE, 'poses.json'));
 }

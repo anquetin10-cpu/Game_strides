@@ -72,6 +72,10 @@ private:
 		FString FenceLabel;
 		int32 FenceBar = 0, FenceFrames = 0;
 		double FenceDir = 1, FenceSide = 0, FenceHit = 0.15;
+		// Poses de la carrière (tranche T5) : hauteurs des obstacles et numéro surligné relevés dans le jeu web.
+		bool bHasCourse = false;
+		TArray<double> CourseHeights;
+		int32 CourseHighlight = -1;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);

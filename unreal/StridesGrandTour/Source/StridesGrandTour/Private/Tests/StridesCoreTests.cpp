@@ -15,6 +15,14 @@
 #include "Engine/StaticMesh.h"
 #include "UObject/Package.h"
 #include "Engine/GameInstance.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "Components/StaticMeshComponent.h"
+#include "StridesCsoScenery.h"
+#include "StridesCourse.h"
+#include "StridesFence.h"
+#include "StridesHorse.h"
+#include "StridesRider.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCoreCourseTest, "Strides.Core.Course", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
 bool FStridesCoreCourseTest::RunTest(const FString&)
@@ -196,5 +204,218 @@ bool FStridesPariteCsoTest::RunTest(const FString&)
 		}
 	}
 	else AddError(TEXT("unreal/docs/parite/cso/poses.json illisible"));
+	return true;
+}
+
+// Tranche T5 (unreal/docs/parite/cso-ecarts.md §4) : obstacles, lignes et poteau construits par le jeu web. Le test relit
+// le manifeste exporté (Content/World/Cso/cso_fences.json, scripts/unreal/export-cso-runs.mjs --fences) et vérifie le
+// parcours tel que le construit le jeu (AStridesCourse::Build, puis déroulé jusqu'à la cloche) :
+//  - hauteurs hors épreuve = csoHeights(base hors épreuve) du manifeste, calculées par le cœur (strides::courseHeights)
+//    et égales aux hauteurs relevées dans le jeu web ; en épreuve (après l'entrée en piste) = profil de CourseHeight,
+//    égal à la base et aux hauteurs « epreuve » du manifeste ;
+//  - pour chaque obstacle et chaque état : nombre de pièces par catégorie (chandeliers, ailes, barres, barres basses,
+//    taquets, remplissage, jardinières, fanions, panneau) égal au relevé, chaque composante portant le maillage du
+//    relevé, son pivot monde (posé par l'acteur depuis le tracé du cœur et le relief) au pivot monde relevé dans le jeu
+//    web, sa boîte englobante centrée sur ce pivot, le barycentre des sommets de son maillage (qui fixe l'orientation)
+//    au barycentre monde relevé ; barres du haut à la position de repos du cœur ;
+//  - lignes de départ et d'arrivée (placées par les lignes du déroulé) et poteau « Chrono » : mêmes contrôles ;
+//  - numéro attendu : panneau du 1 teinté de la couleur relevée (#7dffc4) après l'entrée en piste, les autres blancs.
+namespace StridesSceneryTest
+{
+struct FWorld
+{
+	UGameInstance* GI = nullptr;
+	UWorld* World = nullptr;
+	FWorld()
+	{
+		GI = NewObject<UGameInstance>(GEngine);
+		GI->AddToRoot();
+		GI->InitializeStandalone(TEXT("StridesCsoSceneryTest"));
+		World = GI->GetWorld();
+	}
+	~FWorld()
+	{
+		GI->Shutdown();
+		if (World)
+		{
+			GEngine->DestroyWorldContext(World);
+			World->DestroyWorld(false);
+		}
+		GI->RemoveFromRoot();
+	}
+};
+
+// Écarts d'un ensemble de composantes (étiquette de catégorie en dernier) au relevé : nombres par catégorie, maillage,
+// pivot monde (cm) et centre de la boîte englobante. Dz (m) : sol Unreal − sol du jeu web sous le groupe (le relief
+// Unreal est la grille de 2 m des hauteurs analytiques, le web pose ses objets sur son maillage de relief de 6 m) ; les
+// hauteurs sont comparées au-dessus du sol de chaque jeu, l'écart de sol est relevé à part.
+struct FCheck
+{
+	int32 Pieces = 0, CountErrors = 0, MeshErrors = 0;
+	double MaxPivot = 0, MaxBounds = 0, MaxCentroid = 0, MaxGround = 0;
+	TArray<FString> Notes;
+	void Compare(const FString& Where, const TArray<const UStaticMeshComponent*>& Comps, const TArray<FStridesCsoPiece>& Want, const TMap<FString, int32>& Counts, const FStridesCsoScenery& S, double Dz = 0)
+	{
+		MaxGround = FMath::Max(MaxGround, FMath::Abs(Dz));
+		TMap<FString, int32> Got;
+		for (const UStaticMeshComponent* C : Comps) Got.FindOrAdd(C->ComponentTags.Last().ToString())++;
+		for (const auto& KV : Counts)
+			if (Got.FindRef(KV.Key) != KV.Value) { CountErrors++; Notes.Add(FString::Printf(TEXT("%s : %s %d au lieu de %d"), *Where, *KV.Key, Got.FindRef(KV.Key), KV.Value)); }
+		if (Got.Num() != Counts.Num()) { CountErrors++; Notes.Add(FString::Printf(TEXT("%s : %d catégories au lieu de %d"), *Where, Got.Num(), Counts.Num())); }
+		if (Comps.Num() != Want.Num()) { CountErrors++; Notes.Add(FString::Printf(TEXT("%s : %d pièces au lieu de %d"), *Where, Comps.Num(), Want.Num())); return; }
+		for (int32 I = 0; I < Want.Num(); I++)
+		{
+			const UStaticMeshComponent* C = Comps[I];
+			const FStridesCsoPiece& P = Want[I];
+			Pieces++;
+			const FString* Path = S.MeshPaths.Find(P.Mesh);
+			if (C->ComponentTags.Last().ToString() != P.Cat || !Path || !C->GetStaticMesh() || C->GetStaticMesh()->GetPathName() != *Path)
+			{
+				MeshErrors++;
+				Notes.Add(FString::Printf(TEXT("%s : pièce %d (%s) maillage %s"), *Where, I, *P.Cat, C->GetStaticMesh() ? *C->GetStaticMesh()->GetName() : TEXT("aucun")));
+				continue;
+			}
+			const FVector WantUE = StridesUnits::WebToUE(P.W.X, P.W.Y + Dz, P.W.Z);
+			MaxPivot = FMath::Max(MaxPivot, (C->GetComponentLocation() - WantUE).Size());
+			MaxBounds = FMath::Max(MaxBounds, (C->Bounds.Origin - WantUE).Size());
+			// Orientation : barycentre du maillage (repère web du maillage → X = x, Y = z, Z = y, import Interchange) placé
+			// par la transformée de la composante, comparé au barycentre monde relevé dans le jeu web.
+			const FVector Cm = S.MeshCentroids.FindRef(P.Mesh);
+			const FVector GotC = C->GetComponentTransform().TransformPosition(FVector(Cm.X, Cm.Z, Cm.Y) * StridesUnits::CmPerM);
+			MaxCentroid = FMath::Max(MaxCentroid, (GotC - StridesUnits::WebToUE(P.WC.X, P.WC.Y + Dz, P.WC.Z)).Size());
+		}
+	}
+};
+
+TArray<const UStaticMeshComponent*> Tagged(const TArray<TObjectPtr<UStaticMeshComponent>>& All, const TCHAR* Group)
+{
+	TArray<const UStaticMeshComponent*> Out;
+	for (const UStaticMeshComponent* C : All)
+		if (C && (!Group || C->ComponentTags.Contains(FName(Group)))) Out.Add(C);
+	return Out;
+}
+}  // namespace StridesSceneryTest
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesPariteCsoSceneryTest, "Strides.Parite.CsoScenery", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesPariteCsoSceneryTest::RunTest(const FString&)
+{
+	using namespace StridesSceneryTest;
+	// Manifeste relu tel qu'exporté (états et hauteurs), indépendamment du chargeur du jeu.
+	FString Text;
+	const FString File = FPaths::ProjectContentDir() / TEXT("World/Cso/cso_fences.json");
+	if (!TestTrue(TEXT("cso_fences.json présent"), FFileHelper::LoadFileToString(Text, *File))) return false;
+	TSharedPtr<FJsonObject> Root;
+	if (!TestTrue(TEXT("manifeste lisible"), FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) && Root.IsValid())) return false;
+	TMap<FString, TArray<double>> Heights;
+	TMap<FString, double> Bases;
+	for (const TSharedPtr<FJsonValue>& V : Root->GetArrayField(TEXT("states")))
+	{
+		const TSharedPtr<FJsonObject> O = V->AsObject();
+		TArray<double>& H = Heights.Add(O->GetStringField(TEXT("id")));
+		for (const TSharedPtr<FJsonValue>& X : O->GetArrayField(TEXT("heights"))) H.Add(X->AsNumber());
+		Bases.Add(O->GetStringField(TEXT("id")), O->GetNumberField(TEXT("base")));
+	}
+	if (!TestTrue(TEXT("états hors-epreuve et epreuve exportés"), Heights.Contains(TEXT("hors-epreuve")) && Heights.Contains(TEXT("epreuve")))) return false;
+	TestTrue(TEXT("bases relevées dans le jeu web : 1,15 hors épreuve, 1,10 en épreuve"), Bases[TEXT("hors-epreuve")] == 1.15 && Bases[TEXT("epreuve")] == 1.1);
+
+	FWorld W;
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestNotNull(TEXT("sous-système de données"), Data)) return false;
+	const FStridesCsoScenery& S = Data->CsoScenery();
+	if (!TestTrue(TEXT("géométrie du parcours chargée (cso_fences.json, cso_assets.json)"), S.IsLoaded())) return false;
+	AStridesCourse* Course = W.World->SpawnActor<AStridesCourse>();
+	strides::CourseDesign D = Data->PoleCourse();
+	D.x += Data->PoleArena.X;
+	D.z += Data->PoleArena.Y;
+	Course->Build(D, *Data);
+	const int32 N = Course->Obstacles().size();
+	if (!TestEqual(TEXT("obstacles du parcours = obstacles du manifeste"), N, S.Fences.Num())) return false;
+
+	// Un état : hauteurs du jeu, pièces de chaque obstacle comparées au relevé de cet état.
+	auto CheckState = [&](const FString& State, FCheck& K)
+	{
+		const std::vector<double> Got = Course->FenceHeights();
+		const TArray<double>& Want = Heights[State];
+		int32 Bad = 0;
+		for (int32 I = 0; I < N; I++) Bad += I >= Want.Num() || Got[I] != Want[I];
+		TestEqual(FString::Printf(TEXT("%s : hauteurs du jeu = hauteurs relevées dans le jeu web"), *State), Bad, 0);
+		for (int32 I = 0; I < N; I++)
+		{
+			const AStridesFence* F = Course->FenceAt(I);
+			const FStridesCsoFenceData* FD = S.Fence(F->Num);
+			const FStridesCsoLook* L = FD ? FD->LookAt(Got[I]) : nullptr;
+			if (!FD || !L || L->State != State || FD->Label != F->Label || !F->UsesExportedGeometry())
+			{
+				K.CountErrors++;
+				K.Notes.Add(FString::Printf(TEXT("%s : obstacle %s sans pièces exportées"), *State, *F->Label));
+				continue;
+			}
+			K.Compare(FString::Printf(TEXT("%s %s"), *State, *F->Label), Tagged(F->PieceComponents(), nullptr), L->Pieces, L->Counts, S, Data->TerrainHeight(FD->X, FD->Z) - FD->Ground);
+			// Barres du haut : pivot du relevé = position de repos du cœur (obstacles.js _bars).
+			const strides::CsoFenceState& St = Course->FenceStates()[I];
+			for (const FStridesCsoPiece& P : L->Pieces)
+				if (P.Rail >= 0 && (P.Rail >= (int32)St.rails.size() || FMath::Abs(St.rails[P.Rail].restY - P.P.Y) > 1e-6 || FMath::Abs(St.rails[P.Rail].restZ - P.P.Z) > 1e-6))
+				{
+					K.CountErrors++;
+					K.Notes.Add(FString::Printf(TEXT("%s %s : barre %d hors de la position de repos du cœur"), *State, *F->Label, P.Rail));
+				}
+		}
+	};
+	auto Report = [&](const FString& What, const FCheck& K)
+	{
+		for (int32 I = 0; I < FMath::Min(K.Notes.Num(), 12); I++) AddError(K.Notes[I]);
+		TestTrue(FString::Printf(TEXT("%s : %d pièces, nombres par catégorie identiques au relevé"), *What, K.Pieces), K.CountErrors == 0 && K.Pieces > 0);
+		TestEqual(FString::Printf(TEXT("%s : maillages du relevé"), *What), K.MeshErrors, 0);
+		TestTrue(FString::Printf(TEXT("%s : pivots au relevé (écart max %.4f cm)"), *What, K.MaxPivot), K.MaxPivot < 0.1);
+		TestTrue(FString::Printf(TEXT("%s : boîtes englobantes centrées sur les pivots relevés (écart max %.4f cm)"), *What, K.MaxBounds), K.MaxBounds < 0.1);
+		TestTrue(FString::Printf(TEXT("%s : orientation, barycentres des maillages au relevé (écart max %.4f cm)"), *What, K.MaxCentroid), K.MaxCentroid < 0.1);
+		AddInfo(FString::Printf(TEXT("%s : %d pièces, pivots à %.4f cm, boîtes à %.4f cm, barycentres à %.4f cm du relevé (hauteurs au-dessus du sol de chaque jeu ; écart de sol max %.2f cm)"), *What, K.Pieces, K.MaxPivot, K.MaxBounds, K.MaxCentroid, K.MaxGround * 100));
+	};
+
+	// 1) Hors épreuve : csoHeights(1,15) (obstacles.js _build), calculées par le cœur.
+	{
+		const std::vector<double> Core = Course->HeightsFor(Bases[TEXT("hors-epreuve")]);
+		int32 Bad = 0;
+		for (int32 I = 0; I < N; I++) Bad += Core[I] != Heights[TEXT("hors-epreuve")][I];
+		TestEqual(TEXT("hors épreuve : strides::courseHeights(1,15) = hauteurs du jeu web"), Bad, 0);
+		FCheck K;
+		CheckState(TEXT("hors-epreuve"), K);
+		Report(TEXT("obstacles hors épreuve"), K);
+		int32 Lit = 0;
+		for (int32 I = 0; I < N; I++) Lit += !Course->FenceAt(I)->SignTint().Equals(S.HighlightOff, 1e-6);
+		TestEqual(TEXT("hors épreuve : aucun numéro surligné"), Lit, 0);
+	}
+	// 2) Lignes de départ et d'arrivée, poteau « Chrono ».
+	{
+		FCheck K;
+		for (const FStridesCsoGroup& L : S.Lines) K.Compare(FString::Printf(TEXT("ligne %s"), *L.Id), Tagged(Course->PropComponents(), *L.Id), L.Pieces, L.Counts, S, Data->TerrainHeight(L.X, L.Z) - L.Ground);
+		K.Compare(TEXT("poteau"), Tagged(Course->PropComponents(), *S.Marker.Id), S.Marker.Pieces, S.Marker.Counts, S, Data->TerrainHeight(S.Marker.X, S.Marker.Z) - S.Marker.Ground);
+		Report(TEXT("lignes et poteau"), K);
+	}
+	// 3) Épreuve : cheval posé à l'entrée de la carrière, cavalier en selle, déroulé jusqu'à la cloche (entrée en piste :
+	//    hauteurs posées, barres remises, 1 surligné).
+	{
+		if (!TestTrue(TEXT("épreuve lancée"), Course->StartRun(TEXT("Alex"), TEXT("Comète")))) return false;
+		const strides::CsoRunConfig& Cfg = Course->Run()->config();
+		AStridesHorse* Horse = W.World->SpawnActor<AStridesHorse>();
+		Horse->Course = Course;
+		Horse->PlaceAt(Cfg.gateX, Cfg.gateZ, Cfg.start.rot, 0);
+		AStridesRider* Rider = W.World->SpawnActor<AStridesRider>(Horse->GetActorLocation() + FVector(0, 0, 90), FRotator::ZeroRotator);
+		if (!TestTrue(TEXT("cavalier en selle"), Rider && Rider->TryMount(nullptr))) return false;
+		for (int32 K = 0; K < 90 && Course->Run()->step() != strides::CsoStep::Course; K++) Horse->Tick(1.0 / 30);
+		TestTrue(TEXT("parcours atteint (cloche)"), Course->Run()->step() == strides::CsoStep::Course);
+		TestTrue(TEXT("épreuve : CourseHeight = base relevée en épreuve"), FMath::IsNearlyEqual((double)Course->CourseHeight, Bases[TEXT("epreuve")], 1e-6));
+		FCheck K;
+		CheckState(TEXT("epreuve"), K);
+		Report(TEXT("obstacles en épreuve"), K);
+		int32 Wrong = 0;
+		for (int32 I = 0; I < N; I++)
+		{
+			const AStridesFence* F = Course->FenceAt(I);
+			Wrong += !F->SignTint().Equals(F->Num == 1 ? S.HighlightOn : S.HighlightOff, 1e-6);
+		}
+		TestTrue(TEXT("épreuve : n° 1 surligné (couleur relevée), les autres blancs"), Course->Highlight() == 1 && Wrong == 0);
+	}
 	return true;
 }

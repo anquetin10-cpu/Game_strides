@@ -162,6 +162,15 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("phoneApps"))) PhoneApps.Add(V->AsString());
 	}
 	LoadScene();
+	// Obstacles, lignes et poteau du parcours du Pôle construits par le jeu web (tranche T5).
+	{
+		const FString Dir = FPaths::ProjectContentDir() / TEXT("World/Cso");
+		FString Err;
+		if (CsoSceneryData.Load(Dir / TEXT("cso_fences.json"), Dir / TEXT("cso_assets.json"), Err))
+			LoadLog.Add(FString::Printf(TEXT("World/Cso/cso_fences.json : %d obstacles, %d lignes, %d maillages"), CsoSceneryData.Fences.Num(), CsoSceneryData.Lines.Num(), CsoSceneryData.MeshCount));
+		else
+			LoadLog.Add(FString::Printf(TEXT("World/Cso : géométrie du parcours absente (%s)"), *Err));
+	}
 }
 
 void UStridesDataSubsystem::LoadScene()

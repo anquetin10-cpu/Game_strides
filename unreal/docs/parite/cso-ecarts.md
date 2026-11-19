@@ -623,6 +623,41 @@ Principes communs :
 - **Preuve visuelle** : vue aérienne, ligne de départ, ligne d'arrivée, poteau (étape 2 de la recette, à créer côté web).
 - **Dépendances / risques** : T1. Différences d'éclairage SwiftShader / Metal attendues : la comparaison porte sur la forme,
   la position et la couleur de base, pas sur les pixels ; budget de triangles iOS à mesurer (instanciation).
+- **Livré (19/11/2026)** : (1) Export dans le jeu web en cours d'exécution, pas dans une page séparée : `cso-export.html`
+  n'a pas été créé, car les panneaux sont des canvas dessinés avec la police chargée par le jeu et le relief est celui du
+  jeu. `scripts/unreal/cso-export.js` est chargé dans la page par `export-cso-runs.mjs --fences`. Il construit les
+  obstacles avec le code du jeu (`new Obstacles`, `new Activities` sur un jeu témoin) et relève chaque primitive à sa
+  création (pile d'exécution : site `fichier:ligne`) puis à sa peinture (couleur, sommets). Les maillages fusionnés du web
+  se découpent ainsi exactement en pièces : table `SITES` (site → catégorie), regroupement par contact. La construction
+  témoin est comparée au jeu réel au bit près, hors épreuve et en épreuve, lignes et poteau compris. Les hauteurs de base
+  (1,15 dans `_build`, 1,10 dans `cso_train`) sont lues dans le source, puis recoupées : `csoHeights(base)` doit redonner
+  les hauteurs construites. Sorties : 95 maillages uniques (GLB), 14 textures (DÉPART / ARRIVÉE en français et en
+  anglais), manifeste `Content/World/Cso/cso_fences.json` (positions locale et monde du pivot, barycentre, hauteurs par
+  état, `#7dffc4` / `#ffffff` lus sur les panneaux, matériaux). Deux exports consécutifs donnent les mêmes octets.
+  (2) `scripts/unreal/import-cso-fences.py` importe le tout et vérifie les boîtes englobantes des 95 maillages contre le
+  manifeste : écart 0,0001 cm, repère x → X, z → Y, y → Z. Matériaux : bois peint (couleur de sommet, rugosité 0,42),
+  poteau mat à facettes, panneaux sans éclairage et double face (texture × teinte) ; le mur reprend `MI_Brick` et
+  `MI_Plaster` du monde. Le script écrit `cso_assets.json`.
+  (3) Jeu : `AStridesFence` pose une composante par pièce (`BuildExported`), les barres du haut restant à part et animées
+  par le cœur (`RailMeshTransform`). `SetHeight` refait l'obstacle du cœur et ses pièces ; repli sur les formes de base
+  sans manifeste. `AStridesCourse` pose les hauteurs hors épreuve au `Build` (`csoHeights(1,15)`), puis celles de
+  l'épreuve à l'entrée en piste (avant la remise des barres). Il suit le numéro surligné du déroulé et pose les lignes,
+  aux positions du déroulé, ainsi que le poteau. `-StridesShots=cso` pose l'état relevé dans le web (`course` de
+  `poses.json` : hauteurs et numéro surligné). (4) Preuves : test moteur `Strides.Parite.CsoScenery`
+  (`SG/Tests/StridesCoreTests.cpp`) en Result={Success}. Hors épreuve comme en épreuve, les hauteurs du jeu sont égales
+  aux hauteurs relevées et à `courseHeights(base)`. Les 225 pièces par état gardent les nombres par catégorie et le
+  maillage du relevé ; pivots, boîtes englobantes et barycentres (orientation) sont à 0,0001 cm. Les 30 pièces des lignes
+  et du poteau passent les mêmes contrôles. Le n° 1 est teinté `#7dffc4` après l'entrée en piste. Mutations faites en
+  session (source restauré) : 6 détectées sur 7, la septième étant équivalente (yaw ∈ {0, π}).
+  Montages `cso/carriere-aerienne.png`, `ligne-depart.png`, `ligne-arrivee.png`, `poteau-chrono.png` (844 × 390 de
+  chaque côté). Les poses de chute (T3) ont été refaites avec l'état relevé. Démonstration F8 (`-StridesShots`) :
+  « Arrivée ✓ » en 60,44 s, 0 point. (5) Limites :
+  - au poteau, le sol Unreal (grille de 2 m) est 7,27 cm plus bas que le maillage de relief du web (6 m) ;
+  - ombres des nuages non portées ; mur sans le shader de surfaces du web ;
+  - pas d'instanciation : 30 560 triangles par état, budget iOS non mesuré ;
+  - pièces sans collision (ailes : `cso.obstacles-collisions`) ;
+  - une barre du haut retournée de 180° (bandes inversées) ne serait vue que sur les montages ;
+  - seul le poteau de `cso_train` est affiché, sans interaction (T10).
 
 ### T6. Caméra de concours (StridesCore `CsoCamera`)
 

@@ -191,7 +191,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:97-103 (GroundAt = TerrainHeight du relief exporté) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:277",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test du cheval ; TerrainHeight lit la grille exportée du jeu web (StridesDataSubsystem.cpp:188-199) sans oracle de hauteur.",
+  "preuve": "Aucun test du cheval ; TerrainHeight lit la grille exportée du jeu web (StridesDataSubsystem.cpp:197-208) sans oracle de hauteur.",
   "ecart": "Relief seul : ni platelage, ni trottoirs, ni camion ; aucun ralentissement en pente ; cheval toujours horizontal (FRotator(0, cap, 0)).",
   "tranche": "c"
  },
@@ -581,7 +581,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Les barres ne tombent que sur la marge de la trajectoire (margin < −rub, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:79-82) : un membre visible qui touche une barre ne la fait pas tomber, et une barre peut tomber sans contact visible.",
+  "ecart": "Les barres ne tombent que sur la marge de la trajectoire (margin < −rub, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:177-180) : un membre visible qui touche une barre ne la fait pas tomber, et une barre peut tomber sans contact visible.",
   "tranche": "a"
  },
  {

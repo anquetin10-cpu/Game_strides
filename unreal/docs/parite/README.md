@@ -17,6 +17,7 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/core/tests/oracles/{jump,cso_ride,cso_course,cso_text}.json` | idem | cas de référence des fonctions pures |
 | `unreal/core/tests/oracles/cso_runs/` | `export-cso-runs.mjs` (jeu web en cours d'exécution) | scénarios rejoués image par image : `index.json` (en-tête des canaux, liste des exécutions) et un fichier par scénario et par langue, `<id>.<lang>.json` |
 | `unreal/core/tests/oracles/cso_target.json`, `cso_goto.json` | idem | grille de visée et d'appui ; étape « rejoindre l'entrée » |
+| `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
 Export en cours d'exécution (serveur Vite sur `http://127.0.0.1:5173`, sinon
 `npx vite --host 127.0.0.1 --port 5173 --strictPort` ; Chrome du Mac, aucun téléchargement) :
@@ -37,6 +38,27 @@ node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs 
   l'index est signalé à l'export, jamais supprimé. Taille : le plus gros fichier fait ~4 Mo ; aucun fichier de plus de
   20 Mo ne doit être commité (découper par scénario).
 
+Géométrie du parcours (tranche T5) : construite par le jeu web dans la page (classe `Obstacles`, `showJumpGeo`, `railGeo`,
+poteau de `activities.js`, sur un jeu témoin), chaque primitive relevée à sa création et à sa peinture puis découpée en
+pièces (table `SITES` de `cso-export.js` : site `fichier:ligne` → catégorie ; un site inconnu arrête l'export). La
+construction témoin est comparée au jeu réel au bit près, hors épreuve (avant le lancement de l'activité) et en épreuve
+(après l'entrée en piste). Deux exports donnent les mêmes octets.
+
+```sh
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --fences     # ~40 s
+"$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" -run=pythonscript \
+  -script="$PWD/scripts/unreal/import-cso-fences.py" -unattended -nosplash -nullrhi              # ~20 s
+```
+
+- `--fences` écrit `.tmp/unreal-import/cso/` (`cso_fences.glb` : un nœud par maillage unique, centré sur son pivot ;
+  `sign_*.png` : textures des panneaux, DÉPART / ARRIVÉE en français et en anglais) et le manifeste (réécrit seulement
+  s'il change). Seul, il ne rejoue aucun scénario.
+- `import-cso-fences.py` importe maillages, textures et matériaux sous `/Game/World/Cso`, vérifie que la boîte
+  englobante de chaque maillage importé est celle du manifeste (repère x → X, z → Y, y → Z) et écrit
+  `Content/World/Cso/cso_assets.json` (chemins des maillages et des matériaux de panneaux). Compte rendu :
+  `.tmp/unreal-import/import-cso-fences.log` (dernière ligne `TERMINÉ`).
+- Le jeu lit les deux fichiers au démarrage (`UStridesDataSubsystem::CsoScenery`) ; sans eux, obstacles en formes de base.
+
 ## 2. Tests
 
 ```sh
@@ -52,7 +74,9 @@ python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py
 - `ctest` lance `strides_core_tests <oracles> <Content/Data>` : lecture de `cso_runs/` par `loadRuns`
   (`unreal/core/tests/test_core.cpp`), qui contrôle l'index (schéma, nom de fichier, identifiant, langue, nombre
   d'images) avant les rejeux.
-- Tests moteur `Strides.Parite.*` : même lecture par `Private/Tests/StridesOracleRuns.h`. Les messages d'information
+- Tests moteur `Strides.Parite.*` : même lecture par `Private/Tests/StridesOracleRuns.h`. `Strides.Parite.CsoScenery`
+  relit `cso_fences.json` : hauteurs hors épreuve et en épreuve, pièces de chaque obstacle, des lignes et du poteau
+  (nombre par catégorie, maillage, pivot, boîte englobante, barycentre), numéro surligné. Les messages d'information
   (compteurs d'images, d'appels comparés) sont dans `.tmp/automation/index.json` (`-ReportExportPath`).
 - Mutations : chaque script recompile le banc avec une copie mutée d'un source du cœur (le dépôt n'est jamais
   modifié) ; une mutation doit faire échouer le banc. Les mutations équivalentes sont déclarées dans le script
@@ -65,7 +89,11 @@ Web (poses écrites dans `unreal/docs/parite/cso/poses.json`, captures `<pose>-w
 ```sh
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots        # toutes les poses
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=chute  # chute de barre seule
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=carriere  # carrière, lignes, poteau
 ```
+
+Chaque pose relève aussi l'état des obstacles dans le jeu web au moment de la capture (`course` : hauteurs dans l'ordre
+du parcours, numéro surligné) ; `-StridesShots=cso` le pose sur le parcours Unreal avant la capture.
 
 Unreal (rendu GPU réel, jamais `-nullrhi` ; une seule instance d'UnrealEditor, qui quitte seule après la dernière pose) :
 

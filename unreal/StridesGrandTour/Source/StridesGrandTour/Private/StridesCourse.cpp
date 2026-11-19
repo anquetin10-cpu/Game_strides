@@ -1,5 +1,8 @@
 #include "StridesCourse.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "StridesCsoScenery.h"
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesUnits.h"
@@ -18,13 +21,107 @@ void AStridesCourse::Build(const strides::CourseDesign& Design, const UStridesDa
 	bRunConfig = Data.CsoText() && Data.PoleRunConfig(Labels, RunConfig);
 	if (bRunConfig) RunText = *Data.CsoText();
 	else UE_LOG(LogTemp, Warning, TEXT("Strides : épreuve du Pôle sans règles ni textes (cso_course_pole.json « run » ou strings_cso.json absents)"));
+	// Géométrie du jeu web (tranche T5) : hors épreuve, le monde pose les obstacles à csoHeights(1,15) (obstacles.js
+	// _build, base relevée par l'export) ; lignes de départ et d'arrivée, poteau « Chrono ».
+	const FStridesCsoScenery& S = Data.CsoScenery();
+	if (S.IsLoaded())
+	{
+		if (const FStridesCsoState* Off = S.State(TEXT("hors-epreuve"))) ApplyHeights(HeightsFor(Off->Base));
+		BuildProps(Data);
+	}
+	else UE_LOG(LogTemp, Warning, TEXT("Strides : géométrie du parcours absente (Content/World/Cso), formes de base"));
+}
+
+void AStridesCourse::ApplyHeights(const std::vector<double>& Heights)
+{
+	for (int32 I = 0; I < Fences.Num() && I < (int32)Heights.size(); I++)
+	{
+		if (!Fences[I]) continue;
+		Fences[I]->SetHeight(Heights[I]);
+		CoreObstacles[I] = Fences[I]->CoreObstacle();
+	}
+	CoreStates = strides::csoFenceStates(CoreObstacles);
+}
+
+std::vector<double> AStridesCourse::FenceHeights() const
+{
+	std::vector<double> H;
+	for (const AStridesFence* F : Fences) H.push_back(F ? F->CoreObstacle().h : 0.0);
+	return H;
+}
+
+void AStridesCourse::SetHighlight(int32 InNum)
+{
+	HighlightNum = InNum;
+	for (AStridesFence* F : Fences)
+		if (F) F->SetHighlighted(F->Num == InNum);
+}
+
+void AStridesCourse::BuildProps(const UStridesDataSubsystem& Data)
+{
+	for (UStaticMeshComponent* C : Props)
+		if (C) C->DestroyComponent();
+	Props.Reset();
+	PropTex.Reset();
+	PropTexEn.Reset();
+	const FStridesCsoScenery& S = Data.CsoScenery();
+	// Pièce d'un groupe posé en (X, sol, Z) et tourné de Rot : position et lacet monde (FStridesCsoScenery).
+	auto Add = [&](const FString& Group, double X, double Z, double Rot, const FStridesCsoPiece& P)
+	{
+		UStaticMesh* M = S.LoadMesh(P.Mesh);
+		if (!M) return;
+		const FVector W = FStridesCsoScenery::PieceWorldWeb(X, Data.TerrainHeight(X, Z), Z, Rot, P);
+		UStaticMeshComponent* C = NewObject<UStaticMeshComponent>(this);
+		C->SetupAttachment(GetRootComponent());
+		C->SetStaticMesh(M);
+		C->ComponentTags.Add(FName(*Group));
+		C->ComponentTags.Add(FName(*P.Cat));
+		C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		C->RegisterComponent();
+		C->SetWorldTransform(FTransform(FRotator(0, -FMath::RadiansToDegrees(Rot + P.Yaw), 0), StridesUnits::WebToUE(W.X, W.Y, W.Z)));
+		Props.Add(C);
+		PropTex.Add(P.Tex);
+		PropTexEn.Add(P.TexEn);
+	};
+	for (const FStridesCsoGroup& L : S.Lines)
+	{
+		// Lignes posées comme le déroulé de l'épreuve les franchit (cso_course_pole.json « run » : CSO_START / CSO_FINISH).
+		double X = L.X, Z = L.Z, Rot = L.Rot;
+		if (bRunConfig && (L.Id == TEXT("start") || L.Id == TEXT("finish")))
+		{
+			const strides::CsoRunLine& R = L.Id == TEXT("start") ? RunConfig.start : RunConfig.finish;
+			X = R.x;
+			Z = R.z;
+			Rot = R.rot;
+		}
+		for (const FStridesCsoPiece& P : L.Pieces) Add(L.Id, X, Z, Rot, P);
+	}
+	for (const FStridesCsoPiece& P : S.Marker.Pieces) Add(S.Marker.Id, S.Marker.X, S.Marker.Z, S.Marker.Rot, P);
+	RefreshPropSigns();
+}
+
+void AStridesCourse::RefreshPropSigns()
+{
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	if (!Data) return;
+	// Panneaux DÉPART / ARRIVÉE dans la langue de l'épreuve (t('DÉPART') du jeu web).
+	for (int32 I = 0; I < Props.Num(); I++)
+	{
+		if (!Props[I] || PropTex[I].IsEmpty()) continue;
+		FStridesCsoPiece P;
+		P.Tex = PropTex[I];
+		P.TexEn = PropTexEn[I];
+		Props[I]->SetMaterial(0, Data->CsoScenery().SignMaterial(P, Lang));
+	}
 }
 
 void AStridesCourse::BuildWith(const strides::CourseDesign& Design, double CourseSpeedMS, double FenceWidthM)
 {
 	Trace = strides::traceCourse(Design);
+	DesignData = Design;
 	CoreObstacles.clear();
 	const std::vector<double> Heights = strides::courseHeights(Design, Trace, CourseHeight);
+	CourseHeightsV = Heights;
 	for (size_t i = 0; i < Trace.fences.size(); i++)
 	{
 		const strides::TraceFence& F = Trace.fences[i];
@@ -45,6 +142,7 @@ bool AStridesCourse::StartRun(const FString& PlayerName, const FString& HorseNam
 	C.playerName = TCHAR_TO_UTF8(*PlayerName);
 	C.horseName = TCHAR_TO_UTF8(*HorseName);
 	C.lang = strides::langFromName(TCHAR_TO_UTF8(*Lang));
+	RefreshPropSigns();
 	StartRunWith(C, RunText);
 	return true;
 }
@@ -80,15 +178,23 @@ void AStridesCourse::FlushRunCalls()
 		AudioCalls.Add(Line(C));  // sons de l'épreuve : tranche T12
 		UE_LOG(LogTemp, Verbose, TEXT("Strides épreuve : son %s"), *AudioCalls.Last());
 	}
-	// Entrée en piste : barres remises sur leurs taquets (obstacles.js resetRails).
+	// Entrée en piste (courses.js:453-455) : hauteurs de l'épreuve posées (Obstacles.setHeights), barres remises sur
+	// leurs taquets (resetRails), puis numéro 1 surligné (ci-dessous).
 	if (RunPtr->takeResetRails())
 	{
 		RailResetCount++;
+		if (FenceHeights() != CourseHeightsV) ApplyHeights(CourseHeightsV);
 		for (int32 I = 0; I < (int32)CoreStates.size(); I++)
 		{
 			strides::csoRestFence(CoreStates[I]);
 			if (Fences.IsValidIndex(I) && Fences[I]) Fences[I]->ApplyRails(CoreStates[I]);
 		}
+	}
+	// Numéro attendu mis en évidence (Obstacles.highlight) quand le déroulé le change.
+	if (RunPtr->highlight() != RunHighlight)
+	{
+		RunHighlight = RunPtr->highlight();
+		SetHighlight(RunHighlight);
 	}
 }
 

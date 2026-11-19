@@ -1,7 +1,7 @@
 {
  "schema": "strides.parite_poses/1",
  "generator": "scripts/unreal/export-cso-runs.mjs --shots",
- "frame": "repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact",
+ "frame": "repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture",
  "viewport": {
   "w": 844,
   "h": 390
@@ -50,8 +50,206 @@
     844,
     390
    ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
    "web": "unreal/docs/parite/cso/carriere-aerienne-web.png",
    "unreal": "unreal/docs/parite/cso/carriere-aerienne-unreal.png"
+  },
+  {
+   "name": "ligne-depart",
+   "desc": "Ligne de départ (CSO_START) vue depuis l’abord, 8 m avant la ligne dans son axe, œil à 2,2 m du sol, visée au milieu de la ligne à 0,9 m : poteaux, fanions, cellules sur trépied, ligne de sciure, panneau DÉPART ; après la cloche, 15 h, HUD masqué.",
+   "hour": 15,
+   "eye": [
+    326.7194921478288,
+    5.2,
+    -199.4093377419748
+   ],
+   "target": [
+    321.0626378983364,
+    3.9,
+    -205.06619199146718
+   ],
+   "fovV": 45,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.376346,
+    "z": -193.752483,
+    "h": 3.926991,
+    "v": 0
+   },
+   "sunDir": [
+    -0.242017,
+    0.771855,
+    0.587935
+   ],
+   "day": 0,
+   "groundEye": 3,
+   "groundTarget": 3,
+   "groundHorse": 3,
+   "camDir": [
+    -0.697952,
+    -0.160396,
+    -0.697952
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "web": "unreal/docs/parite/cso/ligne-depart-web.png",
+   "unreal": "unreal/docs/parite/cso/ligne-depart-unreal.png"
+  },
+  {
+   "name": "ligne-arrivee",
+   "desc": "Ligne d’arrivée (CSO_FINISH) vue depuis l’abord, 8 m avant la ligne dans son axe, œil à 2,2 m du sol, visée au milieu de la ligne à 0,9 m : poteaux, fanions, cellules sur trépied, ligne de sciure, panneau ARRIVÉE ; après la cloche, 15 h, HUD masqué.",
+   "hour": 15,
+   "eye": [
+    366.9280144530407,
+    5.2,
+    -195.78582813241601
+   ],
+   "target": [
+    374.9280144530407,
+    3.9,
+    -195.78582813241596
+   ],
+   "fovV": 45,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.376346,
+    "z": -193.752483,
+    "h": 3.926991,
+    "v": 0
+   },
+   "sunDir": [
+    -0.242017,
+    0.771855,
+    0.587935
+   ],
+   "day": 0,
+   "groundEye": 3,
+   "groundTarget": 3,
+   "groundHorse": 3,
+   "camDir": [
+    0.987053,
+    -0.160396,
+    0
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "web": "unreal/docs/parite/cso/ligne-arrivee-web.png",
+   "unreal": "unreal/docs/parite/cso/ligne-arrivee-unreal.png"
+  },
+  {
+   "name": "poteau-chrono",
+   "desc": "Poteau « Chrono » de l’activité Parcours du Pôle (cso_train), vu de l’entrée de la carrière (5,5 m à l’ouest, 3,5 m au sud du mât, œil à 1,7 m du sol), visée à 1,8 m au milieu du mât et du panneau, carrière en arrière-plan ; après la cloche, 15 h, HUD masqué.",
+   "hour": 15,
+   "eye": [
+    330.5,
+    4.772680870691934,
+    -180.5
+   ],
+   "target": [
+    336,
+    4.8726808706919345,
+    -183.65
+   ],
+   "fovV": 50,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.376346,
+    "z": -193.752483,
+    "h": 3.926991,
+    "v": 0
+   },
+   "sunDir": [
+    -0.242017,
+    0.771855,
+    0.587935
+   ],
+   "day": 0,
+   "groundEye": 3.611375,
+   "groundTarget": 3.0854,
+   "groundHorse": 3,
+   "camDir": [
+    0.867649,
+    0.015775,
+    -0.496926
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "web": "unreal/docs/parite/cso/poteau-chrono-web.png",
+   "unreal": "unreal/docs/parite/cso/poteau-chrono-unreal.png"
   },
   {
    "name": "chute-barre-0_1s",
@@ -117,6 +315,21 @@
     844,
     390
    ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
    "web": "unreal/docs/parite/cso/chute-barre-0_1s-web.png",
    "unreal": "unreal/docs/parite/cso/chute-barre-0_1s-unreal.png"
   },
@@ -184,6 +397,21 @@
     844,
     390
    ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
    "web": "unreal/docs/parite/cso/chute-barre-0_3s-web.png",
    "unreal": "unreal/docs/parite/cso/chute-barre-0_3s-unreal.png"
   },
@@ -251,6 +479,21 @@
     844,
     390
    ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
    "web": "unreal/docs/parite/cso/chute-barre-0_6s-web.png",
    "unreal": "unreal/docs/parite/cso/chute-barre-0_6s-unreal.png"
   },
@@ -318,6 +561,21 @@
     844,
     390
    ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
    "web": "unreal/docs/parite/cso/chute-barre-1_5s-web.png",
    "unreal": "unreal/docs/parite/cso/chute-barre-1_5s-unreal.png"
   }

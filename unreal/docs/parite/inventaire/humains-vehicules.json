@@ -196,7 +196,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:93,109,201 (relief et maillages de décor en collision BlockAll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:128 (mode de marche rétabli à la descente)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test de la hauteur des pieds ni capture ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:110-121) vérifie seulement la donnée de relief (4 hauteurs écrites à la main, sans oracle exporté), ni walkHeight ni le contact de la capsule ; unreal/docs/validation-mac-2026-11-17.md ne cite pas la marche sur les surfaces.",
+  "preuve": "Aucun test de la hauteur des pieds ni capture ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:118-129) vérifie seulement la donnée de relief (4 hauteurs écrites à la main, sans oracle exporté), ni walkHeight ni le contact de la capsule ; unreal/docs/validation-mac-2026-11-17.md ne cite pas la marche sur les surfaces.",
   "ecart": "Hauteur donnée par les collisions physiques du décor exporté, non comparée à world.walkHeight ; pas de camion, donc ni plancher ni pont praticables.",
   "tranche": "b"
  },
