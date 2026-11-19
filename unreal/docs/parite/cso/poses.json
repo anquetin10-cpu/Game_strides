@@ -1,7 +1,7 @@
 {
  "schema": "strides.parite_poses/1",
  "generator": "scripts/unreal/export-cso-runs.mjs --shots",
- "frame": "repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil",
+ "frame": "repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact",
  "viewport": {
   "w": 844,
   "h": 390
@@ -52,6 +52,274 @@
    ],
    "web": "unreal/docs/parite/cso/carriere-aerienne-web.png",
    "unreal": "unreal/docs/parite/cso/carriere-aerienne-unreal.png"
+  },
+  {
+   "name": "chute-barre-0_1s",
+   "desc": "Chute de la barre du vertical 3 touchée en montée (appel trop près, scénario t3-pres-montee), 0,1 s après le contact (image 88), caméra fixe de trois quarts arrière, au sud-ouest de l’obstacle, 15 h, HUD masqué.",
+   "hour": 15.109333,
+   "eye": [
+    351.82879906659076,
+    4.8,
+    -246.27997394254632
+   ],
+   "target": [
+    356.9287990665908,
+    3.6,
+    -252.77997394254632
+   ],
+   "fovV": 45,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 356.4933333333318,
+    "z": -252.78,
+    "h": 1.5707963267948966,
+    "jumpY": 1.0608789750619068,
+    "jumpT": 0.3332444681418288
+   },
+   "fence": {
+    "label": "3",
+    "bar": 0,
+    "dir": 1,
+    "side": 1,
+    "hit": 0.19061097554800166,
+    "frames": 3
+   },
+   "rails": [
+    {
+     "y": 1.0673000000000001,
+     "z": 0.11193441462056035,
+     "rx": 2.238688292411207,
+     "rz": -0.017208827352376464,
+     "fall": {
+      "t": 0.1,
+      "dir": 1,
+      "side": 1,
+      "hit": 0.19061097554800166
+     }
+    }
+   ],
+   "frame": 88,
+   "sunDir": [
+    -0.26908,
+    0.767073,
+    0.582404
+   ],
+   "day": 0,
+   "camDir": [
+    0.610877,
+    -0.143736,
+    -0.778569
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "web": "unreal/docs/parite/cso/chute-barre-0_1s-web.png",
+   "unreal": "unreal/docs/parite/cso/chute-barre-0_1s-unreal.png"
+  },
+  {
+   "name": "chute-barre-0_3s",
+   "desc": "Chute de la barre du vertical 3 touchée en montée (appel trop près, scénario t3-pres-montee), 0,3 s après le contact (image 94), caméra fixe de trois quarts arrière, au sud-ouest de l’obstacle, 15 h, HUD masqué.",
+   "hour": 15.113333,
+   "eye": [
+    351.82879906659076,
+    4.8,
+    -246.27997394254632
+   ],
+   "target": [
+    356.9287990665908,
+    3.6,
+    -252.77997394254632
+   ],
+   "fovV": 45,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 357.7333333333317,
+    "z": -252.78,
+    "h": 1.5707963267948966,
+    "jumpY": 1.0613031569791647,
+    "jumpT": 0.6664889362836576
+   },
+   "fence": {
+    "label": "3",
+    "bar": 0,
+    "dir": 1,
+    "side": 1,
+    "hit": 0.19061097554800166,
+    "frames": 9
+   },
+   "rails": [
+    {
+     "y": 0.7730000000000002,
+     "z": 0.335803243861681,
+     "rx": 6.716064877233619,
+     "rz": -0.08584116218424569,
+     "fall": {
+      "t": 0.3,
+      "dir": 1,
+      "side": 1,
+      "hit": 0.19061097554800166
+     }
+    }
+   ],
+   "frame": 94,
+   "sunDir": [
+    -0.270066,
+    0.766889,
+    0.58219
+   ],
+   "day": 0,
+   "camDir": [
+    0.610877,
+    -0.143736,
+    -0.778569
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "web": "unreal/docs/parite/cso/chute-barre-0_3s-web.png",
+   "unreal": "unreal/docs/parite/cso/chute-barre-0_3s-unreal.png"
+  },
+  {
+   "name": "chute-barre-0_6s",
+   "desc": "Chute de la barre du vertical 3 touchée en montée (appel trop près, scénario t3-pres-montee), 0,6 s après le contact (image 103), caméra fixe de trois quarts arrière, au sud-ouest de l’obstacle, 15 h, HUD masqué.",
+   "hour": 15.119333,
+   "eye": [
+    351.82879906659076,
+    4.8,
+    -246.27997394254632
+   ],
+   "target": [
+    356.9287990665908,
+    3.6,
+    -252.77997394254632
+   ],
+   "fovV": 45,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 359.5805333333316,
+    "z": -252.78,
+    "h": 1.5707963267948966,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "fence": {
+    "label": "3",
+    "bar": 0,
+    "dir": 1,
+    "side": 1,
+    "hit": 0.19061097554800166,
+    "frames": 18
+   },
+   "rails": [
+    {
+     "y": 0.08095600000000003,
+     "z": 0.671606487723362,
+     "rx": 13.432129754467239,
+     "rz": 0.016291190183009018,
+     "fall": {
+      "t": 0.6,
+      "dir": 1,
+      "side": 1,
+      "hit": 0.19061097554800166
+     }
+    }
+   ],
+   "frame": 103,
+   "sunDir": [
+    -0.271544,
+    0.766611,
+    0.581869
+   ],
+   "day": 0,
+   "camDir": [
+    0.610877,
+    -0.143736,
+    -0.778569
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "web": "unreal/docs/parite/cso/chute-barre-0_6s-web.png",
+   "unreal": "unreal/docs/parite/cso/chute-barre-0_6s-unreal.png"
+  },
+  {
+   "name": "chute-barre-1_5s",
+   "desc": "Chute de la barre du vertical 3 touchée en montée (appel trop près, scénario t3-pres-montee), 1,5 s après le contact (image 130), caméra fixe de trois quarts arrière, au sud-ouest de l’obstacle, 15 h, HUD masqué.",
+   "hour": 15.137333,
+   "eye": [
+    351.82879906659076,
+    4.8,
+    -246.27997394254632
+   ],
+   "target": [
+    356.9287990665908,
+    3.6,
+    -252.77997394254632
+   ],
+   "fovV": 45,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 365.1605333333311,
+    "z": -252.78,
+    "h": 1.5707963267948966,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "fence": {
+    "label": "3",
+    "bar": 0,
+    "dir": 1,
+    "side": 1,
+    "hit": 0.19061097554800166,
+    "frames": 45
+   },
+   "rails": [
+    {
+     "y": 0.05,
+     "z": 1.240830215354137,
+     "rx": 24.816604307082745,
+     "rz": 0,
+     "fall": {
+      "t": 1.5000000000000013,
+      "dir": 1,
+      "side": 1,
+      "hit": 0.19061097554800166
+     }
+    }
+   ],
+   "frame": 130,
+   "sunDir": [
+    -0.275976,
+    0.765768,
+    0.580893
+   ],
+   "day": 0,
+   "camDir": [
+    0.610877,
+    -0.143736,
+    -0.778569
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "web": "unreal/docs/parite/cso/chute-barre-1_5s-web.png",
+   "unreal": "unreal/docs/parite/cso/chute-barre-1_5s-unreal.png"
   }
  ]
 }

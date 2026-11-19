@@ -172,6 +172,21 @@ void AStridesShots::LoadPoses()
 		P.Width = (int32)VP->GetNumberField(TEXT("w"));
 		P.Height = (int32)VP->GetNumberField(TEXT("h"));
 		P.Out = Root / O->GetStringField(TEXT("unreal"));
+		P.bHasJumpY = H->TryGetNumberField(TEXT("jumpY"), P.HorseJumpY);
+		const TSharedPtr<FJsonObject>* Fe = nullptr;
+		if (O->TryGetObjectField(TEXT("fence"), Fe))
+		{
+			P.bHasFence = true;
+			P.FenceLabel = (*Fe)->GetStringField(TEXT("label"));
+			P.FenceBar = (int32)(*Fe)->GetNumberField(TEXT("bar"));
+			P.FenceDir = (*Fe)->GetNumberField(TEXT("dir"));
+			P.FenceSide = (*Fe)->GetNumberField(TEXT("side"));
+			P.FenceHit = (*Fe)->GetNumberField(TEXT("hit"));
+			P.FenceFrames = (int32)(*Fe)->GetNumberField(TEXT("frames"));
+		}
+		// -StridesPose=<préfixe> : seulement les poses dont le nom commence ainsi.
+		FString Only;
+		if (FParse::Value(FCommandLine::Get(), TEXT("StridesPose="), Only) && !P.Name.StartsWith(Only)) continue;
 		Poses.Add(P);
 	}
 	UE_LOG(LogTemp, Display, TEXT("Strides parite: %d pose(s) lue(s) dans %s"), Poses.Num(), *File);
@@ -183,6 +198,24 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 	if (Horse)
 	{
 		Horse->PlaceAt(P.HorseX, P.HorseZ, P.HorseH);
+		if (P.bHasFence && Horse->Course)
+		{
+			// Chute de barre : cheval figé à la pose (en l'air), barre renversée et tombée par le cœur, comme en jeu.
+			Horse->SetActorTickEnabled(false);
+			if (P.bHasJumpY) Horse->SetActorLocation(StridesUnits::WebToUE(P.HorseX, Horse->GroundAt(P.HorseX, P.HorseZ) + P.HorseJumpY, P.HorseZ));
+			AStridesCourse* C = Horse->Course;
+			const std::vector<strides::CsoObstacle>& Obs = C->Obstacles();
+			for (int32 I = 0; I < (int32)Obs.size(); I++)
+			{
+				if (UTF8_TO_TCHAR(Obs[I].label.c_str()) != P.FenceLabel) continue;
+				strides::csoRestFence(C->FenceStates()[I]);
+				strides::CsoFenceOut Out;
+				strides::csoKnock(Obs, C->FenceStates(), I, P.FenceBar, P.FenceDir, P.FenceSide, P.FenceHit, 0, Out);
+				for (int32 K = 0; K < P.FenceFrames; K++) C->UpdateFences(1.0 / 30, 0, P.HorseX, P.HorseZ);
+				const strides::CsoRail& R = C->FenceStates()[I].rails[P.FenceBar];
+				UE_LOG(LogTemp, Display, TEXT("Strides parite: barre %s/%d après %d images : y %.6f z %.6f rx %.6f rz %.6f t %.4f"), *P.FenceLabel, P.FenceBar, P.FenceFrames, R.y, R.z, R.rx, R.rz, R.fall.t);
+			}
+		}
 		if (!bPoseMounted)
 		{
 			if (AStridesRider* Rider = Cast<AStridesRider>(PC->GetPawn()))

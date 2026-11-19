@@ -47,6 +47,14 @@ private:
 		double FovV = 58;
 		int32 Width = 844, Height = 390;
 		FString Out;  // chemin absolu de la capture Unreal
+		// Poses de chute de barre (tranche T3) : cheval en l'air (jumpY, m), barre renversée par le cœur (csoKnock) puis
+		// Frames images de csoFencesUpdate (pas 1/30 s), affichée par AStridesFence::ApplyRails comme en jeu.
+		bool bHasJumpY = false;
+		double HorseJumpY = 0;
+		bool bHasFence = false;
+		FString FenceLabel;
+		int32 FenceBar = 0, FenceFrames = 0;
+		double FenceDir = 1, FenceSide = 0, FenceHit = 0.15;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);
