@@ -129,6 +129,13 @@ STRIDESCORE_API int csoApproachRefusal(const CsoHorseState& s, const std::vector
                                        double clearance, bool csoCourse, double time, const JumpParams& J = jumpDefaults(),
                                        const CsoHorseParams& P = csoHorseDefaults());
 
+// Appui SAUT (horse.js startJump), appelé par csoHorseStep : trop lent, en l'air ou refus engagé → rien ; avec les
+// commandes de concours, sans obstacle visé ou bien trop tôt (> 1,9 × L0) → JumpEarly ; zone refuse → refus si la barre
+// avant est encore devant les épaules (x ≥ 0), appui ignoré sinon ; sinon saut (Jump) sur le plan de l'obstacle visé.
+STRIDESCORE_API bool csoStartJump(CsoHorseState& s, const CsoFrameInput& in, const std::vector<CsoObstacle>& obstacles,
+                                  std::vector<CsoHorseEvent>& events, const JumpParams& J = jumpDefaults(),
+                                  const CsoHorseParams& P = csoHorseDefaults());
+
 // Une image : conduite (player.js → csoRideStep) puis cheval (horse.js update) jusqu'au déplacement compris. Les
 // corrections qui suivent dans le jeu web (collisions, Obstacles.updateHorse) sont à la charge de l'appelant.
 STRIDESCORE_API void csoHorseStep(CsoHorseState& s, const CsoFrameInput& in, const std::vector<CsoObstacle>& obstacles,

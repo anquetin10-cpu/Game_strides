@@ -403,9 +403,14 @@ static void testHorseRuns() {
   CHECK(ride["kbdRamp"].num() == csoRideDefaults().kbdRamp && ride["airTurn"].num() == csoRideDefaults().airTurn && ride["landingLoss"].num() == csoRideDefaults().landingLoss &&
             ride["yawTau"].num() == csoRideDefaults().yawTau && ride["yawAcc"].num() == csoRideDefaults().yawAcc,
         "cso_ride.json : rampe clavier, airTurn, perte, τ ou accélération de lacet différents du portage");
-  const char* required[] = {"droit", "bonne-zone", "virage-serre", "rampe-clavier", "ctrl-alt", "appui-10m", "appui-3ms", "abord-70"};
+  // Les 8 scénarios du critère de T2, puis les compléments du contrôle de T2 (rotation en l'air, plafond de
+  // ralentissement de 9 m/s², perte d'élan plafonnée à la réception).
+  const char* required[] = {"droit", "bonne-zone", "virage-serre", "rampe-clavier", "ctrl-alt", "appui-10m", "appui-3ms", "abord-70",
+                            "virage-en-lair", "survitesse", "appel-pres"};
   std::map<std::string, int> clean;  // scénario → images rejouées sans recalage ni écart
-  int keyFrames = 0, refusalsDecided = 0;
+  int keyFrames = 0, refusalsDecided = 0, refusalBrakes = 0, refusalBrakeBad = 0;
+  // Témoins relevés dans l'oracle (jeu web) : les branches visées sont bien exercées par les scénarios rejoués.
+  std::map<std::string, int> airYaw, decelCap, lossCap;
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
     const J& ch0 = r["setup"]["ch0"];
@@ -417,6 +422,7 @@ static void testHorseRuns() {
     HorseDev dev;
     int resync = 0, bad = 0, evBad = 0, tmBad = 0, tgBad = 0, refBad = 0, n = 0;
     std::vector<std::string> evAll;
+    const J* prevS = &ch0["s"];
     for (const J& f : r["frames"].a) {
       const J& ch = f["ch"];
       if (ch.t != J::Obj) { bad++; continue; }
@@ -454,6 +460,27 @@ static void testHorseRuns() {
       const int gotRef = csoApproachRefusal(s, obs, fi.power, fi.clearance, fi.csoControls, fi.time);
       if (gotRef != wantRef) { refBad++; if (refBad < 3) std::printf("  %s image %d : refus à l'abord %d / %d\n", who.c_str(), (int)f["f"].num(), gotRef, wantRef); }
       if (wantRef >= 0) refusalsDecided++;
+      // Refus décidé : freinage calculé par csoRefuse (obstacles.js refuse → horse.js brake) sur l'état du cœur, comparé
+      // au freinage et à l'obstacle refusé relevés en fin d'image (le garde-fou du nez, T3, ne touche que la position).
+      if (wantRef >= 0 && gotRef == wantRef) {
+        CsoHorseState t = s;
+        csoRefuse(t, obs, gotRef, P);
+        refusalBrakes++;
+        if (!near(t.brake, ch["s"]["bk"].num(), 1e-12) || t.refusing != wantRef) {
+          refusalBrakeBad++;
+          std::printf("  %s image %d : freinage du refus %.17g / %.17g\n", who.c_str(), (int)f["f"].num(), t.brake, ch["s"]["bk"].num());
+        }
+      }
+      // Témoins (valeurs du jeu web) : lacet non nul en l'air ; ralentissement au plafond de 9 m/s² ; perte d'élan à la
+      // réception au plafond (landingLoss).
+      {
+        const J& e = ch["s"];
+        const J& p = *prevS;
+        if (e["jT"].num() >= 0 && std::abs(orZero(e["yr"])) > 0.05) airYaw[id]++;
+        if (e["jT"].num() < 0 && p["jT"].num() < 0 && e["bk"].num() == 0 && near((p["v"].num() - e["v"].num()) / fi.dt, 9, 1e-9)) decelCap[id]++;
+        if (p["jT"].num() >= 0 && e["jT"].num() < 0 && near(e["v"].num() / p["v"].num(), 1 - csoRideDefaults().landingLoss, 1e-12)) lossCap[id]++;
+        prevS = &e;
+      }
       if (external) { loadHorse(s, ch["s"]); resync++; }
       if (!ch["obs"].isNull()) obs = obstaclesFrom(ch["obs"], who);
       // Aide à l'appel et cible après l'image.
@@ -476,6 +503,10 @@ static void testHorseRuns() {
     if (id == "abord-70") CHECK(count("horse:jumpEarly") == 1 && count("horse:jump") == 0, "%s : pas d'obstacle visé à 70°", who.c_str());
     if (id == "bonne-zone" || id == "droit") CHECK(count("horse:jump") == 1 && count("horse:land") == 1, "%s : un saut", who.c_str());
     if (id == "refus") CHECK(count("horse:refuse") >= 1 && count("horse:jump") == 0, "%s : refus (cabré) sans saut", who.c_str());
+    if (id == "virage-en-lair") CHECK(count("horse:jump") == 1 && airYaw[id] >= 10, "%s : lacet en l'air sur %d images", who.c_str(), airYaw[id]);
+    if (id == "survitesse") CHECK(decelCap[id] >= 3, "%s : ralentissement à 9 m/s² sur %d images", who.c_str(), decelCap[id]);
+    if (id == "appel-pres") CHECK(count("horse:jump") == 1 && lossCap[id] == 1, "%s : perte d'élan plafonnée à la réception (%d)", who.c_str(), lossCap[id]);
+    if (id == "abord-61") CHECK(count("horse:refuse") == 1 && count("horse:jump") == 0, "%s : refus hors de l'angle de saut", who.c_str());
   }
   int ok = 0;
   for (const char* id : required) {
@@ -483,8 +514,13 @@ static void testHorseRuns() {
     ok += (int)clean.count(id);
   }
   CHECK(keyFrames > 0, "aucune image au clavier");
-  CHECK(refusalsDecided >= 2, "décisions de refus à l'abord rejouées : %d", refusalsDecided);
-  std::printf("cheval de concours : %d scénarios requis rejoués sans recalage ni écart > 1e-6 ; %d images au clavier ; %d refus à l'abord décidés à la même image que le jeu\n", ok, keyFrames, refusalsDecided);
+  CHECK(refusalsDecided >= 3, "décisions de refus à l'abord rejouées : %d", refusalsDecided);
+  CHECK(refusalBrakes == refusalsDecided && refusalBrakeBad == 0, "freinages de refus : %d comparés, %d différents du jeu", refusalBrakes, refusalBrakeBad);
+  int air = 0, dec = 0, loss = 0;
+  for (auto& [k, v] : airYaw) air += v;
+  for (auto& [k, v] : decelCap) dec += v;
+  for (auto& [k, v] : lossCap) loss += v;
+  std::printf("cheval de concours : %d scénarios requis rejoués sans recalage ni écart > 1e-6 ; %d images au clavier ; %d refus à l'abord décidés à la même image que le jeu, freinage identique ; témoins : %d images en l'air avec lacet, %d images au plafond de 9 m/s², %d réceptions au plafond de perte\n", ok, keyFrames, refusalsDecided, air, dec, loss);
 }
 
 // Grille de visée : obstacles.target / timing du jeu (cso_target.json) = csoTarget / csoTiming.
@@ -500,7 +536,7 @@ static void testTarget() {
   CHECK(csoFences == 10, "obstacles du parcours dans la grille : %d", csoFences);
   const double power = o["power"].num(), clr = o["clearance"].num();
   const bool cso = o["cso"].b;
-  int n = 0, bad = 0, hits = 0, zones[5] = {0, 0, 0, 0, 0};
+  int n = 0, bad = 0, hits = 0, zones[5] = {0, 0, 0, 0, 0}, inMargin = 0, outMargin = 0;
   for (const J& c : o["list"].a) {
     CsoHorseState s;
     s.x = c["x"].num(); s.z = c["z"].num(); s.heading = c["h"].num(); s.speed = c["v"].num();
@@ -511,10 +547,83 @@ static void testTarget() {
     if (!why.empty()) { bad++; if (bad < 6) std::printf("  visée, cas %d :%s\n", n, why.c_str()); }
     if (t.index >= 0) hits++;
     zones[(int)tm]++;
+    // Témoins de la tolérance latérale : décalage du point de passage posé entre la demi-largeur et + 0,35 m (visé par
+    // le jeu), ou au-delà (non visé), abord de face.
+    const double u0 = std::abs(c["ref"][3].num());
+    if (c["ref"][2].num() == 0 && c["ref"].a.size() == 5) {
+      if (u0 > fw / 2 && u0 <= fw / 2 + 0.35 && !c["tg"].isNull()) inMargin++;
+      if (u0 > fw / 2 + 0.35 && c["tg"].isNull()) outMargin++;
+    }
     n++;
   }
   CHECK(bad == 0 && n > 1000, "visée : %d cas sur %d différents du jeu", bad, n);
-  std::printf("visée : %d cas (%d avec obstacle visé ; aide none %d, good %d, far %d, near %d)\n", n, hits, zones[0], zones[1], zones[2], zones[3]);
+  CHECK(inMargin > 0 && outMargin > 0, "visée : tolérance latérale de 0,35 m non exercée (%d dans la marge, %d au-delà)", inMargin, outMargin);
+  std::printf("visée : %d cas (%d avec obstacle visé ; aide none %d, good %d, far %d, near %d ; de face, %d visés dans la marge latérale de 0,35 m, %d non visés au-delà)\n",
+              n, hits, zones[0], zones[1], zones[2], zones[3], inMargin, outMargin);
+}
+
+// Appui SAUT et refus décidé sur des poses du cheval (cso_target.json, listes press et refuse) : Horse.startJump et
+// Obstacles.refuse du jeu = csoStartJump et csoRefuse (toutes les branches : trop lent, en l'air, refus engagé, trop tôt,
+// sans obstacle visé, zone refuse devant ou déjà dans l'obstacle, saut ; freinage v²/2d ou v/0,5).
+static void testPress() {
+  J o = loadJson(ORA + "/cso_target.json");
+  const std::vector<CsoObstacle> obs = obstaclesFrom(o["obs"], "cso_target");
+  const bool cso = o["cso"].b;
+  CHECK(o["press"].a.size() > 1000 && o["refuse"].a.size() > 500, "appuis / refus absents de cso_target.json");
+  int n = 0, bad = 0, jumps = 0, early = 0, refused = 0, ignored = 0, slow = 0, busy = 0;
+  for (const J& c : o["press"].a) {
+    CsoHorseState s;
+    s.x = c["x"].num(); s.z = c["z"].num(); s.heading = c["h"].num(); s.speed = c["v"].num();
+    s.jumpT = c["jT0"].num(); s.refusing = c["rf0"].isNull() ? -1 : (int)c["rf0"].num();
+    CsoFrameInput fi;
+    fi.power = c["pow"].num(); fi.clearance = c["clr"].num(); fi.time = c["t"].num(); fi.csoControls = cso; fi.playerHorse = true;
+    const CsoTarget tg = csoTarget(obs, s, fi.power, fi.clearance, cso);
+    std::vector<CsoHorseEvent> evs;
+    const bool ok = csoStartJump(s, fi, obs, evs);
+    std::string why;
+    char b[128];
+    auto d = [&](const char* k, double a, const J& e) {
+      if (e.isNull() || !near(a, e.num(), 1e-12)) { std::snprintf(b, sizeof b, " %s %.17g/%.17g", k, a, e.isNull() ? NAN : e.num()); why += b; }
+    };
+    if (ok != c["ok"].b) why += " valeur rendue";
+    std::string got, want;
+    for (CsoHorseEvent e : evs) { got += csoHorseEventName(e); got += ' '; }
+    for (const J& e : c["ev"].a) { want += e.s; want += ' '; }
+    if (got != want) why += " événements « " + got + "» / « " + want + "»";
+    d("jumpT", s.jumpT, c["jT"]);
+    if (ok) { d("jumpPeak", s.jumpPeak, c["jP"]); d("jumpLen", s.jumpLen, c["jL"]); d("jumpDur", s.jumpDur, c["jD"]); }
+    d("brake", s.brake, c["bk"]);
+    if (s.refusing != (c["rf"].isNull() ? -1 : (int)c["rf"].num())) why += " refusing";
+    if ((s.hasLastJump ? s.lastJumpObstacle : -1) != (c["lj"].isNull() ? -1 : (int)c["lj"].num())) why += " lastJump";
+    if (!why.empty()) { bad++; if (bad < 6) std::printf("  appui, cas %d :%s\n", n, why.c_str()); }
+    // Branches exercées (lues sur le résultat du jeu).
+    if (c["jT0"].num() >= 0 || !c["rf0"].isNull()) busy++;
+    else if (c["v"].num() < csoHorseDefaults().minJumpSpeed) slow++;
+    else if (c["ok"].b) jumps++;
+    else if (!c["ev"].a.empty()) early++;
+    else if (!c["rf"].isNull()) refused++;
+    else if (tg.index >= 0 && tg.plan.zone == Zone::Refuse && tg.geo.rails.front().x < 0) ignored++;
+    n++;
+  }
+  CHECK(bad == 0, "appui SAUT : %d cas sur %d différents du jeu", bad, n);
+  CHECK(jumps > 0 && early > 0 && refused > 0 && ignored > 0 && slow > 0 && busy > 0,
+        "appui SAUT : branche non exercée (saut %d, trop tôt %d, refus %d, ignoré %d, trop lent %d, en l'air ou en refus %d)", jumps, early, refused, ignored, slow, busy);
+  std::printf("appui SAUT : %d cas (saut %d, trop tôt ou sans obstacle %d, refus tout contre %d, ignoré dans l'obstacle %d, trop lent %d, en l'air ou déjà en refus %d)\n",
+              n, jumps, early, refused, ignored, slow, busy);
+  int m = 0, rbad = 0, dist = 0, time = 0;
+  for (const J& c : o["refuse"].a) {
+    CsoHorseState s;
+    s.x = c["x"].num(); s.z = c["z"].num(); s.heading = c["h"].num(); s.speed = c["v"].num();
+    csoRefuse(s, obs, (int)c["o"].num());
+    if (!near(s.brake, c["bk"].num(), 1e-12) || s.refusing != (c["rf"].isNull() ? -1 : (int)c["rf"].num())) {
+      rbad++;
+      if (rbad < 6) std::printf("  refus, cas %d : freinage %.17g / %.17g\n", m, s.brake, c["bk"].num());
+    }
+    if (c["bk"].num() > c["v"].num() / 0.5) dist++; else time++;
+    m++;
+  }
+  CHECK(rbad == 0 && dist > 0 && time > 0, "refus décidé : %d cas sur %d différents du jeu (v²/2d %d, v/0,5 %d)", rbad, m, dist, time);
+  std::printf("refus décidé : %d cas (freinage v²/2d %d, v/0,5 %d)\n", m, dist, time);
 }
 
 // Scénarios de jugement (règles de courses.js) : sans faute, barre, refus, double, temps, élimination.
@@ -609,6 +718,7 @@ int main(int argc, char** argv) {
     testRuns();
     testHorseRuns();
     testTarget();
+    testPress();
     testJudge();
     testSave();
   } catch (const std::exception& e) {

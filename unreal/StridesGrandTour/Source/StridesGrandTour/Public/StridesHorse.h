@@ -51,6 +51,8 @@ public:
 	const TArray<FString>& LastEvents() const { return FrameEvents; }
 	// Aide à l'appel (obstacles.js timing) : zone affichée par le bouton SAUT (tranche T9).
 	strides::Zone JumpTiming() const;
+	// Puissance du saut (horse.js jumpPower) : jumpPeak lu dans Content/Data × saut du profil (équipement et état absents).
+	double JumpPower() const;
 	// Hauteur du sol (m, repère web) sous un point.
 	double GroundAt(double WebX, double WebZ) const;
 	double WebX() const { return X; }
@@ -77,7 +79,6 @@ private:
 	void TickDemo();
 	void StartOpenWorldJump();
 	void UpdateAnimation();
-	double JumpPower() const;
 	const class UStridesDataSubsystem* DataSub() const;
 	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
 	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpCanterAnimation;

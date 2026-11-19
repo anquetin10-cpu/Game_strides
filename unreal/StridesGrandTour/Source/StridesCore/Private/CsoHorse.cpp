@@ -190,18 +190,9 @@ int csoApproachRefusal(const CsoHorseState& s, const std::vector<CsoObstacle>& o
   return -1;
 }
 
-namespace {
-// Commandes du cheval écrites par le joueur (horse.control) pour cette image.
-struct Control {
-  bool cso = false;  // c.turnRate !== undefined (commandes de concours posées par csoRideStep)
-  double turnRate = 0, speedOverride = 0, yawTau = 0, yawAcc = 0, airTurn = 0, landingLoss = 0;
-  double mag = 0;
-  bool jump = false;
-};
-
 // horse.js startJump().
-bool startJump(CsoHorseState& s, const CsoFrameInput& in, const std::vector<CsoObstacle>& obstacles,
-               std::vector<CsoHorseEvent>& events, const JumpParams& J, const CsoHorseParams& P) {
+bool csoStartJump(CsoHorseState& s, const CsoFrameInput& in, const std::vector<CsoObstacle>& obstacles,
+                  std::vector<CsoHorseEvent>& events, const JumpParams& J, const CsoHorseParams& P) {
   if (s.jumpT >= 0 || s.speed < P.minJumpSpeed) return false;
   // Refus engagé : trop tard pour sauter.
   if (s.refusing >= 0) return false;
@@ -249,6 +240,15 @@ bool startJump(CsoHorseState& s, const CsoFrameInput& in, const std::vector<CsoO
   events.push_back(CsoHorseEvent::Jump);
   return true;
 }
+
+namespace {
+// Commandes du cheval écrites par le joueur (horse.control) pour cette image.
+struct Control {
+  bool cso = false;  // c.turnRate !== undefined (commandes de concours posées par csoRideStep)
+  double turnRate = 0, speedOverride = 0, yawTau = 0, yawAcc = 0, airTurn = 0, landingLoss = 0;
+  double mag = 0;
+  bool jump = false;
+};
 }  // namespace
 
 void csoHorseStep(CsoHorseState& s, const CsoFrameInput& in, const std::vector<CsoObstacle>& obstacles,
@@ -334,7 +334,7 @@ void csoHorseStep(CsoHorseState& s, const CsoFrameInput& in, const std::vector<C
   // Saut.
   if (c.jump) {
     if (s.jumpT < 0 && !in.frozen) {
-      if (!startJump(s, in, obstacles, events, J, P) && in.playerHorse && s.speed < P.minJumpSpeed)
+      if (!csoStartJump(s, in, obstacles, events, J, P) && in.playerHorse && s.speed < P.minJumpSpeed)
         events.push_back(CsoHorseEvent::TooSlow);
     }
   }

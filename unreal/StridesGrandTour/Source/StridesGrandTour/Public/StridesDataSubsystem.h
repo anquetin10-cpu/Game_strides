@@ -32,7 +32,7 @@ struct FStridesHorseProfile
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) int32 Age = 0;
 	// Multiplicateurs du jeu web (data.js) : vitesse, saut, endurance.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) float SpeedMul = 1.f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) float JumpMul = 1.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) double JumpMul = 1.0;  // double : puissance du saut au bit près du jeu web
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) float StaminaMul = 1.f;
 };
 
@@ -106,7 +106,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FStridesProgressionLevel> Progression;
 	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") TArray<FString> PhoneApps;
 	// Hauteur de base du saut (m) : HORSE.jumpPeak du jeu web, multipliée par le profil du cheval.
-	UPROPERTY(BlueprintReadOnly, Category = "Strides") float JumpPeak = 1.35f;
+	UPROPERTY(BlueprintReadOnly, Category = "Strides") double JumpPeak = 1.35;  // double : HORSE.jumpPeak du jeu web, sans arrondi float
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") float MinJumpSpeed = 3.2f;
 	// Cheval de concours (cso_horse.json, extrait de obstacles.js par scripts/unreal/export-data.mjs) : largeur des
 	// obstacles du parcours de CSO (m) ; REF / NOSE / OVERRUN et constantes du saut dans HorseParams().

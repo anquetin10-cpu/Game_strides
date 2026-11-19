@@ -16,6 +16,9 @@
 #include "StridesCore/CsoHorse.h"
 #include "StridesCourse.h"
 #include "StridesHorse.h"
+#include "StridesDataSubsystem.h"
+#include "StridesPlayerController.h"
+#include "Engine/GameInstance.h"
 
 namespace
 {
@@ -82,9 +85,10 @@ bool FStridesPariteCsoHorseTest::RunTest(const FString&)
 {
 	const TSharedPtr<FJsonObject> O = LoadJsonFile(RepoRoot() / TEXT("unreal/core/tests/oracles/cso_runs.json"));
 	if (!TestTrue(TEXT("cso_runs.json lu"), O.IsValid())) return false;
-	const TSet<FString> Required = {TEXT("droit"), TEXT("bonne-zone"), TEXT("virage-serre"), TEXT("rampe-clavier"), TEXT("ctrl-alt"), TEXT("appui-10m"), TEXT("appui-3ms"), TEXT("abord-70")};
+	const TSet<FString> Required = {TEXT("droit"), TEXT("bonne-zone"), TEXT("virage-serre"), TEXT("rampe-clavier"), TEXT("ctrl-alt"), TEXT("appui-10m"), TEXT("appui-3ms"), TEXT("abord-70"),
+		TEXT("virage-en-lair"), TEXT("survitesse"), TEXT("appel-pres")};
 	TSet<FString> Clean;
-	int32 Frames = 0;
+	int32 Frames = 0, Refusals = 0, RefusalBad = 0;
 	for (const TSharedPtr<FJsonValue>& RV : O->GetArrayField(TEXT("runs")))
 	{
 		const TSharedPtr<FJsonObject> R = RV->AsObject();
@@ -136,6 +140,18 @@ bool FStridesPariteCsoHorseTest::RunTest(const FString&)
 				MaxDev = FMath::Max(MaxDev, FMath::Max3(D, D2, D3));
 				Bad += !(FMath::Max3(D, D2, D3) <= 1e-6);
 			}
+			// Refus décidé par Obstacles.updateHorse à cette image : même décision (csoApproachRefusal) et même freinage
+			// (csoRefuse), comme dans AStridesHorse::TickCso.
+			const TSharedPtr<FJsonObject> SEnd = Ch->GetObjectField(TEXT("s"));
+			if (B && !(*B)->HasTypedField<EJson::Number>(TEXT("rf")) && SEnd->HasTypedField<EJson::Number>(TEXT("rf")))
+			{
+				const int32 WantRef = (int32)SEnd->GetNumberField(TEXT("rf"));
+				const int GotRef = strides::csoApproachRefusal(S, Obs, Fi.power, Fi.clearance, Fi.csoControls, Fi.time);
+				strides::CsoHorseState T = S;
+				if (GotRef >= 0) strides::csoRefuse(T, Obs, GotRef);
+				Refusals++;
+				RefusalBad += !(GotRef == WantRef && T.refusing == WantRef && FMath::Abs(T.brake - SEnd->GetNumberField(TEXT("bk"))) <= 1e-12 * FMath::Max(1.0, FMath::Abs(T.brake)));
+			}
 			if (bExternal) { LoadState(S, Ch->GetObjectField(TEXT("s"))); Resync++; }
 			const TArray<TSharedPtr<FJsonValue>>* NewObs = nullptr;
 			if (Ch->TryGetArrayField(TEXT("obs"), NewObs)) Obs = ObstaclesFrom(*NewObs);
@@ -146,7 +162,8 @@ bool FStridesPariteCsoHorseTest::RunTest(const FString&)
 		if (Bad == 0 && EvBad == 0 && Resync == 0) Clean.Add(Id);
 	}
 	for (const FString& Id : Required) TestTrue(FString::Printf(TEXT("scénario %s rejoué sans recalage"), *Id), Clean.Contains(Id));
-	AddInfo(FString::Printf(TEXT("cheval de concours : %d images rejouées, %d scénarios requis sans écart"), Frames, Clean.Intersect(Required).Num()));
+	TestTrue(FString::Printf(TEXT("refus décidés à la même image, même freinage (%d, %d différents)"), Refusals, RefusalBad), Refusals >= 3 && RefusalBad == 0);
+	AddInfo(FString::Printf(TEXT("cheval de concours : %d images rejouées, %d scénarios requis sans écart, %d refus (décision et freinage) identiques"), Frames, Clean.Intersect(Required).Num(), Refusals - RefusalBad));
 	return true;
 }
 
@@ -167,23 +184,59 @@ bool FStridesCsoHorseInGameTest::RunTest(const FString&)
 	Design.x += Arena->GetNumberField(TEXT("x"));
 	Design.z += Arena->GetNumberField(TEXT("z"));
 
-	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, TEXT("StridesCsoHorseTest"));
-	if (!TestNotNull(TEXT("monde de test"), World)) return false;
+	// Instance de jeu autonome (contexte de monde, sous-systèmes initialisés) : le cheval lit ses données (puissance,
+	// paramètres du saut et du cheval de concours) dans Content/Data par UStridesDataSubsystem, comme en jeu.
+	UGameInstance* GI = NewObject<UGameInstance>(GEngine);
+	GI->AddToRoot();
+	GI->InitializeStandalone(TEXT("StridesCsoHorseTest"));
+	UWorld* World = GI->GetWorld();
+	auto Cleanup = [&]()
+	{
+		GI->Shutdown();
+		if (World)
+		{
+			GEngine->DestroyWorldContext(World);
+			World->DestroyWorld(false);
+		}
+		GI->RemoveFromRoot();
+	};
+	if (!TestNotNull(TEXT("monde de test"), World)) { Cleanup(); return false; }
+	const UStridesDataSubsystem* Data = GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestNotNull(TEXT("sous-système de données (Content/Data)"), Data)) { Cleanup(); return false; }
+	TestTrue(TEXT("paramètres du cheval de concours lus dans cso_horse.json"),
+		Data->HorseParams().ref == HorseJ->GetNumberField(TEXT("ref")) && Data->HorseParams().nose == HorseJ->GetNumberField(TEXT("nose")) &&
+		Data->HorseParams().overrun == HorseJ->GetNumberField(TEXT("overrun")) && Data->HorseParams().minJumpSpeed == HorseJ->GetNumberField(TEXT("minJumpSpeed")) &&
+		Data->HorseParams().jumpDuration == HorseJ->GetNumberField(TEXT("jumpDuration")));
 	AStridesCourse* Course = World->SpawnActor<AStridesCourse>();
 	Course->BuildWith(Design, 350.0 / 60.0, HorseJ->GetNumberField(TEXT("csoFenceWidth")));
 	const std::vector<strides::CsoObstacle>& Obs = Course->Obstacles();
 	TestEqual(TEXT("obstacles du parcours"), (int32)Obs.size(), 10);
 	int32 Three = -1;
 	for (int32 i = 0; i < (int32)Obs.size(); i++) if (Obs[i].label == "3") Three = i;
-	if (!TestTrue(TEXT("obstacle 3 trouvé"), Three >= 0)) { World->DestroyWorld(false); World->RemoveFromRoot(); return false; }
+	if (!TestTrue(TEXT("obstacle 3 trouvé"), Three >= 0)) { Cleanup(); return false; }
 	const strides::CsoObstacle& F3 = Obs[Three];
 	TestTrue(TEXT("largeur des obstacles = cso_horse.json"), F3.w == HorseJ->GetNumberField(TEXT("csoFenceWidth")));
 	AStridesHorse* Horse = World->SpawnActor<AStridesHorse>();
 	Horse->Course = Course;
+	// Le joueur : contrôleur du jeu qui possède le cheval ; l'appui passe par son action SAUT (Espace, bouton A du
+	// gamepad et bouton tactile SAUT appellent le même OnJump).
+	AStridesPlayerController* PC = World->SpawnActor<AStridesPlayerController>();
+	if (!TestNotNull(TEXT("contrôleur du joueur"), PC)) { Cleanup(); return false; }
+	PC->Possess(Horse);
+	TestTrue(TEXT("cheval possédé par le contrôleur du joueur"), PC->GetPawn() == Horse);
+	// Puissance du cheval = jumpPeak lu dans Content/Data × saut du profil (horse_profiles.json), pas la valeur par défaut.
+	const FStridesHorseProfile* Prof = Data->FindHorse(Horse->ProfileId);
+	const double Power = Horse->JumpPower();
+	TestTrue(FString::Printf(TEXT("puissance du cheval %.17g = jumpPeak %.17g (cso_horse.json : %.17g) × profil %s"), Power, Data->JumpPeak,
+		HorseJ->GetNumberField(TEXT("jumpPeak")), *Horse->ProfileId),
+		Prof != nullptr && Data->JumpPeak == HorseJ->GetNumberField(TEXT("jumpPeak")) && Power == Data->JumpPeak * Prof->JumpMul);
+	const strides::JumpParams& JP = Data->Jump();
+	const strides::CsoHorseParams& HP = Data->HorseParams();
 	const double Dt = 1.0 / 30;
 	const double Head = FMath::Atan2(F3.n.x, F3.n.z);
-	// Distance de la première barre aux épaules (visée du cœur, comme le jeu web).
-	auto FirstBar = [&]() { const strides::CsoTarget T = strides::csoTarget(Obs, Horse->CsoState(), 1.35, 0, true); return T.index == Three ? T.geo.rails.front().x : 1e9; };
+	// Distance de la première barre aux épaules (visée du cœur avec les données du jeu, comme le jeu web).
+	auto Target = [&]() { return strides::csoTarget(Obs, Horse->CsoState(), Power, 0, true, JP, HP); };
+	auto FirstBar = [&]() { const strides::CsoTarget T = Target(); return T.index == Three ? T.geo.rails.front().x : 1e9; };
 	auto Has = [&](const TCHAR* E) { return Horse->LastEvents().Contains(E); };
 
 	// 1) Galop de concours (6,2 m/s), 18 m avant le 3 dans son axe ; SAUT à 10 m : aucun saut, « trop tôt ».
@@ -191,7 +244,7 @@ bool FStridesCsoHorseInGameTest::RunTest(const FString&)
 	int32 Guard = 0;
 	while (FirstBar() > 10 && Guard++ < 200) Horse->Tick(Dt);
 	const double At = FirstBar();
-	Horse->RequestJump();
+	PC->TouchJump();
 	Horse->Tick(Dt);
 	TestTrue(FString::Printf(TEXT("appui à %.2f m : pas de saut"), At), !Horse->IsJumping() && At <= 10 && At > 9);
 	TestTrue(TEXT("appui à 10 m : événement horse:jumpEarly"), Has(TEXT("horse:jumpEarly")));
@@ -199,8 +252,8 @@ bool FStridesCsoHorseInGameTest::RunTest(const FString&)
 	bool bJumped = false, bLanded = false;
 	for (Guard = 0; Guard < 200 && !bLanded; Guard++)
 	{
-		const strides::CsoTarget T = strides::csoTarget(Obs, Horse->CsoState(), 1.35, 0, true);
-		if (!bJumped && !Horse->IsJumping() && T.index == Three && T.plan.zone == strides::Zone::Good && T.plan.ideal <= T.plan.L + 0.3) Horse->RequestJump();
+		const strides::CsoTarget T = Target();
+		if (!bJumped && !Horse->IsJumping() && T.index == Three && T.plan.zone == strides::Zone::Good && T.plan.ideal <= T.plan.L + 0.3) PC->TouchJump();
 		Horse->Tick(Dt);
 		bJumped |= Has(TEXT("horse:jump"));
 		bLanded |= Has(TEXT("horse:land"));
@@ -220,7 +273,9 @@ bool FStridesCsoHorseInGameTest::RunTest(const FString&)
 	}
 	TestTrue(TEXT("sans appel : aucun saut automatique"), !bAnyJump);
 	TestTrue(FString::Printf(TEXT("sans appel : refus, arrêt à %.2f m de l'axe de l'obstacle (origine du cheval)"), Closest), bRefused && Closest > 0);
-	World->DestroyWorld(false);
-	World->RemoveFromRoot();
+	AddInfo(FString::Printf(TEXT("cheval en jeu (données de Content/Data, appui par le contrôleur du joueur) : puissance %.17g, appui à %.2f m sans saut, saut en bonne zone %s, sans appel refus à %.2f m"),
+		Power, At, bJumped && bLanded ? TEXT("oui") : TEXT("non"), Closest));
+	PC->UnPossess();
+	Cleanup();
 	return true;
 }

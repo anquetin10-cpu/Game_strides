@@ -374,6 +374,20 @@ Principes communs :
   rendu GPU (Metal, bureau) : parcours complet « Terminé : 0 pts en 60.42 s ». Restent hors T2 : jugement des barres au
   passage, glissade, garde-fou du nez, comptage unique des refus (T3) ; affichage « Trop tôt » / « Trop lent » (T7, T9) ;
   puissance sans équipement ni état ; commandes de concours toujours actives hors épreuve (T4, T10).
+- **Contrôle adverse et corrections (19/11/2026)** : la livraison revendiquait des branches qu'aucun oracle n'exerçait
+  (rotation en l'air `airTurn`, plafond de ralentissement de 9 m/s², valeur du freinage de refus, tolérance latérale de
+  0,35 m, refus de `startJump` si la barre avant est encore devant). Ajouts, tous exportés du jeu en cours d'exécution par
+  `EXP` : scénarios `virage-en-lair` (joystick à droite pendant le vol), `survitesse` (cheval posé à 9,6 m/s, cadence
+  bornée à 8), `abord-61` (abord hors de l'angle de saut, refus au seuil v²/16 + 0,3), `appel-pres` (perte d'élan
+  plafonnée à 4 %) ; dans `ORA/cso_target.json`, 2 240 poses décalées de 2,1 et −2,2 m, 2 740 appuis (`Horse.startJump`
+  appelé seul, liste `press`) et 960 refus décidés (`Obstacles.refuse` appelé seul, liste `refuse`). `TC` compare en plus
+  le freinage de chaque refus décidé dans la chaîne du jeu (`csoApproachRefusal` puis `csoRefuse`) et vérifie dans
+  l'oracle des témoins de chaque branche ; `csoStartJump` est exposé pour le test. `scripts/unreal/mutations-cso-horse.py`
+  applique 14 mutations à une copie de `CsoHorse.cpp` : toutes détectées (dont les six que le contrôle avait vues passer).
+  Les 10 scénarios et les 8 980 poses d'origine sont inchangés à l'octet près. ctest : 12 267 vérifications, 0 échec.
+  `Strides.Cso.HorseInGame` tourne désormais dans une instance de jeu autonome (données de `Content/Data`, puissance
+  exacte en double au lieu de float) et appuie par le contrôleur du joueur (`TouchJump`, même gestionnaire que la touche
+  Espace) ; la frappe de la touche par Enhanced Input et la capture restent hors test.
 
 ### T3. Obstacles : jugement au passage, refus, chute des barres (StridesCore)
 
