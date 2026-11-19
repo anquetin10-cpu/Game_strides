@@ -1,6 +1,10 @@
 #include "StridesShots.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraTypes.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Engine/LocalPlayer.h"
+#include "SceneView.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "GameFramework/HUD.h"
@@ -94,6 +98,107 @@ bool AStridesShots::ResolveShotsDir(const TCHAR* CommandLine, const FString& Roo
 		}
 	}
 	Out = Dir;
+	return true;
+}
+
+TArray<double> AStridesShots::FramingYs(const FMinimalViewInfo& InView, int32 Width, int32 Height, double X, double Z, double Heading, double Y0, const TArray<FVector2D>& Pts)
+{
+	// Projection du moteur (celle du rendu : ULocalPlayer::GetProjectionData) pour un viewport Width × Height.
+	FMinimalViewInfo View = InView;
+	const FIntRect Rect(0, 0, Width, Height);
+	FSceneViewProjectionData Proj;
+	Proj.ViewOrigin = View.Location;
+	Proj.ViewRotationMatrix = FInverseRotationMatrix(View.Rotation) * FMatrix(FPlane(0, 0, 1, 0), FPlane(1, 0, 0, 0), FPlane(0, 1, 0, 0), FPlane(0, 0, 0, 1));
+	Proj.SetViewRectangle(Rect);
+	const EAspectRatioAxisConstraint Axis = View.AspectRatioAxisConstraint.Get(GetDefault<ULocalPlayer>()->AspectRatioAxisConstraint);
+	FMinimalViewInfo::CalculateProjectionMatrixGivenViewRectangle(View, Axis, Rect, Proj);
+	const FMatrix VP = Proj.ComputeViewProjectionMatrix();
+	TArray<double> Ys;
+	for (const FVector2D& P : Pts)
+	{
+		FVector2D S;
+		FSceneView::ProjectWorldToScreen(StridesUnits::WebToUE(X + FMath::Sin(Heading) * P.X, Y0 + P.Y, Z + FMath::Cos(Heading) * P.X), Rect, VP, S, true);
+		Ys.Add(S.Y / Height);
+	}
+	return Ys;
+}
+
+bool AStridesShots::ReplayCourseCamera(AStridesHorse* Horse, const TSharedPtr<FJsonObject>& Run, int32 LastFrame,
+	TFunctionRef<void(int32, const strides::CsoCamOut&, const TSharedPtr<FJsonObject>&)> OnCall, FString& Why)
+{
+	const TSharedPtr<FJsonObject>* Setup = nullptr;
+	const TSharedPtr<FJsonObject>* C0 = nullptr;
+	if (!Horse || !Run.IsValid() || !Run->TryGetObjectField(TEXT("setup"), Setup) || !(*Setup)->TryGetObjectField(TEXT("cc0"), C0))
+	{
+		Why = TEXT("exécution sans canal caméra (setup.cc0)");
+		return false;
+	}
+	// Obstacles relevés par le banc (cc0.obs) → rang dans les obstacles du parcours du jeu (même centre à 1e-6 m près).
+	static const std::vector<strides::CsoObstacle> NoObstacles;
+	const std::vector<strides::CsoObstacle>& Obs = Horse->Course ? Horse->Course->Obstacles() : NoObstacles;
+	TArray<int32> Map;
+	for (const TSharedPtr<FJsonValue>& V : (*C0)->GetArrayField(TEXT("obs")))
+	{
+		const TArray<TSharedPtr<FJsonValue>>& A = V->AsArray();
+		int32 Found = -1;
+		for (int32 I = 0; I < (int32)Obs.size(); I++)
+			if (FMath::Abs(Obs[I].x - A[0]->AsNumber()) < 1e-6 && FMath::Abs(Obs[I].z - A[1]->AsNumber()) < 1e-6) Found = I;
+		Map.Add(Found);
+	}
+	auto Vec = [](const TArray<TSharedPtr<FJsonValue>>& A) { return strides::CsoVec3{A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()}; };
+	Horse->LeaveCourseCamera();
+	Horse->SetCameraBefore(Vec((*C0)->GetArrayField(TEXT("eye"))), (*C0)->GetNumberField(TEXT("fov")), (*C0)->GetNumberField(TEXT("camFov")));
+	bool bFirst = true;
+	auto Call = [&](int32 F, const TSharedPtr<FJsonObject>& C) -> bool
+	{
+		const TArray<TSharedPtr<FJsonValue>>& Hz = C->GetArrayField(TEXT("hz"));
+		strides::CsoCamHorse V;
+		V.x = Hz[0]->AsNumber();
+		V.z = Hz[1]->AsNumber();
+		V.heading = Hz[2]->AsNumber();
+		V.yawRate = Hz[3]->IsNull() ? 0.0 : Hz[3]->AsNumber();
+		V.jumpT = Hz[4]->AsNumber();
+		V.jumpY = Hz[5]->AsNumber();
+		V.groundY = Horse->GroundAt(V.x, V.z);  // sol du jeu (relief exporté), pas celui relevé dans le web
+		const TArray<TSharedPtr<FJsonValue>>* E0 = nullptr;
+		if (C->TryGetArrayField(TEXT("e0"), E0))
+		{
+			const TArray<TSharedPtr<FJsonValue>>& F0 = C->GetArrayField(TEXT("f0"));
+			Horse->SetCameraBefore(Vec(*E0), F0[0]->AsNumber(), F0[1]->AsNumber());
+		}
+		else if (bFirst)
+		{
+			// Branche concours déjà active au début de l'exécution : son état interne (cc0.st) n'est pas rejoué par le jeu.
+			Why = FString::Printf(TEXT("image %d : caméra de concours déjà active au départ (état cc0.st non rejouable par le jeu)"), F);
+			return false;
+		}
+		bFirst = false;
+		double Dt = 1.0 / 30;
+		C->TryGetNumberField(TEXT("dt"), Dt);
+		bool bInstant = false;
+		C->TryGetBoolField(TEXT("i"), bInstant);
+		int32 Next = -1;
+		double Nx = -1;
+		if (C->TryGetNumberField(TEXT("nx"), Nx) && Map.IsValidIndex((int32)Nx)) Next = Map[(int32)Nx];
+		OnCall(F, Horse->StepCourseCamera(Dt, V, Next, bInstant), C);
+		return true;
+	};
+	for (const TSharedPtr<FJsonValue>& FV : Run->GetArrayField(TEXT("frames")))
+	{
+		const TSharedPtr<FJsonObject> Fr = FV->AsObject();
+		const int32 F = (int32)Fr->GetNumberField(TEXT("f"));
+		if (LastFrame >= 0 && F > LastFrame) break;
+		const TArray<TSharedPtr<FJsonValue>>* Pre = nullptr;
+		if (Fr->TryGetArrayField(TEXT("ccp"), Pre))
+			for (const TSharedPtr<FJsonValue>& C : *Pre)
+				if (!Call(F, C->AsObject())) return false;
+		const TSharedPtr<FJsonObject>* Cc = nullptr;
+		if (Fr->TryGetObjectField(TEXT("cc"), Cc))
+		{
+			if (!Call(F, *Cc)) return false;
+		}
+		else Horse->LeaveCourseCamera();  // branche concours non prise à cette image (this._comp = null)
+	}
 	return true;
 }
 
@@ -261,6 +366,24 @@ void AStridesShots::LoadPoses()
 			for (const TSharedPtr<FJsonValue>& Hv : (*Co)->GetArrayField(TEXT("heights"))) P.CourseHeights.Add(Hv->AsNumber());
 			P.CourseHighlight = (int32)(*Co)->GetNumberField(TEXT("highlight"));
 		}
+		// Caméra de concours (tranche T6) : exécution de l'oracle rejouée par le jeu, mesure du cadrage du web.
+		const TSharedPtr<FJsonObject>* Cr = nullptr;
+		if (O->TryGetObjectField(TEXT("camRun"), Cr))
+		{
+			P.bHasCamRun = true;
+			P.CamRunFile = (*Cr)->GetStringField(TEXT("file"));
+			P.CamRunFrame = (int32)(*Cr)->GetNumberField(TEXT("frame"));
+		}
+		const TSharedPtr<FJsonObject>* Fm = nullptr;
+		if (O->TryGetObjectField(TEXT("framing"), Fm))
+		{
+			for (const TSharedPtr<FJsonValue>& Pt : (*Fm)->GetArrayField(TEXT("pts")))
+				P.FramingPts.Add(FVector2D(Pt->AsArray()[0]->AsNumber(), Pt->AsArray()[1]->AsNumber()));
+			P.WebPart = (*Fm)->GetNumberField(TEXT("part"));
+			P.WebTop = (*Fm)->GetNumberField(TEXT("top"));
+			P.WebBottom = (*Fm)->GetNumberField(TEXT("bottom"));
+			P.bFramingJump = (*Fm)->GetBoolField(TEXT("jump"));
+		}
 		// -StridesPose=<préfixe> : seulement les poses dont le nom commence ainsi.
 		FString Only;
 		if (FParse::Value(FCommandLine::Get(), TEXT("StridesPose="), Only) && !P.Name.StartsWith(Only)) continue;
@@ -310,24 +433,32 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 			}
 		}
 	}
-	if (!Camera)
-	{
-		Camera = GetWorld()->SpawnActor<ACameraActor>();
-		UCameraComponent* C = Camera->GetCameraComponent();
-		C->bConstrainAspectRatio = false;
-		// Le joueur local d'UE 5.8 maintient l'axe Y par défaut (BaseEngine.ini, [/Script/Engine.LocalPlayer]
-		// AspectRatioAxisConstraint=AspectRatio_MaintainYFOV) : la première capture, sans ce réglage, montrait un champ
-		// nettement plus large que le web. Axe X imposé : FieldOfView est alors bien le FOV horizontal calculé ici.
-		C->bOverrideAspectRatioAxisConstraint = true;
-		C->SetAspectRatioAxisConstraint(EAspectRatioAxisConstraint::AspectRatio_MaintainXFOV);
-	}
-	// Altitudes absolues du web (le relief Unreal est exporté du web) ; FOV vertical web → FOV horizontal Unreal.
-	const FVector Eye = StridesUnits::WebToUE(P.Eye.X, P.Eye.Y, P.Eye.Z);
-	const FVector Target = StridesUnits::WebToUE(P.Target.X, P.Target.Y, P.Target.Z);
 	const double FovH = HorizontalFov(P.FovV, P.Width, P.Height);
-	Camera->SetActorLocationAndRotation(Eye, (Target - Eye).Rotation());
-	Camera->GetCameraComponent()->SetFieldOfView((float)FovH);
-	PC->SetViewTarget(Camera);
+	if (P.bHasCamRun && Horse)
+	{
+		// Caméra de concours (tranche T6) : calculée par le jeu, capture par la caméra du cheval.
+		ApplyCamRunPose(P, PC, Horse);
+	}
+	else
+	{
+		if (!Camera)
+		{
+			Camera = GetWorld()->SpawnActor<ACameraActor>();
+			UCameraComponent* C = Camera->GetCameraComponent();
+			C->bConstrainAspectRatio = false;
+			// Le joueur local d'UE 5.8 maintient l'axe Y par défaut (BaseEngine.ini, [/Script/Engine.LocalPlayer]
+			// AspectRatioAxisConstraint=AspectRatio_MaintainYFOV) : la première capture, sans ce réglage, montrait un champ
+			// nettement plus large que le web. Axe X imposé : FieldOfView est alors bien le FOV horizontal calculé ici.
+			C->bOverrideAspectRatioAxisConstraint = true;
+			C->SetAspectRatioAxisConstraint(EAspectRatioAxisConstraint::AspectRatio_MaintainXFOV);
+		}
+		// Altitudes absolues du web (le relief Unreal est exporté du web) ; FOV vertical web → FOV horizontal Unreal.
+		const FVector Eye = StridesUnits::WebToUE(P.Eye.X, P.Eye.Y, P.Eye.Z);
+		const FVector Target = StridesUnits::WebToUE(P.Target.X, P.Target.Y, P.Target.Z);
+		Camera->SetActorLocationAndRotation(Eye, (Target - Eye).Rotation());
+		Camera->GetCameraComponent()->SetFieldOfView((float)FovH);
+		PC->SetViewTarget(Camera);
+	}
 	if (PC->GetHUD()) PC->GetHUD()->bShowHUD = false;
 	// Soleil : la lumière va du soleil vers la scène (sens opposé à sunDir, direction web → axes Unreal).
 	const FVector LightDir = -FVector(P.SunDir.X, P.SunDir.Z, P.SunDir.Y).GetSafeNormal();
@@ -335,9 +466,85 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 	for (TActorIterator<ASkyLight> It(GetWorld()); It; ++It) It->GetLightComponent()->RecaptureSky();
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 	auto G = [Data](double X, double Z) { return Data ? Data->TerrainHeight(X, Z) : 0.0; };
-	UE_LOG(LogTemp, Display, TEXT("Strides parite: pose %s, cheval (%.3f ; %.3f) cap %.4f monté=%d, FOV %.4f° vertical -> %.4f° horizontal (%dx%d), soleil %s -> rotation %s, sol Unreal oeil %.3f cible %.3f cheval %.3f"),
-		*P.Name, P.HorseX, P.HorseZ, P.HorseH, bPoseMounted, P.FovV, FovH, P.Width, P.Height, *P.SunDir.ToString(), *LightDir.Rotation().ToString(),
+	UE_LOG(LogTemp, Display, TEXT("Strides parite: pose %s, cheval (%.3f ; %.3f) cap %.4f monté=%d, FOV %.4f° vertical -> %s (%dx%d), soleil %s -> rotation %s, sol Unreal oeil %.3f cible %.3f cheval %.3f"),
+		*P.Name, P.HorseX, P.HorseZ, P.HorseH, bPoseMounted, P.FovV,
+		P.bHasCamRun ? TEXT("caméra du cheval (axe Y maintenu)") : *FString::Printf(TEXT("%.4f° horizontal"), FovH), P.Width, P.Height, *P.SunDir.ToString(), *LightDir.Rotation().ToString(),
 		G(P.Eye.X, P.Eye.Z), G(P.Target.X, P.Target.Z), G(P.HorseX, P.HorseZ));
+}
+
+void AStridesShots::ApplyCamRunPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
+{
+	// Cheval figé à la pose de l'image (en l'air s'il saute) : son pas et sa caméra ne tournent plus d'eux-mêmes.
+	Horse->SetActorTickEnabled(false);
+	if (P.bHasJumpY) Horse->SetActorLocation(StridesUnits::WebToUE(P.HorseX, Horse->GroundAt(P.HorseX, P.HorseZ) + P.HorseJumpY, P.HorseZ));
+	if (!CamRunCache.IsValid() || CamRunCacheFile != P.CamRunFile)
+	{
+		FString Text;
+		CamRunCache.Reset();
+		if (FFileHelper::LoadFileToString(Text, *(RepoRoot() / P.CamRunFile))) FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), CamRunCache);
+		CamRunCacheFile = P.CamRunFile;
+	}
+	double DevPos = 0, DevFov = 0, DevGround = 0;
+	int32 Calls = 0;
+	FString Why;
+	const bool bOk = ReplayCourseCamera(Horse, CamRunCache, P.CamRunFrame, [&](int32, const strides::CsoCamOut& Out, const TSharedPtr<FJsonObject>& C)
+	{
+		const TArray<TSharedPtr<FJsonValue>>& E = C->GetArrayField(TEXT("eye"));
+		const TArray<TSharedPtr<FJsonValue>>& L = C->GetArrayField(TEXT("look"));
+		const TArray<TSharedPtr<FJsonValue>>& Hz = C->GetArrayField(TEXT("hz"));
+		DevPos = FMath::Max(DevPos, FMath::Max3(FMath::Abs(Out.eye.x - E[0]->AsNumber()), FMath::Abs(Out.eye.y - E[1]->AsNumber()), FMath::Abs(Out.eye.z - E[2]->AsNumber())));
+		DevPos = FMath::Max(DevPos, FMath::Max3(FMath::Abs(Out.look.x - L[0]->AsNumber()), FMath::Abs(Out.look.y - L[1]->AsNumber()), FMath::Abs(Out.look.z - L[2]->AsNumber())));
+		DevFov = FMath::Max(DevFov, FMath::Abs(Out.fov - C->GetNumberField(TEXT("fov"))));
+		DevGround = FMath::Max(DevGround, FMath::Abs(Horse->GroundAt(Hz[0]->AsNumber(), Hz[1]->AsNumber()) - Hz[6]->AsNumber()));
+		Calls++;
+	}, Why);
+	PC->SetViewTarget(Horse);
+	const strides::CsoCamState& S = Horse->CourseCameraState();
+	UE_LOG(LogTemp, Display, TEXT("Strides parite: caméra de concours rejouée par le jeu (%s, image %d) : %s, %d appels, écart max au web œil/visée %.3g m, FOV %.3g°, sol sous le cheval %.3g m ; œil (%.4f ; %.4f ; %.4f), FOV vertical appliqué %.4f°, recul %.3f m"),
+		*P.CamRunFile, P.CamRunFrame, bOk ? TEXT("ok") : *Why, Calls, DevPos, DevFov, DevGround, S.eye.x, S.eye.y, S.eye.z, S.camFov, S.back);
+}
+
+void AStridesShots::MeasureFraming(const FPose& P, APlayerController* PC)
+{
+	AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
+	if (!Horse || !PC->PlayerCameraManager || P.FramingPts.Num() == 0) return;
+	// Vue de rendu (cache du gestionnaire de caméra) au moment de la capture.
+	const FMinimalViewInfo View = PC->PlayerCameraManager->GetCameraCacheView();
+	const double Y0 = Horse->GroundAt(P.HorseX, P.HorseZ) + (P.bHasJumpY ? P.HorseJumpY : 0.0);
+	const TArray<double> Ys = FramingYs(View, P.Width, P.Height, P.HorseX, P.HorseZ, P.HorseH, Y0, P.FramingPts);
+	double Top = 1e9, Bot = -1e9;
+	for (const double Y : Ys)
+	{
+		Top = FMath::Min(Top, Y);
+		Bot = FMath::Max(Bot, Y);
+	}
+	Top = FMath::Max(0.0, Top);
+	Bot = FMath::Min(1.0, Bot);
+	double Ex, Ey, Ez;
+	StridesUnits::UEToWeb(View.Location, Ex, Ey, Ez);
+	const EAspectRatioAxisConstraint Axis = View.AspectRatioAxisConstraint.Get(GetDefault<ULocalPlayer>()->AspectRatioAxisConstraint);
+	const TCHAR* AxisName = Axis == EAspectRatioAxisConstraint::AspectRatio_MaintainYFOV ? TEXT("MaintainYFOV") : Axis == EAspectRatioAxisConstraint::AspectRatio_MaintainXFOV ? TEXT("MaintainXFOV") : TEXT("MajorAxisFOV");
+	const double EyeDev = FVector(Ex - P.Eye.X, Ey - P.Eye.Y, Ez - P.Eye.Z).Size();
+	UE_LOG(LogTemp, Display, TEXT("Strides parite: cadrage %s : couple sur %.4f de la hauteur (haut %.4f, bas %.4f) ; web %.4f (haut %.4f, bas %.4f) ; écart %.4f ; œil de rendu à %.3g m de l'œil web, FOV %.4f° (%s)"),
+		*P.Name, Bot - Top, Top, Bot, P.WebPart, P.WebTop, P.WebBottom, (Bot - Top) - P.WebPart, EyeDev, View.FOV, AxisName);
+	TSharedPtr<FJsonObject> R = MakeShared<FJsonObject>();
+	R->SetStringField(TEXT("name"), P.Name);
+	R->SetNumberField(TEXT("frame"), P.CamRunFrame);
+	R->SetBoolField(TEXT("jump"), P.bFramingJump);
+	R->SetNumberField(TEXT("part"), Bot - Top);
+	R->SetNumberField(TEXT("top"), Top);
+	R->SetNumberField(TEXT("bottom"), Bot);
+	R->SetNumberField(TEXT("webPart"), P.WebPart);
+	R->SetNumberField(TEXT("webTop"), P.WebTop);
+	R->SetNumberField(TEXT("webBottom"), P.WebBottom);
+	R->SetNumberField(TEXT("fovV"), View.FOV);
+	R->SetStringField(TEXT("axis"), AxisName);
+	R->SetNumberField(TEXT("eyeDev"), EyeDev);
+	TArray<TSharedPtr<FJsonValue>> Yv;
+	for (const double Y : Ys) Yv.Add(MakeShared<FJsonValueNumber>(Y));
+	R->SetArrayField(TEXT("ys"), Yv);
+	FramingResults.Add(MakeShared<FJsonValueObject>(R));
+	FramingOut = FPaths::GetPath(P.Out) / TEXT("cadrage-unreal.json");
 }
 
 void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
@@ -353,7 +560,24 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 	}
 	Wait -= DeltaSeconds;
 	if (Wait > 0) return;
-	if (PoseIndex >= Poses.Num()) { FPlatformMisc::RequestExit(false); return; }
+	if (PoseIndex >= Poses.Num())
+	{
+		if (FramingResults.Num() && !FramingOut.IsEmpty())
+		{
+			TSharedPtr<FJsonObject> Doc = MakeShared<FJsonObject>();
+			Doc->SetStringField(TEXT("schema"), TEXT("strides.parite_cadrage/1"));
+			Doc->SetStringField(TEXT("generator"), TEXT("-StridesShots=cso (AStridesShots::MeasureFraming)"));
+			Doc->SetStringField(TEXT("measure"), TEXT("tests/e2e/cso-framing.mjs:31-39 : silhouette du couple projetée par la vue de rendu Unreal (projection du moteur, viewport de la pose) ; part = bas - haut (0 = haut de l'écran) ; web* = mesure du jeu web à la même image (poses.json)"));
+			Doc->SetArrayField(TEXT("poses"), FramingResults);
+			FString Out;
+			FJsonSerializer::Serialize(Doc.ToSharedRef(), TJsonWriterFactory<>::Create(&Out));
+			FFileHelper::SaveStringToFile(Out + TEXT("\n"), *FramingOut, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+			UE_LOG(LogTemp, Display, TEXT("Strides parite: mesures du cadrage écrites dans %s"), *FramingOut);
+			FramingResults.Reset();
+		}
+		FPlatformMisc::RequestExit(false);
+		return;
+	}
 	const FPose& P = Poses[PoseIndex];
 	if (PoseStep == 0)
 	{
@@ -379,6 +603,7 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 	else
 	{
 		UE_LOG(LogTemp, Display, TEXT("Strides parite: %s %s"), *P.Out, IFileManager::Get().FileExists(*P.Out) ? TEXT("écrite") : TEXT("ABSENTE"));
+		if (P.bHasCamRun) MeasureFraming(P, PC);
 		PoseIndex++;
 		PoseStep = 0;
 		Wait = 0.5f;

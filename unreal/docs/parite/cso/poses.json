@@ -578,6 +578,672 @@
    },
    "web": "unreal/docs/parite/cso/chute-barre-1_5s-web.png",
    "unreal": "unreal/docs/parite/cso/chute-barre-1_5s-unreal.png"
+  },
+  {
+   "name": "cadrage-040",
+   "desc": "Caméra de concours à l’image 40 du scénario « cadrage » (tests/e2e/cso-framing.mjs : parcours suivi au pilote des tests depuis 3 m avant la ligne de départ), vue de la caméra du jeu (œil, point visé, FOV vertical appliqué), 15 h, HUD masqué ; couple sur 36,7 % de la hauteur de l’écran.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "frame": 40,
+   "camRun": {
+    "file": "unreal/core/tests/oracles/cso_runs/cadrage.fr.json",
+    "frame": 40
+   },
+   "framing": {
+    "source": "tests/e2e/cso-framing.mjs",
+    "pts": [
+     [
+      0,
+      0,
+      0
+     ],
+     [
+      -1.25,
+      1.55,
+      0
+     ],
+     [
+      1.35,
+      2.05,
+      0
+     ],
+     [
+      0,
+      2.55,
+      0
+     ],
+     [
+      0.9,
+      0,
+      0
+     ],
+     [
+      -1,
+      0,
+      0
+     ]
+    ],
+    "part": 0.3667327594552765,
+    "top": 0.4707316380149783,
+    "bottom": 0.8374643974702548,
+    "jump": false,
+    "ys": [
+     0.7748503198120202,
+     0.6413136331162701,
+     0.5061825975556595,
+     0.4707316380149783,
+     0.7311011425952133,
+     0.8374643974702548
+    ]
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "day": 0,
+   "camDir": [
+    -0.69895,
+    -0.151455,
+    -0.69895
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "web": "unreal/docs/parite/cso/cadrage-040-web.png",
+   "unreal": "unreal/docs/parite/cso/cadrage-040-unreal.png"
+  },
+  {
+   "name": "cadrage-120",
+   "desc": "Caméra de concours à l’image 120 du scénario « cadrage » (tests/e2e/cso-framing.mjs : parcours suivi au pilote des tests depuis 3 m avant la ligne de départ), vue de la caméra du jeu (œil, point visé, FOV vertical appliqué), 15 h, HUD masqué ; couple sur 36,3 % de la hauteur de l’écran.",
+   "hour": 15.135333,
+   "eye": [
+    313.5148348593481,
+    6.406311229626237,
+    -212.61399503045308
+   ],
+   "target": [
+    303.51637865280054,
+    4.116198004753454,
+    -222.6124512370007
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 308.4785413562705,
+    "z": -217.65028853353058,
+    "h": -2.3561944901923404,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "frame": 120,
+   "camRun": {
+    "file": "unreal/core/tests/oracles/cso_runs/cadrage.fr.json",
+    "frame": 120
+   },
+   "framing": {
+    "source": "tests/e2e/cso-framing.mjs",
+    "pts": [
+     [
+      0,
+      0,
+      0
+     ],
+     [
+      -1.25,
+      1.55,
+      0
+     ],
+     [
+      1.35,
+      2.05,
+      0
+     ],
+     [
+      0,
+      2.55,
+      0
+     ],
+     [
+      0.9,
+      0,
+      0
+     ],
+     [
+      -1,
+      0,
+      0
+     ]
+    ],
+    "part": 0.36300892696763576,
+    "top": 0.46310314435852884,
+    "bottom": 0.8261120713261646,
+    "jump": false,
+    "ys": [
+     0.7645940706200266,
+     0.6321731742472209,
+     0.49835310779184894,
+     0.46310314435852884,
+     0.721496912583374,
+     0.8261120713261646
+    ]
+   },
+   "sunDir": [
+    -0.275484,
+    0.765862,
+    0.581002
+   ],
+   "day": 0,
+   "camDir": [
+    -0.698011,
+    -0.159877,
+    -0.698011
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "web": "unreal/docs/parite/cso/cadrage-120-web.png",
+   "unreal": "unreal/docs/parite/cso/cadrage-120-unreal.png"
+  },
+  {
+   "name": "cadrage-200",
+   "desc": "Caméra de concours à l’image 200 du scénario « cadrage » (tests/e2e/cso-framing.mjs : parcours suivi au pilote des tests depuis 3 m avant la ligne de départ), vue de la caméra du jeu (œil, point visé, FOV vertical appliqué), 15 h, HUD masqué ; couple sur 36,3 % de la hauteur de l’écran.",
+   "hour": 15.188667,
+   "eye": [
+    299.9597605719785,
+    6.400002117181676,
+    -223.61217564118797
+   ],
+   "target": [
+    296.634825989343,
+    4.100007878731499,
+    -237.3270963871084
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 298.5004179750353,
+    "z": -230.57937794940383,
+    "h": -2.857070524611155,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "frame": 200,
+   "camRun": {
+    "file": "unreal/core/tests/oracles/cso_runs/cadrage.fr.json",
+    "frame": 200
+   },
+   "framing": {
+    "source": "tests/e2e/cso-framing.mjs",
+    "pts": [
+     [
+      0,
+      0,
+      0
+     ],
+     [
+      -1.25,
+      1.55,
+      0
+     ],
+     [
+      1.35,
+      2.05,
+      0
+     ],
+     [
+      0,
+      2.55,
+      0
+     ],
+     [
+      0.9,
+      0,
+      0
+     ],
+     [
+      -1,
+      0,
+      0
+     ]
+    ],
+    "part": 0.3632213981417575,
+    "top": 0.4615305011398004,
+    "bottom": 0.8247518992815579,
+    "jump": false,
+    "ys": [
+     0.7633179588352812,
+     0.63063618544098,
+     0.4969524763681778,
+     0.4615305011398004,
+     0.720274968390012,
+     0.8247518992815579
+    ]
+   },
+   "sunDir": [
+    -0.28858,
+    0.763289,
+    0.578024
+   ],
+   "day": 0,
+   "camDir": [
+    -0.232539,
+    -0.160857,
+    -0.959193
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "web": "unreal/docs/parite/cso/cadrage-200-web.png",
+   "unreal": "unreal/docs/parite/cso/cadrage-200-unreal.png"
+  },
+  {
+   "name": "cadrage-280",
+   "desc": "Caméra de concours à l’image 280 du scénario « cadrage » (tests/e2e/cso-framing.mjs : parcours suivi au pilote des tests depuis 3 m avant la ligne de départ), vue de la caméra du jeu (œil, point visé, FOV vertical appliqué), 15 h, HUD masqué ; couple sur 36,3 % de la hauteur de l’écran.",
+   "hour": 15.242,
+   "eye": [
+    297.0415503635832,
+    6.400000000710235,
+    -240.84077040168754
+   ],
+   "target": [
+    306.0724177714232,
+    4.100000002700008,
+    -251.7047271760658
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 301.72601298036477,
+    "z": -246.2022031621322,
+    "h": 2.488490758488057,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "frame": 280,
+   "camRun": {
+    "file": "unreal/core/tests/oracles/cso_runs/cadrage.fr.json",
+    "frame": 280
+   },
+   "framing": {
+    "source": "tests/e2e/cso-framing.mjs",
+    "pts": [
+     [
+      0,
+      0,
+      0
+     ],
+     [
+      -1.25,
+      1.55,
+      0
+     ],
+     [
+      1.35,
+      2.05,
+      0
+     ],
+     [
+      0,
+      2.55,
+      0
+     ],
+     [
+      0.9,
+      0,
+      0
+     ],
+     [
+      -1,
+      0,
+      0
+     ]
+    ],
+    "part": 0.3631162951968878,
+    "top": 0.46164504542486773,
+    "bottom": 0.8247613406217555,
+    "jump": false,
+    "ys": [
+     0.7633458136401851,
+     0.6306913840772945,
+     0.49705651776020365,
+     0.46164504542486773,
+     0.720315872606883,
+     0.8247613406217555
+    ]
+   },
+   "sunDir": [
+    -0.30162,
+    0.760597,
+    0.574907
+   ],
+   "day": 0,
+   "camDir": [
+    0.63094,
+    -0.160689,
+    -0.759008
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "web": "unreal/docs/parite/cso/cadrage-280-web.png",
+   "unreal": "unreal/docs/parite/cso/cadrage-280-unreal.png"
+  },
+  {
+   "name": "cadrage-360",
+   "desc": "Caméra de concours à l’image 360 du scénario « cadrage » (tests/e2e/cso-framing.mjs : parcours suivi au pilote des tests depuis 3 m avant la ligne de départ), vue de la caméra du jeu (œil, point visé, FOV vertical appliqué), 15 h, HUD masqué ; couple sur 36,6 % de la hauteur de l’écran.",
+   "hour": 15.295333,
+   "eye": [
+    308.9301095041146,
+    6.400000000000238,
+    -253.24257112540175
+   ],
+   "target": [
+    325.2144846259488,
+    4.100000000000907,
+    -253.43108923431578
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 316.0507858676488,
+    "z": -253.32112199028262,
+    "h": 1.627070319984302,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "frame": 360,
+   "camRun": {
+    "file": "unreal/core/tests/oracles/cso_runs/cadrage.fr.json",
+    "frame": 360
+   },
+   "framing": {
+    "source": "tests/e2e/cso-framing.mjs",
+    "pts": [
+     [
+      0,
+      0,
+      0
+     ],
+     [
+      -1.25,
+      1.55,
+      0
+     ],
+     [
+      1.35,
+      2.05,
+      0
+     ],
+     [
+      0,
+      2.55,
+      0
+     ],
+     [
+      0.9,
+      0,
+      0
+     ],
+     [
+      -1,
+      0,
+      0
+     ]
+    ],
+    "part": 0.36551177586147265,
+    "top": 0.48061725035733527,
+    "bottom": 0.8461290262188079,
+    "jump": false,
+    "ys": [
+     0.7839089108442163,
+     0.6499850333362519,
+     0.5160083754112043,
+     0.48061725035733527,
+     0.7404149509644745,
+     0.8461290262188079
+    ]
+   },
+   "sunDir": [
+    -0.314602,
+    0.757786,
+    0.571652
+   ],
+   "day": 0,
+   "camDir": [
+    0.990107,
+    -0.139842,
+    -0.011462
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "web": "unreal/docs/parite/cso/cadrage-360-web.png",
+   "unreal": "unreal/docs/parite/cso/cadrage-360-unreal.png"
+  },
+  {
+   "name": "cadrage-440",
+   "desc": "Caméra de concours à l’image 440 du scénario « cadrage » (tests/e2e/cso-framing.mjs : parcours suivi au pilote des tests depuis 3 m avant la ligne de départ, cheval en l’air), vue de la caméra du jeu (œil, point visé, FOV vertical appliqué), 15 h, HUD masqué ; couple sur 36,0 % de la hauteur de l’écran.",
+   "hour": 15.348667,
+   "eye": [
+    325.4562508223361,
+    6.4307114071240346,
+    -253.13463765960893
+   ],
+   "target": [
+    338.43432984374783,
+    4.108403030739084,
+    -252.54890363043282
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.5711334191059,
+    "z": -252.80755683493965,
+    "h": 1.524924720763905,
+    "jumpY": 0.9509794575928309,
+    "jumpT": 0.22564917236554077
+   },
+   "frame": 440,
+   "camRun": {
+    "file": "unreal/core/tests/oracles/cso_runs/cadrage.fr.json",
+    "frame": 440
+   },
+   "framing": {
+    "source": "tests/e2e/cso-framing.mjs",
+    "pts": [
+     [
+      0,
+      0,
+      0
+     ],
+     [
+      -1.25,
+      1.55,
+      0
+     ],
+     [
+      1.35,
+      2.05,
+      0
+     ],
+     [
+      0,
+      2.55,
+      0
+     ],
+     [
+      0.9,
+      0,
+      0
+     ],
+     [
+      -1,
+      0,
+      0
+     ]
+    ],
+    "part": 0.3604920012604935,
+    "top": 0.32968387716014047,
+    "bottom": 0.690175878420634,
+    "jump": true,
+    "ys": [
+     0.643742564636808,
+     0.48208672722354085,
+     0.3856311616930778,
+     0.32968387716014047,
+     0.6113317525272634,
+     0.690175878420634
+    ]
+   },
+   "sunDir": [
+    -0.327522,
+    0.754858,
+    0.56826
+   ],
+   "day": 0,
+   "camDir": [
+    0.983395,
+    -0.175969,
+    0.044383
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "web": "unreal/docs/parite/cso/cadrage-440-web.png",
+   "unreal": "unreal/docs/parite/cso/cadrage-440-unreal.png"
   }
  ]
 }

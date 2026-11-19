@@ -73,7 +73,10 @@ en fonctions) ; rien de ce qui se voit ou s'entend n'est prouvé.
 7. **Aucune interface d'épreuve** : HUD texte de débogage (`SG/StridesHUD.cpp:25-79`), minicarte et huit boutons
    tactiles toujours visibles, aucun son dans tout `Source/`.
 8. **Caméra** : 55° horizontaux (≈ 27,1° verticaux en 844 × 390, calcul) contre 58° verticaux (≈ 100,4° horizontaux) :
-   champ vertical environ deux fois plus étroit (`SG/StridesHorse.cpp:63`).
+   champ vertical environ deux fois plus étroit (`SG/StridesHorse.cpp:63`). **Mesuré en T6** (matrice de projection du
+   moteur) : avec l'axe Y maintenu du joueur local, UE 5.8 garde le champ vertical 2 atan(tan(FieldOfView / 2) /
+   AspectRatio) ; la perche (16:9 par défaut) montre 32,6° verticaux à tout format. La caméra de concours de T6 impose
+   l'axe Y et AspectRatio 1 : 58° verticaux, comme le web.
 
 Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGrandTour/StridesGrandTour.uproject:15`,
 `PlatformAllowList: ["Mac"]`), conforme à « jamais dans iOS ».
@@ -236,11 +239,11 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | partiel | compile | `SG/StridesHorse.cpp:53-63` | SpringArm 6,5 m depuis un pivot à 1,85 m, inclinaison −9°, retard 6 ; aucun des paramètres web ; suit 100 % de la parabole (bras sur la racine) |
-| 10 | FOV 58° vertical fixe | partiel | compile | `SG/StridesHorse.cpp:63` | 55° horizontal (≈ 27,1° vertical en 844 × 390, calcul) |
-| 10 | Perche anti-collision (1,0 → 6,6 m, pas 0,4, hauteur 2,2 → 3,4, ≥ 0,8 m du sol) | partiel | compile | `SG/StridesHorse.cpp:53-60` | sonde du SpringArm par défaut (non paramétrée) |
-| 10 | Verrouillage derrière le cavalier, sans orbite ni tremblement | partiel | compile | `SG/StridesHorse.cpp:53-60` | `bUsePawnControlRotation` non modifié (défaut moteur : faux, à confirmer) ; non vérifié à l'écran |
-| 10 | Caméra du monde ouvert rétablie à la sortie (FOV 60 + vitesse, 6,6 m, 2,35 m) | absent | aucun | — | une seule caméra |
+| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | identique_prouve (T6) | teste | `SC/CsoCamera.cpp:36-134`, `SG/StridesHorse.cpp:420-524` | pas porté ligne à ligne, oracle « cc » rejoué à 5,7e-14 m près, montages aux 6 instants ; entrée depuis la perche du portage (caméra du monde ouvert non portée) |
+| 10 | FOV 58° vertical fixe | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:67-81` | axe Y maintenu + AspectRatio 1 : M11 = 1/tan(FOV/2) mesuré sur la projection du moteur ; amorti et paliers de 0,05° portés |
+| 10 | Perche anti-collision (1,0 → 6,6 m, pas 0,4, hauteur 2,2 → 3,4, ≥ 0,8 m du sol) | partiel (T6) | teste | `SC/CsoCamera.cpp:72-102`, `SG/StridesHorse.cpp:433-440` | règles prouvées sonde réinjectée ; sonde du jeu = sphère de 0,45 m sur le canal Camera, pas les colliders du web |
+| 10 | Verrouillage derrière le cavalier, sans orbite ni tremblement | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:473-524` | caméra posée en absolu par le cœur à chaque image, aucune entrée de l'orbite |
+| 10 | Caméra du monde ouvert rétablie à la sortie (FOV 60 + vitesse, 6,6 m, 2,35 m) | absent | aucun | `SG/StridesHorse.cpp:463-471` | coupe franche vers la perche du SpringArm (état commun de `camera.js:270-282` non porté) |
 
 ### 2.11 Arrivée et bilan (§11)
 
@@ -679,6 +682,42 @@ Principes communs :
 - **Dépendances / risques** : T1 ; branchement réaliste après T2. La sonde de collision dépend du décor : ne comparer que
   des poses sans obstacle à la perche, ou réinjecter les distances sondées ; le décor exporté doit être identique (inventaire
   monde).
+
+- **Livré (19/11/2026)** : (1) `SCh/CsoCamera.h`, `SC/CsoCamera.cpp` : `csoCamStep` = `_updateComp` ligne à ligne (lacet
+  à accélération bornée et anticipation, ancrage lissé, perche sondée de 1,0 à 6,6 m par une sonde fournie, recul amorti
+  10 / 2,5 par seconde, obstacle survolé, sol, visée attirée puis lissée, fondu de 1,2 s, FOV 58° amorti appliqué par
+  paliers de plus de 0,05°, snap) ; `CAM_COMP` exporté par `EXP` dans `Content/Data/cso_camera.json` (import de
+  `camera.js` par `vite-node`, sans repli navigateur), relu par `UStridesDataSubsystem::CameraParams`. (2) Banc : canal
+  « cc » dans toutes les exécutions non légères (appels de `_updateComp` : cheval vu par la caméra, obstacle suivant,
+  réponses de la sonde et du sol, œil, point visé, FOV, recul), snap relevé et rejoué ; scénarios `cadrage`
+  (`cso-framing.mjs` au pas fixe, réglages relus dans le test, mesures `fr` aux 6 instants et à 1 instant en l'air),
+  `t6-tribunes`, `t6-mat` (perche bloquée, recul minimal, rapprochement puis éloignement), `t6-entree` (entrée depuis une
+  caméra décalée), `t6-relief`, `t6-survol` (sol et obstacle survolé, hors de la carrière). Les autres canaux des 27
+  exécutions réexportées sont identiques au bit près à ceux de `f6909053`. (3) Preuves : `TC` (`testCamRuns`) rejoue
+  33 exécutions, 5 824 appels, sans recalage, écart max 5,7e-14 m (œil et point visé), FOV et recul exacts ; ctest
+  193 284 vérifications, 0 échec. `Strides.Parite.CsoCamera` (cœur dans le module) : même rejeu, 2,8e-14 m.
+  `Strides.Cso.CameraInGame` : la caméra du cheval du jeu (`StepCourseCamera`, sonde par traces, sol du relief,
+  obstacles du parcours) rejoue `cadrage` : 461 appels, 1,1e-13 m ; projection du moteur en 844 × 390 : M11 =
+  1/tan(FOV/2) (champ vertical), cadrage du couple = web à 6e-8 de la hauteur. `Strides.Cso.RunInGame` : caméra de
+  concours active à l'étape de parcours, quittée à pied. 18 tests Strides en Result={Success}. Mutations : 24 sur 24
+  détectées (`scripts/unreal/mutations-cso-camera.py`). (4) Montages `cso/cadrage-040.png` à `cadrage-440.png` (web à
+  gauche, 844 × 390 de chaque côté) : côté Unreal la caméra n'est pas posée, `-StridesShots=cso` rejoue l'exécution par la
+  caméra du cheval dans le décor chargé ; mesure de `cso-framing.mjs:31-39` sur la vue de rendu = web à moins de 1e-7 de
+  la hauteur aux 6 instants (couple sur 36,7 / 36,3 / 36,3 / 36,3 / 36,6 / 36,0 %, `cso/cadrage-unreal.json`).
+  Démonstration F8 : caméra de concours active, « Arrivée ✓ » en 60,20 s, 0 point (conduite automatique, pas une partie
+  jouée). (5) Limites :
+  - la mesure de `cso-framing.mjs` projette une silhouette fixe (sabots, croupe, tête, casque à 2,55 m) : identique, mais
+    le couple **rendu** n'a pas la même taille. Estimation à l'œil sur `cadrage-120` (±5 px) : environ 182 px de haut au
+    web (cavalier debout sur un cheval au galop, modèles du web) contre 136 px côté Unreal (cheval figé au repos,
+    cavalière assise, autres modèles) : écart des modèles et des poses, pas de la caméra (horizon, tribunes et mâts
+    coïncident) ;
+  - sonde de la perche du jeu : sphère de 0,45 m contre la collision du décor Unreal, pas les colliders du web (non
+    exportés) ; dans la carrière, aux 6 instants, aucune des deux n'a bloqué ; comportement contre les tribunes et les mâts
+    prouvé seulement sonde réinjectée ;
+  - obstacles survolés : ceux du parcours seulement ; entrée : fondu depuis la perche du monde ouvert du portage (champ
+    vertical 32,6°) ; sortie : coupe franche vers la perche, l'état commun de `camera.js:270-282` n'est pas porté
+    (`camera.concours-sortie`) ;
+  - critère « à 1e-6 m près » tenu en double sur le cœur ; le composant Unreal stocke le FOV en `float` (écart 1,3e-6°).
 
 ### T7. HUD d'épreuve UMG (tableau, crans, mot d'appel, astuce, toasts, grand message, masquages)
 

@@ -152,7 +152,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:104-111 et :147-155 (fondu SmoothStep de 0,8 s de la transformation du personnage vers SeatTransform)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran ; TryMount et le fondu de 0,8 s sont inchangés depuis le commit e7d80898 qui a écrit cette ligne). La l.19 (cavalière sur mountpoint_01_0179, repli saddle_0168) décrit le commit 5777b8b7 : depuis 9d167156, StridesHorse.cpp:145 lit saddle_0168 en premier, placement actuel non revérifié à l'écran. Valeurs non issues d'un oracle ; aucune capture côte à côte.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran ; TryMount et le fondu de 0,8 s sont inchangés depuis le commit e7d80898 qui a écrit cette ligne). La l.19 (cavalière sur mountpoint_01_0179, repli saddle_0168) décrit le commit 5777b8b7 : depuis 9d167156, StridesHorse.cpp:161 lit saddle_0168 en premier, placement actuel non revérifié à l'écran. Valeurs non issues d'un oracle ; aucune capture côte à côte.",
   "ecart": "Ni approche ni contournement, ni clés de geste, ni IK étrier/rênes, ni casque ; 0,8 s au lieu d'environ 2,5 s ; le personnage glisse en ligne droite et peut traverser le cheval ; le cheval n'est pas arrêté.",
   "tranche": "b"
  },

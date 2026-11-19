@@ -24,7 +24,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:36) ; pas d'essoufflement, pas d'anneau BOOST.",
+  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:37) ; pas d'essoufflement, pas d'anneau BOOST.",
   "tranche": "h"
  },
  {
@@ -108,7 +108,7 @@
   "unreal": "UStridesProgressionSubsystem::MissionStatus (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:49-57) affiché en ligne jaune par AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:28-34 ObjectiveLines, :74) : pendant l'épreuve du Pôle, objectif de l'épreuve (CsoRun::text) puis l'état de la mission de carrière si l'une est lancée ; hors épreuve, l'état des missions",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Test moteur Strides.Hud.ObjectiveLines (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoRunTests.cpp:287) : choix et ordre des lignes (épreuve en cours avec ou sans mission de carrière, objectif vide, hors épreuve), Result={Success} le 19/11/2026 ; MissionStatus lui-même non couvert ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "preuve": "Test moteur Strides.Hud.ObjectiveLines (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoRunTests.cpp:296) : choix et ordre des lignes (épreuve en cours avec ou sans mission de carrière, objectif vide, hors épreuve), Result={Success} le 19/11/2026 ; MissionStatus lui-même non couvert ; aucune capture côte à côte dans unreal/docs/parite/.",
   "ecart": "Une ligne « <titre> · rejoindre <identifiant de lieu> » (identifiant brut, ex. « home », pas le nom du lieu) ou « Aucune mission active » ; pas d'étiquette, de détail, de chrono, d'alerte, d'animation ni de toucher. Pendant l'épreuve du Pôle (lancée au démarrage), deux lignes : l'objectif de l'épreuve puis la mission de carrière lancée (le web n'a qu'une mission active à la fois : missions.active).",
   "tranche": "e"
  },
@@ -207,7 +207,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Le classement de la qualité est comparé à l'oracle JS unreal/core/tests/oracles/jump.json (unreal/core/tests/test_core.cpp:59 ; CTest 4 944 vérifications, 0 échec, unreal/docs/validation-mac-2026-11-17.md ligne 9) ; l'affichage lui-même n'est couvert par aucun test ni capture côte à côte. Capture non comparative Saved/Screenshots/Strides/09_jeu.png (18/11/2026) : « Dernier appel : far ».",
-  "ecart": "Affiche l'identifiant interne anglais (perfect, bitFar, far…) au lieu des libellés français ; reste affiché indéfiniment au lieu de 1,5 s ; aucune couleur selon la qualité ; qualité brute écrite dès l'appel (AStridesHorse::StartJump, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163), y compris juste avant un refus, sans la réconciliation web avec le jugement.",
+  "ecart": "Affiche l'identifiant interne anglais (perfect, bitFar, far…) au lieu des libellés français ; reste affiché indéfiniment au lieu de 1,5 s ; aucune couleur selon la qualité ; qualité brute écrite dès l'appel (AStridesHorse::StartJump, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:179), y compris juste avant un refus, sans la réconciliation web avec le jugement.",
   "tranche": "a"
  },
  {
@@ -344,7 +344,7 @@
   "js": [
    "src/ui/minimap.js"
   ],
-  "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:118-132), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:111-147)",
+  "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:118-132), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:119-155)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test d'affichage ; Strides.World.Architecture (StridesCoreTests.cpp:69-85) ne vérifie que des effectifs (8 régions, 14 lieux) d'un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export).",
@@ -444,7 +444,7 @@
   "js": [
    "src/ui/phone.js"
   ],
-  "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:63-69 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:149), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:70-74)",
+  "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:63-69 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:157), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:70-74)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Architecture (StridesCoreTests.cpp:83) vérifie seulement 10 applications dans un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; résultat de ce test non consigné dans unreal/docs/validation-mac-2026-11-17.md (seuls Course, Save et Units y figurent) : à confirmer.",
@@ -477,7 +477,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Ni clients, ni statuts, ni métiers ; la catégorie des missions est chargée (StridesDataSubsystem.cpp:140) mais jamais affichée.",
+  "ecart": "Ni clients, ni statuts, ni métiers ; la catégorie des missions est chargée (StridesDataSubsystem.cpp:148) mais jamais affichée.",
   "tranche": "e"
  },
  {

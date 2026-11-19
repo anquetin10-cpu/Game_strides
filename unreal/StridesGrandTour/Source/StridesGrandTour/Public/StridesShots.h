@@ -14,9 +14,17 @@
 // chemins de poses.json en mode cso. Le mode refuse d'écrire (journal « Strides shots: REFUS », aucune capture, sortie)
 // si le dossier retenu est un dossier de captures existantes (Saved/Screenshots/Strides ou MacEditor) non vide : les
 // captures de Julien ne sont jamais écrasées. Mode d'emploi : unreal/docs/parite/README.md.
+//
+// Poses de la caméra de concours (tranche T6, champ camRun de poses.json) : la caméra n'est PAS posée à l'œil du web ;
+// le cheval vu par la caméra et l'obstacle suivant sont relus image par image dans l'oracle du scénario (canal « cc »)
+// et la caméra est calculée par le jeu (AStridesHorse::StepCourseCamera : cœur strides::csoCamStep, sonde par traces
+// dans le décor chargé, sol du relief exporté), puis la capture est faite par la caméra du cheval. Le cadrage de
+// tests/e2e/cso-framing.mjs (part de la hauteur de l'écran occupée par le couple) est mesuré avec la vue de rendu et
+// écrit, avec l'écart à l'œil, au point visé et au FOV du web, dans <dossier des captures>/cadrage-unreal.json.
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "StridesCore/CsoCamera.h"
 #include "StridesShots.generated.h"
 
 UCLASS()
@@ -40,6 +48,17 @@ public:
 	static FString DefaultShotsDir();  // Saved/Screenshots/Strides du projet
 	static TArray<FString> ProtectedShotsDirs();  // Saved/Screenshots/Strides et Saved/Screenshots/MacEditor du projet
 	static bool DirHasFiles(const FString& Dir);
+	// Cadrage de tests/e2e/cso-framing.mjs:31-39 : ordonnée d'écran (0 = haut, 1 = bas) de chaque point de la silhouette
+	// (Pts : [avance le long du cap, hauteur] en m, repère web) du couple posé en (X, Z), cap Heading, pieds à Y0, vu par
+	// View dans un viewport Width × Height, projection du moteur avec la contrainte d'axe de la vue (sinon celle du
+	// joueur local).
+	static TArray<double> FramingYs(const struct FMinimalViewInfo& View, int32 Width, int32 Height, double X, double Z, double Heading, double Y0, const TArray<FVector2D>& Pts);
+	// Rejoue par la caméra du cheval (StepCourseCamera) les appels du canal « cc » d'une exécution de l'oracle
+	// (unreal/core/tests/oracles/cso_runs/<id>.<lang>.json) jusqu'à l'image LastFrame comprise (−1 : toutes) : cheval vu
+	// par la caméra et obstacle suivant relus, sol sous le cheval pris dans le relief du jeu ; OnCall reçoit chaque appel
+	// (image, sortie du jeu, appel relevé). Rend false, motif dans Why, si l'exécution n'a pas de canal caméra.
+	static bool ReplayCourseCamera(class AStridesHorse* Horse, const TSharedPtr<class FJsonObject>& Run, int32 LastFrame,
+		TFunctionRef<void(int32, const strides::CsoCamOut&, const TSharedPtr<class FJsonObject>&)> OnCall, FString& Why);
 
 private:
 	struct FShot { FString Name; FVector Eye; FVector Target; };
@@ -76,10 +95,24 @@ private:
 		bool bHasCourse = false;
 		TArray<double> CourseHeights;
 		int32 CourseHighlight = -1;
+		// Caméra de concours (tranche T6) : exécution de l'oracle rejouée jusqu'à l'image CamRunFrame, mesure du cadrage
+		// du web (part, haut, bas) et silhouette du test.
+		bool bHasCamRun = false;
+		FString CamRunFile;
+		int32 CamRunFrame = 0;
+		TArray<FVector2D> FramingPts;
+		double WebPart = 0, WebTop = 0, WebBottom = 0;
+		bool bFramingJump = false;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);
 	void ApplyPose(const FPose& P, class APlayerController* PC);
+	void ApplyCamRunPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
+	void MeasureFraming(const FPose& P, class APlayerController* PC);
+	TSharedPtr<class FJsonObject> CamRunCache;
+	FString CamRunCacheFile;
+	TArray<TSharedPtr<class FJsonValue>> FramingResults;
+	FString FramingOut;
 	TArray<FPose> Poses;
 	int32 PoseIndex = -1;
 	int32 PoseStep = 0;

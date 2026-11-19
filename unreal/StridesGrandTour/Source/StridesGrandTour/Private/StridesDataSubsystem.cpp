@@ -89,6 +89,14 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		double W = 0;
 		if (J->TryGetNumberField(TEXT("csoFenceWidth"), W)) CsoFenceWidth = W;
 	}
+	if (LoadJson(TEXT("cso_camera.json"), J))
+	{
+		auto N = [&J](const TCHAR* K, double& Out) { J->TryGetNumberField(K, Out); };
+		N(TEXT("back"), CamP.back); N(TEXT("up"), CamP.up); N(TEXT("lookAhead"), CamP.lookAhead); N(TEXT("lookUp"), CamP.lookUp);
+		N(TEXT("fenceBias"), CamP.fenceBias); N(TEXT("fenceRange"), CamP.fenceRange); N(TEXT("lead"), CamP.lead); N(TEXT("yawK"), CamP.yawK);
+		N(TEXT("yawAcc"), CamP.yawAcc); N(TEXT("posK"), CamP.posK); N(TEXT("yK"), CamP.yK); N(TEXT("jumpFollow"), CamP.jumpFollow);
+		N(TEXT("fov"), CamP.fov); N(TEXT("minBack"), CamP.minBack); N(TEXT("fenceClear"), CamP.fenceClear); N(TEXT("enter"), CamP.enter);
+	}
 	// Parcours : tracé du fichier (commandes F/L/R/J/M) ; à défaut, le tracé du Pôle compilé dans StridesCore.
 	PoleDesign = strides::poleDesign();
 	if (LoadJson(TEXT("cso_course_pole.json"), J))

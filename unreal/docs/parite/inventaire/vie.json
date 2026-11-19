@@ -52,7 +52,7 @@
    "src/gameplay/story.js",
    "src/gameplay/story2.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:137-143).",
+  "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:145-151).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:87-116) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement que chaque prérequis est défini plus haut dans le JSON : il resterait vert avec les arêtes du web (transport après fugueur, etc.) comme avec IsAvailable cassé. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -211,7 +211,7 @@
    "src/config.js",
    "src/core/save.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:144-148), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49).",
+  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:152-156), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:69-85) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement qu'il y a 5 rangs : ni seuils, ni noms, ni RankName ne sont testés. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -314,7 +314,7 @@
    "src/gameplay/story2.js",
    "src/gameplay/parisGP.js"
   ],
-  "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:137-143.",
+  "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:145-151.",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.World.Architecture et Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:69-116) : journal Automation du 18/11/2026 16:17 UTC (/private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt) : Result=Success, EXIT CODE 0 ; ils comptent 16 missions et totalisent 7 520 crédits et 5 980 de réputation, valeurs du JSON. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -904,7 +904,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:108-110).",
+  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:124-126).",
   "ecart": "Performance indépendante de l'état du cheval.",
   "tranche": "d"
  },
@@ -1105,7 +1105,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:108-110).",
+  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:124-126).",
   "ecart": "Aucun bonus d'équipement.",
   "tranche": "e"
  },
@@ -1236,11 +1236,11 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:31, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:47-64 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:108-110).",
+  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:31, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:47-64 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:124-126).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Export automatique depuis le JS (valeurs relues identiques à data.js le 18/11/2026), mais aucun test C++ ne compare ces profils à un oracle.",
-  "ecart": "SpeedMul et StaminaMul chargés mais non appliqués ; prix, valeur, description et robe détaillée de Tripo ignorés ; un seul cheval dans le monde (ProfileId comete, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:25).",
+  "ecart": "SpeedMul et StaminaMul chargés mais non appliqués ; prix, valeur, description et robe détaillée de Tripo ignorés ; un seul cheval dans le monde (ProfileId comete, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:30).",
   "tranche": "socle"
  },
  {

@@ -2,12 +2,17 @@
 // (strides::csoHorseStep, portage de csoRide.js + horse.js + obstacles.js target / timing / refuse, prouvé par les
 // oracles du jeu web : unreal/core/tests/oracles/cso_runs/, cso_target.json). Monde ouvert (allures) : code d'origine,
 // hors du périmètre du portage. Siège du cavalier.
+// Caméra : perche du monde ouvert (code d'origine) ; en épreuve (game.course.camera du jeu web : CsoRun::course().active,
+// cavalier en selle), caméra de concours pilotée par le cœur (strides::csoCamStep, portage de camera.js _updateComp,
+// tranche T6) : le jeu fournit la sonde de la perche (traces du moteur) et le sol, puis applique œil, point visé et FOV
+// VERTICAL (axe Y maintenu, imposé sur la caméra de concours).
 // Simulation en unités SI dans le repère web (x, z, cap h), convertie à chaque image (StridesUnits.h). Le maillage est
 // une forme de base tant que le cheval PJL n'est pas importé (voir unreal/docs/relais-mac.md) : la simulation ne dépend
 // pas du maillage (clips sur place, pas de root motion).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/JumpModel.h"
@@ -67,6 +72,24 @@ public:
 	// Point d'assise du cavalier (repère monde Unreal).
 	FTransform SeatTransform() const;
 
+	// Caméra de concours (tranche T6). Une image : cheval vu par la caméra, obstacle suivant (rang dans Course->Obstacles(),
+	// −1 : aucun), snap (instant). Sonde de la perche : CameraBlockedAt ; sol : GroundAt ; obstacles survolés : ceux du
+	// parcours. Applique œil, point visé et FOV vertical à CourseCameraComponent() et l'active.
+	strides::CsoCamOut StepCourseCamera(double Dt, const strides::CsoCamHorse& HorseView, int32 NextIndex, bool bInstant = false);
+	// Fin de l'épreuve : caméra de concours désactivée, perche du monde ouvert rétablie (sans l'état commun recalé du web).
+	void LeaveCourseCamera();
+	// Caméra précédente vue par l'entrée de la caméra de concours (position web, FOV lissé et appliqué) : par défaut la
+	// perche du monde ouvert ; posée par les tests et les captures pour repartir de la caméra du jeu web.
+	void SetCameraBefore(const strides::CsoVec3& Eye, double Fov, double CamFov);
+	bool IsCourseCameraActive() const { return CamState.active; }
+	const strides::CsoCamState& CourseCameraState() const { return CamState; }
+	class UCameraComponent* CourseCameraComponent() const { return CourseCamera; }
+	// Sonde (colliders.cameraBlocked du jeu web) : sphère de 0,45 m (marge du web) au point (repère web) contre ce qui bloque
+	// le canal Camera, sans le cheval ni le cavalier.
+	bool CameraBlockedAt(double WebX, double WebY, double WebZ) const;
+	// Cheval vu par la caméra : état du cœur, sol sous le cheval.
+	strides::CsoCamHorse CameraHorse() const;
+
 protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USceneComponent> Root;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UStaticMeshComponent> Body;
@@ -75,6 +98,8 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USkeletalMeshComponent> HairMesh;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USpringArmComponent> Boom;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> Camera;
+	// Caméra de concours (position et orientation absolues, posées à chaque image par StepCourseCamera).
+	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> CourseCamera;
 
 private:
 	void TickCso(float Dt);
@@ -82,6 +107,7 @@ private:
 	void TickDemo();
 	void StartOpenWorldJump();
 	void UpdateAnimation();
+	void UpdateCourseCamera(float Dt);
 	const class UStridesDataSubsystem* DataSub() const;
 	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
 	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpCanterAnimation;
@@ -105,4 +131,8 @@ private:
 	strides::JumpPlan Plan;
 	bool bDemoCourse = false;
 	int32 DemoPoint = 1;
+	// Caméra de concours : état du cœur, obstacles vus par la caméra, caméra précédente posée par SetCameraBefore.
+	strides::CsoCamState CamState;
+	std::vector<strides::CsoCamFence> CamFences;
+	bool bCameraBefore = false;
 };

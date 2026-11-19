@@ -4,6 +4,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
@@ -141,6 +142,8 @@ public:
 	const strides::CsoHorseParams& HorseParams() const { return HorseP; }
 	// Obstacles de concours (cso_horse.json : HIND_TRAIL de obstacles.js, tranche T3).
 	const strides::CsoFenceParams& FenceParams() const { return FenceP; }
+	// Caméra de concours (cso_camera.json : CAM_COMP de camera.js, tranche T6 ; fov = champ VERTICAL en degrés).
+	const strides::CsoCamParams& CameraParams() const { return CamP; }
 	const strides::CourseDesign& PoleCourse() const { return PoleDesign; }
 	// Déroulé de l'épreuve du Pôle (tranche T4) : règles, lignes et entrée de piste de cso_course_pole.json (objet
 	// « run »), libellés des obstacles dans l'ordre du tracé ; faux si absent ou illisible.
@@ -160,6 +163,7 @@ private:
 	strides::CsoRideParams RideP;
 	strides::CsoHorseParams HorseP;
 	strides::CsoFenceParams FenceP;
+	strides::CsoCamParams CamP;
 	strides::CourseDesign PoleDesign;
 	TMap<FString, float> CourseSpeeds;
 	std::string PoleCourseJson;

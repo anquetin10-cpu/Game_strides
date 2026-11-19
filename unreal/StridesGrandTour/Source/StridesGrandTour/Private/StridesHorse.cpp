@@ -12,6 +12,7 @@
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
+#include "StridesRider.h"
 #include "StridesUnits.h"
 
 AStridesHorse::AStridesHorse()
@@ -63,6 +64,21 @@ AStridesHorse::AStridesHorse()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Boom);
 	Camera->FieldOfView = 55.f;
+	// Caméra de concours (tranche T6) : inactive hors épreuve ; position et orientation posées en absolu à chaque image par
+	// StepCourseCamera ; FieldOfView = champ VERTICAL du jeu web (camera.js : 58°). Mesuré sur la projection du moteur
+	// (Strides.Cso.CameraInGame) : avec l'axe Y maintenu, UE 5.8 garde le champ vertical 2 atan(tan(FOV / 2) / AspectRatio)
+	// (FieldOfView y reste horizontal au rapport AspectRatio de la caméra, 16:9 par défaut) ; d'où axe Y imposé ET
+	// AspectRatio 1 (sans bandes : bConstrainAspectRatio faux), pour que FieldOfView soit le champ vertical à tout format.
+	CourseCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CourseCamera"));
+	CourseCamera->SetupAttachment(Root);
+	CourseCamera->SetUsingAbsoluteLocation(true);
+	CourseCamera->SetUsingAbsoluteRotation(true);
+	CourseCamera->bConstrainAspectRatio = false;
+	CourseCamera->SetAspectRatio(1.f);
+	CourseCamera->bOverrideAspectRatioAxisConstraint = true;
+	CourseCamera->SetAspectRatioAxisConstraint(EAspectRatioAxisConstraint::AspectRatio_MaintainYFOV);
+	CourseCamera->FieldOfView = 58.f;
+	CourseCamera->SetAutoActivate(false);
 }
 
 void AStridesHorse::BeginPlay()
@@ -330,6 +346,8 @@ void AStridesHorse::TickCso(float Dt)
 	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
 	bJumping = Sim.jumpT >= 0;
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Sim.jumpY, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+	// Caméra après le cheval et les obstacles, avant le déroulé de l'épreuve (ordre de src/game.js:1489-1507).
+	UpdateCourseCamera(Dt);
 	if (Course)
 	{
 		// Déroulé de l'épreuve (Run.update) après le cheval et les obstacles ; la sortie de piste ramène la cadence vers
@@ -387,6 +405,7 @@ void AStridesHorse::TickOpenWorld(float Dt)
 	}
 	Sim.x = X; Sim.z = Z; Sim.heading = H; Sim.speed = SpeedMS; Sim.jumpT = bJumping ? 0 : -1; Sim.hasCadence = false;
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+	UpdateCourseCamera(Dt);
 	if (Course)
 	{
 		strides::CsoCadence Cad;
@@ -394,4 +413,112 @@ void AStridesHorse::TickOpenWorld(float Dt)
 		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.
 		Course->UpdateFences(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, X, Z);
 	}
+}
+
+// ---------- Caméra de concours (tranche T6) ----------
+
+strides::CsoCamHorse AStridesHorse::CameraHorse() const
+{
+	strides::CsoCamHorse V;
+	V.x = Sim.x;
+	V.z = Sim.z;
+	V.heading = Sim.heading;
+	V.yawRate = Sim.yawRate;
+	V.jumpT = Sim.jumpT;
+	V.jumpY = Sim.jumpY;
+	V.groundY = GroundAt(Sim.x, Sim.z);
+	return V;
+}
+
+bool AStridesHorse::CameraBlockedAt(double WebX, double WebY, double WebZ) const
+{
+	const UWorld* W = GetWorld();
+	if (!W) return false;
+	FCollisionQueryParams Q(SCENE_QUERY_STAT(StridesCourseCamera), false, this);
+	if (Rider) Q.AddIgnoredActor(Rider.Get());
+	return W->OverlapBlockingTestByChannel(StridesUnits::WebToUE(WebX, WebY, WebZ), FQuat::Identity, ECC_Camera, FCollisionShape::MakeSphere(45.f), Q);
+}
+
+void AStridesHorse::SetCameraBefore(const strides::CsoVec3& Eye, double Fov, double CamFov)
+{
+	CamState.eye = Eye;
+	CamState.fov = Fov;
+	CamState.camFov = CamFov;
+	bCameraBefore = true;
+}
+
+void AStridesHorse::UpdateCourseCamera(float Dt)
+{
+	// camera.js:74 : branche concours quand le joueur est à cheval et que l'épreuve est en mode concours
+	// (game.course.camera : de l'entrée en piste à la fin de la sortie de piste).
+	const strides::CsoRun* Run = Course ? Course->Run() : nullptr;
+	if (!Run || !Run->course().active || !Rider)
+	{
+		LeaveCourseCamera();
+		return;
+	}
+	StepCourseCamera(Dt, CameraHorse(), Run->course().next, false);
+}
+
+void AStridesHorse::LeaveCourseCamera()
+{
+	if (CamState.active) strides::csoCamLeave(CamState);
+	if (CourseCamera && CourseCamera->IsActive())
+	{
+		CourseCamera->Deactivate();
+		if (Camera) Camera->Activate();
+	}
+}
+
+strides::CsoCamOut AStridesHorse::StepCourseCamera(double Dt, const strides::CsoCamHorse& HorseView, int32 NextIndex, bool bInstant)
+{
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::CsoCamParams& P = Data ? Data->CameraParams() : strides::csoCamDefaults();
+	if (!CamState.active && !bCameraBefore && Camera)
+	{
+		// Entrée (camera.js:191-204) : la caméra de concours part de la perche du monde ouvert, position et FOV. Champ
+		// vertical de la perche : axe Y maintenu par le joueur local d'UE 5.8 (BaseEngine.ini [/Script/Engine.LocalPlayer])
+		// au rapport AspectRatio de la perche, soit 2 atan(tan(FieldOfView / 2) / AspectRatio).
+		double Ex, Ey, Ez;
+		StridesUnits::UEToWeb(Camera->GetComponentLocation(), Ex, Ey, Ez);
+		CamState.eye = strides::CsoVec3{Ex, Ey, Ez};
+		const double HalfV = FMath::Atan(FMath::Tan(FMath::DegreesToRadians((double)Camera->FieldOfView) / 2) / FMath::Max(0.1, (double)Camera->AspectRatio));
+		CamState.fov = CamState.camFov = FMath::RadiansToDegrees(2 * HalfV);
+	}
+	bCameraBefore = false;
+	// Obstacles survolés (camera.js:233-238 : game.obstacles.list) : ceux du parcours, au sol du relief.
+	CamFences.clear();
+	static const std::vector<strides::CsoObstacle> NoObstacles;
+	const std::vector<strides::CsoObstacle>& Obs = Course ? Course->Obstacles() : NoObstacles;
+	for (const strides::CsoObstacle& O : Obs)
+	{
+		strides::CsoCamFence F;
+		F.x = O.x; F.z = O.z; F.nx = O.n.x; F.nz = O.n.z; F.tx = O.t.x; F.tz = O.t.z;
+		F.w = O.w; F.depth = O.depth; F.ground = GroundAt(O.x, O.z); F.h = O.h; F.off = O.off;
+		CamFences.push_back(F);
+	}
+	strides::CsoCamInput In;
+	In.dt = Dt;
+	In.instant = bInstant;
+	In.horse = HorseView;
+	if (NextIndex >= 0 && NextIndex < (int32)Obs.size())
+	{
+		In.hasNext = true;
+		In.nextX = Obs[NextIndex].x;
+		In.nextZ = Obs[NextIndex].z;
+	}
+	In.fences = &CamFences;
+	In.blocked = [this](double Bx, double By, double Bz) { return CameraBlockedAt(Bx, By, Bz); };
+	In.ground = [this](double Gx, double Gz) { return GroundAt(Gx, Gz); };
+	const strides::CsoCamOut Out = strides::csoCamStep(CamState, In, P);
+	const FVector Eye = StridesUnits::WebToUE(Out.eye.x, Out.eye.y, Out.eye.z);
+	const FVector Look = StridesUnits::WebToUE(Out.look.x, Out.look.y, Out.look.z);
+	CourseCamera->SetWorldLocationAndRotation(Eye, (Look - Eye).Rotation());
+	CourseCamera->SetFieldOfView((float)Out.fov);
+	if (!CourseCamera->IsActive())
+	{
+		if (Camera) Camera->Deactivate();
+		CourseCamera->Activate();
+	}
+	return Out;
 }

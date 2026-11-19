@@ -15,7 +15,8 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 |---|---|---|
 | `unreal/StridesGrandTour/Content/Data/*.json` | `npx vite-node scripts/unreal/export-data.mjs` | données lues par le jeu Unreal (constantes extraites du source JS) |
 | `unreal/core/tests/oracles/{jump,cso_ride,cso_course,cso_text}.json` | idem | cas de référence des fonctions pures |
-| `unreal/core/tests/oracles/cso_runs/` | `export-cso-runs.mjs` (jeu web en cours d'exécution) | scénarios rejoués image par image : `index.json` (en-tête des canaux, liste des exécutions) et un fichier par scénario et par langue, `<id>.<lang>.json` |
+| `unreal/core/tests/oracles/cso_runs/` | `export-cso-runs.mjs` (jeu web en cours d'exécution) | scénarios rejoués image par image : `index.json` (en-tête des canaux, liste des exécutions) et un fichier par scénario et par langue, `<id>.<lang>.json` ; canal « cc » de la caméra de concours (tranche T6) dans toutes les exécutions non légères, scénario `cadrage` = `tests/e2e/cso-framing.mjs` au pas fixe |
+| `unreal/StridesGrandTour/Content/Data/cso_camera.json` | `export-data.mjs` | réglages `CAM_COMP` de `src/entities/camera.js` (tranche T6 ; `fov` = champ vertical, degrés) |
 | `unreal/core/tests/oracles/cso_target.json`, `cso_goto.json` | idem | grille de visée et d'appui ; étape « rejoindre l'entrée » |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
@@ -68,7 +69,7 @@ cmake -S unreal/core -B build/core && cmake --build build/core && ctest --test-d
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides; Quit" -unattended -nullrhi -nosplash -log -stdout \
   -ReportExportPath="$PWD/.tmp/automation" > .tmp/automation.log   # chaque test : Result={Success}
-python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py, mutations-cso-run.py
+python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py, mutations-cso-run.py, mutations-cso-camera.py
 ```
 
 - `ctest` lance `strides_core_tests <oracles> <Content/Data>` : lecture de `cso_runs/` par `loadRuns`
@@ -90,7 +91,15 @@ Web (poses écrites dans `unreal/docs/parite/cso/poses.json`, captures `<pose>-w
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots        # toutes les poses
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=chute  # chute de barre seule
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=carriere  # carrière, lignes, poteau
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=cadrage   # caméra de concours (T6)
 ```
+
+Poses `cadrage-NNN` (tranche T6) : vue de la caméra du jeu web aux 6 instants de `tests/e2e/cso-framing.mjs` (scénario
+`cadrage`, image NNN), avec la mesure du cadrage du web (`framing`) et l'exécution de l'oracle à rejouer (`camRun`). Le
+script vérifie que la partie jouée pendant les captures est celle de l'oracle (cheval, caméra, snap). Côté Unreal, la
+caméra n'est pas posée : `-StridesShots=cso` rejoue l'exécution par la caméra du cheval
+(`AStridesHorse::StepCourseCamera` : sonde par traces dans le décor chargé, sol du relief exporté) jusqu'à l'image, capture
+par cette caméra, mesure le cadrage sur la vue de rendu et écrit `cadrage-unreal.json` dans le dossier des captures.
 
 Chaque pose relève aussi l'état des obstacles dans le jeu web au moment de la capture (`course` : hauteurs dans l'ordre
 du parcours, numéro surligné) ; `-StridesShots=cso` le pose sur le parcours Unreal avant la capture.
@@ -108,8 +117,10 @@ Unreal (rendu GPU réel, jamais `-nullrhi` ; une seule instance d'UnrealEditor, 
   (`unreal/docs/parite/cso/<pose>-unreal.png`, versionné) ; avec, au même nom dans le dossier donné (essai sans toucher
   les captures versionnées).
 - FOV : le web règle un FOV **vertical** ; UE 5.8 maintient l'axe **Y** par défaut (`AspectRatio_MaintainYFOV`). La
-  caméra de capture impose l'axe **X** et reçoit le FOV horizontal équivalent (`AStridesShots::HorizontalFov`) ; la
-  caméra de jeu garde le réglage par défaut.
+  caméra de capture des poses fixes impose l'axe **X** et reçoit le FOV horizontal équivalent
+  (`AStridesShots::HorizontalFov`). La caméra de concours du cheval (tranche T6) impose l'axe **Y** et reçoit le FOV
+  vertical du web tel quel (vérifié par `Strides.Cso.CameraInGame` : projection du moteur en 844 × 390 = projection du
+  web). La perche du monde ouvert garde le réglage du joueur local (axe Y : ses 55° sont verticaux).
 - Contrôle : `grep "Strides parite" .tmp/shots-cso.log` (pose, FOV vertical → horizontal, soleil, « écrite ») et
   `sips -g pixelWidth -g pixelHeight <capture>`.
 

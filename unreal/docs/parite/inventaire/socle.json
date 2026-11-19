@@ -137,7 +137,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "Tick du moteur : AStridesHorse::Tick (StridesHorse.cpp:178), AStridesWorldDirector::Tick (StridesWorldDirector.cpp:48-72), AStridesHUD::DrawHUD (StridesHUD.cpp:25)",
+  "unreal": "Tick du moteur : AStridesHorse::Tick (StridesHorse.cpp:194), AStridesWorldDirector::Tick (StridesWorldDirector.cpp:48-72), AStridesHUD::DrawHUD (StridesHUD.cpp:25)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:14-15 (démarrage en jeu, boucle monter / galop 8,0 m/s / descendre / sauver / recharger) ; aucun test de pas de temps.",
@@ -268,7 +268,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "AStridesGameMode::StartPlay (StridesGameMode.cpp:84-94) : un seul AStridesHorse (ProfileId « comete » par défaut, StridesHorse.h:25) placé à WorldSpawn, cavalier à 2 m côté montoir",
+  "unreal": "AStridesGameMode::StartPlay (StridesGameMode.cpp:84-94) : un seul AStridesHorse (ProfileId « comete » par défaut, StridesHorse.h:30) placé à WorldSpawn, cavalier à 2 m côté montoir",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:14-16 (démarrage, modèles cheval et cavalière en place).",
@@ -328,7 +328,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Le saut Unreal passe une marge d'équipement nulle (StridesHorse.cpp:157, JumpHorse{..., 0.0, ...}) ; pas d'équipement.",
+  "ecart": "Le saut Unreal passe une marge d'équipement nulle (StridesHorse.cpp:173, JumpHorse{..., 0.0, ...}) ; pas d'équipement.",
   "tranche": "e"
  },
  {
@@ -727,7 +727,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Sous MinJumpSpeed le saut est ignoré sans message (StridesHorse.cpp:245) ; pas d'endurance.",
+  "ecart": "Sous MinJumpSpeed le saut est ignoré sans message (StridesHorse.cpp:261) ; pas d'endurance.",
   "tranche": "a"
  },
  {
@@ -809,11 +809,11 @@
   "js": [
    "src/config.js"
   ],
-  "unreal": "horse_gaits.json exporté par scripts/unreal/export-data.mjs:30, lu par StridesDataSubsystem.cpp:31-46 ; seuls servent les noms d'allure (HUD, StridesHUD.cpp:35), jumpPeak (StridesHorse.cpp:110) et minJumpSpeed (StridesHorse.cpp:245) ; la vitesse cible par allure (StridesHorse.cpp:236) est une branche morte, bCsoControls valant toujours vrai (StridesHorse.h:27, jamais remis à faux dans Source/)",
+  "unreal": "horse_gaits.json exporté par scripts/unreal/export-data.mjs:30, lu par StridesDataSubsystem.cpp:31-46 ; seuls servent les noms d'allure (HUD, StridesHUD.cpp:35), jumpPeak (StridesHorse.cpp:126) et minJumpSpeed (StridesHorse.cpp:261) ; la vitesse cible par allure (StridesHorse.cpp:252) est une branche morte, bCsoControls valant toujours vrai (StridesHorse.h:32, jamais remis à faux dans Source/)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:18 (PAS, TROT, GALOP, GRAND GALOP déclenchés et lus au HUD) ; données exportées du JS mais aucun test C++ ne les compare.",
-  "ecart": "Vitesses d'allure jamais appliquées : même hors épreuve, la vitesse suit la cadence de concours (StridesHorse.cpp:231-233, plafond maxSpeed 8 m/s de cso_ride.json) et l'allure affichée est déduite de la vitesse par des seuils codés en dur 0,2 / 3,2 / 5,5 / 7,0 m/s (StridesHorse.cpp:282 ; clip GRAND GALOP dès 7 m/s, unreal/docs/validation-mac-2026-11-17.md:18) ; GALOP 9,72 m/s et GRAND GALOP 14 m/s inatteignables ; ALLURE +/- sans effet durable (GaitIndex réécrit à chaque image) ; endurance (stamina, gallopDrain, staminaRegen) et jumpDuration non lus.",
+  "ecart": "Vitesses d'allure jamais appliquées : même hors épreuve, la vitesse suit la cadence de concours (StridesHorse.cpp:247-249, plafond maxSpeed 8 m/s de cso_ride.json) et l'allure affichée est déduite de la vitesse par des seuils codés en dur 0,2 / 3,2 / 5,5 / 7,0 m/s (StridesHorse.cpp:298 ; clip GRAND GALOP dès 7 m/s, unreal/docs/validation-mac-2026-11-17.md:18) ; GALOP 9,72 m/s et GRAND GALOP 14 m/s inatteignables ; ALLURE +/- sans effet durable (GaitIndex réécrit à chaque image) ; endurance (stamina, gallopDrain, staminaRegen) et jumpDuration non lus.",
   "tranche": "socle"
  },
  {
@@ -958,7 +958,7 @@
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15.",
-  "ecart": "Manquent sifflet, carte, pause, caméra, klaxon, Tab, F, Entrée ; M lance la mission suivante au lieu d'ouvrir la carte ; Maj / Ctrl = allure +/- à l'appui, sans effet durable (allure recalculée depuis la vitesse, StridesHorse.cpp:282), pas de BOOST maintenu ; manette en plus du web.",
+  "ecart": "Manquent sifflet, carte, pause, caméra, klaxon, Tab, F, Entrée ; M lance la mission suivante au lieu d'ouvrir la carte ; Maj / Ctrl = allure +/- à l'appui, sans effet durable (allure recalculée depuis la vitesse, StridesHorse.cpp:298), pas de BOOST maintenu ; manette en plus du web.",
   "tranche": "socle"
  },
  {
@@ -972,7 +972,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; aucun appareil iOS détecté (unreal/docs/validation-mac-2026-11-17.md:44-45).",
-  "ecart": "Déclenchement au clic (relâchement, OnClicked) : aucun maintien possible ; jeu de boutons différent (ni action contextuelle, ni sifflet, ni carte, ni pause) ; libellés français codés en dur ; ALLURE + / ALLURE - sans effet durable (allure recalculée depuis la vitesse, StridesHorse.cpp:282).",
+  "ecart": "Déclenchement au clic (relâchement, OnClicked) : aucun maintien possible ; jeu de boutons différent (ni action contextuelle, ni sifflet, ni carte, ni pause) ; libellés français codés en dur ; ALLURE + / ALLURE - sans effet durable (allure recalculée depuis la vitesse, StridesHorse.cpp:298).",
   "tranche": "h"
  },
  {
@@ -1366,7 +1366,7 @@
    "src/game.js",
    "src/main.js"
   ],
-  "unreal": "Option -TouchControls (StridesPlayerController.cpp:87) ; captures AStridesShots si demandées (StridesGameMode.cpp:107), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:55-98, résolution avant toute capture :119-134) ; démo du parcours F8 (StridesPlayerController.cpp:60, 155)",
+  "unreal": "Option -TouchControls (StridesPlayerController.cpp:87) ; captures AStridesShots si demandées (StridesGameMode.cpp:107), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:59-102, résolution avant toute capture :119-134) ; démo du parcours F8 (StridesPlayerController.cpp:60, 155)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Dossier de sortie des captures : test moteur Strides.Shots.OutputDir (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesShotsTests.cpp ; Result={Success} le 19/11/2026 : dossier protégé non vide refusé avec ou sans l'option, dossier vide accepté, option absolue ou relative à la racine du dépôt, mode cso sans option sur les chemins de poses.json, capture préexistante intacte, -StridesShots sans option refusé tant que Saved/Screenshots/Strides contient des fichiers). Essais réels du 19/11/2026 (jeu -game, rendu Metal) : -StridesShots sans option : journal « Strides shots: REFUS, aucune capture écrite », sortie à l'image 1, les 33 fichiers de Saved/Screenshots/Strides et MacEditor identiques avant et après (shasum, date, taille) ; -StridesShots=cso -StridesPose=carriere -StridesShotsDir=<dossier absolu> : carriere-aerienne-unreal.png écrite dans ce dossier en 844 × 390 (sips), captures versionnées de unreal/docs/parite/cso inchangées ; -StridesShots -StridesShotsDir=.tmp/shots/r0-essai (relatif à la racine du dépôt) : 26 captures dans ce dossier, parcours de démonstration jusqu'à l'arrivée. Aucun test des autres options (-TouchControls, F8).",
@@ -1439,7 +1439,7 @@
   "js": [
    "src/core/noise.js"
   ],
-  "unreal": "Pas de bruit : relief échantillonné dans la grille exportée (scripts/unreal/world-export.js:64-66 → terrain.bin ; StridesDataSubsystem.cpp:179-197, TerrainHeight)",
+  "unreal": "Pas de bruit : relief échantillonné dans la grille exportée (scripts/unreal/world-export.js:64-66 → terrain.bin ; StridesDataSubsystem.cpp:187-205, TerrainHeight)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Scenery (StridesCoreTests.cpp:118-131) compare 4 hauteurs de la grille à des valeurs recopiées à la main d'analyticHeight, sans oracle exporté, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13.",

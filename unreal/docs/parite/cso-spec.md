@@ -482,8 +482,11 @@ verrouillée derrière le cavalier, pas d'orbite au doigt, pas de tremblement (`
 - Perche anti-collision : sondage de 1,0 à 6,6 m par pas de 0,4, hauteur 2,2 → 3,4 ; recul amorti 10 /s en
   rapprochement, 2,5 /s en éloignement ; caméra au moins 0,8 m au-dessus du sol (`camera.js:219-239`).
 - Point visé lissé e^(−4 dt) (`camera.js:252-258`).
-- Unreal : `FieldOfView` est horizontal par défaut. Équivalent calculé : hFOV = 2 atan(tan(29°) × largeur/hauteur) =
-  100,4° en 844 × 390, 89,2° en 16:9 (calcul, à valider par capture).
+- Unreal : correction du 19/11/2026 (tranches T1 et T6) : le joueur local d'UE 5.8 maintient l'axe **Y**
+  (`BaseEngine.ini:2900`, `AspectRatio_MaintainYFOV`), `FieldOfView` y est donc un champ **vertical**. La caméra de
+  concours du portage impose cet axe et reçoit 58° tels quels ; la projection du moteur en 844 × 390 redonne celle du web
+  (`Strides.Cso.CameraInGame`). Le FOV horizontal équivalent, 2 atan(tan(29°) × largeur / hauteur) = 100,4° en 844 × 390,
+  ne sert qu'aux caméras de capture qui imposent l'axe X.
 - Monde ouvert (rétabli à la sortie) : FOV 60 + bonus de vitesse, distance 6,6, hauteur 2,35 (`camera.js:100-104`, `174`).
 - Cadrage mesuré par `tests/e2e/cso-framing.mjs` : couple sur 25 à 42 % de la hauteur, moitié basse au galop, entier à
   l'écran (`cso-framing.mjs:60-65`). Son commentaire « 30 % de la hauteur » diffère de `jumpFollow: 0.12` : le code fait

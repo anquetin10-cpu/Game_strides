@@ -13,6 +13,7 @@
 //  - Strides.Hud.ObjectiveLines : lignes d'objectif du HUD de débogage (objectif de l'épreuve, puis mission de carrière
 //    lancée ; état des missions hors épreuve).
 #include "Misc/AutomationTest.h"
+#include "Camera/CameraComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -260,7 +261,14 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	Horse->PlaceAt(Cfg.gateX, Cfg.gateZ, Cfg.start.rot, 0);
 	AStridesRider* Rider = W.World->SpawnActor<AStridesRider>(Horse->GetActorLocation() + FVector(0, 0, 90), FRotator::ZeroRotator);
 	if (!TestTrue(TEXT("cavalier en selle"), Rider && Rider->TryMount(nullptr) && Horse->Rider == Rider)) return false;
+	TestTrue(TEXT("caméra de concours inactive avant l'entrée en piste"), !Horse->IsCourseCameraActive());
 	for (int32 K = 0; K < 90 && Course->Run()->step() != strides::CsoStep::Course; K++) Horse->Tick(Dt);
+	// Tranche T6 : de l'entrée en piste à la sortie (game.course.camera), la caméra du cheval est la caméra de concours ;
+	// FOV vertical amorti vers 58° (lissé), appliqué au rendu par paliers de plus de 0,05°.
+	const strides::CsoCamState& Cs = Horse->CourseCameraState();
+	TestTrue(FString::Printf(TEXT("caméra de concours active en épreuve, FOV vertical lissé %.4f°, appliqué %.4f° (composant %.4f°)"), Cs.fov, Cs.camFov, Horse->CourseCameraComponent()->FieldOfView),
+		Horse->IsCourseCameraActive() && Horse->CourseCameraComponent()->IsActive() && FMath::Abs(Cs.fov - 58.0) <= 0.05 && FMath::Abs(Cs.camFov - Cs.fov) <= 0.05 &&
+		FMath::Abs(Horse->CourseCameraComponent()->FieldOfView - Cs.camFov) <= 1e-4);
 	TestTrue(TEXT("parcours atteint (entrée de piste, capacité, présentation, entrée en piste, cloche)"), Course->Run()->step() == strides::CsoStep::Course);
 	TestTrue(TEXT("annonce du dossard"), Course->HudLog().ContainsByPredicate([](const FString& L) { return L.StartsWith(TEXT("big | N° ")) && L.EndsWith(TEXT(" · Alex | et Comète | 2400.0")); }));
 	TestTrue(TEXT("cloche : grand message et son"), Logged(TEXT("big | CLOCHE | Tu as 45 s pour franchir la ligne de départ | 2000.0")) && Logged(TEXT("bell")));
@@ -276,6 +284,7 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	Rider->Dismount(nullptr);
 	TestTrue(TEXT("cavalier à pied"), Horse->Rider == nullptr);
 	Horse->Tick(Dt);
+	TestTrue(TEXT("à pied : caméra de concours quittée (perche du monde ouvert)"), !Horse->IsCourseCameraActive() && !Horse->CourseCameraComponent()->IsActive());
 	const strides::CsoRunState& S = Course->Run()->state();
 	TestTrue(FString::Printf(TEXT("descente : éliminé (« %hs »)"), S.eliminatedReason.c_str()), S.eliminated && S.eliminatedReason == "Tu es descendu de cheval : éliminé.");
 	TestTrue(TEXT("descente : grand message ÉLIMINÉ et cloche double"), Logged(TEXT("big | ÉLIMINÉ | Tu es descendu de cheval : éliminé. | 2600.0")) && Logged(TEXT("bell | 2.0")));
