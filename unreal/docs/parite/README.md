@@ -138,6 +138,31 @@ Revue des décors et démonstration (`-StridesShots` sans mode) : **toujours ave
   n'écrit rien, journalise `Strides shots: REFUS, aucune capture écrite : …` et quitte. Test moteur
   `Strides.Shots.OutputDir`. `scripts/unreal/rebuild-world.sh shots` passe un dossier daté sous `.tmp/shots/`.
 
+### HUD d'épreuve (tranche T7) : poses `hud-*`, 844 × 390 et 667 × 308
+
+```sh
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs            # styles et oracle cso_hud.json
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs --shots --no-oracle  # poses hud-* et captures web
+"$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso -StridesPose=hud- [-StridesShotsDir=<dossier dédié>] \
+  -abslog="$PWD/.tmp/shots-hud.log"
+```
+
+- `export-hud-style.mjs` lit le DOM et les styles calculés du jeu web en cours d'exécution (rien n'est modifié dans
+  `src/`) : `Content/Data/hud_cso_style.json` (styles et boîtes des éléments du HUD d'épreuve dans un état de référence,
+  par viewport ; table des masquages par classe), `unreal/core/tests/oracles/cso_hud.json` (le vrai HUD rejoue les appels
+  `hud.*` des exécutions de `cso_runs/` et une séquence synthétique sur une horloge virtuelle, à 390 et 768 px de haut ;
+  rejoué par `testCsoHud` et `Strides.Parite.CsoHud`). Animations et transitions CSS du HUD coupées dans la page : les
+  relevés et les captures montrent l'état d'arrivée.
+- `--shots` : 8 états × 2 viewports ; chaque pose garde la caméra et l'heure de `cadrage-040` et rejoue une exécution de
+  l'oracle jusqu'à son image (`hud.run`, `hud.frame`, appels ajoutés `hud.extra`), l'état du DOM est relevé (`state`). Les
+  autres poses de `poses.json` sont gardées (`export-cso-runs.mjs --shots` garde les poses `hud-*`).
+- Unreal : la fenêtre est mise à la taille de la pose (`FSystemResolution::RequestResolutionChange`), le widget `UStridesCsoHud` affiche le
+  `strides::CsoHud` rejoué de la même façon, la capture prend la fenêtre AVEC l'interface (`FScreenshotRequest`) ;
+  l'état rejoué est comparé à `state` (« identique au web » dans le journal) et l'affichage du widget est écrit dans
+  `hud-unreal.json` du dossier des captures. Les joysticks virtuels par défaut du moteur apparaissent sur ces captures
+  (retirés en tranche T8).
+
 ## 4. Montage côte à côte
 
 ```sh

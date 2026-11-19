@@ -150,6 +150,9 @@ public:
 	bool PoleRunConfig(const std::vector<std::string>& Labels, strides::CsoRunConfig& Out) const;
 	// Textes de l'épreuve (strings_cso.json : clés françaises du code, traductions anglaises) ; nul si absents.
 	const strides::TextTable* CsoText() const { return bCsoText ? &CsoTextTable : nullptr; }
+	// Styles du HUD d'épreuve (tranche T7) relevés dans le navigateur : Content/Data/hud_cso_style.json
+	// (scripts/unreal/export-hud-style.mjs) ; nul si absent.
+	const TSharedPtr<class FJsonObject>& CsoHudStyle() const { return CsoHudStyleJson; }
 	// Géométrie du parcours exportée du jeu web (tranche T5) : Content/World/Cso/cso_fences.json et cso_assets.json ;
 	// IsLoaded() faux si absente (obstacles en formes de base, lignes et poteau invisibles).
 	const FStridesCsoScenery& CsoScenery() const { return CsoSceneryData; }
@@ -168,6 +171,7 @@ private:
 	TMap<FString, float> CourseSpeeds;
 	std::string PoleCourseJson;
 	strides::TextTable CsoTextTable;
+	TSharedPtr<class FJsonObject> CsoHudStyleJson;
 	bool bCsoText = false;
 	FStridesCsoScenery CsoSceneryData;
 };

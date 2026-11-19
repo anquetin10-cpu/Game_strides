@@ -709,6 +709,13 @@ function PAGE() {
         const lg = this.data?.course?.log;
         const lj = JSON.stringify(lg ? lg.map((e) => [e.label ?? null, e.kind ?? null, e.cause ?? null, e.causeText ?? null]) : []);
         if (lj !== (P.lgRec ?? '[]')) ep.lg = JSON.parse((P.lgRec = lj));
+        // Tranche T7 : dernier saut du cheval du joueur (horse._lastJump), lu par le mot d'appel des écouteurs d'obstacle
+        // (courses.js:203-211, feedback) : [numéro de l'obstacle sauté s'il est du parcours « cso » (null sinon), qualité
+        // de l'appel takeoffQuality(plan) (jumpModel.js:135-140, null si aucune)], relevé quand il change. Les écouteurs
+        // le lisent avant Run.update dans la même image (game.js:1491, 1507) : aucun saut ne commence entre les deux.
+        const lJ = h._lastJump;
+        const ljs = JSON.stringify(lJ ? [lJ.o?.course === 'cso' ? lJ.o.num : null, P.takeoffQuality(lJ.plan) ?? null] : null);
+        if (ljs !== (P.ljRec ?? 'null')) ep.lj = JSON.parse((P.ljRec = ljs));
       }
     };
   };
@@ -1409,6 +1416,7 @@ function PAGE() {
     seedRandom(seed);
     clock = 0;
     const O = await import('/src/gameplay/obstacles.js');
+    P.takeoffQuality = (await import('/src/gameplay/jumpModel.js')).takeoffQuality;
     const day = Math.floor(g.save.data.gameTime / 86400);
     g.save.data.gameTime = day * 86400 + 15 * 3600;
     g.time = 1000; // dossard = 40 + floor(time) % 50 (courses.js:459)
@@ -1698,7 +1706,7 @@ const head = {
   precision: 1e-6,
   inputs: 'in.move = joystick virtuel [x, y] (input.setVirtualMove) ; in.keys = touches clavier tenues (input.keys) ; in.held = actions tenues (input.held, ex. gallop) ; in.jump = SAUT pressé à cette image ; in.ui = bouton de carte touché (data-id) avant l’image',
   state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch)',
-  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update, lg = journal des fautes de l’épreuve (state.log) en fin d’image, entrées [label, kind, cause, causeText] (null si absent)',
+  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update, lg = journal des fautes de l’épreuve (state.log) en fin d’image, entrées [label, kind, cause, causeText] (null si absent) ; lj = dernier saut du cheval du joueur (horse._lastJump, lu par le mot d’appel de courses.js:203-211) : [numéro de l’obstacle sauté s’il est du parcours cso, sinon null ; takeoffQuality(plan), null si aucune], null si aucun saut',
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
   lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action)',
   ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
@@ -1828,17 +1836,17 @@ if (FENCES) {
 // Poses de capture. Groupe « carriere » (tranches T1 et T5) : vue aérienne de la carrière, lignes de départ et
 // d'arrivée, poteau « Chrono », dans l'état d'épreuve après la cloche (comme le scénario), puis caméra posée ; chaque
 // pose relève l'état des obstacles du jeu (hauteurs, numéro surligné). Groupe « chute » (tranche T3).
-const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : 'carriere');
+// Groupe « hud » (tranche T7) : poses écrites par scripts/unreal/export-hud-style.mjs --shots, toujours gardées ici.
+const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : 'carriere');
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
   const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
-  // --shots=<groupe> : les poses existantes des autres groupes sont gardées, celles du groupe remplacées.
-  if (SHOTS_ONLY) {
-    try {
-      doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => poseGroup(p.name) !== SHOTS_ONLY);
-    } catch {
-      doc.poses = [];
-    }
+  // --shots=<groupe> : les poses existantes des autres groupes sont gardées, celles du groupe remplacées ; les poses du
+  // HUD (groupe « hud », écrites par export-hud-style.mjs) sont toujours gardées.
+  try {
+    doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : poseGroup(p.name) === 'hud'));
+  } catch {
+    doc.poses = [];
   }
   if (!SHOTS_ONLY || SHOTS_ONLY === 'carriere') {
     const { ctx, page } = await openGame('fr');
@@ -2025,8 +2033,8 @@ if (SHOTS) {
     }
     await ctx.close();
   }
-  // Ordre stable : poses de la carrière, de la chute, puis du cadrage.
-  doc.poses = ['carriere', 'chute', 'cadrage'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
+  // Ordre stable : poses de la carrière, de la chute, du cadrage, puis du HUD.
+  doc.poses = ['carriere', 'chute', 'cadrage', 'hud'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
   writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
   console.log('poses :', join(PARITE, 'poses.json'));
 }

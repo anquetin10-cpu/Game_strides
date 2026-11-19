@@ -66,7 +66,7 @@ ATTENDUES = {
  'rebond si |vy| > 0,6 -> 0,4': 'aucun impact entre 0,4 et 0,6 m/s pour des barres de 1,05 à 1,2 m',
 }
 os.makedirs(out, exist_ok=True)
-others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoRun.cpp', 'CsoCamera.cpp', 'Text.cpp', 'SaveGame.cpp')]
+others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'Text.cpp', 'SaveGame.cpp')]
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 undetected = []

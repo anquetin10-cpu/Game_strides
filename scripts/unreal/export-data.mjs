@@ -12,7 +12,7 @@ import { JUMP, planJump, railsAhead, takeoffQuality, speedFactor, angleFactor } 
 import { CSO_RIDE, steerRate, cadenceDelta, minRadius, maxTurnRate } from '../../src/gameplay/csoRide.js';
 import { CSO_DESIGN, traceCourse, csoHeights } from '../../src/gameplay/csoCourse.js';
 import { timeFaults, compareResults } from '../../src/gameplay/challenge.js';
-import { COURSE_SPEED, COURSE_LENGTH, timeAllowedFor, BELL_DELAY, ordinal, enOrdinal } from '../../src/gameplay/courses.js';
+import { COURSE_SPEED, COURSE_LENGTH, timeAllowedFor, BELL_DELAY, ordinal, enOrdinal, TAKEOFF_TEXT } from '../../src/gameplay/courses.js';
 import { CSO_GATE, CSO_START, CSO_FINISH } from '../../src/gameplay/obstacles.js';
 import { dec } from '../../src/core/math.js';
 import { t as i18nT, T as i18nTpl, chooseLang } from '../../src/core/i18n.js';
@@ -210,4 +210,40 @@ write(DATA, 'strings_cso.json', {
   causes: CAUSES,
 });
 write(ORA, 'cso_text.json', { schema: 'strides.oracle.cso_text/1', source: ['src/core/math.js', 'src/core/i18n.js', 'src/gameplay/courses.js'], fr, en });
+
+// Mot d'appel après un passage (tranche T7) : fonction privée `feedback` des écouteurs d'obstacle de courses.js
+// (:203-211), source extraite telle quelle et évaluée sur une grille ; takeoffQuality remplacé par la qualité donnée
+// (takeoffQuality lui-même est rejoué par jump.json), TAKEOFF_TEXT du jeu (clés françaises).
+const feedbackSrc = (() => {
+  const { code, tree } = ast['gameplay/courses.js'];
+  let init = null;
+  walk(tree, (n) => {
+    if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier' && n.id.name === 'feedback' && n.init) init = n.init;
+  });
+  if (!init) throw new Error('courses.js : feedback introuvable');
+  return code.slice(init.start, init.end);
+})();
+const fbQualities = [null, 'perfect', 'good', 'bitFar', 'bitNear', 'far', 'near', 'angle', 'slow', 'tooClose'];
+const fbCauses = [null, '', ...Object.keys(CAUSES), 'unknown'];
+const fbCases = [];
+for (const cso of [true, false])
+  for (const aid of ['full', 'button', 'off'])
+    for (const last of ['none', 'other', 'this'])
+      for (const q of last === 'none' ? [null] : fbQualities)
+        for (const clear of [true, false])
+          for (const cause of clear ? [null] : fbCauses) {
+            const o = { num: 3 }, other = { num: 4 };
+            const calls = [];
+            const horse = () => ({ _lastJump: last === 'none' ? null : { o: last === 'this' ? o : other, plan: { q } } });
+            const game = { hud: { jumpFeedback: (...a) => calls.push(a) } };
+            const fb = new Function('cso', 'aid', 'horse', 'takeoffQuality', 'TAKEOFF_TEXT', 'game', `return (${feedbackSrc});`)(cso, () => aid, horse, (plan) => plan?.q ?? null, TAKEOFF_TEXT, game);
+            fb(o, clear, cause ?? undefined);
+            fbCases.push({ cso, aid, last, q, clear, cause, out: calls.length ? calls[0] : null });
+          }
+write(ORA, 'cso_feedback.json', {
+  schema: 'strides.oracle.cso_feedback/1', source: ['src/gameplay/courses.js'],
+  doc: 'feedback(o, clear, cause) des écouteurs d’obstacle de courses.js : cso = épreuve de CSO ; aid = réglage jumpAid ; last = dernier saut du cheval (none : aucun, other : autre obstacle, this : cet obstacle) ; q = takeoffQuality de son plan ; clear = sans-faute ; cause = cause de la faute (null : absente) ; out = arguments de hud.jumpFeedback (texte français, genre) ou null si aucun appel',
+  cases: fbCases,
+});
+console.log('mot d’appel :', fbCases.length, 'cas,', fbCases.filter((c) => c.out).length, 'avec un mot');
 console.log('textes :', keys.length, 'clés,', missing.length, 'sans traduction ;', fr.dec.length, 'formats dec par langue');

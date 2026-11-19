@@ -21,10 +21,18 @@
 // dans le décor chargé, sol du relief exporté), puis la capture est faite par la caméra du cheval. Le cadrage de
 // tests/e2e/cso-framing.mjs (part de la hauteur de l'écran occupée par le couple) est mesuré avec la vue de rendu et
 // écrit, avec l'écart à l'œil, au point visé et au FOV du web, dans <dossier des captures>/cadrage-unreal.json.
+//
+// Poses du HUD d'épreuve (tranche T7, champ hud de poses.json, écrit par scripts/unreal/export-hud-style.mjs --shots) :
+// caméra posée comme les poses de la carrière ; le HUD d'épreuve (UStridesCsoHud) affiche un strides::CsoHud figé,
+// obtenu en rejouant l'exécution de l'oracle jusqu'à l'image de la pose (StridesCsoHudReplay, même règle que le web) ;
+// fenêtre mise à la taille de la pose (844 × 390 ou 667 × 308) et capture de la fenêtre AVEC l'interface
+// (FScreenshotRequest) ; l'état rejoué est comparé à l'état du DOM relevé par le web (champ state) et l'affichage du
+// widget est écrit dans <dossier des captures>/hud-unreal.json.
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "StridesCore/CsoCamera.h"
+#include "StridesCore/CsoHud.h"
 #include "StridesShots.generated.h"
 
 UCLASS()
@@ -103,12 +111,21 @@ private:
 		TArray<FVector2D> FramingPts;
 		double WebPart = 0, WebTop = 0, WebBottom = 0;
 		bool bFramingJump = false;
+		// HUD d'épreuve (tranche T7) : exécution rejouée jusqu'à HudFrame, appels ajoutés (JSON [[fn, args]…]) à
+		// HudExtraFrame, état du DOM du web (JSON).
+		bool bHasHud = false;
+		FString HudRunFile, HudExtra, HudState;
+		int32 HudFrame = 0, HudExtraFrame = -1;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);
 	void ApplyPose(const FPose& P, class APlayerController* PC);
 	void ApplyCamRunPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	void MeasureFraming(const FPose& P, class APlayerController* PC);
+	void ApplyHudPose(const FPose& P, class APlayerController* PC);
+	strides::CsoHud PoseHud;
+	TArray<TSharedPtr<class FJsonValue>> HudResults;
+	int32 ResizeTries = 0;
 	TSharedPtr<class FJsonObject> CamRunCache;
 	FString CamRunCacheFile;
 	TArray<TSharedPtr<class FJsonValue>> FramingResults;

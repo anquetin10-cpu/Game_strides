@@ -95,6 +95,7 @@ void AStridesGameMode::StartPlay()
 		FString HorseName;
 		if (Data) for (const FStridesHorseProfile& P : Data->Horses) if (P.Id == Horse->ProfileId) HorseName = P.Name;
 		Course->Lang = UTF8_TO_TCHAR(Fresh.lang.c_str());
+		if (Fresh.settings.count("jumpAid")) Course->JumpAid = UTF8_TO_TCHAR(Fresh.settings.at("jumpAid").c_str());
 		Course->StartRun(UTF8_TO_TCHAR(Fresh.playerName.c_str()), HorseName);
 	}
 	const FVector Spawn = Data ? Data->WorldSpawn : FVector(-104.f, 168.f, .35f);

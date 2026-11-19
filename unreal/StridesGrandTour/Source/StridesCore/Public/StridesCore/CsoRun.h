@@ -8,8 +8,10 @@
 // L'appelant (le jeu) fournit à chaque image ce que lisent courses.js et missions.js (pas de la mission, cheval du
 // joueur, point suivi, mode, cadence) et transmet les événements d'obstacle du parcours (CsoFences) avant l'image,
 // comme Obstacles.updateHorse les émet avant missions.update (src/game.js:1491, 1507).
+// Mot d'appel après un passage (hud.jumpFeedback, tranche T7) : dernier saut du cheval fourni par l'appelant
+// (setLastJump), réglage jumpAid dans la configuration.
 // Hors de cette tranche (honnêtement absents) : texte du dialogue de capacité et sa grille (T10), carte de présentation
-// et plan (T10), mot d'appel jumpFeedback (T7), aides à l'appel (T9), carte de bilan et classement (T11), GPS.
+// et plan (T10), aides à l'appel (T9), carte de bilan et classement (T11), GPS.
 // Oracles : canal « ep » des scénarios de unreal/core/tests/oracles/cso_runs/ (test_core.cpp, testCsoRuns).
 #pragma once
 #include <set>
@@ -38,6 +40,7 @@ struct CsoRunConfig {
   std::string playerName, horseName, stable;  // horseName vide : t('son cheval')
   int bib = -1;          // opts.bib ?? run.data.bib ; sinon 40 + floor(game.time) % 50 à l'entrée en piste
   Lang lang = Lang::Fr;
+  std::string aid = "full";  // aide à l'appel (aid() de courses.js:82 : réglage jumpAid, « full », « button » ou « off »)
 };
 // Règles et lignes de Content/Data/cso_course_pole.json (objet « run », exporté de courses.js / obstacles.js) ;
 // fences : libellés dans l'ordre du tracé. Exception si mal formé.
@@ -91,6 +94,17 @@ STRIDESCORE_API int csoPoints(int faults, double t, double timeAllowed);
 
 enum class CsoObstacleEventKind { Clear, Fault, Refusal };
 
+// Dernier saut du cheval du joueur (horse._lastJump), lu par le mot d'appel au moment d'un passage.
+struct CsoLastJump {
+  bool has = false;     // un saut a eu lieu
+  int num = -1;         // numéro (1..n) de l'obstacle sauté s'il est du parcours, -1 sinon
+  std::string quality;  // takeoffQuality(plan) (JumpModel.h, qualityName) ; vide si aucune
+};
+// Mot d'appel (courses.js:203-211, feedback) : sur le passage de l'obstacle num (sans-faute si clear, sinon faute de
+// cause cause, vide = absente), clé française de TAKEOFF_TEXT (courses.js:39-49) et genre (« good », « ok », « bad ») ;
+// faux si aucun mot (épreuve hors CSO, aide « off », pas de qualité ou qualité sans texte). Oracle : cso_feedback.json.
+STRIDESCORE_API bool csoTakeoffFeedback(bool cso, const std::string& aid, const CsoLastJump& last, int num, bool clear, const std::string& cause, std::string& key, std::string& kind);
+
 // État de l'épreuve (run.data.course de courses.js).
 struct CsoRunLog { std::string label, kind, cause, causeText; };
 struct CsoRunState {
@@ -134,6 +148,9 @@ class STRIDESCORE_API CsoRun {
   // Événement d'obstacle du parcours (obstacle:clear / fault / refusal), avant l'image : rang 1..n (o.num), sens du
   // passage, cause et texte de la cause (faute).
   void obstacleEvent(CsoObstacleEventKind kind, int num, int dir, const std::string& cause, const std::string& causeText, CsoCadence& cad);
+  // Dernier saut du cheval du joueur, lu par les écouteurs d'obstacle (mot d'appel) : à fournir quand il change.
+  void setLastJump(const CsoLastJump& lj) { lastJump_ = lj; }
+  const CsoLastJump& lastJump() const { return lastJump_; }
   // Une image : Run.update(dt) (pas cumulé, étape en cours, passage à la suivante).
   void update(const CsoRunFrame& f, CsoCadence& cad);
 
@@ -195,6 +212,8 @@ class STRIDESCORE_API CsoRun {
   bool resetRails_ = false;
   std::vector<CsoCall> hud_, audio_;
   CsoRunFrame cur_;
+  CsoLastJump lastJump_;
+  void feedback(int num, bool clear, const std::string& cause);
 };
 
 }  // namespace strides

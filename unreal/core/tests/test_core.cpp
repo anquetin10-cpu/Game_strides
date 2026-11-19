@@ -13,6 +13,7 @@
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
+#include "StridesCore/CsoHud.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/Text.h"
@@ -1108,6 +1109,205 @@ static void testText() {
   std::printf("textes et formats : %d cas (dec, ordinaux, pluriels, %zu clés de gabarits et textes fixes, fr et en), %d écarts\n", n, o["fr"]["templates"].a.size(), bad);
 }
 
+// ---------- Mot d'appel (tranche T7) : csoTakeoffFeedback sur la grille de cso_feedback.json ----------
+// Fonction feedback de courses.js:203-211 évaluée par scripts/unreal/export-data.mjs (épreuve, aide, dernier saut, qualité,
+// sans-faute, cause) ; texte comparé en français (clé) et traduit par la table (anglais).
+static void testCsoFeedback() {
+  const J o = loadJson(ORA + "/cso_feedback.json");
+  int n = 0, bad = 0, words = 0;
+  for (const J& c : o["cases"].a) {
+    CsoLastJump lj;
+    const std::string last = c["last"].s;
+    lj.has = last != "none";
+    lj.num = last == "this" ? 3 : 4;
+    lj.quality = c["q"].isNull() ? std::string() : c["q"].s;
+    std::string key, kind;
+    const bool got = csoTakeoffFeedback(c["cso"].b, c["aid"].s, lj, 3, c["clear"].b, c["cause"].isNull() ? std::string() : c["cause"].s, key, kind);
+    const J& out = c["out"];
+    const bool ok = got == !out.isNull() && (!got || (key == out[0].s && kind == out[1].s));
+    if (!ok && ++bad < 6)
+      std::printf("  mot d'appel : %s %s %s q=%s clear=%d cause=%s : %s %s / %s\n", c["cso"].b ? "cso" : "-", c["aid"].s.c_str(), last.c_str(), lj.quality.c_str(), (int)c["clear"].b,
+                  c["cause"].isNull() ? "null" : c["cause"].s.c_str(), got ? key.c_str() : "(aucun)", kind.c_str(), out.isNull() ? "(aucun)" : out[0].s.c_str());
+    if (got) {
+      words++;
+      CHECK(g_text.t(key, Lang::En) != key, "mot d'appel « %s » sans traduction anglaise", key.c_str());
+    }
+    n++;
+  }
+  CHECK(bad == 0 && n > 1000, "cso_feedback : %d cas sur %d différents du jeu web", bad, n);
+  std::printf("mot d'appel : %d cas (%d avec un mot), %d écarts\n", n, words, bad);
+}
+
+// ---------- Interface d'épreuve (tranche T7) : strides::CsoHud rejoué sur cso_hud.json ----------
+// scripts/unreal/export-hud-style.mjs rejoue dans le vrai HUD du jeu web les appels hud.* et l'état lu par hud.update des
+// exécutions de cso_runs/ (et une séquence synthétique) sur une horloge virtuelle ; le modèle reçoit les mêmes entrées
+// (même règle) et doit afficher le même état à chaque image : toasts, astuce, grand message, mot d'appel, crans de
+// cadence, tableau (masqué, dépassement, pénalités), classes du HUD, objectif. Masquages : table de hud_cso_style.json.
+static bool hudPartSame(const std::string& k, const J& w, const CsoHud& h, std::string& got) {
+  auto b = [](bool v) { return std::string(v ? "true" : "false"); };
+  auto q = [](const std::string& v) { return "\"" + v + "\""; };
+  bool ok = false;
+  if (k == "to") {
+    got = "[";
+    ok = w.a.size() == h.toasts().size();
+    for (size_t i = 0; i < h.toasts().size(); i++) {
+      got += (i ? ", " : "") + std::string("[") + q(h.toasts()[i].text) + ", " + q(h.toasts()[i].kind) + "]";
+      if (ok) ok = w[i][0].s == h.toasts()[i].text && w[i][1].s == h.toasts()[i].kind;
+    }
+    got += "]";
+  } else if (k == "hi") {
+    got = "[" + b(h.hintOff()) + ", " + q(h.hintHtml()) + ", " + b(h.hintInline()) + "]";
+    ok = w[0].b == h.hintOff() && w[1].s == h.hintHtml() && w[2].b == h.hintInline();
+  } else if (k == "bg") {
+    got = "[" + b(h.bigHidden()) + ", " + q(h.bigTitle()) + ", " + q(h.bigSub()) + ", " + b(h.bigOn()) + "]";
+    ok = w[0].b == h.bigHidden() && w[1].s == h.bigTitle() && w[2].s == h.bigSub() && w[3].b == h.bigOn();
+  } else if (k == "fb") {
+    got = "[" + q(h.fbText()) + ", " + q(h.fbClass()) + "]";
+    ok = w[0].s == h.fbText() && w[1].s == h.fbClass();
+  } else if (k == "cad") {
+    got = "[" + std::to_string(h.cadOn()) + ", " + b(h.cadShow()) + "]";
+    ok = (int)w[0].num() == h.cadOn() && w[1].b == h.cadShow();
+  } else if (k == "bd") {
+    got = "[" + b(h.boardHidden()) + ", " + b(h.boardOver()) + ", " + b(h.boardFaults()) + "]";
+    ok = w[0].b == h.boardHidden() && w[1].b == h.boardOver() && w[2].b == h.boardFaults();
+  } else if (k == "cl") {
+    got = "[" + b(h.csoOn()) + ", " + b(h.csoCtl()) + ", " + b(h.csoSober()) + "]";
+    ok = w[0].b == h.csoOn() && w[1].b == h.csoCtl() && w[2].b == h.csoSober();
+  } else if (k == "ob") {
+    got = b(h.objectiveOff());
+    ok = w.b == h.objectiveOff();
+  }
+  return ok;
+}
+static CsoCall hudCallOf(const std::string& fn, const J& args) {
+  CsoCall c;
+  c.fn = fn;
+  for (const J& a : args.a) {
+    CsoArg x;
+    if (a.t == J::Num) { x.isNum = true; x.n = a.n; } else x.s = a.s;
+    c.args.push_back(x);
+  }
+  return c;
+}
+static void testCsoHud() {
+  // Masquages par les classes du HUD (styles.css), relevés par le navigateur.
+  const J st = loadJson(DATA + "/hud_cso_style.json");
+  const J& mk = st["masks"];
+  int maskN = 0, maskBad = 0, maskOn = 0;
+  for (const J& combo : mk["combos"].a) {
+    const std::string c = " " + combo.s + " ";
+    const bool ctl = c.find(" cso-ctl ") != std::string::npos, sober = c.find(" cso-sober ") != std::string::npos, on = c.find(" cso-on ") != std::string::npos, big = c.find(" big-on ") != std::string::npos;
+    for (const J& en : mk["elements"].a) {
+      const J& v0 = mk["table"][""][en.s];
+      const J& v = mk["table"][combo.s][en.s];
+      const bool vis0 = v0[0].s != "none" && v0[1].num() > 0, vis = v[0].s != "none" && v[1].num() > 0;
+      CHECK(vis0, "hud_cso_style : élément %s non visible sans classe", en.s.c_str());
+      int idx = -1;
+      for (int e = 0; e < (int)CsoHudElement::Count; e++)
+        if (en.s == csoHudElementName((CsoHudElement)e)) idx = e;
+      CHECK(idx >= 0, "hud_cso_style : élément %s inconnu du portage", en.s.c_str());
+      if (idx < 0) continue;
+      const bool got = csoHudMasked((CsoHudElement)idx, ctl, sober, on, big);
+      maskN++;
+      maskOn += !vis;
+      if (got != !vis && ++maskBad < 6) std::printf("  masquage %s sous « %s » : %d / web %d\n", en.s.c_str(), combo.s.c_str(), (int)got, (int)!vis);
+    }
+  }
+  CHECK(maskBad == 0 && maskN > 100, "masquages du HUD : %d écarts sur %d", maskBad, maskN);
+  std::printf("masquages du HUD : %d cas (%d masqués), %d écarts\n", maskN, maskOn, maskBad);
+
+  const J o = loadJson(ORA + "/cso_hud.json");
+  CHECK(o["schema"].s == "strides.oracle.cso_hud/1", "cso_hud : schéma « %s »", o["schema"].s.c_str());
+  static const std::set<std::string> FNS = {"big", "toast", "hint", "clearHint", "jumpFeedback", "setObjective"};
+  std::string loaded;
+  J runJ;
+  int replays = 0, frames = 0, bad = 0, maxToasts = 0;
+  std::map<std::string, int> partN;
+  for (const J& rp : o["replays"].a) {
+    const std::string who = rp["id"].s + " (" + rp["lang"].s + ", " + std::to_string((int)rp["vh"].num()) + " px)";
+    const bool synth = !rp["inputs"].isNull();
+    if (!synth) {
+      const std::string file = rp["id"].s + "." + rp["lang"].s + ".json";
+      if (file != loaded) {
+        runJ = loadJson(ORA + "/cso_runs/" + file);
+        loaded = file;
+      }
+    }
+    const J& setup = synth ? rp["inputs"]["setup"] : runJ["setup"]["calls"]["hud"];
+    const J& fr = synth ? rp["inputs"]["frames"] : runJ["frames"];
+    CHECK((double)fr.a.size() == rp["frames"].num(), "%s : nombre d'images", who.c_str());
+    CsoHud h;
+    h.setViewportHeight(rp["vh"].num());
+    auto apply = [&](const J& c) {
+      const std::string fn = synth ? c[0].s : c["fn"].s;
+      const J& args = synth ? c[1] : c["args"];
+      if (!FNS.count(fn)) return;
+      if (fn == "setObjective") h.setObjective(!args[0].isNull());
+      else h.call(hudCallOf(fn, args));
+    };
+    for (const J& c : setup.a) apply(c);
+    std::map<std::string, J> want;
+    size_t si = 0;
+    const J& snaps = rp["snaps"];
+    int rb = 0;
+    auto compare = [&](int f) {
+      while (si < snaps.a.size() && (int)snaps[si][0].num() == f) {
+        for (const auto& kv : snaps[si][1].o) {
+          want[kv.first] = kv.second;
+          partN[kv.first]++;
+          if (kv.first == "to") maxToasts = std::max(maxToasts, (int)kv.second.a.size());
+        }
+        si++;
+      }
+      for (const auto& kv : want) {
+        std::string got;
+        if (!hudPartSame(kv.first, kv.second, h, got)) {
+          rb++;
+          if (rb < 4) std::printf("  %s image %d : %s = %s / web %s\n", who.c_str(), f, kv.first.c_str(), got.c_str(), dump(kv.second).c_str());
+        }
+      }
+    };
+    compare(-1);
+    for (size_t k = 0; k < fr.a.size(); k++) {
+      const J& f = fr[k];
+      h.advanceTicks(100);
+      CsoHudFrame in;
+      const J& course = f["course"];
+      const J& board = f["board"];
+      in.course = !course.isNull();
+      in.controlsCso = in.course && course["controls"].s == "cso";
+      in.kindCso = in.course && course["kind"].s == "cso";
+      in.board = !board.isNull();  // tableau fourni tel quel : CsoHud applique lui-même game.course && hud()
+      if (in.board) {
+        in.info.over = board["over"].b;
+        in.info.pen = (int)board["pen"].num();
+      }
+      if (synth) {
+        in.hasCadence = !f["cad"].isNull() && !f["cad"][0].isNull();
+        if (in.hasCadence) { in.cadence = f["cad"][0].num(); in.cadAdjust = f["cad"][1].b; }
+      } else {
+        const J& s = f["ch"]["s"];
+        in.hasCadence = !s.isNull() && !s["cad"].isNull();
+        if (in.hasCadence) { in.cadence = s["cad"].num(); in.cadAdjust = !s["ca"].isNull() && s["ca"].b; }
+      }
+      for (const J& c : f["hud"].a) apply(c);
+      h.update(1.0 / 30, in);
+      compare((int)k);
+      frames++;
+    }
+    CHECK(si == snaps.a.size(), "%s : relevés au-delà des images rejouées", who.c_str());
+    CHECK(rb == 0, "%s : HUD d'épreuve : %d écarts", who.c_str(), rb);
+    bad += rb;
+    replays++;
+  }
+  std::string parts;
+  for (const auto& kv : partN) parts += " " + kv.first + " " + std::to_string(kv.second);
+  for (const char* k : {"to", "hi", "bg", "fb", "cad", "bd", "cl", "ob"}) CHECK(partN[k] > 0, "cso_hud : partie %s jamais relevée", k);
+  CHECK(maxToasts == 2, "cso_hud : deux toasts simultanés jamais relevés (max %d)", maxToasts);
+  CHECK(replays > 100, "cso_hud : %d rejeux", replays);
+  std::printf("HUD d'épreuve : %d rejeux, %d images, %d écarts ; changements relevés :%s ; toasts simultanés au plus %d\n", replays, frames, bad, parts.c_str(), maxToasts);
+}
+
 // ---------- Déroulé d'épreuve (tranche T4) : strides::CsoRun rejoué sur le canal « ep » de cso_runs/ ----------
 // Entrées réinjectées : trajectoire et mode du joueur vus par Run.update, bouton « Entrer en piste », événements
 // d'obstacle émis avant Run.update ; comparés image par image : étape, objectif, état de l'épreuve, mode de concours,
@@ -1129,7 +1329,8 @@ static std::vector<std::string> oracleCalls(const J& list, bool hud) {
   for (const J& c : list.a) {
     const std::string& src = c["src"].s;
     const std::string& fn = c["fn"].s;
-    const bool keep = hud ? (src == "gameplay/courses.js" && fn != "jumpFeedback") || (src == "gameplay/missions.js" && fn == "clearHint") : src == "gameplay/courses.js";
+    // Mot d'appel hud.jumpFeedback compris depuis la tranche T7 (dernier saut relevé dans ep.lj).
+    const bool keep = hud ? src == "gameplay/courses.js" || (src == "gameplay/missions.js" && fn == "clearHint") : src == "gameplay/courses.js";
     if (!keep) continue;
     std::vector<std::string> a;
     for (const J& x : c["args"].a) a.push_back(argStr(x));
@@ -1188,6 +1389,7 @@ static void testCsoRuns() {
                           "sortie de piste écourtée par une descente"};
   for (const char* g : guards) cover[g] = 0;
   int logN = 0;  // changements du journal des fautes comparés
+  int ljN = 0, fbN = 0;  // derniers sauts relevés et mots d'appel comparés (tranche T7)
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
     const J& su = r["setup"];
@@ -1224,6 +1426,18 @@ static void testCsoRuns() {
       const J& ep = f["ep"];
       if (ep.isNull()) { if (!run.finished()) diff(fi, "Run.update absent"); continue; }
       if (f["in"]["ui"].s == "enter") run.enter();
+      // Dernier saut du cheval (horse._lastJump, relevé quand il change) : lu par le mot d'appel des écouteurs (T7).
+      if (ep.o.count("lj")) {
+        CsoLastJump lj;
+        const J& v = ep["lj"];
+        lj.has = !v.isNull();
+        if (lj.has) {
+          lj.num = v[0].isNull() ? -1 : (int)v[0].num();
+          lj.quality = v[1].isNull() ? std::string() : v[1].s;
+          ljN++;
+        }
+        run.setLastJump(lj);
+      }
       // Événements d'obstacle de l'image émis avant Run.update. Un refus compté remet la cadence à 0 (courses.js:265) :
       // la cadence vue ensuite par Run.update (ep.cad) doit être nulle, et le portage doit l'avoir remise.
       const int refusals0 = run.state().refusals;
@@ -1360,6 +1574,7 @@ static void testCsoRuns() {
         diff(fi, s);
       }
       hudN += (int)wh.size();
+      for (const auto& x : wh) fbN += x.rfind("jumpFeedback(", 0) == 0;
       audioN += (int)wa.size();
       for (const auto& x : wh) hudAll.push_back(x);
       for (const auto& x : wa) audioAll.push_back(x);
@@ -1455,6 +1670,8 @@ static void testCsoRuns() {
     cov += std::string(" ; ") + g + " " + std::to_string(cover[g]);
   }
   CHECK(hlN > 0 && rrN > 0 && cheerN > 0 && logN > 0, "numéro surligné, barres remises, public en liesse ou journal des fautes jamais relevés");
+  CHECK(ljN > 0 && fbN > 0, "mot d'appel jamais exercé par les exécutions (derniers sauts %d, mots %d)", ljN, fbN);
+  std::printf("mot d'appel : %d derniers sauts relevés, %d appels hud.jumpFeedback comparés\n", ljN, fbN);
   std::printf("gardes des écouteurs d'obstacle exercées%s\n", cov.c_str());
   std::printf("demandes comparées : %d changements du numéro surligné, %d remises des barres, %d ovations, %d changements du journal des fautes\n", hlN, rrN, cheerN, logN);
   int ok = 0;
@@ -1717,6 +1934,8 @@ int main(int argc, char** argv) {
     testSave();
     loadText();
     testText();
+    testCsoFeedback();
+    testCsoHud();
     testCsoRuns();
     testCsoGoto();
     testCamRuns();

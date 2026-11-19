@@ -12,6 +12,7 @@
 #include "StridesSaveSubsystem.h"
 #include "StridesProgressionSubsystem.h"
 #include "StridesTouchControls.h"
+#include "StridesCsoHud.h"
 
 static UInputAction* MakeAction(UObject* Outer, const TCHAR* Name, EInputActionValueType Type)
 {
@@ -84,6 +85,12 @@ void AStridesPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	InstallInputContext();
+	// Interface d'épreuve (tranche T7) : affichée sur toutes les plateformes, sous les commandes tactiles.
+	if (IsLocalController())
+	{
+		CsoHud = CreateWidget<UStridesCsoHud>(this, UStridesCsoHud::StaticClass());
+		if (CsoHud) CsoHud->AddToViewport(50);
+	}
 	if (PLATFORM_IOS || FParse::Param(FCommandLine::Get(), TEXT("TouchControls")))
 	{
 		bEnableTouchEvents = true;

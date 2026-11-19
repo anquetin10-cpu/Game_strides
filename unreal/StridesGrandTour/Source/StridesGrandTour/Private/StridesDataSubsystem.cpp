@@ -89,6 +89,8 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		double W = 0;
 		if (J->TryGetNumberField(TEXT("csoFenceWidth"), W)) CsoFenceWidth = W;
 	}
+	// HUD d'épreuve (tranche T7) : styles calculés par le navigateur, lus par UStridesCsoHud.
+	LoadJson(TEXT("hud_cso_style.json"), CsoHudStyleJson);
 	if (LoadJson(TEXT("cso_camera.json"), J))
 	{
 		auto N = [&J](const TCHAR* K, double& Out) { J->TryGetNumberField(K, Out); };

@@ -1244,6 +1244,1490 @@
    },
    "web": "unreal/docs/parite/cso/cadrage-440-web.png",
    "unreal": "unreal/docs/parite/cso/cadrage-440-unreal.png"
+  },
+  {
+   "name": "hud-cloche-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : cloche : « CLOCHE », sous-titre et astuce de l’entrée en piste, tableau « Départ 45 s · accordé 64 s » ; exécution t4-cloche (fr) rejouée dans le HUD jusqu’à l’image 95 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-cloche.fr.json",
+    "frame": 95
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 45 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-cloche-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-cloche-844x390-unreal.png"
+  },
+  {
+   "name": "hud-depart-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : avant le départ, 2,5 s après la cloche : grand message retiré, tableau « Départ … s · accordé 64 s », astuce ; exécution t4-cloche (fr) rejouée dans le HUD jusqu’à l’image 149 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-cloche.fr.json",
+    "frame": 149
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 43 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-depart-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-depart-844x390-unreal.png"
+  },
+  {
+   "name": "hud-course-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : en course, obstacle suivant « ▸ 4A », mot d’appel du 3 ; exécution t4-sans-faute (fr) rejouée dans le HUD jusqu’à l’image 735 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 735
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "17,97",
+     "/ 64 s",
+     "0 pt",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-course-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-course-844x390-unreal.png"
+  },
+  {
+   "name": "hud-depassement-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : temps accordé dépassé : chrono en ambre, point de pénalité en rouge ; exécution t4-un-point (fr) rejouée dans le HUD jusqu’à l’image 2138 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-un-point.fr.json",
+    "frame": 2138
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "1 POINT",
+     "64,57 s",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     true,
+     true
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "64,57",
+     "/ 64 s",
+     "1 pt",
+     "Arrivée ✓"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-depassement-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-depassement-844x390-unreal.png"
+  },
+  {
+   "name": "hud-barre-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : barre tombée : toast « Barre au 1 · +4 · Appel trop loin » et mot d’appel ; exécution t4-arrivee-barre (fr) rejouée dans le HUD jusqu’à l’image 269 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-arrivee-barre.fr.json",
+    "frame": 269
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [
+     [
+      "Barre au 1 · +4 · Appel trop loin",
+      ""
+     ]
+    ],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Appel trop loin",
+     "jump-fb bad"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     true
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "2,43",
+     "/ 64 s",
+     "4 pts",
+     "▸ 2"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-barre-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-barre-844x390-unreal.png"
+  },
+  {
+   "name": "hud-appel-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : mot « Appel parfait » (appel ajouté à l’image du premier mot : aucune exécution de l’oracle n’a d’appel parfait ; texte et genre de cso_feedback.json) ; exécution t4-sans-faute (fr) rejouée dans le HUD jusqu’à l’image 268 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 268,
+    "extra": {
+     "frame": 247,
+     "calls": [
+      [
+       "jumpFeedback",
+       [
+        "Appel parfait",
+        "good"
+       ]
+      ]
+     ]
+    }
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Appel parfait",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "2,40",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-appel-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-appel-844x390-unreal.png"
+  },
+  {
+   "name": "hud-cadence-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : crans de cadence affichés (0,3 s après le dernier réglage au joystick) ; exécution droit (fr) rejouée dans le HUD jusqu’à l’image 186 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/droit.fr.json",
+    "frame": 186
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     true
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 42 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-cadence-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-cadence-844x390-unreal.png"
+  },
+  {
+   "name": "hud-elimine-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : deuxième refus : « ÉLIMINÉ », motif, toast du refus ; exécution t4-deux-refus (fr) rejouée dans le HUD jusqu’à l’image 646 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-deux-refus.fr.json",
+    "frame": 646
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [
+     [
+      "Refus au 4B · +4",
+      ""
+     ]
+    ],
+    "hi": [
+     true,
+     "Refus dans le double : reprends-le au <b>4A</b>.",
+     true
+    ],
+    "bg": [
+     false,
+     "ÉLIMINÉ",
+     "2e refus : éliminé du parcours.",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     true
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "14,27",
+     "/ 64 s",
+     "4 pts",
+     "▸ 4B"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-elimine-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-elimine-844x390-unreal.png"
+  },
+  {
+   "name": "hud-cloche-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : cloche : « CLOCHE », sous-titre et astuce de l’entrée en piste, tableau « Départ 45 s · accordé 64 s » ; exécution t4-cloche (fr) rejouée dans le HUD jusqu’à l’image 95 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-cloche.fr.json",
+    "frame": 95
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 45 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-cloche-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-cloche-667x308-unreal.png"
+  },
+  {
+   "name": "hud-depart-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : avant le départ, 2,5 s après la cloche : grand message retiré, tableau « Départ … s · accordé 64 s », astuce ; exécution t4-cloche (fr) rejouée dans le HUD jusqu’à l’image 149 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-cloche.fr.json",
+    "frame": 149
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 43 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-depart-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-depart-667x308-unreal.png"
+  },
+  {
+   "name": "hud-course-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : en course, obstacle suivant « ▸ 4A », mot d’appel du 3 ; exécution t4-sans-faute (fr) rejouée dans le HUD jusqu’à l’image 735 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 735
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "17,97",
+     "/ 64 s",
+     "0 pt",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-course-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-course-667x308-unreal.png"
+  },
+  {
+   "name": "hud-depassement-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : temps accordé dépassé : chrono en ambre, point de pénalité en rouge ; exécution t4-un-point (fr) rejouée dans le HUD jusqu’à l’image 2138 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-un-point.fr.json",
+    "frame": 2138
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "1 POINT",
+     "64,57 s",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     true,
+     true
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "64,57",
+     "/ 64 s",
+     "1 pt",
+     "Arrivée ✓"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-depassement-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-depassement-667x308-unreal.png"
+  },
+  {
+   "name": "hud-barre-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : barre tombée : toast « Barre au 1 · +4 · Appel trop loin » et mot d’appel ; exécution t4-arrivee-barre (fr) rejouée dans le HUD jusqu’à l’image 269 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-arrivee-barre.fr.json",
+    "frame": 269
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [
+     [
+      "Barre au 1 · +4 · Appel trop loin",
+      ""
+     ]
+    ],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Appel trop loin",
+     "jump-fb bad"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     true
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "2,43",
+     "/ 64 s",
+     "4 pts",
+     "▸ 2"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-barre-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-barre-667x308-unreal.png"
+  },
+  {
+   "name": "hud-appel-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : mot « Appel parfait » (appel ajouté à l’image du premier mot : aucune exécution de l’oracle n’a d’appel parfait ; texte et genre de cso_feedback.json) ; exécution t4-sans-faute (fr) rejouée dans le HUD jusqu’à l’image 268 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 268,
+    "extra": {
+     "frame": 247,
+     "calls": [
+      [
+       "jumpFeedback",
+       [
+        "Appel parfait",
+        "good"
+       ]
+      ]
+     ]
+    }
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Appel parfait",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "2,40",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-appel-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-appel-667x308-unreal.png"
+  },
+  {
+   "name": "hud-cadence-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : crans de cadence affichés (0,3 s après le dernier réglage au joystick) ; exécution droit (fr) rejouée dans le HUD jusqu’à l’image 186 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/droit.fr.json",
+    "frame": 186
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     true
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 42 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-cadence-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-cadence-667x308-unreal.png"
+  },
+  {
+   "name": "hud-elimine-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : deuxième refus : « ÉLIMINÉ », motif, toast du refus ; exécution t4-deux-refus (fr) rejouée dans le HUD jusqu’à l’image 646 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-deux-refus.fr.json",
+    "frame": 646
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [
+     [
+      "Refus au 4B · +4",
+      ""
+     ]
+    ],
+    "hi": [
+     true,
+     "Refus dans le double : reprends-le au <b>4A</b>.",
+     true
+    ],
+    "bg": [
+     false,
+     "ÉLIMINÉ",
+     "2e refus : éliminé du parcours.",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     true
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "14,27",
+     "/ 64 s",
+     "4 pts",
+     "▸ 4B"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-elimine-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-elimine-667x308-unreal.png"
   }
  ]
 }

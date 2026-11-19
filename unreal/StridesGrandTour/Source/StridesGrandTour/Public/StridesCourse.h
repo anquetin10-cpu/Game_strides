@@ -2,13 +2,16 @@
 // l'épreuve (strides::CsoRun, tranche T4 : entrée de piste, entrée en piste, cloche, lignes, chrono, points en direct,
 // refus, erreurs de parcours, éliminations, arrivée, sortie de piste, textes fr / en de Content/Data/strings_cso.json),
 // géométrie exportée du jeu web (tranche T5 : obstacles, lignes de départ et d'arrivée, poteau « Chrono », hauteurs
-// hors épreuve puis de l'épreuve, numéro attendu surligné ; Content/World/Cso/cso_fences.json).
+// hors épreuve puis de l'épreuve, numéro attendu surligné ; Content/World/Cso/cso_fences.json) ; interface d'épreuve
+// (tranche T7 : strides::CsoHud nourri par les appels de l'épreuve et l'état de chaque image, affiché par
+// UStridesCsoHud).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
+#include "StridesCore/CsoHud.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
@@ -30,6 +33,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strides") FString SpeedLevel = TEXT("national");
 	// Langue des textes de l'épreuve (« fr » ou « en », comme la sauvegarde : strides::SaveGame::lang).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strides") FString Lang = TEXT("fr");
+	// Aide à l'appel (réglage jumpAid du jeu web : « full », « button » ou « off ») : mot d'appel coupé sur « off ».
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strides") FString JumpAid = TEXT("full");
 	UPROPERTY(BlueprintAssignable, Category = "Strides") FStridesCourseEvent OnCourseEvent;
 
 	void Build(const strides::CourseDesign& Design, const class UStridesDataSubsystem& Data);
@@ -62,11 +67,23 @@ public:
 	void UpdateFences(double Dt, double Time, double FocusX, double FocusZ);
 	const TArray<FString>& FenceEventLog() const { return FenceLog; }
 	// Appels de l'interface (hud.big / toast / hint / clearHint) et sons (audio.*) demandés par l'épreuve, dans l'ordre :
-	// « fn | arg | arg… ». Les sons ne sont pas joués (tranche T12), l'interface d'épreuve est en T7.
+	// « fn | arg | arg… ». Les sons ne sont pas joués (tranche T12) ; l'interface les reçoit aussi (HudModel).
 	const TArray<FString>& HudLog() const { return HudCalls; }
 	const TArray<FString>& AudioLog() const { return AudioCalls; }
 	// Remises des barres demandées par l'épreuve (entrée en piste, obstacles.js resetRails) et appliquées aux obstacles.
 	int32 RailResets() const { return RailResetCount; }
+
+	// Interface d'épreuve (tranche T7) : état du HUD du jeu web (toasts, astuce, grand message, mot d'appel, tableau,
+	// crans de cadence, classes et masquages). Une image : BeginHudFrame (temporisations échues, avant les événements
+	// d'obstacle), appels de l'épreuve (FlushRunCalls), puis UpdateHud après TickRun (hud.update du jeu web).
+	const strides::CsoHud& HudModel() const { return Hud; }
+	strides::CsoHud& HudModel() { return Hud; }
+	void BeginHudFrame(double Dt) { Hud.advance(Dt); }
+	void UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust);
+	// Dernier saut du cheval du joueur (horse._lastJump, mot d'appel) : présent ou non (effacé quand le cheval est posé),
+	// obstacle (indice du cœur, −1 : aucun obstacle du parcours), qualité de l'appel et instant ; transmis à l'épreuve
+	// quand il change.
+	void NoteLastJump(bool bHas, int32 ObstacleIndex, const strides::JumpPlan& Plan, double JumpTime);
 
 	UFUNCTION(BlueprintPure, Category = "Strides") float ElapsedTime() const;
 	UFUNCTION(BlueprintPure, Category = "Strides") int32 Faults() const;
@@ -109,4 +126,6 @@ private:
 	int32 HighlightNum = -1, RunHighlight = -1;
 	UPROPERTY() TArray<TObjectPtr<class UStaticMeshComponent>> Props;
 	TArray<FString> PropTex, PropTexEn;  // textures des panneaux des lignes (vide : autre pièce)
+	strides::CsoHud Hud;
+	double LastJumpTime = -1;
 };

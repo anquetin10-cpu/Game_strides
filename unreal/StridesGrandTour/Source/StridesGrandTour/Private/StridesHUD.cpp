@@ -45,6 +45,9 @@ void AStridesHUD::DrawHUD()
 {
 	Super::DrawHUD();
 	EventT -= GetWorld()->GetDeltaSeconds();
+	// Épreuve (mode concours) : interface d'épreuve UMG seule, ni lignes de débogage ni minicarte.
+	bDrewDebug = DebugVisible(Course.IsValid() && Course->Run() ? &Course->HudModel() : nullptr);
+	if (!bDrewDebug) return;
 	float Y = 40.f;
 	auto Line = [this, &Y](const FString& S, const FLinearColor& C = FLinearColor::White) { DrawText(S, C, 40.f, Y, nullptr, 1.4f); Y += 30.f; };
 	const APawn* P = GetOwningPawn();

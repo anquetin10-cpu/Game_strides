@@ -198,7 +198,12 @@ bool FStridesPariteCsoTest::RunTest(const FString&)
 		{
 			const TSharedPtr<FJsonObject> E = V->AsObject();
 			const TSharedPtr<FJsonObject> VP = E->GetObjectField(TEXT("viewport"));
-			TestTrue(TEXT("pose : viewport 844 × 390"), VP->GetNumberField(TEXT("w")) == 844 && VP->GetNumberField(TEXT("h")) == 390);
+			// 844 × 390 ; les poses du HUD d'épreuve (tranche T7, « hud-* ») aussi en 667 × 308, avec l'exécution rejouée.
+			const bool bHud = E->GetStringField(TEXT("name")).StartsWith(TEXT("hud-"));
+			const double W = VP->GetNumberField(TEXT("w")), H = VP->GetNumberField(TEXT("h"));
+			TestTrue(TEXT("pose : viewport 844 × 390 (ou 667 × 308 pour le HUD)"), (W == 844 && H == 390) || (bHud && W == 667 && H == 308));
+			if (bHud) TestTrue(TEXT("pose du HUD : exécution et image rejouées, état du web"), E->HasField(TEXT("hud")) && E->HasField(TEXT("state")) &&
+				E->GetStringField(TEXT("name")).EndsWith(FString::Printf(TEXT("-%dx%d"), (int32)W, (int32)H)));
 			TestTrue(TEXT("pose : œil, cible, soleil"), E->GetArrayField(TEXT("eye")).Num() == 3 && E->GetArrayField(TEXT("target")).Num() == 3 && E->GetArrayField(TEXT("sunDir")).Num() == 3);
 			TestTrue(TEXT("pose : FOV vertical"), E->GetNumberField(TEXT("fovV")) > 10 && E->GetNumberField(TEXT("fovV")) < 120);
 		}

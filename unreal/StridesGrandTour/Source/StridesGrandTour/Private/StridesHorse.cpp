@@ -279,6 +279,8 @@ void AStridesHorse::TickDemo()
 void AStridesHorse::Tick(float Dt)
 {
 	Super::Tick(Dt);
+	// Interface d'épreuve (tranche T7) : temporisations du HUD échues avant les appels de l'image.
+	if (Course) Course->BeginHudFrame(Dt);
 	if (bCsoControls) TickCso(Dt);
 	else TickOpenWorld(Dt);
 	UpdateAnimation();
@@ -333,6 +335,8 @@ void AStridesHorse::TickCso(float Dt)
 		U.csoCourse = true;
 		strides::CsoFenceOut Out;
 		strides::csoFencesUpdateHorse(Sim, Obs, Course->FenceStates(), U, Out, JP, HP, Data ? Data->FenceParams() : strides::csoFenceDefaults());
+		// Dernier saut (horse._lastJump), lu par le mot d'appel des écouteurs d'obstacle (tranche T7).
+		Course->NoteLastJump(Sim.hasLastJump, Sim.lastJumpObstacle, Sim.lastPlan, Sim.lastJumpTime);
 		for (const strides::CsoHorseEvent E : Out.horse) FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
 		// Événements d'obstacle vus par l'épreuve (courses.js) : un refus compté remet la cadence à 0.
 		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
@@ -356,6 +360,8 @@ void AStridesHorse::TickCso(float Dt)
 		Course->TickRun(RunFrame(Dt, In.time), Cad);
 		Sim.hasCadence = Cad.has;
 		Sim.cadence = Cad.v;
+		// hud.update du jeu web (fin de l'image) : tableau, classes, crans de cadence (réglage au joystick).
+		Course->UpdateHud(Dt, Sim.hasCadence, Sim.cadence, Sim.cadAdjust);
 	}
 	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
 	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop reste atteignable (aligné sur le clip de saut rapide).
@@ -410,6 +416,7 @@ void AStridesHorse::TickOpenWorld(float Dt)
 	{
 		strides::CsoCadence Cad;
 		Course->TickRun(RunFrame(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0), Cad);
+		Course->UpdateHud(Dt, false, 0.0, false);
 		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.
 		Course->UpdateFences(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, X, Z);
 	}

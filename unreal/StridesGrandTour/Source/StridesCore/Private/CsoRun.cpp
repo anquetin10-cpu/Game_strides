@@ -388,17 +388,42 @@ void CsoRun::obstacleEvent(CsoObstacleEventKind kind, int num, int dir, const st
     if (kind == CsoObstacleEventKind::Clear) {
       st_.log.push_back({label, "clear", "", ""});
       audio("tone", {N(990), N(0.06), S("sine"), N(0.06)});
-      // (mot d'appel hud.jumpFeedback : tranche T7)
+      feedback(num, true, std::string());
     } else {
       st_.faults += cfg_.rail;
       st_.log.push_back({label, "rail", cause, causeText});
-      // (mot d'appel hud.jumpFeedback : tranche T7)
+      feedback(num, false, cause);
       audio("fault", {});
       audio("crowdOoh", {});
       hud("toast", {S(Tr("Barre au {0} · +4{1}", {label, causeText.empty() ? std::string() : " · " + causeText}))});
     }
     advance();
   } else if (dir > 0) wrongCourse(num);
+}
+
+// courses.js:39-49 (TAKEOFF_TEXT) et :203-211 (feedback).
+bool csoTakeoffFeedback(bool cso, const std::string& aid, const CsoLastJump& last, int num, bool clear, const std::string& cause, std::string& key, std::string& kind) {
+  if (!cso || aid == "off") return false;
+  std::string q = last.has && last.num == num ? last.quality : std::string();
+  if (!clear) q = !cause.empty() ? (cause == "short" ? "far" : cause == "fast" ? "far" : cause) : (q == "perfect" || q == "good" ? std::string() : q);
+  else if (q == "far") q = "bitFar";
+  else if (q == "near" || q == "tooClose") q = "bitNear";
+  static const char* const TEXT[][2] = {
+      {"perfect", "Appel parfait"}, {"good", "Bon appel"}, {"bitFar", "Un peu loin"}, {"bitNear", "Un peu près"},
+      {"far", "Appel trop loin"}, {"near", "Appel trop près"}, {"angle", "Abord en biais"},
+      {"slow", "Manque d’impulsion"}, {"tooClose", "Trop près"}};
+  for (const auto& e : TEXT)
+    if (q == e[0]) {
+      key = e[1];
+      kind = clear ? (q == "perfect" || q == "good" ? "good" : "ok") : "bad";
+      return true;
+    }
+  return false;
+}
+
+void CsoRun::feedback(int num, bool clear, const std::string& cause) {
+  std::string key, kind;
+  if (csoTakeoffFeedback(true, cfg_.aid, lastJump_, num, clear, cause, key, kind)) hud("jumpFeedback", {S(tr(key.c_str())), S(kind)});
 }
 
 bool CsoRun::board(CsoBoard& b) const {

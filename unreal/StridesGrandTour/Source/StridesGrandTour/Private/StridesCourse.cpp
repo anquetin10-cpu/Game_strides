@@ -142,6 +142,7 @@ bool AStridesCourse::StartRun(const FString& PlayerName, const FString& HorseNam
 	C.playerName = TCHAR_TO_UTF8(*PlayerName);
 	C.horseName = TCHAR_TO_UTF8(*HorseName);
 	C.lang = strides::langFromName(TCHAR_TO_UTF8(*Lang));
+	C.aid = TCHAR_TO_UTF8(*JumpAid);
 	RefreshPropSigns();
 	StartRunWith(C, RunText);
 	return true;
@@ -151,6 +152,8 @@ void AStridesCourse::StartRunWith(const strides::CsoRunConfig& Config, const str
 {
 	if (&Text != &RunText) RunText = Text;
 	Allowed = Config.timeAllowed;
+	Hud = strides::CsoHud();
+	LastJumpTime = -1;
 	RunPtr = std::make_unique<strides::CsoRun>(Config, RunText);
 	RunPtr->begin();
 	FlushRunCalls();
@@ -168,7 +171,9 @@ void AStridesCourse::FlushRunCalls()
 	for (const strides::CsoCall& C : RunPtr->takeHud())
 	{
 		HudCalls.Add(Line(C));
-		// Interface d'épreuve (grand message, toasts, astuce : tranche T7) : texte transmis au HUD de débogage.
+		// Interface d'épreuve (tranche T7) : appel rejoué par le modèle du HUD, affiché par UStridesCsoHud ; texte
+		// transmis aussi aux abonnés (journal).
+		Hud.call(C);
 		FString Text = C.args.empty() || C.args[0].isNum ? FString() : FString(UTF8_TO_TCHAR(C.args[0].s.c_str()));
 		if (C.fn == "big" && C.args.size() > 1 && !C.args[1].isNum && !C.args[1].s.empty()) Text += TEXT(" · ") + FString(UTF8_TO_TCHAR(C.args[1].s.c_str()));
 		OnCourseEvent.Broadcast(UTF8_TO_TCHAR(C.fn.c_str()), Text);
@@ -206,6 +211,47 @@ void AStridesCourse::TickRun(const strides::CsoRunFrame& Frame, strides::CsoCade
 	if (RunPtr->step() == strides::CsoStep::Presentation) RunPtr->enter();
 	RunPtr->update(Frame, Cadence);
 	FlushRunCalls();
+}
+
+void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust)
+{
+	// hud.update du jeu web (après la mission) : game.course (commandes et tableau de l'épreuve), cadence du joueur.
+	// Objectif (setObjective de missions.js) : affiché tant que l'épreuve n'est pas terminée.
+	strides::CsoHudFrame F;
+	if (RunPtr)
+	{
+		Hud.setObjective(!RunPtr->finished());
+		const strides::CsoCourseMode& M = RunPtr->course();
+		F.course = M.active;
+		F.controlsCso = M.active;  // cso_train : controls === 'cso', kind === 'cso' (courses.js:187)
+		F.kindCso = M.active;
+		F.board = RunPtr->board(F.info);
+	}
+	F.hasCadence = bHasCadence;
+	F.cadence = Cadence;
+	F.cadAdjust = bCadAdjust;
+	Hud.update(Dt, F);
+}
+
+void AStridesCourse::NoteLastJump(bool bHas, int32 ObstacleIndex, const strides::JumpPlan& Plan, double JumpTime)
+{
+	if (!RunPtr) return;
+	if (!bHas)
+	{
+		// Cheval posé (horse.setPosition : _lastJump = null).
+		if (RunPtr->lastJump().has) RunPtr->setLastJump(strides::CsoLastJump());
+		LastJumpTime = -1;
+		return;
+	}
+	// Un nouveau saut (horse._lastJump remplacé) : obstacle sauté (numéro du parcours) et qualité de l'appel.
+	if (JumpTime == LastJumpTime && RunPtr->lastJump().has) return;
+	LastJumpTime = JumpTime;
+	strides::CsoLastJump L;
+	L.has = true;
+	const AStridesFence* F = FenceAt(ObstacleIndex);
+	L.num = F ? F->Num : -1;
+	L.quality = strides::qualityName(strides::takeoffQuality(Plan));
+	RunPtr->setLastJump(L);
 }
 
 void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::CsoCadence& Cadence)

@@ -223,16 +223,16 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | absent | aucun | `SG/StridesHUD.cpp:36-53` | minicarte, vitesse, sauvegarde, progression, mission toujours affichées |
-| 9 | Tableau `.cso-board` (chrono, accordé, points, prochain, style) | partiel | compile | `SG/StridesHUD.cpp:37` | une ligne de texte `DrawText` |
-| 9 | Crans de cadence (6 barres, 2 s après réglage) | absent | aucun | `SG/StridesHUD.cpp:36` | valeur numérique « cadence %.1f » |
-| 9 | Objectif masqué en épreuve | absent | aucun | `SG/StridesHUD.cpp:50` | statut de mission affiché |
-| 9 | Astuce `.hint` | absent | aucun | — | — |
-| 9 | Toasts (2 au plus, 1 si h ≤ 420 px, 3200 ms) | partiel | compile | `SG/StridesHUD.cpp:19-23`, `44` | une seule ligne, 3 s, écrasée par l'événement suivant |
-| 9 | Grand message (titre, sous-titre, `pop` 0,5 s) | absent | aucun | — | — |
-| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | compile | `SG/StridesTouchControls.cpp:43` | 150 × 92 à (−32 ; −132) |
-| 9 | Bouton pause en haut à droite | absent | aucun | — | — |
-| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | absent | aucun | `SG/StridesTouchControls.cpp:44-50` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION toujours visibles |
+| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | partiel | testé | `SC/CsoHud.cpp:42`, `SG/StridesHUD.cpp:49`, `SG/StridesTouchControls.cpp:74` | table des masquages du navigateur rejouée (T7) ; pause et SAUT 104 × 104 en T8 ; joysticks virtuels du moteur encore dessinés |
+| 9 | Tableau `.cso-board` (chrono, accordé, points, prochain, style) | partiel | testé | `SG/StridesCsoHud.cpp:447` | UMG, montages `cso/hud-*` ; police du moteur (Geist non embarquée), « ▸ » dessiné |
+| 9 | Crans de cadence (6 barres, 2 s après réglage) | partiel | testé | `SC/CsoHud.cpp:190` | logique rejouée (`cso_hud.json`), montage `cso/hud-cadence-*` ; fondu non comparé image par image |
+| 9 | Objectif masqué en épreuve | partiel | testé | `SC/CsoHud.cpp:42` | HUD de débogage masqué en mode concours ; carte d'objectif non portée |
+| 9 | Astuce `.hint` | partiel | testé | `SC/CsoHud.cpp:139-154` | rejouée et affichée (texte riche) ; logement dans la carte d'objectif non dessiné |
+| 9 | Toasts (2 au plus, 1 si h ≤ 420 px, 3200 ms) | partiel | testé | `SC/CsoHud.cpp:120` | rejoués (deux toasts : séquence synthétique) ; police, ombre portée |
+| 9 | Grand message (titre, sous-titre, `pop` 0,5 s) | partiel | testé | `SC/CsoHud.cpp:129` | rejoué, montages ; animation non comparée image par image |
+| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | compile | `SG/StridesTouchControls.cpp:45` | 150 × 92 à (−32 ; −132) ; seul bouton gardé en épreuve (T7), taille en T8 |
+| 9 | Bouton pause en haut à droite | absent | aucun | — | T8 |
+| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | partiel | testé | `SG/StridesTouchControls.cpp:74` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION masqués en épreuve (T7) |
 | 9 | Notifications retenues puis relâchées | absent | aucun | — | — |
 
 ### 2.10 Caméra (§10)
@@ -737,6 +737,60 @@ Principes communs :
 - **Dépendances / risques** : T4 (textes, événements), T2 (cadence). Mise à l'échelle UMG (courbe DPI) à régler pour
   qu'une unité Slate vaille un pixel CSS en 844 × 390 (à confirmer) ; police : la pile système du web (SF sur iOS) n'est
   pas embarquable telle quelle, licence à vérifier avant tout choix, écart à documenter ; zones sûres iOS (`--st`).
+
+- **Livré (19/11/2026)** : (1) Cœur : `SCh/CsoHud.h`, `SC/CsoHud.cpp` (`strides::CsoHud`, nouveau fichier, au lieu de
+  `SC/CsoRun.cpp` prévu : c'est le HUD de `hud.js`, pas le déroulé) = `toast` (1 toast si la hauteur ≤ 420 px, sinon 2,
+  3,2 s), `big` (2,2 s par défaut, `big-on` retiré 400 ms après), `hint` / `clearHint` / `_placeHint`, `jumpFeedback`
+  (1,5 s), `setObjective`, partie concours de `update` (classes `cso-on` / `cso-ctl` / `cso-sober`, tableau masqué,
+  `over`, `faults`, crans round(cadence / 8 × 6) par `Math.round`, 2 s après un réglage) sur une horloge en ticks de
+  1/3 ms (temporisateurs échus dans l'ordre échéance puis création) ; `csoHudMasked` (masquages de `styles.css:150, 244,
+  988-997`). Mot d'appel : `csoTakeoffFeedback` et `CsoRun::feedback` (`SC/CsoRun.cpp:405-427`, `courses.js:203-211`,
+  aide lue dans `CsoRunConfig::aid`, dernier saut fourni par `CsoRun::setLastJump`). (2) Données et oracles par script :
+  `scripts/unreal/export-hud-style.mjs` (jeu web en cours d'exécution, rien de modifié dans `src/`) écrit
+  `Content/Data/hud_cso_style.json` (styles calculés et boîtes des éléments du HUD d'épreuve par viewport, arrondis au
+  dixième de pixel après chargement des polices ; table des masquages : 19 éléments × 8 combinaisons de classes),
+  `ORA/cso_hud.json` (le vrai HUD rejoue sur une horloge virtuelle les appels `hud.*` et l'état lu par `hud.update` des
+  75 exécutions de `cso_runs/` et d'une séquence synthétique — deux et trois toasts, durées par défaut, big relancé dans la
+  marge, cadence sur les égalités d'arrondi… — à 390 et 768 px : 152 rejeux, 1 463 relevés) et, avec `--shots`, les
+  poses `hud-*` ; `EXP` écrit `ORA/cso_feedback.json` (fonction `feedback` extraite de `courses.js` et évaluée sur 1 638
+  cas) ; `export-cso-runs.mjs` relève le dernier saut du cheval dans le canal « ep » (`ep.lj`) : réexport complet, 34
+  exécutions changées par ce seul champ (comparées champ à champ), les 41 autres identiques à l'octet, `cso_target.json`
+  et `cso_goto.json` identiques ; deux exports successifs de `export-hud-style.mjs` donnent les mêmes octets. (3) Jeu :
+  `SGh/StridesCsoHud.h`, `SG/StridesCsoHud.cpp` (`UStridesCsoHud`, UMG construit en C++, créé par
+  `AStridesPlayerController` sur toutes les plateformes) : tableau (boîte arrondie, alignement sur la ligne de base
+  relevé, chrono ambre en dépassement, points rouges), crans, mot d'appel teinté par genre, astuce en texte riche
+  (`<b>` → style « b »), toasts, grand message (centre et largeur relevés, animation pop), une unité de mise en page =
+  un px CSS (`UScaleBox` : facteur de pixels de la plateforme / échelle DPI du moteur) ; `AStridesCourse` nourrit le
+  modèle (`BeginHudFrame` avant les événements d'obstacle, appels de `CsoRun`, `UpdateHud` après `TickRun`,
+  `NoteLastJump`) ; `AStridesHUD::DebugVisible` : ni lignes de débogage ni minicarte en mode concours ;
+  `UStridesTouchControls::ButtonVisible` : SAUT seul en épreuve ; `-StridesShots=cso` : poses du HUD (fenêtre mise à la
+  taille de la pose, HUD figé rejoué comme au web, capture de la fenêtre avec l'interface, état comparé à celui du DOM).
+  (4) Preuves : `TC` (`testCsoFeedback` 1 638 cas, `testCsoHud` 152 rejeux, 73 554 images et 152 masquages,
+  `testCsoRuns` désormais avec les 98 appels `hud.jumpFeedback`) : ctest 194 398 vérifications, 0 échec ; tests moteur
+  `Strides.Parite.CsoHud` (mêmes rejeux par le module), `Strides.Cso.HudWidget` (textes affichés par le widget égaux à
+  l'oracle : tableau, CLOCHE, toast, mot, 5 crans), `Strides.Parite.CsoRun` (540 appels d'interface dont les mots
+  d'appel), `Strides.Cso.RunInGame` (modèle nourri en jeu : classes, « Départ … s », CLOCHE, HUD de débogage et boutons
+  masqués en épreuve puis rendus au bilan) : 20 tests Strides en Result={Success}. Montages `cso/hud-<état>-844x390.png`
+  et `-667x308.png` (web à gauche) pour 8 états : cloche (« Départ 45 s · accordé 64 s », CLOCHE), avant le départ,
+  en course « ▸ 4A », dépassement en ambre (« 64,57 », 1 pt rouge, « Arrivée ✓ »), « Barre au 1 · +4 · Appel trop
+  loin » avec le mot, « Appel parfait », crans de cadence, ÉLIMINÉ ; état rejoué identique à l'état du DOM du web pour
+  les 16 poses (`cso/hud-unreal.json`). Démonstration F8 : « 60,25 / 64 s 0 pt Arrivée ✓ ». (5) Écarts restants :
+  - police : le web charge Geist et Geist Mono depuis Google Fonts ; Unreal affiche Roboto et Droid Sans Mono du moteur
+    (graisse 600 en gras, chiffres du chrono non monospaces, tableau 2 à 3 px plus haut) : choix et licence d'une
+    police embarquée à trancher ; « ▸ » (U+25B8) absent de toutes les polices du moteur : dessiné (triangle plein) ;
+    « ✓ » par la police de secours ; ombres portées absentes, une seule ombre du titre ;
+  - animations (pop, toastIn, hintIn, fondus) portées mais non comparées image par image : les captures montrent l'état
+    d'arrivée (animations CSS coupées dans la page de capture web) ;
+  - bouton pause, bouton SAUT de 104 × 104 px et joysticks virtuels du moteur (visibles sur les captures Unreal) : T8 ;
+    astuce dans la carte d'objectif (hors parcours) non dessinée, la carte n'étant pas portée ; hors mode concours (après
+    l'élimination), la colonne du web commence après la minicarte, celle d'Unreal garde la position d'épreuve ;
+  - facteur de pixels : écran du Mac (1 sur le Mac mini) ; iOS rend 1 par la plateforme générique (facteur natif 2 ou 3
+    attendu, à confirmer sur appareil) ; zones sûres iOS (`--st`) non traitées ; autres viewports : relevé le plus proche
+    en hauteur ;
+  - objectif (setObjective) en jeu : présent tant que l'épreuve n'est pas terminée (le texte de mission de `missions.js`
+    n'est pas porté) ; le HUD en partie réelle n'a pas été capturé avec l'interface (captures de la démonstration sans
+    interface) ; les quatre scripts de mutations existants listent `CsoHud.cpp` (motifs tous applicables) mais n'ont pas
+    été relancés en entier.
 
 ### T8. Commandes d'épreuve (tactile, clavier, pause)
 

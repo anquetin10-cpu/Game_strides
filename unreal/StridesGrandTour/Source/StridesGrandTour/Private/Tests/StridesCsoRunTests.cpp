@@ -28,6 +28,7 @@
 #include "StridesHorse.h"
 #include "StridesHUD.h"
 #include "StridesRider.h"
+#include "StridesTouchControls.h"
 #include "StridesUnits.h"
 #include "StridesOracleRuns.h"
 
@@ -89,7 +90,7 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 	if (!TestNotNull(TEXT("sous-système de données"), Data) || !TestNotNull(TEXT("textes de l'épreuve (strings_cso.json)"), Data->CsoText())) return false;
 	// Exécutions t4-* et « droit » de l'index, chacune lue seule (un fichier par exécution) par le lecteur du cœur.
 	TArray<FString> Done;
-	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, BoardCmp = 0, LogCmp = 0, Bad = 0;
+	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, BoardCmp = 0, LogCmp = 0, Bad = 0, LastJumps = 0;
 	for (const StridesOracleRuns::FEntry& Entry : Runs)
 	{
 		if (!Entry.Id.StartsWith(TEXT("t4-")) && Entry.Id != TEXT("droit")) continue;
@@ -111,7 +112,8 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 			{
 				const std::string& Src = C["src"].s;
 				const std::string& Fn = C["fn"].s;
-				const bool Keep = bHud ? (Src == "gameplay/courses.js" && Fn != "jumpFeedback") || (Src == "gameplay/missions.js" && Fn == "clearHint") : Src == "gameplay/courses.js";
+				// Mot d'appel (hud.jumpFeedback) compris depuis la tranche T7.
+				const bool Keep = bHud ? Src == "gameplay/courses.js" || (Src == "gameplay/missions.js" && Fn == "clearHint") : Src == "gameplay/courses.js";
 				if (Keep) Want.Add(CallLine(C));
 			}
 			const TArray<FString>& Log = bHud ? Course->HudLog() : Course->AudioLog();
@@ -138,6 +140,20 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 			const int32 F = (int32)Fr["f"].num();
 			const J& Ep = Fr["ep"];
 			if (Ep.isNull()) continue;
+			// Dernier saut du cheval (ep.lj, relevé quand il change), lu par le mot d'appel (tranche T7).
+			if (Ep.o.count("lj"))
+			{
+				strides::CsoLastJump Lj;
+				const J& V = Ep["lj"];
+				Lj.has = !V.isNull();
+				if (Lj.has)
+				{
+					Lj.num = V[0].isNull() ? -1 : (int)V[0].num();
+					Lj.quality = V[1].isNull() ? std::string() : V[1].s;
+				}
+				Course->Run()->setLastJump(Lj);
+				LastJumps++;
+			}
 			strides::CsoFenceOut Out;
 			for (size_t K = 0; K < (size_t)Ep["e0"].num() && K < Fr["ev"].a.size(); K++)
 			{
@@ -238,7 +254,10 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 		for (const TCHAR* L : {TEXT("fr"), TEXT("en")}) TestTrue(FString::Printf(TEXT("scénario %s (%s) rejoué"), Id, L), Done.Contains(FString::Printf(TEXT("%s %s"), Id, L)));
 	TestEqual(TEXT("écarts au jeu web (interface, sons, état, cadence, mode de concours, tableau, surlignage, barres, public, journal)"), Bad, 0);
 	TestTrue(TEXT("journal des fautes relevé"), LogCmp > 0);
-	AddInfo(FString::Printf(TEXT("déroulé d'épreuve dans le jeu : %d exécutions sans écart, %d images, %d appels d'interface, %d sons, %d tableaux et %d changements du journal des fautes comparés"), Done.Num(), Frames, HudCmp, AudioCmp, BoardCmp, LogCmp));
+	TestTrue(TEXT("derniers sauts relevés (mot d'appel)"), LastJumps > 0);
+	const FString Info = FString::Printf(TEXT("déroulé d'épreuve dans le jeu : %d exécutions sans écart, %d images, %d appels d'interface (mots d'appel compris), %d sons, %d tableaux, %d changements du journal des fautes et %d derniers sauts"), Done.Num(), Frames, HudCmp, AudioCmp, BoardCmp, LogCmp, LastJumps);
+	AddInfo(Info);
+	UE_LOG(LogTemp, Display, TEXT("Strides.Parite.CsoRun : %s"), *Info);
 	return true;
 }
 
@@ -273,6 +292,20 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	TestTrue(TEXT("annonce du dossard"), Course->HudLog().ContainsByPredicate([](const FString& L) { return L.StartsWith(TEXT("big | N° ")) && L.EndsWith(TEXT(" · Alex | et Comète | 2400.0")); }));
 	TestTrue(TEXT("cloche : grand message et son"), Logged(TEXT("big | CLOCHE | Tu as 45 s pour franchir la ligne de départ | 2000.0")) && Logged(TEXT("bell")));
 	TestTrue(TEXT("chrono pas lancé avant la ligne"), !Course->Run()->state().started);
+	// Tranche T7 : HUD d'épreuve nourri par l'épreuve (classes de concours, tableau « Départ … s »), HUD de débogage et
+	// boutons hors épreuve masqués.
+	{
+		const strides::CsoHud& H = Course->HudModel();
+		strides::CsoBoard B;
+		Course->Run()->board(B);
+		TestTrue(FString::Printf(TEXT("HUD d'épreuve : cso-ctl, cso-sober, cso-on, tableau « %hs %hs »"), H.boardText(0).c_str(), H.boardText(1).c_str()),
+			H.csoCtl() && H.csoSober() && H.csoOn() && !H.boardHidden() && H.boardText(0) == B.txt[0] && H.boardText(1) == B.txt[1] && H.boardText(0).rfind("Départ ", 0) == 0);
+		TestTrue(FString::Printf(TEXT("HUD d'épreuve : grand message « %hs » reçu"), H.bigTitle().c_str()), H.bigTitle() == "CLOCHE");
+		TestFalse(TEXT("HUD de débogage masqué en épreuve"), AStridesHUD::DebugVisible(&H));
+		TestTrue(TEXT("boutons tactiles en épreuve : SAUT seul"), UStridesTouchControls::ButtonVisible(TEXT("Jump"), &H) && !UStridesTouchControls::ButtonVisible(TEXT("Save"), &H) &&
+			!UStridesTouchControls::ButtonVisible(TEXT("Interact"), &H) && !UStridesTouchControls::ButtonVisible(TEXT("GaitUp"), &H) && !UStridesTouchControls::ButtonVisible(TEXT("Phone"), &H) &&
+			!UStridesTouchControls::ButtonVisible(TEXT("Mission"), &H) && !UStridesTouchControls::ButtonVisible(TEXT("Load"), &H));
+	}
 	// 2) Cheval posé 6 m avant la ligne de départ, dans son axe, au trot : ligne franchie, bip, chrono lancé.
 	Horse->PlaceAt(Cfg.start.x - FMath::Sin(Cfg.start.rot) * 6, Cfg.start.z - FMath::Cos(Cfg.start.rot) * 6, Cfg.start.rot, 4.6);
 	for (int32 K = 0; K < 60 && !Course->Run()->state().started; K++) Horse->Tick(Dt);
@@ -289,6 +322,8 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	TestTrue(FString::Printf(TEXT("descente : éliminé (« %hs »)"), S.eliminatedReason.c_str()), S.eliminated && S.eliminatedReason == "Tu es descendu de cheval : éliminé.");
 	TestTrue(TEXT("descente : grand message ÉLIMINÉ et cloche double"), Logged(TEXT("big | ÉLIMINÉ | Tu es descendu de cheval : éliminé. | 2600.0")) && Logged(TEXT("bell | 2.0")));
 	TestTrue(TEXT("bilan (étape suivante)"), Course->Run()->step() == strides::CsoStep::Result);
+	TestTrue(TEXT("HUD d'épreuve : ÉLIMINÉ reçu, mode concours quitté au bilan, HUD de débogage rendu"), Course->HudModel().bigTitle() == "ÉLIMINÉ" && !Course->HudModel().csoCtl() &&
+		AStridesHUD::DebugVisible(&Course->HudModel()) && UStridesTouchControls::ButtonVisible(TEXT("Save"), &Course->HudModel()));
 	AddInfo(FString::Printf(TEXT("épreuve en jeu : %d appels d'interface, %d sons ; %s"), Course->HudLog().Num(), Course->AudioLog().Num(), *Course->StatusText()));
 	return true;
 }

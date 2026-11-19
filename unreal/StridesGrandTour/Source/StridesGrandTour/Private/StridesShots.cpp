@@ -15,11 +15,18 @@
 #include "Misc/Paths.h"
 #include "EngineUtils.h"
 #include "StridesCourse.h"
+#include "StridesCsoHud.h"
+#include "StridesCsoHudReplay.h"
+#include "StridesPlayerController.h"
+#include "StridesCore/MiniJson.h"
+#include "Policies/CondensedJsonPrintPolicy.h"
+#include "Serialization/JsonWriter.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
 #include "StridesRider.h"
 #include "StridesUnits.h"
 #include "UnrealClient.h"
+#include "UnrealEngine.h"
 #include "Components/LightComponent.h"
 #include "Components/SkyLightComponent.h"
 #include "Dom/JsonObject.h"
@@ -384,6 +391,27 @@ void AStridesShots::LoadPoses()
 			P.WebBottom = (*Fm)->GetNumberField(TEXT("bottom"));
 			P.bFramingJump = (*Fm)->GetBoolField(TEXT("jump"));
 		}
+		// HUD d'épreuve (tranche T7) : exécution de l'oracle rejouée dans le HUD jusqu'à l'image de la pose.
+		const TSharedPtr<FJsonObject>* Hu = nullptr;
+		if (O->TryGetObjectField(TEXT("hud"), Hu))
+		{
+			P.bHasHud = true;
+			P.HudRunFile = (*Hu)->GetStringField(TEXT("run"));
+			P.HudFrame = (int32)(*Hu)->GetNumberField(TEXT("frame"));
+			const TSharedPtr<FJsonObject>* Ex = nullptr;
+			if ((*Hu)->TryGetObjectField(TEXT("extra"), Ex))
+			{
+				P.HudExtraFrame = (int32)(*Ex)->GetNumberField(TEXT("frame"));
+				TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> W = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&P.HudExtra);
+				FJsonSerializer::Serialize((*Ex)->GetArrayField(TEXT("calls")), W);
+			}
+			const TSharedPtr<FJsonObject>* St = nullptr;
+			if (O->TryGetObjectField(TEXT("state"), St))
+			{
+				TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> W = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&P.HudState);
+				FJsonSerializer::Serialize(St->ToSharedRef(), W);
+			}
+		}
 		// -StridesPose=<préfixe> : seulement les poses dont le nom commence ainsi.
 		FString Only;
 		if (FParse::Value(FCommandLine::Get(), TEXT("StridesPose="), Only) && !P.Name.StartsWith(Only)) continue;
@@ -460,6 +488,9 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 		PC->SetViewTarget(Camera);
 	}
 	if (PC->GetHUD()) PC->GetHUD()->bShowHUD = false;
+	if (AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC))
+		if (UStridesCsoHud* W = SPC->CsoHudWidget()) W->SetFrozen(P.bHasHud ? &PoseHud : nullptr);
+	if (P.bHasHud) ApplyHudPose(P, PC);
 	// Soleil : la lumière va du soleil vers la scène (sens opposé à sunDir, direction web → axes Unreal).
 	const FVector LightDir = -FVector(P.SunDir.X, P.SunDir.Z, P.SunDir.Y).GetSafeNormal();
 	for (TActorIterator<ADirectionalLight> It(GetWorld()); It; ++It) It->SetActorRotation(LightDir.Rotation());
@@ -470,6 +501,58 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 		*P.Name, P.HorseX, P.HorseZ, P.HorseH, bPoseMounted, P.FovV,
 		P.bHasCamRun ? TEXT("caméra du cheval (axe Y maintenu)") : *FString::Printf(TEXT("%.4f° horizontal"), FovH), P.Width, P.Height, *P.SunDir.ToString(), *LightDir.Rotation().ToString(),
 		G(P.Eye.X, P.Eye.Z), G(P.Target.X, P.Target.Z), G(P.HorseX, P.HorseZ));
+}
+
+void AStridesShots::ApplyHudPose(const FPose& P, APlayerController* PC)
+{
+	// Exécution de l'oracle rejouée dans un HUD neuf (même règle que la page du web), appels ajoutés compris.
+	FString Text;
+	PoseHud = strides::CsoHud();
+	PoseHud.setViewportHeight(P.Height);
+	if (!FFileHelper::LoadFileToString(Text, *(RepoRoot() / P.HudRunFile)))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Strides parite: HUD %s : exécution illisible (%s)"), *P.Name, *P.HudRunFile);
+		return;
+	}
+	const std::string Utf8 = TCHAR_TO_UTF8(*Text);
+	const J RunJ = JParser(Utf8).parse();
+	const std::string ExtraUtf8 = TCHAR_TO_UTF8(*P.HudExtra);
+	const J Extra = P.HudExtra.IsEmpty() ? J() : JParser(ExtraUtf8).parse();
+	const int N = StridesCsoHudReplay::Run(PoseHud, RunJ, P.HudFrame, P.HudExtraFrame, P.HudExtra.IsEmpty() ? nullptr : &Extra);
+	// État rejoué comparé à l'état du DOM du web à la même image (toasts, astuce, grand message, mot d'appel, crans,
+	// tableau, classes) et textes du tableau.
+	TArray<FString> Diffs;
+	if (!P.HudState.IsEmpty())
+	{
+		const std::string StUtf8 = TCHAR_TO_UTF8(*P.HudState);
+		const J W = JParser(StUtf8).parse();
+		const strides::CsoHud& H = PoseHud;
+		auto Check = [&](const TCHAR* What, bool bSame) { if (!bSame) Diffs.Add(What); };
+		bool bTo = W["to"].a.size() == H.toasts().size();
+		for (size_t I = 0; bTo && I < H.toasts().size(); I++) bTo = W["to"][I][0].s == H.toasts()[I].text && W["to"][I][1].s == H.toasts()[I].kind;
+		Check(TEXT("toasts"), bTo);
+		Check(TEXT("astuce"), W["hi"][0].b == H.hintOff() && W["hi"][1].s == H.hintHtml() && W["hi"][2].b == H.hintInline());
+		Check(TEXT("grand message"), W["bg"][0].b == H.bigHidden() && W["bg"][1].s == H.bigTitle() && W["bg"][2].s == H.bigSub() && W["bg"][3].b == H.bigOn());
+		Check(TEXT("mot d'appel"), W["fb"][0].s == H.fbText() && W["fb"][1].s == H.fbClass());
+		Check(TEXT("crans"), (int)W["cad"][0].num() == H.cadOn() && W["cad"][1].b == H.cadShow());
+		Check(TEXT("tableau"), W["bd"][0].b == H.boardHidden() && W["bd"][1].b == H.boardOver() && W["bd"][2].b == H.boardFaults());
+		Check(TEXT("classes"), W["cl"][0].b == H.csoOn() && W["cl"][1].b == H.csoCtl() && W["cl"][2].b == H.csoSober());
+		bool bTxt = true;
+		for (int K = 0; K < 4; K++) bTxt = bTxt && W["board"][(size_t)K].s == H.boardText(K);
+		Check(TEXT("textes du tableau"), bTxt);
+	}
+	else Diffs.Add(TEXT("état du web absent"));
+	UE_LOG(LogTemp, Display, TEXT("Strides parite: HUD %s : %d images rejouées de %s, état %s"), *P.Name, N, *P.HudRunFile,
+		Diffs.Num() ? *(TEXT("DIFFÉRENT du web : ") + FString::Join(Diffs, TEXT(", "))) : TEXT("identique au web"));
+	TSharedPtr<FJsonObject> R = MakeShared<FJsonObject>();
+	R->SetStringField(TEXT("name"), P.Name);
+	R->SetNumberField(TEXT("frames"), N);
+	TArray<TSharedPtr<FJsonValue>> D;
+	for (const FString& X : Diffs) D.Add(MakeShared<FJsonValueString>(X));
+	R->SetArrayField(TEXT("diffs"), D);
+	// ApplyPose est rappelée juste avant la capture : un relevé par pose.
+	if (HudResults.Num() && HudResults.Last()->AsObject()->GetStringField(TEXT("name")) == P.Name) HudResults.Last() = MakeShared<FJsonValueObject>(R);
+	else HudResults.Add(MakeShared<FJsonValueObject>(R));
 }
 
 void AStridesShots::ApplyCamRunPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
@@ -562,6 +645,21 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 	if (Wait > 0) return;
 	if (PoseIndex >= Poses.Num())
 	{
+		if (HudResults.Num())
+		{
+			// Poses du HUD : état rejoué comparé au web et textes affichés par le widget (Describe, relevé à la capture).
+			TSharedPtr<FJsonObject> Doc = MakeShared<FJsonObject>();
+			Doc->SetStringField(TEXT("schema"), TEXT("strides.parite_hud/1"));
+			Doc->SetStringField(TEXT("generator"), TEXT("-StridesShots=cso (AStridesShots::ApplyHudPose, UStridesCsoHud::Describe)"));
+			Doc->SetStringField(TEXT("doc"), TEXT("par pose : images rejouées, parties de l'état du HUD différentes de l'état du DOM du web (vide : identique), éléments affichés par le widget à la capture (partie=texte)"));
+			Doc->SetArrayField(TEXT("poses"), HudResults);
+			FString Out;
+			FJsonSerializer::Serialize(Doc.ToSharedRef(), TJsonWriterFactory<>::Create(&Out));
+			const FString File = FPaths::GetPath(Poses.Last().Out) / TEXT("hud-unreal.json");
+			FFileHelper::SaveStringToFile(Out + TEXT("\n"), *File, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+			UE_LOG(LogTemp, Display, TEXT("Strides parite: HUD écrit dans %s"), *File);
+			HudResults.Reset();
+		}
 		if (FramingResults.Num() && !FramingOut.IsEmpty())
 		{
 			TSharedPtr<FJsonObject> Doc = MakeShared<FJsonObject>();
@@ -579,6 +677,20 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 		return;
 	}
 	const FPose& P = Poses[PoseIndex];
+	if (PoseStep == 0 && P.bHasHud)
+	{
+		// Capture de la fenêtre avec l'interface : la fenêtre doit avoir la taille du viewport de la pose.
+		const FIntPoint Size = GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport ? GEngine->GameViewport->Viewport->GetSizeXY() : FIntPoint::ZeroValue;
+		if (Size != FIntPoint(P.Width, P.Height) && ResizeTries < 4)
+		{
+			ResizeTries++;
+			FSystemResolution::RequestResolutionChange(P.Width, P.Height, EWindowMode::Windowed);
+			UE_LOG(LogTemp, Display, TEXT("Strides parite: fenêtre %dx%d -> %dx%d demandée"), Size.X, Size.Y, P.Width, P.Height);
+			Wait = 2.f;
+			return;
+		}
+		ResizeTries = 0;
+	}
 	if (PoseStep == 0)
 	{
 		ApplyPose(P, PC);
@@ -589,6 +701,25 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 	{
 		ApplyPose(P, PC);  // vue de la caméra de pose (la montée en selle peut l'avoir rendue au cheval)
 		IFileManager::Get().Delete(*P.Out, false, true, true);
+		if (P.bHasHud)
+		{
+			// HUD d'épreuve : capture de la fenêtre AVEC l'interface (UMG), à la taille de la fenêtre.
+			const FIntPoint Size = GEngine->GameViewport->Viewport->GetSizeXY();
+			FScreenshotRequest::RequestScreenshot(P.Out, true, false);
+			if (AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC))
+				if (UStridesCsoHud* W = SPC->CsoHudWidget(); W && HudResults.Num())
+				{
+					TArray<TSharedPtr<FJsonValue>> D;
+					for (const FString& L : W->Describe()) D.Add(MakeShared<FJsonValueString>(L));
+					HudResults.Last()->AsObject()->SetArrayField(TEXT("shown"), D);
+					HudResults.Last()->AsObject()->SetStringField(TEXT("window"), FString::Printf(TEXT("%dx%d"), Size.X, Size.Y));
+					UE_LOG(LogTemp, Display, TEXT("Strides parite: HUD %s affiché : %s"), *P.Name, *FString::Join(W->Describe(), TEXT(" ; ")));
+				}
+			UE_LOG(LogTemp, Display, TEXT("Strides parite: capture %s demandée avec l'interface (fenêtre %dx%d)"), *P.Out, Size.X, Size.Y);
+			PoseStep = 2;
+			Wait = 4.f;
+			return;
+		}
 		FHighResScreenshotConfig& HR = GetHighResScreenshotConfig();
 		HR.SetResolution(P.Width, P.Height);
 		HR.SetFilename(P.Out);

@@ -51,6 +51,11 @@ private:
 	UPROPERTY() TObjectPtr<class UInputAction> PhoneAction;
 	UPROPERTY() TObjectPtr<class UInputAction> MissionAction;
 	UPROPERTY() TObjectPtr<class UUserWidget> TouchControls;
+public:
+	// Interface d'épreuve UMG (tranche T7).
+	class UStridesCsoHud* CsoHudWidget() const { return CsoHud; }
+private:
+	UPROPERTY() TObjectPtr<class UStridesCsoHud> CsoHud;
 	bool bPhoneOpen = false;
 	class AStridesRider* Rider() const;
 };

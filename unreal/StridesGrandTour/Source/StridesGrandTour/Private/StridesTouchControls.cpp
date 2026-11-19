@@ -5,7 +5,9 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
 #include "StridesPlayerController.h"
+#include "StridesCourse.h"
 #include "Blueprint/WidgetTree.h"
+#include "EngineUtils.h"
 
 namespace
 {
@@ -49,6 +51,7 @@ void UStridesTouchControls::NativeOnInitialized()
 	UButton* PhoneButton = AddTouchButton(WidgetTree, Canvas, TEXT("Phone"), TEXT("TÉLÉPHONE"), FAnchors(.5f, 1.f), FVector2D(-82, -32), FVector2D(164, 58), FVector2D(.5f, 1.f));
 	UButton* MissionButton = AddTouchButton(WidgetTree, Canvas, TEXT("Mission"), TEXT("MISSION"), FAnchors(.5f, 1.f), FVector2D(-82, -102), FVector2D(164, 58), FVector2D(.5f, 1.f));
 
+	Buttons = {JumpButton, InteractButton, GaitUpButton, GaitDownButton, SaveButton, LoadButton, PhoneButton, MissionButton};
 	JumpButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Jump);
 	InteractButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Interact);
 	GaitUpButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitUp);
@@ -67,3 +70,33 @@ void UStridesTouchControls::Save() { if (Controller) Controller->TouchSave(); }
 void UStridesTouchControls::Load() { if (Controller) Controller->TouchLoad(); }
 void UStridesTouchControls::Phone() { if (Controller) Controller->TouchPhone(); }
 void UStridesTouchControls::Mission() { if (Controller) Controller->TouchMission(); }
+
+bool UStridesTouchControls::ButtonVisible(const FString& Name, const strides::CsoHud* RaceHud)
+{
+	if (!RaceHud) return true;
+	using E = strides::CsoHudElement;
+	if (Name == TEXT("Jump")) return !RaceHud->masked(E::Jump);
+	if (Name == TEXT("Interact")) return !RaceHud->masked(E::Action);  // action contextuelle (monter, descendre)
+	if (Name == TEXT("GaitUp") || Name == TEXT("GaitDown")) return !RaceHud->masked(E::Boost);  // allure (BOOST au web)
+	if (Name == TEXT("Phone")) return !RaceHud->masked(E::PhoneButton);
+	return !RaceHud->csoCtl();  // SAUVER, CHARGER, MISSION : outils du portage, sans équivalent au web
+}
+
+TArray<FString> UStridesTouchControls::VisibleButtons() const
+{
+	TArray<FString> L;
+	for (const UButton* B : Buttons)
+		if (B && B->GetVisibility() != ESlateVisibility::Collapsed) L.Add(B->GetName());
+	return L;
+}
+
+void UStridesTouchControls::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	if (!Course.IsValid() && GetWorld())
+		for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
+			if (It->Run()) { Course = *It; break; }
+	const strides::CsoHud* H = Course.IsValid() && Course->Run() ? &Course->HudModel() : nullptr;
+	for (UButton* B : Buttons)
+		if (B) B->SetVisibility(ButtonVisible(B->GetName(), H) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
