@@ -10,7 +10,7 @@
 // comme Obstacles.updateHorse les émet avant missions.update (src/game.js:1491, 1507).
 // Hors de cette tranche (honnêtement absents) : texte du dialogue de capacité et sa grille (T10), carte de présentation
 // et plan (T10), mot d'appel jumpFeedback (T7), aides à l'appel (T9), carte de bilan et classement (T11), GPS.
-// Oracles : canal « ep » des scénarios de unreal/core/tests/oracles/cso_runs.json (test_core.cpp, testCsoRuns).
+// Oracles : canal « ep » des scénarios de unreal/core/tests/oracles/cso_runs/ (test_core.cpp, testCsoRuns).
 #pragma once
 #include <set>
 #include <string>

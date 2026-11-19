@@ -333,6 +333,11 @@ Principes communs :
   (3) déterminisme web : remettre à neuf l'animation du cheval (`anim`, `anim._a`, `pjl.ph`) et mettre à jour les
   matrices monde après chaque `g.update` (ce que fait le rendu), sinon les foulées (`horse:step`) varient ;
   (4) le canal caméra n'enregistre pas encore la distance de perche (à ajouter en T6).
+- **Format découpé (R0, 19/11/2026)** : l'ancien fichier unique `ORA/cso_runs.json` (42 Mo, recommité à chaque
+  tranche) est remplacé par le dossier `ORA/cso_runs/` : `index.json` (en-tête des canaux, schéma
+  `strides.oracle.cso_runs/2`, liste des exécutions) et un fichier par scénario et par langue, `<id>.<lang>.json`
+  (le plus gros ~4 Mo), écrits par `scripts/unreal/cso-runs-io.mjs` ; un fichier inchangé n'est pas réécrit. Les
+  mentions de `cso_runs.json` ci-dessous datent d'avant ce découpage ; mode d'emploi : `unreal/docs/parite/README.md`.
 
 ### T2. Cheval de concours dans StridesCore (conduite intégrée, visée, déclenchement du saut)
 
@@ -627,7 +632,7 @@ Principes communs :
   conversion par image), `TC`.
 - **Logique à porter** : back, up, lookAhead, lookUp, fenceBias / fenceRange, lead, yawK / yawAcc, posK / yK, jumpFollow,
   FOV 58 amorti, minBack, fenceClear, fondu d'entrée 1,2 s, perche (sondage 1,0 → 6,6 m), point visé lissé.
-- **Oracle** : canal « caméra » de `cso_runs.json` (œil, cible, FOV, distance de perche retenue par image).
+- **Oracle** : canal « caméra » de `cso_runs/` (œil, cible, FOV, distance de perche retenue par image).
 - **Données** : `CAM_COMP` exporté par `EXP` (module `camera.js` importé dans le navigateur si `vite-node` échoue sur
   `three`).
 - **Preuve visuelle** : 6 instants de `cso-framing.mjs` capturés des deux côtés (étape 10 de la recette).
@@ -677,7 +682,7 @@ Principes communs :
 
 - **Objectif** : porter `courseAids.js` et l'état du bouton (`hud.js:373-380`, `433-442`).
 - **Critère d'acceptation** : `ORA/cso_takeoff_zone.json` (`takeoffZone` pour chaque obstacle × vitesses × aides) rejoué
-  à 1e-9 ; canal « aides » de `cso_runs.json` (tirets visibles et opacités, bandes, état du bouton par image) identique ;
+  à 1e-9 ; canal « aides » de `cso_runs/` (tirets visibles et opacités, bandes, état du bouton par image) identique ;
   montages côte à côte de `4-abord-trop-loin` et `5-abord-bonne-zone` (captures web existantes) plus « Trop près »,
   aide `button`, aide `off`, tracé masqué.
 - **Fichiers** : créer `SCh/CourseAids.h`, `SC/CourseAids.cpp`, `SGh/StridesCourseAids.h`, `SG/StridesCourseAids.cpp`
@@ -736,14 +741,14 @@ Principes communs :
 - **Objectif** : rendre chaque son de `audio.js` hors ligne en WAV, les jouer aux événements de `CsoRun` / `CsoFences`,
   puis dérouler la recette complète.
 - **Critère d'acceptation** : journal des appels sonores de l'Unreal (nom, arguments, image) identique au canal « audio »
-  de `cso_runs.json` pour tous les scénarios ; 14 sons présents dans `Content/Audio/Cso/` avec la somme de contrôle du
+  de `cso_runs/` pour tous les scénarios ; 14 sons présents dans `Content/Audio/Cso/` avec la somme de contrôle du
   rendu exporté ; ambiance public à 0,6 × 0,08 dans les 90 m ; `unreal/docs/parite/cso/` contient les montages des 13
   étapes de §13 ; un paquet iOS se construit sans Pixel Streaming (contrôle du `.uproject` et du journal UBT).
 - **Fichiers** : créer `scripts/unreal/export-cso-sounds.mjs` (Playwright, `OfflineAudioContext`, bruit à graine fixe),
   `scripts/unreal/import-cso-sounds.py`, `SGh/StridesCsoAudio.h`, `SG/StridesCsoAudio.cpp` ; modifier
   `SG/StridesCourse.cpp`, `unreal/docs/validation-mac-2026-11-17.md` ou une nouvelle note de validation datée.
 - **Logique pure** : aucune nouvelle (les appels sonores sont des événements de T3 / T4).
-- **Oracle** : canal « audio » de `cso_runs.json`.
+- **Oracle** : canal « audio » de `cso_runs/`.
 - **Données** : WAV exportés (paramètres d'appel : `applause(intensité, durée)` rendus par variante utilisée).
 - **Preuve visuelle** : recette complète §13 (13 étapes) ; preuve sonore par journal.
 - **Dépendances / risques** : T3, T4, puis toutes les tranches pour la recette. `audio.js` suppose un `AudioContext` vivant :

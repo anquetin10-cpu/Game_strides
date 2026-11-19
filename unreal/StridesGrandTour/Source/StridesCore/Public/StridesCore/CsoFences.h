@@ -7,7 +7,7 @@
 //     de membre signalé par l'appelant), knock, _rest ;
 //   - update : chute déterministe des barres (taquets, élan, rebonds, glisse, roulement, inclinaison), vibration
 //     d'effleurement, remise par le jury (refus tout contre, entraînement) ou hors mission à plus de 60 m.
-// Oracle : unreal/core/tests/oracles/cso_runs.json, canal « ch » (lc, oe, ob), rejoué image par image par
+// Oracle : unreal/core/tests/oracles/cso_runs/, canal « ch » (lc, oe, ob), rejoué image par image par
 // unreal/core/tests/test_core.cpp (testFenceRuns). Ce qui n'est PAS porté ici : la détection des contacts des membres
 // (pose animée du cheval WildMesh, pjlHorse.js / limbContact.js : l'appelant fournit le contact), l'affichage et les sons
 // (l'appelant reçoit les événements et les transformées).

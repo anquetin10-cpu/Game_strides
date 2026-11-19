@@ -59,7 +59,7 @@ M = [
  ('profondeur bornée à 0,5 -> 0,3', 'clampd(hit, 0.02, 0.5)', 'clampd(hit, 0.02, 0.3)'),
  ('mur : barre à h − 0,05 -> h', 'railAt(o.h - 0.05, 0)', 'railAt(o.h, 0)'),
 ]
-# Branches portées qu'aucun scénario de cso_runs.json ne discrimine (écrit dans l'inventaire, champ « ecart »).
+# Branches portées qu'aucun scénario de cso_runs/ ne discrimine (écrit dans l'inventaire, champ « ecart »).
 ATTENDUES = {
  'membres jugés : 1,2 s -> 0,6 s': 'les postérieurs passent toujours 2,2 m après la sortie avant 0,6 s',
  'recomptage : détour ignoré': 'aucun nouveau refus moins de 5 s après un détour (cabré 1,1 s, demi-tour à 0,8 rad/s)',

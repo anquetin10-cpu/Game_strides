@@ -3,7 +3,7 @@
 
 Chaque mutation est appliquée à une copie de StridesCore/Private/CsoRun.cpp ou Text.cpp (le source du dépôt n'est jamais
 modifié) ; le banc unreal/core/tests/test_core.cpp est recompilé avec cette copie et rejoué sur les oracles exportés du
-jeu web (cso_runs.json, cso_text.json). Une mutation doit faire échouer le banc (code de sortie non nul) ; le script sort
+jeu web (cso_runs/, cso_text.json). Une mutation doit faire échouer le banc (code de sortie non nul) ; le script sort
 en code 1 si l'une n'est pas détectée, hors des mutations listées dans ATTENDUES (raison donnée) — et aussi si l'une de
 celles-ci devient détectée.
 

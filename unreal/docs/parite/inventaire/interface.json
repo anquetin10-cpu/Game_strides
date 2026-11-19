@@ -108,7 +108,7 @@
   "unreal": "UStridesProgressionSubsystem::MissionStatus (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:49-57) affiché en ligne jaune par AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:28-34 ObjectiveLines, :74) : pendant l'épreuve du Pôle, objectif de l'épreuve (CsoRun::text) puis l'état de la mission de carrière si l'une est lancée ; hors épreuve, l'état des missions",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Test moteur Strides.Hud.ObjectiveLines (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoRunTests.cpp:298) : choix et ordre des lignes (épreuve en cours avec ou sans mission de carrière, objectif vide, hors épreuve), Result={Success} le 19/11/2026 ; MissionStatus lui-même non couvert ; aucune capture côte à côte dans unreal/docs/parite/.",
+  "preuve": "Test moteur Strides.Hud.ObjectiveLines (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoRunTests.cpp:287) : choix et ordre des lignes (épreuve en cours avec ou sans mission de carrière, objectif vide, hors épreuve), Result={Success} le 19/11/2026 ; MissionStatus lui-même non couvert ; aucune capture côte à côte dans unreal/docs/parite/.",
   "ecart": "Une ligne « <titre> · rejoindre <identifiant de lieu> » (identifiant brut, ex. « home », pas le nom du lieu) ou « Aucune mission active » ; pas d'étiquette, de détail, de chrono, d'alerte, d'animation ni de toucher. Pendant l'épreuve du Pôle (lancée au démarrage), deux lignes : l'objectif de l'épreuve puis la mission de carrière lancée (le web n'a qu'une mission active à la fois : missions.active).",
   "tranche": "e"
  },

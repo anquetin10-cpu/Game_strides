@@ -1,5 +1,5 @@
 // Portage ligne à ligne (voir CsoHorse.h). Chaque bloc cite sa source JS ; toute divergence est un défaut : les tests
-// rejouent les oracles exportés du jeu web en cours d'exécution (cso_runs.json, cso_target.json).
+// rejouent les oracles exportés du jeu web en cours d'exécution (cso_runs/, cso_target.json).
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/MathUtil.h"
 

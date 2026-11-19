@@ -1,5 +1,5 @@
 // Portage ligne à ligne de src/gameplay/obstacles.js (voir CsoFences.h). Chaque bloc cite sa source JS ; toute divergence
-// est un défaut : les tests rejouent les scénarios exportés du jeu web en cours d'exécution (cso_runs.json, canal « ch »).
+// est un défaut : les tests rejouent les scénarios exportés du jeu web en cours d'exécution (cso_runs/, canal « ch »).
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/MathUtil.h"
 

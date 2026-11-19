@@ -1,7 +1,7 @@
 // Obstacles de concours (tranche T3, unreal/docs/parite/cso-ecarts.md §4) dans le moteur :
 //  - Strides.Parite.CsoFences : miroir de unreal/core/tests/test_core.cpp (testFenceRuns) — le cœur compilé par UBT
 //    rejoue en chaîne (cheval, contacts des membres fournis, Obstacles.updateHorse, Obstacles.update) les scénarios de
-//    cso_runs.json et compare chaque image : état du cheval, événements d'obstacle (marge, cause), barres ;
+//    cso_runs/ et compare chaque image : état du cheval, événements d'obstacle (marge, cause), barres ;
 //  - Strides.Cso.FencesInGame : AStridesFence (transformée d'une barre calculée par le cœur → composante, vérifiée par
 //    la géométrie), puis AStridesHorse / AStridesCourse réels dans un monde de test : abord à 70° du 4A (refus, jamais
 //    franchi), sans-faute au 3 (obstacle:clear à la sortie), refus tout contre au 3 (barre emportée, affichée à la
@@ -24,16 +24,10 @@
 #include "StridesFence.h"
 #include "StridesHorse.h"
 #include "StridesPlayerController.h"
+#include "StridesOracleRuns.h"
 
 namespace StridesFenceTest
 {
-FString RepoRoot()
-{
-	FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../.."));
-	FPaths::CollapseRelativeDirectories(Root);
-	return Root;
-}
-
 TSharedPtr<FJsonObject> LoadJsonFile(const FString& Path)
 {
 	FString Text;
@@ -91,18 +85,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesPariteCsoFencesTest, "Strides.Parite.Cs
 bool FStridesPariteCsoFencesTest::RunTest(const FString&)
 {
 	using namespace StridesFenceTest;
-	const TSharedPtr<FJsonObject> O = LoadJsonFile(RepoRoot() / TEXT("unreal/core/tests/oracles/cso_runs.json"));
-	if (!TestTrue(TEXT("cso_runs.json lu"), O.IsValid())) return false;
+	const TArray<StridesOracleRuns::FEntry> Runs = StridesOracleRuns::List();
+	if (!TestTrue(TEXT("index des oracles cso_runs lu"), Runs.Num() > 0)) return false;
 	const TSet<FString> Required = {TEXT("t3-sans-faute"), TEXT("t3-oxer-loin"), TEXT("t3-pres-montee"), TEXT("t3-posterieurs"), TEXT("t3-effleurement"),
 		TEXT("t3-faute-limite"), TEXT("t3-effleurement-haut"), TEXT("t3-refus-62"), TEXT("t3-tout-contre-remonte"), TEXT("t3-refus-lent"), TEXT("t3-refus-oblique"), TEXT("t3-refus-5s"), TEXT("t3-glissade"),
 		TEXT("refus"), TEXT("abord-61")};
 	TSet<FString> Clean;
 	int32 Frames = 0, Events = 0, RailsCompared = 0;
-	for (const TSharedPtr<FJsonValue>& RV : O->GetArrayField(TEXT("runs")))
+	for (const StridesOracleRuns::FEntry& Entry : Runs)
 	{
-		const TSharedPtr<FJsonObject> R = RV->AsObject();
-		const FString Id = R->GetStringField(TEXT("id"));
-		if (!Required.Contains(Id)) continue;
+		if (!Required.Contains(Entry.Id)) continue;
+		const TSharedPtr<FJsonObject> R = StridesOracleRuns::Load(Entry);
+		if (!TestTrue(FString::Printf(TEXT("cso_runs/%s lu, conforme à l'index"), *Entry.File), R.IsValid())) return false;
+		const FString Id = Entry.Id;
 		const TSharedPtr<FJsonObject> Ch0 = R->GetObjectField(TEXT("setup"))->GetObjectField(TEXT("ch0"));
 		std::vector<strides::CsoObstacle> Obs = ObstaclesFrom(Ch0->GetArrayField(TEXT("obs")));
 		std::vector<strides::CsoFenceState> St = strides::csoFenceStates(Obs);

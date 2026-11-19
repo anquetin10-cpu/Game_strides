@@ -1,6 +1,6 @@
 // Cheval monté. Conduite de concours, visée, déclenchement du saut, refus engagé, cabré : délégués au cœur
 // (strides::csoHorseStep, portage de csoRide.js + horse.js + obstacles.js target / timing / refuse, prouvé par les
-// oracles du jeu web : unreal/core/tests/oracles/cso_runs.json, cso_target.json). Monde ouvert (allures) : code d'origine,
+// oracles du jeu web : unreal/core/tests/oracles/cso_runs/, cso_target.json). Monde ouvert (allures) : code d'origine,
 // hors du périmètre du portage. Siège du cavalier.
 // Simulation en unités SI dans le repère web (x, z, cap h), convertie à chaque image (StridesUnits.h). Le maillage est
 // une forme de base tant que le cheval PJL n'est pas importé (voir unreal/docs/relais-mac.md) : la simulation ne dépend

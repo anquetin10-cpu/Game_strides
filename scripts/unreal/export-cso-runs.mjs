@@ -4,29 +4,35 @@
 // tests/e2e/autopilot.js (lu, jamais modifié), au pas fixe de 1/30 s.
 //
 // Sorties :
-//  - unreal/core/tests/oracles/cso_runs.json : scénarios rejoués image par image. Pour chaque scénario et chaque langue
-//    (fr puis en) : entrées appliquées à chaque image (joystick virtuel move x / y, touches clavier, actions maintenues,
+//  - unreal/core/tests/oracles/cso_runs/ : scénarios rejoués image par image, un fichier par scénario et par langue
+//    (<id>.<lang>.json) et un index (index.json : en-tête descriptif des canaux, liste des exécutions ; format et
+//    écriture dans scripts/unreal/cso-runs-io.mjs). Pour chaque scénario et chaque langue (fr puis en) : entrées appliquées à chaque image (joystick virtuel move x / y, touches clavier, actions maintenues,
 //    appui SAUT, bouton d'interface touché), puis l'état après l'image : cheval, épreuve, tableau de chrono, événements
 //    du bus, appels hud.* et audio.* (nom, arguments), caméra (œil, cible, direction, FOV vertical), barres déplacées.
 //    Déterministe : hasard du navigateur remplacé par un générateur à graine, horloges virtuelles (performance.now,
-//    Date.now avancent de 1/30 s par image), temps de jeu fixés. Deux exécutions donnent un fichier identique octet pour
-//    octet (critère T1 de unreal/docs/parite/cso-ecarts.md).
+//    Date.now avancent de 1/30 s par image), temps de jeu fixés. Deux exécutions donnent des fichiers identiques octet
+//    pour octet (critère T1 de unreal/docs/parite/cso-ecarts.md) ; un fichier inchangé n'est pas réécrit.
 //    Canal « ch » (tranche T2, cheval de concours) : état complet du cheval en pleine précision, rejoué par
 //    unreal/core/tests/test_core.cpp (testHorseRuns). Canal « ep » (tranche T4, déroulé d'épreuve) : entrées de la
 //    mission (Run.update) rejouées par testCsoRuns ; scénarios t4-* en français et en anglais, images « légères ».
 //  - unreal/core/tests/oracles/cso_target.json : grille de visée (obstacles.target / timing du jeu) pour 11 220 poses,
 //    appuis SAUT (Horse.startJump) et refus décidés (Obstacles.refuse) sur des poses du cheval.
-//    --only=id1,id2 : seulement ces scénarios (et « target » pour la grille), à écrire ailleurs avec --out.
+//  - unreal/core/tests/oracles/cso_goto.json : étape « rejoindre l'entrée » (grille de points suivis, fr et en).
+//    --only=id1,id2 : seulement ces scénarios (et « target » / « goto » pour les grilles) ; les autres exécutions de
+//    l'index sont gardées telles quelles. --out=<dossier> : dossier des exécutions (défaut ci-dessus) ; les grilles
+//    vont dans son dossier parent (--goto-out=<fichier> pour l'étape goto).
 //  - avec --shots : unreal/docs/parite/cso/poses.json (pose du cheval, œil, cible, FOV vertical, soleil, viewport) et la
 //    capture web de chaque pose (unreal/docs/parite/cso/<pose>-web.png, 844 × 390, deviceScaleFactor 1) ; la capture
 //    Unreal jumelle est faite par -StridesShots=cso, le montage par scripts/unreal/parite-montage.py.
 //
 // Usage (serveur Vite sur BASE, défaut http://127.0.0.1:5173 ; Chrome installé, aucun téléchargement) :
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots] [--out=fichier.json]
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots] [--only=…] [--out=dossier]
+// Mode d'emploi du banc (oracles, captures, montages, PARITE.md) : unreal/docs/parite/README.md.
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { RUNS_SCHEMA, RUNS_LAYOUT, runFile, writeRuns } from './cso-runs-io.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const BASE = process.env.BASE || 'http://127.0.0.1:5173';
@@ -34,7 +40,8 @@ const BASE = process.env.BASE || 'http://127.0.0.1:5173';
 const SHOTS_ARG = process.argv.find((a) => a === '--shots' || a.startsWith('--shots='));
 const SHOTS = !!SHOTS_ARG;
 const SHOTS_ONLY = SHOTS_ARG && SHOTS_ARG.includes('=') ? SHOTS_ARG.slice(8) : null;
-const OUT = (process.argv.find((a) => a.startsWith('--out=')) || '').slice(6) || join(ROOT, 'unreal/core/tests/oracles/cso_runs.json');
+const OUT = (process.argv.find((a) => a.startsWith('--out=')) || '').slice(6) || join(ROOT, 'unreal/core/tests/oracles/cso_runs');
+const ORA = dirname(OUT); // grilles cso_target.json et cso_goto.json, à côté du dossier des exécutions
 const PARITE = join(ROOT, 'unreal/docs/parite/cso');
 const VIEW = { width: 844, height: 390 };
 const AUTOPILOT = readFileSync(join(ROOT, 'tests/e2e/autopilot.js'), 'utf8');
@@ -1373,10 +1380,12 @@ for (const sc of SCENARIOS) {
   }
 }
 
-// Écriture : en-tête lisible, une image par ligne (diffs lisibles, fichier stable).
+// Écriture : index (en-tête lisible, une ligne par exécution) et un fichier par exécution, une image par ligne (diffs
+// lisibles, fichiers stables ; scripts/unreal/cso-runs-io.mjs).
 const head = {
-  schema: 'strides.oracle.cso_runs/1',
+  schema: RUNS_SCHEMA,
   generator: 'scripts/unreal/export-cso-runs.mjs',
+  layout: RUNS_LAYOUT,
   source: ['src/game.js', 'src/gameplay/courses.js', 'src/gameplay/activities.js', 'src/gameplay/csoRide.js', 'src/gameplay/obstacles.js', 'src/entities/horse.js', 'src/entities/camera.js', 'src/ui/hud.js', 'src/core/audio.js', 'tests/e2e/autopilot.js'],
   frame: 'repère web : x est, z sud, y haut ; cap h -> direction (sin h, cos h) ; m, s, rad ; fov = FOV vertical (degrés)',
   dt: 1 / 30,
@@ -1392,19 +1401,11 @@ const head = {
   hudMethods: HUD_METHODS,
   hudDedupe: HUD_DEDUPE,
 };
-if (!SHOTS_ONLY) {
-  let out = JSON.stringify(head, null, 1).replace(/\n}$/, ',\n "runs": [\n');
-  runs.forEach((r, i) => {
-    const { frames, ...rest } = r;
-    out += JSON.stringify(rest).replace(/}$/, ',"frames":[\n');
-    out += frames.map((f) => JSON.stringify(f)).join(',\n');
-    out += `\n]}${i < runs.length - 1 ? ',' : ''}\n`;
-  });
-  out += ']}\n';
-  JSON.parse(out); // contrôle de forme
-  mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, out);
-  console.log('oracle :', OUT, `${(out.length / 1024).toFixed(0)} Kio`);
+if (!SHOTS_ONLY && runs.length) {
+  const order = SCENARIOS.flatMap((sc) => (sc.langs || ['fr', 'en']).map((lang) => [sc.id, lang]));
+  const res = writeRuns(OUT, head, runs, order);
+  console.log('oracle :', OUT, `${runs.length} exécutions exportées, ${res.written.length} fichiers réécrits (${res.written.join(' ') || 'aucun'}), ${res.kept.length} inchangés`);
+  if (res.orphans.length) console.log('fichiers absents de l’index (non supprimés) :', res.orphans.join(' '));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1413,7 +1414,7 @@ if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('target'))) {
   const { ctx, page } = await openGame('fr');
   await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
   const grid = await page.evaluate(() => window.__parite.targetGrid());
-  const TOUT = OUT.replace(/cso_runs\.json$/, 'cso_target.json');
+  const TOUT = join(ORA, 'cso_target.json');
   const th = {
     schema: 'strides.oracle.cso_target/1',
     generator: 'scripts/unreal/export-cso-runs.mjs',
@@ -1459,7 +1460,7 @@ if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('goto'))) {
     langs.push({ lang, cases: grid.cases });
     await ctx.close();
   }
-  const GOUT = (process.argv.find((a) => a.startsWith('--goto-out=')) || '').slice(11) || OUT.replace(/cso_runs\.json$/, 'cso_goto.json');
+  const GOUT = (process.argv.find((a) => a.startsWith('--goto-out=')) || '').slice(11) || join(ORA, 'cso_goto.json');
   const gh = {
     schema: 'strides.oracle.cso_goto/1',
     generator: 'scripts/unreal/export-cso-runs.mjs',
@@ -1526,7 +1527,7 @@ if (SHOTS) {
   }
   // Tranche T3 : chute de la barre du 3 touchée en montée (scénario t3-pres-montee), 0,1 / 0,3 / 0,6 / 1,5 s après le
   // contact (temps de chute f.t de obstacles.js), caméra fixe de trois quarts arrière. Le scénario tourne image par image
-  // avec les mêmes appels que pour l'oracle ; les états relevés sont comparés ensuite à cso_runs.json.
+  // avec les mêmes appels que pour l'oracle ; les états relevés sont comparés ensuite à cso_runs/t3-pres-montee.fr.json.
   if (!SHOTS_ONLY || SHOTS_ONLY === 'chute') {
     const sc = SCENARIOS.find((x) => x.id === 't3-pres-montee');
     const { ctx, page } = await openGame('fr', true);
@@ -1574,7 +1575,7 @@ if (SHOTS) {
     // La partie jouée pendant les captures est celle de l'oracle (états du cheval identiques image par image).
     const played = await page.evaluate(() => window.__parite.duringFrames());
     try {
-      const ora = JSON.parse(readFileSync(OUT, 'utf8')).runs.find((x) => x.id === sc.id);
+      const ora = JSON.parse(readFileSync(join(OUT, runFile(sc.id, 'fr')), 'utf8'));
       const diff = played.filter((sj, i) => i <= last && (!ora.frames[i] || JSON.stringify(ora.frames[i].ch.s) !== sj)).length;
       console.log(`chute : ${played.length} images jouées, ${diff} différentes de l’oracle ${sc.id}`);
       if (diff) throw new Error('chute : partie différente de l’oracle');

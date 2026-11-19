@@ -38,7 +38,7 @@ write(DATA, 'jump_model.json', { schema: 'strides.jump_model/1', source: src('ga
 write(DATA, 'cso_ride.json', { schema: 'strides.cso_ride/1', source: src('gameplay/csoRide.js'), units: 'm, s, rad', ...CSO_RIDE });
 // Cheval de concours (tranche T2) : constantes nommées que obstacles.js ne publie pas (REF, NOSE, OVERRUN, HIND_TRAIL)
 // et largeur des obstacles du parcours de CSO, extraites du source tel qu'il est (jamais recopiées) ; le comportement
-// qui en dépend est recoupé par les oracles du jeu en cours d'exécution (cso_runs.json, cso_target.json).
+// qui en dépend est recoupé par les oracles du jeu en cours d'exécution (cso_runs/, cso_target.json).
 const OBS_SRC = readFileSync(join(ROOT, 'src/gameplay/obstacles.js'), 'utf8');
 const srcConst = (re, what) => {
   const m = OBS_SRC.match(re);
@@ -54,7 +54,7 @@ write(DATA, 'cso_horse.json', {
 });
 // Déroulé d'épreuve (tranche T4) : règles de courseSteps (courses.js) extraites du source (valeurs par défaut écrites dans
 // la fonction, jamais recopiées), délai de la cloche, entrée de piste et lignes de départ / d'arrivée du jeu (repère monde,
-// pleine précision) ; recoupés par les scénarios t4-* de cso_runs.json (élimination au deuxième refus, +4, 45 s).
+// pleine précision) ; recoupés par les scénarios t4-* de cso_runs/ (élimination au deuxième refus, +4, 45 s).
 const COURSES_SRC = readFileSync(join(ROOT, 'src/gameplay/courses.js'), 'utf8');
 const srcMatch = (re, what) => {
   const m = COURSES_SRC.match(re);

@@ -254,7 +254,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp (RunFrame : cavalier en selle lu à chaque image) → unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (courseUpdate)",
   "etat": "identique_prouve",
   "niveau": "teste",
-  "preuve": "Scénario t4-descente de cso_runs.json (fr et en) rejoué sans écart par testCsoRuns et Strides.Parite.CsoRun ; Strides.Cso.RunInGame : AStridesRider::Dismount pendant le parcours → éliminé.",
+  "preuve": "Scénario t4-descente de cso_runs/ (fr et en) rejoué sans écart par testCsoRuns et Strides.Parite.CsoRun ; Strides.Cso.RunInGame : AStridesRider::Dismount pendant le parcours → éliminé.",
   "ecart": "Descente refusée pendant un saut, sans la séquence animée du web.",
   "tranche": "a"
  },

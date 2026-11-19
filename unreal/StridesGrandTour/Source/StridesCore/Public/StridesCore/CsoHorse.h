@@ -5,7 +5,7 @@
 //     startJump (trop lent, refus engagé, épreuve : cible / zone / 1,9 × L0, zone refuse et x ≥ 0), refuse, brake ;
 //   - src/gameplay/obstacles.js : add / _bars / faces avant-arrière (makeCsoObstacle), target, timing, refuse ;
 //   - src/core/input.js : poll (déplacement venu du clavier, Ctrl / Alt).
-// Oracles : unreal/core/tests/oracles/cso_runs.json (canal « ch », rejoué image par image) et cso_target.json (visée).
+// Oracles : unreal/core/tests/oracles/cso_runs/ (canal « ch », rejoué image par image) et cso_target.json (visée).
 // Ce qui n'est PAS porté ici (entrées de l'appelant ou tranches suivantes) : collisions du monde (colliders.resolve),
 // profondeur d'eau et pente (fournies par l'appelant), endurance et état physiologique (puissance fournie par
 // l'appelant), jugement des barres, refus décidés à l'abord, comptage des refus (Obstacles.updateHorse : portés par

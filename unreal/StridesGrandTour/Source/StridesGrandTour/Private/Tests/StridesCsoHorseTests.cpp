@@ -1,6 +1,6 @@
 // Cheval de concours (tranche T2, unreal/docs/parite/cso-ecarts.md §4) dans le moteur :
 //  - Strides.Parite.CsoHorse : miroir de unreal/core/tests/test_core.cpp (testHorseRuns) — le cœur compilé par UBT
-//    rejoue le canal « ch » de unreal/core/tests/oracles/cso_runs.json (scénarios exportés du jeu web) ;
+//    rejoue le canal « ch » de unreal/core/tests/oracles/cso_runs/ (scénarios exportés du jeu web) ;
 //  - Strides.Cso.HorseInGame : AStridesHorse et AStridesCourse réels (monde de jeu créé pour le test, parcours du Pôle lu
 //    dans Content/Data) : un appui à 10 m de l'obstacle ne déclenche pas de saut, un appui dans la bonne zone si, un
 //    cheval qui arrive sur l'obstacle sans appel refuse (plus de saut automatique).
@@ -19,16 +19,10 @@
 #include "StridesDataSubsystem.h"
 #include "StridesPlayerController.h"
 #include "Engine/GameInstance.h"
+#include "StridesOracleRuns.h"
 
 namespace
 {
-FString RepoRoot()
-{
-	FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../.."));
-	FPaths::CollapseRelativeDirectories(Root);
-	return Root;
-}
-
 TSharedPtr<FJsonObject> LoadJsonFile(const FString& Path)
 {
 	FString Text;
@@ -83,15 +77,16 @@ void LoadState(strides::CsoHorseState& S, const TSharedPtr<FJsonObject>& J)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesPariteCsoHorseTest, "Strides.Parite.CsoHorse", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
 bool FStridesPariteCsoHorseTest::RunTest(const FString&)
 {
-	const TSharedPtr<FJsonObject> O = LoadJsonFile(RepoRoot() / TEXT("unreal/core/tests/oracles/cso_runs.json"));
-	if (!TestTrue(TEXT("cso_runs.json lu"), O.IsValid())) return false;
+	const TArray<StridesOracleRuns::FEntry> Runs = StridesOracleRuns::List();
+	if (!TestTrue(TEXT("index des oracles cso_runs lu"), Runs.Num() > 0)) return false;
 	const TSet<FString> Required = {TEXT("droit"), TEXT("bonne-zone"), TEXT("virage-serre"), TEXT("rampe-clavier"), TEXT("ctrl-alt"), TEXT("appui-10m"), TEXT("appui-3ms"), TEXT("abord-70"),
 		TEXT("virage-en-lair"), TEXT("survitesse"), TEXT("appel-pres")};
 	TSet<FString> Clean;
 	int32 Frames = 0, Refusals = 0, RefusalBad = 0;
-	for (const TSharedPtr<FJsonValue>& RV : O->GetArrayField(TEXT("runs")))
+	for (const StridesOracleRuns::FEntry& Entry : Runs)
 	{
-		const TSharedPtr<FJsonObject> R = RV->AsObject();
+		const TSharedPtr<FJsonObject> R = StridesOracleRuns::Load(Entry);
+		if (!TestTrue(FString::Printf(TEXT("cso_runs/%s lu, conforme à l'index"), *Entry.File), R.IsValid())) return false;
 		const FString Id = R->GetStringField(TEXT("id"));
 		// Scénarios légers de la tranche T4 (déroulé d'épreuve) : pas de canal « ch », rejoués par Strides.Parite.CsoRun.
 		bool bLite = false;

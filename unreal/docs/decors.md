@@ -35,7 +35,7 @@ zsh scripts/unreal/rebuild-world.sh                        # préparation, impor
   `Saved/Screenshots/Strides/`, journal `.tmp/shots.log`.
 - Banc de parité CSO (captures jumelles web / Unreal, même pose, même heure, 844 × 390) :
   `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots` (oracle
-  `unreal/core/tests/oracles/cso_runs.json`, `unreal/docs/parite/cso/poses.json` et `<pose>-web.png`), puis le jeu avec
+  `unreal/core/tests/oracles/cso_runs/`, `unreal/docs/parite/cso/poses.json` et `<pose>-web.png`), puis le jeu avec
   `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` exporté (sinon fenêtre bloquante « Xcode introuvable ») et
   `-game -windowed -ResX=844 -ResY=390 -StridesShots=cso` (`<pose>-unreal.png`, capture haute résolution à la taille
   exacte), enfin `python3 scripts/unreal/parite-montage.py` (contrôle des tailles par `sips`, montage `ffmpeg hstack`

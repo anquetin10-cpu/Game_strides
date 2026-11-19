@@ -1,7 +1,7 @@
 // Déroulé d'épreuve (tranche T4, unreal/docs/parite/cso-ecarts.md §4) dans le moteur :
 //  - Strides.Parite.CsoRun : miroir de unreal/core/tests/test_core.cpp (testCsoRuns) par le chemin du jeu — AStridesCourse
 //    construit avec les données (Content/Data : règles, lignes, textes), puis chaque scénario t4-* et « droit » de
-//    cso_runs.json (français et anglais) rejoué image par image : événements d'obstacle passés à HandleFenceOut (cause
+//    unreal/core/tests/oracles/cso_runs/ (français et anglais) rejoué image par image : événements d'obstacle passés à HandleFenceOut (cause
 //    traduite par le jeu), image passée à TickRun ; comparés comme dans le banc du cœur : appels d'interface et sons
 //    journalisés par l'acteur, cadence remise à 0 par un refus et réécrite en sortie de piste, étape, objectif et pas de
 //    l'étape, état de l'épreuve (chrono, cloche, fautes, refus, pénalités de temps, élimination, manche), mode de
@@ -28,16 +28,10 @@
 #include "StridesHUD.h"
 #include "StridesRider.h"
 #include "StridesUnits.h"
+#include "StridesOracleRuns.h"
 
 namespace StridesRunTest
 {
-FString RepoRoot()
-{
-	FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../.."));
-	FPaths::CollapseRelativeDirectories(Root);
-	return Root;
-}
-
 // Monde de test autonome (instance de jeu, sous-système de données lu dans Content/Data).
 struct FTestWorld
 {
@@ -86,29 +80,24 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesPariteCsoRunTest, "Strides.Parite.CsoRu
 bool FStridesPariteCsoRunTest::RunTest(const FString&)
 {
 	using namespace StridesRunTest;
-	FString Text;
-	if (!TestTrue(TEXT("oracle cso_runs.json lu"), FFileHelper::LoadFileToString(Text, *(RepoRoot() / TEXT("unreal/core/tests/oracles/cso_runs.json"))))) return false;
+	const TArray<StridesOracleRuns::FEntry> Runs = StridesOracleRuns::List();
+	if (!TestTrue(TEXT("index des oracles cso_runs lu"), Runs.Num() > 0)) return false;
 	FTestWorld W(TEXT("StridesCsoRunTest"));
 	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
 	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
 	if (!TestNotNull(TEXT("sous-système de données"), Data) || !TestNotNull(TEXT("textes de l'épreuve (strings_cso.json)"), Data->CsoText())) return false;
-	// Une exécution par ligne d'en-tête (« {"id":… ») suivie de ses images, une par ligne, jusqu'à « ]} » : chaque
-	// exécution est lue seule (le fichier entier ne tient pas en un seul arbre sans peine).
-	const std::string All = TCHAR_TO_UTF8(*Text);
-	Text.Empty();
+	// Exécutions t4-* et « droit » de l'index, chacune lue seule (un fichier par exécution) par le lecteur du cœur.
 	TArray<FString> Done;
 	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, BoardCmp = 0, LogCmp = 0, Bad = 0;
-	size_t Pos = 0;
-	while ((Pos = All.find("\n{\"id\":\"", Pos)) != std::string::npos)
+	for (const StridesOracleRuns::FEntry& Entry : Runs)
 	{
-		const size_t Begin = Pos + 1;
-		const size_t End = All.find("\n]}", Begin);
-		if (End == std::string::npos) break;
-		Pos = End;
-		const std::string Head = All.substr(Begin, 64);
-		if (Head.rfind("{\"id\":\"t4-", 0) != 0 && Head.rfind("{\"id\":\"droit\"", 0) != 0) continue;
-		const J R = JParser(All.substr(Begin, End + 3 - Begin)).parse();
+		if (!Entry.Id.StartsWith(TEXT("t4-")) && Entry.Id != TEXT("droit")) continue;
+		FString Text;
+		if (!TestTrue(FString::Printf(TEXT("cso_runs/%s lu"), *Entry.File), FFileHelper::LoadFileToString(Text, *StridesOracleRuns::Path(Entry)))) return false;
+		const std::string Utf8 = TCHAR_TO_UTF8(*Text);
+		const J R = JParser(Utf8).parse();
 		const std::string Id = R["id"].s, Lang = R["lang"].s;
+		if (!TestTrue(FString::Printf(TEXT("cso_runs/%s conforme à l'index"), *Entry.File), Id == TCHAR_TO_UTF8(*Entry.Id) && Lang == TCHAR_TO_UTF8(*Entry.Lang) && (int32)R["frames"].a.size() == Entry.Frames)) return false;
 		const J& Su = R["setup"];
 		AStridesCourse* Course = SpawnPoleCourse(W.World, *Data);
 		Course->Lang = UTF8_TO_TCHAR(Lang.c_str());

@@ -225,13 +225,33 @@ static std::string playerEvents(const J& ev, const std::string& horseId) {
   return s;
 }
 
+// Oracles de scénario (scripts/unreal/export-cso-runs.mjs, format de scripts/unreal/cso-runs-io.mjs) : index
+// ORA/cso_runs/index.json (en-tête descriptif des canaux, liste des exécutions) et un fichier par exécution,
+// ORA/cso_runs/<id>.<lang>.json. Rendus en un seul arbre : en-tête de l'index, « runs » = exécutions lues dans l'ordre.
+static J loadRuns() {
+  J o = loadJson(ORA + "/cso_runs/index.json");
+  CHECK(o["schema"].s == "strides.oracle.cso_runs/2", "cso_runs : schéma de l'index « %s »", o["schema"].s.c_str());
+  CHECK(o["runs"].t == J::Arr && !o["runs"].a.empty(), "cso_runs : index vide");
+  J runs;
+  runs.t = J::Arr;
+  for (const J& e : o["runs"].a) {
+    const std::string file = e["file"].s;
+    CHECK(!file.empty() && file == e["id"].s + "." + e["lang"].s + ".json", "cso_runs : fichier « %s » pour %s %s", file.c_str(), e["id"].s.c_str(), e["lang"].s.c_str());
+    J r = loadJson(ORA + "/cso_runs/" + file);
+    CHECK(r["id"].s == e["id"].s && r["lang"].s == e["lang"].s && r["frames"].t == J::Arr && e["frames"].t == J::Num && (double)r["frames"].a.size() == e["frames"].n,
+          "cso_runs/%s : identifiant, langue ou nombre d'images différent de l'index", file.c_str());
+    runs.a.push_back(std::move(r));
+  }
+  o.o["runs"] = std::move(runs);
+  return o;
+}
+
 // Oracles de scénario du banc de parité (scripts/unreal/export-cso-runs.mjs) : contrôle de schéma image par image, puis
 // recoupements avec le cœur : ligne de départ du jeu web = repère du tracé + décalage de la carrière lu dans
 // Content/Data, bip de départ à l'image où le cheval franchit cette ligne, et même simulation en français et en anglais
 // (seuls les textes changent).
 static void testRuns() {
-  J o = loadJson(ORA + "/cso_runs.json");
-  CHECK(o["schema"].s == "strides.oracle.cso_runs/1", "cso_runs : schéma « %s »", o["schema"].s.c_str());
+  J o = loadRuns();
   CHECK(o["dt"].t == J::Num && near(o["dt"].num(), 1.0 / 30), "cso_runs : pas fixe 1/30 s");
   CHECK(o["runs"].t == J::Arr && !o["runs"].a.empty(), "cso_runs : aucun scénario");
   auto num = [](const J& x) { return x.t == J::Num; };
@@ -324,7 +344,7 @@ static void testRuns() {
   std::printf("scénarios CSO : %zu (%zu images)\n", o["runs"].a.size(), nFrames);
 }
 
-// ---------- Cheval de concours (tranche T2) : strides::csoHorseStep rejoué sur le canal « ch » de cso_runs.json ----------
+// ---------- Cheval de concours (tranche T2) : strides::csoHorseStep rejoué sur le canal « ch » de cso_runs/ ----------
 
 // Obstacles relevés par le banc (champ obs) : reconstruits par makeCsoObstacle (portage de obstacles.js add / _bars /
 // faces) et comparés à ceux du jeu.
@@ -423,7 +443,7 @@ static bool hasKey(const J& keys, std::initializer_list<const char*> names) {
 // Rejeu chaîné : l'état du cœur n'est recalé sur l'état relevé qu'aux images marquées par le banc (a : changé avant
 // player.update ; b : corrigé après horse.update par une collision ou par Obstacles.updateHorse, hors du pas du cheval).
 static void testHorseRuns() {
-  J o = loadJson(ORA + "/cso_runs.json");
+  J o = loadRuns();
   const J ride = loadJson(DATA + "/cso_ride.json");
   const J hp = loadJson(DATA + "/cso_horse.json");
   // Constantes nommées extraites du source par export-data.mjs = valeurs par défaut du portage.
@@ -660,7 +680,7 @@ static void testPress() {
 }
 
 // ---------- Obstacles (tranche T3) : csoHorseStep + csoLimbContact + csoFencesUpdateHorse + csoFencesUpdate rejoués en
-// chaîne sur le canal « ch » de cso_runs.json, comparés en fin d'image (état du cheval, passage, refus, barres) ----------
+// chaîne sur le canal « ch » de cso_runs/, comparés en fin d'image (état du cheval, passage, refus, barres) ----------
 
 // Passage et dernier refus relevés (ob.ps, ob.rl) → état du cœur.
 static void loadPass(CsoHorseState& s, const J& ob) {
@@ -761,7 +781,7 @@ static std::string diffFences(const CsoHorseState& s, const std::vector<CsoFence
 }
 
 static void testFenceRuns() {
-  J o = loadJson(ORA + "/cso_runs.json");
+  J o = loadRuns();
   const J hp = loadJson(DATA + "/cso_horse.json");
   CHECK(hp["hindTrail"].num() == csoFenceDefaults().hindTrail, "cso_horse.json : HIND_TRAIL %g / portage %g", hp["hindTrail"].num(), csoFenceDefaults().hindTrail);
   // Critère T3 : ces scénarios rejoués en chaîne sans recalage ni écart (dont refus et abord-61, recalés par T2).
@@ -1087,7 +1107,7 @@ static void testText() {
   std::printf("textes et formats : %d cas (dec, ordinaux, pluriels, %zu clés de gabarits et textes fixes, fr et en), %d écarts\n", n, o["fr"]["templates"].a.size(), bad);
 }
 
-// ---------- Déroulé d'épreuve (tranche T4) : strides::CsoRun rejoué sur le canal « ep » de cso_runs.json ----------
+// ---------- Déroulé d'épreuve (tranche T4) : strides::CsoRun rejoué sur le canal « ep » de cso_runs/ ----------
 // Entrées réinjectées : trajectoire et mode du joueur vus par Run.update, bouton « Entrer en piste », événements
 // d'obstacle émis avant Run.update ; comparés image par image : étape, objectif, état de l'épreuve, mode de concours,
 // tableau de chrono (données et textes), cadence réécrite, appels hud.* et audio.* faits par courses.js (et
@@ -1129,7 +1149,7 @@ static std::vector<std::string> coreCalls(const std::vector<CsoCall>& calls) {
   return v;
 }
 static void testCsoRuns() {
-  J o = loadJson(ORA + "/cso_runs.json");
+  J o = loadRuns();
   const J data = loadJson(DATA + "/cso_course_pole.json");
   CourseDesign d;
   std::string err;
