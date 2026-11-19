@@ -1,0 +1,57 @@
+{
+ "schema": "strides.parite_poses/1",
+ "generator": "scripts/unreal/export-cso-runs.mjs --shots",
+ "frame": "repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil",
+ "viewport": {
+  "w": 844,
+  "h": 390
+ },
+ "poses": [
+  {
+   "name": "carriere-aerienne",
+   "desc": "Vue aérienne fixe de la carrière du Pôle depuis le sud, au-dessus de l’entrée, après la cloche (obstacles à 1,10 m, barres en place), 15 h, HUD masqué.",
+   "hour": 15,
+   "eye": [
+    330,
+    58,
+    -158
+   ],
+   "target": [
+    330,
+    3,
+    -232
+   ],
+   "fovV": 58,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.376346,
+    "z": -193.752483,
+    "h": 3.926991,
+    "v": 0
+   },
+   "sunDir": [
+    -0.242017,
+    0.771855,
+    0.587935
+   ],
+   "day": 0,
+   "groundEye": 4.551267,
+   "groundTarget": 3,
+   "groundHorse": 3,
+   "camDir": [
+    0,
+    -0.596524,
+    -0.802595
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "web": "unreal/docs/parite/cso/carriere-aerienne-web.png",
+   "unreal": "unreal/docs/parite/cso/carriere-aerienne-unreal.png"
+  }
+ ]
+}

@@ -429,7 +429,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:11-30 (poleDesign), 13-49 (courseDesignFromJson, parseCourseFile : lecture du tracé exporté), 72-111 (traceCourse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:89-98 (le jeu lit Content/Data/cso_course_pole.json par strides::parseCourseFile) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:12-24",
   "etat": "identique_prouve",
   "niveau": "teste",
-  "preuve": "cso_course.json (régénéré par scripts/unreal/export-data.mjs, clé design = CSO_DESIGN complet) : unreal/core/tests/test_core.cpp:91-107 (checkDesign : départ, 28 commandes, profil) et :111-145 (checkTrace : longueur, 10 obstacles libellé / nature / écart / x / z / cap / s, repères départ et arrivée x / z / cap / s, un point sur 25 avec le cap, les 35 points de l'abord, hauteurs) appliqués à poleDesign() ET au tracé lu dans Content/Data/cso_course_pole.json par parseCourseFile, la fonction du jeu (:147-160) ; fichier altéré (une commande F 11 → 11,1) : 42 échecs (contrôle de mutation du 18/11/2026) ; ctest du 18/11/2026 : 8 022 vérifications, 0 échec ; décalage monde : la ligne de départ du web en cours d'exécution (cso_runs.json, setup.start, CSO_START de obstacles.js) = repère du tracé + centre de carrière de Content/Data à 2e-6 près (unreal/core/tests/test_core.cpp:205-292, testRuns).",
+  "preuve": "cso_course.json (régénéré par scripts/unreal/export-data.mjs, clé design = CSO_DESIGN complet) : unreal/core/tests/test_core.cpp:91-107 (checkDesign : départ, 28 commandes, profil) et :111-145 (checkTrace : longueur, 10 obstacles libellé / nature / écart / x / z / cap / s, repères départ et arrivée x / z / cap / s, un point sur 25 avec le cap, les 35 points de l'abord, hauteurs) appliqués à poleDesign() ET au tracé lu dans Content/Data/cso_course_pole.json par parseCourseFile, la fonction du jeu (:147-160) ; fichier altéré (une commande F 11 → 11,1) : 42 échecs (contrôle de mutation du 18/11/2026) ; ctest du 18/11/2026 : 8 022 vérifications, 0 échec ; Strides.Parite.Cso (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:146-200 : même lecture dans le moteur, obstacles et repères comparés à l'oracle) Result={Success} le 18/11/2026 ; décalage monde : la ligne de départ du web en cours d'exécution (cso_runs.json, setup.start, CSO_START de obstacles.js) = repère du tracé + centre de carrière de Content/Data à 2e-6 près (unreal/core/tests/test_core.cpp:205-292, testRuns).",
   "ecart": "Tronçons (segs) non portés (utiles à l'aide de tracé et au lint, eux-mêmes absents) ; la conversion monde du module de jeu (AStridesCourse, StridesWorldDirector : arène + tracé, cm) n'est pas testée, seul le décalage des données l'est.",
   "tranche": "a"
  },
@@ -471,8 +471,8 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:37-73 (cylindres et cubes de base du moteur)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Formes de base ; aucune capture côte à côte (unreal/docs/parite/<systeme>/ absent).",
-  "ecart": "Pas de couleurs, d'ailes, de jardinières, de fanions ni de matériel de chronométrage ; lignes de départ et d'arrivée invisibles.",
+  "preuve": "Montage côte à côte unreal/docs/parite/cso/carriere-aerienne.png (vue aérienne fixe de la carrière, 844 × 390 de chaque côté, même œil, cible, FOV vertical 58° converti en 100,37° horizontal, soleil de 15 h ; web à gauche) : formes de base grises côté Unreal, barres peintes, chandeliers, ailes et jardinières côté web.",
+  "ecart": "Pas de couleurs, d'ailes, de jardinières, de fanions ni de matériel de chronométrage (visible sur unreal/docs/parite/cso/carriere-aerienne.png) ; lignes de départ et d'arrivée invisibles.",
   "tranche": "a"
  },
  {
@@ -544,7 +544,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Caméra de suivi visible sur les captures montées (validation-mac-2026-11-17.md) ; aucun comportement de concours vérifié.",
-  "ecart": "Pas de caméra dédiée au concours (profil de concours de camera.js, 6,6 m derrière le cheval) : même caméra partout.",
+  "ecart": "Pas de caméra dédiée au concours (profil de concours de camera.js, 6,6 m derrière le cheval) : même caméra partout. Constat du banc de parité (18/11/2026) : le joueur local d'UE 5.8 maintient l'axe Y par défaut (Engine/Config/BaseEngine.ini:2900, AspectRatio_MaintainYFOV) ; une première capture avec FieldOfView = FOV horizontal calculé montrait un champ nettement plus large que le web, corrigé en imposant l'axe X sur la caméra de capture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:198-205). Le FOV de 55 de la caméra du jeu (StridesHorse.cpp:63) n'est donc probablement pas un FOV horizontal comme le suppose cso-ecarts.md §1 point 8 : à mesurer en T6.",
   "tranche": "a"
  },
  {

@@ -11,6 +11,7 @@
 #include "StridesCore/SaveGame.h"
 #include "StridesUnits.h"
 #include "StridesDataSubsystem.h"
+#include "StridesShots.h"
 #include "Engine/StaticMesh.h"
 #include "UObject/Package.h"
 #include "Engine/GameInstance.h"
@@ -136,5 +137,64 @@ bool FStridesWorldSceneryTest::RunTest(const FString&)
 		}
 	TestEqual(TEXT("maillages de décor introuvables"), Missing, 0);
 	TestTrue(TEXT("au moins 200 maillages de décor"), Total >= 200);
+	return true;
+}
+
+// Banc de parité CSO dans le moteur : tracé lu par le jeu (Content/Data/cso_course_pole.json, strides::parseCourseFile)
+// comparé à l'oracle du JS (unreal/core/tests/oracles/cso_course.json), conversion du FOV vertical web en FOV horizontal
+// Unreal utilisée par -StridesShots=cso, et forme de unreal/docs/parite/cso/poses.json.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesPariteCsoTest, "Strides.Parite.Cso", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesPariteCsoTest::RunTest(const FString&)
+{
+	FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../.."));
+	FPaths::CollapseRelativeDirectories(Root);
+	FString Text;
+	TestTrue(TEXT("cso_course_pole.json lu"), FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/cso_course_pole.json"))));
+	strides::CourseDesign D;
+	std::string Err;
+	TestTrue(TEXT("tracé du fichier de données"), strides::parseCourseFile(std::string(TCHAR_TO_UTF8(*Text)), D, Err));
+	const strides::CourseTrace T = strides::traceCourse(D);
+	FString OText;
+	TSharedPtr<FJsonObject> O;
+	TestTrue(TEXT("oracle cso_course.json lu"), FFileHelper::LoadFileToString(OText, *(Root / TEXT("unreal/core/tests/oracles/cso_course.json"))) && FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(OText), O) && O.IsValid());
+	if (O.IsValid() && T.marks.count("start") && T.marks.count("finish"))
+	{
+		TestTrue(TEXT("longueur = oracle"), FMath::IsNearlyEqual(T.length, O->GetNumberField(TEXT("length")), 1e-7));
+		const TArray<TSharedPtr<FJsonValue>>& F = O->GetArrayField(TEXT("fences"));
+		TestEqual(TEXT("nombre d'obstacles = oracle"), (int32)T.fences.size(), F.Num());
+		for (int32 i = 0; i < F.Num() && i < (int32)T.fences.size(); i++)
+		{
+			const TSharedPtr<FJsonObject> E = F[i]->AsObject();
+			TestTrue(FString::Printf(TEXT("obstacle %d = oracle"), i), FMath::IsNearlyEqual(T.fences[i].x, E->GetNumberField(TEXT("x")), 1e-7) && FMath::IsNearlyEqual(T.fences[i].z, E->GetNumberField(TEXT("z")), 1e-7) && FMath::IsNearlyEqual(T.fences[i].rot, E->GetNumberField(TEXT("rot")), 1e-9));
+		}
+		for (const char* M : {"start", "finish"})
+		{
+			const TSharedPtr<FJsonObject> E = O->GetObjectField(TEXT("marks"))->GetObjectField(UTF8_TO_TCHAR(M));
+			const strides::TraceMark& K = T.marks.at(M);
+			TestTrue(FString::Printf(TEXT("repère %s = oracle (x, z, cap, s)"), UTF8_TO_TCHAR(M)), FMath::IsNearlyEqual(K.x, E->GetNumberField(TEXT("x")), 1e-7) && FMath::IsNearlyEqual(K.z, E->GetNumberField(TEXT("z")), 1e-7) && FMath::IsNearlyEqual(K.rot, E->GetNumberField(TEXT("rot")), 1e-9) && FMath::IsNearlyEqual(K.s, E->GetNumberField(TEXT("s")), 1e-7));
+		}
+	}
+	// FOV : 58° vertical en 844 × 390 → environ 100,36° horizontal ; la projection Unreal (axe X maintenu) redonne 58°.
+	const double FovH = AStridesShots::HorizontalFov(58, 844, 390);
+	const double FovVBack = FMath::RadiansToDegrees(2.0 * FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FovH) * 0.5) * 390.0 / 844.0));
+	TestTrue(FString::Printf(TEXT("FOV horizontal %.4f° (≈ 100,36°)"), FovH), FMath::Abs(FovH - 100.36) < 0.01);
+	TestTrue(TEXT("FOV vertical retrouvé"), FMath::IsNearlyEqual(FovVBack, 58.0, 1e-9));
+	TestTrue(TEXT("format carré : FOV inchangé"), FMath::IsNearlyEqual(AStridesShots::HorizontalFov(70, 1, 1), 70.0, 1e-9));
+	// Poses jumelles écrites par le banc web.
+	FString PText;
+	TSharedPtr<FJsonObject> P;
+	if (FFileHelper::LoadFileToString(PText, *(Root / TEXT("unreal/docs/parite/cso/poses.json"))) && FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(PText), P) && P.IsValid())
+	{
+		TestEqual(TEXT("poses : schéma"), P->GetStringField(TEXT("schema")), FString(TEXT("strides.parite_poses/1")));
+		for (const TSharedPtr<FJsonValue>& V : P->GetArrayField(TEXT("poses")))
+		{
+			const TSharedPtr<FJsonObject> E = V->AsObject();
+			const TSharedPtr<FJsonObject> VP = E->GetObjectField(TEXT("viewport"));
+			TestTrue(TEXT("pose : viewport 844 × 390"), VP->GetNumberField(TEXT("w")) == 844 && VP->GetNumberField(TEXT("h")) == 390);
+			TestTrue(TEXT("pose : œil, cible, soleil"), E->GetArrayField(TEXT("eye")).Num() == 3 && E->GetArrayField(TEXT("target")).Num() == 3 && E->GetArrayField(TEXT("sunDir")).Num() == 3);
+			TestTrue(TEXT("pose : FOV vertical"), E->GetNumberField(TEXT("fovV")) > 10 && E->GetNumberField(TEXT("fovV")) < 120);
+		}
+	}
+	else AddError(TEXT("unreal/docs/parite/cso/poses.json illisible"));
 	return true;
 }

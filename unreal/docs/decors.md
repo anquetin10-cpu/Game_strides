@@ -33,6 +33,13 @@ zsh scripts/unreal/rebuild-world.sh                        # préparation, impor
 - `-StridesShots` (jeu lancé en ligne de commande) : 8 points de vue fixes du monde, la vue de jeu, puis la cavalière
   monte et le cheval joue le parcours de démonstration du Pôle (captures toutes les 4 s) ; images dans
   `Saved/Screenshots/Strides/`, journal `.tmp/shots.log`.
+- Banc de parité CSO (captures jumelles web / Unreal, même pose, même heure, 844 × 390) :
+  `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots` (oracle
+  `unreal/core/tests/oracles/cso_runs.json`, `unreal/docs/parite/cso/poses.json` et `<pose>-web.png`), puis le jeu avec
+  `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` exporté (sinon fenêtre bloquante « Xcode introuvable ») et
+  `-game -windowed -ResX=844 -ResY=390 -StridesShots=cso` (`<pose>-unreal.png`, capture haute résolution à la taille
+  exacte), enfin `python3 scripts/unreal/parite-montage.py` (contrôle des tailles par `sips`, montage `ffmpeg hstack`
+  dans `unreal/docs/parite/cso/<pose>.png`, web à gauche).
 - Test d'automatisation `Strides.World.Scenery` : relief identique à `analyticHeight` aux nœuds (écurie 3 m, Pôle 3 m, fond
   marin -13,98 m, colline 59,28 m), 14 routes, étang, et chaque maillage du manifeste chargeable.
 - Vérifié sur Mac le 18/11/2026 : compilation, 6 tests sur 6, parcours complet joué à cheval sur le décor (10 obstacles,

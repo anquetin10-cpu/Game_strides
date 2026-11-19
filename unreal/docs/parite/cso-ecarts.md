@@ -321,6 +321,15 @@ Principes communs :
   `-ResX=844 -ResY=390 -windowed` peut produire 1688 × 780 px (à confirmer, le critère de taille le détecte) ; captures
   Unreal à faire session ouverte (runbook `banc-test-mac-mini`) ; outil de montage gratuit à confirmer sur le Mac mini
   (Pillow ou `ffmpeg hstack`).
+- **Livré (19/11/2026)** : `cso_runs.json` (scénario « droit », fr et en, 298 images chacun) identique sur trois
+  exécutions ; `TC` compare le tracé lu par `parseCourseFile` (fonction du jeu) à l'oracle et contrôle le schéma des
+  scénarios ; `unreal/docs/parite/cso/carriere-aerienne.png` (web à gauche, Unreal à droite). Constats pour la suite :
+  (1) le joueur local d'UE 5.8 maintient l'axe **Y** par défaut (`BaseEngine.ini:2900`) : la capture impose l'axe X ;
+  le FOV 55 de `SG/StridesHorse.cpp:63` n'est donc probablement pas horizontal (§1 point 8, à mesurer en T6) ;
+  (2) sans `DEVELOPER_DIR` exporté, le jeu se bloque sur une fenêtre « Xcode introuvable » à l'initialisation Metal ;
+  (3) déterminisme web : remettre à neuf l'animation du cheval (`anim`, `anim._a`, `pjl.ph`) et mettre à jour les
+  matrices monde après chaque `g.update` (ce que fait le rendu), sinon les foulées (`horse:step`) varient ;
+  (4) le canal caméra n'enregistre pas encore la distance de perche (à ajouter en T6).
 
 ### T2. Cheval de concours dans StridesCore (conduite intégrée, visée, déclenchement du saut)
 
