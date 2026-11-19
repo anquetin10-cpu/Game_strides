@@ -562,6 +562,37 @@ Principes communs :
   `horse:exhausted` du cheval d'un cavalier du décor, `rider230`, absent ; cause non établie, à confirmer : même
   famille que le constat (1), sans effet sur l'épreuve ni sur le cheval du joueur ; `TC` ne lit dans « ev » que les
   événements de saut et de refus du cheval du joueur).
+- **Corrigé après le second contrôle adverse (19/11/2026)** : (1) Règles portées sans oracle, désormais exercées par
+  `EXP` et couvertes par des mutations : conditions du départ lancé (`courses.js:274`) — six scénarios `t4-lance-*`,
+  cheval posé à l'arrêt à la cloche (`setup.pose.ang` = cap tourné de l'axe) : s = 11,8 m, u = 3,7 m, cap à 55° et
+  s = 0,2 m, u = −3,7 m, cap à −55° (chrono lancé) ; s = 12,2 m, |u| = 3,9 m, cap à 62°, s = −0,2 m (pas lancé) ;
+  arrivée seulement après le dernier obstacle (`courses.js:333`), sortie de piste écourtée par une descente
+  (`courses.js:320`) et écouteurs limités à l'étape de parcours — `t4-hors-parcours` (le 3 sauté pendant l'entrée en
+  piste, `setup.ent` ; faute au 2 avant le départ ; ligne d'arrivée franchie avant le départ, puis après le départ le 1
+  étant attendu ; fautes au 3 et au 1 à rebours) et `t4-sortie-descente` (pied à terre 0,37 s après l'arrivée : bilan
+  sans élimination). `TC` exige qu'au moins un relevé exerce chacune de ces règles (19 classes au total avec les
+  7 gardes : chaque condition du départ lancé seule en défaut près de sa limite, départ accordé près des limites,
+  arrivée franchie trop tôt deux fois, sortie écourtée, faute à rebours et avant le départ, saut hors de l'étape de
+  parcours). `mutations-cso-run.py` : 78 mutations détectées sur 83, dont les 6 lacunes relevées par le contrôle
+  (arrivée sans `next > n`, 12 → 40 m, largeur ignorée, cap ignoré, descente ignorée en sortie, écouteurs hors de
+  l'étape de parcours) ; 5 équivalentes par construction et déclarées (`ATTENDUES`) : les 3 d'avant, dont la raison
+  repose maintenant sur une garde prouvée, plus « arrivée : départ non exigé » (next ne dépasse 1 qu'après le départ)
+  et « prochain obstacle gardé à l'arrivée » (next − 1 = n, hors de la liste). (2) Journal des fautes du bilan
+  (`state.log`) : relevé par `EXP` dans le canal « ep » (`lg`, entrées [label, kind, cause, causeText] quand il change ;
+  l'ancien champ `run.course.log` ne contenait que des `null`), comparé à chaque image par `TC` et par
+  `Strides.Parite.CsoRun` (102 changements) ; mutations « refus absent », « saut franchi absent », « barre sans sa
+  cause », « barre notée franchie » détectées. (3) HUD de débogage : `AStridesHUD::ObjectiveLines` affiche l'objectif
+  de l'épreuve puis la mission de carrière lancée (touche M) ; test moteur `Strides.Hud.ObjectiveLines`. (4)
+  Inventaire : pénalités de temps comparées par `csoPoints` (fonction de `CsoRun::points`, 56 cas de
+  `cso_course.json`) ; règles du cross déclarées non portées (`cso.refus-penalite`) ; capture du HUD de débogage
+  rangée dans `unreal/docs/parite/cso/t4-hud-debogage-galop-unreal.png` avec son débordement déclaré
+  (`cso.tableau-chrono`) ; niveaux globaux de `PARITE.md` à jour. (5) Grand message du lancement de l'activité
+  (`missions.js:476`, « PARCOURS DU PÔLE » / « Événement · Entraînement », 2,6 s, puis `audio.notify`) non porté :
+  déclaré dans `cso.entree-piste`, à porter avec le poteau (T10). (6) Limites restantes : fautes à rebours et avant le
+  départ maintenant relevées (barres tombées par un appel à 4,2 m) ; écart de `t3-refus-5s` signalé par le contrôle : l'événement horse:exhausted du cheval du cavalier du décor rider230 tombe à l'image 430 au lieu de 429 dans les trois exportations faites depuis a8a34613 (deux du contrôle précédent, une ici), identiques entre elles : décalage reproductible d'une image par rapport à 8889a03d plutôt qu'un tirage différent d'une exportation à l'autre ; cause non établie (à confirmer), sans effet sur l'épreuve ni sur le cheval du joueur.
+  Résultats : ctest 190 369 vérifications, 0 échec ; `TC` 44 exécutions sans écart, 31 370 images, 398 appels
+  d'interface et 246 sons de `courses.js`, 27 830 tableaux ; `cso_target.json` et `cso_goto.json` identiques à l'octet à ceux de a8a34613 ; les 53 exécutions antérieures de cso_runs.json identiques hors du nouveau champ ep.lg (comparées champ à champ), 16 exécutions ajoutées ;
+  tests moteur : les 14 tests Strides en Result={Success}, dont Strides.Parite.CsoRun (44 exécutions sans écart, 31 370 images, 27 830 tableaux, 102 changements du journal) et Strides.Hud.ObjectiveLines.
 
 ### T5. Obstacles, lignes et poteau visibles (géométrie exportée du web)
 

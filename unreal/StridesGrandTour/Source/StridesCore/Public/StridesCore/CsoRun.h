@@ -85,6 +85,9 @@ struct CsoCadence {
 // modes du joueur).
 STRIDESCORE_API std::string csoGotoText(const CsoRunConfig& cfg, const TextTable& text, const CsoRunFrame& f);
 STRIDESCORE_API bool csoGotoDone(const CsoRunConfig& cfg, const CsoRunFrame& f);
+// Points de l'épreuve de CSO (courses.js:148 hudInfo.pen et :341) : fautes + 1 point par seconde entamée au-delà du
+// temps accordé (ceil(max(0, t − TA) − 1e-9)) ; CsoRun::points l'applique à l'état de la manche.
+STRIDESCORE_API int csoPoints(int faults, double t, double timeAllowed);
 
 enum class CsoObstacleEventKind { Clear, Fault, Refusal };
 

@@ -164,6 +164,26 @@ const SCENARIOS = [
       { do: 'place', dx: 0, dz: 4 }, { do: 'mode', to: 'drive' }, { do: 'place', dx: 6, dz: 20 }, { do: 'place', dx: 0, dz: 5 }, { do: 'mode', to: 'ride' }, { do: 'place', dx: 0, dz: 5, frames: 1 }],
     acts: [{ do: 'wait', frames: 5 }],
     desc: 'Rejoindre l’entrée de la carrière : cheval monté posé à 127 m au sud de l’entrée, puis à 64, 46 et 30 m (objectif avec la distance au-delà de 45 m, sans au-dessous) ; à 30 m, pied à terre (« Monte sur ton cheval ») ; cavalier posé à 4 m de l’entrée, à pied : étape non validée ; au volant du camion (A.drive), camion posé à 21 m puis à 5 m de l’entrée (« Sors du camion puis monte à cheval », non validée) ; en selle (A.mount) ; cheval posé à 5 m : étape validée ; présentation, Entrer en piste, annonce, cloche ; 5 images après.' },
+  // Second contrôle adverse de T4 : conditions du départ lancé (courses.js:274 : 0 ≤ s < 12 m, |u| < w/2 + 0,3 m,
+  // cap à moins de 60° de l'axe) de part et d'autre de chaque limite — cheval posé à l'arrêt à la cloche, donc lu tel
+  // quel à l'ouverture du parcours (ligne de départ : w = 7 m, marge latérale 3,8 m).
+  ...[
+    ['t4-lance-limites', { s: 11.8, u: 3.7, ang: 55, v: 0 }, 'à 11,8 m au-delà de la ligne de départ, 3,7 m à droite de son milieu, cap à 55° de son axe : les trois limites hautes en deçà, chrono lancé à l’ouverture du parcours'],
+    ['t4-lance-limites-gauche', { s: 0.2, u: -3.7, ang: -55, v: 0 }, 'à 0,2 m au-delà de la ligne de départ, 3,7 m à gauche de son milieu, cap à 55° de son axe de l’autre côté : chrono lancé'],
+    ['t4-lance-loin', { s: 12.2, u: 0, v: 0 }, 'à 12,2 m au-delà de la ligne de départ, dans son axe : au-delà des 12 m, chrono pas lancé'],
+    ['t4-lance-large', { s: 4, u: -3.9, v: 0 }, 'à 4 m au-delà de la ligne de départ, 3,9 m à gauche de son milieu (hors des 3,5 + 0,3 m), dans son axe : chrono pas lancé'],
+    ['t4-lance-cap', { s: 4, u: 0, ang: 62, v: 0 }, 'à 4 m au-delà de la ligne de départ, sur son milieu, cap à 62° de son axe (cos < 0,5) : chrono pas lancé'],
+    ['t4-lance-derriere', { s: -0.2, u: 0, v: 0 }, 'à 0,2 m en deçà de la ligne de départ, dans son axe : chrono pas lancé'],
+  ].map(([id, pose, what]) => ({ id, type: 't4', classic: true, maxFrames: 300, pose, acts: [{ do: 'wait', frames: 10 }], desc: `Départ lancé, limites : à la cloche, cheval posé à l’arrêt ${what} ; 10 images après.` })),
+  { id: 't4-hors-parcours', type: 't4', classic: true, maxFrames: 1600, ent: [{ do: 'jump', label: '3', rule: 'good', back: 6 }],
+    acts: [{ do: 'wait', frames: 5 }, { do: 'jump', label: '2', rule: 'far', far: 4.2 }, { do: 'cross', line: 'finish', back: 4, v: 4.6, until: { past: 'finish', s: 3 } },
+      { do: 'cross', line: 'start', back: 5, v: 4.6, until: 'started' }, { do: 'cross', line: 'finish', back: 4, v: 4.6, until: { past: 'finish', s: 3 } },
+      { do: 'jump', label: '3', rule: 'far', far: 4.2, rev: true }, { do: 'jump', label: '1', rule: 'far', far: 4.2, rev: true }, { do: 'wait', frames: 10 }],
+    desc: 'Hors du parcours : présentation, Entrer en piste ; pendant l’entrée en piste (2,4 s), le 3 sauté (cheval posé à 6 m, 6,2 m/s) : écouteurs du parcours pas encore posés, rien ; annonce, cloche ; avant le départ, le 2 sauté avec un appel à 4,2 m de la barre (faute avant le départ : astuce « chrono pas lancé ») et la ligne d’arrivée franchie dans son sens (rien) ; ligne de départ franchie ; ligne d’arrivée franchie de nouveau, le 1 étant attendu (rien : arrivée seulement après le dernier obstacle) ; le 3 puis le 1 sautés à rebours avec un appel à 4,2 m de la barre (fautes à rebours : rien) ; 10 images après.' },
+  { id: 't4-sortie-descente', type: 't4', classic: true, maxFrames: 2400,
+    acts: [{ do: 'line', until: 'started' }, ...['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
+      { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'wait', frames: 10 }, { do: 'mode', to: 'foot', frames: 3 }, { do: 'card', extra: 5 }],
+    desc: 'Sortie de piste écourtée : départ, les 10 éléments sautés (cheval posé devant chacun), cheval posé 4 m avant le milieu de la ligne d’arrivée à 3 m/s, arrivée ; 10 images plus tard, pied à terre (A.foot) : la sortie de piste s’arrête là, sans élimination, bilan.' },
 ];
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -513,6 +533,12 @@ function PAGE() {
           P.rr = 0;
         }
         if (g.cheerT !== cheer0) ep.cheer = g.cheerT;
+        // Second contrôle de T4 : journal des fautes de l'épreuve (state.log, lu par le bilan) relevé en entier quand il
+        // change, entrées [label, kind, cause, causeText] (null si absent). Les écouteurs d'obstacle l'écrivent avant
+        // Run.update : relevé à la fin de l'image.
+        const lg = this.data?.course?.log;
+        const lj = JSON.stringify(lg ? lg.map((e) => [e.label ?? null, e.kind ?? null, e.cause ?? null, e.causeText ?? null]) : []);
+        if (lj !== (P.lgRec ?? '[]')) ep.lg = JSON.parse((P.lgRec = lj));
       }
     };
   };
@@ -963,16 +989,22 @@ function PAGE() {
         if (++k > 120) throw new Error('présentation absente');
       }
       step(input({ ui: 'enter' }));
+      // Second contrôle de T4 : actions de l'étape « Entrée en piste » (setup.ent), achevées avant la cloche.
+      if (sc.ent) {
+        const i0 = g.missions.active?.i;
+        runActs(sc.ent);
+        if (g.missions.active?.i !== i0) throw new Error(`${sc.id} : actions de l’entrée en piste au-delà de l’étape`);
+      }
       for (k = 0; ; k++) {
         const r = step(input());
         if (r.audio.some((c) => c.fn === 'bell')) break;
         if (k > 300) throw new Error('cloche absente');
       }
       // Pose à la cloche (avant l'image où l'étape de parcours démarre) : `pose` = { s, u } dans le repère de la ligne
-      // de départ (s le long de son axe, u à droite), cap de la ligne, vitesse v.
+      // de départ (s le long de son axe, u à droite), cap de la ligne tourné de `ang` degrés (contrôle de T4), vitesse v.
       if (sc.pose) {
         const S = O.CSO_START, nx = Math.sin(S.rot), nz = Math.cos(S.rot);
-        poseHorse(st, S.x + nx * sc.pose.s + nz * (sc.pose.u || 0), S.z + nz * sc.pose.s - nx * (sc.pose.u || 0), S.rot, sc.pose.v);
+        poseHorse(st, S.x + nx * sc.pose.s + nz * (sc.pose.u || 0), S.z + nz * sc.pose.s - nx * (sc.pose.u || 0), S.rot + ((sc.pose.ang || 0) * Math.PI) / 180, sc.pose.v);
       }
       runActs(sc.acts);
     } finally {
@@ -1331,7 +1363,7 @@ for (const sc of SCENARIOS) {
       Object.assign(setup, { horse: r.horse, rails: r.rails, ch0: r.ch0, pose: { ...sc.pose, cross: sc.cross ?? null } });
     } else if (sc.type === 't4') {
       frames = await page.evaluate((s) => window.__parite.runT4(s), sc);
-      Object.assign(setup, { lite: true, acts: sc.acts, pose: sc.pose ?? null, ...(sc.pre ? { pre: sc.pre, at: sc.at ?? null } : {}) });
+      Object.assign(setup, { lite: true, acts: sc.acts, pose: sc.pose ?? null, ...(sc.pre ? { pre: sc.pre, at: sc.at ?? null } : {}), ...(sc.ent ? { ent: sc.ent } : {}) });
     } else frames = await page.evaluate((s) => window.__parite.runDroit(s), sc);
     if (sc.classic) setup.classic = true;
     runs.push({ id: sc.id, lang, desc: sc.desc, setup, frames });
@@ -1351,9 +1383,9 @@ const head = {
   precision: 1e-6,
   inputs: 'in.move = joystick virtuel [x, y] (input.setVirtualMove) ; in.keys = touches clavier tenues (input.keys) ; in.held = actions tenues (input.held, ex. gallop) ; in.jump = SAUT pressé à cette image ; in.ui = bouton de carte touché (data-id) avant l’image',
   state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch)',
-  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update',
+  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update, lg = journal des fautes de l’épreuve (state.log) en fin d’image, entrées [label, kind, cause, causeText] (null si absent)',
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
-  lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; in.press = actions pressées (ex. action)',
+  lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action)',
   ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
   audioRecorded,
   audioIgnored: AUDIO_IGNORED,

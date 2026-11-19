@@ -5,11 +5,13 @@
 //    traduite par le jeu), image passée à TickRun ; comparés comme dans le banc du cœur : appels d'interface et sons
 //    journalisés par l'acteur, cadence remise à 0 par un refus et réécrite en sortie de piste, étape, objectif et pas de
 //    l'étape, état de l'épreuve (chrono, cloche, fautes, refus, pénalités de temps, élimination, manche), mode de
-//    concours, tableau de chrono (données et textes), numéro surligné, barres remises (appliquées par l'acteur) et
-//    public en liesse ;
+//    concours, tableau de chrono (données et textes), numéro surligné, barres remises (appliquées par l'acteur), public
+//    en liesse et journal des fautes (libellé, type, cause, texte de la cause traduit par le jeu) ;
 //  - Strides.Cso.RunInGame : AStridesHorse, AStridesRider et AStridesCourse réels dans un monde de test : entrée de piste
 //    rejointe à cheval, annonce, cloche, ligne de départ franchie (bip), puis descente de cheval (AStridesRider::Dismount)
-//    pendant le parcours : éliminé.
+//    pendant le parcours : éliminé ;
+//  - Strides.Hud.ObjectiveLines : lignes d'objectif du HUD de débogage (objectif de l'épreuve, puis mission de carrière
+//    lancée ; état des missions hors épreuve).
 #include "Misc/AutomationTest.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
@@ -23,6 +25,7 @@
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
+#include "StridesHUD.h"
 #include "StridesRider.h"
 #include "StridesUnits.h"
 
@@ -94,7 +97,7 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 	const std::string All = TCHAR_TO_UTF8(*Text);
 	Text.Empty();
 	TArray<FString> Done;
-	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, BoardCmp = 0, Bad = 0;
+	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, BoardCmp = 0, LogCmp = 0, Bad = 0;
 	size_t Pos = 0;
 	while ((Pos = All.find("\n{\"id\":\"", Pos)) != std::string::npos)
 	{
@@ -134,6 +137,7 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 		Compare(Su["calls"]["hud"], true, -1);
 		AudioAt = Course->AudioLog().Num();
 		int32 HlWant = -1, Resets = Course->RailResets();
+		TArray<FString> LogWant;  // journal des fautes du jeu web (state.log), relevé quand il change
 		auto Fail = [&](int32 F, const FString& What)
 		{
 			if (++RunBad < 4) AddError(FString::Printf(TEXT("%hs (%hs) image %d : %s"), Id.c_str(), Lang.c_str(), F, *What));
@@ -216,17 +220,35 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 			if (Course->RailResets() - Resets != (Ep["rr"].isNull() ? 0 : (int)Ep["rr"].num())) Fail(F, TEXT("barres remises"));
 			Resets = Course->RailResets();
 			if (Run.takeCheer() != (Ep["cheer"].isNull() ? 0.0 : Ep["cheer"].num())) Fail(F, TEXT("public en liesse"));
+			// Journal des fautes (libellé, type, cause, texte de la cause ; absent = vide).
+			if (!Ep["lg"].isNull())
+			{
+				LogWant.Reset();
+				for (const J& E : Ep["lg"].a)
+				{
+					FString Row;
+					for (size_t K = 0; K < 4; K++) Row += (K ? TEXT("|") : TEXT("")) + (E[K].isNull() ? FString() : FString(UTF8_TO_TCHAR(E[K].s.c_str())));
+					LogWant.Add(Row);
+				}
+				LogCmp++;
+			}
+			TArray<FString> LogGot;
+			for (const strides::CsoRunLog& E : S.log) LogGot.Add(FString(UTF8_TO_TCHAR(E.label.c_str())) + TEXT("|") + UTF8_TO_TCHAR(E.kind.c_str()) + TEXT("|") + UTF8_TO_TCHAR(E.cause.c_str()) + TEXT("|") + UTF8_TO_TCHAR(E.causeText.c_str()));
+			if (LogGot != LogWant) Fail(F, FString::Printf(TEXT("journal des fautes « %s » / web « %s »"), *FString::Join(LogGot, TEXT(" ; ")), *FString::Join(LogWant, TEXT(" ; "))));
 		}
 		Bad += RunBad;
 		if (RunBad == 0) Done.Add(FString::Printf(TEXT("%hs %hs"), Id.c_str(), Lang.c_str()));
 		Course->Destroy();
 	}
 	const TCHAR* Required[] = {TEXT("droit"), TEXT("t4-sans-faute"), TEXT("t4-depart-lance"), TEXT("t4-cloche"), TEXT("t4-erreur-parcours"), TEXT("t4-deux-refus"),
-		TEXT("t4-temps-limite"), TEXT("t4-descente"), TEXT("t4-saute-avant-depart"), TEXT("t4-arrivee-barre"), TEXT("t4-lignes"), TEXT("t4-gardes"), TEXT("t4-un-point"), TEXT("t4-entree")};
+		TEXT("t4-temps-limite"), TEXT("t4-descente"), TEXT("t4-saute-avant-depart"), TEXT("t4-arrivee-barre"), TEXT("t4-lignes"), TEXT("t4-gardes"), TEXT("t4-un-point"), TEXT("t4-entree"),
+		TEXT("t4-lance-limites"), TEXT("t4-lance-limites-gauche"), TEXT("t4-lance-loin"), TEXT("t4-lance-large"), TEXT("t4-lance-cap"), TEXT("t4-lance-derriere"), TEXT("t4-hors-parcours"),
+		TEXT("t4-sortie-descente")};
 	for (const TCHAR* Id : Required)
 		for (const TCHAR* L : {TEXT("fr"), TEXT("en")}) TestTrue(FString::Printf(TEXT("scénario %s (%s) rejoué"), Id, L), Done.Contains(FString::Printf(TEXT("%s %s"), Id, L)));
-	TestEqual(TEXT("écarts au jeu web (interface, sons, état, cadence, mode de concours, tableau, surlignage, barres, public)"), Bad, 0);
-	AddInfo(FString::Printf(TEXT("déroulé d'épreuve dans le jeu : %d exécutions sans écart, %d images, %d appels d'interface, %d sons et %d tableaux comparés"), Done.Num(), Frames, HudCmp, AudioCmp, BoardCmp));
+	TestEqual(TEXT("écarts au jeu web (interface, sons, état, cadence, mode de concours, tableau, surlignage, barres, public, journal)"), Bad, 0);
+	TestTrue(TEXT("journal des fautes relevé"), LogCmp > 0);
+	AddInfo(FString::Printf(TEXT("déroulé d'épreuve dans le jeu : %d exécutions sans écart, %d images, %d appels d'interface, %d sons, %d tableaux et %d changements du journal des fautes comparés"), Done.Num(), Frames, HudCmp, AudioCmp, BoardCmp, LogCmp));
 	return true;
 }
 
@@ -270,5 +292,22 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	TestTrue(TEXT("descente : grand message ÉLIMINÉ et cloche double"), Logged(TEXT("big | ÉLIMINÉ | Tu es descendu de cheval : éliminé. | 2600.0")) && Logged(TEXT("bell | 2.0")));
 	TestTrue(TEXT("bilan (étape suivante)"), Course->Run()->step() == strides::CsoStep::Result);
 	AddInfo(FString::Printf(TEXT("épreuve en jeu : %d appels d'interface, %d sons ; %s"), Course->HudLog().Num(), Course->AudioLog().Num(), *Course->StatusText()));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesHudObjectiveLinesTest, "Strides.Hud.ObjectiveLines", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesHudObjectiveLinesTest::RunTest(const FString&)
+{
+	// Second contrôle adverse de T4 : la mission de carrière lancée pendant l'épreuve (touche M) reste affichée.
+	const FString Obj = TEXT("Franchis la ligne de départ"), Mission = TEXT("Premier contrat · rejoindre Pôle"), None = TEXT("Aucune mission active");
+	auto Expect = [this](const TCHAR* What, const TArray<FString>& Got, const TArray<FString>& Want)
+	{
+		TestTrue(FString::Printf(TEXT("%s : « %s » / attendu « %s »"), What, *FString::Join(Got, TEXT(" ; ")), *FString::Join(Want, TEXT(" ; "))), Got == Want);
+	};
+	Expect(TEXT("épreuve en cours, mission lancée : objectif puis mission"), AStridesHUD::ObjectiveLines(true, Obj, TEXT("m1"), Mission), TArray<FString>{Obj, Mission});
+	Expect(TEXT("épreuve en cours, aucune mission : objectif seul"), AStridesHUD::ObjectiveLines(true, Obj, FString(), None), TArray<FString>{Obj});
+	Expect(TEXT("épreuve en cours, objectif vide (cloche), mission lancée : mission seule"), AStridesHUD::ObjectiveLines(true, FString(), TEXT("m1"), Mission), TArray<FString>{Mission});
+	Expect(TEXT("hors épreuve : état des missions"), AStridesHUD::ObjectiveLines(false, FString(), FString(), None), TArray<FString>{None});
+	Expect(TEXT("hors épreuve, mission lancée : mission"), AStridesHUD::ObjectiveLines(false, FString(), TEXT("m1"), Mission), TArray<FString>{Mission});
 	return true;
 }

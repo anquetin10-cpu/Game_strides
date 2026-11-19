@@ -280,10 +280,12 @@ bool CsoRun::out(const std::string& reason) {
   return true;
 }
 
-int CsoRun::points() const {
-  const double over = std::max(0.0, st_.t - cfg_.timeAllowed);
-  return st_.faults + (int)std::ceil(over - 1e-9);
+int csoPoints(int faults, double t, double timeAllowed) {
+  const double over = std::max(0.0, t - timeAllowed);
+  return faults + (int)std::ceil(over - 1e-9);
 }
+
+int CsoRun::points() const { return csoPoints(st_.faults, st_.t, cfg_.timeAllowed); }
 
 bool CsoRun::courseUpdate(const CsoRunFrame& f, CsoCadence& cad) {
   // courses.js:286-351.

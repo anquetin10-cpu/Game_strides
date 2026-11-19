@@ -54,6 +54,28 @@ M = [
  (R, 'saut après l’élimination compté', 'if (st_.finished || st_.eliminated || notStarted()) return;', 'if (st_.finished || notStarted()) return;'),
  (R, 'faute : obstacle suivant non avancé', '      hud("toast", {S(Tr("Barre au {0} · +4{1}", {label, causeText.empty() ? std::string() : " · " + causeText}))});\n    }\n    advance();',
   '      hud("toast", {S(Tr("Barre au {0} · +4{1}", {label, causeText.empty() ? std::string() : " · " + causeText}))});\n      st_.next--;\n    }\n    advance();'),
+ # Second contrôle adverse de T4 : départ lancé (courses.js:274), arrivée (courses.js:333), sortie écourtée par une
+ # descente (courses.js:320), écouteurs limités à l'étape de parcours, journal des fautes (aucune n'était détectée avant
+ # t4-lance-*, t4-hors-parcours, t4-sortie-descente et la comparaison du journal).
+ (R, 'départ lancé : 12 m -> 40 m', 'if (sP >= 0 && sP < 12 &&', 'if (sP >= 0 && sP < 40 &&'),
+ (R, 'départ lancé : 12 m -> 11,5 m', 'if (sP >= 0 && sP < 12 &&', 'if (sP >= 0 && sP < 11.5 &&'),
+ (R, 'départ lancé : 0 m -> −1 m', 'if (sP >= 0 && sP < 12 &&', 'if (sP >= -1 && sP < 12 &&'),
+ (R, 'départ lancé : 0 m -> 0,5 m', 'if (sP >= 0 && sP < 12 &&', 'if (sP >= 0.5 && sP < 12 &&'),
+ (R, 'départ lancé : largeur ignorée', 'uP < L.w / 2 + 0.3 && std::sin(cur_.heading)', 'uP < 1e9 && std::sin(cur_.heading)'),
+ (R, 'départ lancé : marge 0,3 -> 0', 'uP < L.w / 2 + 0.3 && std::sin(cur_.heading)', 'uP < L.w / 2 && std::sin(cur_.heading)'),
+ (R, 'départ lancé : côté gauche non borné', 'const double uP = std::abs((cur_.x - L.x) * nz - (cur_.z - L.z) * nx);', 'const double uP = (cur_.x - L.x) * nz - (cur_.z - L.z) * nx;'),
+ (R, 'départ lancé : cap ignoré', 'std::cos(cur_.heading) * nz > 0.5) {', 'std::cos(cur_.heading) * nz > -2) {'),
+ (R, 'départ lancé : cap 60° -> 53°', 'std::cos(cur_.heading) * nz > 0.5) {', 'std::cos(cur_.heading) * nz > 0.6) {'),
+ (R, 'arrivée : dernier obstacle non exigé', 'if (st_.started && st_.next > n && lineCrossed(cfg_.finish', 'if (st_.started && lineCrossed(cfg_.finish'),
+ (R, 'arrivée : ni départ ni dernier obstacle exigés', 'if (st_.started && st_.next > n && lineCrossed(cfg_.finish', 'if (lineCrossed(cfg_.finish'),
+ (R, 'arrivée : départ non exigé', 'if (st_.started && st_.next > n && lineCrossed(cfg_.finish', 'if (st_.next > n && lineCrossed(cfg_.finish'),
+ (R, 'sortie de piste : descente ignorée', 'return st_.exitT > 2.6 || !f.riding;', 'return st_.exitT > 2.6;'),
+ (R, 'écouteurs actifs hors de l’étape de parcours', 'if (done_ || step() != CsoStep::Course) return;', 'if (done_) return;'),
+ (R, 'mode de concours : prochain obstacle gardé à l’arrivée', 'mode_.next = st_.finished || nextIdx < 0', 'mode_.next = nextIdx < 0'),
+ (R, 'journal : refus absent', '    st_.log.push_back({label, "refusal", "", ""});\n', '\n'),
+ (R, 'journal : saut franchi absent', '      st_.log.push_back({label, "clear", "", ""});\n', '\n'),
+ (R, 'journal : barre sans sa cause', 'st_.log.push_back({label, "rail", cause, causeText});', 'st_.log.push_back({label, "rail", "", ""});'),
+ (R, 'journal : barre notée franchie', 'st_.log.push_back({label, "rail", cause, causeText});', 'st_.log.push_back({label, "clear", cause, causeText});'),
  # Numéro surligné, barres remises, public en liesse
  (R, 'surlignage : faux au départ', '      highlight_ = st_.next;\n    } else if (st_.bell <= 0) {', '      highlight_ = 99;\n    } else if (st_.bell <= 0) {'),
  (R, 'surlignage : 1 non surligné à l’entrée', '      highlight_ = 1;\n', '\n'),
@@ -81,7 +103,8 @@ M = [
  (R, 'sortie : cadence 1,9 -> 2', 'std::max(std::min(cad.v, 1.9), cad.v - 1.6 * f.dt)', 'std::max(std::min(cad.v, 2.0), cad.v - 1.6 * f.dt)'),
  (R, 'sortie : 1,6 m/s² -> 1,5', 'std::max(std::min(cad.v, 1.9), cad.v - 1.6 * f.dt)', 'std::max(std::min(cad.v, 1.9), cad.v - 1.5 * f.dt)'),
  (R, 'applaudissements du sans-faute 1,3 -> 1,2', 'audio("applause", {N(pts == 0 ? 1.3 : 0.55)', 'audio("applause", {N(pts == 0 ? 1.2 : 0.55)'),
- (R, 'pénalités de temps en direct supprimées', 'return st_.faults + (int)std::ceil(over - 1e-9);', 'return st_.faults;'),
+ (R, 'pénalités de temps en direct supprimées', 'return faults + (int)std::ceil(over - 1e-9);', 'return faults;'),
+ (R, 'points : seconde entamée arrondie au plus proche', 'return faults + (int)std::ceil(over - 1e-9);', 'return faults + (int)std::floor(over + 0.5);'),
  # Tableau et objectif
  (R, 'tableau : décompte arrondi par défaut', 'jsInt((long long)std::max(0.0, std::ceil(b.bell)))', 'jsInt((long long)std::max(0.0, std::floor(b.bell)))'),
  (R, 'tableau : « Arrivée » au lieu du libellé', 'b.next = st_.next <= n ? labelOf(st_.next)', 'b.next = st_.next < n ? labelOf(st_.next)'),
@@ -99,8 +122,14 @@ ATTENDUES = {
    "next vaut alors n + 1 et le test de l'obstacle attendu (courses.js:245, `num != st_.next`) rejette déjà tout refus",
  'refus après l’élimination compté': "garde inatteignable : out() rend vrai, Run.update passe à l'étape suivante dans la même image "
    "(missions.js:230-233 → Run.next → end() retire les écouteurs, courses.js:352-354 ; portage : update → next(), puis "
-   "obstacleEvent rejette tout événement hors de l'étape de parcours)",
- 'saut après l’élimination compté': "même raison que le refus après l'élimination",
+   "obstacleEvent rejette tout événement hors de l'étape de parcours — garde prouvée par t4-hors-parcours, saut pendant "
+   "l'entrée en piste : mutation « écouteurs actifs hors de l’étape de parcours » détectée)",
+ 'saut après l’élimination compté': "même raison que le refus après l'élimination (garde d'étape prouvée par t4-hors-parcours : "
+   "mutation « écouteurs actifs hors de l’étape de parcours » détectée)",
+ 'arrivée : départ non exigé': "garde redondante : next ne dépasse 1 que par advance(), appelé seulement chrono lancé "
+   "(courses.js:221, 231 ; portage : notStarted) ; next > n implique donc started, dans le jeu web comme dans le portage",
+ 'mode de concours : prochain obstacle gardé à l’arrivée': "garde redondante : l'arrivée exige next > n (courses.js:333), "
+   "next - 1 vaut alors n, hors de la liste : game.course.next vaut null dans les deux branches (courses.js:308)",
 }
 os.makedirs(out, exist_ok=True)
 srcs = {f: open(os.path.join(core, 'Private', f)).read() for f in (R, T)}

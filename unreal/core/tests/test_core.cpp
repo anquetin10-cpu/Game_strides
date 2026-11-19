@@ -175,8 +175,11 @@ static void testCourse() {
   for (const J& c : o["timeFaults"].a) {
     const int k = (int)c["perSecond"].num();
     CHECK(timeFaults(c["t"].num(), c["allowed"].num(), k) == (int)c["out"].num(), "pénalités de temps %.12g / %g (×%d)", c["t"].num(), c["allowed"].num(), k);
-    // Le score du jeu passe par CourseJudge::points (barème CSO, 1 point par seconde entamée) : même oracle.
+    // Le score du jeu passe par CsoRun::points (csoPoints, barème CSO, 1 point par seconde entamée ; tranche T4) : même
+    // oracle. CourseJudge::points (juge du cross, plus utilisé par le jeu pour le CSO) reste comparé.
     if (k != 1) continue;
+    CHECK(csoPoints(0, c["t"].num(), c["allowed"].num()) == (int)c["out"].num(), "csoPoints à %.12g s / %g : %d au lieu de %d", c["t"].num(), c["allowed"].num(), csoPoints(0, c["t"].num(), c["allowed"].num()), (int)c["out"].num());
+    CHECK(csoPoints(8, c["t"].num(), c["allowed"].num()) == 8 + (int)c["out"].num(), "csoPoints avec 8 points de fautes à %.12g s", c["t"].num());
     CourseJudge j(labels, c["allowed"].num());
     j.startCrossed();
     j.tick(c["t"].num());
@@ -188,7 +191,7 @@ static void testCourse() {
     int s = compareResults(R(c["a"]), R(c["b"]));
     CHECK((s > 0) - (s < 0) == (int)c["out"].num(), "classement");
   }
-  std::printf("parcours : %zu obstacles, longueur %.2f m, abord %zu points, %zu pénalités de temps (%d par le juge), %zu comparaisons\n",
+  std::printf("parcours : %zu obstacles, longueur %.2f m, abord %zu points, %zu pénalités de temps (%d par CsoRun::points et par le juge du cross), %zu comparaisons\n",
               t.fences.size(), t.length, t.leadIn.size(), o["timeFaults"].a.size(), nPoints, o["compare"].a.size());
 }
 
@@ -1142,15 +1145,28 @@ static void testCsoRuns() {
             std::abs(base.finish.x - tr.marks.at("finish").x) < 1e-9 && std::abs(base.finish.z - tr.marks.at("finish").z) < 1e-9 && std::abs(base.finish.rot - tr.marks.at("finish").rot) < 1e-12,
         "lignes de départ / d'arrivée des données différentes du tracé");
   const char* required[] = {"droit", "t4-sans-faute", "t4-depart-lance", "t4-cloche", "t4-erreur-parcours", "t4-deux-refus", "t4-temps-limite", "t4-descente", "t4-saute-avant-depart", "t4-arrivee-barre", "t4-lignes",
-                            "t4-gardes", "t4-un-point", "t4-entree"};
+                            "t4-gardes", "t4-un-point", "t4-entree", "t4-lance-limites", "t4-lance-limites-gauche", "t4-lance-loin", "t4-lance-large", "t4-lance-cap",
+                            "t4-lance-derriere", "t4-hors-parcours", "t4-sortie-descente"};
   std::map<std::string, int> clean;  // « id lang » → images rejouées sans écart
   int frames = 0, hudN = 0, audioN = 0, boardN = 0, hlN = 0, rrN = 0, cheerN = 0;
   // Gardes des écouteurs d'obstacle (courses.js:219-268) réellement exercées par les oracles : événements relevés pendant
   // l'étape de parcours, classés selon l'état de l'épreuve juste avant (contrôle adverse de T4).
   std::map<std::string, int> cover;
   const char* guards[] = {"refus avant le départ, obstacle attendu, dans son sens", "refus devant un obstacle non attendu, après le départ", "refus à rebours devant l'obstacle attendu",
-                          "saut à rebours de l'obstacle attendu", "saut à rebours d'un obstacle non attendu", "saut dans son sens après l'arrivée", "saut dans son sens avant le départ"};
+                          "saut à rebours de l'obstacle attendu", "saut à rebours d'un obstacle non attendu", "saut dans son sens après l'arrivée", "saut dans son sens avant le départ",
+                          // Second contrôle adverse de T4 : fautes (barres) à rebours et avant le départ (branche partagée avec
+                          // les sauts franchis), saut hors de l'étape de parcours (écouteurs pas encore posés), règles de
+                          // l'ouverture du parcours (départ lancé, courses.js:274 : chaque condition seule en défaut, et les
+                          // limites approchées à moins de 0,5 m ou de 0,1 en cosinus), de l'arrivée (courses.js:333 : ligne
+                          // d'arrivée franchie avant le départ, puis avant le dernier obstacle) et de la sortie de piste
+                          // écourtée par une descente (courses.js:320).
+                          "faute à rebours de l'obstacle attendu", "faute à rebours d'un obstacle non attendu", "faute dans son sens avant le départ",
+                          "saut hors de l'étape de parcours (mission en cours)", "départ lancé accordé près des limites (12 m, largeur, cap, 0 m)",
+                          "départ lancé refusé : en deçà de la ligne seulement", "départ lancé refusé : au-delà de 12 m seulement", "départ lancé refusé : hors de la largeur seulement",
+                          "départ lancé refusé : cap au-delà de 60° seulement", "ligne d'arrivée franchie avant le départ", "ligne d'arrivée franchie avant le dernier obstacle",
+                          "sortie de piste écourtée par une descente"};
   for (const char* g : guards) cover[g] = 0;
+  int logN = 0;  // changements du journal des fautes comparés
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
     const J& su = r["setup"];
@@ -1179,6 +1195,9 @@ static void testCsoRuns() {
     std::vector<std::string> hudAll, audioAll;
     std::set<std::string> texts;  // objectifs affichés (étape goto de t4-entree)
     int hlWant = -1;              // dernier numéro surligné par le jeu web (Obstacles.highlight), -1 avant tout appel
+    std::vector<std::string> lgWant;  // journal des fautes du jeu web (state.log), relevé quand il change
+    bool hasSb0 = false;              // position de l'image précédente pendant l'étape de parcours (ligne d'arrivée)
+    double sb0x = 0, sb0z = 0;
     for (const J& f : r["frames"].a) {
       const int fi = (int)f["f"].num();
       const J& ep = f["ep"];
@@ -1209,8 +1228,12 @@ static void testCsoRuns() {
             if (live && num != s0.next && dir < 0) cover[guards[4]]++;
             if (s0.finished && dir > 0) cover[guards[5]]++;
             if (!s0.started && dir > 0) cover[guards[6]]++;
+            if (kind == CsoObstacleEventKind::Fault && live && num == s0.next && dir < 0) cover[guards[7]]++;
+            if (kind == CsoObstacleEventKind::Fault && live && num != s0.next && dir < 0) cover[guards[8]]++;
+            if (kind == CsoObstacleEventKind::Fault && !s0.started && dir > 0) cover[guards[9]]++;
           }
-        }
+        } else if (!run.finished() && kind != CsoObstacleEventKind::Refusal && !run.state().started && !run.state().finished && !run.state().eliminated)
+          cover[guards[10]]++;  // seul cas que la garde d'étape distingue (sinon « chrono pas lancé » serait annoncé)
         run.obstacleEvent(kind, num, dir, e["d"]["cause"].isNull() ? "" : e["d"]["cause"].s, e["d"]["causeText"].isNull() ? "" : e["d"]["causeText"].s, cadEv);
       }
       if (run.state().refusals != refusals0 && cadEv.has && !(cadEv.v == 0 && ep["cad"].num() == 0)) diff(fi, "cadence remise à 0 par le refus compté");
@@ -1229,7 +1252,37 @@ static void testCsoRuns() {
       in.vehicle = !ep["vh"].isNull() && ep["vh"].b;
       CsoCadence cad{!ep["cad"].isNull(), ep["cad"].isNull() ? 0 : ep["cad"].num()};
       CHECK((int)ep["i"].num() == run.stepIndex(), "%s image %d : étape %d avant Run.update / %d", who.c_str(), fi, (int)ep["i"].num(), run.stepIndex());
+      // Règles d'ouverture, d'arrivée et de sortie réellement exercées (classées d'après l'état avant l'image et le jeu
+      // web : étape suivante du relevé).
+      const CsoStep stepBefore = run.step();
+      const CsoRunState sb = run.state();
       run.update(in, cad);
+      if (stepBefore != CsoStep::Course && run.step() == CsoStep::Course) {
+        const CsoRunLine& L = cfg.start;
+        const double nx = std::sin(L.rot), nz = std::cos(L.rot);
+        const double sP = (in.x - L.x) * nx + (in.z - L.z) * nz, uP = std::abs((in.x - L.x) * nz - (in.z - L.z) * nx);
+        const double cs = std::sin(in.heading) * nx + std::cos(in.heading) * nz, uMax = L.w / 2 + 0.3;
+        const bool a = sP >= 0, b = sP < 12, c = uP < uMax, d = cs > 0.5;
+        if (a && b && c && d && sP > 11.5 && uP > uMax - 0.5 && cs < 0.6) cover[guards[11]]++;
+        if (a && b && c && d && sP < 0.5 && uP > uMax - 0.5 && cs < 0.6) cover[guards[11]]++;
+        if (!a && b && c && d && sP > -0.5) cover[guards[12]]++;
+        if (a && !b && c && d && sP < 12.5) cover[guards[13]]++;
+        if (a && b && !c && d && uP < uMax + 0.5) cover[guards[14]]++;
+        if (a && b && c && !d && cs > 0.4) cover[guards[15]]++;
+      }
+      if (stepBefore == CsoStep::Course && !sb.finished) {
+        const CsoRunLine& L = cfg.finish;
+        const double nx = std::sin(L.rot), nz = std::cos(L.rot);
+        const double s0 = (sb0x - L.x) * nx + (sb0z - L.z) * nz, s1 = (in.x - L.x) * nx + (in.z - L.z) * nz, u = std::abs((in.x - L.x) * nz - (in.z - L.z) * nx);
+        if (hasSb0 && s0 < 0 && s1 >= 0 && u < L.w / 2 + 0.3) {
+          if (!sb.started) cover[guards[16]]++;
+          else if (sb.next <= (int)cfg.fences.size()) cover[guards[17]]++;
+        }
+      }
+      if (stepBefore == CsoStep::Course && sb.finished && !in.riding && sb.exitT + in.dt <= 2.6) cover[guards[18]]++;
+      hasSb0 = stepBefore == CsoStep::Course || run.step() == CsoStep::Course;
+      sb0x = in.x;
+      sb0z = in.z;
       n++;
       // Demandes aux obstacles et au public (relevées par le jeu web seulement quand elles changent) : numéro surligné,
       // barres remises à l'entrée en piste, public en liesse après un sans-faute (durée).
@@ -1244,6 +1297,27 @@ static void testCsoRuns() {
       const double cheer = run.takeCheer();
       cheerN += !ep["cheer"].isNull();
       if (cheer != (ep["cheer"].isNull() ? 0.0 : ep["cheer"].num())) diff(fi, "public en liesse " + std::to_string(cheer));
+      // Journal des fautes (state.log, lu par le bilan) : libellé, type, cause, texte de la cause (absent = vide).
+      if (!ep["lg"].isNull()) {
+        lgWant.clear();
+        for (const J& e : ep["lg"].a) {
+          std::string row;
+          for (size_t k = 0; k < 4; k++) row += (k ? "|" : "") + (e[k].isNull() ? std::string() : e[k].s);
+          lgWant.push_back(row);
+        }
+        logN++;
+      }
+      {
+        std::vector<std::string> lgGot;
+        for (const CsoRunLog& e : run.state().log) lgGot.push_back(e.label + "|" + e.kind + "|" + e.cause + "|" + e.causeText);
+        if (lgGot != lgWant) {
+          std::string s0 = "journal :";
+          for (const auto& x : lgGot) s0 += " [" + x + "]";
+          s0 += " / web :";
+          for (const auto& x : lgWant) s0 += " [" + x + "]";
+          diff(fi, s0);
+        }
+      }
       // Cadence réécrite (sortie de piste) et étape après l'image.
       if (cad.has != !ep["cad1"].isNull() || (cad.has && cad.v != ep["cad1"].num())) diff(fi, "cadence après l'image");
       if ((int)ep["i1"].num() != run.stepIndex()) diff(fi, "étape " + std::to_string(run.stepIndex()) + " / " + std::to_string((int)ep["i1"].num()));
@@ -1340,15 +1414,28 @@ static void testCsoRuns() {
       for (const auto& x : texts) seen += " « " + x + " »";
       CHECK(ok, "%s : étape goto (distance, pied à terre, camion, validation à cheval) ; vu :%s", who.c_str(), seen.c_str());
     }
+    // Second contrôle adverse de T4 : départ lancé de part et d'autre de chaque limite, hors du parcours, sortie écourtée.
+    const std::string notYet = g_text.t("Le chrono n’est pas lancé : franchis d’abord la <b>ligne de départ</b>.", cfg.lang);
+    if (id == "t4-lance-limites" || id == "t4-lance-limites-gauche")
+      CHECK(s.started && has(audioAll, "tone(1568") == 1 && run.stepIndex() == 5 && s.t > 0 && s.t < 1, "%s : départ lancé accordé près des limites", who.c_str());
+    if (id == "t4-lance-loin" || id == "t4-lance-large" || id == "t4-lance-cap" || id == "t4-lance-derriere")
+      CHECK(!s.started && has(audioAll, "tone(1568") == 0 && run.stepIndex() == 5 && s.t == 0, "%s : départ lancé refusé", who.c_str());
+    if (id == "t4-hors-parcours")
+      CHECK(s.started && s.next == 1 && !s.finished && !s.eliminated && s.faults == 0 && s.log.empty() && s.wrong.empty() && has(hudAll, notYet) == 1 && has(audioAll, "fault(") == 0 &&
+                has(hudAll, fr ? "SANS FAUTE" : "CLEAR ROUND") == 0 && run.stepIndex() == 5,
+            "%s : saut pendant l'entrée en piste, faute avant le départ, lignes d'arrivée franchies trop tôt et fautes à rebours sans effet", who.c_str());
+    if (id == "t4-sortie-descente")
+      CHECK(s.finished && !s.eliminated && s.faults == 0 && s.log.size() == 10 && s.exitT < 1 && run.stepIndex() == 6 && has(hudAll, fr ? "ÉLIMINÉ" : "ELIMINATED") == 0,
+            "%s : sortie de piste écourtée par la descente, sans élimination", who.c_str());
   }
   std::string cov;
   for (const char* g : guards) {
     CHECK(cover[g] > 0, "garde des écouteurs d'obstacle jamais exercée par les oracles : %s", g);
     cov += std::string(" ; ") + g + " " + std::to_string(cover[g]);
   }
-  CHECK(hlN > 0 && rrN > 0 && cheerN > 0, "numéro surligné, barres remises ou public en liesse jamais relevés");
+  CHECK(hlN > 0 && rrN > 0 && cheerN > 0 && logN > 0, "numéro surligné, barres remises, public en liesse ou journal des fautes jamais relevés");
   std::printf("gardes des écouteurs d'obstacle exercées%s\n", cov.c_str());
-  std::printf("demandes comparées : %d changements du numéro surligné, %d remises des barres, %d ovations\n", hlN, rrN, cheerN);
+  std::printf("demandes comparées : %d changements du numéro surligné, %d remises des barres, %d ovations, %d changements du journal des fautes\n", hlN, rrN, cheerN, logN);
   int ok = 0;
   for (const char* id : required)
     for (const char* lang : {"fr", "en"}) {
