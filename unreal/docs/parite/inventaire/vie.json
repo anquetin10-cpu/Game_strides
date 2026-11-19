@@ -108,10 +108,10 @@
   "js": [
    "src/gameplay/missions.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::MissionStatus (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:49-57) affiché par AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:50 et 72) : « titre · rejoindre <identifiant du lieu> ».",
+  "unreal": "UStridesProgressionSubsystem::MissionStatus (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:49-57) affiché par AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:74 via ObjectiveLines, :28-34, et :96 dans le téléphone ; pendant l'épreuve du Pôle, sous l'objectif de l'épreuve, seulement si une mission de carrière est lancée) : « titre · rejoindre <identifiant du lieu> ».",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test ni capture. testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
+  "preuve": "Aucun test du texte ni capture (le test moteur Strides.Hud.ObjectiveLines ne vérifie que le choix des lignes du HUD). testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
   "ecart": "Identifiant brut du lieu (home, sellerie…) au lieu de son nom, pas de distance dans le texte (seulement « GPS N m » sous la minicarte), pas de minuteur, simple ligne de texte du HUD Canvas, sans mission : « Aucune mission active ».",
   "tranche": "e"
  },

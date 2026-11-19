@@ -13,6 +13,9 @@ public:
 	virtual void DrawHUD() override;
 	virtual void BeginPlay() override;
 	UFUNCTION() void OnCourseEvent(const FString& Kind, const FString& Text);
+	// Lignes d'objectif du HUD de débogage : objectif de l'épreuve en cours (vide : aucune ligne), puis l'état de la
+	// mission de carrière quand l'une est lancée ; hors épreuve, l'état des missions (« Aucune mission active »…).
+	static TArray<FString> ObjectiveLines(bool bRunLive, const FString& RunObjective, const FString& ActiveMissionId, const FString& MissionStatus);
 private:
 	// Minicarte nord en haut, centrée sur le joueur : zones, routes, lieux, obstacles, cheval, cap et GPS.
 	void DrawMinimap(const APawn* P, const class UStridesProgressionSubsystem* Progress);

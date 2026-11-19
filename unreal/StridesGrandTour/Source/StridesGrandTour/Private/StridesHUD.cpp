@@ -25,6 +25,14 @@ FString AStridesHUD::DebugText(const FString& S)
 	return S.Replace(TEXT("<b>"), TEXT("")).Replace(TEXT("</b>"), TEXT("")).Replace(TEXT("▸"), TEXT(">"));
 }
 
+TArray<FString> AStridesHUD::ObjectiveLines(bool bRunLive, const FString& RunObjective, const FString& ActiveMissionId, const FString& MissionStatus)
+{
+	TArray<FString> Out;
+	if (bRunLive && !RunObjective.IsEmpty()) Out.Add(RunObjective);
+	if (!bRunLive || !ActiveMissionId.IsEmpty()) Out.Add(MissionStatus);
+	return Out;
+}
+
 void AStridesHUD::OnCourseEvent(const FString& Kind, const FString& Text)
 {
 	// Épreuve : grand message, toast, astuce (l'interface d'épreuve est en tranche T7) ; clearHint n'a pas de texte.
@@ -58,15 +66,12 @@ void AStridesHUD::DrawHUD()
 	if (const UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
 	{
 		Line(FString::Printf(TEXT("%s · %d crédits · %d réputation"), *Progress->RankName(), Progress->Credits, Progress->Reputation), FLinearColor(0.35f, 0.9f, 0.75f));
-		// Objectif : celui de l'épreuve en cours (Run.text, setObjective du web ; vide : aucune ligne), sinon l'état des
-		// missions du jeu.
+		// Objectif : celui de l'épreuve en cours (Run.text, setObjective du web ; vide : aucune ligne), puis l'état de la
+		// mission de carrière quand l'une est lancée (touche M) ; « Aucune mission active » seulement hors épreuve.
 		const strides::CsoRun* Run = Course.IsValid() ? Course->Run() : nullptr;
-		if (Run && !Run->finished())
-		{
-			const FString Objective = UTF8_TO_TCHAR(Run->text().c_str());
-			if (!Objective.IsEmpty()) Line(DebugText(Objective), FLinearColor(1.f, 0.82f, 0.25f));
-		}
-		else Line(Progress->MissionStatus(), FLinearColor(1.f, 0.82f, 0.25f));
+		const bool bRunLive = Run && !Run->finished();
+		const FString Objective = bRunLive ? FString(UTF8_TO_TCHAR(Run->text().c_str())) : FString();
+		for (const FString& L : ObjectiveLines(bRunLive, Objective, Progress->ActiveMissionId, Progress->MissionStatus())) Line(DebugText(L), FLinearColor(1.f, 0.82f, 0.25f));
 		if (!Progress->LastMessage.IsEmpty()) Line(Progress->LastMessage, FLinearColor(0.7f, 0.9f, 1.f));
 
 		DrawMinimap(P, Progress);
