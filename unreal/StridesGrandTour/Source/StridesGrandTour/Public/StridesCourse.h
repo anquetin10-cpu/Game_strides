@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "StridesCore/CsoCourse.h"
+#include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/JumpModel.h"
 #include <memory>
@@ -33,9 +34,16 @@ public:
 	// dans l'ordre du parcours ; l'indice d'un obstacle du cœur est celui de son acteur (FenceAt).
 	const std::vector<strides::CsoObstacle>& Obstacles() const { return CoreObstacles; }
 	AStridesFence* FenceAt(int32 Index) const { return Fences.IsValidIndex(Index) ? Fences[Index].Get() : nullptr; }
-	// Fin d'un saut (plan du cœur) ou refus devant un obstacle.
-	void JumpLanded(AStridesFence* Fence, const strides::JumpPlan& Plan, int32 Dir);
-	void Refused(AStridesFence* Fence, int32 Dir);
+	// État des obstacles du cœur (barres, remises, barres en attente), même ordre que Obstacles() : écrit par
+	// strides::csoFencesUpdateHorse (appelé par le cheval) et par UpdateFences.
+	std::vector<strides::CsoFenceState>& FenceStates() { return CoreStates; }
+	// Événements et sons des obstacles du cœur (obstacle:clear / fault / refusal) : juge du parcours (règles de
+	// courses.js : obstacle attendu, sens du saut, chrono lancé), message ; journal des événements reçus.
+	void HandleFenceOut(const strides::CsoFenceOut& Out);
+	// Obstacles.update(dt) du jeu web (chute des barres, vibration, remises) puis affichage des barres. FocusX / FocusZ :
+	// position suivie (cheval monté), repère web.
+	void UpdateFences(double Dt, double Time, double FocusX, double FocusZ);
+	const TArray<FString>& FenceEventLog() const { return FenceLog; }
 	void RiderDismounted();
 
 	UFUNCTION(BlueprintPure, Category = "Strides") float ElapsedTime() const;
@@ -51,6 +59,8 @@ private:
 	strides::CourseTrace Trace;
 	std::unique_ptr<strides::CourseJudge> JudgePtr;
 	std::vector<strides::CsoObstacle> CoreObstacles;
+	std::vector<strides::CsoFenceState> CoreStates;
+	TArray<FString> FenceLog;
 	int32 Allowed = 64;
 	UPROPERTY() TArray<TObjectPtr<AStridesFence>> Fences;
 };

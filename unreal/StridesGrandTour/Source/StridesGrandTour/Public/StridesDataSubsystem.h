@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "StridesCore/CsoCourse.h"
+#include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCore/JumpModel.h"
@@ -135,6 +136,8 @@ public:
 	const strides::JumpParams& Jump() const { return JumpP; }
 	const strides::CsoRideParams& Ride() const { return RideP; }
 	const strides::CsoHorseParams& HorseParams() const { return HorseP; }
+	// Obstacles de concours (cso_horse.json : HIND_TRAIL de obstacles.js, tranche T3).
+	const strides::CsoFenceParams& FenceParams() const { return FenceP; }
 	const strides::CourseDesign& PoleCourse() const { return PoleDesign; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
@@ -145,6 +148,7 @@ private:
 	strides::JumpParams JumpP;
 	strides::CsoRideParams RideP;
 	strides::CsoHorseParams HorseP;
+	strides::CsoFenceParams FenceP;
 	strides::CourseDesign PoleDesign;
 	TMap<FString, float> CourseSpeeds;
 };

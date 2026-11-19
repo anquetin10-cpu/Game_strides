@@ -29,6 +29,7 @@ void AStridesCourse::BuildWith(const strides::CourseDesign& Design, double Cours
 		CoreObstacles.push_back(Fence->CoreObstacle());
 		Labels.push_back(F.label);
 	}
+	CoreStates = strides::csoFenceStates(CoreObstacles);
 	// Temps accordé : longueur arrondie au mètre (obstacles.js, CSO_LENGTH) à la vitesse du niveau.
 	Allowed = strides::timeAllowedFor(FMath::RoundToDouble(Trace.length), CourseSpeedMS);
 	JudgePtr = std::make_unique<strides::CourseJudge>(Labels, Allowed);
@@ -64,23 +65,43 @@ void AStridesCourse::TrackHorse(double X0, double Z0, double X1, double Z1, doub
 	}
 }
 
-void AStridesCourse::JumpLanded(AStridesFence* Fence, const strides::JumpPlan& Plan, int32 Dir)
+void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out)
 {
-	if (!JudgePtr || !Fence) return;
-	const double Rub = strides::jumpDefaults().rub;
-	const bool Rail = Plan.hasMargin && Plan.margin < -Rub;
-	const bool Ok = Rail ? JudgePtr->rail(Fence->Num, Dir) : JudgePtr->clear(Fence->Num, Dir);
-	if (Rail) Fence->KnockTopBar();
-	const FString Q = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Plan)));
-	if (!Ok) OnCourseEvent.Broadcast(TEXT("wrong"), FString::Printf(TEXT("Erreur de parcours : ce n'est pas le %s"), *Fence->Label));
-	else OnCourseEvent.Broadcast(Rail ? TEXT("rail") : TEXT("clear"), FString::Printf(TEXT("%s %s · appel %s"), *Fence->Label, Rail ? TEXT("barre +4") : TEXT("franchi"), *Q));
+	for (const strides::CsoFenceEvent& E : Out.events)
+	{
+		AStridesFence* Fence = FenceAt(E.obstacle);
+		FenceLog.Add(FString::Printf(TEXT("%s %s %d"), UTF8_TO_TCHAR(strides::csoFenceEventName(E.kind)), Fence ? *Fence->Label : TEXT("?"), E.dir));
+		if (!JudgePtr || !Fence) continue;
+		strides::CourseJudge& J = *JudgePtr;
+		// courses.js : rien n'est compté avant le départ ni après l'arrivée ou l'élimination (le juge l'ignore).
+		if (E.kind == strides::CsoFenceEventKind::Refusal)
+		{
+			const int32 Before = J.refusals();
+			J.refusal(Fence->Num, E.dir);
+			if (J.refusals() != Before)
+				OnCourseEvent.Broadcast(TEXT("refusal"), J.eliminated() == strides::Elim::Refusals ? TEXT("2e refus : éliminé") : FString::Printf(TEXT("Refus au %s · +4"), *Fence->Label));
+			continue;
+		}
+		const bool bRail = E.kind == strides::CsoFenceEventKind::Fault;
+		if (!J.started() || J.finished() || J.eliminated() != strides::Elim::None || E.dir <= 0) continue;
+		const bool bOk = bRail ? J.rail(Fence->Num, E.dir) : J.clear(Fence->Num, E.dir);
+		if (!bOk) OnCourseEvent.Broadcast(TEXT("wrong"), FString::Printf(TEXT("Erreur de parcours : ce n'est pas le %s"), *Fence->Label));
+		else OnCourseEvent.Broadcast(bRail ? TEXT("rail") : TEXT("clear"), bRail ? FString::Printf(TEXT("Barre au %s · +4"), *Fence->Label) : FString::Printf(TEXT("%s franchi"), *Fence->Label));
+	}
 }
 
-void AStridesCourse::Refused(AStridesFence* Fence, int32 Dir)
+void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double FocusZ)
 {
-	if (!JudgePtr || !Fence) return;
-	JudgePtr->refusal(Fence->Num, Dir);
-	OnCourseEvent.Broadcast(TEXT("refusal"), JudgePtr->eliminated() == strides::Elim::Refusals ? TEXT("2e refus : éliminé") : FString::Printf(TEXT("Refus au %s · +4"), *Fence->Label));
+	strides::CsoFencesUpdateInput In;
+	In.dt = Dt;
+	In.time = Time;
+	In.missionActive = true;  // épreuve en cours : pas de remise hors mission (obstacles.js update)
+	In.focusX = FocusX;
+	In.focusZ = FocusZ;
+	strides::CsoFenceOut Out;
+	strides::csoFencesUpdate(CoreObstacles, CoreStates, In, Out);
+	for (int32 I = 0; I < Fences.Num() && I < (int32)CoreStates.size(); I++)
+		if (Fences[I]) Fences[I]->ApplyRails(CoreStates[I]);
 }
 
 void AStridesCourse::RiderDismounted()

@@ -4,10 +4,13 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <map>
+#include <set>
 #include <sstream>
 #include <string>
 
 #include "StridesCore/CsoCourse.h"
+#include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCore/JumpModel.h"
@@ -445,11 +448,12 @@ static void testHorseRuns() {
       CHECK(in["dt"].num() == fi.dt || !in["hdt"].isNull(), "%s : pas", who.c_str());
       std::vector<CsoHorseEvent> evs;
       csoHorseStep(s, fi, obs, evs);
-      // Événements du cheval (bus) : même suite.
+      // Événements du cheval émis pendant horse.update (ch.he ; ceux de Obstacles.updateHorse, comme le horse:refuse
+      // d'une glissade, sont rejoués par testFenceRuns) : même suite.
       std::string got, want;
       for (CsoHorseEvent e : evs) { got += csoHorseEventName(e); got += ' '; evAll.push_back(csoHorseEventName(e)); }
-      for (const J& e : f["ev"].a)
-        if (e["e"].s == "horse:jump" || e["e"].s == "horse:jumpEarly" || e["e"].s == "horse:tooSlow" || e["e"].s == "horse:refuse" || e["e"].s == "horse:land") { want += e["e"].s; want += ' '; }
+      for (const J& e : ch["he"].a)
+        if (e.s == "horse:jump" || e.s == "horse:jumpEarly" || e.s == "horse:tooSlow" || e.s == "horse:refuse" || e.s == "horse:land") { want += e.s; want += ' '; }
       if (got != want) { evBad++; if (evBad < 4) std::printf("  %s image %d : événements « %s » / « %s »\n", who.c_str(), (int)f["f"].num(), got.c_str(), want.c_str()); }
       const bool external = !ch["b"].isNull() || ch["col"].b;
       const J& expect = !ch["b"].isNull() ? ch["b"] : ch["s"];
@@ -626,6 +630,306 @@ static void testPress() {
   std::printf("refus décidé : %d cas (freinage v²/2d %d, v/0,5 %d)\n", m, dist, time);
 }
 
+// ---------- Obstacles (tranche T3) : csoHorseStep + csoLimbContact + csoFencesUpdateHorse + csoFencesUpdate rejoués en
+// chaîne sur le canal « ch » de cso_runs.json, comparés en fin d'image (état du cheval, passage, refus, barres) ----------
+
+// Passage et dernier refus relevés (ob.ps, ob.rl) → état du cœur.
+static void loadPass(CsoHorseState& s, const J& ob) {
+  const J& ps = ob["ps"];
+  s.hasPass = !ps.isNull();
+  if (s.hasPass) {
+    s.pass.o = (int)ps["o"].num(); s.pass.dir = (int)ps["dir"].num(); s.pass.fault = ps["f"].b; s.pass.done = ps["d"].b;
+    s.pass.cause = ps["c"].isNull() ? "" : ps["c"].s;
+    s.pass.margin = ps["m"].isNull() ? INFINITY : ps["m"].num();
+    s.pass.exitT = ps["x"].isNull() ? 0 : ps["x"].num();
+  }
+  const J& rl = ob["rl"];
+  s.hasRefusal = !rl.isNull();
+  if (s.hasRefusal) s.refusal = CsoRefusalMemo{(int)rl["o"].num(), rl["t"].num(), rl["a"].b};
+}
+
+// Barre hors de son repos (même règle que fenceState() dans export-cso-runs.mjs).
+static bool railMoved(const CsoRail& r) { return r.falling || r.rattle > 0 || r.y != r.restY || r.z != r.restZ || r.rx != r.restRx || r.rz != 0; }
+
+struct FenceDev { double rail = 0, margin = 0, fall = 0; };
+
+// État des obstacles et du passage du cœur ↔ relevé (ob). Tolérance absolue 1e-6 (critère T3), 1e-9 sur les heures.
+static std::string diffFences(const CsoHorseState& s, const std::vector<CsoFenceState>& st, const J& ob, FenceDev& dev) {
+  std::string why;
+  char b[160];
+  auto d = [&](const char* k, double a, double e, double& slot, double tol = 1e-6) {
+    const double x = std::abs(a - e);
+    slot = std::max(slot, x);
+    if (!(x <= tol)) { std::snprintf(b, sizeof b, " %s %.12g/%.12g", k, a, e); why += b; }
+  };
+  double dummy = 0;
+  const J& ps = ob["ps"];
+  if (s.hasPass != !ps.isNull()) why += " passage présent/absent";
+  else if (s.hasPass) {
+    if (s.pass.o != (int)ps["o"].num() || s.pass.dir != (int)ps["dir"].num() || s.pass.fault != ps["f"].b || s.pass.done != ps["d"].b ||
+        s.pass.cause != (ps["c"].isNull() ? std::string() : ps["c"].s))
+      why += " passage (obstacle, sens, faute, annoncé ou cause)";
+    if (ps["m"].isNull() ? std::isfinite(s.pass.margin) : !std::isfinite(s.pass.margin)) why += " marge infinie/finie";
+    else if (!ps["m"].isNull()) d("marge", s.pass.margin, ps["m"].num(), dev.margin);
+    if (ps["x"].isNull() ? s.pass.exitT != 0 : !near(s.pass.exitT, ps["x"].num(), 1e-12)) why += " heure de sortie";
+  }
+  const J& rl = ob["rl"];
+  if (s.hasRefusal != !rl.isNull()) why += " refus compté présent/absent";
+  else if (s.hasRefusal && (s.refusal.o != (int)rl["o"].num() || s.refusal.away != rl["a"].b || !near(s.refusal.t, rl["t"].num(), 1e-12)))
+    why += " dernier refus (obstacle, heure ou détour)";
+  std::map<int, const J*> rec;
+  for (const J& e : ob["fs"].a) rec[(int)e["i"].num()] = &e;
+  for (size_t i = 0; i < st.size(); i++) {
+    const CsoFenceState& f = st[i];
+    std::vector<int> moved;
+    for (size_t k = 0; k < f.rails.size(); k++) if (railMoved(f.rails[k])) moved.push_back((int)k);
+    const bool active = f.knocked || f.rebuild || !f.pending.empty() || !moved.empty();
+    auto it = rec.find((int)i);
+    if (active != (it != rec.end())) { std::snprintf(b, sizeof b, " obstacle %zu actif %d/%d", i, (int)active, (int)(it != rec.end())); why += b; continue; }
+    if (!active) continue;
+    const J& e = *it->second;
+    if (f.knocked != e["kn"].b) why += " renversé";
+    d("remise", f.rebuild, e["rb"].num(), dummy, 1e-9);
+    if (f.pending.size() != e["pd"].a.size()) why += " barres en attente (nombre)";
+    else
+      for (size_t k = 0; k < f.pending.size(); k++) {
+        const J& p = e["pd"][k];
+        const CsoPendingBar& q = f.pending[k];
+        if (q.bar != (int)p[0].num() || q.dir != p[1].num() || q.side != p[2].num()) why += " barre en attente";
+        d("attente.hit", q.hit, p[3].num(), dev.rail);
+        d("attente.reste", q.left, p[4].num(), dev.rail);
+      }
+    if (moved.size() != e["r"].a.size()) { std::snprintf(b, sizeof b, " obstacle %zu : %zu barres déplacées / %zu", i, moved.size(), e["r"].a.size()); why += b; continue; }
+    for (size_t k = 0; k < moved.size(); k++) {
+      const J& r = e["r"][k];
+      const CsoRail& q = f.rails[moved[k]];
+      if (moved[k] != (int)r[0].num()) { why += " rang de barre"; continue; }
+      d("y", q.y, r[1].num(), dev.rail);
+      d("z", q.z, r[2].num(), dev.rail);
+      d("rx", q.rx, r[3].num(), dev.rail);
+      d("rz", q.rz, r[4].num(), dev.rail);
+      d("vibration", q.rattle, r[5].num(), dev.rail);
+      const J& fa = r[6];
+      if (q.falling != !fa.isNull()) { why += " chute présente/absente"; continue; }
+      if (!q.falling) continue;
+      const CsoRailFall& c = q.fall;
+      d("chute.t", c.t, fa["t"].num(), dev.fall);
+      if (c.dir != fa["dir"].num() || c.side != fa["side"].num() || c.clonk != fa["ck"].b || c.done != fa["dn"].b) why += " chute (sens, côté, choc, fin)";
+      d("chute.hit", c.hit, fa["hit"].num(), dev.fall);
+      if (c.started != !fa["e"].isNull()) { why += " bouts posés/non posés"; continue; }
+      if (!c.started) continue;
+      for (int k2 = 0; k2 < 2; k2++) {
+        d("bout.y", c.ends[k2].y, fa["e"][k2][0].num(), dev.fall);
+        d("bout.vy", c.ends[k2].vy, fa["e"][k2][1].num(), dev.fall);
+        d("bout.t0", c.ends[k2].t0, fa["e"][k2][2].num(), dev.fall);
+      }
+      d("chute.z", c.z, fa["z"].num(), dev.fall);
+      d("chute.vz", c.vz, fa["vz"].num(), dev.fall);
+      d("chute.roll", c.roll, fa["roll"].num(), dev.fall);
+    }
+  }
+  return why;
+}
+
+static void testFenceRuns() {
+  J o = loadJson(ORA + "/cso_runs.json");
+  const J hp = loadJson(DATA + "/cso_horse.json");
+  CHECK(hp["hindTrail"].num() == csoFenceDefaults().hindTrail, "cso_horse.json : HIND_TRAIL %g / portage %g", hp["hindTrail"].num(), csoFenceDefaults().hindTrail);
+  // Critère T3 : ces scénarios rejoués en chaîne sans recalage ni écart (dont refus et abord-61, recalés par T2).
+  const char* required[] = {"t3-sans-faute", "t3-oxer-loin", "t3-pres-montee", "t3-posterieurs", "t3-effleurement", "t3-faute-limite",
+                            "t3-effleurement-haut", "t3-refus-62", "t3-refus-lent", "t3-refus-oblique", "t3-refus-5s", "t3-glissade",
+                            "refus", "abord-61"};
+  // Rejoués sans écart, recalés seulement aux images de collision avec le décor (colliders.resolve, non porté) : le
+  // cheval s'éloigne du 7 en frôlant une aile après avoir tourné le dos (remise de la barre par le jury).
+  const char* withCollisions[] = {"t3-tout-contre-remonte"};
+  std::map<std::string, int> clean, colOnly;
+  // Témoins relevés dans l'oracle (jeu web) et branches du portage exercées.
+  std::map<std::string, int> wit;
+  int frames = 0, railCmp = 0;
+  double railDevMax = 0;
+  for (const J& r : o["runs"].a) {
+    const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
+    const J& ch0 = r["setup"]["ch0"];
+    if (ch0["ob"].isNull()) { CHECK(false, "%s : état initial des obstacles absent (oracle antérieur à T3)", who.c_str()); continue; }
+    std::vector<CsoObstacle> obs = obstaclesFrom(ch0["obs"], who);
+    std::vector<CsoFenceState> st = csoFenceStates(obs);
+    CsoHorseState s;
+    loadHorse(s, ch0["s"]);
+    loadPass(s, ch0["ob"]);
+    HorseDev dev;
+    FenceDev fdev;
+    int resync = 0, cols = 0, bad = 0, fbad = 0, evBad = 0, oeBad = 0, sndBad = 0, railBad = 0, n = 0;
+    std::map<std::string, int> cnt;  // événements du cœur sur ce scénario
+    std::vector<double> margins;     // marges des franchissements et fautes annoncés
+    // Barres du parcours relevées (canal rails, arrondi au millionième) : état initial, puis changements image par image.
+    std::map<std::string, std::vector<double>> rails;
+    for (const auto& [k, v] : r["setup"]["rails"].o) { std::vector<double> t; for (const J& x : v.a) t.push_back(x.num()); rails[k] = t; }
+    std::set<int> knockedBefore;
+    std::string why0 = diffFences(s, st, ch0["ob"], fdev);
+    CHECK(why0.empty(), "%s : état initial des obstacles :%s", who.c_str(), why0.c_str());
+    for (const J& f : r["frames"].a) {
+      const J& ch = f["ch"];
+      if (ch.t != J::Obj) { bad++; continue; }
+      const J& in = ch["in"];
+      if (!ch["a"].isNull()) { loadHorse(s, ch["a"]); resync++; }
+      const double prevX = s.x, prevZ = s.z;
+      CsoFrameInput fi;
+      fi.dt = in["hdt"].isNull() ? in["dt"].num() : in["hdt"].num();
+      fi.moveX = in["mx"].num(); fi.moveY = in["my"].num(); fi.keyMove = in["key"].b; fi.jumpPressed = in["jp"].b;
+      fi.csoControls = in["cso"].b; fi.locked = in["lk"].b; fi.frozen = in["fz"].b; fi.playerHorse = in["pl"].b;
+      fi.power = in["pow"].num(); fi.clearance = in["clr"].num(); fi.time = in["t"].num(); fi.slope = in["sl"].num();
+      fi.waterDepth = orZero(in["wd"]); fi.waterAhead = orZero(in["wa"]);
+      std::vector<CsoHorseEvent> evs;
+      csoHorseStep(s, fi, obs, evs);
+      // Collision du monde pendant horse.update (non portée) : recalage sur l'état relevé après horse.update.
+      if (ch["col"].b) { loadHorse(s, ch["b"].isNull() ? ch["s"] : ch["b"]); resync++; cols++; }
+      CsoFenceOut out;
+      // Contacts des membres signalés par le cheval WildMesh pendant horse.update (détection non portée : entrée).
+      for (const J& c : ch["lc"].a) {
+        csoLimbContact(s, obs, st, CsoLimbHit{(int)c["o"].num(), (int)c["bar"].num(), c["d"].num(), c["u"].num(), c["hind"].b}, fi.time, out);
+        wit["contact de membre"]++;
+      }
+      CsoUpdateHorseInput uh;
+      uh.prevX = prevX; uh.prevZ = prevZ;
+      uh.time = in["ut"].isNull() ? fi.time : in["ut"].num();
+      uh.limbJudged = in["lj"].b;
+      uh.power = fi.power; uh.clearance = fi.clearance; uh.csoCourse = fi.csoControls;
+      const double bx = s.x, bz = s.z;
+      const size_t horseEv0 = out.horse.size();
+      csoFencesUpdateHorse(s, obs, st, uh, out);
+      const bool slid = out.horse.size() > horseEv0;
+      if (slid) wit["glissade (refus sur place)"]++;
+      else if (s.x != bx || s.z != bz) wit["garde-fou du nez (poussée)"]++;
+      CsoFencesUpdateInput ui;
+      ui.dt = in["odt"].isNull() ? in["dt"].num() : in["odt"].num();
+      ui.time = in["ot"].isNull() ? fi.time : in["ot"].num();
+      ui.missionActive = in["ma"].b;
+      ui.focusX = s.x; ui.focusZ = s.z;
+      csoFencesUpdate(obs, st, ui, out);
+      // Événements du cheval (horse.update puis updateHorse) : même suite que le bus du jeu sur l'image.
+      std::string got, want;
+      for (CsoHorseEvent e : evs) { got += csoHorseEventName(e); got += ' '; }
+      for (CsoHorseEvent e : out.horse) { got += csoHorseEventName(e); got += ' '; }
+      for (const J& e : f["ev"].a)
+        if (e["e"].s == "horse:jump" || e["e"].s == "horse:jumpEarly" || e["e"].s == "horse:tooSlow" || e["e"].s == "horse:refuse" || e["e"].s == "horse:land") { want += e["e"].s; want += ' '; }
+      if (got != want) { evBad++; if (evBad < 4) std::printf("  %s image %d : événements du cheval « %s » / « %s »\n", who.c_str(), (int)f["f"].num(), got.c_str(), want.c_str()); }
+      // Événements des obstacles (pleine précision) : même suite, même obstacle, sens, marge (1e-6), cause.
+      std::string ow;
+      const J& oe = ch["oe"];
+      if (out.events.size() != oe.a.size()) ow += " nombre";
+      else
+        for (size_t k = 0; k < out.events.size(); k++) {
+          const CsoFenceEvent& e = out.events[k];
+          const J& x = oe[k];
+          if (x["e"].s != csoFenceEventName(e.kind) || e.obstacle != (int)x["o"].num() || e.dir != (int)x["dir"].num()) ow += " événement";
+          if (e.kind != CsoFenceEventKind::Refusal) {
+            if (x["m"].isNull() ? std::isfinite(e.margin) : !(std::abs(e.margin - x["m"].num()) <= 1e-6)) ow += " marge";
+            else if (!x["m"].isNull()) fdev.margin = std::max(fdev.margin, std::abs(e.margin - x["m"].num()));
+          }
+          if (e.cause != (x["c"].isNull() ? std::string() : x["c"].s)) ow += " cause " + e.cause;
+        }
+      for (const CsoFenceEvent& e : out.events) {
+        cnt[csoFenceEventName(e.kind)]++;
+        if (e.kind != CsoFenceEventKind::Refusal) margins.push_back(e.margin);
+        if (e.kind == CsoFenceEventKind::Fault) wit["faute cause " + e.cause]++;
+        if (e.kind == CsoFenceEventKind::Clear) wit["franchi"]++;
+        if (e.kind == CsoFenceEventKind::Refusal) wit["refus compté"]++;
+      }
+      for (CsoHorseEvent e : evs) if (e == CsoHorseEvent::Refuse) cnt["horse:refuse"]++;
+      for (CsoHorseEvent e : out.horse) if (e == CsoHorseEvent::Refuse) cnt["horse:refuse"]++;
+      if (!ow.empty()) { oeBad++; if (oeBad < 4) std::printf("  %s image %d : événements d'obstacle%s\n", who.c_str(), (int)f["f"].num(), ow.c_str()); }
+      // Sons des obstacles (game.audio) : même suite.
+      std::string sg, sw;
+      for (CsoFenceSound x : out.sounds) { sg += csoFenceSoundName(x); sg += ' '; cnt[csoFenceSoundName(x)]++; }
+      for (const J& a : f["audio"].a)
+        if (a["fn"].s == "railFall" || a["fn"].s == "railTouch" || a["fn"].s == "thud") { sw += a["fn"].s; sw += ' '; }
+      if (sg != sw) { sndBad++; if (sndBad < 4) std::printf("  %s image %d : sons « %s » / « %s »\n", who.c_str(), (int)f["f"].num(), sg.c_str(), sw.c_str()); }
+      // État du cheval en fin d'image (après updateHorse : refus, poussée, glissade).
+      const std::string why = diffHorse(s, ch["s"], dev);
+      if (!why.empty()) { bad++; if (bad < 4) std::printf("  %s image %d :%s\n", who.c_str(), (int)f["f"].num(), why.c_str()); }
+      if (!ch["obs"].isNull()) {
+        // Hauteurs changées par l'épreuve (setHeights → _mesh) : barres reconstruites au repos, état du jeu gardé.
+        std::vector<CsoObstacle> nobs = obstaclesFrom(ch["obs"], who);
+        std::vector<CsoFenceState> fresh = csoFenceStates(nobs);
+        for (size_t i = 0; i < fresh.size() && i < st.size() && i < obs.size(); i++) {
+          bool same = obs[i].bars.size() == nobs[i].bars.size() && obs[i].h == nobs[i].h;
+          for (size_t k = 0; same && k < obs[i].bars.size(); k++) same = obs[i].bars[k].s == nobs[i].bars[k].s && obs[i].bars[k].h == nobs[i].bars[k].h;
+          if (same) fresh[i] = st[i];
+          else { fresh[i].knocked = st[i].knocked; fresh[i].rebuild = st[i].rebuild; fresh[i].pending = st[i].pending; }
+        }
+        obs = nobs;
+        st = fresh;
+      }
+      const std::string fw = diffFences(s, st, ch["ob"], fdev);
+      if (!fw.empty()) { fbad++; if (fbad < 4) std::printf("  %s image %d : obstacles%s\n", who.c_str(), (int)f["f"].num(), fw.c_str()); }
+      // Transformées des barres du parcours (canal rails, arrondi au millionième) : 1e-6 m / rad par image.
+      for (const J& x : f["rails"].a) { std::vector<double> t; for (const J& v : x["t"].a) t.push_back(v.num()); rails[x["r"].s] = t; }
+      for (size_t i = 0; i < obs.size(); i++) {
+        if (obs[i].course != "cso") continue;
+        for (size_t k = 0; k < st[i].rails.size(); k++) {
+          const auto itR = rails.find(obs[i].label + "/" + std::to_string(k));
+          if (itR == rails.end() || itR->second.size() != 6) { railBad++; continue; }
+          const CsoRail& q = st[i].rails[k];
+          const double want6[6] = {0, q.y, q.z, q.rx, 0, q.rz};
+          double m = 0;
+          for (int c = 0; c < 6; c++) m = std::max(m, std::abs(itR->second[c] - want6[c]));
+          railDevMax = std::max(railDevMax, m);
+          railCmp++;
+          if (!(m <= 1e-6)) { railBad++; if (railBad < 4) std::printf("  %s image %d : barre %s/%zu écart %.3g\n", who.c_str(), (int)f["f"].num(), obs[i].label.c_str(), k, m); }
+        }
+      }
+      // Témoins (état du jeu web relevé).
+      std::set<int> knockedNow;
+      for (const J& e : ch["ob"]["fs"].a) if (e["kn"].b) knockedNow.insert((int)e["i"].num());
+      for (int i : knockedBefore) if (!knockedNow.count(i)) wit["barre remise par le jury"]++;
+      knockedBefore = knockedNow;
+      for (const J& e : ch["ob"]["fs"].a) {
+        if (!e["pd"].a.empty()) wit["barre en attente (postérieurs)"]++;
+        for (const J& x : e["r"].a) if (x[5].num() > 0) wit["vibration d'effleurement"]++;
+        if (e["rb"].num() > 0) wit["remise prévue"]++;
+      }
+      if (!ch["ob"]["rl"].isNull() && ch["ob"]["rl"]["a"].b) wit["refus détourné"]++;
+      if (!ch["ob"]["ps"].isNull() && !ch["ob"]["ps"]["x"].isNull() && !ch["ob"]["ps"]["d"].b) wit["résultat différé (membres jugés)"]++;
+      n++;
+    }
+    frames += n;
+    CHECK(bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0,
+          "%s : rejeu des obstacles : %d images en écart (cheval), %d (obstacles), %d (événements du cheval), %d (événements d'obstacle), %d (sons), %d (barres)",
+          who.c_str(), bad, fbad, evBad, oeBad, sndBad, railBad);
+    if (bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0 && resync == 0 && n > 0) clean[id] = n;
+    if (bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0 && resync == cols && n > 0) colOnly[id] = cols;
+    std::printf("obstacles %-22s %-2s : %3d images, %d recalages, écarts max : position %.2g m, vitesse %.2g m/s, barres %.2g, chute %.2g, marge %.2g ; franchi %d, faute %d, refus compté %d, cabré %d, chute %d, effleurement %d, choc %d\n",
+                id.c_str(), lang.c_str(), n, resync, dev.pos, dev.speed, fdev.rail, fdev.fall, fdev.margin, cnt["obstacle:clear"], cnt["obstacle:fault"],
+                cnt["obstacle:refusal"], cnt["horse:refuse"], cnt["railFall"], cnt["railTouch"], cnt["thud"]);
+    // Comportements attendus des scénarios de la tranche (en plus de l'identité au jeu web).
+    auto c = [&](const char* k) { return cnt[k]; };
+    if (id == "t3-sans-faute") CHECK(c("obstacle:clear") == 1 && c("obstacle:fault") == 0 && c("railFall") == 0, "%s : sans faute", who.c_str());
+    if (id == "t3-oxer-loin") CHECK(c("obstacle:fault") == 1 && c("railFall") == 2, "%s : deux barres, une faute", who.c_str());
+    if (id == "t3-pres-montee" || id == "t3-posterieurs") CHECK(c("obstacle:fault") == 1 && c("railFall") == 1, "%s : une barre, une faute", who.c_str());
+    if (id == "t3-effleurement") CHECK(c("obstacle:clear") == 1 && c("railTouch") >= 1 && c("railFall") == 0, "%s : effleurée, franchi", who.c_str());
+    // Seuils : marge juste sous −0,06 (faute) et juste sous +0,04 (effleurement), relevées dans le jeu web.
+    if (id == "t3-faute-limite") CHECK(c("obstacle:fault") == 1 && c("railFall") == 1 && margins.size() == 1 && margins[0] < -0.06 && margins[0] >= -0.08, "%s : faute de justesse", who.c_str());
+    if (id == "t3-effleurement-haut") CHECK(c("obstacle:clear") == 1 && c("railTouch") >= 1 && margins.size() == 1 && margins[0] >= 0.02 && margins[0] < 0.04, "%s : effleurement de justesse", who.c_str());
+    if (id == "t3-refus-62" || id == "t3-tout-contre-remonte") CHECK(c("obstacle:refusal") == 1 && c("railFall") == 1, "%s : refus tout contre, barre emportée", who.c_str());
+    if (id == "t3-refus-lent" || id == "t3-refus-oblique") CHECK(c("obstacle:refusal") == 1 && c("railFall") == 0, "%s : refus sans barre", who.c_str());
+    if (id == "t3-refus-5s") CHECK(c("obstacle:refusal") == 2 && c("horse:refuse") > 2, "%s : refus recompté après 5 s seulement (%d cabrés)", who.c_str(), c("horse:refuse"));
+    if (id == "t3-glissade") CHECK(c("obstacle:refusal") == 1 && c("horse:refuse") >= 2, "%s : glissades, refus compté une fois", who.c_str());
+  }
+  int ok = 0;
+  for (const char* id : required) {
+    CHECK(clean.count(id), "scénario %s : absent, recalé ou en écart", id);
+    ok += (int)clean.count(id);
+  }
+  for (const char* id : withCollisions) CHECK(colOnly.count(id), "scénario %s : absent, en écart ou recalé hors collisions", id);
+  for (const char* w : {"franchi", "faute cause short", "faute cause far", "faute cause near", "barre en attente (postérieurs)", "vibration d'effleurement",
+                        "refus compté", "remise prévue", "barre remise par le jury", "refus détourné", "glissade (refus sur place)", "garde-fou du nez (poussée)"})
+    CHECK(wit[w] > 0, "branche non exercée : %s", w);
+  std::printf("obstacles : %d scénarios requis rejoués sans recalage ni écart > 1e-6 (%zu au total) ; t3-tout-contre-remonte sans écart, %d recalages de collision ; %d images, %d transformées de barres comparées (écart max %.2g) ; témoins :",
+              ok, clean.size(), colOnly.count("t3-tout-contre-remonte") ? colOnly["t3-tout-contre-remonte"] : -1, frames, railCmp, railDevMax);
+  for (const auto& [k, v] : wit) std::printf(" %s %d ;", k.c_str(), v);
+  std::printf("\n");
+}
+
 // Scénarios de jugement (règles de courses.js) : sans faute, barre, refus, double, temps, élimination.
 static void testJudge() {
   CourseTrace t = traceCourse(poleDesign());
@@ -717,6 +1021,7 @@ int main(int argc, char** argv) {
     testCourse();
     testRuns();
     testHorseRuns();
+    testFenceRuns();
     testTarget();
     testPress();
     testJudge();

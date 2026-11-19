@@ -275,6 +275,9 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
   hauteurs hors épreuve, descente de cheval non éliminatoire avant le départ, `kbdRamp` inutilisé.
 - Trous de preuve dans l'existant identique_prouve : chemin JSON du tracé non testé (le test utilise `poleDesign()` recopié),
   repères z et rot non comparés, `compareResults` sur 3 cas, `points()` hors oracle.
+- Correction de `cso-spec.md` §7.1 (19/11/2026, tranche T3) : sur un refus tout contre, la barre avant part dans le sens
+  de la marche du cheval (`obstacles.js:459`, sens +1 quand il arrive du côté s < 0), pas vers lui ; vérifié par les
+  scénarios `refus`, `t3-refus-62` et `t3-tout-contre-remonte` (position z de la barre croissante).
 - `README.md:33` (« Parcours du Pôle … classement : portés, testés et branchés ») surestime : classement simulé absent,
   jugement couvert par des scénarios écrits à la main, aucun oracle de bout en bout.
 
@@ -413,6 +416,40 @@ Principes communs :
 - **Dépendances / risques** : T2 (état du cheval, cible). Les contacts des membres (WildMesh) restent hors de cette
   tranche : ils exigent la pose animée du cheval PJL (`pjlHorse.js:674-700`) identique au web ; sans eux, l'Unreal juge
   comme le web en qualité basse seulement (écart à garder visible dans l'inventaire).
+
+- **Livré (19/11/2026)** : `SCh/CsoFences.h`, `SC/CsoFences.cpp` (`csoFencesUpdateHorse` = `updateHorse` entier : détour,
+  résultat différé, barres en attente, comptage à l'arrêt, décision, barre emportée, garde-fou du nez, glissade ;
+  `_judge`, `_finishPass`, `_count`, `knock`, `_rest`, effet de `limbContact` ; `csoFencesUpdate` = `update` : chute,
+  vibration, remises). Le passage (`_pass`) et le dernier refus compté (`_refusal`) sont dans `CsoHorseState`.
+  `scripts/unreal/export-cso-runs.mjs` : 13 scénarios « pose » nouveaux en personnages classiques (`?classic` : pas de
+  cheval WildMesh, donc `_limbJudged` faux ; condition lue dans `realistic.js:876-879`) : `t3-sans-faute`,
+  `t3-oxer-loin`, `t3-pres-montee`, `t3-posterieurs`, `t3-effleurement`, `t3-faute-limite` (marge −0,075),
+  `t3-effleurement-haut` (marge +0,026), `t3-refus-62`, `t3-tout-contre-remonte`, `t3-refus-lent`, `t3-refus-oblique`
+  (66°), `t3-refus-5s`, `t3-glissade` ; canal « ch » complété (`oe` événements d'obstacle en pleine précision, `ob`
+  passage / dernier refus / barres hors repos avec l'état interne de chaque chute, `lc` contacts des membres, `he`
+  événements émis pendant `horse.update`, entrées `lj`, `ma`) ; `setup.rails` des scénarios « pose » corrigé (il
+  donnait l'état final). Les 14 scénarios antérieurs sont inchangés hors des nouveaux champs (vérifié champ à champ) ;
+  `cso_target.json` inchangé à l'octet ; deux exécutions complètes de l'exporteur donnent des fichiers identiques octet
+  pour octet. `TC` (`testFenceRuns`) rejoue les 27 exécutions (26 scénarios, « droit » en
+  fr et en) en chaîne (pas du cheval, contacts relevés, `updateHorse`, `update`) : 25 scénarios sans recalage ni écart
+  (barres ≤ 1,1e-14 en interne, ≤ 5e-7 contre le canal « rails » arrondi au millionième), dont les 14 requis ; `t3-tout-contre-remonte` sans écart mais recalé aux 13
+  images où le cheval frôle une aile (collisions du décor, non portées). ctest 18 853 vérifications, 0 échec ;
+  `scripts/unreal/mutations-cso-fences.py` : 37 mutations, 34 détectées, 3 attendues non détectées (branches qu'aucun scénario n'exerce, listées dans le script). Jeu : `AStridesFence` affiche une composante par barre à la
+  transformée du cœur (`RailTransform`, `ApplyRails` ; mur = bloc fixe + barre du dessus), `AStridesCourse` reçoit les
+  événements du cœur (`HandleFenceOut` ; `JumpLanded` et `Refused` supprimés) et fait tourner `csoFencesUpdate`
+  (`UpdateFences`), `AStridesHorse::TickCso` appelle `csoFencesUpdateHorse` après le pas du cheval (membres non jugés).
+  Tests moteur `Strides.Parite.CsoFences` (miroir) et `Strides.Cso.FencesInGame` (transformée vérifiée par la
+  géométrie ; abord du 4A à 70° : appui sans saut, refus, jamais compté franchi ; sans-faute au 3 ; refus tout contre au
+  3 avec barre affichée à la transformée du cœur) : Result={Success}, comme les 9 autres tests Strides. Preuve
+  visuelle : `unreal/docs/parite/cso/chute-barre-0_1s.png`, `-0_3s`, `-0_6s`, `-1_5s` (chute de la barre du 3 touchée en
+  montée, `t3-pres-montee`, même caméra, 15 h, 844 × 390 de chaque côté ; la partie jouée pendant les captures web est
+  identique à l'oracle image par image ; côté Unreal, la barre est renversée et tombée par le cœur avec les paramètres
+  du contact web, valeurs identiques dans le journal). Constats : (1) la spécification disait la barre emportée « vers
+  le cheval » ; le code l'envoie dans le sens de sa marche (`cso-spec.md` §7.1 corrigé) ; (2) aucun scénario exporté ne
+  contient de contact de membre, même en qualité haute (`lc` vide) : l'effet `csoLimbContact` est porté sans oracle ;
+  (3) branches non discriminées par l'oracle (mutations non détectées, détail dans l'inventaire) : résultat différé
+  « 1,2 s au plus », détour suivi d'un nouveau refus en moins de 5 s, rebond au seuil 0,6 m/s ; (4) sur les montages, le cheval Unreal est à la position et à la hauteur du saut web mais dans une
+  pose de clip non calée sur le saut, et l'obstacle n'a ni ailes ni barres basses (T5).
 
 ### T4. Déroulé d'épreuve, textes et formats (StridesCore `CsoRun`)
 

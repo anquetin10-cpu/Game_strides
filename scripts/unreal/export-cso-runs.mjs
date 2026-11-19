@@ -29,7 +29,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const BASE = process.env.BASE || 'http://127.0.0.1:5173';
-const SHOTS = process.argv.includes('--shots');
+// --shots : toutes les poses de capture ; --shots=chute : seulement la chute de barre (tranche T3), ajoutée à poses.json.
+const SHOTS_ARG = process.argv.find((a) => a === '--shots' || a.startsWith('--shots='));
+const SHOTS = !!SHOTS_ARG;
+const SHOTS_ONLY = SHOTS_ARG && SHOTS_ARG.includes('=') ? SHOTS_ARG.slice(8) : null;
 const OUT = (process.argv.find((a) => a.startsWith('--out=')) || '').slice(6) || join(ROOT, 'unreal/core/tests/oracles/cso_runs.json');
 const PARITE = join(ROOT, 'unreal/docs/parite/cso');
 const VIEW = { width: 844, height: 390 };
@@ -80,6 +83,38 @@ const SCENARIOS = [
     desc: 'Abord du vertical 4A à 61° de son axe (hors de l’angle de saut), 4,6 m/s, ligne de marche coupant le plan de l’obstacle à 2 m de son centre, côté opposé à l’arrivée : les épaules entrent dans la largeur loin de la barre ; refus décidé par Obstacles.updateHorse quand l’écart passe sous v²/16 + 0,3 (tranche T3), freinage, cabré ; joystick relâché ; jusqu’à la fin du cabré.' },
   { id: 'appel-pres', type: 'pose', langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 300,
     desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où l’obstacle visé est en zone « près » (saut raccourci au plus, perte d’élan à la réception plafonnée à 4 %) ; jusqu’à 10 m après le 3.' },
+  // Scénarios des obstacles (tranche T3 : jugement au passage, refus, chute des barres). Cheval affiché en modèle
+  // classique (?classic : pas de cheval WildMesh, donc aucun contact des membres et Obstacles._limbJudged faux) : le
+  // jugement ne dépend que de la trajectoire, comme dans le portage. Fin de l'enregistrement : barres au repos (chute
+  // terminée, vibration éteinte, aucune barre en attente) et cheval éloigné ou cabré terminé.
+  { id: 't3-sans-faute', type: 'pose', classic: true, langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 300,
+    desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT selon la règle de tests/e2e/autopilot.js (bonne zone, sommet sur l’obstacle) ; franchi, résultat annoncé à la sortie des épaules (membres non jugés) ; jusqu’à 8 m après le 3.' },
+  { id: 't3-oxer-loin', type: 'pose', classic: true, langs: ['fr'], pose: { x: -19.67, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'Abord droit de l’oxer 2 à 6,2 m/s : SAUT à la première image où l’oxer est en zone « loin » avec la barre avant à moins de 5 m des épaules ; appel bien trop loin, les deux barres tombent, une seule faute ; jusqu’à la fin des chutes.' },
+  { id: 't3-pres-montee', type: 'pose', classic: true, langs: ['fr'], pose: { x: 8.1, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où le 3 est en zone « près » avec une marge prévue sous −0,06 m ; barre touchée en montée (antérieurs), elle tombe tout de suite ; jusqu’à la fin de la chute.' },
+  { id: 't3-posterieurs', type: 'pose', classic: true, langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où le 3 est en zone « loin » avec une marge prévue sous −0,06 m ; barre touchée en descente (postérieurs) : sa chute attend 1,1 m parcourus par le cheval ; jusqu’à la fin de la chute.' },
+  { id: 't3-effleurement', type: 'pose', classic: true, langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où la marge prévue est entre −0,06 et 0,04 m (barre effleurée : elle tinte et vibre, reste en place, franchi) ; jusqu’à la fin de la vibration.' },
+  // Seuils du jugement (contrôle par mutations) : marge juste sous −0,06 (faute) et juste sous +0,04 (effleurement) ;
+  // poses choisies au centimètre pour que la marge prévue à l'appui tombe dans ces fenêtres.
+  { id: 't3-faute-limite', type: 'pose', classic: true, langs: ['fr'], pose: { x: 8.16, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où la marge prévue est entre −0,08 et −0,06 m (barre touchée de justesse en descente : faute, chute après 1,1 m) ; jusqu’à la fin de la chute.' },
+  { id: 't3-effleurement-haut', type: 'pose', classic: true, langs: ['fr'], pose: { x: 8.13, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où la marge prévue est entre +0,02 et +0,04 m (barre effleurée de justesse : vibration, franchi) ; jusqu’à la fin de la vibration.' },
+  { id: 't3-refus-62', type: 'pose', classic: true, langs: ['fr'], pose: { x: -36, z: 28.21, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'Abord droit du vertical 6A à 6,2 m/s sans appui : refus décidé à l’abord, freinage jusqu’à l’arrêt, nez dans l’obstacle (barre emportée vers le cheval, garde-fou du nez), cabré 1,1 s, refus compté à l’arrêt ; jusqu’à la fin du cabré et de la chute.' },
+  { id: 't3-tout-contre-remonte', type: 'pose', classic: true, langs: ['fr'], pose: { x: -5, z: 28.21, h: Math.PI / 2, v: 6.2 }, maxFrames: 500,
+    desc: 'Abord droit du vertical 7 à 6,2 m/s sans appui : refus tout contre, barre emportée ; après le cabré, joystick à fond à gauche jusqu’à 100° de l’axe (dos tourné : refus « détourné ») puis relâché ; les refus repris pendant la volte ne sont pas recomptés ; le cheval s’éloigne, le jury remonte la barre plus de 3 s après le refus, une fois le cheval à plus de 5 m ; jusqu’à 10 images après la remise.' },
+  { id: 't3-refus-lent', type: 'pose', classic: true, langs: ['fr'], pose: { x: 16, z: -28.78, h: Math.PI / 2, v: 2.6 }, maxFrames: 300,
+    desc: 'Abord droit du vertical 3 au trot lent (2,6 m/s, sous la vitesse minimale de saut) sans appui : refus quand le nez est à moins de 1,5 m, freinage, cabré ; jusqu’à 10 images après le cabré.' },
+  { id: 't3-refus-oblique', type: 'pose', classic: true, langs: ['fr'], pose: { x: 19.83 + 12 * Math.cos((66 * Math.PI) / 180), z: 0.22 - 12 * Math.sin((66 * Math.PI) / 180), h: -Math.PI / 2 + (66 * Math.PI) / 180, v: 6.2 }, cross: { x: 19.83, z: 0.22 }, maxFrames: 300,
+    desc: 'Abord du vertical 4A à 66° de son axe (hors de l’angle de saut), 6,2 m/s, ligne de marche passant par son centre, sans appui : refus quand l’écart du nez passe sous v²/16 + 0,3 m, freinage, cabré ; jusqu’à 10 images après le cabré.' },
+  { id: 't3-refus-5s', type: 'pose', classic: true, langs: ['fr'], pose: { x: 21, z: -28.78, h: Math.PI / 2, v: 1.6 }, maxFrames: 1000,
+    desc: 'Abord droit du vertical 3 à 1,6 m/s : refus lent compté ; joystick en arrière jusqu’à l’arrêt (cadence 0) : les refus repris entre-temps, face au même obstacle sans détour, ne sont pas recomptés et repoussent chacun l’échéance de 5 s ; joystick vers l’avant 4 s après le dernier refus : refus non recompté ; retour à l’arrêt ; joystick vers l’avant 5,5 s après le dernier refus : refus compté ; jusqu’à 45 images après.' },
+  { id: 't3-glissade', type: 'pose', classic: true, langs: ['fr'], pose: { x: 22, z: -28.78, h: Math.PI / 2, v: 0.4 }, maxFrames: 500,
+    desc: 'Abord droit du vertical 3 au pas de fourmi (0,4 m/s : pas de décision de refus sous 0,5 m/s) : les épaules entrent dans l’obstacle, refus sur place (cheval ramené devant la face, cabré), compté une fois ; il repart et recommence (non recompté avant 5 s) ; jusqu’à 10 images après le deuxième cabré.' },
 ];
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -157,6 +192,11 @@ function PAGE() {
     const emit = g.bus.emit.bind(g.bus);
     g.bus.emit = (evt, data) => {
       if (cur) cur.ev.push({ e: evt, d: summ(data, 1) });
+      // Canal « ch » (tranche T3) : événements d'obstacle en pleine précision (marge non arrondie).
+      if (cur?.ch && evt.startsWith('obstacle:')) (cur.ch.oe ||= []).push({ e: evt, o: idx(data.obstacle), dir: data.dir, m: data.margin === undefined ? undefined : nul(data.margin), c: data.cause ?? undefined });
+      // Événements du cheval émis pendant horse.update (le pas porté par csoHorseStep), hors foulées ; ceux émis ensuite
+      // par Obstacles.updateHorse (horse:refuse d'une glissade) n'y sont pas.
+      if (cur?.ch && inHorse && evt.startsWith('horse:') && evt !== 'horse:step') (cur.ch.he ||= []).push(evt);
       return emit(evt, data);
     };
     P.installHorse();
@@ -242,6 +282,32 @@ function PAGE() {
     };
   };
   const targetSumm = (t) => (t ? { o: idx(t.o), x0: t.geo.rails[0].x, cosA: t.geo.cosA, zone: t.plan.zone, L0: t.plan.L0, L: t.plan.L, H: t.plan.H, m: nul(t.plan.margin), ideal: nul(t.plan.ideal), dev: nul(t.plan.dev), cause: t.plan.cause ?? null } : null);
+  // Tranche T3 : état des obstacles en fin d'image, pleine précision. Pour chaque obstacle de `obs` hors de son état de
+  // repos : renversé (kn), remise prévue (rb, heure de jeu), barres en attente (pd : [rang de la barre, sens, côté,
+  // profondeur, distance restante]), barres déplacées (r : [rang, position.y, position.z, rotation.x, rotation.z,
+  // vibration, chute { t, dir, side, hit, e = bouts [y, vy, t0] ou null, z, vz, roll, ck = premier choc, dn = finie }]).
+  const fenceState = () => {
+    const out = [];
+    obsList.forEach((o, i) => {
+      const r = [];
+      o.rails.forEach((m, k) => {
+        const ud = m.userData, f = ud.fall;
+        if (!f && !(ud.rattle > 0) && m.position.y === ud.rest.y && m.position.z === ud.rest.z && m.rotation.x === ud.rest.rx && m.rotation.z === 0) return;
+        r.push([k, m.position.y, m.position.z, m.rotation.x, m.rotation.z, ud.rattle || 0, f ? { t: f.t, dir: f.dir, side: f.side, hit: f.hit, e: f.ends ? f.ends.map((e) => [e.y, e.vy, e.t0]) : null, z: nul(f.z), vz: nul(f.vz), roll: nul(f.roll), ck: !!f.clonk, dn: !!f.done } : null]);
+      });
+      const pd = (o._pending || []).map((p) => [o.bars.indexOf(p.bar), p.dir, p.side, p.hit, p.left]);
+      if (o.knocked || o.rebuild || pd.length || r.length) out.push({ i, kn: !!o.knocked, rb: o.rebuild || 0, pd, r });
+    });
+    return out;
+  };
+  // Passage en cours (horse._pass) et dernier refus compté (horse._refusal), pleine précision.
+  const passState = (h) => {
+    const P = h._pass, R = h._refusal;
+    return {
+      ps: P ? { o: idx(P.o), dir: P.dir, f: P.fault, c: P.cause ?? null, m: nul(P.margin), x: P.exitT ?? null, d: P.done } : null,
+      rl: R ? { o: idx(R.o), t: R.t, a: R.away } : null,
+    };
+  };
   const finishCh = (rec) => {
     const ch = rec.ch;
     if (!ch) return;
@@ -258,13 +324,14 @@ function PAGE() {
     }
     ch.tm = g.obstacles.timing(h);
     ch.tg = targetSumm(g.obstacles.target(h));
+    ch.ob = { ...passState(h), fs: fenceState() };
   };
   const chStart = () => {
     obsList = g.obstacles.list.filter((o) => Math.abs(o.x - ARENA.x) < 80 && Math.abs(o.z - ARENA.z) < 60);
     lastSig = obsSig();
     const s = hstate();
     lastS = JSON.stringify(s);
-    return { s, obs: obsDump() };
+    return { s, obs: obsDump(), ob: { ...passState(g.player.horse), fs: fenceState() } };
   };
   P.installHorse = () => {
     const p = g.player;
@@ -304,6 +371,35 @@ function PAGE() {
       if (inHorse && r) col = true;
       return r;
     };
+    // Tranche T3 : entrées de Obstacles.updateHorse (lj = membres visibles jugés, ut = heure de jeu si elle diffère de
+    // in.t), de Obstacles.update (ma = mission en cours, odt = pas s'il diffère de in.dt) et contacts des membres
+    // signalés par le cheval WildMesh pendant horse.update (lc : obstacle, rang de la barre, profondeur, u, postérieur).
+    const O = g.obstacles;
+    const uh = O.updateHorse.bind(O);
+    O.updateHorse = (horse, px, pz) => {
+      const ch = cur?.ch;
+      if (ch && horse === g.player.horse) {
+        ch.in.lj = O._limbJudged(horse);
+        if (g.time !== ch.in.t) ch.in.ut = g.time;
+      }
+      return uh(horse, px, pz);
+    };
+    const ou = O.update.bind(O);
+    O.update = (dt) => {
+      const ch = cur?.ch;
+      if (ch) {
+        ch.in.ma = !!g.missions.active;
+        if (dt !== ch.in.dt) ch.in.odt = dt;
+        if (g.time !== ch.in.t) ch.in.ot = g.time;
+      }
+      return ou(dt);
+    };
+    const lc = O.limbContact.bind(O);
+    O.limbContact = (horse, o, bar, hit) => {
+      const ch = cur?.ch;
+      if (ch && horse === g.player.horse) (ch.lc ||= []).push({ o: idx(o), bar: o.bars.indexOf(bar), d: hit.depth, u: hit.u, hind: !!hit.hind });
+      return lc(horse, o, bar, hit);
+    };
   };
 
   // Entrée en piste commune (mêmes images que « droit », non enregistrées) : présentation, Entrer en piste, cloche.
@@ -323,6 +419,30 @@ function PAGE() {
   const F = (label) => g.obstacles.ofCourse('cso').find((o) => o.label === label);
   const sAlong = (o, h) => (h.pos.x - o.x) * o.n.x + (h.pos.z - o.z) * o.n.z;
   const T = (st) => st.k / 30;
+  // Tranche T3. Barres d'un obstacle au repos : aucune chute en cours, aucune vibration, aucune barre en attente.
+  const idleRails = (o) => !o._pending?.length && o.rails.every((r) => (!r.userData.fall || r.userData.fall.done) && !(r.userData.rattle > 0));
+  // Nombre d'événements `name` émis à la dernière image enregistrée.
+  const lastEv = (name) => (frames.length ? frames[frames.length - 1].ev.filter((e) => e.e === name).length : 0);
+  // Vrai `extra` images après la fin du premier cabré.
+  const afterRear = (st, extra) => {
+    const h = st.h;
+    if (st.rear === undefined && h._rearT > 0) st.rear = st.k;
+    if (st.rear === undefined || h._rearT > 0) return false;
+    st.after ??= st.k;
+    return st.k - st.after >= extra;
+  };
+  // Abord droit sans direction, SAUT à la première image où l'obstacle visé est `label` et `rule(cible)` est vrai ;
+  // fin quand le cheval est retombé, à plus de 8 m au-delà de l'obstacle, barres au repos. Un refus avant l'appui est
+  // une erreur de réglage du scénario.
+  const jumpDrive = (label, rule) => (st) => {
+    const o = F(label), h = st.h;
+    const tg = g.obstacles.target(h);
+    const press = !st.jumped && h.jumpT < 0 && !h._refusing && !!tg && tg.o === o && rule(tg);
+    if (press) st.jumped = true;
+    if (!st.jumped && (h._refusing || h._rearT > 0)) throw new Error(`${st.sc.id} : refus avant l’appui`);
+    if (st.jumped && h.jumpT < 0 && sAlong(o, h) > 8 && idleRails(o)) return null;
+    return { jump: press };
+  };
   // Règle des entrées de chaque scénario « pose » : évaluée avant l'image k (état de fin de l'image k − 1) ; null = fin.
   const DRIVES = {
     'bonne-zone': (st) => {
@@ -411,8 +531,71 @@ function PAGE() {
       if (st.jumped && h.jumpT < 0 && sAlong(o, h) > 10) return null;
       return { jump: press };
     },
+    // ---- Tranche T3 ----
+    't3-sans-faute': jumpDrive('3', (tg) => tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3),
+    't3-oxer-loin': jumpDrive('2', (tg) => tg.plan.zone === 'far' && tg.geo.rails[0].x <= 5),
+    't3-pres-montee': jumpDrive('3', (tg) => tg.plan.zone === 'near' && tg.plan.margin < -0.06),
+    't3-posterieurs': jumpDrive('3', (tg) => tg.plan.zone === 'far' && tg.plan.margin < -0.06 && tg.geo.rails[0].x < tg.plan.L),
+    't3-effleurement': jumpDrive('3', (tg) => tg.plan.zone !== 'refuse' && tg.plan.zone !== 'none' && tg.plan.margin >= -0.06 && tg.plan.margin < 0.04 && tg.geo.rails[0].x > 2),
+    't3-faute-limite': jumpDrive('3', (tg) => tg.plan.zone === 'far' && tg.plan.margin < -0.06 && tg.plan.margin >= -0.08 && tg.geo.rails[0].x > 2),
+    't3-effleurement-haut': jumpDrive('3', (tg) => tg.plan.zone !== 'refuse' && tg.plan.zone !== 'none' && tg.plan.margin >= 0.02 && tg.plan.margin < 0.04 && tg.geo.rails[0].x > 2),
+    't3-refus-62': (st) => (afterRear(st, 10) && idleRails(F('6A')) ? null : st.k >= 380 ? null : {}),
+    't3-refus-lent': (st) => (afterRear(st, 10) && idleRails(F('3')) ? null : st.k >= 280 ? null : {}),
+    't3-refus-oblique': (st) => (afterRear(st, 10) || st.k >= 200 ? null : {}),
+    't3-tout-contre-remonte': (st) => {
+      const o = F('7'), h = st.h;
+      if (o.knocked) st.kn = true;
+      if (st.kn && st.rest === undefined && !o.knocked && idleRails(o)) st.rest = st.k; // barre remise par le jury
+      if (st.rest !== undefined && st.k - st.rest >= 10) return null;
+      if (st.k >= 480) return null;
+      if (st.rear === undefined && h._rearT > 0) st.rear = st.k;
+      if (st.rear === undefined || h._rearT > 0) return {};
+      // Après le cabré : à fond à gauche jusqu'à 100° de l'axe de l'obstacle (dos tourné), puis tout droit.
+      const fn = h.forward.x * o.n.x + h.forward.z * o.n.z;
+      if (!st.turned && fn > Math.cos((100 * Math.PI) / 180)) return { move: [-1, 0] };
+      st.turned = true;
+      return {};
+    },
+    // Refus lent compté ; joystick en arrière jusqu'à l'arrêt complet (cadence 0) : les refus repris entre-temps ne sont
+    // pas recomptés et repoussent chacun l'échéance de 5 s. Puis joystick vers l'avant 4 s après le dernier refus : refus
+    // non recompté (moins de 5 s) ; retour à l'arrêt ; joystick vers l'avant 5,5 s après le dernier refus : refus compté.
+    // Fin 45 images (cabré de 1,1 s compris) après ce deuxième refus compté.
+    't3-refus-5s': (st) => {
+      const h = st.h, p = g.player;
+      if (lastEv('horse:refuse')) st.lastRef = st.k - 1;
+      st.n = (st.n || 0) + lastEv('obstacle:refusal');
+      if (st.n >= 2) {
+        st.t2 ??= st.k;
+        return st.k - st.t2 > 45 ? null : {};
+      }
+      if (st.k >= 980) return null;
+      if (st.n === 0) return {};
+      const busy = h._rearT > 0 || !!h._refusing;
+      if (st.pushing) {
+        if (!busy) return { move: [0, 1] };
+        st.pushing = false;
+      }
+      if (p.csoCadence > 0 || h.speed > 0 || busy) return { move: [0, -1] };
+      if (st.k - st.lastRef >= (st.stage ? 165 : 120)) {
+        st.pushing = true;
+        st.stage = (st.stage || 0) + 1;
+        return { move: [0, 1] };
+      }
+      return {};
+    },
+    // Glissades répétées : fin 45 images après le deuxième cabré (ou 450 images).
+    't3-glissade': (st) => {
+      st.n = (st.n || 0) + lastEv('horse:refuse');
+      if (st.n >= 2) {
+        st.t2 ??= st.k;
+        if (st.k - st.t2 > 45) return null;
+      }
+      return st.k >= 450 ? null : {};
+    },
   };
-  P.runPose = (sc) => {
+  // Mise en place d'un scénario « pose » (entrée en piste, cheval posé), partagée par runPose et par les captures prises
+  // pendant un scénario (posesDuring).
+  const poseStart = (sc) => {
     const h = g.player.horse, p = g.player;
     enterRing();
     h.setPosition(ARENA.x + sc.pose.x, ARENA.z + sc.pose.z, sc.pose.h);
@@ -423,16 +606,30 @@ function PAGE() {
     if (!g.camera.parent) g.camera.updateMatrixWorld();
     frames.length = 0;
     rails0 = railState();
+    // État initial des barres (rails0 est ensuite remplacé à chaque image par railDelta : avant T3, setup.rails des
+    // scénarios « pose » donnait par erreur l'état final).
+    const railsInit = rails0;
     const ch0 = chStart();
-    const st = { k: 0, h, sc };
-    for (;;) {
-      const o = DRIVES[sc.id](st);
-      if (!o) break;
-      step(input(o));
-      st.k++;
-      if (frames.length > sc.maxFrames) throw new Error(`scénario ${sc.id} trop long`);
+    return { railsInit, ch0, st: { k: 0, h, sc } };
+  };
+  // Une image du scénario ; faux quand la règle des entrées l'arrête.
+  const poseStep = (st) => {
+    const o = DRIVES[st.sc.id](st);
+    if (!o) return false;
+    step(input(o));
+    st.k++;
+    return true;
+  };
+  P.runPose = (sc) => {
+    const h = g.player.horse;
+    const { railsInit, ch0, st } = poseStart(sc);
+    while (poseStep(st)) {
+      if (frames.length > sc.maxFrames) {
+        if (sc.lenient) break; // --lenient : mise au point d'un scénario (images enregistrées malgré tout)
+        throw new Error(`scénario ${sc.id} trop long`);
+      }
     }
-    return { pose: { x: h.pos.x, z: h.pos.z }, horse: { x: R6(ARENA.x + sc.pose.x), z: R6(ARENA.z + sc.pose.z), h: R6(sc.pose.h), v: R6(sc.pose.v) }, rails: rails0, ch0, frames };
+    return { pose: { x: h.pos.x, z: h.pos.z }, horse: { x: R6(ARENA.x + sc.pose.x), z: R6(ARENA.z + sc.pose.z), h: R6(sc.pose.h), v: R6(sc.pose.v) }, rails: railsInit, ch0, frames };
   };
 
   // Grille de visée (oracle cso_target.json) : cheval posé devant chaque obstacle du parcours (deux sens, angles,
@@ -660,16 +857,70 @@ function PAGE() {
     };
   };
   P.render = () => g.renderer.render(g.scene, g.camera);
+  // Captures prises pendant un scénario (tranche T3, chute des barres) : le scénario avance image par image (mêmes appels
+  // que runPose) ; aux images voulues, caméra de pose, rendu, puis caméra de jeu rétablie avant l'image suivante.
+  let during = null;
+  P.duringStart = (sc) => {
+    during = poseStart(sc);
+    return true;
+  };
+  // Avance jusqu'à la fin de l'image k ; renvoie l'état utile à la pose (cheval, barres de l'obstacle `label`).
+  P.duringTo = (k, label) => {
+    while (frames.length <= k) if (!poseStep(during.st)) throw new Error(`scénario terminé avant l’image ${k}`);
+    const h = g.player.horse, o = F(label);
+    return {
+      f: frames[k].f, ch: frames[k].ch.s, horse: { x: h.pos.x, z: h.pos.z, h: h.heading, jumpY: h.jumpY, jumpT: h.jumpT },
+      rails: o.rails.map((r) => ({ y: r.position.y, z: r.position.z, rx: r.rotation.x, rz: r.rotation.z, fall: r.userData.fall ? { t: r.userData.fall.t, dir: r.userData.fall.dir, side: r.userData.fall.side, hit: r.userData.fall.hit } : null })),
+      fence: { x: o.x, z: o.z, ground: o.ground, n: o.n },
+    };
+  };
+  let camSaved = null;
+  P.duringView = (ps) => {
+    const cam = g.camera, h = g.player.horse;
+    camSaved = { p: cam.position.clone(), q: cam.quaternion.clone(), fov: cam.fov, aspect: cam.aspect };
+    cam.position.set(...ps.eye);
+    cam.fov = ps.fovV;
+    cam.aspect = ps.viewport.w / ps.viewport.h;
+    cam.updateProjectionMatrix();
+    cam.lookAt(...ps.target);
+    g.sky.update(g.hour(), h.pos, 0);
+    g.sky.follow(cam);
+    g.world.update(0, cam, g.sky, h.pos);
+    g.renderer.domElement.classList.add('parite-scene');
+    if (!document.getElementById('parite-css')) {
+      const st = document.createElement('style');
+      st.id = 'parite-css';
+      st.textContent = '* { visibility: hidden !important; } canvas.parite-scene { visibility: visible !important; }';
+      document.head.appendChild(st);
+    }
+    g.scene.updateMatrixWorld();
+    g.renderer.render(g.scene, cam);
+    return { sunDir: v3(g.sky.sunDir), hour: R6(g.hour()), day: Math.floor(g.save.data.gameTime / 86400), camDir: v3(cam.getWorldDirection(tmp)), canvas: [g.renderer.domElement.width, g.renderer.domElement.height] };
+  };
+  P.duringRestore = () => {
+    const cam = g.camera;
+    cam.position.copy(camSaved.p);
+    cam.quaternion.copy(camSaved.q);
+    cam.fov = camSaved.fov;
+    cam.aspect = camSaved.aspect;
+    cam.updateProjectionMatrix();
+    g.scene.updateMatrixWorld();
+    if (!cam.parent) cam.updateMatrixWorld();
+  };
+  // Images enregistrées pendant les captures (comparées à l'oracle par le script : la capture ne change pas la partie).
+  P.duringFrames = () => frames.map((f) => JSON.stringify(f.ch.s));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const errors = [];
-async function openGame(lang) {
+// `classic` : personnages classiques (?classic, crochet de game.js) : pas de cheval WildMesh, donc pas de contacts des
+// membres (scénarios de la tranche T3).
+async function openGame(lang, classic = false) {
   const ctx = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${lang}: ${e.message}`));
-  await page.goto(`${BASE}/?autostart&quality=high&lang=${lang}`, { timeout: 180000 });
+  await page.goto(`${BASE}/?autostart&quality=high&lang=${lang}${classic ? '&classic' : ''}`, { timeout: 180000 });
   await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000, polling: 500 });
   await page.addScriptTag({ content: AUTOPILOT });
   await page.addScriptTag({ content: `(${PAGE.toString()})();` });
@@ -681,11 +932,13 @@ const runs = [];
 let audioRecorded = null;
 const ONLY = (process.argv.find((a) => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
 for (const sc of SCENARIOS) {
+  if (SHOTS_ONLY) break;
   if (ONLY.length && !ONLY.includes(sc.id)) continue;
   for (const lang of sc.langs || ['fr', 'en']) {
     const t0 = Date.now();
-    const { ctx, page, audioNames } = await openGame(lang);
+    const { ctx, page, audioNames } = await openGame(lang, !!sc.classic);
     audioRecorded = audioNames;
+    if (process.argv.includes('--lenient')) sc.lenient = true;
     const setup = await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [sc, 20261118]);
     let frames;
     if (sc.type === 'pose') {
@@ -693,6 +946,7 @@ for (const sc of SCENARIOS) {
       frames = r.frames;
       Object.assign(setup, { horse: r.horse, rails: r.rails, ch0: r.ch0, pose: { ...sc.pose, cross: sc.cross ?? null } });
     } else frames = await page.evaluate((s) => window.__parite.runDroit(s), sc);
+    if (sc.classic) setup.classic = true;
     runs.push({ id: sc.id, lang, desc: sc.desc, setup, frames });
     const evs = frames.flatMap((f) => f.ev.map((e) => e.e)).filter((e) => e.startsWith('obstacle:') || e.startsWith('horse:j') || e === 'horse:land');
     console.log(`${sc.id} ${lang} : ${frames.length} images, ${((Date.now() - t0) / 1000).toFixed(0)} s, événements ${evs.join(' ')}`);
@@ -710,28 +964,30 @@ const head = {
   precision: 1e-6,
   inputs: 'in.move = joystick virtuel [x, y] (input.setVirtualMove) ; in.keys = touches clavier tenues (input.keys) ; in.held = actions tenues (input.held, ex. gallop) ; in.jump = SAUT pressé à cette image ; in.ui = bouton de carte touché (data-id) avant l’image',
   state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch)',
-  ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs }',
+  ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
   audioRecorded,
   audioIgnored: AUDIO_IGNORED,
   hudMethods: HUD_METHODS,
   hudDedupe: HUD_DEDUPE,
 };
-let out = JSON.stringify(head, null, 1).replace(/\n}$/, ',\n "runs": [\n');
-runs.forEach((r, i) => {
-  const { frames, ...rest } = r;
-  out += JSON.stringify(rest).replace(/}$/, ',"frames":[\n');
-  out += frames.map((f) => JSON.stringify(f)).join(',\n');
-  out += `\n]}${i < runs.length - 1 ? ',' : ''}\n`;
-});
-out += ']}\n';
-JSON.parse(out); // contrôle de forme
-mkdirSync(dirname(OUT), { recursive: true });
-writeFileSync(OUT, out);
-console.log('oracle :', OUT, `${(out.length / 1024).toFixed(0)} Kio`);
+if (!SHOTS_ONLY) {
+  let out = JSON.stringify(head, null, 1).replace(/\n}$/, ',\n "runs": [\n');
+  runs.forEach((r, i) => {
+    const { frames, ...rest } = r;
+    out += JSON.stringify(rest).replace(/}$/, ',"frames":[\n');
+    out += frames.map((f) => JSON.stringify(f)).join(',\n');
+    out += `\n]}${i < runs.length - 1 ? ',' : ''}\n`;
+  });
+  out += ']}\n';
+  JSON.parse(out); // contrôle de forme
+  mkdirSync(dirname(OUT), { recursive: true });
+  writeFileSync(OUT, out);
+  console.log('oracle :', OUT, `${(out.length / 1024).toFixed(0)} Kio`);
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Grille de visée (oracle cso_target.json) : obstacles.target(h) et timing(h) du jeu en cours d'exécution.
-if (!ONLY.length || ONLY.includes('target')) {
+if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('target'))) {
   const { ctx, page } = await openGame('fr');
   await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
   const grid = await page.evaluate(() => window.__parite.targetGrid());
@@ -761,43 +1017,113 @@ if (!ONLY.length || ONLY.includes('target')) {
 // Poses de capture (vue aérienne de la carrière) : état d'épreuve après la cloche, comme le scénario, puis caméra posée.
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
-  const POSES = [
-    {
-      name: 'carriere-aerienne',
-      desc: 'Vue aérienne fixe de la carrière du Pôle depuis le sud, au-dessus de l’entrée, après la cloche (obstacles à 1,10 m, barres en place), 15 h, HUD masqué.',
-      hour: 15,
-      eye: [330, 58, -158],
-      target: [330, 3, -232],
-      fovV: 58,
-      viewport: { w: VIEW.width, h: VIEW.height },
-    },
-  ];
-  const { ctx, page } = await openGame('fr');
-  const setup = await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
-  // Présentation → Entrer en piste → cloche (mêmes images que le scénario « droit », sans le galop).
-  await page.evaluate(() => {
-    const A = window.__auto;
-    for (let i = 0; i < 120 && !document.querySelector('.overlay [data-id="enter"]'); i++) A.tick(1);
-    A.tap(document.querySelector('.overlay [data-id="enter"]'));
-    A.tick(80);
-  });
-  const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
-  for (const ps of POSES) {
-    const horse = setup.horse;
-    const full = { ...ps, horse };
-    const info = await page.evaluate((p) => window.__parite.pose(p), full);
-    // Textures et tuiles chargées en asynchrone : laisser venir, puis rendre de nouveau.
-    await page.waitForTimeout(3000);
-    await page.evaluate(() => window.__parite.render());
-    await page.waitForTimeout(500);
-    const file = join(PARITE, `${ps.name}-web.png`);
-    await page.screenshot({ path: file });
-    doc.poses.push({ ...full, ...info, web: `unreal/docs/parite/cso/${ps.name}-web.png`, unreal: `unreal/docs/parite/cso/${ps.name}-unreal.png` });
-    console.log('pose', ps.name, JSON.stringify(info));
+  const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
+  // --shots=chute : les poses existantes de poses.json sont gardées, celles de la chute remplacées.
+  if (SHOTS_ONLY) {
+    try {
+      doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => !p.name.startsWith('chute-'));
+    } catch {
+      doc.poses = [];
+    }
+  }
+  if (!SHOTS_ONLY) {
+    const POSES = [
+      {
+        name: 'carriere-aerienne',
+        desc: 'Vue aérienne fixe de la carrière du Pôle depuis le sud, au-dessus de l’entrée, après la cloche (obstacles à 1,10 m, barres en place), 15 h, HUD masqué.',
+        hour: 15,
+        eye: [330, 58, -158],
+        target: [330, 3, -232],
+        fovV: 58,
+        viewport: { w: VIEW.width, h: VIEW.height },
+      },
+    ];
+    const { ctx, page } = await openGame('fr');
+    const setup = await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
+    // Présentation → Entrer en piste → cloche (mêmes images que le scénario « droit », sans le galop).
+    await page.evaluate(() => {
+      const A = window.__auto;
+      for (let i = 0; i < 120 && !document.querySelector('.overlay [data-id="enter"]'); i++) A.tick(1);
+      A.tap(document.querySelector('.overlay [data-id="enter"]'));
+      A.tick(80);
+    });
+    for (const ps of POSES) {
+      const horse = setup.horse;
+      const full = { ...ps, horse };
+      const info = await page.evaluate((p) => window.__parite.pose(p), full);
+      // Textures et tuiles chargées en asynchrone : laisser venir, puis rendre de nouveau.
+      await page.waitForTimeout(3000);
+      await page.evaluate(() => window.__parite.render());
+      await page.waitForTimeout(500);
+      const file = join(PARITE, `${ps.name}-web.png`);
+      await page.screenshot({ path: file });
+      doc.poses.push({ ...full, ...info, web: `unreal/docs/parite/cso/${ps.name}-web.png`, unreal: `unreal/docs/parite/cso/${ps.name}-unreal.png` });
+      console.log('pose', ps.name, JSON.stringify(info));
+    }
+    await ctx.close();
+  }
+  // Tranche T3 : chute de la barre du 3 touchée en montée (scénario t3-pres-montee), 0,1 / 0,3 / 0,6 / 1,5 s après le
+  // contact (temps de chute f.t de obstacles.js), caméra fixe de trois quarts arrière. Le scénario tourne image par image
+  // avec les mêmes appels que pour l'oracle ; les états relevés sont comparés ensuite à cso_runs.json.
+  if (!SHOTS_ONLY || SHOTS_ONLY === 'chute') {
+    const sc = SCENARIOS.find((x) => x.id === 't3-pres-montee');
+    const { ctx, page } = await openGame('fr', true);
+    await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [sc, 20261118]);
+    await page.evaluate((s) => window.__parite.duringStart(s), sc);
+    let knock = null;
+    for (let k = 0; k < sc.maxFrames && !knock; k++) {
+      const r = await page.evaluate(([kk]) => window.__parite.duringTo(kk, '3'), [k]);
+      const bar = r.rails.findIndex((x) => x.fall);
+      if (bar >= 0) knock = { k, bar, ...r.rails[bar].fall, fence: r.fence };
+    }
+    if (!knock) throw new Error('chute : aucune barre du 3 renversée');
+    const F = knock.fence;
+    let last = knock.k;
+    for (const t of [0.1, 0.3, 0.6, 1.5]) {
+      const n = Math.round(t * 30); // appels de Obstacles.update depuis le contact (le premier dans l'image du contact)
+      const k = knock.k + n - 1;
+      last = k;
+      const r = await page.evaluate(([kk]) => window.__parite.duringTo(kk, '3'), [k]);
+      const name = `chute-barre-${String(t).replace('.', '_')}s`;
+      const ps = {
+        name,
+        desc: `Chute de la barre du vertical 3 touchée en montée (appel trop près, scénario t3-pres-montee), ${String(t).replace('.', ',')} s après le contact (image ${k}), caméra fixe de trois quarts arrière, au sud-ouest de l’obstacle, 15 h, HUD masqué.`,
+        hour: 15,
+        // Trois-quarts arrière gauche du cheval (le 3 est sauté vers l'est, ses barres vont du nord au sud).
+        eye: [F.x - 4.5, F.ground + 1.8, F.z + 6.5],
+        target: [F.x + 0.6, F.ground + 0.6, F.z],
+        fovV: 45,
+        viewport: { w: VIEW.width, h: VIEW.height },
+        horse: { x: r.horse.x, z: r.horse.z, h: r.horse.h, jumpY: r.horse.jumpY, jumpT: r.horse.jumpT },
+        fence: { label: '3', bar: knock.bar, dir: knock.dir, side: knock.side, hit: knock.hit, frames: n },
+        rails: r.rails,
+        frame: k,
+      };
+      if (Math.abs(r.rails[knock.bar].fall.t - t) > 1e-9) throw new Error(`chute : temps ${r.rails[knock.bar].fall.t} au lieu de ${t}`);
+      const info = await page.evaluate((p) => window.__parite.duringView(p), ps);
+      await page.waitForTimeout(3000);
+      await page.evaluate(() => window.__parite.render());
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: join(PARITE, `${name}-web.png`) });
+      await page.evaluate(() => window.__parite.duringRestore());
+      doc.poses.push({ ...ps, ...info, web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png` });
+      console.log('pose', name, 'image', k, 'barre', JSON.stringify(r.rails[knock.bar]));
+    }
+    // La partie jouée pendant les captures est celle de l'oracle (états du cheval identiques image par image).
+    const played = await page.evaluate(() => window.__parite.duringFrames());
+    try {
+      const ora = JSON.parse(readFileSync(OUT, 'utf8')).runs.find((x) => x.id === sc.id);
+      const diff = played.filter((sj, i) => i <= last && (!ora.frames[i] || JSON.stringify(ora.frames[i].ch.s) !== sj)).length;
+      console.log(`chute : ${played.length} images jouées, ${diff} différentes de l’oracle ${sc.id}`);
+      if (diff) throw new Error('chute : partie différente de l’oracle');
+    } catch (e) {
+      if (e.message.startsWith('chute')) throw e;
+      console.log('chute : oracle illisible, comparaison non faite', e.message);
+    }
+    await ctx.close();
   }
   writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
   console.log('poses :', join(PARITE, 'poses.json'));
-  await ctx.close();
 }
 if (errors.length) console.log('erreurs de page :', errors.slice(0, 5));
 await browser.close();

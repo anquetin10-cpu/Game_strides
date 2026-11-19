@@ -85,6 +85,7 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		auto N = [&J](const TCHAR* K, double& Out) { J->TryGetNumberField(K, Out); };
 		N(TEXT("ref"), HorseP.ref); N(TEXT("nose"), HorseP.nose); N(TEXT("overrun"), HorseP.overrun);
 		N(TEXT("jumpDuration"), HorseP.jumpDuration); N(TEXT("minJumpSpeed"), HorseP.minJumpSpeed);
+		N(TEXT("hindTrail"), FenceP.hindTrail);
 		double W = 0;
 		if (J->TryGetNumberField(TEXT("csoFenceWidth"), W)) CsoFenceWidth = W;
 	}

@@ -118,11 +118,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:129-159 (csoBrake, csoRear, csoRefuse), 296-299 et 318-332 (cabré, freinage, arrêt) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:302-303 (TickCso : csoApproachRefusal puis csoRefuse)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:129-159 (csoBrake, csoRear, csoRefuse), 296-299 et 318-332 (cabré, freinage, arrêt) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:231-321 (décision et comptage, tranche T3) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:280-299 (TickCso)",
   "etat": "identique_prouve",
   "niveau": "teste",
   "preuve": "Freinage comparé au jeu web de deux façons. (1) Sur des poses : unreal/core/tests/oracles/cso_target.json, liste « refuse » : 960 refus décidés (Obstacles.refuse appelé seul dans le jeu en cours d'exécution ; 10 obstacles, abord à 0, 40, 61 et 80°, épaules de 1 m après à 4 m avant le centre, 0,6 à 7,6 m/s) = csoRefuse / csoBrake (unreal/core/tests/test_core.cpp:568, testPress), 0 écart au 1e-12 relatif ; le terme v²/2d l'emporte dans 341 cas, v/0,5 dans 619. (2) Dans la chaîne du jeu (csoApproachRefusal puis csoRefuse, comme AStridesHorse::TickCso) : aux 3 refus décidés des scénarios refus (images 70 et 111) et abord-61 (image 32), même décision à la même image et même freinage que l'état relevé en fin d'image (testHorseRuns, test_core.cpp:394 ; miroir Strides.Parite.CsoHorse, Result={Success}). Arrêt sous 0,05 m/s, cabré de 1,1 s, horse:refuse à la même image, cadence figée et direction coupée pendant le cabré rejoués sans écart. Mutations détectées par scripts/unreal/mutations-cso-horse.py (14 mutations de CsoHorse.cpp, toutes détectées) : v/0,5 → v/0,4, 2d → 3d, terme v/0,5 supprimé, OVERRUN × 0,7 → × 0,5, part minimale vers l'obstacle 0,3 → 0,4, distance minimale 0,35 → 0,3. Strides.Cso.HorseInGame : refus et arrêt devant l'obstacle dans le jeu, données lues dans Content/Data.",
-  "ecart": "Hennissement (son de horse:refuse) absent (T12) ; comptage du refus : voir cso.refus-decision.",
+  "ecart": "Hennissement (son de horse:refuse) absent (T12) ; décision et comptage du refus : voir cso.refus-decision et cso.refus-unique.",
   "tranche": "a"
  },
  {

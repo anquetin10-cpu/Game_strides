@@ -98,6 +98,8 @@ void AStridesHorse::PlaceAt(double WebX, double WebZ, double Heading, double InS
 	Sim.jumpT = -1; Sim.jumpY = 0; Sim.brake = 0; Sim.refusing = -1;
 	Sim.hasLastJump = false; Sim.lastJumpObstacle = -1;
 	Sim.jt0 = Sim.jt1 = -1;
+	// (horse._pass oublié ; le dernier refus compté, horse._refusal, est gardé comme dans le jeu web)
+	Sim.hasPass = false;
 	// Cadence de concours reprise de la vitesse réelle à l'image suivante (csoRide.js:65).
 	Sim.hasCadence = false;
 	SpeedMS = (float)InSpeedMS;
@@ -242,9 +244,8 @@ void AStridesHorse::Tick(float Dt)
 	UpdateAnimation();
 }
 
-// Concours : une image du cœur (csoRideStep + Horse.update), puis ce que fait Obstacles.updateHorse pour la visée et le
-// refus (comptage du refus à l'arrêt, refus décidé à l'abord) ; le jugement des barres reste celui de la réception
-// (provisoire, tranche T3).
+// Concours : une image du cœur (csoRideStep + Horse.update), puis Obstacles.updateHorse et Obstacles.update du cœur
+// (jugement des barres au passage, refus, chute des barres : tranche T3).
 void AStridesHorse::TickCso(float Dt)
 {
 	const UStridesDataSubsystem* Data = DataSub();
@@ -274,33 +275,28 @@ void AStridesHorse::TickCso(float Dt)
 	for (const strides::CsoHorseEvent E : Events)
 	{
 		FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
-		if (E == strides::CsoHorseEvent::Jump)
-		{
-			JumpFence = Course && Sim.hasLastJump ? Course->FenceAt(Sim.lastJumpObstacle) : nullptr;
-			JumpDir = Sim.lastGeo.sign;
-			if (Sim.hasLastJump) LastTakeoff = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Sim.lastPlan)));
-		}
-		else if (E == strides::CsoHorseEvent::Land)
-		{
-			if (Course && JumpFence.IsValid() && Sim.hasLastJump) Course->JumpLanded(JumpFence.Get(), Sim.lastPlan, JumpDir);
-			JumpFence = nullptr;
-		}
+		if (E == strides::CsoHorseEvent::Jump && Sim.hasLastJump) LastTakeoff = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Sim.lastPlan)));
 	}
-	// Refus engagé et arrêté (plus de freinage) : compté, comme Obstacles._count.
-	if (Sim.refusing >= 0 && !(Sim.brake > 0))
+	// Obstacles.updateHorse (tranche T3, cœur) : jugement de chaque barre au passage des épaules, refus (décision à
+	// l'abord, comptage à l'arrêt, barre emportée tout contre, garde-fou du nez, glissade), barres des postérieurs ; puis
+	// Obstacles.update (chute des barres, vibration, remise par le jury) et affichage des barres. Pas de cheval WildMesh :
+	// membres non jugés, résultat annoncé à la sortie des épaules (comme le web en personnages classiques).
+	if (Course)
 	{
-		if (Course)
-			if (AStridesFence* F = Course->FenceAt(Sim.refusing))
-			{
-				const strides::CsoObstacle& O = Obs[Sim.refusing];
-				const double S = (Sim.x - O.x) * O.n.x + (Sim.z - O.z) * O.n.z;
-				Course->Refused(F, S < 0 ? 1 : -1);
-			}
-		Sim.refusing = -1;
+		strides::CsoUpdateHorseInput U;
+		U.prevX = X0;
+		U.prevZ = Z0;
+		U.time = In.time;
+		U.limbJudged = false;
+		U.power = In.power;
+		U.clearance = In.clearance;
+		U.csoCourse = true;
+		strides::CsoFenceOut Out;
+		strides::csoFencesUpdateHorse(Sim, Obs, Course->FenceStates(), U, Out, JP, HP, Data ? Data->FenceParams() : strides::csoFenceDefaults());
+		for (const strides::CsoHorseEvent E : Out.horse) FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
+		Course->HandleFenceOut(Out);
+		Course->UpdateFences(Dt, In.time, Sim.x, Sim.z);
 	}
-	// Refus décidé à l'abord (cheval arrivé sur l'obstacle sans appel possible) : freinage jusqu'à l'arrêt, puis cabré.
-	const int32 Ref = strides::csoApproachRefusal(Sim, Obs, In.power, In.clearance, true, In.time, JP, HP);
-	if (Ref >= 0) strides::csoRefuse(Sim, Obs, Ref, HP);
 	X = Sim.x; Z = Sim.z; H = Sim.heading;
 	SpeedMS = (float)Sim.speed;
 	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
@@ -355,5 +351,10 @@ void AStridesHorse::TickOpenWorld(float Dt)
 	}
 	Sim.x = X; Sim.z = Z; Sim.heading = H; Sim.speed = SpeedMS; Sim.jumpT = bJumping ? 0 : -1; Sim.hasCadence = false;
 	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
-	if (Course) Course->TrackHorse(X0, Z0, X, Z, H, Dt);
+	if (Course)
+	{
+		Course->TrackHorse(X0, Z0, X, Z, H, Dt);
+		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.
+		Course->UpdateFences(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, X, Z);
+	}
 }

@@ -33,26 +33,29 @@ void AStridesFence::Setup(const FString& InLabel, const FString& Kind, double In
 	UStaticMesh* Cyl = BasicMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	UStaticMesh* Cube = BasicMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	const double Width = Obstacle.w;  // m (cso_horse.json : largeur des obstacles du parcours, obstacles.js)
-	for (const strides::Bar& B : Core.bars)
+	if (Kind == TEXT("w"))
 	{
+		// Mur : bloc fixe (obstacles.js : box(w, h − 0,15, 0,5)) ; la barre posée dessus est la seule qui tombe.
+		UStaticMeshComponent* Block = NewObject<UStaticMeshComponent>(this);
+		Block->SetupAttachment(Root);
+		Block->RegisterComponent();
+		Block->SetStaticMesh(Cube);
+		Block->SetRelativeLocation(FVector(0, 0, (InHeightM - 0.15) * 50.0));
+		Block->SetRelativeScale3D(FVector(0.5, Width, InHeightM - 0.15));
+		Block->SetCollisionProfileName(TEXT("StridesFence"));
+	}
+	// Barres du haut (celles qui tombent) : état de repos du cœur (obstacles.js _mesh), une composante par barre.
+	const std::vector<strides::CsoFenceState> Rest = strides::csoFenceStates({Obstacle});
+	for (const strides::CsoRail& R : Rest[0].rails)
+	{
+		// Barre de 10 cm de diamètre posée sur ses taquets (cylindre de base : 100 cm de haut, 100 cm de diamètre).
 		UStaticMeshComponent* Bar = NewObject<UStaticMeshComponent>(this);
 		Bar->SetupAttachment(Root);
 		Bar->RegisterComponent();
-		if (Kind == TEXT("w"))
-		{
-			// Mur : bloc plein jusqu'à la hauteur (cube 1 m de base Unreal = 100 cm).
-			Bar->SetStaticMesh(Cube);
-			Bar->SetRelativeLocation(FVector(B.s * 100.0, 0, B.h * 50.0));
-			Bar->SetRelativeScale3D(FVector(0.4, Width, B.h));
-		}
-		else
-		{
-			// Barre de 10 cm de diamètre posée sur ses taquets (cylindre de base : 100 cm de haut, 100 cm de diamètre).
-			Bar->SetStaticMesh(Cyl);
-			Bar->SetRelativeLocation(FVector(B.s * 100.0, 0, B.h * 100.0));
-			Bar->SetRelativeRotation(FRotator(0, 0, 90));
-			Bar->SetRelativeScale3D(FVector(0.1, 0.1, Width));
-		}
+		Bar->SetStaticMesh(Cyl);
+		FTransform T = RailTransform(R.y, R.z, R.rx, R.rz);
+		T.SetScale3D(FVector(0.1, 0.1, Width));
+		Bar->SetRelativeTransform(T);
 		Bar->SetCollisionProfileName(TEXT("StridesFence"));
 		Bars.Add(Bar);
 	}
@@ -69,9 +72,30 @@ void AStridesFence::Setup(const FString& InLabel, const FString& Kind, double In
 	}
 }
 
-void AStridesFence::KnockTopBar()
+FTransform AStridesFence::RailTransform(double Y, double Z, double Rx, double Rz)
 {
-	if (Bars.Num() == 0) return;
-	UStaticMeshComponent* Top = Bars.Last();
-	Top->SetRelativeLocation(FVector(Top->GetRelativeLocation().X + 40.0, 0, 6.0));
+	// Rotation web locale (Three.js, ordre XYZ) : M = Rx(rx) · Rz(rz). Repère local Unreal de l'acteur : X = z web (axe de
+	// saut), Y = −x web (le long des barres), Z = y web (StridesUnits) : M_ue = P · M · Pᵀ, image de chaque axe Unreal.
+	const double Cx = FMath::Cos(Rx), Sx = FMath::Sin(Rx), Cz = FMath::Cos(Rz), Sz = FMath::Sin(Rz);
+	const double M[3][3] = {{Cz, -Sz, 0}, {Cx * Sz, Cx * Cz, -Sx}, {Sx * Sz, Sx * Cz, Cx}};
+	auto P = [](double Wx, double Wy, double Wz) { return FVector(Wz, -Wx, Wy); };
+	const FVector XAxis = P(M[0][2], M[1][2], M[2][2]);     // Pᵀ eX = ez web
+	const FVector YAxis = P(-M[0][0], -M[1][0], -M[2][0]);  // Pᵀ eY = −ex web
+	const FVector ZAxis = P(M[0][1], M[1][1], M[2][1]);     // Pᵀ eZ = ey web
+	const FQuat Q(FMatrix(XAxis, YAxis, ZAxis, FVector::ZeroVector));
+	// Cylindre de base (axe Z du maillage) couché le long des barres.
+	const FQuat Lying = FRotator(0, 0, 90).Quaternion();
+	return FTransform(Q * Lying, FVector(Z * StridesUnits::CmPerM, 0, Y * StridesUnits::CmPerM));
+}
+
+void AStridesFence::ApplyRails(const strides::CsoFenceState& State)
+{
+	const double Width = Obstacle.w;
+	for (int32 K = 0; K < Bars.Num() && K < (int32)State.rails.size(); K++)
+	{
+		const strides::CsoRail& R = State.rails[K];
+		FTransform T = RailTransform(R.y, R.z, R.rx, R.rz);
+		T.SetScale3D(FVector(0.1, 0.1, Width));
+		Bars[K]->SetRelativeTransform(T);
+	}
 }

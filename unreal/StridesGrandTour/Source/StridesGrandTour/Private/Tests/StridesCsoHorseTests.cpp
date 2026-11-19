@@ -117,13 +117,17 @@ bool FStridesPariteCsoHorseTest::RunTest(const FString&)
 			Fi.waterDepth = NumOr(In, TEXT("wd"), 0); Fi.waterAhead = NumOr(In, TEXT("wa"), 0);
 			std::vector<strides::CsoHorseEvent> Ev;
 			strides::csoHorseStep(S, Fi, Obs, Ev);
+			// Événements émis pendant horse.update (ch.he) ; ceux de Obstacles.updateHorse (glissade) relèvent de
+			// Strides.Parite.CsoFences.
 			FString Got, Want;
 			for (const strides::CsoHorseEvent E : Ev) Got += FString(UTF8_TO_TCHAR(strides::csoHorseEventName(E))) + TEXT(" ");
-			for (const TSharedPtr<FJsonValue>& EV : F->GetArrayField(TEXT("ev")))
-			{
-				const FString E = EV->AsObject()->GetStringField(TEXT("e"));
-				if (E == TEXT("horse:jump") || E == TEXT("horse:jumpEarly") || E == TEXT("horse:tooSlow") || E == TEXT("horse:refuse") || E == TEXT("horse:land")) Want += E + TEXT(" ");
-			}
+			const TArray<TSharedPtr<FJsonValue>>* He = nullptr;
+			if (Ch->TryGetArrayField(TEXT("he"), He))
+				for (const TSharedPtr<FJsonValue>& EV : *He)
+				{
+					const FString E = EV->AsString();
+					if (E == TEXT("horse:jump") || E == TEXT("horse:jumpEarly") || E == TEXT("horse:tooSlow") || E == TEXT("horse:refuse") || E == TEXT("horse:land")) Want += E + TEXT(" ");
+				}
 			EvBad += Got != Want;
 			const TSharedPtr<FJsonObject>* B = nullptr;
 			const bool bExternal = Ch->TryGetObjectField(TEXT("b"), B) || Ch->HasField(TEXT("col"));

@@ -8,7 +8,8 @@
 // Oracles : unreal/core/tests/oracles/cso_runs.json (canal « ch », rejoué image par image) et cso_target.json (visée).
 // Ce qui n'est PAS porté ici (entrées de l'appelant ou tranches suivantes) : collisions du monde (colliders.resolve),
 // profondeur d'eau et pente (fournies par l'appelant), endurance et état physiologique (puissance fournie par
-// l'appelant), jugement des barres, refus décidés à l'abord, comptage des refus (Obstacles.updateHorse, tranche T3).
+// l'appelant), jugement des barres, refus décidés à l'abord, comptage des refus (Obstacles.updateHorse : portés par
+// CsoFences.h, tranche T3).
 // Unités SI, repère web (x est, z sud, cap h -> direction (sin h, cos h)).
 #pragma once
 #include <functional>
@@ -58,6 +59,23 @@ struct CsoTarget {
 enum class CsoHorseEvent { Jump, JumpEarly, TooSlow, Refuse, Land };
 STRIDESCORE_API const char* csoHorseEventName(CsoHorseEvent);  // "horse:jump", …
 
+// Passage en cours au-dessus d'un obstacle (obstacles.js _judge / limbContact : horse._pass). cause = clé du jeu web
+// (« short », « far », « near », « tooClose », « angle », « slow », « fast », « hindRail », « foreRail ») ou vide ; marge
+// minimale des barres jugées (+∞ tant qu'aucune ne l'est) ; exitT = heure de sortie des épaules (0 : pas encore, comme
+// le `!pass.exitT` du JS).
+struct CsoPass {
+  int o = -1, dir = 1;
+  bool fault = false, done = false;
+  std::string cause;
+  double margin = 0, exitT = 0;
+};
+// Dernier refus compté (obstacles.js _count : horse._refusal) : obstacle, heure, cheval détourné depuis.
+struct CsoRefusalMemo {
+  int o = -1;
+  double t = 0;
+  bool away = false;
+};
+
 // État du cheval du joueur et de sa conduite de concours (champs du Horse et du Player web utilisés par le pas).
 struct CsoHorseState {
   double x = 0, z = 0, heading = 0, speed = 0;
@@ -80,6 +98,12 @@ struct CsoHorseState {
   bool hasCadence = false;
   double cadence = 0, kbdSteer = 0;
   bool cadAdjust = false;
+  // Jugement des obstacles (tranche T3, CsoFences.h) : passage en cours (horse._pass, remis à zéro par setPosition) et
+  // dernier refus compté (horse._refusal, gardé par setPosition).
+  bool hasPass = false;
+  CsoPass pass;
+  bool hasRefusal = false;
+  CsoRefusalMemo refusal;
 };
 
 // Entrées d'une image (game.update → player.update → horse.update).
@@ -123,8 +147,8 @@ STRIDESCORE_API void csoRefuse(CsoHorseState& s, const std::vector<CsoObstacle>&
 // Décision de refus à l'abord, extraite de Obstacles.updateHorse (obstacles.js:440-455) : cheval au sol, pas déjà en
 // refus, plus de 0,5 m/s, entre les chandeliers, dirigé vers l'obstacle ; abordable (angle) : refus si l'appel n'est plus
 // possible (zone refuse, trop près, ou trop lent tout contre) ; sinon refus quand le nez est à moins de v²/16 + 0,3 m.
-// Renvoie l'indice de l'obstacle refusé, −1 sinon (l'appelant appelle csoRefuse). Le reste de updateHorse (jugement des
-// barres, comptage, glissade, garde-fou du nez, chute des barres) est la tranche T3.
+// Renvoie l'indice de l'obstacle refusé, −1 sinon (l'appelant appelle csoRefuse). updateHorse entier (même décision,
+// jugement des barres, comptage, glissade, garde-fou du nez, chute des barres) : csoFencesUpdateHorse (CsoFences.h).
 STRIDESCORE_API int csoApproachRefusal(const CsoHorseState& s, const std::vector<CsoObstacle>& obstacles, double power,
                                        double clearance, bool csoCourse, double time, const JumpParams& J = jumpDefaults(),
                                        const CsoHorseParams& P = csoHorseDefaults());

@@ -49,7 +49,7 @@
    "src/gameplay/courses.js",
    "src/gameplay/jumpModel.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163 (LastTakeoff = nom brut de la qualité) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:39 (« Dernier appel : … ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:83-85 (« X franchi · appel <qualité> »)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:163 (LastTakeoff = nom brut de la qualité) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:39 (« Dernier appel : … ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:89 (« X franchi », sans mot d'appel depuis T3)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni vérification à l'écran citée de cet affichage.",
@@ -65,11 +65,11 @@
    "src/gameplay/courses.js",
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:85 (« X barre +4 · appel <qualité> »)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:89 (« Barre au X · +4 ») ; cause du cœur (CsoFenceEvent.cause : short, far, near, angle, …, tranche T3) non affichée",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test.",
-  "ecart": "La cause n'est pas traduite en texte (CAUSES non porté) ; seule la qualité d'appel en anglais est jointe ; causes short / foreRail / hindRail inexistantes ; pas de relevé des fautes pour un bilan.",
+  "ecart": "La cause n'est pas traduite en texte (CAUSES non porté) ni affichée ; pas de relevé des fautes pour un bilan.",
   "tranche": "a"
  },
  {
@@ -152,11 +152,11 @@
   "js": [
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:76-86 (JumpLanded : barre si marge du plan < −rub) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:269-272",
-  "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Seuil rub = 0,06 m prouvé dans planJump (jump.json) ; jugement du jeu non testé ; .tmp/shots.log du 18/11 (démonstration automatique StridesShots, hors validation-mac-2026-11-17.md) : une faute à chacun des 10 obstacles, « Terminé : 63 pts en 86.61 s ».",
-  "ecart": "Faute décidée à la réception d'après la marge du plan calculée à l'appel, pas au passage réel de chaque barre : un virage en l'air ne change rien ; seul l'obstacle visé à l'appel est jugé (un obstacle franchi sans appel ou hors sélection ne l'est pas) ; pas de cause 'short' ; la démonstration automatique appelle dès 11,7 m (StridesHorse.cpp:217-218), d'où une barre partout.",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:96-149 (judge = _judge), 59-78 (_finishPass), 231-321 (csoFencesUpdateHorse = updateHorse, résultat différé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:280-299 (TickCso : appel du cœur après le pas du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:68-91 (HandleFenceOut : événements du cœur vers le juge)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs.json (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 34 mutations détectées sur 37 (scripts/unreal/mutations-cso-fences.py) ; événements obstacle:clear / obstacle:fault à la même image, même obstacle, même sens, marge à 1e-6 (relevée en pleine précision), même cause (short, far, near) ; témoins : 64 images de résultat différé (membres jugés), marge juste sous −0,06 (t3-faute-limite, −0,0749 : faute) ; Strides.Parite.CsoFences (miroir dans le moteur) et Strides.Cso.FencesInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoFencesTests.cpp) : Result={Success} (sans-faute au 3 : obstacle:clear du cœur reçu par le parcours ; abord à 70° du 4A : jamais compté franchi ni en faute).",
+  "ecart": "Le jeu Unreal n'a pas de cheval WildMesh : il appelle le cœur avec les membres non jugés (résultat annoncé à la sortie des épaules), comme le jeu web en qualité « Économie » ou personnages « Classiques » ; en qualité par défaut, le web diffère l'annonce et ajoute les contacts des membres (cso.contact-membres). Branche « 1,2 s au plus » du résultat différé non exercée par un oracle (mutation 1,2 → 0,6 s non détectée : dans tous les scénarios les postérieurs passent 2,2 m avant). Cause 'angle' (marge du plan ≥ 0 sans cause) non exercée. Sons (bip de franchissement, faute) : T12.",
   "tranche": "a"
  },
  {
@@ -166,11 +166,11 @@
   "js": [
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code.",
-  "ecart": "Ni vibration ni son.",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:136-141 (vibration demandée), 337-341 (décroissance 2,5 /s, rotation, levée) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:91-100 (ApplyRails : barre affichée à la transformée du cœur)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs.json (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 34 mutations détectées sur 37 (scripts/unreal/mutations-cso-fences.py) ; t3-effleurement (marge −0,047) et t3-effleurement-haut (marge +0,026, juste sous +0,04) : vibration à la même image, transformée de la barre identique à chaque image jusqu'au repos, son railTouch demandé à la même image ; mutations du seuil 0,04 → 0,02, de la décroissance, de l'amplitude de rotation et de levée détectées.",
+  "ecart": "Son « tinte » (railTouch) demandé par le cœur mais non joué : aucun son dans Unreal (T12). Barre affichée en cylindre gris (habillage : T5). Vibration non vérifiée à l'écran par capture.",
   "tranche": "a"
  },
  {
@@ -181,11 +181,11 @@
    "src/gameplay/limbContact.js",
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code (unreal/docs/MATRICE.md : « contact des membres : à faire »).",
-  "ecart": "Aucun contact membre / barre ; la barre ne tombe que par la marge du plan.",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:201-228 (csoLimbContact = Obstacles.limbContact : barre tombée du côté poussé, faute, cause)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Effet d'un contact porté et compilé (UBT, ctest) ; aucun contact relevé dans les 26 scénarios de cso_runs.json (canal lc vide, y compris en qualité haute) : non comparé à un oracle.",
+  "ecart": "Détection des contacts (capsules des membres, balayage, pjlHorse.js / limbContact.js) non portée : elle exige la pose animée du cheval WildMesh ; le jeu Unreal appelle le cœur sans contacts ni membres jugés. Effet du contact (csoLimbContact) sans oracle.",
   "tranche": "a"
  },
  {
@@ -195,11 +195,11 @@
   "js": [
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:76-81 (KnockTopBar)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:180-199 (csoKnock = knock), 164-178 (csoRestFence = _rest), 323-376 (csoFencesUpdate = update : chute, rebonds, glisse, roulement, inclinaison, remises) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:75-100 (RailTransform, ApplyRails : une composante par barre, mur = bloc fixe + barre du dessus) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:93-106 (UpdateFences)",
   "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test ni vérification à l'écran citée.",
-  "ecart": "La barre du haut est déplacée d'un coup (40 cm en avant, 6 cm du sol), sans animation ni côté, toujours vers +X local quel que soit le sens du saut ; sur un mur, c'est tout le bloc qui est déplacé ; toujours la barre du haut ; jamais remise en place (ni resetRails, ni remontée par le jury).",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs.json (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 34 mutations détectées sur 37 (scripts/unreal/mutations-cso-fences.py) ; transformées des barres (position y, z, rotations x, z) comparées à chaque image au canal « rails » (69 300 comparaisons, écart ≤ 5e-7 = arrondi au millionième de l'oracle) et à l'état interne de chaque chute (bouts, vitesses, élan, roulement, fin) ; oxer : deux barres tombées, une seule faute (t3-oxer-loin) ; postérieurs : chute après 1,1 m (t3-posterieurs, t3-faute-limite) ; antérieurs : chute immédiate (t3-pres-montee) ; remise par le jury 3 s après un refus tout contre, cheval à plus de 5 m (t3-tout-contre-remonte) ; mutations de G, du rebond 0,28, de la glisse e^(−2,6 dt), du retard du 2e bout, de l'élan, de l'ordre des bouts, du roulement, de la fin à 0,5 s, de la borne de profondeur détectées ; Strides.Parite.CsoFences (miroir dans le moteur) et Strides.Cso.FencesInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoFencesTests.cpp) : Result={Success} : RailTransform vérifiée par la géométrie (bouts de la barre à 1e-6 cm), barre emportée affichée à la transformée du cœur à chaque image ; montages côte à côte unreal/docs/parite/cso/chute-barre-0_1s.png, chute-barre-0_3s.png, chute-barre-0_6s.png, chute-barre-1_5s.png (web à gauche, Unreal à droite, 844 × 390 chacun vérifiés par sips ; valeurs du cœur dans le journal Unreal identiques à celles du web : y 1,0673, z 0,111934, rx 2,238688, rz −0,017209 à 0,1 s).",
+  "ecart": "Barres remises en début de manche (resetRails) : non porté (épreuve jamais recommencée dans Unreal, T4 / T11). Remise hors mission à plus de 60 m portée mais non exercée (le parcours Unreal passe toujours « mission en cours »). Rebond au seuil |vy| > 0,6 non exercé (mutation 0,6 → 0,4 non détectée : aucun impact entre 0,4 et 0,6 m/s pour des barres de 1,05 à 1,2 m). Barre en attente déclenchée par l'éloignement (> 8 m) non exercée. Sons railFall et thud demandés par le cœur, non joués (T12). Sur les montages : barre en cylindre gris sans chandeliers ni ailes ni barres basses (T5), cheval Unreal posé à la hauteur du saut mais dans une pose de clip non calée sur le saut (hors T3), teintes et ombres (rendu de bureau Metal).",
   "tranche": "a"
  },
  {
@@ -209,11 +209,11 @@
   "js": [
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:146-160 (csoRefuse), 162-198 (csoApproachRefusal : décision à l'abord) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:289-303 (comptage à l'arrêt, décision à l'abord)",
-  "etat": "partiel",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:231-321 (csoFencesUpdateHorse : décision, comptage à l'arrêt, barre emportée tout contre, garde-fou du nez, glissade) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:146-160 (csoRefuse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:280-299 (TickCso)",
+  "etat": "identique_prouve",
   "niveau": "teste",
-  "preuve": "Décision de refus à l'abord (obstacles.js:440-455) évaluée à chaque image des 14 scénarios (unreal/core/tests/test_core.cpp:394) : refus décidés à la même image que le jeu web (2 dans le scénario « refus », 1 dans « abord-61 » : abord à 61°, hors de l'angle de saut, décision au seuil v²/16 + 0,3), aucun refus inattendu sur 2 051 images ; freinage de chaque refus décidé identique (voir cheval.refus) ; arrêt, cabré de 1,1 s, cadence figée et direction coupée rejoués sans écart après recalage sur les corrections de updateHorse ; mutation v²/16 → v²/12 détectée par scripts/unreal/mutations-cso-horse.py (abord-61 : 2 décisions en écart) ; dans le jeu : Strides.Cso.HorseInGame, abord sans appel → refus et arrêt devant l'obstacle.",
-  "ecart": "Le reste de updateHorse est la tranche T3 : cheval qui glisse le long des barres arrêté devant (non porté), garde-fou du nez (OVERRUN : poussée de 0,3 m au plus par image, non porté : le scénario « refus » le montre aux images 70 à 73 et 111 à 113), barre emportée tout contre, règle du refus compté une seule fois (5 s, cheval non détourné) : le jeu Unreal compte chaque arrêt.",
+  "preuve": "unreal/core/tests/oracles/cso_runs.json (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 34 mutations détectées sur 37 (scripts/unreal/mutations-cso-fences.py) ; refus au freinage à 6,2 m/s (t3-refus-62, refus), lent (t3-refus-lent), oblique (t3-refus-oblique, abord à 66°), tout contre avec barre emportée (t3-refus-62, t3-tout-contre-remonte, refus), glissade au pas de fourmi (t3-glissade, 3 refus sur place) : même décision, même freinage, même arrêt, même cabré, même événement obstacle:refusal (sens) à la même image ; garde-fou du nez exercé sur 25 images ; mutations de la glissade (profondeur/2 + 0,1), du refus lent (1,5 m), du refus oblique (v²/16), du garde-fou (0,3 m par image), du seuil de la barre emportée (−0,24 → −0,4 m, discriminé par le refus lent tout contre de la fin de t3-refus-5s), de la remise (3 s, 5 m) et du sens du refus compté détectées ; Strides.Parite.CsoFences (miroir dans le moteur) et Strides.Cso.FencesInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoFencesTests.cpp) : Result={Success} (abord à 70° : refus, cabré, obstacle:refusal du cœur ; refus tout contre au 3 : refus compté, barre emportée).",
+  "ecart": "Spécification corrigée : la barre emportée part dans le sens de la marche du cheval, pas vers lui (cso-spec.md §7.1). Hennissement (son) : T12.",
   "tranche": "a"
  },
  {
@@ -223,11 +223,11 @@
   "js": [
    "src/gameplay/obstacles.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:167, 228, 249 (délai RefuseT de 1,2 s)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:80-94 (countRefusal = _count), 236-241 (détour : sens ou profondeur/2 + 6 m)",
   "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test.",
-  "ecart": "Seul un délai de 1,2 s sépare deux refus : un cheval relancé droit sur l'obstacle peut cumuler deux refus (donc l'élimination) sans s'être détourné.",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs.json (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 34 mutations détectées sur 37 (scripts/unreal/mutations-cso-fences.py) ; t3-refus-5s : refus lents repris face au même obstacle toutes les 1,7 s non recomptés, refus repris 4,67 s après le précédent non recompté, refus repris 6,17 s après recompté (mutation 5 s → 3 s détectée) ; t3-glissade : 3 refus sur place, un seul compté ; détour (cheval qui tourne le dos ou s'éloigne de plus de profondeur/2 + 6 m) relevé à chaque image dans t3-tout-contre-remonte et comparé (mutations du sens et de la distance détectées).",
+  "ecart": "Effet du détour sur le recomptage non exercé : aucun scénario ne représente l'obstacle moins de 5 s après un détour (cabré de 1,1 s puis demi-tour sur les hanches à 0,8 rad/s au plus : environ 4,5 s pour tourner le dos puis refaire face, estimation à confirmer) ; mutation « détour ignoré » non détectée. Refus compté par le parcours (+4, cadence remise à 0, élimination au 2e) : T4.",
   "tranche": "a"
  },
  {
@@ -251,7 +251,7 @@
   "js": [
    "src/gameplay/courses.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:103-115 (advance, clear, rail) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:76-86",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:103-115 (advance, clear, rail) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:68-91 (HandleFenceOut : obstacle:clear / fault / refusal du cœur, tranche T3)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Scénarios manuels unreal/core/tests/test_core.cpp:118-136 (obstacle avant le départ ignoré, deux barres = 8 points, erreur de parcours), passés le 18/11/2026 ; aucun oracle.",

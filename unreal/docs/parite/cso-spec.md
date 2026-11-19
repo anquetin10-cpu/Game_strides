@@ -384,8 +384,10 @@ condition (`horse.js:67-69`, `config.js:56`).
 - Freinage jusqu'à l'arrêt sur max(0,35 ; écart + 0,42) / composante m (`obstacles.js:378-389`), décélération
   max(v²/2d ; v/0,5) (`horse.js:186-189`) ; à l'arrêt : vitesse 0, cabré 1,1 s, son `neigh` (`horse.js:175-183`,
   `game.js:728`).
-- Refus tout contre (nez 0,24 m dans l'obstacle) : la barre avant tombe vers le cheval, remontée 3 s plus tard quand le
-  cheval est à plus de 5 m ; compté comme refus, pas comme barre (`obstacles.js:456-461`, `618`).
+- Refus tout contre (nez 0,24 m dans l'obstacle) : la barre avant tombe dans le sens de la marche du cheval (sens +1
+  quand il arrive du côté s < 0 : `side < 0 ? 1 : -1`, correction du 19/11/2026, vérifiée par l'oracle T3 ; la version
+  précédente de cette ligne disait « vers le cheval »), remontée plus de 3 s plus tard, une fois le cheval à plus de 5 m ;
+  compté comme refus, pas comme barre (`obstacles.js:456-461`, `618`).
 - Dérobade (« passage à côté ») : non modélisée comme faute ; passer hors des chandeliers ne compte rien, appuyer
   SAUT donne `Trop tôt` (test `tests/e2e/cso.mjs:235`).
 
