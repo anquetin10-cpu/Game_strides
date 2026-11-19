@@ -16,6 +16,7 @@ import { COURSE_SPEED, COURSE_LENGTH, timeAllowedFor } from '../../src/gameplay/
 import { HORSE } from '../../src/config.js';
 import { POLE } from '../../src/world/sites.js';
 import { HORSES } from '../../src/gameplay/data.js';
+import { readFileSync } from 'node:fs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const DATA = join(ROOT, 'unreal/StridesGrandTour/Content/Data');
@@ -30,6 +31,22 @@ write(DATA, 'horse_gaits.json', { schema: 'strides.horse_gaits/1', source: src('
 write(DATA, 'horse_profiles.json', { schema: 'strides.horse_profiles/1', source: src('gameplay/data.js'), horses: Object.values(HORSES).map((h) => ({ id: h.id, name: h.name, breed: h.breed, age: h.age, coat: h.coat, blaze: !!h.blaze, socks: h.socks, speed: h.speed, jump: h.jump, stamina: h.stamina, price: h.price ?? 0, value: h.value ?? 0, desc: h.desc })) });
 write(DATA, 'jump_model.json', { schema: 'strides.jump_model/1', source: src('gameplay/jumpModel.js'), units: 'm, s', ...JUMP });
 write(DATA, 'cso_ride.json', { schema: 'strides.cso_ride/1', source: src('gameplay/csoRide.js'), units: 'm, s, rad', ...CSO_RIDE });
+// Cheval de concours (tranche T2) : constantes nommées que obstacles.js ne publie pas (REF, NOSE, OVERRUN, HIND_TRAIL)
+// et largeur des obstacles du parcours de CSO, extraites du source tel qu'il est (jamais recopiées) ; le comportement
+// qui en dépend est recoupé par les oracles du jeu en cours d'exécution (cso_runs.json, cso_target.json).
+const OBS_SRC = readFileSync(join(ROOT, 'src/gameplay/obstacles.js'), 'utf8');
+const srcConst = (re, what) => {
+  const m = OBS_SRC.match(re);
+  if (!m) throw new Error(`obstacles.js : ${what} introuvable`);
+  return Number(m[1]);
+};
+write(DATA, 'cso_horse.json', {
+  schema: 'strides.cso_horse/1', source: [src('gameplay/obstacles.js'), src('config.js')], units: 'm, s, m/s',
+  ref: srcConst(/\bREF = ([\d.]+)/, 'REF'), nose: srcConst(/\bNOSE = ([\d.]+)/, 'NOSE'), overrun: srcConst(/\bOVERRUN = ([\d.]+)/, 'OVERRUN'),
+  hindTrail: srcConst(/\bHIND_TRAIL = ([\d.]+)/, 'HIND_TRAIL'),
+  csoFenceWidth: srcConst(/CSO_LAYOUT\.forEach\(\(f, i\) => \{\s*this\.add\(\{[^}]*\bw: ([\d.]+)[^}]*course: 'cso'/, 'largeur des obstacles de CSO'),
+  jumpDuration: HORSE.jumpDuration, minJumpSpeed: HORSE.minJumpSpeed, jumpPeak: HORSE.jumpPeak,
+});
 write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: 4, firstRefusal: 4, refusalsToEliminate: 2, timeFaultPerSecond: 1 } });
 
 // ---------- Oracles ----------

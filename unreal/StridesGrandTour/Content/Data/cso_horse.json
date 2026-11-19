@@ -1,0 +1,16 @@
+{
+ "schema": "strides.cso_horse/1",
+ "source": [
+  "src/gameplay/obstacles.js",
+  "src/config.js"
+ ],
+ "units": "m, s, m/s",
+ "ref": 0.4,
+ "nose": 1.6,
+ "overrun": 0.6,
+ "hindTrail": 2.2,
+ "csoFenceWidth": 3.8,
+ "jumpDuration": 0.8,
+ "minJumpSpeed": 3.2,
+ "jumpPeak": 1.35
+}
