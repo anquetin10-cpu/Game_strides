@@ -16,6 +16,7 @@
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
+#include "StridesCore/MathUtil.h"
 #include "StridesCore/SaveGame.h"
 #include "StridesCore/MiniJson.h"
 
@@ -1140,9 +1141,16 @@ static void testCsoRuns() {
   CHECK(std::abs(base.start.x - tr.marks.at("start").x) < 1e-9 && std::abs(base.start.z - tr.marks.at("start").z) < 1e-9 && std::abs(base.start.rot - tr.marks.at("start").rot) < 1e-12 &&
             std::abs(base.finish.x - tr.marks.at("finish").x) < 1e-9 && std::abs(base.finish.z - tr.marks.at("finish").z) < 1e-9 && std::abs(base.finish.rot - tr.marks.at("finish").rot) < 1e-12,
         "lignes de départ / d'arrivée des données différentes du tracé");
-  const char* required[] = {"droit", "t4-sans-faute", "t4-depart-lance", "t4-cloche", "t4-erreur-parcours", "t4-deux-refus", "t4-temps-limite", "t4-descente", "t4-saute-avant-depart", "t4-arrivee-barre", "t4-lignes"};
+  const char* required[] = {"droit", "t4-sans-faute", "t4-depart-lance", "t4-cloche", "t4-erreur-parcours", "t4-deux-refus", "t4-temps-limite", "t4-descente", "t4-saute-avant-depart", "t4-arrivee-barre", "t4-lignes",
+                            "t4-gardes", "t4-un-point", "t4-entree"};
   std::map<std::string, int> clean;  // « id lang » → images rejouées sans écart
-  int frames = 0, hudN = 0, audioN = 0, boardN = 0;
+  int frames = 0, hudN = 0, audioN = 0, boardN = 0, hlN = 0, rrN = 0, cheerN = 0;
+  // Gardes des écouteurs d'obstacle (courses.js:219-268) réellement exercées par les oracles : événements relevés pendant
+  // l'étape de parcours, classés selon l'état de l'épreuve juste avant (contrôle adverse de T4).
+  std::map<std::string, int> cover;
+  const char* guards[] = {"refus avant le départ, obstacle attendu, dans son sens", "refus devant un obstacle non attendu, après le départ", "refus à rebours devant l'obstacle attendu",
+                          "saut à rebours de l'obstacle attendu", "saut à rebours d'un obstacle non attendu", "saut dans son sens après l'arrivée", "saut dans son sens avant le départ"};
+  for (const char* g : guards) cover[g] = 0;
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
     const J& su = r["setup"];
@@ -1169,6 +1177,8 @@ static void testCsoRuns() {
       if (got != want) diff(-1, "appels hud au lancement");
     }
     std::vector<std::string> hudAll, audioAll;
+    std::set<std::string> texts;  // objectifs affichés (étape goto de t4-entree)
+    int hlWant = -1;              // dernier numéro surligné par le jeu web (Obstacles.highlight), -1 avant tout appel
     for (const J& f : r["frames"].a) {
       const int fi = (int)f["f"].num();
       const J& ep = f["ep"];
@@ -1186,7 +1196,22 @@ static void testCsoRuns() {
         if (ob["course"].s != "cso") continue;
         const CsoObstacleEventKind kind = en == "obstacle:clear" ? CsoObstacleEventKind::Clear : en == "obstacle:fault" ? CsoObstacleEventKind::Fault : CsoObstacleEventKind::Refusal;
         CHECK(labels[(size_t)ob["num"].num() - 1] == ob["label"].s, "%s : obstacle %s de rang %g", who.c_str(), ob["label"].s.c_str(), ob["num"].num());
-        run.obstacleEvent(kind, (int)ob["num"].num(), (int)e["d"]["dir"].num(), e["d"]["cause"].isNull() ? "" : e["d"]["cause"].s, e["d"]["causeText"].isNull() ? "" : e["d"]["causeText"].s, cadEv);
+        const int num = (int)ob["num"].num(), dir = (int)e["d"]["dir"].num();
+        if (run.step() == CsoStep::Course) {
+          const CsoRunState& s0 = run.state();
+          const bool live = s0.started && !s0.finished && !s0.eliminated;
+          if (kind == CsoObstacleEventKind::Refusal) {
+            if (!s0.started && num == s0.next && dir > 0) cover[guards[0]]++;
+            if (live && num != s0.next && dir > 0) cover[guards[1]]++;
+            if (live && num == s0.next && dir < 0) cover[guards[2]]++;
+          } else {
+            if (live && num == s0.next && dir < 0) cover[guards[3]]++;
+            if (live && num != s0.next && dir < 0) cover[guards[4]]++;
+            if (s0.finished && dir > 0) cover[guards[5]]++;
+            if (!s0.started && dir > 0) cover[guards[6]]++;
+          }
+        }
+        run.obstacleEvent(kind, num, dir, e["d"]["cause"].isNull() ? "" : e["d"]["cause"].s, e["d"]["causeText"].isNull() ? "" : e["d"]["causeText"].s, cadEv);
       }
       if (run.state().refusals != refusals0 && cadEv.has && !(cadEv.v == 0 && ep["cad"].num() == 0)) diff(fi, "cadence remise à 0 par le refus compté");
       if (run.state().refusals == refusals0 && cadEv.v != -12345.0) diff(fi, "cadence réécrite sans refus compté");
@@ -1199,10 +1224,26 @@ static void testCsoRuns() {
       in.focusX = ep["fx"].isNull() ? in.x : ep["fx"].num();
       in.focusZ = ep["fz"].isNull() ? in.z : ep["fz"].num();
       in.riding = ep["mode"].s == "ride";
+      in.driving = ep["mode"].s == "drive";
+      in.inTruck = !ep["tk"].isNull() && ep["tk"].b;
+      in.vehicle = !ep["vh"].isNull() && ep["vh"].b;
       CsoCadence cad{!ep["cad"].isNull(), ep["cad"].isNull() ? 0 : ep["cad"].num()};
       CHECK((int)ep["i"].num() == run.stepIndex(), "%s image %d : étape %d avant Run.update / %d", who.c_str(), fi, (int)ep["i"].num(), run.stepIndex());
       run.update(in, cad);
       n++;
+      // Demandes aux obstacles et au public (relevées par le jeu web seulement quand elles changent) : numéro surligné,
+      // barres remises à l'entrée en piste, public en liesse après un sans-faute (durée).
+      if (!ep["hl"].isNull()) {
+        hlWant = (int)ep["hl"].num();
+        hlN++;
+      }
+      if (run.highlight() != hlWant) diff(fi, "numéro surligné " + std::to_string(run.highlight()) + " / " + std::to_string(hlWant));
+      const bool rrGot = run.takeResetRails(), rrWant = !ep["rr"].isNull();
+      rrN += rrWant;
+      if (rrGot != rrWant || (rrWant && ep["rr"].num() != 1)) diff(fi, std::string("barres remises ") + (rrGot ? "oui" : "non") + " / " + (rrWant ? "oui" : "non"));
+      const double cheer = run.takeCheer();
+      cheerN += !ep["cheer"].isNull();
+      if (cheer != (ep["cheer"].isNull() ? 0.0 : ep["cheer"].num())) diff(fi, "public en liesse " + std::to_string(cheer));
       // Cadence réécrite (sortie de piste) et étape après l'image.
       if (cad.has != !ep["cad1"].isNull() || (cad.has && cad.v != ep["cad1"].num())) diff(fi, "cadence après l'image");
       if ((int)ep["i1"].num() != run.stepIndex()) diff(fi, "étape " + std::to_string(run.stepIndex()) + " / " + std::to_string((int)ep["i1"].num()));
@@ -1229,6 +1270,7 @@ static void testCsoRuns() {
       for (const auto& x : wa) audioAll.push_back(x);
       // Étape, objectif, état de l'épreuve.
       const J& rr = f["run"];
+      if (run.step() == CsoStep::Goto || (int)ep["i"].num() == 0) texts.insert(rr["text"].s + (in.riding ? " [à cheval]" : in.driving ? " [au volant]" : " [à pied]") + (jsHypot(in.focusX - cfg.gateX, in.focusZ - cfg.gateZ) < cfg.gateR ? " [dans le rayon]" : ""));
       if ((int)rr["i"].num() != run.stepIndex() || rr["text"].s != run.text() || R6(run.stepT()) != rr["stepT"].num()) diff(fi, "étape / objectif « " + run.text() + " » / « " + rr["text"].s + " »");
       const J& c = rr["course"];
       const CsoRunState& s = run.state();
@@ -1278,7 +1320,35 @@ static void testCsoRuns() {
     if (id == "t4-saute-avant-depart") CHECK(s.started && s.next == 1 && has(hudAll, fr ? "Le chrono n’est pas lancé" : "clock") >= 1, "%s : obstacle sauté avant le départ ignoré", who.c_str());
     if (id == "t4-lignes") CHECK(s.started && has(audioAll, "tone(1568") == 1 && s.t < 1, "%s : ligne franchie de biais puis hors de la marge (rien), puis dans la marge (chrono lancé)", who.c_str());
     if (id == "t4-arrivee-barre") CHECK(s.finished && s.faults == 4 && run.points() == 4 && has(hudAll, fr ? "4 POINTS" : "4 FAULTS") == 1 && has(hudAll, fr ? "Barre au 1 · +4" : "at 1 · +4") == 1, "%s : arrivée avec une barre", who.c_str());
+    // Contrôle adverse de T4.
+    if (id == "t4-gardes")
+      CHECK(s.started && s.next == 2 && s.faults == 0 && s.refusals == 0 && s.fenceRefusals == 0 && s.wrong.empty() && s.log.size() == 1 && has(hudAll, fr ? "Refus" : "Refusal") == 0 &&
+                has(hudAll, fr ? "Erreur de parcours" : "Wrong course") == 0 && has(audioAll, "fault(") == 0,
+            "%s : refus avant le départ, devant un autre obstacle, à rebours, et sauts à rebours ignorés ; le 1 dans son sens compté", who.c_str());
+    if (id == "t4-un-point")
+      CHECK(s.finished && s.faults == 0 && s.timeFaults == 1 && run.points() == 1 && s.t > 64 && s.t <= 65 && has(hudAll, fr ? "\"1 POINT\"" : "\"1 FAULT\"") == 1 && has(hudAll, "POINTS") == 0 &&
+                has(hudAll, "FAULTS") == 0 && has(audioAll, "cheer(") == 0 && s.wrong.empty() && has(hudAll, fr ? "Erreur de parcours" : "Wrong course") == 0,
+            "%s : arrivée à 1 point, saut pendant la sortie de piste ignoré", who.c_str());
+    if (id == "t4-entree") {
+      const std::string base = fr ? "Entre en piste : rejoins l’entrée de la carrière" : "Enter the arena: head to the arena entrance";
+      const std::string mount = fr ? "Monte sur ton cheval (siffle-le si besoin)." : "Mount your horse (whistle for it if needed).";
+      const std::string truck = fr ? "Sors du camion puis monte à cheval." : "Get out of the horsebox, then mount your horse.";
+      bool ok = texts.count(base + " · 130 m [à cheval]") && texts.count(base + " · 60 m [à cheval]") && texts.count(base + " · 50 m [à cheval]") && texts.count(base + " [à cheval]") &&
+                texts.count(mount + " [à pied]") && texts.count(mount + " [à pied] [dans le rayon]") && texts.count(truck + " [au volant]") && texts.count(truck + " [au volant] [dans le rayon]") &&
+                s.started == false && run.stepIndex() == 5;
+      std::string seen;
+      for (const auto& x : texts) seen += " « " + x + " »";
+      CHECK(ok, "%s : étape goto (distance, pied à terre, camion, validation à cheval) ; vu :%s", who.c_str(), seen.c_str());
+    }
   }
+  std::string cov;
+  for (const char* g : guards) {
+    CHECK(cover[g] > 0, "garde des écouteurs d'obstacle jamais exercée par les oracles : %s", g);
+    cov += std::string(" ; ") + g + " " + std::to_string(cover[g]);
+  }
+  CHECK(hlN > 0 && rrN > 0 && cheerN > 0, "numéro surligné, barres remises ou public en liesse jamais relevés");
+  std::printf("gardes des écouteurs d'obstacle exercées%s\n", cov.c_str());
+  std::printf("demandes comparées : %d changements du numéro surligné, %d remises des barres, %d ovations\n", hlN, rrN, cheerN);
   int ok = 0;
   for (const char* id : required)
     for (const char* lang : {"fr", "en"}) {
@@ -1289,6 +1359,40 @@ static void testCsoRuns() {
   for (const auto& k : g_text.missing()) miss += " « " + k + " »";
   CHECK(g_text.missing().empty(), "textes demandés absents de strings_cso.json :%s", miss.c_str());
   std::printf("déroulé d'épreuve : %d exécutions requises rejouées sans écart (%zu au total), %d images, %d appels d'interface et %d sons de courses.js comparés, %d tableaux\n", ok, clean.size(), frames, hudN, audioN, boardN);
+}
+
+// Étape « rejoindre l'entrée de la carrière » (contrôle adverse de T4) : objectif et validation de l'étape goto du jeu
+// web sur la grille de cso_goto.json (points suivis autour des seuils, quatre modes du joueur, fr et en).
+static void testCsoGoto() {
+  const J o = loadJson(ORA + "/cso_goto.json");
+  const J data = loadJson(DATA + "/cso_course_pole.json");
+  const CsoRunConfig base = csoRunConfigFromJson(data, {});
+  CHECK(o["gate"]["x"].num() == base.gateX && o["gate"]["z"].num() == base.gateZ && o["r"].num() == base.gateR && o["mode"].s == "ride", "cso_goto.json : entrée de piste, rayon ou mode différents des données");
+  int n = 0, bad = 0;
+  std::set<std::string> texts;
+  for (const J& L : o["langs"].a) {
+    CsoRunConfig cfg = base;
+    cfg.lang = langFromName(L["lang"].s);
+    for (const J& c : L["cases"].a) {
+      CsoRunFrame f;
+      f.focusX = c["fx"].num();
+      f.focusZ = c["fz"].num();
+      f.riding = c["mode"].s == "ride";
+      f.driving = c["mode"].s == "drive";
+      f.inTruck = !c["tk"].isNull() && c["tk"].b;
+      f.vehicle = !c["vh"].isNull() && c["vh"].b;
+      const std::string got = csoGotoText(cfg, g_text, f);
+      const bool done = csoGotoDone(cfg, f);
+      n++;
+      texts.insert(c["text"].s);
+      if (got != c["text"].s || done != c["done"].b) {
+        if (++bad < 6) std::printf("  goto %s (%.6g, %.6g) %s : « %s » %d / « %s » %d\n", L["lang"].s.c_str(), f.focusX, f.focusZ, c["mode"].s.c_str(), got.c_str(), (int)done, c["text"].s.c_str(), (int)c["done"].b);
+      }
+    }
+  }
+  CHECK(n >= 400 && bad == 0, "étape goto : %d cas, %d écarts", n, bad);
+  CHECK(texts.size() >= 28, "étape goto : %zu textes distincts seulement", texts.size());  // 14 par langue
+  std::printf("étape goto : %d cas, %d écarts, %zu textes distincts\n", n, bad, texts.size());
 }
 
 int main(int argc, char** argv) {
@@ -1308,6 +1412,7 @@ int main(int argc, char** argv) {
     loadText();
     testText();
     testCsoRuns();
+    testCsoGoto();
   } catch (const std::exception& e) {
     std::printf("exception : %s\n", e.what());
     return 2;

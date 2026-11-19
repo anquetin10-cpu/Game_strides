@@ -42,6 +42,40 @@ M = [
  (R, 'refus : astuce aussi au refus éliminatoire', 'if (st_.refusals < cfg_.maxRefusals && st_.fenceRefusals < 3)', 'if (st_.refusals <= cfg_.maxRefusals && st_.fenceRefusals < 3)'),
  (R, 'refus : astuce 3,5 s -> 3 s', 'hud("hint", {S(msg), N(3500)});', 'hud("hint", {S(msg), N(3000)});'),
  (R, 'barre : +4 -> +3', 'st_.faults += cfg_.rail;', 'st_.faults += 3;'),
+ # Gardes des écouteurs d'obstacle (contrôle adverse de T4 : aucune n'était détectée avant t4-gardes et t4-un-point)
+ (R, 'refus devant un obstacle non attendu compté', '    if (num != st_.next) return;\n', '\n'),
+ (R, 'refus à rebours compté', 'if (st_.finished || st_.eliminated || !st_.started || dir < 0) return;', 'if (st_.finished || st_.eliminated || !st_.started) return;'),
+ (R, 'refus avant le départ compté', 'if (st_.finished || st_.eliminated || !st_.started || dir < 0) return;', 'if (st_.finished || st_.eliminated || dir < 0) return;'),
+ (R, 'refus après l’arrivée compté', 'if (st_.finished || st_.eliminated || !st_.started || dir < 0) return;', 'if (st_.eliminated || !st_.started || dir < 0) return;'),
+ (R, 'refus après l’élimination compté', 'if (st_.finished || st_.eliminated || !st_.started || dir < 0) return;', 'if (st_.finished || !st_.started || dir < 0) return;'),
+ (R, 'saut à rebours compté', '  if (num == st_.next && dir > 0) {', '  if (num == st_.next) {'),
+ (R, 'erreur de parcours sur un saut à rebours', '  } else if (dir > 0) wrongCourse(num);', '  } else wrongCourse(num);'),
+ (R, 'saut après l’arrivée compté', 'if (st_.finished || st_.eliminated || notStarted()) return;', 'if (st_.eliminated || notStarted()) return;'),
+ (R, 'saut après l’élimination compté', 'if (st_.finished || st_.eliminated || notStarted()) return;', 'if (st_.finished || notStarted()) return;'),
+ (R, 'faute : obstacle suivant non avancé', '      hud("toast", {S(Tr("Barre au {0} · +4{1}", {label, causeText.empty() ? std::string() : " · " + causeText}))});\n    }\n    advance();',
+  '      hud("toast", {S(Tr("Barre au {0} · +4{1}", {label, causeText.empty() ? std::string() : " · " + causeText}))});\n      st_.next--;\n    }\n    advance();'),
+ # Numéro surligné, barres remises, public en liesse
+ (R, 'surlignage : faux au départ', '      highlight_ = st_.next;\n    } else if (st_.bell <= 0) {', '      highlight_ = 99;\n    } else if (st_.bell <= 0) {'),
+ (R, 'surlignage : 1 non surligné à l’entrée', '      highlight_ = 1;\n', '\n'),
+ (R, 'surlignage : pas avancé', '  st_.fenceRefusals = 0;\n  highlight_ = st_.next;', '  st_.fenceRefusals = 0;'),
+ (R, 'surlignage : reprise du double sans surlignage', '          st_.next = fe.num;\n          highlight_ = st_.next;', '          st_.next = fe.num;'),
+ (R, 'surlignage : éteint à la fin du parcours', '  highlight_ = -1;\n  mode_ = CsoCourseMode();\n  st_.running = false;', '  mode_ = CsoCourseMode();\n  st_.running = false;'),
+ (R, 'barres jamais remises à l’entrée', '      resetRails_ = true;', '      resetRails_ = false;'),
+ (R, 'ovation jamais demandée', '    if (pts == 0) cheer_ = 3.5;', ''),
+ (R, 'ovation 3,5 s -> 3 s', '    if (pts == 0) cheer_ = 3.5;', '    if (pts == 0) cheer_ = 3;'),
+ (R, 'arrivée : « 1 POINT » -> « 1 POINTS »', 'pts > 1 ? Tr("{0} POINTS"', 'pts >= 1 ? Tr("{0} POINTS"'),
+ # Étape « rejoindre l'entrée de la carrière » (cso_goto.json et t4-entree)
+ (R, 'goto : rayon ignoré', '  return jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ) < cfg.gateR && f.riding;', '  return f.riding;'),
+ (R, 'goto : rayon 9 -> 9,01 (inclusif)', '  return jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ) < cfg.gateR && f.riding;', '  return jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ) <= cfg.gateR && f.riding;'),
+ (R, 'goto : à cheval non exigé', '  return jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ) < cfg.gateR && f.riding;', '  return jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ) < cfg.gateR;'),
+ (R, 'goto : distance jamais affichée', 'if (d > std::max(45.0, cfg.gateR + 30)) {', 'if (false) {'),
+ (R, 'goto : seuil max(45, r + 30) -> r + 30', 'if (d > std::max(45.0, cfg.gateR + 30)) {', 'if (d > cfg.gateR + 30) {'),
+ (R, 'goto : distance arrondie par défaut', 'jsInt((long long)std::floor(d / 10 + 0.5) * 10)', 'jsInt((long long)std::floor(d / 10) * 10)'),
+ (R, 'goto : kilomètres jamais', 'd >= 1000 ? dec(d / 1000, 1, cfg.lang)', 'false ? dec(d / 1000, 1, cfg.lang)'),
+ (R, 'goto : camion et véhicule inversés', 'f.vehicle && !f.inTruck ? "Sors du véhicule', '!(f.vehicle && !f.inTruck) ? "Sors du véhicule'),
+ (R, 'goto : au volant traité comme à pied', '    if (f.driving) return text.t(', '    if (false) return text.t('),
+ (R, 'goto : consigne de montée jamais', '  if (!f.riding) {\n    // modeHint', '  if (false) {\n    // modeHint'),
+ (R, 'goto : std::hypot au lieu de Math.hypot', '  const double d = jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ);', '  const double d = std::hypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ);'),
  # Arrivée et sortie de piste
  (R, 'sortie de piste 2,6 s -> 2 s', 'return st_.exitT > 2.6 || !f.riding;', 'return st_.exitT > 2.0 || !f.riding;'),
  (R, 'sortie : cadence 1,9 -> 2', 'std::max(std::min(cad.v, 1.9), cad.v - 1.6 * f.dt)', 'std::max(std::min(cad.v, 2.0), cad.v - 1.6 * f.dt)'),
@@ -59,7 +93,15 @@ M = [
  (T, 'enOrdinal : 11e en « st »', "const char* suf = a >= 0 && a < 4 ? S[a] : v >= 0 && v < 4 ? S[v] : S[0];", "const char* suf = v % 10 < 4 ? S[v % 10] : S[0];"),
 ]
 # Règles portées que les scénarios ne discriminent pas (raison donnée ; écrit dans l'inventaire, champ « ecart »).
-ATTENDUES = {}
+# Équivalentes par construction, dans le jeu web comme dans le portage (aucun oracle ne peut les distinguer) :
+ATTENDUES = {
+ 'refus après l’arrivée compté': "garde redondante : l'arrivée n'est franchie que si next > n (courses.js:333, CsoRun courseUpdate), "
+   "next vaut alors n + 1 et le test de l'obstacle attendu (courses.js:245, `num != st_.next`) rejette déjà tout refus",
+ 'refus après l’élimination compté': "garde inatteignable : out() rend vrai, Run.update passe à l'étape suivante dans la même image "
+   "(missions.js:230-233 → Run.next → end() retire les écouteurs, courses.js:352-354 ; portage : update → next(), puis "
+   "obstacleEvent rejette tout événement hors de l'étape de parcours)",
+ 'saut après l’élimination compté': "même raison que le refus après l'élimination",
+}
 os.makedirs(out, exist_ok=True)
 srcs = {f: open(os.path.join(core, 'Private', f)).read() for f in (R, T)}
 allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'Text.cpp', 'SaveGame.cpp')

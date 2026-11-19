@@ -82,11 +82,14 @@ void AStridesCourse::FlushRunCalls()
 	}
 	// Entrée en piste : barres remises sur leurs taquets (obstacles.js resetRails).
 	if (RunPtr->takeResetRails())
+	{
+		RailResetCount++;
 		for (int32 I = 0; I < (int32)CoreStates.size(); I++)
 		{
 			strides::csoRestFence(CoreStates[I]);
 			if (Fences.IsValidIndex(I) && Fences[I]) Fences[I]->ApplyRails(CoreStates[I]);
 		}
+	}
 }
 
 void AStridesCourse::TickRun(const strides::CsoRunFrame& Frame, strides::CsoCadence& Cadence)

@@ -148,6 +148,22 @@ const SCENARIOS = [
     acts: [{ do: 'cross', line: 'start', back: 5, ang: 70, v: 4.6, until: { past: 'start', s: 3 } }, { do: 'cross', line: 'start', back: 5, u: 3.95, v: 4.6, until: { past: 'start', s: 3 } },
       { do: 'cross', line: 'start', back: 5, u: 3.65, v: 4.6, until: 'started' }, { do: 'wait', frames: 10 }],
     desc: 'Ligne de départ : franchie au milieu à 70° de son axe (cap au-delà de 60° : chrono pas lancé), puis dans l’axe à 3,95 m du milieu (hors des 3,5 + 0,3 m : pas lancé), puis dans l’axe à 3,65 m du milieu (au-delà du fanion mais dans la marge de 0,3 m : chrono lancé) ; cheval posé 5 m avant chaque passage, à 4,6 m/s ; 10 images après.' },
+  // Contrôle adverse de T4 : gardes des écouteurs d'obstacle (courses.js:219-268) qu'aucun scénario n'exerçait, arrivée
+  // à 1 point suivie d'un saut pendant la sortie de piste, étape « rejoindre l'entrée de la carrière ».
+  { id: 't4-gardes', type: 't4', classic: true, maxFrames: 1400,
+    acts: [{ do: 'wait', frames: 5 }, { do: 'jump', label: '1', rule: 'none', ang: 66, back: 12 }, { do: 'cross', line: 'start', back: 5, v: 4.6, until: 'started' },
+      { do: 'jump', label: '3', rule: 'none' }, { do: 'jump', label: '1', rule: 'none', rev: true }, { do: 'jump', label: '1', rule: 'good', rev: true },
+      { do: 'jump', label: '3', rule: 'good', rev: true }, { do: 'jump', label: '1', rule: 'good' }, { do: 'wait', frames: 10 }],
+    desc: 'Gardes des écouteurs d’obstacle : avant le départ, refus au 1 (obstacle attendu, dans son sens ; abord à 66° de son axe, cheval posé à 12 m, au-delà de la ligne de départ et hors de sa largeur) : rien ; ligne de départ franchie ; refus au 3 alors que le 1 est attendu : rien ; refus au 1 abordé par l’arrière : rien ; le 1 sauté à rebours : rien (ni compté, ni erreur de parcours) ; le 3 sauté à rebours : rien ; le 1 sauté dans son sens : compté ; 10 images après.' },
+  { id: 't4-un-point', type: 't4', classic: true, maxFrames: 4000,
+    acts: [{ do: 'line', until: 'started' }, ...['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
+      { do: 'place', dx: 0, dz: -20, frames: 1 }, { do: 'still', until: { t: 63.2 } }, { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'jump', label: '8', rule: 'far', far: 3.2, back: 6 }, { do: 'card', extra: 5 }],
+    desc: 'Arrivée à 1 point, puis saut pendant la sortie de piste : départ, les 10 éléments sautés (cheval posé devant chacun), cheval posé à l’arrêt au milieu de la carrière (20 m au nord de l’entrée, loin de la ligne d’arrivée) jusqu’à 63,2 s de chrono, cheval posé 4 m avant le milieu de la ligne d’arrivée à 3 m/s : arrivée au-delà du temps accordé de 64 s, de moins d’une seconde (« 1 POINT ») ; pendant la sortie de piste (cadence ramenée vers 1,9 m/s), le 8 sauté de nouveau dans son sens (cheval posé à 6 m à 6,2 m/s, SAUT à 3,2 m de la première barre) : rien ; bilan.' },
+  { id: 't4-entree', type: 't4', classic: true, maxFrames: 700, at: { dx: 0, dz: 127 },
+    pre: [{ do: 'wait', frames: 3 }, { do: 'place', dx: 0, dz: 64 }, { do: 'place', dx: 0, dz: 46 }, { do: 'place', dx: 0, dz: 30 }, { do: 'mode', to: 'foot', frames: 5 },
+      { do: 'place', dx: 0, dz: 4 }, { do: 'mode', to: 'drive' }, { do: 'place', dx: 6, dz: 20 }, { do: 'place', dx: 0, dz: 5 }, { do: 'mode', to: 'ride' }, { do: 'place', dx: 0, dz: 5, frames: 1 }],
+    acts: [{ do: 'wait', frames: 5 }],
+    desc: 'Rejoindre l’entrée de la carrière : cheval monté posé à 127 m au sud de l’entrée, puis à 64, 46 et 30 m (objectif avec la distance au-delà de 45 m, sans au-dessous) ; à 30 m, pied à terre (« Monte sur ton cheval ») ; cavalier posé à 4 m de l’entrée, à pied : étape non validée ; au volant du camion (A.drive), camion posé à 21 m puis à 5 m de l’entrée (« Sors du camion puis monte à cheval », non validée) ; en selle (A.mount) ; cheval posé à 5 m : étape validée ; présentation, Entrer en piste, annonce, cloche ; 5 images après.' },
 ];
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -451,6 +467,17 @@ function PAGE() {
       if (ch && horse === g.player.horse) (ch.lc ||= []).push({ o: idx(o), bar: o.bars.indexOf(bar), d: hit.depth, u: hit.u, hind: !!hit.hind });
       return lc(horse, o, bar, hit);
     };
+    // Tranche T4 (canal « ep ») : demandes de l'épreuve aux obstacles du parcours « cso » — numéro surligné
+    // (Obstacles.highlight, dernier numéro demandé) et barres remises (Obstacles.resetRails, appels comptés).
+    const hl = O.highlight.bind(O), rr = O.resetRails.bind(O);
+    O.highlight = (courseId, num) => {
+      if (courseId === 'cso') P.hl = num;
+      return hl(courseId, num);
+    };
+    O.resetRails = (courseId) => {
+      if (courseId === 'cso') P.rr = (P.rr || 0) + 1;
+      return rr(courseId);
+    };
   };
 
   // ---- Canal « ep » (tranche T4, déroulé de l'épreuve) : entrées de la mission vues par Run.update (missions.js) ----
@@ -458,6 +485,9 @@ function PAGE() {
   // (game.player.horse, lu par l'étape de parcours) ; fx, fz = point suivi (player.focus, lu par l'étape « goto ») ;
   // mode = player.mode ; cad = cadence de concours à l'entrée (null si indéfinie), cad1 = après ; i, i1 = étape avant /
   // après ; e0 = nombre d'événements du bus émis dans l'image avant Run.update (ceux de Obstacles.updateHorse).
+  // Sorties relevées seulement quand elles changent (correction du contrôle de T4) : hl = dernier numéro surligné
+  // (Obstacles.highlight) s'il a changé depuis le dernier relevé, rr = appels de Obstacles.resetRails depuis le dernier
+  // relevé, cheer = game.cheerT s'il a été réécrit pendant Run.update ; au volant : tk = player.inTruck, vh = véhicule.
   const hookRun = () => {
     const run = g.missions.active;
     if (!run) return;
@@ -469,12 +499,20 @@ function PAGE() {
       if (!cur || this !== g.missions.active) return up.call(this, dt);
       const p = g.player, h = p.horse, fp = p.focus?.pos;
       const ep = { e0: cur.ev.length, i: this.i, dt, gt: g.time, x: h.pos.x, z: h.pos.z, h: h.heading, fx: fp ? fp.x : null, fz: fp ? fp.z : null, mode: p.mode, cad: nul(p.csoCadence) };
+      if (p.mode === 'drive') Object.assign(ep, { tk: !!p.inTruck, vh: !!p.vehicle });
+      const cheer0 = g.cheerT;
       cur.ep = ep;
       try {
         return up.call(this, dt);
       } finally {
         ep.i1 = this.i;
         ep.cad1 = nul(p.csoCadence);
+        if (P.hl !== P.hlRec) ep.hl = P.hlRec = P.hl;
+        if (P.rr) {
+          ep.rr = P.rr;
+          P.rr = 0;
+        }
+        if (g.cheerT !== cheer0) ep.cheer = g.cheerT;
       }
     };
   };
@@ -735,6 +773,8 @@ function PAGE() {
     if (c === 'card') return cardShown();
     if (c.next !== undefined) return (s?.next ?? 0) >= c.next;
     if (c.frames !== undefined) return st.a.k >= c.frames;
+    if (c.t !== undefined) return (s?.t ?? 0) >= c.t; // chrono de l'épreuve atteint
+    if (c.step !== undefined) return (g.missions.active?.i ?? -1) >= c.step; // étape de la mission atteinte
     // Ligne dépassée de `s` m (abscisse le long de son axe), sans condition de largeur ni de cap.
     if (c.past !== undefined) {
       const Ln = c.past === 'finish' ? st.O.CSO_FINISH : st.O.CSO_START, h = st.h;
@@ -783,15 +823,20 @@ function PAGE() {
     },
     // Obstacle sauté comme A.jumpObstacle : cheval posé dans l'axe (11 m avant, ou 3,4 m après l'élément précédent d'un
     // double), à 6,2 m/s ; joystick vers l'axe de l'obstacle ; SAUT selon `rule` : 'good' (bonne zone, sommet sur
-    // l'obstacle), 'far' (à `far` m de la première barre), 'none' (aucun appui : refus).
+    // l'obstacle), 'far' (à `far` m de la première barre), 'none' (aucun appui : refus). Contrôle de T4 : `rev` = abord
+    // par l'arrière (sens inverse du saut, 11 m après l'obstacle) ; `ang` = abord à `ang` degrés de l'axe (ligne de marche
+    // passant par le centre de l'obstacle, cap tenu) ; `back` = distance du point de pose au centre.
     jump: (a, st) => {
       const h = st.h, o = F(a.label);
+      const alt = !!(a.rev || a.ang), sg = a.rev ? -1 : 1;
+      const hd = o.rot + (a.rev ? Math.PI : 0) + ((a.ang || 0) * Math.PI) / 180;
       if (!a.placed) {
         if (h.jumpT >= 0 || h._rearT > 0 || h._refusing) return {};
         const prev = g.obstacles.ofCourse('cso').find((q) => q.num === o.num - 1);
         const gap = prev ? (o.x - prev.x) * o.n.x + (o.z - prev.z) * o.n.z : 99;
-        const back = a.back ?? (prev && gap > 0 && gap < 12 && Math.abs((o.x - prev.x) * o.n.z - (o.z - prev.z) * o.n.x) < 1 ? gap - 3.4 : 11);
-        poseHorse(st, o.x - o.n.x * back, o.z - o.n.z * back, o.rot, a.v ?? 6.2);
+        const back = a.back ?? (!alt && prev && gap > 0 && gap < 12 && Math.abs((o.x - prev.x) * o.n.z - (o.z - prev.z) * o.n.x) < 1 ? gap - 3.4 : 11);
+        if (alt) poseHorse(st, o.x - Math.sin(hd) * back, o.z - Math.cos(hd) * back, hd, a.v ?? 6.2);
+        else poseHorse(st, o.x - o.n.x * back, o.z - o.n.z * back, o.rot, a.v ?? 6.2);
         a.placed = true;
       }
       const s2 = sAlong(o, h);
@@ -801,7 +846,7 @@ function PAGE() {
           a.after = (a.after || 0) + 1;
           if (a.after > (a.extra ?? 10)) return null;
         }
-      } else if (a.jumped && h.jumpT < 0 && s2 > 2 && (!h._pass || h._pass.o !== o || h._pass.done)) return null;
+      } else if (a.jumped && h.jumpT < 0 && sg * s2 > 2 && (!h._pass || h._pass.o !== o || h._pass.done)) return null;
       if (a.k > 300) throw new Error(`${st.sc.id} : saut du ${a.label} sans fin`);
       const tg = g.obstacles.target(h);
       let jump = false;
@@ -809,7 +854,7 @@ function PAGE() {
         const go = a.rule === 'far' ? tg.geo.rails[0].x <= (a.far ?? 4.2) : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
         if (go) jump = a.jumped = true;
       }
-      return { move: [steerTo(h, o.n.x, o.n.z), 0], jump };
+      return { move: [alt ? steerTo(h, Math.sin(hd), Math.cos(hd)) : steerTo(h, o.n.x, o.n.z), 0], jump };
     },
     // Arrêt : joystick en arrière jusqu'à la cadence nulle et au cheval arrêté, puis rien, jusqu'à `until`.
     still: (a, st) => {
@@ -842,6 +887,32 @@ function PAGE() {
       if (a.k > 300) throw new Error(`${st.sc.id} : ligne ${a.line} jamais franchie`);
       return { move: [steerTo(h, Math.sin(hd), Math.cos(hd)), 0] };
     },
+    // Étape « rejoindre l'entrée de la carrière » (contrôle de T4) : ce que le joueur déplace — cheval monté, cavalier à
+    // pied, camion — posé à (dx, dz) m de l'entrée de piste (CSO_GATE), à l'arrêt, puis `frames` images.
+    place: (a, st) => {
+      const p = g.player, GA = st.O.CSO_GATE, x = GA.x + a.dx, z = GA.z + a.dz;
+      if (!a.placed) {
+        const hd = Math.atan2(GA.x - x, GA.z - z); // tourné vers l'entrée
+        if (p.mode === 'ride') poseHorse(st, x, z, hd, 0);
+        else if (p.mode === 'drive') p.vehicle.setPosition(x, z, hd);
+        else p.human.setPosition(x, z);
+        a.placed = true;
+      }
+      return a.k >= (a.frames ?? 3) ? null : {};
+    },
+    // Changement de mode par les gestes de tests/e2e/autopilot.js : 'foot' (A.foot : arrêt et descente), 'drive'
+    // (A.drive : à pied près du camion, puis au volant), 'ride' (A.mount : sortie du camion, à pied près du cheval, en
+    // selle) ; puis `frames` images.
+    mode: (a, st) => {
+      if (!a.done) {
+        if (a.to === 'foot') A.foot();
+        else if (a.to === 'drive') A.drive();
+        else A.mount();
+        a.done = true;
+        if (g.player.mode !== a.to) throw new Error(`${st.sc.id} : mode ${g.player.mode} au lieu de ${a.to}`);
+      }
+      return a.k >= (a.frames ?? 3) ? null : {};
+    },
     // Attente du bilan (carte « Recommencer »), puis `extra` images.
     card: (a, st) => {
       if (cardShown()) a.seen = (a.seen ?? 0) + 1;
@@ -856,27 +927,9 @@ function PAGE() {
     const { CSO_TRACE } = await import('/src/gameplay/csoCourse.js');
     const lead = CSO_TRACE.leadIn.map((p) => ({ x: ARENA.x + p.x, z: ARENA.z + p.z }));
     const st = { k: 0, h, sc, O, line: lead.slice(0, -1).concat(O.CSO_LINE), leadLen: lead.length - 1, tp: null };
-    P.lite = true;
-    try {
-      // Présentation, « Entrer en piste », annonce, cloche (images enregistrées).
-      let k = 0;
-      while (!document.querySelector('.overlay [data-id="enter"]')) {
-        step(input());
-        if (++k > 120) throw new Error('présentation absente');
-      }
-      step(input({ ui: 'enter' }));
-      for (k = 0; ; k++) {
-        const r = step(input());
-        if (r.audio.some((c) => c.fn === 'bell')) break;
-        if (k > 300) throw new Error('cloche absente');
-      }
-      // Pose à la cloche (avant l'image où l'étape de parcours démarre) : `pose` = { s, u } dans le repère de la ligne
-      // de départ (s le long de son axe, u à droite), cap de la ligne, vitesse v.
-      if (sc.pose) {
-        const S = O.CSO_START, nx = Math.sin(S.rot), nz = Math.cos(S.rot);
-        poseHorse(st, S.x + nx * sc.pose.s + nz * (sc.pose.u || 0), S.z + nz * sc.pose.s - nx * (sc.pose.u || 0), S.rot, sc.pose.v);
-      }
-      const acts = sc.acts.map((a) => ({ ...a, k: 0 }));
+    // Suite d'actions : chacune évaluée avant chaque image jusqu'à ce qu'elle rende null, puis la suivante.
+    const runActs = (list) => {
+      const acts = list.map((a) => ({ ...a, k: 0 }));
       let ai = 0;
       for (;;) {
         let inp = null;
@@ -898,10 +951,58 @@ function PAGE() {
           throw new Error(`scénario ${sc.id} trop long (action ${ai} ${st.a.do})`);
         }
       }
+    };
+    P.lite = true;
+    try {
+      // Contrôle de T4 : actions de l'étape « rejoindre l'entrée de la carrière » (setup.pre), avant la présentation.
+      if (sc.pre) runActs(sc.pre);
+      // Présentation, « Entrer en piste », annonce, cloche (images enregistrées).
+      let k = 0;
+      while (!document.querySelector('.overlay [data-id="enter"]')) {
+        step(input());
+        if (++k > 120) throw new Error('présentation absente');
+      }
+      step(input({ ui: 'enter' }));
+      for (k = 0; ; k++) {
+        const r = step(input());
+        if (r.audio.some((c) => c.fn === 'bell')) break;
+        if (k > 300) throw new Error('cloche absente');
+      }
+      // Pose à la cloche (avant l'image où l'étape de parcours démarre) : `pose` = { s, u } dans le repère de la ligne
+      // de départ (s le long de son axe, u à droite), cap de la ligne, vitesse v.
+      if (sc.pose) {
+        const S = O.CSO_START, nx = Math.sin(S.rot), nz = Math.cos(S.rot);
+        poseHorse(st, S.x + nx * sc.pose.s + nz * (sc.pose.u || 0), S.z + nz * sc.pose.s - nx * (sc.pose.u || 0), S.rot, sc.pose.v);
+      }
+      runActs(sc.acts);
     } finally {
       P.lite = false;
     }
     return frames;
+  };
+
+  // Oracle cso_goto.json (contrôle de T4) : étape « rejoindre l'entrée de la carrière » de l'activité lancée
+  // (g.missions.active.steps[0], fabriquée par courses.js:496 avec makeSteps de missions.js), évaluée telle quelle — text()
+  // et update() — sur une grille de points suivis autour de l'entrée et de modes du joueur. Le joueur lu par l'étape
+  // (game.player) est remplacé le temps de chaque appel par un relevé { focus, mode, vehicle, inTruck } puis rétabli.
+  P.gotoGrid = (cases) => {
+    const run = g.missions.active;
+    const s = run?.steps[0];
+    if (!s || s.kind !== 'goto' || run.i !== 0) throw new Error('étape goto absente');
+    const GA = { x: s.target.x, z: s.target.z }, truck = { truck: true }, car = { car: true };
+    const real = g.player;
+    const out = [];
+    try {
+      for (const c of cases) {
+        const fx = GA.x + c.dx, fz = GA.z + c.dz;
+        const vehicle = c.mode === 'drive' ? (c.car ? car : truck) : null;
+        g.player = { focus: { pos: { x: fx, z: fz } }, mode: c.mode, vehicle, inTruck: c.mode === 'drive' && vehicle === truck };
+        out.push({ fx, fz, mode: c.mode, ...(c.mode === 'drive' ? { tk: !c.car, vh: true } : {}), text: s.text(run), done: !!s.update(run, DT) });
+      }
+    } finally {
+      g.player = real;
+    }
+    return { gate: GA, r: s.radius, mode: s.mode, cases: out };
   };
 
   // Grille de visée (oracle cso_target.json) : cheval posé devant chaque obstacle du parcours (deux sens, angles,
@@ -1021,7 +1122,12 @@ function PAGE() {
     const h = g.player.horse;
     const S = O.CSO_START;
     const before = sc.before ?? 16; // scénarios « pose » : même entrée en piste que « droit »
-    const pose = { x: S.x - Math.sin(S.rot) * before, z: S.z - Math.cos(S.rot) * before, h: S.rot };
+    // `at` (contrôle de T4, étape « rejoindre l'entrée ») : cheval monté posé à (dx, dz) m de l'entrée de piste, tourné
+    // vers elle.
+    const GA0 = O.CSO_GATE;
+    const pose = sc.at
+      ? { x: GA0.x + sc.at.dx, z: GA0.z + sc.at.dz, h: Math.atan2(-sc.at.dx, -sc.at.dz) }
+      : { x: S.x - Math.sin(S.rot) * before, z: S.z - Math.cos(S.rot) * before, h: S.rot };
     h.setPosition(pose.x, pose.z, pose.h);
     h.speed = 0;
     h.stamina = h.maxStamina;
@@ -1225,7 +1331,7 @@ for (const sc of SCENARIOS) {
       Object.assign(setup, { horse: r.horse, rails: r.rails, ch0: r.ch0, pose: { ...sc.pose, cross: sc.cross ?? null } });
     } else if (sc.type === 't4') {
       frames = await page.evaluate((s) => window.__parite.runT4(s), sc);
-      Object.assign(setup, { lite: true, acts: sc.acts, pose: sc.pose ?? null });
+      Object.assign(setup, { lite: true, acts: sc.acts, pose: sc.pose ?? null, ...(sc.pre ? { pre: sc.pre, at: sc.at ?? null } : {}) });
     } else frames = await page.evaluate((s) => window.__parite.runDroit(s), sc);
     if (sc.classic) setup.classic = true;
     runs.push({ id: sc.id, lang, desc: sc.desc, setup, frames });
@@ -1245,9 +1351,9 @@ const head = {
   precision: 1e-6,
   inputs: 'in.move = joystick virtuel [x, y] (input.setVirtualMove) ; in.keys = touches clavier tenues (input.keys) ; in.held = actions tenues (input.held, ex. gallop) ; in.jump = SAUT pressé à cette image ; in.ui = bouton de carte touché (data-id) avant l’image',
   state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch)',
-  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, cad / cad1 = cadence de concours avant / après (null si indéfinie)',
+  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update',
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
-  lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; in.press = actions pressées (ex. action)',
+  lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; in.press = actions pressées (ex. action)',
   ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
   audioRecorded,
   audioIgnored: AUDIO_IGNORED,
@@ -1295,6 +1401,46 @@ if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('target'))) {
   writeFileSync(TOUT, tout);
   console.log('oracle :', TOUT, `${grid.cases.length} cas, ${grid.press.length} appuis, ${grid.refuse.length} refus, ${(tout.length / 1024).toFixed(0)} Kio`);
   await ctx.close();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Étape « rejoindre l'entrée de la carrière » (oracle cso_goto.json, contrôle de T4) : objectif et validation de l'étape
+// goto du jeu, en français et en anglais, sur une grille de points suivis (distances autour des seuils r = 9 m,
+// max(45, r + 30) m, arrondi à la dizaine, passage au kilomètre ; dans l'axe nord-sud de l'entrée et à 37°) et de modes
+// du joueur (à pied, à cheval, au volant du camion, au volant d'un autre véhicule).
+if (!SHOTS_ONLY && (!ONLY.length || ONLY.includes('goto'))) {
+  const D = [0, 5, 8.99, 9, 9.01, 20, 38.99, 39, 39.01, 44.99, 45, 45.01, 54.99, 55, 55.01, 64.99, 65, 120, 994.99, 995, 999.99, 1000, 1049.99, 1050, 1234.5, 15000];
+  const MODES = [{ mode: 'foot' }, { mode: 'ride' }, { mode: 'drive' }, { mode: 'drive', car: true }];
+  const cases = [];
+  for (const d of D)
+    for (const deg of [0, 37]) {
+      const a = (deg * Math.PI) / 180;
+      for (const m of MODES) cases.push({ dx: deg ? d * Math.sin(a) : 0, dz: deg ? d * Math.cos(a) : d, ...m });
+    }
+  const langs = [];
+  let gateInfo = null;
+  for (const lang of ['fr', 'en']) {
+    const { ctx, page } = await openGame(lang, true);
+    await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [{ id: 'goto', type: 't4' }, 20261118]);
+    const grid = await page.evaluate((c) => window.__parite.gotoGrid(c), cases);
+    gateInfo = { gate: grid.gate, r: grid.r, mode: grid.mode };
+    langs.push({ lang, cases: grid.cases });
+    await ctx.close();
+  }
+  const GOUT = (process.argv.find((a) => a.startsWith('--goto-out=')) || '').slice(11) || OUT.replace(/cso_runs\.json$/, 'cso_goto.json');
+  const gh = {
+    schema: 'strides.oracle.cso_goto/1',
+    generator: 'scripts/unreal/export-cso-runs.mjs',
+    source: ['src/gameplay/missions.js', 'src/gameplay/courses.js', 'src/gameplay/obstacles.js'],
+    frame: 'repère web : x est, z sud ; m',
+    step: 'g.missions.active.steps[0] de l’activité cso_train (goto de courses.js:496, makeSteps de missions.js) : text() et update() appelés avec game.player remplacé par { focus.pos = (fx, fz), mode, vehicle, inTruck } ; tk = inTruck, vh = véhicule présent (au volant seulement)',
+    ...gateInfo,
+  };
+  let gout = JSON.stringify(gh, null, 1).replace(/\n}$/, ',\n "langs": [\n');
+  gout += langs.map((l) => `{"lang":${JSON.stringify(l.lang)},"cases":[\n${l.cases.map((c) => JSON.stringify(c)).join(',\n')}\n]}`).join(',\n') + '\n]}\n';
+  JSON.parse(gout);
+  writeFileSync(GOUT, gout);
+  console.log('oracle :', GOUT, `${langs.map((l) => `${l.lang} ${l.cases.length} cas`).join(', ')}, ${(gout.length / 1024).toFixed(0)} Kio`);
 }
 
 // ---------------------------------------------------------------------------------------------------------------

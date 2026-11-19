@@ -63,6 +63,8 @@ public:
 	// « fn | arg | arg… ». Les sons ne sont pas joués (tranche T12), l'interface d'épreuve est en T7.
 	const TArray<FString>& HudLog() const { return HudCalls; }
 	const TArray<FString>& AudioLog() const { return AudioCalls; }
+	// Remises des barres demandées par l'épreuve (entrée en piste, obstacles.js resetRails) et appliquées aux obstacles.
+	int32 RailResets() const { return RailResetCount; }
 
 	UFUNCTION(BlueprintPure, Category = "Strides") float ElapsedTime() const;
 	UFUNCTION(BlueprintPure, Category = "Strides") int32 Faults() const;
@@ -78,7 +80,7 @@ private:
 	std::vector<strides::CsoObstacle> CoreObstacles;
 	std::vector<strides::CsoFenceState> CoreStates;
 	TArray<FString> FenceLog, HudCalls, AudioCalls;
-	int32 Allowed = 64;
+	int32 Allowed = 64, RailResetCount = 0;
 	bool bRunConfig = false;
 	strides::CsoRunConfig RunConfig;
 	strides::TextTable RunText;  // copie : CsoRun en garde une référence

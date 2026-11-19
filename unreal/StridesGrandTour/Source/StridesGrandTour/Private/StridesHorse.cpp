@@ -133,6 +133,7 @@ strides::CsoRunFrame AStridesHorse::RunFrame(double Dt, double Time) const
 	F.z = Z;
 	F.heading = H;
 	F.riding = Rider != nullptr;
+	// (au volant : F.driving, F.inTruck, F.vehicle restent faux, le jeu Unreal n'a ni camion ni véhicule conduit)
 	F.focusX = X;
 	F.focusZ = Z;
 	if (!F.riding)

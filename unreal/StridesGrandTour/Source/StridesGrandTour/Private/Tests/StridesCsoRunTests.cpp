@@ -2,8 +2,11 @@
 //  - Strides.Parite.CsoRun : miroir de unreal/core/tests/test_core.cpp (testCsoRuns) par le chemin du jeu — AStridesCourse
 //    construit avec les données (Content/Data : règles, lignes, textes), puis chaque scénario t4-* et « droit » de
 //    cso_runs.json (français et anglais) rejoué image par image : événements d'obstacle passés à HandleFenceOut (cause
-//    traduite par le jeu), image passée à TickRun ; appels d'interface et sons journalisés par l'acteur comparés à ceux
-//    de courses.js, état de l'épreuve comparé ;
+//    traduite par le jeu), image passée à TickRun ; comparés comme dans le banc du cœur : appels d'interface et sons
+//    journalisés par l'acteur, cadence remise à 0 par un refus et réécrite en sortie de piste, étape, objectif et pas de
+//    l'étape, état de l'épreuve (chrono, cloche, fautes, refus, pénalités de temps, élimination, manche), mode de
+//    concours, tableau de chrono (données et textes), numéro surligné, barres remises (appliquées par l'acteur) et
+//    public en liesse ;
 //  - Strides.Cso.RunInGame : AStridesHorse, AStridesRider et AStridesCourse réels dans un monde de test : entrée de piste
 //    rejointe à cheval, annonce, cloche, ligne de départ franchie (bip), puis descente de cheval (AStridesRider::Dismount)
 //    pendant le parcours : éliminé.
@@ -91,7 +94,7 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 	const std::string All = TCHAR_TO_UTF8(*Text);
 	Text.Empty();
 	TArray<FString> Done;
-	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, Bad = 0;
+	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, BoardCmp = 0, Bad = 0;
 	size_t Pos = 0;
 	while ((Pos = All.find("\n{\"id\":\"", Pos)) != std::string::npos)
 	{
@@ -130,6 +133,12 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 		};
 		Compare(Su["calls"]["hud"], true, -1);
 		AudioAt = Course->AudioLog().Num();
+		int32 HlWant = -1, Resets = Course->RailResets();
+		auto Fail = [&](int32 F, const FString& What)
+		{
+			if (++RunBad < 4) AddError(FString::Printf(TEXT("%hs (%hs) image %d : %s"), Id.c_str(), Lang.c_str(), F, *What));
+		};
+		auto R6 = [](double V) { return FMath::FloorToDouble(V * 1e6 + 0.5) / 1e6; };  // Math.round(v * 1e6) / 1e6
 		for (const J& Fr : R["frames"].a)
 		{
 			const int32 F = (int32)Fr["f"].num();
@@ -148,8 +157,11 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 				if (!E["d"]["cause"].isNull()) Ev.cause = E["d"]["cause"].s;
 				Out.events.push_back(Ev);
 			}
-			strides::CsoCadence Cad{!Ep["cad"].isNull(), Ep["cad"].isNull() ? 0 : Ep["cad"].num()};
+			// Événements avant l'image : un refus compté remet la cadence à 0 (courses.js:265), lue ensuite par Run.update.
+			const int32 Refusals0 = Course->Run()->state().refusals;
+			strides::CsoCadence Cad{!Ep["cad"].isNull(), -12345.0};
 			if (!Out.events.empty()) Course->HandleFenceOut(Out, Cad);
+			if (Course->Run()->state().refusals != Refusals0 ? Cad.has && !(Cad.v == 0 && Ep["cad"].num() == 0) : Cad.v != -12345.0) Fail(F, TEXT("cadence remise à 0 par un refus compté"));
 			strides::CsoRunFrame In;
 			In.dt = Ep["dt"].num();
 			In.time = Ep["gt"].num();
@@ -159,30 +171,62 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 			In.focusX = Ep["fx"].isNull() ? In.x : Ep["fx"].num();
 			In.focusZ = Ep["fz"].isNull() ? In.z : Ep["fz"].num();
 			In.riding = Ep["mode"].s == "ride";
+			In.driving = Ep["mode"].s == "drive";
+			In.inTruck = !Ep["tk"].isNull() && Ep["tk"].b;
+			In.vehicle = !Ep["vh"].isNull() && Ep["vh"].b;
 			strides::CsoCadence Cad2{!Ep["cad"].isNull(), Ep["cad"].isNull() ? 0 : Ep["cad"].num()};
+			if ((int)Ep["i"].num() != Course->Run()->stepIndex()) Fail(F, TEXT("étape avant Run.update"));
 			Course->TickRun(In, Cad2);
 			Frames++;
 			Compare(Fr["hud"], true, F);
 			Compare(Fr["audio"], false, F);
-			const J& C = Fr["run"]["course"];
-			const strides::CsoRunState& S = Course->Run()->state();
+			strides::CsoRun& Run = *Course->Run();
+			// Cadence réécrite (sortie de piste), étape, objectif, pas de l'étape.
+			if (Cad2.has != !Ep["cad1"].isNull() || (Cad2.has && Cad2.v != Ep["cad1"].num())) Fail(F, TEXT("cadence après l'image"));
+			const J& Rr = Fr["run"];
+			if ((int)Ep["i1"].num() != Run.stepIndex() || (int)Rr["i"].num() != Run.stepIndex() || Rr["text"].s != Run.text() || R6(Run.stepT()) != Rr["stepT"].num()) Fail(F, TEXT("étape / objectif"));
+			// État de l'épreuve.
+			const J& C = Rr["course"];
+			const strides::CsoRunState& S = Run.state();
 			const bool bElim = !C["eliminated"].isNull();
-			if (C["started"].b != S.started || (int)C["next"].num() != S.next || (int)C["faults"].num() != S.faults || bElim != S.eliminated || (bElim && C["eliminated"].s != S.eliminatedReason) ||
-				FMath::Abs(C["t"].num() - S.t) > 1e-6 || Fr["run"]["text"].s != Course->Run()->text())
+			if (C["started"].b != S.started || R6(S.t) != C["t"].num() || (int)C["next"].num() != S.next || (int)C["faults"].num() != S.faults || (int)C["refusals"].num() != S.refusals ||
+				(int)C["fenceRefusals"].num() != S.fenceRefusals || C["finished"].b != S.finished || bElim != S.eliminated || (bElim && C["eliminated"].s != S.eliminatedReason) ||
+				(int)C["timeFaults"].num() != S.timeFaults || R6(S.bell) != C["bell"].num() || (int)C["attempt"].num() != S.attempt || C["running"].b != S.running)
+				Fail(F, TEXT("état de l'épreuve"));
+			// Mode de concours (game.course) et tableau de chrono (données et textes de hud.js).
+			const J& Gc = Fr["course"];
+			const strides::CsoCourseMode& M = Run.course();
+			if (Gc.isNull() != !M.active || (M.active && (Gc["running"].b != M.running || Gc["pre"].b != M.pre || Gc["controls"].s != "cso" || (Gc["next"].isNull() ? -1 : (int)Gc["next"]["num"].num() - 1) != M.next)))
+				Fail(F, TEXT("mode de concours"));
+			strides::CsoBoard B;
+			const bool bBoard = Run.board(B);
+			const J& Wb = Fr["board"];
+			if (Wb.isNull() != !bBoard) Fail(F, TEXT("tableau présent / absent"));
+			else if (bBoard)
 			{
-				if (++RunBad < 4) AddError(FString::Printf(TEXT("%hs (%hs) image %d : état de l'épreuve"), Id.c_str(), Lang.c_str(), F));
+				bool bSame = Wb["started"].b == B.started && R6(B.bell) == Wb["bell"].num() && R6(B.t) == Wb["t"].num() && (int)Wb["ta"].num() == B.ta && (int)Wb["pen"].num() == B.pen &&
+					Wb["over"].b == B.over && Wb["next"].s == B.next && Wb["finished"].b == B.finished && Wb["eliminated"].b == B.eliminated;
+				for (int K = 0; K < 4; K++) bSame = bSame && Wb["txt"][(size_t)K].s == B.txt[K];
+				if (!bSame) Fail(F, TEXT("tableau de chrono"));
+				BoardCmp++;
 			}
+			// Numéro surligné, barres remises (appliquées par AStridesCourse), public en liesse.
+			if (!Ep["hl"].isNull()) HlWant = (int)Ep["hl"].num();
+			if (Run.highlight() != HlWant) Fail(F, FString::Printf(TEXT("numéro surligné %d / %d"), Run.highlight(), HlWant));
+			if (Course->RailResets() - Resets != (Ep["rr"].isNull() ? 0 : (int)Ep["rr"].num())) Fail(F, TEXT("barres remises"));
+			Resets = Course->RailResets();
+			if (Run.takeCheer() != (Ep["cheer"].isNull() ? 0.0 : Ep["cheer"].num())) Fail(F, TEXT("public en liesse"));
 		}
 		Bad += RunBad;
-		Done.Add(FString::Printf(TEXT("%hs %hs"), Id.c_str(), Lang.c_str()));
+		if (RunBad == 0) Done.Add(FString::Printf(TEXT("%hs %hs"), Id.c_str(), Lang.c_str()));
 		Course->Destroy();
 	}
 	const TCHAR* Required[] = {TEXT("droit"), TEXT("t4-sans-faute"), TEXT("t4-depart-lance"), TEXT("t4-cloche"), TEXT("t4-erreur-parcours"), TEXT("t4-deux-refus"),
-		TEXT("t4-temps-limite"), TEXT("t4-descente"), TEXT("t4-saute-avant-depart"), TEXT("t4-arrivee-barre"), TEXT("t4-lignes")};
+		TEXT("t4-temps-limite"), TEXT("t4-descente"), TEXT("t4-saute-avant-depart"), TEXT("t4-arrivee-barre"), TEXT("t4-lignes"), TEXT("t4-gardes"), TEXT("t4-un-point"), TEXT("t4-entree")};
 	for (const TCHAR* Id : Required)
 		for (const TCHAR* L : {TEXT("fr"), TEXT("en")}) TestTrue(FString::Printf(TEXT("scénario %s (%s) rejoué"), Id, L), Done.Contains(FString::Printf(TEXT("%s %s"), Id, L)));
-	TestEqual(TEXT("écarts au jeu web (interface, sons, état)"), Bad, 0);
-	AddInfo(FString::Printf(TEXT("déroulé d'épreuve dans le jeu : %d exécutions, %d images, %d appels d'interface et %d sons comparés"), Done.Num(), Frames, HudCmp, AudioCmp));
+	TestEqual(TEXT("écarts au jeu web (interface, sons, état, cadence, mode de concours, tableau, surlignage, barres, public)"), Bad, 0);
+	AddInfo(FString::Printf(TEXT("déroulé d'épreuve dans le jeu : %d exécutions sans écart, %d images, %d appels d'interface, %d sons et %d tableaux comparés"), Done.Num(), Frames, HudCmp, AudioCmp, BoardCmp));
 	return true;
 }
 

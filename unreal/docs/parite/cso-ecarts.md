@@ -530,6 +530,38 @@ Principes communs :
   bilan et boutons (T11 : le jeu reste au bilan) ; interface d'épreuve (T7 : les appels vont au HUD de débogage) ; sons
   (T12) ; mot d'appel `jumpFeedback` (T7) ; gel en pause et téléphone (T8) ; commandes de concours toujours actives
   hors épreuve et hauteurs posées à la construction (T10) ; cible GPS ; joueur et langue d'une sauvegarde neuve.
+- **Corrigé après le contrôle adverse (19/11/2026)** : (1) l'inventaire affirmait un « refus au 1 compté » dans
+  `t4-temps-limite`, où aucun refus n'a lieu : phrase retirée. (2) Aucun oracle n'exerçait les gardes des écouteurs
+  d'obstacle (`courses.js:221, 231, 243, 245`) : `EXP` relève maintenant `t4-gardes` (refus au 1 avant le départ, abordé
+  à 66° de son axe ; refus au 3 quand le 1 est attendu ; refus au 1 et sauts du 1 et du 3 abordés par l'arrière ; le 1
+  dans son sens, compté) et `t4-un-point` (arrivée à 64,57 s : « 1 POINT » / « 1 FAULT », puis le 8 sauté pendant la
+  sortie de piste) ; `TC` exige qu'au moins un événement de l'oracle exerce chacune des 7 gardes (2 par garde). Les
+  9 mutations de gardes sont dans `mutations-cso-run.py` : 6 détectées, 3 équivalentes par construction et déclarées
+  (`ATTENDUES`) — refus « après l'arrivée » (l'arrivée exige next > n, l'obstacle attendu n'existe plus), refus et saut
+  « après l'élimination » (`out()` termine l'étape dans la même image : `missions.js:230-233` → `end()` retire les
+  écouteurs, `courses.js:352-354` ; portage : `update` → `next()`, `obstacleEvent` hors de l'étape de parcours ignoré).
+  (3) Étape goto : oracle `ORA/cso_goto.json` (l'étape du jeu, `g.missions.active.steps[0]`, évaluée sur 52 points ×
+  4 modes du joueur, fr et en : 416 cas) et scénario `t4-entree` (cheval posé à 127, 64, 46, 30 m ; pied à terre ;
+  camion ; en selle à 5 m) ; consigne « au volant » portée (`CsoRunFrame.driving / inTruck / vehicle`,
+  `csoGotoText` / `csoGotoDone`). La grille a révélé un écart d'un ulp entre `std::hypot` et `Math.hypot` de V8
+  (994,99999999999989 au lieu de 995 : « 990 m » au lieu de « 1000 m ») : `jsHypot` (`StridesCore/MathUtil.h`) reproduit
+  l'algorithme de V8 (Math.hypot de Safari non comparé, à confirmer ; les autres `std::hypot` de `CsoFences.cpp` et
+  `CsoHorse.cpp` ne sont pas encore remplacés). (4) Canal « ep » : numéro surligné (dernier appel de
+  `Obstacles.highlight`), remises des barres (`resetRails`) et `game.cheerT` relevés quand ils changent, comparés par `TC`
+  (120 changements, 28 remises, 2 ovations ; `takeCheer` rend désormais la durée, 3,5 s). (5) Le test moteur
+  `Strides.Parite.CsoRun` compare tout ce que compare `TC` (cadence, étape, pas de l'étape, état complet, mode de
+  concours, tableau, surlignage, remises comptées par `AStridesCourse::RailResets`, public en liesse) : 28 exécutions
+  sans écart, 27 864 images, 25 540 tableaux. (6) HUD de débogage : balises `<b>` retirées, « ▸ » rendu « > » (glyphe
+  absent de la police par défaut du moteur), objectif de l'épreuve à la place de « Aucune mission active » (capture GPU
+  `10_galop_00` refaite). Résultats : ctest 170 550 vérifications, 0 échec ; `TC` 28 exécutions sans écart, 27 864
+  images, 264 appels d'interface et 182 sons de `courses.js`, 25 540 tableaux ; `cso_goto.json` 416 cas sans écart ;
+  `cso_target.json` identique à l'octet ; deux exécutions complètes de l'exporteur (24 min chacune) donnent les 53
+  exécutions de `cso_runs.json` identiques (hors `setup.pre` / `setup.at`, ajoutés entre les deux) et `cso_goto.json`
+  identique à l'octet ; par rapport à l'oracle précédent, 46 des 47 exécutions antérieures sont identiques hors des
+  nouveaux champs ; dans la 47e, `t3-refus-5s`, une image diffère dans les deux exécutions du jour (événement
+  `horse:exhausted` du cheval d'un cavalier du décor, `rider230`, absent ; cause non établie, à confirmer : même
+  famille que le constat (1), sans effet sur l'épreuve ni sur le cheval du joueur ; `TC` ne lit dans « ev » que les
+  événements de saut et de refus du cheval du joueur).
 
 ### T5. Obstacles, lignes et poteau visibles (géométrie exportée du web)
 

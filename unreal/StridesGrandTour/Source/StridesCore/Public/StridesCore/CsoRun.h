@@ -67,6 +67,9 @@ struct CsoRunFrame {
   double x = 0, z = 0, heading = 0; // cheval du joueur (game.player.horse)
   double focusX = 0, focusZ = 0;    // point suivi (player.focus : cheval monté, sinon cavalier)
   bool riding = true;               // player.mode === 'ride'
+  // Au volant (player.mode === 'drive') : dans le camion (player.inTruck) ou dans un autre véhicule (player.vehicle non
+  // nul, hors camion). Lus par la consigne de l'étape goto (missions.js modeHint) ; le jeu Unreal n'a pas de véhicule.
+  bool driving = false, inTruck = false, vehicle = false;
 };
 // Cadence de concours du joueur (player.csoCadence ; has = faux si indéfinie), lue et réécrite par l'épreuve : remise à
 // 0 sur un refus compté, ramenée vers 1,9 m/s pendant la sortie de piste.
@@ -74,6 +77,14 @@ struct CsoCadence {
   bool has = false;
   double v = 0;
 };
+
+// Étape « rejoindre l'entrée de la carrière » (missions.js goto(CSO_GATE, …, { r: 9, mode: 'ride' }), courses.js:496) :
+// objectif affiché (au-delà de max(45, r + 30) m : texte et distance, « 120 m » ou « 1,2 km » ; sinon consigne de mode
+// — descendre du camion ou du véhicule, monter à cheval — ; sinon le texte) et validation (point suivi à moins de r m,
+// à cheval). Oracle : unreal/core/tests/oracles/cso_goto.json (étape du jeu web évaluée sur une grille de points et de
+// modes du joueur).
+STRIDESCORE_API std::string csoGotoText(const CsoRunConfig& cfg, const TextTable& text, const CsoRunFrame& f);
+STRIDESCORE_API bool csoGotoDone(const CsoRunConfig& cfg, const CsoRunFrame& f);
 
 enum class CsoObstacleEventKind { Clear, Fault, Refusal };
 
@@ -140,8 +151,8 @@ class STRIDESCORE_API CsoRun {
   int highlight() const { return highlight_; }  // numéro surligné (Obstacles.highlight), -1 : aucun
   // Demandes faites aux obstacles à l'entrée en piste (hauteurs posées, barres remises) : vrai une fois puis remis à faux.
   bool takeResetRails();
-  // Public en liesse demandé (game.cheerT = 3,5 s après un sans-faute) : vrai une fois puis remis à faux.
-  bool takeCheer();
+  // Public en liesse demandé après un sans-faute (game.cheerT = 3,5, courses.js:345) : durée en secondes une fois, puis 0.
+  double takeCheer();
   int bib() const { return bib_; }
   const CsoRunConfig& config() const { return cfg_; }
 
@@ -177,7 +188,8 @@ class STRIDESCORE_API CsoRun {
   CsoRunState st_;
   CsoCourseMode mode_;
   int highlight_ = -1, bib_ = -1;
-  bool cheer_ = false, resetRails_ = false;
+  double cheer_ = 0;
+  bool resetRails_ = false;
   std::vector<CsoCall> hud_, audio_;
   CsoRunFrame cur_;
 };

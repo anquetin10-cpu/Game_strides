@@ -13,14 +13,23 @@
 void AStridesHUD::BeginPlay()
 {
 	Super::BeginPlay();
-	for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It) It->OnCourseEvent.AddDynamic(this, &AStridesHUD::OnCourseEvent);
+	for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
+	{
+		It->OnCourseEvent.AddDynamic(this, &AStridesHUD::OnCourseEvent);
+		if (!Course.IsValid()) Course = *It;
+	}
+}
+
+FString AStridesHUD::DebugText(const FString& S)
+{
+	return S.Replace(TEXT("<b>"), TEXT("")).Replace(TEXT("</b>"), TEXT("")).Replace(TEXT("▸"), TEXT(">"));
 }
 
 void AStridesHUD::OnCourseEvent(const FString& Kind, const FString& Text)
 {
 	// Épreuve : grand message, toast, astuce (l'interface d'épreuve est en tranche T7) ; clearHint n'a pas de texte.
 	if (Text.IsEmpty()) return;
-	LastEvent = Text;
+	LastEvent = DebugText(Text);
 	EventT = 3.f;
 }
 
@@ -36,7 +45,7 @@ void AStridesHUD::DrawHUD()
 		const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 		const FString Gait = D && D->Gaits.IsValidIndex(H->GaitIndex) ? D->Gaits[H->GaitIndex].Name.ToString() : TEXT("?");
 		Line(FString::Printf(TEXT("À cheval · %s · %.1f m/s (%.0f m/min) · cadence %.1f"), *Gait, H->SpeedMS, H->SpeedMS * 60, H->CadenceMS));
-		if (H->Course) Line(H->Course->StatusText());
+		if (H->Course) Line(DebugText(H->Course->StatusText()));
 		if (H->IsDemoCourseActive()) Line(TEXT("DÉMONSTRATION AUTOMATIQUE DU PARCOURS"), FLinearColor(0.4f, 0.9f, 1.f));
 		if (!H->LastTakeoff.IsEmpty()) Line(FString::Printf(TEXT("Dernier appel : %s"), *H->LastTakeoff));
 		if (PLATFORM_IOS) Line(TEXT("Joystick : direction / cadence · boutons : SAUT, MONTER, ALLURE"), FLinearColor(0.8f, 0.8f, 0.8f));
@@ -49,7 +58,15 @@ void AStridesHUD::DrawHUD()
 	if (const UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
 	{
 		Line(FString::Printf(TEXT("%s · %d crédits · %d réputation"), *Progress->RankName(), Progress->Credits, Progress->Reputation), FLinearColor(0.35f, 0.9f, 0.75f));
-		Line(Progress->MissionStatus(), FLinearColor(1.f, 0.82f, 0.25f));
+		// Objectif : celui de l'épreuve en cours (Run.text, setObjective du web ; vide : aucune ligne), sinon l'état des
+		// missions du jeu.
+		const strides::CsoRun* Run = Course.IsValid() ? Course->Run() : nullptr;
+		if (Run && !Run->finished())
+		{
+			const FString Objective = UTF8_TO_TCHAR(Run->text().c_str());
+			if (!Objective.IsEmpty()) Line(DebugText(Objective), FLinearColor(1.f, 0.82f, 0.25f));
+		}
+		else Line(Progress->MissionStatus(), FLinearColor(1.f, 0.82f, 0.25f));
 		if (!Progress->LastMessage.IsEmpty()) Line(Progress->LastMessage, FLinearColor(0.7f, 0.9f, 1.f));
 
 		DrawMinimap(P, Progress);

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include "StridesCore/MathUtil.h"
 #include "StridesCore/MiniJson.h"
 
 namespace strides {
@@ -71,7 +72,31 @@ void CsoRun::audio(const char* fn, std::vector<CsoArg> args) { audio_.push_back(
 std::vector<CsoCall> CsoRun::takeHud() { std::vector<CsoCall> v; v.swap(hud_); return v; }
 std::vector<CsoCall> CsoRun::takeAudio() { std::vector<CsoCall> v; v.swap(audio_); return v; }
 bool CsoRun::takeResetRails() { const bool r = resetRails_; resetRails_ = false; return r; }
-bool CsoRun::takeCheer() { const bool r = cheer_; cheer_ = false; return r; }
+double CsoRun::takeCheer() { const double r = cheer_; cheer_ = 0; return r; }
+
+// ---------- Étape goto (missions.js:20-35, 55-73) ----------
+std::string csoGotoText(const CsoRunConfig& cfg, const TextTable& text, const CsoRunFrame& f) {
+  // text : far(pos, r) — distance au-delà de max(NEAR = 45, r + 30) m — puis withDist, sinon modeHint('ride'), sinon le
+  // texte.
+  const std::string base = text.t("Entre en piste : rejoins l’entrée de la carrière", cfg.lang);
+  const double d = jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ);  // Math.hypot du jeu web (MathUtil.h)
+  if (d > std::max(45.0, cfg.gateR + 30)) {
+    // withDist : « 1,2 km » (num(d / 1000, 1)) ou « 120 m » (Math.round(d / 10) * 10)
+    const std::string dist = d >= 1000 ? dec(d / 1000, 1, cfg.lang) + " km" : jsInt((long long)std::floor(d / 10 + 0.5) * 10) + " m";
+    return base + " · " + dist;
+  }
+  if (!f.riding) {
+    // modeHint('ride') : au volant (camion, ou autre véhicule), sinon à pied.
+    if (f.driving) return text.t(f.vehicle && !f.inTruck ? "Sors du véhicule puis monte à cheval." : "Sors du camion puis monte à cheval.", cfg.lang);
+    return text.t("Monte sur ton cheval (siffle-le si besoin).", cfg.lang);
+  }
+  return base;
+}
+
+bool csoGotoDone(const CsoRunConfig& cfg, const CsoRunFrame& f) {
+  // update : dist(p) < r && player.mode === 'ride'
+  return jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ) < cfg.gateR && f.riding;
+}
 
 CsoStep CsoRun::step() const { return i_ >= 0 && i_ < (int)steps_.size() ? steps_[(size_t)i_] : CsoStep::Result; }
 std::string CsoRun::labelOf(int num) const { return num >= 1 && num <= (int)cfg_.fences.size() ? cfg_.fences[(size_t)num - 1].label : std::string(); }
@@ -118,18 +143,7 @@ void CsoRun::resultChoice(ResultChoice c) {
 std::string CsoRun::text() const {
   if (done_ || i_ < 0) return std::string();
   switch (step()) {
-    case CsoStep::Goto: {
-      // missions.js goto : distance au-delà de max(45, r + 30) m, sinon consigne de mode, sinon le texte.
-      const std::string base = tr("Entre en piste : rejoins l’entrée de la carrière");
-      const double d = std::hypot(cur_.focusX - cfg_.gateX, cur_.focusZ - cfg_.gateZ);
-      if (d > std::max(45.0, cfg_.gateR + 30)) {
-        // withDist : « 120 m » (Math.round(d / 10) * 10) ou « 1,2 km »
-        const std::string dist = d >= 1000 ? dec(d / 1000, 1, cfg_.lang) + " km" : jsInt((long long)std::floor(d / 10 + 0.5) * 10) + " m";
-        return base + " · " + dist;
-      }
-      if (!cur_.riding) return tr("Monte sur ton cheval (siffle-le si besoin).");
-      return base;
-    }
+    case CsoStep::Goto: return csoGotoText(cfg_, text_, cur_);
     case CsoStep::Capacity: return std::string();
     case CsoStep::Presentation: return tr("Présentation de l’épreuve");
     case CsoStep::Entrance: return tr("Entrée en piste…");
@@ -209,7 +223,7 @@ void CsoRun::startStep() {
 
 bool CsoRun::updateStep(const CsoRunFrame& f, CsoCadence& cad) {
   switch (step()) {
-    case CsoStep::Goto: return std::hypot(f.focusX - cfg_.gateX, f.focusZ - cfg_.gateZ) < cfg_.gateR && f.riding;
+    case CsoStep::Goto: return csoGotoDone(cfg_, f);
     case CsoStep::Capacity: return !capWarn_;
     case CsoStep::Presentation: return pres_;
     case CsoStep::Entrance: return stepT_ > 2.4;
@@ -309,7 +323,7 @@ bool CsoRun::courseUpdate(const CsoRunFrame& f, CsoCadence& cad) {
     audio("applause", {N(pts == 0 ? 1.3 : 0.55), N(pts == 0 ? 4 : 2.6)});
     if (pts == 0) audio("cheer", {});
     hud("big", {S(pts == 0 ? tr("SANS FAUTE !") : pts > 1 ? Tr("{0} POINTS", {jsInt(pts)}) : Tr("{0} POINT", {jsInt(pts)})), S(dec(st_.t, 2, cfg_.lang) + " s"), N(2600)});
-    if (pts == 0) cheer_ = true;
+    if (pts == 0) cheer_ = 3.5;  // game.cheerT = 3.5 (CSO)
     return false;  // CSO : courte sortie de piste avant le bilan
   }
   return false;
