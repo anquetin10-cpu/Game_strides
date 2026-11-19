@@ -1,7 +1,8 @@
 #!/bin/zsh
 # Chaîne complète après un export du monde web (scripts/unreal/world-export.html) :
 # préparation des images, import Unreal (commandlet), compilation de l'éditeur, puis revue visuelle -StridesShots
-# (captures dans unreal/StridesGrandTour/Saved/Screenshots/Strides). Étapes : prepare, import, build, shots (défaut : toutes).
+# (captures dans un dossier daté .tmp/shots/<date>, ou SHOTS_DIR ; jamais dans Saved/Screenshots/Strides, qui garde
+# les captures existantes : voir unreal/docs/parite/README.md). Étapes : prepare, import, build, shots (défaut : toutes).
 set -euo pipefail
 ROOT=${0:A:h:h:h}
 cd $ROOT
@@ -22,8 +23,9 @@ for step in $STEPS; do
         || { grep -E "error" .tmp/build-editor.log | head -20; exit 1; }
       grep "Result:" .tmp/build-editor.log ;;
     shots)
+      SHOTS_DIR=${SHOTS_DIR:-$ROOT/.tmp/shots/$(date +%Y%m%d-%H%M%S)}
       "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJECT" -game -windowed -ResX=1600 -ResY=900 -nosplash \
-        -StridesShots -abslog="$ROOT/.tmp/shots.log" > /dev/null 2>&1 || true
+        -StridesShots -StridesShotsDir="$SHOTS_DIR" -abslog="$ROOT/.tmp/shots.log" > /dev/null 2>&1 || true
       grep -E "Strides scenery|Strides shot|Fatal" .tmp/shots.log | cut -c1-200 ;;
   esac
 done

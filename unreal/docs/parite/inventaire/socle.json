@@ -572,7 +572,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "AStridesShots sert aux captures de contrôle (StridesGameMode.cpp:95), pas au joueur.",
+  "ecart": "AStridesShots sert aux captures de contrôle (StridesGameMode.cpp:107), pas au joueur.",
   "tranche": "h"
  },
  {
@@ -1366,10 +1366,10 @@
    "src/game.js",
    "src/main.js"
   ],
-  "unreal": "Option -TouchControls (StridesPlayerController.cpp:87) ; captures AStridesShots si demandées (StridesGameMode.cpp:95) ; démo du parcours F8 (StridesPlayerController.cpp:60, 155)",
+  "unreal": "Option -TouchControls (StridesPlayerController.cpp:87) ; captures AStridesShots si demandées (StridesGameMode.cpp:107), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:55-98, résolution avant toute capture :119-134) ; démo du parcours F8 (StridesPlayerController.cpp:60, 155)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test de ces options.",
+  "preuve": "Dossier de sortie des captures : test moteur Strides.Shots.OutputDir (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesShotsTests.cpp ; Result={Success} le 19/11/2026 : dossier protégé non vide refusé avec ou sans l'option, dossier vide accepté, option absolue ou relative à la racine du dépôt, mode cso sans option sur les chemins de poses.json, capture préexistante intacte, -StridesShots sans option refusé tant que Saved/Screenshots/Strides contient des fichiers). Essais réels du 19/11/2026 (jeu -game, rendu Metal) : -StridesShots sans option : journal « Strides shots: REFUS, aucune capture écrite », sortie à l'image 1, les 33 fichiers de Saved/Screenshots/Strides et MacEditor identiques avant et après (shasum, date, taille) ; -StridesShots=cso -StridesPose=carriere -StridesShotsDir=<dossier absolu> : carriere-aerienne-unreal.png écrite dans ce dossier en 844 × 390 (sips), captures versionnées de unreal/docs/parite/cso inchangées ; -StridesShots -StridesShotsDir=.tmp/shots/r0-essai (relatif à la racine du dépôt) : 26 captures dans ce dossier, parcours de démonstration jusqu'à l'arrivée. Aucun test des autres options (-TouchControls, F8).",
   "ecart": "Options différentes : rien n'équivaut à ?autostart, ?secours ou ?lang ; pas d'accès scriptable à l'état du jeu pour des tests de bout en bout.",
   "tranche": "socle"
  },

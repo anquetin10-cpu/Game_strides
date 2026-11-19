@@ -31,8 +31,8 @@ zsh scripts/unreal/rebuild-world.sh                        # préparation, impor
 
 ## Vérifications
 - `-StridesShots` (jeu lancé en ligne de commande) : 8 points de vue fixes du monde, la vue de jeu, puis la cavalière
-  monte et le cheval joue le parcours de démonstration du Pôle (captures toutes les 4 s) ; images dans
-  `Saved/Screenshots/Strides/`, journal `.tmp/shots.log`.
+  monte et le cheval joue le parcours de démonstration du Pôle (captures toutes les 4 s) ; images dans le dossier de
+  `-StridesShotsDir=<chemin>` (sans lui : refus si `Saved/Screenshots/Strides/` n'est pas vide ; `parite/README.md`), journal `.tmp/shots.log`.
 - Banc de parité CSO (captures jumelles web / Unreal, même pose, même heure, 844 × 390) :
   `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots` (oracle
   `unreal/core/tests/oracles/cso_runs/`, `unreal/docs/parite/cso/poses.json` et `<pose>-web.png`), puis le jeu avec

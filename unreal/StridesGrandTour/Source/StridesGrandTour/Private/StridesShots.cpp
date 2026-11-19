@@ -43,6 +43,60 @@ double AStridesShots::HorizontalFov(double FovV, double Width, double Height)
 	return FMath::RadiansToDegrees(2.0 * FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FovV) * 0.5) * Width / Height));
 }
 
+FString AStridesShots::RepoRoot()
+{
+	FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../.."));
+	FPaths::CollapseRelativeDirectories(Root);
+	return Root;
+}
+
+FString AStridesShots::DefaultShotsDir() { return FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / TEXT("Screenshots/Strides")); }
+
+TArray<FString> AStridesShots::ProtectedShotsDirs()
+{
+	const FString S = FPaths::ConvertRelativePathToFull(FPaths::ProjectSavedDir() / TEXT("Screenshots"));
+	return {S / TEXT("Strides"), S / TEXT("MacEditor")};
+}
+
+bool AStridesShots::DirHasFiles(const FString& Dir)
+{
+	bool bAny = false;
+	IFileManager::Get().IterateDirectory(*Dir, [&bAny](const TCHAR*, bool) { bAny = true; return false; });
+	return bAny;
+}
+
+bool AStridesShots::ResolveShotsDir(const TCHAR* CommandLine, const FString& Root, const FString& DefaultDir, const TArray<FString>& Protected, FString& Out, FString& Why)
+{
+	auto Norm = [](FString P) {
+		P = FPaths::ConvertRelativePathToFull(P);
+		FPaths::RemoveDuplicateSlashes(P);
+		FPaths::CollapseRelativeDirectories(P);
+		FPaths::NormalizeDirectoryName(P);
+		return P;
+	};
+	Out.Reset();
+	Why.Reset();
+	FString Dir;
+	if (FParse::Value(CommandLine, TEXT("StridesShotsDir="), Dir, false) && !Dir.IsEmpty())
+	{
+		if (FPaths::IsRelative(Dir)) Dir = Root / Dir;
+	}
+	else Dir = DefaultDir;
+	if (Dir.IsEmpty()) return true;
+	Dir = Norm(Dir);
+	for (const FString& P : Protected)
+	{
+		const FString Q = Norm(P);
+		if (FPaths::IsSamePath(Dir, Q) && DirHasFiles(Q))
+		{
+			Why = FString::Printf(TEXT("%s contient déjà des captures, jamais écrasées : passer -StridesShotsDir=<dossier dédié>"), *Q);
+			return false;
+		}
+	}
+	Out = Dir;
+	return true;
+}
+
 AStridesShots::AStridesShots()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -62,6 +116,22 @@ AStridesShots::AStridesShots()
 void AStridesShots::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (!bOutResolved)
+	{
+		// Dossier de sortie résolu une fois, avant toute capture ; refus = sortie sans rien écrire.
+		bOutResolved = true;
+		FString Why;
+		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Mode() == TEXT("cso") ? FString() : DefaultShotsDir(), ProtectedShotsDirs(), OutDir, Why))
+		{
+			bRefused = true;
+			UE_LOG(LogTemp, Error, TEXT("Strides shots: REFUS, aucune capture écrite : %s"), *Why);
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		if (!OutDir.IsEmpty()) IFileManager::Get().MakeDirectory(*OutDir, true);
+		UE_LOG(LogTemp, Display, TEXT("Strides shots: captures dans %s"), OutDir.IsEmpty() ? TEXT("les chemins de poses.json") : *OutDir);
+	}
+	if (bRefused) return;
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (!PC) return;
 	if (Mode() == TEXT("cso"))
@@ -74,7 +144,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 	if (Index >= 0 && Index <= Shots.Num() && RideShot < 0 && !bCaptured)
 	{
 		const FString Name = Index < Shots.Num() ? Shots[Index].Name : FString(TEXT("09_jeu"));
-		FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / TEXT("Screenshots/Strides") / (Name + TEXT(".png")), false, false);
+		FScreenshotRequest::RequestScreenshot(OutDir / (Name + TEXT(".png")), false, false);
 		UE_LOG(LogTemp, Display, TEXT("Strides shot: %s"), *Name);
 		bCaptured = true;
 		Wait = 1.0f;
@@ -126,7 +196,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 	{
 		AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
 		const FString Name = FString::Printf(TEXT("10_galop_%02d"), RideShot++);
-		FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir() / TEXT("Screenshots/Strides") / (Name + TEXT(".png")), false, false);
+		FScreenshotRequest::RequestScreenshot(OutDir / (Name + TEXT(".png")), false, false);
 		if (Horse && Horse->Course) UE_LOG(LogTemp, Display, TEXT("Strides shot: %s — %s"), *Name, *Horse->Course->StatusText());
 		Index--;
 		Wait = 4.f;
@@ -139,9 +209,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 
 void AStridesShots::LoadPoses()
 {
-	// Racine du dépôt : le projet est dans unreal/StridesGrandTour/.
-	FString Root = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../.."));
-	FPaths::CollapseRelativeDirectories(Root);
+	const FString Root = RepoRoot();
 	FString File = Root / TEXT("unreal/docs/parite/cso/poses.json");
 	FParse::Value(FCommandLine::Get(), TEXT("StridesPoses="), File);
 	FString Text;
@@ -171,7 +239,9 @@ void AStridesShots::LoadPoses()
 		const TSharedPtr<FJsonObject> VP = O->GetObjectField(TEXT("viewport"));
 		P.Width = (int32)VP->GetNumberField(TEXT("w"));
 		P.Height = (int32)VP->GetNumberField(TEXT("h"));
-		P.Out = Root / O->GetStringField(TEXT("unreal"));
+		// Capture Unreal : chemin de poses.json, ou même nom de fichier dans le dossier de -StridesShotsDir.
+		const FString Unreal = O->GetStringField(TEXT("unreal"));
+		P.Out = OutDir.IsEmpty() ? Root / Unreal : OutDir / FPaths::GetCleanFilename(Unreal);
 		P.bHasJumpY = H->TryGetNumberField(TEXT("jumpY"), P.HorseJumpY);
 		const TSharedPtr<FJsonObject>* Fe = nullptr;
 		if (O->TryGetObjectField(TEXT("fence"), Fe))

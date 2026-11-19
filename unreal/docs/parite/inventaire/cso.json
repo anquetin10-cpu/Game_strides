@@ -544,7 +544,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Caméra de suivi visible sur les captures montées (validation-mac-2026-11-17.md) ; aucun comportement de concours vérifié.",
-  "ecart": "Pas de caméra dédiée au concours (profil de concours de camera.js, 6,6 m derrière le cheval) : même caméra partout. Constat du banc de parité (18/11/2026) : le joueur local d'UE 5.8 maintient l'axe Y par défaut (Engine/Config/BaseEngine.ini:2900, AspectRatio_MaintainYFOV) ; une première capture avec FieldOfView = FOV horizontal calculé montrait un champ nettement plus large que le web, corrigé en imposant l'axe X sur la caméra de capture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:198-205). Le FOV de 55 de la caméra du jeu (StridesHorse.cpp:63) n'est donc probablement pas un FOV horizontal comme le suppose cso-ecarts.md §1 point 8 : à mesurer en T6.",
+  "ecart": "Pas de caméra dédiée au concours (profil de concours de camera.js, 6,6 m derrière le cheval) : même caméra partout. Constat du banc de parité (18/11/2026) : le joueur local d'UE 5.8 maintient l'axe Y par défaut (Engine/Config/BaseEngine.ini:2900, AspectRatio_MaintainYFOV) ; une première capture avec FieldOfView = FOV horizontal calculé montrait un champ nettement plus large que le web, corrigé en imposant l'axe X sur la caméra de capture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:298-308). Le FOV de 55 de la caméra du jeu (StridesHorse.cpp:63) n'est donc probablement pas un FOV horizontal comme le suppose cso-ecarts.md §1 point 8 : à mesurer en T6.",
   "tranche": "a"
  },
  {

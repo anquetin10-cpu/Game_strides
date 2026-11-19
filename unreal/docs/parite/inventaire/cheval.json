@@ -916,7 +916,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core). unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:22-80 place une caméra fixe, mais seulement pour le banc de captures lancé avec -StridesShots.",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core). unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:100-170 place une caméra fixe, mais seulement pour le banc de captures lancé avec -StridesShots.",
   "ecart": "Aucune séquence ni mode photo.",
   "tranche": "socle"
  },

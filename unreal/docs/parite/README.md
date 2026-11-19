@@ -72,17 +72,32 @@ Unreal (rendu GPU réel, jamais `-nullrhi` ; une seule instance d'UnrealEditor, 
 ```sh
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso [-StridesPose=<préfixe>] \
-  -abslog="$PWD/.tmp/shots-cso.log"
+  [-StridesShotsDir=<dossier dédié>] -abslog="$PWD/.tmp/shots-cso.log"
 ```
 
 - `-StridesShots=cso` lit `poses.json` (`-StridesPoses=<fichier>` pour un autre) ; `-StridesPose=<préfixe>` : seulement
-  les poses dont le nom commence ainsi. Chaque capture va au chemin `unreal` de sa pose
-  (`unreal/docs/parite/cso/<pose>-unreal.png`, versionné).
+  les poses dont le nom commence ainsi. Sans `-StridesShotsDir`, chaque capture va au chemin `unreal` de sa pose
+  (`unreal/docs/parite/cso/<pose>-unreal.png`, versionné) ; avec, au même nom dans le dossier donné (essai sans toucher
+  les captures versionnées).
 - FOV : le web règle un FOV **vertical** ; UE 5.8 maintient l'axe **Y** par défaut (`AspectRatio_MaintainYFOV`). La
   caméra de capture impose l'axe **X** et reçoit le FOV horizontal équivalent (`AStridesShots::HorizontalFov`) ; la
   caméra de jeu garde le réglage par défaut.
 - Contrôle : `grep "Strides parite" .tmp/shots-cso.log` (pose, FOV vertical → horizontal, soleil, « écrite ») et
   `sips -g pixelWidth -g pixelHeight <capture>`.
+
+Revue des décors et démonstration (`-StridesShots` sans mode) : **toujours avec un dossier dédié**.
+
+```sh
+"$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -game -windowed -ResX=1600 -ResY=900 -nosplash -StridesShots -StridesShotsDir=.tmp/shots/$(date +%Y%m%d-%H%M%S) \
+  -abslog="$PWD/.tmp/shots.log"
+```
+
+- `-StridesShotsDir=<chemin>` : absolu, ou relatif à la racine du dépôt ; créé au besoin.
+- Garde-fou : `Saved/Screenshots/Strides/` et `Saved/Screenshots/MacEditor/` contiennent des captures de Julien. Si le
+  dossier retenu est l'un d'eux et qu'il contient déjà un fichier (cas de `-StridesShots` sans option), le mode
+  n'écrit rien, journalise `Strides shots: REFUS, aucune capture écrite : …` et quitte. Test moteur
+  `Strides.Shots.OutputDir`. `scripts/unreal/rebuild-world.sh shots` passe un dossier daté sous `.tmp/shots/`.
 
 ## 4. Montage côte à côte
 
