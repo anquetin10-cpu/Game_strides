@@ -1,0 +1,122 @@
+{
+ "schema": "strides.oracle.rider_rules_o2/1",
+ "generator": "scripts/unreal/rider-rules-o2.mjs",
+ "doc": "oracle O2 des règles de monte (essai de monte, voie A, étape 3) : src/entities/human/anim.js inchangé, rejoué hors navigateur (Node) sur les entrées d’O1 avec le squelette de 25 os aux proportions d’un rig (unreal/core/tests/oracles/monte/rigs/<rig>.json). Rig web_classic : identique à O1 à 1e-6 près (checks.web_classic.o1). Autre rig : ce que la règle web aurait produit avec ces longueurs, oracle du portage C++ (étape 4) et du niveau A (étape 6).",
+ "layout": "un dossier par rig, un fichier par scénario (runs[].file = <rig>/<id>.json) : objet { id, desc, setup, frames }, en-tête sur la première ligne puis une image par ligne ; images dans l’ordre d’O1 (même f), fenêtre de mesure et fondu repris d’O1",
+ "inputs": "entrées de la règle à l’image f = canal in de l’image f du fichier O1 nommé dans setup.o1 (empreinte sha256), avec fit remplacé par fit × setup.fitScale (multiplication par ce double, sauf kneeOut et mountKneeOut, et tableaux élément par élément ; aucune opération si fitScale = 1), puis chaque clé de setup.fitOverride (mètres) divisée par setup.scale ; st.hair = setup.hair (déduit du canal cq d’O1 : hairTail non nul) ; état neuf à l’image 0 (Human.mount : _init = false, _ride = null)",
+ "frames": {
+  "S": "repère du siège, comme O1 ; point dans S = point du modèle × setup.scale"
+ },
+ "channels": {
+  "f": "indice de l’image (celui d’O1)",
+  "cl": "squelette dans S (m), pleine précision : 25 articulations dans l’ordre setup.bones, puis planteL, planteR (pied.localToWorld(0, -ankleY + 0.012, toe.z - 0.005), anim.js:771), poingL, poingR (main.localToWorld(fist ; fistR à droite s’il existe))",
+  "cq": "quaternions locaux des 24 os animés (ordre setup.cq), après le lissage d’animateHuman",
+  "tg": "cibles de la règle (_P), dans S : fL, fR (cheville visée), qL, qR (orientation du pied), xL, xR (place naturelle du pied, null sans profil), hL, hR (poignet visé), hp (bassin visé)",
+  "dg": "état interne de la règle après l’image (_ride), comme O1 : post, diag, wantDiag, diagT, two, jumpK, rel, bobAvg, hd, wasJump, look [a, to, t], hug { l, r : [px, fx, t] }, bT"
+ },
+ "tolerances": {
+  "o1": 0.000001,
+  "rz": 0.000002
+ },
+ "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1",
+ "o1Index": {
+  "file": "unreal/core/tests/oracles/monte/o1/index.json",
+  "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1"
+ },
+ "rigs": {
+  "web_classic": {
+   "file": "unreal/core/tests/oracles/monte/rigs/web_classic.json",
+   "sha256": "6f7c3c654f0c55f39c4725c7b537a89b3baa6151799dfc1265a4f8aa5652aa9f",
+   "scale": 0.985
+  },
+  "rider_f": {
+   "file": "unreal/core/tests/oracles/monte/rigs/rider_f.json",
+   "sha256": "1c8fcfce36d6163616cc69c70e9045616af094e8b585e96c06f83e079a884939",
+   "scale": 1
+  }
+ },
+ "checks": {
+  "web_classic": {
+   "o1": {
+    "cl": {
+     "max": 2.8992254708093412e-9,
+     "at": [
+      "E3b",
+      69,
+      "lFing"
+     ]
+    },
+    "cq": {
+     "max": 1.0269538382642413e-8,
+     "at": [
+      "E3b",
+      69,
+      "lFore"
+     ]
+    },
+    "tg": {
+     "max": 1.1102230246251565e-16,
+     "at": [
+      "E3",
+      6,
+      "fL"
+     ]
+    },
+    "tq": {
+     "max": 2.2420923445309954e-16,
+     "at": [
+      "E3b",
+      56,
+      "qL"
+     ]
+    },
+    "dg": {
+     "max": 2.220446049250313e-16,
+     "at": [
+      "E1b",
+      72,
+      "two"
+     ]
+    },
+    "images": 929
+   }
+  },
+  "rider_f": {
+   "rz": {
+    "os": {
+     "max": 0.0000010736923478082971,
+     "at": [
+      "E2d",
+      44,
+      "ball_r"
+     ]
+    },
+    "poing": {
+     "max": 0.0000011302001906021708,
+     "at": [
+      "E6v",
+      109,
+      "poingL"
+     ]
+    }
+   }
+  }
+ },
+ "runs": [
+{"rig":"web_classic","id":"E1","file":"web_classic/E1.json","frames":65,"window":[20,65],"accept":true},
+{"rig":"web_classic","id":"E1b","file":"web_classic/E1b.json","frames":130,"window":[60,130],"accept":true},
+{"rig":"web_classic","id":"E2g","file":"web_classic/E2g.json","frames":140,"window":[60,140],"accept":true},
+{"rig":"web_classic","id":"E2d","file":"web_classic/E2d.json","frames":140,"window":[60,140],"accept":true},
+{"rig":"web_classic","id":"E3","file":"web_classic/E3.json","frames":105,"window":[20,105],"accept":true},
+{"rig":"web_classic","id":"E3b","file":"web_classic/E3b.json","frames":109,"window":[20,109],"accept":true},
+{"rig":"web_classic","id":"E6t","file":"web_classic/E6t.json","frames":120,"window":[45,120],"accept":false},
+{"rig":"web_classic","id":"E6v","file":"web_classic/E6v.json","frames":120,"window":[60,120],"accept":false},
+{"rig":"rider_f","id":"E1","file":"rider_f/E1.json","frames":65,"window":[20,65],"accept":true},
+{"rig":"rider_f","id":"E1b","file":"rider_f/E1b.json","frames":130,"window":[60,130],"accept":true},
+{"rig":"rider_f","id":"E2g","file":"rider_f/E2g.json","frames":140,"window":[60,140],"accept":true},
+{"rig":"rider_f","id":"E2d","file":"rider_f/E2d.json","frames":140,"window":[60,140],"accept":true},
+{"rig":"rider_f","id":"E3","file":"rider_f/E3.json","frames":105,"window":[20,105],"accept":true},
+{"rig":"rider_f","id":"E3b","file":"rider_f/E3b.json","frames":109,"window":[20,109],"accept":true},
+{"rig":"rider_f","id":"E6t","file":"rider_f/E6t.json","frames":120,"window":[45,120],"accept":false},
+{"rig":"rider_f","id":"E6v","file":"rider_f/E6v.json","frames":120,"window":[60,120],"accept":false}
+]}

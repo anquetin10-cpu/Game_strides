@@ -1,0 +1,189 @@
+{
+ "schema": "strides.monte.rig/1",
+ "name": "web_classic",
+ "generator": "scripts/unreal/rider-rules-o2.mjs",
+ "source": {
+  "skeleton": "src/entities/human/skeleton.js",
+  "fist": "src/entities/human.js (FIST)"
+ },
+ "doc": "personnage classique du jeu web (squelette de 25 os sur lequel human/anim.js applique les règles de monte) : rest = décalages de repos (boneDefs, unités du modèle), info = rigInfo, fist = poing (repère de la main) ; scale = échelle du joueur des oracles O1 (outfits.js, graine 20261118), relue dans O1",
+ "scale": 0.985,
+ "bones": [
+  "root",
+  "hips",
+  "spine",
+  "chest",
+  "neck",
+  "head",
+  "hairTail",
+  "lClav",
+  "lArm",
+  "lFore",
+  "lHand",
+  "lFing",
+  "rClav",
+  "rArm",
+  "rFore",
+  "rHand",
+  "rFing",
+  "lThigh",
+  "lShin",
+  "lFoot",
+  "lToe",
+  "rThigh",
+  "rShin",
+  "rFoot",
+  "rToe"
+ ],
+ "rest": {
+  "root": [
+   0,
+   0,
+   0
+  ],
+  "hips": [
+   0,
+   0.94,
+   0
+  ],
+  "spine": [
+   0,
+   0.105,
+   -0.012
+  ],
+  "chest": [
+   0,
+   0.195,
+   0.004
+  ],
+  "neck": [
+   0,
+   0.2,
+   -0.024
+  ],
+  "head": [
+   0,
+   0.098,
+   0.02
+  ],
+  "hairTail": [
+   0,
+   0.075,
+   -0.096
+  ],
+  "lClav": [
+   0.02,
+   0.155,
+   0.03
+  ],
+  "lArm": [
+   0.148,
+   -0.055,
+   -0.04
+  ],
+  "lFore": [
+   0,
+   -0.29,
+   0
+  ],
+  "lHand": [
+   0,
+   -0.235,
+   0
+  ],
+  "lFing": [
+   0,
+   -0.086,
+   0.004
+  ],
+  "rClav": [
+   -0.02,
+   0.155,
+   0.03
+  ],
+  "rArm": [
+   -0.148,
+   -0.055,
+   -0.04
+  ],
+  "rFore": [
+   0,
+   -0.29,
+   0
+  ],
+  "rHand": [
+   0,
+   -0.235,
+   0
+  ],
+  "rFing": [
+   0,
+   -0.086,
+   0.004
+  ],
+  "lThigh": [
+   0.084,
+   -0.065,
+   0.005
+  ],
+  "lShin": [
+   0,
+   -0.405,
+   0
+  ],
+  "lFoot": [
+   0,
+   -0.39,
+   -0.01
+  ],
+  "lToe": [
+   0,
+   -0.055,
+   0.135
+  ],
+  "rThigh": [
+   -0.084,
+   -0.065,
+   0.005
+  ],
+  "rShin": [
+   0,
+   -0.405,
+   0
+  ],
+  "rFoot": [
+   0,
+   -0.39,
+   -0.01
+  ],
+  "rToe": [
+   0,
+   -0.055,
+   0.135
+  ]
+ },
+ "info": {
+  "sex": "f",
+  "hipsY": 0.94,
+  "hipJointY": 0.875,
+  "hipHalf": 0.084,
+  "thighLen": 0.405,
+  "shinLen": 0.39012818406262323,
+  "upperArmLen": 0.29,
+  "foreArmLen": 0.235,
+  "ankleY": 0.07999999999999996,
+  "toe": [
+   0,
+   -0.055,
+   0.135
+  ],
+  "heelBack": 0.055,
+  "seatToHips": 0.115,
+  "height": 1.68
+ },
+ "fist": [
+  0,
+  -0.068,
+  0.012
+ ]
+}

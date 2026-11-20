@@ -11,7 +11,9 @@ Documents de ce dossier :
 - `faisabilite.md` : faisabilité MetaHuman dans UE 5.8.4 (voie B, conservée pour mémoire) ;
 - `base.json` : ligne de base de l'étape 1, écrite par `scripts/unreal/monte-base.py` (jamais à la main) ;
 - `v3-mesures.md` et `v3-mesures.json` : première mesure de la v3 (étape 2), écrites par
-  `scripts/unreal/rider-rules-metrics.mjs` à partir de l'oracle O1 `unreal/core/tests/oracles/monte/o1/` (jamais à la main).
+  `scripts/unreal/rider-rules-metrics.mjs` à partir de l'oracle O1 `unreal/core/tests/oracles/monte/o1/` (jamais à la main) ;
+- `o2.md` : oracle O2 (étape 3), preuve O2 = O1, rig `rider_f`, mesures de la règle sur les deux rigs et longueurs
+  d'étriers pour la décision J3, écrit par `scripts/unreal/rider-rules-o2.mjs` (jamais à la main).
 
 Cadre de la phase en cours : copie de travail isolée (branche locale `claude/monte-voie-a`, sans les binaires de
 `Content/` sauf `Content/Data`, `node_modules` en lien vers le dépôt principal), aucun Unreal Build Tool, aucun
@@ -27,6 +29,11 @@ npx vite --config scripts/unreal/vite-monte.config.mjs --host 127.0.0.1 --port 5
 # Étape 2 (serveur 5176 lancé) : oracle O1 et ancres de sellerie (~15 min), puis mesures (quelques secondes)
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs --anchors   # [--only=E1,E3]
 node scripts/unreal/rider-rules-metrics.mjs                     # -> unreal/docs/parite/monte/v3-mesures.md et .json
+# Étape 3 (sans navigateur ni serveur) : rig de la cavalière réaliste, oracle O2, page o2.md (~1 s), mutations (~30 s)
+python3 scripts/unreal/rig-from-glb.py                          # -> unreal/core/tests/oracles/monte/rigs/rider_f.json
+node scripts/unreal/rider-rules-o2.mjs                          # -> oracles/monte/o2/, rigs/web_classic.json, o2.md
+node scripts/unreal/rider-rules-o2.mjs --fit=stirrupY=-0.62     # longueur d'étriers J3 (m) -> .tmp/monte/o2-fit
+python3 scripts/unreal/mutations-monte-o2.py                    # 93 mutations d'anim.js et du rejeu, copies dans build/
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -130,3 +137,90 @@ G7 (`git diff` code 0, aucun fichier non suivi sous `src`, `public`, `tests` ; `
 `build/core-monte` : 1/1, cœur non modifié), G6 (`build-parite.py` code 0, `PARITE.md` inchangé). G5 non relancée :
 aucune capture touchée. Mutations : sans objet à cette étape (le web est en lecture seule) ; elles portent sur le C++ à
 l'étape 4 (`mutations-rider-rules.py`).
+
+## Étape 3. Oracle O2 : la règle du web rejouée hors navigateur (20/11/2026)
+
+Base : `7ddfdd99` (étape 2). Étape reprise après une interruption : les fichiers laissés par la première exécution ont été
+relus et rejoués ; ils redonnaient leurs propres sorties à l'octet. Corrections apportées à la reprise : contrôle O2 = O1
+rendu impossible à sauter (une échelle différente ou une image manquante est un échec), écart `NaN` compté comme infini,
+état interne absent comparé sans planter, fichiers versionnés écrits seulement pour l'oracle complet (jamais avec
+`--out`), mention « convention à confirmer » dédoublée dans `o2.md`, colonnes assise et pied écarté ajoutées au tableau
+des étriers.
+
+Produits (tous écrits par script) :
+- `scripts/unreal/rider-rules-o2.mjs` : importe `src/entities/human/anim.js` et `skeleton.js` **inchangés** dans Node
+  (sans Vite ni navigateur), construit le squelette de 25 os d'un rig (os `three.js`, `userData.rest`, `__rig.info`) et
+  rejoue le canal `in` d'O1 image par image ; il écrit `cl`, `cq`, `tg`, `dg` au format d'O1 et la page `o2.md` ;
+- `unreal/core/tests/oracles/monte/o2/` : 2 rigs × 8 scénarios, 1 858 images, 7,4 Mo au total (rigs compris), 0,58 Mo
+  pour le plus gros fichier ; schéma `strides.oracle.rider_rules_o2/1`, `index.json` avec les contrôles ;
+- `unreal/core/tests/oracles/monte/rigs/web_classic.json` (depuis `skeleton.js`) et `rider_f.json` (par
+  `scripts/unreal/rig-from-glb.py`, lecteur GLB sans dépendance : nœuds de `public/real/rider_f.glb`, calage de
+  `realistic.js _calibrate`, semelle et poing relevés dans la page par l'exporteur O1) ;
+- `scripts/unreal/mutations-monte-o2.py` : 93 mutations sur des copies d'`anim.js` (75) et du rejeu (18), dans `build/`.
+
+Acceptation :
+
+| Critère du plan | Résultat |
+|---|---|
+| O2 `web_classic` à l'échelle enregistrée reproduit O1 (`cl` et `tg`) à 1e-6 m et 1e-6 rad, toutes images, tous scénarios | atteint sur les 929 images des 8 scénarios : `cl` 2,9e-9 m, `cq` 1,0e-8 rad, `tg` 1,1e-16 m, orientations des pieds 2,2e-16 rad, état interne `dg` 2,2e-16. Les entrées exportées sont complètes |
+| Deux exécutions identiques à l'octet | atteint : `shasum` des 17 fichiers d'`o2/`, des 2 rigs et d'`o2.md` identique d'une exécution à l'autre ; deux sorties `--out` comparées par `diff -r` |
+| O2 `rider_f` produit | atteint : 8 scénarios ; le rig, animé par les rotations du classique, redonne le rendu réaliste du web (`rz`) à 1,1e-6 m près (tolérance 2e-6, `rz` étant arrondi au millionième) ; boule du pied à 1,4e-7 m de la page |
+| Option `--fit stirrupY=…` | atteinte : `--fit=stirrupY=<m>` (et `stirrupX`, `stirrupZ`, `handX`, `handY`, `handZ`, `legClear`), sortie hors de l'oracle versionné |
+| Plus gros fichier sous 20 Mo | atteint : 0,58 Mo |
+| G7 | atteint : voir la fin d'étape |
+
+Mutations (`mutations-monte-o2.py`, code 0) : 93 mutations, 81 détectées par l'écart à O1, 0 plantage. Les 12 autres
+sont listées dans `ATTENDUES` avec leur raison, et chaque raison est prouvée par une sonde rejouée sur O1 (copie
+d'`anim.js` qui lève une erreur quand la condition est vraie) ; pour chacune, les écarts à O1 sont identiques à ceux du
+témoin. Ce sont les parties de la règle que **O1 n'exerce pas** : vitesse au-delà de 9 m/s (le galop allongé), salut
+(`st.wave`), queue de cheval (`hairTail` nul à toutes les images), pas autre que 1/30 s, allonge d'`ik2` au-delà de 0,98
+de la longueur du membre, tolérance « genou au-delà de la cheville » (`room()` jamais faux), borne de 12 cm de l'écart du
+pied (`xMax` toujours plus serrée), fenêtre de 0,25 s et borne 0,97 de `hugMemory` (la seconde est du code mort par
+construction), marge de 5 mm et seconde passe de la remontée du pied (atteinte, sans effet). L'étape 4 ne pourra pas
+départager ces mutations dans le C++ contre O2 non plus ; pour les couvrir, il faudrait des scénarios de plus (galop
+allongé, salut), à décider.
+
+Adaptations du plan (déclarées dans les en-têtes des scripts) :
+- Node seul au lieu de vite-node : `anim.js` n'importe que `three` ; aucun cache n'est écrit dans `node_modules`.
+- Dossiers `oracles/monte/o2/<rig>/` et `oracles/monte/rigs/` au lieu de `rider_rules_o2/` et `rider_rules/rigs/`.
+- `web_classic.json` est écrit par `rider-rules-o2.mjs` depuis `skeleton.js` (le personnage classique n'a pas de GLB :
+  `humanModel.js:29` le construit par `boneDefs`) ; le script vérifie qu'il est identique au squelette enregistré dans O1.
+- `rider_f` : `seatToHips` est une convention à confirmer à l'étape 6 (classique × rapport `hipScale` de
+  `realistic.js:726`) ; `heelBack` et `height` restent nuls, la monte ne les lit pas. Pas de rig `rider_m` : O1 ne relève
+  la semelle et le poing que du modèle affiché (`rider_f`).
+- Mutations ajoutées à cette étape (le plan ne les prévoyait qu'à l'étape 4, sur le C++).
+
+Constats :
+1. **O2 = O1 à 1e-8 près** : la règle ne lit rien d'autre que le canal `in`. Seul écart au-delà de 1e-12 : le lissage des
+   os par `Quaternion.slerp`, qui change de branche selon `cosHalfTheta`. Vérifié dans Node par une sonde hors dépôt : à
+   l'image 69 d'E3b, `lFore` est à un ulp de sa cible (`cosHalfTheta` = 0,9999999999999999, branche d'interpolation
+   linéaire), puis à 1,0000000000000002 à l'image 70 (aucun mouvement) ; l'écart à O1 apparaît à l'image 69 (5,0e-9 sur
+   une composante) et se divise par 4 environ à chaque image (lissage à 40 /s). Le côté Chrome n'est pas observé : la
+   branche prise par O1 à cette image reste à confirmer.
+2. **La règle dépasse sa propre portée maximale avec `rider_f`.** ρ (hanche–cheville rapportée à la jambe, mesurée sur
+   le squelette) atteint 0,956 en E3b à la longueur v3, et 0,96 à 0,97 avec des étriers plus courts (règle : `riseReach`
+   0,95 ; seuil du niveau B : 0,955). Mécanisme vérifié par une sonde hors dépôt sur E3b : la cible de la cheville est
+   bornée à 0,9500 par la remontée, puis `hugMemory` garde le pied écarté (refermeture à `FOOT_RELAX`, 2 cm/s) et la
+   portée de la cible passe à 0,9593 (pied gauche 1,65 cm plus loin) ; la cheville réelle est à 1,0 cm de sa cible
+   (constat 1 de l'étape 2), un peu plus près de la hanche, d'où 0,956. Avec `web_classic` à la longueur v3, la cible
+   ne dépasse jamais 0,9500 en E3b (ρ mesuré 0,946) ; avec des étriers plus courts, ρ atteint 0,95 à 0,96 (même
+   mécanisme probable, non sondé). Comme M7 (constat 2 de l'étape 2), ce seuil absolu du niveau B est donc dépassé par
+   la règle elle-même : à trancher avant l'étape 6.
+3. **`rider_f` à la longueur v3** : la jambe (80,4 cm) est plus longue que celle du classique à l'échelle 0,985
+   (78,3 cm) et l'étrier v3 la tend : à l'arrêt, ρ 0,925 (plafond assis 0,93) et le bassin descend de 1,2 cm dans la
+   selle pour atteindre l'étrier. Ce chiffre dépend de la convention `seatToHips`.
+4. **Premier centimètre de raccourcissement presque sans effet à l'arrêt.** Avec `web_classic`, le pied gauche passe de
+   0,6 à 3,1 cm d'écart latéral à 1 cm de raccourcissement (tibia contre le flanc, la règle écarte le pied), ce qui
+   rallonge la portée ; avec `rider_f`, c'est le bassin qui remonte dans la selle. De 2 à 8 cm, le genou se ferme de
+   2,3 à 3,3° par centimètre selon le rig, proche de l'estimation géométrique de l'étape 2 (environ 3°).
+
+Chiffres pour la décision J3 (longueur d'étriers), mesurés avec O2 (tableaux complets : `o2.md` §4) :
+- `web_classic` (squelette que la v3 anime), arrêt E1, genou moyen : 132,2° à la longueur v3 (stirrupY −0,64 m),
+  131,2° à 1 cm plus court, 126,2° à 2 cm, 123,4° à 3 cm, 118,1° à 5 cm, 111,1° à 8 cm ; ρ de 0,914 à 0,825.
+- `rider_f` (proportions de la cavalière visible) : 135,2°, 135,3°, 132,7°, 129,4°, 123,6°, 115,1° aux mêmes longueurs.
+- Galop (E2g), `web_classic` : genou le plus fermé 117,5° (v3), 115,0°, 112,6°, 110,3° à 1, 2 et 3 cm, puis plus de
+  gain (113,9° à 5 cm, 110,6° à 8 cm) et ρ au-delà de 0,95 (0,952 et 0,962). Obstacle de 1,40 m (E3b) : genou le plus
+  ouvert 142,1° (v3), 143,5° à 147,3° dès 1 cm, ρ de 0,950 à 0,960 (constat 2).
+- Conversion pour une longueur choisie : stirrupY = −0,64 m + raccourcissement ; dans le web v3, le cheval PJL borne
+  stirrupY à −0,64 m au plus court (`pjlHorse.js:264`) : un étrier plus court exigerait de lever cette borne (web) ou de
+  la régler dans le portage (Unreal).
