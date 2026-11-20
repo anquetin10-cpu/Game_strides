@@ -137,6 +137,12 @@ private:
 		bool bHasBilan = false;
 		FString BilanRunFile, BilanCard;
 		int32 BilanFrame = 0;
+		// Contrôle adverse de T11 : corps de la carte défilé (« end » : jusqu'en bas, sinon en px CSS) et mise en page de
+		// la carte relevée dans le web corps en haut (boîtes, scrollHeight, classe more, scrollTop et more après le
+		// défilement ; JSON), comparée aux boîtes du widget.
+		bool bBilanScrollEnd = false;
+		double BilanScroll = 0;
+		FString BilanLayout;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);
@@ -155,6 +161,10 @@ private:
 	// du jeu jusqu'à l'image de la pose (bilan ouvert par le déroulé), carte comparée à celle du web (bilan-unreal.json).
 	void ApplyBilanPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	TSharedPtr<class FJsonObject> BilanResult;
+	// Exécution et image rejouées pour la dernière pose de bilan, et images rejouées : la pose suivante de même exécution
+	// et même image (autre viewport, ou ApplyPose rappelée avant la capture) garde le bilan ouvert et ce décompte.
+	FString BilanReplayKey;
+	int32 BilanReplayCount = 0;
 	// Démonstration (-StridesShots sans mode, cso-jeu) : activité lancée au poteau, « Entrer en piste » touché à l'ouverture
 	// de la carte de présentation.
 	bool StartActivityAtPost(class APlayerController* PC);

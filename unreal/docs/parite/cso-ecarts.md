@@ -269,9 +269,9 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | 11.1 | Sons d'arrivée, public en liesse 3,5 s | absent | aucun | — | — |
 | 11.2 | Classement simulé (`simulateField`, `mulberry32`, `rankResults`) | identique_prouve | teste | `SC/Ranking.cpp:21-111` ; `TC:1723` | T11 : `ORA/cso_ranking.json` rejoué à l'identique ; marge 1e-9 et tri stable non départagés (mutations déclarées) |
 | 11.2 | Comparaison de résultats (`compareResults`) | identique_prouve | teste | `SC/CsoCourse.cpp:87-92` ; `TC:104-108` | 3 cas seulement ; le bilan web trie par `rankResults` (`ranking.js:23-25`), absent |
-| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | identique_prouve | joue_ecran | `SC/Ranking.cpp:113-185` ; `SG/StridesCsoScreens.cpp:501-579` ; `TC:1775`, `TC:2066` | T11 : `ORA/cso_result.json` (26 cartes) et canal « bl » (23 cartes) identiques ; montages `bilan-2-carte-*` ; dotation non portée |
+| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | partiel | joue_ecran | `SC/Ranking.cpp:113-185`, `:200-263` (mise en page) ; `SG/StridesCsoScreens.cpp:586-765` ; `TC:1775`, `TC:1851`, `TC:2160` | T11 : textes identiques (`ORA/cso_result.json` : 30 cartes ; canal « bl » : 25 cartes) ; contrôle adverse : mise en page par le flux CSS (`ORA/cso_result_layout.json`, 60 vues, 3 876 boîtes à 0,088 px), lignes de la grille du moteur identiques au web (60 vues), colonnes du tableau à 8,2 px au plus (police du moteur étalonnée) ; montages `bilan-2`, `bilan-3`, `bilan-4` ; dotation non portée |
 | 11.2 | Boutons `Recommencer`, `S'entraîner`, `Quitter l'épreuve` | partiel | teste | `SC/CsoRun.cpp:265-279` ; `SG/StridesCourse.cpp:217-224` ; `Strides.Cso.Result` | T11 : Recommencer et Quitter identiques (t11-manche-2, t11-refus) ; S'entraîner : `cso_warmup` absent, rien n'est lancé |
-| 11.2 | Meilleur temps `bestTimes.cso_train` = temps + pénalités | partiel | teste | `SC/CsoRun.cpp:242-253` ; `SG/StridesSaveSubsystem.cpp:106-125` | T11 : écrit à l'étape d'enregistrement sans F5, égal à `ep.bt` du web (4 cas) ; pénalités de temps, élimination et meilleur temps existant non départagés |
+| 11.2 | Meilleur temps `bestTimes.cso_train` = temps + pénalités | partiel | teste | `SC/CsoRun.cpp:242-253` ; `SG/StridesSaveSubsystem.cpp:106-125` | T11 : écrit à l'étape d'enregistrement sans F5, égal à `ep.bt` du web (6 cas) ; pénalités de temps, élimination et meilleur temps existant non départagés |
 | 11.2 | Classement en ligne `reportScore` | absent | aucun | — | — |
 | 11.3 | Concours, défi v6, missions d'histoire | absent | aucun | — | — |
 
@@ -1101,7 +1101,8 @@ Principes communs :
   0 pt Arrivée ✓ » ; `-StridesShots=cso-jeu -TouchControls` refaite (`jeu-1` sans activité au départ du jeu).
   (6) Écarts restants : police du moteur (cartes, plan, dialogue) ; mise en page relevée en français pour Comète, non
   recalculée pour un autre texte ; animation de l'overlay, clignotement de « Toucher pour fermer », clics sonores non
-  portés ; ombre de la barre d'actions plus sombre. Captures de la recette : en 1-presentation et 2-plan, le fond (flouté)
+  portés ; ombre de la barre d'actions plus sombre (corrigé au contrôle adverse de T11 : ombres de bord de la boîte
+  défilante Slate retirées). Captures de la recette : en 1-presentation et 2-plan, le fond (flouté)
   montre une autre vue que l'exécution rejouée (écarts moyens 10,85 et 9,51 / 255 entre PNG et capture de l'exécution,
   `poses.json`, champ `recette`) ; en 3-cloche, le PNG n'a plus le grand message « CLOCHE » (temporisations du HUD sur
   l'horloge réelle pendant `A.tick(80)`) alors que le modèle de l'oracle (pause de 700 ms par capture, T9) l'affiche,
@@ -1170,6 +1171,44 @@ Principes communs :
   la référence tactile est prise pendant le fondu de l'overlay et vient d'une partie au doigt en temps réel (chrono
   60,77 s au lieu de 59,80 s, même classement 5e sur 15), non rejouable au pas fixe ; sans sauvegarde existante,
   `RecordBestTime` crée une sauvegarde sans position (le chargement F9 la refuse ensuite, comme avant).
+
+#### Contrôle adverse de T11 (20/11/2026)
+
+Base `97d1d013`. C = corrigé, D = déclaré.
+
+1. C (majeur) — mise en page de la carte figée sur le relevé de `t9-parcours` (joueur 9e ou au-delà posé sous la zone
+   de défilement ; fautes sur deux lignes débordant sur la ligne suivante). Mise en page portée en logique pure :
+   `strides::csoResultLayout` (`SC/Ranking.cpp:200-263`) reproduit le flux CSS du corps (`styles.css:246-254`, `350-355`) à
+   partir du relevé de base de la vue (désormais par langue : `cso_result_style.json` schéma 2, fr et en, avec la largeur
+   Geist de chaque texte) : chaque bloc garde sa distance au précédent, sa hauteur suit ses lignes de texte, une ligne de
+   tableau par engagé affiché, colonnes réparties en proportion de leur largeur maximale (table-layout auto, vérifié à
+   0,09 px), `scrollHeight` = bas du tableau + padding-bottom, classe `more` (`screens.js:151`) suivie au défilement.
+   Oracle `ORA/cso_result_layout.json` (`export-cso-result.mjs --screens` : 15 états × 2 langues × 2 viewports, boîtes,
+   largeurs de texte des cellules, défilement et `more` en haut et en bas) : `testCsoResultLayout` (`TC:1851`) 60 vues,
+   3 876 boîtes à 0,088 px, défilement et `more` identiques ; 15 mutations de la mise en page dans
+   `mutations-cso-ranking.py`, 12 détectées, 3 déclarées (lignes d'une clé, arrondi au-dessus de `scrollHeight`, seuil de
+   4 px de `more`) ; le script entier : 76 mutations, 67 détectées, 9 déclarées, code 0. Jeu
+   (`SG/StridesCsoScreens.cpp:586-765`) : lignes des valeurs mesurées par le moteur à la largeur de la colonne divisée par
+   le rapport Geist / moteur étalonné sur le relevé, largeurs de texte des cellules estimées par colonne et par graisse ;
+   test moteur `Strides.Cso.ResultLayout` : lignes identiques au web dans les 60 vues, flux à 0,000 px, défilement et
+   `more` identiques, colonnes à 8,2 px au plus (déclaré). Partie réelle `t11-trois-barres` (12 pts sur deux lignes,
+   joueur 14e, 9 lignes) exportée du web et rejouée (`testCsoRuns`, `Strides.Cso.Result`) ; montages
+   `bilan-3-trois-barres-*` (corps en haut) et `bilan-4-trois-barres-bas-*` (défilé jusqu'en bas : 195 px et 247 px comme
+   le web, ombre de la barre retirée), boîtes comparées au web dans `bilan-unreal.json`. `cso.bilan` passe en `partiel`
+   (police du moteur : colonnes, mot coupé ; comme les autres lignes qui déclarent la police).
+2. C — sous-branches « Victoire ! » et « joueur exactement 9e » : états `victoire-fautes` (manche 268, aucun engagé
+   sans faute) et `neuvieme` (4 pts en 60,00 s) ajoutés à `cso_result.json` ; mutations détectées.
+3. C — `socle.json` `sauvegarde.auto` et `vie.json` `missions.sauvegarde-carriere` : écritures automatiques ciblées
+   (réglages de la Pause, meilleur temps de T11) déclarées.
+4. C — références vers `export-data.mjs` recalées (`:40` horse_gaits, `:41` horse_profiles, `:82` cso_course_pole) ;
+   références vers les fichiers réécrits par cette correction recalées par projection du diff (17), cibles relues.
+5. C — `bilan-unreal.json` : images rejouées gardées pour les poses suivantes de même exécution et même image (2 072
+   pour `bilan-2`, 902 pour `bilan-3` et `bilan-4`).
+6. C — trait sombre au-dessus de la barre d'actions : ombres de bord de la boîte défilante Slate retirées (aussi sur les
+   cartes de T10 : captures `entree-1-presentation-667x308` et `entree-2-plan-*` refaites) ; `testCsoResult` lit le temps
+   accordé dans `cso_course_pole.json` ; identifiant d'inventaire du commentaire de `mutations-cso-ranking.py` corrigé
+   (`activites.parcours-pole`, `cso.classement-simule`, `cso.bilan`). D — référence tactile `bilan-touch` : état
+   différent (partie au doigt), déclarée `partiel`, inchangée.
 
 ### T12. Sons de l'épreuve et recette complète
 

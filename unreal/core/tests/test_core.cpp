@@ -1774,6 +1774,8 @@ static void testRanking() {
 // identique ; choix du bilan (Recommencer, Quitter, S'entraîner) relevés dans le jeu web.
 static void testCsoResult() {
   const J o = loadJson(ORA + "/cso_result.json");
+  // Temps accordé du Parcours du Pôle : celui que le jeu lit (cso_course_pole.json, objet run).
+  const CsoRunConfig pole = csoRunConfigFromJson(loadJson(DATA + "/cso_course_pole.json"), {});
   int n = 0, bad = 0, nine = 0, horseless = 0, buttons = 0;
   std::set<std::string> titles;
   for (const char* lang : {"fr", "en"}) {
@@ -1791,7 +1793,7 @@ static void testCsoResult() {
       in.playerName = c["playerName"].s;
       in.hasHorse = !c["horseName"].isNull();
       if (in.hasHorse) in.horseName = c["horseName"].s;
-      in.timeAllowed = 64;
+      in.timeAllowed = pole.timeAllowed;
       in.courseTitle = g_activity.title;
       in.result = g_activity.result;
       const CsoResultCard card = csoResultCard(in, g_names, g_text, L);
@@ -1824,6 +1826,98 @@ static void testCsoResult() {
   std::string ts;
   for (const auto& x : titles) ts += " « " + x + " »";
   std::printf("bilan (cso_result.json) : %d cartes identiques au DOM du jeu web (joueur au-delà du 8e : %d, sans cheval : %d, boutons touchés : %d cas) ; titres :%s\n", n, nine, horseless, buttons, ts.c_str());
+}
+
+// Mise en page de la carte de bilan (contrôle adverse de T11) : relevé de base d'une vue du jeu (cso_result_style.json,
+// lu par UStridesCsoScreens) et état posé du web (cso_result_layout.json : lignes de chaque texte tirées de la hauteur de
+// sa boîte, largeur du texte de chaque cellule) → csoResultLayout : boîtes du kicker, du titre, de la grille, du tableau,
+// des lignes et des cellules (au dixième de px du relevé près), scrollHeight, hauteur visible, classe more en haut et
+// défilé jusqu'en bas (scrollTop maximal) identiques au navigateur.
+static CsoBox boxOfRect(const J& r) { return {r[0].num(), r[1].num(), r[2].num(), r[3].num()}; }
+static CsoResultLayoutBase resultLayoutBase(const J& res) {
+  CsoResultLayoutBase b;
+  b.body = boxOfRect(res["body"]["rect"]);
+  b.padBottom = std::stod(res["body"]["paddingBottom"].s);
+  b.clientHeight = res["body"]["clientHeight"].num();
+  b.kicker = boxOfRect(res["kicker"]["rect"]);
+  b.title = boxOfRect(res["title"]["rect"]);
+  for (const J& k : res["keys"].a) b.keys.push_back(boxOfRect(k["rect"]));
+  for (const J& v : res["values"].a) b.values.push_back(boxOfRect(v["rect"]));
+  b.table = boxOfRect(res["table"]["rect"]);
+  for (const J& r : res["rows"].a) b.rows.push_back(boxOfRect(r["rect"]));
+  for (const J& c : res["rows"][0]["cells"].a) b.cellPad.push_back(std::stod(c["paddingLeft"].s) + std::stod(c["paddingRight"].s));
+  return b;
+}
+static void testCsoResultLayout() {
+  const J st = loadJson(DATA + "/cso_result_style.json");
+  const J o = loadJson(ORA + "/cso_result_layout.json");
+  const J cards = loadJson(ORA + "/cso_result.json");
+  int n = 0, bad = 0, wrapped = 0, nine = 0, boxes = 0, moreBottom = 0;
+  double worst = 0;
+  for (const char* lang : {"fr", "en"}) {
+    for (const J& L : o[lang].a) {
+      const std::string id = L["id"].s + " (" + lang + ", " + dump(L["viewport"]) + ")";
+      const J* base = nullptr;
+      for (const J& v : st["views"].a)
+        if (v["lang"].s == lang && v["viewport"][0].num() == L["viewport"][0].num() && v["viewport"][1].num() == L["viewport"][1].num()) base = &v["result"];
+      const J* card = nullptr;
+      for (const J& c : cards[lang].a)
+        if (c["id"].s == L["id"].s) card = &c;
+      CHECK(base && card && dump((*card)["dom"]) == dump(L["dom"]), "mise en page %s : relevé de base de la vue et carte de cso_result.json", id.c_str());
+      if (!base || !card) continue;
+      const CsoResultLayoutBase b = resultLayoutBase(*base);
+      CsoResultLayoutIn in;
+      auto lines = [](const J& r, const CsoBox& one) { return (int)std::lround(r[3].num() / one.h); };
+      in.kickerLines = lines(L["kicker"], b.kicker);
+      in.titleLines = lines(L["title"], b.title);
+      for (size_t i = 0; i < L["keys"].a.size() && i < b.keys.size(); i++) in.keyLines.push_back(lines(L["keys"][i], b.keys[i]));
+      for (size_t i = 0; i < L["values"].a.size() && i < b.values.size(); i++) in.valueLines.push_back(lines(L["values"][i], b.values[i]));
+      for (const J& r : L["rows"].a) {
+        std::vector<double> tw;
+        for (const J& w : r["tw"].a) tw.push_back(w.num());
+        in.cellText.push_back(tw);
+      }
+      const CsoResultLayout got = csoResultLayout(b, in);
+      int diffs = 0;
+      auto cmp = [&](const std::string& what, const CsoBox& g, const J& w) {
+        const double d = std::max({std::fabs(g.x - w[0].num()), std::fabs(g.y - w[1].num()), std::fabs(g.w - w[2].num()), std::fabs(g.h - w[3].num())});
+        worst = std::max(worst, d);
+        boxes++;
+        if (d > 0.15 && ++diffs <= 2)
+          std::printf("  mise en page %s : %s [%.2f, %.2f, %.2f, %.2f] / web %s\n", id.c_str(), what.c_str(), g.x, g.y, g.w, g.h, dump(w).c_str());
+      };
+      cmp("kicker", got.kicker, L["kicker"]);
+      cmp("titre", got.title, L["title"]);
+      if (got.keys.size() != L["keys"].a.size() || got.rows.size() != L["rows"].a.size()) diffs++;
+      for (size_t i = 0; i < got.keys.size() && i < L["keys"].a.size(); i++) {
+        cmp("clé " + std::to_string(i), got.keys[i], L["keys"][i]);
+        cmp("valeur " + std::to_string(i), got.values[i], L["values"][i]);
+      }
+      cmp("tableau", got.table, L["table"]);
+      for (size_t j = 0; j < got.rows.size() && j < L["rows"].a.size(); j++) {
+        cmp("ligne " + std::to_string(j + 1), got.rows[j], L["rows"][j]["rect"]);
+        for (size_t k = 0; k < got.cells[j].size() && k < L["rows"][j]["cells"].a.size(); k++)
+          cmp("cellule " + std::to_string(j + 1) + "." + std::to_string(k + 1), got.cells[j][k], L["rows"][j]["cells"][k]);
+      }
+      const J& bo = L["bottom"];
+      const bool scrollOk = got.scrollHeight == (int)L["body"]["scrollHeight"].num() && got.clientHeight == L["body"]["clientHeight"].num() && got.maxScroll() == bo["scrollTop"].num() &&
+                            got.more(0) == L["more"].b && got.more(got.maxScroll()) == bo["more"].b && !got.tooWide;
+      if (!scrollOk) {
+        diffs++;
+        std::printf("  mise en page %s : défilement %d / %g, visible %g / %g, bas %g / %g, more %d %d / %d %d\n", id.c_str(), got.scrollHeight, L["body"]["scrollHeight"].num(), got.clientHeight,
+                    L["body"]["clientHeight"].num(), got.maxScroll(), bo["scrollTop"].num(), got.more(0), got.more(got.maxScroll()), L["more"].b, bo["more"].b);
+      }
+      bad += diffs > 0;
+      n++;
+      wrapped += *std::max_element(in.valueLines.begin(), in.valueLines.end()) > 1;
+      nine += got.rows.size() == 9;
+      moreBottom += !bo["more"].b && L["more"].b;
+    }
+  }
+  CHECK(bad == 0 && n >= 60, "mise en page du bilan : %d vues sur %d différentes du navigateur", bad, n);
+  CHECK(wrapped >= 6 && nine >= 16 && moreBottom == n, "mise en page du bilan : branches non exercées (valeur sur deux lignes %d, joueur au-delà du 8e %d, ombre retirée en bas %d)", wrapped, nine, moreBottom);
+  std::printf("mise en page du bilan (cso_result_layout.json) : %d vues (%d avec une valeur sur deux lignes, %d avec le joueur au-delà du 8e), %d boîtes à %.3f px au plus du navigateur ; défilement et classe more identiques\n",
+              n, wrapped, nine, boxes, worst);
 }
 
 static void testCsoRuns() {
@@ -2933,6 +3027,7 @@ int main(int argc, char** argv) {
     run("hud", testCsoHud);
     run("ranking", testRanking);
     run("result", testCsoResult);
+    run("layout", testCsoResultLayout);
     run("csoruns", testCsoRuns);
     run("goto", testCsoGoto);
     run("camera", testCamRuns);

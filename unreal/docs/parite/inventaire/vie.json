@@ -243,7 +243,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de la carrière sauvegardée (Strides.Core.Save ne lit que le JSON du cœur). testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
-  "ecart": "Deux sources de vérité : strides::SaveGame.money et .reputation ne sont pas reliés à Credits et Reputation ; sauvegarde manuelle seulement (F5 ou bouton tactile SAUVER, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132) ; l'import de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:87-110, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:139-153) ne reprend ni completed ni checkpoint et ne remplit pas la carrière ; choix, drapeaux, statistiques et avis absents.",
+  "ecart": "Deux sources de vérité : strides::SaveGame.money et .reputation ne sont pas reliés à Credits et Reputation ; carrière sauvée à la main seulement (F5 ou bouton tactile SAUVER, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132) : aucune écriture à la fin d'une mission ; seuls les réglages de la Pause et le meilleur temps du Parcours du Pôle (étape d'enregistrement, tranche T11) sont écrits sans F5 ; l'import de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:87-110, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:139-153) ne reprend ni completed ni checkpoint et ne remplit pas la carrière ; choix, drapeaux, statistiques et avis absents.",
   "tranche": "e"
  },
  {
@@ -676,7 +676,7 @@
   "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé par l'action du poteau « Chrono » (tranche T10 : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp, StridesCourse.cpp:172-204) ; étape d'enregistrement du meilleur temps (tranche T11 : unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:242-253, score = chrono + fautes + pénalités de temps, rien après une élimination, record si aucun meilleur temps ou meilleur) ; écrit dans la sauvegarde à cette étape, sans F5 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:367-378, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:106-125 ; bestTimes de unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:37-39, 79, 102)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Tracé, hauteurs, temps accordé comparés à cso_course.json (test_core.cpp:163-204) ; meilleur temps : ep.bt des exécutions t11-refus (28,033… s = 24,03 s + 4 points de refus) et t11-manche-2 (20,800… s, dernière manche) égal au bit près (testCsoRuns) ; Strides.Cso.Result : écrit dans l'emplacement de sauvegarde du test sans SaveNow et relu sur le disque au bit près ; bestTimes relu et importé de la sauvegarde web (testSave).",
+  "preuve": "Tracé, hauteurs, temps accordé comparés à cso_course.json (test_core.cpp:163-204) ; meilleur temps : ep.bt des exécutions t11-refus (28,033… s = 24,03 s + 4 points de refus), t11-manche-2 (20,800… s, dernière manche) et t11-trois-barres (32,800… s = 20,80 s + 12 points de barres) égal au bit près (testCsoRuns) ; Strides.Cso.Result : écrit dans l'emplacement de sauvegarde du test sans SaveNow et relu sur le disque au bit près ; bestTimes relu et importé de la sauvegarde web (testSave).",
   "ecart": "Branches non départagées (mutations déclarées, scripts/unreal/mutations-cso-ranking.py) : pénalités de temps dans le score (aucune exécution enregistrée n'en a), rien après une élimination, meilleur temps existant égalé ou battu (sauvegarde neuve à chaque exécution). Ni classement en ligne (reportScore), ni carte « Nouveau record » (resultTitle, resultBody : le bilan tient lieu d'écran de résultat, resultCustom), ni récompenses de fin de mission (réputation, compétence organisation).",
   "tranche": "a"
  },
@@ -861,7 +861,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; StaminaMul est lu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:63) mais jamais utilisé ; stamina, gallopDrain et staminaRegen sont exportés dans horse_gaits.json (scripts/unreal/export-data.mjs:31) mais non lus.",
+  "preuve": "Aucun équivalent ; StaminaMul est lu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:63) mais jamais utilisé ; stamina, gallopDrain et staminaRegen sont exportés dans horse_gaits.json (scripts/unreal/export-data.mjs:40) mais non lus.",
   "ecart": "Aucune physiologie du cheval.",
   "tranche": "d"
  },
@@ -1236,7 +1236,7 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:32, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:186).",
+  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:41, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:186).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Export automatique depuis le JS (valeurs relues identiques à data.js le 18/11/2026), mais aucun test C++ ne compare ces profils à un oracle.",

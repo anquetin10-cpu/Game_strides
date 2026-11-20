@@ -167,6 +167,8 @@
 {"id":"t11-refus","lang":"en","file":"t11-refus.en.json","frames":1012},
 {"id":"t11-manche-2","lang":"fr","file":"t11-manche-2.fr.json","frames":1729},
 {"id":"t11-manche-2","lang":"en","file":"t11-manche-2.en.json","frames":1729},
+{"id":"t11-trois-barres","lang":"fr","file":"t11-trois-barres.fr.json","frames":915},
+{"id":"t11-trois-barres","lang":"en","file":"t11-trois-barres.en.json","frames":915},
 {"id":"t6-tribunes","lang":"fr","file":"t6-tribunes.fr.json","frames":150},
 {"id":"t6-mat","lang":"fr","file":"t6-mat.fr.json","frames":105},
 {"id":"t6-entree","lang":"fr","file":"t6-entree.fr.json","frames":78},

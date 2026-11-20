@@ -197,4 +197,69 @@ CsoResultInput csoResultInputOf(const CsoRun& run) {
   return in;
 }
 
+CsoResultLayout csoResultLayout(const CsoResultLayoutBase& b, const CsoResultLayoutIn& in) {
+  CsoResultLayout o;
+  // Décalage accumulé : lignes de texte en plus dans les blocs précédents (le relevé n'en a qu'une par bloc).
+  double dy = 0;
+  auto block = [&](const CsoBox& r, int lines) {
+    CsoBox x = r;
+    x.y = r.y + dy;
+    x.h = r.h * std::max(1, lines);
+    dy += x.h - r.h;
+    return x;
+  };
+  o.kicker = block(b.kicker, in.kickerLines);
+  o.title = block(b.title, in.titleLines);
+  // Grille (.cso-pres : rangées séparées de row-gap) : rangée haute de sa case la plus haute, clé et valeur étirées.
+  for (size_t i = 0; i < b.keys.size() && i < b.values.size(); i++) {
+    const int n = std::max(i < in.keyLines.size() ? in.keyLines[i] : 1, i < in.valueLines.size() ? in.valueLines[i] : 1);
+    const double h0 = std::max(b.keys[i].h, b.values[i].h);
+    CsoBox k = b.keys[i], v = b.values[i];
+    k.y = b.keys[i].y + dy;
+    v.y = b.values[i].y + dy;
+    k.h = v.h = h0 * std::max(1, n);
+    dy += k.h - h0;
+    o.keys.push_back(k);
+    o.values.push_back(v);
+  }
+  // Tableau (.cso-rank, border-collapse) : lignes contiguës de la hauteur relevée, une par engagé affiché.
+  const double step = b.rows.empty() ? 0 : b.rows[0].h;
+  const size_t n = in.cellText.size();
+  o.table = b.table;
+  o.table.y = b.table.y + dy;
+  o.table.h = step * (double)n;
+  // Colonnes (table-layout auto, largeur du tableau fixée à 100 %) : largeur maximale de chaque colonne = texte le plus
+  // large + padding ; la largeur du tableau est répartie en proportion de ces maxima.
+  const size_t nc = b.cellPad.size();
+  std::vector<double> m(nc, 0);
+  for (const std::vector<double>& row : in.cellText)
+    for (size_t k = 0; k < nc && k < row.size(); k++) m[k] = std::max(m[k], row[k] + b.cellPad[k]);
+  double sum = 0;
+  for (double x : m) sum += x;
+  o.tooWide = sum > b.table.w;
+  std::vector<double> xs(nc), ws(nc);
+  double x = b.table.x;
+  for (size_t k = 0; k < nc; k++) {
+    ws[k] = sum > 0 ? m[k] * b.table.w / sum : b.table.w / (double)nc;
+    xs[k] = x;
+    x += ws[k];
+  }
+  const CsoBox r0 = b.rows.empty() ? b.table : b.rows[0];
+  for (size_t j = 0; j < n; j++) {
+    const CsoBox r{r0.x, o.table.y + step * (double)j, r0.w, step};
+    o.rows.push_back(r);
+    std::vector<CsoBox> cs;
+    for (size_t k = 0; k < nc; k++) cs.push_back({xs[k], r.y, ws[k], step});
+    o.cells.push_back(cs);
+  }
+  // Hauteur de défilement : bas du tableau + padding-bottom du corps, arrondie au pixel (scrollHeight entier).
+  o.scrollHeight = (int)std::round(o.table.y + o.table.h - b.body.y + b.padBottom);
+  o.clientHeight = b.clientHeight;
+  return o;
+}
+
+double CsoResultLayout::maxScroll() const { return std::max(0.0, (double)scrollHeight - clientHeight); }
+
+bool CsoResultLayout::more(double scrollTop) const { return (double)scrollHeight - scrollTop - clientHeight > 4; }
+
 }  // namespace strides

@@ -620,6 +620,17 @@ void AStridesShots::LoadPoses()
 				TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> W = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&P.BilanCard);
 				FJsonSerializer::Serialize(Ca->ToSharedRef(), W);
 			}
+			if (const TSharedPtr<FJsonValue> ScrollAt = (*Bl)->TryGetField(TEXT("scroll")))
+			{
+				if (ScrollAt->Type == EJson::String) P.bBilanScrollEnd = ScrollAt->AsString() == TEXT("end");
+				else if (ScrollAt->Type == EJson::Number) P.BilanScroll = ScrollAt->AsNumber();
+			}
+			const TSharedPtr<FJsonObject>* La = nullptr;
+			if ((*Bl)->TryGetObjectField(TEXT("layout"), La))
+			{
+				TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> W = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&P.BilanLayout);
+				FJsonSerializer::Serialize(La->ToSharedRef(), W);
+			}
 		}
 		// Commandes d'épreuve (tranche T8) : page tactile, doigt sur le joystick, carte Pause.
 		O->TryGetBoolField(TEXT("tactile"), P.bTactile);
@@ -1024,10 +1035,14 @@ void AStridesShots::ApplyBilanPose(const FPose& P, APlayerController* PC, AStrid
 	}
 	TArray<FString> Diffs;
 	int32 Replayed = 0;
-	// Une seule partie rejouée (ApplyPose est rappelée avant la capture ; la pose suivante, autre viewport, garde le bilan
-	// ouvert) : activité lancée comme au poteau (joueur et cheval de l'exécution), puis chaque image de l'exécution jusqu'à
-	// celle de la pose (boutons de carte touchés par le widget, événements d'obstacle, image du déroulé).
-	if (C->Screen() != AStridesCourse::EScreen::Result)
+	// Une partie rejouée par exécution et image (ApplyPose est rappelée avant la capture ; la pose suivante de même
+	// exécution et même image, autre viewport ou corps défilé, garde le bilan ouvert et le décompte des images) : activité
+	// lancée comme au poteau (joueur et cheval de l'exécution ; une autre épreuve en cours est relancée de zéro), puis
+	// chaque image de l'exécution jusqu'à celle de la pose (boutons de carte touchés par le widget, événements d'obstacle,
+	// image du déroulé).
+	const FString RunKey = FString::Printf(TEXT("%s|%d"), *P.BilanRunFile, P.BilanFrame);
+	if (C->Screen() == AStridesCourse::EScreen::Result && BilanReplayKey == RunKey) Replayed = BilanReplayCount;
+	else
 	{
 		FString Text;
 		if (!FFileHelper::LoadFileToString(Text, *(RepoRoot() / P.BilanRunFile)))
@@ -1047,8 +1062,12 @@ void AStridesShots::ApplyBilanPose(const FPose& P, APlayerController* PC, AStrid
 			if (StridesCsoRunReplay::Frame(C, Fr, W, bUi, Cad)) Replayed++;
 			if (!bUi) Diffs.Add(FString::Printf(TEXT("bouton « %hs » absent à l'image %d"), Fr["in"]["ui"].s.c_str(), (int32)Fr["f"].num()));
 		}
+		BilanReplayKey = RunKey;
+		BilanReplayCount = Replayed;
 	}
 	W->Refresh();
+	// Corps de la carte défilé comme le doigt (pose « bas » : jusqu'en bas).
+	W->ScrollCardForTest(P.bBilanScrollEnd ? W->CardMaxScroll() : P.BilanScroll);
 	if (C->Screen() != AStridesCourse::EScreen::Result) Diffs.Add(TEXT("bilan non ouvert"));
 	if (!P.BilanCard.IsEmpty())
 	{
@@ -1081,6 +1100,70 @@ void AStridesShots::ApplyBilanPose(const FPose& P, APlayerController* PC, AStrid
 	for (const FString& X : Diffs) Dv.Add(MakeShared<FJsonValueString>(X));
 	BilanResult->SetArrayField(TEXT("diffs"), Dv);
 	BilanResult->SetNumberField(TEXT("replayed"), Replayed);
+	// Mise en page (contrôle adverse de T11) : boîtes du widget comparées à celles du web (px CSS, corps en haut) ;
+	// lignes de chaque texte (moteur / web) ; défilement et classe more.
+	if (!P.BilanLayout.IsEmpty())
+	{
+		const std::string Utf8 = TCHAR_TO_UTF8(*P.BilanLayout);
+		const J Lw = JParser(Utf8).parse();
+		TSharedPtr<FJsonObject> Lo = MakeShared<FJsonObject>();
+		TArray<TSharedPtr<FJsonValue>> Far;
+		int32 NBox = 0;
+		double Worst = 0, WorstY = 0;
+		auto Cmp = [&](const FString& Part, const J& R)
+		{
+			if (R.t != J::Arr || R.a.size() < 4) return;
+			const FVector4 B = W->BoxOf(Part);
+			const double Dx = FMath::Max(FMath::Abs(B.X - R[0].num()), FMath::Abs(B.Z - R[2].num()));
+			const double Dy = FMath::Max(FMath::Abs(B.Y - R[1].num()), FMath::Abs(B.W - R[3].num()));
+			NBox++;
+			Worst = FMath::Max(Worst, FMath::Max(Dx, Dy));
+			WorstY = FMath::Max(WorstY, Dy);
+			if (FMath::Max(Dx, Dy) > 0.5)
+				Far.Add(MakeShared<FJsonValueString>(FString::Printf(TEXT("%s [%.1f, %.1f, %.1f, %.1f] / web [%.1f, %.1f, %.1f, %.1f]"), *Part, B.X, B.Y, B.Z, B.W, R[0].num(), R[1].num(), R[2].num(), R[3].num())));
+		};
+		Cmp(TEXT("kicker"), Lw["kicker"]);
+		Cmp(TEXT("title"), Lw["title"]);
+		for (size_t I = 0; I < Lw["keys"].a.size(); I++) Cmp(FString::Printf(TEXT("k%d"), (int32)I), Lw["keys"][I]);
+		for (size_t I = 0; I < Lw["values"].a.size(); I++) Cmp(FString::Printf(TEXT("v%d"), (int32)I), Lw["values"][I]);
+		Cmp(TEXT("table"), Lw["table"]);
+		for (size_t I = 0; I < Lw["rows"].a.size(); I++)
+		{
+			if (Lw["rows"][I]["me"].b) Cmp(TEXT("me"), Lw["rows"][I]["rect"]);
+			for (size_t K = 0; K < Lw["rows"][I]["cells"].a.size(); K++) Cmp(FString::Printf(TEXT("r%d.%d"), (int32)I, (int32)K), Lw["rows"][I]["cells"][K]);
+		}
+		const strides::CsoResultLayout* Ul = W->ResultLayoutShown();
+		const strides::CsoResultLayoutIn* Ui = W->ResultLayoutInput();
+		if (Ul && Ui)
+		{
+			FString Lu, Lweb;
+			for (size_t I = 0; I < Ui->valueLines.size() && I < Lw["values"].a.size() && I < Ul->values.size(); I++)
+			{
+				Lu += FString::Printf(TEXT("%s%d"), I ? TEXT(",") : TEXT(""), FMath::Max(Ui->keyLines[I], Ui->valueLines[I]));
+				Lweb += FString::Printf(TEXT("%s%d"), I ? TEXT(",") : TEXT(""), FMath::RoundToInt(Lw["values"][I][3].num() / (Ul->values[I].h / FMath::Max(1, FMath::Max(Ui->keyLines[I], Ui->valueLines[I])))));
+			}
+			Lo->SetStringField(TEXT("gridLines"), Lu);
+			Lo->SetStringField(TEXT("gridLinesWeb"), Lweb);
+			Lo->SetNumberField(TEXT("scrollHeight"), Ul->scrollHeight);
+			if (Lu != Lweb) Diffs.Add(FString::Printf(TEXT("lignes de la grille %s / web %s"), *Lu, *Lweb));
+		}
+		Lo->SetNumberField(TEXT("scrollHeightWeb"), Lw["body"]["scrollHeight"].num());
+		Lo->SetNumberField(TEXT("scroll"), W->CardScrollOffset());
+		Lo->SetNumberField(TEXT("scrollWeb"), Lw["scrollTop"].num());
+		Lo->SetBoolField(TEXT("more"), W->CardMore());
+		Lo->SetBoolField(TEXT("moreWeb"), Lw["moreAfter"].b);
+		Lo->SetNumberField(TEXT("boxes"), NBox);
+		Lo->SetNumberField(TEXT("worst"), Worst);
+		Lo->SetNumberField(TEXT("worstY"), WorstY);
+		Lo->SetArrayField(TEXT("far"), Far);
+		BilanResult->SetObjectField(TEXT("layout"), Lo);
+		if (W->CardScrollOffset() != Lw["scrollTop"].num() || W->CardMore() != Lw["moreAfter"].b) Diffs.Add(TEXT("défilement ou classe more différents du web"));
+		UE_LOG(LogTemp, Display, TEXT("Strides parite: bilan %s : mise en page, %d boîtes à %.2f px au plus du web (%.2f px en hauteur), %d au-delà de 0,5 px ; défilé à %.0f px (web %.0f), more %d (web %d)"),
+			*P.Name, NBox, Worst, WorstY, Far.Num(), W->CardScrollOffset(), Lw["scrollTop"].num(), W->CardMore(), Lw["moreAfter"].b);
+		TArray<TSharedPtr<FJsonValue>> Dv2;
+		for (const FString& X : Diffs) Dv2.Add(MakeShared<FJsonValueString>(X));
+		BilanResult->SetArrayField(TEXT("diffs"), Dv2);
+	}
 	BilanResult->SetStringField(TEXT("step"), C->Run() ? UTF8_TO_TCHAR(strides::csoStepName(C->Run()->step())) : TEXT(""));
 	BilanResult->SetStringField(TEXT("title"), UTF8_TO_TCHAR(C->ResultCard().title.c_str()));
 }

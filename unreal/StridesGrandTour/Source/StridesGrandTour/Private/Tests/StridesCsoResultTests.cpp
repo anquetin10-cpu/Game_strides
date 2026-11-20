@@ -10,7 +10,9 @@
 //    Recommencer : carte fermée, barre du 2 renversée avant le geste remise sur ses taquets à l'entrée en piste (barres
 //    remises par le jeu : AStridesCourse::FlushRunCalls), annonce du dossard, cloche, manche 2. Quitter l'épreuve :
 //    meilleur temps (chrono + pénalités) écrit dans l'emplacement de sauvegarde du test SANS SaveNow (F5), relu sur le
-//    disque au bit près ; mission terminée, simulation reprise.
+//    disque au bit près ; mission terminée, simulation reprise. t11-trois-barres (contrôle adverse de T11 : trois barres,
+//    joueur 14e, fautes sur deux lignes) : même rejeu, bilan affiché par le widget.
+//  - Strides.Cso.ResultLayout : mise en page de la carte de bilan comparée au navigateur (voir ce test plus bas).
 #include "Misc/AutomationTest.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/Engine.h"
@@ -18,6 +20,7 @@
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/MiniJson.h"
@@ -248,9 +251,146 @@ bool FStridesCsoResultTest::RunTest(const FString&)
 		Course->Destroy();
 	}
 	UGameplayStatics::DeleteGameInSlot(TestSlot, 0);
-	for (const TCHAR* Id : {TEXT("t11-refus"), TEXT("t11-manche-2")})
+	for (const TCHAR* Id : {TEXT("t11-refus"), TEXT("t11-manche-2"), TEXT("t11-trois-barres")})
 		for (const TCHAR* L : {TEXT("fr"), TEXT("en")}) TestTrue(FString::Printf(TEXT("exécution %s (%s) rejouée sans écart"), Id, L), Done.Contains(FString::Printf(TEXT("%s %s"), Id, L)));
-	TestTrue(FString::Printf(TEXT("bilans comparés (%d), Recommencer (%d), meilleurs temps (%d)"), Bilans, Retries, Records), Bilans >= 6 && Retries == 2 && Records == 4);
+	TestTrue(FString::Printf(TEXT("bilans comparés (%d), Recommencer (%d), meilleurs temps (%d)"), Bilans, Retries, Records), Bilans >= 8 && Retries == 2 && Records == 6);
 	Info(FString::Printf(TEXT("%d exécutions sans écart, %d images, %d appels d'interface et %d sons comparés, %d bilans, %d Recommencer, %d meilleurs temps"), Done.Num(), Frames, HudCmp, AudioCmp, Bilans, Retries, Records));
+	return true;
+}
+
+// Mise en page du bilan (contrôle adverse de T11) dans le moteur : carte du cœur pour chaque état posé de
+// unreal/core/tests/oracles/cso_result.json (entrées du bilan lues par le chemin du jeu : AStridesCourse::StartRun puis
+// strides::csoResultInputOf, état de la manche, joueur et cheval de l'état), posée dans le widget des cartes
+// (UStridesCsoScreens::SetResultForTest) à 844 × 390 et 667 × 308, en français et en anglais, et comparée à la mise en
+// page du navigateur (cso_result_layout.json, scripts/unreal/export-cso-result.mjs --screens) : lignes de chaque case de
+// la grille mesurées par le moteur (police étalonnée sur le relevé de base) ; boîtes du kicker, du titre, de la grille,
+// du tableau, de la ligne du joueur et des cellules (positions verticales et hauteurs exigées au dixième de px ; colonnes
+// du tableau, réparties sur des largeurs de texte estimées : écart borné) ; hauteur de défilement, classe more en haut et
+// le corps défilé jusqu'en bas.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCsoResultLayoutTest, "Strides.Cso.ResultLayout", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesCsoResultLayoutTest::RunTest(const FString&)
+{
+	using namespace StridesResultTest;
+	const FString Ora = FPaths::GetPath(StridesOracleRuns::Dir());
+	FString LayText, CardText;
+	if (!TestTrue(TEXT("cso_result_layout.json lu"), FFileHelper::LoadFileToString(LayText, *(Ora / TEXT("cso_result_layout.json")))) ||
+		!TestTrue(TEXT("cso_result.json lu"), FFileHelper::LoadFileToString(CardText, *(Ora / TEXT("cso_result.json"))))) return false;
+	const std::string LayUtf8 = TCHAR_TO_UTF8(*LayText), CardUtf8 = TCHAR_TO_UTF8(*CardText);
+	const J Lay = JParser(LayUtf8).parse();
+	const J Cards = JParser(CardUtf8).parse();
+	FTestWorld W(TEXT("StridesCsoResultLayoutTest"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestNotNull(TEXT("sous-système des données"), Data) || !TestNotNull(TEXT("noms des engagés"), Data->RankNames()) || !TestTrue(TEXT("styles du bilan"), Data->CsoResultStyle().IsValid())) return false;
+	UStridesCsoScreens* S = CreateWidget<UStridesCsoScreens>(W.World, UStridesCsoScreens::StaticClass());
+	if (!TestNotNull(TEXT("widget des cartes"), S)) return false;
+	auto Info = [this](const FString& M) { AddInfo(M); UE_LOG(LogTemp, Display, TEXT("Strides.Cso.ResultLayout : %s"), *M); };
+	int32 Views = 0, LinesSame = 0, Boxes = 0, FlowBad = 0, ScrollBad = 0, Wrapped = 0, Nine = 0;
+	double WorstY = 0, WorstX = 0;
+	TArray<FString> LineDiffs, ColWorst;
+	for (const char* Lang : {"fr", "en"})
+	{
+		AStridesCourse* Course = W.World->SpawnActor<AStridesCourse>();
+		strides::CourseDesign D = Data->PoleCourse();
+		D.x += Data->PoleArena.X;
+		D.z += Data->PoleArena.Y;
+		Course->Build(D, *Data);
+		Course->Lang = U(Lang);
+		if (!TestTrue(TEXT("épreuve lancée"), Course->StartRun(TEXT("Test"), TEXT("Comète")))) return false;
+		for (const J& L : Lay[Lang].a)
+		{
+			const J* Cj = nullptr;
+			for (const J& Cv : Cards[Lang].a)
+				if (Cv["id"].s == L["id"].s) Cj = &Cv;
+			if (!TestNotNull(TEXT("état de cso_result.json"), Cj)) continue;
+			const J& St = (*Cj)["state"];
+			strides::CsoResultInput In = strides::csoResultInputOf(*Course->Run());
+			In.state.t = St["t"].num();
+			In.state.faults = (int)St["faults"].num();
+			In.state.timeFaults = (int)St["timeFaults"].num();
+			In.state.attempt = (int)St["attempt"].num();
+			In.state.eliminated = !St["eliminated"].isNull();
+			In.state.eliminatedReason = In.state.eliminated ? St["eliminated"].s : std::string();
+			In.state.log.clear();
+			for (const J& Lg : (*Cj)["log"].a) In.state.log.push_back({Lg[0].s, Lg[1].s, Lg[2].isNull() ? "" : Lg[2].s, Lg[3].isNull() ? "" : Lg[3].s});
+			In.playerName = (*Cj)["playerName"].s;
+			In.hasHorse = !(*Cj)["horseName"].isNull();
+			In.horseName = In.hasHorse ? (*Cj)["horseName"].s : std::string();
+			const strides::CsoResultCard Card = strides::csoResultCard(In, *Data->RankNames(), Course->Texts(), Course->RunLang());
+			const FString Id = FString::Printf(TEXT("%hs (%hs, %dx%d)"), L["id"].s.c_str(), Lang, (int32)L["viewport"][0].num(), (int32)L["viewport"][1].num());
+			const FString Why = CardDiff(Card, L["dom"]);
+			if (!Why.IsEmpty()) { AddError(Id + TEXT(" : carte du cœur différente du DOM : ") + Why); continue; }
+			S->SetResultForTest(Card, U(Lang));
+			S->SetViewCssForTest(FVector2D(L["viewport"][0].num(), L["viewport"][1].num()));
+			S->Refresh();
+			const strides::CsoResultLayout* Ul = S->ResultLayoutShown();
+			const strides::CsoResultLayoutIn* Ui = S->ResultLayoutInput();
+			if (!TestTrue(Id + TEXT(" : bilan affiché, mise en page calculée"), S->CardShown() == 3 && Ul && Ui)) continue;
+			Views++;
+			// Lignes de chaque case de la grille : moteur / web (hauteur de la boîte du web / hauteur d'une ligne du relevé).
+			bool bLines = Ui->kickerLines == FMath::RoundToInt(L["kicker"][3].num() / (Ul->kicker.h / Ui->kickerLines)) && Ui->titleLines == FMath::RoundToInt(L["title"][3].num() / (Ul->title.h / Ui->titleLines));
+			FString Lu, Lw;
+			for (size_t I = 0; I < Ul->values.size() && I < L["values"].a.size(); I++)
+			{
+				const int32 Nu = FMath::Max(Ui->keyLines[I], Ui->valueLines[I]);
+				const int32 Nw = FMath::RoundToInt(L["values"][I][3].num() / (Ul->values[I].h / Nu));
+				Lu += FString::Printf(TEXT("%s%d"), I ? TEXT(",") : TEXT(""), Nu);
+				Lw += FString::Printf(TEXT("%s%d"), I ? TEXT(",") : TEXT(""), Nw);
+				bLines &= Nu == Nw;
+				Wrapped += Nw > 1 && I == 1;
+			}
+			Nine += L["rows"].a.size() == 9;
+			if (bLines) LinesSame++;
+			else LineDiffs.Add(FString::Printf(TEXT("%s : lignes de la grille %s / web %s (titre %d, kicker %d)"), *Id, *Lu, *Lw, Ui->titleLines, Ui->kickerLines));
+			// Boîtes : flux (y, hauteur) exigé au dixième de px près quand les lignes sont les mêmes ; colonnes (x,
+			// largeur) relevées (police du moteur).
+			double VY = 0, VX = 0;
+			FString VXAt;
+			auto Cmp = [&](const FString& Part, const J& R)
+			{
+				const FVector4 B = S->BoxOf(Part);
+				VY = FMath::Max(VY, FMath::Max(FMath::Abs(B.Y - R[1].num()), FMath::Abs(B.W - R[3].num())));
+				const double Dx = FMath::Max(FMath::Abs(B.X - R[0].num()), FMath::Abs(B.Z - R[2].num()));
+				if (Dx > VX) { VX = Dx; VXAt = FString::Printf(TEXT("%s x %.1f / %.1f, largeur %.1f / %.1f"), *Part, B.X, R[0].num(), B.Z, R[2].num()); }
+				Boxes++;
+			};
+			Cmp(TEXT("kicker"), L["kicker"]);
+			Cmp(TEXT("title"), L["title"]);
+			for (size_t I = 0; I < L["keys"].a.size(); I++) { Cmp(FString::Printf(TEXT("k%d"), (int32)I), L["keys"][I]); Cmp(FString::Printf(TEXT("v%d"), (int32)I), L["values"][I]); }
+			Cmp(TEXT("table"), L["table"]);
+			for (size_t I = 0; I < L["rows"].a.size(); I++)
+			{
+				if (L["rows"][I]["me"].b) Cmp(TEXT("me"), L["rows"][I]["rect"]);
+				for (size_t K = 0; K < L["rows"][I]["cells"].a.size(); K++) Cmp(FString::Printf(TEXT("r%d.%d"), (int32)I, (int32)K), L["rows"][I]["cells"][K]);
+			}
+			if (bLines)
+			{
+				WorstY = FMath::Max(WorstY, VY);
+				if (VY > 0.15) { FlowBad++; AddError(FString::Printf(TEXT("%s : flux à %.2f px du navigateur"), *Id, VY)); }
+				// Défilement : hauteur, classe more en haut, défilé jusqu'en bas (scrollTop maximal du navigateur).
+				const bool bTop = S->CardMore() == L["more"].b;
+				S->ScrollCardForTest(1e6);
+				const bool bScroll = Ul->scrollHeight == (int)L["body"]["scrollHeight"].num() && S->CardScrollOffset() == L["bottom"]["scrollTop"].num() && S->CardMore() == L["bottom"]["more"].b && bTop;
+				if (!bScroll) { ScrollBad++; AddError(FString::Printf(TEXT("%s : défilement %d / %g, bas %.1f / %g, more %d / %d"), *Id, Ul->scrollHeight, L["body"]["scrollHeight"].num(), S->CardScrollOffset(), L["bottom"]["scrollTop"].num(), S->CardMore(), L["bottom"]["more"].b)); }
+			}
+			WorstX = FMath::Max(WorstX, VX);
+			ColWorst.Add(FString::Printf(TEXT("%s : colonnes à %.2f px (%s)"), *Id, VX, *VXAt));
+		}
+		S->ClearResultForTest();
+		S->Refresh();
+		Course->Destroy();
+	}
+	for (const FString& Ld : LineDiffs) Info(Ld);
+	for (const FString& Cw : ColWorst) UE_LOG(LogTemp, Display, TEXT("Strides.Cso.ResultLayout : %s"), *Cw);
+	Info(FString::Printf(TEXT("%d vues : %d avec les mêmes lignes que le navigateur (dont %d avec les fautes sur plusieurs lignes, %d avec le joueur au-delà du 8e) ; %d boîtes ; flux à %.3f px au plus du navigateur ; colonnes à %.2f px au plus (police du moteur)"),
+		Views, LinesSame, Wrapped, Nine, Boxes, WorstY, WorstX));
+	TestTrue(TEXT("vues comparées (60 attendues)"), Views == 60);
+	// Lignes : valeurs passées à la ligne à la largeur de leur colonne divisée par le rapport Geist / police du moteur
+	// étalonné sur le relevé de base (60 vues sur 60 comme le navigateur à l'export du 20/11/2026).
+	TestTrue(TEXT("lignes de chaque case de la grille identiques au navigateur dans toutes les vues"), LinesSame == Views);
+	TestTrue(TEXT("flux et défilement identiques au navigateur quand les lignes sont les mêmes"), FlowBad == 0 && ScrollBad == 0);
+	// Colonnes du tableau : réparties comme le navigateur sur des largeurs de texte estimées (police du moteur étalonnée sur
+	// le relevé de base) ; écart déclaré (inventaire cso.bilan), borné ici pour détecter une régression.
+	TestTrue(FString::Printf(TEXT("colonnes du tableau à moins de 9 px du navigateur (%.2f px)"), WorstX), WorstX < 9.0);
 	return true;
 }

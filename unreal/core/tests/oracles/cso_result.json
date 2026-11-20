@@ -2291,6 +2291,344 @@
     ]
    },
    "waiting": true
+  },
+  {
+   "id": "neuvieme",
+   "playerName": "Test",
+   "horseName": "Comète",
+   "state": {
+    "faults": 4,
+    "refusals": 0,
+    "fenceRefusals": 0,
+    "next": 1,
+    "t": 59.999999999999154,
+    "running": false,
+    "started": true,
+    "finished": true,
+    "timeFaults": 0,
+    "log": [
+     {
+      "label": "5",
+      "kind": "rail",
+      "cause": "far",
+      "causeText": "Appel trop loin"
+     }
+    ],
+    "bell": 45,
+    "attempt": 1,
+    "eliminated": null
+   },
+   "log": [
+    [
+     "5",
+     "rail",
+     "far",
+     "Appel trop loin"
+    ]
+   ],
+   "dom": {
+    "kicker": "Résultats · Prix STRIDES",
+    "title": "9e place",
+    "rows": [
+     [
+      "Chrono",
+      "60,00 s (accordé 64 s)"
+     ],
+     [
+      "Fautes aux obstacles",
+      "4 pts : barre au 5 (appel trop loin)"
+     ],
+     [
+      "Pénalités de temps",
+      "0 pt"
+     ],
+     [
+      "Total",
+      "4 pts"
+     ],
+     [
+      "Classement",
+      "9e sur 15"
+     ],
+     [
+      "Récompense",
+      "hors dotation"
+     ]
+    ],
+    "table": [
+     {
+      "me": false,
+      "td": [
+       "1",
+       "M. Mercier · Rubis Blanc",
+       "0 pt",
+       "56,26 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "2",
+       "J. Moreau · Hermès du Lac",
+       "0 pt",
+       "58,42 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "3",
+       "E. Bernard · Oural",
+       "0 pt",
+       "58,53 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "4",
+       "L. Roux · Diamant Rouge",
+       "0 pt",
+       "58,95 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "5",
+       "A. Leroy · Utopie",
+       "0 pt",
+       "61,04 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "6",
+       "H. Fournier · Kalimba",
+       "0 pt",
+       "62,39 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "7",
+       "N. Mercier · Ninja Z",
+       "4 pts",
+       "59,21 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "8",
+       "M. Moreau · Vendôme",
+       "4 pts",
+       "59,53 s",
+       ""
+      ]
+     },
+     {
+      "me": true,
+      "td": [
+       "9",
+       "Test · Comète",
+       "4 pts",
+       "60,00 s",
+       ""
+      ]
+     }
+    ],
+    "buttons": [
+     [
+      "cso-retry",
+      "Recommencer",
+      "btn"
+     ],
+     [
+      "cso-train",
+      "S’entraîner",
+      "btn"
+     ],
+     [
+      "cso-done",
+      "Quitter l’épreuve",
+      "btn primary"
+     ]
+    ]
+   },
+   "waiting": true
+  },
+  {
+   "id": "victoire-fautes",
+   "playerName": "Test",
+   "horseName": "Comète",
+   "state": {
+    "faults": 4,
+    "refusals": 0,
+    "fenceRefusals": 0,
+    "next": 1,
+    "t": 59.999999999999154,
+    "running": false,
+    "started": true,
+    "finished": true,
+    "timeFaults": 0,
+    "log": [
+     {
+      "label": "3",
+      "kind": "refusal"
+     }
+    ],
+    "bell": 45,
+    "attempt": 268,
+    "eliminated": null
+   },
+   "log": [
+    [
+     "3",
+     "refusal",
+     null,
+     null
+    ]
+   ],
+   "dom": {
+    "kicker": "Résultats · Prix STRIDES · manche 268",
+    "title": "Victoire !",
+    "rows": [
+     [
+      "Chrono",
+      "60,00 s (accordé 64 s)"
+     ],
+     [
+      "Fautes aux obstacles",
+      "4 pts : refus au 3"
+     ],
+     [
+      "Pénalités de temps",
+      "0 pt"
+     ],
+     [
+      "Total",
+      "4 pts"
+     ],
+     [
+      "Classement",
+      "1re sur 15"
+     ],
+     [
+      "Récompense",
+      "hors dotation"
+     ]
+    ],
+    "table": [
+     {
+      "me": true,
+      "td": [
+       "1",
+       "Test · Comète",
+       "4 pts",
+       "60,00 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "2",
+       "J. Roux · Kalimba",
+       "4 pts",
+       "61,49 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "3",
+       "J. Lefèvre · Vendôme",
+       "4 pts",
+       "62,05 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "4",
+       "H. Duval · Utopie",
+       "4 pts",
+       "62,43 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "5",
+       "C. Lefèvre · Belle d’Auge",
+       "4 pts",
+       "63,62 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "6",
+       "L. Marchand · Oural",
+       "5 pts",
+       "64,12 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "7",
+       "L. Bernard · Rubis Blanc",
+       "5 pts",
+       "64,36 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "8",
+       "Z. Girard · Saphir des Bois",
+       "6 pts",
+       "65,17 s",
+       ""
+      ]
+     }
+    ],
+    "buttons": [
+     [
+      "cso-retry",
+      "Recommencer",
+      "btn"
+     ],
+     [
+      "cso-train",
+      "S’entraîner",
+      "btn"
+     ],
+     [
+      "cso-done",
+      "Quitter l’épreuve",
+      "btn primary"
+     ]
+    ]
+   },
+   "waiting": true
   }
  ],
  "en": [
@@ -4553,6 +4891,344 @@
        "N. Mercier · Ninja Z",
        "4 faults",
        "59.21 s",
+       ""
+      ]
+     }
+    ],
+    "buttons": [
+     [
+      "cso-retry",
+      "Try again",
+      "btn"
+     ],
+     [
+      "cso-train",
+      "Practise",
+      "btn"
+     ],
+     [
+      "cso-done",
+      "Leave the class",
+      "btn primary"
+     ]
+    ]
+   },
+   "waiting": true
+  },
+  {
+   "id": "neuvieme",
+   "playerName": "Test",
+   "horseName": "Comète",
+   "state": {
+    "faults": 4,
+    "refusals": 0,
+    "fenceRefusals": 0,
+    "next": 1,
+    "t": 59.999999999999154,
+    "running": false,
+    "started": true,
+    "finished": true,
+    "timeFaults": 0,
+    "log": [
+     {
+      "label": "5",
+      "kind": "rail",
+      "cause": "far",
+      "causeText": "Took off too far"
+     }
+    ],
+    "bell": 45,
+    "attempt": 1,
+    "eliminated": null
+   },
+   "log": [
+    [
+     "5",
+     "rail",
+     "far",
+     "Took off too far"
+    ]
+   ],
+   "dom": {
+    "kicker": "Results · STRIDES Prize",
+    "title": "9th place",
+    "rows": [
+     [
+      "Time",
+      "60.00 s (allowed 64 s)"
+     ],
+     [
+      "Jumping faults",
+      "4 faults: rail down at 5 (took off too far)"
+     ],
+     [
+      "Time faults",
+      "0 faults"
+     ],
+     [
+      "Total",
+      "4 faults"
+     ],
+     [
+      "Leaderboard",
+      "9th of 15"
+     ],
+     [
+      "Reward",
+      "outside the prize money"
+     ]
+    ],
+    "table": [
+     {
+      "me": false,
+      "td": [
+       "1",
+       "M. Mercier · Rubis Blanc",
+       "0 faults",
+       "56.26 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "2",
+       "J. Moreau · Hermès du Lac",
+       "0 faults",
+       "58.42 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "3",
+       "E. Bernard · Oural",
+       "0 faults",
+       "58.53 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "4",
+       "L. Roux · Diamant Rouge",
+       "0 faults",
+       "58.95 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "5",
+       "A. Leroy · Utopie",
+       "0 faults",
+       "61.04 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "6",
+       "H. Fournier · Kalimba",
+       "0 faults",
+       "62.39 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "7",
+       "N. Mercier · Ninja Z",
+       "4 faults",
+       "59.21 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "8",
+       "M. Moreau · Vendôme",
+       "4 faults",
+       "59.53 s",
+       ""
+      ]
+     },
+     {
+      "me": true,
+      "td": [
+       "9",
+       "Test · Comète",
+       "4 faults",
+       "60.00 s",
+       ""
+      ]
+     }
+    ],
+    "buttons": [
+     [
+      "cso-retry",
+      "Try again",
+      "btn"
+     ],
+     [
+      "cso-train",
+      "Practise",
+      "btn"
+     ],
+     [
+      "cso-done",
+      "Leave the class",
+      "btn primary"
+     ]
+    ]
+   },
+   "waiting": true
+  },
+  {
+   "id": "victoire-fautes",
+   "playerName": "Test",
+   "horseName": "Comète",
+   "state": {
+    "faults": 4,
+    "refusals": 0,
+    "fenceRefusals": 0,
+    "next": 1,
+    "t": 59.999999999999154,
+    "running": false,
+    "started": true,
+    "finished": true,
+    "timeFaults": 0,
+    "log": [
+     {
+      "label": "3",
+      "kind": "refusal"
+     }
+    ],
+    "bell": 45,
+    "attempt": 268,
+    "eliminated": null
+   },
+   "log": [
+    [
+     "3",
+     "refusal",
+     null,
+     null
+    ]
+   ],
+   "dom": {
+    "kicker": "Results · STRIDES Prize · round 268",
+    "title": "Victory!",
+    "rows": [
+     [
+      "Time",
+      "60.00 s (allowed 64 s)"
+     ],
+     [
+      "Jumping faults",
+      "4 faults: refusal at 3"
+     ],
+     [
+      "Time faults",
+      "0 faults"
+     ],
+     [
+      "Total",
+      "4 faults"
+     ],
+     [
+      "Leaderboard",
+      "1st of 15"
+     ],
+     [
+      "Reward",
+      "outside the prize money"
+     ]
+    ],
+    "table": [
+     {
+      "me": true,
+      "td": [
+       "1",
+       "Test · Comète",
+       "4 faults",
+       "60.00 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "2",
+       "J. Roux · Kalimba",
+       "4 faults",
+       "61.49 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "3",
+       "J. Lefèvre · Vendôme",
+       "4 faults",
+       "62.05 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "4",
+       "H. Duval · Utopie",
+       "4 faults",
+       "62.43 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "5",
+       "C. Lefèvre · Belle d’Auge",
+       "4 faults",
+       "63.62 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "6",
+       "L. Marchand · Oural",
+       "5 faults",
+       "64.12 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "7",
+       "L. Bernard · Rubis Blanc",
+       "5 faults",
+       "64.36 s",
+       ""
+      ]
+     },
+     {
+      "me": false,
+      "td": [
+       "8",
+       "Z. Girard · Saphir des Bois",
+       "6 faults",
+       "65.17 s",
        ""
       ]
      }

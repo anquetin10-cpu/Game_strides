@@ -1,5 +1,7 @@
-// Carte de bilan (tranche T11 : courses.js:372-424, styles Content/Data/cso_result_style.json, textes du cœur
-// strides::csoResultCard via AStridesCourse::ResultCard). Cartes de l'entrée dans l'épreuve (tranche T10) : carte de
+// Carte de bilan (tranche T11 : courses.js:372-424, textes du cœur strides::csoResultCard via AStridesCourse::ResultCard ;
+// styles et relevé de base par langue et par viewport : Content/Data/cso_result_style.json ; mise en page du flux CSS
+// strides::csoResultLayout, lignes de chaque texte et largeur du texte des cellules mesurées par le moteur ; classe more
+// de la barre d'actions suivie au défilement du corps). Cartes de l'entrée dans l'épreuve (tranche T10) : carte de
 // présentation (src/gameplay/courses.js:119-138, gabarit
 // src/ui/screens.js:159-177), carte du plan du parcours (courses.js:111-118, src/ui/coursePlan.js) et dialogue de
 // l'entraîneur (src/ui/hud.js:547-583), en UMG. Mise en page relevée dans le navigateur (Content/Data/cso_screens_style.json,
@@ -15,6 +17,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/Widget.h"
 #include "StridesCore/CoursePlan.h"
+#include "StridesCore/Ranking.h"
 #include "StridesCsoScreens.generated.h"
 
 // Plan du parcours dessiné en Slate (SVG du web : viewBox mis à l'échelle de la boîte, centré, xMidYMid meet) : rectangles
@@ -65,6 +68,18 @@ public:
 	// Boîte (px CSS) d'une partie affichée : « card », « kicker », « title », « k0 »…, « v0 »…, « rules », « svg »,
 	// « legend », « plan » / « plan-back » / « enter » (boutons), « dialog », « av », « line ».
 	FVector4 BoxOf(const FString& Part) const { const FVector4* B = Boxes.Find(Part); return B ? *B : FVector4(0, 0, 0, 0); }
+	// Bilan posé sans épreuve (tests de mise en page) : carte du cœur et langue de la vue ; ClearResultForTest le retire.
+	void SetResultForTest(const strides::CsoResultCard& Card, const FString& InLang) { TestCard = Card; TestLang = InLang; }
+	void ClearResultForTest() { TestCard.Reset(); }
+	// Mise en page du bilan affiché (csoResultLayout) et ses entrées mesurées par le moteur ; nul hors du bilan.
+	const strides::CsoResultLayout* ResultLayoutShown() const { return bResultLay ? &ResultLay : nullptr; }
+	const strides::CsoResultLayoutIn* ResultLayoutInput() const { return bResultLay ? &ResultLayIn : nullptr; }
+	// Corps défilable de la carte affichée : défilement (px CSS), défilement maximal, classe more de la barre d'actions
+	// (scrollHeight − scrollTop − clientHeight > 4, screens.js:151) ; ScrollCardForTest défile comme le doigt.
+	void ScrollCardForTest(double Offset);
+	double CardScrollOffset() const { return CardOffset; }
+	double CardMaxScroll() const { return FMath::Max(0.0, CardScrollH - CardClientH); }
+	bool CardMore() const { return bCardMore; }
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -83,6 +98,9 @@ private:
 	UFUNCTION() void OnRetry();
 	UFUNCTION() void OnTrain();
 	UFUNCTION() void OnDone();
+	UFUNCTION() void OnCardScrolled(float Offset);
+	void UpdateMore();
+	const strides::CsoResultCard& ResultShown() const;
 
 	UPROPERTY() TObjectPtr<class AStridesCourse> Course;
 	UPROPERTY() TObjectPtr<class UCanvasPanel> Root;
@@ -92,6 +110,15 @@ private:
 	UPROPERTY() TArray<TObjectPtr<class UWidget>> Parts;
 	UPROPERTY() TArray<TObjectPtr<class UTexture2D>> Textures;
 	UPROPERTY() TObjectPtr<UStridesCoursePlanView> PlanW;
+	UPROPERTY() TObjectPtr<class UScrollBox> CardScroll;
+	UPROPERTY() TArray<TObjectPtr<class UWidget>> MoreParts;  // ombre et bordure de la barre d'actions (classe more)
+	double CardScrollH = 0, CardClientH = 0, CardOffset = 0;
+	bool bCardMore = false;
+	TOptional<strides::CsoResultCard> TestCard;
+	FString TestLang;
+	strides::CsoResultLayout ResultLay;
+	strides::CsoResultLayoutIn ResultLayIn;
+	bool bResultLay = false;
 	TArray<FString> Shown;
 	TArray<FString> ButtonIds;
 	TMap<FString, FVector4> Boxes;

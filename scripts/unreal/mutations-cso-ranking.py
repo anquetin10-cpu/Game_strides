@@ -2,10 +2,10 @@
 """Mutations du portage de l'arrivée et du bilan (tranche T11) : preuve que les oracles départagent la logique.
 
 Chaque mutation est appliquée à une copie de StridesCore/Private/Ranking.cpp (mulberry32, simulateField, rankResults,
-carte de bilan), CsoRun.cpp (étape d'enregistrement du meilleur temps, fin de la mission) ou SaveGame.cpp (bestTimes)
+carte de bilan, mise en page de la carte), CsoRun.cpp (étape d'enregistrement du meilleur temps, fin de la mission) ou SaveGame.cpp (bestTimes)
 — le source du dépôt n'est jamais modifié ; le banc unreal/core/tests/test_core.cpp est recompilé avec cette copie et
 rejoué (STRIDES_TESTS : seulement les bancs concernés) sur les oracles exportés du jeu web (cso_ranking.json,
-cso_result.json ; cso_runs/ : canal « bl » des bilans, ep.bt des meilleurs temps, fin de la mission). Une mutation doit
+cso_result.json, cso_result_layout.json ; cso_runs/ : canal « bl » des bilans, ep.bt des meilleurs temps, fin de la mission). Une mutation doit
 faire échouer le banc (code de sortie non nul) ; le script sort en code 1 si l'une n'est pas détectée, hors des mutations
 listées dans ATTENDUES (raison donnée) — et aussi si l'une de celles-ci devient détectée.
 
@@ -72,6 +72,25 @@ M = [
  (K, 'kicker : titre de l’épreuve au lieu de res.title', 'res.title.empty() ? tt.t(in.courseTitle, lang) : tt.t(res.title, lang)', 'tt.t(in.courseTitle, lang)'),
  (K, 'boutons : Quitter non principal', 'tt.t(res.continueLabel, lang), true}}', 'tt.t(res.continueLabel, lang), false}}'),
  (K, 'boutons : libellé Continuer imposé', 'res.continueLabel.empty() ? t("Continuer") : tt.t(res.continueLabel, lang)', 't("Continuer")'),
+ # Contrôle adverse de T11 : sous-branches départagées par les états « victoire-fautes » et « neuvieme » de cso_result.json
+ (K, 'titre : vainqueur avec des fautes « sans faute »', ': t("Victoire !"))', ': t("Victoire, sans faute !"))', 'result'),
+ (K, 'tableau : joueur exactement 9e omis', 'c.rank && meAt >= 8', 'c.rank && meAt >= 9', 'result'),
+ # Mise en page de la carte (csoResultLayout : flux CSS, colonnes du tableau, défilement, classe more)
+ (K, 'mise en page : rangée de la grille sans décalage des suivantes', '    dy += k.h - h0;\n', '', 'layout'),
+ (K, 'mise en page : rangée de la grille toujours sur une ligne', 'k.h = v.h = h0 * std::max(1, n);', 'k.h = v.h = h0;', 'layout'),
+ (K, 'mise en page : lignes de la clé ignorées', 'std::max(i < in.keyLines.size() ? in.keyLines[i] : 1, i < in.valueLines.size() ? in.valueLines[i] : 1)', '(i < in.valueLines.size() ? in.valueLines[i] : 1)', 'layout'),
+ (K, 'mise en page : tableau non décalé par la grille', 'o.table.y = b.table.y + dy;', 'o.table.y = b.table.y;', 'layout'),
+ (K, 'mise en page : lignes du tableau de 24 px', 'const double step = b.rows.empty() ? 0 : b.rows[0].h;', 'const double step = b.rows.empty() ? 0 : b.rows[0].h - 1;', 'layout'),
+ (K, 'mise en page : 8 lignes de tableau au plus', 'const size_t n = in.cellText.size();', 'const size_t n = std::min<size_t>(in.cellText.size(), 8);', 'layout'),
+ (K, 'colonnes : padding omis', 'm[k] = std::max(m[k], row[k] + b.cellPad[k]);', 'm[k] = std::max(m[k], row[k]);', 'layout'),
+ (K, 'colonnes : largeurs égales', 'ws[k] = sum > 0 ? m[k] * b.table.w / sum : b.table.w / (double)nc;', 'ws[k] = b.table.w / (double)nc;', 'layout'),
+ (K, 'colonnes : texte de la dernière ligne seulement', 'for (size_t k = 0; k < nc && k < row.size(); k++) m[k] = std::max(m[k], row[k] + b.cellPad[k]);', 'for (size_t k = 0; k < nc && k < row.size(); k++) m[k] = row[k] + b.cellPad[k];', 'layout'),
+ (K, 'défilement : padding-bottom omis', 'o.table.h - b.body.y + b.padBottom);', 'o.table.h - b.body.y);', 'layout'),
+ (K, 'défilement : hauteur tronquée', 'o.scrollHeight = (int)std::round(', 'o.scrollHeight = (int)std::floor(', 'layout'),
+ (K, 'défilement : hauteur arrondie au-dessus', 'o.scrollHeight = (int)std::round(', 'o.scrollHeight = (int)std::ceil(', 'layout'),
+ (K, 'défilement maximal : hauteur visible ignorée', 'std::max(0.0, (double)scrollHeight - clientHeight)', 'std::max(0.0, (double)scrollHeight)', 'layout'),
+ (K, 'classe more : position du défilement ignorée', '(double)scrollHeight - scrollTop - clientHeight > 4', '(double)scrollHeight - clientHeight > 4', 'layout'),
+ (K, 'classe more : seuil 4 px -> 0', '(double)scrollHeight - scrollTop - clientHeight > 4', '(double)scrollHeight - scrollTop - clientHeight > 0', 'layout'),
  # Déroulé (CsoRun) : bilan, enregistrement du meilleur temps (activities.js:111-129), fin de la mission
  (R, 'enregistrement : pénalités omises', 'const double score = st_.t + pen;', 'const double score = st_.t;'),
  (R, 'enregistrement : pénalités de temps omises', '(double)(st_.faults + st_.timeFaults)', '(double)st_.faults'),
@@ -86,10 +105,11 @@ M = [
  (S, 'sauvegarde : bestTimes non relu', '  for (auto& [k, v2] : j["bestTimes"].o) if (v2.t == J::Num) s.bestTimes[k] = v2.n;\n  for (auto& [k, v2] : j["settings"].o) s.settings[k] = v2.s;', '  for (auto& [k, v2] : j["settings"].o) s.settings[k] = v2.s;'),
  (S, 'import web : bestTimes ignoré', '  for (auto& [k, v2] : j["bestTimes"].o) if (v2.t == J::Num) s.bestTimes[k] = v2.n;\n  for (auto& [k, r] : j["challenges"]', '  for (auto& [k, r] : j["challenges"]'),
 ]
-# Bancs rejoués par fichier muté (les autres ne lisent pas le code muté).
-TESTS = {K: 'ranking,result,csoruns', R: 'csoruns', S: 'save'}
-# Sous-branches qu'aucun oracle exporté du web ne départage (déclarées dans l'inventaire, cso.bilan-meilleur-temps et
-# cso.classement-simule) : les exécutions de cso_runs/ partent d'une sauvegarde neuve (aucun meilleur temps), ne quittent
+# Bancs rejoués par fichier muté (les autres ne lisent pas le code muté) ; une mutation peut nommer les siens (5e champ :
+# carte de bilan → result, mise en page → layout).
+TESTS = {K: 'ranking,result,layout,csoruns', R: 'csoruns', S: 'save'}
+# Sous-branches qu'aucun oracle exporté du web ne départage (déclarées dans l'inventaire : activites.parcours-pole pour
+# l'enregistrement, cso.classement-simule pour le tirage et le tri, cso.bilan pour la carte et sa mise en page) : les exécutions de cso_runs/ partent d'une sauvegarde neuve (aucun meilleur temps), ne quittent
 # jamais l'épreuve après une élimination et n'ont pas de pénalité de temps à l'arrivée.
 ATTENDUES = {
  'enregistrement : pénalités de temps omises': 'aucune exécution enregistrée avec une pénalité de temps (t11-refus : 4 points de refus, 0 de temps ; t11-manche-2 : 0)',
@@ -98,6 +118,9 @@ ATTENDUES = {
  'classement : tri non stable': 'libc++ trie les tableaux de moins de 31 éléments par insertion (tri stable) : 15 engagés au plus dans les oracles',
  'pénalités de temps : marge 1e-9 omise': 't − ta jamais entier (à 1e-9 près) parmi les engagés tirés par les graines de l’oracle',
  'joueur : chrono non arrondi': 'chrono du joueur jamais à moins d’un demi-centième de celui d’un engagé dans les oracles ; affichage dec(…, 2) inchangé',
+ 'mise en page : lignes de la clé ignorées': 'les lignes de chaque case sont tirées de la hauteur de sa boîte dans le navigateur, où clé et valeur sont étirées à la hauteur de la rangée (même nombre de lignes) ; aucune clé ne passe sur deux lignes dans le web',
+ 'défilement : hauteur arrondie au-dessus': 'bas du tableau + padding-bottom toujours à x,5 ou x,8 px dans les oracles (lignes de 25 px, boîtes relevées à 0,5 ou 0,8 px) : arrondi et arrondi au-dessus donnent le même entier',
+ 'classe more : seuil 4 px -> 0': 'aucun état ne laisse entre 0 et 4 px à défiler (en haut : plus de 100 px ; défilé jusqu’en bas : 0)',
 }
 os.makedirs(out, exist_ok=True)
 srcs = {f: open(os.path.join(core, 'Private', f)).read() for f in (K, R, S)}
@@ -122,7 +145,9 @@ for f, sel in TESTS.items():
     if r.returncode: sys.exit(f'témoin ({sel}) en échec sans mutation : {r.stdout.strip().splitlines()[-1:]}')
 print('témoin : banc vert sans mutation', flush=True)
 undetected = []
-for file, name, a, b in M:
+for mut in M:
+    file, name, a, b = mut[:4]
+    sel = mut[4] if len(mut) > 4 else TESTS[file]
     src = srcs[file]
     n = src.count(a)
     if n != 1:
@@ -132,7 +157,7 @@ for file, name, a, b in M:
     c = subprocess.run(['clang++', '-std=c++20', '-O1', '-I', inc, f, *[o for k, o in objs.items() if k != file], '-o', exe], capture_output=True, text=True)
     if c.returncode:
         print(f'{name} : compilation échouée\n{c.stderr[:400]}'); undetected.append(name); continue
-    r = subprocess.run([exe, ora, data], capture_output=True, text=True, env={**os.environ, 'STRIDES_TESTS': TESTS[file]})
+    r = subprocess.run([exe, ora, data], capture_output=True, text=True, env={**os.environ, 'STRIDES_TESTS': sel})
     last = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ''
     fails = [l.strip() for l in r.stdout.splitlines() if 'ÉCHEC' in l][:1]
     status = 'détectée' if r.returncode else 'NON DÉTECTÉE'

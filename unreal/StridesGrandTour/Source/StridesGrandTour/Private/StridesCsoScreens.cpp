@@ -274,6 +274,33 @@ void PlaceAt(UCanvasPanel* C, UWidget* W, const FVector4& Box, int32 Z = 0)
 	S->SetZOrder(Z);
 }
 FString U(const std::string& S) { return UTF8_TO_TCHAR(S.c_str()); }
+// Taille (px CSS) d'un texte posé par le moteur (police et interligne du bloc) : retour à la ligne à la largeur W (W > 0)
+// ou sur une seule ligne ; nulle sans application Slate.
+FVector2D TextSize(UTextBlock* T, double W)
+{
+	if (!FSlateApplication::IsInitialized()) return FVector2D::ZeroVector;
+	T->SetAutoWrapText(false);
+	T->SetWrapTextAt(W > 0 ? (float)W : 0.f);
+	const TSharedRef<SWidget> S = T->TakeWidget();
+	S->SlatePrepass(1.f);
+	return S->GetDesiredSize();
+}
+// Nombre de lignes d'un texte passé à la ligne à la largeur Wrap (hauteur à cette largeur / hauteur d'une ligne) ; le
+// texte reste passé à la ligne à cette largeur (affichage).
+int32 TextLinesAt(UTextBlock* T, double Wrap)
+{
+	const double One = TextSize(T, 0).Y;
+	const double H = TextSize(T, Wrap).Y;
+	return One > 0 ? FMath::Max(1, FMath::RoundToInt(H / One)) : 1;
+}
+// Même mesure, puis retour à la ligne automatique à la largeur de la boîte rétabli.
+int32 TextLines(UTextBlock* T, double W)
+{
+	const int32 N = TextLinesAt(T, W);
+	T->SetWrapTextAt(0.f);
+	T->SetAutoWrapText(true);
+	return N;
+}
 }  // namespace
 
 void UStridesCsoScreens::NativeOnInitialized()
@@ -320,6 +347,39 @@ void UStridesCsoScreens::Clear()
 	ButtonIds.Reset();
 	Boxes.Reset();
 	PlanW = nullptr;
+	CardScroll = nullptr;
+	MoreParts.Reset();
+	CardScrollH = CardClientH = CardOffset = 0;
+	bCardMore = false;
+	bResultLay = false;
+}
+
+const strides::CsoResultCard& UStridesCsoScreens::ResultShown() const
+{
+	static const strides::CsoResultCard None;
+	return TestCard.IsSet() ? TestCard.GetValue() : Course ? Course->ResultCard() : None;
+}
+
+void UStridesCsoScreens::OnCardScrolled(float Offset)
+{
+	CardOffset = Offset;
+	UpdateMore();
+}
+
+void UStridesCsoScreens::ScrollCardForTest(double Offset)
+{
+	if (!CardScroll) return;
+	const double O = FMath::Clamp(Offset, 0.0, CardMaxScroll());
+	CardScroll->SetScrollOffset((float)O);
+	OnCardScrolled((float)O);
+}
+
+// Classe more (screens.js:151 : contenu restant à faire défiler) : ombre et bordure du haut de la barre d'actions.
+void UStridesCsoScreens::UpdateMore()
+{
+	bCardMore = CardScrollH - CardOffset - CardClientH > 4;
+	for (UWidget* W : MoreParts)
+		if (W) W->SetVisibility(bCardMore ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 }
 
 void UStridesCsoScreens::Refresh()
@@ -337,7 +397,13 @@ void UStridesCsoScreens::Refresh()
 	int32 Which = 0;
 	bool bDlg = false;
 	FString Key;
-	if (Course)
+	if (TestCard.IsSet())
+	{
+		// Bilan posé (tests de mise en page) : carte du cœur seule, sans épreuve.
+		Which = 3;
+		Key = FString::Printf(TEXT("test|%s|%.2fx%.2f"), *TestLang, V.X, V.Y) + U("|" + TestCard->kicker + "|" + TestCard->title + "|" + (TestCard->rows.size() > 1 ? TestCard->rows[1].second : std::string()) + "|" + std::to_string(TestCard->table.size()));
+	}
+	else if (Course)
 	{
 		using ES = AStridesCourse::EScreen;
 		Which = Course->Screen() == ES::Presentation ? 1 : Course->Screen() == ES::Plan ? 2 : Course->Screen() == ES::Result ? 3 : 0;
@@ -367,14 +433,19 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 	// cso_screens_style.json.
 	const Sc::FJ Doc = Data ? (Which == 3 ? Data->CsoResultStyle() : Data->CsoScreensStyle()) : nullptr;
 	const TArray<TSharedPtr<FJsonValue>>* Views = nullptr;
-	if (!Course || !Doc.IsValid() || !Doc->TryGetArrayField(TEXT("views"), Views) || !Views->Num()) return;
-	// Relevé du viewport le plus proche en hauteur ; carte centrée (overlay flex) : décalage au viewport courant.
+	if ((!Course && !(Which == 3 && TestCard.IsSet())) || !Doc.IsValid() || !Doc->TryGetArrayField(TEXT("views"), Views) || !Views->Num()) return;
+	// Relevé du viewport le plus proche en hauteur ; carte centrée (overlay flex) : décalage au viewport courant. Bilan :
+	// relevé de la langue de l'épreuve (libellés de la grille et du tableau), à défaut tous.
+	const FString ViewLang = TestCard.IsSet() ? TestLang : Course ? Course->Lang : FString();
+	bool bLangView = false;
+	for (const TSharedPtr<FJsonValue>& Vv : *Views) bLangView |= Sc::Str(Vv->AsObject(), TEXT("lang")) == ViewLang;
 	Sc::FJ View;
 	FVector2D View0(844, 390);
 	double Best = 1e9;
 	for (const TSharedPtr<FJsonValue>& Vv : *Views)
 	{
 		const Sc::FJ O = Vv->AsObject();
+		if (bLangView && Sc::Str(O, TEXT("lang")) != ViewLang) continue;
 		const TArray<TSharedPtr<FJsonValue>>& VP = O->GetArrayField(TEXT("viewport"));
 		const double D = FMath::Abs(VP[1]->AsNumber() - ViewCss.Y);
 		if (D < Best) { Best = D; View = O; View0 = FVector2D(VP[0]->AsNumber(), VP[1]->AsNumber()); }
@@ -456,9 +527,23 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 	const FVector4 Br = Box(Bd);
 	UScrollBox* Scroll = Cast<UScrollBox>(Keep(WidgetTree->ConstructWidget<UScrollBox>()));
 	Scroll->SetScrollBarVisibility(ESlateVisibility::Collapsed);
+	// Sans les ombres de bord du style Slate par défaut (trait sombre en haut et en bas du corps défilé) : le web n'a que
+	// l'ombre claire de la barre d'actions (classe more).
+	{
+		FScrollBoxStyle Ss = Scroll->GetWidgetStyle();
+		Ss.SetTopShadowBrush(FSlateNoResource());
+		Ss.SetBottomShadowBrush(FSlateNoResource());
+		Ss.SetLeftShadowBrush(FSlateNoResource());
+		Ss.SetRightShadowBrush(FSlateNoResource());
+		Scroll->SetWidgetStyle(Ss);
+	}
+	Scroll->OnUserScrolled.AddDynamic(this, &UStridesCsoScreens::OnCardScrolled);
 	PlaceAt(Canvas, Scroll, Br, 4);
+	CardScroll = Scroll;
+	CardScrollH = Sc::Num(Bd, TEXT("scrollHeight"), Br.W);
+	CardClientH = Sc::Num(Bd, TEXT("clientHeight"), Br.W);
 	USizeBox* Content = WidgetTree->ConstructWidget<USizeBox>();
-	Content->SetHeightOverride(Sc::Num(Bd, TEXT("scrollHeight"), Br.W));
+	Content->SetHeightOverride(CardScrollH);
 	Content->SetWidthOverride(Br.Z);
 	Scroll->AddChild(Content);
 	UCanvasPanel* In = WidgetTree->ConstructWidget<UCanvasPanel>();
@@ -501,31 +586,36 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 	else if (Which == 3)
 	{
 		// Bilan (courses.js:414-423) : kicker, titre, grille, tableau du classement (8 premiers, plus le joueur au-delà),
-		// boutons ; textes du cœur (csoResultCard), mise en page du relevé.
-		const strides::CsoResultCard& Rc = Course->ResultCard();
-		Put(TEXT("kicker"), Sc::Obj(C, TEXT("kicker")), U(Rc.kicker));
-		Put(TEXT("title"), Sc::Obj(C, TEXT("title")), U(Rc.title));
+		// boutons ; textes du cœur (csoResultCard). Mise en page du flux CSS (strides::csoResultLayout, contrôle adverse de
+		// T11) à partir du relevé de base de la langue et du viewport : lignes de chaque texte à la largeur de sa boîte et
+		// largeur du texte de chaque cellule mesurées par le moteur ; hauteur de défilement du flux.
+		const strides::CsoResultCard& Rc = ResultShown();
+		auto Cb = [&](const Sc::FJ& E) { const FVector4 R = Box(E); return strides::CsoBox{R.X, R.Y, R.Z, R.W}; };
 		const TArray<TSharedPtr<FJsonValue>>* Ks = nullptr;
 		const TArray<TSharedPtr<FJsonValue>>* Vs = nullptr;
+		const TArray<TSharedPtr<FJsonValue>>* Rows = nullptr;
 		C->TryGetArrayField(TEXT("keys"), Ks);
 		C->TryGetArrayField(TEXT("values"), Vs);
-		for (int32 I = 0; I < (int32)Rc.rows.size(); I++)
-		{
-			if (!Ks || !Vs || I >= Ks->Num() || I >= Vs->Num())
-			{
-				Shown.Add(FString::Printf(TEXT("k%d=%s (sans boîte relevée)"), I, *U(Rc.rows[(size_t)I].first)));
-				continue;
-			}
-			Put(*FString::Printf(TEXT("k%d"), I), (*Ks)[I]->AsObject(), U(Rc.rows[(size_t)I].first));
-			Put(*FString::Printf(TEXT("v%d"), I), (*Vs)[I]->AsObject(), U(Rc.rows[(size_t)I].second));
-		}
-		// Tableau : ligne i posée à la boîte relevée de la ligne i (au-delà des lignes relevées : pas de la dernière
-		// ligne) ; fond de la ligne du joueur (tr.me) ; cellules aux boîtes relevées (colonnes du relevé), styles d'une
-		// ligne relevée de même classe (gras pour le joueur).
-		const TArray<TSharedPtr<FJsonValue>>* Rows = nullptr;
 		C->TryGetArrayField(TEXT("rows"), Rows);
-		if (Rows && Rows->Num())
+		const Sc::FJ KickerE = Sc::Obj(C, TEXT("kicker")), TitleE = Sc::Obj(C, TEXT("title")), TableE = Sc::Obj(C, TEXT("table"));
+		if (!KickerE.IsValid() || !TitleE.IsValid() || !TableE.IsValid() || !Ks || !Vs || !Rows || !Rows->Num())
 		{
+			UE_LOG(LogTemp, Error, TEXT("Strides cartes : relevé du bilan incomplet (cso_result_style.json)"));
+			Shown.Add(TEXT("bilan : relevé incomplet"));
+		}
+		else
+		{
+			strides::CsoResultLayoutBase Lb;
+			Lb.body = Cb(Bd);
+			Lb.padBottom = Sc::Num(Bd, TEXT("paddingBottom"));
+			Lb.clientHeight = CardClientH;
+			Lb.kicker = Cb(KickerE);
+			Lb.title = Cb(TitleE);
+			for (const TSharedPtr<FJsonValue>& K : *Ks) Lb.keys.push_back(Cb(K->AsObject()));
+			for (const TSharedPtr<FJsonValue>& V : *Vs) Lb.values.push_back(Cb(V->AsObject()));
+			Lb.table = Cb(TableE);
+			for (const TSharedPtr<FJsonValue>& R : *Rows) Lb.rows.push_back(Cb(R->AsObject()));
+			// Styles d'une ligne relevée de même classe (gras et fond pour le joueur, tr.me) ; padding des cellules.
 			Sc::FJ MeRow, PlainRow;
 			for (const TSharedPtr<FJsonValue>& Rv : *Rows)
 			{
@@ -534,46 +624,142 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 				if (bMe && !MeRow.IsValid()) MeRow = Rv->AsObject();
 				if (!bMe && !PlainRow.IsValid()) PlainRow = Rv->AsObject();
 			}
-			const int32 NR = Rows->Num();
-			const FVector4 Last = Box((*Rows)[NR - 1]->AsObject());
-			const double Step = NR > 1 ? Last.Y - Box((*Rows)[NR - 2]->AsObject()).Y : Last.W;
-			for (int32 I = 0; I < (int32)Rc.table.size(); I++)
+			const Sc::FJ Row0 = (*Rows)[0]->AsObject();
+			const TArray<TSharedPtr<FJsonValue>>* Cells0 = nullptr;
+			Row0->TryGetArrayField(TEXT("cells"), Cells0);
+			if (Cells0)
+				for (const TSharedPtr<FJsonValue>& Cv : *Cells0) Lb.cellPad.push_back(Sc::Num(Cv->AsObject(), TEXT("paddingLeft")) + Sc::Num(Cv->AsObject(), TEXT("paddingRight")));
+			// Étalonnage de la police du moteur sur le relevé de base (texte et largeur Geist de chaque cellule et de chaque
+			// valeur, Range du navigateur) : par colonne du tableau et par graisse (lignes ordinaires, ligne du joueur en
+			// gras), rapport de la largeur web du texte le plus large à celle du même texte posé par le moteur ; valeurs de
+			// la grille : rapport des sommes. Largeur web d'un texte estimée =
+			// largeur du moteur × rapport ; valeur passée à la ligne à la largeur de sa colonne / rapport (là où le web, plus
+			// large, passe à la ligne).
+			auto Wide = [&](const Sc::FJ& E) { return TextSize(Text(E, Sc::Str(E, TEXT("text"))), 0).X; };
+			std::vector<double> ColRatio[2] = {std::vector<double>(Lb.cellPad.size(), 1.0), std::vector<double>(Lb.cellPad.size(), 1.0)};
+			for (int32 Me = 0; Me < 2; Me++)
+				for (size_t K = 0; K < ColRatio[Me].size(); K++)
+				{
+					Sc::FJ Widest;
+					for (const TSharedPtr<FJsonValue>& Rv : *Rows)
+					{
+						bool bMe = false;
+						Rv->AsObject()->TryGetBoolField(TEXT("me"), bMe);
+						const TArray<TSharedPtr<FJsonValue>>* Cs = nullptr;
+						if (bMe != (Me == 1) || !Rv->AsObject()->TryGetArrayField(TEXT("cells"), Cs) || (int32)K >= Cs->Num()) continue;
+						const Sc::FJ E = (*Cs)[K]->AsObject();
+						if (!Sc::Str(E, TEXT("text")).IsEmpty() && (!Widest.IsValid() || Sc::Num(E, TEXT("tw")) > Sc::Num(Widest, TEXT("tw")))) Widest = E;
+					}
+					const double Ue = Widest.IsValid() ? Wide(Widest) : 0;
+					if (Ue > 0 && Sc::Num(Widest, TEXT("tw")) > 0) ColRatio[Me][K] = Sc::Num(Widest, TEXT("tw")) / Ue;
+				}
+			double VWeb = 0, VEng = 0;
+			for (const TSharedPtr<FJsonValue>& V : *Vs)
+				if (!Sc::Str(V->AsObject(), TEXT("text")).IsEmpty()) { VWeb += Sc::Num(V->AsObject(), TEXT("tw")); VEng += Wide(V->AsObject()); }
+			const double ValRatio = VWeb > 0 && VEng > 0 ? VWeb / VEng : 1.0;
+			{
+				FString Rs;
+				for (int32 Me = 0; Me < 2; Me++)
+					for (double R : ColRatio[Me]) Rs += FString::Printf(TEXT("%s%.3f"), Rs.IsEmpty() ? TEXT("") : TEXT(", "), R);
+				Shown.Add(FString::Printf(TEXT("police : colonnes × %s (ordinaires, puis joueur) ; valeurs × %.3f"), *Rs, ValRatio));
+			}
+			// Textes et mesures.
+			strides::CsoResultLayoutIn LIn;
+			UTextBlock* Tk = Text(KickerE, U(Rc.kicker));
+			LIn.kickerLines = TextLines(Tk, Lb.kicker.w);
+			UTextBlock* Tt = Text(TitleE, U(Rc.title));
+			LIn.titleLines = TextLines(Tt, Lb.title.w);
+			const int32 NG = FMath::Min3((int32)Rc.rows.size(), Ks->Num(), Vs->Num());
+			TArray<UTextBlock*> TKs, TVs;
+			// Clés : colonne auto de la grille, large du texte de la clé la plus large (max-content du navigateur, relevée par
+			// langue) : une clé ne passe jamais à la ligne (police du moteur parfois un peu plus large : texte non coupé,
+			// débord dans l'espace de 14 px entre les colonnes). Valeurs : passées à la ligne comme dans le web (étalonnage).
+			for (int32 I = 0; I < NG; I++)
+			{
+				TKs.Add(Text((*Ks)[I]->AsObject(), U(Rc.rows[(size_t)I].first)));
+				TKs.Last()->SetAutoWrapText(false);
+				TKs.Last()->SetClipping(EWidgetClipping::Inherit);
+				TVs.Add(Text((*Vs)[I]->AsObject(), U(Rc.rows[(size_t)I].second)));
+				LIn.keyLines.push_back(1);
+				LIn.valueLines.push_back(TextLinesAt(TVs.Last(), Lb.values[(size_t)I].w / ValRatio));
+			}
+			for (int32 I = NG; I < (int32)Rc.rows.size(); I++) Shown.Add(FString::Printf(TEXT("k%d=%s (sans boîte relevée)"), I, *U(Rc.rows[(size_t)I].first)));
+			struct FCell { UTextBlock* T; Sc::FJ St; };
+			TArray<TArray<FCell>> Cells;
+			for (const strides::CsoResultRow& Row : Rc.table)
+			{
+				const Sc::FJ Look = Row.me && MeRow.IsValid() ? MeRow : !Row.me && PlainRow.IsValid() ? PlainRow : Row0;
+				const TArray<TSharedPtr<FJsonValue>>* LookCells = nullptr;
+				Look->TryGetArrayField(TEXT("cells"), LookCells);
+				const FString Txt[5] = {FString::FromInt(Row.rank), U(Row.name), U(Row.pts), U(Row.time), U(Row.prize)};
+				TArray<FCell>& Rw = Cells.AddDefaulted_GetRef();
+				std::vector<double> Tw;
+				for (int32 K = 0; K < 5 && LookCells && K < LookCells->Num(); K++)
+				{
+					const Sc::FJ St = (*LookCells)[K]->AsObject();
+					UTextBlock* T = Text(St, Txt[K]);
+					// Largeur web estimée du texte sur une ligne (cellules sans retour à la ligne : white-space nowrap à partir de
+					// la 3e ; le nom ne passe à la ligne que si les colonnes débordent, cas signalé par tooWide).
+					Tw.push_back(Txt[K].IsEmpty() ? 0.0 : TextSize(T, 0).X * (K < (int32)ColRatio[Row.me ? 1 : 0].size() ? ColRatio[Row.me ? 1 : 0][(size_t)K] : 1.0));
+					T->SetWrapTextAt(0.f);
+					T->SetAutoWrapText(false);
+					if (Sc::Str(St, TEXT("textAlign")) == TEXT("right")) T->SetJustification(ETextJustify::Right);
+					Rw.Add({T, St});
+				}
+				LIn.cellText.push_back(Tw);
+			}
+			ResultLay = strides::csoResultLayout(Lb, LIn);
+			ResultLayIn = LIn;
+			bResultLay = true;
+			if (ResultLay.tooWide)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Strides cartes : colonnes du bilan plus larges que le tableau (répartition entre largeurs minimale et maximale du navigateur non portée)"));
+				Shown.Add(TEXT("tableau : colonnes plus larges que le tableau"));
+			}
+			CardScrollH = ResultLay.scrollHeight;
+			Content->SetHeightOverride(CardScrollH);
+			auto ToV = [](const strides::CsoBox& B) { return FVector4(B.x, B.y, B.w, B.h); };
+			auto PutT = [&](const FString& Part, UTextBlock* T, const strides::CsoBox& B)
+			{
+				const FVector4 R = ToV(B);
+				PlaceAt(In, T, FVector4(R.X - Br.X, R.Y - Br.Y, R.Z, R.W));
+				Boxes.Add(Part, R);
+				Shown.Add(FString::Printf(TEXT("%s=%s"), *Part, *T->GetText().ToString()));
+			};
+			PutT(TEXT("kicker"), Tk, ResultLay.kicker);
+			PutT(TEXT("title"), Tt, ResultLay.title);
+			for (int32 I = 0; I < NG && I < (int32)ResultLay.keys.size(); I++)
+			{
+				PutT(FString::Printf(TEXT("k%d"), I), TKs[I], ResultLay.keys[(size_t)I]);
+				PutT(FString::Printf(TEXT("v%d"), I), TVs[I], ResultLay.values[(size_t)I]);
+			}
+			// Tableau : fond de la ligne du joueur (tr.me) ; texte de chaque cellule dans sa boîte de contenu (padding 4px
+			// 6px), aligné comme la cellule (à droite à partir de la 3e).
+			for (int32 I = 0; I < (int32)Rc.table.size() && I < (int32)ResultLay.rows.size(); I++)
 			{
 				const strides::CsoResultRow& Row = Rc.table[(size_t)I];
-				const Sc::FJ At = (*Rows)[FMath::Min(I, NR - 1)]->AsObject();
-				const double Dy = I < NR ? 0 : (I - NR + 1) * Step;
-				const Sc::FJ Look = Row.me && MeRow.IsValid() ? MeRow : !Row.me && PlainRow.IsValid() ? PlainRow : At;
-				FVector4 Rb = Box(At);
-				Rb.Y += Dy;
+				const FVector4 Rb = ToV(ResultLay.rows[(size_t)I]);
 				if (Row.me)
 				{
 					UBorder* Bg = WidgetTree->ConstructWidget<UBorder>();
-					Bg->SetBrushColor(Sc::Color(Look, TEXT("backgroundColor")));
+					Bg->SetBrushColor(Sc::Color(MeRow.IsValid() ? MeRow : Row0, TEXT("backgroundColor")));
 					PlaceAt(In, Bg, FVector4(Rb.X - Br.X, Rb.Y - Br.Y, Rb.Z, Rb.W));
 					Boxes.Add(TEXT("me"), Rb);
 				}
-				const TArray<TSharedPtr<FJsonValue>>* Cells = nullptr;
-				const TArray<TSharedPtr<FJsonValue>>* LookCells = nullptr;
-				At->TryGetArrayField(TEXT("cells"), Cells);
-				Look->TryGetArrayField(TEXT("cells"), LookCells);
-				const FString Txt[5] = {FString::FromInt(Row.rank), U(Row.name), U(Row.pts), U(Row.time), U(Row.prize)};
-				for (int32 K = 0; K < 5 && Cells && K < Cells->Num(); K++)
+				FString Line;
+				for (int32 K = 0; K < Cells[I].Num() && K < (int32)ResultLay.cells[(size_t)I].size(); K++)
 				{
-					const Sc::FJ Cell = (*Cells)[K]->AsObject();
-					const Sc::FJ St = LookCells && K < LookCells->Num() ? (*LookCells)[K]->AsObject() : Cell;
-					FVector4 Cb = Box(Cell);
-					Cb.Y += Dy;
-					// Texte dans la boîte de contenu (padding 4px 6px), aligné comme la cellule (à droite à partir de la 3e).
-					const double Pl = Sc::Num(St, TEXT("paddingLeft")), Pr0 = Sc::Num(St, TEXT("paddingRight")), Pt = Sc::Num(St, TEXT("paddingTop")), Pb = Sc::Num(St, TEXT("paddingBottom"));
-					UTextBlock* T = Text(St, Txt[K]);
-					T->SetAutoWrapText(false);
-					if (Sc::Str(St, TEXT("textAlign")) == TEXT("right")) T->SetJustification(ETextJustify::Right);
-					const FVector4 Inner(Cb.X + Pl, Cb.Y + Pt, FMath::Max(0.0, Cb.Z - Pl - Pr0), FMath::Max(0.0, Cb.W - Pt - Pb));
-					PlaceAt(In, T, FVector4(Inner.X - Br.X, Inner.Y - Br.Y, Inner.Z, Inner.W));
-					Boxes.Add(FString::Printf(TEXT("r%d.%d"), I, K), Cb);
+					const FCell& Ce = Cells[I][K];
+					const FVector4 Cb2 = ToV(ResultLay.cells[(size_t)I][(size_t)K]);
+					const double Pl = Sc::Num(Ce.St, TEXT("paddingLeft")), Pr0 = Sc::Num(Ce.St, TEXT("paddingRight")), Pt = Sc::Num(Ce.St, TEXT("paddingTop")), Pb = Sc::Num(Ce.St, TEXT("paddingBottom"));
+					const FVector4 Inner(Cb2.X + Pl, Cb2.Y + Pt, FMath::Max(0.0, Cb2.Z - Pl - Pr0), FMath::Max(0.0, Cb2.W - Pt - Pb));
+					PlaceAt(In, Ce.T, FVector4(Inner.X - Br.X, Inner.Y - Br.Y, Inner.Z, Inner.W));
+					Boxes.Add(FString::Printf(TEXT("r%d.%d"), I, K), Cb2);
+					Line += (K ? TEXT("|") : TEXT("")) + Ce.T->GetText().ToString();
 				}
-				Shown.Add(FString::Printf(TEXT("ligne %d=%s|%s|%s|%s|%s%s"), I + 1, *Txt[0], *Txt[1], *Txt[2], *Txt[3], *Txt[4], Row.me ? TEXT(" (me)") : TEXT("")));
+				Shown.Add(FString::Printf(TEXT("ligne %d=%s%s"), I + 1, *Line, Row.me ? TEXT(" (me)") : TEXT("")));
 			}
+			Boxes.Add(TEXT("table"), ToV(ResultLay.table));
 		}
 		for (const strides::CsoResultButton& B : Rc.buttons) Btns.Add({U(B.id), U(B.label), B.primary});
 	}
@@ -602,12 +788,15 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 		Put(TEXT("legend"), Sc::Obj(C, TEXT("legend")), U(Pc.legend));
 		Btns = {{TEXT("plan-back"), U(Pc.backLabel), true}};
 	}
-	// Barre d'actions (toujours visible) : bordure du haut et ombre quand le corps déborde (classe more).
+	// Barre d'actions (toujours visible) : bordure du haut et ombre tant qu'il reste du contenu à faire défiler (classe
+	// more, screens.js:151 : suivie au défilement, UpdateMore) ; styles de la classe more du relevé (relevé en haut du
+	// corps, classe présente).
 	const Sc::FJ Ac = Sc::Obj(C, TEXT("actions"));
 	const FVector4 Ar = Box(Ac);
-	bool bMore = false;
-	Ac->TryGetBoolField(TEXT("more"), bMore);
-	if (bMore)
+	bool bMoreStyle = false;
+	Ac->TryGetBoolField(TEXT("more"), bMoreStyle);
+	if (!bMoreStyle && CardScrollH - CardClientH > 4) UE_LOG(LogTemp, Warning, TEXT("Strides cartes : corps à faire défiler, styles de la classe more absents du relevé"));
+	if (bMoreStyle)
 	{
 		const Sc::FShadow As = Sc::Shadow(Ac);
 		if (As.bOn)
@@ -620,11 +809,14 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 			I->SetBrush(Sc::ImageBrush(T, FVector2D(Ar.Z + 2 * Bl, Ar.W + 2 * Bl), As.Color));
 			I->SetClipping(EWidgetClipping::ClipToBounds);
 			PlaceAt(Canvas, I, FVector4(Ar.X + As.Offset.X - Bl, Ar.Y + As.Offset.Y - Bl, Ar.Z + 2 * Bl, Ar.W + 2 * Bl), 5);
+			MoreParts.Add(I);
 		}
 		UBorder* Top = Cast<UBorder>(Keep(WidgetTree->ConstructWidget<UBorder>()));
 		Top->SetBrushColor(Sc::Color(Ac, TEXT("borderTopColor")));
 		PlaceAt(Canvas, Top, FVector4(Ar.X, Ar.Y, Ar.Z, Sc::Num(Ac, TEXT("borderTopWidth"), 1)), 7);
+		MoreParts.Add(Top);
 	}
+	UpdateMore();
 	UBorder* Bar = Cast<UBorder>(Keep(WidgetTree->ConstructWidget<UBorder>()));
 	{
 		FSlateBrush B = Sc::Rounded(Sc::Color(Cd, TEXT("backgroundColor")), 0);

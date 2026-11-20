@@ -27,9 +27,10 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/core/tests/oracles/cso_entry.json`, `unreal/StridesGrandTour/Content/Data/cso_activity.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-entry.mjs` (~3 min, jeu web en cours d'exécution) | entrée dans l'épreuve (tranche T10) : `courseSteps` appelé dans la page avec les vraies étapes de mission pour 21 configurations (cartes de présentation et du plan : arguments de `screens.card` et DOM ; boutons Voir le plan, Retour, Entrer en piste contrôlés) et une grille de chevaux (contrôle de capacité, dont les deux bords du seuil de puissance cherché par dichotomie), action du poteau proposée par `interact.update` autour du départ (fr et en) ; données de l'activité `cso_train` relevées dans le jeu (poteau, action « Chrono », offre de mission) ; rejoués par `testCsoEntry` |
 | `unreal/StridesGrandTour/Content/Data/cso_screens_style.json` | `export-cso-entry.mjs --screens` | styles calculés et boîtes des cartes de présentation et du plan et du dialogue de l'entraîneur, ouverts comme dans la recette, 844 × 390 et 667 × 308 |
 | `unreal/core/tests/oracles/cso_ranking.json`, `unreal/StridesGrandTour/Content/Data/cso_ranking.json` | `npx vite-node scripts/unreal/export-data.mjs` | classement simulé (tranche T11) : `mulberry32` (`src/core/math.js`), `simulateField` et `rankResults` (`src/gameplay/ranking.js`) appelés tels quels (graines 5150 + 31 k, k = 0 à 9, classes du Pôle et du concours de `trip.js`, graines de concours ; 112 classements avec le joueur) ; données : `FIRST_NAMES`, `LAST_NAMES`, `HORSE_NAMES` ; rejoué par `testRanking` |
-| `unreal/core/tests/oracles/cso_result.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-result.mjs` (~2 min, jeu web en cours d'exécution) | bilan (tranche T11) : étape de bilan de l'activité `cso_train` construite par le jeu, démarrée sur 13 états posés × 2 langues, carte relevée dans le DOM (kicker, titre, grille, tableau, boutons) ; boutons Recommencer, Quitter l'épreuve, S'entraîner touchés sur 3 cas ; rejoué par `testCsoResult` |
-| `unreal/StridesGrandTour/Content/Data/cso_result_style.json` | `export-cso-result.mjs --screens` | styles calculés et boîtes de la carte de bilan à 844 × 390 et 667 × 308 (état du bilan de `t9-parcours`), lus par `UStridesCsoScreens` |
-| canal « bl » et `ep.bt` de `cso_runs/`, exécutions `t11-refus`, `t11-manche-2` | `export-cso-runs.mjs --only=t11-refus,t11-manche-2` (et toute exécution qui atteint le bilan) | carte de bilan relevée dans le DOM à l'image où elle s'ouvre ; meilleur temps `save.data.bestTimes.cso_train` relevé quand il change (tranche T11) |
+| `unreal/core/tests/oracles/cso_result.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-result.mjs` (~2 min, jeu web en cours d'exécution) | bilan (tranche T11) : étape de bilan de l'activité `cso_train` construite par le jeu, démarrée sur 15 états posés × 2 langues, carte relevée dans le DOM (kicker, titre, grille, tableau, boutons) ; boutons Recommencer, Quitter l'épreuve, S'entraîner touchés sur 3 cas ; rejoué par `testCsoResult` |
+| `unreal/StridesGrandTour/Content/Data/cso_result_style.json` | `export-cso-result.mjs --screens` | relevé de base de la carte de bilan, par langue (fr, en) et par viewport (844 × 390, 667 × 308) : styles calculés, boîtes et largeur Geist de chaque texte (état du bilan de `t9-parcours`), lus par `UStridesCsoScreens` (mise en page `csoResultLayout`, étalonnage de la police du moteur) |
+| `unreal/core/tests/oracles/cso_result_layout.json` | `export-cso-result.mjs --screens` | mise en page de la carte de bilan dans le navigateur pour les 15 états posés × 2 langues × 2 viewports (boîtes, largeurs de texte des cellules, `scrollHeight`, classe `more` en haut et défilé jusqu'en bas) ; rejoué par `testCsoResultLayout` et `Strides.Cso.ResultLayout` |
+| canal « bl » et `ep.bt` de `cso_runs/`, exécutions `t11-refus`, `t11-manche-2`, `t11-trois-barres` | `export-cso-runs.mjs --only=t11-refus,t11-manche-2,t11-trois-barres` (et toute exécution qui atteint le bilan) | carte de bilan relevée dans le DOM à l'image où elle s'ouvre ; meilleur temps `save.data.bestTimes.cso_train` relevé quand il change (tranche T11) |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
 Export en cours d'exécution (serveur Vite sur `http://127.0.0.1:5173`, sinon
@@ -290,7 +291,7 @@ python3 scripts/unreal/parite-montage.py unreal/docs/parite/cso entree-
 ### Arrivée et bilan (tranche T11) : poses `bilan-*`, 844 × 390 et 667 × 308
 
 ```sh
-node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=bilan   # ~4 min, 4 captures web
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=bilan   # ~8 min, 8 captures web
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso -StridesPose=bilan- -StridesShotsDir=<dossier dédié> \
   -abslog="<dossier dédié>/shots-bilan.log"
@@ -300,11 +301,16 @@ python3 scripts/unreal/parite-montage.py unreal/docs/parite/cso bilan-
 - `--shots=bilan` : exécution `t9-parcours` de l'oracle (parcours complet sans faute) rejouée dans une page neuve par
   capture, arrêtée à la 15e image après le grand message « SANS FAUTE ! » (`bilan-1-sans-faute`) puis 3 images après
   l'ouverture de la carte de bilan (`bilan-2-carte`) ; carte relevée dans le DOM et comparée au canal « bl » de l'oracle.
+  Contrôle adverse de T11 : exécution `t11-trois-barres` (page `?classic` comme son export ; fautes sur deux lignes,
+  joueur 14e) arrêtée 3 images après l'ouverture de la carte, corps en haut (`bilan-3-trois-barres`) puis défilé jusqu'en
+  bas (`bilan-4-trois-barres-bas`, `scroll: "end"`) ; mise en page de la carte relevée après l'animation d'ouverture
+  (boîtes, `scrollHeight`, `more`, puis `scrollTop` et `more` après le défilement : champ `bilan.layout` de la pose).
 - Unreal : `bilan-1-*` rejoue le HUD de l'exécution (comme les poses `aide-*`) ; `bilan-2-*` lance l'activité dans
   l'épreuve du niveau et rejoue l'exécution image par image par le chemin du jeu (`StridesCsoRunReplay` : boutons de
   carte touchés par le widget, événements d'obstacle, `TickRun`) jusqu'à l'image de la pose ; carte comparée au DOM du
-  web (`AStridesShots::ApplyBilanPose`) ; relevé `bilan-unreal.json`. Copier ensuite `bilan-*-unreal.png` et
-  `bilan-unreal.json` du dossier dédié dans `unreal/docs/parite/cso/`.
+  web (`AStridesShots::ApplyBilanPose`) ; corps défilé comme le doigt pour `bilan-4` ; boîtes du widget, lignes de la
+  grille, défilement et `more` comparés au relevé du web (`layout` de `bilan-unreal.json`). Copier ensuite
+  `bilan-*-unreal.png` et `bilan-unreal.json` du dossier dédié dans `unreal/docs/parite/cso/`.
 - Référence tactile : `tests/e2e/cso-touch.mjs` écrit `tests/e2e/out/cso/touch-bilan.png` (1688 × 780) ; réduit à
   844 × 390 (`ffmpeg -vf scale=844:390:flags=area`) dans `bilan-touch-844x390-web.png`, assemblé à côté de
   `bilan-2-carte-844x390-unreal.png` dans `bilan-touch-844x390.png` (partie au doigt, chrono différent : voir

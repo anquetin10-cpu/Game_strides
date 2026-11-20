@@ -92,4 +92,45 @@ STRIDESCORE_API CsoResultCard csoResultCard(const CsoResultInput& in, const Rank
 // configuration) ; dotation jamais reçue (r.data.rewarded : sans dotation, toujours faux).
 STRIDESCORE_API CsoResultInput csoResultInputOf(const CsoRun& run);
 
+// Mise en page de la carte de bilan (contrôle adverse de T11) : flux CSS du corps défilable (src/styles.css:246-254,
+// 350-355 ; classe more : src/ui/screens.js:151) reproduit à partir du relevé de base d'une langue et d'un viewport
+// (Content/Data/cso_result_style.json : une ligne de texte par bloc, 8 lignes de tableau). Chaque bloc (kicker, titre,
+// rangée de la grille, tableau) garde sa distance au bloc précédent du relevé ; sa hauteur suit son nombre de lignes de
+// texte (rangée de la grille : sa case la plus haute) ; le tableau a une ligne de la hauteur relevée par engagé affiché ;
+// ses colonnes se partagent la largeur du tableau en proportion de leur largeur maximale (texte le plus large +
+// padding : table-layout auto quand la somme tient dans la largeur). scrollHeight = bas du tableau + padding-bottom du
+// corps, arrondi au pixel ; more(scrollTop) : scrollHeight − scrollTop − clientHeight > 4. Boîtes en px CSS (x, y,
+// largeur, hauteur). Contrôlé sur unreal/core/tests/oracles/cso_result_layout.json (testCsoResultLayout).
+struct CsoBox {
+  double x = 0, y = 0, w = 0, h = 0;
+};
+struct CsoResultLayoutBase {
+  CsoBox body;                        // corps défilable (.card-body)
+  double padBottom = 0;               // son padding-bottom
+  double clientHeight = 0;            // sa hauteur visible
+  CsoBox kicker, title;               // une ligne chacun
+  std::vector<CsoBox> keys, values;   // cases de la grille, une ligne chacune
+  CsoBox table;
+  std::vector<CsoBox> rows;           // lignes relevées (contiguës, même hauteur)
+  std::vector<double> cellPad;        // padding gauche + droit des cellules, par colonne
+};
+struct CsoResultLayoutIn {
+  int kickerLines = 1, titleLines = 1;
+  std::vector<int> keyLines, valueLines;      // lignes de chaque case de la grille
+  std::vector<std::vector<double>> cellText;  // largeur du texte de chaque cellule, par ligne affichée du tableau
+};
+struct CsoResultLayout {
+  CsoBox kicker, title, table;
+  std::vector<CsoBox> keys, values, rows;
+  std::vector<std::vector<CsoBox>> cells;
+  int scrollHeight = 0;
+  double clientHeight = 0;
+  // Somme des largeurs maximales au-delà de la largeur du tableau : le navigateur répartit alors entre largeurs minimale
+  // et maximale (non porté : répartition proportionnelle gardée).
+  bool tooWide = false;
+  double maxScroll() const;           // scrollTop maximal
+  bool more(double scrollTop) const;  // classe more de la barre d'actions
+};
+STRIDESCORE_API CsoResultLayout csoResultLayout(const CsoResultLayoutBase& base, const CsoResultLayoutIn& in);
+
 }  // namespace strides

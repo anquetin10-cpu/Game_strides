@@ -34,7 +34,8 @@
 //    captures 4 et 5 de la recette : PNG de tests/e2e/out/cso/ et exécution t9-recette) ; --poses=nom1,nom2 : ces poses
 //    seulement, les autres poses aide-* gardées.
 //    --shots=bilan (tranche T11) : poses bilan-* (exécution t9-parcours arrêtée au grand message « SANS FAUTE ! » et à
-//    la carte de bilan, 844 × 390 et 667 × 308) ;
+//    la carte de bilan ; contrôle adverse : t11-trois-barres arrêtée à la carte, corps en haut puis défilé jusqu'en bas ;
+//    mise en page de la carte relevée ; 844 × 390 et 667 × 308) ;
 //    --shots=entree (tranche T10) : poses entree-* (exécution t9-recette arrêtée aux captures 1-presentation, 2-plan,
 //    3-cloche de la recette et à l'annonce du dossard, 844 × 390 et 667 × 308 ; carte ouverte relevée dans le DOM) ;
 //    --poses= comme ci-dessus.
@@ -247,6 +248,13 @@ const SCENARIOS = [
       ...['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
       { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'card', extra: 5 }, { do: 'tap', id: 'cso-done' }, { do: 'wait', frames: 10 }],
     desc: 'Recommencer : manche 1 avec une barre au 2 (appel à 4,2 m de la première barre ; autres éléments sautés, cheval posé devant chacun), arrivée, bilan ; « Recommencer » touché : nouvelle manche (barres remises, entrée en piste, cloche) ; cheval arrêté au joystick jusqu’au début du parcours, posé 5 m avant la ligne de départ à 4,6 m/s, ligne franchie, les 10 éléments sautés, arrivée, bilan « manche 2 » ; « Quitter l’épreuve » touché : meilleur temps enregistré (dernière manche), fin de la mission ; 10 images après.' },
+  // Contrôle adverse de T11 : bilan dont la mise en page diffère du relevé (fautes sur deux lignes, joueur au-delà du 8e :
+  // 9 lignes au tableau, corps plus haut), en partie réelle.
+  { id: 't11-trois-barres', type: 't4', classic: true, maxFrames: 2400,
+    acts: [{ do: 'line', until: 'started' }, ...['1', '2', '3'].map((label) => ({ do: 'jump', label, rule: 'far', far: 4.2 })),
+      ...['4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
+      { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'card', extra: 5 }, { do: 'tap', id: 'cso-done' }, { do: 'wait', frames: 10 }],
+    desc: 'Bilan de trois barres : départ, appels trop loin au 1, au 2 et au 3 (à 4,2 m de la première barre : barres tombées), les 7 autres éléments sautés (cheval posé devant chacun), cheval posé 4 m avant le milieu de la ligne d’arrivée à 3 m/s, arrivée (« 12 POINTS »), sortie de piste, bilan (fautes sur deux lignes, joueur au-delà du 8e : 9 lignes au tableau) ; « Quitter l’épreuve » touché : meilleur temps enregistré, fin de la mission ; 10 images après.' },
   // Scénarios de la tranche T6 (caméra de concours) contre le décor (repère : entrée de piste CSO_GATE ; le parcours ne
   // fait jamais toucher la perche) : la sonde bloque la perche, le recul se raccourcit (amorti 10 /s) puis s'allonge
   // (amorti 2,5 /s). Tribunes : boîte « stands » au nord de la carrière ; mât : mât « mast » de la lice nord.
@@ -561,6 +569,23 @@ function PAGE() {
       rows: [...ov.querySelectorAll('.cso-pres .k')].map((k, i) => [k.textContent, vs[i]?.textContent ?? null]),
       table: [...ov.querySelectorAll('table.cso-rank tr')].map((tr) => ({ me: tr.classList.contains('me'), td: [...tr.children].map((td) => td.textContent) })),
       buttons: [...ov.querySelectorAll('.card-actions button')].map((b) => [b.dataset.id, b.textContent, b.className]),
+    };
+  };
+  // Mise en page de la carte de bilan (contrôle adverse de T11, poses bilan-*) : boîtes (px CSS du viewport, au dixième)
+  // du kicker, du titre, des cases de la grille, du tableau, des lignes et des cellules, corps en haut ; scrollHeight et
+  // clientHeight du corps ; classe more de la barre d'actions.
+  P.bilanLayout = (ov) => {
+    const q = (s) => ov.querySelector(s);
+    const r1 = (v) => Math.round(v * 10) / 10;
+    const rect = (el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(r1); };
+    const body = q('.card-body');
+    return {
+      body: { scrollHeight: body.scrollHeight, clientHeight: body.clientHeight, scrollTop: body.scrollTop },
+      kicker: rect(q('.kicker')), title: rect(q('h2')),
+      keys: [...ov.querySelectorAll('.cso-pres .k')].map(rect), values: [...ov.querySelectorAll('.cso-pres .v')].map(rect),
+      table: rect(q('table.cso-rank')),
+      rows: [...ov.querySelectorAll('table.cso-rank tr')].map((tr) => ({ rect: rect(tr), me: tr.classList.contains('me'), cells: [...tr.children].map(rect) })),
+      more: q('.card-actions').classList.contains('more'),
     };
   };
   const capture = (rec) => {
@@ -2910,25 +2935,34 @@ if (SHOTS) {
   // pas fixe), arrêtée à l'image choisie ; HUD (grand message « SANS FAUTE ! ») et carte de bilan affichés, 844 × 390 et
   // 667 × 308. Carte relevée dans le DOM (kicker, titre, grille, tableau, boutons) ; canal « ai » de l'image comparé.
   else if (SHOTS_ONLY === 'bilan') {
-    const sc = { ...SCENARIOS.find((x) => x.id === 't9-parcours'), virtualHud: true };
-    const ora = JSON.parse(readFileSync(join(OUT, runFile(sc.id, 'fr')), 'utf8'));
+    const t9 = { ...SCENARIOS.find((x) => x.id === 't9-parcours'), virtualHud: true };
+    const ora = JSON.parse(readFileSync(join(OUT, runFile(t9.id, 'fr')), 'utf8'));
     const kBig = ora.frames.findIndex((f) => f.hud.some((c) => c.fn === 'big' && c.args[0] === 'SANS FAUTE !'));
     const kCard = ora.frames.findIndex((f) => f.bl);
     if (kBig < 0 || kCard < 0) throw new Error('bilan : arrivée « SANS FAUTE ! » ou bilan absent de t9-parcours');
-    const file = `unreal/core/tests/oracles/cso_runs/${runFile(sc.id, 'fr')}`;
+    // Contrôle adverse de T11 : bilan de t11-trois-barres (fautes sur deux lignes, joueur 14e : 9 lignes au tableau),
+    // corps en haut puis défilé jusqu'en bas (ligne du joueur, ombre de la barre d'actions retirée).
+    const tb = { ...SCENARIOS.find((x) => x.id === 't11-trois-barres'), virtualHud: true };
+    const oraTb = JSON.parse(readFileSync(join(OUT, runFile(tb.id, 'fr')), 'utf8'));
+    const kCardTb = oraTb.frames.findIndex((f) => f.bl);
+    if (kCardTb < 0) throw new Error('bilan absent de t11-trois-barres');
     const BILAN = [
-      { name: 'bilan-1-sans-faute', k: kBig + 15, card: false, desc: `arrivée sans faute : 15e image après le grand message « SANS FAUTE ! » (courses.js:344, image ${kBig}), sous-titre du chrono, tableau` },
-      { name: 'bilan-2-carte', k: kCard + 3, card: true, desc: `carte de bilan (courses.js:414-423, ouverte à l’image ${kCard} après la sortie de piste) : kicker, titre « ${ora.frames[kCard].bl.title} », grille, classement simulé (8 premiers et le joueur), boutons Recommencer, S’entraîner, Quitter l’épreuve` },
+      { name: 'bilan-1-sans-faute', sc: t9, ora, k: kBig + 15, card: false, desc: `arrivée sans faute : 15e image après le grand message « SANS FAUTE ! » (courses.js:344, image ${kBig}), sous-titre du chrono, tableau` },
+      { name: 'bilan-2-carte', sc: t9, ora, k: kCard + 3, card: true, kc: kCard, desc: `carte de bilan (courses.js:414-423, ouverte à l’image ${kCard} après la sortie de piste) : kicker, titre « ${ora.frames[kCard].bl.title} », grille, classement simulé (8 premiers et le joueur), boutons Recommencer, S’entraîner, Quitter l’épreuve` },
+      { name: 'bilan-3-trois-barres', sc: tb, ora: oraTb, k: kCardTb + 3, card: true, kc: kCardTb, desc: `carte de bilan d’une manche à trois barres (ouverte à l’image ${kCardTb}) : titre « ${oraTb.frames[kCardTb].bl.title} », fautes sur deux lignes (lignes suivantes décalées), corps en haut` },
+      { name: 'bilan-4-trois-barres-bas', sc: tb, ora: oraTb, k: kCardTb + 3, card: true, kc: kCardTb, scroll: 'end', desc: `même carte, corps défilé jusqu’en bas : 9e ligne du tableau (le joueur, « ${oraTb.frames[kCardTb].bl.title} », sous les 8 premiers), ombre de la barre d’actions retirée (classe more)` },
     ];
     const VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
     const shots = [];
     for (const B of BILAN) {
+      const sc = B.sc;
+      const file = `unreal/core/tests/oracles/cso_runs/${runFile(sc.id, 'fr')}`;
       for (const v of VIEWS) {
         const vk = `${v.width}x${v.height}`;
         const ctx = await browser.newContext({ viewport: v, deviceScaleFactor: 1 });
         const page = await ctx.newPage();
         page.on('pageerror', (e) => errors.push(`fr: ${e.message}`));
-        await page.goto(`${BASE}/?autostart&quality=high&lang=fr`, { timeout: 180000 });
+        await page.goto(`${BASE}/?autostart&quality=high&lang=fr${sc.classic ? '&classic' : ''}`, { timeout: 180000 });
         await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000, polling: 500 });
         await page.addScriptTag({ content: AUTOPILOT });
         await page.addScriptTag({ content: `(${PAGE.toString()})();` });
@@ -2947,9 +2981,22 @@ if (SHOTS) {
           o.card = ov ? window.__parite.bilanDom(ov) : null;
           return o;
         }, B.k);
-        if (r.ai !== JSON.stringify(ora.frames[B.k].ai)) throw new Error(`${B.name} ${vk} : canal « ai » de l’image ${B.k} différent de l’oracle`);
-        if (!!r.card !== B.card || (B.card && JSON.stringify(r.card) !== JSON.stringify(ora.frames[kCard].bl))) throw new Error(`${B.name} ${vk} : carte de bilan absente ou différente du canal « bl » de l’oracle`);
+        if (r.ai !== JSON.stringify(B.ora.frames[B.k].ai)) throw new Error(`${B.name} ${vk} : canal « ai » de l’image ${B.k} différent de l’oracle`);
+        if (!!r.card !== B.card || (B.card && JSON.stringify(r.card) !== JSON.stringify(B.ora.frames[B.kc].bl))) throw new Error(`${B.name} ${vk} : carte de bilan absente ou différente du canal « bl » de l’oracle : ${JSON.stringify(r.card).slice(0, 400)} / ${JSON.stringify(B.ora.frames[B.kc].bl).slice(0, 400)}`);
         await page.waitForTimeout(3000);
+        // Mise en page relevée après l'animation d'ouverture de la carte (échelle et translation de l'overlay finies),
+        // corps en haut ; puis corps défilé jusqu'en bas (pose « bas ») : scrollTop maximal, classe more relevée après
+        // l'événement scroll.
+        if (B.card) {
+          r.layout = await page.evaluate(async (end) => {
+            const ov = document.querySelector('.overlay [data-id="cso-retry"]')?.closest('.overlay');
+            const lay = window.__parite.bilanLayout(ov);
+            const body = ov.querySelector('.card-body');
+            if (end) body.scrollTop = body.scrollHeight;
+            await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+            return { ...lay, scrollTop: body.scrollTop, moreAfter: ov.querySelector('.card-actions').classList.contains('more') };
+          }, B.scroll === 'end');
+        }
         await page.evaluate(() => window.__parite.render());
         await page.waitForTimeout(500);
         const name = `${B.name}-${vk}`;
@@ -2959,10 +3006,10 @@ if (SHOTS) {
           name, desc: `Arrivée et bilan (tranche T11), partie réelle ${sc.id} arrêtée à l’image ${B.k} : ${B.desc} ; vue de la caméra du jeu, HUD${B.card ? ' et carte' : ''} affichés ; ${v.width} × ${v.height}.`,
           hour: r.hour, eye: r.eye, target: r.target, fovV: r.fovV, viewport: { w: v.width, h: v.height }, horse: r.horse, sunDir: r.sunDir, day: r.day, canvas: r.canvas,
           course: { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 },
-          hud: { run: file, frame: B.k }, ...(B.card ? { bilan: { run: file, frame: B.k, card: r.card } } : { aids: { run: file, frame: B.k } }), state: r.state, frame: B.k,
+          hud: { run: file, frame: B.k }, ...(B.card ? { bilan: { run: file, frame: B.k, card: r.card, layout: r.layout, ...(B.scroll ? { scroll: B.scroll } : {}) } } : { aids: { run: file, frame: B.k } }), state: r.state, frame: B.k,
           web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png`,
         });
-        console.log('pose', name, 'image', B.k, 'grand message', JSON.stringify(r.state.bg), 'carte', JSON.stringify(r.card && [r.card.kicker, r.card.title]));
+        console.log('pose', name, 'image', B.k, 'grand message', JSON.stringify(r.state.bg), 'carte', JSON.stringify(r.card && [r.card.kicker, r.card.title]), r.layout ? `corps ${r.layout.body.scrollHeight} px, défilé ${r.layout.scrollTop}, more ${r.layout.more} → ${r.layout.moreAfter}` : '');
         await ctx.close();
       }
     }
