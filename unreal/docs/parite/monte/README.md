@@ -240,11 +240,15 @@ Créé :
   `solveArm`, `flankAt`, `crestAt`, `hugFlank`, `hugMemory`, `riding`, `hairSpring` et l'application lissée
   d'`animateHuman` (slerp à trois branches, jambes exactes une fois le fondu fini) ; plus la préparation des entrées de
   `human.js` `animateRiding` (`RideInputFilter` : rebond et tangage du dos, saut, réception `landT`, profils du flanc
-  filtrés par `FLANK_RELAX` et `FLANK_LEAD`, réglages en unités du modèle). Les fonctions de Three.js utilisées sont
-  reproduites avec leurs formules de three 0.170.0, dans le même ordre d'opérations, sans contraction en FMA
-  (`#pragma clang fp contract(off)` encadré par `float_control(push/pop)` : vérifié, Clang contracte sinon même en -O0,
-  et le réglage ne déborde pas sur les autres sources d'une compilation unifiée). Aucun état statique : chaque cavalier
-  porte son état.
+  filtrés par `FLANK_RELAX` et `FLANK_LEAD`, réglages en unités du modèle), **portée pour le seul cas qu'O1 exerce**
+  (une mise en selle, pas d'animation jamais nul) : trois écarts connus hors de ce cas, voir « Contrôle adverse et pause
+  S3 » plus bas. Les fonctions de Three.js utilisées sont reproduites avec leurs formules de three 0.170.0, dans le même
+  ordre d'opérations. Contraction en FMA désactivée dans `RiderRules.cpp` (`#pragma clang fp contract(off)` encadré par
+  `float_control(push/pop)` ; Clang contracte sinon, même en -O0), **sauf dans `smoothstep`** : défini dans
+  `MathUtil.h`, inclus avant le pragma, son `3 - 2 * t` est compilé en `fma(t, -2, 3)` ; la multiplication par −2 est
+  exacte, le résultat est donc identique au bit près. Le pragma est efficace (sans lui, `web_classic` passe de 1e-15 à
+  4,3e-9 m, relevé du contrôle adverse) et ne déborde pas sur les autres sources d'une compilation unifiée. Aucun état
+  statique : chaque cavalier porte son état.
 - `Content/Data/rider_rules.json`, écrit par `scripts/unreal/export-rider-rules-data.mjs` (Node seul) : `RIDE` importé
   d'`anim.js` ; constantes non publiées relues dans le source (`THIGH_MARGIN`, `POLE_OPEN`, `HUG_OPEN`, `HUG_RELAX`,
   `FOOT_OPEN`, `FOOT_RELAX`, `DEFAULT_FIT` ; `FLANK_RELAX`, `FLANK_LEAD`, `FIST`, `RIDER_FIT`, `RIDER_SEAT` ; `LEG_THICK`,
@@ -258,10 +262,10 @@ Créé :
 |---|---|
 | Rigs `web_classic` et `rider_f`, tous scénarios : articulations et cibles C++ contre O2 ≤ 0,1 mm et ≤ 1e-4 rad | atteint, 1 858 images (8 scénarios × 2 rigs). `web_classic` : articulations et points 1,0e-15 m, rotations locales 2,1e-15 rad, cibles 1,1e-16 m, orientations des pieds 2,2e-16 rad. `rider_f` : articulations et points 7,2e-9 m (E1b, image 129, poing gauche), rotations locales 2,6e-8 rad (E1b, image 82, `lFore`), cibles 2,2e-16 m |
 | État interne (`post`, `two`, `jumpK`, `rel`) ≤ 1e-6 | atteint, et étendu à tout `dg` (`diag`, `wantDiag`, `diagT`, `bobAvg`, `hd`, `wasJump`, `look`, `hug` des deux côtés, `blendT`) : 2,2e-16 |
-| Entrées C++ calculées depuis `hz` brut, comparées au canal `in` : ≤ 1e-6 m | atteint pour toutes les images à partir de la deuxième (18 420 valeurs, 8 scénarios) : 1,9e-16 (tangage, E2g, image 131). Le cavalier lit l'état du cheval de l'image précédente (`hz` de f − 1) ; l'image 0 suit la mise en selle, non exportée : l'état du filtre y est repris du canal `in`. Exception : le virage (`h.lastTurn` n'est pas exporté dans O1), repris du canal `in` et non comparé |
-| G4 : au moins 30 mutations, chacune détectée ou déclarée | atteint : 97 mutations (constantes de `RIDE` à leur usage, constantes nommées, chaque étape de `hugFlank`, `hugMemory`, ordre mémoire puis recherche, retards d'une image, lissage, squelette, préparation des entrées), 85 détectées, 12 déclarées dans `ATTENDUES` avec leur raison, code 0. Témoin non muté vérifié en tête de campagne |
+| Entrées C++ calculées depuis `hz` brut, comparées au canal `in` : ≤ 1e-6 m | atteint pour toutes les images à partir de la deuxième (921 images × 20 valeurs = 18 420, 8 scénarios) : 1,9e-16 (tangage, E2g, image 131). Ce décompte gonfle la preuve : `dt` est passé tel quel en argument (comparaison tautologique), `hs` et `jump` sont recopiés de `hz`, `kneeOut` et `mountKneeOut` sont des directions recopiées. Ce qui prouve le portage : rebond, tangage, `landT`, `t`, phase de foulée, longueurs mises à l'échelle, profils `flankL` et `flankR` filtrés, `crest`. Le cavalier lit l'état du cheval de l'image précédente (`hz` de f − 1) ; l'image 0 suit la mise en selle, non exportée : l'état du filtre y est repris du canal `in`. Exception : le virage (`h.lastTurn` n'est pas exporté dans O1), repris du canal `in` et non comparé |
+| G4 : au moins 30 mutations, chacune détectée ou déclarée | atteint pour le seuil (au moins 30, chacune détectée ou déclarée, code 0) ; partiel pour « une par constante et par branche ». 97 mutations (une partie des constantes de `RIDE`, constantes nommées, chaque étape de `hugFlank`, `hugMemory`, ordre mémoire puis recherche, retards d'une image, lissage, squelette, préparation des entrées), 85 détectées, 12 déclarées dans `ATTENDUES` avec leur raison. Sans mutation dans le script : `breathChest`, `breathShoulder`, `releaseIn1`, et `holdMax` et `landFold` dans le calcul de `jHd` (le contrôle adverse les a mutées sur une copie : toutes détectées). La mutation « ordre inversé, pied avant genou » saute l'étape 1 de `hugFlank` (`if (false)`) : ce n'est pas une inversion d'ordre. Branches qu'O1 n'exerce pas, ni déclarées ni couvertes : voir « Contrôle adverse et pause S3 ». Témoin non muté vérifié en tête de campagne |
 | Coût : 10 000 images en Release, médiane ≤ 0,22 ms | atteint : médiane 0,0041 ms par image (trois passes : 0,00417, 0,00413, 0,00413 ms) ; moyenne 0,0050, p99 0,0100, max 0,017 à 0,042 ms |
-| G1 | vert : 2 tests ctest, 248 386 + 306 914 = 555 300 vérifications, 0 échec, 0 avertissement à la compilation |
+| G1 | vert : 2 tests ctest, 248 386 + 306 914 = 555 300 vérifications, 0 échec, 0 avertissement à la compilation. Réserve : `monte-base.py --verifier` compare la somme à la base de l'étape 1, qui ne comptait que le cœur (248 386) ; une baisse des vérifications du cœur serait masquée par le test `monte` (liste par test enregistrée, non comparée) |
 
 Mesure du coût (honnête, à relire avec ses limites) : Mac mini M2 16 Go, Apple clang 21, `-O3 -DNDEBUG`
 (`CMAKE_BUILD_TYPE=Release`). Une image mesurée = `RideInputFilter::next` + `RiderRules::step` + `RiderRules::skeleton`
@@ -306,13 +310,44 @@ Adaptations du plan :
 - Export des constantes par `export-rider-rules-data.mjs` et non par `export-data.mjs` : celui-ci s'exécute par
   vite-node (cache écrit dans `node_modules`, partagé avec le chantier CSO) et la tranche CSO le modifie.
 - Oracles lus dans `unreal/core/tests/oracles/monte/` (dossiers de l'étape 3).
-- `monte-base.py` additionne désormais les vérifications de tous les exécutables de ctest (G1).
+- `monte-base.py` additionne désormais les vérifications de tous les exécutables de ctest (G1 ; réserve dans la ligne G1
+  du tableau).
 
-Fin d'étape : la condition d'arrêt S3 (moins de 8 Gio libres) est atteinte pendant l'étape (6,1 Gio libres au début,
-5,3 Gio en cours ; l'étape elle-même a écrit environ 25 Mo : `build/core-monte-rel`, `build/mutations-monte`).
-`monte-base.py --verifier` refuse donc de tourner (code 2, par construction). Les portes ont été passées une par une :
+Fin d'étape : **la condition d'arrêt S3 n'a pas été respectée.** S3 (plan §7 : moins de 8 Gio libres à n'importe quel
+moment, donc pause immédiate, aucune suppression, question à Julien) était déjà atteinte au début de l'étape (6,1 Gio
+libres ; 5,3 Gio en cours ; l'étape elle-même a écrit environ 25 Mo : `build/core-monte-rel`, `build/mutations-monte`).
+L'étape a pourtant été menée jusqu'au commit `d3f43ab9`, et S3 n'a été présentée que comme la raison d'une porte
+partielle. La pause est en place depuis la correction qui suit. `monte-base.py --verifier` refuse de tourner (code 2,
+par construction). Les portes ont été passées une par une :
 G1 (ctest ci-dessus), G5 (montage refait, 150 PNG, empreinte globale identique à `base.json`, aucun fichier modifié), G6
 (`build-parite.py` code 0, 687 fonctions, 29 identiques prouvées, 262 partielles, 396 absentes, 169/169 ; `PARITE.md`
 inchangé), G7 (`git diff --quiet HEAD -- src public tests` code 0, aucun fichier non suivi ; `riderPosture` 4/4 ; suite
 unitaire 30 fichiers, 297/297, cache de Vite dans `.tmp/monte`). G2, G3 : non lancées (UBT et UnrealEditor exclus).
+
+### Contrôle adverse et pause S3 (20/11/2026, 17 h 18)
+
+**Essai en pause sur S3, en attente de Julien.** Disque : 3,9 Gio libres à 17 h 18 (`df -h /Users/julien`), 3,1 Gio à
+17 h 04 (mesure du contrôle adverse), 13,5 Gio à la base de l'étape 1 (`base.json`). Pendant cette correction : aucune
+compilation, aucun test, aucune mutation, aucun code modifié, aucune suppression ; seul ce journal est corrigé. L'étape 5
+(Unreal Build Tool, UnrealEditor) ne démarre pas avant la décision de Julien sur la place disque.
+
+Constats du contrôle adverse, vérifiés par lecture du code et d'O1 pendant la pause ; corrections de code en attente :
+1. **FMA.** `smoothstep` (`MathUtil.h:9`, inclus ligne 9 de `RiderRules.cpp`, avant le pragma ligne 15) reste
+   contracté ; `lerp` et `vlerp` sont redéfinis après le pragma et ne le sont pas. Formulation corrigée plus haut.
+   Correction prévue : pragma placé avant les includes, puis test et mutations rejoués.
+2. **Préparation des entrées hors du cas d'O1.** (a) `human.js:326` `if (!step) return;` n'est pas porté : avec un pas
+   nul, `RideInputFilter::next` fait avancer `landT`, `wasJump` et la mémoire des profils, alors que le web n'avance que
+   `anim.t`. (b) `seed()` efface la mémoire brute des profils (`_flankRaw`), que le web garde d'une mise en selle à
+   l'autre. (c) `reset()` remet à neuf plus que `Human.mount` (`human.js:249-272`, qui ne remet que `_init` et `_ride`) :
+   aussi `blendT`, la pose `_P` et la queue de cheval ; le commentaire de `RiderRules.h:159` est donc inexact pour une
+   remise en selle. Sans effet pour le joueur à une seule mise en selle, cas que l'oracle prouve ; compte pour les
+   cavaliers animés à pas réduit (LOD) et pour une remontée en selle. Effet chiffré sur la pose : à confirmer. Correction
+   prévue avec un test dédié (pas nul, deux mises en selle), faute de scénario O1.
+3. **Branches qu'O1 n'exerce pas, ni déclarées ni couvertes jusqu'ici** (relevé par lecture d'O1) : galop allongé
+   (`smoothstep(9.8, 11.8, hs)` ; vitesse maximale d'O1 8,70 m/s, E3b), deux sauts successifs (remise de `R.hd` à −1 ;
+   un saut au plus par scénario, E3 et E3b), pas nul (pas minimal d'O1 : 1/30 s). À déclarer dans `ATTENDUES` avec leur
+   raison, ou à couvrir par des scénarios O1 de plus.
+4. **Mutations manquantes** : `breathChest`, `breathShoulder`, `releaseIn1`, `holdMax` et `landFold` dans `jHd`, et une
+   vraie inversion de l'ordre genou puis pied ; libellé « ordre inversé » à corriger en « étape 1 sautée ».
+5. **G1 de `monte-base.py`** : comparer les vérifications par test ctest (cœur et `monte` séparément), et non leur somme.
 
