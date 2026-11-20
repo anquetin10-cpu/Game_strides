@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <map>
 #include <set>
@@ -14,6 +15,7 @@
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoHud.h"
+#include "StridesCore/CsoInput.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/Text.h"
@@ -1938,27 +1940,140 @@ static void testCamRuns() {
               runs, calls, devPos, devFov, devBack, entries, snaps, blocked, minBack, closer, farther, fenceLift, biased, mk.c_str());
 }
 
+// ---------- Commandes (tranche T8) : cso_input.json (classe Input du web sous événements synthétiques) ----------
+// Chaque appel relevé dans le navigateur est rejoué sur une instance neuve par scénario ; l'état complet est comparé
+// après chaque appel : move, look, keyMove, _virtual, held, pressed, keys, enabled, joy, lookPtr exactement ; élément du
+// joystick (left, top, translation du bouton) à l'arrondi de la sérialisation CSS du navigateur près (6 chiffres
+// significatifs : écart relatif ≤ 1e-5).
+static std::string csoInputState(const CsoInput& in) {
+  auto set = [](const std::set<std::string>& s) {
+    std::string o = "[";
+    for (const std::string& x : s) o += (o.size() > 1 ? "," : "") + x;
+    return o + "]";
+  };
+  // −0 du web (move.y = -dy / R) : JSON l'écrit 0 ; comparé comme 0.
+  const auto z = [](double v) { return v == 0 ? 0.0 : v; };
+  char b[512];
+  std::snprintf(b, sizeof b, "mv %.17g %.17g %.17g km %d vi %d lk %.17g %.17g en %d joy %s%lld %.17g %.17g %.17g %.17g lp %s%lld %.17g %.17g", z(in.move.x), z(in.move.y), z(in.move.mag),
+                in.keyMove, in.virtualMove, z(in.look.dx), z(in.look.dy), in.enabled, in.joy.on ? "" : "null:", (long long)in.joy.id, z(in.joy.ox), z(in.joy.oy), z(in.joy.x), z(in.joy.y),
+                in.lookPtr.on ? "" : "null:", (long long)in.lookPtr.id, z(in.lookPtr.x), z(in.lookPtr.y));
+  return std::string(b) + " held " + set(in.held) + " pr " + set(in.pressed) + " keys " + set(in.keys);
+}
+static void testCsoInput() {
+  const J o = loadJson(ORA + "/cso_input.json");
+  CHECK(o["schema"].s == "strides.oracle.cso_input/1", "cso_input.json : schéma %s", o["schema"].s.c_str());
+  int calls = 0, bad = 0, elBad = 0, joyDowns = 0, rebases = 0, lookMoves = 0, keyCalls = 0, btnCalls = 0, scen = 0;
+  std::set<std::string> fns;
+  for (const J& sc : o["scenarios"].a) {
+    scen++;
+    CsoInput in;
+    int scBad = 0;
+    for (const J& e : sc["log"].a) {
+      const J& c = e["c"];
+      const std::string fn = c["fn"].s;
+      fns.insert(fn);
+      calls++;
+      const auto ptype = [&]() { return c["pt"].s == "mouse" ? CsoPointer::Mouse : c["pt"].s == "pen" ? CsoPointer::Pen : CsoPointer::Touch; };
+      const bool wasJoy = in.joy.on;
+      const double ox0 = in.joy.ox, oy0 = in.joy.oy;
+      if (fn == "init") CHECK(c["R"].num() == in.R, "%s : rayon %g", sc["id"].s.c_str(), c["R"].num());
+      else if (fn == "down") in.pointerDown((std::int64_t)c["id"].num(), ptype(), c["x"].num(), c["y"].num(), c["vw"].num(), c["vh"].num());
+      else if (fn == "move") in.pointerMove((std::int64_t)c["id"].num(), ptype(), c["x"].num(), c["y"].num());
+      else if (fn == "up") in.pointerUp((std::int64_t)c["id"].num());
+      else if (fn == "key") { in.key(c["code"].s, c["down"].b, c["rep"].b); keyCalls++; }
+      else if (fn == "btnDown") { in.buttonDown(c["name"].s); btnCalls++; }
+      else if (fn == "btnUp") { in.buttonUp(c["name"].s); btnCalls++; }
+      else if (fn == "poll") in.poll();
+      else if (fn == "endFrame") in.endFrame();
+      else if (fn == "setEnabled") in.setEnabled(c["v"].b);
+      else if (fn == "releaseAll") in.releaseAll();
+      else if (fn == "setVirtualMove") in.setVirtualMove(c["x"].num(), c["y"].num());
+      else CHECK(false, "%s : appel inconnu %s", sc["id"].s.c_str(), fn.c_str());
+      if (fn == "down" && !wasJoy && in.joy.on) joyDowns++;
+      if (fn == "move" && in.joy.on && (in.joy.ox != ox0 || in.joy.oy != oy0)) rebases++;
+      if (fn == "move" && in.lookPtr.on && (std::int64_t)c["id"].num() == in.lookPtr.id) lookMoves++;
+      // État attendu, même format.
+      const J& s = e["s"];
+      CsoInput w;
+      w.move = {s["mv"][0].num(), s["mv"][1].num(), s["mv"][2].num()};
+      w.keyMove = s["km"].b;
+      w.virtualMove = s["vi"].b;
+      w.look = {s["lk"][0].num(), s["lk"][1].num()};
+      w.enabled = s["en"].b;
+      w.joy.on = !s["joy"][0].isNull();
+      w.joy.id = w.joy.on ? (std::int64_t)s["joy"][0].num() : 0;
+      w.joy.ox = s["joy"][1].num(); w.joy.oy = s["joy"][2].num(); w.joy.x = s["joy"][3].num(); w.joy.y = s["joy"][4].num();
+      w.lookPtr.on = !s["lp"][0].isNull();
+      w.lookPtr.id = w.lookPtr.on ? (std::int64_t)s["lp"][0].num() : 0;
+      w.lookPtr.x = s["lp"][1].num(); w.lookPtr.y = s["lp"][2].num();
+      for (const J& x : s["held"].a) w.held.insert(x.s);
+      for (const J& x : s["pr"].a) w.pressed.insert(x.s);
+      for (const J& x : s["keys"].a) w.keys.insert(x.s);
+      CsoInput g = in;
+      if (!g.joy.on) g.joy.id = 0;
+      if (!g.lookPtr.on) g.lookPtr.id = 0;
+      const std::string got = csoInputState(g), want = csoInputState(w);
+      if (got != want) {
+        bad++;
+        if (++scBad <= 2) std::printf("  %s, appel %d (%s) :\n    obtenu %s\n    attendu %s\n", sc["id"].s.c_str(), calls, fn.c_str(), got.c_str(), want.c_str());
+      }
+      // Élément du joystick : [active, left, top, bouton x, bouton y].
+      const J& el = s["el"];
+      const auto css = [](double a, double b) { return std::abs(a - b) <= 1e-5 * std::max(1.0, std::abs(b)); };
+      const bool placed = !el[1].isNull();
+      bool elOk = el.a.size() == 5 && el[0].b == in.view.active && placed == in.view.placed && (!placed || (css(in.view.left, el[1].num()) && css(in.view.top, el[2].num()))) &&
+                  css(in.view.knobX, el[3].num()) && css(in.view.knobY, el[4].num());
+      if (!elOk) {
+        elBad++;
+        if (elBad < 4) std::printf("  %s, appel %d : joystick affiché %d %d %g %g %g %g\n", sc["id"].s.c_str(), calls, in.view.active, in.view.placed, in.view.left, in.view.top, in.view.knobX, in.view.knobY);
+      }
+    }
+  }
+  CHECK(bad == 0, "commandes : %d états différents de l'oracle sur %d appels", bad, calls);
+  CHECK(elBad == 0, "commandes : %d états du joystick affiché différents", elBad);
+  // L'oracle exerce bien ce qu'il doit : joystick pris, rebasage, regard, clavier, boutons, tous les appels.
+  CHECK(scen >= 15 && joyDowns >= 10 && rebases >= 3 && lookMoves >= 4 && keyCalls >= 80 && btnCalls >= 8, "commandes : couverture %d %d %d %d %d %d", scen, joyDowns, rebases, lookMoves, keyCalls, btnCalls);
+  for (const char* f : {"init", "down", "move", "up", "key", "btnDown", "btnUp", "poll", "endFrame", "setEnabled", "releaseAll", "setVirtualMove"}) CHECK(fns.count(f), "commandes : appel %s absent de l'oracle", f);
+  // Codes physiques (tables de la plateforme, sans oracle web) : W et Z, A et Q distincts ; flèches, modificateurs.
+  CHECK(webCodeFromMacKeyCode(0x0D) == "KeyW" && webCodeFromMacKeyCode(0x06) == "KeyZ" && webCodeFromMacKeyCode(0x00) == "KeyA" && webCodeFromMacKeyCode(0x0C) == "KeyQ" &&
+            webCodeFromMacKeyCode(0x7E) == "ArrowUp" && webCodeFromMacKeyCode(0x3B) == "ControlLeft" && webCodeFromMacKeyCode(0x3A) == "AltLeft" && webCodeFromMacKeyCode(0x35) == "Escape" &&
+            webCodeFromMacKeyCode(0x30) == "Tab" && webCodeFromMacKeyCode(0x31) == "Space" && webCodeFromMacKeyCode(0x2E) == "KeyM" && webCodeFromMacKeyCode(0x63).empty(),
+        "codes physiques du Mac");
+  CHECK(webCodeFromKeyName("W") == "KeyW" && webCodeFromKeyName("SpaceBar") == "Space" && webCodeFromKeyName("LeftControl") == "ControlLeft" && webCodeFromKeyName("Up") == "ArrowUp" &&
+            webCodeFromKeyName("F8").empty(),
+        "noms de touches Unreal");
+  std::printf("commandes : %d scénarios, %d appels rejoués (%d joysticks pris, %d rebasages, %d regards, %d touches, %d boutons), %d écarts\n", scen, calls, joyDowns, rebases, lookMoves, keyCalls,
+              btnCalls, bad + elBad);
+}
+
 int main(int argc, char** argv) {
   ORA = argc > 1 ? argv[1] : "oracles";
   DATA = argc > 2 ? argv[2] : "../../StridesGrandTour/Content/Data";
+  // STRIDES_TESTS=input,save… : seulement ces bancs (scripts de mutations ciblés) ; sans la variable, tous.
+  const char* only = std::getenv("STRIDES_TESTS");
+  const std::string sel = only ? std::string(",") + only + "," : std::string();
+  const auto run = [&](const char* name, void (*fn)()) {
+    if (sel.empty() || sel.find(std::string(",") + name + ",") != std::string::npos) fn();
+  };
   try {
-    testJump();
-    testRide();
-    testCourse();
-    testRuns();
-    testHorseRuns();
-    testFenceRuns();
-    testTarget();
-    testPress();
-    testJudge();
-    testSave();
+    run("jump", testJump);
+    run("ride", testRide);
+    run("course", testCourse);
+    run("runs", testRuns);
+    run("horse", testHorseRuns);
+    run("fences", testFenceRuns);
+    run("target", testTarget);
+    run("press", testPress);
+    run("judge", testJudge);
+    run("save", testSave);
     loadText();
-    testText();
-    testCsoFeedback();
-    testCsoHud();
-    testCsoRuns();
-    testCsoGoto();
-    testCamRuns();
+    run("text", testText);
+    run("feedback", testCsoFeedback);
+    run("hud", testCsoHud);
+    run("csoruns", testCsoRuns);
+    run("goto", testCsoGoto);
+    run("camera", testCamRuns);
+    run("input", testCsoInput);
   } catch (const std::exception& e) {
     std::printf("exception : %s\n", e.what());
     return 2;

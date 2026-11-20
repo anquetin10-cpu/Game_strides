@@ -911,11 +911,11 @@
    "src/core/input.js",
    "src/styles.css"
   ],
-  "unreal": "Joystick virtuel du moteur (DefaultInput.ini:4-5, DefaultVirtualJoysticks) relié à l'axe Gamepad_Left2D (StridesPlayerController.cpp:50)",
+  "unreal": "strides::CsoInput (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/CsoInput.h:23 ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:12-99 : zone, prise du joystick, base qui suit le doigt, amplitude, élément affiché) ; en jeu, encore le joystick virtuel du moteur (unreal/StridesGrandTour/Config/DefaultInput.ini:4-5)",
   "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test ; aucun appareil iOS détecté (unreal/docs/validation-mac-2026-11-17.md:44-45).",
-  "ecart": "Joystick virtuel du moteur : il peut se recentrer au point touché dans sa zone d'interaction (option bPreventRecenter, TouchInterface.h:82 du moteur ; valeur de l'asset DefaultVirtualJoysticks à confirmer) mais sa base ne suit pas le doigt au-delà ; zone (45 % / 30 %) et rayon 58 px non réglés ; amplitude lue comme accélérateur de cadence (zone morte 0,35, CsoRide.cpp:24-29) et non comme allure ; toujours affiché (bAlwaysShowTouchInterface=True).",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_input.json (vraie classe Input du web soumise à des événements tactiles, souris et clavier synthétiques, scripts/unreal/export-cso-input.mjs) rejoué par testCsoInput (unreal/core/tests/test_core.cpp:1962) : 18 scénarios, 624 appels, 0 écart (état complet après chaque appel ; position de l'élément à la sérialisation CSS près) ; 59 mutations de CsoInput.cpp détectées (scripts/unreal/mutations-cso-input.py).",
+  "ecart": "Logique du web prouvée dans le cœur, pas encore branchée dans le jeu à ce commit (tranche T8) : le jeu affiche toujours le joystick virtuel du moteur.",
   "tranche": "h"
  },
  {
@@ -926,11 +926,11 @@
    "src/core/input.js",
    "src/game.js"
   ],
-  "unreal": "Action Look sur Mouse2D et Gamepad_Right2D (StridesPlayerController.cpp:51-52, 140-145)",
+  "unreal": "Pointeur de regard de strides::CsoInput (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:51-66 : × 1,25 au doigt, × 1 à la souris) ; en jeu, action Look sur Mouse2D et Gamepad_Right2D (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:51-52, 140-145)",
   "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test.",
-  "ecart": "Souris lue sans clic ; en tactile, regard par le second stick du joystick moteur et non par glisser (à confirmer) ; pas de réglage de sensibilité.",
+  "niveau": "teste",
+  "preuve": "Pointeur de regard (prise, facteurs, suivi, levée) rejoué par testCsoInput sur cso_input.json, 0 écart ; mutations « regard » détectées.",
+  "ecart": "Regard du web calculé par le cœur mais non appliqué à la caméra ; souris lue sans clic en jeu ; pas de réglage de sensibilité.",
   "tranche": "socle"
  },
  {
@@ -940,11 +940,11 @@
   "js": [
    "src/core/input.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:73-91 (keyboardMove, portage de input.js poll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:127-142 (OnMove : déplacement clavier du cœur, drapeau clavier transmis au cheval)",
+  "unreal": "strides::CsoInput::key et poll (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:119-163 : codes physiques, diagonale, Ctrl gauche 0,5, Alt gauche 0,25) ; keyboardMove (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:73-91) ; en jeu, OnMove (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:127-142)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "keyboardMove comparé aux 258 images au clavier des scénarios rampe-clavier et ctrl-alt (input.move et keyMove relevés après input.poll, test_core.cpp:447, 0 écart) ; le branchement dans le contrôleur est compilé, pas joué.",
-  "ecart": "Diagonale normalisée et amplitudes Ctrl 0,5 / Alt 0,25 identiques ; touches logiques W et Z, A et Q doublées au lieu des codes physiques (Q déplace à gauche alors qu'il siffle dans le web) ; Ctrl reste aussi lié à « allure − » (sans effet en concours) ; hors épreuve, l'avant / arrière règle toujours une cadence (bCsoControls toujours vrai) ; tranche T8.",
+  "preuve": "Clavier de cso_input.json (scénarios clavier, azerty : code KeyW tapé « z », KeyA tapé « q »…) rejoué par testCsoInput, 0 écart ; keyboardMove comparé aux images au clavier de cso_runs/ (test_core.cpp:447).",
+  "ecart": "Codes physiques prouvés dans le cœur ; en jeu à ce commit, touches logiques W et Z, A et Q doublées (branchement des codes physiques : suite de la tranche T8).",
   "tranche": "socle"
  },
  {
@@ -1055,11 +1055,11 @@
   "js": [
    "src/core/input.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Seule la démo automatique du parcours (F8, StridesPlayerController.cpp:164) pilote le cheval, pour une autre fonction.",
+  "unreal": "strides::CsoInput::setVirtualMove (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:165-171)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "Scénarios virtuel et desactive-suite de cso_input.json rejoués par testCsoInput, 0 écart ; mutations « virtuel » détectées.",
+  "ecart": "Aucun dans le cœur ; seuls les tests l'appellent (comme le web).",
   "tranche": "socle"
  },
  {

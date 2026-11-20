@@ -18,6 +18,7 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/core/tests/oracles/cso_runs/` | `export-cso-runs.mjs` (jeu web en cours d'exécution) | scénarios rejoués image par image : `index.json` (en-tête des canaux, liste des exécutions) et un fichier par scénario et par langue, `<id>.<lang>.json` ; canal « cc » de la caméra de concours (tranche T6) dans toutes les exécutions non légères, scénario `cadrage` = `tests/e2e/cso-framing.mjs` au pas fixe |
 | `unreal/StridesGrandTour/Content/Data/cso_camera.json` | `export-data.mjs` | réglages `CAM_COMP` de `src/entities/camera.js` (tranche T6 ; `fov` = champ vertical, degrés) |
 | `unreal/core/tests/oracles/cso_target.json`, `cso_goto.json` | idem | grille de visée et d'appui ; étape « rejoindre l'entrée » |
+| `unreal/core/tests/oracles/cso_input.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-input.mjs` (~1 min, page de test sans le jeu) | commandes (tranche T8) : vraie classe `Input` de `src/core/input.js` soumise à des événements tactiles, souris et clavier synthétiques (DevTools), chaque appel reçu et l'état complet juste après ; rejoué par `testCsoInput` |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
 Export en cours d'exécution (serveur Vite sur `http://127.0.0.1:5173`, sinon
@@ -69,9 +70,12 @@ cmake -S unreal/core -B build/core && cmake --build build/core && ctest --test-d
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides; Quit" -unattended -nullrhi -nosplash -log -stdout \
   -ReportExportPath="$PWD/.tmp/automation" > .tmp/automation.log   # chaque test : Result={Success}
-python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py, mutations-cso-run.py, mutations-cso-camera.py
+python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py, mutations-cso-run.py, mutations-cso-camera.py,
+                                                 # mutations-cso-hud.py, mutations-cso-input.py (~1 min, objets communs compilés une fois)
 ```
 
+- `STRIDES_TESTS=input,save` : le banc ne lance que ces parties (noms dans le `main` de `test_core.cpp`) ; sans la
+  variable, tout.
 - `ctest` lance `strides_core_tests <oracles> <Content/Data>` : lecture de `cso_runs/` par `loadRuns`
   (`unreal/core/tests/test_core.cpp`), qui contrôle l'index (schéma, nom de fichier, identifiant, langue, nombre
   d'images) avant les rejeux.
