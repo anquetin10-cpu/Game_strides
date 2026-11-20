@@ -98,7 +98,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "SaveGame::fresh() (SaveGame.h:31) n'est appelé par aucun parcours de jeu (seulement implicitement quand la lecture échoue) ; StridesGameMode place toujours cheval et cavalier à WorldSpawn (StridesGameMode.cpp:87-117), sans box ni carte d'accueil.",
+  "ecart": "SaveGame::fresh() (SaveGame.h:34) n'est appelé par aucun parcours de jeu (seulement implicitement quand la lecture échoue) ; StridesGameMode place toujours cheval et cavalier à WorldSpawn (StridesGameMode.cpp:87-117), sans box ni carte d'accueil.",
   "tranche": "socle"
  },
  {
@@ -108,7 +108,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "UStridesSaveSubsystem::LoadNow (StridesSaveSubsystem.cpp:71-96), déclenché seulement par F9 ou le bouton CHARGER (StridesPlayerController.cpp:107, 514 ; StridesTouchControls.cpp:133)",
+  "unreal": "UStridesSaveSubsystem::LoadNow (StridesSaveSubsystem.cpp:62-88), déclenché seulement par F9 ou le bouton CHARGER (StridesPlayerController.cpp:107, 514 ; StridesTouchControls.cpp:133)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (« sauvegarder puis recharger » contrôlé à l'écran) ; aucun oracle JS.",
@@ -244,7 +244,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Rendu figé dans DefaultEngine.ini:9-23 (mobile forward, MSAA 4x, 2 cascades) et StridesGameMode.cpp:49-52 (ombres jusqu'à 250 m, 3 cascades) ; aucun réglage joueur, quality « auto » seulement stocké (SaveGame.h:27).",
+  "ecart": "Rendu figé dans DefaultEngine.ini:9-23 (mobile forward, MSAA 4x, 2 cascades) et StridesGameMode.cpp:49-52 (ombres jusqu'à 250 m, 3 cascades) ; aucun réglage joueur, quality « auto » seulement stocké (SaveGame.h:30).",
   "tranche": "socle"
  },
  {
@@ -258,7 +258,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Pas de résolution dynamique ni de scalability pilotée par la cadence ; pas de modèles classiques de repli (réglage characters stocké sans effet, SaveGame.h:27).",
+  "ecart": "Pas de résolution dynamique ni de scalability pilotée par la cadence ; pas de modèles classiques de repli (réglage characters stocké sans effet, SaveGame.h:30).",
   "tranche": "socle"
  },
  {
@@ -300,7 +300,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "activeHorse est écrit à la sauvegarde depuis Horse->ProfileId (StridesSaveSubsystem.cpp:44) mais aucune commande ne change de monture.",
+  "ecart": "activeHorse est écrit à la sauvegarde depuis Horse->ProfileId (StridesSaveSubsystem.cpp:45) mais aucune commande ne change de monture.",
   "tranche": "e"
  },
  {
@@ -343,7 +343,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Les quatre compétences sont seulement stockées et relues (SaveGame.h:23, SaveGame.cpp:73, 95) ; aucune règle ne les fait évoluer.",
+  "ecart": "Les quatre compétences sont seulement stockées et relues (SaveGame.h:23, SaveGame.cpp:76, 99) ; aucune règle ne les fait évoluer.",
   "tranche": "e"
  },
  {
@@ -397,7 +397,7 @@
    "src/game.js",
    "src/core/save.js"
   ],
-  "unreal": "Mission active et missions terminées rangées dans UStridesSaveGame (StridesSaveSubsystem.h:18-19) et rétablies par LoadNow (StridesSaveSubsystem.cpp:78-80)",
+  "unreal": "Mission active et missions terminées rangées dans UStridesSaveGame (StridesSaveSubsystem.h:18-19) et rétablies par LoadNow (StridesSaveSubsystem.cpp:70-72)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de reprise de mission ; non cité dans unreal/docs/validation-mac-2026-11-17.md.",
@@ -596,10 +596,10 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:37-43 : mode foot/ride, x, y, z, cap ; à cheval, position du cheval) et LoadNow (87-93 : cheval replacé et cavalier remis en selle, ou cavalier à pied) ; conversions StridesUnits.h:10-14",
+  "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:38-44 : mode foot/ride, x, y, z, cap ; à cheval, position du cheval) et LoadNow (87-93 : cheval replacé et cavalier remis en selle, ou cavalier à pied) ; conversions StridesUnits.h:10-14",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 ; relecture de la pose testée à la main par unreal/core/tests/test_core.cpp:1077-1083 et StridesCoreTests.cpp:58-68 (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; Strides.Core.Save réussi selon unreal/docs/validation-mac-2026-11-17.md:13) ; aucun oracle JS.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 ; relecture de la pose testée à la main par unreal/core/tests/test_core.cpp:1083-1089 et StridesCoreTests.cpp:58-68 (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; Strides.Core.Save réussi selon unreal/docs/validation-mac-2026-11-17.md:13) ; aucun oracle JS.",
   "ecart": "Une seule pose : à pied, le cheval n'est ni sauvé ni replacé ; aucun véhicule, état du cheval, carburant, box ou commerce.",
   "tranche": "socle"
  },
@@ -824,10 +824,10 @@
    "src/core/save.js",
    "src/config.js"
   ],
-  "unreal": "strides::SaveGame, schéma « strides.save » v1 (SaveGame.h:17-31 ; SaveGame.cpp:22-81) ; réglages courseLine et jumpAid de la carte Pause (SaveGame.h:40-51 ; SaveGame.cpp:107-140)",
+  "unreal": "strides::SaveGame, schéma « strides.save » v1 (SaveGame.h:17-34 ; SaveGame.cpp:22-85) ; réglages courseLine et jumpAid de la carte Pause (SaveGame.h:43-54 ; SaveGame.cpp:112-145)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1070-1092 (testSave), testCsoPause (unreal/core/tests/test_core.cpp:2385 : bascules de la vraie carte Pause du web, cso_pause.json, 27 étapes, 0 écart ; réglages relus après un aller-retour JSON et depuis un export du web) et StridesCoreTests.cpp:58-68 (Strides.Core.Save) ; Strides.Cso.Controls : réglages écrits dans un emplacement de test puis relus (UStridesSaveSubsystem::SaveSettings / ReloadSettings).",
+  "preuve": "unreal/core/tests/test_core.cpp:1075-1101 (testSave), testCsoPause (unreal/core/tests/test_core.cpp:2585 : bascules de la vraie carte Pause du web, cso_pause.json, 27 étapes, 0 écart ; réglages relus après un aller-retour JSON et depuis un export du web) et StridesCoreTests.cpp:58-68 (Strides.Core.Save) ; Strides.Cso.Controls : réglages écrits dans un emplacement de test puis relus (UStridesSaveSubsystem::SaveSettings / ReloadSettings).",
   "ecart": "Sous-ensemble : nom, avatar, langue, argent, réputation, heure, cheval actif, compétences, chevaux, records, 4 réglages (quality, jumpAid, characters, courseLine), pose ; heure par défaut 7 h au lieu de 9 h ; réglages son, musique, camSens, timeScale absents ; le reste n'existe que dans legacyJson après un import.",
   "tranche": "socle"
  },
@@ -838,10 +838,10 @@
   "js": [
    "src/core/save.js"
   ],
-  "unreal": "SaveGame::fromWebExport (SaveGame.cpp:86-92 : web v1 → réputation = xp) ; SaveGame::fromJson refuse une version < 1 ou > 1 (SaveGame.cpp:62-63)",
+  "unreal": "SaveGame::fromWebExport (SaveGame.cpp:90-96 : web v1 → réputation = xp) ; SaveGame::fromJson refuse une version < 1 ou > 1 (SaveGame.cpp:65-66)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1086-1089 (import v1 xp 340 → réputation 340 ; version 99 refusée), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec) ; tests/unit/save.test.js non exporté en oracle.",
+  "preuve": "unreal/core/tests/test_core.cpp:1092-1098 (import v1 xp 340 → réputation 340 ; version 99 refusée), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec) ; tests/unit/save.test.js non exporté en oracle.",
   "ecart": "Pas de copie de secours avant migration ; pas de chaîne de migrations du schéma natif (v1 seule).",
   "tranche": "socle"
  },
@@ -852,10 +852,10 @@
   "js": [
    "src/core/save.js"
   ],
-  "unreal": "SaveGame::fromJson (SaveGame.cpp:58-81) : schéma et version seulement",
+  "unreal": "SaveGame::fromJson (SaveGame.cpp:61-85) : schéma et version seulement",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1089-1090 (version future et texte non JSON refusés), écrit à la main, passé.",
+  "preuve": "unreal/core/tests/test_core.cpp:1098-1099 (version future et texte non JSON refusés), écrit à la main, passé.",
   "ecart": "Aucun contrôle de type : champ absent ou mal typé lu comme 0 ou chaîne vide (MiniJson.h:21-25) ; liste de chevaux vide acceptée ; pas de started.",
   "tranche": "socle"
  },
@@ -871,7 +871,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Comportement inverse : SaveNow repart d'une sauvegarde neuve quand la lecture échoue puis écrit l'emplacement (StridesSaveSubsystem.cpp:29, 57-66) ; une sauvegarde illisible est écrasée sans copie.",
+  "ecart": "Comportement inverse : SaveNow repart d'une sauvegarde neuve quand la lecture échoue puis écrit l'emplacement (StridesSaveSubsystem.cpp:29, 48-57) ; une sauvegarde illisible est écrasée sans copie.",
   "tranche": "socle"
  },
  {
@@ -882,11 +882,11 @@
    "src/core/save.js",
    "src/config.js"
   ],
-  "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:25-69), emplacement « strides_main » (ligne 14), UStridesSaveGame (StridesSaveSubsystem.h:10-20)",
+  "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:25-60), emplacement « strides_main » (ligne 14), UStridesSaveGame (StridesSaveSubsystem.h:10-20)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (sauvegarder puis recharger à l'écran) ; aucun oracle.",
-  "ecart": "Pas de garde « partie commencée » ni de verrou ; ni date ni build ; crédits et réputation de la progression rangés hors du JSON du cœur (StridesSaveSubsystem.cpp:59-65) : deux sources d'argent qui divergent.",
+  "ecart": "Pas de garde « partie commencée » ni de verrou ; ni date ni build ; crédits et réputation de la progression rangés hors du JSON du cœur (StridesSaveSubsystem.cpp:50-56) : deux sources d'argent qui divergent.",
   "tranche": "socle"
  },
  {
@@ -896,11 +896,11 @@
   "js": [
    "src/core/save.js"
   ],
-  "unreal": "SaveGame::fromWebExport (SaveGame.cpp:83-105) ; UStridesSaveSubsystem::ImportWebExport(Path) (StridesSaveSubsystem.cpp:125-138)",
+  "unreal": "SaveGame::fromWebExport (SaveGame.cpp:87-110) ; UStridesSaveSubsystem::ImportWebExport(Path) (StridesSaveSubsystem.cpp:139-153)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1086-1087 (import v1, reste conservé dans legacyJson), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec).",
-  "ecart": "Pas d'export natif ; ImportWebExport n'a aucun appelant (ni bouton ni commande) ; argent et réputation importés ignorés par la progression (Credits / Reputation du USaveGame laissés à 0 puis relus par LoadNow : StridesSaveSubsystem.cpp:78-80, 133-135) ; un défi sans record (best null) devient 0 pénalité en 0 s (SaveGame.cpp:98-101) ; échappements \\r, \\b, \\f relus comme r, b, f (MiniJson.h:68).",
+  "preuve": "unreal/core/tests/test_core.cpp:1092-1093 (import v1, reste conservé dans legacyJson), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec).",
+  "ecart": "Pas d'export natif ; ImportWebExport n'a aucun appelant (ni bouton ni commande) ; argent et réputation importés ignorés par la progression (Credits / Reputation du USaveGame laissés à 0 puis relus par LoadNow : StridesSaveSubsystem.cpp:70-72, 148-150) ; un défi sans record (best null) devient 0 pénalité en 0 s (SaveGame.cpp:103-106) ; échappements \\r, \\b, \\f relus comme r, b, f (MiniJson.h:68).",
   "tranche": "socle"
  },
  {
@@ -914,7 +914,7 @@
   "unreal": "strides::CsoInput (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:12-99 : zone, prise, base qui suit le doigt, amplitude, élément affiché) ; doigts reçus par AStridesPlayerController::InputTouch, appelé par UGameViewportClient::InputTouch (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:251-278 : px du viewport divisés par le facteur de pixels, identifiant = index + 100 × appareil, Began → pointerdown, Moved et FirstMove → pointermove, Ended → pointerup, Stationary et ForceChanged sans effet) ; joystick dessiné par UStridesTouchControls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:264-288, 401-417 : base en dégradé radial, bouton et ombre, opacité du repos 0,55, place de repos et tailles relevées dans la page tactile, Content/Data/cso_controls_style.json) ; joysticks virtuels du moteur retirés (unreal/StridesGrandTour/Config/DefaultInput.ini:4-7)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Logique : unreal/core/tests/oracles/cso_input.json (vraie classe Input du web sous événements tactiles, souris et clavier synthétiques, scripts/unreal/export-cso-input.mjs) rejoué par testCsoInput (unreal/core/tests/test_core.cpp:2295) : 18 scénarios, 624 appels, 0 écart ; 59 mutations de CsoInput.cpp détectées (scripts/unreal/mutations-cso-input.py ; 2 de plus depuis le contrôle des remarques, stylet et d ≥ R, déclarées non départagées dans ATTENDUES : 69 mutations, 67 détectées, code 0). Chemin du doigt : Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374) appelle InputTouch par l'interface de APlayerController avec des positions en px du viewport et un facteur de pixels imposé à 3 : Began à (450 ; 900) px → joystick tenu, base en (150 ; 300) px CSS ; FirstMove puis Moved → bouton suivi, Moved répété au même point sans effet ; Stationary et ForceChanged sans effet ; doigt d'un second appareil (même index) → regard distinct (25 ; −12,5) ; Ended → relâché ; cadence qui monte, gardée au relâché ; 8 mutations du chemin détectées (scripts/unreal/mutations-cso-controls.py). Écran : montages côte à côte unreal/docs/parite/cso/cmd-joystick-844x390.png et cmd-joystick-667x308.png, doigt envoyé comme un message tactile de la plateforme (FSlateApplication::OnTouchStarted / OnTouchMoved, ceux qu'envoie iOS), routé par Slate jusqu'au viewport du jeu puis à InputTouch (AStridesShots::SlateTouch et ApplyControlsPose, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:721-738, 740-779) : relevé cmd-unreal.json, touch.events = Began#1(150.0;300.0) Moved#1(178.0;270.0) ; mêmes boîtes du joystick qu'avant ; partie réelle -StridesShots=cso-jeu -TouchControls : joystick au repos sur jeu-1 à jeu-5.",
+  "preuve": "Logique : unreal/core/tests/oracles/cso_input.json (vraie classe Input du web sous événements tactiles, souris et clavier synthétiques, scripts/unreal/export-cso-input.mjs) rejoué par testCsoInput (unreal/core/tests/test_core.cpp:2495) : 18 scénarios, 624 appels, 0 écart ; 59 mutations de CsoInput.cpp détectées (scripts/unreal/mutations-cso-input.py ; 2 de plus depuis le contrôle des remarques, stylet et d ≥ R, déclarées non départagées dans ATTENDUES : 69 mutations, 67 détectées, code 0). Chemin du doigt : Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374) appelle InputTouch par l'interface de APlayerController avec des positions en px du viewport et un facteur de pixels imposé à 3 : Began à (450 ; 900) px → joystick tenu, base en (150 ; 300) px CSS ; FirstMove puis Moved → bouton suivi, Moved répété au même point sans effet ; Stationary et ForceChanged sans effet ; doigt d'un second appareil (même index) → regard distinct (25 ; −12,5) ; Ended → relâché ; cadence qui monte, gardée au relâché ; 8 mutations du chemin détectées (scripts/unreal/mutations-cso-controls.py). Écran : montages côte à côte unreal/docs/parite/cso/cmd-joystick-844x390.png et cmd-joystick-667x308.png, doigt envoyé comme un message tactile de la plateforme (FSlateApplication::OnTouchStarted / OnTouchMoved, ceux qu'envoie iOS), routé par Slate jusqu'au viewport du jeu puis à InputTouch (AStridesShots::SlateTouch et ApplyControlsPose, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:737-754, 756-795) : relevé cmd-unreal.json, touch.events = Began#1(150.0;300.0) Moved#1(178.0;270.0) ; mêmes boîtes du joystick qu'avant ; partie réelle -StridesShots=cso-jeu -TouchControls : joystick au repos sur jeu-1 à jeu-5.",
   "ecart": "Rendu approché : dégradé radial et ombre portée dessinés dans des textures (pas de flou CSS exact) ; pas d'animation de fondu (transition d'opacité 0,2 s du repos). Coordonnées : facteur de pixels du Mac (1) aux captures, 3 imposé au test ; sur iOS, facteur natif à confirmer sur appareil (UStridesCsoHud::PixelRatio). Toucher réel non essayé (aucun appareil iOS) : sur Mac, le doigt part de FSlateApplication (couche UIKit d'iOS non exercée) ; sur Mac, Slate a livré Began puis Moved (pas de FirstMove) ; la souris ne pilote pas le joystick (comme le web : -TouchControls n'active pas bUseMouseForTouch). Contrôle des remarques (20/11/2026) : état ramené de identique_prouve à partiel : la logique est identique (oracle), le rendu ne l'est pas (pas de transition d'opacité de 0,2 s au relâché, styles.css:90 ; dégradé et ombre approchés) et le facteur de pixels iOS n'est pas vérifié (couche UIKit non exercée). Branches de CsoInput non départagées par cso_input.json : type de pointeur « pen » (mutation « pen traité comme souris » non détectée ; sans effet en jeu, InputTouch n'envoie jamais Pen) ; seuil « d > R » contre « d >= R » (équivalente : k = 0 quand d = R) ; déclarées dans ATTENDUES de scripts/unreal/mutations-cso-input.py.",
   "tranche": "h"
  },
@@ -943,7 +943,7 @@
   "unreal": "Codes physiques : préprocesseur Slate FStridesKeyProcessor (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:39-54) et AStridesPlayerController::WebCodeOf (:66-73, code matériel de la touche sur Mac, table strides::webCodeFromMacKeyCode, unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:193-206) ; strides::CsoInput::key et poll (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:119-163 : diagonale, Ctrl gauche 0,5, Alt gauche 0,25) ; déplacement versé au cheval par StepCommands (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:289-366)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Clavier de cso_input.json (scénarios clavier et azerty : code KeyW tapé « z », KeyA tapé « q »…) rejoué par testCsoInput, 0 écart ; keyboardMove comparé aux images au clavier de cso_runs/ (test_core.cpp:466) ; Strides.Cso.Controls (KeyZ sans effet, KeyW avance avec keyMove, Ctrl gauche 0,5, dans l'épreuve réelle) ; Strides.Cso.PhysicalKeys (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:376-396 : touche Z d'un clavier AZERTY, code matériel de W, lue KeyW).",
+  "preuve": "Clavier de cso_input.json (scénarios clavier et azerty : code KeyW tapé « z », KeyA tapé « q »…) rejoué par testCsoInput, 0 écart ; keyboardMove comparé aux images au clavier de cso_runs/ (test_core.cpp:471) ; Strides.Cso.Controls (KeyZ sans effet, KeyW avance avec keyMove, Ctrl gauche 0,5, dans l'épreuve réelle) ; Strides.Cso.PhysicalKeys (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:376-396 : touche Z d'un clavier AZERTY, code matériel de W, lue KeyW).",
   "ecart": "Le code matériel de macOS passé par Unreal dans FKeyEvent::GetKeyCode est supposé égal au kVK_* (sources privées Mac du moteur absentes) : vérifié par test sur des événements construits, pas sur un vrai clavier AZERTY (à confirmer à la main). Hors Mac (iOS, clavier matériel), repli sur le nom de touche Unreal, lié au caractère produit (pas aux codes physiques). Hors épreuve, l'avant / arrière règle toujours une cadence (bCsoControls toujours vrai).",
   "tranche": "socle"
  },
@@ -1090,7 +1090,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Réglages sound et music absents de SaveGame.settings (SaveGame.h:27).",
+  "ecart": "Réglages sound et music absents de SaveGame.settings (SaveGame.h:30).",
   "tranche": "h"
  },
  {
@@ -1296,7 +1296,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Seul un record personnel local « cso_pole » est gardé s'il est meilleur (StridesSaveSubsystem.cpp:45-56, avec compareResults dont le signe est prouvé par l'oracle cso_course.json) ; aucun classement partagé, aucun rang.",
+  "ecart": "Aucun classement partagé, aucun rang ; le meilleur temps de l'activité Parcours du Pôle est gardé localement (bestTimes.cso_train, tranche T11 : activites.parcours-pole).",
   "tranche": "socle"
  },
  {
@@ -1366,7 +1366,7 @@
    "src/game.js",
    "src/main.js"
   ],
-  "unreal": "Option -TouchControls (StridesPlayerController.cpp:75-78) ; captures AStridesShots si demandées (StridesGameMode.cpp:118), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:77-123, résolution avant toute capture :242-257) ; démo du parcours F8 (StridesPlayerController.cpp:108, 515)",
+  "unreal": "Option -TouchControls (StridesPlayerController.cpp:75-78) ; captures AStridesShots si demandées (StridesGameMode.cpp:118), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:78-124, résolution avant toute capture :242-257) ; démo du parcours F8 (StridesPlayerController.cpp:108, 515)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Dossier de sortie des captures : test moteur Strides.Shots.OutputDir (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesShotsTests.cpp ; Result={Success} le 19/11/2026 : dossier protégé non vide refusé avec ou sans l'option, y compris écrit avec une autre casse (contrôle des remarques : comparaison sans casse, le volume APFS du Mac ne la distingue pas ; …/Screenshots/strides désigne le vrai dossier Strides), dossier vide accepté, option absolue ou relative à la racine du dépôt, mode cso sans option sur les chemins de poses.json, capture préexistante intacte, -StridesShots sans option refusé tant que Saved/Screenshots/Strides contient des fichiers). Essais réels du 19/11/2026 (jeu -game, rendu Metal) : -StridesShots sans option : journal « Strides shots: REFUS, aucune capture écrite », sortie à l'image 1, les 33 fichiers de Saved/Screenshots/Strides et MacEditor identiques avant et après (shasum, date, taille) ; -StridesShots=cso -StridesPose=carriere -StridesShotsDir=<dossier absolu> : carriere-aerienne-unreal.png écrite dans ce dossier en 844 × 390 (sips), captures versionnées de unreal/docs/parite/cso inchangées ; -StridesShots -StridesShotsDir=.tmp/shots/r0-essai (relatif à la racine du dépôt) : 26 captures dans ce dossier, parcours de démonstration jusqu'à l'arrivée. Aucun test des autres options (-TouchControls, F8).",
@@ -1439,7 +1439,7 @@
   "js": [
    "src/core/noise.js"
   ],
-  "unreal": "Pas de bruit : relief échantillonné dans la grille exportée (scripts/unreal/world-export.js:64-66 → terrain.bin ; StridesDataSubsystem.cpp:223-268, TerrainHeight)",
+  "unreal": "Pas de bruit : relief échantillonné dans la grille exportée (scripts/unreal/world-export.js:64-66 → terrain.bin ; StridesDataSubsystem.cpp:235-280, TerrainHeight)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Scenery (StridesCoreTests.cpp:119-132) compare 4 hauteurs de la grille à des valeurs recopiées à la main d'analyticHeight, sans oracle exporté, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13.",

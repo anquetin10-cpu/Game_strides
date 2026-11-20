@@ -6577,6 +6577,700 @@
    },
    "web": "unreal/docs/parite/cso/entree-4-cloche-667x308-web.png",
    "unreal": "unreal/docs/parite/cso/entree-4-cloche-667x308-unreal.png"
+  },
+  {
+   "name": "bilan-1-sans-faute-844x390",
+   "desc": "Arrivée et bilan (tranche T11), partie réelle t9-parcours arrêtée à l’image 2005 : arrivée sans faute : 15e image après le grand message « SANS FAUTE ! » (courses.js:344, image 1990), sous-titre du chrono, tableau ; vue de la caméra du jeu, HUD affichés ; 844 × 390.",
+   "hour": 16.337333,
+   "eye": [
+    370.8805636018188,
+    6.400355684909414,
+    -195.08705832162218
+   ],
+   "target": [
+    380.6901253432701,
+    4.804227465617569,
+    -196.19379819541143
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 377.90689427627547,
+    "z": -195.8923869258276,
+    "h": 1.6718520963608565,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.552882,
+    0.680067,
+    0.481487
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2005
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2005
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "SANS FAUTE !",
+     "59,80 s",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     4,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "59,80",
+     "/ 64 s",
+     "0 pt",
+     "Arrivée ✓"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 2005,
+   "web": "unreal/docs/parite/cso/bilan-1-sans-faute-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/bilan-1-sans-faute-844x390-unreal.png"
+  },
+  {
+   "name": "bilan-1-sans-faute-667x308",
+   "desc": "Arrivée et bilan (tranche T11), partie réelle t9-parcours arrêtée à l’image 2005 : arrivée sans faute : 15e image après le grand message « SANS FAUTE ! » (courses.js:344, image 1990), sous-titre du chrono, tableau ; vue de la caméra du jeu, HUD affichés ; 667 × 308.",
+   "hour": 16.337333,
+   "eye": [
+    370.8805636018188,
+    6.400355684909414,
+    -195.08705832162218
+   ],
+   "target": [
+    380.6901253432701,
+    4.804227465617569,
+    -196.19379819541143
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 377.90689427627547,
+    "z": -195.8923869258276,
+    "h": 1.6718520963608565,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.552882,
+    0.680067,
+    0.481487
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2005
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2005
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "SANS FAUTE !",
+     "59,80 s",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     4,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "59,80",
+     "/ 64 s",
+     "0 pt",
+     "Arrivée ✓"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 2005,
+   "web": "unreal/docs/parite/cso/bilan-1-sans-faute-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/bilan-1-sans-faute-667x308-unreal.png"
+  },
+  {
+   "name": "bilan-2-carte-844x390",
+   "desc": "Arrivée et bilan (tranche T11), partie réelle t9-parcours arrêtée à l’image 2071 : carte de bilan (courses.js:414-423, ouverte à l’image 2068 après la sortie de piste) : kicker, titre « Sans faute · 5e », grille, classement simulé (8 premiers et le joueur), boutons Recommencer, S’entraîner, Quitter l’épreuve ; vue de la caméra du jeu, HUD et carte affichés ; 844 × 390.",
+   "hour": 16.379333,
+   "eye": [
+    379.23020849357874,
+    6.38364465302735,
+    -196.02845293328505
+   ],
+   "target": [
+    389.07856987276523,
+    5.0001720612513445,
+    -197.07524886982338
+   ],
+   "fovV": 58.518363558636594,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 385.92354931545367,
+    "z": -196.73989732131417,
+    "h": 1.676688961613067,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.561739,
+    0.676068,
+    0.476844
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2071
+   },
+   "bilan": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2071,
+    "card": {
+     "kicker": "Résultats · Prix STRIDES",
+     "title": "Sans faute · 5e",
+     "rows": [
+      [
+       "Chrono",
+       "59,80 s (accordé 64 s)"
+      ],
+      [
+       "Fautes aux obstacles",
+       "0 · aucune"
+      ],
+      [
+       "Pénalités de temps",
+       "0 pt"
+      ],
+      [
+       "Total",
+       "0 pt"
+      ],
+      [
+       "Classement",
+       "5e sur 15"
+      ],
+      [
+       "Récompense",
+       "hors dotation"
+      ]
+     ],
+     "table": [
+      {
+       "me": false,
+       "td": [
+        "1",
+        "M. Mercier · Rubis Blanc",
+        "0 pt",
+        "56,26 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "2",
+        "J. Moreau · Hermès du Lac",
+        "0 pt",
+        "58,42 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "3",
+        "E. Bernard · Oural",
+        "0 pt",
+        "58,53 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "4",
+        "L. Roux · Diamant Rouge",
+        "0 pt",
+        "58,95 s",
+        ""
+       ]
+      },
+      {
+       "me": true,
+       "td": [
+        "5",
+        "Test · Comète",
+        "0 pt",
+        "59,80 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "6",
+        "A. Leroy · Utopie",
+        "0 pt",
+        "61,04 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "7",
+        "H. Fournier · Kalimba",
+        "0 pt",
+        "62,39 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "8",
+        "N. Mercier · Ninja Z",
+        "4 pts",
+        "59,21 s",
+        ""
+       ]
+      }
+     ],
+     "buttons": [
+      [
+       "cso-retry",
+       "Recommencer",
+       "btn"
+      ],
+      [
+       "cso-train",
+       "S’entraîner",
+       "btn"
+      ],
+      [
+       "cso-done",
+       "Quitter l’épreuve",
+       "btn primary"
+      ]
+     ]
+    }
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     true
+    ],
+    "bg": [
+     true,
+     "SANS FAUTE !",
+     "59,80 s",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     2,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "59,80",
+     "/ 64 s",
+     "0 pt",
+     "Arrivée ✓"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 2071,
+   "web": "unreal/docs/parite/cso/bilan-2-carte-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/bilan-2-carte-844x390-unreal.png"
+  },
+  {
+   "name": "bilan-2-carte-667x308",
+   "desc": "Arrivée et bilan (tranche T11), partie réelle t9-parcours arrêtée à l’image 2071 : carte de bilan (courses.js:414-423, ouverte à l’image 2068 après la sortie de piste) : kicker, titre « Sans faute · 5e », grille, classement simulé (8 premiers et le joueur), boutons Recommencer, S’entraîner, Quitter l’épreuve ; vue de la caméra du jeu, HUD et carte affichés ; 667 × 308.",
+   "hour": 16.379333,
+   "eye": [
+    379.23020849357874,
+    6.38364465302735,
+    -196.02845293328505
+   ],
+   "target": [
+    389.07856987276523,
+    5.0001720612513445,
+    -197.07524886982338
+   ],
+   "fovV": 58.518363558636594,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 385.92354931545367,
+    "z": -196.73989732131417,
+    "h": 1.676688961613067,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.561739,
+    0.676068,
+    0.476844
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2071
+   },
+   "bilan": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 2071,
+    "card": {
+     "kicker": "Résultats · Prix STRIDES",
+     "title": "Sans faute · 5e",
+     "rows": [
+      [
+       "Chrono",
+       "59,80 s (accordé 64 s)"
+      ],
+      [
+       "Fautes aux obstacles",
+       "0 · aucune"
+      ],
+      [
+       "Pénalités de temps",
+       "0 pt"
+      ],
+      [
+       "Total",
+       "0 pt"
+      ],
+      [
+       "Classement",
+       "5e sur 15"
+      ],
+      [
+       "Récompense",
+       "hors dotation"
+      ]
+     ],
+     "table": [
+      {
+       "me": false,
+       "td": [
+        "1",
+        "M. Mercier · Rubis Blanc",
+        "0 pt",
+        "56,26 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "2",
+        "J. Moreau · Hermès du Lac",
+        "0 pt",
+        "58,42 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "3",
+        "E. Bernard · Oural",
+        "0 pt",
+        "58,53 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "4",
+        "L. Roux · Diamant Rouge",
+        "0 pt",
+        "58,95 s",
+        ""
+       ]
+      },
+      {
+       "me": true,
+       "td": [
+        "5",
+        "Test · Comète",
+        "0 pt",
+        "59,80 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "6",
+        "A. Leroy · Utopie",
+        "0 pt",
+        "61,04 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "7",
+        "H. Fournier · Kalimba",
+        "0 pt",
+        "62,39 s",
+        ""
+       ]
+      },
+      {
+       "me": false,
+       "td": [
+        "8",
+        "N. Mercier · Ninja Z",
+        "4 pts",
+        "59,21 s",
+        ""
+       ]
+      }
+     ],
+     "buttons": [
+      [
+       "cso-retry",
+       "Recommencer",
+       "btn"
+      ],
+      [
+       "cso-train",
+       "S’entraîner",
+       "btn"
+      ],
+      [
+       "cso-done",
+       "Quitter l’épreuve",
+       "btn primary"
+      ]
+     ]
+    }
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     true
+    ],
+    "bg": [
+     true,
+     "SANS FAUTE !",
+     "59,80 s",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     2,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "59,80",
+     "/ 64 s",
+     "0 pt",
+     "Arrivée ✓"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 2071,
+   "web": "unreal/docs/parite/cso/bilan-2-carte-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/bilan-2-carte-667x308-unreal.png"
   }
  ]
 }

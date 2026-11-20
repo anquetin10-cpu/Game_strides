@@ -66,6 +66,19 @@ function readSource() {
   if (!opts) throw new Error('activities.js : courseSteps de cso_train introuvable');
   const title = tKey(prop(opts, 'title')), className = tKey(prop(opts, 'className'));
   if (!title || !className) throw new Error('activities.js : titre ou classe de cso_train introuvable');
+  // Tranche T11 : bilan (opts.result : classe, graine, titre, libellé du bouton principal ; textes = clés de t()) et
+  // enregistrement du meilleur temps (penalties, noRecord de l'activité). Littéraux et appels t('…') seulement.
+  const lit = (n, what) => {
+    if (n?.type === 'Literal') return n.value;
+    if (tKey(n)) return tKey(n);
+    if (n?.type === 'ArrayExpression') return n.elements.map((e) => lit(e, what));
+    if (n?.type === 'ObjectExpression') return Object.fromEntries(n.properties.map((p) => [p.key.name, lit(p.value, `${what}.${p.key.name}`)]));
+    if (n?.type === 'UnaryExpression' && n.operator === '!' && n.argument.type === 'Literal') return !n.argument.value;
+    throw new Error(`activities.js : ${what} n'est pas un littéral`);
+  };
+  const result = lit(prop(opts, 'result'), 'result');
+  if (!result?.cls?.id || !Array.isArray(result.cls.prizes) || typeof result.seed !== 'number' || !result.title || !result.continueLabel) throw new Error('activities.js : opts.result de cso_train incomplet');
+  const record = { penalties: prop(train, 'penalties') ? lit(prop(train, 'penalties'), 'penalties') === true : false, noRecord: prop(train, 'noRecord') ? lit(prop(train, 'noRecord'), 'noRecord') === true : false };
   // missions.js : libellé de la verticale ({ EVENEMENTS: t('Événement'), … }[offer.vertical]) et durée du grand message.
   const ms = srcOf('gameplay/missions.js');
   const labels = {};
@@ -78,7 +91,7 @@ function readSource() {
   const place = /opts\.place \|\| '([^']+)'/.exec(srcOf('gameplay/courses.js'));
   const appTitle = /^\s*title: '([^']+)',/m.exec(srcOf('config.js'));
   if (!place || !appTitle) throw new Error('courses.js / config.js : lieu par défaut ou titre du jeu introuvable');
-  return { title, className, verticalLabels: labels, launchMs: Number(big[1]), place: place[1], appTitle: appTitle[1] };
+  return { title, className, verticalLabels: labels, launchMs: Number(big[1]), place: place[1], appTitle: appTitle[1], result, record };
 }
 const SRC = readSource();
 
@@ -407,11 +420,14 @@ if (activity.activity.offerTitle !== activity.activity.name) throw new Error('of
 const act = {
   schema: 'strides.cso_activity/1', generator: 'scripts/unreal/export-cso-entry.mjs',
   source: ['src/gameplay/activities.js', 'src/gameplay/interact.js', 'src/gameplay/missions.js', 'src/gameplay/courses.js', 'src/config.js'],
-  doc: 'activité « Parcours du Pôle » (cso_train) relevée dans le jeu web en français (textes = clés de t()) : activity = g.activities.defs (id, name, kind, desc, start, marker) et offre de mission après Activities.start (vertical, category) ; title / className = opts de courseSteps (activities.js, analyse syntaxique) ; verticalLabel = libellé de la verticale (missions.js) ; interact = action « act:cso_train » de g.interact (label, icon, r, priority, modes, x, z) ; launch.ms = durée du grand message de missions.start ; presentation = titre du jeu (CONFIG.title) et lieu par défaut (courses.js) du kicker',
+  doc: 'activité « Parcours du Pôle » (cso_train) relevée dans le jeu web en français (textes = clés de t()) : activity = g.activities.defs (id, name, kind, desc, start, marker) et offre de mission après Activities.start (vertical, category) ; title / className = opts de courseSteps (activities.js, analyse syntaxique) ; verticalLabel = libellé de la verticale (missions.js) ; interact = action « act:cso_train » de g.interact (label, icon, r, priority, modes, x, z) ; launch.ms = durée du grand message de missions.start ; presentation = titre du jeu (CONFIG.title) et lieu par défaut (courses.js) du kicker ; result = opts.result de courseSteps (tranche T11, bilan : cls = id, name, prizes ; seed ; title ; continueLabel ; textes = clés de t()) ; record = penalties et noRecord de l’activité (étape d’enregistrement du meilleur temps, activities.js)',
   activity: { ...activity.activity, title: SRC.title, className: SRC.className, verticalLabel: SRC.verticalLabels[activity.activity.vertical] },
   interact: activity.interact,
   launch: { ms: SRC.launchMs },
   presentation: { appTitle: SRC.appTitle, place: SRC.place },
+  // Tranche T11 : opts.result de courseSteps (bilan) et étape d'enregistrement du meilleur temps (activities.js).
+  result: SRC.result,
+  record: SRC.record,
 };
 delete act.activity.offerTitle;
 writeIfChanged(join(DATA, 'cso_activity.json'), JSON.stringify(act, null, 1) + '\n');

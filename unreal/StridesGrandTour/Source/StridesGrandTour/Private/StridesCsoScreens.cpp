@@ -339,11 +339,14 @@ void UStridesCsoScreens::Refresh()
 	FString Key;
 	if (Course)
 	{
-		Which = Course->Screen() == AStridesCourse::EScreen::Presentation ? 1 : Course->Screen() == AStridesCourse::EScreen::Plan ? 2 : 0;
+		using ES = AStridesCourse::EScreen;
+		Which = Course->Screen() == ES::Presentation ? 1 : Course->Screen() == ES::Plan ? 2 : Course->Screen() == ES::Result ? 3 : 0;
 		bDlg = Course->DialogOpen();
 		const strides::CsoCall& Dc = Course->DialogCall();
 		Key = FString::Printf(TEXT("%d|%d|%s|%s|%.2fx%.2f|%s"), Which, bDlg, *Course->Lang, *U(Course->PresentationInput().horseName), V.X, V.Y,
 			bDlg && Dc.args.size() > 2 ? *U(Dc.args[2].s) : TEXT(""));
+		// Bilan (tranche T11) : contenu de la carte dans la clé (une nouvelle manche rouvre une carte différente).
+		if (Which == 3) Key += U("|" + Course->ResultCard().kicker + "|" + Course->ResultCard().title + "|" + (Course->ResultCard().rows.empty() ? std::string() : Course->ResultCard().rows[0].second));
 	}
 	if (Key != ShownKey)
 	{
@@ -360,7 +363,9 @@ void UStridesCsoScreens::Refresh()
 void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 {
 	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
-	const Sc::FJ Doc = Data ? Data->CsoScreensStyle() : nullptr;
+	// Bilan (tranche T11) : styles relevés de la carte de bilan (cso_result_style.json) ; cartes de l'entrée (T10) :
+	// cso_screens_style.json.
+	const Sc::FJ Doc = Data ? (Which == 3 ? Data->CsoResultStyle() : Data->CsoScreensStyle()) : nullptr;
 	const TArray<TSharedPtr<FJsonValue>>* Views = nullptr;
 	if (!Course || !Doc.IsValid() || !Doc->TryGetArrayField(TEXT("views"), Views) || !Views->Num()) return;
 	// Relevé du viewport le plus proche en hauteur ; carte centrée (overlay flex) : décalage au viewport courant.
@@ -374,7 +379,7 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 		const double D = FMath::Abs(VP[1]->AsNumber() - ViewCss.Y);
 		if (D < Best) { Best = D; View = O; View0 = FVector2D(VP[0]->AsNumber(), VP[1]->AsNumber()); }
 	}
-	const Sc::FJ C = Sc::Obj(View, Which == 1 ? TEXT("presentation") : TEXT("plan"));
+	const Sc::FJ C = Sc::Obj(View, Which == 1 ? TEXT("presentation") : Which == 2 ? TEXT("plan") : TEXT("result"));
 	const FVector2D Off((ViewCss.X - View0.X) / 2, (ViewCss.Y - View0.Y) / 2);
 	auto Box = [&](const Sc::FJ& E) { const FVector4 R = Sc::Rect(E); return FVector4(R.X + Off.X, R.Y + Off.Y, R.Z, R.W); };
 	auto Keep = [this](UWidget* W) { Parts.Add(W); return W; };
@@ -493,6 +498,85 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 		Put(TEXT("rules"), Sc::Obj(C, TEXT("rules")), U(Pr.rules));
 		Btns = {{TEXT("plan"), U(Pr.planLabel), false}, {TEXT("enter"), U(Pr.enterLabel), true}};
 	}
+	else if (Which == 3)
+	{
+		// Bilan (courses.js:414-423) : kicker, titre, grille, tableau du classement (8 premiers, plus le joueur au-delà),
+		// boutons ; textes du cœur (csoResultCard), mise en page du relevé.
+		const strides::CsoResultCard& Rc = Course->ResultCard();
+		Put(TEXT("kicker"), Sc::Obj(C, TEXT("kicker")), U(Rc.kicker));
+		Put(TEXT("title"), Sc::Obj(C, TEXT("title")), U(Rc.title));
+		const TArray<TSharedPtr<FJsonValue>>* Ks = nullptr;
+		const TArray<TSharedPtr<FJsonValue>>* Vs = nullptr;
+		C->TryGetArrayField(TEXT("keys"), Ks);
+		C->TryGetArrayField(TEXT("values"), Vs);
+		for (int32 I = 0; I < (int32)Rc.rows.size(); I++)
+		{
+			if (!Ks || !Vs || I >= Ks->Num() || I >= Vs->Num())
+			{
+				Shown.Add(FString::Printf(TEXT("k%d=%s (sans boîte relevée)"), I, *U(Rc.rows[(size_t)I].first)));
+				continue;
+			}
+			Put(*FString::Printf(TEXT("k%d"), I), (*Ks)[I]->AsObject(), U(Rc.rows[(size_t)I].first));
+			Put(*FString::Printf(TEXT("v%d"), I), (*Vs)[I]->AsObject(), U(Rc.rows[(size_t)I].second));
+		}
+		// Tableau : ligne i posée à la boîte relevée de la ligne i (au-delà des lignes relevées : pas de la dernière
+		// ligne) ; fond de la ligne du joueur (tr.me) ; cellules aux boîtes relevées (colonnes du relevé), styles d'une
+		// ligne relevée de même classe (gras pour le joueur).
+		const TArray<TSharedPtr<FJsonValue>>* Rows = nullptr;
+		C->TryGetArrayField(TEXT("rows"), Rows);
+		if (Rows && Rows->Num())
+		{
+			Sc::FJ MeRow, PlainRow;
+			for (const TSharedPtr<FJsonValue>& Rv : *Rows)
+			{
+				bool bMe = false;
+				Rv->AsObject()->TryGetBoolField(TEXT("me"), bMe);
+				if (bMe && !MeRow.IsValid()) MeRow = Rv->AsObject();
+				if (!bMe && !PlainRow.IsValid()) PlainRow = Rv->AsObject();
+			}
+			const int32 NR = Rows->Num();
+			const FVector4 Last = Box((*Rows)[NR - 1]->AsObject());
+			const double Step = NR > 1 ? Last.Y - Box((*Rows)[NR - 2]->AsObject()).Y : Last.W;
+			for (int32 I = 0; I < (int32)Rc.table.size(); I++)
+			{
+				const strides::CsoResultRow& Row = Rc.table[(size_t)I];
+				const Sc::FJ At = (*Rows)[FMath::Min(I, NR - 1)]->AsObject();
+				const double Dy = I < NR ? 0 : (I - NR + 1) * Step;
+				const Sc::FJ Look = Row.me && MeRow.IsValid() ? MeRow : !Row.me && PlainRow.IsValid() ? PlainRow : At;
+				FVector4 Rb = Box(At);
+				Rb.Y += Dy;
+				if (Row.me)
+				{
+					UBorder* Bg = WidgetTree->ConstructWidget<UBorder>();
+					Bg->SetBrushColor(Sc::Color(Look, TEXT("backgroundColor")));
+					PlaceAt(In, Bg, FVector4(Rb.X - Br.X, Rb.Y - Br.Y, Rb.Z, Rb.W));
+					Boxes.Add(TEXT("me"), Rb);
+				}
+				const TArray<TSharedPtr<FJsonValue>>* Cells = nullptr;
+				const TArray<TSharedPtr<FJsonValue>>* LookCells = nullptr;
+				At->TryGetArrayField(TEXT("cells"), Cells);
+				Look->TryGetArrayField(TEXT("cells"), LookCells);
+				const FString Txt[5] = {FString::FromInt(Row.rank), U(Row.name), U(Row.pts), U(Row.time), U(Row.prize)};
+				for (int32 K = 0; K < 5 && Cells && K < Cells->Num(); K++)
+				{
+					const Sc::FJ Cell = (*Cells)[K]->AsObject();
+					const Sc::FJ St = LookCells && K < LookCells->Num() ? (*LookCells)[K]->AsObject() : Cell;
+					FVector4 Cb = Box(Cell);
+					Cb.Y += Dy;
+					// Texte dans la boîte de contenu (padding 4px 6px), aligné comme la cellule (à droite à partir de la 3e).
+					const double Pl = Sc::Num(St, TEXT("paddingLeft")), Pr0 = Sc::Num(St, TEXT("paddingRight")), Pt = Sc::Num(St, TEXT("paddingTop")), Pb = Sc::Num(St, TEXT("paddingBottom"));
+					UTextBlock* T = Text(St, Txt[K]);
+					T->SetAutoWrapText(false);
+					if (Sc::Str(St, TEXT("textAlign")) == TEXT("right")) T->SetJustification(ETextJustify::Right);
+					const FVector4 Inner(Cb.X + Pl, Cb.Y + Pt, FMath::Max(0.0, Cb.Z - Pl - Pr0), FMath::Max(0.0, Cb.W - Pt - Pb));
+					PlaceAt(In, T, FVector4(Inner.X - Br.X, Inner.Y - Br.Y, Inner.Z, Inner.W));
+					Boxes.Add(FString::Printf(TEXT("r%d.%d"), I, K), Cb);
+				}
+				Shown.Add(FString::Printf(TEXT("ligne %d=%s|%s|%s|%s|%s%s"), I + 1, *Txt[0], *Txt[1], *Txt[2], *Txt[3], *Txt[4], Row.me ? TEXT(" (me)") : TEXT("")));
+			}
+		}
+		for (const strides::CsoResultButton& B : Rc.buttons) Btns.Add({U(B.id), U(B.label), B.primary});
+	}
 	else
 	{
 		// Plan (showPlan) : kicker, titre, plan dessiné des primitives du cœur, légende.
@@ -561,6 +645,9 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 		UButton* W = Cast<UButton>(Keep(Button(E, Bn.Label)));
 		if (Bn.Id == TEXT("plan")) W->OnClicked.AddDynamic(this, &UStridesCsoScreens::OnPlan);
 		else if (Bn.Id == TEXT("plan-back")) W->OnClicked.AddDynamic(this, &UStridesCsoScreens::OnBack);
+		else if (Bn.Id == TEXT("cso-retry")) W->OnClicked.AddDynamic(this, &UStridesCsoScreens::OnRetry);
+		else if (Bn.Id == TEXT("cso-train")) W->OnClicked.AddDynamic(this, &UStridesCsoScreens::OnTrain);
+		else if (Bn.Id == TEXT("cso-done")) W->OnClicked.AddDynamic(this, &UStridesCsoScreens::OnDone);
 		else W->OnClicked.AddDynamic(this, &UStridesCsoScreens::OnEnter);
 		PlaceAt(Canvas, W, Box(E), 8);
 		Boxes.Add(Bn.Id, Box(E));
@@ -687,6 +774,9 @@ void UStridesCsoScreens::OnPlan() { if (Course) Course->PressScreenButton(TEXT("
 void UStridesCsoScreens::OnBack() { if (Course) Course->PressScreenButton(TEXT("plan-back")); Refresh(); }
 void UStridesCsoScreens::OnEnter() { if (Course) Course->PressScreenButton(TEXT("enter")); Refresh(); }
 void UStridesCsoScreens::OnDialog() { if (Course) Course->AdvanceDialog(); Refresh(); }
+void UStridesCsoScreens::OnRetry() { if (Course) Course->PressScreenButton(TEXT("cso-retry")); Refresh(); }
+void UStridesCsoScreens::OnTrain() { if (Course) Course->PressScreenButton(TEXT("cso-train")); Refresh(); }
+void UStridesCsoScreens::OnDone() { if (Course) Course->PressScreenButton(TEXT("cso-done")); Refresh(); }
 
 bool UStridesCsoScreens::ClickForTest(const FString& Id)
 {
@@ -701,5 +791,8 @@ bool UStridesCsoScreens::ClickForTest(const FString& Id)
 	if (Id == TEXT("plan")) OnPlan();
 	else if (Id == TEXT("plan-back")) OnBack();
 	else if (Id == TEXT("enter")) OnEnter();
+	else if (Id == TEXT("cso-retry")) OnRetry();
+	else if (Id == TEXT("cso-train")) OnTrain();
+	else if (Id == TEXT("cso-done")) OnDone();
 	return true;
 }

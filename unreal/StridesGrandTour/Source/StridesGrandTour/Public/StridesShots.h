@@ -132,6 +132,11 @@ private:
 		// de l'exécution, carte et dialogue relevés dans le DOM du web (JSON).
 		bool bHasEntree = false;
 		FString EntreeScreen, EntreePlayer, EntreeHorseId, EntreeCard;
+		// Bilan (tranche T11) : exécution de l'oracle rejouée par le jeu (activité lancée, StridesCsoRunReplay) jusqu'à
+		// l'image de la pose, carte de bilan relevée dans le DOM du web (JSON).
+		bool bHasBilan = false;
+		FString BilanRunFile, BilanCard;
+		int32 BilanFrame = 0;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);
@@ -146,6 +151,10 @@ private:
 	// comparé à la carte du web (entree-unreal.json).
 	void ApplyEntreePose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	TSharedPtr<class FJsonObject> EntreeResult;
+	// Tranche T11 : activité lancée dans l'épreuve du niveau et exécution de l'oracle rejouée image par image par le chemin
+	// du jeu jusqu'à l'image de la pose (bilan ouvert par le déroulé), carte comparée à celle du web (bilan-unreal.json).
+	void ApplyBilanPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
+	TSharedPtr<class FJsonObject> BilanResult;
 	// Démonstration (-StridesShots sans mode, cso-jeu) : activité lancée au poteau, « Entrer en piste » touché à l'ouverture
 	// de la carte de présentation.
 	bool StartActivityAtPost(class APlayerController* PC);

@@ -1,4 +1,5 @@
 #include "StridesShots.h"
+#include "StridesCsoRunReplay.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/CameraTypes.h"
@@ -606,6 +607,20 @@ void AStridesShots::LoadPoses()
 				FJsonSerializer::Serialize(Ca->ToSharedRef(), W);
 			}
 		}
+		// Bilan (tranche T11) : exécution rejouée par le jeu jusqu'à l'image de la pose, carte relevée dans le web.
+		const TSharedPtr<FJsonObject>* Bl = nullptr;
+		if (O->TryGetObjectField(TEXT("bilan"), Bl))
+		{
+			P.bHasBilan = true;
+			P.BilanRunFile = (*Bl)->GetStringField(TEXT("run"));
+			P.BilanFrame = (int32)(*Bl)->GetNumberField(TEXT("frame"));
+			const TSharedPtr<FJsonObject>* Ca = nullptr;
+			if ((*Bl)->TryGetObjectField(TEXT("card"), Ca))
+			{
+				TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> W = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&P.BilanCard);
+				FJsonSerializer::Serialize(Ca->ToSharedRef(), W);
+			}
+		}
 		// Commandes d'épreuve (tranche T8) : page tactile, doigt sur le joystick, carte Pause.
 		O->TryGetBoolField(TEXT("tactile"), P.bTactile);
 		O->TryGetBoolField(TEXT("pause"), P.bPause);
@@ -701,6 +716,7 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 	if (P.bHasAids && Horse) ApplyAidsPose(P, Horse);
 	ApplyControlsPose(P, PC, Horse);
 	if (P.bHasEntree && Horse) ApplyEntreePose(P, PC, Horse);
+	if (P.bHasBilan && Horse) ApplyBilanPose(P, PC, Horse);
 	// Soleil : la lumière va du soleil vers la scène (sens opposé à sunDir, direction web → axes Unreal).
 	const FVector LightDir = -FVector(P.SunDir.X, P.SunDir.Z, P.SunDir.Y).GetSafeNormal();
 	for (TActorIterator<ADirectionalLight> It(GetWorld()); It; ++It) It->SetActorRotation(LightDir.Rotation());
@@ -995,6 +1011,80 @@ void AStridesShots::ApplyEntreePose(const FPose& P, APlayerController* PC, AStri
 	EntreeResult->SetStringField(TEXT("step"), C->Run() ? UTF8_TO_TCHAR(strides::csoStepName(C->Run()->step())) : TEXT(""));
 }
 
+void AStridesShots::ApplyBilanPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
+{
+	AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
+	AStridesCourse* C = SPC ? SPC->EntryCourse() : nullptr;
+	UStridesCsoScreens* W = SPC ? SPC->ScreensWidget() : nullptr;
+	BilanResult = MakeShared<FJsonObject>();
+	if (!C || !W)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Strides parite: bilan %s : épreuve ou widget des cartes absent"), *P.Name);
+		return;
+	}
+	TArray<FString> Diffs;
+	int32 Replayed = 0;
+	// Une seule partie rejouée (ApplyPose est rappelée avant la capture ; la pose suivante, autre viewport, garde le bilan
+	// ouvert) : activité lancée comme au poteau (joueur et cheval de l'exécution), puis chaque image de l'exécution jusqu'à
+	// celle de la pose (boutons de carte touchés par le widget, événements d'obstacle, image du déroulé).
+	if (C->Screen() != AStridesCourse::EScreen::Result)
+	{
+		FString Text;
+		if (!FFileHelper::LoadFileToString(Text, *(RepoRoot() / P.BilanRunFile)))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides parite: bilan %s : exécution illisible (%s)"), *P.Name, *P.BilanRunFile);
+			return;
+		}
+		const std::string Utf8 = TCHAR_TO_UTF8(*Text);
+		const J R = JParser(Utf8).parse();
+		C->Lang = UTF8_TO_TCHAR(R["lang"].s.c_str());
+		if (!C->StartActivity(UTF8_TO_TCHAR(R["setup"]["playerName"].s.c_str()), UTF8_TO_TCHAR(R["setup"]["horseName"].s.c_str()), Horse->JumpPower(), 0.0)) Diffs.Add(TEXT("activité non lancée"));
+		for (const J& Fr : R["frames"].a)
+		{
+			if ((int32)Fr["f"].num() > P.BilanFrame) break;
+			bool bUi = true;
+			strides::CsoCadence Cad;
+			if (StridesCsoRunReplay::Frame(C, Fr, W, bUi, Cad)) Replayed++;
+			if (!bUi) Diffs.Add(FString::Printf(TEXT("bouton « %hs » absent à l'image %d"), Fr["in"]["ui"].s.c_str(), (int32)Fr["f"].num()));
+		}
+	}
+	W->Refresh();
+	if (C->Screen() != AStridesCourse::EScreen::Result) Diffs.Add(TEXT("bilan non ouvert"));
+	if (!P.BilanCard.IsEmpty())
+	{
+		const std::string Utf8 = TCHAR_TO_UTF8(*P.BilanCard);
+		const J D = JParser(Utf8).parse();
+		const strides::CsoResultCard& Rc = C->ResultCard();
+		auto Same = [&](const TCHAR* What, const std::string& A, const J& B) { if (B.t != J::Str || B.s != A) Diffs.Add(FString::Printf(TEXT("%s : « %s » / web « %s »"), What, UTF8_TO_TCHAR(A.c_str()), UTF8_TO_TCHAR(B.s.c_str()))); };
+		Same(TEXT("kicker"), Rc.kicker, D["kicker"]);
+		Same(TEXT("titre"), Rc.title, D["title"]);
+		if (D["rows"].a.size() != Rc.rows.size()) Diffs.Add(TEXT("lignes de la grille"));
+		for (size_t I = 0; I < Rc.rows.size() && I < D["rows"].a.size(); I++)
+		{
+			Same(TEXT("clé"), Rc.rows[I].first, D["rows"][I][0]);
+			Same(TEXT("valeur"), Rc.rows[I].second, D["rows"][I][1]);
+		}
+		if (D["table"].a.size() != Rc.table.size()) Diffs.Add(TEXT("lignes du tableau"));
+		for (size_t I = 0; I < Rc.table.size() && I < D["table"].a.size(); I++)
+		{
+			const strides::CsoResultRow& Row = Rc.table[I];
+			const std::string Got[5] = {std::to_string(Row.rank), Row.name, Row.pts, Row.time, Row.prize};
+			for (size_t K = 0; K < 5; K++) Same(TEXT("cellule"), Got[K], D["table"][I]["td"][K]);
+			if (Row.me != D["table"][I]["me"].b) Diffs.Add(TEXT("ligne du joueur"));
+		}
+		if (D["buttons"].a.size() != Rc.buttons.size()) Diffs.Add(TEXT("boutons"));
+		for (size_t I = 0; I < Rc.buttons.size() && I < D["buttons"].a.size(); I++) Same(TEXT("bouton"), Rc.buttons[I].label, D["buttons"][I][1]);
+	}
+	UE_LOG(LogTemp, Display, TEXT("Strides parite: bilan %s : %d images rejouées de %s (jusqu'à %d), carte %s"), *P.Name, Replayed, *P.BilanRunFile, P.BilanFrame,
+		Diffs.Num() ? *(TEXT("DIFFÉRENTE du web : ") + FString::Join(Diffs, TEXT(" ; "))) : TEXT("identique au web"));
+	TArray<TSharedPtr<FJsonValue>> Dv;
+	for (const FString& X : Diffs) Dv.Add(MakeShared<FJsonValueString>(X));
+	BilanResult->SetArrayField(TEXT("diffs"), Dv);
+	BilanResult->SetNumberField(TEXT("replayed"), Replayed);
+	BilanResult->SetStringField(TEXT("step"), C->Run() ? UTF8_TO_TCHAR(strides::csoStepName(C->Run()->step())) : TEXT(""));
+	BilanResult->SetStringField(TEXT("title"), UTF8_TO_TCHAR(C->ResultCard().title.c_str()));
+}
+
 void AStridesShots::ApplyCamRunPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
 {
 	// Cheval figé à la pose de l'image (en l'air s'il saute) : son pas et sa caméra ne tournent plus d'eux-mêmes.
@@ -1216,6 +1306,19 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 							UE_LOG(LogTemp, Display, TEXT("Strides parite: cartes %s affichées : %s"), *P.Name, *FString::Join(Sw->Describe(), TEXT(" ; ")));
 						}
 						HudResults.Last()->AsObject()->SetObjectField(TEXT("entree"), EntreeResult);
+					}
+					// Bilan (tranche T11) : éléments affichés par UStridesCsoScreens à la capture.
+					if (P.bHasBilan && BilanResult.IsValid())
+					{
+						if (const UStridesCsoScreens* Sw = SPC->ScreensWidget())
+						{
+							TArray<TSharedPtr<FJsonValue>> Sd;
+							for (const FString& L : Sw->Describe()) Sd.Add(MakeShared<FJsonValueString>(L));
+							BilanResult->SetArrayField(TEXT("shown"), Sd);
+							BilanResult->SetNumberField(TEXT("card"), Sw->CardShown());
+							UE_LOG(LogTemp, Display, TEXT("Strides parite: bilan %s affiché : %s"), *P.Name, *FString::Join(Sw->Describe(), TEXT(" ; ")));
+						}
+						HudResults.Last()->AsObject()->SetObjectField(TEXT("bilan"), BilanResult);
 					}
 					if (const UStridesPauseMenu* M = SPC->PauseMenuWidget(); M && M->IsOpen())
 					{

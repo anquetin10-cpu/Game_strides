@@ -45,6 +45,16 @@ public:
 	// Relit les réglages de l'emplacement (faux : aucune sauvegarde lisible, réglages inchangés).
 	bool ReloadSettings();
 
+	// Tranche T11 : meilleurs temps des activités (save.data.bestTimes du web), lus avec les réglages, écrits par SaveNow.
+	// RecordBestTime : activities.js:120 (bestTimes[a.id] = score), écrit tout de suite dans l'emplacement (le reste de la
+	// sauvegarde est gardé ; sans sauvegarde, une sauvegarde neuve) : le meilleur temps est conservé sans F5.
+	bool BestTime(const FString& Id, double& Out) const;
+	const std::map<std::string, double>& BestTimes() const { return Best; }
+	// Tests (emplacement à eux, SlotName) : meilleurs temps en mémoire remis à ceux d'une sauvegarde neuve.
+	std::map<std::string, double>& MutableBestTimes() { return Best; }
+	bool RecordBestTime(const FString& Id, double Score);
+
 private:
 	strides::Settings Settings = strides::SaveGame::fresh().settings;
+	std::map<std::string, double> Best;
 };

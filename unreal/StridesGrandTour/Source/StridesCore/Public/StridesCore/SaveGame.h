@@ -23,6 +23,9 @@ struct STRIDESCORE_API SaveGame {
   std::map<std::string, double> skills{{"preparation", 0}, {"equitation", 0}, {"transport", 0}, {"organisation", 0}};
   std::vector<std::string> horses{"comete"};
   std::map<std::string, SaveRecord> records;
+  // Meilleur temps des activités chronométrées (save.js:34 bestTimes : identifiant → secondes, chrono + pénalités pour
+  // le Parcours du Pôle ; activities.js:120, tranche T11). Importé de la sauvegarde web.
+  std::map<std::string, double> bestTimes;
   // Réglages (save.js:37) : valeurs en texte ; courseLine « true » / « false » (booléen du web, tranche T8).
   std::map<std::string, std::string> settings{{"quality", "auto"}, {"jumpAid", "full"}, {"characters", "auto"}, {"courseLine", "true"}};
   SavePose pose;

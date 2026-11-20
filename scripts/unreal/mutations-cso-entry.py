@@ -103,7 +103,7 @@ ATTENDUES = {
 }
 os.makedirs(out, exist_ok=True)
 srcs = {f: open(os.path.join(core, 'Private', f)).read() for f in (P, E, T, R)}
-allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp')
+allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp')
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 inc = os.path.join(core, 'Public')

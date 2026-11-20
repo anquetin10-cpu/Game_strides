@@ -40,6 +40,19 @@ CsoActivity csoActivityFromJson(const J& file) {
   o.launchMs = (int)file["launch"]["ms"].num();
   o.appTitle = file["presentation"]["appTitle"].s;
   o.place = file["presentation"]["place"].s;
+  // Tranche T11 : bilan (opts.result) et enregistrement du meilleur temps.
+  const J& res = file["result"];
+  if (res.t != J::Obj || res["cls"].t != J::Obj) throw std::runtime_error("cso_activity.json : objet « result » absent (export-cso-entry.mjs, tranche T11)");
+  o.result.clsId = res["cls"]["id"].s;
+  o.result.clsName = res["cls"]["name"].s;
+  if (res["cls"]["ta"].t == J::Num) { o.result.hasClsTa = true; o.result.clsTa = res["cls"]["ta"].n; }
+  for (const J& p : res["cls"]["prizes"].a) o.result.prizes.push_back(p.num());
+  if (res["seed"].t == J::Num) { o.result.hasSeed = true; o.result.seed = res["seed"].n; }
+  if (res["n"].t == J::Num) { o.result.hasN = true; o.result.n = (int)res["n"].n; }
+  o.result.title = res["title"].s;
+  o.result.continueLabel = res["continueLabel"].s;
+  o.penalties = file["record"]["penalties"].b;
+  o.noRecord = file["record"]["noRecord"].b;
   return o;
 }
 

@@ -24,6 +24,9 @@ import { HORSES } from '../../src/gameplay/data.js';
 import { CAM_COMP } from '../../src/entities/camera.js';
 import { coursePlanSvg, coursePlanLegend } from '../../src/ui/coursePlan.js';
 import { readFileSync } from 'node:fs';
+import { simulateField, rankResults, HORSE_NAMES } from '../../src/gameplay/ranking.js';
+import { FIRST_NAMES, LAST_NAMES } from '../../src/gameplay/data.js';
+import { mulberry32 } from '../../src/core/math.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const DATA = join(ROOT, 'unreal/StridesGrandTour/Content/Data');
@@ -280,3 +283,50 @@ write(ORA, 'cso_plan.json', {
   arena: POLE.arena, stands: POLE.stands, fr: planFr, en: planEn,
 });
 console.log('plan du parcours :', planFr.cases.length, 'cas par langue');
+
+// ---------- Classement simulé (tranche T11) ----------
+// Données lues par le jeu : FIRST_NAMES, LAST_NAMES (data.js), HORSE_NAMES (ranking.js). Oracle : mulberry32 (math.js),
+// simulateField et rankResults (ranking.js) appelés tels quels. Classes : celle du Parcours du Pôle (cls am2 de
+// activities.js, temps accordé de l'épreuve timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national)) et celles du
+// concours (CLASSES de trip.js : id et ta relus dans le source, analyse syntaxique) ; graines 5150 + 31 k (k = 0 à 9 :
+// manche k du Parcours du Pôle, courses.js:382) et graines de concours floor(game.time × 7 + dossard) (trip.js:274).
+write(DATA, 'cso_ranking.json', { schema: 'strides.cso_ranking/1', source: [src('gameplay/data.js'), src('gameplay/ranking.js')], first: FIRST_NAMES, last: LAST_NAMES, horses: HORSE_NAMES });
+const tripAst = parseAst(readFileSync(join(ROOT, 'src/gameplay/trip.js'), 'utf8'));
+const tripCode = readFileSync(join(ROOT, 'src/gameplay/trip.js'), 'utf8');
+let classesNode = null;
+walk(tripAst, (n) => {
+  if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier' && n.id.name === 'CLASSES' && n.init?.type === 'ArrayExpression') classesNode = n.init;
+});
+if (!classesNode) throw new Error('trip.js : CLASSES introuvable');
+const concours = classesNode.elements.map((o) => {
+  const pv = (k) => o.properties.find((p) => p.key?.name === k)?.value;
+  const ta = new Function('timeAllowedFor', 'COURSE_LENGTH', 'COURSE_SPEED', `return (${tripCode.slice(pv('ta').start, pv('ta').end)});`)(timeAllowedFor, COURSE_LENGTH, COURSE_SPEED);
+  return { id: pv('id').value, ta };
+});
+const poleCls = { id: 'am2', ta: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national) };
+const rankSeeds = [...Array(10).keys()].map((k) => 5150 + 31 * k);
+const concoursSeeds = [Math.floor(9 * 3600 * 7 + 40), Math.floor(15.5 * 3600 * 7 + 89), Math.floor(123456.789 * 7 + 52), 0, 1];
+const mulSeeds = [0, 1, 7, 5150, 5181, 2147483647, 2147483648, 4294967295, 4294967296, 4294967297, -1, -5150, 3.7, -3.7, 1e10, 1e21, NaN, Infinity];
+const mul = mulSeeds.map((seed) => { const r = mulberry32(seed); return { seed: Number.isFinite(seed) ? seed : String(seed), out: [...Array(12)].map(() => r()) }; });
+const fields = [];
+for (const cls of [poleCls, ...concours]) for (const seed of [...rankSeeds, ...concoursSeeds]) fields.push({ cls, seed, n: 14, field: simulateField(cls, seed, 14) });
+for (const n of [0, 1, 20]) fields.push({ cls: poleCls, seed: 5181, n, field: simulateField(poleCls, 5181, n) });
+// Classement : le champ de la manche plus le joueur (dernier de la liste comme dans courses.js:383), à des temps et des
+// points autour de ceux des engagés (égalités exactes comprises : le joueur après, tri stable).
+const ranks = [];
+for (const seed of rankSeeds.slice(0, 4)) {
+  const field = simulateField(poleCls, seed, 14);
+  const times = [...new Set(field.map((x) => x.time))].sort((a, b) => a - b);
+  const meTimes = [50, times[0] - 0.01, times[0], times[3], times[7], times[13] + 0.01, 70.12];
+  for (const faults of [0, 4, 8, 17]) for (const time of meTimes) {
+    const me = { rider: 'Alex', horse: 'Comète', faults, time, me: true };
+    const ranked = rankResults([...field, me]);
+    ranks.push({ seed, me: { faults, time }, order: ranked.map((x) => (x.me ? -1 : field.indexOf(x))) });
+  }
+}
+write(ORA, 'cso_ranking.json', {
+  schema: 'strides.oracle.cso_ranking/1', source: ['src/core/math.js', 'src/gameplay/ranking.js', 'src/gameplay/trip.js', 'src/gameplay/activities.js'],
+  doc: 'mulberry32(seed) : 12 premiers tirages (seed non fini écrit en texte) ; fields = simulateField(cls, seed, n) (cls = { id, ta }) ; ranks = rankResults([...simulateField(Parcours du Pôle, seed, 14), me]) : order = rang dans le champ de chaque classé, -1 pour le joueur',
+  classes: { pole: poleCls, concours }, mulberry32: mul, fields, ranks,
+});
+console.log('classement simulé :', mul.length, 'graines mulberry32,', fields.length, 'champs,', ranks.length, 'classements');

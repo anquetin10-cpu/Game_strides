@@ -14,6 +14,7 @@
 #include "StridesCore/CourseAids.h"
 #include "StridesCore/CoursePlan.h"
 #include "StridesCore/CsoEntry.h"
+#include "StridesCore/Ranking.h"
 #include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
@@ -316,7 +317,11 @@ static void testRuns() {
       ok = ok && in.t == J::Obj && vec(in["move"], 2) && strs(in["keys"]) && strs(in["held"]) && in["jump"].t == J::Bool && (in["ui"].isNull() || in["ui"].t == J::Str);
       ok = ok && num(h["x"]) && num(h["y"]) && num(h["z"]) && num(h["h"]) && num(h["v"]) && num(h["jumpT"]) && num(h["jumpY"]) && (h["cad"].isNull() || num(h["cad"])) && h["mode"].t == J::Str;
       // Scénarios légers (tranche T4) : ni caméra ni canal « ch », canal « ep » à chaque image.
-      if (su["lite"].b) ok = ok && c.isNull() && f["ch"].isNull() && f["ep"].t == J::Obj && num(f["ep"]["dt"]) && num(f["ep"]["x"]) && f["ep"]["mode"].t == J::Str;
+      // Tranche T11 : après la fin de la mission (missions.complete), ni mission ni canal « ep » (et plus jamais ensuite).
+      if (su["lite"].b) {
+        const bool over = f["ep"].isNull() && f["run"].isNull() && i > 0 && (fr[i - 1]["ep"].t == J::Obj ? fr[i - 1]["run"].isNull() : fr[i - 1]["ep"].isNull());
+        ok = ok && c.isNull() && f["ch"].isNull() && ((f["ep"].t == J::Obj && num(f["ep"]["dt"]) && num(f["ep"]["x"]) && f["ep"]["mode"].t == J::Str) || over);
+      }
       else ok = ok && vec(c["eye"], 3) && vec(c["target"], 3) && vec(c["dir"], 3) && num(c["fov"]) && num(c["aspect"]);
       ok = ok && calls(f["ev"], "e") && calls(f["hud"], "fn") && calls(f["audio"], "fn");
       ok = ok && (f["run"].isNull() || f["run"].t == J::Obj) && (f["course"].isNull() || f["course"].t == J::Obj) && (f["board"].isNull() || f["board"].t == J::Obj);
@@ -1074,6 +1079,7 @@ static void testSave() {
   s.money = 1250;
   s.horses.push_back("biscotte");
   s.records["cso"] = {false, 4, 61.37};
+  s.bestTimes["cso_train"] = 59.800000000000196;  // tranche T11 : chrono + pénalités, double du jeu (%.17g)
   s.pose = {"ride", 330.5, 2.1, -270.25, 1.2, true};
   std::string txt = s.toJson();
   SaveGame r;
@@ -1086,6 +1092,9 @@ static void testSave() {
   CHECK(SaveGame::fromWebExport("{\"version\":1,\"playerName\":\"Léa\",\"xp\":340,\"money\":90,\"horses\":[\"comete\"],\"inventory\":{\"carrots\":3}}", w, err), "import web : %s", err.c_str());
   CHECK(w.playerName == "Léa" && w.reputation == 340 && w.money == 90 && w.legacyJson.find("carrots") != std::string::npos, "import web : champs et reste conservé");
   CHECK(r.records.count("cso") && r.records["cso"].penalties == 4 && near(r.records["cso"].time, 61.37), "record relu");
+  CHECK(r.bestTimes.size() == 1 && r.bestTimes["cso_train"] == 59.800000000000196, "meilleur temps relu au bit près (tranche T11)");
+  CHECK(SaveGame::fromWebExport("{\"version\":2,\"bestTimes\":{\"cso_train\":63.43333333333334,\"beach\":41.2,\"bad\":\"x\"}}", w, err) && w.bestTimes.size() == 2 && w.bestTimes["cso_train"] == 63.43333333333334,
+        "import web : meilleurs temps (bestTimes, nombres seulement)");
   CHECK(!SaveGame::fromJson("{\"schema\":\"strides.save\",\"version\":99}", r, err), "version future refusée");
   CHECK(!SaveGame::fromJson("pas du json", r, err), "fichier abîmé refusé");
   std::printf("sauvegarde : %zu octets\n", txt.size());
@@ -1095,11 +1104,13 @@ static void testSave() {
 // ---------- Textes et formats (tranche T4) : cso_text.json (dec, ordinaux, pluriels, gabarits) ----------
 static TextTable g_text;
 static CsoActivity g_activity;  // Content/Data/cso_activity.json (tranche T10)
+static RankNames g_names;       // Content/Data/cso_ranking.json (tranche T11)
 static void loadText() {
   const std::string raw = readFile(DATA + "/strings_cso.json");
   std::string err;
   CHECK(g_text.parse(raw, err), "strings_cso.json illisible : %s", err.c_str());
   CHECK(csoActivityFromFile(readFile(DATA + "/cso_activity.json"), g_activity, err), "cso_activity.json illisible : %s", err.c_str());
+  CHECK(rankNamesFromFile(readFile(DATA + "/cso_ranking.json"), g_names, err), "cso_ranking.json illisible : %s", err.c_str());
 }
 static void testText() {
   const J o = loadJson(ORA + "/cso_text.json");
@@ -1654,7 +1665,8 @@ static std::vector<std::string> oracleCalls(const J& list, bool hud, bool launch
     // Mot d'appel hud.jumpFeedback compris depuis la tranche T7 (dernier saut relevé dans ep.lj). Lancement de l'activité
     // (tranche T10, launch) : grand message et son « notify » de missions.start compris.
     const bool mis = src == "gameplay/missions.js";
-    const bool keep = hud ? src == "gameplay/courses.js" || (mis && fn == "clearHint") || (launch && mis && fn == "big") : src == "gameplay/courses.js" || (launch && mis && fn == "notify");
+    // Fin de la mission (tranche T11, missions.complete → run.cleanup) : dialogue fermé (closeDialog) compris.
+    const bool keep = hud ? src == "gameplay/courses.js" || (mis && (fn == "clearHint" || fn == "closeDialog")) || (launch && mis && fn == "big") : src == "gameplay/courses.js" || (launch && mis && fn == "notify");
     if (!keep) continue;
     std::vector<std::string> a;
     for (const J& x : c["args"].a) a.push_back(argStr(x));
@@ -1674,6 +1686,146 @@ static std::vector<std::string> coreCalls(const std::vector<CsoCall>& calls) {
   }
   return v;
 }
+// ---------- Classement simulé et bilan (tranche T11) ----------
+// Carte de bilan du portage comparée à celle relevée dans le DOM (kicker, titre, grille, tableau, boutons) : texte vide
+// si identique, sinon la première différence.
+static std::string resultDiff(const CsoResultCard& c, const J& d) {
+  auto q = [](const std::string& s) { return " « " + s + " »"; };
+  if (c.kicker != d["kicker"].s) return " kicker" + q(c.kicker) + " /" + q(d["kicker"].s);
+  if (c.title != d["title"].s) return " titre" + q(c.title) + " /" + q(d["title"].s);
+  if (c.rows.size() != d["rows"].a.size()) return " grille de " + std::to_string(c.rows.size()) + " lignes / " + std::to_string(d["rows"].a.size());
+  for (size_t i = 0; i < c.rows.size(); i++)
+    if (c.rows[i].first != d["rows"][i][0].s || c.rows[i].second != d["rows"][i][1].s) return " grille" + q(c.rows[i].first + " = " + c.rows[i].second) + " /" + q(d["rows"][i][0].s + " = " + d["rows"][i][1].s);
+  if (c.table.size() != d["table"].a.size()) return " tableau de " + std::to_string(c.table.size()) + " lignes / " + std::to_string(d["table"].a.size());
+  for (size_t i = 0; i < c.table.size(); i++) {
+    const CsoResultRow& r = c.table[i];
+    const J& w = d["table"][i];
+    const std::vector<std::string> got = {std::to_string(r.rank), r.name, r.pts, r.time, r.prize};
+    std::vector<std::string> want;
+    for (const J& x : w["td"].a) want.push_back(x.s);
+    if (got != want || r.me != w["me"].b) {
+      std::string a, b;
+      for (const auto& x : got) a += x + "|";
+      for (const auto& x : want) b += x + "|";
+      return " ligne " + std::to_string(i + 1) + q(a + (r.me ? " me" : "")) + " /" + q(b + (w["me"].b ? " me" : ""));
+    }
+  }
+  if (c.buttons.size() != d["buttons"].a.size()) return " boutons";
+  for (size_t i = 0; i < c.buttons.size(); i++) {
+    const J& b = d["buttons"][i];
+    if (c.buttons[i].id != b[0].s || c.buttons[i].label != b[1].s || (b[2].s.find("primary") != std::string::npos) != c.buttons[i].primary) return " bouton" + q(c.buttons[i].id + " " + c.buttons[i].label) + " /" + q(b[0].s + " " + b[1].s);
+  }
+  return std::string();
+}
+
+// mulberry32, simulateField et rankResults du jeu web (cso_ranking.json) : tirages, engagés (cavalier, cheval, points,
+// chrono au centième) et ordre du classement, à l'identique.
+static void testRanking() {
+  const J o = loadJson(ORA + "/cso_ranking.json");
+  int bad = 0, nMul = 0, nField = 0, nRank = 0;
+  for (const J& m : o["mulberry32"].a) {
+    const double seed = m["seed"].t == J::Str ? (m["seed"].s == "NaN" ? NAN : m["seed"].s == "Infinity" ? INFINITY : -INFINITY) : m["seed"].num();
+    Mulberry32 r(seed);
+    for (const J& v : m["out"].a) {
+      const double got = r.next();
+      if (got != v.num()) { bad++; if (bad < 6) std::printf("  mulberry32(%s) : %.17g / %.17g\n", dump(m["seed"]).c_str(), got, v.num()); }
+      nMul++;
+    }
+  }
+  for (const J& f : o["fields"].a) {
+    RankClass cls;
+    cls.id = f["cls"]["id"].s;
+    cls.ta = f["cls"]["ta"].num();
+    const std::vector<RankEntry> got = simulateField(cls, f["seed"].num(), (int)f["n"].num(), g_names);
+    if (got.size() != f["field"].a.size()) { bad++; continue; }
+    for (size_t i = 0; i < got.size(); i++) {
+      const J& w = f["field"][i];
+      if (got[i].rider != w["rider"].s || got[i].horse != w["horse"].s || got[i].faults != (int)w["faults"].num() || got[i].time != w["time"].num()) {
+        bad++;
+        if (bad < 6) std::printf("  simulateField(%s, %g) n° %zu : %s · %s %d %.17g / %s · %s %g %.17g\n", cls.id.c_str(), f["seed"].num(), i, got[i].rider.c_str(), got[i].horse.c_str(), got[i].faults, got[i].time,
+                                 w["rider"].s.c_str(), w["horse"].s.c_str(), w["faults"].num(), w["time"].num());
+      }
+      nField++;
+    }
+  }
+  const RankClass pole{o["classes"]["pole"]["id"].s, o["classes"]["pole"]["ta"].num()};
+  for (const J& c : o["ranks"].a) {
+    std::vector<RankEntry> list = simulateField(pole, c["seed"].num(), 14, g_names);
+    for (size_t i = 0; i < list.size(); i++) list[i].rider += "#" + std::to_string(i);  // repère du rang d'origine
+    RankEntry me;
+    me.rider = "me";
+    me.faults = (int)c["me"]["faults"].num();
+    me.time = c["me"]["time"].num();
+    me.me = true;
+    list.push_back(me);
+    const std::vector<RankEntry> ranked = rankResults(list);
+    std::vector<int> order;
+    for (const RankEntry& x : ranked) order.push_back(x.me ? -1 : std::stoi(x.rider.substr(x.rider.find('#') + 1)));
+    std::vector<int> want;
+    for (const J& v : c["order"].a) want.push_back((int)v.num());
+    if (order != want) { bad++; if (bad < 6) std::printf("  rankResults (graine %g, joueur %g pts %.17g) : ordre différent\n", c["seed"].num(), c["me"]["faults"].num(), c["me"]["time"].num()); }
+    nRank++;
+  }
+  CHECK(bad == 0 && nMul > 200 && nField > 800 && nRank > 100, "classement simulé : %d écarts (mulberry32 %d tirages, %d engagés, %d classements)", bad, nMul, nField, nRank);
+  std::printf("classement simulé : %d tirages mulberry32, %d engagés de simulateField, %d classements rankResults identiques au jeu web\n", nMul, nField, nRank);
+}
+
+// Carte de bilan (cso_result.json : étape de bilan du jeu web démarrée sur des états posés, DOM relevé) : contenu
+// identique ; choix du bilan (Recommencer, Quitter, S'entraîner) relevés dans le jeu web.
+static void testCsoResult() {
+  const J o = loadJson(ORA + "/cso_result.json");
+  int n = 0, bad = 0, nine = 0, horseless = 0, buttons = 0;
+  std::set<std::string> titles;
+  for (const char* lang : {"fr", "en"}) {
+    const Lang L = langFromName(lang);
+    for (const J& c : o[lang].a) {
+      CsoResultInput in;
+      const J& s = c["state"];
+      in.state.t = s["t"].num();
+      in.state.faults = (int)s["faults"].num();
+      in.state.timeFaults = (int)s["timeFaults"].num();
+      in.state.attempt = (int)s["attempt"].num();
+      in.state.eliminated = !s["eliminated"].isNull();
+      if (in.state.eliminated) in.state.eliminatedReason = s["eliminated"].s;
+      for (const J& l : c["log"].a) in.state.log.push_back({l[0].s, l[1].s, l[2].isNull() ? "" : l[2].s, l[3].isNull() ? "" : l[3].s});
+      in.playerName = c["playerName"].s;
+      in.hasHorse = !c["horseName"].isNull();
+      if (in.hasHorse) in.horseName = c["horseName"].s;
+      in.timeAllowed = 64;
+      in.courseTitle = g_activity.title;
+      in.result = g_activity.result;
+      const CsoResultCard card = csoResultCard(in, g_names, g_text, L);
+      const std::string why = resultDiff(card, c["dom"]);
+      if (!why.empty()) { bad++; if (bad < 8) std::printf("  bilan %s (%s) :%s\n", c["id"].s.c_str(), lang, why.c_str()); }
+      n++;
+      nine += card.table.size() == 9;
+      horseless += !in.hasHorse;
+      titles.insert(c["dom"]["title"].s);
+      CHECK(c["waiting"].b, "bilan %s (%s) : l'étape attend le choix", c["id"].s.c_str(), lang);
+      if (!c["retry"].isNull()) {
+        buttons++;
+        const J& r = c["retry"];
+        const J& d = c["done"];
+        const J& t = c["train"];
+        // Recommencer : 4 étapes insérées (entrée en piste, cloche, parcours, bilan), état neuf de la manche suivante.
+        CHECK(r["closed"].b && r["flag"].s == "retry" && r["next"].b && r["inserted"].a.size() == 4 && r["state"]["attempt"].num() == in.state.attempt + 1 && r["state"]["t"].num() == 0 &&
+                  r["state"]["faults"].num() == 0 && r["state"]["log"].num() == 0 && r["state"]["eliminated"].isNull() && !r["state"]["started"].b,
+              "bilan %s (%s) : Recommencer du jeu web (manche neuve)", c["id"].s.c_str(), lang);
+        // Quitter et S'entraîner : même fin (bilan validé, resultCustom, fermeture) ; S'entraîner demande en plus
+        // l'entraînement 300 ms plus tard (startTraining : cso_warmup, absent du portage).
+        CHECK(d["closed"].b && d["flag"].s == "done" && d["next"].b && d["custom"].b && d["close"].num() == 1 && !d["afterTrain"].b, "bilan %s (%s) : Quitter l'épreuve du jeu web", c["id"].s.c_str(), lang);
+        CHECK(t["closed"].b && t["flag"].s == "train" && t["next"].b && t["close"].num() == 1 && t["afterTrain"].b && t["timers"].a.size() == 1 && t["timers"][0].num() == 300 && t["startTraining"].num() == 1,
+              "bilan %s (%s) : S'entraîner du jeu web", c["id"].s.c_str(), lang);
+      }
+    }
+  }
+  CHECK(bad == 0 && n >= 20, "bilan : %d cartes sur %d différentes du jeu web", bad, n);
+  CHECK(nine > 0 && horseless > 0 && buttons >= 4, "bilan : branches non exercées (joueur au-delà du 8e %d, sans cheval %d, boutons %d)", nine, horseless, buttons);
+  std::string ts;
+  for (const auto& x : titles) ts += " « " + x + " »";
+  std::printf("bilan (cso_result.json) : %d cartes identiques au DOM du jeu web (joueur au-delà du 8e : %d, sans cheval : %d, boutons touchés : %d cas) ; titres :%s\n", n, nine, horseless, buttons, ts.c_str());
+}
+
 static void testCsoRuns() {
   J o = loadRuns();
   const J data = loadJson(DATA + "/cso_course_pole.json");
@@ -1692,7 +1844,7 @@ static void testCsoRuns() {
         "lignes de départ / d'arrivée des données différentes du tracé");
   const char* required[] = {"droit", "t4-sans-faute", "t4-depart-lance", "t4-cloche", "t4-erreur-parcours", "t4-deux-refus", "t4-temps-limite", "t4-descente", "t4-saute-avant-depart", "t4-arrivee-barre", "t4-lignes",
                             "t4-gardes", "t4-un-point", "t4-entree", "t4-lance-limites", "t4-lance-limites-gauche", "t4-lance-loin", "t4-lance-large", "t4-lance-cap",
-                            "t4-lance-derriere", "t4-hors-parcours", "t4-sortie-descente", "t7-parfait-barre-2"};
+                            "t4-lance-derriere", "t4-hors-parcours", "t4-sortie-descente", "t7-parfait-barre-2", "t11-refus", "t11-manche-2"};
   std::map<std::string, int> clean;  // « id lang » → images rejouées sans écart
   int frames = 0, hudN = 0, audioN = 0, boardN = 0, hlN = 0, rrN = 0, cheerN = 0, launchN = 0;
   // Gardes des écouteurs d'obstacle (courses.js:219-268) réellement exercées par les oracles : événements relevés pendant
@@ -1715,6 +1867,8 @@ static void testCsoRuns() {
   int logN = 0;  // changements du journal des fautes comparés
   int ljN = 0, fbN = 0;  // derniers sauts relevés et mots d'appel comparés (tranche T7)
   int perfectN = 0, bar2N = 0;  // « Appel parfait » et « Barre au 2 · +4 · … » produits par le portage (critère de T7)
+  int bilanN = 0, recordN = 0;  // tranche T11 : bilans comparés, meilleurs temps enregistrés comparés
+  std::set<std::string> bilanIds;
   std::vector<std::string> forced;  // exécutions dont l'état de l'épreuve est écrit par le test (non rejouées)
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
@@ -1746,6 +1900,13 @@ static void testCsoRuns() {
     // « notify » avant la première étape, comparés aux appels du lancement relevés (setup.calls).
     cfg.launch = true;
     cfg.launchBig = csoActivityLaunchBig(g_activity, g_text, cfg.lang);
+    // Tranche T11 : bilan (opts.result de l'activité) et étape d'enregistrement du meilleur temps (sauvegarde neuve de
+    // la page d'export : aucun meilleur temps au lancement).
+    cfg.resultCfg = g_activity.result;
+    cfg.courseTitle = g_activity.title;
+    cfg.record = !g_activity.noRecord;
+    cfg.recordId = g_activity.id;
+    cfg.penalties = g_activity.penalties;
     CsoRun run(cfg, g_text);
     run.begin();
     int bad = 0, n = 0;
@@ -1771,6 +1932,10 @@ static void testCsoRuns() {
       const J& ep = f["ep"];
       if (ep.isNull()) { if (!run.finished()) diff(fi, "Run.update absent"); continue; }
       if (f["in"]["ui"].s == "enter") run.enter();
+      // Tranche T11 : boutons du bilan (r.flags.res = 'retry' / 'train' / 'done').
+      if (f["in"]["ui"].s == "cso-retry") run.resultChoice(CsoRun::ResultChoice::Retry);
+      if (f["in"]["ui"].s == "cso-train") run.resultChoice(CsoRun::ResultChoice::Train);
+      if (f["in"]["ui"].s == "cso-done") run.resultChoice(CsoRun::ResultChoice::Done);
       // Dernier saut du cheval (horse._lastJump, relevé quand il change) : lu par le mot d'appel des écouteurs (T7).
       if (ep.o.count("lj")) {
         CsoLastJump lj;
@@ -1898,6 +2063,22 @@ static void testCsoRuns() {
           diff(fi, s0);
         }
       }
+      // Tranche T11 : bilan ouvert à cette image (carte relevée dans le DOM, canal « bl ») et contenu de la carte
+      // (csoResultCard sur l'état du portage) ; meilleur temps écrit par l'étape d'enregistrement (ep.bt).
+      {
+        const bool opened = run.takeResultOpened(), blWant = !f["bl"].isNull();
+        if (opened != blWant) diff(fi, std::string("bilan ouvert ") + (opened ? "oui" : "non") + " / " + (blWant ? "oui" : "non"));
+        if (opened && blWant) {
+          const std::string why = resultDiff(csoResultCard(csoResultInputOf(run), g_names, g_text, cfg.lang), f["bl"]);
+          if (!why.empty()) diff(fi, "bilan :" + why);
+          bilanN++;
+          bilanIds.insert(id + " " + lang + " " + f["bl"]["title"].s);
+        }
+        const CsoRun::Record rc = run.takeRecord();
+        const bool btWant = ep.o.count("bt") > 0;
+        if (rc.rec != btWant || (btWant && (ep["bt"].isNull() || rc.score != ep["bt"].num()))) diff(fi, "meilleur temps " + std::to_string(rc.score) + (rc.rec ? " (record)" : "") + " / " + (btWant ? dump(ep["bt"]) : std::string("inchangé")));
+        if (btWant) recordN++;
+      }
       // Cadence réécrite (sortie de piste) et étape après l'image.
       if (cad.has != !ep["cad1"].isNull() || (cad.has && cad.v != ep["cad1"].num())) diff(fi, "cadence après l'image");
       if ((int)ep["i1"].num() != run.stepIndex()) diff(fi, "étape " + std::to_string(run.stepIndex()) + " / " + std::to_string((int)ep["i1"].num()));
@@ -1927,6 +2108,14 @@ static void testCsoRuns() {
       audioN += (int)wa.size();
       for (const auto& x : wh) hudAll.push_back(x);
       for (const auto& x : wa) audioAll.push_back(x);
+      // Tranche T11 : mission terminée pendant l'image (missions.complete : active = null, game.course = null, tableau
+      // masqué) : plus d'étape ni d'état d'épreuve relevés.
+      if (f["run"].isNull()) {
+        CsoBoard nb;
+        if (!run.finished()) diff(fi, "mission terminée dans le jeu web, en cours dans le portage");
+        if (!f["course"].isNull() || !f["board"].isNull() || run.course().active || run.board(nb)) diff(fi, "mode de concours ou tableau après la fin de la mission");
+        continue;
+      }
       // Étape, objectif, état de l'épreuve.
       const J& rr = f["run"];
       if (run.step() == CsoStep::Goto || (int)ep["i"].num() == 0) texts.insert(rr["text"].s + (in.riding ? " [à cheval]" : in.driving ? " [au volant]" : " [à pied]") + (jsHypot(in.focusX - cfg.gateX, in.focusZ - cfg.gateZ) < cfg.gateR ? " [dans le rayon]" : ""));
@@ -2012,6 +2201,11 @@ static void testCsoRuns() {
     if (id == "t4-sortie-descente")
       CHECK(s.finished && !s.eliminated && s.faults == 0 && s.log.size() == 10 && s.exitT < 1 && run.stepIndex() == 6 && has(hudAll, fr ? "ÉLIMINÉ" : "ELIMINATED") == 0,
             "%s : sortie de piste écourtée par la descente, sans élimination", who.c_str());
+    // Tranche T11 : fin de la mission après « Quitter l'épreuve » (étape d'enregistrement, missions.complete).
+    if (id == "t11-refus") CHECK(run.finished() && !run.trainingRequested() && s.refusals == 1 && s.faults == 4 && s.attempt == 1, "%s : bilan avec un refus, Quitter l'épreuve, fin de la mission", who.c_str());
+    if (id == "t11-manche-2")
+      CHECK(run.finished() && s.attempt == 2 && s.faults == 0 && s.started && s.finished && has(audioAll, "bell(") == 2 && has(hudAll, fr ? "CLOCHE" : "BELL") == 2,
+            "%s : Recommencer (manche 2 : entrée en piste, cloche, parcours), Quitter l'épreuve", who.c_str());
   }
   std::string cov;
   for (const char* g : guards) {
@@ -2039,6 +2233,12 @@ static void testCsoRuns() {
   CHECK(forced.size() == 1 && forced[0] == "t9-recette", "exécutions à état forcé non rejouées : %zu (attendu : t9-recette seule)", forced.size());
   std::printf("déroulé d'épreuve : non rejouée (état de l'épreuve écrit par tests/e2e/cso-shots.mjs) : %s\n", forced.empty() ? "aucune" : forced[0].c_str());
   CHECK(clean.count("t9-ambre fr"), "t9-ambre (fr) : absent ou en écart");
+  // Tranche T11 : bilans de vraies parties (issues : sans-faute vainqueur, sans-faute classé, barres, refus, éliminé,
+  // 2e manche, pénalité de temps) et meilleurs temps enregistrés.
+  std::string seen;
+  for (const auto& x : bilanIds) seen += " « " + x + " »";
+  std::printf("bilan (canal bl) : %d cartes comparées :%s ; %d meilleurs temps enregistrés comparés\n", bilanN, seen.c_str(), recordN);
+  CHECK(bilanN >= 20 && recordN >= 4, "bilans (%d) ou meilleurs temps (%d) trop peu exercés", bilanN, recordN);
 }
 
 // Étape « rejoindre l'entrée de la carrière » (contrôle adverse de T4) : objectif et validation de l'étape goto du jeu
@@ -2731,6 +2931,8 @@ int main(int argc, char** argv) {
     run("entry", testCsoEntry);
     run("feedback", testCsoFeedback);
     run("hud", testCsoHud);
+    run("ranking", testRanking);
+    run("result", testCsoResult);
     run("csoruns", testCsoRuns);
     run("goto", testCsoGoto);
     run("camera", testCamRuns);

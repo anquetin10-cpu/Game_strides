@@ -7,7 +7,9 @@
 // UStridesCsoHud) ; aides à l'appel (tranche T9 : tracé au sol, zone d'appel, repère, AStridesCourseAids ; bouton SAUT
 // coloré par l'état de CsoHud) ; entrée dans l'épreuve (tranche T10 : activité lancée au poteau « Chrono », grand message
 // du lancement, contrôle de capacité et dialogue de l'entraîneur, carte de présentation, carte du plan, « Entrer en
-// piste » ; affichés par UStridesCsoScreens).
+// piste » ; affichés par UStridesCsoScreens) ; arrivée et bilan (tranche T11 : carte de bilan du cœur, strides::
+// csoResultCard ; Recommencer, S'entraîner, Quitter l'épreuve ; meilleur temps de l'activité écrit dans la sauvegarde à
+// l'étape d'enregistrement ; fin de la mission).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -19,6 +21,7 @@
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoHud.h"
 #include "StridesCore/CsoRun.h"
+#include "StridesCore/Ranking.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
 #include <memory>
@@ -61,9 +64,10 @@ public:
 	// Mission en cours (g.missions.active) : déroulé lancé et pas terminé.
 	bool MissionActive() const { return RunPtr && !RunPtr->finished(); }
 	// Carte modale ouverte (overlay du web : simulation en pause, boutons globaux et action coupés).
-	enum class EScreen : uint8 { None, Presentation, Plan };
+	enum class EScreen : uint8 { None, Presentation, Plan, Result };
 	EScreen Screen() const { return ScreenNow; }
 	// Bouton d'une carte (data-id du web) : « plan » (Voir le plan), « plan-back » (Retour), « enter » (Entrer en piste) ;
+	// bilan (tranche T11) : « cso-retry » (Recommencer), « cso-train » (S'entraîner), « cso-done » (Quitter l'épreuve) ;
 	// faux si ce bouton n'est pas affiché.
 	bool PressScreenButton(const FString& Id);
 	// Dialogue de l'entraîneur (hud.dialog) affiché et sa fermeture (advanceDialog : une seule ligne).
@@ -75,6 +79,10 @@ public:
 	strides::CsoPresentation Presentation() const;
 	strides::CsoPlanCard PlanCard() const;
 	strides::CoursePlan Plan() const;
+	// Carte de bilan calculée à l'ouverture du bilan (courses.js:375, start : état de la manche à ce moment).
+	const strides::CsoResultCard& ResultCard() const { return ResultCardData; }
+	// Meilleur temps écrit à la dernière étape d'enregistrement (activities.js:120) : vrai et le score s'il y en a eu un.
+	bool LastRecord(double& OutScore) const { OutScore = LastRecordScore; return bLastRecord; }
 	strides::Lang RunLang() const { return strides::langFromName(TCHAR_TO_UTF8(*Lang)); }
 	const strides::TextTable& Texts() const { return RunText; }
 	// Réglage jumpAid changé (carte Pause, tranche T8) : gardé pour la prochaine épreuve et appliqué à celle en cours.
@@ -197,4 +205,9 @@ private:
 	bool bDialog = false;
 	strides::CsoCall DialogLine;
 	std::string RunHorseName;
+	// Bilan (tranche T11).
+	strides::CsoResultCard ResultCardData;
+	bool bLastRecord = false;
+	double LastRecordScore = 0;
+	void ApplyActivityResult(strides::CsoRunConfig& C, bool bRecord) const;
 };

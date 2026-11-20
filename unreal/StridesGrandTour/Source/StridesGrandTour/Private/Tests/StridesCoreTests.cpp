@@ -199,10 +199,13 @@ bool FStridesPariteCsoTest::RunTest(const FString&)
 			const TSharedPtr<FJsonObject> E = V->AsObject();
 			const TSharedPtr<FJsonObject> VP = E->GetObjectField(TEXT("viewport"));
 			// 844 × 390 ; les poses du HUD d'épreuve (tranche T7, « hud-* »), des commandes (tranche T8, « cmd-* »), des aides
-			// à l'appel (tranche T9, « aide-* ») et de l'entrée dans l'épreuve (tranche T10, « entree-* ») aussi en 667 × 308,
+			// à l'appel (tranche T9, « aide-* »), de l'entrée dans l'épreuve (tranche T10, « entree-* ») et du bilan (T11) aussi en 667 × 308,
 			// avec l'exécution rejouée.
 			const FString Nm = E->GetStringField(TEXT("name"));
-			const bool bHud = Nm.StartsWith(TEXT("hud-")) || Nm.StartsWith(TEXT("cmd-")) || Nm.StartsWith(TEXT("aide-")) || Nm.StartsWith(TEXT("entree-"));
+			const bool bHud = Nm.StartsWith(TEXT("hud-")) || Nm.StartsWith(TEXT("cmd-")) || Nm.StartsWith(TEXT("aide-")) || Nm.StartsWith(TEXT("entree-")) || Nm.StartsWith(TEXT("bilan-"));
+			// Arrivée et bilan (tranche T11, « bilan-* ») : HUD rejoué ; carte (bilan-2-*) par l'exécution rejouée par le jeu.
+			if (Nm.StartsWith(TEXT("bilan-2-"))) TestTrue(TEXT("pose du bilan : exécution rejouée jusqu'à l'image du HUD, carte du web"), E->HasField(TEXT("bilan")) &&
+				E->GetObjectField(TEXT("bilan"))->GetNumberField(TEXT("frame")) == E->GetObjectField(TEXT("hud"))->GetNumberField(TEXT("frame")) && E->GetObjectField(TEXT("bilan"))->HasField(TEXT("card")));
 			if (Nm.StartsWith(TEXT("entree-"))) TestTrue(TEXT("pose de l'entrée : carte attendue, joueur et cheval de l'exécution"), E->HasField(TEXT("entree")) &&
 				E->GetObjectField(TEXT("entree"))->HasField(TEXT("setup")));
 			if (Nm.StartsWith(TEXT("aide-"))) TestTrue(TEXT("pose des aides : canal « ai » rejoué à la même image que le HUD"), E->HasField(TEXT("aids")) &&

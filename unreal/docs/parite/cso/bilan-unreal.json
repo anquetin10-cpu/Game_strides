@@ -1,0 +1,407 @@
+{
+	"schema": "strides.parite_hud/1",
+	"generator": "-StridesShots=cso (AStridesShots::ApplyHudPose, UStridesCsoHud::Describe)",
+	"doc": "par pose : images rejouées, parties de l'état du HUD différentes de l'état du DOM du web (vide : identique), éléments affichés par le widget à la capture (partie=texte)",
+	"poses": [
+		{
+			"name": "bilan-1-sans-faute-844x390",
+			"frames": 2006,
+			"diffs": [],
+			"shown": [
+				"board=59,80|/ 64 s|0 pt|Arrivée ✓",
+				"big=SANS FAUTE !|59,80 S"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 1930,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			}
+		},
+		{
+			"name": "bilan-1-sans-faute-667x308",
+			"frames": 2006,
+			"diffs": [],
+			"shown": [
+				"board=59,80|/ 64 s|0 pt|Arrivée ✓",
+				"big=SANS FAUTE !|59,80 S"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 1930,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			}
+		},
+		{
+			"name": "bilan-2-carte-844x390",
+			"frames": 2072,
+			"diffs": [],
+			"shown": [],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"bilan":
+			{
+				"diffs": [],
+				"replayed": 0,
+				"step": "result",
+				"title": "Sans faute · 5e",
+				"shown": [
+					"kicker=RÉSULTATS · PRIX STRIDES",
+					"title=Sans faute · 5e",
+					"k0=Chrono",
+					"v0=59,80 s (accordé 64 s)",
+					"k1=Fautes aux obstacles",
+					"v1=0 · aucune",
+					"k2=Pénalités de temps",
+					"v2=0 pt",
+					"k3=Total",
+					"v3=0 pt",
+					"k4=Classement",
+					"v4=5e sur 15",
+					"k5=Récompense",
+					"v5=hors dotation",
+					"ligne 1=1|M. Mercier · Rubis Blanc|0 pt|56,26 s|",
+					"ligne 2=2|J. Moreau · Hermès du Lac|0 pt|58,42 s|",
+					"ligne 3=3|E. Bernard · Oural|0 pt|58,53 s|",
+					"ligne 4=4|L. Roux · Diamant Rouge|0 pt|58,95 s|",
+					"ligne 5=5|Test · Comète|0 pt|59,80 s| (me)",
+					"ligne 6=6|A. Leroy · Utopie|0 pt|61,04 s|",
+					"ligne 7=7|H. Fournier · Kalimba|0 pt|62,39 s|",
+					"ligne 8=8|N. Mercier · Ninja Z|4 pts|59,21 s|",
+					"bouton cso-retry=Recommencer",
+					"bouton cso-train=S’entraîner",
+					"bouton cso-done=Quitter l’épreuve (primary)"
+				],
+				"card": 3
+			}
+		},
+		{
+			"name": "bilan-2-carte-667x308",
+			"frames": 2072,
+			"diffs": [],
+			"shown": [],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"bilan":
+			{
+				"diffs": [],
+				"replayed": 0,
+				"step": "result",
+				"title": "Sans faute · 5e",
+				"shown": [
+					"kicker=RÉSULTATS · PRIX STRIDES",
+					"title=Sans faute · 5e",
+					"k0=Chrono",
+					"v0=59,80 s (accordé 64 s)",
+					"k1=Fautes aux obstacles",
+					"v1=0 · aucune",
+					"k2=Pénalités de temps",
+					"v2=0 pt",
+					"k3=Total",
+					"v3=0 pt",
+					"k4=Classement",
+					"v4=5e sur 15",
+					"k5=Récompense",
+					"v5=hors dotation",
+					"ligne 1=1|M. Mercier · Rubis Blanc|0 pt|56,26 s|",
+					"ligne 2=2|J. Moreau · Hermès du Lac|0 pt|58,42 s|",
+					"ligne 3=3|E. Bernard · Oural|0 pt|58,53 s|",
+					"ligne 4=4|L. Roux · Diamant Rouge|0 pt|58,95 s|",
+					"ligne 5=5|Test · Comète|0 pt|59,80 s| (me)",
+					"ligne 6=6|A. Leroy · Utopie|0 pt|61,04 s|",
+					"ligne 7=7|H. Fournier · Kalimba|0 pt|62,39 s|",
+					"ligne 8=8|N. Mercier · Ninja Z|4 pts|59,21 s|",
+					"bouton cso-retry=Recommencer",
+					"bouton cso-train=S’entraîner",
+					"bouton cso-done=Quitter l’épreuve (primary)"
+				],
+				"card": 3
+			}
+		}
+	]
+}

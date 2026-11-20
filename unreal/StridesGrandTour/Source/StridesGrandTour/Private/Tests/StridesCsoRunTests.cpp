@@ -120,8 +120,8 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 			{
 				const std::string& Src = C["src"].s;
 				const std::string& Fn = C["fn"].s;
-				// Mot d'appel (hud.jumpFeedback) compris depuis la tranche T7.
-				const bool Keep = bHud ? Src == "gameplay/courses.js" || (Src == "gameplay/missions.js" && Fn == "clearHint") : Src == "gameplay/courses.js";
+				// Mot d'appel (hud.jumpFeedback) compris depuis la tranche T7 ; fin de mission (closeDialog) depuis T11.
+				const bool Keep = bHud ? Src == "gameplay/courses.js" || (Src == "gameplay/missions.js" && (Fn == "clearHint" || Fn == "closeDialog")) : Src == "gameplay/courses.js";
 				if (Keep) Want.Add(CallLine(C));
 			}
 			const TArray<FString>& Log = bHud ? Course->HudLog() : Course->AudioLog();

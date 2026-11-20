@@ -145,10 +145,28 @@ bool AStridesCourse::StartRun(const FString& PlayerName, const FString& HorseNam
 	C.horseName = TCHAR_TO_UTF8(*HorseName);
 	C.lang = strides::langFromName(TCHAR_TO_UTF8(*Lang));
 	C.aid = TCHAR_TO_UTF8(*JumpAid);
+	ApplyActivityResult(C, false);
 	RefreshPropSigns();
 	StartRunWith(C, RunText);
 	bAutoEnter = true;
 	return true;
+}
+
+void AStridesCourse::ApplyActivityResult(strides::CsoRunConfig& C, bool bRecord) const
+{
+	// Tranche T11 : opts.result de l'épreuve (bilan) ; avec l'activité, étape d'enregistrement du meilleur temps
+	// (activities.js:111-129 : best = save.data.bestTimes[a.id] lu au lancement).
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const strides::CsoActivity* A = Data ? Data->CsoActivity() : nullptr;
+	if (!A) return;
+	C.resultCfg = A->result;
+	C.courseTitle = A->title;
+	if (!bRecord || A->noRecord) return;
+	C.record = true;
+	C.recordId = A->id;
+	C.penalties = A->penalties;
+	if (const UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
+		C.hasBest = Save->BestTime(UTF8_TO_TCHAR(A->id.c_str()), C.best);
 }
 
 bool AStridesCourse::StartActivity(const FString& PlayerName, const FString& HorseName, double JumpPower, double Clearance)
@@ -178,6 +196,7 @@ bool AStridesCourse::StartActivity(const FString& PlayerName, const FString& Hor
 	C.capWho = Cap.who;
 	C.capInitials = Cap.initials;
 	C.capText = Cap.text;
+	ApplyActivityResult(C, true);
 	RefreshPropSigns();
 	StartRunWith(C, RunText);
 	UE_LOG(LogTemp, Display, TEXT("Strides épreuve : activité %s lancée (capacité : portée %.2f m pour %.2f m, dialogue %d)"), UTF8_TO_TCHAR(A->id.c_str()), Cap.reach, Cap.maxH, Cap.hopeless);
@@ -193,6 +212,14 @@ bool AStridesCourse::PressScreenButton(const FString& Id)
 	{
 		ScreenNow = EScreen::None;
 		if (RunPtr) RunPtr->enter();
+		return true;
+	}
+	// Bilan (courses.js:418-422) : la carte se ferme, le choix est lu par l'étape à l'image suivante (r.flags.res).
+	if (ScreenNow == EScreen::Result && RunPtr && (Id == TEXT("cso-retry") || Id == TEXT("cso-train") || Id == TEXT("cso-done")))
+	{
+		ScreenNow = EScreen::None;
+		using RC = strides::CsoRun::ResultChoice;
+		RunPtr->resultChoice(Id == TEXT("cso-retry") ? RC::Retry : Id == TEXT("cso-train") ? RC::Train : RC::Done);
 		return true;
 	}
 	return false;
@@ -264,6 +291,8 @@ void AStridesCourse::StartRunWith(const strides::CsoRunConfig& Config, const str
 	ScreenNow = EScreen::None;
 	bDialog = false;
 	RunHorseName = Config.horseName;
+	ResultCardData = strides::CsoResultCard();
+	bLastRecord = false;
 	RunPtr->begin();
 	FlushRunCalls();
 }
@@ -286,6 +315,8 @@ void AStridesCourse::FlushRunCalls()
 			bDialog = true;
 			DialogLine = C;
 		}
+		// Fin de la mission (tranche T11, run.cleanup de missions.js:250-252) : dialogue encore ouvert fermé.
+		if (C.fn == "closeDialog") bDialog = false;
 		// Interface d'épreuve (tranche T7) : appel rejoué par le modèle du HUD, affiché par UStridesCsoHud ; texte
 		// transmis aussi aux abonnés (journal).
 		Hud.call(C);
@@ -315,6 +346,35 @@ void AStridesCourse::FlushRunCalls()
 	{
 		RunHighlight = RunPtr->highlight();
 		SetHighlight(RunHighlight);
+	}
+	// Bilan ouvert (courses.js:375-424, tranche T11) : carte du cœur sur l'état de la manche, simulation suspendue jusqu'au
+	// choix (overlay du web).
+	if (RunPtr->takeResultOpened())
+	{
+		const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+		const strides::RankNames* Names = Data ? Data->RankNames() : nullptr;
+		// (dotation non portée : csoResultCard la refuse ; le Parcours du Pôle n'en a pas, contrôlé ici sans exception)
+		const strides::CsoResultConfig& Rc = RunPtr->config().resultCfg;
+		if (Names && Rc.prizes.empty() && !Names->first.empty()) ResultCardData = strides::csoResultCard(strides::csoResultInputOf(*RunPtr), *Names, RunText, RunLang());
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides épreuve : bilan sans noms des engagés (cso_ranking.json) ou avec dotation (non portée)"));
+			ResultCardData = strides::CsoResultCard();
+		}
+		ScreenNow = EScreen::Result;
+		UE_LOG(LogTemp, Display, TEXT("Strides épreuve : bilan « %s » (%s)"), UTF8_TO_TCHAR(ResultCardData.title.c_str()), UTF8_TO_TCHAR(ResultCardData.kicker.c_str()));
+	}
+	// Étape d'enregistrement (activities.js:113-127) : meilleur temps écrit dans la sauvegarde tout de suite (sans F5).
+	{
+		const strides::CsoRun::Record Rec = RunPtr->takeRecord();
+		if (Rec.taken && Rec.rec)
+		{
+			bLastRecord = true;
+			LastRecordScore = Rec.score;
+			UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
+			const bool bSaved = Save && Save->RecordBestTime(UTF8_TO_TCHAR(RunPtr->config().recordId.c_str()), Rec.score);
+			UE_LOG(LogTemp, Display, TEXT("Strides épreuve : meilleur temps %hs = %.17g s (écrit dans la sauvegarde : %d)"), RunPtr->config().recordId.c_str(), Rec.score, bSaved);
+		}
 	}
 	// Étape de présentation commencée (courses.js:529-536, start : showPresentation) : carte ouverte une fois (lancement
 	// direct StartRun : validée d'office à l'image suivante, sans carte ni simulation suspendue).

@@ -1,4 +1,6 @@
-// Cartes de l'entrée dans l'épreuve (tranche T10) : carte de présentation (src/gameplay/courses.js:119-138, gabarit
+// Carte de bilan (tranche T11 : courses.js:372-424, styles Content/Data/cso_result_style.json, textes du cœur
+// strides::csoResultCard via AStridesCourse::ResultCard). Cartes de l'entrée dans l'épreuve (tranche T10) : carte de
+// présentation (src/gameplay/courses.js:119-138, gabarit
 // src/ui/screens.js:159-177), carte du plan du parcours (courses.js:111-118, src/ui/coursePlan.js) et dialogue de
 // l'entraîneur (src/ui/hud.js:547-583), en UMG. Mise en page relevée dans le navigateur (Content/Data/cso_screens_style.json,
 // scripts/unreal/export-cso-entry.mjs --screens : boîtes et styles calculés à 844 × 390 et 667 × 308 ; viewport le plus
@@ -47,10 +49,11 @@ class STRIDESGRANDTOUR_API UStridesCsoScreens : public UUserWidget
 public:
 	void Bind(class AStridesCourse* InCourse) { Course = InCourse; }
 	class AStridesCourse* BoundCourse() const { return Course; }
-	// Carte ou dialogue affiché (relevé à la dernière mise à jour) : 0 aucune carte, 1 présentation, 2 plan.
+	// Carte ou dialogue affiché (relevé à la dernière mise à jour) : 0 aucune carte, 1 présentation, 2 plan, 3 bilan.
 	int32 CardShown() const { return ShownScreen; }
 	bool DialogShown() const { return bDialogShown; }
-	// Bouton par son identifiant du web (plan, plan-back, enter ; dialog : toucher le dialogue) : mêmes gestionnaires
+	// Bouton par son identifiant du web (plan, plan-back, enter ; bilan : cso-retry, cso-train, cso-done ; dialog : toucher le
+	// dialogue) : mêmes gestionnaires
 	// qu'au toucher (tests, captures) ; faux si ce bouton n'est pas affiché.
 	bool ClickForTest(const FString& Id);
 	// Éléments affichés (« partie=texte »), pour les tests et les captures.
@@ -77,6 +80,9 @@ private:
 	UFUNCTION() void OnBack();
 	UFUNCTION() void OnEnter();
 	UFUNCTION() void OnDialog();
+	UFUNCTION() void OnRetry();
+	UFUNCTION() void OnTrain();
+	UFUNCTION() void OnDone();
 
 	UPROPERTY() TObjectPtr<class AStridesCourse> Course;
 	UPROPERTY() TObjectPtr<class UCanvasPanel> Root;
@@ -90,7 +96,7 @@ private:
 	TArray<FString> ButtonIds;
 	TMap<FString, FVector4> Boxes;
 	FVector2D TestView = FVector2D::ZeroVector;
-	int32 ShownScreen = 0;  // 0 : aucune carte, 1 : présentation, 2 : plan
+	int32 ShownScreen = 0;  // 0 : aucune carte, 1 : présentation, 2 : plan, 3 : bilan
 	bool bDialogShown = false;
 	FString ShownKey;       // état affiché (carte, dialogue, langue, cheval, viewport) : reconstruit quand il change
 };

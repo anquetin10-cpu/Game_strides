@@ -265,13 +265,13 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
 | 11.1 | Arrivée : points = fautes + pénalités de temps | partiel | teste | `SC/CsoCourse.cpp:136-139` ; `TC:135` | scénario écrit à la main |
-| 11.1 | `SANS FAUTE !` / `{n} POINTS` / `1 POINT`, sous-titre `{dec(t,2)} s`, 2600 ms | partiel | compile | `SG/StridesCourse.cpp:58` | « 1 POINTS » ; pas de sous-titre ; ligne de texte 3 s |
+| 11.1 | `SANS FAUTE !` / `{n} POINTS` / `1 POINT`, sous-titre `{dec(t,2)} s`, 2600 ms | identique_prouve | joue_ecran | `SC/CsoRun.cpp` (courseUpdate) ; HUD UMG (T7) | T4 / T7 : appel `big` identique (cso_runs/) ; T11 : montage `bilan-1-sans-faute-*` |
 | 11.1 | Sons d'arrivée, public en liesse 3,5 s | absent | aucun | — | — |
-| 11.2 | Classement simulé (`simulateField`, `mulberry32`, `rankResults`) | absent | aucun | — | — |
+| 11.2 | Classement simulé (`simulateField`, `mulberry32`, `rankResults`) | identique_prouve | teste | `SC/Ranking.cpp:21-111` ; `TC:1723` | T11 : `ORA/cso_ranking.json` rejoué à l'identique ; marge 1e-9 et tri stable non départagés (mutations déclarées) |
 | 11.2 | Comparaison de résultats (`compareResults`) | identique_prouve | teste | `SC/CsoCourse.cpp:87-92` ; `TC:104-108` | 3 cas seulement ; le bilan web trie par `rankResults` (`ranking.js:23-25`), absent |
-| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | absent | aucun | `SG/StridesCourse.cpp:110` | ligne « Terminé : %d pts en %.2f s » |
-| 11.2 | Boutons `Recommencer`, `S'entraîner`, `Quitter l'épreuve` | absent | aucun | — | — |
-| 11.2 | Meilleur temps `bestTimes.cso_train` = temps + pénalités | partiel | compile | `SG/StridesSaveSubsystem.cpp:44-53` | clé `cso_pole`, résultat complet comparé par `compareResults`, écrit seulement à la sauvegarde manuelle F5 |
+| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | identique_prouve | joue_ecran | `SC/Ranking.cpp:113-185` ; `SG/StridesCsoScreens.cpp:501-579` ; `TC:1775`, `TC:2066` | T11 : `ORA/cso_result.json` (26 cartes) et canal « bl » (23 cartes) identiques ; montages `bilan-2-carte-*` ; dotation non portée |
+| 11.2 | Boutons `Recommencer`, `S'entraîner`, `Quitter l'épreuve` | partiel | teste | `SC/CsoRun.cpp:265-279` ; `SG/StridesCourse.cpp:217-224` ; `Strides.Cso.Result` | T11 : Recommencer et Quitter identiques (t11-manche-2, t11-refus) ; S'entraîner : `cso_warmup` absent, rien n'est lancé |
+| 11.2 | Meilleur temps `bestTimes.cso_train` = temps + pénalités | partiel | teste | `SC/CsoRun.cpp:242-253` ; `SG/StridesSaveSubsystem.cpp:106-125` | T11 : écrit à l'étape d'enregistrement sans F5, égal à `ep.bt` du web (4 cas) ; pénalités de temps, élimination et meilleur temps existant non départagés |
 | 11.2 | Classement en ligne `reportScore` | absent | aucun | — | — |
 | 11.3 | Concours, défi v6, missions d'histoire | absent | aucun | — | — |
 
@@ -1131,6 +1131,45 @@ Principes communs :
 - **Dépendances / risques** : T4, T7, T10 (cartes). `S'entraîner` mène à l'entraînement au paddock (`cso_warmup`), absent
   de l'Unreal : bouton à brancher quand cette activité sera portée, sans rien inventer en attendant ; `reportScore`
   (réseau) hors plan.
+
+#### Réalisation de T11 (20/11/2026, reprise après la pause disque)
+
+- **Cœur** (`SC/Ranking.cpp`, `SCh/Ranking.h`) : `mulberry32` (arithmétique 32 bits, `ToUint32` du web), `simulateField`,
+  `rankResults` (tri stable), carte de bilan `csoResultCard` (kicker, titre, grille, tableau des 8 premiers et du joueur,
+  boutons), `csoResultInputOf`. `CsoRun` : étape d'enregistrement du meilleur temps (`activities.js:111-129` : rien après
+  une élimination, score = chrono + fautes + pénalités de temps, record sans meilleur temps ou s'il est battu), fin de la
+  mission (`run.cleanup` : `clearHint`, `closeDialog`). `SaveGame` : `bestTimes` écrit, relu et importé du web ; l'ancien
+  record « cso_pole » pris à la sauvegarde F5 est retiré (le web n'en écrit pas pour cette activité).
+- **Oracles** : `ORA/cso_ranking.json` (export-data.mjs : 216 tirages, 861 engagés, 112 classements, identiques) ;
+  `ORA/cso_result.json` (export-cso-result.mjs : 13 états × 2 langues, dont vainqueur sans faute, barres, refus,
+  éliminé, manches 2, 3 et 10, joueur au-delà du 8e, sans cheval ; 26 cartes identiques ; boutons touchés sur 3 cas) ;
+  canal « bl » et `ep.bt` de `cso_runs/` (23 bilans de vraies parties identiques ; 4 meilleurs temps égaux au bit près) ;
+  exécutions `t11-refus` (refus au 3, Quitter) et `t11-manche-2` (barre au 2, Recommencer, manche 2 sans faute,
+  Quitter), réexportées à l'identique.
+- **Jeu** : carte UMG (`SG/StridesCsoScreens.cpp`, styles `Content/Data/cso_result_style.json`), boutons, meilleur
+  temps écrit dans l'emplacement de sauvegarde à l'étape d'enregistrement (`UStridesSaveSubsystem::RecordBestTime`, sans
+  F5). Test moteur `Strides.Cso.Result` : `t11-refus` et `t11-manche-2` (fr, en) rejouées par le chemin du jeu
+  (`SG/StridesCsoRunReplay.h`, widget des cartes) : 5 446 images, 146 appels d'interface, 96 sons, 6 bilans identiques au
+  DOM et affichés, 2 Recommencer (barre du 2 renversée puis remise à l'entrée en piste, annonce, cloche, manche 2),
+  4 meilleurs temps relus sur le disque. 27 tests Automation Strides au vert ; ctest au vert ; démo F8 rejouée dans un
+  dossier dédié (« 60,46 / 64 s 0 pt Arrivée ✓ », captures de Julien inchangées).
+- **Preuves visuelles** : `cso/bilan-1-sans-faute-{844x390,667x308}.png` (15e image après « SANS FAUTE ! » de
+  `t9-parcours`, HUD rejoué identique au web), `cso/bilan-2-carte-{844x390,667x308}.png` (exécution rejouée par le jeu
+  jusqu'à l'image 2071, carte identique au web : `bilan-unreal.json`), référence tactile `cso/bilan-touch-844x390.png`
+  (`touch-bilan.png` de `tests/e2e/cso-touch.mjs`, sha256 c7172cdd…, réduit à 844 × 390).
+- **Mutations** : `scripts/unreal/mutations-cso-ranking.py`, 59 mutations, 53 détectées, 6 déclarées non départagées :
+  marge 1e-9 des pénalités de temps des engagés, tri non stable (libc++ stable sous 31 éléments), chrono du joueur non
+  arrondi avant le tri, et trois branches de l'enregistrement (pénalités de temps dans le score, Quitter après une
+  élimination, meilleur temps existant égalé) : aucune exécution enregistrée ne les exerce (sauvegarde neuve, aucune
+  pénalité de temps, aucune élimination quittée).
+- **Écarts déclarés** : dotation (`prizes`, concours) non portée (`csoResultCard` la refuse) ; `S'entraîner` termine la
+  mission sans rien lancer (`cso_warmup` absent) ; récompenses de fin de mission (réputation, compétence organisation,
+  statistiques, offres, objectif « Une mission t'attend ») et `reportScore` non portés ; sons d'arrivée journalisés, non
+  joués (T12) ; rendu : police du moteur, fondu d'ouverture de l'overlay absent, HUD hors épreuve (mini-carte,
+  porte-monnaie) absent derrière la carte, robe du cheval, sable et bandeaux de la lice déjà différents (décor, T5) ;
+  la référence tactile est prise pendant le fondu de l'overlay et vient d'une partie au doigt en temps réel (chrono
+  60,77 s au lieu de 59,80 s, même classement 5e sur 15), non rejouable au pas fixe ; sans sauvegarde existante,
+  `RecordBestTime` crée une sauvegarde sans position (le chargement F9 la refuse ensuite, comme avant).
 
 ### T12. Sons de l'épreuve et recette complète
 

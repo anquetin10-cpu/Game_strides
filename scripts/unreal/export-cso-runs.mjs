@@ -33,6 +33,8 @@
 //    --shots=aides (tranche T9) : poses aide-* (exécutions t9-* arrêtées à l'image choisie, 844 × 390 et 667 × 308 ;
 //    captures 4 et 5 de la recette : PNG de tests/e2e/out/cso/ et exécution t9-recette) ; --poses=nom1,nom2 : ces poses
 //    seulement, les autres poses aide-* gardées.
+//    --shots=bilan (tranche T11) : poses bilan-* (exécution t9-parcours arrêtée au grand message « SANS FAUTE ! » et à
+//    la carte de bilan, 844 × 390 et 667 × 308) ;
 //    --shots=entree (tranche T10) : poses entree-* (exécution t9-recette arrêtée aux captures 1-presentation, 2-plan,
 //    3-cloche de la recette et à l'annonce du dossard, 844 × 390 et 667 × 308 ; carte ouverte relevée dans le DOM) ;
 //    --poses= comme ci-dessus.
@@ -229,6 +231,22 @@ const SCENARIOS = [
   { id: 't7-parfait-barre-2', type: 't4', classic: true, maxFrames: 1000,
     acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'perfect' }, { do: 'jump', label: '2', rule: 'far', far: 4.2 }, { do: 'wait', frames: 40 }],
     desc: 'Appel parfait puis barre au 2 : départ ; le 1 sauté (cheval posé devant, 6,2 m/s, SAUT à la première image en bonne zone avec un écart de longueur sous 3 % : « Appel parfait ») ; le 2 sauté avec un appel trop loin (à 4,2 m de la première barre : barre tombée, toast « Barre au 2 · +4 · … ») ; 40 images après.' },
+  // Tranche T11 (bilan, classement simulé, Recommencer, meilleur temps) : bilan d'une manche avec un refus, puis
+  // « Quitter l'épreuve » (enregistrement du meilleur temps, fin de la mission) ; deux manches (barre, « Recommencer »,
+  // entrée en piste, cloche, manche 2 sans faute, bilan « manche 2 », « Quitter l'épreuve »).
+  { id: 't11-refus', type: 't4', classic: true, maxFrames: 2400,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'jump', label: '2', rule: 'good' }, { do: 'jump', label: '3', rule: 'none' },
+      ...['3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
+      { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'card', extra: 5 }, { do: 'tap', id: 'cso-done' }, { do: 'wait', frames: 10 }],
+    desc: 'Bilan avec un refus, puis Quitter l’épreuve : départ, le 1 et le 2 sautés (cheval posé devant chacun), refus au 3 sans appui, le 3 repris puis les 7 autres éléments sautés, cheval posé 4 m avant le milieu de la ligne d’arrivée à 3 m/s, arrivée, sortie de piste, bilan (« 4 pts : refus au 3 ») ; « Quitter l’épreuve » touché : meilleur temps de l’activité enregistré (chrono + pénalités), fin de la mission ; 10 images après.' },
+  { id: 't11-manche-2', type: 't4', classic: true, maxFrames: 3200,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'jump', label: '2', rule: 'far', far: 4.2 },
+      ...['3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
+      { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'card', extra: 5 }, { do: 'tap', id: 'cso-retry' },
+      { do: 'still', until: { step: 9 } }, { do: 'cross', line: 'start', back: 5, v: 4.6, until: 'started' },
+      ...['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
+      { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'card', extra: 5 }, { do: 'tap', id: 'cso-done' }, { do: 'wait', frames: 10 }],
+    desc: 'Recommencer : manche 1 avec une barre au 2 (appel à 4,2 m de la première barre ; autres éléments sautés, cheval posé devant chacun), arrivée, bilan ; « Recommencer » touché : nouvelle manche (barres remises, entrée en piste, cloche) ; cheval arrêté au joystick jusqu’au début du parcours, posé 5 m avant la ligne de départ à 4,6 m/s, ligne franchie, les 10 éléments sautés, arrivée, bilan « manche 2 » ; « Quitter l’épreuve » touché : meilleur temps enregistré (dernière manche), fin de la mission ; 10 images après.' },
   // Scénarios de la tranche T6 (caméra de concours) contre le décor (repère : entrée de piste CSO_GATE ; le parcours ne
   // fait jamais toucher la perche) : la sonde bloque la perche, le recul se raccourcit (amorti 10 /s) puis s'allonge
   // (amorti 2,5 /s). Tribunes : boîte « stands » au nord de la carrière ; mât : mât « mast » de la lice nord.
@@ -533,6 +551,18 @@ function PAGE() {
     return d;
   };
   const tmp = new (g.camera.position.constructor)();
+  // Carte de bilan (tranche T11) : kicker, titre, grille .cso-pres [clé, valeur], tableau .cso-rank (lignes : classe me,
+  // textes des cellules), boutons [data-id, texte, classe].
+  P.bilanDom = (ov) => {
+    const q = (s) => ov.querySelector(s);
+    const vs = [...ov.querySelectorAll('.cso-pres .v')];
+    return {
+      kicker: q('.kicker')?.textContent ?? null, title: q('h2')?.textContent ?? null,
+      rows: [...ov.querySelectorAll('.cso-pres .k')].map((k, i) => [k.textContent, vs[i]?.textContent ?? null]),
+      table: [...ov.querySelectorAll('table.cso-rank tr')].map((tr) => ({ me: tr.classList.contains('me'), td: [...tr.children].map((td) => td.textContent) })),
+      buttons: [...ov.querySelectorAll('.card-actions button')].map((b) => [b.dataset.id, b.textContent, b.className]),
+    };
+  };
   const capture = (rec) => {
     const p = g.player, h = p.horse;
     rec.horse = { x: R6(h.pos.x), y: R6(h.pos.y), z: R6(h.pos.z), h: R6(h.heading), v: R6(h.speed), jumpT: R6(h.jumpT), jumpY: R6(h.jumpY), cad: p.csoCadence === undefined ? null : R6(p.csoCadence), mode: p.mode };
@@ -546,6 +576,13 @@ function PAGE() {
     if (!P.lite) rec.cam = { eye: v3(g.camera.position), target: v3(g.cam.target), dir: v3(g.camera.getWorldDirection(tmp)), fov: R6(g.camera.fov), aspect: R6(g.camera.aspect) };
     rec.rails = railDelta();
     if (!P.lite) rec.sim = { paused: !!g.simPaused, overlay: !!document.querySelector('.overlay') };
+    // Tranche T11 : carte de bilan (screens.card de courses.js:414, reconnue à son bouton « cso-retry ») relevée dans le DOM
+    // à l'image où elle s'ouvre (nouvel élément .overlay).
+    const bov = document.querySelector('.overlay [data-id="cso-retry"]')?.closest('.overlay') || null;
+    if (bov !== (P.blEl ?? null)) {
+      P.blEl = bov;
+      if (bov) rec.bl = P.bilanDom(bov);
+    }
     return rec;
   };
   const apply = (inp) => {
@@ -885,6 +922,10 @@ function PAGE() {
         const lJ = h._lastJump;
         const ljs = JSON.stringify(lJ ? [lJ.o?.course === 'cso' ? lJ.o.num : null, P.takeoffQuality(lJ.plan) ?? null] : null);
         if (ljs !== (P.ljRec ?? 'null')) ep.lj = JSON.parse((P.ljRec = ljs));
+        // Tranche T11 : meilleur temps de l'activité (save.data.bestTimes.cso_train, écrit par l'étape d'enregistrement
+        // d'activities.js:120), relevé quand il change (null : absent).
+        const bt = JSON.stringify(g.save.data.bestTimes?.cso_train ?? null);
+        if (bt !== (P.btRec ?? 'null')) ep.bt = JSON.parse((P.btRec = bt));
       }
     };
   };
@@ -1396,6 +1437,12 @@ function PAGE() {
         if (g.player.mode !== a.to) throw new Error(`${st.sc.id} : mode ${g.player.mode} au lieu de ${a.to}`);
       }
       return a.k >= (a.frames ?? 3) ? null : {};
+    },
+    // Tranche T11 : bouton de carte touché avant l'image (in.ui : cso-retry, cso-done…), une image.
+    tap: (a, st) => {
+      if (a.k >= 1) return null;
+      if (!document.querySelector(`.overlay [data-id="${a.id}"]`)) throw new Error(`${st.sc.id} : bouton ${a.id} absent`);
+      return { ui: a.id };
     },
     // Attente du bilan (carte « Recommencer »), puis `extra` images.
     card: (a, st) => {
@@ -2256,7 +2303,8 @@ const head = {
   precision: 1e-6,
   inputs: 'in.move = joystick virtuel [x, y] (input.setVirtualMove) ; in.keys = touches clavier tenues (input.keys) ; in.held = actions tenues (input.held, ex. gallop) ; in.jump = SAUT pressé à cette image ; in.ui = bouton de carte touché (data-id) avant l’image',
   state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch) ; valeurs résumées (run.course, course, board, ev.d, arguments) : au-delà de deux niveaux d’imbrication, objets et tableaux remplacés par null (ex. run.course.log, steps de mission:start) : journal des fautes complet dans ep.lg, recul de la caméra dans cc.bk',
-  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update, lg = journal des fautes de l’épreuve (state.log) en fin d’image, entrées [label, kind, cause, causeText] (null si absent) ; lj = dernier saut du cheval du joueur (horse._lastJump, lu par le mot d’appel de courses.js:203-211) : [numéro de l’obstacle sauté s’il est du parcours cso, sinon null ; takeoffQuality(plan), null si aucune], null si aucun saut',
+  ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update, lg = journal des fautes de l’épreuve (state.log) en fin d’image, entrées [label, kind, cause, causeText] (null si absent) ; lj = dernier saut du cheval du joueur (horse._lastJump, lu par le mot d’appel de courses.js:203-211) : [numéro de l’obstacle sauté s’il est du parcours cso, sinon null ; takeoffQuality(plan), null si aucune], null si aucun saut ; bt = meilleur temps de l’activité (save.data.bestTimes.cso_train, tranche T11), null si absent',
+  bl: 'carte de bilan (tranche T11, courses.js:414 : screens.card reconnue à son bouton cso-retry), relevée dans le DOM à l’image où elle s’ouvre : kicker, title, rows = grille .cso-pres [clé, valeur], table = lignes de .cso-rank { me = classe me, td = textes des cellules }, buttons = [data-id, texte, classe]',
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
   lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action) ; scénario t9-recette (tests/e2e/cso-shots.mjs, setup.recette = réglages relus dans le test, shots = images capturées, pause = modèle des temporisations du HUD) : in.taps = boutons de carte touchés avant in.ui, fs = état de l’épreuve écrit par le test avant l’image (started, next, t, hl = obstacle surligné, o = rang de l’obstacle abordé, snap = caméra recalée), hw = ticks de l’horloge virtuelle du HUD écoulés après l’image (captures du test, sans image de jeu)',
   ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
@@ -2458,7 +2506,8 @@ if (FREEZE) {
 // Groupes « cmd » (tranche T8, écrits par export-hud-style.mjs --controls) et « aides » (tranche T9, --shots=aides) :
 // gardés par les autres groupes.
 // Groupe « entree » (tranche T10, --shots=entree) : présentation, plan, annonce du dossard et cloche de la recette.
-const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : name.startsWith('cmd-') ? 'cmd' : name.startsWith('aide-') ? 'aides' : name.startsWith('entree-') ? 'entree' : 'carriere');
+// Groupe « bilan » (tranche T11, --shots=bilan) : grand message « SANS FAUTE ! » à l'arrivée et carte de bilan.
+const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : name.startsWith('cmd-') ? 'cmd' : name.startsWith('aide-') ? 'aides' : name.startsWith('entree-') ? 'entree' : name.startsWith('bilan-') ? 'bilan' : 'carriere');
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
   const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
@@ -2467,7 +2516,7 @@ if (SHOTS) {
   let priorPoses = [];
   try {
     priorPoses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses;
-    doc.poses = priorPoses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : ['hud', 'cmd', 'aides', 'entree'].includes(poseGroup(p.name))));
+    doc.poses = priorPoses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : ['hud', 'cmd', 'aides', 'entree', 'bilan'].includes(poseGroup(p.name))));
   } catch {
     doc.poses = [];
   }
@@ -2857,8 +2906,72 @@ if (SHOTS) {
     console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses de l’entrée refaites,', ordered.length, 'en tout');
   }
   // Ordre stable : poses de la carrière, de la chute, du cadrage, puis du HUD.
-  else doc.poses = ['carriere', 'chute', 'cadrage', 'hud', 'cmd', 'aides', 'entree'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
-  if (SHOTS_ONLY !== 'aides' && SHOTS_ONLY !== 'entree') {
+  // Tranche T11 : arrivée et bilan en partie réelle (exécution t9-parcours de l'oracle : parcours complet sans faute, au
+  // pas fixe), arrêtée à l'image choisie ; HUD (grand message « SANS FAUTE ! ») et carte de bilan affichés, 844 × 390 et
+  // 667 × 308. Carte relevée dans le DOM (kicker, titre, grille, tableau, boutons) ; canal « ai » de l'image comparé.
+  else if (SHOTS_ONLY === 'bilan') {
+    const sc = { ...SCENARIOS.find((x) => x.id === 't9-parcours'), virtualHud: true };
+    const ora = JSON.parse(readFileSync(join(OUT, runFile(sc.id, 'fr')), 'utf8'));
+    const kBig = ora.frames.findIndex((f) => f.hud.some((c) => c.fn === 'big' && c.args[0] === 'SANS FAUTE !'));
+    const kCard = ora.frames.findIndex((f) => f.bl);
+    if (kBig < 0 || kCard < 0) throw new Error('bilan : arrivée « SANS FAUTE ! » ou bilan absent de t9-parcours');
+    const file = `unreal/core/tests/oracles/cso_runs/${runFile(sc.id, 'fr')}`;
+    const BILAN = [
+      { name: 'bilan-1-sans-faute', k: kBig + 15, card: false, desc: `arrivée sans faute : 15e image après le grand message « SANS FAUTE ! » (courses.js:344, image ${kBig}), sous-titre du chrono, tableau` },
+      { name: 'bilan-2-carte', k: kCard + 3, card: true, desc: `carte de bilan (courses.js:414-423, ouverte à l’image ${kCard} après la sortie de piste) : kicker, titre « ${ora.frames[kCard].bl.title} », grille, classement simulé (8 premiers et le joueur), boutons Recommencer, S’entraîner, Quitter l’épreuve` },
+    ];
+    const VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
+    const shots = [];
+    for (const B of BILAN) {
+      for (const v of VIEWS) {
+        const vk = `${v.width}x${v.height}`;
+        const ctx = await browser.newContext({ viewport: v, deviceScaleFactor: 1 });
+        const page = await ctx.newPage();
+        page.on('pageerror', (e) => errors.push(`fr: ${e.message}`));
+        await page.goto(`${BASE}/?autostart&quality=high&lang=fr`, { timeout: 180000 });
+        await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000, polling: 500 });
+        await page.addScriptTag({ content: AUTOPILOT });
+        await page.addScriptTag({ content: `(${PAGE.toString()})();` });
+        await page.evaluate((o) => window.__parite.install(o), { audioIgnored: AUDIO_IGNORED, hudMethods: HUD_METHODS, hudDedupe: HUD_DEDUPE });
+        await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [sc, 20261118]);
+        await page.evaluate((kk) => (window.__parite.stopAfter = kk), B.k);
+        try {
+          await page.evaluate((s) => window.__parite.runT4(s), sc);
+          throw new Error(`${B.name} : partie terminée avant l’image ${B.k}`);
+        } catch (e) {
+          if (!String(e.message).includes('STOP')) throw e;
+        }
+        const r = await page.evaluate((kk) => {
+          const o = window.__parite.aideView(kk, 0);
+          const ov = document.querySelector('.overlay [data-id="cso-retry"]')?.closest('.overlay');
+          o.card = ov ? window.__parite.bilanDom(ov) : null;
+          return o;
+        }, B.k);
+        if (r.ai !== JSON.stringify(ora.frames[B.k].ai)) throw new Error(`${B.name} ${vk} : canal « ai » de l’image ${B.k} différent de l’oracle`);
+        if (!!r.card !== B.card || (B.card && JSON.stringify(r.card) !== JSON.stringify(ora.frames[kCard].bl))) throw new Error(`${B.name} ${vk} : carte de bilan absente ou différente du canal « bl » de l’oracle`);
+        await page.waitForTimeout(3000);
+        await page.evaluate(() => window.__parite.render());
+        await page.waitForTimeout(500);
+        const name = `${B.name}-${vk}`;
+        await page.screenshot({ path: join(PARITE, `${name}-web.png`) });
+        const st = await liveCso(page);
+        shots.push({
+          name, desc: `Arrivée et bilan (tranche T11), partie réelle ${sc.id} arrêtée à l’image ${B.k} : ${B.desc} ; vue de la caméra du jeu, HUD${B.card ? ' et carte' : ''} affichés ; ${v.width} × ${v.height}.`,
+          hour: r.hour, eye: r.eye, target: r.target, fovV: r.fovV, viewport: { w: v.width, h: v.height }, horse: r.horse, sunDir: r.sunDir, day: r.day, canvas: r.canvas,
+          course: { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 },
+          hud: { run: file, frame: B.k }, ...(B.card ? { bilan: { run: file, frame: B.k, card: r.card } } : { aids: { run: file, frame: B.k } }), state: r.state, frame: B.k,
+          web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png`,
+        });
+        console.log('pose', name, 'image', B.k, 'grand message', JSON.stringify(r.state.bg), 'carte', JSON.stringify(r.card && [r.card.kicker, r.card.title]));
+        await ctx.close();
+      }
+    }
+    doc.poses = doc.poses.filter((p) => poseGroup(p.name) !== 'bilan').concat(shots);
+    writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
+    console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses du bilan');
+  }
+  else doc.poses = ['carriere', 'chute', 'cadrage', 'hud', 'cmd', 'aides', 'entree', 'bilan'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
+  if (SHOTS_ONLY !== 'aides' && SHOTS_ONLY !== 'entree' && SHOTS_ONLY !== 'bilan') {
     writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
     console.log('poses :', join(PARITE, 'poses.json'));
   }

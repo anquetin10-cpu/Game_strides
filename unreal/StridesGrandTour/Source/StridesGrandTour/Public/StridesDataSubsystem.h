@@ -14,6 +14,7 @@
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
+#include "StridesCore/Ranking.h"
 #include "StridesCsoScenery.h"
 #include "StridesDataSubsystem.generated.h"
 
@@ -172,6 +173,11 @@ public:
 	// nul si absent) ; carrière et tribunes du plan et longueur du parcours (cso_course_pole.json : arena, stands, length).
 	const strides::CsoActivity* CsoActivity() const { return bCsoActivity ? &CsoActivityDef : nullptr; }
 	const TSharedPtr<class FJsonObject>& CsoScreensStyle() const { return CsoScreensJson; }
+	// Tranche T11 : noms des engagés simulés (Content/Data/cso_ranking.json : FIRST_NAMES, LAST_NAMES, HORSE_NAMES ; nul si
+	// absent ou illisible) ; styles de la carte de bilan (Content/Data/cso_result_style.json,
+	// scripts/unreal/export-cso-result.mjs --screens ; nul si absent).
+	const strides::RankNames* RankNames() const { return bRankNames ? &RankNamesDef : nullptr; }
+	const TSharedPtr<class FJsonObject>& CsoResultStyle() const { return CsoResultJson; }
 	const strides::CoursePlanArena& PlanArena() const { return PlanArenaDef; }
 	double PoleLength() const { return PoleLengthM; }
 	// Géométrie du parcours exportée du jeu web (tranche T5) : Content/World/Cso/cso_fences.json et cso_assets.json ;
@@ -199,6 +205,9 @@ private:
 	TSharedPtr<class FJsonObject> CsoScreensJson;
 	strides::CsoActivity CsoActivityDef;
 	bool bCsoActivity = false;
+	strides::RankNames RankNamesDef;
+	bool bRankNames = false;
+	TSharedPtr<class FJsonObject> CsoResultJson;
 	strides::CoursePlanArena PlanArenaDef;
 	double PoleLengthM = 368;
 	UPROPERTY() TMap<FString, TObjectPtr<class UTexture2D>> UiIcons;

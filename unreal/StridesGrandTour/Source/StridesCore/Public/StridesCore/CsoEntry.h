@@ -33,6 +33,9 @@ struct CsoActivity {
   int launchMs = 2600;                                // durée du grand message du lancement (missions.js:476)
   std::string appTitle;                               // CONFIG.title (kicker de la présentation)
   std::string place;                                  // lieu par défaut de la présentation (opts.place || …, non traduit)
+  // Tranche T11 : opts.result (bilan) et étape d'enregistrement du meilleur temps (a.penalties, a.noRecord).
+  CsoResultConfig result;
+  bool penalties = false, noRecord = false;
 };
 STRIDESCORE_API CsoActivity csoActivityFromJson(const J& file);
 STRIDESCORE_API bool csoActivityFromFile(const std::string& text, CsoActivity& out, std::string& err);

@@ -17,6 +17,7 @@ const char* csoStepName(CsoStep s) {
     case CsoStep::Bell: return "bell";
     case CsoStep::Course: return "course";
     case CsoStep::Result: return "result";
+    case CsoStep::Record: return "record";
   }
   return "?";
 }
@@ -64,6 +65,8 @@ CsoRun::CsoRun(CsoRunConfig cfg, const TextTable& text) : cfg_(std::move(cfg)), 
   if (cfg_.present) steps_.push_back(CsoStep::Presentation);
   for (CsoStep s : {CsoStep::Entrance, CsoStep::Bell, CsoStep::Course}) steps_.push_back(s);
   if (cfg_.result) steps_.push_back(CsoStep::Result);
+  // activities.js:111-129 (tranche T11) : étape d'enregistrement du meilleur temps ajoutée après les étapes de l'épreuve.
+  if (cfg_.record) steps_.push_back(CsoStep::Record);
   st_.bell = cfg_.bellDelay;
 }
 
@@ -72,6 +75,8 @@ void CsoRun::audio(const char* fn, std::vector<CsoArg> args) { audio_.push_back(
 std::vector<CsoCall> CsoRun::takeHud() { std::vector<CsoCall> v; v.swap(hud_); return v; }
 std::vector<CsoCall> CsoRun::takeAudio() { std::vector<CsoCall> v; v.swap(audio_); return v; }
 bool CsoRun::takeResetRails() { const bool r = resetRails_; resetRails_ = false; return r; }
+bool CsoRun::takeResultOpened() { const bool r = resultOpened_; resultOpened_ = false; return r; }
+CsoRun::Record CsoRun::takeRecord() { const Record r = record_; record_ = Record(); return r; }
 double CsoRun::takeCheer() { const double r = cheer_; cheer_ = 0; return r; }
 
 // ---------- Étape goto (missions.js:20-35, 55-73) ----------
@@ -117,7 +122,11 @@ void CsoRun::next() {
   i_++;
   stepT_ = 0;
   if (i_ >= (int)steps_.size()) {
-    done_ = true;  // missions.complete (bilan de la mission : tranche T11)
+    // missions.complete (missions.js:558-624 ; tranche T11 : le bilan tient lieu d'écran de résultat) : run.cleanup
+    // (missions.js:235-253 : aucune étape en cours à terminer, consigne effacée, dialogue fermé).
+    hud("clearHint", {});
+    hud("closeDialog", {});
+    done_ = true;
     return;
   }
   startStep();
@@ -156,6 +165,7 @@ std::string CsoRun::text() const {
     case CsoStep::Entrance: return tr("Entrée en piste…");
     case CsoStep::Bell: return std::string();
     case CsoStep::Result: return tr("Résultats…");
+    case CsoStep::Record: return std::string();  // activities.js:112 : text ''
     case CsoStep::Course: {
       if (st_.eliminated) return tr("Éliminé");
       if (st_.finished) return std::string();
@@ -224,9 +234,23 @@ void CsoRun::startStep() {
       break;
     }
     case CsoStep::Result:
-      // courses.js:372-424 : carte de bilan, classement simulé, récompense (tranche T11) ; attente du choix.
+      // courses.js:372-424 : carte de bilan (contenu : csoResultCard, Ranking.h), classement simulé, récompense ; attente du
+      // choix (r.flags.res = null).
       resultChoice_ = false;
+      resultOpened_ = true;
       break;
+    case CsoStep::Record: {
+      // activities.js:113-127 : épreuve quittée après une élimination, pas de chrono ; score = chrono + pénalités
+      // (totalPenalties : fautes + pénalités de temps) ; record si aucun meilleur temps (!best) ou meilleur.
+      if (st_.eliminated) break;
+      const double pen = cfg_.penalties ? (double)(st_.faults + st_.timeFaults) : 0.0;
+      const double score = st_.t + pen;
+      const bool noBest = !cfg_.hasBest || cfg_.best == 0 || std::isnan(cfg_.best);
+      record_.taken = true;
+      record_.rec = noBest || score < cfg_.best;
+      record_.score = score;
+      break;
+    }
   }
 }
 
@@ -250,8 +274,11 @@ bool CsoRun::updateStep(const CsoRunFrame& f, CsoCadence& cad) {
         if (cfg_.result) more.push_back(CsoStep::Result);
         steps_.insert(steps_.begin() + i_ + 1, more.begin(), more.end());
       }
+      // « S'entraîner » : r.data.afterTrain (courses.js:434).
+      if (choice_ == ResultChoice::Train) afterTrain_ = true;
       return true;
     }
+    case CsoStep::Record: return true;  // activities.js:128 : update: () => true
   }
   return false;
 }

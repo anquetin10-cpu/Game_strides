@@ -26,8 +26,9 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 {
 	strides::SaveGame Core;
 	FString Msg;
-	ReadCore(SlotName, Core, Msg);  // part de la sauvegarde existante (records) ; sinon une sauvegarde neuve
+	ReadCore(SlotName, Core, Msg);  // part de la sauvegarde existante (records importés) ; sinon une sauvegarde neuve
 	Core.settings = Settings;  // réglages en cours (carte Pause)
+	Core.bestTimes = Best;     // meilleurs temps des activités (tranche T11)
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W) return false;
 	AStridesHorse* Horse = nullptr;
@@ -42,18 +43,8 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	const double Hd = Riding ? Horse->Heading() : StridesUnits::YawDegToHeading(Rider ? Rider->GetActorRotation().Yaw : 0);
 	Core.pose = {Riding ? "ride" : "foot", X, Y, Z, Hd, true};
 	if (Horse) Core.activeHorse = TCHAR_TO_UTF8(*Horse->ProfileId);
-	// Record du parcours : seulement s'il est meilleur (challenge.js : compareResults).
-	for (TActorIterator<AStridesCourse> It(W); It; ++It)
-		if (const strides::CsoRun* Run = It->Run())
-			if (Run->state().finished || Run->state().eliminated)
-			{
-				// Résultat de la manche (épreuve du cœur, tranche T4) : éliminé, fautes + pénalités de temps, chrono au centième.
-				const strides::CsoRunState& St = Run->state();
-				const strides::RunResult R{St.eliminated, St.eliminated ? 0 : Run->points(), std::round(St.t * 100) / 100};
-				auto Cur = Core.records.find("cso_pole");
-				const strides::RunResult Old = Cur == Core.records.end() ? strides::RunResult{true, 0, 0} : strides::RunResult{Cur->second.eliminated, Cur->second.penalties, Cur->second.time};
-				if (Cur == Core.records.end() || strides::compareResults(R, Old) < 0) Core.records["cso_pole"] = {R.eliminated, R.penalties, R.time};
-			}
+	// Tranche T11 : l'ancien record « cso_pole » pris à la sauvegarde (compareResults des défis) est retiré : le Parcours du
+	// Pôle du web n'écrit pas de record de défi, il écrit bestTimes.cso_train à la fin de l'activité (RecordBestTime).
 	UStridesSaveGame* S = Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
 	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
 	if (const UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
@@ -73,6 +64,7 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	strides::SaveGame Core;
 	if (!ReadCore(SlotName, Core, LastMessage)) return false;
 	Settings = Core.settings;
+	Best = Core.bestTimes;
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W || !Core.pose.valid) { LastMessage = TEXT("Sauvegarde sans position"); return false; }
 	if (UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)))
@@ -107,7 +99,29 @@ bool UStridesSaveSubsystem::ReloadSettings()
 	FString Msg;
 	if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0) || !ReadCore(SlotName, Core, Msg)) return false;
 	Settings = Core.settings;
+	Best = Core.bestTimes;
 	return true;
+}
+
+bool UStridesSaveSubsystem::BestTime(const FString& Id, double& Out) const
+{
+	const auto It = Best.find(TCHAR_TO_UTF8(*Id));
+	if (It == Best.end()) return false;
+	Out = It->second;
+	return true;
+}
+
+bool UStridesSaveSubsystem::RecordBestTime(const FString& Id, double Score)
+{
+	Best[TCHAR_TO_UTF8(*Id)] = Score;
+	strides::SaveGame Core;
+	FString Msg;
+	UStridesSaveGame* Old = UGameplayStatics::DoesSaveGameExist(SlotName, 0) ? Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)) : nullptr;
+	if (Old) ReadCore(SlotName, Core, Msg);
+	Core.bestTimes = Best;
+	UStridesSaveGame* S = Old ? Old : Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
+	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
+	return UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
 }
 
 bool UStridesSaveSubsystem::SaveSettings()
@@ -130,6 +144,7 @@ bool UStridesSaveSubsystem::ImportWebExport(const FString& Path)
 	std::string Err;
 	if (!strides::SaveGame::fromWebExport(TCHAR_TO_UTF8(*Text), Core, Err)) { LastMessage = UTF8_TO_TCHAR(Err.c_str()); return false; }
 	Settings = Core.settings;
+	Best = Core.bestTimes;
 	UStridesSaveGame* S = Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
 	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
 	const bool Ok = UGameplayStatics::SaveGameToSlot(S, SlotName, 0);

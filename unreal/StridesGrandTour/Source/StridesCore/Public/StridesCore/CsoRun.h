@@ -14,7 +14,9 @@
 // dialogue de l'entraîneur (appel hud « dialog » quand le contrôle de capacité échoue, CsoEntry.h : csoCapacity) ; la
 // carte de présentation et le plan sont affichés par le jeu (CsoEntry.h, CoursePlan.h) pendant l'étape de présentation,
 // qui attend « Entrer en piste » (enter).
-// Hors de cette tranche (honnêtement absents) : carte de bilan et classement (T11), GPS.
+// Tranche T11 : bilan (ouverture, choix Recommencer / S'entraîner / Quitter ; contenu de la carte : Ranking.h,
+// csoResultCard), étape d'enregistrement du meilleur temps de l'activité (activities.js:111-129) et fin de la mission.
+// Absents : GPS ; récompenses de fin de mission (réputation, compétence), entraînement au paddock (cso_warmup).
 // Oracles : canal « ep » des scénarios de unreal/core/tests/oracles/cso_runs/ (test_core.cpp, testCsoRuns).
 #pragma once
 #include <set>
@@ -43,6 +45,23 @@ struct CsoCall {
 struct CsoRunLine { double x = 0, z = 0, rot = 0, w = 6; };
 struct CsoRunFence { std::string label; int num = 0; };  // dans l'ordre du parcours (num = 1..n)
 
+// opts.result de courseSteps (src/gameplay/activities.js:38, Parcours du Pôle ; tranche T11) : clés françaises, traduites
+// au bilan (Ranking.h : csoResultCard). Lues dans Content/Data/cso_activity.json (activité relevée par
+// scripts/unreal/export-cso-entry.mjs, analyse syntaxique d'activities.js).
+struct CsoResultConfig {
+  std::string clsId = "am2";        // res.cls.id
+  std::string clsName;              // res.cls.name (clé ; non affiché par le bilan)
+  bool hasClsTa = false;            // res.cls.ta (sinon le temps accordé de l'épreuve)
+  double clsTa = 0;
+  std::vector<double> prizes;       // res.cls.prizes (dotation : non portée, doit être vide)
+  bool hasSeed = false;             // res.seed ?? 7
+  double seed = 7;
+  bool hasN = false;                // res.n ?? 14
+  int n = 14;
+  std::string title;                // res.title (clé ; vide : titre de l'épreuve)
+  std::string continueLabel;        // res.continueLabel (clé ; vide : t('Continuer'))
+};
+
 struct CsoRunConfig {
   std::vector<CsoRunFence> fences;
   CsoRunLine start, finish;
@@ -63,6 +82,16 @@ struct CsoRunConfig {
   int bib = -1;          // opts.bib ?? run.data.bib ; sinon 40 + floor(game.time) % 50 à l'entrée en piste
   Lang lang = Lang::Fr;
   std::string aid = "full";  // aide à l'appel (aid() de courses.js:82 : réglage jumpAid, « full », « button » ou « off »)
+  // Tranche T11 : bilan (opts.result) et enregistrement du meilleur temps de l'activité (activities.js:111-129 : étape
+  // ajoutée après le bilan sauf noRecord ; best = save.data.bestTimes[a.id] lu au lancement de l'activité, absent si
+  // hasBest faux ; score = chrono + pénalités si a.penalties).
+  CsoResultConfig resultCfg;
+  std::string courseTitle;   // opts.title (clé) : repli du titre du bilan
+  bool record = false;       // étape d'enregistrement présente (activité lancée, sans noRecord)
+  std::string recordId;      // a.id (« cso_train »)
+  bool penalties = true;     // a.penalties
+  bool hasBest = false;
+  double best = 0;
 };
 // Règles et lignes de Content/Data/cso_course_pole.json (objet « run », exporté de courses.js / obstacles.js) ;
 // fences : libellés dans l'ordre du tracé. Exception si mal formé.
@@ -70,7 +99,7 @@ STRIDESCORE_API CsoRunConfig csoRunConfigFromJson(const J& courseFile, const std
 // Même lecture depuis le texte du fichier (chemin du jeu) : faux et message si illisible, sans exception.
 STRIDESCORE_API bool csoRunConfigFromFile(const std::string& text, const std::vector<std::string>& labels, CsoRunConfig& out, std::string& err);
 
-enum class CsoStep { Goto, Capacity, Presentation, Entrance, Bell, Course, Result };
+enum class CsoStep { Goto, Capacity, Presentation, Entrance, Bell, Course, Result, Record };
 STRIDESCORE_API const char* csoStepName(CsoStep s);
 
 // Entrées d'une image (missions.update(sdt) puis l'étape en cours).
@@ -171,6 +200,17 @@ class STRIDESCORE_API CsoRun {
   std::vector<CsoCall> takeHud();
   std::vector<CsoCall> takeAudio();
 
+  // Tranche T11 : bilan ouvert au début de l'étape de bilan (courses.js:375, start) : vrai une fois par bilan, puis faux.
+  bool takeResultOpened();
+  // Choix du bilan fait (bouton touché) : la carte se ferme (screens.card : ov.remove()).
+  bool resultChosen() const { return resultChoice_; }
+  // Étape d'enregistrement (activities.js:113-127, start) : meilleur temps à écrire (save.data.bestTimes[recordId] =
+  // score) quand rec est vrai ; rien après une élimination. Rendu une fois.
+  struct Record { bool taken = false, rec = false; double score = 0; };
+  Record takeRecord();
+  // « S'entraîner » choisi (r.data.afterTrain) : entraînement au paddock demandé 300 ms après la fin de la mission
+  // (startTraining, activité cso_warmup absente du portage : rien n'est lancé).
+  bool trainingRequested() const { return afterTrain_; }
   bool finished() const { return done_; }  // mission terminée (après le bilan, ou échouée)
   bool failed() const { return failed_; }  // échec de la mission (élimination d'une épreuve non « souple »)
   int stepIndex() const { return i_; }     // rang de l'étape (Run.i)
@@ -219,6 +259,8 @@ class STRIDESCORE_API CsoRun {
   // Drapeaux des étapes (run.flags) et position précédente du parcours (prevP).
   bool capWarn_ = false, pres_ = false, resultChoice_ = false;
   ResultChoice choice_ = ResultChoice::Done;
+  bool resultOpened_ = false, afterTrain_ = false;
+  Record record_;
   bool hasPrev_ = false;
   double prevX_ = 0, prevZ_ = 0;
   CsoRunState st_;

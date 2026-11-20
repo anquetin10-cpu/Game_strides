@@ -157,6 +157,18 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		else LoadLog.Add(FString::Printf(TEXT("cso_activity.json : illisible (%s), pas de poteau actif"), UTF8_TO_TCHAR(Err.c_str())));
 	}
 	LoadJson(TEXT("cso_screens_style.json"), CsoScreensJson);
+	// Bilan (tranche T11) : noms des engagés simulés (lecture du cœur, celle de testRanking) et styles de la carte.
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
+		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/cso_ranking.json"))) && strides::rankNamesFromFile(std::string(TCHAR_TO_UTF8(*Text)), RankNamesDef, Err))
+		{
+			bRankNames = true;
+			LoadLog.Add(FString::Printf(TEXT("cso_ranking.json : %d prénoms, %d noms, %d chevaux"), (int32)RankNamesDef.first.size(), (int32)RankNamesDef.last.size(), (int32)RankNamesDef.horses.size()));
+		}
+		else LoadLog.Add(FString::Printf(TEXT("cso_ranking.json : illisible (%s), pas de classement au bilan"), UTF8_TO_TCHAR(Err.c_str())));
+	}
+	LoadJson(TEXT("cso_result_style.json"), CsoResultJson);
 	// Textes de l'épreuve (tranche T4) : table lue par le cœur (strides::TextTable), la même que testCsoRuns.
 	{
 		FString Text;

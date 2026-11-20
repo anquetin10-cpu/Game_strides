@@ -34,6 +34,9 @@ std::string SaveGame::toJson() const {
     o << (first ? "" : ",") << esc(k) << ":{\"eliminated\":" << (r.eliminated ? "true" : "false") << ",\"penalties\":" << r.penalties << ",\"time\":" << num(r.time) << "}";
     first = false;
   }
+  o << "},\"bestTimes\":{";
+  first = true;
+  for (auto& [k, v] : bestTimes) { o << (first ? "" : ",") << esc(k) << ":" << num(v); first = false; }
   o << "},\"settings\":{";
   first = true;
   for (auto& [k, v] : settings) { o << (first ? "" : ",") << esc(k) << ":" << esc(v); first = false; }
@@ -73,6 +76,7 @@ bool SaveGame::fromJson(const std::string& text, SaveGame& out, std::string& err
   for (auto& [k, v2] : j["skills"].o) s.skills[k] = v2.n;
   if (j["horses"].t == J::Arr) { s.horses.clear(); for (auto& h : j["horses"].a) s.horses.push_back(h.s); }
   for (auto& [k, r] : j["records"].o) s.records[k] = {r["eliminated"].b, (int)r["penalties"].n, r["time"].n};
+  for (auto& [k, v2] : j["bestTimes"].o) if (v2.t == J::Num) s.bestTimes[k] = v2.n;
   for (auto& [k, v2] : j["settings"].o) s.settings[k] = v2.s;
   if (j["pose"].t == J::Obj) s.pose = {j["pose"]["mode"].s, j["pose"]["x"].n, j["pose"]["y"].n, j["pose"]["z"].n, j["pose"]["heading"].n, true};
   if (j["legacy"].t == J::Str) s.legacyJson = j["legacy"].s;
@@ -95,6 +99,7 @@ bool SaveGame::fromWebExport(const std::string& text, SaveGame& out, std::string
   for (auto& [k, v2] : j["skills"].o) s.skills[k] = v2.n;
   if (j["horses"].t == J::Arr) { s.horses.clear(); for (auto& h : j["horses"].a) if (h.t == J::Str) s.horses.push_back(h.s); }
   for (auto& [k, v2] : j["settings"].o) if (v2.t == J::Str) s.settings[k] = v2.s; else if (v2.t == J::Bool) s.settings[k] = v2.b ? "true" : "false";
+  for (auto& [k, v2] : j["bestTimes"].o) if (v2.t == J::Num) s.bestTimes[k] = v2.n;
   for (auto& [k, r] : j["challenges"]["records"].o) {
     const J& b = r["best"].t == J::Obj ? r["best"] : r;
     s.records[k] = {!b["eliminated"].isNull(), (int)b["penalties"].n, b["time"].n};
