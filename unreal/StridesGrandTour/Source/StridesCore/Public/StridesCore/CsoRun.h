@@ -10,8 +10,11 @@
 // comme Obstacles.updateHorse les émet avant missions.update (src/game.js:1491, 1507).
 // Mot d'appel après un passage (hud.jumpFeedback, tranche T7) : dernier saut du cheval fourni par l'appelant
 // (setLastJump), réglage jumpAid dans la configuration.
-// Hors de cette tranche (honnêtement absents) : texte du dialogue de capacité et sa grille (T10), carte de présentation
-// et plan (T10), aides à l'appel (T9), carte de bilan et classement (T11), GPS.
+// Tranche T10 : lancement de l'activité (grand message et son « notify » de missions.start, CsoRunConfig::launch) et
+// dialogue de l'entraîneur (appel hud « dialog » quand le contrôle de capacité échoue, CsoEntry.h : csoCapacity) ; la
+// carte de présentation et le plan sont affichés par le jeu (CsoEntry.h, CoursePlan.h) pendant l'étape de présentation,
+// qui attend « Entrer en piste » (enter).
+// Hors de cette tranche (honnêtement absents) : carte de bilan et classement (T11), GPS.
 // Oracles : canal « ep » des scénarios de unreal/core/tests/oracles/cso_runs/ (test_core.cpp, testCsoRuns).
 #pragma once
 #include <set>
@@ -23,6 +26,19 @@
 struct J;
 
 namespace strides {
+
+// Appel d'interface ou de son : nom de la méthode du jeu web (hud.big, hud.toast, hud.hint, hud.clearHint ;
+// hud.dialog : qui, initiales, texte ; audio.tone, audio.bell, audio.applause, audio.fault, audio.crowdOoh, audio.cheer,
+// audio.notify) et arguments.
+struct CsoArg {
+  bool isNum = false;
+  double n = 0;
+  std::string s;
+};
+struct CsoCall {
+  std::string fn;
+  std::vector<CsoArg> args;
+};
 
 struct CsoRunLine { double x = 0, z = 0, rot = 0, w = 6; };
 struct CsoRunFence { std::string label; int num = 0; };  // dans l'ordre du parcours (num = 1..n)
@@ -37,6 +53,12 @@ struct CsoRunConfig {
   bool present = true;   // présentation (opts.present !== false)
   bool capacity = true;  // contrôle de capacité (hauteurs données : maxH)
   bool hopeless = false; // résultat du contrôle de capacité (grille de courses.js:506-521, tranche T10) : dialogue
+  // Dialogue de l'entraîneur (hud.dialog([{ who, initials, text }]), courses.js:524) quand hopeless : csoCapacity.
+  std::string capWho, capInitials, capText;
+  // Lancement de l'activité (missions.start, missions.js:475-477, tranche T10) : grand message (csoActivityLaunchBig)
+  // puis son « notify », avant la première étape ; absent (launch faux) pour un déroulé lancé sans activité (tests T4).
+  bool launch = false;
+  CsoCall launchBig;
   std::string playerName, horseName, stable;  // horseName vide : t('son cheval')
   int bib = -1;          // opts.bib ?? run.data.bib ; sinon 40 + floor(game.time) % 50 à l'entrée en piste
   Lang lang = Lang::Fr;
@@ -47,18 +69,6 @@ struct CsoRunConfig {
 STRIDESCORE_API CsoRunConfig csoRunConfigFromJson(const J& courseFile, const std::vector<std::string>& labels);
 // Même lecture depuis le texte du fichier (chemin du jeu) : faux et message si illisible, sans exception.
 STRIDESCORE_API bool csoRunConfigFromFile(const std::string& text, const std::vector<std::string>& labels, CsoRunConfig& out, std::string& err);
-
-// Appel d'interface ou de son : nom de la méthode du jeu web (hud.big, hud.toast, hud.hint, hud.clearHint ;
-// audio.tone, audio.bell, audio.applause, audio.fault, audio.crowdOoh, audio.cheer) et arguments.
-struct CsoArg {
-  bool isNum = false;
-  double n = 0;
-  std::string s;
-};
-struct CsoCall {
-  std::string fn;
-  std::vector<CsoArg> args;
-};
 
 enum class CsoStep { Goto, Capacity, Presentation, Entrance, Bell, Course, Result };
 STRIDESCORE_API const char* csoStepName(CsoStep s);

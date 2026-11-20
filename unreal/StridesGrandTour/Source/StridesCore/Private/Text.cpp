@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
 #include "StridesCore/MiniJson.h"
 
@@ -47,6 +48,81 @@ std::string jsToFixed(double x, int k) {
 }
 
 std::string jsInt(long long n) { return std::to_string(n); }
+
+std::string jsNumber(double x) {
+  if (std::isnan(x)) return "NaN";
+  if (std::isinf(x)) return x < 0 ? "-Infinity" : "Infinity";
+  if (x == 0) return "0";
+  std::string sign;
+  if (x < 0) {
+    sign = "-";
+    x = -x;
+  }
+  // Plus petit nombre de chiffres significatifs k qui redonne x (Number::toString, étape 5) : écriture correctement
+  // arrondie à k chiffres (la plus proche de x), k croissant.
+  char b[64];
+  for (int p = 1; p <= 17; p++) {
+    std::snprintf(b, sizeof b, "%.*e", p - 1, x);
+    if (std::strtod(b, nullptr) == x) break;
+  }
+  const std::string m = b;
+  const size_t e = m.find('e');
+  const int exp10 = std::atoi(m.c_str() + e + 1);
+  std::string digits;
+  for (size_t i = 0; i < e; i++)
+    if (m[i] != '.') digits += m[i];
+  while (digits.size() > 1 && digits.back() == '0') digits.pop_back();
+  const int k = (int)digits.size(), n = exp10 + 1;  // x = 0,d1…dk × 10^n
+  std::string out;
+  if (k <= n && n <= 21) out = digits + std::string((size_t)(n - k), '0');
+  else if (0 < n && n <= 21) out = digits.substr(0, (size_t)n) + "." + digits.substr((size_t)n);
+  else if (-6 < n && n <= 0) out = "0." + std::string((size_t)-n, '0') + digits;
+  else {
+    out = digits.substr(0, 1);
+    if (k > 1) out += "." + digits.substr(1);
+    out += (n - 1 >= 0 ? "e+" : "e-") + std::to_string(std::abs(n - 1));
+  }
+  return sign + out;
+}
+
+// Casse : ASCII, Latin-1 (U+00C0–U+00DE ↔ U+00E0–U+00FE hors × et ÷ ; UTF-8 C3 80–9E ↔ C3 A0–BE), ÿ (C3 BF) ↔ Ÿ (C5 B8),
+// œ (C5 93) ↔ Œ (C5 92).
+std::string jsUpper(const std::string& s) {
+  std::string o;
+  o.reserve(s.size());
+  for (size_t i = 0; i < s.size(); i++) {
+    const unsigned char c = (unsigned char)s[i];
+    if (c >= 'a' && c <= 'z') o += (char)(c - 32);
+    else if (c == 0xC3 && i + 1 < s.size()) {
+      const unsigned char d = (unsigned char)s[++i];
+      if (d == 0xBF) o += "\xC5\xB8";
+      else if (d >= 0xA0 && d <= 0xBE && d != 0xB7) { o += (char)0xC3; o += (char)(d - 0x20); }
+      else { o += (char)c; o += (char)d; }
+    } else if (c == 0xC5 && i + 1 < s.size() && (unsigned char)s[i + 1] == 0x93) {
+      o += "\xC5\x92";
+      i++;
+    } else o += (char)c;
+  }
+  return o;
+}
+
+std::string jsLower(const std::string& s) {
+  std::string o;
+  o.reserve(s.size());
+  for (size_t i = 0; i < s.size(); i++) {
+    const unsigned char c = (unsigned char)s[i];
+    if (c >= 'A' && c <= 'Z') o += (char)(c + 32);
+    else if (c == 0xC3 && i + 1 < s.size()) {
+      const unsigned char d = (unsigned char)s[++i];
+      if (d >= 0x80 && d <= 0x9E && d != 0x97) { o += (char)0xC3; o += (char)(d + 0x20); }
+      else { o += (char)c; o += (char)d; }
+    } else if (c == 0xC5 && i + 1 < s.size() && ((unsigned char)s[i + 1] == 0x92 || (unsigned char)s[i + 1] == 0xB8)) {
+      o += (unsigned char)s[i + 1] == 0x92 ? "\xC5\x93" : "\xC3\xBF";
+      i++;
+    } else o += (char)c;
+  }
+  return o;
+}
 
 std::string dec(double n, int k, Lang lang) {
   std::string s = jsToFixed(n, k);

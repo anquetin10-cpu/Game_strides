@@ -23,6 +23,15 @@ STRIDESCORE_API Lang langFromName(const std::string& s);  // « en » → anglai
 STRIDESCORE_API std::string jsToFixed(double x, int k);
 // String(n) d'un nombre entier (gabarits ${n}).
 STRIDESCORE_API std::string jsInt(long long n);
+// String(x) d'un nombre quelconque (Number::toString de l'ECMAScript, tranche T10 : gabarits ${x} du plan du parcours) :
+// plus courte écriture décimale qui redonne le même double, notation exponentielle hors de [1e-6, 1e21[ ; NaN,
+// Infinity, -Infinity ; −0 donne « 0 ». Oracle : cas « str » de cso_text.json.
+STRIDESCORE_API std::string jsNumber(double x);
+// String.prototype.toUpperCase / toLowerCase (UTF-8) sur l'ASCII, le bloc Latin-1 (à … þ, À … Þ, hors × et ÷ ; ÿ ↔ Ÿ) et
+// œ ↔ Œ : suffisant pour les textes de l'épreuve (oracle : cas « upper » / « lower » de cso_text.json, toutes les
+// clés) ; ß et les autres écritures ne sont pas portés (laissés tels quels).
+STRIDESCORE_API std::string jsUpper(const std::string& s);
+STRIDESCORE_API std::string jsLower(const std::string& s);
 // math.js dec(n, k) : toFixed, virgule décimale en français.
 STRIDESCORE_API std::string dec(double n, int k, Lang lang);
 // courses.js : enOrdinal (1st, 2nd, 3rd, 4th, 11th, 21st…), ordinal (« 1re », « 2e » / anglais), nth (« 2e » / « 2nd »).

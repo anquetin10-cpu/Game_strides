@@ -1,0 +1,49 @@
+{
+ "schema": "strides.cso_activity/1",
+ "generator": "scripts/unreal/export-cso-entry.mjs",
+ "source": [
+  "src/gameplay/activities.js",
+  "src/gameplay/interact.js",
+  "src/gameplay/missions.js",
+  "src/gameplay/courses.js",
+  "src/config.js"
+ ],
+ "doc": "activité « Parcours du Pôle » (cso_train) relevée dans le jeu web en français (textes = clés de t()) : activity = g.activities.defs (id, name, kind, desc, start, marker) et offre de mission après Activities.start (vertical, category) ; title / className = opts de courseSteps (activities.js, analyse syntaxique) ; verticalLabel = libellé de la verticale (missions.js) ; interact = action « act:cso_train » de g.interact (label, icon, r, priority, modes, x, z) ; launch.ms = durée du grand message de missions.start ; presentation = titre du jeu (CONFIG.title) et lieu par défaut (courses.js) du kicker",
+ "activity": {
+  "id": "cso_train",
+  "name": "Parcours du Pôle",
+  "kind": "CSO",
+  "desc": "8 obstacles dont deux doubles au Pôle International, 1,10 m, barème A au chrono.",
+  "start": {
+   "x": 330,
+   "z": -191
+  },
+  "marker": {
+   "x": 336,
+   "z": -184
+  },
+  "vertical": "EVENEMENTS",
+  "category": "Entraînement",
+  "title": "Prix STRIDES · Parcours du Pôle",
+  "className": "Amateur 1,10 m",
+  "verticalLabel": "Événement"
+ },
+ "interact": {
+  "label": "Chrono",
+  "icon": "target",
+  "r": 6,
+  "priority": 1,
+  "modes": [
+   "ride"
+  ],
+  "x": 330,
+  "z": -191
+ },
+ "launch": {
+  "ms": 2600
+ },
+ "presentation": {
+  "appTitle": "EQUESTRIAN TOUR",
+  "place": "Pôle International"
+ }
+}

@@ -102,7 +102,14 @@ CsoStep CsoRun::step() const { return i_ >= 0 && i_ < (int)steps_.size() ? steps
 std::string CsoRun::labelOf(int num) const { return num >= 1 && num <= (int)cfg_.fences.size() ? cfg_.fences[(size_t)num - 1].label : std::string(); }
 
 // ---------- Déroulé de mission (missions.js Run) ----------
-void CsoRun::begin() { next(); }
+void CsoRun::begin() {
+  // missions.start (tranche T10) : grand message du lancement, son « notify », puis run.begin().
+  if (cfg_.launch) {
+    hud_.push_back(cfg_.launchBig);
+    audio("notify", {});
+  }
+  next();
+}
 
 void CsoRun::next() {
   if (i_ >= 0 && i_ < (int)steps_.size()) endStep();
@@ -170,10 +177,12 @@ void CsoRun::startStep() {
   switch (step()) {
     case CsoStep::Goto: break;
     case CsoStep::Capacity:
-      // courses.js:499-528 : dialogue de l'entraîneur si les obstacles sont hors de portée (grille et texte : T10).
+      // courses.js:499-528 : dialogue de l'entraîneur si les obstacles sont hors de portée (grille et texte : csoCapacity,
+      // tranche T10) ; l'étape attend sa fermeture (closeCapacityDialog).
       capWarn_ = cfg_.hopeless;
+      if (capWarn_) hud("dialog", {S(cfg_.capWho), S(cfg_.capInitials), S(cfg_.capText)});
       break;
-    case CsoStep::Presentation: pres_ = false; break;  // carte de présentation (T10)
+    case CsoStep::Presentation: pres_ = false; break;  // carte de présentation affichée par le jeu (T10) jusqu'à enter()
     case CsoStep::Entrance: {
       // courses.js:452-462 : hauteurs posées, barres remises, n° 1 surligné, mode concours, annonce, applaudissements.
       resetRails_ = true;

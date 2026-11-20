@@ -5,6 +5,8 @@
   "src/gameplay/missions.js",
   "src/ui/hud.js",
   "src/gameplay/jumpModel.js",
+  "src/ui/coursePlan.js",
+  "src/gameplay/activities.js",
   "src/core/i18n.js",
   "src/i18n/en/*.js"
  ],
@@ -15,7 +17,10 @@
   " · double": " · double",
   " · manche {0}": " · round {0}",
   "0 · aucune": "0 · none",
+  "10 obstacles en forêt, mare comprise.": "10 fences in the forest, including the pond.",
   "3e refus sur le même obstacle : éliminé du parcours.": "Third refusal at the same fence: eliminated from the course.",
+  "8 anneaux le long de la mer, de l’Écurie des Dunes à Deauville City, sur le sable ferme au bord de l’eau (plus loin à marée basse).": "8 rings along the sea, from Écurie des Dunes to Deauville City, on the firm sand at the water’s edge (further out at low tide).",
+  "8 obstacles dont deux doubles au Pôle International, 1,10 m, barème A au chrono.": "8 fences including two doubles at the Pôle International, 1.10 m, Table A against the clock.",
   "<b>Dans la vraie vie</b> — {0}": "<b>In real life</b> — {0}",
   "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment.": "<b>Left/right</b>: steer · <b>forward/back</b>: pace (held) · <b>JUMP</b> at the right moment.",
   "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.": "<b>Left/right</b>: steer · <b>forward/back</b>: pace (held) · <b>JUMP</b> at the right moment. Cross the <b>start line</b>.",
@@ -23,15 +28,18 @@
   "Abord désaxé": "Crooked approach",
   "Abord en biais": "Crooked approach",
   "Action": "Action",
+  "Amateur 1,10 m": "Amateur 1.10 m",
   "Appel parfait": "Perfect take-off",
   "Appel trop loin": "Took off too far",
   "Appel trop près": "Took off too close",
   "Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.": "Press <b>JUMP</b> when the button is <b>green</b>.",
+  "Arrivée": "Finish",
   "Arrivée ✓": "Finish ✓",
   "Barre au {0} · +4{1}": "Rail down at {0} · +4{1}",
   "Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.": "Rail down or first refusal: 4 faults · second refusal: elimination · 1 fault per second (or part of a second) over the time allowed.",
   "Barre touchée par les antérieurs": "Rail hit by the front legs",
   "Barre touchée par les postérieurs": "Rail hit by the hind legs",
+  "Barre · {0}": "Rail down · {0}",
   "Bon appel": "Good take-off",
   "Boost": "Boost",
   "CLOCHE": "BELL",
@@ -52,8 +60,15 @@
   "Difficile": "Hard",
   "Dotation versée : +{0}": "Prize money paid: +{0}",
   "Débloqué au palier « {0} ».": "Unlocked at the “{0}” tier.",
+  "Départ": "Start",
   "Départ {0} s": "Start {0} s",
+  "ENTRÉE": "ENTRANCE",
   "Engagements en CSI ouverts au Pôle International.": "CSI entries open at Pôle International.",
+  "Entraînement": "Training",
+  "Entraînement : {0} saut sans faute sur {1}": "Training: {0} clear jump out of {1}",
+  "Entraînement : {0} sauts sans faute sur {1}": "Training: {0} clear jumps out of {1}",
+  "Entraînement terminé": "Training complete",
+  "Entraînement à l’abord": "Approach training",
   "Entraîneur": "Coach",
   "Entre en piste : rejoins l’entrée de la carrière": "Enter the arena: head to the arena entrance",
   "Entrer en piste": "Enter the arena",
@@ -73,6 +88,7 @@
   "Le client": "The client",
   "Maintiens <b>BOOST</b> par à-coups : l’endurance se recharge au galop normal.": "Hold <b>BOOST</b> in bursts: stamina recovers at a normal canter.",
   "Manque d’impulsion": "Lacking impulsion",
+  "Meilleur : {0}": "Best: {0}",
   "Mission": "Mission",
   "Mission Strides": "Strides mission",
   "Mission Strides · Chauffeur": "Strides mission · Driver",
@@ -83,6 +99,7 @@
   "Monte dans le camion.": "Get into the horsebox.",
   "Monte sur ton cheval (siffle-le si besoin).": "Mount your horse (whistle for it if needed).",
   "Moyenne": "Medium",
+  "Nouveau record": "New best",
   "Nouvelle demande · {0}": "New request · {0}",
   "Nouvelles missions : Transport, sorties cavalier, plage.": "New missions: transport, rider outings, beach.",
   "N° {0} · {1}": "No. {0} · {1}",
@@ -91,6 +108,7 @@
   "Offre refusée.": "Offer declined.",
   "PARTEZ !": "GO!",
   "Parcours": "Course",
+  "Parcours du Pôle": "Pôle Course",
   "Parcours du Pôle International": "Pôle International course",
   "Parfait, rapide et pro. Je recommande sans hésiter.": "Perfect, quick and professional. Highly recommended.",
   "Pas assez d’impulsion": "Not enough impulsion",
@@ -104,17 +122,23 @@
   "Position {0}/6 · Termine dans le top 3": "Position {0}/6 · Finish in the top 3",
   "Pourboire 5★ : +{0}": "5★ tip: +{0}",
   "Prends ton élan…": "Build up speed…",
+  "Prix STRIDES": "STRIDES Prize",
+  "Prix STRIDES · Parcours du Pôle": "STRIDES Prize · Pôle Course",
   "Prochaine étape · touche pour ouvrir": "Next step · tap to open",
   "Prépare-toi…": "Get ready…",
   "Présentation de l’épreuve": "Class presentation",
+  "Pénalités : {0} · ": "Penalties: {0} · ",
   "Pénalités de temps": "Time faults",
+  "Quitter l’épreuve": "Leave the class",
   "Ralentis après la ligne": "Slow down after the line",
   "Rampe ouverte : <b>ferme-la</b> à l’arrière du camion avant de rouler.": "Ramp down: <b>close it</b> at the back of the horsebox before driving off.",
   "Recommencer": "Try again",
+  "Refus : trop près, appelle plus tôt": "Refusal: too close, take off earlier",
   "Refus au {0} · +{1}": "Refusal at {0} · +{1}",
   "Refus dans le double : reprends-le au <b>{0}</b>.": "Refusal in the double: start it again from <b>{0}</b>.",
   "Rejoins la piste de l’hippodrome (ligne droite des tribunes)": "Head to the racecourse track (home straight by the stands)",
   "Rejoins le départ du cross": "Head to the cross-country start",
+  "Rejoins le paddock d’échauffement du Pôle": "Head to the Pôle warm-up paddock",
   "Reste sur la piste !": "Stay on the track!",
   "Retour": "Back",
   "Récompense": "Reward",
@@ -124,6 +148,8 @@
   "Résultats…": "Results…",
   "SANS FAUTE !": "CLEAR ROUND!",
   "Sans faute · {0}": "Clear round · {0}",
+  "Sans faute · {0} cm de marge": "Clear · {0} cm to spare",
+  "Sans faute · {0} cm de marge (juste : appel un peu long ou un peu près)": "Clear · {0} cm to spare (tight: take-off a little long or a little close)",
   "Saut": "Jump",
   "Saut trop court : atterrissage dans l’obstacle": "Jump too short: landed in the fence",
   "Saute !": "Jump!",
@@ -133,16 +159,22 @@
   "Sors du camion puis monte à cheval.": "Get out of the horsebox, then mount your horse.",
   "Sors du véhicule (ACTION à l’arrêt).": "Get out of the vehicle (ACTION when stopped).",
   "Sors du véhicule puis monte à cheval.": "Get out of the vehicle, then mount your horse.",
+  "Sprint de la plage": "Beach Sprint",
   "S’entraîner": "Practise",
+  "TRIBUNES": "STANDS",
+  "Temps + pénalités": "Time + penalties",
   "Temps accordé": "Time allowed",
   "Temps limite dépassé : éliminé.": "Time limit exceeded: eliminated.",
   "Temps écoulé !": "Time’s up!",
   "Termine ou abandonne ta mission en cours d’abord.": "Finish or abandon your current mission first.",
+  "Terminer": "Finish",
   "Ton engagement ({0}) t’a été remboursé : le concours a été interrompu.": "Your entry fee ({0}) has been refunded: the show was interrupted.",
   "Total": "Total",
   "Toucher pour continuer": "Tap to continue",
   "Toucher pour fermer": "Tap to close",
   "Touché au {0} · +4{1}": "Hit at {0} · +4{1}",
+  "Tour de l’hippodrome": "Racecourse Lap",
+  "Tour de piste": "Lap of the track",
   "Trop loin": "Too far",
   "Trop près": "Too close",
   "Trop près : plus de place pour sauter": "Too close: no room left to jump",
@@ -158,11 +190,15 @@
   "Téléphone": "Phone",
   "Un peu loin": "A little far",
   "Un peu près": "A little close",
+  "Un tour de piste chronométré. Gère l’endurance !": "One timed lap of the track. Manage your stamina!",
   "Un tour de piste, cinq adversaires. Le grand galop ne dure pas : garde de l’endurance pour la dernière ligne droite !": "One lap, five rivals. A full gallop doesn’t last: save some stamina for the final straight!",
+  "Un vertical et un oxer au paddock du Pôle, sans enjeu : trouve la bonne distance d’appel.": "A vertical and an oxer in the Pôle paddock, no pressure: find the right take-off distance.",
   "Une mission t’attend sur Strides": "A mission is waiting on Strides",
+  "Vertical au nord (sauté vers l’est), oxer au sud (sauté vers l’ouest) : un cercle à main droite les enchaîne. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.": "Vertical to the north (jumped eastwards), oxer to the south (jumped westwards): one circle on the right rein links them. At canter, press <b>JUMP</b> when the button is <b>green</b> (green zone on the ground). Finish whenever you like.",
   "Victoire !": "Victory!",
   "Victoire, sans faute !": "Victory, with a clear round!",
   "Voir le plan": "View the plan",
+  "appel à revoir": "work on the take-off",
   "aucune (éliminé)": "none (eliminated)",
   "barre au {0}{1}": "rail down at {0}{1}",
   "barème A au chrono": "Table A against the clock",
@@ -170,9 +206,12 @@
   "hors dotation": "outside the prize money",
   "il faut": "you need",
   "maintenant": "now",
+  "mur": "wall",
+  "oxer": "oxer",
   "refus au {0}": "refusal at {0}",
   "son cheval": "their horse",
   "temps accordé {0} s": "time allowed {0} s",
+  "vertical": "vertical",
   "{0} POINT": "{0} FAULT",
   "{0} POINTS": "{0} FAULTS",
   "{0} accepte {1} € · {2}": "{0} accepts €{1} · {2}",
@@ -189,6 +228,8 @@
   "{0} refus : éliminé du parcours.": "{0} refusal: eliminated from the course.",
   "{0} s (accordé {1} s)": "{0} s (allowed {1} s)",
   "{0} s écoulées : le chrono est lancé": "{0} s up: the clock has started",
+  "{0} saut sans faute sur {1}.": "{0} clear jump out of {1}.",
+  "{0} sauts sans faute sur {1}.": "{0} clear jumps out of {1}.",
   "{0} sur {1}": "{0} of {1}",
   "{0} tr/min": "{0} rpm",
   "{0} — dotation déjà reçue pour ta première manche classée": "{0} — prize money already received for your first placed round",
@@ -208,6 +249,8 @@
   "Mission",
   "Pause",
   "Total",
+  "oxer",
+  "vertical",
   "{0} place"
  ],
  "files": {
@@ -226,8 +269,17 @@
   "0 · aucune": [
    "gameplay/courses.js"
   ],
+  "10 obstacles en forêt, mare comprise.": [
+   "gameplay/activities.js"
+  ],
   "3e refus sur le même obstacle : éliminé du parcours.": [
    "gameplay/courses.js"
+  ],
+  "8 anneaux le long de la mer, de l’Écurie des Dunes à Deauville City, sur le sable ferme au bord de l’eau (plus loin à marée basse).": [
+   "gameplay/activities.js"
+  ],
+  "8 obstacles dont deux doubles au Pôle International, 1,10 m, barème A au chrono.": [
+   "gameplay/activities.js"
   ],
   "<b>Dans la vraie vie</b> — {0}": [
    "gameplay/missions.js"
@@ -250,6 +302,9 @@
   "Action": [
    "ui/hud.js"
   ],
+  "Amateur 1,10 m": [
+   "gameplay/activities.js"
+  ],
   "Appel parfait": [
    "gameplay/courses.js"
   ],
@@ -263,6 +318,9 @@
   ],
   "Appuie sur <b>SAUT</b> quand le bouton est <b>vert</b>.": [
    "gameplay/courses.js"
+  ],
+  "Arrivée": [
+   "ui/coursePlan.js"
   ],
   "Arrivée ✓": [
    "ui/hud.js"
@@ -278,6 +336,9 @@
   ],
   "Barre touchée par les postérieurs": [
    "gameplay/jumpModel.js"
+  ],
+  "Barre · {0}": [
+   "gameplay/activities.js"
   ],
   "Bon appel": [
    "gameplay/courses.js"
@@ -301,6 +362,7 @@
    "gameplay/courses.js"
   ],
   "Chrono": [
+   "gameplay/activities.js",
    "gameplay/courses.js"
   ],
   "Classement": [
@@ -325,6 +387,7 @@
    "gameplay/courses.js"
   ],
   "Cross de Saint-Gatien": [
+   "gameplay/activities.js",
    "gameplay/courses.js"
   ],
   "Descends de cheval (bouton ACTION à l’arrêt).": [
@@ -339,11 +402,32 @@
   "Débloqué au palier « {0} ».": [
    "gameplay/missions.js"
   ],
+  "Départ": [
+   "ui/coursePlan.js"
+  ],
   "Départ {0} s": [
    "ui/hud.js"
   ],
+  "ENTRÉE": [
+   "ui/coursePlan.js"
+  ],
   "Engagements en CSI ouverts au Pôle International.": [
    "gameplay/missions.js"
+  ],
+  "Entraînement": [
+   "gameplay/activities.js"
+  ],
+  "Entraînement : {0} saut sans faute sur {1}": [
+   "gameplay/activities.js"
+  ],
+  "Entraînement : {0} sauts sans faute sur {1}": [
+   "gameplay/activities.js"
+  ],
+  "Entraînement terminé": [
+   "gameplay/activities.js"
+  ],
+  "Entraînement à l’abord": [
+   "gameplay/activities.js"
   ],
   "Entraîneur": [
    "gameplay/courses.js"
@@ -402,6 +486,9 @@
   "Manque d’impulsion": [
    "gameplay/courses.js"
   ],
+  "Meilleur : {0}": [
+   "gameplay/activities.js"
+  ],
   "Mission": [
    "gameplay/missions.js"
   ],
@@ -432,6 +519,9 @@
   "Moyenne": [
    "gameplay/courses.js"
   ],
+  "Nouveau record": [
+   "gameplay/activities.js"
+  ],
   "Nouvelle demande · {0}": [
    "gameplay/missions.js"
   ],
@@ -456,6 +546,9 @@
   "Parcours": [
    "gameplay/courses.js"
   ],
+  "Parcours du Pôle": [
+   "gameplay/activities.js"
+  ],
   "Parcours du Pôle International": [
    "gameplay/courses.js"
   ],
@@ -478,7 +571,8 @@
    "gameplay/courses.js"
   ],
   "Plan du parcours": [
-   "gameplay/courses.js"
+   "gameplay/courses.js",
+   "ui/coursePlan.js"
   ],
   "Plus tard": [
    "gameplay/missions.js"
@@ -495,6 +589,12 @@
   "Prends ton élan…": [
    "gameplay/courses.js"
   ],
+  "Prix STRIDES": [
+   "gameplay/activities.js"
+  ],
+  "Prix STRIDES · Parcours du Pôle": [
+   "gameplay/activities.js"
+  ],
   "Prochaine étape · touche pour ouvrir": [
    "gameplay/missions.js"
   ],
@@ -504,8 +604,14 @@
   "Présentation de l’épreuve": [
    "gameplay/courses.js"
   ],
+  "Pénalités : {0} · ": [
+   "gameplay/activities.js"
+  ],
   "Pénalités de temps": [
    "gameplay/courses.js"
+  ],
+  "Quitter l’épreuve": [
+   "gameplay/activities.js"
   ],
   "Ralentis après la ligne": [
    "gameplay/courses.js"
@@ -515,6 +621,9 @@
   ],
   "Recommencer": [
    "gameplay/courses.js"
+  ],
+  "Refus : trop près, appelle plus tôt": [
+   "gameplay/activities.js"
   ],
   "Refus au {0} · +{1}": [
    "gameplay/courses.js"
@@ -527,6 +636,9 @@
   ],
   "Rejoins le départ du cross": [
    "gameplay/courses.js"
+  ],
+  "Rejoins le paddock d’échauffement du Pôle": [
+   "gameplay/activities.js"
   ],
   "Reste sur la piste !": [
    "gameplay/courses.js"
@@ -555,6 +667,12 @@
   "Sans faute · {0}": [
    "gameplay/courses.js"
   ],
+  "Sans faute · {0} cm de marge": [
+   "gameplay/activities.js"
+  ],
+  "Sans faute · {0} cm de marge (juste : appel un peu long ou un peu près)": [
+   "gameplay/activities.js"
+  ],
   "Saut": [
    "ui/hud.js"
   ],
@@ -582,8 +700,17 @@
   "Sors du véhicule puis monte à cheval.": [
    "gameplay/missions.js"
   ],
+  "Sprint de la plage": [
+   "gameplay/activities.js"
+  ],
   "S’entraîner": [
    "gameplay/courses.js"
+  ],
+  "TRIBUNES": [
+   "ui/coursePlan.js"
+  ],
+  "Temps + pénalités": [
+   "gameplay/activities.js"
   ],
   "Temps accordé": [
    "gameplay/courses.js"
@@ -596,6 +723,9 @@
   ],
   "Termine ou abandonne ta mission en cours d’abord.": [
    "gameplay/missions.js"
+  ],
+  "Terminer": [
+   "gameplay/activities.js"
   ],
   "Ton engagement ({0}) t’a été remboursé : le concours a été interrompu.": [
    "gameplay/missions.js"
@@ -611,6 +741,12 @@
   ],
   "Touché au {0} · +4{1}": [
    "gameplay/courses.js"
+  ],
+  "Tour de l’hippodrome": [
+   "gameplay/activities.js"
+  ],
+  "Tour de piste": [
+   "gameplay/activities.js"
   ],
   "Trop loin": [
    "ui/hud.js"
@@ -658,11 +794,20 @@
   "Un peu près": [
    "gameplay/courses.js"
   ],
+  "Un tour de piste chronométré. Gère l’endurance !": [
+   "gameplay/activities.js"
+  ],
   "Un tour de piste, cinq adversaires. Le grand galop ne dure pas : garde de l’endurance pour la dernière ligne droite !": [
    "gameplay/courses.js"
   ],
+  "Un vertical et un oxer au paddock du Pôle, sans enjeu : trouve la bonne distance d’appel.": [
+   "gameplay/activities.js"
+  ],
   "Une mission t’attend sur Strides": [
    "gameplay/missions.js"
+  ],
+  "Vertical au nord (sauté vers l’est), oxer au sud (sauté vers l’ouest) : un cercle à main droite les enchaîne. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.": [
+   "gameplay/activities.js"
   ],
   "Victoire !": [
    "gameplay/courses.js"
@@ -672,6 +817,9 @@
   ],
   "Voir le plan": [
    "gameplay/courses.js"
+  ],
+  "appel à revoir": [
+   "gameplay/activities.js"
   ],
   "aucune (éliminé)": [
    "gameplay/courses.js"
@@ -694,6 +842,12 @@
   "maintenant": [
    "ui/hud.js"
   ],
+  "mur": [
+   "ui/coursePlan.js"
+  ],
+  "oxer": [
+   "ui/coursePlan.js"
+  ],
   "refus au {0}": [
    "gameplay/courses.js"
   ],
@@ -702,6 +856,9 @@
   ],
   "temps accordé {0} s": [
    "gameplay/courses.js"
+  ],
+  "vertical": [
+   "ui/coursePlan.js"
   ],
   "{0} POINT": [
    "gameplay/courses.js"
@@ -752,6 +909,12 @@
   ],
   "{0} s écoulées : le chrono est lancé": [
    "gameplay/courses.js"
+  ],
+  "{0} saut sans faute sur {1}.": [
+   "gameplay/activities.js"
+  ],
+  "{0} sauts sans faute sur {1}.": [
+   "gameplay/activities.js"
   ],
   "{0} sur {1}": [
    "gameplay/courses.js"

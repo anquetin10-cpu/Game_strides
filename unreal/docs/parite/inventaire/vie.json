@@ -676,7 +676,7 @@
   "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé au démarrage (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp) ; record « cso_pole » gardé s'il est meilleur selon compareResults, seulement lors de la sauvegarde manuelle (F5 ou bouton SAUVER) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Tracé, hauteurs, temps accordé et compareResults comparés à l'oracle JS unreal/core/tests/oracles/cso_course.json par unreal/core/tests/test_core.cpp:160-201 (CTest : 4 944 vérifications, zéro échec, validation-mac-2026-11-17.md l.9) ; la règle de record de l'activité (temps + pénalités) n'a pas d'oracle.",
+  "preuve": "Tracé, hauteurs, temps accordé et compareResults comparés à l'oracle JS unreal/core/tests/oracles/cso_course.json par unreal/core/tests/test_core.cpp:163-204 (CTest : 4 944 vérifications, zéro échec, validation-mac-2026-11-17.md l.9) ; la règle de record de l'activité (temps + pénalités) n'a pas d'oracle.",
   "ecart": "Pas de poteau ni de lancement d'activité (T10 : activité lancée au démarrage) ; record classé par élimination, pénalités puis temps (challenge.js) au lieu du score temps + pénalités ; clé cso_pole au lieu de bestTimes.cso_train ; enregistré seulement à la sauvegarde ; ni classement en ligne ni carte « Nouveau record ».",
   "tranche": "a"
  },
@@ -861,7 +861,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; StaminaMul est lu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:63) mais jamais utilisé ; stamina, gallopDrain et staminaRegen sont exportés dans horse_gaits.json (scripts/unreal/export-data.mjs:30) mais non lus.",
+  "preuve": "Aucun équivalent ; StaminaMul est lu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:63) mais jamais utilisé ; stamina, gallopDrain et staminaRegen sont exportés dans horse_gaits.json (scripts/unreal/export-data.mjs:31) mais non lus.",
   "ecart": "Aucune physiologie du cheval.",
   "tranche": "d"
  },
@@ -1046,7 +1046,7 @@
   "unreal": "Credits entiers du sous-système de progression, affichés « N crédits » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:79) ; strides::SaveGame.money (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:21) sérialisé et importé de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:69, 91).",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1067-1089 (testSave, écrit à la main) relit money = 1 250 et importe money = 90 d'un export web ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle JS.",
+  "preuve": "unreal/core/tests/test_core.cpp:1070-1092 (testSave, écrit à la main) relit money = 1 250 et importe money = 90 d'un export web ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle JS.",
   "ecart": "Deux compteurs non reliés (Credits affiché, money sauvegardé) ; unité « crédits » au lieu d'euros ; entiers (le web gère les centimes : café 1,80 €, carburant au litre) ; aucune dépense possible.",
   "tranche": "e"
  },
@@ -1236,7 +1236,7 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:31, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:186).",
+  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:32, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:186).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Export automatique depuis le JS (valeurs relues identiques à data.js le 18/11/2026), mais aucun test C++ ne compare ces profils à un oracle.",
@@ -1253,7 +1253,7 @@
   "unreal": "strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:44).",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1072-1080 (écrit à la main) relit la liste horses ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle de ownedHorses ni de activeHorseId.",
+  "preuve": "unreal/core/tests/test_core.cpp:1075-1083 (écrit à la main) relit la liste horses ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle de ownedHorses ni de activeHorseId.",
   "ecart": "Pas de filtre des identifiants inconnus ni de cheval à l'essai ; activeHorse jamais réappliqué au chargement ; ni achat ni changement de cheval.",
   "tranche": "e"
  },

@@ -22,6 +22,7 @@ import { HORSE } from '../../src/config.js';
 import { POLE } from '../../src/world/sites.js';
 import { HORSES } from '../../src/gameplay/data.js';
 import { CAM_COMP } from '../../src/entities/camera.js';
+import { coursePlanSvg, coursePlanLegend } from '../../src/ui/coursePlan.js';
 import { readFileSync } from 'node:fs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -75,7 +76,7 @@ const csoRun = {
   start: CSO_START, finish: CSO_FINISH,
   timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national),
 };
-write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: csoRun.rail, firstRefusal: csoRun.pen, refusalsToEliminate: csoRun.maxRefusals, timeFaultPerSecond: timeFaults(65, 64, 1) }, run: csoRun });
+write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, stands: POLE.stands, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: csoRun.rail, firstRefusal: csoRun.pen, refusalsToEliminate: csoRun.maxRefusals, timeFaultPerSecond: timeFaults(65, 64, 1) }, run: csoRun });
 
 // ---------- Oracles ----------
 // Saut : grille d'appels devant un vertical et un oxer, plusieurs vitesses, angles, puissances.
@@ -131,7 +132,9 @@ console.log('données :', DATA, '\noracles :', ORA, '\nsauts', jump.length, 'con
 // par i18n.js lui-même (chooseLang('en') puis t(clé)) : rien n'est recopié. Fichiers : déroulé de l'épreuve
 // (courses.js), étapes de mission (missions.js : « goto », consignes de mode), tableau de chrono (hud.js), causes de
 // faute (jumpModel.js).
-const TEXT_FILES = ['gameplay/courses.js', 'gameplay/missions.js', 'ui/hud.js', 'gameplay/jumpModel.js'];
+// Tranche T10 : plan du parcours (ui/coursePlan.js) et activités lancées au poteau (gameplay/activities.js : nom, titre,
+// classe, libellé « Chrono » ; catégorie de mission passée à t() par missions.start, relevée ci-dessous).
+const TEXT_FILES = ['gameplay/courses.js', 'gameplay/missions.js', 'ui/hud.js', 'gameplay/jumpModel.js', 'ui/coursePlan.js', 'gameplay/activities.js'];
 const walk = (node, fn) => {
   if (!node || typeof node.type !== 'string') return;
   fn(node);
@@ -151,6 +154,9 @@ for (const f of TEXT_FILES) {
     let key = null;
     if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 't' && n.arguments[0]?.type === 'Literal' && typeof n.arguments[0].value === 'string') key = n.arguments[0].value;
     else if (n.type === 'TaggedTemplateExpression' && n.tag.type === 'Identifier' && n.tag.name === 'T') key = n.quasi.quasis.map((q, i) => (i ? `{${i - 1}}` : '') + q.value.cooked).join('');
+    // Clé dynamique : catégorie de l'offre d'une activité (activities.js : category: '…' littéral), traduite par
+    // missions.start (t(offer.category), missions.js:475).
+    else if (f === 'gameplay/activities.js' && n.type === 'Property' && n.key.type === 'Identifier' && n.key.name === 'category' && n.value.type === 'Literal' && typeof n.value.value === 'string') key = n.value.value;
     if (key === null || key === '') return;
     if (!keyFiles.has(key)) keyFiles.set(key, new Set());
     keyFiles.get(key).add(f);
@@ -184,6 +190,11 @@ const textCases = (lang) => ({
   enOrdinal: ordN.map((n) => ({ n, out: enOrdinal(n) })),
   nth: ordN.map((n) => ({ n, out: nthOf(lang)(n) })),
   ptsText: [...Array(13).keys()].map((n) => ({ n, out: ptsOf(lang)(n) })),
+  // Tranche T10 : String(n) (gabarits ${x} du plan) sur les mêmes valeurs et quelques cas limites ; toUpperCase /
+  // toLowerCase des textes de la table dans cette langue (titre du lancement en capitales, difficulté en minuscules).
+  str: [...decVals, 1e21, 1e-7, 123456789012345680000, 0.000001, 5e-324, -1e-7, 37.6, -43.5, 1.1 + 0.1, 368, -0].map((n) => ({ n, out: String(n) })),
+  upper: keys.map((key) => { const x = i18nT(key); return [x, x.toUpperCase()]; }),
+  lower: keys.map((key) => { const x = i18nT(key); return [x, x.toLowerCase()]; }),
   // Gabarit : valeurs d'essai distinctes ; texte fixe : t(clé).
   templates: keys.map((key) => {
     const parts = key.split(/\{\d+\}/);
@@ -247,3 +258,25 @@ write(ORA, 'cso_feedback.json', {
 });
 console.log('mot d’appel :', fbCases.length, 'cas,', fbCases.filter((c) => c.out).length, 'avec un mot');
 console.log('textes :', keys.length, 'clés,', missing.length, 'sans traduction ;', fr.dec.length, 'formats dec par langue');
+
+// ---------- Plan du parcours (tranche T10) ----------
+// coursePlanSvg et coursePlanLegend de src/ui/coursePlan.js appelés tels quels (tracé du Pôle CSO_TRACE) : hauteurs
+// csoHeights(base) des épreuves du jeu (1,05 / 1,15 / 1,25 : concours Am 2, Am 1, Pro 2 ; 1,10 : Parcours du Pôle ;
+// 1,40 / 1,55 : CSI et Grand Prix), sans hauteurs, et numéros surlignés (next, branche que courses.js ne passe pas),
+// en français puis en anglais (dec et t lisent la langue vivante). Rejoué caractère pour caractère par testCoursePlan.
+const PLAN_BASES = [1.05, 1.1, 1.15, 1.25, 1.4, 1.55];
+const planCases = () => [
+  ...PLAN_BASES.map((base) => ({ base, heights: csoHeights(base), next: 0 })),
+  { base: null, heights: null, next: 0 },
+  ...[1, 2, 6, 10].map((next) => ({ base: 1.1, heights: csoHeights(1.1), next })),
+].map((c) => ({ ...c, svg: coursePlanSvg({ heights: c.heights, next: c.next }) }));
+const planFr = { cases: planCases(), legend: coursePlanLegend() };
+chooseLang('en');
+const planEn = { cases: planCases(), legend: coursePlanLegend() };
+chooseLang('fr');
+write(ORA, 'cso_plan.json', {
+  schema: 'strides.oracle.cso_plan/1', source: ['src/ui/coursePlan.js', 'src/gameplay/csoCourse.js', 'src/world/sites.js'],
+  doc: 'coursePlanSvg({ heights, next }) (tracé CSO_TRACE, venue du Pôle) et coursePlanLegend() : base = hauteur donnée à csoHeights (null : pas de hauteurs) ; next = numéro surligné (0 : aucun) ; svg = chaîne exacte',
+  arena: POLE.arena, stands: POLE.stands, fr: planFr, en: planEn,
+});
+console.log('plan du parcours :', planFr.cases.length, 'cas par langue');

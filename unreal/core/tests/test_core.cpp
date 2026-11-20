@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <map>
 #include <set>
@@ -11,6 +12,8 @@
 #include <string>
 
 #include "StridesCore/CourseAids.h"
+#include "StridesCore/CoursePlan.h"
+#include "StridesCore/CsoEntry.h"
 #include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
@@ -1091,10 +1094,12 @@ static void testSave() {
 
 // ---------- Textes et formats (tranche T4) : cso_text.json (dec, ordinaux, pluriels, gabarits) ----------
 static TextTable g_text;
+static CsoActivity g_activity;  // Content/Data/cso_activity.json (tranche T10)
 static void loadText() {
   const std::string raw = readFile(DATA + "/strings_cso.json");
   std::string err;
   CHECK(g_text.parse(raw, err), "strings_cso.json illisible : %s", err.c_str());
+  CHECK(csoActivityFromFile(readFile(DATA + "/cso_activity.json"), g_activity, err), "cso_activity.json illisible : %s", err.c_str());
 }
 static void testText() {
   const J o = loadJson(ORA + "/cso_text.json");
@@ -1119,6 +1124,13 @@ static void testText() {
     for (const J& e : c["enOrdinal"].a) same(enOrdinal((long long)e["n"].num()), e["out"].s, "enOrdinal", std::to_string((long long)e["n"].num()));
     for (const J& e : c["nth"].a) same(nth((long long)e["n"].num(), L), e["out"].s, "nth", std::to_string((long long)e["n"].num()) + " " + ln);
     for (const J& e : c["ptsText"].a) same(ptsText((long long)e["n"].num(), L, g_text), e["out"].s, "ptsText", std::to_string((long long)e["n"].num()) + " " + ln);
+    // Tranche T10 : String(n) (jsNumber) et casse (toUpperCase / toLowerCase des textes de la table).
+    for (const J& e : c["str"].a) {
+      std::snprintf(b, sizeof b, "%.17g", e["n"].num());
+      same(jsNumber(e["n"].num()), e["out"].s, "String", b);
+    }
+    for (const J& e : c["upper"].a) same(jsUpper(e[0].s), e[1].s, "toUpperCase", e[0].s);
+    for (const J& e : c["lower"].a) same(jsLower(e[0].s), e[1].s, "toLowerCase", e[0].s);
     for (const J& e : c["templates"].a) {
       CHECK(g_text.has(e["key"].s), "strings_cso.json : clé absente « %s »", e["key"].s.c_str());
       if (e["vals"].isNull()) same(g_text.t(e["key"].s, L), e["out"].s, "t", e["key"].s + " " + ln);
@@ -1131,6 +1143,279 @@ static void testText() {
   }
   CHECK(bad == 0, "cso_text : %d cas sur %d différents du jeu web", bad, n);
   std::printf("textes et formats : %d cas (dec, ordinaux, pluriels, %zu clés de gabarits et textes fixes, fr et en), %d écarts\n", n, o["fr"]["templates"].a.size(), bad);
+}
+
+// ---------- Plan du parcours (tranche T10) : coursePlan / coursePlanSvg / coursePlanLegend sur cso_plan.json ----------
+// Tracé local du Pôle lu comme le jeu (Content/Data/cso_course_pole.json, design non décalé), carrière et tribunes des
+// données ; SVG comparé caractère pour caractère (chaque primitive dessinée relit ses nombres dans ses attributs).
+static void testCoursePlan() {
+  const J o = loadJson(ORA + "/cso_plan.json");
+  CHECK(o["schema"].s == "strides.oracle.cso_plan/1", "cso_plan : schéma « %s »", o["schema"].s.c_str());
+  const J data = loadJson(DATA + "/cso_course_pole.json");
+  CourseDesign d;
+  std::string err;
+  CHECK(parseCourseFile(readFile(DATA + "/cso_course_pole.json"), d, err), "cso_course_pole.json : %s", err.c_str());
+  const CourseTrace tr = traceCourse(d);
+  CoursePlanArena A;
+  A.w = data["arena"]["w"].num();
+  A.d = data["arena"]["d"].num();
+  A.standsW = data["stands"]["w"].num();
+  CHECK(A.w == o["arena"]["w"].num() && A.d == o["arena"]["d"].num() && A.standsW == o["stands"]["w"].num(), "cso_plan : carrière ou tribunes des données différentes de l'oracle");
+  int n = 0, bad = 0, prims = 0, hot = 0;
+  std::map<int, int> kinds;
+  for (const char* ln : {"fr", "en"}) {
+    const Lang L = langFromName(ln);
+    for (const J& c : o[ln]["cases"].a) {
+      const bool hasH = !c["heights"].isNull();
+      std::vector<double> h;
+      if (hasH) {
+        for (const J& x : c["heights"].a) h.push_back(x.num());
+        CHECK(courseHeights(d, tr, c["base"].num()) == h, "cso_plan : csoHeights(%g) différent du jeu", c["base"].num());
+      }
+      const int next = (int)c["next"].num();
+      const CoursePlan p = coursePlan(tr, A, hasH ? &h : nullptr, next, g_text, L);
+      const std::string got = coursePlanSvg(p), want = c["svg"].s;
+      n++;
+      if (got != want) {
+        bad++;
+        size_t k = 0;
+        while (k < got.size() && k < want.size() && got[k] == want[k]) k++;
+        const size_t a = k > 60 ? k - 60 : 0;
+        if (bad < 5) std::printf("  plan %s base %s next %d : écart au caractère %zu\n    portage « %s »\n    web     « %s »\n", ln, hasH ? jsNumber(c["base"].num()).c_str() : "null", next, k, got.substr(a, 140).c_str(), want.substr(a, 140).c_str());
+      }
+      prims += (int)p.prims.size();
+      for (const PlanPrim& q : p.prims) {
+        kinds[(int)q.kind]++;
+        hot += q.fill == "#1a9b62" || q.stroke == "#1a9b62";
+        // Géométrie relue : nombre de valeurs attendu par sorte de primitive.
+        const size_t nv = q.v.size();
+        const bool ok = q.kind == PlanPrim::Kind::Rect ? nv == 5 : q.kind == PlanPrim::Kind::Line ? nv == 4 : q.kind == PlanPrim::Kind::Circle ? nv == 3 : q.kind == PlanPrim::Kind::Text ? nv == 2 : nv >= 4 && nv % 2 == 0;
+        CHECK(ok, "plan : primitive %d avec %zu valeurs", (int)q.kind, nv);
+      }
+    }
+    const std::string lg = coursePlanLegend(tr, g_text, L);
+    n++;
+    if (lg != o[ln]["legend"].s) {
+      bad++;
+      std::printf("  légende %s : « %s » / « %s »\n", ln, lg.c_str(), o[ln]["legend"].s.c_str());
+    }
+  }
+  CHECK(bad == 0, "cso_plan : %d sorties sur %d différentes du jeu web", bad, n);
+  CHECK(hot > 0, "cso_plan : aucun obstacle surligné exercé");
+  std::printf("plan du parcours : %d sorties (SVG de 6 hauteurs, sans hauteurs, 4 numéros surlignés, légende ; fr et en), %d primitives, %d écarts\n", n, prims, bad);
+}
+
+// ---------- Entrée dans l'épreuve (tranche T10) : présentation, plan, capacité, activité (cso_entry.json) ----------
+// Pour chaque configuration de courseSteps relevée dans la page du jeu web : composition du parcours lue dans le tracé du
+// jeu (Content/Data/cso_course_pole.json, sous-ensembles de l'oracle), hauteurs csoHeights du jeu, cheval de l'oracle ;
+// carte de présentation (arguments de screens.card reconstruits en HTML, DOM : kicker, titre, grille, jury, règles,
+// boutons), carte du plan (HTML = coursePlanSvg + légende, DOM), contrôle de capacité (étape, dialogue, attente).
+static void testCsoEntry() {
+  // Copie de la table : les clés des configurations d'essai (barème, règles) n'y sont pas et ne doivent pas compter parmi
+  // les textes demandés par le déroulé (contrôle de testCsoRuns).
+  const TextTable tt = g_text;
+  const J o = loadJson(ORA + "/cso_entry.json");
+  CHECK(o["schema"].s == "strides.oracle.cso_entry/1", "cso_entry : schéma « %s »", o["schema"].s.c_str());
+  const J data = loadJson(DATA + "/cso_course_pole.json");
+  CourseDesign d;
+  std::string err;
+  CHECK(parseCourseFile(readFile(DATA + "/cso_course_pole.json"), d, err), "cso_course_pole.json : %s", err.c_str());
+  const CourseTrace tr = traceCourse(d);
+  CoursePlanArena A;
+  A.w = data["arena"]["w"].num();
+  A.d = data["arena"]["d"].num();
+  A.standsW = data["stands"]["w"].num();
+  const double length = data["length"].num();
+  // Activité : données relevées (poteau, action) cohérentes avec le déroulé (entrée de piste) et le poteau du manifeste.
+  const CsoRunConfig rc = csoRunConfigFromJson(data, {});
+  CHECK(g_activity.id == "cso_train" && g_activity.startX == rc.gateX && g_activity.startZ == rc.gateZ, "cso_activity : départ de l'activité différent de l'entrée de piste");
+  CHECK(g_activity.label == "Chrono" && g_activity.r > 0 && g_activity.modes.size() == 1 && g_activity.modes[0] == "ride", "cso_activity : action du poteau inattendue");
+  int n = 0, bad = 0, presN = 0, capN = 0, shown = 0, planN = 0;
+  std::set<std::string> diffs;
+  auto same = [&](const std::string& got, const std::string& want, const std::string& what) {
+    n++;
+    if (got != want) {
+      bad++;
+      if (bad < 10) std::printf("  %s : « %s » / « %s »\n", what.c_str(), got.c_str(), want.c_str());
+    }
+  };
+  auto labelsOf = [&](const J& cf) {
+    std::vector<std::string> v;
+    const std::string course = cf["course"].isNull() ? "cso" : cf["course"].s;
+    for (const TraceFence& f : tr.fences) {
+      bool in = course == "cso";
+      if (!in)
+        for (const J& x : o["subsets"][course].a) in = in || x.s == f.label;
+      if (in) v.push_back(f.label);
+    }
+    return v;
+  };
+  auto capOf = [&](const J& cf, const J& c, const std::string& who, Lang L) {
+    CsoCapacityInput ci;
+    const std::vector<std::string> labels = labelsOf(cf);
+    CHECK(labels.size() == c["fences"].a.size(), "%s : composition différente", who.c_str());
+    for (size_t i = 0; i < labels.size() && i < c["fences"].a.size(); i++) {
+      const TraceFence* f = nullptr;
+      for (const TraceFence& x : tr.fences) if (x.label == labels[i]) f = &x;
+      const J& w = c["fences"][i];
+      CHECK(f && f->kind == w[0].s && f->spread == w[1].num(), "%s : obstacle %s différent du tracé", who.c_str(), labels[i].c_str());
+      ci.fences.push_back({f ? f->kind : w[0].s, f ? f->spread : w[1].num(), w[2].num()});  // o.h : hauteur posée dans le jeu web
+    }
+    ci.hasHeights = !c["heights"].isNull();
+    for (const J& x : c["heights"].a) ci.heights.push_back(x.num());
+    if (!cf["base"].isNull()) CHECK(courseHeights(d, tr, cf["base"].num()) == ci.heights, "%s : csoHeights différent du jeu", who.c_str());
+    ci.cso = cf["kind"].isNull() || cf["kind"].s == "cso";
+    ci.hasHorse = !c["horse"].isNull();
+    if (ci.hasHorse) {
+      ci.power = c["horse"]["jumpPower"].num();
+      ci.clearance = c["horse"]["clearance"].num();
+      ci.horseName = c["horse"]["name"].s;
+    }
+    const CsoCapacity cap = csoCapacity(ci, tt, L);
+    n++;
+    capN++;
+    const bool want = !c["dialog"].isNull();
+    if (cap.step != c["capStep"].b || cap.hopeless != want || (cap.step && (c["capWarn"].b != cap.hopeless || c["capWait"].b != cap.hopeless || !c["capDone"].b))) {
+      bad++;
+      if (bad < 10) std::printf("  %s : capacité étape %d/%d dialogue %d/%d (reach %.3f, maxH %.2f)\n", who.c_str(), cap.step, c["capStep"].b, cap.hopeless, want, cap.reach, cap.maxH);
+    }
+    // Déroulé du portage (CsoRun) : étape de capacité lancée après l'entrée de piste, dialogue demandé (hud « dialog »)
+    // seulement si le contrôle échoue, étape tenue tant qu'il n'est pas fermé, puis présentation (comme capWait / capDone).
+    if (cap.step && ci.cso) {
+      CsoRunConfig rcfg = rc;
+      rcfg.lang = L;
+      rcfg.hopeless = cap.hopeless;
+      rcfg.capWho = cap.who;
+      rcfg.capInitials = cap.initials;
+      rcfg.capText = cap.text;
+      CsoRun run(rcfg, tt);
+      run.begin();
+      CsoRunFrame fr;
+      fr.dt = 1.0 / 30;
+      fr.x = fr.focusX = rc.gateX;
+      fr.z = fr.focusZ = rc.gateZ;
+      CsoCadence cad;
+      run.update(fr, cad);  // entrée de piste rejointe : étape de capacité
+      std::string dlg;
+      int dialogs = 0;
+      for (const CsoCall& x : run.takeHud())
+        if (x.fn == "dialog" && x.args.size() == 3) {
+          dialogs++;
+          dlg = x.args[0].s + "|" + x.args[1].s + "|" + x.args[2].s;
+        }
+      run.update(fr, cad);
+      const bool held = run.step() == CsoStep::Capacity;
+      run.closeCapacityDialog();
+      run.update(fr, cad);
+      n++;
+      if (run.step() != CsoStep::Presentation || held != c["capWait"].b || dialogs != (want ? 1 : 0) || (want && dlg != c["dialog"][0][0].s + "|" + c["dialog"][0][1].s + "|" + c["dialog"][0][2].s)) {
+        bad++;
+        if (bad < 10) std::printf("  %s : déroulé de la capacité (dialogues %d, tenue %d / %d, étape %s)\n", who.c_str(), dialogs, held, c["capWait"].b, csoStepName(run.step()));
+      }
+    }
+    if (want) {
+      shown++;
+      CHECK(c["dialog"].a.size() == 1, "%s : dialogue de %zu lignes", who.c_str(), c["dialog"].a.size());
+      same(cap.who, c["dialog"][0][0].s, who + " qui");
+      same(cap.initials, c["dialog"][0][1].s, who + " initiales");
+      same(cap.text, c["dialog"][0][2].s, who + " texte");
+    }
+  };
+  for (const char* ln : {"fr", "en"}) {
+    const Lang L = langFromName(ln);
+    const J& pres = o[ln]["presentation"];
+    for (size_t k = 0; k < pres.a.size(); k++) {
+      const J& c = pres[k];
+      const J& cf = o["configs"]["presentation"][k];
+      const std::string who = std::string(ln) + " " + cf["id"].s;
+      capOf(cf, c, who, L);
+      CsoPresentationInput in;
+      in.labels = labelsOf(cf);
+      std::vector<std::string> wl;
+      for (const J& x : c["labels"].a) wl.push_back(x.s);
+      CHECK(in.labels == wl, "%s : libellés différents", who.c_str());
+      in.hasHeights = !c["heights"].isNull();
+      for (const J& x : c["heights"].a) in.heights.push_back(x.num());
+      in.hasHeight = !cf["height"].isNull();
+      if (in.hasHeight) in.height = cf["height"].num();
+      for (const char* key : {"title", "className", "table", "rulesText", "place"}) {
+        const std::string v = cf[key].isNull() ? std::string() : cf[key].s;
+        if (!std::strcmp(key, "title")) in.title = v;
+        else if (!std::strcmp(key, "className")) in.className = v;
+        else if (!std::strcmp(key, "table")) in.table = v;
+        else if (!std::strcmp(key, "rulesText")) in.rulesText = v;
+        else in.place = v;
+      }
+      for (const J& x : cf["intro"].a) in.intro.push_back(x.s);
+      in.hasHorse = !c["horse"].isNull();
+      if (in.hasHorse) in.horseName = c["horse"]["name"].s;
+      in.timeAllowed = cf["ta"].isNull() ? rc.timeAllowed : (int)cf["ta"].num();
+      in.length = cf["length"].isNull() ? length : cf["length"].num();
+      in.appTitle = g_activity.appTitle;
+      in.defaultPlace = g_activity.place;
+      const CsoPresentation p = csoPresentation(in, tt, L);
+      const J& args = c["presentation"]["args"];
+      const J& dom = c["presentation"]["dom"];
+      same(p.kicker, args["kicker"].s, who + " kicker");
+      same(p.kicker, dom["kicker"].s, who + " kicker (DOM)");
+      same(p.title, args["title"].s, who + " titre");
+      same(p.title, dom["title"].s, who + " titre (DOM)");
+      // HTML de la carte (courses.js:129-131), valeurs insérées telles quelles.
+      std::string html = "<div class=\"cso-pres\">";
+      for (const auto& r : p.rows) html += "<div class=\"k\">" + r.first + "</div><div class=\"v\">" + r.second + "</div>";
+      html += "</div>" + (p.jury.empty() ? std::string() : "<p class=\"cso-jury\">" + p.jury + "</p>") + "<p class=\"cso-rules\">" + p.rules + "</p>";
+      same(html, args["html"].s, who + " html");
+      CHECK(dom["rows"].a.size() == p.rows.size(), "%s : %zu lignes au lieu de %zu", who.c_str(), p.rows.size(), dom["rows"].a.size());
+      for (size_t i = 0; i < p.rows.size() && i < dom["rows"].a.size(); i++) {
+        same(p.rows[i].first, dom["rows"][i][0].s, who + " clé");
+        same(p.rows[i].second, dom["rows"][i][1].s, who + " valeur");
+      }
+      same(p.jury, dom["jury"].isNull() ? std::string() : dom["jury"].s, who + " jury");
+      same(p.rules, dom["rules"].s, who + " règles");
+      same("plan|" + p.planLabel + "|0 enter|" + p.enterLabel + "|1", args["buttons"][0][0].s + "|" + args["buttons"][0][1].s + "|" + (args["buttons"][0][2].b ? "1" : "0") + " " + args["buttons"][1][0].s + "|" + args["buttons"][1][1].s + "|" + (args["buttons"][1][2].b ? "1" : "0"), who + " boutons");
+      same(p.planLabel + "|" + p.enterLabel, dom["buttons"][0][1].s + "|" + dom["buttons"][1][1].s, who + " boutons (DOM)");
+      // Carte du plan.
+      const CsoPlanCard pc = csoPlanCard(in, tr, tt, L);
+      const J& pa = c["plan"]["args"];
+      same(pc.kicker, pa["kicker"].s, who + " plan kicker");
+      same(pc.title, pa["title"].s, who + " plan titre");
+      const CoursePlan plan = coursePlan(tr, A, in.hasHeights ? &in.heights : nullptr, 0, tt, L);
+      same(coursePlanSvg(plan) + "<p class=\"plan-legend\">" + pc.legend + "</p>", pa["html"].s, who + " plan html");
+      same(pc.legend, c["plan"]["dom"]["legend"].s, who + " légende (DOM)");
+      same("plan-back|" + pc.backLabel + "|1", pa["buttons"][0][0].s + "|" + pa["buttons"][0][1].s + "|" + (pa["buttons"][0][2].b ? "1" : "0"), who + " plan bouton");
+      CHECK(pa["buttons"].a.size() == 1 && c["plan"]["dom"]["svg"].b, "%s : carte du plan inattendue", who.c_str());
+      presN++;
+      planN++;
+      double ch = 0;
+      if (csoClassHeight(in, ch)) diffs.insert(csoDifficultyKey(ch));
+    }
+    const J& caps = o[ln]["capacity"];
+    for (size_t k = 0; k < caps.a.size(); k++) capOf(o["configs"]["capacity"][k], caps[k], std::string(ln) + " capacité " + std::to_string(k), L);
+  }
+  // Action du poteau (interact.update) : proposée exactement quand le jeu web la retient, libellé traduit.
+  int interN = 0, chosen = 0;
+  for (const char* ln : {"fr", "en"})
+    for (const J& c : o[ln]["interact"].a) {
+      const bool av = csoActivityAvailable(g_activity, c["fx"].num(), c["fz"].num(), c["mode"].s, c["mission"].b);
+      const bool web = !c["id"].isNull() && c["id"].s == "act:" + g_activity.id;
+      n++;
+      interN++;
+      chosen += web;
+      if (av != web || (web && c["label"].s != tt.t(g_activity.label, langFromName(ln)))) {
+        bad++;
+        if (bad < 10) std::printf("  action du poteau %s (%g ; %g) %s mission %d : portage %d, web %s\n", ln, c["fx"].num(), c["fz"].num(), c["mode"].s.c_str(), c["mission"].b, av, c["id"].isNull() ? "aucune" : c["id"].s.c_str());
+      }
+    }
+  CHECK(chosen > 0 && chosen < interN, "cso_entry : action du poteau jamais ou toujours retenue");
+  // Lancement de l'activité : grand message (titre en capitales, verticale · catégorie, durée).
+  for (const char* ln : {"fr", "en"}) {
+    const CsoCall b = csoActivityLaunchBig(g_activity, tt, langFromName(ln));
+    CHECK(b.fn == "big" && b.args.size() == 3 && b.args[2].n == 2600, "lancement %s : appel inattendu", ln);
+  }
+  CHECK(bad == 0, "cso_entry : %d sorties sur %d différentes du jeu web", bad, n);
+  CHECK(diffs.size() == 4, "cso_entry : %zu niveaux de difficulté exercés sur 4", diffs.size());
+  CHECK(shown > 0 && shown < capN, "cso_entry : dialogue de capacité jamais ou toujours affiché (%d sur %d)", shown, capN);
+  std::printf("entrée dans l'épreuve : %d présentations et cartes du plan, %d contrôles de capacité (%d dialogues), %zu niveaux de difficulté, %d positions de l'action du poteau (%d retenues) ; %d sorties comparées, %d écarts\n", presN, capN, shown, diffs.size(), interN, chosen, n, bad);
 }
 
 // ---------- Mot d'appel (tranche T7) : csoTakeoffFeedback sur la grille de cso_feedback.json ----------
@@ -1361,13 +1646,15 @@ static std::string argStr(const J& a) {
   if (a.t == J::Str) return "\"" + a.s + "\"";
   return dump(a);
 }
-static std::vector<std::string> oracleCalls(const J& list, bool hud) {
+static std::vector<std::string> oracleCalls(const J& list, bool hud, bool launch = false) {
   std::vector<std::string> v;
   for (const J& c : list.a) {
     const std::string& src = c["src"].s;
     const std::string& fn = c["fn"].s;
-    // Mot d'appel hud.jumpFeedback compris depuis la tranche T7 (dernier saut relevé dans ep.lj).
-    const bool keep = hud ? src == "gameplay/courses.js" || (src == "gameplay/missions.js" && fn == "clearHint") : src == "gameplay/courses.js";
+    // Mot d'appel hud.jumpFeedback compris depuis la tranche T7 (dernier saut relevé dans ep.lj). Lancement de l'activité
+    // (tranche T10, launch) : grand message et son « notify » de missions.start compris.
+    const bool mis = src == "gameplay/missions.js";
+    const bool keep = hud ? src == "gameplay/courses.js" || (mis && fn == "clearHint") || (launch && mis && fn == "big") : src == "gameplay/courses.js" || (launch && mis && fn == "notify");
     if (!keep) continue;
     std::vector<std::string> a;
     for (const J& x : c["args"].a) a.push_back(argStr(x));
@@ -1407,7 +1694,7 @@ static void testCsoRuns() {
                             "t4-gardes", "t4-un-point", "t4-entree", "t4-lance-limites", "t4-lance-limites-gauche", "t4-lance-loin", "t4-lance-large", "t4-lance-cap",
                             "t4-lance-derriere", "t4-hors-parcours", "t4-sortie-descente", "t7-parfait-barre-2"};
   std::map<std::string, int> clean;  // « id lang » → images rejouées sans écart
-  int frames = 0, hudN = 0, audioN = 0, boardN = 0, hlN = 0, rrN = 0, cheerN = 0;
+  int frames = 0, hudN = 0, audioN = 0, boardN = 0, hlN = 0, rrN = 0, cheerN = 0, launchN = 0;
   // Gardes des écouteurs d'obstacle (courses.js:219-268) réellement exercées par les oracles : événements relevés pendant
   // l'étape de parcours, classés selon l'état de l'épreuve juste avant (contrôle adverse de T4).
   std::map<std::string, int> cover;
@@ -1455,6 +1742,10 @@ static void testCsoRuns() {
     cfg.lang = langFromName(lang);
     // Tranche T9 : réglage jumpAid posé avant le lancement (exécutions t9-*, setup.aid ; aid() de courses.js:82 le lit).
     if (su["aid"].t == J::Str) cfg.aid = su["aid"].s;
+    // Tranche T10 : lancement de l'activité (missions.start) porté : grand message (données de cso_activity.json) et
+    // « notify » avant la première étape, comparés aux appels du lancement relevés (setup.calls).
+    cfg.launch = true;
+    cfg.launchBig = csoActivityLaunchBig(g_activity, g_text, cfg.lang);
     CsoRun run(cfg, g_text);
     run.begin();
     int bad = 0, n = 0;
@@ -1463,8 +1754,11 @@ static void testCsoRuns() {
       if (bad < 6) std::printf("  %s image %d : %s\n", who.c_str(), f, what.c_str());
     };
     {
-      const std::vector<std::string> got = coreCalls(run.takeHud()), want = oracleCalls(su["calls"]["hud"], true);
+      const std::vector<std::string> got = coreCalls(run.takeHud()), want = oracleCalls(su["calls"]["hud"], true, true);
       if (got != want) diff(-1, "appels hud au lancement");
+      const std::vector<std::string> ga = coreCalls(run.takeAudio()), wa = oracleCalls(su["calls"]["audio"], false, true);
+      if (ga != wa || wa.empty()) diff(-1, "sons au lancement");
+      launchN++;
     }
     std::vector<std::string> hudAll, audioAll;
     std::set<std::string> texts;  // objectifs affichés (étape goto de t4-entree)
@@ -1741,6 +2035,7 @@ static void testCsoRuns() {
   for (const auto& k : g_text.missing()) miss += " « " + k + " »";
   CHECK(g_text.missing().empty(), "textes demandés absents de strings_cso.json :%s", miss.c_str());
   std::printf("déroulé d'épreuve : %d exécutions requises rejouées sans écart (%zu au total), %d images, %d appels d'interface et %d sons de courses.js comparés, %d tableaux\n", ok, clean.size(), frames, hudN, audioN, boardN);
+  std::printf("déroulé d'épreuve : lancement de l'activité (grand message, clearHint, notify de missions.start) comparé dans %d exécutions\n", launchN);
   CHECK(forced.size() == 1 && forced[0] == "t9-recette", "exécutions à état forcé non rejouées : %zu (attendu : t9-recette seule)", forced.size());
   std::printf("déroulé d'épreuve : non rejouée (état de l'épreuve écrit par tests/e2e/cso-shots.mjs) : %s\n", forced.empty() ? "aucune" : forced[0].c_str());
   CHECK(clean.count("t9-ambre fr"), "t9-ambre (fr) : absent ou en écart");
@@ -2432,6 +2727,8 @@ int main(int argc, char** argv) {
     run("save", testSave);
     loadText();
     run("text", testText);
+    run("plan", testCoursePlan);
+    run("entry", testCsoEntry);
     run("feedback", testCsoFeedback);
     run("hud", testCsoHud);
     run("csoruns", testCsoRuns);
