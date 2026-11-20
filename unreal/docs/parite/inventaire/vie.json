@@ -52,7 +52,7 @@
    "src/gameplay/story.js",
    "src/gameplay/story2.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:209-214).",
+  "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:220-225).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:88-117) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement que chaque prérequis est défini plus haut dans le JSON : il resterait vert avec les arêtes du web (transport après fugueur, etc.) comme avec IsAvailable cassé. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -211,7 +211,7 @@
    "src/config.js",
    "src/core/save.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:216-220), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:79).",
+  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:227-231), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:79).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:70-86) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement qu'il y a 5 rangs : ni seuils, ni noms, ni RankName ne sont testés. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -239,11 +239,11 @@
   "js": [
    "src/gameplay/missions.js"
   ],
-  "unreal": "UStridesSaveSubsystem::SaveNow et LoadNow (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:50-55, 70-72) : Credits, Reputation, ActiveMissionId et CompletedMissions dans des UPROPERTY de UStridesSaveGame (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesSaveSubsystem.h:16-19), hors du JSON strides::SaveGame ; Restore borne à 0 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:90-97).",
+  "unreal": "UStridesSaveSubsystem::SaveNow et LoadNow (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:50-55, 72-74) : Credits, Reputation, ActiveMissionId et CompletedMissions dans des UPROPERTY de UStridesSaveGame (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesSaveSubsystem.h:16-19), hors du JSON strides::SaveGame ; Restore borne à 0 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:90-97).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de la carrière sauvegardée (Strides.Core.Save ne lit que le JSON du cœur). testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
-  "ecart": "Deux sources de vérité : strides::SaveGame.money et .reputation ne sont pas reliés à Credits et Reputation ; carrière sauvée à la main seulement (F5 ou bouton tactile SAUVER, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132) : aucune écriture à la fin d'une mission ; seuls les réglages de la Pause et le meilleur temps du Parcours du Pôle (étape d'enregistrement, tranche T11) sont écrits sans F5 ; l'import de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:87-110, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:139-153) ne reprend ni completed ni checkpoint et ne remplit pas la carrière ; choix, drapeaux, statistiques et avis absents.",
+  "ecart": "Deux sources de vérité : strides::SaveGame.money et .reputation ne sont pas reliés à Credits et Reputation ; carrière sauvée à la main seulement (F5 ou bouton tactile SAUVER, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132) : aucune écriture à la fin d'une mission ; seuls les réglages de la Pause et le meilleur temps du Parcours du Pôle (étape d'enregistrement, tranche T11) sont écrits sans F5 ; l'import de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:87-110, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:145-159) ne reprend ni completed ni checkpoint et ne remplit pas la carrière ; choix, drapeaux, statistiques et avis absents.",
   "tranche": "e"
  },
  {
@@ -255,7 +255,7 @@
    "src/gameplay/story.js",
    "src/gameplay/story2.js"
   ],
-  "unreal": "ActiveMissionId sauvegardé et restauré (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:54, 72).",
+  "unreal": "ActiveMissionId sauvegardé et restauré (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:54, 74).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test.",
@@ -314,7 +314,7 @@
    "src/gameplay/story2.js",
    "src/gameplay/parisGP.js"
   ],
-  "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:209-214.",
+  "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:220-225.",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.World.Architecture et Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:70-117) : journal Automation du 18/11/2026 16:17 UTC (/private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt) : Result=Success, EXIT CODE 0 ; ils comptent 16 missions et totalisent 7 520 crédits et 5 980 de réputation, valeurs du JSON. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -673,7 +673,7 @@
   "js": [
    "src/gameplay/activities.js"
   ],
-  "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé par l'action du poteau « Chrono » (tranche T10 : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp, StridesCourse.cpp:173-205) ; étape d'enregistrement du meilleur temps (tranche T11 : unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:242-253, score = chrono + fautes + pénalités de temps, rien après une élimination, record si aucun meilleur temps ou meilleur) ; écrit dans la sauvegarde à cette étape, sans F5 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:369-380, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:106-125 ; bestTimes de unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:37-39, 79, 102)",
+  "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé par l'action du poteau « Chrono » (tranche T10 : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp, StridesCourse.cpp:173-205) ; étape d'enregistrement du meilleur temps (tranche T11 : unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:242-253, score = chrono + fautes + pénalités de temps, rien après une élimination, record si aucun meilleur temps ou meilleur) ; écrit dans la sauvegarde à cette étape, sans F5 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:369-380, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:112-131 ; bestTimes de unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:37-39, 79, 102)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Tracé, hauteurs, temps accordé comparés à cso_course.json (test_core.cpp:189-230) ; meilleur temps : ep.bt des exécutions t11-refus (28,033… s = 24,03 s + 4 points de refus), t11-manche-2 (20,800… s, dernière manche) et t11-trois-barres (32,800… s = 20,80 s + 12 points de barres) égal au bit près (testCsoRuns) ; Strides.Cso.Result : écrit dans l'emplacement de sauvegarde du test sans SaveNow et relu sur le disque au bit près ; bestTimes relu et importé de la sauvegarde web (testSave).",
@@ -904,7 +904,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:187).",
+  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:250).",
   "ecart": "Performance indépendante de l'état du cheval.",
   "tranche": "d"
  },
@@ -1105,7 +1105,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:187).",
+  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:250).",
   "ecart": "Aucun bonus d'équipement.",
   "tranche": "e"
  },
@@ -1236,11 +1236,11 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:41, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:187).",
+  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:41, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:250).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Export automatique depuis le JS (valeurs relues identiques à data.js le 18/11/2026), mais aucun test C++ ne compare ces profils à un oracle.",
-  "ecart": "SpeedMul et StaminaMul chargés mais non appliqués ; prix, valeur, description et robe détaillée de Tripo ignorés ; un seul cheval dans le monde (ProfileId comete, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:35).",
+  "ecart": "SpeedMul et StaminaMul chargés mais non appliqués ; prix, valeur, description et robe détaillée de Tripo ignorés ; un seul cheval dans le monde, la monture de la sauvegarde (ProfileId, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:35, posé par ApplyEngagedCoat) ; robe, liste et balzanes lues dans Content/Data/horse_coats.json (cheval.robes), pas dans horse_profiles.json.",
   "tranche": "socle"
  },
  {
@@ -1250,11 +1250,11 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:45).",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseCoat.cpp:137-185 (ownedHorses, activeHorseId sur save.data et sur la sauvegarde native) ; strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24), lus par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:68-69 et 107-108 ; monture engagée = activeHorseId (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:103-154) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:45).",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1120-1129 (écrit à la main) relit la liste horses ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle de ownedHorses ni de activeHorseId.",
-  "ecart": "Pas de filtre des identifiants inconnus ni de cheval à l'essai ; activeHorse jamais réappliqué au chargement ; ni achat ni changement de cheval.",
+  "preuve": "unreal/core/tests/test_core.cpp:3267 (testHorseCoat) : ownedHorses et activeHorseId contre unreal/core/tests/oracles/horse_coat.json (12 sauvegardes : doublons, chevaux inconnus, essai, monture absente de l’écurie, horses non tableau ; fonctions du web appelées telles quelles), 0 écart ; mutations-horse-coat.py (7 mutations de l’écurie et de la monture détectées) ; unreal/core/tests/test_core.cpp:1120-1129 relit la liste horses de la sauvegarde.",
+  "ecart": "Identifiants égaux à un nom de propriété d’objet JavaScript (constructor, toString…) acceptés par le web (HORSES[id] vrai), refusés par le portage ; ni achat ni changement de cheval.",
   "tranche": "e"
  },
  {

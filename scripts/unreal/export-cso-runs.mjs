@@ -30,6 +30,8 @@
 //    --shots=carriere : seulement les poses de la carrière (vue aérienne, lignes de départ et d'arrivée, poteau
 //    « Chrono », tranche T5) ; --shots=chute : seulement la chute de barre (T3) ; --shots=cadrage : seulement la caméra
 //    de concours aux 6 instants de tests/e2e/cso-framing.mjs (T6) ; les autres poses sont gardées.
+//    --shots=robe (C1, robe du cheval engagé) : poses robe-* (cheval du joueur à l'arrêt au départ après la cloche, profil,
+//    trois quarts arrière et avant ; robe du cheval WildMesh relevée dans coatLive) ; les autres poses sont gardées.
 //    --shots=aides (tranche T9) : poses aide-* (exécutions t9-* arrêtées à l'image choisie, 844 × 390 et 667 × 308 ;
 //    captures 4 et 5 de la recette : PNG de tests/e2e/out/cso/ et exécution t9-recette) ; --poses=nom1,nom2 : ces poses
 //    seulement, les autres poses aide-* gardées.
@@ -47,7 +49,7 @@
 //    téléphone image par image (boucle de game.js:1406), rejoué par le test moteur Strides.Cso.Controls.
 //
 // Usage (serveur Vite sur BASE, défaut http://127.0.0.1:5173 ; Chrome installé, aucun téléchargement) :
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute|cadrage|aides] [--poses=…]] [--fences] [--freeze] [--aids] [--only=…] [--out=dossier]
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|robe|chute|cadrage|aides] [--poses=…]] [--fences] [--freeze] [--aids] [--only=…] [--out=dossier]
 // Mode d'emploi du banc (oracles, captures, montages, PARITE.md) : unreal/docs/parite/README.md.
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -2532,7 +2534,7 @@ if (FREEZE) {
 // gardés par les autres groupes.
 // Groupe « entree » (tranche T10, --shots=entree) : présentation, plan, annonce du dossard et cloche de la recette.
 // Groupe « bilan » (tranche T11, --shots=bilan) : grand message « SANS FAUTE ! » à l'arrivée et carte de bilan.
-const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : name.startsWith('cmd-') ? 'cmd' : name.startsWith('aide-') ? 'aides' : name.startsWith('entree-') ? 'entree' : name.startsWith('bilan-') ? 'bilan' : 'carriere');
+const poseGroup = (name) => (name.startsWith('robe-') ? 'robe' : name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : name.startsWith('cmd-') ? 'cmd' : name.startsWith('aide-') ? 'aides' : name.startsWith('entree-') ? 'entree' : name.startsWith('bilan-') ? 'bilan' : 'carriere');
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
   const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
@@ -2614,6 +2616,45 @@ if (SHOTS) {
       const course = { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 };
       doc.poses.push({ ...full, ...info, course, web: `unreal/docs/parite/cso/${ps.name}-web.png`, unreal: `unreal/docs/parite/cso/${ps.name}-unreal.png` });
       console.log('pose', ps.name, JSON.stringify(info), JSON.stringify(course));
+    }
+    await ctx.close();
+  }
+  // C1 (robe du cheval engagé) : cheval du joueur à l'arrêt au départ du parcours, après la cloche (comme les poses de la
+  // carrière), vu de profil (côté gauche : balzane postérieure gauche de Comète), de trois quarts arrière et de trois quarts
+  // avant (liste), 15 h. Chaque pose relève la robe du cheval WildMesh affiché (`coatLive` : cheval, uniformes du matériau
+  // de robe et des crins, dont la robe mouillée uWet).
+  if (!SHOTS_ONLY || SHOTS_ONLY === 'robe') {
+    const { ctx, page } = await openGame('fr');
+    const setup = await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
+    await enterCourse(page);
+    const H = setup.horse;
+    // Avant du cheval (sin h, cos h) ; gauche du cheval (cos h, −sin h) : x est, z sud, y haut.
+    const fw = [Math.sin(H.h), Math.cos(H.h)], lt = [Math.cos(H.h), -Math.sin(H.h)];
+    const gy = await page.evaluate(([x, z]) => window.__game.player.horse.groundAt(x, z), [H.x, H.z]);
+    const at = (a, b, up) => [H.x + fw[0] * a + lt[0] * b, gy + up, H.z + fw[1] * a + lt[1] * b];
+    const POSES = [
+      { name: 'robe-profil', desc: 'Cheval du joueur (Comète) à l’arrêt au départ du parcours du Pôle après la cloche, vu de profil côté gauche (œil 6,5 m à gauche, 1,5 m au-dessus du sol), visée au centre du cheval à 1,2 m ; 15 h, HUD masqué.', eye: at(0, 6.5, 1.5), target: at(0, 0, 1.2), fovV: 40 },
+      { name: 'robe-trois-quarts-arriere', desc: 'Même cheval vu de trois quarts arrière gauche (5 m derrière, 3,5 m à gauche, œil à 1,8 m), visée au centre du cheval à 1,1 m : croupe, queue, postérieurs ; 15 h, HUD masqué.', eye: at(-5, 3.5, 1.8), target: at(0, 0, 1.1), fovV: 45 },
+      { name: 'robe-trois-quarts-avant', desc: 'Même cheval vu de trois quarts avant gauche (4,2 m devant, 2,6 m à gauche, œil à 1,7 m), visée 1 m devant le centre à 1,4 m : tête (liste), encolure, antérieurs ; 15 h, HUD masqué.', eye: at(4.2, 2.6, 1.7), target: at(1, 0, 1.4), fovV: 40 },
+    ];
+    for (const ps of POSES) {
+      const full = { ...ps, hour: 15, viewport: { w: VIEW.width, h: VIEW.height }, horse: H };
+      const info = await page.evaluate((p) => window.__parite.pose(p), full);
+      await page.waitForTimeout(3000);
+      await page.evaluate(() => window.__parite.render());
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: join(PARITE, `${ps.name}-web.png`) });
+      const st = await liveCso(page);
+      const course = { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 };
+      const coatLive = await page.evaluate(() => {
+        const h = window.__game.player.horse, v = h.pjl?.view;
+        const U = v?.materials?.coat.userData.coatUniforms, Hc = v?.materials?.hair.userData.hairUniform;
+        if (!U || !Hc) return { pjl: false, id: h.def?.id ?? null };
+        const c = (x) => [x.r, x.g, x.b], q = (x) => [x.x, x.y, x.z, x.w];
+        return { pjl: true, id: h.def.id, coat: c(U.uCoat.value), points: c(U.uPoints.value), pointsAmt: U.uPointsAmt.value, detail: U.uDetail.value, socks: q(U.uSocks.value), blaze: q(U.uBlaze.value), dapples: U.uDapples.value, wet: U.uWet.value, hair: c(Hc.value) };
+      });
+      doc.poses.push({ ...full, ...info, course, coatLive, web: `unreal/docs/parite/cso/${ps.name}-web.png`, unreal: `unreal/docs/parite/cso/${ps.name}-unreal.png` });
+      console.log('pose', ps.name, JSON.stringify(info), 'robe', JSON.stringify(coatLive));
     }
     await ctx.close();
   }
@@ -3017,7 +3058,7 @@ if (SHOTS) {
     writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
     console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses du bilan');
   }
-  else doc.poses = ['carriere', 'chute', 'cadrage', 'hud', 'cmd', 'aides', 'entree', 'bilan'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
+  else doc.poses = ['carriere', 'robe', 'chute', 'cadrage', 'hud', 'cmd', 'aides', 'entree', 'bilan'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
   if (SHOTS_ONLY !== 'aides' && SHOTS_ONLY !== 'entree' && SHOTS_ONLY !== 'bilan') {
     writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
     console.log('poses :', join(PARITE, 'poses.json'));

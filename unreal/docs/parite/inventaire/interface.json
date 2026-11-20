@@ -24,7 +24,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:44) ; pas d'essoufflement, pas d'anneau BOOST.",
+  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:45) ; pas d'essoufflement, pas d'anneau BOOST.",
   "tranche": "h"
  },
  {
@@ -189,7 +189,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "strides::CsoHud::update (bouton) et jumpEarly (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:205-215, 179-185) ; UStridesTouchControls::ApplyJumpState (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:421-535 : fond, anneau, halo, pastille, libellé ; styles de Content/Data/cso_jump_style.json) ; horse:jumpEarly → jumpEarly (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:336-337)",
+  "unreal": "strides::CsoHud::update (bouton) et jumpEarly (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:205-215, 179-185) ; UStridesTouchControls::ApplyJumpState (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:421-535 : fond, anneau, halo, pastille, libellé ; styles de Content/Data/cso_jump_style.json) ; horse:jumpEarly → jumpEarly (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:399-400)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "État du bouton (_jt, classes far / good / near / early, signe, libellé traduit, « Trop tôt » 600 ms sur l'horloge des temporisations du HUD, relancé par un second appui) : canal « ai » des 10 exécutions t9-* de unreal/core/tests/oracles/cso_runs/ (appels de CourseAids.update relevés dans le jeu web : entrées, sol lu, maillages après l'appel ; bouton SAUT image par image ; dont t9-ambre, bande ambre sans bande verte, t9-courbe, jumeau de t9-parcours tracé masqué, et t9-recette, tests/e2e/cso-shots.mjs rejoué au pas fixe) rejoué par testCsoAids (unreal/core/tests/test_core.cpp:2873) : 7 022 appels, 7 801 images, 0 écart ; styles des 8 états relevés dans le vrai HUD (scripts/unreal/export-hud-style.mjs --jump-states, 844 × 390 et 667 × 308) ; test moteur Strides.Cso.Aids (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesAidsTests.cpp) : Result={Success} (HUD des exécutions t9-appel et t9-aide-off rejoué et affiché par le widget à chaque image, deux viewports : style, libellé en capitales, signe, couleurs du fond, de l'anneau et de la pastille, halo = DOM du web et styles relevés, 0 écart ; anneau et pastille posés aux boîtes relevées ; libellé anglais « TOO FAR ») ; scripts/unreal/mutations-cso-aids.py : 55 mutations de CourseAids.cpp et du bouton de CsoHud.cpp, 46 détectées, 9 non détectées déclarées (raisons écrites dans le script) ; montages côte à côte unreal/docs/parite/cso/aide-*.png (Trop loin : captures 4 et 5 de la recette, PNG du web d'origine ; Saute ! avec halo : aide-saute ; Trop près, Trop tôt, aide « bouton seul », Saut sans couleur) : HUD rejoué jusqu'à l'image, état identique au DOM du web, bouton relevé dans aide-unreal.json.",
@@ -344,7 +344,7 @@
   "js": [
    "src/ui/minimap.js"
   ],
-  "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:160-174), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:183-207)",
+  "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:160-174), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:194-218)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test d'affichage ; Strides.World.Architecture (StridesCoreTests.cpp:70-86) ne vérifie que des effectifs (8 régions, 14 lieux) d'un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export).",
@@ -444,7 +444,7 @@
   "js": [
    "src/ui/phone.js"
   ],
-  "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:109-114 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:221), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:115-119)",
+  "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:109-114 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:232), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:115-119)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Architecture (StridesCoreTests.cpp:84) vérifie seulement 10 applications dans un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; résultat de ce test non consigné dans unreal/docs/validation-mac-2026-11-17.md (seuls Course, Save et Units y figurent) : à confirmer.",
@@ -477,7 +477,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Ni clients, ni statuts, ni métiers ; la catégorie des missions est chargée (StridesDataSubsystem.cpp:212) mais jamais affichée.",
+  "ecart": "Ni clients, ni statuts, ni métiers ; la catégorie des missions est chargée (StridesDataSubsystem.cpp:223) mais jamais affichée.",
   "tranche": "e"
  },
  {
@@ -727,7 +727,7 @@
   "js": [
    "src/ui/phone.js"
   ],
-  "unreal": "UStridesSaveSubsystem::SaveNow / LoadNow par F5 / F9 et boutons SAUVER / CHARGER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:107-108, 527-528 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132-133 ; messages unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:58, 86)",
+  "unreal": "UStridesSaveSubsystem::SaveNow / LoadNow par F5 / F9 et boutons SAUVER / CHARGER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:107-108, 527-528 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132-133 ; messages unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:58, 90)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md ligne 15 : « sauvegarder puis recharger » contrôlé à l'écran ; test Strides.Core.Save réussi (ligne 13, scénario écrit à la main). Aucun écran de réglages, aucune capture côte à côte dans unreal/docs/parite/.",

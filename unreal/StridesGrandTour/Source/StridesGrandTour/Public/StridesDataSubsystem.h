@@ -15,6 +15,7 @@
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/Ranking.h"
+#include "StridesCore/HorseCoat.h"
 #include "StridesCsoScenery.h"
 #include "StridesDataSubsystem.generated.h"
 
@@ -177,6 +178,9 @@ public:
 	// absent ou illisible) ; styles de la carte de bilan (Content/Data/cso_result_style.json,
 	// scripts/unreal/export-cso-result.mjs --screens ; nul si absent).
 	const strides::RankNames* RankNames() const { return bRankNames ? &RankNamesDef : nullptr; }
+	// Robe du cheval engagé (C1) : Content/Data/horse_coats.json (robes, palette, listes, chevaux du jeu web,
+	// scripts/unreal/export-horse-coat.mjs ; lecture du cœur, celle de testHorseCoat) ; nul si absent ou illisible.
+	const strides::HorseCoatData* HorseCoats() const { return bHorseCoats ? &HorseCoatsDef : nullptr; }
 	const TSharedPtr<class FJsonObject>& CsoResultStyle() const { return CsoResultJson; }
 	const strides::CoursePlanArena& PlanArena() const { return PlanArenaDef; }
 	double PoleLength() const { return PoleLengthM; }
@@ -207,6 +211,8 @@ private:
 	bool bCsoActivity = false;
 	strides::RankNames RankNamesDef;
 	bool bRankNames = false;
+	strides::HorseCoatData HorseCoatsDef;
+	bool bHorseCoats = false;
 	TSharedPtr<class FJsonObject> CsoResultJson;
 	strides::CoursePlanArena PlanArenaDef;
 	double PoleLengthM = 368;

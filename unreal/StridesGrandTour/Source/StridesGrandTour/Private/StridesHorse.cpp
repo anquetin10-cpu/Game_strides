@@ -7,6 +7,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/GameInstance.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -15,6 +17,8 @@
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesRider.h"
+#include "StridesSaveSubsystem.h"
+#include "StridesCore/HorseCoat.h"
 #include "StridesUnits.h"
 
 AStridesHorse::AStridesHorse()
@@ -35,7 +39,12 @@ AStridesHorse::AStridesHorse()
 	// et clips partagent l'échelle du GLB, ~100 fois trop grande ; l'échelle 0,01 ramène le cheval à 1,5 m
 	// au bassin. L'ancien rig (horse_pjl_unreal) avait des os 100 fois plus loin que ses sommets.
 	const TCHAR* HorseAssetRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/");
-	if (USkeletalMesh* HorseBody = LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_426.Object_426"))))
+	// Robe du cheval engagé (C1) : corps porteur des masques de robe du jeu web (UV 1 à 3, scripts/unreal/coat-horse-glb.py
+	// et import-horse-coat.py ; même squelette, mêmes clips) ; à défaut, corps d'origine (robe grise de la texture).
+	USkeletalMesh* HorseBody = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_coat/SK_HorseCoatBody.SK_HorseCoatBody"));
+	bCoatBody = HorseBody != nullptr;
+	if (!HorseBody) HorseBody = LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_426.Object_426")));
+	if (HorseBody)
 	{
 		Mesh->SetSkeletalMesh(HorseBody);
 		Mesh->SetRelativeScale3D(FVector(0.01f));
@@ -88,6 +97,60 @@ void AStridesHorse::BeginPlay()
 	Super::BeginPlay();
 	SetActorTickEnabled(true);
 	UpdateAnimation();
+	ApplyEngagedCoat();
+}
+
+bool AStridesHorse::ApplyEngagedCoat()
+{
+	const UGameInstance* GI = GetGameInstance();
+	const UStridesDataSubsystem* Data = GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const UStridesSaveSubsystem* Save = GI ? GI->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
+	const strides::HorseCoatData* Coats = Data ? Data->HorseCoats() : nullptr;
+	if (!Coats || !Mesh || !HairMesh) return bCoatApplied = false;
+	strides::CoatUniforms U;
+	strides::EngagedHorse E;
+	try
+	{
+		// game.js spawnMainHorse(activeHorseId(d)) : HORSES[id] || HORSES.comete, robe coatOf(def) (pjlHorse.js).
+		const std::string Id = Save ? strides::activeHorseId(Save->StableHorses(), Save->SavedActiveHorse(), *Coats) : std::string("comete");
+		E = strides::engagedHorse(Id, *Coats);
+		U = strides::coatUniforms(E.coat, *Coats);
+	}
+	catch (const std::exception& Ex)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Strides robe : %s, robe d'origine du modèle gardée"), UTF8_TO_TCHAR(Ex.what()));
+		return bCoatApplied = false;
+	}
+	ProfileId = UTF8_TO_TCHAR(E.id.c_str());
+	UMaterialInterface* CoatBase = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_coat/M_HorseCoat.M_HorseCoat"));
+	UMaterialInterface* HairBase = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_coat/M_HorseHair.M_HorseHair"));
+	if (!bCoatBody || !CoatBase || !HairBase)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Strides robe : corps à masques ou matériaux de robe absents (scripts/unreal/import-horse-coat.py), robe d'origine du modèle gardée"));
+		return bCoatApplied = false;
+	}
+	if (!CoatMID || CoatMID->Parent != CoatBase) CoatMID = UMaterialInstanceDynamic::Create(CoatBase, this);
+	if (!HairMID || HairMID->Parent != HairBase) HairMID = UMaterialInstanceDynamic::Create(HairBase, this);
+	auto Col = [](const std::array<double, 3>& C) { return FLinearColor((float)C[0], (float)C[1], (float)C[2], 1.f); };
+	auto V4 = [](const std::array<double, 4>& C) { return FLinearColor((float)C[0], (float)C[1], (float)C[2], (float)C[3]); };
+	CoatMID->SetVectorParameterValue(TEXT("CoatColor"), Col(U.coat));
+	CoatMID->SetVectorParameterValue(TEXT("PointsColor"), Col(U.points));
+	CoatMID->SetVectorParameterValue(TEXT("Socks"), V4(U.socks));
+	CoatMID->SetVectorParameterValue(TEXT("Blaze"), V4(U.blaze));
+	CoatMID->SetScalarParameterValue(TEXT("PointsAmt"), (float)U.pointsAmt);
+	CoatMID->SetScalarParameterValue(TEXT("Detail"), (float)U.detail);
+	CoatMID->SetScalarParameterValue(TEXT("Roughness"), (float)U.roughness);
+	// Robe mouillée (pjlHorse.js : uWet = max(pluie, sueur × 0,6) du cheval du jeu) : pluie et sueur non portées, 0.
+	CoatMID->SetScalarParameterValue(TEXT("Wet"), (float)U.wet);
+	HairMID->SetVectorParameterValue(TEXT("HairColor"), Col(U.hair));
+	HairMID->SetScalarParameterValue(TEXT("Roughness"), (float)U.hairRoughness);
+	for (int32 I = 0; I < Mesh->GetNumMaterials(); I++) Mesh->SetMaterial(I, CoatMID);
+	for (int32 I = 0; I < HairMesh->GetNumMaterials(); I++) HairMesh->SetMaterial(I, HairMID);
+	bCoatApplied = true;
+	UE_LOG(LogTemp, Display, TEXT("Strides robe : cheval engagé %s, robe %s, liste %s, balzanes (%g %g %g %g)%s"), *ProfileId, UTF8_TO_TCHAR(E.coat.colour.c_str()),
+		E.coat.blaze ? UTF8_TO_TCHAR(E.coat.blaze->c_str()) : TEXT("-"), U.socks[0], U.socks[1], U.socks[2], U.socks[3],
+		E.model.empty() ? TEXT("") : *FString::Printf(TEXT(" ; le web l'affiche avec le modèle %s, non porté"), UTF8_TO_TCHAR(E.model.c_str())));
+	return true;
 }
 
 void AStridesHorse::UpdateAnimation()

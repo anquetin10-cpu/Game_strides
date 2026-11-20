@@ -65,6 +65,8 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	if (!ReadCore(SlotName, Core, LastMessage)) return false;
 	Settings = Core.settings;
 	Best = Core.bestTimes;
+	Horses = Core.horses;
+	ActiveHorse = Core.activeHorse;
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W || !Core.pose.valid) { LastMessage = TEXT("Sauvegarde sans position"); return false; }
 	if (UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)))
@@ -75,6 +77,8 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	AStridesRider* Rider = nullptr;
 	for (TActorIterator<AStridesRider> It(W); It; ++It) Rider = *It;
 	if (!Horse || !Rider) return false;
+	// Monture de la sauvegarde (game.js spawnMainHorse(activeHorseId(d))) : robe du cheval engagé.
+	Horse->ApplyEngagedCoat();
 	if (Rider->MountedOn) Rider->Dismount(PC);
 	if (Core.pose.mode == "ride")
 	{
@@ -100,6 +104,8 @@ bool UStridesSaveSubsystem::ReloadSettings()
 	if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0) || !ReadCore(SlotName, Core, Msg)) return false;
 	Settings = Core.settings;
 	Best = Core.bestTimes;
+	Horses = Core.horses;
+	ActiveHorse = Core.activeHorse;
 	return true;
 }
 

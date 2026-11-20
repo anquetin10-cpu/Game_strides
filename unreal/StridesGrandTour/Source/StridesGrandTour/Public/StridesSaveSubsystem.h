@@ -54,7 +54,16 @@ public:
 	std::map<std::string, double>& MutableBestTimes() { return Best; }
 	bool RecordBestTime(const FString& Id, double Score);
 
+	// Robe du cheval engagé (C1) : écurie et monture de la sauvegarde (save.data.horses, activeHorse), lues avec les
+	// réglages et par LoadNow (sinon celles d'une sauvegarde neuve) ; monture engagée = activeHorseId (data.js).
+	const std::vector<std::string>& StableHorses() const { return Horses; }
+	const std::string& SavedActiveHorse() const { return ActiveHorse; }
+	// Tests (emplacement à eux) : écurie et monture en mémoire.
+	void SetStable(const std::vector<std::string>& InHorses, const std::string& InActive) { Horses = InHorses; ActiveHorse = InActive; }
+
 private:
 	strides::Settings Settings = strides::SaveGame::fresh().settings;
 	std::map<std::string, double> Best;
+	std::vector<std::string> Horses = strides::SaveGame::fresh().horses;
+	std::string ActiveHorse = strides::SaveGame::fresh().activeHorse;
 };

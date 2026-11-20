@@ -252,6 +252,294 @@
    "unreal": "unreal/docs/parite/cso/poteau-chrono-unreal.png"
   },
   {
+   "name": "robe-profil",
+   "desc": "Cheval du joueur (Comète) à l’arrêt au départ du parcours du Pôle après la cloche, vu de profil côté gauche (œil 6,5 m à gauche, 1,5 m au-dessus du sol), visée au centre du cheval à 1,2 m ; 15 h, HUD masqué.",
+   "eye": [
+    327.7801527634497,
+    4.5,
+    -189.15628808112538
+   ],
+   "target": [
+    332.376346,
+    4.2,
+    -193.752483
+   ],
+   "fovV": 40,
+   "hour": 15,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.376346,
+    "z": -193.752483,
+    "h": 3.926991,
+    "v": 0
+   },
+   "sunDir": [
+    -0.242017,
+    0.771855,
+    0.587935
+   ],
+   "day": 0,
+   "groundEye": 3,
+   "groundTarget": 3,
+   "groundHorse": 3,
+   "camDir": [
+    0.706355,
+    -0.046105,
+    -0.706355
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "coatLive": {
+    "pjl": true,
+    "id": "comete",
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ]
+   },
+   "web": "unreal/docs/parite/cso/robe-profil-web.png",
+   "unreal": "unreal/docs/parite/cso/robe-profil-unreal.png"
+  },
+  {
+   "name": "robe-trois-quarts-arriere",
+   "desc": "Même cheval vu de trois quarts arrière gauche (5 m derrière, 3,5 m à gauche, œil à 1,8 m), visée au centre du cheval à 1,1 m : croupe, queue, postérieurs ; 15 h, HUD masqué.",
+   "eye": [
+    333.4370072717611,
+    4.8,
+    -187.7420755540288
+   ],
+   "target": [
+    332.376346,
+    4.1,
+    -193.752483
+   ],
+   "fovV": 45,
+   "hour": 15,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.376346,
+    "z": -193.752483,
+    "h": 3.926991,
+    "v": 0
+   },
+   "sunDir": [
+    -0.242017,
+    0.771855,
+    0.587935
+   ],
+   "day": 0,
+   "groundEye": 3,
+   "groundTarget": 3,
+   "groundHorse": 3,
+   "camDir": [
+    -0.172654,
+    -0.113945,
+    -0.97837
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "coatLive": {
+    "pjl": true,
+    "id": "comete",
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ]
+   },
+   "web": "unreal/docs/parite/cso/robe-trois-quarts-arriere-web.png",
+   "unreal": "unreal/docs/parite/cso/robe-trois-quarts-arriere-unreal.png"
+  },
+  {
+   "name": "robe-trois-quarts-avant",
+   "desc": "Même cheval vu de trois quarts avant gauche (4,2 m devant, 2,6 m à gauche, œil à 1,7 m), visée 1 m devant le centre à 1,4 m : tête (liste), encolure, antérieurs ; 15 h, HUD masqué.",
+   "eye": [
+    327.56801968087626,
+    4.7,
+    -194.88385296991345
+   ],
+   "target": [
+    331.6692390894039,
+    4.4,
+    -194.45958965177698
+   ],
+   "fovV": 40,
+   "hour": 15,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 332.376346,
+    "z": -193.752483,
+    "h": 3.926991,
+    "v": 0
+   },
+   "sunDir": [
+    -0.242017,
+    0.771855,
+    0.587935
+   ],
+   "day": 0,
+   "groundEye": 3,
+   "groundTarget": 3,
+   "groundHorse": 3,
+   "camDir": [
+    0.992069,
+    -0.072569,
+    0.102628
+   ],
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "coatLive": {
+    "pjl": true,
+    "id": "comete",
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ]
+   },
+   "web": "unreal/docs/parite/cso/robe-trois-quarts-avant-web.png",
+   "unreal": "unreal/docs/parite/cso/robe-trois-quarts-avant-unreal.png"
+  },
+  {
    "name": "chute-barre-0_1s",
    "desc": "Chute de la barre du vertical 3 touchée en montée (appel trop près, scénario t3-pres-montee), 0,1 s après le contact (image 88), caméra fixe de trois quarts arrière, au sud-ouest de l’obstacle, 15 h, HUD masqué.",
    "hour": 15.109333,

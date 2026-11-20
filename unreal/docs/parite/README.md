@@ -32,6 +32,8 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/core/tests/oracles/cso_result_layout.json` | `export-cso-result.mjs --screens` | mise en page de la carte de bilan dans le navigateur pour les 15 états posés × 2 langues × 2 viewports (boîtes, largeurs de texte des cellules, `scrollHeight`, classe `more` en haut et défilé jusqu'en bas) ; rejoué par `testCsoResultLayout` et `Strides.Cso.ResultLayout` |
 | canal « bl » et `ep.bt` de `cso_runs/`, exécutions `t11-refus`, `t11-manche-2`, `t11-trois-barres` | `export-cso-runs.mjs --only=t11-refus,t11-manche-2,t11-trois-barres` (et toute exécution qui atteint le bilan) | carte de bilan relevée dans le DOM à l'image où elle s'ouvre ; meilleur temps `save.data.bestTimes.cso_train` relevé quand il change (tranche T11) |
 | `unreal/StridesGrandTour/Content/Data/cso_sounds.json`, `unreal/core/tests/oracles/cso_crowd.json`, `.tmp/unreal-import/cso-sounds/*.wav` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-sounds.mjs` (~1 min ; `--no-game` : sans le relevé du niveau du public dans le jeu) | sons de l'épreuve (tranche T12) : chaque variante appelée dans `cso_runs/` rendue hors ligne par la vraie classe `Audio` de `src/core/audio.js` (OfflineAudioContext passé à `unlock()`, `Math.random` → `mulberry32` à graine fixe), PCM 16 bits 48 kHz après le gain maître et avant le compresseur (mesuré par son : `gameChain`), bus du public débranché ; boucle du bus du public ; manifeste (clé, actif, SHA-1 du PCM, constantes du bus lues dans le source, niveau relevé dans le jeu autour des 90 m) ; gain du bus du public rendu échantillon par échantillon (7 séquences d'images) rejoué par `testCsoCrowd` |
+| `unreal/StridesGrandTour/Content/Data/horse_coats.json`, `unreal/core/tests/oracles/horse_coat.json`, `.tmp/unreal-import/horse-coat/body_coat.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-horse-coat.mjs` (~10 s, page de test sans le jeu) | robe du cheval engagé (C1) : robes (`COATS`), palette (`coatColours`), listes (`BLAZE`, lues dans `uBlaze`), chevaux de `data.js`, empreintes du GLSL des matériaux ; oracle : `coatOf`, uniformes de `makeCoatMaterial` / `makeHairMaterial`, `ownedHorses` / `activeHorseId` sur 12 sauvegardes, cheval engagé (rejoué par `testHorseCoat`) ; intermédiaire : masques de robe de chaque sommet du corps (`coatMask`, `coatRegion` d'`asset.js`) et bruits du shader évalués sur le GPU |
+| `unreal/core/tests/oracles/horse_coat_vertices.json`, `.tmp/unreal-import/horse_pjl_coat.glb` | `python3 scripts/unreal/coat-horse-glb.py` | corps du GLB normalisé avec les masques en UV 1 à 3 (région « flat » : triangles à cheval dédoublés) ; sommets écrits (relus par `Strides.Horse.CoatMesh`) |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
 Export en cours d'exécution (serveur Vite sur `http://127.0.0.1:5173`, sinon
@@ -340,6 +342,29 @@ python3 scripts/unreal/check-pixel-streaming-ios.py [--binary=unreal/StridesGran
   `Strides.Cso.AudioAssets` (SHA-1 du PCM importé) et `Strides.Cso.Audio` (sources câblées dans le jeu),
   `mutations-cso-audio.py`. `check-pixel-streaming-ios.py` : `.uproject` (PixelStreaming2 limité à Mac), modules de la cible
   IOS et Mac selon UnrealBuildTool (`-Mode=JsonExport`), chaîne « pixelstreaming » dans un binaire iOS lié.
+
+### Robe du cheval engagé (C1) : poses `robe-*`, 844 × 390
+
+```sh
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-horse-coat.mjs     # données, oracle, masques
+python3 scripts/unreal/coat-horse-glb.py                                             # GLB du corps à masques
+"$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" -run=pythonscript \
+  -script="$PWD/scripts/unreal/import-horse-coat.py" -unattended -nosplash -nullrhi   # /Game/Characters/Horse/horse_pjl_coat
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=robe   # poses robe-*, captures web
+```
+
+- `import-horse-coat.py` importe `SK_HorseCoatBody` par le gestionnaire Interchange avec un pipeline imposé (squelette du
+  cheval déjà importé, échelle 1 comme le corps d'origine, UV en pleine précision, ni clips, ni asset physique, ni
+  matériau) : l'option d'une `AssetImportTask` n'était pas appliquée. Il crée `M_HorseCoat` et `M_HorseHair` (port HLSL
+  de `coat.js`) ; compte rendu `.tmp/unreal-import/import-horse-coat.log` (dernière ligne `TERMINÉ`).
+- Jeu : `AStridesHorse::ApplyEngagedCoat` (BeginPlay et chargement d'une partie) : monture = `activeHorseId` de l'écurie
+  de la sauvegarde, robe `coatOf`, paramètres `strides::coatUniforms` sur des instances dynamiques des deux matériaux ;
+  journal « Strides robe : cheval engagé … ».
+- Poses : cheval du joueur à l'arrêt au départ après la cloche, profil gauche, trois quarts arrière et avant ; `coatLive`
+  relève la robe du cheval WildMesh affiché dans le web. Captures Unreal : `-StridesShots=cso -StridesPose=robe-` (et
+  `cadrage-` pour la caméra de concours) dans un dossier dédié, puis `parite-montage.py unreal/docs/parite/cso robe-`.
+- Tests : `testHorseCoat` (`STRIDES_TESTS=coat`), `Strides.Horse.CoatMesh`, `Strides.Horse.Coat` ;
+  `python3 scripts/unreal/mutations-horse-coat.py` (code 0 attendu, équivalentes déclarées dans `ATTENDUES`).
 
 ## 4. Montage côte à côte
 

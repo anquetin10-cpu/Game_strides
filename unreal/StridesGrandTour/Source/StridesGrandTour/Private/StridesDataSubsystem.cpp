@@ -168,6 +168,17 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 		else LoadLog.Add(FString::Printf(TEXT("cso_ranking.json : illisible (%s), pas de classement au bilan"), UTF8_TO_TCHAR(Err.c_str())));
 	}
+	// Robe du cheval engagé (C1) : lecture du cœur (celle de testHorseCoat).
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
+		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/horse_coats.json"))) && strides::horseCoatDataFromFile(std::string(TCHAR_TO_UTF8(*Text)), HorseCoatsDef, Err))
+		{
+			bHorseCoats = true;
+			LoadLog.Add(FString::Printf(TEXT("horse_coats.json : %d robes, %d listes, %d chevaux"), (int32)HorseCoatsDef.coats.size(), (int32)HorseCoatsDef.blaze.size(), (int32)HorseCoatsDef.horses.size()));
+		}
+		else LoadLog.Add(FString::Printf(TEXT("horse_coats.json : illisible (%s), robe d'origine du modèle"), UTF8_TO_TCHAR(Err.c_str())));
+	}
 	LoadJson(TEXT("cso_result_style.json"), CsoResultJson);
 	// Textes de l'épreuve (tranche T4) : table lue par le cœur (strides::TextTable), la même que testCsoRuns.
 	{

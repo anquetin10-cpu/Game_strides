@@ -33,6 +33,19 @@ public:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strides") FString ProfileId = TEXT("comete");
+	// Robe du cheval engagé (C1) : monture de la sauvegarde (activeHorseId de data.js : écurie et monture lues par
+	// UStridesSaveSubsystem, sinon celles d'une sauvegarde neuve) → ProfileId, puis robe de ce cheval (coatOf) posée sur des
+	// instances dynamiques des matériaux de robe et de crins (scripts/unreal/import-horse-coat.py) : paramètres
+	// strides::coatUniforms. Appelé au BeginPlay et au chargement d'une partie. Faux si les données ou les matériaux
+	// manquent (robe d'origine du modèle gardée).
+	bool ApplyEngagedCoat();
+	// Robe posée (C1) : vrai après ApplyEngagedCoat réussi ; corps avec les masques de robe chargé (SK_HorseCoatBody).
+	bool HasEngagedCoat() const { return bCoatApplied; }
+	bool HasCoatBody() const { return bCoatBody; }
+	class UMaterialInstanceDynamic* CoatMaterial() const { return CoatMID; }
+	class UMaterialInstanceDynamic* HairMaterial() const { return HairMID; }
+	class USkeletalMeshComponent* BodyMesh() const { return Mesh; }
+	class USkeletalMeshComponent* ManeMesh() const { return HairMesh; }
 	// Conduite de concours (vrai pendant une épreuve) : cadence réglée au joystick, saut au bouton.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strides") bool bCsoControls = true;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") float SpeedMS = 0.f;
@@ -96,6 +109,10 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USkeletalMeshComponent> Mesh;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USkeletalMeshComponent> EyesMesh;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USkeletalMeshComponent> HairMesh;
+	UPROPERTY(Transient) TObjectPtr<class UMaterialInstanceDynamic> CoatMID;
+	UPROPERTY(Transient) TObjectPtr<class UMaterialInstanceDynamic> HairMID;
+	bool bCoatApplied = false;
+	bool bCoatBody = false;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class USpringArmComponent> Boom;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> Camera;
 	// Caméra de concours (position et orientation absolues, posées à chaque image par StepCourseCamera).

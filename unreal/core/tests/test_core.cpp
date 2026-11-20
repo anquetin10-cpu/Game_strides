@@ -3259,6 +3259,92 @@ static void testCsoCrowd() {
   std::printf("public : %d séquences, %d relevés du gain rejoués, écart max %.3g (formule de la spécification ; plateau du navigateur juste sous la cible) ; niveau : %d relevés du jeu\n", scen, probes, worst, lv);
 }
 
+#include "StridesCore/HorseCoat.h"
+
+// Robe du cheval engagé (C1) : coatOf, uniformes de makeCoatMaterial / makeHairMaterial, ownedHorses / activeHorseId et
+// cheval engagé, contre oracles/horse_coat.json (fonctions du web appelées telles quelles, export-horse-coat.mjs), avec
+// les données lues par le jeu (Content/Data/horse_coats.json).
+static void testHorseCoat() {
+  const J o = loadJson(ORA + "/horse_coat.json");
+  const HorseCoatData data = horseCoatDataFromJson(loadJson(DATA + "/horse_coats.json"));
+  int nOf = 0, nUni = 0, nAct = 0, nEng = 0, nThrow = 0;
+  // Couleurs : Math.pow de V8 et pow de la bibliothèque C diffèrent parfois au dernier bit (2e-16 mesuré) ; tolérance
+  // 1e-14 (absolue sous 1), très en dessous de la précision des uniformes float du GPU.
+  auto same3 = [](const std::array<double, 3>& a, const J& w) { return w.a.size() == 3 && near(a[0], w[0].num(), 1e-14) && near(a[1], w[1].num(), 1e-14) && near(a[2], w[2].num(), 1e-14); };
+  auto same4 = [](const std::array<double, 4>& a, const J& w) { return w.a.size() == 4 && a[0] == w[0].num() && a[1] == w[1].num() && a[2] == w[2].num() && a[3] == w[3].num(); };
+  auto coatSame = [](const Coat& c, const J& w) {
+    if (c.colour != w["colour"].s || !c.blaze || *c.blaze != w["blaze"].s || !c.socks || !c.dapples || *c.dapples != w["dapples"].num()) return false;
+    if (c.socks->size() != w["socks"].a.size()) return false;
+    for (size_t k = 0; k < c.socks->size(); k++) if ((*c.socks)[k] != w["socks"][k].num()) return false;
+    return true;
+  };
+  for (const J& c : o["coatOf"].a) {
+    nOf++;
+    if (c["out"]["throws"].t == J::Str) {
+      bool threw = false;
+      try { coatOf(c["def"], data); } catch (const std::exception&) { threw = true; }
+      CHECK(threw, "coatOf(%s) : exception attendue (%s)", dump(c["def"]).c_str(), c["out"]["throws"].s.c_str());
+      nThrow++;
+      continue;
+    }
+    const Coat got = coatOf(c["def"], data);
+    CHECK(coatSame(got, c["out"]), "coatOf(%s) : %s %s / %s", dump(c["def"]).c_str(), got.colour.c_str(), got.blaze ? got.blaze->c_str() : "-", dump(c["out"]).c_str());
+  }
+  for (const J& c : o["uniforms"].a) {
+    nUni++;
+    Coat in;
+    in.colour = c["coat"]["colour"].s;
+    if (c["coat"]["blaze"].t == J::Str) in.blaze = c["coat"]["blaze"].s;
+    if (c["coat"]["socks"].t == J::Arr) { std::vector<double> v; for (const J& x : c["coat"]["socks"].a) v.push_back(x.num()); in.socks = v; }
+    if (c["coat"]["dapples"].t == J::Num) in.dapples = c["coat"]["dapples"].num();
+    const J& w = c["out"];
+    if (w["throws"].t == J::Str) {
+      bool threw = false;
+      try { coatUniforms(in, data); } catch (const std::exception&) { threw = true; }
+      CHECK(threw, "makeCoatMaterial(%s) : exception attendue (%s)", dump(c["coat"]).c_str(), w["throws"].s.c_str());
+      nThrow++;
+      continue;
+    }
+    const CoatUniforms u = coatUniforms(in, data);
+    const bool ok = same3(u.coat, w["coat"]) && same3(u.points, w["points"]) && same3(u.hair, w["hair"]) && u.pointsAmt == w["pointsAmt"].num() &&
+                    u.detail == w["detail"].num() && same4(u.socks, w["socks"]) && same4(u.blaze, w["blaze"]) && u.dapples == w["dapples"].num() &&
+                    u.wet == w["wet"].num() && u.roughness == w["roughness"].num() && u.metalness == w["metalness"].num() &&
+                    u.hairRoughness == w["hairRoughness"].num() && u.alphaTest == w["alphaTest"].num() &&
+                    // THREE.DoubleSide = 2 (matériaux de base du GLB : doubleSided), gardé par clone() ; cheveux opaques (alphaTest).
+                    (w["side"].num() == 2) == u.doubleSided && (w["hairSide"].num() == 2) == u.doubleSided && w["hairTransparent"].t == J::Bool && !w["hairTransparent"].b;
+    CHECK(ok, "uniformes(%s) : robe (%.17g %.17g %.17g) balzanes (%g %g %g %g) liste (%g %g %g %g) / %s", dump(c["coat"]).c_str(), u.coat[0], u.coat[1], u.coat[2],
+          u.socks[0], u.socks[1], u.socks[2], u.socks[3], u.blaze[0], u.blaze[1], u.blaze[2], u.blaze[3], dump(w).c_str());
+  }
+  for (const J& c : o["active"].a) {
+    nAct++;
+    const std::vector<std::string> own = ownedHorses(c["save"], data);
+    std::string got = "[", want = dump(c["owned"]);
+    for (size_t i = 0; i < own.size(); i++) got += (i ? "," : "") + std::string("\"") + own[i] + "\"";
+    got += "]";
+    bool same = own.size() == c["owned"].a.size();
+    for (size_t i = 0; same && i < own.size(); i++) same = own[i] == c["owned"][i].s;
+    CHECK(same, "ownedHorses(%s) : %s / %s", dump(c["save"]).c_str(), got.c_str(), want.c_str());
+    CHECK(activeHorseId(c["save"], data) == c["active"].s, "activeHorseId(%s) : %s / %s", dump(c["save"]).c_str(), activeHorseId(c["save"], data).c_str(), c["active"].s.c_str());
+    // Sauvegarde native (tableau de chaînes) : mêmes réponses quand save.data a cette forme.
+    if (c["save"]["horses"].t == J::Arr && c["save"]["activeHorse"].t == J::Str) {
+      std::vector<std::string> hs;
+      bool strs = true;
+      for (const J& h : c["save"]["horses"].a) { strs = strs && h.t == J::Str; hs.push_back(h.s); }
+      if (strs) CHECK(activeHorseId(hs, c["save"]["activeHorse"].s, data) == c["active"].s, "activeHorseId(sauvegarde native %s)", dump(c["save"]).c_str());
+    }
+  }
+  for (const J& c : o["engaged"].a) {
+    nEng++;
+    const EngagedHorse e = engagedHorse(activeHorseId(c["save"], data), data);
+    CHECK(e.id == c["id"].s && e.model == (c["model"].t == J::Str ? c["model"].s : std::string()) && coatSame(e.coat, c["coat"]),
+          "cheval engagé (%s) : %s %s / %s", dump(c["save"]).c_str(), e.id.c_str(), e.coat.colour.c_str(), dump(c).c_str());
+  }
+  // Les chevaux, robes, palette et listes du jeu sont ceux de l'oracle (même export).
+  CHECK(data.horses.size() >= 4 && data.coats.size() == data.palette.size() && data.blaze.count("none") && data.bodyFragmentSha1.size() == 40,
+        "horse_coats.json : %zu chevaux, %zu robes, %zu palettes", data.horses.size(), data.coats.size(), data.palette.size());
+  std::printf("robe : coatOf %d, uniformes %d, sauvegardes %d, chevaux engagés %d (dont %d exceptions comme le web)\n", nOf, nUni, nAct, nEng, nThrow);
+}
+
 int main(int argc, char** argv) {
   ORA = argc > 1 ? argv[1] : "oracles";
   DATA = argc > 2 ? argv[2] : "../../StridesGrandTour/Content/Data";
@@ -3297,6 +3383,7 @@ int main(int argc, char** argv) {
     run("pause", testCsoPause);
     run("zone", testCsoTakeoffZone);
     run("aids", testCsoAids);
+    run("coat", testHorseCoat);
   } catch (const std::exception& e) {
     std::printf("exception : %s\n", e.what());
     return 2;

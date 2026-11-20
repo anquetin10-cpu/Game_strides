@@ -111,7 +111,7 @@
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (sauvegarder puis recharger vérifié à l'écran) ; Strides.Core.Save (Private/Tests/StridesCoreTests.cpp:58-68) et unreal/core/tests/test_core.cpp testSave : aller-retour de la pose écrit à la main, sans oracle JS.",
-  "ecart": "Au rechargement, remise en selle (TryMount, transition de 0,8 s) quand la pose sauvegardée est 'ride', alors que le web reprend toujours à pied ; position du cheval non sauvegardée : à pied, le cheval reste où il est (ni à sa position sauvegardée, ni à côté du joueur) ; transport et mode volant absents ; pas de recalage caméra explicite ; le Dismount du rechargement (StridesSaveSubsystem.cpp:78) fait aussi descendre le cavalier pendant une épreuve : le déroulé, qui lit à chaque image si le cavalier est en selle (StridesHorse.cpp:153, CsoRunFrame::riding ; StridesRider.cpp:119-120), élimine alors.",
+  "ecart": "Au rechargement, remise en selle (TryMount, transition de 0,8 s) quand la pose sauvegardée est 'ride', alors que le web reprend toujours à pied ; position du cheval non sauvegardée : à pied, le cheval reste où il est (ni à sa position sauvegardée, ni à côté du joueur) ; transport et mode volant absents ; pas de recalage caméra explicite ; le Dismount du rechargement (StridesSaveSubsystem.cpp:82) fait aussi descendre le cavalier pendant une épreuve : le déroulé, qui lit à chaque image si le cavalier est en selle (StridesHorse.cpp:216, CsoRunFrame::riding ; StridesRider.cpp:119-120), élimine alors.",
   "tranche": "socle"
  },
  {
@@ -152,7 +152,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:104-111 et :148-156 (fondu SmoothStep de 0,8 s de la transformation du personnage vers SeatTransform)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran ; TryMount et le fondu de 0,8 s sont inchangés depuis le commit e7d80898 qui a écrit cette ligne). La l.19 (cavalière sur mountpoint_01_0179, repli saddle_0168) décrit le commit 5777b8b7 : depuis 9d167156, StridesHorse.cpp:226 lit saddle_0168 en premier, placement actuel non revérifié à l'écran. Valeurs non issues d'un oracle ; aucune capture côte à côte.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran ; TryMount et le fondu de 0,8 s sont inchangés depuis le commit e7d80898 qui a écrit cette ligne). La l.19 (cavalière sur mountpoint_01_0179, repli saddle_0168) décrit le commit 5777b8b7 : depuis 9d167156, StridesHorse.cpp:289 lit saddle_0168 en premier, placement actuel non revérifié à l'écran. Valeurs non issues d'un oracle ; aucune capture côte à côte.",
   "ecart": "Ni approche ni contournement, ni clés de geste, ni IK étrier/rênes, ni casque ; 0,8 s au lieu d'environ 2,5 s ; le personnage glisse en ligne droite et peut traverser le cheval ; le cheval n'est pas arrêté.",
   "tranche": "b"
  },
@@ -206,7 +206,7 @@
    "src/gameplay/horseMount.js",
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:78 (rechargement : Dismount avant de replacer) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-135 (Dismount : MountT remis à -1, cavalier posé à pied 1,2 m à gauche du cheval, ce qui interrompt aussi la transition de 0,8 s) ; StridesPlayerController.cpp:516 (E pendant la transition → Dismount)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:82 (rechargement : Dismount avant de replacer) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-135 (Dismount : MountT remis à -1, cavalier posé à pied 1,2 m à gauche du cheval, ce qui interrompt aussi la transition de 0,8 s) ; StridesPlayerController.cpp:516 (E pendant la transition → Dismount)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test d'interruption.",
