@@ -13,7 +13,8 @@ Documents de ce dossier :
 - `v3-mesures.md` et `v3-mesures.json` : première mesure de la v3 (étape 2), écrites par
   `scripts/unreal/rider-rules-metrics.mjs` à partir de l'oracle O1 `unreal/core/tests/oracles/monte/o1/` (jamais à la main) ;
 - `o2.md` : oracle O2 (étape 3), preuve O2 = O1, rig `rider_f`, mesures de la règle sur les deux rigs et longueurs
-  d'étriers pour la décision J3, écrit par `scripts/unreal/rider-rules-o2.mjs` (jamais à la main).
+  d'étriers pour la décision J3, écrit par `scripts/unreal/rider-rules-o2.mjs` (jamais à la main) ;
+- section « Étape 4 » ci-dessous : règles portées en C++ (`StridesCore/RiderRules.h`), preuve contre O2, mutations, coût.
 
 Cadre de la phase en cours : copie de travail isolée (branche locale `claude/monte-voie-a`, sans les binaires de
 `Content/` sauf `Content/Data`, `node_modules` en lien vers le dépôt principal), aucun Unreal Build Tool, aucun
@@ -34,6 +35,12 @@ python3 scripts/unreal/rig-from-glb.py                          # -> unreal/core
 node scripts/unreal/rider-rules-o2.mjs                          # -> oracles/monte/o2/, rigs/web_classic.json, o2.md
 node scripts/unreal/rider-rules-o2.mjs --fit=stirrupY=-0.62     # longueur d'étriers J3 (m) -> .tmp/monte/o2-fit
 python3 scripts/unreal/mutations-monte-o2.py                    # 93 mutations d'anim.js et du rejeu, copies dans build/
+# Étape 4 (C++ hors moteur) : paramètres, test contre O2 (dans ctest, ~2 s), mutations (~3 min), banc de coût (Release)
+node scripts/unreal/export-rider-rules-data.mjs                 # -> Content/Data/rider_rules.json (--check : comparaison)
+cmake -S unreal/core -B build/core-monte && cmake --build build/core-monte && ctest --test-dir build/core-monte --output-on-failure
+python3 scripts/unreal/mutations-rider-rules.py                 # 97 mutations de RiderRules.cpp, copies dans build/mutations-monte
+cmake -S unreal/core -B build/core-monte-rel -DCMAKE_BUILD_TYPE=Release && cmake --build build/core-monte-rel --target strides_monte_bench
+build/core-monte-rel/strides_monte_bench unreal/core/tests/oracles/monte unreal/StridesGrandTour/Content/Data 10000 rider_f
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -224,3 +231,88 @@ Chiffres pour la décision J3 (longueur d'étriers), mesurés avec O2 (tableaux 
 - Conversion pour une longueur choisie : stirrupY = −0,64 m + raccourcissement ; dans le web v3, le cheval PJL borne
   stirrupY à −0,64 m au plus court (`pjlHorse.js:264`) : un étrier plus court exigerait de lever cette borne (web) ou de
   la régler dans le portage (Unreal).
+
+## Étape 4. Règles de monte portées en C++ : `RiderRules` (20/11/2026)
+
+Créé :
+- `unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/RiderRules.h` et `Private/RiderRules.cpp` (C++20, sans
+  type Unreal). Port ligne à ligne d'`anim.js` en pose « ride » : `ik2`, `kneeOf`, `lookQ`, `forwardTrunk`, `solveLeg`,
+  `solveArm`, `flankAt`, `crestAt`, `hugFlank`, `hugMemory`, `riding`, `hairSpring` et l'application lissée
+  d'`animateHuman` (slerp à trois branches, jambes exactes une fois le fondu fini) ; plus la préparation des entrées de
+  `human.js` `animateRiding` (`RideInputFilter` : rebond et tangage du dos, saut, réception `landT`, profils du flanc
+  filtrés par `FLANK_RELAX` et `FLANK_LEAD`, réglages en unités du modèle). Les fonctions de Three.js utilisées sont
+  reproduites avec leurs formules de three 0.170.0, dans le même ordre d'opérations, sans contraction en FMA
+  (`#pragma clang fp contract(off)` encadré par `float_control(push/pop)` : vérifié, Clang contracte sinon même en -O0,
+  et le réglage ne déborde pas sur les autres sources d'une compilation unifiée). Aucun état statique : chaque cavalier
+  porte son état.
+- `Content/Data/rider_rules.json`, écrit par `scripts/unreal/export-rider-rules-data.mjs` (Node seul) : `RIDE` importé
+  d'`anim.js` ; constantes non publiées relues dans le source (`THIGH_MARGIN`, `POLE_OPEN`, `HUG_OPEN`, `HUG_RELAX`,
+  `FOOT_OPEN`, `FOOT_RELAX`, `DEFAULT_FIT` ; `FLANK_RELAX`, `FLANK_LEAD`, `FIST`, `RIDER_FIT`, `RIDER_SEAT` ; `LEG_THICK`,
+  `HIND_DOWN`), une seule occurrence exigée. Deux exports : mêmes octets.
+- `unreal/core/tests/test_monte.cpp` (exécutable `strides_monte_tests`, test ctest `monte`), `tests/bench_monte.cpp`
+  (`strides_monte_bench`, hors ctest), `scripts/unreal/mutations-rider-rules.py`. `unreal/core/CMakeLists.txt` : bloc
+  ajouté en fin de fichier (`target_sources`, deux exécutables), sans toucher à la ligne `add_library` que la tranche CSO
+  modifie.
+
+| Critère du plan | Résultat |
+|---|---|
+| Rigs `web_classic` et `rider_f`, tous scénarios : articulations et cibles C++ contre O2 ≤ 0,1 mm et ≤ 1e-4 rad | atteint, 1 858 images (8 scénarios × 2 rigs). `web_classic` : articulations et points 1,0e-15 m, rotations locales 2,1e-15 rad, cibles 1,1e-16 m, orientations des pieds 2,2e-16 rad. `rider_f` : articulations et points 7,2e-9 m (E1b, image 129, poing gauche), rotations locales 2,6e-8 rad (E1b, image 82, `lFore`), cibles 2,2e-16 m |
+| État interne (`post`, `two`, `jumpK`, `rel`) ≤ 1e-6 | atteint, et étendu à tout `dg` (`diag`, `wantDiag`, `diagT`, `bobAvg`, `hd`, `wasJump`, `look`, `hug` des deux côtés, `blendT`) : 2,2e-16 |
+| Entrées C++ calculées depuis `hz` brut, comparées au canal `in` : ≤ 1e-6 m | atteint pour toutes les images à partir de la deuxième (18 420 valeurs, 8 scénarios) : 1,9e-16 (tangage, E2g, image 131). Le cavalier lit l'état du cheval de l'image précédente (`hz` de f − 1) ; l'image 0 suit la mise en selle, non exportée : l'état du filtre y est repris du canal `in`. Exception : le virage (`h.lastTurn` n'est pas exporté dans O1), repris du canal `in` et non comparé |
+| G4 : au moins 30 mutations, chacune détectée ou déclarée | atteint : 97 mutations (constantes de `RIDE` à leur usage, constantes nommées, chaque étape de `hugFlank`, `hugMemory`, ordre mémoire puis recherche, retards d'une image, lissage, squelette, préparation des entrées), 85 détectées, 12 déclarées dans `ATTENDUES` avec leur raison, code 0. Témoin non muté vérifié en tête de campagne |
+| Coût : 10 000 images en Release, médiane ≤ 0,22 ms | atteint : médiane 0,0041 ms par image (trois passes : 0,00417, 0,00413, 0,00413 ms) ; moyenne 0,0050, p99 0,0100, max 0,017 à 0,042 ms |
+| G1 | vert : 2 tests ctest, 248 386 + 306 914 = 555 300 vérifications, 0 échec, 0 avertissement à la compilation |
+
+Mesure du coût (honnête, à relire avec ses limites) : Mac mini M2 16 Go, Apple clang 21, `-O3 -DNDEBUG`
+(`CMAKE_BUILD_TYPE=Release`). Une image mesurée = `RideInputFilter::next` + `RiderRules::step` + `RiderRules::skeleton`
+(25 matrices, plantes, poings) pour la cavalière `rider_f`, sur les 8 scénarios d'O1 enchaînés en boucle (état du
+cheval relu dans `hz`), état remis à neuf au début de chaque scénario hors chronomètre ; 500 images de mise en
+température non comptées ; chaque image chronométrée seule par `std::chrono::steady_clock` (pas de 41,7 ns sur ce Mac :
+deux lectures successives donnent 0 ns en médiane, 83 ns au plus). Machine chargée par le chantier CSO pendant la mesure
+(charge moyenne 3,8). Rig `web_classic` : médiane 0,0041 ms aussi. Ce chiffre est le coût CPU du cœur seul, hors moteur :
+le Control Rig, l'évaluation de l'animation et l'iPhone ne sont pas mesurés (étapes 7 et 16).
+
+Contrôles en plus du plan :
+- La compilation en -O0 et en -O3 donne des écarts identiques au caractère près (sortie complète du test comparée).
+- Chaîne complète `hz` → entrées → règle, contre O2 `web_classic` : articulations 2,9e-9 m, rotations 1,0e-8 rad, cibles
+  2,2e-16 m. Ces 1e-8 sont l'écart connu entre O1 (Chrome) et O2 (Node) au changement de branche du slerp (étape 3,
+  constat 1) : le C++ suit Node à 1e-15 près sur `web_classic`.
+- Isolation : deux cavaliers simultanés, et un cavalier remis à neuf, donnent les mêmes octets (19 511 valeurs).
+- Valeurs par défaut de `RideParams` identiques à `rider_rules.json` (53 valeurs, égalité exacte).
+
+Mutations non départagées (12, toutes dans `ATTENDUES`) :
+- les mêmes parties de la règle que l'étape 3 n'exerce pas sur `anim.js` (raisons prouvées alors par des sondes sur O1) :
+  limite « genou au-delà de la cheville » (`room()` jamais faux), borne de 12 cm de l'écart du pied (`xMax` plus serrée),
+  seconde passe et marge de 5 mm de la remontée du pied, plafond 0,97 de `hugMemory` (inactif avec `kneeOut` 0,45),
+  borne 0,9995 d'`ik2` et de `kneeOf` (allonge toujours sous 0,98) ;
+- branche linéaire du slerp (quelques 1e-9 au plus, sous les tolérances) ;
+- queue de cheval (`hair` faux dans tous les scénarios), salut (`wave` nul), `DEFAULT_FIT` (le jeu fournit toujours
+  `fit`), formule du virage de `animateRiding` (`h.lastTurn` absent d'O1).
+Les couvrir demanderait des scénarios de plus (galop allongé, salut, cavalier avec queue de cheval) et l'export de
+`h.lastTurn` dans O1 : à décider.
+
+Constats :
+1. **Le portage reproduit la v3 au dernier bit près sur le squelette du web** (`web_classic` : 1e-15). Sur `rider_f`, le
+   plus gros écart (2,6e-8 rad sur `lFore`) a probablement la même cause que l'écart O1–O2 (branche du slerp à un ulp de
+   la cible, ici entre la libm d'Apple et celle de Node) : non sondé, à confirmer ; il reste environ 3 800 fois
+   sous la tolérance (1e-4 rad).
+2. **Le coût est négligeable devant le seuil** : environ 4 µs par image, 50 fois sous 0,22 ms.
+3. `Content/Data/rider_rules.json` porte aussi les données dont les étapes 5 et 6 auront besoin (`RIDER_FIT`,
+   `RIDER_SEAT`, `FIST`, `LEG_THICK`, `HIND_DOWN`) ; la règle ne les lit pas.
+
+Adaptations du plan :
+- Test dans un exécutable séparé (`test_monte.cpp`, ctest `monte`) et non dans `test_core.cpp` : ce fichier est modifié
+  par la tranche CSO. `run("rider", …)` n'existe donc pas ; le test s'appelle `monte`.
+- Export des constantes par `export-rider-rules-data.mjs` et non par `export-data.mjs` : celui-ci s'exécute par
+  vite-node (cache écrit dans `node_modules`, partagé avec le chantier CSO) et la tranche CSO le modifie.
+- Oracles lus dans `unreal/core/tests/oracles/monte/` (dossiers de l'étape 3).
+- `monte-base.py` additionne désormais les vérifications de tous les exécutables de ctest (G1).
+
+Fin d'étape : la condition d'arrêt S3 (moins de 8 Gio libres) est atteinte pendant l'étape (6,1 Gio libres au début,
+5,3 Gio en cours ; l'étape elle-même a écrit environ 25 Mo : `build/core-monte-rel`, `build/mutations-monte`).
+`monte-base.py --verifier` refuse donc de tourner (code 2, par construction). Les portes ont été passées une par une :
+G1 (ctest ci-dessus), G5 (montage refait, 150 PNG, empreinte globale identique à `base.json`, aucun fichier modifié), G6
+(`build-parite.py` code 0, 687 fonctions, 29 identiques prouvées, 262 partielles, 396 absentes, 169/169 ; `PARITE.md`
+inchangé), G7 (`git diff --quiet HEAD -- src public tests` code 0, aucun fichier non suivi ; `riderPosture` 4/4 ; suite
+unitaire 30 fichiers, 297/297, cache de Vite dans `.tmp/monte`). G2, G3 : non lancées (UBT et UnrealEditor exclus).
+

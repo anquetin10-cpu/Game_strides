@@ -105,11 +105,14 @@ def g1():
         return {'ok': False, 'erreur': 'compilation', 'avertissements': warn}
     t0 = datetime.datetime.now()
     code, out = run(['ctest', '--test-dir', BUILD, '-V'], 'g1-ctest.log')
-    m = re.search(r'(\d+) vérifications, (\d+) échecs', out)
+    # Un bilan par exécutable de test (oracles du cœur ; monte depuis l'étape 4) : additionnés.
+    ms = re.findall(r'(\d+) vérifications, (\d+) échecs', out)
     t = re.search(r'(\d+) tests failed out of (\d+)', out)
-    return {'ok': code == 0 and bool(m) and m.group(2) == '0', 'commande': 'cmake -S unreal/core -B build/core-monte && '
+    nv, ne = sum(int(a) for a, _ in ms), sum(int(b) for _, b in ms)
+    return {'ok': code == 0 and bool(ms) and ne == 0, 'commande': 'cmake -S unreal/core -B build/core-monte && '
             'cmake --build build/core-monte --clean-first && ctest --test-dir build/core-monte -V',
-            'verifications': int(m.group(1)) if m else None, 'echecs': int(m.group(2)) if m else None,
+            'verifications': nv if ms else None, 'echecs': ne if ms else None,
+            'verifications_par_test': [int(a) for a, _ in ms],
             'tests_ctest': int(t.group(2)) if t else None, 'avertissements_compilation': warn,
             'duree_ctest_s': round((datetime.datetime.now() - t0).total_seconds())}
 

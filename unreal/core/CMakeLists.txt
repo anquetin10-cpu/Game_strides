@@ -16,3 +16,12 @@ add_executable(strides_core_tests tests/test_core.cpp)
 target_link_libraries(strides_core_tests strides_core)
 # Arguments : oracles exportés du JS, puis données lues par le jeu (Content/Data) pour tester le chemin du jeu.
 add_test(NAME oracles COMMAND strides_core_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Essai de monte, voie A, étape 4 : règles de monte du web (src/entities/human/anim.js, human.js) portées en C++
+# (StridesCore/RiderRules), prouvées contre l'oracle O2 (tests/oracles/monte) ; banc de coût strides_monte_bench (hors
+# ctest, à compiler en Release : cmake -DCMAKE_BUILD_TYPE=Release).
+target_sources(strides_core PRIVATE ${CORE}/Private/RiderRules.cpp)
+add_executable(strides_monte_tests tests/test_monte.cpp)
+target_link_libraries(strides_monte_tests strides_core)
+add_test(NAME monte COMMAND strides_monte_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+add_executable(strides_monte_bench tests/bench_monte.cpp)
+target_link_libraries(strides_monte_bench strides_core)
