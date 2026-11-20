@@ -341,7 +341,7 @@
    "src/entities/human/anim.js",
    "src/entities/human/skeleton.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m, possession du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:136-156 (Tick : SetActorTransform sur SeatTransform, fondu SmoothStep de 0,8 s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:152-168 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179, orientation de l'acteur cheval)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m, possession du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:136-156 (Tick : SetActorTransform sur SeatTransform, fondu SmoothStep de 0,8 s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:153-169 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179, orientation de l'acteur cheval)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15-16 et :19 (montée et placement en selle contrôlés sur la version antérieure : os mountpoint_01_0179 d'abord, transformée complète de l'os, modèle rider_f_unreal) ; unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09). Aucun oracle ni capture côte à côte.",
@@ -376,7 +376,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7). Captures Unreal seules : unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_00 à 10_galop_18.png (19 images, sans pendant web, hors unreal/docs/parite).",
-  "ecart": "Clips discrets, sans mélange : en commandes CSO (bCsoControls vrai par défaut, StridesHorse.h:32, jamais mis à faux), l'index d'allure est recalculé à chaque image d'après la vitesse brute avec des seuils propres au portage (0,2 / 3,2 / 5,5 / 7,0 m/s, StridesHorse.cpp:300), différents des seuils web et sans division par le multiplicateur du cheval ; ChangeGait (StridesHorse.cpp:133) est écrasé ; clips joués à vitesse 1,0 sans calage sur la phase de foulée du cheval (horseGaitPhase) ; pas de bercement du bassin.",
+  "ecart": "Clips discrets, sans mélange : en commandes CSO (bCsoControls vrai par défaut, StridesHorse.h:32, jamais mis à faux), l'index d'allure est recalculé à chaque image d'après la vitesse brute avec des seuils propres au portage (0,2 / 3,2 / 5,5 / 7,0 m/s, StridesHorse.cpp:310), différents des seuils web et sans division par le multiplicateur du cheval ; ChangeGait (StridesHorse.cpp:134) est écrasé ; clips joués à vitesse 1,0 sans calage sur la phase de foulée du cheval (horseGaitPhase) ; pas de bercement du bassin.",
   "tranche": "b"
  },
  {
@@ -662,7 +662,7 @@
   "js": [
    "src/entities/realistic.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:33-47 (un seul cheval, maillage PJL normalisé toujours chargé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:86 (cheval unique)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:34-48 (un seul cheval, maillage PJL normalisé toujours chargé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:87 (cheval unique)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de sélection ; unreal/docs/validation-mac-2026-11-17.md:16-17 porte sur l'import du cheval, pas sur la gestion de plusieurs chevaux.",

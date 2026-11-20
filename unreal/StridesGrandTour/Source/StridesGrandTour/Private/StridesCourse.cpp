@@ -148,6 +148,12 @@ bool AStridesCourse::StartRun(const FString& PlayerName, const FString& HorseNam
 	return true;
 }
 
+void AStridesCourse::SetJumpAid(const FString& Aid)
+{
+	JumpAid = Aid;
+	if (RunPtr) RunPtr->setAid(TCHAR_TO_UTF8(*Aid));
+}
+
 void AStridesCourse::StartRunWith(const strides::CsoRunConfig& Config, const strides::TextTable& Text)
 {
 	if (&Text != &RunText) RunText = Text;

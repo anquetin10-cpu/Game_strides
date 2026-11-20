@@ -102,8 +102,10 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> CourseCamera;
 
 private:
-	void TickCso(float Dt);
-	void TickOpenWorld(float Dt);
+	// bSimPaused : simulation suspendue (téléphone ouvert : game.simPaused) ; cheval et chrono figés (hdt et sdt nuls),
+	// obstacles, caméra et HUD au pas réel (game.js:1486-1507).
+	void TickCso(float Dt, bool bSimPaused = false);
+	void TickOpenWorld(float Dt, bool bSimPaused = false);
 	void TickDemo();
 	void StartOpenWorldJump();
 	void UpdateAnimation();

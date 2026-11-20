@@ -1,0 +1,207 @@
+{
+	"schema": "strides.parite_hud/1",
+	"generator": "-StridesShots=cso (AStridesShots::ApplyHudPose, UStridesCsoHud::Describe)",
+	"doc": "par pose : images rejouées, parties de l'état du HUD différentes de l'état du DOM du web (vide : identique), éléments affichés par le widget à la capture (partie=texte)",
+	"poses": [
+		{
+			"name": "cmd-joystick-844x390",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					88,
+					238,
+					124,
+					124
+				],
+				"Knob": [
+					151,
+					243,
+					54,
+					54
+				],
+				"joystickOpacity": 1,
+				"tactile": true
+			}
+		},
+		{
+			"name": "cmd-pause-844x390",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					46,
+					226,
+					124,
+					124
+				],
+				"Knob": [
+					81,
+					261,
+					54,
+					54
+				],
+				"joystickOpacity": 0.55000000000000004,
+				"tactile": true
+			},
+			"pauseMenu": [
+				"kicker=PAUSE",
+				"title=Equestrian Tour",
+				"p0=<b>Épreuve</b> — <b>diriger</b> : joystick gauche/droite (←/→) · <b>cadence</b> : joystick avant/arrière (↑/↓), gardée quand on relâche · <b>SAUT</b> au bon moment (Espace).",
+				"p1=<b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).",
+				"p2=Version 2.0.0 · Unreal",
+				"promo=Cette app existe pour de vrai.",
+				"bouton title=Écran titre",
+				"bouton strides=Découvrir la vraie application Strides",
+				"bouton share=Partager",
+				"bouton resume=Reprendre",
+				"pause-line=Tracé au sol : affiché",
+				"pause-aid=Aide au saut : complète"
+			]
+		},
+		{
+			"name": "cmd-joystick-667x308",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					64,
+					184,
+					112,
+					112
+				],
+				"Knob": [
+					121,
+					183,
+					54,
+					54
+				],
+				"joystickOpacity": 1,
+				"tactile": true
+			}
+		},
+		{
+			"name": "cmd-pause-667x308",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					86,
+					172,
+					112,
+					112
+				],
+				"Knob": [
+					115,
+					201,
+					54,
+					54
+				],
+				"joystickOpacity": 0.55000000000000004,
+				"tactile": true
+			},
+			"pauseMenu": [
+				"kicker=PAUSE",
+				"title=Equestrian Tour",
+				"p0=<b>Épreuve</b> — <b>diriger</b> : joystick gauche/droite (←/→) · <b>cadence</b> : joystick avant/arrière (↑/↓), gardée quand on relâche · <b>SAUT</b> au bon moment (Espace).",
+				"p1=<b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).",
+				"p2=Version 2.0.0 · Unreal",
+				"promo=Cette app existe pour de vrai.",
+				"bouton title=Écran titre",
+				"bouton strides=Découvrir la vraie application Strides",
+				"bouton share=Partager",
+				"bouton resume=Reprendre",
+				"pause-line=Tracé au sol : affiché",
+				"pause-aid=Aide au saut : complète"
+			]
+		}
+	]
+}

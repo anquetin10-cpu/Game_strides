@@ -322,10 +322,18 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	if (DebugHud) DebugHud->SetCanvasForTest(Toile);
 	if (DebugHud) DebugHud->DrawHUD();
 	TestTrue(TEXT("DrawHUD en épreuve : rien dessiné (retour anticipé)"), DebugHud && !DebugHud->DrewDebugLastFrame());
+	// Tranche T8 : widget en mode tactile, cavalière en selle (bouton SAUT du mode « ride ») ; en épreuve, SAUT et pause seuls.
 	UStridesTouchControls* Touch = CreateWidget<UStridesTouchControls>(W.World, UStridesTouchControls::StaticClass());
-	if (Touch) Touch->Sync();
+	strides::CsoInput TouchCmd;
+	if (Touch)
+	{
+		Touch->SetTouchMode(true);
+		Touch->SetCommandsForTest(&TouchCmd, true);
+		Touch->SetViewCssForTest(FVector2D(844, 390));
+		Touch->Sync();
+	}
 	const TArray<FString> InRace = Touch ? Touch->VisibleButtons() : TArray<FString>();
-	TestTrue(FString::Printf(TEXT("commandes tactiles en épreuve : boutons visibles « %s » (SAUT seul)"), *FString::Join(InRace, TEXT(", "))), InRace == TArray<FString>{TEXT("Jump")});
+	TestTrue(FString::Printf(TEXT("commandes tactiles en épreuve : boutons visibles « %s » (SAUT et pause seuls)"), *FString::Join(InRace, TEXT(", "))), InRace == (TArray<FString>{TEXT("Jump"), TEXT("Pause")}));
 	// 2) Cheval posé 6 m avant la ligne de départ, dans son axe, au trot : ligne franchie, bip, chrono lancé.
 	Horse->PlaceAt(Cfg.start.x - FMath::Sin(Cfg.start.rot) * 6, Cfg.start.z - FMath::Cos(Cfg.start.rot) * 6, Cfg.start.rot, 4.6);
 	for (int32 K = 0; K < 60 && !Course->Run()->state().started; K++) Horse->Tick(Dt);
@@ -344,9 +352,15 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	TestTrue(TEXT("bilan (étape suivante)"), Course->Run()->step() == strides::CsoStep::Result);
 	TestTrue(TEXT("HUD d'épreuve : ÉLIMINÉ reçu, mode concours quitté au bilan, HUD de débogage rendu"), Course->HudModel().bigTitle() == "ÉLIMINÉ" && !Course->HudModel().csoCtl() &&
 		AStridesHUD::DebugVisible(&Course->HudModel()) && UStridesTouchControls::ButtonVisible(TEXT("Save"), &Course->HudModel()));
-	if (Touch) Touch->Sync();
+	// Cavalière à pied (pas de SAUT : mode « foot » du web) ; hors épreuve, boutons du portage et pause.
+	if (Touch)
+	{
+		Touch->SetCommandsForTest(&TouchCmd, false);
+		Touch->Sync();
+	}
 	const TArray<FString> AtResult = Touch ? Touch->VisibleButtons() : TArray<FString>();
-	TestTrue(FString::Printf(TEXT("commandes tactiles au bilan : %d boutons visibles « %s »"), AtResult.Num(), *FString::Join(AtResult, TEXT(", "))), AtResult.Num() == 8);
+	TestTrue(FString::Printf(TEXT("commandes tactiles au bilan : %d boutons visibles « %s »"), AtResult.Num(), *FString::Join(AtResult, TEXT(", "))),
+		AtResult.Num() == 8 && AtResult.Contains(TEXT("Pause")) && !AtResult.Contains(TEXT("Jump")));
 	AddInfo(FString::Printf(TEXT("épreuve en jeu : %d appels d'interface, %d sons ; %s"), Course->HudLog().Num(), Course->AudioLog().Num(), *Course->StatusText()));
 	return true;
 }

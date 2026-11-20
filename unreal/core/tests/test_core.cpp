@@ -2046,6 +2046,58 @@ static void testCsoInput() {
               btnCalls, bad + elBad);
 }
 
+// ---------- Carte Pause (tranche T8) : cso_pause.json (bascules cliquées dans la vraie carte du web) ----------
+// Réglages après chaque clic (absent / valeur) et libellés affichés : clé calculée par le cœur, texte pris dans les
+// libellés relevés dans le DOM (Content/Data/cso_controls_style.json, ce que lit le jeu).
+static void testCsoPause() {
+  const J o = loadJson(ORA + "/cso_pause.json");
+  const J st = loadJson(DATA + "/cso_controls_style.json");
+  const J& lb = st["labels"];
+  const auto label = [&](const std::string& key) -> std::string {
+    if (key.empty()) return "";
+    if (key == "aid.locked") return lb["locked"].s;
+    const size_t dot = key.find('.');
+    return lb[key.substr(0, dot)][key.substr(dot + 1)].s;
+  };
+  int steps = 0, bad = 0;
+  for (const J& c : o["cases"].a) {
+    Settings s;
+    if (!c["start"]["courseLine"].isNull()) s["courseLine"] = c["start"]["courseLine"].b ? "true" : "false";
+    if (!c["start"]["jumpAid"].isNull()) s["jumpAid"] = c["start"]["jumpAid"].s;
+    const bool locked = c["locked"].b;
+    for (const J& e : c["steps"].a) {
+      steps++;
+      if (e["act"].s == "ligne") toggleCourseLine(s);
+      else if (e["act"].s == "aide") cycleJumpAid(s, locked);
+      const std::string wantLine = e["courseLine"].isNull() ? "absent" : e["courseLine"].b ? "true" : "false";
+      const std::string gotLine = s.count("courseLine") ? s["courseLine"] : "absent";
+      const std::string wantAid = e["jumpAid"].isNull() ? "absent" : e["jumpAid"].s;
+      const std::string gotAid = s.count("jumpAid") ? s["jumpAid"] : "absent";
+      const std::string lineTxt = label(pauseLineLabelKey(s)), aidTxt = label(pauseAidLabelKey(s, locked));
+      const bool ok = gotLine == wantLine && gotAid == wantAid && lineTxt == e["line"].s && aidTxt == e["aid"].s && locked == e["aidDisabled"].b;
+      if (!ok) {
+        bad++;
+        if (bad < 4) std::printf("  pause « %s », %s : %s %s « %s » « %s » / %s %s « %s » « %s »\n", c["desc"].s.c_str(), e["act"].s.c_str(), gotLine.c_str(), gotAid.c_str(), lineTxt.c_str(), aidTxt.c_str(),
+                                 wantLine.c_str(), wantAid.c_str(), e["line"].s.c_str(), e["aid"].s.c_str());
+      }
+    }
+  }
+  CHECK(bad == 0 && steps >= 25, "carte Pause : %d étapes, %d écarts", steps, bad);
+  // Sauvegarde neuve : réglages du web (save.js:37) ; relus après un aller-retour JSON, et depuis un export du web
+  // (booléen false).
+  SaveGame g = SaveGame::fresh();
+  CHECK(courseLineShown(g.settings) && jumpAidOf(g.settings) == "full" && g.settings.at("courseLine") == "true", "réglages neufs");
+  toggleCourseLine(g.settings);
+  cycleJumpAid(g.settings);
+  SaveGame r;
+  std::string err;
+  CHECK(SaveGame::fromJson(g.toJson(), r, err) && !courseLineShown(r.settings) && jumpAidOf(r.settings) == "button", "réglages relus : %s", err.c_str());
+  SaveGame w;
+  CHECK(SaveGame::fromWebExport("{\"version\":2,\"settings\":{\"jumpAid\":\"off\",\"courseLine\":false}}", w, err) && !courseLineShown(w.settings) && jumpAidOf(w.settings) == "off",
+        "réglages importés du web : %s", err.c_str());
+  std::printf("carte Pause : %zu cas, %d étapes rejouées, %d écarts\n", o["cases"].a.size(), steps, bad);
+}
+
 int main(int argc, char** argv) {
   ORA = argc > 1 ? argv[1] : "oracles";
   DATA = argc > 2 ? argv[2] : "../../StridesGrandTour/Content/Data";
@@ -2074,6 +2126,7 @@ int main(int argc, char** argv) {
     run("goto", testCsoGoto);
     run("camera", testCamRuns);
     run("input", testCsoInput);
+    run("pause", testCsoPause);
   } catch (const std::exception& e) {
     std::printf("exception : %s\n", e.what());
     return 2;

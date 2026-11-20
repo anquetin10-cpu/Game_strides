@@ -104,4 +104,38 @@ bool SaveGame::fromWebExport(const std::string& text, SaveGame& out, std::string
   return true;
 }
 
+bool courseLineShown(const Settings& s) {
+  const auto it = s.find("courseLine");
+  return !(it != s.end() && it->second == "false");
+}
+
+void toggleCourseLine(Settings& s) {
+  const auto it = s.find("courseLine");
+  s["courseLine"] = it != s.end() && it->second == "false" ? "true" : "false";
+}
+
+std::string jumpAidOf(const Settings& s) {
+  const auto it = s.find("jumpAid");
+  return it == s.end() || it->second.empty() ? std::string("full") : it->second;
+}
+
+void cycleJumpAid(Settings& s, bool locked) {
+  if (locked) return;
+  static const char* order[] = {"full", "button", "off"};
+  const std::string cur = jumpAidOf(s);
+  int i = -1;
+  for (int k = 0; k < 3; k++)
+    if (cur == order[k]) i = k;
+  s["jumpAid"] = order[(i + 1) % 3];
+}
+
+std::string pauseLineLabelKey(const Settings& s) { return courseLineShown(s) ? "line.true" : "line.false"; }
+
+std::string pauseAidLabelKey(const Settings& s, bool locked) {
+  if (locked) return "aid.locked";
+  // aids[st.jumpAid || 'full'] : une valeur hors liste n'a pas de libellé (texte vide dans le web).
+  const std::string a = jumpAidOf(s);
+  return a == "full" || a == "button" || a == "off" ? "aid." + a : std::string();
+}
+
 }  // namespace strides

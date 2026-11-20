@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "StridesCore/SaveGame.h"
 #include "StridesSaveSubsystem.generated.h"
 
 UCLASS()
@@ -29,4 +30,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Strides") bool ImportWebExport(const FString& Path);
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") FString LastMessage;
 	static const FString Slot;
+	// Emplacement utilisé (Slot par défaut) ; les tests en prennent un à eux pour ne jamais toucher la partie du joueur.
+	FString SlotName = Slot;
+
+	// Réglages en cours (save.js settings : jumpAid, courseLine…, tranche T8) : lus dans la sauvegarde à l'initialisation
+	// (sinon ceux d'une sauvegarde neuve), modifiés par la carte Pause, écrits par SaveSettings (saveSoon du web) et par
+	// SaveNow, relus par LoadNow.
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	const strides::Settings& GetSettings() const { return Settings; }
+	strides::Settings& MutableSettings() { return Settings; }
+	// Réglages écrits dans l'emplacement : le reste de la sauvegarde (position, records) est gardé ; sans sauvegarde,
+	// une sauvegarde neuve portant ces réglages.
+	bool SaveSettings();
+	// Relit les réglages de l'emplacement (faux : aucune sauvegarde lisible, réglages inchangés).
+	bool ReloadSettings();
+
+private:
+	strides::Settings Settings = strides::SaveGame::fresh().settings;
 };

@@ -178,8 +178,31 @@ node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs
 - Unreal : la fenêtre est mise à la taille de la pose (`FSystemResolution::RequestResolutionChange`), le widget `UStridesCsoHud` affiche le
   `strides::CsoHud` rejoué de la même façon, la capture prend la fenêtre AVEC l'interface (`FScreenshotRequest`) ;
   l'état rejoué est comparé à `state` (« identique au web » dans le journal) et l'affichage du widget est écrit dans
-  `hud-unreal.json` du dossier des captures. Les joysticks virtuels par défaut du moteur apparaissent sur ces captures
-  (retirés en tranche T8).
+  `hud-unreal.json` du dossier des captures. Les joysticks virtuels par défaut du moteur, visibles sur les
+  premières captures, sont retirés depuis la tranche T8 (captures refaites : boutons SAUT et pause du web).
+
+### Commandes d'épreuve (tranche T8) : poses `cmd-*`, 844 × 390 et 667 × 308
+
+```sh
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-input.mjs              # oracle cso_input.json (~1 min)
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs --controls   # styles, cso_pause.json, poses cmd-*
+"$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso -StridesPose=cmd- [-StridesShotsDir=<dossier dédié>] \
+  -abslog="$PWD/.tmp/shots-cmd.log"
+```
+
+- `--controls` n'écrit que ses sorties (page **tactile** du jeu : `hasTouch`, joystick dessiné ; cavalière montée pour le
+  bouton SAUT) : `Content/Data/cso_controls_style.json` (joystick au repos et tenu, boutons SAUT et pause, carte Pause
+  ouverte en épreuve, libellés des bascules relevés dans le DOM), `Content/Data/ui/icon-jump.png` et `icon-pause.png`
+  (icônes rendues par le navigateur), `unreal/core/tests/oracles/cso_pause.json` (bascules cliquées dans la vraie carte),
+  poses `cmd-*` de `poses.json` et leurs captures web. Styles, oracle et poses du HUD (T7) ne sont pas réécrits.
+- Pose `cmd-joystick-*` : champ `touch` (doigt posé puis glissé, px CSS) versé par `-StridesShots=cso` dans les commandes
+  du contrôleur (`AStridesShots::ApplyControlsPose`), cheval figé ; pose `cmd-pause-*` (`pause`) : carte Pause ouverte par
+  le contrôleur (jeu suspendu, l'acteur des captures continue). `tactile` : joystick dessiné (page tactile du web).
+- Relevé de l'affichage par famille de poses : `hud-unreal.json` (T7), `cmd-unreal.json` (T8) ; chaque pose y note les
+  boutons visibles et les boîtes de SAUT, pause et joystick (px CSS) et, en pause, les éléments de la carte.
+- Clavier : les touches sont lues par leur code physique (code matériel du Mac) ; `Strides.Cso.PhysicalKeys` vérifie la
+  table sur des événements construits (un vrai clavier AZERTY n'a pas été essayé).
 
 ## 4. Montage côte à côte
 

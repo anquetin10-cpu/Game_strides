@@ -12,7 +12,7 @@
 			"debugDrawn": true,
 			"touchControls": true,
 			"visibleButtons": [
-				"Jump",
+				"Pause",
 				"Interact",
 				"GaitUp",
 				"GaitDown",
@@ -36,7 +36,8 @@
 			"debugDrawn": false,
 			"touchControls": true,
 			"visibleButtons": [
-				"Jump"
+				"Jump",
+				"Pause"
 			],
 			"raceHud": [
 				"board=Départ 45 s|· accordé 64 s|0 pt|▸ 1",
@@ -58,7 +59,8 @@
 			"debugDrawn": false,
 			"touchControls": true,
 			"visibleButtons": [
-				"Jump"
+				"Jump",
+				"Pause"
 			],
 			"raceHud": [
 				"board=2,23|/ 64 s|0 pt|▸ 2",
@@ -79,15 +81,16 @@
 			"debugDrawn": false,
 			"touchControls": true,
 			"visibleButtons": [
-				"Jump"
+				"Jump",
+				"Pause"
 			],
 			"raceHud": [
-				"board=34,86|/ 64 s|0 pt|▸ 6A",
+				"board=34,82|/ 64 s|0 pt|▸ 6A",
 				"fb=Bon appel"
 			],
 			"classes": "cso-ctl cso-sober cso-on",
 			"minimapMasked": true,
-			"status": "34,97 / 64 s 0 pt ▸ 6A · Obstacle n°6A · double sur 10",
+			"status": "34,93 / 64 s 0 pt ▸ 6A · Obstacle n°6A · double sur 10",
 			"written": true
 		},
 		{
@@ -100,6 +103,7 @@
 			"touchControls": true,
 			"visibleButtons": [
 				"Jump",
+				"Pause",
 				"Interact",
 				"GaitUp",
 				"GaitDown",

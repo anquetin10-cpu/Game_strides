@@ -115,6 +115,11 @@ private:
 		// HUD d'épreuve (tranche T7) : exécution rejouée jusqu'à HudFrame, appels ajoutés (JSON [[fn, args]…]) à
 		// HudExtraFrame, état du DOM du web (JSON).
 		bool bHasHud = false;
+		// Commandes d'épreuve (tranche T8) : page tactile du web (joystick dessiné), doigt posé puis glissé (px CSS),
+		// carte Pause ouverte.
+		bool bTactile = false, bHasTouch = false, bPause = false;
+		int32 TouchId = 1;
+		FVector2D TouchStart = FVector2D::ZeroVector, TouchMove = FVector2D::ZeroVector;
 		FString HudRunFile, HudExtra, HudState;
 		int32 HudFrame = 0, HudExtraFrame = -1;
 	};
@@ -124,6 +129,7 @@ private:
 	void ApplyCamRunPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	void MeasureFraming(const FPose& P, class APlayerController* PC);
 	void ApplyHudPose(const FPose& P, class APlayerController* PC);
+	void ApplyControlsPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	// Partie réelle avec l'interface (mode "cso-jeu", contrôle adverse de T7) : captures de la fenêtre aux instants choisis
 	// par l'état de l'épreuve, avec le relevé de ce qui est réellement affiché.
 	void TickJeu(float DeltaSeconds, class APlayerController* PC);

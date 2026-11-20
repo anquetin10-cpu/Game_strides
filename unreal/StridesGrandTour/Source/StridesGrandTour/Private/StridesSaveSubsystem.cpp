@@ -13,9 +13,9 @@
 
 const FString UStridesSaveSubsystem::Slot = TEXT("strides_main");
 
-static bool ReadCore(strides::SaveGame& Out, FString& Msg)
+static bool ReadCore(const FString& SlotName, strides::SaveGame& Out, FString& Msg)
 {
-	UStridesSaveGame* S = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(UStridesSaveSubsystem::Slot, 0));
+	UStridesSaveGame* S = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
 	if (!S) { Msg = TEXT("Aucune sauvegarde"); return false; }
 	std::string Err;
 	if (!strides::SaveGame::fromJson(TCHAR_TO_UTF8(*S->Json), Out, Err)) { Msg = FString::Printf(TEXT("Sauvegarde illisible : %s"), UTF8_TO_TCHAR(Err.c_str())); return false; }
@@ -26,7 +26,8 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 {
 	strides::SaveGame Core;
 	FString Msg;
-	ReadCore(Core, Msg);  // part de la sauvegarde existante (records, réglages) ; sinon une sauvegarde neuve
+	ReadCore(SlotName, Core, Msg);  // part de la sauvegarde existante (records) ; sinon une sauvegarde neuve
+	Core.settings = Settings;  // réglages en cours (carte Pause)
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W) return false;
 	AStridesHorse* Horse = nullptr;
@@ -62,7 +63,7 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 		S->ActiveMissionId = Progress->ActiveMissionId;
 		S->CompletedMissions = Progress->CompletedMissions;
 	}
-	const bool Ok = UGameplayStatics::SaveGameToSlot(S, Slot, 0);
+	const bool Ok = UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
 	LastMessage = Ok ? TEXT("Partie sauvegardée") : TEXT("Échec de la sauvegarde");
 	return Ok;
 }
@@ -70,10 +71,11 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 {
 	strides::SaveGame Core;
-	if (!ReadCore(Core, LastMessage)) return false;
+	if (!ReadCore(SlotName, Core, LastMessage)) return false;
+	Settings = Core.settings;
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W || !Core.pose.valid) { LastMessage = TEXT("Sauvegarde sans position"); return false; }
-	if (UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(Slot, 0)))
+	if (UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)))
 		if (UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
 			Progress->Restore(Saved->Credits, Saved->Reputation, Saved->ActiveMissionId, Saved->CompletedMissions);
 	AStridesHorse* Horse = nullptr;
@@ -93,6 +95,33 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	return true;
 }
 
+void UStridesSaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	ReloadSettings();
+}
+
+bool UStridesSaveSubsystem::ReloadSettings()
+{
+	strides::SaveGame Core;
+	FString Msg;
+	if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0) || !ReadCore(SlotName, Core, Msg)) return false;
+	Settings = Core.settings;
+	return true;
+}
+
+bool UStridesSaveSubsystem::SaveSettings()
+{
+	strides::SaveGame Core;
+	FString Msg;
+	UStridesSaveGame* Old = UGameplayStatics::DoesSaveGameExist(SlotName, 0) ? Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)) : nullptr;
+	if (Old) ReadCore(SlotName, Core, Msg);
+	Core.settings = Settings;
+	UStridesSaveGame* S = Old ? Old : Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
+	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
+	return UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
+}
+
 bool UStridesSaveSubsystem::ImportWebExport(const FString& Path)
 {
 	FString Text;
@@ -100,9 +129,10 @@ bool UStridesSaveSubsystem::ImportWebExport(const FString& Path)
 	strides::SaveGame Core;
 	std::string Err;
 	if (!strides::SaveGame::fromWebExport(TCHAR_TO_UTF8(*Text), Core, Err)) { LastMessage = UTF8_TO_TCHAR(Err.c_str()); return false; }
+	Settings = Core.settings;
 	UStridesSaveGame* S = Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
 	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
-	const bool Ok = UGameplayStatics::SaveGameToSlot(S, Slot, 0);
+	const bool Ok = UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
 	LastMessage = Ok ? TEXT("Sauvegarde du jeu web importée") : TEXT("Échec de l'import");
 	return Ok;
 }

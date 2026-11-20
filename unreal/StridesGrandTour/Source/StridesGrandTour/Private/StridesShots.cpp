@@ -26,6 +26,7 @@
 #include "StridesHUD.h"
 #include "StridesRider.h"
 #include "StridesTouchControls.h"
+#include "StridesPauseMenu.h"
 #include "StridesUnits.h"
 #include "UnrealClient.h"
 #include "UnrealEngine.h"
@@ -215,6 +216,8 @@ AStridesShots::AStridesShots()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+	// Les poses de la carte Pause suspendent le jeu (SetGamePaused) : les captures continuent.
+	PrimaryActorTick.bTickEvenWhenPaused = true;
 	// Points de vue (x, hauteur au-dessus du sol, z) -> cible (x, hauteur au-dessus du sol, z), repère web en mètres.
 	auto S = [this](const TCHAR* Name, double Ex, double Ey, double Ez, double Tx, double Ty, double Tz) { Shots.Add({Name, FVector(Ex, Ey, Ez), FVector(Tx, Ty, Tz)}); };
 	S(TEXT("01_ecurie_cour"), -92, 1.8, 186, -122, 3, 152);
@@ -556,6 +559,19 @@ void AStridesShots::LoadPoses()
 				FJsonSerializer::Serialize(St->ToSharedRef(), W);
 			}
 		}
+		// Commandes d'épreuve (tranche T8) : page tactile, doigt sur le joystick, carte Pause.
+		O->TryGetBoolField(TEXT("tactile"), P.bTactile);
+		O->TryGetBoolField(TEXT("pause"), P.bPause);
+		const TSharedPtr<FJsonObject>* To = nullptr;
+		if (O->TryGetObjectField(TEXT("touch"), To))
+		{
+			P.bHasTouch = true;
+			P.TouchId = (int32)(*To)->GetNumberField(TEXT("id"));
+			const TArray<TSharedPtr<FJsonValue>>& A = (*To)->GetArrayField(TEXT("start"));
+			const TArray<TSharedPtr<FJsonValue>>& B = (*To)->GetArrayField(TEXT("move"));
+			P.TouchStart = FVector2D(A[0]->AsNumber(), A[1]->AsNumber());
+			P.TouchMove = FVector2D(B[0]->AsNumber(), B[1]->AsNumber());
+		}
 		// -StridesPose=<préfixe> : seulement les poses dont le nom commence ainsi.
 		FString Only;
 		if (FParse::Value(FCommandLine::Get(), TEXT("StridesPose="), Only) && !P.Name.StartsWith(Only)) continue;
@@ -635,6 +651,7 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 	if (AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC))
 		if (UStridesCsoHud* W = SPC->CsoHudWidget()) W->SetFrozen(P.bHasHud ? &PoseHud : nullptr);
 	if (P.bHasHud) ApplyHudPose(P, PC);
+	ApplyControlsPose(P, PC, Horse);
 	// Soleil : la lumière va du soleil vers la scène (sens opposé à sunDir, direction web → axes Unreal).
 	const FVector LightDir = -FVector(P.SunDir.X, P.SunDir.Z, P.SunDir.Y).GetSafeNormal();
 	for (TActorIterator<ADirectionalLight> It(GetWorld()); It; ++It) It->SetActorRotation(LightDir.Rotation());
@@ -645,6 +662,30 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 		*P.Name, P.HorseX, P.HorseZ, P.HorseH, bPoseMounted, P.FovV,
 		P.bHasCamRun ? TEXT("caméra du cheval (axe Y maintenu)") : *FString::Printf(TEXT("%.4f° horizontal"), FovH), P.Width, P.Height, *P.SunDir.ToString(), *LightDir.Rotation().ToString(),
 		G(P.Eye.X, P.Eye.Z), G(P.Target.X, P.Target.Z), G(P.HorseX, P.HorseZ));
+}
+
+// Commandes d'épreuve (tranche T8) : mode tactile comme la page du web (joystick dessiné), doigt posé puis glissé dans
+// les commandes du contrôleur (mêmes px CSS que le geste du web), cheval figé à la pose (le web ne fait plus de pas) ;
+// carte Pause ouverte par le contrôleur (jeu suspendu).
+void AStridesShots::ApplyControlsPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
+{
+	AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
+	if (!SPC) return;
+	if (UStridesTouchControls* T = SPC->TouchWidget()) T->SetTouchMode(P.bTactile);
+	// Reprise d'abord (pose précédente en pause : commandes désactivées, le geste serait ignoré).
+	if (!P.bPause && SPC->IsGamePausedState()) SPC->ResumeGame();
+	strides::CsoInput& Cmd = SPC->Commands();
+	Cmd.releaseAll();
+	if (P.bHasTouch)
+	{
+		if (Horse) Horse->SetActorTickEnabled(false);
+		SPC->FeedPointerDown(P.TouchId, false, P.TouchStart);
+		SPC->FeedPointerMove(P.TouchId, false, P.TouchMove);
+		const FVector2D V = SPC->ViewCss();
+		UE_LOG(LogTemp, Display, TEXT("Strides parite: commandes %s : viewport %.1f x %.1f px CSS, joystick %s base (%.1f ; %.1f) bouton (%+.1f ; %+.1f), move (%.6f ; %.6f ; %.6f)"), *P.Name, V.X, V.Y,
+			Cmd.joy.on ? TEXT("tenu") : TEXT("LIBRE"), Cmd.view.left, Cmd.view.top, Cmd.view.knobX, Cmd.view.knobY, Cmd.move.x, Cmd.move.y, Cmd.move.mag);
+	}
+	if (P.bPause && !SPC->IsGamePausedState()) SPC->PauseGame();
 }
 
 void AStridesShots::ApplyHudPose(const FPose& P, APlayerController* PC)
@@ -799,7 +840,10 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 			Doc->SetArrayField(TEXT("poses"), HudResults);
 			FString Out;
 			FJsonSerializer::Serialize(Doc.ToSharedRef(), TJsonWriterFactory<>::Create(&Out));
-			const FString File = FPaths::GetPath(Poses.Last().Out) / TEXT("hud-unreal.json");
+			// Un relevé par famille de poses (hud-* : tranche T7, cmd-* : tranche T8), nommé d'après la première pose relevée.
+			FString Family = HudResults[0]->AsObject()->GetStringField(TEXT("name"));
+			Family = Family.Left(Family.Find(TEXT("-")));
+			const FString File = FPaths::GetPath(Poses.Last().Out) / (Family + TEXT("-unreal.json"));
 			FFileHelper::SaveStringToFile(Out + TEXT("\n"), *File, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 			UE_LOG(LogTemp, Display, TEXT("Strides parite: HUD écrit dans %s"), *File);
 			HudResults.Reset();
@@ -858,6 +902,31 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 					HudResults.Last()->AsObject()->SetArrayField(TEXT("shown"), D);
 					HudResults.Last()->AsObject()->SetStringField(TEXT("window"), FString::Printf(TEXT("%dx%d"), Size.X, Size.Y));
 					UE_LOG(LogTemp, Display, TEXT("Strides parite: HUD %s affiché : %s"), *P.Name, *FString::Join(W->Describe(), TEXT(" ; ")));
+					// Commandes affichées (tranche T8) : boutons visibles, boîtes (px CSS) de SAUT, pause et joystick, opacité du
+					// joystick ; carte Pause (éléments affichés).
+					if (UStridesTouchControls* T = SPC->TouchWidget())
+					{
+						T->Sync();
+						TArray<TSharedPtr<FJsonValue>> Bn;
+						for (const FString& N : T->VisibleButtons()) Bn.Add(MakeShared<FJsonValueString>(N));
+						TSharedPtr<FJsonObject> C = MakeShared<FJsonObject>();
+						C->SetArrayField(TEXT("buttons"), Bn);
+						for (const TCHAR* N : {TEXT("Jump"), TEXT("Pause"), TEXT("Joystick"), TEXT("Knob")})
+						{
+							const FVector4 B = T->BoxOf(N);
+							C->SetArrayField(N, {MakeShared<FJsonValueNumber>(B.X), MakeShared<FJsonValueNumber>(B.Y), MakeShared<FJsonValueNumber>(B.Z), MakeShared<FJsonValueNumber>(B.W)});
+						}
+						C->SetNumberField(TEXT("joystickOpacity"), T->JoystickOpacity());
+						C->SetBoolField(TEXT("tactile"), T->IsTouchMode());
+						HudResults.Last()->AsObject()->SetObjectField(TEXT("controls"), C);
+						UE_LOG(LogTemp, Display, TEXT("Strides parite: commandes %s affichées : %s"), *P.Name, *FString::Join(T->VisibleButtons(), TEXT(", ")));
+					}
+					if (const UStridesPauseMenu* M = SPC->PauseMenuWidget(); M && M->IsOpen())
+					{
+						TArray<TSharedPtr<FJsonValue>> Pm;
+						for (const FString& L : M->Describe()) Pm.Add(MakeShared<FJsonValueString>(L));
+						HudResults.Last()->AsObject()->SetArrayField(TEXT("pauseMenu"), Pm);
+					}
 				}
 			UE_LOG(LogTemp, Display, TEXT("Strides parite: capture %s demandée avec l'interface (fenêtre %dx%d)"), *P.Out, Size.X, Size.Y);
 			PoseStep = 2;

@@ -51,7 +51,11 @@ void AStridesHUD::DrawHUD()
 			if (It->Run()) { Course = *It; break; }
 	// Épreuve (mode concours) : interface d'épreuve UMG seule, ni lignes de débogage ni minicarte.
 	bDrewDebug = DebugVisible(Course.IsValid() && Course->Run() ? &Course->HudModel() : nullptr);
-	if (!bDrewDebug) return;
+	if (!bDrewDebug)
+	{
+		DrawPhone(GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>());
+		return;
+	}
 	float Y = 40.f;
 	auto Line = [this, &Y](const FString& S, const FLinearColor& C = FLinearColor::White) { DrawText(S, C, 40.f, Y, nullptr, 1.4f); Y += 30.f; };
 	const APawn* P = GetOwningPawn();
@@ -82,31 +86,38 @@ void AStridesHUD::DrawHUD()
 		if (!Progress->LastMessage.IsEmpty()) Line(Progress->LastMessage, FLinearColor(0.7f, 0.9f, 1.f));
 
 		DrawMinimap(P, Progress);
-		const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-
-		const AStridesPlayerController* Controller = Cast<AStridesPlayerController>(GetOwningPlayerController());
-		if (Controller && Controller->IsPhoneOpen())
-		{
-			const float W = 440.f, Ht = FMath::Min(650.f, Canvas->SizeY - 80.f), X = (Canvas->SizeX - W) * .5f, Top = 40.f;
-			DrawRect(FLinearColor(.025f, .03f, .04f, .96f), X, Top, W, Ht);
-			DrawText(TEXT("STRIDES"), FLinearColor(.3f, .9f, .75f), X + 28, Top + 24, nullptr, 1.8f);
-			DrawText(TEXT("Téléphone · P pour fermer"), FLinearColor(.7f, .75f, .8f), X + 28, Top + 62, nullptr, 1.f);
-			float AppY = Top + 108;
-			if (Data) for (int32 I = 0; I < Data->PhoneApps.Num(); ++I)
-			{
-				const int32 Col = I % 2, Row = I / 2;
-				DrawRect(FLinearColor(.08f, .1f, .13f, 1.f), X + 26 + Col * 198, AppY + Row * 48, 184, 38);
-				DrawText(Data->PhoneApps[I], FLinearColor::White, X + 38 + Col * 198, AppY + 8 + Row * 48, nullptr, .9f);
-			}
-			const float MissionY = AppY + 260;
-			DrawText(TEXT("MISSION ACTIVE"), FLinearColor(.3f, .9f, .75f), X + 28, MissionY, nullptr, 1.f);
-			DrawText(Progress->MissionStatus(), FLinearColor::White, X + 28, MissionY + 32, nullptr, 1.05f);
-			DrawText(TEXT("M / bouton MISSION : lancer la prochaine mission"), FLinearColor(1.f, .82f, .25f), X + 28, MissionY + 72, nullptr, .85f);
-			DrawText(FString::Printf(TEXT("Carrière : %d / %d missions"), Progress->CompletedMissions.Num(), Data ? Data->Missions.Num() : 0), FLinearColor(.8f, .84f, .9f), X + 28, MissionY + 108, nullptr, 1.f);
-		}
+		DrawPhone(Progress);
 	}
 	if (const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>())
 		for (const FString& L : D->LoadLog) if (L.Contains(TEXT("introuvable")) || L.Contains(TEXT("illisible"))) Line(L, FLinearColor::Red);
+}
+
+// Téléphone ouvert (P / Tab, M sur la carte) : panneau dessiné aussi en épreuve (le web ouvre le téléphone en concours ;
+// tranche T8 : il fige le cheval et le chrono).
+void AStridesHUD::DrawPhone(const UStridesProgressionSubsystem* Progress)
+{
+	if (!Progress) return;
+	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+	const AStridesPlayerController* Controller = Cast<AStridesPlayerController>(GetOwningPlayerController());
+	if (Controller && Controller->IsPhoneOpen())
+	{
+		const float W = 440.f, Ht = FMath::Min(650.f, Canvas->SizeY - 80.f), X = (Canvas->SizeX - W) * .5f, Top = 40.f;
+		DrawRect(FLinearColor(.025f, .03f, .04f, .96f), X, Top, W, Ht);
+		DrawText(TEXT("STRIDES"), FLinearColor(.3f, .9f, .75f), X + 28, Top + 24, nullptr, 1.8f);
+		DrawText(Controller->PhoneApp() == TEXT("map") ? TEXT("Carte · M pour fermer (application Carte non portée)") : TEXT("Téléphone · P ou Tab pour fermer"), FLinearColor(.7f, .75f, .8f), X + 28, Top + 62, nullptr, 1.f);
+		float AppY = Top + 108;
+		if (Data) for (int32 I = 0; I < Data->PhoneApps.Num(); ++I)
+		{
+			const int32 Col = I % 2, Row = I / 2;
+			DrawRect(FLinearColor(.08f, .1f, .13f, 1.f), X + 26 + Col * 198, AppY + Row * 48, 184, 38);
+			DrawText(Data->PhoneApps[I], FLinearColor::White, X + 38 + Col * 198, AppY + 8 + Row * 48, nullptr, .9f);
+		}
+		const float MissionY = AppY + 260;
+		DrawText(TEXT("MISSION ACTIVE"), FLinearColor(.3f, .9f, .75f), X + 28, MissionY, nullptr, 1.f);
+		DrawText(Progress->MissionStatus(), FLinearColor::White, X + 28, MissionY + 32, nullptr, 1.05f);
+		DrawText(TEXT("N / bouton MISSION : lancer la prochaine mission"), FLinearColor(1.f, .82f, .25f), X + 28, MissionY + 72, nullptr, .85f);
+		DrawText(FString::Printf(TEXT("Carrière : %d / %d missions"), Progress->CompletedMissions.Num(), Data ? Data->Missions.Num() : 0), FLinearColor(.8f, .84f, .9f), X + 28, MissionY + 108, nullptr, 1.f);
+	}
 }
 
 void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem* Progress)

@@ -1,4 +1,5 @@
 #include "StridesGameMode.h"
+#include "StridesSaveSubsystem.h"
 #include "StridesCore/SaveGame.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
@@ -95,7 +96,9 @@ void AStridesGameMode::StartPlay()
 		FString HorseName;
 		if (Data) for (const FStridesHorseProfile& P : Data->Horses) if (P.Id == Horse->ProfileId) HorseName = P.Name;
 		Course->Lang = UTF8_TO_TCHAR(Fresh.lang.c_str());
-		if (Fresh.settings.count("jumpAid")) Course->JumpAid = UTF8_TO_TCHAR(Fresh.settings.at("jumpAid").c_str());
+		// Aide à l'appel : réglage de la sauvegarde (carte Pause, tranche T8), sinon celui d'une sauvegarde neuve.
+		const UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
+		Course->JumpAid = UTF8_TO_TCHAR(strides::jumpAidOf(Save ? Save->GetSettings() : Fresh.settings).c_str());
 		Course->StartRun(UTF8_TO_TCHAR(Fresh.playerName.c_str()), HorseName);
 	}
 	const FVector Spawn = Data ? Data->WorldSpawn : FVector(-104.f, 168.f, .35f);

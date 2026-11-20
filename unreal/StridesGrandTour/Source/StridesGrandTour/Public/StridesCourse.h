@@ -44,6 +44,8 @@ public:
 	// Lancement de l'activité (premier pas de la mission : rejoindre l'entrée de la carrière) avec les règles et textes
 	// préparés par Build ; faux si aucune donnée. Joueur et cheval : textes de l'annonce (N° … · joueur / et cheval).
 	bool StartRun(const FString& PlayerName, const FString& HorseName);
+	// Réglage jumpAid changé (carte Pause, tranche T8) : gardé pour la prochaine épreuve et appliqué à celle en cours.
+	void SetJumpAid(const FString& Aid);
 	// Même lancement avec des règles et une table de textes données (tests).
 	void StartRunWith(const strides::CsoRunConfig& Config, const strides::TextTable& Text);
 	// Une image de l'épreuve (Run.update du jeu web), appelée par le cheval après le pas du cœur, les obstacles et leurs

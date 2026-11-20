@@ -1,0 +1,286 @@
+{
+ "schema": "strides.oracle.cso_pause/1",
+ "source": [
+  "src/ui/screens.js"
+ ],
+ "generator": "scripts/unreal/export-hud-style.mjs --controls",
+ "doc": "carte Pause du jeu web ouverte en épreuve (game.pause), bascules cliquées : par cas, réglages de départ (null : absent), aide imposée (game.course.aidLocked), puis après l’ouverture et chaque clic : settings.courseLine et settings.jumpAid (null : absent), libellés des deux boutons, bouton d’aide désactivé",
+ "cases": [
+  {
+   "desc": "réglages par défaut absents (courseLine et jumpAid indéfinis)",
+   "start": {
+    "courseLine": null,
+    "jumpAid": null
+   },
+   "locked": false,
+   "steps": [
+    {
+     "act": "ouverture",
+     "courseLine": null,
+     "jumpAid": null,
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    },
+    {
+     "act": "ligne",
+     "courseLine": false,
+     "jumpAid": null,
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    },
+    {
+     "act": "ligne",
+     "courseLine": true,
+     "jumpAid": null,
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    },
+    {
+     "act": "ligne",
+     "courseLine": false,
+     "jumpAid": null,
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": false,
+     "jumpAid": "button",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : bouton seul",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": false,
+     "jumpAid": "off",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : aucune",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": false,
+     "jumpAid": "full",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": false,
+     "jumpAid": "button",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : bouton seul",
+     "aidDisabled": false
+    }
+   ]
+  },
+  {
+   "desc": "réglages d’une sauvegarde neuve (save.js:37)",
+   "start": {
+    "courseLine": true,
+    "jumpAid": "full"
+   },
+   "locked": false,
+   "steps": [
+    {
+     "act": "ouverture",
+     "courseLine": true,
+     "jumpAid": "full",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": true,
+     "jumpAid": "button",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : bouton seul",
+     "aidDisabled": false
+    },
+    {
+     "act": "ligne",
+     "courseLine": false,
+     "jumpAid": "button",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : bouton seul",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": false,
+     "jumpAid": "off",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : aucune",
+     "aidDisabled": false
+    },
+    {
+     "act": "ligne",
+     "courseLine": true,
+     "jumpAid": "off",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : aucune",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": true,
+     "jumpAid": "full",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    }
+   ]
+  },
+  {
+   "desc": "tracé masqué, aide « bouton seul »",
+   "start": {
+    "courseLine": false,
+    "jumpAid": "button"
+   },
+   "locked": false,
+   "steps": [
+    {
+     "act": "ouverture",
+     "courseLine": false,
+     "jumpAid": "button",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : bouton seul",
+     "aidDisabled": false
+    },
+    {
+     "act": "ligne",
+     "courseLine": true,
+     "jumpAid": "button",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : bouton seul",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": true,
+     "jumpAid": "off",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : aucune",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": true,
+     "jumpAid": "full",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    }
+   ]
+  },
+  {
+   "desc": "aide inconnue (valeur hors liste)",
+   "start": {
+    "courseLine": true,
+    "jumpAid": "xyz"
+   },
+   "locked": false,
+   "steps": [
+    {
+     "act": "ouverture",
+     "courseLine": true,
+     "jumpAid": "xyz",
+     "line": "Tracé au sol : affiché",
+     "aid": "",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": true,
+     "jumpAid": "full",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": true,
+     "jumpAid": "button",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : bouton seul",
+     "aidDisabled": false
+    }
+   ]
+  },
+  {
+   "desc": "aide « aucune »",
+   "start": {
+    "courseLine": false,
+    "jumpAid": "off"
+   },
+   "locked": false,
+   "steps": [
+    {
+     "act": "ouverture",
+     "courseLine": false,
+     "jumpAid": "off",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : aucune",
+     "aidDisabled": false
+    },
+    {
+     "act": "aide",
+     "courseLine": false,
+     "jumpAid": "full",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : complète",
+     "aidDisabled": false
+    }
+   ]
+  },
+  {
+   "desc": "aide imposée par l’épreuve (défi) : bouton désactivé, clic sans effet",
+   "start": {
+    "courseLine": true,
+    "jumpAid": "button"
+   },
+   "locked": true,
+   "steps": [
+    {
+     "act": "ouverture",
+     "courseLine": true,
+     "jumpAid": "button",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : imposée par l’épreuve",
+     "aidDisabled": true
+    },
+    {
+     "act": "aide",
+     "courseLine": true,
+     "jumpAid": "button",
+     "line": "Tracé au sol : affiché",
+     "aid": "Aide au saut : imposée par l’épreuve",
+     "aidDisabled": true
+    },
+    {
+     "act": "ligne",
+     "courseLine": false,
+     "jumpAid": "button",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : imposée par l’épreuve",
+     "aidDisabled": true
+    },
+    {
+     "act": "aide",
+     "courseLine": false,
+     "jumpAid": "button",
+     "line": "Tracé au sol : masqué",
+     "aid": "Aide au saut : imposée par l’épreuve",
+     "aidDisabled": true
+    }
+   ]
+  }
+ ]
+}

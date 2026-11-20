@@ -26,9 +26,14 @@
 //    scripts/unreal/parite-montage.py.
 //
 // Usage (serveur Vite sur BASE, défaut http://127.0.0.1:5173 ; Chrome installé, aucun téléchargement) :
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs [--shots] [--no-oracle]
+//  - avec --controls (tranche T8, seul : rien d'autre n'est réécrit) : page TACTILE ; Content/Data/cso_controls_style.json
+//    (joystick au repos et tenu, boutons SAUT et pause, carte Pause en épreuve, libellés des bascules) et icônes PNG de
+//    Content/Data/ui/ ; oracle unreal/core/tests/oracles/cso_pause.json (bascules de la carte Pause cliquées) ; poses
+//    cmd-joystick-* et cmd-pause-* de poses.json et leurs captures web.
+//
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs [--shots] [--no-oracle] | [--controls]
 import { chromium } from 'playwright';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,6 +45,8 @@ const DATA = join(ROOT, 'unreal/StridesGrandTour/Content/Data');
 const PARITE = join(ROOT, 'unreal/docs/parite/cso');
 const SHOTS = process.argv.includes('--shots');
 const NO_ORACLE = process.argv.includes('--no-oracle');
+// --controls (tranche T8) : seulement les commandes d'épreuve (page tactile) ; styles, oracle et poses du HUD non touchés.
+const CONTROLS = process.argv.includes('--controls');
 const STYLE_VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
 const ORACLE_HEIGHTS = [390, 768];
 // Appels du HUD rejoués (les autres méthodes enregistrées — notify, dialog, jumpEarly — relèvent d'autres tranches).
@@ -303,15 +310,15 @@ function PAGE() {
     const r = replay(inp, ps.hud.frame, ps.hud.extra);
     return { last: r.last, board: r.board, sunDir: [g.sky.sunDir.x, g.sky.sunDir.y, g.sky.sunDir.z].map((v) => Math.round(v * 1e6) / 1e6) };
   };
-  window.__hudT7 = { replay, reference, styles, masks, pose, reset, resize: () => g.resize() };
+  window.__hudT7 = { replay, reference, styles, masks, pose, reset, css, resize: () => g.resize() };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const errors = [];
 // Une page par langue (textes propres au HUD : « Départ … s », virgule décimale du chrono).
-const openPage = async (lang) => {
-  const ctx = await browser.newContext({ viewport: STYLE_VIEWS[0], deviceScaleFactor: 1 });
+const openPage = async (lang, extra = {}) => {
+  const ctx = await browser.newContext({ viewport: STYLE_VIEWS[0], deviceScaleFactor: 1, ...extra });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${lang}: ${e.message}`));
   await page.goto(`${BASE}/?autostart&quality=high&lang=${lang}`, { timeout: 180000 });
@@ -327,7 +334,7 @@ const openPage = async (lang) => {
   await page.addScriptTag({ content: `(${PAGE.toString()})();` });
   return { ctx, page };
 };
-const pages = { fr: await openPage('fr') };
+const pages = { fr: await openPage('fr', CONTROLS ? { hasTouch: true } : {}) };
 const page = pages.fr.page;
 const setView = async (v, pg = page) => {
   await pg.setViewportSize(v);
@@ -363,19 +370,21 @@ const texts = { fb: perfect[0], hint: clocheHint.args[0], toast: barre.args[0], 
 const style = { schema: 'strides.hud_cso_style/1', generator: 'scripts/unreal/export-hud-style.mjs', source: ['src/ui/hud.js', 'src/styles.css'],
   doc: 'styles calculés par le navigateur (getComputedStyle, chaînes telles quelles) et boîtes (rect = [x, y, largeur, hauteur], px CSS) des éléments du HUD d’épreuve dans l’état de référence (épreuve en cours, tableau lancé, crans affichés, mot d’appel, astuce, toast, grand message ; textes tirés des oracles) ; views = un relevé par viewport ; masks = display et opacité de chaque élément (rendu visible pour lui-même) sous chaque combinaison de classes du HUD',
   texts, views: [], masks: null };
-for (const v of STYLE_VIEWS) {
-  await setView(v);
-  await page.evaluate((t) => window.__hudT7.reference(t), texts);
-  // Polices chargées (Geist, Geist Mono, police de secours des glyphes ▸ ✓) avant de mesurer : sinon la largeur des
-  // textes varie d'un export à l'autre (constaté : 1/64 px).
-  await page.evaluate(() => document.fonts.ready);
-  await page.waitForTimeout(300);
-  style.views.push(await page.evaluate((t) => window.__hudT7.styles(t), texts));
+if (!CONTROLS) {
+  for (const v of STYLE_VIEWS) {
+    await setView(v);
+    await page.evaluate((t) => window.__hudT7.reference(t), texts);
+    // Polices chargées (Geist, Geist Mono, police de secours des glyphes ▸ ✓) avant de mesurer : sinon la largeur des
+    // textes varie d'un export à l'autre (constaté : 1/64 px).
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    style.views.push(await page.evaluate((t) => window.__hudT7.styles(t), texts));
+  }
+  await setView(STYLE_VIEWS[0]);
+  style.masks = await page.evaluate(() => window.__hudT7.masks());
+  writeFileSync(join(DATA, 'hud_cso_style.json'), JSON.stringify(style, null, 1) + '\n');
+  console.log('styles :', style.views.map((v) => v.viewport.join('x')).join(', '), '; polices Geist chargées :', JSON.stringify(style.views[0].fonts));
 }
-await setView(STYLE_VIEWS[0]);
-style.masks = await page.evaluate(() => window.__hudT7.masks());
-writeFileSync(join(DATA, 'hud_cso_style.json'), JSON.stringify(style, null, 1) + '\n');
-console.log('styles :', style.views.map((v) => v.viewport.join('x')).join(', '), '; polices Geist chargées :', JSON.stringify(style.views[0].fonts));
 
 // Séquence synthétique (entrées écrites ici, sorties du HUD du jeu) : branches qu'aucune exécution n'atteint — deux et
 // trois toasts rapprochés (écran haut), classe de toast, mot d'appel vide puis remplacé, astuce sans durée puis
@@ -417,7 +426,7 @@ const synthInputs = () => {
 };
 
 // ---- Comportement (oracle cso_hud.json) ----
-if (!NO_ORACLE) {
+if (!NO_ORACLE && !CONTROLS) {
   const doc = { schema: 'strides.oracle.cso_hud/1', generator: 'scripts/unreal/export-hud-style.mjs', source: ['src/ui/hud.js'],
     doc: 'HUD du jeu web (vrai Hud, DOM) rejouant les appels hud.* (big, toast, hint, clearHint, jumpFeedback, setObjective) et l’état lu par hud.update (game.course : controls, kind ; tableau : valeurs relevées, pour les classes over et faults ; cadence de concours et réglage au joystick : canal ch, indéfinie dans les images légères) des exécutions de cso_runs/ ; horloge virtuelle : appels du lancement à 0, image f à (f + 1) × 100 ticks de 1/3 ms, temporisateurs échus déclenchés avant les appels de l’image (échéance puis création), hud.update(1/30) après les appels. snaps = [image, parties changées] : to = toasts [texte, classes en plus de toast] ; hi = astuce [masquée, innerHTML, dans l’objectif] ; bg = grand message [masqué, titre, sous-titre, big-on] ; fb = mot d’appel [texte, className] ; cad = crans [allumés, show] ; bd = tableau [masqué, over, faults] ; cl = [cso-on, cso-ctl, cso-sober] ; ob = objectif masqué (off). Textes du tableau : non relevés ici (valeurs du tableau arrondies au millionième dans cso_runs, Math.ceil de la cloche en dépend) ; le texte affiché par le jeu en cours d’exécution est board.txt de cso_runs, comparé par testCsoRuns.',
     heights: ORACLE_HEIGHTS, synth: 'id « synth » : séquence synthétique, entrées dans inputs (setup = appels du lancement ; frames[f] = { hud : [fn, args], course, board, cad : [cadence, réglage] | null })', replays: [] };
@@ -443,7 +452,7 @@ if (!NO_ORACLE) {
 }
 
 // ---- Captures (poses hud-*) ----
-if (SHOTS) {
+if (SHOTS && !CONTROLS) {
   mkdirSync(PARITE, { recursive: true });
   const posesFile = join(PARITE, 'poses.json');
   const posesDoc = JSON.parse(readFileSync(posesFile, 'utf8'));
@@ -496,6 +505,237 @@ if (SHOTS) {
   writeFileSync(posesFile, JSON.stringify(posesDoc, null, 1) + '\n');
   console.log('poses :', posesFile);
 }
+// ---- Commandes d'épreuve (tranche T8) : page tactile, joystick, boutons SAUT et pause, menu Pause ----
+// Sorties : Content/Data/cso_controls_style.json (styles et boîtes du joystick au repos et au doigt, des boutons SAUT et
+// pause et de la carte Pause en épreuve, par viewport ; libellés des bascules relevés dans le DOM ; icônes rendues par
+// le navigateur en PNG dans Content/Data/ui/) ; unreal/core/tests/oracles/cso_pause.json (bascules « Tracé au sol » et
+// « Aide au saut » cliquées dans la vraie carte : réglages et libellés après chaque clic) ; poses cmd-* de poses.json et
+// captures web <pose>-web.png (tactile : joystick tenu au doigt ; carte Pause ouverte en épreuve).
+function PAGE_CTL() {
+  const g = window.__game;
+  const H = g.hud;
+  const T7 = window.__hudT7;
+  // Carte et joystick sans animation ni transition : relevés et captures à l'état d'arrivée.
+  const st = document.createElement('style');
+  st.textContent = '.overlay, .overlay *, .joy-base, .joy-base * { animation: none !important; transition: none !important; }';
+  document.head.appendChild(st);
+  const EXTRA = ['backgroundImage', 'backdropFilter', 'borderTopRightRadius', 'borderBottomLeftRadius', 'borderBottomRightRadius', 'borderBottomWidth', 'borderBottomColor', 'borderLeftWidth',
+    'borderLeftColor', 'borderRightWidth', 'marginRight', 'marginBottom', 'fontStyle', 'overflowY', 'justifyContent', 'flexWrap', 'cursor', 'strokeWidth', 'stroke', 'fill'];
+  const r1 = (v) => Math.round(v * 10) / 10;
+  const css = (el) => {
+    if (!el) return null;
+    const o = T7.css(el);
+    const s = getComputedStyle(el);
+    for (const p of EXTRA) o[p] = typeof s[p] === 'string' ? s[p].replace(/(-?\d+\.\d+)px/g, (_, n) => `${r1(Number(n))}px`) : s[p];
+    return o;
+  };
+  const withText = (el, html = false) => (el ? { ...css(el), [html ? 'html' : 'text']: html ? el.innerHTML : el.textContent } : null);
+  // À cheval (bouton SAUT affiché : hud.js le masque hors du mode « ride »), comme la cavalière en selle des poses Unreal.
+  if (g.player.mode !== 'ride') window.__auto.mount();
+  const inp = g.input;
+  const joy = () => ({ base: css(inp.joyEl), knob: css(inp.knobEl), active: inp.joyEl.classList.contains('active'), styleLeft: inp.joyEl.style.left, styleTop: inp.joyEl.style.top,
+    knobTransform: inp.knobEl.style.transform, move: [inp.move.x, inp.move.y, inp.move.mag], joyState: [inp.joy.id !== null, inp.joy.ox, inp.joy.oy, inp.joy.x, inp.joy.y] });
+  const buttons = () => ({
+    mode: g.player.mode, hide: H.btnJump.classList.contains('hide'), classes: H.el.className,
+    jump: css(H.btnJump), jumpIcon: css(H.btnJump.querySelector('svg')), jumpLabel: withText(H.btnJump.querySelector('span')), jumpRing: css(H.btnJump.querySelector('.ring')), actions: css(H.actionsEl),
+    pause: css(H.pauseBtn), pauseIcon: css(H.pauseBtn.querySelector('svg')),
+  });
+  const card = () => {
+    const ov = [...document.querySelectorAll('.overlay')].pop();
+    if (!ov) return null;
+    const q = (sel) => ov.querySelector(sel);
+    const body = q('.card-body');
+    const ps = [...body.querySelectorAll(':scope > div > p, :scope > p')];
+    return {
+      overlay: css(ov), card: css(q('.card')), body: { ...css(body), scrollHeight: body.scrollHeight, clientHeight: body.clientHeight, scrollTop: body.scrollTop },
+      kicker: withText(q('.kicker')), title: withText(q('h2')),
+      // Ligne de version : « Version {BUILD} · {BUILD_ID} » (screens.js:219) ; l'identifiant de build du serveur Vite (commit,
+      // date) varie d'un export à l'autre : remplacé par le jeton {build_id} (le jeu Unreal y met le sien).
+      paragraphs: ps.map((p) => {
+        const o = withText(p, true);
+        if (p.classList.contains('build-id')) o.html = o.html.replace(/ · .*$/, ' · {build_id}');
+        return o;
+      }),
+      bold: css(body.querySelector('p b')),
+      comp: css(q('.pause-comp')), line: withText(q('[data-id="pause-line"]')), aid: { ...withText(q('[data-id="pause-aid"]')), disabled: q('[data-id="pause-aid"]').disabled },
+      promo: css(q('.promo')), promoT: withText(q('.promo .t')), promoS: withText(q('.promo .s')), promoBtn: withText(q('.promo .btn')),
+      actions: { ...css(q('.card-actions')), more: q('.card-actions').classList.contains('more') },
+      buttons: [...q('.card-actions').querySelectorAll('button')].map((b) => ({ id: b.dataset.id, cls: b.className, ...withText(b) })),
+    };
+  };
+  // Vrai bouton du DOM pressé comme un doigt (tap() de src/ui/dom.js : pointerdown puis pointerup sur place).
+  const press = (el) => {
+    const r = el.getBoundingClientRect();
+    const o = { clientX: r.x + r.width / 2, clientY: r.y + r.height / 2, bubbles: true, pointerId: 77, pointerType: 'touch', isPrimary: true };
+    el.dispatchEvent(new PointerEvent('pointerdown', o));
+    el.dispatchEvent(new PointerEvent('pointerup', o));
+  };
+  const openPause = () => {
+    g.state = 'play';
+    g.pause();
+    return g.state;
+  };
+  const resume = () => {
+    const ov = [...document.querySelectorAll('.overlay')].pop();
+    if (ov) press(ov.querySelector('[data-id="resume"]'));
+    return g.state;
+  };
+  // Bascules de la carte : réglages et libellés après chaque clic (click : écouteurs de screens.js).
+  const toggles = () => {
+    const stg = g.save.data.settings;
+    const keep = { courseLine: stg.courseLine, jumpAid: stg.jumpAid, aidLocked: g.course?.aidLocked };
+    const cases = [];
+    const val = (v) => (v === undefined ? null : v);
+    const one = (desc, start, locked, clicks) => {
+      for (const k of ['courseLine', 'jumpAid']) if (start[k] === undefined) delete stg[k]; else stg[k] = start[k];
+      g.course.aidLocked = locked;
+      openPause();
+      const ov = [...document.querySelectorAll('.overlay')].pop();
+      const bl = ov.querySelector('[data-id="pause-line"]');
+      const ba = ov.querySelector('[data-id="pause-aid"]');
+      const steps = [];
+      const rec = (act) => steps.push({ act, courseLine: val(stg.courseLine), jumpAid: val(stg.jumpAid), line: bl.textContent, aid: ba.textContent, aidDisabled: ba.disabled });
+      rec('ouverture');
+      for (const c of clicks) {
+        (c === 'ligne' ? bl : ba).click();
+        rec(c);
+      }
+      resume();
+      cases.push({ desc, start: { courseLine: val(start.courseLine), jumpAid: val(start.jumpAid) }, locked, steps });
+    };
+    one('réglages par défaut absents (courseLine et jumpAid indéfinis)', {}, false, ['ligne', 'ligne', 'ligne', 'aide', 'aide', 'aide', 'aide']);
+    one('réglages d’une sauvegarde neuve (save.js:37)', { courseLine: true, jumpAid: 'full' }, false, ['aide', 'ligne', 'aide', 'ligne', 'aide']);
+    one('tracé masqué, aide « bouton seul »', { courseLine: false, jumpAid: 'button' }, false, ['ligne', 'aide', 'aide']);
+    one('aide inconnue (valeur hors liste)', { courseLine: true, jumpAid: 'xyz' }, false, ['aide', 'aide']);
+    one('aide « aucune »', { courseLine: false, jumpAid: 'off' }, false, ['aide']);
+    one('aide imposée par l’épreuve (défi) : bouton désactivé, clic sans effet', { courseLine: true, jumpAid: 'button' }, true, ['aide', 'ligne', 'aide']);
+    for (const k of ['courseLine', 'jumpAid']) if (keep[k] === undefined) delete stg[k]; else stg[k] = keep[k];
+    g.course.aidLocked = keep.aidLocked;
+    return cases;
+  };
+  // Icône SVG du DOM rendue par le navigateur (blanc, fond transparent) à Scale × sa taille affichée.
+  const iconPng = async (svgEl, scale) => {
+    const r = svgEl.getBoundingClientRect();
+    const clone = svgEl.cloneNode(true);
+    clone.setAttribute('width', r.width * scale);
+    clone.setAttribute('height', r.height * scale);
+    clone.setAttribute('stroke', '#ffffff');
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const img = new Image();
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(clone.outerHTML.replace(/currentColor/g, '#ffffff'))}`;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = Math.round(r.width * scale);
+    c.height = Math.round(r.height * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return { svg: svgEl.outerHTML, size: [r1(r.width), r1(r.height)], scale, png: c.toDataURL('image/png') };
+  };
+  const icons = async () => ({ jump: await iconPng(H.btnJump.querySelector('svg'), 4), pause: await iconPng(H.pauseBtn.querySelector('svg'), 4) });
+  window.__ctlT8 = { joy, buttons, card, openPause, resume, toggles, icons, mode: () => g.player.mode, isTouch: () => !document.body.classList.contains('desktop') };
+}
+
+if (CONTROLS) {
+  await page.addScriptTag({ content: `(${PAGE_CTL.toString()})();` });
+  if (!(await page.evaluate(() => window.__ctlT8.isTouch()))) throw new Error('page sans écran tactile (body.desktop) : joystick masqué');
+  const cdp = await pages.fr.ctx.newCDPSession(page);
+  const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([id, x, y]) => ({ id, x, y })) });
+  const posesFile = join(PARITE, 'poses.json');
+  const posesDoc = JSON.parse(readFileSync(posesFile, 'utf8'));
+  const base = posesDoc.poses.find((p) => p.name === 'cadrage-040');
+  if (!base) throw new Error('pose cadrage-040 absente de poses.json');
+  // Même état du HUD que la pose hud-course (T7) : en course, « ▸ 4A ».
+  const sf = run('t4-sans-faute', 'fr');
+  const fCourse = sf.frames.find((f) => f.board?.txt?.[3] === '▸ 4A');
+  if (!fCourse) throw new Error('image « ▸ 4A » introuvable dans t4-sans-faute');
+  const frame = fCourse.f + 21;
+  // Doigt sur le joystick : posé dans la zone, glissé de (28 ; −30) px (sous le rayon de 58 px) ; même geste relatif
+  // aux deux viewports.
+  const FINGER = { '844x390': [150, 300], '667x308': [120, 240] };
+  const DRAG = [28, -30];
+  const ctl = { schema: 'strides.cso_controls_style/1', generator: 'scripts/unreal/export-hud-style.mjs --controls', source: ['src/core/input.js', 'src/ui/hud.js', 'src/ui/screens.js', 'src/ui/icons.js', 'src/styles.css'],
+    doc: 'commandes d’épreuve (tranche T8) dans la page tactile du jeu web (hasTouch : body sans .desktop), HUD de la pose hud-course : par viewport, joystick au repos et tenu au doigt (rest, held : styles calculés et boîtes de .joy-base et .joy-knob ; geste finger + drag), boutons SAUT et pause (styles et boîtes, icône, libellé, anneau), carte Pause ouverte en épreuve (overlay, carte, corps défilable, kicker, titre, paragraphes en HTML, bascules, encart, actions : styles et boîtes ; rect en px CSS du viewport) ; labels = libellés des bascules relevés dans le DOM ; icons = icônes SVG rendues en PNG (Content/Data/ui/)',
+    views: [], labels: null, icons: {} };
+  const shots = [];
+  for (const v of STYLE_VIEWS) {
+    await setView(v);
+    const vk = `${v.width}x${v.height}`;
+    const ps = {
+      name: `cmd-joystick-${vk}`,
+      desc: `Commandes d’épreuve (tranche T8) en tactile : joystick tenu au doigt (posé en (${FINGER[vk].join(' ; ')}) px, glissé de (${DRAG.join(' ; ')}) px), boutons SAUT et pause ; HUD de la pose hud-course (exécution t4-sans-faute rejouée jusqu’à l’image ${frame}) ; décor, heure et caméra de la pose cadrage-040 ; ${v.width} × ${v.height}.`,
+      hour: base.hour, eye: base.eye, target: base.target, fovV: base.fovV, viewport: { w: v.width, h: v.height }, horse: { x: base.horse.x, z: base.horse.z, h: base.horse.h }, course: base.course,
+      hud: { run: 'unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json', frame },
+      // Page tactile (joystick dessiné) ; doigt posé puis glissé (px CSS).
+      tactile: true,
+      touch: { id: 1, start: FINGER[vk], move: [FINGER[vk][0] + DRAG[0], FINGER[vk][1] + DRAG[1]] },
+    };
+    const info = await page.evaluate(([p, i]) => window.__hudT7.pose(p, i), [ps, runInputs(sf)]);
+    ps.sunDir = info.sunDir;
+    ps.state = { ...info.last, board: info.board };
+    await page.evaluate(() => document.fonts.ready);
+    const view = { viewport: [v.width, v.height], rest: await page.evaluate(() => window.__ctlT8.joy()), buttons: await page.evaluate(() => window.__ctlT8.buttons()) };
+    if (view.buttons.hide) throw new Error(`bouton SAUT masqué dans la pose (mode ${view.buttons.mode})`);
+    await touch('touchStart', [[1, ...ps.touch.start]]);
+    await touch('touchMove', [[1, ...ps.touch.move]]);
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    view.held = await page.evaluate(() => window.__ctlT8.joy());
+    view.finger = ps.touch.start;
+    view.drag = DRAG;
+    await page.waitForTimeout(300);
+    ps.web = `unreal/docs/parite/cso/${ps.name}-web.png`;
+    ps.unreal = `unreal/docs/parite/cso/${ps.name}-unreal.png`;
+    await page.screenshot({ path: join(ROOT, ps.web) });
+    shots.push(ps);
+    console.log('pose', ps.name, 'joystick', JSON.stringify(view.held.joyState), 'move', JSON.stringify(view.held.move));
+    await touch('touchEnd', []);
+    // Carte Pause en épreuve (game.course.kind === 'cso' dans l'état rejoué), même HUD derrière.
+    const pp = { ...ps, name: `cmd-pause-${vk}`, desc: `Menu Pause ouvert en épreuve (tranche T8) : carte « Pause » (rappel des gestes de l’épreuve, bascules « Tracé au sol » et « Aide au saut », commandes, encart Strides, version, actions) sur le HUD de la pose hud-course ; page tactile ; ${v.width} × ${v.height}.`, pause: true };
+    delete pp.touch;
+    pp.web = `unreal/docs/parite/cso/${pp.name}-web.png`;
+    pp.unreal = `unreal/docs/parite/cso/${pp.name}-unreal.png`;
+    const stt = await page.evaluate(() => window.__ctlT8.openPause());
+    if (stt !== 'paused') throw new Error(`pause non ouverte (${stt})`);
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await page.waitForTimeout(400);
+    view.card = await page.evaluate(() => window.__ctlT8.card());
+    await page.screenshot({ path: join(ROOT, pp.web) });
+    shots.push(pp);
+    console.log('pose', pp.name, 'carte', JSON.stringify(view.card.card.rect), 'corps', view.card.body.scrollHeight, '/', view.card.body.clientHeight, 'boutons', view.card.buttons.map((b) => b.text).join(' | '));
+    await page.evaluate(() => window.__ctlT8.resume());
+    ctl.views.push(view);
+  }
+  await setView(STYLE_VIEWS[0]);
+  // Bascules : oracle et libellés relevés dans le DOM (jamais recopiés).
+  const cases = await page.evaluate(() => window.__ctlT8.toggles());
+  const labels = { line: {}, aid: {}, locked: null };
+  for (const c of cases)
+    for (const s of c.steps) {
+      // aids[st.jumpAid || 'full'] : seules les valeurs de la liste (ou l'absence, « full ») ont un libellé.
+      if (s.aidDisabled) labels.locked = s.aid;
+      else if (!s.jumpAid || ['full', 'button', 'off'].includes(s.jumpAid)) labels.aid[s.jumpAid || 'full'] = s.aid;
+      labels.line[s.courseLine === false ? 'false' : 'true'] = s.line;
+    }
+  ctl.labels = labels;
+  const ic = await page.evaluate(() => window.__ctlT8.icons());
+  mkdirSync(join(DATA, 'ui'), { recursive: true });
+  for (const [k, v] of Object.entries(ic)) {
+    const file = `ui/icon-${k}.png`;
+    writeFileSync(join(DATA, file), Buffer.from(v.png.split(',')[1], 'base64'));
+    ctl.icons[k] = { file, svg: v.svg, size: v.size, scale: v.scale };
+  }
+  const writeIfChanged = (file, text) => {
+    const prev = existsSync(file) ? readFileSync(file, 'utf8') : null;
+    if (prev === text) console.log('inchangé :', file);
+    else { writeFileSync(file, text); console.log('écrit :', file); }
+  };
+  writeIfChanged(join(DATA, 'cso_controls_style.json'), JSON.stringify(ctl, null, 1) + '\n');
+  writeIfChanged(join(ORA, 'cso_pause.json'), JSON.stringify({ schema: 'strides.oracle.cso_pause/1', source: ['src/ui/screens.js'], generator: 'scripts/unreal/export-hud-style.mjs --controls',
+    doc: 'carte Pause du jeu web ouverte en épreuve (game.pause), bascules cliquées : par cas, réglages de départ (null : absent), aide imposée (game.course.aidLocked), puis après l’ouverture et chaque clic : settings.courseLine et settings.jumpAid (null : absent), libellés des deux boutons, bouton d’aide désactivé',
+    cases }, null, 1) + '\n');
+  posesDoc.poses = posesDoc.poses.filter((p) => !p.name.startsWith('cmd-')).concat(shots);
+  writeFileSync(posesFile, JSON.stringify(posesDoc, null, 1) + '\n');
+  console.log('libellés :', JSON.stringify(labels), '; cas des bascules :', cases.length, '; poses :', shots.map((p) => p.name).join(', '));
+}
+
 if (errors.length) console.log('erreurs de page :', errors.slice(0, 5));
 for (const p of Object.values(pages)) await p.ctx.close();
 await browser.close();

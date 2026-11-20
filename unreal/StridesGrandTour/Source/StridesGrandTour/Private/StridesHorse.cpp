@@ -1,4 +1,5 @@
 #include "StridesHorse.h"
+#include "StridesPlayerController.h"
 #include "Animation/AnimationAsset.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -279,17 +280,26 @@ void AStridesHorse::TickDemo()
 void AStridesHorse::Tick(float Dt)
 {
 	Super::Tick(Dt);
+	// Tranche T8 : en pause (game.state « paused »), la boucle du web n'appelle plus update() : ni pas du cheval, ni
+	// obstacles, ni caméra, ni épreuve (le jeu est aussi suspendu par SetGamePaused ; ce garde vaut sans lui, tests
+	// compris). Téléphone ouvert : simulation suspendue, cheval et chrono figés.
+	const AStridesPlayerController* PC = Cast<AStridesPlayerController>(GetController());
+	if (PC && PC->SkipsUpdate()) return;
+	const bool bSimPaused = PC && PC->IsSimPaused();
 	// Interface d'épreuve (tranche T7) : temporisations du HUD échues avant les appels de l'image (horloge murale).
 	if (Course) Course->BeginHudFrame();
-	if (bCsoControls) TickCso(Dt);
-	else TickOpenWorld(Dt);
+	if (bCsoControls) TickCso(Dt, bSimPaused);
+	else TickOpenWorld(Dt, bSimPaused);
 	UpdateAnimation();
 }
 
 // Concours : une image du cœur (csoRideStep + Horse.update), puis Obstacles.updateHorse et Obstacles.update du cœur
 // (jugement des barres au passage, refus, chute des barres : tranche T3).
-void AStridesHorse::TickCso(float Dt)
+void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 {
+	// hdt (cheval, en épreuve et en commandes de concours) et sdt (chrono de l'épreuve) : nuls simulation suspendue.
+	const float HDt = bSimPaused ? 0.f : Dt;
+	const float SDt = bSimPaused ? 0.f : Dt;
 	const UStridesDataSubsystem* Data = DataSub();
 	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
 	const strides::JumpParams& JP = Data ? Data->Jump() : strides::jumpDefaults();
@@ -298,7 +308,7 @@ void AStridesHorse::TickCso(float Dt)
 	const std::vector<strides::CsoObstacle>& Obs = Course ? Course->Obstacles() : NoObstacles;
 	if (bDemoCourse && Course) TickDemo();
 	strides::CsoFrameInput In;
-	In.dt = Dt;
+	In.dt = HDt;
 	In.moveX = Move.X;
 	In.moveY = Move.Y;
 	In.keyMove = bKeyMove;
@@ -357,7 +367,7 @@ void AStridesHorse::TickCso(float Dt)
 		// Déroulé de l'épreuve (Run.update) après le cheval et les obstacles ; la sortie de piste ramène la cadence vers
 		// 1,9 m/s.
 		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
-		Course->TickRun(RunFrame(Dt, In.time), Cad);
+		Course->TickRun(RunFrame(SDt, In.time), Cad);
 		Sim.hasCadence = Cad.has;
 		Sim.cadence = Cad.v;
 		// hud.update du jeu web (fin de l'image) : tableau, classes, crans de cadence (réglage au joystick).
@@ -387,8 +397,9 @@ void AStridesHorse::StartOpenWorldJump()
 	JumpDir = T.geo.sign;
 }
 
-void AStridesHorse::TickOpenWorld(float Dt)
+void AStridesHorse::TickOpenWorld(float Dt, bool bSimPaused)
 {
+	const float SDt = bSimPaused ? 0.f : Dt;
 	const UStridesDataSubsystem* Data = DataSub();
 	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
 	const double Target = Data && Data->Gaits.IsValidIndex(GaitIndex) ? Data->Gaits[GaitIndex].Speed : 0.0;
@@ -415,7 +426,7 @@ void AStridesHorse::TickOpenWorld(float Dt)
 	if (Course)
 	{
 		strides::CsoCadence Cad;
-		Course->TickRun(RunFrame(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0), Cad);
+		Course->TickRun(RunFrame(SDt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0), Cad);
 		Course->UpdateHud(Dt, false, 0.0, false);
 		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.
 		Course->UpdateFences(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, X, Z);

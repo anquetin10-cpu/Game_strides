@@ -161,11 +161,11 @@ bool FStridesPariteCsoHudTest::RunTest(const FString&)
 	TestFalse(TEXT("épreuve : HUD de débogage (minicarte, lignes) masqué"), AStridesHUD::DebugVisible(&Race));
 	const strides::CsoHud Idle;
 	TestTrue(TEXT("hors épreuve : HUD de débogage affiché"), AStridesHUD::DebugVisible(nullptr) && AStridesHUD::DebugVisible(&Idle));
-	const TCHAR* Names[] = {TEXT("Jump"), TEXT("Interact"), TEXT("GaitUp"), TEXT("GaitDown"), TEXT("Save"), TEXT("Load"), TEXT("Phone"), TEXT("Mission")};
+	const TCHAR* Names[] = {TEXT("Jump"), TEXT("Pause"), TEXT("Interact"), TEXT("GaitUp"), TEXT("GaitDown"), TEXT("Save"), TEXT("Load"), TEXT("Phone"), TEXT("Mission")};
 	TArray<FString> InRace;
 	for (const TCHAR* N : Names)
 		if (UStridesTouchControls::ButtonVisible(N, &Race)) InRace.Add(N);
-	TestTrue(FString::Printf(TEXT("épreuve : boutons tactiles visibles « %s » (SAUT seul)"), *FString::Join(InRace, TEXT(", "))), InRace == TArray<FString>{TEXT("Jump")});
+	TestTrue(FString::Printf(TEXT("épreuve : boutons visibles « %s » (SAUT et pause)"), *FString::Join(InRace, TEXT(", "))), InRace == (TArray<FString>{TEXT("Jump"), TEXT("Pause")}));
 	const FString Info = FString::Printf(TEXT("HUD d'épreuve dans le module : %d rejeux, %d images, %d écarts ; %d masquages, %d écarts"), Replays, Frames, Bad, MaskN, MaskBad);
 	AddInfo(Info);
 	UE_LOG(LogTemp, Display, TEXT("Strides.Parite.CsoHud : %s"), *Info);

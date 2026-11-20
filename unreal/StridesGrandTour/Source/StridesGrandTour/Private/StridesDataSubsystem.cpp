@@ -1,6 +1,8 @@
 #include "StridesDataSubsystem.h"
 #include "Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
+#include "ImageUtils.h"
+#include "Engine/Texture2D.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
@@ -91,6 +93,18 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 	// HUD d'épreuve (tranche T7) : styles calculés par le navigateur, lus par UStridesCsoHud.
 	LoadJson(TEXT("hud_cso_style.json"), CsoHudStyleJson);
+	// Commandes d'épreuve (tranche T8) : styles de la page tactile et icônes PNG rendues par le navigateur.
+	if (LoadJson(TEXT("cso_controls_style.json"), CsoControlsJson))
+	{
+		const TSharedPtr<FJsonObject>* Icons = nullptr;
+		if (CsoControlsJson->TryGetObjectField(TEXT("icons"), Icons))
+			for (const auto& KV : (*Icons)->Values)
+			{
+				const FString File = KV.Value->AsObject()->GetStringField(TEXT("file"));
+				if (UTexture2D* T = FImageUtils::ImportFileAsTexture2D(FPaths::ProjectContentDir() / TEXT("Data") / File)) UiIcons.Add(FString(*KV.Key), T);
+				else UE_LOG(LogTemp, Warning, TEXT("Strides: icône %s illisible"), *File);
+			}
+	}
 	if (LoadJson(TEXT("cso_camera.json"), J))
 	{
 		auto N = [&J](const TCHAR* K, double& Out) { J->TryGetNumberField(K, Out); };

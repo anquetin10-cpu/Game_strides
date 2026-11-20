@@ -2,8 +2,8 @@
 """Mutations des commandes (tranche T8) : preuve que l'oracle cso_input.json exerce chaque règle de src/core/input.js.
 
 Chaque mutation est appliquée à une copie de StridesCore/Private/CsoInput.cpp (joystick flottant, zone, regard, boutons,
-clavier par codes physiques, amplitude Ctrl / Alt, commandes désactivées, relâchement) ; le source du dépôt n'est jamais
-modifié. Le banc unreal/core/tests/test_core.cpp est recompilé avec la copie et rejoué sur les oracles exportés du jeu
+clavier par codes physiques, amplitude Ctrl / Alt, commandes désactivées, relâchement) ou SaveGame.cpp (bascules de la
+carte Pause : tracé au sol, aide au saut) ; le source du dépôt n'est jamais modifié. Le banc unreal/core/tests/test_core.cpp est recompilé avec la copie et rejoué sur les oracles exportés du jeu
 web. Une mutation doit faire échouer le banc (code de sortie non nul) ; le script sort en code 1 si l'une n'est pas
 détectée, hors des mutations listées dans ATTENDUES (raison donnée) — et aussi si l'une de celles-ci devient détectée.
 
@@ -16,7 +16,7 @@ repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 ora = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(repo, 'unreal/core/tests/oracles')
 out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(repo, 'build/mutations-input')
 core = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesCore')
-I = 'CsoInput.cpp'
+I, S = 'CsoInput.cpp', 'SaveGame.cpp'
 M = [
  # Zone et prise du joystick (input.js:40-43, 66-79)
  (I, 'zone : 50 % de la largeur au lieu de 45 %', 'const double zx = viewW * 0.45;', 'const double zx = viewW * 0.5;'),
@@ -85,6 +85,15 @@ M = [
  (I, 'releaseAll : joystick gardé', '  keys.clear();\n  joy.on = false;\n  lookPtr.on = false;', '  keys.clear();\n  lookPtr.on = false;'),
  (I, 'setEnabled : relâchement même sans changement', 'if (v != enabled) releaseAll();', 'releaseAll();'),
  (I, 'setEnabled : pas de relâchement', 'if (v != enabled) releaseAll();', ''),
+ # Carte Pause (screens.js:224-243)
+ (S, 'tracé : absent lu comme masqué', 'return !(it != s.end() && it->second == "false");', 'return it != s.end() && it->second == "true";'),
+ (S, 'tracé : bascule sans effet sur « false »', 's["courseLine"] = it != s.end() && it->second == "false" ? "true" : "false";', 's["courseLine"] = "false";'),
+ (S, 'aide : absente lue comme « button »', 'return it == s.end() || it->second.empty() ? std::string("full") : it->second;', 'return it == s.end() || it->second.empty() ? std::string("button") : it->second;'),
+ (S, 'aide : ordre full → off → button', 'static const char* order[] = {"full", "button", "off"};', 'static const char* order[] = {"full", "off", "button"};'),
+ (S, 'aide : imposée mais basculée', '  if (locked) return;\n  static const char', '  static const char'),
+ (S, 'aide : valeur inconnue gardée', '  s["jumpAid"] = order[(i + 1) % 3];', '  if (i >= 0) s["jumpAid"] = order[(i + 1) % 3];'),
+ (S, 'libellé : aide imposée non signalée', '  if (locked) return "aid.locked";\n', ''),
+ (S, 'libellé : valeur inconnue affichée comme « complète »', 'return a == "full" || a == "button" || a == "off" ? "aid." + a : std::string();', 'return a == "button" || a == "off" ? "aid." + a : std::string("aid.full");'),
 ]
 # Mutations qu'aucun oracle ne peut départager (raison donnée) : listées pour mémoire, pas comme des succès.
 ATTENDUES = {
@@ -97,16 +106,17 @@ test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 undetected = []
 # Objets communs compilés une fois (banc et sources non mutées) ; seule la copie mutée est recompilée, puis liée. Seul
-# testCsoInput tourne (STRIDES_TESTS=input, filtre du main du banc) : les autres oracles ne lisent pas CsoInput.
+# testCsoInput et testCsoPause tournent (STRIDES_TESTS=input,pause, filtre du main du banc) : les autres oracles ne lisent
+# ni CsoInput ni les bascules de la carte Pause.
 inc = ['-I', os.path.join(core, 'Public')]
 objs = {}
-for x in ('test_core.cpp',) + tuple(c for c in allc if c != I):
+for x in ('test_core.cpp',) + allc:
     src = test if x == 'test_core.cpp' else os.path.join(core, 'Private', x)
     o = os.path.join(out, x.replace('.cpp', '.o'))
     c = subprocess.run(['clang++', '-std=c++20', '-O1', *inc, '-c', src, '-o', o], capture_output=True, text=True)
     if c.returncode: sys.exit(f'{x} : compilation échouée\n{c.stderr[:400]}')
     objs[x] = o
-env = dict(os.environ, STRIDES_TESTS='input')
+env = dict(os.environ, STRIDES_TESTS='input,pause')
 for file, name, a, b in M:
     src = open(os.path.join(core, 'Private', file)).read()
     n = src.count(a)
@@ -115,7 +125,7 @@ for file, name, a, b in M:
     f = os.path.join(out, file)
     open(f, 'w').write(src.replace(a, b))
     exe = os.path.join(out, 'mut')
-    c = subprocess.run(['clang++', '-std=c++20', '-O1', *inc, f, *objs.values(), '-o', exe], capture_output=True, text=True)
+    c = subprocess.run(['clang++', '-std=c++20', '-O1', *inc, f, *[o for k, o in objs.items() if k != file], '-o', exe], capture_output=True, text=True)
     if c.returncode:
         print(f'{name} : compilation échouée\n{c.stderr[:400]}'); undetected.append(name); continue
     r = subprocess.run([exe, ora, data], capture_output=True, text=True, env=env)
@@ -125,8 +135,7 @@ for file, name, a, b in M:
     if not r.returncode: undetected.append(name)
     print(f'{name} : {status} (code {r.returncode}, {last}){" ; " + fails[0][:160] if fails else ""}', flush=True)
 # Témoin : la copie non mutée passe le banc.
-open(os.path.join(out, I), 'w').write(open(os.path.join(core, 'Private', I)).read())
-c = subprocess.run(['clang++', '-std=c++20', '-O1', *inc, os.path.join(out, I), *objs.values(), '-o', os.path.join(out, 'mut')], capture_output=True, text=True)
+c = subprocess.run(['clang++', '-std=c++20', '-O1', *objs.values(), '-o', os.path.join(out, 'mut')], capture_output=True, text=True)
 r = subprocess.run([os.path.join(out, 'mut'), ora, data], capture_output=True, text=True, env=env)
 print(f'témoin non muté : code {r.returncode} ({r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""})')
 if c.returncode or r.returncode: sys.exit('témoin non muté en échec : banc ou oracle à revoir')

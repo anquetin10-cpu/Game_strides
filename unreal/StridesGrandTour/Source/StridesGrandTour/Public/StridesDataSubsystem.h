@@ -153,6 +153,11 @@ public:
 	// Styles du HUD d'épreuve (tranche T7) relevés dans le navigateur : Content/Data/hud_cso_style.json
 	// (scripts/unreal/export-hud-style.mjs) ; nul si absent.
 	const TSharedPtr<class FJsonObject>& CsoHudStyle() const { return CsoHudStyleJson; }
+	// Commandes d'épreuve (tranche T8) relevées dans la page tactile du navigateur : Content/Data/cso_controls_style.json
+	// (joystick, boutons SAUT et pause, carte Pause, libellés des bascules ; scripts/unreal/export-hud-style.mjs
+	// --controls) ; nul si absent. Icônes rendues par le navigateur (Content/Data/ui/icon-<nom>.png) : nul si absente.
+	const TSharedPtr<class FJsonObject>& CsoControlsStyle() const { return CsoControlsJson; }
+	class UTexture2D* UiIcon(const FString& Name) const { const TObjectPtr<UTexture2D>* T = UiIcons.Find(Name); return T ? T->Get() : nullptr; }
 	// Géométrie du parcours exportée du jeu web (tranche T5) : Content/World/Cso/cso_fences.json et cso_assets.json ;
 	// IsLoaded() faux si absente (obstacles en formes de base, lignes et poteau invisibles).
 	const FStridesCsoScenery& CsoScenery() const { return CsoSceneryData; }
@@ -172,6 +177,8 @@ private:
 	std::string PoleCourseJson;
 	strides::TextTable CsoTextTable;
 	TSharedPtr<class FJsonObject> CsoHudStyleJson;
+	TSharedPtr<class FJsonObject> CsoControlsJson;
+	UPROPERTY() TMap<FString, TObjectPtr<class UTexture2D>> UiIcons;
 	bool bCsoText = false;
 	FStridesCsoScenery CsoSceneryData;
 };

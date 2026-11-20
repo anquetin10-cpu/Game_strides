@@ -139,11 +139,11 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 | 3 | En l'air × 0,3 sur la rotation effective | partiel | joue_ecran | `SG/StridesHorse.cpp:240` ; VM:19 | × 0,3 appliqué à la consigne, pas à la rotation (`horse.js:236`) |
 | 3 | Perte à la réception v × (1 − min(0,04 ; \|dev\| × 0,5)) | partiel | compile | `SG/StridesHorse.cpp:274` | −4 % fixe dès \|dev\| > 0,02, sinon rien |
 | 3 | Rampe clavier 3,2 /s (× 2 en relâchant / inversant) | absent | aucun | `SG/StridesDataSubsystem.cpp:81` | paramètre lu, jamais utilisé |
-| 3 | Clavier : flèches / WASD (ZQSD), Espace, Échap, P/Tab, M ; Ctrl / Alt = amplitude 0,5 / 0,25 | partiel | joue_ecran | `SG/StridesPlayerController.cpp:45-63` ; VM:15 | liaisons par caractère doublées (W et Z, A et Q) au lieu des codes physiques ; pas d'Échap ni de Tab ; M lance une mission ; Ctrl / Maj = allure −/+ |
-| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | absent | aucun | `unreal/StridesGrandTour/Config/DefaultInput.ini:4-5` | joysticks virtuels fixes du moteur |
+| 3 | Clavier : flèches / WASD (ZQSD), Espace, Échap, P/Tab, M ; Ctrl / Alt = amplitude 0,5 / 0,25 | partiel | teste | `SC/CsoInput.cpp:109-163` ; `SG/StridesPlayerController.cpp:35-69`, `265-320` ; `ORA/cso_input.json` | codes physiques (code matériel du Mac, T8) ; Échap pause, P / Tab téléphone, M carte ; allures du portage sans effet en épreuve ; code matériel supposé = kVK_* (pas essayé sur un vrai clavier AZERTY) ; hors Mac, repli par nom de touche |
+| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | identique_prouve | joue_ecran | `SC/CsoInput.cpp:12-99` ; `SG/StridesPlayerController.cpp:244-254` ; `SG/StridesTouchControls.cpp:250-273`, `368-385` ; `ORA/cso_input.json` ; `cso/cmd-joystick-*` | logique rejouée (624 appels, 0 écart), montages côte à côte ; joysticks du moteur retirés ; toucher réel non essayé (aucun appareil iOS) ; dégradé et ombre approchés |
 | 3 | Sortie de piste 2,6 s, cadence → 1,9 m/s à −1,6 m/s² | absent | aucun | — | — |
-| 3 | Menu pause : rappel des commandes, bascules `Tracé au sol` et `Aide au saut` | absent | aucun | `SCh/SaveGame.h:26` | réglage `jumpAid` stocké sans effet ; `courseLine` absent |
-| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | absent | aucun | `SG/StridesPlayerController.cpp:158` ; `SG/StridesCourse.cpp:51` | téléphone ouvert : cheval et chrono continuent |
+| 3 | Menu pause : rappel des commandes, bascules `Tracé au sol` et `Aide au saut` | partiel | joue_ecran | `SG/StridesPauseMenu.cpp:144-410` ; `SC/SaveGame.cpp:107-140` ; `ORA/cso_pause.json` ; `cso/cmd-pause-*` | bascules rejouées (27 étapes, 0 écart), réglages sauvegardés et relus, aide appliquée à l'épreuve en cours ; Écran titre, Découvrir, Partager sans effet ; police et interlignes approchés |
+| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | partiel | teste | `SG/StridesHorse.cpp:287-304`, `370` ; `SG/StridesPlayerController.cpp:223-226`, `340-379` | pause et téléphone : 150 images sans bouger chrono ni cheval (`Strides.Cso.Controls`) ; dialogues et écrans de choix non portés |
 
 ### 2.4 Aide à l'appel (§4)
 
@@ -212,7 +212,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 |---|---|---|---|---|---|
 | 8.1 | Départ par la ligne, par les 45 s, ou départ lancé | partiel | compile | `SG/StridesCourse.cpp:45-49` | ligne seule (6 m) |
 | 8.1 | Obstacles sautés avant le départ ignorés, hint 3000 ms | partiel | teste | `SC/CsoCourse.cpp:105`, `111` ; `TC:120-121` | hint absent |
-| 8.2 | Écoulement : dt de mission, nul en pause / téléphone / dialogue | partiel | compile | `SG/StridesCourse.cpp:51` | dt compté dès l'image du départ (web : à partir de l'image suivante, `courses.js:291-303`) ; aucun gel |
+| 8.2 | Écoulement : dt de mission, nul en pause / téléphone / dialogue | partiel | teste | `SG/StridesCourse.cpp:51` ; `SG/StridesHorse.cpp:298-304`, `370` | dt compté dès l'image du départ (web : à partir de l'image suivante, `courses.js:291-303`) ; gel en pause et téléphone (T8, `Strides.Cso.Controls`) ; pas de dialogue |
 | 8.3 | Affichage `dec(t, 2)` (virgule) `/ 64 s`, `Départ {ceil(bell)} s · accordé 64 s`, ambre en dépassement | partiel | compile | `SG/StridesCourse.cpp:103-112` | « %.2f s · %d pts · prochain : %s » : point décimal, pas de « / 64 s », points sans pénalités de temps (web : en direct, `courses.js:148`), pas d'ambre, pas de décompte |
 | 8.4 | Pénalités de temps (1 par seconde entamée) | identique_prouve | teste | `SC/CsoCourse.cpp:83-86` ; `ORA/cso_course.json` `timeFaults` ; `TC:103` | `points()` (`:136-139`) reprend la formule, couvert par un seul scénario manuel (`TC:134-135`) |
 | 8.4 | Élimination : descente de cheval | partiel | teste | `SG/StridesCourse.cpp:95-98` ; `SG/StridesRider.cpp:118` ; `TC:154-158` | seulement après le départ (web : à chaque image, y compris avant, `courses.js:322`) ; descente impossible en l'air ; message différent |
@@ -223,16 +223,16 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | partiel | testé | `SC/CsoHud.cpp:42`, `SG/StridesHUD.cpp:53`, `SG/StridesTouchControls.cpp:79` | table des masquages du navigateur rejouée (T7) ; pause et SAUT 104 × 104 en T8 ; joysticks virtuels du moteur encore dessinés |
+| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | partiel | testé | `SC/CsoHud.cpp:42`, `SG/StridesHUD.cpp:53`, `SG/StridesTouchControls.cpp:295-313` | table des masquages du navigateur rejouée (T7) ; en épreuve SAUT et pause seuls (T8) ; joysticks du moteur retirés |
 | 9 | Tableau `.cso-board` (chrono, accordé, points, prochain, style) | partiel | testé | `SG/StridesCsoHud.cpp:567` | UMG, montages `cso/hud-*` ; police du moteur (Geist non embarquée), « ▸ » dessiné |
 | 9 | Crans de cadence (6 barres, 2 s après réglage) | partiel | testé | `SC/CsoHud.cpp:192` | logique rejouée (`cso_hud.json`), montage `cso/hud-cadence-*` ; fondu non comparé image par image |
 | 9 | Objectif masqué en épreuve | partiel | testé | `SC/CsoHud.cpp:42` | HUD de débogage masqué en mode concours ; carte d'objectif non portée |
 | 9 | Astuce `.hint` | partiel | testé | `SC/CsoHud.cpp:141-156` | rejouée et affichée (texte riche) ; logement dans la carte d'objectif non dessiné |
 | 9 | Toasts (2 au plus, 1 si h ≤ 420 px, 3200 ms) | partiel | testé | `SC/CsoHud.cpp:122` | rejoués (deux toasts : séquence synthétique) ; police, ombre portée |
 | 9 | Grand message (titre, sous-titre, `pop` 0,5 s) | partiel | testé | `SC/CsoHud.cpp:131` | rejoué, montages ; animation non comparée image par image |
-| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | compile | `SG/StridesTouchControls.cpp:50` | 150 × 92 à (−32 ; −132) ; seul bouton gardé en épreuve (T7), taille en T8 |
-| 9 | Bouton pause en haut à droite | absent | aucun | — | T8 |
-| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | partiel | testé | `SG/StridesTouchControls.cpp:79` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION masqués en épreuve (T7) |
+| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | joue_ecran | `SG/StridesTouchControls.cpp:197-224`, `247` ; `Strides.Cso.Controls` ; `cso/hud-*`, `cso/cmd-*` | boîte affichée = boîte du web (104 px CSS, réduits à 91,5 px par le bloc d'actions sous 420 px) ; icône rendue par le navigateur ; anneau et libellés d'appel en T9 ; état enfoncé non porté |
+| 9 | Bouton pause en haut à droite | partiel | joue_ecran | `SG/StridesTouchControls.cpp:225-246` ; `cso/hud-*`, `cso/cmd-*` | boîte, fond, rayon, ombre et icône du web ; ouvre la carte Pause (bindButton) |
+| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | partiel | testé | `SG/StridesTouchControls.cpp:295-313` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION masqués en épreuve (T7, T8) |
 | 9 | Notifications retenues puis relâchées | absent | aucun | — | — |
 
 ### 2.10 Caméra (§10)
@@ -786,7 +786,8 @@ Principes communs :
   - animations (pop, toastIn, hintIn, fondu des crans) portées avec durée, courbe et image de départ relevées, mais non
     comparées image par image : les captures montrent l'état d'arrivée (animations CSS coupées dans la page de capture
     web) ; fondu de 0,25 s de l'astuce sous big-on non porté (masquée d'un coup) ;
-  - bouton pause, bouton SAUT de 104 × 104 px et joysticks virtuels du moteur (visibles sur les captures Unreal) : T8 ;
+  - bouton pause, bouton SAUT de 104 × 104 px et joysticks virtuels du moteur (visibles sur les captures Unreal) : T8
+    (livré : voir T8, captures `hud-*` et `jeu-*` refaites) ;
     astuce dans la carte d'objectif (hors parcours) non dessinée, la carte n'étant pas portée ; hors mode concours (après
     l'élimination), la colonne du web commence après la minicarte, celle d'Unreal garde la position d'épreuve ;
   - facteur de pixels : écran du Mac (1 sur le Mac mini) ; iOS rend 1 par la plateforme générique (facteur natif 2 ou 3
@@ -846,6 +847,47 @@ Principes communs :
   pause, côte à côte.
 - **Dépendances / risques** : T2, T7. Tactile vérifiable sur Mac seulement via `-TouchControls` (souris) : vrai tactile
   à valider sur appareil iOS, bloqué tant que `idevice_id` échoue (VM:44-45).
+- **Livré (20/11/2026)** : (1) Cœur : `SCh/CsoInput.h`, `SC/CsoInput.cpp` (`strides::CsoInput` = classe `Input` de
+  `input.js` ligne à ligne : joystick flottant, zone, regard, `bindButton`, clavier par codes physiques, Ctrl / Alt,
+  `setEnabled`, `releaseAll`, `setVirtualMove` ; tables des codes matériels du Mac et des noms de touches Unreal) ; réglages
+  de la carte Pause dans `SCh/SaveGame.h` / `SC/SaveGame.cpp` (`courseLine` « true » par défaut comme `save.js:37`,
+  `toggleCourseLine`, `cycleJumpAid`, clés des libellés) ; `CsoRun::setAid` (aide relue en cours d'épreuve). (2) Oracles :
+  `ORA/cso_input.json` par `scripts/unreal/export-cso-input.mjs` (vraie classe du web, servie par Vite dans une page de
+  test sans le jeu, soumise à des événements DevTools tactiles, souris et clavier — un doigt est levé par `touchEnd` avec
+  ce seul point, constaté sur le Chrome du Mac ; disposition AZERTY simulée par `code` ≠ `key` ; appels imbriqués non
+  relevés) : 18 scénarios, 624 appels, état complet comparé après chaque appel, **0 écart** (position de l'élément du
+  joystick au 1e-5 relatif : sérialisation CSS du navigateur) ; `ORA/cso_pause.json` et `Content/Data/cso_controls_style.json`
+  par `export-hud-style.mjs --controls` (page tactile du jeu, HUD de la pose `hud-course`, cavalière montée : styles et
+  boîtes du joystick, des boutons SAUT et pause et de la carte Pause, libellés des bascules relevés dans le DOM, icônes
+  « saut » et « pause » rendues en PNG par le navigateur ; identifiant de build remplacé par `{build_id}`) : 6 cas,
+  27 étapes, **0 écart** ; deux exports donnent les mêmes octets. `mutations-cso-input.py` : 67 mutations (59 de
+  `CsoInput.cpp`, 8 des bascules), 67 détectées (objets communs compilés une fois, `STRIDES_TESTS=input,pause`).
+  (3) Jeu : `AStridesPlayerController` réécrit (préprocesseur Slate des touches, codes physiques par
+  `WebCodeOf` ; `InputTouch` → px CSS ; `StepCommands` = début de `game.update` : `poll`, téléphone / carte / pause,
+  gel des commandes, cheval, `endFrame` ; `PauseGame` / `ResumeGame` : état « paused », commandes désactivées, carte,
+  `SetGamePaused` ; téléphone : `setEnabled(false)` ; allures sans effet en épreuve ; mission du portage passée de M à N) ;
+  `AStridesHorse::Tick` : rien en pause à partir de l'image suivante (le web finit l'image d'Échap), hdt et sdt nuls
+  téléphone ouvert ; `UStridesTouchControls` réécrit (SAUT et pause du web sur toutes les plateformes, joystick en mode
+  tactile, boutons du portage hors épreuve) ; `UStridesPauseMenu` (nouveau) ; `StridesCss.h` (lecture des styles
+  calculés) ; `UStridesSaveSubsystem` : réglages en cours, `SaveSettings` / `ReloadSettings`, emplacement réglable (les
+  tests écrivent dans `strides_test_t8`, jamais dans la partie du joueur) ; `AStridesHUD::DrawPhone` (panneau aussi en
+  épreuve) ; `DefaultInput.ini` : joysticks virtuels du moteur retirés. (4) Preuves : ctest 0 échec ; 23 tests Strides
+  en Result={Success}, dont `Strides.Cso.Controls` (épreuve réelle : en épreuve boutons SAUT et pause seuls, boîtes =
+  relevé du web, SAUT de 104 px CSS ; joystick tenu au doigt ; KeyZ sans effet, KeyW avance, Ctrl 0,5 ; **Échap : 150
+  images (5 s) sans que le chrono ni la position du cheval ne bougent** ; carte Pause, bascules, réglages écrits puis
+  relus, aide de l'épreuve passée à « button » ; reprise ; **téléphone ouvert 150 images : chrono et cheval figés** ;
+  Tab, M, Échap qui ferme le téléphone ; bouton pause) et `Strides.Cso.PhysicalKeys` ; montages côte à côte
+  `cso/cmd-joystick-844x390.png`, `cmd-joystick-667x308.png` (joystick de 112 px du web sous 320 px de haut),
+  `cmd-pause-844x390.png`, `cmd-pause-667x308.png` ; captures Unreal `hud-*` refaites (SAUT et pause, plus de joystick du
+  moteur ; relevés `hud-unreal.json`, `cmd-unreal.json` : boutons visibles et boîtes) ; partie réelle
+  `-StridesShots=cso-jeu -TouchControls` refaite (`jeu-1` à `jeu-5`) ; démonstration F8 : « 60,38 / 64 s 0 pt
+  Arrivée ✓ ». (5) Écarts restants : code matériel des touches supposé égal au kVK_* de macOS (sources privées Mac du
+  moteur absentes ; vérifié sur des événements construits, pas sur un vrai clavier AZERTY) et repli par nom de touche
+  hors Mac ; toucher réel non essayé (aucun appareil iOS ; facteur de pixels iOS toujours à vérifier) ; souris : regard
+  sans clic (Mouse2D) ; regard au doigt appliqué à la perche du monde ouvert, sens à confirmer ; carte Pause en français,
+  mise en page relevée en épreuve seulement, Écran titre / Découvrir / Partager sans effet, polices et interlignes
+  approchés ; état enfoncé des boutons ronds non porté ; carte du téléphone = titre du panneau (application non portée) ;
+  après l'élimination, le web montre le HUD du cavalier à pied, le portage la cavalière en selle (SAUT, pause).
 
 ### T9. Aides à l'appel (bouton SAUT coloré, zone au sol, tracé au sol, repère)
 

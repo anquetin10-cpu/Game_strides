@@ -175,6 +175,9 @@ class STRIDESCORE_API CsoRun {
   double takeCheer();
   int bib() const { return bib_; }
   const CsoRunConfig& config() const { return cfg_; }
+  // Aide à l'appel changée en cours d'épreuve (carte Pause, tranche T8) : aid() de courses.js:82 relit le réglage à chaque
+  // appel ; le mot d'appel suivant suit la nouvelle valeur.
+  void setAid(const std::string& aid) { cfg_.aid = aid; }
 
  private:
   void next();

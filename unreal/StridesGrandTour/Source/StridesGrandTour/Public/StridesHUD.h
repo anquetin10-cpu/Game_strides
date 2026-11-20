@@ -29,6 +29,7 @@ public:
 private:
 	// Minicarte nord en haut, centrée sur le joueur : zones, routes, lieux, obstacles, cheval, cap et GPS.
 	void DrawMinimap(const APawn* P, const class UStridesProgressionSubsystem* Progress);
+	void DrawPhone(const class UStridesProgressionSubsystem* Progress);
 	// Texte du HUD de débogage : balises <b> de l'astuce retirées (le web les rend en gras), « ▸ » rendu « > » (glyphe
 	// absent de la police par défaut du moteur ; l'interface d'épreuve UMG de la tranche T7 en aura une qui l'a).
 	static FString DebugText(const FString& S);

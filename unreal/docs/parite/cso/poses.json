@@ -2704,6 +2704,394 @@
    },
    "web": "unreal/docs/parite/cso/hud-elimine-667x308-web.png",
    "unreal": "unreal/docs/parite/cso/hud-elimine-667x308-unreal.png"
+  },
+  {
+   "name": "cmd-joystick-844x390",
+   "desc": "Commandes d’épreuve (tranche T8) en tactile : joystick tenu au doigt (posé en (150 ; 300) px, glissé de (28 ; -30) px), boutons SAUT et pause ; HUD de la pose hud-course (exécution t4-sans-faute rejouée jusqu’à l’image 735) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 735
+   },
+   "tactile": true,
+   "touch": {
+    "id": 1,
+    "start": [
+     150,
+     300
+    ],
+    "move": [
+     178,
+     270
+    ]
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "17,97",
+     "/ 64 s",
+     "0 pt",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/cmd-joystick-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/cmd-joystick-844x390-unreal.png"
+  },
+  {
+   "name": "cmd-pause-844x390",
+   "desc": "Menu Pause ouvert en épreuve (tranche T8) : carte « Pause » (rappel des gestes de l’épreuve, bascules « Tracé au sol » et « Aide au saut », commandes, encart Strides, version, actions) sur le HUD de la pose hud-course ; page tactile ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 735
+   },
+   "tactile": true,
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "17,97",
+     "/ 64 s",
+     "0 pt",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/cmd-pause-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/cmd-pause-844x390-unreal.png",
+   "pause": true
+  },
+  {
+   "name": "cmd-joystick-667x308",
+   "desc": "Commandes d’épreuve (tranche T8) en tactile : joystick tenu au doigt (posé en (120 ; 240) px, glissé de (28 ; -30) px), boutons SAUT et pause ; HUD de la pose hud-course (exécution t4-sans-faute rejouée jusqu’à l’image 735) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 735
+   },
+   "tactile": true,
+   "touch": {
+    "id": 1,
+    "start": [
+     120,
+     240
+    ],
+    "move": [
+     148,
+     210
+    ]
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "17,97",
+     "/ 64 s",
+     "0 pt",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/cmd-joystick-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/cmd-joystick-667x308-unreal.png"
+  },
+  {
+   "name": "cmd-pause-667x308",
+   "desc": "Menu Pause ouvert en épreuve (tranche T8) : carte « Pause » (rappel des gestes de l’épreuve, bascules « Tracé au sol » et « Aide au saut », commandes, encart Strides, version, actions) sur le HUD de la pose hud-course ; page tactile ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
+    "frame": 735
+   },
+   "tactile": true,
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "17,97",
+     "/ 64 s",
+     "0 pt",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/cmd-pause-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/cmd-pause-667x308-unreal.png",
+   "pause": true
   }
  ]
 }

@@ -23,7 +23,8 @@ struct STRIDESCORE_API SaveGame {
   std::map<std::string, double> skills{{"preparation", 0}, {"equitation", 0}, {"transport", 0}, {"organisation", 0}};
   std::vector<std::string> horses{"comete"};
   std::map<std::string, SaveRecord> records;
-  std::map<std::string, std::string> settings{{"quality", "auto"}, {"jumpAid", "full"}, {"characters", "auto"}};
+  // Réglages (save.js:37) : valeurs en texte ; courseLine « true » / « false » (booléen du web, tranche T8).
+  std::map<std::string, std::string> settings{{"quality", "auto"}, {"jumpAid", "full"}, {"characters", "auto"}, {"courseLine", "true"}};
   SavePose pose;
   std::string legacyJson;  // sauvegarde web d'origine (import), intacte
 
@@ -34,5 +35,19 @@ struct STRIDESCORE_API SaveGame {
   // Import d'une sauvegarde du jeu web (export de Réglages, version 1 ou 2).
   static bool fromWebExport(const std::string& text, SaveGame& out, std::string& error);
 };
+
+// Réglages de la carte Pause en épreuve (src/ui/screens.js:224-243, tranche T8) sur la table des réglages : tracé au sol
+// affiché sauf si courseLine vaut « false » (st.courseLine !== false) ; un clic le bascule (st.courseLine =
+// st.courseLine === false) ; aide au saut = jumpAid, « full » si absente ou vide (st.jumpAid || 'full') ; un clic passe à
+// la suivante de full → button → off → full (indexOf : une valeur inconnue repart à « full ») ; aide imposée par
+// l'épreuve : clic sans effet. Libellés : clés « line.true », « line.false », « aid.full », « aid.button », « aid.off »,
+// « aid.locked » de Content/Data/cso_controls_style.json (labels, relevés dans le DOM).
+using Settings = std::map<std::string, std::string>;
+STRIDESCORE_API bool courseLineShown(const Settings& s);
+STRIDESCORE_API void toggleCourseLine(Settings& s);
+STRIDESCORE_API std::string jumpAidOf(const Settings& s);
+STRIDESCORE_API void cycleJumpAid(Settings& s, bool locked = false);
+STRIDESCORE_API std::string pauseLineLabelKey(const Settings& s);
+STRIDESCORE_API std::string pauseAidLabelKey(const Settings& s, bool locked);
 
 }  // namespace strides

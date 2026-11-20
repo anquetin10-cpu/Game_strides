@@ -5,20 +5,72 @@
 #include "InputMappingContext.h"
 #include "InputModifiers.h"
 #include "EngineUtils.h"
+#include "Engine/GameViewportClient.h"
+#include "Framework/Application/IInputProcessor.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
+#include "Misc/CoreDelegates.h"
 #include "Misc/Parse.h"
+#include "StridesCourse.h"
 #include "StridesHorse.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesProgressionSubsystem.h"
 #include "StridesTouchControls.h"
 #include "StridesCsoHud.h"
+#include "StridesPauseMenu.h"
 
-static UInputAction* MakeAction(UObject* Outer, const TCHAR* Name, EInputActionValueType Type)
+namespace
+{
+UInputAction* MakeAction(UObject* Outer, const TCHAR* Name, EInputActionValueType Type)
 {
 	UInputAction* A = NewObject<UInputAction>(Outer, Name);
 	A->ValueType = Type;
 	return A;
+}
+
+// Préprocesseur Slate : chaque touche enfoncée ou relâchée (répétition automatique comprise) est versée aux commandes
+// du web (window keydown / keyup) ; l'événement continue vers Enhanced Input et les widgets.
+class FStridesKeyProcessor : public IInputProcessor
+{
+public:
+	explicit FStridesKeyProcessor(AStridesPlayerController* InPC) : PC(InPC) {}
+	virtual void Tick(const float, FSlateApplication&, TSharedRef<ICursor>) override {}
+	virtual bool HandleKeyDownEvent(FSlateApplication&, const FKeyEvent& E) override { Feed(E, true); return false; }
+	virtual bool HandleKeyUpEvent(FSlateApplication&, const FKeyEvent& E) override { Feed(E, false); return false; }
+	virtual const TCHAR* GetDebugName() const override { return TEXT("StridesKeys"); }
+private:
+	void Feed(const FKeyEvent& E, bool bDown)
+	{
+		const FString Code = AStridesPlayerController::WebCodeOf(E);
+		if (!Code.IsEmpty() && PC.IsValid()) PC->FeedKey(Code, bDown, E.IsRepeat());
+	}
+	TWeakObjectPtr<AStridesPlayerController> PC;
+};
+}  // namespace
+
+AStridesPlayerController::AStridesPlayerController()
+{
+	// Commandes lues en pause (la carte Pause et ses boutons ; Échap ne relance pas : update() du web n'est plus appelée).
+	PrimaryActorTick.bTickEvenWhenPaused = true;
+	bEnableTouchEvents = true;
+}
+
+// Sur Mac : FKeyEvent::GetKeyCode porte le code virtuel matériel de macOS (kVK_*, position sur le clavier) ; ailleurs,
+// ou code inconnu de la table, nom de la touche Unreal (lié au caractère produit : repli, déclaré dans l'inventaire).
+FString AStridesPlayerController::WebCodeOf(const FKeyEvent& E)
+{
+#if PLATFORM_MAC
+	const std::string Mac = strides::webCodeFromMacKeyCode(E.GetKeyCode());
+	if (!Mac.empty()) return UTF8_TO_TCHAR(Mac.c_str());
+#endif
+	return UTF8_TO_TCHAR(strides::webCodeFromKeyName(TCHAR_TO_UTF8(*E.GetKey().GetFName().ToString())).c_str());
+}
+
+bool AStridesPlayerController::TouchMode()
+{
+	return PLATFORM_IOS || FParse::Param(FCommandLine::Get(), TEXT("TouchControls"));
 }
 
 void AStridesPlayerController::SetupInputComponent()
@@ -36,21 +88,12 @@ void AStridesPlayerController::SetupInputComponent()
 	DemoCourseAction = MakeAction(this, TEXT("DemoCourse"), EInputActionValueType::Boolean);
 	PhoneAction = MakeAction(this, TEXT("Phone"), EInputActionValueType::Boolean);
 	MissionAction = MakeAction(this, TEXT("Mission"), EInputActionValueType::Boolean);
-	// Clavier ZQSD/WASD et flèches, manette (stick gauche / droit, A, X), tactile : joystick virtuel (axes de manette).
-	auto Axis = [this](const FKey& K, bool SwizzleY, bool Negate)
-	{
-		FEnhancedActionKeyMapping& M = Context->MapKey(MoveAction, K);
-		if (SwizzleY) M.Modifiers.Add(NewObject<UInputModifierSwizzleAxis>(this));
-		if (Negate) M.Modifiers.Add(NewObject<UInputModifierNegate>(this));
-	};
-	Axis(EKeys::W, true, false); Axis(EKeys::Z, true, false); Axis(EKeys::Up, true, false);
-	Axis(EKeys::S, true, true); Axis(EKeys::Down, true, true);
-	Axis(EKeys::D, false, false); Axis(EKeys::Right, false, false);
-	Axis(EKeys::A, false, true); Axis(EKeys::Q, false, true); Axis(EKeys::Left, false, true);
+	// Clavier du web (déplacement, Espace, Échap, P / Tab, M, Ctrl / Alt) : commandes du web (FeedKey, codes physiques).
+	// Restent ici : manette (stick gauche / droit, A, X, Start, croix), souris (regard), outils du portage (E monter /
+	// descendre, Maj / Ctrl allure hors épreuve, F5 / F9, F8 démonstration, N mission suivante).
 	Context->MapKey(MoveAction, EKeys::Gamepad_Left2D);
 	Context->MapKey(LookAction, EKeys::Mouse2D);
 	Context->MapKey(LookAction, EKeys::Gamepad_Right2D);
-	Context->MapKey(JumpAction, EKeys::SpaceBar);
 	Context->MapKey(JumpAction, EKeys::Gamepad_FaceButton_Bottom);
 	Context->MapKey(InteractAction, EKeys::E);
 	Context->MapKey(InteractAction, EKeys::Gamepad_FaceButton_Left);
@@ -59,9 +102,8 @@ void AStridesPlayerController::SetupInputComponent()
 	Context->MapKey(SaveAction, EKeys::F5);
 	Context->MapKey(LoadAction, EKeys::F9);
 	Context->MapKey(DemoCourseAction, EKeys::F8);
-	Context->MapKey(PhoneAction, EKeys::P);
 	Context->MapKey(PhoneAction, EKeys::Gamepad_Special_Right);
-	Context->MapKey(MissionAction, EKeys::M);
+	Context->MapKey(MissionAction, EKeys::N);
 	Context->MapKey(MissionAction, EKeys::Gamepad_DPad_Up);
 	if (UEnhancedInputComponent* EI = Cast<UEnhancedInputComponent>(InputComponent))
 	{
@@ -87,22 +129,55 @@ void AStridesPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	InstallInputContext();
+	if (!IsLocalController()) return;
 	// Interface d'épreuve (tranche T7) : affichée sur toutes les plateformes, sous les commandes tactiles.
-	if (IsLocalController())
+	CsoHud = CreateWidget<UStridesCsoHud>(this, UStridesCsoHud::StaticClass());
+	if (CsoHud) CsoHud->AddToViewport(50);
+	// Boutons SAUT et pause (toutes plateformes, comme les boutons du HUD du web) ; joystick et boutons du portage en
+	// mode tactile (tranche T8).
+	TouchControls = CreateWidget<UStridesTouchControls>(this, UStridesTouchControls::StaticClass());
+	if (TouchControls) TouchControls->AddToViewport(100);
+	RestoreInputMode();
+	// Clavier par codes physiques ; tout relâché quand l'application perd le focus ou passe en arrière-plan (window blur,
+	// visibilitychange du web).
+	if (FSlateApplication::IsInitialized())
 	{
-		CsoHud = CreateWidget<UStridesCsoHud>(this, UStridesCsoHud::StaticClass());
-		if (CsoHud) CsoHud->AddToViewport(50);
+		KeyProcessor = MakeShared<FStridesKeyProcessor>(this);
+		FSlateApplication::Get().RegisterInputPreProcessor(KeyProcessor);
+		ActivationHandle = FSlateApplication::Get().OnApplicationActivationStateChanged().AddUObject(this, &AStridesPlayerController::OnAppActivation);
 	}
-	if (PLATFORM_IOS || FParse::Param(FCommandLine::Get(), TEXT("TouchControls")))
+	DeactivateHandle = FCoreDelegates::ApplicationWillDeactivateDelegate.AddUObject(this, &AStridesPlayerController::OnAppDeactivate);
+}
+
+void AStridesPlayerController::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (FSlateApplication::IsInitialized())
 	{
-		bEnableTouchEvents = true;
-		TouchControls = CreateWidget<UStridesTouchControls>(this, UStridesTouchControls::StaticClass());
-		if (TouchControls) TouchControls->AddToViewport(100);
+		if (KeyProcessor.IsValid()) FSlateApplication::Get().UnregisterInputPreProcessor(KeyProcessor);
+		if (ActivationHandle.IsValid()) FSlateApplication::Get().OnApplicationActivationStateChanged().Remove(ActivationHandle);
+	}
+	KeyProcessor.Reset();
+	if (DeactivateHandle.IsValid()) FCoreDelegates::ApplicationWillDeactivateDelegate.Remove(DeactivateHandle);
+	Super::EndPlay(Reason);
+}
+
+void AStridesPlayerController::OnAppActivation(const bool bActive) { if (!bActive) Cmd.releaseAll(); }
+void AStridesPlayerController::OnAppDeactivate() { Cmd.releaseAll(); }
+
+void AStridesPlayerController::RestoreInputMode()
+{
+	if (TouchMode())
+	{
 		FInputModeGameAndUI InputMode;
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		InputMode.SetHideCursorDuringCapture(false);
 		SetInputMode(InputMode);
-		if (!PLATFORM_IOS) bShowMouseCursor = true;
+		bShowMouseCursor = !PLATFORM_IOS;
+	}
+	else
+	{
+		SetInputMode(FInputModeGameOnly());
+		bShowMouseCursor = false;
 	}
 }
 
@@ -124,33 +199,191 @@ AStridesRider* AStridesPlayerController::Rider() const
 	return nullptr;
 }
 
+FVector2D AStridesPlayerController::ViewCss() const
+{
+	const UWorld* W = GetWorld();
+	const UGameViewportClient* VC = W ? W->GetGameViewport() : nullptr;
+	if (VC && VC->Viewport)
+	{
+		const FIntPoint Px = VC->Viewport->GetSizeXY();
+		if (Px.X > 0 && Px.Y > 0) return FVector2D(Px) / UStridesCsoHud::PixelRatio();
+	}
+	return TestViewCss;
+}
+
+bool AStridesPlayerController::InRace() const
+{
+	if (!CourseCache.IsValid() && GetWorld())
+		for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
+			if (It->Run()) { CourseCache = *It; break; }
+	const AStridesCourse* C = CourseCache.Get();
+	return C && C->Run() && C->HudModel().csoCtl();
+}
+
+bool AStridesPlayerController::IsSimPaused() const
+{
+	return bPhoneOpen || (PauseMenu && PauseMenu->IsOpen());
+}
+
+// ---- Entrées vers les commandes du web ----
+void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRepeat) { Cmd.key(TCHAR_TO_UTF8(*Code), bDown, bRepeat); }
+
+void AStridesPlayerController::FeedPointerDown(int64 Id, bool bMouse, const FVector2D& Css)
+{
+	const FVector2D V = ViewCss();
+	Cmd.pointerDown(Id, bMouse ? strides::CsoPointer::Mouse : strides::CsoPointer::Touch, Css.X, Css.Y, V.X, V.Y);
+}
+void AStridesPlayerController::FeedPointerMove(int64 Id, bool bMouse, const FVector2D& Css)
+{
+	Cmd.pointerMove(Id, bMouse ? strides::CsoPointer::Mouse : strides::CsoPointer::Touch, Css.X, Css.Y, FPlatformTime::Seconds() * 1000.0);
+}
+void AStridesPlayerController::FeedPointerUp(int64 Id) { Cmd.pointerUp(Id); }
+void AStridesPlayerController::ButtonDown(const FString& Name) { Cmd.buttonDown(TCHAR_TO_UTF8(*Name)); }
+void AStridesPlayerController::ButtonUp(const FString& Name) { Cmd.buttonUp(TCHAR_TO_UTF8(*Name)); }
+
+bool AStridesPlayerController::InputTouch(const FTouchId TouchId, const ETouchType::Type Type, const FVector2D& TouchLocation, const float Force, const uint64 Timestamp)
+{
+	// Doigt posé hors des widgets (surface de jeu, comme le canvas du web) : position du viewport en px CSS.
+	const int64 Id = (int64)TouchId.GetIndex() + 100 * (int64)TouchId.GetDeviceId().GetId();
+	const FVector2D Css = TouchLocation / UStridesCsoHud::PixelRatio();
+	if (Type == ETouchType::Began) FeedPointerDown(Id, false, Css);
+	else if (Type == ETouchType::Moved) FeedPointerMove(Id, false, Css);
+	else if (Type == ETouchType::Ended) FeedPointerUp(Id);
+	Super::InputTouch(TouchId, Type, TouchLocation, Force, Timestamp);
+	return true;
+}
+
+void AStridesPlayerController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+	StepCommands(DeltaTime);
+}
+
+// game.update (src/game.js:1438-1490) côté commandes : input.poll, boutons globaux, gel des commandes, cheval, puis
+// input.endFrame. En pause, update() n'est pas appelée : rien n'est lu (un Échap tapé en pause reste dans pressed et
+// reprend effet à la reprise, comme dans le web).
+void AStridesPlayerController::StepCommands(float)
+{
+	bPauseThisFrame = false;
+	if (bPausedState) return;
+	Cmd.poll();
+	// Écran modal ouvert (overlay) : aucun autre que la carte Pause n'est porté (présentation, choix : tranche T10).
+	const bool bOverlay = false;
+	if (Cmd.wasPressed("phone") && !bOverlay) TogglePhone();
+	if (Cmd.wasPressed("map") && !bOverlay)
+	{
+		if (bPhoneOpen) ClosePhone();
+		else OpenPhone(TEXT("map"));
+	}
+	if (Cmd.wasPressed("pause") && !bOverlay)
+	{
+		if (bPhoneOpen) ClosePhone();
+		else PauseGame();
+	}
+	const bool bCanAct = !bPhoneOpen && !bOverlay;
+	if (!bCanAct)
+	{
+		// frozenInput : déplacement à zéro, saut retiré.
+		Cmd.move.x = Cmd.move.y = Cmd.move.mag = 0;
+		Cmd.pressed.erase("jump");
+	}
+	APawn* P = GetPawn();
+	if (AStridesHorse* H = Cast<AStridesHorse>(P))
+	{
+		FVector2D M(Cmd.move.x, Cmd.move.y);
+		// Manette (hors web) : seulement sans clavier ni joystick.
+		if (Cmd.move.mag == 0 && !Cmd.keyMove && bCanAct && !GamepadMove.IsZero()) M = GamepadMove;
+		H->SetMoveInput(M, Cmd.keyMove);
+		if (Cmd.wasPressed("jump")) H->RequestJump();
+	}
+	else if (P)
+	{
+		// À pied : déplacement relatif à la caméra (le cavalier du portage, pas le marcheur du web).
+		FVector2D M(Cmd.move.x, Cmd.move.y);
+		if (M.IsZero() && bCanAct) M = GamepadMove;
+		if (!M.IsZero())
+		{
+			const FRotator Yaw(0, GetControlRotation().Yaw, 0);
+			P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::X), M.Y);
+			P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y), M.X);
+		}
+	}
+	// Regard au doigt (glisser hors du joystick, camera.js:79-81 : 0,0062 rad par px en lacet, 0,0045 en tangage) sur la
+	// perche du monde ouvert ; sans effet sur la caméra de concours.
+	if (Cmd.look.dx != 0 || Cmd.look.dy != 0)
+	{
+		AddYawInput((float)FMath::RadiansToDegrees(Cmd.look.dx * 0.0062));
+		AddPitchInput((float)FMath::RadiansToDegrees(Cmd.look.dy * 0.0045));
+	}
+	Cmd.endFrame();
+}
+
+// ---- Téléphone et pause ----
+void AStridesPlayerController::OpenPhone(const FString& App)
+{
+	PhoneAppName = App;
+	bPhoneOpen = true;
+	Cmd.setEnabled(false);
+}
+void AStridesPlayerController::ClosePhone()
+{
+	if (!bPhoneOpen) return;
+	bPhoneOpen = false;
+	Cmd.setEnabled(true);
+}
+void AStridesPlayerController::TogglePhone()
+{
+	if (bPhoneOpen) ClosePhone();
+	else OpenPhone(TEXT("home"));
+}
+
+void AStridesPlayerController::PauseGame()
+{
+	if (bPausedState) return;  // game.pause : seulement depuis l'état « play »
+	bPausedState = true;
+	bPauseThisFrame = true;
+	Cmd.setEnabled(false);
+	if (!PauseMenu)
+		PauseMenu = GetLocalPlayer() ? CreateWidget<UStridesPauseMenu>(this, UStridesPauseMenu::StaticClass()) : CreateWidget<UStridesPauseMenu>(GetWorld(), UStridesPauseMenu::StaticClass());
+	if (PauseMenu)
+	{
+		PauseMenu->Open(this);
+		if (GetWorld() && GetWorld()->GetGameViewport() && !PauseMenu->IsInViewport()) PauseMenu->AddToViewport(300);
+	}
+	Cmd.releaseAll();  // screens.card : input.releaseAll()
+	UGameplayStatics::SetGamePaused(this, true);
+	// Carte cliquable à la souris sur Mac (le web garde toujours le pointeur).
+	if (GetLocalPlayer())
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetHideCursorDuringCapture(false);
+		SetInputMode(InputMode);
+		bShowMouseCursor = !PLATFORM_IOS;
+	}
+}
+
+void AStridesPlayerController::ResumeGame()
+{
+	if (!bPausedState) return;
+	bPausedState = false;
+	Cmd.setEnabled(true);
+	if (PauseMenu)
+	{
+		PauseMenu->Close();
+		PauseMenu->RemoveFromParent();
+	}
+	UGameplayStatics::SetGamePaused(this, false);
+	if (GetLocalPlayer()) RestoreInputMode();
+}
+
+// ---- Enhanced Input : manette, souris, outils du portage ----
 void AStridesPlayerController::OnMove(const FInputActionValue& V)
 {
 	const FVector2D In = V.Get<FVector2D>();
-	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn()))
-	{
-		// Clavier : déplacement de input.js (poll, portage strides::keyboardMove) : diagonale normalisée, Ctrl gauche
-		// = amplitude 0,5, Alt gauche = 0,25, et drapeau clavier (la direction de concours y monte progressivement).
-		// Touches par caractère (W et Z, A et Q) en attendant les codes physiques (tranche T8).
-		const strides::KeyboardMove K = strides::keyboardMove(
-			IsInputKeyDown(EKeys::W) || IsInputKeyDown(EKeys::Z) || IsInputKeyDown(EKeys::Up), IsInputKeyDown(EKeys::S) || IsInputKeyDown(EKeys::Down),
-			IsInputKeyDown(EKeys::D) || IsInputKeyDown(EKeys::Right), IsInputKeyDown(EKeys::A) || IsInputKeyDown(EKeys::Q) || IsInputKeyDown(EKeys::Left),
-			IsInputKeyDown(EKeys::LeftControl), IsInputKeyDown(EKeys::LeftAlt));
-		if (K.keyMove) H->SetMoveInput(FVector2D(K.x, K.y), true);
-		else H->SetMoveInput(In, false);
-		return;
-	}
-	if (APawn* P = GetPawn())
-	{
-		const FRotator Yaw(0, GetControlRotation().Yaw, 0);
-		P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::X), In.Y);
-		P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y), In.X);
-	}
+	GamepadMove = In;
 }
-void AStridesPlayerController::OnMoveDone(const FInputActionValue&)
-{
-	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->SetMoveInput(FVector2D::ZeroVector);
-}
+void AStridesPlayerController::OnMoveDone(const FInputActionValue&) { GamepadMove = FVector2D::ZeroVector; }
 void AStridesPlayerController::OnLook(const FInputActionValue& V)
 {
 	const FVector2D In = V.Get<FVector2D>();
@@ -169,12 +402,14 @@ void AStridesPlayerController::OnInteract()
 		else R->TryMount(this);
 	}
 }
-void AStridesPlayerController::OnGaitUp() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ChangeGait(1); }
-void AStridesPlayerController::OnGaitDown() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ChangeGait(-1); }
+// Allures du portage (Maj / Ctrl) : sans effet en épreuve (le web n'a pas d'allure en concours ; Ctrl gauche y réduit
+// l'amplitude du clavier).
+void AStridesPlayerController::OnGaitUp() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn()); H && !InRace()) H->ChangeGait(1); }
+void AStridesPlayerController::OnGaitDown() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn()); H && !InRace()) H->ChangeGait(-1); }
 void AStridesPlayerController::OnSave() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->SaveNow(this); }
 void AStridesPlayerController::OnLoad() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->LoadNow(this); }
 void AStridesPlayerController::OnDemoCourse() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ToggleDemoCourse(); }
-void AStridesPlayerController::OnPhone() { bPhoneOpen = !bPhoneOpen; }
+void AStridesPlayerController::OnPhone() { TogglePhone(); }
 void AStridesPlayerController::OnMission()
 {
 	if (UStridesProgressionSubsystem* P = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>()) P->StartNextMission();
@@ -186,5 +421,5 @@ void AStridesPlayerController::TouchGaitUp() { OnGaitUp(); }
 void AStridesPlayerController::TouchGaitDown() { OnGaitDown(); }
 void AStridesPlayerController::TouchSave() { OnSave(); }
 void AStridesPlayerController::TouchLoad() { OnLoad(); }
-void AStridesPlayerController::TouchPhone() { OnPhone(); }
+void AStridesPlayerController::TouchPhone() { TogglePhone(); }
 void AStridesPlayerController::TouchMission() { OnMission(); }
