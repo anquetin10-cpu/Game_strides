@@ -7,6 +7,20 @@
 			"name": "cmd-joystick-844x390",
 			"frames": 736,
 			"diffs": [],
+			"touch":
+			{
+				"via": "FSlateApplication::OnTouchStarted / OnTouchMoved -> SViewport -> UGameViewportClient::InputTouch -> AStridesPlayerController::InputTouch",
+				"events": [
+					"Began#1(150.0;300.0)",
+					"Moved#1(178.0;270.0)"
+				],
+				"pixelRatio": 1,
+				"move": [
+					0.48275862068965519,
+					0.51724137931034486,
+					0.70752705271321359
+				]
+			},
 			"shown": [
 				"board=17,97|/ 64 s|0 pt|▸ 4A",
 				"fb=Bon appel"
@@ -107,6 +121,20 @@
 			"name": "cmd-joystick-667x308",
 			"frames": 736,
 			"diffs": [],
+			"touch":
+			{
+				"via": "FSlateApplication::OnTouchStarted / OnTouchMoved -> SViewport -> UGameViewportClient::InputTouch -> AStridesPlayerController::InputTouch",
+				"events": [
+					"Began#1(120.0;240.0)",
+					"Moved#1(148.0;210.0)"
+				],
+				"pixelRatio": 1,
+				"move": [
+					0.48275862068965519,
+					0.51724137931034486,
+					0.70752705271321359
+				]
+			},
 			"shown": [
 				"board=17,97|/ 64 s|0 pt|▸ 4A",
 				"fb=Bon appel"

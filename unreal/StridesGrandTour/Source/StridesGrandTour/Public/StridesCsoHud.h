@@ -48,6 +48,8 @@ public:
 	FString ToastStyle(int32 I) const;
 	// Facteur de pixels de la plateforme (pixels physiques par px CSS) : 1 sur un écran de Mac non Retina.
 	static double PixelRatio();
+	// Tests : facteur de pixels imposé (iPhone : 3) ; 0 rend celui de l'écran.
+	static void SetPixelRatioForTest(double Ratio);
 	// Style du viewport le plus proche (hauteur) dans le relevé du navigateur.
 	static FStridesCsoHudStyle StyleFor(const TSharedPtr<class FJsonObject>& Doc, const FVector2D& ViewCss);
 

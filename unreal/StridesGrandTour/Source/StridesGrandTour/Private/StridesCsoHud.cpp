@@ -529,8 +529,12 @@ const strides::CsoHud* UStridesCsoHud::Source() const
 	return Course.IsValid() && Course->Run() ? &Course->HudModel() : nullptr;
 }
 
+namespace { double GPixelRatioForTest = 0; }
+void UStridesCsoHud::SetPixelRatioForTest(double Ratio) { GPixelRatioForTest = Ratio; }
+
 double UStridesCsoHud::PixelRatio()
 {
+	if (GPixelRatioForTest > 0) return GPixelRatioForTest;
 	// Mac : facteur de l'écran (FPlatformApplicationMisc) ; iOS : la plateforme générique rend 1 (à confirmer sur
 	// appareil, facteur d'écran natif 2 ou 3 attendu).
 	return FMath::Max(1.0, (double)FPlatformApplicationMisc::GetDPIScaleFactorAtPoint(0, 0));

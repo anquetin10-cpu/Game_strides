@@ -130,6 +130,10 @@ private:
 	void MeasureFraming(const FPose& P, class APlayerController* PC);
 	void ApplyHudPose(const FPose& P, class APlayerController* PC);
 	void ApplyControlsPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
+	// Doigt envoyé à Slate comme un message tactile de la plateforme (Phase 0 posé, 1 glissé, 2 levé ; px CSS).
+	bool SlateTouch(int32 Phase, int32 FingerIndex, const FVector2D& Css);
+	int32 HeldTouch = -1;
+	FVector2D HeldTouchAt = FVector2D::ZeroVector;
 	// Partie réelle avec l'interface (mode "cso-jeu", contrôle adverse de T7) : captures de la fenêtre aux instants choisis
 	// par l'état de l'épreuve, avec le relevé de ce qui est réellement affiché.
 	void TickJeu(float DeltaSeconds, class APlayerController* PC);

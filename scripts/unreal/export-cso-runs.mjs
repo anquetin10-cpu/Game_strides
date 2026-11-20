@@ -34,9 +34,11 @@
 //    le jeu web (scripts/unreal/cso-export.js, chargé dans la page), comparée au jeu réel hors épreuve et en épreuve :
 //    .tmp/unreal-import/cso/ (cso_fences.glb, sign_*.png, importés par scripts/unreal/import-cso-fences.py) et le
 //    manifeste unreal/StridesGrandTour/Content/World/Cso/cso_fences.json (relu par le jeu et le test Strides.Parite.CsoScenery).
+//  - avec --freeze (tranche T8) : unreal/core/tests/oracles/cso_freeze.json, gel du cheval et du chrono en pause et au
+//    téléphone image par image (boucle de game.js:1406), rejoué par le test moteur Strides.Cso.Controls.
 //
 // Usage (serveur Vite sur BASE, défaut http://127.0.0.1:5173 ; Chrome installé, aucun téléchargement) :
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute|cadrage]] [--fences] [--only=…] [--out=dossier]
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute|cadrage]] [--fences] [--freeze] [--only=…] [--out=dossier]
 // Mode d'emploi du banc (oracles, captures, montages, PARITE.md) : unreal/docs/parite/README.md.
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -52,7 +54,10 @@ const SHOTS = !!SHOTS_ARG;
 const SHOTS_ONLY = SHOTS_ARG && SHOTS_ARG.includes('=') ? SHOTS_ARG.slice(8) : null;
 // --fences : export de la géométrie des obstacles (tranche T5) ; seul, ou avec --shots, il ne rejoue aucun scénario.
 const FENCES = process.argv.includes('--fences');
-const NO_RUNS = !!SHOTS_ONLY || FENCES;
+// --freeze (tranche T8, contrôle adverse) : gel en pause et au téléphone, image par image (oracle cso_freeze.json) ; seul,
+// il ne rejoue aucun scénario.
+const FREEZE = process.argv.includes('--freeze');
+const NO_RUNS = !!SHOTS_ONLY || FENCES || FREEZE;
 const FENCES_OUT = join(ROOT, '.tmp/unreal-import/cso');
 const FENCES_MANIFEST = join(ROOT, 'unreal/StridesGrandTour/Content/World/Cso/cso_fences.json');
 const OUT = (process.argv.find((a) => a.startsWith('--out=')) || '').slice(6) || join(ROOT, 'unreal/core/tests/oracles/cso_runs');
@@ -1553,6 +1558,45 @@ function PAGE() {
     return frames;
   };
 
+  // ---- Gel en pause et au téléphone (tranche T8, contrôle adverse) : boucle de game.js:1406 au pas fixe ----
+  // Entrée en piste et cloche comme « droit », galop droit (cadence montée au joystick puis relâchée) jusqu'au départ du
+  // chrono + 10 images ; puis la séquence `seq` est jouée image par image comme la boucle du jeu : update(dt) seulement à
+  // l'état « play » (ou « photo »), rien en pause. Action d'une image, versée avant elle : « pause » (Échap), « phone »
+  // (P), « map » (M) = appui (input.pressed, input.js:171) ; « resume » = clic de Reprendre sur la carte Pause.
+  P.runFreeze = (sc, seq) => {
+    const h = g.player.horse, p = g.player;
+    let k = 0;
+    while (!document.querySelector('.overlay [data-id="enter"]')) {
+      step(input());
+      if (++k > 120) throw new Error('présentation absente');
+    }
+    step(input({ ui: 'enter' }));
+    let bell = false;
+    for (k = 0; !bell; k++) {
+      bell = step(input()).audio.some((c) => c.fn === 'bell');
+      if (k > 300) throw new Error('cloche absente');
+    }
+    for (k = 0; !g.course?.hud?.().started; k++) {
+      step(input({ move: [0, (p.csoCadence ?? 0) < sc.cadence ? 1 : 0] }));
+      if (k > 900) throw new Error('chrono non lancé');
+    }
+    for (k = 0; k < 10; k++) step(input());
+    const out = [];
+    for (const a of seq) {
+      if (a === 'resume') {
+        const el = document.querySelector('.overlay [data-id="resume"]');
+        if (!el) throw new Error('carte Pause absente');
+        A.tap(el);
+      }
+      const upd = g.state === 'play' || g.state === 'photo';
+      if (upd) step(input(a && a !== 'resume' ? { press: [a] } : {}));
+      else clock += DT * 1000;
+      const ci = g.course?.hud?.();
+      out.push({ a, upd, st: g.state, sp: !!g.simPaused, ph: !!g.phone.isOpen, app: g.phone.isOpen ? g.phone.app : null, t: ci ? R6(ci.t) : null, x: R6(h.pos.x), z: R6(h.pos.z) });
+    }
+    return out;
+  };
+
   // Pose de capture : caméra posée (œil, cible, FOV vertical), soleil à l'heure de la pose, HUD masqué, rendu.
   P.pose = (ps) => {
     const h = g.player.horse;
@@ -1837,6 +1881,37 @@ if (FENCES) {
   for (const f of M.fences) console.log(`  ${f.label} ${f.kind} : ${Object.entries(f.states).map(([k, st]) => `${k} h ${st.h} ${JSON.stringify(st.counts)}`).join(' | ')}`);
   for (const l of M.lines) console.log(`  ligne ${l.id} : ${JSON.stringify(l.counts)}`);
   console.log(`  poteau ${M.marker.activity} : ${JSON.stringify(M.marker.counts)}`);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Gel en pause et au téléphone (tranche T8, contrôle adverse) : unreal/core/tests/oracles/cso_freeze.json, rejoué par le
+// test moteur Strides.Cso.Controls. Après le départ du chrono du parcours du Pôle (entrée en piste comme « droit »), la
+// séquence ci-dessous est jouée par la boucle du jeu (game.js:1406 : update seulement à l'état « play ») ; chaque image
+// relève l'appel d'update, l'état du jeu, simPaused, le téléphone, le chrono et la position du cheval.
+if (FREEZE) {
+  const rep = (n) => Array(n).fill(null);
+  const seq = [...rep(3), 'pause', ...rep(150), 'resume', ...rep(5), 'phone', ...rep(150), 'phone', ...rep(3), 'phone', ...rep(3), 'pause', ...rep(3), 'map', ...rep(2), 'map', ...rep(3), 'pause', ...rep(3), 'resume', ...rep(3)];
+  const { ctx, page } = await openGame('fr');
+  await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
+  const frames = await page.evaluate(([s, q]) => window.__parite.runFreeze(s, q), [SCENARIOS[0], seq]);
+  await ctx.close();
+  const FOUT = join(ORA, 'cso_freeze.json');
+  const head = {
+    schema: 'strides.oracle.cso_freeze/1',
+    source: ['src/game.js', 'src/core/input.js', 'src/ui/phone.js', 'src/ui/screens.js', 'src/gameplay/courses.js'],
+    generator: 'scripts/unreal/export-cso-runs.mjs --freeze',
+    doc: 'Parcours du Pôle (fr), entrée en piste et cloche comme le scénario « droit », galop droit jusqu’au départ du chrono + 10 images ; puis une image par entrée, au pas fixe dt, par la boucle du jeu (game.js:1406 : update(dt) seulement à l’état « play ») : a = action versée avant l’image (pause = Échap, phone = P, map = M : appui ; resume = clic de Reprendre sur la carte Pause ; null : rien) ; upd = update appelée ; st = game.state après l’image ; sp = game.simPaused (calculé en tête d’update, non recalculé en pause) ; ph, app = téléphone ouvert et application ; t = chrono de l’épreuve (course.hud().t, arrondi au millionième) ; x, z = position du cheval (arrondie au millionième).',
+    dt: 1 / 30,
+  };
+  const text = JSON.stringify(head, null, 1).replace(/\n}$/, ',\n "frames": [\n') + frames.map((f) => '  ' + JSON.stringify(f)).join(',\n') + '\n ]\n}\n';
+  JSON.parse(text);
+  let prev = null;
+  try {
+    prev = readFileSync(FOUT, 'utf8');
+  } catch {}
+  if (prev !== text) writeFileSync(FOUT, text);
+  const adv = frames.filter((f, i) => i && f.t !== frames[i - 1].t).length;
+  console.log(`gel : ${frames.length} images, chrono avancé à ${adv} images, ${frames.filter((f) => !f.upd).length} sans update ; ${prev === text ? 'inchangé' : 'écrit'} (${FOUT})`);
 }
 
 // ---------------------------------------------------------------------------------------------------------------

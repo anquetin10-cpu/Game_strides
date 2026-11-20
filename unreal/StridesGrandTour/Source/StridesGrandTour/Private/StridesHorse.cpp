@@ -282,7 +282,8 @@ void AStridesHorse::Tick(float Dt)
 	Super::Tick(Dt);
 	// Tranche T8 : en pause (game.state « paused »), la boucle du web n'appelle plus update() : ni pas du cheval, ni
 	// obstacles, ni caméra, ni épreuve (le jeu est aussi suspendu par SetGamePaused ; ce garde vaut sans lui, tests
-	// compris). Téléphone ouvert : simulation suspendue, cheval et chrono figés.
+	// compris) ; l'image d'Échap avance encore (PauseGame : SkipsUpdate faux à cette image). Téléphone ouvert en tête
+	// d'image (game.simPaused relevé par StepCommands avant les boutons globaux) : cheval et chrono figés.
 	const AStridesPlayerController* PC = Cast<AStridesPlayerController>(GetController());
 	if (PC && PC->SkipsUpdate()) return;
 	const bool bSimPaused = PC && PC->IsSimPaused();

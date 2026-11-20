@@ -139,11 +139,11 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 | 3 | En l'air × 0,3 sur la rotation effective | partiel | joue_ecran | `SG/StridesHorse.cpp:240` ; VM:19 | × 0,3 appliqué à la consigne, pas à la rotation (`horse.js:236`) |
 | 3 | Perte à la réception v × (1 − min(0,04 ; \|dev\| × 0,5)) | partiel | compile | `SG/StridesHorse.cpp:274` | −4 % fixe dès \|dev\| > 0,02, sinon rien |
 | 3 | Rampe clavier 3,2 /s (× 2 en relâchant / inversant) | absent | aucun | `SG/StridesDataSubsystem.cpp:81` | paramètre lu, jamais utilisé |
-| 3 | Clavier : flèches / WASD (ZQSD), Espace, Échap, P/Tab, M ; Ctrl / Alt = amplitude 0,5 / 0,25 | partiel | teste | `SC/CsoInput.cpp:109-163` ; `SG/StridesPlayerController.cpp:35-69`, `265-320` ; `ORA/cso_input.json` | codes physiques (code matériel du Mac, T8) ; Échap pause, P / Tab téléphone, M carte ; allures du portage sans effet en épreuve ; code matériel supposé = kVK_* (pas essayé sur un vrai clavier AZERTY) ; hors Mac, repli par nom de touche |
-| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | identique_prouve | joue_ecran | `SC/CsoInput.cpp:12-99` ; `SG/StridesPlayerController.cpp:244-254` ; `SG/StridesTouchControls.cpp:250-273`, `368-385` ; `ORA/cso_input.json` ; `cso/cmd-joystick-*` | logique rejouée (624 appels, 0 écart), montages côte à côte ; joysticks du moteur retirés ; toucher réel non essayé (aucun appareil iOS) ; dégradé et ombre approchés |
+| 3 | Clavier : flèches / WASD (ZQSD), Espace, Échap, P/Tab, M ; Ctrl / Alt = amplitude 0,5 / 0,25 | partiel | teste | `SC/CsoInput.cpp:109-163` ; `SG/StridesPlayerController.cpp:35-69`, `277-334`, `422-423` ; `ORA/cso_input.json`, `ORA/cso_freeze.json` | codes physiques (code matériel du Mac, T8) ; Échap pause, P / Tab téléphone, M carte (image par image comme le web) ; allures du portage sans effet en épreuve (testé, mutations détectées) ; code matériel supposé = kVK_* (pas essayé sur un vrai clavier AZERTY) ; hors Mac, repli par nom de touche |
+| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | identique_prouve | joue_ecran | `SC/CsoInput.cpp:12-99` ; `SG/StridesPlayerController.cpp:239-266` ; `SG/StridesTouchControls.cpp:250-273`, `368-385` ; `ORA/cso_input.json` ; `cso/cmd-joystick-*` | logique rejouée (624 appels, 0 écart) ; `InputTouch` testé (facteur 3, identifiants, types de toucher, 8 mutations détectées) ; montages côte à côte, doigt routé par Slate jusqu'au viewport ; joysticks du moteur retirés ; toucher réel non essayé (aucun appareil iOS) ; dégradé et ombre approchés |
 | 3 | Sortie de piste 2,6 s, cadence → 1,9 m/s à −1,6 m/s² | absent | aucun | — | — |
 | 3 | Menu pause : rappel des commandes, bascules `Tracé au sol` et `Aide au saut` | partiel | joue_ecran | `SG/StridesPauseMenu.cpp:144-410` ; `SC/SaveGame.cpp:107-140` ; `ORA/cso_pause.json` ; `cso/cmd-pause-*` | bascules rejouées (27 étapes, 0 écart), réglages sauvegardés et relus, aide appliquée à l'épreuve en cours ; Écran titre, Découvrir, Partager sans effet ; police et interlignes approchés |
-| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | partiel | teste | `SG/StridesHorse.cpp:287-304`, `370` ; `SG/StridesPlayerController.cpp:223-226`, `340-379` | pause et téléphone : 150 images sans bouger chrono ni cheval (`Strides.Cso.Controls`) ; dialogues et écrans de choix non portés |
+| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | partiel | teste | `SG/StridesHorse.cpp:288-305`, `371` ; `SG/StridesPlayerController.cpp:286`, `355-393` ; `ORA/cso_freeze.json` | image par image comme le web (338 images, 0 écart : l'image d'Échap et celle de l'ouverture du téléphone avancent, celle de la fermeture reste figée) ; pause et téléphone : 150 images sans bouger chrono ni cheval (`Strides.Cso.Controls`) ; dialogues et écrans de choix non portés |
 
 ### 2.4 Aide à l'appel (§4)
 
@@ -212,7 +212,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 |---|---|---|---|---|---|
 | 8.1 | Départ par la ligne, par les 45 s, ou départ lancé | partiel | compile | `SG/StridesCourse.cpp:45-49` | ligne seule (6 m) |
 | 8.1 | Obstacles sautés avant le départ ignorés, hint 3000 ms | partiel | teste | `SC/CsoCourse.cpp:105`, `111` ; `TC:120-121` | hint absent |
-| 8.2 | Écoulement : dt de mission, nul en pause / téléphone / dialogue | partiel | teste | `SG/StridesCourse.cpp:51` ; `SG/StridesHorse.cpp:298-304`, `370` | dt compté dès l'image du départ (web : à partir de l'image suivante, `courses.js:291-303`) ; gel en pause et téléphone (T8, `Strides.Cso.Controls`) ; pas de dialogue |
+| 8.2 | Écoulement : dt de mission, nul en pause / téléphone / dialogue | partiel | teste | `SG/StridesCourse.cpp:51` ; `SG/StridesHorse.cpp:299-305`, `371` | dt compté dès l'image du départ (web : à partir de l'image suivante, `courses.js:291-303`) ; gel en pause et téléphone image par image comme le web (T8, `ORA/cso_freeze.json`, `Strides.Cso.Controls`) ; pas de dialogue |
 | 8.3 | Affichage `dec(t, 2)` (virgule) `/ 64 s`, `Départ {ceil(bell)} s · accordé 64 s`, ambre en dépassement | partiel | compile | `SG/StridesCourse.cpp:103-112` | « %.2f s · %d pts · prochain : %s » : point décimal, pas de « / 64 s », points sans pénalités de temps (web : en direct, `courses.js:148`), pas d'ambre, pas de décompte |
 | 8.4 | Pénalités de temps (1 par seconde entamée) | identique_prouve | teste | `SC/CsoCourse.cpp:83-86` ; `ORA/cso_course.json` `timeFaults` ; `TC:103` | `points()` (`:136-139`) reprend la formule, couvert par un seul scénario manuel (`TC:134-135`) |
 | 8.4 | Élimination : descente de cheval | partiel | teste | `SG/StridesCourse.cpp:95-98` ; `SG/StridesRider.cpp:118` ; `TC:154-158` | seulement après le départ (web : à chaque image, y compris avant, `courses.js:322`) ; descente impossible en l'air ; message différent |
@@ -863,7 +863,7 @@ Principes communs :
   27 étapes, **0 écart** ; deux exports donnent les mêmes octets. `mutations-cso-input.py` : 67 mutations (59 de
   `CsoInput.cpp`, 8 des bascules), 67 détectées (objets communs compilés une fois, `STRIDES_TESTS=input,pause`).
   (3) Jeu : `AStridesPlayerController` réécrit (préprocesseur Slate des touches, codes physiques par
-  `WebCodeOf` ; `InputTouch` → px CSS ; `StepCommands` = début de `game.update` : `poll`, téléphone / carte / pause,
+  `WebCodeOf` ; `InputTouch` → px CSS ; `StepCommands` = début de `game.update` : `poll`, `simPaused`, téléphone / carte / pause,
   gel des commandes, cheval, `endFrame` ; `PauseGame` / `ResumeGame` : état « paused », commandes désactivées, carte,
   `SetGamePaused` ; téléphone : `setEnabled(false)` ; allures sans effet en épreuve ; mission du portage passée de M à N) ;
   `AStridesHorse::Tick` : rien en pause à partir de l'image suivante (le web finit l'image d'Échap), hdt et sdt nuls
@@ -888,6 +888,34 @@ Principes communs :
   mise en page relevée en épreuve seulement, Écran titre / Découvrir / Partager sans effet, polices et interlignes
   approchés ; état enfoncé des boutons ronds non porté ; carte du téléphone = titre du panneau (application non portée) ;
   après l'élimination, le web montre le HUD du cavalier à pied, le portage la cavalière en selle (SAUT, pause).
+- **Correction après contrôle adverse (20/11/2026)** : (1) Chemin réel du doigt : la livraison disait les gestes
+  injectés dans `InputTouch` alors que tests et captures appelaient `FeedPointer*`. `Strides.Cso.Controls` appelle
+  désormais `AStridesPlayerController::InputTouch` par l'interface de `APlayerController` (celle qu'appelle
+  `UGameViewportClient::InputTouch`), positions en px du viewport, facteur de pixels imposé à 3 (iPhone,
+  `UStridesCsoHud::SetPixelRatioForTest`) : division par le facteur (Began à (450 ; 900) px → base en (150 ; 300) px
+  CSS), identifiant = index + 100 × appareil (deux doigts d'index 1 sur deux appareils : joystick et regard distincts,
+  regard (25 ; −12,5) = 1,25 × px CSS), Began, FirstMove (désormais traité comme Moved : qu'il précède un Moved au même
+  point — répété sans effet, vérifié — ou qu'il le remplace, rien n'est perdu), Moved, Stationary et ForceChanged (sans
+  effet), Ended (joystick et regard relâchés). Les captures `cmd-joystick-*` passent par Slate :
+  `AStridesShots::SlateTouch` envoie `FSlateApplication::OnTouchStarted` / `OnTouchMoved` (les messages qu'envoie la
+  couche iOS), routés jusqu'au `SViewport` du jeu, `UGameViewportClient::InputTouch` puis `InputTouch` ; `cmd-unreal.json`
+  note les doigts reçus (`Began#1(150.0;300.0) Moved#1(178.0;270.0)` : Slate du Mac n'émet pas FirstMove) ; boîtes du
+  joystick identiques à la série précédente, captures refaites (50 à 51 dB de PSNR contre l'ancienne, bruit de rendu).
+  Sur Mac, `-TouchControls` n'active pas `bUseMouseForTouch` : la souris ne pilote pas le joystick (comme le web). Reste
+  non exercée : la couche UIKit d'iOS (aucun appareil). (2) Gel décalé d'une image : `game.simPaused` est relevé en tête
+  de `StepCommands`, après `poll` et avant les boutons globaux (`game.js:1444-1445`, `1462-1467`) ; l'image d'Échap et
+  celle de l'ouverture du téléphone avancent encore, celle de la fermeture reste figée. Nouvel oracle `ORA/cso_freeze.json`
+  (`export-cso-runs.mjs --freeze` : après le départ du chrono du Pôle, 338 images jouées par la boucle du jeu web,
+  `game.js:1406`, avec Échap, P, M et Reprendre ; deux exports donnent les mêmes octets) rejoué par
+  `Strides.Cso.Controls` : 338 images, 0 écart (update appelée, état, `simPaused`, téléphone et application, chrono
+  avancé, cheval déplacé) ; pause : 150 images sans update, chrono figé à 0,466667 s ; téléphone : 151 images figées à
+  0,700000 s (mêmes valeurs que le web). (3) Allures retirées de Maj / Ctrl en épreuve testées : cheval à l'allure 2,
+  `OnGaitUp` / `OnGaitDown` sans effet en épreuve, effectifs une fois le parcours retiré (2 → 3 → 2). (4) Inventaire :
+  `boucle.gel-commandes` pointe le gel (`StridesPlayerController.cpp:298-304`), références des fichiers réécrits
+  transportées (difflib, première ligne de chaque plage relue). (5) `scripts/unreal/mutations-cso-controls.py` : 16
+  mutations du module de jeu (8 du chemin du doigt, 6 du gel, 2 des allures), écrites dans le source puis remises octet
+  pour octet, 16 détectées par `Strides.Cso.Controls`. ctest : 199 918 vérifications, 0 échec ; 23 tests Strides en
+  Result={Success}.
 
 ### T9. Aides à l'appel (bouton SAUT coloré, zone au sol, tracé au sol, repère)
 

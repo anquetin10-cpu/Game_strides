@@ -1,11 +1,14 @@
 // Commandes du joueur. Tranche T8 : les commandes du web (src/core/input.js, portées dans strides::CsoInput) reçoivent
 // le clavier par CODES PHYSIQUES (préprocesseur Slate : code matériel de la touche, « KeyW » = touche Z d'un clavier
-// AZERTY), le toucher (InputTouch du viewport : joystick flottant et regard ; boutons SAUT et pause du widget
-// UStridesTouchControls) ; une image de commandes (StepCommands, début de game.update) applique téléphone (P / Tab),
+// AZERTY), le toucher (InputTouch : doigt posé hors des widgets, routé par Slate et le viewport du jeu comme sur iOS ;
+// joystick flottant et regard ; boutons SAUT et pause du widget UStridesTouchControls) ; une image de commandes
+// (StepCommands, début de game.update) relève game.simPaused en tête d'image, puis applique téléphone (P / Tab),
 // carte (M), pause (Échap, ferme d'abord le téléphone), gel des commandes quand le téléphone est ouvert, puis le
 // déplacement et le saut au cheval. Pause : état « paused » (game.pause), commandes désactivées, carte Pause
 // (UStridesPauseMenu), jeu suspendu (UGameplayStatics::SetGamePaused ; le cheval et l'épreuve ne font plus de pas,
-// AStridesHorse::Tick). Téléphone ouvert : cheval et chrono figés (hdt et sdt nuls, game.js:1486-1489, 1507).
+// AStridesHorse::Tick, à partir de l'image suivante : celle d'Échap avance encore). Téléphone ouvert : cheval et chrono
+// figés (hdt et sdt nuls, game.js:1444-1445, 1488, 1507) à partir de l'image qui suit l'ouverture, jusqu'à l'image de la
+// fermeture comprise (simPaused est calculé avant les boutons globaux).
 // Enhanced Input garde la manette, la souris (regard) et les outils du portage (E monter, F5 / F9, F8, N mission) ; les
 // allures (Maj / Ctrl) sont sans effet en épreuve (mode concours).
 #pragma once
@@ -62,8 +65,9 @@ public:
 	// La pause prend effet à l'image suivante (le web finit l'image où Échap a été lu) : vrai si la mise à jour du jeu
 	// est suspendue à cette image.
 	bool SkipsUpdate() const { return bPausedState && !bPauseThisFrame; }
-	// Simulation suspendue (game.simPaused : téléphone, carte modale) : cheval et chrono figés en épreuve.
-	bool IsSimPaused() const;
+	// Simulation suspendue (game.simPaused, src/game.js:1444 : téléphone ouvert ; carte modale non portée) relevée en tête
+	// de l'image de commandes, avant les boutons globaux : cheval et chrono figés en épreuve.
+	bool IsSimPaused() const { return bSimPausedFrame; }
 	class UStridesPauseMenu* PauseMenuWidget() const { return PauseMenu; }
 	// Mode concours (classe cso-ctl du HUD de l'épreuve du monde).
 	bool InRace() const;
@@ -73,8 +77,17 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void SetupInputComponent() override;
 	virtual void PlayerTick(float DeltaTime) override;
+
+public:
+	// Doigt reçu du viewport du jeu (UGameViewportClient::InputTouch, position en px du viewport) : px CSS (divisés par
+	// le facteur de pixels), identifiant du doigt = index + 100 × appareil ; Began → pointerdown, Moved et FirstMove →
+	// pointermove, Ended → pointerup ; Stationary et ForceChanged sans effet (aucun pointermove du web).
 	using APlayerController::InputTouch;
 	virtual bool InputTouch(const FTouchId TouchId, const ETouchType::Type Type, const FVector2D& TouchLocation, const float Force, const uint64 Timestamp) override;
+	static int64 TouchPointerId(const FTouchId& TouchId);
+	// Relevé des doigts reçus par InputTouch (type, identifiant, px CSS), pour les captures : 32 derniers.
+	const TArray<FString>& TouchLog() const { return TouchEvents; }
+	void ClearTouchLog() { TouchEvents.Reset(); }
 
 private:
 	void InstallInputContext();
@@ -129,6 +142,8 @@ private:
 	bool bPhoneOpen = false;
 	bool bPausedState = false;
 	bool bPauseThisFrame = false;
+	bool bSimPausedFrame = false;
+	TArray<FString> TouchEvents;
 	mutable TWeakObjectPtr<class AStridesCourse> CourseCache;
 	class AStridesRider* Rider() const;
 };

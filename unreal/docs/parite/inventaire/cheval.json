@@ -6,11 +6,11 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:253 (hors épreuve : vitesse Gaits[GaitIndex].Speed lue dans Content/Data/horse_gaits.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:130-135 (ChangeGait) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:407-408 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:128-129 (ALLURE + / ALLURE -) ; mais bCsoControls vaut true par défaut (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:32) et n'est jamais remis à false",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:253 (hors épreuve : vitesse Gaits[GaitIndex].Speed lue dans Content/Data/horse_gaits.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:130-135 (ChangeGait) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:422-423 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:128-129 (ALLURE + / ALLURE -) ; mais bCsoControls vaut true par défaut (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:32) et n'est jamais remis à false",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test. La branche hors épreuve n'est jamais exécutée (rg bCsoControls : aucune affectation hors de la déclaration) ; la validation Mac (unreal/docs/validation-mac-2026-11-17.md:18) a déclenché les allures par la cadence de concours, pas par cette branche.",
-  "ecart": "Allure aux boutons et non à l'amplitude du joystick ; ni galop modulé 6,5 → 9,72 m/s ni BOOST ; speedMul non appliqué. En pratique la conduite de concours (cadence plafonnée à 8 m/s) s'applique partout et GaitIndex est recalculé d'après la vitesse à chaque image (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:310) : ALLURE +/- reste sans effet et le grand galop à 14 m/s est inatteignable.",
+  "ecart": "Allure aux boutons et non à l'amplitude du joystick ; ni galop modulé 6,5 → 9,72 m/s ni BOOST ; speedMul non appliqué. En pratique la conduite de concours (cadence plafonnée à 8 m/s) s'applique partout et GaitIndex est recalculé d'après la vitesse à chaque image (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:311) : ALLURE +/- reste sans effet et le grand galop à 14 m/s est inatteignable.",
   "tranche": "socle"
  },
  {
@@ -34,7 +34,7 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:328-332 (concours : 4,5 / 3,6 / 9 m/s², freinage du refus) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:365-394 (monde ouvert, code d'origine)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:328-332 (concours : 4,5 / 3,6 / 9 m/s², freinage du refus) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:366-395 (monde ouvert, code d'origine)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Concours : vitesse rejouée image par image dans les 10 scénarios de cso_runs/ (test_core.cpp:447, écart 0 m/s) ; la mutation « 3 m/s² dans les deux sens » est détectée (39 à 41 images en écart).",
@@ -62,7 +62,7 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:203-252 (startJump), 334-340 (appel et horse:tooSlow) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:265-342",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:203-252 (startJump), 334-340 (appel et horse:tooSlow) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:265-343",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Scénarios appui-10m, appui-3ms, abord-70, bonne-zone, droit, appel-pres (cso_runs/, test_core.cpp:447) : mêmes événements horse:jump / jumpEarly / tooSlow à la même image, même plan ; 2 740 appuis sur des poses (cso_target.json, liste « press », Horse.startJump du jeu = csoStartJump, test_core.cpp:590, 0 écart) ; Strides.Cso.HorseInGame : appui par le contrôleur du joueur (TouchJump → OnJump, gestionnaire de l'action SAUT) à 9,95 m sans saut dans le jeu.",
@@ -76,7 +76,7 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:189 (planJump sans obstacle : H = power × speedFactor, L = max(1,5 ; v × T)) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:281-304 (hauteur strides::arcY ajoutée au sol) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:122-128 (JumpPower = JumpPeak × JumpMul)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:189 (planJump sans obstacle : H = power × speedFactor, L = max(1,5 ; v × T)) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:281-305 (hauteur strides::arcY ajoutée au sol) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:122-128 (JumpPower = JumpPeak × JumpMul)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "speedFactor est comparée à l'oracle unreal/core/tests/oracles/jump.json (10 valeurs de speedFactor ; les 3 autres facteurs portent sur angleFactor) ; aucun des 576 cas de jump.json n'est sans obstacle ni en zone 'none' : le chemin planJump(nullptr) n'est pas couvert ; la validation Mac ne précise pas si le saut cité était libre.",
@@ -94,7 +94,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement par SetActorLocationAndRotation sans balayage, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:305) : un saut libre traverse tout.",
+  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement par SetActorLocationAndRotation sans balayage, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306) : un saut libre traverse tout.",
   "tranche": "c"
  },
  {
@@ -118,7 +118,7 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:129-159 (csoBrake, csoRear, csoRefuse), 296-299 et 318-332 (cabré, freinage, arrêt) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:231-321 (décision et comptage, tranche T3) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:308-327 (TickCso)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:129-159 (csoBrake, csoRear, csoRefuse), 296-299 et 318-332 (cabré, freinage, arrêt) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:231-321 (décision et comptage, tranche T3) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:309-328 (TickCso)",
   "etat": "identique_prouve",
   "niveau": "teste",
   "preuve": "Freinage comparé au jeu web de deux façons. (1) Sur des poses : unreal/core/tests/oracles/cso_target.json, liste « refuse » : 960 refus décidés (Obstacles.refuse appelé seul dans le jeu en cours d'exécution ; 10 obstacles, abord à 0, 40, 61 et 80°, épaules de 1 m après à 4 m avant le centre, 0,6 à 7,6 m/s) = csoRefuse / csoBrake (unreal/core/tests/test_core.cpp:590, testPress), 0 écart au 1e-12 relatif ; le terme v²/2d l'emporte dans 341 cas, v/0,5 dans 619. (2) Dans la chaîne du jeu (csoApproachRefusal puis csoRefuse, comme AStridesHorse::TickCso) : aux 3 refus décidés des scénarios refus (images 70 et 111) et abord-61 (image 32), même décision à la même image et même freinage que l'état relevé en fin d'image (testHorseRuns, test_core.cpp:447 ; miroir Strides.Parite.CsoHorse, Result={Success}). Arrêt sous 0,05 m/s, cabré de 1,1 s, horse:refuse à la même image, cadence figée et direction coupée pendant le cabré rejoués sans écart. Mutations détectées par scripts/unreal/mutations-cso-horse.py (14 mutations de CsoHorse.cpp, toutes détectées) : v/0,5 → v/0,4, 2d → 3d, terme v/0,5 supprimé, OVERRUN × 0,7 → × 0,5, part minimale vers l'obstacle 0,3 → 0,4, distance minimale 0,35 → 0,3. Strides.Cso.HorseInGame : refus et arrêt devant l'obstacle dans le jeu, données lues dans Content/Data.",
@@ -188,7 +188,7 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:114-120 (GroundAt = TerrainHeight du relief exporté) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:305",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:114-120 (GroundAt = TerrainHeight du relief exporté) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test du cheval ; TerrainHeight lit la grille exportée du jeu web (StridesDataSubsystem.cpp:221-232) sans oracle de hauteur.",
@@ -206,7 +206,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Déplacement par SetActorLocationAndRotation sans balayage (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:305) : le cheval traverse bâtiments, arbres, tribunes et sort de la carte.",
+  "ecart": "Déplacement par SetActorLocationAndRotation sans balayage (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306) : le cheval traverse bâtiments, arbres, tribunes et sort de la carte.",
   "tranche": "c"
  },
  {
@@ -320,7 +320,7 @@
    "src/entities/horse/anim.js",
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:310 (seuils 0,2 / 3,2 / 5,5 / 7,0 m/s en conduite de concours) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:35-36 (nom de l'allure au HUD)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:311 (seuils 0,2 / 3,2 / 5,5 / 7,0 m/s en conduite de concours) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:35-36 (nom de l'allure au HUD)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:18 et :46 (PAS, TROT, GALOP, GRAND GALOP déclenchés à l'écran et lus au HUD) ; aucun test.",
@@ -386,7 +386,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Cheval toujours vertical (rotation limitée au cap, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:305).",
+  "ecart": "Cheval toujours vertical (rotation limitée au cap, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306).",
   "tranche": "socle"
  },
  {
@@ -535,7 +535,7 @@
    "src/entities/pjl/asset.js",
    "src/entities/horse/anim.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:96 (jump_gallop si SpeedMS ≥ 7 m/s, sinon jump_canter) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:100-101 (clip lu depuis le début à vitesse 1, sans boucle) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:293 (hauteur arcY ajoutée à l'acteur)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:96 (jump_gallop si SpeedMS ≥ 7 m/s, sinon jump_canter) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:100-101 (clip lu depuis le début à vitesse 1, sans boucle) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:294 (hauteur arcY ajoutée à l'acteur)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:46 (les deux clips de saut sélectionnés selon la vitesse ; ancien rig) ; aucun test ni capture.",
@@ -843,7 +843,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:387-392 (Look : AddYawInput / AddPitchInput, souris et stick droit, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:95-96)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:402-407 (Look : AddYawInput / AddPitchInput, souris et stick droit, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:95-96)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; rien à l'écran dans la validation Mac.",
@@ -885,7 +885,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/CsoCamera.h:1-110 et unreal/StridesGrandTour/Source/StridesCore/Private/CsoCamera.cpp:36-134 (strides::csoCamStep, portage de camera.js:184-269) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-82 (caméra de concours du cheval : position et orientation absolues, axe Y maintenu, AspectRatio 1, FieldOfView = champ vertical) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:438-542 (CameraHorse, UpdateCourseCamera, StepCourseCamera : œil, point visé et FOV appliqués) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:364 (après le cheval et les obstacles, avant le déroulé d'épreuve)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/CsoCamera.h:1-110 et unreal/StridesGrandTour/Source/StridesCore/Private/CsoCamera.cpp:36-134 (strides::csoCamStep, portage de camera.js:184-269) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-82 (caméra de concours du cheval : position et orientation absolues, axe Y maintenu, AspectRatio 1, FieldOfView = champ vertical) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:439-543 (CameraHorse, UpdateCourseCamera, StepCourseCamera : œil, point visé et FOV appliqués) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:365 (après le cheval et les obstacles, avant le déroulé d'épreuve)",
   "etat": "identique_prouve",
   "niveau": "teste",
   "preuve": "Oracle exporté du jeu web (canal « cc » de unreal/core/tests/oracles/cso_runs/ : 33 exécutions, 5 824 appels, dont le snap de 30 poses, 3 entrées en piste et les 6 instants de tests/e2e/cso-framing.mjs) : unreal/core/tests/test_core.cpp:1785 (testCamRuns, rejeu chaîné sans recalage, écart max 5,7e-14 m sur l'œil et le point visé, FOV et recul exacts) et Strides.Parite.CsoCamera (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoCameraTests.cpp:74) ; caméra du cheval du jeu rejouant le scénario « cadrage » : Strides.Cso.CameraInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoCameraTests.cpp:171 : écart 1,1e-13 m, composant posé à l'œil, M11 = 1/tan(FOV/2) donc champ vertical, cadrage du couple par la projection du moteur en 844 × 390 = web à 6e-8 de la hauteur) ; 24 mutations de CsoCamera.cpp détectées (scripts/unreal/mutations-cso-camera.py) ; montages unreal/docs/parite/cso/cadrage-040.png à cadrage-440.png (caméra calculée par le jeu, mesure de cso-framing.mjs:31-39 identique sur la vue de rendu : cadrage-unreal.json).",
@@ -900,7 +900,7 @@
    "src/entities/camera.js",
    "src/world/colliders.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCamera.cpp:72-102 (règles du cœur, sonde et sol fournis par l'appelant) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:451-458 (CameraBlockedAt : sphère de 0,45 m sur le canal Camera, cheval et cavalier ignorés) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:507-530 (obstacles du parcours au sol du relief, sol sous la caméra = relief exporté)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCamera.cpp:72-102 (règles du cœur, sonde et sol fournis par l'appelant) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:452-459 (CameraBlockedAt : sphère de 0,45 m sur le canal Camera, cheval et cavalier ignorés) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:508-531 (obstacles du parcours au sol du relief, sol sous la caméra = relief exporté)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Règles prouvées sur l'oracle, sonde et sol réinjectés (testCamRuns, Strides.Parite.CsoCamera) : t6-tribunes et t6-mat (perche bloquée, recul minimal, rapprochement puis éloignement), t6-relief (talus sous la caméra), t6-survol (haie de cross survolée) ; mutations correspondantes détectées.",
@@ -914,7 +914,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:481-489 (LeaveCourseCamera : caméra de concours désactivée, perche du monde ouvert réactivée telle quelle)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:482-490 (LeaveCourseCamera : caméra de concours désactivée, perche du monde ouvert réactivée telle quelle)",
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucune : l'état commun n'est pas relevé par le canal « cc » (camera.js:270-282 non porté).",
@@ -945,7 +945,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core). unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:215-293 place une caméra fixe, mais seulement pour le banc de captures lancé avec -StridesShots.",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core). unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:219-297 place une caméra fixe, mais seulement pour le banc de captures lancé avec -StridesShots.",
   "ecart": "Aucune séquence ni mode photo.",
   "tranche": "socle"
  },
@@ -956,7 +956,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:301-310 (marche relative au lacet de contrôle, pas à celui de la caméra) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:61-62 (retard de caméra : après un placement la caméra glisse au lieu d'être replacée)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:316-325 (marche relative au lacet de contrôle, pas à celui de la caméra) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:61-62 (retard de caméra : après un placement la caméra glisse au lieu d'être replacée)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test.",

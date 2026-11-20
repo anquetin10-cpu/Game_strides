@@ -220,11 +220,6 @@ bool AStridesPlayerController::InRace() const
 	return C && C->Run() && C->HudModel().csoCtl();
 }
 
-bool AStridesPlayerController::IsSimPaused() const
-{
-	return bPhoneOpen || (PauseMenu && PauseMenu->IsOpen());
-}
-
 // ---- Entrées vers les commandes du web ----
 void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRepeat) { Cmd.key(TCHAR_TO_UTF8(*Code), bDown, bRepeat); }
 
@@ -241,14 +236,31 @@ void AStridesPlayerController::FeedPointerUp(int64 Id) { Cmd.pointerUp(Id); }
 void AStridesPlayerController::ButtonDown(const FString& Name) { Cmd.buttonDown(TCHAR_TO_UTF8(*Name)); }
 void AStridesPlayerController::ButtonUp(const FString& Name) { Cmd.buttonUp(TCHAR_TO_UTF8(*Name)); }
 
+int64 AStridesPlayerController::TouchPointerId(const FTouchId& TouchId)
+{
+	return (int64)TouchId.GetIndex() + 100 * (int64)TouchId.GetDeviceId().GetId();
+}
+
 bool AStridesPlayerController::InputTouch(const FTouchId TouchId, const ETouchType::Type Type, const FVector2D& TouchLocation, const float Force, const uint64 Timestamp)
 {
-	// Doigt posé hors des widgets (surface de jeu, comme le canvas du web) : position du viewport en px CSS.
-	const int64 Id = (int64)TouchId.GetIndex() + 100 * (int64)TouchId.GetDeviceId().GetId();
+	// Doigt posé hors des widgets (surface de jeu, comme le canvas du web) : position du viewport (px) en px CSS.
+	const int64 Id = TouchPointerId(TouchId);
 	const FVector2D Css = TouchLocation / UStridesCsoHud::PixelRatio();
-	if (Type == ETouchType::Began) FeedPointerDown(Id, false, Css);
-	else if (Type == ETouchType::Moved) FeedPointerMove(Id, false, Css);
-	else if (Type == ETouchType::Ended) FeedPointerUp(Id);
+	// FirstMove (premier déplacement du doigt) traité comme Moved : qu'il précède un Moved au même point (le second
+	// pointermove ne change rien : position absolue, écart de regard nul) ou qu'il le remplace, le geste du web est rendu.
+	const TCHAR* Name = TEXT("?");
+	switch (Type)
+	{
+	case ETouchType::Began: Name = TEXT("Began"); FeedPointerDown(Id, false, Css); break;
+	case ETouchType::Moved: Name = TEXT("Moved"); FeedPointerMove(Id, false, Css); break;
+	case ETouchType::FirstMove: Name = TEXT("FirstMove"); FeedPointerMove(Id, false, Css); break;
+	case ETouchType::Ended: Name = TEXT("Ended"); FeedPointerUp(Id); break;
+	case ETouchType::Stationary: Name = TEXT("Stationary"); break;
+	case ETouchType::ForceChanged: Name = TEXT("ForceChanged"); break;
+	default: break;
+	}
+	if (TouchEvents.Num() >= 32) TouchEvents.RemoveAt(0);
+	TouchEvents.Add(FString::Printf(TEXT("%s#%lld(%.1f;%.1f)"), Name, Id, Css.X, Css.Y));
 	Super::InputTouch(TouchId, Type, TouchLocation, Force, Timestamp);
 	return true;
 }
@@ -269,6 +281,9 @@ void AStridesPlayerController::StepCommands(float)
 	Cmd.poll();
 	// Écran modal ouvert (overlay) : aucun autre que la carte Pause n'est porté (présentation, choix : tranche T10).
 	const bool bOverlay = false;
+	// game.simPaused (src/game.js:1444-1445) : relevé ici, avant les boutons globaux. L'image où le téléphone s'ouvre (ou
+	// Échap) avance encore, celle où il se referme reste figée (ORA/cso_freeze.json).
+	bSimPausedFrame = bPhoneOpen || bOverlay;
 	if (Cmd.wasPressed("phone") && !bOverlay) TogglePhone();
 	if (Cmd.wasPressed("map") && !bOverlay)
 	{

@@ -19,6 +19,7 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/StridesGrandTour/Content/Data/cso_camera.json` | `export-data.mjs` | réglages `CAM_COMP` de `src/entities/camera.js` (tranche T6 ; `fov` = champ vertical, degrés) |
 | `unreal/core/tests/oracles/cso_target.json`, `cso_goto.json` | idem | grille de visée et d'appui ; étape « rejoindre l'entrée » |
 | `unreal/core/tests/oracles/cso_input.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-input.mjs` (~1 min, page de test sans le jeu) | commandes (tranche T8) : vraie classe `Input` de `src/core/input.js` soumise à des événements tactiles, souris et clavier synthétiques (DevTools), chaque appel reçu et l'état complet juste après ; rejoué par `testCsoInput` |
+| `unreal/core/tests/oracles/cso_freeze.json` | `export-cso-runs.mjs --freeze` (~45 s, jeu web en cours d'exécution) | gel en pause et au téléphone (tranche T8, contrôle adverse) : après le départ du chrono du Pôle, 338 images jouées par la boucle du jeu (`game.js:1406`, update seulement à l'état « play ») avec Échap, P, M et Reprendre ; par image : update appelée, état, `simPaused`, téléphone, chrono, position du cheval ; rejoué par le test moteur `Strides.Cso.Controls` |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
 Export en cours d'exécution (serveur Vite sur `http://127.0.0.1:5173`, sinon
@@ -186,6 +187,8 @@ node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs
 ```sh
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-input.mjs              # oracle cso_input.json (~1 min)
 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs --controls   # styles, cso_pause.json, poses cmd-*
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --freeze     # oracle cso_freeze.json (~45 s)
+python3 scripts/unreal/mutations-cso-controls.py   # module de jeu : 16 mutations (~25 min, une instance d'UnrealEditor)
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso -StridesPose=cmd- [-StridesShotsDir=<dossier dédié>] \
   -abslog="$PWD/.tmp/shots-cmd.log"
@@ -196,8 +199,10 @@ node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs
   ouverte en épreuve, libellés des bascules relevés dans le DOM), `Content/Data/ui/icon-jump.png` et `icon-pause.png`
   (icônes rendues par le navigateur), `unreal/core/tests/oracles/cso_pause.json` (bascules cliquées dans la vraie carte),
   poses `cmd-*` de `poses.json` et leurs captures web. Styles, oracle et poses du HUD (T7) ne sont pas réécrits.
-- Pose `cmd-joystick-*` : champ `touch` (doigt posé puis glissé, px CSS) versé par `-StridesShots=cso` dans les commandes
-  du contrôleur (`AStridesShots::ApplyControlsPose`), cheval figé ; pose `cmd-pause-*` (`pause`) : carte Pause ouverte par
+- Pose `cmd-joystick-*` : champ `touch` (doigt posé puis glissé, px CSS) envoyé par `-StridesShots=cso` comme un message
+  tactile de la plateforme (`FSlateApplication::OnTouchStarted` / `OnTouchMoved`, ceux qu'envoie iOS), routé par Slate
+  jusqu'au viewport du jeu puis à `AStridesPlayerController::InputTouch` (`AStridesShots::SlateTouch`), cheval figé ; les
+  doigts reçus par `InputTouch` sont notés dans `cmd-unreal.json` (`touch.events`) ; pose `cmd-pause-*` (`pause`) : carte Pause ouverte par
   le contrôleur (jeu suspendu, l'acteur des captures continue). `tactile` : joystick dessiné (page tactile du web).
 - Relevé de l'affichage par famille de poses : `hud-unreal.json` (T7), `cmd-unreal.json` (T8) ; chaque pose y note les
   boutons visibles et les boîtes de SAUT, pause et joystick (px CSS) et, en pause, les éléments de la carte.

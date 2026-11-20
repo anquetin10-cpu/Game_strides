@@ -36,6 +36,10 @@
 #include "Engine/DirectionalLight.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
+#include "Framework/Application/SlateApplication.h"
+#include "GenericPlatform/GenericPlatformInputDeviceMapper.h"
+#include "Widgets/SViewport.h"
+#include "Widgets/SWindow.h"
 #include "Engine/SkyLight.h"
 #include "HAL/FileManager.h"
 #include "HighResScreenshot.h"
@@ -664,9 +668,30 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 		G(P.Eye.X, P.Eye.Z), G(P.Target.X, P.Target.Z), G(P.HorseX, P.HorseZ));
 }
 
-// Commandes d'épreuve (tranche T8) : mode tactile comme la page du web (joystick dessiné), doigt posé puis glissé dans
-// les commandes du contrôleur (mêmes px CSS que le geste du web), cheval figé à la pose (le web ne fait plus de pas) ;
-// carte Pause ouverte par le contrôleur (jeu suspendu).
+// Commandes d'épreuve (tranche T8) : mode tactile comme la page du web (joystick dessiné), doigt posé puis glissé (mêmes
+// px CSS que le geste du web) par le chemin d'un vrai doigt : messages tactiles de la plateforme reçus par Slate
+// (FSlateApplication::OnTouchStarted / OnTouchMoved, ceux qu'envoie iOS), routés jusqu'au viewport du jeu
+// (SViewport, UGameViewportClient::InputTouch) puis à AStridesPlayerController::InputTouch ; cheval figé à la pose (le
+// web ne fait plus de pas) ; carte Pause ouverte par le contrôleur (jeu suspendu).
+bool AStridesShots::SlateTouch(int32 Phase, int32 FingerIndex, const FVector2D& Css)
+{
+	UGameViewportClient* VC = GetWorld() ? GetWorld()->GetGameViewport() : nullptr;
+	if (!VC || !FSlateApplication::IsInitialized()) return false;
+	const TSharedPtr<SViewport> VW = VC->GetGameViewportWidget();
+	const TSharedPtr<SWindow> Win = VC->GetWindow();
+	if (!VW.IsValid() || !Win.IsValid()) return false;
+	// Position du doigt sur l'écran : px CSS → px du viewport (facteur de pixels) → unités Slate du widget du viewport
+	// (UGameViewportClient reçoit AbsoluteToLocal(écran) × Scale : les px du viewport).
+	const FGeometry& G = VW->GetCachedGeometry();
+	const FVector2D Screen = FVector2D(G.LocalToAbsolute(FVector2f(Css * UStridesCsoHud::PixelRatio() / FMath::Max(1e-3f, G.Scale))));
+	FSlateApplication& S = FSlateApplication::Get();
+	const FPlatformUserId User = IPlatformInputDeviceMapper::Get().GetPrimaryPlatformUser();
+	const FInputDeviceId Dev = IPlatformInputDeviceMapper::Get().GetDefaultInputDevice();
+	if (Phase == 0) return S.OnTouchStarted(Win->GetNativeWindow(), Screen, 1.f, FingerIndex, User, Dev);
+	if (Phase == 1) return S.OnTouchMoved(Screen, 1.f, FingerIndex, User, Dev);
+	return S.OnTouchEnded(Screen, FingerIndex, User, Dev);
+}
+
 void AStridesShots::ApplyControlsPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
 {
 	AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
@@ -674,16 +699,36 @@ void AStridesShots::ApplyControlsPose(const FPose& P, APlayerController* PC, ASt
 	if (UStridesTouchControls* T = SPC->TouchWidget()) T->SetTouchMode(P.bTactile);
 	// Reprise d'abord (pose précédente en pause : commandes désactivées, le geste serait ignoré).
 	if (!P.bPause && SPC->IsGamePausedState()) SPC->ResumeGame();
+	// Doigt de la pose précédente levé.
+	if (HeldTouch >= 0) SlateTouch(2, HeldTouch, HeldTouchAt);
+	HeldTouch = -1;
 	strides::CsoInput& Cmd = SPC->Commands();
 	Cmd.releaseAll();
 	if (P.bHasTouch)
 	{
 		if (Horse) Horse->SetActorTickEnabled(false);
-		SPC->FeedPointerDown(P.TouchId, false, P.TouchStart);
-		SPC->FeedPointerMove(P.TouchId, false, P.TouchMove);
+		SPC->ClearTouchLog();
+		const bool bDown = SlateTouch(0, P.TouchId, P.TouchStart);
+		const bool bMove = SlateTouch(1, P.TouchId, P.TouchMove);
+		HeldTouch = P.TouchId;
+		HeldTouchAt = P.TouchMove;
 		const FVector2D V = SPC->ViewCss();
-		UE_LOG(LogTemp, Display, TEXT("Strides parite: commandes %s : viewport %.1f x %.1f px CSS, joystick %s base (%.1f ; %.1f) bouton (%+.1f ; %+.1f), move (%.6f ; %.6f ; %.6f)"), *P.Name, V.X, V.Y,
+		const FString Events = FString::Join(SPC->TouchLog(), TEXT(" "));
+		UE_LOG(LogTemp, Display, TEXT("Strides parite: commandes %s : doigt par Slate (posé %d, glissé %d), reçu par InputTouch : %s ; viewport %.1f x %.1f px CSS, facteur de pixels %.2f, joystick %s base (%.1f ; %.1f) bouton (%+.1f ; %+.1f), move (%.6f ; %.6f ; %.6f)"),
+			*P.Name, bDown, bMove, Events.IsEmpty() ? TEXT("RIEN") : *Events, V.X, V.Y, UStridesCsoHud::PixelRatio(),
 			Cmd.joy.on ? TEXT("tenu") : TEXT("LIBRE"), Cmd.view.left, Cmd.view.top, Cmd.view.knobX, Cmd.view.knobY, Cmd.move.x, Cmd.move.y, Cmd.move.mag);
+		if (HudResults.Num())
+		{
+			TSharedPtr<FJsonObject> To = MakeShared<FJsonObject>();
+			To->SetStringField(TEXT("via"), TEXT("FSlateApplication::OnTouchStarted / OnTouchMoved -> SViewport -> UGameViewportClient::InputTouch -> AStridesPlayerController::InputTouch"));
+			TArray<TSharedPtr<FJsonValue>> Ev;
+			for (const FString& E : SPC->TouchLog()) Ev.Add(MakeShared<FJsonValueString>(E));
+			To->SetArrayField(TEXT("events"), Ev);
+			To->SetNumberField(TEXT("pixelRatio"), UStridesCsoHud::PixelRatio());
+			To->SetArrayField(TEXT("move"), {MakeShared<FJsonValueNumber>(Cmd.move.x), MakeShared<FJsonValueNumber>(Cmd.move.y), MakeShared<FJsonValueNumber>(Cmd.move.mag)});
+			HudResults.Last()->AsObject()->SetObjectField(TEXT("touch"), To);
+		}
+		if (!Cmd.joy.on) UE_LOG(LogTemp, Error, TEXT("Strides parite: commandes %s : le doigt n'a pas atteint le joystick par Slate"), *P.Name);
 	}
 	if (P.bPause && !SPC->IsGamePausedState()) SPC->PauseGame();
 }

@@ -23,7 +23,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun code : AStridesHorse avance sans borne (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:305), TerrainHeight ne fait que bloquer la hauteur au bord (StridesDataSubsystem.cpp:221-231), le cavalier à pied peut marcher sur le relief prolongé jusqu'à 4,2 km (StridesScenery.cpp:139-200).",
+  "preuve": "Aucun code : AStridesHorse avance sans borne (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306), TerrainHeight ne fait que bloquer la hauteur au bord (StridesDataSubsystem.cpp:221-231), le cavalier à pied peut marcher sur le relief prolongé jusqu'à 4,2 km (StridesScenery.cpp:139-200).",
   "ecart": "Pas de limite de carte ni de notion de région Deauville / Paris.",
   "tranche": "c"
  },
@@ -813,7 +813,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
-  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement direct, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:305) ; maillage exact au lieu des volumes simplifiés ; pas de hauteur de sommet franchissable.",
+  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement direct, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306) ; maillage exact au lieu des volumes simplifiés ; pas de hauteur de sommet franchissable.",
   "tranche": "socle"
  },
  {
@@ -823,7 +823,7 @@
   "js": [
    "src/world/colliders.js"
   ],
-  "unreal": "USpringArmComponent du cavalier et du cheval (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-61, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:57-64 ; en épreuve, caméra de concours sondée par CameraBlockedAt, StridesHorse.cpp:451-458, tranche T6), test de collision par défaut du moteur (non réglé explicitement)",
+  "unreal": "USpringArmComponent du cavalier et du cheval (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-61, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:57-64 ; en épreuve, caméra de concours sondée par CameraBlockedAt, StridesHorse.cpp:452-459, tranche T6), test de collision par défaut du moteur (non réglé explicitement)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
