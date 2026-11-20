@@ -93,6 +93,9 @@ inline void Frame(strides::CsoHud& H, const J& F, bool bSynth, const J* Extra = 
 	if (Jt.t == J::Str)
 		In.jumpTiming = Jt.s == "good" ? strides::Zone::Good : Jt.s == "far" ? strides::Zone::Far : Jt.s == "near" ? strides::Zone::Near : Jt.s == "refuse" ? strides::Zone::Refuse : strides::Zone::None;
 	H.update(1.0 / 30, In);
+	// Exécution t9-recette (tests/e2e/cso-shots.mjs) : pause d'une capture du test après l'image (hw, ticks de l'horloge
+	// virtuelle, temporisations seules, sans image de jeu).
+	if (!bSynth && F["hw"].t == J::Num) H.advanceTicks((int64_t)F["hw"].num());
 }
 
 // Exécution de cso_runs rejouée jusqu'à l'image LastFrame comprise (−1 : toutes) ; appels ExtraCalls ajoutés à

@@ -3095,16 +3095,16 @@
   },
   {
    "name": "aide-4-trop-loin-844x390",
-   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 293 : abord du 2 (oxer) depuis 16 m, première barre à 8,1 m des épaules ou moins (7,5 + 0,6 m de tests/e2e/cso-shots.mjs:54) : bouton « Trop loin », zone d’appel au sol, tracé, repère ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
-   "hour": 15.196,
+   "desc": "Aides à l’appel (tranche T9), capture 4-abord-trop-loin de la recette (tests/e2e/cso-shots.mjs:36-58 : état forcé, 2 abordé depuis 16 m à 6,6 m/s, arrêt quand la première barre passe sous 7,5 + 0,6 m) : bouton « Trop loin », zone d’appel au sol, tracé, repère ; capture web = PNG de la recette (tests/e2e/out/cso/4-abord-trop-loin.png) ; état rejoué par l’exécution t9-recette de l’oracle arrêtée à l’image 119 (capture de cette exécution : aide-4-trop-loin-844x390-oracle.png) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.077333,
    "eye": [
-    318.23307518047926,
+    318.2364084739216,
     6.4,
     -252.77997394254638
    ],
    "target": [
-    328.1112175948962,
-    4.843625224922611,
+    328.11422793230486,
+    4.841576839370985,
     -252.77997394254635
    ],
    "fovV": 58.03663127777747,
@@ -3113,16 +3113,16 @@
     "h": 390
    },
    "horse": {
-    "x": 325.35546573325684,
+    "x": 325.35879906659017,
     "z": -252.77997394254635,
     "h": 1.5707963267948948,
     "jumpY": 0,
     "jumpT": -1
    },
    "sunDir": [
-    -0.290377,
-    0.762926,
-    0.577603
+    -0.261181,
+    0.768525,
+    0.584084
    ],
    "day": 0,
    "canvas": [
@@ -3145,17 +3145,17 @@
     "highlight": 2
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 119
    },
    "aids": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 119
    },
    "state": {
     "to": [],
     "hi": [
-     true,
+     false,
      "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
      false
     ],
@@ -3166,8 +3166,8 @@
      false
     ],
     "fb": [
-     "Bon appel",
-     "jump-fb good"
+     "",
+     "jump-fb off"
     ],
     "cad": [
      5,
@@ -3185,7 +3185,7 @@
     ],
     "ob": false,
     "board": [
-     "3,23",
+     "8,55",
      "/ 64 s",
      "0 pt",
      "▸ 2"
@@ -3200,22 +3200,37 @@
      "hide": false
     }
    },
-   "frame": 293,
+   "frame": 119,
+   "recette": {
+    "png": "tests/e2e/out/cso/4-abord-trop-loin.png",
+    "sha256": "c294965fd64237257facd92a5dc314fd8a54ad5bc95ab7c4c4cf1e4f8248d72e",
+    "oracle": "unreal/docs/parite/cso/aide-4-trop-loin-844x390-oracle.png",
+    "ecart": {
+     "mean": 3.11,
+     "over16": 2.62,
+     "box": [
+      0,
+      79,
+      842,
+      389
+     ]
+    }
+   },
    "web": "unreal/docs/parite/cso/aide-4-trop-loin-844x390-web.png",
    "unreal": "unreal/docs/parite/cso/aide-4-trop-loin-844x390-unreal.png"
   },
   {
    "name": "aide-4-trop-loin-667x308",
-   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 293 : abord du 2 (oxer) depuis 16 m, première barre à 8,1 m des épaules ou moins (7,5 + 0,6 m de tests/e2e/cso-shots.mjs:54) : bouton « Trop loin », zone d’appel au sol, tracé, repère ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
-   "hour": 15.196,
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-recette arrêtée à l’image 119 : capture 4-abord-trop-loin de la recette (tests/e2e/cso-shots.mjs:36-58 : état forcé, 2 abordé depuis 16 m à 6,6 m/s, arrêt quand la première barre passe sous 7,5 + 0,6 m) : bouton « Trop loin », zone d’appel au sol, tracé, repère ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.077333,
    "eye": [
-    318.23307518047926,
+    318.2364084739216,
     6.4,
     -252.77997394254638
    ],
    "target": [
-    328.1112175948962,
-    4.843625224922611,
+    328.11422793230486,
+    4.841576839370985,
     -252.77997394254635
    ],
    "fovV": 58.03663127777747,
@@ -3224,16 +3239,16 @@
     "h": 308
    },
    "horse": {
-    "x": 325.35546573325684,
+    "x": 325.35879906659017,
     "z": -252.77997394254635,
     "h": 1.5707963267948948,
     "jumpY": 0,
     "jumpT": -1
    },
    "sunDir": [
-    -0.290377,
-    0.762926,
-    0.577603
+    -0.261181,
+    0.768525,
+    0.584084
    ],
    "day": 0,
    "canvas": [
@@ -3256,17 +3271,17 @@
     "highlight": 2
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 119
    },
    "aids": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 119
    },
    "state": {
     "to": [],
     "hi": [
-     true,
+     false,
      "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
      false
     ],
@@ -3277,8 +3292,8 @@
      false
     ],
     "fb": [
-     "Bon appel",
-     "jump-fb good"
+     "",
+     "jump-fb off"
     ],
     "cad": [
      5,
@@ -3296,7 +3311,7 @@
     ],
     "ob": false,
     "board": [
-     "3,23",
+     "8,55",
      "/ 64 s",
      "0 pt",
      "▸ 2"
@@ -3311,12 +3326,249 @@
      "hide": false
     }
    },
-   "frame": 293,
+   "frame": 119,
    "web": "unreal/docs/parite/cso/aide-4-trop-loin-667x308-web.png",
    "unreal": "unreal/docs/parite/cso/aide-4-trop-loin-667x308-unreal.png"
   },
   {
    "name": "aide-5-bonne-zone-844x390",
+   "desc": "Aides à l’appel (tranche T9), capture 5-abord-bonne-zone de la recette (même état forcé, arrêt quand la première barre passe sous 1,7 + 0,6 m) : bouton « Trop loin » (le jeu web n’y affiche pas « Saute ! »), zone d’appel au sol sous le cheval, repère ; capture web = PNG de la recette (tests/e2e/out/cso/5-abord-bonne-zone.png) ; état rejoué par l’exécution t9-recette de l’oracle arrêtée à l’image 181 (capture de cette exécution : aide-5-bonne-zone-844x390-oracle.png) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.118667,
+   "eye": [
+    324.02306892935314,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    333.8769320624211,
+    4.696655831969073,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 331.14546573325634,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.27138,
+    0.766642,
+    0.581905
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 181
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 181
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "9,49",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "far",
+     "cl": [
+      "far"
+     ],
+     "sg": "»",
+     "lb": "Trop loin",
+     "hide": false
+    }
+   },
+   "frame": 181,
+   "recette": {
+    "png": "tests/e2e/out/cso/5-abord-bonne-zone.png",
+    "sha256": "f0c4d8181d14ccef9c8d92048cdc73988099373858d9113a9f340bb411a24d72",
+    "oracle": "unreal/docs/parite/cso/aide-5-bonne-zone-844x390-oracle.png",
+    "ecart": {
+     "mean": 4.05,
+     "over16": 3.27,
+     "box": [
+      2,
+      62,
+      843,
+      383
+     ]
+    }
+   },
+   "web": "unreal/docs/parite/cso/aide-5-bonne-zone-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-5-bonne-zone-844x390-unreal.png"
+  },
+  {
+   "name": "aide-5-bonne-zone-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-recette arrêtée à l’image 181 : capture 5-abord-bonne-zone de la recette (même état forcé, arrêt quand la première barre passe sous 1,7 + 0,6 m) : bouton « Trop loin » (le jeu web n’y affiche pas « Saute ! »), zone d’appel au sol sous le cheval, repère ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.118667,
+   "eye": [
+    324.02306892935314,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    333.8769320624211,
+    4.696655831969073,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 331.14546573325634,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.27138,
+    0.766642,
+    0.581905
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 181
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 181
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "9,49",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "far",
+     "cl": [
+      "far"
+     ],
+     "sg": "»",
+     "lb": "Trop loin",
+     "hide": false
+    }
+   },
+   "frame": 181,
+   "web": "unreal/docs/parite/cso/aide-5-bonne-zone-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-5-bonne-zone-667x308-unreal.png"
+  },
+  {
+   "name": "aide-saute-844x390",
    "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 322 : abord du 2 : première image où le bouton affiche « Saute ! » (bonne zone) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
    "hour": 15.215333,
    "eye": [
@@ -3423,11 +3675,11 @@
     }
    },
    "frame": 322,
-   "web": "unreal/docs/parite/cso/aide-5-bonne-zone-844x390-web.png",
-   "unreal": "unreal/docs/parite/cso/aide-5-bonne-zone-844x390-unreal.png"
+   "web": "unreal/docs/parite/cso/aide-saute-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-saute-844x390-unreal.png"
   },
   {
-   "name": "aide-5-bonne-zone-667x308",
+   "name": "aide-saute-667x308",
    "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 322 : abord du 2 : première image où le bouton affiche « Saute ! » (bonne zone) ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
    "hour": 15.215333,
    "eye": [
@@ -3534,8 +3786,8 @@
     }
    },
    "frame": 322,
-   "web": "unreal/docs/parite/cso/aide-5-bonne-zone-667x308-web.png",
-   "unreal": "unreal/docs/parite/cso/aide-5-bonne-zone-667x308-unreal.png"
+   "web": "unreal/docs/parite/cso/aide-saute-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-saute-667x308-unreal.png"
   },
   {
    "name": "aide-trop-pres-844x390",
@@ -4424,18 +4676,18 @@
    "unreal": "unreal/docs/parite/cso/aide-off-667x308-unreal.png"
   },
   {
-   "name": "aide-sans-trace-844x390",
-   "desc": "Aides à l’appel (tranche T9), partie réelle t9-sans-trace arrêtée à l’image 293 : tracé au sol masqué : abord du 2, première barre à 8,1 m ou moins (zone d’appel, repère et bouton gardés) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
-   "hour": 15.196,
+   "name": "aide-trace-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-parcours arrêtée à l’image 394 : tracé au sol affiché : volte entre le 1 et le 2, première image où le cap s’écarte de 60° au plus de la direction du 2 ; tirets du tracé en courbe devant le cheval jusqu’au 2, repère au-dessus du 2 (zone d’appel au-delà de 26 m) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.263333,
    "eye": [
-    318.23307518047926,
-    6.4,
-    -252.77997394254638
+    296.68108388541896,
+    6.400000082335901,
+    -230.36417503469147
    ],
    "target": [
-    328.1112175948962,
-    4.843625224922611,
-    -252.77997394254635
+    298.3313279991275,
+    4.792495313128695,
+    -240.0951884856197
    ],
    "fovV": 58.03663127777747,
    "viewport": {
@@ -4443,16 +4695,16 @@
     "h": 390
    },
    "horse": {
-    "x": 325.35546573325684,
-    "z": -252.77997394254635,
-    "h": 1.5707963267948948,
+    "x": 298.03986469413735,
+    "z": -237.354471284639,
+    "h": 3.0168749571073663,
     "jumpY": 0,
     "jumpT": -1
    },
    "sunDir": [
-    -0.290377,
-    0.762926,
-    0.577603
+    -0.30682,
+    0.759487,
+    0.573621
    ],
    "day": 0,
    "canvas": [
@@ -4475,12 +4727,12 @@
     "highlight": 2
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 394
    },
    "aids": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 394
    },
    "state": {
     "to": [],
@@ -4496,8 +4748,8 @@
      false
     ],
     "fb": [
-     "Bon appel",
-     "jump-fb good"
+     "",
+     "jump-fb good off"
     ],
     "cad": [
      5,
@@ -4515,38 +4767,36 @@
     ],
     "ob": false,
     "board": [
-     "3,23",
+     "6,60",
      "/ 64 s",
      "0 pt",
      "▸ 2"
     ],
     "jump": {
-     "st": "far",
-     "cl": [
-      "far"
-     ],
-     "sg": "»",
-     "lb": "Trop loin",
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
      "hide": false
     }
    },
-   "frame": 293,
-   "web": "unreal/docs/parite/cso/aide-sans-trace-844x390-web.png",
-   "unreal": "unreal/docs/parite/cso/aide-sans-trace-844x390-unreal.png"
+   "frame": 394,
+   "web": "unreal/docs/parite/cso/aide-trace-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-trace-844x390-unreal.png"
   },
   {
-   "name": "aide-sans-trace-667x308",
-   "desc": "Aides à l’appel (tranche T9), partie réelle t9-sans-trace arrêtée à l’image 293 : tracé au sol masqué : abord du 2, première barre à 8,1 m ou moins (zone d’appel, repère et bouton gardés) ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
-   "hour": 15.196,
+   "name": "aide-trace-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-parcours arrêtée à l’image 394 : tracé au sol affiché : volte entre le 1 et le 2, première image où le cap s’écarte de 60° au plus de la direction du 2 ; tirets du tracé en courbe devant le cheval jusqu’au 2, repère au-dessus du 2 (zone d’appel au-delà de 26 m) ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.263333,
    "eye": [
-    318.23307518047926,
-    6.4,
-    -252.77997394254638
+    296.68108388541896,
+    6.400000082335901,
+    -230.36417503469147
    ],
    "target": [
-    328.1112175948962,
-    4.843625224922611,
-    -252.77997394254635
+    298.3313279991275,
+    4.792495313128695,
+    -240.0951884856197
    ],
    "fovV": 58.03663127777747,
    "viewport": {
@@ -4554,16 +4804,16 @@
     "h": 308
    },
    "horse": {
-    "x": 325.35546573325684,
-    "z": -252.77997394254635,
-    "h": 1.5707963267948948,
+    "x": 298.03986469413735,
+    "z": -237.354471284639,
+    "h": 3.0168749571073663,
     "jumpY": 0,
     "jumpT": -1
    },
    "sunDir": [
-    -0.290377,
-    0.762926,
-    0.577603
+    -0.30682,
+    0.759487,
+    0.573621
    ],
    "day": 0,
    "canvas": [
@@ -4586,12 +4836,339 @@
     "highlight": 2
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 394
    },
    "aids": {
-    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
-    "frame": 293
+    "run": "unreal/core/tests/oracles/cso_runs/t9-parcours.fr.json",
+    "frame": 394
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "6,60",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 394,
+   "web": "unreal/docs/parite/cso/aide-trace-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-trace-667x308-unreal.png"
+  },
+  {
+   "name": "aide-sans-trace-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-courbe arrêtée à l’image 394 : tracé au sol masqué (courseLine false) : même image que aide-trace (mêmes gestes jusque-là, cheval au même endroit), repère et bouton gardés, aucun tiret ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.263333,
+   "eye": [
+    296.68108388541896,
+    6.400000082335901,
+    -230.36417503469147
+   ],
+   "target": [
+    298.3313279991275,
+    4.792495313128695,
+    -240.0951884856197
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 298.03986469413735,
+    "z": -237.354471284639,
+    "h": 3.0168749571073663,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.30682,
+    0.759487,
+    0.573621
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-courbe.fr.json",
+    "frame": 394
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-courbe.fr.json",
+    "frame": 394
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "6,60",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 394,
+   "web": "unreal/docs/parite/cso/aide-sans-trace-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-sans-trace-844x390-unreal.png"
+  },
+  {
+   "name": "aide-sans-trace-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-courbe arrêtée à l’image 394 : tracé au sol masqué (courseLine false) : même image que aide-trace (mêmes gestes jusque-là, cheval au même endroit), repère et bouton gardés, aucun tiret ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.263333,
+   "eye": [
+    296.68108388541896,
+    6.400000082335901,
+    -230.36417503469147
+   ],
+   "target": [
+    298.3313279991275,
+    4.792495313128695,
+    -240.0951884856197
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 298.03986469413735,
+    "z": -237.354471284639,
+    "h": 3.0168749571073663,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.30682,
+    0.759487,
+    0.573621
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-courbe.fr.json",
+    "frame": 394
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-courbe.fr.json",
+    "frame": 394
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "6,60",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 394,
+   "web": "unreal/docs/parite/cso/aide-sans-trace-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-sans-trace-667x308-unreal.png"
+  },
+  {
+   "name": "aide-ambre-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-ambre arrêtée à l’image 752 : abord lent du 8 (4,6 m/s, zone calculée à 5,5 m/s) : bande ambre sans bande verte, première barre à 11 m ou moins ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.502,
+   "eye": [
+    345.92716314841437,
+    6.4,
+    -195.78582813241616
+   ],
+   "target": [
+    355.8195461105664,
+    4.93686660549236,
+    -195.7858281324161
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 352.9146811197067,
+    "z": -195.78582813241613,
+    "h": 1.5707963267948912,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.364303,
+    0.745788,
+    0.557749
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 10
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-ambre.fr.json",
+    "frame": 752
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-ambre.fr.json",
+    "frame": 752
    },
    "state": {
     "to": [],
@@ -4611,7 +5188,7 @@
      "jump-fb good"
     ],
     "cad": [
-     5,
+     3,
      false
     ],
     "bd": [
@@ -4626,10 +5203,10 @@
     ],
     "ob": false,
     "board": [
-     "3,23",
+     "18,53",
      "/ 64 s",
      "0 pt",
-     "▸ 2"
+     "▸ 8"
     ],
     "jump": {
      "st": "far",
@@ -4641,9 +5218,120 @@
      "hide": false
     }
    },
-   "frame": 293,
-   "web": "unreal/docs/parite/cso/aide-sans-trace-667x308-web.png",
-   "unreal": "unreal/docs/parite/cso/aide-sans-trace-667x308-unreal.png"
+   "frame": 752,
+   "web": "unreal/docs/parite/cso/aide-ambre-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-ambre-844x390-unreal.png"
+  },
+  {
+   "name": "aide-ambre-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-ambre arrêtée à l’image 752 : abord lent du 8 (4,6 m/s, zone calculée à 5,5 m/s) : bande ambre sans bande verte, première barre à 11 m ou moins ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.502,
+   "eye": [
+    345.92716314841437,
+    6.4,
+    -195.78582813241616
+   ],
+   "target": [
+    355.8195461105664,
+    4.93686660549236,
+    -195.7858281324161
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 352.9146811197067,
+    "z": -195.78582813241613,
+    "h": 1.5707963267948912,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.364303,
+    0.745788,
+    0.557749
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 10
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-ambre.fr.json",
+    "frame": 752
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-ambre.fr.json",
+    "frame": 752
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     3,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "18,53",
+     "/ 64 s",
+     "0 pt",
+     "▸ 8"
+    ],
+    "jump": {
+     "st": "far",
+     "cl": [
+      "far"
+     ],
+     "sg": "»",
+     "lb": "Trop loin",
+     "hide": false
+    }
+   },
+   "frame": 752,
+   "web": "unreal/docs/parite/cso/aide-ambre-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-ambre-667x308-unreal.png"
   }
  ]
 }

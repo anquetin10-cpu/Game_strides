@@ -1428,6 +1428,7 @@ static void testCsoRuns() {
   int logN = 0;  // changements du journal des fautes comparés
   int ljN = 0, fbN = 0;  // derniers sauts relevés et mots d'appel comparés (tranche T7)
   int perfectN = 0, bar2N = 0;  // « Appel parfait » et « Barre au 2 · +4 · … » produits par le portage (critère de T7)
+  std::vector<std::string> forced;  // exécutions dont l'état de l'épreuve est écrit par le test (non rejouées)
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
     const J& su = r["setup"];
@@ -1435,6 +1436,16 @@ static void testCsoRuns() {
     if (su["run0"].isNull() || su["run0"]["i"].isNull() || su["run0"]["i"].num() != 0 || r["frames"].a.empty() || r["frames"][0]["ep"].isNull() ||
         r["frames"][0]["ep"]["i"].num() != 0)
       continue;
+    // Contrôle adverse de T9 : t9-recette (tests/e2e/cso-shots.mjs) écrit l'état de l'épreuve entre deux images (champ fs :
+    // chrono lancé, obstacle attendu, chrono, surlignage) ; hors de la logique du jeu, il n'est pas rejoué ici (canal « ai »
+    // et HUD rejoués par testCsoAids et les poses aide-4-*, aide-5-*).
+    if (!su["recette"].isNull()) {
+      bool fs = false;
+      for (const J& f : r["frames"].a) fs = fs || !f["fs"].isNull();
+      CHECK(fs, "%s : état forcé (fs) absent", who.c_str());
+      forced.push_back(id);
+      continue;
+    }
     CHECK(std::abs(su["finish"]["x"].num() - base.finish.x) < 1e-9 && std::abs(su["finish"]["z"].num() - base.finish.z) < 1e-9 && su["finish"]["w"].num() == base.finish.w &&
               std::abs(su["start"]["x"].num() - base.start.x) < 2e-6 && su["start"]["w"].num() == base.start.w && su["gate"]["x"].num() == base.gateX && su["gate"]["z"].num() == base.gateZ,
           "%s : lignes ou entrée de piste du jeu différentes des données", who.c_str());
@@ -1730,6 +1741,9 @@ static void testCsoRuns() {
   for (const auto& k : g_text.missing()) miss += " « " + k + " »";
   CHECK(g_text.missing().empty(), "textes demandés absents de strings_cso.json :%s", miss.c_str());
   std::printf("déroulé d'épreuve : %d exécutions requises rejouées sans écart (%zu au total), %d images, %d appels d'interface et %d sons de courses.js comparés, %d tableaux\n", ok, clean.size(), frames, hudN, audioN, boardN);
+  CHECK(forced.size() == 1 && forced[0] == "t9-recette", "exécutions à état forcé non rejouées : %zu (attendu : t9-recette seule)", forced.size());
+  std::printf("déroulé d'épreuve : non rejouée (état de l'épreuve écrit par tests/e2e/cso-shots.mjs) : %s\n", forced.empty() ? "aucune" : forced[0].c_str());
+  CHECK(clean.count("t9-ambre fr"), "t9-ambre (fr) : absent ou en écart");
 }
 
 // Étape « rejoindre l'entrée de la carrière » (contrôle adverse de T4) : objectif et validation de l'étape goto du jeu
@@ -2153,8 +2167,9 @@ static bool aidsF32(double core, double web) {
   return (double)f == web || (double)std::nextafter(f, 1e30f) == web || (double)std::nextafter(f, -1e30f) == web;
 }
 
-// takeoffZone sur la grille de cso_takeoff_zone.json (obstacles du parcours à 6 jeux de hauteurs × 15 vitesses ×
-// 4 puissances × 3 bonus) à 1e-9 ; tirets du tracé (_marks) : nombre, indices de tracé, coins x / z (float32 du web).
+// takeoffZone sur la grille de cso_takeoff_zone.json (obstacles du parcours à 8 jeux de hauteurs × 15 vitesses ×
+// 4 puissances × 3 bonus) à 1e-9 ; tirets du tracé (_marks, _strip) : nombre, indices de tracé, coins x / z lus par
+// le sol à 1e-9 du cœur, coins x / y / z du tampon du web (float32) = cœur, y = sol lu par le web + lineLift.
 static void testCsoTakeoffZone() {
   const J o = loadJson(ORA + "/cso_takeoff_zone.json");
   CHECK(o["schema"].s == "strides.oracle.cso_takeoff_zone/1", "cso_takeoff_zone.json : schéma « %s »", o["schema"].s.c_str());
@@ -2183,21 +2198,28 @@ static void testCsoTakeoffZone() {
             near(line.back().s, o["line"]["last"]["s"].num()), "CSO_LINE : %zu points, extrémités différentes du web", line.size());
   const std::vector<CsoLineMark> marks = csoLineMarks(line);
   CHECK(marks.size() == o["marks"].a.size(), "tirets du tracé : %zu au lieu de %zu", marks.size(), o["marks"].a.size());
-  int bad = 0;
+  const CsoAidsParams& A0 = csoAidsDefaults();
+  int bad = 0, liftN = 0;
   for (size_t k = 0; k < marks.size() && k < o["marks"].a.size(); k++) {
     const J& w = o["marks"][k];
-    bool ok = near(marks[k].s, w["s"].num());
-    for (int j = 0; j < 4; j++) ok = ok && aidsF32(marks[k].c[j][0], w["c"][(size_t)j][0].num()) && aidsF32(marks[k].c[j][1], w["c"][(size_t)j][2].num());
-    if (!ok && bad++ < 3) CHECK(false, "tiret %zu (s %g) : coins différents du web", k, w["s"].num());
+    bool ok = near(marks[k].s, w["s"].num()) && w["g"].t == J::Arr && w["g"].a.size() == 4;
+    for (int j = 0; ok && j < 4; j++) {
+      const J& gq = w["g"][(size_t)j];  // terrain.getHeight(x, z) appelé par _strip pour ce coin (pleine précision)
+      ok = near(marks[k].c[j][0], gq[0].num()) && near(marks[k].c[j][1], gq[1].num()) && aidsF32(marks[k].c[j][0], w["c"][(size_t)j][0].num()) &&
+           aidsF32(gq[2].num() + A0.lineLift, w["c"][(size_t)j][1].num()) && aidsF32(marks[k].c[j][1], w["c"][(size_t)j][2].num());
+      if (ok) liftN++;
+    }
+    if (!ok && bad++ < 3) CHECK(false, "tiret %zu (s %g) : coins ou hauteur (sol + %g) différents du web", k, w["s"].num(), A0.lineLift);
   }
   CHECK(bad == 0, "tirets du tracé : %d tirets différents", bad);
+  CHECK(liftN == (int)marks.size() * 4, "hauteur des tirets : %d coins comparés", liftN);
   // LINE_MARK relu dans la scène du web (Content/Data/cso_aids.json) = constantes du cœur.
   const J d = loadJson(DATA + "/cso_aids.json");
   const CsoAidsParams& A = csoAidsDefaults();
   const J& L = d["lineMark"];
   CHECK(near(A.dash, L["dash"].num()) && near(A.width, L["width"].num()) && near(A.every, L["every"].num()) && near(A.after, L["after"].num()) && near(A.hideNear, L["hideNear"].num()),
         "LINE_MARK du cœur différent de cso_aids.json");
-  std::printf("aides (takeoffZone) : %d cas (deux bandes %d, ambre seule %d, aucune %d), %zu tirets du tracé\n", n, both, passOnly, none, marks.size());
+  std::printf("aides (takeoffZone) : %d cas (deux bandes %d, ambre seule %d, aucune %d), %zu tirets du tracé (%d coins : x, z, hauteur sol + %g)\n", n, both, passOnly, none, marks.size(), liftN, A0.lineLift);
 }
 
 // Canal « ai » des exécutions t9-* : chaque appel de CourseAids.update rejoué par strides::CsoCourseAids (entrées,
@@ -2208,6 +2230,10 @@ static void testCsoAids() {
   J o = loadRuns();
   const std::vector<TracePoint> line = aidsWorldLine();
   int runs = 0, frames = 0, calls = 0, lineOn = 0, lineOff = 0, nextNull = 0, okOn = 0, goodOn = 0, recompute = 0, pre = 0, aidOff = 0, earlyF = 0, earlyCalls = 0, virt = 0;
+  // Contrôle adverse de T9 : zone d'appel sans bande verte (takeoffZone rend pass, pas good : place(this.good, null),
+  // courseAids.js:155 ; t9-ambre) ; pauses du HUD de t9-recette (hw : captures de tests/e2e/cso-shots.mjs).
+  int okOnly = 0, okOnlyGoodMoved = 0, pauses = 0;
+  std::set<std::string> ids;
   // Sous-branches (relevées sur les entrées) : aide coupée à l'entrée en piste alors que le cheval vise un obstacle, zone
   // coupée à pied près de l'obstacle suivant, point du tracé le plus proche avant l'obstacle précédent (prevS − 2 m),
   // cheval loin du tracé (> 15 m), appui « Trop tôt » relancé avant la fin des 600 ms.
@@ -2216,6 +2242,7 @@ static void testCsoAids() {
   for (const J& r : o["runs"].a) {
     if (!r["setup"]["aides"].b) continue;
     runs++;
+    ids.insert(r["id"].s);
     virt += (int)r["setup"]["virtualEarly"].num();
     const std::string id = r["id"].s, lang = r["lang"].s;
     const Lang L = lang == "en" ? Lang::En : Lang::Fr;
@@ -2224,7 +2251,7 @@ static void testCsoAids() {
     hud.setViewportHeight(390);
     std::vector<CsoAidsFence> fences;
     int bad = 0;
-    double zt0 = 0;
+    double zt0 = 0, gx0 = 0, gy0 = 0;
     for (const J& f : r["frames"].a) {
       const int fi = (int)f["f"].num();
       const std::string who = id + "." + lang + " image " + std::to_string(fi);
@@ -2259,6 +2286,7 @@ static void testCsoAids() {
       CsoHudFrame hf;
       hf.jumpTiming = jt;
       hud.update(1.0 / 30, hf);
+      // (état du bouton relevé en fin d'image, avant la pause de la capture)
       const std::string st = b["st"].isNull() ? std::string() : b["st"].s;
       std::set<std::string> cl;
       for (const J& k : b["cl"].a) cl.insert(k.s);
@@ -2272,6 +2300,11 @@ static void testCsoAids() {
       if (b["pre"].b) pre++;
       if (b["pre"].b && b["tm"].s != "none") preAimed++;
       if (b["c"].b && b["aid"].s == "off") aidOff++;
+      // Pause d'une capture de t9-recette après l'image : temporisations du HUD seules (sans image de jeu).
+      if (f["hw"].t == J::Num) {
+        hud.advanceTicks((int64_t)f["hw"].num());
+        pauses += (int)std::lround(f["hw"].num() / r["setup"]["recette"]["pause"]["ticks"].num());  // captures (1-presentation et 2-plan : même image)
+      }
       // Aides du parcours.
       const J& c = ai["c"];
       if (c.isNull()) continue;
@@ -2345,21 +2378,32 @@ static void testCsoAids() {
       if (!ain.next) nextNull++;
       if (v.ok.visible) okOn++;
       if (v.good.visible) goodOn++;
+      // Bande ambre seule : la verte reste masquée et garde sa position, relevée de 0,005 m (courseAids.js:166).
+      if (v.ok.visible && !v.good.visible && !out["zo"].isNull() && out["zo"]["g"].isNull()) {
+        okOnly++;
+        if (near(v.good.y, gy0 + csoAidsDefaults().goodLift) && near(v.good.x, gx0)) okOnlyGoodMoved++;
+      }
+      gx0 = v.good.x;
+      gy0 = v.good.y;
       if (ain.next && aids.zoneTimer() > zt0 + 1e-12) recompute++;
       zt0 = aids.zoneTimer();
     }
     CHECK(bad == 0, "%s.%s : %d écarts (aides ou bouton)", id.c_str(), lang.c_str(), bad);
   }
   CHECK(runs >= 5, "canal « ai » : %d exécutions t9-*", runs);
-  // (bande ambre sans bande verte : jamais dans ces exécutions, hauteurs de 1,05 à 1,15 m ; takeoffZone la rend sur la
-  // grille de cso_takeoff_zone.json, l'affichage seul n'est pas départagé : écart déclaré à l'inventaire)
+  for (const char* id : {"t9-parcours", "t9-appel", "t9-retour", "t9-aide-bouton", "t9-aide-off", "t9-sans-trace", "t9-ambre", "t9-courbe", "t9-recette"})
+    CHECK(ids.count(id), "canal « ai » : exécution %s absente", id);
+  // Zone sans bande verte (pass seul) : affichée dans t9-ambre (abord du 8 à 4,6 m/s) ; zone sans aucune plage (pass nul)
+  // jamais avec les hauteurs de l'épreuve (1,05 à 1,15 m), même garde de place (écart déclaré à l'inventaire).
+  CHECK(okOnly > 0 && okOnlyGoodMoved > 0, "canal « ai » : bande ambre seule %d appels (verte masquée relevée de 0,005 m : %d)", okOnly, okOnlyGoodMoved);
+  CHECK(pauses == 5, "t9-recette : %d pauses de capture rejouées (5 captures de tests/e2e/cso-shots.mjs jusqu'à 5-abord-bonne-zone)", pauses);
   CHECK(lineOn > 0 && lineOff > 0 && nextNull > 0 && okOn > 0 && goodOn > 0 && recompute > 0 && pre > 0 && aidOff > 0 && earlyF > 0 && earlyCalls > 0 && virt == earlyCalls,
         "canal « ai » : branche non exercée (tracé affiché %d / masqué %d, sans obstacle suivant %d, bande ambre %d, verte %d, zone recalculée %d, entrée en piste %d, aide coupée %d, « Trop tôt » %d images / %d appuis, %d temporisations virtuelles)",
         lineOn, lineOff, nextNull, okOn, goodOn, recompute, pre, aidOff, earlyF, earlyCalls, virt);
   for (const char* k : {"none", "far", "good", "near", "early"}) CHECK(states[k] > 0, "bouton SAUT : état « %s » jamais relevé", k);
   CHECK(preAimed > 0 && footNear > 0 && behindPrev > 0 && farLine > 0 && earlyAgain > 0,
         "canal « ai » : sous-branche non exercée (entrée en piste en visée %d, à pied près de l'obstacle %d, avant l'obstacle précédent %d, loin du tracé %d, « Trop tôt » relancé %d)", preAimed, footNear, behindPrev, farLine, earlyAgain);
-  std::printf("aides (sous-branches) : entrée en piste en visée %d images, à pied près de l'obstacle %d appels, point du tracé avant l'obstacle précédent %d, loin du tracé %d, « Trop tôt » relancé %d fois\n", preAimed, footNear, behindPrev, farLine, earlyAgain);
+  std::printf("aides (sous-branches) : entrée en piste en visée %d images, à pied près de l'obstacle %d appels, point du tracé avant l'obstacle précédent %d, loin du tracé %d, « Trop tôt » relancé %d fois, bande ambre seule %d appels, pauses de capture %d\n", preAimed, footNear, behindPrev, farLine, earlyAgain, okOnly, pauses);
   std::printf("aides (canal ai) : %d exécutions, %d images, %d appels de CourseAids.update (tracé affiché %d, masqué %d, sans obstacle suivant %d, bande ambre %d, verte %d, zone recalculée %d) ; bouton : entrée en piste %d, aide coupée %d, « Trop tôt » %d images (%d appuis)",
               runs, frames, calls, lineOn, lineOff, nextNull, okOn, goodOn, recompute, pre, aidOff, earlyF, earlyCalls);
   for (const auto& kv : states) std::printf(", %s %d", kv.first.c_str(), kv.second);

@@ -30,6 +30,9 @@
 //    --shots=carriere : seulement les poses de la carrière (vue aérienne, lignes de départ et d'arrivée, poteau
 //    « Chrono », tranche T5) ; --shots=chute : seulement la chute de barre (T3) ; --shots=cadrage : seulement la caméra
 //    de concours aux 6 instants de tests/e2e/cso-framing.mjs (T6) ; les autres poses sont gardées.
+//    --shots=aides (tranche T9) : poses aide-* (exécutions t9-* arrêtées à l'image choisie, 844 × 390 et 667 × 308 ;
+//    captures 4 et 5 de la recette : PNG de tests/e2e/out/cso/ et exécution t9-recette) ; --poses=nom1,nom2 : ces poses
+//    seulement, les autres poses aide-* gardées.
 //  - avec --fences (tranche T5) : géométrie des obstacles du parcours, des lignes et du poteau « Chrono » construite par
 //    le jeu web (scripts/unreal/cso-export.js, chargé dans la page), comparée au jeu réel hors épreuve et en épreuve :
 //    .tmp/unreal-import/cso/ (cso_fences.glb, sign_*.png, importés par scripts/unreal/import-cso-fences.py) et le
@@ -38,12 +41,14 @@
 //    téléphone image par image (boucle de game.js:1406), rejoué par le test moteur Strides.Cso.Controls.
 //
 // Usage (serveur Vite sur BASE, défaut http://127.0.0.1:5173 ; Chrome installé, aucun téléchargement) :
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute|cadrage]] [--fences] [--freeze] [--only=…] [--out=dossier]
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute|cadrage|aides] [--poses=…]] [--fences] [--freeze] [--aids] [--only=…] [--out=dossier]
 // Mode d'emploi du banc (oracles, captures, montages, PARITE.md) : unreal/docs/parite/README.md.
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { RUNS_SCHEMA, RUNS_LAYOUT, runFile, writeRuns } from './cso-runs-io.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -268,6 +273,23 @@ const SCENARIOS = [
   { id: 't9-sans-trace', type: 't4', aides: true, langs: ['fr'], courseLine: false, maxFrames: 1000,
     acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'jump', label: '2', rule: 'good', back: 16 }, { do: 'wait', frames: 10 }],
     desc: 'Tracé au sol masqué (courseLine false) : départ, le 1 puis le 2 (abordé depuis 16 m) sautés en bonne zone ; zone d’appel, repère et bouton gardés ; 10 images après.' },
+  // Contrôle adverse de T9 : zone d'appel sans bande verte (takeoffZone rend pass, pas good : place(this.good, null),
+  // courseAids.js:155), atteinte dans une partie normale à l'abord lent du 8 (oxer, le plus haut du parcours).
+  { id: 't9-ambre', type: 't4', aides: true, langs: ['fr'], maxFrames: 1400,
+    acts: [{ do: 'line', until: 'started' }, ...['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7'].map((label) => ({ do: 'jump', label, rule: 'good' })),
+      { do: 'at', label: '8', d: 16, v: 4.6, frames: 40 }, { do: 'wait', frames: 3 }],
+    desc: 'Zone d’appel ambre seule : départ, les éléments 1 à 7 sautés en bonne zone (cheval posé devant chacun) ; cheval posé 16 m devant le 8 (oxer) à 4,6 m/s (trot de concours : takeoffZone le calcule à 5,5 m/s), joystick vers l’axe, 40 images sans appui (bande ambre sans bande verte), puis 3 images.' },
+  // Contrôle adverse de T9 : jumeau de t9-parcours tracé masqué (mêmes gestes jusqu'au 2 franchi) : montages
+  // aide-trace / aide-sans-trace pris à la même image, dans la volte entre le 1 et le 2 (tirets en courbe, hors de l'axe
+  // de la caméra).
+  { id: 't9-courbe', type: 't4', aides: true, langs: ['fr'], courseLine: false, maxFrames: 1000, acts: [{ do: 'line', until: { next: 3 } }],
+    desc: 'Tracé au sol masqué (courseLine false), mêmes gestes que t9-parcours jusqu’au 2 franchi : du poteau d’attente le long de l’abord dessiné puis du tracé, cadence montée au joystick jusqu’à 6,2 m/s, SAUT selon la règle de A.rideLine ; départ, le 1, la volte vers le 2, le 2.' },
+  // Contrôle adverse de T9 : tests/e2e/cso-shots.mjs rejoué au pas fixe jusqu'aux captures 4-abord-trop-loin et
+  // 5-abord-bonne-zone de la recette (réglages relus dans le test, voir readShots ; état forcé par le test entre deux
+  // images relevé dans le champ fs, cheval posé dans tp). Rejoué par testCsoAids (canal « ai ») et par les poses
+  // aide-4-* / aide-5-* ; pas par testCsoRuns (état de l'épreuve écrit par le test, hors de la logique du jeu).
+  { id: 't9-recette', type: 'recette', aides: true, langs: ['fr'], maxFrames: 400,
+    desc: 'Recette des captures de l’épreuve (tests/e2e/cso-shots.mjs) : cheval monté posé 4 m au sud de l’entrée de piste, cap π ; Parcours du Pôle lancé, 6 images ; plan ouvert puis refermé, Entrer en piste, 80 images ; puis, pour chaque capture d’abord du 2 (trop loin, bonne zone), l’état forcé par le test (chrono lancé, obstacle attendu 2, chrono à 7,42 s, 2 surligné, cheval posé 16 m devant le 2 dans son axe à 6,6 m/s, caméra recalée) et sa boucle (joystick vers l’axe, cadence 6,2 m/s, une image, arrêt quand la première barre passe sous 7,5 + 0,6 m puis 1,7 + 0,6 m). Temporisations du HUD : voir setup.recette.pause.' },
 ];
 
 // Réglages du scénario « cadrage » relus dans tests/e2e/cso-framing.mjs (le test fait foi, aucune valeur recopiée).
@@ -298,6 +320,100 @@ function readFraming() {
 }
 const FRAMING = readFraming();
 for (const sc of SCENARIOS) if (sc.type === 'framing') sc.framing = FRAMING;
+
+// Réglages du scénario « t9-recette » relus dans tests/e2e/cso-shots.mjs (le test fait foi, aucune valeur recopiée).
+// Temporisations du HUD (hud.js : setTimeout, horloge réelle) : dans la recette, la page n'exécute ses temporisations
+// qu'entre deux page.evaluate, c'est-à-dire pendant chaque capture (shot : attente de `wait` ms, rendu, capture d'écran),
+// les boucles de A.tick étant bien plus rapides que le temps de jeu. Leur état sur les PNG dépend donc de la durée réelle
+// des captures, qui n'est pas reproductible (mesurée sur ce Mac par une copie chronométrée du test : rendu et capture de
+// 0,27 à 3,9 s selon la capture ; l'astuce y est éteinte à la capture 5, allumée sur le PNG de la recette). Modèle de
+// l'oracle : horloge du HUD = temps de jeu (100 ticks par image, comme toutes les exécutions) + une pause par capture
+// (champ hw de l'image capturée) = attente du test (`wait`, relue) + CAPTURE_MS. CAPTURE_MS n'est pas une mesure : c'est
+// une valeur retenue dans l'intervalle où l'état du HUD des deux PNG de la recette est obtenu (grand message « CLOCHE »
+// éteint et astuce affichée à la capture 4, astuce affichée à la capture 5 ; bornes calculées par l'export, voir
+// setup.recette.pause). Sans effet sur le jeu, les aides et le bouton SAUT (temps de jeu seul).
+const CAPTURE_MS = 250;
+function readShots() {
+  const t = readFileSync(join(ROOT, 'tests/e2e/cso-shots.mjs'), 'utf8');
+  const m = (re, what) => {
+    const r = re.exec(t);
+    if (!r) throw new Error(`cso-shots.mjs : ${what} introuvable`);
+    return r;
+  };
+  const num = (re, what) => Number(m(re, what)[1]);
+  const loop = m(/for \(const \[name, x\] of (\[\[.*?\]\])\) \{/, 'captures d’abord')[1];
+  // Boutons de carte touchés avant la cloche, dans l'ordre (plan, retour, Entrer en piste), sans image entre eux.
+  const taps = [...t.slice(0, t.indexOf("await shot('3-")).matchAll(/\[data-id="([^"]+)"\]/g)].map((x) => x[1]);
+  if (taps[taps.length - 1] !== 'enter') throw new Error('cso-shots.mjs : Entrer en piste introuvable');
+  return {
+    source: 'tests/e2e/cso-shots.mjs',
+    at: { dx: 0, dz: num(/h\.setPosition\(O\.CSO_GATE\.x, O\.CSO_GATE\.z \+ ([\d.]+), Math\.PI\)/, 'pose devant l’entrée'), h: Math.PI },
+    pre: num(/g\.activities\.start\([^\n]*\n\s*A\.tick\((\d+)\);/, 'images avant la présentation'),
+    taps,
+    post: num(/data-id="enter"\]'\)\); A\.tick\((\d+)\);/, 'images après Entrer en piste'),
+    shots: JSON.parse(loop.replace(/'/g, '"')),
+    next: num(/st\.next = (\d+);/, 'obstacle attendu forcé'),
+    t: num(/st\.t = ([\d.]+);/, 'chrono forcé'),
+    hl: num(/g\.obstacles\.highlight\('cso', (\d+)\);/, 'obstacle surligné'),
+    idx: num(/const o = list\[(\d+)\];/, 'obstacle abordé'),
+    back: num(/h\.setPosition\(o\.x - o\.n\.x \* ([\d.]+), o\.z - o\.n\.z \* [\d.]+, o\.rot\);/, 'recul'),
+    v: num(/h\.speed = ([\d.]+);\n\s*g\.cam\.snap\(h\.pos, o\.rot\);\n\s*for \(let i = 0; i < \d+; i\+\+\) \{\n\s*A\.steer\(o\.n\.x/, 'vitesse posée'),
+    n: num(/for \(let i = 0; i < (\d+); i\+\+\) \{\n\s*A\.steer\(o\.n\.x, o\.n\.z, [\d.]+\);\n\s*A\.tick\(1\);/, 'images au plus'),
+    mag: num(/A\.steer\(o\.n\.x, o\.n\.z, ([\d.]+)\);\n\s*A\.tick\(1\);\n\s*const tg/, 'amplitude du pilote'),
+    margin: num(/tg\.geo\.rails\[0\]\.x <= x \+ ([\d.]+)\) break;/, 'marge d’arrêt'),
+    wait: num(/const shot = async \(name\) => \{\n\s*await page\.waitForTimeout\((\d+)\);/, 'attente avant capture'),
+    captureMs: CAPTURE_MS,
+  };
+}
+const SHOTS_RECETTE = readShots();
+// Écart entre deux PNG de même taille (décodés par ffmpeg en RVB 8 bits) : moyenne sur les pixels de l'écart absolu
+// moyen des trois canaux, part des pixels dont cet écart dépasse 16, boîte de ces pixels.
+function pngDiff(a, b, v) {
+  const raw = (p) => execFileSync('ffmpeg', ['-v', 'error', '-i', p, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], { maxBuffer: 64 << 20 });
+  const A = raw(a), B = raw(b);
+  if (A.length !== B.length || A.length !== v.width * v.height * 3) throw new Error(`pngDiff : tailles différentes (${a}, ${b})`);
+  let sum = 0, over = 0, x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
+  for (let i = 0, n = A.length / 3; i < n; i++) {
+    const d = (Math.abs(A[3 * i] - B[3 * i]) + Math.abs(A[3 * i + 1] - B[3 * i + 1]) + Math.abs(A[3 * i + 2] - B[3 * i + 2])) / 3;
+    sum += d;
+    if (d > 16) {
+      over++;
+      const x = i % v.width, y = Math.floor(i / v.width);
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+  }
+  const n = A.length / 3;
+  return { mean: Math.round((sum / n) * 100) / 100, over16: Math.round((over / n) * 10000) / 100, box: over ? [x0, y0, x1, y1] : null };
+}
+// Intervalle de la durée de capture C (ms) où le modèle de readShots donne l'état du HUD visible sur les PNG de la
+// recette aux captures d'abord (4-abord-trop-loin, 5-abord-bonne-zone : grand message éteint, classe big-on retirée,
+// astuce affichée). Horloge virtuelle (ticks de 1/3 ms) : un appel de l'image f a lieu à (f + 1) × 100 + pauses des
+// images < f ; la capture de l'image k est vue à (k + 1) × 100 + pauses des images ≤ k ; une pause = 3 × (attente + C).
+// hud.js : big(…, ms) éteint le message à ms puis retire big-on 400 ms plus tard (hud.js:462-465) ; hint(…, ms) éteint
+// l'astuce à ms (hud.js:474).
+function recetteBounds(frames, shots, R) {
+  const pausesUpTo = (k) => frames.slice(0, k + 1).reduce((n, f) => n + (f.hw ? Math.round(f.hw / Math.round((R.wait + R.captureMs) * 3)) : 0), 0);
+  let min = -Infinity, max = Infinity;
+  for (const s of shots) {
+    let big = null, hint = null;
+    for (let f = 0; f <= s.frame; f++)
+      for (const c of frames[f].hud) {
+        if (c.fn === 'big') big = { f, ms: c.args[2] ?? 2200 };
+        if (c.fn === 'hint') hint = { f, ms: c.args[1] ?? 4500 };
+        if (c.fn === 'clearHint') hint = null;
+      }
+    if (!big || !hint) throw new Error(`t9-recette : grand message ou astuce absents avant ${s.name}`);
+    // big-on retiré : (k − fb) × 100 + 3 (W + C) ΔP ≥ 3 (ms + 400)
+    const dPb = pausesUpTo(s.frame) - pausesUpTo(big.f - 1);
+    if (dPb > 0) min = Math.max(min, (3 * (big.ms + 400) - (s.frame - big.f) * 100) / (3 * dPb) - R.wait);
+    else if ((s.frame - big.f) * 100 < 3 * (big.ms + 400)) throw new Error(`t9-recette : big-on gardé à ${s.name}`);
+    // astuce affichée : (k − fh) × 100 + 3 (W + C) ΔP < 3 ms
+    const dPh = pausesUpTo(s.frame) - pausesUpTo(hint.f - 1);
+    if (dPh > 0) max = Math.min(max, (3 * hint.ms - (s.frame - hint.f) * 100) / (3 * dPh) - R.wait);
+  }
+  return { min: Math.ceil(min), max: Math.floor(max) };
+}
+for (const sc of SCENARIOS) if (sc.type === 'recette') Object.assign(sc, { recette: SHOTS_RECETTE, at: SHOTS_RECETTE.at });
 
 // ---------------------------------------------------------------------------------------------------------------
 // Code injecté dans la page : banc d'enregistrement (window.__parite).
@@ -431,6 +547,12 @@ function PAGE() {
   };
   const apply = (inp) => {
     const I = g.input;
+    // Scénario t9-recette : boutons de carte touchés avant `ui`, sans image entre eux (plan, retour).
+    for (const id of inp.taps || []) {
+      const el = document.querySelector(`.overlay [data-id="${id}"]`);
+      if (!el) throw new Error(`bouton introuvable : ${id}`);
+      A.tap(el);
+    }
     if (inp.ui) {
       const el = document.querySelector(`.overlay [data-id="${inp.ui}"]`);
       if (!el) throw new Error(`bouton introuvable : ${inp.ui}`);
@@ -463,7 +585,7 @@ function PAGE() {
     if (P.stopAfter !== undefined && frames.length > P.stopAfter) throw new Error('STOP'); // captures de la tranche T9
     return rec;
   };
-  const input = (o = {}) => ({ move: o.move || [0, 0], keys: o.keys || [], held: o.held || [], jump: !!o.jump, ui: o.ui || null, ...(o.press?.length ? { press: o.press } : {}) });
+  const input = (o = {}) => ({ move: o.move || [0, 0], keys: o.keys || [], held: o.held || [], jump: !!o.jump, ui: o.ui || null, ...(o.press?.length ? { press: o.press } : {}), ...(o.taps?.length ? { taps: o.taps } : {}) });
 
   // ---- Canal « ch » (cheval de concours, tranche T2) : état complet du cheval du joueur en pleine précision ----
   // Relevé autour des appels du jeu : entrées vues par player.update (input.move après input.poll, keyMove, appui SAUT,
@@ -1346,6 +1468,57 @@ function PAGE() {
     return frames;
   };
 
+  // ---- Scénario t9-recette (contrôle adverse de T9) : tests/e2e/cso-shots.mjs au pas fixe ----
+  // Gestes du test (réglages relus, sc.recette) : `pre` images ; boutons touchés (plan, retour) puis Entrer en piste
+  // avant l'image suivante ; `post` images en tout ; pour chaque capture d'abord, l'état écrit par le test entre deux
+  // images (relevé dans le champ fs de l'image suivante, cheval posé dans tp) puis sa boucle : A.steer vers l'axe de
+  // l'obstacle (cadence et joystick, tests/e2e/autopilot.js), une image, arrêt quand la première barre de l'obstacle visé
+  // passe sous x + marge. Captures du test : champ hw de l'image capturée (pause de l'horloge virtuelle du HUD, voir
+  // readShots) ; shots = images capturées.
+  P.runRecette = async (sc) => {
+    const R = sc.recette, h = g.player.horse;
+    const pauseTicks = Math.round((R.wait + R.captureMs) * 3);
+    const pause = (rec, n) => {
+      rec.hw = (rec.hw || 0) + n * pauseTicks;
+      if (AIDS) AIDS.tick(n * pauseTicks);
+    };
+    const shots = [];
+    P.lite = true;
+    try {
+      for (let k = 0; k < R.pre; k++) step(input());
+      pause(frames[frames.length - 1], 2); // captures 1-presentation et 2-plan (le plan, touché entre les deux, l'est ici avec l'image suivante)
+      step(input({ taps: R.taps.slice(0, -1), ui: R.taps[R.taps.length - 1] }));
+      for (let k = 1; k < R.post; k++) step(input());
+      pause(frames[frames.length - 1], 1); // capture 3-cloche
+      for (const [name, x] of R.shots) {
+        const s = course(), o = g.obstacles.ofCourse('cso')[R.idx];
+        s.started = true;
+        s.next = R.next;
+        s.t = R.t;
+        g.obstacles.highlight('cso', R.hl);
+        h.setPosition(o.x - o.n.x * R.back, o.z - o.n.z * R.back, o.rot);
+        h.speed = R.v;
+        g.cam.snap(h.pos, o.rot);
+        const fs = { started: true, next: R.next, t: R.t, hl: R.hl, o: R.idx, snap: true };
+        const tp = { x: h.pos.x, z: h.pos.z, h: h.heading, v: R.v };
+        let rec = null;
+        for (let i = 0; i < R.n; i++) {
+          A.steer(o.n.x, o.n.z, R.mag);
+          rec = step(input({ move: [g.input.move.x, g.input.move.y] }));
+          if (i === 0) Object.assign(rec, { fs, tp });
+          const tg = g.obstacles.target(h);
+          if (tg && tg.o === o && tg.geo.rails[0].x <= x + R.margin) break;
+        }
+        if (frames.length > sc.maxFrames) throw new Error(`scénario ${sc.id} trop long`);
+        shots.push({ name, frame: rec.f, x });
+        pause(rec, 1); // capture `name`
+      }
+    } finally {
+      P.lite = false;
+    }
+    return { frames, shots };
+  };
+
   // Oracle cso_goto.json (contrôle de T4) : étape « rejoindre l'entrée de la carrière » de l'activité lancée
   // (g.missions.active.steps[0], fabriquée par courses.js:496 avec makeSteps de missions.js), évaluée telle quelle — text()
   // et update() — sur une grille de points suivis autour de l'entrée et de modes du joueur. Le joueur lu par l'étape
@@ -1582,9 +1755,11 @@ function PAGE() {
   // Captures de la tranche T9 (--shots=aides) : la partie s'arrête après l'image k (P.stopAfter) ; vue de la caméra du
   // jeu à cette image, HUD affiché (animations et transitions coupées : état d'arrivée), état du HUD relevé dans le DOM
   // (mêmes parties que export-hud-style.mjs, bouton SAUT compris) et canal « ai » de l'image (comparé à l'oracle).
-  P.aideView = (k) => {
+  P.aideView = (k, hw = 0) => {
     const f = frames[k];
     if (!f) throw new Error(`capture : image ${k} absente`);
+    // t9-recette : pause de la capture du test (ticks de l'horloge virtuelle, hw de l'image dans l'oracle) avant le relevé.
+    if (hw && AIDS) AIDS.tick(hw);
     const H = g.hud, h = g.player.horse, cam = g.camera;
     if (!document.getElementById('aide-css')) {
       const st = document.createElement('style');
@@ -1648,9 +1823,25 @@ function PAGE() {
     }
     g.obstacles.setHeights('cso', h0);
     if (aidObs().some((o, i) => o.h !== h0[i])) throw new Error('aides : hauteurs non remises');
-    const aids = new CA.CourseAids(g, 'cso');
+    // Sol lu par _strip pour chaque coin (terrain.getHeight(x, z), avant l'ajout de 0,04 et l'arrondi float32), dans
+    // l'ordre : les coins du tracé d'abord (this.line), puis ceux de sa suite.
+    const ter = g.terrain, own = Object.prototype.hasOwnProperty.call(ter, 'getHeight'), gh0 = ter.getHeight;
+    const gq = [];
+    ter.getHeight = function (x, z) {
+      const y = gh0.call(this, x, z);
+      gq.push([x, z, y]);
+      return y;
+    };
+    let aids;
+    try {
+      aids = new CA.CourseAids(g, 'cso');
+    } finally {
+      if (own) ter.getHeight = gh0;
+      else delete ter.getHeight;
+    }
     const pos = aids.line.geo.attributes.position.array;
-    const marks = aids.line.stepS.map((s, k) => ({ s, c: [0, 1, 2, 3].map((j) => [pos[(k * 4 + j) * 3], pos[(k * 4 + j) * 3 + 1], pos[(k * 4 + j) * 3 + 2]]) }));
+    if (gq.length !== aids.line.stepS.length * 8) throw new Error(`aides : ${gq.length} lectures du sol pour ${aids.line.stepS.length} tirets`);
+    const marks = aids.line.stepS.map((s, k) => ({ s, c: [0, 1, 2, 3].map((j) => [pos[(k * 4 + j) * 3], pos[(k * 4 + j) * 3 + 1], pos[(k * 4 + j) * 3 + 2]]), g: [0, 1, 2, 3].map((j) => gq[k * 4 + j]) }));
     const idxOk = [...aids.line.geo.index.array].every((v, i) => v === Math.floor(i / 6) * 4 + [0, 1, 2, 0, 2, 3][i % 6]);
     const mat = (m) => ({ type: m.type, color: `#${m.color.getHexString()}`, colorLinear: [m.color.r, m.color.g, m.color.b], opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, depthTest: m.depthTest, side: m.side, toneMapped: m.toneMapped });
     const geo = (gg) => ({ position: [...gg.attributes.position.array], normal: gg.attributes.normal ? [...gg.attributes.normal.array] : null, index: gg.index ? [...gg.index.array] : null, params: gg.parameters ?? null });
@@ -2006,6 +2197,14 @@ for (const sc of SCENARIOS) {
       frames = await page.evaluate((s) => window.__parite.runT4(s), sc);
       delete setup.cc0; // images légères : pas de canal caméra
       Object.assign(setup, { lite: true, acts: sc.acts, pose: sc.pose ?? null, ...(sc.pre ? { pre: sc.pre, at: sc.at ?? null } : {}), ...(sc.ent ? { ent: sc.ent } : {}) });
+    } else if (sc.type === 'recette') {
+      const r = await page.evaluate((s) => window.__parite.runRecette(s), sc);
+      frames = r.frames;
+      delete setup.cc0;
+      const pause = { wait: sc.recette.wait, captureMs: sc.recette.captureMs, ticks: Math.round((sc.recette.wait + sc.recette.captureMs) * 3), bounds: recetteBounds(frames, r.shots, sc.recette) };
+      Object.assign(setup, { lite: true, at: sc.at, recette: { ...sc.recette, shots: r.shots, pause } });
+      console.log(`t9-recette : captures ${r.shots.map((s) => `${s.name} image ${s.frame}`).join(', ')} ; pause par capture ${pause.wait} + ${pause.captureMs} ms, état du HUD des PNG obtenu pour une durée de capture de ${pause.bounds.min} à ${pause.bounds.max} ms`);
+      if (sc.recette.captureMs < pause.bounds.min || sc.recette.captureMs > pause.bounds.max) throw new Error('t9-recette : durée de capture hors de l’intervalle de l’état des PNG');
     } else frames = await page.evaluate((s) => window.__parite.runDroit(s), sc);
     if (sc.classic) setup.classic = true;
     if (sc.aides) Object.assign(setup, { aides: true, aid: sc.aid ?? 'full', courseLine: sc.courseLine ?? true, virtualEarly: await page.evaluate(() => window.__parite.aidsVirtual()) });
@@ -2030,7 +2229,7 @@ const head = {
   state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch) ; valeurs résumées (run.course, course, board, ev.d, arguments) : au-delà de deux niveaux d’imbrication, objets et tableaux remplacés par null (ex. run.course.log, steps de mission:start) : journal des fautes complet dans ep.lg, recul de la caméra dans cc.bk',
   ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update, lg = journal des fautes de l’épreuve (state.log) en fin d’image, entrées [label, kind, cause, causeText] (null si absent) ; lj = dernier saut du cheval du joueur (horse._lastJump, lu par le mot d’appel de courses.js:203-211) : [numéro de l’obstacle sauté s’il est du parcours cso, sinon null ; takeoffQuality(plan), null si aucune], null si aucun saut',
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
-  lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action)',
+  lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action) ; scénario t9-recette (tests/e2e/cso-shots.mjs, setup.recette = réglages relus dans le test, shots = images capturées, pause = modèle des temporisations du HUD) : in.taps = boutons de carte touchés avant in.ui, fs = état de l’épreuve écrit par le test avant l’image (started, next, t, hl = obstacle surligné, o = rang de l’obstacle abordé, snap = caméra recalée), hw = ticks de l’horloge virtuelle du HUD écoulés après l’image (captures du test, sans image de jeu)',
   ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
   cc: 'canal de la caméra de concours (tranche T6), nombres en pleine précision, un appel de FollowCamera._updateComp par image en épreuve : hz = cheval vu par la caméra [pos.x, pos.z, heading, _yawRate (null : indéfini), jumpT, jumpY, groundY] ; dt s’il diffère du pas ; i = instant (snap) ; e0 = camera.position et f0 = [this.fov, camera.fov] avant l’appel quand l’état de concours est (re)créé ; nx = rang dans cc0.obs de game.course.next (null : aucun) ; sonde de la perche (colliders.cameraBlocked) : pn = points sondés, pb = rang du premier point bloqué (−1 : aucun), pq = points [x, y, z] sondés (premier appel de l’exécution et appels bloqués) ; th = [x, z, hauteur] rendus par terrain.getHeight (sol sous la caméra) ; eye = camera.position, look = arguments de camera.lookAt, fov = camera.fov (vertical, appliqué), fs = this.fov (lissé), bk = _comp.back (recul retenu, amorti) ; obs = obstacles [x, z, n.x, n.z, t.x, t.z, w, depth (null : absent), ground, h, off] quand l’un d’eux change ; ccp = appels hors image (snap) avant l’image ; setup.cc0 = état de départ { st = _comp (cH, w, t, ax, az, ay, back, from, fromLook, aim) ou null, eye, fov = this.fov, camFov = camera.fov, obs }',
   ai: 'canal des aides à l’appel (tranche T9, scénarios t9-*, setup.aides ; setup.aid / setup.courseLine = réglages jumpAid / courseLine posés avant le lancement ; setup.virtualEarly = temporisations de « Trop tôt » passées sur l’horloge virtuelle), pleine précision : c = appel de CourseAids.update (courseAids.js:104-167) de l’image, absent sans appel : in = entrées (dt ; n = rang de l’obstacle suivant dans ob, null : aucun ; ps = prevS ; sl / sz = showLine / showZone ; hh = cheval présent ; x, z, v, pw, cl = cheval : position, vitesse, jumpPower, mods.clearance ; md = mode « ride » ; t = game.time), gq = appels de terrain.getHeight pendant l’appel [x, z, y] dans l’ordre, out = maillages après l’appel (ln / af = tracé jusqu’à l’obstacle suivant / après lui [visible, premier tiret, nombre de tirets (null : drawRange infini, jamais réglé)] ; mk = repère [visible, x, y, z, rotation.y] ; ok / gd = bandes ambre / verte [visible, x, y, z, rotation.y, scale.x, scale.z] ; zt = _zoneT ; zf = rang de _zoneFor ; zo = _zone { p = pass, g = good }) ; b = bouton SAUT : jt = valeur lue par hud.update (g.course?.jumpTiming?.() || ’none’, relevée à l’appel), tm = obstacles.timing du cheval au même moment, c = game.course non nul, pre = game.course.pre (entrée en piste), aid = réglage jumpAid || ’full’, line = courseLine !== false, to / tx = cible (rang dans ob, première barre en m) ou null, cad / ca = player.csoCadence (null : indéfinie) et player._cadAdjust lus par la même hud.update ; puis, en fin d’image : st = hud._jt (null : non défini ou remis à null), cl = classes far / good / near / early de .btn-jump, sg = signe, lb = libellé ; ob = obstacles du parcours dans l’ordre (label, num, kind, x, z, rot, h, w, spread, ground, lineS, n, bars [s, h], off) quand la liste change ; temporisation de « Trop tôt » (hud.js:438) sur une horloge virtuelle de 100 ticks de 1/3 ms par image, échéances déclenchées avant l’image suivante',
@@ -2129,7 +2328,7 @@ if (AIDS_DATA) {
     source: ['src/gameplay/courseAids.js', 'src/gameplay/jumpModel.js', 'src/gameplay/obstacles.js', 'src/gameplay/csoCourse.js'],
     frame: 'repère web : x est, z sud, y haut ; m, m/s',
     sets: 'takeoffZone(o, { speed: v, jumpPower: pw, mods: { clearance: cl } }) de courseAids.js:25-34, appelée dans la page sur les obstacles du parcours cso (Obstacles.ofCourse) : base null = hauteurs hors épreuve, sinon Obstacles.setHeights(csoHeights(base)) ; obs = obstacles (label, num, kind, x, z, rot, h, w, spread, ground, lineS, n, bars [s, h], off) ; cases = [rang de l’obstacle, v, pw, cl, pass [près, loin] ou null, good [près, loin] ou null]',
-    marks: 'tirets du tracé construits par new CourseAids(game, ’cso’) (_marks de courseAids.js:80-92 sur CSO_LINE, LINE_MARK) : s = indice de tracé (stepS), c = quatre coins [x, y, z] (y = terrain.getHeight + 0,04) ; line = CSO_LINE (nombre de points, premier, dernier)',
+    marks: 'tirets du tracé construits par new CourseAids(game, ’cso’) (_marks de courseAids.js:80-92 sur CSO_LINE, LINE_MARK) : s = indice de tracé (stepS), c = quatre coins [x, y, z] du tampon de positions (float32, y = terrain.getHeight + 0,04), g = appels de terrain.getHeight de _strip pour ces coins [x, z, y] (pleine précision, avant l’ajout et l’arrondi) ; line = CSO_LINE (nombre de points, premier, dernier)',
     speeds: r.speeds, powers: r.powers, clears: r.clears, line: r.line,
   };
   let zout = JSON.stringify(zh, null, 1).replace(/\n}$/, ',\n "sets": [\n');
@@ -2235,8 +2434,10 @@ if (SHOTS) {
   const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
   // --shots=<groupe> : les poses existantes des autres groupes sont gardées, celles du groupe remplacées ; les poses du
   // HUD (groupe « hud », écrites par export-hud-style.mjs) sont toujours gardées.
+  let priorPoses = [];
   try {
-    doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : ['hud', 'cmd', 'aides'].includes(poseGroup(p.name))));
+    priorPoses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses;
+    doc.poses = priorPoses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : ['hud', 'cmd', 'aides'].includes(poseGroup(p.name))));
   } catch {
     doc.poses = [];
   }
@@ -2429,22 +2630,52 @@ if (SHOTS) {
   // 844 × 390 et 667 × 308. Une page par capture (partie rejouée depuis le début, temporisations de hud.js virtuelles) ;
   // le canal « ai » de l'image est comparé à l'oracle.
   if (SHOTS_ONLY === 'aides') {
+    // Volte entre le 1 et le 2 (tracé en courbe, hors de l'axe de la caméra) : première image au sol, obstacle suivant le
+    // 2, où le cap du cheval s'écarte de 60° au plus de la direction du 2 (l'écart passe de 75 à 90° après la réception
+    // du 1, puis se referme).
+    const inTurn = (b, k, frames) => {
+      const f = frames[k], c = f.ai?.c;
+      if (!c || c.in.n !== 1 || f.horse.jumpT >= 0) return false;
+      let ob = null;
+      for (let i = k; i >= 0 && !ob; i--) ob = frames[i].ai?.ob ?? null;
+      const o = ob[1], h = f.horse;
+      const a = Math.atan2(o.x - h.x, o.z - h.z) - h.h;
+      return Math.abs((((a + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) - Math.PI) <= Math.PI / 3;
+    };
     const AIDE = [
-      { name: 'aide-4-trop-loin', run: 't9-appel', desc: 'abord du 2 (oxer) depuis 16 m, première barre à 8,1 m des épaules ou moins (7,5 + 0,6 m de tests/e2e/cso-shots.mjs:54) : bouton « Trop loin », zone d’appel au sol, tracé, repère', pick: (b) => b.to === 1 && b.tx !== null && b.tx <= 8.1 },
-      { name: 'aide-5-bonne-zone', run: 't9-appel', desc: 'abord du 2 : première image où le bouton affiche « Saute ! » (bonne zone)', pick: (b) => b.to === 1 && b.st === 'good' },
+      // Contrôle adverse de T9 : captures de la recette (tests/e2e/out/cso/*.png, faites par tests/e2e/cso-shots.mjs) en
+      // 844 × 390, rejouées par l'exécution t9-recette de l'oracle ; en 667 × 308, capture de l'exécution de l'oracle.
+      { name: 'aide-4-trop-loin', run: 't9-recette', recette: '4-abord-trop-loin', desc: 'capture 4-abord-trop-loin de la recette (tests/e2e/cso-shots.mjs:36-58 : état forcé, 2 abordé depuis 16 m à 6,6 m/s, arrêt quand la première barre passe sous 7,5 + 0,6 m) : bouton « Trop loin », zone d’appel au sol, tracé, repère' },
+      { name: 'aide-5-bonne-zone', run: 't9-recette', recette: '5-abord-bonne-zone', desc: 'capture 5-abord-bonne-zone de la recette (même état forcé, arrêt quand la première barre passe sous 1,7 + 0,6 m) : bouton « Trop loin » (le jeu web n’y affiche pas « Saute ! »), zone d’appel au sol sous le cheval, repère' },
+      { name: 'aide-saute', run: 't9-appel', desc: 'abord du 2 : première image où le bouton affiche « Saute ! » (bonne zone)', pick: (b) => b.to === 1 && b.st === 'good' },
       { name: 'aide-trop-pres', run: 't9-appel', desc: 'abord du 3 : première image où le bouton affiche « Trop près »', pick: (b) => b.to === 2 && b.st === 'near' },
       { name: 'aide-trop-tot', run: 't9-appel', desc: 'abord du 1 : sixième image après l’appui SAUT à 10 m (bien trop tôt) : bouton « Trop tôt »', pick: (b, k, frames) => b.cl.includes('early') && frames[k - 5]?.ai?.b?.cl.includes('early') && !frames[k - 6]?.ai?.b?.cl.includes('early') },
       { name: 'aide-bouton', run: 't9-aide-bouton', desc: 'aide « bouton seul » : abord du 2, première image en bonne zone (bouton « Saute ! », pas de zone au sol)', pick: (b) => b.to === 1 && b.st === 'good' },
       { name: 'aide-off', run: 't9-aide-off', desc: 'aide coupée : abord du 2, première barre à 5 m ou moins (bouton « Saut » sans couleur, pas de zone au sol, tracé et repère gardés)', pick: (b) => b.to === 1 && b.tx !== null && b.tx <= 5 },
-      { name: 'aide-sans-trace', run: 't9-sans-trace', desc: 'tracé au sol masqué : abord du 2, première barre à 8,1 m ou moins (zone d’appel, repère et bouton gardés)', pick: (b) => b.to === 1 && b.tx !== null && b.tx <= 8.1 },
+      { name: 'aide-trace', run: 't9-parcours', desc: 'tracé au sol affiché : volte entre le 1 et le 2, première image où le cap s’écarte de 60° au plus de la direction du 2 ; tirets du tracé en courbe devant le cheval jusqu’au 2, repère au-dessus du 2 (zone d’appel au-delà de 26 m)', pick: inTurn },
+      { name: 'aide-sans-trace', run: 't9-courbe', pair: 'aide-trace', desc: 'tracé au sol masqué (courseLine false) : même image que aide-trace (mêmes gestes jusque-là, cheval au même endroit), repère et bouton gardés, aucun tiret', pick: inTurn },
+      { name: 'aide-ambre', run: 't9-ambre', desc: 'abord lent du 8 (4,6 m/s, zone calculée à 5,5 m/s) : bande ambre sans bande verte, première barre à 11 m ou moins', pick: (b, k, frames) => b.to === 9 && b.tx !== null && b.tx <= 11 && frames[k].ai?.c?.out?.ok[0] && !frames[k].ai.c.out.gd[0] },
     ];
+    // --poses=nom1,nom2 : seulement ces poses (les autres poses aide-* de poses.json sont gardées).
+    const AIDE_ONLY = (process.argv.find((a) => a.startsWith('--poses=')) || '').slice(8).split(',').filter(Boolean);
     const VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
     const shots = [];
+    const picked = {};
     for (const A of AIDE) {
       const sc = { ...SCENARIOS.find((x) => x.id === A.run), virtualHud: true };
       const ora = JSON.parse(readFileSync(join(OUT, runFile(sc.id, 'fr')), 'utf8'));
-      const k = ora.frames.findIndex((f, i) => f.ai?.b && A.pick(f.ai.b, i, ora.frames));
+      const k = A.recette ? ora.setup.recette.shots.find((s) => s.name === A.recette).frame : ora.frames.findIndex((f, i) => f.ai?.b && A.pick(f.ai.b, i, ora.frames));
       if (k < 0) throw new Error(`${A.name} : image introuvable dans ${sc.id}`);
+      picked[A.name] = { k, ora };
+      // Paire tracé affiché / masqué : même image, mêmes entrées des aides (cheval, obstacle suivant), tracé seul changé.
+      if (A.pair) {
+        const P0 = picked[A.pair];
+        const strip = (f) => JSON.stringify({ ...f.ai.c.in, sl: null });
+        if (!P0 || P0.k !== k || strip(P0.ora.frames[k]) !== strip(ora.frames[k]) || ora.frames.slice(0, k + 1).some((f, i) => JSON.stringify(f.in) !== JSON.stringify(P0.ora.frames[i].in)))
+          throw new Error(`${A.name} : image ou état différent de ${A.pair}`);
+        console.log(`${A.name} : image ${k}, mêmes entrées que ${A.pair} sur les ${k + 1} premières images, tracé seul changé`);
+      }
+      if (AIDE_ONLY.length && !AIDE_ONLY.includes(A.name)) continue;
       for (const v of VIEWS) {
         const vk = `${v.width}x${v.height}`;
         const ctx = await browser.newContext({ viewport: v, deviceScaleFactor: 1 });
@@ -2458,35 +2689,54 @@ if (SHOTS) {
         await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [sc, 20261118]);
         await page.evaluate((kk) => (window.__parite.stopAfter = kk), k);
         try {
-          await page.evaluate((s) => window.__parite.runT4(s), sc);
+          if (sc.type === 'recette') await page.evaluate((s) => window.__parite.runRecette(s), sc);
+          else await page.evaluate((s) => window.__parite.runT4(s), sc);
           throw new Error(`${A.name} : partie terminée avant l’image ${k}`);
         } catch (e) {
           if (!String(e.message).includes('STOP')) throw e;
         }
-        const r = await page.evaluate((kk) => window.__parite.aideView(kk), k);
+        // (t9-recette : pause de la capture du test, hw de l'image, avant le relevé du HUD)
+        const r = await page.evaluate(([kk, hw]) => window.__parite.aideView(kk, hw), [k, ora.frames[k].hw ?? 0]);
         if (r.ai !== JSON.stringify(ora.frames[k].ai)) throw new Error(`${A.name} ${vk} : canal « ai » de l’image ${k} différent de l’oracle`);
         await page.waitForTimeout(3000);
         await page.evaluate(() => window.__parite.render());
         await page.waitForTimeout(500);
         const name = `${A.name}-${vk}`;
-        await page.screenshot({ path: join(PARITE, `${name}-web.png`) });
+        // Recette en 844 × 390 : la capture de l'exécution de l'oracle est gardée à côté (-oracle.png) et comparée au PNG
+        // de la recette, qui devient la capture web du montage (copie octet pour octet, empreinte notée).
+        const RECETTE_PNG = A.recette && v.width === 844 && v.height === 390 ? join(ROOT, `tests/e2e/out/cso/${A.recette}.png`) : null;
+        await page.screenshot({ path: join(PARITE, RECETTE_PNG ? `${name}-oracle.png` : `${name}-web.png`) });
+        let recette = null;
+        if (RECETTE_PNG) {
+          const png = readFileSync(RECETTE_PNG);
+          writeFileSync(join(PARITE, `${name}-web.png`), png);
+          recette = { png: `tests/e2e/out/cso/${A.recette}.png`, sha256: createHash('sha256').update(png).digest('hex'), oracle: `unreal/docs/parite/cso/${name}-oracle.png`, ecart: pngDiff(join(PARITE, `${name}-oracle.png`), RECETTE_PNG, v) };
+          console.log(`${name} : capture de l’oracle / PNG de la recette : écart moyen ${recette.ecart.mean} (sur 255), ${recette.ecart.over16} % des pixels au-delà de 16`);
+        }
         const st = await liveCso(page);
         const file = `unreal/core/tests/oracles/cso_runs/${runFile(sc.id, 'fr')}`;
         shots.push({
-          name, desc: `Aides à l’appel (tranche T9), partie réelle ${sc.id} arrêtée à l’image ${k} : ${A.desc} ; caméra de concours du jeu à cette image, HUD affiché ; ${v.width} × ${v.height}.`,
+          name, desc: recette
+            ? `Aides à l’appel (tranche T9), ${A.desc} ; capture web = PNG de la recette (${recette.png}) ; état rejoué par l’exécution ${sc.id} de l’oracle arrêtée à l’image ${k} (capture de cette exécution : ${name}-oracle.png) ; caméra de concours du jeu à cette image, HUD affiché ; ${v.width} × ${v.height}.`
+            : `Aides à l’appel (tranche T9), partie réelle ${sc.id} arrêtée à l’image ${k} : ${A.desc} ; caméra de concours du jeu à cette image, HUD affiché ; ${v.width} × ${v.height}.`,
           hour: r.hour, eye: r.eye, target: r.target, fovV: r.fovV, viewport: { w: v.width, h: v.height }, horse: r.horse, sunDir: r.sunDir, day: r.day, canvas: r.canvas,
           course: { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 },
           hud: { run: file, frame: k }, aids: { run: file, frame: k }, state: r.state, frame: k,
+          ...(recette ? { recette } : {}),
           web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png`,
         });
-        console.log('pose', name, 'image', k, 'bouton', JSON.stringify(r.state.jump), 'temporisations virtuelles', r.virtual);
+        console.log('pose', name, 'image', k, 'bouton', JSON.stringify(r.state.jump), 'astuce', JSON.stringify(r.state.hi[0]), 'grand message', JSON.stringify(r.state.bg[0]), 'big-on', JSON.stringify(r.state.bg[3]), 'temporisations virtuelles', r.virtual);
         await ctx.close();
       }
     }
-    // Poses des autres groupes gardées à leur place ; aides à la fin.
-    doc.poses = doc.poses.filter((p) => poseGroup(p.name) !== 'aides').concat(shots);
+    // Poses des autres groupes gardées à leur place ; aides à la fin, dans l'ordre de AIDE (poses non refaites gardées).
+    const oldAide = new Map(priorPoses.filter((p) => poseGroup(p.name) === 'aides').map((p) => [p.name, p]));
+    const fresh = new Map(shots.map((p) => [p.name, p]));
+    const ordered = AIDE.flatMap((A) => VIEWS.map((v) => `${A.name}-${v.width}x${v.height}`)).map((n) => fresh.get(n) || oldAide.get(n));
+    if (ordered.some((p) => !p)) throw new Error(`poses d’aides absentes : ${AIDE.flatMap((A) => VIEWS.map((v) => `${A.name}-${v.width}x${v.height}`)).filter((n) => !fresh.get(n) && !oldAide.get(n)).join(' ')}`);
+    doc.poses = doc.poses.filter((p) => poseGroup(p.name) !== 'aides').concat(ordered);
     writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
-    console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses d’aides');
+    console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses d’aides refaites,', ordered.length, 'en tout');
   }
   // Ordre stable : poses de la carrière, de la chute, du cadrage, puis du HUD.
   else doc.poses = ['carriere', 'chute', 'cadrage', 'hud', 'cmd', 'aides'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));

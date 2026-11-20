@@ -34,6 +34,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 | Parcours du Pôle : obstacles (jugement au passage, chute des barres, refus), déroulé d'épreuve (cloche, départ, arrivée, éliminations, textes FR / EN), temps et pénalités | **identiques au JS (oracles)** : jugement des barres au passage, décision et pénalité de refus, ordre des fautes, cloche, départ et départ lancé, arrivée, élimination à la descente, temps accordé, pénalités de temps, temps limite ; **partiels** : chute des barres (remise en piste sans oracle), refus unique (recomptage après détour non exercé), contacts des membres (non portés), effleurement (son absent), affichage de l'élimination, entrée en piste, habillage des obstacles (forme et position en montage côte à côte, couleur du mur différente) ; présentation, bilan et classement simulé **absents** (T10, T11) |
 | Caméra de concours (champ vertical 58°) | règle de la caméra **identique au JS (oracle « cc »)**, montages aux 6 instants de `cso-framing.mjs` ; **partiel** : caméra dès l'entrée en piste (pas d'orbite manuelle à rendre) et contre le décor (sonde du moteur, pas les colliders du web) |
 | HUD d'épreuve UMG, commandes d'épreuve (joystick flottant, SAUT, pause, clavier par codes physiques) | logique rejouée **sans écart contre les oracles** (seuil de 420 px des toasts et pas du décompte des crans non départagés) ; rendu **partiel** (police du moteur, animations non comparées, joystick approché) ; toucher réel iOS **non vérifié** |
+| Aides à l'appel (bouton SAUT coloré, zone d'appel et tracé au sol, repère) | logique rejouée **sans écart contre les oracles** (`takeoffZone`, canal « ai » des exécutions `t9-*`, dont `tests/e2e/cso-shots.mjs` rejoué), montages côte à côte (dont les captures de la recette) ; **partiel** : rendu des bandes et tirets plus terne, aide imposée par un défi non portée, bande de moins de 0,2 m et zone sans aucune plage non départagées |
 | Sauvegarde | **schéma natif v1 + import de l'export web, testés** ; sauvegarde/rechargement vérifiés à l'écran |
 | Déplacement à pied, monter, descendre | **compilé et vérifié à l'écran**, transition 0,8 s |
 | Cheval PJL (modèle, 17 clips), cavalier réaliste (visages, mains, posture) | **importés et positionnés** ; 17 animations cheval normalisées, allures/sauts branchés ; cavalier ancré sur le point de selle animé, animation squelettique à finir |
@@ -51,7 +52,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 - Procédure, état vérifié et blocages Apple : [`docs/testflight.md`](docs/testflight.md).
 
 ## Prochaine tranche
-Tranche a (parcours CSO du Pôle), sous-tranches T9 à T12 de `docs/parite/cso-ecarts.md` §4 : aides à l'appel (bouton
-SAUT coloré, zone et tracé au sol, repère), entrée dans l'épreuve (poteau « Chrono », présentation, plan), arrivée et
+Tranche a (parcours CSO du Pôle), sous-tranches T10 à T12 de `docs/parite/cso-ecarts.md` §4 (T9, aides à l'appel, livrée
+le 20/11/2026) : entrée dans l'épreuve (poteau « Chrono », présentation, plan), arrivée et
 bilan (classement simulé, recommencer, record), sons et recette complète. État prouvé, partiel et absent de la tranche :
 `docs/relais-mac.md` (« Parité de la tranche a ») et `docs/PARITE.md`.

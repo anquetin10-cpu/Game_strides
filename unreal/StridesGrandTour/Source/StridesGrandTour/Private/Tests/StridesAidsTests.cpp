@@ -107,9 +107,20 @@ bool FStridesCsoAidsTest::RunTest(const FString&)
 	// 2) Canal « ai » rejoué dans l'acteur.
 	const TSharedPtr<FJsonObject> AidsData = Data->CsoAids();
 	const TSharedPtr<FJsonObject> Mats = AidsData->GetObjectField(TEXT("materials"));
-	int32 Calls = 0, Bad = 0, ShownLine = 0, ShownOk = 0, ShownGood = 0, ShownMark = 0, GeoBad = 0;
-	double GroundDev = 0;
-	for (const TCHAR* Id : {TEXT("t9-appel.fr"), TEXT("t9-aide-bouton.fr"), TEXT("t9-aide-off.fr"), TEXT("t9-sans-trace.fr"), TEXT("t9-parcours.fr")})
+	int32 Calls = 0, Bad = 0, ShownLine = 0, ShownOk = 0, ShownGood = 0, ShownMark = 0, GeoBad = 0, ShownOkOnly = 0, LiftN = 0;
+	double GroundDev = 0, LiftDev = 0;
+	// Tirets du web (cso_takeoff_zone.json : coins [x, y, z] du tampon float32, y = sol du web + 0,04) : coins posés par
+	// l'acteur (sol du relief du jeu + lineLift du cœur) comparés à chaque appel où le tracé est affiché.
+	J ZoneJ;
+	{
+		FString Zt;
+		TestTrue(TEXT("cso_takeoff_zone.json lu"), FFileHelper::LoadFileToString(Zt, *(RepoRoot() / TEXT("unreal/core/tests/oracles/cso_takeoff_zone.json"))));
+		const std::string Zu = TCHAR_TO_UTF8(*Zt);
+		ZoneJ = JParser(Zu).parse();
+	}
+	const J& WebMarks = ZoneJ["marks"];
+	// (contrôle adverse : t9-ambre = bande ambre sans bande verte ; t9-recette = tests/e2e/cso-shots.mjs rejoué)
+	for (const TCHAR* Id : {TEXT("t9-appel.fr"), TEXT("t9-aide-bouton.fr"), TEXT("t9-aide-off.fr"), TEXT("t9-sans-trace.fr"), TEXT("t9-parcours.fr"), TEXT("t9-ambre.fr"), TEXT("t9-recette.fr")})
 	{
 		J RunJ;
 		if (!TestTrue(FString::Printf(TEXT("exécution %s lue"), Id), LoadRun(Id, RunJ))) continue;
@@ -151,7 +162,18 @@ bool FStridesCsoAidsTest::RunTest(const FString&)
 				bGeo = bGeo && A->IsShown(TEXT("mark")) && FMath::Abs(MinY - (V.markY - 0.15)) < 1e-6;
 				ShownMark++;
 			}
-			if (A->IsShown(TEXT("line"))) ShownLine++;
+			if (A->IsShown(TEXT("line")))
+			{
+				ShownLine++;
+				const TArray<FVector> Lv = A->WebVertices(TEXT("line"));
+				for (int32 I = 0; I < Lv.Num(); I++)
+				{
+					const J& Wc = WebMarks[(size_t)(V.lineFirst + I / 4)]["c"][(size_t)(I % 4)];
+					LiftDev = FMath::Max(LiftDev, FVector::Dist(Lv[I], FVector(Wc[0].num(), Wc[1].num(), Wc[2].num())));
+					LiftN++;
+				}
+			}
+			if (A->IsShown(TEXT("ok")) && !A->IsShown(TEXT("good"))) ShownOkOnly++;
 			if (!bGeo && GeoBad++ < 3) AddError(FString::Printf(TEXT("%s image %d : maillages différents de la vue du cœur"), Id, (int32)F["f"].num()));
 		}
 		// Matériaux : couleur linéaire et opacité de la scène du web, une ou deux faces, ordre de rendu.
@@ -172,9 +194,10 @@ bool FStridesCsoAidsTest::RunTest(const FString&)
 		}
 		A->Destroy();
 	}
-	TestTrue(FString::Printf(TEXT("canal « ai » : %d appels rejoués dans l'acteur, %d écarts de la vue au web, %d maillages différents de la vue ; sol des bandes à %.3g m du web"), Calls, Bad, GeoBad, GroundDev),
-		Calls > 3000 && Bad == 0 && GeoBad == 0 && GroundDev < 1e-3 && ShownLine > 0 && ShownOk > 0 && ShownGood > 0 && ShownMark > 0);
-	Info(FString::Printf(TEXT("aides rejouées : %d appels ; affichés : tracé %d, ambre %d, verte %d, repère %d ; sol des bandes à %.3g m du web"), Calls, ShownLine, ShownOk, ShownGood, ShownMark, GroundDev));
+	TestTrue(FString::Printf(TEXT("canal « ai » : %d appels rejoués dans l'acteur, %d écarts de la vue au web, %d maillages différents de la vue ; sol des bandes à %.3g m du web ; ambre seule %d appels"), Calls, Bad, GeoBad, GroundDev, ShownOkOnly),
+		Calls > 3000 && Bad == 0 && GeoBad == 0 && GroundDev < 1e-3 && ShownLine > 0 && ShownOk > 0 && ShownGood > 0 && ShownMark > 0 && ShownOkOnly > 0);
+	TestTrue(FString::Printf(TEXT("tirets affichés : %d coins (x, sol du relief + 0,04, z) à %.3g m au plus des coins du web"), LiftN, LiftDev), LiftN > 1000 && LiftDev < 1e-3);
+	Info(FString::Printf(TEXT("aides rejouées : %d appels ; affichés : tracé %d, ambre %d (seule %d), verte %d, repère %d ; sol des bandes à %.3g m du web ; tirets à %.3g m du web (%d coins)"), Calls, ShownLine, ShownOk, ShownOkOnly, ShownGood, ShownMark, GroundDev, LiftDev, LiftN));
 
 	// 3) Bouton SAUT : HUD rejoué, affiché par le widget des commandes, comparé au DOM du web image par image.
 	UStridesTouchControls* Touch = CreateWidget<UStridesTouchControls>(W.World, UStridesTouchControls::StaticClass());

@@ -5,11 +5,11 @@
 	"poses": [
 		{
 			"name": "aide-4-trop-loin-844x390",
-			"frames": 294,
+			"frames": 120,
 			"diffs": [],
 			"shown": [
-				"board=3,23|/ 64 s|0 pt|▸ 2",
-				"fb=Bon appel"
+				"board=8,55|/ 64 s|0 pt|▸ 2",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>."
 			],
 			"window": "844x390",
 			"controls":
@@ -69,7 +69,7 @@
 			},
 			"aids":
 			{
-				"calls": 218,
+				"calls": 40,
 				"diffs": [],
 				"groundDev": 0,
 				"line":
@@ -108,11 +108,11 @@
 		},
 		{
 			"name": "aide-4-trop-loin-667x308",
-			"frames": 294,
+			"frames": 120,
 			"diffs": [],
 			"shown": [
-				"board=3,23|/ 64 s|0 pt|▸ 2",
-				"fb=Bon appel"
+				"board=8,55|/ 64 s|0 pt|▸ 2",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>."
 			],
 			"window": "667x308",
 			"controls":
@@ -172,7 +172,7 @@
 			},
 			"aids":
 			{
-				"calls": 218,
+				"calls": 40,
 				"diffs": [],
 				"groundDev": 0,
 				"line":
@@ -211,6 +211,212 @@
 		},
 		{
 			"name": "aide-5-bonne-zone-844x390",
+			"frames": 182,
+			"diffs": [],
+			"shown": [
+				"board=9,49|/ 64 s|0 pt|▸ 2",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>."
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "far",
+					"label": "TROP LOIN",
+					"sign": [
+						808.60000000000002,
+						274.39999999999998,
+						19.399999999999999,
+						19.399999999999999
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(240, 179, 58, 1.00)",
+					"signColor": "rgba(240, 179, 58, 1.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						726.79999999999995,
+						277,
+						100.3,
+						100.3
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 102,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": true,
+					"vertices": 4,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": true,
+					"vertices": 32,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": true,
+					"vertices": 4,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": true,
+					"vertices": 4,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 1,
+				"afterQuads": 8
+			}
+		},
+		{
+			"name": "aide-5-bonne-zone-667x308",
+			"frames": 182,
+			"diffs": [],
+			"shown": [
+				"board=9,49|/ 64 s|0 pt|▸ 2",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>."
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "far",
+					"label": "TROP LOIN",
+					"sign": [
+						631.60000000000002,
+						192.40000000000001,
+						19.399999999999999,
+						19.399999999999999
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(240, 179, 58, 1.00)",
+					"signColor": "rgba(240, 179, 58, 1.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						549.79999999999995,
+						195,
+						100.3,
+						100.3
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 102,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": true,
+					"vertices": 4,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": true,
+					"vertices": 32,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": true,
+					"vertices": 4,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": true,
+					"vertices": 4,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 1,
+				"afterQuads": 8
+			}
+		},
+		{
+			"name": "aide-saute-844x390",
 			"frames": 323,
 			"diffs": [],
 			"shown": [
@@ -312,7 +518,7 @@
 			}
 		},
 		{
-			"name": "aide-5-bonne-zone-667x308",
+			"name": "aide-saute-667x308",
 			"frames": 323,
 			"diffs": [],
 			"shown": [
@@ -1234,11 +1440,419 @@
 			}
 		},
 		{
-			"name": "aide-sans-trace-844x390",
-			"frames": 294,
+			"name": "aide-trace-844x390",
+			"frames": 395,
 			"diffs": [],
 			"shown": [
-				"board=3,23|/ 64 s|0 pt|▸ 2",
+				"board=6,60|/ 64 s|0 pt|▸ 2"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 319,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": true,
+					"vertices": 112,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": true,
+					"vertices": 32,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 28,
+				"afterQuads": 8
+			}
+		},
+		{
+			"name": "aide-trace-667x308",
+			"frames": 395,
+			"diffs": [],
+			"shown": [
+				"board=6,60|/ 64 s|0 pt|▸ 2"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 319,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": true,
+					"vertices": 112,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": true,
+					"vertices": 32,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 28,
+				"afterQuads": 8
+			}
+		},
+		{
+			"name": "aide-sans-trace-844x390",
+			"frames": 395,
+			"diffs": [],
+			"shown": [
+				"board=6,60|/ 64 s|0 pt|▸ 2"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 319,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			}
+		},
+		{
+			"name": "aide-sans-trace-667x308",
+			"frames": 395,
+			"diffs": [],
+			"shown": [
+				"board=6,60|/ 64 s|0 pt|▸ 2"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 319,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			}
+		},
+		{
+			"name": "aide-ambre-844x390",
+			"frames": 753,
+			"diffs": [],
+			"shown": [
+				"board=18,53|/ 64 s|0 pt|▸ 8",
 				"fb=Bon appel"
 			],
 			"window": "844x390",
@@ -1299,19 +1913,19 @@
 			},
 			"aids":
 			{
-				"calls": 218,
+				"calls": 677,
 				"diffs": [],
 				"groundDev": 0,
 				"line":
 				{
-					"shown": false,
-					"vertices": 0,
+					"shown": true,
+					"vertices": 28,
 					"sortPriority": 2
 				},
 				"after":
 				{
-					"shown": false,
-					"vertices": 0,
+					"shown": true,
+					"vertices": 28,
 					"sortPriority": 2
 				},
 				"ok":
@@ -1322,8 +1936,8 @@
 				},
 				"good":
 				{
-					"shown": true,
-					"vertices": 4,
+					"shown": false,
+					"vertices": 0,
 					"sortPriority": 2
 				},
 				"mark":
@@ -1332,16 +1946,16 @@
 					"vertices": 15,
 					"sortPriority": 0
 				},
-				"lineQuads": 0,
-				"afterQuads": 0
+				"lineQuads": 7,
+				"afterQuads": 7
 			}
 		},
 		{
-			"name": "aide-sans-trace-667x308",
-			"frames": 294,
+			"name": "aide-ambre-667x308",
+			"frames": 753,
 			"diffs": [],
 			"shown": [
-				"board=3,23|/ 64 s|0 pt|▸ 2",
+				"board=18,53|/ 64 s|0 pt|▸ 8",
 				"fb=Bon appel"
 			],
 			"window": "667x308",
@@ -1402,19 +2016,19 @@
 			},
 			"aids":
 			{
-				"calls": 218,
+				"calls": 677,
 				"diffs": [],
 				"groundDev": 0,
 				"line":
 				{
-					"shown": false,
-					"vertices": 0,
+					"shown": true,
+					"vertices": 28,
 					"sortPriority": 2
 				},
 				"after":
 				{
-					"shown": false,
-					"vertices": 0,
+					"shown": true,
+					"vertices": 28,
 					"sortPriority": 2
 				},
 				"ok":
@@ -1425,8 +2039,8 @@
 				},
 				"good":
 				{
-					"shown": true,
-					"vertices": 4,
+					"shown": false,
+					"vertices": 0,
 					"sortPriority": 2
 				},
 				"mark":
@@ -1435,8 +2049,8 @@
 					"vertices": 15,
 					"sortPriority": 0
 				},
-				"lineQuads": 0,
-				"afterQuads": 0
+				"lineQuads": 7,
+				"afterQuads": 7
 			}
 		}
 	]

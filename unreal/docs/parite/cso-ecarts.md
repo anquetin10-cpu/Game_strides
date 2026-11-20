@@ -165,9 +165,9 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 |---|---|---|---|---|---|
 | 4.1 | État `timing()` (none en l'air, en refus, v < 3,2 ; refuse → near ; aide off → none) | identique_prouve | joue_ecran | `SC/CsoHorse.cpp:120-126` ; `SC/CourseAids.cpp:93-96` (`csoJumpTiming` : hors épreuve, entrée en piste, aide off) ; `SG/StridesCourse.cpp:239-259` ; `ORA/cso_target.json`, canal « ai » des exécutions `t9-*` (`testCsoAids`) ; `Strides.Cso.Aids` (T9) | aucun |
 | 4.1 | Obstacle visé `target()` (épaules à 0,4 m, cos ≥ 0,5, première ≤ 13 m, dernière ≥ −0,3, \|u\| ≤ 2,25) | identique_prouve | teste | `SC/CsoHorse.cpp:94-118` ; `ORA/cso_target.json` (T2) | aucun sur la visée ; puissance du saut du portage : inventaire `cso.declenchement-saut` |
-| 4.1 | Bouton SAUT coloré (Trop loin / Saute ! / Trop près / Saut / Trop tôt 600 ms) | partiel | joue_ecran | `SC/CsoHud.cpp:179-185`, `205-215` ; `SG/StridesTouchControls.cpp:413-527` ; `DATA/cso_jump_style.json` ; canal « ai » (`testCsoAids`) ; `Strides.Cso.Aids` ; `cso/aide-*` (T9) | état, classes, signe, libellé, « Trop tôt » relancé : identiques image par image ; police du moteur, halo approché, transition de l'anneau et état enfoncé non portés |
-| 4.2 | Zone d'appel au sol (`takeoffZone`, bandes verte / ambre) | partiel | joue_ecran | `SC/CourseAids.cpp:17-51`, `105-118`, `121-174` ; `SG/StridesCourseAids.cpp:208-239` ; `ORA/cso_takeoff_zone.json`, canal « ai » ; `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (T9) | logique identique ; bande de moins de 0,2 m non départagée (n'apparaît qu'à 1,55 m) ; rendu : tone mapping et mélange différents (bandes plus ternes) |
-| 4.3 | Tracé au sol (tirets, opacités, masquage, règle des 15 m) | partiel | joue_ecran | `SC/CourseAids.cpp:54-90`, `121-174` ; `SG/StridesCourseAids.cpp:161-184` ; `SG/StridesCourse.cpp:369-406` ; tirets de `ORA/cso_takeoff_zone.json`, canal « ai » ; `cso/aide-sans-trace-*` (T9) | logique identique ; début du tronçon borné par prevS non départagé (égalité à l'arrondi près sur le tracé du Pôle) ; rendu : tone mapping et mélange |
+| 4.1 | Bouton SAUT coloré (Trop loin / Saute ! / Trop près / Saut / Trop tôt 600 ms) | partiel | joue_ecran | `SC/CsoHud.cpp:179-185`, `205-215` ; `SG/StridesTouchControls.cpp:413-527` ; `DATA/cso_jump_style.json` ; canal « ai » (`testCsoAids`) ; `Strides.Cso.Aids` ; `cso/aide-*` (T9) | état, classes, signe, libellé, « Trop tôt » relancé : identiques image par image ; aide imposée par un défi (`opts.jumpAid`, `aidLocked`) non portée (défis absents) ; police du moteur, halo approché, transition de l'anneau et état enfoncé non portés |
+| 4.2 | Zone d'appel au sol (`takeoffZone`, bandes verte / ambre) | partiel | joue_ecran | `SC/CourseAids.cpp:17-51`, `105-118`, `121-174` ; `SG/StridesCourseAids.cpp:208-239` ; `ORA/cso_takeoff_zone.json`, canal « ai » (bande ambre seule : `t9-ambre`) ; `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (PNG de la recette, `t9-recette`), `aide-ambre-*` (T9) | logique identique ; non départagés : bande de moins de 0,2 m (n'apparaît qu'à 1,55 m), zone sans aucune plage (pass nul : jamais avec le cheval des exécutions ; à 1,10 m, cheval de puissance 1,1 seulement) ; rendu : tone mapping et mélange différents (bandes plus ternes) |
+| 4.3 | Tracé au sol (tirets, opacités, masquage, règle des 15 m) | partiel | joue_ecran | `SC/CourseAids.cpp:54-90`, `121-174` ; `SG/StridesCourseAids.cpp:161-184` ; `SG/StridesCourse.cpp:369-406` ; tirets de `ORA/cso_takeoff_zone.json` (coins et hauteur sol + 0,04), canal « ai » ; `cso/aide-trace-*` et `aide-sans-trace-*` (même image, tracé affiché / masqué) (T9) | logique identique ; début du tronçon borné par prevS non départagé (égalité à l'arrondi près sur le tracé du Pôle) ; rendu : tone mapping et mélange |
 | 4.4 | Repère conique au-dessus de l'obstacle suivant | partiel | joue_ecran | `SC/CourseAids.cpp:121-174` ; `SG/StridesCourseAids.cpp:208-239` (géométrie du web, `DATA/cso_aids.json`) ; canal « ai » ; `cso/aide-*` (T9) | position, oscillation, cap identiques ; rendu : tone mapping et mélange |
 
 ### 2.5 Saut (§5)
@@ -956,7 +956,7 @@ Principes communs :
 - **Preuve visuelle** : étape 4 de la recette.
 - **Dépendances / risques** : T2 (`timing`), T5 (obstacles visibles pour la capture), T7 (bouton), T8 (réglages).
   Rendu translucide au sol sur mobile (tri, z-fighting à +0,035 m) à vérifier.
-- **Réalisé (20/11/2026)** : (1) Cœur : `SCh/CourseAids.h`, `SC/CourseAids.cpp` (`csoTakeoffZone`, `csoLineMarks`,
+- **Réalisé (20/11/2026, première livraison ; décomptes à jour au contrôle adverse plus bas)** : (1) Cœur : `SCh/CourseAids.h`, `SC/CourseAids.cpp` (`csoTakeoffZone`, `csoLineMarks`,
   `csoMarkRange`, `csoJumpTiming`, `CsoCourseAids::update` : tracé, repère, zone recalculée toutes les 0,25 s et au
   changement d'obstacle, bandes) ; bouton SAUT dans `CsoHud` (`SC/CsoHud.cpp:179-185`, `205-215` : `_jt`, classes,
   signe, clé du libellé, « Trop tôt » 600 ms sur l'horloge des temporisations du HUD). (2) Oracles exportés du jeu web :
@@ -992,15 +992,49 @@ Principes communs :
   (`-StridesShots=cso-jeu -TouchControls`, dossier dédié) : « 60,33 / 64 s 0 pt Arrivée ✓ », tirets du tracé visibles
   vers l'obstacle suivant (capture `jeu-3-mot` du dossier dédié, non versionnée). (6) Captures (`--shots=aides`,
   partie réelle arrêtée à l'image, HUD affiché, canal « ai » comparé à l'oracle ; Unreal : `-StridesShots=cso
-  -StridesPose=aide-` dans un dossier dédié, aides et HUD rejoués, état identique au web pour les 14 poses,
-  `cso/aide-unreal.json`) : montages côte à côte `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (mêmes états que les
-  captures de la recette `4-abord-trop-loin` et `5-abord-bonne-zone`, refaites dans une partie de l'oracle : 2 abordé
-  depuis 16 m à 6,2 m/s, sans l'état forcé de `cso-shots.mjs`), `aide-trop-pres-*`, `aide-trop-tot-*`,
-  `aide-bouton-*`, `aide-off-*`, `aide-sans-trace-*`, en 844 × 390 et 667 × 308. (7) Écarts restants : rendu des aides
+  -StridesPose=aide-` dans un dossier dédié, aides et HUD rejoués, état identique au web pour les 20 poses,
+  `cso/aide-unreal.json`) : montages côte à côte `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (captures de la
+  recette, voir le contrôle adverse ci-dessous), `aide-saute-*`, `aide-trop-pres-*`, `aide-trop-tot-*`, `aide-bouton-*`,
+  `aide-off-*`, `aide-trace-*`, `aide-sans-trace-*`, `aide-ambre-*`, en 844 × 390 et 667 × 308. (7) Écarts restants : rendu des aides
   (le web tone-mappe chaque matériau, ACES à 0,42, puis mélange en sRGB ; Unreal mélange en linéaire avant son
   tonemapper : bandes et tirets plus ternes, teintes différentes ; z-fighting non observé sur Mac, rendu mobile iOS non
   essayé) ; police du moteur sur le libellé et la pastille, halo approché, transition de l'anneau et état enfoncé non
   portés ; entraînement au paddock (`cso_warmup`) absent.
+- **Contrôle adverse et corrections (20/11/2026)** : (1) Bande ambre sans bande verte (`takeoffZone` rend pass, pas
+  good : garde `if (!r) return;` de `place`, `courseAids.js:155`, portée par `placeBand`) : la livraison ne l'exerçait
+  pas et la déclarait à tort ; exécution `t9-ambre` (éléments 1 à 7 sautés, cheval posé 16 m devant le 8 à 4,6 m/s, zone
+  calculée à 5,5 m/s) : 36 appels à bande ambre seule, bande verte masquée relevée de 0,005 m comme le web ;
+  `testCsoAids` l'exige ; mutations de la garde et de la plage verte détectées (`t9-ambre` image 734) ; montage
+  `cso/aide-ambre-*` (bande au pied du 8, en grande partie cachée par le couple dans les deux captures ; ambre affichée
+  et verte masquée relevées dans `aide-unreal.json`). Zone sans aucune
+  plage (pass nul) : jamais avec le cheval des exécutions (puissance 1,38) ; aux hauteurs de l'épreuve, seulement pour un
+  cheval de puissance 1,1 sous 5,8 m/s (13 cas de la grille) : non départagée, déclarée (mutation « ambre posée sans
+  plage ambre » non détectée, raison dans le script). (2) Captures de la recette : exécution `t9-recette` =
+  `tests/e2e/cso-shots.mjs` rejoué au pas fixe, réglages relus dans le test (`readShots` : 6 images, plan, retour,
+  Entrer en piste, 80 images, état forcé chrono lancé / obstacle 2 / 7,42 s / surlignage, cheval posé 16 m devant le 2
+  à 6,6 m/s, boucle du test à 0,62 jusqu'à 7,5 + 0,6 m puis 1,7 + 0,6 m) ; état écrit par le test relevé dans `fs`,
+  exécution non rejouée par `testCsoRuns` (seule exécution à état forcé, vérifié). Images 119 et 181 : chrono 8,55 et
+  9,49, bouton « Trop loin », astuce affichée, comme les PNG de la recette. Temporisations du HUD : la recette les fait
+  courir sur l'horloge réelle pendant ses captures (une copie chronométrée du test sur ce Mac a éteint l'astuce avant
+  la capture 5, que le PNG d'origine affiche : non reproductible) ; modèle de l'oracle : temps de jeu + une pause par
+  capture de 450 ms (relus) + 250 ms (valeur retenue, intervalle de validité 67 à 416 ms calculé par l'export pour
+  l'état des deux PNG), champ `hw`, rejoué par `StridesCsoHudReplay` et `testCsoAids`. Montages
+  `cso/aide-4-trop-loin-844x390.png` et `aide-5-bonne-zone-844x390.png` : PNG d'origine de la recette (copie, empreinte
+  notée) à côté d'Unreal rejouant `t9-recette` à l'image de la capture ; capture du web de l'exécution de l'oracle
+  gardée (`*-oracle.png`, écart au PNG relevé dans `poses.json` : foule et animation du cheval, hasard non tiré pareil) ;
+  667 × 308 : capture de l'oracle. L'ancienne pose « Saute ! » de `t9-appel` devient `aide-saute-*`. (3)
+  `cso.aide-bouton-saut` ramené à partiel : aide imposée par un défi (`opts.jumpAid`, `aidLocked`) non portée. (4)
+  Hauteur des tirets : sol lu par `_strip` pour chaque coin exporté (`marks[].g` de `ORA/cso_takeoff_zone.json`) ;
+  `testCsoTakeoffZone` compare y = sol + `lineLift` au tampon float32 du web (924 coins), `Strides.Cso.Aids` les coins
+  posés par l'acteur sur le relief du jeu (à 1,7e-5 m au plus du web) ; mutations à +0,05 et +0,035 m détectées. (5)
+  Tracé masqué : paire `aide-trace-*` (`t9-parcours`) / `aide-sans-trace-*` (`t9-courbe`, jumeau tracé masqué, mêmes
+  entrées depuis le lancement, vérifié par l'export) à la même image de la volte entre le 1 et le 2, tirets en courbe
+  hors de l'axe de la caméra. (6) Commentaire du test corrigé (8 jeux de hauteurs). Mutations : 55, 46 détectées,
+  9 déclarées ; `testCsoAids` : 10 exécutions, 7 801 images, 7 022 appels, 0 écart ; ctest : 253 115 vérifications,
+  0 échec ; 24 tests Strides en Result={Success} (`Strides.Cso.Aids` : 7 exécutions rejouées dans l'acteur dont
+  `t9-ambre` et `t9-recette`, 4 097 appels, 36 à bande ambre seule) ; captures Unreal des 20 poses `aide-*` (dossier
+  dédié) : HUD et aides identiques au web ; démonstration `-StridesShots=cso-jeu -TouchControls` (dossier dédié) :
+  « 60,33 / 64 s 0 pt Arrivée ✓ ».
 
 ### T10. Entrée dans l'épreuve (poteau, présentation, plan, entrée en piste, cloche)
 

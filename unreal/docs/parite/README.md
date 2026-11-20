@@ -20,8 +20,8 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/core/tests/oracles/cso_target.json`, `cso_goto.json` | idem | grille de visée et d'appui ; étape « rejoindre l'entrée » |
 | `unreal/core/tests/oracles/cso_input.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-input.mjs` (~1 min, page de test sans le jeu) | commandes (tranche T8) : vraie classe `Input` de `src/core/input.js` soumise à des événements tactiles, souris et clavier synthétiques (DevTools), chaque appel reçu et l'état complet juste après ; rejoué par `testCsoInput` |
 | `unreal/core/tests/oracles/cso_freeze.json` | `export-cso-runs.mjs --freeze` (~45 s, jeu web en cours d'exécution) | gel en pause et au téléphone (tranche T8, contrôle adverse) : après le départ du chrono du Pôle, 338 images jouées par la boucle du jeu (`game.js:1406`, update seulement à l'état « play ») avec Échap, P, M et Reprendre ; par image : update appelée, état, `simPaused`, téléphone, chrono, position du cheval ; rejoué par le test moteur `Strides.Cso.Controls` |
-| `unreal/core/tests/oracles/cso_takeoff_zone.json`, `unreal/StridesGrandTour/Content/Data/cso_aids.json` | `export-cso-runs.mjs --aids` (~40 s, jeu web en cours d'exécution) | aides à l'appel (tranche T9) : `takeoffZone` de `courseAids.js` appelée dans la page sur les obstacles du parcours (8 jeux de hauteurs × 15 vitesses × 4 puissances × 3 bonus = 14 400 cas) et tirets du tracé d'un vrai `CourseAids` (rejoués par `testCsoTakeoffZone`) ; données du jeu : `LINE_MARK`, matériaux (couleur, opacité, faces), ordre de rendu et géométries du repère et des bandes relus dans la scène |
-| canal « ai » des exécutions `t9-*` de `cso_runs/` | `export-cso-runs.mjs --only=t9-parcours,t9-appel,t9-retour,t9-aide-bouton,t9-aide-off,t9-sans-trace` | appels de `CourseAids.update` (entrées, sol lu, maillages après l'appel), bouton SAUT (aide lue par `hud.update`, état du DOM), temporisation de « Trop tôt » sur une horloge virtuelle (100 ticks de 1/3 ms par image) ; rejoués par `testCsoAids` et `Strides.Cso.Aids` |
+| `unreal/core/tests/oracles/cso_takeoff_zone.json`, `unreal/StridesGrandTour/Content/Data/cso_aids.json` | `export-cso-runs.mjs --aids` (~40 s, jeu web en cours d'exécution) | aides à l'appel (tranche T9) : `takeoffZone` de `courseAids.js` appelée dans la page sur les obstacles du parcours (8 jeux de hauteurs × 15 vitesses × 4 puissances × 3 bonus = 14 400 cas) et tirets du tracé d'un vrai `CourseAids` avec le sol lu pour chaque coin (rejoués par `testCsoTakeoffZone` : coins, hauteur sol + 0,04) ; données du jeu : `LINE_MARK`, matériaux (couleur, opacité, faces), ordre de rendu et géométries du repère et des bandes relus dans la scène |
+| canal « ai » des exécutions `t9-*` de `cso_runs/` | `export-cso-runs.mjs --only=t9-parcours,t9-appel,t9-retour,t9-aide-bouton,t9-aide-off,t9-sans-trace,t9-ambre,t9-courbe,t9-recette` | appels de `CourseAids.update` (entrées, sol lu, maillages après l'appel), bouton SAUT (aide lue par `hud.update`, état du DOM), temporisation de « Trop tôt » sur une horloge virtuelle (100 ticks de 1/3 ms par image) ; rejoués par `testCsoAids` et `Strides.Cso.Aids`. `t9-ambre` : bande ambre sans bande verte (abord lent du 8). `t9-courbe` : jumeau de `t9-parcours` tracé masqué jusqu'au 2 (paire `aide-trace` / `aide-sans-trace`). `t9-recette` : `tests/e2e/cso-shots.mjs` rejoué au pas fixe jusqu'aux captures `4-abord-trop-loin` et `5-abord-bonne-zone` (réglages relus dans le test ; état de l'épreuve écrit par le test dans le champ `fs`, non rejoué par `testCsoRuns` ; pauses des captures du test dans `hw`, modèle et intervalle de validité dans `setup.recette.pause`) |
 | `unreal/StridesGrandTour/Content/Data/cso_jump_style.json` | `export-hud-style.mjs --jump-states` (seul, rien d'autre n'est réécrit) | bouton SAUT dans chacun des 8 états (none, far, good, near, et les mêmes pendant « Trop tôt ») posés par le vrai HUD, 844 × 390 et 667 × 308 : styles et boîtes du bouton, de l'anneau, de la pastille, du libellé |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
@@ -223,16 +223,21 @@ python3 scripts/unreal/mutations-cso-controls.py   # module de jeu : 16 mutation
 ```sh
 "$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" -run=pythonscript \
   -script="$PWD/scripts/unreal/import-cso-aids.py" -unattended -nosplash -nullrhi            # matériaux M_CsoAid(TwoSided)
-node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=aides  # ~15 min, 14 captures web
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=aides  # ~40 min, 20 captures web
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=aides --poses=aide-trace,aide-sans-trace  # quelques poses
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso -StridesPose=aide- -StridesShotsDir=<dossier dédié> \
   -abslog="$PWD/.tmp/shots-aides.log"
 ```
 
-- `--shots=aides` : partie réelle (exécutions `t9-appel`, `t9-aide-bouton`, `t9-aide-off`, `t9-sans-trace` de l'oracle,
-  rejouées depuis le début dans une page neuve par capture) arrêtée à l'image choisie par une règle lue dans l'oracle
-  (abord du 2 à 8,1 m, première image « Saute ! », « Trop près » au 3, « Trop tôt » au 1, aide « bouton seul », aide
-  coupée, tracé masqué) ; vue de la caméra de concours du jeu, HUD affiché (animations coupées), temporisations de
+- `--shots=aides` : partie réelle (exécutions `t9-recette`, `t9-appel`, `t9-aide-bouton`, `t9-aide-off`, `t9-parcours`,
+  `t9-courbe`, `t9-ambre` de l'oracle, rejouées depuis le début dans une page neuve par capture) arrêtée à l'image choisie par une
+  règle lue dans l'oracle (captures 4 et 5 de la recette, première image « Saute ! », « Trop près » au 3, « Trop tôt » au
+  1, aide « bouton seul », aide coupée, volte entre le 1 et le 2 avec et sans tracé, bande ambre seule au 8) ; `--poses=` : ces
+  poses seulement (les autres poses `aide-*` de `poses.json` sont gardées). Poses `aide-4-trop-loin-844x390` et
+  `aide-5-bonne-zone-844x390` : la capture web du montage est le PNG de la recette (`tests/e2e/out/cso/*.png`, copié,
+  empreinte et écart à la capture de l'oracle notés dans `recette`), la capture de l'exécution `t9-recette` est gardée
+  dans `<pose>-oracle.png` ; vue de la caméra de concours du jeu, HUD affiché (animations coupées), temporisations de
   `hud.js` sur l'horloge virtuelle, état du DOM relevé (`state`, bouton SAUT compris) ; le canal « ai » de l'image est
   comparé à l'oracle (arrêt sinon). Les autres poses de `poses.json` sont gardées à leur place.
 - Unreal : la pose rejoue le canal « ai » jusqu'à l'image dans les aides du parcours (`AStridesShots::ApplyAidsPose`,

@@ -5,7 +5,7 @@ Chaque mutation est appliquée à une copie de StridesCore/Private/CourseAids.cp
 affichées, update : tracé, repère, zone d'appel, bandes ; aide lue par le bouton) ou CsoHud.cpp (bouton SAUT : état,
 classes, signe, libellé, « Trop tôt » 600 ms) ; le source du dépôt n'est jamais modifié. Le banc
 unreal/core/tests/test_core.cpp est recompilé avec la copie et rejoué sur les oracles exportés du jeu web
-(cso_takeoff_zone.json ; canal « ai » des exécutions t9-* de cso_runs/ ; Content/Data/cso_aids.json). Seuls testCsoTakeoffZone
+(cso_takeoff_zone.json ; canal « ai » des exécutions t9-* de cso_runs/, dont t9-ambre et t9-recette ; Content/Data/cso_aids.json). Seuls testCsoTakeoffZone
 et testCsoAids tournent (STRIDES_TESTS=zone,aids). Une mutation doit faire échouer le banc ; le script sort en code 1 si
 l'une n'est pas détectée hors de la liste ATTENDUES (raison donnée), ou si l'une de celles-ci devient détectée.
 
@@ -64,6 +64,13 @@ M = [
  (A, 'bandes : posées à +0,04 m', '  m.y = (groundAt ? groundAt(x, zz) : 0.0) + A_.bandLift;', '  m.y = (groundAt ? groundAt(x, zz) : 0.0) + 0.04;'),
  (A, 'bandes : verte non relevée de 0,005 m', '  view_.good.y += A_.goodLift;', '  (void)0;'),
  (A, 'bandes : sans cap', '  m.rot = next.ob.rot;', '  m.rot = 0;'),
+ # Contrôle adverse de T9 : garde de place (courseAids.js:155, `if (!r) return;`), plage absente de chaque bande, hauteur
+ # des tirets (_strip : sol + 0,04, courseAids.js:67 ; constante lue par le jeu dans csoAidsDefaults()).
+ (A, 'bandes : posées sans plage (garde de place retirée)', '  if (!has) return;\n', ''),
+ (A, 'bandes : verte posée sans plage verte', '  placeBand(view_.good, zone_.hasGood, zone_.good, *next, groundAt);', '  placeBand(view_.good, true, zone_.good, *next, groundAt);'),
+ (A, 'bandes : ambre posée sans plage ambre', '  placeBand(view_.ok, zone_.hasPass, zone_.pass, *next, groundAt);', '  placeBand(view_.ok, true, zone_.pass, *next, groundAt);'),
+ (A, 'tirets : posés à sol + 0,05 m', '  static const CsoAidsParams A;', '  static const CsoAidsParams A = [] { CsoAidsParams p; p.lineLift = 0.05; return p; }();'),
+ (A, 'tirets : posés à sol + 0,035 m', '  static const CsoAidsParams A;', '  static const CsoAidsParams A = [] { CsoAidsParams p; p.lineLift = 0.035; return p; }();'),
  (A, 'bandes : ambre et verte inversées', '  placeBand(view_.ok, zone_.hasPass, zone_.pass, *next, groundAt);\n  placeBand(view_.good, zone_.hasGood, zone_.good, *next, groundAt);',
   '  placeBand(view_.ok, zone_.hasGood, zone_.good, *next, groundAt);\n  placeBand(view_.good, zone_.hasPass, zone_.pass, *next, groundAt);'),
  # Aide lue par le bouton (courses.js:187, 458 ; hud.js:374)
@@ -102,6 +109,11 @@ ATTENDUES = {
  'bandes : longueur minimale 0,2 m ignorée':
   'sous-branche non départagée : une bande de moins de 0,2 m n’apparaît qu’à 1,55 m et plus (195 cas de la grille '
   'cso_takeoff_zone.json, base 1,55) ; l’épreuve se court à 1,05-1,15 m, aucune exécution ne l’affiche',
+ 'bandes : ambre posée sans plage ambre':
+  'sous-branche non départagée : zone sans aucune plage (takeoffZone rend pass nul) jamais avec le cheval des exécutions '
+  '(puissance 1,38) ; aux hauteurs de l’épreuve (base 1,10), seulement pour un cheval de puissance 1,1 sous 5,8 m/s '
+  '(13 cas de la grille cso_takeoff_zone.json), qu’aucune exécution ne monte ; la garde elle-même (même fonction '
+  'placeBand) est départagée par t9-ambre (verte sans plage verte)',
  'bouton : « refuse » affiché comme « near »':
   'équivalente par construction : obstacles.timing rend déjà « near » pour une zone « refuse » (obstacles.js:373), le '
   'bouton ne reçoit jamais « refuse »',
