@@ -6,7 +6,7 @@
   "js": [
    "src/gameplay/missions.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::StartNextMission (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31) prend la première mission disponible dans l'ordre du JSON ; déclenchée par N (outil du portage ; M ouvre la carte comme le web) ou la croix haut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:110-111, 517-520) et le bouton tactile MISSION (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:135) ; téléphone = 10 noms d'applications non interactifs (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:97-121).",
+  "unreal": "UStridesProgressionSubsystem::StartNextMission (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31) prend la première mission disponible dans l'ordre du JSON ; déclenchée par N (outil du portage ; M ouvre la carte comme le web) ou la croix haut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:111-112, 531-534) et le bouton tactile MISSION (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:135) ; téléphone = 10 noms d'applications non interactifs (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:97-121).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test du sous-système ; Strides.World.Architecture compte seulement 16 missions et 10 applications dans le JSON. testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
@@ -659,7 +659,7 @@
   "js": [
    "src/gameplay/activities.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:62-103 (BuildProps : poteau de l'activité cso_train, géométrie exportée du jeu web, tranche T5) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp:1-46 et unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesActivityPost.h (tranche T10 : action du poteau, strides::csoActivityAvailable, Activities.start) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:91-115 (poteau posé avec Content/Data/cso_activity.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:476-508 (libellé, déclenchement)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:63-104 (BuildProps : poteau de l'activité cso_train, géométrie exportée du jeu web, tranche T5) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp:1-46 et unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesActivityPost.h (tranche T10 : action du poteau, strides::csoActivityAvailable, Activities.start) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:91-115 (poteau posé avec Content/Data/cso_activity.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:477-522 (libellé, déclenchement)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "Poteau de cso_train seulement : géométrie relevée dans le jeu web (scripts/unreal/cso-export.js, comparée au maillage du jeu réel), pièces (mât, panneau) vérifiées par le test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:225-439 (Strides.Parite.CsoScenery) ; montage unreal/docs/parite/cso/poteau-chrono.png. Tranche T10 : Strides.Cso.Entry : action proposée ou non par le poteau du jeu aux 84 positions sans mission de unreal/core/tests/oracles/cso_entry.json (42 en français, 42 en anglais ; 14 avec l'action, libellé « Chrono » / « Time ») et aux 42 positions avec mission (jamais), 0 écart ; activité lancée par la touche E au poteau ; démonstration -StridesShots et partie -StridesShots=cso-jeu lancées par l'action du poteau (journal « activité lancée au poteau=1 »).",
@@ -673,10 +673,10 @@
   "js": [
    "src/gameplay/activities.js"
   ],
-  "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé par l'action du poteau « Chrono » (tranche T10 : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp, StridesCourse.cpp:172-204) ; étape d'enregistrement du meilleur temps (tranche T11 : unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:242-253, score = chrono + fautes + pénalités de temps, rien après une élimination, record si aucun meilleur temps ou meilleur) ; écrit dans la sauvegarde à cette étape, sans F5 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:367-378, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:106-125 ; bestTimes de unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:37-39, 79, 102)",
+  "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé par l'action du poteau « Chrono » (tranche T10 : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp, StridesCourse.cpp:173-205) ; étape d'enregistrement du meilleur temps (tranche T11 : unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:242-253, score = chrono + fautes + pénalités de temps, rien après une élimination, record si aucun meilleur temps ou meilleur) ; écrit dans la sauvegarde à cette étape, sans F5 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:369-380, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:106-125 ; bestTimes de unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:37-39, 79, 102)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Tracé, hauteurs, temps accordé comparés à cso_course.json (test_core.cpp:163-204) ; meilleur temps : ep.bt des exécutions t11-refus (28,033… s = 24,03 s + 4 points de refus), t11-manche-2 (20,800… s, dernière manche) et t11-trois-barres (32,800… s = 20,80 s + 12 points de barres) égal au bit près (testCsoRuns) ; Strides.Cso.Result : écrit dans l'emplacement de sauvegarde du test sans SaveNow et relu sur le disque au bit près ; bestTimes relu et importé de la sauvegarde web (testSave).",
+  "preuve": "Tracé, hauteurs, temps accordé comparés à cso_course.json (test_core.cpp:189-230) ; meilleur temps : ep.bt des exécutions t11-refus (28,033… s = 24,03 s + 4 points de refus), t11-manche-2 (20,800… s, dernière manche) et t11-trois-barres (32,800… s = 20,80 s + 12 points de barres) égal au bit près (testCsoRuns) ; Strides.Cso.Result : écrit dans l'emplacement de sauvegarde du test sans SaveNow et relu sur le disque au bit près ; bestTimes relu et importé de la sauvegarde web (testSave).",
   "ecart": "Branches non départagées (mutations déclarées, scripts/unreal/mutations-cso-ranking.py) : pénalités de temps dans le score (aucune exécution enregistrée n'en a), rien après une élimination, meilleur temps existant égalé ou battu (sauvegarde neuve à chaque exécution). Ni classement en ligne (reportScore), ni carte « Nouveau record » (resultTitle, resultBody : le bilan tient lieu d'écran de résultat, resultCustom), ni récompenses de fin de mission (réputation, compétence organisation).",
   "tranche": "a"
  },
@@ -904,7 +904,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:186).",
+  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:187).",
   "ecart": "Performance indépendante de l'état du cheval.",
   "tranche": "d"
  },
@@ -1046,7 +1046,7 @@
   "unreal": "Credits entiers du sous-système de progression, affichés « N crédits » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:79) ; strides::SaveGame.money (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:21) sérialisé et importé de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:72, 95).",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1075-1101 (testSave, écrit à la main) relit money = 1 250 et importe money = 90 d'un export web ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle JS.",
+  "preuve": "unreal/core/tests/test_core.cpp:1115-1141 (testSave, écrit à la main) relit money = 1 250 et importe money = 90 d'un export web ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle JS.",
   "ecart": "Deux compteurs non reliés (Credits affiché, money sauvegardé) ; unité « crédits » au lieu d'euros ; entiers (le web gère les centimes : café 1,80 €, carburant au litre) ; aucune dépense possible.",
   "tranche": "e"
  },
@@ -1105,7 +1105,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:186).",
+  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:187).",
   "ecart": "Aucun bonus d'équipement.",
   "tranche": "e"
  },
@@ -1236,7 +1236,7 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:41, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:186).",
+  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:41, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:187).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Export automatique depuis le JS (valeurs relues identiques à data.js le 18/11/2026), mais aucun test C++ ne compare ces profils à un oracle.",
@@ -1253,7 +1253,7 @@
   "unreal": "strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:45).",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "unreal/core/tests/test_core.cpp:1080-1089 (écrit à la main) relit la liste horses ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle de ownedHorses ni de activeHorseId.",
+  "preuve": "unreal/core/tests/test_core.cpp:1120-1129 (écrit à la main) relit la liste horses ; réussi dans CTest (validation-mac-2026-11-17.md l.9) ; aucun oracle de ownedHorses ni de activeHorseId.",
   "ecart": "Pas de filtre des identifiants inconnus ni de cheval à l'essai ; activeHorse jamais réappliqué au chargement ; ni achat ni changement de cheval.",
   "tranche": "e"
  },
@@ -1320,7 +1320,7 @@
   "js": [
    "src/gameplay/interact.js"
   ],
-  "unreal": "AStridesPlayerController::DoAction (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:486-508 : dialogue de l'entraîneur fermé d'abord, puis action du poteau « Chrono » d'AStridesActivityPost (priorité 1, rayon 6 m, à cheval, sans mission ; tranche T10), sinon monter sur le cheval le plus proche à moins de 3 m (AStridesRider::TryMount, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113) ou descendre) ; appelée par l'action des commandes du web (E, F, Entrée : StridesPlayerController.cpp:328-329), le bouton de face gauche et le bouton tactile (OnInteract, :444-448) ; bouton tactile au libellé de l'action du poteau (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:373-380)",
+  "unreal": "AStridesPlayerController::DoAction (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:487-522 : dialogue de l'entraîneur fermé d'abord, puis action du poteau « Chrono » d'AStridesActivityPost (priorité 1, rayon 6 m, à cheval, sans mission ; tranche T10), sinon monter sur le cheval le plus proche à moins de 3 m (AStridesRider::TryMount, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113) ou descendre) ; appelée par l'action des commandes du web (E, F, Entrée : StridesPlayerController.cpp:329-330), le bouton de face gauche et le bouton tactile (OnInteract, :445-449) ; bouton tactile au libellé de l'action du poteau (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:373-380)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "validation-mac-2026-11-17.md l.15 : « monter, accélérer jusqu'au galop à 8,0 m/s, descendre » contrôlé à l'écran ; tranche T10 : Strides.Cso.Entry (action du poteau proposée selon la position, le mode et la mission comme le registre du web, 126 positions de cso_entry.json ; touche E au poteau : activité lancée) et Strides.Cso.EntryDialog (touche E : dialogue fermé avant toute autre action).",

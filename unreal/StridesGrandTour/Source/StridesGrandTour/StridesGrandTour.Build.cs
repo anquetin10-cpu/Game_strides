@@ -8,6 +8,9 @@ public class StridesGrandTour : ModuleRules
 	public StridesGrandTour(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		// Lecteur JSON du cœur (MiniJson.h, qui lève des exceptions) inclus par les rejeux d'oracle des outils et des tests :
+		// exceptions permises comme dans StridesCore (sans quoi la cible IOS Shipping ne compile pas, constaté le 20/11/2026).
+		bEnableExceptions = true;
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "StridesCore" });
 		PrivateDependencyModuleNames.AddRange(new string[] { "Json", "JsonUtilities", "UMG", "Slate", "SlateCore", "ApplicationCore", "ProceduralMeshComponent" });
 	}

@@ -1,4 +1,5 @@
 #include "StridesPlayerController.h"
+#include "StridesCsoAudio.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -486,7 +487,13 @@ FString AStridesPlayerController::ActionLabel() const
 bool AStridesPlayerController::DoAction()
 {
 	// hud.advanceDialog() d'abord (dialogue de l'entraîneur), sinon interact.trigger().
-	if (AStridesCourse* C = EntryCourse(); C && C->AdvanceDialog()) return true;
+	UStridesCsoAudio* Audio = GetWorld() ? GetWorld()->GetSubsystem<UStridesCsoAudio>() : nullptr;
+	if (AStridesCourse* C = EntryCourse(); C && C->AdvanceDialog())
+	{
+		// hud.advanceDialog : réplique passée → click() (hud.js:570).
+		if (Audio) Audio->Call(strides::csoClickCall(), "ui/hud.js");
+		return true;
+	}
 	// Action du poteau « Chrono » (priorité 1) : à cheval, point suivi = le cheval, sans mission en cours.
 	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn()))
 		if (AStridesActivityPost* P = ActivityPost())
@@ -495,13 +502,20 @@ bool AStridesPlayerController::DoAction()
 			StridesUnits::UEToWeb(H->GetActorLocation(), X, Y, Z);
 			const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
 			const FStridesHorseProfile* Pr = Data ? Data->FindHorse(H->ProfileId) : nullptr;
-			if (P->Trigger(X, Z, TEXT("ride"), P->PlayerName, Pr ? Pr->Name : FString(), H->JumpPower(), 0.0)) return true;
+			if (P->Trigger(X, Z, TEXT("ride"), P->PlayerName, Pr ? Pr->Name : FString(), H->JumpPower(), 0.0))
+			{
+				if (Audio) Audio->Click();  // interact.trigger : it.action() puis click() (interact.js:50-52)
+				return true;
+			}
 		}
 	// Action du portage (priorité 0 au web pour descendre) : monter, descendre.
 	if (AStridesRider* R = Rider())
 	{
+		// interact.trigger : click() seulement si une action était proposée (monter près d'un cheval, descendre).
+		bool bDone = true;
 		if (R->MountedOn) R->Dismount(this);
-		else R->TryMount(this);
+		else bDone = R->TryMount(this);
+		if (Audio && bDone) Audio->Click();
 		return true;
 	}
 	return false;

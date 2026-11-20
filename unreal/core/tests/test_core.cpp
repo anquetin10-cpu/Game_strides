@@ -12,6 +12,7 @@
 #include <string>
 
 #include "StridesCore/CourseAids.h"
+#include "StridesCore/CsoAudio.h"
 #include "StridesCore/CoursePlan.h"
 #include "StridesCore/CsoEntry.h"
 #include "StridesCore/Ranking.h"
@@ -46,6 +47,31 @@ static int g_checks = 0, g_fail = 0;
 static bool near(double a, double b, double tol = 1e-9) { return std::abs(a - b) <= tol * std::max(1.0, std::abs(b)); }
 
 static std::string ORA, DATA;
+
+// Journal des sons du portage (tranche T12), rempli par les rejeux du cœur et comparé au canal « audio » de cso_runs/
+// par testCsoSounds : clé « id lang » → image → parties de l'image dans l'ordre de game.update (boutons de carte, pas du
+// cheval, Obstacles.updateHorse, écouteurs de courses.js sur les événements d'obstacle, Obstacles.update, Run.update).
+// Appel écrit « fn(arguments)@fichier » (nombres en %.17g, chaînes entre guillemets).
+struct FenceSounds { bool has = false; std::vector<std::string> horse, judge, slide, fall; };
+struct RunSounds { bool has = false; std::vector<std::string> ui, ev, upd; };
+static std::map<std::string, std::map<int, FenceSounds>> g_fenceSounds;
+static std::map<std::string, std::map<int, RunSounds>> g_runSounds;
+static std::map<std::string, std::vector<std::string>> g_launchSounds;
+static bool g_fenceSoundsDone = false, g_runSoundsDone = false;
+static std::string sndArg(bool isNum, double n, const std::string& s) {
+  if (isNum) { char b[40]; std::snprintf(b, sizeof b, "%.17g", n); return b; }
+  return "\"" + s + "\"";
+}
+static std::string sndCall(const CsoCall& c, const std::string& src) {
+  std::string r = c.fn + "(";
+  for (size_t i = 0; i < c.args.size(); i++) r += (i ? ", " : "") + sndArg(c.args[i].isNum, c.args[i].n, c.args[i].s);
+  return r + ")@" + src;
+}
+static std::vector<std::string> sndCalls(const std::vector<CsoCall>& v, const char* src = nullptr) {
+  std::vector<std::string> r;
+  for (const CsoCall& c : v) r.push_back(sndCall(c, src ? src : csoRunSoundSrc(c)));
+  return r;
+}
 
 static void testJump() {
   J o = loadJson(ORA + "/jump.json");
@@ -881,6 +907,7 @@ static void testFenceRuns() {
       const double bx = s.x, bz = s.z;
       const size_t horseEv0 = out.horse.size();
       csoFencesUpdateHorse(s, obs, st, uh, out);
+      const size_t judgeSnd = out.sounds.size();
       const bool slid = out.horse.size() > horseEv0;
       if (slid) wit["glissade (refus sur place)"]++;
       else if (s.x != bx || s.z != bz) wit["garde-fou du nez (poussée)"]++;
@@ -890,6 +917,19 @@ static void testFenceRuns() {
       ui.missionActive = in["ma"].b;
       ui.focusX = s.x; ui.focusZ = s.z;
       csoFencesUpdate(obs, st, ui, out);
+      // Tranche T12 : sons du cheval (écouteurs de game.js sur les événements du cœur ; sol de la carrière : sable) et
+      // des obstacles de l'image, gardés pour testCsoSounds.
+      {
+        FenceSounds& fs = g_fenceSounds[id + " " + lang][(int)f["f"].num()];
+        fs.has = true;
+        std::vector<CsoCall> hc, sc;
+        for (CsoHorseEvent e : evs) csoHorseSounds(e, fi.playerHorse, fi.csoControls, "sand", hc);
+        fs.horse = sndCalls(hc, "game.js");
+        hc.clear();
+        for (CsoHorseEvent e : out.horse) csoHorseSounds(e, fi.playerHorse, fi.csoControls, "sand", hc);
+        fs.slide = sndCalls(hc, "game.js");
+        for (size_t k = 0; k < out.sounds.size(); k++) (k < judgeSnd ? fs.judge : fs.fall).push_back(sndCall(csoFenceSoundCall(out.sounds[k]), "gameplay/obstacles.js"));
+      }
       // Événements du cheval (horse.update puis updateHorse) : même suite que le bus du jeu sur l'image.
       std::string got, want;
       for (CsoHorseEvent e : evs) { got += csoHorseEventName(e); got += ' '; }
@@ -2011,7 +2051,9 @@ static void testCsoRuns() {
     {
       const std::vector<std::string> got = coreCalls(run.takeHud()), want = oracleCalls(su["calls"]["hud"], true, true);
       if (got != want) diff(-1, "appels hud au lancement");
-      const std::vector<std::string> ga = coreCalls(run.takeAudio()), wa = oracleCalls(su["calls"]["audio"], false, true);
+      const std::vector<CsoCall> la = run.takeAudio();
+      g_launchSounds[id + " " + lang] = sndCalls(la);
+      const std::vector<std::string> ga = coreCalls(la), wa = oracleCalls(su["calls"]["audio"], false, true);
       if (ga != wa || wa.empty()) diff(-1, "sons au lancement");
       launchN++;
     }
@@ -2025,11 +2067,15 @@ static void testCsoRuns() {
       const int fi = (int)f["f"].num();
       const J& ep = f["ep"];
       if (ep.isNull()) { if (!run.finished()) diff(fi, "Run.update absent"); continue; }
+      RunSounds& rs = g_runSounds[id + " " + lang][fi];
+      rs.has = true;
       if (f["in"]["ui"].s == "enter") run.enter();
       // Tranche T11 : boutons du bilan (r.flags.res = 'retry' / 'train' / 'done').
       if (f["in"]["ui"].s == "cso-retry") run.resultChoice(CsoRun::ResultChoice::Retry);
       if (f["in"]["ui"].s == "cso-train") run.resultChoice(CsoRun::ResultChoice::Train);
       if (f["in"]["ui"].s == "cso-done") run.resultChoice(CsoRun::ResultChoice::Done);
+      std::vector<CsoCall> uiAudio = run.takeAudio();  // tranche T12 : sons des boutons de carte (avant g.update)
+      rs.ui = sndCalls(uiAudio);
       // Dernier saut du cheval (horse._lastJump, relevé quand il change) : lu par le mot d'appel des écouteurs (T7).
       if (ep.o.count("lj")) {
         CsoLastJump lj;
@@ -2075,6 +2121,10 @@ static void testCsoRuns() {
           cover[guards[10]]++;  // seul cas que la garde d'étape distingue (sinon « chrono pas lancé » serait annoncé)
         run.obstacleEvent(kind, num, dir, e["d"]["cause"].isNull() ? "" : e["d"]["cause"].s, e["d"]["causeText"].isNull() ? "" : e["d"]["causeText"].s, cadEv);
       }
+      // Tranche T12 : sons des boutons de carte (avant l'image) puis des écouteurs d'obstacle, séparés de ceux de Run.update.
+      std::vector<CsoCall> frameAudio = run.takeAudio();
+      rs.ev = sndCalls(frameAudio);
+      frameAudio.insert(frameAudio.begin(), uiAudio.begin(), uiAudio.end());
       if (run.state().refusals != refusals0 && cadEv.has && !(cadEv.v == 0 && ep["cad"].num() == 0)) diff(fi, "cadence remise à 0 par le refus compté");
       if (run.state().refusals == refusals0 && cadEv.v != -12345.0) diff(fi, "cadence réécrite sans refus compté");
       CsoRunFrame in;
@@ -2178,7 +2228,12 @@ static void testCsoRuns() {
       if ((int)ep["i1"].num() != run.stepIndex()) diff(fi, "étape " + std::to_string(run.stepIndex()) + " / " + std::to_string((int)ep["i1"].num()));
       // Appels de l'interface et sons.
       const std::vector<std::string> gh = coreCalls(run.takeHud()), wh = oracleCalls(f["hud"], true);
-      const std::vector<std::string> ga = coreCalls(run.takeAudio()), wa = oracleCalls(f["audio"], false);
+      {
+        const std::vector<CsoCall> upd = run.takeAudio();
+        rs.upd = sndCalls(upd);
+        frameAudio.insert(frameAudio.end(), upd.begin(), upd.end());
+      }
+      const std::vector<std::string> ga = coreCalls(frameAudio), wa = oracleCalls(f["audio"], false);
       if (gh != wh) {
         std::string s = "hud :";
         for (const auto& x : gh) s += " " + x;
@@ -2999,6 +3054,211 @@ static void testCsoAids() {
   std::printf("\n");
 }
 
+
+// ---------- Sons de l'épreuve (tranche T12) ----------
+// Journal des sons du portage comparé, image par image et dans l'ordre, au canal « audio » de TOUTES les exécutions de
+// cso_runs/ (fn, arguments, fichier appelant) ; parties produites par les rejeux du cœur (testFenceRuns : écouteurs de
+// game.js sur les événements du cheval du cœur, sons des obstacles du cœur ; testCsoRuns : déroulé d'épreuve), dans
+// l'ordre de game.update : boutons de carte, pas du cheval (horse.update), Obstacles.updateHorse (barres, glissade),
+// écouteurs de courses.js sur les événements d'obstacle, Obstacles.update (chute des barres), Run.update. Exécutions
+// légères (t4-*, sans canal « ch ») : sons du cheval rejoués depuis les événements du bus de l'oracle par les mêmes
+// écouteurs (le cheval n'y est pas rejoué), click (interact.js:52) d'après l'action pressée et l'action déclenchée
+// (descente : player:dismountStart), sons des obstacles exclus (obstacles non rejoués). Exclus partout et déclarés :
+// breath (foulées de l'animation du cheval, non portée). Chaque appel comparé doit avoir son WAV dans cso_sounds.json.
+static std::string oraSnd(const J& c) {
+  std::vector<std::string> a;
+  for (const J& x : c["args"].a) a.push_back(argStr(x));
+  return callStr(c["fn"].s, a) + "@" + (c["src"].t == J::Str ? c["src"].s : std::string("null"));
+}
+static void testCsoSounds() {
+  CHECK(!g_fenceSounds.empty() && !g_runSounds.empty(), "sons : rejeux « fences » et « csoruns » requis (STRIDES_TESTS)");
+  if (g_fenceSounds.empty() || g_runSounds.empty()) return;
+  const J man = loadJson(DATA + "/cso_sounds.json");
+  std::map<std::string, int> manKeys;
+  for (const J& x : man["sounds"].a) manKeys[x["nom"].s] = 0;
+  J o = loadRuns();
+  std::map<std::string, int> perFn, excluded;
+  int frames = 0, cmp = 0, bad = 0, okRuns = 0, liteRuns = 0, fullRuns = 0, missingKey = 0, noRun = 0;
+  for (const J& r : o["runs"].a) {
+    const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")", key = id + " " + lang;
+    const bool lite = r["setup"]["lite"].b;
+    const std::string pid = r["setup"]["horseId"].s;
+    int rbad = 0;
+    auto diff = [&](int fi, const std::vector<std::string>& got, const std::vector<std::string>& want) {
+      rbad++;
+      if (rbad > 3) return;
+      std::string g, w;
+      for (const auto& x : got) g += " " + x;
+      for (const auto& x : want) w += " " + x;
+      std::printf("  %s image %d : sons du portage :%s / web :%s\n", who.c_str(), fi, g.c_str(), w.c_str());
+    };
+    auto useKey = [&](const J& c) {
+      CsoCall call;
+      call.fn = c["fn"].s;
+      for (const J& x : c["args"].a) {
+        CsoArg a;
+        a.isNum = x.t == J::Num;
+        if (a.isNum) a.n = x.num(); else a.s = x.s;
+        call.args.push_back(a);
+      }
+      const auto it = manKeys.find(csoSoundKey(call));
+      if (it == manKeys.end()) { missingKey++; if (missingKey < 4) std::printf("  %s : son %s sans WAV au manifeste\n", who.c_str(), csoSoundKey(call).c_str()); }
+      else it->second++;
+    };
+    // Déroulé rejoué par testCsoRuns (exécution enregistrée depuis le lancement de l'activité) ; sinon (épreuve posée en
+    // cours de parcours par le scénario, ou état écrit par le test : t9-recette), sons de courses.js et missions.js exclus.
+    const auto itL = g_launchSounds.find(key);
+    const bool runReplayed = itL != g_launchSounds.end();
+    if (runReplayed) {
+      std::vector<std::string> want;
+      for (const J& c : r["setup"]["calls"]["audio"].a) { want.push_back(oraSnd(c)); useKey(c); }
+      if (itL->second != want) diff(-1, itL->second, want);
+      cmp += (int)want.size();
+    } else
+      for (const J& c : r["setup"]["calls"]["audio"].a) { excluded[c["fn"].s + " (déroulé non rejoué)"]++; useKey(c); }
+    const auto itF = g_fenceSounds.find(key);
+    const auto itR = g_runSounds.find(key);
+    if (!lite && itF == g_fenceSounds.end()) { CHECK(false, "%s : rejeu des obstacles absent", who.c_str()); continue; }
+    bool prevCso = false;  // game.course?.controls === 'cso' à la fin de l'image précédente (vu par horse.update)
+    for (const J& f : r["frames"].a) {
+      const int fi = (int)f["f"].num();
+      std::vector<std::string> want, got;
+      for (const J& c : f["audio"].a) {
+        const std::string& fn = c["fn"].s;
+        if (fn == "breath") { excluded["breath (foulées de l’animation)"]++; continue; }
+        if (lite && c["src"].s == "gameplay/obstacles.js") { excluded[fn + " (obstacles, exécutions légères)"]++; useKey(c); continue; }
+        if (!runReplayed && (c["src"].s == "gameplay/courses.js" || c["src"].s == "gameplay/missions.js")) {
+          excluded[fn + " (déroulé non rejoué)"]++;
+          if (fn != "cheer") useKey(c);
+          continue;
+        }
+        want.push_back(oraSnd(c));
+        perFn[fn]++;
+        if (fn != "cheer") useKey(c);  // cheer : automation du bus du public (testCsoCrowd)
+      }
+      const RunSounds* rs = nullptr;
+      if (itR != g_runSounds.end()) { const auto it = itR->second.find(fi); if (it != itR->second.end()) rs = &it->second; }
+      const FenceSounds* fs = nullptr;
+      if (!lite) { const auto it = itF->second.find(fi); if (it != itF->second.end()) fs = &it->second; }
+      auto add = [&](const std::vector<std::string>& v) { got.insert(got.end(), v.begin(), v.end()); };
+      if (rs) add(rs->ui);
+      if (!lite) {
+        if (!fs) { CHECK(false, "%s image %d : image absente du rejeu des obstacles", who.c_str(), fi); continue; }
+        add(fs->horse);
+        add(fs->judge);
+        add(fs->slide);
+      } else {
+        bool press = false, trig = false;
+        for (const J& x : f["in"]["press"].a) press = press || x.s == "action";
+        for (const J& e : f["ev"].a) trig = trig || e["e"].s == "player:dismountStart";
+        if (press && trig) got.push_back(sndCall(csoClickCall(), "gameplay/interact.js"));
+        std::vector<CsoCall> hc;
+        for (const J& e : f["ev"].a) {
+          const std::string& en = e["e"].s;
+          const bool pl = e["d"]["horse"].t == J::Str && e["d"]["horse"].s == pid;
+          if (en == "horse:jump") csoHorseSounds(CsoHorseEvent::Jump, pl, prevCso, "sand", hc);
+          else if (en == "horse:land") csoHorseSounds(CsoHorseEvent::Land, pl, prevCso, "sand", hc);
+          else if (en == "horse:refuse") csoHorseSounds(CsoHorseEvent::Refuse, pl, prevCso, "sand", hc);
+        }
+        add(sndCalls(hc, "game.js"));
+      }
+      if (rs) add(rs->ev);
+      if (fs) add(fs->fall);
+      if (rs) add(rs->upd);
+      prevCso = f["course"].t == J::Obj && f["course"]["controls"].t == J::Str && f["course"]["controls"].s == "cso";
+      if (got != want) diff(fi, got, want);
+      cmp += (int)want.size();
+      frames++;
+    }
+    bad += rbad;
+    CHECK(rbad == 0, "%s : journal des sons : %d images en écart", who.c_str(), rbad);
+    if (rbad == 0) okRuns++;
+    (lite ? liteRuns : fullRuns)++;
+    if (!runReplayed) noRun++;
+  }
+  CHECK(missingKey == 0, "sons : %d appels sans WAV au manifeste", missingKey);
+  // Chaque WAV d'appel du manifeste sert au moins une fois (le manifeste est relevé dans le même oracle).
+  for (const auto& [k, n] : manKeys) if (k != "crowd_loop") CHECK(n > 0, "sons : WAV %s jamais appelé", k.c_str());
+  // Branches des écouteurs exercées.
+  for (const char* fn : {"snort", "hoof", "landing", "neigh", "railFall", "railTouch", "thud", "notify", "applause", "bell", "tone", "fault", "crowdOoh", "cheer", "click"})
+    CHECK(perFn[fn] > 0 || (std::string(fn) == "notify"), "sons : %s jamais comparé", fn);
+  std::printf("sons : %d exécutions sur %zu au journal identique (%d complètes, %d légères ; déroulé non rejoué dans %d), %d images, %d appels comparés (fn, arguments, fichier, ordre) ;", okRuns, o["runs"].a.size(), fullRuns, liteRuns, noRun, frames, cmp);
+  for (const auto& [k, v] : perFn) std::printf(" %s %d", k.c_str(), v);
+  std::printf(" ; exclus :");
+  for (const auto& [k, v] : excluded) std::printf(" %s %d ;", k.c_str(), v);
+  std::printf("\n");
+}
+
+// Bus du public (tranche T12) : constantes du portage = manifeste (lues dans le source) ; niveau relevé dans le jeu autour
+// du bord des 90 m ; gain rendu hors ligne (cso_crowd.json, échantillon par échantillon) rejoué par strides::CsoCrowd.
+static void testCsoCrowd() {
+  const J man = loadJson(DATA + "/cso_sounds.json");
+  const J ora = loadJson(ORA + "/cso_crowd.json");
+  const CsoCrowdParams& P = csoCrowdDefaults();
+  {
+    // Chemin du jeu : manifeste lu par csoSoundBankFromFile (constantes du bus prises dans le manifeste par le jeu).
+    std::ifstream fm(DATA + "/cso_sounds.json");
+    std::stringstream ss;
+    ss << fm.rdbuf();
+    CsoSoundBank bank;
+    std::string err;
+    CHECK(csoSoundBankFromFile(ss.str(), bank, err), "cso_sounds.json : %s", err.c_str());
+    const CsoCrowdParams& B = bank.crowd;
+    CHECK(B.radius == P.radius && B.level == P.level && B.scale == P.scale && B.tau == P.tau && B.cheerPeak == P.cheerPeak && B.cheerTarget == P.cheerTarget &&
+              B.cheerHold == P.cheerHold && B.cheerTau == P.cheerTau && bank.crowdLoop == "crowd_loop" && bank.rate == (int)ora["rate"].num() &&
+              bank.sounds.size() == man["sounds"].a.size(),
+          "cso_sounds.json lu par le jeu : constantes, boucle ou nombre de sons inattendus");
+  }
+  for (const J* C : {&man["crowd"], &ora["constants"]}) {
+    const J& c = *C;
+    CHECK(c["level"]["radius"].num() == P.radius && c["level"]["value"].num() == P.level && c["ambience"]["scale"].num() == P.scale &&
+              c["ambience"]["tau"].num() == P.tau && c["cheer"]["peak"].num() == P.cheerPeak && c["cheer"]["target"].num() == P.cheerTarget &&
+              c["cheer"]["hold"].num() == P.cheerHold && c["cheer"]["tau"].num() == P.cheerTau,
+          "public : constantes du portage ≠ source (%g %g %g %g %g %g %g %g)", c["level"]["radius"].num(), c["level"]["value"].num(), c["ambience"]["scale"].num(),
+          c["ambience"]["tau"].num(), c["cheer"]["peak"].num(), c["cheer"]["target"].num(), c["cheer"]["hold"].num(), c["cheer"]["tau"].num());
+  }
+  int lv = 0;
+  for (const J& x : man["crowd"]["inGame"].a) {
+    const double got = csoCrowdLevel(x["dist"].num(), 0, 0, 0, false);
+    CHECK(got == x["crowd"].num(), "public : niveau à %.3f m : %g / jeu %g", x["dist"].num(), got, x["crowd"].num());
+    lv++;
+  }
+  CHECK(lv >= 4, "public : niveau relevé dans le jeu absent du manifeste (--no-game ?)");
+  CHECK(csoCrowdLevel(500, 0, 0, 0, true) == P.level, "public : épreuve CSO en cours, hors des 90 m");
+  const double rate = ora["rate"].num();
+  double worst = 0;
+  int probes = 0, scen = 0;
+  for (const J& sc : ora["scenarios"].a) {
+    CsoCrowd cr;
+    const J& times = sc["times"];
+    const J& pr = sc["probe"];
+    size_t p = 0;
+    double sw = 0;
+    for (size_t k = 0; k < times.a.size(); k++) {
+      const double t = times[k].num();
+      const std::string ks = std::to_string(k);
+      if (sc["actions"].o.count(ks))
+        for (const J& a : sc["actions"][ks].a) cr.onCall(CsoCall{a[0].s, {}}, t);
+      cr.ambience(sc["crowd"][k].num(), t);
+      for (int q = 0; q < 2 && p < pr.a.size(); q++, p++) {
+        const double n = pr[p][0].num(), want = pr[p][1].num();
+        const double got = cr.gainAt(n / rate);
+        sw = std::max(sw, std::abs(got - want));
+        probes++;
+      }
+    }
+    CHECK(p == pr.a.size(), "public %s : %zu relevés rejoués sur %zu", sc["id"].s.c_str(), p, pr.a.size());
+    // Le modèle du cœur suit la formule exacte de la spécification ; le gain rendu par Chrome cale juste sous la cible
+    // (0,0479553 au lieu de 0,048 au plateau, relevé dans l'oracle) : écart toléré 5e-5 (0,1 % du gain d'ambiance,
+    // −0,008 dB). Cause supposée, à confirmer : calcul de setTargetAtTime en float32 par Chrome (l'incrément s'annule
+    // près de la cible) ; une récurrence float32 simple ne reproduit pas l'oracle à mieux que 4e-5 (essayé, non gardé).
+    CHECK(sw <= 5e-5, "public %s : écart de gain %.3g", sc["id"].s.c_str(), sw);
+    worst = std::max(worst, sw);
+    scen++;
+  }
+  std::printf("public : %d séquences, %d relevés du gain rejoués, écart max %.3g (formule de la spécification ; plateau du navigateur juste sous la cible) ; niveau : %d relevés du jeu\n", scen, probes, worst, lv);
+}
+
 int main(int argc, char** argv) {
   ORA = argc > 1 ? argv[1] : "oracles";
   DATA = argc > 2 ? argv[2] : "../../StridesGrandTour/Content/Data";
@@ -3029,6 +3289,8 @@ int main(int argc, char** argv) {
     run("result", testCsoResult);
     run("layout", testCsoResultLayout);
     run("csoruns", testCsoRuns);
+    run("sounds", testCsoSounds);
+    run("crowd", testCsoCrowd);
     run("goto", testCsoGoto);
     run("camera", testCamRuns);
     run("input", testCsoInput);

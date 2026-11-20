@@ -1,0 +1,580 @@
+{
+ "schema": "strides.cso_sounds/1",
+ "generator": "scripts/unreal/export-cso-sounds.mjs",
+ "source": [
+  "src/core/audio.js",
+  "src/core/math.js (mulberry32)",
+  "src/game.js",
+  "unreal/core/tests/oracles/cso_runs/"
+ ],
+ "render": "OfflineAudioContext mono 48000 Hz ; classe Audio du jeu (unlock() sur le contexte hors ligne) ; signal après le gain maître 0.8, avant le compresseur ; bus du public débranché ; PCM 16 bits (arrondi de x × 32767, borné) ; silence final coupé",
+ "seeds": "Math.random = mulberry32(20261120) pendant unlock (tampon de bruit de 2 s), puis mulberry32(FNV-1a 32 bits de la clé) pendant l'appel",
+ "nommage": "champ « nom » : nom puis arguments (String(n) de JS), joints par « _ », « . » → « p » (strides::csoSoundKey) ; pas « key » : faux positif de gitleaks (generic-api-key)",
+ "gameChain": "mesure du même appel par la chaîne du jeu (gain maître → DynamicsCompressor par défaut : seuil −24 dB, genou 30, ratio 12, attaque 3 ms, relâchement 250 ms, anticipation 6 ms) : crête, RMS et écart de RMS au rendu sec (dB) ; le compresseur n’est pas porté",
+ "notRendered": {
+  "breath": "foulées de l’animation du cheval (horse:step, horse.anim.phase) non portées",
+  "cheer": "automation du gain du bus du public (crowd), rejouée par le cœur (cso_crowd.json)"
+ },
+ "rate": 48000,
+ "crowd": {
+  "master": 0.8,
+  "bus": {
+   "freq": 900,
+   "q": 0.7,
+   "type": "bandpass",
+   "noiseSeconds": 2
+  },
+  "ambience": {
+   "scale": 0.08,
+   "tau": 0.5
+  },
+  "cheer": {
+   "peak": 0.28,
+   "target": 0,
+   "hold": 1.6,
+   "tau": 0.8
+  },
+  "level": {
+   "radius": 90,
+   "value": 0.6,
+   "inCourse": "game.course?.kind === 'cso'",
+   "indoor": "shops.murmur() (intérieur des commerces, hors épreuve : non porté)"
+  },
+  "sources": [
+   "src/core/audio.js",
+   "src/game.js"
+  ],
+  "oracle": "unreal/core/tests/oracles/cso_crowd.json",
+  "asset": "crowd_loop",
+  "inGame": [
+   {
+    "d": 88,
+    "dist": 88,
+    "crowd": 0.6,
+    "indoor": 0,
+    "course": null,
+    "calls": 6
+   },
+   {
+    "d": 89.5,
+    "dist": 89.5,
+    "crowd": 0.6,
+    "indoor": 0,
+    "course": null,
+    "calls": 6
+   },
+   {
+    "d": 90.5,
+    "dist": 90.5,
+    "crowd": 0,
+    "indoor": 0,
+    "course": null,
+    "calls": 6
+   },
+   {
+    "d": 92,
+    "dist": 92,
+    "crowd": 0,
+    "indoor": 0,
+    "course": null,
+    "calls": 6
+   },
+   {
+    "d": 40,
+    "dist": 40,
+    "crowd": 0.6,
+    "indoor": 0,
+    "course": null,
+    "calls": 6
+   },
+   {
+    "d": 200,
+    "dist": 200,
+    "crowd": 0,
+    "indoor": 0,
+    "course": null,
+    "calls": 6
+   }
+  ]
+ },
+ "sounds": [
+  {
+   "nom": "applause_0p55_2p6",
+   "fn": "applause",
+   "args": [
+    0.55,
+    2.6
+   ],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 10,
+   "file": "applause_0p55_2p6.wav",
+   "asset": "/Game/Audio/Cso/applause_0p55_2p6.applause_0p55_2p6",
+   "seed": 529040442,
+   "samples": 119706,
+   "seconds": 2.493875,
+   "peak": 0.018342,
+   "rms": 0.001392,
+   "clipped": 0,
+   "pcmSha1": "9e8ca90776c858efa6cc0445b47c36365467ed48",
+   "fileSha256": "dd533d4cadab64e86a8ef63848cf9f1ce6e51974baaaacbcd9aa4b9d03056f2d",
+   "gameChain": {
+    "peak": 0.028,
+    "rms": 0.002,
+    "rmsDb": 3.3
+   }
+  },
+  {
+   "nom": "applause_0p5_2p2",
+   "fn": "applause",
+   "args": [
+    0.5,
+    2.2
+   ],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 65,
+   "file": "applause_0p5_2p2.wav",
+   "asset": "/Game/Audio/Cso/applause_0p5_2p2.applause_0p5_2p2",
+   "seed": 904268433,
+   "samples": 101542,
+   "seconds": 2.115458,
+   "peak": 0.014679,
+   "rms": 0.001323,
+   "clipped": 0,
+   "pcmSha1": "f83f995da196d082a4ce9670f3db0a7f5d8b8e12",
+   "fileSha256": "1af0d4fd2976d477d1a9e50c678b03de2c10f61915291f21b334a3a0352ad7cf",
+   "gameChain": {
+    "peak": 0.0185,
+    "rms": 0.0019,
+    "rmsDb": 3.2
+   }
+  },
+  {
+   "nom": "applause_1p3_4",
+   "fn": "applause",
+   "args": [
+    1.3,
+    4
+   ],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 8,
+   "file": "applause_1p3_4.wav",
+   "asset": "/Game/Audio/Cso/applause_1p3_4.applause_1p3_4",
+   "seed": 2263619452,
+   "samples": 181934,
+   "seconds": 3.790292,
+   "peak": 0.044893,
+   "rms": 0.004635,
+   "clipped": 0,
+   "pcmSha1": "4ec2df9c11eec0b1db362d02db1d536907e0abac",
+   "fileSha256": "2518aca486a1cddc59451d03b17f922316833a669f766abf8d73edb4e3569f4a",
+   "gameChain": {
+    "peak": 0.0684,
+    "rms": 0.0067,
+    "rmsDb": 3.3
+   }
+  },
+  {
+   "nom": "bell",
+   "fn": "bell",
+   "args": [],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 65,
+   "file": "bell.wav",
+   "asset": "/Game/Audio/Cso/bell.bell",
+   "seed": 2188252728,
+   "samples": 79200,
+   "seconds": 1.65,
+   "peak": 0.240883,
+   "rms": 0.027315,
+   "clipped": 0,
+   "pcmSha1": "ad66015e771eccbe58c1038665432dde00837afa",
+   "fileSha256": "ca7d8117926d3a2137769fe06c812e3ad46c769c7cc670f3b9da74857075cddf",
+   "gameChain": {
+    "peak": 0.1799,
+    "rms": 0.0293,
+    "rmsDb": 0.6
+   }
+  },
+  {
+   "nom": "bell_2",
+   "fn": "bell",
+   "args": [
+    2
+   ],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 7,
+   "file": "bell_2.wav",
+   "asset": "/Game/Audio/Cso/bell_2.bell_2",
+   "seed": 1587687477,
+   "samples": 105600,
+   "seconds": 2.2,
+   "peak": 0.245918,
+   "rms": 0.033425,
+   "clipped": 0,
+   "pcmSha1": "40f03e5663fac482ccf194fa7a052e0b14347710",
+   "fileSha256": "b5ec4dc88a871a6d850b8005613cb48aa57170f04b9af293c82bb6eaa14fb9cd",
+   "gameChain": {
+    "peak": 0.3399,
+    "rms": 0.0427,
+    "rmsDb": 2.1
+   }
+  },
+  {
+   "nom": "click",
+   "fn": "click",
+   "args": [],
+   "src": [
+    "gameplay/interact.js"
+   ],
+   "calls": 3,
+   "file": "click.wav",
+   "asset": "/Game/Audio/Cso/click.click",
+   "seed": 1551804527,
+   "samples": 3839,
+   "seconds": 0.079979,
+   "peak": 0.036805,
+   "rms": 0.00463,
+   "clipped": 0,
+   "pcmSha1": "0dca5787525505291a87fdf3613d5f54c30a4532",
+   "fileSha256": "48edc7101696d8d385a6687d253d4caaf532320bef2f2ee7a57b480d9367bf1b",
+   "gameChain": {
+    "peak": 0.0134,
+    "rms": 0.0017,
+    "rmsDb": -8.7
+   }
+  },
+  {
+   "nom": "crowdOoh",
+   "fn": "crowdOoh",
+   "args": [],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 19,
+   "file": "crowdOoh.wav",
+   "asset": "/Game/Audio/Cso/crowdOoh.crowdOoh",
+   "seed": 183470932,
+   "samples": 50399,
+   "seconds": 1.049979,
+   "peak": 0.016724,
+   "rms": 0.001785,
+   "clipped": 0,
+   "pcmSha1": "9558faa79b14c6babf78b6053a1c38888e4f9fcc",
+   "fileSha256": "d6908a2a7f7c0c53a22d1f3cfc3fff8d664694ab6df3f16aab5c6a22ed46bea9",
+   "gameChain": {
+    "peak": 0.0254,
+    "rms": 0.0027,
+    "rmsDb": 3.5
+   }
+  },
+  {
+   "nom": "fault",
+   "fn": "fault",
+   "args": [],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 21,
+   "file": "fault.wav",
+   "asset": "/Game/Audio/Cso/fault.fault",
+   "seed": 2936529791,
+   "samples": 14387,
+   "seconds": 0.299729,
+   "peak": 0.201422,
+   "rms": 0.035314,
+   "clipped": 0,
+   "pcmSha1": "d090ace57f8b8fecf492064e634d856c13c8dbcd",
+   "fileSha256": "911f08e88715cf1f14a15a945675f6de561f679b6c80a5eaf99f540dcc79e095",
+   "gameChain": {
+    "peak": 0.0747,
+    "rms": 0.0175,
+    "rmsDb": -6.1
+   }
+  },
+  {
+   "nom": "hoof_sand_1p4",
+   "fn": "hoof",
+   "args": [
+    "sand",
+    1.4
+   ],
+   "src": [
+    "game.js"
+   ],
+   "calls": 256,
+   "file": "hoof_sand_1p4.wav",
+   "asset": "/Game/Audio/Cso/hoof_sand_1p4.hoof_sand_1p4",
+   "seed": 2394084028,
+   "samples": 12809,
+   "seconds": 0.266854,
+   "peak": 0.024598,
+   "rms": 0.002526,
+   "clipped": 0,
+   "pcmSha1": "9ef8c9b7c5c6d82e84bdc8bf3655b662722d8818",
+   "fileSha256": "90cae3db30483b44facf059753df527667f4df52dd7e2f319c80717c50243341",
+   "gameChain": {
+    "peak": 0.0097,
+    "rms": 0.0013,
+    "rmsDb": -5.8
+   }
+  },
+  {
+   "nom": "landing_1",
+   "fn": "landing",
+   "args": [
+    1
+   ],
+   "src": [
+    "game.js"
+   ],
+   "calls": 256,
+   "file": "landing_1.wav",
+   "asset": "/Game/Audio/Cso/landing_1.landing_1",
+   "seed": 600354072,
+   "samples": 12104,
+   "seconds": 0.252167,
+   "peak": 0.033052,
+   "rms": 0.003181,
+   "clipped": 0,
+   "pcmSha1": "93de82a15274444fdc2346a6ac5ce49d9feb789d",
+   "fileSha256": "fca84111bbc199ffdcf5c886e241a6add51eacb834e6eed618f00e80a2dd206c",
+   "gameChain": {
+    "peak": 0.0358,
+    "rms": 0.0026,
+    "rmsDb": -1.6
+   }
+  },
+  {
+   "nom": "neigh",
+   "fn": "neigh",
+   "args": [],
+   "src": [
+    "game.js"
+   ],
+   "calls": 54,
+   "file": "neigh.wav",
+   "asset": "/Game/Audio/Cso/neigh.neigh",
+   "seed": 3443940912,
+   "samples": 48020,
+   "seconds": 1.000417,
+   "peak": 0.044557,
+   "rms": 0.006877,
+   "clipped": 0,
+   "pcmSha1": "7c3f54f712386ee3ab957c62f146d394486c77b2",
+   "fileSha256": "4de3d264fbe9719928f6dc19dfa91526b708fae39e0e3055d94afe529213b4b7",
+   "gameChain": {
+    "peak": 0.043,
+    "rms": 0.0086,
+    "rmsDb": 1.9
+   }
+  },
+  {
+   "nom": "notify",
+   "fn": "notify",
+   "args": [],
+   "src": [
+    "gameplay/missions.js"
+   ],
+   "calls": 94,
+   "file": "notify.wav",
+   "asset": "/Game/Audio/Cso/notify.notify",
+   "seed": 2691530300,
+   "samples": 15839,
+   "seconds": 0.329979,
+   "peak": 0.09537,
+   "rms": 0.017754,
+   "clipped": 0,
+   "pcmSha1": "fc74afe36f5f1a52d85ef307d3ff573c29f957cd",
+   "fileSha256": "8204075f540e4819c85038aa6a948c7441edcdac45bb1aa3fbceb828353cb39c",
+   "gameChain": {
+    "peak": 0.1204,
+    "rms": 0.0184,
+    "rmsDb": 0.3
+   }
+  },
+  {
+   "nom": "railFall",
+   "fn": "railFall",
+   "args": [],
+   "src": [
+    "gameplay/obstacles.js"
+   ],
+   "calls": 50,
+   "file": "railFall.wav",
+   "asset": "/Game/Audio/Cso/railFall.railFall",
+   "seed": 3547527644,
+   "samples": 21798,
+   "seconds": 0.454125,
+   "peak": 0.194708,
+   "rms": 0.027979,
+   "clipped": 0,
+   "pcmSha1": "1ed58e594b6db73c1f9310836871833b3c772118",
+   "fileSha256": "2d3aa4ab424720dc524d547577a25e8a6d5b89ccff9ddbf9776600c1be117083",
+   "gameChain": {
+    "peak": 0.0732,
+    "rms": 0.0146,
+    "rmsDb": -5.7
+   }
+  },
+  {
+   "nom": "railTouch",
+   "fn": "railTouch",
+   "args": [],
+   "src": [
+    "gameplay/obstacles.js"
+   ],
+   "calls": 2,
+   "file": "railTouch.wav",
+   "asset": "/Game/Audio/Cso/railTouch.railTouch",
+   "seed": 37391532,
+   "samples": 6720,
+   "seconds": 0.14,
+   "peak": 0.055391,
+   "rms": 0.007614,
+   "clipped": 0,
+   "pcmSha1": "63815ac8ea8cdabf91134e75173cc23a767e717c",
+   "fileSha256": "c0450fae806d9a862d7be6bbd656fcbf3aef03ae45f528be7e1b38d4615ab675",
+   "gameChain": {
+    "peak": 0.0202,
+    "rms": 0.0032,
+    "rmsDb": -7.5
+   }
+  },
+  {
+   "nom": "snort",
+   "fn": "snort",
+   "args": [],
+   "src": [
+    "game.js"
+   ],
+   "calls": 256,
+   "file": "snort.wav",
+   "asset": "/Game/Audio/Cso/snort.snort",
+   "seed": 777478711,
+   "samples": 23959,
+   "seconds": 0.499146,
+   "peak": 0.05118,
+   "rms": 0.00433,
+   "clipped": 0,
+   "pcmSha1": "ffc29eefb04975dcfbf27669d6242abbbcdb9cf3",
+   "fileSha256": "41d8e7dc90201926ab2e8f23164d6a06a16fdcf2267f05f56db7a830f9c635f2",
+   "gameChain": {
+    "peak": 0.0331,
+    "rms": 0.0037,
+    "rmsDb": -1.4
+   }
+  },
+  {
+   "nom": "thud",
+   "fn": "thud",
+   "args": [],
+   "src": [
+    "gameplay/obstacles.js"
+   ],
+   "calls": 49,
+   "file": "thud.wav",
+   "asset": "/Game/Audio/Cso/thud.thud",
+   "seed": 3405389336,
+   "samples": 14387,
+   "seconds": 0.299729,
+   "peak": 0.197455,
+   "rms": 0.033475,
+   "clipped": 0,
+   "pcmSha1": "c7a6e15f92d611899acb1e34aa394c22ab2f73e3",
+   "fileSha256": "295dbdb872e1a9bf485c3c91718c9b7407cbbdbbf2f4f8d6911be96fb6b630d7",
+   "gameChain": {
+    "peak": 0.0643,
+    "rms": 0.0167,
+    "rmsDb": -6.1
+   }
+  },
+  {
+   "nom": "tone_1568_0p1_sine_0p08",
+   "fn": "tone",
+   "args": [
+    1568,
+    0.1,
+    "sine",
+    0.08
+   ],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 50,
+   "file": "tone_1568_0p1_sine_0p08.wav",
+   "asset": "/Game/Audio/Cso/tone_1568_0p1_sine_0p08.tone_1568_0p1_sine_0p08",
+   "seed": 2847048375,
+   "samples": 7200,
+   "seconds": 0.15,
+   "peak": 0.063784,
+   "rms": 0.010601,
+   "clipped": 0,
+   "pcmSha1": "6768a277ce1ca1a8c10e762df145235755aa651c",
+   "fileSha256": "cc543820b893ddefe18aba1ed6a1e2d04c154087e3a6021db05a182815955eb3",
+   "gameChain": {
+    "peak": 0.0232,
+    "rms": 0.0046,
+    "rmsDb": -7.3
+   }
+  },
+  {
+   "nom": "tone_990_0p06_sine_0p06",
+   "fn": "tone",
+   "args": [
+    990,
+    0.06,
+    "sine",
+    0.06
+   ],
+   "src": [
+    "gameplay/courses.js"
+   ],
+   "calls": 212,
+   "file": "tone_990_0p06_sine_0p06.wav",
+   "asset": "/Game/Audio/Cso/tone_990_0p06_sine_0p06.tone_990_0p06_sine_0p06",
+   "seed": 3325268736,
+   "samples": 5280,
+   "seconds": 0.11,
+   "peak": 0.046236,
+   "rms": 0.007567,
+   "clipped": 0,
+   "pcmSha1": "fb5d6dc65c212268e7549a3db314612907d5ca46",
+   "fileSha256": "3da093d8ffa3f7ff0de57844dd20117b8535b43f9679fc6d279df63060880fcd",
+   "gameChain": {
+    "peak": 0.017,
+    "rms": 0.003,
+    "rmsDb": -8.1
+   }
+  },
+  {
+   "nom": "crowd_loop",
+   "fn": null,
+   "args": [],
+   "src": [
+    "core/audio.js"
+   ],
+   "calls": 0,
+   "file": "crowd_loop.wav",
+   "asset": "/Game/Audio/Cso/crowd_loop.crowd_loop",
+   "loop": true,
+   "seed": 20261120,
+   "samples": 96000,
+   "seconds": 2,
+   "peak": 0.500194,
+   "rms": 0.129298,
+   "clipped": 0,
+   "pcmSha1": "9f0c895454cdb79704df954e707a45961741f05e",
+   "fileSha256": "5ad390bf90c3e6197c5d4bcb9eba866b49f875a9689054d0cc601bb5c2a73da1"
+  }
+ ]
+}

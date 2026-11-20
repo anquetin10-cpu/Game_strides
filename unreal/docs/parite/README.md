@@ -31,6 +31,7 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/StridesGrandTour/Content/Data/cso_result_style.json` | `export-cso-result.mjs --screens` | relevé de base de la carte de bilan, par langue (fr, en) et par viewport (844 × 390, 667 × 308) : styles calculés, boîtes et largeur Geist de chaque texte (état du bilan de `t9-parcours`), lus par `UStridesCsoScreens` (mise en page `csoResultLayout`, étalonnage de la police du moteur) |
 | `unreal/core/tests/oracles/cso_result_layout.json` | `export-cso-result.mjs --screens` | mise en page de la carte de bilan dans le navigateur pour les 15 états posés × 2 langues × 2 viewports (boîtes, largeurs de texte des cellules, `scrollHeight`, classe `more` en haut et défilé jusqu'en bas) ; rejoué par `testCsoResultLayout` et `Strides.Cso.ResultLayout` |
 | canal « bl » et `ep.bt` de `cso_runs/`, exécutions `t11-refus`, `t11-manche-2`, `t11-trois-barres` | `export-cso-runs.mjs --only=t11-refus,t11-manche-2,t11-trois-barres` (et toute exécution qui atteint le bilan) | carte de bilan relevée dans le DOM à l'image où elle s'ouvre ; meilleur temps `save.data.bestTimes.cso_train` relevé quand il change (tranche T11) |
+| `unreal/StridesGrandTour/Content/Data/cso_sounds.json`, `unreal/core/tests/oracles/cso_crowd.json`, `.tmp/unreal-import/cso-sounds/*.wav` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-sounds.mjs` (~1 min ; `--no-game` : sans le relevé du niveau du public dans le jeu) | sons de l'épreuve (tranche T12) : chaque variante appelée dans `cso_runs/` rendue hors ligne par la vraie classe `Audio` de `src/core/audio.js` (OfflineAudioContext passé à `unlock()`, `Math.random` → `mulberry32` à graine fixe), PCM 16 bits 48 kHz après le gain maître et avant le compresseur (mesuré par son : `gameChain`), bus du public débranché ; boucle du bus du public ; manifeste (clé, actif, SHA-1 du PCM, constantes du bus lues dans le source, niveau relevé dans le jeu autour des 90 m) ; gain du bus du public rendu échantillon par échantillon (7 séquences d'images) rejoué par `testCsoCrowd` |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
 Export en cours d'exécution (serveur Vite sur `http://127.0.0.1:5173`, sinon
@@ -84,7 +85,7 @@ cmake -S unreal/core -B build/core && cmake --build build/core && ctest --test-d
   -ReportExportPath="$PWD/.tmp/automation" > .tmp/automation.log   # chaque test : Result={Success}
 python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py, mutations-cso-run.py, mutations-cso-camera.py,
                                                  # mutations-cso-hud.py, mutations-cso-input.py, mutations-cso-aids.py,
-                                                 # mutations-cso-entry.py
+                                                 # mutations-cso-entry.py, mutations-cso-audio.py (~25 min)
                                                  # (~1 min à ~2 min, objets communs compilés une fois)
 ```
 
@@ -316,6 +317,26 @@ python3 scripts/unreal/parite-montage.py unreal/docs/parite/cso bilan-
   `bilan-2-carte-844x390-unreal.png` dans `bilan-touch-844x390.png` (partie au doigt, chrono différent : voir
   `cso-ecarts.md`, T11).
 - Mutations : `python3 scripts/unreal/mutations-cso-ranking.py` (code 0 attendu, non détectées déclarées dans `ATTENDUES`).
+
+### Sons de l'épreuve (tranche T12) et Pixel Streaming
+
+```sh
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-sounds.mjs        # WAV, manifeste, cso_crowd.json
+"$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" -run=pythonscript \
+  -script="$PWD/scripts/unreal/import-cso-sounds.py" -unattended -nosplash -nullrhi           # /Game/Audio/Cso (PCM)
+python3 scripts/unreal/check-pixel-streaming-ios.py [--binary=unreal/StridesGrandTour/Binaries/IOS/StridesGrandTour-IOS-Shipping]
+```
+
+- Rendu déterministe : deux exports donnent les mêmes octets ; Chrome somme les connexions d'une entrée dans un ordre
+  variable, un rendu peut différer d'un pas de quantification sur quelques échantillons (applause_1p3_4, bell, bell_2) :
+  le fichier existant est alors gardé (signalé à l'export).
+- Jeu : `UStridesCsoAudio` (sous-système du monde) écrit chaque appel de premier niveau au journal (`fn(arguments)@fichier`,
+  même écriture que `testCsoSounds`) et joue son WAV ; bus du public : boucle `crowd_loop` dont le volume suit
+  `strides::CsoCrowd` (ambience à la fin de chaque image de jeu, cheer, applause) sur l'horloge audio (temps réel).
+- Preuves : `testCsoSounds` (journal du portage = canal « audio » des 94 exécutions), `testCsoCrowd`, tests moteur
+  `Strides.Cso.AudioAssets` (SHA-1 du PCM importé) et `Strides.Cso.Audio` (sources câblées dans le jeu),
+  `mutations-cso-audio.py`. `check-pixel-streaming-ios.py` : `.uproject` (PixelStreaming2 limité à Mac), modules de la cible
+  IOS et Mac selon UnrealBuildTool (`-Mode=JsonExport`), chaîne « pixelstreaming » dans un binaire iOS lié.
 
 ## 4. Montage côte à côte
 

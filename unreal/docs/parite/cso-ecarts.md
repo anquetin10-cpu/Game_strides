@@ -1228,6 +1228,55 @@ Base `97d1d013`. C = corrigé, D = déclaré.
 - **Dépendances / risques** : T3, T4, puis toutes les tranches pour la recette. `audio.js` suppose un `AudioContext` vivant :
   faisabilité du rendu hors ligne à confirmer ; validation sur appareil bloquée par `idevice_id` (VM:44-45).
 
+#### Réalisation de T12 (20/11/2026)
+
+Base `0fdf2f4b`. Niveaux séparés : code écrit, compilé (Mac Editor et cible IOS Shipping liée), testé (cœur et moteur),
+lu en jeu sur Mac sans écoute ; **aucun appareil iOS**, **aucun paquet iOS** (disque, voir plus bas).
+
+- **Rendu hors ligne** (`scripts/unreal/export-cso-sounds.mjs`) : la vraie classe `Audio` de `src/core/audio.js` est
+  chargée dans une page de test (rien n'est modifié dans `src/`) ; `unlock()` reçoit un `OfflineAudioContext` (48 kHz,
+  mono) à la place d'`AudioContext` : même graphe que le jeu (gain maître 0,8, compresseur, boucles d'ambiance, tampon de
+  bruit de 2 s). `Math.random` → `mulberry32` (`src/core/math.js`), graine fixe pour le tampon de bruit, graine par clé pour
+  l'appel. Variantes rendues : **toutes celles appelées dans `cso_runs/`** (relevées dans l'oracle, aucune liste écrite à la
+  main) : 18 sons pour les 14 fonctions de §12 (applause ×3, bell ×2, tone ×2, hoof « sand » 1,4, landing 1, notify, snort,
+  railTouch, railFall, thud, fault, crowdOoh, neigh) plus click ; `cheer` n'est pas un son mais une automation du gain du
+  bus du public ; `breath` n'est pas rendu (foulées de l'animation non portées). WAV PCM 16 bits **après le gain maître et
+  avant le compresseur** ; boucle du bus du public (seconde période de 2 s du bruit bouclé passé au passe-bande 900 Hz).
+  Deux exports donnent les mêmes octets (un rendu peut différer d'un pas de quantification sur quelques échantillons :
+  ordre de sommation de Chrome ; le fichier existant est gardé).
+- **Import** (`scripts/unreal/import-cso-sounds.py`) : 19 `USoundWave` sous `/Game/Audio/Cso` (808 Ko), compression PCM,
+  boucle jouée même silencieuse ; `Strides.Cso.AudioAssets` : PCM importé (`GetImportedSoundWaveData`) = SHA-1 du rendu
+  pour les 19, 48 kHz, mono.
+- **Logique pure** (`StridesCore/CsoAudio`) : écouteurs de `game.js:716-728` (landing, snort, hoof à l'appel en
+  concours, neigh), click d'`interact.js:52`, clé des WAV, fichier appelant, `WebAudioParam` (sémantique de
+  setValueAtTime / setTargetAtTime / cancelScheduledValues), bus du public (`ambience`, `cheer`, `applause`), niveau du
+  public (`game.js:1553`), manifeste. Constantes lues dans le source par l'exporteur.
+- **Jeu** (`UStridesCsoAudio`) : journal de chaque appel de premier niveau et lecture du WAV ; sources :
+  `AStridesHorse::TickCso` (cheval, barres, cabré de la glissade), `AStridesCourse` (déroulé, chute des barres),
+  `AStridesPlayerController::DoAction` (click d'une action ou d'une réplique) ; ambience à la fin de chaque image de jeu.
+- **Oracle et preuves** : `testCsoSounds` : journal du portage = canal « audio » des **94 exécutions** (52 446 images,
+  1 367 appels, ordre compris) ; exclus et déclarés : breath (1 224), sons des obstacles des 60 exécutions légères (82),
+  sons du déroulé des 32 exécutions posées en cours de parcours (36). `testCsoCrowd` : gain du bus du public rendu par le web
+  (7 séquences, 3 380 relevés) rejoué à 4,47e-5 près (plateau du navigateur juste sous la cible, 0,0479553 au lieu de
+  0,048 ; cause supposée, à confirmer : float32) ; niveau relevé dans le jeu à 88 / 89,5 / 90,5 / 92 / 40 / 200 m.
+  `mutations-cso-audio.py` : 27 mutations, 22 détectées, 5 déclarées (landing 0,5 et snort des chevaux du décor, sabot
+  hors commandes de concours : jamais exercés ; annulation « > t » : doublon sans effet ; bord des 90 m non relevé).
+  `Strides.Cso.Audio` : sources câblées en jeu. ctest : 300 639 vérifications, 0 échec ; Automation : 30/30.
+- **Écarts déclarés** : compresseur du bus maître non porté (par son seul, la chaîne du web change le RMS de −8,7 à
+  +3,5 dB : mesure `gameChain` du manifeste) ; une seule réalisation du hasard au lieu d'un tirage par appel ; pas des
+  sabots, souffle, vent, mer, moteur, musique, pluie, oiseaux non portés ; réglage « Son » absent de la carte Pause ;
+  écoute réelle non faite (sortie du Mac mini : téléviseur HDMI « Beyond TV ») ; sol du sabot passé « sand » par le jeu.
+- **Pixel Streaming** (`scripts/unreal/check-pixel-streaming-ios.py`) : `.uproject` (PixelStreaming2, `PlatformAllowList`
+  `["Mac"]`) ; UnrealBuildTool `-Mode=JsonExport` : cible IOS Development 429 modules, **aucun** PixelStreaming ; cible
+  Mac 486 modules dont 7 PixelStreaming2 (témoin) ; cible **IOS Shipping compilée et liée** (`Build.sh StridesGrandTour IOS
+  Shipping` : 36 unités, binaire arm64 de 235 Mo, 0 occurrence de « pixelstreaming ») ; échec à la finalisation de l'app
+  (« Signing for "StridesGrandTour" requires a development team ») : blocage de signature déjà connu. La cible IOS ne
+  compilait plus depuis T9 (`MiniJson.h` lève des exceptions, interdites dans le module de jeu en Shipping : 6 tests et
+  `StridesShots.cpp`) : exceptions permises dans `StridesGrandTour.Build.cs`, comme dans `StridesCore`.
+- **Paquet iOS complet : non fait (disque)** : 12,0 Go libres après la compilation IOS (12,8 Go avant), sous le seuil de
+  12 Go exigé avant ET après l'estimation (cuisson + mise en scène + archive : environ 3 Go d'après les sorties du
+  18/11 : `Saved/Cooked` 710 Mo, `Saved/StagedBuilds` 1,2 Go, archive 0,9 Go).
+
 ### Contrôle des remarques des contrôles adverses (hygiène, 20/11/2026)
 
 Base `055c2c92`. Chaque remarque des contrôles de R0 à T8 est corrigée, prouvée déjà réglée, ou déclarée (branche

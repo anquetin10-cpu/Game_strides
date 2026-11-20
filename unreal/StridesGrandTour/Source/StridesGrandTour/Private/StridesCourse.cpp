@@ -1,4 +1,5 @@
 #include "StridesCourse.h"
+#include "StridesCsoAudio.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -324,10 +325,11 @@ void AStridesCourse::FlushRunCalls()
 		if (C.fn == "big" && C.args.size() > 1 && !C.args[1].isNum && !C.args[1].s.empty()) Text += TEXT(" · ") + FString(UTF8_TO_TCHAR(C.args[1].s.c_str()));
 		OnCourseEvent.Broadcast(UTF8_TO_TCHAR(C.fn.c_str()), Text);
 	}
-	for (const strides::CsoCall& C : RunPtr->takeAudio())
 	{
-		AudioCalls.Add(Line(C));  // sons de l'épreuve : tranche T12
-		UE_LOG(LogTemp, Verbose, TEXT("Strides épreuve : son %s"), *AudioCalls.Last());
+		// Sons de l'épreuve (tranche T12) : journal de l'acteur et lecture par UStridesCsoAudio.
+		const std::vector<strides::CsoCall> Sounds = RunPtr->takeAudio();
+		for (const strides::CsoCall& C : Sounds) AudioCalls.Add(Line(C));
+		if (UStridesCsoAudio* Audio = GetWorld() ? GetWorld()->GetSubsystem<UStridesCsoAudio>() : nullptr) Audio->RunCalls(Sounds);
 	}
 	// Entrée en piste (courses.js:453-455) : hauteurs de l'épreuve posées (Obstacles.setHeights), barres remises sur
 	// leurs taquets (resetRails), puis numéro 1 surligné (ci-dessous).
@@ -481,6 +483,9 @@ void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double 
 	In.focusZ = FocusZ;
 	strides::CsoFenceOut Out;
 	strides::csoFencesUpdate(CoreObstacles, CoreStates, In, Out);
+	// Choc de la barre au premier rebond (obstacles.js:649 : thud), tranche T12.
+	if (UStridesCsoAudio* Audio = GetWorld() ? GetWorld()->GetSubsystem<UStridesCsoAudio>() : nullptr)
+		for (const strides::CsoFenceSound S : Out.sounds) Audio->FenceSound(S);
 	for (int32 I = 0; I < Fences.Num() && I < (int32)CoreStates.size(); I++)
 		if (Fences[I]) Fences[I]->ApplyRails(CoreStates[I]);
 }

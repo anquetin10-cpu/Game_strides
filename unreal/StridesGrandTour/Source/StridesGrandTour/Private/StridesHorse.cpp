@@ -1,4 +1,5 @@
 #include "StridesHorse.h"
+#include "StridesCsoAudio.h"
 #include "StridesPlayerController.h"
 #include "Animation/AnimationAsset.h"
 #include "Camera/CameraComponent.h"
@@ -325,8 +326,11 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 	Events.clear();
 	strides::csoHorseStep(Sim, In, Obs, Events, R, JP, HP);
 	FrameEvents.Reset();
+	// Sons (tranche T12) : écouteurs de game.js:716-728, cheval du joueur, commandes de concours, sol de la carrière.
+	UStridesCsoAudio* Audio = GetWorld() ? GetWorld()->GetSubsystem<UStridesCsoAudio>() : nullptr;
 	for (const strides::CsoHorseEvent E : Events)
 	{
+		if (Audio) Audio->HorseEvent(E, In.playerHorse, In.csoControls, "sand");
 		FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
 		if (E == strides::CsoHorseEvent::Jump && Sim.hasLastJump) LastTakeoff = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Sim.lastPlan)));
 		// game.js:727 : horse:jumpEarly → hud.jumpEarly() (bouton « Trop tôt » 600 ms, tranche T9).
@@ -350,6 +354,12 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 		strides::csoFencesUpdateHorse(Sim, Obs, Course->FenceStates(), U, Out, JP, HP, Data ? Data->FenceParams() : strides::csoFenceDefaults());
 		// Dernier saut (horse._lastJump), lu par le mot d'appel des écouteurs d'obstacle (tranche T7).
 		Course->NoteLastJump(Sim.hasLastJump, Sim.lastJumpObstacle, Sim.lastPlan, Sim.lastJumpTime);
+		// Sons des barres (knock, _judge) puis cabré de la glissade (horse:refuse → neigh), avant les écouteurs de courses.js.
+		if (Audio)
+		{
+			for (const strides::CsoFenceSound S : Out.sounds) Audio->FenceSound(S);
+			for (const strides::CsoHorseEvent E : Out.horse) Audio->HorseEvent(E, In.playerHorse, In.csoControls, "sand");
+		}
 		for (const strides::CsoHorseEvent E : Out.horse) FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
 		// Événements d'obstacle vus par l'épreuve (courses.js) : un refus compté remet la cadence à 0.
 		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};

@@ -23,7 +23,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun code : AStridesHorse avance sans borne (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:365), TerrainHeight ne fait que bloquer la hauteur au bord (StridesDataSubsystem.cpp:269-280), le cavalier à pied peut marcher sur le relief prolongé jusqu'à 4,2 km (StridesScenery.cpp:139-200).",
+  "preuve": "Aucun code : AStridesHorse avance sans borne (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:375), TerrainHeight ne fait que bloquer la hauteur au bord (StridesDataSubsystem.cpp:269-280), le cavalier à pied peut marcher sur le relief prolongé jusqu'à 4,2 km (StridesScenery.cpp:139-200).",
   "ecart": "Pas de limite de carte ni de notion de région Deauville / Paris.",
   "tranche": "c"
  },
@@ -50,7 +50,7 @@
    "src/world/terrain.js",
    "src/world/world.js"
   ],
-  "unreal": "UStridesDataSubsystem::TerrainHeight (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:269-280, même découpage en triangles mais sur la grille de 2 m) ; AStridesHorse::GroundAt (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:173-179) ; cavalier à pied : collisions physiques du maillage procédural (StridesScenery.cpp:201)",
+  "unreal": "UStridesDataSubsystem::TerrainHeight (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:269-280, même découpage en triangles mais sur la grille de 2 m) ; AStridesHorse::GroundAt (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:174-180) ; cavalier à pied : collisions physiques du maillage procédural (StridesScenery.cpp:201)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:127-130) vérifie TerrainHeight en 4 points, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Ces points sont des nœuds de la grille Unreal de 2 m (donc égaux à analyticHeight) mais aucun n'est un nœud du maillage web de 6 m ((x + 600) / 6 ou (z + 600) / 6 non entier) : les valeurs attendues ne sont pas celles de getHeight ; seules les deux zones aplanies à 3 m (écurie, Pôle) coïncident. Aucun test entre les nœuds, là où grilles de 2 m et de 6 m divergent.",
@@ -186,7 +186,7 @@
   "unreal": "Géométrie exportée (architecture.glb) ; centre de carrière exporté par scripts/unreal/export-data.mjs:82 (cso_course_pole.json arena) et lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:123-125 ; parcours posé dessus par AStridesWorldDirector::BuildWorld (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Centre de carrière des données (Content/Data/cso_course_pole.json, arena) recoupé avec le web en cours d'exécution : ligne de départ CSO_START du jeu web (unreal/core/tests/oracles/cso_runs/, setup.start) = repère du tracé + arena à 2e-6 près (unreal/core/tests/test_core.cpp:264-370) ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:128) ne vérifie que le sol aplani à 3 m en (330, -224), qui relève de monde.relief-analytique ; le placement Unreal du parcours (AStridesCourse) n'est pas comparé au web ; module compilé (UBT du 18/11/2026 : Result: Succeeded). Montage côte à côte unreal/docs/parite/cso/carriere-aerienne.png (scripts/unreal/export-cso-runs.mjs --shots, -StridesShots=cso, scripts/unreal/parite-montage.py ; web à gauche, Unreal à droite, 844 × 390 chacun vérifiés par sips) : coins de la carrière, tribunes, club-house, tableau d'affichage et écuries aux mêmes pixels à quelques pixels près ; sol Unreal sous l'œil 4,548 m contre 4,551 m au web, 3,000 m sous la cible et le cheval des deux côtés.",
+  "preuve": "Centre de carrière des données (Content/Data/cso_course_pole.json, arena) recoupé avec le web en cours d'exécution : ligne de départ CSO_START du jeu web (unreal/core/tests/oracles/cso_runs/, setup.start) = repère du tracé + arena à 2e-6 près (unreal/core/tests/test_core.cpp:290-396) ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:128) ne vérifie que le sol aplani à 3 m en (330, -224), qui relève de monde.relief-analytique ; le placement Unreal du parcours (AStridesCourse) n'est pas comparé au web ; module compilé (UBT du 18/11/2026 : Result: Succeeded). Montage côte à côte unreal/docs/parite/cso/carriere-aerienne.png (scripts/unreal/export-cso-runs.mjs --shots, -StridesShots=cso, scripts/unreal/parite-montage.py ; web à gauche, Unreal à droite, 844 × 390 chacun vérifiés par sips) : coins de la carrière, tribunes, club-house, tableau d'affichage et écuries aux mêmes pixels à quelques pixels près ; sol Unreal sous l'œil 4,548 m contre 4,551 m au web, 3,000 m sous la cible et le cheval des deux côtés.",
   "ecart": "Projecteurs sans lumière (pas de nuit) ; d'après unreal/docs/parite/cso/carriere-aerienne.png : public des tribunes, détente sans obstacles, clôture du petit côté sud peu visible, teintes du sable et de l'herbe, ombres portées (soleil orienté comme au web, rendu de bureau Mac et non rendu mobile) ; aucune comparaison au pixel.",
   "tranche": "c"
  },
@@ -813,7 +813,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
-  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement direct, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:126, 365, 430) ; maillage exact au lieu des volumes simplifiés ; pas de hauteur de sommet franchissable.",
+  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement direct, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:127, 375, 440) ; maillage exact au lieu des volumes simplifiés ; pas de hauteur de sommet franchissable.",
   "tranche": "socle"
  },
  {
@@ -823,7 +823,7 @@
   "js": [
    "src/world/colliders.js"
   ],
-  "unreal": "USpringArmComponent du cavalier et du cheval (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-61, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:57-64 ; en épreuve, caméra de concours sondée par CameraBlockedAt, StridesHorse.cpp:459-466, tranche T6), test de collision par défaut du moteur (non réglé explicitement)",
+  "unreal": "USpringArmComponent du cavalier et du cheval (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-61, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:58-65 ; en épreuve, caméra de concours sondée par CameraBlockedAt, StridesHorse.cpp:469-476, tranche T6), test de collision par défaut du moteur (non réglé explicitement)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
@@ -837,7 +837,7 @@
   "js": [
    "src/world/world.js"
   ],
-  "unreal": "Cavalier à pied : la capsule marche sur les maillages à collision (Planches exportées) ; cheval : relief seul (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:173-179)",
+  "unreal": "Cavalier à pied : la capsule marche sur les maillages à collision (Planches exportées) ; cheval : relief seul (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:174-180)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
