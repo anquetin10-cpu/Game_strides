@@ -239,11 +239,11 @@
   "js": [
    "src/gameplay/missions.js"
   ],
-  "unreal": "UStridesSaveSubsystem::SaveNow et LoadNow (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:57-62, 76-78) : Credits, Reputation, ActiveMissionId et CompletedMissions dans des UPROPERTY de UStridesSaveGame (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesSaveSubsystem.h:16-19), hors du JSON strides::SaveGame ; Restore borne à 0 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:90-97).",
+  "unreal": "UStridesSaveSubsystem::SaveNow et LoadNow (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:59-64, 78-80) : Credits, Reputation, ActiveMissionId et CompletedMissions dans des UPROPERTY de UStridesSaveGame (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesSaveSubsystem.h:16-19), hors du JSON strides::SaveGame ; Restore borne à 0 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:90-97).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de la carrière sauvegardée (Strides.Core.Save ne lit que le JSON du cœur). testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
-  "ecart": "Deux sources de vérité : strides::SaveGame.money et .reputation ne sont pas reliés à Credits et Reputation ; sauvegarde manuelle seulement (F5 ou bouton tactile SAUVER, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:131) ; l'import de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:83-105, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:96-136) ne reprend ni completed ni checkpoint et ne remplit pas la carrière ; choix, drapeaux, statistiques et avis absents.",
+  "ecart": "Deux sources de vérité : strides::SaveGame.money et .reputation ne sont pas reliés à Credits et Reputation ; sauvegarde manuelle seulement (F5 ou bouton tactile SAUVER, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:131) ; l'import de l'export web (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:83-105, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:125-138) ne reprend ni completed ni checkpoint et ne remplit pas la carrière ; choix, drapeaux, statistiques et avis absents.",
   "tranche": "e"
  },
  {
@@ -255,7 +255,7 @@
    "src/gameplay/story.js",
    "src/gameplay/story2.js"
   ],
-  "unreal": "ActiveMissionId sauvegardé et restauré (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:61, 78).",
+  "unreal": "ActiveMissionId sauvegardé et restauré (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:63, 80).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test.",
@@ -1320,7 +1320,7 @@
   "js": [
    "src/gameplay/interact.js"
   ],
-  "unreal": "AStridesPlayerController::OnInteract (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:412-420), liée à E et au bouton de face gauche (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:98-99) : seulement monter sur le cheval le plus proche à moins de 3 m (AStridesRider::TryMount, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:90-99) ou descendre ; bouton tactile MONTER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:127).",
+  "unreal": "AStridesPlayerController::OnInteract (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:412-419), liée à E et au bouton de face gauche (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:98-99) : seulement monter sur le cheval le plus proche à moins de 3 m (AStridesRider::TryMount, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113) ou descendre ; bouton tactile MONTER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:127).",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "validation-mac-2026-11-17.md l.15 : « monter, accélérer jusqu'au galop à 8,0 m/s, descendre » contrôlé à l'écran ; aucun test du choix d'action.",

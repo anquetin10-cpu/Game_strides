@@ -595,7 +595,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "La cavalière garde une inclinaison fixe de −14° pendant tout le vol (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:144) sans suivre la réception.",
+  "ecart": "La cavalière garde une inclinaison fixe de −14° pendant tout le vol (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:145) sans suivre la réception.",
   "tranche": "b"
  },
  {
@@ -605,7 +605,7 @@
   "js": [
    "src/entities/pjlHorse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:216-231 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179 ; orientation = cap de l'acteur) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:141-155 (cavalière posée sur ce repère, inclinée de 0 à −5° entre 5 et 8 m/s, −14° et 8 cm en avant en l'air, montée fondue sur 0,8 s)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:216-231 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179 ; orientation = cap de l'acteur) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:142-156 (cavalière posée sur ce repère, inclinée de 0 à −5° entre 5 et 8 m/s, −14° et 8 cm en avant en l'air, montée fondue sur 0,8 s)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 a contrôlé à l'écran le suivi de mountpoint_01_0179 (repli saddle_0168) ; le code actuel donne la priorité à saddle_0168 et lit la position seule (commit 7a17a4d2, après la validation) ; aucun test.",

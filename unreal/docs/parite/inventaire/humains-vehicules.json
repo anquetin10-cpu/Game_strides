@@ -193,7 +193,7 @@
    "src/entities/human.js",
    "src/entities/truck.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:93,109,201 (relief et maillages de décor en collision BlockAll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:128 (mode de marche rétabli à la descente)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:93,109,201 (relief et maillages de décor en collision BlockAll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:129 (mode de marche rétabli à la descente)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de la hauteur des pieds ni capture ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-130) vérifie seulement la donnée de relief (4 hauteurs écrites à la main, sans oracle exporté), ni walkHeight ni le contact de la capsule ; unreal/docs/validation-mac-2026-11-17.md ne cite pas la marche sur les surfaces.",
@@ -256,7 +256,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. Le clip Rider_walk est une marche montée (scripts/unreal/export-rider-animations.py:3, :50).",
-  "ecart": "À pied, la cavalière joue en boucle le clip monté Rider_idle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:70, :132) : jambes en position de selle, aucun cycle de marche ni de course, aucun pied posé.",
+  "ecart": "À pied, la cavalière joue en boucle le clip monté Rider_idle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:70, :133) : jambes en position de selle, aucun cycle de marche ni de course, aucun pied posé.",
   "tranche": "b"
  },
  {
@@ -341,7 +341,7 @@
    "src/entities/human/anim.js",
    "src/entities/human/skeleton.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m, possession du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:136-156 (Tick : SetActorTransform sur SeatTransform, fondu SmoothStep de 0,8 s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:216-231 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179, orientation de l'acteur cheval)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m, possession du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:137-157 (Tick : SetActorTransform sur SeatTransform, fondu SmoothStep de 0,8 s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:216-231 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179, orientation de l'acteur cheval)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15-16 et :19 (montée et placement en selle contrôlés sur la version antérieure : os mountpoint_01_0179 d'abord, transformée complète de l'os, modèle rider_f_unreal) ; unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09). Aucun oracle ni capture côte à côte.",
@@ -360,7 +360,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
-  "ecart": "Le corps entier est translaté avec l'os de selle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:155) : aucun amorti par les jambes, pieds solidaires du bassin.",
+  "ecart": "Le corps entier est translaté avec l'os de selle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:156) : aucun amorti par les jambes, pieds solidaires du bassin.",
   "tranche": "b"
  },
  {
@@ -401,7 +401,7 @@
   "js": [
    "src/entities/human/anim.js"
   ],
-  "unreal": "scripts/unreal/export-rider-animations.py:52-53 (Rider_canter 30 images, énergie 0,28 ; Rider_gallop 24 images, énergie 0,40 : flexion de colonne fold × 0,30 et × 0,24) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:144 (inclinaison de 0 à −5° entre 5 et 8 m/s)",
+  "unreal": "scripts/unreal/export-rider-animations.py:52-53 (Rider_canter 30 images, énergie 0,28 ; Rider_gallop 24 images, énergie 0,40 : flexion de colonne fold × 0,30 et × 0,24) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:145 (inclinaison de 0 à −5° entre 5 et 8 m/s)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (légère inclinaison liée à la vitesse, jeu stable à 8 m/s ; code d'inclinaison inchangé depuis) ; clips de galop postérieurs à cette validation, joués ensuite dans le parcours de démonstration (unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09)) sans évaluation de la posture. Aucun oracle.",
@@ -416,7 +416,7 @@
    "src/entities/human/anim.js",
    "src/entities/human.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:142-146 (inclinaison de tout l'acteur : 0 à −5° de 5 à 8 m/s, −14° au saut)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:143-147 (inclinaison de tout l'acteur : 0 à −5° de 5 à 8 m/s, −14° au saut)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (légère inclinaison liée à la vitesse et au saut). Valeurs écrites à la main, sans oracle.",
@@ -431,7 +431,7 @@
    "src/entities/human/anim.js",
    "src/entities/human.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:79-81 (Rider_jump_gallop si SpeedMS ≥ 7 m/s, sinon Rider_jump_canter), :144-146 (−14°, +8 cm vers l'avant, +4 cm) ; scripts/unreal/export-rider-animations.py:54-55 et :71-73 (pli et main rendue selon la phase du clip : 0–0,28 et 0,12–0,42)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:79-81 (Rider_jump_gallop si SpeedMS ≥ 7 m/s, sinon Rider_jump_canter), :145-147 (−14°, +8 cm vers l'avant, +4 cm) ; scripts/unreal/export-rider-animations.py:54-55 et :71-73 (pli et main rendue selon la phase du clip : 0–0,28 et 0,12–0,42)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (inclinaison au saut, jeu stable après le saut, avant l'ajout des clips) ; unreal/docs/decors.md:38-39 (parcours de 10 obstacles joué à cheval le 18/11/2026, après l'ajout des clips de saut), sans évaluation des phases. Aucun oracle des phases.",
@@ -504,7 +504,7 @@
   "js": [
    "src/entities/human.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-134 (Dismount : refusé pendant un saut, élimination si épreuve en cours, 120 cm à gauche et 90 cm plus haut, cap du cheval, clip idle)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-135 (Dismount : refusé pendant un saut, élimination si épreuve en cours, 120 cm à gauche et 90 cm plus haut, cap du cheval, clip idle)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (descendre contrôlé à l'écran). Aucun oracle.",

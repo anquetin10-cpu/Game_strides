@@ -1022,11 +1022,24 @@ qu'aucun oracle ne départage, raison écrite dans le script de mutations et l'i
 changé, sauf pour l'aligner sur le JS (points 17, 25, 33, 34). Abréviations : C = corrigé, R = déjà réglé (preuve),
 D = déclaré, H = historique (rien à réécrire sans force push, interdit).
 
-1. C — `cso.trace-pole` : `CsoCourse.cpp:51-70 (poleDesign)`. Références `fichier:ligne` de l'inventaire revues pour
-   les fichiers de la tranche a (test_core, StridesHUD, StridesHorse, StridesHorse.h, CsoCourse, CsoHorse, CsoFences,
-   StridesCourse, StridesCsoHud, StridesShots, StridesGameMode, StridesDataSubsystem, StridesTouchControls,
-   StridesCoreTests et tests moteur) : 285 références `fichier:ligne` remplacées (décompte par script contre HEAD ;
-   voir 29, 36, 42). Les références vers les fichiers que la tranche a n'a pas touchés n'ont pas été revues.
+1. C — `cso.trace-pole` : `CsoCourse.cpp:51-70 (poleDesign)`. Références `fichier:ligne` de l'inventaire revues en
+   deux passes. Première passe (`58cb93da`) : test_core, StridesHUD, StridesHorse, StridesHorse.h, CsoCourse, CsoHorse,
+   CsoFences, StridesCourse, StridesCsoHud, StridesShots, StridesGameMode, StridesDataSubsystem, StridesTouchControls,
+   StridesCoreTests et tests moteur, 285 références remplacées (voir 29, 36, 42) ; elle laissait de côté d'autres
+   fichiers touchés par la tranche a (contrôle adverse : `StridesSaveSubsystem.cpp`, modifié en `88eec8c7` et `ecc723b0`,
+   références fausses de 2 à 29 lignes). Seconde passe (après ce contrôle), sur les 60 fichiers de code touchés par la
+   tranche a (`git diff --name-only 250a9b4e HEAD`), vers lesquels l'inventaire porte 563 références explicites : relues
+   une à une contre le texte de HEAD, les 184 références vers les 19 fichiers hors première passe, les 20 de
+   `StridesTouchControls.cpp` et toutes les références nues (« :82-89 », « lignes 86-87 », « (83-89 : ») ; dans les
+   fichiers de la première passe, les trois références qu'une projection par diff (texte cité au commit qui l'introduit,
+   suivi jusqu'à HEAD) signalait encore (`StridesHorse.cpp:67`, `:365`, `StridesHUD.cpp:49`), justes ; 54 remplacements :
+   `StridesSaveSubsystem.cpp` (19 : LoadNow 71-96, Dismount 86, ImportWebExport 125-138, ActiveMissionId 63 et 80,
+   LastMessage 67 et 94, record 45-56), `StridesRider.cpp` (19 : +1 après la ligne 119 depuis `88eec8c7` ; TryMount
+   91-113), `StridesPlayerController.cpp` (OnInteract 412-419, 5), `StridesTouchControls.cpp` (3, dont « :127-141 »
+   rendu explicite), `StridesFence.cpp` (2), `StridesCourse.h`, `StridesCsoScenery.cpp`, `StridesDataSubsystem.h`,
+   `MathUtil.h`, `StridesHUD.cpp` (rayon 160 m, ligne 129) et `StridesDataSubsystem.cpp` (LoadScene 200-232). Les
+   références vers les fichiers que la tranche a n'a pas touchés (inchangés depuis la base `250a9b4e`) n'ont pas été
+   revues.
 2. C — commentaire de `SG/StridesDataSubsystem.cpp:123` : `testCourse`.
 3. C — `testRuns` lit la ligne de départ dans l'oracle (`setup.start` : x, z, rot, **w**) et la déclare franchie par
    `strides::lineCrossed` (fonction du cœur, désormais exposée dans `CsoRun.h` : w/2 + 0,3 et cap à 60° compris) ; le
@@ -1077,7 +1090,9 @@ D = déclaré, H = historique (rien à réécrire sans force push, interdit).
     terminée), comme `g.missions.active` du web. La fenêtre de réception de 0,6 s n'est pas exercée en jeu (D, point 10).
 18. R + D — déjà déclaré (`ATTENDUES`, `cso.refus-unique`) ; complété : « distance du détour ignorée » non détectée.
 19. C — démo F8 et `-StridesShots` sans mode rejoués dans un dossier dédié (point 13) ; garde-fou renforcé (point 25).
-20. C — `cso.capacite-cheval` : 44 exécutions (22 scénarios en français et en anglais).
+20. C — `cso.capacite-cheval` : 47 exécutions rejouées depuis le lancement de l'activité franchissent l'étape (21
+    scénarios t4-* en français et en anglais, `droit` et `t7-parfait-barre-2` dans les deux langues, `t6-entree` en
+    français) ; le « 44 (22 scénarios) » de la première passe était faux (contrôle adverse).
 21. C — §2 annoté comme tableau historique (références du 18/11, dont `SG/StridesHUD.cpp`).
 22. C — `etat.json` : recompté par `wc -l` (voir l'inventaire, niveau « Code écrit »).
 23. R — cause établie en R0 (`063d377d`) : cavaliers du décor remis à leur état d'apparition au setup ; réexport de
@@ -1088,7 +1103,8 @@ D = déclaré, H = historique (rien à réécrire sans force push, interdit).
     `…/PROTEGE`, une option relative en minuscules et le vrai dossier `…/Screenshots/strides`.
 26. H — `23d57d32` affirmait un déterminisme atteint en `063d377d` ; HEAD est juste.
 27. C — `cso.obstacles-habillage` dit en toutes lettres la couleur du mur (MI_Brick, MI_Plaster au lieu de #a4553f et
-    #e9e6de : beige saumon contre rouge brique sur les montages).
+    #e9e6de : beige saumon contre rouge brique sur les montages) et passe de identique_prouve à **partiel** (contrôle
+    adverse : l'état contredisait l'écart, le montage montrant la différence) ; tranche a : 27 / 29 / 22.
 28. D — aucun contrôle ne voit un maillage importé en miroir (boîtes symétriques, barycentres pris dans le manifeste) :
     déclaré à l'inventaire ; message et commentaire de `Strides.Parite.CsoScenery` corrigés (« pose des pièces », signe
     des axes non relu) au lieu de « orientation ».
@@ -1102,8 +1118,10 @@ D = déclaré, H = historique (rien à réécrire sans force push, interdit).
     `Strides.Cso.HudWidget` compare sa marge à la position relevée dans le navigateur (0 px). Captures Unreal `hud-*`
     (16) et `cmd-*` (4) refaites en rendu Metal et montages régénérés ; `jeu-1` à `jeu-5` (partie réelle) **non refaites** :
     elles gardent le décalage de 9 px.
-34. C — `UStridesCsoHud::SetCourseViewport` transmet à chaque image la hauteur réelle (px CSS) au modèle de l'épreuve ;
-    `Strides.Cso.HudClock` : 1280 × 720 → deux toasts, 844 × 390 → un, widget figé sans effet.
+34. C — `UStridesCsoHud::SetCourseViewport` transmet la hauteur réelle (px CSS) au modèle de l'épreuve ;
+    `Strides.Cso.HudClock` l'appelle directement : 1280 × 720 → deux toasts, 844 × 390 → un, widget figé sans effet.
+    L'appel à chaque image (`NativeTick`, `SG/StridesCsoHud.cpp:587`) n'est établi que par lecture du code : aucun test
+    ne passe par `NativeTick` (écrit à `interface.toasts`).
 35. D — seuil 420 px (seules 390 et 768 rejouées) et pas dt du décompte des crans (toujours 1/30) non départagés :
     écrit à `interface.toasts` et `interface.cadence-cso`.
 36. C — références de `StridesHUD.cpp` recalées sur le fichier actuel (42 substitutions, toutes les références au fichier relues).

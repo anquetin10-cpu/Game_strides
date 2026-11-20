@@ -23,22 +23,28 @@ vérifications, 0 échec, **23 tests** Automation `Strides` en `Result={Success}
 ## Parité de la tranche a (parcours CSO du Pôle), au 20/11/2026
 
 Source de vérité : l'inventaire (`parite/inventaire/*.json`, rendu en [`PARITE.md`](PARITE.md)) ; 78 lignes marquées
-tranche a : **28 identique_prouve**, **28 partiel**, **22 absent**. Sous-tranches livrées : T1 à T8 (banc, cheval,
+tranche a : **27 identique_prouve**, **29 partiel**, **22 absent**. Sous-tranches livrées : T1 à T8 (banc, cheval,
 obstacles, déroulé et textes, géométrie des obstacles, caméra, HUD d'épreuve, commandes). Restent T9 à T12.
 
 - **Prouvé** (oracle exporté du jeu web, comparé par un test qui passe, ou montage côte à côte dans `parite/cso/`) :
   tracé et hauteurs, plan de saut et qualité de l'appel, conduite de concours et cadence, visée et déclenchement du
-  saut, jugement des barres au passage, décision de refus, pénalités et temps, déroulé de l'épreuve (cloche, départ,
-  départ lancé, arrivée, éliminations, textes en français et en anglais), caméra de concours (dont champ vertical 58°),
-  géométrie des obstacles, lignes et poteau « Chrono » (forme et position ; pas la couleur du mur), logique du HUD
-  d'épreuve et de la file de toasts, logique du joystick et des touches, gel en pause et au téléphone.
-- **Partiel** : rendu du HUD (police du moteur au lieu de Geist, animations non comparées image par image), joystick
-  (rendu approché, pas de fondu de 0,2 s), effet des contacts des membres (porté sans oracle), chute des barres (branches
-  non départagées déclarées), entrée en piste (carte de présentation non portée), record personnel, caméra contre le
-  décor (sonde du moteur, pas les colliders du web), taille rendue du couple cheval-cavalier.
+  saut, réception et refus du cheval, jugement des barres au passage, décision et pénalité de refus, ordre des fautes,
+  temps accordé, pénalités de temps et temps limite, déroulé de l'épreuve (cloche, départ, départ lancé, arrivée,
+  élimination à la descente, textes en français et en anglais), règle de la caméra de concours (dont champ vertical
+  58°), géométrie des chandeliers et des barres.
+- **Partiel** : habillage des obstacles (forme et position prouvées, couleur du mur différente : beige saumon au lieu
+  de rouge brique), rendu du HUD (police du moteur au lieu de Geist, animations non comparées image par image ; sa
+  logique et celle de la file de toasts sont rejouées sans écart, seuil de 420 px et pas du décompte des crans non
+  départagés), joystick (logique identique, rendu approché, pas de fondu de 0,2 s), contacts des membres (non portés :
+  pose animée requise ; effet porté sans oracle), chute des barres (remise en piste sans oracle, branches non
+  départagées déclarées), refus unique (recomptage après détour non exercé), effleurement (son absent), affichage de
+  l'élimination, entrée en piste (carte de présentation non portée), record personnel, caméra dès l'entrée en piste
+  (pas d'orbite manuelle à rendre) et contre le décor (sonde du moteur, pas les colliders du web), taille rendue du
+  couple cheval-cavalier.
 - **Absent** : carte de présentation et plan, bilan et classement simulé, aides à l'appel (bouton SAUT coloré, zone et
-  tracé au sol : T9), poteau interactif (T10), recommencer et record (T11), sons (T12), collisions des ailes,
-  contacts réels des membres, défis.
+  tracé au sol : T9), poteau interactif (T10), carte de bilan et bouton Recommencer (T11 ; le choix Recommencer est
+  écrit dans `CsoRun`, aucun bouton ne l'appelle), sons (T12), collisions des ailes, contacts réels des membres,
+  défis.
 - **Non vérifié** : tout ce qui demande un appareil iOS (toucher réel, facteur de pixels, performances) ; un vrai
   clavier AZERTY.
 
