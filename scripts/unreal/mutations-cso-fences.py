@@ -58,12 +58,47 @@ M = [
  ('vibration : levée 0,012 -> 0,01', '* 0.012 * r.rattle', '* 0.01 * r.rattle'),
  ('profondeur bornée à 0,5 -> 0,3', 'clampd(hit, 0.02, 0.5)', 'clampd(hit, 0.02, 0.3)'),
  ('mur : barre à h − 0,05 -> h', 'railAt(o.h - 0.05, 0)', 'railAt(o.h, 0)'),
+ # Contrôle des remarques (hygiène, 20/11/2026) : branches restées hors de la liste ci-dessus, sondées ; celles qu'aucun
+ # scénario ne discrimine sont listées dans ATTENDUES avec la raison.
+ ('abord : rayon 12 m -> 8 m', 'if (o.off || std::abs(o.x - px) > 12 || std::abs(o.z - pz) > 12) continue;\n    const LocalS a', 'if (o.off || std::abs(o.x - px) > 8 || std::abs(o.z - pz) > 8) continue;\n    const LocalS a'),
+ ('en l\'air sans jt0', 'const bool airborne = s.jumpT >= 0 || s.jt0 >= 0;\n  for', 'const bool airborne = s.jumpT >= 0;\n  for'),
+ ('réception : fenêtre ignorée', '(s.hasLastJump && s.lastJumpObstacle == oi && s.lastLanded && in.time - s.lastLandTime < 0.6)', 'false'),
+ ('refus à l\'abord : marge < −late supprimée', 'plan.zone == Zone::Refuse || (plan.margin < -J.late && plan.ideal <= plan.L) || (s.speed < P.minJumpSpeed && gap < 1.5)) csoRefuse', 'plan.zone == Zone::Refuse || (s.speed < P.minJumpSpeed && gap < 1.5)) csoRefuse'),
+ ('refus à l\'abord : ideal ≤ L ignoré', '(plan.margin < -J.late && plan.ideal <= plan.L) || (s.speed < P.minJumpSpeed && gap < 1.5)) csoRefuse', '(plan.margin < -J.late) || (s.speed < P.minJumpSpeed && gap < 1.5)) csoRefuse'),
+ ('refus à l\'abord : part vers l\'obstacle 0,3 -> 0,5', 'const double toward = -fn * side;  // part', 'const double toward = -fn * side - 0.2;  // part'),
+ ('refus à l\'abord : vitesse 0,5 -> 1 m/s', 'if (toward > 0.3 && s.speed > 0.5) {\n      const double nose = b.s', 'if (toward > 0.3 && s.speed > 1) {\n      const double nose = b.s'),
+ ('postérieurs : chute si éloigné de 8 m -> 20 m', 'std::hypot(o.x - s.x, o.z - s.z) > 8;', 'std::hypot(o.x - s.x, o.z - s.z) > 20;'),
+ ('cause : angle -> far', 'plan->margin >= 0) ? "angle" : "far"', 'plan->margin >= 0) ? "far" : "far"'),
+ ('membres : postérieurs -> antérieurs', ': hit.hind                            ? "hindRail"', ': hit.hind                            ? "foreRail"'),
+ ('membres : barre déjà en chute non ignorée', 'if (hit.bar < (int)st.rails.size() && st.rails[hit.bar].falling) return;', ''),
+ ('membres : profondeur minimale 0,05 -> 0,1', 'std::max(0.05, hit.depth)', 'std::max(0.1, hit.depth)'),
+ ('passage : résultat précédent non annoncé à l\'abord suivant', '    if (s.hasPass && !s.pass.done) finishPass(s.pass, out);\n    s.hasPass = true;\n    s.pass = newPass(oi, dir);', '    s.hasPass = true;\n    s.pass = newPass(oi, dir);'),
+ ('détour : distance ignorée', ' || std::abs(ls) > ro.depth / 2 + 6) s.refusal.away = true;', ') s.refusal.away = true;'),
+ ('obstacle plein : vitesse × 0,55 -> × 0,6 (jugement)', 'if (o.solid) s.speed *= 0.55;\n      }\n    } else if', 'if (o.solid) s.speed *= 0.6;\n      }\n    } else if'),
+ ('entraînement : remontée 2,5 s -> 2 s', 'st.rebuild = time + 2.5;', 'st.rebuild = time + 2;'),
+ ('hors mission : remise à 60 m -> 30 m', '(std::abs(o.x - in.focusX) > 60 || std::abs(o.z - in.focusZ) > 60)', '(std::abs(o.x - in.focusX) > 30 || std::abs(o.z - in.focusZ) > 30)'),
+ ('effleurement : seuil de vibration 0,04 -> 0,06', '} else if (margin < 0.04 &&', '} else if (margin < 0.06 &&'),
 ]
 # Branches portées qu'aucun scénario de cso_runs/ ne discrimine (écrit dans l'inventaire, champ « ecart »).
 ATTENDUES = {
  'membres jugés : 1,2 s -> 0,6 s': 'les postérieurs passent toujours 2,2 m après la sortie avant 0,6 s',
  'recomptage : détour ignoré': 'aucun nouveau refus moins de 5 s après un détour (cabré 1,1 s, demi-tour à 0,8 rad/s)',
  'rebond si |vy| > 0,6 -> 0,4': 'aucun impact entre 0,4 et 0,6 m/s pour des barres de 1,05 à 1,2 m',
+ # Contrôle des remarques (hygiène, 20/11/2026) : branches sondées, non discriminées par les 47 exécutions.
+ 'abord : rayon 12 m -> 8 m': 'équivalente sur le parcours du Pôle : aucun jugement ni refus à plus de ~5 m du centre d’un obstacle',
+ 'en l\'air sans jt0': 'aucun passage de barre ni abord à l’image même de la réception',
+ 'refus à l\'abord : marge < −late supprimée': 'aucun abord où la marge passe sous −late avec ideal ≤ L avant la zone « refuse » ou le refus lent',
+ 'postérieurs : chute si éloigné de 8 m -> 20 m': 'les barres en attente tombent toujours après ~1,1 m de marche, jamais par éloignement',
+ 'cause : angle -> far': 'aucune faute dont le plan est sans cause et de marge ≥ 0 (cause « angle »)',
+ 'membres : postérieurs -> antérieurs': 'aucun contact de membre relevé (canal lc vide dans toutes les exécutions)',
+ 'membres : barre déjà en chute non ignorée': 'aucun contact de membre relevé (canal lc vide dans toutes les exécutions)',
+ 'membres : profondeur minimale 0,05 -> 0,1': 'aucun contact de membre relevé (canal lc vide dans toutes les exécutions)',
+ 'passage : résultat précédent non annoncé à l\'abord suivant': 'aucun obstacle abordé pendant qu’un résultat attend (membres jugés)',
+ 'détour : distance ignorée': 'aucun refus après un éloignement de plus de profondeur / 2 + 6 m sans demi-tour (seul le sens est exercé)',
+ 'obstacle plein : vitesse × 0,55 -> × 0,6 (jugement)': 'aucun obstacle plein (solid) dans le parcours du Pôle (cross seulement)',
+ 'entraînement : remontée 2,5 s -> 2 s': 'obstacles d’entraînement (warmup, home, paris_warm) absents des exécutions',
+ 'hors mission : remise à 60 m -> 30 m': 'aucune barre tombée hors mission dans les exécutions (épreuve en cours)',
+ 'effleurement : seuil de vibration 0,04 -> 0,06': 'aucune barre passée avec une marge entre 0,04 et 0,06 m',
 }
 os.makedirs(out, exist_ok=True)
 others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'Text.cpp', 'SaveGame.cpp')]

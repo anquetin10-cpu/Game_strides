@@ -222,8 +222,9 @@ bool FStridesPariteCsoTest::RunTest(const FString&)
 //  - pour chaque obstacle et chaque état : nombre de pièces par catégorie (chandeliers, ailes, barres, barres basses,
 //    taquets, remplissage, jardinières, fanions, panneau) égal au relevé, chaque composante portant le maillage du
 //    relevé, son pivot monde (posé par l'acteur depuis le tracé du cœur et le relief) au pivot monde relevé dans le jeu
-//    web, sa boîte englobante centrée sur ce pivot, le barycentre des sommets de son maillage (qui fixe l'orientation)
-//    au barycentre monde relevé ; barres du haut à la position de repos du cœur ;
+//    web, sa boîte englobante centrée sur ce pivot, le barycentre des sommets de son maillage (lu dans le manifeste, pas
+//    dans le maillage importé : il fixe la rotation de la pièce, pas le signe des axes du maillage) au barycentre monde
+//    relevé ; barres du haut à la position de repos du cœur ;
 //  - lignes de départ et d'arrivée (placées par les lignes du déroulé) et poteau « Chrono » : mêmes contrôles ;
 //  - numéro attendu : panneau du 1 teinté de la couleur relevée (#7dffc4) après l'entrée en piste, les autres blancs.
 namespace StridesSceneryTest
@@ -284,8 +285,10 @@ struct FCheck
 			const FVector WantUE = StridesUnits::WebToUE(P.W.X, P.W.Y + Dz, P.W.Z);
 			MaxPivot = FMath::Max(MaxPivot, (C->GetComponentLocation() - WantUE).Size());
 			MaxBounds = FMath::Max(MaxBounds, (C->Bounds.Origin - WantUE).Size());
-			// Orientation : barycentre du maillage (repère web du maillage → X = x, Y = z, Z = y, import Interchange) placé
-			// par la transformée de la composante, comparé au barycentre monde relevé dans le jeu web.
+			// Pose de la composante : barycentre du maillage pris dans le MANIFESTE (repère web du maillage, convention supposée
+			// X = x, Y = z, Z = y de l'import Interchange) placé par la transformée de la composante, comparé au barycentre
+			// monde relevé dans le jeu web. Les sommets réellement importés ne sont pas relus : un maillage importé en miroir
+			// (signe d'un axe) ne serait pas vu ici (ni par import-cso-fences.py, boîtes symétriques) — contrôle des remarques.
 			const FVector Cm = S.MeshCentroids.FindRef(P.Mesh);
 			const FVector GotC = C->GetComponentTransform().TransformPosition(FVector(Cm.X, Cm.Z, Cm.Y) * StridesUnits::CmPerM);
 			MaxCentroid = FMath::Max(MaxCentroid, (GotC - StridesUnits::WebToUE(P.WC.X, P.WC.Y + Dz, P.WC.Z)).Size());
@@ -375,7 +378,7 @@ bool FStridesPariteCsoSceneryTest::RunTest(const FString&)
 		TestEqual(FString::Printf(TEXT("%s : maillages du relevé"), *What), K.MeshErrors, 0);
 		TestTrue(FString::Printf(TEXT("%s : pivots au relevé (écart max %.4f cm)"), *What, K.MaxPivot), K.MaxPivot < 0.1);
 		TestTrue(FString::Printf(TEXT("%s : boîtes englobantes centrées sur les pivots relevés (écart max %.4f cm)"), *What, K.MaxBounds), K.MaxBounds < 0.1);
-		TestTrue(FString::Printf(TEXT("%s : orientation, barycentres des maillages au relevé (écart max %.4f cm)"), *What, K.MaxCentroid), K.MaxCentroid < 0.1);
+		TestTrue(FString::Printf(TEXT("%s : pose des pièces, barycentres du manifeste placés au relevé (écart max %.4f cm ; signe des axes des maillages importés non relu)"), *What, K.MaxCentroid), K.MaxCentroid < 0.1);
 		AddInfo(FString::Printf(TEXT("%s : %d pièces, pivots à %.4f cm, boîtes à %.4f cm, barycentres à %.4f cm du relevé (hauteurs au-dessus du sol de chaque jeu ; écart de sol max %.2f cm)"), *What, K.Pieces, K.MaxPivot, K.MaxBounds, K.MaxCentroid, K.MaxGround * 100));
 	};
 

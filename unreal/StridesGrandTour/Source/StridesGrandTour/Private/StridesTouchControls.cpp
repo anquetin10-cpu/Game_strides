@@ -322,6 +322,14 @@ FVector4 UStridesTouchControls::BoxOf(const FString& Name) const
 	return FVector4(0, 0, 0, 0);
 }
 
+FVector4 UStridesTouchControls::SlotBoxOf(const FString& Name) const
+{
+	const UWidget* W = Name == TEXT("Jump") ? JumpButton : Name == TEXT("Pause") ? PauseButton : nullptr;
+	const UCanvasPanelSlot* S = W ? Cast<UCanvasPanelSlot>(W->Slot) : nullptr;
+	if (!S || W->GetVisibility() == ESlateVisibility::Collapsed) return FVector4(0, 0, 0, 0);
+	return FVector4(S->GetPosition().X, S->GetPosition().Y, S->GetSize().X, S->GetSize().Y);
+}
+
 double UStridesTouchControls::JoystickOpacity() const { return JoyBase && JoyBase->GetVisibility() != ESlateVisibility::Collapsed ? JoyOpacity : 0.0; }
 
 void UStridesTouchControls::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

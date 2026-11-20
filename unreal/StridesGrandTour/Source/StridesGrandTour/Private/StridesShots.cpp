@@ -105,7 +105,10 @@ bool AStridesShots::ResolveShotsDir(const TCHAR* CommandLine, const FString& Roo
 	for (const FString& P : Protected)
 	{
 		const FString Q = Norm(P);
-		if (FPaths::IsSamePath(Dir, Q) && DirHasFiles(Q))
+		// Sans tenir compte de la casse : le volume APFS du Mac ne la distingue pas (…/Screenshots/strides désigne le vrai
+		// dossier Strides), alors que FPaths::IsSamePath la distingue sur Mac. Sur un volume sensible à la casse, le refus
+		// est seulement plus prudent.
+		if (Dir.Equals(Q, ESearchCase::IgnoreCase) && DirHasFiles(Q))
 		{
 			Why = FString::Printf(TEXT("%s contient déjà des captures, jamais écrasées : passer -StridesShotsDir=<dossier dédié>"), *Q);
 			return false;

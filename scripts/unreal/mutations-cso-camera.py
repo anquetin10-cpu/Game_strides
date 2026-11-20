@@ -48,9 +48,25 @@ M = [
  ('point visé d’entrée à 1,6 -> 1,1 m', 's.fromLook = CsoVec3{h.x, h.groundY + 1.6, h.z};', 's.fromLook = CsoVec3{h.x, h.groundY + 1.1, h.z};'),
  ('FOV : amorti 3 /s -> 5 /s', 's.fov = instant ? C.fov : damp(s.fov, C.fov, 3, dt);', 's.fov = instant ? C.fov : damp(s.fov, C.fov, 5, dt);'),
  ('FOV : appliqué à chaque image (sans palier de 0,05°)', 'if (std::abs(s.camFov - s.fov) > 0.05) s.camFov = s.fov;', 's.camFov = s.fov;'),
+ # Contrôle des remarques (hygiène, 20/11/2026) : sous-branches de l'obstacle survolé et du plancher (camera.js:233-239)
+ # et remise du point visé à l'entrée, sondées ; celles qu'aucun scénario ne discrimine sont listées dans ATTENDUES.
+ ('survol : boîte de 4 m -> 2 m', 'if (o.off || std::abs(o.x - cx) > 4 || std::abs(o.z - cz) > 4) continue;', 'if (o.off || std::abs(o.x - cx) > 2 || std::abs(o.z - cz) > 2) continue;'),
+ ('survol : obstacles retirés (off) non filtrés', 'if (o.off || std::abs(o.x - cx) > 4', 'if (std::abs(o.x - cx) > 4'),
+ ('survol : demi-largeur w/2 + 2,4 -> w/2 + 1', 'std::abs(lu) < o.w / 2 + 2.4', 'std::abs(lu) < o.w / 2 + 1'),
+ ('survol : demi-profondeur depth/2 + 0,8 -> depth/2 + 0,2', 'std::abs(ls) < depth / 2 + 0.8)', 'std::abs(ls) < depth / 2 + 0.2)'),
+ ('plancher : sol sous le cheval ignoré', 'cy = std::max(cy, std::max(h.groundY, gc) + 0.8);', 'cy = std::max(cy, gc + 0.8);'),
+ ('entrée : point visé non remis à zéro', '    s.fromLook = CsoVec3{h.x, h.groundY + 1.6, h.z};\n    s.hasAim = false;', '    s.fromLook = CsoVec3{h.x, h.groundY + 1.6, h.z};'),
 ]
 # Mutations qu'aucun oracle ne peut départager (raison donnée) : listées pour mémoire, pas comme des succès.
 ATTENDUES = {
+ # Contrôle des remarques (hygiène, 20/11/2026) : seule t6-survol (caméra immobile au centre d'une haie de cross) exerce
+ # la remontée au-dessus d'un obstacle ; dans la carrière (cy = ay + 3,4), elle ne joue que si o.h dépasse ~1,95 m.
+ 'survol : boîte de 4 m -> 2 m': 'caméra toujours au centre de l’obstacle survolé (t6-survol) : emprise jamais exercée en bordure',
+ 'survol : obstacles retirés (off) non filtrés': 'aucun obstacle retiré (off) sous la caméra dans les exécutions',
+ 'survol : demi-largeur w/2 + 2,4 -> w/2 + 1': 'caméra toujours au centre de l’obstacle survolé : demi-largeur jamais exercée',
+ 'survol : demi-profondeur depth/2 + 0,8 -> depth/2 + 0,2': 'caméra toujours au centre de l’obstacle survolé : demi-profondeur jamais exercée',
+ 'plancher : sol sous le cheval ignoré': 'sol sous la caméra toujours au moins aussi haut que sous le cheval quand le plancher joue (t6-relief)',
+ 'entrée : point visé non remis à zéro': 'aucune nouvelle entrée sans snap après un état de concours déjà actif (point visé alors identique)',
 }
 os.makedirs(out, exist_ok=True)
 others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoInput.cpp', 'Text.cpp', 'SaveGame.cpp')]

@@ -46,6 +46,11 @@ public:
 	// Style appliqué au toast I (taille de police en px CSS, marges intérieures, largeur maximale) : tests du changement de
 	// viewport (rotation, redimensionnement).
 	FString ToastStyle(int32 I) const;
+	// Marge gauche appliquée au chrono dans la ligne du tableau (px CSS) : tests du gap flex.
+	double ChronoLeftPadding() const;
+	// innerHeight du web (px CSS) transmis au modèle du HUD de l'épreuve du monde (file de toasts, hud.js:447 : un toast
+	// au plus si ≤ 420 px, sinon deux) ; appelé à chaque image avec le viewport réel ; sans effet sur un modèle figé.
+	void SetCourseViewport(const FVector2D& ViewCss);
 	// Facteur de pixels de la plateforme (pixels physiques par px CSS) : 1 sur un écran de Mac non Retina.
 	static double PixelRatio();
 	// Tests : facteur de pixels imposé (iPhone : 3) ; 0 rend celui de l'écran.
@@ -70,6 +75,9 @@ private:
 	int32 ShownCadOn = 0;
 	double HintBorn = -1, CadFade = 0;
 	FString HintShown, NextShown;
+	// Tableau (flex, column-gap) : écart de colonne et marge gauche du chrono relevés ; le gap ne précède pas l'icône
+	// d'horloge repliée (display: none sous cso-sober), comme dans le navigateur.
+	double BoardGap = 0, ChronoMarginLeft = 0, ChronoPadBottom = 0;
 
 	UPROPERTY() TObjectPtr<UCanvasPanel> Root;
 	UPROPERTY() TObjectPtr<UScaleBox> Scale;

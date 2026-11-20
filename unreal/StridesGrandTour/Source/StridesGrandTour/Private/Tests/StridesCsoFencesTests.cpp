@@ -285,6 +285,10 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 	PC->Possess(Horse);
 	const double Dt = 1.0 / 30;
 	auto Logged = [&](const FString& Prefix) { int32 N = 0; for (const FString& L : Course->FenceEventLog()) N += L.StartsWith(Prefix); return N; };
+	// Le monde de test ne tourne pas : son heure de jeu (GetTimeSeconds, lue par le cheval pour les règles temporelles
+	// des obstacles : recomptage après 5 s, remontée 3 s après une barre emportée, réception 0,6 s) est avancée à chaque
+	// pas du cheval, comme le ferait le moteur.
+	auto Step = [&]() { World->TimeSeconds += Dt; Horse->Tick(Dt); };
 
 	// 3) Abord du 4A à 70° de son axe, 6,2 m/s, ligne passant par son centre ; SAUT à 7 m du point de passage : pas de saut
 	//    (aucun obstacle visé), refus quand le nez passe sous v²/16 + 0,3 m ; jamais compté franchi.
@@ -299,7 +303,7 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 			const strides::CsoHorseState& S = Horse->CsoState();
 			const double D = (F.x - S.x) * Fx + (F.z - S.z) * Fz;
 			if (!bPressed && D <= 7) { PC->TouchJump(); bPressed = true; }
-			Horse->Tick(Dt);
+			Step();
 			bJumped |= Horse->IsJumping();
 			bRefused |= Horse->LastEvents().Contains(TEXT("horse:refuse"));
 		}
@@ -317,14 +321,14 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 		{
 			const strides::CsoTarget T = strides::csoTarget(Obs, Horse->CsoState(), Horse->JumpPower(), 0, true, Data->Jump(), Data->HorseParams());
 			if (!bJumped && !Horse->IsJumping() && T.index == Three && T.plan.zone == strides::Zone::Good && T.plan.ideal <= T.plan.L + 0.3) { PC->TouchJump(); bJumped = true; }
-			Horse->Tick(Dt);
+			Step();
 		}
 		TestTrue(TEXT("sans-faute au 3 : obstacle:clear du cœur"), Logged(TEXT("obstacle:clear 3 1")) == 1 && Logged(TEXT("obstacle:fault")) == 0);
 		const UStaticMeshComponent* Bar = Course->FenceAt(Three)->RailComponent(0);
 		FTransform Want = AStridesFence::RailTransform(F.bars[0].h, F.bars[0].s, 0, 0);
 		TestTrue(TEXT("sans-faute au 3 : barre au repos"), Bar && Bar->GetRelativeTransform().GetLocation().Equals(Want.GetLocation(), 1e-6));
 	}
-	// 5) Refus tout contre au 3 (6,2 m/s, sans appui) : barre avant emportée vers le cheval ; la composante affiche la
+	// 5) Refus tout contre au 3 (6,2 m/s, sans appui) : barre avant emportée dans le sens de la marche ; la composante affiche la
 	//    transformée du cœur à chaque image.
 	{
 		const strides::CsoObstacle& F = Obs[Three];
@@ -335,7 +339,7 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 		bool bFell = false;
 		for (int32 K = 0; K < 90; K++)
 		{
-			Horse->Tick(Dt);
+			Step();
 			const strides::CsoRail& R = Course->FenceStates()[Three].rails[0];
 			bFell |= R.falling;
 			const FTransform Want = Course->FenceAt(Three)->RailDisplayTransform(R.y, R.z, R.rx, R.rz);
@@ -347,6 +351,53 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 		TestTrue(FString::Printf(TEXT("refus tout contre : refus compté (%d), barre avant emportée dans le sens de la marche (z %.3f m)"), Logged(TEXT("obstacle:refusal 3")) - Before, R.z),
 			Logged(TEXT("obstacle:refusal 3")) == Before + 1 && bFell && R.z > F.bars[0].s && Course->FenceStates()[Three].knocked);
 		TestTrue(FString::Printf(TEXT("barre affichée à la transformée du cœur (écart max %.3g)"), MaxDev), MaxDev < 1e-6);
+	}
+	// 6) Recomptage (obstacles.js _count) : un nouveau refus au même obstacle, sans détour (cheval reposé à 5 m, face à
+	//    l'obstacle, en deçà de profondeur / 2 + 6 m), moins de 5 s après le précédent, n'est pas compté ; 5 s plus tard, si.
+	{
+		const strides::CsoObstacle& F = Obs[Three];
+		const double Head = FMath::Atan2(F.n.x, F.n.z);
+		for (int32 K = 0; K < 60 && Horse->CsoState().rearT > 0; K++) Step();
+		auto Approach = [&](int32& Decided)
+		{
+			Horse->PlaceAt(F.x - F.n.x * 5, F.z - F.n.z * 5, Head, 3.0);
+			Decided = 0;
+			for (int32 K = 0; K < 120; K++)
+			{
+				Step();
+				Decided += Horse->LastEvents().Contains(TEXT("horse:refuse"));
+				if (Decided && Horse->CsoState().refusing < 0 && !(Horse->CsoState().rearT > 0)) break;
+			}
+		};
+		const int32 N0 = Logged(TEXT("obstacle:refusal 3"));
+		const double T0 = World->TimeSeconds;
+		int32 D1 = 0, D2 = 0;
+		Approach(D1);
+		const int32 N1 = Logged(TEXT("obstacle:refusal 3"));
+		const double T1 = World->TimeSeconds;
+		TestTrue(FString::Printf(TEXT("refus lent à 5 m, %.2f s après le refus compté : refus (cabré %d) non recompté (%d -> %d)"), T1 - T0, D1, N0, N1),
+			D1 > 0 && N1 == N0 && Horse->CsoState().hasRefusal && Horse->CsoState().refusal.o == Three);
+		// Cheval arrêté (cadence remise à 0 : un refus non compté ne la remet pas, il repartirait vers l'obstacle et
+		// refuserait encore) ; attente de plus de 5 s après le dernier refus noté (horse._refusal.t).
+		Horse->Halt();
+		for (int32 K = 0; K < 400 && World->TimeSeconds < Horse->CsoState().refusal.t + 5.2; K++) Step();
+		Approach(D2);
+		const int32 N2 = Logged(TEXT("obstacle:refusal 3"));
+		TestTrue(FString::Printf(TEXT("même abord plus de 5 s après le dernier refus : refus (cabré %d) compté (%d -> %d)"), D2, N1, N2), D2 > 0 && N2 == N1 + 1);
+	}
+	// 7) Barre emportée (cas 5) remontée par le jury plus de 3 s après le refus tout contre ET le cheval à plus de 5 m :
+	//    pendant le cas 6 (plus de 5 s, cheval à moins de 5 m), elle reste au sol ; reposé à 12 m, elle est remise.
+	{
+		const strides::CsoObstacle& F = Obs[Three];
+		const strides::CsoFenceState& St = Course->FenceStates()[Three];
+		const double Rebuild = St.rebuild;
+		const bool bNear = St.knocked && World->TimeSeconds > Rebuild;
+		const double Head = FMath::Atan2(F.n.x, F.n.z);
+		Horse->PlaceAt(F.x - F.n.x * 12, F.z - F.n.z * 12, Head + PI, 0);
+		Step();
+		const strides::CsoRail& R = St.rails[0];
+		TestTrue(FString::Printf(TEXT("barre emportée : remontée prévue à %.2f s ; à %.2f s, cheval à moins de 5 m : encore au sol (%d) ; cheval à 12 m : remise"), Rebuild, World->TimeSeconds, bNear),
+			Rebuild > 0 && bNear && !St.knocked && !R.falling && R.y == R.restY && R.z == R.restZ);
 	}
 	AddInfo(FString::Printf(TEXT("obstacles en jeu : %d événements du cœur reçus par le parcours"), Course->FenceEventLog().Num()));
 	PC->UnPossess();

@@ -1,6 +1,7 @@
 // Strides.Shots.OutputDir : dossier de sortie du mode -StridesShots (AStridesShots::ResolveShotsDir). Dossiers de
 // travail créés dans Saved/Automation/Transient/StridesShotsDir (jamais dans Saved/Screenshots) : un dossier « protégé »
-// qui contient déjà une capture est refusé sans l'option comme avec elle (même écrit autrement), un dossier protégé
+// qui contient déjà une capture est refusé sans l'option comme avec elle (même écrit autrement, y compris avec une autre
+// casse : volume APFS insensible à la casse), un dossier protégé
 // vide est accepté, l'option est prise telle quelle (absolue) ou relative à la racine du dépôt, le mode cso sans option
 // garde les chemins de poses.json ; la capture préexistante est relue intacte. Puis les vrais dossiers du projet :
 // Saved/Screenshots/Strides et MacEditor sont protégés, et -StridesShots sans option est refusé tant que
@@ -37,6 +38,12 @@ bool FStridesShotsOutputDirTest::RunTest(const FString&)
 	// Option désignant ce même dossier, écrit autrement (barre finale, « .. », doubles barres) : refus aussi.
 	const FString Detour = FString::Printf(TEXT("-StridesShots -StridesShotsDir=%s/depot/..//Protege/"), *Base);
 	TestFalse(TEXT("option vers le dossier protégé non vide : refus"), AStridesShots::ResolveShotsDir(*Detour, Repo, FString(), Protected, Out, Why));
+	// Même dossier écrit avec une autre casse (volume APFS insensible à la casse : c'est le même dossier) : refus aussi.
+	const FString Casse = FString::Printf(TEXT("-StridesShots -StridesShotsDir=%s/PROTEGE"), *Base);
+	TestFalse(TEXT("option vers le dossier protégé écrit avec une autre casse : refus"), AStridesShots::ResolveShotsDir(*Casse, Repo, FString(), Protected, Out, Why));
+	TestTrue(TEXT("motif du refus (autre casse)"), Why.Contains(TEXT("Protege")) && Out.IsEmpty());
+	const FString CasseRel = TEXT("-StridesShots -StridesShotsDir=../protege");  // relative à la racine (Base/depot)
+	TestFalse(TEXT("option relative vers le dossier protégé, autre casse : refus"), AStridesShots::ResolveShotsDir(*CasseRel, Repo, FString(), Protected, Out, Why));
 	// Sans option, dossier par défaut protégé mais vide : accepté.
 	TestTrue(TEXT("sans option, défaut protégé vide : accepté"), AStridesShots::ResolveShotsDir(TEXT("-StridesShots"), Repo, Empty, Protected, Out, Why));
 	TestTrue(TEXT("dossier rendu = défaut vide"), FPaths::IsSamePath(Out, Empty));
@@ -60,6 +67,12 @@ bool FStridesShotsOutputDirTest::RunTest(const FString&)
 	const FString Strides = AStridesShots::DefaultShotsDir();
 	TestTrue(TEXT("Saved/Screenshots/Strides protégé"), Real.ContainsByPredicate([&](const FString& P) { return FPaths::IsSamePath(P, Strides); }));
 	TestTrue(TEXT("Saved/Screenshots/MacEditor protégé"), Real.ContainsByPredicate([](const FString& P) { return P.EndsWith(TEXT("Screenshots/MacEditor")); }));
+	// Le vrai dossier Strides désigné en minuscules (…/Screenshots/strides) : refusé s'il contient des fichiers.
+	{
+		const FString Lower = FPaths::GetPath(Strides) / TEXT("strides");
+		const bool bLowerOk = AStridesShots::ResolveShotsDir(*FString::Printf(TEXT("-StridesShots -StridesShotsDir=%s"), *Lower), AStridesShots::RepoRoot(), FString(), Real, Out, Why);
+		TestEqual(TEXT("-StridesShotsDir=…/Screenshots/strides : refusé si et seulement si Saved/Screenshots/Strides contient des fichiers"), bLowerOk, !AStridesShots::DirHasFiles(Strides));
+	}
 	const bool bJulien = AStridesShots::DirHasFiles(Strides);
 	const bool bOk = AStridesShots::ResolveShotsDir(TEXT("-game -StridesShots"), AStridesShots::RepoRoot(), Strides, Real, Out, Why);
 	TestEqual(TEXT("-StridesShots sans option : refusé si et seulement si Saved/Screenshots/Strides contient des fichiers"), bOk, !bJulien);

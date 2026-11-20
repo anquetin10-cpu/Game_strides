@@ -17,6 +17,7 @@
 //  - Strides.Hud.ObjectiveLines : lignes d'objectif du HUD de débogage (objectif de l'épreuve, puis mission de carrière
 //    lancée ; état des missions hors épreuve).
 #include "Misc/AutomationTest.h"
+#include "StridesCsoHud.h"
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/Canvas.h"
@@ -402,6 +403,28 @@ bool FStridesCsoHudClockTest::RunTest(const FString&)
 	Course->SyncHudClock(W0 + 1.0);
 	TestEqual(TEXT("heure murale en arrière : horloge du HUD inchangée"), (int64)H.now(), Now);
 	TestEqual(TEXT("2,1 s d'heure murale = 6 300 ticks de 1/3 ms"), (int64)H.now(), (int64)6300);
+	// Hauteur réelle du viewport transmise par le widget d'épreuve au modèle (innerHeight du web, hud.js:447) : deux toasts
+	// au plus sur un écran de plus de 420 px CSS (iPad, fenêtre Mac 1280 × 720), un seul en 844 × 390.
+	{
+		UStridesCsoHud* Widget = CreateWidget<UStridesCsoHud>(W.World, UStridesCsoHud::StaticClass());
+		if (!TestNotNull(TEXT("widget UStridesCsoHud"), Widget)) return false;
+		strides::CsoHud& M = Course->HudModel();
+		Widget->SetCourseViewport(FVector2D(1280, 720));
+		TestEqual(TEXT("viewport 1280 × 720 : hauteur transmise au modèle de l'épreuve"), M.viewportHeight(), 720.0);
+		M.toast("a");
+		M.toast("b");
+		M.toast("c");
+		TestEqual(TEXT("720 px de haut : deux toasts au plus"), (int32)M.toasts().size(), 2);
+		Widget->SetCourseViewport(FVector2D(844, 390));
+		M.toast("d");
+		TestEqual(TEXT("390 px de haut : un seul toast"), (int32)M.toasts().size(), 1);
+		UStridesCsoHud* FrozenW = CreateWidget<UStridesCsoHud>(W.World, UStridesCsoHud::StaticClass());
+		strides::CsoHud Other;
+		FrozenW->SetFrozen(&Other);
+		FrozenW->SetCourseViewport(FVector2D(1280, 720));
+		TestEqual(TEXT("widget figé (captures) : modèle de l'épreuve inchangé"), M.viewportHeight(), 390.0);
+		FrozenW->SetFrozen(nullptr);
+	}
 	return true;
 }
 

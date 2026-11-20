@@ -6,10 +6,10 @@
   "js": [
    "src/world/layout.js"
   ],
-  "unreal": "UStridesDataSubsystem : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:135-140 (world.size de Content/Data/world_architecture.json), LoadScene :154-186 (origine -600, grille 601 x 601 de Content/Data/World/world_scene.json) ; conversion StridesUnits::WebToUE (StridesUnits.h)",
+  "unreal": "UStridesDataSubsystem : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:148-153 (world.size de Content/Data/world_architecture.json), LoadScene :154-186 (origine -600, grille 601 x 601 de Content/Data/World/world_scene.json) ; conversion StridesUnits::WebToUE (StridesUnits.h)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:69-85, taille 1 200) et Strides.World.Scenery (:117, grille 601 x 601 au pas de 2 m) : réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Valeurs attendues recopiées à la main ; world_architecture.json n'est produit par aucun script d'export : pas d'oracle JS.",
+  "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:70-86, taille 1 200) et Strides.World.Scenery (:126, grille 601 x 601 au pas de 2 m) : réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Valeurs attendues recopiées à la main ; world_architecture.json n'est produit par aucun script d'export : pas d'oracle JS.",
   "ecart": "world_architecture.json écrit à la main (seul world_scene.json sort de scripts/unreal/world-export.js) ; pour prouver : exporter WORLD depuis layout.js et le comparer en test.",
   "tranche": "c"
  },
@@ -23,7 +23,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun code : AStridesHorse avance sans borne (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306), TerrainHeight ne fait que bloquer la hauteur au bord (StridesDataSubsystem.cpp:221-231), le cavalier à pied peut marcher sur le relief prolongé jusqu'à 4,2 km (StridesScenery.cpp:139-200).",
+  "preuve": "Aucun code : AStridesHorse avance sans borne (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:363), TerrainHeight ne fait que bloquer la hauteur au bord (StridesDataSubsystem.cpp:234-245), le cavalier à pied peut marcher sur le relief prolongé jusqu'à 4,2 km (StridesScenery.cpp:139-200).",
   "ecart": "Pas de limite de carte ni de notion de région Deauville / Paris.",
   "tranche": "c"
  },
@@ -35,10 +35,10 @@
    "src/world/terrain.js",
    "src/world/layout.js"
   ],
-  "unreal": "scripts/unreal/world-export.js:60-68 (échantillonne analyticHeight du JS sur 2 m -> terrain.bin 601 x 601 float32) ; UStridesDataSubsystem::LoadScene / TerrainHeight (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:178-231) ; AStridesScenery::BuildTerrain (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:99-136, 144 tuiles de 100 m à collisions)",
+  "unreal": "scripts/unreal/world-export.js:60-68 (échantillonne analyticHeight du JS sur 2 m -> terrain.bin 601 x 601 float32) ; UStridesDataSubsystem::LoadScene / TerrainHeight (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:200-245) ; AStridesScenery::BuildTerrain (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:99-136, 144 tuiles de 100 m à collisions)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:126-129) : Écurie du Val 3 m, Pôle 3 m, fond marin -13,9775 m, Colline Strides 59,2831 m, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Les hauteurs viennent du JS (terrain.bin) mais les 4 valeurs attendues sont recopiées à la main : pas d'oracle exporté comparé point à point.",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:127-130) : Écurie du Val 3 m, Pôle 3 m, fond marin -13,9775 m, Colline Strides 59,2831 m, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Les hauteurs viennent du JS (terrain.bin) mais les 4 valeurs attendues sont recopiées à la main : pas d'oracle exporté comparé point à point.",
   "ecart": "4 points contrôlés sur 361 201 nœuds ; pour prouver : exporter un oracle (x, z, analyticHeight) depuis terrain.js et le comparer en C++.",
   "tranche": "c"
  },
@@ -50,10 +50,10 @@
    "src/world/terrain.js",
    "src/world/world.js"
   ],
-  "unreal": "UStridesDataSubsystem::TerrainHeight (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:221-231, même découpage en triangles mais sur la grille de 2 m) ; AStridesHorse::GroundAt (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:114-120) ; cavalier à pied : collisions physiques du maillage procédural (StridesScenery.cpp:201)",
+  "unreal": "UStridesDataSubsystem::TerrainHeight (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:234-245, même découpage en triangles mais sur la grille de 2 m) ; AStridesHorse::GroundAt (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:173-179) ; cavalier à pied : collisions physiques du maillage procédural (StridesScenery.cpp:201)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:126-129) vérifie TerrainHeight en 4 points, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Ces points sont des nœuds de la grille Unreal de 2 m (donc égaux à analyticHeight) mais aucun n'est un nœud du maillage web de 6 m ((x + 600) / 6 ou (z + 600) / 6 non entier) : les valeurs attendues ne sont pas celles de getHeight ; seules les deux zones aplanies à 3 m (écurie, Pôle) coïncident. Aucun test entre les nœuds, là où grilles de 2 m et de 6 m divergent.",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:127-130) vérifie TerrainHeight en 4 points, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Ces points sont des nœuds de la grille Unreal de 2 m (donc égaux à analyticHeight) mais aucun n'est un nœud du maillage web de 6 m ((x + 600) / 6 ou (z + 600) / 6 non entier) : les valeurs attendues ne sont pas celles de getHeight ; seules les deux zones aplanies à 3 m (écurie, Pôle) coïncident. Aucun test entre les nœuds, là où grilles de 2 m et de 6 m divergent.",
   "ecart": "Grille de 2 m au lieu de 6 m : hauteurs différentes entre les nœuds du maillage web (amplitude a confirmer, non mesurée) ; getSlope absent ; à Paris (x > 2 000) le web renvoie PARIS.y + sol, l'Unreal la hauteur du bord est.",
   "tranche": "c"
  },
@@ -108,10 +108,10 @@
   "js": [
    "src/world/layout.js"
   ],
-  "unreal": "Content/Data/world_architecture.json (poi, regions, roads) lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:135-162 ; minicarte AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:139-167) ; cible de mission UStridesProgressionSubsystem::ActiveTarget (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-81)",
+  "unreal": "Content/Data/world_architecture.json (poi, regions, roads) lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:148-165 ; minicarte AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:180-192) ; cible de mission UStridesProgressionSubsystem::ActiveTarget (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-81)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:80, 14 lieux) et Strides.World.CareerGraph (:79-108, lieux des missions connus) : réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026), mais sur un JSON écrit à la main, sans oracle exporté de POI.",
+  "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:81, 14 lieux) et Strides.World.CareerGraph (:88-117, lieux des missions connus) : réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026), mais sur un JSON écrit à la main, sans oracle exporté de POI.",
   "ecart": "14 lieux au lieu de 16 (boutique et plage manquent ; la plage n'existe que comme région) ; « Le Galop » sans son sous-titre ; pas de traduction ; minicarte tracée avec les 8 routes de world_architecture.json au lieu des 14 de ROADS : coast, main, pole et hippo aux mêmes points, ew renommée east-west, home, haras et gatien prolongées jusqu'au site, dunes et les 5 rues de la ville absentes ; la mission « paris » vise le Pôle (StridesProgressionSubsystem.cpp:77).",
   "tranche": "c"
  },
@@ -123,10 +123,10 @@
    "src/world/layout.js",
    "src/world/world.js"
   ],
-  "unreal": "Tracés exportés (scripts/unreal/world-export.js:317 -> world_scene.json) lus par LoadScene (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:206-212) ; AStridesScenery::BuildRoads (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:205-251), même échantillonnage, 6 cm au-dessus du relief",
+  "unreal": "Tracés exportés (scripts/unreal/world-export.js:317 -> world_scene.json) lus par LoadScene (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:219-224) ; AStridesScenery::BuildRoads (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:205-251), même échantillonnage, 6 cm au-dessus du relief",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:130) : 14 routes, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) ; compte seulement, aucune comparaison des sommets au maillage web.",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:131) : 14 routes, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) ; compte seulement, aucune comparaison des sommets au maillage web.",
   "ecart": "Décalage 0,06 m au lieu de 0,07 m, posé sur la grille de 2 m au lieu de 6 m.",
   "tranche": "c"
  },
@@ -168,10 +168,10 @@
    "src/world/sites.js",
    "src/world/world.js"
   ],
-  "unreal": "Géométrie exportée dans architecture.glb (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) ; départ lu dans world_architecture.json et cheval posé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:87-93",
+  "unreal": "Géométrie exportée dans architecture.glb (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) ; départ lu dans world_architecture.json et cheval posé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:86, 104-105",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test du site : Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:126) ne vérifie que le sol aplani à 3 m en (-110, 180), qui relève de monde.relief-analytique, ni la géométrie ni le départ (world.spawn) ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; capture Unreal isolée Saved/Screenshots/Strides/01_ecurie_cour.png non comparée.",
+  "preuve": "Aucun test du site : Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:127) ne vérifie que le sol aplani à 3 m en (-110, 180), qui relève de monde.relief-analytique, ni la géométrie ni le départ (world.spawn) ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; capture Unreal isolée Saved/Screenshots/Strides/01_ecurie_cour.png non comparée.",
   "ecart": "Cheval placé au départ du joueur (-104, 168, cap 0,35) et non en HOME.horse ; homeBoxes, intérieurs éclairés, véhicules garés absents ; maison non visitable.",
   "tranche": "c"
  },
@@ -183,10 +183,10 @@
    "src/world/sites.js",
    "src/world/world.js"
   ],
-  "unreal": "Géométrie exportée (architecture.glb) ; centre de carrière exporté par scripts/unreal/export-data.mjs:34 (cso_course_pole.json arena) et lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:89 ; parcours posé dessus par AStridesWorldDirector::BuildWorld (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45)",
+  "unreal": "Géométrie exportée (architecture.glb) ; centre de carrière exporté par scripts/unreal/export-data.mjs:34 (cso_course_pole.json arena) et lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:120-121 ; parcours posé dessus par AStridesWorldDirector::BuildWorld (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Centre de carrière des données (Content/Data/cso_course_pole.json, arena) recoupé avec le web en cours d'exécution : ligne de départ CSO_START du jeu web (unreal/core/tests/oracles/cso_runs/, setup.start) = repère du tracé + arena à 2e-6 près (unreal/core/tests/test_core.cpp:207-314) ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:127) ne vérifie que le sol aplani à 3 m en (330, -224), qui relève de monde.relief-analytique ; le placement Unreal du parcours (AStridesCourse) n'est pas comparé au web ; module compilé (UBT du 18/11/2026 : Result: Succeeded). Montage côte à côte unreal/docs/parite/cso/carriere-aerienne.png (scripts/unreal/export-cso-runs.mjs --shots, -StridesShots=cso, scripts/unreal/parite-montage.py ; web à gauche, Unreal à droite, 844 × 390 chacun vérifiés par sips) : coins de la carrière, tribunes, club-house, tableau d'affichage et écuries aux mêmes pixels à quelques pixels près ; sol Unreal sous l'œil 4,548 m contre 4,551 m au web, 3,000 m sous la cible et le cheval des deux côtés.",
+  "preuve": "Centre de carrière des données (Content/Data/cso_course_pole.json, arena) recoupé avec le web en cours d'exécution : ligne de départ CSO_START du jeu web (unreal/core/tests/oracles/cso_runs/, setup.start) = repère du tracé + arena à 2e-6 près (unreal/core/tests/test_core.cpp:259-361) ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:128) ne vérifie que le sol aplani à 3 m en (330, -224), qui relève de monde.relief-analytique ; le placement Unreal du parcours (AStridesCourse) n'est pas comparé au web ; module compilé (UBT du 18/11/2026 : Result: Succeeded). Montage côte à côte unreal/docs/parite/cso/carriere-aerienne.png (scripts/unreal/export-cso-runs.mjs --shots, -StridesShots=cso, scripts/unreal/parite-montage.py ; web à gauche, Unreal à droite, 844 × 390 chacun vérifiés par sips) : coins de la carrière, tribunes, club-house, tableau d'affichage et écuries aux mêmes pixels à quelques pixels près ; sol Unreal sous l'œil 4,548 m contre 4,551 m au web, 3,000 m sous la cible et le cheval des deux côtés.",
   "ecart": "Projecteurs sans lumière (pas de nuit) ; d'après unreal/docs/parite/cso/carriere-aerienne.png : public des tribunes, détente sans obstacles, clôture du petit côté sud peu visible, teintes du sable et de l'herbe, ombres portées (soleil orienté comme au web, rendu de bureau Mac et non rendu mobile) ; aucune comparaison au pixel.",
   "tranche": "c"
  },
@@ -293,7 +293,7 @@
   "unreal": "Relief dans terrain.bin ; enseigne exportée comme panneau texturé (scripts/unreal/world-export.js:219-236), sans collision, distance d'affichage plafonnée à 450 m (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:67)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:129) : 59,2831 m en (120, 520), réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) (valeur recopiée à la main).",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:130) : 59,2831 m en (120, 520), réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) (valeur recopiée à la main).",
   "ecart": "Enseigne masquée au-delà de 450 m alors que le web la dessine toujours (a confirmer à l'écran).",
   "tranche": "c"
  },
@@ -355,7 +355,7 @@
   "unreal": "AStridesScenery::BuildTrees (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:268-323) : instances hiérarchiques par variante, teinte par instance, troncs en cylindres invisibles (rayon 0,45 x échelle, 3 m) ; M_WorldLeaves avec balancement (scripts/unreal/import-world.py:444-487)",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:132-146) charge les 26 maillages d'arbres du manifeste, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) ; .tmp/shots.log : « 2541 arbres » ; placement et aspect non comparés.",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:134-147) charge les 26 maillages d'arbres du manifeste, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) ; .tmp/shots.log : « 2541 arbres » ; placement et aspect non comparés.",
   "ecart": "Pas de niveaux de détail ; buissons coupés à 350 m et arbres à 1 600 m ; balancement fixe sans lien avec le vent du jour.",
   "tranche": "c"
  },
@@ -369,7 +369,7 @@
   "unreal": "scripts/unreal/world-export.js:179-215 (tuiles, classes de matériaux) ; scripts/unreal/import-world.py:705-716 (import, collision complexe des tuiles « static ») ; AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:48-84), 206 maillages",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:132-146) : aucun maillage du manifeste introuvable, au moins 200, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Ne prouve que la présence, pas l'identité géométrique.",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:134-147) : aucun maillage du manifeste introuvable, au moins 200, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Ne prouve que la présence, pas l'identité géométrique.",
   "ecart": "Exclus de l'export : maillages hors lots sans texture (trottoirs, vitrines, filets d'eau, faisceau du phare, flaques de lumière), maillage à squelette (statue), intérieurs.",
   "tranche": "c"
  },
@@ -516,10 +516,10 @@
    "src/world/layout.js",
    "src/world/terrain.js"
   ],
-  "unreal": "Niveau exporté (world_scene.json pond.level = 19,0598) lu par LoadScene (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:213-217) ; BuildWater (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:261-265) : plan carré de 38 m avec le matériau de la mer",
+  "unreal": "Niveau exporté (world_scene.json pond.level = 19,0598) lu par LoadScene (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:226-230) ; BuildWater (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:261-265) : plan carré de 38 m avec le matériau de la mer",
   "etat": "partiel",
   "niveau": "teste",
-  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:131) : niveau > 10 m, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) ; niveau exact non comparé.",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:132) : niveau > 10 m, réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026) ; niveau exact non comparé.",
   "ecart": "Carré de 38 m de côté au lieu d'un disque de 16,5 m de rayon (33 m de diamètre) ; matériau de mer translucide au lieu de l'eau sombre.",
   "tranche": "c"
  },
@@ -622,7 +622,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun code : le soleil Unreal est une ADirectionalLight fixe orientée (-42°, 35°, 0), 10 lux (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:41-50).",
+  "preuve": "Aucun code : le soleil Unreal est une ADirectionalLight fixe orientée (-42°, 35°, 0), 10 lux (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:42-51).",
   "ecart": "Pas d'heure de jeu ni de course du soleil.",
   "tranche": "d"
  },
@@ -633,7 +633,7 @@
   "js": [
    "src/world/sky.js"
   ],
-  "unreal": "AStridesGameMode::StartPlay (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:38-83) : SkyAtmosphere, brouillard de hauteur (densité 0,0035, décroissance 0,12), SkyLight capturée une fois (1,5), exposition manuelle -1, occlusion ambiante, halo, vignette",
+  "unreal": "AStridesGameMode::StartPlay (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:39-85) : SkyAtmosphere, brouillard de hauteur (densité 0,0035, décroissance 0,12), SkyLight capturée une fois (1,5), exposition manuelle -1, occlusion ambiante, halo, vignette",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; validation-mac-2026-11-17.md cite le démarrage graphique et le HUD, pas le ciel ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
@@ -693,7 +693,7 @@
   "js": [
    "src/world/sky.js"
   ],
-  "unreal": "Soleil à ombres dynamiques : 3 cascades jusqu'à 250 m, exposant 2,4 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:47-50)",
+  "unreal": "Soleil à ombres dynamiques : 3 cascades jusqu'à 250 m, exposant 2,4 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:48-51)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
@@ -813,7 +813,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
-  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement direct, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:306) ; maillage exact au lieu des volumes simplifiés ; pas de hauteur de sommet franchissable.",
+  "ecart": "Le cheval n'a aucune collision avec le décor (déplacement direct, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:126, 363, 425) ; maillage exact au lieu des volumes simplifiés ; pas de hauteur de sommet franchissable.",
   "tranche": "socle"
  },
  {
@@ -837,7 +837,7 @@
   "js": [
    "src/world/world.js"
   ],
-  "unreal": "Cavalier à pied : la capsule marche sur les maillages à collision (Planches exportées) ; cheval : relief seul (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:114-120)",
+  "unreal": "Cavalier à pied : la capsule marche sur les maillages à collision (Planches exportées) ; cheval : relief seul (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:173-179)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
@@ -865,7 +865,7 @@
   "js": [
    "src/world/world.js"
   ],
-  "unreal": "AStridesWorldDirector::BuildWorld (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:30-46) appelé d'un bloc par AStridesGameMode::StartPlay (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:36-37)",
+  "unreal": "AStridesWorldDirector::BuildWorld (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:30-46) appelé d'un bloc par AStridesGameMode::StartPlay (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:37-38)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",

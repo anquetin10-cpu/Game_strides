@@ -39,6 +39,8 @@ public:
 	// Affichage (tests, captures) : boîte en px CSS [x, y, largeur, hauteur] d'un bouton ou du joystick (« Joystick »,
 	// « Knob »), opacité du joystick ; zéro si masqué.
 	FVector4 BoxOf(const FString& Name) const;
+	// Boîte effectivement posée sur le slot du canevas (position et taille du widget affiché, px CSS) : « Jump », « Pause ».
+	FVector4 SlotBoxOf(const FString& Name) const;
 	double JoystickOpacity() const;
 	// Appui / relâchement du bouton SAUT ou pause comme un doigt (tests) : mêmes gestionnaires qu'au toucher.
 	void PressForTest(const FString& Name, bool bDown);

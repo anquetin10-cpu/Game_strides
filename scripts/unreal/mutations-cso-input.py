@@ -94,9 +94,14 @@ M = [
  (S, 'aide : valeur inconnue gardée', '  s["jumpAid"] = order[(i + 1) % 3];', '  if (i >= 0) s["jumpAid"] = order[(i + 1) % 3];'),
  (S, 'libellé : aide imposée non signalée', '  if (locked) return "aid.locked";\n', ''),
  (S, 'libellé : valeur inconnue affichée comme « complète »', 'return a == "full" || a == "button" || a == "off" ? "aid." + a : std::string();', 'return a == "button" || a == "off" ? "aid." + a : std::string("aid.full");'),
+ # Contrôle des remarques (hygiène, 20/11/2026) : deux branches que le contrôle adverse de T8 avait vues passer.
+ (I, 'stylet traité comme une souris (joystick)', 'if (type != CsoPointer::Mouse && !joy.on', 'if (type != CsoPointer::Mouse && type != CsoPointer::Pen && !joy.on'),
+ (I, 'base suivie dès d = R (d >= R)', '  if (d > R) {\n    const double k = (d - R) / d;', '  if (d >= R) {\n    const double k = (d - R) / d;'),
 ]
 # Mutations qu'aucun oracle ne peut départager (raison donnée) : listées pour mémoire, pas comme des succès.
 ATTENDUES = {
+ 'stylet traité comme une souris (joystick)': 'aucun événement de type « pen » dans cso_input.json ; sans effet en jeu (InputTouch n’envoie jamais Pen)',
+ 'base suivie dès d = R (d >= R)': 'équivalente : à d = R, k = (d − R) / d = 0, la base ne bouge pas',
 }
 only = os.environ.get('MUT_ONLY')
 if only: M = [m for m in M if only in m[1]]

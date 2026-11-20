@@ -51,6 +51,7 @@ class STRIDESCORE_API CsoHud {
 
   // Hauteur du viewport (innerHeight, px CSS) : 1 toast au plus si ≤ 420, sinon 2 (hud.js:447).
   void setViewportHeight(double h) { vh_ = h; }
+  double viewportHeight() const { return vh_; }
   // Avance l'horloge et déclenche les temporisateurs échus (dans l'ordre).
   void advanceTicks(int64_t ticks);
   // Pas d'horloge murale du jeu (secondes ; setTimeout du web : ni gel en pause, ni ralenti) : ticks entiers accumulés,

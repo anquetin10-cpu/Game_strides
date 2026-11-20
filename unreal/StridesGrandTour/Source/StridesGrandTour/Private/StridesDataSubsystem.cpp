@@ -120,7 +120,7 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		if (const TSharedPtr<FJsonObject>* A; J->TryGetObjectField(TEXT("arena"), A))
 			PoleArena = FVector2D((*A)->GetNumberField(TEXT("x")), (*A)->GetNumberField(TEXT("z")));
 		// Tracé : lecture du cœur (strides::parseCourseFile), la même que celle que les tests du cœur comparent à
-		// l'oracle cso_course.json (unreal/core/tests/test_core.cpp, testCourseData).
+		// l'oracle cso_course.json (unreal/core/tests/test_core.cpp, testCourse).
 		FString Text;
 		strides::CourseDesign Design;
 		std::string Err = "fichier illisible";

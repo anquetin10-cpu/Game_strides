@@ -250,9 +250,11 @@ static J loadRuns() {
   return o;
 }
 
-// Oracles de scénario du banc de parité (scripts/unreal/export-cso-runs.mjs) : contrôle de schéma image par image, puis
+// Oracles de scénario du banc de parité (scripts/unreal/export-cso-runs.mjs) : contrôle de FORME image par image (ce n'est
+// pas une preuve d'identité : celles-ci sont les rejeux testHorseRuns, testFenceRuns, testCsoRuns, testCamRuns…), puis
 // recoupements avec le cœur : ligne de départ du jeu web = repère du tracé + décalage de la carrière lu dans
-// Content/Data, bip de départ à l'image où le cheval franchit cette ligne, et même simulation en français et en anglais
+// Content/Data, départ du chrono du web (run.course.started, avec le bip « tone » de courses.js) à l'image où la ligne lue
+// dans l'oracle (setup.start, largeur w comprise) est franchie selon strides::lineCrossed (cap à 60° compris), et même simulation en français et en anglais
 // (seuls les textes changent).
 static void testRuns() {
   J o = loadRuns();
@@ -293,7 +295,13 @@ static void testRuns() {
           "%s : ligne de départ web (%.6f ; %.6f) / cœur (%.6f ; %.6f)", w, su["start"]["x"].num(), su["start"]["z"].num(), ax + sm.x, az + sm.z);
     const J& fr = r["frames"];
     CHECK(fr.t == J::Arr && !fr.a.empty(), "%s : aucune image", w);
-    const double nx = std::sin(sm.rot), nz = std::cos(sm.rot);
+    // Ligne de départ telle que le jeu web l'a posée (setup.start : x, z, rot, w), franchie selon la règle du cœur.
+    CsoRunLine startLine;
+    startLine.x = su["start"]["x"].num();
+    startLine.z = su["start"]["z"].num();
+    startLine.rot = su["start"]["rot"].num();
+    startLine.w = su["start"]["w"].num();
+    CHECK(num(su["start"]["w"]) && startLine.w > 0, "%s : largeur de la ligne de départ absente de l'oracle", w);
     int bip = -1, crossed = -1, jumps = 0, jumpFrame = -1, airborne = -1;
     for (size_t i = 0; i < fr.a.size(); i++) {
       const J& f = fr[i];
@@ -312,16 +320,20 @@ static void testRuns() {
       for (const J& rr : f["rails"].a) ok = ok && rr["r"].t == J::Str && vec(rr["t"], 6) && su["rails"].o.count(rr["r"].s);
       CHECK(ok, "%s (%s) : image %zu mal formée", w, lang.c_str(), i);
       if (!ok) break;
-      for (const J& a : f["audio"].a)
-        if (a["fn"].s == "tone" && !a["args"].a.empty() && a["args"][0].num() == 1568) bip = bip < 0 ? (int)i : bip;
+      // Départ du chrono relevé dans l'état de l'épreuve du web (run.course.started passe à vrai) ; bip = son « tone »
+      // émis par courses.js à cette image (fréquence non recopiée).
+      if (bip < 0 && f["run"].t == J::Obj && f["run"]["course"].t == J::Obj && f["run"]["course"]["started"].b) {
+        bip = (int)i;
+        bool tone = false;
+        for (const J& a : f["audio"].a) tone = tone || (a["fn"].s == "tone" && a["src"].t == J::Str && a["src"].s == "gameplay/courses.js");
+        if (id == "droit") CHECK(tone, "%s (%s) : départ à l'image %d sans bip de courses.js", w, lang.c_str(), bip);
+      }
       if (in["jump"].b) { jumps++; jumpFrame = (int)i; }
       if (jumpFrame >= 0 && airborne < 0 && h["jumpT"].num() >= 0) airborne = (int)i;
       if (i > 0 && crossed < 0) {
         const J& p = fr[i - 1]["horse"];
-        const double s0 = (p["x"].num() - ax - sm.x) * nx + (p["z"].num() - az - sm.z) * nz;
-        const double s1 = (h["x"].num() - ax - sm.x) * nx + (h["z"].num() - az - sm.z) * nz;
-        const double u = std::abs((h["x"].num() - ax - sm.x) * nz - (h["z"].num() - az - sm.z) * nx);
-        if (s0 < 0 && s1 >= 0 && u < 3.8) crossed = (int)i;
+        const double hd = h["h"].num();
+        if (lineCrossed(startLine, true, p["x"].num(), p["z"].num(), h["x"].num(), h["z"].num(), &hd)) crossed = (int)i;
       }
     }
     nFrames += fr.a.size();
@@ -404,6 +416,7 @@ static std::string diffHorse(const CsoHorseState& s, const J& j, HorseDev& dev) 
   d("jumpY", s.jumpY, j["jY"].num(), dev.jump);
   d("yawRate", s.yawRate, orZero(j["yr"]), dev.yaw);
   d("rearT", s.rearT, orZero(j["rT"]), dev.other);
+  d("rearAnim", s.rearAnim, j["ra"].num(), dev.other);  // cabré affiché (horse.js : sin de la phase du cabré)
   d("brake", s.brake, j["bk"].num(), dev.other);
   d("kbdSteer", s.kbdSteer, orZero(j["ks"]), dev.other);
   d("lastTurn", s.lastTurn, j["lt"].num(), dev.other);
@@ -460,8 +473,9 @@ static void testHorseRuns() {
         "cso_ride.json : rampe clavier, airTurn, perte, τ ou accélération de lacet différents du portage");
   // Les 8 scénarios du critère de T2, puis les compléments du contrôle de T2 (rotation en l'air, plafond de
   // ralentissement de 9 m/s², perte d'élan plafonnée à la réception).
+  // Contrôle des remarques (hygiène) : cadence de départ arrondie au dixième depuis une vitesse non multiple de 0,1.
   const char* required[] = {"droit", "bonne-zone", "virage-serre", "rampe-clavier", "ctrl-alt", "appui-10m", "appui-3ms", "abord-70",
-                            "virage-en-lair", "survitesse", "appel-pres"};
+                            "virage-en-lair", "survitesse", "appel-pres", "cadence-depart"};
   std::map<std::string, int> clean;  // scénario → images rejouées sans recalage ni écart
   int keyFrames = 0, refusalsDecided = 0, refusalBrakes = 0, refusalBrakeBad = 0;
   // Témoins relevés dans l'oracle (jeu web) : les branches visées sont bien exercées par les scénarios rejoués.
@@ -562,6 +576,13 @@ static void testHorseRuns() {
     if (id == "refus") CHECK(count("horse:refuse") >= 1 && count("horse:jump") == 0, "%s : refus (cabré) sans saut", who.c_str());
     if (id == "virage-en-lair") CHECK(count("horse:jump") == 1 && airYaw[id] >= 10, "%s : lacet en l'air sur %d images", who.c_str(), airYaw[id]);
     if (id == "survitesse") CHECK(decelCap[id] >= 3, "%s : ralentissement à 9 m/s² sur %d images", who.c_str(), decelCap[id]);
+    // Témoin : vitesse posée non multiple de 0,1 et cadence de départ relevée = arrondi au plus proche ≠ arrondi par défaut.
+    if (id == "cadence-depart") {
+      const J& f0 = r["frames"][0]["ch"];
+      const double v0 = r["setup"]["ch0"]["s"]["v"].num(), c0 = f0["s"]["cad"].num();
+      CHECK(r["setup"]["ch0"]["s"]["cad"].isNull() && std::abs(v0 * 10 - std::round(v0 * 10)) > 0.1 && std::abs(c0 - std::floor(v0 * 10) / 10) > 0.05,
+            "%s : cadence de départ %.3f depuis %.3f m/s ne départage pas l'arrondi", who.c_str(), c0, v0);
+    }
     if (id == "appel-pres") CHECK(count("horse:jump") == 1 && lossCap[id] == 1, "%s : perte d'élan plafonnée à la réception (%d)", who.c_str(), lossCap[id]);
     if (id == "abord-61") CHECK(count("horse:refuse") == 1 && count("horse:jump") == 0, "%s : refus hors de l'angle de saut", who.c_str());
   }

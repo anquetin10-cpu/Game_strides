@@ -295,7 +295,9 @@ void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double 
 	strides::CsoFencesUpdateInput In;
 	In.dt = Dt;
 	In.time = Time;
-	In.missionActive = true;  // épreuve en cours : pas de remise hors mission (obstacles.js update)
+	// obstacles.js update : hors mission (g.missions.active nul), une barre tombée est remise une fois le joueur à plus de
+	// 60 m ; la mission du portage est l'épreuve du Pôle, active jusqu'à sa fin (bilan ou échec).
+	In.missionActive = RunPtr && !RunPtr->finished();
 	In.focusX = FocusX;
 	In.focusZ = FocusZ;
 	strides::CsoFenceOut Out;

@@ -125,7 +125,9 @@ Unreal (rendu GPU réel, jamais `-nullrhi` ; une seule instance d'UnrealEditor, 
   caméra de capture des poses fixes impose l'axe **X** et reçoit le FOV horizontal équivalent
   (`AStridesShots::HorizontalFov`). La caméra de concours du cheval (tranche T6) impose l'axe **Y** et reçoit le FOV
   vertical du web tel quel (vérifié par `Strides.Cso.CameraInGame` : projection du moteur en 844 × 390 = projection du
-  web). La perche du monde ouvert garde le réglage du joueur local (axe Y : ses 55° sont verticaux).
+  web ; AspectRatio 1 imposé, sans quoi UE 5.8 garde le champ vertical 2 atan(tan(FieldOfView / 2) / AspectRatio)). La
+  perche du monde ouvert garde le réglage du joueur local (axe Y, AspectRatio 16:9 par défaut) : elle montre
+  2 atan(tan(27,5°) / 1,778) = 32,6° verticaux, et non 55° (mesure de T6).
 - Contrôle : `grep "Strides parite" .tmp/shots-cso.log` (pose, FOV vertical → horizontal, soleil, « écrite ») et
   `sips -g pixelWidth -g pixelHeight <capture>`.
 
@@ -154,7 +156,9 @@ Revue des décors et démonstration (`-StridesShots` sans mode) : **toujours ave
 - `-StridesShotsDir=<chemin>` : absolu, ou relatif à la racine du dépôt ; créé au besoin.
 - Garde-fou : `Saved/Screenshots/Strides/` et `Saved/Screenshots/MacEditor/` contiennent des captures de Julien. Si le
   dossier retenu est l'un d'eux et qu'il contient déjà un fichier (cas de `-StridesShots` sans option), le mode
-  n'écrit rien, journalise `Strides shots: REFUS, aucune capture écrite : …` et quitte. Test moteur
+  n'écrit rien, journalise `Strides shots: REFUS, aucune capture écrite : …` et quitte. La comparaison ne tient pas
+  compte de la casse (le volume APFS du Mac ne la distingue pas : `…/Screenshots/strides` est le vrai dossier, refusé
+  aussi ; corrigé le 20/11/2026). Un lien symbolique vers ces dossiers n'est pas reconnu : ne pas en créer. Test moteur
   `Strides.Shots.OutputDir`. `scripts/unreal/rebuild-world.sh shots` passe un dossier daté sous `.tmp/shots/`.
 
 ### HUD d'épreuve (tranche T7) : poses `hud-*`, 844 × 390 et 667 × 308

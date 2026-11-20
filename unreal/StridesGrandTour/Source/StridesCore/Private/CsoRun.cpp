@@ -258,7 +258,7 @@ void CsoRun::endStep() {
 }
 
 // Ligne orientée franchie entre deux positions (courses.js:28-36) ; cap facultatif (départ seulement).
-static bool lineCrossed(const CsoRunLine& L, bool hasP0, double x0, double z0, double x1, double z1, const double* heading) {
+bool lineCrossed(const CsoRunLine& L, bool hasP0, double x0, double z0, double x1, double z1, const double* heading) {
   if (!hasP0) return false;
   const double nx = std::sin(L.rot), nz = std::cos(L.rot);
   if (heading && std::sin(*heading) * nx + std::cos(*heading) * nz < 0.5) return false;

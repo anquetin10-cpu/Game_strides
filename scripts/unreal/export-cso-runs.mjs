@@ -107,6 +107,8 @@ const SCENARIOS = [
     desc: 'Abord droit de l’oxer 2 comme « bonne-zone » ; SAUT à la première image où l’aide affiche la bonne zone ; joystick à fond à droite pendant tout le vol (lacet pris en l’air, rotation réduite à airTurn), relâché à la réception ; jusqu’à 1 s après la réception.' },
   { id: 'survitesse', type: 'pose', langs: ['fr'], pose: { x: 36, z: 12, h: Math.PI, v: 9.6 }, maxFrames: 60,
     desc: 'Cheval posé à 9,6 m/s (grand galop), au-dessus de la cadence maximale de concours (8 m/s) : cadence de départ bornée à 8, vitesse ramenée à 8 m/s sous le plafond de ralentissement de 9 m/s² (horse.js:289) ; joystick relâché, 1 s.' },
+  { id: 'cadence-depart', type: 'pose', langs: ['fr'], pose: { x: 36, z: 12, h: Math.PI, v: 5.47 }, maxFrames: 60,
+    desc: 'Contrôle des remarques (hygiène) : cheval posé à 5,47 m/s, vitesse qui n’est pas un multiple de 0,1 : cadence de départ = vitesse arrondie au dixième (Math.round, csoRide.js) = 5,5 m/s, et non 5,4 (arrondi par défaut) ; joystick relâché, 1 s.' },
   { id: 'abord-61', type: 'pose', langs: ['fr'], pose: { x: 19.83 + 10 * Math.cos((61 * Math.PI) / 180), z: 2.22 - 10 * Math.sin((61 * Math.PI) / 180), h: -Math.PI / 2 + (61 * Math.PI) / 180, v: 4.6 }, cross: { x: 19.83, z: 2.22 }, maxFrames: 200,
     desc: 'Abord du vertical 4A à 61° de son axe (hors de l’angle de saut), 4,6 m/s, ligne de marche coupant le plan de l’obstacle à 2 m de son centre, côté opposé à l’arrivée : les épaules entrent dans la largeur loin de la barre ; refus décidé par Obstacles.updateHorse quand l’écart passe sous v²/16 + 0,3 (tranche T3), freinage, cabré ; joystick relâché ; jusqu’à la fin du cabré.' },
   { id: 'appel-pres', type: 'pose', langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 300,
@@ -132,7 +134,7 @@ const SCENARIOS = [
   { id: 't3-effleurement-haut', type: 'pose', classic: true, langs: ['fr'], pose: { x: 8.13, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
     desc: 'Abord droit du vertical 3 à 6,2 m/s : SAUT à la première image où la marge prévue est entre +0,02 et +0,04 m (barre effleurée de justesse : vibration, franchi) ; jusqu’à la fin de la vibration.' },
   { id: 't3-refus-62', type: 'pose', classic: true, langs: ['fr'], pose: { x: -36, z: 28.21, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
-    desc: 'Abord droit du vertical 6A à 6,2 m/s sans appui : refus décidé à l’abord, freinage jusqu’à l’arrêt, nez dans l’obstacle (barre emportée vers le cheval, garde-fou du nez), cabré 1,1 s, refus compté à l’arrêt ; jusqu’à la fin du cabré et de la chute.' },
+    desc: 'Abord droit du vertical 6A à 6,2 m/s sans appui : refus décidé à l’abord, freinage jusqu’à l’arrêt, nez dans l’obstacle (barre avant emportée dans le sens de la marche, garde-fou du nez), cabré 1,1 s, refus compté à l’arrêt ; jusqu’à la fin du cabré et de la chute.' },
   { id: 't3-tout-contre-remonte', type: 'pose', classic: true, langs: ['fr'], pose: { x: -5, z: 28.21, h: Math.PI / 2, v: 6.2 }, maxFrames: 500,
     desc: 'Abord droit du vertical 7 à 6,2 m/s sans appui : refus tout contre, barre emportée ; après le cabré, joystick à fond à gauche jusqu’à 100° de l’axe (dos tourné : refus « détourné ») puis relâché ; les refus repris pendant la volte ne sont pas recomptés ; le cheval s’éloigne, le jury remonte la barre plus de 3 s après le refus, une fois le cheval à plus de 5 m ; jusqu’à 10 images après la remise.' },
   { id: 't3-refus-lent', type: 'pose', classic: true, langs: ['fr'], pose: { x: 16, z: -28.78, h: Math.PI / 2, v: 2.6 }, maxFrames: 300,
@@ -843,6 +845,7 @@ function PAGE() {
       return { jump: press, move: [st.air && st.land === undefined ? 1 : 0, 0] };
     },
     survitesse: (st) => (st.k >= 30 ? null : {}),
+    'cadence-depart': (st) => (st.k >= 30 ? null : {}),
     'abord-61': (st) => {
       const h = st.h;
       if (st.rear === undefined && h._rearT > 0) st.rear = st.k;
@@ -1418,6 +1421,18 @@ function PAGE() {
 
   // Mise en place commune : boucle de rendu arrêtée, fiches et dialogues fermés, hasard à graine, temps de jeu fixés,
   // cheval monté posé en (x, z, cap) à l'arrêt, caméra recalée, activité cso_train lancée.
+  // Valeurs initiales du cheval WildMesh (constructeur de PjlHorse, pjlHorse.js:215-219) : affectations littérales
+  // « this.<champ> = <valeur JSON>; » relevées dans le source de la classe du jeu ; erreur si l'une manque.
+  const pjlInitial = (pjl) => {
+    const src = pjl.constructor.toString();
+    const out = {};
+    for (const k of ['stride', 'roll', 'landT', 'wasJump']) {
+      const m = new RegExp(`this\\.${k}\\s*=\\s*([^;\\n]+);`).exec(src);
+      if (!m) throw new Error(`PjlHorse : valeur initiale de ${k} introuvable dans le constructeur`);
+      out[k] = JSON.parse(m[1].trim());
+    }
+    return out;
+  };
   P.setup = async (sc, seed) => {
     A.stopLoop();
     A.closeCards();
@@ -1454,9 +1469,10 @@ function PAGE() {
     }
     h.lastTurn = 0;
     // Cheval WildMesh (pjlHorse.js) : sa phase de foulée réécrit celle du cheval du jeu (pjlHorse.js:431) ; remise aux
-    // valeurs de son constructeur (pjlHorse.js:215-219) et lissages effacés.
+    // valeurs de son constructeur (pjlHorse.js:215-219), lues dans le source de la classe chargée par la page (aucune
+    // valeur recopiée) ; la phase vaut horse.anim.phase, remise à 0 ci-dessus. Lissages effacés.
     if (h.pjl) {
-      Object.assign(h.pjl, { ph: 0, stride: 3.42, roll: 0, landT: 9, wasJump: false });
+      Object.assign(h.pjl, pjlInitial(h.pjl), { ph: h.anim?.phase || 0 });
       for (const k of ['_clrA', '_clrY', '_clrF', 'dPitch']) delete h.pjl[k];
     }
     // Cavaliers du décor (Ambient.rider de npcs.js : cheval à PathAI) remis à leur état d'apparition. Sinon ils gardent
@@ -1756,7 +1772,7 @@ const head = {
   dt: 1 / 30,
   precision: 1e-6,
   inputs: 'in.move = joystick virtuel [x, y] (input.setVirtualMove) ; in.keys = touches clavier tenues (input.keys) ; in.held = actions tenues (input.held, ex. gallop) ; in.jump = SAUT pressé à cette image ; in.ui = bouton de carte touché (data-id) avant l’image',
-  state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch)',
+  state: 'après g.update(dt) : horse (pos, cap, vitesse, jumpT, jumpY, cadence de concours, mode), run (étape i, stepT, texte, état du parcours), course (game.course), board (tableau de chrono : données et textes), cam (œil, cible, direction, FOV, aspect), rails (barres dont la transformée locale [x, y, z, rx, ry, rz] a changé depuis l’image précédente ; état initial dans setup.rails), ev (bus), hud / audio (appels de premier niveau), ch (cheval de concours, pleine précision, voir ch) ; valeurs résumées (run.course, course, board, ev.d, arguments) : au-delà de deux niveaux d’imbrication, objets et tableaux remplacés par null (ex. run.course.log, steps de mission:start) : journal des fautes complet dans ep.lg, recul de la caméra dans cc.bk',
   ep: 'canal du déroulé d’épreuve (tranche T4), pleine précision : entrées de Run.update (missions.js) à chaque image où une mission est en cours : e0 = nombre d’événements du bus émis dans l’image avant Run.update, i / i1 = étape avant / après, dt = pas de la mission (nul en pause), gt = game.time, x, z, h = cheval du joueur, fx, fz = player.focus, mode = player.mode, tk / vh = player.inTruck / véhicule présent (au volant seulement), cad / cad1 = cadence de concours avant / après (null si indéfinie) ; relevés seulement quand ils changent : hl = dernier numéro surligné (Obstacles.highlight du parcours cso), rr = appels de Obstacles.resetRails(cso) depuis le relevé précédent, cheer = game.cheerT réécrit pendant Run.update, lg = journal des fautes de l’épreuve (state.log) en fin d’image, entrées [label, kind, cause, causeText] (null si absent) ; lj = dernier saut du cheval du joueur (horse._lastJump, lu par le mot d’appel de courses.js:203-211) : [numéro de l’obstacle sauté s’il est du parcours cso, sinon null ; takeoffQuality(plan), null si aucune], null si aucun saut',
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
   lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action)',

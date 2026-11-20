@@ -123,11 +123,16 @@ bool FStridesCsoControlsTest::RunTest(const FString&)
 	const TSharedPtr<FJsonObject> Bt = V0->GetObjectField(TEXT("buttons"));
 	auto RectOf = [](const TSharedPtr<FJsonObject>& E) { const TArray<TSharedPtr<FJsonValue>>& A = E->GetArrayField(TEXT("rect")); return FVector4(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber(), A[3]->AsNumber()); };
 	const FVector4 WantJ = RectOf(Bt->GetObjectField(TEXT("jump"))), WantP = RectOf(Bt->GetObjectField(TEXT("pause")));
-	const FVector4 GotJ = Touch->BoxOf(TEXT("Jump")), GotP = Touch->BoxOf(TEXT("Pause"));
+	// En 844 × 390, la boîte calculée vient du relevé lui-même (ancrage à droite et en bas d'une vue de même taille) : ce
+	// contrôle vérifie le placement effectif (slot du canevas = boîte relevée), pas l'identité du rendu, prouvée par les
+	// montages côte à côte cmd-* et hud-*. Les relevés n'existent qu'en 844 × 390 et 667 × 308 : l'ancrage à droite et en
+	// bas pour une autre taille de viewport n'est comparé au web par aucun test.
+	const FVector4 GotJ = Touch->SlotBoxOf(TEXT("Jump")), GotP = Touch->SlotBoxOf(TEXT("Pause"));
 	const double CssW = FCString::Atod(*Bt->GetObjectField(TEXT("jump"))->GetStringField(TEXT("width")));
-	TestTrue(FString::Printf(TEXT("SAUT : %.0f × %.0f px CSS (largeur calculée %s), affiché (%.1f ; %.1f) %.1f × %.1f = relevé du web (%.1f ; %.1f) %.1f × %.1f"), CssW, CssW,
-		*Bt->GetObjectField(TEXT("jump"))->GetStringField(TEXT("height")), GotJ.X, GotJ.Y, GotJ.Z, GotJ.W, WantJ.X, WantJ.Y, WantJ.Z, WantJ.W), CssW == 104 && (GotJ - WantJ).Size() < 1e-6);
-	TestTrue(FString::Printf(TEXT("pause : (%.1f ; %.1f) %.1f × %.1f = relevé du web"), GotP.X, GotP.Y, GotP.Z, GotP.W), (GotP - WantP).Size() < 1e-6);
+	TestTrue(FString::Printf(TEXT("SAUT : %.0f × %.0f px CSS (largeur calculée %s), slot posé (%.1f ; %.1f) %.1f × %.1f = boîte relevée (%.1f ; %.1f) %.1f × %.1f (placement, pas identité)"), CssW, CssW,
+		*Bt->GetObjectField(TEXT("jump"))->GetStringField(TEXT("height")), GotJ.X, GotJ.Y, GotJ.Z, GotJ.W, WantJ.X, WantJ.Y, WantJ.Z, WantJ.W), CssW == 104 && (GotJ - WantJ).Size() < 1e-3);
+	// (slot du canevas en float : 1e-3 px)
+	TestTrue(FString::Printf(TEXT("pause : slot posé (%.1f ; %.1f) %.1f × %.1f = boîte relevée (placement, pas identité)"), GotP.X, GotP.Y, GotP.Z, GotP.W), (GotP - WantP).Size() < 1e-3);
 	const FVector4 RestJ = Touch->BoxOf(TEXT("Joystick"));
 	const FVector4 WantRest = RectOf(V0->GetObjectField(TEXT("rest"))->GetObjectField(TEXT("base")));
 	TestTrue(FString::Printf(TEXT("joystick au repos : (%.1f ; %.1f) %.1f × %.1f, opacité %.2f = relevé du web"), RestJ.X, RestJ.Y, RestJ.Z, RestJ.W, Touch->JoystickOpacity()),
@@ -226,7 +231,7 @@ bool FStridesCsoControlsTest::RunTest(const FString&)
 	// 5) Gel en pause et au téléphone, image par image, comparé au jeu web : ORA/cso_freeze.json (boucle de game.js:1406,
 	//    update seulement à l'état « play »), même séquence d'actions après le départ du chrono (pause = Échap, phone = P,
 	//    map = M, resume = Reprendre sur la carte Pause). Par image : update appelée, état « paused », simPaused, téléphone
-	//    et application, chrono avancé, cheval déplacé. Pendant la première pause : carte Pause et ses bascules ; pendant
+	//    et application, chrono écoulé (valeur, depuis la première image), cheval déplacé (oui ou non). Pendant la première pause : carte Pause et ses bascules ; pendant
 	//    le premier téléphone : touche W non retenue.
 	FString FText;
 	TSharedPtr<FJsonObject> FDoc;
@@ -240,6 +245,11 @@ bool FStridesCsoControlsTest::RunTest(const FString&)
 	double PrevT = Course->Run()->state().t, PrevX = Horse->WebX(), PrevZ = Horse->WebZ();
 	double PauseT0 = -1, PauseT1 = -1, PhoneT0 = -1, PhoneT1 = -1, RunStartT = 0, PhoneStartT = 0;
 	int32 PauseRun = 0, PhoneRun = 0, MaxPauseRun = 0, MaxPhoneRun = 0;
+	// Valeurs du chrono comparées à celles du web (et non plus seulement « avancé ou non ») : chrono écoulé depuis la
+	// première image de la séquence, au millionième de l'oracle près (l'arrivée sur la ligne de départ diffère : cheval
+	// posé ici, galop du scénario « droit » au web). Positions : comparées par « déplacé ou non » seulement (vitesses
+	// d'abord différentes).
+	double T0u = 0, T0w = 0, MaxDT = 0;
 	for (int32 I = 0; I < OF.Num(); I++)
 	{
 		const TSharedPtr<FJsonObject> O = OF[I]->AsObject();
@@ -260,6 +270,9 @@ bool FStridesCsoControlsTest::RunTest(const FString&)
 		FString WApp;
 		O->TryGetStringField(TEXT("app"), WApp);
 		const double WT = O->GetNumberField(TEXT("t")), WX = O->GetNumberField(TEXT("x")), WZ = O->GetNumberField(TEXT("z"));
+		if (I == 0) { T0u = T; T0w = WT; }
+		const double DT = FMath::Abs((T - T0u) - (WT - T0w));
+		MaxDT = FMath::Max(MaxDT, DT);
 		bool bWAdv = bAdv, bWMov = bMov;
 		if (I > 0)
 		{
@@ -268,7 +281,7 @@ bool FStridesCsoControlsTest::RunTest(const FString&)
 			bWMov = WX != Q->GetNumberField(TEXT("x")) || WZ != Q->GetNumberField(TEXT("z"));
 		}
 		const bool bSame = bUpd == O->GetBoolField(TEXT("upd")) && bPaused == (O->GetStringField(TEXT("st")) == TEXT("paused")) && bSp == O->GetBoolField(TEXT("sp")) &&
-			bPh == O->GetBoolField(TEXT("ph")) && App == WApp && bAdv == bWAdv && bMov == bWMov;
+			bPh == O->GetBoolField(TEXT("ph")) && App == WApp && bAdv == bWAdv && bMov == bWMov && DT < 2e-6;
 		if (!bSame)
 		{
 			Bad++;
@@ -321,6 +334,7 @@ bool FStridesCsoControlsTest::RunTest(const FString&)
 			PC->FeedKey(TEXT("KeyW"), false, false);
 		}
 	}
+	TestTrue(FString::Printf(TEXT("chrono écoulé identique au web à chaque image (écart max %.3g s ; chrono à la première image : portage %.6f, web %.6f)"), MaxDT, T0u, T0w), MaxDT < 2e-6);
 	TestTrue(FString::Printf(TEXT("gel image par image identique au web (cso_freeze.json) : %d images, %d écart(s) ; chrono avancé à %d images, figé à %d%s%s"), OF.Num(), Bad, Advanced, Frozen,
 		BadLines.Num() ? TEXT(" ; ") : TEXT(""), *FString::Join(BadLines, TEXT(" | "))), OF.Num() > 300 && Bad == 0);
 	Info(FString::Printf(TEXT("gel : %d images comparées à cso_freeze.json, %d écart(s), chrono avancé à %d images, figé à %d ; pause %d images sans update, chrono %.6f -> %.6f s ; téléphone %d images figées, chrono %.6f -> %.6f s ; Échap ferme le téléphone %d"),

@@ -227,6 +227,16 @@ bool FStridesCsoHudWidgetTest::RunTest(const FString&)
 		if (C.Fb) TestTrue(FString::Printf(TEXT("%s : mot d'appel « %s »"), C.Run, *All), Shown.Contains(FString(TEXT("fb=")) + UTF8_TO_TCHAR(C.Fb)));
 		if (C.bCad) TestTrue(FString::Printf(TEXT("%s : crans de cadence affichés « %s »"), C.Run, *All), H.cadShow() && Shown.Contains(FString::Printf(TEXT("cad=%d"), H.cadOn())));
 		TestFalse(FString::Printf(TEXT("%s : horloge du tableau masquée (cso-sober)"), C.Run), Shown.Contains(TEXT("clock")));
+		// Gap flex : l'icône d'horloge repliée (display: none) ne laisse pas d'écart ; marge gauche du chrono = sa position
+		// relevée dans le navigateur moins le bord intérieur du tableau (bordure + padding).
+		{
+			const TSharedPtr<FJsonObject> V0 = Data->CsoHudStyle()->GetArrayField(TEXT("views"))[0]->AsObject();
+			auto RectX = [&](const TCHAR* K) { return V0->GetObjectField(K)->GetArrayField(TEXT("rect"))[0]->AsNumber(); };
+			auto Px = [&](const TCHAR* K, const TCHAR* P) { return FCString::Atod(*V0->GetObjectField(K)->GetStringField(P)); };
+			const double Want = RectX(TEXT("boardT")) - (RectX(TEXT("board")) + Px(TEXT("board"), TEXT("borderTopWidth")) + Px(TEXT("board"), TEXT("paddingLeft")));
+			TestTrue(FString::Printf(TEXT("%s : chrono à %.2f px du bord intérieur du tableau (navigateur : %.2f px)"), C.Run, Widget->ChronoLeftPadding(), Want),
+				FMath::Abs(Widget->ChronoLeftPadding() - Want) < 1e-6);
+		}
 		if (!C.Toast) TestFalse(FString::Printf(TEXT("%s : pas de toast"), C.Run), All.Contains(TEXT("toast=")));
 		AddInfo(FString::Printf(TEXT("%s image %d : %s"), C.Run, Target, *All));
 		UE_LOG(LogTemp, Display, TEXT("Strides.Cso.HudWidget : %s image %d : %s"), C.Run, Target, *All);

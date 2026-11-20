@@ -41,10 +41,18 @@ la citation reste donc valable mais à revérifier sur HEAD.
 
 ## 1. Synthèse
 
-Décompte du tableau §2 (122 lignes) : **identique_prouve 10**, **partiel 51**, **absent 61** ; niveaux : teste 21,
-joue_ecran 7, compile 33, aucun 61. Tout ce qui est
-identique_prouve est de la logique pure de `StridesCore` (tracé, hauteurs, temps accordé, pénalités de temps, saut, conduite
-en fonctions) ; rien de ce qui se voit ou s'entend n'est prouvé.
+Décompte du tableau §2 à l'analyse (18/11/2026, 122 lignes) : identique_prouve 10, partiel 51, absent 61 ; niveaux :
+teste 21, joue_ecran 7, compile 33, aucun 61. À cette date, tout ce qui était identique_prouve était de la logique pure
+de `StridesCore` (tracé, hauteurs, temps accordé, pénalités de temps, saut, conduite en fonctions) et rien de ce qui se
+voit ou s'entend n'était prouvé.
+
+**Recompté le 20/11/2026** (contrôle des remarques, `python3` sur le tableau tel qu'il est écrit) : **identique_prouve
+13**, **partiel 58**, **absent 51** ; niveaux : teste 36, joue_ecran 10, compile 25, aucun 51. Ce tableau n'a été tenu
+à jour que pour les lignes que T6, T7 et T8 ont touchées (mention « (T6) », références récentes) ; les lignes que T2 à T5
+ont changées (conduite, saut, refus, barres, déroulé, habillage) gardent l'état du 18/11. **L'état courant fait foi dans
+l'inventaire** (`unreal/docs/parite/inventaire/*.json`, rendu en `unreal/docs/PARITE.md`), pas dans ce décompte. Depuis
+T5, des éléments visibles sont prouvés par montage côte à côte (obstacles et lignes, cadrage de la caméra, HUD
+d'épreuve, boutons SAUT et pause, carte Pause : `unreal/docs/parite/cso/`) ; rien de ce qui s'entend n'est porté (T12).
 
 Écarts structurels, par gravité (constat du code, chiffres calculés signalés) :
 
@@ -84,6 +92,12 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 ---
 
 ## 2. Tableau d'écarts par élément de la spécification
+
+**Tableau historique** (analyse du 18/11/2026, HEAD `5837a02e`) : les références `fichier:ligne` et les états sont ceux
+de cette date, sauf sur les lignes mises à jour par T6, T7, T8 ou le contrôle des remarques du 20/11 (mention de la
+tranche ou référence récente). Par exemple les citations de `SG/StridesHUD.cpp:25-83`, `:39`, `:40-41`, `:61-79` décrivent
+le HUD de débogage d'avant T7 (aujourd'hui `DrawHUD`, masqué en épreuve) ; celles de `SG/StridesHorse.cpp` d'avant T2
+décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.md`).
 
 ### 2.1 Entrée dans l'épreuve (§1)
 
@@ -140,7 +154,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 | 3 | Perte à la réception v × (1 − min(0,04 ; \|dev\| × 0,5)) | partiel | compile | `SG/StridesHorse.cpp:274` | −4 % fixe dès \|dev\| > 0,02, sinon rien |
 | 3 | Rampe clavier 3,2 /s (× 2 en relâchant / inversant) | absent | aucun | `SG/StridesDataSubsystem.cpp:81` | paramètre lu, jamais utilisé |
 | 3 | Clavier : flèches / WASD (ZQSD), Espace, Échap, P/Tab, M ; Ctrl / Alt = amplitude 0,5 / 0,25 | partiel | teste | `SC/CsoInput.cpp:109-163` ; `SG/StridesPlayerController.cpp:35-69`, `277-334`, `422-423` ; `ORA/cso_input.json`, `ORA/cso_freeze.json` | codes physiques (code matériel du Mac, T8) ; Échap pause, P / Tab téléphone, M carte (image par image comme le web) ; allures du portage sans effet en épreuve (testé, mutations détectées) ; code matériel supposé = kVK_* (pas essayé sur un vrai clavier AZERTY) ; hors Mac, repli par nom de touche |
-| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | identique_prouve | joue_ecran | `SC/CsoInput.cpp:12-99` ; `SG/StridesPlayerController.cpp:239-266` ; `SG/StridesTouchControls.cpp:250-273`, `368-385` ; `ORA/cso_input.json` ; `cso/cmd-joystick-*` | logique rejouée (624 appels, 0 écart) ; `InputTouch` testé (facteur 3, identifiants, types de toucher, 8 mutations détectées) ; montages côte à côte, doigt routé par Slate jusqu'au viewport ; joysticks du moteur retirés ; toucher réel non essayé (aucun appareil iOS) ; dégradé et ombre approchés |
+| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | partiel | joue_ecran | `SC/CsoInput.cpp:12-99` ; `SG/StridesPlayerController.cpp:239-266` ; `SG/StridesTouchControls.cpp:250-273`, `368-385` ; `ORA/cso_input.json` ; `cso/cmd-joystick-*` | logique rejouée (624 appels, 0 écart) ; `InputTouch` testé (facteur 3, identifiants, types de toucher, 8 mutations détectées) ; montages côte à côte, doigt routé par Slate jusqu'au viewport ; joysticks du moteur retirés ; logique identique (oracle), rendu non identique : pas de transition d'opacité de 0,2 s au relâché (`styles.css:90`), dégradé et ombre approchés ; facteur de pixels iOS et toucher réel non vérifiés (aucun appareil iOS, couche UIKit non exercée) |
 | 3 | Sortie de piste 2,6 s, cadence → 1,9 m/s à −1,6 m/s² | absent | aucun | — | — |
 | 3 | Menu pause : rappel des commandes, bascules `Tracé au sol` et `Aide au saut` | partiel | joue_ecran | `SG/StridesPauseMenu.cpp:144-410` ; `SC/SaveGame.cpp:107-140` ; `ORA/cso_pause.json` ; `cso/cmd-pause-*` | bascules rejouées (27 étapes, 0 écart), réglages sauvegardés et relus, aide appliquée à l'épreuve en cours ; Écran titre, Découvrir, Partager sans effet ; police et interlignes approchés |
 | 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | partiel | teste | `SG/StridesHorse.cpp:288-305`, `371` ; `SG/StridesPlayerController.cpp:286`, `355-393` ; `ORA/cso_freeze.json` | image par image comme le web (338 images, 0 écart : l'image d'Échap et celle de l'ouverture du téléphone avancent, celle de la fermeture reste figée) ; pause et téléphone : 150 images sans bouger chrono ni cheval (`Strides.Cso.Controls`) ; dialogues et écrans de choix non portés |
@@ -197,7 +211,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 |---|---|---|---|---|---|
 | 7.1 | Décision (largeur, toward > 0,3, v > 0,5 ; zone refuse, marge < −0,3 côté près, lent et nez < 1,5 m ; oblique : écart < v²/16 + 0,3) | partiel | compile | `SG/StridesHorse.cpp:249-259` | seul cas : première barre à < 0,55 m de l'origine ; branche `else StartJump(F)` (`:257`) = saut automatique sans équivalent web, inatteignable car première barre < 0,55 implique zone refuse (`SC/JumpModel.cpp:92`, déduit du code) |
 | 7.1 | Freinage jusqu'à l'arrêt, cabré 1,1 s, `neigh` | absent | aucun | `SG/StridesHorse.cpp:167`, `256` | vitesse mise à 0 d'un coup, 1,2 s sans animation |
-| 7.1 | Refus tout contre : barre avant tombe vers le cheval, remontée 3 s plus tard | absent | aucun | — | — |
+| 7.1 | Refus tout contre : barre avant emportée dans le sens de la marche (spécification corrigée en T3, §7.1), remontée 3 s plus tard | absent | aucun | — | — (historique : porté en T3, voir l'inventaire `cso.refus-decision`) |
 | 7.1 | Dérobade : rien compté ; SAUT → « Trop tôt » | partiel | compile | `SG/StridesCourse.cpp:71` | rien compté (conforme) ; SAUT lance un saut libre, ou un saut vers l'obstacle si l'écart latéral < 2,5 m |
 | 7.2 | Recomptage seulement après détour (> profondeur/2 + 6 m) ou 5 s | absent | aucun | `SG/StridesHorse.cpp:228` | seul délai : 1,2 s |
 | 7.2 | Refus compté (chrono lancé, face, attendu) +4 | partiel | teste | `SC/CsoCourse.cpp:116-120` ; `TC:137-144` | scénario écrit à la main |
@@ -239,11 +253,11 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | identique_prouve (T6) | teste | `SC/CsoCamera.cpp:36-134`, `SG/StridesHorse.cpp:420-524` | pas porté ligne à ligne, oracle « cc » rejoué à 5,7e-14 m près, montages aux 6 instants ; entrée depuis la perche du portage (caméra du monde ouvert non portée) |
-| 10 | FOV 58° vertical fixe | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:67-81` | axe Y maintenu + AspectRatio 1 : M11 = 1/tan(FOV/2) mesuré sur la projection du moteur ; amorti et paliers de 0,05° portés |
-| 10 | Perche anti-collision (1,0 → 6,6 m, pas 0,4, hauteur 2,2 → 3,4, ≥ 0,8 m du sol) | partiel (T6) | teste | `SC/CsoCamera.cpp:72-102`, `SG/StridesHorse.cpp:433-440` | règles prouvées sonde réinjectée ; sonde du jeu = sphère de 0,45 m sur le canal Camera, pas les colliders du web |
-| 10 | Verrouillage derrière le cavalier, sans orbite ni tremblement | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:473-524` | caméra posée en absolu par le cœur à chaque image, aucune entrée de l'orbite |
-| 10 | Caméra du monde ouvert rétablie à la sortie (FOV 60 + vitesse, 6,6 m, 2,35 m) | absent | aucun | `SG/StridesHorse.cpp:463-471` | coupe franche vers la perche du SpringArm (état commun de `camera.js:270-282` non porté) |
+| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | identique_prouve (T6) | teste | `SC/CsoCamera.cpp:36-134`, `SG/StridesHorse.cpp:439-543` | pas porté ligne à ligne, oracle « cc » rejoué à 5,7e-14 m près, montages aux 6 instants ; entrée depuis la perche du portage (caméra du monde ouvert non portée) |
+| 10 | FOV 58° vertical fixe | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:68-82` | axe Y maintenu + AspectRatio 1 : M11 = 1/tan(FOV/2) mesuré sur la projection du moteur ; amorti et paliers de 0,05° portés |
+| 10 | Perche anti-collision (1,0 → 6,6 m, pas 0,4, hauteur 2,2 → 3,4, ≥ 0,8 m du sol) | partiel (T6) | teste | `SC/CsoCamera.cpp:72-102`, `SG/StridesHorse.cpp:452-459` | règles prouvées sonde réinjectée ; sonde du jeu = sphère de 0,45 m sur le canal Camera, pas les colliders du web |
+| 10 | Verrouillage derrière le cavalier, sans orbite ni tremblement | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:492-543` | caméra posée en absolu par le cœur à chaque image, aucune entrée de l'orbite |
+| 10 | Caméra du monde ouvert rétablie à la sortie (FOV 60 + vitesse, 6,6 m, 2,35 m) | absent | aucun | `SG/StridesHorse.cpp:482-490` | coupe franche vers la perche du SpringArm (état commun de `camera.js:270-282` non porté) |
 
 ### 2.11 Arrivée et bilan (§11)
 
@@ -717,7 +731,15 @@ Principes communs :
   - obstacles survolés : ceux du parcours seulement ; entrée : fondu depuis la perche du monde ouvert du portage (champ
     vertical 32,6°) ; sortie : coupe franche vers la perche, l'état commun de `camera.js:270-282` n'est pas porté
     (`camera.concours-sortie`) ;
-  - critère « à 1e-6 m près » tenu en double sur le cœur ; le composant Unreal stocke le FOV en `float` (écart 1,3e-6°).
+  - critère « à 1e-6 m près » tenu en double sur le cœur ; le composant Unreal stocke le FOV en `float` (écart 1,3e-6°) ;
+  - (ajout du contrôle des remarques, 20/11/2026) le canal « cc » ne départage pas l'emprise de la règle « obstacle
+    survolé » (`camera.js:233-238` : boîte de 4 m, demi-largeur w/2 + 2,4, demi-profondeur depth/2 + 0,8, filtre
+    `o.off`), ni le terme `h.groundY` du plancher (`camera.js:239`), ni la remise à zéro du point visé lors d'une nouvelle
+    entrée sans snap : seule `t6-survol` exerce la remontée, caméra immobile au centre d'une haie de cross. Six mutations
+    sondées, non détectées, déclarées dans `ATTENDUES` de `scripts/unreal/mutations-cso-camera.py` (30 mutations, 24
+    détectées). Impact nul dans la carrière : avec cy = ay + 3,4, la remontée ne joue que si o.h dépasse environ 1,95 m,
+    le parcours monte au plus à 1,15 m. La phrase « 24 sur 24 détectées » ci-dessus ne valait que pour les mutations de
+    l'époque.
 
 ### T7. HUD d'épreuve UMG (tableau, crans, mot d'appel, astuce, toasts, grand message, masquages)
 
@@ -992,6 +1014,113 @@ Principes communs :
 - **Preuve visuelle** : recette complète §13 (13 étapes) ; preuve sonore par journal.
 - **Dépendances / risques** : T3, T4, puis toutes les tranches pour la recette. `audio.js` suppose un `AudioContext` vivant :
   faisabilité du rendu hors ligne à confirmer ; validation sur appareil bloquée par `idevice_id` (VM:44-45).
+
+### Contrôle des remarques des contrôles adverses (hygiène, 20/11/2026)
+
+Base `055c2c92`. Chaque remarque des contrôles de R0 à T8 est corrigée, prouvée déjà réglée, ou déclarée (branche
+qu'aucun oracle ne départage, raison écrite dans le script de mutations et l'inventaire). Aucun comportement du jeu n'a
+changé, sauf pour l'aligner sur le JS (points 17, 25, 33, 34). Abréviations : C = corrigé, R = déjà réglé (preuve),
+D = déclaré, H = historique (rien à réécrire sans force push, interdit).
+
+1. C — `cso.trace-pole` : `CsoCourse.cpp:51-70 (poleDesign)`. Références `fichier:ligne` de l'inventaire revues pour
+   les fichiers de la tranche a (test_core, StridesHUD, StridesHorse, StridesHorse.h, CsoCourse, CsoHorse, CsoFences,
+   StridesCourse, StridesCsoHud, StridesShots, StridesGameMode, StridesDataSubsystem, StridesTouchControls,
+   StridesCoreTests et tests moteur) : 285 références `fichier:ligne` remplacées (décompte par script contre HEAD ;
+   voir 29, 36, 42). Les références vers les fichiers que la tranche a n'a pas touchés n'ont pas été revues.
+2. C — commentaire de `SG/StridesDataSubsystem.cpp:123` : `testCourse`.
+3. C — `testRuns` lit la ligne de départ dans l'oracle (`setup.start` : x, z, rot, **w**) et la déclare franchie par
+   `strides::lineCrossed` (fonction du cœur, désormais exposée dans `CsoRun.h` : w/2 + 0,3 et cap à 60° compris) ; le
+   départ du web est lu dans l'état relevé (`run.course.started`) avec le bip « tone » de `courses.js` à cette image :
+   plus de 3,8 ni de 1568 recopiés.
+4. R + D — recul de la caméra enregistré depuis T6 (`cc.bk`, comparé par `testCamRuns`) ; journal des fautes complet
+   dans `ep.lg` depuis le second contrôle de T4 (comparé par `testCsoRuns`). La réduction de `summ` (au-delà de deux
+   niveaux : `run.course.log`, `steps` de `mission:start` à null) est maintenant écrite dans l'en-tête de l'index
+   (`state`), réexporté.
+5. C — l'exporteur lit les valeurs initiales du cheval WildMesh (`stride`, `roll`, `landT`, `wasJump`) dans le source de
+   la classe `PjlHorse` chargée par la page (`pjlInitial`, erreur si l'une manque) ; `ph` = `horse.anim.phase` comme le
+   constructeur. Preuve : `droit` (fr, en) et `t3-refus-5s` réexportés, identiques à l'octet.
+6. R + D — la formule de l'épreuve est comparée directement au web par le déroulé, pas seulement à la lecture :
+   `courses.js:148` (tableau) à chaque image (28 409 tableaux, dont `t4-temps-limite` et `t4-un-point`), `:341` (texte du
+   grand message), `:364` (`state.timeFaults`). Les cas limites de la grille ne passent que par `timeFaults` et
+   `csoPoints` (déclaré à `cso.penalites-temps`).
+7. C — `testRuns` présenté comme un contrôle de **forme** (commentaire du test) ; les preuves d'identité sont les rejeux.
+8. C — `cheval.reception-concours` : plafond de 4 % exercé par `appel-pres` ; `cheval.acceleration` : 34 exécutions du
+   canal « ch » (et non 10).
+9. C + D — `diffHorse` compare désormais `rearAnim` (mutation de la phase du cabré détectée) ; nouveau scénario
+   `cadence-depart` (cheval posé à 5,47 m/s : cadence de départ 5,5 et non 5,4 ; mutation « arrondi par défaut »
+   détectée, témoin vérifié par `testHorseRuns`). `mutations-cso-horse.py` : 32 mutations, 22 détectées, 10 déclarées dans
+   `ATTENDUES` (std::round ≡ jsRound pour v ≥ 0 ; eau ; pente ; trois branches hors épreuve ; rayon 12 m ; jt0 ; fenêtre
+   de réception ; clause « marge < −late »).
+10. D — sous-règles de `csoApproachRefusal` : refus lent (1,5 m, 3,2 m/s) **exercé** (mutations détectées) ; clause
+    « marge < −late avec ideal ≤ L », rayon 12 m, fenêtre 0,6 s et état en l'air jt0 non départagés, déclarés (script,
+    `cso.refus-decision`).
+11. C — `Strides.Cso.HorseInGame` vérifie le nez : au plus OVERRUN (0,6 m) au-delà de la face tant que le cheval avance
+    à plus de 0,5 m/s. Le garde-fou du web ne s'applique qu'au-dessus de 0,5 m/s (`obstacles.js:444`, `462-465`) : à
+    l'arrêt le nez glisse encore, 0,708 m dans l'oracle `t3-refus-62` (0,15 m/s) ; le test relève la valeur à l'arrêt.
+12. C — références de `StridesHorse.cpp` et `StridesHorse.h` dans `cso.json`, `interface.json`, `socle.json` et les
+    autres fichiers d'inventaire recalées (`StartJump` n'existe plus : `TickCso :299-381`, seuils d'allure `:380`).
+13. C — démo F8 rejouée (`-StridesShots -StridesShotsDir=<scratchpad>`, rendu Metal, 26 captures hors du dépôt) :
+    « 60,32 / 64 s 0 pt Arrivée ✓ » ; dossiers `Saved/Screenshots/Strides` et `MacEditor` identiques avant et après
+    (`shasum`). Inventaire : appui à **9,87 m** (première barre au moment de l'appui ; 9,66 m après le pas de l'image).
+14. D — `mutations-cso-fences.py` : 18 mutations de plus sondées ; 55 au total, 38 détectées, 17 dans `ATTENDUES` (dont
+    14 nouvelles : rayon 12 m, jt0, clause « marge < −late », éloignement de 8 m, cause « angle », trois des membres, résultat
+    précédent annoncé, distance du détour, obstacle plein, entraînement, hors mission, seuil de vibration). Inventaire
+    `cso.jugement-barres`, `cso.chute-barre`, `cso.contact-membres`, `cso.effleurement`, `cso.refus-unique`.
+15. H — `cc66e3da` incohérent seul (captures au commit suivant) : non réécrit ; chaque commit de ce contrôle est
+    cohérent seul (code, inventaire, `PARITE.md`).
+16. C — « barre emportée vers le cheval » remplacée par « dans le sens de la marche » : §2 (ligne 7.1), description du
+    scénario `t3-refus-62` (exporteur et oracle réexporté : seul le champ `desc` change), commentaire de
+    `Strides.Cso.FencesInGame`.
+17. C — `Strides.Cso.FencesInGame` avance l'heure du monde (`World->TimeSeconds`) à chaque pas : règle des 5 s vérifiée
+    en jeu (refus non recompté puis recompté), barre emportée remontée plus de 3 s après le refus et cheval à plus de 5 m
+    (au sol tant qu'il reste près). `UpdateFences` passe `missionActive` = épreuve du Pôle en cours (`CsoRun` non
+    terminée), comme `g.missions.active` du web. La fenêtre de réception de 0,6 s n'est pas exercée en jeu (D, point 10).
+18. R + D — déjà déclaré (`ATTENDUES`, `cso.refus-unique`) ; complété : « distance du détour ignorée » non détectée.
+19. C — démo F8 et `-StridesShots` sans mode rejoués dans un dossier dédié (point 13) ; garde-fou renforcé (point 25).
+20. C — `cso.capacite-cheval` : 44 exécutions (22 scénarios en français et en anglais).
+21. C — §2 annoté comme tableau historique (références du 18/11, dont `SG/StridesHUD.cpp`).
+22. C — `etat.json` : recompté par `wc -l` (voir l'inventaire, niveau « Code écrit »).
+23. R — cause établie en R0 (`063d377d`) : cavaliers du décor remis à leur état d'apparition au setup ; réexport de
+    `t3-refus-5s` ce jour identique à l'octet (épuisement de `rider230` à l'image 432).
+24. D — épreuve lancée au démarrage et jamais terminée (bilan et fin de mission : T10, T11) : « Aucune mission active »
+    ne s'affiche plus, l'objectif « Résultats… » reste ; écrit à `interface.objectif`.
+25. C — `AStridesShots::ResolveShotsDir` compare sans tenir compte de la casse ; `Strides.Shots.OutputDir` couvre
+    `…/PROTEGE`, une option relative en minuscules et le vrai dossier `…/Screenshots/strides`.
+26. H — `23d57d32` affirmait un déterminisme atteint en `063d377d` ; HEAD est juste.
+27. C — `cso.obstacles-habillage` dit en toutes lettres la couleur du mur (MI_Brick, MI_Plaster au lieu de #a4553f et
+    #e9e6de : beige saumon contre rouge brique sur les montages).
+28. D — aucun contrôle ne voit un maillage importé en miroir (boîtes symétriques, barycentres pris dans le manifeste) :
+    déclaré à l'inventaire ; message et commentaire de `Strides.Parite.CsoScenery` corrigés (« pose des pièces », signe
+    des axes non relu) au lieu de « orientation ».
+29. C — références décalées de T5 recalées (point 1).
+30. D — état d'épreuve des captures posé depuis `poses.json` ; passage hors épreuve → épreuve prouvé par le test seul,
+    aucun montage de l'état hors épreuve : écrit à `cso.obstacles-habillage`.
+31. D — voir T6, Limites (ajout) et `camera.concours-decor` ; 6 mutations dans `ATTENDUES`.
+32. C — `cso-spec.md` (§10, Unreal) et `unreal/docs/parite/README.md` (FOV) : `FieldOfView` n'est vertical qu'avec
+    AspectRatio 1 ; la perche montre 32,6° verticaux.
+33. C — gap flex : le chrono n'a plus d'écart de 9 px quand l'icône d'horloge est repliée (`cso-sober`) ;
+    `Strides.Cso.HudWidget` compare sa marge à la position relevée dans le navigateur (0 px). Captures Unreal `hud-*`
+    (16) et `cmd-*` (4) refaites en rendu Metal et montages régénérés ; `jeu-1` à `jeu-5` (partie réelle) **non refaites** :
+    elles gardent le décalage de 9 px.
+34. C — `UStridesCsoHud::SetCourseViewport` transmet à chaque image la hauteur réelle (px CSS) au modèle de l'épreuve ;
+    `Strides.Cso.HudClock` : 1280 × 720 → deux toasts, 844 × 390 → un, widget figé sans effet.
+35. D — seuil 420 px (seules 390 et 768 rejouées) et pas dt du décompte des crans (toujours 1/30) non départagés :
+    écrit à `interface.toasts` et `interface.cadence-cso`.
+36. C — références de `StridesHUD.cpp` recalées sur le fichier actuel (42 substitutions, toutes les références au fichier relues).
+37. H — `40d4069b` incohérent seul (script en code 1) ; déclaré en T7, corrigé en `4e225342`.
+38. C — `entrees.joystick` et la ligne §2 « Tactile : joystick flottant » ramenés à **partiel** (logique identique,
+    rendu non identique, facteur de pixels iOS non vérifié) ; synthèse §1 corrigée.
+39. C — synthèse §1 recomptée (13 / 58 / 51) avec l'avertissement que le §2 n'est pas tenu à jour pour T2 à T5.
+40. C + D — `Strides.Cso.Controls` compare aussi la valeur du chrono écoulé à chaque image (au millionième de l'oracle) ;
+    positions comparées par « déplacé ou non » seulement ; l'exporteur reproduit la condition de la boucle de
+    `game.js:1406` sans la branche `renderHold` : écrit à `boucle.pause` et `boucle.suspension-simulation`.
+41. D — `mutations-cso-input.py` : « stylet traité comme une souris » et « d ≥ R » ajoutées, non détectées, dans
+    `ATTENDUES` (69 mutations, 67 détectées, code 0) ; `entrees.joystick`.
+42. C — `StridesGameMode.cpp:28, 107-110` (cavalier à pied, 2 m à gauche) ; `SetActorLocationAndRotation` :
+    `StridesHorse.cpp:126, 363, 425`.
+43. C — `Strides.Cso.Controls` relit le slot du canevas (`SlotBoxOf`, placement effectif) et le dit (« placement, pas
+    identité ») ; la preuve d'identité reste le montage. L'ancrage pour un viewport sans relevé n'est comparé par aucun
+    test.
 
 ### Ordre et dépendances
 

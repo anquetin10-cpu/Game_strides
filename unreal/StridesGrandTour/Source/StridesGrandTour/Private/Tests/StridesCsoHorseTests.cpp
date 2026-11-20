@@ -264,7 +264,7 @@ bool FStridesCsoHorseInGameTest::RunTest(const FString&)
 	// 3) Sans appel jusqu'à l'obstacle : refus (freinage, arrêt devant la barre, cabré), jamais de saut automatique.
 	Horse->PlaceAt(F3.x - F3.n.x * 14, F3.z - F3.n.z * 14, Head, 6.2);
 	bool bAnyJump = false, bRefused = false;
-	double Closest = 1e9;
+	double Closest = 1e9, NoseOver = -1e9, NoseOverFast = -1e9;
 	for (Guard = 0; Guard < 150; Guard++)
 	{
 		Horse->Tick(Dt);
@@ -272,11 +272,21 @@ bool FStridesCsoHorseInGameTest::RunTest(const FString&)
 		bRefused |= Has(TEXT("horse:refuse"));
 		const strides::CsoHorseState& S = Horse->CsoState();
 		Closest = FMath::Min(Closest, (F3.x - S.x) * F3.n.x + (F3.z - S.z) * F3.n.z);
+		// Nez du cheval (NOSE devant l'origine, cso_horse.json) au-delà de la face d'entrée du 3. Garde-fou du web
+		// (obstacles.js:444, 462-465) : appliqué seulement tant que le cheval avance vers l'obstacle à plus de 0,5 m/s ; en
+		// dessous, le nez peut encore glisser (web : 0,708 m dans t3-refus-62, à 0,15 m/s).
+		const double Fn = FMath::Sin(S.heading) * F3.n.x + FMath::Cos(S.heading) * F3.n.z;
+		const double NoseS = (S.x - F3.x) * F3.n.x + (S.z - F3.z) * F3.n.z + Fn * HP.nose;
+		NoseOver = FMath::Max(NoseOver, NoseS - F3.front);
+		if (S.speed > 0.5 && Fn > 0.3) NoseOverFast = FMath::Max(NoseOverFast, NoseS - F3.front);
 	}
 	TestTrue(TEXT("sans appel : aucun saut automatique"), !bAnyJump);
 	TestTrue(FString::Printf(TEXT("sans appel : refus, arrêt à %.2f m de l'axe de l'obstacle (origine du cheval)"), Closest), bRefused && Closest > 0);
+	TestTrue(FString::Printf(TEXT("sans appel : au-dessus de 0,5 m/s, nez au plus %.3f m au-delà de la face d'entrée (garde-fou du web : %.2f m) ; à l'arrêt %.3f m"), NoseOverFast, HP.overrun, NoseOver),
+		NoseOverFast <= HP.overrun + 1e-9 && NoseOver > -1e8);
 	AddInfo(FString::Printf(TEXT("cheval en jeu (données de Content/Data, appui par le contrôleur du joueur) : puissance %.17g, appui à %.2f m sans saut, saut en bonne zone %s, sans appel refus à %.2f m"),
 		Power, At, bJumped && bLanded ? TEXT("oui") : TEXT("non"), Closest));
+	AddInfo(FString::Printf(TEXT("sans appel : nez au plus %.3f m au-delà de la face d'entrée du 3"), NoseOver));
 	PC->UnPossess();
 	Cleanup();
 	return true;

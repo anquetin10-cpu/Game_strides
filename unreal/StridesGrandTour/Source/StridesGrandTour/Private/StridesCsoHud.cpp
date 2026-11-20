@@ -434,7 +434,13 @@ void UStridesCsoHud::ApplyStyle(const FStridesCsoHudStyle& S)
 		const FVector4 R = CssRect(E);
 		if (UHorizontalBoxSlot* HS = Cast<UHorizontalBoxSlot>(It.W->Slot))
 			HS->SetPadding(FMargin(It.W == Clock0 ? 0 : Gap + CssNum(E, TEXT("marginLeft")), 0, 0, R.W > 0 ? FMath::Max(0.0, InnerBottom - (R.Y + R.W)) : 0));
+		if (It.W == ChronoBox)
+		{
+			ChronoMarginLeft = CssNum(E, TEXT("marginLeft"));
+			ChronoPadBottom = R.W > 0 ? FMath::Max(0.0, InnerBottom - (R.Y + R.W)) : 0;
+		}
 	}
+	BoardGap = Gap;
 	CssSet(Clock0, CssObj(V, TEXT("clockIco")));
 	Clock0->SetRenderOpacity(CssNum(CssObj(V, TEXT("clockIco")), TEXT("opacity"), 1));
 	const FJ T = CssObj(V, TEXT("boardT"));
@@ -523,6 +529,21 @@ void UStridesCsoHud::ApplyStyle(const FStridesCsoHudStyle& S)
 	if (UVerticalBoxSlot* VS = Cast<UVerticalBoxSlot>(BigSubPill->Slot)) VS->SetPadding(FMargin(0, CssNum(GS, TEXT("marginTop")), 0, 0));
 }
 
+double UStridesCsoHud::ChronoLeftPadding() const
+{
+	const UHorizontalBoxSlot* HS = ChronoBox ? Cast<UHorizontalBoxSlot>(ChronoBox->Slot) : nullptr;
+	return HS ? HS->GetPadding().Left : -1;
+}
+
+void UStridesCsoHud::SetCourseViewport(const FVector2D& ViewCss)
+{
+	if (Frozen) return;
+	if (!Course.IsValid() && GetWorld())
+		for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
+			if (It->Run()) { Course = *It; break; }
+	if (Course.IsValid()) Course->HudModel().setViewportHeight(ViewCss.Y);
+}
+
 const strides::CsoHud* UStridesCsoHud::Source() const
 {
 	if (Frozen) return Frozen;
@@ -563,6 +584,7 @@ void UStridesCsoHud::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (Px.X <= 0) return;
 	Scale->SetUserSpecifiedScale((float)(P / D));
 	const FVector2D ViewCss = Px / P;
+	SetCourseViewport(ViewCss);
 	Css->SetWidthOverride(ViewCss.X);
 	Css->SetHeightOverride(ViewCss.Y);
 	Refresh(*H, ViewCss);
@@ -605,6 +627,9 @@ void UStridesCsoHud::Refresh(const strides::CsoHud& H, const FVector2D& ViewCss)
 	Chrono->SetColorAndOpacity(FSlateColor(CssColor(CssObj(H.boardOver() ? Over : Plain, TEXT("boardT")), TEXT("color"))));
 	Points->SetColorAndOpacity(FSlateColor(CssColor(CssObj(H.boardFaults() ? Over : Plain, TEXT("boardPen")), TEXT("color"))));
 	Clock0->SetVisibility(H.masked(strides::CsoHudElement::ClockIcon) ? Hide : Show);
+	// Gap flex seulement entre éléments affichés : l'icône repliée (cso-sober) ne laisse pas d'écart avant le chrono.
+	if (UHorizontalBoxSlot* HS = Cast<UHorizontalBoxSlot>(ChronoBox->Slot))
+		HS->SetPadding(FMargin((Clock0->GetVisibility() == Hide ? 0 : BoardGap) + ChronoMarginLeft, 0, 0, ChronoPadBottom));
 	// Crans : allumés round(cadence / 8 × 6), affichés 2 s après un réglage, fondu de 0,4 s.
 	const FLinearColor On = CssColor(CssObj(V, TEXT("cadOn")), TEXT("backgroundColor")), Off = CssColor(CssObj(V, TEXT("cadOff")), TEXT("backgroundColor"));
 	for (int32 I = 0; I < CadBars.Num(); I++) CadBars[I]->SetBrush(Rounded(I < H.cadOn() ? On : Off, CssNum(CssObj(V, TEXT("cadOn")), TEXT("borderTopLeftRadius"), 1)));

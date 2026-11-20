@@ -91,6 +91,9 @@ STRIDESCORE_API bool csoGotoDone(const CsoRunConfig& cfg, const CsoRunFrame& f);
 // Points de l'épreuve de CSO (courses.js:148 hudInfo.pen et :341) : fautes + 1 point par seconde entamée au-delà du
 // temps accordé (ceil(max(0, t − TA) − 1e-9)) ; CsoRun::points l'applique à l'état de la manche.
 STRIDESCORE_API int csoPoints(int faults, double t, double timeAllowed);
+// Ligne orientée franchie entre deux positions (courses.js:28-36, lineCrossed) : s0 < 0 ≤ s1 dans le sens de la ligne,
+// à moins de w / 2 + 0,3 m de son centre ; cap facultatif (départ seulement : à 60° près du sens de la ligne).
+STRIDESCORE_API bool lineCrossed(const CsoRunLine& L, bool hasP0, double x0, double z0, double x1, double z1, const double* heading);
 
 enum class CsoObstacleEventKind { Clear, Fault, Refusal };
 
