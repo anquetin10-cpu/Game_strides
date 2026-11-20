@@ -6,13 +6,14 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 |---|---|
 | `StridesGrandTour/StridesGrandTour.uproject` | projet Unreal UE 5.8.4, cibles iOS et Mac |
 | `StridesGrandTour/Config/` | rendu mobile (sans Lumen, Nanite ni ombres virtuelles), iOS paysage, Enhanced Input |
-| `StridesGrandTour/Source/StridesCore/` | **cœur C++20 sans type Unreal** (compilé par UE 5.8.4 et hors moteur) : saut, conduite CSO, parcours et jugement, sauvegarde native |
+| `StridesGrandTour/Source/StridesCore/` | **cœur C++20 sans type Unreal** (compilé par UE 5.8.4 et hors moteur) : saut, conduite CSO, cheval de concours, obstacles, déroulé d'épreuve et textes, caméra de concours, HUD d'épreuve, commandes, sauvegarde native |
 | `StridesGrandTour/Source/StridesGrandTour/` | module de jeu : cheval, cavalier, obstacles, parcours, données, sauvegarde, commandes, HUD, tests d'automatisation |
 | `StridesGrandTour/Content/Data/` | données versionnées exportées du jeu web (JSON, unités SI) |
 | `core/` | compilation et tests du cœur hors moteur (CMake), oracles exportés du jeu web |
 | `docs/MATRICE.md` | matrice de migration module par module |
 | `docs/conventions.md` | unités, axes, caps, modèles importés |
 | `docs/relais-mac.md` | compiler, ouvrir, jouer, importer, construire pour iOS — et ce qui n'est pas vérifié |
+| `docs/PARITE.md`, `docs/parite/` | inventaire de parité (source de vérité), spécification et écarts de la tranche a (`cso-spec.md`, `cso-ecarts.md`), banc de parité et montages côte à côte (`parite/README.md`, `parite/cso/`) |
 | `../scripts/unreal/export-data.mjs` | export des données et des oracles (lit le code JS existant) |
 
 ## Décisions d'architecture
@@ -29,8 +30,10 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 | Fonction du jeu web | Unreal |
 |---|---|
 | Règles du saut (appel, marges, causes, qualité) | **portées, identiques au JS (oracles)** |
-| Conduite de concours (cadence, virages) | **portée, compilée et jouée** ; allure affichée jusqu'au galop à 8,0 m/s |
-| Parcours du Pôle, temps accordé, fautes, refus, éliminations, classement | **portés, testés et branchés** ; parcours complet à valider visuellement |
+| Conduite de concours (cadence, virages), cheval de concours (visée, appel, refus) | **identiques au JS (oracles de scénario rejoués image par image)** ; branches non départagées déclarées |
+| Parcours du Pôle : obstacles (jugement au passage, chute des barres, refus), déroulé d'épreuve (cloche, départ, arrivée, éliminations, textes FR / EN), temps et pénalités | **identiques au JS (oracles)** pour la logique ; géométrie des obstacles et lignes en montage côte à côte (couleur du mur différente) ; présentation, bilan et classement simulé **absents** (T10, T11) |
+| Caméra de concours (champ vertical 58°) | **identique au JS (oracle « cc »)**, montages aux 6 instants de `cso-framing.mjs` |
+| HUD d'épreuve UMG, commandes d'épreuve (joystick flottant, SAUT, pause, clavier par codes physiques) | logique **identique (oracles)** ; rendu **partiel** (police du moteur, animations non comparées, joystick approché) ; toucher réel iOS **non vérifié** |
 | Sauvegarde | **schéma natif v1 + import de l'export web, testés** ; sauvegarde/rechargement vérifiés à l'écran |
 | Déplacement à pied, monter, descendre | **compilé et vérifié à l'écran**, transition 0,8 s |
 | Cheval PJL (modèle, 17 clips), cavalier réaliste (visages, mains, posture) | **importés et positionnés** ; 17 animations cheval normalisées, allures/sauts branchés ; cavalier ancré sur le point de selle animé, animation squelettique à finir |
@@ -38,8 +41,8 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 | Missions, histoire, téléphone Strides, progression, réputation, compétences, énergie | à faire (logique pure, portable) |
 | Véhicules, transport du cheval, carburant | à faire |
 | PNJ, foule, cavaliers PNJ | à faire |
-| Audio, traductions FR/EN | à faire (export) |
-| Interface tactile UMG | **portée et compilée pour iOS** : joystick moteur, saut, monter/descendre, allures, sauvegarde et chargement ; test sur appareil réel requis |
+| Audio | à faire (T12 pour l'épreuve) ; traductions FR / EN des textes de l'épreuve **portées** (strings_cso.json), le reste à faire |
+| Interface tactile UMG | en épreuve : joystick flottant du web, SAUT et pause (joysticks du moteur retirés) ; hors épreuve : boutons du portage (monter, allures, sauvegarde, chargement) ; compilée pour iOS le 18/11 seulement, test sur appareil réel requis |
 
 ## Distribution iOS
 
@@ -48,7 +51,7 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 - Procédure, état vérifié et blocages Apple : [`docs/testflight.md`](docs/testflight.md).
 
 ## Prochaine tranche
-1. Sur Mac : approfondir la revue visuelle de la posture de la cavalière au galop et au saut.
-2. Animation : finaliser l'Animation Blueprint du cheval (virages et transitions — logique de `pjlHorse.js`)
-   et l'animation squelettique du cavalier (mains, étriers — `human/anim.js`).
-3. Puis : HUD et téléphone UMG, monde du Pôle et de l'Écurie du Val, missions et progression.
+Tranche a (parcours CSO du Pôle), sous-tranches T9 à T12 de `docs/parite/cso-ecarts.md` §4 : aides à l'appel (bouton
+SAUT coloré, zone et tracé au sol, repère), entrée dans l'épreuve (poteau « Chrono », présentation, plan), arrivée et
+bilan (classement simulé, recommencer, record), sons et recette complète. État prouvé, partiel et absent de la tranche :
+`docs/relais-mac.md` (« Parité de la tranche a ») et `docs/PARITE.md`.

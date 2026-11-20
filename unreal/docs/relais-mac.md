@@ -2,19 +2,45 @@
 
 État vérifié sur le Mac de développement le 17 novembre 2026, revérifié le 18 novembre 2026 : module compilé avec
 UE 5.8.4 (recompilation complète des modules du projet, 0 erreur, 0 avertissement), cœur en **C++20**, 6 tests
-Automation `Strides` réussis. Inventaire de parité avec le jeu web : [`PARITE.md`](PARITE.md).
+Automation `Strides` réussis. **Mis à jour le 20 novembre 2026** (tranche a, parcours CSO du Pôle, après T8 et le
+contrôle des remarques) : compilation incrémentale `StridesGrandTourEditor Mac Development` réussie, `ctest` 200 115
+vérifications, 0 échec, **23 tests** Automation `Strides` en `Result={Success}`. Inventaire de parité avec le jeu web :
+[`PARITE.md`](PARITE.md) ; plan et écarts de la tranche a : [`parite/cso-ecarts.md`](parite/cso-ecarts.md).
 
 | Étape | État |
 |---|---|
-| Code C++ du cœur (règles) écrit | fait |
-| Cœur compilé et testé hors moteur (g++ 13, clang -Werror ; 4 944 vérifications) | **fait** |
+| Code C++ du cœur (règles) écrit | fait ; 3 705 lignes dans StridesCore (20/11/2026, `wc -l`) |
+| Cœur compilé et testé hors moteur (clang, C++20) | **fait** : 200 115 vérifications, 0 échec (20/11/2026) ; oracles exportés du jeu web |
 | Code du module Unreal écrit (acteurs, sous-systèmes, commandes, HUD, tests d'automatisation) | fait |
-| Module Unreal compilé (UnrealBuildTool) | **fait** avec UE 5.8.4 |
+| Module Unreal compilé (UnrealBuildTool) | **fait** avec UE 5.8.4 (incrémental le 20/11/2026) |
+| Tests Automation `Strides` (éditeur, `-nullrhi`) | **fait** : 23/23 `Result={Success}` le 20/11/2026 |
 | Projet ouvert dans l'éditeur, scène lancée | **fait** |
-| Boucle jouée et parcours complet jugé | **fait** ; 10 obstacles et arrivée validés en démonstration automatique |
-| Archive iOS arm64 complète | **faite sans signature** ; identité et ressources contrôlées |
+| Boucle jouée et parcours complet jugé | **démonstration automatique seulement** (F8 / `-StridesShots`, 20/11/2026 : « 60,32 / 64 s 0 pt Arrivée ✓ ») ; aucune partie jouée à la main comparée au web |
+| Archive iOS arm64 complète | **faite sans signature** le 18/11/2026 ; **pas refaite** depuis la tranche a (paquet iOS hors périmètre) |
 | Package iOS signé pour TestFlight | bloqué par l'accord Apple Developer et l'absence de certificat/profil de distribution |
-| Installé et testé sur iPhone / iPad réel | **non vérifié** |
+| Installé et testé sur iPhone / iPad réel | **non vérifié** (toucher réel, facteur de pixels, zones sûres, budget de triangles non mesurés) |
+
+## Parité de la tranche a (parcours CSO du Pôle), au 20/11/2026
+
+Source de vérité : l'inventaire (`parite/inventaire/*.json`, rendu en [`PARITE.md`](PARITE.md)) ; 78 lignes marquées
+tranche a : **28 identique_prouve**, **28 partiel**, **22 absent**. Sous-tranches livrées : T1 à T8 (banc, cheval,
+obstacles, déroulé et textes, géométrie des obstacles, caméra, HUD d'épreuve, commandes). Restent T9 à T12.
+
+- **Prouvé** (oracle exporté du jeu web, comparé par un test qui passe, ou montage côte à côte dans `parite/cso/`) :
+  tracé et hauteurs, plan de saut et qualité de l'appel, conduite de concours et cadence, visée et déclenchement du
+  saut, jugement des barres au passage, décision de refus, pénalités et temps, déroulé de l'épreuve (cloche, départ,
+  départ lancé, arrivée, éliminations, textes en français et en anglais), caméra de concours (dont champ vertical 58°),
+  géométrie des obstacles, lignes et poteau « Chrono » (forme et position ; pas la couleur du mur), logique du HUD
+  d'épreuve et de la file de toasts, logique du joystick et des touches, gel en pause et au téléphone.
+- **Partiel** : rendu du HUD (police du moteur au lieu de Geist, animations non comparées image par image), joystick
+  (rendu approché, pas de fondu de 0,2 s), effet des contacts des membres (porté sans oracle), chute des barres (branches
+  non départagées déclarées), entrée en piste (carte de présentation non portée), record personnel, caméra contre le
+  décor (sonde du moteur, pas les colliders du web), taille rendue du couple cheval-cavalier.
+- **Absent** : carte de présentation et plan, bilan et classement simulé, aides à l'appel (bouton SAUT coloré, zone et
+  tracé au sol : T9), poteau interactif (T10), recommencer et record (T11), sons (T12), collisions des ailes,
+  contacts réels des membres, défis.
+- **Non vérifié** : tout ce qui demande un appareil iOS (toucher réel, facteur de pixels, performances) ; un vrai
+  clavier AZERTY.
 
 ## 1. Prérequis (Mac)
 - **Unreal Engine 5.8.4**, installé avec le composant officiel **iOS**.
@@ -44,19 +70,28 @@ La compilation Mac et iOS est vérifiée. Toute régression doit être corrigée
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides; Quit" -unattended -nullrhi -log
 ```
-Attendu (18/11/2026) : 6 tests réussis — `Strides.Core.Course`, `Strides.Core.Save`, `Strides.Units`,
-`Strides.World.Architecture`, `Strides.World.CareerGraph`, `Strides.World.Scenery`.
+Attendu (20/11/2026) : 23 tests en `Result={Success}` (`Strides.Core.*`, `Strides.Units`, `Strides.World.*`,
+`Strides.Shots.OutputDir`, `Strides.Parite.*`, `Strides.Cso.*`, `Strides.Hud.ObjectiveLines`). Toujours exporter
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (sinon une fenêtre « Xcode introuvable » bloque Metal).
+Captures et démonstration : toujours avec `-StridesShotsDir=<dossier dédié>` (voir `parite/README.md`) ; le mode
+refuse d'écrire dans `Saved/Screenshots/Strides` ou `MacEditor` s'ils contiennent des fichiers, quelle que soit la casse.
 
 ## 5. Boucle jouable (éditeur, Play)
-Scène construite au lancement (carte `Entry` du moteur, `AStridesGameMode`) : carrière 140 × 96 m, parcours du Pôle à
-1,10 m (10 sauts), cheval à l'entrée de piste, cavalier à côté.
-1. À pied : ZQSD/WASD ou joystick ; approcher du cheval (< 3 m), **E** : monter.
-2. Joystick avant : la cadence monte (galop de concours 6,2 m/s, max 8) ; gauche/droite : virages (rayon 2,6 + 0,8 × v).
-3. Franchir la ligne de départ (HUD : chrono lancé, temps accordé 64 s).
-4. **Espace** devant l'obstacle 1 : HUD « 1 franchi · appel … » ou « barre +4 » ; trop près sans appel : refus.
-5. Terminer ou **E** pour descendre (en épreuve : éliminé, règle du jeu web).
-6. **F5** : sauvegarder ; **F9** : recharger (position, à pied ou à cheval).
-À vérifier sur appareil réel : virages des deux côtés, saut complet, refus, caméra, commandes tactiles et cadence stable.
+Scène construite au lancement (carte `Entry` du moteur, `AStridesGameMode`) : départ à l'Écurie du Val, cavalier à pied
+à 2 m du cheval ; l'épreuve « Parcours du Pôle » (`cso_train`) est lancée d'office (le poteau « Chrono » interactif et la
+carte de présentation relèvent de T10).
+1. À pied : ZQSD/WASD (codes physiques) ou joystick ; approcher du cheval (< 3 m), **E** : monter.
+2. Rejoindre l'entrée de la carrière du Pôle (objectif affiché) ; entrée en piste, annonce, **cloche** (45 s).
+3. Joystick avant / arrière : cadence (gardée au relâché, max 8 m/s) ; gauche / droite : virages ; clavier : flèches ou
+   WASD, Ctrl / Alt gauche = amplitude 0,5 / 0,25.
+4. HUD d'épreuve (UMG, styles relevés dans le navigateur) : tableau « Départ 45 s · accordé 64 s », chrono, points,
+   prochain obstacle, crans de cadence, mot d'appel, toasts ; seuls les boutons SAUT et pause restent en épreuve.
+5. **Espace** / bouton SAUT au bon moment ; trop tôt : rien ; trop près ou trop lent : refus (freinage, cabré).
+6. **Échap** / bouton pause : carte Pause (bascules « Tracé au sol » et « Aide au saut », sauvegardées) ; **P** / Tab :
+   téléphone (cheval et chrono figés) ; **M** : carte (non portée : panneau texte).
+7. **F8** : démonstration automatique du parcours (hors version Shipping) ; **F5** / **F9** : sauvegarder / recharger.
+Limites connues : à l'arrivée, le bilan n'est pas porté (l'épreuve reste au bilan, T11) ; aucun son (T12). À vérifier
+sur appareil réel : toucher, facteur de pixels, zones sûres, cadence d'images.
 
 ## 6. Ressources à importer (éditeur)
 1. `public/real/horse_pjl.glb` → `Content/Horse/` (importeur glTF) : vérifier squelette (419 os), échelle (≈ 1,65 m au
