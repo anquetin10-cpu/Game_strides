@@ -122,6 +122,10 @@ private:
 		FVector2D TouchStart = FVector2D::ZeroVector, TouchMove = FVector2D::ZeroVector;
 		FString HudRunFile, HudExtra, HudState;
 		int32 HudFrame = 0, HudExtraFrame = -1;
+		// Aides à l'appel (tranche T9) : canal « ai » d'une exécution rejoué jusqu'à AidsFrame dans les aides du parcours.
+		bool bHasAids = false;
+		FString AidsRunFile;
+		int32 AidsFrame = 0;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);
@@ -130,6 +134,8 @@ private:
 	void MeasureFraming(const FPose& P, class APlayerController* PC);
 	void ApplyHudPose(const FPose& P, class APlayerController* PC);
 	void ApplyControlsPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
+	void ApplyAidsPose(const FPose& P, class AStridesHorse* Horse);
+	TSharedPtr<class FJsonObject> AidsResult;  // relevé des aides de la pose en cours (aide-unreal.json)
 	// Doigt envoyé à Slate comme un message tactile de la plateforme (Phase 0 posé, 1 glissé, 2 levé ; px CSS).
 	bool SlateTouch(int32 Phase, int32 FingerIndex, const FVector2D& Css);
 	int32 HeldTouch = -1;

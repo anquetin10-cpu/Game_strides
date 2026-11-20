@@ -7,12 +7,15 @@
 // (échéance, création), avant les appels de l'image suivante.
 // Oracle : unreal/core/tests/oracles/cso_hud.json (HUD du jeu web rejoué par scripts/unreal/export-hud-style.mjs sur
 // les appels hud.* des exécutions de cso_runs/, horloge virtuelle) ; masquages : Content/Data/hud_cso_style.json.
+// Bouton SAUT coloré (tranche T9 : hud.js:373-380, jumpEarly :433-442) : canal « ai » des exécutions t9-* de cso_runs/
+// (état du bouton relevé dans le DOM à chaque image, temporisation de « Trop tôt » sur l'horloge virtuelle).
 #pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
 #include "StridesCore/Api.h"
 #include "StridesCore/CsoRun.h"
+#include "StridesCore/JumpModel.h"
 
 namespace strides {
 
@@ -31,6 +34,8 @@ struct CsoHudFrame {
   bool hasCadence = false;  // player.csoCadence !== undefined
   double cadence = 0;
   bool cadAdjust = false;   // player._cadAdjust (cadence réglée au joystick à cette image)
+  // Aide à l'appel lue par le bouton SAUT (g.course?.jumpTiming?.() || 'none', tranche T9 : csoJumpTiming, CourseAids.h).
+  Zone jumpTiming = Zone::None;
 };
 
 // Éléments du HUD masqués par une classe (styles.css:150, 244, 988-997) : display none ou opacité nulle.
@@ -66,6 +71,8 @@ class STRIDESCORE_API CsoHud {
   void clearHint();
   void jumpFeedback(const std::string& text, const std::string& kind = "ok");
   void setObjective(bool present);
+  // Appui SAUT sans effet (hud.js:433-442, tranche T9) : classe early, libellé « Trop tôt », état « early » 600 ms.
+  void jumpEarly();
   // Appel enregistré (CsoRun::takeHud, oracle) : big, toast, hint, clearHint, jumpFeedback ; les autres sont ignorés
   // (rend faux). Arguments absents : valeurs par défaut du JS.
   bool call(const CsoCall& c);
@@ -98,9 +105,19 @@ class STRIDESCORE_API CsoHud {
   bool csoSober() const { return csoSober_; }
   bool objectiveOff() const { return objOff_; }
   bool masked(CsoHudElement e) const { return csoHudMasked(e, csoCtl_, csoSober_, csoOn_, bigOn_); }
+  // Bouton SAUT (tranche T9) : this._jt (vide : non défini ou remis à null ; « none », « far », « good », « near »,
+  // « refuse » ou « early »), classes far / good / near / early de .btn-jump, signe de la pastille (« » », « ✓ », « ! »
+  // ou vide) et clé française du libellé (« Saut », « Trop loin », « Saute ! », « Trop près », « Trop tôt » : t(clé)).
+  const std::string& jumpState() const { return jt_; }
+  bool jumpFar() const { return jFar_; }
+  bool jumpGood() const { return jGood_; }
+  bool jumpNear() const { return jNear_; }
+  bool jumpEarlyOn() const { return jEarly_; }
+  const std::string& jumpSign() const { return jSign_; }
+  const std::string& jumpLabelKey() const { return jLabel_; }
 
  private:
-  enum class TimerKind { ToastRemove, HintOff, BigHide, BigOnOff, FbOff };
+  enum class TimerKind { ToastRemove, HintOff, BigHide, BigOnOff, FbOff, EarlyOff };
   struct Timer { int64_t due; uint64_t seq; TimerKind kind; int arg; uint64_t handle; };
   uint64_t schedule(double ms, TimerKind kind, int arg = 0);
   void cancel(uint64_t handle);
@@ -136,6 +153,10 @@ class STRIDESCORE_API CsoHud {
   bool boardHidden_ = true, over_ = false, faults_ = false;
   std::string boardTxt_[4];
   bool csoOn_ = false, csoCtl_ = false, csoSober_ = false;
+  std::string jt_;  // this._jt
+  bool jFar_ = false, jGood_ = false, jNear_ = false, jEarly_ = false;
+  std::string jSign_, jLabel_ = "Saut";  // signe vide et libellé « Saut » du bouton construit (hud.js:113-118)
+  uint64_t earlyT_ = 0;
 };
 
 }  // namespace strides

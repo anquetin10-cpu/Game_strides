@@ -47,6 +47,9 @@ const SHOTS = process.argv.includes('--shots');
 const NO_ORACLE = process.argv.includes('--no-oracle');
 // --controls (tranche T8) : seulement les commandes d'épreuve (page tactile) ; styles, oracle et poses du HUD non touchés.
 const CONTROLS = process.argv.includes('--controls');
+// --jump-states (tranche T9, seul : rien d'autre n'est réécrit) : bouton SAUT dans chaque état de l'aide à l'appel (page
+// tactile, HUD de la pose hud-course comme --controls) : Content/Data/cso_jump_style.json.
+const JUMP_STATES = process.argv.includes('--jump-states');
 const STYLE_VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
 const ORACLE_HEIGHTS = [390, 768];
 // Appels du HUD rejoués (les autres méthodes enregistrées — notify, dialog, jumpEarly — relèvent d'autres tranches).
@@ -334,7 +337,7 @@ const openPage = async (lang, extra = {}) => {
   await page.addScriptTag({ content: `(${PAGE.toString()})();` });
   return { ctx, page };
 };
-const pages = { fr: await openPage('fr', CONTROLS ? { hasTouch: true } : {}) };
+const pages = { fr: await openPage('fr', CONTROLS || JUMP_STATES ? { hasTouch: true } : {}) };
 const page = pages.fr.page;
 const setView = async (v, pg = page) => {
   await pg.setViewportSize(v);
@@ -370,7 +373,7 @@ const texts = { fb: perfect[0], hint: clocheHint.args[0], toast: barre.args[0], 
 const style = { schema: 'strides.hud_cso_style/1', generator: 'scripts/unreal/export-hud-style.mjs', source: ['src/ui/hud.js', 'src/styles.css'],
   doc: 'styles calculés par le navigateur (getComputedStyle, chaînes telles quelles) et boîtes (rect = [x, y, largeur, hauteur], px CSS) des éléments du HUD d’épreuve dans l’état de référence (épreuve en cours, tableau lancé, crans affichés, mot d’appel, astuce, toast, grand message ; textes tirés des oracles) ; views = un relevé par viewport ; masks = display et opacité de chaque élément (rendu visible pour lui-même) sous chaque combinaison de classes du HUD',
   texts, views: [], masks: null };
-if (!CONTROLS) {
+if (!CONTROLS && !JUMP_STATES) {
   for (const v of STYLE_VIEWS) {
     await setView(v);
     await page.evaluate((t) => window.__hudT7.reference(t), texts);
@@ -426,7 +429,7 @@ const synthInputs = () => {
 };
 
 // ---- Comportement (oracle cso_hud.json) ----
-if (!NO_ORACLE && !CONTROLS) {
+if (!NO_ORACLE && !CONTROLS && !JUMP_STATES) {
   const doc = { schema: 'strides.oracle.cso_hud/1', generator: 'scripts/unreal/export-hud-style.mjs', source: ['src/ui/hud.js'],
     doc: 'HUD du jeu web (vrai Hud, DOM) rejouant les appels hud.* (big, toast, hint, clearHint, jumpFeedback, setObjective) et l’état lu par hud.update (game.course : controls, kind ; tableau : valeurs relevées, pour les classes over et faults ; cadence de concours et réglage au joystick : canal ch, indéfinie dans les images légères) des exécutions de cso_runs/ ; horloge virtuelle : appels du lancement à 0, image f à (f + 1) × 100 ticks de 1/3 ms, temporisateurs échus déclenchés avant les appels de l’image (échéance puis création), hud.update(1/30) après les appels. snaps = [image, parties changées] : to = toasts [texte, classes en plus de toast] ; hi = astuce [masquée, innerHTML, dans l’objectif] ; bg = grand message [masqué, titre, sous-titre, big-on] ; fb = mot d’appel [texte, className] ; cad = crans [allumés, show] ; bd = tableau [masqué, over, faults] ; cl = [cso-on, cso-ctl, cso-sober] ; ob = objectif masqué (off). Textes du tableau : non relevés ici (valeurs du tableau arrondies au millionième dans cso_runs, Math.ceil de la cloche en dépend) ; le texte affiché par le jeu en cours d’exécution est board.txt de cso_runs, comparé par testCsoRuns.',
     heights: ORACLE_HEIGHTS, synth: 'id « synth » : séquence synthétique, entrées dans inputs (setup = appels du lancement ; frames[f] = { hud : [fn, args], course, board, cad : [cadence, réglage] | null })', replays: [] };
@@ -452,7 +455,7 @@ if (!NO_ORACLE && !CONTROLS) {
 }
 
 // ---- Captures (poses hud-*) ----
-if (SHOTS && !CONTROLS) {
+if (SHOTS && !CONTROLS && !JUMP_STATES) {
   mkdirSync(PARITE, { recursive: true });
   const posesFile = join(PARITE, 'poses.json');
   const posesDoc = JSON.parse(readFileSync(posesFile, 'utf8'));
@@ -631,7 +634,34 @@ function PAGE_CTL() {
     return { svg: svgEl.outerHTML, size: [r1(r.width), r1(r.height)], scale, png: c.toDataURL('image/png') };
   };
   const icons = async () => ({ jump: await iconPng(H.btnJump.querySelector('svg'), 4), pause: await iconPng(H.pauseBtn.querySelector('svg'), 4) });
-  window.__ctlT8 = { joy, buttons, card, openPause, resume, toggles, icons, mode: () => g.player.mode, isTouch: () => !document.body.classList.contains('desktop') };
+  // Tranche T9 (--jump-states) : bouton SAUT dans chaque état de l'aide à l'appel, posé par le vrai code du HUD : aide
+  // lue par hud.update (game.course.jumpTiming remplacé le temps du relevé), puis, pour les états « early »,
+  // hud.jumpEarly() ; transitions coupées (état d'arrivée). Bouton remis ensuite à l'état d'origine.
+  const jumpStates = () => {
+    const sty = document.createElement('style');
+    sty.textContent = '.btn-jump, .btn-jump * { transition: none !important; animation: none !important; }';
+    document.head.appendChild(sty);
+    const c0 = g.course;
+    const reset = () => {
+      clearTimeout(H._earlyT);
+      H.btnJump.classList.remove('early');
+      H._jt = undefined;
+    };
+    const out = {};
+    for (const [name, jt, early] of [['none', 'none', false], ['far', 'far', false], ['good', 'good', false], ['near', 'near', false], ['none-early', 'none', true], ['far-early', 'far', true], ['good-early', 'good', true], ['near-early', 'near', true]]) {
+      reset();
+      g.course = { ...(c0 || {}), jumpTiming: () => jt };
+      H.update(0);
+      if (early) H.jumpEarly();
+      out[name] = { jt: H._jt, classes: H.btnJump.className, jump: css(H.btnJump), ring: css(H.btnJump.querySelector('.ring')), sign: withText(H.jumpSign), label: withText(H.jumpLabel), icon: css(H.btnJump.querySelector('svg')) };
+    }
+    reset();
+    g.course = c0;
+    H.update(0);
+    sty.remove();
+    return out;
+  };
+  window.__ctlT8 = { joy, buttons, card, openPause, resume, toggles, icons, jumpStates, mode: () => g.player.mode, isTouch: () => !document.body.classList.contains('desktop') };
 }
 
 if (CONTROLS) {
@@ -734,6 +764,35 @@ if (CONTROLS) {
   posesDoc.poses = posesDoc.poses.filter((p) => !p.name.startsWith('cmd-')).concat(shots);
   writeFileSync(posesFile, JSON.stringify(posesDoc, null, 1) + '\n');
   console.log('libellés :', JSON.stringify(labels), '; cas des bascules :', cases.length, '; poses :', shots.map((p) => p.name).join(', '));
+}
+
+// ---- Bouton SAUT coloré (tranche T9) : Content/Data/cso_jump_style.json ----
+if (JUMP_STATES) {
+  await page.addScriptTag({ content: `(${PAGE_CTL.toString()})();` });
+  if (!(await page.evaluate(() => window.__ctlT8.isTouch()))) throw new Error('page sans écran tactile (body.desktop)');
+  const posesDoc = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8'));
+  const base = posesDoc.poses.find((p) => p.name === 'cadrage-040');
+  if (!base) throw new Error('pose cadrage-040 absente de poses.json');
+  // Même HUD que les poses cmd-* (T8) : t4-sans-faute rejouée jusqu'à l'image « ▸ 4A » + 21.
+  const sf = run('t4-sans-faute', 'fr');
+  const fCourse = sf.frames.find((f) => f.board?.txt?.[3] === '▸ 4A');
+  if (!fCourse) throw new Error('image « ▸ 4A » introuvable dans t4-sans-faute');
+  const frame = fCourse.f + 21;
+  const js = { schema: 'strides.cso_jump_style/1', generator: 'scripts/unreal/export-hud-style.mjs --jump-states', source: ['src/ui/hud.js', 'src/styles.css'],
+    doc: 'bouton SAUT du HUD d’épreuve (page tactile, HUD de la pose hud-course) dans chaque état de l’aide à l’appel (hud.js:373-380 ; « -early » : hud.jumpEarly() appelé ensuite, hud.js:433-442), posé par le vrai HUD : par viewport et par état, _jt, className, styles calculés et boîtes (rect = [x, y, largeur, hauteur], px CSS du viewport) du bouton, de son anneau (.ring), de sa pastille (.jt-sign, texte), de son libellé (span, texte) et de son icône ; transitions coupées',
+    views: [] };
+  for (const v of STYLE_VIEWS) {
+    await setView(v);
+    const ps = { hour: base.hour, eye: base.eye, target: base.target, fovV: base.fovV, viewport: { w: v.width, h: v.height }, horse: { x: base.horse.x, z: base.horse.z, h: base.horse.h }, course: base.course, hud: { run: 'unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json', frame } };
+    await page.evaluate(([p, i]) => window.__hudT7.pose(p, i), [ps, runInputs(sf)]);
+    await page.evaluate(() => document.fonts.ready);
+    js.views.push({ viewport: [v.width, v.height], states: await page.evaluate(() => window.__ctlT8.jumpStates()) });
+    console.log('bouton SAUT', `${v.width}x${v.height}`, Object.entries(js.views.at(-1).states).map(([k, x]) => `${k}: ${x.label.text} ${x.sign.text}`).join(' | '));
+  }
+  const file = join(DATA, 'cso_jump_style.json');
+  const text = JSON.stringify(js, null, 1) + '\n';
+  if (existsSync(file) && readFileSync(file, 'utf8') === text) console.log('inchangé :', file);
+  else { writeFileSync(file, text); console.log('écrit :', file); }
 }
 
 if (errors.length) console.log('erreurs de page :', errors.slice(0, 5));

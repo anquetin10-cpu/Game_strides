@@ -44,6 +44,19 @@ public:
 	double JoystickOpacity() const;
 	// Appui / relâchement du bouton SAUT ou pause comme un doigt (tests) : mêmes gestionnaires qu'au toucher.
 	void PressForTest(const FString& Name, bool bDown);
+	// Bouton SAUT coloré (tranche T9, hud.js:373-380, 433-442 ; styles relevés par état dans Content/Data/cso_jump_style.json) :
+	// état du HUD d'épreuve → clé de style (« none », « far », « good », « near », suivie de « -early » pendant « Trop
+	// tôt ») ; affichage : clé posée, libellé et signe affichés, couleurs du fond, de l'anneau et de la pastille, halo,
+	// boîtes de l'anneau et de la pastille (px CSS ; zéro si masqués).
+	static FString JumpStyleKey(const strides::CsoHud* RaceHud);
+	FString JumpShownKey() const { return JumpKey; }
+	FString JumpLabelText() const;
+	FString JumpSignText() const;
+	FLinearColor JumpColor(const FString& Part) const;  // « background », « ring », « sign », « signText », « label »
+	bool JumpGlowShown() const;
+	FVector4 JumpPartBox(const FString& Part) const;    // « ring », « sign », « glow »
+	// Langue du libellé (textes du jeu, strings_cso.json) : celle de l'épreuve ; forcée par les captures et les tests.
+	void SetLangForTest(const FString& InLang) { TestLang = InLang; }
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -52,6 +65,7 @@ protected:
 private:
 	void Build();
 	void ApplyStyle(const FVector2D& ViewCss);
+	void ApplyJumpState(const strides::CsoHud* RaceHud, const FVector2D& ViewCss);
 	FVector2D ViewCss() const;
 	const strides::CsoInput* Commands() const;
 	bool Riding() const;
@@ -78,6 +92,11 @@ private:
 	UPROPERTY() TObjectPtr<class UButton> JumpButton;
 	UPROPERTY() TObjectPtr<class UImage> JumpIcon;
 	UPROPERTY() TObjectPtr<class UTextBlock> JumpLabel;
+	UPROPERTY() TObjectPtr<class UImage> JumpGlow;
+	UPROPERTY() TObjectPtr<class UImage> JumpRing;
+	UPROPERTY() TObjectPtr<class UBorder> JumpSign;
+	UPROPERTY() TObjectPtr<class UTextBlock> JumpSignLabel;
+	UPROPERTY() TArray<TObjectPtr<class UTexture2D>> JumpTextures;
 	UPROPERTY() TObjectPtr<class UImage> PauseShadow;
 	UPROPERTY() TObjectPtr<class UButton> PauseButton;
 	UPROPERTY() TObjectPtr<class UImage> PauseIcon;
@@ -93,4 +112,12 @@ private:
 	const strides::CsoInput* TestCommands = nullptr;
 	bool bTestRiding = false;
 	FVector2D TestView = FVector2D::ZeroVector;
+	// Bouton SAUT coloré (tranche T9) : relevé du viewport retenu, clé et textes affichés, boîtes posées.
+	TSharedPtr<class FJsonObject> JumpView;
+	FVector2D JumpView0 = FVector2D(844, 390);
+	FString JumpKey, JumpLabelShown, JumpSignShown, TestLang;
+	FVector2D JumpKeyView = FVector2D::ZeroVector;
+	FVector4 RingBox, SignBox, GlowBox;
+	FLinearColor JumpBg, JumpRingC, JumpSignC, JumpSignTextC, JumpLabelC;
+	bool bJumpGlow = false;
 };

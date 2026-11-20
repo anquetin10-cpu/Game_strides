@@ -376,7 +376,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7). Captures Unreal seules : unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_00 à 10_galop_18.png (19 images, sans pendant web, hors unreal/docs/parite).",
-  "ecart": "Clips discrets, sans mélange : en commandes CSO (bCsoControls vrai par défaut, StridesHorse.h:37, jamais mis à faux), l'index d'allure est recalculé à chaque image d'après la vitesse brute avec des seuils propres au portage (0,2 / 3,2 / 5,5 / 7,0 m/s, StridesHorse.cpp:380), différents des seuils web et sans division par le multiplicateur du cheval ; ChangeGait (StridesHorse.cpp:189-194) est écrasé ; clips joués à vitesse 1,0 sans calage sur la phase de foulée du cheval (horseGaitPhase) ; pas de bercement du bassin.",
+  "ecart": "Clips discrets, sans mélange : en commandes CSO (bCsoControls vrai par défaut, StridesHorse.h:37, jamais mis à faux), l'index d'allure est recalculé à chaque image d'après la vitesse brute avec des seuils propres au portage (0,2 / 3,2 / 5,5 / 7,0 m/s, StridesHorse.cpp:385), différents des seuils web et sans division par le multiplicateur du cheval ; ChangeGait (StridesHorse.cpp:189-194) est écrasé ; clips joués à vitesse 1,0 sans calage sur la phase de foulée du cheval (horseGaitPhase) ; pas de bercement du bassin.",
   "tranche": "b"
  },
  {

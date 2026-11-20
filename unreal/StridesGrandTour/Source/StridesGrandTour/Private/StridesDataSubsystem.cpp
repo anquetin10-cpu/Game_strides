@@ -105,6 +105,9 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 				else UE_LOG(LogTemp, Warning, TEXT("Strides: icône %s illisible"), *File);
 			}
 	}
+	// Aides à l'appel (tranche T9) : aides du parcours (scène du web) et bouton SAUT coloré (HUD du web).
+	LoadJson(TEXT("cso_aids.json"), CsoAidsJson);
+	LoadJson(TEXT("cso_jump_style.json"), CsoJumpJson);
 	if (LoadJson(TEXT("cso_camera.json"), J))
 	{
 		auto N = [&J](const TCHAR* K, double& Out) { J->TryGetNumberField(K, Out); };

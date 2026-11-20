@@ -198,9 +198,12 @@ bool FStridesPariteCsoTest::RunTest(const FString&)
 		{
 			const TSharedPtr<FJsonObject> E = V->AsObject();
 			const TSharedPtr<FJsonObject> VP = E->GetObjectField(TEXT("viewport"));
-			// 844 × 390 ; les poses du HUD d'épreuve (tranche T7, « hud-* ») et des commandes (tranche T8, « cmd-* ») aussi en
-			// 667 × 308, avec l'exécution rejouée.
-			const bool bHud = E->GetStringField(TEXT("name")).StartsWith(TEXT("hud-")) || E->GetStringField(TEXT("name")).StartsWith(TEXT("cmd-"));
+			// 844 × 390 ; les poses du HUD d'épreuve (tranche T7, « hud-* »), des commandes (tranche T8, « cmd-* ») et des aides
+			// à l'appel (tranche T9, « aide-* ») aussi en 667 × 308, avec l'exécution rejouée.
+			const FString Nm = E->GetStringField(TEXT("name"));
+			const bool bHud = Nm.StartsWith(TEXT("hud-")) || Nm.StartsWith(TEXT("cmd-")) || Nm.StartsWith(TEXT("aide-"));
+			if (Nm.StartsWith(TEXT("aide-"))) TestTrue(TEXT("pose des aides : canal « ai » rejoué à la même image que le HUD"), E->HasField(TEXT("aids")) &&
+				E->GetObjectField(TEXT("aids"))->GetNumberField(TEXT("frame")) == E->GetObjectField(TEXT("hud"))->GetNumberField(TEXT("frame")));
 			const double W = VP->GetNumberField(TEXT("w")), H = VP->GetNumberField(TEXT("h"));
 			TestTrue(TEXT("pose : viewport 844 × 390 (ou 667 × 308 pour le HUD)"), (W == 844 && H == 390) || (bHud && W == 667 && H == 308));
 			if (bHud) TestTrue(TEXT("pose du HUD : exécution et image rejouées, état du web"), E->HasField(TEXT("hud")) && E->HasField(TEXT("state")) &&

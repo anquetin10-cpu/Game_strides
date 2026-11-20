@@ -157,6 +157,12 @@ public:
 	// (joystick, boutons SAUT et pause, carte Pause, libellés des bascules ; scripts/unreal/export-hud-style.mjs
 	// --controls) ; nul si absent. Icônes rendues par le navigateur (Content/Data/ui/icon-<nom>.png) : nul si absente.
 	const TSharedPtr<class FJsonObject>& CsoControlsStyle() const { return CsoControlsJson; }
+	// Aides à l'appel (tranche T9) relevées dans la scène et le HUD du jeu web : Content/Data/cso_aids.json (LINE_MARK,
+	// matériaux et géométries des aides du parcours ; scripts/unreal/export-cso-runs.mjs --aids) et
+	// Content/Data/cso_jump_style.json (bouton SAUT dans chaque état ; scripts/unreal/export-hud-style.mjs --jump-states) ;
+	// nuls si absents.
+	const TSharedPtr<class FJsonObject>& CsoAids() const { return CsoAidsJson; }
+	const TSharedPtr<class FJsonObject>& CsoJumpStyle() const { return CsoJumpJson; }
 	class UTexture2D* UiIcon(const FString& Name) const { const TObjectPtr<UTexture2D>* T = UiIcons.Find(Name); return T ? T->Get() : nullptr; }
 	// Géométrie du parcours exportée du jeu web (tranche T5) : Content/World/Cso/cso_fences.json et cso_assets.json ;
 	// IsLoaded() faux si absente (obstacles en formes de base, lignes et poteau invisibles).
@@ -178,6 +184,8 @@ private:
 	strides::TextTable CsoTextTable;
 	TSharedPtr<class FJsonObject> CsoHudStyleJson;
 	TSharedPtr<class FJsonObject> CsoControlsJson;
+	TSharedPtr<class FJsonObject> CsoAidsJson;
+	TSharedPtr<class FJsonObject> CsoJumpJson;
 	UPROPERTY() TMap<FString, TObjectPtr<class UTexture2D>> UiIcons;
 	bool bCsoText = false;
 	FStridesCsoScenery CsoSceneryData;

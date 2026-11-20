@@ -3092,6 +3092,1558 @@
    "web": "unreal/docs/parite/cso/cmd-pause-667x308-web.png",
    "unreal": "unreal/docs/parite/cso/cmd-pause-667x308-unreal.png",
    "pause": true
+  },
+  {
+   "name": "aide-4-trop-loin-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 293 : abord du 2 (oxer) depuis 16 m, première barre à 8,1 m des épaules ou moins (7,5 + 0,6 m de tests/e2e/cso-shots.mjs:54) : bouton « Trop loin », zone d’appel au sol, tracé, repère ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.196,
+   "eye": [
+    318.23307518047926,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    328.1112175948962,
+    4.843625224922611,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 325.35546573325684,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.290377,
+    0.762926,
+    0.577603
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 293
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 293
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "3,23",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "far",
+     "cl": [
+      "far"
+     ],
+     "sg": "»",
+     "lb": "Trop loin",
+     "hide": false
+    }
+   },
+   "frame": 293,
+   "web": "unreal/docs/parite/cso/aide-4-trop-loin-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-4-trop-loin-844x390-unreal.png"
+  },
+  {
+   "name": "aide-4-trop-loin-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 293 : abord du 2 (oxer) depuis 16 m, première barre à 8,1 m des épaules ou moins (7,5 + 0,6 m de tests/e2e/cso-shots.mjs:54) : bouton « Trop loin », zone d’appel au sol, tracé, repère ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.196,
+   "eye": [
+    318.23307518047926,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    328.1112175948962,
+    4.843625224922611,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 325.35546573325684,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.290377,
+    0.762926,
+    0.577603
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 293
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 293
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "3,23",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "far",
+     "cl": [
+      "far"
+     ],
+     "sg": "»",
+     "lb": "Trop loin",
+     "hide": false
+    }
+   },
+   "frame": 293,
+   "web": "unreal/docs/parite/cso/aide-4-trop-loin-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-4-trop-loin-667x308-unreal.png"
+  },
+  {
+   "name": "aide-5-bonne-zone-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 322 : abord du 2 : première image où le bouton affiche « Saute ! » (bonne zone) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.215333,
+   "eye": [
+    324.2264022625333,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    334.07929826804815,
+    4.691070421430549,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 331.34879906658966,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.295107,
+    0.761958,
+    0.576483
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 322
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 322
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "4,20",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "good",
+     "cl": [
+      "good"
+     ],
+     "sg": "✓",
+     "lb": "Saute !",
+     "hide": false
+    }
+   },
+   "frame": 322,
+   "web": "unreal/docs/parite/cso/aide-5-bonne-zone-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-5-bonne-zone-844x390-unreal.png"
+  },
+  {
+   "name": "aide-5-bonne-zone-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 322 : abord du 2 : première image où le bouton affiche « Saute ! » (bonne zone) ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.215333,
+   "eye": [
+    324.2264022625333,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    334.07929826804815,
+    4.691070421430549,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 331.34879906658966,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.295107,
+    0.761958,
+    0.576483
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 322
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 322
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "4,20",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "good",
+     "cl": [
+      "good"
+     ],
+     "sg": "✓",
+     "lb": "Saute !",
+     "hide": false
+    }
+   },
+   "frame": 322,
+   "web": "unreal/docs/parite/cso/aide-5-bonne-zone-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-5-bonne-zone-667x308-unreal.png"
+  },
+  {
+   "name": "aide-trop-pres-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 395 : abord du 3 : première image où le bouton affiche « Trop près » ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.264,
+   "eye": [
+    347.71306904330754,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    357.55868488693903,
+    4.649614711089859,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 354.8354657332566,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.306982,
+    0.759452,
+    0.573581
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 3
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 395
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 395
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "6,63",
+     "/ 64 s",
+     "0 pt",
+     "▸ 3"
+    ],
+    "jump": {
+     "st": "near",
+     "cl": [
+      "near"
+     ],
+     "sg": "!",
+     "lb": "Trop près",
+     "hide": false
+    }
+   },
+   "frame": 395,
+   "web": "unreal/docs/parite/cso/aide-trop-pres-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-trop-pres-844x390-unreal.png"
+  },
+  {
+   "name": "aide-trop-pres-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 395 : abord du 3 : première image où le bouton affiche « Trop près » ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.264,
+   "eye": [
+    347.71306904330754,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    357.55868488693903,
+    4.649614711089859,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 354.8354657332566,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.306982,
+    0.759452,
+    0.573581
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 3
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 395
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 395
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "6,63",
+     "/ 64 s",
+     "0 pt",
+     "▸ 3"
+    ],
+    "jump": {
+     "st": "near",
+     "cl": [
+      "near"
+     ],
+     "sg": "!",
+     "lb": "Trop près",
+     "hide": false
+    }
+   },
+   "frame": 395,
+   "web": "unreal/docs/parite/cso/aide-trop-pres-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-trop-pres-667x308-unreal.png"
+  },
+  {
+   "name": "aide-trop-tot-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 205 : abord du 1 : sixième image après l’appui SAUT à 10 m (bien trop tôt) : bouton « Trop tôt » ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.137333,
+   "eye": [
+    324.7653235027984,
+    6.4,
+    -201.36350638700495
+   ],
+   "target": [
+    317.77477316185616,
+    4.895203714284413,
+    -208.35405672794724
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 319.7474192853292,
+    "z": -206.38141060447404,
+    "h": -2.3561944901923404,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.275976,
+    0.765768,
+    0.580893
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 205
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 205
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     true
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "0,30",
+     "/ 64 s",
+     "0 pt",
+     "▸ 1"
+    ],
+    "jump": {
+     "st": "early",
+     "cl": [
+      "far",
+      "early"
+     ],
+     "sg": "»",
+     "lb": "Trop tôt",
+     "hide": false
+    }
+   },
+   "frame": 205,
+   "web": "unreal/docs/parite/cso/aide-trop-tot-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-trop-tot-844x390-unreal.png"
+  },
+  {
+   "name": "aide-trop-tot-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-appel arrêtée à l’image 205 : abord du 1 : sixième image après l’appui SAUT à 10 m (bien trop tôt) : bouton « Trop tôt » ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.137333,
+   "eye": [
+    324.7653235027984,
+    6.4,
+    -201.36350638700495
+   ],
+   "target": [
+    317.77477316185616,
+    4.895203714284413,
+    -208.35405672794724
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 319.7474192853292,
+    "z": -206.38141060447404,
+    "h": -2.3561944901923404,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.275976,
+    0.765768,
+    0.580893
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 205
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-appel.fr.json",
+    "frame": 205
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     true
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "0,30",
+     "/ 64 s",
+     "0 pt",
+     "▸ 1"
+    ],
+    "jump": {
+     "st": "early",
+     "cl": [
+      "far",
+      "early"
+     ],
+     "sg": "»",
+     "lb": "Trop tôt",
+     "hide": false
+    }
+   },
+   "frame": 205,
+   "web": "unreal/docs/parite/cso/aide-trop-tot-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-trop-tot-667x308-unreal.png"
+  },
+  {
+   "name": "aide-bouton-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-aide-bouton arrêtée à l’image 322 : aide « bouton seul » : abord du 2, première image en bonne zone (bouton « Saute ! », pas de zone au sol) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.215333,
+   "eye": [
+    324.2264022625333,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    334.07929826804815,
+    4.691070421430549,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 331.34879906658966,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.295107,
+    0.761958,
+    0.576483
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-bouton.fr.json",
+    "frame": 322
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-bouton.fr.json",
+    "frame": 322
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "4,20",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "good",
+     "cl": [
+      "good"
+     ],
+     "sg": "✓",
+     "lb": "Saute !",
+     "hide": false
+    }
+   },
+   "frame": 322,
+   "web": "unreal/docs/parite/cso/aide-bouton-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-bouton-844x390-unreal.png"
+  },
+  {
+   "name": "aide-bouton-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-aide-bouton arrêtée à l’image 322 : aide « bouton seul » : abord du 2, première image en bonne zone (bouton « Saute ! », pas de zone au sol) ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.215333,
+   "eye": [
+    324.2264022625333,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    334.07929826804815,
+    4.691070421430549,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 331.34879906658966,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.295107,
+    0.761958,
+    0.576483
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-bouton.fr.json",
+    "frame": 322
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-bouton.fr.json",
+    "frame": 322
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "4,20",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "good",
+     "cl": [
+      "good"
+     ],
+     "sg": "✓",
+     "lb": "Saute !",
+     "hide": false
+    }
+   },
+   "frame": 322,
+   "web": "unreal/docs/parite/cso/aide-bouton-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-bouton-667x308-unreal.png"
+  },
+  {
+   "name": "aide-off-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-aide-off arrêtée à l’image 308 : aide coupée : abord du 2, première barre à 5 m ou moins (bouton « Saut » sans couleur, pas de zone au sol, tracé et repère gardés) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.206,
+   "eye": [
+    321.33306897092757,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    331.19890920821433,
+    4.767457071825349,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 328.4554657332566,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.292824,
+    0.762427,
+    0.577026
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-off.fr.json",
+    "frame": 308
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-off.fr.json",
+    "frame": 308
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "3,73",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 308,
+   "web": "unreal/docs/parite/cso/aide-off-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-off-844x390-unreal.png"
+  },
+  {
+   "name": "aide-off-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-aide-off arrêtée à l’image 308 : aide coupée : abord du 2, première barre à 5 m ou moins (bouton « Saut » sans couleur, pas de zone au sol, tracé et repère gardés) ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.206,
+   "eye": [
+    321.33306897092757,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    331.19890920821433,
+    4.767457071825349,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 328.4554657332566,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.292824,
+    0.762427,
+    0.577026
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-off.fr.json",
+    "frame": 308
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-aide-off.fr.json",
+    "frame": 308
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "3,73",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 308,
+   "web": "unreal/docs/parite/cso/aide-off-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-off-667x308-unreal.png"
+  },
+  {
+   "name": "aide-sans-trace-844x390",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-sans-trace arrêtée à l’image 293 : tracé au sol masqué : abord du 2, première barre à 8,1 m ou moins (zone d’appel, repère et bouton gardés) ; caméra de concours du jeu à cette image, HUD affiché ; 844 × 390.",
+   "hour": 15.196,
+   "eye": [
+    318.23307518047926,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    328.1112175948962,
+    4.843625224922611,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 325.35546573325684,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.290377,
+    0.762926,
+    0.577603
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
+    "frame": 293
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
+    "frame": 293
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "3,23",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "far",
+     "cl": [
+      "far"
+     ],
+     "sg": "»",
+     "lb": "Trop loin",
+     "hide": false
+    }
+   },
+   "frame": 293,
+   "web": "unreal/docs/parite/cso/aide-sans-trace-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-sans-trace-844x390-unreal.png"
+  },
+  {
+   "name": "aide-sans-trace-667x308",
+   "desc": "Aides à l’appel (tranche T9), partie réelle t9-sans-trace arrêtée à l’image 293 : tracé au sol masqué : abord du 2, première barre à 8,1 m ou moins (zone d’appel, repère et bouton gardés) ; caméra de concours du jeu à cette image, HUD affiché ; 667 × 308.",
+   "hour": 15.196,
+   "eye": [
+    318.23307518047926,
+    6.4,
+    -252.77997394254638
+   ],
+   "target": [
+    328.1112175948962,
+    4.843625224922611,
+    -252.77997394254635
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 325.35546573325684,
+    "z": -252.77997394254635,
+    "h": 1.5707963267948948,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.290377,
+    0.762926,
+    0.577603
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 2
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
+    "frame": 293
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-sans-trace.fr.json",
+    "frame": 293
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "Bon appel",
+     "jump-fb good"
+    ],
+    "cad": [
+     5,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "3,23",
+     "/ 64 s",
+     "0 pt",
+     "▸ 2"
+    ],
+    "jump": {
+     "st": "far",
+     "cl": [
+      "far"
+     ],
+     "sg": "»",
+     "lb": "Trop loin",
+     "hide": false
+    }
+   },
+   "frame": 293,
+   "web": "unreal/docs/parite/cso/aide-sans-trace-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/aide-sans-trace-667x308-unreal.png"
   }
  ]
 }

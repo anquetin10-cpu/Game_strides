@@ -41,7 +41,7 @@
 //   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs [--shots[=carriere|chute|cadrage]] [--fences] [--freeze] [--only=…] [--out=dossier]
 // Mode d'emploi du banc (oracles, captures, montages, PARITE.md) : unreal/docs/parite/README.md.
 import { chromium } from 'playwright';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RUNS_SCHEMA, RUNS_LAYOUT, runFile, writeRuns } from './cso-runs-io.mjs';
@@ -57,7 +57,11 @@ const FENCES = process.argv.includes('--fences');
 // --freeze (tranche T8, contrôle adverse) : gel en pause et au téléphone, image par image (oracle cso_freeze.json) ; seul,
 // il ne rejoue aucun scénario.
 const FREEZE = process.argv.includes('--freeze');
-const NO_RUNS = !!SHOTS_ONLY || FENCES || FREEZE;
+// --aids (tranche T9) : oracle cso_takeoff_zone.json (takeoffZone sur une grille, tirets du tracé) et données du jeu
+// Content/Data/cso_aids.json (LINE_MARK, matériaux et géométries des aides, relus dans la scène) ; seul, il ne rejoue
+// aucun scénario.
+const AIDS_DATA = process.argv.includes('--aids');
+const NO_RUNS = !!SHOTS_ONLY || FENCES || FREEZE || AIDS_DATA;
 const FENCES_OUT = join(ROOT, '.tmp/unreal-import/cso');
 const FENCES_MANIFEST = join(ROOT, 'unreal/StridesGrandTour/Content/World/Cso/cso_fences.json');
 const OUT = (process.argv.find((a) => a.startsWith('--out=')) || '').slice(6) || join(ROOT, 'unreal/core/tests/oracles/cso_runs');
@@ -239,6 +243,31 @@ const SCENARIOS = [
   // aux instants du test.
   { id: 'cadrage', type: 'framing', langs: ['fr'], at: { dx: 0, dz: 4, h: Math.PI }, maxFrames: 600,
     desc: 'Cadrage de la caméra de concours (tests/e2e/cso-framing.mjs) : cheval monté posé 4 m au sud de l’entrée de piste, cap π ; Parcours du Pôle lancé, 6 images, Entrer en piste, 80 images ; cheval posé 3 m avant la ligne de départ dans son axe, caméra recalée (snap) ; 460 images : pilote des tests le long de la ligne du tracé (point 12 échantillons devant, cadence de concours 6,2 m/s), SAUT dans la bonne zone quand le sommet du saut tombe sur l’obstacle ; mesures du cadrage (part de la hauteur de l’écran occupée par le couple) aux images 40, 120, 200, 280, 360, 440 et à deux instants en l’air.' },
+  // Scénarios de la tranche T9 (aides à l'appel) : épreuve légère (canal « ep ») avec le canal « ai » (aides du parcours
+  // et bouton SAUT, voir P.installAids) ; cheval WildMesh (captures web de la recette) ; réglages jumpAid / courseLine
+  // posés dans la sauvegarde avant le lancement.
+  { id: 't9-parcours', type: 't4', aides: true, maxFrames: 3200, acts: [{ do: 'line', until: 'finished' }, { do: 'card', extra: 5 }],
+    desc: 'Aides à l’appel sur le parcours complet (réglages par défaut : aide complète, tracé affiché) : du poteau d’attente (16 m avant la ligne de départ) le long de l’abord dessiné puis du tracé, cadence montée au joystick jusqu’à 6,2 m/s, SAUT selon la règle de A.rideLine ; entrée en piste (aide coupée), départ, 10 éléments (zone d’appel, tracé, repère, bouton coloré), arrivée (plus d’obstacle suivant), sortie de piste, bilan.' },
+  { id: 't9-appel', type: 't4', aides: true, langs: ['fr'], maxFrames: 1600,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good', early: 10 }, { do: 'jump', label: '2', rule: 'good', back: 16 }, { do: 'jump', label: '3', rule: 'near' },
+      { do: 'jump', label: '4A', rule: 'none' }, { do: 'wait', frames: 20 }],
+    desc: 'États du bouton SAUT : départ ; le 1 (cheval posé 11 m devant, 6,2 m/s) avec un appui à 10 m de la barre (bien trop tôt : « Trop tôt » 600 ms) puis SAUT en bonne zone ; le 2 abordé depuis 16 m (trop loin, puis bonne zone) ; le 3 sauté à la première image en zone « près » (« Trop près ») ; refus au 4A sans appui (aide coupée pendant le refus et sous 3,2 m/s) ; 20 images après.' },
+  // (personnages classiques, comme les scénarios t4-* : la descente du modèle réaliste déplace le point suivi de
+  // quelques 1e-9 m d'un export à l'autre ; aucune capture n'est prise dans cette exécution)
+  { id: 't9-retour', type: 't4', classic: true, aides: true, langs: ['fr'], maxFrames: 1200,
+    ent: [{ do: 'at', label: '1', d: 9, v: 6.2, frames: 6 }, { do: 'place', dx: 0, dz: 0, frames: 3 }],
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'at', label: '1', d: 1, v: 0, frames: 6 },
+      { do: 'at', label: '2', d: 12, v: 6.2, frames: 25, press: [0, 10] }, { do: 'at', label: '2', d: 14, v: 0, frames: 12 }, { do: 'dismount' }, { do: 'card', extra: 5 }],
+    desc: 'Branches des aides que le parcours n’exerce pas : pendant l’entrée en piste, cheval posé 9 m devant le 1 à 6,2 m/s (aide à l’appel coupée, game.course.pre) puis ramené à l’entrée ; départ ; le 1 sauté ; cheval posé à l’arrêt 1 m devant le 1 (sur le tracé, avant l’obstacle précédent : points cherchés depuis prevS − 2, début borné par prevS) ; posé 12 m devant le 2 à 6,2 m/s, SAUT deux fois à 10 images d’écart (bien trop tôt : « Trop tôt » relancé, temporisation annulée) ; posé à l’arrêt 14 m devant le 2 (zone affichée), pied à terre (zone coupée à pied, élimination) ; bilan.' },
+  { id: 't9-aide-bouton', type: 't4', aides: true, langs: ['fr'], aid: 'button', maxFrames: 1000,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'jump', label: '2', rule: 'good', back: 16 }, { do: 'wait', frames: 10 }],
+    desc: 'Aide « bouton seul » (jumpAid button) : départ, le 1 puis le 2 (abordé depuis 16 m) sautés en bonne zone ; bouton coloré, pas de zone au sol ; 10 images après.' },
+  { id: 't9-aide-off', type: 't4', aides: true, langs: ['fr'], aid: 'off', maxFrames: 1000,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'jump', label: '2', rule: 'good', back: 16 }, { do: 'wait', frames: 10 }],
+    desc: 'Aide coupée (jumpAid off) : départ, le 1 puis le 2 (abordé depuis 16 m) sautés en bonne zone (règle du pilote, sans l’aide) ; bouton « Saut » sans couleur, pas de zone au sol, tracé et repère gardés ; 10 images après.' },
+  { id: 't9-sans-trace', type: 't4', aides: true, langs: ['fr'], courseLine: false, maxFrames: 1000,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'jump', label: '2', rule: 'good', back: 16 }, { do: 'wait', frames: 10 }],
+    desc: 'Tracé au sol masqué (courseLine false) : départ, le 1 puis le 2 (abordé depuis 16 m) sautés en bonne zone ; zone d’appel, repère et bouton gardés ; 10 images après.' },
 ];
 
 // Réglages du scénario « cadrage » relus dans tests/e2e/cso-framing.mjs (le test fait foi, aucune valeur recopiée).
@@ -419,6 +448,7 @@ function PAGE() {
     if (ccPending.length) cur.ccp = ccPending.splice(0); // tranche T6 : appels de la caméra entre deux images (snap)
     apply(inp);
     clock += DT * 1000;
+    if (AIDS) AIDS.tick(100); // tranche T9 : temporisation virtuelle de « Trop tôt » (100 ticks de 1/3 ms par image)
     g.update(DT);
     // Ce que fait le rendu de chaque image du jeu (renderer.render → scene.updateMatrixWorld) sans dessiner : l'image
     // suivante lit des matrices monde à jour (pieds du cheval, caméra), comme en jeu.
@@ -426,8 +456,11 @@ function PAGE() {
     if (!g.camera.parent) g.camera.updateMatrixWorld();
     const rec = capture(cur);
     finishCh(rec);
+    finishAi(rec);
+    if (AIDS && g.course?.aids && !(g.course.aids instanceof AIDS.CA.CourseAids)) throw new Error('aides : classe CourseAids différente de celle du jeu');
     cur = null;
     frames.push(rec);
+    if (P.stopAfter !== undefined && frames.length > P.stopAfter) throw new Error('STOP'); // captures de la tranche T9
     return rec;
   };
   const input = (o = {}) => ({ move: o.move || [0, 0], keys: o.keys || [], held: o.held || [], jump: !!o.jump, ui: o.ui || null, ...(o.press?.length ? { press: o.press } : {}) });
@@ -1159,13 +1192,28 @@ function PAGE() {
       if (a.k > 300) throw new Error(`${st.sc.id} : saut du ${a.label} sans fin`);
       const tg = g.obstacles.target(h);
       let jump = false;
-      if (a.rule !== 'none' && !a.jumped && h.jumpT < 0 && tg && tg.o === o) {
+      // Tranche T9 : `early` = un appui SAUT quand la première barre de l'obstacle visé passe sous `early` m (bien trop
+      // tôt : « Trop tôt » sur le bouton) ; règle 'near' = SAUT à la première image où l'obstacle est en zone « près ».
+      if (a.early !== undefined && !a.earlyDone && h.jumpT < 0 && tg && tg.o === o && tg.geo.rails[0].x <= a.early) jump = a.earlyDone = true;
+      else if (a.rule !== 'none' && !a.jumped && h.jumpT < 0 && tg && tg.o === o) {
         const go = a.rule === 'far' ? tg.geo.rails[0].x <= (a.far ?? 4.2)
           : a.rule === 'perfect' ? tg.plan.zone === 'good' && Math.abs(tg.plan.dev || 0) < 0.03
-            : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
+            : a.rule === 'near' ? tg.plan.zone === 'near'
+              : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
         if (go) jump = a.jumped = true;
       }
       return { move: [alt ? steerTo(h, Math.sin(hd), Math.cos(hd)) : steerTo(h, o.n.x, o.n.z), 0], jump };
+    },
+    // Tranche T9 : cheval posé `d` m devant l'obstacle `label` dans son axe (côté abord), à `v` m/s, joystick vers l'axe,
+    // pendant `frames` images ; SAUT aux images de la liste `press` (rang de l'image dans l'action).
+    at: (a, st) => {
+      const h = st.h, o = F(a.label);
+      if (!a.placed) {
+        poseHorse(st, o.x - o.n.x * a.d, o.z - o.n.z * a.d, o.rot, a.v ?? 0);
+        a.placed = true;
+      }
+      if (a.k >= (a.frames ?? 3)) return null;
+      return { move: [steerTo(h, o.n.x, o.n.z), 0], jump: (a.press || []).includes(a.k) };
     },
     // Arrêt : joystick en arrière jusqu'à la cadence nulle et au cheval arrêté, puis rien, jusqu'à `until`.
     still: (a, st) => {
@@ -1433,6 +1481,210 @@ function PAGE() {
     }
     return out;
   };
+  // ---- Canal « ai » (aides à l'appel, tranche T9), scénarios marqués `aides` seulement ----
+  // Appels de CourseAids.update (courseAids.js:104-167) relevés en pleine précision : entrées (in : dt, rang n de
+  // l'obstacle suivant dans la liste du parcours ou null, prevS, showLine, showZone, cheval présent, x, z, vitesse,
+  // jumpPower, mods.clearance, mode « ride », game.time), hauteurs du sol lues par l'appel (gq : [x, z, y] de
+  // terrain.getHeight, dans l'ordre), état des maillages après l'appel (out) ; bouton SAUT (b) : valeur lue par hud.update
+  // (jt = g.course?.jumpTiming?.() || 'none', relevée dans hud.update), obstacles.timing du cheval à ce moment (tm), mode
+  // de concours (c : game.course non nul, pre : entrée en piste), réglage jumpAid (aid), cible (to : rang, tx : première
+  // barre), puis état du DOM après l'image (st = hud._jt, cl = classes far / good / near / early, sg = signe, lb =
+  // libellé). Temporisation de « Trop tôt » (hud.js:438, setTimeout de 600 ms) sur une horloge virtuelle : ticks de 1/3
+  // ms, 100 par image, échéances déclenchées avant l'image suivante (règle de export-hud-style.mjs) ; les autres
+  // temporisations du jeu restent celles du navigateur.
+  let AIDS = null;
+  const aidObs = () => g.obstacles.ofCourse('cso');
+  const aidObsDump = () => aidObs().map((o) => ({ label: o.label, num: o.num, kind: o.kind, x: o.x, z: o.z, rot: o.rot, h: o.h, w: o.w, spread: o.spread, ground: o.ground, lineS: o.lineS ?? null, n: [o.n.x, o.n.z], bars: o.bars.map((b) => [b.s, b.h]), off: !!o.off }));
+  P.installAids = async (sc) => {
+    const CA = await import('/src/gameplay/courseAids.js');
+    const H = g.hud;
+    const stg = g.save.data.settings;
+    if (sc.aid !== undefined) stg.jumpAid = sc.aid;
+    if (sc.courseLine !== undefined) stg.courseLine = sc.courseLine;
+    const VT = { now: 0, seq: 0, list: new Map() };
+    const st0 = window.setTimeout, ct0 = window.clearTimeout;
+    window.setTimeout = function (fn, ms, ...a) {
+      const lines = (new Error().stack || '').split('\n');
+      const stack = lines.slice(1, 5).join('\n');
+      // Captures (--shots=aides) : toutes les temporisations de hud.js sur l'horloge virtuelle (état du HUD = rejeu du jeu
+      // Unreal, règle de export-hud-style.mjs) ; exécutions de l'oracle : celle de « Trop tôt » seulement.
+      if ((/jumpEarly/.test(stack) && /\/src\/ui\/hud\.js/.test(stack)) || (P.virtualHud && /\/src\/ui\/hud\.js/.test(lines[2] || ''))) {
+        const id = ++VT.seq;
+        VT.list.set(id, { due: VT.now + Math.round(Math.max(0, Number(ms) || 0) * 3), seq: id, fn, a });
+        AIDS.virtual++;
+        return -id;
+      }
+      return st0.call(window, fn, ms, ...a);
+    };
+    window.clearTimeout = function (id) {
+      if (typeof id === 'number' && id < 0) VT.list.delete(-id);
+      else ct0.call(window, id);
+    };
+    const tick = (ticks) => {
+      const target = VT.now + ticks;
+      for (;;) {
+        let best = null;
+        for (const t of VT.list.values()) if (t.due <= target && (!best || t.due < best.due || (t.due === best.due && t.seq < best.seq))) best = t;
+        if (!best) break;
+        VT.list.delete(best.seq);
+        VT.now = Math.max(VT.now, best.due);
+        best.fn(...best.a);
+      }
+      VT.now = target;
+    };
+    const up0 = CA.CourseAids.prototype.update;
+    CA.CourseAids.prototype.update = function (dt, o) {
+      const h = g.player.horse, list = aidObs();
+      const n = o.next ? list.indexOf(o.next) : null;
+      if (n === -1) throw new Error('aides : obstacle suivant hors du parcours');
+      const inp = { dt, n, ps: o.prevS ?? 0, sl: o.showLine ?? true, sz: o.showZone ?? true, hh: !!h, x: h ? h.pos.x : null, z: h ? h.pos.z : null, v: h ? h.speed : null, pw: h ? h.jumpPower : null, cl: h ? h.mods.clearance : null, md: g.player.mode === 'ride', t: g.time };
+      const ter = g.terrain, own = Object.prototype.hasOwnProperty.call(ter, 'getHeight'), gh0 = ter.getHeight;
+      const gq = [];
+      ter.getHeight = function (x, z) {
+        const y = gh0.call(this, x, z);
+        gq.push([x, z, y]);
+        return y;
+      };
+      let r;
+      try {
+        r = up0.call(this, dt, o);
+      } finally {
+        if (own) ter.getHeight = gh0;
+        else delete ter.getHeight;
+      }
+      const m = (x) => [x.visible, x.position.x, x.position.y, x.position.z, x.rotation.y, x.scale.x, x.scale.z];
+      const dr = (x) => (x ? [x.mesh.visible, x.geo.drawRange.start / 6, Number.isFinite(x.geo.drawRange.count) ? x.geo.drawRange.count / 6 : null] : null);
+      const out = {
+        ln: dr(this.line), af: dr(this.after), mk: [this.mark.visible, this.mark.position.x, this.mark.position.y, this.mark.position.z, this.mark.rotation.y],
+        ok: m(this.ok), gd: m(this.good), zt: this._zoneT, zf: this._zoneFor ? list.indexOf(this._zoneFor) : null,
+        zo: this._zone ? { p: this._zone.pass, g: this._zone.good } : null,
+      };
+      if (cur) {
+        const ai = (cur.ai ||= {});
+        if (ai.c) throw new Error('aides : deux appels de CourseAids.update dans une image');
+        ai.c = { in: inp, gq, out };
+      }
+      return r;
+    };
+    const hu0 = H.update;
+    H.update = function (dt) {
+      if (cur) {
+        const h = g.player.horse;
+        const tg = h ? g.obstacles.target(h) : null;
+        // (cad / ca : cadence de concours et réglage au joystick lus par la même hud.update, crans du HUD des captures)
+        (cur.ai ||= {}).b = { jt: g.course?.jumpTiming?.() || 'none', tm: h ? g.obstacles.timing(h) : 'none', c: !!g.course, pre: !!g.course?.pre, aid: stg.jumpAid || 'full', line: stg.courseLine !== false, to: tg ? aidObs().indexOf(tg.o) : null, tx: tg ? tg.geo.rails[0].x : null, cad: g.player.csoCadence ?? null, ca: !!g.player._cadAdjust };
+      }
+      return hu0.call(this, dt);
+    };
+    AIDS = { CA, tick, virtual: 0, sig: null };
+  };
+  P.aidsVirtual = () => (AIDS ? AIDS.virtual : null);
+  // Captures de la tranche T9 (--shots=aides) : la partie s'arrête après l'image k (P.stopAfter) ; vue de la caméra du
+  // jeu à cette image, HUD affiché (animations et transitions coupées : état d'arrivée), état du HUD relevé dans le DOM
+  // (mêmes parties que export-hud-style.mjs, bouton SAUT compris) et canal « ai » de l'image (comparé à l'oracle).
+  P.aideView = (k) => {
+    const f = frames[k];
+    if (!f) throw new Error(`capture : image ${k} absente`);
+    const H = g.hud, h = g.player.horse, cam = g.camera;
+    if (!document.getElementById('aide-css')) {
+      const st = document.createElement('style');
+      st.id = 'aide-css';
+      st.textContent = '.hud, .hud * { animation: none !important; transition: none !important; }';
+      document.head.appendChild(st);
+    }
+    g.sky.update(g.hour(), g.player.focus.pos, 0);
+    g.sky.follow(cam);
+    g.world.update(0, cam, g.sky);
+    g.scene.updateMatrixWorld();
+    g.renderer.render(g.scene, cam);
+    const dir = cam.getWorldDirection(tmp).clone();
+    const state = {
+      to: [...H.toastsEl.children].map((c) => [c.textContent, [...c.classList].filter((x) => x !== 'toast').join(' ')]),
+      hi: [H.hintEl.classList.contains('off'), H.hintEl.innerHTML, H.hintEl.classList.contains('inline')],
+      bg: [H.bigEl.classList.contains('hidden'), H.bigEl.querySelector('.t').textContent, H.bigEl.querySelector('.s').textContent, H.el.classList.contains('big-on')],
+      fb: [H.jumpFbEl.textContent, H.jumpFbEl.className],
+      cad: [H.csoCad.querySelectorAll('i.on').length, H.csoCad.classList.contains('show')],
+      bd: [H.csoEl.classList.contains('hidden'), H.csoEl.classList.contains('over'), H.csoEl.classList.contains('faults')],
+      cl: [H.el.classList.contains('cso-on'), H.el.classList.contains('cso-ctl'), H.el.classList.contains('cso-sober')],
+      ob: H.objEl.classList.contains('off'),
+      board: [H.csoT.textContent, H.csoTa.textContent, H.csoPen.textContent, H.csoNext.textContent],
+      jump: { st: H._jt ?? null, cl: ['far', 'good', 'near', 'early'].filter((x) => H.btnJump.classList.contains(x)), sg: H.jumpSign.textContent, lb: H.jumpLabel.textContent, hide: H.btnJump.classList.contains('hide') },
+    };
+    return {
+      f: f.f, ai: JSON.stringify(f.ai), state,
+      eye: [cam.position.x, cam.position.y, cam.position.z], target: [cam.position.x + dir.x * 10, cam.position.y + dir.y * 10, cam.position.z + dir.z * 10], fovV: cam.fov, aspect: cam.aspect,
+      horse: { x: h.pos.x, z: h.pos.z, h: h.heading, jumpY: h.jumpY, jumpT: h.jumpT },
+      sunDir: v3(g.sky.sunDir), hour: R6(g.hour()), day: Math.floor(g.save.data.gameTime / 86400),
+      canvas: [g.renderer.domElement.width, g.renderer.domElement.height], virtual: AIDS ? AIDS.virtual : null,
+    };
+  };
+  P.render = P.render || (() => g.renderer.render(g.scene, g.camera));
+  // Tranche T9 (--aids) : takeoffZone (courseAids.js:25-34) appelée telle quelle sur une grille (obstacles du parcours aux
+  // hauteurs hors épreuve puis csoHeights(base) posées par Obstacles.setHeights × vitesses × puissances × bonus de
+  // franchissement), puis un CourseAids construit par la page sur le jeu réel (tirets du tracé, matériaux, géométries
+  // du repère et des bandes), supprimé ensuite ; hauteurs d'origine remises.
+  P.aidsData = async () => {
+    const CA = await import('/src/gameplay/courseAids.js');
+    const { csoHeights } = await import('/src/gameplay/csoCourse.js');
+    const O = await import('/src/gameplay/obstacles.js');
+    const list = aidObs();
+    const h0 = list.map((o) => o.h);
+    const speeds = [0, 2, 3.2, 4.6, 5.49, 5.5, 5.51, 5.8, 6.2, 6.6, 7, 7.5, 8, 9, 9.6];
+    const powers = [1.1, 1.35, 1.5, 1.8];
+    const clears = [0, 0.03, 0.08];
+    const sets = [];
+    for (const base of [null, 0.6, 0.8, 1.05, 1.1, 1.25, 1.4, 1.55]) {
+      if (base !== null) g.obstacles.setHeights('cso', csoHeights(base));
+      const cases = [];
+      list.forEach((o, i) => {
+        for (const v of speeds)
+          for (const pw of powers)
+            for (const cl of clears) {
+              const z = CA.takeoffZone(o, { speed: v, jumpPower: pw, mods: { clearance: cl } });
+              cases.push([i, v, pw, cl, z.pass, z.good]);
+            }
+      });
+      sets.push({ base, obs: aidObsDump(), cases });
+    }
+    g.obstacles.setHeights('cso', h0);
+    if (aidObs().some((o, i) => o.h !== h0[i])) throw new Error('aides : hauteurs non remises');
+    const aids = new CA.CourseAids(g, 'cso');
+    const pos = aids.line.geo.attributes.position.array;
+    const marks = aids.line.stepS.map((s, k) => ({ s, c: [0, 1, 2, 3].map((j) => [pos[(k * 4 + j) * 3], pos[(k * 4 + j) * 3 + 1], pos[(k * 4 + j) * 3 + 2]]) }));
+    const idxOk = [...aids.line.geo.index.array].every((v, i) => v === Math.floor(i / 6) * 4 + [0, 1, 2, 0, 2, 3][i % 6]);
+    const mat = (m) => ({ type: m.type, color: `#${m.color.getHexString()}`, colorLinear: [m.color.r, m.color.g, m.color.b], opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, depthTest: m.depthTest, side: m.side, toneMapped: m.toneMapped });
+    const geo = (gg) => ({ position: [...gg.attributes.position.array], normal: gg.attributes.normal ? [...gg.attributes.normal.array] : null, index: gg.index ? [...gg.index.array] : null, params: gg.parameters ?? null });
+    const out = {
+      sets,
+      speeds, powers, clears,
+      marks, markIndexOk: idxOk, line: { n: O.CSO_LINE.length, first: O.CSO_LINE[0], last: O.CSO_LINE[O.CSO_LINE.length - 1] },
+      data: {
+        lineMark: CA.LINE_MARK,
+        materials: { line: mat(aids.line.mesh.material), after: mat(aids.after.mesh.material), ok: mat(aids.ok.material), good: mat(aids.good.material), mark: mat(aids.mark.material) },
+        renderOrder: { line: aids.line.mesh.renderOrder, after: aids.after.mesh.renderOrder, ok: aids.ok.renderOrder, good: aids.good.renderOrder, mark: aids.mark.renderOrder },
+        frustumCulled: { line: aids.line.mesh.frustumCulled, mark: aids.mark.frustumCulled },
+        mark: geo(aids.mark.geometry),
+        band: geo(aids.good.geometry),
+        toneMapping: g.renderer.toneMapping, toneMappingExposure: g.renderer.toneMappingExposure, outputColorSpace: g.renderer.outputColorSpace,
+      },
+    };
+    aids.dispose();
+    return out;
+  };
+  // Fin d'image (scénarios `aides`) : état du bouton dans le DOM, liste des obstacles du parcours quand elle change.
+  const finishAi = (rec) => {
+    if (!AIDS) return;
+    const H = g.hud, ai = (rec.ai ||= {});
+    if (!ai.b) throw new Error('aides : hud.update non appelé dans l’image');
+    Object.assign(ai.b, { st: H._jt ?? null, cl: ['far', 'good', 'near', 'early'].filter((k) => H.btnJump.classList.contains(k)), sg: H.jumpSign.textContent, lb: H.jumpLabel.textContent });
+    const ob = aidObsDump();
+    const sig = JSON.stringify(ob);
+    if (sig !== AIDS.sig) {
+      ai.ob = ob;
+      AIDS.sig = sig;
+    }
+  };
+
   P.setup = async (sc, seed) => {
     A.stopLoop();
     A.closeCards();
@@ -1493,6 +1745,8 @@ function PAGE() {
     g.cam.snap(h.pos, h.heading);
     g.scene.updateMatrixWorld();
     if (!g.camera.parent) g.camera.updateMatrixWorld();
+    P.virtualHud = !!sc.virtualHud; // captures de la tranche T9 : temporisations de hud.js virtuelles
+    if (sc.aides) await P.installAids(sc); // tranche T9 : réglages de l'épreuve et canal « ai » (avant le lancement)
     const startCalls = { f: -1, ev: [], hud: [], audio: [] };
     cur = startCalls;
     g.activities.start(g.activities.defs.find((a) => a.id === 'cso_train'));
@@ -1754,6 +2008,7 @@ for (const sc of SCENARIOS) {
       Object.assign(setup, { lite: true, acts: sc.acts, pose: sc.pose ?? null, ...(sc.pre ? { pre: sc.pre, at: sc.at ?? null } : {}), ...(sc.ent ? { ent: sc.ent } : {}) });
     } else frames = await page.evaluate((s) => window.__parite.runDroit(s), sc);
     if (sc.classic) setup.classic = true;
+    if (sc.aides) Object.assign(setup, { aides: true, aid: sc.aid ?? 'full', courseLine: sc.courseLine ?? true, virtualEarly: await page.evaluate(() => window.__parite.aidsVirtual()) });
     runs.push({ id: sc.id, lang, desc: sc.desc, setup, frames });
     const evs = frames.flatMap((f) => f.ev.map((e) => e.e)).filter((e) => e.startsWith('obstacle:') || e.startsWith('horse:j') || e === 'horse:land');
     console.log(`${sc.id} ${lang} : ${frames.length} images, ${((Date.now() - t0) / 1000).toFixed(0)} s, événements ${evs.join(' ')}`);
@@ -1778,6 +2033,7 @@ const head = {
   lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action)',
   ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
   cc: 'canal de la caméra de concours (tranche T6), nombres en pleine précision, un appel de FollowCamera._updateComp par image en épreuve : hz = cheval vu par la caméra [pos.x, pos.z, heading, _yawRate (null : indéfini), jumpT, jumpY, groundY] ; dt s’il diffère du pas ; i = instant (snap) ; e0 = camera.position et f0 = [this.fov, camera.fov] avant l’appel quand l’état de concours est (re)créé ; nx = rang dans cc0.obs de game.course.next (null : aucun) ; sonde de la perche (colliders.cameraBlocked) : pn = points sondés, pb = rang du premier point bloqué (−1 : aucun), pq = points [x, y, z] sondés (premier appel de l’exécution et appels bloqués) ; th = [x, z, hauteur] rendus par terrain.getHeight (sol sous la caméra) ; eye = camera.position, look = arguments de camera.lookAt, fov = camera.fov (vertical, appliqué), fs = this.fov (lissé), bk = _comp.back (recul retenu, amorti) ; obs = obstacles [x, z, n.x, n.z, t.x, t.z, w, depth (null : absent), ground, h, off] quand l’un d’eux change ; ccp = appels hors image (snap) avant l’image ; setup.cc0 = état de départ { st = _comp (cH, w, t, ax, az, ay, back, from, fromLook, aim) ou null, eye, fov = this.fov, camFov = camera.fov, obs }',
+  ai: 'canal des aides à l’appel (tranche T9, scénarios t9-*, setup.aides ; setup.aid / setup.courseLine = réglages jumpAid / courseLine posés avant le lancement ; setup.virtualEarly = temporisations de « Trop tôt » passées sur l’horloge virtuelle), pleine précision : c = appel de CourseAids.update (courseAids.js:104-167) de l’image, absent sans appel : in = entrées (dt ; n = rang de l’obstacle suivant dans ob, null : aucun ; ps = prevS ; sl / sz = showLine / showZone ; hh = cheval présent ; x, z, v, pw, cl = cheval : position, vitesse, jumpPower, mods.clearance ; md = mode « ride » ; t = game.time), gq = appels de terrain.getHeight pendant l’appel [x, z, y] dans l’ordre, out = maillages après l’appel (ln / af = tracé jusqu’à l’obstacle suivant / après lui [visible, premier tiret, nombre de tirets (null : drawRange infini, jamais réglé)] ; mk = repère [visible, x, y, z, rotation.y] ; ok / gd = bandes ambre / verte [visible, x, y, z, rotation.y, scale.x, scale.z] ; zt = _zoneT ; zf = rang de _zoneFor ; zo = _zone { p = pass, g = good }) ; b = bouton SAUT : jt = valeur lue par hud.update (g.course?.jumpTiming?.() || ’none’, relevée à l’appel), tm = obstacles.timing du cheval au même moment, c = game.course non nul, pre = game.course.pre (entrée en piste), aid = réglage jumpAid || ’full’, line = courseLine !== false, to / tx = cible (rang dans ob, première barre en m) ou null, cad / ca = player.csoCadence (null : indéfinie) et player._cadAdjust lus par la même hud.update ; puis, en fin d’image : st = hud._jt (null : non défini ou remis à null), cl = classes far / good / near / early de .btn-jump, sg = signe, lb = libellé ; ob = obstacles du parcours dans l’ordre (label, num, kind, x, z, rot, h, w, spread, ground, lineS, n, bars [s, h], off) quand la liste change ; temporisation de « Trop tôt » (hud.js:438) sur une horloge virtuelle de 100 ticks de 1/3 ms par image, échéances déclenchées avant l’image suivante',
   fr: 'scénario « cadrage » (tranche T6) : mesure de tests/e2e/cso-framing.mjs:31-39 après l’image (silhouette setup.framing.pts projetée par la caméra du jeu, matrices à jour comme au rendu) : part, top, bottom (0 = haut de l’écran), jump (en l’air), ys (ordonnées des points), asp = camera.aspect, pose = [pos.x, pos.z, heading, groundY, jumpY, jumpT] ; setup.framing = réglages relus dans le test, setup.posed = cheval posé avant la première image (x, z, h, course = caméra de concours active, step = étape de la mission)',
   audioRecorded,
   audioIgnored: AUDIO_IGNORED,
@@ -1860,6 +2116,42 @@ if (!NO_RUNS && (!ONLY.length || ONLY.includes('goto'))) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Aides à l'appel (tranche T9, --aids) : oracle cso_takeoff_zone.json et données Content/Data/cso_aids.json.
+if (AIDS_DATA) {
+  const { ctx, page } = await openGame('fr');
+  await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [SCENARIOS[0], 20261118]);
+  const r = await page.evaluate(() => window.__parite.aidsData());
+  if (!r.markIndexOk) throw new Error('aides : index des tirets inattendu');
+  const ZOUT = join(ORA, 'cso_takeoff_zone.json');
+  const zh = {
+    schema: 'strides.oracle.cso_takeoff_zone/1',
+    generator: 'scripts/unreal/export-cso-runs.mjs --aids',
+    source: ['src/gameplay/courseAids.js', 'src/gameplay/jumpModel.js', 'src/gameplay/obstacles.js', 'src/gameplay/csoCourse.js'],
+    frame: 'repère web : x est, z sud, y haut ; m, m/s',
+    sets: 'takeoffZone(o, { speed: v, jumpPower: pw, mods: { clearance: cl } }) de courseAids.js:25-34, appelée dans la page sur les obstacles du parcours cso (Obstacles.ofCourse) : base null = hauteurs hors épreuve, sinon Obstacles.setHeights(csoHeights(base)) ; obs = obstacles (label, num, kind, x, z, rot, h, w, spread, ground, lineS, n, bars [s, h], off) ; cases = [rang de l’obstacle, v, pw, cl, pass [près, loin] ou null, good [près, loin] ou null]',
+    marks: 'tirets du tracé construits par new CourseAids(game, ’cso’) (_marks de courseAids.js:80-92 sur CSO_LINE, LINE_MARK) : s = indice de tracé (stepS), c = quatre coins [x, y, z] (y = terrain.getHeight + 0,04) ; line = CSO_LINE (nombre de points, premier, dernier)',
+    speeds: r.speeds, powers: r.powers, clears: r.clears, line: r.line,
+  };
+  let zout = JSON.stringify(zh, null, 1).replace(/\n}$/, ',\n "sets": [\n');
+  zout += r.sets.map((st) => `{"base":${JSON.stringify(st.base)},"obs":${JSON.stringify(st.obs)},"cases":[\n${st.cases.map((c) => JSON.stringify(c)).join(',\n')}\n]}`).join(',\n') + '\n],\n "marks": [\n';
+  zout += r.marks.map((m) => JSON.stringify(m)).join(',\n') + '\n]}\n';
+  JSON.parse(zout);
+  writeFileSync(ZOUT, zout);
+  const DOUT = join(ROOT, 'unreal/StridesGrandTour/Content/Data/cso_aids.json');
+  const dd = {
+    schema: 'strides.cso_aids/1',
+    generator: 'scripts/unreal/export-cso-runs.mjs --aids',
+    source: ['src/gameplay/courseAids.js', 'src/game.js'],
+    doc: 'aides visuelles du parcours relues dans la scène du jeu web (new CourseAids(game, ’cso’)) : LINE_MARK ; matériaux (MeshBasicMaterial : couleur sRGB et linéaire, opacité, transparence, écriture de profondeur, face : 0 avant, 2 deux faces, tone mapping) du tracé (line), de sa suite (after), des bandes (ok ambre, good verte) et du repère (mark) ; renderOrder ; géométries du repère (ConeGeometry(0,16 ; 0,3 ; 3) retournée) et des bandes (PlaneGeometry(1, 1) couchée) : positions, normales, index ; tone mapping du rendu (toneMapping 4 = ACESFilmic, exposition, espace de sortie)',
+    ...r.data,
+  };
+  const dtext = JSON.stringify(dd, null, 1) + '\n';
+  if (!existsSync(DOUT) || readFileSync(DOUT, 'utf8') !== dtext) writeFileSync(DOUT, dtext);
+  console.log('oracle :', ZOUT, `${r.sets.reduce((n, st) => n + st.cases.length, 0)} cas, ${r.marks.length} tirets, ${(zout.length / 1024).toFixed(0)} Kio ; données :`, DOUT);
+  await ctx.close();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Géométrie des obstacles, des lignes et du poteau « Chrono » (tranche T5) : construite par le jeu web dans la page
 // (scripts/unreal/cso-export.js), comparée au jeu réel hors épreuve (avant le lancement de l'activité) et en épreuve
 // (après l'entrée en piste et la cloche, comme les poses de la carrière).
@@ -1935,14 +2227,16 @@ if (FREEZE) {
 // d'arrivée, poteau « Chrono », dans l'état d'épreuve après la cloche (comme le scénario), puis caméra posée ; chaque
 // pose relève l'état des obstacles du jeu (hauteurs, numéro surligné). Groupe « chute » (tranche T3).
 // Groupe « hud » (tranche T7) : poses écrites par scripts/unreal/export-hud-style.mjs --shots, toujours gardées ici.
-const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : 'carriere');
+// Groupes « cmd » (tranche T8, écrits par export-hud-style.mjs --controls) et « aides » (tranche T9, --shots=aides) :
+// gardés par les autres groupes.
+const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : name.startsWith('cmd-') ? 'cmd' : name.startsWith('aide-') ? 'aides' : 'carriere');
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
   const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
   // --shots=<groupe> : les poses existantes des autres groupes sont gardées, celles du groupe remplacées ; les poses du
   // HUD (groupe « hud », écrites par export-hud-style.mjs) sont toujours gardées.
   try {
-    doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : poseGroup(p.name) === 'hud'));
+    doc.poses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : ['hud', 'cmd', 'aides'].includes(poseGroup(p.name))));
   } catch {
     doc.poses = [];
   }
@@ -2131,10 +2425,75 @@ if (SHOTS) {
     }
     await ctx.close();
   }
+  // Tranche T9 : aides à l'appel, en partie réelle (exécutions t9-* de l'oracle arrêtées à l'image choisie), HUD affiché,
+  // 844 × 390 et 667 × 308. Une page par capture (partie rejouée depuis le début, temporisations de hud.js virtuelles) ;
+  // le canal « ai » de l'image est comparé à l'oracle.
+  if (SHOTS_ONLY === 'aides') {
+    const AIDE = [
+      { name: 'aide-4-trop-loin', run: 't9-appel', desc: 'abord du 2 (oxer) depuis 16 m, première barre à 8,1 m des épaules ou moins (7,5 + 0,6 m de tests/e2e/cso-shots.mjs:54) : bouton « Trop loin », zone d’appel au sol, tracé, repère', pick: (b) => b.to === 1 && b.tx !== null && b.tx <= 8.1 },
+      { name: 'aide-5-bonne-zone', run: 't9-appel', desc: 'abord du 2 : première image où le bouton affiche « Saute ! » (bonne zone)', pick: (b) => b.to === 1 && b.st === 'good' },
+      { name: 'aide-trop-pres', run: 't9-appel', desc: 'abord du 3 : première image où le bouton affiche « Trop près »', pick: (b) => b.to === 2 && b.st === 'near' },
+      { name: 'aide-trop-tot', run: 't9-appel', desc: 'abord du 1 : sixième image après l’appui SAUT à 10 m (bien trop tôt) : bouton « Trop tôt »', pick: (b, k, frames) => b.cl.includes('early') && frames[k - 5]?.ai?.b?.cl.includes('early') && !frames[k - 6]?.ai?.b?.cl.includes('early') },
+      { name: 'aide-bouton', run: 't9-aide-bouton', desc: 'aide « bouton seul » : abord du 2, première image en bonne zone (bouton « Saute ! », pas de zone au sol)', pick: (b) => b.to === 1 && b.st === 'good' },
+      { name: 'aide-off', run: 't9-aide-off', desc: 'aide coupée : abord du 2, première barre à 5 m ou moins (bouton « Saut » sans couleur, pas de zone au sol, tracé et repère gardés)', pick: (b) => b.to === 1 && b.tx !== null && b.tx <= 5 },
+      { name: 'aide-sans-trace', run: 't9-sans-trace', desc: 'tracé au sol masqué : abord du 2, première barre à 8,1 m ou moins (zone d’appel, repère et bouton gardés)', pick: (b) => b.to === 1 && b.tx !== null && b.tx <= 8.1 },
+    ];
+    const VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
+    const shots = [];
+    for (const A of AIDE) {
+      const sc = { ...SCENARIOS.find((x) => x.id === A.run), virtualHud: true };
+      const ora = JSON.parse(readFileSync(join(OUT, runFile(sc.id, 'fr')), 'utf8'));
+      const k = ora.frames.findIndex((f, i) => f.ai?.b && A.pick(f.ai.b, i, ora.frames));
+      if (k < 0) throw new Error(`${A.name} : image introuvable dans ${sc.id}`);
+      for (const v of VIEWS) {
+        const vk = `${v.width}x${v.height}`;
+        const ctx = await browser.newContext({ viewport: v, deviceScaleFactor: 1 });
+        const page = await ctx.newPage();
+        page.on('pageerror', (e) => errors.push(`fr: ${e.message}`));
+        await page.goto(`${BASE}/?autostart&quality=high&lang=fr`, { timeout: 180000 });
+        await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000, polling: 500 });
+        await page.addScriptTag({ content: AUTOPILOT });
+        await page.addScriptTag({ content: `(${PAGE.toString()})();` });
+        await page.evaluate((o) => window.__parite.install(o), { audioIgnored: AUDIO_IGNORED, hudMethods: HUD_METHODS, hudDedupe: HUD_DEDUPE });
+        await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [sc, 20261118]);
+        await page.evaluate((kk) => (window.__parite.stopAfter = kk), k);
+        try {
+          await page.evaluate((s) => window.__parite.runT4(s), sc);
+          throw new Error(`${A.name} : partie terminée avant l’image ${k}`);
+        } catch (e) {
+          if (!String(e.message).includes('STOP')) throw e;
+        }
+        const r = await page.evaluate((kk) => window.__parite.aideView(kk), k);
+        if (r.ai !== JSON.stringify(ora.frames[k].ai)) throw new Error(`${A.name} ${vk} : canal « ai » de l’image ${k} différent de l’oracle`);
+        await page.waitForTimeout(3000);
+        await page.evaluate(() => window.__parite.render());
+        await page.waitForTimeout(500);
+        const name = `${A.name}-${vk}`;
+        await page.screenshot({ path: join(PARITE, `${name}-web.png`) });
+        const st = await liveCso(page);
+        const file = `unreal/core/tests/oracles/cso_runs/${runFile(sc.id, 'fr')}`;
+        shots.push({
+          name, desc: `Aides à l’appel (tranche T9), partie réelle ${sc.id} arrêtée à l’image ${k} : ${A.desc} ; caméra de concours du jeu à cette image, HUD affiché ; ${v.width} × ${v.height}.`,
+          hour: r.hour, eye: r.eye, target: r.target, fovV: r.fovV, viewport: { w: v.width, h: v.height }, horse: r.horse, sunDir: r.sunDir, day: r.day, canvas: r.canvas,
+          course: { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 },
+          hud: { run: file, frame: k }, aids: { run: file, frame: k }, state: r.state, frame: k,
+          web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png`,
+        });
+        console.log('pose', name, 'image', k, 'bouton', JSON.stringify(r.state.jump), 'temporisations virtuelles', r.virtual);
+        await ctx.close();
+      }
+    }
+    // Poses des autres groupes gardées à leur place ; aides à la fin.
+    doc.poses = doc.poses.filter((p) => poseGroup(p.name) !== 'aides').concat(shots);
+    writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
+    console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses d’aides');
+  }
   // Ordre stable : poses de la carrière, de la chute, du cadrage, puis du HUD.
-  doc.poses = ['carriere', 'chute', 'cadrage', 'hud'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
-  writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
-  console.log('poses :', join(PARITE, 'poses.json'));
+  else doc.poses = ['carriere', 'chute', 'cadrage', 'hud', 'cmd', 'aides'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
+  if (SHOTS_ONLY !== 'aides') {
+    writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
+    console.log('poses :', join(PARITE, 'poses.json'));
+  }
 }
 if (errors.length) console.log('erreurs de page :', errors.slice(0, 5));
 await browser.close();

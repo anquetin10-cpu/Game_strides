@@ -15,6 +15,8 @@
 #include "Misc/Paths.h"
 #include "EngineUtils.h"
 #include "StridesCourse.h"
+#include "StridesCourseAids.h"
+#include "StridesCourseAidsReplay.h"
 #include "StridesCsoHud.h"
 #include "StridesCsoHudReplay.h"
 #include "StridesPlayerController.h"
@@ -566,6 +568,14 @@ void AStridesShots::LoadPoses()
 				FJsonSerializer::Serialize(St->ToSharedRef(), W);
 			}
 		}
+		// Aides à l'appel (tranche T9) : canal « ai » de l'exécution rejoué jusqu'à l'image de la pose.
+		const TSharedPtr<FJsonObject>* Ai = nullptr;
+		if (O->TryGetObjectField(TEXT("aids"), Ai))
+		{
+			P.bHasAids = true;
+			P.AidsRunFile = (*Ai)->GetStringField(TEXT("run"));
+			P.AidsFrame = (int32)(*Ai)->GetNumberField(TEXT("frame"));
+		}
 		// Commandes d'épreuve (tranche T8) : page tactile, doigt sur le joystick, carte Pause.
 		O->TryGetBoolField(TEXT("tactile"), P.bTactile);
 		O->TryGetBoolField(TEXT("pause"), P.bPause);
@@ -658,6 +668,7 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 	if (AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC))
 		if (UStridesCsoHud* W = SPC->CsoHudWidget()) W->SetFrozen(P.bHasHud ? &PoseHud : nullptr);
 	if (P.bHasHud) ApplyHudPose(P, PC);
+	if (P.bHasAids && Horse) ApplyAidsPose(P, Horse);
 	ApplyControlsPose(P, PC, Horse);
 	// Soleil : la lumière va du soleil vers la scène (sens opposé à sunDir, direction web → axes Unreal).
 	const FVector LightDir = -FVector(P.SunDir.X, P.SunDir.Z, P.SunDir.Y).GetSafeNormal();
@@ -786,6 +797,52 @@ void AStridesShots::ApplyHudPose(const FPose& P, APlayerController* PC)
 	// ApplyPose est rappelée juste avant la capture : un relevé par pose.
 	if (HudResults.Num() && HudResults.Last()->AsObject()->GetStringField(TEXT("name")) == P.Name) HudResults.Last() = MakeShared<FJsonValueObject>(R);
 	else HudResults.Add(MakeShared<FJsonValueObject>(R));
+}
+
+// Aides à l'appel (tranche T9) : aides du parcours démarrées comme au début du parcours (ligne du cavalier, sol du relief
+// du jeu), canal « ai » de l'exécution rejoué jusqu'à l'image de la pose, puis figées (l'épreuve ne les change plus) ;
+// vue comparée à l'état relevé dans le web à cette image.
+void AStridesShots::ApplyAidsPose(const FPose& P, AStridesHorse* Horse)
+{
+	AStridesCourse* C = Horse->Course;
+	AStridesCourseAids* A = C ? C->EnsureAids() : nullptr;
+	FString Text;
+	if (!A || !FFileHelper::LoadFileToString(Text, *(RepoRoot() / P.AidsRunFile)))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Strides parite: aides %s : parcours ou exécution illisible (%s)"), *P.Name, *P.AidsRunFile);
+		return;
+	}
+	const std::string Utf8 = TCHAR_TO_UTF8(*Text);
+	const J RunJ = JParser(Utf8).parse();
+	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+	A->bFrozen = true;
+	A->Begin(C->AidLine(), [Data](double X, double Z) { return Data ? Data->TerrainHeight(X, Z) : 0.0; });
+	const J* Last = nullptr;
+	const int N = StridesCourseAidsReplay::Run(A, RunJ, P.AidsFrame, &Last);
+	double GroundDev = 0;
+	TArray<FString> D;
+	const bool bCallAtPose = (size_t)P.AidsFrame < RunJ["frames"].a.size() && !RunJ["frames"][(size_t)P.AidsFrame]["ai"]["c"].isNull();
+	if (!Last || !bCallAtPose) D.Add(TEXT("aucun appel à l'image de la pose"));
+	else D = StridesCourseAidsReplay::Diff(*A->CoreAids(), (*Last)["out"], 1e-9, GroundDev);
+	UE_LOG(LogTemp, Display, TEXT("Strides parite: aides %s : %d appels rejoués de %s, %s ; sol des bandes à %.3g m du web ; affichées : tracé %d tirets, suite %d, ambre %d, verte %d, repère %d"),
+		*P.Name, N, *P.AidsRunFile, D.Num() ? *(TEXT("DIFFÉRENT du web : ") + FString::Join(D, TEXT(", "))) : TEXT("identique au web"), GroundDev,
+		A->IsShown(TEXT("line")) ? A->LineQuads() : 0, A->IsShown(TEXT("after")) ? A->AfterQuads() : 0, A->IsShown(TEXT("ok")), A->IsShown(TEXT("good")), A->IsShown(TEXT("mark")));
+	AidsResult = MakeShared<FJsonObject>();
+	AidsResult->SetNumberField(TEXT("calls"), N);
+	TArray<TSharedPtr<FJsonValue>> Dv;
+	for (const FString& X : D) Dv.Add(MakeShared<FJsonValueString>(X));
+	AidsResult->SetArrayField(TEXT("diffs"), Dv);
+	AidsResult->SetNumberField(TEXT("groundDev"), GroundDev);
+	for (const TCHAR* Part : {TEXT("line"), TEXT("after"), TEXT("ok"), TEXT("good"), TEXT("mark")})
+	{
+		TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
+		O->SetBoolField(TEXT("shown"), A->IsShown(Part));
+		O->SetNumberField(TEXT("vertices"), A->WebVertices(Part).Num());
+		O->SetNumberField(TEXT("sortPriority"), A->SortPriority(Part));
+		AidsResult->SetObjectField(Part, O);
+	}
+	AidsResult->SetNumberField(TEXT("lineQuads"), A->IsShown(TEXT("line")) ? A->LineQuads() : 0);
+	AidsResult->SetNumberField(TEXT("afterQuads"), A->IsShown(TEXT("after")) ? A->AfterQuads() : 0);
 }
 
 void AStridesShots::ApplyCamRunPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
@@ -966,9 +1023,30 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 						}
 						C->SetNumberField(TEXT("joystickOpacity"), T->JoystickOpacity());
 						C->SetBoolField(TEXT("tactile"), T->IsTouchMode());
+						// Bouton SAUT coloré (tranche T9) : état, libellé et signe affichés, couleurs, boîtes de l'anneau et de la
+						// pastille (px CSS).
+						TSharedPtr<FJsonObject> Jb = MakeShared<FJsonObject>();
+						Jb->SetStringField(TEXT("style"), T->JumpShownKey());
+						Jb->SetStringField(TEXT("label"), T->JumpLabelText());
+						Jb->SetStringField(TEXT("sign"), T->JumpSignText());
+						Jb->SetBoolField(TEXT("glow"), T->JumpGlowShown());
+						for (const TCHAR* K : {TEXT("background"), TEXT("ring"), TEXT("sign"), TEXT("signText"), TEXT("label")})
+						{
+							const FLinearColor L = T->JumpColor(K);
+							const FColor S = L.ToFColor(true);
+							Jb->SetStringField(FString(K) + TEXT("Color"), FString::Printf(TEXT("rgba(%d, %d, %d, %.2f)"), S.R, S.G, S.B, L.A));
+						}
+						for (const TCHAR* K : {TEXT("ring"), TEXT("sign"), TEXT("glow")})
+						{
+							const FVector4 B = T->JumpPartBox(K);
+							Jb->SetArrayField(K, {MakeShared<FJsonValueNumber>(B.X), MakeShared<FJsonValueNumber>(B.Y), MakeShared<FJsonValueNumber>(B.Z), MakeShared<FJsonValueNumber>(B.W)});
+						}
+						C->SetObjectField(TEXT("jump"), Jb);
+						UE_LOG(LogTemp, Display, TEXT("Strides parite: bouton SAUT %s : style %s, libellé « %s », signe « %s », halo %d"), *P.Name, *T->JumpShownKey(), *T->JumpLabelText(), *T->JumpSignText(), T->JumpGlowShown());
 						HudResults.Last()->AsObject()->SetObjectField(TEXT("controls"), C);
 						UE_LOG(LogTemp, Display, TEXT("Strides parite: commandes %s affichées : %s"), *P.Name, *FString::Join(T->VisibleButtons(), TEXT(", ")));
 					}
+					if (P.bHasAids && AidsResult.IsValid()) HudResults.Last()->AsObject()->SetObjectField(TEXT("aids"), AidsResult);
 					if (const UStridesPauseMenu* M = SPC->PauseMenuWidget(); M && M->IsOpen())
 					{
 						TArray<TSharedPtr<FJsonValue>> Pm;

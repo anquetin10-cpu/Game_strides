@@ -34,7 +34,7 @@ la citation reste donc valable mais à revérifier sur HEAD.
    pas une partie jouée ni une validation VM ; aucun niveau n'est relevé sur cette base.
 5. **Captures** : web `tests/e2e/out/cso/1-presentation.png` à `7-barre-au-sol.png` (844 × 390). Unreal :
    `unreal/StridesGrandTour/Saved/Screenshots/Strides/` = décor (01 à 08), `09_jeu`, `10_galop_00` à `18`, en 1600 × 900,
-   FOV 70 (`SG/StridesShots.cpp:30-37`, `67`), aucune dans une pose de la recette CSO. `unreal/docs/parite/<système>/` :
+   FOV 70 (`SG/StridesShots.cpp:32-39`, `69`), aucune dans une pose de la recette CSO. `unreal/docs/parite/<système>/` :
    aucune capture.
 
 ---
@@ -65,19 +65,19 @@ d'épreuve, boutons SAUT et pause, carte Pause : `unreal/docs/parite/cso/`) ; ri
    (`horse.js:119-122`, bouton « Trop tôt »). Unreal : saut accepté vers tout obstacle à moins de 13 m
    (`SG/StridesHorse.cpp:245-246`, `FenceAhead(..., JP.reach)`). Calcul (puissance 1,35 supposée, profil à confirmer ;
    v 6,2 m/s ; vertical 1,10 m ; appui à 10 m) : L0 = 4,23 m, L = 1,06 × L0 = 4,48 m < 10 m ⇒ arcY = 0, marge =
-   0,2 − 1,10 = −0,90 ⇒ barre comptée à la réception (`SG/StridesCourse.cpp:79-82`), environ 5,5 m avant l'obstacle.
+   0,2 − 1,10 = −0,90 ⇒ barre comptée à la réception (`SG/StridesCourse.cpp:81-84`), environ 5,5 m avant l'obstacle.
    La démonstration appelle à 0,9 × 13 m (`SG/StridesHorse.cpp:217-218`), ce qui est cohérent avec les 4 points pris à
    presque chaque obstacle dans `.tmp/shots.log` (lien de cause déduit du code, à confirmer à l'écran).
-3. **Saut oblique compté franchi.** `FenceAhead` n'a aucun filtre d'angle (`SG/StridesCourse.cpp:60-74`) ; au-delà de 60°,
+3. **Saut oblique compté franchi.** `FenceAhead` n'a aucun filtre d'angle (`SG/StridesCourse.cpp:62-76`) ; au-delà de 60°,
    `planJump` rend un plan sans marge (`SC/JumpModel.cpp:74-80`) et `JumpLanded` compte l'obstacle franchi
-   (`SG/StridesCourse.cpp:80-81`). Web : pas de cible (`obstacles.js:358`), donc pas de saut, et refus si l'écart nez/face
+   (`SG/StridesCourse.cpp:82-83`). Web : pas de cible (`obstacles.js:358`), donc pas de saut, et refus si l'écart nez/face
    < v²/16 + 0,3 (`obstacles.js:455`).
 4. **Saut libre en épreuve** (`SG/StridesHorse.cpp:172`) ; web : interdit en commandes de concours (`horse.js:119`).
-5. **Barres jugées à la réception sur la marge du plan**, pas au passage de chaque barre (`SG/StridesCourse.cpp:76-86`) ;
+5. **Barres jugées à la réception sur la marge du plan**, pas au passage de chaque barre (`SG/StridesCourse.cpp:78-88`) ;
    seule la dernière barre bouge, téléportée de 40 cm (`SG/StridesFence.cpp:76-81`).
 6. **Refus** décidé seulement à moins de 0,55 m de la première barre mesurés depuis l'origine du cheval
    (`SG/StridesHorse.cpp:249-256`), arrêt instantané sans freinage ni cabré, aucune règle de recomptage ; toast « +4 »
-   même quand le juge ignore le refus (`SG/StridesCourse.cpp:91-92`).
+   même quand le juge ignore le refus (`SG/StridesCourse.cpp:93-94`).
 7. **Aucune interface d'épreuve** : HUD texte de débogage (`SG/StridesHUD.cpp:25-83`), minicarte et huit boutons
    tactiles toujours visibles, aucun son dans tout `Source/`.
 8. **Caméra** : 55° horizontaux (≈ 27,1° verticaux en 844 × 390, calcul) contre 58° verticaux (≈ 100,4° horizontaux) :
@@ -94,7 +94,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 ## 2. Tableau d'écarts par élément de la spécification
 
 **Tableau historique** (analyse du 18/11/2026, HEAD `5837a02e`) : les références `fichier:ligne` et les états sont ceux
-de cette date, sauf sur les lignes mises à jour par T6, T7, T8 ou le contrôle des remarques du 20/11 (mention de la
+de cette date, sauf sur les lignes mises à jour par T6, T7, T8, T9 ou le contrôle des remarques du 20/11 (mention de la
 tranche ou référence récente). Par exemple les citations de `SG/StridesHUD.cpp:25-83`, `:39`, `:40-41`, `:61-79` décrivent
 le HUD de débogage d'avant T7 (aujourd'hui `DrawHUD`, masqué en épreuve) ; celles de `SG/StridesHorse.cpp` d'avant T2
 décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.md`).
@@ -120,11 +120,11 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
 | 2.1 | Carrière 120 × 76 centrée (330 ; −224), décalage monde du tracé | partiel | compile | `SG/StridesDataSubsystem.cpp:87-88`, `SG/StridesWorldDirector.cpp:42-44` | valeurs exportées par script, mais décalage monde non testé ; sable, tribunes, paddock relèvent de l'inventaire monde |
-| 2.2 | Tracé : positions, caps, abscisses des 10 éléments | identique_prouve | teste | `SC/CsoCourse.cpp:32-71` ; `TC:79-97` | trou de preuve : le test trace `poleDesign()` recopié à la main (`SC/CsoCourse.cpp:11-30`) alors que le jeu trace le design lu dans le JSON (`SG/StridesDataSubsystem.cpp:84-108`) ; contenu identique aujourd'hui, chemin JSON non testé |
-| 2.2 | Longueur 368,44 m, arrondi 368 | identique_prouve | teste | `TC:83`, `100` ; `SG/StridesCourse.cpp:26` | — |
+| 2.2 | Tracé : positions, caps, abscisses des 10 éléments | identique_prouve | teste | `SC/CsoCourse.cpp:32-71` ; `TC:79-97` | trou de preuve : le test trace `poleDesign()` recopié à la main (`SC/CsoCourse.cpp:11-30`) alors que le jeu trace le design lu dans le JSON (`SG/StridesDataSubsystem.cpp:84-111`) ; contenu identique aujourd'hui, chemin JSON non testé |
+| 2.2 | Longueur 368,44 m, arrondi 368 | identique_prouve | teste | `TC:83`, `100` ; `SG/StridesCourse.cpp:28` | — |
 | 2.2 | Abord hors chrono (lead-in) | partiel | compile | `SC/CsoCourse.cpp:65` | calculé, utilisé par la démo seulement (`SG/StridesHorse.cpp:186-192`) ; absent de l'oracle |
-| 2.3 | Hauteurs `cso_train` (1,1 + profil, arrondi au cm) | identique_prouve | teste | `TC:98-99` ; `SG/StridesCourse.cpp:15` ; `SGh/StridesCourse.h:22` | — |
-| 2.3 | Hauteurs hors épreuve `csoHeights(1.15)` | absent | aucun | `SGh/StridesCourse.h:22` | toujours 1,10 |
+| 2.3 | Hauteurs `cso_train` (1,1 + profil, arrondi au cm) | identique_prouve | teste | `TC:98-99` ; `SG/StridesCourse.cpp:17` ; `SGh/StridesCourse.h:25` | — |
+| 2.3 | Hauteurs hors épreuve `csoHeights(1.15)` | absent | aucun | `SGh/StridesCourse.h:25` | toujours 1,10 |
 | 2.3 | Barres jugées : vertical, oxer montant | partiel | compile | `SG/StridesFence.cpp:31-32` | conforme à `obstacles.js:100-103` mais recopié, non testé |
 | 2.3 | Mur : barre jugée à h, posée à h − 0,05 ; bloc h − 0,15, couvertine, piliers | partiel | compile | `SG/StridesFence.cpp:45-51` | jugement à h conforme ; visuel : cube plein jusqu'à h, sans couvertine ni piliers |
 | 2.3 | Repère d'obstacle n / t | partiel | compile | `SG/StridesFence.cpp:25-28` | convention conforme, non testée (l'oracle construit n / t lui-même, `TC:42-46`) |
@@ -135,10 +135,10 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | 2.3 | Faces d'entrée / sortie (±0,06 ; ±(spread/2 + 0,06) ; ±0,3) | absent | aucun | — | utilisées par le refus et le jugement web |
 | 2.4 | Position et cap des lignes `CSO_START` / `CSO_FINISH` | partiel | teste | `TC:92` | seuls x et s comparés à l'oracle ; z et rot non |
 | 2.4 | Habillage des lignes (poteaux, fanions, cellules, sciure, panneaux) | absent | aucun | — | lignes invisibles |
-| 2.4 | Franchissement du départ (\|u\| < 3,8 m, cap à 60°) | partiel | compile | `SG/StridesCourse.cpp:30-39` | demi-largeur 6 m au lieu de 3,8 ; sens et cap conformes |
-| 2.4 | Franchissement de l'arrivée (sans cap, après le dernier élément) | partiel | teste | `SG/StridesCourse.cpp:38`, `53` ; `SC/CsoCourse.cpp:131-135` ; `TC:124` | cap exigé (pas au web) ; demi-largeur 6 m ; ordre « après le dernier » testé à la main |
-| 2.4 | Bip de départ `tone(1568, 0.1)` | absent | aucun | — | remplacé par un texte « Départ : le chrono est lancé » sans équivalent web (`SG/StridesCourse.cpp:48`) |
-| 2.5 | Temps accordé 64 / 59 / 56 s | identique_prouve | teste | `TC:100-102` ; `SG/StridesCourse.cpp:26` | — |
+| 2.4 | Franchissement du départ (\|u\| < 3,8 m, cap à 60°) | partiel | compile | `SG/StridesCourse.cpp:32-41` | demi-largeur 6 m au lieu de 3,8 ; sens et cap conformes |
+| 2.4 | Franchissement de l'arrivée (sans cap, après le dernier élément) | partiel | teste | `SG/StridesCourse.cpp:40`, `55` ; `SC/CsoCourse.cpp:131-135` ; `TC:124` | cap exigé (pas au web) ; demi-largeur 6 m ; ordre « après le dernier » testé à la main |
+| 2.4 | Bip de départ `tone(1568, 0.1)` | absent | aucun | — | remplacé par un texte « Départ : le chrono est lancé » sans équivalent web (`SG/StridesCourse.cpp:50`) |
+| 2.5 | Temps accordé 64 / 59 / 56 s | identique_prouve | teste | `TC:100-102` ; `SG/StridesCourse.cpp:28` | — |
 | 2.5 | Temps limite 2 × TA = 128 s | partiel | teste | `SC/CsoCourse.cpp:101` ; `TC:148-153` | scénario écrit à la main, sans oracle |
 
 ### 2.3 Conduite (§3)
@@ -154,21 +154,21 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | 3 | Perte à la réception v × (1 − min(0,04 ; \|dev\| × 0,5)) | partiel | compile | `SG/StridesHorse.cpp:274` | −4 % fixe dès \|dev\| > 0,02, sinon rien |
 | 3 | Rampe clavier 3,2 /s (× 2 en relâchant / inversant) | absent | aucun | `SG/StridesDataSubsystem.cpp:81` | paramètre lu, jamais utilisé |
 | 3 | Clavier : flèches / WASD (ZQSD), Espace, Échap, P/Tab, M ; Ctrl / Alt = amplitude 0,5 / 0,25 | partiel | teste | `SC/CsoInput.cpp:109-163` ; `SG/StridesPlayerController.cpp:35-69`, `277-334`, `422-423` ; `ORA/cso_input.json`, `ORA/cso_freeze.json` | codes physiques (code matériel du Mac, T8) ; Échap pause, P / Tab téléphone, M carte (image par image comme le web) ; allures du portage sans effet en épreuve (testé, mutations détectées) ; code matériel supposé = kVK_* (pas essayé sur un vrai clavier AZERTY) ; hors Mac, repli par nom de touche |
-| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | partiel | joue_ecran | `SC/CsoInput.cpp:12-99` ; `SG/StridesPlayerController.cpp:239-266` ; `SG/StridesTouchControls.cpp:250-273`, `368-385` ; `ORA/cso_input.json` ; `cso/cmd-joystick-*` | logique rejouée (624 appels, 0 écart) ; `InputTouch` testé (facteur 3, identifiants, types de toucher, 8 mutations détectées) ; montages côte à côte, doigt routé par Slate jusqu'au viewport ; joysticks du moteur retirés ; logique identique (oracle), rendu non identique : pas de transition d'opacité de 0,2 s au relâché (`styles.css:90`), dégradé et ombre approchés ; facteur de pixels iOS et toucher réel non vérifiés (aucun appareil iOS, couche UIKit non exercée) |
+| 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | partiel | joue_ecran | `SC/CsoInput.cpp:12-99` ; `SG/StridesPlayerController.cpp:239-266` ; `SG/StridesTouchControls.cpp:265-288`, `383-401` ; `ORA/cso_input.json` ; `cso/cmd-joystick-*` | logique rejouée (624 appels, 0 écart) ; `InputTouch` testé (facteur 3, identifiants, types de toucher, 8 mutations détectées) ; montages côte à côte, doigt routé par Slate jusqu'au viewport ; joysticks du moteur retirés ; logique identique (oracle), rendu non identique : pas de transition d'opacité de 0,2 s au relâché (`styles.css:90`), dégradé et ombre approchés ; facteur de pixels iOS et toucher réel non vérifiés (aucun appareil iOS, couche UIKit non exercée) |
 | 3 | Sortie de piste 2,6 s, cadence → 1,9 m/s à −1,6 m/s² | absent | aucun | — | — |
 | 3 | Menu pause : rappel des commandes, bascules `Tracé au sol` et `Aide au saut` | partiel | joue_ecran | `SG/StridesPauseMenu.cpp:144-410` ; `SC/SaveGame.cpp:107-140` ; `ORA/cso_pause.json` ; `cso/cmd-pause-*` | bascules rejouées (27 étapes, 0 écart), réglages sauvegardés et relus, aide appliquée à l'épreuve en cours ; Écran titre, Découvrir, Partager sans effet ; police et interlignes approchés |
-| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | partiel | teste | `SG/StridesHorse.cpp:288-305`, `371` ; `SG/StridesPlayerController.cpp:286`, `355-393` ; `ORA/cso_freeze.json` | image par image comme le web (338 images, 0 écart : l'image d'Échap et celle de l'ouverture du téléphone avancent, celle de la fermeture reste figée) ; pause et téléphone : 150 images sans bouger chrono ni cheval (`Strides.Cso.Controls`) ; dialogues et écrans de choix non portés |
+| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | partiel | teste | `SG/StridesHorse.cpp:288-305`, `373` ; `SG/StridesPlayerController.cpp:286`, `355-393` ; `ORA/cso_freeze.json` | image par image comme le web (338 images, 0 écart : l'image d'Échap et celle de l'ouverture du téléphone avancent, celle de la fermeture reste figée) ; pause et téléphone : 150 images sans bouger chrono ni cheval (`Strides.Cso.Controls`) ; dialogues et écrans de choix non portés |
 
 ### 2.4 Aide à l'appel (§4)
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 4.1 | État `timing()` (none en l'air, en refus, v < 3,2 ; refuse → near ; aide off → none) | absent | aucun | — | — |
-| 4.1 | Obstacle visé `target()` (épaules à 0,4 m, cos ≥ 0,5, première ≤ 13 m, dernière ≥ −0,3, \|u\| ≤ 2,25) | partiel | compile | `SG/StridesCourse.cpp:60-74` | centre de l'obstacle depuis l'origine ; écart latéral < 2,5 m ; aucun filtre d'angle ; « centre devant » au lieu de « dernière barre ≥ −0,3 » |
-| 4.1 | Bouton SAUT coloré (Trop loin / Saute ! / Trop près / Saut / Trop tôt 600 ms) | absent | aucun | `SG/StridesTouchControls.cpp:48` | libellé fixe `SAUT`, fond fixe |
-| 4.2 | Zone d'appel au sol (`takeoffZone`, bandes verte / ambre) | absent | aucun | — | — |
-| 4.3 | Tracé au sol (tirets, opacités, masquage, règle des 15 m) | absent | aucun | — | — |
-| 4.4 | Repère conique au-dessus de l'obstacle suivant | absent | aucun | — | — |
+| 4.1 | État `timing()` (none en l'air, en refus, v < 3,2 ; refuse → near ; aide off → none) | identique_prouve | joue_ecran | `SC/CsoHorse.cpp:120-126` ; `SC/CourseAids.cpp:93-96` (`csoJumpTiming` : hors épreuve, entrée en piste, aide off) ; `SG/StridesCourse.cpp:239-259` ; `ORA/cso_target.json`, canal « ai » des exécutions `t9-*` (`testCsoAids`) ; `Strides.Cso.Aids` (T9) | aucun |
+| 4.1 | Obstacle visé `target()` (épaules à 0,4 m, cos ≥ 0,5, première ≤ 13 m, dernière ≥ −0,3, \|u\| ≤ 2,25) | identique_prouve | teste | `SC/CsoHorse.cpp:94-118` ; `ORA/cso_target.json` (T2) | aucun sur la visée ; puissance du saut du portage : inventaire `cso.declenchement-saut` |
+| 4.1 | Bouton SAUT coloré (Trop loin / Saute ! / Trop près / Saut / Trop tôt 600 ms) | partiel | joue_ecran | `SC/CsoHud.cpp:179-185`, `205-215` ; `SG/StridesTouchControls.cpp:413-527` ; `DATA/cso_jump_style.json` ; canal « ai » (`testCsoAids`) ; `Strides.Cso.Aids` ; `cso/aide-*` (T9) | état, classes, signe, libellé, « Trop tôt » relancé : identiques image par image ; police du moteur, halo approché, transition de l'anneau et état enfoncé non portés |
+| 4.2 | Zone d'appel au sol (`takeoffZone`, bandes verte / ambre) | partiel | joue_ecran | `SC/CourseAids.cpp:17-51`, `105-118`, `121-174` ; `SG/StridesCourseAids.cpp:208-239` ; `ORA/cso_takeoff_zone.json`, canal « ai » ; `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (T9) | logique identique ; bande de moins de 0,2 m non départagée (n'apparaît qu'à 1,55 m) ; rendu : tone mapping et mélange différents (bandes plus ternes) |
+| 4.3 | Tracé au sol (tirets, opacités, masquage, règle des 15 m) | partiel | joue_ecran | `SC/CourseAids.cpp:54-90`, `121-174` ; `SG/StridesCourseAids.cpp:161-184` ; `SG/StridesCourse.cpp:369-406` ; tirets de `ORA/cso_takeoff_zone.json`, canal « ai » ; `cso/aide-sans-trace-*` (T9) | logique identique ; début du tronçon borné par prevS non départagé (égalité à l'arrondi près sur le tracé du Pôle) ; rendu : tone mapping et mélange |
+| 4.4 | Repère conique au-dessus de l'obstacle suivant | partiel | joue_ecran | `SC/CourseAids.cpp:121-174` ; `SG/StridesCourseAids.cpp:208-239` (géométrie du web, `DATA/cso_aids.json`) ; canal « ai » ; `cso/aide-*` (T9) | position, oscillation, cap identiques ; rendu : tone mapping et mélange |
 
 ### 2.5 Saut (§5)
 
@@ -184,25 +184,25 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | 5.3 | `planJump`, zones, causes | identique_prouve | teste | `SC/JumpModel.cpp:65-125` ; `ORA/jump.json` (576 cas) ; `TC:31-62` | — |
 | 5.4 | Trajectoire : durée L / max(v ; 1,5), jumpY = 4Hτ(1 − τ) | partiel | joue_ecran | `SG/StridesHorse.cpp:265-276` ; VM:19 | menée par la distance (équivalent à vitesse constante, non testé) ; clip choisi par v ≥ 7 (`:79`) sans calage sur τ (à confirmer) |
 | 5.4 | Sons d'appel et de réception, sable | absent | aucun | — | — |
-| 5.5 | Jugement de chaque barre au passage des épaules (interpolation, marge, −0,06) | partiel | compile | `SG/StridesCourse.cpp:76-86` | décidé à la réception sur `Plan.margin` ; virage en l'air sans effet ; seul l'obstacle visé à l'appel est jugé |
+| 5.5 | Jugement de chaque barre au passage des épaules (interpolation, marge, −0,06) | partiel | compile | `SG/StridesCourse.cpp:78-88` | décidé à la réception sur `Plan.margin` ; virage en l'air sans effet ; seul l'obstacle visé à l'appel est jugé |
 | 5.5 | Effleurement (marge < 0,04 : tinte, vibre) | absent | aucun | — | — |
 | 5.5 | Cause `short` (au sol pendant le passage), cause `angle` si marge du plan ≥ 0 | absent | aucun | — | — |
 | 5.5 | Résultat différé (membres jugés : 2,2 m ou 1,2 s) | absent | aucun | — | — |
 | 5.6 | `takeoffQuality` | identique_prouve | teste | `SC/JumpModel.cpp:127-140` ; `TC:58` | — |
-| 5.6 | Mot d'appel sous le chrono (textes FR, couleurs, 1500 ms, règles barre / sans-faute) | partiel | compile | `SG/StridesHUD.cpp:39` ; `SG/StridesCourse.cpp:83-85` | identifiant anglais brut (`perfect`), permanent ; ni table de textes, ni couleurs, ni règles de choix |
-| 5.6 | Sans-faute : bip 990 Hz, obstacle suivant surligné | absent | aucun | `SG/StridesCourse.cpp:85` | à la place, un message « {n°} franchi · appel {id} » sans équivalent web |
+| 5.6 | Mot d'appel sous le chrono (textes FR, couleurs, 1500 ms, règles barre / sans-faute) | partiel | compile | `SG/StridesHUD.cpp:39` ; `SG/StridesCourse.cpp:85-87` | identifiant anglais brut (`perfect`), permanent ; ni table de textes, ni couleurs, ni règles de choix |
+| 5.6 | Sans-faute : bip 990 Hz, obstacle suivant surligné | absent | aucun | `SG/StridesCourse.cpp:87` | à la place, un message « {n°} franchi · appel {id} » sans équivalent web |
 
 ### 2.6 Barres qui tombent (§6)
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 6.1 | Moment de la chute (montée : tout de suite ; descente : après 1,1 m ou > 8 m) | absent | aucun | `SG/StridesCourse.cpp:82` | chute à la réception |
+| 6.1 | Moment de la chute (montée : tout de suite ; descente : après 1,1 m ou > 8 m) | absent | aucun | `SG/StridesCourse.cpp:84` | chute à la réception |
 | 6.1 | Oxer : chaque barre touchée tombe, une seule faute | partiel | compile | `SG/StridesFence.cpp:78-80` | une faute (conforme), mais seule `Bars.Last()` (barre arrière) bouge |
 | 6.2 | Chute déterministe (taquets, élan, rebonds, glisse, roulement, inclinaison) | absent | aucun | `SG/StridesFence.cpp:80` | téléportation +40 cm en X local, à 6 cm du sol ; cumulatif à chaque appel |
 | 6.2 | Vibration d'effleurement | absent | aucun | — | — |
 | 6.3 | Contacts des membres (capsules, balayage, fenêtre) | absent | aucun | — | — |
 | 6.4 | Barre comptée +4 (attendu, bon sens) | partiel | teste | `SC/CsoCourse.cpp:110-115` ; `TC:126-136` | scénario écrit à la main |
-| 6.4 | Toast « Barre au {n°} · +4 · {cause} » et textes de cause | partiel | compile | `SG/StridesCourse.cpp:85` ; `SC/JumpModel.cpp:151-161` | texte « {n°} barre +4 · appel {id} » ; aucun texte de cause (identifiants seulement) |
+| 6.4 | Toast « Barre au {n°} · +4 · {cause} » et textes de cause | partiel | compile | `SG/StridesCourse.cpp:87` ; `SC/JumpModel.cpp:151-161` | texte « {n°} barre +4 · appel {id} » ; aucun texte de cause (identifiants seulement) |
 | 6.4 | Barres au sol jusqu'à la fin, remise à la manche suivante ou hors mission > 60 m | partiel | compile | — | jamais remises |
 
 ### 2.7 Refus (§7)
@@ -212,63 +212,63 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | 7.1 | Décision (largeur, toward > 0,3, v > 0,5 ; zone refuse, marge < −0,3 côté près, lent et nez < 1,5 m ; oblique : écart < v²/16 + 0,3) | partiel | compile | `SG/StridesHorse.cpp:249-259` | seul cas : première barre à < 0,55 m de l'origine ; branche `else StartJump(F)` (`:257`) = saut automatique sans équivalent web, inatteignable car première barre < 0,55 implique zone refuse (`SC/JumpModel.cpp:92`, déduit du code) |
 | 7.1 | Freinage jusqu'à l'arrêt, cabré 1,1 s, `neigh` | absent | aucun | `SG/StridesHorse.cpp:167`, `256` | vitesse mise à 0 d'un coup, 1,2 s sans animation |
 | 7.1 | Refus tout contre : barre avant emportée dans le sens de la marche (spécification corrigée en T3, §7.1), remontée 3 s plus tard | absent | aucun | — | — (historique : porté en T3, voir l'inventaire `cso.refus-decision`) |
-| 7.1 | Dérobade : rien compté ; SAUT → « Trop tôt » | partiel | compile | `SG/StridesCourse.cpp:71` | rien compté (conforme) ; SAUT lance un saut libre, ou un saut vers l'obstacle si l'écart latéral < 2,5 m |
+| 7.1 | Dérobade : rien compté ; SAUT → « Trop tôt » | partiel | compile | `SG/StridesCourse.cpp:73` | rien compté (conforme) ; SAUT lance un saut libre, ou un saut vers l'obstacle si l'écart latéral < 2,5 m |
 | 7.2 | Recomptage seulement après détour (> profondeur/2 + 6 m) ou 5 s | absent | aucun | `SG/StridesHorse.cpp:228` | seul délai : 1,2 s |
 | 7.2 | Refus compté (chrono lancé, face, attendu) +4 | partiel | teste | `SC/CsoCourse.cpp:116-120` ; `TC:137-144` | scénario écrit à la main |
 | 7.2 | Refus sur un élément B : reprise au A | partiel | teste | `SC/CsoCourse.cpp:121-126` ; `TC:141-142` | scénario écrit à la main |
 | 7.2 | Cadence remise à 0 sur refus compté | partiel | compile | `SG/StridesHorse.cpp:167`, `256` | remise à 0 à tout refus, compté ou non |
-| 7.2 | Toast « Refus au {n°} · +4 », hints 3500 ms (double / demi-tour) | partiel | compile | `SG/StridesCourse.cpp:91-92` | toast émis même si le juge ignore le refus ; hints absents |
+| 7.2 | Toast « Refus au {n°} · +4 », hints 3500 ms (double / demi-tour) | partiel | compile | `SG/StridesCourse.cpp:93-94` | toast émis même si le juge ignore le refus ; hints absents |
 | 7.2 | Élimination au 2e refus | partiel | teste | `SC/CsoCourse.cpp:127` ; `TC:145-146` | texte « 2e refus : éliminé » au lieu de « 2e refus : éliminé du parcours. » ; pas de grand message |
 
 ### 2.8 Chrono (§8)
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 8.1 | Départ par la ligne, par les 45 s, ou départ lancé | partiel | compile | `SG/StridesCourse.cpp:45-49` | ligne seule (6 m) |
+| 8.1 | Départ par la ligne, par les 45 s, ou départ lancé | partiel | compile | `SG/StridesCourse.cpp:47-51` | ligne seule (6 m) |
 | 8.1 | Obstacles sautés avant le départ ignorés, hint 3000 ms | partiel | teste | `SC/CsoCourse.cpp:105`, `111` ; `TC:120-121` | hint absent |
-| 8.2 | Écoulement : dt de mission, nul en pause / téléphone / dialogue | partiel | teste | `SG/StridesCourse.cpp:51` ; `SG/StridesHorse.cpp:299-305`, `371` | dt compté dès l'image du départ (web : à partir de l'image suivante, `courses.js:291-303`) ; gel en pause et téléphone image par image comme le web (T8, `ORA/cso_freeze.json`, `Strides.Cso.Controls`) ; pas de dialogue |
-| 8.3 | Affichage `dec(t, 2)` (virgule) `/ 64 s`, `Départ {ceil(bell)} s · accordé 64 s`, ambre en dépassement | partiel | compile | `SG/StridesCourse.cpp:103-112` | « %.2f s · %d pts · prochain : %s » : point décimal, pas de « / 64 s », points sans pénalités de temps (web : en direct, `courses.js:148`), pas d'ambre, pas de décompte |
+| 8.2 | Écoulement : dt de mission, nul en pause / téléphone / dialogue | partiel | teste | `SG/StridesCourse.cpp:53` ; `SG/StridesHorse.cpp:299-305`, `373` | dt compté dès l'image du départ (web : à partir de l'image suivante, `courses.js:291-303`) ; gel en pause et téléphone image par image comme le web (T8, `ORA/cso_freeze.json`, `Strides.Cso.Controls`) ; pas de dialogue |
+| 8.3 | Affichage `dec(t, 2)` (virgule) `/ 64 s`, `Départ {ceil(bell)} s · accordé 64 s`, ambre en dépassement | partiel | compile | `SG/StridesCourse.cpp:105-114` | « %.2f s · %d pts · prochain : %s » : point décimal, pas de « / 64 s », points sans pénalités de temps (web : en direct, `courses.js:148`), pas d'ambre, pas de décompte |
 | 8.4 | Pénalités de temps (1 par seconde entamée) | identique_prouve | teste | `SC/CsoCourse.cpp:83-86` ; `ORA/cso_course.json` `timeFaults` ; `TC:103` | `points()` (`:136-139`) reprend la formule, couvert par un seul scénario manuel (`TC:134-135`) |
-| 8.4 | Élimination : descente de cheval | partiel | teste | `SG/StridesCourse.cpp:95-98` ; `SG/StridesRider.cpp:118` ; `TC:154-158` | seulement après le départ (web : à chaque image, y compris avant, `courses.js:322`) ; descente impossible en l'air ; message différent |
-| 8.4 | Élimination : effets (`bell(2)`, `ÉLIMINÉ` / motif 2600 ms, fin immédiate et bilan) | absent | aucun | `SG/StridesCourse.cpp:52`, `97` | ligne de texte seulement |
-| 8.5 | Erreur de parcours (une fois par obstacle, son, toast, hint 3500 ms) | partiel | teste | `SC/CsoCourse.cpp:107`, `113` ; `TC:131` ; `SG/StridesCourse.cpp:84` | comptée à chaque passage ; message nommant l'obstacle sauté au lieu de l'attendu ; ni son ni hint |
+| 8.4 | Élimination : descente de cheval | partiel | teste | `SG/StridesCourse.cpp:97-100` ; `SG/StridesRider.cpp:118` ; `TC:154-158` | seulement après le départ (web : à chaque image, y compris avant, `courses.js:322`) ; descente impossible en l'air ; message différent |
+| 8.4 | Élimination : effets (`bell(2)`, `ÉLIMINÉ` / motif 2600 ms, fin immédiate et bilan) | absent | aucun | `SG/StridesCourse.cpp:54`, `99` | ligne de texte seulement |
+| 8.5 | Erreur de parcours (une fois par obstacle, son, toast, hint 3500 ms) | partiel | teste | `SC/CsoCourse.cpp:107`, `113` ; `TC:131` ; `SG/StridesCourse.cpp:86` | comptée à chaque passage ; message nommant l'obstacle sauté au lieu de l'attendu ; ni son ni hint |
 
 ### 2.9 HUD (§9)
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | partiel | testé | `SC/CsoHud.cpp:42`, `SG/StridesHUD.cpp:53`, `SG/StridesTouchControls.cpp:295-313` | table des masquages du navigateur rejouée (T7) ; en épreuve SAUT et pause seuls (T8) ; joysticks du moteur retirés |
+| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | partiel | testé | `SC/CsoHud.cpp:42`, `SG/StridesHUD.cpp:53`, `SG/StridesTouchControls.cpp:310-328` | table des masquages du navigateur rejouée (T7) ; en épreuve SAUT et pause seuls (T8) ; joysticks du moteur retirés |
 | 9 | Tableau `.cso-board` (chrono, accordé, points, prochain, style) | partiel | testé | `SG/StridesCsoHud.cpp:567` | UMG, montages `cso/hud-*` ; police du moteur (Geist non embarquée), « ▸ » dessiné |
-| 9 | Crans de cadence (6 barres, 2 s après réglage) | partiel | testé | `SC/CsoHud.cpp:192` | logique rejouée (`cso_hud.json`), montage `cso/hud-cadence-*` ; fondu non comparé image par image |
+| 9 | Crans de cadence (6 barres, 2 s après réglage) | partiel | testé | `SC/CsoHud.cpp:205` | logique rejouée (`cso_hud.json`), montage `cso/hud-cadence-*` ; fondu non comparé image par image |
 | 9 | Objectif masqué en épreuve | partiel | testé | `SC/CsoHud.cpp:42` | HUD de débogage masqué en mode concours ; carte d'objectif non portée |
-| 9 | Astuce `.hint` | partiel | testé | `SC/CsoHud.cpp:141-156` | rejouée et affichée (texte riche) ; logement dans la carte d'objectif non dessiné |
-| 9 | Toasts (2 au plus, 1 si h ≤ 420 px, 3200 ms) | partiel | testé | `SC/CsoHud.cpp:122` | rejoués (deux toasts : séquence synthétique) ; police, ombre portée |
-| 9 | Grand message (titre, sous-titre, `pop` 0,5 s) | partiel | testé | `SC/CsoHud.cpp:131` | rejoué, montages ; animation non comparée image par image |
-| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | joue_ecran | `SG/StridesTouchControls.cpp:197-224`, `247` ; `Strides.Cso.Controls` ; `cso/hud-*`, `cso/cmd-*` | boîte affichée = boîte du web (104 px CSS, réduits à 91,5 px par le bloc d'actions sous 420 px) ; icône rendue par le navigateur ; anneau et libellés d'appel en T9 ; état enfoncé non porté |
-| 9 | Bouton pause en haut à droite | partiel | joue_ecran | `SG/StridesTouchControls.cpp:225-246` ; `cso/hud-*`, `cso/cmd-*` | boîte, fond, rayon, ombre et icône du web ; ouvre la carte Pause (bindButton) |
-| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | partiel | testé | `SG/StridesTouchControls.cpp:295-313` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION masqués en épreuve (T7, T8) |
+| 9 | Astuce `.hint` | partiel | testé | `SC/CsoHud.cpp:145-160` | rejouée et affichée (texte riche) ; logement dans la carte d'objectif non dessiné |
+| 9 | Toasts (2 au plus, 1 si h ≤ 420 px, 3200 ms) | partiel | testé | `SC/CsoHud.cpp:126` | rejoués (deux toasts : séquence synthétique) ; police, ombre portée |
+| 9 | Grand message (titre, sous-titre, `pop` 0,5 s) | partiel | testé | `SC/CsoHud.cpp:135` | rejoué, montages ; animation non comparée image par image |
+| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | joue_ecran | `SG/StridesTouchControls.cpp:211-238`, `261`, `413-527` ; `Strides.Cso.Controls`, `Strides.Cso.Aids` ; `cso/hud-*`, `cso/cmd-*`, `cso/aide-*` | boîte affichée = boîte du web (104 px CSS, réduits à 91,5 px par le bloc d'actions sous 420 px) ; icône rendue par le navigateur ; anneau, halo, pastille et libellés d'appel portés (T9, styles relevés par état) ; état enfoncé non porté |
+| 9 | Bouton pause en haut à droite | partiel | joue_ecran | `SG/StridesTouchControls.cpp:239-260` ; `cso/hud-*`, `cso/cmd-*` | boîte, fond, rayon, ombre et icône du web ; ouvre la carte Pause (bindButton) |
+| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | partiel | testé | `SG/StridesTouchControls.cpp:310-328` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION masqués en épreuve (T7, T8) |
 | 9 | Notifications retenues puis relâchées | absent | aucun | — | — |
 
 ### 2.10 Caméra (§10)
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | identique_prouve (T6) | teste | `SC/CsoCamera.cpp:36-134`, `SG/StridesHorse.cpp:439-543` | pas porté ligne à ligne, oracle « cc » rejoué à 5,7e-14 m près, montages aux 6 instants ; entrée depuis la perche du portage (caméra du monde ouvert non portée) |
+| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | identique_prouve (T6) | teste | `SC/CsoCamera.cpp:36-134`, `SG/StridesHorse.cpp:446-550` | pas porté ligne à ligne, oracle « cc » rejoué à 5,7e-14 m près, montages aux 6 instants ; entrée depuis la perche du portage (caméra du monde ouvert non portée) |
 | 10 | FOV 58° vertical fixe | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:68-82` | axe Y maintenu + AspectRatio 1 : M11 = 1/tan(FOV/2) mesuré sur la projection du moteur ; amorti et paliers de 0,05° portés |
-| 10 | Perche anti-collision (1,0 → 6,6 m, pas 0,4, hauteur 2,2 → 3,4, ≥ 0,8 m du sol) | partiel (T6) | teste | `SC/CsoCamera.cpp:72-102`, `SG/StridesHorse.cpp:452-459` | règles prouvées sonde réinjectée ; sonde du jeu = sphère de 0,45 m sur le canal Camera, pas les colliders du web |
-| 10 | Verrouillage derrière le cavalier, sans orbite ni tremblement | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:492-543` | caméra posée en absolu par le cœur à chaque image, aucune entrée de l'orbite |
-| 10 | Caméra du monde ouvert rétablie à la sortie (FOV 60 + vitesse, 6,6 m, 2,35 m) | absent | aucun | `SG/StridesHorse.cpp:482-490` | coupe franche vers la perche du SpringArm (état commun de `camera.js:270-282` non porté) |
+| 10 | Perche anti-collision (1,0 → 6,6 m, pas 0,4, hauteur 2,2 → 3,4, ≥ 0,8 m du sol) | partiel (T6) | teste | `SC/CsoCamera.cpp:72-102`, `SG/StridesHorse.cpp:459-466` | règles prouvées sonde réinjectée ; sonde du jeu = sphère de 0,45 m sur le canal Camera, pas les colliders du web |
+| 10 | Verrouillage derrière le cavalier, sans orbite ni tremblement | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:499-550` | caméra posée en absolu par le cœur à chaque image, aucune entrée de l'orbite |
+| 10 | Caméra du monde ouvert rétablie à la sortie (FOV 60 + vitesse, 6,6 m, 2,35 m) | absent | aucun | `SG/StridesHorse.cpp:489-497` | coupe franche vers la perche du SpringArm (état commun de `camera.js:270-282` non porté) |
 
 ### 2.11 Arrivée et bilan (§11)
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
 | 11.1 | Arrivée : points = fautes + pénalités de temps | partiel | teste | `SC/CsoCourse.cpp:136-139` ; `TC:135` | scénario écrit à la main |
-| 11.1 | `SANS FAUTE !` / `{n} POINTS` / `1 POINT`, sous-titre `{dec(t,2)} s`, 2600 ms | partiel | compile | `SG/StridesCourse.cpp:56` | « 1 POINTS » ; pas de sous-titre ; ligne de texte 3 s |
+| 11.1 | `SANS FAUTE !` / `{n} POINTS` / `1 POINT`, sous-titre `{dec(t,2)} s`, 2600 ms | partiel | compile | `SG/StridesCourse.cpp:58` | « 1 POINTS » ; pas de sous-titre ; ligne de texte 3 s |
 | 11.1 | Sons d'arrivée, public en liesse 3,5 s | absent | aucun | — | — |
 | 11.2 | Classement simulé (`simulateField`, `mulberry32`, `rankResults`) | absent | aucun | — | — |
 | 11.2 | Comparaison de résultats (`compareResults`) | identique_prouve | teste | `SC/CsoCourse.cpp:87-92` ; `TC:104-108` | 3 cas seulement ; le bilan web trie par `rankResults` (`ranking.js:23-25`), absent |
-| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | absent | aucun | `SG/StridesCourse.cpp:108` | ligne « Terminé : %d pts en %.2f s » |
+| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | absent | aucun | `SG/StridesCourse.cpp:110` | ligne « Terminé : %d pts en %.2f s » |
 | 11.2 | Boutons `Recommencer`, `S'entraîner`, `Quitter l'épreuve` | absent | aucun | — | — |
 | 11.2 | Meilleur temps `bestTimes.cso_train` = temps + pénalités | partiel | compile | `SG/StridesSaveSubsystem.cpp:44-53` | clé `cso_pole`, résultat complet comparé par `compareResults`, écrit seulement à la sauvegarde manuelle F5 |
 | 11.2 | Classement en ligne `reportScore` | absent | aucun | — | — |
@@ -279,7 +279,7 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
 | 12 | 14 événements sonores (notify, applause, bell, tone, snort, hoof, landing, railTouch, railFall, thud, fault, crowdOoh, neigh, cheer) et ambiance public | absent | aucun | aucune occurrence `Sound` / `Audio` dans `Source/` | — |
-| 13 | Captures Unreal aux poses de la recette (844 × 390) | absent | aucun | `SG/StridesShots.cpp:30-37`, `67`, `96-105` | captures de décor et de démo en 1600 × 900, FOV 70 ; aucune pose CSO |
+| 13 | Captures Unreal aux poses de la recette (844 × 390) | absent | aucun | `SG/StridesShots.cpp:32-39`, `69`, `98-107` | captures de décor et de démo en 1600 × 900, FOV 70 ; aucune pose CSO |
 
 ---
 
@@ -381,7 +381,8 @@ Principes communs :
   (`g.obstacles.target(h)` et `timing(h)` pour chaque obstacle × distances 0 à 14 m × angles 0 à 75° × décalages latéraux).
 - **Données** : constantes `REF`, `NOSE`, `OVERRUN` et `HORSE.jumpDuration` / `minJumpSpeed` exportées ; puissance du
   cheval (`jumpPower`) relevée dans le jeu pour chaque scénario.
-- **Preuve visuelle** : capture « appui trop tôt » (bouton et cheval) reportée à T9 ; ici preuve par oracle seulement.
+- **Preuve visuelle** : capture « appui trop tôt » (bouton et cheval) reportée à T9 ; ici preuve par oracle seulement
+  (faite en T9 : montages `cso/aide-trop-tot-844x390.png` et `aide-trop-tot-667x308.png`).
 - **Dépendances / risques** : T1. Accumulation d'écarts d'arrondi sur des centaines d'images (`Math.exp` / `std::exp`
   peuvent différer d'un ulp) : tolérance relative et rejeu image par image avec recalage optionnel à documenter ; la
   puissance dépend de l'équipement et de l'état, non portés (relevés comme entrées de l'oracle, port complet ailleurs).
@@ -955,6 +956,51 @@ Principes communs :
 - **Preuve visuelle** : étape 4 de la recette.
 - **Dépendances / risques** : T2 (`timing`), T5 (obstacles visibles pour la capture), T7 (bouton), T8 (réglages).
   Rendu translucide au sol sur mobile (tri, z-fighting à +0,035 m) à vérifier.
+- **Réalisé (20/11/2026)** : (1) Cœur : `SCh/CourseAids.h`, `SC/CourseAids.cpp` (`csoTakeoffZone`, `csoLineMarks`,
+  `csoMarkRange`, `csoJumpTiming`, `CsoCourseAids::update` : tracé, repère, zone recalculée toutes les 0,25 s et au
+  changement d'obstacle, bandes) ; bouton SAUT dans `CsoHud` (`SC/CsoHud.cpp:179-185`, `205-215` : `_jt`, classes,
+  signe, clé du libellé, « Trop tôt » 600 ms sur l'horloge des temporisations du HUD). (2) Oracles exportés du jeu web :
+  `ORA/cso_takeoff_zone.json` (`export-cso-runs.mjs --aids` : `takeoffZone` appelée dans la page sur les 10 obstacles à
+  8 jeux de hauteurs, 15 vitesses, 4 puissances, 3 bonus, 14 400 cas ; 231 tirets d'un vrai `CourseAids`) rejoué à 1e-9
+  par `testCsoTakeoffZone` (« × aides » du critère : l'aide ne change pas `takeoffZone`, elle décide seulement de
+  l'affichage, départagé par le canal « ai ») ; canal « ai » de 7 exécutions `t9-*` (parcours complet en français et en
+  anglais, états du bouton, branches de retour, aide « bouton seul », aide coupée, tracé masqué : appels de
+  `CourseAids.update` avec entrées, sol lu et maillages après l'appel ; aide lue par `hud.update` et état du bouton dans le
+  DOM à chaque image, temporisation de « Trop tôt » sur une horloge virtuelle de 100 ticks de 1/3 ms par image) rejoué par
+  `testCsoAids` : 5 680 appels, 6 227 images, 0 écart (dont entrée en piste en visée, à pied près de l'obstacle, point
+  du tracé avant l'obstacle précédent, loin du tracé, « Trop tôt » relancé). `testCsoRuns` rejoue aussi le canal « ep »
+  de ces exécutions (réglage jumpAid lu dans `setup.aid`). Deux exports donnent les mêmes octets (`t9-retour` en
+  personnages classiques : la descente du modèle réaliste variait de 1e-9 m). (3) `scripts/unreal/mutations-cso-aids.py` :
+  50 mutations, 42 détectées, 8 déclarées (équivalentes ou non départagées, raisons dans le script : distance 0 et
+  7-8 m hors de toute zone, plan sans barre impossible à l'abord droit, dernier point du tracé, obstacle sans lineS,
+  « refuse » jamais reçu par le bouton ; sous-branches non départagées : début du tronçon borné par prevS, bande de
+  moins de 0,2 m). (4) Jeu : `AStridesCourseAids` (`SGh/StridesCourseAids.h`, `SG/StridesCourseAids.cpp` : maillages
+  procéduraux, sommets calculés dans le repère du web puis convertis, géométries, couleurs linéaires, opacités, faces et
+  ordre de rendu relus dans la scène du web, `DATA/cso_aids.json` ; matériaux translucides sans éclairage
+  `M_CsoAid` / `M_CsoAidTwoSided` créés par `scripts/unreal/import-cso-aids.py`) ; `AStridesCourse::UpdateAids`
+  (`SG/StridesCourse.cpp:369-406` : aides créées à l'étape de parcours, obstacle suivant, début du tronçon, réglages
+  courseLine relu dans la sauvegarde et jumpAid ; supprimées à la fin de l'étape) ; bouton coloré par
+  `UStridesTouchControls::ApplyJumpState` (`SG/StridesTouchControls.cpp:413-527` : fond, anneau, halo, pastille,
+  libellé traduit, styles des 8 états relevés par `export-hud-style.mjs --jump-states` dans `DATA/cso_jump_style.json`) ;
+  `horse:jumpEarly` → `jumpEarly` (`SG/StridesHorse.cpp:332-333`). Le fichier `SG/StridesCsoHud.cpp` cité plus haut n'a
+  pas changé : le bouton SAUT est dessiné par `UStridesTouchControls` depuis T8. Casse des libellés : `text-transform:
+  uppercase` passe par la culture (`FText::ToUpper`, « TROP PRÈS ») au lieu de `FString::ToUpper` (ASCII seul).
+  (5) Moteur : `Strides.Cso.Aids` (canal « ai » rejoué dans l'acteur, relief du jeu : 0 écart, sol des bandes à 0 m du
+  web ; maillages, matériaux et ordre de rendu ; bouton affiché par le widget à chaque image de deux exécutions et deux
+  viewports, 0 écart au DOM ; épreuve réelle : repère sur le 1, zone à l'abord, aides « bouton seul » et « off »,
+  tracé masqué par la sauvegarde) ; 24 tests Strides en Result={Success} ; ctest vert ; démonstration en partie réelle
+  (`-StridesShots=cso-jeu -TouchControls`, dossier dédié) : « 60,33 / 64 s 0 pt Arrivée ✓ », tirets du tracé visibles
+  vers l'obstacle suivant (capture `jeu-3-mot` du dossier dédié, non versionnée). (6) Captures (`--shots=aides`,
+  partie réelle arrêtée à l'image, HUD affiché, canal « ai » comparé à l'oracle ; Unreal : `-StridesShots=cso
+  -StridesPose=aide-` dans un dossier dédié, aides et HUD rejoués, état identique au web pour les 14 poses,
+  `cso/aide-unreal.json`) : montages côte à côte `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (mêmes états que les
+  captures de la recette `4-abord-trop-loin` et `5-abord-bonne-zone`, refaites dans une partie de l'oracle : 2 abordé
+  depuis 16 m à 6,2 m/s, sans l'état forcé de `cso-shots.mjs`), `aide-trop-pres-*`, `aide-trop-tot-*`,
+  `aide-bouton-*`, `aide-off-*`, `aide-sans-trace-*`, en 844 × 390 et 667 × 308. (7) Écarts restants : rendu des aides
+  (le web tone-mappe chaque matériau, ACES à 0,42, puis mélange en sRGB ; Unreal mélange en linéaire avant son
+  tonemapper : bandes et tirets plus ternes, teintes différentes ; z-fighting non observé sur Mac, rendu mobile iOS non
+  essayé) ; police du moteur sur le libellé et la pastille, halo approché, transition de l'anneau et état enfoncé non
+  portés ; entraînement au paddock (`cso_warmup`) absent.
 
 ### T10. Entrée dans l'épreuve (poteau, présentation, plan, entrée en piste, cloche)
 
@@ -1040,7 +1086,7 @@ D = déclaré, H = historique (rien à réécrire sans force push, interdit).
    `MathUtil.h`, `StridesHUD.cpp` (rayon 160 m, ligne 129) et `StridesDataSubsystem.cpp` (LoadScene 200-232). Les
    références vers les fichiers que la tranche a n'a pas touchés (inchangés depuis la base `250a9b4e`) n'ont pas été
    revues.
-2. C — commentaire de `SG/StridesDataSubsystem.cpp:123` : `testCourse`.
+2. C — commentaire de `SG/StridesDataSubsystem.cpp:126` : `testCourse`.
 3. C — `testRuns` lit la ligne de départ dans l'oracle (`setup.start` : x, z, rot, **w**) et la déclare franchie par
    `strides::lineCrossed` (fonction du cœur, désormais exposée dans `CsoRun.h` : w/2 + 0,3 et cap à 60° compris) ; le
    départ du web est lu dans l'état relevé (`run.course.started`) avec le bip « tone » de `courses.js` à cette image :
@@ -1135,7 +1181,7 @@ D = déclaré, H = historique (rien à réécrire sans force push, interdit).
 41. D — `mutations-cso-input.py` : « stylet traité comme une souris » et « d ≥ R » ajoutées, non détectées, dans
     `ATTENDUES` (69 mutations, 67 détectées, code 0) ; `entrees.joystick`.
 42. C — `StridesGameMode.cpp:28, 107-110` (cavalier à pied, 2 m à gauche) ; `SetActorLocationAndRotation` :
-    `StridesHorse.cpp:126, 363, 425`.
+    `StridesHorse.cpp:126, 365, 430`.
 43. C — `Strides.Cso.Controls` relit le slot du canevas (`SlotBoxOf`, placement effectif) et le dit (« placement, pas
     identité ») ; la preuve d'identité reste le montage. L'ancrage pour un viewport sans relevé n'est comparé par aucun
     test.

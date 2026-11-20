@@ -2,6 +2,7 @@
 
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Blueprint/WidgetTree.h"
+#include "Components/Border.h"
 #include "Components/Button.h"
 #include "Components/ButtonSlot.h"
 #include "Components/CanvasPanel.h"
@@ -170,6 +171,19 @@ void UStridesTouchControls::Build()
 	CssCanvas->AddChildToCanvas(JumpButton);
 	PauseButton = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("Pause"));
 	CssCanvas->AddChildToCanvas(PauseButton);
+	// Bouton SAUT coloré (tranche T9) : halo et anneau autour du bouton (.ring, inset −6 px), pastille du signe
+	// (.jt-sign) au-dessus.
+	JumpGlow = AddImage(TEXT("JumpGlow"));
+	JumpRing = AddImage(TEXT("JumpRing"));
+	JumpSign = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("JumpSign"));
+	JumpSign->SetVisibility(ESlateVisibility::HitTestInvisible);
+	JumpSign->SetPadding(FMargin(0));
+	JumpSign->SetHorizontalAlignment(HAlign_Center);
+	JumpSign->SetVerticalAlignment(VAlign_Center);
+	JumpSignLabel = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("JumpSignText"));
+	JumpSignLabel->SetJustification(ETextJustify::Center);
+	JumpSign->SetContent(JumpSignLabel);
+	CssCanvas->AddChildToCanvas(JumpSign);
 	JumpButton->OnPressed.AddDynamic(this, &UStridesTouchControls::JumpDown);
 	JumpButton->OnReleased.AddDynamic(this, &UStridesTouchControls::JumpUp);
 	PauseButton->OnPressed.AddDynamic(this, &UStridesTouchControls::PauseDown);
@@ -246,6 +260,7 @@ void UStridesTouchControls::ApplyStyle(const FVector2D& ViewCss)
 	}
 	Place(JumpButton, JumpBox);
 	Place(PauseButton, PauseBox);
+	JumpKey.Reset();  // états du bouton SAUT reposés au nouveau viewport
 	// Joystick : base (dégradé radial, bordure), bouton (et son ombre) ; place de repos ancrée en bas à gauche.
 	const Sc::FJ Jb = Sc::Obj(Rest, TEXT("base")), Jk = Sc::Obj(Rest, TEXT("knob"));
 	const FVector4 Rb = Sc::Rect(Jb);
@@ -373,6 +388,7 @@ void UStridesTouchControls::Sync()
 	// SAUT : bouton du mode « ride » (hud.js:344) et non masqué par les classes du HUD ; pause : toujours.
 	JumpButton->SetVisibility(bStyled && Riding() && ButtonVisible(TEXT("Jump"), H) ? Show : Hide);
 	PauseButton->SetVisibility(bStyled ? Show : Hide);
+	ApplyJumpState(H, V);
 	PauseShadow->SetVisibility(bStyled ? ESlateVisibility::HitTestInvisible : Hide);
 	// Joystick (mode tactile) : au repos à sa place (opacité du repos), tenu : base au doigt, bouton décalé (input.js).
 	const strides::CsoInput* Cmd = Commands();
@@ -390,4 +406,145 @@ void UStridesTouchControls::Sync()
 	Place(JoyKnobShadow, FVector4(KnobCenter.X - KnobSize.Z / 2 - Bl + Sh.Offset.X, KnobCenter.Y - KnobSize.W / 2 - Bl + Sh.Offset.Y, KnobSize.Z + 2 * Bl, KnobSize.W + 2 * Bl));
 	// L'opacité de .joy-base vaut pour la base et son bouton (enfant).
 	for (UImage* I : {JoyBase.Get(), JoyKnob.Get(), JoyKnobShadow.Get()}) I->SetRenderOpacity((float)JoyOpacity);
+}
+
+// ---------- Bouton SAUT coloré (tranche T9) ----------
+
+FString UStridesTouchControls::JumpStyleKey(const strides::CsoHud* RaceHud)
+{
+	if (!RaceHud) return TEXT("none");
+	// Classes far / good / near de .btn-jump (hud.js:376), early ajoutée par jumpEarly (:434).
+	const TCHAR* Base = RaceHud->jumpFar() ? TEXT("far") : RaceHud->jumpGood() ? TEXT("good") : RaceHud->jumpNear() ? TEXT("near") : TEXT("none");
+	return RaceHud->jumpEarlyOn() ? FString(Base) + TEXT("-early") : FString(Base);
+}
+
+void UStridesTouchControls::ApplyJumpState(const strides::CsoHud* RaceHud, const FVector2D& ViewCss)
+{
+	const ESlateVisibility Hide = ESlateVisibility::Collapsed, Shown = ESlateVisibility::HitTestInvisible;
+	const bool bJump = JumpButton && JumpButton->GetVisibility() != Hide;
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const Sc::FJ Doc = Data ? Data->CsoJumpStyle() : Sc::FJ();
+	const TArray<TSharedPtr<FJsonValue>>* Views = nullptr;
+	if (!bJump || !Doc.IsValid() || !Doc->TryGetArrayField(TEXT("views"), Views) || !Views->Num())
+	{
+		for (UWidget* W : {(UWidget*)JumpGlow.Get(), (UWidget*)JumpRing.Get(), (UWidget*)JumpSign.Get()})
+			if (W) W->SetVisibility(Hide);
+		RingBox = SignBox = GlowBox = FVector4(0, 0, 0, 0);
+		bJumpGlow = false;
+		JumpKey.Reset();
+		return;
+	}
+	// Libellé : clé française du HUD traduite dans la langue de l'épreuve (t() de hud.js:379, 435).
+	FString Lang = TestLang;
+	if (Lang.IsEmpty()) Lang = Course.IsValid() ? Course->Lang : TEXT("fr");
+	const strides::TextTable* Text = Data ? Data->CsoText() : nullptr;
+	const std::string Key = RaceHud ? RaceHud->jumpLabelKey() : std::string("Saut");
+	const FString Label = UTF8_TO_TCHAR((Text ? Text->t(Key, strides::langFromName(TCHAR_TO_UTF8(*Lang))) : Key).c_str());
+	const FString Sign = RaceHud ? UTF8_TO_TCHAR(RaceHud->jumpSign().c_str()) : TEXT("");
+	const FString K = JumpStyleKey(RaceHud);
+	if (K == JumpKey && ViewCss == JumpKeyView && Label == JumpLabelShown && Sign == JumpSignShown) return;
+	// Relevé du viewport de hauteur la plus proche (comme ApplyStyle).
+	double Best = 1e9;
+	for (const TSharedPtr<FJsonValue>& V : *Views)
+	{
+		const Sc::FJ O = V->AsObject();
+		const TArray<TSharedPtr<FJsonValue>>& VP = O->GetArrayField(TEXT("viewport"));
+		const double D = FMath::Abs(VP[1]->AsNumber() - ViewCss.Y);
+		if (D < Best) { Best = D; JumpView = O; JumpView0 = FVector2D(VP[0]->AsNumber(), VP[1]->AsNumber()); }
+	}
+	const Sc::FJ States = Sc::Obj(JumpView, TEXT("states"));
+	Sc::FJ S = Sc::Obj(States, *K);
+	if (!S.IsValid()) S = Sc::Obj(States, TEXT("none"));
+	if (!S.IsValid()) return;
+	JumpKey = K;
+	JumpKeyView = ViewCss;
+	JumpLabelShown = Label;
+	JumpSignShown = Sign;
+	const Sc::FJ J = Sc::Obj(S, TEXT("jump")), R = Sc::Obj(S, TEXT("ring")), G = Sc::Obj(S, TEXT("sign")), L = Sc::Obj(S, TEXT("label"));
+	// Boîtes relevées ancrées en bas à droite, comme le bouton (bloc d'actions réduit à 0,88 sous 420 px : boîtes affichées).
+	auto Anchor = [&](const FVector4& B) { return FVector4(ViewCss.X - (JumpView0.X - B.X), ViewCss.Y - (JumpView0.Y - B.Y), B.Z, B.W); };
+	const FVector4 Jr = Sc::Rect(J);
+	const double Kx = Jr.Z / FMath::Max(1.0, Sc::Num(J, TEXT("width"), Jr.Z));
+	// Fond et bordure du bouton (.btn-jump.good : fond vert).
+	JumpBg = Sc::Color(J, TEXT("backgroundColor"));
+	const FSlateBrush Bb = Sc::Rounded(JumpBg, Jr.Z / 2, Sc::Color(J, TEXT("borderTopColor")), Sc::Num(J, TEXT("borderTopWidth")) * Kx);
+	FButtonStyle St = JumpButton->GetStyle();
+	St.SetNormal(Bb);
+	St.SetHovered(Bb);
+	St.SetPressed(Bb);
+	St.SetDisabled(Bb);
+	JumpButton->SetStyle(St);
+	// Anneau (bordure de 3 px, transparente sans état) et halo (box-shadow de l'anneau, hors de sa boîte).
+	RingBox = Anchor(Sc::Rect(R));
+	JumpRingC = Sc::Color(R, TEXT("borderTopColor"));
+	JumpRing->SetBrush(Sc::Rounded(FLinearColor::Transparent, RingBox.Z / 2, JumpRingC, Sc::Num(R, TEXT("borderTopWidth")) * Kx));
+	Place(JumpRing, RingBox);
+	JumpRing->SetVisibility(JumpRingC.A > 0 ? Shown : Hide);
+	const Sc::FShadow Sh = Sc::Shadow(R);
+	bJumpGlow = Sh.bOn;
+	if (Sh.bOn)
+	{
+		const double Bl = Sh.Blur * Kx;
+		const int32 Bi = (int32)FMath::CeilToInt(Bl);
+		JumpTextures.Reset();
+		UTexture2D* T = Sc::SoftShadowTexture((int32)RingBox.Z + 2 * Bi, (int32)RingBox.W + 2 * Bi, RingBox.Z / 2, Bl, true);
+		JumpTextures.Add(T);
+		GlowBox = FVector4(RingBox.X + Sh.Offset.X - Bi, RingBox.Y + Sh.Offset.Y - Bi, RingBox.Z + 2 * Bi, RingBox.W + 2 * Bi);
+		JumpGlow->SetBrush(Sc::ImageBrush(T, FVector2D(GlowBox.Z, GlowBox.W), Sh.Color));
+		Place(JumpGlow, GlowBox);
+		JumpGlow->SetVisibility(Shown);
+	}
+	else
+	{
+		GlowBox = FVector4(0, 0, 0, 0);
+		JumpGlow->SetVisibility(Hide);
+	}
+	// Pastille du signe (display none sans état).
+	const bool bSign = Sc::Str(G, TEXT("display")) != TEXT("none");
+	JumpSignC = Sc::Color(G, TEXT("backgroundColor"));
+	JumpSignTextC = Sc::Color(G, TEXT("color"));
+	if (bSign)
+	{
+		SignBox = Anchor(Sc::Rect(G));
+		JumpSign->SetBrush(Sc::Rounded(JumpSignC, Sc::Num(G, TEXT("borderTopLeftRadius")) * Kx));
+		FSlateFontInfo F = Sc::Font(G);
+		F.Size = (float)(F.Size * Kx);
+		JumpSignLabel->SetFont(F);
+		JumpSignLabel->SetColorAndOpacity(FSlateColor(JumpSignTextC));
+		JumpSignLabel->SetText(FText::FromString(Sign));
+		Place(JumpSign, SignBox);
+		JumpSign->SetVisibility(Shown);
+	}
+	else
+	{
+		SignBox = FVector4(0, 0, 0, 0);
+		JumpSign->SetVisibility(Hide);
+	}
+	// Libellé (texte en capitales du web : text-transform).
+	JumpLabelC = Sc::Color(L, TEXT("color"));
+	JumpLabel->SetColorAndOpacity(FSlateColor(JumpLabelC));
+	JumpLabel->SetText(Sc::Cased(L, Label));
+}
+
+FString UStridesTouchControls::JumpLabelText() const { return JumpLabel && JumpButton && JumpButton->GetVisibility() != ESlateVisibility::Collapsed ? JumpLabel->GetText().ToString() : FString(); }
+FString UStridesTouchControls::JumpSignText() const { return JumpSign && JumpSign->GetVisibility() != ESlateVisibility::Collapsed ? JumpSignShown : FString(); }
+bool UStridesTouchControls::JumpGlowShown() const { return JumpGlow && JumpGlow->GetVisibility() != ESlateVisibility::Collapsed && bJumpGlow; }
+
+FLinearColor UStridesTouchControls::JumpColor(const FString& Part) const
+{
+	if (Part == TEXT("background")) return JumpBg;
+	if (Part == TEXT("ring")) return JumpRingC;
+	if (Part == TEXT("sign")) return JumpSignC;
+	if (Part == TEXT("signText")) return JumpSignTextC;
+	if (Part == TEXT("label")) return JumpLabelC;
+	return FLinearColor::Transparent;
+}
+
+FVector4 UStridesTouchControls::JumpPartBox(const FString& Part) const
+{
+	auto Shown = [](const UWidget* W) { return W && W->GetVisibility() != ESlateVisibility::Collapsed; };
+	if (Part == TEXT("ring")) return Shown(JumpRing) ? RingBox : FVector4(0, 0, 0, 0);
+	if (Part == TEXT("sign")) return Shown(JumpSign) ? SignBox : FVector4(0, 0, 0, 0);
+	if (Part == TEXT("glow")) return Shown(JumpGlow) ? GlowBox : FVector4(0, 0, 0, 0);
+	return FVector4(0, 0, 0, 0);
 }

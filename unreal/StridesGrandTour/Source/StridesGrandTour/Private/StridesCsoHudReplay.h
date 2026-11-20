@@ -4,7 +4,9 @@
 // appels hud.* (big, toast, hint, clearHint, jumpFeedback, setObjective), appels ajoutés, puis hud.update(1/30) avec
 // game.course (controls, kind), le tableau relevé (classes over / faults ; textes affichés = board.txt) et la cadence du
 // canal « ch » (indéfinie dans les images légères). Utilisé par le test Strides.Parite.CsoHud et par les poses « hud-* »
-// de -StridesShots=cso.
+// de -StridesShots=cso. Tranche T9 : appuis « Trop tôt » de l'image (appel hud.jumpEarly enregistré) et aide lue par le
+// bouton SAUT (canal « ai », b.jt) quand l'exécution les a (exécutions t9-*, poses « aide-* ») ; cadence de concours du
+// canal « ai » (b.cad, b.ca) dans ces exécutions légères.
 #pragma once
 #include <string>
 #include "StridesCore/CsoHud.h"
@@ -19,6 +21,11 @@ inline bool IsHudFn(const std::string& Fn)
 
 inline void Call(strides::CsoHud& H, const std::string& Fn, const J& Args)
 {
+	if (Fn == "jumpEarly")
+	{
+		H.jumpEarly();
+		return;
+	}
 	if (!IsHudFn(Fn)) return;
 	if (Fn == "setObjective")
 	{
@@ -73,11 +80,18 @@ inline void Frame(strides::CsoHud& H, const J& F, bool bSynth, const J* Extra = 
 	else
 	{
 		const J& S = F["ch"]["s"];
+		const J& B = F["ai"]["b"];
 		In.hasCadence = !S.isNull() && !S["cad"].isNull();
 		if (In.hasCadence) { In.cadence = S["cad"].num(); In.cadAdjust = !S["ca"].isNull() && S["ca"].b; }
+		// Exécutions légères de la tranche T9 (sans canal « ch ») : cadence relevée dans le canal « ai » (lue par hud.update).
+		else if (S.isNull() && B["cad"].t == J::Num) { In.hasCadence = true; In.cadence = B["cad"].num(); In.cadAdjust = B["ca"].b; }
 	}
 	Calls(H, F["hud"]);
 	if (Extra) Calls(H, *Extra);
+	// Bouton SAUT (tranche T9) : valeur de g.course?.jumpTiming?.() lue par hud.update, relevée dans le canal « ai ».
+	const J& Jt = F["ai"]["b"]["jt"];
+	if (Jt.t == J::Str)
+		In.jumpTiming = Jt.s == "good" ? strides::Zone::Good : Jt.s == "far" ? strides::Zone::Far : Jt.s == "near" ? strides::Zone::Near : Jt.s == "refuse" ? strides::Zone::Refuse : strides::Zone::None;
 	H.update(1.0 / 30, In);
 }
 

@@ -116,6 +116,10 @@ void CsoHud::fire(const Timer& t) {
       fbOff_ = true;
       fbText_.clear();
       break;
+    case TimerKind::EarlyOff:  // btnJump.classList.remove('early') ; this._jt = null
+      jEarly_ = false;
+      jt_.clear();
+      break;
   }
 }
 
@@ -171,6 +175,15 @@ std::string CsoHud::fbClass() const {
   return c;
 }
 
+// hud.js:433-442 : le libellé passe à « Trop tôt » ; classes far / good / near et signe gardés.
+void CsoHud::jumpEarly() {
+  jEarly_ = true;
+  jLabel_ = "Trop tôt";
+  jt_ = "early";
+  cancel(earlyT_);
+  earlyT_ = schedule(600, TimerKind::EarlyOff);
+}
+
 void CsoHud::setObjective(bool present) {
   if (present == !objOff_) return;
   objOff_ = !present;
@@ -190,6 +203,16 @@ bool CsoHud::call(const CsoCall& c) {
 }
 
 void CsoHud::update(double dt, const CsoHudFrame& f) {
+  // Indicateur d'appel de saut (hud.js:373-380) : changé seulement hors de « Trop tôt ».
+  const std::string jt = zoneName(f.jumpTiming);
+  if (jt != jt_ && jt_ != "early") {
+    jt_ = jt;
+    jFar_ = jt == "far";
+    jGood_ = jt == "good";
+    jNear_ = jt == "near";
+    jSign_ = jFar_ ? "»" : jGood_ ? "✓" : jNear_ ? "!" : "";
+    jLabel_ = jFar_ ? "Trop loin" : jGood_ ? "Saute !" : jNear_ ? "Trop près" : "Saut";
+  }
   // Tableau du parcours (hud.js:381-387).
   const bool ci = f.course && f.board;
   boardHidden_ = !ci;

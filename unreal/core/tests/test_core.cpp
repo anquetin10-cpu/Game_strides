@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 
+#include "StridesCore/CourseAids.h"
 #include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
@@ -1441,6 +1442,8 @@ static void testCsoRuns() {
     cfg.playerName = su["playerName"].s;
     cfg.horseName = su["horseName"].s;
     cfg.lang = langFromName(lang);
+    // Tranche T9 : réglage jumpAid posé avant le lancement (exécutions t9-*, setup.aid ; aid() de courses.js:82 le lit).
+    if (su["aid"].t == J::Str) cfg.aid = su["aid"].s;
     CsoRun run(cfg, g_text);
     run.begin();
     int bad = 0, n = 0;
@@ -2119,6 +2122,250 @@ static void testCsoPause() {
   std::printf("carte Pause : %zu cas, %d étapes rejouées, %d écarts\n", o["cases"].a.size(), steps, bad);
 }
 
+// ---------- Aides à l'appel (tranche T9) ----------
+// Ligne du cavalier du jeu web (CSO_LINE = CSO_TRACE.pts.map(toWorld), obstacles.js:39-44) : tracé du design lu par le
+// jeu (Content/Data/cso_course_pole.json), chaque point décalé de la carrière.
+static std::vector<TracePoint> aidsWorldLine() {
+  const J data = loadJson(DATA + "/cso_course_pole.json");
+  CourseDesign d;
+  std::string err;
+  CHECK(parseCourseFile(readFile(DATA + "/cso_course_pole.json"), d, err), "cso_course_pole.json : %s", err.c_str());
+  const double ax = data["arena"]["x"].num(), az = data["arena"]["z"].num();
+  std::vector<TracePoint> line;
+  for (const TracePoint& p : traceCourse(d).pts) line.push_back({ax + p.x, az + p.z, p.h, p.s});
+  return line;
+}
+// Obstacle du parcours relevé dans le web (label, num, kind, x, z, rot, h, w, spread, n, bars) : reconstruit par le cœur
+// (makeCsoObstacle) et comparé au relevé (axe, barres).
+static CsoObstacle aidsObstacle(const J& o, const std::string& who) {
+  const CsoObstacle c = makeCsoObstacle(o["kind"].s, o["x"].num(), o["z"].num(), o["rot"].num(), o["h"].num(), o["w"].num(), o["spread"].num(), o["label"].s, (int)o["num"].num(), "cso");
+  bool ok = near(c.n.x, o["n"][0].num()) && near(c.n.z, o["n"][1].num()) && c.bars.size() == o["bars"].a.size();
+  for (size_t k = 0; ok && k < c.bars.size(); k++) ok = near(c.bars[k].s, o["bars"][k][0].num()) && near(c.bars[k].h, o["bars"][k][1].num());
+  CHECK(ok, "%s : obstacle %s reconstruit différent du web (axe ou barres)", who.c_str(), o["label"].s.c_str());
+  return c;
+}
+static Zone aidsZoneOf(const std::string& s) {
+  return s == "good" ? Zone::Good : s == "far" ? Zone::Far : s == "near" ? Zone::Near : s == "refuse" ? Zone::Refuse : Zone::None;
+}
+// Valeur float32 du web (Float32BufferAttribute) : le double du cœur arrondi en float, à un écart d'arrondi près.
+static bool aidsF32(double core, double web) {
+  const float f = (float)core;
+  return (double)f == web || (double)std::nextafter(f, 1e30f) == web || (double)std::nextafter(f, -1e30f) == web;
+}
+
+// takeoffZone sur la grille de cso_takeoff_zone.json (obstacles du parcours à 6 jeux de hauteurs × 15 vitesses ×
+// 4 puissances × 3 bonus) à 1e-9 ; tirets du tracé (_marks) : nombre, indices de tracé, coins x / z (float32 du web).
+static void testCsoTakeoffZone() {
+  const J o = loadJson(ORA + "/cso_takeoff_zone.json");
+  CHECK(o["schema"].s == "strides.oracle.cso_takeoff_zone/1", "cso_takeoff_zone.json : schéma « %s »", o["schema"].s.c_str());
+  int n = 0, both = 0, passOnly = 0, none = 0, slowClamp = 0;
+  for (const J& st : o["sets"].a) {
+    const std::string who = "cso_takeoff_zone base " + (st["base"].isNull() ? std::string("hors épreuve") : std::to_string(st["base"].num()));
+    std::vector<CsoObstacle> obs;
+    for (const J& ob : st["obs"].a) obs.push_back(aidsObstacle(ob, who));
+    for (const J& c : st["cases"].a) {
+      const size_t i = (size_t)c[0].num();
+      const CsoTakeoffZone z = csoTakeoffZone(obs.at(i), c[1].num(), c[2].num(), c[3].num());
+      auto same = [](bool has, const double* r, const J& w) { return w.isNull() ? !has : has && near(r[0], w[0].num()) && near(r[1], w[1].num()); };
+      CHECK(same(z.hasPass, z.pass, c[4]) && same(z.hasGood, z.good, c[5]), "%s : takeoffZone(%s, v %g, puissance %g, bonus %g) : pass %s [%.15g ; %.15g], good %s [%.15g ; %.15g]", who.c_str(),
+            obs[i].label.c_str(), c[1].num(), c[2].num(), c[3].num(), z.hasPass ? "oui" : "non", z.pass[0], z.pass[1], z.hasGood ? "oui" : "non", z.good[0], z.good[1]);
+      n++;
+      if (!c[4].isNull() && !c[5].isNull()) both++;
+      else if (!c[4].isNull()) passOnly++;
+      else none++;
+      if (c[1].num() < 5.5) slowClamp++;
+    }
+  }
+  CHECK(n > 5000 && both > 0 && passOnly > 0 && none > 0 && slowClamp > 0, "takeoffZone : branche non exercée (%d cas : deux bandes %d, ambre seule %d, aucune %d, vitesse < 5,5 %d)", n, both, passOnly, none, slowClamp);
+  // Tirets du tracé.
+  const std::vector<TracePoint> line = aidsWorldLine();
+  CHECK((double)line.size() == o["line"]["n"].num() && near(line.front().x, o["line"]["first"]["x"].num()) && near(line.back().z, o["line"]["last"]["z"].num()) &&
+            near(line.back().s, o["line"]["last"]["s"].num()), "CSO_LINE : %zu points, extrémités différentes du web", line.size());
+  const std::vector<CsoLineMark> marks = csoLineMarks(line);
+  CHECK(marks.size() == o["marks"].a.size(), "tirets du tracé : %zu au lieu de %zu", marks.size(), o["marks"].a.size());
+  int bad = 0;
+  for (size_t k = 0; k < marks.size() && k < o["marks"].a.size(); k++) {
+    const J& w = o["marks"][k];
+    bool ok = near(marks[k].s, w["s"].num());
+    for (int j = 0; j < 4; j++) ok = ok && aidsF32(marks[k].c[j][0], w["c"][(size_t)j][0].num()) && aidsF32(marks[k].c[j][1], w["c"][(size_t)j][2].num());
+    if (!ok && bad++ < 3) CHECK(false, "tiret %zu (s %g) : coins différents du web", k, w["s"].num());
+  }
+  CHECK(bad == 0, "tirets du tracé : %d tirets différents", bad);
+  // LINE_MARK relu dans la scène du web (Content/Data/cso_aids.json) = constantes du cœur.
+  const J d = loadJson(DATA + "/cso_aids.json");
+  const CsoAidsParams& A = csoAidsDefaults();
+  const J& L = d["lineMark"];
+  CHECK(near(A.dash, L["dash"].num()) && near(A.width, L["width"].num()) && near(A.every, L["every"].num()) && near(A.after, L["after"].num()) && near(A.hideNear, L["hideNear"].num()),
+        "LINE_MARK du cœur différent de cso_aids.json");
+  std::printf("aides (takeoffZone) : %d cas (deux bandes %d, ambre seule %d, aucune %d), %zu tirets du tracé\n", n, both, passOnly, none, marks.size());
+}
+
+// Canal « ai » des exécutions t9-* : chaque appel de CourseAids.update rejoué par strides::CsoCourseAids (entrées,
+// sol lu, maillages après l'appel, zone et sa temporisation) ; bouton SAUT image par image par strides::CsoHud (aide
+// lue = csoJumpTiming, appuis « Trop tôt » de l'image, temporisation de 600 ms sur 100 ticks par image ; état, classes,
+// signe, libellé traduit).
+static void testCsoAids() {
+  J o = loadRuns();
+  const std::vector<TracePoint> line = aidsWorldLine();
+  int runs = 0, frames = 0, calls = 0, lineOn = 0, lineOff = 0, nextNull = 0, okOn = 0, goodOn = 0, recompute = 0, pre = 0, aidOff = 0, earlyF = 0, earlyCalls = 0, virt = 0;
+  // Sous-branches (relevées sur les entrées) : aide coupée à l'entrée en piste alors que le cheval vise un obstacle, zone
+  // coupée à pied près de l'obstacle suivant, point du tracé le plus proche avant l'obstacle précédent (prevS − 2 m),
+  // cheval loin du tracé (> 15 m), appui « Trop tôt » relancé avant la fin des 600 ms.
+  int preAimed = 0, footNear = 0, behindPrev = 0, farLine = 0, earlyAgain = 0, lastEarly = -1000;
+  std::map<std::string, int> states;
+  for (const J& r : o["runs"].a) {
+    if (!r["setup"]["aides"].b) continue;
+    runs++;
+    virt += (int)r["setup"]["virtualEarly"].num();
+    const std::string id = r["id"].s, lang = r["lang"].s;
+    const Lang L = lang == "en" ? Lang::En : Lang::Fr;
+    CsoCourseAids aids(line);
+    CsoHud hud;
+    hud.setViewportHeight(390);
+    std::vector<CsoAidsFence> fences;
+    int bad = 0;
+    double zt0 = 0;
+    for (const J& f : r["frames"].a) {
+      const int fi = (int)f["f"].num();
+      const std::string who = id + "." + lang + " image " + std::to_string(fi);
+      const J& ai = f["ai"];
+      if (!ai["ob"].isNull()) {
+        fences.clear();
+        for (size_t k = 0; k < ai["ob"].a.size(); k++) {
+          const J& ob = ai["ob"][k];
+          CsoAidsFence fe;
+          fe.id = (int)k;
+          fe.ob = aidsObstacle(ob, who);
+          fe.ground = ob["ground"].num();
+          fe.hasLineS = !ob["lineS"].isNull();
+          fe.lineS = fe.hasLineS ? ob["lineS"].num() : 0;
+          fences.push_back(fe);
+        }
+      }
+      frames++;
+      // Bouton SAUT.
+      hud.advanceTicks(100);
+      for (const J& c : f["hud"].a)
+        if (c["fn"].s == "jumpEarly") {
+          hud.jumpEarly();
+          earlyCalls++;
+          if (fi - lastEarly < 18) earlyAgain++;
+          lastEarly = fi;
+        }
+      const J& b = ai["b"];
+      const Zone jt = csoJumpTiming(b["c"].b, b["pre"].b, b["aid"].s, aidsZoneOf(b["tm"].s));
+      CHECK(zoneName(jt) == b["jt"].s, "%s : aide lue par le bouton %s au lieu de %s (timing %s, épreuve %d, entrée %d, aide %s)", who.c_str(), zoneName(jt), b["jt"].s.c_str(), b["tm"].s.c_str(),
+            b["c"].b, b["pre"].b, b["aid"].s.c_str());
+      CsoHudFrame hf;
+      hf.jumpTiming = jt;
+      hud.update(1.0 / 30, hf);
+      const std::string st = b["st"].isNull() ? std::string() : b["st"].s;
+      std::set<std::string> cl;
+      for (const J& k : b["cl"].a) cl.insert(k.s);
+      const bool same = hud.jumpState() == st && hud.jumpFar() == (cl.count("far") > 0) && hud.jumpGood() == (cl.count("good") > 0) && hud.jumpNear() == (cl.count("near") > 0) &&
+                        hud.jumpEarlyOn() == (cl.count("early") > 0) && hud.jumpSign() == b["sg"].s && g_text.t(hud.jumpLabelKey(), L) == b["lb"].s;
+      if (!same && bad++ < 3)
+        CHECK(false, "%s : bouton SAUT « %s » [%s%s%s%s] « %s » « %s » au lieu de « %s » « %s » « %s »", who.c_str(), hud.jumpState().c_str(), hud.jumpFar() ? "far " : "", hud.jumpGood() ? "good " : "",
+              hud.jumpNear() ? "near " : "", hud.jumpEarlyOn() ? "early" : "", hud.jumpSign().c_str(), g_text.t(hud.jumpLabelKey(), L).c_str(), st.c_str(), b["sg"].s.c_str(), b["lb"].s.c_str());
+      states[st.empty() ? "null" : st]++;
+      if (hud.jumpEarlyOn()) earlyF++;
+      if (b["pre"].b) pre++;
+      if (b["pre"].b && b["tm"].s != "none") preAimed++;
+      if (b["c"].b && b["aid"].s == "off") aidOff++;
+      // Aides du parcours.
+      const J& c = ai["c"];
+      if (c.isNull()) continue;
+      calls++;
+      const J& in = c["in"];
+      CsoAidsInput ain;
+      ain.dt = in["dt"].num();
+      ain.next = in["n"].isNull() ? nullptr : &fences.at((size_t)in["n"].num());
+      ain.prevS = in["ps"].num();
+      ain.showLine = in["sl"].b;
+      ain.showZone = in["sz"].b;
+      ain.hasHorse = in["hh"].b;
+      if (ain.hasHorse) {
+        ain.hx = in["x"].num();
+        ain.hz = in["z"].num();
+        ain.speed = in["v"].num();
+        ain.power = in["pw"].num();
+        ain.clearance = in["cl"].num();
+      }
+      ain.riding = in["md"].b;
+      ain.time = in["t"].num();
+      if (ain.next && ain.hasHorse) {
+        if (!ain.riding && std::hypot(ain.next->ob.x - ain.hx, ain.next->ob.z - ain.hz) <= 26) footNear++;
+        double bd = 1e9, bs = 0;
+        for (const TracePoint& p : line) {
+          if (p.s < ain.prevS - 2 || p.s > ain.next->lineS + 12) continue;
+          const double d2 = (p.x - ain.hx) * (p.x - ain.hx) + (p.z - ain.hz) * (p.z - ain.hz);
+          if (d2 < bd) { bd = d2; bs = p.s; }
+        }
+        if (bd > 225) farLine++;
+        else if (bs < ain.prevS) behindPrev++;
+      }
+      size_t gi = 0;
+      bool gqOk = true;
+      const J& gq = c["gq"];
+      aids.update(ain, [&](double x, double z) {
+        if (gi >= gq.a.size()) {
+          gqOk = false;
+          return 0.0;
+        }
+        const J& q = gq[gi++];
+        gqOk = gqOk && near(q[0].num(), x) && near(q[1].num(), z);
+        return q[2].num();
+      });
+      const CsoAidsView& v = aids.view();
+      const J& out = c["out"];
+      auto band = [&](const CsoAidsBand& m, const J& w) {
+        return m.visible == w[0].b && near(m.x, w[1].num()) && near(m.y, w[2].num()) && near(m.z, w[3].num()) && near(m.rot, w[4].num()) && near(m.sx, w[5].num()) && near(m.sz, w[6].num());
+      };
+      auto range = [&](bool vis, int first, int count, const J& w) {
+        if (vis != w[0].b) return false;
+        if (!vis) return true;  // plage d'un maillage masqué : sans effet (drawRange du web gardé tel quel)
+        return !w[2].isNull() && first == (int)w[1].num() && count == (int)w[2].num();
+      };
+      bool ok = gqOk && gi == gq.a.size();
+      ok = ok && range(v.lineVisible, v.lineFirst, v.lineCount, out["ln"]) && range(v.lineVisible, v.afterFirst, v.afterCount, out["af"]);
+      ok = ok && v.markVisible == out["mk"][0].b && near(v.markX, out["mk"][1].num()) && near(v.markY, out["mk"][2].num()) && near(v.markZ, out["mk"][3].num()) && near(v.markRot, out["mk"][4].num());
+      ok = ok && band(v.ok, out["ok"]) && band(v.good, out["gd"]);
+      ok = ok && near(aids.zoneTimer(), out["zt"].num()) && aids.zoneFor() == (out["zf"].isNull() ? -1 : (int)out["zf"].num());
+      if (!out["zo"].isNull()) {
+        const CsoTakeoffZone& z = aids.zone();
+        const J& p = out["zo"]["p"];
+        const J& g = out["zo"]["g"];
+        ok = ok && (p.isNull() ? !z.hasPass : z.hasPass && near(z.pass[0], p[0].num()) && near(z.pass[1], p[1].num()));
+        ok = ok && (g.isNull() ? !z.hasGood : z.hasGood && near(z.good[0], g[0].num()) && near(z.good[1], g[1].num()));
+      }
+      if (!ok && bad++ < 3)
+        CHECK(false, "%s : aides différentes du web (tracé %d [%d+%d] [%d+%d], repère %d (%.6f ; %.6f ; %.6f), ambre %d, verte %d, zone %.6f / obstacle %d, sol %zu/%zu lus)", who.c_str(), v.lineVisible, v.lineFirst,
+              v.lineCount, v.afterFirst, v.afterCount, v.markVisible, v.markX, v.markY, v.markZ, v.ok.visible, v.good.visible, aids.zoneTimer(), aids.zoneFor(), gi, gq.a.size());
+      (v.lineVisible ? lineOn : lineOff)++;
+      if (!ain.next) nextNull++;
+      if (v.ok.visible) okOn++;
+      if (v.good.visible) goodOn++;
+      if (ain.next && aids.zoneTimer() > zt0 + 1e-12) recompute++;
+      zt0 = aids.zoneTimer();
+    }
+    CHECK(bad == 0, "%s.%s : %d écarts (aides ou bouton)", id.c_str(), lang.c_str(), bad);
+  }
+  CHECK(runs >= 5, "canal « ai » : %d exécutions t9-*", runs);
+  // (bande ambre sans bande verte : jamais dans ces exécutions, hauteurs de 1,05 à 1,15 m ; takeoffZone la rend sur la
+  // grille de cso_takeoff_zone.json, l'affichage seul n'est pas départagé : écart déclaré à l'inventaire)
+  CHECK(lineOn > 0 && lineOff > 0 && nextNull > 0 && okOn > 0 && goodOn > 0 && recompute > 0 && pre > 0 && aidOff > 0 && earlyF > 0 && earlyCalls > 0 && virt == earlyCalls,
+        "canal « ai » : branche non exercée (tracé affiché %d / masqué %d, sans obstacle suivant %d, bande ambre %d, verte %d, zone recalculée %d, entrée en piste %d, aide coupée %d, « Trop tôt » %d images / %d appuis, %d temporisations virtuelles)",
+        lineOn, lineOff, nextNull, okOn, goodOn, recompute, pre, aidOff, earlyF, earlyCalls, virt);
+  for (const char* k : {"none", "far", "good", "near", "early"}) CHECK(states[k] > 0, "bouton SAUT : état « %s » jamais relevé", k);
+  CHECK(preAimed > 0 && footNear > 0 && behindPrev > 0 && farLine > 0 && earlyAgain > 0,
+        "canal « ai » : sous-branche non exercée (entrée en piste en visée %d, à pied près de l'obstacle %d, avant l'obstacle précédent %d, loin du tracé %d, « Trop tôt » relancé %d)", preAimed, footNear, behindPrev, farLine, earlyAgain);
+  std::printf("aides (sous-branches) : entrée en piste en visée %d images, à pied près de l'obstacle %d appels, point du tracé avant l'obstacle précédent %d, loin du tracé %d, « Trop tôt » relancé %d fois\n", preAimed, footNear, behindPrev, farLine, earlyAgain);
+  std::printf("aides (canal ai) : %d exécutions, %d images, %d appels de CourseAids.update (tracé affiché %d, masqué %d, sans obstacle suivant %d, bande ambre %d, verte %d, zone recalculée %d) ; bouton : entrée en piste %d, aide coupée %d, « Trop tôt » %d images (%d appuis)",
+              runs, frames, calls, lineOn, lineOff, nextNull, okOn, goodOn, recompute, pre, aidOff, earlyF, earlyCalls);
+  for (const auto& kv : states) std::printf(", %s %d", kv.first.c_str(), kv.second);
+  std::printf("\n");
+}
+
 int main(int argc, char** argv) {
   ORA = argc > 1 ? argv[1] : "oracles";
   DATA = argc > 2 ? argv[2] : "../../StridesGrandTour/Content/Data";
@@ -2148,6 +2395,8 @@ int main(int argc, char** argv) {
     run("camera", testCamRuns);
     run("input", testCsoInput);
     run("pause", testCsoPause);
+    run("zone", testCsoTakeoffZone);
+    run("aids", testCsoAids);
   } catch (const std::exception& e) {
     std::printf("exception : %s\n", e.what());
     return 2;

@@ -4,10 +4,12 @@
 // géométrie exportée du jeu web (tranche T5 : obstacles, lignes de départ et d'arrivée, poteau « Chrono », hauteurs
 // hors épreuve puis de l'épreuve, numéro attendu surligné ; Content/World/Cso/cso_fences.json) ; interface d'épreuve
 // (tranche T7 : strides::CsoHud nourri par les appels de l'épreuve et l'état de chaque image, affiché par
-// UStridesCsoHud).
+// UStridesCsoHud) ; aides à l'appel (tranche T9 : tracé au sol, zone d'appel, repère, AStridesCourseAids ; bouton SAUT
+// coloré par l'état de CsoHud).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "StridesCore/CourseAids.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
@@ -19,6 +21,7 @@
 #include "StridesCourse.generated.h"
 
 class AStridesFence;
+class AStridesCourseAids;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FStridesCourseEvent, const FString&, Kind, const FString&, Text);
 
@@ -87,7 +90,25 @@ public:
 	void SyncHudClock(double Now);
 	double WallSeconds() const;
 	void BeginHudFrame() { SyncHudClock(WallSeconds()); }
-	void UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust);
+	// Timing : aide à l'appel du cheval du joueur (obstacles.timing, csoTiming) ; le bouton SAUT lit
+	// csoJumpTiming(game.course, entrée en piste, réglage jumpAid, Timing) (tranche T9).
+	void UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust, strides::Zone Timing = strides::Zone::None);
+	// Aides du parcours (tranche T9, courses.js:188, 311-320, 355) : créées au début de l'étape de parcours, mises à jour
+	// après le déroulé de l'image (obstacle suivant, début du tronçon, réglages courseLine et jumpAid), supprimées à la
+	// fin de l'étape. Cheval du joueur : position, vitesse, puissance, bonus de franchissement, monté ou non ; Time =
+	// game.time (repère).
+	void UpdateAids(double Dt, double HorseX, double HorseZ, double Speed, double Power, double Clearance, bool bRiding, double Time);
+	AStridesCourseAids* CourseAids() const { return Aids; }
+	// Acteur des aides (créé au besoin), sans le démarrer : captures et tests.
+	AStridesCourseAids* EnsureAids();
+	// Réglage courseLine (Tracé au sol) : relu dans la sauvegarde à chaque image (settings().courseLine du web) ; sans
+	// sauvegarde, cette valeur.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strides") bool bCourseLine = true;
+	bool CourseLineShown() const;
+	// Obstacles du parcours tels que les lit CourseAids.update (sol, abscisse du tracé lineS).
+	std::vector<strides::CsoAidsFence> AidFences() const;
+	// Ligne du cavalier (CSO_LINE : tracé du design local décalé de la carrière point par point, obstacles.js:44).
+	std::vector<strides::TracePoint> AidLine() const;
 	// Dernier saut du cheval du joueur (horse._lastJump, mot d'appel) : présent ou non (effacé quand le cheval est posé),
 	// obstacle (indice du cœur, −1 : aucun obstacle du parcours), qualité de l'appel et instant ; transmis à l'épreuve
 	// quand il change.
@@ -138,4 +159,5 @@ private:
 	double HudWall = 0;     // dernière heure murale vue par SyncHudClock
 	bool bHudWall = false;  // origine fixée
 	double LastJumpTime = -1;
+	UPROPERTY() TObjectPtr<AStridesCourseAids> Aids;
 };

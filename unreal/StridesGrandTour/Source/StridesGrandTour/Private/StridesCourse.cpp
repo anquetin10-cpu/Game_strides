@@ -2,8 +2,10 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "StridesCourseAids.h"
 #include "StridesCsoScenery.h"
 #include "StridesDataSubsystem.h"
+#include "StridesSaveSubsystem.h"
 #include "StridesFence.h"
 #include "StridesUnits.h"
 
@@ -234,7 +236,7 @@ void AStridesCourse::SyncHudClock(double Now)
 	bHudWall = true;
 }
 
-void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust)
+void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust, strides::Zone Timing)
 {
 	// hud.update du jeu web (après la mission) : game.course (commandes et tableau de l'épreuve), cadence du joueur.
 	// Objectif (setObjective de missions.js) : affiché tant que l'épreuve n'est pas terminée.
@@ -247,6 +249,8 @@ void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool
 		F.controlsCso = M.active;  // cso_train : controls === 'cso', kind === 'cso' (courses.js:187)
 		F.kindCso = M.active;
 		F.board = RunPtr->board(F.info);
+		// Bouton SAUT (tranche T9) : g.course?.jumpTiming?.() || 'none'.
+		F.jumpTiming = strides::csoJumpTiming(M.active, M.pre, RunPtr->config().aid, Timing);
 	}
 	F.hasCadence = bHasCadence;
 	F.cadence = Cadence;
@@ -318,4 +322,85 @@ FString AStridesCourse::StatusText() const
 	FString S;
 	for (int32 K = 0; K < 4; K++) S += (K ? TEXT(" ") : TEXT("")) + FString(UTF8_TO_TCHAR(B.txt[K].c_str()));
 	return Objective.IsEmpty() ? S : S + TEXT(" · ") + Objective;
+}
+
+// ---------- Aides à l'appel (tranche T9) ----------
+
+bool AStridesCourse::CourseLineShown() const
+{
+	const UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
+	return Save ? strides::courseLineShown(Save->GetSettings()) : bCourseLine;
+}
+
+std::vector<strides::TracePoint> AStridesCourse::AidLine() const
+{
+	std::vector<strides::TracePoint> Line;
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	if (!Data) return Line;
+	// CSO_LINE = CSO_TRACE.pts.map(toWorld) : tracé local du design, puis décalage de la carrière.
+	for (const strides::TracePoint& P : strides::traceCourse(Data->PoleCourse()).pts)
+		Line.push_back({Data->PoleArena.X + P.x, Data->PoleArena.Y + P.z, P.h, P.s});
+	return Line;
+}
+
+std::vector<strides::CsoAidsFence> AStridesCourse::AidFences() const
+{
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	std::vector<strides::CsoAidsFence> Out;
+	for (size_t I = 0; I < CoreObstacles.size(); I++)
+	{
+		strides::CsoAidsFence F;
+		F.id = (int)I;
+		F.ob = CoreObstacles[I];
+		F.ground = Data ? Data->TerrainHeight(F.ob.x, F.ob.z) : 0.0;
+		F.hasLineS = I < Trace.fences.size();
+		F.lineS = F.hasLineS ? Trace.fences[I].s : 0.0;
+		Out.push_back(F);
+	}
+	return Out;
+}
+
+AStridesCourseAids* AStridesCourse::EnsureAids()
+{
+	if (!Aids && GetWorld()) Aids = GetWorld()->SpawnActor<AStridesCourseAids>();
+	return Aids;
+}
+
+void AStridesCourse::UpdateAids(double Dt, double HorseX, double HorseZ, double Speed, double Power, double Clearance, bool bRiding, double Time)
+{
+	// Étape de parcours en cours (courseStep : CourseAids créé à start, supprimé à end).
+	const bool bCourse = RunPtr && !RunPtr->finished() && RunPtr->step() == strides::CsoStep::Course;
+	if (Aids && Aids->bFrozen) return;
+	if (!bCourse)
+	{
+		if (Aids && Aids->Active()) Aids->End();
+		return;
+	}
+	EnsureAids();
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	if (!Aids->Active()) Aids->Begin(AidLine(), [Data](double X, double Z) { return Data ? Data->TerrainHeight(X, Z) : 0.0; });
+	// courses.js:300-320 : obstacle suivant (le 1 avant le départ), début du tronçon (obstacle précédent), réglages.
+	const strides::CsoRunState& S = RunPtr->state();
+	const std::vector<strides::CsoAidsFence> Fs = AidFences();
+	strides::CsoAidsInput In;
+	In.dt = Dt;
+	In.hasHorse = true;
+	In.hx = HorseX;
+	In.hz = HorseZ;
+	In.speed = Speed;
+	In.power = Power;
+	In.clearance = Clearance;
+	In.riding = bRiding;
+	In.time = Time;
+	if (!S.finished)
+	{
+		const int N = (int)Fs.size();
+		const int NextI = S.started ? S.next - 1 : 0;
+		In.next = NextI >= 0 && NextI < N ? &Fs[(size_t)NextI] : nullptr;
+		const int PrevI = S.next - 2;
+		In.prevS = !S.started || PrevI < 0 || PrevI >= N ? 0.0 : Fs[(size_t)PrevI].lineS;
+		In.showLine = CourseLineShown();
+		In.showZone = RunPtr->config().aid == "full";
+	}
+	Aids->Step(In);
 }

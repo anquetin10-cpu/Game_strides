@@ -329,6 +329,8 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 	{
 		FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
 		if (E == strides::CsoHorseEvent::Jump && Sim.hasLastJump) LastTakeoff = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Sim.lastPlan)));
+		// game.js:727 : horse:jumpEarly → hud.jumpEarly() (bouton « Trop tôt » 600 ms, tranche T9).
+		if (E == strides::CsoHorseEvent::JumpEarly && Course) Course->HudModel().jumpEarly();
 	}
 	// Obstacles.updateHorse (tranche T3, cœur) : jugement de chaque barre au passage des épaules, refus (décision à
 	// l'abord, comptage à l'arrêt, barre emportée tout contre, garde-fou du nez, glissade), barres des postérieurs ; puis
@@ -368,11 +370,14 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 		// Déroulé de l'épreuve (Run.update) après le cheval et les obstacles ; la sortie de piste ramène la cadence vers
 		// 1,9 m/s.
 		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
-		Course->TickRun(RunFrame(SDt, In.time), Cad);
+		const strides::CsoRunFrame RF = RunFrame(SDt, In.time);
+		Course->TickRun(RF, Cad);
 		Sim.hasCadence = Cad.has;
 		Sim.cadence = Cad.v;
-		// hud.update du jeu web (fin de l'image) : tableau, classes, crans de cadence (réglage au joystick).
-		Course->UpdateHud(Dt, Sim.hasCadence, Sim.cadence, Sim.cadAdjust);
+		// Aides du parcours (tranche T9) : mises à jour par l'étape de parcours, après son déroulé de l'image.
+		Course->UpdateAids(SDt, Sim.x, Sim.z, Sim.speed, In.power, In.clearance, RF.riding, In.time);
+		// hud.update du jeu web (fin de l'image) : tableau, classes, crans de cadence (réglage au joystick), bouton SAUT.
+		Course->UpdateHud(Dt, Sim.hasCadence, Sim.cadence, Sim.cadAdjust, JumpTiming());
 	}
 	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
 	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop reste atteignable (aligné sur le clip de saut rapide).
@@ -427,7 +432,9 @@ void AStridesHorse::TickOpenWorld(float Dt, bool bSimPaused)
 	if (Course)
 	{
 		strides::CsoCadence Cad;
-		Course->TickRun(RunFrame(SDt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0), Cad);
+		const strides::CsoRunFrame RF = RunFrame(SDt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0);
+		Course->TickRun(RF, Cad);
+		Course->UpdateAids(SDt, X, Z, SpeedMS, JumpPower(), 0.0, RF.riding, RF.time);
 		Course->UpdateHud(Dt, false, 0.0, false);
 		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.
 		Course->UpdateFences(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, X, Z);

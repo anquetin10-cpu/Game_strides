@@ -20,6 +20,9 @@ Toutes les commandes se lancent depuis la racine du dépôt, avec
 | `unreal/core/tests/oracles/cso_target.json`, `cso_goto.json` | idem | grille de visée et d'appui ; étape « rejoindre l'entrée » |
 | `unreal/core/tests/oracles/cso_input.json` | `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-input.mjs` (~1 min, page de test sans le jeu) | commandes (tranche T8) : vraie classe `Input` de `src/core/input.js` soumise à des événements tactiles, souris et clavier synthétiques (DevTools), chaque appel reçu et l'état complet juste après ; rejoué par `testCsoInput` |
 | `unreal/core/tests/oracles/cso_freeze.json` | `export-cso-runs.mjs --freeze` (~45 s, jeu web en cours d'exécution) | gel en pause et au téléphone (tranche T8, contrôle adverse) : après le départ du chrono du Pôle, 338 images jouées par la boucle du jeu (`game.js:1406`, update seulement à l'état « play ») avec Échap, P, M et Reprendre ; par image : update appelée, état, `simPaused`, téléphone, chrono, position du cheval ; rejoué par le test moteur `Strides.Cso.Controls` |
+| `unreal/core/tests/oracles/cso_takeoff_zone.json`, `unreal/StridesGrandTour/Content/Data/cso_aids.json` | `export-cso-runs.mjs --aids` (~40 s, jeu web en cours d'exécution) | aides à l'appel (tranche T9) : `takeoffZone` de `courseAids.js` appelée dans la page sur les obstacles du parcours (8 jeux de hauteurs × 15 vitesses × 4 puissances × 3 bonus = 14 400 cas) et tirets du tracé d'un vrai `CourseAids` (rejoués par `testCsoTakeoffZone`) ; données du jeu : `LINE_MARK`, matériaux (couleur, opacité, faces), ordre de rendu et géométries du repère et des bandes relus dans la scène |
+| canal « ai » des exécutions `t9-*` de `cso_runs/` | `export-cso-runs.mjs --only=t9-parcours,t9-appel,t9-retour,t9-aide-bouton,t9-aide-off,t9-sans-trace` | appels de `CourseAids.update` (entrées, sol lu, maillages après l'appel), bouton SAUT (aide lue par `hud.update`, état du DOM), temporisation de « Trop tôt » sur une horloge virtuelle (100 ticks de 1/3 ms par image) ; rejoués par `testCsoAids` et `Strides.Cso.Aids` |
+| `unreal/StridesGrandTour/Content/Data/cso_jump_style.json` | `export-hud-style.mjs --jump-states` (seul, rien d'autre n'est réécrit) | bouton SAUT dans chacun des 8 états (none, far, good, near, et les mêmes pendant « Trop tôt ») posés par le vrai HUD, 844 × 390 et 667 × 308 : styles et boîtes du bouton, de l'anneau, de la pastille, du libellé |
 | `unreal/StridesGrandTour/Content/World/Cso/cso_fences.json` | `export-cso-runs.mjs --fences` (jeu web en cours d'exécution, `scripts/unreal/cso-export.js`) | géométrie du parcours du Pôle (tranche T5) : pièces des obstacles, des lignes de départ et d'arrivée et du poteau « Chrono » (catégorie, maillage, pivot local et monde, barycentre), hauteurs hors épreuve et en épreuve, couleurs de surlignage, matériaux |
 
 Export en cours d'exécution (serveur Vite sur `http://127.0.0.1:5173`, sinon
@@ -72,7 +75,8 @@ cmake -S unreal/core -B build/core && cmake --build build/core && ctest --test-d
   -ExecCmds="Automation RunTests Strides; Quit" -unattended -nullrhi -nosplash -log -stdout \
   -ReportExportPath="$PWD/.tmp/automation" > .tmp/automation.log   # chaque test : Result={Success}
 python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py, mutations-cso-run.py, mutations-cso-camera.py,
-                                                 # mutations-cso-hud.py, mutations-cso-input.py (~1 min, objets communs compilés une fois)
+                                                 # mutations-cso-hud.py, mutations-cso-input.py, mutations-cso-aids.py
+                                                 # (~1 min à ~2 min, objets communs compilés une fois)
 ```
 
 - `STRIDES_TESTS=input,save` : le banc ne lance que ces parties (noms dans le `main` de `test_core.cpp`) ; sans la
@@ -208,10 +212,33 @@ python3 scripts/unreal/mutations-cso-controls.py   # module de jeu : 16 mutation
   jusqu'au viewport du jeu puis à `AStridesPlayerController::InputTouch` (`AStridesShots::SlateTouch`), cheval figé ; les
   doigts reçus par `InputTouch` sont notés dans `cmd-unreal.json` (`touch.events`) ; pose `cmd-pause-*` (`pause`) : carte Pause ouverte par
   le contrôleur (jeu suspendu, l'acteur des captures continue). `tactile` : joystick dessiné (page tactile du web).
-- Relevé de l'affichage par famille de poses : `hud-unreal.json` (T7), `cmd-unreal.json` (T8) ; chaque pose y note les
+- Relevé de l'affichage par famille de poses : `hud-unreal.json` (T7), `cmd-unreal.json` (T8), `aide-unreal.json` (T9 :
+  aides affichées et bouton SAUT) ; chaque pose y note les
   boutons visibles et les boîtes de SAUT, pause et joystick (px CSS) et, en pause, les éléments de la carte.
 - Clavier : les touches sont lues par leur code physique (code matériel du Mac) ; `Strides.Cso.PhysicalKeys` vérifie la
   table sur des événements construits (un vrai clavier AZERTY n'a pas été essayé).
+
+### Aides à l'appel (tranche T9) : poses `aide-*`, 844 × 390 et 667 × 308
+
+```sh
+"$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" -run=pythonscript \
+  -script="$PWD/scripts/unreal/import-cso-aids.py" -unattended -nosplash -nullrhi            # matériaux M_CsoAid(TwoSided)
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=aides  # ~15 min, 14 captures web
+"$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso -StridesPose=aide- -StridesShotsDir=<dossier dédié> \
+  -abslog="$PWD/.tmp/shots-aides.log"
+```
+
+- `--shots=aides` : partie réelle (exécutions `t9-appel`, `t9-aide-bouton`, `t9-aide-off`, `t9-sans-trace` de l'oracle,
+  rejouées depuis le début dans une page neuve par capture) arrêtée à l'image choisie par une règle lue dans l'oracle
+  (abord du 2 à 8,1 m, première image « Saute ! », « Trop près » au 3, « Trop tôt » au 1, aide « bouton seul », aide
+  coupée, tracé masqué) ; vue de la caméra de concours du jeu, HUD affiché (animations coupées), temporisations de
+  `hud.js` sur l'horloge virtuelle, état du DOM relevé (`state`, bouton SAUT compris) ; le canal « ai » de l'image est
+  comparé à l'oracle (arrêt sinon). Les autres poses de `poses.json` sont gardées à leur place.
+- Unreal : la pose rejoue le canal « ai » jusqu'à l'image dans les aides du parcours (`AStridesShots::ApplyAidsPose`,
+  sol du relief du jeu ; aides figées ensuite) et le HUD (bouton SAUT compris) ; caméra posée à l'œil, au point visé et
+  au FOV vertical du web ; relevé `aide-unreal.json` (aides et bouton affichés, écarts au web). Copier ensuite les
+  captures `aide-*-unreal.png` et `aide-unreal.json` du dossier dédié dans `unreal/docs/parite/cso/`.
 
 ## 4. Montage côte à côte
 

@@ -107,8 +107,12 @@ inline FSlateFontInfo Font(const FJ& E)
 }
 inline FText Cased(const FJ& E, const FString& T)
 {
+	// text-transform du web : casse de la culture (accents compris : « Trop près » → « TROP PRÈS », tranche T9) ;
+	// FString::ToUpper ne change que l'ASCII.
 	const FString X = Str(E, TEXT("textTransform"));
-	return FText::FromString(X == TEXT("uppercase") ? T.ToUpper() : X == TEXT("lowercase") ? T.ToLower() : T);
+	if (X == TEXT("uppercase")) return FText::FromString(T).ToUpper();
+	if (X == TEXT("lowercase")) return FText::FromString(T).ToLower();
+	return FText::FromString(T);
 }
 inline FSlateBrush Rounded(const FLinearColor& Fill, double Radius, const FLinearColor& Outline = FLinearColor::Transparent, double OutlineW = 0)
 {
@@ -186,8 +190,9 @@ inline UTexture2D* DiscTexture(int32 N, const FLinearColor& C0, const FLinearCol
 	return T;
 }
 // Ombre floue d'un rectangle arrondi (box-shadow) : texture d'opacité (gaussienne approchée par une rampe lissée), à
-// étirer sur la boîte de l'élément agrandie du flou ; couleur portée par la teinte du pinceau.
-inline UTexture2D* SoftShadowTexture(int32 W, int32 H, double Radius, double Blur)
+// étirer sur la boîte de l'élément agrandie du flou ; couleur portée par la teinte du pinceau. bOutside : ombre extérieure
+// du web dessinée seulement hors de la boîte de bordure (halo d'un anneau, tranche T9).
+inline UTexture2D* SoftShadowTexture(int32 W, int32 H, double Radius, double Blur, bool bOutside = false)
 {
 	UTexture2D* T = UTexture2D::CreateTransient(W, H, PF_B8G8R8A8);
 	if (!T) return nullptr;
@@ -203,7 +208,7 @@ inline UTexture2D* SoftShadowTexture(int32 W, int32 H, double Radius, double Blu
 			const double Out = FMath::Sqrt(FMath::Square(FMath::Max(Px, 0.0)) + FMath::Square(FMath::Max(Py, 0.0))) + FMath::Min(FMath::Max(Px, Py), 0.0) - Radius;
 			// Flou CSS : écart-type = flou / 2 ; opacité = 1 − Φ(d / σ) approchée par une rampe lissée sur ±σ·2.
 			const double Sigma = FMath::Max(0.5, Blur / 2);
-			const double A = 1.0 - FMath::SmoothStep(-2 * Sigma, 2 * Sigma, Out);
+			const double A = bOutside && Out < 0 ? 0.0 : 1.0 - FMath::SmoothStep(-2 * Sigma, 2 * Sigma, Out);
 			uint8* P = D + (Y * W + X) * 4;
 			P[0] = P[1] = P[2] = 255;
 			P[3] = (uint8)FMath::Clamp(FMath::RoundToInt(A * 255.0), 0, 255);

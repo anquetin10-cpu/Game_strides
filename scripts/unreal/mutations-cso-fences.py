@@ -101,7 +101,7 @@ ATTENDUES = {
  'effleurement : seuil de vibration 0,04 -> 0,06': 'aucune barre passée avec une marge entre 0,04 et 0,06 m',
 }
 os.makedirs(out, exist_ok=True)
-others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'Text.cpp', 'SaveGame.cpp')]
+others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp')]
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 undetected = []
