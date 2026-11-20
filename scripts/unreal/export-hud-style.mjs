@@ -31,7 +31,7 @@
 //    Content/Data/ui/ ; oracle unreal/core/tests/oracles/cso_pause.json (bascules de la carte Pause cliquées) ; poses
 //    cmd-joystick-* et cmd-pause-* de poses.json et leurs captures web.
 //
-//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs [--shots] [--no-oracle] | [--controls]
+//   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-hud-style.mjs [--shots [--specs=hud-refus,…]] [--no-oracle] | [--controls]
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -50,6 +50,8 @@ const CONTROLS = process.argv.includes('--controls');
 // --jump-states (tranche T9, seul : rien d'autre n'est réécrit) : bouton SAUT dans chaque état de l'aide à l'appel (page
 // tactile, HUD de la pose hud-course comme --controls) : Content/Data/cso_jump_style.json.
 const JUMP_STATES = process.argv.includes('--jump-states');
+// --specs=hud-refus,… (avec --shots) : seulement ces états ; les autres poses hud-* de poses.json sont gardées telles quelles.
+const SPECS_ONLY = (process.argv.find((a) => a.startsWith('--specs=')) || '').slice(8).split(',').filter(Boolean);
 const STYLE_VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
 const ORACLE_HEIGHTS = [390, 768];
 // Appels du HUD rejoués (les autres méthodes enregistrées — notify, dialog, jumpEarly — relèvent d'autres tranches).
@@ -472,7 +474,9 @@ if (SHOTS && !CONTROLS && !JUMP_STATES) {
   const lastAdjust = droit.frames.filter((f) => f.ch?.s?.ca && f.board).pop();
   const deux = run('t4-deux-refus', 'fr');
   const elim = findCall(deux, 'big', (a) => a[0] === 'ÉLIMINÉ');
-  const specs = [
+  // Tranche T12 (recette, étape 7 de cso-spec.md §13) : premier refus compté, toast « Refus au … · +4 ».
+  const refus = findCall(deux, 'toast', (a) => a[0].startsWith('Refus au '));
+  const allSpecs = [
     { name: 'hud-cloche', run: 't4-cloche', frame: cloche.f + HOLD, desc: 'cloche : « CLOCHE », sous-titre et astuce de l’entrée en piste, tableau « Départ 45 s · accordé 64 s »' },
     { name: 'hud-depart', run: 't4-cloche', frame: cloche.f + 75, desc: 'avant le départ, 2,5 s après la cloche : grand message retiré, tableau « Départ … s · accordé 64 s », astuce' },
     { name: 'hud-course', run: 't4-sans-faute', frame: firstFrame(sf, (f) => f.board?.txt?.[3] === '▸ 4A') + HOLD, desc: 'en course, obstacle suivant « ▸ 4A », mot d’appel du 3' },
@@ -481,7 +485,10 @@ if (SHOTS && !CONTROLS && !JUMP_STATES) {
     { name: 'hud-appel', run: 't7-parfait-barre-2', frame: perfectCall.f + HOLD, desc: `mot « ${perfect[0]} » du 1 sauté avec un appel parfait` },
     { name: 'hud-cadence', run: 'droit', frame: lastAdjust.f + 9, desc: 'crans de cadence affichés (0,3 s après le dernier réglage au joystick)' },
     { name: 'hud-elimine', run: 't4-deux-refus', frame: elim.f + HOLD, desc: 'deuxième refus : « ÉLIMINÉ », motif, toast du refus' },
+    { name: 'hud-refus', run: 't4-deux-refus', frame: refus.f + HOLD, desc: `premier refus compté : toast « ${refus.args[0]} »` },
   ];
+  const specs = SPECS_ONLY.length ? allSpecs.filter((x) => SPECS_ONLY.includes(x.name)) : allSpecs;
+  if (SPECS_ONLY.length && specs.length !== SPECS_ONLY.length) throw new Error(`--specs : états inconnus (${SPECS_ONLY.join(', ')})`);
   const poses = [];
   for (const v of STYLE_VIEWS) {
     await setView(v);
@@ -504,7 +511,8 @@ if (SHOTS && !CONTROLS && !JUMP_STATES) {
       console.log('pose', name, 'image', s.frame, JSON.stringify(info.board), info.last.to.map((t) => t[0]).join(' | '), info.last.bg[0] ? '' : `[${info.last.bg[1]}]`, info.last.fb[0]);
     }
   }
-  posesDoc.poses = posesDoc.poses.filter((p) => !p.name.startsWith('hud-')).concat(poses);
+  const shot = new Set(poses.map((p) => p.name));
+  posesDoc.poses = SPECS_ONLY.length ? posesDoc.poses.filter((p) => !shot.has(p.name)).concat(poses) : posesDoc.poses.filter((p) => !p.name.startsWith('hud-')).concat(poses);
   writeFileSync(posesFile, JSON.stringify(posesDoc, null, 1) + '\n');
   console.log('poses :', posesFile);
 }

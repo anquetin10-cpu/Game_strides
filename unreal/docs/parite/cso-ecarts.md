@@ -1276,6 +1276,7 @@ lu en jeu sur Mac sans écoute ; **aucun appareil iOS**, **aucun paquet iOS** (d
 - **Paquet iOS complet : non fait (disque)** : 12,0 Go libres après la compilation IOS (12,8 Go avant), sous le seuil de
   12 Go exigé avant ET après l'estimation (cuisson + mise en scène + archive : environ 3 Go d'après les sorties du
   18/11 : `Saved/Cooked` 710 Mo, `Saved/StagedBuilds` 1,2 Go, archive 0,9 Go).
+- **Recette (§13)** : voir `unreal/docs/validation-mac-2026-11-20.md` (table des 13 étapes et montages).
 
 ### Contrôle des remarques des contrôles adverses (hygiène, 20/11/2026)
 

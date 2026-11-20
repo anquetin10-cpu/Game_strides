@@ -696,6 +696,138 @@
 				"joystickOpacity": 0,
 				"tactile": false
 			}
+		},
+		{
+			"name": "hud-refus-844x390",
+			"frames": 505,
+			"diffs": [],
+			"shown": [
+				"board=10,27|/ 64 s|4 pts|▸ 4A",
+				"hint=Refus dans le double : reprends-le au <b>4A</b>.",
+				"toast=Refus au 4B · +4"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-refus-667x308",
+			"frames": 505,
+			"diffs": [],
+			"shown": [
+				"board=10,27|/ 64 s|4 pts|▸ 4A",
+				"hint=Refus dans le double : reprends-le au <b>4A</b>.",
+				"toast=Refus au 4B · +4"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
 		}
 	]
 }

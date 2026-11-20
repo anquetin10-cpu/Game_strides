@@ -135,6 +135,9 @@ Unreal (rendu GPU réel, jamais `-nullrhi` ; une seule instance d'UnrealEditor, 
   [-StridesShotsDir=<dossier dédié>] -abslog="$PWD/.tmp/shots-cso.log"
 ```
 
+- Lancer `-StridesShots=cso` **par famille de poses** (`-StridesPose=<préfixe>`) : en une seule session, les poses
+  `entree-1-*` et `entree-2-*` jouées après d'autres poses n'ouvrent pas la carte (constaté le 20/11/2026, T12 ; par famille,
+  captures identiques aux versionnées).
 - `-StridesShots=cso` lit `poses.json` (`-StridesPoses=<fichier>` pour un autre) ; `-StridesPose=<préfixe>` : seulement
   les poses dont le nom commence ainsi. Sans `-StridesShotsDir`, chaque capture va au chemin `unreal` de sa pose
   (`unreal/docs/parite/cso/<pose>-unreal.png`, versionné) ; avec, au même nom dans le dossier donné (essai sans toucher

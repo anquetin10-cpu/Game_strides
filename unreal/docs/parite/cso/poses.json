@@ -11053,6 +11053,196 @@
    "frame": 901,
    "web": "unreal/docs/parite/cso/bilan-4-trois-barres-bas-667x308-web.png",
    "unreal": "unreal/docs/parite/cso/bilan-4-trois-barres-bas-667x308-unreal.png"
+  },
+  {
+   "name": "hud-refus-844x390",
+   "desc": "HUD d’épreuve (tranche T7) : premier refus compté : toast « Refus au 4B · +4 » ; exécution t4-deux-refus (fr) rejouée dans le HUD jusqu’à l’image 504 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-deux-refus.fr.json",
+    "frame": 504
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [
+     [
+      "Refus au 4B · +4",
+      ""
+     ]
+    ],
+    "hi": [
+     false,
+     "Refus dans le double : reprends-le au <b>4A</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     true
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "10,27",
+     "/ 64 s",
+     "4 pts",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-refus-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-refus-844x390-unreal.png"
+  },
+  {
+   "name": "hud-refus-667x308",
+   "desc": "HUD d’épreuve (tranche T7) : premier refus compté : toast « Refus au 4B · +4 » ; exécution t4-deux-refus (fr) rejouée dans le HUD jusqu’à l’image 504 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "hour": 15.082,
+   "eye": [
+    325.16195700806,
+    6.4,
+    -200.9668728817433
+   ],
+   "target": [
+    314.5476990035919,
+    4.1,
+    -211.58113088621138
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 320.159662538761,
+    "z": -205.96916735104227,
+    "h": -2.3561944901923404
+   },
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t4-deux-refus.fr.json",
+    "frame": 504
+   },
+   "sunDir": [
+    -0.262334,
+    0.768316,
+    0.583842
+   ],
+   "state": {
+    "to": [
+     [
+      "Refus au 4B · +4",
+      ""
+     ]
+    ],
+    "hi": [
+     false,
+     "Refus dans le double : reprends-le au <b>4A</b>.",
+     false
+    ],
+    "bg": [
+     true,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     false
+    ],
+    "fb": [
+     "",
+     "jump-fb good off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     true
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "10,27",
+     "/ 64 s",
+     "4 pts",
+     "▸ 4A"
+    ]
+   },
+   "web": "unreal/docs/parite/cso/hud-refus-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/hud-refus-667x308-unreal.png"
   }
  ]
 }
