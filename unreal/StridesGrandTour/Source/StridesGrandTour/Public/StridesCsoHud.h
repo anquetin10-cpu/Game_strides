@@ -43,6 +43,9 @@ public:
 	void Refresh(const strides::CsoHud& H, const FVector2D& ViewCss);
 	// Textes et visibilités affichés (tests) : « partie=texte » pour chaque élément visible.
 	TArray<FString> Describe() const;
+	// Style appliqué au toast I (taille de police en px CSS, marges intérieures, largeur maximale) : tests du changement de
+	// viewport (rotation, redimensionnement).
+	FString ToastStyle(int32 I) const;
 	// Facteur de pixels de la plateforme (pixels physiques par px CSS) : 1 sur un écran de Mac non Retina.
 	static double PixelRatio();
 	// Style du viewport le plus proche (hauteur) dans le relevé du navigateur.

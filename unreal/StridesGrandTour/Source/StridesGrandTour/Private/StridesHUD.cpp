@@ -45,6 +45,10 @@ void AStridesHUD::DrawHUD()
 {
 	Super::DrawHUD();
 	EventT -= GetWorld()->GetDeltaSeconds();
+	// Épreuve du monde cherchée à chaque image tant qu'aucune n'est connue (parcours apparu après BeginPlay, monde de test).
+	if (!Course.IsValid() || !Course->Run())
+		for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
+			if (It->Run()) { Course = *It; break; }
 	// Épreuve (mode concours) : interface d'épreuve UMG seule, ni lignes de débogage ni minicarte.
 	bDrewDebug = DebugVisible(Course.IsValid() && Course->Run() ? &Course->HudModel() : nullptr);
 	if (!bDrewDebug) return;

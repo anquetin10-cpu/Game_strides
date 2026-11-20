@@ -108,7 +108,7 @@
   "js": [
    "src/world/layout.js"
   ],
-  "unreal": "Content/Data/world_architecture.json (poi, regions, roads) lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:121-148 ; minicarte AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:124-152) ; cible de mission UStridesProgressionSubsystem::ActiveTarget (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-81)",
+  "unreal": "Content/Data/world_architecture.json (poi, regions, roads) lu par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:121-148 ; minicarte AStridesHUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:128-156) ; cible de mission UStridesProgressionSubsystem::ActiveTarget (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-81)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:80, 14 lieux) et Strides.World.CareerGraph (:79-108, lieux des missions connus) : réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026), mais sur un JSON écrit à la main, sans oracle exporté de POI.",

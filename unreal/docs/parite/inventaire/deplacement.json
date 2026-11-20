@@ -6,7 +6,7 @@
   "js": [
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:49-53 (MaxWalkSpeed 140 cm/s, orientation vers le déplacement 540°/s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:125-135 (AddMovementInput relatif au lacet de contrôle)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:49-53 (MaxWalkSpeed 140 cm/s, orientation vers le déplacement 540°/s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:127-137 (AddMovementInput relatif au lacet de contrôle)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test. validation-mac-2026-11-17.md ne cite pas la marche à pied (seulement monter, descendre, l.15) ; README.md:35 l'affirme vérifiée, non prouvé. Manque : oracle des vitesses + capture côte à côte.",
@@ -20,7 +20,7 @@
   "js": [
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:118-123 (Rider() selon le pawn possédé) ; StridesRider.cpp:111,133 (Possess cheval / cavalier) ; StridesRider.cpp:54-64 (caméra à pied : bras 4,2 m, FOV 55) ; StridesGameMode.cpp:26,91-94 (départ à pied, 2 m à gauche du cheval)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:120-125 (Rider() selon le pawn possédé) ; StridesRider.cpp:111,133 (Possess cheval / cavalier) ; StridesRider.cpp:54-64 (caméra à pied : bras 4,2 m, FOV 55) ; StridesGameMode.cpp:26,91-94 (départ à pied, 2 m à gauche du cheval)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 : boucle monter / descendre vérifiée à l'écran (bascule à pied ↔ à cheval). Aucun test automatisé ni capture de parité.",
@@ -135,7 +135,7 @@
   "js": [
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:150-156 (E, X manette, bouton MONTER) ; StridesHUD.cpp:43",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:152-158 (E, X manette, bouton MONTER) ; StridesHUD.cpp:43",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran). Aucun test ni capture côte à côte.",
@@ -177,7 +177,7 @@
   "js": [
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-118 (refus seulement pendant un saut) ; StridesPlayerController.cpp:150-156",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-118 (refus seulement pendant un saut) ; StridesPlayerController.cpp:152-158",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (descendre vérifié à l'écran). Aucun test.",
@@ -206,7 +206,7 @@
    "src/gameplay/horseMount.js",
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:82 (rechargement : Dismount avant de replacer) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-134 (Dismount : MountT remis à -1, cavalier posé à pied 1,2 m à gauche du cheval, ce qui interrompt aussi la transition de 0,8 s) ; StridesPlayerController.cpp:154 (E pendant la transition → Dismount)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:82 (rechargement : Dismount avant de replacer) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-134 (Dismount : MountT remis à -1, cavalier posé à pied 1,2 m à gauche du cheval, ce qui interrompt aussi la transition de 0,8 s) ; StridesPlayerController.cpp:156 (E pendant la transition → Dismount)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test d'interruption.",
@@ -933,7 +933,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
-  "ecart": "Les polylignes de routes sont chargées (Data->Roads, dessinées par StridesHUD.cpp:132-134) mais il n'existe ni graphe ni calcul d'itinéraire.",
+  "ecart": "Les polylignes de routes sont chargées (Data->Roads, dessinées par StridesHUD.cpp:136-138) mais il n'existe ni graphe ni calcul d'itinéraire.",
   "tranche": "c"
  },
  {
@@ -944,7 +944,7 @@
    "src/gameplay/gps.js",
    "src/ui/minimap.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:160-172 (cible GPS sur la minicarte, ramenée au bord du cadre hors champ, distance « GPS n m »)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:164-176 (cible GPS sur la minicarte, ramenée au bord du cadre hors champ, distance « GPS n m »)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni capture ; minicarte non citée dans validation-mac.",

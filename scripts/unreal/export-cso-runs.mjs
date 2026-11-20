@@ -206,6 +206,10 @@ const SCENARIOS = [
     acts: [{ do: 'line', until: 'started' }, ...['1', '2', '3', '4A', '4B', '5', '6A', '6B', '7', '8'].map((label) => ({ do: 'jump', label, rule: 'good' })),
       { do: 'cross', line: 'finish', back: 4, v: 3, until: 'finished' }, { do: 'wait', frames: 10 }, { do: 'mode', to: 'foot', frames: 3 }, { do: 'card', extra: 5 }],
     desc: 'Sortie de piste écourtée : départ, les 10 éléments sautés (cheval posé devant chacun), cheval posé 4 m avant le milieu de la ligne d’arrivée à 3 m/s, arrivée ; 10 images plus tard, pied à terre (A.foot) : la sortie de piste s’arrête là, sans élimination, bilan.' },
+  // Tranche T7 (HUD d'épreuve) : mot « Appel parfait » et toast « Barre au 2 » d'une vraie exécution (critère de T7).
+  { id: 't7-parfait-barre-2', type: 't4', classic: true, maxFrames: 1000,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'perfect' }, { do: 'jump', label: '2', rule: 'far', far: 4.2 }, { do: 'wait', frames: 40 }],
+    desc: 'Appel parfait puis barre au 2 : départ ; le 1 sauté (cheval posé devant, 6,2 m/s, SAUT à la première image en bonne zone avec un écart de longueur sous 3 % : « Appel parfait ») ; le 2 sauté avec un appel trop loin (à 4,2 m de la première barre : barre tombée, toast « Barre au 2 · +4 · … ») ; 40 images après.' },
   // Scénarios de la tranche T6 (caméra de concours) contre le décor (repère : entrée de piste CSO_GATE ; le parcours ne
   // fait jamais toucher la perche) : la sonde bloque la perche, le recul se raccourcit (amorti 10 /s) puis s'allonge
   // (amorti 2,5 /s). Tribunes : boîte « stands » au nord de la carrière ; mât : mât « mast » de la lice nord.
@@ -1119,7 +1123,8 @@ function PAGE() {
     },
     // Obstacle sauté comme A.jumpObstacle : cheval posé dans l'axe (11 m avant, ou 3,4 m après l'élément précédent d'un
     // double), à 6,2 m/s ; joystick vers l'axe de l'obstacle ; SAUT selon `rule` : 'good' (bonne zone, sommet sur
-    // l'obstacle), 'far' (à `far` m de la première barre), 'none' (aucun appui : refus). Contrôle de T4 : `rev` = abord
+    // l'obstacle), 'far' (à `far` m de la première barre), 'perfect' (bonne zone et écart de longueur sous 3 % : « Appel
+    // parfait » de takeoffQuality, tranche T7), 'none' (aucun appui : refus). Contrôle de T4 : `rev` = abord
     // par l'arrière (sens inverse du saut, 11 m après l'obstacle) ; `ang` = abord à `ang` degrés de l'axe (ligne de marche
     // passant par le centre de l'obstacle, cap tenu) ; `back` = distance du point de pose au centre.
     jump: (a, st) => {
@@ -1147,7 +1152,9 @@ function PAGE() {
       const tg = g.obstacles.target(h);
       let jump = false;
       if (a.rule !== 'none' && !a.jumped && h.jumpT < 0 && tg && tg.o === o) {
-        const go = a.rule === 'far' ? tg.geo.rails[0].x <= (a.far ?? 4.2) : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
+        const go = a.rule === 'far' ? tg.geo.rails[0].x <= (a.far ?? 4.2)
+          : a.rule === 'perfect' ? tg.plan.zone === 'good' && Math.abs(tg.plan.dev || 0) < 0.03
+            : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
         if (go) jump = a.jumped = true;
       }
       return { move: [alt ? steerTo(h, Math.sin(hd), Math.cos(hd)) : steerTo(h, o.n.x, o.n.z), 0], jump };

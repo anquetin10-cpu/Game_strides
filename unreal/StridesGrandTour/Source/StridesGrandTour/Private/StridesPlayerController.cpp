@@ -81,6 +81,8 @@ void AStridesPlayerController::SetupInputComponent()
 	InstallInputContext();
 }
 
+UStridesTouchControls* AStridesPlayerController::TouchWidget() const { return Cast<UStridesTouchControls>(TouchControls); }
+
 void AStridesPlayerController::BeginPlay()
 {
 	Super::BeginPlay();

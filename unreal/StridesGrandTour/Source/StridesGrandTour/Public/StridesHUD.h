@@ -22,8 +22,10 @@ public:
 	// cso-ctl du jeu web, de l'entrée en piste à la sortie), l'interface d'épreuve UMG (UStridesCsoHud) le remplace et la
 	// minicarte est masquée (styles.css:988).
 	static bool DebugVisible(const strides::CsoHud* RaceHud) { return !RaceHud || !RaceHud->masked(strides::CsoHudElement::Minimap); }
-	// Vrai si le HUD de débogage a été dessiné à la dernière image (tests).
+	// Vrai si le HUD de débogage a été dessiné à la dernière image (tests, relevé des captures en partie réelle).
 	bool DrewDebugLastFrame() const { return bDrewDebug; }
+	// Toile de dessin hors PostRender (tests : DrawHUD appelé dans un monde de test).
+	void SetCanvasForTest(class UCanvas* C) { Canvas = C; }
 private:
 	// Minicarte nord en haut, centrée sur le joueur : zones, routes, lieux, obstacles, cheval, cap et GPS.
 	void DrawMinimap(const APawn* P, const class UStridesProgressionSubsystem* Progress);

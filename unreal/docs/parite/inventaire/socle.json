@@ -108,7 +108,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "UStridesSaveSubsystem::LoadNow (StridesSaveSubsystem.cpp:68-92), déclenché seulement par F9 ou le bouton CHARGER (StridesPlayerController.cpp:60, 161 ; StridesTouchControls.cpp:50)",
+  "unreal": "UStridesSaveSubsystem::LoadNow (StridesSaveSubsystem.cpp:68-92), déclenché seulement par F9 ou le bouton CHARGER (StridesPlayerController.cpp:60, 161 ; StridesTouchControls.cpp:55)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (« sauvegarder puis recharger » contrôlé à l'écran) ; aucun oracle JS.",
@@ -155,7 +155,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Le téléphone Unreal n'est qu'un drapeau d'affichage (StridesPlayerController.cpp:163) : chrono du parcours, cheval et détection de mission continuent pendant qu'il est ouvert.",
+  "ecart": "Le téléphone Unreal n'est qu'un drapeau d'affichage (StridesPlayerController.cpp:165) : chrono du parcours, cheval et détection de mission continuent pendant qu'il est ouvert.",
   "tranche": "socle"
  },
  {
@@ -170,7 +170,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "OnMove et OnJump ne testent pas bPhoneOpen (StridesPlayerController.cpp:125-149).",
+  "ecart": "OnMove et OnJump ne testent pas bPhoneOpen (StridesPlayerController.cpp:127-151).",
   "tranche": "socle"
  },
  {
@@ -230,7 +230,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Sauvegarde uniquement manuelle : F5 ou bouton SAUVER (StridesPlayerController.cpp:59, 160 ; StridesTouchControls.cpp:49).",
+  "ecart": "Sauvegarde uniquement manuelle : F5 ou bouton SAUVER (StridesPlayerController.cpp:59, 160 ; StridesTouchControls.cpp:54).",
   "tranche": "socle"
  },
  {
@@ -582,7 +582,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "AStridesHUD::DrawMinimap (StridesHUD.cpp:84-195) : régions, routes, obstacles, lieux, autres chevaux, cible GPS ramenée au bord, flèche de cap, carré de 320 m",
+  "unreal": "AStridesHUD::DrawMinimap (StridesHUD.cpp:88-199) : régions, routes, obstacles, lieux, autres chevaux, cible GPS ramenée au bord, flèche de cap, carré de 320 m",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; minicarte non citée dans unreal/docs/validation-mac-2026-11-17.md.",
@@ -628,7 +628,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Pas de nom de zone ; les régions de world_architecture.json ne servent qu'aux aplats de la minicarte (StridesHUD.cpp:124-131).",
+  "ecart": "Pas de nom de zone ; les régions de world_architecture.json ne servent qu'aux aplats de la minicarte (StridesHUD.cpp:128-135).",
   "tranche": "c"
  },
  {
@@ -766,7 +766,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "Ligne HUD « <rang> · N crédits · N réputation » (StridesHUD.cpp:52)",
+  "unreal": "Ligne HUD « <rang> · N crédits · N réputation » (StridesHUD.cpp:56)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; ligne non citée dans unreal/docs/validation-mac-2026-11-17.md.",
@@ -940,7 +940,7 @@
   "js": [
    "src/core/input.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:73-91 (keyboardMove, portage de input.js poll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:125-140 (OnMove : déplacement clavier du cœur, drapeau clavier transmis au cheval)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:73-91 (keyboardMove, portage de input.js poll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:127-142 (OnMove : déplacement clavier du cœur, drapeau clavier transmis au cheval)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "keyboardMove comparé aux 258 images au clavier des scénarios rampe-clavier et ctrl-alt (input.move et keyMove relevés après input.poll, test_core.cpp:447, 0 écart) ; le branchement dans le contrôleur est compilé, pas joué.",
@@ -968,7 +968,7 @@
   "js": [
    "src/core/input.js"
   ],
-  "unreal": "UStridesTouchControls : SAUT, MONTER, ALLURE +, ALLURE -, SAUVER, CHARGER, TÉLÉPHONE, MISSION (StridesTouchControls.cpp:45-62), affichés sur iOS ou avec -TouchControls (StridesPlayerController.cpp:94-104)",
+  "unreal": "UStridesTouchControls : SAUT, MONTER, ALLURE +, ALLURE -, SAUVER, CHARGER, TÉLÉPHONE, MISSION (StridesTouchControls.cpp:50-67), affichés sur iOS ou avec -TouchControls (StridesPlayerController.cpp:96-106)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; aucun appareil iOS détecté (unreal/docs/validation-mac-2026-11-17.md:44-45).",
@@ -1011,7 +1011,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "AStridesPlayerController::OnInteract : monter ou descendre seulement (StridesPlayerController.cpp:150-157)",
+  "unreal": "AStridesPlayerController::OnInteract : monter ou descendre seulement (StridesPlayerController.cpp:152-159)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter puis descendre à l'écran).",
@@ -1041,7 +1041,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "OnPhone bascule bPhoneOpen et le HUD dessine le panneau du téléphone : applications, mission active, carrière (StridesPlayerController.cpp:163 ; StridesHUD.cpp:60-78)",
+  "unreal": "OnPhone bascule bPhoneOpen et le HUD dessine le panneau du téléphone : applications, mission active, carrière (StridesPlayerController.cpp:165 ; StridesHUD.cpp:64-82)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; téléphone non cité dans unreal/docs/validation-mac-2026-11-17.md.",
@@ -1059,7 +1059,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Seule la démo automatique du parcours (F8, StridesPlayerController.cpp:162) pilote le cheval, pour une autre fonction.",
+  "ecart": "Seule la démo automatique du parcours (F8, StridesPlayerController.cpp:164) pilote le cheval, pour une autre fonction.",
   "tranche": "socle"
  },
  {
@@ -1366,7 +1366,7 @@
    "src/game.js",
    "src/main.js"
   ],
-  "unreal": "Option -TouchControls (StridesPlayerController.cpp:94) ; captures AStridesShots si demandées (StridesGameMode.cpp:108), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:66-109, résolution avant toute capture :119-134) ; démo du parcours F8 (StridesPlayerController.cpp:61, 162)",
+  "unreal": "Option -TouchControls (StridesPlayerController.cpp:96) ; captures AStridesShots si demandées (StridesGameMode.cpp:108), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:68-111, résolution avant toute capture :121-136) ; démo du parcours F8 (StridesPlayerController.cpp:61, 162)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Dossier de sortie des captures : test moteur Strides.Shots.OutputDir (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesShotsTests.cpp ; Result={Success} le 19/11/2026 : dossier protégé non vide refusé avec ou sans l'option, dossier vide accepté, option absolue ou relative à la racine du dépôt, mode cso sans option sur les chemins de poses.json, capture préexistante intacte, -StridesShots sans option refusé tant que Saved/Screenshots/Strides contient des fichiers). Essais réels du 19/11/2026 (jeu -game, rendu Metal) : -StridesShots sans option : journal « Strides shots: REFUS, aucune capture écrite », sortie à l'image 1, les 33 fichiers de Saved/Screenshots/Strides et MacEditor identiques avant et après (shasum, date, taille) ; -StridesShots=cso -StridesPose=carriere -StridesShotsDir=<dossier absolu> : carriere-aerienne-unreal.png écrite dans ce dossier en 844 × 390 (sips), captures versionnées de unreal/docs/parite/cso inchangées ; -StridesShots -StridesShotsDir=.tmp/shots/r0-essai (relatif à la racine du dépôt) : 26 captures dans ce dossier, parcours de démonstration jusqu'à l'arrivée. Aucun test des autres options (-TouchControls, F8).",
@@ -1457,7 +1457,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "HUD provisoire : texte Canvas coloré (StridesHUD.cpp:29-54), boutons sombres à 82 % d'opacité (StridesTouchControls.cpp:18).",
+  "ecart": "HUD provisoire : texte Canvas coloré (StridesHUD.cpp:29-58), boutons sombres à 82 % d'opacité (StridesTouchControls.cpp:18).",
   "tranche": "h"
  },
  {
@@ -1471,7 +1471,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Positions fixes en pixels sans marge de sécurité (StridesTouchControls.cpp:45-52 ; minicarte à 28 px du bord, StridesHUD.cpp:89).",
+  "ecart": "Positions fixes en pixels sans marge de sécurité (StridesTouchControls.cpp:50-57 ; minicarte à 28 px du bord, StridesHUD.cpp:93).",
   "tranche": "h"
  },
  {
@@ -1481,7 +1481,7 @@
   "js": [
    "src/styles.css"
   ],
-  "unreal": "AStridesHUD::DrawHUD : lignes de texte à gauche (StridesHUD.cpp:25-83) et minicarte en haut à droite (StridesHUD.cpp:84-195)",
+  "unreal": "AStridesHUD::DrawHUD : lignes de texte à gauche (StridesHUD.cpp:25-87) et minicarte en haut à droite (StridesHUD.cpp:88-199)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:14 (HUD visible), :18 (allures lues au HUD).",
@@ -1495,7 +1495,7 @@
   "js": [
    "src/styles.css"
   ],
-  "unreal": "Téléphone dessiné au Canvas : les 10 applications de world_architecture.json en tuiles inertes sur 2 colonnes, mission active et compteur de carrière (StridesHUD.cpp:60-78)",
+  "unreal": "Téléphone dessiné au Canvas : les 10 applications de world_architecture.json en tuiles inertes sur 2 colonnes, mission active et compteur de carrière (StridesHUD.cpp:64-82)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; téléphone non cité dans unreal/docs/validation-mac-2026-11-17.md.",

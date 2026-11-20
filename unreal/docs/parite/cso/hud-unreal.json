@@ -46,21 +46,21 @@
 		},
 		{
 			"name": "hud-barre-844x390",
-			"frames": 270,
+			"frames": 336,
 			"diffs": [],
 			"shown": [
-				"board=2,43|/ 64 s|4 pts|▸ 2",
+				"board=4,63|/ 64 s|4 pts|▸ 3",
 				"fb=Appel trop loin",
-				"toast=Barre au 1 · +4 · Appel trop loin"
+				"toast=Barre au 2 · +4 · Appel trop loin"
 			],
 			"window": "844x390"
 		},
 		{
 			"name": "hud-appel-844x390",
-			"frames": 269,
+			"frames": 270,
 			"diffs": [],
 			"shown": [
-				"board=2,40|/ 64 s|0 pt|▸ 2",
+				"board=2,43|/ 64 s|0 pt|▸ 2",
 				"fb=Appel parfait"
 			],
 			"window": "844x390"
@@ -129,21 +129,21 @@
 		},
 		{
 			"name": "hud-barre-667x308",
-			"frames": 270,
+			"frames": 336,
 			"diffs": [],
 			"shown": [
-				"board=2,43|/ 64 s|4 pts|▸ 2",
+				"board=4,63|/ 64 s|4 pts|▸ 3",
 				"fb=Appel trop loin",
-				"toast=Barre au 1 · +4 · Appel trop loin"
+				"toast=Barre au 2 · +4 · Appel trop loin"
 			],
 			"window": "667x308"
 		},
 		{
 			"name": "hud-appel-667x308",
-			"frames": 269,
+			"frames": 270,
 			"diffs": [],
 			"shown": [
-				"board=2,40|/ 64 s|0 pt|▸ 2",
+				"board=2,43|/ 64 s|0 pt|▸ 2",
 				"fb=Appel parfait"
 			],
 			"window": "667x308"

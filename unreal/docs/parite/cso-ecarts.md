@@ -34,7 +34,7 @@ la citation reste donc valable mais à revérifier sur HEAD.
    pas une partie jouée ni une validation VM ; aucun niveau n'est relevé sur cette base.
 5. **Captures** : web `tests/e2e/out/cso/1-presentation.png` à `7-barre-au-sol.png` (844 × 390). Unreal :
    `unreal/StridesGrandTour/Saved/Screenshots/Strides/` = décor (01 à 08), `09_jeu`, `10_galop_00` à `18`, en 1600 × 900,
-   FOV 70 (`SG/StridesShots.cpp:28-35`, `67`), aucune dans une pose de la recette CSO. `unreal/docs/parite/<système>/` :
+   FOV 70 (`SG/StridesShots.cpp:30-37`, `67`), aucune dans une pose de la recette CSO. `unreal/docs/parite/<système>/` :
    aucune capture.
 
 ---
@@ -70,7 +70,7 @@ en fonctions) ; rien de ce qui se voit ou s'entend n'est prouvé.
 6. **Refus** décidé seulement à moins de 0,55 m de la première barre mesurés depuis l'origine du cheval
    (`SG/StridesHorse.cpp:249-256`), arrêt instantané sans freinage ni cabré, aucune règle de recomptage ; toast « +4 »
    même quand le juge ignore le refus (`SG/StridesCourse.cpp:91-92`).
-7. **Aucune interface d'épreuve** : HUD texte de débogage (`SG/StridesHUD.cpp:25-79`), minicarte et huit boutons
+7. **Aucune interface d'épreuve** : HUD texte de débogage (`SG/StridesHUD.cpp:25-83`), minicarte et huit boutons
    tactiles toujours visibles, aucun son dans tout `Source/`.
 8. **Caméra** : 55° horizontaux (≈ 27,1° verticaux en 844 × 390, calcul) contre 58° verticaux (≈ 100,4° horizontaux) :
    champ vertical environ deux fois plus étroit (`SG/StridesHorse.cpp:63`). **Mesuré en T6** (matrice de projection du
@@ -90,7 +90,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
 | 1.1 | Poteau « Chrono » en (336 ; −184), zone r 6 m centrée sur CSO_GATE, à cheval, sans mission | absent | aucun | aucune occurrence dans `Source/` | pas de poteau ni d'interaction ; la ligne de départ est toujours active |
-| 1.1 | App Activités : carte, meilleur temps, bouton `Itinéraire` (GPS) | absent | aucun | téléphone = liste de noms (`SG/StridesHUD.cpp:57-75`) | pas d'app Activités, pas de GPS vers le poteau |
+| 1.1 | App Activités : carte, meilleur temps, bouton `Itinéraire` (GPS) | absent | aucun | téléphone = liste de noms (`SG/StridesHUD.cpp:61-79`) | pas d'app Activités, pas de GPS vers le poteau |
 | 1.1 | Lancement : `PARCOURS DU PÔLE` / `Événement · Entraînement` 2600 ms, `notify`, bandeau d'objectif | absent | aucun | — | — |
 | 1.2 | Enchaînement des étapes (goto, capacité, présentation, entrée, cloche, parcours, bilan, record) | absent | aucun | juge créé au démarrage (`SG/StridesWorldDirector.cpp:40-45`) | aucune machine d'étapes |
 | 1.2 | Contrôle de capacité (grille v × d, dialogue Entraîneur, reach) | absent | aucun | — | — |
@@ -143,7 +143,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 | 3 | Tactile : joystick flottant r 58 px, zone x < 45 %, y > 30 % | absent | aucun | `unreal/StridesGrandTour/Config/DefaultInput.ini:4-5` | joysticks virtuels fixes du moteur |
 | 3 | Sortie de piste 2,6 s, cadence → 1,9 m/s à −1,6 m/s² | absent | aucun | — | — |
 | 3 | Menu pause : rappel des commandes, bascules `Tracé au sol` et `Aide au saut` | absent | aucun | `SCh/SaveGame.h:26` | réglage `jumpAid` stocké sans effet ; `courseLine` absent |
-| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | absent | aucun | `SG/StridesPlayerController.cpp:156` ; `SG/StridesCourse.cpp:51` | téléphone ouvert : cheval et chrono continuent |
+| 3 | Gel cheval + chrono (téléphone, pause, carte, dialogue) | absent | aucun | `SG/StridesPlayerController.cpp:158` ; `SG/StridesCourse.cpp:51` | téléphone ouvert : cheval et chrono continuent |
 
 ### 2.4 Aide à l'appel (§4)
 
@@ -151,7 +151,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 |---|---|---|---|---|---|
 | 4.1 | État `timing()` (none en l'air, en refus, v < 3,2 ; refuse → near ; aide off → none) | absent | aucun | — | — |
 | 4.1 | Obstacle visé `target()` (épaules à 0,4 m, cos ≥ 0,5, première ≤ 13 m, dernière ≥ −0,3, \|u\| ≤ 2,25) | partiel | compile | `SG/StridesCourse.cpp:60-74` | centre de l'obstacle depuis l'origine ; écart latéral < 2,5 m ; aucun filtre d'angle ; « centre devant » au lieu de « dernière barre ≥ −0,3 » |
-| 4.1 | Bouton SAUT coloré (Trop loin / Saute ! / Trop près / Saut / Trop tôt 600 ms) | absent | aucun | `SG/StridesTouchControls.cpp:43` | libellé fixe `SAUT`, fond fixe |
+| 4.1 | Bouton SAUT coloré (Trop loin / Saute ! / Trop près / Saut / Trop tôt 600 ms) | absent | aucun | `SG/StridesTouchControls.cpp:48` | libellé fixe `SAUT`, fond fixe |
 | 4.2 | Zone d'appel au sol (`takeoffZone`, bandes verte / ambre) | absent | aucun | — | — |
 | 4.3 | Tracé au sol (tirets, opacités, masquage, règle des 15 m) | absent | aucun | — | — |
 | 4.4 | Repère conique au-dessus de l'obstacle suivant | absent | aucun | — | — |
@@ -223,16 +223,16 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | partiel | testé | `SC/CsoHud.cpp:42`, `SG/StridesHUD.cpp:49`, `SG/StridesTouchControls.cpp:74` | table des masquages du navigateur rejouée (T7) ; pause et SAUT 104 × 104 en T8 ; joysticks virtuels du moteur encore dessinés |
-| 9 | Tableau `.cso-board` (chrono, accordé, points, prochain, style) | partiel | testé | `SG/StridesCsoHud.cpp:447` | UMG, montages `cso/hud-*` ; police du moteur (Geist non embarquée), « ▸ » dessiné |
-| 9 | Crans de cadence (6 barres, 2 s après réglage) | partiel | testé | `SC/CsoHud.cpp:190` | logique rejouée (`cso_hud.json`), montage `cso/hud-cadence-*` ; fondu non comparé image par image |
+| 9 | Classes `cso-ctl` / `cso-sober` / `cso-on` et masquages | partiel | testé | `SC/CsoHud.cpp:42`, `SG/StridesHUD.cpp:53`, `SG/StridesTouchControls.cpp:79` | table des masquages du navigateur rejouée (T7) ; pause et SAUT 104 × 104 en T8 ; joysticks virtuels du moteur encore dessinés |
+| 9 | Tableau `.cso-board` (chrono, accordé, points, prochain, style) | partiel | testé | `SG/StridesCsoHud.cpp:567` | UMG, montages `cso/hud-*` ; police du moteur (Geist non embarquée), « ▸ » dessiné |
+| 9 | Crans de cadence (6 barres, 2 s après réglage) | partiel | testé | `SC/CsoHud.cpp:192` | logique rejouée (`cso_hud.json`), montage `cso/hud-cadence-*` ; fondu non comparé image par image |
 | 9 | Objectif masqué en épreuve | partiel | testé | `SC/CsoHud.cpp:42` | HUD de débogage masqué en mode concours ; carte d'objectif non portée |
-| 9 | Astuce `.hint` | partiel | testé | `SC/CsoHud.cpp:139-154` | rejouée et affichée (texte riche) ; logement dans la carte d'objectif non dessiné |
-| 9 | Toasts (2 au plus, 1 si h ≤ 420 px, 3200 ms) | partiel | testé | `SC/CsoHud.cpp:120` | rejoués (deux toasts : séquence synthétique) ; police, ombre portée |
-| 9 | Grand message (titre, sous-titre, `pop` 0,5 s) | partiel | testé | `SC/CsoHud.cpp:129` | rejoué, montages ; animation non comparée image par image |
-| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | compile | `SG/StridesTouchControls.cpp:45` | 150 × 92 à (−32 ; −132) ; seul bouton gardé en épreuve (T7), taille en T8 |
+| 9 | Astuce `.hint` | partiel | testé | `SC/CsoHud.cpp:141-156` | rejouée et affichée (texte riche) ; logement dans la carte d'objectif non dessiné |
+| 9 | Toasts (2 au plus, 1 si h ≤ 420 px, 3200 ms) | partiel | testé | `SC/CsoHud.cpp:122` | rejoués (deux toasts : séquence synthétique) ; police, ombre portée |
+| 9 | Grand message (titre, sous-titre, `pop` 0,5 s) | partiel | testé | `SC/CsoHud.cpp:131` | rejoué, montages ; animation non comparée image par image |
+| 9 | Bouton SAUT 104 × 104, 6 px du bord, 8 px du bas | partiel | compile | `SG/StridesTouchControls.cpp:50` | 150 × 92 à (−32 ; −132) ; seul bouton gardé en épreuve (T7), taille en T8 |
 | 9 | Bouton pause en haut à droite | absent | aucun | — | T8 |
-| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | partiel | testé | `SG/StridesTouchControls.cpp:74` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION masqués en épreuve (T7) |
+| 9 | Éléments masqués en épreuve (portefeuille, téléphone, BOOST, sifflet, cardio, endurance, action) | partiel | testé | `SG/StridesTouchControls.cpp:79` | MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION masqués en épreuve (T7) |
 | 9 | Notifications retenues puis relâchées | absent | aucun | — | — |
 
 ### 2.10 Caméra (§10)
@@ -265,7 +265,7 @@ Contrainte vérifiée : Pixel Streaming 2 est limité au Mac (`unreal/StridesGra
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
 | 12 | 14 événements sonores (notify, applause, bell, tone, snort, hoof, landing, railTouch, railFall, thud, fault, crowdOoh, neigh, cheer) et ambiance public | absent | aucun | aucune occurrence `Sound` / `Audio` dans `Source/` | — |
-| 13 | Captures Unreal aux poses de la recette (844 × 390) | absent | aucun | `SG/StridesShots.cpp:28-35`, `67`, `96-105` | captures de décor et de démo en 1600 × 900, FOV 70 ; aucune pose CSO |
+| 13 | Captures Unreal aux poses de la recette (844 × 390) | absent | aucun | `SG/StridesShots.cpp:30-37`, `67`, `96-105` | captures de décor et de démo en 1600 × 900, FOV 70 ; aucune pose CSO |
 
 ---
 
@@ -774,25 +774,59 @@ Principes communs :
   45 mutations, 44 détectées ; la 45e (ordre des temporisations à échéance égale) est équivalente par construction
   (rappels commutatifs, `ATTENDUES`). Montages `cso/hud-<état>-844x390.png`
   et `-667x308.png` (web à gauche) pour 8 états : cloche (« Départ 45 s · accordé 64 s », CLOCHE), avant le départ,
-  en course « ▸ 4A », dépassement en ambre (« 64,57 », 1 pt rouge, « Arrivée ✓ »), « Barre au 1 · +4 · Appel trop
-  loin » avec le mot, « Appel parfait », crans de cadence, ÉLIMINÉ ; état rejoué identique à l'état du DOM du web pour
+  en course « ▸ 4A », dépassement en ambre (« 64,57 », 1 pt rouge, « Arrivée ✓ »), « Barre au 2 · +4 · Appel trop
+  loin » avec le mot et « Appel parfait » (exécution `t7-parfait-barre-2`, depuis la correction), crans de cadence,
+  ÉLIMINÉ ; état rejoué identique à l'état du DOM du web pour
   les 16 poses (`cso/hud-unreal.json`). Démonstration F8 : « 60,25 / 64 s 0 pt Arrivée ✓ ». (5) Écarts restants :
   - police : le web charge Geist et Geist Mono depuis Google Fonts ; Unreal affiche Roboto et Droid Sans Mono du moteur
     (graisse 600 en gras, chiffres du chrono non monospaces, tableau 2 à 3 px plus haut) : choix et licence d'une
-    police embarquée à trancher ; « ▸ » (U+25B8) absent de toutes les polices du moteur : dessiné (triangle plein) ;
-    « ✓ » par la police de secours ; ombres portées absentes, une seule ombre du titre ;
-  - animations (pop, toastIn, hintIn, fondus) portées mais non comparées image par image : les captures montrent l'état
-    d'arrivée (animations CSS coupées dans la page de capture web) ;
+    police embarquée à trancher ; « ▸ » (U+25B8) absent de toutes les polices du moteur : dessiné (triangle plein, à la
+    taille de l'encre mesurée dans le navigateur) ; « ✓ » par la police de secours (vu comme « √ » sur hud-depassement) ;
+    ombres portées absentes, une seule ombre du titre (la première du text-shadow relevé, sans flou) ;
+  - animations (pop, toastIn, hintIn, fondu des crans) portées avec durée, courbe et image de départ relevées, mais non
+    comparées image par image : les captures montrent l'état d'arrivée (animations CSS coupées dans la page de capture
+    web) ; fondu de 0,25 s de l'astuce sous big-on non porté (masquée d'un coup) ;
   - bouton pause, bouton SAUT de 104 × 104 px et joysticks virtuels du moteur (visibles sur les captures Unreal) : T8 ;
     astuce dans la carte d'objectif (hors parcours) non dessinée, la carte n'étant pas portée ; hors mode concours (après
     l'élimination), la colonne du web commence après la minicarte, celle d'Unreal garde la position d'épreuve ;
   - facteur de pixels : écran du Mac (1 sur le Mac mini) ; iOS rend 1 par la plateforme générique (facteur natif 2 ou 3
-    attendu, à confirmer sur appareil) ; zones sûres iOS (`--st`) non traitées ; autres viewports : relevé le plus proche
-    en hauteur ;
+    attendu) : **non vérifié, risque ouvert** — le moteur installé n'a pas les sources privées iOS
+    (`GetDPIScaleFactorAtPoint` non surchargé d'après les en-têtes publics ; facteur de l'écran dans `IOSAppDelegate`
+    `NativeScale` / `MobileContentScaleFactor`, en Objective-C) et cette session n'a ni compilation iOS ni appareil ; à
+    traiter avec la recette sur appareil ; zones sûres iOS (`--st`) non traitées ; autres viewports : relevé le plus
+    proche en hauteur ;
   - objectif (setObjective) en jeu : présent tant que l'épreuve n'est pas terminée (le texte de mission de `missions.js`
-    n'est pas porté) ; le HUD en partie réelle n'a pas été capturé avec l'interface (captures de la démonstration sans
-    interface) ; les quatre scripts de mutations existants listent `CsoHud.cpp` (motifs tous applicables) mais n'ont pas
-    été relancés en entier.
+    n'est pas porté) ; les quatre scripts de mutations existants listent `CsoHud.cpp` (motifs tous applicables) mais
+    n'ont pas été relancés en entier ;
+  - historique : le premier commit de T7 (`40d4069b`) n'est pas cohérent seul — `mutations-cso-hud.py` y sort en code 1
+    (liste `ATTENDUES` vide alors que la mutation d'ordre à échéance égale n'est pas détectée) ; corrigé au commit
+    suivant (`4e225342`) ; historique non réécrit (jamais de force push).
+
+- **Correction après contrôle adverse (20/11/2026)** : (1) critère 2 prouvé à l'écran et par les effets réels, plus
+  seulement par des prédicats : `Strides.Cso.RunInGame` appelle `DrawHUD` du HUD de débogage en épreuve sur une toile de
+  844 × 390 (retour anticipé, `DrewDebugLastFrame` faux) et replie les commandes tactiles par
+  `UStridesTouchControls::Sync` (le corps de `NativeTick`, `VisibleButtons` = SAUT), puis 8 boutons au bilan ; nouveau
+  mode `-StridesShots=cso-jeu -TouchControls` : partie réelle en 844 × 390 avec l'interface, démonstration automatique de
+  l'épreuve, captures `cso/jeu-1-hors-epreuve.png` (lignes, minicarte, 8 boutons), `jeu-2-cloche.png`, `jeu-3-mot.png`,
+  `jeu-4-course.png` (interface d'épreuve seule, SAUT seul), `jeu-5-bilan.png` (tout rendu), relevé à l'image rendue
+  dans `cso/jeu-unreal.json` ; `AStridesHUD::DrawHUD` cherche l'épreuve à chaque image tant qu'aucune n'est connue. Les
+  montages `hud-*` ne prouvent pas le masquage (HUD de débogage masqué par la pose depuis `b064edc5`). (2) Toasts
+  reconstruits au style du nouveau viewport (`ToastIds` remis à zéro par `Refresh`) ; `Strides.Cso.HudWidget` :
+  844 × 390 puis 667 × 308 = 667 × 308 d'emblée ; `hud-barre-667x308` refaite seule : bande haute à 49,2 dB de la
+  capture de la série (20,6 dB avant). (3) « Barre au 2 · +4 · Appel trop loin » et « Appel parfait » d'une vraie
+  exécution : scénario `t7-parfait-barre-2` (`export-cso-runs.mjs`, règle de saut `perfect`), rejoué sans écart par
+  `testCsoRuns` (exécution requise) et `Strides.Parite.CsoRun`, ajouté à `cso_hud.json` (156 rejeux) ; poses
+  `hud-barre` et `hud-appel` sur cette exécution, sans appel ajouté. (4) Horloge des temporisations : murale
+  (`AStridesCourse::SyncHudClock`, `UWorld::GetRealTimeSeconds` : court en pause, ni ralentie ni accélérée, comme
+  `setTimeout`), avancée par le cheval en début d'image et par le widget (images sans pas du cheval) ;
+  `Strides.Cso.HudClock` ; `CsoHud::advance` tolère l'arrondi (un millionième de tick) et `testCsoHud` rejoue l'oracle
+  sur 4 horloges (ticks entiers, pas de 1/30 s, pas découpés, pas arrondis en float) : 0 écart ; 4 mutations de
+  l'horloge ajoutées, toutes détectées (49 mutations, 48 détectées, la 49e équivalente par construction). (5) Valeurs du
+  widget lues dans `hud_cso_style.json` (relevées par `export-hud-style.mjs`) : `textTransform` du sous-titre,
+  `textShadow` du titre, durées, courbes et images de départ des animations (`motion`), boîte d'encre de « ▸ »
+  (`glyphs.next`). (6) Inventaire : `cso.retour-appel` et `cso.tableau-chrono` passent en `partiel` (logique prouvée,
+  rendu à écarts connus). (7) Tests moteur : exécutions légères reconnues par `setup.lite` (même règle que le cœur), `t7-*` rejouées par `Strides.Parite.CsoRun`. ctest :
+  199 878 vérifications, 0 échec ; 21 tests Strides en Result={Success}.
 
 ### T8. Commandes d'épreuve (tactile, clavier, pause)
 

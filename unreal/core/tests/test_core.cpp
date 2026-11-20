@@ -1223,8 +1223,13 @@ static void testCsoHud() {
   J runJ;
   int replays = 0, frames = 0, bad = 0, maxToasts = 0;
   std::map<std::string, int> partN;
+  // Horloges : 0 = ticks entiers (100 par image : horloge virtuelle du web, 1000/30 ms) ; 1 = advance(1/30 s) ;
+  // 2 = advance en trois pas inégaux par image (4 ms, 12,5 ms, reste) ; 3 = advance du pas arrondi en float (Dt du
+  // moteur). Toutes rendent les mêmes relevés : la conversion secondes → ticks est couverte par l'oracle.
+  int clockBad[4] = {0, 0, 0, 0};
+  for (int clock = 0; clock < 4; clock++)
   for (const J& rp : o["replays"].a) {
-    const std::string who = rp["id"].s + " (" + rp["lang"].s + ", " + std::to_string((int)rp["vh"].num()) + " px)";
+    const std::string who = rp["id"].s + " (" + rp["lang"].s + ", " + std::to_string((int)rp["vh"].num()) + " px, horloge " + std::to_string(clock) + ")";
     const bool synth = !rp["inputs"].isNull();
     if (!synth) {
       const std::string file = rp["id"].s + "." + rp["lang"].s + ".json";
@@ -1254,7 +1259,7 @@ static void testCsoHud() {
       while (si < snaps.a.size() && (int)snaps[si][0].num() == f) {
         for (const auto& kv : snaps[si][1].o) {
           want[kv.first] = kv.second;
-          partN[kv.first]++;
+          if (clock == 0) partN[kv.first]++;
           if (kv.first == "to") maxToasts = std::max(maxToasts, (int)kv.second.a.size());
         }
         si++;
@@ -1270,7 +1275,13 @@ static void testCsoHud() {
     compare(-1);
     for (size_t k = 0; k < fr.a.size(); k++) {
       const J& f = fr[k];
-      h.advanceTicks(100);
+      if (clock == 0) h.advanceTicks(100);
+      else if (clock == 1) h.advance(1.0 / 30);
+      else if (clock == 2) {
+        h.advance(0.004);
+        h.advance(0.0125);
+        h.advance(1.0 / 30 - 0.0165);
+      } else h.advance((double)(float)(1.0 / 30));
       CsoHudFrame in;
       const J& course = f["course"];
       const J& board = f["board"];
@@ -1293,12 +1304,13 @@ static void testCsoHud() {
       for (const J& c : f["hud"].a) apply(c);
       h.update(1.0 / 30, in);
       compare((int)k);
-      frames++;
+      if (clock == 0) frames++;
     }
     CHECK(si == snaps.a.size(), "%s : relevés au-delà des images rejouées", who.c_str());
     CHECK(rb == 0, "%s : HUD d'épreuve : %d écarts", who.c_str(), rb);
     bad += rb;
-    replays++;
+    clockBad[clock] += rb;
+    if (clock == 0) replays++;
   }
   std::string parts;
   for (const auto& kv : partN) parts += " " + kv.first + " " + std::to_string(kv.second);
@@ -1306,6 +1318,7 @@ static void testCsoHud() {
   CHECK(maxToasts == 2, "cso_hud : deux toasts simultanés jamais relevés (max %d)", maxToasts);
   CHECK(replays > 100, "cso_hud : %d rejeux", replays);
   std::printf("HUD d'épreuve : %d rejeux, %d images, %d écarts ; changements relevés :%s ; toasts simultanés au plus %d\n", replays, frames, bad, parts.c_str(), maxToasts);
+  std::printf("HUD d'épreuve, horloges (ticks, 1/30 s, pas découpés, pas float) : %d / %d / %d / %d écarts\n", clockBad[0], clockBad[1], clockBad[2], clockBad[3]);
 }
 
 // ---------- Déroulé d'épreuve (tranche T4) : strides::CsoRun rejoué sur le canal « ep » de cso_runs/ ----------
@@ -1368,7 +1381,7 @@ static void testCsoRuns() {
         "lignes de départ / d'arrivée des données différentes du tracé");
   const char* required[] = {"droit", "t4-sans-faute", "t4-depart-lance", "t4-cloche", "t4-erreur-parcours", "t4-deux-refus", "t4-temps-limite", "t4-descente", "t4-saute-avant-depart", "t4-arrivee-barre", "t4-lignes",
                             "t4-gardes", "t4-un-point", "t4-entree", "t4-lance-limites", "t4-lance-limites-gauche", "t4-lance-loin", "t4-lance-large", "t4-lance-cap",
-                            "t4-lance-derriere", "t4-hors-parcours", "t4-sortie-descente"};
+                            "t4-lance-derriere", "t4-hors-parcours", "t4-sortie-descente", "t7-parfait-barre-2"};
   std::map<std::string, int> clean;  // « id lang » → images rejouées sans écart
   int frames = 0, hudN = 0, audioN = 0, boardN = 0, hlN = 0, rrN = 0, cheerN = 0;
   // Gardes des écouteurs d'obstacle (courses.js:219-268) réellement exercées par les oracles : événements relevés pendant
@@ -1390,6 +1403,7 @@ static void testCsoRuns() {
   for (const char* g : guards) cover[g] = 0;
   int logN = 0;  // changements du journal des fautes comparés
   int ljN = 0, fbN = 0;  // derniers sauts relevés et mots d'appel comparés (tranche T7)
+  int perfectN = 0, bar2N = 0;  // « Appel parfait » et « Barre au 2 · +4 · … » produits par le portage (critère de T7)
   for (const J& r : o["runs"].a) {
     const std::string id = r["id"].s, lang = r["lang"].s, who = id + " (" + lang + ")";
     const J& su = r["setup"];
@@ -1575,6 +1589,10 @@ static void testCsoRuns() {
       }
       hudN += (int)wh.size();
       for (const auto& x : wh) fbN += x.rfind("jumpFeedback(", 0) == 0;
+      for (const auto& x : gh) {
+        perfectN += x.rfind("jumpFeedback(\"Appel parfait\"", 0) == 0;
+        bar2N += x.rfind("toast(\"Barre au 2 · +4 · ", 0) == 0;
+      }
       audioN += (int)wa.size();
       for (const auto& x : wh) hudAll.push_back(x);
       for (const auto& x : wa) audioAll.push_back(x);
@@ -1672,6 +1690,8 @@ static void testCsoRuns() {
   CHECK(hlN > 0 && rrN > 0 && cheerN > 0 && logN > 0, "numéro surligné, barres remises, public en liesse ou journal des fautes jamais relevés");
   CHECK(ljN > 0 && fbN > 0, "mot d'appel jamais exercé par les exécutions (derniers sauts %d, mots %d)", ljN, fbN);
   std::printf("mot d'appel : %d derniers sauts relevés, %d appels hud.jumpFeedback comparés\n", ljN, fbN);
+  CHECK(perfectN > 0 && bar2N > 0, "« Appel parfait » (%d) et « Barre au 2 · +4 · … » (%d) jamais produits", perfectN, bar2N);
+  std::printf("mot « Appel parfait » : %d appels ; toast « Barre au 2 · +4 · … » : %d appels (portage, égaux au web)\n", perfectN, bar2N);
   std::printf("gardes des écouteurs d'obstacle exercées%s\n", cov.c_str());
   std::printf("demandes comparées : %d changements du numéro surligné, %d remises des barres, %d ovations, %d changements du journal des fautes\n", hlN, rrN, cheerN, logN);
   int ok = 0;

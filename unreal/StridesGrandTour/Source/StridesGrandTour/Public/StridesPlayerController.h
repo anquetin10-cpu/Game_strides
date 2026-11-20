@@ -54,6 +54,8 @@ private:
 public:
 	// Interface d'épreuve UMG (tranche T7).
 	class UStridesCsoHud* CsoHudWidget() const { return CsoHud; }
+	// Commandes tactiles (iOS, ou -TouchControls) : nul si absentes.
+	class UStridesTouchControls* TouchWidget() const;
 private:
 	UPROPERTY() TObjectPtr<class UStridesCsoHud> CsoHud;
 	bool bPhoneOpen = false;

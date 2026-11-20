@@ -9,11 +9,17 @@
 //    en liesse et journal des fautes (libellé, type, cause, texte de la cause traduit par le jeu) ;
 //  - Strides.Cso.RunInGame : AStridesHorse, AStridesRider et AStridesCourse réels dans un monde de test : entrée de piste
 //    rejointe à cheval, annonce, cloche, ligne de départ franchie (bip), puis descente de cheval (AStridesRider::Dismount)
-//    pendant le parcours : éliminé ;
+//    pendant le parcours : éliminé ; tranche T7 : modèle du HUD nourri en jeu, DrawHUD du HUD de débogage appelé en
+//    épreuve (retour anticipé : rien dessiné), boutons tactiles repliés par UStridesTouchControls::Sync (le corps de
+//    NativeTick) puis rendus au bilan ;
+//  - Strides.Cso.HudClock : temporisations du HUD sur l'horloge murale (setTimeout du web) : le pas du cheval (temps de
+//    jeu) ne les fait pas échoir, l'heure murale si, sans pas du cheval (pause) ;
 //  - Strides.Hud.ObjectiveLines : lignes d'objectif du HUD de débogage (objectif de l'épreuve, puis mission de carrière
 //    lancée ; état des missions hors épreuve).
 #include "Misc/AutomationTest.h"
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
+#include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -88,12 +94,13 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
 	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
 	if (!TestNotNull(TEXT("sous-système de données"), Data) || !TestNotNull(TEXT("textes de l'épreuve (strings_cso.json)"), Data->CsoText())) return false;
-	// Exécutions t4-* et « droit » de l'index, chacune lue seule (un fichier par exécution) par le lecteur du cœur.
+	// Exécutions t4-*, t7-* (déroulé enregistré depuis le lancement de l'activité) et « droit » de l'index, chacune lue
+	// seule (un fichier par exécution) par le lecteur du cœur.
 	TArray<FString> Done;
 	int32 Frames = 0, HudCmp = 0, AudioCmp = 0, BoardCmp = 0, LogCmp = 0, Bad = 0, LastJumps = 0;
 	for (const StridesOracleRuns::FEntry& Entry : Runs)
 	{
-		if (!Entry.Id.StartsWith(TEXT("t4-")) && Entry.Id != TEXT("droit")) continue;
+		if (!Entry.Id.StartsWith(TEXT("t4-")) && !Entry.Id.StartsWith(TEXT("t7-")) && Entry.Id != TEXT("droit")) continue;
 		FString Text;
 		if (!TestTrue(FString::Printf(TEXT("cso_runs/%s lu"), *Entry.File), FFileHelper::LoadFileToString(Text, *StridesOracleRuns::Path(Entry)))) return false;
 		const std::string Utf8 = TCHAR_TO_UTF8(*Text);
@@ -249,7 +256,7 @@ bool FStridesPariteCsoRunTest::RunTest(const FString&)
 	const TCHAR* Required[] = {TEXT("droit"), TEXT("t4-sans-faute"), TEXT("t4-depart-lance"), TEXT("t4-cloche"), TEXT("t4-erreur-parcours"), TEXT("t4-deux-refus"),
 		TEXT("t4-temps-limite"), TEXT("t4-descente"), TEXT("t4-saute-avant-depart"), TEXT("t4-arrivee-barre"), TEXT("t4-lignes"), TEXT("t4-gardes"), TEXT("t4-un-point"), TEXT("t4-entree"),
 		TEXT("t4-lance-limites"), TEXT("t4-lance-limites-gauche"), TEXT("t4-lance-loin"), TEXT("t4-lance-large"), TEXT("t4-lance-cap"), TEXT("t4-lance-derriere"), TEXT("t4-hors-parcours"),
-		TEXT("t4-sortie-descente")};
+		TEXT("t4-sortie-descente"), TEXT("t7-parfait-barre-2")};
 	for (const TCHAR* Id : Required)
 		for (const TCHAR* L : {TEXT("fr"), TEXT("en")}) TestTrue(FString::Printf(TEXT("scénario %s (%s) rejoué"), Id, L), Done.Contains(FString::Printf(TEXT("%s %s"), Id, L)));
 	TestEqual(TEXT("écarts au jeu web (interface, sons, état, cadence, mode de concours, tableau, surlignage, barres, public, journal)"), Bad, 0);
@@ -306,6 +313,19 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 			!UStridesTouchControls::ButtonVisible(TEXT("Interact"), &H) && !UStridesTouchControls::ButtonVisible(TEXT("GaitUp"), &H) && !UStridesTouchControls::ButtonVisible(TEXT("Phone"), &H) &&
 			!UStridesTouchControls::ButtonVisible(TEXT("Mission"), &H) && !UStridesTouchControls::ButtonVisible(TEXT("Load"), &H));
 	}
+	// Effets réels (contrôle adverse de T7) : DrawHUD du HUD de débogage appelé en épreuve sur une toile de 844 × 390 (retour
+	// anticipé : ni lignes ni minicarte) ; widget des commandes tactiles replié par Sync, le corps de son NativeTick.
+	AStridesHUD* DebugHud = W.World->SpawnActor<AStridesHUD>();
+	UCanvas* Toile = NewObject<UCanvas>();
+	Toile->SizeX = 844;
+	Toile->SizeY = 390;
+	if (DebugHud) DebugHud->SetCanvasForTest(Toile);
+	if (DebugHud) DebugHud->DrawHUD();
+	TestTrue(TEXT("DrawHUD en épreuve : rien dessiné (retour anticipé)"), DebugHud && !DebugHud->DrewDebugLastFrame());
+	UStridesTouchControls* Touch = CreateWidget<UStridesTouchControls>(W.World, UStridesTouchControls::StaticClass());
+	if (Touch) Touch->Sync();
+	const TArray<FString> InRace = Touch ? Touch->VisibleButtons() : TArray<FString>();
+	TestTrue(FString::Printf(TEXT("commandes tactiles en épreuve : boutons visibles « %s » (SAUT seul)"), *FString::Join(InRace, TEXT(", "))), InRace == TArray<FString>{TEXT("Jump")});
 	// 2) Cheval posé 6 m avant la ligne de départ, dans son axe, au trot : ligne franchie, bip, chrono lancé.
 	Horse->PlaceAt(Cfg.start.x - FMath::Sin(Cfg.start.rot) * 6, Cfg.start.z - FMath::Cos(Cfg.start.rot) * 6, Cfg.start.rot, 4.6);
 	for (int32 K = 0; K < 60 && !Course->Run()->state().started; K++) Horse->Tick(Dt);
@@ -324,7 +344,50 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	TestTrue(TEXT("bilan (étape suivante)"), Course->Run()->step() == strides::CsoStep::Result);
 	TestTrue(TEXT("HUD d'épreuve : ÉLIMINÉ reçu, mode concours quitté au bilan, HUD de débogage rendu"), Course->HudModel().bigTitle() == "ÉLIMINÉ" && !Course->HudModel().csoCtl() &&
 		AStridesHUD::DebugVisible(&Course->HudModel()) && UStridesTouchControls::ButtonVisible(TEXT("Save"), &Course->HudModel()));
+	if (Touch) Touch->Sync();
+	const TArray<FString> AtResult = Touch ? Touch->VisibleButtons() : TArray<FString>();
+	TestTrue(FString::Printf(TEXT("commandes tactiles au bilan : %d boutons visibles « %s »"), AtResult.Num(), *FString::Join(AtResult, TEXT(", "))), AtResult.Num() == 8);
 	AddInfo(FString::Printf(TEXT("épreuve en jeu : %d appels d'interface, %d sons ; %s"), Course->HudLog().Num(), Course->AudioLog().Num(), *Course->StatusText()));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCsoHudClockTest, "Strides.Cso.HudClock", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesCsoHudClockTest::RunTest(const FString&)
+{
+	// Temporisations du HUD d'épreuve (setTimeout du web : horloge murale, qui court en pause et ne suit pas le ralenti) :
+	// le monde de test ne tourne pas (heure murale fixe), le cheval fait des pas de jeu ; l'heure murale est avancée à la
+	// main par SyncHudClock, comme le fait le widget d'épreuve à chaque image, pas du cheval ou non.
+	using namespace StridesRunTest;
+	FTestWorld W(TEXT("StridesCsoHudClockTest"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestNotNull(TEXT("sous-système de données"), Data)) return false;
+	AStridesCourse* Course = SpawnPoleCourse(W.World, *Data);
+	if (!TestTrue(TEXT("épreuve lancée"), Course->StartRun(TEXT("Alex"), TEXT("Comète")))) return false;
+	const strides::CsoRunConfig& Cfg = Course->Run()->config();
+	AStridesHorse* Horse = W.World->SpawnActor<AStridesHorse>();
+	Horse->Course = Course;
+	Horse->PlaceAt(Cfg.gateX, Cfg.gateZ, Cfg.start.rot, 0);
+	AStridesRider* Rider = W.World->SpawnActor<AStridesRider>(Horse->GetActorLocation() + FVector(0, 0, 90), FRotator::ZeroRotator);
+	if (!TestTrue(TEXT("cavalier en selle"), Rider && Rider->TryMount(nullptr))) return false;
+	const double Dt = 1.0 / 30;
+	for (int32 K = 0; K < 90 && Course->Run()->step() != strides::CsoStep::Course; K++) Horse->Tick(Dt);
+	const strides::CsoHud& H = Course->HudModel();
+	const double W0 = Course->WallSeconds();
+	TestTrue(FString::Printf(TEXT("cloche : grand message « %hs » affiché"), H.bigTitle().c_str()), !H.bigHidden() && H.bigTitle() == "CLOCHE");
+	// 3 s de pas du cheval (temps de jeu), heure murale inchangée : la cloche (2 000 ms) reste affichée.
+	for (int32 K = 0; K < 90; K++) Horse->Tick(Dt);
+	TestTrue(TEXT("3 s de pas du cheval sans heure murale : CLOCHE toujours affichée"), !H.bigHidden() && H.bigTitle() == "CLOCHE");
+	// Heure murale avancée sans pas du cheval (pause) : 1,9 s, la cloche reste ; 2,1 s, elle est retirée ; un retour en
+	// arrière est ignoré.
+	Course->SyncHudClock(W0 + 1.9);
+	TestTrue(TEXT("1,9 s d'heure murale : CLOCHE affichée"), !H.bigHidden());
+	Course->SyncHudClock(W0 + 2.1);
+	TestTrue(TEXT("2,1 s d'heure murale, sans pas du cheval : CLOCHE retirée"), H.bigHidden());
+	const int64 Now = H.now();
+	Course->SyncHudClock(W0 + 1.0);
+	TestEqual(TEXT("heure murale en arrière : horloge du HUD inchangée"), (int64)H.now(), Now);
+	TestEqual(TEXT("2,1 s d'heure murale = 6 300 ticks de 1/3 ms"), (int64)H.now(), (int64)6300);
 	return true;
 }
 

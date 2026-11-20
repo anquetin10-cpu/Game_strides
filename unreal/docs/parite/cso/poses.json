@@ -1607,7 +1607,7 @@
   },
   {
    "name": "hud-barre-844x390",
-   "desc": "HUD d’épreuve (tranche T7) : barre tombée : toast « Barre au 1 · +4 · Appel trop loin » et mot d’appel ; exécution t4-arrivee-barre (fr) rejouée dans le HUD jusqu’à l’image 269 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "desc": "HUD d’épreuve (tranche T7) : barre tombée : toast « Barre au 2 · +4 · Appel trop loin » et mot d’appel ; exécution t7-parfait-barre-2 (fr) rejouée dans le HUD jusqu’à l’image 335 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
    "hour": 15.082,
    "eye": [
     325.16195700806,
@@ -1645,8 +1645,8 @@
     "highlight": 1
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t4-arrivee-barre.fr.json",
-    "frame": 269
+    "run": "unreal/core/tests/oracles/cso_runs/t7-parfait-barre-2.fr.json",
+    "frame": 335
    },
    "sunDir": [
     -0.262334,
@@ -1656,7 +1656,7 @@
    "state": {
     "to": [
      [
-      "Barre au 1 · +4 · Appel trop loin",
+      "Barre au 2 · +4 · Appel trop loin",
       ""
      ]
     ],
@@ -1691,10 +1691,10 @@
     ],
     "ob": false,
     "board": [
-     "2,43",
+     "4,63",
      "/ 64 s",
      "4 pts",
-     "▸ 2"
+     "▸ 3"
     ]
    },
    "web": "unreal/docs/parite/cso/hud-barre-844x390-web.png",
@@ -1702,7 +1702,7 @@
   },
   {
    "name": "hud-appel-844x390",
-   "desc": "HUD d’épreuve (tranche T7) : mot « Appel parfait » (appel ajouté à l’image du premier mot : aucune exécution de l’oracle n’a d’appel parfait ; texte et genre de cso_feedback.json) ; exécution t4-sans-faute (fr) rejouée dans le HUD jusqu’à l’image 268 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
+   "desc": "HUD d’épreuve (tranche T7) : mot « Appel parfait » du 1 sauté avec un appel parfait ; exécution t7-parfait-barre-2 (fr) rejouée dans le HUD jusqu’à l’image 269 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 844 × 390.",
    "hour": 15.082,
    "eye": [
     325.16195700806,
@@ -1740,20 +1740,8 @@
     "highlight": 1
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
-    "frame": 268,
-    "extra": {
-     "frame": 247,
-     "calls": [
-      [
-       "jumpFeedback",
-       [
-        "Appel parfait",
-        "good"
-       ]
-      ]
-     ]
-    }
+    "run": "unreal/core/tests/oracles/cso_runs/t7-parfait-barre-2.fr.json",
+    "frame": 269
    },
    "sunDir": [
     -0.262334,
@@ -1793,7 +1781,7 @@
     ],
     "ob": false,
     "board": [
-     "2,40",
+     "2,43",
      "/ 64 s",
      "0 pt",
      "▸ 2"
@@ -2349,7 +2337,7 @@
   },
   {
    "name": "hud-barre-667x308",
-   "desc": "HUD d’épreuve (tranche T7) : barre tombée : toast « Barre au 1 · +4 · Appel trop loin » et mot d’appel ; exécution t4-arrivee-barre (fr) rejouée dans le HUD jusqu’à l’image 269 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "desc": "HUD d’épreuve (tranche T7) : barre tombée : toast « Barre au 2 · +4 · Appel trop loin » et mot d’appel ; exécution t7-parfait-barre-2 (fr) rejouée dans le HUD jusqu’à l’image 335 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
    "hour": 15.082,
    "eye": [
     325.16195700806,
@@ -2387,8 +2375,8 @@
     "highlight": 1
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t4-arrivee-barre.fr.json",
-    "frame": 269
+    "run": "unreal/core/tests/oracles/cso_runs/t7-parfait-barre-2.fr.json",
+    "frame": 335
    },
    "sunDir": [
     -0.262334,
@@ -2398,7 +2386,7 @@
    "state": {
     "to": [
      [
-      "Barre au 1 · +4 · Appel trop loin",
+      "Barre au 2 · +4 · Appel trop loin",
       ""
      ]
     ],
@@ -2433,10 +2421,10 @@
     ],
     "ob": false,
     "board": [
-     "2,43",
+     "4,63",
      "/ 64 s",
      "4 pts",
-     "▸ 2"
+     "▸ 3"
     ]
    },
    "web": "unreal/docs/parite/cso/hud-barre-667x308-web.png",
@@ -2444,7 +2432,7 @@
   },
   {
    "name": "hud-appel-667x308",
-   "desc": "HUD d’épreuve (tranche T7) : mot « Appel parfait » (appel ajouté à l’image du premier mot : aucune exécution de l’oracle n’a d’appel parfait ; texte et genre de cso_feedback.json) ; exécution t4-sans-faute (fr) rejouée dans le HUD jusqu’à l’image 268 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
+   "desc": "HUD d’épreuve (tranche T7) : mot « Appel parfait » du 1 sauté avec un appel parfait ; exécution t7-parfait-barre-2 (fr) rejouée dans le HUD jusqu’à l’image 269 (horloge virtuelle de cso_hud.json) ; décor, heure et caméra de la pose cadrage-040 ; 667 × 308.",
    "hour": 15.082,
    "eye": [
     325.16195700806,
@@ -2482,20 +2470,8 @@
     "highlight": 1
    },
    "hud": {
-    "run": "unreal/core/tests/oracles/cso_runs/t4-sans-faute.fr.json",
-    "frame": 268,
-    "extra": {
-     "frame": 247,
-     "calls": [
-      [
-       "jumpFeedback",
-       [
-        "Appel parfait",
-        "good"
-       ]
-      ]
-     ]
-    }
+    "run": "unreal/core/tests/oracles/cso_runs/t7-parfait-barre-2.fr.json",
+    "frame": 269
    },
    "sunDir": [
     -0.262334,
@@ -2535,7 +2511,7 @@
     ],
     "ob": false,
     "board": [
-     "2,40",
+     "2,43",
      "/ 64 s",
      "0 pt",
      "▸ 2"

@@ -43,7 +43,8 @@ public:
 	AStridesShots();
 	virtual void Tick(float DeltaSeconds) override;
 	static bool Requested();
-	// Mode demandé : "" (revue des décors et démonstration) ou "cso" (poses jumelles du banc de parité).
+	// Mode demandé : "" (revue des décors et démonstration), "cso" (poses jumelles du banc de parité) ou "cso-jeu" (partie
+	// réelle avec l'interface : épreuve du Pôle en démonstration automatique, captures et relevé de l'affichage).
 	static FString Mode();
 	// FOV horizontal (degrés) d'une caméra Unreal (axe X maintenu) qui montre le même champ vertical qu'une caméra
 	// Three.js de FOV vertical FovV (degrés) dans un viewport Width × Height.
@@ -123,6 +124,15 @@ private:
 	void ApplyCamRunPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	void MeasureFraming(const FPose& P, class APlayerController* PC);
 	void ApplyHudPose(const FPose& P, class APlayerController* PC);
+	// Partie réelle avec l'interface (mode "cso-jeu", contrôle adverse de T7) : captures de la fenêtre aux instants choisis
+	// par l'état de l'épreuve, avec le relevé de ce qui est réellement affiché.
+	void TickJeu(float DeltaSeconds, class APlayerController* PC);
+	void JeuCapture(const FString& Name, const FString& What, class APlayerController* PC);
+	void JeuRecord(class APlayerController* PC);
+	int32 JeuStep = 0;
+	float JeuWait = 20.f, JeuClock = 0.f, JeuSince = -1.f, JeuSeen = -1.f;
+	FString JeuPendingName, JeuPendingWhat, JeuPendingFile;
+	TArray<TSharedPtr<class FJsonValue>> JeuResults;
 	strides::CsoHud PoseHud;
 	TArray<TSharedPtr<class FJsonValue>> HudResults;
 	int32 ResizeTries = 0;

@@ -7,7 +7,11 @@
 //    (getBoundingClientRect) des éléments du HUD d'épreuve (tableau, chrono, temps accordé, points, prochain, crans,
 //    mot d'appel par genre, astuce, toast, grand message, bouton SAUT, bouton pause, colonne du haut) dans un état de
 //    référence, pour chaque viewport (844 × 390, 667 × 308) ; table des masquages par classe du HUD (cso-ctl, cso-sober,
-//    cso-on, big-on : display et opacité de chaque élément, l'élément lui-même rendu visible) ; polices chargées.
+//    cso-on, big-on : display et opacité de chaque élément, l'élément lui-même rendu visible) ; polices chargées ;
+//    apparitions (motion : animation toastIn, hintIn, pop — durée, courbe, image de départ de la règle @keyframes — et
+//    transition d'opacité des crans) ; glyphe « ▸ » mesuré dans la police calculée du prochain obstacle (glyphs.next :
+//    avance et boîte d'encre, measureText). Textes de l'état de référence tirés des oracles, dont « Appel parfait » et
+//    « Barre au 2 · +4 · … » de l'exécution t7-parfait-barre-2.
 //  - unreal/core/tests/oracles/cso_hud.json : comportement du HUD (toasts, astuce, grand message, mot d'appel, crans de
 //    cadence, tableau affiché ou non, classes, objectif) quand on rejoue dans le vrai HUD du jeu les appels hud.* et
 //    l'état lu par hud.update (game.course, tableau, cadence) des exécutions de unreal/core/tests/oracles/cso_runs/, sur
@@ -214,7 +218,43 @@ function PAGE() {
     H.csoEl.classList.remove('over', 'faults');
     const plain = { boardT: css(H.csoT), boardPen: css(H.csoPen) };
     H.csoEl.classList.add('faults');
-    return { ...out, fbKinds, boardOver: over, boardPlain: plain, cadOff: css(H.csoCad.children[5]), cadOn: css(H.csoCad.children[0]), fonts: { ui: document.fonts.check('600 12px Geist'), mono: document.fonts.check('700 20px "Geist Mono"') } };
+    return { ...out, fbKinds, boardOver: over, boardPlain: plain, cadOff: css(H.csoCad.children[5]), cadOn: css(H.csoCad.children[0]), motion: motion(), glyphs: { next: glyph(H.csoNext, '▸') },
+      fonts: { ui: document.fonts.check('600 12px Geist'), mono: document.fonts.check('700 20px "Geist Mono"') } };
+  };
+  // Animations et transitions du web (règles de styles.css, lues feuille de capture désactivée le temps de la lecture) :
+  // nom, durée, courbe (chaînes de getComputedStyle) et image de départ de la règle @keyframes (0 %, déclarations
+  // telles qu'écrites) ; la transition d'opacité des crans.
+  const keyframes = (name) => {
+    for (const sh of document.styleSheets) {
+      let rules;
+      try { rules = sh.cssRules; } catch { continue; }
+      for (const r of rules) {
+        if (r.type !== CSSRule.KEYFRAMES_RULE || r.name !== name) continue;
+        return Object.fromEntries([...r.cssRules].map((k) => [k.keyText, Object.fromEntries([...k.style].map((q) => [q, k.style.getPropertyValue(q)]))]));
+      }
+    }
+    return null;
+  };
+  const motion = () => {
+    st.disabled = true;
+    const one = (el) => {
+      const s = getComputedStyle(el);
+      return { animationName: s.animationName, animationDuration: s.animationDuration, animationTimingFunction: s.animationTimingFunction, keyframes: s.animationName === 'none' ? null : keyframes(s.animationName),
+        transitionProperty: s.transitionProperty, transitionDuration: s.transitionDuration, transitionTimingFunction: s.transitionTimingFunction };
+    };
+    const o = { toast: one(H.toastsEl.firstElementChild), hint: one(H.hintEl), big: one(H.bigEl), cad: one(H.csoCad) };
+    st.disabled = false;
+    return o;
+  };
+  // Glyphe mesuré dans la police calculée de l'élément (canvas, mêmes polices de secours que la page) : avance et boîte
+  // d'encre (measureText, px CSS au centième), pour le dessiner là où les polices du moteur ne l'ont pas.
+  const glyph = (el, ch) => {
+    const s = getComputedStyle(el);
+    const c = document.createElement('canvas').getContext('2d');
+    c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    const m = c.measureText(ch);
+    const r2 = (v) => Math.round(v * 100) / 100;
+    return { char: ch, font: c.font, advance: r2(m.width), left: r2(m.actualBoundingBoxLeft), right: r2(m.actualBoundingBoxRight), ascent: r2(m.actualBoundingBoxAscent), descent: r2(m.actualBoundingBoxDescent) };
   };
   // Masquages : chaque élément rendu visible pour lui-même (classes hidden / hide / off retirées, un toast dans la
   // colonne), puis display et opacité calculés sous chaque combinaison de classes du HUD.
@@ -307,10 +347,16 @@ const findCall = (r, fn, test) => {
   throw new Error(`appel ${fn} introuvable dans ${r.head.id}`);
 };
 const feedback = JSON.parse(readFileSync(join(ORA, 'cso_feedback.json'), 'utf8'));
-const perfect = feedback.cases.find((c) => c.cso && c.aid === 'full' && c.last === 'this' && c.q === 'perfect' && c.clear).out;
+// Mot « Appel parfait » et toast « Barre au 2 · +4 · … » d'une vraie exécution (t7-parfait-barre-2, critère de T7) ;
+// mot vérifié contre la fonction feedback de courses.js évaluée dans cso_feedback.json.
+const t7 = run('t7-parfait-barre-2', 'fr');
+const perfectCall = findCall(t7, 'jumpFeedback', (a) => a[1] === 'good');
+const perfect = perfectCall.args;
+const perfectFn = feedback.cases.find((c) => c.cso && c.aid === 'full' && c.last === 'this' && c.q === 'perfect' && c.clear).out;
+if (JSON.stringify(perfect) !== JSON.stringify(perfectFn)) throw new Error(`mot d'appel parfait : ${JSON.stringify(perfect)} / feedback ${JSON.stringify(perfectFn)}`);
 const cloche = findCall(run('t4-cloche', 'fr'), 'big', (a) => a[0] === 'CLOCHE');
 const clocheHint = findCall(run('t4-cloche', 'fr'), 'hint', () => true);
-const barre = findCall(run('t4-arrivee-barre', 'fr'), 'toast', (a) => a[0].startsWith('Barre au'));
+const barre = findCall(t7, 'toast', (a) => a[0].startsWith('Barre au 2 · +4 · '));
 const texts = { fb: perfect[0], hint: clocheHint.args[0], toast: barre.args[0], bigT: cloche.args[0], bigS: cloche.args[1] };
 
 // ---- Styles et masquages ----
@@ -410,7 +456,6 @@ if (SHOTS) {
   };
   const HOLD = 21; // 0,7 s après l'événement : animations d'apparition terminées
   const sf = run('t4-sans-faute', 'fr');
-  const fb1 = findCall(sf, 'jumpFeedback', () => true);
   const droit = run('droit', 'fr');
   const lastAdjust = droit.frames.filter((f) => f.ch?.s?.ca && f.board).pop();
   const deux = run('t4-deux-refus', 'fr');
@@ -420,8 +465,8 @@ if (SHOTS) {
     { name: 'hud-depart', run: 't4-cloche', frame: cloche.f + 75, desc: 'avant le départ, 2,5 s après la cloche : grand message retiré, tableau « Départ … s · accordé 64 s », astuce' },
     { name: 'hud-course', run: 't4-sans-faute', frame: firstFrame(sf, (f) => f.board?.txt?.[3] === '▸ 4A') + HOLD, desc: 'en course, obstacle suivant « ▸ 4A », mot d’appel du 3' },
     { name: 'hud-depassement', run: 't4-un-point', frame: firstFrame(run('t4-un-point', 'fr'), (f) => f.board?.over) + HOLD, desc: 'temps accordé dépassé : chrono en ambre, point de pénalité en rouge' },
-    { name: 'hud-barre', run: 't4-arrivee-barre', frame: barre.f + HOLD, desc: `barre tombée : toast « ${barre.args[0]} » et mot d’appel` },
-    { name: 'hud-appel', run: 't4-sans-faute', frame: fb1.f + HOLD, extra: { frame: fb1.f, calls: [['jumpFeedback', perfect]] }, desc: `mot « ${perfect[0]} » (appel ajouté à l’image du premier mot : aucune exécution de l’oracle n’a d’appel parfait ; texte et genre de cso_feedback.json)` },
+    { name: 'hud-barre', run: 't7-parfait-barre-2', frame: barre.f + HOLD, desc: `barre tombée : toast « ${barre.args[0]} » et mot d’appel` },
+    { name: 'hud-appel', run: 't7-parfait-barre-2', frame: perfectCall.f + HOLD, desc: `mot « ${perfect[0]} » du 1 sauté avec un appel parfait` },
     { name: 'hud-cadence', run: 'droit', frame: lastAdjust.f + 9, desc: 'crans de cadence affichés (0,3 s après le dernier réglage au joystick)' },
     { name: 'hud-elimine', run: 't4-deux-refus', frame: elim.f + HOLD, desc: 'deuxième refus : « ÉLIMINÉ », motif, toast du refus' },
   ];

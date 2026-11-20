@@ -15,14 +15,18 @@ public:
 	// garde (SAUT ; styles.css:988-995 : action, BOOST, téléphone masqués) ; SAUVER, CHARGER et MISSION, sans équivalent
 	// dans le HUD du web, sont masqués aussi. Hors épreuve (RaceHud nul ou sans cso-ctl) : tous visibles.
 	static bool ButtonVisible(const FString& Name, const strides::CsoHud* RaceHud);
-	// Noms des boutons visibles (tests).
+	// Noms des boutons visibles (tests, journal des captures en partie réelle).
 	TArray<FString> VisibleButtons() const;
+	// Visibilité des boutons selon l'épreuve en cours du monde : appelé à chaque image par NativeTick (et par les tests,
+	// le widget n'ayant pas de joueur propriétaire : boutons construits au premier appel).
+	void Sync();
 
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
+	void Build();
 	UFUNCTION() void Jump();
 	UFUNCTION() void Interact();
 	UFUNCTION() void GaitUp();

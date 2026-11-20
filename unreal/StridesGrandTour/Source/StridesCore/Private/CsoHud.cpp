@@ -89,8 +89,10 @@ void CsoHud::advanceTicks(int64_t ticks) {
 }
 
 void CsoHud::advance(double seconds) {
+  // Pas d'horloge murale du jeu (secondes) → ticks entiers, reste gardé pour le pas suivant. Tolérance d'un millionième
+  // de tick : 1/30 s découpé en plusieurs pas, ou arrondi en double, donne 100 ticks et non 99 plus un reste de 0,999…
   frac_ += std::max(0.0, seconds) * (double)kTicksPerSecond;
-  const double k = std::floor(frac_);
+  const double k = std::floor(frac_ + 1e-6);
   frac_ -= k;
   advanceTicks((int64_t)k);
 }

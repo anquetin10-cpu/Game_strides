@@ -23,7 +23,9 @@
 #include "Serialization/JsonWriter.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
+#include "StridesHUD.h"
 #include "StridesRider.h"
+#include "StridesTouchControls.h"
 #include "StridesUnits.h"
 #include "UnrealClient.h"
 #include "UnrealEngine.h"
@@ -233,7 +235,8 @@ void AStridesShots::Tick(float DeltaSeconds)
 		// Dossier de sortie résolu une fois, avant toute capture ; refus = sortie sans rien écrire.
 		bOutResolved = true;
 		FString Why;
-		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Mode() == TEXT("cso") ? FString() : DefaultShotsDir(), ProtectedShotsDirs(), OutDir, Why))
+		const FString Default = Mode() == TEXT("cso") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
+		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Default, ProtectedShotsDirs(), OutDir, Why))
 		{
 			bRefused = true;
 			UE_LOG(LogTemp, Error, TEXT("Strides shots: REFUS, aucune capture écrite : %s"), *Why);
@@ -249,6 +252,11 @@ void AStridesShots::Tick(float DeltaSeconds)
 	if (Mode() == TEXT("cso"))
 	{
 		TickCso(DeltaSeconds, PC);
+		return;
+	}
+	if (Mode() == TEXT("cso-jeu"))
+	{
+		TickJeu(DeltaSeconds, PC);
 		return;
 	}
 	Wait -= DeltaSeconds;
@@ -315,6 +323,142 @@ void AStridesShots::Tick(float DeltaSeconds)
 		if (RideShot > 20 || (Horse && !Horse->IsDemoCourseActive() && RideShot > 2)) Index = Shots.Num() + 100;
 	}
 	if (Index > Shots.Num() + 50) FPlatformMisc::RequestExit(false);
+}
+
+// ---------- Partie réelle avec l'interface (-StridesShots=cso-jeu, contrôle adverse de T7) ----------
+// Jeu tel qu'il tourne (HUD de débogage, interface d'épreuve UMG, commandes tactiles si -TouchControls) : cavalier à pied
+// au départ du jeu (hors épreuve), puis cheval posé à l'entrée du tracé, cavalière en selle, démonstration automatique de
+// l'épreuve ; captures de la fenêtre avec l'interface (FScreenshotRequest, bShowUI) aux instants choisis par l'état de
+// l'épreuve ; à l'image suivant chaque capture (celle-ci rendue), relevé de ce qui a été affiché : boutons tactiles
+// visibles (UStridesTouchControls::VisibleButtons, après NativeTick), HUD de débogage dessiné ou non à l'image
+// (AStridesHUD::DrewDebugLastFrame, retour anticipé de DrawHUD), éléments de l'interface d'épreuve (Describe), classes
+// du HUD et état de l'épreuve ; écrit dans <dossier>/jeu-unreal.json.
+
+void AStridesShots::JeuCapture(const FString& Name, const FString& What, APlayerController* PC)
+{
+	JeuPendingName = Name;
+	JeuPendingWhat = What;
+	JeuPendingFile = OutDir / (Name + TEXT(".png"));
+	IFileManager::Get().Delete(*JeuPendingFile, false, true, true);
+	FScreenshotRequest::RequestScreenshot(JeuPendingFile, true, false);
+	UE_LOG(LogTemp, Display, TEXT("Strides jeu: capture %s demandée (%s)"), *JeuPendingFile, *What);
+}
+
+void AStridesShots::JeuRecord(APlayerController* PC)
+{
+	const TSharedPtr<FJsonObject> R = MakeShared<FJsonObject>();
+	R->SetStringField(TEXT("name"), JeuPendingName);
+	R->SetStringField(TEXT("moment"), JeuPendingWhat);
+	R->SetStringField(TEXT("file"), FPaths::GetCleanFilename(JeuPendingFile));
+	const FIntPoint Size = GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport ? GEngine->GameViewport->Viewport->GetSizeXY() : FIntPoint::ZeroValue;
+	R->SetStringField(TEXT("window"), FString::Printf(TEXT("%dx%d"), Size.X, Size.Y));
+	const AStridesHUD* DebugHud = Cast<AStridesHUD>(PC->GetHUD());
+	R->SetBoolField(TEXT("debugHudShown"), DebugHud && DebugHud->bShowHUD);
+	R->SetBoolField(TEXT("debugDrawn"), DebugHud && DebugHud->DrewDebugLastFrame());
+	AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
+	TArray<TSharedPtr<FJsonValue>> B, D;
+	if (const UStridesTouchControls* T = SPC ? SPC->TouchWidget() : nullptr)
+		for (const FString& N : T->VisibleButtons()) B.Add(MakeShared<FJsonValueString>(N));
+	R->SetBoolField(TEXT("touchControls"), SPC && SPC->TouchWidget());
+	R->SetArrayField(TEXT("visibleButtons"), B);
+	if (const UStridesCsoHud* W = SPC ? SPC->CsoHudWidget() : nullptr)
+		for (const FString& L : W->Describe()) D.Add(MakeShared<FJsonValueString>(L));
+	R->SetArrayField(TEXT("raceHud"), D);
+	const AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
+	if (const AStridesCourse* C = Horse ? Horse->Course : nullptr)
+	{
+		const strides::CsoHud& H = C->HudModel();
+		R->SetStringField(TEXT("classes"), FString::Printf(TEXT("%s%s%s%s"), H.csoCtl() ? TEXT("cso-ctl ") : TEXT(""), H.csoSober() ? TEXT("cso-sober ") : TEXT(""), H.csoOn() ? TEXT("cso-on ") : TEXT(""), H.bigOn() ? TEXT("big-on") : TEXT("")).TrimEnd());
+		R->SetBoolField(TEXT("minimapMasked"), H.masked(strides::CsoHudElement::Minimap));
+		R->SetStringField(TEXT("status"), C->StatusText());
+	}
+	const bool bWritten = IFileManager::Get().FileExists(*JeuPendingFile);
+	R->SetBoolField(TEXT("written"), bWritten);
+	JeuResults.Add(MakeShared<FJsonValueObject>(R));
+	UE_LOG(LogTemp, Display, TEXT("Strides jeu: %s %s ; débogage dessiné %d ; boutons %s ; épreuve %s"), *JeuPendingName, bWritten ? TEXT("écrite") : TEXT("ABSENTE"),
+		(int32)R->GetBoolField(TEXT("debugDrawn")), *FString::JoinBy(B, TEXT(","), [](const TSharedPtr<FJsonValue>& V) { return V->AsString(); }),
+		*FString::JoinBy(D, TEXT(" ; "), [](const TSharedPtr<FJsonValue>& V) { return V->AsString(); }));
+	JeuPendingName.Reset();
+}
+
+void AStridesShots::TickJeu(float DeltaSeconds, APlayerController* PC)
+{
+	JeuClock += DeltaSeconds;
+	// Relevé de la capture demandée à l'image précédente (rendue depuis), après la sauvegarde du fichier.
+	if (!JeuPendingName.IsEmpty())
+	{
+		if (!IFileManager::Get().FileExists(*JeuPendingFile) && JeuClock - JeuSince < 3.f) return;
+		JeuRecord(PC);
+	}
+	JeuWait -= DeltaSeconds;
+	if (JeuWait > 0) return;
+	AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
+	const AStridesCourse* Course = Horse ? Horse->Course : nullptr;
+	const strides::CsoRun* Run = Course ? Course->Run() : nullptr;
+	if (!Horse || !Run) { UE_LOG(LogTemp, Error, TEXT("Strides jeu: pas d'épreuve")); JeuStep = 99; }
+	const strides::CsoHud* H = Course ? &Course->HudModel() : nullptr;
+	auto Shot = [&](const TCHAR* Name, const TCHAR* What) { JeuSince = JeuClock; JeuSeen = -1.f; JeuCapture(Name, What, PC); JeuStep++; JeuWait = 1.f; };
+	switch (JeuStep)
+	{
+	case 0:  // départ du jeu : cavalier à pied à l'Écurie du Val, épreuve à l'étape « rejoindre l'entrée »
+		Shot(TEXT("jeu-1-hors-epreuve"), TEXT("hors épreuve : cavalier à pied au départ du jeu (étape « rejoindre l'entrée de la carrière »)"));
+		break;
+	case 1:
+	{
+		AStridesRider* Rider = Cast<AStridesRider>(PC->GetPawn());
+		const strides::CourseTrace& T = Course->CourseTraceData();
+		const strides::TracePoint& P0 = T.leadIn.empty() ? T.pts.front() : T.leadIn.front();
+		Horse->PlaceAt(P0.x, P0.z, P0.h);
+		if (Rider) Rider->SetActorLocation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 150.0 + FVector(0, 0, 90));
+		const bool bMounted = Rider && Rider->TryMount(PC);
+		Horse->ToggleDemoCourse();
+		UE_LOG(LogTemp, Display, TEXT("Strides jeu: monté=%d, démonstration lancée"), bMounted);
+		JeuStep++;
+		JeuWait = 0.f;
+		break;
+	}
+	case 2:  // cloche : grand message affiché depuis 0,7 s (animation d'apparition finie)
+		if (H && H->csoCtl() && !H->bigHidden() && H->bigTitle() == "CLOCHE" && H->bigPopSeconds() >= .7)
+			Shot(TEXT("jeu-2-cloche"), TEXT("épreuve : cloche (classes cso-ctl cso-sober cso-on)"));
+		break;
+	case 3:  // premier mot d'appel affiché depuis 0,5 s
+		if (H && H->csoCtl() && !H->fbOff())
+		{
+			if (JeuSeen < 0) JeuSeen = JeuClock;
+			if (JeuClock - JeuSeen >= .5f) Shot(TEXT("jeu-3-mot"), TEXT("épreuve : premier mot d'appel"));
+		}
+		else JeuSeen = -1.f;
+		break;
+	case 4:  // en course, obstacle suivant « ▸ 6A »
+		if (H && H->csoCtl() && Run->state().started && H->boardText(3).rfind("▸ 6A", 0) == 0) Shot(TEXT("jeu-4-course"), TEXT("épreuve : en course, obstacle suivant 6A"));
+		break;
+	case 5:  // bilan : arrivée (ou élimination), 3 s après (sortie de piste de 2,6 s finie)
+		if (Run->state().finished || Run->state().eliminated)
+		{
+			if (JeuSeen < 0) JeuSeen = JeuClock;
+			if (JeuClock - JeuSeen >= 3.f) Shot(TEXT("jeu-5-bilan"), TEXT("après l'arrivée : bilan, mode concours quitté"));
+		}
+		else JeuSeen = -1.f;
+		break;
+	default:
+	{
+		if (!JeuPendingName.IsEmpty()) return;
+		const TSharedPtr<FJsonObject> Doc = MakeShared<FJsonObject>();
+		Doc->SetStringField(TEXT("schema"), TEXT("strides.parite.cso_jeu/1"));
+		Doc->SetStringField(TEXT("generator"), TEXT("-StridesShots=cso-jeu -TouchControls (AStridesShots::TickJeu)"));
+		Doc->SetStringField(TEXT("doc"), TEXT("partie réelle, interface comprise : par capture, moment, fenêtre, HUD de débogage dessiné à l'image (retour anticipé de DrawHUD en épreuve), boutons tactiles visibles après NativeTick, éléments de l'interface d'épreuve affichés, classes du HUD, minicarte masquée, tableau ou objectif"));
+		Doc->SetArrayField(TEXT("captures"), JeuResults);
+		FString Out;
+		FJsonSerializer::Serialize(Doc.ToSharedRef(), TJsonWriterFactory<>::Create(&Out));
+		const FString File = OutDir / TEXT("jeu-unreal.json");
+		FFileHelper::SaveStringToFile(Out + TEXT("\n"), *File, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+		UE_LOG(LogTemp, Display, TEXT("Strides jeu: relevé écrit dans %s (%d captures)"), *File, JeuResults.Num());
+		FPlatformMisc::RequestExit(false);
+		JeuStep = 100;
+		return;
+	}
+	}
+	if (JeuClock > 300.f && JeuStep < 99) { UE_LOG(LogTemp, Error, TEXT("Strides jeu: délai dépassé à l'étape %d"), JeuStep); JeuStep = 99; }
 }
 
 // ---------- Banc de parité CSO : poses jumelles (-StridesShots=cso) ----------

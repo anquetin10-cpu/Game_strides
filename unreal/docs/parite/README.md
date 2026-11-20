@@ -124,6 +124,20 @@ Unreal (rendu GPU réel, jamais `-nullrhi` ; une seule instance d'UnrealEditor, 
 - Contrôle : `grep "Strides parite" .tmp/shots-cso.log` (pose, FOV vertical → horizontal, soleil, « écrite ») et
   `sips -g pixelWidth -g pixelHeight <capture>`.
 
+Partie réelle avec l'interface (tranche T7, contrôle adverse) : `-StridesShots=cso-jeu`, avec `-TouchControls` pour les
+commandes tactiles sur Mac. Le jeu tourne tel quel (HUD de débogage, interface d'épreuve UMG) ; cavalier à pied au départ
+du jeu, puis cheval posé à l'entrée du tracé, cavalière en selle, démonstration automatique de l'épreuve. Captures de la
+fenêtre **avec l'interface** aux instants choisis par l'état de l'épreuve (`jeu-1-hors-epreuve`, `jeu-2-cloche`,
+`jeu-3-mot`, `jeu-4-course`, `jeu-5-bilan`) et relevé, à l'image rendue, de ce qui est affiché (`jeu-unreal.json` : HUD
+de débogage dessiné ou non, boutons tactiles visibles, éléments de l'interface d'épreuve, classes du HUD). Sortie par
+défaut : `unreal/docs/parite/cso/` ; `-StridesShotsDir=<dossier>` pour un essai.
+
+```sh
+"$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso-jeu -TouchControls [-StridesShotsDir=<dossier dédié>] \
+  -abslog="$PWD/.tmp/shots-jeu.log"
+```
+
 Revue des décors et démonstration (`-StridesShots` sans mode) : **toujours avec un dossier dédié**.
 
 ```sh

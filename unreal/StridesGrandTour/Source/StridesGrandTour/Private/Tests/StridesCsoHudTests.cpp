@@ -5,8 +5,9 @@
 //    règle que les poses de captures) ; masquages de hud_cso_style.json (csoHudMasked), HUD de débogage
 //    (AStridesHUD::DebugVisible) et boutons tactiles (UStridesTouchControls::ButtonVisible) selon les classes ;
 //  - Strides.Cso.HudWidget : UStridesCsoHud construit dans un monde de test, alimenté par l'état rejoué de poses du banc
-//    (t4-cloche, t4-arrivee-barre, droit) : textes affichés (tableau, grand message, toast, mot d'appel, crans) égaux à
-//    l'oracle caractère pour caractère, éléments masqués absents.
+//    (t4-cloche, t4-arrivee-barre, t7-parfait-barre-2 : « Appel parfait » puis « Barre au 2 · +4 · … », droit) : textes
+//    affichés (tableau, grand message, toast, mot d'appel, crans) égaux à l'oracle caractère pour caractère, éléments
+//    masqués absents ; toast affiché restylé au changement de viewport (844 × 390 puis 667 × 308 = 667 × 308 d'emblée).
 #include "Misc/AutomationTest.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/Engine.h"
@@ -182,10 +183,13 @@ bool FStridesCsoHudWidgetTest::RunTest(const FString&)
 	UStridesCsoHud* Widget = CreateWidget<UStridesCsoHud>(W.World, UStridesCsoHud::StaticClass());
 	if (!TestNotNull(TEXT("widget UStridesCsoHud"), Widget)) return false;
 	// États rejoués jusqu'à une image de l'oracle (comme les poses de captures) ; textes attendus pris dans l'oracle.
-	struct FCase { const TCHAR* Run; const char* BigTitle; const char* Toast; const char* Fb; bool bCad; };
+	// FbAt : image visée prise au premier mot d'appel égal à Fb (sinon au grand message ou au toast).
+	struct FCase { const TCHAR* Run; const char* BigTitle; const char* Toast; const char* Fb; bool bCad; bool bFbAt = false; };
 	const FCase Cases[] = {
 		{TEXT("t4-cloche.fr.json"), "CLOCHE", nullptr, nullptr, false},
 		{TEXT("t4-arrivee-barre.fr.json"), nullptr, "Barre au 1", "Appel trop loin", false},
+		{TEXT("t7-parfait-barre-2.fr.json"), nullptr, nullptr, "Appel parfait", false, true},
+		{TEXT("t7-parfait-barre-2.fr.json"), nullptr, "Barre au 2 · +4 · ", "Appel trop loin", false},
 		{TEXT("droit.fr.json"), nullptr, nullptr, nullptr, true},
 	};
 	for (const FCase& C : Cases)
@@ -199,7 +203,8 @@ bool FStridesCsoHudWidgetTest::RunTest(const FString&)
 			const int32 Fi = (int32)F["f"].num();
 			if (C.bCad && !F["ch"]["s"].isNull() && !F["ch"]["s"]["ca"].isNull() && F["ch"]["s"]["ca"].b && !F["board"].isNull()) Target = Fi + 9;
 			for (const J& Hc : F["hud"].a)
-				if (Target < 0 && ((C.BigTitle && Hc["fn"].s == "big" && Hc["args"][0].s == C.BigTitle) || (C.Toast && Hc["fn"].s == "toast" && Hc["args"][0].s.rfind(C.Toast, 0) == 0))) Target = Fi + 21;
+				if (Target < 0 && ((C.BigTitle && Hc["fn"].s == "big" && Hc["args"][0].s == C.BigTitle) || (C.Toast && Hc["fn"].s == "toast" && Hc["args"][0].s.rfind(C.Toast, 0) == 0) ||
+					(C.bFbAt && Hc["fn"].s == "jumpFeedback" && Hc["args"][0].s == C.Fb))) Target = Fi + 21;
 		}
 		if (!TestTrue(FString::Printf(TEXT("%s : image visée trouvée"), C.Run), Target >= 0)) continue;
 		strides::CsoHud H;
@@ -222,8 +227,24 @@ bool FStridesCsoHudWidgetTest::RunTest(const FString&)
 		if (C.Fb) TestTrue(FString::Printf(TEXT("%s : mot d'appel « %s »"), C.Run, *All), Shown.Contains(FString(TEXT("fb=")) + UTF8_TO_TCHAR(C.Fb)));
 		if (C.bCad) TestTrue(FString::Printf(TEXT("%s : crans de cadence affichés « %s »"), C.Run, *All), H.cadShow() && Shown.Contains(FString::Printf(TEXT("cad=%d"), H.cadOn())));
 		TestFalse(FString::Printf(TEXT("%s : horloge du tableau masquée (cso-sober)"), C.Run), Shown.Contains(TEXT("clock")));
+		if (!C.Toast) TestFalse(FString::Printf(TEXT("%s : pas de toast"), C.Run), All.Contains(TEXT("toast=")));
 		AddInfo(FString::Printf(TEXT("%s image %d : %s"), C.Run, Target, *All));
 		UE_LOG(LogTemp, Display, TEXT("Strides.Cso.HudWidget : %s image %d : %s"), C.Run, Target, *All);
+		// Toast affiché, puis changement de viewport (rotation, redimensionnement) : le toast prend le style du nouveau
+		// viewport, comme un widget qui l'affiche d'emblée à cette taille (captures reproductibles pose par pose).
+		if (C.Toast && !H.toasts().empty())
+		{
+			Widget->Refresh(H, FVector2D(667, 308));
+			UStridesCsoHud* Fresh = CreateWidget<UStridesCsoHud>(W.World, UStridesCsoHud::StaticClass());
+			Fresh->SetFrozen(&H);
+			Fresh->Refresh(H, FVector2D(667, 308));
+			const FString After = Widget->ToastStyle(0), Direct = Fresh->ToastStyle(0);
+			Widget->Refresh(H, FVector2D(844, 390));
+			const FString Back = Widget->ToastStyle(0);
+			TestTrue(FString::Printf(TEXT("%s : toast restylé en 667 × 308 « %s » = affiché d'emblée « %s » ; en 844 × 390 « %s »"), C.Run, *After, *Direct, *Back),
+				!After.IsEmpty() && After == Direct && After != Back);
+			Fresh->SetFrozen(nullptr);
+		}
 	}
 	Widget->SetFrozen(nullptr);
 	return true;

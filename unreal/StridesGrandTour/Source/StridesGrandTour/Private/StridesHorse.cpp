@@ -279,8 +279,8 @@ void AStridesHorse::TickDemo()
 void AStridesHorse::Tick(float Dt)
 {
 	Super::Tick(Dt);
-	// Interface d'épreuve (tranche T7) : temporisations du HUD échues avant les appels de l'image.
-	if (Course) Course->BeginHudFrame(Dt);
+	// Interface d'épreuve (tranche T7) : temporisations du HUD échues avant les appels de l'image (horloge murale).
+	if (Course) Course->BeginHudFrame();
 	if (bCsoControls) TickCso(Dt);
 	else TickOpenWorld(Dt);
 	UpdateAnimation();

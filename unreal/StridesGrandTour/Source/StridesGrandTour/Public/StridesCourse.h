@@ -78,7 +78,13 @@ public:
 	// d'obstacle), appels de l'épreuve (FlushRunCalls), puis UpdateHud après TickRun (hud.update du jeu web).
 	const strides::CsoHud& HudModel() const { return Hud; }
 	strides::CsoHud& HudModel() { return Hud; }
-	void BeginHudFrame(double Dt) { Hud.advance(Dt); }
+	// Horloge des temporisations du HUD (setTimeout du web) : horloge murale, qui court aussi en pause et ne suit ni le
+	// ralenti ni l'accéléré du jeu (UWorld::GetRealTimeSeconds), et non le pas du cheval. Avancée en début d'image par le
+	// cheval (avant les événements d'obstacle) et par le widget d'épreuve (images sans pas du cheval : pause). Now :
+	// secondes murales ; origine à l'heure du lancement de l'épreuve ; un retour en arrière est ignoré.
+	void SyncHudClock(double Now);
+	double WallSeconds() const;
+	void BeginHudFrame() { SyncHudClock(WallSeconds()); }
 	void UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust);
 	// Dernier saut du cheval du joueur (horse._lastJump, mot d'appel) : présent ou non (effacé quand le cheval est posé),
 	// obstacle (indice du cœur, −1 : aucun obstacle du parcours), qualité de l'appel et instant ; transmis à l'épreuve
@@ -127,5 +133,7 @@ private:
 	UPROPERTY() TArray<TObjectPtr<class UStaticMeshComponent>> Props;
 	TArray<FString> PropTex, PropTexEn;  // textures des panneaux des lignes (vide : autre pièce)
 	strides::CsoHud Hud;
+	double HudWall = 0;     // dernière heure murale vue par SyncHudClock
+	bool bHudWall = false;  // origine fixée
 	double LastJumpTime = -1;
 };

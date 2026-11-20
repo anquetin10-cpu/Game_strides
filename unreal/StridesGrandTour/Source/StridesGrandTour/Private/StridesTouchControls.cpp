@@ -34,8 +34,13 @@ void UStridesTouchControls::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 	Controller = Cast<AStridesPlayerController>(GetOwningPlayer());
-	if (!Controller || !WidgetTree) return;
+	if (!Controller) return;
+	Build();
+}
 
+void UStridesTouchControls::Build()
+{
+	if (!WidgetTree || Buttons.Num()) return;
 	UCanvasPanel* Canvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("TouchCanvas"));
 	WidgetTree->RootWidget = Canvas;
 	const FAnchors BottomRight(1.f, 1.f);
@@ -93,6 +98,13 @@ TArray<FString> UStridesTouchControls::VisibleButtons() const
 void UStridesTouchControls::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
+	Sync();
+}
+
+void UStridesTouchControls::Sync()
+{
+	// Sans joueur propriétaire (tests), NativeOnInitialized n'est pas appelé : boutons construits ici.
+	Build();
 	if (!Course.IsValid() && GetWorld())
 		for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
 			if (It->Run()) { Course = *It; break; }

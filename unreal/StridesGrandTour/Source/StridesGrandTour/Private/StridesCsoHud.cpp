@@ -20,6 +20,9 @@
 #include "EngineUtils.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "Styling/CoreStyle.h"
+#include "Fonts/FontMeasure.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Rendering/SlateRenderer.h"
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
 
@@ -90,7 +93,8 @@ double CssMaxWidth(const FJ& E, double Container)
 	return FCString::Atod(*S);
 }
 // « ▸ » (U+25B8) : absent de toutes les polices du moteur (Roboto, Droid Sans Mono, Droid Sans Fallback) ; dessiné
-// comme un petit triangle plein (texture de 32 × 32 px, bords lissés par suréchantillonnage 4 × 4), teinté comme le texte.
+// comme un petit triangle plein (texture de 32 × 32 px, bords lissés par suréchantillonnage 4 × 4), teinté comme le texte,
+// à la taille et à la place de l'encre du glyphe mesurée dans le navigateur (glyphs.next de hud_cso_style.json).
 UTexture2D* TriangleTexture()
 {
 	const int32 N = 32;
@@ -166,8 +170,107 @@ double Bezier(double X1, double Y1, double X2, double Y2, double T)
 	}
 	return By(U);
 }
-double EaseOut(double T) { return Bezier(0, 0, .58, 1, T); }
-double Ease(double T) { return Bezier(.25, .1, .25, 1, T); }
+// Courbe d'une animation ou transition CSS telle que la rend getComputedStyle : cubic-bezier(x1, y1, x2, y2), ou mot-clé
+// dont la norme CSS donne la courbe (ease, ease-in, ease-out, ease-in-out, linear).
+FVector4 CssCurve(const FString& S)
+{
+	const FString T = S.TrimStartAndEnd();
+	if (T.StartsWith(TEXT("cubic-bezier(")))
+	{
+		TArray<FString> P;
+		T.Mid(13).Replace(TEXT(")"), TEXT("")).ParseIntoArray(P, TEXT(","));
+		if (P.Num() == 4) return FVector4(FCString::Atod(*P[0].TrimStartAndEnd()), FCString::Atod(*P[1].TrimStartAndEnd()), FCString::Atod(*P[2].TrimStartAndEnd()), FCString::Atod(*P[3].TrimStartAndEnd()));
+	}
+	if (T == TEXT("linear")) return FVector4(0, 0, 1, 1);
+	if (T == TEXT("ease-in")) return FVector4(.42, 0, 1, 1);
+	if (T == TEXT("ease-out")) return FVector4(0, 0, .58, 1);
+	if (T == TEXT("ease-in-out")) return FVector4(.42, 0, .58, 1);
+	return FVector4(.25, .1, .25, 1);  // ease
+}
+// Durée CSS (« 0.35s », « 300ms ») en secondes.
+double CssSeconds(const FString& S)
+{
+	const FString T = S.TrimStartAndEnd();
+	return T.EndsWith(TEXT("ms")) ? FCString::Atod(*T) / 1000 : FCString::Atod(*T);
+}
+// Argument numérique de la fonction Fn( dans une valeur transform (« translateX(-12px) », « scale(0.8) ») ; un
+// argument en % (translate(-50%, -50%) qui centre le grand message, aussi à l'arrivée) est ignoré.
+bool CssTransformArg(const FString& S, const TCHAR* Fn, int32 Arg, double& Out)
+{
+	const int32 At = S.Find(Fn, ESearchCase::CaseSensitive);
+	if (At == INDEX_NONE) return false;
+	const int32 Open = At + FCString::Strlen(Fn);
+	int32 Close = INDEX_NONE;
+	if (!S.Mid(Open).FindChar(')', Close)) return false;
+	TArray<FString> P;
+	S.Mid(Open, Close).ParseIntoArray(P, TEXT(","));
+	if (!P.IsValidIndex(Arg) || P[Arg].Contains(TEXT("%"))) return false;
+	Out = FCString::Atod(*P[Arg].TrimStartAndEnd());
+	return true;
+}
+// Apparition relevée dans le navigateur (motion.<élément> de hud_cso_style.json) : animation @keyframes (image de départ
+// 0 % → état de l'élément) ou, pour bTransition, transition d'opacité ; durée et courbe de getComputedStyle.
+struct FCssMotion
+{
+	double Dur = 0;
+	FVector4 Curve = FVector4(.25, .1, .25, 1);
+	double FromOpacity = 1, FromScale = 1;
+	FVector2D FromShift = FVector2D::ZeroVector;  // translateX / translateY (px)
+	// Avancement de la courbe T secondes après le début (1 sans durée).
+	double At(double T) const { return Dur > 0 ? Bezier(Curve.X, Curve.Y, Curve.Z, Curve.W, FMath::Clamp(T / Dur, 0.0, 1.0)) : 1.0; }
+	double Opacity(double E) const { return FromOpacity + (1 - FromOpacity) * E; }
+	double Scale(double E) const { return FromScale + (1 - FromScale) * E; }
+	FVector2D Shift(double E) const { return FromShift * (1 - E); }
+};
+FCssMotion CssMotionOf(const FJ& View, const TCHAR* Key, bool bTransition)
+{
+	FCssMotion M;
+	const FJ E = CssObj(CssObj(View, TEXT("motion")), Key);
+	if (!E.IsValid()) return M;
+	M.Dur = CssSeconds(CssStr(E, bTransition ? TEXT("transitionDuration") : TEXT("animationDuration")));
+	M.Curve = CssCurve(CssStr(E, bTransition ? TEXT("transitionTimingFunction") : TEXT("animationTimingFunction")));
+	if (bTransition) return M;
+	const FJ From = CssObj(CssObj(E, TEXT("keyframes")), TEXT("0%"));
+	if (!From.IsValid()) return M;
+	const FString Op = CssStr(From, TEXT("opacity"));
+	if (!Op.IsEmpty()) M.FromOpacity = FCString::Atod(*Op);
+	const FString Tr = CssStr(From, TEXT("transform"));
+	double V = 0;
+	if (CssTransformArg(Tr, TEXT("translateX("), 0, V)) M.FromShift.X = V;
+	if (CssTransformArg(Tr, TEXT("translateY("), 0, V)) M.FromShift.Y = V;
+	if (CssTransformArg(Tr, TEXT("translate("), 0, V)) M.FromShift.X = V;
+	if (CssTransformArg(Tr, TEXT("translate("), 1, V)) M.FromShift.Y = V;
+	if (CssTransformArg(Tr, TEXT("scale("), 0, V)) M.FromScale = V;
+	return M;
+}
+// Première ombre d'un text-shadow calculé (« rgba(0, 0, 0, 0.45) 0px 1px 3px, … ») : couleur et décalage (Slate : une
+// seule ombre, sans flou).
+bool CssTextShadow(const FJ& E, FLinearColor& Color, FVector2D& Offset)
+{
+	const FString S = CssStr(E, TEXT("textShadow"));
+	int32 Close = INDEX_NONE;
+	if (S.IsEmpty() || S == TEXT("none") || !S.FindChar(')', Close)) return false;
+	const TSharedPtr<FJsonObject> C = MakeShared<FJsonObject>();
+	C->SetStringField(TEXT("c"), S.Left(Close + 1));
+	Color = CssColor(C, TEXT("c"));
+	TArray<FString> P;
+	S.Mid(Close + 1).TrimStartAndEnd().ParseIntoArray(P, TEXT(" "));
+	Offset = FVector2D(P.Num() > 0 ? FCString::Atod(*P[0]) : 0, P.Num() > 1 ? FCString::Atod(*P[1]) : 0);
+	return true;
+}
+// text-transform calculé : « uppercase » → majuscules (Unicode : « É »), « lowercase » → minuscules.
+FText CssCased(const FJ& E, const FText& T)
+{
+	const FString X = CssStr(E, TEXT("textTransform"));
+	return X == TEXT("uppercase") ? T.ToUpper() : X == TEXT("lowercase") ? T.ToLower() : T;
+}
+// Champ numérique d'un objet JSON (Def si absent).
+double JNum(const FJ& O, const TCHAR* K, double Def = 0)
+{
+	double V = Def;
+	if (O.IsValid()) O->TryGetNumberField(K, V);
+	return V;
+}
 FText CssText(const std::string& S) { return FText::FromString(UTF8_TO_TCHAR(S.c_str())); }
 void CssSet(UTextBlock* T, const FJ& E)
 {
@@ -342,10 +445,21 @@ void UStridesCsoHud::ApplyStyle(const FStridesCsoHudStyle& S)
 	CssSet(Points, CssObj(V, TEXT("boardPen")));
 	const FJ N = CssObj(V, TEXT("boardNext"));
 	CssSet(Next, N);
-	// « ▸ » dessiné (TriangleTexture) : 0,42 em de large sur 0,5 em de haut, suivi de l'espace du texte.
-	const double Em = CssNum(N, TEXT("fontSize"), 13);
-	NextArrow->SetDesiredSizeOverride(FVector2D(.42 * Em, .5 * Em));
+	// « ▸ » dessiné (TriangleTexture) : boîte d'encre du glyphe mesurée par le navigateur dans la police du web (avance,
+	// débords gauche et droit, hauteur au-dessus de la ligne de base), puis l'espace du texte. Ligne de base : celle de la
+	// police du texte qui suit (mesure de Slate) ; sans mesure (moteur sans rendu), triangle centré dans la ligne.
+	const FJ Gl = CssObj(CssObj(V, TEXT("glyphs")), TEXT("next"));
+	const double GAdv = JNum(Gl, TEXT("advance")), GL = JNum(Gl, TEXT("left")), GR = JNum(Gl, TEXT("right")), GA = JNum(Gl, TEXT("ascent")), GD = JNum(Gl, TEXT("descent"));
+	NextArrow->SetDesiredSizeOverride(FVector2D(FMath::Max(0.0, GL + GR), FMath::Max(0.0, GA + GD)));
 	NextArrow->SetColorAndOpacity(CssColor(N, TEXT("color")));
+	if (UHorizontalBoxSlot* AS = Cast<UHorizontalBoxSlot>(NextArrow->Slot))
+	{
+		double Below = -1;  // de la ligne de base au bas de la ligne (px)
+		if (FSlateApplication::IsInitialized() && FSlateApplication::Get().GetRenderer())
+			Below = -(double)FSlateApplication::Get().GetRenderer()->GetFontMeasureService()->GetBaseline(Next->GetFont());
+		AS->SetVerticalAlignment(Below >= 0 ? VAlign_Bottom : VAlign_Center);
+		AS->SetPadding(FMargin(FMath::Max(0.0, -GL), 0, FMath::Max(0.0, GAdv - GR), Below >= 0 ? FMath::Max(0.0, Below - GD) : 0));
+	}
 	NextPill->SetBrush(BoxOf(N));
 	NextPill->SetPadding(CssPadding(N));
 	// Crans : largeur, hauteur et écart relevés.
@@ -398,8 +512,11 @@ void UStridesCsoHud::ApplyStyle(const FStridesCsoHudStyle& S)
 	const FJ G = CssObj(V, TEXT("big")), GT = CssObj(V, TEXT("bigT")), GS = CssObj(V, TEXT("bigS"));
 	BigBox->SetWidthOverride(CssRect(G).Z / S.Viewport.X * LastView.X);
 	CssSet(BigTitle, GT);
-	BigTitle->SetShadowOffset(FVector2D(0, 1));
-	BigTitle->SetShadowColorAndOpacity(FLinearColor(0, 0, 0, .45f));
+	FLinearColor ShadowColor = FLinearColor::Transparent;
+	FVector2D ShadowOffset = FVector2D::ZeroVector;
+	CssTextShadow(GT, ShadowColor, ShadowOffset);
+	BigTitle->SetShadowOffset(ShadowOffset);
+	BigTitle->SetShadowColorAndOpacity(ShadowColor);
 	CssSet(BigSub, GS);
 	BigSubPill->SetBrush(BoxOf(GS));
 	BigSubPill->SetPadding(CssPadding(GS));
@@ -426,6 +543,9 @@ void UStridesCsoHud::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (!Frozen && !Course.IsValid() && GetWorld())
 		for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
 			if (It->Run()) { Course = *It; break; }
+	// Temporisations du HUD sur l'horloge murale aussi quand le cheval ne fait pas de pas (pause) ; sans effet si le
+	// cheval l'a déjà avancée à cette image.
+	if (!Frozen && Course.IsValid() && Course->Run()) Course->SyncHudClock(Course->WallSeconds());
 	const strides::CsoHud* H = Source();
 	if (!H || !Root)
 	{
@@ -456,6 +576,8 @@ void UStridesCsoHud::Refresh(const strides::CsoHud& H, const FVector2D& ViewCss)
 		if (!Style.bLoaded) return;
 		LastView = ViewCss;
 		ApplyStyle(Style);
+		// Toasts affichés reconstruits au style du nouveau viewport (rotation, redimensionnement), apparition gardée.
+		ToastIds.Reset();
 	}
 	const FJ V = Style.View;
 	const ESlateVisibility Show = ESlateVisibility::HitTestInvisible, Hide = ESlateVisibility::Collapsed;
@@ -483,9 +605,9 @@ void UStridesCsoHud::Refresh(const strides::CsoHud& H, const FVector2D& ViewCss)
 	const FLinearColor On = CssColor(CssObj(V, TEXT("cadOn")), TEXT("backgroundColor")), Off = CssColor(CssObj(V, TEXT("cadOff")), TEXT("backgroundColor"));
 	for (int32 I = 0; I < CadBars.Num(); I++) CadBars[I]->SetBrush(Rounded(I < H.cadOn() ? On : Off, CssNum(CssObj(V, TEXT("cadOn")), TEXT("borderTopLeftRadius"), 1)));
 	ShownCadOn = FMath::Min(H.cadOn(), CadBars.Num());
-	const double FadeT = FMath::Clamp(H.cadShowSince() / .4, 0.0, 1.0);
+	const double FadeE = CssMotionOf(V, TEXT("cad"), true).At(H.cadShowSince());
 	const double CadOp = CssNum(CssObj(V, TEXT("cad")), TEXT("opacity"), .9);
-	Cad->SetRenderOpacity((float)(H.cadShow() ? Ease(FadeT) * CadOp : (1 - Ease(FadeT)) * CadOp));
+	Cad->SetRenderOpacity((float)(H.cadShow() ? FadeE * CadOp : (1 - FadeE) * CadOp));
 
 	// Mot d'appel.
 	Feedback->SetVisibility(H.fbOff() ? Hide : Show);
@@ -509,12 +631,13 @@ void UStridesCsoHud::Refresh(const strides::CsoHud& H, const FVector2D& ViewCss)
 			HintText->SetText(FText::FromString(Html.Replace(TEXT("</b>"), TEXT("</>"))));
 			HintBorn = Clock;
 		}
-		const double K = EaseOut(FMath::Clamp((Clock - HintBorn) / .3, 0.0, 1.0));
+		const FCssMotion HM = CssMotionOf(V, TEXT("hint"), false);
+		const double K = HM.At(Clock - HintBorn);
 		// Transparente sous big-on (opacité 0, place gardée) : masquée sans être retirée de la colonne (le contour d'une
 		// boîte arrondie de Slate ne suit pas l'opacité de rendu).
 		if (H.masked(strides::CsoHudElement::Hint)) HintBox->SetVisibility(ESlateVisibility::Hidden);
-		HintBox->SetRenderOpacity((float)K);
-		HintBox->SetRenderTranslation(FVector2D(0, -4 * (1 - K)));
+		HintBox->SetRenderOpacity((float)HM.Opacity(K));
+		HintBox->SetRenderTranslation(HM.Shift(K));
 	}
 	else HintBorn = -1;
 
@@ -549,11 +672,12 @@ void UStridesCsoHud::Refresh(const strides::CsoHud& H, const FVector2D& ViewCss)
 			if (!ToastBorn.Contains(T.id)) ToastBorn.Add(T.id, Clock);
 		}
 	}
+	const FCssMotion TM = CssMotionOf(V, TEXT("toast"), false);
 	for (int32 I = 0; I < Toasts->GetChildrenCount() && I < (int32)H.toasts().size(); I++)
 	{
-		const double K = EaseOut(FMath::Clamp((Clock - ToastBorn.FindRef(H.toasts()[I].id)) / .35, 0.0, 1.0));
-		Toasts->GetChildAt(I)->SetRenderOpacity((float)K);
-		Toasts->GetChildAt(I)->SetRenderTranslation(FVector2D(-12 * (1 - K), 0));
+		const double K = TM.At(Clock - ToastBorn.FindRef(H.toasts()[I].id));
+		Toasts->GetChildAt(I)->SetRenderOpacity((float)TM.Opacity(K));
+		Toasts->GetChildAt(I)->SetRenderTranslation(TM.Shift(K));
 	}
 	Toasts->SetVisibility(H.toasts().empty() ? Hide : Show);
 	if (!H.toasts().empty()) Shown.Add(Toasts);
@@ -565,7 +689,7 @@ void UStridesCsoHud::Refresh(const strides::CsoHud& H, const FVector2D& ViewCss)
 			VS->SetPadding(FMargin(0, Top + (W == Feedback && At >= 0 ? CssNum(CssObj(V, TEXT("jumpFb")), TEXT("marginTop")) : 0), 0, 0));
 		}
 
-	// Grand message : centre à 50 % de la largeur et à max(34 %, --st + 56 px) de la hauteur ; animation pop (0,5 s).
+	// Grand message : centre à 50 % de la largeur et à max(34 %, --st + 56 px) de la hauteur ; animation pop relevée.
 	BigBox->SetVisibility(H.bigHidden() ? Hide : Show);
 	if (!H.bigHidden())
 	{
@@ -573,12 +697,24 @@ void UStridesCsoHud::Refresh(const strides::CsoHud& H, const FVector2D& ViewCss)
 		const FVector4 G = CssRect(CssObj(V, TEXT("big")));
 		if (UCanvasPanelSlot* BS = Cast<UCanvasPanelSlot>(BigBox->Slot)) BS->SetPosition(FVector2D((G.X + G.Z / 2) / Style.Viewport.X * ViewCss.X, (G.Y + G.W / 2) / Style.Viewport.Y * ViewCss.Y));
 		BigTitle->SetText(CssText(H.bigTitle()));
-		BigSub->SetText(CssText(H.bigSub()).ToUpper());  // text-transform: uppercase (Unicode : « É »)
+		BigSub->SetText(CssCased(CssObj(V, TEXT("bigS")), CssText(H.bigSub())));
 		BigSubPill->SetVisibility(H.bigSub().empty() ? Hide : Show);
-		const double E = Bezier(.2, .9, .3, 1.3, FMath::Clamp(H.bigPopSeconds() / .5, 0.0, 1.0));
-		BigBox->SetRenderOpacity((float)FMath::Clamp(E, 0.0, 1.0));
-		BigBox->SetRenderScale(FVector2D(.8 + .2 * E, .8 + .2 * E));
+		const FCssMotion BM = CssMotionOf(V, TEXT("big"), false);
+		const double E = BM.At(H.bigPopSeconds());
+		BigBox->SetRenderOpacity((float)FMath::Clamp(BM.Opacity(E), 0.0, 1.0));
+		BigBox->SetRenderScale(FVector2D(BM.Scale(E), BM.Scale(E)));
 	}
+}
+
+FString UStridesCsoHud::ToastStyle(int32 I) const
+{
+	const USizeBox* SB = Toasts && I >= 0 && I < Toasts->GetChildrenCount() ? Cast<USizeBox>(Toasts->GetChildAt(I)) : nullptr;
+	const UBorder* Bd = SB ? Cast<UBorder>(SB->GetContent()) : nullptr;
+	const UTextBlock* T = Bd ? Cast<UTextBlock>(Bd->GetContent()) : nullptr;
+	if (!T) return FString();
+	const FMargin P = Bd->GetPadding();
+	return FString::Printf(TEXT("police %.2f px, marges %.1f %.1f %.1f %.1f, largeur max %.1f, retour à %.1f"), T->GetFont().Size / .75, P.Left, P.Top, P.Right, P.Bottom,
+		SB->GetMaxDesiredWidth(), T->GetWrapTextAt());
 }
 
 TArray<FString> UStridesCsoHud::Describe() const

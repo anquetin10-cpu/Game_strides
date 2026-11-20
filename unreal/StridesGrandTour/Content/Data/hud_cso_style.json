@@ -9,7 +9,7 @@
  "texts": {
   "fb": "Appel parfait",
   "hint": "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
-  "toast": "Barre au 1 · +4 · Appel trop loin",
+  "toast": "Barre au 2 · +4 · Appel trop loin",
   "bigT": "CLOCHE",
   "bigS": "Tu as 45 s pour franchir la ligne de départ"
  },
@@ -1015,7 +1015,7 @@
     "rect": [
      16,
      138.8,
-     201.2,
+     204,
      31.6
     ],
     "display": "flow-root",
@@ -1039,7 +1039,7 @@
     "borderTopLeftRadius": "14px",
     "maxWidth": "100%",
     "minWidth": "auto",
-    "width": "201.2px",
+    "width": "204px",
     "height": "31.6px",
     "gap": "normal",
     "rowGap": "normal",
@@ -1736,6 +1736,70 @@
     "left": "auto",
     "right": "auto",
     "bottom": "auto"
+   },
+   "motion": {
+    "toast": {
+     "animationName": "toastIn",
+     "animationDuration": "0.35s",
+     "animationTimingFunction": "ease-out",
+     "keyframes": {
+      "0%": {
+       "opacity": "0",
+       "transform": "translateX(-12px)"
+      }
+     },
+     "transitionProperty": "all",
+     "transitionDuration": "0s",
+     "transitionTimingFunction": "ease"
+    },
+    "hint": {
+     "animationName": "hintIn",
+     "animationDuration": "0.3s",
+     "animationTimingFunction": "ease-out",
+     "keyframes": {
+      "0%": {
+       "opacity": "0",
+       "transform": "translateY(-4px)"
+      }
+     },
+     "transitionProperty": "opacity",
+     "transitionDuration": "0.25s",
+     "transitionTimingFunction": "ease"
+    },
+    "big": {
+     "animationName": "pop",
+     "animationDuration": "0.5s",
+     "animationTimingFunction": "cubic-bezier(0.2, 0.9, 0.3, 1.3)",
+     "keyframes": {
+      "0%": {
+       "opacity": "0",
+       "transform": "translate(-50%, -50%) scale(0.8)"
+      }
+     },
+     "transitionProperty": "all",
+     "transitionDuration": "0s",
+     "transitionTimingFunction": "ease"
+    },
+    "cad": {
+     "animationName": "none",
+     "animationDuration": "0s",
+     "animationTimingFunction": "ease",
+     "keyframes": null,
+     "transitionProperty": "opacity",
+     "transitionDuration": "0.4s",
+     "transitionTimingFunction": "ease"
+    }
+   },
+   "glyphs": {
+    "next": {
+     "char": "▸",
+     "font": "600 13px Geist, -apple-system, \"system-ui\", \"Helvetica Neue\", Arial, sans-serif",
+     "advance": 6.16,
+     "left": -1.39,
+     "right": 5.17,
+     "ascent": 5.51,
+     "descent": -1.65
+    }
    },
    "fonts": {
     "ui": true,
@@ -2743,7 +2807,7 @@
     "rect": [
      16,
      132.4,
-     176.2,
+     178.6,
      25.8
     ],
     "display": "flow-root",
@@ -2767,7 +2831,7 @@
     "borderTopLeftRadius": "14px",
     "maxWidth": "100%",
     "minWidth": "auto",
-    "width": "176.2px",
+    "width": "178.6px",
     "height": "25.8px",
     "gap": "normal",
     "rowGap": "normal",
@@ -3464,6 +3528,70 @@
     "left": "auto",
     "right": "auto",
     "bottom": "auto"
+   },
+   "motion": {
+    "toast": {
+     "animationName": "toastIn",
+     "animationDuration": "0.35s",
+     "animationTimingFunction": "ease-out",
+     "keyframes": {
+      "0%": {
+       "opacity": "0",
+       "transform": "translateX(-12px)"
+      }
+     },
+     "transitionProperty": "all",
+     "transitionDuration": "0s",
+     "transitionTimingFunction": "ease"
+    },
+    "hint": {
+     "animationName": "hintIn",
+     "animationDuration": "0.3s",
+     "animationTimingFunction": "ease-out",
+     "keyframes": {
+      "0%": {
+       "opacity": "0",
+       "transform": "translateY(-4px)"
+      }
+     },
+     "transitionProperty": "opacity",
+     "transitionDuration": "0.25s",
+     "transitionTimingFunction": "ease"
+    },
+    "big": {
+     "animationName": "pop",
+     "animationDuration": "0.5s",
+     "animationTimingFunction": "cubic-bezier(0.2, 0.9, 0.3, 1.3)",
+     "keyframes": {
+      "0%": {
+       "opacity": "0",
+       "transform": "translate(-50%, -50%) scale(0.8)"
+      }
+     },
+     "transitionProperty": "all",
+     "transitionDuration": "0s",
+     "transitionTimingFunction": "ease"
+    },
+    "cad": {
+     "animationName": "none",
+     "animationDuration": "0s",
+     "animationTimingFunction": "ease",
+     "keyframes": null,
+     "transitionProperty": "opacity",
+     "transitionDuration": "0.4s",
+     "transitionTimingFunction": "ease"
+    }
+   },
+   "glyphs": {
+    "next": {
+     "char": "▸",
+     "font": "600 13px Geist, -apple-system, \"system-ui\", \"Helvetica Neue\", Arial, sans-serif",
+     "advance": 6.16,
+     "left": -1.39,
+     "right": 5.17,
+     "ascent": 5.51,
+     "descent": -1.65
+    }
    },
    "fonts": {
     "ui": true,

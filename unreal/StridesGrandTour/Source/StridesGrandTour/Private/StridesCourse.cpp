@@ -153,6 +153,9 @@ void AStridesCourse::StartRunWith(const strides::CsoRunConfig& Config, const str
 	if (&Text != &RunText) RunText = Text;
 	Allowed = Config.timeAllowed;
 	Hud = strides::CsoHud();
+	// Origine de l'horloge du HUD : l'heure murale du lancement (appels du lancement à 0, comme les setTimeout du web).
+	HudWall = WallSeconds();
+	bHudWall = true;
 	LastJumpTime = -1;
 	RunPtr = std::make_unique<strides::CsoRun>(Config, RunText);
 	RunPtr->begin();
@@ -211,6 +214,18 @@ void AStridesCourse::TickRun(const strides::CsoRunFrame& Frame, strides::CsoCade
 	if (RunPtr->step() == strides::CsoStep::Presentation) RunPtr->enter();
 	RunPtr->update(Frame, Cadence);
 	FlushRunCalls();
+}
+
+double AStridesCourse::WallSeconds() const
+{
+	return GetWorld() ? GetWorld()->GetRealTimeSeconds() : 0.0;
+}
+
+void AStridesCourse::SyncHudClock(double Now)
+{
+	if (bHudWall && Now > HudWall) Hud.advance(Now - HudWall);
+	if (!bHudWall || Now > HudWall) HudWall = Now;
+	bHudWall = true;
 }
 
 void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool bCadAdjust)

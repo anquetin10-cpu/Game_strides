@@ -83,11 +83,11 @@ bool FStridesPariteCsoCameraTest::RunTest(const FString&)
 	TArray<FString> Clean;
 	for (const StridesOracleRuns::FEntry& Entry : Runs)
 	{
-		if (Entry.Id.StartsWith(TEXT("t4-"))) continue;  // images légères : pas de canal caméra
 		FString Text;
 		if (!TestTrue(FString::Printf(TEXT("cso_runs/%s lu"), *Entry.File), FFileHelper::LoadFileToString(Text, *StridesOracleRuns::Path(Entry)))) return false;
 		const std::string Utf8 = TCHAR_TO_UTF8(*Text);
 		const J R = JParser(Utf8).parse();
+		if (R["setup"]["lite"].b) continue;  // images légères (t4-*, t7-*) : pas de canal caméra (même règle que testCamRuns)
 		const J& C0 = R["setup"]["cc0"];
 		if (!TestTrue(FString::Printf(TEXT("%s : état de départ de la caméra (cc0)"), *Entry.File), C0.t == J::Obj)) continue;
 		strides::CsoCamState S;

@@ -61,6 +61,11 @@ M = [
  (H, 'masquage : astuce visible sous big-on', 'case CsoHudElement::Hint: return bigOn;', 'case CsoHudElement::Hint: return false;'),
  (H, 'masquage : minicarte gardée en concours', '    case CsoHudElement::Minimap:\n', ''),
  (H, 'masquage : télémétrie gardée en épreuve sobre', '    case CsoHudElement::Telemetry:\n', ''),
+ # Horloge murale du jeu (secondes → ticks de 1/3 ms) : rejouée par pas de 1/30 s entiers, découpés et arrondis en float
+ (H, 'horloge : secondes → ticks doublés', 'advanceTicks((int64_t)k);', 'advanceTicks((int64_t)k * 2);'),
+ (H, 'horloge : 1 000 ticks par seconde au lieu de 3 000', 'frac_ += std::max(0.0, seconds) * (double)kTicksPerSecond;', 'frac_ += std::max(0.0, seconds) * 1000.0;'),
+ (H, 'horloge : reste du pas perdu', '  frac_ -= k;\n  advanceTicks', '  frac_ = 0;\n  advanceTicks'),
+ (H, 'horloge : sans tolérance d’arrondi (1/30 s découpé = 99 ticks)', 'std::floor(frac_ + 1e-6)', 'std::floor(frac_)'),
  # Mot d'appel (courses.js:203-211)
  (R, 'mot d’appel : aide « off » ignorée', 'if (!cso || aid == "off") return false;', 'if (!cso) return false;'),
  (R, 'mot d’appel : dernier saut d’un autre obstacle accepté', 'std::string q = last.has && last.num == num ? last.quality : std::string();', 'std::string q = last.has ? last.quality : std::string();'),

@@ -158,6 +158,8 @@
 {"id":"t4-hors-parcours","lang":"en","file":"t4-hors-parcours.en.json","frames":404},
 {"id":"t4-sortie-descente","lang":"fr","file":"t4-sortie-descente.fr.json","frames":839},
 {"id":"t4-sortie-descente","lang":"en","file":"t4-sortie-descente.en.json","frames":839},
+{"id":"t7-parfait-barre-2","lang":"fr","file":"t7-parfait-barre-2.fr.json","frames":363},
+{"id":"t7-parfait-barre-2","lang":"en","file":"t7-parfait-barre-2.en.json","frames":363},
 {"id":"t6-tribunes","lang":"fr","file":"t6-tribunes.fr.json","frames":150},
 {"id":"t6-mat","lang":"fr","file":"t6-mat.fr.json","frames":105},
 {"id":"t6-entree","lang":"fr","file":"t6-entree.fr.json","frames":78},

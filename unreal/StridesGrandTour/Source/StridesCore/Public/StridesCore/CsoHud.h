@@ -53,7 +53,9 @@ class STRIDESCORE_API CsoHud {
   void setViewportHeight(double h) { vh_ = h; }
   // Avance l'horloge et déclenche les temporisateurs échus (dans l'ordre).
   void advanceTicks(int64_t ticks);
-  void advance(double seconds);  // pas réel du jeu : ticks entiers accumulés, reste gardé
+  // Pas d'horloge murale du jeu (secondes ; setTimeout du web : ni gel en pause, ni ralenti) : ticks entiers accumulés,
+  // reste gardé. Rejoué sur l'oracle par pas de 1/30 s entiers et découpés (testCsoHud).
+  void advance(double seconds);
   int64_t now() const { return now_; }
 
   // Appels du jeu web (hud.js:432-475, :174-185).
