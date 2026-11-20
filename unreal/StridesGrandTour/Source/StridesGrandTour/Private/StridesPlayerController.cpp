@@ -20,6 +20,10 @@
 #include "StridesTouchControls.h"
 #include "StridesCsoHud.h"
 #include "StridesPauseMenu.h"
+#include "StridesActivityPost.h"
+#include "StridesCsoScreens.h"
+#include "StridesDataSubsystem.h"
+#include "StridesUnits.h"
 
 namespace
 {
@@ -89,13 +93,13 @@ void AStridesPlayerController::SetupInputComponent()
 	PhoneAction = MakeAction(this, TEXT("Phone"), EInputActionValueType::Boolean);
 	MissionAction = MakeAction(this, TEXT("Mission"), EInputActionValueType::Boolean);
 	// Clavier du web (déplacement, Espace, Échap, P / Tab, M, Ctrl / Alt) : commandes du web (FeedKey, codes physiques).
-	// Restent ici : manette (stick gauche / droit, A, X, Start, croix), souris (regard), outils du portage (E monter /
-	// descendre, Maj / Ctrl allure hors épreuve, F5 / F9, F8 démonstration, N mission suivante).
+	// Restent ici : manette (stick gauche / droit, A, X, Start, croix), souris (regard), outils du portage (Maj / Ctrl allure
+	// hors épreuve, F5 / F9, F8 démonstration, N mission suivante). E, F et Entrée : « action » des commandes du web
+	// (tranche T10, DoAction depuis StepCommands) ; le bouton X de la manette y mène aussi (OnInteract).
 	Context->MapKey(MoveAction, EKeys::Gamepad_Left2D);
 	Context->MapKey(LookAction, EKeys::Mouse2D);
 	Context->MapKey(LookAction, EKeys::Gamepad_Right2D);
 	Context->MapKey(JumpAction, EKeys::Gamepad_FaceButton_Bottom);
-	Context->MapKey(InteractAction, EKeys::E);
 	Context->MapKey(InteractAction, EKeys::Gamepad_FaceButton_Left);
 	Context->MapKey(GaitUpAction, EKeys::LeftShift);
 	Context->MapKey(GaitDownAction, EKeys::LeftControl);
@@ -137,6 +141,14 @@ void AStridesPlayerController::BeginPlay()
 	// mode tactile (tranche T8).
 	TouchControls = CreateWidget<UStridesTouchControls>(this, UStridesTouchControls::StaticClass());
 	if (TouchControls) TouchControls->AddToViewport(100);
+	// Cartes de présentation et du plan, dialogue de l'entraîneur (tranche T10) : au-dessus du HUD et des boutons (overlay
+	// du web, z-index 46), sous la carte Pause.
+	Screens = CreateWidget<UStridesCsoScreens>(this, UStridesCsoScreens::StaticClass());
+	if (Screens)
+	{
+		Screens->Bind(EntryCourse());
+		Screens->AddToViewport(200);
+	}
 	RestoreInputMode();
 	// Clavier par codes physiques ; tout relâché quand l'application perd le focus ou passe en arrière-plan (window blur,
 	// visibilitychange du web).
@@ -279,11 +291,28 @@ void AStridesPlayerController::StepCommands(float)
 	bPauseThisFrame = false;
 	if (bPausedState) return;
 	Cmd.poll();
-	// Écran modal ouvert (overlay) : aucun autre que la carte Pause n'est porté (présentation, choix : tranche T10).
-	const bool bOverlay = false;
+	// Écran modal ouvert (overlay : carte de présentation ou du plan, tranche T10) ; dialogue de l'entraîneur affiché.
+	if (Screens && !Screens->BoundCourse()) Screens->Bind(EntryCourse());
+	const bool bOverlay = CardOpen();
+	const bool bDialog = DialogOpen();
 	// game.simPaused (src/game.js:1444-1445) : relevé ici, avant les boutons globaux. L'image où le téléphone s'ouvre (ou
 	// Échap) avance encore, celle où il se referme reste figée (ORA/cso_freeze.json).
-	bSimPausedFrame = bPhoneOpen || bOverlay;
+	bSimPausedFrame = bPhoneOpen || bOverlay || bDialog;
+	// Carte cliquable à la souris sur Mac (le web garde toujours le pointeur) ; mode d'entrée rendu à sa fermeture.
+	if (bOverlay != bCardInput && GetLocalPlayer() && !bPausedState)
+	{
+		bCardInput = bOverlay;
+		if (bOverlay)
+		{
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetHideCursorDuringCapture(false);
+			SetInputMode(InputMode);
+			bShowMouseCursor = !PLATFORM_IOS;
+			Cmd.releaseAll();  // screens.card : input.releaseAll()
+		}
+		else RestoreInputMode();
+	}
 	if (Cmd.wasPressed("phone") && !bOverlay) TogglePhone();
 	if (Cmd.wasPressed("map") && !bOverlay)
 	{
@@ -296,7 +325,10 @@ void AStridesPlayerController::StepCommands(float)
 		else PauseGame();
 	}
 	const bool bCanAct = !bPhoneOpen && !bOverlay;
-	if (!bCanAct)
+	// game.js:1467-1469 : action (E, F, Entrée, bouton d'action) — dialogue fermé, sinon action proposée.
+	if (bCanAct && Cmd.wasPressed("action")) DoAction();
+	// frozenInput (game.js:1478) : téléphone, carte ou dialogue.
+	if (!bCanAct || DialogOpen())
 	{
 		// frozenInput : déplacement à zéro, saut retiré.
 		Cmd.move.x = Cmd.move.y = Cmd.move.mag = 0;
@@ -411,11 +443,68 @@ void AStridesPlayerController::OnJump()
 }
 void AStridesPlayerController::OnInteract()
 {
+	// Manette (X) et bouton tactile du portage : même action que E / F / Entrée, hors carte et téléphone.
+	if (!bPhoneOpen && !CardOpen() && !bPausedState) DoAction();
+}
+
+// ---- Entrée dans l'épreuve (tranche T10) ----
+AStridesActivityPost* AStridesPlayerController::ActivityPost() const
+{
+	if (!PostCache.IsValid() && GetWorld())
+		if (TActorIterator<AStridesActivityPost> It(GetWorld()); It) PostCache = *It;
+	return PostCache.Get();
+}
+
+AStridesCourse* AStridesPlayerController::EntryCourse() const
+{
+	if (const AStridesActivityPost* P = ActivityPost()) return P->Course;
+	return nullptr;
+}
+
+bool AStridesPlayerController::CardOpen() const
+{
+	const AStridesCourse* C = EntryCourse();
+	return C && C->Screen() != AStridesCourse::EScreen::None;
+}
+
+bool AStridesPlayerController::DialogOpen() const
+{
+	const AStridesCourse* C = EntryCourse();
+	return C && C->DialogOpen();
+}
+
+FString AStridesPlayerController::ActionLabel() const
+{
+	const AStridesActivityPost* P = ActivityPost();
+	const AStridesHorse* H = Cast<AStridesHorse>(GetPawn());
+	if (!P || !H) return FString();
+	double X, Y, Z;
+	StridesUnits::UEToWeb(H->GetActorLocation(), X, Y, Z);
+	return P->Available(X, Z, TEXT("ride")) ? P->Label() : FString();
+}
+
+bool AStridesPlayerController::DoAction()
+{
+	// hud.advanceDialog() d'abord (dialogue de l'entraîneur), sinon interact.trigger().
+	if (AStridesCourse* C = EntryCourse(); C && C->AdvanceDialog()) return true;
+	// Action du poteau « Chrono » (priorité 1) : à cheval, point suivi = le cheval, sans mission en cours.
+	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn()))
+		if (AStridesActivityPost* P = ActivityPost())
+		{
+			double X, Y, Z;
+			StridesUnits::UEToWeb(H->GetActorLocation(), X, Y, Z);
+			const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+			const FStridesHorseProfile* Pr = Data ? Data->FindHorse(H->ProfileId) : nullptr;
+			if (P->Trigger(X, Z, TEXT("ride"), P->PlayerName, Pr ? Pr->Name : FString(), H->JumpPower(), 0.0)) return true;
+		}
+	// Action du portage (priorité 0 au web pour descendre) : monter, descendre.
 	if (AStridesRider* R = Rider())
 	{
 		if (R->MountedOn) R->Dismount(this);
 		else R->TryMount(this);
+		return true;
 	}
+	return false;
 }
 // Allures du portage (Maj / Ctrl) : sans effet en épreuve (le web n'a pas d'allure en concours ; Ctrl gauche y réduit
 // l'amplitude du clavier).

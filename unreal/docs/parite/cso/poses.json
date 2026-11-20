@@ -5332,6 +5332,1251 @@
    "frame": 752,
    "web": "unreal/docs/parite/cso/aide-ambre-667x308-web.png",
    "unreal": "unreal/docs/parite/cso/aide-ambre-667x308-unreal.png"
+  },
+  {
+   "name": "entree-1-presentation-844x390",
+   "desc": "Entrée dans l’épreuve (tranche T10), capture 1-presentation de la recette (tests/e2e/cso-shots.mjs:18-30 : cheval monté posé 4 m au sud de l’entrée, cap π, Parcours du Pôle lancé au poteau, 6 images) : carte de présentation ; capture web = PNG de la recette (tests/e2e/out/cso/1-presentation.png) ; état rejoué par l’exécution t9-recette de l’oracle arrêtée à l’image 5 (capture de cette exécution : entree-1-presentation-844x390-oracle.png) ; vue de la caméra du jeu, HUD et carte affichés ; 844 × 390.",
+   "hour": 15.001333,
+   "eye": [
+    330,
+    7.426139300066376,
+    -180.7350462406559
+   ],
+   "target": [
+    330,
+    4.417963997976227,
+    -190.27186339062237
+   ],
+   "fovV": 60,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": 3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.242348,
+    0.7718,
+    0.587871
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.1,
+     1.15,
+     1.15,
+     1.1,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.2
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5,
+    "hw": 2100
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "",
+     true
+    ],
+    "bg": [
+     false,
+     "PARCOURS DU PÔLE",
+     "Événement · Entraînement",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "0,00",
+     "",
+     "",
+     ""
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 5,
+   "entree": {
+    "screen": "presentation",
+    "steps": [
+     {
+      "tick": 2100
+     }
+    ],
+    "card": {
+     "screen": "presentation",
+     "kicker": "EQUESTRIAN TOUR · Pôle International",
+     "title": "Prix STRIDES · Parcours du Pôle",
+     "rows": [
+      [
+       "Épreuve",
+       "Amateur 1,10 m · barème A au chrono"
+      ],
+      [
+       "Hauteur",
+       "1,10 m · difficulté moyenne"
+      ],
+      [
+       "Cheval engagé",
+       "Comète"
+      ],
+      [
+       "Temps accordé",
+       "64 s"
+      ],
+      [
+       "Parcours",
+       "8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 m"
+      ]
+     ],
+     "jury": null,
+     "rules": "Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.",
+     "legend": null,
+     "svg": null,
+     "buttons": [
+      [
+       "plan",
+       "Voir le plan",
+       "btn"
+      ],
+      [
+       "enter",
+       "Entrer en piste",
+       "btn primary"
+      ]
+     ]
+    },
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "recette": {
+    "png": "tests/e2e/out/cso/1-presentation.png",
+    "sha256": "2027b65696b54d5325b5e4d08e5c132df57f4f696a6c056da357799929a17d05",
+    "oracle": "unreal/docs/parite/cso/entree-1-presentation-844x390-oracle.png",
+    "ecart": {
+     "mean": 10.85,
+     "over16": 26.9,
+     "box": [
+      0,
+      0,
+      843,
+      389
+     ]
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-1-presentation-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-1-presentation-844x390-unreal.png"
+  },
+  {
+   "name": "entree-1-presentation-667x308",
+   "desc": "Entrée dans l’épreuve (tranche T10), partie réelle t9-recette arrêtée à l’image 5 : capture 1-presentation de la recette (tests/e2e/cso-shots.mjs:18-30 : cheval monté posé 4 m au sud de l’entrée, cap π, Parcours du Pôle lancé au poteau, 6 images) : carte de présentation ; vue de la caméra du jeu, HUD et carte affichés ; 667 × 308.",
+   "hour": 15.001333,
+   "eye": [
+    330,
+    7.426139300066376,
+    -180.7350462406559
+   ],
+   "target": [
+    330,
+    4.417963997976227,
+    -190.27186339062237
+   ],
+   "fovV": 60,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": 3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.242348,
+    0.7718,
+    0.587871
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.1,
+     1.15,
+     1.15,
+     1.1,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.2
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5,
+    "hw": 2100
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "",
+     true
+    ],
+    "bg": [
+     false,
+     "PARCOURS DU PÔLE",
+     "Événement · Entraînement",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "0,00",
+     "",
+     "",
+     ""
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 5,
+   "entree": {
+    "screen": "presentation",
+    "steps": [
+     {
+      "tick": 2100
+     }
+    ],
+    "card": {
+     "screen": "presentation",
+     "kicker": "EQUESTRIAN TOUR · Pôle International",
+     "title": "Prix STRIDES · Parcours du Pôle",
+     "rows": [
+      [
+       "Épreuve",
+       "Amateur 1,10 m · barème A au chrono"
+      ],
+      [
+       "Hauteur",
+       "1,10 m · difficulté moyenne"
+      ],
+      [
+       "Cheval engagé",
+       "Comète"
+      ],
+      [
+       "Temps accordé",
+       "64 s"
+      ],
+      [
+       "Parcours",
+       "8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 m"
+      ]
+     ],
+     "jury": null,
+     "rules": "Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.",
+     "legend": null,
+     "svg": null,
+     "buttons": [
+      [
+       "plan",
+       "Voir le plan",
+       "btn"
+      ],
+      [
+       "enter",
+       "Entrer en piste",
+       "btn primary"
+      ]
+     ]
+    },
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-1-presentation-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-1-presentation-667x308-unreal.png"
+  },
+  {
+   "name": "entree-2-plan-844x390",
+   "desc": "Entrée dans l’épreuve (tranche T10), capture 2-plan de la recette (cso-shots.mjs:31-32 : « Voir le plan » touché après la capture 1) : carte du plan ; capture web = PNG de la recette (tests/e2e/out/cso/2-plan.png) ; état rejoué par l’exécution t9-recette de l’oracle arrêtée à l’image 5 (capture de cette exécution : entree-2-plan-844x390-oracle.png) ; vue de la caméra du jeu, HUD et carte affichés ; 844 × 390.",
+   "hour": 15.001333,
+   "eye": [
+    330,
+    7.426139300066376,
+    -180.7350462406559
+   ],
+   "target": [
+    330,
+    4.417963997976227,
+    -190.27186339062237
+   ],
+   "fovV": 60,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": 3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.242348,
+    0.7718,
+    0.587871
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.1,
+     1.15,
+     1.15,
+     1.1,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.2
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5,
+    "hw": 4200
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "",
+     true
+    ],
+    "bg": [
+     false,
+     "PARCOURS DU PÔLE",
+     "Événement · Entraînement",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "0,00",
+     "",
+     "",
+     ""
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 5,
+   "entree": {
+    "screen": "plan",
+    "steps": [
+     {
+      "tick": 2100
+     },
+     {
+      "tap": "plan"
+     },
+     {
+      "tick": 2100
+     }
+    ],
+    "card": {
+     "screen": "plan",
+     "kicker": "Plan du parcours",
+     "title": "Prix STRIDES · Parcours du Pôle",
+     "rows": [],
+     "jury": null,
+     "rules": null,
+     "legend": "1 vertical · 2 oxer · 3 vertical · 4A vertical · 4B oxer · 5 mur · 6A vertical · 6B oxer · 7 vertical · 8 oxer · 368 m · temps accordé 64 s",
+     "svg": {
+      "viewBox": "-66 -48 132 96",
+      "texts": [
+       "ENTRÉE",
+       "TRIBUNES",
+       "Départ",
+       "Arrivée",
+       "1",
+       "1,05",
+       "2",
+       "1,10",
+       "3",
+       "1,10",
+       "4A",
+       "1,05",
+       "4B",
+       "1,10",
+       "5",
+       "1,10",
+       "6A",
+       "1,10",
+       "6B",
+       "1,10",
+       "7",
+       "1,10",
+       "8",
+       "1,15"
+      ],
+      "counts": {
+       "rect": 3,
+       "line": 16,
+       "polyline": 2,
+       "path": 10,
+       "circle": 10,
+       "text": 24
+      }
+     },
+     "buttons": [
+      [
+       "plan-back",
+       "Retour",
+       "btn primary"
+      ]
+     ]
+    },
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "recette": {
+    "png": "tests/e2e/out/cso/2-plan.png",
+    "sha256": "7d76e340fcebc7822d1f019531faaa66eb4ee1e9eb8c528c4219e14ebfc14343",
+    "oracle": "unreal/docs/parite/cso/entree-2-plan-844x390-oracle.png",
+    "ecart": {
+     "mean": 9.51,
+     "over16": 24.48,
+     "box": [
+      0,
+      0,
+      843,
+      389
+     ]
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-2-plan-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-2-plan-844x390-unreal.png"
+  },
+  {
+   "name": "entree-2-plan-667x308",
+   "desc": "Entrée dans l’épreuve (tranche T10), partie réelle t9-recette arrêtée à l’image 5 : capture 2-plan de la recette (cso-shots.mjs:31-32 : « Voir le plan » touché après la capture 1) : carte du plan ; vue de la caméra du jeu, HUD et carte affichés ; 667 × 308.",
+   "hour": 15.001333,
+   "eye": [
+    330,
+    7.426139300066376,
+    -180.7350462406559
+   ],
+   "target": [
+    330,
+    4.417963997976227,
+    -190.27186339062237
+   ],
+   "fovV": 60,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": 3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.242348,
+    0.7718,
+    0.587871
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.1,
+     1.15,
+     1.15,
+     1.1,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.15,
+     1.2
+    ],
+    "highlight": -1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5,
+    "hw": 4200
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 5
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "",
+     true
+    ],
+    "bg": [
+     false,
+     "PARCOURS DU PÔLE",
+     "Événement · Entraînement",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     false,
+     false
+    ],
+    "ob": false,
+    "board": [
+     "0,00",
+     "",
+     "",
+     ""
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 5,
+   "entree": {
+    "screen": "plan",
+    "steps": [
+     {
+      "tick": 2100
+     },
+     {
+      "tap": "plan"
+     },
+     {
+      "tick": 2100
+     }
+    ],
+    "card": {
+     "screen": "plan",
+     "kicker": "Plan du parcours",
+     "title": "Prix STRIDES · Parcours du Pôle",
+     "rows": [],
+     "jury": null,
+     "rules": null,
+     "legend": "1 vertical · 2 oxer · 3 vertical · 4A vertical · 4B oxer · 5 mur · 6A vertical · 6B oxer · 7 vertical · 8 oxer · 368 m · temps accordé 64 s",
+     "svg": {
+      "viewBox": "-66 -48 132 96",
+      "texts": [
+       "ENTRÉE",
+       "TRIBUNES",
+       "Départ",
+       "Arrivée",
+       "1",
+       "1,05",
+       "2",
+       "1,10",
+       "3",
+       "1,10",
+       "4A",
+       "1,05",
+       "4B",
+       "1,10",
+       "5",
+       "1,10",
+       "6A",
+       "1,10",
+       "6B",
+       "1,10",
+       "7",
+       "1,10",
+       "8",
+       "1,15"
+      ],
+      "counts": {
+       "rect": 3,
+       "line": 16,
+       "polyline": 2,
+       "path": 10,
+       "circle": 10,
+       "text": 24
+      }
+     },
+     "buttons": [
+      [
+       "plan-back",
+       "Retour",
+       "btn primary"
+      ]
+     ]
+    },
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-2-plan-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-2-plan-667x308-unreal.png"
+  },
+  {
+   "name": "entree-3-annonce-844x390",
+   "desc": "Entrée dans l’épreuve (tranche T10), partie réelle t9-recette arrêtée à l’image 33 : annonce du couple « N° {dossard} · {joueur} » : 28e image après « Entrer en piste » (tick(28) de tests/e2e/cso.mjs:58-63 ; la recette n’en fait pas de capture) ; vue de la caméra du jeu, HUD et carte affichés ; 844 × 390.",
+   "hour": 15.02,
+   "eye": [
+    330,
+    6.560334265635372,
+    -180.4523509751025
+   ],
+   "target": [
+    330,
+    4.899175138478915,
+    -190.31341330906352
+   ],
+   "fovV": 58.14854715642866,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": -3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.246983,
+    0.771018,
+    0.586967
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 33,
+    "hw": 0
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 33
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "",
+     true
+    ],
+    "bg": [
+     false,
+     "N° 40 · Test",
+     "et Comète",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     true
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "0,00",
+     "",
+     "",
+     ""
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 33,
+   "entree": {
+    "screen": null,
+    "steps": [],
+    "card": null,
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-3-annonce-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-3-annonce-844x390-unreal.png"
+  },
+  {
+   "name": "entree-3-annonce-667x308",
+   "desc": "Entrée dans l’épreuve (tranche T10), partie réelle t9-recette arrêtée à l’image 33 : annonce du couple « N° {dossard} · {joueur} » : 28e image après « Entrer en piste » (tick(28) de tests/e2e/cso.mjs:58-63 ; la recette n’en fait pas de capture) ; vue de la caméra du jeu, HUD et carte affichés ; 667 × 308.",
+   "hour": 15.02,
+   "eye": [
+    330,
+    6.560334265635372,
+    -180.4523509751025
+   ],
+   "target": [
+    330,
+    4.899175138478915,
+    -190.31341330906352
+   ],
+   "fovV": 58.14854715642866,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": -3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.246983,
+    0.771018,
+    0.586967
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 33,
+    "hw": 0
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 33
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     true,
+     "",
+     true
+    ],
+    "bg": [
+     false,
+     "N° 40 · Test",
+     "et Comète",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     true
+    ],
+    "bd": [
+     true,
+     false,
+     false
+    ],
+    "cl": [
+     false,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "0,00",
+     "",
+     "",
+     ""
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 33,
+   "entree": {
+    "screen": null,
+    "steps": [],
+    "card": null,
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-3-annonce-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-3-annonce-667x308-unreal.png"
+  },
+  {
+   "name": "entree-4-cloche-844x390",
+   "desc": "Entrée dans l’épreuve (tranche T10), capture 3-cloche de la recette (cso-shots.mjs:33-34 : « Retour », « Entrer en piste », 80 images) ; capture web = PNG de la recette (tests/e2e/out/cso/3-cloche.png) ; état rejoué par l’exécution t9-recette de l’oracle arrêtée à l’image 85 (capture de cette exécution : entree-4-cloche-844x390-oracle.png) ; vue de la caméra du jeu, HUD et carte affichés ; 844 × 390.",
+   "hour": 15.054667,
+   "eye": [
+    330,
+    6.4,
+    -180.4
+   ],
+   "target": [
+    330,
+    4.941408748976314,
+    -190.29305370259544
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": -3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.255574,
+    0.769527,
+    0.585243
+   ],
+   "day": 0,
+   "canvas": [
+    844,
+    390
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 85,
+    "hw": 2100
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 85
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 45 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 85,
+   "entree": {
+    "screen": null,
+    "steps": [
+     {
+      "tick": 2100
+     }
+    ],
+    "card": null,
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "recette": {
+    "png": "tests/e2e/out/cso/3-cloche.png",
+    "sha256": "48317c3ba0e851376c6c30d44c39e1944050c51a98cdd7974fc4471fc1d09e3e",
+    "oracle": "unreal/docs/parite/cso/entree-4-cloche-844x390-oracle.png",
+    "ecart": {
+     "mean": 12.29,
+     "over16": 12.1,
+     "box": [
+      0,
+      43,
+      843,
+      389
+     ]
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-4-cloche-844x390-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-4-cloche-844x390-unreal.png"
+  },
+  {
+   "name": "entree-4-cloche-667x308",
+   "desc": "Entrée dans l’épreuve (tranche T10), partie réelle t9-recette arrêtée à l’image 85 : capture 3-cloche de la recette (cso-shots.mjs:33-34 : « Retour », « Entrer en piste », 80 images) ; vue de la caméra du jeu, HUD et carte affichés ; 667 × 308.",
+   "hour": 15.054667,
+   "eye": [
+    330,
+    6.4,
+    -180.4
+   ],
+   "target": [
+    330,
+    4.941408748976314,
+    -190.29305370259544
+   ],
+   "fovV": 58.03663127777747,
+   "viewport": {
+    "w": 667,
+    "h": 308
+   },
+   "horse": {
+    "x": 330,
+    "z": -187,
+    "h": -3.141592653589793,
+    "jumpY": 0,
+    "jumpT": -1
+   },
+   "sunDir": [
+    -0.255574,
+    0.769527,
+    0.585243
+   ],
+   "day": 0,
+   "canvas": [
+    667,
+    308
+   ],
+   "course": {
+    "heights": [
+     1.05,
+     1.1,
+     1.1,
+     1.05,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.1,
+     1.15
+    ],
+    "highlight": 1
+   },
+   "hud": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 85,
+    "hw": 2100
+   },
+   "aids": {
+    "run": "unreal/core/tests/oracles/cso_runs/t9-recette.fr.json",
+    "frame": 85
+   },
+   "state": {
+    "to": [],
+    "hi": [
+     false,
+     "<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+     false
+    ],
+    "bg": [
+     false,
+     "CLOCHE",
+     "Tu as 45 s pour franchir la ligne de départ",
+     true
+    ],
+    "fb": [
+     "",
+     "jump-fb off"
+    ],
+    "cad": [
+     0,
+     false
+    ],
+    "bd": [
+     false,
+     false,
+     false
+    ],
+    "cl": [
+     true,
+     true,
+     true
+    ],
+    "ob": false,
+    "board": [
+     "Départ 45 s",
+     "· accordé 64 s",
+     "0 pt",
+     "▸ 1"
+    ],
+    "jump": {
+     "st": "none",
+     "cl": [],
+     "sg": "",
+     "lb": "Saut",
+     "hide": false
+    }
+   },
+   "frame": 85,
+   "entree": {
+    "screen": null,
+    "steps": [
+     {
+      "tick": 2100
+     }
+    ],
+    "card": null,
+    "dialog": null,
+    "setup": {
+     "playerName": "Test",
+     "horseName": "Comète",
+     "horseId": "comete",
+     "lang": "fr"
+    }
+   },
+   "web": "unreal/docs/parite/cso/entree-4-cloche-667x308-web.png",
+   "unreal": "unreal/docs/parite/cso/entree-4-cloche-667x308-unreal.png"
   }
  ]
 }

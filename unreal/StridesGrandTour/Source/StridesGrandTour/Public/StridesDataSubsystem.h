@@ -4,7 +4,9 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "StridesCore/CoursePlan.h"
 #include "StridesCore/CsoCamera.h"
+#include "StridesCore/CsoEntry.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
@@ -164,6 +166,14 @@ public:
 	const TSharedPtr<class FJsonObject>& CsoAids() const { return CsoAidsJson; }
 	const TSharedPtr<class FJsonObject>& CsoJumpStyle() const { return CsoJumpJson; }
 	class UTexture2D* UiIcon(const FString& Name) const { const TObjectPtr<UTexture2D>* T = UiIcons.Find(Name); return T ? T->Get() : nullptr; }
+	// Entrée dans l'épreuve (tranche T10) : activité « Parcours du Pôle » et action de son poteau relevées dans le jeu web
+	// (Content/Data/cso_activity.json, scripts/unreal/export-cso-entry.mjs ; nul si absente ou illisible) ; styles des
+	// cartes de présentation et du plan et du dialogue de l'entraîneur (Content/Data/cso_screens_style.json, --screens ;
+	// nul si absent) ; carrière et tribunes du plan et longueur du parcours (cso_course_pole.json : arena, stands, length).
+	const strides::CsoActivity* CsoActivity() const { return bCsoActivity ? &CsoActivityDef : nullptr; }
+	const TSharedPtr<class FJsonObject>& CsoScreensStyle() const { return CsoScreensJson; }
+	const strides::CoursePlanArena& PlanArena() const { return PlanArenaDef; }
+	double PoleLength() const { return PoleLengthM; }
 	// Géométrie du parcours exportée du jeu web (tranche T5) : Content/World/Cso/cso_fences.json et cso_assets.json ;
 	// IsLoaded() faux si absente (obstacles en formes de base, lignes et poteau invisibles).
 	const FStridesCsoScenery& CsoScenery() const { return CsoSceneryData; }
@@ -186,6 +196,11 @@ private:
 	TSharedPtr<class FJsonObject> CsoControlsJson;
 	TSharedPtr<class FJsonObject> CsoAidsJson;
 	TSharedPtr<class FJsonObject> CsoJumpJson;
+	TSharedPtr<class FJsonObject> CsoScreensJson;
+	strides::CsoActivity CsoActivityDef;
+	bool bCsoActivity = false;
+	strides::CoursePlanArena PlanArenaDef;
+	double PoleLengthM = 368;
 	UPROPERTY() TMap<FString, TObjectPtr<class UTexture2D>> UiIcons;
 	bool bCsoText = false;
 	FStridesCsoScenery CsoSceneryData;

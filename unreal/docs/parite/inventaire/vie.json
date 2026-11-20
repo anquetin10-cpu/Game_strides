@@ -6,7 +6,7 @@
   "js": [
    "src/gameplay/missions.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::StartNextMission (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31) prend la première mission disponible dans l'ordre du JSON ; déclenchée par N (outil du portage ; M ouvre la carte comme le web) ou la croix haut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:106-107, 428-431) et le bouton tactile MISSION (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:135) ; téléphone = 10 noms d'applications non interactifs (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:97-121).",
+  "unreal": "UStridesProgressionSubsystem::StartNextMission (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31) prend la première mission disponible dans l'ordre du JSON ; déclenchée par N (outil du portage ; M ouvre la carte comme le web) ou la croix haut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:110-111, 517-520) et le bouton tactile MISSION (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:135) ; téléphone = 10 noms d'applications non interactifs (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:97-121).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test du sous-système ; Strides.World.Architecture compte seulement 16 missions et 10 applications dans le JSON. testflight.md affirme une carrière jouée dans la fenêtre Unreal, mais validation-mac-2026-11-17.md (commit 285404cc, antérieur à l'ajout de la carrière en d783e762 et 503a72a3) n'en dit rien : pas de niveau joue_ecran.",
@@ -52,7 +52,7 @@
    "src/gameplay/story.js",
    "src/gameplay/story2.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:177-182).",
+  "unreal": "UStridesProgressionSubsystem::IsAvailable (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:4-10), même règle ; graphe lu dans Content/Data/world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:197-202).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:88-117) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement que chaque prérequis est défini plus haut dans le JSON : il resterait vert avec les arêtes du web (transport après fugueur, etc.) comme avec IsAvailable cassé. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -70,7 +70,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test.",
-  "ecart": "Une seule étape par mission, rayon 18 m au lieu de 6 m, mode jamais vérifié, pas de consigne de mode. Le départ (-104, 168 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:104-105) est à 7,2 m du lieu home (-110, 172) : dans l'enchaînement normal, tuto et m1 (lieu home) se terminent dès leur lancement ; groom (lancée après m3 au Pôle) et transport (après plage) se terminent dès le retour à 18 m de l'Écurie du Val.",
+  "ecart": "Une seule étape par mission, rayon 18 m au lieu de 6 m, mode jamais vérifié, pas de consigne de mode. Le départ (-104, 168 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:111-112) est à 7,2 m du lieu home (-110, 172) : dans l'enchaînement normal, tuto et m1 (lieu home) se terminent dès leur lancement ; groom (lancée après m3 au Pôle) et transport (après plage) se terminent dès le retour à 18 m de l'Écurie du Val.",
   "tranche": "e"
  },
  {
@@ -211,7 +211,7 @@
    "src/config.js",
    "src/core/save.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:184-188), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:79).",
+  "unreal": "UStridesProgressionSubsystem::RankName (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:204-208), affichée dans le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:79).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:70-86) passe (journal Automation du 18/11/2026 16:17 UTC, /private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt : Result=Success, EXIT CODE 0) mais vérifie seulement qu'il y a 5 rangs : ni seuils, ni noms, ni RankName ne sont testés. Fonction non couverte : niveau compile. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -314,7 +314,7 @@
    "src/gameplay/story2.js",
    "src/gameplay/parisGP.js"
   ],
-  "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:177-182.",
+  "unreal": "Content/Data/world_architecture.json (16 missions écrites à la main) chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:197-202.",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.World.Architecture et Strides.World.CareerGraph (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:70-117) : journal Automation du 18/11/2026 16:17 UTC (/private/tmp/claude-501/-Users-julien--openclaw-workspace-projects-grand-tour-unreal/57d762b8-da50-58ab-95ad-7a7ec79cb10f/scratchpad/autotests.log, hors dépôt) : Result=Success, EXIT CODE 0 ; ils comptent 16 missions et totalisent 7 520 crédits et 5 980 de réputation, valeurs du JSON. Content/Data/world_architecture.json est écrit à la main (commit d783e762, aucun champ source) et n'est pas produit par scripts/unreal/export-data.mjs : aucune comparaison au JS.",
@@ -659,11 +659,11 @@
   "js": [
    "src/gameplay/activities.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:62-103 (BuildProps : poteau de l'activité cso_train, géométrie exportée du jeu web, tranche T5)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:62-103 (BuildProps : poteau de l'activité cso_train, géométrie exportée du jeu web, tranche T5) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp:1-46 et unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesActivityPost.h (tranche T10 : action du poteau, strides::csoActivityAvailable, Activities.start) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:91-115 (poteau posé avec Content/Data/cso_activity.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:476-508 (libellé, déclenchement)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Poteau de cso_train seulement : géométrie relevée dans le jeu web (scripts/unreal/cso-export.js, comparée au maillage du jeu réel), pièces (mât, panneau) vérifiées par le test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:219-433 (Strides.Parite.CsoScenery) ; montage unreal/docs/parite/cso/poteau-chrono.png.",
-  "ecart": "Un seul poteau (cso_train) affiché, sans interaction ni libellé « Chrono » (T10) ; les quatre autres activités, le meilleur temps et la réputation ne sont pas portés.",
+  "preuve": "Poteau de cso_train seulement : géométrie relevée dans le jeu web (scripts/unreal/cso-export.js, comparée au maillage du jeu réel), pièces (mât, panneau) vérifiées par le test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:222-436 (Strides.Parite.CsoScenery) ; montage unreal/docs/parite/cso/poteau-chrono.png. Tranche T10 : Strides.Cso.Entry : action proposée ou non par le poteau du jeu aux 84 positions sans mission de unreal/core/tests/oracles/cso_entry.json (42 en français, 42 en anglais ; 14 avec l'action, libellé « Chrono » / « Time ») et aux 42 positions avec mission (jamais), 0 écart ; activité lancée par la touche E au poteau ; démonstration -StridesShots et partie -StridesShots=cso-jeu lancées par l'action du poteau (journal « activité lancée au poteau=1 »).",
+  "ecart": "Un seul poteau (cso_train) ; les quatre autres activités, le meilleur temps et la réputation ne sont pas portés ; poteau toujours affiché (masquage au-delà de 300 m non porté) ; libellé « Chrono » sur le bouton tactile du portage (sans pictogramme) ; seule une mission de carrière du portage ou l'épreuve en cours bloque l'action.",
   "tranche": "e"
  },
  {
@@ -673,11 +673,11 @@
   "js": [
    "src/gameplay/activities.js"
   ],
-  "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé au démarrage (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp) ; record « cso_pole » gardé s'il est meilleur selon compareResults, seulement lors de la sauvegarde manuelle (F5 ou bouton SAUVER) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp)",
+  "unreal": "AStridesCourse au Pôle : déroulé d'épreuve du cœur (strides::CsoRun, unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp) lancé par l'action du poteau « Chrono » (tranche T10 : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp, StridesCourse.cpp:154-185) ; record « cso_pole » gardé s'il est meilleur selon compareResults, seulement lors de la sauvegarde manuelle (F5 ou bouton SAUVER) (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Tracé, hauteurs, temps accordé et compareResults comparés à l'oracle JS unreal/core/tests/oracles/cso_course.json par unreal/core/tests/test_core.cpp:163-204 (CTest : 4 944 vérifications, zéro échec, validation-mac-2026-11-17.md l.9) ; la règle de record de l'activité (temps + pénalités) n'a pas d'oracle.",
-  "ecart": "Pas de poteau ni de lancement d'activité (T10 : activité lancée au démarrage) ; record classé par élimination, pénalités puis temps (challenge.js) au lieu du score temps + pénalités ; clé cso_pole au lieu de bestTimes.cso_train ; enregistré seulement à la sauvegarde ; ni classement en ligne ni carte « Nouveau record ».",
+  "ecart": "Activité lancée au poteau (tranche T10) ; record classé par élimination, pénalités puis temps (challenge.js) au lieu du score temps + pénalités ; clé cso_pole au lieu de bestTimes.cso_train ; enregistré seulement à la sauvegarde ; ni classement en ligne ni carte « Nouveau record ».",
   "tranche": "a"
  },
  {
@@ -1320,11 +1320,11 @@
   "js": [
    "src/gameplay/interact.js"
   ],
-  "unreal": "AStridesPlayerController::OnInteract (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:412-419), liée à E et au bouton de face gauche (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:98-99) : seulement monter sur le cheval le plus proche à moins de 3 m (AStridesRider::TryMount, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113) ou descendre ; bouton tactile MONTER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:128).",
+  "unreal": "AStridesPlayerController::DoAction (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:486-508 : dialogue de l'entraîneur fermé d'abord, puis action du poteau « Chrono » d'AStridesActivityPost (priorité 1, rayon 6 m, à cheval, sans mission ; tranche T10), sinon monter sur le cheval le plus proche à moins de 3 m (AStridesRider::TryMount, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113) ou descendre) ; appelée par l'action des commandes du web (E, F, Entrée : StridesPlayerController.cpp:328-329), le bouton de face gauche et le bouton tactile (OnInteract, :444-448) ; bouton tactile au libellé de l'action du poteau (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:373-380)",
   "etat": "partiel",
-  "niveau": "joue_ecran",
-  "preuve": "validation-mac-2026-11-17.md l.15 : « monter, accélérer jusqu'au galop à 8,0 m/s, descendre » contrôlé à l'écran ; aucun test du choix d'action.",
-  "ecart": "Pas de registre ni de priorité : une seule action câblée ; aucune autre action du web (box, soins, maison, commerces, plein, missions, Chrono) n'existe.",
+  "niveau": "teste",
+  "preuve": "validation-mac-2026-11-17.md l.15 : « monter, accélérer jusqu'au galop à 8,0 m/s, descendre » contrôlé à l'écran ; tranche T10 : Strides.Cso.Entry (action du poteau proposée selon la position, le mode et la mission comme le registre du web, 126 positions de cso_entry.json ; touche E au poteau : activité lancée) et Strides.Cso.EntryDialog (touche E : dialogue fermé avant toute autre action).",
+  "ecart": "Pas de registre général : deux actions câblées (poteau du Pôle, monter / descendre) ; la priorité du web (score priorité × 100 − distance) n'est rendue que pour ces deux-là ; aucune autre action du web (box, soins, maison, commerces, plein, missions, autres poteaux) ; clic sonore non joué.",
   "tranche": "socle"
  }
 ]

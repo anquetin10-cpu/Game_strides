@@ -370,6 +370,14 @@ void UStridesTouchControls::Sync()
 		if (!B || B == JumpButton || B == PauseButton) continue;
 		B->SetVisibility(bTouchMode && ButtonVisible(B->GetName(), H) ? Show : Hide);
 	}
+	// Bouton d'action : libellé de l'action proposée par le poteau (t('Chrono'), tranche T10), sinon celui du portage.
+	for (UButton* B : Buttons)
+		if (B && B->GetName() == TEXT("Interact"))
+			if (UTextBlock* L = Cast<UTextBlock>(B->GetContent()))
+			{
+				const FString A = Controller ? Controller->ActionLabel() : FString();
+				L->SetText(FText::FromString(A.IsEmpty() ? FString(TEXT("MONTER")) : A));
+			}
 	// Calque en px CSS : échelle (facteur de pixels de la plateforme), puis mise en page au viewport.
 	const FVector2D V = ViewCss();
 	if (Scale && !TestView.IsZero()) Scale->SetUserSpecifiedScale(1.f);

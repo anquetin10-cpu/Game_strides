@@ -662,7 +662,7 @@
   "js": [
    "src/entities/realistic.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:31-51 (un seul cheval, maillage PJL normalisé toujours chargé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:88 (cheval unique)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:31-51 (un seul cheval, maillage PJL normalisé toujours chargé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:89 (cheval unique)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de sélection ; unreal/docs/validation-mac-2026-11-17.md:16-17 porte sur l'import du cheval, pas sur la gestion de plusieurs chevaux.",

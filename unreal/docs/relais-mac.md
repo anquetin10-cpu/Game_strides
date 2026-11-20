@@ -23,9 +23,9 @@ vérifications, 0 échec, **24 tests** Automation `Strides` en `Result={Success}
 ## Parité de la tranche a (parcours CSO du Pôle), au 20/11/2026
 
 Source de vérité : l'inventaire (`parite/inventaire/*.json`, rendu en [`PARITE.md`](PARITE.md)) ; 78 lignes marquées
-tranche a : **27 identique_prouve**, **32 partiel**, **19 absent**. Sous-tranches livrées : T1 à T9 (banc, cheval,
-obstacles, déroulé et textes, géométrie des obstacles, caméra, HUD d'épreuve, commandes, aides à l'appel). Restent T10
-à T12.
+tranche a : **27 identique_prouve**, **34 partiel**, **17 absent**. Sous-tranches livrées : T1 à T10 (banc, cheval,
+obstacles, déroulé et textes, géométrie des obstacles, caméra, HUD d'épreuve, commandes, aides à l'appel, entrée dans
+l'épreuve). Restent T11 et T12.
 
 - **Prouvé** (oracle exporté du jeu web, comparé par un test qui passe, ou montage côte à côte dans `parite/cso/`) :
   tracé et hauteurs, plan de saut et qualité de l'appel, conduite de concours et cadence, visée et déclenchement du
@@ -43,8 +43,11 @@ obstacles, déroulé et textes, géométrie des obstacles, caméra, HUD d'épreu
   (pas d'orbite manuelle à rendre) et contre le décor (sonde du moteur, pas les colliders du web), taille rendue du
   couple cheval-cavalier, aides à l'appel (T9 : logique, bouton, zone, tracé et repère rejoués sans écart, montages côte
   à côte dont les captures de la recette ; rendu des bandes et des tirets plus terne, aide imposée par un défi non
-  portée, bande de moins de 0,2 m et zone sans aucune plage non départagées).
-- **Absent** : carte de présentation et plan, bilan et classement simulé, poteau interactif (T10), carte de bilan et bouton Recommencer (T11 ; le choix Recommencer est
+  portée, bande de moins de 0,2 m et zone sans aucune plage non départagées), entrée dans l'épreuve (T10 : poteau
+  « Chrono » et action, lancement, contrôle de capacité et dialogue de l'entraîneur, cartes de présentation et du plan,
+  annonce, cloche ; logique et contenus identiques aux oracles, montages côte à côte `entree-*` ; rendu des cartes avec
+  la police du moteur, mise en page relevée pour le texte de référence).
+- **Absent** : bilan et classement simulé, carte de bilan et bouton Recommencer (T11 ; le choix Recommencer est
   écrit dans `CsoRun`, aucun bouton ne l'appelle), sons (T12), collisions des ailes, contacts réels des membres,
   défis.
 - **Non vérifié** : tout ce qui demande un appareil iOS (toucher réel, facteur de pixels, performances) ; un vrai
@@ -86,10 +89,11 @@ refuse d'écrire dans `Saved/Screenshots/Strides` ou `MacEditor` s'ils contienne
 
 ## 5. Boucle jouable (éditeur, Play)
 Scène construite au lancement (carte `Entry` du moteur, `AStridesGameMode`) : départ à l'Écurie du Val, cavalier à pied
-à 2 m du cheval ; l'épreuve « Parcours du Pôle » (`cso_train`) est lancée d'office (le poteau « Chrono » interactif et la
-carte de présentation relèvent de T10).
+à 2 m du cheval ; rien n'est lancé au démarrage (tranche T10) : l'épreuve « Parcours du Pôle » (`cso_train`) se lance au
+poteau « Chrono » de l'entrée de la carrière du Pôle, à cheval (action : **E**, F, Entrée ou bouton d'action « Chrono »).
 1. À pied : ZQSD/WASD (codes physiques) ou joystick ; approcher du cheval (< 3 m), **E** : monter.
-2. Rejoindre l'entrée de la carrière du Pôle (objectif affiché) ; entrée en piste, annonce, **cloche** (45 s).
+2. À cheval à l'entrée de la carrière du Pôle, **E** : grand message « PARCOURS DU PÔLE », carte de présentation (Voir le
+   plan, Retour, **Entrer en piste**, à la souris sur Mac) ; entrée en piste, annonce, **cloche** (45 s).
 3. Joystick avant / arrière : cadence (gardée au relâché, max 8 m/s) ; gauche / droite : virages ; clavier : flèches ou
    WASD, Ctrl / Alt gauche = amplitude 0,5 / 0,25.
 4. HUD d'épreuve (UMG, styles relevés dans le navigateur) : tableau « Départ 45 s · accordé 64 s », chrono, points,

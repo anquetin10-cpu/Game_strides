@@ -121,7 +121,14 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	if (LoadJson(TEXT("cso_course_pole.json"), J))
 	{
 		if (const TSharedPtr<FJsonObject>* A; J->TryGetObjectField(TEXT("arena"), A))
+		{
 			PoleArena = FVector2D((*A)->GetNumberField(TEXT("x")), (*A)->GetNumberField(TEXT("z")));
+			// Plan du parcours (tranche T10) : carrière (POLE.arena.w, d) et tribunes (POLE.stands.w).
+			(*A)->TryGetNumberField(TEXT("w"), PlanArenaDef.w);
+			(*A)->TryGetNumberField(TEXT("d"), PlanArenaDef.d);
+		}
+		if (const TSharedPtr<FJsonObject>* St; J->TryGetObjectField(TEXT("stands"), St)) (*St)->TryGetNumberField(TEXT("w"), PlanArenaDef.standsW);
+		J->TryGetNumberField(TEXT("length"), PoleLengthM);
 		// Tracé : lecture du cœur (strides::parseCourseFile), la même que celle que les tests du cœur comparent à
 		// l'oracle cso_course.json (unreal/core/tests/test_core.cpp, testCourse).
 		FString Text;
@@ -137,6 +144,19 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			LoadLog.Add(FString::Printf(TEXT("cso_course_pole.json : tracé illisible (%s), tracé compilé utilisé"), UTF8_TO_TCHAR(Err.c_str())));
 		for (const auto& P : J->GetObjectField(TEXT("speeds"))->Values) CourseSpeeds.Add(FString(P.Key), P.Value->AsNumber());
 	}
+	// Entrée dans l'épreuve (tranche T10) : activité et action du poteau (lecture du cœur, celle de testCsoEntry), styles des
+	// cartes et du dialogue.
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
+		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/cso_activity.json"))) && strides::csoActivityFromFile(std::string(TCHAR_TO_UTF8(*Text)), CsoActivityDef, Err))
+		{
+			bCsoActivity = true;
+			LoadLog.Add(FString::Printf(TEXT("cso_activity.json : activité %s, action « %s » à %.1f m"), UTF8_TO_TCHAR(CsoActivityDef.id.c_str()), UTF8_TO_TCHAR(CsoActivityDef.label.c_str()), CsoActivityDef.r));
+		}
+		else LoadLog.Add(FString::Printf(TEXT("cso_activity.json : illisible (%s), pas de poteau actif"), UTF8_TO_TCHAR(Err.c_str())));
+	}
+	LoadJson(TEXT("cso_screens_style.json"), CsoScreensJson);
 	// Textes de l'épreuve (tranche T4) : table lue par le cœur (strides::TextTable), la même que testCsoRuns.
 	{
 		FString Text;

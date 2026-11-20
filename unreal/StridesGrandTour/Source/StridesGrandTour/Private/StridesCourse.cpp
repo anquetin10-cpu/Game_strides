@@ -147,7 +147,100 @@ bool AStridesCourse::StartRun(const FString& PlayerName, const FString& HorseNam
 	C.aid = TCHAR_TO_UTF8(*JumpAid);
 	RefreshPropSigns();
 	StartRunWith(C, RunText);
+	bAutoEnter = true;
 	return true;
+}
+
+bool AStridesCourse::StartActivity(const FString& PlayerName, const FString& HorseName, double JumpPower, double Clearance)
+{
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const strides::CsoActivity* A = Data ? Data->CsoActivity() : nullptr;
+	if (!bRunConfig || !A) return false;
+	strides::CsoRunConfig C = RunConfig;
+	C.playerName = TCHAR_TO_UTF8(*PlayerName);
+	C.horseName = TCHAR_TO_UTF8(*HorseName);
+	C.lang = strides::langFromName(TCHAR_TO_UTF8(*Lang));
+	C.aid = TCHAR_TO_UTF8(*JumpAid);
+	// missions.start (missions.js:475-477) : grand message et « notify » avant la première étape.
+	C.launch = true;
+	C.launchBig = strides::csoActivityLaunchBig(*A, RunText, C.lang);
+	// Contrôle de capacité (courses.js:499-528) : obstacles tels qu'ils sont posés (hors épreuve) et hauteurs de l'épreuve
+	// (heights[i] ?? o.h), cheval du joueur (puissance du saut, bonus de franchissement de l'équipement).
+	strides::CsoCapacityInput In;
+	for (const strides::CsoObstacle& O : CoreObstacles) In.fences.push_back({O.kind, O.spread, O.h});
+	In.heights = CourseHeightsV;
+	In.power = JumpPower;
+	In.clearance = Clearance;
+	In.horseName = C.horseName;
+	const strides::CsoCapacity Cap = strides::csoCapacity(In, RunText, C.lang, Data->Jump());
+	C.capacity = Cap.step;
+	C.hopeless = Cap.hopeless;
+	C.capWho = Cap.who;
+	C.capInitials = Cap.initials;
+	C.capText = Cap.text;
+	RefreshPropSigns();
+	StartRunWith(C, RunText);
+	UE_LOG(LogTemp, Display, TEXT("Strides épreuve : activité %s lancée (capacité : portée %.2f m pour %.2f m, dialogue %d)"), UTF8_TO_TCHAR(A->id.c_str()), Cap.reach, Cap.maxH, Cap.hopeless);
+	return true;
+}
+
+bool AStridesCourse::PressScreenButton(const FString& Id)
+{
+	// screens.card (screens.js:162-168) : la carte se ferme, puis le bouton agit.
+	if (ScreenNow == EScreen::Presentation && Id == TEXT("plan")) { ScreenNow = EScreen::Plan; return true; }
+	if (ScreenNow == EScreen::Plan && Id == TEXT("plan-back")) { ScreenNow = EScreen::Presentation; return true; }
+	if (ScreenNow == EScreen::Presentation && Id == TEXT("enter"))
+	{
+		ScreenNow = EScreen::None;
+		if (RunPtr) RunPtr->enter();
+		return true;
+	}
+	return false;
+}
+
+bool AStridesCourse::AdvanceDialog()
+{
+	if (!bDialog) return false;
+	// hud.advanceDialog : une seule ligne, dialogue fermé puis onDone (courses.js:524 : capWarn = false).
+	bDialog = false;
+	if (RunPtr) RunPtr->closeCapacityDialog();
+	return true;
+}
+
+strides::CsoPresentationInput AStridesCourse::PresentationInput() const
+{
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const strides::CsoActivity* A = Data ? Data->CsoActivity() : nullptr;
+	strides::CsoPresentationInput In;
+	for (const strides::TraceFence& F : Trace.fences) In.labels.push_back(F.label);
+	In.heights = CourseHeightsV;
+	if (A)
+	{
+		In.title = A->title;
+		In.className = A->className;
+		In.appTitle = A->appTitle;
+		In.defaultPlace = A->place;
+	}
+	In.horseName = RunHorseName.empty() && RunPtr ? RunPtr->config().horseName : RunHorseName;
+	In.timeAllowed = Allowed;
+	In.length = Data ? Data->PoleLength() : 368;
+	return In;
+}
+
+strides::CsoPresentation AStridesCourse::Presentation() const { return strides::csoPresentation(PresentationInput(), RunText, RunLang()); }
+
+strides::CsoPlanCard AStridesCourse::PlanCard() const
+{
+	// Plan du tracé local (CSO_TRACE, repère de la carrière) : celui du design non décalé.
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	return strides::csoPlanCard(PresentationInput(), Data ? strides::traceCourse(Data->PoleCourse()) : Trace, RunText, RunLang());
+}
+
+strides::CoursePlan AStridesCourse::Plan() const
+{
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const strides::CsoPresentationInput In = PresentationInput();
+	return strides::coursePlan(Data ? strides::traceCourse(Data->PoleCourse()) : Trace, Data ? Data->PlanArena() : strides::CoursePlanArena(), &In.heights, 0, RunText, RunLang());
 }
 
 void AStridesCourse::SetJumpAid(const FString& Aid)
@@ -166,6 +259,11 @@ void AStridesCourse::StartRunWith(const strides::CsoRunConfig& Config, const str
 	bHudWall = true;
 	LastJumpTime = -1;
 	RunPtr = std::make_unique<strides::CsoRun>(Config, RunText);
+	bAutoEnter = false;
+	ScreenStep = -1;
+	ScreenNow = EScreen::None;
+	bDialog = false;
+	RunHorseName = Config.horseName;
 	RunPtr->begin();
 	FlushRunCalls();
 }
@@ -182,6 +280,12 @@ void AStridesCourse::FlushRunCalls()
 	for (const strides::CsoCall& C : RunPtr->takeHud())
 	{
 		HudCalls.Add(Line(C));
+		// Dialogue de l'entraîneur (tranche T10) : affiché par UStridesCsoScreens jusqu'à sa fermeture.
+		if (C.fn == "dialog")
+		{
+			bDialog = true;
+			DialogLine = C;
+		}
 		// Interface d'épreuve (tranche T7) : appel rejoué par le modèle du HUD, affiché par UStridesCsoHud ; texte
 		// transmis aussi aux abonnés (journal).
 		Hud.call(C);
@@ -212,14 +316,25 @@ void AStridesCourse::FlushRunCalls()
 		RunHighlight = RunPtr->highlight();
 		SetHighlight(RunHighlight);
 	}
+	// Étape de présentation commencée (courses.js:529-536, start : showPresentation) : carte ouverte une fois (lancement
+	// direct StartRun : validée d'office à l'image suivante, sans carte ni simulation suspendue).
+	if (!bAutoEnter && !RunPtr->finished() && RunPtr->step() == strides::CsoStep::Presentation && ScreenStep != RunPtr->stepIndex())
+	{
+		ScreenStep = RunPtr->stepIndex();
+		ScreenNow = EScreen::Presentation;
+	}
 }
 
 void AStridesCourse::TickRun(const strides::CsoRunFrame& Frame, strides::CsoCadence& Cadence)
 {
 	if (!RunPtr) return;
-	// Présentation : la carte (Voir le plan / Entrer en piste) relève de la tranche T10 ; en attendant, l'entrée en piste
-	// suit aussitôt (écart inscrit à l'inventaire).
-	if (RunPtr->step() == strides::CsoStep::Presentation) RunPtr->enter();
+	// Présentation (tranche T10) : carte affichée jusqu'à « Entrer en piste » (PressScreenButton) ; lancement direct des
+	// tests et outils (StartRun) : validée d'office, sans carte.
+	if (bAutoEnter && RunPtr->step() == strides::CsoStep::Presentation)
+	{
+		ScreenNow = EScreen::None;
+		RunPtr->enter();
+	}
 	RunPtr->update(Frame, Cadence);
 	FlushRunCalls();
 }

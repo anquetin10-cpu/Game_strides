@@ -126,6 +126,12 @@ private:
 		bool bHasAids = false;
 		FString AidsRunFile;
 		int32 AidsFrame = 0;
+		// Pause de l'horloge virtuelle du HUD après la dernière image (hw de la pose, tranche T10) ; −1 : celle de l'image.
+		int64 HudHw = -1;
+		// Entrée dans l'épreuve (tranche T10) : carte attendue (« presentation », « plan », vide : aucune), joueur et cheval
+		// de l'exécution, carte et dialogue relevés dans le DOM du web (JSON).
+		bool bHasEntree = false;
+		FString EntreeScreen, EntreePlayer, EntreeHorseId, EntreeCard;
 	};
 	void LoadPoses();
 	void TickCso(float DeltaSeconds, class APlayerController* PC);
@@ -135,6 +141,16 @@ private:
 	void ApplyHudPose(const FPose& P, class APlayerController* PC);
 	void ApplyControlsPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	void ApplyAidsPose(const FPose& P, class AStridesHorse* Horse);
+	// Tranche T10 : activité lancée au poteau par l'action du joueur (AStridesPlayerController::DoAction), carte ouverte par
+	// le déroulé et boutons touchés par le widget (UStridesCsoScreens::ClickForTest) jusqu'à la carte de la pose ; relevé
+	// comparé à la carte du web (entree-unreal.json).
+	void ApplyEntreePose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
+	TSharedPtr<class FJsonObject> EntreeResult;
+	// Démonstration (-StridesShots sans mode, cso-jeu) : activité lancée au poteau, « Entrer en piste » touché à l'ouverture
+	// de la carte de présentation.
+	bool StartActivityAtPost(class APlayerController* PC);
+	void EnterWhenPresented(class APlayerController* PC);
+	bool bEnterPending = false;
 	TSharedPtr<class FJsonObject> AidsResult;  // relevé des aides de la pose en cours (aide-unreal.json)
 	// Doigt envoyé à Slate comme un message tactile de la plateforme (Phase 0 posé, 1 glissé, 2 levé ; px CSS).
 	bool SlateTouch(int32 Phase, int32 FingerIndex, const FVector2D& Css);

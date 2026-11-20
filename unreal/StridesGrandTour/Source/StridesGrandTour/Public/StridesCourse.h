@@ -5,11 +5,15 @@
 // hors épreuve puis de l'épreuve, numéro attendu surligné ; Content/World/Cso/cso_fences.json) ; interface d'épreuve
 // (tranche T7 : strides::CsoHud nourri par les appels de l'épreuve et l'état de chaque image, affiché par
 // UStridesCsoHud) ; aides à l'appel (tranche T9 : tracé au sol, zone d'appel, repère, AStridesCourseAids ; bouton SAUT
-// coloré par l'état de CsoHud).
+// coloré par l'état de CsoHud) ; entrée dans l'épreuve (tranche T10 : activité lancée au poteau « Chrono », grand message
+// du lancement, contrôle de capacité et dialogue de l'entraîneur, carte de présentation, carte du plan, « Entrer en
+// piste » ; affichés par UStridesCsoScreens).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "StridesCore/CourseAids.h"
+#include "StridesCore/CoursePlan.h"
+#include "StridesCore/CsoEntry.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoHorse.h"
@@ -44,9 +48,35 @@ public:
 	// Même construction sans le sous-système de données : vitesse du niveau (m/s) et largeur des obstacles (m). Aucune
 	// épreuve n'est préparée (règles, lignes et textes viennent des données).
 	void BuildWith(const strides::CourseDesign& Design, double CourseSpeedMS, double FenceWidthM);
-	// Lancement de l'activité (premier pas de la mission : rejoindre l'entrée de la carrière) avec les règles et textes
-	// préparés par Build ; faux si aucune donnée. Joueur et cheval : textes de l'annonce (N° … · joueur / et cheval).
+	// Lancement direct du déroulé (premier pas : rejoindre l'entrée de la carrière) avec les règles et textes préparés par
+	// Build, sans activité : ni grand message du lancement, ni contrôle de capacité, présentation validée d'office (sans
+	// carte) — chemin des tests du déroulé et des outils ; le jeu passe par StartActivity. Faux si aucune donnée. Joueur
+	// et cheval : textes de l'annonce (N° … · joueur / et cheval).
 	bool StartRun(const FString& PlayerName, const FString& HorseName);
+	// ---- Entrée dans l'épreuve (tranche T10) ----
+	// Activity.start du poteau « Chrono » (activities.js:98-135, missions.start) : grand message « PARCOURS DU PÔLE » et
+	// son « notify », puis le déroulé ; contrôle de capacité du cheval (puissance du saut, bonus de franchissement ;
+	// obstacles posés et hauteurs de l'épreuve) ; la présentation attend « Entrer en piste ». Faux sans données.
+	bool StartActivity(const FString& PlayerName, const FString& HorseName, double JumpPower, double Clearance);
+	// Mission en cours (g.missions.active) : déroulé lancé et pas terminé.
+	bool MissionActive() const { return RunPtr && !RunPtr->finished(); }
+	// Carte modale ouverte (overlay du web : simulation en pause, boutons globaux et action coupés).
+	enum class EScreen : uint8 { None, Presentation, Plan };
+	EScreen Screen() const { return ScreenNow; }
+	// Bouton d'une carte (data-id du web) : « plan » (Voir le plan), « plan-back » (Retour), « enter » (Entrer en piste) ;
+	// faux si ce bouton n'est pas affiché.
+	bool PressScreenButton(const FString& Id);
+	// Dialogue de l'entraîneur (hud.dialog) affiché et sa fermeture (advanceDialog : une seule ligne).
+	bool DialogOpen() const { return bDialog; }
+	const strides::CsoCall& DialogCall() const { return DialogLine; }
+	bool AdvanceDialog();
+	// Contenu des cartes (cœur : CsoEntry, CoursePlan) dans la langue de l'épreuve.
+	strides::CsoPresentationInput PresentationInput() const;
+	strides::CsoPresentation Presentation() const;
+	strides::CsoPlanCard PlanCard() const;
+	strides::CoursePlan Plan() const;
+	strides::Lang RunLang() const { return strides::langFromName(TCHAR_TO_UTF8(*Lang)); }
+	const strides::TextTable& Texts() const { return RunText; }
 	// Réglage jumpAid changé (carte Pause, tranche T8) : gardé pour la prochaine épreuve et appliqué à celle en cours.
 	void SetJumpAid(const FString& Aid);
 	// Même lancement avec des règles et une table de textes données (tests).
@@ -160,4 +190,11 @@ private:
 	bool bHudWall = false;  // origine fixée
 	double LastJumpTime = -1;
 	UPROPERTY() TObjectPtr<AStridesCourseAids> Aids;
+	// Entrée dans l'épreuve (tranche T10).
+	bool bAutoEnter = false;         // StartRun : présentation validée d'office
+	int32 ScreenStep = -1;           // rang de l'étape de présentation dont la carte a été ouverte
+	EScreen ScreenNow = EScreen::None;
+	bool bDialog = false;
+	strides::CsoCall DialogLine;
+	std::string RunHorseName;
 };

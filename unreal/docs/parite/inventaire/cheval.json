@@ -6,7 +6,7 @@
   "js": [
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:411 (hors épreuve : vitesse Gaits[GaitIndex].Speed lue dans Content/Data/horse_gaits.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:189-194 (ChangeGait) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:422-423 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:129-130 (ALLURE + / ALLURE -) ; mais bCsoControls vaut true par défaut (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:37) et n'est jamais remis à false",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:411 (hors épreuve : vitesse Gaits[GaitIndex].Speed lue dans Content/Data/horse_gaits.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:189-194 (ChangeGait) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:511-512 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:129-130 (ALLURE + / ALLURE -) ; mais bCsoControls vaut true par défaut (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:37) et n'est jamais remis à false",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test. La branche hors épreuve n'est jamais exécutée (rg bCsoControls : aucune affectation hors de la déclaration) ; la validation Mac (unreal/docs/validation-mac-2026-11-17.md:18) a déclenché les allures par la cadence de concours, pas par cette branche.",
@@ -191,7 +191,7 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:173-179 (GroundAt = TerrainHeight du relief exporté) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:320-322 (pente devant le cheval, entrée du cœur)",
   "etat": "partiel",
   "niveau": "compile",
-  "preuve": "Aucun test du cheval ; TerrainHeight lit la grille exportée du jeu web (StridesDataSubsystem.cpp:237-248) sans oracle de hauteur.",
+  "preuve": "Aucun test du cheval ; TerrainHeight lit la grille exportée du jeu web (StridesDataSubsystem.cpp:257-268) sans oracle de hauteur.",
   "ecart": "Relief seul : ni platelage, ni trottoirs, ni camion ; aucun ralentissement en pente ; cheval toujours horizontal (FRotator(0, cap, 0)).",
   "tranche": "c"
  },
@@ -843,7 +843,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:402-407 (Look : AddYawInput / AddPitchInput, souris et stick droit, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:95-96)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:434-439 (Look : AddYawInput / AddPitchInput, souris et stick droit, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:100-101)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; rien à l'écran dans la validation Mac.",
@@ -945,7 +945,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core). unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:600-683 place une caméra fixe, mais seulement pour le banc de captures lancé avec -StridesShots.",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core). unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:630-714 place une caméra fixe, mais seulement pour le banc de captures lancé avec -StridesShots.",
   "ecart": "Aucune séquence ni mode photo.",
   "tranche": "socle"
  },
@@ -956,7 +956,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:316-325 (marche relative au lacet de contrôle, pas à celui de la caméra) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:63-64 (retard de caméra : après un placement la caméra glisse au lieu d'être replacée)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:348-357 (marche relative au lacet de contrôle, pas à celui de la caméra) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:63-64 (retard de caméra : après un placement la caméra glisse au lieu d'être replacée)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test.",

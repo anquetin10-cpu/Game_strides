@@ -29,6 +29,8 @@
 #include "StridesRider.h"
 #include "StridesTouchControls.h"
 #include "StridesPauseMenu.h"
+#include "StridesCsoScreens.h"
+#include "StridesActivityPost.h"
 #include "StridesUnits.h"
 #include "UnrealClient.h"
 #include "UnrealEngine.h"
@@ -266,6 +268,8 @@ void AStridesShots::Tick(float DeltaSeconds)
 		TickCso(DeltaSeconds, PC);
 		return;
 	}
+	// Tranche T10 : « Entrer en piste » touché dès que la carte de présentation de l'activité lancée s'ouvre.
+	EnterWhenPresented(PC);
 	if (Mode() == TEXT("cso-jeu"))
 	{
 		TickJeu(DeltaSeconds, PC);
@@ -318,8 +322,11 @@ void AStridesShots::Tick(float DeltaSeconds)
 		Horse->PlaceAt(P0.x, P0.z, P0.h);
 		Rider->SetActorLocation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 150.0 + FVector(0, 0, 90));
 		const bool bMounted = Rider->TryMount(PC);
+		// Tranche T10 : activité lancée au poteau « Chrono » par l'action du joueur (le départ du tracé est l'entrée de la
+		// carrière, dans la zone du poteau), présentation validée par « Entrer en piste ».
+		const bool bStarted = StartActivityAtPost(PC);
 		Horse->ToggleDemoCourse();
-		UE_LOG(LogTemp, Display, TEXT("Strides ride: monté=%d, départ (%.1f, %.1f), sol %.2f m"), bMounted, P0.x, P0.z, Horse->GroundAt(P0.x, P0.z));
+		UE_LOG(LogTemp, Display, TEXT("Strides ride: monté=%d, activité lancée au poteau=%d, départ (%.1f, %.1f), sol %.2f m"), bMounted, bStarted, P0.x, P0.z, Horse->GroundAt(P0.x, P0.z));
 		RideShot = 0;
 		Wait = 3.f;
 		Index--;  // reste sur cette étape
@@ -407,13 +414,14 @@ void AStridesShots::TickJeu(float DeltaSeconds, APlayerController* PC)
 	AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
 	const AStridesCourse* Course = Horse ? Horse->Course : nullptr;
 	const strides::CsoRun* Run = Course ? Course->Run() : nullptr;
-	if (!Horse || !Run) { UE_LOG(LogTemp, Error, TEXT("Strides jeu: pas d'épreuve")); JeuStep = 99; }
+	// Tranche T10 : aucune épreuve avant l'action du poteau (étape 1).
+	if (!Horse || (!Run && JeuStep >= 2)) { UE_LOG(LogTemp, Error, TEXT("Strides jeu: pas d'épreuve")); JeuStep = 99; }
 	const strides::CsoHud* H = Course ? &Course->HudModel() : nullptr;
 	auto Shot = [&](const TCHAR* Name, const TCHAR* What) { JeuSince = JeuClock; JeuSeen = -1.f; JeuCapture(Name, What, PC); JeuStep++; JeuWait = 1.f; };
 	switch (JeuStep)
 	{
-	case 0:  // départ du jeu : cavalier à pied à l'Écurie du Val, épreuve à l'étape « rejoindre l'entrée »
-		Shot(TEXT("jeu-1-hors-epreuve"), TEXT("hors épreuve : cavalier à pied au départ du jeu (étape « rejoindre l'entrée de la carrière »)"));
+	case 0:  // départ du jeu : cavalier à pied à l'Écurie du Val, aucune activité lancée (tranche T10)
+		Shot(TEXT("jeu-1-hors-epreuve"), TEXT("hors épreuve : cavalier à pied au départ du jeu (aucune activité lancée)"));
 		break;
 	case 1:
 	{
@@ -423,8 +431,9 @@ void AStridesShots::TickJeu(float DeltaSeconds, APlayerController* PC)
 		Horse->PlaceAt(P0.x, P0.z, P0.h);
 		if (Rider) Rider->SetActorLocation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 150.0 + FVector(0, 0, 90));
 		const bool bMounted = Rider && Rider->TryMount(PC);
+		const bool bStarted = StartActivityAtPost(PC);
 		Horse->ToggleDemoCourse();
-		UE_LOG(LogTemp, Display, TEXT("Strides jeu: monté=%d, démonstration lancée"), bMounted);
+		UE_LOG(LogTemp, Display, TEXT("Strides jeu: monté=%d, activité lancée au poteau=%d, démonstration lancée"), bMounted, bStarted);
 		JeuStep++;
 		JeuWait = 0.f;
 		break;
@@ -554,6 +563,8 @@ void AStridesShots::LoadPoses()
 			P.bHasHud = true;
 			P.HudRunFile = (*Hu)->GetStringField(TEXT("run"));
 			P.HudFrame = (int32)(*Hu)->GetNumberField(TEXT("frame"));
+			double Hw = -1;
+			if ((*Hu)->TryGetNumberField(TEXT("hw"), Hw)) P.HudHw = (int64)Hw;
 			const TSharedPtr<FJsonObject>* Ex = nullptr;
 			if ((*Hu)->TryGetObjectField(TEXT("extra"), Ex))
 			{
@@ -575,6 +586,25 @@ void AStridesShots::LoadPoses()
 			P.bHasAids = true;
 			P.AidsRunFile = (*Ai)->GetStringField(TEXT("run"));
 			P.AidsFrame = (int32)(*Ai)->GetNumberField(TEXT("frame"));
+		}
+		// Entrée dans l'épreuve (tranche T10) : carte attendue, joueur et cheval de l'exécution, carte relevée dans le web.
+		const TSharedPtr<FJsonObject>* En = nullptr;
+		if (O->TryGetObjectField(TEXT("entree"), En))
+		{
+			P.bHasEntree = true;
+			(*En)->TryGetStringField(TEXT("screen"), P.EntreeScreen);
+			const TSharedPtr<FJsonObject>* Su = nullptr;
+			if ((*En)->TryGetObjectField(TEXT("setup"), Su))
+			{
+				(*Su)->TryGetStringField(TEXT("playerName"), P.EntreePlayer);
+				(*Su)->TryGetStringField(TEXT("horseId"), P.EntreeHorseId);
+			}
+			const TSharedPtr<FJsonObject>* Ca = nullptr;
+			if ((*En)->TryGetObjectField(TEXT("card"), Ca))
+			{
+				TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> W = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&P.EntreeCard);
+				FJsonSerializer::Serialize(Ca->ToSharedRef(), W);
+			}
 		}
 		// Commandes d'épreuve (tranche T8) : page tactile, doigt sur le joystick, carte Pause.
 		O->TryGetBoolField(TEXT("tactile"), P.bTactile);
@@ -670,6 +700,7 @@ void AStridesShots::ApplyPose(const FPose& P, APlayerController* PC)
 	if (P.bHasHud) ApplyHudPose(P, PC);
 	if (P.bHasAids && Horse) ApplyAidsPose(P, Horse);
 	ApplyControlsPose(P, PC, Horse);
+	if (P.bHasEntree && Horse) ApplyEntreePose(P, PC, Horse);
 	// Soleil : la lumière va du soleil vers la scène (sens opposé à sunDir, direction web → axes Unreal).
 	const FVector LightDir = -FVector(P.SunDir.X, P.SunDir.Z, P.SunDir.Y).GetSafeNormal();
 	for (TActorIterator<ADirectionalLight> It(GetWorld()); It; ++It) It->SetActorRotation(LightDir.Rotation());
@@ -762,7 +793,7 @@ void AStridesShots::ApplyHudPose(const FPose& P, APlayerController* PC)
 	const J RunJ = JParser(Utf8).parse();
 	const std::string ExtraUtf8 = TCHAR_TO_UTF8(*P.HudExtra);
 	const J Extra = P.HudExtra.IsEmpty() ? J() : JParser(ExtraUtf8).parse();
-	const int N = StridesCsoHudReplay::Run(PoseHud, RunJ, P.HudFrame, P.HudExtraFrame, P.HudExtra.IsEmpty() ? nullptr : &Extra);
+	const int N = StridesCsoHudReplay::Run(PoseHud, RunJ, P.HudFrame, P.HudExtraFrame, P.HudExtra.IsEmpty() ? nullptr : &Extra, P.HudHw);
 	// État rejoué comparé à l'état du DOM du web à la même image (toasts, astuce, grand message, mot d'appel, crans,
 	// tableau, classes) et textes du tableau.
 	TArray<FString> Diffs;
@@ -843,6 +874,125 @@ void AStridesShots::ApplyAidsPose(const FPose& P, AStridesHorse* Horse)
 	}
 	AidsResult->SetNumberField(TEXT("lineQuads"), A->IsShown(TEXT("line")) ? A->LineQuads() : 0);
 	AidsResult->SetNumberField(TEXT("afterQuads"), A->IsShown(TEXT("after")) ? A->AfterQuads() : 0);
+}
+
+// ---------- Entrée dans l'épreuve (tranche T10) ----------
+bool AStridesShots::StartActivityAtPost(APlayerController* PC)
+{
+	AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
+	const AStridesCourse* C = SPC ? SPC->EntryCourse() : nullptr;
+	if (!SPC || !C || C->MissionActive() || SPC->ActionLabel().IsEmpty()) return false;
+	const bool bOk = SPC->DoAction() && C->MissionActive();
+	bEnterPending = bOk;
+	return bOk;
+}
+
+void AStridesShots::EnterWhenPresented(APlayerController* PC)
+{
+	AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
+	AStridesCourse* C = SPC ? SPC->EntryCourse() : nullptr;
+	if (!bEnterPending || !C) return;
+	if (C->DialogOpen()) SPC->DoAction();  // dialogue de l'entraîneur fermé (action)
+	if (C->Screen() != AStridesCourse::EScreen::Presentation) return;
+	UStridesCsoScreens* W = SPC->ScreensWidget();
+	const bool bClicked = W ? W->ClickForTest(TEXT("enter")) : C->PressScreenButton(TEXT("enter"));
+	UE_LOG(LogTemp, Display, TEXT("Strides shots: carte de présentation ouverte, « Entrer en piste » touché=%d"), bClicked);
+	bEnterPending = false;
+}
+
+void AStridesShots::ApplyEntreePose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
+{
+	AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
+	AStridesCourse* C = SPC ? SPC->EntryCourse() : nullptr;
+	UStridesCsoScreens* W = SPC ? SPC->ScreensWidget() : nullptr;
+	EntreeResult = MakeShared<FJsonObject>();
+	if (!C || !W)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Strides parite: entrée %s : poteau, épreuve ou widget des cartes absent"), *P.Name);
+		return;
+	}
+	using ES = AStridesCourse::EScreen;
+	const ES Want = P.EntreeScreen == TEXT("presentation") ? ES::Presentation : P.EntreeScreen == TEXT("plan") ? ES::Plan : ES::None;
+	TArray<FString> Did;
+	// Activité lancée comme le joueur la lance : action du poteau (cheval monté posé à la pose, 4 m au sud de l'entrée,
+	// dans la zone de 6 m du départ), puis déroulé (rejoindre l'entrée, capacité) jusqu'à la carte, au fil des images du
+	// cheval (ApplyPose est rappelée avant la capture).
+	if (Want != ES::None && !C->MissionActive())
+	{
+		const FString Label = SPC->ActionLabel();
+		const bool bOk = !Label.IsEmpty() && SPC->DoAction();
+		Did.Add(FString::Printf(TEXT("action « %s » du poteau : activité lancée=%d"), *Label, bOk && C->MissionActive()));
+	}
+	// Boutons de la carte touchés par le widget (gestes de la recette : Voir le plan, Retour, Entrer en piste).
+	if (Want == ES::Plan && C->Screen() == ES::Presentation) Did.Add(FString::Printf(TEXT("Voir le plan=%d"), W->ClickForTest(TEXT("plan"))));
+	if (Want == ES::Presentation && C->Screen() == ES::Plan) Did.Add(FString::Printf(TEXT("Retour=%d"), W->ClickForTest(TEXT("plan-back"))));
+	if (Want == ES::None && C->Screen() == ES::Plan) Did.Add(FString::Printf(TEXT("Retour=%d"), W->ClickForTest(TEXT("plan-back"))));
+	if (Want == ES::None && C->Screen() == ES::Presentation) Did.Add(FString::Printf(TEXT("Entrer en piste=%d"), W->ClickForTest(TEXT("enter"))));
+	W->Refresh();
+	// Carte affichée comparée à celle du DOM du web : kicker, titre, grille, règles, légende, textes et primitives du plan,
+	// boutons.
+	TArray<FString> Diffs;
+	const ES Got = C->Screen();
+	if (Got != Want) Diffs.Add(FString::Printf(TEXT("carte %d au lieu de %d"), (int32)Got, (int32)Want));
+	if (!P.EntreeCard.IsEmpty() && Got != ES::None)
+	{
+		const std::string Utf8 = TCHAR_TO_UTF8(*P.EntreeCard);
+		const J Web = JParser(Utf8).parse();
+		auto Same = [&](const TCHAR* What, const std::string& A, const J& B) { if (B.t != J::Str || B.s != A) Diffs.Add(FString::Printf(TEXT("%s : « %s » / web « %s »"), What, UTF8_TO_TCHAR(A.c_str()), UTF8_TO_TCHAR(B.s.c_str()))); };
+		const J& Bt = Web["buttons"];
+		if (Got == ES::Presentation)
+		{
+			const strides::CsoPresentation Pr = C->Presentation();
+			Same(TEXT("kicker"), Pr.kicker, Web["kicker"]);
+			Same(TEXT("titre"), Pr.title, Web["title"]);
+			if (Web["rows"].a.size() != Pr.rows.size()) Diffs.Add(TEXT("nombre de lignes de la grille"));
+			for (size_t I = 0; I < Pr.rows.size() && I < Web["rows"].a.size(); I++)
+			{
+				Same(TEXT("clé"), Pr.rows[I].first, Web["rows"][I][0]);
+				Same(TEXT("valeur"), Pr.rows[I].second, Web["rows"][I][1]);
+			}
+			if (!Pr.jury.empty() || !Web["jury"].isNull()) Same(TEXT("jury"), Pr.jury, Web["jury"]);
+			Same(TEXT("règles"), Pr.rules, Web["rules"]);
+			if (Bt.a.size() != 2) Diffs.Add(TEXT("boutons"));
+			else
+			{
+				Same(TEXT("bouton plan"), Pr.planLabel, Bt[0][1]);
+				Same(TEXT("bouton enter"), Pr.enterLabel, Bt[1][1]);
+			}
+		}
+		else
+		{
+			const strides::CsoPlanCard Pc = C->PlanCard();
+			const strides::CoursePlan Plan = C->Plan();
+			Same(TEXT("kicker"), Pc.kicker, Web["kicker"]);
+			Same(TEXT("titre"), Pc.title, Web["title"]);
+			Same(TEXT("légende"), Pc.legend, Web["legend"]);
+			Same(TEXT("viewBox"), Plan.viewBox, Web["svg"]["viewBox"]);
+			std::vector<std::string> Texts;
+			TMap<FString, int32> N;
+			for (const strides::PlanPrim& Pp : Plan.prims)
+			{
+				if (Pp.kind == strides::PlanPrim::Kind::Text) Texts.push_back(Pp.text);
+				N.FindOrAdd(Pp.kind == strides::PlanPrim::Kind::Rect ? TEXT("rect") : Pp.kind == strides::PlanPrim::Kind::Line ? TEXT("line") : Pp.kind == strides::PlanPrim::Kind::Polyline ? TEXT("polyline") : Pp.kind == strides::PlanPrim::Kind::Path ? TEXT("path") : Pp.kind == strides::PlanPrim::Kind::Circle ? TEXT("circle") : TEXT("text"))++;
+			}
+			bool bTx = Web["svg"]["texts"].a.size() == Texts.size();
+			for (size_t I = 0; bTx && I < Texts.size(); I++) bTx = Web["svg"]["texts"][I].s == Texts[I];
+			if (!bTx) Diffs.Add(TEXT("textes du plan"));
+			for (const TCHAR* K : {TEXT("rect"), TEXT("line"), TEXT("polyline"), TEXT("path"), TEXT("circle"), TEXT("text")})
+				if ((int32)Web["svg"]["counts"][TCHAR_TO_UTF8(K)].num() != N.FindRef(K)) Diffs.Add(FString::Printf(TEXT("nombre de %s du plan"), K));
+			if (Bt.a.size() != 1) Diffs.Add(TEXT("boutons"));
+			else Same(TEXT("bouton plan-back"), Pc.backLabel, Bt[0][1]);
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("Strides parite: entrée %s : %s ; carte affichée %d (voulue %d), %s"), *P.Name, Did.Num() ? *FString::Join(Did, TEXT(", ")) : TEXT("rien à faire"),
+		(int32)Got, (int32)Want, Diffs.Num() ? *(TEXT("DIFFÉRENTE du web : ") + FString::Join(Diffs, TEXT(" ; "))) : TEXT("identique au web"));
+	TArray<TSharedPtr<FJsonValue>> Dv, Gv;
+	for (const FString& X : Diffs) Dv.Add(MakeShared<FJsonValueString>(X));
+	for (const FString& X : Did) Gv.Add(MakeShared<FJsonValueString>(X));
+	EntreeResult->SetStringField(TEXT("screen"), Got == ES::Presentation ? TEXT("presentation") : Got == ES::Plan ? TEXT("plan") : TEXT(""));
+	EntreeResult->SetArrayField(TEXT("gestures"), Gv);
+	EntreeResult->SetArrayField(TEXT("diffs"), Dv);
+	EntreeResult->SetStringField(TEXT("step"), C->Run() ? UTF8_TO_TCHAR(strides::csoStepName(C->Run()->step())) : TEXT(""));
 }
 
 void AStridesShots::ApplyCamRunPose(const FPose& P, APlayerController* PC, AStridesHorse* Horse)
@@ -1047,6 +1197,26 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 						UE_LOG(LogTemp, Display, TEXT("Strides parite: commandes %s affichées : %s"), *P.Name, *FString::Join(T->VisibleButtons(), TEXT(", ")));
 					}
 					if (P.bHasAids && AidsResult.IsValid()) HudResults.Last()->AsObject()->SetObjectField(TEXT("aids"), AidsResult);
+					// Cartes de l'entrée (tranche T10) : éléments affichés par UStridesCsoScreens à la capture, primitives du plan
+					// peintes, comparaison au DOM du web.
+					if (P.bHasEntree && EntreeResult.IsValid())
+					{
+						if (const UStridesCsoScreens* Sw = SPC->ScreensWidget())
+						{
+							TArray<TSharedPtr<FJsonValue>> Sd;
+							for (const FString& L : Sw->Describe()) Sd.Add(MakeShared<FJsonValueString>(L));
+							EntreeResult->SetArrayField(TEXT("shown"), Sd);
+							EntreeResult->SetNumberField(TEXT("card"), Sw->CardShown());
+							if (const UStridesCoursePlanView* Pv = Sw->PlanView())
+							{
+								TSharedPtr<FJsonObject> Pc = MakeShared<FJsonObject>();
+								for (const TPair<FString, int32>& Kv : Pv->DrawnCounts()) Pc->SetNumberField(Kv.Key, Kv.Value);
+								EntreeResult->SetObjectField(TEXT("planPainted"), Pc);
+							}
+							UE_LOG(LogTemp, Display, TEXT("Strides parite: cartes %s affichées : %s"), *P.Name, *FString::Join(Sw->Describe(), TEXT(" ; ")));
+						}
+						HudResults.Last()->AsObject()->SetObjectField(TEXT("entree"), EntreeResult);
+					}
 					if (const UStridesPauseMenu* M = SPC->PauseMenuWidget(); M && M->IsOpen())
 					{
 						TArray<TSharedPtr<FJsonValue>> Pm;

@@ -24,7 +24,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:41) ; pas d'essoufflement, pas d'anneau BOOST.",
+  "ecart": "Le portage ne simule ni n'affiche l'endurance (StaminaMul est seulement lu dans StridesDataSubsystem.h:43) ; pas d'essoufflement, pas d'anneau BOOST.",
   "tranche": "h"
  },
  {
@@ -109,7 +109,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Test moteur Strides.Hud.ObjectiveLines (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoRunTests.cpp:431) : choix et ordre des lignes (épreuve en cours avec ou sans mission de carrière, objectif vide, hors épreuve), Result={Success} le 19/11/2026 ; MissionStatus lui-même non couvert ; aucune capture côte à côte dans unreal/docs/parite/.",
-  "ecart": "Une ligne « <titre> · rejoindre <identifiant de lieu> » (identifiant brut, ex. « home », pas le nom du lieu) ou « Aucune mission active » ; pas d'étiquette, de détail, de chrono, d'alerte, d'animation ni de toucher. Pendant l'épreuve du Pôle (lancée au démarrage), deux lignes : l'objectif de l'épreuve puis la mission de carrière lancée (le web n'a qu'une mission active à la fois : missions.active). En épreuve (mode concours), le HUD de débogage, et donc cette ligne, est masqué comme la carte d'objectif du web (.hud.cso-on .objective) ; l'objectif reste calculé (CsoRun::text). Contrôle des remarques (20/11/2026) : l'épreuve du Pôle est lancée au démarrage et reste au bilan (strides::CsoRun jamais terminée : bilan et fin de mission relèvent de T10 et T11) : bRunLive reste vrai toute la partie, « Aucune mission active » ne s'affiche plus et l'objectif « Résultats… » reste ; écart à corriger avec T10 et T11.",
+  "ecart": "Une ligne « <titre> · rejoindre <identifiant de lieu> » (identifiant brut, ex. « home », pas le nom du lieu) ou « Aucune mission active » ; pas d'étiquette, de détail, de chrono, d'alerte, d'animation ni de toucher. Pendant l'épreuve du Pôle (lancée au poteau depuis la tranche T10), deux lignes : l'objectif de l'épreuve puis la mission de carrière lancée (le web n'a qu'une mission active à la fois : missions.active). En épreuve (mode concours), le HUD de débogage, et donc cette ligne, est masqué comme la carte d'objectif du web (.hud.cso-on .objective) ; l'objectif reste calculé (CsoRun::text). Contrôle des remarques (20/11/2026) : l'épreuve reste au bilan une fois lancée (strides::CsoRun jamais terminée : fin de mission en T11) : bRunLive reste vrai ensuite et l'objectif « Résultats… » reste ; depuis la tranche T10, rien n'est lancé au démarrage (« Aucune mission active » au départ du jeu, relevé jeu-unreal.json : objectif vide).",
   "tranche": "e"
  },
  {
@@ -175,11 +175,11 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Aucun dialogue de PNJ ni d'histoire dans le portage.",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScreens.cpp:572-684 (UStridesCsoScreens::BuildDialog : dialogue de l'entraîneur du contrôle de capacité, tranche T10) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:201-208, 284-289 (appel « dialog » du déroulé, AdvanceDialog) ; Content/Data/cso_screens_style.json (dialog : boîte, pastille, nom, « Toucher pour fermer », texte)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.Cso.EntryDialog (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoEntryTests.cpp:232-289, Result={Success} le 20/11/2026) : dialogue du contrôle de capacité affiché par le widget (initiales, nom en capitales, « Toucher pour fermer », réplique identique à l'oracle cso_entry.json), fermé par l'action (touche E) ou le toucher (ClickForTest « dialog »).",
+  "ecart": "Seul le dialogue de l'entraîneur du Pôle (une réplique) existe : aucun dialogue de PNJ ni d'histoire ; « Toucher pour continuer » (plusieurs répliques) non exercé ; clic sonore et rappel en fin non portés ; masquage de la télémétrie et de la plaque de zone sans objet (non portées) ; boîte à la hauteur du relevé (texte de référence), police du moteur ; aucune capture côte à côte.",
   "tranche": "e"
  },
  {
@@ -189,7 +189,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "strides::CsoHud::update (bouton) et jumpEarly (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:205-215, 179-185) ; UStridesTouchControls::ApplyJumpState (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:413-527 : fond, anneau, halo, pastille, libellé ; styles de Content/Data/cso_jump_style.json) ; horse:jumpEarly → jumpEarly (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:332-333)",
+  "unreal": "strides::CsoHud::update (bouton) et jumpEarly (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:205-215, 179-185) ; UStridesTouchControls::ApplyJumpState (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:421-535 : fond, anneau, halo, pastille, libellé ; styles de Content/Data/cso_jump_style.json) ; horse:jumpEarly → jumpEarly (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:332-333)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "État du bouton (_jt, classes far / good / near / early, signe, libellé traduit, « Trop tôt » 600 ms sur l'horloge des temporisations du HUD, relancé par un second appui) : canal « ai » des 10 exécutions t9-* de unreal/core/tests/oracles/cso_runs/ (appels de CourseAids.update relevés dans le jeu web : entrées, sol lu, maillages après l'appel ; bouton SAUT image par image ; dont t9-ambre, bande ambre sans bande verte, t9-courbe, jumeau de t9-parcours tracé masqué, et t9-recette, tests/e2e/cso-shots.mjs rejoué au pas fixe) rejoué par testCsoAids (unreal/core/tests/test_core.cpp:2524) : 7 022 appels, 7 801 images, 0 écart ; styles des 8 états relevés dans le vrai HUD (scripts/unreal/export-hud-style.mjs --jump-states, 844 × 390 et 667 × 308) ; test moteur Strides.Cso.Aids (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesAidsTests.cpp) : Result={Success} (HUD des exécutions t9-appel et t9-aide-off rejoué et affiché par le widget à chaque image, deux viewports : style, libellé en capitales, signe, couleurs du fond, de l'anneau et de la pastille, halo = DOM du web et styles relevés, 0 écart ; anneau et pastille posés aux boîtes relevées ; libellé anglais « TOO FAR ») ; scripts/unreal/mutations-cso-aids.py : 55 mutations de CourseAids.cpp et du bouton de CsoHud.cpp, 46 détectées, 9 non détectées déclarées (raisons écrites dans le script) ; montages côte à côte unreal/docs/parite/cso/aide-*.png (Trop loin : captures 4 et 5 de la recette, PNG du web d'origine ; Saute ! avec halo : aide-saute ; Trop près, Trop tôt, aide « bouton seul », Saut sans couleur) : HUD rejoué jusqu'à l'image, état identique au DOM du web, bouton relevé dans aide-unreal.json.",
@@ -203,7 +203,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "strides::csoTakeoffFeedback et CsoRun::feedback (unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:414-436) ; strides::CsoHud::jumpFeedback (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:162, 1,5 s) ; UStridesCsoHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoHud.cpp:593-736, couleur good / ok / bad du relevé) ; dernier saut fourni par AStridesCourse::NoteLastJump (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:261)",
+  "unreal": "strides::csoTakeoffFeedback et CsoRun::feedback (unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:414-436) ; strides::CsoHud::jumpFeedback (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:162, 1,5 s) ; UStridesCsoHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoHud.cpp:593-736, couleur good / ok / bad du relevé) ; dernier saut fourni par AStridesCourse::NoteLastJump (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:376)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "unreal/core/tests/oracles/cso_feedback.json (feedback de courses.js évaluée sur 1 638 cas) : 0 écart (unreal/core/tests/test_core.cpp:1424) ; mots d'appel des exécutions : 98 appels hud.jumpFeedback identiques (testCsoRuns, ep.lj) ; unreal/core/tests/oracles/cso_hud.json (scripts/unreal/export-hud-style.mjs : le vrai HUD du jeu web rejoue, sur une horloge virtuelle, les appels hud.* et l'état lu par hud.update des 77 exécutions de cso_runs/ et d'une séquence synthétique, à 390 et 768 px de haut : 156 rejeux) rejoué par strides::CsoHud dans unreal/core/tests/test_core.cpp:1501 (testCsoHud) : 75 006 images, 0 écart, sur 4 horloges (ticks entiers, CsoHud::advance par pas de 1/30 s, par pas découpés, par pas arrondis en float) (toasts, astuce, grand message et big-on, mot d'appel, crans, tableau masqué / over / faults, classes cso-on / cso-ctl / cso-sober, objectif) ; même rejeu par le module de jeu, test moteur Strides.Parite.CsoHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoHudTests.cpp:81), Result={Success} ; Montages côte à côte web / Unreal unreal/docs/parite/cso/hud-*-844x390.png et hud-*-667x308.png (8 états : cloche, avant le départ, en course « ▸ 4A », dépassement en ambre, « Barre au 2 · +4 · Appel trop loin » et « Appel parfait » d'une vraie exécution (t7-parfait-barre-2), crans de cadence, élimination ; 844 × 390 et 667 × 308, même lieu, même heure, même caméra ; scripts/unreal/export-hud-style.mjs --shots puis -StridesShots=cso, état rejoué comparé à l'état du DOM du web : identique pour les 16 poses, unreal/docs/parite/cso/hud-unreal.json) ; ancien affichage « Dernier appel : … » du HUD de débogage masqué en épreuve ; scripts/unreal/mutations-cso-hud.py : 49 mutations de CsoHud.cpp (dont 4 de l'horloge murale) et du mot d'appel de CsoRun.cpp, 48 détectées par le banc ; la 49e (ordre de déclenchement inversé à échéance égale) est équivalente par construction (rappels des temporisations commutatifs, raison écrite dans le script).",
@@ -231,7 +231,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "strides::CsoHud::update (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:205 : round(cadence / 8 × 6) par Math.round, 2 s après un réglage au joystick) ; UStridesCsoHud (crans de 4 px, hauteurs et couleurs du relevé, fondu de 0,4 s) ; cadence et réglage du cheval du joueur transmis par AStridesCourse::UpdateHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:239)",
+  "unreal": "strides::CsoHud::update (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:205 : round(cadence / 8 × 6) par Math.round, 2 s après un réglage au joystick) ; UStridesCsoHud (crans de 4 px, hauteurs et couleurs du relevé, fondu de 0,4 s) ; cadence et réglage du cheval du joueur transmis par AStridesCourse::UpdateHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:354)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "unreal/core/tests/oracles/cso_hud.json (scripts/unreal/export-hud-style.mjs : le vrai HUD du jeu web rejoue, sur une horloge virtuelle, les appels hud.* et l'état lu par hud.update des 77 exécutions de cso_runs/ et d'une séquence synthétique, à 390 et 768 px de haut : 156 rejeux) rejoué par strides::CsoHud dans unreal/core/tests/test_core.cpp:1501 (testCsoHud) : 75 006 images, 0 écart, sur 4 horloges (ticks entiers, CsoHud::advance par pas de 1/30 s, par pas découpés, par pas arrondis en float) (toasts, astuce, grand message et big-on, mot d'appel, crans, tableau masqué / over / faults, classes cso-on / cso-ctl / cso-sober, objectif) ; même rejeu par le module de jeu, test moteur Strides.Parite.CsoHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoHudTests.cpp:81), Result={Success} ; crans exercés par les exécutions non légères (canal ch : cadence, réglage) et la séquence synthétique (égalités d'arrondi, au-delà de 8 m/s, négative, indéfinie, commandes hors concours) ; montage unreal/docs/parite/cso/hud-cadence-844x390.png et hud-cadence-667x308.png (5 crans allumés de part et d'autre) ; scripts/unreal/mutations-cso-hud.py : 49 mutations de CsoHud.cpp (dont 4 de l'horloge murale) et du mot d'appel de CsoRun.cpp, 48 détectées par le banc ; la 49e (ordre de déclenchement inversé à échéance égale) est équivalente par construction (rappels des temporisations commutatifs, raison écrite dans le script).",
@@ -245,10 +245,10 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "strides::csoHudMasked (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:42) et CsoHud::masked ; AStridesHUD::DebugVisible (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHUD.h:24 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:53 : ni lignes de débogage ni minicarte en mode concours) ; UStridesTouchControls::ButtonVisible et Sync (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:310-328, 356-409 : SAUT et pause seuls en épreuve, HUD affiché pris au widget d'épreuve) ; recherche de l'épreuve à chaque image tant qu'aucune n'est connue (AStridesHUD::DrawHUD, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49) ; relevé des captures AStridesShots::TickJeu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:396-474)",
+  "unreal": "strides::csoHudMasked (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:42) et CsoHud::masked ; AStridesHUD::DebugVisible (unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHUD.h:24 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:53 : ni lignes de débogage ni minicarte en mode concours) ; UStridesTouchControls::ButtonVisible et Sync (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:310-328, 356-417 : SAUT et pause seuls en épreuve, HUD affiché pris au widget d'épreuve) ; recherche de l'épreuve à chaque image tant qu'aucune n'est connue (AStridesHUD::DrawHUD, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:49) ; relevé des captures AStridesShots::TickJeu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:403-483)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Table des masquages relevée par le navigateur (Content/Data/hud_cso_style.json, masks : display et opacité de 19 éléments sous 8 combinaisons de classes) comparée à csoHudMasked : 152 cas, 0 écart (unreal/core/tests/test_core.cpp:1501 et Strides.Parite.CsoHud) ; effets réels : Strides.Cso.RunInGame appelle DrawHUD du HUD de débogage en épreuve sur une toile de 844 × 390 (retour anticipé : rien dessiné) et replie les commandes par UStridesTouchControls::Sync (en épreuve : SAUT et pause seuls ; au bilan à pied : 7 boutons du portage et pause) ; Strides.Cso.Controls (SAUT et pause seuls en épreuve, boîtes du web) ; partie réelle avec l'interface (-StridesShots=cso-jeu -TouchControls, 844 × 390, démonstration automatique) : jeu-1-hors-epreuve.png (lignes, minicarte, boutons du portage, pause, joystick), jeu-2-cloche.png, jeu-3-mot.png, jeu-4-course.png (interface d'épreuve, SAUT, pause, joystick au repos), jeu-5-bilan.png ; relevé jeu-unreal.json ; montages unreal/docs/parite/cso/hud-*-844x390.png et -667x308.png et cmd-*.png (SAUT et pause comme le web).",
+  "preuve": "Table des masquages relevée par le navigateur (Content/Data/hud_cso_style.json, masks : display et opacité de 19 éléments sous 8 combinaisons de classes) comparée à csoHudMasked : 152 cas, 0 écart (unreal/core/tests/test_core.cpp:1501 et Strides.Parite.CsoHud) ; effets réels : Strides.Cso.RunInGame appelle DrawHUD du HUD de débogage en épreuve sur une toile de 844 × 390 (retour anticipé : rien dessiné) et replie les commandes par UStridesTouchControls::Sync (en épreuve : SAUT et pause seuls ; au bilan à pied : 7 boutons du portage et pause) ; Strides.Cso.Controls (SAUT et pause seuls en épreuve, boîtes du web) ; partie réelle avec l'interface (-StridesShots=cso-jeu -TouchControls, 844 × 390, démonstration automatique) : jeu-1-hors-epreuve.png (lignes, minicarte, boutons du portage, pause, joystick ; depuis la tranche T10, aucune activité lancée au départ du jeu, puis activité lancée au poteau et carte validée par l'outil), jeu-2-cloche.png, jeu-3-mot.png, jeu-4-course.png (interface d'épreuve, SAUT, pause, joystick au repos), jeu-5-bilan.png ; relevé jeu-unreal.json ; montages unreal/docs/parite/cso/hud-*-844x390.png et -667x308.png et cmd-*.png (SAUT et pause comme le web).",
   "ecart": "Télémétrie, BOOST, sifflet et cardio non portés (rien à masquer) ; entraînement au paddock (classe cso-ctl sans cso-sober) non porté ; après l'élimination (hud-elimine), le web montre le HUD hors épreuve du cavalier à pied (minicarte, téléphone, Courir, Action) et le portage la cavalière en selle avec SAUT et pause (HUD du monde ouvert non porté).",
   "tranche": "a"
  },
@@ -259,11 +259,11 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "Bouton tactile « MONTER » et touche E / bouton gauche de manette : monter ou descendre seulement (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:128 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:98-99, 412-419)",
+  "unreal": "Bouton tactile du portage et action des commandes du web (E, F, Entrée), bouton gauche de manette : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:128, 373-380 (libellé « Chrono » quand le poteau propose son action, sinon « MONTER ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:103, 444-508 (OnInteract, DoAction)",
   "etat": "partiel",
-  "niveau": "compile",
-  "preuve": "Aucun test ; non vérifié sur écran tactile (unreal/docs/validation-mac-2026-11-17.md lignes 45-46 : aucun appareil iOS, aucun package).",
-  "ecart": "Une seule interaction (monter/descendre à moins de 3 m) au libellé fixe « MONTER » ; ni action secondaire, ni sifflet, ni pictogramme.",
+  "niveau": "teste",
+  "preuve": "Strides.Cso.Entry (tranche T10) : libellé de l'action proposée (ActionLabel « Chrono »), activité lancée par la touche E ; non vérifié sur écran tactile (unreal/docs/validation-mac-2026-11-17.md lignes 45-46 : aucun appareil iOS, aucun package).",
+  "ecart": "Deux interactions (poteau du Pôle, monter / descendre à moins de 3 m) ; libellé « MONTER » fixe hors poteau (même à cheval) ; ni action secondaire, ni sifflet, ni pictogramme ; bouton rectangulaire du portage.",
   "tranche": "h"
  },
  {
@@ -273,7 +273,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "Boutons tactiles « ALLURE + » / « ALLURE - » et Maj / Ctrl gauches (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:129-130 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:100-101, 422-423)",
+  "unreal": "Boutons tactiles « ALLURE + » / « ALLURE - » et Maj / Ctrl gauches (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:129-130 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:104-105, 511-512)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; non vérifié sur écran tactile.",
@@ -287,7 +287,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "UStridesTouchControls (UMG, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:118-193, 195-289, 356-409), créé sur toutes les plateformes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:136-139) : boutons ronds SAUT (bas à droite) et pause (haut à droite) du HUD du web, joystick flottant en mode tactile (iOS ou -TouchControls, :71-74) ; boutons du portage MONTER, ALLURE +/-, SAUVER, CHARGER, TÉLÉPHONE, MISSION en mode tactile hors épreuve ; joysticks virtuels du moteur retirés (unreal/StridesGrandTour/Config/DefaultInput.ini:4-7)",
+  "unreal": "UStridesTouchControls (UMG, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:118-193, 195-289, 356-417), créé sur toutes les plateformes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:140-143) : boutons ronds SAUT (bas à droite) et pause (haut à droite) du HUD du web, joystick flottant en mode tactile (iOS ou -TouchControls, :75-78) ; boutons du portage MONTER, ALLURE +/-, SAUVER, CHARGER, TÉLÉPHONE, MISSION en mode tactile hors épreuve ; joysticks virtuels du moteur retirés (unreal/StridesGrandTour/Config/DefaultInput.ini:4-7)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "Styles, boîtes et icônes relevés dans la page tactile du jeu web (scripts/unreal/export-hud-style.mjs --controls → Content/Data/cso_controls_style.json, Content/Data/ui/icon-jump.png et icon-pause.png rendues par le navigateur) ; Strides.Cso.Controls : en épreuve, boutons visibles SAUT et pause seuls, SAUT de 104 × 104 px CSS affiché à la boîte du web (91,5 px : bloc d'actions réduit à 0,88 sous 420 px de haut), pause 44 × 48, joystick au repos à la place du web ; montages côte à côte unreal/docs/parite/cso/cmd-joystick-*.png, hud-*-844x390.png et hud-*-667x308.png (SAUT et pause, sans joystick du moteur ; relevé hud-unreal.json et cmd-unreal.json : boutons visibles et boîtes) ; partie réelle -StridesShots=cso-jeu -TouchControls (jeu-1 à jeu-5 : joystick au repos, SAUT et pause en épreuve, boutons du portage hors épreuve ; jeu-unreal.json).",
@@ -301,7 +301,7 @@
   "js": [
    "src/ui/hud.js"
   ],
-  "unreal": "Bouton tactile « TÉLÉPHONE » du portage (mode tactile, hors épreuve), touches P et Tab (commandes du web), bouton spécial droit de manette (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:134 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:105, 287, 427)",
+  "unreal": "Bouton tactile « TÉLÉPHONE » du portage (mode tactile, hors épreuve), touches P et Tab (commandes du web), bouton spécial droit de manette (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:134 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:109, 316, 516)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; aucune capture côte à côte dans unreal/docs/parite/.",
@@ -344,7 +344,7 @@
   "js": [
    "src/ui/minimap.js"
   ],
-  "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:160-174), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:151-175)",
+  "unreal": "Rectangles des 8 régions colorés par type et 8 tracés de routes (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:160-174), lus de world_architecture.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:171-195)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test d'affichage ; Strides.World.Architecture (StridesCoreTests.cpp:70-86) ne vérifie que des effectifs (8 régions, 14 lieux) d'un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export).",
@@ -430,7 +430,7 @@
   "js": [
    "src/ui/phone.js"
   ],
-  "unreal": "AStridesPlayerController::OpenPhone / ClosePhone / TogglePhone (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:337-353 : commandes désactivées tant qu'il est ouvert, setEnabled du web) ; P / Tab / M lus par StepCommands (:277-334) ; panneau dessiné par AStridesHUD::DrawPhone, aussi en épreuve (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:56, 97-121)",
+  "unreal": "AStridesPlayerController::OpenPhone / ClosePhone / TogglePhone (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:369-385 : commandes désactivées tant qu'il est ouvert, setEnabled du web) ; P / Tab / M lus par StepCommands (:289-366) ; panneau dessiné par AStridesHUD::DrawPhone, aussi en épreuve (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:56, 97-121)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.Cso.Controls : téléphone ouvert en épreuve, commandes désactivées (touche W non retenue), cheval et chrono figés 150 images ; fermé par P, Échap ou M.",
@@ -444,7 +444,7 @@
   "js": [
    "src/ui/phone.js"
   ],
-  "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:109-114 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:189), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:115-119)",
+  "unreal": "Grille de 10 libellés lus de phoneApps (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:109-114 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:209), bloc « MISSION ACTIVE » et « Carrière : n / 16 missions » (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:115-119)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Strides.World.Architecture (StridesCoreTests.cpp:84) vérifie seulement 10 applications dans un Content/Data/world_architecture.json écrit à la main (commit d783e762, aucun script d'export) ; résultat de ce test non consigné dans unreal/docs/validation-mac-2026-11-17.md (seuls Course, Save et Units y figurent) : à confirmer.",
@@ -477,7 +477,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Ni clients, ni statuts, ni métiers ; la catégorie des missions est chargée (StridesDataSubsystem.cpp:180) mais jamais affichée.",
+  "ecart": "Ni clients, ni statuts, ni métiers ; la catégorie des missions est chargée (StridesDataSubsystem.cpp:200) mais jamais affichée.",
   "tranche": "e"
  },
  {
@@ -501,7 +501,7 @@
   "js": [
    "src/ui/requests.js"
   ],
-  "unreal": "UStridesProgressionSubsystem::StartNextMission, lancé par N (M ouvre la carte, comme le web), bouton tactile MISSION ou haut de la croix directionnelle de manette (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:106-107, 428-431 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:135)",
+  "unreal": "UStridesProgressionSubsystem::StartNextMission, lancé par N (M ouvre la carte, comme le web), bouton tactile MISSION ou haut de la croix directionnelle de manette (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:12-31 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:110-111, 517-520 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:135)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de StartNextMission ; Strides.World.CareerGraph (StridesCoreTests.cpp:88-117) vérifie seulement l'ordre des prérequis du JSON écrit à la main.",
@@ -727,7 +727,7 @@
   "js": [
    "src/ui/phone.js"
   ],
-  "unreal": "UStridesSaveSubsystem::SaveNow / LoadNow par F5 / F9 et boutons SAUVER / CHARGER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:102-103, 424-425 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132-133 ; messages unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:67, 94)",
+  "unreal": "UStridesSaveSubsystem::SaveNow / LoadNow par F5 / F9 et boutons SAUVER / CHARGER (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:106-107, 513-514 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:132-133 ; messages unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:67, 94)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md ligne 15 : « sauvegarder puis recharger » contrôlé à l'écran ; test Strides.Core.Save réussi (ligne 13, scénario écrit à la main). Aucun écran de réglages, aucune capture côte à côte dans unreal/docs/parite/.",
@@ -885,7 +885,7 @@
    "src/ui/screens.js",
    "src/ui/hud.js"
   ],
-  "unreal": "UStridesPauseMenu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPauseMenu.cpp:144-366 : carte, voile et flou, kicker, titre, rappel des gestes de l'épreuve, bascules, rappel des commandes, encart Strides, version, actions ; :390-410 : bascules « Tracé au sol » et « Aide au saut », réglages écrits dans la sauvegarde et aide appliquée à l'épreuve en cours, AStridesCourse::SetJumpAid, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:153-157) ; libellés choisis par le cœur (strides::pauseLineLabelKey, pauseAidLabelKey, unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:107-140) ; ouverte par Échap ou le bouton pause (AStridesPlayerController::PauseGame, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:355-379)",
+  "unreal": "UStridesPauseMenu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPauseMenu.cpp:144-366 : carte, voile et flou, kicker, titre, rappel des gestes de l'épreuve, bascules, rappel des commandes, encart Strides, version, actions ; :390-410 : bascules « Tracé au sol » et « Aide au saut », réglages écrits dans la sauvegarde et aide appliquée à l'épreuve en cours, AStridesCourse::SetJumpAid, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:246-250) ; libellés choisis par le cœur (strides::pauseLineLabelKey, pauseAidLabelKey, unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:107-140) ; ouverte par Échap ou le bouton pause (AStridesPlayerController::PauseGame, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:387-411)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "Bascules : oracle unreal/core/tests/oracles/cso_pause.json (vraie carte Pause du web ouverte en épreuve, boutons cliqués : réglages et libellés après chaque clic, 6 cas dont aide imposée et valeur inconnue) rejoué par testCsoPause (unreal/core/tests/test_core.cpp:2385, 28 étapes, 0 écart) ; 8 mutations des bascules détectées (scripts/unreal/mutations-cso-input.py) ; Strides.Cso.Controls : libellés affichés, clics, réglages écrits dans un emplacement de test et relus, aide de l'épreuve en cours passée à « button » ; ouverture par Échap et Reprendre comparés image par image au jeu web (unreal/core/tests/oracles/cso_freeze.json, 0 écart) ; textes, boîtes et styles relevés dans la page tactile (Content/Data/cso_controls_style.json) ; montages côte à côte unreal/docs/parite/cso/cmd-pause-844x390.png et cmd-pause-667x308.png.",

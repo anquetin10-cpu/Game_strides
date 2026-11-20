@@ -83,6 +83,10 @@ python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py
                                                  # (~1 min à ~2 min, objets communs compilés une fois)
 ```
 
+- Entrée dans l'épreuve (tranche T10) : `Strides.Cso.Entry` et `Strides.Cso.EntryDialog`
+  (`Private/Tests/StridesCsoEntryTests.cpp`) relisent `unreal/core/tests/oracles/cso_entry.json` par le chemin du jeu
+  (poteau, action du joueur, cartes et dialogue affichés par `UStridesCsoScreens`).
+
 - `STRIDES_TESTS=input,save` : le banc ne lance que ces parties (noms dans le `main` de `test_core.cpp`) ; sans la
   variable, tout.
 - `ctest` lance `strides_core_tests <oracles> <Content/Data>` : lecture de `cso_runs/` par `loadRuns`
@@ -217,7 +221,7 @@ python3 scripts/unreal/mutations-cso-controls.py   # module de jeu : 16 mutation
   doigts reçus par `InputTouch` sont notés dans `cmd-unreal.json` (`touch.events`) ; pose `cmd-pause-*` (`pause`) : carte Pause ouverte par
   le contrôleur (jeu suspendu, l'acteur des captures continue). `tactile` : joystick dessiné (page tactile du web).
 - Relevé de l'affichage par famille de poses : `hud-unreal.json` (T7), `cmd-unreal.json` (T8), `aide-unreal.json` (T9 :
-  aides affichées et bouton SAUT) ; chaque pose y note les
+  aides affichées et bouton SAUT), `entree-unreal.json` (T10 : cartes et plan) ; chaque pose y note les
   boutons visibles et les boîtes de SAUT, pause et joystick (px CSS) et, en pause, les éléments de la carte.
 - Clavier : les touches sont lues par leur code physique (code matériel du Mac) ; `Strides.Cso.PhysicalKeys` vérifie la
   table sur des événements construits (un vrai clavier AZERTY n'a pas été essayé).
@@ -249,14 +253,45 @@ node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs 
   au FOV vertical du web ; relevé `aide-unreal.json` (aides et bouton affichés, écarts au web). Copier ensuite les
   captures `aide-*-unreal.png` et `aide-unreal.json` du dossier dédié dans `unreal/docs/parite/cso/`.
 
+### Entrée dans l'épreuve (tranche T10) : poses `entree-*`, 844 × 390 et 667 × 308
+
+```sh
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=entree   # ~8 min, 8 captures web
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs --shots=entree --poses=entree-2-plan
+"$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -game -windowed -ResX=844 -ResY=390 -nosplash -StridesShots=cso -StridesPose=entree- -StridesShotsDir=<dossier dédié> \
+  -abslog="$PWD/.tmp/shots-entree.log"
+python3 scripts/unreal/parite-montage.py unreal/docs/parite/cso entree-
+```
+
+- `--shots=entree` : exécution `t9-recette` de l'oracle (`tests/e2e/cso-shots.mjs` au pas fixe) rejouée depuis le début
+  dans une page neuve par capture, arrêtée à l'image de la capture ; gestes du test entre deux images (pauses des
+  captures sur l'horloge virtuelle du HUD, « Voir le plan » touché) ; carte ouverte relevée dans le DOM (`entree.card` :
+  kicker, titre, grille, règles, légende, textes et primitives du plan, boutons) ; canal « ai » comparé à l'oracle.
+  Poses : `entree-1-presentation` et `entree-2-plan` (image 5), `entree-3-annonce` (28e image après « Entrer en piste »,
+  `tick(28)` de `tests/e2e/cso.mjs:62`), `entree-4-cloche` (capture 3-cloche). En 844 × 390, la capture web des poses 1, 2
+  et 4 est le PNG de la recette (`tests/e2e/out/cso/`, copie, empreinte et écart notés dans `recette`), la capture de
+  l'exécution est gardée dans `<pose>-oracle.png`. `hud.hw` : pause de l'horloge virtuelle après l'image (une capture
+  pour la présentation, deux pour le plan).
+- Unreal : le cheval monté est posé à la pose ; l'activité est lancée par l'action du joueur au poteau
+  (`AStridesPlayerController::DoAction`), la carte s'ouvre au fil des images du déroulé, les boutons sont touchés par le
+  widget (`UStridesCsoScreens::ClickForTest`) jusqu'à la carte de la pose (`AStridesShots::ApplyEntreePose`) ; HUD rejoué
+  de la même exécution (`hud.hw` compris) ; relevé `entree-unreal.json` (carte affichée comparée au DOM du web, éléments
+  affichés, primitives du plan peintes). Copier ensuite `entree-*-unreal.png` et `entree-unreal.json` du dossier dédié
+  dans `unreal/docs/parite/cso/`.
+- Démonstration (`-StridesShots` sans mode) et partie `-StridesShots=cso-jeu` : depuis T10 rien n'est lancé au démarrage ;
+  l'outil lance l'activité par l'action du poteau (le départ du tracé est l'entrée de la carrière, dans la zone de 6 m)
+  et touche « Entrer en piste » à l'ouverture de la carte.
+
 ## 4. Montage côte à côte
 
 ```sh
-python3 scripts/unreal/parite-montage.py [unreal/docs/parite/cso]
+python3 scripts/unreal/parite-montage.py [unreal/docs/parite/cso] [préfixe]
 ```
 
-Pour chaque pose de `poses.json` : vérifie que `<pose>-web.png` et `<pose>-unreal.png` ont exactement la taille du
-viewport (`sips`), puis les assemble (web à gauche, `ffmpeg hstack`) dans `<pose>.png`. Code 1 au premier écart.
+Pour chaque pose de `poses.json` (avec un préfixe : seulement les poses dont le nom commence ainsi) : vérifie que
+`<pose>-web.png` et `<pose>-unreal.png` ont exactement la taille du viewport (`sips`), puis les assemble (web à gauche,
+`ffmpeg hstack`) dans `<pose>.png`. Code 1 au premier écart.
 
 ## 5. Inventaire et PARITE.md
 

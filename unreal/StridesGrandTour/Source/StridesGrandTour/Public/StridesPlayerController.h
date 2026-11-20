@@ -9,8 +9,13 @@
 // AStridesHorse::Tick, à partir de l'image suivante : celle d'Échap avance encore). Téléphone ouvert : cheval et chrono
 // figés (hdt et sdt nuls, game.js:1444-1445, 1488, 1507) à partir de l'image qui suit l'ouverture, jusqu'à l'image de la
 // fermeture comprise (simPaused est calculé avant les boutons globaux).
-// Enhanced Input garde la manette, la souris (regard) et les outils du portage (E monter, F5 / F9, F8, N mission) ; les
-// allures (Maj / Ctrl) sont sans effet en épreuve (mode concours).
+// Tranche T10 : action contextuelle du web (« action » : E, F, Entrée, bouton d'action ; game.js:1467-1469) — ferme le
+// dialogue de l'entraîneur s'il est affiché, sinon déclenche l'action proposée (poteau « Chrono » d'AStridesActivityPost,
+// à cheval, sans mission ; à défaut monter / descendre du portage) ; carte de présentation ou du plan ouverte (overlay)
+// et dialogue : simulation suspendue (game.simPaused), commandes gelées, boutons globaux coupés sous la carte ; cartes et
+// dialogue affichés par UStridesCsoScreens.
+// Enhanced Input garde la manette, la souris (regard) et les outils du portage (F5 / F9, F8, N mission ; E passe par les
+// commandes du web) ; les allures (Maj / Ctrl) sont sans effet en épreuve (mode concours).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
@@ -65,9 +70,21 @@ public:
 	// La pause prend effet à l'image suivante (le web finit l'image où Échap a été lu) : vrai si la mise à jour du jeu
 	// est suspendue à cette image.
 	bool SkipsUpdate() const { return bPausedState && !bPauseThisFrame; }
-	// Simulation suspendue (game.simPaused, src/game.js:1444 : téléphone ouvert ; carte modale non portée) relevée en tête
-	// de l'image de commandes, avant les boutons globaux : cheval et chrono figés en épreuve.
+	// Simulation suspendue (game.simPaused, src/game.js:1444 : téléphone ouvert, carte modale ouverte ou dialogue affiché)
+	// relevée en tête de l'image de commandes, avant les boutons globaux : cheval et chrono figés en épreuve.
 	bool IsSimPaused() const { return bSimPausedFrame; }
+	// ---- Entrée dans l'épreuve (tranche T10) ----
+	// Action du web (game.js:1467-1469 : advanceDialog, sinon interact.trigger) ; vrai si quelque chose a été fait.
+	bool DoAction();
+	// Libellé de l'action proposée par le poteau (t('Chrono')), vide si aucune.
+	FString ActionLabel() const;
+	// Poteau de l'activité du Pôle et épreuve qu'il lance (nuls sans données).
+	class AStridesActivityPost* ActivityPost() const;
+	class AStridesCourse* EntryCourse() const;
+	// Carte de présentation ou du plan ouverte (overlay du web), dialogue de l'entraîneur affiché.
+	bool CardOpen() const;
+	bool DialogOpen() const;
+	class UStridesCsoScreens* ScreensWidget() const { return Screens; }
 	class UStridesPauseMenu* PauseMenuWidget() const { return PauseMenu; }
 	// Mode concours (classe cso-ctl du HUD de l'épreuve du monde).
 	bool InRace() const;
@@ -133,6 +150,9 @@ public:
 private:
 	UPROPERTY() TObjectPtr<class UStridesCsoHud> CsoHud;
 	UPROPERTY() TObjectPtr<class UStridesPauseMenu> PauseMenu;
+	UPROPERTY() TObjectPtr<class UStridesCsoScreens> Screens;
+	mutable TWeakObjectPtr<class AStridesActivityPost> PostCache;
+	bool bCardInput = false;  // mode d'entrée « jeu et interface » posé pour la carte (pointeur sur Mac)
 	strides::CsoInput Cmd;
 	TSharedPtr<class IInputProcessor> KeyProcessor;
 	FDelegateHandle ActivationHandle, DeactivateHandle;

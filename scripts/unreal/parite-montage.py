@@ -5,7 +5,9 @@ Lit unreal/docs/parite/<système>/poses.json (écrit par scripts/unreal/export-c
 vérifie que la capture web (<pose>-web.png, Playwright) et la capture Unreal (<pose>-unreal.png, -StridesShots=cso) ont
 exactement la taille du viewport de la pose (sips -g pixelWidth -g pixelHeight), puis les assemble avec ffmpeg (hstack ;
 Pillow n'est pas installé) dans <pose>.png. Code de sortie 1 au premier écart (fichier absent, taille fausse, ffmpeg).
-Usage : python3 scripts/unreal/parite-montage.py [unreal/docs/parite/cso]
+Usage : python3 scripts/unreal/parite-montage.py [unreal/docs/parite/cso] [préfixe]
+Préfixe (ex. « entree- », tranche T10) : seulement les poses dont le nom commence ainsi (les autres montages ne sont pas
+réécrits).
 """
 import json
 import os
@@ -27,8 +29,11 @@ def main():
     folder = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else 'unreal/docs/parite/cso')
     with open(os.path.join(folder, 'poses.json'), encoding='utf-8') as f:
         doc = json.load(f)
+    prefix = sys.argv[2] if len(sys.argv) > 2 else ''
     ok = True
     for pose in doc['poses']:
+        if not pose['name'].startswith(prefix):
+            continue
         vw, vh = pose['viewport']['w'], pose['viewport']['h']
         files = {k: os.path.join(ROOT, pose[k]) for k in ('web', 'unreal')}
         for k, p in files.items():

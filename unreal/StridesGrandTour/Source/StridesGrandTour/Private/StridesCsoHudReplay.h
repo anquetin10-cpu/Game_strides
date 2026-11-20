@@ -55,7 +55,7 @@ inline void Calls(strides::CsoHud& H, const J& List)
 }
 
 // Une image : Frame = image de cso_runs (Synth faux) ou entrée de la séquence synthétique.
-inline void Frame(strides::CsoHud& H, const J& F, bool bSynth, const J* Extra = nullptr)
+inline void Frame(strides::CsoHud& H, const J& F, bool bSynth, const J* Extra = nullptr, int64_t HwOverride = -1)
 {
 	H.advanceTicks(100);
 	strides::CsoHudFrame In;
@@ -95,12 +95,15 @@ inline void Frame(strides::CsoHud& H, const J& F, bool bSynth, const J* Extra = 
 	H.update(1.0 / 30, In);
 	// Exécution t9-recette (tests/e2e/cso-shots.mjs) : pause d'une capture du test après l'image (hw, ticks de l'horloge
 	// virtuelle, temporisations seules, sans image de jeu).
-	if (!bSynth && F["hw"].t == J::Num) H.advanceTicks((int64_t)F["hw"].num());
+	// Tranche T10 : pause donnée par la pose (HwOverride ≥ 0 : capture 1-presentation, prise avant la seconde pause).
+	if (!bSynth && HwOverride >= 0) H.advanceTicks(HwOverride);
+	else if (!bSynth && F["hw"].t == J::Num) H.advanceTicks((int64_t)F["hw"].num());
 }
 
 // Exécution de cso_runs rejouée jusqu'à l'image LastFrame comprise (−1 : toutes) ; appels ExtraCalls ajoutés à
-// l'image ExtraFrame. Rend le nombre d'images rejouées.
-inline int Run(strides::CsoHud& H, const J& RunJ, int LastFrame = -1, int ExtraFrame = -1, const J* ExtraCalls = nullptr)
+// l'image ExtraFrame ; LastHw ≥ 0 : pause de l'horloge virtuelle après l'image LastFrame à la place de son hw. Rend le
+// nombre d'images rejouées.
+inline int Run(strides::CsoHud& H, const J& RunJ, int LastFrame = -1, int ExtraFrame = -1, const J* ExtraCalls = nullptr, int64_t LastHw = -1)
 {
 	Calls(H, RunJ["setup"]["calls"]["hud"]);
 	int N = 0;
@@ -108,7 +111,7 @@ inline int Run(strides::CsoHud& H, const J& RunJ, int LastFrame = -1, int ExtraF
 	{
 		const int Fi = (int)F["f"].num();
 		if (LastFrame >= 0 && Fi > LastFrame) break;
-		Frame(H, F, false, Fi == ExtraFrame ? ExtraCalls : nullptr);
+		Frame(H, F, false, Fi == ExtraFrame ? ExtraCalls : nullptr, Fi == LastFrame ? LastHw : -1);
 		N++;
 	}
 	return N;

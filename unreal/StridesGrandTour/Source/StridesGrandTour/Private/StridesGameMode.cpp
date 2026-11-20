@@ -13,6 +13,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Kismet/GameplayStatics.h"
+#include "StridesActivityPost.h"
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHUD.h"
@@ -87,19 +88,25 @@ void AStridesGameMode::StartPlay()
 	AStridesCourse* Course = WorldDirector->PoleCourse;
 	AStridesHorse* Horse = W->SpawnActor<AStridesHorse>();
 	Horse->Course = Course;
-	// Épreuve du Pôle (tranche T4) : activité lancée au démarrage (le poteau « Chrono » et la carte de présentation
-	// relèvent de la tranche T10) ; première étape : rejoindre l'entrée de la carrière à cheval. Joueur et langue : ceux
-	// d'une sauvegarde neuve (strides::SaveGame, comme save.js) ; cheval : profil du cheval du joueur.
+	// Épreuve du Pôle (tranche T10) : rien n'est lancé au démarrage, comme le jeu web. Le poteau « Chrono » de l'activité
+	// cso_train (AStridesActivityPost, Content/Data/cso_activity.json) propose son action à cheval à moins de 6 m du départ,
+	// sans mission en cours ; elle lance l'activité (grand message, contrôle de capacité, présentation, puis rejoindre
+	// l'entrée de la carrière…). Joueur et langue : ceux d'une sauvegarde neuve (strides::SaveGame, comme save.js) ; cheval :
+	// profil du cheval du joueur (lu au déclenchement).
 	if (Course)
 	{
 		const strides::SaveGame Fresh;
-		FString HorseName;
-		if (Data) for (const FStridesHorseProfile& P : Data->Horses) if (P.Id == Horse->ProfileId) HorseName = P.Name;
 		Course->Lang = UTF8_TO_TCHAR(Fresh.lang.c_str());
 		// Aide à l'appel : réglage de la sauvegarde (carte Pause, tranche T8), sinon celui d'une sauvegarde neuve.
 		const UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
 		Course->JumpAid = UTF8_TO_TCHAR(strides::jumpAidOf(Save ? Save->GetSettings() : Fresh.settings).c_str());
-		Course->StartRun(UTF8_TO_TCHAR(Fresh.playerName.c_str()), HorseName);
+		if (const strides::CsoActivity* A = Data ? Data->CsoActivity() : nullptr)
+		{
+			AStridesActivityPost* Pole = W->SpawnActor<AStridesActivityPost>();
+			Pole->Setup(*A, Course);
+			Pole->PlayerName = UTF8_TO_TCHAR(Fresh.playerName.c_str());
+		}
+		else UE_LOG(LogTemp, Warning, TEXT("Strides : activité du Pôle absente (cso_activity.json) : pas de poteau actif"));
 	}
 	const FVector Spawn = Data ? Data->WorldSpawn : FVector(-104.f, 168.f, .35f);
 	Horse->PlaceAt(Spawn.X, Spawn.Y, Spawn.Z);

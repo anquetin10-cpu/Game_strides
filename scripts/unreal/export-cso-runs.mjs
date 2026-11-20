@@ -33,6 +33,9 @@
 //    --shots=aides (tranche T9) : poses aide-* (exécutions t9-* arrêtées à l'image choisie, 844 × 390 et 667 × 308 ;
 //    captures 4 et 5 de la recette : PNG de tests/e2e/out/cso/ et exécution t9-recette) ; --poses=nom1,nom2 : ces poses
 //    seulement, les autres poses aide-* gardées.
+//    --shots=entree (tranche T10) : poses entree-* (exécution t9-recette arrêtée aux captures 1-presentation, 2-plan,
+//    3-cloche de la recette et à l'annonce du dossard, 844 × 390 et 667 × 308 ; carte ouverte relevée dans le DOM) ;
+//    --poses= comme ci-dessus.
 //  - avec --fences (tranche T5) : géométrie des obstacles du parcours, des lignes et du poteau « Chrono » construite par
 //    le jeu web (scripts/unreal/cso-export.js, chargé dans la page), comparée au jeu réel hors épreuve et en épreuve :
 //    .tmp/unreal-import/cso/ (cso_fences.glb, sign_*.png, importés par scripts/unreal/import-cso-fences.py) et le
@@ -1793,6 +1796,32 @@ function PAGE() {
       canvas: [g.renderer.domElement.width, g.renderer.domElement.height], virtual: AIDS ? AIDS.virtual : null,
     };
   };
+  // Captures de la tranche T10 (--shots=entree) : gestes du test après l'image k (pauses des captures sur l'horloge
+  // virtuelle du HUD, boutons de carte touchés), puis vue de aideView et carte ouverte relevée dans le DOM.
+  P.entreeView = (k, steps = []) => {
+    for (const s of steps) {
+      if (s.tick && AIDS) AIDS.tick(s.tick);
+      if (s.tap) {
+        const el = document.querySelector(`.overlay [data-id="${s.tap}"]`);
+        if (!el) throw new Error(`bouton introuvable : ${s.tap}`);
+        A.tap(el);
+      }
+    }
+    const r = P.aideView(k, 0);
+    const ov = document.querySelector('.overlay .card');
+    const tx = (sel) => ov?.querySelector(sel)?.textContent ?? null;
+    r.card = ov ? {
+      screen: ov.querySelector('[data-id="plan-back"]') ? 'plan' : ov.querySelector('[data-id="enter"]') ? 'presentation' : 'autre',
+      kicker: tx('.kicker'), title: tx('h2'),
+      rows: [...ov.querySelectorAll('.cso-pres .k')].map((kel) => [kel.textContent, kel.nextElementSibling?.textContent ?? null]),
+      jury: tx('.cso-jury'), rules: tx('.cso-rules'), legend: tx('.plan-legend'),
+      svg: ov.querySelector('svg.course-plan') ? { viewBox: ov.querySelector('svg.course-plan').getAttribute('viewBox'), texts: [...ov.querySelectorAll('svg.course-plan text')].map((t) => t.textContent), counts: Object.fromEntries(['rect', 'line', 'polyline', 'path', 'circle', 'text'].map((n) => [n, ov.querySelectorAll(`svg.course-plan ${n}`).length])) } : null,
+      buttons: [...ov.querySelectorAll('.card-actions [data-id]')].map((b) => [b.dataset.id, b.textContent, b.className]),
+    } : null;
+    const d = g.hud.dialogActive ? g.hud.dialogEl : null;
+    r.dialog = d ? { who: d.querySelector('.who span')?.textContent ?? null, av: d.querySelector('.av')?.textContent ?? null, next: d.querySelector('.next')?.textContent ?? null, line: d.querySelector('.line')?.textContent ?? null } : null;
+    return r;
+  };
   P.render = P.render || (() => g.renderer.render(g.scene, g.camera));
   // Tranche T9 (--aids) : takeoffZone (courseAids.js:25-34) appelée telle quelle sur une grille (obstacles du parcours aux
   // hauteurs hors épreuve puis csoHeights(base) posées par Obstacles.setHeights × vitesses × puissances × bonus de
@@ -2428,7 +2457,8 @@ if (FREEZE) {
 // Groupe « hud » (tranche T7) : poses écrites par scripts/unreal/export-hud-style.mjs --shots, toujours gardées ici.
 // Groupes « cmd » (tranche T8, écrits par export-hud-style.mjs --controls) et « aides » (tranche T9, --shots=aides) :
 // gardés par les autres groupes.
-const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : name.startsWith('cmd-') ? 'cmd' : name.startsWith('aide-') ? 'aides' : 'carriere');
+// Groupe « entree » (tranche T10, --shots=entree) : présentation, plan, annonce du dossard et cloche de la recette.
+const poseGroup = (name) => (name.startsWith('chute-') ? 'chute' : name.startsWith('cadrage-') ? 'cadrage' : name.startsWith('hud-') ? 'hud' : name.startsWith('cmd-') ? 'cmd' : name.startsWith('aide-') ? 'aides' : name.startsWith('entree-') ? 'entree' : 'carriere');
 if (SHOTS) {
   mkdirSync(PARITE, { recursive: true });
   const doc = { schema: 'strides.parite_poses/1', generator: 'scripts/unreal/export-cso-runs.mjs --shots', frame: 'repère web : x est, z sud, y haut (altitude absolue) ; cap h -> (sin h, cos h) ; fovV = FOV vertical (degrés) ; sunDir = direction vers le soleil ; fence (poses de chute) = barre renversée (rang, sens, côté, profondeur) et nombre d’images de Obstacles.update depuis le contact ; course (poses de la carrière) = hauteurs des obstacles du parcours dans l’ordre et numéro surligné (Obstacles.highlight, -1 : aucun) relevés dans le jeu au moment de la capture', viewport: { w: VIEW.width, h: VIEW.height }, poses: [] };
@@ -2437,7 +2467,7 @@ if (SHOTS) {
   let priorPoses = [];
   try {
     priorPoses = JSON.parse(readFileSync(join(PARITE, 'poses.json'), 'utf8')).poses;
-    doc.poses = priorPoses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : ['hud', 'cmd', 'aides'].includes(poseGroup(p.name))));
+    doc.poses = priorPoses.filter((p) => (SHOTS_ONLY ? poseGroup(p.name) !== SHOTS_ONLY : ['hud', 'cmd', 'aides', 'entree'].includes(poseGroup(p.name))));
   } catch {
     doc.poses = [];
   }
@@ -2738,9 +2768,97 @@ if (SHOTS) {
     writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
     console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses d’aides refaites,', ordered.length, 'en tout');
   }
+  // Tranche T10 : entrée dans l'épreuve, en partie réelle (exécution t9-recette = tests/e2e/cso-shots.mjs au pas fixe,
+  // arrêtée à l'image de chaque capture), HUD et cartes affichés, 844 × 390 et 667 × 308. Captures de la recette
+  // 1-presentation, 2-plan, 3-cloche (PNG de tests/e2e/out/cso/ en 844 × 390, comme T9) ; annonce « N° {dossard} » à la
+  // 28e image après « Entrer en piste » (tick(28) de tests/e2e/cso.mjs:62, sans capture de la recette : capture de
+  // l'exécution). Une page par capture ; gestes du test entre deux images (plan touché, pauses des captures sur
+  // l'horloge virtuelle du HUD) ; carte relevée dans le DOM (kicker, titre, grille, règles, légende, textes du plan,
+  // boutons) ; canal « ai » de l'image comparé à l'oracle.
+  else if (SHOTS_ONLY === 'entree') {
+    const sc = { ...SCENARIOS.find((x) => x.id === 't9-recette'), virtualHud: true };
+    const ora = JSON.parse(readFileSync(join(OUT, runFile(sc.id, 'fr')), 'utf8'));
+    const R = ora.setup.recette;
+    const pauseTicks = Math.round((R.wait + R.captureMs) * 3);
+    // Images relues dans l'oracle : dernière image avant les boutons (pauses des captures 1 et 2), image d'« Entrer en
+    // piste », image de la capture 3 (post images après l'entrée).
+    const kEnter = ora.frames.findIndex((f) => f.in.ui === 'enter');
+    const kPres = kEnter - 1, kBell = kEnter + R.post - 1, kBib = kEnter + 27;
+    if (kEnter !== R.pre || ora.frames[kPres].hw !== 2 * pauseTicks || ora.frames[kBell].hw !== pauseTicks || JSON.stringify(ora.frames[kEnter].in.taps) !== JSON.stringify(R.taps.slice(0, -1)))
+      throw new Error(`entree : gestes de la recette différents de l’oracle (entrée ${kEnter}, pauses ${ora.frames[kPres].hw} / ${ora.frames[kBell]?.hw})`);
+    const ENTREE = [
+      { name: 'entree-1-presentation', k: kPres, recette: '1-presentation', steps: [{ tick: pauseTicks }], hw: pauseTicks, desc: `capture 1-presentation de la recette (tests/e2e/cso-shots.mjs:18-30 : cheval monté posé 4 m au sud de l’entrée, cap π, Parcours du Pôle lancé au poteau, 6 images) : carte de présentation` },
+      { name: 'entree-2-plan', k: kPres, recette: '2-plan', steps: [{ tick: pauseTicks }, { tap: 'plan' }, { tick: pauseTicks }], hw: 2 * pauseTicks, desc: `capture 2-plan de la recette (cso-shots.mjs:31-32 : « Voir le plan » touché après la capture 1) : carte du plan` },
+      { name: 'entree-3-annonce', k: kBib, steps: [], hw: 0, desc: `annonce du couple « N° {dossard} · {joueur} » : 28e image après « Entrer en piste » (tick(28) de tests/e2e/cso.mjs:58-63 ; la recette n’en fait pas de capture)` },
+      { name: 'entree-4-cloche', k: kBell, recette: '3-cloche', steps: [{ tick: pauseTicks }], hw: pauseTicks, desc: `capture 3-cloche de la recette (cso-shots.mjs:33-34 : « Retour », « Entrer en piste », 80 images)` },
+    ];
+    const ONLY = (process.argv.find((a) => a.startsWith('--poses=')) || '').slice(8).split(',').filter(Boolean);
+    const VIEWS = [{ width: 844, height: 390 }, { width: 667, height: 308 }];
+    const shots = [];
+    for (const E of ENTREE) {
+      if (ONLY.length && !ONLY.includes(E.name)) continue;
+      for (const v of VIEWS) {
+        const vk = `${v.width}x${v.height}`;
+        const ctx = await browser.newContext({ viewport: v, deviceScaleFactor: 1 });
+        const page = await ctx.newPage();
+        page.on('pageerror', (e) => errors.push(`fr: ${e.message}`));
+        await page.goto(`${BASE}/?autostart&quality=high&lang=fr`, { timeout: 180000 });
+        await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 240000, polling: 500 });
+        await page.addScriptTag({ content: AUTOPILOT });
+        await page.addScriptTag({ content: `(${PAGE.toString()})();` });
+        await page.evaluate((o) => window.__parite.install(o), { audioIgnored: AUDIO_IGNORED, hudMethods: HUD_METHODS, hudDedupe: HUD_DEDUPE });
+        await page.evaluate(([s, seed]) => window.__parite.setup(s, seed), [sc, 20261118]);
+        await page.evaluate((kk) => (window.__parite.stopAfter = kk), E.k);
+        try {
+          await page.evaluate((s) => window.__parite.runRecette(s), sc);
+          throw new Error(`${E.name} : partie terminée avant l’image ${E.k}`);
+        } catch (e) {
+          if (!String(e.message).includes('STOP')) throw e;
+        }
+        const r = await page.evaluate(([kk, st]) => window.__parite.entreeView(kk, st), [E.k, E.steps]);
+        if (r.ai !== JSON.stringify(ora.frames[E.k].ai)) throw new Error(`${E.name} ${vk} : canal « ai » de l’image ${E.k} différent de l’oracle`);
+        await page.waitForTimeout(3000);
+        await page.evaluate(() => window.__parite.render());
+        await page.waitForTimeout(500);
+        const name = `${E.name}-${vk}`;
+        const RECETTE_PNG = E.recette && v.width === 844 && v.height === 390 ? join(ROOT, `tests/e2e/out/cso/${E.recette}.png`) : null;
+        await page.screenshot({ path: join(PARITE, RECETTE_PNG ? `${name}-oracle.png` : `${name}-web.png`) });
+        let recette = null;
+        if (RECETTE_PNG) {
+          const png = readFileSync(RECETTE_PNG);
+          writeFileSync(join(PARITE, `${name}-web.png`), png);
+          recette = { png: `tests/e2e/out/cso/${E.recette}.png`, sha256: createHash('sha256').update(png).digest('hex'), oracle: `unreal/docs/parite/cso/${name}-oracle.png`, ecart: pngDiff(join(PARITE, `${name}-oracle.png`), RECETTE_PNG, v) };
+          console.log(`${name} : capture de l’oracle / PNG de la recette : écart moyen ${recette.ecart.mean} (sur 255), ${recette.ecart.over16} % des pixels au-delà de 16`);
+        }
+        const st = await liveCso(page);
+        const file = `unreal/core/tests/oracles/cso_runs/${runFile(sc.id, 'fr')}`;
+        shots.push({
+          name, desc: recette
+            ? `Entrée dans l’épreuve (tranche T10), ${E.desc} ; capture web = PNG de la recette (${recette.png}) ; état rejoué par l’exécution ${sc.id} de l’oracle arrêtée à l’image ${E.k} (capture de cette exécution : ${name}-oracle.png) ; vue de la caméra du jeu, HUD et carte affichés ; ${v.width} × ${v.height}.`
+            : `Entrée dans l’épreuve (tranche T10), partie réelle ${sc.id} arrêtée à l’image ${E.k} : ${E.desc} ; vue de la caméra du jeu, HUD et carte affichés ; ${v.width} × ${v.height}.`,
+          hour: r.hour, eye: r.eye, target: r.target, fovV: r.fovV, viewport: { w: v.width, h: v.height }, horse: r.horse, sunDir: r.sunDir, day: r.day, canvas: r.canvas,
+          course: { heights: st.heights, highlight: st.highlight.length ? st.highlight[0] : -1 },
+          hud: { run: file, frame: E.k, hw: E.hw }, aids: { run: file, frame: E.k }, state: r.state, frame: E.k,
+          entree: { screen: r.card ? r.card.screen : null, steps: E.steps, card: r.card, dialog: r.dialog, setup: { playerName: ora.setup.playerName, horseName: ora.setup.horseName, horseId: ora.setup.horseId, lang: 'fr' } },
+          ...(recette ? { recette } : {}),
+          web: `unreal/docs/parite/cso/${name}-web.png`, unreal: `unreal/docs/parite/cso/${name}-unreal.png`,
+        });
+        console.log('pose', name, 'image', E.k, 'carte', JSON.stringify(r.card && [r.card.screen, r.card.kicker, r.card.buttons]), 'grand message', JSON.stringify(r.state.bg), 'temporisations virtuelles', r.virtual);
+        await ctx.close();
+      }
+    }
+    const oldE = new Map(priorPoses.filter((p) => poseGroup(p.name) === 'entree').map((p) => [p.name, p]));
+    const fresh = new Map(shots.map((p) => [p.name, p]));
+    const names = ENTREE.flatMap((E) => VIEWS.map((v) => `${E.name}-${v.width}x${v.height}`));
+    const ordered = names.map((n) => fresh.get(n) || oldE.get(n));
+    if (ordered.some((p) => !p)) throw new Error(`poses de l’entrée absentes : ${names.filter((n) => !fresh.get(n) && !oldE.get(n)).join(' ')}`);
+    doc.poses = doc.poses.filter((p) => poseGroup(p.name) !== 'entree').concat(ordered);
+    writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
+    console.log('poses :', join(PARITE, 'poses.json'), shots.length, 'poses de l’entrée refaites,', ordered.length, 'en tout');
+  }
   // Ordre stable : poses de la carrière, de la chute, du cadrage, puis du HUD.
-  else doc.poses = ['carriere', 'chute', 'cadrage', 'hud', 'cmd', 'aides'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
-  if (SHOTS_ONLY !== 'aides') {
+  else doc.poses = ['carriere', 'chute', 'cadrage', 'hud', 'cmd', 'aides', 'entree'].flatMap((gr) => doc.poses.filter((p) => poseGroup(p.name) === gr));
+  if (SHOTS_ONLY !== 'aides' && SHOTS_ONLY !== 'entree') {
     writeFileSync(join(PARITE, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
     console.log('poses :', join(PARITE, 'poses.json'));
   }

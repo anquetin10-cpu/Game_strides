@@ -52,7 +52,8 @@ voit ou s'entend n'était prouvé.
 ont changées (conduite, saut, refus, barres, déroulé, habillage) gardent l'état du 18/11. **L'état courant fait foi dans
 l'inventaire** (`unreal/docs/parite/inventaire/*.json`, rendu en `unreal/docs/PARITE.md`), pas dans ce décompte. Depuis
 T5, des éléments visibles sont prouvés par montage côte à côte (obstacles et lignes, cadrage de la caméra, HUD
-d'épreuve, boutons SAUT et pause, carte Pause : `unreal/docs/parite/cso/`) ; rien de ce qui s'entend n'est porté (T12).
+d'épreuve, boutons SAUT et pause, carte Pause, aides à l'appel, cartes de présentation et du plan, annonce du dossard
+et cloche : `unreal/docs/parite/cso/`) ; rien de ce qui s'entend n'est porté (T12).
 
 Écarts structurels, par gravité (constat du code, chiffres calculés signalés) :
 
@@ -1056,6 +1057,60 @@ Principes communs :
 - **Preuve visuelle** : étape 1 de la recette (captures web existantes pour présentation, plan, cloche).
 - **Dépendances / risques** : T4, T7, T5 (poteau). Le plan SVG n'a pas de rendu natif en UMG : port en primitives
   (préféré, toutes hauteurs) ; repli possible : PNG rendus par Playwright pour chaque variante.
+- **Réalisé (20/11/2026 ; deux commits : cœur `dbe34ef1`, puis jeu, captures et inventaire)** : (1) Cœur :
+  `SCh/CoursePlan.h`, `SC/CoursePlan.cpp` (`coursePlan` : primitives du plan, chacune avec son élément SVG exact et sa
+  géométrie relue dans ses attributs ; `coursePlanSvg`, `coursePlanLegend`) ; `SCh/CsoEntry.h`, `SC/CsoEntry.cpp`
+  (activité `cso_train` lue dans `DATA/cso_activity.json`, action du poteau `csoActivityAvailable`, grand message du
+  lancement, `csoPresentation`, `csoPlanCard`, `csoCapacity`) ; `CsoRun` (lancement : grand message et `notify` de
+  `missions.start` ; dialogue de l'entraîneur et attente de sa fermeture) ; `Text` (`String(n)`, casse). (2) Oracles
+  exportés du jeu web : `ORA/cso_plan.json` (`export-data.mjs`, vite-node : 22 SVG pour csoHeights 1,05 / 1,10 / 1,15 /
+  1,25 / 1,40 / 1,55, sans hauteurs et numéros surlignés, fr et en, et 2 légendes) reproduit caractère pour caractère
+  par `testCoursePlan` ; `ORA/cso_entry.json` (`export-cso-entry.mjs`, Playwright, `courseSteps` appelé dans la page
+  avec les vraies étapes de mission) : 42 cartes de présentation et 42 cartes du plan (grille, difficulté, ligne
+  « Parcours »), 406 contrôles de capacité (dialogue affiché ou non, portée, texte ; bords du seuil de puissance par
+  dichotomie), 168 positions de l'action du poteau, rejoués à 100 % par `testCsoEntry` ; ctest : 259 715 vérifications,
+  0 échec ; `scripts/unreal/mutations-cso-entry.py` : 55 détectées sur 59, 4 déclarées. (3) Jeu : rien n'est lancé au
+  démarrage (`SG/StridesGameMode.cpp:91-115`) ; poteau `AStridesActivityPost` (`SGh/StridesActivityPost.h`,
+  `SG/StridesActivityPost.cpp`) posé avec `DATA/cso_activity.json` ; action du web dans
+  `AStridesPlayerController::DoAction` (`SG/StridesPlayerController.cpp:486-508` : dialogue fermé d'abord, puis poteau,
+  sinon monter / descendre ; E, F, Entrée par les commandes du web, `:328-329`) ; carte ouverte ou dialogue :
+  simulation suspendue, commandes gelées, boutons globaux coupés sous la carte (`:294-336`) ;
+  `AStridesCourse::StartActivity` (`SG/StridesCourse.cpp:154-185` : grand message, contrôle de capacité avec le cheval
+  du joueur), cartes et boutons (`:187-244`, `:319-325`) ; `UStridesCsoScreens` (`SGh/StridesCsoScreens.h`,
+  `SG/StridesCsoScreens.cpp` : voile flouté, carte, grille, règles, barre d'actions, boutons aux boîtes relevées dans
+  `DATA/cso_screens_style.json` ; plan dessiné en Slate depuis les primitives du cœur, `SStridesCoursePlan::OnPaint` ;
+  dialogue de l'entraîneur) ; bouton tactile au libellé « Chrono » (`SG/StridesTouchControls.cpp:373-380`). Le fichier
+  `SG/StridesPlayerController.cpp` prévu pour l'« interaction » porte l'action ; `TC` n'était pas à modifier pour le jeu
+  (tests moteur à part). (4) Moteur : `Strides.Cso.Entry` (action du poteau aux 84 positions sans mission et 42 avec
+  mission de l'oracle, fr et en ; touche E au poteau ; lancement ; carte ouverte : contenu identique au DOM du web, boîtes
+  du relevé, cheval immobile touche W tenue, P / M / Échap / E sans effet ; élément svg de la carte du plan identique au
+  caractère près au HTML de la carte du web ; Voir le plan, Retour, Entrer en piste ; annonce, cloche) et
+  `Strides.Cso.EntryDialog` (cas de l'oracle aux hauteurs de l'épreuve : dialogue identique, affiché, simulation
+  suspendue, fermé par E, présentation ensuite) ; 26 tests Strides en Result={Success} ; mutations du module faites en
+  session (source muté, éditeur recompilé, tests relancés, source restauré ; script non versionné) : carte sans
+  simulation suspendue, action sans fermeture du dialogue d'abord, carte jamais ouverte, poteau proposé malgré une
+  mission, « Entrer en piste » sans valider l'étape : 5 détectées sur 5. (5) Captures (`export-cso-runs.mjs
+  --shots=entree` : exécution `t9-recette` = `tests/e2e/cso-shots.mjs` rejouée au pas fixe jusqu'à l'image de chaque
+  capture, gestes du test entre deux images, carte relevée dans le DOM ; Unreal : `-StridesShots=cso -StridesPose=entree-`
+  dans un dossier dédié, activité lancée par l'action du poteau, carte ouverte par le déroulé et boutons touchés par le
+  widget, HUD rejoué de la même exécution ; relevé `cso/entree-unreal.json` : carte identique au DOM du web pour les 8
+  poses, primitives du plan peintes = SVG du web) : montages `cso/entree-1-presentation-*`, `entree-2-plan-*`,
+  `entree-3-annonce-*` (annonce « N° 40 · Test » à la 28e image après « Entrer en piste », `tick(28)` de
+  `tests/e2e/cso.mjs:62`) et `entree-4-cloche-*`, en 844 × 390 (captures de la recette pour 1, 2 et 3-cloche) et
+  667 × 308. Démonstration `-StridesShots` (dossier dédié) : activité lancée au poteau, carte validée, « 60,34 / 64 s
+  0 pt Arrivée ✓ » ; `-StridesShots=cso-jeu -TouchControls` refaite (`jeu-1` sans activité au départ du jeu).
+  (6) Écarts restants : police du moteur (cartes, plan, dialogue) ; mise en page relevée en français pour Comète, non
+  recalculée pour un autre texte ; animation de l'overlay, clignotement de « Toucher pour fermer », clics sonores non
+  portés ; ombre de la barre d'actions plus sombre. Captures de la recette : en 1-presentation et 2-plan, le fond (flouté)
+  montre une autre vue que l'exécution rejouée (écarts moyens 10,85 et 9,51 / 255 entre PNG et capture de l'exécution,
+  `poses.json`, champ `recette`) ; en 3-cloche, le PNG n'a plus le grand message « CLOCHE » (temporisations du HUD sur
+  l'horloge réelle pendant `A.tick(80)`) alors que le modèle de l'oracle (pause de 700 ms par capture, T9) l'affiche,
+  comme Unreal et la capture de l'exécution (`entree-4-cloche-844x390-oracle.png`) : écart déclaré, le modèle n'est pas
+  recalé sur ce PNG. État du HUD rejoué identique au DOM du web sauf le texte initial du tableau caché (« 0,00 » de
+  `hud.js:74`, vide dans le modèle du cœur ; invisible). Décor des montages d'annonce et de cloche : arche « ENTRÉE DE
+  PISTE » mal convertie côté Unreal, cheval gris, tenue du cavalier (hors de cette tranche). Cible GPS vers le poteau,
+  app Activités et meilleur temps, autres poteaux, masquage du poteau au-delà de 300 m non portés ; dialogue sans
+  capture côte à côte ; aucun paquet iOS, aucun appareil réel.
 
 ### T11. Arrivée, bilan, classement simulé, recommencer, record
 
