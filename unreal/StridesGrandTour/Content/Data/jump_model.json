@@ -1,0 +1,23 @@
+{
+ "schema": "strides.jump_model/1",
+ "source": "src/gameplay/jumpModel.js",
+ "units": "m, s",
+ "T": 0.8,
+ "lift": 0.2,
+ "adapt": 0.06,
+ "shorten": 0.12,
+ "adaptXc": 0.12,
+ "shortenXc": 0.24,
+ "minFront": 0.55,
+ "good": 0.15,
+ "rub": 0.06,
+ "late": 0.3,
+ "maxAngle": 0.5,
+ "reach": 13,
+ "clear": 0.32,
+ "spreadK": 0.18,
+ "T0": 0.56,
+ "Tk": 0.1,
+ "Tmin": 0.6,
+ "Tmax": 0.74
+}

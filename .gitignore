@@ -11,3 +11,20 @@ trial/textures/
 trial/review/
 trial/debug/
 trial/tripo_clean_*.glb
+/build/
+/.tmp/
+
+# Unreal Engine : sorties locales régénérables
+unreal/StridesGrandTour/Binaries/
+unreal/StridesGrandTour/Build/*
+!unreal/StridesGrandTour/Build/IOS/
+unreal/StridesGrandTour/Build/IOS/*
+!unreal/StridesGrandTour/Build/IOS/Resources/
+unreal/StridesGrandTour/Build/IOS/Resources/*
+!unreal/StridesGrandTour/Build/IOS/Resources/Graphics/
+!unreal/StridesGrandTour/Build/IOS/Resources/Graphics/*.png
+unreal/StridesGrandTour/Builds/
+unreal/StridesGrandTour/DerivedDataCache/
+unreal/StridesGrandTour/Intermediate/
+unreal/StridesGrandTour/Saved/
+*.xcworkspace/

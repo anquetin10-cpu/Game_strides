@@ -1,0 +1,8825 @@
+{
+ "schema": "strides.oracle.cso_ranking/1",
+ "source": [
+  "src/core/math.js",
+  "src/gameplay/ranking.js",
+  "src/gameplay/trip.js",
+  "src/gameplay/activities.js"
+ ],
+ "doc": "mulberry32(seed) : 12 premiers tirages (seed non fini écrit en texte) ; fields = simulateField(cls, seed, n) (cls = { id, ta }) ; ranks = rankResults([...simulateField(Parcours du Pôle, seed, 14), me]) : order = rang dans le champ de chaque classé, -1 pour le joueur",
+ "classes": {
+  "pole": {
+   "id": "am2",
+   "ta": 64
+  },
+  "concours": [
+   {
+    "id": "am2",
+    "ta": 64
+   },
+   {
+    "id": "am1",
+    "ta": 64
+   },
+   {
+    "id": "pro2",
+    "ta": 59
+   }
+  ]
+ },
+ "mulberry32": [
+  {
+   "seed": 0,
+   "out": [
+    0.26642920868471265,
+    0.0003297457005828619,
+    0.2232720274478197,
+    0.1462021479383111,
+    0.46732782293111086,
+    0.5450490827206522,
+    0.6152513844426721,
+    0.6489853798411787,
+    0.45600721263326705,
+    0.581218967679888,
+    0.24625753005966544,
+    0.09785169479437172
+   ]
+  },
+  {
+   "seed": 1,
+   "out": [
+    0.6270739405881613,
+    0.002735721180215478,
+    0.5274470399599522,
+    0.9810509674716741,
+    0.9683778982143849,
+    0.281103502959013,
+    0.6128388606011868,
+    0.7207431411370635,
+    0.425796952098608,
+    0.9948229456786066,
+    0.45527112716808915,
+    0.48878831742331386
+   ]
+  },
+  {
+   "seed": 7,
+   "out": [
+    0.011704753153026104,
+    0.06195825757458806,
+    0.97690763277933,
+    0.6990287057124078,
+    0.5214452685322613,
+    0.4055216880515218,
+    0.4662326325196773,
+    0.23992518591694534,
+    0.5533256039489061,
+    0.729822089895606,
+    0.2578155610244721,
+    0.15594836394302547
+   ]
+  },
+  {
+   "seed": 5150,
+   "out": [
+    0.3736589092295617,
+    0.6026743419934064,
+    0.17008373467251658,
+    0.9058269723318517,
+    0.5030610705725849,
+    0.6522160437889397,
+    0.956301512895152,
+    0.06212240667082369,
+    0.28986696782521904,
+    0.9081169832497835,
+    0.6243081795983016,
+    0.9633907382376492
+   ]
+  },
+  {
+   "seed": 5181,
+   "out": [
+    0.5913824236486107,
+    0.6484538801014423,
+    0.8676293194293976,
+    0.17648785188794136,
+    0.7094217403791845,
+    0.7483074192423373,
+    0.4447234047111124,
+    0.5663967593573034,
+    0.6730845032725483,
+    0.5523712746798992,
+    0.5248954757116735,
+    0.1669792311731726
+   ]
+  },
+  {
+   "seed": 2147483647,
+   "out": [
+    0.4290980885270983,
+    0.12713524978607893,
+    0.3852774982806295,
+    0.39639189024455845,
+    0.11962746665813029,
+    0.9531875969842076,
+    0.6806830384302884,
+    0.9957805015146732,
+    0.3577910573221743,
+    0.29028820362873375,
+    0.5385690161492676,
+    0.9202438748907298
+   ]
+  },
+  {
+   "seed": 2147483648,
+   "out": [
+    0.8205775609239936,
+    0.4481089550536126,
+    0.7836112855002284,
+    0.5120457962621003,
+    0.8388098266441375,
+    0.4205148529727012,
+    0.8944806265644729,
+    0.9326926763169467,
+    0.6747888037934899,
+    0.4173516221344471,
+    0.7520525439176708,
+    0.5010397543665022
+   ]
+  },
+  {
+   "seed": 4294967295,
+   "out": [
+    0.8964226141106337,
+    0.189478256739676,
+    0.7156526781618595,
+    0.9440599093213677,
+    0.8452364315744489,
+    0.5391399988438934,
+    0.6804977387655526,
+    0.4755720964167267,
+    0.13585773925296962,
+    0.9884445976931602,
+    0.8714674517977983,
+    0.18934845877811313
+   ]
+  },
+  {
+   "seed": 4294967296,
+   "out": [
+    0.26642920868471265,
+    0.0003297457005828619,
+    0.2232720274478197,
+    0.1462021479383111,
+    0.46732782293111086,
+    0.5450490827206522,
+    0.6152513844426721,
+    0.6489853798411787,
+    0.45600721263326705,
+    0.581218967679888,
+    0.24625753005966544,
+    0.09785169479437172
+   ]
+  },
+  {
+   "seed": 4294967297,
+   "out": [
+    0.6270739405881613,
+    0.002735721180215478,
+    0.5274470399599522,
+    0.9810509674716741,
+    0.9683778982143849,
+    0.281103502959013,
+    0.6128388606011868,
+    0.7207431411370635,
+    0.425796952098608,
+    0.9948229456786066,
+    0.45527112716808915,
+    0.48878831742331386
+   ]
+  },
+  {
+   "seed": -1,
+   "out": [
+    0.8964226141106337,
+    0.189478256739676,
+    0.7156526781618595,
+    0.9440599093213677,
+    0.8452364315744489,
+    0.5391399988438934,
+    0.6804977387655526,
+    0.4755720964167267,
+    0.13585773925296962,
+    0.9884445976931602,
+    0.8714674517977983,
+    0.18934845877811313
+   ]
+  },
+  {
+   "seed": -5150,
+   "out": [
+    0.5131047666072845,
+    0.4650752863381058,
+    0.04712348501197994,
+    0.37216812814585865,
+    0.8162988484837115,
+    0.23941165208816528,
+    0.21231274376623333,
+    0.38058753474615514,
+    0.5851259471382946,
+    0.4565650359727442,
+    0.22099161031655967,
+    0.0024342434480786324
+   ]
+  },
+  {
+   "seed": 3.7,
+   "out": [
+    0.7202267837710679,
+    0.03866216051392257,
+    0.4561921926215291,
+    0.07492800964973867,
+    0.7630053898319602,
+    0.481180417817086,
+    0.48672957462258637,
+    0.1618005665950477,
+    0.2632562683429569,
+    0.5526072245556861,
+    0.19491625181399286,
+    0.08359288168139756
+   ]
+  },
+  {
+   "seed": -3.7,
+   "out": [
+    0.5127934608608484,
+    0.46524663479067385,
+    0.09994429117068648,
+    0.44028591737151146,
+    0.46933195064775646,
+    0.03619865910150111,
+    0.6955402616877109,
+    0.21126085659489036,
+    0.7557855665218085,
+    0.022922629490494728,
+    0.7719700115267187,
+    0.18126221233978868
+   ]
+  },
+  {
+   "seed": 10000000000,
+   "out": [
+    0.07301638228818774,
+    0.2801921374630183,
+    0.7482029318343848,
+    0.8916378186549991,
+    0.0275621535256505,
+    0.8929428898263723,
+    0.659172257874161,
+    0.9611327759921551,
+    0.46003869525156915,
+    0.7933743803296238,
+    0.5428041415289044,
+    0.9468885522801429
+   ]
+  },
+  {
+   "seed": 1e+21,
+   "out": [
+    0.6713672615587711,
+    0.20666237571276724,
+    0.8864429974928498,
+    0.25004032300785184,
+    0.6536694536916912,
+    0.2934183608740568,
+    0.7460259259678423,
+    0.7369009044487029,
+    0.05233032791875303,
+    0.5013352781534195,
+    0.979615782154724,
+    0.8534706498030573
+   ]
+  },
+  {
+   "seed": "NaN",
+   "out": [
+    0.26642920868471265,
+    0.0003297457005828619,
+    0.2232720274478197,
+    0.1462021479383111,
+    0.46732782293111086,
+    0.5450490827206522,
+    0.6152513844426721,
+    0.6489853798411787,
+    0.45600721263326705,
+    0.581218967679888,
+    0.24625753005966544,
+    0.09785169479437172
+   ]
+  },
+  {
+   "seed": "Infinity",
+   "out": [
+    0.26642920868471265,
+    0.0003297457005828619,
+    0.2232720274478197,
+    0.1462021479383111,
+    0.46732782293111086,
+    0.5450490827206522,
+    0.6152513844426721,
+    0.6489853798411787,
+    0.45600721263326705,
+    0.581218967679888,
+    0.24625753005966544,
+    0.09785169479437172
+   ]
+  }
+ ],
+ "fields": [
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5150,
+   "n": 14,
+   "field": [
+    {
+     "rider": "M. Marchand",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 60.93
+    },
+    {
+     "rider": "C. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 61.35
+    },
+    {
+     "rider": "P. Leroy",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 60.88
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 60.45
+    },
+    {
+     "rider": "T. Girard",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.68
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 59.53
+    },
+    {
+     "rider": "E. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.4
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.89
+    },
+    {
+     "rider": "N. Martin",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.29
+    },
+    {
+     "rider": "P. Roux",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 59.93
+    },
+    {
+     "rider": "I. Girard",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.23
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.46
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 60.63
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 58.32
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5181,
+   "n": 14,
+   "field": [
+    {
+     "rider": "V. Fournier",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.66
+    },
+    {
+     "rider": "M. Moreau",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.53
+    },
+    {
+     "rider": "V. Girard",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 60.43
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 58.95
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 60.71
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 58.53
+    },
+    {
+     "rider": "N. Mercier",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 59.21
+    },
+    {
+     "rider": "T. Moreau",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 62.44
+    },
+    {
+     "rider": "A. Leroy",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 61.04
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 62.39
+    },
+    {
+     "rider": "M. Mercier",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 56.26
+    },
+    {
+     "rider": "L. Lambert",
+     "horse": "Galaxie",
+     "faults": 15,
+     "time": 66.18
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 58.42
+    },
+    {
+     "rider": "C. Bonnet",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 62.6
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5212,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Duval",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 63.9
+    },
+    {
+     "rider": "V. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.73
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 59.81
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 59.07
+    },
+    {
+     "rider": "E. Bonnet",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 59.9
+    },
+    {
+     "rider": "Z. Guérin",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 57.61
+    },
+    {
+     "rider": "E. Blanc",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 61.63
+    },
+    {
+     "rider": "C. Fournier",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 61.39
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 59.84
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 59.43
+    },
+    {
+     "rider": "A. Roux",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 58.79
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 60.17
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 62.33
+    },
+    {
+     "rider": "L. Lefèvre",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 59.42
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5243,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Faure",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 59.49
+    },
+    {
+     "rider": "M. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 60.65
+    },
+    {
+     "rider": "L. Bernard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 60.64
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 59.85
+    },
+    {
+     "rider": "N. Faure",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 62.6
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 58.08
+    },
+    {
+     "rider": "H. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 59.18
+    },
+    {
+     "rider": "J. Fournier",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 60.16
+    },
+    {
+     "rider": "A. Bonnet",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 56.83
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 63.02
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 58.63
+    },
+    {
+     "rider": "A. Girard",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 58.42
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.8
+    },
+    {
+     "rider": "E. Faure",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 57.25
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5274,
+   "n": 14,
+   "field": [
+    {
+     "rider": "A. Duval",
+     "horse": "Kalimba",
+     "faults": 12,
+     "time": 59.83
+    },
+    {
+     "rider": "M. Bonnet",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 57.3
+    },
+    {
+     "rider": "M. Bonnet",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 59.87
+    },
+    {
+     "rider": "E. Lefèvre",
+     "horse": "Hermès du Lac",
+     "faults": 8,
+     "time": 61.46
+    },
+    {
+     "rider": "A. Blanc",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 59.6
+    },
+    {
+     "rider": "N. Martin",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 59.59
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.63
+    },
+    {
+     "rider": "L. Leroy",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 62.28
+    },
+    {
+     "rider": "I. Guérin",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 62.94
+    },
+    {
+     "rider": "V. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.67
+    },
+    {
+     "rider": "J. Duval",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 58.1
+    },
+    {
+     "rider": "Z. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 58.68
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 59.61
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Utopie",
+     "faults": 16,
+     "time": 67.08
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5305,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 61.25
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 59.32
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 62.39
+    },
+    {
+     "rider": "A. Mercier",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.99
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 63.93
+    },
+    {
+     "rider": "L. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 62.3
+    },
+    {
+     "rider": "N. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 8,
+     "time": 59.78
+    },
+    {
+     "rider": "L. Leroy",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 58.57
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 63.36
+    },
+    {
+     "rider": "E. Duval",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 58.3
+    },
+    {
+     "rider": "T. Blanc",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 61.09
+    },
+    {
+     "rider": "V. Fournier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 58.42
+    },
+    {
+     "rider": "J. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 63.49
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 60.21
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5336,
+   "n": 14,
+   "field": [
+    {
+     "rider": "T. Lambert",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 60.69
+    },
+    {
+     "rider": "H. Martin",
+     "horse": "Tiara du Ter",
+     "faults": 16,
+     "time": 61.29
+    },
+    {
+     "rider": "L. Mercier",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 61.07
+    },
+    {
+     "rider": "C. Fournier",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.74
+    },
+    {
+     "rider": "E. Martin",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 60.98
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Ninja Z",
+     "faults": 10,
+     "time": 65.05
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.99
+    },
+    {
+     "rider": "Z. Faure",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 59.64
+    },
+    {
+     "rider": "E. Mercier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 61.17
+    },
+    {
+     "rider": "J. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 63.71
+    },
+    {
+     "rider": "A. Girard",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 61.07
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 59.72
+    },
+    {
+     "rider": "P. Moreau",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 61.85
+    },
+    {
+     "rider": "N. Lefèvre",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 62.43
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5367,
+   "n": 14,
+   "field": [
+    {
+     "rider": "Z. Roux",
+     "horse": "Saphir des Bois",
+     "faults": 13,
+     "time": 64.57
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 61.94
+    },
+    {
+     "rider": "A. Lambert",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 58.62
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 62.81
+    },
+    {
+     "rider": "P. Lambert",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.07
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 58.49
+    },
+    {
+     "rider": "H. Duval",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 58.28
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 60.3
+    },
+    {
+     "rider": "I. Bonnet",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 61.63
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 56.7
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 12,
+     "time": 61.44
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 60.43
+    },
+    {
+     "rider": "J. Bonnet",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 59.87
+    },
+    {
+     "rider": "Z. Faure",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.63
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5398,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 62.03
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 63.19
+    },
+    {
+     "rider": "A. Fournier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 57.67
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Rubis Blanc",
+     "faults": 12,
+     "time": 63.29
+    },
+    {
+     "rider": "I. Guérin",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 61.52
+    },
+    {
+     "rider": "E. Duval",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 58.58
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 56.42
+    },
+    {
+     "rider": "I. Mercier",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 62.71
+    },
+    {
+     "rider": "Z. Blanc",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 57.86
+    },
+    {
+     "rider": "J. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 56.57
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 59.79
+    },
+    {
+     "rider": "P. Mercier",
+     "horse": "Saphir des Bois",
+     "faults": 16,
+     "time": 59.73
+    },
+    {
+     "rider": "N. Roux",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 61.65
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 62.48
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5429,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 60.7
+    },
+    {
+     "rider": "A. Martin",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 55.93
+    },
+    {
+     "rider": "C. Martin",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 61.65
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 55.61
+    },
+    {
+     "rider": "Z. Bonnet",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.38
+    },
+    {
+     "rider": "N. Leroy",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 58.74
+    },
+    {
+     "rider": "V. Guérin",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 60.78
+    },
+    {
+     "rider": "M. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 12,
+     "time": 58.13
+    },
+    {
+     "rider": "T. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.11
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 61.27
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 59.01
+    },
+    {
+     "rider": "P. Lambert",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.77
+    },
+    {
+     "rider": "M. Lefèvre",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.77
+    },
+    {
+     "rider": "N. Mercier",
+     "horse": "Kalimba",
+     "faults": 16,
+     "time": 58.02
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 226840,
+   "n": 14,
+   "field": [
+    {
+     "rider": "V. Moreau",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 61.63
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 57.8
+    },
+    {
+     "rider": "H. Lefèvre",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 62.02
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 62.71
+    },
+    {
+     "rider": "V. Martin",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 62.28
+    },
+    {
+     "rider": "J. Lambert",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 55.82
+    },
+    {
+     "rider": "A. Bernard",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 59.55
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 61.7
+    },
+    {
+     "rider": "L. Mercier",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 57.24
+    },
+    {
+     "rider": "P. Lambert",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 61.71
+    },
+    {
+     "rider": "T. Lambert",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.77
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 61.28
+    },
+    {
+     "rider": "M. Lefèvre",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 60.1
+    },
+    {
+     "rider": "H. Martin",
+     "horse": "Rubis Blanc",
+     "faults": 17,
+     "time": 64.15
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 390689,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Leroy",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 57.83
+    },
+    {
+     "rider": "E. Lambert",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 60.92
+    },
+    {
+     "rider": "M. Moreau",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 57.71
+    },
+    {
+     "rider": "J. Martin",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 61.12
+    },
+    {
+     "rider": "L. Fournier",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 61.05
+    },
+    {
+     "rider": "L. Fournier",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 59.83
+    },
+    {
+     "rider": "C. Leroy",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 60.25
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Galaxie",
+     "faults": 12,
+     "time": 60.3
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 59.43
+    },
+    {
+     "rider": "H. Marchand",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 58.22
+    },
+    {
+     "rider": "T. Lambert",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 62.24
+    },
+    {
+     "rider": "M. Martin",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.77
+    },
+    {
+     "rider": "P. Girard",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 57.82
+    },
+    {
+     "rider": "E. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 61.56
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 864249,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 12,
+     "time": 60.03
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 59.76
+    },
+    {
+     "rider": "T. Fournier",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 59.93
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.49
+    },
+    {
+     "rider": "M. Lambert",
+     "horse": "Saphir des Bois",
+     "faults": 15,
+     "time": 66.52
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.59
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Ninja Z",
+     "faults": 12,
+     "time": 61.34
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 5,
+     "time": 64.35
+    },
+    {
+     "rider": "Z. Guérin",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.93
+    },
+    {
+     "rider": "N. Lambert",
+     "horse": "Kalimba",
+     "faults": 12,
+     "time": 61.53
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Rubis Blanc",
+     "faults": 16,
+     "time": 63.14
+    },
+    {
+     "rider": "L. Fournier",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 62.61
+    },
+    {
+     "rider": "A. Guérin",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 58.62
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Quartz du Val",
+     "faults": 12,
+     "time": 59.69
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 0,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 55.25
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 59.69
+    },
+    {
+     "rider": "Z. Bernard",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 63.09
+    },
+    {
+     "rider": "A. Faure",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 58.85
+    },
+    {
+     "rider": "L. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 59.36
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.6
+    },
+    {
+     "rider": "V. Blanc",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.96
+    },
+    {
+     "rider": "C. Bonnet",
+     "horse": "Ninja Z",
+     "faults": 16,
+     "time": 61.65
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 61.35
+    },
+    {
+     "rider": "J. Lefèvre",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 57.57
+    },
+    {
+     "rider": "M. Mercier",
+     "horse": "Kalimba",
+     "faults": 16,
+     "time": 62.04
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 58.12
+    },
+    {
+     "rider": "Z. Mercier",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 61.14
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 59.62
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 1,
+   "n": 14,
+   "field": [
+    {
+     "rider": "M. Lambert",
+     "horse": "Ubris de Mai",
+     "faults": 1,
+     "time": 64.1
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 63.04
+    },
+    {
+     "rider": "I. Blanc",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 56.69
+    },
+    {
+     "rider": "Z. Blanc",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 56.48
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.62
+    },
+    {
+     "rider": "A. Duval",
+     "horse": "Oural",
+     "faults": 8,
+     "time": 63.32
+    },
+    {
+     "rider": "V. Lambert",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 57.12
+    },
+    {
+     "rider": "J. Lefèvre",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 57.63
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Utopie",
+     "faults": 16,
+     "time": 61.9
+    },
+    {
+     "rider": "C. Guérin",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 62.81
+    },
+    {
+     "rider": "V. Duval",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 63.47
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 59.65
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 61.43
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 60.62
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5150,
+   "n": 14,
+   "field": [
+    {
+     "rider": "M. Marchand",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 60.93
+    },
+    {
+     "rider": "C. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 61.35
+    },
+    {
+     "rider": "P. Leroy",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 60.88
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 60.45
+    },
+    {
+     "rider": "T. Girard",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.68
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 59.53
+    },
+    {
+     "rider": "E. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.4
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.89
+    },
+    {
+     "rider": "N. Martin",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.29
+    },
+    {
+     "rider": "P. Roux",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 59.93
+    },
+    {
+     "rider": "I. Girard",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.23
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.46
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 60.63
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 58.32
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5181,
+   "n": 14,
+   "field": [
+    {
+     "rider": "V. Fournier",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.66
+    },
+    {
+     "rider": "M. Moreau",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.53
+    },
+    {
+     "rider": "V. Girard",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 60.43
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 58.95
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 60.71
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 58.53
+    },
+    {
+     "rider": "N. Mercier",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 59.21
+    },
+    {
+     "rider": "T. Moreau",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 62.44
+    },
+    {
+     "rider": "A. Leroy",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 61.04
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 62.39
+    },
+    {
+     "rider": "M. Mercier",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 56.26
+    },
+    {
+     "rider": "L. Lambert",
+     "horse": "Galaxie",
+     "faults": 15,
+     "time": 66.18
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 58.42
+    },
+    {
+     "rider": "C. Bonnet",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 62.6
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5212,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Duval",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 63.9
+    },
+    {
+     "rider": "V. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.73
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 59.81
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 59.07
+    },
+    {
+     "rider": "E. Bonnet",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 59.9
+    },
+    {
+     "rider": "Z. Guérin",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 57.61
+    },
+    {
+     "rider": "E. Blanc",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 61.63
+    },
+    {
+     "rider": "C. Fournier",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 61.39
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 59.84
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 59.43
+    },
+    {
+     "rider": "A. Roux",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 58.79
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 60.17
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 62.33
+    },
+    {
+     "rider": "L. Lefèvre",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 59.42
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5243,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Faure",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 59.49
+    },
+    {
+     "rider": "M. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 60.65
+    },
+    {
+     "rider": "L. Bernard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 60.64
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 59.85
+    },
+    {
+     "rider": "N. Faure",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 62.6
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 58.08
+    },
+    {
+     "rider": "H. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 59.18
+    },
+    {
+     "rider": "J. Fournier",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 60.16
+    },
+    {
+     "rider": "A. Bonnet",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 56.83
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 63.02
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 58.63
+    },
+    {
+     "rider": "A. Girard",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 58.42
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.8
+    },
+    {
+     "rider": "E. Faure",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 57.25
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5274,
+   "n": 14,
+   "field": [
+    {
+     "rider": "A. Duval",
+     "horse": "Kalimba",
+     "faults": 12,
+     "time": 59.83
+    },
+    {
+     "rider": "M. Bonnet",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 57.3
+    },
+    {
+     "rider": "M. Bonnet",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 59.87
+    },
+    {
+     "rider": "E. Lefèvre",
+     "horse": "Hermès du Lac",
+     "faults": 8,
+     "time": 61.46
+    },
+    {
+     "rider": "A. Blanc",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 59.6
+    },
+    {
+     "rider": "N. Martin",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 59.59
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.63
+    },
+    {
+     "rider": "L. Leroy",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 62.28
+    },
+    {
+     "rider": "I. Guérin",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 62.94
+    },
+    {
+     "rider": "V. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.67
+    },
+    {
+     "rider": "J. Duval",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 58.1
+    },
+    {
+     "rider": "Z. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 58.68
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 59.61
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Utopie",
+     "faults": 16,
+     "time": 67.08
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5305,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 61.25
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 59.32
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 62.39
+    },
+    {
+     "rider": "A. Mercier",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.99
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 63.93
+    },
+    {
+     "rider": "L. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 62.3
+    },
+    {
+     "rider": "N. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 8,
+     "time": 59.78
+    },
+    {
+     "rider": "L. Leroy",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 58.57
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 63.36
+    },
+    {
+     "rider": "E. Duval",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 58.3
+    },
+    {
+     "rider": "T. Blanc",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 61.09
+    },
+    {
+     "rider": "V. Fournier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 58.42
+    },
+    {
+     "rider": "J. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 63.49
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 60.21
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5336,
+   "n": 14,
+   "field": [
+    {
+     "rider": "T. Lambert",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 60.69
+    },
+    {
+     "rider": "H. Martin",
+     "horse": "Tiara du Ter",
+     "faults": 16,
+     "time": 61.29
+    },
+    {
+     "rider": "L. Mercier",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 61.07
+    },
+    {
+     "rider": "C. Fournier",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.74
+    },
+    {
+     "rider": "E. Martin",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 60.98
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Ninja Z",
+     "faults": 10,
+     "time": 65.05
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.99
+    },
+    {
+     "rider": "Z. Faure",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 59.64
+    },
+    {
+     "rider": "E. Mercier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 61.17
+    },
+    {
+     "rider": "J. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 63.71
+    },
+    {
+     "rider": "A. Girard",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 61.07
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 59.72
+    },
+    {
+     "rider": "P. Moreau",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 61.85
+    },
+    {
+     "rider": "N. Lefèvre",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 62.43
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5367,
+   "n": 14,
+   "field": [
+    {
+     "rider": "Z. Roux",
+     "horse": "Saphir des Bois",
+     "faults": 13,
+     "time": 64.57
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 61.94
+    },
+    {
+     "rider": "A. Lambert",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 58.62
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 62.81
+    },
+    {
+     "rider": "P. Lambert",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.07
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 58.49
+    },
+    {
+     "rider": "H. Duval",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 58.28
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 60.3
+    },
+    {
+     "rider": "I. Bonnet",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 61.63
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 56.7
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 12,
+     "time": 61.44
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 60.43
+    },
+    {
+     "rider": "J. Bonnet",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 59.87
+    },
+    {
+     "rider": "Z. Faure",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.63
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5398,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 62.03
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 63.19
+    },
+    {
+     "rider": "A. Fournier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 57.67
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Rubis Blanc",
+     "faults": 12,
+     "time": 63.29
+    },
+    {
+     "rider": "I. Guérin",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 61.52
+    },
+    {
+     "rider": "E. Duval",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 58.58
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 56.42
+    },
+    {
+     "rider": "I. Mercier",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 62.71
+    },
+    {
+     "rider": "Z. Blanc",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 57.86
+    },
+    {
+     "rider": "J. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 56.57
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 59.79
+    },
+    {
+     "rider": "P. Mercier",
+     "horse": "Saphir des Bois",
+     "faults": 16,
+     "time": 59.73
+    },
+    {
+     "rider": "N. Roux",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 61.65
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 62.48
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5429,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 60.7
+    },
+    {
+     "rider": "A. Martin",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 55.93
+    },
+    {
+     "rider": "C. Martin",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 61.65
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 55.61
+    },
+    {
+     "rider": "Z. Bonnet",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.38
+    },
+    {
+     "rider": "N. Leroy",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 58.74
+    },
+    {
+     "rider": "V. Guérin",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 60.78
+    },
+    {
+     "rider": "M. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 12,
+     "time": 58.13
+    },
+    {
+     "rider": "T. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.11
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 61.27
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 59.01
+    },
+    {
+     "rider": "P. Lambert",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.77
+    },
+    {
+     "rider": "M. Lefèvre",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.77
+    },
+    {
+     "rider": "N. Mercier",
+     "horse": "Kalimba",
+     "faults": 16,
+     "time": 58.02
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 226840,
+   "n": 14,
+   "field": [
+    {
+     "rider": "V. Moreau",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 61.63
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 57.8
+    },
+    {
+     "rider": "H. Lefèvre",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 62.02
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 62.71
+    },
+    {
+     "rider": "V. Martin",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 62.28
+    },
+    {
+     "rider": "J. Lambert",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 55.82
+    },
+    {
+     "rider": "A. Bernard",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 59.55
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 61.7
+    },
+    {
+     "rider": "L. Mercier",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 57.24
+    },
+    {
+     "rider": "P. Lambert",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 61.71
+    },
+    {
+     "rider": "T. Lambert",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.77
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 61.28
+    },
+    {
+     "rider": "M. Lefèvre",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 60.1
+    },
+    {
+     "rider": "H. Martin",
+     "horse": "Rubis Blanc",
+     "faults": 17,
+     "time": 64.15
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 390689,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Leroy",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 57.83
+    },
+    {
+     "rider": "E. Lambert",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 60.92
+    },
+    {
+     "rider": "M. Moreau",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 57.71
+    },
+    {
+     "rider": "J. Martin",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 61.12
+    },
+    {
+     "rider": "L. Fournier",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 61.05
+    },
+    {
+     "rider": "L. Fournier",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 59.83
+    },
+    {
+     "rider": "C. Leroy",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 60.25
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Galaxie",
+     "faults": 12,
+     "time": 60.3
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 59.43
+    },
+    {
+     "rider": "H. Marchand",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 58.22
+    },
+    {
+     "rider": "T. Lambert",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 62.24
+    },
+    {
+     "rider": "M. Martin",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.77
+    },
+    {
+     "rider": "P. Girard",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 57.82
+    },
+    {
+     "rider": "E. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 61.56
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 864249,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 12,
+     "time": 60.03
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 59.76
+    },
+    {
+     "rider": "T. Fournier",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 59.93
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.49
+    },
+    {
+     "rider": "M. Lambert",
+     "horse": "Saphir des Bois",
+     "faults": 15,
+     "time": 66.52
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.59
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Ninja Z",
+     "faults": 12,
+     "time": 61.34
+    },
+    {
+     "rider": "C. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 5,
+     "time": 64.35
+    },
+    {
+     "rider": "Z. Guérin",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.93
+    },
+    {
+     "rider": "N. Lambert",
+     "horse": "Kalimba",
+     "faults": 12,
+     "time": 61.53
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Rubis Blanc",
+     "faults": 16,
+     "time": 63.14
+    },
+    {
+     "rider": "L. Fournier",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 62.61
+    },
+    {
+     "rider": "A. Guérin",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 58.62
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Quartz du Val",
+     "faults": 12,
+     "time": 59.69
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 0,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 55.25
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 59.69
+    },
+    {
+     "rider": "Z. Bernard",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 63.09
+    },
+    {
+     "rider": "A. Faure",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 58.85
+    },
+    {
+     "rider": "L. Lefèvre",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 59.36
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.6
+    },
+    {
+     "rider": "V. Blanc",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.96
+    },
+    {
+     "rider": "C. Bonnet",
+     "horse": "Ninja Z",
+     "faults": 16,
+     "time": 61.65
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 61.35
+    },
+    {
+     "rider": "J. Lefèvre",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 57.57
+    },
+    {
+     "rider": "M. Mercier",
+     "horse": "Kalimba",
+     "faults": 16,
+     "time": 62.04
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 58.12
+    },
+    {
+     "rider": "Z. Mercier",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 61.14
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 59.62
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 1,
+   "n": 14,
+   "field": [
+    {
+     "rider": "M. Lambert",
+     "horse": "Ubris de Mai",
+     "faults": 1,
+     "time": 64.1
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 63.04
+    },
+    {
+     "rider": "I. Blanc",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 56.69
+    },
+    {
+     "rider": "Z. Blanc",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 56.48
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.62
+    },
+    {
+     "rider": "A. Duval",
+     "horse": "Oural",
+     "faults": 8,
+     "time": 63.32
+    },
+    {
+     "rider": "V. Lambert",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 57.12
+    },
+    {
+     "rider": "J. Lefèvre",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 57.63
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Utopie",
+     "faults": 16,
+     "time": 61.9
+    },
+    {
+     "rider": "C. Guérin",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 62.81
+    },
+    {
+     "rider": "V. Duval",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 63.47
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 59.65
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 61.43
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 60.62
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5150,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Bonnet",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 61.35
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Hermès du Lac",
+     "faults": 16,
+     "time": 61.39
+    },
+    {
+     "rider": "C. Leroy",
+     "horse": "Quartz du Val",
+     "faults": 9,
+     "time": 64.68
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 60.51
+    },
+    {
+     "rider": "T. Leroy",
+     "horse": "Vendôme",
+     "faults": 5,
+     "time": 64.43
+    },
+    {
+     "rider": "E. Leroy",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 62.37
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Diamant Rouge",
+     "faults": 12,
+     "time": 60.36
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 61.26
+    },
+    {
+     "rider": "Z. Lefèvre",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 57.43
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Ninja Z",
+     "faults": 8,
+     "time": 62.52
+    },
+    {
+     "rider": "P. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 12,
+     "time": 61.13
+    },
+    {
+     "rider": "I. Girard",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.23
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 59.46
+    },
+    {
+     "rider": "Z. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 61.48
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5181,
+   "n": 14,
+   "field": [
+    {
+     "rider": "V. Mercier",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.41
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 61.83
+    },
+    {
+     "rider": "A. Bernard",
+     "horse": "Tiara du Ter",
+     "faults": 8,
+     "time": 61.68
+    },
+    {
+     "rider": "M. Bonnet",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 60.37
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 59.08
+    },
+    {
+     "rider": "H. Mercier",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 57.87
+    },
+    {
+     "rider": "A. Leroy",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 56.74
+    },
+    {
+     "rider": "V. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 60.26
+    },
+    {
+     "rider": "T. Moreau",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 61.84
+    },
+    {
+     "rider": "A. Leroy",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 61.04
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 62.39
+    },
+    {
+     "rider": "M. Mercier",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 56.26
+    },
+    {
+     "rider": "T. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 14,
+     "time": 65.27
+    },
+    {
+     "rider": "J. Leroy",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 57.94
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5212,
+   "n": 14,
+   "field": [
+    {
+     "rider": "M. Martin",
+     "horse": "Diamant Rouge",
+     "faults": 9,
+     "time": 64.17
+    },
+    {
+     "rider": "L. Mercier",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 60.84
+    },
+    {
+     "rider": "H. Duval",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.37
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 61.49
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 58.9
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 63.09
+    },
+    {
+     "rider": "V. Lambert",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 60.29
+    },
+    {
+     "rider": "T. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 61.88
+    },
+    {
+     "rider": "C. Fournier",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 61.39
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 59.84
+    },
+    {
+     "rider": "C. Duval",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 60.77
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 58.79
+    },
+    {
+     "rider": "L. Lambert",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 58.15
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 12,
+     "time": 62.29
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5243,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Faure",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 59.49
+    },
+    {
+     "rider": "M. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 60.65
+    },
+    {
+     "rider": "A. Girard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 59.6
+    },
+    {
+     "rider": "Z. Bonnet",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 58.62
+    },
+    {
+     "rider": "T. Marchand",
+     "horse": "Rubis Blanc",
+     "faults": 12,
+     "time": 61.55
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Galaxie",
+     "faults": 12,
+     "time": 60.67
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 63.35
+    },
+    {
+     "rider": "P. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 63.04
+    },
+    {
+     "rider": "H. Moreau",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 58.01
+    },
+    {
+     "rider": "P. Blanc",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 62.75
+    },
+    {
+     "rider": "L. Marchand",
+     "horse": "Tiara du Ter",
+     "faults": 8,
+     "time": 61.34
+    },
+    {
+     "rider": "P. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 58.17
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Saphir des Bois",
+     "faults": 16,
+     "time": 59.37
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 57.8
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5274,
+   "n": 14,
+   "field": [
+    {
+     "rider": "I. Bonnet",
+     "horse": "Kalimba",
+     "faults": 16,
+     "time": 59.16
+    },
+    {
+     "rider": "H. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 58.1
+    },
+    {
+     "rider": "I. Duval",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 58.76
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 62.49
+    },
+    {
+     "rider": "E. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 60.81
+    },
+    {
+     "rider": "A. Bonnet",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.03
+    },
+    {
+     "rider": "N. Martin",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 59.59
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 60.61
+    },
+    {
+     "rider": "N. Girard",
+     "horse": "Diamant Rouge",
+     "faults": 16,
+     "time": 62.08
+    },
+    {
+     "rider": "V. Fournier",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 61.44
+    },
+    {
+     "rider": "Z. Leroy",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 60.48
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Ninja Z",
+     "faults": 8,
+     "time": 57.02
+    },
+    {
+     "rider": "Z. Duval",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 57.67
+    },
+    {
+     "rider": "Z. Lefèvre",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 60.21
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5305,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 61.25
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 59.32
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 63.73
+    },
+    {
+     "rider": "A. Fournier",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 58.86
+    },
+    {
+     "rider": "A. Guérin",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 62.52
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.57
+    },
+    {
+     "rider": "E. Roux",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 60.43
+    },
+    {
+     "rider": "C. Moreau",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 60.52
+    },
+    {
+     "rider": "P. Duval",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 57.15
+    },
+    {
+     "rider": "C. Blanc",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 62.63
+    },
+    {
+     "rider": "E. Duval",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 57.7
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 62.93
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 60.43
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 62.26
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5336,
+   "n": 14,
+   "field": [
+    {
+     "rider": "T. Guérin",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 60.64
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Tiara du Ter",
+     "faults": 5,
+     "time": 64.1
+    },
+    {
+     "rider": "E. Blanc",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 58.25
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 59.02
+    },
+    {
+     "rider": "T. Bernard",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 58.31
+    },
+    {
+     "rider": "V. Blanc",
+     "horse": "Ninja Z",
+     "faults": 12,
+     "time": 60.32
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 12,
+     "time": 63.02
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 59.99
+    },
+    {
+     "rider": "E. Lambert",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 60.74
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Rubis Blanc",
+     "faults": 12,
+     "time": 60.77
+    },
+    {
+     "rider": "J. Mercier",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 60.96
+    },
+    {
+     "rider": "N. Duval",
+     "horse": "Hermès du Lac",
+     "faults": 8,
+     "time": 59.14
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 60.7
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 60.6
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5367,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Girard",
+     "horse": "Saphir des Bois",
+     "faults": 14,
+     "time": 65.9
+    },
+    {
+     "rider": "H. Marchand",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 61.24
+    },
+    {
+     "rider": "J. Martin",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 60.45
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 63.31
+    },
+    {
+     "rider": "C. Leroy",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 61.39
+    },
+    {
+     "rider": "I. Leroy",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 60.95
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 57.67
+    },
+    {
+     "rider": "H. Girard",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 58.54
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 60.3
+    },
+    {
+     "rider": "I. Bonnet",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 61.63
+    },
+    {
+     "rider": "H. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 57.71
+    },
+    {
+     "rider": "M. Moreau",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 61.17
+    },
+    {
+     "rider": "A. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 61.51
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 55.35
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5398,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Martin",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 63.07
+    },
+    {
+     "rider": "C. Blanc",
+     "horse": "Utopie",
+     "faults": 5,
+     "time": 64.68
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 58.03
+    },
+    {
+     "rider": "T. Leroy",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 62.61
+    },
+    {
+     "rider": "T. Lefèvre",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 57.98
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 8,
+     "time": 61.04
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 58.96
+    },
+    {
+     "rider": "H. Lambert",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 59.15
+    },
+    {
+     "rider": "Z. Lambert",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 62.72
+    },
+    {
+     "rider": "A. Duval",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 58.69
+    },
+    {
+     "rider": "I. Fournier",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 59.75
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 59.79
+    },
+    {
+     "rider": "I. Roux",
+     "horse": "Oural",
+     "faults": 16,
+     "time": 62.12
+    },
+    {
+     "rider": "V. Faure",
+     "horse": "Ninja Z",
+     "faults": 8,
+     "time": 60.03
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 5429,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 60.7
+    },
+    {
+     "rider": "A. Martin",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 55.93
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 62.23
+    },
+    {
+     "rider": "M. Bernard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 56.95
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 60.67
+    },
+    {
+     "rider": "L. Bernard",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 62.83
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 62.43
+    },
+    {
+     "rider": "N. Faure",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 63.16
+    },
+    {
+     "rider": "I. Moreau",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 58.41
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 59.21
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 61.27
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.01
+    },
+    {
+     "rider": "T. Fournier",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 57.09
+    },
+    {
+     "rider": "P. Faure",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 57.79
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 226840,
+   "n": 14,
+   "field": [
+    {
+     "rider": "A. Mercier",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 61.94
+    },
+    {
+     "rider": "L. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 58.19
+    },
+    {
+     "rider": "V. Faure",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 60.22
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 60.9
+    },
+    {
+     "rider": "V. Leroy",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 62.22
+    },
+    {
+     "rider": "Z. Moreau",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 60.7
+    },
+    {
+     "rider": "Z. Mercier",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 58.26
+    },
+    {
+     "rider": "A. Bernard",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 58.95
+    },
+    {
+     "rider": "V. Bernard",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 62.55
+    },
+    {
+     "rider": "J. Martin",
+     "horse": "Ninja Z",
+     "faults": 12,
+     "time": 60.42
+    },
+    {
+     "rider": "N. Leroy",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 60.69
+    },
+    {
+     "rider": "M. Roux",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 60.23
+    },
+    {
+     "rider": "A. Faure",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 59.55
+    },
+    {
+     "rider": "T. Moreau",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 60.05
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 390689,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 59.78
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 59.46
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 57.57
+    },
+    {
+     "rider": "A. Faure",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 57.64
+    },
+    {
+     "rider": "H. Guérin",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 58.18
+    },
+    {
+     "rider": "C. Martin",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 60.26
+    },
+    {
+     "rider": "J. Lefèvre",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 59.11
+    },
+    {
+     "rider": "N. Fournier",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 62.93
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 60.75
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 59.43
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 57.67
+    },
+    {
+     "rider": "A. Roux",
+     "horse": "Vendôme",
+     "faults": 18,
+     "time": 65.64
+    },
+    {
+     "rider": "N. Moreau",
+     "horse": "Tiara du Ter",
+     "faults": 8,
+     "time": 61.27
+    },
+    {
+     "rider": "I. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 56.94
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 864249,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Fournier",
+     "horse": "Ubris de Mai",
+     "faults": 12,
+     "time": 62.51
+    },
+    {
+     "rider": "Z. Martin",
+     "horse": "Vendôme",
+     "faults": 12,
+     "time": 59.47
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 59.44
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 59.41
+    },
+    {
+     "rider": "T. Marchand",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 62.22
+    },
+    {
+     "rider": "H. Faure",
+     "horse": "Oural",
+     "faults": 8,
+     "time": 61.56
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Ninja Z",
+     "faults": 5,
+     "time": 64.27
+    },
+    {
+     "rider": "L. Girard",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 61.39
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 61.82
+    },
+    {
+     "rider": "T. Guérin",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 60.83
+    },
+    {
+     "rider": "N. Lambert",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 60.93
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Galaxie",
+     "faults": 18,
+     "time": 65.11
+    },
+    {
+     "rider": "T. Bonnet",
+     "horse": "Hermès du Lac",
+     "faults": 16,
+     "time": 63.75
+    },
+    {
+     "rider": "V. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 62.29
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 0,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 55.25
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.38
+    },
+    {
+     "rider": "T. Bonnet",
+     "horse": "Vendôme",
+     "faults": 12,
+     "time": 63.01
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 59.25
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 63
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Saphir des Bois",
+     "faults": 8,
+     "time": 58.52
+    },
+    {
+     "rider": "T. Roux",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 57.56
+    },
+    {
+     "rider": "L. Girard",
+     "horse": "Ninja Z",
+     "faults": 5,
+     "time": 64.6
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 59.59
+    },
+    {
+     "rider": "C. Duval",
+     "horse": "Utopie",
+     "faults": 16,
+     "time": 60.44
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 59.23
+    },
+    {
+     "rider": "V. Guérin",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 59.32
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 58.12
+    },
+    {
+     "rider": "L. Lambert",
+     "horse": "Hermès du Lac",
+     "faults": 9,
+     "time": 64.2
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am1",
+    "ta": 64
+   },
+   "seed": 1,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Moreau",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 60.65
+    },
+    {
+     "rider": "E. Fournier",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 63.29
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 57.08
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 59.52
+    },
+    {
+     "rider": "M. Girard",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 59.76
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Oural",
+     "faults": 8,
+     "time": 60.65
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 58.88
+    },
+    {
+     "rider": "M. Martin",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 59.7
+    },
+    {
+     "rider": "V. Roux",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 63.09
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Kalimba",
+     "faults": 1,
+     "time": 64.42
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 59.47
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Galaxie",
+     "faults": 13,
+     "time": 64.53
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 60.85
+    },
+    {
+     "rider": "L. Bernard",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 60.56
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5150,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Bonnet",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 56.35
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Hermès du Lac",
+     "faults": 16,
+     "time": 56.39
+    },
+    {
+     "rider": "C. Leroy",
+     "horse": "Quartz du Val",
+     "faults": 9,
+     "time": 59.68
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 55.51
+    },
+    {
+     "rider": "T. Leroy",
+     "horse": "Vendôme",
+     "faults": 5,
+     "time": 59.43
+    },
+    {
+     "rider": "E. Leroy",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 57.37
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Diamant Rouge",
+     "faults": 12,
+     "time": 55.36
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 56.26
+    },
+    {
+     "rider": "Z. Lefèvre",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 52.43
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Ninja Z",
+     "faults": 8,
+     "time": 57.52
+    },
+    {
+     "rider": "P. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 12,
+     "time": 56.13
+    },
+    {
+     "rider": "I. Girard",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 54.23
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 54.46
+    },
+    {
+     "rider": "Z. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 56.48
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5181,
+   "n": 14,
+   "field": [
+    {
+     "rider": "V. Mercier",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 56.41
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 56.83
+    },
+    {
+     "rider": "A. Bernard",
+     "horse": "Tiara du Ter",
+     "faults": 8,
+     "time": 56.68
+    },
+    {
+     "rider": "M. Bonnet",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 55.37
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 54.08
+    },
+    {
+     "rider": "H. Mercier",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 52.87
+    },
+    {
+     "rider": "A. Leroy",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 51.74
+    },
+    {
+     "rider": "V. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 55.26
+    },
+    {
+     "rider": "T. Moreau",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 56.84
+    },
+    {
+     "rider": "A. Leroy",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 56.04
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 57.39
+    },
+    {
+     "rider": "M. Mercier",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 51.26
+    },
+    {
+     "rider": "T. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 14,
+     "time": 60.27
+    },
+    {
+     "rider": "J. Leroy",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 52.94
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5212,
+   "n": 14,
+   "field": [
+    {
+     "rider": "M. Martin",
+     "horse": "Diamant Rouge",
+     "faults": 9,
+     "time": 59.17
+    },
+    {
+     "rider": "L. Mercier",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 55.84
+    },
+    {
+     "rider": "H. Duval",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 55.37
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 56.49
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 53.9
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 58.09
+    },
+    {
+     "rider": "V. Lambert",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 55.29
+    },
+    {
+     "rider": "T. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 56.88
+    },
+    {
+     "rider": "C. Fournier",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 56.39
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 54.84
+    },
+    {
+     "rider": "C. Duval",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 55.77
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 53.79
+    },
+    {
+     "rider": "L. Lambert",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 53.15
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 12,
+     "time": 57.29
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5243,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Faure",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 54.49
+    },
+    {
+     "rider": "M. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 55.65
+    },
+    {
+     "rider": "A. Girard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 54.6
+    },
+    {
+     "rider": "Z. Bonnet",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 53.62
+    },
+    {
+     "rider": "T. Marchand",
+     "horse": "Rubis Blanc",
+     "faults": 12,
+     "time": 56.55
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Galaxie",
+     "faults": 12,
+     "time": 55.67
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 58.35
+    },
+    {
+     "rider": "P. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 58.04
+    },
+    {
+     "rider": "H. Moreau",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 53.01
+    },
+    {
+     "rider": "P. Blanc",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 57.75
+    },
+    {
+     "rider": "L. Marchand",
+     "horse": "Tiara du Ter",
+     "faults": 8,
+     "time": 56.34
+    },
+    {
+     "rider": "P. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 53.17
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Saphir des Bois",
+     "faults": 16,
+     "time": 54.37
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 52.8
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5274,
+   "n": 14,
+   "field": [
+    {
+     "rider": "I. Bonnet",
+     "horse": "Kalimba",
+     "faults": 16,
+     "time": 54.16
+    },
+    {
+     "rider": "H. Girard",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 53.1
+    },
+    {
+     "rider": "I. Duval",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 53.76
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 57.49
+    },
+    {
+     "rider": "E. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 55.81
+    },
+    {
+     "rider": "A. Bonnet",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 56.03
+    },
+    {
+     "rider": "N. Martin",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 54.59
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 55.61
+    },
+    {
+     "rider": "N. Girard",
+     "horse": "Diamant Rouge",
+     "faults": 16,
+     "time": 57.08
+    },
+    {
+     "rider": "V. Fournier",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 56.44
+    },
+    {
+     "rider": "Z. Leroy",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 55.48
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Ninja Z",
+     "faults": 8,
+     "time": 52.02
+    },
+    {
+     "rider": "Z. Duval",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 52.67
+    },
+    {
+     "rider": "Z. Lefèvre",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 55.21
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5305,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 56.25
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 54.32
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 58.73
+    },
+    {
+     "rider": "A. Fournier",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 53.86
+    },
+    {
+     "rider": "A. Guérin",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 57.52
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 54.57
+    },
+    {
+     "rider": "E. Roux",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 55.43
+    },
+    {
+     "rider": "C. Moreau",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 55.52
+    },
+    {
+     "rider": "P. Duval",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 52.15
+    },
+    {
+     "rider": "C. Blanc",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 57.63
+    },
+    {
+     "rider": "E. Duval",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 52.7
+    },
+    {
+     "rider": "J. Blanc",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 57.93
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 55.43
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 57.26
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5336,
+   "n": 14,
+   "field": [
+    {
+     "rider": "T. Guérin",
+     "horse": "Vendôme",
+     "faults": 8,
+     "time": 55.64
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Tiara du Ter",
+     "faults": 5,
+     "time": 59.1
+    },
+    {
+     "rider": "E. Blanc",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 53.25
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 54.02
+    },
+    {
+     "rider": "T. Bernard",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 53.31
+    },
+    {
+     "rider": "V. Blanc",
+     "horse": "Ninja Z",
+     "faults": 12,
+     "time": 55.32
+    },
+    {
+     "rider": "H. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 12,
+     "time": 58.02
+    },
+    {
+     "rider": "P. Marchand",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 54.99
+    },
+    {
+     "rider": "E. Lambert",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 55.74
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Rubis Blanc",
+     "faults": 12,
+     "time": 55.77
+    },
+    {
+     "rider": "J. Mercier",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 55.96
+    },
+    {
+     "rider": "N. Duval",
+     "horse": "Hermès du Lac",
+     "faults": 8,
+     "time": 54.14
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 55.7
+    },
+    {
+     "rider": "L. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 55.6
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5367,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Girard",
+     "horse": "Saphir des Bois",
+     "faults": 14,
+     "time": 60.9
+    },
+    {
+     "rider": "H. Marchand",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 56.24
+    },
+    {
+     "rider": "J. Martin",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 55.45
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Belle d’Auge",
+     "faults": 8,
+     "time": 58.31
+    },
+    {
+     "rider": "C. Leroy",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 56.39
+    },
+    {
+     "rider": "I. Leroy",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 55.95
+    },
+    {
+     "rider": "L. Martin",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 52.67
+    },
+    {
+     "rider": "H. Girard",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 53.54
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 55.3
+    },
+    {
+     "rider": "I. Bonnet",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 56.63
+    },
+    {
+     "rider": "H. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 52.71
+    },
+    {
+     "rider": "M. Moreau",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 56.17
+    },
+    {
+     "rider": "A. Roux",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 56.51
+    },
+    {
+     "rider": "E. Marchand",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 50.35
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5398,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Martin",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 58.07
+    },
+    {
+     "rider": "C. Blanc",
+     "horse": "Utopie",
+     "faults": 5,
+     "time": 59.68
+    },
+    {
+     "rider": "L. Duval",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 53.03
+    },
+    {
+     "rider": "T. Leroy",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 57.61
+    },
+    {
+     "rider": "T. Lefèvre",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 52.98
+    },
+    {
+     "rider": "C. Mercier",
+     "horse": "Hermès du Lac",
+     "faults": 8,
+     "time": 56.04
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 53.96
+    },
+    {
+     "rider": "H. Lambert",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 54.15
+    },
+    {
+     "rider": "Z. Lambert",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 57.72
+    },
+    {
+     "rider": "A. Duval",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 53.69
+    },
+    {
+     "rider": "I. Fournier",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 54.75
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 54.79
+    },
+    {
+     "rider": "I. Roux",
+     "horse": "Oural",
+     "faults": 16,
+     "time": 57.12
+    },
+    {
+     "rider": "V. Faure",
+     "horse": "Ninja Z",
+     "faults": 8,
+     "time": 55.03
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 5429,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Roux",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 55.7
+    },
+    {
+     "rider": "A. Martin",
+     "horse": "Galaxie",
+     "faults": 0,
+     "time": 50.93
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 57.23
+    },
+    {
+     "rider": "M. Bernard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 51.95
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 55.67
+    },
+    {
+     "rider": "L. Bernard",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 57.83
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 57.43
+    },
+    {
+     "rider": "N. Faure",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 58.16
+    },
+    {
+     "rider": "I. Moreau",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 53.41
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 54.21
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 56.27
+    },
+    {
+     "rider": "A. Lefèvre",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 54.01
+    },
+    {
+     "rider": "T. Fournier",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 52.09
+    },
+    {
+     "rider": "P. Faure",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 52.79
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 226840,
+   "n": 14,
+   "field": [
+    {
+     "rider": "A. Mercier",
+     "horse": "Galaxie",
+     "faults": 4,
+     "time": 56.94
+    },
+    {
+     "rider": "L. Girard",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 53.19
+    },
+    {
+     "rider": "V. Faure",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 55.22
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Ubris de Mai",
+     "faults": 0,
+     "time": 55.9
+    },
+    {
+     "rider": "V. Leroy",
+     "horse": "Vendôme",
+     "faults": 0,
+     "time": 57.22
+    },
+    {
+     "rider": "Z. Moreau",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 55.7
+    },
+    {
+     "rider": "Z. Mercier",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 53.26
+    },
+    {
+     "rider": "A. Bernard",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 53.95
+    },
+    {
+     "rider": "V. Bernard",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 57.55
+    },
+    {
+     "rider": "J. Martin",
+     "horse": "Ninja Z",
+     "faults": 12,
+     "time": 55.42
+    },
+    {
+     "rider": "N. Leroy",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 55.69
+    },
+    {
+     "rider": "M. Roux",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 55.23
+    },
+    {
+     "rider": "A. Faure",
+     "horse": "Kalimba",
+     "faults": 8,
+     "time": 54.55
+    },
+    {
+     "rider": "T. Moreau",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 55.05
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 390689,
+   "n": 14,
+   "field": [
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 54.78
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 54.46
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 52.57
+    },
+    {
+     "rider": "A. Faure",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 52.64
+    },
+    {
+     "rider": "H. Guérin",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 53.18
+    },
+    {
+     "rider": "C. Martin",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 55.26
+    },
+    {
+     "rider": "J. Lefèvre",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 54.11
+    },
+    {
+     "rider": "N. Fournier",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 57.93
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Hermès du Lac",
+     "faults": 4,
+     "time": 55.75
+    },
+    {
+     "rider": "C. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 54.43
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Ubris de Mai",
+     "faults": 8,
+     "time": 52.67
+    },
+    {
+     "rider": "A. Roux",
+     "horse": "Vendôme",
+     "faults": 18,
+     "time": 60.64
+    },
+    {
+     "rider": "N. Moreau",
+     "horse": "Tiara du Ter",
+     "faults": 8,
+     "time": 56.27
+    },
+    {
+     "rider": "I. Leroy",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 51.94
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 864249,
+   "n": 14,
+   "field": [
+    {
+     "rider": "L. Fournier",
+     "horse": "Ubris de Mai",
+     "faults": 12,
+     "time": 57.51
+    },
+    {
+     "rider": "Z. Martin",
+     "horse": "Vendôme",
+     "faults": 12,
+     "time": 54.47
+    },
+    {
+     "rider": "L. Blanc",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 54.44
+    },
+    {
+     "rider": "C. Lambert",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 54.41
+    },
+    {
+     "rider": "T. Marchand",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 57.22
+    },
+    {
+     "rider": "H. Faure",
+     "horse": "Oural",
+     "faults": 8,
+     "time": 56.56
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Ninja Z",
+     "faults": 5,
+     "time": 59.27
+    },
+    {
+     "rider": "L. Girard",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 56.39
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Utopie",
+     "faults": 8,
+     "time": 56.82
+    },
+    {
+     "rider": "T. Guérin",
+     "horse": "Kalimba",
+     "faults": 4,
+     "time": 55.83
+    },
+    {
+     "rider": "N. Lambert",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 55.93
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Galaxie",
+     "faults": 18,
+     "time": 60.11
+    },
+    {
+     "rider": "T. Bonnet",
+     "horse": "Hermès du Lac",
+     "faults": 16,
+     "time": 58.75
+    },
+    {
+     "rider": "V. Martin",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 57.29
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 0,
+   "n": 14,
+   "field": [
+    {
+     "rider": "E. Girard",
+     "horse": "Quartz du Val",
+     "faults": 0,
+     "time": 50.25
+    },
+    {
+     "rider": "C. Bernard",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 56.38
+    },
+    {
+     "rider": "T. Bonnet",
+     "horse": "Vendôme",
+     "faults": 12,
+     "time": 58.01
+    },
+    {
+     "rider": "J. Bernard",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 54.25
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Diamant Rouge",
+     "faults": 8,
+     "time": 58
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Saphir des Bois",
+     "faults": 8,
+     "time": 53.52
+    },
+    {
+     "rider": "T. Roux",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 52.56
+    },
+    {
+     "rider": "L. Girard",
+     "horse": "Ninja Z",
+     "faults": 5,
+     "time": 59.6
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 54.59
+    },
+    {
+     "rider": "C. Duval",
+     "horse": "Utopie",
+     "faults": 16,
+     "time": 55.44
+    },
+    {
+     "rider": "C. Faure",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 54.23
+    },
+    {
+     "rider": "V. Guérin",
+     "horse": "Rubis Blanc",
+     "faults": 4,
+     "time": 54.32
+    },
+    {
+     "rider": "I. Martin",
+     "horse": "Galaxie",
+     "faults": 8,
+     "time": 53.12
+    },
+    {
+     "rider": "L. Lambert",
+     "horse": "Hermès du Lac",
+     "faults": 9,
+     "time": 59.2
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "pro2",
+    "ta": 59
+   },
+   "seed": 1,
+   "n": 14,
+   "field": [
+    {
+     "rider": "C. Moreau",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 55.65
+    },
+    {
+     "rider": "E. Fournier",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 58.29
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Tiara du Ter",
+     "faults": 0,
+     "time": 52.08
+    },
+    {
+     "rider": "C. Roux",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 54.52
+    },
+    {
+     "rider": "M. Girard",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 54.76
+    },
+    {
+     "rider": "A. Marchand",
+     "horse": "Oural",
+     "faults": 8,
+     "time": 55.65
+    },
+    {
+     "rider": "P. Lefèvre",
+     "horse": "Ninja Z",
+     "faults": 0,
+     "time": 53.88
+    },
+    {
+     "rider": "M. Martin",
+     "horse": "Belle d’Auge",
+     "faults": 0,
+     "time": 54.7
+    },
+    {
+     "rider": "V. Roux",
+     "horse": "Utopie",
+     "faults": 4,
+     "time": 58.09
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Kalimba",
+     "faults": 1,
+     "time": 59.42
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Rubis Blanc",
+     "faults": 8,
+     "time": 54.47
+    },
+    {
+     "rider": "L. Bonnet",
+     "horse": "Galaxie",
+     "faults": 13,
+     "time": 59.53
+    },
+    {
+     "rider": "I. Bernard",
+     "horse": "Hermès du Lac",
+     "faults": 12,
+     "time": 55.85
+    },
+    {
+     "rider": "L. Bernard",
+     "horse": "Quartz du Val",
+     "faults": 4,
+     "time": 55.56
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5181,
+   "n": 0,
+   "field": []
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5181,
+   "n": 1,
+   "field": [
+    {
+     "rider": "V. Fournier",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.66
+    }
+   ]
+  },
+  {
+   "cls": {
+    "id": "am2",
+    "ta": 64
+   },
+   "seed": 5181,
+   "n": 20,
+   "field": [
+    {
+     "rider": "V. Fournier",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 61.66
+    },
+    {
+     "rider": "M. Moreau",
+     "horse": "Vendôme",
+     "faults": 4,
+     "time": 59.53
+    },
+    {
+     "rider": "V. Girard",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 60.43
+    },
+    {
+     "rider": "L. Roux",
+     "horse": "Diamant Rouge",
+     "faults": 0,
+     "time": 58.95
+    },
+    {
+     "rider": "C. Lefèvre",
+     "horse": "Saphir des Bois",
+     "faults": 4,
+     "time": 60.71
+    },
+    {
+     "rider": "E. Bernard",
+     "horse": "Oural",
+     "faults": 0,
+     "time": 58.53
+    },
+    {
+     "rider": "N. Mercier",
+     "horse": "Ninja Z",
+     "faults": 4,
+     "time": 59.21
+    },
+    {
+     "rider": "T. Moreau",
+     "horse": "Belle d’Auge",
+     "faults": 4,
+     "time": 62.44
+    },
+    {
+     "rider": "A. Leroy",
+     "horse": "Utopie",
+     "faults": 0,
+     "time": 61.04
+    },
+    {
+     "rider": "H. Fournier",
+     "horse": "Kalimba",
+     "faults": 0,
+     "time": 62.39
+    },
+    {
+     "rider": "M. Mercier",
+     "horse": "Rubis Blanc",
+     "faults": 0,
+     "time": 56.26
+    },
+    {
+     "rider": "L. Lambert",
+     "horse": "Galaxie",
+     "faults": 15,
+     "time": 66.18
+    },
+    {
+     "rider": "J. Moreau",
+     "horse": "Hermès du Lac",
+     "faults": 0,
+     "time": 58.42
+    },
+    {
+     "rider": "C. Bonnet",
+     "horse": "Quartz du Val",
+     "faults": 8,
+     "time": 62.6
+    },
+    {
+     "rider": "M. Faure",
+     "horse": "Ubris de Mai",
+     "faults": 4,
+     "time": 59.87
+    },
+    {
+     "rider": "V. Moreau",
+     "horse": "Vendôme",
+     "faults": 11,
+     "time": 66.14
+    },
+    {
+     "rider": "I. Girard",
+     "horse": "Tiara du Ter",
+     "faults": 4,
+     "time": 61.62
+    },
+    {
+     "rider": "A. Girard",
+     "horse": "Diamant Rouge",
+     "faults": 4,
+     "time": 62.21
+    },
+    {
+     "rider": "J. Guérin",
+     "horse": "Saphir des Bois",
+     "faults": 0,
+     "time": 59.5
+    },
+    {
+     "rider": "M. Duval",
+     "horse": "Oural",
+     "faults": 4,
+     "time": 59.43
+    }
+   ]
+  }
+ ],
+ "ranks": [
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 0,
+    "time": 50
+   },
+   "order": [
+    -1,
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 0,
+    "time": 57.88
+   },
+   "order": [
+    -1,
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 0,
+    "time": 57.89
+   },
+   "order": [
+    7,
+    -1,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 0,
+    "time": 59.4
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    -1,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 0,
+    "time": 59.93
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    -1,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 0,
+    "time": 61.36
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    -1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 0,
+    "time": 70.12
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    -1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 4,
+    "time": 50
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    -1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 4,
+    "time": 57.88
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    -1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 4,
+    "time": 57.89
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    -1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 4,
+    "time": 59.4
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    -1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 4,
+    "time": 59.93
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    -1,
+    3,
+    12,
+    0,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 4,
+    "time": 61.36
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    -1,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 4,
+    "time": 70.12
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    -1,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 8,
+    "time": 50
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    -1,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 8,
+    "time": 57.88
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    -1,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 8,
+    "time": 57.89
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    -1,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 8,
+    "time": 59.4
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    -1,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 8,
+    "time": 59.93
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    -1,
+    2
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 8,
+    "time": 61.36
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 8,
+    "time": 70.12
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 17,
+    "time": 50
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 17,
+    "time": 57.88
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 17,
+    "time": 57.89
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 17,
+    "time": 59.4
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 17,
+    "time": 59.93
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 17,
+    "time": 61.36
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5150,
+   "me": {
+    "faults": 17,
+    "time": 70.12
+   },
+   "order": [
+    7,
+    13,
+    10,
+    6,
+    11,
+    8,
+    1,
+    5,
+    4,
+    9,
+    3,
+    12,
+    0,
+    2,
+    -1
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 0,
+    "time": 50
+   },
+   "order": [
+    -1,
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 0,
+    "time": 56.25
+   },
+   "order": [
+    -1,
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 0,
+    "time": 56.26
+   },
+   "order": [
+    10,
+    -1,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 0,
+    "time": 58.95
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    -1,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 0,
+    "time": 60.71
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    -1,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 0,
+    "time": 66.19000000000001
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    -1,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 0,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    -1,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 4,
+    "time": 50
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    -1,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 4,
+    "time": 56.25
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    -1,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 4,
+    "time": 56.26
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    -1,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 4,
+    "time": 58.95
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    -1,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 4,
+    "time": 60.71
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    -1,
+    0,
+    7,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 4,
+    "time": 66.19000000000001
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    -1,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 4,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    -1,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 8,
+    "time": 50
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    -1,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 8,
+    "time": 56.25
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    -1,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 8,
+    "time": 56.26
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    -1,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 8,
+    "time": 58.95
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    -1,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 8,
+    "time": 60.71
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    -1,
+    13,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 8,
+    "time": 66.19000000000001
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    -1,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 8,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    -1,
+    11
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 17,
+    "time": 50
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11,
+    -1
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 17,
+    "time": 56.25
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11,
+    -1
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 17,
+    "time": 56.26
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11,
+    -1
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 17,
+    "time": 58.95
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11,
+    -1
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 17,
+    "time": 60.71
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11,
+    -1
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 17,
+    "time": 66.19000000000001
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11,
+    -1
+   ]
+  },
+  {
+   "seed": 5181,
+   "me": {
+    "faults": 17,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    12,
+    5,
+    3,
+    8,
+    9,
+    6,
+    1,
+    2,
+    4,
+    0,
+    7,
+    13,
+    11,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 0,
+    "time": 50
+   },
+   "order": [
+    -1,
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 0,
+    "time": 57.6
+   },
+   "order": [
+    -1,
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 0,
+    "time": 57.61
+   },
+   "order": [
+    -1,
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 0,
+    "time": 59.42
+   },
+   "order": [
+    10,
+    -1,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 0,
+    "time": 59.84
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    -1,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 0,
+    "time": 63.91
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    -1,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 0,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    -1,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 4,
+    "time": 50
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    -1,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 4,
+    "time": 57.6
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    -1,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 4,
+    "time": 57.61
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    -1,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 4,
+    "time": 59.42
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    -1,
+    9,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 4,
+    "time": 59.84
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    -1,
+    4,
+    12,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 4,
+    "time": 63.91
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    -1,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 4,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    -1,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 8,
+    "time": 50
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    -1,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 8,
+    "time": 57.6
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    -1,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 8,
+    "time": 57.61
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    -1,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 8,
+    "time": 59.42
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    -1,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 8,
+    "time": 59.84
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    -1,
+    6,
+    0
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 8,
+    "time": 63.91
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 8,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 17,
+    "time": 50
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 17,
+    "time": 57.6
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 17,
+    "time": 57.61
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 17,
+    "time": 59.42
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 17,
+    "time": 59.84
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 17,
+    "time": 63.91
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5212,
+   "me": {
+    "faults": 17,
+    "time": 70.12
+   },
+   "order": [
+    10,
+    1,
+    2,
+    8,
+    11,
+    7,
+    5,
+    3,
+    13,
+    9,
+    4,
+    12,
+    6,
+    0,
+    -1
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 0,
+    "time": 50
+   },
+   "order": [
+    -1,
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 0,
+    "time": 56.82
+   },
+   "order": [
+    -1,
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 0,
+    "time": 56.83
+   },
+   "order": [
+    8,
+    -1,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 0,
+    "time": 58.08
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    -1,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 0,
+    "time": 59.49
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    -1,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 0,
+    "time": 63.03
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    -1,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 0,
+    "time": 70.12
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    -1,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 4,
+    "time": 50
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    -1,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 4,
+    "time": 56.82
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    -1,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 4,
+    "time": 56.83
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    -1,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 4,
+    "time": 58.08
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    -1,
+    10,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 4,
+    "time": 59.49
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 4,
+    "time": 63.03
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 4,
+    "time": 70.12
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 8,
+    "time": 50
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 8,
+    "time": 56.82
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 8,
+    "time": 56.83
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 8,
+    "time": 58.08
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 8,
+    "time": 59.49
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    -1,
+    7,
+    2,
+    9,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 8,
+    "time": 63.03
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    -1,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 8,
+    "time": 70.12
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    -1,
+    6
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 17,
+    "time": 50
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6,
+    -1
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 17,
+    "time": 56.82
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6,
+    -1
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 17,
+    "time": 56.83
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6,
+    -1
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 17,
+    "time": 58.08
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6,
+    -1
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 17,
+    "time": 59.49
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6,
+    -1
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 17,
+    "time": 63.03
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6,
+    -1
+   ]
+  },
+  {
+   "seed": 5243,
+   "me": {
+    "faults": 17,
+    "time": 70.12
+   },
+   "order": [
+    8,
+    13,
+    12,
+    5,
+    11,
+    0,
+    3,
+    1,
+    4,
+    10,
+    7,
+    2,
+    9,
+    6,
+    -1
+   ]
+  }
+ ]
+}

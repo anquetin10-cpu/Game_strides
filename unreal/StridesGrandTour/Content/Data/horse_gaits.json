@@ -1,0 +1,43 @@
+{
+ "schema": "strides.horse_gaits/1",
+ "source": "src/config.js",
+ "units": "m/s",
+ "gaits": [
+  {
+   "id": "N",
+   "name": "ARRÊT",
+   "speed": 0,
+   "max": null
+  },
+  {
+   "id": "1",
+   "name": "PAS",
+   "speed": 1.9,
+   "max": null
+  },
+  {
+   "id": "2",
+   "name": "TROT",
+   "speed": 4.6,
+   "max": null
+  },
+  {
+   "id": "3",
+   "name": "GALOP",
+   "speed": 6.5,
+   "max": 9.72
+  },
+  {
+   "id": "4",
+   "name": "GRAND GALOP",
+   "speed": 14,
+   "max": null
+  }
+ ],
+ "jumpPeak": 1.35,
+ "jumpDuration": 0.8,
+ "minJumpSpeed": 3.2,
+ "stamina": 100,
+ "gallopDrain": 7,
+ "staminaRegen": 9
+}

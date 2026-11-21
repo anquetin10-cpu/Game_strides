@@ -1,0 +1,1032 @@
+{
+ "rider_f": {
+  "blender": {
+   "blender": "5.3.0",
+   "armature": "Armature",
+   "bones": 53,
+   "meshes": [
+    {
+     "name": "Body",
+     "verts": 9336,
+     "tris": 16827,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Skin",
+      "Cloth_tallboots"
+     ]
+    },
+    {
+     "name": "Cloth_boots",
+     "verts": 1952,
+     "tris": 3204,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_boots"
+     ]
+    },
+    {
+     "name": "Cloth_jacket",
+     "verts": 2153,
+     "tris": 3668,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_jacket"
+     ]
+    },
+    {
+     "name": "Cloth_jeans",
+     "verts": 645,
+     "tris": 1135,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_jeans"
+     ]
+    },
+    {
+     "name": "Cloth_shirt",
+     "verts": 1603,
+     "tris": 2688,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_shirt"
+     ]
+    },
+    {
+     "name": "Eyebrows",
+     "verts": 124,
+     "tris": 192,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Eyebrow"
+     ]
+    },
+    {
+     "name": "Eyelashes",
+     "verts": 250,
+     "tris": 368,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Eyelash"
+     ]
+    },
+    {
+     "name": "Eyes",
+     "verts": 1116,
+     "tris": 2040,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Eye",
+      "Iris",
+      "Cornea"
+     ]
+    },
+    {
+     "name": "Hair_ponytail01",
+     "verts": 3902,
+     "tris": 5352,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Hair_ponytail01"
+     ]
+    },
+    {
+     "name": "Icosphere",
+     "verts": 42,
+     "tris": 80,
+     "shape_keys": [],
+     "groups": 0,
+     "armature": false,
+     "over4": 0,
+     "unweighted": 42,
+     "materials": []
+    }
+   ],
+   "materials": [
+    "Cloth_boots",
+    "Cloth_jacket",
+    "Cloth_jeans",
+    "Cloth_shirt",
+    "Cloth_tallboots",
+    "Cornea",
+    "Eye",
+    "Eyebrow",
+    "Eyelash",
+    "Hair_ponytail01",
+    "Iris",
+    "Skin"
+   ],
+   "problems": [],
+   "bbox": {
+    "min": [
+     -0.951,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     0.951,
+     1.0,
+     1.672
+    ],
+    "height": 2.672
+   },
+   "missing_keys": [],
+   "shape_probe_mm": {
+    "face_jaw_width": 7.5,
+    "blink_left": 10.2,
+    "body_weight": 10.5
+   }
+  },
+  "comparaison": {
+   "joints": [
+    53,
+    53
+   ],
+   "materials": [
+    12,
+    12
+   ],
+   "meshes": {
+    "Skin": {
+     "verts": [
+      8688,
+      8688
+     ],
+     "tris": [
+      15777,
+      15777
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      1.4876,
+      1.4876
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_tallboots": {
+     "verts": [
+      648,
+      648
+     ],
+     "tris": [
+      1050,
+      1050
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.3943,
+      0.3943
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Eyebrow": {
+     "verts": [
+      124,
+      124
+     ],
+     "tris": [
+      192,
+      192
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0119,
+      0.0119
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Eyelash": {
+     "verts": [
+      250,
+      250
+     ],
+     "tris": [
+      368,
+      368
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0153,
+      0.0153
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Eye": {
+     "verts": [
+      360,
+      360
+     ],
+     "tris": [
+      640,
+      640
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0296,
+      0.0296
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Iris": {
+     "verts": [
+      232,
+      232
+     ],
+     "tris": [
+      420,
+      420
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0112,
+      0.0112
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cornea": {
+     "verts": [
+      524,
+      524
+     ],
+     "tris": [
+      980,
+      980
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0304,
+      0.0304
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Hair_ponytail01": {
+     "verts": [
+      3902,
+      3902
+     ],
+     "tris": [
+      5352,
+      5352
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.3683,
+      0.3683
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_shirt": {
+     "verts": [
+      1603,
+      1603
+     ],
+     "tris": [
+      2688,
+      2688
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.5983,
+      0.5983
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_jeans": {
+     "verts": [
+      645,
+      645
+     ],
+     "tris": [
+      1135,
+      1135
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.6007,
+      0.6007
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_boots": {
+     "verts": [
+      1952,
+      1952
+     ],
+     "tris": [
+      3204,
+      3204
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.2314,
+      0.2314
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_jacket": {
+     "verts": [
+      2153,
+      2153
+     ],
+     "tris": [
+      3668,
+      3668
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.6823,
+      0.6823
+     ],
+     "sampleMaxDist_mm": 0
+    }
+   },
+   "maxBonePosDiff_mm": 0,
+   "problems": []
+  }
+ },
+ "rider_m": {
+  "blender": {
+   "blender": "5.3.0",
+   "armature": "Armature",
+   "bones": 53,
+   "meshes": [
+    {
+     "name": "Body",
+     "verts": 9326,
+     "tris": 16799,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Skin",
+      "Cloth_tallboots"
+     ]
+    },
+    {
+     "name": "Cloth_boots",
+     "verts": 1952,
+     "tris": 3204,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_boots"
+     ]
+    },
+    {
+     "name": "Cloth_jacket",
+     "verts": 2153,
+     "tris": 3668,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_jacket"
+     ]
+    },
+    {
+     "name": "Cloth_jeans",
+     "verts": 646,
+     "tris": 1136,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_jeans"
+     ]
+    },
+    {
+     "name": "Cloth_shirt",
+     "verts": 1603,
+     "tris": 2688,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Cloth_shirt"
+     ]
+    },
+    {
+     "name": "Eyebrows",
+     "verts": 124,
+     "tris": 192,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Eyebrow"
+     ]
+    },
+    {
+     "name": "Eyelashes",
+     "verts": 250,
+     "tris": 368,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Eyelash"
+     ]
+    },
+    {
+     "name": "Eyes",
+     "verts": 1116,
+     "tris": 2040,
+     "shape_keys": [
+      "face_nose_width",
+      "face_nose_length",
+      "face_nose_height",
+      "face_jaw_width",
+      "face_chin",
+      "face_cheekbones",
+      "face_eye_spacing",
+      "face_lips",
+      "face_mouth_width",
+      "blink_left",
+      "blink_right",
+      "look_left",
+      "look_right",
+      "look_up",
+      "look_down",
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Eye",
+      "Iris",
+      "Cornea"
+     ]
+    },
+    {
+     "name": "Hair_short02",
+     "verts": 1794,
+     "tris": 3344,
+     "shape_keys": [
+      "body_weight",
+      "body_muscle"
+     ],
+     "groups": 53,
+     "armature": true,
+     "over4": 0,
+     "unweighted": 0,
+     "materials": [
+      "Hair_short02"
+     ]
+    },
+    {
+     "name": "Icosphere",
+     "verts": 42,
+     "tris": 80,
+     "shape_keys": [],
+     "groups": 0,
+     "armature": false,
+     "over4": 0,
+     "unweighted": 42,
+     "materials": []
+    }
+   ],
+   "materials": [
+    "Cloth_boots",
+    "Cloth_jacket",
+    "Cloth_jeans",
+    "Cloth_shirt",
+    "Cloth_tallboots",
+    "Cornea",
+    "Eye",
+    "Eyebrow",
+    "Eyelash",
+    "Hair_short02",
+    "Iris",
+    "Skin"
+   ],
+   "problems": [],
+   "bbox": {
+    "min": [
+     -0.951,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     0.951,
+     1.0,
+     1.925
+    ],
+    "height": 2.925
+   },
+   "missing_keys": [],
+   "shape_probe_mm": {
+    "face_jaw_width": 7.5,
+    "blink_left": 10.2,
+    "body_weight": 10.6
+   }
+  },
+  "comparaison": {
+   "joints": [
+    53,
+    53
+   ],
+   "materials": [
+    12,
+    12
+   ],
+   "meshes": {
+    "Skin": {
+     "verts": [
+      8688,
+      8688
+     ],
+     "tris": [
+      15777,
+      15777
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      1.7331,
+      1.7331
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_tallboots": {
+     "verts": [
+      638,
+      638
+     ],
+     "tris": [
+      1022,
+      1022
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.464,
+      0.464
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Eyebrow": {
+     "verts": [
+      124,
+      124
+     ],
+     "tris": [
+      192,
+      192
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.01,
+      0.01
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Eyelash": {
+     "verts": [
+      250,
+      250
+     ],
+     "tris": [
+      368,
+      368
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0149,
+      0.0149
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Eye": {
+     "verts": [
+      360,
+      360
+     ],
+     "tris": [
+      640,
+      640
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0311,
+      0.0311
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Iris": {
+     "verts": [
+      232,
+      232
+     ],
+     "tris": [
+      420,
+      420
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.0117,
+      0.0117
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cornea": {
+     "verts": [
+      524,
+      524
+     ],
+     "tris": [
+      980,
+      980
+     ],
+     "targets": [
+      17,
+      17
+     ],
+     "missingTargets": [],
+     "height": [
+      0.032,
+      0.032
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Hair_short02": {
+     "verts": [
+      1794,
+      1794
+     ],
+     "tris": [
+      3344,
+      3344
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.2211,
+      0.2211
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_shirt": {
+     "verts": [
+      1603,
+      1603
+     ],
+     "tris": [
+      2688,
+      2688
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.6529,
+      0.6529
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_jeans": {
+     "verts": [
+      646,
+      646
+     ],
+     "tris": [
+      1136,
+      1136
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.6775,
+      0.6775
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_boots": {
+     "verts": [
+      1952,
+      1952
+     ],
+     "tris": [
+      3204,
+      3204
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.2498,
+      0.2498
+     ],
+     "sampleMaxDist_mm": 0
+    },
+    "Cloth_jacket": {
+     "verts": [
+      2153,
+      2153
+     ],
+     "tris": [
+      3668,
+      3668
+     ],
+     "targets": [
+      2,
+      2
+     ],
+     "missingTargets": [],
+     "height": [
+      0.7126,
+      0.7126
+     ],
+     "sampleMaxDist_mm": 0
+    }
+   },
+   "maxBonePosDiff_mm": 0,
+   "problems": []
+  }
+ }
+}

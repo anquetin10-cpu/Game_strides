@@ -151,6 +151,86 @@ function plantFoot(out, outQ, info, x, z, ground, pitch, yaw) {
   return out;
 }
 
+// ---------- Pieds posés (verrouillage au sol) ----------
+// Le pied en appui garde sa position et son orientation dans le monde (repère du terrain), quelle que soit la rotation
+// ou l'accélération du corps : plus de pied qui glisse en virage, au départ ou à l'arrêt, ni de pivot sur place glissé.
+// En suspension, le pied part de là où il s'est levé et rejoint la cible de pose (courbe douce) ; à l'arrêt, un pied
+// trop décalé (corps qui a tourné ou dérivé) déclenche un pas. st.world = { x, z, h, s } : position, cap et échelle du
+// personnage, fournis par Human.update (absent : pas de verrouillage, comportement d'origine).
+const _lk = { x: 0, z: 0, yaw: 0, lift: 0 };
+const STEP_DUR = 0.22; // pas forcé (s)
+const STEP_DEV = 0.15; // écart d'un pied posé à sa place naturelle qui déclenche un pas forcé (unités du modèle ≈ m)
+function lockFoot(st, FL, side, stance, u, duty, x, z, yawF, dt, v) {
+  const W = st.world;
+  _lk.x = x; _lk.z = z; _lk.yaw = yawF; _lk.lift = 0;
+  if (!W) return _lk;
+  const c = Math.cos(W.h), s = Math.sin(W.h), sc = W.s || 1;
+  const toW = (lx, lz, o) => { o.x = W.x + sc * (lx * c + lz * s); o.z = W.z + sc * (-lx * s + lz * c); return o; };
+  const toL = (wx, wz, o) => { const dx = (wx - W.x) / sc, dz = (wz - W.z) / sc; o.x = dx * c - dz * s; o.z = dx * s + dz * c; return o; };
+  let L = FL[side];
+  if (!L) L = FL[side] = { wx: 0, wz: 0, wh: 0, on: false, lift: null, step: null, cw: null, cwh: 0 };
+  const other = FL[side === 'l' ? 'r' : 'l'];
+  const done = () => { L.cw = toW(_lk.x, _lk.z, L.cw || {}); L.cwh = W.h + _lk.yaw; return _lk; };
+  // Personnage déplacé d'un coup (téléportation, sortie de véhicule, descente de cheval) ou animation suspendue : pied
+  // trop loin de sa place (> 50 cm) : il y est replacé, sans pas (sinon fente ou genou à terre).
+  const ref = L.step ? { x: L.step.wx, z: L.step.wz } : L.on ? { x: L.wx, z: L.wz } : L.lift ? { x: L.lift.wx, z: L.lift.wz } : null;
+  if (ref) {
+    const q = toL(ref.x, ref.z, {});
+    if (Math.hypot(q.x - x, q.z - z) > 0.5) { L.step = null; L.on = false; L.lift = null; L.cw = null; }
+  }
+  // Pas forcé en cours (pied trop décalé : demi-tour, arrêt brusque) : du point de départ à la place naturelle, en arc.
+  if (L.step) {
+    L.step.t += dt;
+    const k = Math.min(1, L.step.t / STEP_DUR), e = k * k * (3 - 2 * k);
+    const q = toL(L.step.wx, L.step.wz, {});
+    _lk.x = q.x + (x - q.x) * e;
+    _lk.z = q.z + (z - q.z) * e;
+    _lk.yaw = wrap(L.step.wh - W.h) * (1 - e) + yawF * e;
+    _lk.lift = 0.07 * Math.sin(Math.PI * k);
+    if (k >= 1) {
+      L.step = null;
+      const w = toW(x, z, {});
+      L.wx = w.x; L.wz = w.z; L.wh = W.h + yawF; L.on = true; L.lift = null;
+    }
+    return done();
+  }
+  const idle = !(v > 0.05 || FL.need > 0 || stance);
+  if (stance || idle) {
+    if (!L.on) {
+      // Posé là où le pied se trouve (fin de suspension, ou pied arrêté en l'air à l'arrêt), jamais téléporté.
+      const w = L.cw && L.lift ? L.cw : toW(x, z, {});
+      L.wx = w.x; L.wz = w.z; L.wh = L.cw && L.lift ? L.cwh : W.h + yawF; L.on = true; L.lift = null;
+    }
+    toL(L.wx, L.wz, _lk);
+    _lk.yaw = wrap(L.wh - W.h);
+    const dev = Math.hypot(_lk.x - x, _lk.z - z), dyaw = Math.abs(wrap(_lk.yaw - yawF));
+    // Trop loin de sa place (le corps a tourné ou changé de sens) : pas forcé, un pied à la fois.
+    if ((dev > STEP_DEV || dyaw > 0.9) && !(other && other.step)) {
+      L.step = { wx: L.wx, wz: L.wz, wh: L.wh, t: 0 };
+      L.on = false;
+      return done();
+    }
+    // À l'arrêt : un pas dès que le pied posé s'écarte de sa place naturelle (6 cm) ou a tourné de plus de 20°.
+    if (idle && (dev > 0.06 || dyaw > 0.35) && FL.need <= 0) FL.need = 1.2;
+    return done();
+  }
+  // Suspension : du point de lever (fixé dans le monde) à la cible de pose, au rythme de la suspension.
+  if (L.on) { L.lift = { wx: L.wx, wz: L.wz, wh: L.wh }; L.on = false; }
+  if (!L.lift) return done();
+  const k = Math.min(1, Math.max(0, (u - duty) / (1 - duty)));
+  const e = k * k * (3 - 2 * k);
+  const q = toL(L.lift.wx, L.lift.wz, {});
+  _lk.x = q.x + (x - q.x) * e;
+  _lk.z = q.z + (z - q.z) * e;
+  _lk.yaw = wrap(L.lift.wh - W.h) * (1 - e) + yawF * e;
+  return done();
+}
+function wrap(a) {
+  while (a > Math.PI) a -= TAU;
+  while (a < -Math.PI) a += TAU;
+  return a;
+}
+
 // ---------- Locomotion ----------
 function locomotion(B, P, st, dt, info, opts) {
   const v = Math.max(0, st.speed || 0);
@@ -158,7 +238,11 @@ function locomotion(B, P, st, dt, info, opts) {
   const run = sstep(2.2, 3.1, v);
   // pas sur place quand on pivote à l'arrêt (évite les pieds qui glissent)
   const pivot = sstep(0.9, 2.6, Math.abs(st.turnRate || 0)) * (1 - sstep(0.2, 0.5, v));
-  const moving = Math.max(sstep(0.05, 0.35, v), pivot * 0.75);
+  // Pieds verrouillés au sol (voir lockFoot) : à l'arrêt, un pied que le corps a trop fait tourner ou dériver déclenche
+  // un vrai pas (au lieu de glisser) ; le pas dure un cycle complet.
+  const FL = st._fl || (st._fl = { l: null, r: null, need: 0, u: { l: 0, r: 0 } });
+  if (FL.need > 0) FL.need -= dt;
+  const moving = Math.max(sstep(0.05, 0.35, v), pivot * 0.75, FL.need > 0 ? 0.75 : 0);
   // cadence (foulées/s) et facteur de service d'après les données de marche et de course
   const fw = 0.6 + 0.2 * Math.min(v, 2.6);
   const fr = 1.15 + 0.075 * Math.min(v, 8);
@@ -230,7 +314,8 @@ function locomotion(B, P, st, dt, info, opts) {
     const x = sg * stepW;
     const yawF = sg * (0.1 + 0.04 * idle);
     const foot = P.feet[side];
-    plantFoot(foot.pos, foot.q, info, x, z, y * moving, pitch * moving, yawF);
+    const lk = lockFoot(st, FL, side, u < duty && moving > 0.02, u, duty, x, z, yawF, dt, v);
+    plantFoot(foot.pos, foot.q, info, lk.x, lk.z, y * moving + lk.lift, pitch * moving, lk.yaw);
     foot.toe = toe * moving;
   }
   // Abaisser le bassin si une cheville est hors de portée.
@@ -395,6 +480,42 @@ function carryArms(B, P, st) {
 // ---------- Équitation ----------
 // st : horseSpeed (allure normalisée), horseGaitPhase, jump (-1 ou 0..1), wave, turn, bob (m), pitch (rad), fit
 const DEFAULT_FIT = { stirrupX: 0.33, stirrupY: -0.64, stirrupZ: 0.06, kneeOut: 0.45, handX: 0.06, handY: 0.3, handZ: 0.36 };
+// Paramètres de la posture montée (hypothèses d'animation du jeu, pas des mesures biomécaniques ; unités du personnage,
+// fractions et secondes). Les réglages de position (étriers, genou, mains : fit / RIDER_FIT) restent ceux de Julien.
+export const RIDE = {
+  // Hauteur du bassin au-dessus de l'assise : trot enlevé, suspension (galop), obstacle (valeurs d'avant ce chantier).
+  postLift: 0.085, twoLift: 0.1, jumpLift: 0.05,
+  // Allongement de la jambe (hanche → cheville) en part de sa longueur : assis (réserve de flexion des genoux, valeur
+  // d'avant ce chantier) ; hors de la selle, debout dans les étriers (nouveau : genou ouvert à 142° environ, réserve de
+  // flexion gardée : test « jambe verrouillée » de tests/unit/human.test.js).
+  seatReach: 0.93, riseReach: 0.95,
+  // Obstacle, sur les événements du cheval : flexion pendant l'appel (part du vol du jeu), main rendue pendant le vol,
+  // ouverture commencée à la descente et poursuivie jusqu'au poser des postérieurs (attendu holdMax s au plus après
+  // celui des antérieurs), puis redressement progressif (recover s) ; main ramenée après le poser des antérieurs
+  // (handBack s).
+  foldIn: 0.18, releaseIn: [0.12, 0.35], holdMax: 0.45, recover: 0.5, handBack: 0.4,
+  // Part de la position d'obstacle gardée au poser des antérieurs (fin du vol) et à celui des postérieurs.
+  landFold: 0.6, hindFold: 0.4,
+  // Attente vivante : fréquence de respiration (Hz), amplitudes (rad) du buste et des épaules, transfert de poids.
+  breathRate: 0.25, breathChest: 0.012, breathShoulder: 0.012, idleShift: 0.018,
+  // Écart supplémentaire de chaque main (m) ajouté au réglage handX (inchangé, celui de Julien) : avec les mains du modèle
+  // réaliste, les deux poings se touchaient (« mains jointes »). 0 rétablit exactement la position précédente.
+  handSpread: 0.02,
+  // Bras : allongement maximal (bras + avant-bras ; 0,97 ≈ coude à 150°, jamais verrouillé) ; poignet au-dessus du
+  // dessus de l'encolure (m), quand le cheval fournit ce profil (fit.crest).
+  handReach: 0.97, handClear: 0.1,
+};
+// Dessus de l'encolure (repère du siège) : fit.crest = [z0, pas, h0, h1, …], hauteurs du dessus du corps par tranche
+// d'avance ; -9 : pas de mesure.
+function crestAt(crest, z) {
+  const n = crest.length - 2;
+  const u = (z - crest[0]) / crest[1];
+  if (u < 0 || u > n - 1) return -Infinity;
+  const i = Math.min(n - 2, Math.floor(u));
+  const a = crest[2 + i], b = crest[3 + i];
+  if (a < -8 || b < -8) return Math.max(a, b) < -8 ? -Infinity : Math.max(a, b);
+  return a + (b - a) * (u - i);
+}
 // ---------- Jambe le long du flanc (cheval qui fournit son profil, voir pjlHorse.js) ----------
 // fit.flank = [y0, pas, d0, d1, …] : demi-largeur du tronc (axe du siège → flanc) par tranche de hauteur sous le siège,
 // unités du personnage ; fit.legClear : demi-épaisseur du mollet et de la botte. Interpolation linéaire, bornée.
@@ -423,35 +544,118 @@ const flankOf = (fit, sg) => (sg > 0 ? fit.flankL : fit.flankR) || fit.flank || 
 // comme un cavalier dont le genou appuie sur le quartier et le mollet longe le tronc : genou trop près → il s'ouvre (pôle),
 // jamais au-delà de la cheville (pas de genoux « en ailes ») ; tibia trop près → le pied s'écarte du strict nécessaire.
 // Hauteur et avance de l'étrier, talon : inchangés.
+// Recherche continue (dichotomie) de la plus petite ouverture du genou, puis du plus petit écart du pied : la solution
+// varie continûment avec le profil du flanc. (Auparavant, ouverture et écart avançaient par crans de 0,15 et de 0,4 à
+// 3 cm, en nombre variable d'une image à l'autre : le genou pivotait de 15 à 35° en une image au galop.)
+const THIGH_MARGIN = 0.02;
+// Cuisse à mi-longueur et aux trois quarts (vers le genou) ; au-dessus, elle repose sur la selle.
+const _ht = new THREE.Vector3();
+const thighGap = (gap, hip, knee) => Math.min(gap(_ht.copy(hip).lerp(knee, 0.5)), gap(_ht.copy(hip).lerp(knee, 0.75))) - THIGH_MARGIN;
+const POLE_OPEN = 0.9; // composante latérale du pôle au-delà de laquelle ouvrir le genou ne le déplace plus
 function hugFlank(P, side, sg, foot, pole, flank, clr, info, xMax = Infinity) {
   const hip = P.mp[BN[side].Thigh];
   const a = info.thighLen, b = info.shinLen;
   // < 0 : dans le flanc (1 cm de marge : le genou réel diffère de quelques millimètres de son estimation après le
   // réajustement du bassin)
   const gap = (p) => p.x * sg - (flankAt(flank, p.y) + clr + 0.01);
-  for (let it = 0; it < 32; it++) {
+  const gaps = () => {
     kneeOf(hip, foot, pole, a, b, _hk);
-    const gk = gap(_hk);
-    let gs = 0, push = 0;
-    for (const t of [0.35, 0.65]) {
-      _hp.copy(_hk).lerp(foot, t);
-      const g = gap(_hp);
-      if (g < gs) (gs = g), (push = -g / Math.max(t, 0.5));
-    }
-    // Pôle déjà tourné vers l'extérieur : l'ouvrir davantage ne déplace plus le genou. Le genou reste alors appuyé contre
-    // le quartier de la selle (la cuisse ne s'écarte pas plus) ; seul le tibia est encore écarté du flanc, par le pied, et
-    // de 4 cm au plus au-delà de sa place naturelle (xMax) : jamais de jambes en « A ».
-    const poleOpen = pole.x * sg >= 0.9;
-    if (gs >= -1e-4 && (gk >= -1e-4 || poleOpen)) return;
-    const kneeRoom = _hk.x * sg < foot.x * sg + 0.01; // le genou peut encore s'ouvrir sans dépasser la cheville
-    if (gk < -1e-4 && kneeRoom && !poleOpen) {
-      pole.x += sg * 0.15;
-      pole.normalize();
-    } else if (poleOpen) {
-      if (foot.x * sg >= xMax - 1e-4) return;
-      foot.x = sg * Math.min(foot.x * sg + Math.min(Math.max(push, 0.004), 0.03), xMax);
-    } else foot.x += sg * Math.min(Math.max(push, gk < -1e-4 ? -gk : 0, 0.004), 0.03);
+    let gs = 0;
+    for (const t of [0.35, 0.65]) gs = Math.min(gs, gap(_hp.copy(_hk).lerp(foot, t)));
+    // Cuisse (aux trois quarts, près du genou) : contrôlée avec le genou, que l'ouverture écarte aussi (la cuisse
+    // traversait le flanc en virage à droite, audit v2 : 2 à 3 cm).
+    // Marge de 2 cm en plus : le profil du flanc (fourni par le cheval, inchangé) est relevé autour de l'étrier, la cuisse
+    // passe plus en avant, où le tronc est plus large.
+    return { gk: Math.min(gap(_hk), thighGap(gap, hip, _hk)), gs };
+  };
+  let g = gaps();
+  if (g.gs >= -1e-4 && g.gk >= -1e-4) return;
+  // 1. Genou : pôle tourné vers l'extérieur (même hauteur, composante latérale px), sans que le genou dépasse la cheville
+  //    (pas de genoux « en ailes ») ni au-delà de POLE_OPEN.
+  const py = pole.y;
+  const setPole = (px) => pole.set(sg * px, py, Math.sqrt(Math.max(0.0001, 1 - px * px - py * py)));
+  const px0 = Math.min(pole.x * sg, POLE_OPEN);
+  const room = (px) => (setPole(px), kneeOf(hip, foot, pole, a, b, _hk).x * sg < foot.x * sg + 0.01);
+  let pxMax = POLE_OPEN;
+  if (!room(pxMax)) {
+    let lo = px0, hi = POLE_OPEN;
+    if (!room(lo)) hi = lo;
+    else for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; if (room(m)) lo = m; else hi = m; }
+    pxMax = lo;
   }
+  const ok = (r, atMax) => r.gs >= -1e-4 && (r.gk >= -1e-4 || atMax);
+  setPole(px0);
+  if (g.gk < -1e-4 && pxMax > px0 + 1e-4) {
+    setPole(pxMax);
+    if (gaps().gk >= -1e-4) {
+      let lo = px0, hi = pxMax;
+      for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; setPole(m); if (gaps().gk >= -1e-4) hi = m; else lo = m; }
+      setPole(hi);
+    }
+  }
+  g = gaps();
+  const atMax = pole.x * sg >= POLE_OPEN - 1e-3;
+  if (ok(g, atMax)) return;
+  // 2. Tibia (et genou sans place pour s'ouvrir) : le pied s'écarte du strict nécessaire, de 4 cm au plus au-delà de sa
+  //    place naturelle (xMax) : jamais de jambes en « A ». Le genou reste alors appuyé contre le quartier.
+  const x0 = foot.x * sg, room2 = Math.max(0, Math.min(xMax, x0 + 0.12) - x0);
+  if (room2 > 1e-5) {
+    foot.x = sg * (x0 + room2);
+    if (ok(gaps(), atMax)) {
+      let lo = 0, hi = room2;
+      for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; foot.x = sg * (x0 + m); if (ok(gaps(), atMax)) hi = m; else lo = m; }
+      foot.x = sg * (x0 + hi);
+      return;
+    }
+  }
+  // 3. Pied à sa limite et tibia encore dans le flanc : le genou s'ouvre davantage, du strict nécessaire, dans les mêmes
+  //    limites (pas au-delà de la cheville, ni de POLE_OPEN).
+  const pxNow = pole.x * sg;
+  let lim = POLE_OPEN;
+  if (!room(lim)) {
+    let lo = pxNow, hi = POLE_OPEN;
+    for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; if (room(m)) lo = m; else hi = m; }
+    lim = lo;
+  }
+  if (lim <= pxNow + 1e-4) return setPole(pxNow);
+  setPole(lim);
+  if (gaps().gs < -1e-4) return;
+  let lo = pxNow, hi = lim;
+  for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; setPole(m); if (gaps().gs >= -1e-4) hi = m; else lo = m; }
+  setPole(hi);
+}
+
+// Continuité dans le temps de la jambe collée au flanc (hugFlank cherche à chaque image la plus petite ouverture du genou
+// et le plus petit écart du pied : quand le flanc respire ou change de côté, cette solution minimale basculait de 20 à 30°
+// en une image, même au pas en ligne droite — audit v2). Mémoire par côté : la jambe se referme progressivement
+// (HUG_RELAX, FOOT_RELAX : sans risque, une jambe plus ouverte est plus loin du flanc) et s'ouvre à vitesse limitée
+// (HUG_OPEN, FOOT_OPEN) sauf si la limite laissait le genou ou le tibia à plus de 1 cm dans le flanc : la solution exacte
+// est alors appliquée (pas de traversée pour lisser).
+const HUG_OPEN = 2.4, HUG_RELAX = 0.12; // composante latérale du pôle du genou, par seconde (refermeture lente : la jambe garde l'ouverture de son cycle de foulée)
+const FOOT_OPEN = 0.6, FOOT_RELAX = 0.02; // écart latéral du pied, m/s
+function hugMemory(R, P, side, sg, foot, pole, flank, clr, info, dt, t) {
+  const M = (R.hug ||= {});
+  const m = M[side];
+  const py = pole.y;
+  const px = pole.x * sg, fx = foot.x * sg;
+  if (m && t - m.t < 0.25 && dt > 0) {
+    const apx = px < m.px ? Math.max(px, m.px - HUG_RELAX * dt) : Math.min(px, m.px + HUG_OPEN * dt);
+    const afx = fx < m.fx ? Math.max(fx, m.fx - FOOT_RELAX * dt) : Math.min(fx, m.fx + FOOT_OPEN * dt);
+    const cpx = Math.min(apx, 0.97);
+    pole.set(sg * cpx, py, Math.sqrt(Math.max(0.0001, 1 - cpx * cpx - py * py)));
+    foot.x = sg * afx;
+    // Contrôle : genou et tibia (35 et 65 %) hors du flanc à 1 cm près ; sinon, solution exacte.
+    const hip = P.mp[BN[side].Thigh];
+    kneeOf(hip, foot, pole, info.thighLen, info.shinLen, _hk);
+    const gap = (p) => p.x * sg - (flankAt(flank, p.y) + clr);
+    let g = Math.min(gap(_hk), thighGap(gap, hip, _hk));
+    for (const k of [0.35, 0.65]) g = Math.min(g, gap(_hp.copy(_hk).lerp(foot, k)));
+    if (g < -0.01) {
+      pole.set(sg * px, py, Math.sqrt(Math.max(0.0001, 1 - px * px - py * py)));
+      foot.x = sg * fx;
+    }
+  }
+  M[side] = { px: pole.x * sg, fx: foot.x * sg, t };
 }
 
 function riding(B, P, st, dt, info) {
@@ -460,7 +664,7 @@ function riding(B, P, st, dt, info) {
   const ph = st.horseGaitPhase || 0;
   const t = st.t || 0;
   // bobAvg amorcé sur la première hauteur de selle (sinon le filtre part de 0 et enfonce le cavalier dans le cheval pendant ~2 s).
-  const R = st._ride || (st._ride = { post: 0, diag: 0, wantDiag: 0, diagT: 0, two: 0, jumpK: 0, rel: 0, bobAvg: st.bob || 0 });
+  const R = st._ride || (st._ride = { post: 0, diag: 0, wantDiag: 0, diagT: 0, two: 0, jumpK: 0, rel: 0, bobAvg: st.bob || 0, hd: -1, wasJump: false });
   const walk = sstep(0.4, 1.2, hs) * (1 - sstep(2.8, 3.6, hs));
   const trot = sstep(2.8, 3.6, hs) * (1 - sstep(5.2, 5.9, hs));
   const canter = sstep(5.2, 5.9, hs) * (1 - sstep(9.8, 11.8, hs));
@@ -480,13 +684,32 @@ function riding(B, P, st, dt, info) {
   const rise = sstep(0.02, 0.2, u) * (1 - sstep(0.34, 0.5, u));
   R.post = lerp(R.post, rise * trot, 1 - Math.exp(-30 * dt));
   // Suspension (galop) et position d'obstacle.
+  // Obstacle : phases données par le cheval (pas de second chronomètre). Vol du jeu st.jump (0 → 1 : de l'appui des
+  // postérieurs au poser des antérieurs), puis st.landT (s depuis ce poser) et st.hindDown (postérieurs reposés).
+  // Auparavant, le cavalier se redressait dès les trois quarts du vol et avait repris sa position de galop à la
+  // réception des antérieurs, un demi-temps avant le poser des postérieurs.
   const jump = st.jump >= 0 ? st.jump : -1;
-  const jk = jump >= 0 ? sstep(0, 0.18, jump) * (1 - sstep(0.75, 1, jump)) : 0;
+  const landT = st.landT ?? -1;
+  if (jump >= 0) R.hd = -1;
+  else if (landT >= 0 && R.hd < 0 && (st.hindDown || landT >= RIDE.holdMax)) R.hd = landT;
+  let jk = 0, release = 0;
+  if (jump >= 0) {
+    // pliée jusqu'au sommet, puis ouverture progressive pendant la descente (landFold au poser des antérieurs)
+    jk = sstep(0, RIDE.foldIn, jump) * (1 - (1 - RIDE.landFold) * sstep(0.5, 1, jump));
+    release = sstep(RIDE.releaseIn[0], RIDE.releaseIn[1], jump);
+  } else if (landT >= 0 && R.wasJump) {
+    // entre les deux posers : de landFold vers hindFold ; après le poser des postérieurs : redressement en recover s
+    const atHd = R.hd < 0 ? landT : R.hd;
+    const jHd = RIDE.landFold - (RIDE.landFold - RIDE.hindFold) * sstep(0, RIDE.holdMax, atHd);
+    jk = R.hd < 0 ? jHd : jHd * (1 - sstep(0, RIDE.recover, landT - R.hd));
+    release = 1 - sstep(0, RIDE.handBack, landT);
+    if (jk <= 0 && release <= 0) R.wasJump = false;
+  }
+  if (jump >= 0) R.wasJump = true;
   R.jumpK = lerp(R.jumpK, jk, 1 - Math.exp(-14 * dt));
   const twoTarget = Math.max(canter * 0.55, gallop * 1.0, R.jumpK);
   R.two = lerp(R.two, twoTarget, 1 - Math.exp(-5 * dt));
   const two = R.two;
-  const release = jump >= 0 ? sstep(0.12, 0.35, jump) * (1 - sstep(0.62, 0.92, jump)) : 0;
   R.rel = lerp(R.rel, release, 1 - Math.exp(-10 * dt));
   // Amortir le mouvement vertical du dos du cheval (genoux et chevilles).
   const bob = st.bob || 0;
@@ -495,25 +718,48 @@ function riding(B, P, st, dt, info) {
   // Bassin : assis, enlevé (monte et avance), en suspension (au-dessus de la selle, en arrière).
   const canterRock = canter * (1 - two) * Math.sin(TAU * ph + 0.6);
   const walkRock = walk * Math.sin(TAU * 2 * ph);
-  let hy = info.seatToHips + R.post * 0.085 + two * 0.1 + R.jumpK * 0.05 - bobHP * (0.4 + two * 0.5);
+  // Hauteur voulue au-dessus de l'assise ; amorti du dos du cheval seulement hors de la selle (assis, le bassin suit la
+  // selle : il ne s'y enfonce pas quand le dos monte et ne flotte pas au-dessus quand il descend).
+  const lift = R.post * RIDE.postLift + two * RIDE.twoLift + R.jumpK * RIDE.jumpLift;
+  const offSeat = clamp(lift / 0.04, 0, 1);
+  const dy = Math.max(0, lift - bobHP * (0.4 + two * 0.5) * offSeat);
   let hz = R.post * 0.06 - two * 0.035 - R.jumpK * 0.02;
-  P.hips.set(0, hy, hz);
+  P.hips.set(0, info.seatToHips, hz);
   // Inclinaison du buste (par rapport à la verticale), compensée du tangage de la selle.
   const pitchW = st.pitch || 0;
   const torso = 0.04 + trot * 0.06 + R.post * 0.14 + two * 0.52 + R.jumpK * 0.62 + canterRock * 0.03;
   // compenser le tangage du dos (rester d'aplomb), sauf à l'obstacle où l'on suit le cheval
-  const comp = -pitchW * 0.85 * (1 - 0.75 * R.jumpK);
-  qEuler(P.q.hips, 0.08 + two * 0.35 + R.jumpK * 0.15 + comp * 0.5 + walkRock * 0.04 + canterRock * 0.07, 0, -turn * 0.06);
-  qEuler(P.q.spine, torso * 0.35 + comp * 0.25 - canterRock * 0.04, 0, -turn * 0.04);
-  qEuler(P.q.chest, torso * 0.3 + comp * 0.25, 0, 0);
+  // (à la montée, cheval cabré : le buste le suit ; à la descente et à la réception, nez en bas : le buste reste
+  // d'aplomb au lieu de se coucher sur l'encolure)
+  const comp = -pitchW * 0.85 * (1 - (pitchW < 0 ? 0.75 : 0.25) * R.jumpK);
+  // Attente vivante (skills tiers blender-animation / animation : jamais de personnage figé ; respiration, transfert de
+  // poids, regard) : à l'arrêt et au pas, respiration du buste et des épaules, appui qui glisse lentement d'un ischion à
+  // l'autre, regard qui se promène ; atténués aux allures rapides et à l'obstacle. (Auparavant : rotation nulle à l'arrêt.)
+  const still = (1 - sstep(0.3, 1.6, hs)) * (1 - R.jumpK);
+  const idle = still + 0.35 * walk;
+  const breath = Math.sin(t * RIDE.breathRate * TAU);
+  const shiftW = Math.sin(t * 0.11 * TAU + 1.3) * still;
+  if (!R.look) R.look = { a: 0, to: 0, t: 0 };
+  R.look.t -= dt;
+  if (R.look.t <= 0) (R.look.t = 2.5 + 3.5 * frac(Math.sin(t * 12.9898) * 43758.5)), (R.look.to = (frac(Math.sin(t * 78.233) * 12345.6) - 0.5) * 0.6);
+  R.look.a = lerp(R.look.a, R.look.to * still, 1 - Math.exp(-1.8 * dt));
+  qEuler(P.q.hips, 0.08 + two * 0.35 + R.jumpK * 0.15 + comp * 0.5 + walkRock * 0.04 + canterRock * 0.07, 0, -turn * 0.06 + shiftW * RIDE.idleShift);
+  qEuler(P.q.spine, torso * 0.35 + comp * 0.25 - canterRock * 0.04 + breath * 0.006 * idle, 0, -turn * 0.04 - shiftW * RIDE.idleShift * 0.8);
+  qEuler(P.q.chest, torso * 0.3 + comp * 0.25 - breath * RIDE.breathChest * idle, R.look.a * 0.15, 0);
+  for (const side of SIDES) qEuler(P.q[BN[side].Clav], 0, 0, (side === 'l' ? 1 : -1) * breath * RIDE.breathShoulder * idle);
   // Regard devant, entre les oreilles (plus haut à l'obstacle).
   const totalPitch = 0.08 + two * 0.35 + R.jumpK * 0.15 + torso * 0.65 + comp;
-  qEuler(P.q.neck, -totalPitch * 0.45, 0, 0);
-  qEuler(P.q.head, -totalPitch * 0.42 + 0.06 - R.jumpK * 0.08, 0, turn * 0.08);
+  qEuler(P.q.neck, -totalPitch * 0.45, R.look.a * 0.35, 0);
+  qEuler(P.q.head, -totalPitch * 0.42 + 0.06 - R.jumpK * 0.08, R.look.a * 0.5, turn * 0.08);
   forwardTrunk(B, P);
-  // Jambes : pied dans l'étrier (plante), talon bas, genou contre la selle, jambe à la sangle.
-  // Garder une réserve de flexion aux genoux, même pour la petite morphologie en suspension.
-  const maxReach = (info.thighLen + info.shinLen) * 0.93;
+  // Jambes : pied dans l'étrier (plante), talon bas, genou contre la selle, jambe à la sangle. Les étriers sont posés
+  // d'après le cavalier assis (étrivières de longueur fixe) : quand le bassin se soulève (trot enlevé, suspension,
+  // obstacle), ce sont les genoux et les hanches qui s'ouvrent, les pieds restent dans les étriers. Assis, réserve de
+  // flexion des genoux (RIDE.seatReach) ; hors de la selle, la jambe peut s'allonger jusqu'à RIDE.riseReach, et le
+  // bassin ne monte pas plus haut que ce que permettent les jambes (auparavant les pieds remontaient avec lui et les
+  // étrivières raccourcissaient de 8 à 14 cm à chaque foulée de trot ou de galop et à l'obstacle).
+  const legLen = info.thighLen + info.shinLen;
+  const maxReach = legLen * RIDE.seatReach;
   let lowerSeat = 0;
   for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
@@ -541,7 +787,7 @@ function riding(B, P, st, dt, info) {
   // Cheval large (profil de flanc fourni) : le bassin ne descend que de quelques centimètres, sinon les cuisses
   // entreraient dans le dos du cheval ; au-delà, c'est le pied qui remonte dans l'étrier (étrier un peu plus court).
   const wide = !!(flankOf(fit, 1) || flankOf(fit, -1));
-  if (wide) lowerSeat = Math.min(lowerSeat, 0.035 * (info.thighLen + info.shinLen) / 0.9);
+  if (wide) lowerSeat = Math.min(lowerSeat, 0.035 * legLen / 0.9);
   if (lowerSeat > 0) {
     // Adapter la hauteur de suspension au cavalier, sans déplacer ses pieds hors des étriers.
     P.hips.y -= lowerSeat;
@@ -555,27 +801,42 @@ function riding(B, P, st, dt, info) {
       if (f.pos.y < minY) f.pos.y = minY;
     }
   }
+  // Bassin soulevé de dy au plus, dans la limite de la portée des jambes (pieds à leur place dans les étriers).
+  if (dy > 0) {
+    const seated = P.hips.y;
+    const riseReach = legLen * RIDE.riseReach;
+    let top = seated + dy;
+    for (const side of SIDES) {
+      const f = P.feet[side], hip = P.mp[BN[side].Thigh];
+      const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
+      top = Math.min(top, f.pos.y + Math.sqrt(Math.max(0, riseReach * riseReach - lateral2)) - (hip.y - P.hips.y));
+    }
+    P.hips.y = Math.max(seated, top);
+    forwardTrunk(B, P);
+  }
+  const reachNow = legLen * (dy > 0 ? RIDE.riseReach : RIDE.seatReach);
   for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
     const f = P.feet[side];
     const pole = _v5.set(sg * fit.kneeOut, -0.05, 1).normalize();
     const fl = flankOf(fit, sg);
     if (fl) {
-      // Pied hors d'atteinte après l'écart (bassin levé à l'obstacle, dos qui monte au galop) : il remonte, sans se
-      // rapprocher du flanc. En remontant, le genou et le tibia changent de place et peuvent arriver à une hauteur où le
-      // flanc est plus large : genou, tibia et cheville recontrôlés à chaque passe (pas seulement la cheville).
+      // Pied hors d'atteinte après l'écart du tibia : il remonte, sans se rapprocher du flanc. En remontant, le genou et
+      // le tibia changent de place et peuvent arriver à une hauteur où le flanc est plus large : genou, tibia et cheville
+      // recontrôlés à chaque passe (pas seulement la cheville).
       const hip = P.mp[BN[side].Thigh];
       for (let pass = 0; pass < 3; pass++) {
         hugFlank(P, side, sg, f.pos, pole, fl, fit.legClear || 0, info, f.xMax ?? Infinity);
         let raised = false;
         for (let k = 0; k < 4; k++) {
           const lateral2 = (hip.x - f.pos.x) ** 2 + (hip.z - f.pos.z) ** 2;
-          const minY = hip.y - Math.sqrt(Math.max(0, maxReach * maxReach - lateral2));
+          const minY = hip.y - Math.sqrt(Math.max(0, reachNow * reachNow - lateral2));
           if (f.pos.y < minY - 1e-4) (f.pos.y = minY), (raised = true);
           f.pos.x = sg * Math.max(Math.abs(f.pos.x), flankAt(fl, f.pos.y) + (fit.legClear || 0) + 0.005);
         }
         if (!raised) break;
       }
+      hugMemory(R, P, side, sg, f.pos, pole, fl, fit.legClear || 0, info, dt, st.t || 0);
     }
     solveLeg(B, P, side, f.pos, f.q, 0, pole);
   }
@@ -583,9 +844,17 @@ function riding(B, P, st, dt, info) {
   const nod = (walk * 0.025 + canter * 0.035 + gallop * 0.03) * Math.sin(TAU * (walk > 0.5 ? 2 : 1) * ph + 1.2);
   for (const side of SIDES) {
     const sg = side === 'l' ? 1 : -1;
-    let hx = sg * fit.handX, hY = fit.handY - two * 0.07 - R.rel * 0.12, hZ = fit.handZ + two * 0.13 + R.rel * 0.22 + nod + R.post * 0.02;
+    let hx = sg * (fit.handX + RIDE.handSpread), hY = fit.handY - two * 0.07 - R.rel * 0.12, hZ = fit.handZ + two * 0.13 + R.rel * 0.22 + nod + R.post * 0.02;
     if (st.wave && side === 'l') hx = 0.01;
     const hp = P.hands[side].set(hx, hY - bobHP * 0.3, hZ);
+    // Poignet au-dessus de l'encolure (main rendue à l'obstacle, buste penché) : auparavant les poings entraient
+    // jusqu'à 6 cm dans l'encolure pendant le vol.
+    if (fit.crest) hp.y = Math.max(hp.y, crestAt(fit.crest, hp.z + 0.06) + RIDE.handClear);
+    // Bras jamais verrouillé : main ramenée vers l'épaule au-delà de RIDE.handReach (coude tendu à 176° auparavant
+    // au galop et pendant tout le saut).
+    const sh = P.mp[BN[side].Arm], armMax = (info.upperArmLen + info.foreArmLen) * RIDE.handReach;
+    const dh = hp.distanceTo(sh);
+    if (dh > armMax) hp.sub(sh).multiplyScalar(armMax / dh).add(sh);
     if (st.wave && side === 'r') {
       const w = Math.sin(t * 8.5);
       qEuler(P.q.rArm, -0.35, 0, -(2.5));

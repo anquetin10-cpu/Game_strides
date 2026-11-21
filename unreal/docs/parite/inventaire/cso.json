@@ -1,0 +1,988 @@
+[
+ {
+  "id": "cso.plan-saut",
+  "domaine": "CSO",
+  "fonction": "Plan de saut (planJump) : longueur L = première + dernière distance aux barres, bornée à [L0 × (1 − 0,12), L0 × (1 + 0,06)] en CSO ([−0,24, +0,12] hors CSO), hauteur H = Hbase × (1 − 1,5 × dev²), marge par barre = arc + 0,20 m (lift) + dégagement − hauteur, zones good (marge ≥ 0,15 m) / far / near / refuse (première barre à moins de 0,55 m), causes tooClose, far, near, angle, slow, fast.",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:23-125 (railsAhead, shape, minMargin, planJump) ; paramètres lus dans Content/Data/jump_model.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:67-75)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/jump.json : 576 appels (vertical 1,10 m, oxer 1,20 m écart 1,3, vertical 1,45 m, mur 1,00 m ; 9 distances, 4 vitesses, 2 angles, CSO ou non) comparés par unreal/core/tests/test_core.cpp:76-107 (L, H, marge, marges, zone, cause à 1e-9) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/ ; test moteur Strides.Core.Course (StridesCoreTests.cpp:34-39) réussi le 17/11 (validation-mac-2026-11-17.md, commit 285404cc).",
+  "ecart": "Chemins non couverts par l'oracle : saut sans obstacle (geo nul) et abord à plus de 60° (cosA < 0,5) ; les cas exportés n'ont que cosA = 1 ou 0,9394 (cap à 0,35 rad) : la cause « angle » hors CSO (cosA < 0,92) et la zone none ne sont jamais exercées. Content/Data/jump_model.json régénéré identique.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.facteurs-vitesse-angle",
+  "domaine": "CSO",
+  "fonction": "Capacité de saut Hcap = puissance × speedFactor(v) (0,72 à 1 entre 3,5 et 6,5 m/s, −16 % entre 9 et 12 m/s) × angleFactor (1 − 0,6 × (1 − cosA)) ; en CSO hauteur visée = barre la plus haute + 0,32 + 0,18 × écart − 0,20 m, durée T = clamp(0,56 + 0,1 × H, 0,60, 0,74) s, L0 = max(1,5, v × T).",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:17-19 (speedFactor, angleFactor, arcY), 47-57 (shape)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "jump.json : 10 valeurs de speedFactor (0 à 14 m/s) et 3 d'angleFactor (unreal/core/tests/test_core.cpp:78-81), plus les 576 cas qui passent par shape() ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "Aucun sur la fonction ; la puissance donnée par le jeu Unreal diffère (voir cso.declenchement-saut).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.qualite-appel",
+  "domaine": "CSO",
+  "fonction": "Qualité de l'appel (takeoffQuality) : la cause du modèle si elle existe (tooClose, far, near, angle, slow, fast ; 'short' ramené à far), sinon perfect (|dev| < 0,03) ou good en zone good, sinon bitFar / bitNear selon que l'idéal dépasse L0.",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:127-140 (takeoffQuality), 142-176 (noms)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "jump.json : qualité comparée sur les 576 cas (unreal/core/tests/test_core.cpp:103) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "La cause 'short' n'existe pas dans l'énumération C++ (JumpModel.h:30) : planJump ne la produit jamais, elle n'est produite que par le jugement des barres (obstacles.js:523 ; porté depuis T3 comme cause de faute, CsoFences.cpp:133, cso.jugement-barres), jamais par planJump : la branche 'short' → far de takeoffQuality est sans objet dans le web comme dans le portage.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.retour-appel",
+  "domaine": "CSO",
+  "fonction": "Après chaque saut de CSO (sauf aide « Aucune »), un mot s'affiche sous le chrono (Appel parfait, Bon appel, Un peu loin, Un peu près, Appel trop loin, Appel trop près, Abord en biais, Manque d'impulsion, Trop près), corrigé par le jugement réel : sur une barre la cause l'emporte (short et fast donnent « Appel trop loin »), jamais « parfait » ni « bon », far → Un peu loin et near / tooClose → Un peu près sur un franchissement, couleur good / ok / bad.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "strides::csoTakeoffFeedback (unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:441 : TAKEOFF_TEXT et règles de courses.js:203-211, aide « off » lue dans CsoRunConfig::aid) ; CsoRun::feedback (:424, appel hud.jumpFeedback dans l'ordre du jeu web, :391, :395) ; dernier saut : AStridesCourse::NoteLastJump (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:438), appelé par AStridesHorse::TickCso (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:419) ; affichage strides::CsoHud + UStridesCsoHud",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_feedback.json (scripts/unreal/export-data.mjs : source de feedback extraite de courses.js et évaluée sur 1 638 cas — épreuve, aide full / button / off, dernier saut absent / autre obstacle / cet obstacle, 10 qualités, sans-faute ou barre, 13 causes) : 0 écart (unreal/core/tests/test_core.cpp:1475) ; dernier saut relevé dans le canal « ep » des exécutions (ep.lj, scripts/unreal/export-cso-runs.mjs) : 118 relevés, 98 appels hud.jumpFeedback identiques (texte français et anglais, genre) dans testCsoRuns et Strides.Parite.CsoRun ; Montages côte à côte web / Unreal unreal/docs/parite/cso/hud-*-844x390.png et hud-*-667x308.png (8 états : cloche, avant le départ, en course « ▸ 4A », dépassement en ambre, « Barre au 2 · +4 · Appel trop loin » et « Appel parfait » d'une vraie exécution (t7-parfait-barre-2), crans de cadence, élimination ; 844 × 390 et 667 × 308, même lieu, même heure, même caméra ; scripts/unreal/export-hud-style.mjs --shots puis -StridesShots=cso, état rejoué comparé à l'état du DOM du web : identique pour les 16 poses, unreal/docs/parite/cso/hud-unreal.json) ; scripts/unreal/mutations-cso-hud.py : 49 mutations de CsoHud.cpp (dont 4 de l'horloge murale) et du mot d'appel de CsoRun.cpp, 48 détectées par le banc ; la 49e (ordre de déclenchement inversé à échéance égale) est équivalente par construction (rappels des temporisations commutatifs, raison écrite dans le script). Correction après contrôle adverse (20/11/2026) : scénario t7-parfait-barre-2 (scripts/unreal/export-cso-runs.mjs, règle de saut « perfect » : bonne zone, écart de longueur sous 3 %) : « Appel parfait » au 1 et « Barre au 2 · +4 · Appel trop loin » joués par le jeu web, rejoués sans écart par testCsoRuns (exécution requise, appels produits par le portage vérifiés) et Strides.Parite.CsoRun ; texte du mot vérifié contre cso_feedback.json par export-hud-style.mjs.",
+  "ecart": "Logique et textes prouvés identiques par oracle (choix du mot, textes français et anglais, genre ; « Appel parfait » d'une vraie exécution, t7-parfait-barre-2) ; état partiel pour le rendu, écarts connus : police du moteur (Roboto, Droid Sans Mono) au lieu de Geist et Geist Mono chargées par le web depuis Google Fonts (non embarquées : licence et fichier à décider) : graisses 600 rendues en gras, chiffres du chrono non monospaces, hauteur du tableau 2 à 3 px de plus ; ombres portées (box-shadow) absentes. Rendu détaillé : interface.retour-qualite-appel.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cause-barre",
+  "domaine": "CSO",
+  "fonction": "Barre tombée : toast « Barre au X · +4 · <cause> » avec la cause en clair (Appel trop loin, Appel trop près, Trop près : plus de place pour sauter, Abord désaxé, Pas assez d'impulsion, Trop vite : saut à plat, Saut trop court : atterrissage dans l'obstacle, Barre touchée par les antérieurs / postérieurs), reprise en minuscules dans le bilan.",
+  "js": [
+   "src/gameplay/jumpModel.js",
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (obstacleEvent : toast « Barre au X · +4 · cause ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (HandleFenceOut : cause du cœur traduite par strides::TextTable::cause, CAUSES de jumpModel.js exportées dans Content/Data/strings_cso.json)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; t4-arrivee-barre : toast « Barre au 1 · +4 · Appel trop loin » / « … · Took off too far » identique au jeu web, cause traduite par le jeu dans Strides.Parite.CsoRun.",
+  "ecart": "Causes « Saut trop court » mises à part (portée depuis T3 : CsoFences.cpp:133), « Barre touchée par les antérieurs / postérieurs » jamais produite par le jeu Unreal (contacts des membres non portés, pas de cheval WildMesh : cso.contact-membres). Toast « Barre au X · +4 · cause » dessiné par le HUD d'épreuve UMG depuis T7, texte comparé au web par testCsoRuns (rendu : interface.toasts ; montage hud-barre-*) ; reprise de la cause en minuscules dans le bilan portée en tranche T11 (unreal/StridesGrandTour/Source/StridesCore/Private/Ranking.cpp:149, comparée au DOM par cso_result.json et le canal « bl »).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.direction",
+  "domaine": "CSO",
+  "fonction": "Direction de concours (steerRate) : zone morte 0,06, courbe expo 1,35, rotation maximale v / R(v) avec R(v) = 2,6 + 0,8 v (6,3 m au trot, 7,6 m au galop de concours, 9 m au galop allongé), pivot de 0,8 rad/s à l'arrêt interpolé jusqu'à 1 m/s.",
+  "js": [
+   "src/gameplay/csoRide.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRide.cpp:12-23 (minRadius, maxTurnRate, steerRate) ; paramètres lus dans Content/Data/cso_ride.json (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:76-84)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_ride.json : 42 cas steerRate, 6 minRadius, 6 maxTurnRate comparés à 1e-9 par unreal/core/tests/test_core.cpp:109-122 ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/ ; cso_ride.json de Content/Data régénéré identique.",
+  "ecart": "Aucun sur la fonction ; l'application au cheval diffère (voir cso.conduite-integration).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cadence",
+  "domaine": "CSO",
+  "fonction": "Cadence de concours (cadenceDelta) : variation de cadence nulle si le joystick avant / arrière ne dépasse pas 0,35 ou n'est pas franchement vertical (|y| ≤ 0,65 |x|), proportionnelle au-delà de la zone morte, au plus 1,2 m/s² au galop et 2,2 m/s² quand la cadence est sous 4,6 m/s ; nulle joystick relâché.",
+  "js": [
+   "src/gameplay/csoRide.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRide.cpp:24-29 (cadenceDelta) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:274-277 (appel dans csoHorseStep, voir cso.conduite-integration)",
+  "etat": "identique_prouve",
+  "niveau": "joue_ecran",
+  "preuve": "cso_ride.json : 18 cas cadenceDelta (unreal/core/tests/test_core.cpp:116) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/ ; à l'écran : « accélérer jusqu'au galop à 8,0 m/s » (validation-mac-2026-11-17.md, Boucle contrôlée à l'écran).",
+  "ecart": "Fonction identique ; son intégration (plafond de 8 m/s, cadence gardée joystick relâché, figée pendant un refus) est prouvée par le rejeu des scénarios (cso.conduite-integration).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.conduite-integration",
+  "domaine": "CSO",
+  "fonction": "Conduite de concours appliquée au cheval (csoRideStep et horse.js) : cadence de départ = vitesse réelle arrondie au dixième, direction clavier amenée progressivement (3,2 par seconde, double en retour), cadence bornée entre 0 et 8 m/s (galop allongé) et gardée quand on lâche le joystick, figée pendant un refus ou un cabrer, vitesse qui rejoint la cadence à 4,5 m/s² sous 5 m/s, 3,6 m/s² au-delà et 9 m/s² en ralentissant (horse.js:289), inchangée en l'air, rotation figée pendant le cabrer, rotation qui rejoint la consigne en exp(−dt / 0,2 s) bornée à 3 rad/s², 30 % de la rotation réelle gardée en l'air, perte d'élan à la réception de min(4 %, |dev| × 0,5), commandes retirées en sortie d'épreuve (clearCsoControls) et réservées aux épreuves et entraînements de CSO.",
+  "js": [
+   "src/gameplay/csoRide.js",
+   "src/entities/horse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:254-368 (csoHorseStep : csoRideStep puis Horse.update jusqu'au déplacement) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:363-459 (TickCso : délégation au cœur, pente lue sur le relief exporté)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ (canal « ch » exporté du jeu web en cours d'exécution par scripts/unreal/export-cso-runs.mjs, sha256 6c9c3b6c… ; chaque scénario identique d'une exécution à l'autre : les 10 premiers au fichier précédent, les 4 ajoutés au contrôle de T2 à un essai séparé) rejoué image par image par unreal/core/tests/test_core.cpp:497 (testHorseRuns) : 12 scénarios requis sans aucun recalage (dont cadence-depart, contrôle des remarques) (droit fr et en, bonne-zone, virage-serre, rampe-clavier, ctrl-alt, appui-10m, appui-3ms, abord-70, virage-en-lair, survitesse, appel-pres), écart maximal 8,9e-16 rad sur le cap et 4,4e-16 sur le saut, 0 m / 0 m/s sur la position et la vitesse, mêmes événements horse:* à la même image ; ctest 19/11/2026 : 12 267 vérifications, 0 échec ; miroir moteur Strides.Parite.CsoHorse (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoHorseTests.cpp:77) Result={Success}. Branches exercées, avec témoins relevés dans l'oracle et vérifiés par le test : rotation en l'air × airTurn (virage-en-lair, 21 images en l'air avec lacet) ; plafond de ralentissement de 9 m/s² (horse.js:289 ; survitesse, cheval posé à 9,6 m/s, cadence bornée à 8 : 5 images au plafond) ; perte d'élan à la réception plafonnée à 4 % (appel-pres, appel en zone « près », dev −0,12 : 6,2 → 5,952 m/s). Mutations détectées par scripts/unreal/mutations-cso-horse.py (32 mutations de CsoHorse.cpp depuis le contrôle des remarques : 22 détectées, 10 déclarées non discriminées ou équivalentes dans ATTENDUES) : airTurn supprimé (virage-en-lair), ralentissement 9 → 6 m/s² (survitesse, 30 images en écart), perte sans plafond (appel-pres), rampe clavier sans le facteur 2, accélération 3 m/s² constante.",
+  "ecart": "Fonction du cœur identique. Dans le jeu Unreal : commandes de concours toujours actives, y compris hors épreuve (bCsoControls jamais remis à faux, pas d'équivalent de clearCsoControls ; clearCsoControls non porté, la fin de mission de T11 ne les coupe pas) ; profondeur d'eau toujours 0 (aucune donnée d'eau côté Unreal) ; puissance sans équipement ni état (voir cso.declenchement-saut) ; collisions du monde non portées (aucun scénario n'en contient, le banc les signale). Contrôle des remarques (20/11/2026) : cadence de départ arrondie au dixième départagée par le scénario cadence-depart (5,47 m/s → 5,5 ; mutation « arrondi par défaut » détectée ; std::round au lieu de jsRound équivalent pour une vitesse ≥ 0) ; cabré affiché (rearAnim) désormais comparé par diffHorse (mutation de sa phase détectée). Non discriminés par l'oracle (ATTENDUES de mutations-cso-horse.py) : branche hors commandes de concours (lacet, perte de réception 0,94, freinage devant un obstacle du monde), seuils d'eau et de pente.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.declenchement-saut",
+  "domaine": "CSO",
+  "fonction": "Bouton SAUT : saut accepté au-dessus de 3,2 m/s et hors refus engagé ; l'obstacle visé est celui dont la première barre est la plus proche devant les épaules (point 0,4 m devant l'origine), première barre à 13 m au plus et dernière pas plus de 0,3 m derrière, abord à moins de 60° (cosA ≥ 0,5), milieu des barres dans la largeur ± 0,35 m ; avec les commandes de concours (épreuve ou entraînement de CSO), appui sans effet (horse:jumpEarly) sans obstacle visé ou si la première barre est à plus de 1,9 × L0 ; sinon, saut libre ; puissance = jumpPeak × saut du cheval × (1 + équipement) × état, dégagement donné par l'équipement.",
+  "js": [
+   "src/gameplay/obstacles.js",
+   "src/gameplay/csoRide.js",
+   "src/entities/horse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:94-126 (csoTarget, csoTiming), 194-242 (csoStartJump) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:363-459 (TickCso : appui transmis au cœur ; FenceAhead supprimé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:121-139 (obstacles du cœur) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:103, 345, 441-444 (Espace / bouton A)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_target.json (identique octet pour octet sur deux exécutions, sha256 21bc1711…) : 11 220 poses du cheval (grille d'origine de 8 980 poses : 10 obstacles, deux sens, 5 angles de 0 à 75°, 3 décalages, 14 distances, 2 à 4 vitesses, en l'air, en refus ; plus 2 240 poses décalées de 2,1 et −2,2 m, de part et d'autre de la tolérance latérale de 0,35 m) où obstacles.target() et timing() du jeu web sont comparés à csoTarget / csoTiming (unreal/core/tests/test_core.cpp:640, testTarget, 0 écart ; 5 678 cas avec obstacle visé, dont 1 038 de face dans la marge de 0,35 m) ; 2 740 appuis SAUT (liste « press » : Horse.startJump appelé seul dans le jeu) comparés à csoStartJump (test_core.cpp:681, testPress, 0 écart sur la valeur rendue, les événements, le saut, le freinage et l'obstacle refusé) : saut 956, trop tôt ou sans obstacle 574, refus tout contre (zone refuse, barre avant devant les épaules) 201, appui ignoré déjà dans l'obstacle (zone refuse, x < 0) 309, trop lent 680, en l'air ou déjà en refus 20 ; scénarios appui-10m (appui à 9,87 m de la première barre au moment de l'appui, 9,66 m après le pas de l'image : horse:jumpEarly, puis saut en bonne zone), appui-3ms (horse:tooSlow), abord-70 (aucun obstacle visé : horse:jumpEarly), bonne-zone, droit, appel-pres rejoués sans écart. Mutations détectées par scripts/unreal/mutations-cso-horse.py (32 mutations de CsoHorse.cpp depuis le contrôle des remarques : 22 détectées, 10 déclarées non discriminées ou équivalentes dans ATTENDUES) : tolérance latérale 0,35 supprimée (2 040 cas en écart), condition x ≥ 0 supprimée (309 appuis), refus engagé ignoré (10), seuil 1,9 × L0 → 2,1 × L0 (59). Dans le jeu : Strides.Cso.HorseInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoHorseTests.cpp:172) Result={Success} : instance de jeu autonome (UGameInstance::InitializeStandalone), données lues dans Content/Data par UStridesDataSubsystem (puissance 1,35 × profil comète 1, paramètres de cso_horse.json), vrais acteurs AStridesHorse / AStridesCourse possédés par AStridesPlayerController ; appui par TouchJump (même gestionnaire OnJump que la touche Espace et le bouton A) : appui à 9,95 m sans saut avec horse:jumpEarly, appui en bonne zone suivi du saut et de la réception, aucun saut automatique.",
+  "ecart": "Visée et règle d'appui identiques. Puissance du saut dans le jeu Unreal = jumpPeak × saut du profil, sans équipement ni état (cheval.multiplicateurs, cheval.etat-physiologique) ; dégagement toujours 0 ; hors épreuve, saut libre sans test de clôture (_jumpBlocked non porté, cheval.saut-bloque) ; le bouton « Trop tôt » est affiché depuis T9 (interface.aide-appel-bouton-saut, montage aide-trop-tot-*) ; l'astuce « Trop lent » ne l'est pas (événement horse:tooSlow émis par le cœur : interface.astuces-cheval) ; le test en jeu appelle le gestionnaire de l'action SAUT, pas la frappe de la touche Espace par Enhanced Input (clavier par codes physiques : Strides.Cso.PhysicalKeys, T8).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.trajectoire-saut",
+  "domaine": "CSO",
+  "fonction": "Trajectoire du saut : parabole arcY(H, L, x) = 4 H x (L − x) / L² sur la longueur et la hauteur du plan, phase du saut menée par le temps (jumpT) ; hauteur réelle = arc + levée 0,20 m + dégagement, utilisée pour juger chaque barre.",
+  "js": [
+   "src/gameplay/jumpModel.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/JumpModel.cpp:19 (arcY) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:341-363 (phase jumpT += dt / jumpDur, jumpY = 4 H τ (1 − τ), réception) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:438 (hauteur affichée = sol + jumpY) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:156-172 (clip de saut selon la vitesse)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Phase et hauteur du saut rejouées image par image (jumpT, jumpY, jumpPeak, jumpDur) dans les scénarios droit, bonne-zone et appui-10m (cso_runs/, test_core.cpp:497) : écart maximal 4,4e-16.",
+  "ecart": "Phase et hauteur identiques ; la hauteur réelle (arc + levée) sert depuis T3 à juger chaque barre au passage des épaules (cso.jugement-barres) ; dégagement toujours 0 dans le jeu Unreal (cheval.multiplicateurs) ; calage entre le clip animé et la parabole non vérifié (cheval.saut-animation).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.jugement-barres",
+  "domaine": "CSO",
+  "fonction": "Jugement en l'air (obstacles._judge) : chaque barre est jugée quand les épaules passent son plan, à la hauteur réelle de la trajectoire interpolée entre deux images ; marge < −0,06 m = barre tombée, une seule faute par élément, résultat annoncé à la sortie de l'obstacle (ou quand les postérieurs l'ont passé, 1,2 s au plus) ; cheval au sol au passage = cause 'short'.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:96-149 (judge = _judge), 59-78 (_finishPass), 231-321 (csoFencesUpdateHorse = updateHorse, résultat différé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:405-433 (TickCso : appel du cœur après le pas du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:459-472 (HandleFenceOut : événements du cœur vers le juge)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 55 mutations depuis le contrôle des remarques, 38 détectées, 17 déclarées non discriminées dans ATTENDUES (scripts/unreal/mutations-cso-fences.py) ; événements obstacle:clear / obstacle:fault à la même image, même obstacle, même sens, marge à 1e-6 (relevée en pleine précision), même cause (short, far, near) ; témoins : 64 images de résultat différé (membres jugés), marge juste sous −0,06 (t3-faute-limite, −0,0749 : faute) ; Strides.Parite.CsoFences (miroir dans le moteur) et Strides.Cso.FencesInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoFencesTests.cpp) : Result={Success} (sans-faute au 3 : obstacle:clear du cœur reçu par le parcours ; abord à 70° du 4A : jamais compté franchi ni en faute).",
+  "ecart": "Le jeu Unreal n'a pas de cheval WildMesh : il appelle le cœur avec les membres non jugés (résultat annoncé à la sortie des épaules), comme le jeu web en qualité « Économie » ou personnages « Classiques » ; en qualité par défaut, le web diffère l'annonce et ajoute les contacts des membres (cso.contact-membres). Branche « 1,2 s au plus » du résultat différé non exercée par un oracle (mutation 1,2 → 0,6 s non détectée : dans tous les scénarios les postérieurs passent 2,2 m avant). Cause 'angle' (marge du plan ≥ 0 sans cause) non exercée. Sons (bip de franchissement, faute) joués depuis T12 (cso.sons-parcours). Contrôle des remarques (20/11/2026) : branches non discriminées au-delà de la liste ATTENDUES d'origine, maintenant déclarées : cause « angle » (aucune faute à plan sans cause et marge ≥ 0), résultat précédent annoncé à l'abord suivant (aucun obstacle abordé pendant qu'un résultat attend), rayon de 12 m (équivalent sur le Pôle), état en l'air jt0, obstacle plein × 0,55 (aucun obstacle plein au Pôle).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.effleurement",
+  "domaine": "CSO",
+  "fonction": "Barre effleurée (marge entre −0,06 et +0,04 m) : la barre tinte et vibre sur ses taquets mais reste en place.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:136-141 (vibration demandée), 336-340 (décroissance 2,5 /s, rotation, levée) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:152-195 (RailMeshTransform, RailDisplayTransform, ApplyRails : barre exportée du jeu web affichée à la transformée du cœur)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 55 mutations depuis le contrôle des remarques, 38 détectées, 17 déclarées non discriminées dans ATTENDUES (scripts/unreal/mutations-cso-fences.py) ; t3-effleurement (marge −0,047) et t3-effleurement-haut (marge +0,026, juste sous +0,04) : vibration à la même image, transformée de la barre identique à chaque image jusqu'au repos, son railTouch demandé à la même image ; mutations du seuil 0,04 → 0,02, de la décroissance, de l'amplitude de rotation et de levée détectées.",
+  "ecart": "Son « tinte » (railTouch) joué depuis T12 (journal identique au web, cso.sons-parcours). Barre exportée du jeu web depuis T5. Vibration non vérifiée à l'écran par capture. Contrôle des remarques (20/11/2026) : seuil de vibration 0,04 non départagé contre 0,06 (aucune barre passée avec une marge entre 0,04 et 0,06 m ; t3-effleurement-haut : +0,026) ; déclaré dans ATTENDUES.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.contact-membres",
+  "domaine": "CSO",
+  "fonction": "Contact réel des membres (limbContact.js) : canon, paturon et sabot en capsules contre la barre (cylindre de rayon 0,05 m) dans le plan de l'obstacle, balayage en 6 positions entre deux images ; un membre qui touche fait tomber la barre du côté poussé et compte la faute (cause antérieurs ou postérieurs), pour le cheval WildMesh du joueur.",
+  "js": [
+   "src/gameplay/limbContact.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:201-228 (csoLimbContact = Obstacles.limbContact : barre tombée du côté poussé, faute, cause)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Effet d'un contact porté et compilé (UBT, ctest) ; aucun contact relevé dans les 26 scénarios de cso_runs/ (canal lc vide, y compris en qualité haute) : non comparé à un oracle.",
+  "ecart": "Détection des contacts (capsules des membres, balayage, pjlHorse.js / limbContact.js) non portée : elle exige la pose animée du cheval WildMesh ; le jeu Unreal appelle le cœur sans contacts ni membres jugés. Effet du contact (csoLimbContact) sans oracle : mutations « postérieurs → antérieurs », « barre déjà en chute non ignorée » et « profondeur minimale 0,05 » non détectées (canal lc vide), déclarées dans ATTENDUES de scripts/unreal/mutations-cso-fences.py.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.chute-barre",
+  "domaine": "CSO",
+  "fonction": "Chute d'une barre : un bout quitte son taquet puis l'autre, dans le sens du saut, élan réglé par la profondeur du contact, rebonds amortis puis roulement au sol ; antérieurs : chute immédiate, postérieurs : après 1,1 m ; une seule chute ; barres remises en début de manche (resetRails), hors mission quand le joueur s'éloigne, et obstacle emporté sur un refus remonté par le jury après 3 s.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:180-199 (csoKnock = knock), 164-178 (csoRestFence = _rest), 323-390 (csoFencesUpdate = update : chute, rebonds, glisse, roulement, inclinaison, remises) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:152-195 (RailTransform, RailMeshTransform, ApplyRails : une composante par barre du haut, maillage de la barre exporté du jeu web, tranche T5) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:474-491 (UpdateFences)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 55 mutations depuis le contrôle des remarques, 38 détectées, 17 déclarées non discriminées dans ATTENDUES (scripts/unreal/mutations-cso-fences.py) ; transformées des barres (position y, z, rotations x, z) comparées à chaque image au canal « rails » (69 300 comparaisons, écart ≤ 5e-7 = arrondi au millionième de l'oracle) et à l'état interne de chaque chute (bouts, vitesses, élan, roulement, fin) ; oxer : deux barres tombées, une seule faute (t3-oxer-loin) ; postérieurs : chute après 1,1 m (t3-posterieurs, t3-faute-limite) ; antérieurs : chute immédiate (t3-pres-montee) ; remise par le jury 3 s après un refus tout contre, cheval à plus de 5 m (t3-tout-contre-remonte) ; mutations de G, du rebond 0,28, de la glisse e^(−2,6 dt), du retard du 2e bout, de l'élan, de l'ordre des bouts, du roulement, de la fin à 0,5 s, de la borne de profondeur détectées ; Strides.Parite.CsoFences (miroir dans le moteur) et Strides.Cso.FencesInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoFencesTests.cpp) : Result={Success} : RailTransform vérifiée par la géométrie (bouts de la barre à 1e-6 cm), barre emportée affichée à la transformée du cœur à chaque image ; montages côte à côte unreal/docs/parite/cso/chute-barre-0_1s.png, chute-barre-0_3s.png, chute-barre-0_6s.png, chute-barre-1_5s.png (web à gauche, Unreal à droite, 844 × 390 chacun vérifiés par sips ; valeurs du cœur dans le journal Unreal identiques à celles du web : y 1,0673, z 0,111934, rx 2,238688, rz −0,017209 à 0,1 s) ; tranche T5 : poses de chute reprises avec l'état des obstacles relevé dans le jeu web (hauteurs de l'épreuve, n° surligné) et captures Unreal refaites avec la géométrie exportée (chandeliers, ailes, barres basses, jardinières, panneau du 3) ; Strides.Cso.FencesInGame : RailMeshTransform vérifiée par la géométrie (bouts de la barre exportée à 1e-6 cm), barre affichée = RailDisplayTransform du cœur à chaque image.",
+  "ecart": "Barres remises à l'entrée en piste (resetRails) : demandées par strides::CsoRun, appliquées par AStridesCourse (csoRestFence), sans oracle de barres pour ce cas. Remise hors mission à plus de 60 m portée mais non exercée (aucun oracle de barres hors mission). Rebond au seuil |vy| > 0,6 non exercé (mutation 0,6 → 0,4 non détectée : aucun impact entre 0,4 et 0,6 m/s pour des barres de 1,05 à 1,2 m). Barre en attente déclenchée par l'éloignement (> 8 m) non exercée. Sons railFall et thud joués depuis T12 (cso.sons-parcours). Sur les montages : cheval Unreal posé à la hauteur du saut mais dans une pose de clip non calée sur le saut (hors T3), teintes et ombres (rendu de bureau Metal). Contrôle des remarques (20/11/2026) : non départagés et déclarés : chute des barres en attente par éloignement (8 m), remontée des obstacles d'entraînement (2,5 s), remise hors mission (60 m). En jeu, AStridesCourse::UpdateFences passe désormais missionActive = épreuve du Pôle en cours (CsoRun non terminée), comme g.missions.active du web, au lieu de toujours vrai ; Strides.Cso.FencesInGame avance l'heure du monde et vérifie la remontée de la barre emportée plus de 3 s après le refus ET le cheval à plus de 5 m (au sol tant qu'il reste à moins de 5 m).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.refus-decision",
+  "domaine": "CSO",
+  "fonction": "Décision de refus (obstacles.updateHorse) : face à l'obstacle (part de marche vers lui > 0,3, vitesse > 0,5 m/s, dans la largeur), refus si le plan donne la zone refuse, ou marge < −0,30 m avec un appel trop près, ou vitesse < 3,2 m/s à moins de 1,5 m, ou abord à plus de 60° à moins de v²/16 + 0,3 m ; le cheval freine jusqu'à l'arrêt devant la face (nez à 1,6 m), le refus compte à l'arrêt ; tout contre, il emporte la barre (refus, pas faute de barre) ; un cheval qui glisse le long des barres est arrêté devant.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:231-321 (csoFencesUpdateHorse : décision, comptage à l'arrêt, barre emportée tout contre, garde-fou du nez, glissade) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:146-159 (csoRefuse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:405-433 (TickCso)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 55 mutations depuis le contrôle des remarques, 38 détectées, 17 déclarées non discriminées dans ATTENDUES (scripts/unreal/mutations-cso-fences.py) ; refus au freinage à 6,2 m/s (t3-refus-62, refus), lent (t3-refus-lent), oblique (t3-refus-oblique, abord à 66°), tout contre avec barre emportée (t3-refus-62, t3-tout-contre-remonte, refus), glissade au pas de fourmi (t3-glissade, 3 refus sur place) : même décision, même freinage, même arrêt, même cabré, même événement obstacle:refusal (sens) à la même image ; garde-fou du nez exercé sur 25 images ; mutations de la glissade (profondeur/2 + 0,1), du refus lent (1,5 m), du refus oblique (v²/16), du garde-fou (0,3 m par image), du seuil de la barre emportée (−0,24 → −0,4 m, discriminé par le refus lent tout contre de la fin de t3-refus-5s), de la remise (3 s, 5 m) et du sens du refus compté détectées ; Strides.Parite.CsoFences (miroir dans le moteur) et Strides.Cso.FencesInGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoFencesTests.cpp) : Result={Success} (abord à 70° : refus, cabré, obstacle:refusal du cœur ; refus tout contre au 3 : refus compté, barre emportée).",
+  "ecart": "Spécification corrigée : la barre emportée part dans le sens de la marche du cheval, pas vers lui (cso-spec.md §7.1). Hennissement (son) joué depuis T12 (cso.sons-parcours). Contrôle des remarques (20/11/2026) : sous-règles de csoApproachRefusal et de la décision de csoFencesUpdateHorse sondées par mutations (scripts/unreal/mutations-cso-horse.py, mutations-cso-fences.py). Exercées : refus lent (vitesse < 3,2 m/s à moins de 1,5 m : mutations 1,5 → 1,2 m et « 3,2 m/s ignoré » détectées), ideal ≤ L, part vers l'obstacle 0,3, vitesse 0,5 m/s. NON départagées par l'oracle (déclarées dans ATTENDUES) : clause « marge < −late avec ideal ≤ L » entière (aucun abord ne la déclenche avant la zone « refuse » ou le refus lent), rayon de 12 m (équivalent sur le Pôle), fenêtre de réception de 0,6 s (aucun saut ne retombe dans l'obstacle visé), état en l'air jt0 (aucun abord à l'image de la réception). Garde-fou du nez : appliqué par le web seulement au-dessus de 0,5 m/s (obstacles.js:444, 462-465) ; à l'arrêt le nez glisse encore (web : 0,708 m au-delà de la face dans t3-refus-62, à 0,15 m/s) ; Strides.Cso.HorseInGame vérifie la borne de 0,6 m au-dessus de 0,5 m/s et relève la valeur à l'arrêt.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.refus-unique",
+  "domaine": "CSO",
+  "fonction": "Un refus n'est compté qu'une fois tant que le cheval reste face au même obstacle : il doit se détourner, reculer à plus de profondeur / 2 + 6 m ou attendre 5 s avant qu'un nouveau refus compte.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoFences.cpp:80-94 (countRefusal = _count), 236-241 (détour : sens ou profondeur/2 + 6 m)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ (scripts/unreal/export-cso-runs.mjs, jeu web en cours d'exécution, canal « ch » : oe, ob, lc, he) rejoué en chaîne par unreal/core/tests/test_core.cpp (testFenceRuns : csoHorseStep, csoLimbContact, csoFencesUpdateHorse, csoFencesUpdate) : 14 scénarios requis sans recalage ni écart (t3-sans-faute, t3-oxer-loin, t3-pres-montee, t3-posterieurs, t3-effleurement, t3-faute-limite, t3-effleurement-haut, t3-refus-62, t3-refus-lent, t3-refus-oblique, t3-refus-5s, t3-glissade, refus, abord-61), plus les 11 autres scénarios du fichier (dont droit, bonne-zone, appui-10m, virage-en-lair, appel-pres en qualité haute, membres jugés : résultat différé) ; t3-tout-contre-remonte sans écart, recalé aux 13 images où le cheval frôle une aile (collisions du décor, non portées) ; écart maximal 1,1e-14 (barres), 0 (cheval) ; ctest 18853 vérifications, 0 échec ; 55 mutations depuis le contrôle des remarques, 38 détectées, 17 déclarées non discriminées dans ATTENDUES (scripts/unreal/mutations-cso-fences.py) ; t3-refus-5s : refus lents repris face au même obstacle toutes les 1,7 s non recomptés, refus repris 4,67 s après le précédent non recompté, refus repris 6,17 s après recompté (mutation 5 s → 3 s détectée) ; t3-glissade : 3 refus sur place, un seul compté ; détour (cheval qui tourne le dos ou s'éloigne de plus de profondeur/2 + 6 m) relevé à chaque image dans t3-tout-contre-remonte et comparé (mutations du sens et de la distance détectées).",
+  "ecart": "Effet du détour sur le recomptage non exercé : aucun scénario ne représente l'obstacle moins de 5 s après un détour (cabré de 1,1 s puis demi-tour sur les hanches à 0,8 rad/s au plus : environ 4,5 s pour tourner le dos puis refaire face, estimation à confirmer) ; mutation « détour ignoré » non détectée. Refus compté par le parcours (+4, cadence remise à 0, élimination au 2e) : T4. Contrôle des remarques (20/11/2026) : recomptage après détour toujours non couvert par l'oracle (seule la branche des 5 s l'est) : mutations « détour ignoré » et « distance du détour ignorée » non détectées (le seuil profondeur/2 + 6 → + 2 et le sens le sont), déclarées dans ATTENDUES. En jeu, Strides.Cso.FencesInGame (heure du monde avancée) vérifie la règle des 5 s : refus lent à 5 m moins de 5 s après le précédent, non recompté ; même abord plus de 5 s après, compté.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.refus-penalite",
+  "domaine": "CSO",
+  "fonction": "Refus compté seulement devant l'obstacle attendu et dans son sens : +4 points, refus dans un double (élément B) → reprise au A, cadence remise à 0 et consigne de demi-tour ; 2e refus = élimination (épreuve de CSO ; règles du cross : voir l'écart et cso.cross-regles).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (obstacleEvent, refus) ; règles extraites de courses.js dans Content/Data/cso_course_pole.json (run : pen, maxRefusals) ; cadence remise à 0 dans unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp (TickCso)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; t4-deux-refus : refus au 4B → reprise au 4A (astuce « Refus dans le double : reprends-le au 4A. »), deuxième refus → « 2e refus : éliminé du parcours. » / « 2nd refusal: eliminated from the course. », cadence nulle après chaque refus compté. Gardes (contrôle adverse de T4) : t4-gardes — refus au 1 avant le départ (abord à 66° de son axe, au-delà de la ligne et hors de sa largeur), refus au 3 quand le 1 est attendu, refus au 1 abordé par l'arrière (dir = −1) : aucun compté, ni toast, ni pénalité, ni astuce, ni cadence remise à 0, comme dans le jeu web ; testCsoRuns exige qu'au moins un événement de l'oracle exerce chacune de ces gardes (2 événements par garde : avant le départ, devant un obstacle non attendu, à rebours). Journal des fautes : entrée « refusal » comparée image par image (mutation « journal : refus absent » détectée).",
+  "ecart": "Gardes « après l'arrivée » (l'obstacle attendu n'existe plus : next = n + 1) et « après l'élimination » (écouteurs retirés dans la même image ; la garde d'étape du portage qui le reproduit est prouvée par t4-hors-parcours, saut pendant l'entrée en piste) redondantes par construction, dans le jeu web comme dans le portage : aucun oracle ne peut les distinguer ; règles du cross de courses.js (+20 par refus, élimination au 4e refus ou au 3e sur le même obstacle) NON PORTÉES : CsoRun ne construit que l'épreuve de CSO (`rg -n -i \"xc|cross\" CsoRun.cpp CsoRun.h` : aucune règle), hors tranche (a), voir cso.cross-regles ; nombre de refus réglable par épreuve (défi) : hors tranche.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.ordre-fautes",
+  "domaine": "CSO",
+  "fonction": "Obstacle attendu franchi dans son sens : passage au suivant (+4 si barre, une faute par élément) ; avant la ligne de départ aucun saut ne compte (consigne « franchis d'abord la ligne de départ ») ; mauvais obstacle : « Erreur de parcours : saute l'obstacle <attendu> (repère vert) », une fois par obstacle, sans pénalité.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (obstacleEvent, advance, notStarted, wrongCourse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (HandleFenceOut)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; t4-erreur-parcours : le 3 sauté avant le 1 → « Erreur de parcours : ce n’est pas le 1 » une seule fois (deuxième saut du 3 sans rien), puis le 1 franchi ; t4-saute-avant-depart : le 4A sauté avant la ligne → astuce « Le chrono n’est pas lancé… » 3 s, rien compté. Gardes (contrôle adverse de T4) : t4-gardes — le 1 puis le 3 sautés à rebours (dir = −1) : ni comptés, ni erreur de parcours ; le 1 sauté dans son sens ensuite : compté (prochain 2) ; t4-un-point — le 8 sauté pendant la sortie de piste, après l'arrivée (faute, dir = 1) : rien ; testCsoRuns exige au moins un événement de l'oracle par garde (2 événements par garde : à rebours de l’obstacle attendu, à rebours d’un autre obstacle, après l’arrivée, avant le départ).",
+  "ecart": "Aucun sur la règle et les textes. Repère vert de l'obstacle attendu : numéro surligné demandé par le cœur identique, image par image, au dernier numéro passé par le jeu web à Obstacles.highlight (relevé dans le canal « ep »), et affiché depuis T5 (AStridesCourse::SetHighlight, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:56-61, appelée par FlushRunCalls quand le déroulé change le numéro, ligne 350 ; voir cso.guidage-prochain) ; « Erreur de parcours » dessinée en toast par le HUD UMG depuis T7 (rendu : interface.toasts) ; garde « après l'élimination » redondante par construction (écouteurs retirés dans la même image), sans oracle possible.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.temps-accorde",
+  "domaine": "CSO",
+  "fonction": "Temps accordé = ⌈longueur / vitesse × 60⌉ avec 350 m/min (national), 375 (CSI), 400 (Grand Prix CSI 5*), 420 (cross amateur) ; parcours du Pôle 368 m → 64 s au national.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp (timeAllowedFor) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (BuildWith ; StartRunWith : temps accordé de l'objet run de cso_course_pole.json) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp (vitesses lues dans cso_course_pole.json)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json (timeAllowed des 4 niveaux) comparé par unreal/core/tests/test_core.cpp:205-206 ; StridesCoreTests.cpp:33 (64 s) réussi le 17/11 (validation-mac-2026-11-17.md) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/.",
+  "ecart": "Le jeu Unreal n'utilise que le niveau national à 1,10 m (StridesCourse.h:42-43) ; le web fixe le temps accordé par épreuve (classe, défi, Paris).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.penalites-temps",
+  "domaine": "CSO",
+  "fonction": "Pénalités de temps du barème A : 1 point par seconde entamée au-delà du temps accordé (⌈t − TA − 1e-9⌉, 0 en deçà).",
+  "js": [
+   "src/gameplay/challenge.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp (timeFaults) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (csoPoints / CsoRun::points : points en direct ; pénalités de fin de parcours : ceil(max(0, t − TA) − 1e-9))",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json : 59 cas timeFaults (temps accordés 45 / 56 / 59 / 64 s ; écarts −5 s, −1e-10, 0, 1e-12, 1e-10, 1e-8, 0,01 à 15 s ; 1 et 2 points par seconde) comparés par unreal/core/tests/test_core.cpp:210-222 ; les 56 cas à 1 point par seconde rejoués aussi par csoPoints (avec 0 et 8 points de fautes), la fonction de CsoRun::points qui compte les points du jeu depuis T4, et par CourseJudge::points (juge resté pour le cross, plus utilisé par le jeu pour le CSO) ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; mutations « pénalités de temps en direct supprimées » et « seconde entamée arrondie au plus proche » de csoPoints détectées (scripts/unreal/mutations-cso-run.py).",
+  "ecart": "Oracle de timeFaults tiré de challenge.js. La formule de l'épreuve est comparée directement au jeu web par le déroulé (testCsoRuns, cso_runs/) et non plus seulement à la lecture : courses.js:148 (hudInfo.pen) à chaque image, 28 409 tableaux dont t4-temps-limite au-delà du temps accordé et t4-un-point (64,57 s → 1 point) ; :341 par le texte du grand message à l'arrivée (« 1 POINT », « 4 POINTS ») ; :364 par state.timeFaults de l'état relevé. Les cas limites de la grille (−1e-10, 1e-12, 1e-8 s…) ne sont appliqués qu'à timeFaults et csoPoints, pas aux lignes de courses.js (images au pas de 1/30 s). Règle du cross dans cso.cross-regles.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.temps-limite",
+  "domaine": "CSO",
+  "fonction": "Temps limite : élimination au-delà du double du temps accordé (128 s pour 64 s), « Temps limite dépassé : éliminé. »",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (courseUpdate : t > 2 × TA)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; t4-temps-limite : cheval arrêté après la ligne, pénalités de temps en direct au-delà de 64 s, éliminé à 128,03 s (« Temps limite dépassé : éliminé. »), cloche double, bilan.",
+  "ecart": "Aucun sur la règle et le texte. Grand message dessiné par le HUD d'épreuve UMG depuis T7 (le HUD de débogage ne s'affiche plus qu'hors épreuve) : rendu à interface.grand-message ; limite propre aux défis (timeLimit) non portée, comme les défis eux-mêmes (cso.defi-deroule).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.elimination-descente",
+  "domaine": "CSO",
+  "fonction": "Cavalier descendu de cheval pendant l'épreuve : « Tu es descendu de cheval : éliminé. »",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp (RunFrame : cavalier en selle ou non, lu à chaque image) → unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (courseUpdate) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp (Dismount, plus d'appel au parcours)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; t4-descente : ACTION « Descendre » après la cloche, avant le départ → « Tu es descendu de cheval : éliminé. » ; test moteur Strides.Cso.RunInGame : AStridesRider::Dismount pendant le parcours → éliminé à l'image suivante : Result={Success}.",
+  "ecart": "Aucun sur la règle et le texte. Conditions de la descente, hors de cette ligne : le portage la refuse seulement pendant un saut (StridesRider.cpp) et la permet à toute vitesse (monte.interaction-descendre), le web ne la propose que sous 2,5 m/s : une descente au galop élimine dans le portage alors qu'elle n'est pas possible dans le web ; séquence animée du web (horseMount.js : arrêt puis descente) non portée (monte.sequence-descente) : l'élimination suit l'appel à Dismount.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.elimination-affichage",
+  "domaine": "CSO",
+  "fonction": "Élimination : cloche à deux coups, « ÉLIMINÉ » en grand avec le motif pendant 2,6 s ; épreuve avec classement (souple) : le parcours s'arrête et le bilan suit, sinon échec de la mission.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (out : bell(2), big(ÉLIMINÉ, motif, 2600), épreuve souple → bilan) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (journal, OnCourseEvent) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} (appels et suite des étapes : bilan après l'élimination).",
+  "ecart": "Grand message « ÉLIMINÉ » et motif rendus par le HUD d'épreuve UMG (tranche T7, montage unreal/docs/parite/cso/hud-elimine-844x390.png et -667x308.png ; police du moteur) ; cloche double jouée depuis T12 (bell(2), cso.sons-parcours) ; carte de bilan « Éliminé » portée en T11 (cso_result.json ; canal « bl » de t4-deux-refus, t4-descente, t4-temps-limite) ; échec de mission des épreuves non souples porté sans oracle.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.ligne-depart",
+  "domaine": "CSO",
+  "fonction": "Chrono lancé au franchissement de la ligne de départ dans son sens (cap à moins de 60°) entre les fanions (demi-largeur 3,8 m pour une ligne de 7 m), avec un bip ; départ lancé : déjà au-delà de la ligne (moins de 12 m) et dans le bon sens à la cloche → chrono lancé aussitôt ; chrono au centième.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (lineCrossed, départ lancé au début du parcours) ; lignes CSO_START / CSO_FINISH exportées de obstacles.js (Content/Data/cso_course_pole.json, run)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; « droit » et t4-sans-faute : bip à l'image où la ligne est franchie ; t4-depart-lance : cheval 4 m au-delà de la ligne à la cloche → chrono lancé au début du parcours, bip, astuce 5 s ; t4-lignes : ligne franchie à 70° de son axe puis à 3,95 m du milieu (rien), puis à 3,65 m (chrono lancé) ; test moteur Strides.Cso.RunInGame : ligne franchie par le cheval réel → chrono lancé. Second contrôle adverse (conditions du départ lancé, courses.js:274) : cheval posé à l'arrêt à la cloche, lu à l'ouverture du parcours — s = 11,8 m, u = 3,7 m, cap à 55° de l'axe (t4-lance-limites) et s = 0,2 m, u = −3,7 m, cap à −55° (t4-lance-limites-gauche) : chrono lancé ; s = 12,2 m (t4-lance-loin), |u| = 3,9 m (t4-lance-large), cap à 62° (t4-lance-cap), s = −0,2 m (t4-lance-derriere) : pas lancé ; testCsoRuns exige qu'au moins une ouverture exerce chaque condition seule en défaut, à moins de 0,5 m (0,1 en cosinus) de sa limite, et un départ accordé près des limites ; mutations détectées : 12 → 40 m, 12 → 11,5 m, 0 → −1 m, 0 → 0,5 m, largeur ignorée, marge 0,3 → 0, côté gauche non borné, cap ignoré, cap 60° → 53°.",
+  "ecart": "Bip joué depuis T12 (tone 1568, cso.sons-parcours) ; lignes affichées avec la géométrie du jeu web (T5, cso.obstacles-habillage).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cloche",
+  "domaine": "CSO",
+  "fonction": "Cloche après l'entrée en piste : « CLOCHE · Tu as 45 s pour franchir la ligne de départ » ; au-delà de 45 s le chrono part de lui-même (« 45 s écoulées : le chrono est lancé »).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (étape Bell, courseUpdate : décompte BELL_DELAY exporté)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; t4-cloche : cheval arrêté 16 m avant la ligne, chrono lancé au bout de 45 s avec le toast « 45 s écoulées : le chrono est lancé » / « 45 s up: the clock has started », sans bip ; « CLOCHE » / « BELL » 2 s dans tous les scénarios.",
+  "ecart": "Aucun sur la logique et les textes. Grand message dessiné par le HUD d'épreuve UMG depuis T7 (le HUD de débogage ne s'affiche plus qu'hors épreuve) : rendu à interface.grand-message (police du moteur) ; montages hud-cloche-* (HUD de l'oracle rejoué) et entree-4-cloche-* (appels hud.* de l'exécution web t9-recette rejoués dans le widget : voir cso.entree-piste) ; la seule cloche produite en image par le déroulé du jeu est jeu-2-cloche.png (partie réelle, sans côte à côte). Son bell joué depuis T12 (journal identique au web : cso.sons-parcours ; rendu sonore : audio.concours).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.entree-piste",
+  "domaine": "CSO",
+  "fonction": "Entrée en piste : rejoindre à cheval l'entrée de la carrière (rayon 9 m), puis annonce « N° <dossard> · <joueur> et <cheval> » (dossard 40 à 89), applaudissements, hauteurs posées et barres remises, obstacle 1 mis en évidence, caméra et commandes de concours dès l'entrée.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:110-117 (tranche T10 : lancement de l'activité, grand message et son « notify », CsoRunConfig::launch) ; CsoRun.cpp (étapes Goto, Entrance : rayon 9 m à cheval, dossard, annonce, applaudissements, barres remises, n° 1 surligné, mode concours) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:173-205 (StartActivity, tranche T10 : CsoRunConfig::launch, grand message de csoActivityLaunchBig, contrôle de capacité) ; StridesCourse.cpp:141-154 (StartRun : lancement direct des tests et outils, présentation validée d'office) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesActivityPost.cpp:1-46 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:487-522 (action du poteau : activité lancée par le joueur) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:91-115 (rien de lancé au démarrage, poteau posé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:336-388 (entrée en piste : hauteurs de l'épreuve posées par ApplyHeights, barres remises, numéro surligné suivi du déroulé) ; StridesCourse.cpp:18-36 (hors épreuve : csoHeights(base) du manifeste)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; annonce « N° 40 · Test » / « et Comète » 2,4 s, applause(0.5, 2.2) ; test moteur Strides.Cso.RunInGame : entrée rejointe à cheval, annonce, cloche. Étape « rejoindre l'entrée de la carrière » (contrôle adverse de T4) : unreal/core/tests/oracles/cso_goto.json — étape goto du jeu web (g.missions.active.steps[0]) évaluée telle quelle sur 52 points × 4 modes du joueur (à pied, à cheval, au volant du camion, au volant d'un autre véhicule), en français et en anglais : distances autour de 9 m (rayon strict), 39 et 45 m (seuil max(45, r + 30)), arrondi à la dizaine (54,99 / 55 / 64,99 / 65 m), 994,99 m (« 990 m »), 995 m (« 1000 m »), 1 000 m et au-delà (« 1,0 km »… « 15,0 km ») ; testCsoGoto : 416 cas, 0 écart ; t4-entree — cheval posé à 127, 64, 46 puis 30 m de l'entrée (« · 130 m », « · 60 m », « · 50 m », puis sans distance), pied à terre (« Monte sur ton cheval (siffle-le si besoin). », étape non validée même cavalier à 4 m), au volant du camion (« · 530 m », puis « Sors du camion puis monte à cheval. », non validée camion à 5 m), en selle, cheval posé à 5 m : validée, présentation, entrée en piste, cloche ; barres remises (Obstacles.resetRails) et 1 surligné à l'entrée en piste comparés à l'image près ; tranche T5, test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:225-439 (Strides.Parite.CsoScenery) : hauteurs hors épreuve = strides::courseHeights(1,15) = hauteurs relevées dans le jeu web avant le lancement de l'activité (1,10 1,15 1,15 1,10 1,15 1,15 1,15 1,15 1,15 1,20) ; après l'entrée en piste et la cloche, profil de CourseHeight = base 1,10 relevée = hauteurs relevées après l'entrée en piste (1,05 1,10 1,10 1,05 1,10 1,10 1,10 1,10 1,10 1,15), pièces de chaque obstacle refaites à ces hauteurs, n° 1 surligné ; tranche T10 : lancement de l'activité (grand message « PARCOURS DU PÔLE » / « Événement · Entraînement » 2,6 s, clearHint, son notify de missions.start ; données Content/Data/cso_activity.json, csoActivityLaunchBig) comparé aux appels du lancement relevés dans 56 exécutions de cso_runs/ (testCsoRuns). Tranche T10 : activité lancée par l'action du joueur au poteau (touche E, cheval monté 4 m au sud de l'entrée) : grand message « PARCOURS DU PÔLE » / « Événement · Entraînement » 2600 ms et notify émis par le jeu, présentation, « Entrer en piste », annonce « N° … · Alex / et Comète » (2400 ms), cloche (tests moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoEntryTests.cpp:109-230 (Strides.Cso.Entry) et :232-289 (Strides.Cso.EntryDialog), Result={Success} le 20/11/2026) ; annonce du dossard à la 28e image après « Entrer en piste » (tests/e2e/cso.mjs:59-63 lit le grand message après tick(2) puis tick(28), soit 30 images : même texte, message de 2 400 ms) : montages unreal/docs/parite/cso/entree-3-annonce-844x390.png et -667x308.png (web : exécution t9-recette rejouée ; Unreal : appels hud.* de la même exécution web rejoués dans le widget, « N° 40 · Test » / « ET COMÈTE » est le texte du web : voir l'écart) ; démonstration -StridesShots (activité lancée au poteau, carte validée) : « 60,34 / 64 s 0 pt Arrivée ✓ » ; scripts/unreal/mutations-cso-entry.py (cœur) ; les mutations du module de jeu de T10, faites en session sans script versionné, ne sont pas rejouables et ne comptent pas comme preuve (voir cso.presentation).",
+  "ecart": "Commandes de concours toujours actives hors épreuve (bCsoControls) ; joueur et langue d'une sauvegarde neuve (« Alex », fr) ; consigne « au volant » (camion, véhicule) portée et prouvée par la grille, mais le jeu Unreal n'a ni camion ni véhicule conduit (driving toujours faux) ; distance calculée comme Math.hypot de V8 (jsHypot, StridesCore/MathUtil.h : std::hypot donnait 994,99999999999989 au lieu de 995 sur la grille, d'où « 990 m » au lieu de « 1000 m ») ; Math.hypot de Safari non comparé (à confirmer). Tranche T10 : bandeau d'objectif du lancement (setObjective) et cible GPS non rendus ; sur les montages entree-3-annonce et entree-4-cloche, le décor diffère (arche « ENTRÉE DE PISTE » mal convertie côté Unreal : panneaux de bois inclinés, cheval gris au lieu de bai, tenue du cavalier) : écarts du monde et du cheval, hors de cette ligne ; ces captures sont antérieures à C1 (4b62c5f5) : le jeu engage depuis le cheval bai de la sauvegarde (cheval.robes), montages non refaits ; HUD de ces deux montages : appels hud.* enregistrés de l'exécution web t9-recette rejoués par StridesCsoHudReplay::Run puis figés par SetFrozen (StridesShots.cpp:725, 823) : « N° 40 · Test » est le texte du web rendu par le widget Unreal ; le dossard propre au jeu (40 + ⌊temps⌋ mod 50, CsoRun.cpp:204) n'apparaît sur aucun montage ; la logique de l'annonce est prouvée par testCsoRuns (appels identiques) et par Strides.Cso.Entry, qui ne contrôle que le début « N° » et la fin « · Alex / et Comète » du texte, pas le numéro ; état du HUD rejoué identique au DOM du web sauf le texte initial du tableau caché (« 0,00 » posé par hud.js:74 à la construction, chaîne vide dans le modèle du cœur ; invisible, tableau masqué).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.capacite-cheval",
+  "domaine": "CSO",
+  "fonction": "Avant l'entrée en piste, l'entraîneur prévient si aucun appel (galop 6,2 / 7,0 / 7,8 m/s, de 0,6 à 5 m) ne franchit sans faute l'un des obstacles avec ce cheval et cet équipement : « tu plafonnes vers X m ».",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoEntry.cpp:168-211 (csoCapacity : grille v × d, portée, texte du dialogue) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:193 (étape Capacity : dialogue demandé, attente de sa fermeture) ; tranche T10, jeu : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:173-205 (StartActivity : obstacles posés hors épreuve, hauteurs de l'épreuve, puissance du cheval du joueur, bonus 0), :229-236 (AdvanceDialog) et :314-318 (appel « dialog ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScreens.cpp:851-963 (dialogue affiché) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:295-337 (simulation suspendue, commandes gelées, action qui ferme le dialogue)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_entry.json : étape de capacité de courseSteps appelée dans la page du jeu web (cheval du joueur remplacé : puissance 0,8 à 1,6, bonus de franchissement 0 / 0,04 / 0,1 ; hauteurs csoHeights(1,05 à 1,55) ; parcours de cross ; cheval absent ; compositions réduites ; et, pour 6 hauteurs × 3 bonus et 2 compositions, les deux bords du seuil de puissance cherché par dichotomie dans le jeu, à 2⁻⁵⁰ près) : 406 contrôles (156 dialogues) identiques au portage — étape présente, dialogue affiché ou non, qui, initiales, texte (hauteur maximale et portée au centième), drapeau de l'étape, attente puis validation après la fermeture — et rejoués par le déroulé CsoRun (dialogue demandé, étape tenue, présentation ensuite) (unreal/core/tests/test_core.cpp:1264, testCsoEntry) ; scripts/unreal/mutations-cso-entry.py : 16 mutations de la capacité et du déroulé détectées sur 20, les 4 autres déclarées (ATTENDUES). Jeu (tranche T10) : Strides.Cso.EntryDialog (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoEntryTests.cpp:232-289, Result={Success} le 20/11/2026) : cas de l'oracle aux hauteurs de l'épreuve (Comète, puissance 0,8) lancé par le jeu : dialogue (qui, initiales, texte) identique à l'oracle, affiché par le widget (« EN », « ENTRAÎNEUR », « TOUCHER POUR FERMER », texte), simulation suspendue (cheval immobile touche W tenue), étape tenue, fermé par la touche E, présentation ensuite ; mutation « action sans fermeture du dialogue d'abord » détectée (module, en session).",
+  "ecart": "Dans le jeu, puissance = jumpPeak × saut du profil (sans équipement ni état) et bonus de franchissement toujours 0 (cheval.multiplicateurs) : avec Comète au Pôle, le dialogue ne s'affiche pas (comme le web avec ce cheval) ; montré par le test avec une puissance de l'oracle. Dialogue : mise en page relevée pour le texte de référence (hauteur fixe, ancré en bas), police du moteur, clic sonore d'advanceDialog joué depuis T12 (click, ui/hud.js, AStridesPlayerController::DoAction ; câblage non exercé par un test), clignotement de « Toucher pour fermer » non porté, aucune capture côte à côte du dialogue. Sous-branches non départagées (seuil de puissance inchangé au bit près, mutations-cso-entry.py ATTENDUES) : galop de 6,2 m/s, appel à 0,6 m, appels au-delà de 4 m, appel en zone de refus (barre avant à moins de 0,55 m) ; l'appel décisif est au galop de 7,8 m/s à distance intermédiaire.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.presentation",
+  "domaine": "CSO",
+  "fonction": "Présentation de l'épreuve : barème (A au chrono), hauteur et difficulté (Facile sous 1,08 m, Moyenne sous 1,18, Difficile sous 1,35, sinon Très difficile), cheval engagé, temps accordé, composition « 8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 m », texte du jury, règles, boutons Voir le plan et Entrer en piste.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/csoCourse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoEntry.cpp:91-164 (csoClassHeight, csoDifficultyKey, csoParcoursText, csoPresentation, csoPlanCard) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (étape Presentation : attente de « Entrer en piste ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:207-227 (PressScreenButton : Voir le plan, Retour, Entrer en piste), :238-272 (contenu des cartes), :381-387 (carte ouverte au début de l'étape) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScreens.cpp:429-849 (UStridesCsoScreens::BuildCard : voile flouté, carte, corps défilable, grille, règles, barre d'actions, boutons aux boîtes relevées) ; unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesCsoScreens.h ; Content/Data/cso_screens_style.json (scripts/unreal/export-cso-entry.mjs --screens)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/core/tests/oracles/cso_entry.json (scripts/unreal/export-cso-entry.mjs : courseSteps de courses.js appelé dans la page du jeu web avec les vraies étapes de mission, 21 configurations : hauteurs csoHeights(base) de part et d'autre des seuils 1,08 / 1,18 / 1,35, hauteurs à égalité d'effectif, opts.height, sans hauteurs, sans double, un double, deux doubles, classe, barème, lieu, jury, règles, titre, temps accordé, longueur, cheval absent ou renommé ; arguments de screens.card et DOM de la carte relevés, « Voir le plan », « Retour », « Entrer en piste » contrôlés par l'export ; français et anglais) : 42 cartes de présentation (kicker, titre, HTML reconstruit, grille clé / valeur, jury, règles, boutons) et 42 cartes du plan identiques au portage (unreal/core/tests/test_core.cpp:1264, testCsoEntry), 4 niveaux de difficulté exercés ; scripts/unreal/mutations-cso-entry.py : 14 mutations de la présentation (seuils, tri des hauteurs, opts.height, minuscules, composition, paire, lieu, cheval absent, jury, règles, longueur), toutes détectées. Jeu (tranche T10) : Strides.Cso.Entry (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoEntryTests.cpp:109-230, Result={Success} le 20/11/2026) : carte ouverte par le déroulé après l'action du poteau ; contenu (kicker, titre, grille, règles, boutons) identique au DOM du web du cas cso_train (cso_entry.json), affiché par le widget (Describe), boîtes de la carte et des boutons à celles du relevé ; simulation suspendue et commandes gelées tant que la carte est ouverte (cheval immobile touche W tenue ; P, M, Échap et E sans effet) ; Voir le plan, Retour, Entrer en piste ; montages côte à côte unreal/docs/parite/cso/entree-1-presentation-844x390.png et -667x308.png (web à gauche : capture 1-presentation de la recette tests/e2e/out/cso/ en 844 × 390, capture de l'exécution t9-recette rejouée en 667 × 308 ; Unreal à droite : rendu Metal, carte ouverte par le déroulé après l'action du poteau, relevé unreal/docs/parite/cso/entree-unreal.json) : carte comparée au DOM du web à la capture (identique) pour les 4 poses qui ont une carte (entree-1 et entree-2, deux viewports ; entree-3 et entree-4 n'en ont pas) ; le champ « gestures » du relevé est vide pour les 8 poses (le relevé est recréé à chaque rappel d'ApplyPose et ne garde que le dernier passage) : les gestes faits (action du poteau, Voir le plan, Retour, Entrer en piste) ne sont visibles que dans le journal, non versionné. Mutations du module faites en session en T10 (source muté, éditeur recompilé, Strides.Cso.Entry relancé, source restauré) : « carte sans simulation suspendue », « carte jamais ouverte », « Entrer en piste sans valider l'étape », « poteau proposé malgré une mission en cours » notées détectées, sans script versionné : non rejouables, elles ne comptent pas comme preuve.",
+  "ecart": "Logique et textes prouvés identiques par oracle ; état partiel pour le rendu : police du moteur au lieu de Geist (lignes un peu plus étroites) ; mise en page relevée en français pour Comète (844 × 390 et 667 × 308, carte centrée au viewport) : un texte plus long (anglais, autre cheval, jury) n'est pas remis en page ; animation d'apparition de l'overlay non portée ; ombre de la barre d'actions : le trait sombre des ombres de bord de la boîte défilante Slate est retiré au contrôle adverse de T11 (seule reste l'ombre claire de la classe more, suivie au défilement ; captures entree-1-presentation-667x308 et entree-2-plan refaites) ; fond : sur les montages 844 × 390, le PNG de la recette montre une autre vue (caméra pas encore revenue sur le cheval : écart moyen 10,85 / 255 entre ce PNG et la capture de l'exécution rejouée, vue que pose Unreal) ; aucun son sur les boutons de carte (le web n'en joue pas : screens.js, aucun click au canal « audio » aux images « in.ui » de cso_runs/).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.plan-parcours",
+  "domaine": "CSO",
+  "fonction": "Plan du parcours (SVG) dessiné depuis le tracé : carrière (Pôle 120 × 76 m ou arène de Paris 86 × 46 m), ligne du cavalier, obstacles numérotés (vertical une barre, oxer deux, mur un bloc), doubles, lignes de départ et d'arrivée, entrée et tribunes, nord en haut, hauteurs ; légende « 1 vertical · 2 oxer · … », longueur et temps accordé.",
+  "js": [
+   "src/ui/coursePlan.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CoursePlan.cpp:73-160 (coursePlan : primitives du plan, chacune avec son élément SVG exact et sa géométrie relue dans ses attributs ; coursePlanSvg ; coursePlanLegend) ; unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/CoursePlan.h ; jeu (tranche T10) : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScreens.cpp:27-262 (UStridesCoursePlanView, SStridesCoursePlan::OnPaint : viewBox mis à l'échelle, xMidYMid meet, rectangles arrondis, traits et extrémités rondes, pointillés mesurés le long du tracé, triangles pleins, disques, textes sur leur ligne de base) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:258-272 (PlanCard, Plan : tracé local du design non décalé, carrière et tribunes des données)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/core/tests/oracles/cso_plan.json (scripts/unreal/export-data.mjs : coursePlanSvg et coursePlanLegend de src/ui/coursePlan.js appelés tels quels pour csoHeights(1,05 / 1,10 / 1,15 / 1,25 / 1,40 / 1,55), sans hauteurs et avec 4 numéros surlignés, en français et en anglais) : 24 sorties identiques caractère pour caractère au portage (unreal/core/tests/test_core.cpp:1202-1257, testCoursePlan ; tracé lu dans Content/Data/cso_course_pole.json comme le jeu, carrière et tribunes des données), 1 410 primitives ; cartes du plan de 21 configurations de courseSteps × 2 langues relevées dans le jeu web (unreal/core/tests/oracles/cso_entry.json : HTML de la carte = SVG + légende + temps accordé) identiques (testCsoEntry) ; scripts/unreal/mutations-cso-entry.py : 20 mutations du plan (marges, entrée, tribunes, pointillés, lignes, oxer, mur, surlignage, flèche, pastille, hauteurs, extrémités, légende), toutes détectées. Jeu (tranche T10) : Strides.Cso.Entry : élément svg de la carte du plan ouverte dans le jeu identique au caractère près à celui de la carte du web (args.html de cso_entry.json), légende, kicker, titre, bouton Retour identiques au DOM ; montages unreal/docs/parite/cso/entree-2-plan-844x390.png et -667x308.png (web : capture 2-plan de la recette en 844 × 390) ; à la capture, comptes de la vue Slate (3 rect, 16 line, 2 polyline, 10 path, 10 circle, 24 text) égaux à ceux du SVG du web (entree-unreal.json) : ils comptent les itérations de la boucle de SStridesCoursePlan::OnPaint (Count appelé même quand un triangle n'est pas émis), pas les primitives effectivement dessinées ; la preuve du dessin est le montage.",
+  "ecart": "Logique prouvée caractère pour caractère ; rendu partiel : police du moteur pour les textes du plan, contour des rectangles tracé en segments (arcs de 6 segments), pointillés et traits sans anticrénelage identique au navigateur ; plan non défilable au doigt (corps défilable relevé, sans geste) ; arène de Paris (venue « paris », mission finale) non portée.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.trace-pole",
+  "domaine": "CSO",
+  "fonction": "Tracé du Pôle (traceCourse de CSO_DESIGN) : ligne du cavalier échantillonnée tous les 0,5 m, abord depuis l'entrée (leadIn), départ, 8 obstacles numérotés et 10 sauts (double 4A – 4B à 11,4 m, double 6A – 6B à 7,8 m, oxers de 1,2 à 1,5 m d'écart, mur au 5), arrivée ; longueur 368,44 m (368 m retenus).",
+  "js": [
+   "src/gameplay/csoCourse.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:51-70 (poleDesign), 13-49 (courseDesignFromJson, parseCourseFile : lecture du tracé exporté), 72-111 (traceCourse) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:121-146 (le jeu lit Content/Data/cso_course_pole.json par strides::parseCourseFile) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:40-45 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:18-36, 121-125",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json (régénéré par scripts/unreal/export-data.mjs, clé design = CSO_DESIGN complet) : unreal/core/tests/test_core.cpp:134-150 (checkDesign : départ, 28 commandes, profil) et :154-188 (checkTrace : longueur, 10 obstacles libellé / nature / écart / x / z / cap / s, repères départ et arrivée x / z / cap / s, un point sur 25 avec le cap, les 35 points de l'abord, hauteurs) appliqués à poleDesign() ET au tracé lu dans Content/Data/cso_course_pole.json par parseCourseFile, la fonction du jeu (:192-198) ; fichier altéré (une commande F 11 → 11,1) : 42 échecs (contrôle de mutation du 18/11/2026) ; ctest du 18/11/2026 : 8 022 vérifications, 0 échec ; Strides.Parite.Cso (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:154-223 : même lecture dans le moteur, obstacles et repères comparés à l'oracle) Result={Success} le 18/11/2026 ; décalage monde : la ligne de départ du web en cours d'exécution (cso_runs/, setup.start, CSO_START de obstacles.js) = repère du tracé + centre de carrière de Content/Data à 2e-6 près (unreal/core/tests/test_core.cpp:290-396, testRuns).",
+  "ecart": "Tronçons (segs) non portés (utiles à l'aide de tracé et au lint, eux-mêmes absents) ; la conversion monde du module de jeu (AStridesCourse, StridesWorldDirector : arène + tracé, cm) n'est pas testée, seul le décalage des données l'est.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.hauteurs-profil",
+  "domaine": "CSO",
+  "fonction": "Hauteurs d'une épreuve de hauteur h : h + profil (obstacles 1 et 4A −5 cm, 8 +5 cm), arrondi au centimètre.",
+  "js": [
+   "src/gameplay/csoCourse.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp (courseHeights) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (BuildWith) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:18-47 (hauteurs hors épreuve csoHeights(1,15) puis de l'épreuve, ApplyHeights)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json (heights110) comparé par unreal/core/tests/test_core.cpp:185-186 ; depuis T10, cso_plan.json : courseHeights = csoHeights du web pour 6 bases (unreal/core/tests/test_core.cpp:1224) ; unreal/core/tests/test_core.cpp recompilé hors dépôt (-Werror) et rejoué le 18/11/2026 sur HEAD 5837a02e : 4 944 vérifications, 0 échec ; oracles régénérés depuis le JS actuel avec scripts/unreal/export-data.mjs (sortie dans le scratchpad) identiques octet pour octet à unreal/core/tests/oracles/ ; tranche T5, test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:225-439 (Strides.Parite.CsoScenery) : strides::courseHeights(1,15) et (1,10) égales aux hauteurs relevées dans le jeu web hors épreuve et en épreuve (manifeste Content/World/Cso/cso_fences.json).",
+  "ecart": "Aucun sur la fonction. Hauteurs 1,10 m (épreuve) et 1,15 m (hors épreuve) vérifiées par cso_course.json ; depuis T10, courseHeights est aussi comparé à csoHeights du web pour les bases 1,05, 1,10, 1,15, 1,25, 1,40 et 1,55 (cso_plan.json, unreal/core/tests/test_core.cpp:1224, testCoursePlan) ; le jeu Unreal n'utilise que 1,10 et 1,15 (missions d'histoire à 1,40 et 1,55 non portées).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-geometrie",
+  "domaine": "CSO",
+  "fonction": "Obstacles jugés : vertical (une barre), oxer (deux barres, l'avant 5 cm plus bas, écart 1,2 m par défaut), mur ; largeur 3,8 m en CSO ; axe de saut n = (sin rot, cos rot), axe des barres t = (cos rot, −sin rot) ; posés au sol du relief ; faces avant / arrière et profondeur servant au refus et au jugement.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:21-49 (Setup, SetHeight : strides::makeCsoObstacle, acteur posé au sol du relief et tourné de rot) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:35-59 (makeCsoObstacle : barres, écart par défaut, faces)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Code relu conforme à obstacles._bars et add() pour les barres et les axes ; aucun test sur AStridesFence ; test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:225-439 (Strides.Parite.CsoScenery) (tranche T5) : pivots des pièces de chaque obstacle, posés par l'acteur depuis le tracé du cœur et le relief, à 0,0001 cm des pivots relevés dans le jeu web (axes n / t, sol, cap), hors épreuve et en épreuve ; barres du haut du relevé (oxer : avant à s = −spread/2 et h − 0,05, arrière à +spread/2 et h ; mur : h − 0,05) à la position de repos du cœur.",
+  "ecart": "Faces avant / arrière, profondeur et écart par défaut de 1,2 m portés dans strides::makeCsoObstacle (CsoHorse.cpp:47-56), non vérifiés par le test de T5 (jugement et refus : voir cso.refus-decision, cso.jugement-barres).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-habillage",
+  "domaine": "CSO",
+  "fonction": "Habillage des obstacles de concours : barres en bois peint (palette par obstacle), chandeliers et ailes, jardinières au pied des ailes, fanions réglementaires (rouge à droite, blanc à gauche), lignes de départ et d'arrivée avec cellules sur trépied, ligne de sciure au sol et panneaux DÉPART / ARRIVÉE.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:63-106 (BuildExported : une composante par pièce du manifeste à la hauteur de l'obstacle, barres du haut à part, panneau numéro) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:63-119 (BuildProps, RefreshPropSigns : lignes de départ et d'arrivée posées par les lignes du déroulé, panneaux DÉPART / ARRIVÉE selon la langue, poteau « Chrono ») ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScenery.cpp:67-177 (lecture du manifeste et de cso_assets.json, PieceRelative, PieceWorldWeb) ; scripts/unreal/cso-export.js ; scripts/unreal/import-cso-fences.py ; unreal/StridesGrandTour/Content/World/Cso/",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "géométrie construite par le jeu web lui-même dans la page en cours d'exécution (scripts/unreal/export-cso-runs.mjs --fences, scripts/unreal/cso-export.js : classe Obstacles, showJumpGeo, railGeo, flagsGeo, planterGeo, _timingLine, poteau de activities.js sur un jeu témoin ; chaque primitive relevée à sa création et à sa peinture, découpée en pièces) ; construction témoin comparée au jeu réel au bit près (sommets et couleurs de chaque maillage, hauteurs, sol) hors épreuve (avant le lancement de l'activité) et en épreuve (après l'entrée en piste), lignes et poteau compris ; deux exports consécutifs identiques à l'octet (GLB et manifeste) ; manifeste unreal/StridesGrandTour/Content/World/Cso/cso_fences.json (10 obstacles, 95 maillages uniques, 14 textures, 30 560 triangles par état) ; import Unreal (scripts/unreal/import-cso-fences.py) : boîtes englobantes des 95 maillages importés égales à celles du manifeste à 0,0001 cm (repère x → X, z → Y, y → Z vérifié) ; test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:225-439 (Strides.Parite.CsoScenery) : Result={Success} — pour chaque obstacle, hors épreuve et en épreuve, nombre de pièces par catégorie identique au relevé (vertical : 2 chandeliers, 2 ailes, 1 barre, 2 barres basses, 6 taquets, 1 remplissage, 2 jardinières, 4 fanions, 1 panneau ; oxer : 4 chandeliers, 4 ailes, 2 barres, 2 barres basses, 8 taquets ; mur : bloc, couvertine, 2 piliers, 2 fanions, barre, panneau), 225 pièces par état, maillage du relevé sur chaque composante, pivot monde posé par l'acteur (tracé du cœur, relief) à 0,0001 cm du pivot relevé dans le jeu web, boîte englobante centrée sur ce pivot à 0,0001 cm, barycentre des sommets de son maillage (qui fixe l'orientation) au barycentre monde relevé à 0,0001 cm ; lignes (poteaux, fanions, 6 pieds de trépied, 2 cellules, ligne de sciure, panneau) et poteau (mât, panneau) : 30 pièces, mêmes contrôles ; montages côte à côte unreal/docs/parite/cso/carriere-aerienne.png, ligne-depart.png, ligne-arrivee.png, poteau-chrono.png (web à gauche, Unreal à droite, 844 × 390 chacun vérifiés par sips ; même œil, cible, FOV vertical converti en horizontal, soleil de 15 h, état d'épreuve relevé dans le jeu web : hauteurs et n° 1 surligné) ; mutations du jeu faites en session (source modifié, éditeur recompilé, test relancé, source restauré ; script non versionné) : axe x local des pièces inversé (pivots à 700 cm), hauteurs hors épreuve non posées, hauteurs de l'épreuve non posées à l'entrée en piste, surlignage non suivi, lacet des pièces tourné de 180° (barycentres à 20 cm), lacet des lignes et du poteau inversé (barycentres à 3,5 cm) : toutes détectées ; sens de la rotation locale (yaw) inversé non détecté, équivalent par construction (yaw vaut 0 ou π dans le relevé).",
+  "ecart": "État partiel (contrôle adverse de l'hygiène du 20/11/2026 : l'état identique_prouve contredisait cet écart) : la couleur de base visible du mur (obstacle 5) diffère du web. Unreal lui applique MI_Brick et MI_Plaster du monde au lieu des couleurs de sommet exportées (#a4553f pour les briques, #e9e6de pour la couvertine) ; sur les montages (hud-course-844x390.png, carriere-aerienne.png), mur beige saumon côté Unreal, rouge brique côté web. La preuve (test et montages) établit le nombre, la forme et la position des pièces de l'habillage, pas cette couleur ; la ligne repassera en identique_prouve quand le mur portera les couleurs exportées et qu'un montage le montrera. Rendu : ombres des nuages du matériau des obstacles (addCloudShadows) non portées ; mur : shader de surfaces du jeu web remplacé par les matériaux du monde (MI_Brick pour les briques, MI_Plaster pour la couvertine et les chapeaux) ; panneaux : texture du canvas relevée dans le jeu web à l'export (la police est celle chargée à ce moment) ; teintes et ombres du rendu Metal. Lignes et poteau posés sur le relief Unreal (grille de 2 m des hauteurs analytiques) : au poteau, le sol Unreal est 7,27 cm plus bas que le maillage de relief du web (6 m) sur lequel le web le pose (hauteurs comparées au-dessus du sol de chaque jeu, écart de sol relevé par le test) ; obstacles et lignes dans la carrière : 0 cm. Pas d'instanciation : 30 560 triangles par état (manifeste), budget iOS non mesuré (aucun paquet iOS). Pièces sans collision (cso.obstacles-collisions). Tracé au sol vert visible côté web sur ligne-depart.png : aide portée depuis T9 (cso.aide-trace-sol), capture Unreal de ligne-depart antérieure à T9. Barres du haut : géométrie symétrique, une barre retournée de 180° (ordre des bandes de couleur inversé) ne serait vue que sur les montages, pas par le test. Contrôle des remarques (20/11/2026) : aucun contrôle automatique ne voit un maillage importé en miroir : scripts/unreal/import-cso-fences.py compare des boîtes englobantes de maillages centrés sur leur pivot (symétriques : la permutation des axes est validée, pas leur signe) et Strides.Parite.CsoScenery prend les barycentres dans le manifeste en supposant la convention x → X, z → Y, y → Z, sans relire les sommets importés ; « orientation à 0,0001 cm » vaut pour la pose des pièces, pas pour le signe des axes du maillage (défaut absent à la vérification séparée du contrôle, oracle faible). Les captures Unreal posent l'état d'épreuve (hauteurs 1,10, n° 1 surligné) directement depuis le champ course de poses.json (-StridesShots=cso) : le passage de l'état hors épreuve (1,15) à l'état d'épreuve n'est prouvé que par Strides.Parite.CsoScenery (partie 3), aucun montage ne montre l'état hors épreuve.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-collisions",
+  "domaine": "CSO",
+  "fonction": "Chandeliers et ailes solides pour le cheval et les piétons (boîtes de collision hors de la largeur des barres) ; à pied, les obstacles sont des murets (blockHuman).",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code ne bloque : barres du haut en requête seule avec chevauchement du Pawn (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:88-92, unreal/StridesGrandTour/Config/DefaultEngine.ini:47) et maillages exportés importés sans collision (scripts/unreal/import-cso-fences.py) ; autres pièces (chandeliers, ailes…) sans collision (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:86).",
+  "ecart": "On traverse les obstacles à pied comme à cheval (cheval déplacé sans balayage).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.obstacles-entrainement",
+  "domaine": "CSO",
+  "fonction": "Obstacles hors épreuve : paddock du Pôle (vertical 1,10 m et oxer 1,00 m, largeur 3,4 m, sautés en sens contraires), obstacles de la maison (vertical 0,75 m, oxer 1,00 m, largeur 3,2 m), paddock de Paris (vertical 1,30 m, oxer 1,25 m) ; barres tombées remontées dès que le cheval s'éloigne.",
+  "js": [
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Seuls les 10 obstacles du parcours du Pôle existent.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.guidage-prochain",
+  "domaine": "CSO",
+  "fonction": "Pendant le parcours : consigne « Obstacle n°X · double sur N », « Franchis la ligne de départ », « Passe la ligne d'arrivée ! », cible de guidage 7 m avant l'obstacle suivant, numéro de l'obstacle suivant mis en évidence.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (text : objectif de chaque étape) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (StatusText) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:56-61, 346-380 (SetHighlight : panneau du numéro attendu teinté, suivi du déroulé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:197-211",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} (objectif identique à chaque image : « Franchis la ligne de départ », « Obstacle n°4A · double sur 10 », « Fence 4A · double of 10 », « Passe la ligne d’arrivée ! », « Résultats… ») ; tranche T5, test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:225-439 (Strides.Parite.CsoScenery) : après l'entrée en piste, panneau du 1 teinté de la couleur relevée dans le jeu web (Obstacles.highlight : #7dffc4), les autres de la couleur relevée pour un panneau non surligné (#ffffff), aucun surligné hors épreuve ; visible sur unreal/docs/parite/cso/ligne-depart.png.",
+  "ecart": "Cible de guidage (GPS, 7 m avant l'obstacle) non portée ; numéro surligné identique au jeu web image par image et affiché (T5) ; objectif de l'étape goto prouvé par cso_goto.json et t4-entree (voir cso.entree-piste) ; « ▸ » du tableau dessiné par le HUD d'épreuve UMG depuis T7, triangle à la taille et à la place de l'encre relevées dans le navigateur (interface.tableau-cso) ; le HUD de débogage, qui l'écrivait « > », ne s'affiche plus qu'hors épreuve.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.tableau-chrono",
+  "domaine": "CSO",
+  "fonction": "Tableau de chrono : décompte de la cloche avant le départ, puis temps, temps accordé, points (fautes + pénalités de temps en direct, signal de dépassement), obstacle suivant, état terminé ou éliminé.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (board : hudInfo de courses.js et textes de hud.js) ; strides::CsoHud (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHud.cpp:205) et UStridesCsoHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoHud.cpp:593-736) : tableau d'épreuve UMG (tranche T7) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp (StatusText, HUD de débogage hors épreuve)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; textes « Départ 42 s », « · accordé 64 s », « 12,34 », « / 64 s », « 0 pt » / « 5 pts », « ▸ 4A », « ▸ Arrivée », « Arrivée ✓ » identiques à chaque image en français et en anglais, pénalités de temps en direct (t4-temps-limite). Tranche T7 : rendu UMG ; Montages côte à côte web / Unreal unreal/docs/parite/cso/hud-*-844x390.png et hud-*-667x308.png (8 états : cloche, avant le départ, en course « ▸ 4A », dépassement en ambre, « Barre au 2 · +4 · Appel trop loin » et « Appel parfait » d'une vraie exécution (t7-parfait-barre-2), crans de cadence, élimination ; 844 × 390 et 667 × 308, même lieu, même heure, même caméra ; scripts/unreal/export-hud-style.mjs --shots puis -StridesShots=cso, état rejoué comparé à l'état du DOM du web : identique pour les 16 poses, unreal/docs/parite/cso/hud-unreal.json) ; dépassement en ambre et pénalités en rouge (hud-depassement) ; textes affichés égaux à board.txt de l'oracle (Strides.Cso.HudWidget).",
+  "ecart": "Logique et textes prouvés identiques par oracle (données et textes du tableau à chaque image où hud.update l'écrit, français et anglais) ; texte initial du tableau : « 0,00 » posé par hud.js:74 à la construction du HUD, chaîne vide dans le modèle du cœur (strides::CsoHud) : invisible (tableau masqué avant le départ), relevé comme différence aux poses entree-1 à entree-3 (cso.entree-piste) ; état partiel pour le rendu, écarts connus : « ▸ » dessiné (absent des polices du moteur ; taille et place de l'encre mesurées dans le navigateur), « ✓ » par la police de secours (visible comme « √ » sur hud-depassement) ; police du moteur (Roboto, Droid Sans Mono) au lieu de Geist et Geist Mono chargées par le web depuis Google Fonts (non embarquées : licence et fichier à décider) : graisses 600 rendues en gras, chiffres du chrono non monospaces, hauteur du tableau 2 à 3 px de plus ; ombres portées (box-shadow) absentes. Le HUD de débogage (« > » pour « ▸ », balises retirées) ne s'affiche plus qu'hors épreuve ; capture unreal/docs/parite/cso/t4-hud-debogage-galop-unreal.png antérieure à T7. Rendu détaillé : interface.tableau-cso.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.camera-concours",
+  "domaine": "CSO",
+  "fonction": "Caméra de concours dès l'entrée en piste (game.course.camera), caméra manuelle rendue à l'automatique au départ.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/entities/camera.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:549-560 (UpdateCourseCamera : caméra de concours quand le déroulé est en mode concours, CsoRun::course().active, de l'entrée en piste à la fin de la sortie de piste, cavalier en selle ; sinon perche du monde ouvert) et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:572-623 (StepCourseCamera, cœur strides::csoCamStep de unreal/StridesGrandTour/Source/StridesCore/Private/CsoCamera.cpp:36)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.Cso.RunInGame : caméra de concours inactive avant l'entrée, active à l'étape de parcours (FOV vertical lissé à 58° ± 0,05, appliqué par paliers), quittée à pied ; Strides.Cso.CameraInGame et testCamRuns (voir camera.concours) ; montages unreal/docs/parite/cso/cadrage-*.png.",
+  "ecart": "« Caméra manuelle rendue à l'automatique au départ » (game.cam.lastManual = −10) sans objet : le portage n'a pas d'orbite manuelle. FOV : le joueur local d'UE 5.8 maintient l'axe Y au rapport AspectRatio de la caméra (mesuré en T6) ; la caméra de concours impose l'axe Y et AspectRatio 1, FieldOfView est donc le champ vertical du web. Caméras de capture des poses fixes : axe X imposé, FOV horizontal calculé (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.aide-trace-sol",
+  "domaine": "CSO",
+  "fonction": "Tracé au sol (réglage « Tracé au sol ») : tirets vert profond de 0,7 × 0,26 m tous les 1,5 m sur la ligne du cavalier, du cheval jusqu'à 12 m après l'obstacle suivant (suite plus pâle), masqués à 1,5 m sous le cheval.",
+  "js": [
+   "src/gameplay/courseAids.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "strides::csoLineMarks, csoMarkRange, CsoCourseAids::update (unreal/StridesGrandTour/Source/StridesCore/Private/CourseAids.cpp:54-76, 79-90, 121-174) ; AStridesCourseAids (maillages procéduraux, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourseAids.cpp:161-184) ; AStridesCourse::UpdateAids (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:549-586, réglage courseLine relu dans la sauvegarde)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Tirets du tracé : 231 tirets d'un vrai CourseAids du jeu web (cso_takeoff_zone.json, marks) = csoLineMarks sur la ligne du cavalier tracée par le cœur (coins à l'arrondi float32 du web près ; hauteur = sol lu par le web pour chaque coin + lineLift du cœur, 924 coins, testCsoTakeoffZone, unreal/core/tests/test_core.cpp:2817 ; mutations à +0,05 et +0,035 m détectées) ; plages affichées, masquage sous le cheval, règle des 15 m, suite plus pâle, réglage courseLine : canal « ai » des 10 exécutions t9-* de unreal/core/tests/oracles/cso_runs/ (appels de CourseAids.update relevés dans le jeu web : entrées, sol lu, maillages après l'appel ; bouton SAUT image par image ; dont t9-ambre, bande ambre sans bande verte, t9-courbe, jumeau de t9-parcours tracé masqué, et t9-recette, tests/e2e/cso-shots.mjs rejoué au pas fixe) rejoué par testCsoAids (unreal/core/tests/test_core.cpp:2873) : 7 022 appels, 7 801 images, 0 écart ; scripts/unreal/mutations-cso-aids.py : 57 mutations de CourseAids.cpp et du bouton de CsoHud.cpp, 46 détectées, 11 non détectées déclarées (raisons écrites dans le script ; deux « cheval absent » ajoutées et rejouées le 21/11/2026, code 0) ; test moteur Strides.Cso.Aids (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesAidsTests.cpp) : Result={Success} (canal rejoué dans l'acteur, tirets affichés = vue du cœur, coins posés par l'acteur sur le relief du jeu à 1,7e-5 m au plus des coins du web ; épreuve réelle : tracé de la ligne de départ au 1, masqué par courseLine false) ; montages côte à côte unreal/docs/parite/cso/aide-trace-*.png (t9-parcours, volte entre le 1 et le 2 : tirets en courbe devant le cheval jusqu'au 2) et aide-sans-trace-*.png (même image de t9-courbe, mêmes entrées depuis le lancement, tracé masqué par courseLine false).",
+  "ecart": "Logique identique (oracle) ; sous-branches non départagées : cheval absent (tracé depuis prevS sans cheval : aucun appel à hh faux, mutation déclarée), début du tronçon borné par prevS (un tiret ne tombe dans [s0 ; prevS) qu'à l'arrondi près sur le tracé du Pôle). Rendu : MeshBasicMaterial du web tone-mappé (ACES, exposition 0,42) puis mélangé en sRGB, Unreal mélange en linéaire avant son tonemapper : teintes et contraste différents sur les montages (tirets vert profond visibles sur aide-trace-*, ternes dans les deux) ; maillages reconstruits à chaque changement de plage (le web règle setDrawRange). Composition des entrées en jeu (AStridesCourse::UpdateAids) non comparée image par image : voir cso.aide-zone-appel.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.aide-zone-appel",
+  "domaine": "CSO",
+  "fonction": "Zone d'appel (aide « Complète ») : bande au sol devant l'obstacle suivant, verte où le saut passe bien et ambre où il passe encore, calculée par planJump à max(v, 5,5 m/s) entre 0 et 8 m, recalculée 4 fois par seconde et posée sous les antérieurs ; repère triangulaire au-dessus de l'obstacle suivant.",
+  "js": [
+   "src/gameplay/courseAids.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "strides::csoTakeoffZone, CsoCourseAids::update et placeBand (unreal/StridesGrandTour/Source/StridesCore/Private/CourseAids.cpp:17-51, 121-174, 105-118) ; AStridesCourseAids (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourseAids.cpp:208-239 : bandes et repère, matériaux M_CsoAid / M_CsoAidTwoSided créés par scripts/unreal/import-cso-aids.py, couleurs et opacités de Content/Data/cso_aids.json)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/core/tests/oracles/cso_takeoff_zone.json (scripts/unreal/export-cso-runs.mjs --aids : takeoffZone de courseAids.js appelée dans la page du jeu web sur les 10 obstacles du parcours à 8 jeux de hauteurs, 15 vitesses, 4 puissances, 3 bonus : 14 400 cas) rejoué à 1e-9 par testCsoTakeoffZone (unreal/core/tests/test_core.cpp:2817) : 0 écart ; zone recalculée toutes les 0,25 s et au changement d'obstacle, bandes ambre et verte (position, cap, largeur bornée à 2,2 m, longueur), repère (hauteur, oscillation, cap), aide « Complète » seule, à cheval, à 26 m au plus : canal « ai » des 10 exécutions t9-* de unreal/core/tests/oracles/cso_runs/ (appels de CourseAids.update relevés dans le jeu web : entrées, sol lu, maillages après l'appel ; bouton SAUT image par image ; dont t9-ambre, bande ambre sans bande verte, t9-courbe, jumeau de t9-parcours tracé masqué, et t9-recette, tests/e2e/cso-shots.mjs rejoué au pas fixe) rejoué par testCsoAids (unreal/core/tests/test_core.cpp:2873) : 7 022 appels, 7 801 images, 0 écart ; scripts/unreal/mutations-cso-aids.py : 57 mutations de CourseAids.cpp et du bouton de CsoHud.cpp, 46 détectées, 11 non détectées déclarées (raisons écrites dans le script ; deux « cheval absent » ajoutées et rejouées le 21/11/2026, code 0) ; test moteur Strides.Cso.Aids (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesAidsTests.cpp) : Result={Success} (sommets des bandes et du cône posés d'après la vue, couleurs linéaires, opacités, faces et ordre de rendu de la scène du web ; épreuve réelle : repère sur le 1, zone à l'abord, masquée en aide « bouton seul ») ; bande ambre sans bande verte (takeoffZone rend pass, pas good : garde de place, courseAids.js:155) : t9-ambre, abord du 8 à 4,6 m/s, 36 appels, bande verte masquée relevée de 0,005 m comme le web ; mutation de la garde détectée ; montages côte à côte unreal/docs/parite/cso/aide-4-trop-loin-*.png et aide-5-bonne-zone-*.png (en 844 × 390, capture web = PNG de la recette tests/e2e/out/cso/4-abord-trop-loin.png et 5-abord-bonne-zone.png ; Unreal rejoue l'exécution t9-recette, tests/e2e/cso-shots.mjs au pas fixe, arrêtée à l'image de chaque capture), aide-saute-*.png, aide-trop-pres-*.png, aide-ambre-*.png (pose de la bande ambre seule au pied du 8 ; la bande y est masquée par le couple dans les deux captures : ce montage n'en apporte aucune preuve visuelle, l'état repose sur le canal « ai », 36 appels, et sur aide-unreal.json, ambre affichée et verte masquée), aide-bouton-*.png (sans zone), aide-off-*.png (sans zone) : canal « ai » rejoué jusqu'à l'image de la capture, vue identique au web (aide-unreal.json).",
+  "ecart": "Logique identique (oracle) ; sous-branches non départagées par le canal : bande de moins de 0,2 m (aucune exécution n'en pose ; la grille cso_takeoff_zone.json en compte 195 sur ses 8 jeux de hauteurs, toutes hauteurs confondues, dont 18 à la base 1,05 et 11 à la base 1,10 de l'épreuve : elle existe donc aussi aux hauteurs de l'épreuve ; seule la plage takeoffZone y est comparée, pas la bande posée) ; cheval absent (g.player.horse nul, avant le premier setHorse : tracé depuis prevS, zone masquée ; aucun appel du canal « ai » n'a hh faux et le jeu passe toujours hasHorse = true, StridesCourse.cpp:567 ; mutations déclarées) ; zone sans aucune plage (pass nul) : jamais avec le cheval des exécutions (puissance 1,38), aux hauteurs de l'épreuve seulement pour un cheval de puissance 1,1 sous 5,8 m/s (13 cas de la grille), même garde de place que la bande verte seule, elle départagée par t9-ambre ; montages aide-4-* et aide-5-* : temporisations du HUD de la recette sur l'horloge réelle (non reproductibles : une copie chronométrée du test éteint l'astuce avant la capture 5), modélisées par l'oracle (pause de capture de 450 ms relue dans le test + CAPTURE_MS = 250 ms, valeur choisie dans l'intervalle de validité 67 à 416 ms calculé par l'export pour retrouver l'état des deux PNG : modèle ajusté, pas une reproduction ; il ne touche que les temporisations du HUD, astuce et grand message, ni les aides ni le bouton SAUT) ; foule et animation du cheval de la recette non tirées au même hasard (capture de l'oracle / PNG de la recette : écart moyen 3,1 et 4,1 sur 255, 2,6 et 3,3 % des pixels au-delà de 16, relevés dans poses.json). Composition des entrées des aides en jeu (next, prevS, showLine, showZone, dt, clearance, par AStridesCourse::UpdateAids) non comparée image par image au web : le canal « ai » est rejoué dans l'acteur depuis les entrées enregistrées dans l'oracle ; le câblage réel n'est vérifié que par des points de contrôle de Strides.Cso.Aids en épreuve réelle (repère sur le 1, zone à l'abord, aide « bouton seul » ou coupée, tracé masqué) et par la démonstration. Rendu : tone mapping et mélange (voir cso.aide-trace-sol) : bandes plus ternes que le web ; z-fighting non observé à +0,035 m sur les captures Mac, rendu mobile (iOS) non essayé.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.aide-bouton-saut",
+  "domaine": "CSO",
+  "fonction": "Aide à l'appel sur le bouton SAUT : état far / good / near / none de l'obstacle devant (mêmes calculs que le saut ; none en l'air, pendant un refus ou sous 3,2 m/s), réglage Complète ou Aucune, imposé par un défi.",
+  "js": [
+   "src/gameplay/obstacles.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:120-126 (csoTiming) ; strides::csoJumpTiming (unreal/StridesGrandTour/Source/StridesCore/Private/CourseAids.cpp:93-96) ; AStridesCourse::UpdateHud (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:416-436) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:229-235 (AStridesHorse::JumpTiming)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "État de l'aide (timing) comparé au jeu web sur les 11 220 poses de cso_target.json et après chacune des images des scénarios (unreal/core/tests/test_core.cpp:640, testTarget, et :593, csoTiming après chaque image dans testHorseRuns, 0 écart) ; aide lue par le bouton (g.course?.jumpTiming?.() || 'none' : hors épreuve, entrée en piste, aide « off ») relevée dans hud.update à chaque image des exécutions t9-* et recomposée par csoJumpTiming : canal « ai » des 10 exécutions t9-* de unreal/core/tests/oracles/cso_runs/ (appels de CourseAids.update relevés dans le jeu web : entrées, sol lu, maillages après l'appel ; bouton SAUT image par image ; dont t9-ambre, bande ambre sans bande verte, t9-courbe, jumeau de t9-parcours tracé masqué, et t9-recette, tests/e2e/cso-shots.mjs rejoué au pas fixe) rejoué par testCsoAids (unreal/core/tests/test_core.cpp:2873) : 7 022 appels, 7 801 images, 0 écart (dont 6 images d'entrée en piste en visée d'un obstacle, aide coupée) ; scripts/unreal/mutations-cso-aids.py : 57 mutations de CourseAids.cpp et du bouton de CsoHud.cpp, 46 détectées, 11 non détectées déclarées (raisons écrites dans le script ; deux « cheval absent » ajoutées et rejouées le 21/11/2026, code 0) ; test moteur Strides.Cso.Aids (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesAidsTests.cpp) : Result={Success} (épreuve réelle : bouton coloré par l'aide du cheval, « none » en aide « off »).",
+  "ecart": "Aide imposée par un défi (opts.jumpAid, game.course.aidLocked : src/gameplay/courses.js:82, 187) non portée : défis absents du portage, le réglage vient seulement de la sauvegarde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesGameMode.cpp:102, jumpAidOf) et UStridesPauseMenu::AidLocked rend toujours faux (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPauseMenu.cpp:78) ; les exécutions t9-* posent toutes l'aide par la sauvegarde (setup.aid). Aucun écart sur le reste de la fonction ; affichage du bouton : interface.aide-appel-bouton-saut.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.arrivee",
+  "domaine": "CSO",
+  "fonction": "Arrivée : tous les obstacles passés puis ligne d'arrivée franchie (sans condition de cap) → « SANS FAUTE ! », « 1 POINT » ou « N POINTS » avec le chrono, applaudissements et ovation sur un sans-faute ; en CSO, sortie de piste de 2,6 s (cadence ramenée à 1,9 m/s) avant le bilan.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (courseUpdate : ligne d'arrivée sans cap, points, grand message, sons, sortie de piste 2,6 s, cadence vers 1,9 m/s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp (cadence réécrite)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_runs/ : 21 scénarios t4-* (sans-faute, départ lancé, cloche écoulée, erreur de parcours, deux refus avec reprise du double, temps limite, descente avant le départ, obstacle sauté avant le départ, arrivée de biais avec une barre, ligne de départ franchie de biais, hors de la marge puis dans la marge, gardes des écouteurs d'obstacle, arrivée à 1 point suivie d'un saut pendant la sortie de piste, entrée de piste rejointe de loin, à pied puis au volant ; second contrôle adverse : départ lancé de part et d'autre de chaque limite (t4-lance-*, 6 scénarios), saut pendant l'entrée en piste, faute avant le départ, ligne d'arrivée franchie avant le départ puis avant le dernier obstacle, fautes à rebours (t4-hors-parcours), sortie de piste écourtée par une descente (t4-sortie-descente)) et « droit », en français et en anglais, enregistrés depuis le lancement de l'activité (scripts/unreal/export-cso-runs.mjs, canal « ep ») ; unreal/core/tests/test_core.cpp (testCsoRuns) les rejoue en réinjectant trajectoire, mode du joueur et événements d'obstacle : 44 exécutions sans écart, 31 370 images, 398 appels d'interface et 246 sons de courses.js identiques (texte, durée, arguments), état de l'épreuve, objectif, mode de concours, tableau de chrono (27 830 tableaux, données et textes), numéro surligné, barres remises, public en liesse et journal des fautes du bilan (102 changements : libellé, type, cause, texte de la cause) identiques image par image ; ctest du 19/11/2026 : 190 369 vérifications, 0 échec ; scripts/unreal/mutations-cso-run.py : 78 mutations détectées sur 83, les 5 autres équivalentes par construction (gardes « après l'arrivée » du refus, « après l'élimination » du refus et du saut, « départ exigé » de l'arrivée, prochain obstacle du mode de concours effacé à l'arrivée ; raison écrite dans le script) ; même rejeu, avec les mêmes comparaisons, par le chemin du jeu (AStridesCourse) dans le test moteur Strides.Parite.CsoRun : Result={Success} ; t4-sans-faute : « SANS FAUTE ! » / « CLEAR ROUND! » avec « 59,80 s », applause(1.3, 4) et cheer, sortie de piste 2,6 s, cadence identique image par image ; t4-arrivee-barre : arrivée franchie à 70° de son axe (sans condition de cap) à 3 m/s, « 4 POINTS » / « 4 FAULTS », applause(0.55, 2.6), cadence ramenée à 1,9 m/s pendant la sortie. Contrôle adverse de T4 : t4-un-point — arrivée à 64,57 s, au-delà des 64 s accordés de moins d'une seconde : « 1 POINT » / « 1 FAULT » avec « 64,57 s », applause(0.55, 2.6), sans ovation, pénalité de temps 1 au bilan ; ovation du public (game.cheerT = 3,5 après un sans-faute, t4-sans-faute) demandée à la même image que dans le jeu web. Second contrôle adverse : t4-hors-parcours — ligne d'arrivée franchie dans son sens, sur son milieu, avant le départ puis après le départ le 1 étant attendu : pas d'arrivée (règle « tous les obstacles passés », courses.js:333) ; t4-sortie-descente — pied à terre 0,37 s après l'arrivée : sortie de piste écourtée, bilan à la même image que le jeu web, sans élimination (courses.js:320) ; mutations détectées : dernier obstacle non exigé, ni départ ni dernier obstacle exigés, descente ignorée pendant la sortie ; « départ non exigé » équivalente par construction (next ne dépasse 1 qu'après le départ).",
+  "ecart": "Aucun sur la règle, les textes et le journal des sons. Rendu : grand message « SANS FAUTE ! » dessiné par le HUD d'épreuve UMG depuis T7 (le HUD de débogage ne s'affiche plus qu'hors épreuve ; montage bilan-1-sans-faute-*, HUD rejoué de l'exécution t9-parcours ; rendu à interface.grand-message) ; applaudissements et ovation (gain du bus du public) joués depuis T12 (journal : cso.sons-parcours ; rendu sonore, compresseur non porté : audio.concours) ; public en liesse (game.cheerT = 3,5) demandé par strides::CsoRun (takeCheer) mais non animé (interface.celebration).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.bilan",
+  "domaine": "CSO",
+  "fonction": "Bilan de manche : chrono (et temps accordé), détail des fautes (barre au X (cause), refus au Y), pénalités de temps, total (totalPenalties), classement « Ne sur N », récompense ; titre Victoire, sans faute ! / Ne place / Éliminé ; boutons Recommencer, S'entraîner, Continuer.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/Ranking.cpp:113-185 (csoResultCard : kicker, titre, grille, tableau des 8 premiers et du joueur, boutons) ; unreal/StridesGrandTour/Source/StridesCore/Private/Ranking.cpp:200-263 et unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/Ranking.h:95-134 (csoResultLayout : flux CSS de la carte, colonnes du tableau, défilement, classe more ; contrôle adverse de T11) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:236-241, 265-279 (étape de bilan : ouverture, attente du choix) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:354-368 (carte calculée à l'ouverture, simulation suspendue) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScreens.cpp:586-765 (carte UMG : relevé de base de la langue et du viewport dans Content/Data/cso_result_style.json, lignes de chaque texte et largeurs de texte des cellules mesurées par le moteur, police étalonnée sur le relevé, mise en page csoResultLayout), StridesCsoScreens.cpp:791-819 et StridesCsoScreens.cpp:363-383 (barre d'actions : ombre et bordure de la classe more suivies au défilement)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Textes : unreal/core/tests/oracles/cso_result.json (étape de bilan du jeu web démarrée sur 15 états posés × 2 langues : vainqueur sans faute, vainqueur avec des fautes (« Victoire ! », manche 268), sans-faute 2e et 7e, barres, refus, refus + barre + temps, 1 point de temps, éliminé (refus, descente), manches 2, 3 et 10, joueur exactement 9e, joueur 13e et 14e, sans cheval ; DOM relevé par scripts/unreal/export-cso-result.mjs) : 30 cartes identiques (testCsoResult, test_core.cpp:1815) ; canal « bl » de cso_runs/ (bilan d'une vraie partie, 25 cartes : sans-faute 5e, 7e place, 14e place à trois barres, éliminé, vainqueur de la manche 2) identique (test_core.cpp:2210). Mise en page (contrôle adverse de T11) : unreal/core/tests/oracles/cso_result_layout.json (60 vues : 15 états × 2 langues × 844 × 390 et 667 × 308, boîtes relevées dans le navigateur) rejoué par testCsoResultLayout (test_core.cpp:1891) : csoResultLayout, appliqué au relevé de base de la vue avec les lignes et largeurs de texte du web, place 3 876 boîtes à 0,088 px au plus du navigateur, scrollHeight, scrollTop maximal et classe more (en haut, défilé jusqu'en bas) identiques ; Strides.Cso.ResultLayout (Tests/StridesCsoResultTests.cpp:270) : carte posée dans le widget pour ces 60 vues, lignes de chaque case de la grille mesurées par le moteur identiques au navigateur dans les 60 vues (dont 7 avec les fautes sur deux lignes, 16 avec le joueur au-delà du 8e), positions verticales et hauteurs à 0,000 px, défilement et classe more identiques ; Strides.Cso.Result : 8 bilans de t11-refus, t11-manche-2 et t11-trois-barres rejoués par le chemin du jeu, carte identique au DOM et affichée par le widget ; montages unreal/docs/parite/cso/bilan-2-carte-*.png (t9-parcours rejouée jusqu'à l'image 2071 : 56 boîtes à 0,05 px au plus du web), bilan-3-trois-barres-*.png (t11-trois-barres rejouée jusqu'à l'image 901 : fautes sur deux lignes, lignes suivantes décalées comme dans le web) et bilan-4-trois-barres-bas-*.png (même carte défilée jusqu'en bas par programme, UStridesCsoScreens::ScrollCardForTest puis SetScrollOffset, comme le scrollTop posé côté web : 14e ligne visible, défilé de 195 px en 844 × 390 et 247 px en 667 × 308 comme le web, ombre de la barre d'actions retirée), relevés dans bilan-unreal.json (lignes de la grille, boîtes, défilement, classe more comparés au web) ; référence tactile bilan-touch-844x390.png (tests/e2e/cso-touch.mjs, touch-bilan.png ; réassemblée le 21/11/2026 à côté de bilan-2-carte-844x390-unreal.png refaite au contrôle adverse de T11) ; scripts/unreal/mutations-cso-ranking.py : 76 mutations, 67 détectées (dont titre « Victoire ! », joueur exactement 9e et 12 de la mise en page sur 15), 9 déclarées non départagées.",
+  "ecart": "Dotation (prizes non vides, concours) non portée : csoResultCard la refuse (le Parcours du Pôle n'en a pas). Rendu : police du moteur au lieu de Geist ; la mise en page est le flux du web, mais ses entrées viennent de la police du moteur étalonnée sur le relevé de base (rapport des largeurs Geist / moteur par colonne et par graisse, et pour les valeurs) : colonnes du tableau à 8,2 px au plus du navigateur sur les 60 vues de cso_result_layout.json (4,3 px dans les captures bilan-3 et bilan-4 : rang à deux chiffres en gras, chiffres proportionnels de Geist) ; une valeur sur deux lignes peut couper un mot plus tôt ou plus tard que le web (667 × 308 de bilan-3 : « (appel / trop loin) » au lieu de « (appel trop / loin) »), même nombre de lignes ; une clé de la grille plus large dans la police du moteur déborde dans l'espace entre colonnes au lieu de passer à la ligne (le web la dimensionne à son texte). Non portés : nom d'engagé passé à la ligne quand les colonnes débordent (somme des largeurs maximales au-delà du tableau : répartition proportionnelle gardée, signalée), carte raccourcie quand le contenu tient sans défiler (toujours 8 lignes au moins : jamais le cas aux deux viewports). Animation d'ouverture de l'overlay absente (la référence tactile touch-bilan.png est prise pendant ce fondu, chrono 60,77 s de la partie au doigt au lieu de 59,80 s), HUD hors épreuve (mini-carte, porte-monnaie) absent derrière la carte. Défilement de la carte au doigt ni exercé ni prouvé (bilan-4 : défilement posé par programme des deux côtés). Poses bilan-3 et bilan-4 : état du HUD derrière la carte différent du web (toasts, grand message, mot d'appel, crans ; relevé dans bilan-unreal.json) : la capture web de l'exécution légère ?classic t11-trois-barres fige les temporisations du HUD, Unreal les fait avancer au temps du jeu ; presque entièrement caché par la carte. Branches non départagées (mutations déclarées) : chrono du joueur arrondi au centième avant le tri ; lignes d'une clé (jamais sur deux lignes dans le web) ; arrondi au-dessus de scrollHeight ; seuil de 4 px de la classe more.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.recommencer",
+  "domaine": "CSO",
+  "fonction": "Recommencer : nouvelle manche (état remis à zéro, manche n + 1, nouveau tirage des concurrents) ; S'entraîner : ouvre l'entraînement après le bilan.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp:265-279 (resultChoice : Recommencer insère entrée, cloche, parcours, bilan ; S'entraîner : afterTrain) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:218-225 (boutons de la carte) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScreens.cpp (OnRetry, OnTrain, OnDone)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "cso_result.json : boutons touchés dans le jeu web sur 3 cas × 2 langues (Recommencer : 4 étapes insérées, manche n + 1, état neuf ; Quitter : fermeture ; S'entraîner : entraînement demandé 300 ms après) ; exécution t11-manche-2 (barre au 2, Recommencer, entrée en piste, cloche, manche 2 sans faute, bilan « manche 2 », Quitter) rejouée sans écart par testCsoRuns et par Strides.Cso.Result (widget : carte fermée, barre du 2 remise sur ses taquets à l'entrée en piste, annonce du dossard, cloche, manche 2).",
+  "ecart": "S'entraîner : l'entraînement au paddock (cso_warmup, startTraining) n'est pas porté ; le bouton termine la mission comme Quitter et rien n'est lancé (trainingRequested reste vrai, sans effet).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.classement-simule",
+  "domaine": "Classements",
+  "fonction": "Classement simulé d'une épreuve : 14 concurrents tirés par graine (mulberry32, graine + 31 × manche) : 34 % à 0, 34 % à 4, 18 % à 8, 9 % à 12, 5 % à 16 points (classe am2 : 25 % de chances de 4 points de moins), chrono autour du temps accordé − 4 s ; tri par fautes puis chrono ; joueur classé sauf s'il est éliminé, 8 premiers plus le joueur affichés.",
+  "js": [
+   "src/gameplay/ranking.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/Ranking.cpp:13-111 (jsToUint32, Mulberry32::next, simulateField, rankResults) ; unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/Ranking.h ; Content/Data/cso_ranking.json (FIRST_NAMES, LAST_NAMES, HORSE_NAMES exportés par scripts/unreal/export-data.mjs)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_ranking.json (mulberry32 sur 18 graines dont négatives, non entières, NaN et ±2^32 ; simulateField pour la classe du Pôle et les 5 classes du concours (trip.js), graines 5150 + 31 k (k = 0 à 9) et graines de concours, n = 0, 1, 20 ; rankResults sur 112 classements avec le joueur, égalités exactes comprises ; fonctions du web appelées telles quelles) : 216 tirages, 861 engagés et 112 classements identiques (testRanking, test_core.cpp:1763) ; scripts/unreal/mutations-cso-ranking.py : 76 mutations (tirage, tri, carte, mise en page, enregistrement, sauvegarde), 67 détectées, 9 déclarées non départagées (raisons dans le script).",
+  "ecart": "Graine négative : le web tire quand même (mulberry32 convertit la graine, math.js:21) et nomme le cheval HORSE_NAMES[(i + ⌊graine⌋) % n], indice négatif, donc undefined (ranking.js:18) ; le portage lève une exception (Ranking.cpp:70) : différence de comportement, non atteignable en jeu (graines 5150 + 31 k et graines de concours positives) ; état ramené à partiel à l'hygiène finale (21/11/2026) pour cette raison. Branches non départagées (mutations déclarées) : marge 1e-9 des pénalités de temps (t − ta jamais entier dans les graines), tri stable contre tri non stable (libc++ stable sous 31 éléments).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.dotation",
+  "domaine": "Classements",
+  "fonction": "Récompense de la manche : dotation selon le rang (prix de la classe), versée une seule fois (« dotation déjà reçue pour ta première manche classée »), toast « Dotation versée ».",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Les missions de concours Unreal (m3 Premier concours, csi3, gp) se valident en arrivant à 18 m du lieu (StridesWorldDirector.cpp:70-71) avec un gain fixe de world_architecture.json, sans parcours ni rang.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.comparaison-resultats",
+  "domaine": "Classements",
+  "fonction": "Comparaison de deux résultats : parcours terminé devant éliminé, puis moins de pénalités, puis meilleur chrono.",
+  "js": [
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:127-132 (compareResults)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "cso_course.json : 12 cas compare (terminé / éliminé dans les deux sens, deux éliminés, égalités exactes, écart d'un centième, pénalités contre chrono) comparés par unreal/core/tests/test_core.cpp:224-228 ; ctest du 18/11/2026 : 8 022 vérifications, 0 échec ; oracle régénéré depuis le JS actuel par scripts/unreal/export-data.mjs.",
+  "ecart": "Domaine : le web accepte aussi un résultat absent (null, classé derrière : challenge.js:182-184), que le portage ne peut pas recevoir (RunResult par valeur) et qu'aucun appel du portage ne passe (défis absents : cso.record-personnel) : cas sans objet, non départagé ; le web rend a.time − b.time, le portage son signe (le web ne lit que le signe : isBetter, challenge.js:192). Le tri rankResults de ranking.js (fautes puis chrono) est porté à part depuis T11 (Ranking.cpp:107-111, cso.classement-simule).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.record-personnel",
+  "domaine": "Défis",
+  "fonction": "Record personnel par défi et par version : meilleur résultat (jamais une élimination), nombre de tentatives, dernier résultat, tentative comptée une seule fois (30 identifiants gardés), « Nouveau record » à l'écran de fin.",
+  "js": [
+   "src/gameplay/challenge.js",
+   "src/gameplay/challengeRun.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:14, 25 (records importés du web, défi) ; le record « cso_pole » pris à la sauvegarde F5 est retiré en tranche T11 (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:46-47)",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun record de défi n'est plus écrit par le jeu ; les records importés de la sauvegarde web restent relus (test_core.cpp:1130).",
+  "ecart": "Défis (challenge.js) absents du portage : ni record par défi et par version, ni tentatives, ni « Nouveau record ». Le meilleur temps de l'activité Parcours du Pôle est porté à part (activites.parcours-pole, bestTimes.cso_train).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.resultat-tentative",
+  "domaine": "Défis",
+  "fonction": "Résultat d'une tentative (makeResult) : défi, version, tentative, cheval, motif d'élimination, barres = max(0, arrondi((fautes − 4 × refus) / 4)), refus, fautes, pénalités de temps et total (nuls si éliminé), chrono au centième, date, version du jeu.",
+  "js": [
+   "src/gameplay/challenge.js",
+   "src/gameplay/challengeRun.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp (résultat de la manche tiré de strides::CsoRun : éliminé, fautes + pénalités, chrono au centième) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp (CourseJudge::result, cœur, plus utilisé par le jeu depuis T4)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "result().eliminated vérifié dans les scénarios manuels (unreal/core/tests/test_core.cpp:1069, 1088) ; aucun oracle.",
+  "ecart": "Ni barres, ni refus, ni pénalités de temps séparées, ni identifiant, date ou version ; pénalités à 0 (et non nulles) si éliminé.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defis-versions",
+  "domaine": "Défis",
+  "fonction": "Défis rejouables à conditions figées et versionnées : Pôle v1 à v6 (courant v6 : 10 sauts à 1,10 m, temps accordé 64 s, limite 128 s, Onyx KWPN 8 ans vitesse 1,13 saut 1,06, jour 2 à 11 h sans pluie, aide au saut activée) et Paris v1 à v3 (courant v3 : 9 sauts à 1,50 m, 54 s, limite 108 s, Lumière de Paris à 20 h 30) ; une version publiée ne change plus.",
+  "js": [
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Le parcours permanent Unreal (1,10 m, 64 s) reprend les chiffres du défi Pôle v6 mais sans défi, version, cheval fourni ni conditions.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-deroule",
+  "domaine": "Défis",
+  "fonction": "Déroulé d'un défi : départ refusé avec motif (partie en pause, mission en cours, camion en chargement, cheval mené en main, objet porté), cheval fourni sans équipement ni effet de forme, placé 8 m derrière la ligne de départ dans l'axe du 1, obstacles retenus (setOff) à hauteur unique, heure et météo réappliquées à chaque image, élimination convertie en résultat, puis monde du joueur rétabli (heure, météo, cheval, position, mode), y compris après rechargement ; Paris : transport direct dans l'arène.",
+  "js": [
+   "src/gameplay/challengeRun.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucune tentative isolée du monde du joueur.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-acces",
+  "domaine": "Défis",
+  "fonction": "Accès aux défis : panneau à droite de l'arche d'entrée du Pôle (x + 11 m, z + 2,5 m) et application Activités du téléphone (défis courants Pôle v6 et Paris v3).",
+  "js": [
+   "src/gameplay/challengeRun.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Le téléphone Unreal liste 10 applications sans Activités ni défi (Content/Data/world_architecture.json, phoneApps).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-ecrans",
+  "domaine": "Défis",
+  "fonction": "Écrans du défi : règles et conditions avant le départ (4 points par barre, 4 au premier refus, élimination au second, 1 point par seconde entamée, puis le chrono ; éliminé si descendu ou au-delà de la limite ; cheval fourni, météo, temps accordé, aide au saut), écran de fin avec Recommencer et record précédent, ligne de résultat « N pts · S s » ou « Éliminé ».",
+  "js": [
+   "src/ui/challenge-screens.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun écran de défi.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.defi-carte-partage",
+  "domaine": "Défis",
+  "fonction": "Carte de résultat 1080 × 1350 générée sur l'appareil (défi, résultat, cheval, pseudonyme facultatif de 20 caractères au plus, signature Equestrian Tour, versions) et partage volontaire : partage natif avec fichier, sinon téléchargement de l'image, sinon texte à copier avec l'adresse publique de la partie (sans paramètres ni ancre).",
+  "js": [
+   "src/ui/challenge-screens.js",
+   "src/gameplay/challenge.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucune carte ni partage.",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.classements-app",
+  "domaine": "Classements",
+  "fonction": "Application « Classements » du téléphone : meilleures performances par épreuve (défi du Pôle, concours, entraînements chronométrés), mises à jour en direct, mon rang, pseudonyme ; hors ligne, records de l'appareil et explication ; format « 4 pts · 45,32 s » (barème A) ou « 1:12,40 » (chrono) ; score d'un défi terminé envoyé au classement en ligne.",
+  "js": [
+   "src/ui/ranking-app.js",
+   "src/gameplay/challengeRun.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Pas d'application Classements parmi les 10 du téléphone (StridesHUD.cpp:109-114) ; service en ligne non choisi (unreal/docs/MATRICE.md : core/online.js à remplacer, rien de payant engagé).",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.cross-regles",
+  "domaine": "Épreuves",
+  "fonction": "Règles du cross : départ au compte à rebours sans cloche ni présentation, 20 points par refus, élimination au 4e refus ou au 3e sur un même obstacle, 0,4 point par seconde au-delà du temps accordé (arrondi), « Touché au X · +4 », obstacles fixes qui freinent le cheval (vitesse × 0,55).",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoCourse.cpp:134-136, 156-169, 176-179 (CourseJudge en mode cross)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Scénario manuel unreal/core/tests/test_core.cpp:1106-1110 (20 points par refus, 3e refus au même obstacle), passé le 18/11/2026 ; aucun oracle ; aucun parcours de cross construit.",
+  "ecart": "Juge seul (CourseJudge, plus utilisé par le jeu depuis T4 ; strides::CsoRun ne construit que l'épreuve de CSO) : ni compte à rebours, ni obstacles fixes, ni freinage ; pénalité de temps 0,4 / s jamais testée (lround et Math.round coïncident pour des valeurs positives).",
+  "tranche": "a"
+ },
+ {
+  "id": "cso.cross-trace",
+  "domaine": "Épreuves",
+  "fonction": "Parcours de cross de Saint-Gatien : 10 obstacles fixes le long du chemin (troncs 0,95 m, haies 1,05 m, largeur 4,2 m), saut d'entrée dans la mare 3 m avant l'eau, longueur 760 m, vitesse cross amateur 420 m/min.",
+  "js": [
+   "src/gameplay/obstacles.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "La mission « cross » de world_architecture.json se valide à l'arrivée à 18 m (StridesWorldDirector.cpp:70-71), sans parcours.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.anneaux",
+  "domaine": "Épreuves",
+  "fonction": "Anneaux de passage (checkpointSteps) : tores de 3,2 m de rayon franchis dans l'ordre à moins de 5,5 m, anneau suivant opaque et les autres à 35 %, note montante à chaque passage, limite de temps facultative, à cheval.",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun anneau.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.anneaux-plage",
+  "domaine": "Épreuves",
+  "fonction": "Anneaux de galop sur la plage : posés sur le sable ferme, 14 m en retrait du plus haut rivage que la marée montante atteindra au passage prévu (25 s + 7 s par anneau), jamais au pied des Planches ; longueur d'un tracé (pathLength).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "La mission « plage » de world_architecture.json se valide à l'arrivée à 18 m, sans anneaux ni marée.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.hippodrome",
+  "domaine": "Épreuves",
+  "fonction": "Course d'hippodrome : 5 adversaires nommés en stalles (casaques), départ au compte à rebours, adversaires à 67-76 % du grand galop de 14 m/s, position en direct, ordre d'arrivée au poteau ; tour d'entraînement de 12 anneaux à 61 m du centre (ovalLength, ovalPoint, ovalProject).",
+  "js": [
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "La mission « derby » de world_architecture.json se valide à l'arrivée à 18 m, sans course.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-traces",
+  "domaine": "Paris",
+  "fonction": "Tracés de Paris dans l'arène de 86 × 46 m (abord depuis la porte ouest) : Sprint de 7 efforts (1, double 2A – 2B à une foulée, 3, mur 4, 5, oxer large 6) et Grand Prix de 9 efforts (doubles 3A – 3B et 5A – 5B), 310 m chacun ; un seul tracé en piste à la fois ; hauteurs avec profil.",
+  "js": [
+   "src/gameplay/parisCourse.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "traceCourse (CsoCourse.cpp:72-111) est générique mais aucun tracé de Paris n'est exporté ni construit, et l'arène n'existe pas côté Unreal.",
+  "tranche": "c"
+ },
+ {
+  "id": "cso.paris-sprint",
+  "domaine": "Paris",
+  "fonction": "Sprint du Grand Prix de Paris à 1,50 m, barème C : chrono + 4 s par barre (temps accordé de 54 s sans effet), 2e refus éliminatoire ; son classement fixe la grille du Grand Prix (le plus rapide part en dernier) ; prime de 1 500 € au vainqueur.",
+  "js": [
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun barème C.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-gp-barrage",
+  "domaine": "Paris",
+  "fonction": "Grand Prix de Paris à 1,60 m, barème A au chrono (temps accordé 54 s), barrage des sans-faute (temps accordé ⌈54 × 0,86⌉ = 47 s), podium, dotation des 10 premiers de 12 000 à 1 000 € (42 000 € avec le Sprint).",
+  "js": [
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun barrage ni podium.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-concurrents",
+  "domaine": "Paris",
+  "fonction": "39 couples simulés reproductibles par graine (parisRivals, forme de 0,85 à 1,15) : Sprint (56 % sans barre, 30 % une, 14 % deux, environ 7 m/s), Grand Prix (fautes selon la forme, chrono vers 93 % du temps accordé), barrage (62 % sans faute, environ 7,2 m/s).",
+  "js": [
+   "src/gameplay/parisGP.js",
+   "src/gameplay/ranking.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Aucun concurrent simulé.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.paris-deroule",
+  "domaine": "Paris",
+  "fonction": "Mission finale « Grand Prix de Paris Indoor » (après le Grand Prix CSI 5*) : invitation, camion par l'A13, accréditation, échauffement de 2 sauts au paddock, Sprint, présentation des 40 cavaliers sur écrans géants, Grand Prix le soir (20 h), barrage, podium ; 1 500 de réputation.",
+  "js": [
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code du déroulé.",
+  "ecart": "Seule une entrée « gpparis » existe dans Content/Data/world_architecture.json (pay 3000, xp 1800, lieu paris ; web : dotation 42 000 €, xp 1500 — origine de ces valeurs à confirmer), validée à l'arrivée à 18 m (StridesWorldDirector.cpp:70-71).",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.lint-trace",
+  "domaine": "Outils",
+  "fonction": "Lint des tracés (courseLint) : approche droite (Pôle 18 m, Paris 14,5 m), réception 12 / 10 m, rayon au moins 13 / 10,5 m, virage de 200° au plus, pas de S, combinaisons 7,6 – 8,0 m (une foulée) et 11,2 – 11,6 m (deux), lignes 4,2 + n × 3,56 m ± 0,4 (n = 3 à 7), distances aux lices et aux autres obstacles, caméra hors tribunes, départ et arrivée à 8 – 15 m, longueur / 6,2 m/s ≤ temps accordé − 4 s ; tableau des mesures.",
+  "js": [
+   "src/gameplay/courseLint.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code.",
+  "ecart": "Inutile tant que les tracés viennent de l'export JS (cso_course_pole.json) ; nécessaire si un tracé est un jour édité côté Unreal.",
+  "tranche": "socle"
+ },
+ {
+  "id": "cso.textes-score",
+  "domaine": "Interface",
+  "fonction": "Textes de score bilingues : ordinaux 1re / 2e (anglais 1st, 2nd, 3rd, 11th, 21st), « 2e refus », points « 0 pt / 1 pt / 4 pts » (anglais « 0 pts »), secondes et hauteurs à la virgule (« 45,32 s », « 1,10 m »), heure « 20 h 30 ».",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/challenge.js",
+   "src/gameplay/parisGP.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/Text.cpp (jsToFixed, dec, enOrdinal, ordinal, nth, ptsText, gabarits ; tranche T10 : jsNumber = String(n), jsUpper / jsLower = toUpperCase / toLowerCase) ; Content/Data/strings_cso.json",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_text.json (scripts/unreal/export-data.mjs : dec, ordinal, enOrdinal de courses.js, nth et ptsText extraits du source, 229 clés de gabarits ; tranche T10 : String(n) sur 1 377 valeurs, toUpperCase et toLowerCase des 229 textes de la table ; fr et en) : 15 916 cas comparés par unreal/core/tests/test_core.cpp (testText), 0 écart ; égalités de toFixed (0,125, 2,5, 1,005…) comprises ; mutations de jsNumber (seuils de notation, nombre de chiffres) et de la casse Latin-1 détectées (scripts/unreal/mutations-cso-entry.py).",
+  "ecart": "Heure (« 20 h 30 ») et séparateur de milliers non portés ; textes du bilan rendus par la carte (T11 : ordinaux, « {n} sur {N} », pts) ; casse : ASCII, Latin-1 et œ seulement (ß et autres écritures non portés).",
+  "tranche": "h"
+ },
+ {
+  "id": "cso.sons-parcours",
+  "domaine": "Interface",
+  "fonction": "Sons du parcours : bip aigu (1 568 Hz) au départ, note de 990 Hz sur un obstacle franchi, son de faute et « oh » du public sur barre ou refus, cloche (un coup au départ, deux à l'élimination), applaudissements à l'entrée et à l'arrivée (plus forts sur un sans-faute), ovation, tintement d'une barre effleurée.",
+  "js": [
+   "src/gameplay/courses.js",
+   "src/gameplay/obstacles.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (sons demandés : tone, fault, crowdOoh, bell, applause, cheer, notify) ; unreal/StridesGrandTour/Source/StridesCore/Private/CsoAudio.cpp:11-51 (clé des WAV, fichier appelant, écouteurs de game.js:716-728, click) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoAudio.cpp:85-124 (journal et lecture : UGameplayStatics::PlaySound2D du WAV du manifeste) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:328-333 (sons du déroulé), :486-488 (thud de la chute) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:393-396 et 421-425 (cheval, barres, cabré de la glissade) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:490-518 (click d'une action) ; Content/Audio/Cso (19 USoundWave), Content/Data/cso_sounds.json",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:3073-3190 (testCsoSounds) : journal des sons du portage comparé image par image et dans l'ordre (fn, arguments, fichier appelant) au canal « audio » des 94 exécutions de unreal/core/tests/oracles/cso_runs/ (34 complètes, 60 légères) : 94/94 identiques, 52 446 images, 1 367 appels comparés (applause 82, bell 71, cheer 8, click 3, crowdOoh 19, fault 21, hoof 256, landing 256, neigh 54, railFall 9, railTouch 2, snort 256, thud 8, tone 260, notify au lancement) ; parties produites par les rejeux du cœur dans les 34 exécutions complètes (testFenceRuns : écouteurs de game.js sur les événements du cheval du cœur, sons des obstacles du cœur ; testCsoRuns : déroulé), dans l'ordre de game.update ; dans les 60 exécutions légères (sans canal « ch », sautées par testHorseRuns et testFenceRuns), les sons du cheval sont tirés des événements horse:jump, horse:land et horse:refuse de l'oracle (champ ev), pas d'un rejeu du cœur, et le click est recomposé par une règle écrite dans le test (appui action + player:dismountStart), pas par la logique du portage (AStridesPlayerController::DoAction) ; chaque appel a son WAV au manifeste ; scripts/unreal/mutations-cso-audio.py : 27 mutations, 22 détectées, 5 déclarées (code 0) ; WAV rendus hors ligne par la classe Audio du jeu web (scripts/unreal/export-cso-sounds.mjs, OfflineAudioContext, Math.random → mulberry32 à graine fixe) et importés sous /Game/Audio/Cso (scripts/unreal/import-cso-sounds.py, compression PCM) : test moteur Strides.Cso.AudioAssets (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoAudioTests.cpp:32-65) : PCM importé = SHA-1 du rendu pour les 19 sons, Result={Success} ; Strides.Cso.Audio (:98-239) : sources câblées dans le jeu (lancement par l'action du poteau, entrée, cloche, départ, appel, réception, obstacle franchi, cabré, descente, élimination), Result={Success}",
+  "ecart": "Déclaré : (1) compresseur du bus maître (DynamicsCompressor par défaut de Chrome, avec gain de rattrapage) non porté : par son seul, la chaîne du jeu web change le RMS de −8,7 à +3,5 dB (mesure gameChain de Content/Data/cso_sounds.json) ; (2) le web tire un hasard neuf à chaque appel (bruit, jitter, applaudissements) : Unreal rejoue une seule réalisation (graine fixe) ; (3) WAV en PCM 16 bits (quantification) ; deux rendus de Chrome diffèrent d'un pas sur quelques échantillons (ordre de sommation), le fichier existant est gardé quand l'écart reste dans la tolérance (au plus 1 pas sur au plus 16 échantillons) : deux exports successifs donnent donc les mêmes octets, mais un export dans un dossier vide change la SHA-1 de 3 sons sur 19 (applause_1p3_4, bell_2 et bell ; constat du contrôle adverse, non refait) ; (4) exclus du journal comparé : breath (foulées de l'animation, non portées), sons des obstacles des 60 exécutions légères (obstacles non rejoués), sons du déroulé de 32 exécutions posées en cours de parcours ; sol du sabot à l'appel : « sand » passé par le jeu (carrière), non relevé ; ordre des sons dans une même image entre barres, glissade et écouteurs d'obstacle choisi fixe (barres, cabré de la glissade, écouteurs), aucune image de l'oracle ne les mêle ; (5) lecture réelle non écoutée ni enregistrée : périphérique de sortie du Mac mini « Beyond TV » (CoreAudio, 48 kHz), aucun appareil iOS.",
+  "tranche": "h"
+ }
+]

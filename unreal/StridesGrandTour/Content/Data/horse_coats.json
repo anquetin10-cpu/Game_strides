@@ -1,0 +1,210 @@
+{
+ "schema": "strides.horse_coats/1",
+ "generator": "scripts/unreal/export-horse-coat.mjs",
+ "source": [
+  "src/entities/pjl/coat.js",
+  "src/entities/pjlHorse.js",
+  "src/gameplay/data.js",
+  "src/entities/pjl/asset.js"
+ ],
+ "note": "robes de pjlHorse.js (COATS, ordre du source), palette de coat.js (coatColours, hexadécimal sRGB tel qu’écrit), listes (BLAZE, uniformes uBlaze), chevaux de data.js (champs de la robe tels qu’écrits)",
+ "coats": [
+  "bay",
+  "darkbay",
+  "brown",
+  "chestnut",
+  "liverchestnut",
+  "grey",
+  "dapplegrey",
+  "black",
+  "palomino"
+ ],
+ "palette": {
+  "bay": {
+   "body": "#7c3d1c",
+   "points": "#151110",
+   "pointsAmt": 1,
+   "hair": "#141110",
+   "detail": 1.15
+  },
+  "darkbay": {
+   "body": "#4b2615",
+   "points": "#110d0c",
+   "pointsAmt": 1,
+   "hair": "#0f0c0b",
+   "detail": 1.1
+  },
+  "brown": {
+   "body": "#3b2318",
+   "points": "#110d0c",
+   "pointsAmt": 1,
+   "hair": "#100d0c",
+   "detail": 1.05
+  },
+  "chestnut": {
+   "body": "#9c4d1f",
+   "points": "#8a4019",
+   "pointsAmt": 0.35,
+   "hair": "#8f4a1c",
+   "detail": 1.15
+  },
+  "liverchestnut": {
+   "body": "#5a2b16",
+   "points": "#4a2412",
+   "pointsAmt": 0.3,
+   "hair": "#3f1f10",
+   "detail": 1.1
+  },
+  "grey": {
+   "body": "#cfcbc4",
+   "points": "#8d8a86",
+   "pointsAmt": 0.45,
+   "hair": "#dedad3",
+   "detail": 1
+  },
+  "dapplegrey": {
+   "body": "#b3b0ab",
+   "points": "#5d5b58",
+   "pointsAmt": 0.65,
+   "hair": "#c9c5bd",
+   "detail": 1
+  },
+  "black": {
+   "body": "#1b1715",
+   "points": "#121010",
+   "pointsAmt": 1,
+   "hair": "#0d0b0b",
+   "detail": 1.2
+  },
+  "palomino": {
+   "body": "#caa063",
+   "points": "#b98d52",
+   "pointsAmt": 0.3,
+   "hair": "#efe6cf",
+   "detail": 1.1
+  }
+ },
+ "blaze": {
+  "none": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "star": [
+   1,
+   0.12,
+   0.3,
+   0.32
+  ],
+  "stripe": [
+   1,
+   0.2,
+   0.85,
+   0.16
+  ],
+  "blaze": [
+   1,
+   0.12,
+   1.05,
+   0.34
+  ],
+  "bald": [
+   1,
+   0.05,
+   1.1,
+   0.75
+  ]
+ },
+ "horses": [
+  {
+   "id": "comete",
+   "name": "Comète",
+   "coat": "bay",
+   "blaze": true,
+   "socks": [
+    false,
+    false,
+    true,
+    false
+   ],
+   "model": null,
+   "trial": false
+  },
+  {
+   "id": "ulysse",
+   "name": "Ulysse",
+   "coat": "grey",
+   "blaze": false,
+   "socks": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "model": null,
+   "trial": false
+  },
+  {
+   "id": "onyx",
+   "name": "Onyx",
+   "coat": "black",
+   "blaze": false,
+   "socks": [
+    true,
+    false,
+    false,
+    false
+   ],
+   "model": null,
+   "trial": false
+  },
+  {
+   "id": "saphir",
+   "name": "Saphir",
+   "coat": "chestnut",
+   "blaze": true,
+   "socks": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "model": null,
+   "trial": false
+  },
+  {
+   "id": "tripo",
+   "name": "Tripo",
+   "coat": {
+    "body": "#a38069",
+    "mane": "#8a5233",
+    "legs": "#95725b",
+    "muzzle": "#5e463a",
+    "hoof": "#57493e",
+    "points": 0,
+    "sheen": "#dfbaa0",
+    "dapple": 0.08,
+    "flaxen": 0.1,
+    "swatch": "#b08a72"
+   },
+   "blaze": true,
+   "socks": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "model": "horse_tripo",
+   "trial": true
+  }
+ ],
+ "shader": {
+  "bodyFragmentSha1": "2be922035798eeb2aa0a169f334510d47da6779e",
+  "bodyVertexSha1": "83bf5da94f3c049fe4c64583e62229ad1cb04529",
+  "hairFragmentSha1": "d8e6e24c3ccc97852841198bc0d4cbaaf07add4d",
+  "edgeExpr": "0.04 + 0.03 * vnoise(vBindPos * 0.7)",
+  "widthExpr": "0.85 + 0.3 * vnoise(vBindPos * 0.5)",
+  "note": "empreintes SHA-1 du code injecté par onBeforeCompile (shader témoin : #include <common>, <begin_vertex>, <map_fragment>, <roughnessmap_fragment>, <opaque_fragment>) ; le matériau Unreal (scripts/unreal/import-horse-coat.py) porte ce code en HLSL et rappelle ces empreintes"
+ }
+}

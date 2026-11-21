@@ -1,0 +1,2079 @@
+{
+ "schema": "strides.oracle.horse_coat/1",
+ "generator": "scripts/unreal/export-horse-coat.mjs",
+ "source": [
+  "src/entities/pjl/coat.js",
+  "src/entities/pjlHorse.js",
+  "src/gameplay/data.js",
+  "src/entities/pjl/asset.js"
+ ],
+ "note": "coatOf(def) ; uniformes de makeCoatMaterial / makeHairMaterial (couleurs THREE.Color en espace linéaire, exception relevée dans « throws ») ; ownedHorses / activeHorseId (save.data) ; cheval engagé = HORSES[activeHorseId(d)] || HORSES.comete (game.js spawnMainHorse) puis coatOf",
+ "checks": [
+  "COATS (9) acceptées par coatOf ; robe inconnue → bay",
+  "PALETTE (9) lue par coatColours ; robe inconnue → bay",
+  "BLAZE (5) lu dans uBlaze de makeCoatMaterial"
+ ],
+ "coatOf": [
+  {
+   "id": "comete",
+   "def": {
+    "coat": "bay",
+    "blaze": true,
+    "socks": [
+     false,
+     false,
+     true,
+     false
+    ]
+   },
+   "out": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "id": "ulysse",
+   "def": {
+    "coat": "grey",
+    "blaze": false,
+    "socks": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "out": {
+    "colour": "grey",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "id": "onyx",
+   "def": {
+    "coat": "black",
+    "blaze": false,
+    "socks": [
+     true,
+     false,
+     false,
+     false
+    ]
+   },
+   "out": {
+    "colour": "black",
+    "blaze": "none",
+    "socks": [
+     0.38,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "id": "saphir",
+   "def": {
+    "coat": "chestnut",
+    "blaze": true,
+    "socks": [
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "out": {
+    "colour": "chestnut",
+    "blaze": "blaze",
+    "socks": [
+     0.38,
+     0.38,
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "id": "tripo",
+   "def": {
+    "coat": {
+     "body": "#a38069",
+     "mane": "#8a5233",
+     "legs": "#95725b",
+     "muzzle": "#5e463a",
+     "hoof": "#57493e",
+     "points": 0,
+     "sheen": "#dfbaa0",
+     "dapple": 0.08,
+     "flaxen": 0.1,
+     "swatch": "#b08a72"
+    },
+    "blaze": true,
+    "socks": [
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "out": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0.38,
+     0.38,
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {},
+   "out": {
+    "colour": "bay",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "palomino"
+   },
+   "out": {
+    "colour": "palomino",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "dapplegrey",
+    "blaze": "star",
+    "socks": [
+     0.2,
+     true,
+     false,
+     0.9
+    ]
+   },
+   "out": {
+    "colour": "dapplegrey",
+    "blaze": "star",
+    "socks": [
+     0.2,
+     0.38,
+     0,
+     0.9
+    ],
+    "dapples": 0.6
+   }
+  },
+  {
+   "def": {
+    "coat": "pink",
+    "blaze": "stripe"
+   },
+   "out": {
+    "colour": "bay",
+    "blaze": "stripe",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": {
+     "body": "#ffffff"
+    },
+    "blaze": "bald",
+    "socks": [
+     true,
+     true
+    ]
+   },
+   "out": {
+    "colour": "bay",
+    "blaze": "bald",
+    "socks": [
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": 42,
+    "blaze": 1,
+    "socks": [
+     1,
+     "x",
+     null,
+     true,
+     true
+    ]
+   },
+   "out": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     1,
+     0,
+     0,
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "liverchestnut",
+    "blaze": 0,
+    "socks": null
+   },
+   "out": {
+    "colour": "liverchestnut",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "darkbay",
+    "blaze": "none",
+    "socks": []
+   },
+   "out": {
+    "colour": "darkbay",
+    "blaze": "none",
+    "socks": [],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "brown",
+    "blaze": "blaze",
+    "socks": [
+     false,
+     false,
+     false,
+     false
+    ]
+   },
+   "out": {
+    "colour": "brown",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "Bay",
+    "blaze": true
+   },
+   "out": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "black",
+    "blaze": "unknown-mark"
+   },
+   "out": {
+    "colour": "black",
+    "blaze": "unknown-mark",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "def": {
+    "coat": "grey",
+    "socks": "abc"
+   },
+   "out": {
+    "throws": "(def.socks || [0,0,0,0]).map is not a function"
+   }
+  },
+  {
+   "def": {
+    "coat": "chestnut",
+    "socks": 3
+   },
+   "out": {
+    "throws": "(def.socks || [0,0,0,0]).map is not a function"
+   }
+  }
+ ],
+ "uniforms": [
+  {
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "grey",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.623960391667596,
+     0.5972017883558645,
+     0.55201140150344
+    ],
+    "points": [
+     0.2663556047920505,
+     0.2541520943200296,
+     0.23839757380151394
+    ],
+    "pointsAmt": 0.45,
+    "detail": 1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.6,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.7304607400847158,
+     0.7011018919268015,
+     0.6514056374127929
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "black",
+    "blaze": "none",
+    "socks": [
+     0.38,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.010960094003125918,
+     0.008568125615105716,
+     0.007499032040460618
+    ],
+    "points": [
+     0.006048833020386069,
+     0.005181516700061659,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.2,
+    "socks": [
+     0.38,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.004024717016506897,
+     0.0033465357620980074,
+     0.0033465357620980074
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "chestnut",
+    "blaze": "blaze",
+    "socks": [
+     0.38,
+     0.38,
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.33245153633549385,
+     0.07421356837213867,
+     0.013702083043526807
+    ],
+    "points": [
+     0.2541520943200296,
+     0.05126945836711539,
+     0.00972121731707524
+    ],
+    "pointsAmt": 0.35,
+    "detail": 1.15,
+    "socks": [
+     0.38,
+     0.38,
+     0.38,
+     0.38
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.2746773120495699,
+     0.06847816983662762,
+     0.011612245176281512
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0.38,
+     0.38,
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0.38,
+     0.38,
+     0.38,
+     0.38
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "bay",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "palomino",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.5906188409113381,
+     0.3515325994898463,
+     0.12477181755144427
+    ],
+    "points": [
+     0.48514994004665124,
+     0.2663556047920505,
+     0.08437621153575764
+    ],
+    "pointsAmt": 0.3,
+    "detail": 1.1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.8631572134510892,
+     0.7912979403281551,
+     0.623960391667596
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "dapplegrey",
+    "blaze": "star",
+    "socks": [
+     0.2,
+     0.38,
+     0,
+     0.9
+    ],
+    "dapples": 0.6
+   },
+   "out": {
+    "coat": [
+     0.450785782828426,
+     0.43415363616478553,
+     0.407240211891531
+    ],
+    "points": [
+     0.10946171076915331,
+     0.10461648408208657,
+     0.09758734713304495
+    ],
+    "pointsAmt": 0.65,
+    "detail": 1,
+    "socks": [
+     0.2,
+     0.38,
+     0,
+     0.9
+    ],
+    "blaze": [
+     1,
+     0.12,
+     0.3,
+     0.32
+    ],
+    "dapples": 0.6,
+    "wet": 0,
+    "roughness": 0.6,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.5840784178830671,
+     0.5583403896257968,
+     0.508881320845802
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "bay",
+    "blaze": "stripe",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     1,
+     0.2,
+     0.85,
+     0.16
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "bay",
+    "blaze": "bald",
+    "socks": [
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0.38,
+     0.38,
+     0,
+     1
+    ],
+    "blaze": [
+     1,
+     0.05,
+     1.1,
+     0.75
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     1,
+     0,
+     0,
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     1,
+     0,
+     0,
+     0.38
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "liverchestnut",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.10224173307914941,
+     0.024157632443547246,
+     0.008023192982520563
+    ],
+    "points": [
+     0.06847816983662762,
+     0.01764195448412081,
+     0.006048833020386069
+    ],
+    "pointsAmt": 0.3,
+    "detail": 1.1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.04970656597728775,
+     0.013702083043526807,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "darkbay",
+    "blaze": "none",
+    "socks": [],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.07036009568874305,
+     0.019382360952473074,
+     0.007499032040460618
+    ],
+    "points": [
+     0.005605391621829108,
+     0.004024717016506897,
+     0.0036765073221525194
+    ],
+    "pointsAmt": 1,
+    "detail": 1.1,
+    "socks": [
+     0,
+     0,
+     0,
+     1
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.004776953478513362,
+     0.0036765073221525194,
+     0.0033465357620980074
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "brown",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.04373502925049377,
+     0.01680737574872402,
+     0.009134058699157796
+    ],
+    "points": [
+     0.005605391621829108,
+     0.004024717016506897,
+     0.0036765073221525194
+    ],
+    "pointsAmt": 1,
+    "detail": 1.05,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.005181516700061659,
+     0.004024717016506897,
+     0.0036765073221525194
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     1,
+     0.12,
+     1.05,
+     0.34
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "black",
+    "blaze": "unknown-mark",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   },
+   "out": {
+    "throws": "BLAZE[(coat.blaze ?? \"none\")] is not iterable (cannot read property undefined)"
+   }
+  },
+  {
+   "coat": {
+    "colour": "bay"
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "darkbay"
+   },
+   "out": {
+    "coat": [
+     0.07036009568874305,
+     0.019382360952473074,
+     0.007499032040460618
+    ],
+    "points": [
+     0.005605391621829108,
+     0.004024717016506897,
+     0.0036765073221525194
+    ],
+    "pointsAmt": 1,
+    "detail": 1.1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.004776953478513362,
+     0.0036765073221525194,
+     0.0033465357620980074
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "brown"
+   },
+   "out": {
+    "coat": [
+     0.04373502925049377,
+     0.01680737574872402,
+     0.009134058699157796
+    ],
+    "points": [
+     0.005605391621829108,
+     0.004024717016506897,
+     0.0036765073221525194
+    ],
+    "pointsAmt": 1,
+    "detail": 1.05,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.005181516700061659,
+     0.004024717016506897,
+     0.0036765073221525194
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "chestnut"
+   },
+   "out": {
+    "coat": [
+     0.33245153633549385,
+     0.07421356837213867,
+     0.013702083043526807
+    ],
+    "points": [
+     0.2541520943200296,
+     0.05126945836711539,
+     0.00972121731707524
+    ],
+    "pointsAmt": 0.35,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.2746773120495699,
+     0.06847816983662762,
+     0.011612245176281512
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "liverchestnut"
+   },
+   "out": {
+    "coat": [
+     0.10224173307914941,
+     0.024157632443547246,
+     0.008023192982520563
+    ],
+    "points": [
+     0.06847816983662762,
+     0.01764195448412081,
+     0.006048833020386069
+    ],
+    "pointsAmt": 0.3,
+    "detail": 1.1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.04970656597728775,
+     0.013702083043526807,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "grey"
+   },
+   "out": {
+    "coat": [
+     0.623960391667596,
+     0.5972017883558645,
+     0.55201140150344
+    ],
+    "points": [
+     0.2663556047920505,
+     0.2541520943200296,
+     0.23839757380151394
+    ],
+    "pointsAmt": 0.45,
+    "detail": 1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.6,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.7304607400847158,
+     0.7011018919268015,
+     0.6514056374127929
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "dapplegrey"
+   },
+   "out": {
+    "coat": [
+     0.450785782828426,
+     0.43415363616478553,
+     0.407240211891531
+    ],
+    "points": [
+     0.10946171076915331,
+     0.10461648408208657,
+     0.09758734713304495
+    ],
+    "pointsAmt": 0.65,
+    "detail": 1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 1,
+    "wet": 0,
+    "roughness": 0.6,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.5840784178830671,
+     0.5583403896257968,
+     0.508881320845802
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "black"
+   },
+   "out": {
+    "coat": [
+     0.010960094003125918,
+     0.008568125615105716,
+     0.007499032040460618
+    ],
+    "points": [
+     0.006048833020386069,
+     0.005181516700061659,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.2,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.004024717016506897,
+     0.0033465357620980074,
+     0.0033465357620980074
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "palomino"
+   },
+   "out": {
+    "coat": [
+     0.5906188409113381,
+     0.3515325994898463,
+     0.12477181755144427
+    ],
+    "points": [
+     0.48514994004665124,
+     0.2663556047920505,
+     0.08437621153575764
+    ],
+    "pointsAmt": 0.3,
+    "detail": 1.1,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.8631572134510892,
+     0.7912979403281551,
+     0.623960391667596
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "zzz"
+   },
+   "out": {
+    "coat": [
+     0.20155625378383743,
+     0.04666508633021928,
+     0.011612245176281512
+    ],
+    "points": [
+     0.007499032040460618,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "pointsAmt": 1,
+    "detail": 1.15,
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "blaze": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0,
+    "wet": 0,
+    "roughness": 0.48,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.0069954101845983935,
+     0.005605391621829108,
+     0.005181516700061659
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  },
+  {
+   "coat": {
+    "colour": "dapplegrey",
+    "blaze": "star",
+    "socks": [
+     0.1,
+     0.2
+    ]
+   },
+   "out": {
+    "coat": [
+     0.450785782828426,
+     0.43415363616478553,
+     0.407240211891531
+    ],
+    "points": [
+     0.10946171076915331,
+     0.10461648408208657,
+     0.09758734713304495
+    ],
+    "pointsAmt": 0.65,
+    "detail": 1,
+    "socks": [
+     0.1,
+     0.2,
+     0,
+     1
+    ],
+    "blaze": [
+     1,
+     0.12,
+     0.3,
+     0.32
+    ],
+    "dapples": 1,
+    "wet": 0,
+    "roughness": 0.6,
+    "metalness": 0,
+    "side": 2,
+    "hair": [
+     0.5840784178830671,
+     0.5583403896257968,
+     0.508881320845802
+    ],
+    "hairRoughness": 0.62,
+    "alphaTest": 0.35,
+    "hairSide": 2,
+    "hairTransparent": false
+   }
+  }
+ ],
+ "active": [
+  {
+   "save": {},
+   "owned": [
+    "comete",
+    "tripo"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "horses": [
+     "comete"
+    ],
+    "activeHorse": "comete"
+   },
+   "owned": [
+    "comete",
+    "tripo"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "horses": [
+     "comete",
+     "ulysse"
+    ],
+    "activeHorse": "ulysse"
+   },
+   "owned": [
+    "comete",
+    "tripo",
+    "ulysse"
+   ],
+   "active": "ulysse"
+  },
+  {
+   "save": {
+    "horses": [
+     "comete",
+     "ulysse"
+    ],
+    "activeHorse": "saphir"
+   },
+   "owned": [
+    "comete",
+    "tripo",
+    "ulysse"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "horses": [
+     "comete"
+    ],
+    "activeHorse": "tripo"
+   },
+   "owned": [
+    "comete",
+    "tripo"
+   ],
+   "active": "tripo"
+  },
+  {
+   "save": {
+    "horses": [
+     "saphir",
+     "onyx",
+     "saphir",
+     "licorne"
+    ],
+    "activeHorse": "onyx"
+   },
+   "owned": [
+    "saphir",
+    "tripo",
+    "onyx"
+   ],
+   "active": "onyx"
+  },
+  {
+   "save": {
+    "horses": [
+     "licorne"
+    ],
+    "activeHorse": "licorne"
+   },
+   "owned": [
+    "comete",
+    "tripo"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "horses": [],
+    "activeHorse": "comete"
+   },
+   "owned": [
+    "comete",
+    "tripo"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "horses": "comete",
+    "activeHorse": "ulysse"
+   },
+   "owned": [
+    "comete",
+    "tripo"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "horses": [
+     "tripo",
+     "ulysse"
+    ],
+    "activeHorse": null
+   },
+   "owned": [
+    "ulysse",
+    "tripo"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "activeHorse": "onyx"
+   },
+   "owned": [
+    "comete",
+    "tripo"
+   ],
+   "active": "comete"
+  },
+  {
+   "save": {
+    "horses": [
+     "onyx"
+    ]
+   },
+   "owned": [
+    "onyx",
+    "tripo"
+   ],
+   "active": "comete"
+  }
+ ],
+ "engaged": [
+  {
+   "save": {},
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "comete"
+    ],
+    "activeHorse": "comete"
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "comete",
+     "ulysse"
+    ],
+    "activeHorse": "ulysse"
+   },
+   "id": "ulysse",
+   "model": null,
+   "coat": {
+    "colour": "grey",
+    "blaze": "none",
+    "socks": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "comete",
+     "ulysse"
+    ],
+    "activeHorse": "saphir"
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "comete"
+    ],
+    "activeHorse": "tripo"
+   },
+   "id": "tripo",
+   "model": "horse_tripo",
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0.38,
+     0.38,
+     0.38,
+     0.38
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "saphir",
+     "onyx",
+     "saphir",
+     "licorne"
+    ],
+    "activeHorse": "onyx"
+   },
+   "id": "onyx",
+   "model": null,
+   "coat": {
+    "colour": "black",
+    "blaze": "none",
+    "socks": [
+     0.38,
+     0,
+     0,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "licorne"
+    ],
+    "activeHorse": "licorne"
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [],
+    "activeHorse": "comete"
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": "comete",
+    "activeHorse": "ulysse"
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "tripo",
+     "ulysse"
+    ],
+    "activeHorse": null
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "activeHorse": "onyx"
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  },
+  {
+   "save": {
+    "horses": [
+     "onyx"
+    ]
+   },
+   "id": "comete",
+   "model": null,
+   "coat": {
+    "colour": "bay",
+    "blaze": "blaze",
+    "socks": [
+     0,
+     0,
+     0.38,
+     0
+    ],
+    "dapples": 0
+   }
+  }
+ ]
+}

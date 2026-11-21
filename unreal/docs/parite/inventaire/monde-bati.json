@@ -1,0 +1,945 @@
+[
+ {
+  "id": "monde.bati-facades-normandes",
+  "domaine": "Monde",
+  "fonction": "Bâtiments procéduraux (buildingGeo, PALETTE) : murs enduits (5 teintes) ou brique (3), soubassement, toit à deux pans, en croupe ou plat (hauteur 0,45 x petite dimension, débord 0,45 m), maisons à pans de bois du Pays d'Auge avec étage en encorbellement de 0,22 m, lucarnes, avant-corps à pignon, gouttières et descentes, cheminées à mitrons, volets (6 teintes côtières, stables par bâtiment), encadrements de pierre sur la brique, socle enfoncé de 2 m dans la pente ; volets et détails sans ombre portée.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36) ; matériau choisi par classe de couleur et d'orientation (scripts/unreal/world-export.js:96-115, scripts/unreal/import-world.py:619-635)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; .tmp/shots.log:1525 « 206 maillages d'architecture, 16 haies, 2541 arbres » ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor. Capture Unreal seule Saved/Screenshots/Strides/04_ville_rue.png (18/11), sans pendant web.",
+  "ecart": "Géométrie figée au moment de l'export ; couleurs peintes reclassées par heuristique (couleur, orientation) en 12 classes (11 matériaux photo et le colombage), verre et lampe étant imposés par lot, soit 14 créneaux (.tmp/unreal-import/import-world.log), sans lien avec la pièce d'origine ; détails fusionnés aux tuiles, dessinés à toute distance et portant ombre ; sur 04_ville_rue.png, triangles clairs aux angles de certaines fenêtres (origine à confirmer).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-colombage",
+  "domaine": "Monde",
+  "fonction": "Pans de bois normands codés par une couleur magenta (colombage(fill, wood)) puis dessinés par le shader : poteaux serrés espacés de 0,46 m (1,05 m pour un code), larges de 0,15 à 0,20 m, hourdis enduit (crème, blanc, ocre) ou briques en épi, trois teintes de bois, sablières et poteaux d'angle en bois plein.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "M_WorldColombage, portage HLSL du shader web avec détail photo enduit et planches (scripts/unreal/import-world.py:366-441) ; classe « colombage » de l'export (scripts/unreal/world-export.js:103)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded) ; matériau généré (.tmp/unreal-import/import-world.log : « matériau M_WorldColombage expressions 14 ») et appliqué aux tuiles chargées par AStridesScenery ; capture Unreal seule 04_ville_rue.png, sans pendant web.",
+  "ecart": "Code relu sur une couleur de sommet réencodée sRGB et moyennée par triangle (seuils arrondis) ; rendu non comparé au web ; 62 450 triangles classés « colombage » à l'export (.tmp/unreal-import/world-scene/world_scene.json ; la copie Content/Data/World/world_scene.json n'a pas ce champ) sans contrôle que tous les pans de bois y tombent.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-vitrages-effet-piece",
+  "domaine": "Monde",
+  "fonction": "Vitrages winBox portant les coordonnées locales de la fenêtre (attribut win) pour simuler une pièce derrière la vitre ; largeur négative = ouverture de box sans vitre ; vitrines de commerce (shopWinBox) toujours éclairées avec étagères garnies ; ensureWin rend tous les vitrages fusionnables.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "M_WorldGlass (scripts/unreal/import-world.py:488-497) : couleur de sommet x 0,12, rugosité 0,06 ; vitres décollées de 2,5 cm du mur (scripts/unreal/world-export.js:143-146)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded) ; l'attribut win n'est pas exporté (scripts/unreal/world-export.js:160-164 ne garde que position, normale, couleur, UV). Capture Unreal seule 04_ville_rue.png : vitres uniformément sombres.",
+  "ecart": "Aucune pièce simulée, aucune vitrine garnie ni éclairée, aucun allumage le soir.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-hangar-foin",
+  "domaine": "Monde",
+  "fonction": "Hangar ouvert (shedGeo) : poteaux de bois sombre de 5 m par défaut portant un toit à deux pans (débord 0,8 m), mur de fond en bois, stock de 36 bottes de foin sur 3 rangs ; posé dans la cour de l'Écurie du Val, ouvert vers l'est.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; foin rendu par la classe « straw » (MI_Straw, photo sparse_grass) ; collision par triangles de la tuile au lieu des boîtes web.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-clotures",
+  "domaine": "Monde",
+  "fonction": "Clôtures (fenceGeo) suivant le relief : hauteur 1,15 m, 2 lisses blanches, poteaux tous les 3 m, variante à planches pleines (paddock de Paris 1,0 m), tracé ouvert ou fermé.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36) ; collision complexe des tuiles « static » (scripts/unreal/import-world.py:695-701, 713-714)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; collision par triangles du maillage au lieu des colliders web.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-reverberes",
+  "domaine": "Monde",
+  "fonction": "Réverbère en fonte (lampGeo) d'environ 4,1 m : socle, fût de 3,35 m, crosse de 0,75 m, lanterne hexagonale lumineuse ; moulures, bagues, volute et fleuron dessinés seulement de près ; collision de 0,2 m de rayon ; flaque de lumière au sol la nuit sous la lanterne.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36) ; lanterne dans les tuiles lights_* en M_WorldLamp (scripts/unreal/import-world.py:500-508)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Lanterne émissive en permanence (couleur x 2,5), sans lumière réelle ni flaque au sol ; moulures, bagues, volute et fleuron (batch.addDetail, src/world/world.js:298) fusionnés aux tuiles static : dessinés à toute distance et portant ombre, seule la lanterne (tuile lights) étant coupée à 450 m (StridesScenery.cpp:67) ; collision par maillage.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-mobilier-urbain",
+  "domaine": "Monde",
+  "fonction": "Mobilier : bancs publics (lattes de chêne, flancs et accoudoirs en fonte), parasols bicolores, stores bannes rayés (bandes d'environ 0,6 m, 1,5 m de profondeur, à 3,05 m), jardinières de rue (bac acier de 1,6 x 0,6 m, haut de 0,5 m ; 9 touffes et 14 fleurs en détail sans ombre, toujours dessinées dans les rues (niveau 1, src/world/world.js:1547) ou dans le lot détail masqué au-delà de 240 m (src/world/world.js:614)), mâts de drapeaux de 7 m (drapeau 1,1 x 1,7 m), balles rondes de foin.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; feuillage et fleurs des jardinières rendus par la classe « foliage » (photo forest_leaves_02) ; feuillage des jardinières fusionné aux tuiles static (toujours dessiné, portant ombre) ou aux tuiles detail (coupées à 450 m au lieu de 240 m, portant ombre).",
+  "tranche": "c"
+ },
+ {
+  "id": "cso.geometrie-chandeliers-barres",
+  "domaine": "CSO",
+  "fonction": "Géométrie des obstacles de CSO (showJumpGeo, railGeo) : chandeliers à ailes (montant peint à bandes tous les 0,5 m, hauteur h + 0,75 m, aile de 0,95 m à 4 lattes, pieds en croix), taquets métalliques sous chaque barre (oxer montant : barre avant 5 cm plus basse), barres de 10 cm peintes en bandes d'environ 45 cm à embouts arrondis, planche peinte (vertical) ou jardinière de buis fleurie (oxer), fanions rouge à droite et blanc à gauche dans le sens du saut.",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "Maillages exportés du jeu web (scripts/unreal/cso-export.js : showJumpGeo, railGeo découpés en pièces) importés dans unreal/StridesGrandTour/Content/World/Cso/Meshes ; posés par AStridesFence::BuildExported (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesFence.cpp:63-106)",
+  "etat": "identique_prouve",
+  "niveau": "joue_ecran",
+  "preuve": "géométrie construite par le jeu web lui-même dans la page en cours d'exécution (scripts/unreal/export-cso-runs.mjs --fences, scripts/unreal/cso-export.js : classe Obstacles, showJumpGeo, railGeo, flagsGeo, planterGeo, _timingLine, poteau de activities.js sur un jeu témoin ; chaque primitive relevée à sa création et à sa peinture, découpée en pièces) ; construction témoin comparée au jeu réel au bit près (sommets et couleurs de chaque maillage, hauteurs, sol) hors épreuve (avant le lancement de l'activité) et en épreuve (après l'entrée en piste), lignes et poteau compris ; deux exports consécutifs identiques à l'octet (GLB et manifeste) ; manifeste unreal/StridesGrandTour/Content/World/Cso/cso_fences.json (10 obstacles, 95 maillages uniques, 14 textures, 30 560 triangles par état) ; import Unreal (scripts/unreal/import-cso-fences.py) : boîtes englobantes des 95 maillages importés égales à celles du manifeste à 0,0001 cm (repère x → X, z → Y, y → Z vérifié) ; test moteur unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:225-439 (Strides.Parite.CsoScenery) : chandeliers, ailes, taquets, barres, barres basses, remplissage par obstacle et par état identiques au relevé (nombre, maillage, pivot à 0,0001 cm) ; montages côte à côte unreal/docs/parite/cso/carriere-aerienne.png, ligne-depart.png, ligne-arrivee.png, poteau-chrono.png, chute-barre-*.png (tranche T5).",
+  "ecart": "Aucun sur la géométrie (pièces, dimensions, poses, bandes peintes). Rendu des matériaux, hors de cette ligne : ombres des nuages (addCloudShadows) non portées, teintes et ombres du rendu Metal, couleur du mur (cso.obstacles-habillage) ; pas d'instanciation (budget de triangles iOS non mesuré).",
+  "tranche": "a"
+ },
+ {
+  "id": "monde.bati-obstacles-cross",
+  "domaine": "Monde",
+  "fonction": "Obstacles de cross : tronc écorcé (rayon h/2, relief d'écorce, cernes aux extrémités) posé sur chevalets (logJumpGeo) ; haie de cross en brosse de bouleau sur caisson de bois, entre deux piquets blancs (brushJumpGeo).",
+  "js": [
+   "src/world/builders.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun obstacle de cross : AStridesFence ne connaît que vertical, oxer et mur.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-generateurs-inutilises",
+  "domaine": "Monde",
+  "fonction": "Infra : générateurs présents mais appelés nulle part dans src/ ni tests/ : stableGeo (ancienne écurie à boxes) et carGeo en boîtes (builders.js), barnBoxCenters (barns.js), roadTexture (textures.js), drawStridesMark et drawWordmark (textures.js).",
+  "js": [
+   "src/world/builders.js",
+   "src/world/barns.js",
+   "src/world/textures.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). Sans fonction joueur côté web (rg : aucun appel).",
+  "ecart": "Sans objet tant que le web ne les appelle pas.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-ecuries-americaines",
+  "domaine": "Monde",
+  "fonction": "Écuries « à l'américaine » (barnGeo) : bâtiment fermé traversé par une allée centrale (3,6 m par défaut, 8,4 m au Pôle, 4,2 m à Paris, 3,2 m aux Dunes et à Gatien), boxes de 3,6 x 3,6 m de part et d'autre, murs de 0,25 m, 4,2 m à l'égout, toit d'environ 30° (27° sous tente) débordant de 0,9 m, soubassement béton, bardage ou enduit, portes coulissantes en pignon et sur l'allée transversale, charpente apparente, façades de boxes à barreaudage et porte coulissante, fenêtres de box ouvrantes côté cour ou hautes ; styles : Écurie du Val, haras (2 ailes), Dunes, Gatien, Pôle, tente de Paris.",
+  "js": [
+   "src/world/barns.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor. Captures Unreal seules 01_ecurie_cour.png et 02_ecurie_vue.png (18/11), sans pendant web.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; vitres de box en M_WorldGlass ; matériaux photo déduits de la couleur peinte ; lucarnes de l'écurie : triangles clairs résiduels signalés par unreal/docs/decors.md:45 (non vérifié ici).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-ecuries-locaux",
+  "domaine": "Monde",
+  "fonction": "Locaux des écuries par module : aire de pansage avec attaches croisées, douche carrelée (caniveau à grille, potence pivotante avec tuyau, lampe chauffante infrarouge), sellerie (porte-selles garnis, porte-filets, armoires, malles), salle d'aliments (coffres, sacs), éclairage suspendu de l'allée, locaux fermés sous plafond (grenier).",
+  "js": [
+   "src/world/barns.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36) ; lampes dans les tuiles lights_* (M_WorldLamp)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; réglettes et lampe chauffante émissives en permanence, sans lumière réelle ; plafonds des locaux pour la caméra absents.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-club-house",
+  "domaine": "Monde",
+  "fonction": "Club-house vitré (clubHouseGeo, 12 x 8 x 3,4 m par défaut) : murs sombres, baies vitrées de 2,4 m sur la carrière, vitrage latéral, 3 plafonniers, terrasse ; plafond et collisions fournis.",
+  "js": [
+   "src/world/barns.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; baies en M_WorldGlass, plafonniers émissifs en permanence ; ni plafond caméra ni zone intérieure.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-collisions-plafonds",
+  "domaine": "Monde",
+  "fonction": "Collisions et plafonds fournis par les générateurs : murs des écuries, de la maison et des commerces en boîtes avec ouvertures de portes (porte des commerces fermée : on entre par l'action « Entrer »), plafonds des locaux et sous-face des toits pour la caméra, zones intérieures (lumière du ciel réduite), centres des boxes.",
+  "js": [
+   "src/world/barns.js",
+   "src/world/homeGeo.js",
+   "src/world/shopGeo.js"
+  ],
+  "unreal": "Collision complexe des tuiles « static » (scripts/unreal/import-world.py:695-701, 713-714 ; AStridesScenery::AddMesh, StridesScenery.cpp:86-97)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded) ; aucun test de collision ni de caméra en intérieur.",
+  "ecart": "Collision par triangles du maillage au lieu des boîtes web ; porte vitrée des commerces non exportée (baie ouverte sur un intérieur vide, à confirmer) ; aucun plafond caméra ni zone intérieure ; détails, vitres et lampes sans collision.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-maison-exterieur",
+  "domaine": "Monde",
+  "fonction": "Maison de l'Écurie du Val (houseExterior) : longère normande enduite de 18,4 x 8,6 m, murs de 0,32 m et 3,2 m à l'égout, toit d'ardoise de 4 m (pente d'environ 43°) débordant de 0,45 m (0,30 m sur les pignons), porte d'entrée sur la cour, fenêtres à petits bois avec volets, lucarnes, œils-de-bœuf, cheminée de brique, chaînes d'angle, vitrages à effet de pièce allumés la nuit.",
+  "js": [
+   "src/world/homeGeo.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; vitrages sans effet de pièce, fenêtres éclairées (glow) émissives en permanence ; la porte ne mène à aucun intérieur.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-maison-pieces",
+  "domaine": "Monde",
+  "fonction": "Intérieur de la maison construit à la demande en étapes (houseInteriorSteps) : salle de bain, chambre, salon, cuisine ; cloisons de 0,12 m percées de passages de 2,18 m, sols, parements, plinthes, plafond à 2,78 m ; salon avec cheminée, bibliothèque, canapé, fauteuil, vitrine à trophées, photos de chevaux, rideaux ; cuisine équipée et table ; chambre (lit, chevets, armoire, commode) ; douche, vasque, WC ; 6 points lumineux chauds ; invisible du dehors.",
+  "js": [
+   "src/world/homeGeo.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). unreal/README.md:37 range aussi les intérieurs en « à faire ».",
+  "ecart": "Aucun intérieur ni chargement à la demande.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-maison-plan",
+  "domaine": "Monde",
+  "fonction": "Plan de la maison sans géométrie (houseLayout, roomAt, houseAnchor) : 3 cloisons, 8 baies, 25 meubles en collision avec hauteur de dessus (0,4 à 2,15 m), repères d'arrivée, de sortie et de porte, pièce courante, repères en coordonnées monde, plafond caméra à 2,95 m.",
+  "js": [
+   "src/world/homeGeo.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Ni plan, ni collisions intérieures, ni repères.",
+  "tranche": "c"
+ },
+ {
+  "id": "vie.points-action-maison",
+  "domaine": "Rythme de vie",
+  "fonction": "Points d'action de la maison (fixtures, anchors) : lit (« Se coucher », position allongée tête sur l'oreiller), évier de la cuisine (« Boire un verre d'eau »), lavabo (« Se rafraîchir »), place au salon ; lus par HomeManager (src/gameplay/home.js:47-64).",
+  "js": [
+   "src/world/homeGeo.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune action domestique (dormir, boire, se rafraîchir).",
+  "tranche": "d"
+ },
+ {
+  "id": "monde.bati-commerces-facades",
+  "domaine": "Monde",
+  "fonction": "Façades des 3 commerces visitables de Deauville City (Sellerie du Port 20 x 14 m, Le Galop 14 x 10 m, boutique d'équitation 10 x 11 m ; shopExterior, shopHoles, wallWithHoles) : rez-de-chaussée maçonné de 0,32 m percé de baies, soubassement de pierre, devanture en applique de bois peint (pilastres, panneaux moulurés, bandeau d'enseigne, corniche, bavette de zinc), vitrines en retrait à petits bois, porte vitrée avec imposte et poignée de laiton, seuil de pierre (marche de 16 cm, plancher à +0,18 m), lanternes éclairées la nuit, store banne festonné (café, boutique), enseigne drapeau sur potence, étages d'habitation au-dessus.",
+  "js": [
+   "src/world/shopGeo.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36) ; enseignes en panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Verre des vitrines et de la porte (maillage « shop-glass » hors lots, sans texture) non exporté : baies ouvertes ; lanternes émissives en permanence ; aucune action « Entrer » ni intérieur.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-devantures-rue",
+  "domaine": "Monde",
+  "fonction": "Devantures des maisons de la ville (streetShopfront) : applique peinte de 0,32 m de saillie, piliers, soubassements à panneaux, vitrines à meneau toujours éclairées (rampe allumée la nuit), bandeau à 2,62 m portant l'enseigne d'un commerce fictif, corniche.",
+  "js": [
+   "src/world/shopGeo.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36) ; enseignes en panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Vitrines sans effet de pièce ni étagères (M_WorldGlass) ; rampes de vitrine émissives en permanence ; enseignes figées dans la langue de l'export.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-kit-pieces",
+  "domaine": "Monde",
+  "fonction": "Infra des intérieurs : Kit (géométrie rangée par matériau : A architecture et bois, L cuir, F tissu, M métal, G verre, E ampoules émissives), coque de pièce (roomShell : plancher, plafond, lambris, enduit, poutres, plinthes, retours des baies), tore, tour et capsule.",
+  "js": [
+   "src/world/shopGeo.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun outil de construction d'intérieur.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-articles-equitation",
+  "domaine": "Monde",
+  "fonction": "Articles exposés modélisés : selles (cuir, tapis, liseré), filets, licols, piles de tapis, paires de guêtres, casques, bottes, vêtements sur cintre, mannequins, rayonnages, suspensions, étiquettes de prix.",
+  "js": [
+   "src/world/shopGeo.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun article modélisé.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-chargement-commerces",
+  "domaine": "Monde",
+  "fonction": "Intérieur d'un commerce construit à la demande (buildInterior) et retiré à la sortie : géométrie par matériau, jusqu'à 6 points lumineux chauds, collisions du mobilier (hauteur de dessus), point d'arrivée et de sortie (shopAnchor), panneaux intérieurs ; shopLayout(id) donne collisions et rayons sans rien construire.",
+  "js": [
+   "src/world/shopInteriors.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune entrée dans un commerce.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-sellerie-du-port",
+  "domaine": "Monde",
+  "fonction": "Sellerie du Port (20 x 14 m, buildSellerie) : mur des selles au fond et îlot de selles, briderie à gauche, tapis à droite, protections au centre, soins près de l'entrée, équipement du cavalier dans l'angle, comptoir face à la porte avec présentoir Strides, trois vitrines, 13 meubles en collision.",
+  "js": [
+   "src/world/shopInteriors.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Intérieur inexistant.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-cafe-le-galop",
+  "domaine": "Monde",
+  "fonction": "Café-boulangerie Le Galop (14 x 10 m, buildCafe) : comptoir et vitrine à pâtisseries à gauche, pains au mur, machine à café, salle de 4 tables à droite, ardoise du menu avec les prix de CAFE_MENU (chalkTexture, « x,xx € » en français, « €x.xx » en anglais), présentoir Strides, 8 meubles en collision.",
+  "js": [
+   "src/world/shopInteriors.js",
+   "src/world/textures.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). L'ardoise est construite avec l'intérieur, donc absente de l'export.",
+  "ecart": "Intérieur et ardoise inexistants.",
+  "tranche": "c"
+ },
+ {
+  "id": "economie.rayons-catalogue-commerces",
+  "domaine": "Économie",
+  "fonction": "Rayons interactifs des commerces (fixtures) : point d'interaction et catégories du catalogue — sellerie : selles (2), briderie, tapis, protections, soins, cavalier, comptoir ; café : comptoir et vitrine ; boutique : vestes, polos, pantalons, bottes et casques, accessoires, équipement du cheval, cabine d'essayage (vestes, polos, pantalons, accessoires, casques), comptoir.",
+  "js": [
+   "src/world/shopInteriors.js",
+   "src/world/storeInterior.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun rayon, aucun achat, aucun essayage.",
+  "tranche": "e"
+ },
+ {
+  "id": "pnj.personnel-clients-commerces",
+  "domaine": "PNJ",
+  "fonction": "Personnel et clientèle des commerces : Margaux Leroy (sellière), Paul Hamel (boulanger), Hélène Marchand (conseillère de vente) avec tenues définies ; une boulangère ; clients debout ou assis (1 à la sellerie, 2 assis en salle et 3 en terrasse au café, 2 à la boutique).",
+  "js": [
+   "src/world/shopInteriors.js",
+   "src/world/storeInterior.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun personnage dans les commerces.",
+  "tranche": "g"
+ },
+ {
+  "id": "monde.interieur-boutique-equitation",
+  "domaine": "Monde",
+  "fonction": "Boutique d'équitation (ancienne Maison Lucette, 10 x 11 m, buildStore) : cabine d'essayage et miroir, comptoir avec bandeau rétroéclairé, portant mural de vestes de concours (3 coloris) et softshells, table et portant des pantalons (4 coloris), étagères de polos (6 coloris), podium bottes et casques, mur des accessoires (gants, casquettes, ceintures, chaussettes), tapis de selle (6 jeux), bonnets (3) et guêtres, tête de cheval en résine coiffée d'un bonnet, porte-couverture, caisson lumineux, mannequins cavaliers, podiums des vitrines, 17 meubles en collision.",
+  "js": [
+   "src/world/storeInterior.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Intérieur inexistant.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-boutique-regle-marque",
+  "domaine": "Monde",
+  "fonction": "Règle partenaire de la boutique (storeSkin, STORE_BRAND = kingsland) : tant que la marque n'est pas « authorized » (statut actuel « pending », src/partners/partners.js:49), habillage neutre (nom neutre traduit, sous-titre du métier, pictogramme fer à cheval, aucun nom, logo, visuel ni slogan de la marque) ; une fois autorisée, nom officiel et ressources officielles fournies affichées telles quelles, à leurs proportions.",
+  "js": [
+   "src/world/storeSkin.js",
+   "src/world/storeBrand.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). Seules les textures de l'état au moment de l'export sont figées dans architecture.glb (voir monde.bati-boutique-enseignes).",
+  "ecart": "Aucune bascule selon le statut : passer à la marque autorisée exige un réexport ; règle non vérifiable côté Unreal.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-boutique-enseignes",
+  "domaine": "Monde",
+  "fonction": "Habillage extérieur de la boutique (storeFascia, storeBlade, storeDecal, decalMesh) : bandeau 2048 x 256 (logo officiel si fourni, sinon lettres peintes), enseigne drapeau 256 x 256 (fer à cheval générique ou logo), lettrage des vitrines (1024 x 256) et de la porte (512 x 192) en décalcomanies ; version texte dessinée d'abord, image officielle substituée à son chargement (image illisible : texte conservé).",
+  "js": [
+   "src/world/storeBrand.js"
+  ],
+  "unreal": "Panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; LoadObject<UStaticMesh> ne contrôle ni les matériaux ni les textures des panneaux : la fonction (textures dessinées) n'est couverte par aucun test, niveau ramené à compile ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Textures figées à l'export (version neutre attendue, statut pending ; non contrôlé) ; décalcomanies coupées à 450 m au lieu de 120 m ; aucune substitution d'image officielle.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.interieur-boutique-panneaux",
+  "domaine": "Monde",
+  "fonction": "Panneaux intérieurs de la boutique (storeSignTexture, storeSignMesh) : bandeau rétroéclairé derrière le comptoir (1024 x 256) et caisson lumineux (affiche 512 x 740), neutres ou officiels selon la règle partenaire.",
+  "js": [
+   "src/world/storeBrand.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Inexistants (pas d'intérieur).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-salle-arene",
+  "domaine": "Monde",
+  "fonction": "Salle du Grand Prix de Paris Indoor (hommage fictif, aucun nom ni logo réels) à x = 4 000 m : hall de 112 x 76 x 21 m en bardage sombre, piste de sable fibré de 86 x 46 m, porte des cavaliers à l'ouest, entrées du public et hall vitré au sud, toiture et fermes métalliques tous les 12 m avec coursives, plafond pour la caméra, zone intérieure, projecteurs de piste.",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "Lots statiques de Paris exportés : tuiles static_23 à static_28, detail_42 à 45, glass_26, lights_23 à 28 (Content/Data/World/world_assets.json), posés par AStridesScenery::Build (StridesScenery.cpp:60-70)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucune capture de Paris (Saved/Screenshots/Strides : 28 images, 8 vues fixes de Deauville, 1 vue de jeu et 19 captures du parcours du Pôle) ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Estimation hors moteur (formule du relief lointain StridesScenery.cpp:139-147 appliquée aux hauteurs de Content/Data/World/terrain.bin) : relief Unreal de 42 à 52 m sur l'emprise de Paris (x 3 800 à 4 070, z ±90) contre un sol de Paris à 31 m (PARIS.y = max(12, bord est + 1,5), src/world/terrain.js:155-157) : probablement enterré de 11 à 21 m, à confirmer à l'écran ; ni plafond caméra ni zone intérieure ; aucun accès (voir monde.paris de monde-socle.json).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-tribunes-public",
+  "domaine": "Monde",
+  "fonction": "Tribunes pleines au nord, au sud et à l'est : gradins de 0,85 m pour 0,5 m de haut du passage de 2 m au mur, garde-corps vitré, public dessiné en texture sur un plan incliné, émissif 0,32 (0,28 + 0,12 x intensité du spectacle) avec scintillement pendant les applaudissements.",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "Lots statiques de Paris exportés : tuiles static_23 à static_28, detail_42 à 45, glass_26, lights_23 à 28 (Content/Data/World/world_assets.json), posés par AStridesScenery::Build (StridesScenery.cpp:60-70) (gradins) ; plan du public absent (groupe « paris » hors world.group, non parcouru par scripts/unreal/world-export.js:221)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Tribunes vides, sans public ni réaction ; Estimation hors moteur (formule du relief lointain StridesScenery.cpp:139-147 appliquée aux hauteurs de Content/Data/World/terrain.bin) : relief Unreal de 42 à 52 m sur l'emprise de Paris (x 3 800 à 4 070, z ±90) contre un sol de Paris à 31 m (PARIS.y = max(12, bord est + 1,5), src/world/terrain.js:155-157) : probablement enterré de 11 à 21 m, à confirmer à l'écran.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-ecrans-geants",
+  "domaine": "Monde",
+  "fonction": "Cube d'écrans géants (faces de 9,6 x 5,4 m) suspendu à 13,5 m au-dessus de la piste et écran mural de 12 x 6,75 m au-dessus de la porte des cavaliers, redessinés toutes les 0,25 s : titre, deux lignes, chrono à 2 décimales ou compte à rebours de la cloche, pénalités en rouge (0 en vert), « pt/pts » selon la langue.",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun écran ni affichage du chrono dans la salle.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-faisceaux-projecteurs",
+  "domaine": "Monde",
+  "fonction": "Spectacle et éclairage : 8 faisceaux coniques additifs (rayon 2,6 m) balayant la piste, opacité 0,035 + 0,08 x intensité du spectacle, virant au rouge en fin de présentation ; rampes de lampes au-dessus de la piste allumées en permanence ; emplacement de projecteurs (csFlood) pour la piste et ses abords ; mise à jour seulement à Paris (update).",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). Rampes et faisceaux appartiennent au groupe « paris », non exporté.",
+  "ecart": "Ni faisceaux, ni rampes, ni projecteurs.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-lice-enseignes",
+  "domaine": "Monde",
+  "fonction": "Lice de la piste : planches blanches de 1,05 m en collision avec face imprimée de panneaux (bande de 0,9 m, motif tous les 40 m, émissif 0,25) ; enseignes rétroéclairées « GRAND PRIX DE PARIS INDOOR » sur la façade sud (34 m) et au-dessus de l'entrée des cavaliers (22 m), lisibles de nuit.",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "Lots statiques de Paris exportés : tuiles static_23 à static_28, detail_42 à 45, glass_26, lights_23 à 28 (Content/Data/World/world_assets.json), posés par AStridesScenery::Build (StridesScenery.cpp:60-70) (planches et caissons d'enseignes)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Faces imprimées et enseignes rétroéclairées non exportées : lice blanche nue, caissons noirs sans texte ; collision par maillage ; Estimation hors moteur (formule du relief lointain StridesScenery.cpp:139-147 appliquée aux hauteurs de Content/Data/World/terrain.bin) : relief Unreal de 42 à 52 m sur l'emprise de Paris (x 3 800 à 4 070, z ±90) contre un sol de Paris à 31 m (PARIS.y = max(12, bord est + 1,5), src/world/terrain.js:155-157) : probablement enterré de 11 à 21 m, à confirmer à l'écran.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-abords",
+  "domaine": "Monde",
+  "fonction": "Abords de la salle : paddock d'échauffement de 40 x 26 m en sable, clôture à planches de 1 m ouverte vers la porte des cavaliers, projecteurs, allée en tapis caoutchouc, écuries provisoires sous tente (12 modules, allée de 4,2 m), parking des camions avec marquages, voie d'accès à l'autoroute avec ligne médiane, 9 lampadaires, panneaux « PARIS » et « A13 · DEAUVILLE CITY » ; côté Deauville, panneau « A13 · PARIS » au bout de la route est-ouest.",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "Lots statiques de Paris exportés : tuiles static_23 à static_28, detail_42 à 45, glass_26, lights_23 à 28 (Content/Data/World/world_assets.json), posés par AStridesScenery::Build (StridesScenery.cpp:60-70) ; panneaux en panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Estimation hors moteur (formule du relief lointain StridesScenery.cpp:139-147 appliquée aux hauteurs de Content/Data/World/terrain.bin) : relief Unreal de 42 à 52 m sur l'emprise de Paris (x 3 800 à 4 070, z ±90) contre un sol de Paris à 31 m (PARIS.y = max(12, bord est + 1,5), src/world/terrain.js:155-157) : probablement enterré de 11 à 21 m, à confirmer à l'écran ; lampadaires émissifs en permanence ; panneaux figés dans la langue de l'export.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-silhouette",
+  "domaine": "Monde",
+  "fonction": "Paris au loin : couronne d'immeubles en pierre claire à 230–320 m (18 à 40 m de large, 18 à 30 m de haut, mansardes de zinc, rangées de fenêtres éclairées la nuit) et tour métallique en treillis de 300 m au nord-ouest, illuminée en doré la nuit.",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "Lots statiques de Paris exportés : tuiles static_23 à static_28, detail_42 à 45, glass_26, lights_23 à 28 (Content/Data/World/world_assets.json), posés par AStridesScenery::Build (StridesScenery.cpp:60-70)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Fenêtres et illumination émissives en permanence ; immeubles posés à 31 m, hauts de 18 à 30 m, probablement en partie noyés dans le relief lointain synthétique (environ 40 à 55 m dans cette couronne, même estimation que monde.paris-salle-arene), tour de 300 m émergente, à confirmer à l'écran.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.paris-separation-zones",
+  "domaine": "Monde",
+  "fonction": "Séparation des zones : tuiles de Paris masquées au-delà de 620 m (rien de Paris vu depuis Deauville, et inversement) ; écrans, faisceaux et public animés seulement quand le joueur est à Paris.",
+  "js": [
+   "src/world/paris.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). Les maillages à collision n'ont aucune distance maximale (StridesScenery.cpp:67 ne la fixe que pour les maillages sans collision).",
+  "ecart": "Tuiles static de Paris dessinées à toute distance ; aucune notion de région.",
+  "tranche": "c"
+ },
+ {
+  "id": "vehicules.voitures-profilees-props",
+  "domaine": "Véhicules",
+  "fonction": "Voitures procédurales profilées aux cotes réelles (CARS, carGeo, carMaterial, glassMaterial, carPillars, unitWheelGeo) : 5 modèles (citadine type Clio V de 4,05 m, compacte, berline, SUV, Duster), 4 à 5 teintes chacun, carrosserie lissée (Chaikin), passages de roues, montants, vitres, roues à jante, peinture vernie ; utilisées par les véhicules (src/entities/vehicle.js) et le trafic (src/gameplay/npcs.js).",
+  "js": [
+   "src/world/props.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune voiture, garée ou roulante.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.tracteur-chargeur-props",
+  "domaine": "Véhicules",
+  "fonction": "Tracteur rouge à chargeur frontal (tractorGeo, tractorWheelGeo, TRACTOR_WHEELS) : châssis, carter moteur, pont avant, cabine, roues arrière de 0,82 m et avant de 0,52 m de rayon avec jantes.",
+  "js": [
+   "src/world/props.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun tracteur.",
+  "tranche": "f"
+ },
+ {
+  "id": "monde.accessoires-ecurie",
+  "domaine": "Monde",
+  "fonction": "Matériel d'écurie posé dans la cour de l'Écurie du Val : abreuvoirs, montoir en bois à trois marches, brouette, fumière (murs béton en U et tas de fumier pailleux), balles rondes enrubannées (film vert, une sur quatre blanche).",
+  "js": [
+   "src/world/props.js"
+  ],
+  "unreal": "Géométrie exportée du World web dans architecture.glb (scripts/unreal/world-export.js:193-238), importée par scripts/unreal/import-world.py:707-716, posée par AStridesScenery::Build (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:60-70) appelé par AStridesWorldDirector::BuildWorld (StridesWorldDirector.cpp:35-36)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; matériaux photo déduits de la couleur peinte.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.infra-primitives-low-poly",
+  "domaine": "Monde",
+  "fonction": "Infra : fabrique de géométries low-poly (boîtes, cylindres, cônes, icosaèdres, sphères, toits à deux pans et en croupe, membres, transformations), peinture par sommet avec variation de teinte (jitter), assemblage de pièces.",
+  "js": [
+   "src/world/shapes.js",
+   "src/world/builders.js"
+  ],
+  "unreal": "Aucun générateur ; le résultat est exporté peint par sommet, couleurs réencodées en sRGB pour Interchange (scripts/unreal/world-export.js:83-93, 150)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément (porte sur le résultat exporté, pas sur la fabrique, qui n'a aucun code Unreal : niveau ramené à compile) ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Aucune géométrie procédurale côté Unreal (formes de base du moteur seulement pour les obstacles et les troncs).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.infra-lots-statiques",
+  "domaine": "Monde",
+  "fonction": "Infra : regroupement statique par tuiles (StaticBatch) de 150 m (détails 90 m) pour limiter les appels de dessin ; détails de niveau 1 toujours dessinés (volets, jardinières), de niveau 2 seulement pour les tuiles à moins de 250 m (moulures, menuiseries, gouttières), exclus de la passe d'ombre ; lot détail séparé sans ombre masqué au-delà de 240 m, tuiles masquées au-delà de 620 m (src/world/world.js:1940-1999) ; tableaux libérés après envoi au GPU.",
+  "js": [
+   "src/world/shapes.js",
+   "src/world/world.js"
+  ],
+  "unreal": "Une StaticMesh par tuile, sans fusion ni Nanite (scripts/unreal/import-world.py:649-679) : 66 static, 13 detail, 17 glass, 38 lights, 72 panneaux ; maillages sans collision coupés à 450 m (StridesScenery.cpp:67)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; .tmp/shots.log:1525 « 206 maillages d'architecture, 16 haies, 2541 arbres » ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Détails de niveau 1 et 2 fusionnés aux tuiles static (exportées entières) : dessinés à toute distance et portant ombre ; aucune distinction de niveau ; tuiles detail_* (sans ombre au web, src/world/world.js:134) portant ombre (shadow vrai au manifeste, scripts/unreal/import-world.py:716) et coupées à 450 m au lieu de 240 m ; tuiles static jamais coupées (620 m au web).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.texture-logo-strides",
+  "domaine": "Monde",
+  "fonction": "Logo Strides officiel (drawLogo) recoloré d'une seule teinte aux proportions du fichier (logoTexture, logoCutoutTexture, drawStoreBadge) : panneaux du toit et des façades du Strides HQ (22, 16 et 14 m), entrée du Pôle (12,4 m), logo découpé (alphaTest 0,5) sur la colline Strides.",
+  "js": [
+   "src/world/textures.js"
+  ],
+  "unreal": "Panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; LoadObject<UStaticMesh> ne contrôle ni les matériaux ni les textures des panneaux : la fonction (textures dessinées) n'est couverte par aucun test, niveau ramené à compile ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Textures figées à l'export ; transparence du logo découpé dépendant de la conversion glTF (alphaTest en masque), à confirmer à l'écran.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.texture-publicites",
+  "domaine": "Monde",
+  "fonction": "5 affiches Strides (adTexture) : trouver un professionnel, application mobile avec badge App Store, métiers, paiement sécurisé, inscription des prestataires ; panneaux de 11 x 5,5 m, textes traduits.",
+  "js": [
+   "src/world/textures.js"
+  ],
+  "unreal": "Panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; LoadObject<UStaticMesh> ne contrôle ni les matériaux ni les textures des panneaux : la fonction (textures dessinées) n'est couverte par aucun test, niveau ramené à compile ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Textures figées dans la langue de l'export.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.texture-signalisation",
+  "domaine": "Monde",
+  "fonction": "Signalisation routière et urbaine (roadSignTexture, streetPlateTexture) : panneaux d'entrée et de sortie d'agglomération « DEAUVILLE CITY », limitation ronde à 80, plaques de rue (dont Place Morny).",
+  "js": [
+   "src/world/textures.js"
+  ],
+  "unreal": "Panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; LoadObject<UStaticMesh> ne contrôle ni les matériaux ni les textures des panneaux : la fonction (textures dessinées) n'est couverte par aucun test, niveau ramené à compile ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Textures figées ; panneaux coupés à 450 m.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.texture-enseignes-panneaux",
+  "domaine": "Monde",
+  "fonction": "Panneaux et enseignes dessinés au design system Strides (polices Geist) : panneaux d'information à titre et sous-titre (signTexture), bandeaux de devanture à empattements (fasciaTexture, 2048 x 256, demi-résolution pour les maisons), enseignes drapeau (bladeTexture : selle, coupe…), bannière du Pôle (bannerTexture), écran « LIVE » du Pôle (screenTexture).",
+  "js": [
+   "src/world/textures.js"
+  ],
+  "unreal": "Panneaux texturés exportés avec leurs textures (scripts/unreal/world-export.js:219-234 ; 72 maillages sign_* au manifeste Content/Data/World/world_assets.json, matériau importé, sans collision ni ombre : scripts/unreal/import-world.py:710-716)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; LoadObject<UStaticMesh> ne contrôle ni les matériaux ni les textures des panneaux : la fonction (textures dessinées) n'est couverte par aucun test, niveau ramené à compile ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Textures figées à l'export ; l'écran du Pôle reste une image fixe (comme le web).",
+  "tranche": "c"
+ },
+ {
+  "id": "interface.langue-textures-decor",
+  "domaine": "Interface",
+  "fonction": "Textes dessinés dans le décor (panneaux, enseignes, affiches, plaques, enseignes de Paris, habillage neutre de la boutique) traduits par t() dans la langue du joueur (français ou anglais).",
+  "js": [
+   "src/world/textures.js",
+   "src/world/storeBrand.js",
+   "src/world/storeSkin.js",
+   "src/world/paris.js"
+  ],
+  "unreal": "Textures exportées dans une seule langue, celle de la page d'export (scripts/unreal/world-export.js:219-234)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded) ; langue de l'export non consignée (LANG vaut « fr » par défaut, src/core/i18n.js:42), à confirmer.",
+  "ecart": "Aucune bascule français/anglais : changer de langue exigerait un second export et un second jeu de maillages.",
+  "tranche": "h"
+ },
+ {
+  "id": "vehicules.livree-camion-texture",
+  "domaine": "Véhicules",
+  "fonction": "Livrée du camion STX (truckTexture, TRUCK_SWATCHES, TRUCK_RECTS) : peinture, vinyles et logos plaqués sur les zones UV du modèle.",
+  "js": [
+   "src/world/textures.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun camion.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.ecran-defender-texture",
+  "domaine": "Véhicules",
+  "fonction": "Écran central du Defender remplacé par l'écran Strides (replaceStridesScreen, rapport 0,254 / 0,041).",
+  "js": [
+   "src/world/textures.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun Defender.",
+  "tranche": "f"
+ },
+ {
+  "id": "collection.halo-fers-texture",
+  "domaine": "Collection",
+  "fonction": "Halo lumineux des fers à cheval à collectionner (horseshoeSpriteTexture : dégradé radial doré de 128 px).",
+  "js": [
+   "src/world/textures.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun objet à collectionner.",
+  "tranche": "e"
+ },
+ {
+  "id": "monde.veg-arbres-instances",
+  "domaine": "Monde",
+  "fonction": "Arbres instanciés par variante (Vegetation.addTree, buildTrees, InstanceSet) : variante tirée d'un hachage de la position, une paire écorce + feuillage par variante, échelle s et étirement vertical sy (0,9 à 1,15 et pied enfoncé de 0,15 m pour World.tree, src/world/world.js:254-258 ; 0,8 à 1,2 et pied à -0,1 m pour le sous-bois sans collision, src/world/world.js:1868), teinte par arbre (luminosité 0,86 à 1,12, nuance jaune ou bleutée de ±7 %) ; 2 541 arbres, 26 variantes.",
+  "js": [
+   "src/world/vegetation.js",
+   "src/world/world.js"
+  ],
+  "unreal": "AStridesScenery::BuildTrees (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:268-323) : un composant d'instances hiérarchiques par variante, transformations et teintes lues dans Content/Data/World/trees.json exporté (scripts/unreal/world-export.js:268-273), pied à min(y, relief - 0,12 m) (StridesScenery.cpp:307)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément, et n'appelle ni AStridesScenery::BuildTrees ni la lecture de trees.json : niveau ramené à compile ; .tmp/shots.log est un journal d'exécution, pas un test ; .tmp/shots.log:1525 « 206 maillages d'architecture, 16 haies, 2541 arbres » ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor. Capture Unreal seule 07_bocage.png.",
+  "ecart": "Placement et teintes recopiés de l'export, rendu non comparé ; troncs en cylindres de collision de 3 m de haut (StridesScenery.cpp:286-311).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.veg-niveaux-detail",
+  "domaine": "Monde",
+  "fonction": "Niveaux de détail des arbres : maillage complet à moins de 64 m (50 m sur écran tactile), fondu tramé sur 8 m vers des imposteurs éclairés (atlas 8 x 4, cellules de 256 px, 192 px sur tactile) jusqu'à 1 400 m, arbre effacé par tramage entre 1,5 et 4 m de la caméra, ombres des arbres hors champ à moins de 42 m, recalcul seulement quand la caméra bouge.",
+  "js": [
+   "src/world/vegetation.js"
+  ],
+  "unreal": "Distances de coupure seules : 1 600 m pour les arbres, 350 m pour les buissons (StridesScenery.cpp:282)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded).",
+  "ecart": "Ni imposteurs ni fondu : maillage complet jusqu'à 1 600 m (charge sur iPhone non mesurée, unreal/docs/decors.md:42-43) ; pas d'effacement près de la caméra.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.veg-vent-materiaux",
+  "domaine": "Monde",
+  "fonction": "Matériaux végétaux (WIND, patchMaterial) : vent d'ouest partagé (direction 0,86 / -0,5) appliqué dans le vertex shader aux arbres et aux haies selon un poids de vent par sommet, translucidité du feuillage 0,55 (contre-jour), lumière du ciel à travers le houppier, renfort d'alpha au loin, alpha-to-coverage, normales non retournées.",
+  "js": [
+   "src/world/vegetation.js"
+  ],
+  "unreal": "M_WorldLeaves (scripts/unreal/import-world.py:444-485) : feuillage masqué deux faces (modèle « two sided foliage »), balancement par décalage de position fonction de la hauteur locale (pleine amplitude à 15 m, 9 et 6 cm, fréquences 1,7 et 3,1)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded) ; matériau généré (.tmp/unreal-import/import-world.log : « matériau M_WorldLeaves expressions 11 »).",
+  "ecart": "Balancement sans direction de vent ni poids par sommet ; troncs, branches et haies immobiles ; translucidité et lumière du ciel remplacées par le modèle d'ombrage du moteur ; rendu non comparé.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.veg-haies-volume",
+  "domaine": "Monde",
+  "fonction": "Haies du bocage normand (buildHedges, HEDGE_PROFILE) : volume continu sur talus selon un profil de 13 points (talus herbeux de 3,4 m de large, masse feuillue jusqu'à 1,68 m), sections tous les 3 m au plus, hauteur et épaisseur irrégulières, extrémités arrondies, occlusion par sommet, tuiles de 300 m, texture de haie répétée tous les 4 m.",
+  "js": [
+   "src/world/vegetation.js"
+  ],
+  "unreal": "16 maillages hedge_0 à hedge_15 (une tuile de 300 m chacun ; manifeste et .tmp/unreal-import/import-world.log : 16) exportés (scripts/unreal/world-export.js:275-289) en MI_HedgeHull à collision (scripts/unreal/import-world.py:643-644, 732-742), posés par AStridesScenery::Build (StridesScenery.cpp:71-79)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; .tmp/shots.log:1525 « 206 maillages d'architecture, 16 haies, 2541 arbres » ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor. Capture Unreal seule 07_bocage.png (18/11) : volume lisse, bandes répétées.",
+  "ecart": "Texture répétée 3 fois plus serrée que le web (UVScale 3,0 sur les UV web), rugosité et occlusion tirées de la photo forest_leaves_02 ; collision par maillage complexe du talus.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.veg-haies-rameaux",
+  "domaine": "Monde",
+  "fonction": "Rameaux des haies de près (hedgeChunk, updateHedges) : tronçons de 4 m de cartes de rameaux (aubépine, noisetier, ronces, lierre, herbes du talus) en 3 gabarits instanciés le long des haies (un tous les 3,6 m environ, suivant la pente), teinte par tronçon, affichés à moins de 125 m (95 m sur tactile) avec fondu sur 15 m.",
+  "js": [
+   "src/world/vegetation.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). L'export ne prend que les 3 gabarits des maillages instanciés « hedges:near » sans leurs instances (scripts/unreal/world-export.js:278-288), importés en hedge_13 à hedge_15 sans collision et posés à l'origine du monde (repère y = 0, relief à 5,56 m au centre d'après terrain.bin : sous le sol, à confirmer) ; 07_bocage.png montre des haies sans rameaux.",
+  "ecart": "Haies réduites à leur volume lisse ; 3 maillages inutiles chargés.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.veg-essences-procedurales",
+  "domaine": "Monde",
+  "fonction": "Arbres procéduraux (SPECIES, treeVariant) : 9 essences — chêne (4 variantes, 15 m), hêtre (3, 19 m), frêne (2, 18 m), peuplier (2, 24 m), bouleau (3, 15 m), pin (3, 17 m), pommier (4, 6,5 m), buisson (3, 3 m), têtard (2, 9 m), soit 26 variantes ; tronc et deux niveaux de branches en tubes effilés texturés d'écorce, houppier selon une enveloppe par essence, cartes de rameaux à normales « en couronne », occlusion et poids de vent par sommet.",
+  "js": [
+   "src/world/treeGen.js"
+  ],
+  "unreal": "trees.glb : les 26 variantes exportées telles que générées (scripts/unreal/world-export.js:240-267), importées dans Content/World/Meshes/Trees avec écorce et feuillage (scripts/unreal/import-world.py:719-730)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément (26 maillages d'arbres) ; .tmp/unreal-import/import-world.log : « import trees.glb … 26 maillages » ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "géométrie figée au moment de l'export (aucun générateur côté Unreal : toute retouche du web exige de réexporter) ; poids de vent par sommet (aWind) et proxy d'ombre non exportés ; 3 écorces sur 4 remplacées par une photo (voir monde.texture-ecorces).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.veg-ombres-feuillage",
+  "domaine": "Monde",
+  "fonction": "Ombres du feuillage : proxy d'ombre fait de 40 % des cartes agrandies de 35 % (treeVariant), matériaux de profondeur tramés pour que l'ombre apparaisse avec le maillage, feuillage visible sans ombre propre.",
+  "js": [
+   "src/world/treeGen.js",
+   "src/world/vegetation.js"
+  ],
+  "unreal": "Ombres portées par le feuillage lui-même (instances hiérarchiques à ombre par défaut, StridesScenery.cpp:275-284)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded).",
+  "ecart": "Pas de proxy d'ombre ; coût des ombres du feuillage complet de 2 541 arbres non mesuré sur appareil.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.texture-atlas-feuillage",
+  "domaine": "Monde",
+  "fonction": "Atlas de feuillage procédural de 1 024 x 1 024 (4 x 4 cellules de 256 px, leafAtlas, leafCell, LEAF) : rameaux de chêne (2), hêtre (2), frêne, bouleau, peuplier, pommier, pommier à fruits, pin, aubépine, noisetier, ronce, lierre, touffe d'herbe, fougère ; teintes de fin d'été, sans image externe.",
+  "js": [
+   "src/world/vegTextures.js"
+  ],
+  "unreal": "T_LeafAtlas importé depuis leaf_atlas.png exporté du web (scripts/unreal/world-export.js:292-293 ; scripts/unreal/import-world.py:120), échantillonné par M_WorldLeaves",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded) ; aucune comparaison de pixels ni capture côte à côte.",
+  "ecart": "Copie figée de l'atlas (compression et mipmaps du moteur) ; cellules herbe et fougère inutilisées faute d'herbe et de rameaux de haie.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.texture-ecorces",
+  "domaine": "Monde",
+  "fonction": "Écorces procédurales de 128 x 256 (barkTextures : couleur et relief converti en normales) : fissurée (chêne, frêne, peuplier, pommier), lisse (hêtre, noisetier), bouleau, pin.",
+  "js": [
+   "src/world/vegTextures.js"
+  ],
+  "unreal": "Bouleau : T_Bark_Birch et T_Bark_Birch_N exportés du web (MI_BarkBirch, scripts/unreal/import-world.py:124-125, 640-641) ; fissurée, lisse et pin : photo Poly Haven bark_brown_02 (MI_BarkFissured, MI_BarkSmooth, MI_BarkPine, import-world.py:637-639)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded) ; les textures web fissurée, lisse et pin sont exportées (scripts/unreal/world-export.js:294-298) mais pas importées.",
+  "ecart": "3 écorces sur 4 ne sont pas celles du web.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.texture-haie",
+  "domaine": "Monde",
+  "fonction": "Feuillage de haie répétable de 512 x 256 (hedgeTextures : couleur et normales) pour le volume des haies.",
+  "js": [
+   "src/world/vegTextures.js"
+  ],
+  "unreal": "T_Hedge et T_Hedge_N exportés du web (scripts/unreal/import-world.py:121-122) dans MI_HedgeHull (import-world.py:643-644)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log:30 Result: Succeeded).",
+  "ecart": "Répétée 3 fois plus serrée (UVScale 3,0) ; rugosité et occlusion tirées de la photo forest_leaves_02.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.herbe-touffes-gpu",
+  "domaine": "Monde",
+  "fonction": "Herbe en volume autour de la caméra, calculée sur le GPU (Grass) : motif de touffes répété (repliement torique, côté 1,7 x rayon) qui suit la caméra sans mise à jour CPU ; herbe proche de brins courbés (3,6 touffes/m², rayon 16,5 m), herbe moyenne (0,4 touffe/m² jusqu'à 44 m, apparition dès 11 m) ; densités à l'échelle de 4 500 touffes (ordinateur) ou 3 200 (tactile) ; hauteur lue dans la carte de relief, couleur du sol, ombres des nuages, vent.",
+  "js": [
+   "src/world/grass.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core). unreal/docs/decors.md:46 : « Pas encore d'herbe en volume au premier plan ».",
+  "ecart": "Sol photo seul (M_WorldTerrain) ; aucune herbe.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.herbe-fleurs-ble-fougeres",
+  "domaine": "Monde",
+  "fonction": "Couches complémentaires de l'herbe : fleurs des prés et épis de graminées (1,62/m², 19 m), blé sur pied (1,24/m², 27 m), fougères aigles en sous-bois (0,67/m², 24 m, cellule fougère de l'atlas), textures procédurales de fleurs et de blé.",
+  "js": [
+   "src/world/grass.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Ni fleurs, ni blé sur pied, ni fougères.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.herbe-carte-vegetation",
+  "domaine": "Monde",
+  "fonction": "Où pousse l'herbe : masque de 512 x 512 déduit de la carte peinte du sol (vert dominant, buildGrassMask), carte de végétation de 1 024 x 1 024 (prairie haute, pelouse rase, fleurs, blé sur pied ou chaume) tirée des parcelles, routes, chemins, forêts et rivage (vegetationMap), herbe retirée sous les bâtiments et à 2,3 m autour de la maison (clearGrassUnder), isGrass(x, z) pour interroger le masque.",
+  "js": [
+   "src/world/grass.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune carte de végétation.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.bati-elements-lumineux",
+  "domaine": "Monde",
+  "fonction": "Éléments lumineux des bâtiments rangés dans le lot « lights » et allumés à la nuit : lanternes des réverbères et des commerces, rampes de vitrines, fenêtres éclairées de la maison, réglettes et lampe chauffante des écuries, plafonniers du club-house, fenêtres et illumination de la silhouette de Paris.",
+  "js": [
+   "src/world/builders.js",
+   "src/world/shopGeo.js",
+   "src/world/homeGeo.js",
+   "src/world/barns.js",
+   "src/world/paris.js"
+  ],
+  "unreal": "Tuiles lights_* (38) en M_WorldLamp : couleur de sommet x 2,5 en émissif (scripts/unreal/import-world.py:500-508), sans ombre (StridesScenery.cpp:60-70)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-152) réussi le 18/11/2026 (.tmp/tests.log:1988 Result={Success}, :2000 EXIT CODE 0) : il ne vérifie que le chargement des 248 maillages du manifeste (206 architecture, 26 arbres, 16 haies), ni la forme ni la place de cet élément ; aucun oracle JS ni capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
+  "ecart": "Allumés en permanence, de jour comme de nuit ; aucune source de lumière réelle (pas de cycle jour/nuit côté Unreal).",
+  "tranche": "d"
+ }
+]

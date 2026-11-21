@@ -1,0 +1,21 @@
+{
+ "schema": "strides.cso_ride/1",
+ "source": "src/gameplay/csoRide.js",
+ "units": "m, s, rad",
+ "cadence": 6.2,
+ "maxSpeed": 8,
+ "cadenceRate": 1.2,
+ "lowRate": 2.2,
+ "deadZone": 0.35,
+ "slope": 0.65,
+ "steerDead": 0.06,
+ "expo": 1.35,
+ "radius0": 2.6,
+ "radiusK": 0.8,
+ "pivot": 0.8,
+ "yawTau": 0.2,
+ "yawAcc": 3,
+ "airTurn": 0.3,
+ "kbdRamp": 3.2,
+ "landingLoss": 0.04
+}

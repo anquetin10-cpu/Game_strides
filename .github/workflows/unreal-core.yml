@@ -1,0 +1,38 @@
+name: Portage Unreal — cœur C++ (règles, oracles du jeu web)
+
+# Compile le cœur StridesCore (C++17 standard, sans Unreal) avec GCC et Clang et rejoue les oracles exportés du jeu web.
+# Ne compile pas le module Unreal (pas d'Unreal Engine sur les machines GitHub) : voir unreal/docs/relais-mac.md.
+on:
+  push:
+    paths: ['unreal/**', 'scripts/unreal/**', 'src/gameplay/**', '.github/workflows/unreal-core.yml']
+  pull_request:
+    paths: ['unreal/**', 'scripts/unreal/**', 'src/gameplay/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cxx: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      # Les oracles du dépôt doivent être ceux que produit le jeu web actuel (sinon : réexporter).
+      - name: Oracles à jour
+        run: |
+          npx vite-node scripts/unreal/export-data.mjs
+          git diff --exit-code -- unreal/core/tests/oracles unreal/StridesGrandTour/Content/Data
+      - name: Compilation et tests (${{ matrix.cxx }})
+        run: |
+          CXX=${{ matrix.cxx }} cmake -S unreal/core -B build/core -DCMAKE_CXX_FLAGS=-Werror
+          cmake --build build/core
+          ctest --test-dir build/core --output-on-failure

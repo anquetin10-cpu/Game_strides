@@ -1,0 +1,117 @@
+{
+ "schema": "strides.horse_profiles/1",
+ "source": "src/gameplay/data.js",
+ "horses": [
+  {
+   "id": "comete",
+   "name": "Comète",
+   "breed": "Selle Français",
+   "age": 9,
+   "coat": "bay",
+   "blaze": true,
+   "socks": [
+    false,
+    false,
+    true,
+    false
+   ],
+   "speed": 1,
+   "jump": 1,
+   "stamina": 1,
+   "price": 0,
+   "value": 0,
+   "desc": "Jument baie, fiable et courageuse. Ta partenaire depuis toujours."
+  },
+  {
+   "id": "ulysse",
+   "name": "Ulysse",
+   "breed": "Selle Français",
+   "age": 11,
+   "coat": "grey",
+   "blaze": false,
+   "socks": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "speed": 0.98,
+   "jump": 1.15,
+   "stamina": 1.12,
+   "price": 1800,
+   "value": 25000,
+   "desc": "Hongre gris, très respectueux sur les barres."
+  },
+  {
+   "id": "onyx",
+   "name": "Onyx",
+   "breed": "KWPN",
+   "age": 8,
+   "coat": "black",
+   "blaze": false,
+   "socks": [
+    true,
+    false,
+    false,
+    false
+   ],
+   "speed": 1.13,
+   "jump": 1.06,
+   "stamina": 1,
+   "price": 3200,
+   "value": 45000,
+   "desc": "Étalon noir explosif. Une fusée sur le plat."
+  },
+  {
+   "id": "saphir",
+   "name": "Saphir",
+   "breed": "Holsteiner",
+   "age": 10,
+   "coat": "chestnut",
+   "blaze": true,
+   "socks": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "speed": 1.1,
+   "jump": 1.24,
+   "stamina": 1.2,
+   "price": 5500,
+   "value": 150000,
+   "desc": "Jument alezane, gagnante en Grand Prix. La crème."
+  },
+  {
+   "id": "tripo",
+   "name": "Tripo",
+   "breed": "Selle Français",
+   "age": 7,
+   "coat": {
+    "body": "#a38069",
+    "mane": "#8a5233",
+    "legs": "#95725b",
+    "muzzle": "#5e463a",
+    "hoof": "#57493e",
+    "points": 0,
+    "sheen": "#dfbaa0",
+    "dapple": 0.08,
+    "flaxen": 0.1,
+    "swatch": "#b08a72"
+   },
+   "blaze": true,
+   "socks": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "speed": 1,
+   "jump": 1,
+   "stamina": 1,
+   "price": 0,
+   "value": 0,
+   "desc": "Hongre alezan clair à l’essai à l’écurie, avec un nouveau modèle 3D. Monte-le et compare-le à Comète."
+  }
+ ]
+}

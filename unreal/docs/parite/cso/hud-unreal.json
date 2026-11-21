@@ -1,0 +1,833 @@
+{
+	"schema": "strides.parite_hud/1",
+	"generator": "-StridesShots=cso (AStridesShots::ApplyHudPose, UStridesCsoHud::Describe)",
+	"doc": "par pose : images rejouées, parties de l'état du HUD différentes de l'état du DOM du web (vide : identique), éléments affichés par le widget à la capture (partie=texte)",
+	"poses": [
+		{
+			"name": "hud-cloche-844x390",
+			"frames": 96,
+			"diffs": [],
+			"shown": [
+				"board=Départ 45 s|· accordé 64 s|0 pt|▸ 1",
+				"hint(transparente)=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+				"big=CLOCHE|TU AS 45 S POUR FRANCHIR LA LIGNE DE DÉPART"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-depart-844x390",
+			"frames": 150,
+			"diffs": [],
+			"shown": [
+				"board=Départ 43 s|· accordé 64 s|0 pt|▸ 1",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>."
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-course-844x390",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-depassement-844x390",
+			"frames": 2139,
+			"diffs": [],
+			"shown": [
+				"board=64,57|/ 64 s|1 pt|Arrivée ✓",
+				"big=1 POINT|64,57 S"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-barre-844x390",
+			"frames": 336,
+			"diffs": [],
+			"shown": [
+				"board=4,63|/ 64 s|4 pts|▸ 3",
+				"fb=Appel trop loin",
+				"toast=Barre au 2 · +4 · Appel trop loin"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-appel-844x390",
+			"frames": 270,
+			"diffs": [],
+			"shown": [
+				"board=2,43|/ 64 s|0 pt|▸ 2",
+				"fb=Appel parfait"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-cadence-844x390",
+			"frames": 187,
+			"diffs": [],
+			"shown": [
+				"board=Départ 42 s|· accordé 64 s|0 pt|▸ 1",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+				"cad=5"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-elimine-844x390",
+			"frames": 647,
+			"diffs": [],
+			"shown": [
+				"toast=Refus au 4B · +4",
+				"big=ÉLIMINÉ|2E REFUS : ÉLIMINÉ DU PARCOURS."
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					731.20000000000005,
+					281.39999999999998,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-cloche-667x308",
+			"frames": 96,
+			"diffs": [],
+			"shown": [
+				"board=Départ 45 s|· accordé 64 s|0 pt|▸ 1",
+				"hint(transparente)=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+				"big=CLOCHE|TU AS 45 S POUR FRANCHIR LA LIGNE DE DÉPART"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-depart-667x308",
+			"frames": 150,
+			"diffs": [],
+			"shown": [
+				"board=Départ 43 s|· accordé 64 s|0 pt|▸ 1",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>."
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-course-667x308",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-depassement-667x308",
+			"frames": 2139,
+			"diffs": [],
+			"shown": [
+				"board=64,57|/ 64 s|1 pt|Arrivée ✓",
+				"big=1 POINT|64,57 S"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-barre-667x308",
+			"frames": 336,
+			"diffs": [],
+			"shown": [
+				"board=4,63|/ 64 s|4 pts|▸ 3",
+				"fb=Appel trop loin",
+				"toast=Barre au 2 · +4 · Appel trop loin"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-appel-667x308",
+			"frames": 270,
+			"diffs": [],
+			"shown": [
+				"board=2,43|/ 64 s|0 pt|▸ 2",
+				"fb=Appel parfait"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-cadence-667x308",
+			"frames": 187,
+			"diffs": [],
+			"shown": [
+				"board=Départ 42 s|· accordé 64 s|0 pt|▸ 1",
+				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+				"cad=5"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-elimine-667x308",
+			"frames": 647,
+			"diffs": [],
+			"shown": [
+				"toast=Refus au 4B · +4",
+				"big=ÉLIMINÉ|2E REFUS : ÉLIMINÉ DU PARCOURS."
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"Jump": [
+					554.20000000000005,
+					199.40000000000001,
+					91.5,
+					91.5
+				],
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-refus-844x390",
+			"frames": 505,
+			"diffs": [],
+			"shown": [
+				"board=10,27|/ 64 s|4 pts|▸ 4A",
+				"hint=Refus dans le double : reprends-le au <b>4A</b>.",
+				"toast=Refus au 4B · +4"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		},
+		{
+			"name": "hud-refus-667x308",
+			"frames": 505,
+			"diffs": [],
+			"shown": [
+				"board=10,27|/ 64 s|4 pts|▸ 4A",
+				"hint=Refus dans le double : reprends-le au <b>4A</b>.",
+				"toast=Refus au 4B · +4"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			}
+		}
+	]
+}
