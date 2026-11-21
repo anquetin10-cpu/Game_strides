@@ -6,7 +6,7 @@
   "js": [
    "src/world/layout.js"
   ],
-  "unreal": "UStridesDataSubsystem : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:194-199 (world.size de Content/Data/world_architecture.json), LoadScene :220-252 (origine -600, grille 601 x 601 de Content/Data/World/world_scene.json) ; conversion StridesUnits::WebToUE (StridesUnits.h)",
+  "unreal": "UStridesDataSubsystem : unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:194-199 (world.size de Content/Data/world_architecture.json), LoadScene :246-278 (origine -600, grille 601 x 601 de Content/Data/World/world_scene.json) ; conversion StridesUnits::WebToUE (StridesUnits.h)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.World.Architecture (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:70-86, taille 1 200) et Strides.World.Scenery (:126, grille 601 x 601 au pas de 2 m) : réussi (.tmp/tests.log : Result={Success}, EXIT CODE 0, 18/11/2026). Valeurs attendues recopiées à la main ; world_architecture.json n'est produit par aucun script d'export : pas d'oracle JS.",

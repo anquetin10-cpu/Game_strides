@@ -1250,11 +1250,11 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseCoat.cpp:137-185 (ownedHorses, activeHorseId sur save.data et sur la sauvegarde native) ; strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24), lus par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:68-69 et 107-108 ; monture engagée = activeHorseId (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:103-154) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:45).",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseCoat.cpp:137-187 (ownedHorses, activeHorseId sur save.data et sur la sauvegarde native) ; strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24), lus par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:68-69 et 107-108 ; monture engagée = activeHorseId (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:103-154) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:45).",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "unreal/core/tests/test_core.cpp:3267 (testHorseCoat) : ownedHorses et activeHorseId contre unreal/core/tests/oracles/horse_coat.json (12 sauvegardes : doublons, chevaux inconnus, essai, monture absente de l’écurie, horses non tableau ; fonctions du web appelées telles quelles), 0 écart ; mutations-horse-coat.py (7 mutations de l’écurie et de la monture détectées) ; unreal/core/tests/test_core.cpp:1120-1129 relit la liste horses de la sauvegarde.",
-  "ecart": "Identifiants égaux à un nom de propriété d’objet JavaScript (constructor, toString…) acceptés par le web (HORSES[id] vrai), refusés par le portage ; ni achat ni changement de cheval.",
+  "ecart": "Identifiants égaux à un nom de propriété d’objet JavaScript (constructor, toString…) acceptés par le web (HORSES[id] vrai), refusés par le portage ; ni achat ni changement de cheval ; identifiant non chaîne dans save.horses (par exemple [[\"ulysse\"]]) : le web convertit la clé (HORSES[[\"ulysse\"]] vrai) et garde ce tableau dans ownedHorses sans ajouter Comète, le portage ignore les identifiants non chaînes et ajoute Comète (activeHorseId identique des deux côtés, ownedHorses différent) ; non exercé par l’oracle.",
   "tranche": "e"
  },
  {

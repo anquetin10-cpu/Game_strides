@@ -2,56 +2,58 @@
 
 État vérifié sur le Mac de développement le 17 novembre 2026, revérifié le 18 novembre 2026 : module compilé avec
 UE 5.8.4 (recompilation complète des modules du projet, 0 erreur, 0 avertissement), cœur en **C++20**, 6 tests
-Automation `Strides` réussis. **Mis à jour le 20 novembre 2026** (tranche a, parcours CSO du Pôle, après T9 et son contrôle
-adverse) : compilation incrémentale `StridesGrandTourEditor Mac Development` réussie, `ctest` 253 115
-vérifications, 0 échec, **24 tests** Automation `Strides` en `Result={Success}`. Inventaire de parité avec le jeu web :
+Automation `Strides` réussis. **Mis à jour le 21 novembre 2026** (tranche a, parcours CSO du Pôle, livrée de T1 à T12,
+plus la robe du cheval engagé C1 et l'hygiène finale de la tranche) : dernière compilation incrémentale
+`StridesGrandTourEditor Mac Development` réussie en C1 (21/11/2026) ; `ctest` 300 728 vérifications, 0 échec
+(21/11/2026) ; **32 tests** Automation `Strides` en `Result={Success}` au dernier passage (C1), non relancés à
+l'hygiène finale (2,7 Go libres ; aucun source compilé modifié depuis). Inventaire de parité avec le jeu web :
 [`PARITE.md`](PARITE.md) ; plan et écarts de la tranche a : [`parite/cso-ecarts.md`](parite/cso-ecarts.md).
 
 | Étape | État |
 |---|---|
-| Code C++ du cœur (règles) écrit | fait ; 3 705 lignes dans StridesCore (20/11/2026, `wc -l`) |
-| Cœur compilé et testé hors moteur (clang, C++20) | **fait** : 253 115 vérifications, 0 échec (20/11/2026) ; oracles exportés du jeu web |
+| Code C++ du cœur (règles) écrit | fait ; 5 722 lignes dans StridesCore (21/11/2026, `wc -l` des .cpp et .h) |
+| Cœur compilé et testé hors moteur (clang, C++20) | **fait** : 300 728 vérifications, 0 échec (21/11/2026) ; oracles exportés du jeu web ; scripts de mutations du cœur réparés et rejoués le 21/11/2026 |
 | Code du module Unreal écrit (acteurs, sous-systèmes, commandes, HUD, tests d'automatisation) | fait |
-| Module Unreal compilé (UnrealBuildTool) | **fait** avec UE 5.8.4 (incrémental le 20/11/2026) |
-| Tests Automation `Strides` (éditeur, `-nullrhi`) | **fait** : 24/24 `Result={Success}` le 20/11/2026 |
+| Module Unreal compilé (UnrealBuildTool) | **fait** avec UE 5.8.4 (incrémental, dernier en C1 le 21/11/2026) ; cible `StridesGrandTour IOS Shipping` compilée et liée le 20/11/2026 (T12) |
+| Tests Automation `Strides` (éditeur, `-nullrhi`) | **fait** : 32 `Result={Success}` au dernier passage (C1, 21/11/2026) |
 | Projet ouvert dans l'éditeur, scène lancée | **fait** |
-| Boucle jouée et parcours complet jugé | **démonstration automatique seulement** (F8 / `-StridesShots=cso-jeu`, 20/11/2026 après T9 : « 60,33 / 64 s 0 pt Arrivée ✓ ») ; aucune partie jouée à la main comparée au web |
-| Archive iOS arm64 complète | **faite sans signature** le 18/11/2026 ; **pas refaite** depuis la tranche a (paquet iOS hors périmètre) |
+| Boucle jouée et parcours complet jugé | **démonstration automatique seulement** (F8 / `-StridesShots=cso-jeu` : activité lancée au poteau, carte validée, « 60,28 / 64 s 0 pt Arrivée ✓ » après T12 ; au vert en C1) ; aucune partie jouée à la main comparée au web |
+| Archive iOS arm64 complète | **faite sans signature** le 18/11/2026 ; **pas refaite** : le 20/11/2026 (T12), binaire IOS Shipping lié sans Pixel Streaming, paquet non fait faute de disque et finalisation refusée faute d'équipe de signature |
 | Package iOS signé pour TestFlight | bloqué par l'accord Apple Developer et l'absence de certificat/profil de distribution |
 | Installé et testé sur iPhone / iPad réel | **non vérifié** (toucher réel, facteur de pixels, zones sûres, budget de triangles non mesurés) |
 
-## Parité de la tranche a (parcours CSO du Pôle), au 20/11/2026
+## Parité de la tranche a (parcours CSO du Pôle), au 21/11/2026
 
 Source de vérité : l'inventaire (`parite/inventaire/*.json`, rendu en [`PARITE.md`](PARITE.md)) ; 78 lignes marquées
-tranche a : **27 identique_prouve**, **34 partiel**, **17 absent**. Sous-tranches livrées : T1 à T10 (banc, cheval,
-obstacles, déroulé et textes, géométrie des obstacles, caméra, HUD d'épreuve, commandes, aides à l'appel, entrée dans
-l'épreuve). Restent T11 et T12.
+tranche a : **27 identique_prouve**, **37 partiel**, **14 absent** (niveaux : testé 48, joué à l'écran 14, compilé 2,
+aucun 14). Sous-tranches livrées : T1 à T12 (banc, cheval, obstacles, déroulé et textes, géométrie des obstacles, caméra,
+HUD d'épreuve, commandes, aides à l'appel, entrée dans l'épreuve, arrivée et bilan, sons et recette), puis l'hygiène
+finale du 21/11/2026 (`parite/cso-ecarts.md` §4). « Prouvé » vaut pour la règle, les textes et les appels ; le rendu de
+ce qui s'affiche ou s'entend est déclaré dans les lignes `interface.*` et `audio.*`, partielles.
 
-- **Prouvé** (oracle exporté du jeu web, comparé par un test qui passe, ou montage côte à côte dans `parite/cso/`) :
-  tracé et hauteurs, plan de saut et qualité de l'appel, conduite de concours et cadence, visée et déclenchement du
-  saut, réception et refus du cheval, jugement des barres au passage, décision et pénalité de refus, ordre des fautes,
-  temps accordé, pénalités de temps et temps limite, déroulé de l'épreuve (cloche, départ, départ lancé, arrivée,
-  élimination à la descente, textes en français et en anglais), règle de la caméra de concours (dont champ vertical
-  58°), géométrie des chandeliers et des barres.
-- **Partiel** : habillage des obstacles (forme et position prouvées, couleur du mur différente : beige saumon au lieu
-  de rouge brique), rendu du HUD (police du moteur au lieu de Geist, animations non comparées image par image ; sa
-  logique et celle de la file de toasts sont rejouées sans écart, seuil de 420 px et pas du décompte des crans non
-  départagés), joystick (logique identique, rendu approché, pas de fondu de 0,2 s), contacts des membres (non portés :
-  pose animée requise ; effet porté sans oracle), chute des barres (remise en piste sans oracle, branches non
-  départagées déclarées), refus unique (recomptage après détour non exercé), effleurement (son absent), affichage de
-  l'élimination, entrée en piste (carte de présentation non portée), record personnel, caméra dès l'entrée en piste
-  (pas d'orbite manuelle à rendre) et contre le décor (sonde du moteur, pas les colliders du web), taille rendue du
-  couple cheval-cavalier, aides à l'appel (T9 : logique, bouton, zone, tracé et repère rejoués sans écart, montages côte
-  à côte dont les captures de la recette ; rendu des bandes et des tirets plus terne, aide imposée par un défi non
-  portée, bande de moins de 0,2 m et zone sans aucune plage non départagées), entrée dans l'épreuve (T10 : poteau
-  « Chrono » et action, lancement, contrôle de capacité et dialogue de l'entraîneur, cartes de présentation et du plan,
-  annonce, cloche ; logique et contenus identiques aux oracles, montages côte à côte `entree-*` ; rendu des cartes avec
-  la police du moteur, mise en page relevée pour le texte de référence).
-- **Absent** : bilan et classement simulé, carte de bilan et bouton Recommencer (T11 ; le choix Recommencer est
-  écrit dans `CsoRun`, aucun bouton ne l'appelle), sons (T12), collisions des ailes, contacts réels des membres,
-  défis.
-- **Non vérifié** : tout ce qui demande un appareil iOS (toucher réel, facteur de pixels, performances) ; un vrai
-  clavier AZERTY.
+- **Prouvé (27)** (oracle exporté du jeu web, comparé par un test qui passe, écart sans différence dans la fonction) :
+  cheval de concours (direction, cadence, conduite intégrée, prise du cap, réception, refus), saut (plan, facteurs de
+  vitesse et d'angle, qualité de l'appel, visée et déclenchement), obstacles (jugement des barres au passage, décision
+  et pénalité de refus, ordre des fautes), déroulé (cloche, ligne de départ et départ lancé, arrivée, temps accordé,
+  pénalités de temps, temps limite, élimination à la descente : deux lignes), tracé du Pôle et hauteurs du profil,
+  géométrie des chandeliers et des barres, règle de la caméra de concours (champ vertical 58°), comparaison de deux
+  résultats.
+- **Partiel (37)** : rendu du HUD d'épreuve (tableau et chrono, mot d'appel, cadence, masquages : police du moteur au
+  lieu de Geist, animations non comparées image par image), bouton SAUT coloré et aides au sol (logique sans écart,
+  rendu plus terne, aide imposée par un défi non portée), cause de barre (causes des membres jamais produites),
+  trajectoire (calage du clip non vérifié), animation du saut, appel (astuce « Trop lent » absente), astuces (seul
+  « Trop tôt » porté), effleurement, contacts des membres (effet porté sans détection), chute des barres, refus unique,
+  affichage de l'élimination, entrée en piste, contrôle de capacité, cartes de présentation et du plan, géométrie des
+  obstacles (faces non vérifiées par le test de T5), habillage (couleur du mur), guidage (cible GPS absente), caméra
+  dès l'entrée en piste et contre le décor, bilan (police, colonnes à 8,2 px au plus), Recommencer (« S'entraîner » sans
+  effet), classement simulé (graine négative refusée), résultat de tentative, règles du cross, sauts libres, sons de
+  concours (compresseur non porté, écoute non faite), activité Parcours du Pôle (meilleur temps).
+- **Absent (14)** : défis (cinq lignes) et record par défi, entraînement au paddock (`cso_warmup`) et obstacles
+  d'entraînement, collisions des obstacles, appui des postérieurs et membres réglés sur les barres, contacts réels des
+  membres, caméra de sortie de piste, célébration (missions d'histoire et Paris, pas le Pôle).
+- **Non vérifié** : tout ce qui demande un appareil iOS (toucher réel, facteur de pixels, zones sûres, rendu mobile,
+  performances, budget de triangles) ; paquet iOS complet et signature ; écoute réelle des sons ; un vrai clavier
+  AZERTY.
 
 ## 1. Prérequis (Mac)
 - **Unreal Engine 5.8.4**, installé avec le composant officiel **iOS**.
@@ -81,8 +83,9 @@ La compilation Mac et iOS est vérifiée. Toute régression doit être corrigée
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides; Quit" -unattended -nullrhi -log
 ```
-Attendu (20/11/2026) : 24 tests en `Result={Success}` (`Strides.Core.*`, `Strides.Units`, `Strides.World.*`,
-`Strides.Shots.OutputDir`, `Strides.Parite.*`, `Strides.Cso.*`, `Strides.Hud.ObjectiveLines`). Toujours exporter
+Attendu (21/11/2026) : 32 tests en `Result={Success}` (`Strides.Core.*`, `Strides.Units`, `Strides.World.*`,
+`Strides.Shots.OutputDir`, `Strides.Parite.*`, `Strides.Cso.*`, `Strides.Horse.*`, `Strides.Hud.ObjectiveLines` : 32
+déclarations `IMPLEMENT_*AUTOMATION_TEST` dans `Private/Tests/`) ; dernier passage complet au vert : C1, 21/11/2026. Toujours exporter
 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (sinon une fenêtre « Xcode introuvable » bloque Metal).
 Captures et démonstration : toujours avec `-StridesShotsDir=<dossier dédié>` (voir `parite/README.md`) ; le mode
 refuse d'écrire dans `Saved/Screenshots/Strides` ou `MacEditor` s'ils contiennent des fichiers, quelle que soit la casse.

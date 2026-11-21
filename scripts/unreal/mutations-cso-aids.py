@@ -71,6 +71,10 @@ M = [
  (A, 'bandes : ambre posée sans plage ambre', '  placeBand(view_.ok, zone_.hasPass, zone_.pass, *next, groundAt);', '  placeBand(view_.ok, true, zone_.pass, *next, groundAt);'),
  (A, 'tirets : posés à sol + 0,05 m', '  static const CsoAidsParams A;', '  static const CsoAidsParams A = [] { CsoAidsParams p; p.lineLift = 0.05; return p; }();'),
  (A, 'tirets : posés à sol + 0,035 m', '  static const CsoAidsParams A;', '  static const CsoAidsParams A = [] { CsoAidsParams p; p.lineLift = 0.035; return p; }();'),
+ # Hygiène finale de la tranche a (21/11/2026) : branche « cheval absent » (g.player.horse nul, courseAids.js:106, 116 et
+ # zoneOn), jamais exercée : le canal « ai » n'a aucun appel à hh faux et le jeu passe toujours hasHorse = true.
+ (A, 'cheval absent : tracé borné au cheval sans cheval', '      if (in.hasHorse) {\n        double bd = 1e9;', '      if (true) {\n        double bd = 1e9;'),
+ (A, 'cheval absent : zone affichée sans cheval', 'in.showZone && next && in.hasHorse && in.riding;', 'in.showZone && next && in.riding;'),
  (A, 'bandes : ambre et verte inversées', '  placeBand(view_.ok, zone_.hasPass, zone_.pass, *next, groundAt);\n  placeBand(view_.good, zone_.hasGood, zone_.good, *next, groundAt);',
   '  placeBand(view_.ok, zone_.hasGood, zone_.good, *next, groundAt);\n  placeBand(view_.good, zone_.hasPass, zone_.pass, *next, groundAt);'),
  # Aide lue par le bouton (courses.js:187, 458 ; hud.js:374)
@@ -107,8 +111,16 @@ ATTENDUES = {
  'tracé : obstacle sans lineS à 0 (au lieu de 1e9)':
   'équivalente en épreuve de CSO : tous les obstacles du parcours ont lineS (obstacles.js:184)',
  'bandes : longueur minimale 0,2 m ignorée':
-  'sous-branche non départagée : une bande de moins de 0,2 m n’apparaît qu’à 1,55 m et plus (195 cas de la grille '
-  'cso_takeoff_zone.json, base 1,55) ; l’épreuve se court à 1,05-1,15 m, aucune exécution ne l’affiche',
+  'sous-branche non départagée : aucune exécution de cso_runs/ ne pose une plage de moins de 0,2 m ; la grille '
+  'cso_takeoff_zone.json en compte 195 sur ses 8 jeux de hauteurs (toutes hauteurs confondues), dont 18 à la base 1,05 '
+  'et 11 à la base 1,10 de l’épreuve (puissances 1,1 et 1,35), 39 hors épreuve et 54 à 1,55 : la bande courte existe '
+  'donc aussi aux hauteurs de l’épreuve ; takeoffZone y est comparée, pas la bande posée',
+ 'cheval absent : tracé borné au cheval sans cheval':
+  'sous-branche non départagée : aucun appel du canal « ai » n’a hh faux (g.player.horse nul seulement avant le premier '
+  'setHorse, player.js:56) et le jeu passe toujours hasHorse = true (StridesCourse.cpp:567) ; sans cheval, le web '
+  'garde s0 = prevS',
+ 'cheval absent : zone affichée sans cheval':
+  'sous-branche non départagée : même raison (aucun appel à hh faux) ; sans cheval, le web n’affiche pas la zone',
  'bandes : ambre posée sans plage ambre':
   'sous-branche non départagée : zone sans aucune plage (takeoffZone rend pass nul) jamais avec le cheval des exécutions '
   '(puissance 1,38) ; aux hauteurs de l’épreuve (base 1,10), seulement pour un cheval de puissance 1,1 sous 5,8 m/s '
@@ -121,7 +133,7 @@ ATTENDUES = {
 only = os.environ.get('MUT_ONLY')
 if only: M = [m for m in M if only in m[1]]
 os.makedirs(out, exist_ok=True)
-allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp')
+allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 undetected = []

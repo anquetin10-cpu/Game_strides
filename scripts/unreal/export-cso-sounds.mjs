@@ -4,7 +4,9 @@
 // unreal/core/tests/oracles/cso_runs/ (variantes réellement appelées pendant l'épreuve), dans un OfflineAudioContext que
 // `unlock()` reçoit à la place du AudioContext du navigateur (même graphe : bus maître 0,8, compresseur, boucles
 // d'ambiance, tampon de bruit de 2 s). Hasard : Math.random remplacé par mulberry32 (src/core/math.js), graine fixe pour
-// le tampon de bruit, graine par son pour l'appel ; deux exports donnent les mêmes octets.
+// le tampon de bruit, graine par son pour l'appel ; deux exports successifs donnent les mêmes octets parce que le WAV
+// existant est gardé quand l'écart reste dans la tolérance (voir plus bas) : un export dans un dossier vide peut changer
+// la SHA-1 de quelques sons (3 sur 19 au contrôle adverse de T12 : applause_1p3_4, bell_2, bell).
 //
 // Sorties :
 //  - .tmp/unreal-import/cso-sounds/<clé>.wav : PCM 16 bits mono 48 kHz, signal pris APRÈS le gain maître (0,8) et AVANT
@@ -277,7 +279,7 @@ for (const v of variants) {
   let pcm = all.slice(0, last + 1);
   // Chrome somme les connexions d'une entrée dans un ordre qui varie d'une exécution à l'autre (bus maître : une
   // connexion par note) : quelques échantillons peuvent changer d'un pas de quantification (constaté sur applause_1p3_4,
-  // bell_2). Un fichier existant qui reste à au plus 1 pas sur au plus 16 échantillons est gardé tel quel.
+  // bell_2 et bell). Un fichier existant qui reste à au plus 1 pas sur au plus 16 échantillons est gardé tel quel.
   const prev = join(WAV_DIR, `${v.key}.wav`);
   if (existsSync(prev)) {
     const b = readFileSync(prev).subarray(44);

@@ -106,7 +106,10 @@ python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py
   (compteurs d'images, d'appels comparés) sont dans `.tmp/automation/index.json` (`-ReportExportPath`).
 - Mutations : chaque script recompile le banc avec une copie mutée d'un source du cœur (le dépôt n'est jamais
   modifié) ; une mutation doit faire échouer le banc. Les mutations équivalentes sont déclarées dans le script
-  (`ATTENDUES`) et dans l'inventaire.
+  (`ATTENDUES`) et dans l'inventaire. Chaque script lie le banc avec les sources du cœur : un source ajouté au cœur
+  (ainsi `CsoAudio.cpp` en T12, `HorseCoat.cpp` en C1) doit entrer dans leur liste, sinon l'édition de liens échoue et
+  aucune mutation n'est jugée (constaté et corrigé à l'hygiène finale du 21/11/2026 ; `mutations-horse-coat.py` prend
+  tous les sources par motif).
 
 ## 3. Captures jumelles (même lieu, même heure, même caméra, 844 × 390)
 
@@ -160,7 +163,9 @@ du jeu, puis cheval posé à l'entrée du tracé, cavalière en selle, démonstr
 fenêtre **avec l'interface** aux instants choisis par l'état de l'épreuve (`jeu-1-hors-epreuve`, `jeu-2-cloche`,
 `jeu-3-mot`, `jeu-4-course`, `jeu-5-bilan`) et relevé, à l'image rendue, de ce qui est affiché (`jeu-unreal.json` : HUD
 de débogage dessiné ou non, boutons tactiles visibles, éléments de l'interface d'épreuve, classes du HUD). Sortie par
-défaut : `unreal/docs/parite/cso/` ; `-StridesShotsDir=<dossier>` pour un essai.
+défaut : `unreal/docs/parite/cso/` ; `-StridesShotsDir=<dossier>` pour un essai. Les captures versionnées datent de T10
+(`46d41417`) : après la correction du chrono (`58cb93da`), avant T11 (`jeu-5-bilan` n'a pas la carte de bilan), T12 et
+C1 (cheval gris).
 
 ```sh
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
@@ -252,7 +257,8 @@ node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-cso-runs.mjs 
 - `--shots=aides` : partie réelle (exécutions `t9-recette`, `t9-appel`, `t9-aide-bouton`, `t9-aide-off`, `t9-parcours`,
   `t9-courbe`, `t9-ambre` de l'oracle, rejouées depuis le début dans une page neuve par capture) arrêtée à l'image choisie par une
   règle lue dans l'oracle (captures 4 et 5 de la recette, première image « Saute ! », « Trop près » au 3, « Trop tôt » au
-  1, aide « bouton seul », aide coupée, volte entre le 1 et le 2 avec et sans tracé, bande ambre seule au 8) ; `--poses=` : ces
+  1, aide « bouton seul », aide coupée, volte entre le 1 et le 2 avec et sans tracé, bande ambre seule au 8 : sur ce
+  montage la bande est masquée par le couple, l'état ne se lit que dans le relevé et le canal « ai ») ; `--poses=` : ces
   poses seulement (les autres poses `aide-*` de `poses.json` sont gardées). Poses `aide-4-trop-loin-844x390` et
   `aide-5-bonne-zone-844x390` : la capture web du montage est le PNG de la recette (`tests/e2e/out/cso/*.png`, copié,
   empreinte et écart à la capture de l'oracle notés dans `recette`), la capture de l'exécution `t9-recette` est gardée
@@ -279,16 +285,20 @@ python3 scripts/unreal/parite-montage.py unreal/docs/parite/cso entree-
   dans une page neuve par capture, arrêtée à l'image de la capture ; gestes du test entre deux images (pauses des
   captures sur l'horloge virtuelle du HUD, « Voir le plan » touché) ; carte ouverte relevée dans le DOM (`entree.card` :
   kicker, titre, grille, règles, légende, textes et primitives du plan, boutons) ; canal « ai » comparé à l'oracle.
-  Poses : `entree-1-presentation` et `entree-2-plan` (image 5), `entree-3-annonce` (28e image après « Entrer en piste »,
-  `tick(28)` de `tests/e2e/cso.mjs:62`), `entree-4-cloche` (capture 3-cloche). En 844 × 390, la capture web des poses 1, 2
+  Poses : `entree-1-presentation` et `entree-2-plan` (image 5), `entree-3-annonce` (28e image après « Entrer en piste » ;
+  `tests/e2e/cso.mjs:59-63` lit le grand message après `tick(2)` puis `tick(28)`, soit 30 images : même texte, message
+  de 2 400 ms), `entree-4-cloche` (capture 3-cloche). En 844 × 390, la capture web des poses 1, 2
   et 4 est le PNG de la recette (`tests/e2e/out/cso/`, copie, empreinte et écart notés dans `recette`), la capture de
   l'exécution est gardée dans `<pose>-oracle.png`. `hud.hw` : pause de l'horloge virtuelle après l'image (une capture
   pour la présentation, deux pour le plan).
 - Unreal : le cheval monté est posé à la pose ; l'activité est lancée par l'action du joueur au poteau
   (`AStridesPlayerController::DoAction`), la carte s'ouvre au fil des images du déroulé, les boutons sont touchés par le
   widget (`UStridesCsoScreens::ClickForTest`) jusqu'à la carte de la pose (`AStridesShots::ApplyEntreePose`) ; HUD rejoué
-  de la même exécution (`hud.hw` compris) ; relevé `entree-unreal.json` (carte affichée comparée au DOM du web, éléments
-  affichés, primitives du plan peintes). Copier ensuite `entree-*-unreal.png` et `entree-unreal.json` du dossier dédié
+  de la même exécution (`hud.hw` compris : appels `hud.*` enregistrés dans le web, rejoués par `StridesCsoHudReplay::Run`
+  et figés par `SetFrozen` ; « N° 40 · Test » est donc le texte du web, le dossard propre au jeu n'est sur aucun montage) ;
+  relevé `entree-unreal.json` (carte affichée comparée au DOM du web pour les 4 poses qui en ont une, éléments affichés,
+  comptes du plan : itérations de la boucle d'`OnPaint`, pas primitives dessinées ; champ `gestures` vide, relevé recréé
+  à chaque rappel d'`ApplyPose` : les gestes ne se lisent que dans le journal). Copier ensuite `entree-*-unreal.png` et `entree-unreal.json` du dossier dédié
   dans `unreal/docs/parite/cso/`.
 - Démonstration (`-StridesShots` sans mode) et partie `-StridesShots=cso-jeu` : depuis T10 rien n'est lancé au démarrage ;
   l'outil lance l'activité par l'action du poteau (le départ du tracé est l'entrée de la carrière, dans la zone de 6 m)
@@ -314,13 +324,19 @@ python3 scripts/unreal/parite-montage.py unreal/docs/parite/cso bilan-
 - Unreal : `bilan-1-*` rejoue le HUD de l'exécution (comme les poses `aide-*`) ; `bilan-2-*` lance l'activité dans
   l'épreuve du niveau et rejoue l'exécution image par image par le chemin du jeu (`StridesCsoRunReplay` : boutons de
   carte touchés par le widget, événements d'obstacle, `TickRun`) jusqu'à l'image de la pose ; carte comparée au DOM du
-  web (`AStridesShots::ApplyBilanPose`) ; corps défilé comme le doigt pour `bilan-4` ; boîtes du widget, lignes de la
-  grille, défilement et `more` comparés au relevé du web (`layout` de `bilan-unreal.json`). Copier ensuite
+  web (`AStridesShots::ApplyBilanPose`) ; corps défilé par programme pour `bilan-4` (`ScrollCardForTest` puis
+  `SetScrollOffset`, comme le `scrollTop` du web : le défilement au doigt n'est ni exercé ni prouvé) ; boîtes du widget,
+  lignes de la grille, défilement et `more` comparés au relevé du web (`layout` de `bilan-unreal.json`). Poses `bilan-3`
+  et `bilan-4` : l'état du HUD derrière la carte diffère du web (toasts, grand message, mot d'appel, crans : `diffs` de
+  `bilan-unreal.json`), la page `?classic` de `t11-trois-barres` figeant les temporisations du HUD alors qu'Unreal les
+  fait avancer au temps du jeu ; presque entièrement caché par la carte. Copier ensuite
   `bilan-*-unreal.png` et `bilan-unreal.json` du dossier dédié dans `unreal/docs/parite/cso/`.
 - Référence tactile : `tests/e2e/cso-touch.mjs` écrit `tests/e2e/out/cso/touch-bilan.png` (1688 × 780) ; réduit à
   844 × 390 (`ffmpeg -vf scale=844:390:flags=area`) dans `bilan-touch-844x390-web.png`, assemblé à côté de
   `bilan-2-carte-844x390-unreal.png` dans `bilan-touch-844x390.png` (partie au doigt, chrono différent : voir
-  `cso-ecarts.md`, T11).
+  `cso-ecarts.md`, T11) : `ffmpeg -i bilan-touch-844x390-web.png -i bilan-2-carte-844x390-unreal.png -filter_complex
+  hstack=inputs=2 -frames:v 1 bilan-touch-844x390.png` (réassemblé le 21/11/2026 sur la capture refaite au contrôle
+  adverse de T11).
 - Mutations : `python3 scripts/unreal/mutations-cso-ranking.py` (code 0 attendu, non détectées déclarées dans `ATTENDUES`).
 
 ### Sons de l'épreuve (tranche T12) et Pixel Streaming

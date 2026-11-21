@@ -9,10 +9,10 @@ Branche `claude/unreal-port`, base `0fdf2f4b` (fin de T11). Mac mini, Xcode 26.6
 | Quoi | Preuve | Résultat |
 |---|---|---|
 | Cœur hors moteur | `ctest --test-dir build/core` | 300 639 vérifications, 0 échec |
-| Journal des sons = canal « audio » du web | `testCsoSounds` (`unreal/core/tests/test_core.cpp`) | 94/94 exécutions de `cso_runs/`, 52 446 images, 1 367 appels (nom, arguments, fichier appelant, ordre) ; exclus déclarés : breath (1 224), obstacles des exécutions légères (82), déroulé des exécutions posées en cours (36) |
+| Journal des sons = canal « audio » du web | `testCsoSounds` (`unreal/core/tests/test_core.cpp`) | 94/94 exécutions de `cso_runs/`, 52 446 images, 1 367 appels (nom, arguments, fichier appelant, ordre) ; précisé à l'hygiène finale du 21/11 : produits par les rejeux du cœur dans les 34 exécutions complètes ; dans les 60 légères, sons du cheval tirés des événements `horse:*` de l'oracle et click recomposé par une règle écrite dans le test (pas par `DoAction`) ; exclus déclarés : breath (1 224), obstacles des exécutions légères (82), déroulé des exécutions posées en cours (36) |
 | Sons rendus par le web, importés à l'identique | `export-cso-sounds.mjs` → `import-cso-sounds.py` → `Strides.Cso.AudioAssets` | 19 USoundWave sous `/Game/Audio/Cso` (18 sons des 14 fonctions de `cso-spec.md` §12 et click, plus la boucle du public) : PCM importé = SHA-1 du rendu, 48 kHz, mono, compression PCM |
 | Bus du public (0,6 × 0,08 dans les 90 m) | `testCsoCrowd`, `Strides.Cso.Audio` | gain rendu par le web (7 séquences, 3 380 relevés) rejoué à 4,47e-5 ; niveau relevé dans le jeu web à 88 / 89,5 / 90,5 / 92 / 40 / 200 m ; en jeu : 0,6 à 50 m, 0 à 120 m, 0,6 en épreuve à 300 m, gain établi 0,048 |
-| Sources des sons câblées dans le jeu | `Strides.Cso.Audio` | lancement au poteau (notify puis click), entrée (applause 0,5 / 2,2), cloche, départ (tone 1568), appel (snort puis hoof « sand » 1,4 à la même image), réception (landing 1), obstacle franchi (tone 990), refus (neigh, fault, crowdOoh), descente (click) et élimination (bell 2) |
+| Sources des sons câblées dans le jeu | `Strides.Cso.Audio` | lancement au poteau (notify puis click), entrée (applause 0,5 / 2,2), cloche, départ (tone 1568), appel (snort puis hoof « sand » 1,4, adjacents dans le journal : le numéro d'image n'est pas comparé), réception (landing 1), obstacle franchi (tone 990), refus (neigh, fault, crowdOoh ; partie sautée sans erreur si l'obstacle 2 manque), descente (click) et élimination (bell 2) |
 | Mutations | `mutations-cso-audio.py` | 27 mutations, 22 détectées, 5 déclarées (code 0) |
 | Tests moteur | `Automation RunTests Strides` (-nullrhi) | 30/30 Result={Success} |
 | Démonstration F8 | `-StridesShots -StridesShotsDir=<scratchpad>` (rendu Metal) | 26 captures hors dépôt, « 60,28 / 64 s 0 pt Arrivée ✓ » ; `Saved/Screenshots/Strides` et `MacEditor` identiques avant et après (`shasum`) |
@@ -33,14 +33,14 @@ n'est donc périmé par T12 ; les écarts déjà déclarés par les tranches res
 | 1 Entrée : présentation, plan, annonce « N° », cloche | `entree-1-presentation`, `entree-2-plan`, `entree-3-annonce`, `entree-4-cloche` (844 × 390 et 667 × 308), `hud-cloche`, `hud-depart` | fait (écarts T10 déclarés : PNG de la recette sans « CLOCHE », fond flouté, police) |
 | 2 Piste, tracé, lignes | `carriere-aerienne`, `ligne-depart`, `ligne-arrivee`, `poteau-chrono` | fait (T5 ; couleur du mur déclarée) |
 | 3 Conduite, cadence | `hud-cadence` (crans), `cmd-joystick` | partiel : `touch-abord`, `touch-double`, `touch-arrivee` (vrai tactile du web) sans jumeau Unreal |
-| 4 Aide à l'appel | `aide-4-trop-loin`, `aide-5-bonne-zone`, `aide-trop-pres`, `aide-bouton`, `aide-off`, `aide-sans-trace`, `aide-trace`, `aide-saute`, `aide-trop-tot`, `aide-ambre` | fait (T9) |
+| 4 Aide à l'appel | `aide-4-trop-loin`, `aide-5-bonne-zone`, `aide-trop-pres`, `aide-bouton`, `aide-off`, `aide-sans-trace`, `aide-trace`, `aide-saute`, `aide-trop-tot`, `aide-ambre` | fait (T9) ; `aide-ambre` ne montre pas la bande (masquée par le couple) : preuve par le canal « ai » ; état du HUD de `aide-4` et `aide-5` : modèle ajusté (CAPTURE_MS = 250 ms) |
 | 5 Saut | `cadrage-440` (cheval en l'air, τ ≈ 0,23), `hud-appel` (« Appel parfait »), `aide-saute` | partiel : τ = 0,5 et 0,75 non capturés ; `6-saut.png` de la recette sans jumeau ; animation du cheval non identique |
 | 6 Barre au sol | `chute-barre-0_1s`, `-0_3s`, `-0_6s`, `-1_5s` | fait (T5) ; `7-barre-au-sol.png` de la recette sans jumeau |
 | 7 Refus | `hud-refus` (nouveau, T12 : toast « Refus au 4B · +4 », consigne du double, tableau « 4 pts ») | partiel : cabré du cheval non capturé (scène de `cadrage-040`) |
 | 8 Chrono, élimination | `hud-elimine`, `hud-depassement` (tableau en ambre) | fait |
 | 9 HUD | `hud-*` (9 états × 2 viewports), `cmd-*` | fait |
 | 10 Caméra | `cadrage-040` … `cadrage-440` (6 instants) | fait (T6) |
-| 11 Arrivée, bilan | `bilan-1-sans-faute` (« SANS FAUTE ! »), `bilan-2-carte`, `bilan-3-trois-barres`, `bilan-4-trois-barres-bas`, `bilan-touch` | fait ; `bilan-touch` partiel (partie au doigt, chrono différent) |
+| 11 Arrivée, bilan | `bilan-1-sans-faute` (« SANS FAUTE ! »), `bilan-2-carte`, `bilan-3-trois-barres`, `bilan-4-trois-barres-bas`, `bilan-touch` | fait ; `bilan-touch` partiel (partie au doigt, chrono différent ; réassemblé le 21/11 sur la capture `bilan-2` refaite) ; `bilan-3` et `bilan-4` : HUD derrière la carte différent du web (temporisations figées par la page `?classic`), défilement posé par programme |
 | Concours complet | aucun | absent : `tests/e2e/contest-full.mjs` dépend d'un état privé et les entrées de concours ne sont pas portées (hors plan) |
 | 12 Sons | journal, pas d'image : `testCsoSounds`, `Strides.Cso.AudioAssets`, `Strides.Cso.Audio` | fait par journal ; écoute non faite |
 
@@ -66,8 +66,9 @@ n'est donc périmé par T12 ; les écarts déjà déclarés par les tranches res
 
 - **Écoute** : aucun son entendu ni enregistré ; la sortie audio du Mac mini est le téléviseur HDMI « Beyond TV »
   (CoreAudio, 48 kHz ; Unreal journalise « Error querying Sample Rate » au démarrage).
-- **Paquet iOS complet : non fait (disque)** : 12,8 Go libres avant la compilation IOS, 12,0 Go après, sous le seuil de
-  12 Go exigé avant ET après l'estimation (cuisson, mise en scène et archive : environ 3 Go d'après les sorties du 18/11).
+- **Paquet iOS complet : non fait (disque)** : 12,8 Go libres avant la compilation IOS, 12,0 Go après ; c'est
+  l'estimation du paquet (cuisson, mise en scène et archive : environ 3 Go d'après les sorties du 18/11), soit environ
+  9 Go restants après, qui le place sous le seuil de 12 Go exigé après (précisé le 21/11).
 - **Appareil réel (iPhone, iPad)** : aucun appareil détecté, signature bloquée (équipe de développement Apple absente).
 - Rendu mobile (ES3.1 / Metal mobile) non comparé.
 
