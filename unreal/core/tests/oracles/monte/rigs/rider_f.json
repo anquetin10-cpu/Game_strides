@@ -1,0 +1,234 @@
+{
+ "schema": "strides.monte.rig/1",
+ "name": "rider_f",
+ "generator": "scripts/unreal/rig-from-glb.py",
+ "source": {
+  "glb": "public/real/rider_f.glb",
+  "o1": "unreal/core/tests/oracles/monte/o1/E1.json"
+ },
+ "doc": "squelette de 25 os du personnage classique (skeleton.js : ordre bones, hiérarchie, rotations de repos nulles) aux proportions du modèle rider_f.glb, calé comme dans le jeu (realistic.js _calibrate : membres tournés sur les directions de repos du classique) ; rest : décalage de chaque os par rapport à son parent, repère du modèle (y vers le haut, z vers l’avant, x vers la gauche), mètres à taille naturelle ; info : champs de rigInfo (skeleton.js:62-83) lus par human/anim.js ; fist : poing (centre de prise des rênes), repère de la main ; scale : échelle d’affichage par défaut (le jeu affiche le modèle réaliste à sa taille naturelle, realistic.js:393-395).",
+ "scale": 1,
+ "bones": [
+  "root",
+  "hips",
+  "spine",
+  "chest",
+  "neck",
+  "head",
+  "hairTail",
+  "lClav",
+  "lArm",
+  "lFore",
+  "lHand",
+  "lFing",
+  "rClav",
+  "rArm",
+  "rFore",
+  "rHand",
+  "rFing",
+  "lThigh",
+  "lShin",
+  "lFoot",
+  "lToe",
+  "rThigh",
+  "rShin",
+  "rFoot",
+  "rToe"
+ ],
+ "rest": {
+  "root": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "hips": [
+   -3.0357654212149224e-17,
+   0.8840237669862537,
+   0.023705571526053792
+  ],
+  "spine": [
+   -6.377742474633635e-17,
+   0.07115580864871351,
+   -0.0456529577791318
+  ],
+  "chest": [
+   -7.000450847173796e-16,
+   0.15134159837740913,
+   0.03352686060344818
+  ],
+  "neck": [
+   -2.2521145911506288e-15,
+   0.3029574962677146,
+   -0.004105701477506791
+  ],
+  "head": [
+   -3.618861142017112e-15,
+   0.10673351704780276,
+   0.03937058426789635
+  ],
+  "hairTail": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "lClav": [
+   0.023986407329714368,
+   0.23106068942135738,
+   0.018483850797541772
+  ],
+  "lArm": [
+   0.13358965124330918,
+   -0.04964480282690542,
+   -0.03610531114684033
+  ],
+  "lFore": [
+   0.0,
+   -0.24171422751633065,
+   2.6020852139652106e-18
+  ],
+  "lHand": [
+   0.0,
+   -0.22291751473973842,
+   2.0816681711721685e-17
+  ],
+  "lFing": [
+   0.0,
+   -0.0947594793973271,
+   0.004407417646387305
+  ],
+  "rClav": [
+   -0.02398642082008127,
+   0.23106068959887716,
+   0.01848385269185141
+  ],
+  "rArm": [
+   -0.13358965624126584,
+   -0.04964480468425414,
+   -0.03610531249763942
+  ],
+  "rFore": [
+   0.0,
+   -0.2417142175605591,
+   1.734723475976807e-18
+  ],
+  "rHand": [
+   0.0,
+   -0.22291753851140428,
+   2.42861286636753e-17
+  ],
+  "rFing": [
+   0.0,
+   -0.0947594652134085,
+   0.004407416986670164
+  ],
+  "lThigh": [
+   0.096445986534791,
+   -0.013773542994727106,
+   -0.005958798847501171
+  ],
+  "lShin": [
+   0.0,
+   -0.3977980227564849,
+   0.0
+  ],
+  "lFoot": [
+   0.0,
+   -0.40580835352738565,
+   -0.01040534239813809
+  ],
+  "lToe": [
+   0.0,
+   -0.04816998530625181,
+   0.11823541847898172
+  ],
+  "rThigh": [
+   -0.0964459837420431,
+   -0.013773543529054244,
+   -0.0059587981069964095
+  ],
+  "rShin": [
+   -1.3877787807814457e-17,
+   -0.39779799373891583,
+   6.938893903907228e-18
+  ],
+  "rFoot": [
+   0.0,
+   -0.4058083671601272,
+   -0.010405342747695563
+  ],
+  "rToe": [
+   0.0,
+   -0.04816998058771924,
+   0.11823540689712907
+  ]
+ },
+ "info": {
+  "sex": "f",
+  "hipsY": 0.8840237669862537,
+  "hipJointY": 0.8702502239915266,
+  "hipHalf": 0.096445986534791,
+  "thighLen": 0.3977980227564849,
+  "shinLen": 0.4059417334335435,
+  "upperArmLen": 0.24171422751633065,
+  "foreArmLen": 0.22291751473973842,
+  "ankleY": 0.08068895018436417,
+  "toe": [
+   0.0,
+   -0.04816998530625181,
+   0.11823541847898172
+  ],
+  "heelBack": null,
+  "seatToHips": 0.10815184383342467,
+  "height": null
+ },
+ "fist": [
+  -0.02025411848256854,
+  -0.09156585258718465,
+  0.008467879874337489
+ ],
+ "fistR": [
+  0.020254190504577906,
+  -0.0915657466159158,
+  0.008468036246966647
+ ],
+ "map": {
+  "hips": "pelvis",
+  "spine": "spine_01",
+  "chest": "spine_03",
+  "neck": "neck_01",
+  "head": "head",
+  "lClav": "clavicle_l",
+  "lArm": "upperarm_l",
+  "lFore": "lowerarm_l",
+  "lHand": "hand_l",
+  "lThigh": "thigh_l",
+  "lShin": "calf_l",
+  "lFoot": "foot_l",
+  "lToe": "ball_l",
+  "rClav": "clavicle_r",
+  "rArm": "upperarm_r",
+  "rFore": "lowerarm_r",
+  "rHand": "hand_r",
+  "rThigh": "thigh_r",
+  "rShin": "calf_r",
+  "rFoot": "foot_r",
+  "rToe": "ball_r",
+  "lFing": "middle_01_l",
+  "rFing": "middle_01_r"
+ },
+ "notes": {
+  "root": "origine du modèle (sol de la pose de repos du fichier)",
+  "hairTail": "pas d’os équivalent : confondu avec la tête (décalage nul), sans effet sur la règle ni sur les cibles",
+  "lFing": "os middle_01 (direction de la main, comme realistic.js ALIGN)",
+  "ankleY": "hauteur de la cheville gauche au-dessus de la semelle (sommet le plus bas de la botte, setup.real.sole.l, relevé dans la page)",
+  "toe": "boule du pied (ball_l) moins cheville, pose calée",
+  "seatToHips": "convention à confirmer : classique 0.115 × hauteur du bassin 0.8840237669862537 / 0.94 (rapport hipScale de realistic.js:726)",
+  "heelBack": "non lu par la monte (anim.js plantFoot : marche) ; pas de mesure",
+  "height": "non lu par l’animation ; pas de mesure",
+  "fist": "gauche (fist) et droit (fistR, pour information) : RealBody.gripPoint (rz) dans le repère de la main classique, moyenne sur la fenêtre d’E1 ; dispersion maximale 1.2e-06 m"
+ },
+ "checks": {
+  "ball": 1.378214019367996e-07,
+  "fistSpread": 1.153415998051884e-06
+ }
+}
