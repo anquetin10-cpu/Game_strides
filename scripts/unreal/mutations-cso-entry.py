@@ -7,6 +7,7 @@ rejoué (STRIDES_TESTS : seulement les bancs concernés) sur les oracles export�
 cso_text.json ; cso_runs/ pour le lancement de l'activité). Une mutation doit faire échouer le banc (code de sortie non
 nul) ; le script sort en code 1 si l'une n'est pas détectée, hors des mutations listées dans ATTENDUES (raison donnée)
 — et aussi si l'une de celles-ci devient détectée.
+Code 2 si une mutation n'a pas pu être jouée (motif absent ou en double, compilation échouée), même listée dans ATTENDUES.
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
   python3 scripts/unreal/mutations-cso-entry.py [dossier des oracles] [dossier de travail]
@@ -115,18 +116,19 @@ for x in allc + ('test_core.cpp',):
     c = subprocess.run(['clang++', '-std=c++20', '-O1', '-I', inc, '-c', src, '-o', o], capture_output=True, text=True)
     if c.returncode: sys.exit(f'{x} : compilation échouée\n{c.stderr[:600]}')
     objs[x] = o
-undetected = []
+# broken : mutations non jouées (motif absent ou en double, compilation échouée) : jamais comptées non détectées.
+undetected, broken = [], []
 for file, name, a, b in M:
     src = srcs[file]
     n = src.count(a)
     if n != 1:
-        print(f'{name} : motif trouvé {n} fois, mutation non appliquée'); undetected.append(name); continue
+        print(f'{name} : motif trouvé {n} fois, mutation non appliquée'); broken.append(name); continue
     f = os.path.join(out, 'mut_' + file)
     open(f, 'w').write(src.replace(a, b))
     exe = os.path.join(out, 'mut')
     c = subprocess.run(['clang++', '-std=c++20', '-O1', '-I', inc, f, *[o for k, o in objs.items() if k != file], '-o', exe], capture_output=True, text=True)
     if c.returncode:
-        print(f'{name} : compilation échouée\n{c.stderr[:400]}'); undetected.append(name); continue
+        print(f'{name} : compilation échouée\n{c.stderr[:400]}'); broken.append(name); continue
     r = subprocess.run([exe, ora, data], capture_output=True, text=True, env={**os.environ, 'STRIDES_TESTS': TESTS[file]})
     last = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ''
     fails = [l.strip() for l in r.stdout.splitlines() if 'ÉCHEC' in l][:1]
@@ -134,10 +136,12 @@ for file, name, a, b in M:
     if not r.returncode: undetected.append(name)
     print(f'{name} : {status} (code {r.returncode}, {last}){" ; " + fails[0][:160] if fails else ""}', flush=True)
 unexpected = [n for n in undetected if n not in ATTENDUES]
-now_detected = [n for n in ATTENDUES if n not in undetected]
-print(f'{len(M)} mutations, {len(M) - len(undetected)} détectées, {len(undetected)} non détectées' + (' : ' + ' ; '.join(undetected) if undetected else ''))
+now_detected = [n for n in ATTENDUES if n not in undetected and n not in broken]
+print(f'{len(M)} mutations, {len(M) - len(undetected) - len(broken)} détectées, {len(undetected)} non détectées, {len(broken)} non jouées' + (' : ' + ' ; '.join(undetected) if undetected else ''))
 for n in undetected:
     if n in ATTENDUES: print(f'  attendue : {n} ({ATTENDUES[n]})')
 if unexpected: print('NON DÉTECTÉES HORS LISTE : ' + ' ; '.join(unexpected))
 if now_detected: print('désormais détectées (liste ATTENDUES à corriger) : ' + ' ; '.join(now_detected))
-sys.exit(1 if unexpected or now_detected else 0)
+# Une mutation non jouée ne prouve rien : code 2, même si elle figure dans ATTENDUES.
+if broken: print('NON JOUÉES (motif absent ou en double, ou compilation échouée) : ' + ' ; '.join(broken))
+sys.exit(2 if broken else 1 if unexpected or now_detected else 0)

@@ -56,8 +56,11 @@ d'épreuve, boutons SAUT et pause, carte Pause, aides à l'appel, cartes de pré
 et cloche : `unreal/docs/parite/cso/`) ; depuis T12, les sons de l'épreuve sont portés (journal identique au canal
 « audio » du web, rendu hors ligne importé à l'identique ; compresseur du bus maître non porté, écoute non faite).
 
-**Hygiène finale du 21/11/2026** : l'inventaire compte pour la tranche a **27 identique_prouve**, **37 partiel**,
-**14 absent** (78 lignes ; niveaux : teste 48, joue_ecran 14, compile 2, aucun 14). Ce qui reste pour une tranche a
+**Hygiène finale du 21/11/2026, après son contrôle adverse** : l'inventaire compte pour la tranche a
+**23 identique_prouve**, **41 partiel**, **14 absent** (78 lignes ; niveaux : teste 48, joue_ecran 14, compile 2,
+aucun 14). Le contrôle adverse a ramené à partiel quatre lignes dont l'écart déclarait une différence, dans le jeu, d'un
+élément de leur propre fonction (`cso.conduite-integration`, `cso.declenchement-saut`, `cso.jugement-barres`,
+`camera.concours` : §4, « Contrôle adverse de l'hygiène finale »). Ce qui reste pour une tranche a
 entièrement identique, par ordre d'importance visible pour le joueur : §4, « Ce qui reste pour une tranche a
 entièrement identique ».
 
@@ -173,7 +176,7 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | 4.1 | État `timing()` (none en l'air, en refus, v < 3,2 ; refuse → near ; aide off → none) | identique_prouve | joue_ecran | `SC/CsoHorse.cpp:120-126` ; `SC/CourseAids.cpp:93-96` (`csoJumpTiming` : hors épreuve, entrée en piste, aide off) ; `SG/StridesCourse.cpp:239-259` ; `ORA/cso_target.json`, canal « ai » des exécutions `t9-*` (`testCsoAids`) ; `Strides.Cso.Aids` (T9) | aucun |
 | 4.1 | Obstacle visé `target()` (épaules à 0,4 m, cos ≥ 0,5, première ≤ 13 m, dernière ≥ −0,3, \|u\| ≤ 2,25) | identique_prouve | teste | `SC/CsoHorse.cpp:94-118` ; `ORA/cso_target.json` (T2) | aucun sur la visée ; puissance du saut du portage : inventaire `cso.declenchement-saut` |
 | 4.1 | Bouton SAUT coloré (Trop loin / Saute ! / Trop près / Saut / Trop tôt 600 ms) | partiel | joue_ecran | `SC/CsoHud.cpp:179-185`, `205-215` ; `SG/StridesTouchControls.cpp:413-527` ; `DATA/cso_jump_style.json` ; canal « ai » (`testCsoAids`) ; `Strides.Cso.Aids` ; `cso/aide-*` (T9) | état, classes, signe, libellé, « Trop tôt » relancé : identiques image par image ; aide imposée par un défi (`opts.jumpAid`, `aidLocked`) non portée (défis absents) ; police du moteur, halo approché, transition de l'anneau et état enfoncé non portés |
-| 4.2 | Zone d'appel au sol (`takeoffZone`, bandes verte / ambre) | partiel | joue_ecran | `SC/CourseAids.cpp:17-51`, `105-118`, `121-174` ; `SG/StridesCourseAids.cpp:208-239` ; `ORA/cso_takeoff_zone.json`, canal « ai » (bande ambre seule : `t9-ambre`) ; `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (PNG de la recette, `t9-recette`), `aide-ambre-*` (T9) | logique identique ; non départagés : bande de moins de 0,2 m (aucune exécution n'en pose ; elle existe aussi aux hauteurs de l'épreuve : 18 cas de la grille à la base 1,05, 11 à 1,10, 195 sur toute la grille), cheval absent (aucun appel à hh faux), zone sans aucune plage (pass nul : jamais avec le cheval des exécutions ; à 1,10 m, cheval de puissance 1,1 seulement) ; rendu : tone mapping et mélange différents (bandes plus ternes) |
+| 4.2 | Zone d'appel au sol (`takeoffZone`, bandes verte / ambre) | partiel | joue_ecran | `SC/CourseAids.cpp:17-51`, `105-118`, `121-174` ; `SG/StridesCourseAids.cpp:208-239` ; `ORA/cso_takeoff_zone.json`, canal « ai » (bande ambre seule : `t9-ambre`) ; `cso/aide-4-trop-loin-*`, `aide-5-bonne-zone-*` (PNG de la recette, `t9-recette`), `aide-ambre-*` (T9) | logique identique ; non départagés : bande de moins de 0,2 m (aucune exécution n'en pose ; elle existe aussi aux hauteurs de l'épreuve : 11 cas de la grille à la base 1,10 du Pôle, 195 sur toute la grille, dont 18 à 1,05, classe Amateur 2 des concours), cheval absent (aucun appel à hh faux), zone sans aucune plage (pass nul : jamais avec le cheval des exécutions ; à 1,10 m, cheval de puissance 1,1 seulement) ; rendu : tone mapping et mélange différents (bandes plus ternes) |
 | 4.3 | Tracé au sol (tirets, opacités, masquage, règle des 15 m) | partiel | joue_ecran | `SC/CourseAids.cpp:54-90`, `121-174` ; `SG/StridesCourseAids.cpp:161-184` ; `SG/StridesCourse.cpp:369-406` ; tirets de `ORA/cso_takeoff_zone.json` (coins et hauteur sol + 0,04), canal « ai » ; `cso/aide-trace-*` et `aide-sans-trace-*` (même image, tracé affiché / masqué) (T9) | logique identique ; début du tronçon borné par prevS non départagé (égalité à l'arrondi près sur le tracé du Pôle) ; rendu : tone mapping et mélange |
 | 4.4 | Repère conique au-dessus de l'obstacle suivant | partiel | joue_ecran | `SC/CourseAids.cpp:121-174` ; `SG/StridesCourseAids.cpp:208-239` (géométrie du web, `DATA/cso_aids.json`) ; canal « ai » ; `cso/aide-*` (T9) | position, oscillation, cap identiques ; rendu : tone mapping et mélange |
 
@@ -260,7 +263,7 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
-| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | identique_prouve (T6) | teste | `SC/CsoCamera.cpp:36-134`, `SG/StridesHorse.cpp:446-550` | pas porté ligne à ligne, oracle « cc » rejoué à 5,7e-14 m près, montages aux 6 instants ; entrée depuis la perche du portage (caméra du monde ouvert non portée) |
+| 10 | Caméra de concours (back 6,6, up 3,4, lookAhead 9, lookUp 1,1, fenceBias, lead 0,18, yawK / yawAcc, posK / yK, jumpFollow 0,12, minBack, fenceClear, enter 1,2 s) | partiel (T6 ; hygiène finale, 21/11) | teste | `SC/CsoCamera.cpp:36-134`, `SG/StridesHorse.cpp:446-550` | pas porté ligne à ligne, oracle « cc » rejoué à 5,7e-14 m près, montages aux 6 instants ; entrée depuis la perche du portage (caméra du monde ouvert non portée) : le fondu de 1,2 s ne part pas de la même image que le web (inventaire `camera.concours`, partiel) |
 | 10 | FOV 58° vertical fixe | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:68-82` | axe Y maintenu + AspectRatio 1 : M11 = 1/tan(FOV/2) mesuré sur la projection du moteur ; amorti et paliers de 0,05° portés |
 | 10 | Perche anti-collision (1,0 → 6,6 m, pas 0,4, hauteur 2,2 → 3,4, ≥ 0,8 m du sol) | partiel (T6) | teste | `SC/CsoCamera.cpp:72-102`, `SG/StridesHorse.cpp:459-466` | règles prouvées sonde réinjectée ; sonde du jeu = sphère de 0,45 m sur le canal Camera, pas les colliders du web |
 | 10 | Verrouillage derrière le cavalier, sans orbite ni tremblement | identique_prouve (T6) | teste | `SG/StridesHorse.cpp:499-550` | caméra posée en absolu par le cœur à chaque image, aucune entrée de l'orbite |
@@ -273,9 +276,9 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | 11.1 | Arrivée : points = fautes + pénalités de temps | partiel | teste | `SC/CsoCourse.cpp:136-139` ; `TC:135` | scénario écrit à la main |
 | 11.1 | `SANS FAUTE !` / `{n} POINTS` / `1 POINT`, sous-titre `{dec(t,2)} s`, 2600 ms | identique_prouve | joue_ecran | `SC/CsoRun.cpp` (courseUpdate) ; HUD UMG (T7) | T4 / T7 : appel `big` identique (cso_runs/) ; T11 : montage `bilan-1-sans-faute-*` |
 | 11.1 | Sons d'arrivée, public en liesse 3,5 s | absent | aucun | — | — |
-| 11.2 | Classement simulé (`simulateField`, `mulberry32`, `rankResults`) | identique_prouve | teste | `SC/Ranking.cpp:21-111` ; `TC:1723` | T11 : `ORA/cso_ranking.json` rejoué à l'identique ; marge 1e-9 et tri stable non départagés (mutations déclarées) |
+| 11.2 | Classement simulé (`simulateField`, `mulberry32`, `rankResults`) | partiel (hygiène finale, 21/11) | teste | `SC/Ranking.cpp:21-111` ; `TC:1730` | T11 : `ORA/cso_ranking.json` rejoué à l'identique ; marge 1e-9 et tri stable non départagés (mutations déclarées) ; graine négative : cheval `undefined` côté web, exception côté portage (inventaire `cso.classement-simule`) |
 | 11.2 | Comparaison de résultats (`compareResults`) | identique_prouve | teste | `SC/CsoCourse.cpp:87-92` ; `TC:104-108` | 3 cas seulement ; le bilan web trie par `rankResults` (`ranking.js:23-25`), absent |
-| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | partiel | joue_ecran | `SC/Ranking.cpp:113-185`, `:200-263` (mise en page) ; `SG/StridesCsoScreens.cpp:586-765` ; `TC:1775`, `TC:1851`, `TC:2160` | T11 : textes identiques (`ORA/cso_result.json` : 30 cartes ; canal « bl » : 25 cartes) ; contrôle adverse : mise en page par le flux CSS (`ORA/cso_result_layout.json`, 60 vues, 3 876 boîtes à 0,088 px), lignes de la grille du moteur identiques au web (60 vues), colonnes du tableau à 8,2 px au plus (police du moteur étalonnée) ; montages `bilan-2`, `bilan-3`, `bilan-4` ; dotation non portée |
+| 11.2 | Carte de bilan (kicker, titre, grille, tableau 8 premiers + joueur) | partiel | joue_ecran | `SC/Ranking.cpp:113-185`, `:200-263` (mise en page) ; `SG/StridesCsoScreens.cpp:586-765` ; `TC:1782`, `TC:1858`, `TC:2167` | T11 : textes identiques (`ORA/cso_result.json` : 30 cartes ; canal « bl » : 25 cartes) ; contrôle adverse : mise en page par le flux CSS (`ORA/cso_result_layout.json`, 60 vues, 3 876 boîtes à 0,088 px), lignes de la grille du moteur identiques au web (60 vues), colonnes du tableau à 8,2 px au plus (police du moteur étalonnée) ; montages `bilan-2`, `bilan-3`, `bilan-4` ; dotation non portée |
 | 11.2 | Boutons `Recommencer`, `S'entraîner`, `Quitter l'épreuve` | partiel | teste | `SC/CsoRun.cpp:265-279` ; `SG/StridesCourse.cpp:217-224` ; `Strides.Cso.Result` | T11 : Recommencer et Quitter identiques (t11-manche-2, t11-refus) ; S'entraîner : `cso_warmup` absent, rien n'est lancé |
 | 11.2 | Meilleur temps `bestTimes.cso_train` = temps + pénalités | partiel | teste | `SC/CsoRun.cpp:242-253` ; `SG/StridesSaveSubsystem.cpp:106-125` | T11 : écrit à l'étape d'enregistrement sans F5, égal à `ep.bt` du web (6 cas) ; pénalités de temps, élimination et meilleur temps existant non départagés |
 | 11.2 | Classement en ligne `reportScore` | absent | aucun | — | — |
@@ -1106,7 +1109,7 @@ Principes communs :
   `StridesCsoHudReplay::Run` puis figés par `SetFrozen` : « N° 40 · Test » est le texte du web rendu par le widget, le
   dossard propre au jeu n'apparaît sur aucun montage) ; relevé `cso/entree-unreal.json` : carte identique au DOM du web
   pour les 4 poses qui ont une carte (entree-3 et entree-4 n'en ont pas), champ `gestures` vide pour les 8 poses (relevé
-  recréé à chaque rappel d'`ApplyPose`), comptes du plan égaux au SVG du web (itérations de la boucle d'`OnPaint`, pas
+  recréé à chaque rappel d'`ApplyPose` ; corrigé le 22/11/2026, remarque 16 du §4), comptes du plan égaux au SVG du web (itérations de la boucle d'`OnPaint`, pas
   primitives dessinées) : montages `cso/entree-1-presentation-*`, `entree-2-plan-*`,
   `entree-3-annonce-*` (annonce « N° 40 · Test » à la 28e image après « Entrer en piste » ; `tests/e2e/cso.mjs:59-63`
   la lit après `tick(2)` puis `tick(28)`, soit 30 images, même texte) et `entree-4-cloche-*`, en 844 × 390 (captures de la recette pour 1, 2 et 3-cloche) et
@@ -1198,7 +1201,7 @@ Base `97d1d013`. C = corrigé, D = déclaré.
    tableau par engagé affiché, colonnes réparties en proportion de leur largeur maximale (table-layout auto, vérifié à
    0,09 px), `scrollHeight` = bas du tableau + padding-bottom, classe `more` (`screens.js:151`) suivie au défilement.
    Oracle `ORA/cso_result_layout.json` (`export-cso-result.mjs --screens` : 15 états × 2 langues × 2 viewports, boîtes,
-   largeurs de texte des cellules, défilement et `more` en haut et en bas) : `testCsoResultLayout` (`TC:1851`) 60 vues,
+   largeurs de texte des cellules, défilement et `more` en haut et en bas) : `testCsoResultLayout` (`TC:1858`) 60 vues,
    3 876 boîtes à 0,088 px, défilement et `more` identiques ; 15 mutations de la mise en page dans
    `mutations-cso-ranking.py`, 12 détectées, 3 déclarées (lignes d'une clé, arrondi au-dessus de `scrollHeight`, seuil de
    4 px de `more`) ; le script entier : 76 mutations, 67 détectées, 9 déclarées, code 0. Jeu
@@ -1440,7 +1443,8 @@ réassemblé. `ctest` rejoué : 300 728 vérifications, 0 échec.
    débogage, hors épreuve).
 2. C — `cso.chute-barre` : « le parcours Unreal passe toujours « mission en cours » » retiré (`missionActive` = épreuve
    en cours, `SG/StridesCourse.cpp:481`) ; la remise hors mission à 60 m reste non exercée, faute d'oracle.
-3. C — `relais-mac.md`, « Parité de la tranche a » : recomptée sur les 78 lignes (27 / 37 / 14) ; joystick retiré
+3. C — `relais-mac.md`, « Parité de la tranche a » : recomptée sur les 78 lignes (27 / 37 / 14, puis 23 / 41 / 14
+   après le contrôle adverse, voir plus bas) ; joystick retiré
    (tranche h), `cso.comparaison-resultats` parmi les prouvés, Recommencer parmi les partiels.
 4. C — `camera.concours` : sous-branches non départagées écrites dans son écart (point visé remis à zéro, `h.groundY`,
    emprise de l'obstacle survolé), comme dans `camera.concours-decor` et `ATTENDUES`.
@@ -1449,8 +1453,9 @@ réassemblé. `ctest` rejoué : 300 728 vérifications, 0 échec.
    D — ces captures précèdent T11 (`jeu-5-bilan` sans carte de bilan), T12 et C1 (cheval gris) :
    `interface.hud-sobre-cso`, `parite/README.md`.
 6. C — bande de moins de 0,2 m : recomptée dans `ORA/cso_takeoff_zone.json` (`python3`) : 195 cas sur les 8 jeux de
-   hauteurs, toutes hauteurs confondues, dont 18 à la base 1,05 et 11 à la base 1,10 de l'épreuve (puissances 1,1 et
-   1,35), 39 hors épreuve, 54 à 1,55 ; justification corrigée dans `cso.aide-zone-appel`, la ligne 4.2 du §2 et
+   hauteurs : 11 à la base 1,10 de l'épreuve du Pôle (`csoHeights(1.1)`, `activities.js:35` ; puissances 1,1 et 1,35),
+   39 hors épreuve (base nulle), 18 à 1,05 (classe Amateur 2 des concours, `trip.js:143`), 37 à 1,25, 36 à 1,40, 54 à
+   1,55 (ventilation corrigée après le contrôle adverse ; la première version faisait de 1,05 une base de l'épreuve) ; justification corrigée dans `cso.aide-zone-appel`, la ligne 4.2 du §2 et
    `ATTENDUES` de `mutations-cso-aids.py` (aucune exécution n'en pose ; seule la plage est comparée, pas la bande).
 7. D — branche « cheval absent » : mutations « tracé borné au cheval sans cheval » et « zone affichée sans cheval »
    ajoutées, non détectées, déclarées (`player.js:56`, `SG/StridesCourse.cpp:567`) ; écarts de `cso.aide-zone-appel` et
@@ -1473,11 +1478,15 @@ réassemblé. `ctest` rejoué : 300 728 vérifications, 0 échec.
     `cso.entree-piste`, `cso.cloche`, T10, `parite/README.md`.
 15. D — mutations du module de jeu de T10, sans script versionné : retirées des preuves (`cso.presentation`,
     `cso.entree-piste`, T10) ; script à écrire (voir la liste ci-dessous).
-16. D — `entree-unreal.json` : `gestures` vide pour les 8 poses (relevé recréé à chaque rappel d'`ApplyPose`), comptes du
-    plan = itérations d'`OnPaint`, carte comparée pour 4 poses seulement : `cso.presentation`, `cso.plan-parcours`, T10,
-    `parite/README.md`. Correction de l'outil non faite (compilation et captures).
-17. D — texte initial « 0,00 » (`hud.js:74`) : déclaré dans `cso.tableau-chrono` et `interface.tableau-cso`. Correction du
-    cœur non faite : elle change l'état que le module de jeu rejoue, sans pouvoir relancer les tests moteur.
+16. C (gestes) et D (comptes du plan) — `entree-unreal.json` : `gestures` était vide pour les 8 poses (relevé recréé à
+    chaque rappel d'`ApplyPose`) ; **corrigé à la reprise du 22/11/2026** (gestes cumulés sur les deux appels de la pose,
+    `AStridesShots::EntreeGestures`, relevé refait) ; comptes du plan = primitives du modèle parcourues par `OnPaint`
+    (un `case` par sorte, `SG/StridesCsoScreens.cpp:138-216`), pas appels de dessin comptés : déclaré ; carte comparée
+    pour les 4 poses qui en ont une : `cso.presentation`, `cso.plan-parcours`, T10, `parite/README.md`.
+17. C — texte initial « 0,00 » (`hud.js:74`) : **corrigé à la reprise du 22/11/2026** (`strides::CsoHud(Lang)` pose
+    `dec(0, 2)` à la construction, contrôle de `testCsoHud` ; la différence « textes du tableau » des poses entree-1 à
+    entree-3 a disparu du relevé `entree-unreal.json`) : `cso.tableau-chrono`, `interface.tableau-cso`,
+    `cso.entree-piste`.
 18. C — instant de l'annonce : `cso.mjs:59-63` lit le grand message après `tick(2)` puis `tick(28)` (30 images ; la pose
     est à la 28e, même texte) : `cso.entree-piste`, T10, `parite/README.md`.
 19. C — `cso.cloche` : écart réécrit (rien sur la logique et les textes ; rendu à `interface.grand-message` ; son joué
@@ -1495,8 +1504,10 @@ réassemblé. `ctest` rejoué : 300 728 vérifications, 0 échec.
 25. C — provenance du journal des sons : dans les 60 exécutions légères, sons du cheval tirés des événements de l'oracle
     et click recomposé par une règle écrite dans le test : `cso.sons-parcours`, `audio.cheval`, `audio.concours`,
     `audio.interface`, T12, note de validation.
-26. D — click joué sur une descente refusée (saut) ou au-delà de 2,5 m/s : `audio.interface`. Correction de `DoAction`
-    non faite (compilation et tests moteur requis).
+26. C — click joué sur une descente refusée (saut) ou au-delà de 2,5 m/s : **corrigé à la reprise du 22/11/2026**
+    (`AStridesPlayerController::DoAction` ne descend et ne joue le click que sous 2,5 m/s et hors saut, comme le `when`
+    de l'interaction `dismount`, `player.js:225`) : `audio.interface`, `monte.interaction-descendre`,
+    `monte.descente-elimination`, `cso.elimination-descente`.
 27. C — §1 et §2.12 de ce document : sons portés en T12, captures de la recette faites.
 28. C — « deux exports donnent les mêmes octets » précisé (tolérance ; dossier vide : 3 sons sur 19, dont `bell`) : T12,
     `audio.*`, commentaires d'`export-cso-sounds.mjs`. Non revérifié par un nouvel export (il réécrirait le manifeste et
@@ -1524,8 +1535,9 @@ l'écran) ; écarts recadrés sur leur fonction : `cso.geometrie-chandeliers-bar
 `monte.descente-elimination` (conditions de descente renvoyées à `monte.interaction-descendre` : au galop, le portage
 laisse descendre et donc éliminer) ; références : `camera.concours` `CsoCamera.cpp:36-135`, `cso.entree-piste`
 `StridesCourse.cpp:141-154`, `cso.capacite-cheval` `CsoEntry.cpp:168-211`, `cso.presentation` `CsoEntry.cpp:91-164`,
-`cso.classement-simule` `Ranking.cpp:13-111`, `testCsoSounds` `test_core.cpp:3073-3190` (4 lignes). Tranche a :
-**27 identique_prouve, 37 partiel, 14 absent** (28 / 35 / 15 avant).
+`cso.classement-simule` `Ranking.cpp:13-111`, `testCsoSounds` `test_core.cpp:3080-3197` (4 lignes). Tranche a :
+**27 identique_prouve, 37 partiel, 14 absent** (28 / 35 / 15 avant) ; **23 / 41 / 14** après le contrôle adverse
+(section suivante).
 
 **Scripts de mutations du cœur** : depuis T12 (`CsoAudio.cpp`) puis C1 (`HorseCoat.cpp`), l'édition de liens de leur
 banc échouait (symboles indéfinis : `test_core.cpp` appelle `testCsoSounds` et `testHorseCoat`) : chaque mutation
@@ -1537,48 +1549,147 @@ dans `ATTENDUES` : `mutations-cso-aids.py` 57 mutations, 46 détectées, 11 déc
 48, 1 ; `-input` 69, 67, 2 ; `-ranking` 76, 67, 9 ; `-run` 83, 78, 5 ; `mutations-horse-coat.py` 39, 38, 1 (sources pris
 par motif, intact). `mutations-cso-controls.py` (module de jeu, UnrealEditor) n'est pas rejoué (disque).
 
-**Convention d'état** : une ligne de règle (déroulé, texte, journal d'appels) est identique_prouve quand sa règle, ses
-textes et ses appels sont prouvés par oracle et que tout son rendu relève d'une ligne `interface.*` ou `audio.*` qui en
-porte les écarts (`cso.cloche`, `cso.temps-limite`, `cso.arrivee`, `cso.ordre-fautes`) ; une ligne qui déclare elle-même
-une différence de rendu ou de comportement reste partielle (`cso.retour-appel`, `cso.tableau-chrono`,
-`cso.presentation`, `cso.classement-simule`). Un cas que le portage ne peut pas recevoir et qu'aucun appel ne passe
-(`cso.comparaison-resultats` : résultat absent) est déclaré non départagé, pas compté comme différence.
+**Convention d'état** (précisée après le contrôle adverse de l'hygiène finale) : une ligne est identique_prouve quand un
+oracle exporté du jeu web, comparé par un test qui passe, prouve ce que décrit sa fonction, et que son écart ne déclare
+**aucune différence, dans le jeu Unreal, d'un élément nommé dans sa propre fonction** (référence : le web avec ses
+réglages par défaut) ; les sous-branches qu'aucun oracle ne départage sont déclarées dans l'écart et les `ATTENDUES`, pas
+comptées comme différences. Trois cas en découlent :
 
-### Ce qui reste pour une tranche a entièrement identique (21/11/2026, par ordre d'importance visible pour le joueur)
+- **ligne d'intégration** (branchement d'une règle dans le jeu : `cso.conduite-integration`, `cso.declenchement-saut`,
+  `cso.jugement-barres`, `camera.concours`) : elle porte les différences que le jeu introduit (commandes armées hors
+  épreuve, puissance sans équipement ni état, membres non jugés, caméra de départ du fondu) et reste partielle tant
+  qu'elle en déclare une ;
+- **ligne de formule ou de règle** appelée par une ligne d'intégration (`cso.direction`, `cso.cadence`,
+  `cso.facteurs-vitesse-angle`, `cso.plan-saut`, `cso.qualite-appel`, `cheval.cap-concours`,
+  `cheval.reception-concours`) ou déclenchée par une autre fonction (`cso.elimination-descente`,
+  `monte.descente-elimination` : même élimination et même texte à chaque descente ; les conditions de la descente sont à
+  `monte.interaction-descendre`, partielle) : jugée sur sa formule ou sa règle, l'entrée différente étant comptée à la
+  ligne qui la produit, nommée dans l'écart ;
+- **ligne de règle du déroulé** (`cso.cloche`, `cso.temps-limite`, `cso.arrivee`, `cso.ordre-fautes`) : identique_prouve
+  quand sa règle, ses textes et ses appels sont prouvés et que tout son rendu relève d'une ligne `interface.*` ou
+  `audio.*` qui en porte les écarts.
+
+Une ligne qui déclare elle-même une différence de rendu ou de comportement reste partielle (`cso.retour-appel`,
+`cso.tableau-chrono`, `cso.presentation`, `cso.classement-simule`, et les quatre lignes d'intégration ci-dessus). Un cas
+que le portage ne peut pas recevoir et qu'aucun appel ne passe (`cso.comparaison-resultats` : résultat absent) est déclaré
+non départagé, pas compté comme différence.
+
+### Contrôle adverse de l'hygiène finale (21/11/2026)
+
+Base `4b62c5f5` ; la passe précédente est `438faeb3`. Disque : 3,0 Go libres (`df -h /Users/julien`), toujours sous les
+8 Go exigés avant une étape lourde : **aucune compilation Unreal, aucun test Automation, aucune capture ni démonstration
+F8** ; aucun source du cœur ni du module de jeu modifié ; `ctest` rejoué : 300 728 vérifications, 0 échec.
+
+**Reprise du 22/11/2026** (après une interruption de la session ; base `438faeb3`, travail non commité de la première
+exécution gardé et relu) : 5,1 Go libres au départ, compilation incrémentale et tests dans le dépôt principal, sans copie
+du projet. Les trois remarques encore vraies sont **corrigées par alignement sur le JS** : 17, `strides::CsoHud(Lang)`
+pose `dec(0, 2)` à la construction (`SCh/CsoHud.h:57-59`, `hud.js:74`) ; 26, `AStridesPlayerController::DoAction` ne
+descend et ne joue le click que sous 2,5 m/s et hors saut (`SG/StridesPlayerController.cpp:511-527`, `player.js:225` ;
+`Dismount` reste inconditionnel hors saut pour la descente forcée du chargement, comme `player.dismount(true)`) ; 16,
+gestes du relevé cumulés sur les deux appels d'`ApplyPose` (`AStridesShots::EntreeGestures`). Preuves : `ctest` 300 729
+vérifications, 0 échec (contrôle « HUD construit » ajouté à `testCsoHud`, français « 0,00 » et anglais « 0.00 ») ;
+`StridesGrandTourEditor Mac Development` : Result: Succeeded ; `Automation RunTests Strides` : 32 tests trouvés, 32/32
+Result={Success} ; poses `entree-*` rejouées en rendu Metal dans un dossier dédié : `entree-unreal.json` refait, **aucune
+différence aux 8 poses** (la différence « textes du tableau » des poses entree-1 à entree-3, due au « 0,00 » absent,
+a disparu) et gestes relevés (action « Chrono », Voir le plan, Retour puis Entrer en piste) ; démonstration de l'épreuve
+avec l'interface (`-StridesShots=cso-jeu -TouchControls`, dossier dédié) : « 60,52 / 64 s 0 pt Arrivée ✓ ». Aucun état
+de ligne ne change (bilan **23 / 41 / 14** inchangé) ; captures PNG du passage non versionnées (montages inchangés).
+`mutations-cso-controls.py` (module de jeu) non rejoué : aucune de ses mutations ne porte sur le code modifié.
+
+1. **Majeur, corrigé** — états surévalués : `cso.conduite-integration` (commandes de concours armées hors épreuve :
+   `bCsoControls = true`, `SGh/StridesHorse.h:50`, jamais remis à faux ; `In.csoControls = true`,
+   `SG/StridesHorse.cpp:381` ; `clearCsoControls` non porté) et `cso.declenchement-saut` (puissance sans
+   `(1 + mods.jump)` ni `cond.jumpMul` de `horse.js:68`, `SG/StridesHorse.cpp:244-250` ; dégagement 0,
+   `SCh/CsoHorse.h:120`) passent **partiel**. Même examen des 27 lignes prouvées, avec la convention ci-dessus :
+   `cso.jugement-barres` passe aussi **partiel** (le jeu affiche le modèle du cheval WildMesh mais appelle le cœur avec
+   `limbJudged = false`, `SG/StridesHorse.cpp:412` : annonce à la sortie des épaules, alors que le web, réglages par
+   défaut `quality` et `characters` « auto », `save.js:37`, `pjlAllowed`, `realistic.js:876-879`, juge les membres et
+   attend les postérieurs ; l'écart disait à tort « pas de cheval WildMesh », corrigé aussi dans `cso.cause-barre`), et
+   `camera.concours` (« limite » pour le contrôle) passe **partiel** par choix prudent : son fondu d'entrée de 1,2 s,
+   nommé dans sa fonction, part de la perche du portage (`camera.suivi`) et non de la caméra du web. Les 23 autres restent
+   prouvées : leur écart ne déclare aucune différence d'un élément de leur fonction (relu ligne à ligne). Tranche a :
+   **23 identique_prouve, 41 partiel, 14 absent** (au lieu de 27 / 37 / 14) ; niveaux inchangés (teste 48, joue_ecran
+   14, compile 2, aucun 14). §2 aligné : caméra de concours (ligne 10) et classement simulé (ligne 11.2) n'y sont plus
+   marqués identique_prouve.
+2. **Majeur, corrigé à la reprise du 22/11/2026** (voir « Reprise » ci-dessous) — remarques 16, 17 et 26 : écarts
+   encore vrais au premier passage, alignés sur le JS à la reprise. 26 : `DoAction` (`SG/StridesPlayerController.cpp`,
+   version `438faeb3` lignes 512-518) jouait le click dès que `bDone` était vrai, même quand `Dismount` refusait (saut en
+   cours, `SG/StridesRider.cpp:118`), et descendait à toute vitesse ; il suit désormais le `when` de l'interaction
+   `dismount` (`player.js:225` : vitesse < 2,5 m/s, hors saut ; `noDismount` de mission non porté). 17 : « 0,00 » posé à
+   la construction de `strides::CsoHud` comme `hud.js:74`. 16 : gestes du relevé `entree-unreal.json` cumulés sur les
+   deux appels de la pose ; comptes du plan (primitives du modèle, pas appels de dessin) déclarés.
+3. **Mineur, corrigé** — remarque 6 : la base 1,05 n'est pas une hauteur de l'épreuve du Pôle (classe Amateur 2 des
+   concours, `trip.js:143` ; l'épreuve utilise `csoHeights(1.1)`, `activities.js:35`). Recompté (`python3` sur
+   `ORA/cso_takeoff_zone.json`, longueur `far − near`) : 195 cas = 39 hors épreuve + 18 à 1,05 + 11 à 1,10 + 37 à 1,25 +
+   36 à 1,40 + 54 à 1,55, aucun à 0,60 ni 0,80 ; à 1,10, puissances 1,1 (9 cas) et 1,35 (2). Texte corrigé dans
+   `cso.aide-zone-appel`, `ATTENDUES` de `mutations-cso-aids.py`, la ligne 4.2 du §2 et la remarque 6 ci-dessus.
+4. **Mineur, corrigé** — liste « Ce qui reste » complétée : carrière et public (sable, spectateurs absents), annonce du
+   résultat sans les postérieurs, fondu d'entrée, règles du cross, sauts libres, résultat de tentative, faces des
+   obstacles non vérifiées.
+5. **Mineur, corrigé** — banc de mutations : dans les 11 scripts du cœur, une mutation dont le motif est absent ou en
+   double, ou dont la compilation échoue, n'est plus comptée « non détectée » : elle va dans une liste `broken`
+   (« non jouées »), affichée, et le script sort en **code 2**, même si elle figure dans `ATTENDUES`. Témoin négatif :
+   copie de `mutations-cso-aids.py` avec deux mutations fausses listées dans `ATTENDUES` (motif absent, source qui ne
+   compile pas) : « 2 mutations, 0 détectées, 0 non détectées, 2 non jouées », code 2. `mutations-cso-controls.py`
+   (module de jeu) s'arrêtait déjà sur un motif absent et sortait en code 1 sur une compilation échouée : inchangé.
+   Rejeu des scripts durcis (21/11/2026, 02:30 à 03:09, avant la reprise) : code 0 pour 10 scripts sur 11, 0 mutation
+   non jouée : `mutations-cso-run` 83 mutations, 78 détectées ; `mutations-cso-input` 69 / 67 ; `mutations-cso-entry`
+   59 / 55 ; `mutations-cso-aids` 57 / 46 ; `mutations-cso-hud` 49 / 48 ; `mutations-horse-coat` 39 / 38 ;
+   `mutations-cso-horse` 32 / 22 ; `mutations-cso-camera` 30 / 24 ; `mutations-cso-audio` 27 / 22 ; non détectées
+   toutes listées dans `ATTENDUES` ; `mutations-cso-ranking` non rejoué à ce passage (repris le 22/11, ci-dessous) ;
+   `mutations-cso-fences` interrompu par la limite d'usage. Reprise du 22-23/11/2026, sur le code
+   corrigé : `mutations-cso-fences` 55 mutations, 38 détectées, 17 non détectées toutes listées, code 0 ;
+   `mutations-cso-hud` (seul script dont le source, `CsoHud`, a changé) 49 / 48, code 0 ; `mutations-cso-ranking` 76 /
+   67, code 0 ; 0 mutation non jouée. Les 8 autres scripts ne sont pas rejoués sur le code corrigé (charge du Mac :
+   environ 3 min par mutation) : leurs sources mutés n'ont pas changé depuis leur rejeu du 21/11.
+
+### Ce qui reste pour une tranche a entièrement identique (21/11/2026, complété après le contrôle adverse, par ordre d'importance visible pour le joueur)
 
 1. **Cheval et cavalière en mouvement** : clip de saut non calé sur la parabole (seuil 7 m/s au lieu de 8, durée non
    ajustée, retour sec à la réception : `cheval.saut-animation`), postérieurs libres à l'appel, membres non réglés sur
    la hauteur des barres, sellerie absente, couple rendu d'une autre taille (T6) ; cavalière : tranche b (référence à
    trancher).
-2. **Contacts et collisions** : barres qui tombent sans contact visible ou membre qui traverse une barre (détection des
-   membres non portée : `cso.contact-membres`, `cheval.contacts-membres-barres`) ; ailes et barres traversables
-   (`cso.obstacles-collisions`).
-3. **Couleurs et lumière** : mur beige saumon au lieu de rouge brique (couleurs de sommet exportées non appliquées),
+2. **Carrière et public** (autres tranches, visibles à chaque image de l'épreuve) : sable de la carrière brun côté
+   Unreal, clair côté web (écart le plus visible des montages, par exemple `aide-ambre-844x390.png`), teinte de l'herbe,
+   public des tribunes (`monde.pole-international`, tranche c) ; **aucun spectateur** au bord de la carrière
+   (`pnj.spectateurs-pole`, absent, tranche g), donc ni applaudissements visibles ni liesse au sans-faute : `cso.arrivee`
+   demande `cheerT`, rien ne l'anime.
+3. **Contacts, collisions et annonce des fautes** : barres qui tombent sans contact visible ou membre qui traverse une
+   barre (détection des membres non portée : `cso.contact-membres`, `cheval.contacts-membres-barres`) ; résultat de
+   chaque obstacle annoncé à la sortie des épaules au lieu du passage des postérieurs (toast et son plus tôt :
+   `cso.jugement-barres`) ; ailes et barres traversables (`cso.obstacles-collisions`).
+4. **Couleurs et lumière** : mur beige saumon au lieu de rouge brique (couleurs de sommet exportées non appliquées),
    ombres des nuages des obstacles absentes, rendu Metal plus clair (flanc du cheval 20 à 30 %), bandes et tirets des
    aides plus ternes (mélange avant tone mapping), cheval gris sur les captures antérieures à C1.
-4. **Sons** : compresseur du bus maître non porté (la chaîne du web change le RMS d'un son seul de −8,7 à +3,5 dB), une seule réalisation
-   du hasard par son, souffle au galop et pas des sabots absents (foulées de l'animation), click sur une descente
-   refusée ; écoute réelle jamais faite.
-5. **Police Geist** non embarquée (licence et fichier à décider) : graisses, chiffres non monospaces, hauteur du tableau
+5. **Sons** : compresseur du bus maître non porté (la chaîne du web change le RMS d'un son seul de −8,7 à +3,5 dB), une
+   seule réalisation du hasard par son, souffle au galop et pas des sabots absents (foulées de l'animation) ; écoute
+   réelle jamais faite.
+6. **Police Geist** non embarquée (licence et fichier à décider) : graisses, chiffres non monospaces, hauteur du tableau
    (2 à 3 px), colonnes du bilan à 8,2 px au plus, mot coupé autrement, cartes de présentation et du plan relevées pour
    Comète en français seulement.
-6. **Animations et effets d'interface** : fondu d'ouverture des cartes absent, « Toucher pour fermer » sans
+7. **Animations et effets d'interface** : fondu d'ouverture des cartes absent, « Toucher pour fermer » sans
    clignotement, transition et état enfoncé du bouton SAUT, halo approché, ombres portées absentes, pop du grand message
    et fondu des crans non comparés image par image.
-7. **Autour de l'épreuve** : public en liesse non animé au sans-faute, coupe franche à la sortie de piste au lieu de la
-   caméra du monde ouvert, HUD du cavalier à pied après l'élimination et HUD hors épreuve derrière le bilan non portés,
-   cible GPS (7 m avant l'obstacle) et bandeau d'objectif du lancement absents.
-8. **Fonctions absentes** : « S'entraîner » et paddock (`cso_warmup`), défis (versions, déroulé, accès, écrans, carte de
-   partage) et records par défi, astuces « Trop lent » et « Cheval essoufflé », dotation, `reportScore`, récompenses de
-   fin de mission.
-9. **Différences de logique peu visibles** : commandes de concours actives hors épreuve (`bCsoControls`), descente
-   possible au galop (élimination que le web ne permet pas), graine négative du classement, texte initial « 0,00 » du
-   tableau caché, dégagement toujours 0 et puissance sans équipement ni état.
-10. **Preuves à compléter** : rendu mobile iOS (ES3.1 / Metal mobile), appareil réel (toucher, facteur de pixels, zones
-    sûres, performances, budget de triangles), paquet iOS signé ; montages à refaire après C1 et T11 (`entree-*`,
+8. **Autour de l'épreuve** : fondu d'entrée en piste parti de la perche du portage (`camera.concours`, `camera.suivi`),
+   coupe franche à la sortie de piste au lieu de la caméra du monde ouvert (`camera.concours-sortie`), HUD du cavalier à
+   pied après l'élimination et HUD hors épreuve derrière le bilan non portés, cible GPS (7 m avant l'obstacle) et
+   bandeau d'objectif du lancement absents.
+9. **Fonctions absentes ou incomplètes** : « S'entraîner » et paddock (`cso_warmup`), défis (versions, déroulé, accès,
+   écrans, carte de partage) et records par défi, astuces « Trop lent » et « Cheval essoufflé », dotation,
+   `reportScore`, récompenses de fin de mission ; résultat de tentative sans barres, refus, pénalités de temps séparées,
+   identifiant, date ni version (`cso.resultat-tentative`, utile aux défis et records) ; hors du parcours du Pôle :
+   sauts libres sans obstacles hors parcours, statistiques, compétence ni son de faute (`cso.sauts-libres`), règles du
+   cross non construites (`cso.cross-regles` : `strides::CsoRun` ne construit que l'épreuve de CSO).
+10. **Différences de logique peu visibles** : commandes de concours actives hors épreuve (`bCsoControls`,
+    `cso.conduite-integration`), `noDismount` de mission non porté, graine négative du classement, dégagement toujours
+    0 et puissance sans équipement ni état (`cso.declenchement-saut`).
+11. **Corrections et preuves à compléter** : comptes du plan du relevé `entree-unreal.json` pris sur le modèle, pas sur
+    les appels de dessin ; aucun test moteur ne descend à cheval lancé (limite de 2,5 m/s relue contre `player.js:225`) ;
+    faces avant / arrière, profondeur et écart par défaut des obstacles portés mais non vérifiés par le test de T5
+    (`cso.obstacles-geometrie`) ; rendu mobile iOS (ES3.1 / Metal mobile), appareil réel (toucher, facteur de pixels,
+    zones sûres, performances, budget de triangles), paquet iOS signé ; montages à refaire après C1 et T11 (`entree-*`,
     `carriere-*`, `hud-*`, `aide-*`, `bilan-*`, `jeu-*`) ; défilement de la carte de bilan au doigt ; script versionné
-    des mutations du module de jeu de T10 ; relevé `entree-unreal.json` à corriger (gestes, primitives dessinées) ;
-    sous-branches non départagées déclarées dans les `ATTENDUES` des scripts.
+    des mutations du module de jeu de T10 ; sous-branches non départagées déclarées dans les `ATTENDUES` des scripts.
 
 ### Ordre et dépendances
 

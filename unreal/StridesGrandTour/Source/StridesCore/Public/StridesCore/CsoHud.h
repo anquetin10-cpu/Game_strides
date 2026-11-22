@@ -54,6 +54,10 @@ class STRIDESCORE_API CsoHud {
  public:
   static constexpr int64_t kTicksPerSecond = 3000;
 
+  // Construction (hud.js:74, h('b.tab-num', { text: dec(0, 2) })) : chrono du tableau « 0,00 » dans la langue du jeu,
+  // les trois autres champs vides (hud.js:75-77) ; le tableau reste masqué jusqu'à la première mise à jour.
+  explicit CsoHud(Lang lang = Lang::Fr) { boardTxt_[0] = dec(0, 2, lang); }
+
   // Hauteur du viewport (innerHeight, px CSS) : 1 toast au plus si ≤ 420, sinon 2 (hud.js:447).
   void setViewportHeight(double h) { vh_ = h; }
   double viewportHeight() const { return vh_; }

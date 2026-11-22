@@ -1015,7 +1015,9 @@ void AStridesShots::ApplyEntreePose(const FPose& P, APlayerController* PC, AStri
 		(int32)Got, (int32)Want, Diffs.Num() ? *(TEXT("DIFFÉRENTE du web : ") + FString::Join(Diffs, TEXT(" ; "))) : TEXT("identique au web"));
 	TArray<TSharedPtr<FJsonValue>> Dv, Gv;
 	for (const FString& X : Diffs) Dv.Add(MakeShared<FJsonValueString>(X));
-	for (const FString& X : Did) Gv.Add(MakeShared<FJsonValueString>(X));
+	if (PoseStep == 0) EntreeGestures.Reset();
+	EntreeGestures.Append(Did);
+	for (const FString& X : EntreeGestures) Gv.Add(MakeShared<FJsonValueString>(X));
 	EntreeResult->SetStringField(TEXT("screen"), Got == ES::Presentation ? TEXT("presentation") : Got == ES::Plan ? TEXT("plan") : TEXT(""));
 	EntreeResult->SetArrayField(TEXT("gestures"), Gv);
 	EntreeResult->SetArrayField(TEXT("diffs"), Dv);

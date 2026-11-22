@@ -8,6 +8,7 @@ unreal/core/tests/test_core.cpp est recompilé avec la copie et rejoué sur les 
 (cso_takeoff_zone.json ; canal « ai » des exécutions t9-* de cso_runs/, dont t9-ambre et t9-recette ; Content/Data/cso_aids.json). Seuls testCsoTakeoffZone
 et testCsoAids tournent (STRIDES_TESTS=zone,aids). Une mutation doit faire échouer le banc ; le script sort en code 1 si
 l'une n'est pas détectée hors de la liste ATTENDUES (raison donnée), ou si l'une de celles-ci devient détectée.
+Code 2 si une mutation n'a pas pu être jouée (motif absent ou en double, compilation échouée), même listée dans ATTENDUES.
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
   [MUT_ONLY=<texte>] python3 scripts/unreal/mutations-cso-aids.py [dossier des oracles] [dossier de travail]
@@ -112,9 +113,10 @@ ATTENDUES = {
   'équivalente en épreuve de CSO : tous les obstacles du parcours ont lineS (obstacles.js:184)',
  'bandes : longueur minimale 0,2 m ignorée':
   'sous-branche non départagée : aucune exécution de cso_runs/ ne pose une plage de moins de 0,2 m ; la grille '
-  'cso_takeoff_zone.json en compte 195 sur ses 8 jeux de hauteurs (toutes hauteurs confondues), dont 18 à la base 1,05 '
-  'et 11 à la base 1,10 de l’épreuve (puissances 1,1 et 1,35), 39 hors épreuve et 54 à 1,55 : la bande courte existe '
-  'donc aussi aux hauteurs de l’épreuve ; takeoffZone y est comparée, pas la bande posée',
+  'cso_takeoff_zone.json en compte 195 sur ses 8 jeux de hauteurs : 11 à la base 1,10 de l’épreuve du Pôle '
+  '(csoHeights(1.1), activities.js:35 ; puissances 1,1 et 1,35), 39 aux hauteurs hors épreuve (base nulle), 18 à 1,05 '
+  '(classe Amateur 2 des concours, trip.js:143, hors tranche a), 37 à 1,25, 36 à 1,40, 54 à 1,55, aucune à 0,60 ni '
+  'à 0,80 : la bande courte existe donc aussi aux hauteurs de l’épreuve ; takeoffZone y est comparée, pas la bande posée',
  'cheval absent : tracé borné au cheval sans cheval':
   'sous-branche non départagée : aucun appel du canal « ai » n’a hh faux (g.player.horse nul seulement avant le premier '
   'setHorse, player.js:56) et le jeu passe toujours hasHorse = true (StridesCourse.cpp:567) ; sans cheval, le web '
@@ -136,7 +138,8 @@ os.makedirs(out, exist_ok=True)
 allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
-undetected = []
+# broken : mutations non jouées (motif absent ou en double, compilation échouée) : jamais comptées non détectées.
+undetected, broken = [], []
 # Objets communs compilés une fois ; seule la copie mutée est recompilée, puis liée.
 inc = ['-I', os.path.join(core, 'Public')]
 objs = {}
@@ -151,13 +154,13 @@ for file, name, a, b in M:
     src = open(os.path.join(core, 'Private', file)).read()
     n = src.count(a)
     if n != 1:
-        print(f'{name} : motif trouvé {n} fois, mutation non appliquée'); undetected.append(name); continue
+        print(f'{name} : motif trouvé {n} fois, mutation non appliquée'); broken.append(name); continue
     f = os.path.join(out, file)
     open(f, 'w').write(src.replace(a, b))
     exe = os.path.join(out, 'mut')
     c = subprocess.run(['clang++', '-std=c++20', '-O1', *inc, f, *[o for k, o in objs.items() if k != file], '-o', exe], capture_output=True, text=True)
     if c.returncode:
-        print(f'{name} : compilation échouée\n{c.stderr[:400]}'); undetected.append(name); continue
+        print(f'{name} : compilation échouée\n{c.stderr[:400]}'); broken.append(name); continue
     r = subprocess.run([exe, ora, data], capture_output=True, text=True, env=env)
     last = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ''
     fails = [l.strip() for l in r.stdout.splitlines() if 'ÉCHEC' in l][:1]
@@ -170,10 +173,12 @@ r = subprocess.run([os.path.join(out, 'mut'), ora, data], capture_output=True, t
 print(f'témoin non muté : code {r.returncode} ({r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""})')
 if c.returncode or r.returncode: sys.exit('témoin non muté en échec : banc ou oracle à revoir')
 unexpected = [n for n in undetected if n not in ATTENDUES]
-now_detected = [n for n in ATTENDUES if n not in undetected and any(m[1] == n for m in M)]
-print(f'{len(M)} mutations, {len(M) - len(undetected)} détectées, {len(undetected)} non détectées' + (' : ' + ' ; '.join(undetected) if undetected else ''))
+now_detected = [n for n in ATTENDUES if n not in undetected and n not in broken and any(m[1] == n for m in M)]
+print(f'{len(M)} mutations, {len(M) - len(undetected) - len(broken)} détectées, {len(undetected)} non détectées, {len(broken)} non jouées' + (' : ' + ' ; '.join(undetected) if undetected else ''))
 for n in undetected:
     if n in ATTENDUES: print(f'  attendue : {n} ({ATTENDUES[n]})')
 if unexpected: print('NON DÉTECTÉES HORS LISTE : ' + ' ; '.join(unexpected))
 if now_detected: print('désormais détectées (liste ATTENDUES à corriger) : ' + ' ; '.join(now_detected))
-sys.exit(1 if unexpected or now_detected else 0)
+# Une mutation non jouée ne prouve rien : code 2, même si elle figure dans ATTENDUES.
+if broken: print('NON JOUÉES (motif absent ou en double, ou compilation échouée) : ' + ' ; '.join(broken))
+sys.exit(2 if broken else 1 if unexpected or now_detected else 0)

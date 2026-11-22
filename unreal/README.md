@@ -52,8 +52,9 @@ Branche `claude/unreal-port`. Le jeu web (`src/`, `public/`) reste intact : c'es
 - Procédure, état vérifié et blocages Apple : [`docs/testflight.md`](docs/testflight.md).
 
 ## Prochaine tranche
-Tranche a (parcours CSO du Pôle) livrée de T1 à T12, hygiène finale le 21/11/2026 : 78 fonctions, **27 identiques
-prouvées, 37 partielles, 14 absentes**, rien de vérifié sur appareil iOS. Ce qui reste pour qu'elle soit entièrement
+Tranche a (parcours CSO du Pôle) livrée de T1 à T12, hygiène finale et contrôle adverse le 21/11/2026 : 78 fonctions,
+**23 identiques prouvées, 41 partielles, 14 absentes**, rien de vérifié sur appareil iOS ; remarques 16, 17 et 26
+corrigées à la reprise du 22/11/2026 (alignement sur le JS, 32 tests Automation au vert). Ce qui reste pour qu'elle soit entièrement
 identique, par ordre d'importance visible pour le joueur : `docs/parite/cso-ecarts.md` §4 (« Ce qui reste pour une
 tranche a entièrement identique ») ; détail : `docs/relais-mac.md` (« Parité de la tranche a ») et `docs/PARITE.md`.
 Tranche suivante : à décider par Julien.

@@ -135,7 +135,7 @@
   "js": [
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:445-522 (E, X manette, bouton MONTER) ; StridesHUD.cpp:73",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:445-529 (E, X manette, bouton MONTER) ; StridesHUD.cpp:73",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran). Aucun test ni capture côte à côte.",
@@ -177,11 +177,11 @@
   "js": [
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-118 (refus seulement pendant un saut) ; StridesPlayerController.cpp:445-522",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:511-527 (AStridesPlayerController::DoAction : descente seulement sous 2,5 m/s et hors saut, player.js:225 ; click seulement si l'action a eu lieu) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-118 (Dismount : refus pendant un saut, descente forcée du chargement inconditionnelle comme player.dismount(true))",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (descendre vérifié à l'écran). Aucun test.",
-  "ecart": "Aucune limite de vitesse : le cheval est mis à 0 m/s instantanément (StridesRider.cpp:123) ; pas de noDismount de mission.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (descendre vérifié à l'écran, avant la limite de vitesse). Limite de 2,5 m/s ajoutée le 22/11/2026 (contrôle adverse de l'hygiène finale de la tranche a) : compilée, 32 tests Automation Strides au vert, démonstration de l'épreuve au vert ; aucun test ne descend à cheval lancé (code relu contre player.js:225).",
+  "ecart": "Seuil comparé à la vitesse du cheval du portage (SpeedMS, float) ; pas de noDismount de mission ; séquence de descente non portée (monte.sequence-descente) : le cheval est mis à 0 m/s instantanément (StridesRider.cpp:123) ; aucun bouton « Descendre » affiché (l'étiquette d'action ne porte que le poteau).",
   "tranche": "b"
  },
  {
@@ -206,7 +206,7 @@
    "src/gameplay/horseMount.js",
    "src/gameplay/player.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:82 (rechargement : Dismount avant de replacer) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-135 (Dismount : MountT remis à -1, cavalier posé à pied 1,2 m à gauche du cheval, ce qui interrompt aussi la transition de 0,8 s) ; StridesPlayerController.cpp:516 (E pendant la transition → Dismount)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:82 (rechargement : Dismount avant de replacer) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-135 (Dismount : MountT remis à -1, cavalier posé à pied 1,2 m à gauche du cheval, ce qui interrompt aussi la transition de 0,8 s) ; StridesPlayerController.cpp:522 (E pendant la transition → Dismount, cheval à l’arrêt sous 2,5 m/s)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test d'interruption.",
@@ -255,7 +255,7 @@
   "etat": "identique_prouve",
   "niveau": "teste",
   "preuve": "Scénario t4-descente de cso_runs/ (fr et en) rejoué sans écart par testCsoRuns et Strides.Parite.CsoRun ; Strides.Cso.RunInGame : AStridesRider::Dismount pendant le parcours → éliminé.",
-  "ecart": "Aucun sur la règle. Descente refusée seulement pendant un saut, permise à toute vitesse (monte.interaction-descendre : le web ne la propose que sous 2,5 m/s), sans la séquence animée du web (monte.sequence-descente).",
+  "ecart": "Aucun sur la règle. Descente proposée, comme le web, sous 2,5 m/s et hors saut seulement (AStridesPlayerController::DoAction, depuis le 22/11/2026), sans noDismount de mission (monte.interaction-descendre) ni la séquence animée du web (monte.sequence-descente).",
   "tranche": "a"
  },
  {

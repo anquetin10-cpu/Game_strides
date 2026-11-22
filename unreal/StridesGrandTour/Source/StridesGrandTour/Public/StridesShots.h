@@ -157,6 +157,9 @@ private:
 	// comparé à la carte du web (entree-unreal.json).
 	void ApplyEntreePose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);
 	TSharedPtr<class FJsonObject> EntreeResult;
+	// Gestes faits pour la pose en cours, cumulés sur ses deux appels d'ApplyPose (PoseStep 0 puis 1) : le second rappel
+	// ne refait rien et effaçait le relevé (gestures vide dans entree-unreal.json avant l'hygiène finale).
+	TArray<FString> EntreeGestures;
 	// Tranche T11 : activité lancée dans l'épreuve du niveau et exécution de l'oracle rejouée image par image par le chemin
 	// du jeu jusqu'à l'image de la pose (bilan ouvert par le déroulé), carte comparée à celle du web (bilan-unreal.json).
 	void ApplyBilanPose(const FPose& P, class APlayerController* PC, class AStridesHorse* Horse);

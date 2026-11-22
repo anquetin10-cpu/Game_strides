@@ -512,8 +512,15 @@ bool AStridesPlayerController::DoAction()
 	if (AStridesRider* R = Rider())
 	{
 		// interact.trigger : click() seulement si une action était proposée (monter près d'un cheval, descendre).
+		// « Descendre » n'est proposé que si le cheval va à moins de 2,5 m/s et hors saut (player.js:225, when de
+		// l'interaction dismount) : sinon aucune action, donc ni descente ni click. Dismount lui-même reste inconditionnel
+		// hors saut (descente forcée du chargement, comme player.dismount(true) du web).
 		bool bDone = true;
-		if (R->MountedOn) R->Dismount(this);
+		if (const AStridesHorse* M = R->MountedOn)
+		{
+			bDone = M->SpeedMS < 2.5f && !M->IsJumping();
+			if (bDone) R->Dismount(this);
+		}
 		else bDone = R->TryMount(this);
 		if (Audio && bDone) Audio->Click();
 		return true;

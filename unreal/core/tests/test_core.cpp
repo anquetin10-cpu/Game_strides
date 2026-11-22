@@ -1550,6 +1550,13 @@ static CsoCall hudCallOf(const std::string& fn, const J& args) {
   return c;
 }
 static void testCsoHud() {
+  // Construction (hud.js:74-77) : chrono « dec(0, 2) » dans la langue du jeu, autres champs vides, tableau masqué.
+  {
+    const CsoHud fr, en(Lang::En);
+    CHECK(fr.boardText(0) == "0,00" && en.boardText(0) == "0.00" && fr.boardText(1).empty() && fr.boardText(2).empty() &&
+              fr.boardText(3).empty() && fr.boardHidden(),
+          "HUD construit : chrono « %s » / « %s », tableau masqué", fr.boardText(0).c_str(), en.boardText(0).c_str());
+  }
   // Masquages par les classes du HUD (styles.css), relevés par le navigateur.
   const J st = loadJson(DATA + "/hud_cso_style.json");
   const J& mk = st["masks"];

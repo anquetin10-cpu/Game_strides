@@ -6,9 +6,7 @@
 		{
 			"name": "entree-1-presentation-844x390",
 			"frames": 6,
-			"diffs": [
-				"textes du tableau"
-			],
+			"diffs": [],
 			"shown": [
 				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
 			],
@@ -111,7 +109,9 @@
 			"entree":
 			{
 				"screen": "presentation",
-				"gestures": [],
+				"gestures": [
+					"action « Chrono » du poteau : activité lancée=1"
+				],
 				"diffs": [],
 				"step": "presentation",
 				"shown": [
@@ -137,9 +137,7 @@
 		{
 			"name": "entree-1-presentation-667x308",
 			"frames": 6,
-			"diffs": [
-				"textes du tableau"
-			],
+			"diffs": [],
 			"shown": [
 				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
 			],
@@ -268,9 +266,7 @@
 		{
 			"name": "entree-2-plan-844x390",
 			"frames": 6,
-			"diffs": [
-				"textes du tableau"
-			],
+			"diffs": [],
 			"shown": [
 				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
 			],
@@ -373,7 +369,9 @@
 			"entree":
 			{
 				"screen": "plan",
-				"gestures": [],
+				"gestures": [
+					"Voir le plan=1"
+				],
 				"diffs": [],
 				"step": "presentation",
 				"shown": [
@@ -398,9 +396,7 @@
 		{
 			"name": "entree-2-plan-667x308",
 			"frames": 6,
-			"diffs": [
-				"textes du tableau"
-			],
+			"diffs": [],
 			"shown": [
 				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
 			],
@@ -528,9 +524,7 @@
 		{
 			"name": "entree-3-annonce-844x390",
 			"frames": 34,
-			"diffs": [
-				"textes du tableau"
-			],
+			"diffs": [],
 			"shown": [
 				"big=N° 40 · Test|ET COMÈTE"
 			],
@@ -633,7 +627,10 @@
 			"entree":
 			{
 				"screen": "",
-				"gestures": [],
+				"gestures": [
+					"Retour=1",
+					"Entrer en piste=1"
+				],
 				"diffs": [],
 				"step": "course",
 				"shown": [],
@@ -643,9 +640,7 @@
 		{
 			"name": "entree-3-annonce-667x308",
 			"frames": 34,
-			"diffs": [
-				"textes du tableau"
-			],
+			"diffs": [],
 			"shown": [
 				"big=N° 40 · Test|ET COMÈTE"
 			],

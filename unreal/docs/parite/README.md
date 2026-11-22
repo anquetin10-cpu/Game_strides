@@ -109,7 +109,10 @@ python3 scripts/unreal/mutations-cso-horse.py    # aussi mutations-cso-fences.py
   (`ATTENDUES`) et dans l'inventaire. Chaque script lie le banc avec les sources du cœur : un source ajouté au cœur
   (ainsi `CsoAudio.cpp` en T12, `HorseCoat.cpp` en C1) doit entrer dans leur liste, sinon l'édition de liens échoue et
   aucune mutation n'est jugée (constaté et corrigé à l'hygiène finale du 21/11/2026 ; `mutations-horse-coat.py` prend
-  tous les sources par motif).
+  tous les sources par motif). Codes de sortie des scripts du cœur : 0 si tout est détecté hors `ATTENDUES` ; 1 si une
+  mutation n'est pas détectée hors de la liste, ou si une mutation listée devient détectée ; **2 si une mutation n'a pas
+  pu être jouée** (motif absent ou en double, compilation échouée), même listée dans `ATTENDUES` (depuis le contrôle
+  adverse de l'hygiène finale : auparavant comptée « non détectée », donc acceptée en silence si elle était listée).
 
 ## 3. Captures jumelles (même lieu, même heure, même caméra, 844 × 390)
 
@@ -297,8 +300,9 @@ python3 scripts/unreal/parite-montage.py unreal/docs/parite/cso entree-
   de la même exécution (`hud.hw` compris : appels `hud.*` enregistrés dans le web, rejoués par `StridesCsoHudReplay::Run`
   et figés par `SetFrozen` ; « N° 40 · Test » est donc le texte du web, le dossard propre au jeu n'est sur aucun montage) ;
   relevé `entree-unreal.json` (carte affichée comparée au DOM du web pour les 4 poses qui en ont une, éléments affichés,
-  comptes du plan : itérations de la boucle d'`OnPaint`, pas primitives dessinées ; champ `gestures` vide, relevé recréé
-  à chaque rappel d'`ApplyPose` : les gestes ne se lisent que dans le journal). Copier ensuite `entree-*-unreal.png` et `entree-unreal.json` du dossier dédié
+  comptes du plan : primitives du modèle parcourues par `OnPaint`, pas appels de dessin comptés ; champ `gestures` :
+  gestes faits pour la pose, cumulés sur ses deux appels d'`ApplyPose` depuis le 22/11/2026, vide pour une pose jouée
+  à la suite d'une autre sans geste à faire). Copier ensuite `entree-*-unreal.png` et `entree-unreal.json` du dossier dédié
   dans `unreal/docs/parite/cso/`.
 - Démonstration (`-StridesShots` sans mode) et partie `-StridesShots=cso-jeu` : depuis T10 rien n'est lancé au démarrage ;
   l'outil lance l'activité par l'action du poteau (le départ du tracé est l'entrée de la carrière, dans la zone de 6 m)
@@ -398,7 +402,9 @@ Pour chaque pose de `poses.json` (avec un préfixe : seulement les poses dont le
   identique_prouve ; `niveau` : aucun, code_ecrit, compile, teste, joue_ecran ; `preuve`, `ecart`, références
   `fichier:ligne`). Méta et niveaux globaux : `unreal/docs/parite/etat.json`.
 - `identique_prouve` seulement avec un oracle exporté du JS comparé par un test qui passe, ou un montage côte à côte
-  dans `unreal/docs/parite/cso/`. Les branches qu'aucun oracle ne départage sont écrites dans `ecart`.
+  dans `unreal/docs/parite/cso/`, et seulement si l'`ecart` ne déclare aucune différence, dans le jeu, d'un élément
+  nommé dans la `fonction` (convention d'état : `cso-ecarts.md` §4). Les branches qu'aucun oracle ne départage sont
+  écrites dans `ecart`.
 - Après toute réécriture d'un fichier cité, mettre à jour ses références (`rg -n "<nom du fichier>"
   unreal/docs/parite/inventaire/`), puis régénérer, dans le même commit que le code :
 
