@@ -46,6 +46,16 @@ node scripts/unreal/export-horse-tack.mjs                      # -> Content/Data
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides.Parite.HorseSeat; Quit" -unattended -nullrhi -nosplash -log -stdout -ReportExportPath=<dossier>
 python3 scripts/unreal/mutations-horse-tack.py [--moteur]      # cœur : copies dans build/ (~30 s) ; --moteur : UBT + éditeur (~3 min chacune)
+# Étape 6 (moteur) : données de la cavalière, ctest « monte-cavaliere », test moteur (niveau A), page niveau-a.md, mutations.
+# Depuis la migration (23/11/2026) : UBT avec -NoUBA, éditeur par le chemin réel du moteur et du projet (voir l'étape 6).
+python3 scripts/unreal/export-rider-rig-data.py                # -> Content/Data/monte_rider_f.json (--check : comparaison)
+"$UE_REEL/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "<chemin réel>/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -ExecCmds="Automation RunTests Strides.Parite.RiderRules; Quit" -unattended -nullrhi -nosplash -log -stdout \
+  -StridesMonteDir=<dossier> -ReportExportPath=<dossier>
+node scripts/unreal/rider-rules-niveau-a.mjs --unreal=<dossier>/unreal-rider_f   # -> niveau-a.md, niveau-a.json
+python3 scripts/unreal/mutations-rider-rig.py [--moteur]       # cœur : ~15 s ; --moteur : UBT + éditeur (~3 min chacune)
+"$UE_REEL/Engine/Binaries/Mac/UnrealEditor-Cmd" "<chemin réel>/…/StridesGrandTour.uproject" -run=pythonscript \
+  -script="<chemin réel>/scripts/unreal/build-rider-controlrig.py" -unattended -nullrhi   # asset Control Rig (non utilisé en jeu)
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -469,3 +479,115 @@ Mutations (`scripts/unreal/mutations-horse-tack.py`), 35 au total :
 5. **Hauteur des postérieurs** : en jeu, mesurée au-dessus du relief (`AStridesHorse::GroundAt`) ; dans le test, au-dessus du
    plan du cheval (écart à `hz.hv` 3,35 cm au plus, information : le web mesure au-dessus du relief).
 6. **Mouvements secondaires** (bascule, levée de tête) : non portés ; les images où ils sont non nuls sont exclues du test.
+
+## Étape 6. Cavalière actuelle montée par les règles, option `-StridesRider=regles` (23/11/2026)
+
+Base : `a61df9aa` (étape 5), branche `claude/unreal-port`. Premier passage après la migration de Tom (projet et moteur sur
+le disque externe APFS `/Volumes/Stockage-Qualification`, chemins habituels conservés par liens symboliques).
+
+### Migration : ce qui a dû changer dans les commandes (constaté, rien supprimé)
+
+- **Point de montage** : `/dev/disk10s1` sur `/Volumes/Stockage-Qualification` (apfs, local, journaled) ; dépôt réel
+  `/Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal` (lien depuis
+  `~/.openclaw/workspace/projects/grand-tour-unreal`) ; moteur réel `/Volumes/Stockage-Qualification/Mac-Mini-Migration/Applications/UE_5.8`
+  (lien depuis `/Users/Shared/Epic Games/UE_5.8`, posé à 22 h 03). Place libre : 71 Gio (interne), 841 Gio (externe).
+- **PCH partagés périmés** : construits à 21 h 58 contre l'ancienne copie du moteur ; UBT les jugeait à jour (horodatages
+  gardés par rsync) et la compilation échouait par redéfinitions (`CoreTypes.h`, 720 erreurs). Corrigé sans rien supprimer :
+  date de modification des 14 en-têtes `Intermediate/Build/Mac/arm64/StridesGrandTourEditor/Development/*/SharedPCH.*.h`
+  avancée (`touch`), UBT les a recompilés.
+- **UBA** (exécuteur Unreal Build Accelerator) : refuse d'écrire par le chemin du lien symbolique (« Refusing to register
+  create-for-write … dir not populated ») ; compilation verte avec **`-NoUBA`**.
+- **Éditeur** : lancé par `/Users/Shared/Epic Games/UE_5.8/…`, il calcule le chemin du projet relativement à son dossier réel
+  et ne démarre pas (« Failed to open descriptor file ../../../../../../../Volumes/… ») ; lancé par le **chemin réel du moteur**
+  avec le chemin réel du projet, il démarre.
+- `Strides.Cso.CameraInGame` passe avec un avertissement nouveau : l'éditeur ne lance plus `libimobiledevice` depuis le moteur
+  déplacé (outil iOS, sans effet sur le test) ; à regarder par Tom.
+
+### Ce qui est fait
+
+- **Données** (`scripts/unreal/export-rider-rig-data.py` → `Content/Data/monte_rider_f.json`) : rig de règle `rider_f`
+  (`rigs/rider_f.json` tel quel), réglages de mise en selle `fit0` d'O1 (identiques dans les 8 scénarios ; `stirrupY`
+  −0,64 m, décision J3), et, lus dans `src/entities/realistic.js` par expressions régulières (jamais recopiés) : `MAP`
+  (21 os), `ALIGN` (14 chaînes, dans l'ordre), flexion des doigts au calage.
+- **Cœur** (`StridesCore/RiderPose`) : lecteurs des canaux d'O1 ; `RideDriver`, la chaîne du web `animateRiding` avec son
+  **retard d'une image** (le cavalier lit le cheval de l'image précédente) ; `poseInSeat` (rotations monde des 25 os dans S).
+  ctest `monte-cavaliere` (72 547 vérifications) : chaîne du jeu depuis `hz`/`mx` d'O1, rig `rider_f` à l'échelle 1, contre O2
+  `rider_f` sur les 8 scénarios (929 images) : 9,1e-9 m ; rejeu direct du canal `in` : 7,2e-9 m.
+- **Composant** `UStridesRiderRig` (`SG/StridesRiderRig.cpp`) : entrées depuis `UStridesHorseTack` (siège S, profils,
+  postérieurs) et `AStridesHorse` (vitesse, `jumpT`, virage) ; règle ; **reciblage comme le web** (`realistic.js` update :
+  rotation monde de l'os classique × décalage du calage ; le calage `_calibrate` est refait sur la pose de référence du
+  maillage Unreal, même squelette que `public/real/rider_f.glb` : translations identiques, rotations à 0,04° près) ; espace du
+  maillage déduit par une similitude à axes signés sur 9 articulations (résidu 0,00001 cm) ; puis **deux os par membre**
+  (`AnimationCore::SolveTwoBoneIK`, étirement désactivé, pôle en position = genou ou coude de la règle, `kneeOf`).
+- **Jeu** (`StridesRider.cpp`) : avec `-StridesRider=regles`, `EnableRulesRig` crée un `UPoseableMeshComponent` (mêmes
+  vêtements, meneurs) et le composant ; en selle sur un cheval dont la sellerie est prête, clips cuits coupés, cavalière
+  posée au siège S. **Sans l'option, rien n'est créé** (vérifié par le test) et `SeatTransform()` n'est pas touché.
+
+### Control Rig : construit par Python, mais le jeu utilise le repli C++ (déclaré)
+
+`scripts/unreal/build-rider-controlrig.py` (`UnrealEditor-Cmd -run=pythonscript`, sans interface) construit
+`/Game/Characters/Riders/Rig/CR_StridesMonte_riderF` (233 Ko) : os importés du maillage, quatre `TwoBoneIKSimplePerItem`
+(jambes `thigh/calf/foot`, bras `upperarm/lowerarm/hand`), `bEnableStretch` relu à `False` sur les quatre, `PoleVectorKind`
+`Location`, cibles et pôles lus sur des repères (« nulls ») de la hiérarchie. Trois tentatives : (1) graphe neuf sans nœud
+d'exécution ; (2) `add_member_variable(…, 'FVector')` fait échouer une assertion du moteur 5.8.4
+(`RigVMExternalVariable.cpp:280`, `CPPTypeObject`) et l'éditeur s'arrête ; (3) avec des repères : réussi.
+**Le jeu n'utilise pas cet asset** : le graphe ne contient que les quatre membres (ni bassin, ni colonne, ni pieds, ni doigts),
+et son évaluation à l'exécution (`UControlRigComponent`, dépendance au module `ControlRig`) n'est ni écrite ni prouvée. La pose
+du jeu est calculée en C++ (`UStridesRiderRig`), avec le solveur de deux os d'AnimationCore ; l'équivalence de ce solveur avec
+le nœud `TwoBoneIKSimplePerItem` n'est **pas vérifiée** (source du nœud absent du moteur installé).
+
+### Preuve : `Strides.Parite.RiderRules` (niveau A dans le moteur) et `niveau-a.md`
+
+Le test crée la cavalière du jeu, appelle `EnableRulesRig`, rejoue E1, E1b, E2g, E2d, E3 et E3b par la chaîne du jeu (première
+image par son canal `in`, puis `hz` et `mx` d'O1 avec le retard d'une image), pose le maillage, **relit les articulations sur le
+maillage** (`GetBoneLocation`), les ramène dans S par une conversion inverse écrite dans le test, et compare à O2 `rider_f` à
+chaque image (689 images) : **écart maximal 0,0001 cm** ; correction des deux os par membre 0,0001 cm au plus (le reciblage
+place déjà les articulations) ; coût moyen 0,012 ms par image (max 0,033 ms, `FPlatformTime`, éditeur sans rendu). Les
+grandeurs M1 à M17 sont calculées sur l'export du test par `scripts/unreal/rider-rules-niveau-a.mjs`, avec le code de
+`rider-rules-metrics.mjs` : toutes les tolérances du niveau A sur l'écart à O2 sont tenues (écarts de 1e-5 cm et 1e-4° au plus ;
+phases du saut identiques à l'image près). Les seuils absolus M7 ≥ −1 cm et M9 ≥ 9 cm ne sont pas tenus **par O2 lui-même**
+(règle web, mêmes proportions) : rapportés dans `niveau-a.md`, pas comptés comme écart du portage.
+
+Mutations (`scripts/unreal/mutations-rider-rig.py --moteur`, 620 s) : **12 sur 12 détectées**, code 0, sources rétablis.
+- cœur (5, ctest `monte-cavaliere` sur une copie) : retard d'une image supprimé, état du cheval (2,1e-4 m) et profils
+  (2,6e-4 m) ; première image non jouée ; `kneeOut` mis à l'échelle (détectée seulement après ajout au test du rejeu direct du
+  canal `in` : la première version du test ne la voyait pas) ; ordre du produit des rotations monde inversé ;
+- moteur (7, UBT puis `Strides.Parite.RiderRules`) : signe de Y du repère du siège (repère indirect, initialisation refusée) ;
+  pôle en direction (coude à 10,3 cm) ; étirement activé (6,0 cm) ; retard d'une image supprimé (1,11 cm : détectée de peu par
+  le seuil de 1 cm du moteur, nettement par le cœur) ; conjugaison des rotations sans le signe de la symétrie (1,4 cm) ; bassin
+  non posé (79 cm) ; calage des membres supprimé (5,1 cm).
+- Le script appelle UBT avec `-NoUBA` et l'éditeur par le chemin réel, journal dans un fichier et `-trace=none` : un premier
+  passage est resté bloqué (le démon `UnrealTraceServer` de l'éditeur gardait ouvert le tube de sortie ; arrêt de ma propre
+  tâche, aucun source n'était muté à ce moment, vérifié).
+
+### Écarts et limites (déclarés)
+
+1. **Niveau B non mesuré** : en jeu, les entrées viennent du cheval Unreal (phase du clip joué au lieu de `horse.anim.phase`,
+   `contactOff` absent, cheval 3,7 % plus petit, profils du flanc jusqu'à 2,4 cm du web en 7 tranches, galop à gauche et sauts
+   sans clips en miroir) : rien n'est prouvé en jeu au-delà du niveau A.
+2. **Étriers du cheval** non pilotés par les pieds ; **rênes** absentes (les poings sont calculés).
+3. **Control Rig** : voir plus haut (asset construit, non utilisé).
+4. **`seatToHips` de `rider_f`** reste la convention de l'étape 3 (classique × rapport des hauteurs de bassin), non mesurée.
+5. **Cheveux** : avec l'option, la queue de cheval (`Hair_ponytail`) n'est pas rendue (présente dans le jeu par défaut) ; cause
+   non trouvée (suiveur du maillage posé), à corriger.
+6. **Retard apparent au galop** : à la capture, l'acteur de la cavalière est à 9 cm du siège relu en fin d'image (une image à
+   6 m/s), malgré la dépendance de tick sur le cheval et sa sellerie ; cause à confirmer.
+
+### Captures côte à côte (rendu GPU réel, 844 × 390) : `captures/`
+
+- Web : `node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs --shots=<dossier>` (serveur 5177),
+  scénarios E1 (image 40, arrêt) et E2d (image 100, galop à droite, 8,45 m/s), caméra posée dans le repère du cheval (holder :
+  œil à 4,2 m à gauche, 1,5 m de haut ; FOV vertical 38°) ; `poses.json` donne les poses, relues côté Unreal ; rien n'est
+  écrit dans les oracles.
+- Unreal : `-game -windowed -ResX=844 -ResY=390 -StridesShots=monte [-StridesRider=regles] -StridesShotsDir=<dossier>
+  -StridesMontePoses=<poses.json>` : cheval à l'entrée du tracé du Pôle, cavalière en selle, même caméra dans le repère de
+  l'acteur du cheval ; arrêt, puis parcours de démonstration et capture au premier galop hors saut (6,2 m/s).
+- Fichiers : `monte-<arret|galop>-web.png`, `-unreal.png` (option `regles`), `-unreal-defaut.png` (jeu par défaut, même scène).
+- Ce que les captures montrent : avec l'option, la cavalière est assise dans la selle, pieds sous elle, mains au-dessus du
+  garrot, comme dans le web ; sans l'option, la cavalière du jeu par défaut (clips cuits). Ce ne sont **pas** des poses
+  jumelles : décor différent (plage du web, carrière du Pôle), phase de galop différente (le web rejoue E2d, Unreal joue le
+  parcours de démonstration), cheval Unreal 3,7 % plus petit. Elles ne prouvent rien au-delà du niveau A ; le jugement du
+  réalisme reste à Julien.
+- Premiers essais (non gardés) : vêtements restés en pose de référence (suiveurs attachés à l'ancien maillage : corrigé en les
+  rattachant au maillage posé) ; galop jamais atteint (carte d'activité non validée : corrigé).
+

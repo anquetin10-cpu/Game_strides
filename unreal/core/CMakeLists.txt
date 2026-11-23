@@ -31,3 +31,10 @@ target_sources(strides_core PRIVATE ${CORE}/Private/HorseTack.cpp)
 add_executable(strides_horse_tack_tests tests/test_horse_tack.cpp)
 target_link_libraries(strides_horse_tack_tests strides_core)
 add_test(NAME monte-cheval COMMAND strides_horse_tack_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Essai de monte, voie A, étape 6 : cavalière Unreal montée par les règles (StridesCore/RiderPose : lecture des données,
+# chaîne cheval → entrées → règle avec le retard d'une image du web, pose dans S pour le reciblage), contre O2 rider_f
+# (ctest « monte-cavaliere ») ; dans le moteur : Strides.Parite.RiderRules.
+target_sources(strides_core PRIVATE ${CORE}/Private/RiderPose.cpp)
+add_executable(strides_rider_pose_tests tests/test_rider_pose.cpp)
+target_link_libraries(strides_rider_pose_tests strides_core)
+add_test(NAME monte-cavaliere COMMAND strides_rider_pose_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)

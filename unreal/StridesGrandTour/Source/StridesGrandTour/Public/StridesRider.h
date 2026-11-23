@@ -22,6 +22,13 @@ public:
 	// suivante (cavalier à pied) et élimine, avant le départ compris (règle de courses.js).
 	void Dismount(class APlayerController* PC);
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") TObjectPtr<AStridesHorse> MountedOn;
+	// Essai de monte, voie A, étape 6 : cavalière montée par les règles du web (-StridesRider=regles, appelé au BeginPlay ;
+	// les tests l'appellent directement). Crée un maillage posé (UPoseableMeshComponent, mêmes vêtements) et le composant
+	// UStridesRiderRig ; en selle sur un cheval dont la sellerie est prête, les clips cuits sont coupés et la règle pose
+	// la cavalière au siège S. Sans cet appel, rien n'est créé et le comportement est celui d'avant.
+	bool EnableRulesRig(FString* Err = nullptr);
+	class UStridesRiderRig* RulesRig() const { return Rules; }
+	class UPoseableMeshComponent* RulesMesh() const { return RulesBody; }
 
 private:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UStaticMeshComponent> Body;
@@ -36,4 +43,9 @@ private:
 	UPROPERTY() TObjectPtr<class UAnimationAsset> JumpGallopAnimation;
 	int32 LastAnimationGait = INDEX_NONE;
 	bool bLastAnimationJumping = false;
+	UPROPERTY(Transient) TObjectPtr<class UStridesRiderRig> Rules;
+	UPROPERTY(Transient) TObjectPtr<class UPoseableMeshComponent> RulesBody;
+	bool bRulesActive = false;  // en selle, pose par la règle
+	void SetRulesActive(bool bOn);
+	bool RulesReady() const;
 };

@@ -23,6 +23,11 @@
 //   node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs [--only=E1,E3] [--out=dossier] [--anchors | --anchors-only]
 // --only : seulement ces scénarios (les autres entrées de l'index sont gardées) ; --anchors : écrit aussi les ancres ;
 // --anchors-only : seulement les ancres.
+// --shots=<dossier> (essai de monte, étape 6) : captures côte à côte, sans rien écrire dans les oracles. Scénarios E1
+//   (arrêt) et E2d (galop à droite : le cheval Unreal n'a pas les clips en miroir de la main gauche), page en 844 × 390,
+//   arrêtés à l'image de capture (SHOT_POSES) ; caméra posée dans le repère du cheval (holder : x à gauche, y vers le
+//   haut, z vers l'avant, m), FOV vertical, rendu, capture <dossier>/monte-<nom>-web.png ; poses et état de l'image dans
+//   <dossier>/poses.json, relu par -StridesShots=monte côté Unreal (même caméra dans le repère de l'acteur du cheval).
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -40,6 +45,12 @@ const ANCHORS_FILE = join(ROOT, 'unreal/StridesGrandTour/Content/Data/pjl_tack_a
 const ONLY = arg('only').split(',').filter(Boolean);
 const SEED = 20261118;
 const SCHEMA = 'strides.oracle.rider_rules/1';
+const SHOTS = arg('shots');
+// Captures (--shots) : scénario, image, caméra dans le repère du cheval (vue de gauche, à hauteur du cavalier).
+const SHOT_POSES = [
+  { name: 'arret', scenario: 'E1', frame: 40, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38 },
+  { name: 'galop', scenario: 'E2d', frame: 100, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38 },
+];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Plans des scénarios : table « plan » de tests/e2e/pjl/rider-audit.mjs (allures) et obstacles de sa préparation CSO,
@@ -591,6 +602,30 @@ function PAGE() {
     }
     return out;
   };
+  // Capture (--shots) : caméra du jeu posée dans le repère du cheval (holder), rendu de la scène seule.
+  P.shot = (ps) => {
+    const cam = g.camera, H = h.pjl.holder;
+    H.updateWorldMatrix(true, false);
+    const eye = H.localToWorld(new T.Vector3(...ps.eyeH)), target = H.localToWorld(new T.Vector3(...ps.targetH));
+    cam.position.copy(eye);
+    cam.fov = ps.fovV;
+    cam.aspect = ps.viewport.w / ps.viewport.h;
+    cam.updateProjectionMatrix();
+    cam.lookAt(target);
+    g.sky.update(g.hour(), h.pos, 0);
+    g.sky.follow(cam);
+    g.world.update(0, cam, g.sky, h.pos);
+    g.renderer.domElement.classList.add('parite-scene');
+    if (!document.getElementById('parite-css')) {
+      const st = document.createElement('style');
+      st.id = 'parite-css';
+      st.textContent = '* { visibility: hidden !important; } canvas.parite-scene { visibility: visible !important; }';
+      document.head.appendChild(st);
+    }
+    g.scene.updateMatrixWorld();
+    g.renderer.render(g.scene, cam);
+    return { eye: v3(eye), target: v3(target), speed: h.speed, gait: h.pjl._s?.gait ?? null, phase: h.anim.phase, hour: g.hour(), canvas: [g.renderer.domElement.width, g.renderer.domElement.height] };
+  };
   P.finish = () => {
     const r = { fade: P.fade, ev: P.cso ? P.cso.evs.slice() : null };
     if (P.cso) P.cso.off();
@@ -630,8 +665,8 @@ function PAGE() {
 const AUTOPILOT = readFileSync(join(ROOT, 'tests/e2e/autopilot.js'), 'utf8');
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const errors = [];
-async function openGame() {
-  const ctx = await browser.newContext({ viewport: { width: 640, height: 360 }, deviceScaleFactor: 1 });
+async function openGame(viewport = { width: 640, height: 360 }) {
+  const ctx = await browser.newContext({ viewport, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(`${BASE}/?autostart&quality=high&lang=fr&real`, { timeout: 180000 });
@@ -675,9 +710,36 @@ if (ANCHORS) {
   console.log(`${ANCHORS_FILE} : ${writeIfChanged(ANCHORS_FILE, text) ? 'écrit' : 'inchangé'} (${text.length} octets)`);
 }
 
+if (SHOTS) {
+  // Captures côte à côte (étape 6) : aucune écriture dans les oracles.
+  mkdirSync(SHOTS, { recursive: true });
+  const VIEW = { w: 844, h: 390 };
+  const out = [];
+  for (const ps of SHOT_POSES) {
+    const sc = SCENARIOS.find((x) => x.id === ps.scenario);
+    const { ctx, page } = await openGame({ width: VIEW.w, height: VIEW.h });
+    await page.evaluate(([s, seed]) => window.__monte.setupAllures(s, seed), [{ ...sc }, SEED]);
+    let n = 0;
+    while (n <= ps.frame) {
+      const k = Math.min(10, ps.frame + 1 - n);
+      await page.evaluate(([m, w]) => window.__monte.frames(m, w), [k, sc.window]);
+      n += k;
+    }
+    const st = await page.evaluate((p) => window.__monte.shot(p), { ...ps, viewport: VIEW });
+    const file = join(SHOTS, `monte-${ps.name}-web.png`);
+    await page.screenshot({ path: file });
+    await ctx.close();
+    out.push({ ...ps, viewport: VIEW, web: { file: `monte-${ps.name}-web.png`, ...st } });
+    console.log(`capture ${ps.name} : ${ps.scenario} image ${ps.frame}, vitesse ${st.speed.toFixed(2)} m/s, ${file}`);
+  }
+  const doc = { schema: 'strides.monte.captures/1', generator: 'scripts/unreal/export-rider-rules.mjs --shots', srcTree,
+    doc: 'captures côte à côte de la cavalière montée par les règles : caméra dans le repère du cheval (holder du web : x à gauche, y vers le haut, z vers l’avant, m ; Unreal : X = 100 z, Y = −100 x, Z = 100 y dans le repère de l’acteur du cheval), FOV vertical (degrés), viewport ; état du web à l’image de capture.',
+    poses: out };
+  writeFileSync(join(SHOTS, 'poses.json'), JSON.stringify(doc, null, 1) + '\n');
+}
 const runs = [];
 const todo = SCENARIOS.filter((s) => !ONLY.length || ONLY.includes(s.id));
-if (!ANCHORS_ONLY) {
+if (!ANCHORS_ONLY && !SHOTS) {
   for (const sc of todo) {
     const t0 = Date.now();
     const { ctx, page } = await openGame();

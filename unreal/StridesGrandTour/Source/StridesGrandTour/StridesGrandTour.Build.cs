@@ -12,6 +12,6 @@ public class StridesGrandTour : ModuleRules
 		// exceptions permises comme dans StridesCore (sans quoi la cible IOS Shipping ne compile pas, constaté le 20/11/2026).
 		bEnableExceptions = true;
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "StridesCore" });
-		PrivateDependencyModuleNames.AddRange(new string[] { "Json", "JsonUtilities", "UMG", "Slate", "SlateCore", "ApplicationCore", "ProceduralMeshComponent" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Json", "JsonUtilities", "UMG", "Slate", "SlateCore", "ApplicationCore", "ProceduralMeshComponent", "AnimationCore" });
 	}
 }

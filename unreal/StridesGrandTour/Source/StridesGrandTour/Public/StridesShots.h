@@ -80,6 +80,13 @@ private:
 	FString OutDir;  // dossier de sortie résolu (vide en mode cso sans option : chemins de poses.json)
 	int32 RideShot = -1;
 	float RideTime = 0.f;
+	// Essai de monte, étape 6 (mode "monte") : captures de la cavalière en selle, à l'arrêt puis au galop, caméra posée dans
+	// le repère du cheval comme la capture du web (poses.json de export-rider-rules.mjs --shots).
+	void TickMonte(float DeltaSeconds, class APlayerController* PC);
+	int32 MonteStep = 0;
+	float MonteWait = 0.f;
+	TArray<TSharedPtr<class FJsonObject>> MontePoses;
+	FString MonteLog;
 	UPROPERTY() TObjectPtr<class ACameraActor> Camera;
 
 	// Banc de parité CSO (mode "cso").

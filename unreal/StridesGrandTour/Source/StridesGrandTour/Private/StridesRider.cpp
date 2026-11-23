@@ -3,14 +3,19 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "StridesCourse.h"
 #include "StridesHorse.h"
+#include "StridesHorseTack.h"
+#include "StridesRiderRig.h"
 
 AStridesRider::AStridesRider()
 {
@@ -68,6 +73,80 @@ void AStridesRider::BeginPlay()
 {
 	Super::BeginPlay();
 	GetMesh()->PlayAnimation(GaitAnimations.IsValidIndex(0) ? GaitAnimations[0].Get() : nullptr, true);
+	// Essai de monte (voie A, étape 6) : cavalière montée par les règles du web, seulement avec -StridesRider=regles.
+	FString RiderOption;
+	if (FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOption) && RiderOption == TEXT("regles"))
+	{
+		FString Err;
+		if (!EnableRulesRig(&Err)) UE_LOG(LogTemp, Warning, TEXT("StridesRider=regles : règles de monte indisponibles (%s)"), *Err);
+	}
+}
+
+bool AStridesRider::EnableRulesRig(FString* Err)
+{
+	if (Rules) return Rules->IsReady();
+	USkeletalMeshComponent* Main = GetMesh();
+	USkeletalMesh* Asset = Main ? Main->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset)
+	{
+		if (Err) *Err = TEXT("maillage de la cavalière absent");
+		return false;
+	}
+	RulesBody = NewObject<UPoseableMeshComponent>(this, TEXT("RulesBody"));
+	RulesBody->SetupAttachment(GetCapsuleComponent());
+	RulesBody->SetSkinnedAssetAndUpdate(Asset);
+	RulesBody->SetRelativeTransform(Main->GetRelativeTransform());
+	RulesBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	RulesBody->SetVisibility(false);
+	RulesBody->RegisterComponent();
+	Rules = NewObject<UStridesRiderRig>(this, TEXT("RulesRig"));
+	Rules->RegisterComponent();
+	return Rules->Init(RulesBody, Err);
+}
+
+bool AStridesRider::RulesReady() const
+{
+	const UStridesHorseTack* Tack = MountedOn ? MountedOn->HorseTack() : nullptr;
+	return Rules && Rules->IsReady() && Tack && Tack->IsReady();
+}
+
+// En selle avec la règle : clips cuits coupés, maillage posé visible et meneur des vêtements ; à pied : l'inverse.
+void AStridesRider::SetRulesActive(bool bOn)
+{
+	if (bOn == bRulesActive || !RulesBody) return;
+	bRulesActive = bOn;
+	USkeletalMeshComponent* Main = GetMesh();
+	UStridesHorseTack* Tack = MountedOn ? MountedOn->HorseTack() : nullptr;
+	if (bOn)
+	{
+		Rules->ResetRide();
+		Main->Stop();
+		Main->SetVisibility(false);
+		RulesBody->SetRelativeTransform(Rules->MeshInSeat());
+		RulesBody->SetVisibility(true);
+		// Vêtements rattachés au maillage posé : un suiveur lit les os du meneur dans SON propre repère de composant.
+		for (USkeletalMeshComponent* Part : MeshParts)
+		{
+			Part->AttachToComponent(RulesBody, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			Part->SetLeaderPoseComponent(RulesBody, true);
+		}
+		// Après le cheval (déplacement de l'acteur) et sa sellerie (siège S de l'image) : sinon la cavalière est posée sur le
+		// siège de l'image précédente (constaté au galop : 7 cm de retard).
+		if (Tack) AddTickPrerequisiteComponent(Tack);
+		if (MountedOn) AddTickPrerequisiteActor(MountedOn);
+	}
+	else
+	{
+		for (USkeletalMeshComponent* Part : MeshParts)
+		{
+			Part->AttachToComponent(Main, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			Part->SetLeaderPoseComponent(Main, true);
+		}
+		RulesBody->SetVisibility(false);
+		Main->SetVisibility(true);
+		if (Tack) RemoveTickPrerequisiteComponent(Tack);
+		if (MountedOn) RemoveTickPrerequisiteActor(MountedOn);
+	}
 }
 
 void AStridesRider::UpdateMountedAnimation()
@@ -107,7 +186,8 @@ bool AStridesRider::TryMount(APlayerController* PC)
 	MountT = 0.f;
 	LastAnimationGait = INDEX_NONE;
 	bLastAnimationJumping = false;
-	UpdateMountedAnimation();
+	if (RulesReady()) SetRulesActive(true);
+	else UpdateMountedAnimation();
 	if (PC) PC->Possess(Best);
 	return true;
 }
@@ -116,6 +196,7 @@ void AStridesRider::Dismount(APlayerController* PC)
 {
 	AStridesHorse* H = MountedOn;
 	if (!H || H->IsJumping()) return;
+	SetRulesActive(false);
 	// Plus d'appel au parcours : l'épreuve lit à chaque image si le cavalier est en selle (AStridesHorse::RunFrame) et
 	// élimine à tout moment du parcours, avant le départ compris (courses.js:329).
 	MountedOn = nullptr;
@@ -138,6 +219,22 @@ void AStridesRider::Tick(float Dt)
 {
 	Super::Tick(Dt);
 	if (!MountedOn) return;
+	if (bRulesActive)
+	{
+		// Règles de monte : pose de la règle à chaque image, cavalière posée au siège S de la sellerie (sans inclinaison
+		// globale : le buste suit la règle).
+		Rules->StepFromHorse(MountedOn, Dt);
+		const FTransform RulesSeat = MountedOn->HorseTack()->SeatWorld();
+		if (MountT >= 0.f && MountT < 0.8f)
+		{
+			MountT += Dt;
+			FTransform T;
+			T.Blend(MountFrom, RulesSeat, FMath::SmoothStep(0.f, 1.f, FMath::Min(1.f, MountT / 0.8f)));
+			SetActorTransform(T);
+		}
+		else SetActorTransform(RulesSeat);
+		return;
+	}
 	UpdateMountedAnimation();
 	FTransform Seat = MountedOn->SeatTransform();
 	// La forme du cavalier est déjà en pose montée. Une inclinaison globale
