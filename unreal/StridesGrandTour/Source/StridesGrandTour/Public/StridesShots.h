@@ -28,6 +28,16 @@
 // fenêtre mise à la taille de la pose (844 × 390 ou 667 × 308) et capture de la fenêtre AVEC l'interface
 // (FScreenshotRequest) ; l'état rejoué est comparé à l'état du DOM relevé par le web (champ state) et l'affichage du
 // widget est écrit dans <dossier des captures>/hud-unreal.json.
+//
+// -StridesShots=perf (essai de monte, voie A, étape 7) : mesure du coût, rendu GPU réel. Fenêtre de 844 × 390, cheval à
+// l'entrée du tracé du Pôle, cavalière en selle (jeu par défaut, ou -StridesRider=regles), activité lancée au poteau
+// (caméra de concours), puis deux phases : « arret » (cheval immobile, comme E1) et « galop » (parcours de démonstration,
+// à partir du premier galop ; le galop à gauche d'E2g n'existe pas dans Unreal, voir unreal/docs/parite/monte/cout.md).
+// Par phase : 120 images de chauffe puis 600 mesurées (-StridesPerfWarm=, -StridesPerfFrames=) ; par image : temps du
+// jeu (GGameThreadTime), du rendu (GRenderThreadTime), du GPU (RHIGetGPUFrameCycles), pas de l'image, LOD prédit du
+// maillage de la cavalière ; mémoire (UsedPhysical, PeakUsedPhysical) toutes les 30 images. Sortie
+// <-StridesShotsDir>/perf-unreal.json (valeurs brutes, médiane et 95e centile par strides::perf), puis une capture par phase
+// (perf-<phase>.png, après la mesure ; aucune avec -StridesPerfSansCapture). Exige -StridesShotsDir. Résumé des passes : scripts/unreal/perf-summary.py.
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -66,6 +76,8 @@ public:
 	// (unreal/core/tests/oracles/cso_runs/<id>.<lang>.json) jusqu'à l'image LastFrame comprise (−1 : toutes) : cheval vu
 	// par la caméra et obstacle suivant relus, sol sous le cheval pris dans le relief du jeu ; OnCall reçoit chaque appel
 	// (image, sortie du jeu, appel relevé). Rend false, motif dans Why, si l'exécution n'a pas de canal caméra.
+	// Résumé d'une série de mesures du mode perf (strides::perf::summarize) : n, median, p95, mean, min, max.
+	static TSharedPtr<class FJsonObject> PerfSummaryJson(const TArray<double>& Values);
 	static bool ReplayCourseCamera(class AStridesHorse* Horse, const TSharedPtr<class FJsonObject>& Run, int32 LastFrame,
 		TFunctionRef<void(int32, const strides::CsoCamOut&, const TSharedPtr<class FJsonObject>&)> OnCall, FString& Why);
 
@@ -88,6 +100,20 @@ private:
 	TArray<TSharedPtr<class FJsonObject>> MontePoses;
 	FString MonteLog;
 	UPROPERTY() TObjectPtr<class ACameraActor> Camera;
+	// Mesure du coût (mode "perf", étape 7).
+	void TickPerf(float DeltaSeconds, class APlayerController* PC);
+	struct FPerfPhase
+	{
+		FString Name;
+		TArray<double> Game, Render, Gpu, Delta, Lod, Speed, RigMs, TackMs, Used, Peak;
+		int32 CourseCam = 0, Jumping = 0, Gallop = 0, Bones = 0;
+		FString BodyMesh;
+		double StartTime = 0;
+	};
+	TArray<FPerfPhase> PerfPhases;
+	int32 PerfStep = 0, PerfFrame = 0, PerfWarm = 120, PerfFrames = 600, PerfResizeTries = 0;
+	float PerfWait = 0.f, PerfClock = 0.f;
+	FIntPoint PerfViewport = FIntPoint::ZeroValue;
 
 	// Banc de parité CSO (mode "cso").
 	struct FPose

@@ -79,3 +79,23 @@ bool FStridesShotsOutputDirTest::RunTest(const FString&)
 	AddInfo(FString::Printf(TEXT("Saved/Screenshots/Strides %s ; -StridesShots sans option : %s"), bJulien ? TEXT("non vide") : TEXT("vide"), bOk ? TEXT("accepté") : *(TEXT("refusé : ") + Why)));
 	return true;
 }
+
+// Strides.Shots.PerfStats : résumé écrit par le mode -StridesShots=perf (essai de monte, étape 7) dans perf-unreal.json,
+// calculé par strides::perf::summarize (centile type 7) ; mêmes valeurs attendues que le ctest « perf » (à la main).
+#include "Dom/JsonObject.h"
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesShotsPerfStatsTest, "Strides.Shots.PerfStats", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesShotsPerfStatsTest::RunTest(const FString&)
+{
+	TArray<double> V;
+	for (int32 I = 0; I < 20; I++) V.Add((I * 7) % 20 + 1);  // 1..20 dans le désordre
+	const TSharedPtr<FJsonObject> S = AStridesShots::PerfSummaryJson(V);
+	TestEqual(TEXT("n"), S->GetNumberField(TEXT("n")), 20.0);
+	TestEqual(TEXT("médiane"), S->GetNumberField(TEXT("median")), 10.5, 1e-12);
+	TestEqual(TEXT("95e centile : h = 18,05 → 19,05"), S->GetNumberField(TEXT("p95")), 19.05, 1e-12);
+	TestEqual(TEXT("moyenne"), S->GetNumberField(TEXT("mean")), 10.5, 1e-12);
+	TestEqual(TEXT("minimum"), S->GetNumberField(TEXT("min")), 1.0);
+	TestEqual(TEXT("maximum"), S->GetNumberField(TEXT("max")), 20.0);
+	TestEqual(TEXT("série vide : n = 0"), AStridesShots::PerfSummaryJson({})->GetNumberField(TEXT("n")), 0.0);
+	TestEqual(TEXT("p95 de {1, 3, 5} = 4,8"), AStridesShots::PerfSummaryJson({5, 1, 3})->GetNumberField(TEXT("p95")), 4.8, 1e-12);
+	return true;
+}

@@ -16,6 +16,48 @@ Documents de ce dossier :
   d'étriers pour la décision J3, écrit par `scripts/unreal/rider-rules-o2.mjs` (jamais à la main) ;
 - section « Étape 4 » ci-dessous : règles portées en C++ (`StridesCore/RiderRules.h`), preuve contre O2, mutations, coût.
 
+## Synthèse de la voie A pour Julien (24/11/2026, après l'étape 7)
+
+La voie A s'arrête à l'étape 7 : la voie B (MetaHuman) est écartée, donc pas d'étape 8 ni suivantes. Les niveaux de preuve
+sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rendu** (tests Automation), **en jeu avec rendu**
+(captures, mesures du coût).
+
+**Prouvé**
+- Hors moteur : les règles de monte du web v3 sont portées en C++ et donnent les mêmes poses que le web, à 0,1 mm près
+  (étape 4, ctest `monte`, 306 914 vérifications). La sellerie du cheval (siège, ancres, postérieurs) est portée et
+  vérifiée contre O1 (étape 5, ctest `monte-cheval`). La chaîne cheval → règle → pose, avec le retard d'une image du web,
+  est elle aussi vérifiée (étape 6, ctest `monte-cavaliere`).
+- Dans le moteur, sans rendu, **niveau A** : avec `-StridesRider=regles`, la cavalière actuelle, rejouée avec les entrées
+  du web, est à 0,0001 cm d'O2 sur 689 images (arrêt, transition, galop à gauche et à droite, sauts de 1,10 m et
+  1,40 m ; `Strides.Parite.RiderRules`, `niveau-a.md`). Posé comme le web, le cheval Unreal donne le même siège et les
+  mêmes repères : ancres à 1,8 mm, siège à 0,08° (`Strides.Parite.HorseSeat`).
+- Sans l'option, le jeu par défaut est inchangé. C'est vérifié par test (aucun composant créé) et par les captures du CSO,
+  dont les empreintes n'ont pas bougé.
+- **Coût en jeu, rendu réel (étape 7)** : la règle ajoute **+0,03 ms à l'arrêt et +0,05 ms au galop** au temps du jeu. Le
+  seuil était de 0,3 ms ; la mesure se répète d'une passe à l'autre à 3,5 % près. Aucune différence de temps GPU n'est
+  mesurable au-delà du bruit (`cout.md`).
+
+**Partiel**
+- Captures côte à côte à l'arrêt et au galop (`captures/`) : la cavalière est assise, pieds sous elle, mains au-dessus du
+  garrot. Ce ne sont pas des poses jumelles (décor et phase différents). Deux défauts visibles : la queue de cheval n'est
+  pas rendue avec l'option, et au galop la cavalière paraît en retard de 9 cm sur la selle (cause à confirmer).
+- Le Control Rig est construit par script, mais le jeu utilise un calcul C++ équivalent, non prouvé identique au nœud
+  du Control Rig.
+- Mutations du composant de sellerie dans le moteur : 1 sur 18 seulement passée (campagne interrompue par la migration,
+  étape 5).
+- Mesure du coût : le temps du fil de rendu inclut l'attente de l'écran à 60 Hz et ne mesure pas le travail. La valeur
+  absolue du GPU sur Metal est à confirmer. La mémoire est celle du processus entier et ne départage pas les options.
+  L'aperçu du rendu mobile sur Mac démarre, mais se fige à la capture, avec un `ensure` Metal (`cout.md`).
+
+**Non vérifié**
+- **Niveau B** : la cavalière en jeu sur le cheval Unreal, contre les règles et O1. Le cheval Unreal est 3,7 % plus petit,
+  n'a ni galop à gauche ni sauts en miroir, ne s'incline pas dans les virages, et sa phase de foulée diffère de celle du
+  web. Rien n'est prouvé en jeu au-delà du niveau A.
+- Étriers non pilotés par les pieds, rênes absentes.
+- Coût sur iPhone ou iPad : aucun appareil branché (étape 16). Les chiffres du Mac classent les options, sans prédire le
+  coût sur un téléphone.
+- Réalisme équestre : c'est à Julien d'en juger sur les captures ; aucun oracle ne le prouve.
+
 Cadre de la phase en cours : copie de travail isolée (branche locale `claude/monte-voie-a`, sans les binaires de
 `Content/` sauf `Content/Data`, `node_modules` en lien vers le dépôt principal), aucun Unreal Build Tool, aucun
 UnrealEditor ; la tranche CSO avance en parallèle sur `claude/unreal-port`. Fusion après la fin de la tranche CSO.
@@ -56,6 +98,10 @@ node scripts/unreal/rider-rules-niveau-a.mjs --unreal=<dossier>/unreal-rider_f  
 python3 scripts/unreal/mutations-rider-rig.py [--moteur]       # cœur : ~15 s ; --moteur : UBT + éditeur (~3 min chacune)
 "$UE_REEL/Engine/Binaries/Mac/UnrealEditor-Cmd" "<chemin réel>/…/StridesGrandTour.uproject" -run=pythonscript \
   -script="<chemin réel>/scripts/unreal/build-rider-controlrig.py" -unattended -nullrhi   # asset Control Rig (non utilisé en jeu)
+# Étape 7 (rendu GPU réel, session ouverte) : ctest « perf », passes du mode -StridesShots=perf (~2 min 30 chacune), résumé
+python3 scripts/unreal/perf-summary.py --mesurer --sortie=<dossier> --passes=3 [--libre] [--apercu-mobile] --ecrire  # -> cout.md, perf/
+python3 scripts/unreal/perf-summary.py unreal/docs/parite/monte/perf   # résumé seul, depuis les fichiers versionnés
+python3 scripts/unreal/mutations-perf.py                       # 12 mutations (PerfStats.cpp, recalcul du résumé), ~20 s
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -591,3 +637,38 @@ Mutations (`scripts/unreal/mutations-rider-rig.py --moteur`, 620 s) : **12 sur 1
 - Premiers essais (non gardés) : vêtements restés en pose de référence (suiveurs attachés à l'ancien maillage : corrigé en les
   rattachant au maillage posé) ; galop jamais atteint (carte d'activité non validée : corrigé).
 
+
+## Étape 7. Mode de mesure du coût, et ligne de base (24/11/2026)
+
+Base : `cf24a9f6` (étape 6), branche `claude/unreal-port`. Chemin réel du dépôt (disque externe APFS `/dev/disk10s1` sur
+`/Volumes/Stockage-Qualification`) ; UBT avec `-NoUBA`, éditeur par le chemin réel du moteur, comme à l'étape 6. Aucun
+défaut nouveau dû au lien symbolique. Place libre au départ : 66 Gio (interne), 841 Gio (externe).
+
+Créé ou modifié :
+- `StridesCore/PerfStats` (C++20 seul) : médiane, 95e centile (définition « type 7 »), dispersion des médianes ; ctest
+  « perf » (20 vérifications, valeurs attendues calculées à la main).
+- `SG/StridesShots.cpp` et `.h` : mode `-StridesShots=perf` (`TickPerf`), options `-StridesPerfWarm=`,
+  `-StridesPerfFrames=` et `-StridesPerfSansCapture`. Il écrit `perf-unreal.json` (valeurs brutes et résumé par
+  `PerfStats`). Il exige `-StridesShotsDir` et n'écrit jamais dans `Saved/Screenshots`. Modules `RenderCore` et `RHI`
+  ajoutés aux dépendances privées (`GGameThreadTime`, `RHIGetGPUFrameCycles`).
+- `Strides.Shots.PerfStats` : résumé du module contre les mêmes valeurs attendues.
+- `scripts/unreal/perf-summary.py` : passes (préconditions de session, `caffeinate`), recalcul indépendant par
+  `statistics.quantiles`, tableau de `cout.md`, copies dans `perf/`.
+- `scripts/unreal/mutations-perf.py` : 12 mutations (9 dans `PerfStats.cpp`, 3 dans le recalcul du résumé), **12 sur 12
+  détectées**, témoins verts.
+- `cout.md` : tableau, critères et lecture ; `perf/` : 13 passes (1,7 Mo) et `resume.json`. Le plan voulait
+  `unreal/docs/essai-metahuman/cout.md` ; ce dossier n'existe pas (voie B écartée), le tableau est donc rangé ici.
+
+Résultats (détail dans `cout.md`) :
+- Trois passes `actuel` et trois `regles`, alternées, de 2 × 600 images mesurées. Dispersion des médianes ≤ 3,5 %.
+  **Δ temps du jeu : +0,031 ms à l'arrêt et +0,047 ms au galop** (seuil 0,3 ms) : critère tenu.
+- La variante `-libre` (synchronisation coupée par `-ExecCmds`) n'a pas libéré l'image : elle reste à 60 Hz. Ce sont donc
+  trois passes de plus par configuration, dans les mêmes conditions.
+- Aperçu mobile (`-FeatureLevelES31`) : premier essai figé à la capture, arrêté par moi ; second essai sans capture,
+  complet. Noté à part dans `cout.md`.
+
+Portes : G1 vert (300 729 cœur, 306 914 monte, 3 719 monte-cheval, 72 547 monte-cavaliere, 20 perf ; 0 échec) ; G2 vert
+(UBT code 0, aucun avertissement, deux compilations) ; G3 vert (35 tests, 35 réussis, 0 échec ; l'avertissement
+`idevice_id` déjà connu sur un test) ; G4 : `mutations-perf.py` code 0, aucun source muté par les scripts `mutations-cso-*`
+touché ; G5 : empreintes des 238 PNG de `parite/cso` identiques avant et après ; G6 code 0, `PARITE.md` inchangé ; G7
+`git diff --quiet HEAD -- src public tests` code 0, `riderPosture` 4/4.

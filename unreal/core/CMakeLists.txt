@@ -38,3 +38,9 @@ target_sources(strides_core PRIVATE ${CORE}/Private/RiderPose.cpp)
 add_executable(strides_rider_pose_tests tests/test_rider_pose.cpp)
 target_link_libraries(strides_rider_pose_tests strides_core)
 add_test(NAME monte-cavaliere COMMAND strides_rider_pose_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Essai de monte, voie A, étape 7 : statistiques du mode de mesure du coût (-StridesShots=perf : médiane, 95e centile,
+# dispersion des médianes entre passes), StridesCore/PerfStats ; ctest « perf ».
+target_sources(strides_core PRIVATE ${CORE}/Private/PerfStats.cpp)
+add_executable(strides_perf_tests tests/test_perf_stats.cpp)
+target_link_libraries(strides_perf_tests strides_core)
+add_test(NAME perf COMMAND strides_perf_tests)

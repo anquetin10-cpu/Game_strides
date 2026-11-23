@@ -22,6 +22,13 @@
 #include "StridesCsoHudReplay.h"
 #include "StridesPlayerController.h"
 #include "StridesCore/MiniJson.h"
+#include "StridesCore/PerfStats.h"
+#include "DynamicRHI.h"
+#include "RHI.h"
+#include "RenderTimer.h"
+#include "HAL/PlatformMemory.h"
+#include "HAL/PlatformTime.h"
+#include "Misc/App.h"
 #include "Policies/CondensedJsonPrintPolicy.h"
 #include "Serialization/JsonWriter.h"
 #include "StridesDataSubsystem.h"
@@ -253,7 +260,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 		// Dossier de sortie résolu une fois, avant toute capture ; refus = sortie sans rien écrire.
 		bOutResolved = true;
 		FString Why;
-		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
+		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
 		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Default, ProtectedShotsDirs(), OutDir, Why))
 		{
 			bRefused = true;
@@ -275,6 +282,11 @@ void AStridesShots::Tick(float DeltaSeconds)
 	if (Mode() == TEXT("monte"))
 	{
 		TickMonte(DeltaSeconds, PC);
+		return;
+	}
+	if (Mode() == TEXT("perf"))
+	{
+		TickPerf(DeltaSeconds, PC);
 		return;
 	}
 	// Tranche T10 : « Entrer en piste » touché dès que la carte de présentation de l'activité lancée s'ouvre.
@@ -1570,3 +1582,230 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 	}
 }
 
+
+// ---------- Essai de monte, étape 7 : mesure du coût (-StridesShots=perf) ----------
+TSharedPtr<FJsonObject> AStridesShots::PerfSummaryJson(const TArray<double>& Values)
+{
+	const strides::perf::Summary S = strides::perf::summarize(std::vector<double>(Values.GetData(), Values.GetData() + Values.Num()));
+	TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
+	O->SetNumberField(TEXT("n"), (double)S.n);
+	O->SetNumberField(TEXT("median"), S.median);
+	O->SetNumberField(TEXT("p95"), S.p95);
+	O->SetNumberField(TEXT("mean"), S.mean);
+	O->SetNumberField(TEXT("min"), S.min);
+	O->SetNumberField(TEXT("max"), S.max);
+	return O;
+}
+
+// Étapes : 1 fenêtre à 844 × 390 ; 2 cheval à l'entrée du tracé, cavalière en selle ; 3 activité lancée au poteau ;
+// 4 attente de la caméra de concours ; 5 phase « arret » ; 6 capture ; 7 parcours de démonstration ; 8 attente du galop ;
+// 9 phase « galop » ; 10 capture ; 11 écriture de perf-unreal.json, sortie.
+void AStridesShots::TickPerf(float DeltaSeconds, APlayerController* PC)
+{
+	AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
+	AStridesRider* Rider = Cast<AStridesRider>(PC->GetPawn());
+	if (!Rider && Horse) Rider = Horse->Rider;
+	if (PerfStep >= 3) EnterWhenPresented(PC);  // carte de présentation validée (« Entrer en piste »)
+	if (PerfStep == 0)
+	{
+		if (OutDir.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides perf: -StridesShotsDir=<dossier dédié> exigé"));
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		FParse::Value(FCommandLine::Get(), TEXT("StridesPerfWarm="), PerfWarm);
+		FParse::Value(FCommandLine::Get(), TEXT("StridesPerfFrames="), PerfFrames);
+		PerfStep = 1;
+		PerfWait = 20.f;  // shaders et tuiles
+		return;
+	}
+	// Une image mesurée (après les images de chauffe) : temps de l'image précédente relevés par le moteur.
+	const auto Sample = [&](FPerfPhase& Ph) {
+		if (PerfFrame++ < PerfWarm) return;
+		Ph.Game.Add(FPlatformTime::ToMilliseconds(GGameThreadTime));
+		Ph.Render.Add(FPlatformTime::ToMilliseconds(GRenderThreadTime));
+		Ph.Gpu.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)));
+		Ph.Delta.Add(1000.0 * DeltaSeconds);
+		USkinnedMeshComponent* Body = Rider && Rider->RulesMesh() && Rider->RulesMesh()->IsVisible() ? (USkinnedMeshComponent*)Rider->RulesMesh() : Rider ? (USkinnedMeshComponent*)Rider->GetMesh() : nullptr;
+		if (Body)
+		{
+			Ph.Lod.Add(Body->GetPredictedLODLevel());
+			Ph.Bones = Body->GetNumBones();
+			Ph.BodyMesh = Body->GetName();
+		}
+		if (Horse)
+		{
+			Ph.Speed.Add(Horse->SpeedMS);
+			Ph.CourseCam += Horse->IsCourseCameraActive() ? 1 : 0;
+			Ph.Jumping += Horse->IsJumping() ? 1 : 0;
+			Ph.Gallop += Horse->GaitIndex >= 3 ? 1 : 0;
+			if (const UStridesHorseTack* T = Horse->HorseTack()) Ph.TackMs.Add(T->LastCostMs());
+		}
+		if (const UStridesRiderRig* R = Rider ? Rider->RulesRig() : nullptr) if (R->IsReady() && Rider->RulesMesh()->IsVisible()) Ph.RigMs.Add(R->LastCostMs());
+		if ((PerfFrame - PerfWarm - 1) % 30 == 0)
+		{
+			const FPlatformMemoryStats M = FPlatformMemory::GetStats();
+			Ph.Used.Add(M.UsedPhysical / (1024.0 * 1024.0));
+			Ph.Peak.Add(M.PeakUsedPhysical / (1024.0 * 1024.0));
+		}
+	};
+	const auto Begin = [&](const TCHAR* Name) {
+		FPerfPhase Ph;
+		Ph.Name = Name;
+		Ph.StartTime = GetWorld()->GetTimeSeconds();
+		PerfPhases.Add(Ph);
+		PerfFrame = 0;
+		UE_LOG(LogTemp, Display, TEXT("Strides perf: phase %s (%d images de chauffe, %d mesurées)"), Name, PerfWarm, PerfFrames);
+	};
+	const auto Done = [&]() { return PerfPhases.Num() && PerfFrame >= PerfWarm + PerfFrames; };
+	if (PerfStep == 5 || PerfStep == 9)
+	{
+		Sample(PerfPhases.Last());
+		if (Done())
+		{
+			const FPerfPhase& Ph = PerfPhases.Last();
+			// -StridesPerfSansCapture : aucune capture de contrôle (en aperçu du rendu mobile, -FeatureLevelES31, le jeu s'est
+			// figé à la demande de capture, constaté le 24/11/2026).
+			const bool bShot = !FParse::Param(FCommandLine::Get(), TEXT("StridesPerfSansCapture"));
+			const FString File = OutDir / FString::Printf(TEXT("perf-%s.png"), *Ph.Name);
+			if (bShot) FScreenshotRequest::RequestScreenshot(File, false, false);
+			UE_LOG(LogTemp, Display, TEXT("Strides perf: phase %s mesurée ; capture %s"), *Ph.Name, bShot ? *File : TEXT("non demandée"));
+			PerfStep++;
+			PerfWait = 1.f;
+		}
+		return;
+	}
+	PerfWait -= DeltaSeconds;
+	PerfClock += DeltaSeconds;
+	if (PerfWait > 0) return;
+	switch (PerfStep)
+	{
+	case 1:
+	{
+		const FIntPoint Size = GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport ? GEngine->GameViewport->Viewport->GetSizeXY() : FIntPoint::ZeroValue;
+		if (Size != FIntPoint(844, 390) && PerfResizeTries < 4)
+		{
+			PerfResizeTries++;
+			FSystemResolution::RequestResolutionChange(844, 390, EWindowMode::Windowed);
+			UE_LOG(LogTemp, Display, TEXT("Strides perf: fenêtre %dx%d -> 844x390 demandée"), Size.X, Size.Y);
+			PerfWait = 2.f;
+			return;
+		}
+		PerfViewport = Size;
+		PerfStep = 2;
+		return;
+	}
+	case 2:
+	{
+		if (!Horse || !Rider || !Horse->Course) { UE_LOG(LogTemp, Error, TEXT("Strides perf: cheval, cavalière ou parcours absent")); FPlatformMisc::RequestExit(false); return; }
+		const strides::CourseTrace& T = Horse->Course->CourseTraceData();
+		const strides::TracePoint& P0 = T.leadIn.empty() ? T.pts.front() : T.leadIn.front();
+		Horse->PlaceAt(P0.x, P0.z, P0.h);
+		Rider->SetActorLocation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 150.0 + FVector(0, 0, 90));
+		const bool bMounted = Rider->TryMount(PC);
+		UE_LOG(LogTemp, Display, TEXT("Strides perf: monté=%d, règles=%d"), bMounted, (int32)(Rider->RulesRig() && Rider->RulesRig()->IsReady()));
+		PerfStep = 3;
+		PerfWait = 5.f;  // transition de montée (0,8 s) et fondu de la règle
+		return;
+	}
+	case 3:
+		UE_LOG(LogTemp, Display, TEXT("Strides perf: activité lancée au poteau=%d"), (int32)StartActivityAtPost(PC));
+		PerfStep = 4;
+		PerfClock = 0.f;
+		return;
+	case 4:
+		if ((Horse && Horse->IsCourseCameraActive()) || PerfClock > 20.f)
+		{
+			UE_LOG(LogTemp, Display, TEXT("Strides perf: caméra de concours %s"), Horse && Horse->IsCourseCameraActive() ? TEXT("active") : TEXT("INACTIVE après 20 s"));
+			PerfWait = 2.f;
+			PerfStep = 45;
+		}
+		return;
+	case 45:
+		Begin(TEXT("arret"));
+		PerfStep = 5;
+		return;
+	case 6:
+		if (Horse) Horse->ToggleDemoCourse();
+		PerfStep = 8;
+		PerfClock = 0.f;
+		return;
+	case 8:
+		if (Horse && Horse->GaitIndex >= 3 && Horse->SpeedMS >= 5.f && !Horse->IsJumping())
+		{
+			Begin(TEXT("galop"));
+			PerfStep = 9;
+		}
+		else if (PerfClock > 60.f)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides perf: pas de galop en 60 s (vitesse %.2f m/s, allure %d)"), Horse ? Horse->SpeedMS : -1.f, Horse ? Horse->GaitIndex : -1);
+			PerfStep = 10;
+		}
+		return;
+	case 10:
+	{
+		TSharedPtr<FJsonObject> Doc = MakeShared<FJsonObject>();
+		Doc->SetStringField(TEXT("schema"), TEXT("strides.perf/1"));
+		Doc->SetStringField(TEXT("generator"), TEXT("-StridesShots=perf (AStridesShots::TickPerf)"));
+		Doc->SetStringField(TEXT("doc"), TEXT("ms par image : gameMs = GGameThreadTime, renderMs = GRenderThreadTime, gpuMs = RHIGetGPUFrameCycles(0), frameMs = pas de l'image ; temps de l'image précédente, relevés au tick de fin d'image ; rigMs, tackMs : coût mesuré par la règle et la sellerie (FPlatformTime, option regles) ; usedMB, peakMB : FPlatformMemory UsedPhysical et PeakUsedPhysical toutes les 30 images ; lod : GetPredictedLODLevel du maillage du corps de la cavalière ; résumés par strides::perf::summarize (centile type 7)"));
+		FString RiderOpt;
+		FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOpt);
+		Doc->SetStringField(TEXT("config"), RiderOpt == TEXT("regles") ? TEXT("regles") : TEXT("actuel"));
+		Doc->SetBoolField(TEXT("rulesActive"), Rider && Rider->RulesMesh() && Rider->RulesMesh()->IsVisible());
+		Doc->SetStringField(TEXT("rhi"), GDynamicRHI ? GDynamicRHI->GetName() : TEXT("?"));
+		FString FL;
+		GetFeatureLevelName(GMaxRHIFeatureLevel, FL);
+		Doc->SetStringField(TEXT("featureLevel"), FL);
+		Doc->SetBoolField(TEXT("mobilePreview"), FParse::Param(FCommandLine::Get(), TEXT("FeatureLevelES31")));
+		Doc->SetArrayField(TEXT("viewport"), {MakeShared<FJsonValueNumber>(PerfViewport.X), MakeShared<FJsonValueNumber>(PerfViewport.Y)});
+		Doc->SetNumberField(TEXT("warm"), PerfWarm);
+		Doc->SetNumberField(TEXT("frames"), PerfFrames);
+		TArray<TSharedPtr<FJsonValue>> Phases;
+		for (const FPerfPhase& Ph : PerfPhases)
+		{
+			TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
+			O->SetStringField(TEXT("name"), Ph.Name);
+			O->SetNumberField(TEXT("startTime"), Ph.StartTime);
+			O->SetBoolField(TEXT("complete"), Ph.Game.Num() >= PerfFrames);
+			O->SetStringField(TEXT("bodyMesh"), Ph.BodyMesh);
+			O->SetNumberField(TEXT("bones"), Ph.Bones);
+			O->SetNumberField(TEXT("courseCameraFrames"), Ph.CourseCam);
+			O->SetNumberField(TEXT("jumpingFrames"), Ph.Jumping);
+			O->SetNumberField(TEXT("gallopFrames"), Ph.Gallop);
+			TSharedPtr<FJsonObject> Series = MakeShared<FJsonObject>();
+			const auto Put = [&](const TCHAR* K, const TArray<double>& V) {
+				TSharedPtr<FJsonObject> S = PerfSummaryJson(V);
+				TArray<TSharedPtr<FJsonValue>> Raw;
+				for (double X : V) Raw.Add(MakeShared<FJsonValueNumber>(X));
+				S->SetArrayField(TEXT("values"), Raw);
+				Series->SetObjectField(K, S);
+			};
+			Put(TEXT("gameMs"), Ph.Game);
+			Put(TEXT("renderMs"), Ph.Render);
+			Put(TEXT("gpuMs"), Ph.Gpu);
+			Put(TEXT("frameMs"), Ph.Delta);
+			Put(TEXT("lod"), Ph.Lod);
+			Put(TEXT("speed"), Ph.Speed);
+			Put(TEXT("rigMs"), Ph.RigMs);
+			Put(TEXT("tackMs"), Ph.TackMs);
+			Put(TEXT("usedMB"), Ph.Used);
+			Put(TEXT("peakMB"), Ph.Peak);
+			O->SetObjectField(TEXT("series"), Series);
+			Phases.Add(MakeShared<FJsonValueObject>(O));
+			const strides::perf::Summary G = strides::perf::summarize(std::vector<double>(Ph.Game.GetData(), Ph.Game.GetData() + Ph.Game.Num()));
+			UE_LOG(LogTemp, Display, TEXT("Strides perf: %s : jeu médiane %.3f ms, p95 %.3f ms (%d images), os %d, caméra de concours %d images"), *Ph.Name, G.median, G.p95, Ph.Game.Num(), Ph.Bones, Ph.CourseCam);
+		}
+		Doc->SetArrayField(TEXT("phases"), Phases);
+		FString Out;
+		FJsonSerializer::Serialize(Doc.ToSharedRef(), TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&Out));
+		const FString File = OutDir / TEXT("perf-unreal.json");
+		FFileHelper::SaveStringToFile(Out + TEXT("\n"), *File, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+		UE_LOG(LogTemp, Display, TEXT("Strides perf: écrit %s"), *File);
+		PerfStep = 11;
+		return;
+	}
+	default:
+		FPlatformMisc::RequestExit(false);
+	}
+}
