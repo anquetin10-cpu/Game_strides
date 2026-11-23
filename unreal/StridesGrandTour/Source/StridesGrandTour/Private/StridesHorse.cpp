@@ -16,6 +16,7 @@
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
+#include "StridesHorseTack.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesCore/HorseCoat.h"
@@ -98,6 +99,15 @@ void AStridesHorse::BeginPlay()
 	SetActorTickEnabled(true);
 	UpdateAnimation();
 	ApplyEngagedCoat();
+	// Essai de monte (voie A) : sellerie lue par les règles de monte, seulement avec -StridesRider=regles.
+	FString RiderOption;
+	if (FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOption) && RiderOption == TEXT("regles") && Mesh)
+	{
+		Tack = NewObject<UStridesHorseTack>(this, TEXT("HorseTack"));
+		Tack->RegisterComponent();
+		Tack->AddTickPrerequisiteComponent(Mesh);
+		if (Tack->Init(Mesh)) Tack->SetComponentTickEnabled(true);
+	}
 }
 
 bool AStridesHorse::ApplyEngagedCoat()

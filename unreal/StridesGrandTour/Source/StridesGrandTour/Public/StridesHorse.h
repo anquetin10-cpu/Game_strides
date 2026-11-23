@@ -22,6 +22,7 @@
 class AStridesCourse;
 class AStridesFence;
 class AStridesRider;
+class UStridesHorseTack;
 
 UCLASS()
 class STRIDESGRANDTOUR_API AStridesHorse : public APawn
@@ -84,6 +85,9 @@ public:
 	void ToggleDemoCourse();
 	// Point d'assise du cavalier (repère monde Unreal).
 	FTransform SeatTransform() const;
+	// Sellerie du cheval WildMesh (essai de monte, étape 5 : siège S, ancres, profils, postérieurs ; UStridesHorseTack) :
+	// créée seulement avec -StridesRider=regles, sinon nulle (le jeu par défaut ne la lit pas ; SeatTransform inchangé).
+	UStridesHorseTack* HorseTack() const { return Tack; }
 
 	// Caméra de concours (tranche T6). Une image : cheval vu par la caméra, obstacle suivant (rang dans Course->Obstacles(),
 	// −1 : aucun), snap (instant). Sonde de la perche : CameraBlockedAt ; sol : GroundAt ; obstacles survolés : ceux du
@@ -117,6 +121,7 @@ protected:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> Camera;
 	// Caméra de concours (position et orientation absolues, posées à chaque image par StepCourseCamera).
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> CourseCamera;
+	UPROPERTY(Transient) TObjectPtr<UStridesHorseTack> Tack;
 
 private:
 	// bSimPaused : simulation suspendue (téléphone ouvert : game.simPaused) ; cheval et chrono figés (hdt et sdt nuls),

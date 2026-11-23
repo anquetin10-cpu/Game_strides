@@ -123,7 +123,7 @@
    "src/game.js",
    "src/core/input.js"
   ],
-  "unreal": "AStridesPlayerController::PauseGame / ResumeGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:388-426 : état « paused », commandes désactivées, carte Pause, UGameplayStatics::SetGamePaused) ; mise à jour suspendue à partir de l'image suivante, l'image d'Échap avançant encore comme dans le web (SkipsUpdate, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesPlayerController.h:72 ; AStridesHorse::Tick, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:352) ; carte UStridesPauseMenu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPauseMenu.cpp:105-114, 412 : Reprendre)",
+  "unreal": "AStridesPlayerController::PauseGame / ResumeGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:388-426 : état « paused », commandes désactivées, carte Pause, UGameplayStatics::SetGamePaused) ; mise à jour suspendue à partir de l'image suivante, l'image d'Échap avançant encore comme dans le web (SkipsUpdate, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesPlayerController.h:72 ; AStridesHorse::Tick, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:362) ; carte UStridesPauseMenu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPauseMenu.cpp:105-114, 412 : Reprendre)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "Oracle unreal/core/tests/oracles/cso_freeze.json (scripts/unreal/export-cso-runs.mjs --freeze : 338 images jouées au pas fixe selon la condition de la boucle du jeu web, game.js:1406 : update seulement aux états « play » et « photo », avec Échap, P, M et Reprendre) rejoué par Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374) : 338 images, 0 écart (update appelée, état « paused », simPaused, téléphone, chrono avancé, cheval déplacé) ; l'image d'Échap avance (chrono 0,433333 → 0,466667 s), puis 150 images (5 s) sans update : chrono figé à 0,466667 s et position du cheval inchangée au bit près ; carte ouverte, Reprendre → le chrono et le cheval repartent à l'image du clic ; bouton pause du HUD → pause. Mutations « pause dès l'image d'Échap » et « simPaused vivant » détectées (scripts/unreal/mutations-cso-controls.py). Capture : cmd-pause-844x390.png, cmd-pause-667x308.png (montages côte à côte).",
@@ -137,7 +137,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "Tick du moteur : AStridesHorse::Tick (StridesHorse.cpp:344-359), AStridesWorldDirector::Tick (StridesWorldDirector.cpp:48-72), AStridesHUD::DrawHUD (StridesHUD.cpp:44-93)",
+  "unreal": "Tick du moteur : AStridesHorse::Tick (StridesHorse.cpp:354-369), AStridesWorldDirector::Tick (StridesWorldDirector.cpp:48-72), AStridesHUD::DrawHUD (StridesHUD.cpp:44-93)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:14-15 (démarrage en jeu, boucle monter / galop 8,0 m/s / descendre / sauver / recharger) ; aucun test de pas de temps.",
@@ -151,7 +151,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "game.simPaused relevé en tête de l'image de commandes, après input.poll et avant les boutons globaux (AStridesPlayerController::StepCommands, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:295-313 : téléphone ouvert, carte de présentation ou du plan ouverte, dialogue de l'entraîneur affiché (tranche T10) ; IsSimPaused, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesPlayerController.h:75) ; AStridesHorse::TickCso (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:363-369, 383 : hdt et sdt nuls, obstacles, caméra et HUD au pas réel, game.js:1444-1445, 1488, 1507)",
+  "unreal": "game.simPaused relevé en tête de l'image de commandes, après input.poll et avant les boutons globaux (AStridesPlayerController::StepCommands, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:295-313 : téléphone ouvert, carte de présentation ou du plan ouverte, dialogue de l'entraîneur affiché (tranche T10) ; IsSimPaused, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesPlayerController.h:75) ; AStridesHorse::TickCso (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:373-379, 383 : hdt et sdt nuls, obstacles, caméra et HUD au pas réel, game.js:1444-1445, 1488, 1507)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "unreal/core/tests/oracles/cso_freeze.json (condition de la boucle de game.js:1406 reproduite par l'exporteur) rejoué image par image par Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374), 0 écart sur 338 images : l'image où le téléphone s'ouvre (P) ou s'ouvre sur la carte (M) avance encore, les suivantes sont figées, l'image de la fermeture (P, M ou Échap) reste figée, la suivante repart ; téléphone ouvert 150 images (5 s) : chrono figé à 0,700000 s (même valeur que le web) et position du cheval inchangée au bit près, touche W non retenue. Mutations « simPaused relevé après les boutons globaux », « chrono (sdt) / cheval (hdt) non figés » détectées (scripts/unreal/mutations-cso-controls.py). Tranche T10 : Strides.Cso.Entry et Strides.Cso.EntryDialog : carte ouverte (15 images) ou dialogue affiché (10 images), touche W tenue : simulation suspendue, cheval immobile ; mutation « carte sans simulation suspendue » détectée (module, en session).",
@@ -268,7 +268,7 @@
   "js": [
    "src/game.js"
   ],
-  "unreal": "AStridesGameMode::StartPlay (StridesGameMode.cpp:88-117) : un seul AStridesHorse (ProfileId « comete » par défaut, StridesHorse.h:27) placé à WorldSpawn, cavalier à 2 m côté montoir",
+  "unreal": "AStridesGameMode::StartPlay (StridesGameMode.cpp:88-117) : un seul AStridesHorse (ProfileId « comete » par défaut, StridesHorse.h:28) placé à WorldSpawn, cavalier à 2 m côté montoir",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:14-16 (démarrage, modèles cheval et cavalière en place).",
@@ -328,7 +328,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Le saut Unreal passe une marge d'équipement nulle (StridesHorse.cpp:233, 469-471, JumpHorse{..., 0.0, ...}) ; pas d'équipement.",
+  "ecart": "Le saut Unreal passe une marge d'équipement nulle (StridesHorse.cpp:243, 469-471, JumpHorse{..., 0.0, ...}) ; pas d'équipement.",
   "tranche": "e"
  },
  {
@@ -727,7 +727,7 @@
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "« Trop tôt » : canal « ai » des exécutions t9-* rejoué par testCsoAids (état du bouton à chaque image, temporisation de 600 ms sur l'horloge virtuelle), mutation « Trop tôt 500 ms » détectée (scripts/unreal/mutations-cso-aids.py), montages unreal/docs/parite/cso/aide-trop-tot-*.png ; astuces : aucun code. État passé de absent à partiel à l'hygiène finale du 21/11/2026.",
-  "ecart": "« Trop lent pour sauter : passe au trot » (2,5 s) non affichée (événement émis par le cœur, rien ne l'affiche) ; « Cheval essoufflé : relâche BOOST » absente (BOOST et endurance non portés) ; limite d'une astuce par 45 s non portée ; hors épreuve, sous MinJumpSpeed le saut est ignoré sans message (StridesHorse.cpp:490).",
+  "ecart": "« Trop lent pour sauter : passe au trot » (2,5 s) non affichée (événement émis par le cœur, rien ne l'affiche) ; « Cheval essoufflé : relâche BOOST » absente (BOOST et endurance non portés) ; limite d'une astuce par 45 s non portée ; hors épreuve, sous MinJumpSpeed le saut est ignoré sans message (StridesHorse.cpp:500).",
   "tranche": "a"
  },
  {
@@ -809,11 +809,11 @@
   "js": [
    "src/config.js"
   ],
-  "unreal": "horse_gaits.json exporté par scripts/unreal/export-data.mjs:40, lu par StridesDataSubsystem.cpp:33-48 ; seuls servent les noms d'allure (HUD, StridesHUD.cpp:65), jumpPeak (StridesHorse.cpp:250) et minJumpSpeed (StridesHorse.cpp:490) ; la vitesse cible par allure (StridesHorse.cpp:484) est une branche morte, bCsoControls valant toujours vrai (StridesHorse.h:50, jamais remis à faux dans Source/)",
+  "unreal": "horse_gaits.json exporté par scripts/unreal/export-data.mjs:40, lu par StridesDataSubsystem.cpp:33-48 ; seuls servent les noms d'allure (HUD, StridesHUD.cpp:65), jumpPeak (StridesHorse.cpp:260) et minJumpSpeed (StridesHorse.cpp:500) ; la vitesse cible par allure (StridesHorse.cpp:494) est une branche morte, bCsoControls valant toujours vrai (StridesHorse.h:51, jamais remis à faux dans Source/)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:18 (PAS, TROT, GALOP, GRAND GALOP déclenchés et lus au HUD) ; données exportées du JS mais aucun test C++ ne les compare.",
-  "ecart": "Vitesses d'allure jamais appliquées : même hors épreuve, la vitesse suit la cadence de concours (StridesHorse.cpp:390, plafond maxSpeed 8 m/s de cso_ride.json) et l'allure affichée est déduite de la vitesse par des seuils codés en dur 0,2 / 3,2 / 5,5 / 7,0 m/s (StridesHorse.cpp:458 ; clip GRAND GALOP dès 7 m/s, unreal/docs/validation-mac-2026-11-17.md:18) ; GALOP 9,72 m/s et GRAND GALOP 14 m/s inatteignables ; ALLURE +/- sans effet durable (GaitIndex réécrit à chaque image) ; endurance (stamina, gallopDrain, staminaRegen) et jumpDuration non lus.",
+  "ecart": "Vitesses d'allure jamais appliquées : même hors épreuve, la vitesse suit la cadence de concours (StridesHorse.cpp:400, plafond maxSpeed 8 m/s de cso_ride.json) et l'allure affichée est déduite de la vitesse par des seuils codés en dur 0,2 / 3,2 / 5,5 / 7,0 m/s (StridesHorse.cpp:468 ; clip GRAND GALOP dès 7 m/s, unreal/docs/validation-mac-2026-11-17.md:18) ; GALOP 9,72 m/s et GRAND GALOP 14 m/s inatteignables ; ALLURE +/- sans effet durable (GaitIndex réécrit à chaque image) ; endurance (stamina, gallopDrain, staminaRegen) et jumpDuration non lus.",
   "tranche": "socle"
  },
  {
@@ -1146,7 +1146,7 @@
    "src/core/audio.js",
    "src/game.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoAudio.cpp:29-48 (écouteurs de game.js:716-728 : landing, snort, hoof à l'appel en concours, neigh) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:393-396 et 358-362 ; Content/Audio/Cso (snort, hoof_sand_1p4, landing_1, neigh)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoAudio.cpp:29-48 (écouteurs de game.js:716-728 : landing, snort, hoof à l'appel en concours, neigh) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:403-406 et 358-362 ; Content/Audio/Cso (snort, hoof_sand_1p4, landing_1, neigh)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "unreal/core/tests/test_core.cpp:3080-3197 (testCsoSounds) : journal des sons du portage comparé image par image et dans l'ordre (fn, arguments, fichier appelant) au canal « audio » des 94 exécutions de unreal/core/tests/oracles/cso_runs/ (34 complètes, 60 légères) : 94/94 identiques, 52 446 images, 1 367 appels comparés (applause 82, bell 71, cheer 8, click 3, crowdOoh 19, fault 21, hoof 256, landing 256, neigh 54, railFall 9, railTouch 2, snort 256, thud 8, tone 260, notify au lancement) ; parties produites par les rejeux du cœur dans les 34 exécutions complètes (testFenceRuns : écouteurs de game.js sur les événements du cheval du cœur, sons des obstacles du cœur ; testCsoRuns : déroulé), dans l'ordre de game.update ; dans les 60 exécutions légères (sans canal « ch », sautées par testHorseRuns et testFenceRuns), les sons du cheval sont tirés des événements horse:jump, horse:land et horse:refuse de l'oracle (champ ev), pas d'un rejeu du cœur, et le click est recomposé par une règle écrite dans le test (appui action + player:dismountStart), pas par la logique du portage (AStridesPlayerController::DoAction) ; chaque appel a son WAV au manifeste ; scripts/unreal/mutations-cso-audio.py : 27 mutations, 22 détectées, 5 déclarées (code 0) ; WAV rendus hors ligne par la classe Audio du jeu web (scripts/unreal/export-cso-sounds.mjs, OfflineAudioContext, Math.random → mulberry32 à graine fixe) et importés sous /Game/Audio/Cso (scripts/unreal/import-cso-sounds.py, compression PCM) : test moteur Strides.Cso.AudioAssets (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoAudioTests.cpp:32-65) : PCM importé = SHA-1 du rendu pour les 19 sons, Result={Success} ; Strides.Cso.Audio (:98-239) : sources câblées dans le jeu (lancement par l'action du poteau, entrée, cloche, départ, appel, réception, obstacle franchi, cabré, descente, élimination), Result={Success}",

@@ -904,7 +904,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:250).",
+  "preuve": "Aucun équivalent ; le saut Unreal n'applique que le multiplicateur du profil (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:260).",
   "ecart": "Performance indépendante de l'état du cheval.",
   "tranche": "d"
  },
@@ -1105,7 +1105,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:250).",
+  "preuve": "Aucun équivalent ; seul le multiplicateur de saut du profil est appliqué (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:260).",
   "ecart": "Aucun bonus d'équipement.",
   "tranche": "e"
  },
@@ -1236,11 +1236,11 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:41, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:250).",
+  "unreal": "Content/Data/horse_profiles.json exporté de data.js par scripts/unreal/export-data.mjs:41, chargé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesDataSubsystem.cpp:49-66 ; JumpMul appliqué à la hauteur de saut (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:260).",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Export automatique depuis le JS (valeurs relues identiques à data.js le 18/11/2026), mais aucun test C++ ne compare ces profils à un oracle.",
-  "ecart": "SpeedMul et StaminaMul chargés mais non appliqués ; prix, valeur, description et robe détaillée de Tripo ignorés ; un seul cheval dans le monde, la monture de la sauvegarde (ProfileId, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:35, posé par ApplyEngagedCoat) ; robe, liste et balzanes lues dans Content/Data/horse_coats.json (cheval.robes), pas dans horse_profiles.json.",
+  "ecart": "SpeedMul et StaminaMul chargés mais non appliqués ; prix, valeur, description et robe détaillée de Tripo ignorés ; un seul cheval dans le monde, la monture de la sauvegarde (ProfileId, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesHorse.h:36, posé par ApplyEngagedCoat) ; robe, liste et balzanes lues dans Content/Data/horse_coats.json (cheval.robes), pas dans horse_profiles.json.",
   "tranche": "socle"
  },
  {
@@ -1250,7 +1250,7 @@
   "js": [
    "src/gameplay/data.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseCoat.cpp:137-187 (ownedHorses, activeHorseId sur save.data et sur la sauvegarde native) ; strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24), lus par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:68-69 et 107-108 ; monture engagée = activeHorseId (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:103-154) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:45).",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseCoat.cpp:137-187 (ownedHorses, activeHorseId sur save.data et sur la sauvegarde native) ; strides::SaveGame.horses et activeHorse (unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20, 24), lus par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:68-69 et 107-108 ; monture engagée = activeHorseId (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:113-164) ; activeHorse écrit depuis le cheval du monde (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:45).",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "unreal/core/tests/test_core.cpp:3274 (testHorseCoat) : ownedHorses et activeHorseId contre unreal/core/tests/oracles/horse_coat.json (12 sauvegardes : doublons, chevaux inconnus, essai, monture absente de l’écurie, horses non tableau ; fonctions du web appelées telles quelles), 0 écart ; mutations-horse-coat.py (7 mutations de l’écurie et de la monture détectées) ; unreal/core/tests/test_core.cpp:1120-1129 relit la liste horses de la sauvegarde.",

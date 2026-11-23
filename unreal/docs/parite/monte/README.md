@@ -41,6 +41,11 @@ cmake -S unreal/core -B build/core-monte && cmake --build build/core-monte && ct
 python3 scripts/unreal/mutations-rider-rules.py                 # 97 mutations de RiderRules.cpp, copies dans build/mutations-monte
 cmake -S unreal/core -B build/core-monte-rel -DCMAKE_BUILD_TYPE=Release && cmake --build build/core-monte-rel --target strides_monte_bench
 build/core-monte-rel/strides_monte_bench unreal/core/tests/oracles/monte unreal/StridesGrandTour/Content/Data 10000 rider_f
+# Étape 5 (moteur) : données de sellerie (Node seul, ~2 s), ctest « monte-cheval », test moteur, mutations
+node scripts/unreal/export-horse-tack.mjs                      # -> Content/Data/pjl_horse_tack.json (--check : comparaison)
+"$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
+  -ExecCmds="Automation RunTests Strides.Parite.HorseSeat; Quit" -unattended -nullrhi -nosplash -log -stdout -ReportExportPath=<dossier>
+python3 scripts/unreal/mutations-horse-tack.py [--moteur]      # cœur : copies dans build/ (~30 s) ; --moteur : UBT + éditeur (~3 min chacune)
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -351,3 +356,116 @@ Constats du contrôle adverse, vérifiés par lecture du code et d'O1 pendant la
    vraie inversion de l'ordre genou puis pied ; libellé « ordre inversé » à corriger en « étape 1 sautée ».
 5. **G1 de `monte-base.py`** : comparer les vérifications par test ctest (cœur et `monte` séparément), et non leur somme.
 
+
+## Étape 5. Le cheval Unreal fournit ce que la règle lit (R0) (23/11/2026)
+
+Base : `95536019` (fusion de la voie A dans `claude/unreal-port`). Dépôt déplacé le 23/11/2026 sur le disque externe APFS
+`/Volumes/Stockage-Qualification` (lien symbolique depuis `~/.openclaw/workspace/projects/grand-tour-unreal`) : Unreal Build
+Tool et UnrealEditor ont été lancés avec le chemin réel `/Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/
+grand-tour-unreal/…` ; aucun défaut lié au lien n'a été constaté (compilation de la base : code 0, 89 s ; un premier lancement
+de l'éditeur par le chemin du lien a fonctionné aussi). Captures du banc dans le dossier de travail de la session, jamais dans
+`Saved/Screenshots`.
+
+Créé :
+- `scripts/unreal/export-horse-tack.mjs` (Node seul, `@gltf-transform` et `meshoptimizer` déjà installés) → `Content/Data/
+  pjl_horse_tack.json` (267 Ko). Il relit le cheval du web (`public/real/horse_pjl.glb`, décodé comme three.js), les ancres et
+  les indices de sommets relevés dans la page à l'étape 2 (`pjl_tack_anchors.json`) et les constantes de `pjlHorse.js` (CREST,
+  HIND_DOWN, lissages 12 et 18, fenêtre de 1,5 s, `landT` initial ; une seule occurrence exigée). Pour chaque ancre et chacun
+  des 738 sommets retenus (450 du flanc, 288 de l'encolure), et pour chacun de ses os, il écrit le poids et le point
+  q = W_repos · boneInverse · p (espace de la scène du GLB, pose de repos des nœuds), plus les positions de repos des 419
+  articulations. Raison : l'import Unreal renumérote les sommets, et le GLB du web encode une pose de liaison qui n'est pas sa
+  pose de repos (quantification). Contrôles écrits dans le fichier : matrices inverses de liaison identiques à la page (écart
+  0), ancres d'étrier au repos à 2,8e-16 m de `pjlRest` d'O1. Deux exports : mêmes octets (`--check`).
+- `StridesCore/HorseTack.h`, `Private/HorseTack.cpp` (C++20, sans type Unreal) : port de `pjlHorse.js` `_snapshot` (horloge de
+  réception), `_attachRider` (siège S : ancre `seat` recentrée sur le milieu des ancres d'étrier, lissage 12/s ; tangage
+  `spine_04` → `pelvis` par rapport au repos, lissage 18/s ; inclinaison de la vue ; Euler `YXZ`), `update` (postérieurs
+  reposés : `toes_02` à moins de 10 cm du sol, fenêtre de 1,5 s après le poser) et `_flankUpdate` (profils du flanc et du dessus
+  de l'encolure), et de `pjl/view.js` `anchorWorld` ; moindres carrés affines pour la conversion d'axes.
+- `SG/StridesHorseTack.cpp`, `SGh/StridesHorseTack.h` : `UStridesHorseTack` (composant d'`AStridesHorse`). À
+  l'initialisation : données lues, 30 os retrouvés par nom, conversion d'axes scène du GLB → maillage déduite des positions de
+  repos des 419 articulations (résidu 0,00097 unité du maillage ; c'est une symétrie d'axes de facteur 100 :
+  X = 100 x, Y = −100 y, Z = 100 z). À chaque image : transformée de peau de chaque os (os posé ∘ os au repos⁻¹ ∘ conversion),
+  puis le cœur. Expose le siège S (repère du cheval du web, repère de l'acteur et monde), les ancres dans S, les profils, les
+  hauteurs des postérieurs, `hindDown`, la phase du clip joué et le coût de l'image. **Créé seulement avec
+  `-StridesRider=regles`** (`StridesHorse.cpp:102-110`) ; sans l'option, `HorseTack()` est nul (vérifié par le test) et
+  `SeatTransform()` n'a pas changé (même code, `StridesHorse.cpp:290-305`).
+- `unreal/core/tests/test_horse_tack.cpp` (ctest `monte-cheval`, 3 719 vérifications) et `SG/Tests/StridesRiderTests.cpp`
+  (`Strides.Parite.HorseSeat`), `scripts/unreal/mutations-horse-tack.py`.
+
+Mesure préalable (plan : « mesurer d'abord »), clip idle à 0,5 s, même pose Unreal calculée deux fois :
+
+| Os | Jeu Unreal (échelle 0,01) | Posé comme le web (échelle 0,010388, lacet, sol) | Écart |
+|---|---|---|---|
+| `spine_04_09` | 151,69 cm du sol | 158,38 cm | −6,69 cm |
+| `saddle_0168` | 172,62 cm | 180,13 cm | −7,50 cm |
+| `pelvis_05` | 160,90 cm | 167,95 cm | −7,05 cm |
+
+**Écart supérieur à 1 cm : l'échelle du cheval n'est pas changée** (elle sert au CSO déjà prouvé). Le cheval Unreal est
+3,7 % plus petit que celui du web (0,01 contre 0,0103883 m par unité de la scène du GLB, rapport 0,9626) ; le web tourne
+aussi le modèle de −0,69° (lacet −0,0120 rad) et le soulève de 0,80 cm (semelles au sol), ce que le jeu Unreal ne fait pas.
+Le niveau B se jugera donc sur les seuils absolus des règles pour les grandeurs qui dépendent du cheval (plan, étape 5). Le
+chiffre du web « `spine_04` à 1,48 m » se rapporte aux articulations des sabots ; au-dessus des semelles, le même calcul donne
+1,584 m.
+
+Constat de l'import : la racine `_rootJoint` des clips Unreal porte une rotation de 90° (axe −X) par rapport à la pose de
+référence du maillage (Interchange y a cuit le nœud racine de la scène) ; le web retire les pistes des racines (`pjl/asset.js`).
+Le jeu en tient compte (le maillage du jeu est droit) ; pour comparer au web, le test laisse les trois racines du web
+(`root_04`, `_rootJoint`, `rootmountpoint_01_0289`) à la pose de référence.
+
+`Strides.Parite.HorseSeat` (vert) : le cheval du jeu est créé dans un monde de test, le composant initialisé sur son maillage.
+Aux images d'O1 dont tous les clips actifs existent dans Unreal (aucun clip en miroir) et sans bascule ni levée de tête, les
+clips Unreal sont échantillonnés aux temps du canal `mx` et mélangés comme le mélangeur WildMesh (`PropertyMixer` de three.js :
+première action copiée, puis mélange au poids relatif, `slerpFlat`, complément à 1 par la pose d'origine), avec le corps de la
+vue (hauteur, inclinaison) de l'image. Les lissages partent de la mise en place (idle au premier pas) à l'image 0, sinon de
+l'état du web à l'image précédente (x et tangage de S, réception, postérieurs). 537 images rejouées (E1 65, E1b 115, E2g 21,
+E2d 126, E6t 105, E6v 105 ; E3 et E3b n'ont aucune image sans clip en miroir), en 10 plages ; la pose échantillonnée est celle
+que le maillage du jeu évalue (écart 0,0099 unité du maillage, soit 0,0001 cm dans le jeu).
+
+| Critère (plan, étape 5) | Images à un clip ≥ 0,99 (sélection du plan, 105) | Toutes les images rejouées (537) |
+|---|---|---|
+| Ancres dans S ≤ 0,5 cm | 0,021 cm (E1 image 37, `bitL`) | 0,184 cm (E6t image 77, `ironL`) |
+| Position de S dans le repère du cheval | — | 0,239 cm (E6t image 90) |
+| Orientation de S ≤ 0,5° | 0,0003° | 0,079° (E6t image 114) |
+| Chaque tranche du flanc ≤ 0,5 cm | 0,0012 cm | **2,369 cm** (E6t image 111, flanc gauche, tranche 7) ; 7 tranches sur 21 480 au-delà de 0,5 cm |
+| Chaque tranche de l'encolure ≤ 0,5 cm | 0,0061 cm | 0,281 cm (E6t image 53) ; tranches mesurées des deux côtés ou d'aucun |
+| `hindDown` à la même image ± 1 | toujours identique au web, mais aucune image de saut posée (voir plus bas) | idem |
+| Coût ≤ 0,1 ms par image (`FPlatformTime`) | médiane 0,0112 ms, p99 0,0126 ms, maximum 0,0156 ms (537 images) | |
+
+Données brutes et compressées des clips donnent les mêmes chiffres (au dix-millième de centimètre près) : la compression
+d'animation n'est pas en cause. Aux allures, les clips importés sont rééchantillonnés à 24 ou 30 images/s (canter : 18 clés
+contre 34 clés irrégulières dans le GLB du web ; trot : 26 clés à 30 images/s) : cause probable des millimètres d'écart des
+ancres aux allures, **à confirmer**. Les 7 tranches du flanc au-delà de 0,5 cm sont des tranches basses (bord du ventre), où un
+déplacement de quelques millimètres change le sommet le plus écarté de la tranche.
+
+Hors moteur (`ctest` `monte-cheval`, 3 719 vérifications) : données lues ; pose de repos skinnée par la formule du web =
+`pjlRest` d'O1 à 4,5e-16 m ; horloge de réception et `hindDown` identiques à O1 à chaque image des 8 scénarios (929 images,
+`landT` exact, poses des postérieurs en E3 image 81 et E3b image 75), à partir de `hz.jT` et des hauteurs `hz.hv` exportées par
+le web ; recentrage du siège (lissage 12/s du milieu des ancres d'étrier) contre `hz` à 1,8e-13 m ; orientation de S = Euler
+`YXZ` (tangage, 0, inclinaison `mx.rz`) à 5,2e-8 rad ; moindres carrés affines et inverse sur une similitude connue.
+
+Mutations (`scripts/unreal/mutations-horse-tack.py`), 35 au total :
+- niveau cœur (17, copies dans `build/`, ~30 s) : 14 détectées par `monte-cheval`, 3 déclarées dans `ATTENDUES` avec leur
+  raison (un saut au plus par scénario : postérieurs « levés au saut » non départagés ; dans O1, l'os gauche passe sous 10 cm à
+  la même image que le droit ou avant lui ; ordre d'Euler XYZ équivalent à YXZ quand l'angle y est nul, mutation équivalente) ;
+  code 0 ;
+- niveau moteur (18 : siège, tangage, inclinaison, profils, conversion du composant ; UBT puis `Strides.Parite.HorseSeat`) :
+  témoin vert, **1 seule vérifiée** (recentrage 12/s → 6/s : détectée, cinq critères en échec). La campagne a été suspendue de
+  l'extérieur le 23/11/2026 vers 21 h 31 (`kill -STOP` envoyé par la session de migration, pendant la synchronisation finale de
+  `UE_5.8` vers le disque externe) ; le source resté muté a été rétabli à la main (comparé à la copie du cœur : identique à
+  l'original) et le processus arrêté. **17 mutations moteur restent à passer**, après la migration du moteur, par
+  `python3 scripts/unreal/mutations-horse-tack.py --moteur` (environ 3 min chacune). **Les binaires locaux du module
+  (`Binaries/`, `Intermediate/`) sont ceux de la compilation mutée : une compilation UBT est nécessaire avant tout lancement
+  de l'éditeur ou du jeu.** Les preuves G2 et G3 ci-dessus portent sur le source commité, compilé et testé avant la campagne.
+
+Écarts et limites (déclarés, non corrigés à cette étape) :
+1. **Clips en miroir** (main gauche, `*_M`, cuits par `pjl/asset.js bakeMirror`) : absents d'Unreal. Aucune image de saut ni de
+   galop à gauche n'est posée ; le jeu Unreal joue toujours les clips d'origine. `hindDown` n'est donc prouvé qu'au niveau
+   logique (hauteurs des os relevées dans le web) ; dans Unreal, il reste faux aux 537 images comme dans le web.
+2. **Échelle et placement du cheval** : voir la mesure préalable (−3,7 %, lacet, sol).
+3. **Inclinaison de la vue** : le cheval Unreal ne s'incline pas dans les virages ; le composant reçoit un roulis nul en jeu
+   (le test lui donne `mx.rz`).
+4. **Phase de foulée** : `PlayedClipPhase()` donne la phase du clip joué, pas `horse.anim.phase` du web (décalages
+   `gaitInfo.offset` et `align.off`, calculés par la page, non exportés).
+5. **Hauteur des postérieurs** : en jeu, mesurée au-dessus du relief (`AStridesHorse::GroundAt`) ; dans le test, au-dessus du
+   plan du cheval (écart à `hz.hv` 3,35 cm au plus, information : le web mesure au-dessus du relief).
+6. **Mouvements secondaires** (bascule, levée de tête) : non portés ; les images où ils sont non nuls sont exclues du test.
