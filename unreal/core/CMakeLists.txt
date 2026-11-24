@@ -44,3 +44,11 @@ target_sources(strides_core PRIVATE ${CORE}/Private/PerfStats.cpp)
 add_executable(strides_perf_tests tests/test_perf_stats.cpp)
 target_link_libraries(strides_perf_tests strides_core)
 add_test(NAME perf COMMAND strides_perf_tests)
+# Essai de monte, voie A, étape M2 : clips miroir du cheval WildMesh (pjl/asset.js bakeMirror) et main au galop
+# (horse/anim.js, pjl/view.js) portés en C++ (StridesCore/HorseMirror), contre l'oracle miroir exporté du jeu web
+# (tests/oracles/monte/miroir, scripts/unreal/export-horse-mirror.mjs) et O1 (ctest « monte-miroir ») ; dans le moteur :
+# Strides.Parite.HorseMirror.
+target_sources(strides_core PRIVATE ${CORE}/Private/HorseMirror.cpp)
+add_executable(strides_horse_mirror_tests tests/test_horse_mirror.cpp)
+target_link_libraries(strides_horse_mirror_tests strides_core)
+add_test(NAME monte-miroir COMMAND strides_horse_mirror_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
