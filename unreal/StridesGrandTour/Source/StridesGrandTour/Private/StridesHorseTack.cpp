@@ -7,6 +7,7 @@
 #include "HAL/PlatformTime.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "StridesHorseMirror.h"
 #include "StridesCore/MiniJson.h"
 #include "StridesHorse.h"
 #include "StridesUnits.h"
@@ -165,6 +166,8 @@ FTransform UStridesHorseTack::SeatWorld() const
 
 double UStridesHorseTack::PlayedClipPhase() const
 {
+	// Option -StridesHorseLead=web (étape M2) : mélangeur du cheval à couches, phase de sa première couche.
+	if (const UStridesHorseAnimInstance* Lead = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr) return Lead->Phase();
 	const UAnimSingleNodeInstance* Single = Mesh ? Mesh->GetSingleNodeInstance() : nullptr;
 	const UAnimSequenceBase* Seq = Single ? Cast<UAnimSequenceBase>(Single->GetAnimationAsset()) : nullptr;
 	if (!Seq || Seq->GetPlayLength() <= 0) return -1;

@@ -31,6 +31,10 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   du web, est à 0,0001 cm d'O2 sur 689 images (arrêt, transition, galop à gauche et à droite, sauts de 1,10 m et
   1,40 m ; `Strides.Parite.RiderRules`, `niveau-a.md`). Posé comme le web, le cheval Unreal donne le même siège et les
   mêmes repères : ancres à 1,8 mm, siège à 0,08° (`Strides.Parite.HorseSeat`).
+- **Clips miroir (étape M2)** : la cuisson `bakeMirror` portée en C++ redonne au bit près les 11 clips à main gauche du
+  web (ctest `monte-miroir`) ; dans Unreal, avec `-StridesHorseLead=web`, galop et saut à main gauche, os visibles à
+  0,0124 cm du web pour les clips importés à 24 images/s (`Strides.Parite.HorseMirror`) ; trot et jump_gallop, importés à
+  30 images/s, s'écartent de 2,7 à 20,9 cm (import, déclaré).
 - Sans l'option, le jeu par défaut est inchangé. C'est vérifié par test (aucun composant créé) et par les captures du CSO,
   dont les empreintes n'ont pas bougé.
 - **Coût en jeu, rendu réel (étape 7)** : la règle ajoute **+0,03 ms à l'arrêt et +0,05 ms au galop** au temps du jeu. Le
@@ -52,7 +56,7 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
 
 **Non vérifié**
 - **Niveau B** : la cavalière en jeu sur le cheval Unreal, contre les règles et O1. Le cheval Unreal est 3,7 % plus petit,
-  n'a ni galop à gauche ni sauts en miroir, ne s'incline pas dans les virages, et sa phase de foulée diffère de celle du
+  n'a galop à gauche et sauts en miroir qu'avec `-StridesHorseLead=web` (étape M2), ne s'incline pas dans les virages, et sa phase de foulée diffère de celle du
   web. Rien n'est prouvé en jeu au-delà du niveau A.
 - Étriers non pilotés par les pieds, rênes absentes.
 - Coût sur iPhone ou iPad : aucun appareil branché (étape 16). Les chiffres du Mac classent les options, sans prédire le
@@ -792,3 +796,143 @@ milieu de l'image). Coût de la règle 0,033 à 0,039 ms à l'image capturée.
   mode `cso` ne sont pas touchés).
 - G6 : `build-parite.py` code 0 ; `PARITE.md` régénéré (références recalées, preuve et écart des lignes de la cavalière).
 - G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+## Étape M2. Clips miroir du cheval : bakeMirror porté et prouvé contre le web (24/11/2026)
+
+Base : `79d00c54` (reliquats M1), branche `claude/unreal-port`. Décision de Julien du 24/11/2026 (`decisions.md`) : porter
+dans Unreal la logique du web qui inverse les clips de droite (`src/entities/pjl/asset.js` prepare et bakeMirror,
+`src/entities/pjl/view.js` leadBlend, `src/entities/horse/anim.js` main au galop), puis la prouver face au web.
+
+### Oracle (`unreal/core/tests/oracles/monte/miroir/`, 8,5 Mo, plus gros fichier 1,1 Mo)
+
+`scripts/unreal/export-horse-mirror.mjs` ouvre la page `scripts/unreal/horse-mirror-export.html` (Vite, port 5178,
+Playwright avec le Chrome installé) qui prépare le cheval **avec les modules du jeu** (`loadHorseAsset`, chargeur
+`loadRealGltf('horse_pjl')`) et relève les 11 clips `_M` que le jeu a cuits (Float32Array, au bit près), plus les entrées
+de la cuisson : squelette (419 os, parents, repos, parent non-os `_rootJoint`), pose idle à 0,5 s, et pour chaque clip
+source la pose posée par le mélangeur three.js à chaque instant de la cuisson (doubles : le mélangeur interpole dans un
+`Float64Array`), avec le temps de clip bouclé (`AnimationAction.time`). FPS et liste des clips sont relus dans `asset.js`.
+La page vérifie que les propriétés sans piste restent au repos et que le parent non-os ne bouge pas. Deux exports
+identiques à l'octet (`diff -r`) ; un troisième n'écrit rien. 168 os sur 419 portent un sommet (`rig.skinned`).
+
+Constats du web relevés au passage : au dernier instant des allures (t = durée), `AnimationAction` boucle et pose le clip
+à **t = 0** ; les sauts ont une durée flottante 32 bits supérieure à 49/24 s, donc leur dernier instant n'est pas bouclé.
+
+### Cœur C++ (`StridesCore/HorseMirror`) et ctest `monte-miroir`
+
+Port ligne pour ligne (opérations de three.js 0.170.0 dans leur ordre, `Math.hypot` de V8, sans contraction FMA, tableaux
+`Float32Array` en `float`) : paires gauche/droite (`_l`, `_r`, `_left`, `_right`, dernier os d'un nom de base), plan des
+bras, réflexion S, matrices C de la pose de repos, pose monde miroir S·W·C, retour en local, conservation des longueurs
+(os fixes au repos, sinon direction cuite à la longueur du partenaire ; bassin et racines exclus), continuité du signe des
+quaternions, pistes de `root_04` et `_rootJoint` omises, renommage des virages, temps bouclés, lecture des clés
+(`LinearInterpolant`, `slerpFlat`) ; main au galop (anim.js:287-294), main des clips, fondu leadBlend (10/s).
+
+Résultat (`ctest monte-miroir`, 4 202 vérifications, 0 échec) : nourris des poses source du web, **les 11 clips miroir
+du C++ sont identiques au bit près à ceux du jeu (758 940 valeurs sur 758 940)** ; positions monde des bras identiques à
+three.js (écart 0) ; sur les 921 images d'O1, main du cheval, main des clips et leadBlend identiques au web au bit près
+(4 changements de main, après 16 images de virage tenu), saut en miroir selon la main aux 2 départs de saut. Les
+tolérances prévues (1e-6 m, 1e-6 sur les quaternions) n'ont pas servi : écart nul.
+
+### Dans Unreal : cuisson au chargement, option `-StridesHorseLead=web`
+
+Choix : **cuisson au chargement** (`FStridesHorseMirrorSet`, `StridesHorseMirror.cpp`) plutôt que des AnimSequence `_M`
+écrites par l'éditeur : c'est le même code que le ctest prouve, sans recompression d'animation par Unreal ni ~25 Mo de
+binaires ; 0,4 à 0,8 s au chargement dans l'éditeur (11 clips, mesuré). Entrées : squelette de référence du maillage
+(espace du composant), clips importés échantillonnés par Unreal aux instants de la cuisson (racines du web au repos),
+durée = longueur du clip en flottant 32 bits, comme les temps des clés glTF (`GetPlayLength` rend déjà un `float` : la
+conversion gardée dans le code est sans effet, voir les mutations). La compression de chaque clip est attendue avant l'échantillonnage : sans cela, l'éditeur lisait
+tantôt les données brutes, tantôt les compressées, et deux lancements donnaient des cuissons différentes (constaté).
+
+Jeu : sans option, rien ne change (mode à un clip, `PlayAnimation`). Avec `-StridesHorseLead=web`, le cheval prend un
+mélangeur à couches (`UStridesHorseAnimInstance`, mélange du `PropertyMixer` de three.js) : main au galop depuis
+`lastTurn` (concours) ou le lacet du monde ouvert lissé de même (hypothèse, à confirmer), fondu leadBlend 10/s, clip
+d'origine au poids leadBlend et clip miroir au poids 1 − leadBlend au même temps de clip (trot, galop, grand galop), saut
+en miroir si la main est à gauche au départ. Main initiale du web : à gauche (`A.lead = 1`) ; `leadSwap` pris faux (prouvé
+pour ce cheval : O1 associe la main 1 aux clips « L » à chaque image). Non portés : variantes de virage dans le mélange,
+lissage des poids (14/s), phase de foulée par main. `UStridesHorseTack::PlayedClipPhase` lit la phase de la première
+couche.
+
+### Rééchantillonnage à l'import (mesuré, déclaré, non corrigé)
+
+Les clips Unreal sont rééchantillonnés à l'import : canter, gallop, leurs virages et jump_canter à **24 images/s** (canter :
+18 clés contre 34 clés irrégulières dans le GLB), trot, ses virages et jump_gallop à **30 images/s** (26 et 56 clés). Aux
+instants de la cuisson (f / 24 s), les clés à 24 images/s tombent juste : la pose source d'Unreal est à 0,0119 cm du web
+(os skinnés). À 30 images/s, Unreal interpole entre ses clés : la pose source s'écarte de **2,8 à 8,0 cm** (pied, poignet,
+trot et jump_gallop). Réimporter ces clips à 24 images/s toucherait les clips du CSO prouvé : non fait, déclaré.
+
+### Preuve dans le moteur : `Strides.Parite.HorseMirror` (vert)
+
+- Jeu par défaut : pas de mélangeur à couches, aucun clip miroir cuit.
+- Entrées : paires d'os identiques au web (par nom, 419 os) ; plan de symétrie à **0,0001°** et **0,0001 cm** de celui du
+  web (dans la scène du GLB, conversion d'axes de `UStridesHorseTack`).
+- Clés des 11 clips (260), positions des articulations dans la scène du GLB, données compressées (celles du jeu) :
+  - clips à 24 images/s, os skinnés : source **0,0119 cm**, miroir **0,0124 cm** du web (critères : miroir ≤ source +
+    0,05 cm et ≤ 0,5 cm) ;
+  - clips à 30 images/s (trot, ses virages, jump_gallop), sans critère : source jusqu'à 7,99 cm, miroir jusqu'à
+    **20,87 cm** (jump_gallop_M clé 23, `toes_01_middleslider_01_out_l`) : l'écart d'import change aussi la décision « l'os
+    partenaire bouge » de la conservation des longueurs ;
+  - toutes articulations : l'os d'aide `mountpoint_01` (aucun sommet) s'écarte de **91,6 cm** avec les données
+    compressées (20,9 cm au plus avec les données brutes) : invisible, déclaré ;
+  - données brutes (information) : mêmes chiffres pour les os skinnés.
+- Images d'O1 avec un clip miroir (cheval posé par le mélangeur WildMesh, clips miroir d'Unreal), 170 images retenues
+  (E2g 90, E3 40, E3b 40 ; source à 24 images/s, hors saut) : **ancres dans S 0,0043 cm, siège 0,0013 cm, 0,0004°**,
+  ancres dans le repère du cheval 0,0061 cm, postérieurs identiques au web ; encolure sur la sélection du plan (un clip
+  ≥ 0,99) dans la tolérance, aux allures mêlées 0,515 cm au plus (E2g image 77, tranche 17 : déclaré, comme le flanc de
+  l'étape 5). À part, sans critère : 88 images de trot en miroir (ancres 0,18 cm) et 4 images de saut (ancres **9,4 cm**) :
+  la vue du web fait basculer le corps face aux barres (`pjlHorse.js` `_barClear` : `body.rotation.x`, `body.position.z`),
+  ce qu'O1 n'exporte pas ; la pose mêlée elle-même a été comparée au web, mélangeur reconstruit dans la page aux images
+  E3 39 à 41 : **0,0045 cm** (diagnostic du 24/11, non versionné).
+- Jeu avec l'option : le maillage posé par le mélangeur à couches = lecture du clip miroir à **0,00003 cm** (couche seule,
+  et 0,3 canter + 0,7 canter_M) ; au galop sans virage, 40 images : couches canter (poids leadBlend) et canter_M (1 −
+  leadBlend) au même temps de clip, poids identiques au calcul du cœur, main gardée à gauche.
+
+### Mutations (`scripts/unreal/mutations-horse-mirror.py`)
+
+Cœur (copie de `HorseMirror.cpp`, ctest `monte-miroir`, ~30 s) : 23 mutations, **19 détectées**, 4 déclarées dans
+`ATTENDUES` : normale du plan inversée (équivalente : S ne dépend que de n nᵀ et d n) ; signe du déterminant ignoré à la
+décomposition (équivalente, déduit : les matrices locales de la cuisson sont de déterminant positif) ; seuil de virage
+0,25 → 0,30 rad/s et maintien non remis à zéro (**faiblesses** : O1 n'a ni virage entre 0,25 et 0,30 rad/s pendant un
+maintien, ni maintien interrompu ; le seuil 0,45 est départagé). Détectées notamment : aucune paire, pose miroir sur l'os
+lui-même, côté `_right` ignoré, plan décalé, signe de la réflexion, matrices C omises, longueurs non conservées, os fixes
+non remis au repos, seuil de mouvement ×10, bassin corrigé, continuité du signe, racines gardées, virages non renommés,
+fin non bouclée, poids des clés, main (maintien 0,4 s, seuil 0,45, main des clips inversée), fondu 5/s.
+
+Moteur (`--moteur`, source du dépôt muté, UBT puis `Strides.Parite.HorseMirror`) : témoin vert ; 11 mutations, **7
+détectées** (aucun os apparié : 143 cm ; longueurs non conservées : 13,6 cm ; signe de la réflexion : 28,1 cm ; plan
+incliné : 3,3 cm ; plan pris à 0 s au lieu de 0,5 s ; clip miroir au poids leadBlend ; fondu de main absent), 4
+déclarées : plan décalé de 0,5 unité (équivalente dans Unreal, déduit : translation absorbée par la racine dont la piste est
+omise ; détectée au niveau cœur), racines non remises au repos à la cuisson (équivalente, déduit : la rotation de 90° de la
+racine est autour de l'axe latéral et commute avec S), durée non arrondie (équivalente : `GetPlayLength` rend un `float`),
+poids relatif oublié au mélange (équivalente pour le jeu, qui ne mêle que deux couches de poids w et 1 − w). Campagne du
+24/11 : 10 mutations en 1 138 s, code de sortie 1 car ces 4 n'étaient pas encore listées ; liste corrigée, puis plan
+incliné ajouté et passé seul (`--noms=`, 283 s, code 0) ; sources rétablis et recompilation finale code 0 les deux fois.
+
+### Captures côte à côte (rendu GPU réel, 844 × 390, `captures/`)
+
+Web : `export-rider-rules.mjs --shots=<dossier> --only-shots=galop-gauche,saut-gauche` (E2g image 100, galop à gauche
+sur canter_M et canter_L90_M ; E3 image 50, en vol sur jump_canter_M) ; poses dans `captures/poses-miroir.json`. Unreal :
+`-game -windowed -ResX=844 -ResY=390 -StridesShots=miroir -StridesRider=regles -StridesHorseLead=web
+-StridesShotsDir=<dossier> -StridesMontePoses=<poses-miroir.json>` : parcours de démonstration, capture au premier galop
+sur les clips miroir seuls (leadBlend 0,0000, 6,22 m/s), puis 0,36 s après un départ de saut en miroir. Fichiers
+`monte-galop-gauche-{web,unreal}.png`, `monte-saut-gauche-{web,unreal}.png` ; montages sous
+`.ue-cache/travail/m2/montages/` (non versionnés). Pas des poses jumelles (décor, phase, hauteur d'obstacle, cheval
+3,7 % plus petit) : elles montrent le galop et le saut à main gauche dans les deux jeux.
+
+### Portes
+
+- G1 : ctest code 0 ; cœur 300 729, `monte` 306 914, `monte-cheval` 3 719, `monte-cavaliere` 72 547, `perf` 20,
+  **`monte-miroir` 4 202** vérifications, 0 échec (construit sous `.ue-cache/travail/core`).
+- G2 : UBT code 0, aucun avertissement ni erreur du compilateur dans le journal final.
+- G3 : `Automation RunTests Strides` : **37 tests, 37 en succès**, 0 échec (nouveau : `Strides.Parite.HorseMirror`).
+  Avertissements : 2, sur `Strides.Parite.CsoHorse` (test en cours quand l'éditeur cherche les appareils iOS :
+  `idevice_id`, erreur 86, déjà relevé aux reliquats M1).
+- G4 : `mutations-horse-mirror.py` (cœur code 0 ; moteur : voir ci-dessus).
+- G5 : `git diff --quiet HEAD -- unreal/docs/parite/cso` code 0 (PNG du CSO non régénérés : le jeu par défaut et le mode
+  `cso` ne prennent pas l'option).
+- G6 : `build-parite.py` code 0 ; lignes `cheval.main-galop` (absent → partiel, joué à l'écran avec l'option) et
+  `cheval.saut-animation` (miroir) mises à jour.
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Reste à faire (M2) : clips à 30 images/s (trot, jump_gallop) à réimporter à 24 images/s si Julien l'accepte (toucherait
+les clips du CSO prouvé, captures CSO à refaire) ; variantes de virage et lissage des poids du mélangeur ; images de saut
+d'O1 non comparables tant que la bascule `_barClear` n'est ni exportée ni portée ; option `-StridesHorseLead=web` à faire
+passer au jeu par défaut sur décision de Julien (elle change le galop du départ : le web part à main gauche).

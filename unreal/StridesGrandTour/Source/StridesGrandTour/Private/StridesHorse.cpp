@@ -2,6 +2,7 @@
 #include "StridesCsoAudio.h"
 #include "StridesPlayerController.h"
 #include "Animation/AnimationAsset.h"
+#include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -17,6 +18,7 @@
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesHorseTack.h"
+#include "StridesHorseMirror.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesCore/HorseCoat.h"
@@ -99,6 +101,13 @@ void AStridesHorse::BeginPlay()
 	SetActorTickEnabled(true);
 	UpdateAnimation();
 	ApplyEngagedCoat();
+	// Étape M2 : main au galop et clips miroir du web, seulement avec -StridesHorseLead=web.
+	FString LeadOption;
+	if (FParse::Value(FCommandLine::Get(), TEXT("StridesHorseLead="), LeadOption) && LeadOption == TEXT("web"))
+	{
+		FString Err;
+		if (!EnableWebLead(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides main au galop : clips miroir non cuits (%s), clips d'origine gardés"), *Err);
+	}
 	// Essai de monte (voie A) : sellerie lue par les règles de monte, seulement avec -StridesRider=regles.
 	FString RiderOption;
 	if (FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOption) && RiderOption == TEXT("regles") && Mesh)
@@ -163,9 +172,109 @@ bool AStridesHorse::ApplyEngagedCoat()
 	return true;
 }
 
+bool AStridesHorse::EnableWebLead(FString* Err)
+{
+	if (bLeadWeb) return true;
+	if (!Mesh || !Mesh->GetSkeletalMeshAsset())
+	{
+		if (Err) *Err = TEXT("maillage absent");
+		return false;
+	}
+	TSharedPtr<FStridesHorseMirrorSet> Set = MakeShared<FStridesHorseMirrorSet>();
+	const FString ClipRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_");
+	if (!Set->Build(Mesh->GetSkeletalMeshAsset(), ClipRoot, Err)) return false;
+	Mirrors = Set;
+	Mesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	Mesh->SetAnimInstanceClass(UStridesHorseAnimInstance::StaticClass());
+	UStridesHorseAnimInstance* A = Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance());
+	if (!A)
+	{
+		if (Err) *Err = TEXT("mélangeur du cheval non créé");
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		LastAnimationGait = INDEX_NONE;
+		return false;
+	}
+	A->Set = Mirrors;
+	bLeadWeb = true;
+	LeadSt = strides::mirror::LeadState();
+	LeadBlendV = 1;
+	LastAnimationGait = INDEX_NONE;
+	bLastAnimationJumping = false;
+	UpdateWebLeadAnimation(0.f);
+	UE_LOG(LogTemp, Display, TEXT("Strides main au galop : %d clips miroir cuits en %.1f ms"), Mirrors->Num(), Mirrors->BuildMs());
+	return true;
+}
+
+// Option -StridesHorseLead=web : main du galop (horse/anim.js) depuis le virage lissé, fondu de main leadBlend (pjl/view.js,
+// 10/s) entre clip d'origine (poids leadBlend) et clip miroir (1 − leadBlend) au même temps de clip ; saut en miroir si la
+// main est à gauche au départ. Choix des clips et horloge : ceux du jeu par défaut (allure du jeu, saut rapide au-delà de
+// 7 m/s, clip repris à 0 à chaque changement, boucle des allures, saut joué une fois).
+void AStridesHorse::UpdateWebLeadAnimation(float Dt)
+{
+	UStridesHorseAnimInstance* A = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
+	if (!A || !Mirrors.IsValid()) return;
+	// Virage : H.lastTurn (cœur CSO) ; hors concours, lacet du monde ouvert lissé comme lastTurn (8/s, csoHorseStep).
+	OpenWorldTurn = OpenWorldTurn + (YawRate - OpenWorldTurn) * (1 - FMath::Exp(-8.0 * Dt));
+	const double Turn = bCsoControls ? Sim.lastTurn : OpenWorldTurn;
+	strides::mirror::leadStep(LeadSt, Turn, Dt);
+	// leadSwap du web (pjlHorse.js _calibrate) : faux pour ce cheval (O1 : main 1 ↔ clips « L » à chaque image, ctest).
+	const char Lead = strides::mirror::clipLead(LeadSt.lead, false);
+	LeadBlendV = strides::mirror::leadBlendStep(LeadBlendV, Lead, Dt);
+	if (bJumping != bLastAnimationJumping || (!bJumping && GaitIndex != LastAnimationGait))
+	{
+		ClipTime = 0;
+		if (bJumping) bJumpMirror = Lead == 'L';  // view.js : jumpMirror = s.lead === 'L' au départ du saut
+		LastAnimationGait = GaitIndex;
+		bLastAnimationJumping = bJumping;
+	}
+	else
+		ClipTime += Dt;
+	TArray<FStridesHorseLayer> Layers;
+	static const TCHAR* GaitNames[] = {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")};
+	if (bJumping)
+	{
+		const bool bGallop = SpeedMS >= 7.f;
+		const UAnimSequence* Seq = Cast<UAnimSequence>(bGallop ? JumpGallopAnimation.Get() : JumpCanterAnimation.Get());
+		const int32 M = bJumpMirror ? Mirrors->Find(bGallop ? TEXT("jump_gallop_M") : TEXT("jump_canter_M")) : INDEX_NONE;
+		const double Len = Seq ? Seq->GetPlayLength() : 0;
+		FStridesHorseLayer L;
+		L.Time = FMath::Min(ClipTime, Len);
+		L.Weight = 1;
+		if (M != INDEX_NONE) L.Mirror = M;
+		else L.Seq = Seq;
+		Layers.Add(L);
+	}
+	else if (GaitAnimations.IsValidIndex(GaitIndex))
+	{
+		const UAnimSequence* Seq = Cast<UAnimSequence>(GaitAnimations[GaitIndex].Get());
+		const double Len = Seq ? Seq->GetPlayLength() : 0;
+		const double T = Len > 0 ? strides::mirror::loopClipTime(ClipTime, Len) : 0;
+		const int32 M = GaitIndex < (int32)UE_ARRAY_COUNT(GaitNames) ? Mirrors->Find(FString(GaitNames[GaitIndex]) + TEXT("_M")) : INDEX_NONE;
+		FStridesHorseLayer O;
+		O.Seq = Seq;
+		O.Time = T;
+		O.Weight = M != INDEX_NONE ? LeadBlendV : 1;
+		Layers.Add(O);
+		if (M != INDEX_NONE)
+		{
+			FStridesHorseLayer Mi;
+			Mi.Mirror = M;
+			Mi.Time = T;
+			Mi.Weight = 1 - LeadBlendV;
+			Layers.Add(Mi);
+		}
+	}
+	A->Layers = MoveTemp(Layers);
+}
+
 void AStridesHorse::UpdateAnimation()
 {
 	if (!Mesh || !Mesh->GetSkeletalMeshAsset()) return;
+	if (bLeadWeb)
+	{
+		UpdateWebLeadAnimation(LastDt);
+		return;
+	}
 	if (bJumping != bLastAnimationJumping || (!bJumping && GaitIndex != LastAnimationGait))
 	{
 		UAnimationAsset* Next = bJumping
@@ -365,6 +474,7 @@ void AStridesHorse::Tick(float Dt)
 	if (Course) Course->BeginHudFrame();
 	if (bCsoControls) TickCso(Dt, bSimPaused);
 	else TickOpenWorld(Dt, bSimPaused);
+	LastDt = bSimPaused ? 0.f : Dt;
 	UpdateAnimation();
 }
 

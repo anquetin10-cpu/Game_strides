@@ -15,6 +15,7 @@
 #include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRun.h"
+#include "StridesCore/HorseMirror.h"
 #include "StridesCore/JumpModel.h"
 #include <vector>
 #include "StridesHorse.generated.h"
@@ -88,6 +89,20 @@ public:
 	// Sellerie du cheval WildMesh (essai de monte, étape 5 : siège S, ancres, profils, postérieurs ; UStridesHorseTack) :
 	// créée seulement avec -StridesRider=regles, sinon nulle (le jeu par défaut ne la lit pas ; SeatTransform inchangé).
 	UStridesHorseTack* HorseTack() const { return Tack; }
+	// Étape M2 (option -StridesHorseLead=web) : main au galop et clips miroir comme le web ; sans l'option, nuls.
+	bool UsesWebLead() const { return bLeadWeb; }
+	const class FStridesHorseMirrorSet* MirrorSet() const { return Mirrors.Get(); }
+	const strides::mirror::LeadState& LeadState() const { return LeadSt; }
+	double LeadBlend() const { return LeadBlendV; }
+	bool JumpMirrored() const { return bJumpMirror; }
+	// Active l'option sur ce cheval (BeginPlay la lit dans la ligne de commande ; les tests l'appellent) ; faux si la cuisson échoue.
+	bool EnableWebLead(FString* Err = nullptr);
+	// Une mise à jour de l'animation de pas Dt, hors simulation (tests Strides.Parite.HorseMirror).
+	void StepAnimation(float Dt)
+	{
+		LastDt = Dt;
+		UpdateAnimation();
+	}
 
 	// Caméra de concours (tranche T6). Une image : cheval vu par la caméra, obstacle suivant (rang dans Course->Obstacles(),
 	// −1 : aucun), snap (instant). Sonde de la perche : CameraBlockedAt ; sol : GroundAt ; obstacles survolés : ceux du
@@ -131,6 +146,7 @@ private:
 	void TickDemo();
 	void StartOpenWorldJump();
 	void UpdateAnimation();
+	void UpdateWebLeadAnimation(float Dt);
 	void UpdateCourseCamera(float Dt);
 	const class UStridesDataSubsystem* DataSub() const;
 	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
@@ -159,4 +175,13 @@ private:
 	strides::CsoCamState CamState;
 	std::vector<strides::CsoCamFence> CamFences;
 	bool bCameraBefore = false;
+	// Étape M2 : option -StridesHorseLead=web.
+	bool bLeadWeb = false;
+	TSharedPtr<class FStridesHorseMirrorSet> Mirrors;
+	strides::mirror::LeadState LeadSt;
+	double LeadBlendV = 1;  // pjl/view.js : leadBlend = 1 à la création de la vue
+	double OpenWorldTurn = 0;
+	double ClipTime = 0;
+	bool bJumpMirror = false;
+	float LastDt = 0;
 };

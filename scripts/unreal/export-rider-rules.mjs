@@ -50,7 +50,13 @@ const SHOTS = arg('shots');
 const SHOT_POSES = [
   { name: 'arret', scenario: 'E1', frame: 40, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38 },
   { name: 'galop', scenario: 'E2d', frame: 100, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38 },
+  // Étape M2 (clips miroir) : galop à main gauche (E2g, clips canter_M et canter_L90_M seuls) et saut à main gauche (E3,
+  // clip jump_canter_M, en vol : jT 0,61). Choisies par --only-shots=galop-gauche,saut-gauche.
+  { name: 'galop-gauche', scenario: 'E2g', frame: 100, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
+  { name: 'saut-gauche', scenario: 'E3', frame: 50, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
 ];
+// --only-shots=a,b : seulement ces captures ; sans l'option, les captures de l'étape 6 (arrêt, galop) comme avant.
+const ONLY_SHOTS = arg('only-shots').split(',').filter(Boolean);
 
 // ---------------------------------------------------------------------------------------------------------------
 // Plans des scénarios : table « plan » de tests/e2e/pjl/rider-audit.mjs (allures) et obstacles de sa préparation CSO,
@@ -715,14 +721,17 @@ if (SHOTS) {
   mkdirSync(SHOTS, { recursive: true });
   const VIEW = { w: 844, h: 390 };
   const out = [];
-  for (const ps of SHOT_POSES) {
+  for (const { only, ...ps } of SHOT_POSES) {
+    if (ONLY_SHOTS.length ? !ONLY_SHOTS.includes(ps.name) : only) continue;
     const sc = SCENARIOS.find((x) => x.id === ps.scenario);
     const { ctx, page } = await openGame({ width: VIEW.w, height: VIEW.h });
-    await page.evaluate(([s, seed]) => window.__monte.setupAllures(s, seed), [{ ...sc }, SEED]);
+    if (sc.type === 'cso') await page.evaluate(([s, specs, N, seed]) => window.__monte.setupCso(s, specs, N, seed), [{ ...sc }, CSO_SPECS, CSO_N, SEED]);
+    else await page.evaluate(([s, seed]) => window.__monte.setupAllures(s, seed), [{ ...sc }, SEED]);
     let n = 0;
+    const shotWin = sc.type === 'cso' ? [CSO_N - 20, null] : sc.window; // fenêtre de l'export (CSO : voir plus bas)
     while (n <= ps.frame) {
       const k = Math.min(10, ps.frame + 1 - n);
-      await page.evaluate(([m, w]) => window.__monte.frames(m, w), [k, sc.window]);
+      await page.evaluate(([m, w]) => window.__monte.frames(m, w), [k, shotWin]);
       n += k;
     }
     const st = await page.evaluate((p) => window.__monte.shot(p), { ...ps, viewport: VIEW });

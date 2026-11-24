@@ -33,6 +33,7 @@
 #include "Serialization/JsonWriter.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
+#include "StridesCore/HorseMirror.h"
 #include "StridesHUD.h"
 #include "StridesRider.h"
 #include "StridesRiderRig.h"
@@ -260,7 +261,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 		// Dossier de sortie résolu une fois, avant toute capture ; refus = sortie sans rien écrire.
 		bOutResolved = true;
 		FString Why;
-		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
+		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("miroir") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
 		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Default, ProtectedShotsDirs(), OutDir, Why))
 		{
 			bRefused = true;
@@ -279,7 +280,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 		TickCso(DeltaSeconds, PC);
 		return;
 	}
-	if (Mode() == TEXT("monte"))
+	if (Mode() == TEXT("monte") || Mode() == TEXT("miroir"))
 	{
 		TickMonte(DeltaSeconds, PC);
 		return;
@@ -1464,8 +1465,12 @@ void AStridesShots::TickCso(float DeltaSeconds, APlayerController* PC)
 // horizontal, axe X imposé). Arrêt : cheval immobile ; galop : parcours de démonstration, capture à la première image au
 // galop (allure galop ou grand galop, ≥ 5 m/s) hors saut. Avec -StridesRider=regles : <nom>-unreal.png (cavalière posée par la règle) ; sans :
 // <nom>-unreal-defaut.png (cavalière du jeu par défaut). Exige -StridesShotsDir=<dossier dédié>.
+// Étape M2, -StridesShots=miroir (avec -StridesHorseLead=web) : même mise en selle et même parcours, sans la capture à
+// l'arrêt ; « galop-gauche » à la première image au galop hors saut sur les clips miroir seuls (main des clips à gauche,
+// leadBlend < 0,01), puis « saut-gauche » 0,35 s après un départ de saut en miroir ; poses du web de mêmes noms.
 void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 {
+	const bool bMiroir = Mode() == TEXT("miroir");
 	AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
 	if (MonteStep == 0)
 	{
@@ -1553,7 +1558,7 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 			bRules ? TEXT("actives") : TEXT("absentes (jeu par défaut)"), Horse ? Horse->SpeedMS : -1.f, Horse ? (int32)Horse->IsJumping() : -1, Rig ? Rig->LastCostMs() : -1.0);
 	};
 	if (MonteStep >= 5) EnterWhenPresented(PC);  // carte de présentation de l'activité validée (« Entrer en piste »)
-	if (MonteStep >= 3) View(Pose(MonteStep >= 5 ? TEXT("galop") : TEXT("arret")));
+	if (MonteStep >= 3) View(Pose(bMiroir ? (MonteStep >= 6 ? TEXT("saut-gauche") : TEXT("galop-gauche")) : MonteStep >= 5 ? TEXT("galop") : TEXT("arret")));
 	MonteWait -= DeltaSeconds;
 	if (MonteWait > 0) return;
 	switch (MonteStep)
@@ -1572,7 +1577,13 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 		return;
 	}
 	case 3:
-		Shot(TEXT("arret"));
+		if (!bMiroir) Shot(TEXT("arret"));
+		else if (!Horse || !Horse->UsesWebLead())
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides miroir: option -StridesHorseLead=web absente ou clips miroir non cuits"));
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
 		MonteStep = 4;
 		MonteWait = 2.f;
 		return;
@@ -1584,6 +1595,24 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 		MonteWait = 4.f;
 		return;
 	case 5:
+		if (bMiroir)
+		{
+			if (Horse && Horse->GaitIndex >= 3 && Horse->SpeedMS >= 5.f && !Horse->IsJumping() && strides::mirror::clipLead(Horse->LeadState().lead, false) == 'L' && Horse->LeadBlend() < 0.01)
+			{
+				Shot(TEXT("galop-gauche"));
+				UE_LOG(LogTemp, Display, TEXT("Strides miroir: galop à gauche, leadBlend %.4f, allure %d"), Horse->LeadBlend(), Horse->GaitIndex);
+				MonteStep = 6;
+				MonteWait = 0.f;
+				RideTime = 0.f;
+				JumpClock = -1.f;
+			}
+			else if ((RideTime += DeltaSeconds) > 90.f)
+			{
+				UE_LOG(LogTemp, Error, TEXT("Strides miroir: pas de galop à gauche en 90 s"));
+				FPlatformMisc::RequestExit(false);
+			}
+			return;
+		}
 		if (Horse && Horse->GaitIndex >= 3 && Horse->SpeedMS >= 5.f && !Horse->IsJumping())
 		{
 			Shot(TEXT("galop"));
@@ -1595,6 +1624,31 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 			UE_LOG(LogTemp, Error, TEXT("Strides monte: pas de galop hors saut en 60 s (vitesse %.2f m/s, allure %d)"), Horse ? Horse->SpeedMS : -1.f, Horse ? Horse->GaitIndex : -1);
 			FPlatformMisc::RequestExit(false);
 		}
+		return;
+	case 6:
+		if (bMiroir)
+		{
+			if (Horse && Horse->IsJumping())
+			{
+				JumpClock = JumpClock < 0 ? 0.f : JumpClock + DeltaSeconds;
+				if (JumpClock >= 0.35f && Horse->JumpMirrored())
+				{
+					Shot(TEXT("saut-gauche"));
+					UE_LOG(LogTemp, Display, TEXT("Strides miroir: saut à main gauche (clip miroir), %.2f s après le départ"), JumpClock);
+					MonteStep = 7;
+					MonteWait = 2.f;
+					return;
+				}
+			}
+			else JumpClock = -1.f;
+			if ((RideTime += DeltaSeconds) > 120.f)
+			{
+				UE_LOG(LogTemp, Error, TEXT("Strides miroir: pas de saut à main gauche en 120 s"));
+				FPlatformMisc::RequestExit(false);
+			}
+			return;
+		}
+		FPlatformMisc::RequestExit(false);
 		return;
 	default:
 		FPlatformMisc::RequestExit(false);

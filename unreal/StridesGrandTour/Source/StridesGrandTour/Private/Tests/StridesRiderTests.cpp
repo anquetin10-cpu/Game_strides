@@ -25,11 +25,14 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "HAL/PlatformTime.h"
+#include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "StridesCore/HorseTack.h"
 #include "StridesCore/MiniJson.h"
 #include "StridesHorse.h"
 #include "StridesHorseTack.h"
+#include "StridesHorseMirror.h"
+#include "StridesCore/HorseMirror.h"
 
 using namespace strides::tack;
 
@@ -431,6 +434,524 @@ bool FStridesHorseSeatTest::RunTest(const FString&)
 		if (C.Value)
 			AddInfo(FString::Printf(TEXT("clip Unreal %s : %.5f s, %d clés échantillonnées, %.3f images/s"), *C.Key, C.Value->GetPlayLength(), C.Value->GetNumberOfSampledKeys(),
 				C.Value->GetSamplingFrameRate().AsDecimal()));
+	Horse->Destroy();
+	return true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Étape M2 de l'essai de monte (voie A) : Strides.Parite.HorseMirror. Clips miroir du cheval Unreal (FStridesHorseMirrorSet :
+// cuisson de StridesCore/HorseMirror, prouvée au bit près contre le web par le ctest « monte-miroir », nourrie ici des
+// clips importés d'Unreal) contre les clips « _M » cuits par le jeu web (oracle unreal/core/tests/oracles/monte/miroir).
+//  1. Jeu par défaut : sans l'option -StridesHorseLead=web, le cheval garde le mode à un clip (rien de changé).
+//  2. Entrées de la cuisson : noms et durées des clips, paires d'os (par nom) identiques au web ; plan de symétrie.
+//  3. Pour chaque clip et chaque clé : positions des 419 articulations (repère de la scène du GLB, via la conversion d'axes
+//     de UStridesHorseTack), pose source d'Unreal contre pose source du web (écart d'import : rééchantillonnage), puis clip
+//     miroir d'Unreal contre clip miroir du web ; racines du web à la pose de référence.
+//  4. Images d'O1 dont au moins un clip actif est un clip miroir : cheval Unreal posé par le mélangeur WildMesh avec les
+//     clips miroir d'Unreal ; ancres dans S, siège, encolure, postérieurs contre le canal hz (critères de l'étape 5).
+//  5. Jeu avec l'option : le mélangeur à couches du cheval (UStridesHorseAnimInstance) pose le maillage comme la lecture du
+//     clip miroir (couche miroir seule, puis mélange 50/50 avec le clip d'origine).
+namespace StridesRiderTest
+{
+bool LoadBytes(const FString& Path, TArray<uint8>& Out) { return FFileHelper::LoadFileToArray(Out, *Path); }
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesHorseMirrorTest, "Strides.Parite.HorseMirror", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FStridesHorseMirrorTest::RunTest(const FString&)
+{
+	using namespace StridesRiderTest;
+	namespace M = strides::mirror;
+	FTestWorld W(TEXT("StridesHorseMirrorTest"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	AStridesHorse* Horse = W.World->SpawnActor<AStridesHorse>(FVector::ZeroVector, FRotator::ZeroRotator);
+	if (!TestNotNull(TEXT("cheval"), Horse)) return false;
+	USkeletalMeshComponent* Mesh = Horse->BodyMesh();
+	const USkeletalMesh* SkM = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!TestNotNull(TEXT("maillage du cheval"), SkM)) return false;
+	// 1. Jeu par défaut.
+	TestFalse(TEXT("jeu par défaut : option -StridesHorseLead=web absente, clips d'origine"), Horse->UsesWebLead());
+	TestNull(TEXT("jeu par défaut : pas de mélangeur à couches sur le maillage"), Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()));
+	TestNull(TEXT("jeu par défaut : aucun clip miroir cuit"), Horse->MirrorSet());
+
+	UStridesHorseTack* Tack = NewObject<UStridesHorseTack>(Horse);
+	FString Err;
+	if (!TestTrue(FString::Printf(TEXT("sellerie initialisée (%s)"), *Err), Tack->Init(Mesh, &Err))) return false;
+	const TackModel& TM = Tack->Model();
+	const Affine Mesh2Glb = invert(Tack->GlbToMesh());
+	const double CmPerGlb = 100 * TM.innerScale;
+	const FReferenceSkeleton& Ref = SkM->GetRefSkeleton();
+
+	// Oracle miroir du web.
+	J H;
+	try
+	{
+		H = loadJson(TCHAR_TO_UTF8(*(MonteDir() / TEXT("miroir/index.json"))));
+	}
+	catch (const std::exception& Ex)
+	{
+		AddError(FString::Printf(TEXT("oracle miroir illisible : %s"), UTF8_TO_TCHAR(Ex.what())));
+		return false;
+	}
+	M::Rig WebRig;
+	{
+		const J& R = H["rig"];
+		for (size_t I = 0; I < R["names"].a.size(); I++)
+		{
+			WebRig.names.push_back(R["names"][I].s);
+			WebRig.parent.push_back((int)R["parent"][I].num());
+			M::Xf X;
+			for (int K = 0; K < 3; K++) X.p[K] = R["rest"][I]["p"][K].num(), X.s[K] = R["rest"][I]["s"][K].num();
+			for (int K = 0; K < 4; K++) X.q[K] = R["rest"][I]["q"][K].num();
+			WebRig.rest.push_back(X);
+			M::Mat4 Pw;
+			if (!R["parentWorld"][I].isNull())
+				for (int K = 0; K < 16; K++) Pw.e[K] = R["parentWorld"][I][K].num();
+			WebRig.parentWorld.push_back(Pw);
+		}
+	}
+	const int32 NW = (int32)WebRig.names.size();
+	// Os qui portent un sommet d'un maillage skinné du cheval (rig.skinned, relevé dans le web) : seuls leurs écarts se voient.
+	TArray<bool> Skinned;
+	int32 NSkinned = 0;
+	for (int32 I = 0; I < NW; I++)
+	{
+		Skinned.Add(H["rig"]["skinned"][(size_t)I].num() > 0);
+		NSkinned += Skinned.Last();
+	}
+	// Os du web → os du maillage Unreal (par nom).
+	TArray<int32> ToUE;
+	int32 Missing = 0;
+	for (int32 I = 0; I < NW; I++)
+	{
+		ToUE.Add(Ref.FindBoneIndex(FName(UTF8_TO_TCHAR(WebRig.names[I].c_str()))));
+		Missing += ToUE.Last() == INDEX_NONE;
+	}
+	if (!TestEqual(TEXT("os du web retrouvés par nom dans le maillage Unreal"), Missing, 0)) return false;
+
+	// 2. Cuisson Unreal (même code que le jeu avec l'option).
+	FStridesHorseMirrorSet Set;
+	const FString ClipRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_");
+	if (!TestTrue(FString::Printf(TEXT("cuisson des clips miroir dans Unreal (%s)"), *Err), Set.Build(SkM, ClipRoot, &Err))) return false;
+	AddInfo(FString::Printf(TEXT("cuisson Unreal : %d clips miroir en %.1f ms"), Set.Num(), Set.BuildMs()));
+	{
+		const std::vector<int> WebPairs = M::pairIndices(WebRig);
+		int32 Diff = 0;
+		for (int32 I = 0; I < NW; I++)
+			Diff += ToUE[WebPairs[I]] != Set.Pairs()[ToUE[I]];
+		TestEqual(TEXT("paires d'os gauche/droite d'Unreal = paires du web (par nom, 419 os)"), Diff, 0);
+	}
+	// Plan : bras du web (pose idle du web) contre bras d'Unreal (pose idle d'Unreal), dans la scène du GLB.
+	{
+		std::vector<M::Xf> Idle;
+		for (const J& B : H["idle"]["local"].a)
+		{
+			M::Xf X;
+			for (int K = 0; K < 3; K++) X.p[K] = B["p"][K].num(), X.s[K] = B["s"][K].num();
+			for (int K = 0; K < 4; K++) X.q[K] = B["q"][K].num();
+			Idle.push_back(X);
+		}
+		M::Plane WebPl;
+		M::symmetryPlane(WebRig, Idle, WebPl);
+		const M::Plane& UePl = Set.Plane();
+		const V3 Mid = apply(Mesh2Glb, {UePl.mid[0], UePl.mid[1], UePl.mid[2]});
+		const V3 Tip = apply(Mesh2Glb, {UePl.mid[0] + 100 * UePl.n[0], UePl.mid[1] + 100 * UePl.n[1], UePl.mid[2] + 100 * UePl.n[2]});
+		V3 N{Tip.x - Mid.x, Tip.y - Mid.y, Tip.z - Mid.z};
+		const double Ln = FMath::Sqrt(N.x * N.x + N.y * N.y + N.z * N.z);
+		const double Cos = (N.x * WebPl.n[0] + N.y * WebPl.n[1] + N.z * WebPl.n[2]) / Ln;
+		const double MidGap = Dist(Mid, {WebPl.mid[0], WebPl.mid[1], WebPl.mid[2]}) * CmPerGlb;
+		const double AngGap = FMath::RadiansToDegrees(FMath::Acos(FMath::Min(1.0, Cos)));
+		AddInfo(FString::Printf(TEXT("plan de symétrie d'Unreal contre celui du web : normale à %.4f°, milieu des bras à %.4f cm"), AngGap, MidGap));
+		TestTrue(TEXT("plan de symétrie : normale à moins de 0,1°, milieu à moins de 0,1 cm du web"), AngGap < 0.1 && MidGap < 0.1);
+	}
+
+	// 3. Clés des clips : source et miroir.
+	auto ToXfT = [](const FTransform& T) {
+		M::Xf X;
+		const FVector P = T.GetTranslation();
+		const FQuat Q = T.GetRotation();
+		X.p[0] = P.X, X.p[1] = P.Y, X.p[2] = P.Z;
+		X.q[0] = Q.X, X.q[1] = Q.Y, X.q[2] = Q.Z, X.q[3] = Q.W;
+		return X;
+	};
+	(void)ToXfT;
+	// Deux passes : données brutes de l'import (éditeur seulement, information), puis données compressées (celles du jeu,
+	// critères) ; la cuisson attend la compression de chaque clip (FStridesHorseMirrorSet::Build).
+	FStridesHorseMirrorSet SetRaw;
+	TestTrue(TEXT("cuisson sur les données brutes de l'import (information)"), SetRaw.Build(SkM, ClipRoot, &Err, true));
+	for (int32 Pass = 0; Pass < 2; Pass++)
+	{
+	const bool bRaw = Pass == 0;
+	const FStridesHorseMirrorSet& Cur = bRaw ? SetRaw : Set;
+	const FString Tag = bRaw ? TEXT("données brutes") : TEXT("données compressées (jeu)");
+	FWorst WSrc, WMir, W24Src, W24Mir, WSkSrc, WSkMir;
+	int32 Keys = 0, ClipsSeen = 0, Clips24 = 0;
+	FString PerClip, Off24;
+	bool bNamesOk = true, bDurOk = true;
+	for (const J& S : H["src"].a)
+	{
+		const std::string Src = S["name"].s, MName = M::mirroredName(Src);
+		const J* Web = nullptr;
+		for (const J& Mm : H["mirrored"].a)
+			if (Mm["name"].s == MName) Web = &Mm;
+		const int32 UI = Cur.Find(UTF8_TO_TCHAR(MName.c_str()));
+		if (!Web || UI == INDEX_NONE) { bNamesOk = false; continue; }
+		const M::Clip& UC = Cur.Clip(UI);
+		bDurOk &= UC.duration == S["duration"].num() && UC.times.size() == (*Web)["times"].a.size();
+		TArray<uint8> SrcBytes, MirBytes;
+		if (!LoadBytes(MonteDir() / TEXT("miroir") / UTF8_TO_TCHAR(S["file"].s.c_str()), SrcBytes) ||
+			!LoadBytes(MonteDir() / TEXT("miroir") / UTF8_TO_TCHAR((*Web)["file"].s.c_str()), MirBytes))
+		{
+			AddError(TEXT("fichiers de l'oracle miroir illisibles"));
+			return false;
+		}
+		const double* SV = reinterpret_cast<const double*>(SrcBytes.GetData());
+		const float* MV = reinterpret_cast<const float*>(MirBytes.GetData());
+		const std::vector<J>& An = S["animated"].a;
+		size_t Per = 0;
+		for (const J& A : An) Per += A[1].s == "q" ? 4 : 3;
+		const size_t NK = (*Web)["times"].a.size(), NB = (*Web)["bones"].a.size();
+		FWorst CSrc, CMir;
+		// Clip source importé à 24 images/s (cadence de la cuisson du web) : ses clés tombent aux instants de la cuisson.
+		const bool b24 = FMath::IsNearlyEqual(Cur.Source(UI)->GetSamplingFrameRate().AsDecimal(), (double)M::kBakeFps, 1e-6);
+		Clips24 += b24;
+		if (!b24) Off24 += FString::Printf(TEXT(" %s (%.0f images/s)"), UTF8_TO_TCHAR(MName.c_str()), Cur.Source(UI)->GetSamplingFrameRate().AsDecimal());
+		// Diagnostic : décision « l'os partenaire bouge » de la conservation des longueurs (bakeMirror), web contre Unreal.
+		TArray<TArray<FVector3f>> WebSp, UeSp;
+		WebSp.SetNum(NW);
+		UeSp.SetNum(NW);
+		const std::vector<int> WP = M::pairIndices(WebRig);
+		for (size_t F = 0; F < NK && F < UC.times.size(); F++)
+		{
+			const FString Where = FString::Printf(TEXT("%s clé %d"), UTF8_TO_TCHAR(MName.c_str()), (int32)F);
+			// Web : pose source et clé miroir, monde de la scène du GLB.
+			std::vector<M::Xf> PS = WebRig.rest, PM = WebRig.rest;
+			size_t K = F * Per;
+			for (const J& A : An)
+			{
+				M::Xf& X = PS[(size_t)A[0].num()];
+				double* D = A[1].s == "p" ? X.p : A[1].s == "q" ? X.q : X.s;
+				for (int C = 0; C < (A[1].s == "q" ? 4 : 3); C++) D[C] = SV[K++];
+			}
+			for (size_t Jb = 0; Jb < NB; Jb++)
+			{
+				M::Xf& X = PM[(size_t)(*Web)["bones"][Jb].num()];
+				const float* V = &MV[(F * NB + Jb) * 7];
+				for (int C = 0; C < 3; C++) X.p[C] = V[C];
+				for (int C = 0; C < 4; C++) X.q[C] = V[3 + C];
+			}
+			const std::vector<M::Mat4> WS = M::worldMatrices(WebRig, PS), WM = M::worldMatrices(WebRig, PM);
+			// Unreal : pose source au temps de clip du web, clé miroir d'Unreal.
+			TArray<FTransform> LS, LM, CS_, CM_;
+			const double ClipT = S["clipTime"][F].num();
+			if (!StridesHorseAnim::SampleLocal(Cur.Source(UI), SkM, ClipT, true, LS, bRaw) || !Cur.SampleLocal(UI, UC.times[F], true, LM))
+			{
+				AddError(TEXT("échantillonnage Unreal"));
+				return false;
+			}
+			StridesHorseAnim::LocalToComponent(Ref, LS, CS_);
+			StridesHorseAnim::LocalToComponent(Ref, LM, CM_);
+			for (int32 I = 0; I < NW; I++)
+			{
+				const M::Xf& Pw = PS[WP[I]];
+				WebSp[I].Add(FVector3f((float)Pw.p[0], (float)Pw.p[1], (float)Pw.p[2]));
+				UeSp[I].Add(FVector3f(LS[ToUE[WP[I]]].GetTranslation()));
+			}
+			for (int32 I = 0; I < NW; I++)
+			{
+				const FVector A = CS_[ToUE[I]].GetLocation(), B = CM_[ToUE[I]].GetLocation();
+				const V3 Ga = apply(Mesh2Glb, {A.X, A.Y, A.Z}), Gb = apply(Mesh2Glb, {B.X, B.Y, B.Z});
+				const FString Wb = Where + TEXT(" ") + UTF8_TO_TCHAR(WebRig.names[I].c_str());
+				const double Es = Dist(Ga, {WS[I].e[12], WS[I].e[13], WS[I].e[14]}) * CmPerGlb;
+				const double Em = Dist(Gb, {WM[I].e[12], WM[I].e[13], WM[I].e[14]}) * CmPerGlb;
+				CSrc.See(Es, Wb);
+				CMir.See(Em, Wb);
+				WSrc.See(Es, Wb);
+				WMir.See(Em, Wb);
+				if (b24 && Skinned[I]) W24Src.See(Es, Wb), W24Mir.See(Em, Wb);
+				if (Skinned[I]) WSkSrc.See(Es, Wb), WSkMir.See(Em, Wb);
+			}
+			Keys++;
+		}
+		{
+			auto Moving = [](const TArray<FVector3f>& Sp) {
+				for (int32 F = 1; F < Sp.Num(); F++)
+				{
+					const double Dx = (double)Sp[F].X - Sp[0].X, Dy = (double)Sp[F].Y - Sp[0].Y, Dz = (double)Sp[F].Z - Sp[0].Z;
+					if (FMath::Sqrt(Dx * Dx + Dy * Dy + Dz * Dz) > 1e-3 * (FMath::Sqrt((double)Sp[0].X * Sp[0].X + (double)Sp[0].Y * Sp[0].Y + (double)Sp[0].Z * Sp[0].Z) + 1e-6)) return true;
+				}
+				return false;
+			};
+			int32 Flip = 0;
+			FString Ex;
+			for (int32 I = 0; I < NW; I++)
+			{
+				const std::string Base = M::baseName(WebRig.names[I]);
+				if (Base == "root" || Base == "pelvis" || WebRig.names[I] == "root_04" || WebRig.names[I] == "_rootJoint") continue;
+				if (Moving(WebSp[I]) != Moving(UeSp[I]))
+				{
+					if (Flip < 4) Ex += FString::Printf(TEXT(" %s (web %s)"), UTF8_TO_TCHAR(WebRig.names[I].c_str()), Moving(WebSp[I]) ? TEXT("bouge") : TEXT("fixe"));
+					Flip++;
+				}
+			}
+			AddInfo(FString::Printf(TEXT("%s, %s : décision « partenaire en mouvement » (conservation des longueurs) différente du web pour %d os%s"), *Tag, UTF8_TO_TCHAR(MName.c_str()), Flip, *Ex));
+		}
+		ClipsSeen++;
+		PerClip += FString::Printf(TEXT(" %s : source %.3f, miroir %.3f ;"), UTF8_TO_TCHAR(MName.c_str()), CSrc.V, CMir.V);
+		AddInfo(FString::Printf(TEXT("%s, %s (%d clés Unreal du clip source, %.3f images/s) : articulations, source Unreal − web %.4f cm (%s), miroir Unreal − web %.4f cm (%s)"),
+			*Tag, UTF8_TO_TCHAR(MName.c_str()), Cur.Source(UI)->GetNumberOfSampledKeys(), Cur.Source(UI)->GetSamplingFrameRate().AsDecimal(), CSrc.V, *CSrc.Where, CMir.V, *CMir.Where));
+	}
+	AddInfo(FString::Printf(TEXT("%s : %d clés comparées ; pire écart des 419 articulations : source %.4f cm (%s), miroir %.4f cm (%s) ; des %d os skinnés : source %.4f cm (%s), miroir %.4f cm (%s)"),
+		*Tag, Keys, WSrc.V, *WSrc.Where, WMir.V, *WMir.Where, NSkinned, WSkSrc.V, *WSkSrc.Where, WSkMir.V, *WSkMir.Where));
+	if (bRaw) continue;
+	TestTrue(TEXT("11 clips miroir d'Unreal, mêmes noms que le web (virages renommés)"), bNamesOk && ClipsSeen == 11);
+	TestTrue(TEXT("durées et nombres de clés des clips miroir d'Unreal = web"), bDurOk);
+	// Critères, sur les os skinnés (168 : ceux qui portent un sommet ; les autres, aides de l'export et points de fixation
+	// comme mountpoint_01, ne se voient pas) des clips dont la source Unreal est à 24 images/s (ses clés tombent aux instants
+	// de la cuisson) : le miroir
+	// n'ajoute pas d'écart au-delà de celui de l'import (la réflexion est une isométrie) : miroir ≤ source + 0,05 cm, et
+	// ≤ 0,5 cm (seuil de l'étape 5). Les clips importés à 30 images/s sont rééchantillonnés : leur écart (source et miroir)
+	// est relevé ci-dessus et déclaré, sans critère (voir unreal/docs/parite/monte/README.md, étape M2).
+	AddInfo(FString::Printf(TEXT("clips à 24 images/s : %d ; importés à une autre cadence, sans critère :%s"), Clips24, *Off24));
+	AddInfo(FString::Printf(TEXT("clips à 24 images/s, os skinnés : source Unreal − web %.4f cm (%s), miroir Unreal − web %.4f cm (%s)"), W24Src.V, *W24Src.Where, W24Mir.V, *W24Mir.Where));
+	TestTrue(FString::Printf(TEXT("clips à 24 images/s, os skinnés : miroir Unreal − web (%.4f cm, %s) ≤ écart d'import des sources (%.4f cm) + 0,05 cm"), W24Mir.V, *W24Mir.Where, W24Src.V),
+		Clips24 >= 7 && W24Mir.V >= 0 && W24Mir.V <= W24Src.V + 0.05);
+	TestTrue(FString::Printf(TEXT("clips à 24 images/s, os skinnés : miroir Unreal − web ≤ 0,5 cm à toutes les clés (%.4f cm)"), W24Mir.V), W24Mir.V >= 0 && W24Mir.V <= 0.5);
+	}
+
+	// 4. Images d'O1 avec clips miroir.
+	TMap<FString, const UAnimSequence*> Clips;
+	auto ClipSeq = [&](const std::string& Name) -> const UAnimSequence* {
+		const FString N = UTF8_TO_TCHAR(Name.c_str());
+		if (const UAnimSequence* const* C = Clips.Find(N)) return *C;
+		const UAnimSequence* C = N.EndsWith(TEXT("_M")) ? nullptr : LoadObject<UAnimSequence>(nullptr, *(ClipRoot + N + TEXT(".Horse_") + N));
+		Clips.Add(N, C);
+		return C;
+	};
+	auto Available = [&](const std::string& Name) { return Set.Find(UTF8_TO_TCHAR(Name.c_str())) != INDEX_NONE || ClipSeq(Name) != nullptr; };
+	auto Sample = [&](const std::string& Name, double T, TArray<FTransform>& L) {
+		const int32 I = Set.Find(UTF8_TO_TCHAR(Name.c_str()));
+		return I != INDEX_NONE ? Set.SampleLocal(I, T, true, L) : StridesHorseAnim::SampleLocal(ClipSeq(Name), SkM, T, true, L);
+	};
+	auto MixerPose = [&](const J& Mx, TArray<FTransform>& Out) {
+		TArray<FTransform> Acc, In;
+		double Wt = 0;
+		for (const J& A : Mx["a"].a)
+		{
+			if (!Sample(A[0].s, A[2].num(), In)) return false;
+			const double Wa = A[1].num();
+			if (Wt == 0) Acc = In, Wt = Wa;
+			else
+			{
+				Wt += Wa;
+				Mix(Acc, In, Wa / Wt);
+			}
+		}
+		if (Wt == 0) return false;
+		if (Wt < 1) Mix(Acc, Ref.GetRefBonePose(), 1 - Wt);
+		LocalToComponent(Ref, Acc, Out);
+		return true;
+	};
+	auto Eligible = [&](const J& F, bool& bHasMirror) {
+		const J& Sec = F["mx"]["sec"];
+		if (FMath::Abs(Sec["bascule"].num()) > 1e-6 || FMath::Abs(Sec["headLift"].num()) > 1e-6) return false;
+		bHasMirror = false;
+		for (const J& A : F["mx"]["a"].a)
+		{
+			if (!Available(A[0].s)) return false;
+			bHasMirror |= FString(UTF8_TO_TCHAR(A[0].s.c_str())).EndsWith(TEXT("_M"));
+		}
+		return true;
+	};
+	const UAnimSequence* Idle = ClipSeq("idle");
+	auto NoGround = [](const V3& P) { return P.y; };
+	FWorst WAnchor, WSeatPos, WSeatRot, WCrest, WCrestP, WAnchorP, WJumpAnchor, WThirty, WAnchorH;
+	int32 Frames = 0, Pure = 0, JumpFrames = 0, ThirtyFrames = 0, CrestMiss = 0, HindMiss = 0, SkippedSec = 0;
+	FString PerRun;
+	TArray<FTransform> CS;
+	for (const TCHAR* Id : {TEXT("E1"), TEXT("E1b"), TEXT("E2g"), TEXT("E2d"), TEXT("E3"), TEXT("E3b"), TEXT("E6t"), TEXT("E6v")})
+	{
+		J O;
+		try
+		{
+			O = loadJson(TCHAR_TO_UTF8(*(MonteDir() / TEXT("o1") / (FString(Id) + TEXT(".json")))));
+		}
+		catch (const std::exception& Ex)
+		{
+			AddError(FString::Printf(TEXT("O1 %s illisible : %s"), Id, UTF8_TO_TCHAR(Ex.what())));
+			continue;
+		}
+		const double Dt = O["setup"]["dt"].num();
+		const std::vector<J>& Fr = O["frames"].a;
+		Tack->ResetState();
+		if (!SamplePose(Idle, SkM, Dt, true, CS)) return false;
+		Tack->StepPose(CS, compose(WebBody(TM, 0, 0), Mesh2Glb), Dt, 0, false, NoGround);
+		const double Pitch0 = Tack->State().pitch0;
+		bool bInRun = false;
+		const int32 N0 = Frames;
+		for (size_t I = 0; I < Fr.size(); I++)
+		{
+			const J& F = Fr[I];
+			bool bHasMirror = false;
+			const bool bOk = Eligible(F, bHasMirror);
+			// Les images sans clip miroir sont celles de Strides.Parite.HorseSeat ; on les rejoue aussi pour tenir l'état
+			// des lissages, sans les compter ici.
+			if (!bOk || !MixerPose(F["mx"], CS))
+			{
+				SkippedSec += bHasMirror;
+				bInRun = false;
+				continue;
+			}
+			const J& Hz = F["hz"];
+			if (!bInRun && I > 0)
+			{
+				V3 P;
+				Q4 Q;
+				SeatInHolder(Fr[I - 1]["hz"], P, Q);
+				TackState& St = Tack->State();
+				St.seatX = P.x;
+				St.dPitch = -2 * FMath::Atan2(Q.x, Q.w);
+				St.pitch0 = Pitch0;
+				St.landT = Fr[I - 1]["hz"]["lT"].num();
+				St.wasJump = Fr[I - 1]["hz"]["jT"].num() >= 0;
+				St.hindDown = Fr[I - 1]["hz"]["hd"].b;
+			}
+			bInRun = true;
+			const double Rz = F["mx"]["rz"].num(), By = F["mx"]["by"].num();
+			Tack->StepPose(CS, compose(WebBody(TM, By, Rz), Mesh2Glb), Dt, Rz, Hz["jT"].num() >= 0, NoGround);
+			if (!bHasMirror) continue;
+			const TackOut& Out = Tack->Out();
+			double Top = 0;
+			bool bJump = false, bThirty = false;
+			for (const J& A : F["mx"]["a"].a)
+			{
+				Top = FMath::Max(Top, A[1].num());
+				const FString An = UTF8_TO_TCHAR(A[0].s.c_str());
+				bJump |= An.StartsWith(TEXT("jump"));
+				const UAnimSequence* Src = ClipSeq(An.EndsWith(TEXT("_M")) ? A[0].s.substr(0, A[0].s.size() - 2) : A[0].s);
+				bThirty |= An.EndsWith(TEXT("_M")) && Src && !FMath::IsNearlyEqual(Src->GetSamplingFrameRate().AsDecimal(), (double)M::kBakeFps, 1e-6);
+			}
+			// Saut : la vue du web fait basculer le corps face aux barres (pjlHorse.js _barClear : body.rotation.x et
+			// body.position.z), ce qu'O1 n'exporte pas (mx : by et rz seulement) ; images relevées à part, sans critère.
+			// Clips miroir dont la source Unreal n'est pas à 24 images/s (trot : 30) : relevées à part, sans critère.
+			if (bJump || bThirty)
+			{
+				for (int A = 0; A < AnchorCount; A++)
+					(bJump ? WJumpAnchor : WThirty).See(Dist(Out.anchorS[A], V(Hz["an"][anchorName(A)])), FString::Printf(TEXT("%s image %d %s"), Id, (int32)F["f"].num(), UTF8_TO_TCHAR(anchorName(A))));
+				(bJump ? JumpFrames : ThirtyFrames)++;
+				continue;
+			}
+			const FString Where = FString::Printf(TEXT("%s image %d"), Id, (int32)F["f"].num());
+			V3 Sp;
+			Q4 Sq;
+			SeatInHolder(Hz, Sp, Sq);
+			WSeatPos.See(Dist(Out.seatPos, Sp), Where);
+			WSeatRot.See(AngleDeg(Out.seatQ, Sq), Where);
+			for (int A = 0; A < AnchorCount; A++)
+			{
+				const double E = Dist(Out.anchorS[A], V(Hz["an"][anchorName(A)]));
+				WAnchor.See(E, Where + TEXT(" ") + UTF8_TO_TCHAR(anchorName(A)));
+				if (Top >= 0.99) WAnchorP.See(E, Where + TEXT(" ") + UTF8_TO_TCHAR(anchorName(A)));
+				// Ancre dans le repère du cheval (sans le siège S) : le web la donne par S dans H.
+				const V3 An = V(Hz["an"][anchorName(A)]), R = rotate(Sq, An), Wh{Sp.x + R.x, Sp.y + R.y, Sp.z + R.z};
+				WAnchorH.See(Dist(Out.anchorH[A], Wh), Where + TEXT(" ") + UTF8_TO_TCHAR(anchorName(A)));
+			}
+			const J& Cr = Hz["cr"];
+			for (size_t S = 2; S < Out.crest.size() && S < Cr.a.size(); S++)
+			{
+				const bool A = Out.crest[S] > -9, B = Cr[S].num() > -9;
+				if (A != B) { CrestMiss++; continue; }
+				if (!A) continue;
+				const double Ec = FMath::Abs(Out.crest[S] - Cr[S].num());
+				WCrest.See(Ec, Where + FString::Printf(TEXT(" encolure tranche %d"), (int32)S - 2));
+				if (Top >= 0.99) WCrestP.See(Ec, Where + FString::Printf(TEXT(" encolure tranche %d"), (int32)S - 2));
+			}
+			HindMiss += Tack->State().hindDown != Hz["hd"].b;
+			Frames++;
+			Pure += Top >= 0.99;
+		}
+		PerRun += FString::Printf(TEXT(" %s %d"), Id, Frames - N0);
+	}
+	AddInfo(FString::Printf(TEXT("O1 : %d images avec clip miroir (source à 24 images/s, hors saut) rejouées (%s), dont %d à un clip ≥ 0,99 ; à part : %d images de saut, %d images de trot en miroir (source à 30 images/s) ; %d images avec clip miroir écartées (bascule ou levée de tête non portées)"),
+		Frames, *PerRun, Pure, JumpFrames, ThirtyFrames, SkippedSec));
+	AddInfo(FString::Printf(TEXT("O1, images retenues : ancres %.4f cm (%s), siège %.4f cm (%s), orientation %.4f° (%s), encolure %.4f cm (%s), ancres dans le repère du cheval %.4f cm (%s) ; un clip ≥ 0,99 : ancres %.4f cm (%s)"),
+		100 * WAnchor.V, *WAnchor.Where, 100 * WSeatPos.V, *WSeatPos.Where, WSeatRot.V, *WSeatRot.Where, 100 * WCrest.V, *WCrest.Where, 100 * WAnchorH.V, *WAnchorH.Where, 100 * WAnchorP.V, *WAnchorP.Where));
+	AddInfo(FString::Printf(TEXT("O1, à part (sans critère) : saut, ancres dans S %.4f cm (%s) ; trot en miroir, ancres dans S %.4f cm (%s)"), 100 * WJumpAnchor.V, *WJumpAnchor.Where, 100 * WThirty.V, *WThirty.Where));
+	TestTrue(FString::Printf(TEXT("images d'O1 avec clip miroir rejouées : %d"), Frames), Frames >= 150);
+	TestTrue(TEXT("ancres ≤ 0,5 cm (images avec clip miroir)"), WAnchor.V >= 0 && WAnchor.V <= 0.005);
+	TestTrue(TEXT("position du siège ≤ 0,5 cm"), WSeatPos.V >= 0 && WSeatPos.V <= 0.005);
+	TestTrue(TEXT("orientation du siège ≤ 0,5°"), WSeatRot.V >= 0 && WSeatRot.V <= 0.5);
+	// Encolure : critère de l'étape 5 sur sa sélection (un clip ≥ 0,99) ; aux allures mêlées, relevé (le maximum d'une tranche
+	// change de sommet pour un déplacement de quelques millimètres, comme le flanc de Strides.Parite.HorseSeat).
+	TestTrue(FString::Printf(TEXT("dessus de l'encolure ≤ 0,5 cm (un clip ≥ 0,99 : %.4f cm)"), 100 * WCrestP.V), WCrestP.V >= 0 && WCrestP.V <= 0.005);
+	TestEqual(TEXT("tranches d'encolure mesurées des deux côtés ou d'aucun"), CrestMiss, 0);
+	TestEqual(TEXT("postérieurs reposés : même état que le web à chaque image"), HindMiss, 0);
+
+	// 5. Jeu avec l'option : mélangeur à couches du maillage.
+	if (!TestTrue(FString::Printf(TEXT("option -StridesHorseLead=web activée sur le cheval (%s)"), *Err), Horse->EnableWebLead(&Err))) return false;
+	UStridesHorseAnimInstance* Anim = Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance());
+	if (!TestNotNull(TEXT("mélangeur à couches du cheval"), Anim)) return false;
+	TestEqual(TEXT("main initiale du web : à gauche (A.lead = 1)"), Horse->LeadState().lead, 1);
+	{
+		const int32 CI = Horse->MirrorSet()->Find(TEXT("canter_M"));
+		const UAnimSequence* Canter = ClipSeq("canter");
+		if (!TestTrue(TEXT("canter_M et canter"), CI != INDEX_NONE && Canter)) return false;
+		double WorstOnly = -1, WorstMix = -1;
+		for (const double T : {0.0, 0.1, 0.25, 0.4, 0.6})
+		{
+			for (int32 Pass = 0; Pass < 2; Pass++)
+			{
+				FStridesHorseLayer Lm;
+				Lm.Mirror = CI, Lm.Time = T, Lm.Weight = Pass ? 0.7 : 1;
+				Anim->Layers.Reset();
+				if (Pass)
+				{
+					FStridesHorseLayer Lo;
+					Lo.Seq = Canter, Lo.Time = T, Lo.Weight = 0.3;
+					Anim->Layers.Add(Lo);
+				}
+				Anim->Layers.Add(Lm);
+				Mesh->TickAnimation(0.f, false);
+				Mesh->RefreshBoneTransforms();
+				const TArray<FTransform>& Live = Mesh->GetComponentSpaceTransforms();
+				TArray<FTransform> Lmir, Lori, Want;
+				Horse->MirrorSet()->SampleLocal(CI, T, false, Lmir);
+				if (Pass)
+				{
+					StridesHorseAnim::SampleLocal(Canter, SkM, T, false, Lori);
+					Mix(Lori, Lmir, 0.7);
+					Lmir = Lori;
+				}
+				LocalToComponent(Ref, Lmir, Want);
+				double G = 0;
+				for (int32 B = 0; B < Want.Num() && B < Live.Num(); B++) G = FMath::Max(G, (double)FVector::Dist(Want[B].GetLocation(), Live[B].GetLocation()));
+				(Pass ? WorstMix : WorstOnly) = FMath::Max(Pass ? WorstMix : WorstOnly, G * Mesh->GetRelativeScale3D().X);
+			}
+		}
+		AddInfo(FString::Printf(TEXT("jeu avec l'option : maillage posé par le mélangeur à couches contre la lecture du clip miroir : couche miroir seule %.5f cm, mélange 0,3 canter + 0,7 canter_M %.5f cm"), WorstOnly, WorstMix));
+		TestTrue(TEXT("jeu avec l'option : pose du maillage = lecture du clip miroir (≤ 0,01 cm), seule et mêlée au clip d'origine"), WorstOnly >= 0 && WorstOnly <= 0.01 && WorstMix >= 0 && WorstMix <= 0.01);
+		// Couches posées par le cheval au galop (allure 3), sans virage : main initiale à gauche, fondu leadBlend du web
+		// depuis 1 (pjl/view.js) ; clip d'origine au poids leadBlend, clip miroir au poids 1 − leadBlend, même temps de clip.
+		Horse->GaitIndex = 3;
+		double Lb = 1, Tc = 0, WorstW = 0;
+		bool bLayersOk = true;
+		const float Dt = 1.f / 30.f;
+		for (int32 K = 0; K < 40; K++)
+		{
+			Horse->StepAnimation(Dt);
+			Lb = M::leadBlendStep(Lb, 'L', Dt);
+			if (K > 0) Tc += Dt;
+			const TArray<FStridesHorseLayer>& Ls = Anim->Layers;
+			bLayersOk &= Ls.Num() == 2 && Ls[0].Seq == Canter && Ls[0].Mirror == INDEX_NONE && Ls[1].Mirror == CI && Ls[1].Seq == nullptr;
+			if (Ls.Num() == 2)
+			{
+				WorstW = FMath::Max(WorstW, FMath::Abs(Ls[0].Weight - Lb) + FMath::Abs(Ls[1].Weight - (1 - Lb)));
+				bLayersOk &= Ls[0].Time == Ls[1].Time && FMath::IsNearlyEqual(Ls[0].Time, M::loopClipTime(Tc, Canter->GetPlayLength()), 1e-6);
+			}
+		}
+		AddInfo(FString::Printf(TEXT("jeu avec l'option, galop sans virage : 40 images, leadBlend final %.6f, écart des poids %.3g"), Lb, WorstW));
+		TestTrue(TEXT("jeu avec l'option : couches canter (poids leadBlend) et canter_M (poids 1 − leadBlend) au même temps de clip"), bLayersOk && WorstW < 1e-9);
+		TestEqual(TEXT("jeu avec l'option : main gardée à gauche sans virage"), Horse->LeadState().lead, 1);
+	}
 	Horse->Destroy();
 	return true;
 }

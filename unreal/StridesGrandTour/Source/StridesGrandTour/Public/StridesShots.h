@@ -92,6 +92,7 @@ private:
 	FString OutDir;  // dossier de sortie résolu (vide en mode cso sans option : chemins de poses.json)
 	int32 RideShot = -1;
 	float RideTime = 0.f;
+	float JumpClock = -1.f;  // étape M2 (-StridesShots=miroir) : temps depuis le départ du saut
 	// Essai de monte, étape 6 (mode "monte") : captures de la cavalière en selle, à l'arrêt puis au galop, caméra posée dans
 	// le repère du cheval comme la capture du web (poses.json de export-rider-rules.mjs --shots).
 	void TickMonte(float DeltaSeconds, class APlayerController* PC);
