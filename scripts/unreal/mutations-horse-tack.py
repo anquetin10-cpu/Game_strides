@@ -15,9 +15,10 @@ Une mutation doit être détectée par son niveau ; le script sort en code 1 si 
 listées dans ATTENDUES (raison donnée), si l'une de celles-ci devient détectée, ou si le témoin non muté ne passe pas.
 Sans --moteur, les mutations du niveau moteur sont seulement listées (non vérifiées).
 
-Usage (DEVELOPER_DIR réglé sur Xcode ; UE = dossier du moteur pour --moteur) :
+Usage (DEVELOPER_DIR réglé sur Xcode ; UE = dossier du moteur pour --moteur, chemin réel par défaut) :
   python3 scripts/unreal/mutations-horse-tack.py [--moteur] [--sortie=dossier]
-Défaut de sortie : build/mutations-horse-tack (copies, journaux).
+Défaut de sortie : .ue-cache/travail/mutations-horse-tack (copies, journaux, rapports ; exclu de git). Chemins réels du
+moteur et du projet, éditeur avec -trace=none et journal dans un fichier : scripts/unreal/ue_travail.py.
 """
 import os
 import re
@@ -25,10 +26,11 @@ import subprocess
 import sys
 import time
 import json
+import ue_travail
 
-repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+repo = ue_travail.REPO
 arg = {a.split('=', 1)[0]: (a.split('=', 1)[1] if '=' in a else True) for a in sys.argv[1:]}
-out = os.path.abspath(arg.get('--sortie', os.path.join(repo, 'build/mutations-horse-tack')))
+out = os.path.abspath(arg.get('--sortie', ue_travail.sortie('mutations-horse-tack')))
 MOTEUR = bool(arg.get('--moteur'))
 core = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesCore')
 game = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesGrandTour')
@@ -37,8 +39,6 @@ COMP_CPP = os.path.join(game, 'Private/StridesHorseTack.cpp')
 ora = os.path.join(repo, 'unreal/core/tests/oracles/monte')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 test = os.path.join(repo, 'unreal/core/tests/test_horse_tack.cpp')
-uproject = os.path.join(repo, 'unreal/StridesGrandTour/StridesGrandTour.uproject')
-UE = os.environ.get('UE', '/Users/Shared/Epic Games/UE_5.8')
 
 # (niveau, fichier, nom, motif, remplacement)
 C, E = 'cœur', 'moteur'
@@ -88,6 +88,9 @@ ATTENDUES = {
  'Euler YXZ : ordre XYZ (terme z)': 'mutation équivalente : le siège est composé avec un angle y nul (pjlHorse.js:854), et Ry(0)·Rx·Rz = Rx·Ry(0)·Rz',
  'postérieurs : levés au saut supprimé': 'un saut au plus par scénario d’O1 (E3, E3b) : avant l’appel, postérieurs non détectés (landT > 1,5 s) ; il faudrait deux sauts successifs',
  'composant : saut ignoré': 'aucune image de saut posée dans Unreal (clips de saut d’O1 en miroir, absents d’Unreal) ; la logique du saut est prouvée au niveau cœur',
+ # Constatées à la campagne moteur complète du 24/11/2026 (reliquats M1) :
+ 'flanc : sommets du bord inférieur exclus': 'tranche 0 du flanc toujours vide dans le web : hz.fl[2] et hz.fr[2] valent 0 à toutes les images des 8 scénarios d’O1 (relevé sur l’oracle) ; aucun sommet n’y tombe, l’exclure ne change rien',
+ 'tangage : bassin et garrot inversés': 'inverser le vecteur ajoute ±π à pitch ET à pitch0 (même formule au repos) : pitch − pitch0 ne change que si le signe de la hauteur garrot − bassin change entre le repos et l’image (passage à ±π), ce que les images testées n’exercent pas (déduit, non mesuré) ; faiblesse du test déclarée',
 }
 
 os.makedirs(out, exist_ok=True)
@@ -119,25 +122,12 @@ def core_run(text, tag):
 
 # ---------------------------------------------------------------- niveau moteur
 def ubt():
-    env = dict(os.environ, DEVELOPER_DIR=os.environ.get('DEVELOPER_DIR', '/Applications/Xcode.app/Contents/Developer'))
-    c = subprocess.run([f'{UE}/Engine/Build/BatchFiles/Mac/Build.sh', 'StridesGrandTourEditor', 'Mac', 'Development', f'-project={uproject}', '-WaitMutex'],
-                       capture_output=True, text=True, env=env)
-    return c.returncode, c.stdout[-1500:]
+    return ue_travail.ubt(os.path.join(out, 'ubt-dernier.log'))
 
 
 def engine_run(tag):
-    rep = os.path.join(out, 'auto-' + re.sub(r'[^a-z0-9]+', '-', tag.lower())[:40])
-    shots = os.path.join(out, 'shots')
-    c = subprocess.run([f'{UE}/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor', uproject,
-                        '-ExecCmds=Automation RunTests Strides.Parite.HorseSeat; Quit', '-unattended', '-nullrhi', '-nosplash', '-log', '-stdout',
-                        f'-StridesShotsDir={shots}', f'-ReportExportPath={rep}'], capture_output=True, text=True)
-    try:
-        d = json.load(open(os.path.join(rep, 'index.json'), encoding='utf-8-sig'))
-        t = d['tests'][0]
-        errs = [e['event']['message'] for e in t['entries'] if e['event']['type'] == 'Error']
-        return t['state'], errs
-    except Exception as ex:  # pas de rapport : éditeur en échec
-        return f'sans rapport ({ex}; code {c.returncode})', []
+    state, errs, _ = ue_travail.editor_test('Strides.Parite.HorseSeat', out, tag)
+    return state, errs
 
 
 def run_level(level, path, a, b, name):

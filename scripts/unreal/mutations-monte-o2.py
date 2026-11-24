@@ -22,7 +22,7 @@ trouvé exactement une fois, ou si un fichier versionné a changé.
 
 Usage (racine de la copie) :
   [MUT_ONLY=<texte>] python3 scripts/unreal/mutations-monte-o2.py [dossier de travail]
-Défaut : build/mutations-monte-o2. Durée : environ 0,3 s par mutation ou sonde (une demi-minute en tout).
+Défaut : .ue-cache/travail/mutations-monte-o2. Durée : environ 0,3 s par mutation ou sonde (une demi-minute en tout).
 """
 import hashlib
 import os
@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 repo = Path(__file__).resolve().parents[2]
-work = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else repo / 'build/mutations-monte-o2'
+work = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else repo / '.ue-cache/travail/mutations-monte-o2'
 ANIM = repo / 'src/entities/human/anim.js'
 O2 = repo / 'scripts/unreal/rider-rules-o2.mjs'
 A, H = 'anim.js', 'rejeu'

@@ -10,12 +10,12 @@ Code 2 si une mutation n'a pas pu être jouée (motif absent ou en double, compi
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
   [MUT_ONLY=<texte>] python3 scripts/unreal/mutations-cso-input.py [dossier des oracles] [dossier de travail]
-Défauts : unreal/core/tests/oracles et build/mutations-input.
+Défauts : unreal/core/tests/oracles et .ue-cache/travail/mutations-input.
 """
 import subprocess, sys, os
 repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 ora = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(repo, 'unreal/core/tests/oracles')
-out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(repo, 'build/mutations-input')
+out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(repo, '.ue-cache/travail/mutations-input')
 core = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesCore')
 I, S = 'CsoInput.cpp', 'SaveGame.cpp'
 M = [

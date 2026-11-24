@@ -11,7 +11,7 @@ Code 2 si une mutation n'a pas pu être jouée (motif absent ou en double, compi
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
   python3 scripts/unreal/mutations-horse-coat.py [dossier des oracles] [dossier de travail]
-Défauts : unreal/core/tests/oracles et build/mutations-coat.
+Défauts : unreal/core/tests/oracles et .ue-cache/travail/mutations-coat.
 """
 import glob
 import os
@@ -20,7 +20,7 @@ import sys
 
 repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 ora = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(repo, 'unreal/core/tests/oracles')
-out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(repo, 'build/mutations-coat')
+out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(repo, '.ue-cache/travail/mutations-coat')
 core = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesCore')
 K = 'HorseCoat.cpp'
 M = [

@@ -11,17 +11,18 @@ mutation doit faire échouer le test (Result={Fail}, ou aucun résultat) ; le sc
 
 Usage (DEVELOPER_DIR réglé sur Xcode ; une seule instance d'UnrealEditor) :
   [MUT_ONLY=<texte>] [MUT_FROM=<numéro>] python3 scripts/unreal/mutations-cso-controls.py [dossier de travail]
-Défaut : build/mutations-controls (journaux des tests).
+Défaut : .ue-cache/travail/mutations-controls (journaux des tests ; exclu de git). Chemins réels du moteur et du projet,
+éditeur avec -trace=none et journal dans un fichier (-abslog) : scripts/unreal/ue_travail.py.
 """
 import hashlib, os, subprocess, sys
+import ue_travail
 
-repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-out = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(repo, 'build/mutations-controls')
+repo = ue_travail.REPO
+out = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else ue_travail.sortie('mutations-controls')
 src = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesGrandTour')
-proj = os.path.join(repo, 'unreal/StridesGrandTour/StridesGrandTour.uproject')
-UE = '/Users/Shared/Epic Games/UE_5.8'
-BUILD = [f'{UE}/Engine/Build/BatchFiles/Mac/Build.sh', 'StridesGrandTourEditor', 'Mac', 'Development', f'-project={proj}', '-WaitMutex']
-EDITOR = f'{UE}/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
+proj = ue_travail.UPROJECT
+BUILD = [ue_travail.BUILD_SH, 'StridesGrandTourEditor', 'Mac', 'Development', f'-project={proj}', '-WaitMutex']
+EDITOR = ue_travail.EDITOR
 TEST = 'Strides.Cso.Controls'
 PC, PCH, HO = 'Private/StridesPlayerController.cpp', 'Public/StridesPlayerController.h', 'Private/StridesHorse.cpp'
 
@@ -61,8 +62,9 @@ def build():
 
 def run_test(tag):
   log = os.path.join(out, f'{tag}.log')
-  with open(log, 'w') as f:
-    subprocess.run([EDITOR, proj, f'-ExecCmds=Automation RunTests {TEST}; Quit', '-unattended', '-nullrhi', '-nosplash', '-log', '-stdout'], env=env, stdout=f, stderr=subprocess.STDOUT)
+  # Journal écrit par l'éditeur (-abslog), pas par un tube : -trace=none, sinon le démon de trace garde la sortie ouverte.
+  subprocess.run([EDITOR, proj, f'-ExecCmds=Automation RunTests {TEST}; Quit', '-unattended', '-nullrhi', '-nosplash', '-trace=none', f'-abslog={log}',
+                  f'-StridesShotsDir={os.path.join(out, "shots")}'], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
   text = open(log, errors='replace').read()
   if f'Result={{Success}} Name={{Controls}} Path={{{TEST}}}' in text: return 'passe', log
   if f'Path={{{TEST}}}' in text: return 'échoue', log

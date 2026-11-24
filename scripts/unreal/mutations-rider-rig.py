@@ -12,12 +12,12 @@ Deux niveaux, comme scripts/unreal/mutations-horse-tack.py.
   Environ 3 min par mutation. Une seule instance d'UnrealEditor à la fois.
 
 Après la migration du 23/11/2026 (projet et moteur sur le disque externe, chemins habituels par liens symboliques) :
-UBT est appelé avec -NoUBA (l'exécuteur UBA refuse d'écrire par le chemin du lien symbolique) et l'éditeur par le
-chemin réel du moteur (UE_REAL ; par le lien, l'éditeur calcule un chemin relatif du projet faux et ne démarre pas).
+chemins réels du dépôt, du moteur et du projet, éditeur avec -trace=none et journal dans un fichier (-abslog), sorties
+sous .ue-cache/travail : scripts/unreal/ue_travail.py. Par les chemins réels, UBT compile sans -NoUBA (24/11/2026).
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
   python3 scripts/unreal/mutations-rider-rig.py [--moteur] [--sortie=dossier]
-Défaut de sortie : build/mutations-rider-rig. Code 1 si une mutation n'est pas détectée (hors ATTENDUES), si le témoin ne
+Défaut de sortie : .ue-cache/travail/mutations-rider-rig. Code 1 si une mutation n'est pas détectée (hors ATTENDUES), si le témoin ne
 passe pas, ou si un source n'est pas rétabli.
 """
 import json
@@ -26,10 +26,11 @@ import re
 import subprocess
 import sys
 import time
+import ue_travail
 
-repo = os.path.realpath(os.path.join(os.path.dirname(__file__), '../..'))
+repo = ue_travail.REPO
 arg = {a.split('=', 1)[0]: (a.split('=', 1)[1] if '=' in a else True) for a in sys.argv[1:]}
-out = os.path.abspath(arg.get('--sortie', os.path.join(repo, 'build/mutations-rider-rig')))
+out = os.path.abspath(arg.get('--sortie', ue_travail.sortie('mutations-rider-rig')))
 MOTEUR = bool(arg.get('--moteur'))
 core = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesCore')
 game = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesGrandTour')
@@ -39,8 +40,6 @@ RIG_H = os.path.join(game, 'Public/StridesRiderRig.h')
 ora = os.path.join(repo, 'unreal/core/tests/oracles/monte')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 test = os.path.join(repo, 'unreal/core/tests/test_rider_pose.cpp')
-uproject = os.path.join(repo, 'unreal/StridesGrandTour/StridesGrandTour.uproject')
-UE_REAL = os.path.realpath(os.environ.get('UE', '/Users/Shared/Epic Games/UE_5.8'))
 
 C, E = 'cœur', 'moteur'
 M = [
@@ -79,30 +78,13 @@ def core_run(text, tag):
 
 
 def ubt():
-    env = dict(os.environ, DEVELOPER_DIR=os.environ.get('DEVELOPER_DIR', '/Applications/Xcode.app/Contents/Developer'))
-    c = subprocess.run([f'{UE_REAL}/Engine/Build/BatchFiles/Mac/Build.sh', 'StridesGrandTourEditor', 'Mac', 'Development', f'-project={uproject}',
-                        '-WaitMutex', '-NoUBA'], capture_output=True, text=True, env=env)
-    return c.returncode, c.stdout[-1500:]
+    return ue_travail.ubt(os.path.join(out, 'ubt-dernier.log'))
 
 
 def engine_run(tag):
     slug = re.sub(r'[^a-z0-9]+', '-', tag.lower())[:40]
-    rep = os.path.join(out, 'auto-' + slug)
-    # Journal dans un fichier, pas dans un tube : le démon UnrealTraceServer lancé par l'éditeur hérite de la sortie et la
-    # garderait ouverte (constaté le 23/11/2026 : éditeur zombie, script bloqué) ; -trace=none évite ce démon.
-    log = open(os.path.join(out, 'editeur-' + slug + '.log'), 'w')
-    c = subprocess.run([f'{UE_REAL}/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor', uproject,
-                        '-ExecCmds=Automation RunTests Strides.Parite.RiderRules; Quit', '-unattended', '-nullrhi', '-nosplash', '-log', '-stdout',
-                        f'-StridesShotsDir={os.path.join(out, "shots")}', f'-StridesMonteDir={os.path.join(out, "monte-" + slug)}',
-                        f'-ReportExportPath={rep}', '-trace=none'], stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
-    log.close()
-    try:
-        d = json.load(open(os.path.join(rep, 'index.json'), encoding='utf-8-sig'))
-        t = d['tests'][0]
-        errs = [e['event']['message'] for e in t['entries'] if e['event']['type'] == 'Error']
-        return t['state'], errs
-    except Exception as ex:  # pas de rapport : éditeur en échec
-        return f'sans rapport ({ex}; code {c.returncode})', []
+    state, errs, _ = ue_travail.editor_test('Strides.Parite.RiderRules', out, tag, (f'-StridesMonteDir={os.path.join(out, "monte-" + slug)}',))
+    return state, errs
 
 
 def run_level(level, path, a, b, name):

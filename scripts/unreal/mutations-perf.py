@@ -11,7 +11,7 @@ Le témoin (copies non mutées) doit passer. Le module Unreal n'est pas recompil
 strides::perf::summarize, prouvé ici.
 
 Usage : python3 scripts/unreal/mutations-perf.py [--json=<perf-unreal.json>] [--sortie=<dossier>]
-Défaut de sortie : build/mutations-perf. Code 1 si une mutation n'est pas détectée ou si un témoin échoue.
+Défaut de sortie : .ue-cache/travail/mutations-perf. Code 1 si une mutation n'est pas détectée ou si un témoin échoue.
 """
 import glob
 import os
@@ -21,7 +21,7 @@ import sys
 
 repo = os.path.realpath(os.path.join(os.path.dirname(__file__), '../..'))
 arg = {a.split('=', 1)[0]: (a.split('=', 1)[1] if '=' in a else True) for a in sys.argv[1:]}
-out = os.path.abspath(arg.get('--sortie', os.path.join(repo, 'build/mutations-perf')))
+out = os.path.abspath(arg.get('--sortie', os.path.join(repo, '.ue-cache/travail/mutations-perf')))
 core = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesCore')
 SRC = os.path.join(core, 'Private/PerfStats.cpp')
 TEST = os.path.join(repo, 'unreal/core/tests/test_perf_stats.cpp')

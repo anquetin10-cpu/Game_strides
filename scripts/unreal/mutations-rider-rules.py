@@ -14,7 +14,7 @@ contrôlées contre rider_rules.json par le même banc).
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
   python3 scripts/unreal/mutations-rider-rules.py [dossier des oracles monte] [dossier de travail]
-Défauts : unreal/core/tests/oracles/monte et build/mutations-monte.
+Défauts : unreal/core/tests/oracles/monte et .ue-cache/travail/mutations-monte.
 """
 import os
 import subprocess
@@ -23,7 +23,7 @@ import time
 
 repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 ora = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(repo, 'unreal/core/tests/oracles/monte')
-out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(repo, 'build/mutations-monte')
+out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(repo, '.ue-cache/travail/mutations-monte')
 core = os.path.join(repo, 'unreal/StridesGrandTour/Source/StridesCore')
 src = open(os.path.join(core, 'Private/RiderRules.cpp')).read()
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
