@@ -562,6 +562,50 @@ bool FStridesHorseMirrorTest::RunTest(const FString&)
 		const double AngGap = FMath::RadiansToDegrees(FMath::Acos(FMath::Min(1.0, Cos)));
 		AddInfo(FString::Printf(TEXT("plan de symétrie d'Unreal contre celui du web : normale à %.4f°, milieu des bras à %.4f cm"), AngGap, MidGap));
 		TestTrue(TEXT("plan de symétrie : normale à moins de 0,1°, milieu à moins de 0,1 cm du web"), AngGap < 0.1 && MidGap < 0.1);
+		// Décalage du plan : la réflexion S de la cuisson doit laisser fixe le milieu des bras (point du plan) et envoyer
+		// milieu + n sur milieu − n. Contrôle fait sur la réflexion du plan d'Unreal (repère du maillage, cm) et sur celle du
+		// plan du web recalculé par le port, comparée aux bras relevés par three.js (idle.upperarm, information de l'oracle).
+		auto ReflGap = [](const M::Plane& Pl) {
+			const M::Mat4 Sm = M::reflection(Pl);
+			auto Ap = [&Sm](const double X[3], double Out[3]) {
+				for (int R = 0; R < 3; R++) Out[R] = Sm.e[R] * X[0] + Sm.e[4 + R] * X[1] + Sm.e[8 + R] * X[2] + Sm.e[12 + R];
+			};
+			double P0[3], P1[3], X1[3] = {Pl.mid[0] + Pl.n[0], Pl.mid[1] + Pl.n[1], Pl.mid[2] + Pl.n[2]};
+			Ap(Pl.mid, P0);
+			Ap(X1, P1);
+			double G = 0;
+			for (int K = 0; K < 3; K++) G = FMath::Max(G, FMath::Max(FMath::Abs(P0[K] - Pl.mid[K]), FMath::Abs(P1[K] - (Pl.mid[K] - Pl.n[K]))));
+			return G;
+		};
+		const double UeRefl = ReflGap(UePl), WebRefl = ReflGap(WebPl);
+		double ArmL[3] = {0, 0, 0}, ArmR[3] = {0, 0, 0};
+		int32 Arms = 0;
+		for (const auto& KV : H["idle"]["upperarm"].o)
+		{
+			const bool bL = KV.first.rfind("upperarm_l_", 0) == 0;
+			double* A = bL ? ArmL : ArmR;
+			for (int K = 0; K < 3; K++) A[K] = KV.second[K].num();
+			Arms += bL ? 1 : 10;
+		}
+		double ThreeMid = 0, ThreeD = 0;
+		{
+			double N3[3] = {ArmL[0] - ArmR[0], ArmL[1] - ArmR[1], ArmL[2] - ArmR[2]};
+			const double L3 = FMath::Sqrt(N3[0] * N3[0] + N3[1] * N3[1] + N3[2] * N3[2]);
+			double D3 = 0;
+			for (int K = 0; K < 3; K++)
+			{
+				N3[K] /= L3;
+				const double Mk = (ArmL[K] + ArmR[K]) / 2;
+				ThreeMid = FMath::Max(ThreeMid, FMath::Abs(Mk - WebPl.mid[K]));
+				D3 += N3[K] * Mk;
+			}
+			ThreeD = FMath::Abs(D3 - WebPl.d);
+		}
+		AddInfo(FString::Printf(TEXT("réflexion du plan : point fixe et image de milieu + n à %.3g (Unreal, cm) et %.3g (web, unités du GLB) ; plan du web contre les bras de three.js : milieu %.3g, décalage d %.3g (unités du GLB)"),
+			UeRefl, WebRefl, ThreeMid, ThreeD));
+		TestEqual(TEXT("bras gauche et droit relevés par three.js dans l'oracle"), Arms, 11);
+		TestTrue(TEXT("réflexion de la cuisson : milieu des bras fixe et milieu + n envoyé sur milieu − n (≤ 1e-6 cm dans Unreal, ≤ 1e-6 unité dans le web)"), UeRefl <= 1e-6 && WebRefl <= 1e-6);
+		TestTrue(TEXT("plan du web recalculé par le port = bras de three.js (milieu et décalage d ≤ 1e-9 unité du GLB)"), ThreeMid <= 1e-9 && ThreeD <= 1e-9);
 	}
 
 	// 3. Clés des clips : source et miroir.
@@ -951,6 +995,101 @@ bool FStridesHorseMirrorTest::RunTest(const FString&)
 		AddInfo(FString::Printf(TEXT("jeu avec l'option, galop sans virage : 40 images, leadBlend final %.6f, écart des poids %.3g"), Lb, WorstW));
 		TestTrue(TEXT("jeu avec l'option : couches canter (poids leadBlend) et canter_M (poids 1 − leadBlend) au même temps de clip"), bLayersOk && WorstW < 1e-9);
 		TestEqual(TEXT("jeu avec l'option : main gardée à gauche sans virage"), Horse->LeadState().lead, 1);
+	}
+
+	// 6. Décisions du jeu Unreal contre celles du code du web (miroir/decisions.json, scénarios de synthèse joués par
+	// animateHorse et HorseView.update dans la page d'export) : le cheval Unreal avec l'option, mis à jour par
+	// StepAnimation (même code que le jeu), virage et saut posés par les points d'entrée de test.
+	{
+		J D;
+		try
+		{
+			D = loadJson(TCHAR_TO_UTF8(*(MonteDir() / TEXT("miroir/decisions.json"))));
+		}
+		catch (const std::exception& Ex)
+		{
+			AddError(FString::Printf(TEXT("oracle des décisions illisible : %s"), UTF8_TO_TCHAR(Ex.what())));
+			return false;
+		}
+		Horse->GaitIndex = 3;
+		Horse->SpeedMS = 7.f;
+		// 6a. Main au galop : virage du scénario vu par leadStep dans UpdateWebLeadAnimation.
+		int32 LeadFrames = 0, LeadMiss = 0, LeadSwitches = 0;
+		FString FirstLeadMiss;
+		for (const J& Sc : D["lead"].a)
+		{
+			Horse->ResetWebLeadForTests();
+			for (size_t I = 0; I < Sc["frames"].a.size() && I < Sc["out"].a.size(); I++)
+			{
+				const int32 Before = Horse->LeadState().lead;
+				Horse->SetTurnForTests(Sc["frames"][I][0].num());
+				Horse->StepAnimation(Sc["frames"][I][1].num());
+				LeadSwitches += Horse->LeadState().lead != Before;
+				const bool bOk = Horse->LeadState().lead == (int32)Sc["out"][I][0].num() && Horse->LeadState().hold == Sc["out"][I][1].num();
+				if (!bOk && LeadMiss++ == 0)
+					FirstLeadMiss = FString::Printf(TEXT("%s image %d : main %d maintien %.17g, web %g %.17g"), UTF8_TO_TCHAR(Sc["name"].s.c_str()), (int32)I, Horse->LeadState().lead,
+						Horse->LeadState().hold, Sc["out"][I][0].num(), Sc["out"][I][1].num());
+				LeadFrames++;
+			}
+		}
+		Horse->SetTurnForTests(0);
+		AddInfo(FString::Printf(TEXT("décisions, main au galop : %d scénarios, %d images, %d changements de main, %d écarts%s%s"), (int32)D["lead"].a.size(), LeadFrames, LeadSwitches, LeadMiss,
+			LeadMiss ? TEXT(" ; premier : ") : TEXT(""), *FirstLeadMiss));
+		TestTrue(TEXT("décisions : main et maintien du cheval Unreal = ceux d'animateHorse à chaque image (égalité exacte)"), LeadFrames > 600 && LeadMiss == 0);
+		// 6b. Clip de saut : main et vitesse posées à chaque image, saut selon le mode du web (takeoff, air).
+		int32 ViewFrames = 0, ViewMiss = 0, LayerMiss = 0, Starts = 0, MirStarts = 0;
+		double WorstLb = 0;
+		FString FirstViewMiss;
+		const UAnimSequence* JumpSeq[2] = {ClipSeq("jump_canter"), ClipSeq("jump_gallop")};
+		if (!TestTrue(TEXT("clips jump_canter et jump_gallop importés"), JumpSeq[0] && JumpSeq[1])) return false;
+		for (const J& Sc : D["view"].a)
+		{
+			Horse->ResetWebLeadForTests();
+			bool bWas = false;
+			for (size_t I = 0; I < Sc["frames"].a.size() && I < Sc["out"].a.size(); I++)
+			{
+				const J& F = Sc["frames"][I];
+				const J& O = Sc["out"][I];
+				const bool bJump = F[0].s == "takeoff" || F[0].s == "air";
+				Horse->SetLeadForTests(F[1].s == "L" ? 1 : -1);
+				Horse->SpeedMS = (float)F[2].num();
+				Horse->SetJumpingForTests(bJump);
+				Horse->StepAnimation(F[3].num());
+				const M::JumpView& Jv = Horse->JumpViewState();
+				const std::string Got = Jv.hasClip ? M::jumpClipName({Jv.clip.gallop, false}) : std::string("-");
+				const std::string Want = O[0].isNull() ? std::string("-") : O[0].s;
+				// La vitesse passe par SpeedMS (float, comme le jeu) : les cas du web sont choisis loin du seuil à l'échelle
+				// d'un float (8,000001 m/s → 8,0000010 en float).
+				const bool bOk = Got == Want && Horse->JumpMirrored() == O[1].b;
+				WorstLb = FMath::Max(WorstLb, FMath::Abs(Horse->LeadBlend() - O[2].num()));
+				if (!bOk && ViewMiss++ == 0)
+					FirstViewMiss = FString::Printf(TEXT("%s image %d : %s miroir %d, web %s %d"), UTF8_TO_TCHAR(Sc["name"].s.c_str()), (int32)I, UTF8_TO_TCHAR(Got.c_str()),
+						(int32)Horse->JumpMirrored(), UTF8_TO_TCHAR(Want.c_str()), (int32)O[1].b);
+				if (bJump && !bWas)
+				{
+					Starts++;
+					MirStarts += O[1].b;
+				}
+				// Couche posée sur le maillage pendant le saut : clip miroir cuit si le web joue le miroir, sinon clip importé.
+				if (bJump)
+				{
+					const TArray<FStridesHorseLayer>& Ls = Anim->Layers;
+					const bool bGal = Want == "jump_gallop";
+					const int32 MI = Horse->MirrorSet()->Find(bGal ? TEXT("jump_gallop_M") : TEXT("jump_canter_M"));
+					const bool bLayer = Ls.Num() == 1 && Ls[0].Weight == 1 &&
+						(O[1].b ? (Ls[0].Mirror == MI && MI != INDEX_NONE && Ls[0].Seq == nullptr) : (Ls[0].Mirror == INDEX_NONE && Ls[0].Seq == JumpSeq[bGal ? 1 : 0]));
+					LayerMiss += !bLayer;
+				}
+				bWas = bJump;
+				ViewFrames++;
+			}
+		}
+		Horse->ResetWebLeadForTests();
+		AddInfo(FString::Printf(TEXT("décisions, saut : %d scénarios, %d images, %d départs (%d en miroir), %d écarts de clip ou de miroir%s%s, %d couches de saut fausses, leadBlend à %.3g du web"),
+			(int32)D["view"].a.size(), ViewFrames, Starts, MirStarts, ViewMiss, ViewMiss ? TEXT(" ; premier : ") : TEXT(""), *FirstViewMiss, LayerMiss, WorstLb));
+		TestTrue(TEXT("décisions : clip de saut et miroir du cheval Unreal = ceux de HorseView à chaque image"), ViewFrames > 300 && Starts >= 20 && MirStarts >= 10 && ViewMiss == 0);
+		TestTrue(TEXT("décisions : couche du saut = jump_*_M cuit (miroir) ou clip importé, au poids 1"), LayerMiss == 0);
+		TestTrue(TEXT("décisions : leadBlend du cheval Unreal = celui de la vue du web (≤ 1e-12)"), WorstLb <= 1e-12);
 	}
 	Horse->Destroy();
 	return true;

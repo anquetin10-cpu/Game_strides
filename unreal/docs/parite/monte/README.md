@@ -829,7 +829,8 @@ quaternions, pistes de `root_04` et `_rootJoint` omises, renommage des virages, 
 Résultat (`ctest monte-miroir`, 4 202 vérifications, 0 échec) : nourris des poses source du web, **les 11 clips miroir
 du C++ sont identiques au bit près à ceux du jeu (758 940 valeurs sur 758 940)** ; positions monde des bras identiques à
 three.js (écart 0) ; sur les 921 images d'O1, main du cheval, main des clips et leadBlend identiques au web au bit près
-(4 changements de main, après 16 images de virage tenu), saut en miroir selon la main aux 2 départs de saut. Les
+(4 changements de main, après 16 images de virage tenu), saut en miroir selon la main aux 2 départs de saut (affirmation corrigée plus bas : le ctest ne faisait alors que
+comparer deux champs d'O1 entre eux). Les
 tolérances prévues (1e-6 m, 1e-6 sur les quaternions) n'ont pas servi : écart nul.
 
 ### Dans Unreal : cuisson au chargement, option `-StridesHorseLead=web`
@@ -848,7 +849,7 @@ mélangeur à couches (`UStridesHorseAnimInstance`, mélange du `PropertyMixer` 
 d'origine au poids leadBlend et clip miroir au poids 1 − leadBlend au même temps de clip (trot, galop, grand galop), saut
 en miroir si la main est à gauche au départ. Main initiale du web : à gauche (`A.lead = 1`) ; `leadSwap` pris faux (prouvé
 pour ce cheval : O1 associe la main 1 aux clips « L » à chaque image). Non portés : variantes de virage dans le mélange,
-lissage des poids (14/s), phase de foulée par main. `UStridesHorseTack::PlayedClipPhase` lit la phase de la première
+lissage des poids (14/s), phase de foulée par main ; horloge du saut et fondu `jumpWeight` (voir la correction plus bas). `UStridesHorseTack::PlayedClipPhase` lit la phase de la première
 couche.
 
 ### Rééchantillonnage à l'import (mesuré, déclaré, non corrigé)
@@ -936,3 +937,107 @@ Reste à faire (M2) : clips à 30 images/s (trot, jump_gallop) à réimporter à
 les clips du CSO prouvé, captures CSO à refaire) ; variantes de virage et lissage des poids du mélangeur ; images de saut
 d'O1 non comparables tant que la bascule `_barClear` n'est ni exportée ni portée ; option `-StridesHorseLead=web` à faire
 passer au jeu par défaut sur décision de Julien (elle change le galop du départ : le web part à main gauche).
+
+## Étape M2, correction après contrôle adverse (24/11/2026)
+
+Base : `e42cd907` (M2 b). Cinq constats du contrôle adverse, traités un par un.
+
+### 1. Saut en miroir selon la main : la preuve annoncée était absente (constat fondé, corrigé)
+
+Le ctest comparait deux champs d'O1 entre eux (`jm == (lead == 'L')`) sans appeler le port, et le choix du moteur
+(`StridesHorse.cpp`, `bJumpMirror = Lead == 'L'`) n'était vérifié par aucun test : une mutation `Lead == 'R'` passait
+(« NON DÉTECTÉE ; Success », journal du contrôleur). Correction :
+
+- Cœur : `strides::mirror::jumpChoice`, `jumpClipName`, `jumpViewStep` (port de `view.js:229-233` : choix au premier instant
+  de saut seulement, clip `jump_gallop` si `s.speed > 8`, miroir si `s.lead === 'L'`, choix gardé jusqu'au saut suivant).
+  Le moteur appelle `jumpViewStep` ; le seuil 7 m/s ne reste que dans le jeu par défaut (sans l'option, inchangé, G5).
+- ctest : `jumpViewStep` rejoué à chaque image d'O1 (921 images) depuis le mode, `hz.v` et la main des clips, comparé au
+  clip (`jc`) et au miroir (`jm`) relevés dans la vue du web, puis aux décisions de synthèse (point 5).
+- Moteur : section 6 de `Strides.Parite.HorseMirror`, cheval Unreal avec l'option mis à jour par `StepAnimation` (même
+  code que le jeu), saut, vitesse et main posés par des points d'entrée de test (`SetJumpingForTests`, `SetLeadForTests`,
+  `SetTurnForTests`, `ResetWebLeadForTests`, non appelés par le jeu) : 19 scénarios de la vue du web, 348 images,
+  20 départs de saut dont 10 en miroir : **0 écart** de clip ou de miroir, **0 couche de saut fausse** (couche unique au
+  poids 1 : `jump_*_M` cuit si le web joue le miroir, sinon le clip importé), leadBlend à 0 du web.
+- Mutations moteur ajoutées, dont celle du contrôleur (point 4).
+
+Pour rejouer les pas du web sans arrondi, le pas de l'animation du cheval est passé en `double` (`StepAnimation`,
+`LastDt`, `UpdateWebLeadAnimation`) ; dans le jeu, il reçoit toujours `DeltaSeconds` (float), valeur identique.
+
+### 2. Branchement du saut : seuil corrigé, écarts restants déclarés (constat fondé)
+
+Seuil corrigé avec l'option : `jump_gallop` au-delà de 8 m/s (strict), départagé par les cas 7,999 / 8 / 8,000001 m/s.
+**Non portés (avec l'option comme sans)** : horloge du saut du web (`ct = toeOff + jt` avant l'appel, puis `toeOff + (jt / T)
+· (foreLand − toeOff)`, bornée à la fin du clip), contacts du clip qui la calent (`asset.js:174-230` : toeOff, foreLand,
+hindLand, nextFore, pelvisRise), fondu `jumpWeight` (18/s à la montée, 12/s au retour), suite après réception (`postLand`,
+fondu de sortie jusqu'au poser suivant), hauteur `rootY` retranchée, saut tenu à part du mélange des allures (poids
+`groundW`), repli `?? jump_gallop`. Le clip de saut d'Unreal est lu depuis 0 au temps du jeu et coupé à la réception.
+
+### 3. Captures : illustrations, pas une comparaison de pose (constat fondé, déclaré)
+
+Les captures `captures/monte-{galop,saut}-gauche-*.png` montrent le galop et le saut à main gauche dans les deux jeux,
+mais ni le même décor, ni le même instant de foulée, ni la même phase de saut (web : E3 image 50, appel ou début du vol ;
+Unreal : 0,37 s après le départ dans les captures refaites, horloge du saut non portée). Sur une image fixe, la main ne se lit pas avec certitude :
+elle est attestée par le journal de capture (leadBlend, clip miroir) et par l'état d'O1, et prouvée par les tests ci-dessus,
+pas par les images.
+
+### 4. Plan décalé au niveau moteur (constat fondé, corrigé)
+
+`Strides.Parite.HorseMirror` vérifie désormais la réflexion de la cuisson elle-même : le milieu des bras est un point fixe
+de S et milieu + n est envoyé sur milieu − n (Unreal : 1,8e-12 cm ; web : 2,8e-14 unité), et le plan du web recalculé par
+le port est celui des bras relevés par three.js (`idle.upperarm` : milieu 0, décalage d 1,8e-15 unité). Le décalage de
+0,5 unité ne déplace aucune pose locale dans Unreal (translation absorbée par la racine dont la piste est omise), mais il
+fausse la réflexion : il est désormais détecté.
+
+### 5. Faiblesses d'O1 (constat fondé, corrigé) et ressource 404 (identifiée)
+
+Oracle de synthèse `miroir/decisions.json` (55 Ko), écrit par le même pilote `export-horse-mirror.mjs` : scénarios
+d'entrée écrits par le pilote, sorties produites par le code du jeu dans la page (`animateHorse` sur un cheval procédural
+`createHorseMesh`, état neuf par scénario ; `HorseView.update` sur le cheval préparé par le jeu, vue neuve par scénario).
+10 scénarios de main (648 images, 14 changements : virage 0,27 et 0,26 tenu, 0,25 exact, maintien interrompu par un virage
+nul ou du côté de la main, maintien de 0,5 s exact au pas de 0,0625 s, pas de 0,15 s, pas variables, aller-retour,
+sinus) et 19 de saut (8 vitesses × 2 mains, mode `takeoff`, main changée en vol puis second saut). Constat du web relevé au
+passage : `animateHorse` borne le pas à 0,1 s avant la main (`anim.js:267`) ; le port ne le faisait pas, corrigé
+(`leadStep`). Deux exports identiques à l'octet (`diff -r`), un troisième n'écrit rien ; les 24 fichiers d'O-miroir déjà
+versionnés sont inchangés. ctest et moteur : égalité exacte (main, maintien, clip, miroir, leadBlend).
+
+La ressource 404 de l'export était `/favicon.ico` (la page n'en déclarait pas) : `<link rel="icon" href="data:,">` ajouté,
+plus aucune erreur de chargement (écouteurs `response` et `requestfailed` ajoutés au pilote). Reste un avertissement
+`[logo] logo officiel Strides non chargé`, émis par la sellerie de `HorseView` à sa construction (logo du tapis dessiné
+avant le chargement de l'image) : sans effet sur les décisions relevées.
+
+### Mutations (campagne du 24/11 après correction)
+
+Cœur : 31 mutations, **29 détectées**, 2 équivalentes déclarées (normale inversée, signe du déterminant). Désormais
+détectées : seuil 0,25 → 0,30 rad/s et maintien non remis à zéro (faiblesses d'O1), plus les nouvelles : pas non borné,
+maintien ≥ 0,5 s, virage ≥ 0,25, miroir à main droite, galop dès 7 m/s, galop à 8 m/s inclus, choix refait à chaque image,
+choix effacé à la réception.
+
+Moteur (`--moteur`, campagne complète du 24/11, 2 933 s, sources rétablis, recompilation finale code 0) : 17 mutations,
+**14 détectées**, 3 équivalentes déclarées (racines non remises au repos, durée non arrondie, poids relatif au mélange).
+Désormais détectées : plan décalé de 0,5 unité (par le contrôle de la réflexion), et les nouvelles : **saut en miroir à main
+droite** (`Lead == 'L' ? 'R' : 'L'` passé à `jumpViewStep`, l'équivalent de la mutation du contrôleur), miroir du saut
+jamais joué, saut au galop dès 7 m/s, choix du saut refait à chaque image, virage de signe inversé pour la main, pas de la
+main pris en 32 bits. La mutation « miroir jamais joué » écrite `false ? …` ne compilait pas (`-Wunreachable-code`) et
+comptait comme non détectée : réécrite `Dt < 0 ? …` (fausse à l'exécution) et passée seule (`--noms=`, 325 s, code 0,
+détectée).
+
+### Portes (correction)
+
+- G1 : ctest code 0 ; cœur 300 729, `monte` 306 914, `monte-cheval` 3 719, `monte-cavaliere` 72 547, `perf` 20,
+  **`monte-miroir` 7 069** vérifications (4 202 avant), 0 échec.
+- G2 : UBT code 0, aucun avertissement ni erreur du compilateur.
+- G3 : `Automation RunTests Strides` : 37 tests, 37 en succès.
+- G4 : `mutations-horse-mirror.py` : cœur 29/31 (2 équivalentes), moteur 14/17 (3 équivalentes), voir ci-dessus.
+- G5 : `git diff --quiet HEAD -- unreal/docs/parite/cso` code 0 (le jeu par défaut garde le seuil de 7 m/s et les clips
+  d'origine).
+- G6 : `build-parite.py` code 0 ; lignes `cheval.main-galop` et `cheval.saut-animation` mises à jour (preuve et écarts).
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Captures Unreal refaites avec le code corrigé (même commande, journal
+`.ue-cache/travail/m2c/shots-unreal/jeu.log` : galop à gauche leadBlend 0,0000 ; saut `jump_canter_M`, 0,37 s après le
+départ, 6,20 m/s) et remplacées dans `captures/` ; captures web inchangées. Montages sous `.ue-cache/travail/m2c/montages/`.
+
+Reste à faire (correction de M2) : horloge du saut du web et ses contacts, fondu `jumpWeight`, suite `postLand` et
+hauteur `rootY` (point 2) : à porter dans une étape dédiée au saut animé, avec un oracle des contacts de `asset.js` ;
+seuil de 7 m/s du jeu par défaut à aligner sur 8 m/s seulement avec les preuves CSO refaites (décision de Julien) ;
+captures appariées (même instant de foulée et même phase de saut) quand l'horloge du saut sera portée.

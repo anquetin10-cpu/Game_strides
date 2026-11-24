@@ -1634,7 +1634,8 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 				if (JumpClock >= 0.35f && Horse->JumpMirrored())
 				{
 					Shot(TEXT("saut-gauche"));
-					UE_LOG(LogTemp, Display, TEXT("Strides miroir: saut à main gauche (clip miroir), %.2f s après le départ"), JumpClock);
+					UE_LOG(LogTemp, Display, TEXT("Strides miroir: saut à main gauche (clip miroir %s), %.2f s après le départ, %.2f m/s"),
+						UTF8_TO_TCHAR(strides::mirror::jumpClipName(Horse->JumpViewState().clip).c_str()), JumpClock, Horse->SpeedMS);
 					MonteStep = 7;
 					MonteWait = 2.f;
 					return;

@@ -198,6 +198,7 @@ bool AStridesHorse::EnableWebLead(FString* Err)
 	bLeadWeb = true;
 	LeadSt = strides::mirror::LeadState();
 	LeadBlendV = 1;
+	JumpV = strides::mirror::JumpView();
 	LastAnimationGait = INDEX_NONE;
 	bLastAnimationJumping = false;
 	UpdateWebLeadAnimation(0.f);
@@ -206,24 +207,26 @@ bool AStridesHorse::EnableWebLead(FString* Err)
 }
 
 // Option -StridesHorseLead=web : main du galop (horse/anim.js) depuis le virage lissé, fondu de main leadBlend (pjl/view.js,
-// 10/s) entre clip d'origine (poids leadBlend) et clip miroir (1 − leadBlend) au même temps de clip ; saut en miroir si la
-// main est à gauche au départ. Choix des clips et horloge : ceux du jeu par défaut (allure du jeu, saut rapide au-delà de
-// 7 m/s, clip repris à 0 à chaque changement, boucle des allures, saut joué une fois).
-void AStridesHorse::UpdateWebLeadAnimation(float Dt)
+// 10/s) entre clip d'origine (poids leadBlend) et clip miroir (1 − leadBlend) au même temps de clip ; clip de saut choisi
+// au départ du saut comme la vue du web (strides::mirror::jumpViewStep, view.js:229-233 : « jump_gallop » au-delà de
+// 8 m/s, miroir si la main des clips est à gauche). Horloge : celle du jeu par défaut (allure du jeu, clip repris à 0 à
+// chaque changement, boucle des allures, saut joué une fois depuis 0) ; l'horloge du saut du web (toeOff, jt / T,
+// foreLand), son fondu jumpWeight (18/s) et la suite après réception (postLand) ne sont pas portés.
+void AStridesHorse::UpdateWebLeadAnimation(double Dt)
 {
 	UStridesHorseAnimInstance* A = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
 	if (!A || !Mirrors.IsValid()) return;
 	// Virage : H.lastTurn (cœur CSO) ; hors concours, lacet du monde ouvert lissé comme lastTurn (8/s, csoHorseStep).
 	OpenWorldTurn = OpenWorldTurn + (YawRate - OpenWorldTurn) * (1 - FMath::Exp(-8.0 * Dt));
-	const double Turn = bCsoControls ? Sim.lastTurn : OpenWorldTurn;
+	const double Turn = bTurnForTests ? TurnForTests : bCsoControls ? Sim.lastTurn : OpenWorldTurn;
 	strides::mirror::leadStep(LeadSt, Turn, Dt);
 	// leadSwap du web (pjlHorse.js _calibrate) : faux pour ce cheval (O1 : main 1 ↔ clips « L » à chaque image, ctest).
 	const char Lead = strides::mirror::clipLead(LeadSt.lead, false);
 	LeadBlendV = strides::mirror::leadBlendStep(LeadBlendV, Lead, Dt);
+	strides::mirror::jumpViewStep(JumpV, bJumping, SpeedMS, Lead);
 	if (bJumping != bLastAnimationJumping || (!bJumping && GaitIndex != LastAnimationGait))
 	{
 		ClipTime = 0;
-		if (bJumping) bJumpMirror = Lead == 'L';  // view.js : jumpMirror = s.lead === 'L' au départ du saut
 		LastAnimationGait = GaitIndex;
 		bLastAnimationJumping = bJumping;
 	}
@@ -233,9 +236,9 @@ void AStridesHorse::UpdateWebLeadAnimation(float Dt)
 	static const TCHAR* GaitNames[] = {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")};
 	if (bJumping)
 	{
-		const bool bGallop = SpeedMS >= 7.f;
+		const bool bGallop = JumpV.clip.gallop;
 		const UAnimSequence* Seq = Cast<UAnimSequence>(bGallop ? JumpGallopAnimation.Get() : JumpCanterAnimation.Get());
-		const int32 M = bJumpMirror ? Mirrors->Find(bGallop ? TEXT("jump_gallop_M") : TEXT("jump_canter_M")) : INDEX_NONE;
+		const int32 M = JumpV.clip.mirror ? Mirrors->Find(UTF8_TO_TCHAR(strides::mirror::jumpClipName(JumpV.clip).c_str())) : INDEX_NONE;
 		const double Len = Seq ? Seq->GetPlayLength() : 0;
 		FStridesHorseLayer L;
 		L.Time = FMath::Min(ClipTime, Len);
@@ -474,7 +477,7 @@ void AStridesHorse::Tick(float Dt)
 	if (Course) Course->BeginHudFrame();
 	if (bCsoControls) TickCso(Dt, bSimPaused);
 	else TickOpenWorld(Dt, bSimPaused);
-	LastDt = bSimPaused ? 0.f : Dt;
+	LastDt = bSimPaused ? 0.0 : Dt;
 	UpdateAnimation();
 }
 

@@ -94,11 +94,27 @@ public:
 	const class FStridesHorseMirrorSet* MirrorSet() const { return Mirrors.Get(); }
 	const strides::mirror::LeadState& LeadState() const { return LeadSt; }
 	double LeadBlend() const { return LeadBlendV; }
-	bool JumpMirrored() const { return bJumpMirror; }
+	bool JumpMirrored() const { return JumpV.clip.mirror; }
+	// Clip de saut de la vue (view.js:229-233), choisi au départ du dernier saut.
+	const strides::mirror::JumpView& JumpViewState() const { return JumpV; }
+	// Tests Strides.Parite.HorseMirror : entrées de l'animation hors simulation (saut en cours, virage vu par la main au
+	// galop à la place de lastTurn ou du lacet lissé, main remise à neuf). Le jeu ne les appelle pas.
+	void SetJumpingForTests(bool bJump) { bJumping = bJump; }
+	void SetTurnForTests(double Turn) { bTurnForTests = true; TurnForTests = Turn; }
+	// Main posée directement (maintien remis à zéro) ; avec un virage nul, leadStep la garde.
+	void SetLeadForTests(int32 Lead) { LeadSt.lead = Lead; LeadSt.hold = 0; }
+	void ResetWebLeadForTests()
+	{
+		LeadSt = strides::mirror::LeadState();
+		LeadBlendV = 1;
+		JumpV = strides::mirror::JumpView();
+		bLastAnimationJumping = bJumping = false;
+		LastAnimationGait = INDEX_NONE;
+	}
 	// Active l'option sur ce cheval (BeginPlay la lit dans la ligne de commande ; les tests l'appellent) ; faux si la cuisson échoue.
 	bool EnableWebLead(FString* Err = nullptr);
 	// Une mise à jour de l'animation de pas Dt, hors simulation (tests Strides.Parite.HorseMirror).
-	void StepAnimation(float Dt)
+	void StepAnimation(double Dt)
 	{
 		LastDt = Dt;
 		UpdateAnimation();
@@ -146,7 +162,7 @@ private:
 	void TickDemo();
 	void StartOpenWorldJump();
 	void UpdateAnimation();
-	void UpdateWebLeadAnimation(float Dt);
+	void UpdateWebLeadAnimation(double Dt);
 	void UpdateCourseCamera(float Dt);
 	const class UStridesDataSubsystem* DataSub() const;
 	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
@@ -182,6 +198,8 @@ private:
 	double LeadBlendV = 1;  // pjl/view.js : leadBlend = 1 à la création de la vue
 	double OpenWorldTurn = 0;
 	double ClipTime = 0;
-	bool bJumpMirror = false;
-	float LastDt = 0;
+	strides::mirror::JumpView JumpV;
+	bool bTurnForTests = false;
+	double TurnForTests = 0;
+	double LastDt = 0;  // double : les tests rejouent les pas du web sans arrondi 32 bits
 };

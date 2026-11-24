@@ -70,6 +70,15 @@ M = [
  (C, CORE_CPP, 'main : maintien non remis à zéro', '  } else\n    A.hold = 0;', '  } else\n    (void)0;'),
  (C, CORE_CPP, 'main des clips inversée', "const char dest = lead > 0 ? 'L' : 'R';", "const char dest = lead > 0 ? 'R' : 'L';"),
  (C, CORE_CPP, 'fondu de main 10/s -> 5/s', 'const double t = 1 - std::exp(-10 * dt);', 'const double t = 1 - std::exp(-5 * dt);'),
+ (C, CORE_CPP, 'main : pas non borné à 0,1 s', '  dt = std::min(dt, 0.1);\n', ''),
+ (C, CORE_CPP, 'main : maintien ≥ 0,5 s au lieu de > 0,5 s', 'if (A.hold > 0.5) {', 'if (A.hold >= 0.5) {'),
+ (C, CORE_CPP, 'main : virage ≥ 0,25 au lieu de > 0,25', 'std::fabs(turn) > 0.25', 'std::fabs(turn) >= 0.25'),
+ # Clip de saut de la vue (pjl/view.js:229-233)
+ (C, CORE_CPP, 'saut : miroir à main droite', "c.mirror = lead == 'L';", "c.mirror = lead == 'R';"),
+ (C, CORE_CPP, 'saut : galop dès 7 m/s (seuil du jeu par défaut)', 'c.gallop = speed > 8;', 'c.gallop = speed >= 7;'),
+ (C, CORE_CPP, 'saut : galop à 8 m/s inclus', 'c.gallop = speed > 8;', 'c.gallop = speed >= 8;'),
+ (C, CORE_CPP, 'saut : choix refait à chaque image du saut', 'const bool start = jumping && !v.wasJumping;', 'const bool start = jumping;'),
+ (C, CORE_CPP, 'saut : choix effacé à la réception', '  v.wasJumping = jumping;\n  return start;', '  if (!jumping) v.hasClip = false;\n  v.wasJumping = jumping;\n  return start;'),
  # Moteur : la cuisson nourrie des clips d'Unreal, le mélangeur du jeu
  (E, CORE_CPP, 'moteur : aucun os apparié', PAIR, 'out[i] = static_cast<int>(i);'),
  (E, CORE_CPP, 'moteur : plan décalé de 0,5 unité', PLANE, 'out.d = out.n[0] * out.mid[0] + out.n[1] * out.mid[1] + out.n[2] * out.mid[2] + 0.5;'),
@@ -82,17 +91,21 @@ M = [
  (E, ADAPT_CPP, 'mélangeur : poids relatif oublié', 'StridesHorseAnim::Mix(Acc, In, Ly.Weight / W);', 'StridesHorseAnim::Mix(Acc, In, Ly.Weight);'),
  (E, HORSE_CPP, 'jeu : clip miroir au poids leadBlend', 'Mi.Weight = 1 - LeadBlendV;', 'Mi.Weight = LeadBlendV;'),
  (E, HORSE_CPP, 'jeu : fondu de main absent', 'LeadBlendV = strides::mirror::leadBlendStep(LeadBlendV, Lead, Dt);', 'LeadBlendV = Lead == \'R\' ? 1 : 0;'),
+ # Moteur : décisions de la main et du saut dans le jeu Unreal (contrôle adverse de M2)
+ (E, HORSE_CPP, 'jeu : saut en miroir à main droite (Lead == R)', 'strides::mirror::jumpViewStep(JumpV, bJumping, SpeedMS, Lead);', "strides::mirror::jumpViewStep(JumpV, bJumping, SpeedMS, Lead == 'L' ? 'R' : 'L');"),
+ (E, HORSE_CPP, 'jeu : miroir du saut jamais joué', 'const int32 M = JumpV.clip.mirror ? Mirrors->Find(', 'const int32 M = Dt < 0 ? Mirrors->Find('),  # condition fausse à l’exécution (« false ? » refusé par -Wunreachable-code)
+ (E, HORSE_CPP, 'jeu : saut au galop dès 7 m/s (seuil du jeu par défaut)', 'const bool bGallop = JumpV.clip.gallop;', 'const bool bGallop = SpeedMS >= 7.f;'),
+ (E, HORSE_CPP, 'jeu : choix du saut refait à chaque image', 'strides::mirror::jumpViewStep(JumpV, bJumping, SpeedMS, Lead);', 'JumpV.wasJumping = false; strides::mirror::jumpViewStep(JumpV, bJumping, SpeedMS, Lead);'),
+ (E, HORSE_CPP, 'jeu : virage de signe inversé pour la main', 'strides::mirror::leadStep(LeadSt, Turn, Dt);', 'strides::mirror::leadStep(LeadSt, -Turn, Dt);'),
+ (E, HORSE_CPP, 'jeu : pas de la main pris en 32 bits', 'strides::mirror::leadStep(LeadSt, Turn, Dt);', 'strides::mirror::leadStep(LeadSt, Turn, (float)Dt);'),
 ]
 
 ATTENDUES = {
  'plan : normale inversée (r − l)': 'mutation équivalente : la réflexion ne dépend que de n nᵀ et de d n, inchangés quand n et d changent de signe ensemble',
  'décomposition : signe du déterminant ignoré': 'mutation équivalente dans la cuisson : chaque matrice locale décomposée est parentW⁻¹ · S·W·C avec det S = det C = −1, donc de déterminant positif (déduit, non mesuré) ; la branche det < 0 ne sert pas',
- 'main : virage 0,25 -> 0,30 rad/s': 'faiblesse déclarée : dans O1, aux images de maintien, |virage| ne passe jamais entre 0,25 et 0,30 rad/s ; le seuil 0,45 est départagé (mutation suivante)',
- 'moteur : plan décalé de 0,5 unité': 'équivalente dans Unreal (déduit) : décaler le plan translate toute la pose miroir, y compris la racine _rootJoint dont la piste est omise ; les poses locales des autres os ne changent pas. Le plan incliné, lui, est détecté (mutation suivante) ; le décalage est détecté au niveau cœur (parent non-os du web)',
  'adaptateur : racines du web non remises au repos à la cuisson': 'équivalente (déduit) : la rotation de 90° cuite dans la racine des clips Unreal est autour de l’axe latéral (−X), normal au plan de symétrie ; elle commute avec la réflexion S et disparaît des poses locales',
  'adaptateur : durée non arrondie en 32 bits': 'équivalente : UAnimSequenceBase::GetPlayLength rend déjà un float (UE 5.8, AnimSequenceBase.h:86) ; l’arrondi est gardé comme garde-fou',
  'mélangeur : poids relatif oublié': 'équivalente pour le jeu : deux couches de poids w et 1 − w, donc W = 1 au second mélange et w₂ / W = w₂ ; elle ne départagerait qu’un mélange de trois couches ou plus, que le jeu ne fait pas',
- 'main : maintien non remis à zéro': 'faiblesse déclarée : dans O1, aucun maintien n’est interrompu avant le changement de main (un seul virage tenu par scénario) ; il faudrait un virage bref puis un virage long',
 }
 
 os.makedirs(out, exist_ok=True)
