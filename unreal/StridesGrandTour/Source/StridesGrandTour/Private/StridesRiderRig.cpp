@@ -259,30 +259,53 @@ void UStridesRiderRig::Apply(const RideInputs& In)
 	if (Drv) Drv->apply(In);
 }
 
+RideHorseSample UStridesRiderRig::SampleFromTack(const UStridesHorseTack& Tack, double Speed, double JumpT, double LastTurn)
+{
+	// État du cheval de cette image (le cavalier le lira à l'image suivante : RideDriver). human.js animateRiding :
+	// bob = e[13] − h.pos.y − contactOff (hauteur monde de l'os d'attache au-dessus du cheval, abaissement d'appel retiré),
+	// pitch = −asin(e[9]), phase = h.anim.phase + riderPostOffset.
+	const strides::tack::TackOut& O = Tack.Out();
+	RideHorseSample H;
+	const strides::tack::V3 Z = strides::tack::rotate(O.seatQ, strides::tack::V3{0, 0, 1});
+	// Repère du cheval Unreal (acteur : origine au sol sous le cheval, ou à la hauteur du saut ; cap seul, ni tangage de
+	// pente ni roulis) : ses axes sont ceux du monde à un lacet près, donc hauteur et axe z de S y valent ceux du monde
+	// relatifs à h.pos du web : horseY = 0. (Le cheval du web suit la pente du terrain ; Unreal non : écart du cheval,
+	// mesuré par Strides.Parite.RiderOnHorse et le ctest « monte-cheval », pas de cette conversion.)
+	H.attachY = O.seatPos.y;
+	H.attachZ = Vec3{Z.x, Z.y, Z.z};
+	H.horseY = 0;
+	// contactOff du web (pjlHorse.js _pushContact : corps abaissé à l'appel pendant que les postérieurs poussent) : le cheval
+	// Unreal n'abaisse pas son corps (horloge du saut non portée, étape M2) ; il n'y a donc rien à retirer : 0 exact pour ce
+	// cheval.
+	H.contactOff = 0;
+	H.speed = Speed;
+	// Phase de foulée, convention du web (étape M3 : calage des clips, UStridesHorseTack::StepPhase).
+	H.phase = Tack.RiderPhase();
+	// riderPostOffset : affecté nulle part dans src/ (pjl_horse_phase.json, vérifié par le ctest « monte-cheval ») : 0.
+	H.postOffset = 0;
+	H.jumpT = JumpT;
+	H.hindDown = const_cast<UStridesHorseTack&>(Tack).State().hindDown;
+	H.lastTurn = LastTurn;
+	return H;
+}
+
+RideFitMeters UStridesRiderRig::FitFromTack(const UStridesHorseTack& Tack) const
+{
+	const strides::tack::TackOut& O = Tack.Out();
+	RideFitMeters F = Fit0;
+	F.flankL = O.flankL;
+	F.flankR = O.flankR;
+	F.crest = O.crest;
+	return F;
+}
+
 bool UStridesRiderRig::StepFromHorse(const AStridesHorse* Horse, double Dt)
 {
 	const UStridesHorseTack* Tack = Horse ? Horse->HorseTack() : nullptr;
 	if (!bReady || !Tack || !Tack->IsReady()) return false;
 	const double T0 = FPlatformTime::Seconds();
-	// État du cheval de cette image (le cavalier le lira à l'image suivante : RideDriver).
-	const strides::tack::TackOut& O = Tack->Out();
-	RideHorseSample H;
-	const strides::tack::V3 Z = strides::tack::rotate(O.seatQ, strides::tack::V3{0, 0, 1});
-	H.attachY = O.seatPos.y;  // repère du cheval : origine au sol sous le cheval
-	H.attachZ = Vec3{Z.x, Z.y, Z.z};
-	H.horseY = 0;
-	H.contactOff = 0;  // contactOff de la vue du web : sans équivalent Unreal (sabots posés par les clips)
-	H.speed = Horse->SpeedMS;
-	H.phase = FMath::Max(0.0, Tack->PlayedClipPhase());  // phase du clip joué, pas horse.anim.phase (UStridesHorseTack)
-	H.postOffset = 0;
-	H.jumpT = Horse->CsoState().jumpT;
-	H.hindDown = const_cast<UStridesHorseTack*>(Tack)->State().hindDown;
-	H.lastTurn = Horse->CsoState().lastTurn;
-	RideFitMeters F = Fit0;
-	F.flankL = O.flankL;
-	F.flankR = O.flankR;
-	F.crest = O.crest;
-	const RideInputs In = Drv->prepare(H, F, Dt);
+	const RideHorseSample H = SampleFromTack(*Tack, Horse->SpeedMS, Horse->CsoState().jumpT, Horse->CsoState().lastTurn);
+	const RideInputs In = Drv->prepare(H, FitFromTack(*Tack), Dt);
 	Drv->apply(In);
 	PoseMesh();
 	CostMs = (FPlatformTime::Seconds() - T0) * 1000.0;

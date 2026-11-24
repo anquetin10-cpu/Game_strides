@@ -38,6 +38,10 @@ public:
 	void ResetRide();
 	// Une image du jeu, cavalière en selle sur Horse (sellerie créée et prête) : entrées, règle, pose du maillage.
 	bool StepFromHorse(const AStridesHorse* Horse, double Dt);
+	// État du cheval d'une image lu par la règle (human.js animateRiding), depuis la sellerie Unreal (siège S, postérieurs,
+	// phase de foulée du web : étape M3) et l'état du cheval (vitesse, jumpT, lastTurn) ; profils du cheval (réglages).
+	static strides::rider::RideHorseSample SampleFromTack(const class UStridesHorseTack& Tack, double Speed, double JumpT, double LastTurn);
+	strides::rider::RideFitMeters FitFromTack(const class UStridesHorseTack& Tack) const;
 	// Rejeu (tests) : première image connue par ses entrées, puis images depuis l'état brut du cheval.
 	void Seed(const strides::rider::RideInputs& First, const strides::rider::RideHorseSample& H, const strides::rider::RideFitMeters& Fit);
 	strides::rider::RideInputs Prepare(const strides::rider::RideHorseSample& H, const strides::rider::RideFitMeters& Fit, double Dt);

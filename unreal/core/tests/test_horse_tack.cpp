@@ -7,13 +7,18 @@
 //  3. recentrage du siège : x de S dans le repère du cheval = lissage (12/s) du milieu des ancres d'étrier, recalculées
 //     dans le repère du cheval depuis hz.an et hz.S, hz.H, à partir de la deuxième image ;
 //  4. orientation du siège : S dans H = Euler 'YXZ' (−dPitch, 0, inclinaison de la vue mx.rz), tangage seul inconnu ;
-//  5. moindres carrés affines (conversion d'axes du composant) sur une similitude connue, avec symétrie.
+//  5. moindres carrés affines (conversion d'axes du composant) sur une similitude connue, avec symétrie ;
+//  6. (étape M3) phase de foulée lue par le cavalier (StridesCore/HorsePhase) : calage des clips (align, leadSwap) recalculé
+//     depuis les appuis relevés dans le jeu (Content/Data/pjl_horse_phase.json) contre la sortie du calage du jeu ; puis,
+//     à chaque image d'O1, horse.anim.phase retrouvée depuis le temps du clip d'allure du mélangeur (mx.a), l'allure, la
+//     main, la vitesse et le saut (hz), contre hz.ph ; hors réécriture (arrêt, saut), écart de la phase tenue relevé.
 // Usage : strides_horse_tack_tests <oracles/monte> <Content/Data>
 #include <cmath>
 #include <cstdio>
 #include <string>
 #include <vector>
 
+#include "StridesCore/HorsePhase.h"
 #include "StridesCore/HorseTack.h"
 #include "StridesCore/MiniJson.h"
 
@@ -173,6 +178,79 @@ static void testFit() {
   std::printf("moindres carrés affines : similitude avec symétrie retrouvée à %.1e\n", e);
 }
 
+// Écart circulaire entre deux phases (0..0,5).
+static double phaseGap(double a, double b) {
+  double d = std::fmod(std::fabs(a - b), 1.0);
+  return d > 0.5 ? 1 - d : d;
+}
+
+static void testPhase() {
+  using namespace strides::phase;
+  PhaseModel m = phaseModelFromJson(loadJson(DATA + "/pjl_horse_phase.json"));
+  calibrate(m);
+  CHECK(m.postAssignments == 0, "riderPostOffset affecté %d fois dans src/ (0 attendu : décalage nul)", m.postAssignments);
+  CHECK(m.leadSwap == m.webLeadSwap, "leadSwap %d, jeu %d", (int)m.leadSwap, (int)m.webLeadSwap);
+  CHECK(m.align.size() == 6 && m.webAlign.size() == m.align.size(), "%zu clés calées, %zu dans le jeu", m.align.size(), m.webAlign.size());
+  double alignWorst = 0;
+  for (const auto& [k, w] : m.webAlign) {
+    const auto it = m.align.find(k);
+    const bool have = it != m.align.end();
+    CHECK(have && it->second.ok == w.ok, "align[%s] : présence %d, jeu %d", k.c_str(), have && it->second.ok, (int)w.ok);
+    if (!have || !w.ok || !it->second.ok) continue;
+    const double d = std::max(std::fabs(it->second.off - w.off), std::fabs(it->second.res - w.res));
+    alignWorst = std::max(alignWorst, d);
+    CHECK(d <= 1e-12, "align[%s] : off %.15g (jeu %.15g), res %.15g (jeu %.15g)", k.c_str(), it->second.off, w.off, it->second.res, w.res);
+  }
+  std::printf("phase : calage des clips recalculé depuis les appuis du jeu, écart à la sortie du jeu %.2e (6 clés, leadSwap %d)\n", alignWorst, (int)m.leadSwap);
+  int frames = 0, rewritten = 0, noClip = 0;
+  double worst = 0, heldWorst = 0;
+  std::string worstAt, heldAt;
+  int heldN = 0;
+  for (const char* run : RUNS) {
+    const J o = loadJson(ORA + "/o1/" + run + ".json");
+    const std::vector<J>& F = o["frames"].a;
+    PhaseState st;
+    // Phase avant la première image exportée (mise en place du web) : celle de l'image 0 (état repris, déclaré).
+    st.animPhase = F.at(0)["hz"]["ph"].num();
+    for (size_t i = 0; i < F.size(); i++) {
+      const J& hz = F[i]["hz"];
+      const J& mx = F[i]["mx"];
+      std::string clip;
+      double cp = 0;
+      for (const J& a : mx["a"].a) {
+        const std::string& n = a[0].s;
+        const std::string fam = clipFamily(n);
+        const auto c = m.contacts.find(n);
+        // Clip d'allure de durée connue (clips d'origine et miroirs ; les variantes de virage ont leur propre durée).
+        if (fam.empty() || c == m.contacts.end()) continue;
+        clip = n;
+        cp = a[2].num() / c->second.duration;
+        break;
+      }
+      noClip += clip.empty() && hz["gait"].s != "idle";
+      // Main du jeu : hz.lead = A.lead de la locomotion (> 0 : à gauche), leadDest de pjlHorse.js.
+      const double got = phaseStep(m, st, hz["gait"].s, clip, cp, hz["v"].num(), hz["lead"].num() > 0 ? 'L' : 'R', hz["jT"].num() >= 0);
+      const double want = hz["ph"].num(), d = phaseGap(got, want);
+      char at[64];
+      std::snprintf(at, sizeof at, "%s image %d", run, (int)F[i]["f"].num());
+      if (st.rewritten) {
+        rewritten++;
+        if (d > worst) worst = d, worstAt = at;
+        CHECK(d <= 1e-9, "%s : phase %.12f, web %.12f (%s, %s)", at, got, want, hz["gait"].s.c_str(), clip.c_str());
+      } else {
+        heldN++;
+        if (d > heldWorst) heldWorst = d, heldAt = at;
+        st.animPhase = got;  // phase tenue (locomotion procédurale du web non portée)
+      }
+      frames++;
+    }
+  }
+  CHECK(rewritten > 500, "%d images réécrites sur %d", rewritten, frames);
+  std::printf("phase : %d images d'O1 (8 scénarios), %d réécrites depuis le temps du clip : écart max %.2e (%s) ; %d tenues (arrêt, saut, allure "
+              "sans calage) : écart max de la phase tenue à hz.ph %.4f (%s, information) ; %d images d'allure sans clip de base\n",
+              frames, rewritten, worst, worstAt.c_str(), heldN, heldWorst, heldAt.c_str(), noClip);
+}
+
 int main(int argc, char** argv) {
   if (argc < 3) {
     std::printf("usage : %s <oracles/monte> <Content/Data>\n", argv[0]);
@@ -186,6 +264,7 @@ int main(int argc, char** argv) {
     testLandHind(m);
     testSeatFromO1(m);
     testFit();
+    testPhase();
   } catch (const std::exception& ex) {
     std::printf("ÉCHEC : exception %s\n", ex.what());
     return 1;

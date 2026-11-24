@@ -28,6 +28,8 @@ target_link_libraries(strides_monte_bench strides_core)
 # Essai de monte, voie A, étape 5 : sellerie du cheval WildMesh (src/entities/pjlHorse.js, pjl/view.js) portée en C++
 # (StridesCore/HorseTack), contre l'oracle O1 (ctest « monte-cheval ») ; cheval posé dans Unreal : Strides.Parite.HorseSeat.
 target_sources(strides_core PRIVATE ${CORE}/Private/HorseTack.cpp)
+# Étape M3 : phase de foulée lue par le cavalier (calage des clips, pjlHorse.js), StridesCore/HorsePhase, même ctest.
+target_sources(strides_core PRIVATE ${CORE}/Private/HorsePhase.cpp)
 add_executable(strides_horse_tack_tests tests/test_horse_tack.cpp)
 target_link_libraries(strides_horse_tack_tests strides_core)
 add_test(NAME monte-cheval COMMAND strides_horse_tack_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)

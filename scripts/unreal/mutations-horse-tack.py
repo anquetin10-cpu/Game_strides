@@ -105,6 +105,11 @@ tobj = os.path.join(out, 'test_horse_tack.o')
 c = subprocess.run(flags + ['-c', test, '-o', tobj], capture_output=True, text=True)
 if c.returncode:
     print('compilation du banc échouée\n' + c.stderr[:800]); sys.exit(1)
+# Étape M3 : le banc vérifie aussi la phase de foulée (StridesCore/HorsePhase.cpp, non muté ici), liée telle quelle.
+pobj = os.path.join(out, 'HorsePhase.o')
+c = subprocess.run(flags + ['-c', os.path.join(core, 'Private/HorsePhase.cpp'), '-o', pobj], capture_output=True, text=True)
+if c.returncode:
+    print('compilation de HorsePhase.cpp échouée\n' + c.stderr[:800]); sys.exit(1)
 
 
 def core_run(text, tag):
@@ -114,7 +119,7 @@ def core_run(text, tag):
     c = subprocess.run(flags + ['-c', f, '-o', obj], capture_output=True, text=True)
     if c.returncode:
         return None, f'{tag} : compilation échouée\n{c.stderr[:400]}'
-    c = subprocess.run(['clang++', tobj, obj, '-o', exe], capture_output=True, text=True)
+    c = subprocess.run(['clang++', tobj, obj, pobj, '-o', exe], capture_output=True, text=True)
     if c.returncode:
         return None, f'{tag} : édition de liens échouée\n{c.stderr[:400]}'
     return subprocess.run([exe, ora, data], capture_output=True, text=True), ''

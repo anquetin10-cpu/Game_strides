@@ -15,6 +15,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "StridesCore/HorsePhase.h"
 #include "StridesCore/HorseTack.h"
 #include <functional>
 #include <vector>
@@ -58,9 +59,21 @@ public:
 	// Siège S en Unreal : repère local de l'acteur (cm ; X vers l'avant, Y à droite, Z vers le haut) et monde.
 	FTransform SeatInActor() const;
 	FTransform SeatWorld() const;
-	// Phase du clip joué par le maillage (temps / durée, 0..1 ; −1 hors mode d'animation à un seul clip). Ce n'est pas
-	// horse.anim.phase du web (décalages gaitInfo.offset et align.off non portés).
+	// Phase du clip joué par le maillage (temps / durée, 0..1 ; −1 sans clip). Ce n'est pas horse.anim.phase du web : voir
+	// RiderPhase.
 	double PlayedClipPhase() const;
+	// Étape M3 : premier clip d'ALLURE joué par le maillage (walk, trot, canter, gallop, leurs virages et miroirs ; nom du
+	// clip du web, sans le préfixe « Horse_ » des assets) et sa phase (temps / durée). Faux sans clip d'allure.
+	bool PlayedGaitClip(FString& Name, double& Phase) const;
+	// Étape M3 : phase de foulée lue par le cavalier, convention du web (horse.anim.phase : pjlHorse.js _snapshot, calage
+	// des clips align et gaitInfo.offset, StridesCore/HorsePhase), calculée à chaque image depuis le clip d'allure joué ;
+	// tenue à l'arrêt et au saut (locomotion procédurale du web non portée). Gait : allure du jeu (idle, walk, trot,
+	// canter, gallop) ; Lead : main du jeu ('L', 'R').
+	void StepPhase(const FString& Gait, double Speed, TCHAR Lead, bool bJumping);
+	double RiderPhase() const { return PhaseSt.animPhase; }
+	bool PhaseRewritten() const { return PhaseSt.rewritten; }
+	const strides::phase::PhaseModel& PhaseCalib() const { return Phase_; }
+	strides::phase::PhaseState& RiderPhaseState() { return PhaseSt; }
 	// Coût de la dernière image (ms), mesuré par FPlatformTime autour de la logique et des transformées de peau.
 	double LastCostMs() const { return CostMs; }
 
@@ -76,6 +89,8 @@ private:
 	strides::tack::TackModel Model_;
 	strides::tack::TackState State_;
 	strides::tack::TackOut Out_;
+	strides::phase::PhaseModel Phase_;
+	strides::phase::PhaseState PhaseSt;
 	strides::tack::Affine Glb2Mesh;
 	double FitRms = -1;
 	int32 FitJoints = 0;

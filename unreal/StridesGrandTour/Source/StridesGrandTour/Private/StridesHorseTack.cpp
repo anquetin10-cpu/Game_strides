@@ -57,6 +57,20 @@ bool UStridesHorseTack::Init(USkeletalMeshComponent* InMesh, FString* Err)
 	{
 		return Fail(UTF8_TO_TCHAR(Ex.what()));
 	}
+	// Étape M3 : calage de la phase de foulée (Content/Data/pjl_horse_phase.json, scripts/unreal/export-horse-phase.mjs).
+	FString PhaseText;
+	const FString PhasePath = FPaths::ProjectContentDir() / TEXT("Data/pjl_horse_phase.json");
+	if (!FFileHelper::LoadFileToString(PhaseText, *PhasePath)) return Fail(TEXT("Content/Data/pjl_horse_phase.json introuvable (scripts/unreal/export-horse-phase.mjs)"));
+	try
+	{
+		const std::string Src(TCHAR_TO_UTF8(*PhaseText));
+		Phase_ = strides::phase::phaseModelFromJson(JParser(Src).parse());
+		strides::phase::calibrate(Phase_);
+	}
+	catch (const std::exception& Ex)
+	{
+		return Fail(UTF8_TO_TCHAR(Ex.what()));
+	}
 	// Conversion d'axes : positions de repos des articulations (scène du GLB) contre la pose de référence du maillage.
 	const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
 	std::vector<V3> From, To;
@@ -93,6 +107,7 @@ void UStridesHorseTack::ResetState()
 {
 	State_ = freshState(Model_);
 	Out_ = TackOut();
+	PhaseSt = strides::phase::PhaseState();  // pjlHorse.js : horse.anim.phase = 0 à la création du cheval
 }
 
 Affine UStridesHorseTack::GameMeshToHolder() const
@@ -140,6 +155,53 @@ void UStridesHorseTack::Step(float Dt)
 	};
 	// (roulis de la vue : le cheval Unreal ne s'incline pas dans les virages, inclinaison nulle)
 	StepPose(Mesh->GetComponentSpaceTransforms(), GameMeshToHolder(), Dt, 0.0, Horse && Horse->IsJumping(), Height);
+	// Phase de foulée du cavalier : allure du jeu (GaitIndex) ; main du jeu, leadDest de pjlHorse.js (avant leadSwap) :
+	// option -StridesHorseLead=web : main du web ; jeu par défaut : clips d'origine seuls, à main droite d'après le calage du
+	// web (leadSwap faux, vérifié par le ctest « monte-cheval » ; s'il était vrai, le jeu par défaut serait à main gauche).
+	static const TCHAR* GaitNames[] = {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")};
+	if (Horse)
+	{
+		const FString Gait = Horse->GaitIndex >= 0 && Horse->GaitIndex < (int32)UE_ARRAY_COUNT(GaitNames) ? GaitNames[Horse->GaitIndex] : TEXT("idle");
+		const TCHAR Lead = Horse->UsesWebLead() ? (TCHAR)strides::mirror::clipLead(Horse->LeadState().lead, false) : (Phase_.leadSwap ? TEXT('L') : TEXT('R'));
+		StepPhase(Gait, Horse->SpeedMS, Lead, Horse->IsJumping());
+	}
+}
+
+bool UStridesHorseTack::PlayedGaitClip(FString& Name, double& Phase) const
+{
+	if (const UStridesHorseAnimInstance* Lead = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr)
+	{
+		for (const FStridesHorseLayer& Ly : Lead->Layers)
+		{
+			const bool bMirror = !Ly.Seq && Lead->Set.IsValid() && Ly.Mirror != INDEX_NONE;
+			const FString N = bMirror ? Lead->Set->Name(Ly.Mirror) : Ly.Seq ? Ly.Seq->GetName() : FString();
+			const FString Web = N.StartsWith(TEXT("Horse_")) ? N.Mid(6) : N;
+			const double Len = bMirror ? Lead->Set->Clip(Ly.Mirror).duration : Ly.Seq ? Ly.Seq->GetPlayLength() : 0;
+			if (Len <= 0 || strides::phase::clipFamily(TCHAR_TO_UTF8(*Web)).empty()) continue;
+			Name = Web;
+			Phase = FMath::Frac(Ly.Time / Len);
+			return true;
+		}
+		return false;
+	}
+	const UAnimSingleNodeInstance* Single = Mesh ? Mesh->GetSingleNodeInstance() : nullptr;
+	const UAnimSequenceBase* Seq = Single ? Cast<UAnimSequenceBase>(Single->GetAnimationAsset()) : nullptr;
+	if (!Seq || Seq->GetPlayLength() <= 0) return false;
+	const FString N = Seq->GetName();
+	const FString Web = N.StartsWith(TEXT("Horse_")) ? N.Mid(6) : N;
+	if (strides::phase::clipFamily(TCHAR_TO_UTF8(*Web)).empty()) return false;
+	Name = Web;
+	Phase = FMath::Frac(Single->GetCurrentTime() / Seq->GetPlayLength());
+	return true;
+}
+
+void UStridesHorseTack::StepPhase(const FString& Gait, double Speed, TCHAR Lead, bool bJumping)
+{
+	if (!bReady) return;
+	FString Clip;
+	double P = 0;
+	if (!PlayedGaitClip(Clip, P)) Clip.Reset();
+	strides::phase::phaseStep(Phase_, PhaseSt, TCHAR_TO_UTF8(*Gait), TCHAR_TO_UTF8(*Clip), P, Speed, Lead == TEXT('L') ? 'L' : 'R', bJumping);
 }
 
 void UStridesHorseTack::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

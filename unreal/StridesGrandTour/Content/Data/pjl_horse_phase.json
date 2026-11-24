@@ -1,0 +1,214 @@
+{
+ "schema": "strides.pjl_horse_phase/1",
+ "generator": "scripts/unreal/export-horse-phase.mjs (page scripts/unreal/horse-phase-export.html)",
+ "source": [
+  "src/entities/pjl/asset.js",
+  "src/entities/pjl/view.js",
+  "src/entities/pjlHorse.js",
+  "src/entities/horse/anim.js",
+  "src/entities/human.js"
+ ],
+ "doc": "calage de la phase de foulée du cheval WildMesh, relevé dans le jeu web en cours d’exécution. Phase des clips de la vue : ph (pjlHorse.js this.ph) ; temps d’un clip d’allure k = ((ph + gaitInfo[k].offset) % 1) · durée (pjl/view.js). Phase lue par le cavalier : horse.anim.phase = wrap01(ph − align[clé].off) quand align[clé] existe, sans saut et au-delà de rules.minSpeed m/s (pjlHorse.js _snapshot ; clé = allure du jeu, ou au galop (speed > rules.gallopAbove ? gallop : canter) + main du jeu), sinon la phase de la locomotion procédurale (horse/anim.js) ; plus riderPostOffset (human.js), jamais affecté dans src/. gaitContacts : appuis des clips mesurés par asset.js (touch : phase du poser AG, AD, PG, PD ; duty ; duration, s) ; gaitOffsets : GAIT_OFFSETS de horse/anim.js ; web.align, web.leadSwap : sortie de PjlHorse._calibrate dans la page (off, res).",
+ "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1",
+ "three": "170",
+ "rules": {
+  "gallopAbove": 9.8,
+  "minSpeed": 0.2
+ },
+ "riderPostOffset": {
+  "assignments": 0,
+  "occurrences": 2
+ },
+ "gaitInfo": {
+  "walk": {
+   "stride": 1.85,
+   "offset": 0
+  },
+  "trot": {
+   "stride": 2.49,
+   "offset": 0.07
+  },
+  "canter": {
+   "stride": 3.42,
+   "offset": 0.88
+  },
+  "gallop": {
+   "stride": 4.5,
+   "offset": 0.87
+  }
+ },
+ "gaitOffsets": {
+  "walk": [
+   0.25,
+   0.75,
+   0,
+   0.5
+  ],
+  "trot": [
+   0.515,
+   0.015,
+   0,
+   0.5
+  ],
+  "canterL": [
+   0.5,
+   0.29,
+   0.27,
+   0
+  ],
+  "canterR": [
+   0.29,
+   0.5,
+   0,
+   0.27
+  ],
+  "gallopL": [
+   0.5,
+   0.38,
+   0.11,
+   0
+  ],
+  "gallopR": [
+   0.38,
+   0.5,
+   0,
+   0.11
+  ]
+ },
+ "gaitContacts": {
+  "walk": {
+   "touch": [
+    0,
+    0.5208333333333334,
+    0.6458333333333334,
+    0.1875
+   ],
+   "duty": [
+    0.5833333333333334,
+    0.5833333333333334,
+    0.7083333333333334,
+    0.625
+   ],
+   "duration": 1.4583333730697632
+  },
+  "trot": {
+   "touch": [
+    0.0625,
+    0.625,
+    0.5416666666666666,
+    0.020833333333333332
+   ],
+   "duty": [
+    0.4166666666666667,
+    0.3541666666666667,
+    0.4166666666666667,
+    0.4375
+   ],
+   "duration": 0.8333333134651184
+  },
+  "canter": {
+   "touch": [
+    0.0625,
+    0.3541666666666667,
+    0.8541666666666666,
+    0.08333333333333333
+   ],
+   "duty": [
+    0.3125,
+    0.2916666666666667,
+    0.3125,
+    0.2916666666666667
+   ],
+   "duration": 0.7083333134651184
+  },
+  "gallop": {
+   "touch": [
+    0.10416666666666667,
+    0.3125,
+    0.8541666666666666,
+    0.041666666666666664
+   ],
+   "duty": [
+    0.20833333333333334,
+    0.22916666666666666,
+    0.20833333333333334,
+    0.22916666666666666
+   ],
+   "duration": 0.625
+  },
+  "trot_M": {
+   "touch": [
+    0.7916666666666666,
+    0.041666666666666664,
+    0,
+    0.7916666666666666
+   ],
+   "duty": [
+    0.22916666666666666,
+    0.25,
+    0.20833333333333334,
+    0.25
+   ],
+   "duration": 0.8333333134651184
+  },
+  "canter_M": {
+   "touch": [
+    0.4791666666666667,
+    0,
+    0.041666666666666664,
+    0.0625
+   ],
+   "duty": [
+    0.1875,
+    0.20833333333333334,
+    0.14583333333333334,
+    0.16666666666666666
+   ],
+   "duration": 0.7083333134651184
+  },
+  "gallop_M": {
+   "touch": [
+    0.4166666666666667,
+    0.0625,
+    0,
+    0.9375
+   ],
+   "duty": [
+    0.14583333333333334,
+    0.14583333333333334,
+    0.125,
+    0.1875
+   ],
+   "duration": 0.625
+  }
+ },
+ "web": {
+  "align": {
+   "walk": {
+    "off": 0.7136973317756528,
+    "res": 0.046875
+   },
+   "trot": {
+    "off": 0.4847935274237256,
+    "res": 0.02739676371186281
+   },
+   "canterR": {
+    "off": 0.9436695884873703,
+    "res": 0.030624999999999958
+   },
+   "canterL": {
+    "off": 0.9993151351019793,
+    "res": 0.13999999999999999
+   },
+   "gallopR": {
+    "off": 0.9609229415826539,
+    "res": 0.062291666666666606
+   },
+   "gallopL": {
+    "off": 0.9951927352740861,
+    "res": 0.0828202990296236
+   }
+  },
+  "leadSwap": false
+ }
+}
