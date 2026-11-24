@@ -595,7 +595,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "La cavalière garde une inclinaison fixe de −14° pendant tout le vol (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:145) sans suivre la réception.",
+  "ecart": "La cavalière garde une inclinaison fixe de −14° pendant tout le vol (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:265) sans suivre la réception.",
   "tranche": "b"
  },
  {
@@ -605,7 +605,7 @@
   "js": [
    "src/entities/pjlHorse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseTack.cpp:218-261 (seatStep : siège S à l'ancre seat skinnée, recentré sur le milieu des ancres d'étrier, lissage 12/s ; tangage spine_04 → bassin par rapport au repos, lissage 18/s ; inclinaison de la vue ; Euler YXZ ; puis ancres dans S et profils) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorseTack.cpp:36-148 (UStridesHorseTack : transformées de peau des os du cheval Unreal, conversion d'axes déduite des 419 articulations ; créé seulement avec -StridesRider=regles, StridesHorse.cpp:102-110) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:290-305 (SeatTransform inchangé, lu par le jeu par défaut : position de l'os saddle_0168, sinon mountpoint_01_0179 ; orientation = cap de l'acteur) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:142-156 (cavalière posée sur SeatTransform, inclinée de 0 à −5° entre 5 et 8 m/s, −14° et 8 cm en avant en l'air, montée fondue sur 0,8 s)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseTack.cpp:218-261 (seatStep : siège S à l'ancre seat skinnée, recentré sur le milieu des ancres d'étrier, lissage 12/s ; tangage spine_04 → bassin par rapport au repos, lissage 18/s ; inclinaison de la vue ; Euler YXZ ; puis ancres dans S et profils) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorseTack.cpp:36-148 (UStridesHorseTack : transformées de peau des os du cheval Unreal, conversion d'axes déduite des 419 articulations ; créé seulement avec -StridesRider=regles, StridesHorse.cpp:102-110) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:290-305 (SeatTransform inchangé, lu par le jeu par défaut : position de l'os saddle_0168, sinon mountpoint_01_0179 ; orientation = cap de l'acteur) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:262-276 (cavalière posée sur SeatTransform, inclinée de 0 à −5° entre 5 et 8 m/s, −14° et 8 cm en avant en l'air, montée fondue sur 0,8 s)",
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.Parite.HorseSeat (Private/Tests/StridesRiderTests.cpp, vert) : cheval du jeu posé aux images de l'oracle O1 (clips Unreal mélangés comme le mélangeur WildMesh, 537 images de 6 scénarios), siège S, ancres et profils du composant contre le canal hz : aux 105 images à un clip ≥ 0,99, ancres 0,021 cm, orientation de S 0,0003°, flanc 0,0012 cm, encolure 0,0061 cm ; sur les 537, ancres 0,184 cm, position de S 0,239 cm, orientation 0,079°, encolure 0,281 cm ; coût médian 0,011 ms par image. ctest monte-cheval (3 719 vérifications) : recentrage contre O1 à 1,8e-13 m, Euler YXZ avec l'inclinaison à 5,2e-8 rad, horloge de réception et postérieurs reposés identiques à O1 (929 images). Mutations : scripts/unreal/mutations-horse-tack.py. Détail : unreal/docs/parite/monte/README.md, étape 5.",
@@ -831,7 +831,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-78 (cheval : perche de 6,5 m, pivot à 1,85 m, −9°, retard de caméra 6) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-64 (à pied : 4,2 m, pivot 0,95 m au-dessus du centre de la capsule, −8°)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-78 (cheval : perche de 6,5 m, pivot à 1,85 m, −9°, retard de caméra 6) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:59-69 (à pied : 4,2 m, pivot 0,95 m au-dessus du centre de la capsule, −8°)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; la validation Mac ne cite pas la caméra.",
@@ -849,7 +849,7 @@
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; rien à l'écran dans la validation Mac.",
-  "ecart": "Les perches n'utilisent pas la rotation de contrôle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:61 bUsePawnControlRotation = false ; perche du cheval laissée à sa valeur par défaut, fausse) : la caméra reste rivée derrière le personnage ou le cheval, l'orbite n'a pas d'effet visible (à confirmer à l'écran) ; pas de geste tactile d'orbite ; pas de recentrage temporisé.",
+  "ecart": "Les perches n'utilisent pas la rotation de contrôle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:66 bUsePawnControlRotation = false ; perche du cheval laissée à sa valeur par défaut, fausse) : la caméra reste rivée derrière le personnage ou le cheval, l'orbite n'a pas d'effet visible (à confirmer à l'écran) ; pas de geste tactile d'orbite ; pas de recentrage temporisé.",
   "tranche": "socle"
  },
  {
@@ -859,7 +859,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-75 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-61 (USpringArmComponent : test de collision du moteur actif par défaut, non modifié)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-75 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:59-66 (USpringArmComponent : test de collision du moteur actif par défaut, non modifié)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; géométries du décor exporté qui bloquent le canal caméra : à confirmer.",
@@ -873,7 +873,7 @@
   "js": [
    "src/entities/camera.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:78 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:64 (55° fixes)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:78 et unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:69 (55° fixes)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni capture.",

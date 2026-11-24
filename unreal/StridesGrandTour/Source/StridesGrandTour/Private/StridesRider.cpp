@@ -125,13 +125,24 @@ void AStridesRider::SetRulesActive(bool bOn)
 		RulesBody->SetRelativeTransform(Rules->MeshInSeat());
 		RulesBody->SetVisibility(true);
 		// Vêtements rattachés au maillage posé : un suiveur lit les os du meneur dans SON propre repère de composant.
+		// Bornes : un suiveur d'un UPoseableMeshComponent garde les bornes de SA pose de référence (cavalière debout) ; la
+		// queue de cheval, les yeux, les sourcils et les cils, petits et placés à la tête, ont alors leurs bornes 75 à 100 cm
+		// au-dessus de la tête assise et le rendu les écarte (hors du champ). Ils prennent les bornes du maillage posé
+		// (mesuré par Strides.Monte.EnJeu).
 		for (USkeletalMeshComponent* Part : MeshParts)
 		{
 			Part->AttachToComponent(RulesBody, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 			Part->SetLeaderPoseComponent(RulesBody, true);
+			Part->bUseBoundsFromLeaderPoseComponent = true;
+			Part->InvalidateCachedBounds();
+			Part->UpdateBounds();
+			Part->MarkRenderTransformDirty();
 		}
 		// Après le cheval (déplacement de l'acteur) et sa sellerie (siège S de l'image) : sinon la cavalière est posée sur le
-		// siège de l'image précédente (constaté au galop : 7 cm de retard).
+		// siège de l'image précédente (constaté au galop : 7 cm de retard). La sellerie tique en TG_PostUpdateWork (après
+		// l'animation du cheval) : le moteur repousse donc le tick de la cavalière dans ce groupe. En fin d'image, l'acteur
+		// est sur le siège de l'image (écart nul, Strides.Monte.EnJeu) ; un relevé fait plus tôt dans l'image (tick d'un
+		// autre acteur en TG_PrePhysics, comme AStridesShots) voit encore la cavalière de l'image précédente.
 		if (Tack) AddTickPrerequisiteComponent(Tack);
 		if (MountedOn) AddTickPrerequisiteActor(MountedOn);
 	}
@@ -141,6 +152,10 @@ void AStridesRider::SetRulesActive(bool bOn)
 		{
 			Part->AttachToComponent(Main, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 			Part->SetLeaderPoseComponent(Main, true);
+			Part->bUseBoundsFromLeaderPoseComponent = false;  // comme le jeu par défaut
+			Part->InvalidateCachedBounds();
+			Part->UpdateBounds();
+			Part->MarkRenderTransformDirty();
 		}
 		RulesBody->SetVisibility(false);
 		Main->SetVisibility(true);
@@ -233,6 +248,14 @@ void AStridesRider::Tick(float Dt)
 			SetActorTransform(T);
 		}
 		else SetActorTransform(RulesSeat);
+		// Bornes des suiveurs reprises au maillage posé à chaque image : un UPoseableMeshComponent ne les rafraîchit pas (le
+		// cache des bornes locales d'un suiveur n'est invalidé que par un meneur USkeletalMeshComponent).
+		for (USkeletalMeshComponent* Part : MeshParts)
+		{
+			Part->InvalidateCachedBounds();
+			Part->UpdateBounds();
+			Part->MarkRenderTransformDirty();
+		}
 		return;
 	}
 	UpdateMountedAnimation();

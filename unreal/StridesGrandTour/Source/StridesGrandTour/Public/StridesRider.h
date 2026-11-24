@@ -29,6 +29,8 @@ public:
 	bool EnableRulesRig(FString* Err = nullptr);
 	class UStridesRiderRig* RulesRig() const { return Rules; }
 	class UPoseableMeshComponent* RulesMesh() const { return RulesBody; }
+	// Vêtements, yeux, sourcils, cils et queue de cheval (suiveurs du maillage meneur) : lus par Strides.Monte.EnJeu.
+	const TArray<TObjectPtr<class USkeletalMeshComponent>>& Parts() const { return MeshParts; }
 
 private:
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UStaticMeshComponent> Body;

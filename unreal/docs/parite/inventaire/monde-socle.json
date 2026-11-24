@@ -809,7 +809,7 @@
    "src/world/colliders.js",
    "src/world/world.js"
   ],
-  "unreal": "Physique Unreal : tuiles « static » en collision complexe (scripts/unreal/import-world.py:695-716), haies non feuillues, troncs en cylindres invisibles (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:286-322), relief à collisions (:201) ; subie par le seul cavalier à pied (capsule CharacterMovement, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:49-52)",
+  "unreal": "Physique Unreal : tuiles « static » en collision complexe (scripts/unreal/import-world.py:695-716), haies non feuillues, troncs en cylindres invisibles (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:286-322), relief à collisions (:201) ; subie par le seul cavalier à pied (capsule CharacterMovement, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-57)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",
@@ -823,7 +823,7 @@
   "js": [
    "src/world/colliders.js"
   ],
-  "unreal": "USpringArmComponent du cavalier et du cheval (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-61, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-75 ; en épreuve, caméra de concours sondée par CameraBlockedAt, StridesHorse.cpp:542-549, tranche T6), test de collision par défaut du moteur (non réglé explicitement)",
+  "unreal": "USpringArmComponent du cavalier et du cheval (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:59-66, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:68-75 ; en épreuve, caméra de concours sondée par CameraBlockedAt, StridesHorse.cpp:542-549, tranche T6), test de collision par défaut du moteur (non réglé explicitement)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; module compilé (.tmp/build-editor.log : Result: Succeeded) ; aucune capture côte à côte dans unreal/docs/parite/ ; validation-mac-2026-11-17.md ne cite pas le décor.",

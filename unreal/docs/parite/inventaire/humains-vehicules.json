@@ -7,7 +7,7 @@
    "src/entities/human/skeleton.js",
    "src/entities/humanModel.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:18 (capsule 25 × 84 cm, soit 1,68 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26-35 (squelette du modèle réaliste rider_f_animated, Body_Skeleton)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:23 (capsule 25 × 84 cm, soit 1,68 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:31-40 (squelette du modèle réaliste rider_f_animated, Body_Skeleton)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni oracle ; unreal/docs/validation-mac-2026-11-17.md:16 contrôle l'échelle de la cavalière importée, pas les proportions du squelette web.",
@@ -108,7 +108,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "rg -i 'outfit|tenue|palette|helmet|casque|beard|barbe' dans unreal/StridesGrandTour/Source et scripts/unreal : aucun code. StridesRider.cpp:36-43 charge une liste fixe de pièces du GLB (Cloth_boots, Cloth_jacket, Cloth_jeans, Cloth_shirt, Eyebrows, Eyelashes, Eyes, Hair_ponytail01), sans aucune résolution. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "preuve": "rg -i 'outfit|tenue|palette|helmet|casque|beard|barbe' dans unreal/StridesGrandTour/Source et scripts/unreal : aucun code. StridesRider.cpp:41-48 charge une liste fixe de pièces du GLB (Cloth_boots, Cloth_jacket, Cloth_jeans, Cloth_shirt, Eyebrows, Eyelashes, Eyes, Hair_ponytail01), sans aucune résolution. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
   "ecart": "Aucune résolution de tenue : la cavalière porte toujours la même combinaison de pièces, sans palette, sans choix de coiffure (queue de cheval au lieu du chignon de OUTFITS.riderF), sans casque, sans barbe ni sexe déduit ; tests/unit/human.test.js côté web non exporté.",
   "tranche": "b"
  },
@@ -119,7 +119,7 @@
   "js": [
    "src/entities/humanModel.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:36-43 (cavalière seule, pièces du GLB non teintées)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:41-48 (cavalière seule, pièces du GLB non teintées)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni capture côte à côte. Capture Unreal seule (hors unreal/docs/parite) : unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_05.png montre une veste brun-olive et un jean bleu, pas le haut #1b1c1f ni la culotte #f2f1ec.",
@@ -168,7 +168,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
-  "ecart": "Aucune API de changement de tenue : pièces chargées une fois dans le constructeur (StridesRider.cpp:36-43).",
+  "ecart": "Aucune API de changement de tenue : pièces chargées une fois dans le constructeur (StridesRider.cpp:41-48).",
   "tranche": "b"
  },
  {
@@ -178,7 +178,7 @@
   "js": [
    "src/entities/human.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:18 (capsule de rayon 25 cm), :49-53 (CharacterMovement : 140 cm/s, orientation vers le déplacement à 540°/s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:109,201 (collisions du relief)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:23 (capsule de rayon 25 cm), :49-53 (CharacterMovement : 140 cm/s, orientation vers le déplacement à 540°/s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:109,201 (collisions du relief)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; unreal/docs/validation-mac-2026-11-17.md ne cite pas la marche à pied. Manque : oracle de Human.move (trajectoire, eau) et capture côte à côte.",
@@ -193,7 +193,7 @@
    "src/entities/human.js",
    "src/entities/truck.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:93,109,201 (relief et maillages de décor en collision BlockAll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:129 (mode de marche rétabli à la descente)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesScenery.cpp:93,109,201 (relief et maillages de décor en collision BlockAll) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:225 (mode de marche rétabli à la descente)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test de la hauteur des pieds ni capture ; Strides.World.Scenery (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCoreTests.cpp:119-130) vérifie seulement la donnée de relief (4 hauteurs écrites à la main, sans oracle exporté), ni walkHeight ni le contact de la capsule ; unreal/docs/validation-mac-2026-11-17.md ne cite pas la marche sur les surfaces.",
@@ -256,7 +256,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. Le clip Rider_walk est une marche montée (scripts/unreal/export-rider-animations.py:3, :50).",
-  "ecart": "À pied, la cavalière joue en boucle le clip monté Rider_idle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:70, :133) : jambes en position de selle, aucun cycle de marche ni de course, aucun pied posé.",
+  "ecart": "À pied, la cavalière joue en boucle le clip monté Rider_idle (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:75, :133) : jambes en position de selle, aucun cycle de marche ni de course, aucun pied posé.",
   "tranche": "b"
  },
  {
@@ -300,7 +300,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
-  "ecart": "La pièce Hair_ponytail01 (et son PhysicsAsset importé) suit seulement la pose du corps (SetLeaderPoseComponent, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:41) : aucun ressort ni simulation.",
+  "ecart": "La pièce Hair_ponytail01 (et son PhysicsAsset importé) suit seulement la pose du corps (SetLeaderPoseComponent, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:46) : aucun ressort ni simulation.",
   "tranche": "b"
  },
  {
@@ -311,7 +311,7 @@
    "src/entities/human/anim.js",
    "src/entities/human.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:73-89 (changement de clip par PlayAnimation à chaque changement d'allure ou de saut)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:167-183 (changement de clip par PlayAnimation à chaque changement d'allure ou de saut)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7).",
@@ -341,7 +341,7 @@
    "src/entities/human/anim.js",
    "src/entities/human/skeleton.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:91-113 (TryMount : cheval le plus proche à moins de 3 m, possession du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:137-157 (Tick : SetActorTransform sur SeatTransform, fondu SmoothStep de 0,8 s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:290-305 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179, orientation de l'acteur cheval)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:185-208 (TryMount : cheval le plus proche à moins de 3 m, possession du cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:233-277 (Tick : SetActorTransform sur SeatTransform, fondu SmoothStep de 0,8 s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:290-305 (SeatTransform : position de l'os saddle_0168, sinon mountpoint_01_0179, orientation de l'acteur cheval)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15-16 et :19 (montée et placement en selle contrôlés sur la version antérieure : os mountpoint_01_0179 d'abord, transformée complète de l'os, modèle rider_f_unreal) ; unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09). Aucun oracle ni capture côte à côte.",
@@ -359,8 +359,8 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRiderRig.cpp (UStridesRiderRig : entrées depuis UStridesHorseTack avec le retard d'une image, règle StridesCore/RiderRules, reciblage comme realistic.js, deux os par membre AnimationCore::SolveTwoBoneIK sans étirement, pôle en position) ; unreal/StridesGrandTour/Source/StridesCore/Private/RiderPose.cpp (chaîne cheval → entrées → règle) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp (option -StridesRider=regles : en selle, clips cuits coupés, maillage posé)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M14 assise ≤ 4,9e-8 cm d'O2, M6 portée ±5e-8, M16 continuité ≤ O2 + 7,6e-5° par image (filtre bobAvg de la règle). Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
-  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Avec l'option, cheveux non rendus et retard apparent de 9 cm au galop (unreal/docs/parite/monte/README.md, étape 6).",
+  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M14 assise ≤ 4,9e-8 cm d'O2, M6 portée ±5e-8, M16 continuité ≤ O2 + 7,6e-5° par image (filtre bobAvg de la règle). Strides.Monte.EnJeu (monde qui tique, BeginPlay : règle et sellerie créées seulement avec l'option ; au galop, cavalière sur le siège de l'image en fin d'image, écart 0 cm ; suiveurs du maillage posé avec ses bornes) ; mutations scripts/unreal/mutations-monte-jeu.py. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
+  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Reliquats M1 (unreal/docs/parite/monte/README.md) : cheveux, yeux, sourcils et cils de nouveau rendus avec l'option (bornes des suiveurs prises au maillage posé) ; le « retard de 9 cm » de l'étape 6 était un relevé fait au milieu de l'image (tick de AStridesShots, avant celui de la cavalière), pas un retard de la cavalière dans l'image rendue.",
   "tranche": "b"
  },
  {
@@ -372,7 +372,7 @@
    "src/entities/human.js",
    "src/entities/horse.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:44-46 et :73-89 (un clip par allure : idle, walk, trot, canter, gallop, choisi par AStridesHorse::GaitIndex) ; scripts/unreal/export-rider-animations.py:48-56 (7 clips, énergie 0 / 0,08 / 0,16 / 0,28 / 0,40)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:49-51 et :73-89 (un clip par allure : idle, walk, trot, canter, gallop, choisi par AStridesHorse::GaitIndex) ; scripts/unreal/export-rider-animations.py:48-56 (7 clips, énergie 0 / 0,08 / 0,16 / 0,28 / 0,40)",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7). Captures Unreal seules : unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_00 à 10_galop_18.png (19 images, sans pendant web, hors unreal/docs/parite).",
@@ -387,7 +387,7 @@
    "src/entities/human/anim.js",
    "src/entities/human.js"
   ],
-  "unreal": "scripts/unreal/export-rider-animations.py:51 et :68-107 (clip Rider_trot, 24 images à 30 i/s : flexion du buste et oscillation des cibles mains/pieds) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:81",
+  "unreal": "scripts/unreal/export-rider-animations.py:51 et :68-107 (clip Rider_trot, 24 images à 30 i/s : flexion du buste et oscillation des cibles mains/pieds) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:175",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni capture du trot ; clips de la cavalière créés après la validation (commits 9d167156 et dfe2eb27 du 17-18/11 ; validation-mac-2026-11-17.md inchangé depuis 5777b8b7).",
@@ -404,8 +404,8 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRiderRig.cpp (UStridesRiderRig : entrées depuis UStridesHorseTack avec le retard d'une image, règle StridesCore/RiderRules, reciblage comme realistic.js, deux os par membre AnimationCore::SolveTwoBoneIK sans étirement, pôle en position) ; unreal/StridesGrandTour/Source/StridesCore/Private/RiderPose.cpp (chaîne cheval → entrées → règle) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp (option -StridesRider=regles : en selle, clips cuits coupés, maillage posé)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; E2g et E2d (galop) : M6 portée ±5e-8, M13 buste ≤ 3,3e-6°, M14 assise ≤ 4,9e-8 cm, M16 ≤ O2 + 7,6e-5°. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
-  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Galop à gauche absent du cheval Unreal (clip miroir). Avec l'option, cheveux non rendus et retard apparent de 9 cm au galop (unreal/docs/parite/monte/README.md, étape 6).",
+  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; E2g et E2d (galop) : M6 portée ±5e-8, M13 buste ≤ 3,3e-6°, M14 assise ≤ 4,9e-8 cm, M16 ≤ O2 + 7,6e-5°. Strides.Monte.EnJeu (monde qui tique, BeginPlay : règle et sellerie créées seulement avec l'option ; au galop, cavalière sur le siège de l'image en fin d'image, écart 0 cm ; suiveurs du maillage posé avec ses bornes) ; mutations scripts/unreal/mutations-monte-jeu.py. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
+  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Galop à gauche absent du cheval Unreal (clip miroir). Reliquats M1 (unreal/docs/parite/monte/README.md) : cheveux, yeux, sourcils et cils de nouveau rendus avec l'option (bornes des suiveurs prises au maillage posé) ; le « retard de 9 cm » de l'étape 6 était un relevé fait au milieu de l'image (tick de AStridesShots, avant celui de la cavalière), pas un retard de la cavalière dans l'image rendue.",
   "tranche": "b"
  },
  {
@@ -416,7 +416,7 @@
    "src/entities/human/anim.js",
    "src/entities/human.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:143-147 (inclinaison de tout l'acteur : 0 à −5° de 5 à 8 m/s, −14° au saut)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:263-267 (inclinaison de tout l'acteur : 0 à −5° de 5 à 8 m/s, −14° au saut)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:19 (légère inclinaison liée à la vitesse et au saut). Valeurs écrites à la main, sans oracle.",
@@ -435,7 +435,7 @@
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M17 phases du saut identiques à O2 à l'image près en E3 et E3b (appel, sommet, posers, jumpK 0,5 et 0,1) ; M13 buste ≤ 3,3e-6°.",
-  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Dans le jeu, le cheval Unreal n'a pas les clips de saut en miroir et hindDown n'y est pas prouvé (étape 5) : accompagnement du saut prouvé sur les entrées du web seulement. Avec l'option, cheveux non rendus et retard apparent de 9 cm au galop (unreal/docs/parite/monte/README.md, étape 6).",
+  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Dans le jeu, le cheval Unreal n'a pas les clips de saut en miroir et hindDown n'y est pas prouvé (étape 5) : accompagnement du saut prouvé sur les entrées du web seulement. Reliquats M1 (unreal/docs/parite/monte/README.md) : cheveux, yeux, sourcils et cils de nouveau rendus avec l'option (bornes des suiveurs prises au maillage posé) ; le « retard de 9 cm » de l'étape 6 était un relevé fait au milieu de l'image (tick de AStridesShots, avant celui de la cavalière), pas un retard de la cavalière dans l'image rendue.",
   "tranche": "b"
  },
  {
@@ -449,8 +449,8 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRiderRig.cpp (UStridesRiderRig : entrées depuis UStridesHorseTack avec le retard d'une image, règle StridesCore/RiderRules, reciblage comme realistic.js, deux os par membre AnimationCore::SolveTwoBoneIK sans étirement, pôle en position) ; unreal/StridesGrandTour/Source/StridesCore/Private/RiderPose.cpp (chaîne cheval → entrées → règle) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp (option -StridesRider=regles : en selle, clips cuits coupés, maillage posé)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M1 plante – point d'étrier ≤ 1,1e-5 cm, M2 ≤ 5,9e-6 cm, M6 portée ±5e-8, M11 genou, hanche, cheville ≤ 7,2e-5°, M15 talon et pointe ≤ 1,6e-6° (tolérances 1 cm, 0,005, 2°). Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
-  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Étriers du cheval Unreal non pilotés par les pieds (aucun os d'étrier suivi) : la plante est sur le point d'étrier de la règle, pas sur un étrier affiché. Avec l'option, cheveux non rendus et retard apparent de 9 cm au galop (unreal/docs/parite/monte/README.md, étape 6).",
+  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M1 plante – point d'étrier ≤ 1,1e-5 cm, M2 ≤ 5,9e-6 cm, M6 portée ±5e-8, M11 genou, hanche, cheville ≤ 7,2e-5°, M15 talon et pointe ≤ 1,6e-6° (tolérances 1 cm, 0,005, 2°). Strides.Monte.EnJeu (monde qui tique, BeginPlay : règle et sellerie créées seulement avec l'option ; au galop, cavalière sur le siège de l'image en fin d'image, écart 0 cm ; suiveurs du maillage posé avec ses bornes) ; mutations scripts/unreal/mutations-monte-jeu.py. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
+  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Étriers du cheval Unreal non pilotés par les pieds (aucun os d'étrier suivi) : la plante est sur le point d'étrier de la règle, pas sur un étrier affiché. Reliquats M1 (unreal/docs/parite/monte/README.md) : cheveux, yeux, sourcils et cils de nouveau rendus avec l'option (bornes des suiveurs prises au maillage posé) ; le « retard de 9 cm » de l'étape 6 était un relevé fait au milieu de l'image (tick de AStridesShots, avant celui de la cavalière), pas un retard de la cavalière dans l'image rendue.",
   "tranche": "b"
  },
  {
@@ -464,8 +464,8 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRiderRig.cpp (UStridesRiderRig : entrées depuis UStridesHorseTack avec le retard d'une image, règle StridesCore/RiderRules, reciblage comme realistic.js, deux os par membre AnimationCore::SolveTwoBoneIK sans étirement, pôle en position) ; unreal/StridesGrandTour/Source/StridesCore/Private/RiderPose.cpp (chaîne cheval → entrées → règle) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp (option -StridesRider=regles : en selle, clips cuits coupés, maillage posé)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M7 écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %) ≤ 5,9e-5 cm d'O2 avec les profils d'O1. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
-  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. En jeu, les profils viennent de UStridesHorseTack (7 tranches sur 21 480 jusqu'à 2,4 cm du web, étape 5) ; M7 ≥ −1 cm non tenu par la règle elle-même (O2 : jusqu'à −23 cm aux transitions, niveau-a.md). Avec l'option, cheveux non rendus et retard apparent de 9 cm au galop (unreal/docs/parite/monte/README.md, étape 6).",
+  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M7 écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %) ≤ 5,9e-5 cm d'O2 avec les profils d'O1. Strides.Monte.EnJeu (monde qui tique, BeginPlay : règle et sellerie créées seulement avec l'option ; au galop, cavalière sur le siège de l'image en fin d'image, écart 0 cm ; suiveurs du maillage posé avec ses bornes) ; mutations scripts/unreal/mutations-monte-jeu.py. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
+  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. En jeu, les profils viennent de UStridesHorseTack (7 tranches sur 21 480 jusqu'à 2,4 cm du web, étape 5) ; M7 ≥ −1 cm non tenu par la règle elle-même (O2 : jusqu'à −23 cm aux transitions, niveau-a.md). Reliquats M1 (unreal/docs/parite/monte/README.md) : cheveux, yeux, sourcils et cils de nouveau rendus avec l'option (bornes des suiveurs prises au maillage posé) ; le « retard de 9 cm » de l'étape 6 était un relevé fait au milieu de l'image (tick de AStridesShots, avant celui de la cavalière), pas un retard de la cavalière dans l'image rendue.",
   "tranche": "b"
  },
  {
@@ -479,8 +479,8 @@
   "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRiderRig.cpp (UStridesRiderRig : entrées depuis UStridesHorseTack avec le retard d'une image, règle StridesCore/RiderRules, reciblage comme realistic.js, deux os par membre AnimationCore::SolveTwoBoneIK sans étirement, pôle en position) ; unreal/StridesGrandTour/Source/StridesCore/Private/RiderPose.cpp (chaîne cheval → entrées → règle) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp (option -StridesRider=regles : en selle, clips cuits coupés, maillage posé)",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M9 poignet au-dessus de l'encolure ≤ 3,8e-7 cm d'O2, M10 allonge ≤ 0,97 (écart à O2 ≤ 6e-7), coude ≤ 6,3e-4° ; poings (gripPoint) relus sur le maillage. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
-  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Rênes absentes (cheval.renes) : les poings sont calculés (UStridesRiderRig::FistPoint) mais aucune rêne n'est dessinée. Avec l'option, cheveux non rendus et retard apparent de 9 cm au galop (unreal/docs/parite/monte/README.md, étape 6).",
+  "preuve": "Strides.Parite.RiderRules (niveau A dans le moteur : E1, E1b, E2g, E2d, E3, E3b, 689 images ; entrées rejouées depuis O1, articulations relues sur le maillage rider_f_animated posé, contre O2 rider_f : écart max 0,0001 cm) ; unreal/docs/parite/monte/niveau-a.md (grandeurs par scripts/unreal/rider-rules-niveau-a.mjs, même code de métriques que le web) ; ctest monte-cavaliere (chaîne du jeu contre O2 rider_f, 9e-9 m) ; mutations scripts/unreal/mutations-rider-rig.py ; M9 poignet au-dessus de l'encolure ≤ 3,8e-7 cm d'O2, M10 allonge ≤ 0,97 (écart à O2 ≤ 6e-7), coude ≤ 6,3e-4° ; poings (gripPoint) relus sur le maillage. Strides.Monte.EnJeu (monde qui tique, BeginPlay : règle et sellerie créées seulement avec l'option ; au galop, cavalière sur le siège de l'image en fin d'image, écart 0 cm ; suiveurs du maillage posé avec ses bornes) ; mutations scripts/unreal/mutations-monte-jeu.py. Captures en jeu, rendu réel, à l'arrêt et au galop, avec et sans l'option, à côté du web : unreal/docs/parite/monte/captures/.",
+  "ecart": "Prouvé derrière -StridesRider=regles seulement : sans l'option, le jeu par défaut garde les clips cuits (comportement inchangé). Niveau A seulement (entrées du web rejouées) ; niveau B (cheval Unreal en jeu : phase du clip joué au lieu de horse.anim.phase, contactOff absent, cheval 3,7 % plus petit, galop à gauche et sauts sans clips en miroir dans Unreal) non mesuré. Rênes absentes (cheval.renes) : les poings sont calculés (UStridesRiderRig::FistPoint) mais aucune rêne n'est dessinée. Reliquats M1 (unreal/docs/parite/monte/README.md) : cheveux, yeux, sourcils et cils de nouveau rendus avec l'option (bornes des suiveurs prises au maillage posé) ; le « retard de 9 cm » de l'étape 6 était un relevé fait au milieu de l'image (tick de AStridesShots, avant celui de la cavalière), pas un retard de la cavalière dans l'image rendue.",
   "tranche": "b"
  },
  {
@@ -504,7 +504,7 @@
   "js": [
    "src/entities/human.js"
   ],
-  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:115-135 (Dismount : refusé pendant un saut, élimination si épreuve en cours, 120 cm à gauche et 90 cm plus haut, cap du cheval, clip idle)",
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:210-231 (Dismount : refusé pendant un saut, élimination si épreuve en cours, 120 cm à gauche et 90 cm plus haut, cap du cheval, clip idle)",
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (descendre contrôlé à l'écran). Aucun oracle.",
@@ -518,10 +518,10 @@
   "js": [
    "src/entities/realistic.js"
   ],
-  "unreal": "Content/Characters/Riders/Female/rider_f_animated (Body, Cloth_*, Eyes, Eyebrows, Eyelashes, Hair_ponytail01, 7 clips) ; Content/Characters/Riders/Male/rider_m_unreal ; scripts/unreal/prepare-import.mjs, scripts/unreal/export-rider-animations.py, scripts/unreal/import-rider-animations.py ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26-43",
+  "unreal": "Content/Characters/Riders/Female/rider_f_animated (Body, Cloth_*, Eyes, Eyebrows, Eyelashes, Hair_ponytail01, 7 clips) ; Content/Characters/Riders/Male/rider_m_unreal ; scripts/unreal/prepare-import.mjs, scripts/unreal/export-rider-animations.py, scripts/unreal/import-rider-animations.py ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:31-48",
   "etat": "partiel",
   "niveau": "joue_ecran",
-  "preuve": "unreal/docs/validation-mac-2026-11-17.md:16 (ancien import rider_f_unreal : échelle, orientation et placement en selle contrôlés sur une capture montée) ; modèle actuel rider_f_animated (réexport Blender, dfe2eb27, avec rotation de −90° ajoutée en StridesRider.cpp:33) affiché dans unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09). Aucune capture côte à côte web/Unreal.",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:16 (ancien import rider_f_unreal : échelle, orientation et placement en selle contrôlés sur une capture montée) ; modèle actuel rider_f_animated (réexport Blender, dfe2eb27, avec rotation de −90° ajoutée en StridesRider.cpp:38) affiché dans unreal/docs/decors.md:33-35 et :38-39 (séquence -StridesShots : la cavalière monte et le parcours de démonstration est joué à cheval, vérifié sur Mac le 18/11/2026 avec le code actuel, commit f2c1de09). Aucune capture côte à côte web/Unreal.",
   "ecart": "Cavalier rider_m importé mais référencé par aucun code ; ancien import rider_f_unreal toujours présent mais plus référencé ; version du GLB source (lot humains v3 ou antérieur) à confirmer : unreal/ImportSource/rider_f_unreal.glb ; présence des formes de visage (face_*, blink_*, look_*) après import Interchange : à confirmer (.uasset).",
   "tranche": "b"
  },
@@ -603,7 +603,7 @@
   "js": [
    "src/entities/realistic.js"
   ],
-  "unreal": "Content/Characters/Riders/Female/rider_f_animated/rider_f_animated/Materials et Textures (Skin, Cloth_*, Hair_ponytail01, skin_albedo, skin_normal… importés par Interchange), chargés via unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26-43",
+  "unreal": "Content/Characters/Riders/Female/rider_f_animated/rider_f_animated/Materials et Textures (Skin, Cloth_*, Hair_ponytail01, skin_albedo, skin_normal… importés par Interchange), chargés via unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:31-48",
   "etat": "partiel",
   "niveau": "compile",
   "preuve": "Aucun test ni capture côte à côte ; contenu .uasset illisible : réglages des matériaux importés à confirmer.",
@@ -620,7 +620,7 @@
   "unreal": "",
   "etat": "absent",
   "niveau": "aucun",
-  "preuve": "rg -i 'tint|SetVectorParameter|CreateDynamicMaterial|outfit' dans unreal/StridesGrandTour/Source : seul StridesWorldDirector.cpp:23 teinte un matériau, aucun sur la cavalière. StridesRider.cpp:36-43 affiche toutes les pièces avec les couleurs natives des textures. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "preuve": "rg -i 'tint|SetVectorParameter|CreateDynamicMaterial|outfit' dans unreal/StridesGrandTour/Source : seul StridesWorldDirector.cpp:23 teinte un matériau, aucun sur la cavalière. StridesRider.cpp:41-48 affiche toutes les pièces avec les couleurs natives des textures. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
   "ecart": "Aucune teinte appliquée (veste brun-olive et jean bleu sur unreal/StridesGrandTour/Saved/Screenshots/Strides/10_galop_05.png) ; veste Cloth_jacket toujours visible (au lieu de la seule tenue de concours) ; pas de gants, de casque ni de casquette.",
   "tranche": "b"
  },
@@ -638,7 +638,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/. Voir aussi deplacement.json monte.casque (absent).",
-  "ecart": "Aucun maillage de casque ni de casquette parmi les pièces de la cavalière (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:36).",
+  "ecart": "Aucun maillage de casque ni de casquette parmi les pièces de la cavalière (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:41).",
   "tranche": "b"
  },
  {

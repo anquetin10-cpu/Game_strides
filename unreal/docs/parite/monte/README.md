@@ -16,7 +16,7 @@ Documents de ce dossier :
   d'étriers pour la décision J3, écrit par `scripts/unreal/rider-rules-o2.mjs` (jamais à la main) ;
 - section « Étape 4 » ci-dessous : règles portées en C++ (`StridesCore/RiderRules.h`), preuve contre O2, mutations, coût.
 
-## Synthèse de la voie A pour Julien (24/11/2026, après l'étape 7)
+## Synthèse de la voie A pour Julien (24/11/2026, après l'étape 7 et les reliquats M1)
 
 La voie A s'arrête à l'étape 7 : la voie B (MetaHuman) est écartée, donc pas d'étape 8 ni suivantes. Les niveaux de preuve
 sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rendu** (tests Automation), **en jeu avec rendu**
@@ -38,13 +38,14 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   mesurable au-delà du bruit (`cout.md`).
 
 **Partiel**
-- Captures côte à côte à l'arrêt et au galop (`captures/`) : la cavalière est assise, pieds sous elle, mains au-dessus du
-  garrot. Ce ne sont pas des poses jumelles (décor et phase différents). Deux défauts visibles : la queue de cheval n'est
-  pas rendue avec l'option, et au galop la cavalière paraît en retard de 9 cm sur la selle (cause à confirmer).
+- Captures côte à côte à l'arrêt et au galop (`captures/`, refaites le 24/11 aux reliquats M1) : la cavalière est assise,
+  pieds sous elle, mains au-dessus du garrot ; avec l'option, queue de cheval, yeux et sourcils de nouveau rendus. Ce ne
+  sont pas des poses jumelles (décor et phase différents). Le « retard de 9 cm » au galop était l'instant du relevé (milieu
+  de l'image) : en fin d'image, la cavalière est sur le siège (0 cm, `Strides.Monte.EnJeu`).
 - Le Control Rig est construit par script, mais le jeu utilise un calcul C++ équivalent, non prouvé identique au nœud
   du Control Rig.
-- Mutations du composant de sellerie dans le moteur : 1 sur 18 seulement passée (campagne interrompue par la migration,
-  étape 5).
+- Mutations du composant de sellerie dans le moteur : les 18 passées aux reliquats M1 ; 16 détectées, 2 déclarées dont une
+  non départagée (tangage, bassin et garrot inversés), en plus de « saut ignoré » déjà déclarée.
 - Mesure du coût : le temps du fil de rendu inclut l'attente de l'écran à 60 Hz et ne mesure pas le travail. La valeur
   absolue du GPU sur Metal est à confirmer. La mémoire est celle du processus entier et ne départage pas les options.
   L'aperçu du rendu mobile sur Mac démarre, mais se fige à la capture, avec un `ensure` Metal (`cout.md`).
@@ -76,20 +77,21 @@ node scripts/unreal/rider-rules-metrics.mjs                     # -> unreal/docs
 python3 scripts/unreal/rig-from-glb.py                          # -> unreal/core/tests/oracles/monte/rigs/rider_f.json
 node scripts/unreal/rider-rules-o2.mjs                          # -> oracles/monte/o2/, rigs/web_classic.json, o2.md
 node scripts/unreal/rider-rules-o2.mjs --fit=stirrupY=-0.62     # longueur d'étriers J3 (m) -> .tmp/monte/o2-fit
-python3 scripts/unreal/mutations-monte-o2.py                    # 93 mutations d'anim.js et du rejeu, copies dans build/
+python3 scripts/unreal/mutations-monte-o2.py                    # 93 mutations d'anim.js et du rejeu, copies dans .ue-cache/travail/
 # Étape 4 (C++ hors moteur) : paramètres, test contre O2 (dans ctest, ~2 s), mutations (~3 min), banc de coût (Release)
 node scripts/unreal/export-rider-rules-data.mjs                 # -> Content/Data/rider_rules.json (--check : comparaison)
 cmake -S unreal/core -B build/core-monte && cmake --build build/core-monte && ctest --test-dir build/core-monte --output-on-failure
-python3 scripts/unreal/mutations-rider-rules.py                 # 97 mutations de RiderRules.cpp, copies dans build/mutations-monte
+python3 scripts/unreal/mutations-rider-rules.py                 # 97 mutations de RiderRules.cpp, copies dans .ue-cache/travail/mutations-monte
 cmake -S unreal/core -B build/core-monte-rel -DCMAKE_BUILD_TYPE=Release && cmake --build build/core-monte-rel --target strides_monte_bench
 build/core-monte-rel/strides_monte_bench unreal/core/tests/oracles/monte unreal/StridesGrandTour/Content/Data 10000 rider_f
 # Étape 5 (moteur) : données de sellerie (Node seul, ~2 s), ctest « monte-cheval », test moteur, mutations
 node scripts/unreal/export-horse-tack.mjs                      # -> Content/Data/pjl_horse_tack.json (--check : comparaison)
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PWD/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides.Parite.HorseSeat; Quit" -unattended -nullrhi -nosplash -log -stdout -ReportExportPath=<dossier>
-python3 scripts/unreal/mutations-horse-tack.py [--moteur]      # cœur : copies dans build/ (~30 s) ; --moteur : UBT + éditeur (~3 min chacune)
+python3 scripts/unreal/mutations-horse-tack.py [--moteur]      # cœur : copies dans .ue-cache/travail/ (~30 s) ; --moteur : UBT + éditeur (~25 s chacune)
 # Étape 6 (moteur) : données de la cavalière, ctest « monte-cavaliere », test moteur (niveau A), page niveau-a.md, mutations.
-# Depuis la migration (23/11/2026) : UBT avec -NoUBA, éditeur par le chemin réel du moteur et du projet (voir l'étape 6).
+# Depuis la migration (23/11/2026) : éditeur par le chemin réel du moteur et du projet (étape 6) ; par les chemins réels, UBT
+# compile sans -NoUBA (reliquats M1, 24/11/2026).
 python3 scripts/unreal/export-rider-rig-data.py                # -> Content/Data/monte_rider_f.json (--check : comparaison)
 "$UE_REEL/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "<chemin réel>/unreal/StridesGrandTour/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides.Parite.RiderRules; Quit" -unattended -nullrhi -nosplash -log -stdout \
@@ -102,6 +104,10 @@ python3 scripts/unreal/mutations-rider-rig.py [--moteur]       # cœur : ~15 s ;
 python3 scripts/unreal/perf-summary.py --mesurer --sortie=<dossier> --passes=3 [--libre] [--apercu-mobile] --ecrire  # -> cout.md, perf/
 python3 scripts/unreal/perf-summary.py unreal/docs/parite/monte/perf   # résumé seul, depuis les fichiers versionnés
 python3 scripts/unreal/mutations-perf.py                       # 12 mutations (PerfStats.cpp, recalcul du résumé), ~20 s
+# Reliquats M1 : sorties des mutations sous .ue-cache/travail/ (scripts/unreal/ue_travail.py, chemins réels, -trace=none)
+"$UE_REEL/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" \
+  -ExecCmds="Automation RunTests Strides.Monte.EnJeu; Quit" -unattended -nullrhi -nosplash -trace=none -abslog=<journal> -ReportExportPath=<dossier>
+python3 scripts/unreal/mutations-monte-jeu.py                  # 9 mutations moteur (ordre des ticks, bornes, BeginPlay), ~13 min
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -508,7 +514,8 @@ Mutations (`scripts/unreal/mutations-horse-tack.py`), 35 au total :
   témoin vert, **1 seule vérifiée** (recentrage 12/s → 6/s : détectée, cinq critères en échec). La campagne a été suspendue de
   l'extérieur le 23/11/2026 vers 21 h 31 (`kill -STOP` envoyé par la session de migration, pendant la synchronisation finale de
   `UE_5.8` vers le disque externe) ; le source resté muté a été rétabli à la main (comparé à la copie du cœur : identique à
-  l'original) et le processus arrêté. **17 mutations moteur restent à passer**, après la migration du moteur, par
+  l'original) et le processus arrêté. **17 mutations moteur restent à passer** (*passées aux reliquats M1 : voir la fin de ce
+  journal*), après la migration du moteur, par
   `python3 scripts/unreal/mutations-horse-tack.py --moteur` (environ 3 min chacune). **Les binaires locaux du module
   (`Binaries/`, `Intermediate/`) sont ceux de la compilation mutée : une compilation UBT est nécessaire avant tout lancement
   de l'éditeur ou du jeu.** Les preuves G2 et G3 ci-dessus portent sur le source commité, compilé et testé avant la campagne.
@@ -618,6 +625,7 @@ Mutations (`scripts/unreal/mutations-rider-rig.py --moteur`, 620 s) : **12 sur 1
    non trouvée (suiveur du maillage posé), à corriger.
 6. **Retard apparent au galop** : à la capture, l'acteur de la cavalière est à 9 cm du siège relu en fin d'image (une image à
    6 m/s), malgré la dépendance de tick sur le cheval et sa sellerie ; cause à confirmer.
+   *Corrigé ou expliqué aux reliquats M1 (fin de ce journal) : 5, bornes des suiveurs ; 6, relevé fait au milieu de l'image.*
 
 ### Captures côte à côte (rendu GPU réel, 844 × 390) : `captures/`
 
@@ -672,3 +680,115 @@ Portes : G1 vert (300 729 cœur, 306 914 monte, 3 719 monte-cheval, 72 547 monte
 `idevice_id` déjà connu sur un test) ; G4 : `mutations-perf.py` code 0, aucun source muté par les scripts `mutations-cso-*`
 touché ; G5 : empreintes des 238 PNG de `parite/cso` identiques avant et après ; G6 code 0, `PARITE.md` inchangé ; G7
 `git diff --quiet HEAD -- src public tests` code 0, `riderPosture` 4/4.
+
+## Reliquats M1 des étapes 5 à 7 (24/11/2026)
+
+Base : `cce6bad3` (étape 7), branche `claude/unreal-port`. Chemins réels du dépôt et du moteur (disque externe) ; UBT
+sans `-NoUBA` (compile par les chemins réels, code 0) ; fichiers lourds et journaux sous `.ue-cache/travail/` (exclu de git).
+
+### (a) Scripts de mutations après la migration
+
+- `scripts/unreal/ue_travail.py` (nouveau) : chemins réels (dépôt par `realpath`, moteur par `UE` ou
+  `/Volumes/Stockage-Qualification/Mac-Mini-Migration/Applications/UE_5.8`), UBT, éditeur sans rendu avec `-trace=none`
+  et journal dans un fichier (`-abslog`), sorties sous `.ue-cache/travail/<nom>`.
+- `mutations-horse-tack.py`, `mutations-rider-rig.py`, `mutations-cso-controls.py` : lancements par ce module ; les 15
+  autres `mutations-*.py` : dossier de travail par défaut déplacé de `build/` vers `.ue-cache/travail/`. **Les listes de
+  mutations ne changent pas** (seuls l'en-tête, les chemins et les fonctions de lancement sont modifiés : `git diff`).
+- `mutations-horse-tack.py --moteur` (campagne complète, les 18 mutations moteur rejouées, pas seulement les 17 restantes) :
+  témoin cœur et témoin moteur verts ; 35 mutations (17 cœur, 18 moteur), **29 détectées**, 6 déclarées
+  dans `ATTENDUES`, code 0, sources rétablis, recompilation finale code 0 (478 s : UBT incrémental et éditeur sans rendu
+  prennent environ 25 s par mutation moteur, et non 3 min comme estimé à l'étape 5). Sur les 18 moteur, 16 détectées par
+  `Strides.Parite.HorseSeat`. Deux mutations moteur non détectées, ajoutées à `ATTENDUES` avec leur raison après une
+  première passe en code 1 (même campagne, 570 s) :
+  - « flanc : sommets du bord inférieur exclus » : **équivalente**, mesuré sur l'oracle : la tranche 0 du flanc vaut 0
+    (`hz.fl[2]`, `hz.fr[2]`) à toutes les images des 8 scénarios d'O1 ; aucun sommet n'y tombe ;
+  - « tangage : bassin et garrot inversés » : **non départagée** (faiblesse du test) : l'inversion ajoute ±π à `pitch` et à
+    `pitch0`, la différence ne change qu'au passage à ±π (signe de la hauteur garrot − bassin qui change entre le repos et
+    l'image), non exercé par les images testées ; raison déduite, non mesurée.
+  La troisième non détectée du niveau moteur, « composant : saut ignoré », était déjà déclarée (clips en miroir absents).
+- `mutations-rider-rules.py` rejoué : 97 mutations, 85 détectées, 12 déclarées dans `ATTENDUES` (mêmes raisons qu'à
+  l'étape 4), code 0, 130 s.
+
+### (b) Cheveux non rendus avec `-StridesRider=regles` : cause et correction
+
+Mesuré par `Strides.Monte.EnJeu` (diagnostic avant correction) : les 8 suiveurs (vêtements, yeux, sourcils, cils, queue de
+cheval) suivent bien le maillage posé (53 os, aucun absent du meneur), mais leurs **bornes** restent celles de leur pose de
+référence (cavalière debout) : pour `Hair_ponytail01`, `Eyes`, `Eyebrows` et `Eyelashes`, la boîte est 74 à 87 cm
+au-dessus de l'os `head` de la cavalière assise. Le rendu écarte ces petites pièces (boîte hors du champ de la caméra) ;
+les vêtements, grands, restent dans le champ. Avec un meneur `USkeletalMeshComponent` (jeu par défaut), le cache des
+bornes d'un suiveur est invalidé par le meneur ; un `UPoseableMeshComponent` ne le fait pas.
+Correction (`StridesRider.cpp`, seulement en selle avec la règle) : `bUseBoundsFromLeaderPoseComponent` vrai et cache des
+bornes invalidé à l'activation et à chaque image après la pose ; rétabli à faux pied à terre (comportement par défaut).
+Activer seulement le drapeau ne suffit pas (mesuré : bornes toujours à 74 cm, cache non invalidé).
+Preuve : `Strides.Monte.EnJeu` (bornes des 4 pièces de la tête autour de l'os `head`) et captures (queue de cheval, yeux,
+sourcils visibles).
+
+### (c) « Retard de 9 cm » au galop : mesure et cause
+
+- Relevé de l'étape 6 refait avant correction (`-StridesShots=monte -StridesRider=regles`, rendu réel) : au tick de
+  `AStridesShots`, acteur de la cavalière à 9,7 cm du siège S (pelvis à −11,3 cm dans S), à 6,2 m/s.
+- Ordre réel des ticks (mesuré, `GetActualTickGroup`) : cheval en `TG_PrePhysics` (0), sellerie en `TG_PostUpdateWork` (5,
+  après l'animation du cheval), cavalière **repoussée en `TG_PostUpdateWork`** (5) par son prérequis sur la sellerie.
+  `AStridesShots` tique en `TG_PrePhysics`, après le cheval et avant la cavalière : il lisait le siège de l'image
+  courante et la cavalière de l'image précédente, soit un pas du cheval (6,2 m/s ÷ 60 = 10,3 cm).
+- **En fin d'image** (`FWorldDelegates::OnWorldPostActorTick`, état rendu dans la capture) : écart **0,0000 cm** à l'arrêt
+  et au galop (même passe de capture, `-StridesShots=monte`, relevé « fin d'image » ajouté au journal). Le retard n'était
+  donc pas dans l'image rendue : c'était l'instant du relevé.
+- Correction : le relevé de `-StridesShots=monte` est fait en fin d'image (et l'écart au tick de la capture est gardé dans
+  le journal pour mémoire). L'ordre des ticks de la cavalière est inchangé (déjà correct) et désormais vérifié par test.
+- Test moteur `Strides.Monte.EnJeu` (nouveau, `Private/Tests/StridesMonteInGameTests.cpp`) : monde de test commencé
+  comme le jeu (`InitializeActorsForPlay`, `BeginPlay`), cheval et cavalière créés avec `-StridesRider=regles` posé le temps
+  du `SpawnActor`, montée, 240 images de 1/60 s au galop (`World->Tick`, `GFrameCounter` avancé ; sans cela chaque tick
+  ne passe qu'une fois). Mesuré : 8,00 m/s, pas du cheval 13,56 cm par image ; **fin d'image : écart 0,000000 cm et
+  0,000003°** sur 150 images ; un observateur en `TG_PrePhysics` après le cheval voit 13,56 cm (le relevé de l'étape 6,
+  reproduit : le test voit un retard quand il y en a un).
+
+### (d) Mineurs des contrôles des étapes 5 à 7
+
+- Inventaire : 48 références `StridesRider.cpp:<ligne>` décalées par les étapes 5 et 6 (et par M1) recalées, dans 6
+  fichiers de `unreal/docs/parite/inventaire/` : 40 par correspondance des lignes (diff de la version où la référence a
+  été écrite à la version actuelle, contenu identique), 8 étendues de fonction (`TryMount`, `Dismount`, `Tick`) recalées à
+  la main sur la fonction actuelle. Références `StridesHorse.cpp` : toutes justes (vérifié de la même façon, aucune
+  décalée). Les tableaux historiques datés de `cso-ecarts.md` et `oracle-monte.md` ne sont pas réécrits.
+- « `HorseTack()` nul sans l'option » : la preuve de l'étape 5 créait le cheval dans un monde sans `BeginPlay`, donc ne
+  prouvait rien. `Strides.Monte.EnJeu` le prouve avec `BeginPlay` : sans l'option, ni sellerie, ni règle, ni maillage
+  posé ; avec l'option, les trois sont créés (contrôle positif) ; la ligne de commande est rétablie après le bloc.
+- G3 : compte exact ci-dessous, avertissements nommés par test.
+
+### Mutations `scripts/unreal/mutations-monte-jeu.py` (moteur, UBT puis `Strides.Monte.EnJeu`)
+
+Témoin vert ; 9 mutations, **7 détectées**, 2 déclarées, code 0, sources rétablis, recompilation finale code 0 (770 s).
+Détectées : prérequis du cheval et de la sellerie retirés (cavalière en `TG_PrePhysics`) ; prérequis de la sellerie seul
+retiré ; suiveurs gardant leurs bornes propres en selle ; bornes du meneur gardées pied à terre ; règle créée par
+`BeginPlay` sans l'option ; règle jamais créée ; sellerie créée sans l'option. Déclarées : prérequis du cheval seul retiré
+(équivalente : la sellerie tique en `TG_PostUpdateWork`, après le cheval) ; rafraîchissement des bornes à chaque image
+retiré (**non départagée** : le cache invalidé à l'activation suit le composant et la pose assise bouge peu au galop ; le
+rafraîchissement est gardé pour la montée et le saut, que le test n'exerce pas). Non couvert : le relevé de fin d'image de
+`-StridesShots=monte` (mode de capture, sans test Automation ; sortie lue dans le journal).
+
+### Captures (`captures/`, rendu GPU réel, 844 × 390)
+
+Refaites le 24/11/2026 : web (`export-rider-rules.mjs --shots`, Vite sur le port 5178 ; `poses.json` identique octet pour
+octet à celui de l'étape 6), Unreal par défaut et Unreal avec `-StridesRider=regles`. Montages web | défaut | règles sous
+`.ue-cache/travail/m1/montages/` (non versionnés). Avec la règle, la queue de cheval, les yeux et les sourcils sont
+rendus. Mêmes limites qu'à l'étape 6 : pas des poses jumelles (décor, phase de galop, cheval 3,7 % plus petit).
+Relevés du journal de la passe `regles` : arrêt, fin d'image, écart 0,0000 cm ; galop (6,20 m/s), fin d'image, écart
+0,0000 cm, au tick de la capture 9,94 cm ; pelvis dans S (−1,9 ; 0,0 ; 10,1) cm au galop (−11,3 cm à l'étape 6 : relevé au
+milieu de l'image). Coût de la règle 0,033 à 0,039 ms à l'image capturée.
+
+### Portes
+
+- G1 : ctest code 0 ; cœur 300 729, `monte` 306 914, `monte-cheval` 3 719, `monte-cavaliere` 72 547, `perf` 20
+  vérifications, 0 échec (construit sous `.ue-cache/travail/core`).
+- G2 : UBT code 0, aucune erreur ni avertissement du compilateur dans les journaux (compilations successives de M1).
+- G3 : `Automation RunTests Strides` : **36 tests, 36 en succès** (35 sans avertissement, 1 avec), 0 échec. Le nouveau test
+  est `Strides.Monte.EnJeu`. Avertissements, nommés exactement : **2, tous deux sur `Strides.Parite.CsoFences`** (le test en
+  cours quand l'éditeur cherche les appareils iOS) : `FMacPlatformProcess::CreateProc: posix_spawn(".../libimobiledevice/Mac/idevice_id") failed (86, …)`
+  et `Failed to launch Tool. (.../idevice_id)`. `idevice_id` est un exécutable x86_64 (`file`) ; l'erreur 86 est
+  « Bad CPU type in executable » (Rosetta absent : à confirmer). Sans effet sur les tests. Les étapes 6 et 7 rattachaient
+  cet avertissement à `Strides.Cso.CameraInGame` ou à « un test » : il tombe sur le test en cours à ce moment.
+- G4 : `mutations-horse-tack.py --moteur` code 0, `mutations-rider-rules.py` code 0, `mutations-monte-jeu.py` code 0.
+- G5 : empreintes des 238 PNG de `parite/cso` identiques avant et après (captures non régénérées : le jeu par défaut et le
+  mode `cso` ne sont pas touchés).
+- G6 : `build-parite.py` code 0 ; `PARITE.md` régénéré (références recalées, preuve et écart des lignes de la cavalière).
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.

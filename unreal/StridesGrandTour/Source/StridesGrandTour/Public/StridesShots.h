@@ -98,6 +98,7 @@ private:
 	int32 MonteStep = 0;
 	float MonteWait = 0.f;
 	TArray<TSharedPtr<class FJsonObject>> MontePoses;
+	FDelegateHandle MonteEndOfFrame;  // relevé de la cavalière en fin d'image (après tous les groupes de tick)
 	FString MonteLog;
 	UPROPERTY() TObjectPtr<class ACameraActor> Camera;
 	// Mesure du coût (mode "perf", étape 7).

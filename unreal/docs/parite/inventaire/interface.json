@@ -832,7 +832,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (rg dans unreal/StridesGrandTour/Source, Content, Config, scripts/unreal, unreal/core).",
-  "ecart": "Pas de prénom ; seule la cavalière est utilisée (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:26) bien que Content/Characters/Riders/Male soit importé.",
+  "ecart": "Pas de prénom ; seule la cavalière est utilisée (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:31) bien que Content/Characters/Riders/Male soit importé.",
   "tranche": "b"
  },
  {

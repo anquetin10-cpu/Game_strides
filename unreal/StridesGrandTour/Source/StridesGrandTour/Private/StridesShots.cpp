@@ -1524,11 +1524,30 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 		const UStridesRiderRig* Rig = Rider ? Rider->RulesRig() : nullptr;
 		if (Rider && Rider->RulesMesh() && Horse && Horse->HorseTack())
 		{
-			UPoseableMeshComponent* M = Rider->RulesMesh();
-			const FTransform Seat = Horse->HorseTack()->SeatWorld();
-			const auto L = [&](const TCHAR* B) { return Seat.InverseTransformPosition(M->GetBoneLocation(FName(B), EBoneSpaces::WorldSpace)).ToString(); };
-			UE_LOG(LogTemp, Display, TEXT("Strides monte: acteur %s, siège %s, maillage posé visible %d ; os dans le repère du siège (cm) : pelvis %s, head %s, foot_l %s, hand_l %s"),
-				*Rider->GetActorLocation().ToString(), *Seat.GetLocation().ToString(), (int32)M->IsVisible(), *L(TEXT("pelvis")), *L(TEXT("head")), *L(TEXT("foot_l")), *L(TEXT("hand_l")));
+			// Relevé au moment de la demande (tick de cet acteur, TG_PrePhysics : le cheval a pu avancer, la cavalière est
+			// encore à l'image précédente, car elle tique en TG_PostUpdateWork derrière la sellerie), puis en fin d'image
+			// (OnWorldPostActorTick, après tous les groupes de tick : l'état rendu dans la capture).
+			const double MidGap = (Rider->GetActorLocation() - Horse->HorseTack()->SeatWorld().GetLocation()).Size();
+			const FString ShotName = Name;
+			FWorldDelegates::OnWorldPostActorTick.Remove(MonteEndOfFrame);
+			MonteEndOfFrame = FWorldDelegates::OnWorldPostActorTick.AddWeakLambda(this, [this, Rider, Horse, MidGap, ShotName](UWorld* Wd, ELevelTick, float) {
+				if (Wd != GetWorld()) return;
+				// Copies d'abord : retirer le délégué détruit cette lambda et ses captures.
+				AStridesShots* Self = this;
+				AStridesRider* R = Rider;
+				AStridesHorse* Hr = Horse;
+				const double Mid = MidGap;
+				const FString N = ShotName;
+				FWorldDelegates::OnWorldPostActorTick.Remove(Self->MonteEndOfFrame);
+				Self->MonteEndOfFrame.Reset();
+				if (!IsValid(R) || !IsValid(Hr) || !R->RulesMesh() || !Hr->HorseTack()) return;
+				UPoseableMeshComponent* M = R->RulesMesh();
+				const FTransform Seat = Hr->HorseTack()->SeatWorld();
+				const auto L = [&](const TCHAR* B) { return Seat.InverseTransformPosition(M->GetBoneLocation(FName(B), EBoneSpaces::WorldSpace)).ToString(); };
+				UE_LOG(LogTemp, Display, TEXT("Strides monte: %s, fin d'image : acteur %s, siège %s, écart %.4f cm (au tick de la capture : %.2f cm), maillage posé visible %d ; os dans le repère du siège (cm) : pelvis %s, head %s, foot_l %s, hand_l %s"),
+					*N, *R->GetActorLocation().ToString(), *Seat.GetLocation().ToString(), (R->GetActorLocation() - Seat.GetLocation()).Size(), Mid, (int32)M->IsVisible(),
+					*L(TEXT("pelvis")), *L(TEXT("head")), *L(TEXT("foot_l")), *L(TEXT("hand_l")));
+			});
 		}
 		UE_LOG(LogTemp, Display, TEXT("Strides monte: %s écrite (%s) ; règles %s, vitesse %.2f m/s, saut %d, coût de la règle %.4f ms"), Name, *File,
 			bRules ? TEXT("actives") : TEXT("absentes (jeu par défaut)"), Horse ? Horse->SpeedMS : -1.f, Horse ? (int32)Horse->IsJumping() : -1, Rig ? Rig->LastCostMs() : -1.0);
