@@ -16,7 +16,7 @@ sans selle ni bride, ne s'incline pas), et c'est lui qui fait l'essentiel des é
   phase de foulée donnée à la cavalière comme dans le web (étape M3) : égale au web à 5e-10 près quand le cheval galope ou
   trotte.
 - **Sur le cheval Unreal (niveau B)**, sur 215 critères du plan :
-  - tenus : pied sur le point d'étrier (M1) et écart latéral du pied (M2) partout, coude et allonge du bras partout,
+  - tenus : pied sur le point d’étrier (M1) et cheville jamais au-delà de sa place naturelle (M2) partout, coude et allonge du bras partout,
     appel, sommet et poser des antérieurs du saut à l'image près ;
   - non tenus : 61. Mais 20 des 23 seuils manqués le sont aussi par le web lui-même (jambe un peu tendue, genou qui
     touche le flanc, poignet un peu bas) : ce sont des limites de la règle du web, pas du portage ;
