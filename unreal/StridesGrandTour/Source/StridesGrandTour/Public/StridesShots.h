@@ -96,6 +96,13 @@ private:
 	// Essai de monte, étape 6 (mode "monte") : captures de la cavalière en selle, à l'arrêt puis au galop, caméra posée dans
 	// le repère du cheval comme la capture du web (poses.json de export-rider-rules.mjs --shots).
 	void TickMonte(float DeltaSeconds, class APlayerController* PC);
+	// Étape M3 (mode "monte-b", niveau B, avec -StridesRider=regles et -StridesHorseLead=web) : captures APPARIÉES au web :
+	// pour chaque pose de -StridesMontePoses (scénario et image d'O1), le cheval Unreal et la cavalière sont posés par le
+	// rejeu de cette image (FStridesRiderOnHorseReplay, le code du test Strides.Parite.RiderOnHorse), ticks du cheval, de
+	// sa sellerie et de la cavalière suspendus le temps de la capture ; même caméra que le web dans le repère du cheval.
+	void TickMonteB(float DeltaSeconds, class APlayerController* PC);
+	TSharedPtr<class FStridesRiderOnHorseReplay> MonteReplay;
+	int32 MonteShot = 0;
 	int32 MonteStep = 0;
 	float MonteWait = 0.f;
 	TArray<TSharedPtr<class FJsonObject>> MontePoses;

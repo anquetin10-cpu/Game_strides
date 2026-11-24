@@ -34,6 +34,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { runText, indexText } from './cso-runs-io.mjs';
+import { jumpPhases } from './rider-rules-metrics.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const BASE = process.env.BASE || 'http://127.0.0.1:5176';
@@ -54,7 +55,16 @@ const SHOT_POSES = [
   // clip jump_canter_M, en vol : jT 0,61). Choisies par --only-shots=galop-gauche,saut-gauche.
   { name: 'galop-gauche', scenario: 'E2g', frame: 100, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
   { name: 'saut-gauche', scenario: 'E3', frame: 50, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
+  // Étape M3 (niveau B, captures appariées) : sommet du saut d'E3, image relue dans O1 (rider-rules-metrics.mjs jumpPhases :
+  // premier vol à mi-course, in.jump ≥ 0,5), jamais recopiée.
+  { name: 'saut-sommet', scenario: 'E3', frame: sommetE3(), eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
 ];
+function sommetE3() {
+  const f = join(ROOT, 'unreal/core/tests/oracles/monte/o1/E3.json');
+  if (!existsSync(f)) return null;
+  const p = jumpPhases(JSON.parse(readFileSync(f, 'utf8')));
+  return p ? p.sommet : null;
+}
 // --only-shots=a,b : seulement ces captures ; sans l'option, les captures de l'étape 6 (arrêt, galop) comme avant.
 const ONLY_SHOTS = arg('only-shots').split(',').filter(Boolean);
 

@@ -38,6 +38,8 @@
 #include "StridesRider.h"
 #include "StridesRiderRig.h"
 #include "StridesHorseTack.h"
+#include "StridesRiderReplay.h"
+#include "Components/PoseableMeshComponent.h"
 #include "Components/PoseableMeshComponent.h"
 #include "StridesTouchControls.h"
 #include "StridesPauseMenu.h"
@@ -261,7 +263,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 		// Dossier de sortie résolu une fois, avant toute capture ; refus = sortie sans rien écrire.
 		bOutResolved = true;
 		FString Why;
-		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("miroir") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
+		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("miroir") || Mode() == TEXT("monte-b") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
 		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Default, ProtectedShotsDirs(), OutDir, Why))
 		{
 			bRefused = true;
@@ -283,6 +285,11 @@ void AStridesShots::Tick(float DeltaSeconds)
 	if (Mode() == TEXT("monte") || Mode() == TEXT("miroir"))
 	{
 		TickMonte(DeltaSeconds, PC);
+		return;
+	}
+	if (Mode() == TEXT("monte-b"))
+	{
+		TickMonteB(DeltaSeconds, PC);
 		return;
 	}
 	if (Mode() == TEXT("perf"))
@@ -1651,6 +1658,178 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 		}
 		FPlatformMisc::RequestExit(false);
 		return;
+	default:
+		FPlatformMisc::RequestExit(false);
+	}
+}
+
+
+// ---------- Essai de monte, étape M3 : niveau B, captures appariées au web (-StridesShots=monte-b) ----------
+// Mise en selle comme le mode monte (entrée du tracé du Pôle) ; puis, pour chaque pose de -StridesMontePoses (défaut
+// unreal/docs/parite/monte/captures/poses-niveau-b.json) : ticks du cheval, de sa sellerie et de la cavalière suspendus,
+// rejeu du scénario d'O1 de l'image 0 à l'image de la pose sur le cheval Unreal (FStridesRiderOnHorseReplay), cheval
+// soulevé de la hauteur du saut enregistrée (hz.p.y − hz.gy) pour ne pas poser un cheval en vol sur le sol, cavalière au
+// siège S ; caméra du web dans le repère de l'acteur du cheval ; capture monte-<nom>-unreal-b.png après 1,5 s.
+void AStridesShots::TickMonteB(float DeltaSeconds, APlayerController* PC)
+{
+	AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
+	AStridesRider* Rider = Cast<AStridesRider>(PC->GetPawn());
+	if (!Rider && Horse) Rider = Horse->Rider;
+	if (MonteStep == 0)
+	{
+		if (OutDir.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides monte-b: -StridesShotsDir=<dossier dédié> exigé"));
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		FString PosesFile = RepoRoot() / TEXT("unreal/docs/parite/monte/captures/poses-niveau-b.json");
+		FParse::Value(FCommandLine::Get(), TEXT("StridesMontePoses="), PosesFile);
+		FString Text;
+		TSharedPtr<FJsonObject> Doc;
+		if (!FFileHelper::LoadFileToString(Text, *PosesFile) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Doc) || !Doc)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides monte-b: poses illisibles (%s)"), *PosesFile);
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		for (const TSharedPtr<FJsonValue>& V : Doc->GetArrayField(TEXT("poses"))) MontePoses.Add(V->AsObject());
+		MonteStep = 1;
+		MonteWait = 20.f;  // shaders et tuiles
+		return;
+	}
+	const auto View = [&](const TSharedPtr<FJsonObject>& P) {
+		if (!Horse || !P) return;
+		const auto H = [&](const TCHAR* K) {
+			const TArray<TSharedPtr<FJsonValue>>& A = P->GetArrayField(K);
+			return Horse->GetActorTransform().TransformPosition(FVector(100.0 * A[2]->AsNumber(), -100.0 * A[0]->AsNumber(), 100.0 * A[1]->AsNumber()));
+		};
+		const TSharedPtr<FJsonObject> VP = P->GetObjectField(TEXT("viewport"));
+		if (!Camera)
+		{
+			Camera = GetWorld()->SpawnActor<ACameraActor>();
+			Camera->GetCameraComponent()->bConstrainAspectRatio = false;
+			Camera->GetCameraComponent()->bOverrideAspectRatioAxisConstraint = true;
+			Camera->GetCameraComponent()->AspectRatioAxisConstraint = EAspectRatioAxisConstraint::AspectRatio_MaintainXFOV;
+		}
+		Camera->GetCameraComponent()->SetFieldOfView(HorizontalFov(P->GetNumberField(TEXT("fovV")), VP->GetNumberField(TEXT("w")), VP->GetNumberField(TEXT("h"))));
+		const FVector Eye = H(TEXT("eyeH"));
+		Camera->SetActorLocationAndRotation(Eye, (H(TEXT("targetH")) - Eye).Rotation());
+		PC->SetViewTarget(Camera);
+		if (PC->GetHUD()) PC->GetHUD()->bShowHUD = false;
+	};
+	// Bornes des suiveurs de la cavalière (son tick, suspendu, les rafraîchit d'ordinaire : voir AStridesRider::Tick).
+	const auto Bounds = [&]() {
+		if (!Rider) return;
+		for (USkeletalMeshComponent* Part : Rider->Parts())
+		{
+			Part->InvalidateCachedBounds();
+			Part->UpdateBounds();
+			Part->MarkRenderTransformDirty();
+		}
+	};
+	if (MonteStep >= 3 && MontePoses.IsValidIndex(MonteShot))
+	{
+		View(MontePoses[MonteShot]);
+		Bounds();
+	}
+	MonteWait -= DeltaSeconds;
+	if (MonteWait > 0) return;
+	switch (MonteStep)
+	{
+	case 1:
+	{
+		if (!Horse || !Rider || !Horse->Course) { FPlatformMisc::RequestExit(false); return; }
+		const strides::CourseTrace& T = Horse->Course->CourseTraceData();
+		const strides::TracePoint& P0 = T.leadIn.empty() ? T.pts.front() : T.leadIn.front();
+		Horse->PlaceAt(P0.x, P0.z, P0.h);
+		Rider->SetActorLocation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 150.0 + FVector(0, 0, 90));
+		const bool bMounted = Rider->TryMount(PC);
+		UE_LOG(LogTemp, Display, TEXT("Strides monte-b: monté=%d, règles=%d, option de main=%d"), bMounted, (int32)(Rider->RulesRig() && Rider->RulesRig()->IsReady()), (int32)Horse->UsesWebLead());
+		MonteStep = 2;
+		MonteWait = 5.f;  // transition de montée (0,8 s) et fondu de la règle
+		return;
+	}
+	case 2:
+	{
+		FString Err;
+		MonteReplay = MakeShared<FStridesRiderOnHorseReplay>();
+		if (!Horse || !Rider || !MonteReplay->Setup(Horse, Horse->HorseTack(), Rider->RulesRig(), &Err))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides monte-b: rejeu impossible (%s) : -StridesRider=regles et -StridesHorseLead=web exigés"), *Err);
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		Horse->SetActorTickEnabled(false);
+		Horse->HorseTack()->SetComponentTickEnabled(false);
+		Rider->SetActorTickEnabled(false);
+		MonteStep = 3;
+		MonteShot = 0;
+		MonteWait = 0.f;
+		return;
+	}
+	case 3:
+	{
+		if (!MontePoses.IsValidIndex(MonteShot))
+		{
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		const TSharedPtr<FJsonObject>& P = MontePoses[MonteShot];
+		const FString Id = P->GetStringField(TEXT("scenario"));
+		const int32 Frame = (int32)P->GetNumberField(TEXT("frame"));
+		FString Err;
+		bool bOk = false;
+		double Lift = 0;
+		try
+		{
+			static J O1;
+			O1 = loadJson(TCHAR_TO_UTF8(*(RepoRoot() / TEXT("unreal/core/tests/oracles/monte/o1") / Id + TEXT(".json"))));
+			bOk = MonteReplay->Begin(O1, &Err);
+			for (int32 I = 0; bOk && I <= Frame && I < MonteReplay->Num(); I++) bOk = MonteReplay->Step(I, &Err);
+			const J& Hz = O1["frames"][Frame]["hz"];
+			Lift = Hz["p"][1].num() - Hz["gy"].num();
+		}
+		catch (const std::exception& Ex)
+		{
+			Err = UTF8_TO_TCHAR(Ex.what());
+			bOk = false;
+		}
+		if (!bOk)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides monte-b: %s image %d : %s"), *Id, Frame, *Err);
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		// Cheval soulevé de la hauteur enregistrée au-dessus du sol (saut), cavalière au siège.
+		const strides::CourseTrace& T = Horse->Course->CourseTraceData();
+		const strides::TracePoint& P0 = T.leadIn.empty() ? T.pts.front() : T.leadIn.front();
+		Horse->PlaceAt(P0.x, P0.z, P0.h);
+		Horse->SetActorLocation(Horse->GetActorLocation() + FVector(0, 0, 100.0 * Lift));
+		Rider->SetActorTransform(Horse->HorseTack()->SeatWorld());
+		Bounds();
+		const strides::rider::RideInputs& A = MonteReplay->LastInputs();
+		UE_LOG(LogTemp, Display, TEXT("Strides monte-b: %s posée (%s image %d) : phase lue par la règle %.4f, phase du cheval %.4f, vitesse %.2f m/s, saut %.3f, clips %d dont %d miroir, hauteur %.3f m"),
+			*P->GetStringField(TEXT("name")), *Id, Frame, A.gaitPhase, Horse->HorseTack()->RiderPhase(), A.horseSpeed, A.jump, MonteReplay->LastClipCount(), MonteReplay->LastMirrorCount(), Lift);
+		MonteStep = 4;
+		MonteWait = 1.5f;
+		return;
+	}
+	case 4:
+	{
+		const TSharedPtr<FJsonObject>& P = MontePoses[MonteShot];
+		const FString File = OutDir / FString::Printf(TEXT("monte-%s-unreal-b.png"), *P->GetStringField(TEXT("name")));
+		FScreenshotRequest::RequestScreenshot(File, false, false);
+		const FTransform Seat = Horse->HorseTack()->SeatWorld();
+		UPoseableMeshComponent* Mb = Rider->RulesMesh();
+		const auto L = [&](const TCHAR* B) { return Seat.InverseTransformPosition(Mb->GetBoneLocation(FName(B), EBoneSpaces::WorldSpace)).ToString(); };
+		UE_LOG(LogTemp, Display, TEXT("Strides monte-b: %s écrite (%s) ; os dans le repère du siège (cm) : pelvis %s, foot_l %s, hand_l %s ; cavalière à %.4f cm du siège"),
+			*P->GetStringField(TEXT("name")), *File, *L(TEXT("pelvis")), *L(TEXT("foot_l")), *L(TEXT("hand_l")), (Rider->GetActorLocation() - Seat.GetLocation()).Size());
+		MonteShot++;
+		MonteStep = 3;
+		MonteWait = 1.f;
+		return;
+	}
 	default:
 		FPlatformMisc::RequestExit(false);
 	}

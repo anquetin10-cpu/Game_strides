@@ -16,7 +16,7 @@ Documents de ce dossier :
   d'étriers pour la décision J3, écrit par `scripts/unreal/rider-rules-o2.mjs` (jamais à la main) ;
 - section « Étape 4 » ci-dessous : règles portées en C++ (`StridesCore/RiderRules.h`), preuve contre O2, mutations, coût.
 
-## Synthèse de la voie A pour Julien (24/11/2026, après l'étape 7 et les reliquats M1)
+## Synthèse de la voie A pour Julien (24/11/2026, après l'étape 7, les reliquats M1, les clips miroir M2 et le niveau B M3)
 
 La voie A s'arrête à l'étape 7 : la voie B (MetaHuman) est écartée, donc pas d'étape 8 ni suivantes. Les niveaux de preuve
 sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rendu** (tests Automation), **en jeu avec rendu**
@@ -41,7 +41,26 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   seuil était de 0,3 ms ; la mesure se répète d'une passe à l'autre à 3,5 % près. Aucune différence de temps GPU n'est
   mesurable au-delà du bruit (`cout.md`).
 
+- **Phase de foulée (étape M3)** : le cheval Unreal donne à la règle la phase du web (`horse.anim.phase` : calage des clips
+  `align` et `gaitInfo.offset` porté en C++, `StridesCore/HorsePhase`), et non plus la phase brute de son clip : calage
+  recalculé égal à celui du jeu web (écart 0), phase égale à celle d'O1 à 2,2e-16 près sur 753 images (ctest
+  `monte-cheval`) et à 5e-10 près sur 515 images du cheval Unreal posé par son mélangeur (`Strides.Parite.RiderOnHorse`).
+  `contactOff`, `horseY` et `postOffset` valent 0 : exact pour le cheval Unreal (il n'abaisse pas son corps à l'appel, ne
+  suit pas la pente ; `riderPostOffset` n'est affecté nulle part dans le web), vérifié par le test.
+
 **Partiel**
+- **Niveau B (étape M3, dans le moteur sans rendu)** : la cavalière est rejouée sur le cheval Unreal (689 images, E1 à
+  E3b, dont 362 avec un clip miroir), tout ce que la règle lit venant d'Unreal. Le rejeu lui-même est juste : avec le même
+  cheval posé comme celui du web, la cavalière redonne O2 à 0,64 cm près avant le premier saut (555 images). Sur le cheval
+  du jeu, **61 critères sur 215 ne sont pas tenus** contre O1 (`niveau-b.md`) ; 20 des 23 seuils absolus manqués le sont
+  aussi par O1 (règle du web) ; contre O2 (mêmes proportions), 22 écarts sur 83 et 2 phases du saut. Sans saut (E1 à
+  E2d), ils viennent du cheval du jeu (3,7 % plus petit, pas d'inclinaison en virage ; le contrôle, cheval posé comme le
+  web, reste sous 0,64°) : hanche jusqu'à 14°, ouverture du genou jusqu'à 21°, assise au pas jusqu'à 2,3 cm. Aux sauts
+  s'ajoutent le corps non remonté (poser des postérieurs d'E3 détecté 12 images trop tôt) et la phase tenue (locomotion
+  procédurale du web non portée : jusqu'à 4,1 cm aux mains après la réception ; dans le contrôle, jusqu'à 7,1° sur l'ouverture du genou et 3,7° sur la hanche en E3).
+- Captures appariées (même image d'O1, même caméra dans le repère du cheval) à l'arrêt, au galop à droite et à gauche et
+  au sommet du saut (`captures/niveau-b/`, étape M3) ; décors différents ; selle, bride, rênes et étriers absents du
+  cheval Unreal.
 - Captures côte à côte à l'arrêt et au galop (`captures/`, refaites le 24/11 aux reliquats M1) : la cavalière est assise,
   pieds sous elle, mains au-dessus du garrot ; avec l'option, queue de cheval, yeux et sourcils de nouveau rendus. Ce ne
   sont pas des poses jumelles (décor et phase différents). Le « retard de 9 cm » au galop était l'instant du relevé (milieu
@@ -55,10 +74,11 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   L'aperçu du rendu mobile sur Mac démarre, mais se fige à la capture, avec un `ensure` Metal (`cout.md`).
 
 **Non vérifié**
-- **Niveau B** : la cavalière en jeu sur le cheval Unreal, contre les règles et O1. Le cheval Unreal est 3,7 % plus petit,
-  n'a galop à gauche et sauts en miroir qu'avec `-StridesHorseLead=web` (étape M2), ne s'incline pas dans les virages, et sa phase de foulée diffère de celle du
-  web. Rien n'est prouvé en jeu au-delà du niveau A.
-- Étriers non pilotés par les pieds, rênes absentes.
+- **Niveau B en jeu avec rendu** : le niveau B est mesuré sur le cheval Unreal rejoué par les oracles (trajectoire et
+  clips du web), pas sur une partie jouée : en jeu, le cheval Unreal avance ses clips à vitesse 1 (cadence du web non
+  portée), lit son propre virage et ses propres sauts (horloge du saut du web non portée).
+- Selle, tapis, bride, rênes, étrivières et étriers absents du cheval Unreal (aucun maillage de sellerie) ; M4, M5, M8 et
+  M18 non mesurables dans Unreal ; M19 (montée, descente) sans oracle.
 - Coût sur iPhone ou iPad : aucun appareil branché (étape 16). Les chiffres du Mac classent les options, sans prédire le
   coût sur un téléphone.
 - Réalisme équestre : c'est à Julien d'en juger sur les captures ; aucun oracle ne le prouve.
@@ -112,6 +132,17 @@ python3 scripts/unreal/mutations-perf.py                       # 12 mutations (P
 "$UE_REEL/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" \
   -ExecCmds="Automation RunTests Strides.Monte.EnJeu; Quit" -unattended -nullrhi -nosplash -trace=none -abslog=<journal> -ReportExportPath=<dossier>
 python3 scripts/unreal/mutations-monte-jeu.py                  # 9 mutations moteur (ordre des ticks, bornes, BeginPlay), ~13 min
+# Étape M3 (niveau B) : calage de la phase (Vite 5178), test moteur, page niveau-b.md, mutations, captures appariées
+node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-horse-phase.mjs   # -> Content/Data/pjl_horse_phase.json (--check)
+"$UE_REEL/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" \
+  -ExecCmds="Automation RunTests Strides.Parite.RiderOnHorse; Quit" -unattended -nullrhi -nosplash -trace=none \
+  -abslog=<journal> -StridesMonteDir=<dossier> -ReportExportPath=<dossier>
+node scripts/unreal/rider-rules-niveau-b.mjs --unreal=<dossier>/unreal-niveau-b --controle=<dossier>/unreal-niveau-b-web   # -> niveau-b.md, .json
+python3 scripts/unreal/mutations-rider-on-horse.py [--moteur]   # cœur ~20 s ; --moteur : UBT + éditeur (~2 min 30 chacune)
+BASE=http://127.0.0.1:5178 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs --shots=<dossier> \
+  --only-shots=arret,galop,galop-gauche,saut-sommet                               # web + poses.json (-> captures/niveau-b/)
+"$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -game -windowed -ResX=844 -ResY=390 -StridesShots=monte-b \
+  -StridesRider=regles -StridesHorseLead=web -StridesShotsDir=<dossier> -StridesMontePoses=<captures/niveau-b/poses.json> -abslog=<journal>
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -1041,3 +1072,133 @@ Reste à faire (correction de M2) : horloge du saut du web et ses contacts, fond
 hauteur `rootY` (point 2) : à porter dans une étape dédiée au saut animé, avec un oracle des contacts de `asset.js` ;
 seuil de 7 m/s du jeu par défaut à aligner sur 8 m/s seulement avec les preuves CSO refaites (décision de Julien) ;
 captures appariées (même instant de foulée et même phase de saut) quand l'horloge du saut sera portée.
+
+## Étape M3. Niveau B : cavalière sur le cheval Unreal (24/11/2026)
+
+Base : `246c4e3a` (correction de M2), branche `claude/unreal-port`. Plan §5 et étape 12, adaptés à la voie A (option
+`-StridesRider=regles`, pas de MetaHuman). Chemins réels du dépôt et du moteur ; fichiers lourds sous `.ue-cache/travail/m3/`.
+
+### 1. Entrées de la règle venues du cheval Unreal, rendues fidèles au web
+
+- **Phase de foulée** (`gaitInfo.offset`, `align`). Avant M3, la règle lisait la phase brute du clip joué. Le web lui donne
+  `horse.anim.phase = wrap01(ph − align[clé].off)`, où `ph` est la phase des clips de la vue (temps du clip =
+  `((ph + gaitInfo[k].offset) % 1) · durée`), réécrite seulement sans saut au-delà de 0,2 m/s (`pjlHorse.js` `_snapshot`).
+  - Données : `scripts/unreal/export-horse-phase.mjs` (page `horse-phase-export.html`, Vite 5178) relève dans le jeu en
+    cours d'exécution les appuis des clips (`asset.gaitContacts`), `gaitInfo`, `GAIT_OFFSETS`, et la sortie du calage d'un
+    `PjlHorse` construit sur le cheval préparé par le jeu (`align`, `leadSwap`) ; seuils 9,8 m/s et 0,2 m/s relus dans
+    `pjlHorse.js` (une seule occurrence exigée) ; → `Content/Data/pjl_horse_phase.json` (4 183 octets). Deux exports : même
+    contenu (`--check`).
+  - Cœur : `StridesCore/HorsePhase` (port de `circularOffset`, `_calibrate`, de la réécriture de `_snapshot` et, inversée,
+    de la formule de `view.js`). ctest `monte-cheval` (4 488 vérifications, 3 719 avant) : calage recalculé = calage du jeu
+    (écart 0 sur les 6 clés, `leadSwap` faux) ; à chaque image d'O1 (8 scénarios, 929 images), phase retrouvée depuis le
+    temps du clip d'allure du mélangeur (`mx.a`) contre `hz.ph` : **753 images réécrites, écart max 2,2e-16** ; 176 images
+    tenues (arrêt, saut) : écart de la phase tenue jusqu'à 0,4985 (E3b image 55), déclaré ; 32 images n'ont que des clips
+    de virage (durée propre) : non comparées.
+  - Jeu : `UStridesHorseTack::StepPhase` (clip d'allure relu sur le maillage : mélangeur à couches ou mode à un clip ;
+    allure `GaitIndex` ; main du web avec `-StridesHorseLead=web`, sinon droite, celle des clips d'origine) ;
+    `UStridesRiderRig::SampleFromTack` lit `RiderPhase()`.
+- **contactOff, horseY, postOffset** : 0, et c'est exact pour le cheval Unreal (commentaires dans `SampleFromTack`). Le
+  web retire de `bob` l'abaissement d'appel de sa vue (`_pushContact`, E3b : 7 images, jusqu'à 25,6 cm) et lit la hauteur
+  et le tangage du siège dans le monde (son cheval suit la pente : jusqu'à 1,5 cm en E2) ; le cheval Unreal n'abaisse pas
+  son corps et ne suit pas la pente, son repère n'a que le cap. `riderPostOffset` n'est affecté nulle part dans `src/`
+  (compte écrit dans `pjl_horse_phase.json`, vérifié par le ctest et le test moteur).
+
+### 2. Rejeu sur le cheval Unreal : `FStridesRiderOnHorseReplay` et `Strides.Parite.RiderOnHorse`
+
+`SG/StridesRiderReplay.cpp` (code commun au test et aux captures) : à chaque image d'O1, le mélangeur du jeu
+(`UStridesHorseAnimInstance`, option `-StridesHorseLead=web`) reçoit les clips, poids et temps du web (`mx.a`, clips
+miroir cuits par M2), le maillage du jeu est évalué (échelle du jeu ; ni inclinaison `mx.rz` ni corps `mx.by`, comme en
+jeu), la sellerie Unreal calcule siège, ancres, profils, postérieurs et phase, puis la chaîne du jeu pose la cavalière
+(première image par son canal `in`, virage par le canal `in` comme au niveau A).
+
+`Strides.Parite.RiderOnHorse` (E1, E1b, E2g, E2d, E3, E3b : 689 images, dont 362 avec un clip miroir) vérifie :
+- phase réécrite depuis le clip Unreal = `hz.ph` : **515 images, écart ≤ 5e-10** (critère 1e-5) ;
+- adaptateur (clip relu sur le maillage) = cœur nourri des clips du web, mêmes images réécrites, même phase ;
+- chemin du jeu (`UStridesHorseTack::Step`) : 15 cas d'allure, de main et de clip (canter, canter_M, gallop, gallop_M,
+  trot, walk, seuil 9,8 m/s, couche idle en tête) → phase du web ;
+- `contactOff`, `horseY`, `postOffset` nuls, `bob` = hauteur du siège Unreal de l'image précédente (écart 0), phase du
+  composant avec le retard d'une image ;
+- allonge du bras ≤ 0,97 (bornée par la règle), articulations finies ;
+- **contrôle** : le même rejeu avec le cheval Unreal posé comme celui du web (échelle 0,010388, lacet, sol, corps et
+  inclinaison de la vue, pente du terrain) : **avant le premier saut, la cavalière redonne O2 rider_f à 0,64 cm près (555
+  images)** ; avec en plus la phase du web : au sol 0,637 cm (clips du trot importés à 30 images/s), 0,127 cm hors trot ;
+  toutes images 4,06 cm (E3 image 64, saut : bascule `_barClear` non exportée), 5,68 cm avec la phase tenue (E3 image 48).
+  Le rejeu ne fausse donc pas la mesure : les écarts du niveau B viennent du cheval du jeu.
+- information : `ρ` max 0,9605 (E2g image 46 ; la règle ne la borne pas, O2 va jusqu'à 0,9556) ; cheval Unreal contre web :
+  `bob` jusqu'à 14,66 cm (E3 image 72, corps non retenu au saut), tangage 6,45° (E3 image 43), siège dans le repère du
+  cheval 28,67 cm (E3 image 41) ; au galop en cercle, le siège du web est déporté de 24 cm par l'inclinaison de la vue,
+  celui d'Unreal non. Coût du rejeu (cheval, sellerie, règle, pose ; éditeur sans rendu) 0,11 à 0,28 ms par image en
+  moyenne selon la passe, information (le coût en jeu reste celui de l'étape 7).
+
+### 3. Grandeurs M1 à M18 : `niveau-b.md` (`scripts/unreal/rider-rules-niveau-b.mjs`)
+
+Même code de métriques que le web (`rider-rules-metrics.mjs`) ; références O1 (plan) et O2 rider_f (mêmes proportions) ;
+colonnes de décomposition O2 − O1 (proportions) et contrôle − O2 (rejeu).
+- **61 critères sur 215 non tenus contre O1.** Seuils absolus : 23 manqués sur 114, dont **20 aussi manqués par O1** (M6
+  ρ assis, M7 flanc, M9 poignet : limites de la règle du web) ; les 3 propres à Unreal : ρ hors de la selle 0,9605 (E2g)
+  et 0,9571 (E2d), seuil 0,955, O1 0,9459 ; poignet 8,99 cm en E2d (seuil 9, O1 9,01). M1 et M2 tenus partout (44 et 12
+  critères), coude et allonge tenus.
+- Écarts aux références : 36 sur 83 non tenus contre O1, **22 sur 83 contre O2** (plus 2 phases du saut d'E3) ; dans les
+  scénarios sans saut (E1 à E2d), la colonne contrôle − O2 reste ≤ 0,64° et ≤ 0,06 cm : l'écart vient du cheval du jeu. Les plus grands, au galop en cercle (inclinaison absente) : hanche 14,0° (E2g), ouverture du genou
+  21,2° (E2d), cheville 11,8° (E2d) ; assise au pas 2,3 cm (E2d) ; levée maximale de l'assise O2 + 3,3 cm.
+- M17 : appel, sommet, poser des antérieurs, montée et maximum de jumpK identiques à O1 ; poser des postérieurs détecté
+  **12 images trop tôt en E3** (70 contre 82) et retenu par la règle 3 images trop tôt (70 contre 73) ; E3b dans ± 2.
+- Non mesurables dans Unreal : M4 (aucun étrier affiché), M5, M8 (pénétration par rayons dans la page web), M18 (rênes) ;
+  M19 (montée et descente) : aucun oracle.
+
+### 4. Captures appariées (rendu GPU réel, 844 × 390) : `captures/niveau-b/`
+
+Web : `export-rider-rules.mjs --shots --only-shots=arret,galop,galop-gauche,saut-sommet` (nouvelle pose `saut-sommet` :
+image relue dans O1 par `jumpPhases`, E3 image 50) ; `poses.json` versionné. Unreal : `-StridesShots=monte-b
+-StridesRider=regles -StridesHorseLead=web` (nouveau mode : ticks du cheval, de la sellerie et de la cavalière suspendus,
+rejeu de l'image d'O1 de la pose sur le cheval Unreal, cheval soulevé de la hauteur du saut enregistrée, même caméra dans
+le repère du cheval). Cette fois les poses sont **jumelles** (même image d'O1, même instant de foulée et de saut) ; le
+décor diffère (plage du web, carrière du Pôle), et le cheval Unreal n'a ni selle, ni bride, ni étriers. Journal de la passe
+(`.ue-cache/travail/m3/shots-unreal/jeu.log`) : galop à droite, phase lue 0,4791, 2 clips ; galop à gauche, 2 clips miroir ;
+sommet du saut, 2 clips miroir, cheval soulevé de 1,135 m ; cavalière à 0,0000 cm du siège à chaque capture. Les PNG web
+refaits ne sont pas identiques à l'octet à ceux de M1 et M2 (rendu SwiftShader) ; ceux de `captures/` ne sont pas remplacés.
+Montages web | Unreal sous `.ue-cache/travail/m3/montages/`.
+
+### 5. Mutations (`scripts/unreal/mutations-rider-on-horse.py`)
+
+22 mutations, **21 détectées**, 1 équivalente déclarée (`ATTENDUES`), sources rétablis, recompilation finale code 0.
+- Cœur (11, copie de `HorsePhase.cpp` reliée au ctest `monte-cheval`, ~20 s) : 11 détectées. Calage (signe de l'écart
+  circulaire, résidu sans valeur absolue, appuis sans `gaitInfo.offset`, main gauche calée sur le clip d'origine, marge de
+  `leadSwap`) ; phase (`gaitInfo.offset` ajouté, `align` ignoré, clé de main inversée, grand galop dès 6,8 m/s, réécrite
+  pendant le saut, réécrite à l'arrêt).
+- Moteur (11, source du dépôt muté, UBT puis `Strides.Parite.RiderOnHorse`) : 10 détectées. Phase du clip décalée de
+  0,1 ; première couche prise même hors allure (**non détectée au premier passage** : dans les mélanges d'O1 un clip
+  d'allure est toujours en tête, 558 images sur 558 ; cas de synthèse ajouté au chemin du jeu, couche idle avant
+  canter_M, puis détectée, passe seule `--noms=`, 439 s) ; main du jeu ignorée ; allure décalée d'un rang ; phase non
+  calculée au tick ; phase brute du clip (comportement d'avant M3) ; `horseY` = hauteur du siège ; `contactOff` non nul ;
+  temps des clips du web ignorés au rejeu ; phase du web passée à la règle en jeu. Équivalente : nom du clip miroir pris
+  sur le clip source (le nom ne sert qu'à la famille d'allure, la même ; la durée lue est celle du clip miroir).
+- Campagne du 24/11 : 3 045 s pour les 22 (code de sortie 1 : 2 non détectées hors liste) ; le test a ensuite reçu la
+  comparaison adaptateur = cœur et le cas de synthèse ; les 2 mutations alors non détectées ont été rejouées avec le test
+  final (596 s, puis 439 s). Les 9 autres mutations moteur détectées l'ont été par la version précédente du test, dont
+  la version finale ne retire aucune vérification.
+
+### 6. Portes
+
+- G1 : ctest code 0 (construit sous `.ue-cache/travail/core`) ; cœur 300 729, `monte` 306 914, **`monte-cheval` 4 488**
+  (3 719 avant : phase de foulée), `monte-cavaliere` 72 547, `perf` 20, `monte-miroir` 7 069 vérifications, 0 échec.
+- G2 : UBT code 0, aucune erreur ni avertissement du compilateur dans les journaux.
+- G3 : `Automation RunTests Strides` : **38 tests, 38 en succès** (nouveau : `Strides.Parite.RiderOnHorse`). Avertissements,
+  5 : `idevice_id` (erreur 86, déjà relevé) deux fois sur `Strides.Cso.Aids` et deux fois sur `Strides.Parite.CsoRun`, et
+  « HTTP request timed out after 3.00 seconds URL=https://www.google.com/generate_204 » sur `Strides.Cso.Aids` (test de
+  connexion de l'éditeur, sans effet sur les tests).
+- G4 : `mutations-rider-on-horse.py` (ci-dessus) ; sources touchés : `mutations-horse-tack.py --moteur` (après ajout de
+  `HorsePhase.cpp` à l'édition de liens du banc, liste inchangée) 35 mutations, 29 détectées, 6 déclarées, code 0, 1 758 s
+  (la raison déclarée de « composant : saut ignoré », clips de saut absents d'Unreal, est périmée depuis M2 :
+  `Strides.Parite.HorseSeat` ne pose toujours aucune image de saut, mais `Strides.Parite.RiderOnHorse` le fait) ;
+  `mutations-rider-rig.py --moteur` 12 sur 12, code 0, 1 472 s. Sources rétablis, recompilation finale code 0.
+- G5 : `git diff --quiet HEAD -- unreal/docs/parite/cso` code 0 (jeu par défaut inchangé : la phase n'est lue que par la
+  règle, option `-StridesRider=regles` ; le mode `monte-b` est nouveau).
+- G6 : `build-parite.py` code 0 ; lignes `cavaliere.amorti-dos`, `suspension-galop`, `saut`, `jambes-etriers`, `flanc`,
+  `mains-renes` mises à jour (preuve et écart du niveau B).
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Reste à faire (M3) : phase de la locomotion procédurale du web pendant le saut et à l'arrêt (`horse/anim.js`), horloge du
+saut, corps et bascule au saut, inclinaison en virage, cadence de foulée réglée sur la vitesse (en partie jouée le cheval
+Unreal joue ses clips à vitesse 1) ; sellerie absente ; mesure du niveau B en partie jouée (ici : rejeu des oracles) ;
+décisions de Julien listées dans `decision-voie-a.md`.
