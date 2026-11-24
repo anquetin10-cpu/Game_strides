@@ -39,6 +39,33 @@ const SOURCES = JSON.parse(
   once(/for \(const name of (\[[^\]]*\])\) \{\n\s*const src = clips\.get\(name\);\n\s*if \(!src\)\n\s*continue;\n\s*resetPose\(\);\n\s*const m = bakeMirror\(/, 'liste des clips miroir')[1].replace(/'/g, '"'),
 );
 
+// Scénarios de synthèse (entrées seulement ; les sorties sont celles du code du jeu).
+const DT = 1 / 30;
+const rep = (n, v) => Array.from({ length: n }, () => v);
+const LEAD = [
+  { name: 'virage 0,27 tenu (seuil 0,25)', speed: 7, frames: rep(40, [-0.27, DT]) },
+  { name: 'virage 0,26 tenu', speed: 7, frames: rep(30, [-0.26, DT]) },
+  { name: 'virage 0,25 exact (inégalité stricte)', speed: 7, frames: rep(30, [-0.25, DT]) },
+  { name: 'maintien interrompu (virage nul)', speed: 7, frames: [...rep(12, [-0.4, DT]), [0, DT], ...rep(12, [-0.4, DT]), ...rep(20, [-0.4, DT])] },
+  { name: 'maintien interrompu (virage du côté de la main)', speed: 7, frames: [...rep(12, [-0.4, DT]), [0.4, DT], ...rep(12, [-0.4, DT])] },
+  { name: 'maintien 0,5 s exact (pas 0,0625 s)', speed: 7, frames: rep(10, [-0.5, 0.0625]) },
+  { name: 'pas de 0,15 s (borné à 0,1 s)', speed: 7, frames: rep(8, [-0.5, 0.15]) },
+  { name: 'pas variables', speed: 7, frames: Array.from({ length: 60 }, (_, f) => [-0.3, 0.01 + 0.02 * (f % 5)]) },
+  { name: 'aller-retour', speed: 7, frames: [...rep(30, [-0.6, DT]), ...rep(30, [0.6, DT]), ...rep(10, [-0.6, DT]), ...rep(30, [0, DT])] },
+  { name: 'sinus', speed: 7, frames: Array.from({ length: 300 }, (_, f) => [0.8 * Math.sin((2 * Math.PI * f) / 90), DT]) },
+];
+const jumpCase = (lead, speed, mode = 'air') => ({ name: `saut ${mode}, main ${lead}, ${speed} m/s`, frames: [...rep(5, ['ride', lead, speed, DT]), ...rep(10, [mode, lead, speed, DT]), ...rep(3, ['landing', lead, speed, DT])] });
+const VIEW = [
+  ...[6.5, 7, 7.5, 7.999, 8, 8.000001, 8.5, 10].flatMap((v) => ['L', 'R'].map((l) => jumpCase(l, v))),
+  jumpCase('L', 6.5, 'takeoff'),
+  jumpCase('R', 9, 'takeoff'),
+  {
+    name: 'main changée en vol, puis second saut',
+    frames: [...rep(5, ['ride', 'L', 7, DT]), ...rep(3, ['air', 'L', 7, DT]), ...rep(5, ['air', 'R', 7, DT]), ...rep(5, ['ride', 'R', 9, DT]), ...rep(3, ['air', 'R', 9, DT]), ...rep(3, ['air', 'L', 7, DT])],
+  },
+];
+const DECISIONS = { lead: LEAD, view: VIEW };
+
 function writeIfChanged(file, data) {
   if (existsSync(file) && Buffer.compare(readFileSync(file), Buffer.from(data)) === 0) return false;
   writeFileSync(file, data);
@@ -50,6 +77,8 @@ const browser = await chromium.launch({ headless: true, args: ['--use-angle=swif
 try {
   const page = await browser.newPage();
   page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && console.log('[page]', m.text()));
+  page.on('response', (r) => r.status() >= 400 && console.log('[page] ressource', r.status(), r.url()));
+  page.on('requestfailed', (r) => console.log('[page] requête échouée', r.url(), r.failure()?.errorText));
   page.on('pageerror', (e) => console.log('[page] erreur', e.message));
   await page.goto(`${BASE}/scripts/unreal/horse-mirror-export.html`, { timeout: 180000 });
   await page.waitForFunction(() => window.__mirrorReady === true, null, { timeout: 180000 });
@@ -88,6 +117,24 @@ try {
     written += writeIfChanged(join(OUT, file), Buffer.from(m.vals, 'base64'));
     head.mirrored.push({ name: m.name, duration: m.duration, times: m.times, bones: m.bones, file });
   }
+  // Décisions de la main et du saut (decisions.json) : scénarios de synthèse joués par le code du jeu (page, decisions()).
+  const D = await page.evaluate((p) => window.__mirror.decisions(p), DECISIONS);
+  const dec = {
+    schema: 'strides.oracle.horse_lead_decisions/1',
+    generator: head.generator,
+    doc:
+      'décisions de la main au galop (src/entities/horse/anim.js animateHorse, cheval procédural du jeu, état neuf par scénario) et du clip de saut de la vue WildMesh (src/entities/pjl/view.js HorseView.update, cheval préparé par le jeu), jouées par le code du jeu sur des entrées de synthèse ; sert à départager ce que les parcours d’O1 ne départagent pas (seuil de virage, maintien interrompu, borne du pas, seuil de vitesse du saut, miroir selon la main).',
+    srcTree: head.srcTree,
+    fields: {
+      lead: 'name ; speed ; frames : [virage (st.turn, rad/s, > 0 à gauche), pas dt (s)] ; out : après chaque image [A.lead, A.leadHold]',
+      view: 'name ; frames : [s.mode, s.lead, s.speed (m/s), dt] ; out : après chaque image [jumpClip.name ou null, jumpMirror, leadBlend]',
+    },
+    lead: DECISIONS.lead.map((sc, i) => ({ ...sc, out: D.lead[i].out })),
+    view: DECISIONS.view.map((sc, i) => ({ ...sc, out: D.view[i].out })),
+  };
+  const decText = JSON.stringify(dec) + '\n';
+  JSON.parse(decText);
+  written += writeIfChanged(join(OUT, 'decisions.json'), decText);
   const text = JSON.stringify(head) + '\n';
   JSON.parse(text);
   written += writeIfChanged(join(OUT, 'index.json'), text);

@@ -220,6 +220,7 @@ static void testLead() {
     // Cheval remis à neuf par l'exporteur (état de l'animation neuf : A.lead = 1, A.leadHold = 0, anim.js:188) ; l'image
     // de mise en place (à l'arrêt, non exportée) ne change ni l'un ni l'autre ; le virage est H.lastTurn (mx.s.turnRate).
     LeadState st;
+    JumpView jv;  // vue neuve (view.js : jumpClip = null, wasJumping = false)
     bool wasJump = Fr[0]["hz"]["jT"].num() >= 0;
     for (size_t i = 0; i < Fr.size(); i++) {
       const J& F = Fr[i];
@@ -234,13 +235,15 @@ static void testLead() {
       const double lb = leadBlendStep(Fr[i - 1]["mx"]["lb"].num(), F["mx"]["s"]["lead"].s[0], dt);
       eLb = std::max(eLb, std::fabs(lb - F["mx"]["lb"].num()));
       CHECK(lb == F["mx"]["lb"].num(), "%s image %zu : leadBlend %.17g, web %.17g", id, i, lb, F["mx"]["lb"].num());
-      // Saut en miroir choisi au départ du saut (view.js : jumping && !wasJumping).
+      // Clip de saut et miroir : jumpViewStep du port (view.js:229-233) rejoué à chaque image depuis le mode, la vitesse
+      // du cheval (hz.v) et la main des clips du web ; comparé au clip (jc) et au miroir (jm) relevés dans la vue du web.
       const std::string mode = F["mx"]["s"]["mode"].s;
       const bool jumping = mode == "takeoff" || mode == "air";
-      if (jumping && !wasJump) {
-        CHECK(F["mx"]["jm"].b == (F["mx"]["s"]["lead"].s == "L"), "%s image %zu : saut en miroir %d, main %s", id, i, F["mx"]["jm"].b, F["mx"]["s"]["lead"].s.c_str());
-        jumps++;
-      }
+      jumps += jumpViewStep(jv, jumping, F["hz"]["v"].num(), F["mx"]["s"]["lead"].s[0]);
+      const std::string want = F["mx"]["jc"].isNull() ? std::string("-") : F["mx"]["jc"].s;
+      const std::string got = jv.hasClip ? jumpClipName({jv.clip.gallop, false}) : std::string("-");
+      CHECK(got == want, "%s image %zu : clip de saut %s, web %s", id, i, got.c_str(), want.c_str());
+      CHECK(jv.clip.mirror == F["mx"]["jm"].b, "%s image %zu : saut en miroir %d, web %d", id, i, jv.clip.mirror, F["mx"]["jm"].b);
       wasJump = jumping;
       frames++;
     }
@@ -248,6 +251,57 @@ static void testLead() {
   CHECK(jumps >= 2, "%d départs de saut vérifiés", jumps);
   std::printf("main au galop : %d images d'O1 rejouées, %d changements de main, leadBlend au bit près (écart %.3g), %d départs de saut (miroir selon la main)\n", frames,
               switches, eLb, jumps);
+}
+
+// Décisions de synthèse jouées par le code du jeu (miroir/decisions.json, export-horse-mirror.mjs) : main au galop
+// (animateHorse, état neuf par scénario) et clip de saut de la vue (HorseView.update, vue neuve par scénario). Comparaison
+// exacte : mêmes opérations en double que le web (somme des pas, comparaisons strictes).
+static void testDecisions() {
+  const J D = loadJson(ORA + "/miroir/decisions.json");
+  CHECK(D["schema"].s == "strides.oracle.horse_lead_decisions/1", "schéma %s", D["schema"].s.c_str());
+  int nLead = 0, nFrames = 0, switches = 0;
+  for (const J& sc : D["lead"].a) {
+    LeadState st;
+    const std::vector<J>& fr = sc["frames"].a;
+    const std::vector<J>& out = sc["out"].a;
+    CHECK(fr.size() == out.size() && !fr.empty(), "%s : %zu images, %zu sorties", sc["name"].s.c_str(), fr.size(), out.size());
+    for (size_t i = 0; i < fr.size() && i < out.size(); i++) {
+      const int before = st.lead;
+      leadStep(st, fr[i][0].num(), fr[i][1].num());
+      switches += st.lead != before;
+      CHECK(st.lead == static_cast<int>(out[i][0].num()) && st.hold == out[i][1].num(), "%s image %zu : main %d maintien %.17g, web %g %.17g", sc["name"].s.c_str(), i, st.lead, st.hold,
+            out[i][0].num(), out[i][1].num());
+      nFrames++;
+    }
+    nLead++;
+  }
+  int nView = 0, vFrames = 0, starts = 0, mirrored = 0, gallops = 0;
+  for (const J& sc : D["view"].a) {
+    JumpView jv;
+    double lb = 1;  // view.js : leadBlend = 1 à la création
+    const std::vector<J>& fr = sc["frames"].a;
+    const std::vector<J>& out = sc["out"].a;
+    CHECK(fr.size() == out.size() && !fr.empty(), "%s : %zu images, %zu sorties", sc["name"].s.c_str(), fr.size(), out.size());
+    for (size_t i = 0; i < fr.size() && i < out.size(); i++) {
+      const std::string mode = fr[i][0].s;
+      const char lead = fr[i][1].s[0];
+      lb = leadBlendStep(lb, lead, fr[i][3].num());
+      if (jumpViewStep(jv, mode == "takeoff" || mode == "air", fr[i][2].num(), lead)) {
+        starts++;
+        mirrored += jv.clip.mirror;
+        gallops += jv.clip.gallop;
+      }
+      const std::string want = out[i][0].isNull() ? std::string("-") : out[i][0].s;
+      const std::string got = jv.hasClip ? jumpClipName({jv.clip.gallop, false}) : std::string("-");
+      CHECK(got == want && jv.clip.mirror == out[i][1].b && lb == out[i][2].num(), "%s image %zu : %s miroir %d lb %.17g, web %s %d %.17g", sc["name"].s.c_str(), i, got.c_str(),
+            jv.clip.mirror, lb, want.c_str(), out[i][1].b, out[i][2].num());
+      vFrames++;
+    }
+    nView++;
+  }
+  CHECK(nLead >= 10 && nView >= 19 && starts >= 20, "%d scénarios de main, %d de saut, %d départs de saut", nLead, nView, starts);
+  std::printf("décisions de synthèse : main %d scénarios (%d images, %d changements), saut %d scénarios (%d images, %d départs dont %d en miroir et %d au galop)\n", nLead, nFrames,
+              switches, nView, vFrames, starts, mirrored, gallops);
 }
 
 int main(int argc, char** argv) {
@@ -261,6 +315,7 @@ int main(int argc, char** argv) {
     CHECK(g_scale > 0.009 && g_scale < 0.012, "échelle du web %.7g m par unité", g_scale);
     testMirror();
     testLead();
+    testDecisions();
   } catch (const std::exception& ex) {
     std::printf("ÉCHEC : exception %s\n", ex.what());
     return 1;

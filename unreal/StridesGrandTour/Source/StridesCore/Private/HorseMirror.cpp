@@ -478,6 +478,7 @@ bool bakeMirror(const Rig& rig, const std::vector<int>& pairIdx, const Mat4& S, 
 }
 
 void leadStep(LeadState& A, double turn, double dt) {
+  dt = std::min(dt, 0.1);
   if (std::fabs(turn) > 0.25 && signd(turn) != A.lead) {
     A.hold += dt;
     if (A.hold > 0.5) {
@@ -497,6 +498,25 @@ double leadBlendStep(double lb, char lead, double dt) {
   const double want = lead == 'R' ? 1 : 0;
   const double t = 1 - std::exp(-10 * dt);
   return lb + (want - lb) * t;
+}
+
+JumpChoice jumpChoice(double speed, char lead) {
+  JumpChoice c;
+  c.gallop = speed > 8;
+  c.mirror = lead == 'L';
+  return c;
+}
+
+std::string jumpClipName(const JumpChoice& c) { return std::string(c.gallop ? "jump_gallop" : "jump_canter") + (c.mirror ? "_M" : ""); }
+
+bool jumpViewStep(JumpView& v, bool jumping, double speed, char lead) {
+  const bool start = jumping && !v.wasJumping;
+  if (start) {
+    v.clip = jumpChoice(speed, lead);
+    v.hasClip = true;
+  }
+  v.wasJumping = jumping;
+  return start;
 }
 
 }  // namespace strides::mirror

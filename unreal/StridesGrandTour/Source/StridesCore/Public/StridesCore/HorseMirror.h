@@ -108,11 +108,32 @@ struct LeadState {
   int lead = 1;     // A.lead : > 0 à gauche (état initial du web : 1)
   double hold = 0;  // A.leadHold
 };
-// anim.js:287-294 (st.lead n'est jamais posé par le jeu) : virage |turn| > 0,25 de l'autre côté tenu plus de 0,5 s.
+// anim.js:287-294 (st.lead n'est jamais posé par le jeu) : virage |turn| > 0,25 de l'autre côté tenu plus de 0,5 s ; pas
+// borné à 0,1 s comme dans animateHorse (anim.js:267, dt = Math.min(dt, 0.1)).
 STRIDESCORE_API void leadStep(LeadState& st, double turn, double dt);
 // pjlHorse.js : main des clips joués (leadSwap : clips d'origine à main gauche) ; 'L' ou 'R'.
 STRIDESCORE_API char clipLead(int lead, bool leadSwap);
 // view.js : leadBlend = damp(leadBlend, main droite ? 1 : 0, 10, dt) (1 = clips d'origine, 0 = clips miroir).
 STRIDESCORE_API double leadBlendStep(double leadBlend, char lead, double dt);
+
+
+// ---- Clip de saut de la vue WildMesh (pjl/view.js:229-233).
+// Au premier instant de saut (jumping && !wasJumping) : clip « jump_gallop » si s.speed > 8 m/s, sinon « jump_canter » ;
+// miroir si la main des clips est à gauche (s.lead === 'L'). Le choix est gardé jusqu'au saut suivant (la vue ne l'efface
+// pas à la réception). Non porté : le repli « ?? jump_gallop » quand jump_canter manque (les deux clips existent).
+struct JumpChoice {
+  bool gallop = false;
+  bool mirror = false;
+};
+STRIDESCORE_API JumpChoice jumpChoice(double speed, char lead);
+// Nom du clip joué : « jump_canter », « jump_gallop », suivis de « _M » en miroir (view.js:317).
+STRIDESCORE_API std::string jumpClipName(const JumpChoice& c);
+struct JumpView {
+  bool wasJumping = false;
+  bool hasClip = false;  // jumpClip !== null
+  JumpChoice clip;
+};
+// Une image de la vue : jumping = mode « takeoff » ou « air ». Vrai au départ d'un saut (choix refait à cette image).
+STRIDESCORE_API bool jumpViewStep(JumpView& v, bool jumping, double speed, char lead);
 
 }  // namespace strides::mirror

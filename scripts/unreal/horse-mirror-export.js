@@ -155,5 +155,42 @@ async function run({ sources, fps }) {
   return { three: THREE.REVISION, boneCount: bones.length, rig, idle, src, mirrored, stats: asset.stats };
 }
 
-window.__mirror = { run, THREE }; // THREE : pour les diagnostics pilotés depuis Playwright
+// Décisions de la main et du saut (contrôle adverse de M2) : code du jeu exécuté sur des entrées de synthèse.
+//  - main au galop : animateHorse (src/entities/horse/anim.js) sur un cheval procédural du jeu (createHorseMesh), état
+//    neuf par scénario ; relevé A.lead et A.leadHold après chaque image ;
+//  - vue WildMesh : HorseView.update (src/entities/pjl/view.js) sur le cheval préparé par le jeu ; relevé du clip de saut
+//    choisi (jumpClip.name), du miroir (jumpMirror) et de leadBlend après chaque image.
+// Les scénarios (entrées) sont écrits par le pilote ; aucune sortie n'est calculée ici hors du code du jeu.
+async function decisions({ lead, view }) {
+  const { createHorseMesh, animateHorse } = await import('/src/entities/horseModel.js');
+  const { HorseView } = await import('/src/entities/pjl/view.js');
+  const { coatOf } = await import('/src/entities/pjlHorse.js');
+  const leadOut = lead.map((sc) => {
+    const { bones } = createHorseMesh({});
+    const st = { speed: sc.speed, vel: sc.speed, phase: 0, jump: -1, turn: 0, t: 0, mounted: true };
+    const fr = [];
+    sc.frames.forEach(([turn, dt]) => {
+      st.turn = turn;
+      st.t += dt;
+      animateHorse(bones, st, dt);
+      fr.push([st._a.lead, st._a.leadHold]);
+    });
+    return { name: sc.name, out: fr };
+  });
+  const asset = await loadHorseAsset(() => loadRealGltf('horse_pjl'));
+  const viewOut = view.map((sc) => {
+    const v = new HorseView(asset, coatOf({}));
+    const fr = [];
+    sc.frames.forEach(([mode, lead, speed, dt]) => {
+      const jumping = mode === 'takeoff' || mode === 'air';
+      const s = { x: 0, z: 0, y: 1.3, heading: 0, roll: 0, speed, gait: 'canter', lead, phase: 0, strideLen: 3.42, turnRate: 0, mode, jt: jumping ? -0.05 : 0, jT: jumping ? 0.6 : 0, landingTimer: 1 };
+      v.update(s, dt);
+      fr.push([v.jumpClip ? v.jumpClip.name : null, v.jumpMirror, v.leadBlend]);
+    });
+    return { name: sc.name, out: fr };
+  });
+  return { lead: leadOut, view: viewOut };
+}
+
+window.__mirror = { run, decisions, THREE }; // THREE : pour les diagnostics pilotés depuis Playwright
 window.__mirrorReady = true;
