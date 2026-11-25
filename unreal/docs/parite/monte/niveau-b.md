@@ -10,9 +10,11 @@ code que pour O1 et O2. Tolérances : `plan-essai.md` §5, niveau B.
 Deux références image par image : **O1** (règle du web, cheval du web, cavalier classique : la référence du plan) et
 **O2 rider_f** (règle du web, cheval du web, proportions de la cavalière Unreal) : l’écart à O2 isole l’effet du cheval
 Unreal. Assis : levée de la règle sous 2 cm et hors du vol ; obstacle : vol ou accompagnement (jumpK ≥ 0,1) ; pas :
-poids de l’allure du pas de la règle au moins 0,5. Non mesurés dans Unreal : M4 (le cheval Unreal n’affiche pas
-d’étrier : pas de selle ni d’étrivières), M5 (étrivière), M8 (pénétration mesurée par rayons dans la page web),
-M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, aucun oracle).
+poids de l’allure du pas de la règle au moins 0,5. Depuis l’étape S1 (sellerie complète), l’export donne les étriers
+affichés par Unreal (`UStridesHorseTackMesh`) : M4 est jugé sur son seuil, M5 (étrivière) et M18 (rênes) sont relevés
+plus bas (colonne O2 de M4 sans objet : O2 n’a pas d’étrier propre) ; M8 (pénétration) est mesuré dans le test moteur par
+la méthode des 6 rayons du web contre le maillage du cheval Unreal skinné. Non mesuré : M19 (montée et descente : E4 et
+E5 hors de l’essai, aucun oracle).
 
 ## Seuils absolus de la règle (valeur Unreal ; O1 et O2 sur les mêmes images, pour mémoire)
 
@@ -25,6 +27,7 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E1 | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 0 images ; sous −2 cm : 0) | 0,39 cm | 1 | ≥ −1,00 cm | oui | 0,20 | 0,63 |
 | E1 | M9 poignet au-dessus de l’encolure (gauche) | 17,77 cm | 1 | ≥ 9,00 cm | oui | 16,37 | 18,44 |
 | E1 | M10 coude (gauche) | 151,84° | 7 | ≤ 155,00° | oui | 130,25 | 151,84 |
+| E1 | M4 plante – étrier affiché (gauche) | 0,64 cm | 37 | ≤ 2,00 cm | oui | 0,34 | 2,11 |
 | E1 | M1 plante – point d’étrier visé, |y| assis (droit) | 0,18 cm | 0 | ≤ 2,00 cm | oui | 0,13 | 0,20 |
 | E1 | M1 plante – point d’étrier visé, |z| assis (droit) | 0,85 cm | 0 | ≤ 2,00 cm | oui | 0,69 | 0,86 |
 | E1 | M2 cheville au-delà de sa place naturelle xMax (droit) | −0,63 cm | 14 | ≤ 1,00 cm | oui | −1,79 | −0,83 |
@@ -32,6 +35,8 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E1 | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 0 images ; sous −2 cm : 0) | 0,10 cm | 1 | ≥ −1,00 cm | oui | 0,51 | 0,61 |
 | E1 | M9 poignet au-dessus de l’encolure (droit) | 17,20 cm | 62 | ≥ 9,00 cm | oui | 16,38 | 17,88 |
 | E1 | M10 coude (droit) | 151,84° | 42 | ≤ 155,00° | oui | 128,15 | 151,84 |
+| E1 | M4 plante – étrier affiché (droit) | 0,64 cm | 37 | ≤ 2,00 cm | oui | 0,34 | 1,07 |
+| E1 | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 20 | ≤ 1,00 cm | oui | 0,00 | — |
 | E1b | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,12 cm | 0 | ≤ 2,00 cm | oui | 0,10 | 0,12 |
 | E1b | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,84 cm | 2 | ≤ 2,00 cm | oui | 0,46 | 0,77 |
 | E1b | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 1,11 cm | 26 | ≤ 3,00 cm | oui | 0,21 | 0,21 |
@@ -42,6 +47,7 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E1b | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 8 images ; sous −2 cm : 24) | −8,20 cm | 60 | ≥ −1,00 cm | **non** | −6,29 | −6,03 |
 | E1b | M9 poignet au-dessus de l’encolure (gauche) | 9,16 cm | 60 | ≥ 9,00 cm | oui | 9,08 | 9,46 |
 | E1b | M10 coude (gauche) | 151,84° | 46 | ≤ 155,00° | oui | 148,89 | 151,84 |
+| E1b | M4 plante – étrier affiché (gauche) | 0,71 cm | 67 | ≤ 2,00 cm | oui | 0,55 | 3,84 |
 | E1b | M1 plante – point d’étrier visé, |y| assis (droit) | 0,18 cm | 6 | ≤ 2,00 cm | oui | 0,12 | 0,19 |
 | E1b | M1 plante – point d’étrier visé, |z| assis (droit) | 0,85 cm | 0 | ≤ 2,00 cm | oui | 0,69 | 0,85 |
 | E1b | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 0,68 cm | 74 | ≤ 3,00 cm | oui | 1,12 | 2,13 |
@@ -52,6 +58,8 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E1b | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 7 images ; sous −2 cm : 22) | −6,31 cm | 22 | ≥ −1,00 cm | **non** | −15,17 | −8,21 |
 | E1b | M9 poignet au-dessus de l’encolure (droit) | 9,15 cm | 60 | ≥ 9,00 cm | oui | 9,08 | 9,46 |
 | E1b | M10 coude (droit) | 151,84° | 96 | ≤ 155,00° | oui | 150,06 | 151,84 |
+| E1b | M4 plante – étrier affiché (droit) | 0,71 cm | 67 | ≤ 2,00 cm | oui | 0,54 | 3,79 |
+| E1b | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 60 | ≤ 1,00 cm | oui | 0,00 | — |
 | E2g | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,12 cm | 0 | ≤ 2,00 cm | oui | 0,11 | 0,28 |
 | E2g | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,77 cm | 0 | ≤ 2,00 cm | oui | 0,60 | 0,77 |
 | E2g | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,61 cm | 45 | ≤ 3,00 cm | oui | 0,15 | 0,14 |
@@ -62,6 +70,7 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E2g | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 118 images ; sous −2 cm : 132) | −14,25 cm | 80 | ≥ −1,00 cm | **non** | −7,47 | −8,46 |
 | E2g | M9 poignet au-dessus de l’encolure (gauche) | 8,64 cm | 84 | ≥ 9,00 cm | **non** | 8,94 | 9,06 |
 | E2g | M10 coude (gauche) | 151,84° | 45 | ≤ 155,00° | oui | 137,14 | 151,84 |
+| E2g | M4 plante – étrier affiché (gauche) | 0,71 cm | 53 | ≤ 2,00 cm | oui | 0,64 | 3,10 |
 | E2g | M1 plante – point d’étrier visé, |y| assis (droit) | 0,18 cm | 0 | ≤ 2,00 cm | oui | 8,44 | 9,16 |
 | E2g | M1 plante – point d’étrier visé, |z| assis (droit) | 0,88 cm | 2 | ≤ 2,00 cm | oui | 0,69 | 0,85 |
 | E2g | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 1,20 cm | 44 | ≤ 3,00 cm | oui | 5,16 | 6,02 |
@@ -72,6 +81,8 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E2g | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 6 images ; sous −2 cm : 5) | −4,19 cm | 39 | ≥ −1,00 cm | **non** | −24,79 | −23,07 |
 | E2g | M9 poignet au-dessus de l’encolure (droit) | 8,61 cm | 84 | ≥ 9,00 cm | **non** | 8,93 | 9,03 |
 | E2g | M10 coude (droit) | 151,84° | 40 | ≤ 155,00° | oui | 140,92 | 151,84 |
+| E2g | M4 plante – étrier affiché (droit) | 0,71 cm | 53 | ≤ 2,00 cm | oui | 0,67 | 3,18 |
+| E2g | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 60 | ≤ 1,00 cm | oui | 0,00 | — |
 | E2d | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,12 cm | 0 | ≤ 2,00 cm | oui | 2,19 | 3,44 |
 | E2d | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,84 cm | 2 | ≤ 2,00 cm | oui | 0,48 | 0,77 |
 | E2d | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,39 cm | 98 | ≤ 3,00 cm | oui | 6,48 | 6,98 |
@@ -82,6 +93,7 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E2d | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 6 images ; sous −2 cm : 12) | −6,04 cm | 2 | ≥ −1,00 cm | **non** | −13,54 | −11,09 |
 | E2d | M9 poignet au-dessus de l’encolure (gauche) | 8,99 cm | 84 | ≥ 9,00 cm | **non** | 9,01 | 9,16 |
 | E2d | M10 coude (gauche) | 151,84° | 45 | ≤ 155,00° | oui | 139,63 | 151,84 |
+| E2d | M4 plante – étrier affiché (gauche) | 0,70 cm | 6 | ≤ 2,00 cm | oui | 0,63 | 2,15 |
 | E2d | M1 plante – point d’étrier visé, |y| assis (droit) | 0,18 cm | 6 | ≤ 2,00 cm | oui | 0,13 | 0,19 |
 | E2d | M1 plante – point d’étrier visé, |z| assis (droit) | 0,85 cm | 0 | ≤ 2,00 cm | oui | 0,69 | 0,85 |
 | E2d | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 0,49 cm | 99 | ≤ 3,00 cm | oui | 0,22 | 0,22 |
@@ -92,6 +104,8 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E2d | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 22 images ; sous −2 cm : 79) | −14,21 cm | 23 | ≥ −1,00 cm | **non** | −1,51 | −2,24 |
 | E2d | M9 poignet au-dessus de l’encolure (droit) | 9,01 cm | 84 | ≥ 9,00 cm | oui | 9,02 | 9,17 |
 | E2d | M10 coude (droit) | 151,84° | 0 | ≤ 155,00° | oui | 134,30 | 151,84 |
+| E2d | M4 plante – étrier affiché (droit) | 0,70 cm | 6 | ≤ 2,00 cm | oui | 0,61 | 1,04 |
+| E2d | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 60 | ≤ 1,00 cm | oui | 0,07 | — |
 | E3 | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,29 cm | 2 | ≤ 2,00 cm | oui | 0,23 | 0,27 |
 | E3 | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,77 cm | 0 | ≤ 2,00 cm | oui | 0,43 | 0,77 |
 | E3 | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,77 cm | 54 | ≤ 3,00 cm | oui | 1,00 | 1,40 |
@@ -102,6 +116,7 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E3 | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 14 images ; sous −2 cm : 32) | −9,09 cm | 42 | ≥ −1,00 cm | **non** | −11,50 | −10,18 |
 | E3 | M9 poignet au-dessus de l’encolure (gauche) | 8,88 cm | 49 | ≥ 9,00 cm | **non** | 6,75 | 7,09 |
 | E3 | M10 coude (gauche) | 151,84° | 62 | ≤ 155,00° | oui | 151,70 | 151,84 |
+| E3 | M4 plante – étrier affiché (gauche) | 0,97 cm | 61 | ≤ 2,00 cm | oui | 0,80 | 2,12 |
 | E3 | M1 plante – point d’étrier visé, |y| assis (droit) | 0,18 cm | 2 | ≤ 2,00 cm | oui | 0,31 | 0,20 |
 | E3 | M1 plante – point d’étrier visé, |z| assis (droit) | 0,85 cm | 0 | ≤ 2,00 cm | oui | 0,69 | 0,85 |
 | E3 | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 0,18 cm | 97 | ≤ 3,00 cm | oui | 1,00 | 0,04 |
@@ -112,6 +127,8 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E3 | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 5 images ; sous −2 cm : 6) | −4,81 cm | 50 | ≥ −1,00 cm | **non** | −7,96 | −3,02 |
 | E3 | M9 poignet au-dessus de l’encolure (droit) | 8,88 cm | 49 | ≥ 9,00 cm | **non** | 6,75 | 7,09 |
 | E3 | M10 coude (droit) | 151,84° | 0 | ≤ 155,00° | oui | 151,70 | 151,84 |
+| E3 | M4 plante – étrier affiché (droit) | 0,97 cm | 61 | ≤ 2,00 cm | oui | 0,80 | 3,89 |
+| E3 | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 20 | ≤ 1,00 cm | oui | 0,00 | — |
 | E3b | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,29 cm | 2 | ≤ 2,00 cm | oui | 0,26 | 0,27 |
 | E3b | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,77 cm | 0 | ≤ 2,00 cm | oui | 0,43 | 0,77 |
 | E3b | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,80 cm | 42 | ≤ 3,00 cm | oui | 1,24 | 0,26 |
@@ -122,6 +139,7 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E3b | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 13 images ; sous −2 cm : 50) | −9,47 cm | 41 | ≥ −1,00 cm | **non** | −13,20 | −10,36 |
 | E3b | M9 poignet au-dessus de l’encolure (gauche) | 8,89 cm | 13 | ≥ 9,00 cm | **non** | 8,57 | 9,22 |
 | E3b | M10 coude (gauche) | 151,84° | 65 | ≤ 155,00° | oui | 151,70 | 151,84 |
+| E3b | M4 plante – étrier affiché (gauche) | 1,00 cm | 64 | ≤ 2,00 cm | oui | 0,82 | 2,30 |
 | E3b | M1 plante – point d’étrier visé, |y| assis (droit) | 0,18 cm | 2 | ≤ 2,00 cm | oui | 0,31 | 0,20 |
 | E3b | M1 plante – point d’étrier visé, |z| assis (droit) | 0,85 cm | 0 | ≤ 2,00 cm | oui | 0,69 | 0,85 |
 | E3b | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 0,80 cm | 42 | ≤ 3,00 cm | oui | 0,35 | −0,01 |
@@ -132,6 +150,8 @@ M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, au
 | E3b | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 2 images ; sous −2 cm : 1) | −3,26 cm | 4 | ≥ −1,00 cm | **non** | −5,10 | −3,74 |
 | E3b | M9 poignet au-dessus de l’encolure (droit) | 8,88 cm | 13 | ≥ 9,00 cm | **non** | 8,57 | 9,22 |
 | E3b | M10 coude (droit) | 151,84° | 0 | ≤ 155,00° | oui | 151,70 | 151,84 |
+| E3b | M4 plante – étrier affiché (droit) | 1,00 cm | 64 | ≤ 2,00 cm | oui | 0,82 | 3,89 |
+| E3b | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 20 | ≤ 1,00 cm | oui | 0,00 | — |
 
 ## Écarts aux références (grandeurs qui ne dépendent pas de l’échelle du cheval)
 
@@ -249,6 +269,69 @@ tenue au saut, clips à 30 images/s rééchantillonnés à l’import) ; le rest
 | E3b | jumpK50Descente | 72 | 72 | 72 | 0 | 0 |
 | E3b | jumpK10Descente | 87 | 88 | 88 | 1 | 1 |
 
+## Sellerie affichée (étape S1) : étrier, étrivière, rênes (information, min – max sur toutes les images)
+
+M4 : plante – étrier affiché ; M4a : avant-pied – étrier, moins 0,015 · scale (0 par construction, dans le web comme dans
+Unreal) ; M5 : étrivière, porte-étrivière → œil de l’étrier (0,115 m au-dessus) ; M18 : rêne, mors → poing de la règle ;
+écartement des poignets. M5 et M18 dépendent de la taille du cheval (Unreal 3,7 % plus petit que le web).
+
+| Scénario | Grandeur | Unreal | O1 | O2 |
+|---|---|---|---|---|
+| E1 | M4 gauche | 0,64 – 0,64 cm | 0,34 – 0,34 cm | — |
+| E1 | M4 droit | 0,64 – 0,64 cm | 0,34 – 0,34 cm | — |
+| E1 | M4a gauche | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E1 | M4a droit | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E1 | M5 étrivière gauche | 49,15 – 49,51 cm | 47,93 – 48,00 cm | — |
+| E1 | M5 étrivière droite | 53,48 – 53,74 cm | 52,92 – 53,02 cm | — |
+| E1 | M18 rêne gauche | 96,91 – 99,19 cm | 102,65 – 104,59 cm | 102,50 – 104,67 cm |
+| E1 | M18 rêne droite | 95,78 – 97,18 cm | 101,51 – 103,28 cm | 101,25 – 102,96 cm |
+| E1 | M18 écartement des poignets | 17,20 – 17,51 cm | 16,94 – 16,94 cm | 17,51 – 17,56 cm |
+| E1b | M4 gauche | 0,62 – 0,71 cm | 0,32 – 0,55 cm | — |
+| E1b | M4 droit | 0,62 – 0,71 cm | 0,32 – 0,54 cm | — |
+| E1b | M4a gauche | −0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E1b | M4a droit | −0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E1b | M5 étrivière gauche | 47,00 – 54,67 cm | 47,03 – 55,16 cm | — |
+| E1b | M5 étrivière droite | 49,10 – 53,77 cm | 49,91 – 56,88 cm | — |
+| E1b | M18 rêne gauche | 88,98 – 121,71 cm | 94,07 – 123,23 cm | 92,71 – 124,51 cm |
+| E1b | M18 rêne droite | 89,60 – 113,58 cm | 95,84 – 118,11 cm | 94,05 – 117,02 cm |
+| E1b | M18 écartement des poignets | 16,97 – 18,39 cm | 16,91 – 16,94 cm | 16,98 – 18,39 cm |
+| E2g | M4 gauche | 0,63 – 0,71 cm | 0,28 – 0,64 cm | — |
+| E2g | M4 droit | 0,63 – 0,71 cm | 0,33 – 0,67 cm | — |
+| E2g | M4a gauche | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E2g | M4a droit | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E2g | M5 étrivière gauche | 42,04 – 50,90 cm | 46,66 – 63,23 cm | — |
+| E2g | M5 étrivière droite | 52,68 – 63,50 cm | 48,93 – 57,66 cm | — |
+| E2g | M18 rêne gauche | 81,26 – 105,39 cm | 81,13 – 105,04 cm | 80,38 – 104,85 cm |
+| E2g | M18 rêne droite | 88,94 – 114,27 cm | 92,23 – 116,16 cm | 89,58 – 113,51 cm |
+| E2g | M18 écartement des poignets | 16,95 – 18,14 cm | 16,88 – 16,94 cm | 16,95 – 18,12 cm |
+| E2d | M4 gauche | 0,62 – 0,70 cm | 0,35 – 0,63 cm | — |
+| E2d | M4 droit | 0,62 – 0,70 cm | 0,34 – 0,61 cm | — |
+| E2d | M4a gauche | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E2d | M4a droit | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E2d | M5 étrivière gauche | 49,15 – 58,46 cm | 47,67 – 54,28 cm | — |
+| E2d | M5 étrivière droite | 44,56 – 53,48 cm | 51,40 – 63,07 cm | — |
+| E2d | M18 rêne gauche | 95,31 – 122,06 cm | 98,33 – 121,80 cm | 95,74 – 123,08 cm |
+| E2d | M18 rêne droite | 87,52 – 113,45 cm | 87,78 – 111,81 cm | 86,84 – 113,33 cm |
+| E2d | M18 écartement des poignets | 16,96 – 18,22 cm | 16,90 – 16,94 cm | 16,95 – 18,04 cm |
+| E3 | M4 gauche | 0,61 – 0,97 cm | 0,11 – 0,80 cm | — |
+| E3 | M4 droit | 0,61 – 0,97 cm | 0,11 – 0,80 cm | — |
+| E3 | M4a gauche | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E3 | M4a droit | −0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E3 | M5 étrivière gauche | 45,32 – 52,10 cm | 46,43 – 52,05 cm | — |
+| E3 | M5 étrivière droite | 46,98 – 58,56 cm | 49,42 – 59,43 cm | — |
+| E3 | M18 rêne gauche | 87,80 – 122,77 cm | 93,94 – 133,58 cm | 92,69 – 131,71 cm |
+| E3 | M18 rêne droite | 88,77 – 125,50 cm | 95,11 – 136,13 cm | 93,80 – 134,49 cm |
+| E3 | M18 écartement des poignets | 16,82 – 19,96 cm | 16,44 – 19,89 cm | 16,57 – 20,60 cm |
+| E3b | M4 gauche | 0,61 – 1,00 cm | 0,11 – 0,82 cm | — |
+| E3b | M4 droit | 0,61 – 1,00 cm | 0,11 – 0,82 cm | — |
+| E3b | M4a gauche | −0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E3b | M4a droit | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E3b | M5 étrivière gauche | 43,71 – 50,08 cm | 43,72 – 49,87 cm | — |
+| E3b | M5 étrivière droite | 52,91 – 60,97 cm | 53,01 – 61,16 cm | — |
+| E3b | M18 rêne gauche | 78,39 – 110,71 cm | 82,19 – 120,50 cm | 83,83 – 118,59 cm |
+| E3b | M18 rêne droite | 79,13 – 111,05 cm | 82,90 – 120,92 cm | 84,61 – 118,99 cm |
+| E3b | M18 écartement des poignets | 16,91 – 19,50 cm | 16,81 – 18,74 cm | 16,90 – 19,66 cm |
+
 ## Entrées de la règle venues du cheval Unreal, contre celles du web (information)
 
 | Scénario | Images | Avec clip miroir | Assises | Phase réécrite depuis le clip (images ; écart max) | Phase tenue (écart max) | bob (écart max) | tangage (écart max) |
@@ -265,4 +348,4 @@ Phase tenue : à l’arrêt et pendant le saut, le web fait avancer la phase par
 ne suit pas la pente du terrain, ne remonte ni n’abaisse son corps au saut (horloge du saut et `rootY` non portés),
 et ne bascule pas face aux barres (`_barClear`).
 
-Verdict : **61 critères sur 215 ne sont pas tenus** (seuils absolus, écarts à O1 et phases du saut contre O1) ; détail ci-dessus. Contre O2 (mêmes proportions) : 24 écarts non tenus.
+Verdict : **61 critères sur 233 ne sont pas tenus** (seuils absolus, écarts à O1 et phases du saut contre O1) ; détail ci-dessus. Contre O2 (mêmes proportions) : 24 écarts non tenus.

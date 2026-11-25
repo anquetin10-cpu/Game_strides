@@ -635,11 +635,11 @@
    "src/entities/horse/anim.js",
    "src/entities/pjlHorse.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Aucun étrier : le modèle importé n'a pas de sellerie.",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseStraps.cpp (stirrupUnderToe : os de l'orteil abaissé de toeDrop · scale ; strapsStep : étrier sous le pied quand il y est, sinon à l'ancre d'étrier, orienté comme le cheval) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorseTackMesh.cpp (UStridesHorseTackMesh : étriers en UProceduralMeshComponent, géométrie du web ; orteil de la cavalière de la règle, pose de l'image ; créé avec -StridesRider=regles ou -StridesTack=web)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "ctest monte-sellerie (7 443 vérifications, 0 échec) contre l'oracle unreal/core/tests/oracles/monte/sellerie (relevé à l'appel de pjlHorse.js _straps et Horse._stirrupsFollow, 929 images, 8 scénarios d'O1, deux exports identiques à l'octet) : os d'étrier à 2e-13 m de l'orteil abaissé, étriers à 0 m, orientation exacte ; orteil lu = pose de la même image (1,6e-13 m). Strides.Parite.HorseTackMesh : étrier sous l'orteil à 4,4e-14 cm ; contre l'étrier du web recalculé sur O2 rider_f (cheval posé comme le web) 0,64 cm avant le premier saut, 4,06 cm au plus (saut). Niveau B : M4 (plante – étrier affiché) ≤ 1,00 cm, seuil 2 cm tenu dans les 6 scénarios (niveau-b.md). Captures avant / après : unreal/docs/parite/monte/captures/sellerie/. Mutations : scripts/unreal/mutations-horse-straps.py. Détail : unreal/docs/parite/monte/README.md, étape S1.",
+  "ecart": "Étriers relevés sans cavalier (0,28 m sur le cheval procédural) et montée / descente (pied dans un seul étrier) non portés : sans cavalière posée par la règle, les étriers pendent à l'ancre (comme le web sans pied dans l'étrier). Jeu par défaut inchangé : sellerie affichée seulement avec -StridesRider=regles ou -StridesTack=web (captures du CSO intactes) ; passage par défaut prévu avec S2.",
   "tranche": "b"
  },
  {
@@ -649,11 +649,11 @@
   "js": [
    "src/entities/pjlHorse.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Ni étrivières ni rênes (voir aussi cheval.renes).",
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/HorseStraps.cpp (strapSet : ruban de n segments, flèche en sinus ; étrivières 6 segments, 1,3 cm ; rênes 16 segments, 8 mm, flèche min(6 cm ; 5 % de la longueur) ou 12 cm sur l'encolure ; rien au-delà de 30 m de la caméra ; constantes relues dans le source par scripts/unreal/tack-horse-glb.py) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorseTackMesh.cpp (rubans en UProceduralMeshComponent ; poings = creux du poing de la pose précédente, realistic.js gripPoint)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "ctest monte-sellerie : 265 920 coordonnées des étrivières et des rênes identiques au bit aux flottants 32 bits du web (0 ulp), visibilité identique à chaque image ; poings lus = gripPoint de l'image précédente dans le siège de l'image (8,2e-7 m, rz d'O1 au millionième). Strides.Parite.HorseTackMesh : étrivière du porte-étrivière à l'œil de l'étrier et rênes du mors au poing à 1e-13 cm près, tampons affichés = sortie du cœur, largeur dans le bon axe. Niveau B : M5 et M18 relevés (niveau-b.md). Mutations : scripts/unreal/mutations-horse-straps.py. Détail : unreal/docs/parite/monte/README.md, étape S1.",
+  "ecart": "Rênes posées sur l'encolure (sans cavalier) et seuil de 30 m : codés, non départagés par l'oracle (aucun scénario sans cavalier ; caméra toujours proche). Normales des rubans calculées par Unreal (le web n'en donne pas). Jeu par défaut inchangé (options -StridesRider=regles ou -StridesTack=web).",
   "tranche": "b"
  },
  {
@@ -669,11 +669,11 @@
    "src/entities/pjl/view.js",
    "src/entities/pjlHorse.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Cheval nu : le GLB importé ne contient que corps, yeux et crins (Object_426, 427, 428) ; aucune sellerie construite ni importée.",
+  "unreal": "scripts/unreal/export-rider-rules.mjs --sellerie-maillage (géométries de pjl/tack.js relevées dans la page), scripts/unreal/tack-horse-glb.py, scripts/unreal/import-horse-tack.py → unreal/StridesGrandTour/Content/Characters/Horse/horse_pjl_tack (SK_Tack_pad, padTrim, saddle, girth, bridle, bit, boots, bonnet ; M_StridesTack, motif matelassé de quiltMaterial) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorseTackMesh.cpp (pièces suiveuses du maillage du cheval, visibilité de setTackVisible, bornes sur les os du meneur)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Strides.Parite.HorseTackMesh : 8 pièces, même squelette que le cheval, suiveuses du maillage du cheval, triangles égaux au web, 7 visibles comme dans le web (bonnet masqué) ; 109 sommets témoins retrouvés au repos (0,0034 unité du maillage) avec les mêmes os porteurs et poids (1,9e-5) ; posés comme le web, 5 432 points à 0,436 cm au plus du web (images posées par les seuls clips) ; bornes contenant les sommets posés à chaque image. Captures avant / après / web (rendu GPU réel, 844 × 390) : unreal/docs/parite/monte/captures/sellerie/. Détail : unreal/docs/parite/monte/README.md, étape S1.",
+  "ecart": "Au saut, à la réception et avec bascule ou levée de tête du web, les pièces suivent le cheval Unreal, qui ne porte pas ces mouvements (jusqu'à 16,8 cm du web ; ancres du cheval 11,1 cm aux mêmes images : étape S4). Oreilles (earPrick) non portées : bonnet à 3,1 cm (masqué). Licol seul, sellerie allégée au loin et changement d'équipement non portés ; matériaux simplifiés (couleur, rugosité, métal du web ; envMapIntensity et éclairage différents). Jeu par défaut inchangé (options -StridesRider=regles ou -StridesTack=web) ; cheval Unreal 3,7 % plus petit (S3).",
   "tranche": "b"
  },
  {
@@ -686,11 +686,11 @@
    "src/entities/pjl/view.js",
    "src/entities/pjlHorse.js"
   ],
-  "unreal": "",
-  "etat": "absent",
-  "niveau": "aucun",
-  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Aucun équipement visible ni achat de sellerie.",
+  "unreal": "unreal/StridesGrandTour/Content/Characters/Horse/horse_pjl_tack/MI_Tack_* (couleurs relevées dans la page, scénario E1 : tapis, liseré, cuir, guêtres, mors, étriers, rênes) ; Content/Data/pjl_horse_tack_mesh.json",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Couleurs linéaires relevées sur les matériaux du web (pjl_horse_tack_mesh.json, scripts/unreal/tack-horse-glb.py) et posées sur les instances MI_Tack_* ; matériau de chaque pièce vérifié par Strides.Parite.HorseTackMesh.",
+  "ecart": "Couleurs fixées à celles du cheval engagé du scénario E1 (défauts de pjl/view.js) : achat, choix de couleur, logo du tapis et changement sur place (setHorseDress) non portés.",
   "tranche": "e"
  },
  {

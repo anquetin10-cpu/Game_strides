@@ -59,8 +59,13 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   s'ajoutent le corps non remonté (poser des postérieurs d'E3 détecté 12 images trop tôt) et la phase tenue (locomotion
   procédurale du web non portée : jusqu'à 4,1 cm aux mains après la réception ; dans le contrôle, jusqu'à 7,1° sur l'ouverture du genou et 3,7° sur la hanche en E3).
 - Captures appariées (même image d'O1, même caméra dans le repère du cheval) à l'arrêt, au galop à droite et à gauche et
-  au sommet du saut (`captures/niveau-b/`, étape M3) ; décors différents ; selle, bride, rênes et étriers absents du
-  cheval Unreal.
+  au sommet du saut (`captures/niveau-b/`, étape M3) ; décors différents ; sellerie absente du cheval Unreal à M3, refaites
+  avec la sellerie complète à l'étape S1 (`captures/sellerie/`, avant / après).
+- **Sellerie complète (étape S1)** : selle, tapis, liseré, sangle, filet, mors et guêtres importés du web (géométries de
+  `pjl/tack.js`, mêmes os, mêmes poids), étriers, étrivières et rênes portés en C++ (`StridesCore/HorseStraps`, identiques au
+  bit au web sur 929 images) ; étrier sous l'orteil de la cavalière. Avec `-StridesRider=regles` ou `-StridesTack=web`.
+  Pièces à 0,44 cm du web aux images posées par les seuls clips ; au saut, elles suivent le cheval Unreal (corps au saut
+  non porté : S4). M4 ≤ 1,00 cm (seuil 2 cm), M5, M8 et M18 mesurés (`niveau-b.md`).
 - Captures côte à côte à l'arrêt et au galop (`captures/`, refaites le 24/11 aux reliquats M1) : la cavalière est assise,
   pieds sous elle, mains au-dessus du garrot ; avec l'option, queue de cheval, yeux et sourcils de nouveau rendus. Ce ne
   sont pas des poses jumelles (décor et phase différents). Le « retard de 9 cm » au galop était l'instant du relevé (milieu
@@ -77,8 +82,7 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
 - **Niveau B en jeu avec rendu** : le niveau B est mesuré sur le cheval Unreal rejoué par les oracles (trajectoire et
   clips du web), pas sur une partie jouée : en jeu, le cheval Unreal avance ses clips à vitesse 1 (cadence du web non
   portée), lit son propre virage et ses propres sauts (horloge du saut du web non portée).
-- Selle, tapis, bride, rênes, étrivières et étriers absents du cheval Unreal (aucun maillage de sellerie) ; M4, M5, M8 et
-  M18 non mesurables dans Unreal ; M19 (montée, descente) sans oracle.
+- Sellerie dans le jeu par défaut : derrière une option jusqu'à S2 ; M19 (montée, descente) sans oracle.
 - Coût sur iPhone ou iPad : aucun appareil branché (étape 16). Les chiffres du Mac classent les options, sans prédire le
   coût sur un téléphone.
 - Réalisme équestre : c'est à Julien d'en juger sur les captures ; aucun oracle ne le prouve.
@@ -143,6 +147,19 @@ BASE=http://127.0.0.1:5178 node --import ./scripts/unreal/pw-chrome.mjs scripts/
   --only-shots=arret,galop,galop-gauche,saut-sommet                               # web + poses.json (-> captures/niveau-b/)
 "$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -game -windowed -ResX=844 -ResY=390 -StridesShots=monte-b \
   -StridesRider=regles -StridesHorseLead=web -StridesShotsDir=<dossier> -StridesMontePoses=<captures/niveau-b/poses.json> -abslog=<journal>
+# Étape S1 (sellerie complète) : oracle sellerie/ et géométrie (Vite 5178), GLB et données, import, ctest, tests moteur,
+# mutations, captures avant / après, coût
+BASE=http://127.0.0.1:5178 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs --sellerie   # -> oracles/monte/sellerie/
+BASE=http://127.0.0.1:5178 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs --sellerie-maillage=<travail>
+python3 scripts/unreal/tack-horse-glb.py --travail=<travail>   # -> <travail>/horse_pjl_tack.glb, Content/Data/pjl_horse_tack_mesh.json
+STRIDES_TACK_GLB=<travail>/horse_pjl_tack.glb "$UE_REEL/Engine/Binaries/Mac/UnrealEditor-Cmd" "<chemin réel>/…/StridesGrandTour.uproject" \
+  -run=pythonscript -script="<chemin réel>/scripts/unreal/import-horse-tack.py" -unattended -nosplash -nullrhi   # -> Content/Characters/Horse/horse_pjl_tack
+"$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -ExecCmds="Automation RunTests Strides.Parite.HorseTackMesh+Strides.Parite.RiderOnHorse; Quit" \
+  -unattended -nullrhi -nosplash -trace=none -abslog=<journal> -ReportExportPath=<dossier> -StridesMonteDir=<dossier>
+python3 scripts/unreal/mutations-horse-straps.py [--moteur]    # cœur ~30 s ; --moteur : UBT + éditeur
+"$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -game -windowed -ResX=844 -ResY=390 -StridesShots=monte-b -StridesRider=regles \
+  -StridesHorseLead=web [-StridesTack=aucune] -StridesShotsDir=<dossier> -StridesMontePoses=unreal/docs/parite/monte/captures/niveau-b/poses.json -abslog=<journal>
+python3 scripts/unreal/perf-summary.py --mesurer --sellerie --sortie=<dossier> --passes=3     # regles contre regles-sans-sellerie
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -1202,3 +1219,139 @@ Reste à faire (M3) : phase de la locomotion procédurale du web pendant le saut
 saut, corps et bascule au saut, inclinaison en virage, cadence de foulée réglée sur la vitesse (en partie jouée le cheval
 Unreal joue ses clips à vitesse 1) ; sellerie absente ; mesure du niveau B en partie jouée (ici : rejeu des oracles) ;
 décisions de Julien listées dans `decision-voie-a.md`.
+
+## Étape S1. Sellerie complète du cheval Unreal (24-25/11/2026)
+
+Décision de Julien du 24/11/2026 (`decisions.md`), première étape. Base : `b369dcbd`. Le web est la spécification : rien
+n'est dessiné à la main, les géométries, couleurs et constantes viennent de la page ou du source.
+
+### Ce que le web fait (lu dans le JS)
+
+- **Pièces skinnées** (`pjl/tack.js buildTack`, `pjl/view.js buildTackMeshes`, `setTackVisible`) : tapis (matelassé,
+  `quiltMaterial`), liseré, selle, sangle, filet (muserolle, têtière, frontal, montants), mors, guêtres, bonnet. Ce ne sont
+  **pas** des maillages du GLB : elles sont construites au chargement sur la surface du corps, skinnées sur les os du corps
+  (espace de liaison). Visibles selon l'équipement : dans le scénario E1 d'O1, 7 pièces sur 8 (bonnet masqué).
+- **Étriers, étrivières, rênes** (`pjlHorse.js` `ironGeometry`, `Strap`, `_straps` ; `horse.js _stirrupsFollow`) : étrier
+  sous l'os de l'orteil du cavalier abaissé de 0,015 · scale (sinon à l'ancre d'étrier), étrivière (6 segments, 1,3 cm) du
+  porte-étrivière à l'œil de l'étrier (+11,5 cm à la verticale), rênes (16 segments, 8 mm) du mors aux poings, flèche
+  min(6 cm ; 5 % de la longueur), ou sur l'encolure sans cavalier (flèche 12 cm) ; rien au-delà de 30 m de la caméra.
+- **Instants de lecture** (mesurés, ctest) : l'orteil lu est celui de la pose du cavalier **de la même image** ; les poings
+  (creux du poing du modèle réaliste, `realistic.js gripPoint`) sont ceux de la pose **de l'image précédente**, dans le siège
+  de l'image courante.
+
+Vérifié : le cheval Unreal est le même cheval PJL que le web (mêmes 419 articulations, mêmes noms ; la formule de la page
+appliquée à 160 sommets du corps redonne le corps du GLB normalisé à 9,8e-6 près, taille 250,8).
+
+### Ce qui est fait
+
+- **Oracle `unreal/core/tests/oracles/monte/sellerie/`** (`export-rider-rules.mjs --sellerie`, 6,9 Mo, plus gros fichier
+  1,1 Mo) : les 8 scénarios d'O1 rejoués à l'identique (repère S égal à O1 à chaque image, contrôlé par l'export), relevé à
+  l'appel de `_straps` et de `_stirrupsFollow` (enveloppes en lecture seule des méthodes) : entrées (ancres, poings,
+  repère du cheval, caméra, orteils) et sorties (visibilité, étriers, sommets des rubans) ; une image sur dix, 109 sommets
+  témoins des pièces skinnées dans S. **Deux exports identiques à l'octet** (shasum des 9 fichiers). Image 0 : poings et
+  rênes non exportés : les poings du modèle réaliste avant la première image variaient d'un export à l'autre (3e-5 m).
+- **Géométrie** (`--sellerie-maillage`, hors dépôt) → `tack-horse-glb.py` : GLB des 8 pièces sur le squelette et la peau
+  du GLB normalisé (sommets à la pose de repos de la scène, formule de `anchorWorld`) et `Content/Data/pjl_horse_tack_mesh.json`
+  (52 Ko : visibilité, couleurs linéaires, sommets témoins et leurs os, géométrie des étriers, constantes de `_straps` et
+  `_stirrupsFollow` **relues dans le source**, une seule occurrence exigée) → `import-horse-tack.py` (Interchange, squelette
+  `Object_426_Skeleton`, une pièce par asset, poids sur 16 bits) : `Content/Characters/Horse/horse_pjl_tack` (3,8 Mo,
+  `SK_Tack_*`, `M_StridesTack` avec le motif matelassé de `quiltMaterial`, `MI_Tack_*`).
+- **Cœur `StridesCore/HorseStraps`** (C++20, sans type Unreal) : `strapSet`, `stirrupUnderToe`, `strapsStep`.
+- **Composant `UStridesHorseTackMesh`** (créé par `AStridesHorse` avec `-StridesRider=regles` ou `-StridesTack=web` ;
+  `-StridesTack=aucune` l'empêche, pour les captures « avant ») : pièces suiveuses du maillage du cheval
+  (`UStridesTackPieceComponent`), étriers et rubans en `UProceduralMeshComponent`, tick après le cheval et la cavalière ;
+  orteils et creux des poings lus sur la cavalière de la règle (`UStridesRiderRig::ToePoint`, `GripPoint`) ; coût mesuré.
+  Sans cavalière posée par la règle : étriers pendants, rênes sur l'encolure (comme le web sans cavalier).
+- **Jeu par défaut inchangé** : sans option, aucun composant (vérifié par le test) ; captures du CSO intactes (G5).
+
+Deux défauts trouvés au rendu, corrigés (aucun ne se voyait dans les tests sans rendu, ce qui justifie les captures) :
+1. les matériaux enregistrés dans les assets importés n'étaient pas relus en jeu (`WorldGridMaterial`) : posés par le
+   composant ; vérifié par le test ;
+2. selle, tapis, liseré, sangle, filet et mors n'étaient **pas rendus** (guêtres seules visibles) : les bornes d'un suiveur
+   viennent de la pose de référence de la pièce, où le cheval du GLB est couché (racine tournée de 90°) ; le rendu les
+   écartait. Bornes recalculées sur les os du meneur qui portent la pièce (marge 40 cm) ; test : bornes contenant tous les
+   sommets posés (chemin du rendu, `ComputeSkinnedPositions`) à chaque image des 6 scénarios.
+
+### Preuves
+
+- **ctest `monte-sellerie`** (7 443 vérifications, 0 échec) : 929 images, toutes affichées ; os d'étrier à 2e-13 m de
+  l'orteil abaissé ; étriers à 0 m, orientation exacte ; **265 920 coordonnées des rubans identiques au bit** aux flottants
+  32 bits du web (0 ulp) ; orteil lu = pose de la même image à 1,6e-13 m (7,8 cm de la précédente) ; poings = pose
+  précédente à 8,2e-7 m (5,5 cm de celle de l'image).
+- **`Strides.Parite.HorseTackMesh`** (nouveau, vert) :
+  - 8 pièces, même squelette, suiveuses et rattachées au maillage du cheval, 7 visibles comme dans le web, triangles égaux
+    au web ; 109 sommets témoins retrouvés au repos à 0,0034 unité du maillage, **mêmes os porteurs, poids à 1,9e-5** ;
+  - cheval posé comme le web (contrôle du rejeu), témoins skinnés contre le canal `tk` : **0,436 cm au plus sur 5 432
+    points** aux images posées par les seuls clips. Au saut, à la réception et avec bascule ou levée de tête du web :
+    16,8 cm au plus (2 198 points), et les **ancres du cheval** s'écartent déjà de 11,1 cm aux mêmes images : la pièce suit
+    le cheval Unreal, qui n'a pas ces mouvements (S4). Bonnet (masqué) : 3,1 cm (oreilles, earPrick non porté) ;
+  - étrier sous l'orteil de la pose de l'image à 4,4e-14 cm ; contre l'étrier du web recalculé sur O2 rider_f : **0,64 cm
+    avant le premier saut** (1 110 étriers), 4,06 cm au plus (saut) ; étrivière et rênes aux bonnes extrémités (≤ 3e-14 cm) ;
+    rubans dans le bon axe ; creux du poing = milieu des 4 os relus par leur nom (8e-8 cm) ; géométrie des étriers = web ;
+    tampons affichés = sortie du cœur ; bornes et matériaux des pièces à chaque image ;
+  - coût de `StepStraps` (logique et rubans) dans le test : 0,0024 ms en moyenne, 0,072 ms au plus (1 378 images).
+- **Niveau B** (`Strides.Parite.RiderOnHorse` exporte maintenant les étriers affichés et M8 ; `niveau-b.md` régénéré) :
+  - **M4** (plante – étrier affiché) ≤ 1,00 cm partout, seuil 2 cm tenu (O1 : ≤ 0,82 cm) ;
+  - **M5** (étrivière) et **M18** (rênes) relevés : par exemple E1, étrivière gauche 49,2 – 49,5 cm (O1 47,9 – 48,0), rêne
+    gauche 96,9 – 99,2 cm (O1 102,7 – 104,6 : cheval Unreal 3,7 % plus petit) ;
+  - **M8** (6 rayons, maillage du cheval Unreal skinné) : 0,00 cm aux 449 images de la fenêtre (O1 ≤ 0,07 cm) ; témoin
+    positif : un point 30 cm sous le siège est vu dans le corps à 443 images sur 449 (25,8 cm au plus) ;
+  - verdict : 61 critères sur 233 non tenus (61 sur 215 avant : les 18 nouveaux critères, M4 et M8, sont tous tenus).
+- **Captures** (rendu GPU réel, 844 × 390, `captures/sellerie/monte-<arret | galop | galop-gauche | saut-sommet>-<avant |
+  apres>.png`, web : `captures/niveau-b/monte-*-web.png`) ; montages avant | après | web hors dépôt
+  (`.ue-cache/travail/s1/montages/`). Ce sont des illustrations (décors différents), pas une comparaison de pose.
+
+### Coût (méthode de l'étape 7, rendu GPU réel, Mac mini, 844 × 390, synchronisation 60 Hz)
+
+`perf-summary.py --mesurer --sellerie --passes=3` : passes alternées « regles » (cavalière de la règle et sellerie
+affichée) et « regles-sans-sellerie » (`-StridesTack=aucune`), 600 images par phase ; fichiers `perf/sellerie/`.
+- Sellerie affichée mesurée par le jeu (`strapsMs` : logique des lanières et mise à jour des rubans) : **0,013 à 0,014 ms**
+  par image (médianes des 3 passes, arrêt et galop ; 95e centile ≤ 0,017 ms).
+- Δ temps du jeu (moyenne des médianes) : **+0,093 ms à l'arrêt, +0,096 ms au galop** (seuil de la règle : 0,3 ms, tenu) ;
+  dispersion des médianes ≤ 3,7 % (seuil 5 %). Le Δ dépasse le coût mesuré des lanières : le reste (pièces skinnées,
+  bornes recalculées, sections des rubans) n'est pas isolé (à confirmer par une mesure dédiée).
+- Rendu : Δ fil de rendu +0,003 / +0,002 ms ; GPU −0,031 ms à l'arrêt, +0,119 ms au galop : dans le bruit de la mesure
+  sur Metal (valeur absolue du GPU à confirmer, étape 7). Rien n'est mesuré sur iPhone ou iPad.
+- Pendant la mise au point, un éditeur bloqué après un plantage de test a tourné jusqu'à 01 h 13 ; arrêté avant ces passes
+  (aucune autre instance pendant la mesure, contrôle de `perf-summary.py`).
+
+### Mutations (`scripts/unreal/mutations-horse-straps.py --moteur`, 25/11/2026, 1 613 s)
+
+31 mutations : 22 cœur (copies, ctest `monte-sellerie`), 9 moteur (UBT puis `Strides.Parite.HorseTackMesh`) ; **28
+détectées**, 3 non départagées et déclarées : rênes posées sur l'encolure (côté inversé), selle ignorée par la visibilité,
+axe latéral du repère du cheval inversé : les trois ne touchent que des branches qu'aucun scénario d'O1 n'exerce (cheval
+toujours sellé, cavalier toujours en selle ; l'axe latéral ne sert qu'aux rênes posées). La troisième a été ajoutée à
+`ATTENDUES` après cette campagne (le script sortait en code 1 sur elle), sans nouvelle campagne. Sources rétablis,
+recompilation finale code 0. Exemples : poings de l'image courante (rênes à 5,4 cm), orteil de la pose précédente (étrier
+à 7,7 cm), orteil remplacé par le pied (12,9 cm contre l'étrier du web), pièces sans meneur, visibilité du web ignorée,
+étriers sans la symétrie des axes, creux du poing sur trois os : tous détectés.
+
+### Écarts déclarés
+
+1. Corps du cheval au saut, bascule, levée de tête, oreilles : non portés (S4) ; les pièces suivent le cheval Unreal.
+2. Cheval Unreal 3,7 % plus petit (S3) : étrivières et rênes plus courtes que le web.
+3. Rênes sur l'encolure et seuil de 30 m : codés, non départagés par l'oracle (aucun scénario sans cavalier, caméra proche).
+4. Matériaux simplifiés : couleur, rugosité et métal du web, motif matelassé ; `envMapIntensity`, éclairage et ombrage
+   d'Unreal différents ; normales des rubans calculées par Unreal (le web n'en donne pas).
+5. Licol, sellerie allégée au loin, montée et descente (un pied dans l'étrier), étriers relevés sans cavalier, changement
+   d'équipement : non portés.
+6. Le jeu par défaut n'affiche pas la sellerie : elle change les captures du CSO ; passage par défaut avec S2.
+7. Un éditeur resté bloqué après un plantage de test (le mien, pendant la mise au point) a tourné en parallèle environ 1 h 35
+   (01 h 13 au plus tard) ; arrêté avant la mesure du coût et la campagne finale.
+
+### Portes
+
+- G1 : ctest code 0 (construit sous `.ue-cache/travail/core-s1`) : cœur 300 729, `monte` 306 914, `monte-cheval` 4 488,
+  `monte-cavaliere` 72 547, `perf` 20, `monte-miroir` 7 069, **`monte-sellerie` 7 443** vérifications, 0 échec.
+- G2 : UBT code 0, aucune erreur (compilations successives de S1 ; avertissements du compilateur traités comme erreurs par
+  le module : un seul, corrigé, ombrage de variable).
+- G3 : `Automation RunTests Strides` : **39 tests, 39 en succès** (nouveau : `Strides.Parite.HorseTackMesh`), 0 échec ;
+  avertissements : `idevice_id` (erreur 86, déjà relevé) deux fois, sur le test en cours.
+- G4 : `mutations-horse-straps.py --moteur` (ci-dessus) ; cœur seul : code 0 (20 détectées, 2 déclarées).
+- G5 : `git diff --quiet HEAD -- unreal/docs/parite/cso` code 0 (jeu par défaut inchangé, captures du CSO intactes).
+- G6 : `build-parite.py` code 0 : lignes `cheval.etriers`, `cheval.lanieres`, `cheval.sellerie` (partiel, joué à
+  l'écran), `cheval.sellerie-couleurs`, `cheval.renes`, `cavaliere.mains-renes` mises à jour.
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Reste à faire (S1) : sellerie visible dans le jeu par défaut (avec S2) ; corps du cheval au saut (S4) ; montée et
+descente ; coût sur iPhone ou iPad ; isoler le coût des pièces skinnées.
