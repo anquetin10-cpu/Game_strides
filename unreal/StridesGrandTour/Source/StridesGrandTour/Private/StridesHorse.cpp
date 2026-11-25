@@ -13,6 +13,11 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
@@ -52,7 +57,7 @@ AStridesHorse::AStridesHorse()
 	if (HorseBody)
 	{
 		Mesh->SetSkeletalMesh(HorseBody);
-		Mesh->SetRelativeScale3D(FVector(0.01f));
+		Mesh->SetRelativeScale3D(FVector(GameMeshScale));
 		Body->SetVisibility(false);
 		Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
@@ -106,6 +111,12 @@ void AStridesHorse::BeginPlay()
 	// Étape S2 : monte du web lue comme un ensemble (StridesMonteOptions : -StridesMonte=, -StridesRider=, -StridesHorseLead=,
 	// -StridesTack=).
 	const StridesMonteOptions::FMonte Monte = StridesMonteOptions::FromCommandLine();
+	// Étape S3 : taille du cheval du web (-StridesHorseScale=web), avant la sellerie (qui lit l'échelle à chaque image).
+	if (StridesMonteOptions::WebHorseScaleFromCommandLine())
+	{
+		FString Err;
+		if (!EnableWebScale(true, &Err)) UE_LOG(LogTemp, Warning, TEXT("Strides taille du cheval du web non appliquée (%s), échelle du jeu gardée"), *Err);
+	}
 	// Étape M2 : main au galop et clips miroir du web.
 	if (Monte.bWebLead)
 	{
@@ -204,6 +215,45 @@ bool AStridesHorse::ApplyEngagedCoat()
 	UE_LOG(LogTemp, Display, TEXT("Strides robe : cheval engagé %s, robe %s, liste %s, balzanes (%g %g %g %g)%s"), *ProfileId, UTF8_TO_TCHAR(E.coat.colour.c_str()),
 		E.coat.blaze ? UTF8_TO_TCHAR(E.coat.blaze->c_str()) : TEXT("-"), U.socks[0], U.socks[1], U.socks[2], U.socks[3],
 		E.model.empty() ? TEXT("") : *FString::Printf(TEXT(" ; le web l'affiche avec le modèle %s, non porté"), UTF8_TO_TCHAR(E.model.c_str())));
+	return true;
+}
+
+double AStridesHorse::WebMeshScale(FString* Err)
+{
+	FString Text;
+	const FString Path = FPaths::ProjectContentDir() / TEXT("Data/pjl_horse_tack.json");
+	TSharedPtr<FJsonObject> Doc;
+	const TSharedPtr<FJsonObject>* Inner = nullptr;
+	double S = 0;
+	if (!FFileHelper::LoadFileToString(Text, *Path) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Doc) || !Doc)
+	{
+		if (Err) *Err = TEXT("Content/Data/pjl_horse_tack.json illisible (scripts/unreal/export-horse-tack.mjs)");
+		return 0;
+	}
+	if (!Doc->TryGetObjectField(TEXT("inner"), Inner) || !Inner || !(*Inner)->TryGetNumberField(TEXT("scale"), S) || !(S > 0) || !FMath::IsFinite(S))
+	{
+		if (Err) *Err = TEXT("pjl_horse_tack.json : inner.scale absent ou invalide");
+		return 0;
+	}
+	return S;
+}
+
+bool AStridesHorse::EnableWebScale(bool bWeb, FString* Err)
+{
+	if (!Mesh)
+	{
+		if (Err) *Err = TEXT("maillage absent");
+		return false;
+	}
+	double S = GameMeshScale;
+	if (bWeb)
+	{
+		S = WebMeshScale(Err);
+		if (!(S > 0)) return false;
+	}
+	Mesh->SetRelativeScale3D(FVector(S));
+	bScaleWeb = bWeb;
+	UE_LOG(LogTemp, Display, TEXT("Strides taille du cheval : %s, échelle du maillage %.9g (rapport au jeu %.6f)"), bWeb ? TEXT("web") : TEXT("jeu"), S, S / GameMeshScale);
 	return true;
 }
 

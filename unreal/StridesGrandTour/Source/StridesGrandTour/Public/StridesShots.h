@@ -113,6 +113,17 @@ private:
 	char MonteS2JumpLead = 0;  // main au départ du saut en cours (0 : pas de saut)
 	int32 MonteS2LeadMismatch = 0, MonteS2LeadFrames = 0;
 	TArray<FString> MonteS2Jumps;  // départs de saut relevés (temps, main, clip)
+	// Étape S3 : mesure visuelle de chaque saut (os des sabots et garrot du maillage affiché, dans le repère du web) :
+	// marge minimale sabot − dessus de barre quand un sabot passe au-dessus d'une barre (|s − barre| ≤ 0,15 m, |u| ≤ w/2),
+	// hauteur maximale du sabot le plus bas au-dessus du sol, hauteur maximale de spine_04 au-dessus du sol.
+	struct FJumpLook
+	{
+		double MinMargin = 1e9, MaxLowHoof = -1e9, MaxWithers = -1e9, BarTop = 0;
+		FString Over;
+		int32 OverFrames = 0;
+	};
+	FJumpLook MonteS2Look;
+	TArray<FString> MonteS2Looks;
 	TSharedPtr<class FStridesRiderOnHorseReplay> MonteReplay;
 	int32 MonteShot = 0;
 	int32 MonteStep = 0;

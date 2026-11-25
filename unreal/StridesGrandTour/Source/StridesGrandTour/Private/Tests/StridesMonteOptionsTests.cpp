@@ -3,6 +3,7 @@
 //     -StridesMonte=web | ancien, options précises -StridesRider=, -StridesHorseLead=, -StridesTack= qui l'emportent sur
 //     l'ensemble, sellerie qui suit la cavalière de la règle (comportement de l'étape S1), valeurs inconnues ignorées et
 //     signalées.
+//  1 bis. Taille du cheval (étape S3) : -StridesHorseScale=web | jeu, défaut épinglé, -StridesMonte=ancien, inconnues.
 //  2. Effet réel par BeginPlay, dans un monde commencé comme le jeu : pour chaque ligne de commande, le cheval et la
 //     cavalière créés ont exactement ce que la résolution annonce (main du web et clips miroir cuits, sellerie lue par la
 //     règle, sellerie affichée, règle de la cavalière) ; avec l'ensemble « web », en selle, la règle est active, le
@@ -28,6 +29,8 @@ namespace StridesMonteOptionsTest
 // Défaut attendu du jeu sans option (étape S2 b : monte du web ; S2 a : ancien comportement). Épinglé ici : changer le
 // défaut du jeu exige de changer ce test, dans le même commit que les preuves refaites.
 constexpr bool bExpectedWebByDefault = true;
+// Étape S3 : taille du cheval du web par défaut (S3 a : non, jeu par défaut inchangé). Épinglée de même.
+constexpr bool bExpectedWebScaleByDefault = false;
 
 struct FTestWorld
 {
@@ -85,7 +88,7 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 	using StridesMonteOptions::FMonte;
 	using StridesMonteOptions::Resolve;
 	FString Opt;
-	for (const TCHAR* K : {TEXT("StridesMonte="), TEXT("StridesRider="), TEXT("StridesHorseLead="), TEXT("StridesTack=")})
+	for (const TCHAR* K : {TEXT("StridesMonte="), TEXT("StridesRider="), TEXT("StridesHorseLead="), TEXT("StridesTack="), TEXT("StridesHorseScale=")})
 		if (!TestFalse(FString::Printf(TEXT("ligne de commande du test sans -%s (sinon le défaut ne serait pas testé)"), K), FParse::Value(FCommandLine::Get(), K, Opt))) return false;
 
 	// ---- 1. Résolution.
@@ -138,6 +141,36 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 		TestTrue(FString::Printf(TEXT("ensemble ancien, valeurs inconnues : ensemble gardé (%s)"), *Str(Old)), Old == Make(false, false, false));
 		TestEqual(TEXT("valeurs inconnues signalées (3 + 3)"), Unknown.Num(), 6);
 	}
+	// ---- 1 bis. Taille du cheval (étape S3) : -StridesHorseScale=web | jeu ; sans elle, non avec -StridesMonte=ancien, sinon
+	// le défaut.
+	{
+		const bool SD = bExpectedWebScaleByDefault;
+		TestEqual(TEXT("taille du cheval par défaut épinglée par le test"), StridesMonteOptions::bWebHorseScaleByDefault, SD);
+		struct FScaleCase { const TCHAR* Cmd; bool Want; int32 Unknown; };
+		const FScaleCase ScaleCases[] = {
+			{TEXT(""), SD, 0},
+			{TEXT("-StridesHorseScale=web"), true, 0},
+			{TEXT("-StridesHorseScale=jeu"), false, 0},
+			{TEXT("-StridesMonte=web"), SD, 0},
+			{TEXT("-StridesMonte=ancien"), false, 0},
+			{TEXT("-StridesMonte=ancien -StridesHorseScale=web"), true, 0},
+			{TEXT("-StridesMonte=web -StridesHorseScale=jeu"), false, 0},
+			{TEXT("-StridesMonte=web -StridesHorseScale=web"), true, 0},
+			{TEXT("-StridesRider=ancien -StridesHorseLead=droite -StridesTack=aucune"), SD, 0},
+			{TEXT("-StridesHorseScale=grand"), SD, 1},
+			{TEXT("-StridesMonte=ancien -StridesHorseScale=grand"), false, 1},
+			{TEXT("-StridesMonteDir=/x -StridesMontePoses=/y.json"), SD, 0},
+		};
+		for (const FScaleCase& C : ScaleCases)
+		{
+			TArray<FString> Unknown;
+			const bool Got = StridesMonteOptions::ResolveWebHorseScale(C.Cmd, &Unknown);
+			TestEqual(FString::Printf(TEXT("taille, « %s » : web %d (attendu %d)"), C.Cmd, (int32)Got, (int32)C.Want), Got, C.Want);
+			TestEqual(FString::Printf(TEXT("taille, « %s » : valeurs inconnues"), C.Cmd), Unknown.Num(), C.Unknown);
+		}
+		// La taille ne touche pas l'ensemble de la monte.
+		TestTrue(TEXT("taille : ensemble de la monte inchangé"), Resolve(TEXT("-StridesHorseScale=web")) == Resolve(TEXT("")) && Resolve(TEXT("-StridesMonte=ancien -StridesHorseScale=web")) == Make(false, false, false));
+	}
 	TestEqual(TEXT("description de l'ensemble web"), StridesMonteOptions::Describe(Make(true, true, true)), FString(TEXT("web")));
 	TestEqual(TEXT("description de l'ancien comportement"), StridesMonteOptions::Describe(Make(false, false, false)), FString(TEXT("ancien")));
 
@@ -155,6 +188,9 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 		TEXT("-StridesMonte=web -StridesTack=aucune"),
 		TEXT("-StridesMonte=ancien -StridesHorseLead=web"),
 		TEXT("-StridesMonte=ancien -StridesTack=web"),
+		TEXT("-StridesHorseScale=web"),
+		TEXT("-StridesHorseScale=jeu"),
+		TEXT("-StridesMonte=ancien -StridesHorseScale=web"),
 	};
 	AStridesHorse* WebHorse = nullptr;
 	AStridesRider* WebRider = nullptr;
@@ -178,6 +214,9 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 		TestEqual(FString::Printf(TEXT("« %s » : sellerie lue par la règle"), Line), Horse->HorseTack() != nullptr, Want.bRiderRules || Want.bTackMesh);
 		TestEqual(FString::Printf(TEXT("« %s » : règle de la cavalière"), Line), Rider->RulesRig() != nullptr, Want.bRiderRules);
 		TestEqual(FString::Printf(TEXT("« %s » : maillage posé"), Line), Rider->RulesMesh() != nullptr, Want.bRiderRules);
+		const bool bScale = StridesMonteOptions::ResolveWebHorseScale(Line);
+		TestEqual(FString::Printf(TEXT("« %s » : taille du cheval du web"), Line), Horse->UsesWebScale(), bScale);
+		TestEqual(FString::Printf(TEXT("« %s » : échelle du maillage"), Line), (double)Horse->BodyMesh()->GetRelativeScale3D().X, bScale ? AStridesHorse::WebMeshScale() : (double)AStridesHorse::GameMeshScale);
 		if (Want == Make(true, true, true) && !WebHorse)
 		{
 			WebHorse = Horse;

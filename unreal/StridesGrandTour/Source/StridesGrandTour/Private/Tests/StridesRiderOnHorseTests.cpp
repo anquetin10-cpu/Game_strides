@@ -35,6 +35,7 @@
 #include "StridesCore/MiniJson.h"
 #include "StridesCore/RiderPose.h"
 #include "StridesHorse.h"
+#include "StridesMonteOptions.h"
 #include "StridesHorseMirror.h"
 #include "StridesHorseTack.h"
 #include "StridesHorseTackMesh.h"
@@ -170,6 +171,10 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	AStridesRider* Rider = W.World->SpawnActor<AStridesRider>(FVector::ZeroVector, FRotator::ZeroRotator);
 	if (!TestNotNull(TEXT("cheval"), Horse) || !TestNotNull(TEXT("cavalière"), Rider)) return false;
 	FString Err;
+	// Étape S3 : taille du cheval du web avec -StridesHorseScale=web (le monde du test n'est pas commencé : appliquée ici).
+	if (StridesMonteOptions::WebHorseScaleFromCommandLine())
+		if (!TestTrue(FString::Printf(TEXT("taille du cheval du web (%s)"), *Err), Horse->EnableWebScale(true, &Err))) return false;
+	AddInfo(FString::Printf(TEXT("taille du cheval : %s, échelle du maillage %.9g"), Horse->UsesWebScale() ? TEXT("web") : TEXT("jeu"), Horse->BodyMesh()->GetRelativeScale3D().X));
 	UStridesHorseTack* Tack = NewObject<UStridesHorseTack>(Horse);
 	if (!TestTrue(FString::Printf(TEXT("sellerie initialisée (%s)"), *Err), Tack->Init(Horse->BodyMesh(), &Err))) return false;
 	// Étape S1 : sellerie affichée (étriers sous les pieds, étrivières, rênes) : l'export donne les étriers affichés (hz.ir).
@@ -214,7 +219,7 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	FWorst WPhase, WHeld, WBob, WBobWeb, WPitchWeb, WRho, WReach, WSeatWeb, WCost;
 	int32 Images = 0, Rewritten = 0, Held = 0, MirrorFrames = 0, BadInputs = 0, NonFinite = 0, AdapterFrames = 0, AdapterBad = 0;
 	double CostSum = 0;
-	FString Index = TEXT("{\"schema\":\"strides.monte.niveau_b_unreal/1\",\"generator\":\"Strides.Parite.RiderOnHorse\",\"runs\":[");
+	FString Index = FString::Printf(TEXT("{\"schema\":\"strides.monte.niveau_b_unreal/1\",\"generator\":\"Strides.Parite.RiderOnHorse\",\"meshScale\":%.9g,\"runs\":["), Horse->BodyMesh()->GetRelativeScale3D().X);
 	const TCHAR* Ids[] = {TEXT("E1"), TEXT("E1b"), TEXT("E2g"), TEXT("E2d"), TEXT("E3"), TEXT("E3b")};
 	for (int32 Run = 0; Run < 6; Run++)
 	{

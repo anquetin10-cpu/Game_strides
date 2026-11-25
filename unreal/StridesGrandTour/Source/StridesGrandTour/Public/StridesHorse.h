@@ -121,6 +121,16 @@ public:
 	}
 	// Active l'option sur ce cheval (BeginPlay la lit dans la ligne de commande ; les tests l'appellent) ; faux si la cuisson échoue.
 	bool EnableWebLead(FString* Err = nullptr);
+	// Étape S3 : taille du cheval (StridesMonteOptions::ResolveWebHorseScale ; BeginPlay lit la ligne de commande, les tests
+	// l'appellent). Échelle du maillage du corps (yeux, crins et sellerie skinnée suivent) : GameMeshScale (0,01, jeu) ou
+	// celle du web, WebMeshScale(). Le maillage importé vaut 100 unités par unité de la scène du GLB (conversion d'axes de
+	// UStridesHorseTack, vérifiée par Strides.Parite.HorseScale) : échelle du maillage = m par unité du GLB du web.
+	// Rien d'autre ne change (simulation, caméra, obstacles : aucun ne lit le maillage). Faux si les données sont illisibles.
+	bool EnableWebScale(bool bWeb = true, FString* Err = nullptr);
+	bool UsesWebScale() const { return bScaleWeb; }
+	static constexpr float GameMeshScale = 0.01f;
+	// inner.scale de Content/Data/pjl_horse_tack.json (export du web) ; 0 si illisible.
+	static double WebMeshScale(FString* Err = nullptr);
 	// Une mise à jour de l'animation de pas Dt, hors simulation (tests Strides.Parite.HorseMirror).
 	void StepAnimation(double Dt)
 	{
@@ -202,6 +212,7 @@ private:
 	bool bCameraBefore = false;
 	// Étape M2 : option -StridesHorseLead=web.
 	bool bLeadWeb = false;
+	bool bScaleWeb = false;
 	TSharedPtr<class FStridesHorseMirrorSet> Mirrors;
 	strides::mirror::LeadState LeadSt;
 	double LeadBlendV = 1;  // pjl/view.js : leadBlend = 1 à la création de la vue

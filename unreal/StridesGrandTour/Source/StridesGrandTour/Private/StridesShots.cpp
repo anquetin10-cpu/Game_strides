@@ -1,6 +1,7 @@
 #include "StridesShots.h"
 #include "StridesCsoRunReplay.h"
 #include "Camera/CameraActor.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/CameraTypes.h"
 #include "Camera/PlayerCameraManager.h"
@@ -1706,9 +1707,10 @@ void AStridesShots::TickMonteS2(float DeltaSeconds, APlayerController* PC)
 			return;
 		}
 		for (const TSharedPtr<FJsonValue>& V : Doc->GetArrayField(TEXT("poses"))) MontePoses.Add(V->AsObject());
-		UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: configuration %s (cavalière %s, main %s, sellerie %s), étiquette %s, cheval %s"),
+		UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: configuration %s (cavalière %s, main %s, sellerie %s), étiquette %s, cheval %s, taille %s (échelle du maillage %.9g)"),
 			*StridesMonteOptions::Describe(Monte), Monte.bRiderRules ? TEXT("règles") : TEXT("ancienne"), Monte.bWebLead ? TEXT("web") : TEXT("droite"),
-			Monte.bTackMesh ? TEXT("web") : TEXT("aucune"), *Tag, Horse ? (Horse->UsesWebLead() ? TEXT("main du web active") : TEXT("clips d'origine")) : TEXT("absent"));
+			Monte.bTackMesh ? TEXT("web") : TEXT("aucune"), *Tag, Horse ? (Horse->UsesWebLead() ? TEXT("main du web active") : TEXT("clips d'origine")) : TEXT("absent"),
+			Horse && Horse->UsesWebScale() ? TEXT("web") : TEXT("jeu"), Horse && Horse->BodyMesh() ? Horse->BodyMesh()->GetRelativeScale3D().X : -1.0);
 		MonteStep = 1;
 		MonteWait = 20.f;  // shaders et tuiles
 		return;
@@ -1804,6 +1806,48 @@ void AStridesShots::TickMonteS2(float DeltaSeconds, APlayerController* PC)
 			Shot(TEXT("galop-droite"), TEXT("galop hors saut à main droite"));
 		else if (bGallop && Lead == 'L' && !MonteS2Done.Contains(TEXT("galop-gauche")) && (!bWebLead || Horse->LeadBlend() < 0.01))
 			Shot(TEXT("galop-gauche"), TEXT("galop hors saut à main gauche"));
+		// Étape S3 : regard sur le saut en cours (maillage affiché, image précédente du rendu).
+		const auto Look = [&]() {
+			USkeletalMeshComponent* Mb = Horse->BodyMesh();
+			if (!Mb || !Horse->Course) return;
+			const FReferenceSkeleton& Ref = Mb->GetSkeletalMeshAsset()->GetRefSkeleton();
+			double LowHoof = 1e9;
+			for (int32 B = 0; B < Ref.GetNum(); B++)
+			{
+				const FString N = Ref.GetBoneName(B).ToString();
+				const bool bHoof = N.StartsWith(TEXT("fingers_02_l")) || N.StartsWith(TEXT("fingers_02_r")) || N.StartsWith(TEXT("toes_02_l")) || N.StartsWith(TEXT("toes_02_r"));
+				const bool bWithers = N.StartsWith(TEXT("spine_04"));
+				if (!bHoof && !bWithers) continue;
+				double Px, Py, Pz;
+				StridesUnits::UEToWeb(Mb->GetBoneLocation(Ref.GetBoneName(B), EBoneSpaces::WorldSpace), Px, Py, Pz);
+				const double Above = Py - Horse->GroundAt(Px, Pz);
+				if (bWithers)
+				{
+					MonteS2Look.MaxWithers = FMath::Max(MonteS2Look.MaxWithers, Above);
+					continue;
+				}
+				LowHoof = FMath::Min(LowHoof, Above);
+				for (const strides::CsoObstacle& O : Horse->Course->Obstacles())
+				{
+					if (O.off) continue;
+					const double Dx = Px - O.x, Dz = Pz - O.z, S = Dx * O.n.x + Dz * O.n.z, U = Dx * O.t.x + Dz * O.t.z;
+					if (FMath::Abs(U) > O.w / 2) continue;
+					for (const strides::Bar& Bar : O.bars)
+						if (FMath::Abs(S - Bar.s) <= 0.15)
+						{
+							const double M = Above - Bar.h;
+							MonteS2Look.OverFrames++;
+							if (M < MonteS2Look.MinMargin)
+							{
+								MonteS2Look.MinMargin = M;
+								MonteS2Look.BarTop = Bar.h;
+								MonteS2Look.Over = FString::Printf(TEXT("%s (%s), os %s"), UTF8_TO_TCHAR(O.label.c_str()), UTF8_TO_TCHAR(O.kind.c_str()), *N);
+							}
+						}
+				}
+			}
+			if (LowHoof < 1e9) MonteS2Look.MaxLowHoof = FMath::Max(MonteS2Look.MaxLowHoof, LowHoof);
+		};
 		if (Horse->IsJumping())
 		{
 			if (JumpClock < 0)
@@ -1811,18 +1855,30 @@ void AStridesShots::TickMonteS2(float DeltaSeconds, APlayerController* PC)
 				JumpClock = 0.f;
 				MonteS2JumpLead = bWebLead ? (Horse->JumpMirrored() ? 'L' : 'R') : Lead;
 				MonteS2Jumps.Add(FString::Printf(TEXT("%.2f s : main %c, %.2f m/s"), RideTime, MonteS2JumpLead, Horse->SpeedMS));
+				MonteS2Look = FJumpLook();
 			}
 			else JumpClock += DeltaSeconds;
+			Look();
 			const FString Name = MonteS2JumpLead == 'R' ? TEXT("saut-droite") : TEXT("saut-gauche");
 			if (JumpClock >= 0.35f && !MonteS2Done.Contains(Name))
 				Shot(Name, MonteS2JumpLead == 'R' ? TEXT("0,35 s après le départ d'un saut à main droite") : TEXT("0,35 s après le départ d'un saut à main gauche"));
 		}
-		else JumpClock = -1.f;
+		else
+		{
+			if (JumpClock >= 0)
+				MonteS2Looks.Add(FString::Printf(TEXT("saut %d : sabot au-dessus d'une barre %s (%d passages) : marge minimale %s, sabot le plus bas au plus haut %.3f m, garrot (spine_04) au plus haut %.3f m"),
+					MonteS2Looks.Num() + 1, MonteS2Look.OverFrames ? *MonteS2Look.Over : TEXT("aucun"), MonteS2Look.OverFrames,
+					MonteS2Look.OverFrames ? *FString::Printf(TEXT("%+.3f m (barre à %.2f m)"), MonteS2Look.MinMargin, MonteS2Look.BarTop) : TEXT("-"), MonteS2Look.MaxLowHoof, MonteS2Look.MaxWithers));
+			JumpClock = -1.f;
+		}
 		const bool bAll = MonteS2Done.Num() >= 5;
-		if (bAll || RideTime > 150.f)
+		// -StridesMonteS2Parcours : mesure des sauts sur tout le parcours de démonstration (fin du parcours ou 150 s).
+		const bool bWholeCourse = FParse::Param(FCommandLine::Get(), TEXT("StridesMonteS2Parcours"));
+		if ((bAll && (!bWholeCourse || (RideTime > 1.f && !Horse->IsDemoCourseActive()))) || RideTime > 150.f)
 		{
 			UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: fin à %.2f s de parcours, %d captures sur 5%s ; départs de saut : %s ; main de l'ombre ≠ main du cheval : %d images sur %d"),
 				RideTime, MonteS2Done.Num(), bAll ? TEXT("") : TEXT(" (MANQUANTES)"), *FString::Join(MonteS2Jumps, TEXT(" | ")), MonteS2LeadMismatch, MonteS2LeadFrames);
+			for (const FString& L : MonteS2Looks) UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: %s"), *L);
 			MonteStep = 6;
 			MonteWait = 2.f;
 		}

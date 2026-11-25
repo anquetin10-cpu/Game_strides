@@ -38,6 +38,9 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
 - **Par défaut depuis l'étape S2 b (25/11/2026)** : cavalière de la règle, main du web et sellerie du web forment un
   ensemble (`StridesMonteOptions`, `Strides.Monte.Options`) ; `-StridesMonte=ancien` rend l'ancien comportement.
   Captures du CSO refaites, relevés du concours identiques avant et après (étapes S2 a et S2 b ci-dessous).
+- **Taille du cheval (étape S3 a, 25/11/2026)** : l'écart de 3,74 % vient de la constante 0,01 de l'acteur (import et
+  clips redonnent l'échelle du web à 2,6e-7 près) ; `-StridesHorseScale=web` donne la taille du web (garrot à 1,48 m des
+  sabots, `Strides.Parite.HorseScale`) ; relevés du concours identiques, niveau B 61 → 58 critères non tenus.
 - **Coût en jeu, rendu réel (étape 7)** : la règle ajoute **+0,03 ms à l'arrêt et +0,05 ms au galop** au temps du jeu. Le
   seuil était de 0,3 ms ; la mesure se répète d'une passe à l'autre à 3,5 % près. Aucune différence de temps GPU n'est
   mesurable au-delà du bruit (`cout.md`).
@@ -162,6 +165,14 @@ python3 scripts/unreal/mutations-horse-straps.py [--moteur]    # cœur ~30 s ; -
 "$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -game -windowed -ResX=844 -ResY=390 -StridesShots=monte-b -StridesRider=regles \
   -StridesHorseLead=web [-StridesTack=aucune] -StridesShotsDir=<dossier> -StridesMontePoses=unreal/docs/parite/monte/captures/niveau-b/poses.json -abslog=<journal>
 python3 scripts/unreal/perf-summary.py --mesurer --sellerie --sortie=<dossier> --passes=3     # regles contre regles-sans-sellerie
+# Étape S3 (taille du cheval) : mesure et option (sans rendu), niveau B avant / après, captures avant / après, mutations
+"$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -ExecCmds="Automation RunTests Strides.Parite.HorseScale+Strides.Monte.Options; Quit" \
+  -unattended -nullrhi -nosplash -trace=none -abslog=<journal> -ReportExportPath=<dossier>
+"$UE_REEL/…/UnrealEditor" … -ExecCmds="Automation RunTests Strides.Parite.RiderOnHorse; Quit" … -StridesMonteDir=<dossier> [-StridesHorseScale=web]
+node scripts/unreal/rider-rules-niveau-b.mjs --unreal=<dossier>/unreal-niveau-b --controle=<dossier>/unreal-niveau-b-web --out=<dossier>/niveau-b
+"$UE_REEL/…/UnrealEditor" … -game -windowed -ResX=844 -ResY=390 -StridesShots=monte-s2 -StridesMonteS2Parcours -StridesShotsTag=<avant | apres> \
+  -StridesShotsDir=<dossier> [-StridesHorseScale=web]           # captures et regard sur chaque saut du parcours (journal)
+python3 scripts/unreal/mutations-monte-jeu.py --noms=S3        # 14 mutations de la taille (Strides.Monte et HorseScale)
 ```
 
 `vite-monte.config.mjs` reprend `vite.config.js` et place le cache de Vite dans `.tmp/monte/vite-cache` : sans lui, le
@@ -1536,3 +1547,150 @@ données de la règle sous `Content/Data`, coût sur appareil) : aucun paquet co
 confirmer. Coût mesuré sur Mac seulement (règle +0,03 à +0,05 ms, sellerie +0,09 ms par image).
 
 Reste à faire (S2) : rien pour S2 ; S3 (cheval +3,7 % derrière une option), S4, S5.
+
+## Étape S3 (a). Cheval à la taille du web, derrière une option (25/11/2026)
+
+Décision de Julien du 24/11/2026 (`decisions.md`, choix C de `decision-voie-a.md`) : agrandir le cheval à la taille du web
+derrière une option, mesurer l'effet sur la cavalière, les sauts, la caméra et le concours, et ne le rendre définitif
+qu'après captures et reprise des preuves concernées. Base : `cc20c6a6` (S2 b).
+
+### Mesure de l'écart et cause (`Strides.Parite.HorseScale`, nouveau test, dans le moteur sans rendu)
+
+Ce que fait le web (`src/entities/pjl/asset.js:94-154`) : sol = articulations des sabots (`fingers_02_l/r`, `toes_02_l/r`) les
+plus basses sur 17 images du galop à 24 images/s ; échelle = (1,68 − 0,2) / hauteur de `spine_04` à l'idle 0,5 s, racines
+du web à la pose de référence. Valeur exportée par `export-horse-tack.mjs` : `inner.scale` = 0,0103882601 m par unité de la
+scène du GLB (`Content/Data/pjl_horse_tack.json`).
+
+| Cause possible | Mesure | Verdict |
+|---|---|---|
+| Import (maillage, squelette) | conversion GLB → maillage déduite des 419 articulations : similitude de facteur 99,999998, résidu 0,00097 unité du maillage | pas en cause |
+| Clips importés | calibrage du web refait sur les clips Unreal : garrot à 142,4686 unités du GLB au-dessus des sabots, échelle 0,0103882573 contre 0,0103882601 (écart relatif −2,6e-7) | pas en cause |
+| Échelle de l'acteur | constante 0,01 du constructeur d'`AStridesHorse` (« ~1,5 m au bassin », posée à la main au 18/11) | **cause** : rapport 0,962625, cheval 3,74 % plus petit ; ×1,038826 (+3,88 %) pour la taille du web |
+
+Cheval du jeu évalué par son maillage (racines du jeu), aux deux échelles :
+
+| Grandeur | Jeu (0,01) | Taille du web | Écart |
+|---|---|---|---|
+| garrot (`spine_04`) au-dessus des articulations des sabots | 142,47 cm | **148,00 cm** (web : 1,48 m) | +5,53 cm |
+| `spine_04` au-dessus du sol (idle 0,5 s) | 151,69 cm | 157,58 cm | +5,89 cm |
+| `saddle` au-dessus du sol | 172,62 cm | 179,32 cm | +6,70 cm |
+| `pelvis` au-dessus du sol | 160,90 cm | 167,15 cm | +6,25 cm |
+| longueur tête – queue (`head`, `tail_01`, à plat) | 194,13 cm | 201,67 cm | +7,54 cm |
+| écartement des épaules (`upperarm`) | 32,37 cm | 33,63 cm | +1,26 cm |
+
+Chaque grandeur est multipliée par 1,038826 (vérifié à 1e-6). Reste au web, non repris (déclaré) : lacet du modèle de
+−0,69° et calage du sol sur la sole des sabots (+0,80 cm) ; d'où `spine_04` à 157,58 cm contre 158,38 cm « posé comme le
+web » (étape 5).
+
+### Ce qui est fait
+
+- **Option `-StridesHorseScale=web | jeu`** (`StridesMonteOptions::ResolveWebHorseScale`, `WebHorseScaleFromCommandLine`) :
+  décision séparée de l'ensemble de la monte ; sans elle, « jeu » avec `-StridesMonte=ancien`, sinon
+  `bWebHorseScaleByDefault` (**faux à cette étape : jeu par défaut inchangé**) ; valeur inconnue ignorée et signalée.
+- **`AStridesHorse::EnableWebScale(bool)`** : échelle du maillage du corps = `inner.scale` lue dans `pjl_horse_tack.json`
+  (jamais recopiée), ou `GameMeshScale` (0,01) ; yeux, crins et sellerie skinnée suivent ; appelée par `BeginPlay` avant la
+  sellerie. Rien d'autre ne change : simulation, caméra de concours, obstacles et chronomètre ne lisent pas le maillage
+  (vérifié par lecture : `CameraHorse()` lit la simulation ; `UStridesHorseTack::GameMeshToHolder` lit l'échelle à chaque
+  image ; étriers dans le monde, en mètres du web).
+- `Strides.Monte.Options` : 12 lignes de commande de la taille résolues (défaut épinglé, ensemble, inconnues, clés
+  voisines), l'ensemble de la monte inchangé par l'option, et 3 lignes de plus créées par `BeginPlay` (échelle du maillage
+  exacte). `Strides.Parite.RiderOnHorse` applique l'option si elle est sur la ligne de commande (monde non commencé) et
+  note l'échelle dans son export (`meshScale`).
+- Mode `-StridesShots=monte-s2` : relève la taille et, par saut, le regard sur le maillage affiché (marge sabot − dessus de
+  barre quand un os de sabot passe au-dessus d'une barre, sabot le plus bas, garrot) ; `-StridesMonteS2Parcours` mesure tout
+  le parcours de démonstration.
+
+### Effet sur la cavalière : niveau B (`Strides.Parite.RiderOnHorse`, `rider-rules-niveau-b.mjs`)
+
+Même compilation, sans option puis avec `-StridesHorseScale=web` (exports sous `.ue-cache/travail/s3/nb-*`) :
+- **61 → 58 critères non tenus sur 233** (contre O1) ; contre O2 : 24 → 20 écarts non tenus. Devenus tenus : M6 portée de
+  la jambe (E2g droite), M9 poignet au-dessus de l'encolure (E2d gauche, E3b gauche et droite) ; devenu non tenu : M6 E3b
+  gauche (0,9460 → 0,9556 pour un seuil de 0,955 : la jambe se tend sur un cheval plus large).
+- Sellerie affichée contre O1 (bornes min et max, moyenne sur les 6 scénarios) : rênes gauche 4,34 → 2,66 cm, droite
+  5,02 → 2,42 cm (au plus 10,8 → 6,5 cm) ; à l'arrêt (E1), rênes 96,9 – 99,2 cm → 102,5 – 104,6 cm pour 102,7 – 104,6 cm au
+  web. Étrier sous le pied (M4) inchangé (≤ 0,50 cm d'O1) ; étrivières 2,3 – 2,9 cm → 2,2 – 2,7 cm.
+- Écarts restants : inclinaison en virage, corps et horloge du saut (S4), clips à 30 images/s (S5).
+
+### Effet sur les sauts, la caméra et le concours
+
+Partie jouée, parcours de démonstration entier (`-StridesShots=monte-s2 -StridesMonteS2Parcours`, rendu GPU réel,
+844 × 390) : **mêmes 10 sauts** aux mêmes instants (départs à 0,1 – 0,2 s près, variabilité connue d'un passage à l'autre),
+même main, même clip, vitesse 6,22 / 6,20 m/s ; « 0 pt Arrivée ✓ » en 60,33 s puis 60,51 s. La trajectoire, la hauteur
+franchie et le contact des barres sont ceux de la simulation (`StridesCore`, `JumpModel`), qui ne lit pas le maillage : ils
+ne changent pas. Regard sur le maillage affiché (avant / après, cm) :
+
+| Saut | Obstacle | Barre | Marge sabot − barre | Sabot le plus bas, au plus haut | Garrot, au plus haut |
+|---|---|---|---|---|---|
+| 1 | 1 (v) | 1,05 | −23,6 / −20,4 | 128,4 / 128,6 | 289,8 / 296,6 |
+| 2 | 2 (o) | 1,05 | +36,6 / +36,6 | 155,3 / 156,5 | 306,3 / 312,9 |
+| 3 | 3 (v) | 1,10 | −1,3 / +4,7 | 139,3 / 140,8 | 294,4 / 301,1 |
+| 4 | 4A (v) | 1,05 | −1,2 / +2,9 | 134,5 / 135,9 | 289,5 / 296,2 |
+| 5 | 4B (o) | 1,05 | +34,2 / +37,5 | 152,2 / 153,4 | 306,5 / 313,1 |
+| 6 | 5 (w) | 1,10 | −2,5 / +3,0 | 139,5 / 141,1 | 294,5 / 301,2 |
+| 7 | 6A (v) | 1,10 | −21,9 / −18,7 | 131,6 / 132,4 | 294,8 / 301,6 |
+| 8 | 6B (o) | 1,05 | +22,1 / +20,8 | 144,3 / 144,7 | 306,8 / 313,5 |
+| 9 | 7 (v) | 1,10 | −26,3 / −22,2 | 131,6 / 132,1 | 294,8 / 301,6 |
+| 10 | 8 (o) | 1,10 | +21,8 / +20,6 | 144,2 / 144,8 | 306,9 / 313,5 |
+
+Marge : os de sabot (articulation, quelques cm au-dessus de la sole) à moins de 15 cm du plan d'une barre, dans la
+largeur de l'obstacle. Constat, **défaut existant avant S3** : sur 4 verticaux sur 7, un postérieur passe visuellement
+sous le dessus de la barre (−19 à −26 cm) alors que la simulation franchit sans faute, et le garrot monte à 2,9 – 3,1 m. Le
+corps du cheval au saut et l'horloge du saut du web ne sont pas portés (S4) ; les valeurs du web pour ce regard ne sont pas
+mesurées (à confirmer en S4). L'agrandissement ne crée aucun contact : il relève les marges de 4,1 à 6,0 cm sur 3 obstacles
+(3, 4A, 5 : de −1,2 à −2,5 cm à +2,9 à +4,7 cm), de 3,2 à 4,1 cm sur 4 autres, ne change pas l'oxer 2 et les baisse de 1,2
+et 1,3 cm sur les oxers 6B et 8 (toujours plus de 20 cm au-dessus).
+
+Concours (`-StridesShots=cso` par famille de poses, puis `-StridesShots=cso-jeu -TouchControls`, 80 captures, avant = jeu par
+défaut, après = `-StridesHorseScale=web`, même compilation, `.ue-cache/travail/s3/cso-*`) :
+- Relevés **identiques champ pour champ** : `aide` (1 173 champs), `bilan` (759), `cadrage` (111 : cadrage, caméra, FOV),
+  `cmd` (201), `entree` (557), `hud` (731) ; `jeu-unreal.json` : 2 champs sur 90, le chrono au moment de la capture 4
+  (34,96 / 35,01 s), variabilité d'un passage à l'autre (le relancé « avant » diffère du versionné de 4 champs) ;
+  démonstration finie en 60,45 et 60,52 s, « 0 pt Arrivée ✓ ».
+- PSNR avant → après : 24,4 à 72,0 dB (`captures/s3/cso-avant-apres.json`) ; il mesure le changement, pas la justesse :
+  le cheval est plus grand sur toutes les poses où il est vu, l'interface ne bouge pas (≥ 69 dB sur `entree`, `cmd`,
+  `bilan`).
+- Caméra : la caméra de concours suit la simulation (`CameraHorse()`), son relevé est identique ; le cheval, plus grand,
+  occupe plus de l'image, comme dans le web.
+
+### Captures (rendu GPU réel, 844 × 390, `captures/s3/`)
+
+- Partie jouée : `monte-<arret | galop-droite | galop-gauche | saut-droite | saut-gauche>-<avant | apres>.png` ; web :
+  `captures/s2/monte-*-web.png`.
+- Poses jumelles du niveau B (même image d'O1, même caméra du web dans le repère du cheval) :
+  `monte-b-<arret | galop | galop-gauche | saut-sommet>-<avant | apres>.png` ; web : `captures/niveau-b/monte-*-web.png`.
+  PSNR avant → après 20,9 à 22,5 dB, contre 27,1 à 29,2 dB pour le bruit de rendu (« avant » relancé contre le versionné).
+- Concours : 4 montages avant | après | web dans `captures/s3/cso/` ; les 80 hors dépôt (`.ue-cache/travail/s3/montages/cso/`).
+- Montages avant | après | web hors dépôt : `.ue-cache/travail/s3/montages/s3-*.png`.
+
+### Incident
+
+Une capture « avant » (`-StridesPose=aide-`) est restée bloquée 12 min au démarrage, l'éditeur attendant le serveur Zen
+local (`FZenServiceInstance::AutoLaunch`, serveur lancé mais jamais vu prêt) ; processus arrêté (`kill -9`, le mien), la
+famille relancée seule ensuite (code 0). Aucun autre effet.
+
+### Mutations (`scripts/unreal/mutations-monte-jeu.py --noms=S3`, campagne du 25/11, 1 043 s)
+
+14 mutations de la taille (résolution de l'option, branchement de `BeginPlay`, `EnableWebScale`, `WebMeshScale`), jouées
+contre `Strides.Monte` (EnJeu, Options) et `Strides.Parite.HorseScale` : **13 détectées, 1 attendue** (« `-StridesMonte=ancien`
+sans effet sur la taille » : équivalente tant que la taille du web n'est pas le défaut ; sa jumelle « `-StridesMonte=ancien`
+donne la taille du web » est détectée). Exemples : défaut basculé, `web` ignorée, `jeu` prise pour `web`, clé sans « = »,
+taille jamais ou toujours appliquée par `BeginPlay`, échelle approchée ×1,0001 (détectée par le rapport 1,038930 au lieu de
+1,038826), échelle lue dans `inner.groundY`, retour à 0,01 impossible. Le motif de la mutation S2 « valeur inconnue non
+signalée » est précisé (il apparaissait deux fois). Sources rétablis, recompilation finale code 0.
+
+### Portes (S3 a)
+
+- G1 : ctest code 0 (`.ue-cache/travail/core-s3`, cœur non touché) : cœur 300 729, `monte` 306 914, `monte-cheval` 4 488,
+  `monte-cavaliere` 72 547, `perf` 20, `monte-miroir` 7 069, `monte-sellerie` 7 443 vérifications, 0 échec.
+- G2 : UBT code 0, aucun avertissement ni erreur du compilateur.
+- G3 : `Automation RunTests Strides` sans option : **41 tests, 41 en succès** (nouveau : `Strides.Parite.HorseScale` ;
+  3 avec l'avertissement `idevice_id`). Avec `-StridesHorseScale=web` : 40 en succès, `Strides.Monte.Options` en échec par
+  sa garde (« ligne de commande du test sans -StridesHorseScale= », attendu : le test épingle le défaut).
+- G4 : ci-dessus.
+- G5 : `git diff --quiet HEAD -- unreal/docs/parite/cso` code 0 (jeu par défaut inchangé).
+- G6 : `build-parite.py` code 0 ; lignes `cheval.pjl-modele` (taille mesurée, option, preuve) et `cheval.assise-cavalier`.
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Conclusion de S3 a : contrôles conformes. La valeur vient du web (`asset.js`, exportée et recalculée sur les clips
+Unreal) ; aucune preuve du concours ne change hors image ; le niveau B s'améliore. Passage par défaut dans un commit séparé
+(S3 b), avec les captures du CSO refaites.

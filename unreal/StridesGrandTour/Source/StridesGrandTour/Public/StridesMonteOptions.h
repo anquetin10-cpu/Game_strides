@@ -36,4 +36,17 @@ STRIDESGRANDTOUR_API FMonte Resolve(const TCHAR* CommandLine, TArray<FString>* U
 STRIDESGRANDTOUR_API FMonte FromCommandLine();
 // « web » si les trois sont actifs, « ancien » si aucun, sinon le détail (journaux, relevés des captures).
 STRIDESGRANDTOUR_API FString Describe(const FMonte& M);
+
+// Étape S3 (décision de Julien du 24/11/2026, choix C de decision-voie-a.md) : taille du cheval. Le web met le modèle à
+// l'échelle (1,68 − 0,2) / hauteur de spine_04 au-dessus des articulations des sabots (src/entities/pjl/asset.js:144-154),
+// soit 0,0103883 m par unité de la scène du GLB, exportée dans Content/Data/pjl_horse_tack.json (inner.scale,
+// scripts/unreal/export-horse-tack.mjs) ; le jeu Unreal posait 0,01 (constante du constructeur d'AStridesHorse) : cheval
+// 3,74 % plus petit. Décision séparée de l'ensemble de la monte (elle touche les captures du concours) :
+//  - -StridesHorseScale=web | jeu : « web » = échelle du web lue dans les données, « jeu » = 0,01 ;
+//  - sans elle : faux avec -StridesMonte=ancien, sinon bWebHorseScaleByDefault.
+// Une valeur inconnue est ignorée (signalée par WebHorseScaleFromCommandLine).
+// Faux à l'étape S3 a : jeu par défaut inchangé.
+inline constexpr bool bWebHorseScaleByDefault = false;
+STRIDESGRANDTOUR_API bool ResolveWebHorseScale(const TCHAR* CommandLine, TArray<FString>* Unknown = nullptr);
+STRIDESGRANDTOUR_API bool WebHorseScaleFromCommandLine();
 }  // namespace StridesMonteOptions

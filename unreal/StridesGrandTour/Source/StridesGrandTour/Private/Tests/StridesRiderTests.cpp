@@ -1095,3 +1095,131 @@ bool FStridesHorseMirrorTest::RunTest(const FString&)
 	Horse->Destroy();
 	return true;
 }
+
+// ---- Étape S3 : taille du cheval du web (décision de Julien du 24/11/2026, choix C de decision-voie-a.md).
+//  Strides.Parite.HorseScale :
+//  1. Cause de l'écart : conversion GLB → maillage de l'import (similitude de facteur 100 ; résidu), et calibrage du web
+//     (pjl/asset.js:94-154 : sol = articulations des sabots les plus basses sur 17 images du galop à 24 images/s ; échelle =
+//     (1,68 − 0,2) / hauteur de spine_04 à l'idle 0,5 s, racines du web à la pose de référence) REFAIT sur les clips Unreal :
+//     il redonne inner.scale de l'export du web (les clips et le squelette importés ne sont pas en cause) ; l'écart vient
+//     de la constante 0,01 du constructeur d'AStridesHorse.
+//  2. Cheval du jeu aux deux échelles (pose évaluée par le maillage, racines du jeu, repère du cheval) : garrot au-dessus
+//     des sabots, selle et bassin au-dessus du sol, longueur tête – queue, écartement des épaules ; rapport web / jeu de
+//     chaque grandeur = inner.scale / 0,01 ; à l'échelle du web, garrot à 1,48 m des articulations des sabots.
+//  3. EnableWebScale : échelle exacte du maillage (inner.scale lu, 0,01 rendu), yeux et crins à la même échelle monde.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesHorseScaleTest, "Strides.Parite.HorseScale", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FStridesHorseScaleTest::RunTest(const FString&)
+{
+	using namespace StridesRiderTest;
+	// Mesures notées au rapport (AddInfo) puis vérifiées.
+	const auto Check = [this](const FString& Msg, bool bOk) {
+		AddInfo(Msg);
+		return TestTrue(Msg, bOk);
+	};
+	FTestWorld W(TEXT("StridesHorseScaleTest"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	AStridesHorse* Horse = W.World->SpawnActor<AStridesHorse>(FVector::ZeroVector, FRotator::ZeroRotator);
+	if (!TestNotNull(TEXT("cheval"), Horse)) return false;
+	USkeletalMeshComponent* Mesh = Horse->BodyMesh();
+	const USkeletalMesh* SkM = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!TestNotNull(TEXT("maillage du cheval"), SkM)) return false;
+	TestFalse(TEXT("sans BeginPlay : échelle du jeu"), Horse->UsesWebScale());
+	TestEqual(TEXT("échelle du maillage du jeu (constructeur)"), (double)Mesh->GetRelativeScale3D().X, (double)AStridesHorse::GameMeshScale);
+	UStridesHorseTack* Tack = NewObject<UStridesHorseTack>(Horse);
+	FString Err;
+	if (!TestTrue(FString::Printf(TEXT("sellerie initialisée (%s)"), *Err), Tack->Init(Mesh, &Err))) return false;
+	const TackModel& M = Tack->Model();
+	const Affine Glb2Mesh = Tack->GlbToMesh(), Mesh2Glb = invert(Glb2Mesh);
+	const double K = std::cbrt(FMath::Abs(det3(Glb2Mesh)));
+	Check(FString::Printf(TEXT("cause 1 : import = similitude de facteur %.6f (unités du maillage par unité du GLB), %d articulations, résidu %.3g"), K, Tack->AxisFitJoints(), Tack->AxisFitRms()),
+		FMath::Abs(K - 100) < 1e-3 && Tack->AxisFitRms() < 0.01);
+	const FReferenceSkeleton& Ref = SkM->GetRefSkeleton();
+	auto Bone = [&](const TCHAR* N) { return Ref.FindBoneIndex(FName(N)); };
+	const int32 Spine = Bone(TEXT("spine_04_09")), Saddle = Bone(TEXT("saddle_0168")), Pelvis = Bone(TEXT("pelvis_05")), Head = Bone(TEXT("head_016")), Tail = Bone(TEXT("tail_01_0186")),
+				ArmL = Bone(TEXT("upperarm_l_098")), ArmR = Bone(TEXT("upperarm_r_0133"));
+	const int32 Hooves[4] = {Bone(TEXT("fingers_02_l_0102")), Bone(TEXT("fingers_02_r_0137")), Bone(TEXT("toes_02_l_0218")), Bone(TEXT("toes_02_r_0255"))};
+	for (int32 B : {Spine, Saddle, Pelvis, Head, Tail, ArmL, ArmR, Hooves[0], Hooves[1], Hooves[2], Hooves[3]})
+		if (!TestTrue(TEXT("os du calibrage présents"), B != INDEX_NONE)) return false;
+	const UAnimSequence* Idle = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_idle.Horse_idle"));
+	const UAnimSequence* Canter = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_canter.Horse_canter"));
+	if (!TestNotNull(TEXT("clips idle et canter"), Idle) || !TestNotNull(TEXT("clip canter"), Canter)) return false;
+
+	// ---- 1. Calibrage du web refait sur les clips Unreal (scène du GLB, racines du web).
+	{
+		TArray<FTransform> CS;
+		const auto GlbY = [&](int32 B) { const FVector P = CS[B].GetLocation(); return apply(Mesh2Glb, {P.X, P.Y, P.Z}).y; };
+		double GroundJ = 1e30;
+		for (int32 I = 0; I < 17; I++)
+		{
+			if (!TestTrue(TEXT("pose du galop"), SamplePose(Canter, SkM, I / 24.0, true, CS))) return false;
+			for (int32 H : Hooves) GroundJ = FMath::Min(GroundJ, GlbY(H));
+		}
+		if (!TestTrue(TEXT("pose idle"), SamplePose(Idle, SkM, 0.5, true, CS))) return false;
+		const double WithersJ = GlbY(Spine) - GroundJ, ScaleU = (1.68 - 0.2) / WithersJ;
+		Check(FString::Printf(TEXT("cause 2 : calibrage du web refait sur les clips Unreal : garrot %.4f unités du GLB au-dessus des sabots, échelle %.9g contre %.9g exportée du web (écart relatif %.2g)"),
+					 WithersJ, ScaleU, M.innerScale, ScaleU / M.innerScale - 1),
+			FMath::Abs(ScaleU / M.innerScale - 1) < 1e-4);
+		AddInfo(FString::Printf(TEXT("cause 3 : le jeu pose %.6g m par unité du GLB (constructeur, 0,01) au lieu de %.9g : rapport %.6f, cheval %.2f %% plus petit ; il faut ×%.6f (+%.2f %%) pour la taille du web"),
+			K * AStridesHorse::GameMeshScale / 100, M.innerScale, K * AStridesHorse::GameMeshScale / 100 / M.innerScale, 100 * (1 - K * AStridesHorse::GameMeshScale / 100 / M.innerScale),
+			M.innerScale * 100 / (K * AStridesHorse::GameMeshScale), 100 * (M.innerScale * 100 / (K * AStridesHorse::GameMeshScale) - 1)));
+	}
+
+	// ---- 2. Cheval du jeu aux deux échelles (maillage évalué, repère du cheval en m).
+	struct FSize { double Withers = 0, WithersGround = 0, SaddleH = 0, PelvisH = 0, Length = 0, Shoulders = 0, LowHoof = 0; };
+	auto Measure = [&](FSize& S) {
+		const auto P = [&](int32 B) { const FVector L = Mesh->GetComponentSpaceTransforms()[B].GetLocation(); return apply(Tack->GameMeshToHolder(), {L.X, L.Y, L.Z}); };
+		const auto Pose = [&](const UAnimSequence* Seq, double T) {
+			Mesh->PlayAnimation(const_cast<UAnimSequence*>(Seq), false);
+			Mesh->SetPosition((float)T, false);
+			Mesh->TickAnimation(0.f, false);
+			Mesh->RefreshBoneTransforms();
+		};
+		double GroundJ = 1e30;
+		for (int32 I = 0; I < 17; I++)
+		{
+			Pose(Canter, I / 24.0);
+			for (int32 H : Hooves) GroundJ = FMath::Min(GroundJ, P(H).y);
+		}
+		Pose(Idle, 0.5);
+		double Low = 1e30;
+		for (int32 H : Hooves) Low = FMath::Min(Low, P(H).y);
+		const V3 Sp = P(Spine), Hd = P(Head), Tl = P(Tail), Al = P(ArmL), Ar = P(ArmR);
+		S.Withers = Sp.y - GroundJ;
+		S.WithersGround = Sp.y;
+		S.SaddleH = P(Saddle).y;
+		S.PelvisH = P(Pelvis).y;
+		S.Length = FMath::Sqrt((Hd.x - Tl.x) * (Hd.x - Tl.x) + (Hd.z - Tl.z) * (Hd.z - Tl.z));
+		S.Shoulders = Dist(Al, Ar);
+		S.LowHoof = Low;
+	};
+	FSize Game, Web;
+	Measure(Game);
+	if (!TestTrue(FString::Printf(TEXT("EnableWebScale (%s)"), *Err), Horse->EnableWebScale(true, &Err))) return false;
+	TestTrue(TEXT("taille du web active"), Horse->UsesWebScale());
+	TestEqual(TEXT("échelle du maillage = inner.scale de l'export du web (exacte)"), (double)Mesh->GetRelativeScale3D().X, M.innerScale);
+	TestEqual(TEXT("WebMeshScale() = inner.scale du modèle de la sellerie"), AStridesHorse::WebMeshScale(), M.innerScale);
+	TestTrue(TEXT("échelle uniforme"), Mesh->GetRelativeScale3D().Y == Mesh->GetRelativeScale3D().X && Mesh->GetRelativeScale3D().Z == Mesh->GetRelativeScale3D().X);
+	Mesh->UpdateComponentToWorld();
+	for (const USkeletalMeshComponent* C : {Horse->ManeMesh()})
+		if (C) TestTrue(TEXT("crins à l'échelle monde du corps"), C->GetComponentScale().Equals(Mesh->GetComponentScale(), 1e-9));
+	Measure(Web);
+	const double Want = M.innerScale / AStridesHorse::GameMeshScale;
+	const struct { const TCHAR* Name; double G, Wb; } Rows[] = {
+		{TEXT("garrot (spine_04) au-dessus des articulations des sabots"), Game.Withers, Web.Withers},
+		{TEXT("spine_04 au-dessus du sol (idle 0,5 s)"), Game.WithersGround, Web.WithersGround},
+		{TEXT("saddle au-dessus du sol (idle 0,5 s)"), Game.SaddleH, Web.SaddleH},
+		{TEXT("pelvis au-dessus du sol (idle 0,5 s)"), Game.PelvisH, Web.PelvisH},
+		{TEXT("longueur tête – queue (head, tail_01, à plat)"), Game.Length, Web.Length},
+		{TEXT("écartement des épaules (upperarm)"), Game.Shoulders, Web.Shoulders},
+		{TEXT("sabot le plus bas (articulation) au-dessus du sol (idle 0,5 s)"), Game.LowHoof, Web.LowHoof},
+	};
+	for (const auto& R : Rows)
+		Check(FString::Printf(TEXT("mesure : %s : jeu %.2f cm, taille du web %.2f cm (écart %+.2f cm, rapport %.6f, attendu %.6f)"), R.Name, 100 * R.G, 100 * R.Wb, 100 * (R.Wb - R.G), R.Wb / R.G, Want),
+			FMath::Abs(R.Wb / R.G - Want) < 1e-6);
+	Check(FString::Printf(TEXT("taille du web : garrot à %.4f m des articulations des sabots (calibrage du web : 1,48 m)"), Web.Withers), FMath::Abs(Web.Withers - 1.48) < 0.005);
+	// ---- 3. Retour à l'échelle du jeu.
+	if (!TestTrue(TEXT("EnableWebScale(false)"), Horse->EnableWebScale(false, &Err))) return false;
+	TestFalse(TEXT("échelle du jeu rendue"), Horse->UsesWebScale());
+	TestEqual(TEXT("échelle du jeu rendue (exacte)"), (double)Mesh->GetRelativeScale3D().X, (double)AStridesHorse::GameMeshScale);
+	return true;
+}

@@ -3,11 +3,13 @@
 cheval → sellerie → cavalière, les bornes des suiveurs du maillage posé (queue de cheval, yeux, sourcils, cils) et la
 création de la règle par BeginPlay selon -StridesRider=regles ; étape S2 : la monte du web lue comme un ensemble
 (StridesMonteOptions : -StridesMonte=, -StridesRider=, -StridesHorseLead=, -StridesTack=, défaut du jeu épinglé), prouvée par
-Strides.Monte.Options (résolution et effet réel par BeginPlay).
+Strides.Monte.Options (résolution et effet réel par BeginPlay) ; étape S3 : taille du cheval du web (-StridesHorseScale=,
+AStridesHorse::EnableWebScale), prouvée par Strides.Monte.Options et Strides.Parite.HorseScale.
 
 Niveau « moteur » seulement : la mutation est appliquée AU SOURCE DU DÉPÔT (StridesRider.cpp, StridesHorse.cpp,
 StridesMonteOptions.cpp et .h), Unreal Build Tool recompile, l'éditeur rejoue Strides.Monte.EnJeu et Strides.Monte.Options
-sans rendu (Automation RunTests Strides.Monte ; mutation détectée si l'un des deux échoue), puis le source est rétabli (try/finally) et une
+et Strides.Parite.HorseScale sans rendu (Automation RunTests Strides.Monte+Strides.Parite.HorseScale ; mutation détectée si l'un
+des trois échoue), puis le source est rétabli (try/finally) et une
 dernière compilation remet le module à l'identique ; le script vérifie à la fin que les sources mutés sont identiques à
 leur état de départ. Environ 3 à 4 min par mutation. Une seule instance d'UnrealEditor à la fois.
 
@@ -31,8 +33,8 @@ RIDER = os.path.join(game, 'Private/StridesRider.cpp')
 HORSE = os.path.join(game, 'Private/StridesHorse.cpp')
 OPTS = os.path.join(game, 'Private/StridesMonteOptions.cpp')
 OPTS_H = os.path.join(game, 'Public/StridesMonteOptions.h')
-TEST = 'Strides.Monte'
-TESTS = ('Strides.Monte.EnJeu', 'Strides.Monte.Options')
+TEST = 'Strides.Monte+Strides.Parite.HorseScale'
+TESTS = ('Strides.Monte.EnJeu', 'Strides.Monte.Options', 'Strides.Parite.HorseScale')
 
 # (fichier, nom, motif, remplacement) : chaque motif doit apparaître une seule fois.
 M = [
@@ -67,15 +69,36 @@ M = [
  (OPTS, 'S2 sellerie ne suit plus l’ensemble', '(bGroup || M.bRiderRules)', 'M.bRiderRules'),
  (OPTS, 'S2 -StridesTack=aucune sans effet', ': Tack == 1;', ': true;'),
  (OPTS, 'S2 -StridesRider=ancien sans effet', 'Read(TEXT("StridesRider="), TEXT("regles"), TEXT("ancien"))', 'Read(TEXT("StridesRider="), TEXT("regles"), TEXT("aucune"))'),
- (OPTS, 'S2 valeur inconnue non signalée', '\t\tif (Unknown) Unknown->Add(', '\t\tif (Unknown && Unknown->Num() < 0) Unknown->Add('),
+ (OPTS, 'S2 valeur inconnue non signalée', '\t\tif (Unknown) Unknown->Add(FString::Printf(TEXT("-%s%s")', '\t\tif (Unknown && Unknown->Num() < 0) Unknown->Add(FString::Printf(TEXT("-%s%s")'),
  (OPTS, 'S2 valeur inconnue prise pour « non »', '\t\treturn -1;\n\t};', '\t\treturn 0;\n\t};'),
  (OPTS, 'S2 description de l’ensemble inversée', 'return TEXT("web");', 'return TEXT("ancien");'),
  (OPTS_H, 'S2 défaut du jeu basculé', 'inline constexpr bool bWebByDefault = true;', 'inline constexpr bool bWebByDefault = false;'),
+ # Étape S3 : taille du cheval du web (-StridesHorseScale=, StridesMonteOptions et AStridesHorse::EnableWebScale), prouvée
+ # par Strides.Monte.Options (résolution, effet par BeginPlay) et Strides.Parite.HorseScale (échelle exacte, mesures).
+ (OPTS_H, 'S3 taille du web par défaut basculée', 'inline constexpr bool bWebHorseScaleByDefault = false;', 'inline constexpr bool bWebHorseScaleByDefault = true;'),
+ (OPTS, 'S3 -StridesHorseScale=web ignorée', 'if (V == TEXT("web")) return true;', 'if (V == TEXT("web")) return bWebHorseScaleByDefault;'),
+ (OPTS, 'S3 -StridesHorseScale=jeu prise pour web', 'if (V == TEXT("jeu")) return false;', 'if (V == TEXT("jeu")) return true;'),
+ (OPTS, 'S3 -StridesMonte=ancien donne la taille du web', 'G == TEXT("ancien")) return false;', 'G == TEXT("ancien")) return true;'),
+ (OPTS, 'S3 -StridesMonte=ancien sans effet sur la taille', 'G == TEXT("ancien")) return false;', 'G == TEXT("ancien")) return bWebHorseScaleByDefault;'),
+ (OPTS, 'S3 valeur inconnue non signalée', 'if (Unknown) Unknown->Add(FString::Printf(TEXT("-StridesHorseScale=%s"), *V));',
+  'if (Unknown && Unknown->Num() < 0) Unknown->Add(FString::Printf(TEXT("-StridesHorseScale=%s"), *V));'),
+ (OPTS, 'S3 clé de la taille sans « = »', 'FParse::Value(Cmd, TEXT("StridesHorseScale="), V)', 'FParse::Value(Cmd, TEXT("StridesHorseScale"), V)'),
+ (HORSE, 'S3 BeginPlay : taille jamais appliquée', 'if (StridesMonteOptions::WebHorseScaleFromCommandLine())', 'if (StridesMonteOptions::WebHorseScaleFromCommandLine() && GetWorld() == nullptr)'),
+ (HORSE, 'S3 BeginPlay : taille toujours appliquée', 'if (StridesMonteOptions::WebHorseScaleFromCommandLine())', 'if (GetWorld() != nullptr)'),
+ (HORSE, 'S3 échelle du web non posée sur le maillage', 'Mesh->SetRelativeScale3D(FVector(S));', 'Mesh->SetRelativeScale3D(FVector(GameMeshScale));'),
+ (HORSE, 'S3 échelle du web approchée (×1,0001)', 'S = WebMeshScale(Err);', 'S = WebMeshScale(Err) * 1.0001;'),
+ (HORSE, 'S3 échelle lue dans inner.groundY', 'TryGetNumberField(TEXT("scale"), S)', 'TryGetNumberField(TEXT("groundY"), S)'),
+ (HORSE, 'S3 retour à l’échelle du jeu impossible', 'double S = GameMeshScale;', 'double S = WebMeshScale();'),
+ (HORSE, 'S3 indicateur de taille non posé', 'bScaleWeb = bWeb;', 'bScaleWeb = false;'),
 ]
 
 ATTENDUES = {
  'ordre : prérequis du cheval retiré': 'mutation équivalente : la sellerie tique en TG_PostUpdateWork, donc après le tick du cheval (TG_PrePhysics) ; '
                                       'son prérequis repousse la cavalière dans ce groupe, après le cheval',
+ 'S3 -StridesMonte=ancien sans effet sur la taille': 'équivalente tant que la taille du web n’est pas le défaut (S3 a : '
+                                                     'bWebHorseScaleByDefault faux, « ancien » et le défaut donnent la même échelle) ; '
+                                                     'départagée par la mutation « donne la taille du web » et, au passage par défaut, par '
+                                                     'le cas « -StridesMonte=ancien » du test',
  'bornes : pas de rafraîchissement à chaque image': 'non départagée : sans lui, le cache invalidé à l’activation reste juste (bornes locales du meneur, déplacées avec le '
                                                     'composant ; au galop la pose assise bouge peu dans le repère du maillage). Gardé pour les grands changements de '
                                                     'pose (montée, saut), que le test n’exerce pas : faiblesse déclarée',
