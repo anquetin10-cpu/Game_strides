@@ -497,7 +497,9 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 
 	// Contrôle : le même rejeu, cheval Unreal posé COMME LE WEB (échelle, lacet, sol, corps et inclinaison de la vue) : la
 	// cavalière doit redonner O2 rider_f (la règle sur le cheval du web, mêmes proportions), aux écarts connus du cheval
-	// près (clips à 30 images/s rééchantillonnés, bascule _barClear non exportée au saut, phase tenue au saut).
+	// près (bascule _barClear non exportée au saut, phase tenue au saut). Depuis l'étape S5 (trot et jump_gallop réimportés à
+	// 24 images/s, comme les autres clips), avant le premier saut, l'écart tombe de 0,64 cm à 0,04 cm : seuil resserré de
+	// 1 cm à 0,1 cm.
 	// Chemin du jeu (UStridesHorseTack::Step, appelé par le tick du composant) : allure lue sur GaitIndex, main sur la main du
 	// web (option) ; couche d'allure posée à un temps connu, phase attendue recalculée ici depuis les données du calage.
 	{
@@ -623,7 +625,8 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 				const FString At = FString::Printf(TEXT("%s image %d"), *Id, I);
 				WAll.See(D, At);
 				if (!bJumped) WBefore.See(D, At), NBefore++;
-				// Au sol (hors saut et 10 images après la réception) : écarts du cheval connus seulement aux allures rééchantillonnées.
+				// Au sol (hors saut et 10 images après la réception) ; relevé aussi sans les images où joue trot ou jump_gallop
+				// (clips à 30 images/s jusqu'à l'étape S5).
 				const bool bGround = F["hz"]["jT"].num() < 0 && F["hz"]["lT"].num() > 10 * Replay.Dt();
 				if (bGround) WGround.See(D, At), NGround++;
 				bool bTrot = false;
@@ -638,9 +641,9 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 		Replay.SetWebPose(false);
 		Replay.SetWebPhase(false);
 		const TCHAR* Tag = Ctl ? TEXT("contrôle, cheval posé comme le web et phase du web") : TEXT("contrôle, cheval posé comme le web");
-		AddInfo(FString::Printf(TEXT("%s : articulations contre O2 rider_f, toutes images %.3f cm (%s) ; avant le premier saut %.4f cm (%s, %d images) ; au sol %.3f cm (%s, %d images) ; au sol sans clip à 30 images/s %.3f cm (%s) ; export %s"),
+		AddInfo(FString::Printf(TEXT("%s : articulations contre O2 rider_f, toutes images %.3f cm (%s) ; avant le premier saut %.4f cm (%s, %d images) ; au sol %.3f cm (%s, %d images) ; au sol sans trot ni jump_gallop %.3f cm (%s) ; export %s"),
 			Tag, WAll.V, *WAll.Where, WBefore.V, *WBefore.Where, NBefore, WGround.V, *WGround.Where, NGround, WGait.V, *WGait.Where, *CtlDir));
-		TestTrue(FString::Printf(TEXT("%s : avant le premier saut, la cavalière redonne O2 à 1 cm près (%.4f cm, %d images)"), Tag, WBefore.V, NBefore), WBefore.V >= 0 && WBefore.V <= 1.0 && NBefore > 400);
+		TestTrue(FString::Printf(TEXT("%s : avant le premier saut, la cavalière redonne O2 à 0,1 cm près (%.4f cm, %d images)"), Tag, WBefore.V, NBefore), WBefore.V >= 0 && WBefore.V <= 0.1 && NBefore > 400);
 	}
 	return true;
 }

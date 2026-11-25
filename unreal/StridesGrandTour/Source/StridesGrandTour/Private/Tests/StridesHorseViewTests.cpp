@@ -210,7 +210,8 @@ bool FStridesHorseViewTest::RunTest(const FString&)
 					StridesUnits::UEToWeb(Wd, Wx, Wy, Wz);
 					const FVector L = Xf.InverseTransformPositionNoScale(Wd);
 					// Sabots dans le repère du cheval contre ceux du web, même image (passe web) : au sol, au saut sur jump_canter
-					// (importé à 24 images/s) ; jump_gallop (importé à 30 images/s, étape S5) relevé à part.
+					// et sur jump_gallop (tous deux importés à 24 images/s depuis l'étape S5 ; jump_gallop, à 30 images/s
+					// avant, était relevé à part : 19,81 cm).
 					if (bWeb)
 					{
 						const J& Wh = R["hoof"][K];
@@ -296,9 +297,10 @@ bool FStridesHorseViewTest::RunTest(const FString&)
 		LogicBad, LogicWorst, *LogicWhere), LogicBad == 0);
 	TestTrue(FString::Printf(TEXT("replis : %d images, sabots de la pose réévaluée à %.3f cm au plus de la géométrie du web (%s ; seuil 0,5 cm)"), TuckFrames, TuckWorst * 100, *TuckWhere),
 		TuckFrames > 0 && TuckWorst <= 0.005);
-	TestTrue(FString::Printf(TEXT("sabots du cheval Unreal dans le repère du cheval, même image que le web : au sol %.2f cm au plus (%s), au saut sur jump_canter %.2f cm (%s) ; seuil 4 cm"),
-		HoofGround * 100, *HoofGroundWhere, HoofCanter * 100, *HoofCanterWhere), HoofGround > 0 && HoofGround <= 0.04 && HoofCanter <= 0.04);
-	AddInfo(FString::Printf(TEXT("sabots au saut sur jump_gallop (importé à 30 images/s, étape S5) : %.2f cm au plus (%s), information"), HoofGallop * 100, *HoofGallopWhere));
+	const FString HoofMsg = FString::Printf(TEXT("sabots du cheval Unreal dans le repère du cheval, même image que le web : au sol %.2f cm au plus (%s), au saut sur jump_canter %.2f cm (%s), au saut sur jump_gallop %.2f cm (%s) ; seuil 4 cm"),
+		HoofGround * 100, *HoofGroundWhere, HoofCanter * 100, *HoofCanterWhere, HoofGallop * 100, *HoofGallopWhere);
+	AddInfo(HoofMsg);
+	TestTrue(HoofMsg, HoofGround > 0 && HoofGround <= 0.04 && HoofCanter <= 0.04 && HoofGallop > 0 && HoofGallop <= 0.04);
 	AddInfo(FString::Printf(TEXT("coût de la vue (avant et après la pose, hors réévaluation) : moyenne %.4f ms, au plus %.4f ms"), CostSum / FMath::Max(1, CostN), CostMax));
 	AddInfo(FString::Printf(TEXT("export : %s"), *OutDir));
 	return true;

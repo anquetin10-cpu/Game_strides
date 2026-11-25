@@ -754,12 +754,15 @@ bool FStridesHorseMirrorTest::RunTest(const FString&)
 	// comme mountpoint_01, ne se voient pas) des clips dont la source Unreal est à 24 images/s (ses clés tombent aux instants
 	// de la cuisson) : le miroir
 	// n'ajoute pas d'écart au-delà de celui de l'import (la réflexion est une isométrie) : miroir ≤ source + 0,05 cm, et
-	// ≤ 0,5 cm (seuil de l'étape 5). Les clips importés à 30 images/s sont rééchantillonnés : leur écart (source et miroir)
-	// est relevé ci-dessus et déclaré, sans critère (voir unreal/docs/parite/monte/README.md, étape M2).
-	AddInfo(FString::Printf(TEXT("clips à 24 images/s : %d ; importés à une autre cadence, sans critère :%s"), Clips24, *Off24));
+	// ≤ 0,5 cm (seuil de l'étape 5). Depuis l'étape S5, tous les clips sources sont importés à 24 images/s (trot, ses
+	// virages et jump_gallop l'étaient à 30 images/s, rééchantillonnés : scripts/unreal/import-horse-clips-24.py) : la
+	// cadence est épinglée, un clip à une autre cadence fait échouer le test.
+	AddInfo(FString::Printf(TEXT("clips à 24 images/s : %d sur %d ; importés à une autre cadence :%s"), Clips24, ClipsSeen, Off24.IsEmpty() ? TEXT(" aucun") : *Off24));
+	TestTrue(FString::Printf(TEXT("clips sources tous importés à 24 images/s, cadence de la cuisson du web (étape S5) : %d sur %d%s"), Clips24, ClipsSeen, *Off24),
+		ClipsSeen >= 11 && Clips24 == ClipsSeen);
 	AddInfo(FString::Printf(TEXT("clips à 24 images/s, os skinnés : source Unreal − web %.4f cm (%s), miroir Unreal − web %.4f cm (%s)"), W24Src.V, *W24Src.Where, W24Mir.V, *W24Mir.Where));
 	TestTrue(FString::Printf(TEXT("clips à 24 images/s, os skinnés : miroir Unreal − web (%.4f cm, %s) ≤ écart d'import des sources (%.4f cm) + 0,05 cm"), W24Mir.V, *W24Mir.Where, W24Src.V),
-		Clips24 >= 7 && W24Mir.V >= 0 && W24Mir.V <= W24Src.V + 0.05);
+		Clips24 >= 11 && W24Mir.V >= 0 && W24Mir.V <= W24Src.V + 0.05);
 	TestTrue(FString::Printf(TEXT("clips à 24 images/s, os skinnés : miroir Unreal − web ≤ 0,5 cm à toutes les clés (%.4f cm)"), W24Mir.V), W24Mir.V >= 0 && W24Mir.V <= 0.5);
 	}
 
@@ -877,7 +880,8 @@ bool FStridesHorseMirrorTest::RunTest(const FString&)
 			}
 			// Saut : la vue du web fait basculer le corps face aux barres (pjlHorse.js _barClear : body.rotation.x et
 			// body.position.z), ce qu'O1 n'exporte pas (mx : by et rz seulement) ; images relevées à part, sans critère.
-			// Clips miroir dont la source Unreal n'est pas à 24 images/s (trot : 30) : relevées à part, sans critère.
+			// Clips miroir dont la source Unreal ne serait pas à 24 images/s (trot jusqu'à l'étape S5 : 30) : relevées à part,
+			// sans critère (aucune depuis S5, cadence épinglée ci-dessus).
 			if (bJump || bThirty)
 			{
 				for (int A = 0; A < AnchorCount; A++)
@@ -916,11 +920,11 @@ bool FStridesHorseMirrorTest::RunTest(const FString&)
 		}
 		PerRun += FString::Printf(TEXT(" %s %d"), Id, Frames - N0);
 	}
-	AddInfo(FString::Printf(TEXT("O1 : %d images avec clip miroir (source à 24 images/s, hors saut) rejouées (%s), dont %d à un clip ≥ 0,99 ; à part : %d images de saut, %d images de trot en miroir (source à 30 images/s) ; %d images avec clip miroir écartées (bascule ou levée de tête non portées)"),
+	AddInfo(FString::Printf(TEXT("O1 : %d images avec clip miroir (source à 24 images/s, hors saut) rejouées (%s), dont %d à un clip ≥ 0,99 ; à part : %d images de saut, %d images à une source pas à 24 images/s ; %d images avec clip miroir écartées (bascule ou levée de tête non portées)"),
 		Frames, *PerRun, Pure, JumpFrames, ThirtyFrames, SkippedSec));
 	AddInfo(FString::Printf(TEXT("O1, images retenues : ancres %.4f cm (%s), siège %.4f cm (%s), orientation %.4f° (%s), encolure %.4f cm (%s), ancres dans le repère du cheval %.4f cm (%s) ; un clip ≥ 0,99 : ancres %.4f cm (%s)"),
 		100 * WAnchor.V, *WAnchor.Where, 100 * WSeatPos.V, *WSeatPos.Where, WSeatRot.V, *WSeatRot.Where, 100 * WCrest.V, *WCrest.Where, 100 * WAnchorH.V, *WAnchorH.Where, 100 * WAnchorP.V, *WAnchorP.Where));
-	AddInfo(FString::Printf(TEXT("O1, à part (sans critère) : saut, ancres dans S %.4f cm (%s) ; trot en miroir, ancres dans S %.4f cm (%s)"), 100 * WJumpAnchor.V, *WJumpAnchor.Where, 100 * WThirty.V, *WThirty.Where));
+	AddInfo(FString::Printf(TEXT("O1, à part (sans critère) : saut, ancres dans S %.4f cm (%s) ; source pas à 24 images/s, ancres dans S %.4f cm (%s)"), 100 * WJumpAnchor.V, *WJumpAnchor.Where, 100 * WThirty.V, *WThirty.Where));
 	TestTrue(FString::Printf(TEXT("images d'O1 avec clip miroir rejouées : %d"), Frames), Frames >= 150);
 	TestTrue(TEXT("ancres ≤ 0,5 cm (images avec clip miroir)"), WAnchor.V >= 0 && WAnchor.V <= 0.005);
 	TestTrue(TEXT("position du siège ≤ 0,5 cm"), WSeatPos.V >= 0 && WSeatPos.V <= 0.005);

@@ -10,8 +10,8 @@
 //    dans le mélangeur, pose réévaluée si un repli est actif), bascule ; repère du corps posé sur le maillage.
 // Repère du corps : groupe « body » de la vue du web (position y, z ; rotation.x puis rotation.z, ordre XYZ de three.js),
 // exprimé dans le repère de l'acteur (X = 100 z, Y = −100 x, Z = 100 y) et composé avec l'échelle du maillage.
-// Écarts au web déclarés : durées des clips = celles des clips importés (trot et jump_gallop rééchantillonnés à 30 images/s,
-// étape S5) ; mouvements secondaires (SecondaryMotion : queue, crinière, encolure, oreilles) et contacts des membres avec les
+// Écarts au web déclarés : durées des clips = celles des clips importés (tous à 24 images/s depuis l'étape S5, mêmes
+// durées que le web) ; mouvements secondaires (SecondaryMotion : queue, crinière, encolure, oreilles) et contacts des membres avec les
 // barres (_limbContacts : faute comptée par le jeu web) non portés.
 #pragma once
 #include "CoreMinimal.h"
