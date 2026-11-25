@@ -75,9 +75,14 @@ const SHOT_POSES = [
   // relues dans O1 (jumpPhases : appel, poserAnterieurs), jamais recopiées ; avec galop, galop-gauche et saut-sommet.
   { name: 'appel', scenario: 'E3', frame: phaseE3('appel'), eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
   { name: 'reception', scenario: 'E3', frame: phaseE3('poserAnterieurs'), eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
+  // Étape S5 (trot et grand saut réimportés à 24 images/s) : trot enlevé d'E6t (image 90, au milieu du plan « trot », images
+  // 45 à 119 : clip trot) et sommet du grand saut d'E3b (9 m/s, clip jump_gallop), image relue dans O1 (jumpPhases), jamais
+  // recopiée.
+  { name: 'trot', scenario: 'E6t', frame: 90, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
+  { name: 'grand-saut-sommet', scenario: 'E3b', frame: phaseE3('sommet', 'E3b'), eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
 ];
-function phaseE3(k) {
-  const f = join(ROOT, 'unreal/core/tests/oracles/monte/o1/E3.json');
+function phaseE3(k, id = 'E3') {
+  const f = join(ROOT, `unreal/core/tests/oracles/monte/o1/${id}.json`);
   if (!existsSync(f)) return null;
   const p = jumpPhases(JSON.parse(readFileSync(f, 'utf8')));
   return p ? p[k] : null;

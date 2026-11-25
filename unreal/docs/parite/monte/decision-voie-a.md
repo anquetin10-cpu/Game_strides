@@ -1,6 +1,6 @@
 # Voie A : ce qu'elle donne, ce qui manque, ce qu'il faut décider
 
-Page pour Julien, 24/11/2026 (étape M3). Détails : `README.md` (journal), `niveau-a.md`, `niveau-b.md`, `cout.md`.
+Page pour Julien, 24/11/2026 (étape M3), bilan final du plan S1 à S5 le 25/11/2026 (en fin de page). Détails : `README.md` (journal), `niveau-a.md`, `niveau-b.md`, `cout.md`.
 
 ## En une phrase
 
@@ -45,11 +45,15 @@ galop-gauche | saut-sommet>-web.png` contre `-unreal-b.png`.
    `-StridesHorseScale=web` (garrot à 1,48 m des sabots comme le web) ; relevés du concours identiques, niveau B 61 → 58
    critères non tenus ; captures `captures/s3/`. **Par défaut depuis l'étape S3 b** (`-StridesHorseScale=jeu` ou
    `-StridesMonte=ancien` : 0,01), captures du CSO refaites.
-3. **Inclinaison dans les virages** et **corps au saut** (bascule face aux barres, hauteur du corps) : non portés.
-4. **Horloge du saut et cadence** : en partie jouée, le cheval Unreal joue ses clips à vitesse 1 ; le web règle la
-   cadence sur la vitesse et cale le saut sur les appuis du clip. Pendant le saut, la phase de foulée est tenue (le web la
-   fait avancer) : jusqu'à 4,1 cm sur les mains après la réception.
-5. **Trot et saut au grand galop** importés à 30 images/s au lieu de 24 : jusqu'à 0,64 cm sur la cavalière au trot.
+3. ~~**Inclinaison dans les virages** et **corps au saut** (bascule face aux barres, hauteur du corps) : non portés.~~
+   **Fait aux étapes S4 a et S4 b (25/11/2026)**, par défaut (`-StridesHorseView=jeu` pour l'ancienne vue) : inclinaison
+   en virage (12,9° au plus en cercle, comme le web), bascule face aux barres, hauteur du corps, repli des membres.
+4. ~~**Horloge du saut et cadence**~~ : **fait à l'étape S4** : cadence des clips réglée sur la vitesse, horloge du saut
+   calée sur les appuis du clip, phase de foulée qui avance pendant le saut ; oracle des appuis : 622 posers et levers sur
+   659 à l'image exacte du web (17 avant).
+5. ~~**Trot et saut au grand galop** importés à 30 images/s au lieu de 24 : jusqu'à 0,64 cm sur la cavalière au trot.~~
+   **Fait à l'étape S5 (25/11/2026)** : réimportés à 24 images/s ; cavalière du contrôle à 0,037 cm d'O2 avant le premier
+   saut, sabots au grand saut à 2,46 cm du web (19,81 cm avant).
 6. **Montée et descente** : non mesurées (pas d'oracle).
 
 ## Choix à faire pour en faire le comportement par défaut
@@ -60,8 +64,31 @@ galop-gauche | saut-sommet>-web.png` contre `-unreal-b.png`.
 | B. Main du web (`-StridesHorseLead=web`) par défaut | galop à gauche, sauts en miroir, seuil du grand saut à 8 m/s comme le web | **fait (étape S2 b)** : le jeu part au galop à gauche ; preuves du concours refaites |
 | C. Cheval à la taille du web (+3,7 %) | rênes, poignets et portée de la jambe plus proches du web (niveau B 61 → 58) | **fait (étape S3 b)**, par défaut ; captures du concours refaites |
 | D. Sellerie du web sur le cheval Unreal | selle, bride, rênes et étriers visibles, étriers qui suivent les pieds | **fait (étape S1)**, par défaut avec A et B (étape S2 b) |
-| E. Inclinaison en virage, corps et horloge du saut | galop en cercle et saut comme le web | une étape dédiée au saut animé, avec un oracle des appuis |
-| F. Clips du trot et du grand saut réimportés à 24 images/s | trot au millimètre | clips du concours touchés, preuves à refaire |
+| E. Inclinaison en virage, corps et horloge du saut | galop en cercle et saut comme le web | **fait (étapes S4 a et S4 b)**, par défaut ; captures du concours refaites |
+| F. Clips du trot et du grand saut réimportés à 24 images/s | trot au millimètre | **fait (étape S5)** ; captures du concours refaites et comparées : inchangées hors bruit, gardées |
 
 Ordre proposé par Tom (à décider par Julien) : D d'abord (le plus visible), puis A avec B ensemble, puis C ; E et F
 ensuite. Chacun passe par une option tant que Julien n'a pas vu les captures.
+
+## Bilan final du plan S1 à S5 (25/11/2026)
+
+Décision de Julien du 24/11/2026 exécutée dans l'ordre, chaque étape derrière une option puis par défaut quand ses
+contrôles étaient conformes. Tout est le jeu par défaut ; `-StridesMonte=ancien` rend l'ancien comportement (sauf la
+cadence des clips de S5, qui est une donnée : l'ancienne reste dans l'historique git, `35e5532f`).
+
+| Étape | Prouvé | Partiel | Non vérifié |
+|---|---|---|---|
+| S1 sellerie complète | étriers, étrivières et rênes identiques au bit au web (ctest) ; pièces à 0,44 cm du web hors saut ; étrier sous le pied (M4 ≤ 1,00 cm) | au saut, pièces liées au corps du cheval Unreal (corrigé par S4) | rendu sur iPhone ou iPad |
+| S2 cavalière réglée comme le web, main du web | niveau A à 0,0001 cm ; relevés du concours identiques ; démonstration « 0 pt Arrivée ✓ » | niveau B : critères manqués venant du cheval (réduits par S3 à S5) et de la règle du web elle-même | paquet iOS, coût sur appareil |
+| S3 taille du web (+3,88 %) | garrot à 1,48 m comme le web ; relevés du concours identiques | niveau B 61 → 58 | idem |
+| S4 inclinaison, corps et horloge du saut | logique égale au web dans le moteur (2,8e-16) ; 622 appuis sur 659 à l'image du web ; plus aucun sabot sous une barre | `SecondaryMotion` et `_limbContacts` non portés (hors décision) ; coût en jeu avec rendu non mesuré | idem |
+| S5 trot et grand saut à 24 images/s | 17 clips à 24 images/s (épinglé) ; clips miroir à 0,05 cm du web ; cavalière du contrôle à 0,037 cm d'O2 avant le saut ; sabots du grand saut à 2,46 cm | — | coût non remesuré (moins de clés) |
+
+Sur le cheval Unreal (niveau B), **50 critères sur 233 restent non tenus** (61 sur 215 au départ, avant l'ajout des
+critères de sellerie) : la plupart sont aussi manqués par le web lui-même (limites de la règle du web : jambe tendue,
+genou contre le flanc) ; contre O2 (mêmes proportions de cavalière), 3 écarts. Le contrôle (cheval Unreal posé comme celui
+du web) redonne la cavalière du web à 0,037 cm avant le premier saut : le portage n'ajoute rien de mesurable.
+
+Restent, hors de la décision du 24/11 (à proposer, rien n'est engagé) : mouvements secondaires du cheval (queue, crinière,
+encolure, oreilles), contacts des membres avec les barres, coût en jeu avec rendu de la vue du cheval, et toute mesure sur
+iPhone ou iPad (aucun paquet construit, comme demandé).

@@ -1,0 +1,323 @@
+{
+ "schema": "strides.monte.captures/1",
+ "generator": "scripts/unreal/export-rider-rules.mjs --shots",
+ "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1",
+ "doc": "captures côte à côte de la cavalière montée par les règles : caméra dans le repère du cheval (holder du web : x à gauche, y vers le haut, z vers l’avant, m ; Unreal : X = 100 z, Y = −100 x, Z = 100 y dans le repère de l’acteur du cheval), FOV vertical (degrés), viewport ; état du web à l’image de capture.",
+ "poses": [
+  {
+   "name": "galop",
+   "scenario": "E2d",
+   "frame": 100,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-galop-web.png",
+    "eye": [
+     151.93465833252802,
+     -0.543555268239734,
+     -441.85143956689143
+    ],
+    "target": [
+     156.15311098438877,
+     -0.6118134145945768,
+     -441.95142981374227
+    ],
+    "speed": 8.451515151515153,
+    "gait": "canter",
+    "phase": 0.5610246046146907,
+    "hour": 11.06800000000004,
+    "canvas": [
+     844,
+     390
+    ],
+    "lead": "R",
+    "jc": null,
+    "jm": false,
+    "lb": 0.9999999999996468
+   }
+  },
+  {
+   "name": "galop-gauche",
+   "scenario": "E2g",
+   "frame": 100,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-galop-gauche-web.png",
+    "eye": [
+     160.2963177238969,
+     -0.7128690092024765,
+     -443.55946247748204
+    ],
+    "target": [
+     156.17399575667545,
+     -0.8311464279557808,
+     -444.4552705209694
+    ],
+    "speed": 8.451515151515153,
+    "gait": "canter",
+    "phase": 0.5053790580000818,
+    "hour": 11.06800000000004,
+    "canvas": [
+     844,
+     390
+    ],
+    "lead": "L",
+    "jc": null,
+    "jm": false,
+    "lb": 1.7139084315420173e-15
+   }
+  },
+  {
+   "name": "saut-sommet",
+   "scenario": "E3",
+   "frame": 50,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-saut-sommet-web.png",
+    "eye": [
+     300.7713333333332,
+     5.6348751539613335,
+     -296.2
+    ],
+    "target": [
+     300.3713333333332,
+     5.534875153961333,
+     -292
+    ],
+    "speed": 6.74,
+    "gait": "canter",
+    "phase": 0.9443299451221027,
+    "hour": 11.034666666666688,
+    "canvas": [
+     844,
+     390
+    ],
+    "lead": "L",
+    "jc": "jump_canter",
+    "jm": true,
+    "lb": 2.9663949993350015e-8
+   }
+  },
+  {
+   "name": "appel",
+   "scenario": "E3",
+   "frame": 41,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-appel-web.png",
+    "eye": [
+     298.7493333333331,
+     4.971454635370041,
+     -296.2
+    ],
+    "target": [
+     298.3493333333331,
+     4.871454635370041,
+     -292
+    ],
+    "speed": 6.74,
+    "gait": "canter",
+    "phase": 0.6917787656443654,
+    "hour": 11.028666666666684,
+    "canvas": [
+     844,
+     390
+    ],
+    "lead": "L",
+    "jc": "jump_canter",
+    "jm": true,
+    "lb": 5.958163628790243e-7
+   }
+  },
+  {
+   "name": "reception",
+   "scenario": "E3",
+   "frame": 59,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-reception-web.png",
+    "eye": [
+     302.77935999999994,
+     4.5,
+     -296.2
+    ],
+    "target": [
+     302.37935999999996,
+     4.3999999999999995,
+     -292
+    ],
+    "speed": 6.5904,
+    "gait": "canter",
+    "phase": 0.7088797966718999,
+    "hour": 11.040666666666691,
+    "canvas": [
+     844,
+     390
+    ],
+    "lead": "L",
+    "jc": "jump_canter",
+    "jm": true,
+    "lb": 1.4768811063798148e-9
+   }
+  },
+  {
+   "name": "trot",
+   "scenario": "E6t",
+   "frame": 90,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-trot-web.png",
+    "eye": [
+     148.3323805572408,
+     -0.9988343363883092,
+     -446.3025397315373
+    ],
+    "target": [
+     150.46556758082627,
+     -1.0915007195732203,
+     -449.9427218786055
+    ],
+    "speed": 4.6,
+    "gait": "trot",
+    "phase": 0.14747355731825829,
+    "hour": 11.061333333333371,
+    "canvas": [
+     844,
+     390
+    ],
+    "lead": "R",
+    "jc": null,
+    "jm": false,
+    "lb": 0.9999999999900969
+   }
+  },
+  {
+   "name": "grand-saut-sommet",
+   "scenario": "E3b",
+   "frame": 52,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-grand-saut-sommet-web.png",
+    "eye": [
+     300.52000000000044,
+     5.978530436639802,
+     -254.2
+    ],
+    "target": [
+     300.12000000000046,
+     5.878530436639801,
+     -250
+    ],
+    "speed": 8.399999999999999,
+    "gait": "canter",
+    "phase": 0.7810026930002777,
+    "hour": 11.036000000000023,
+    "canvas": [
+     844,
+     390
+    ],
+    "lead": "L",
+    "jc": "jump_gallop",
+    "jm": true,
+    "lb": 1.5229979744712642e-8
+   }
+  }
+ ]
+}

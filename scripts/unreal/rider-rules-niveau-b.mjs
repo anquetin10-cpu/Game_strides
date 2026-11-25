@@ -288,7 +288,7 @@ L.push('## Écarts aux références (grandeurs qui ne dépendent pas de l’éch
 L.push('');
 L.push('Colonnes de décomposition (information) : **O2 − O1**, ce que changent les seules proportions de la cavalière (cheval du');
 L.push('web dans les deux) ; **contrôle − O2**, ce que le rejeu ajoute quand le cheval Unreal est posé comme celui du web (phase');
-L.push('tenue au saut, clips à 30 images/s rééchantillonnés à l’import) ; le reste de **Unreal − O2** vient du cheval du jeu');
+L.push('tenue au saut ; jusqu’à l’étape S5, clips du trot et du grand saut rééchantillonnés à 30 images/s) ; le reste de **Unreal − O2** vient du cheval du jeu');
 L.push('(taille, pas d’inclinaison en virage ni de pente, corps non remonté au saut).');
 L.push('');
 L.push('| Scénario | Grandeur | Images | Tolérance | Unreal − O1 (max) | Image | Tenu | Unreal − O2 (max) | Image | Tenu | O2 − O1 | contrôle − O2 |');

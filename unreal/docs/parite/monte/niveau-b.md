@@ -37,13 +37,13 @@ E5 hors de l’essai, aucun oracle).
 | E1 | M10 coude (droit) | 151,84° | 35 | ≤ 155,00° | oui | 128,15 | 151,84 |
 | E1 | M4 plante – étrier affiché (droit) | 0,64 cm | 37 | ≤ 2,00 cm | oui | 0,34 | 1,07 |
 | E1 | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 20 | ≤ 1,00 cm | oui | 0,00 | — |
-| E1b | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,12 cm | 0 | ≤ 2,00 cm | oui | 0,10 | 0,12 |
+| E1b | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,24 cm | 77 | ≤ 2,00 cm | oui | 0,10 | 0,12 |
 | E1b | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,77 cm | 0 | ≤ 2,00 cm | oui | 0,46 | 0,77 |
-| E1b | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,38 cm | 71 | ≤ 3,00 cm | oui | 0,21 | 0,21 |
+| E1b | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,34 cm | 71 | ≤ 3,00 cm | oui | 0,21 | 0,21 |
 | E1b | M1 plante – point d’étrier visé, |Δz| hors de la selle (gauche) | 0,52 cm | 70 | ≤ 5,00 cm | oui | 0,53 | 0,52 |
 | E1b | M2 cheville au-delà de sa place naturelle xMax (gauche) | 0,02 cm | 79 | ≤ 1,00 cm | oui | −0,75 | 0,02 |
-| E1b | M6 portée de la jambe ρ assis (gauche) | 0,9493 | 77 | ≤ 0,9350 | **non** | 0,9438 | 0,9524 |
-| E1b | M6 portée de la jambe ρ hors de la selle (gauche) | 0,9459 | 26 | ≤ 0,9550 | oui | 0,9459 | 0,9460 |
+| E1b | M6 portée de la jambe ρ assis (gauche) | 0,9459 | 77 | ≤ 0,9350 | **non** | 0,9438 | 0,9524 |
+| E1b | M6 portée de la jambe ρ hors de la selle (gauche) | 0,9459 | 24 | ≤ 0,9550 | oui | 0,9459 | 0,9460 |
 | E1b | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 17 images ; sous −2 cm : 25) | −6,73 cm | 3 | ≥ −1,00 cm | **non** | −6,29 | −6,03 |
 | E1b | M9 poignet au-dessus de l’encolure (gauche) | 9,39 cm | 59 | ≥ 9,00 cm | oui | 9,08 | 9,46 |
 | E1b | M10 coude (gauche) | 151,84° | 45 | ≤ 155,00° | oui | 148,89 | 151,84 |
@@ -53,9 +53,9 @@ E5 hors de l’essai, aucun oracle).
 | E1b | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 2,09 cm | 52 | ≤ 3,00 cm | oui | 1,12 | 2,13 |
 | E1b | M1 plante – point d’étrier visé, |Δz| hors de la selle (droit) | 0,50 cm | 52 | ≤ 5,00 cm | oui | 0,48 | 0,50 |
 | E1b | M2 cheville au-delà de sa place naturelle xMax (droit) | 0,86 cm | 89 | ≤ 1,00 cm | oui | 0,16 | 1,00 |
-| E1b | M6 portée de la jambe ρ assis (droit) | 0,9410 | 77 | ≤ 0,9350 | **non** | 0,9403 | 0,9459 |
-| E1b | M6 portée de la jambe ρ hors de la selle (droit) | 0,9459 | 22 | ≤ 0,9550 | oui | 0,9459 | 0,9459 |
-| E1b | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 38 images ; sous −2 cm : 43) | −7,91 cm | 55 | ≥ −1,00 cm | **non** | −15,17 | −8,21 |
+| E1b | M6 portée de la jambe ρ assis (droit) | 0,9403 | 77 | ≤ 0,9350 | **non** | 0,9403 | 0,9459 |
+| E1b | M6 portée de la jambe ρ hors de la selle (droit) | 0,9459 | 71 | ≤ 0,9550 | oui | 0,9459 | 0,9459 |
+| E1b | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 38 images ; sous −2 cm : 42) | −7,92 cm | 55 | ≥ −1,00 cm | **non** | −15,17 | −8,21 |
 | E1b | M9 poignet au-dessus de l’encolure (droit) | 9,37 cm | 59 | ≥ 9,00 cm | oui | 9,08 | 9,46 |
 | E1b | M10 coude (droit) | 151,84° | 97 | ≤ 155,00° | oui | 150,06 | 151,84 |
 | E1b | M4 plante – étrier affiché (droit) | 0,73 cm | 67 | ≤ 2,00 cm | oui | 0,54 | 3,79 |
@@ -73,24 +73,24 @@ E5 hors de l’essai, aucun oracle).
 | E2g | M4 plante – étrier affiché (gauche) | 0,81 cm | 53 | ≤ 2,00 cm | oui | 0,64 | 3,10 |
 | E2g | M1 plante – point d’étrier visé, |y| assis (droit) | 8,96 cm | 16 | ≤ 2,00 cm | **non** | 8,44 | 9,16 |
 | E2g | M1 plante – point d’étrier visé, |z| assis (droit) | 0,85 cm | 0 | ≤ 2,00 cm | oui | 0,69 | 0,85 |
-| E2g | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 5,81 cm | 41 | ≤ 3,00 cm | **non** | 5,16 | 6,02 |
+| E2g | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | 5,84 cm | 41 | ≤ 3,00 cm | **non** | 5,16 | 6,02 |
 | E2g | M1 plante – point d’étrier visé, |Δz| hors de la selle (droit) | 0,53 cm | 22 | ≤ 5,00 cm | oui | 0,51 | 0,53 |
 | E2g | M2 cheville au-delà de sa place naturelle xMax (droit) | −0,86 cm | 39 | ≤ 1,00 cm | oui | −0,81 | −0,75 |
 | E2g | M6 portée de la jambe ρ assis (droit) | 0,9459 | 40 | ≤ 0,9350 | **non** | 0,9454 | 0,9459 |
-| E2g | M6 portée de la jambe ρ hors de la selle (droit) | 0,9459 | 137 | ≤ 0,9550 | oui | 0,9459 | 0,9459 |
+| E2g | M6 portée de la jambe ρ hors de la selle (droit) | 0,9459 | 51 | ≤ 0,9550 | oui | 0,9459 | 0,9459 |
 | E2g | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 84 images ; sous −2 cm : 121) | −22,70 cm | 15 | ≥ −1,00 cm | **non** | −24,79 | −23,07 |
 | E2g | M9 poignet au-dessus de l’encolure (droit) | 8,94 cm | 72 | ≥ 9,00 cm | **non** | 8,93 | 9,03 |
 | E2g | M10 coude (droit) | 151,84° | 7 | ≤ 155,00° | oui | 140,92 | 151,84 |
 | E2g | M4 plante – étrier affiché (droit) | 0,82 cm | 53 | ≤ 2,00 cm | oui | 0,67 | 3,18 |
 | E2g | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 60 | ≤ 1,00 cm | oui | 0,00 | — |
-| E2d | M1 plante – point d’étrier visé, |y| assis (gauche) | 3,52 cm | 38 | ≤ 2,00 cm | **non** | 2,19 | 3,44 |
+| E2d | M1 plante – point d’étrier visé, |y| assis (gauche) | 3,56 cm | 38 | ≤ 2,00 cm | **non** | 2,19 | 3,44 |
 | E2d | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,77 cm | 0 | ≤ 2,00 cm | oui | 0,48 | 0,77 |
-| E2d | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 7,13 cm | 39 | ≤ 3,00 cm | **non** | 6,48 | 6,98 |
+| E2d | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 7,14 cm | 39 | ≤ 3,00 cm | **non** | 6,48 | 6,98 |
 | E2d | M1 plante – point d’étrier visé, |Δz| hors de la selle (gauche) | 0,53 cm | 39 | ≤ 5,00 cm | oui | 0,52 | 0,53 |
 | E2d | M2 cheville au-delà de sa place naturelle xMax (gauche) | −0,47 cm | 4 | ≤ 1,00 cm | oui | −0,81 | −0,55 |
-| E2d | M6 portée de la jambe ρ assis (gauche) | 0,9432 | 36 | ≤ 0,9350 | **non** | 0,9430 | 0,9432 |
+| E2d | M6 portée de la jambe ρ assis (gauche) | 0,9430 | 36 | ≤ 0,9350 | **non** | 0,9430 | 0,9432 |
 | E2d | M6 portée de la jambe ρ hors de la selle (gauche) | 0,9459 | 23 | ≤ 0,9550 | oui | 0,9459 | 0,9459 |
-| E2d | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 138 images ; sous −2 cm : 137) | −11,62 cm | 29 | ≥ −1,00 cm | **non** | −13,54 | −11,09 |
+| E2d | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 138 images ; sous −2 cm : 137) | −11,66 cm | 29 | ≥ −1,00 cm | **non** | −13,54 | −11,09 |
 | E2d | M9 poignet au-dessus de l’encolure (gauche) | 9,23 cm | 130 | ≥ 9,00 cm | oui | 9,01 | 9,16 |
 | E2d | M10 coude (gauche) | 151,84° | 13 | ≤ 155,00° | oui | 139,63 | 151,84 |
 | E2d | M4 plante – étrier affiché (gauche) | 0,80 cm | 20 | ≤ 2,00 cm | oui | 0,63 | 2,15 |
@@ -131,20 +131,20 @@ E5 hors de l’essai, aucun oracle).
 | E3 | M8 pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm)) | 0,00 cm | 20 | ≤ 1,00 cm | oui | 0,00 | — |
 | E3b | M1 plante – point d’étrier visé, |y| assis (gauche) | 0,31 cm | 2 | ≤ 2,00 cm | oui | 0,26 | 0,27 |
 | E3b | M1 plante – point d’étrier visé, |z| assis (gauche) | 0,77 cm | 0 | ≤ 2,00 cm | oui | 0,43 | 0,77 |
-| E3b | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,02 cm | 74 | ≤ 3,00 cm | oui | 1,24 | 0,26 |
-| E3b | M1 plante – point d’étrier visé, |Δz| hors de la selle (gauche) | 0,50 cm | 64 | ≤ 5,00 cm | oui | 0,47 | 0,51 |
+| E3b | M1 plante – point d’étrier visé, Δy hors de la selle (gauche) | 0,02 cm | 73 | ≤ 3,00 cm | oui | 1,24 | 0,26 |
+| E3b | M1 plante – point d’étrier visé, |Δz| hors de la selle (gauche) | 0,52 cm | 64 | ≤ 5,00 cm | oui | 0,47 | 0,51 |
 | E3b | M2 cheville au-delà de sa place naturelle xMax (gauche) | 0,72 cm | 20 | ≤ 1,00 cm | oui | −0,86 | 0,74 |
 | E3b | M6 portée de la jambe ρ assis (gauche) | 0,9336 | 2 | ≤ 0,9350 | oui | 0,9242 | 0,9307 |
 | E3b | M6 portée de la jambe ρ hors de la selle (gauche) | 0,9556 | 20 | ≤ 0,9550 | **non** | 0,9459 | 0,9556 |
-| E3b | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 22 images ; sous −2 cm : 55) | −10,10 cm | 41 | ≥ −1,00 cm | **non** | −13,20 | −10,36 |
+| E3b | M7 écart au flanc, minimum (gauche) (plus longue suite sous −1 cm : 22 images ; sous −2 cm : 55) | −10,13 cm | 67 | ≥ −1,00 cm | **non** | −13,20 | −10,36 |
 | E3b | M9 poignet au-dessus de l’encolure (gauche) | 9,22 cm | 88 | ≥ 9,00 cm | oui | 8,57 | 9,22 |
 | E3b | M10 coude (gauche) | 151,84° | 64 | ≤ 155,00° | oui | 151,70 | 151,84 |
 | E3b | M4 plante – étrier affiché (gauche) | 1,01 cm | 64 | ≤ 2,00 cm | oui | 0,82 | 2,30 |
 | E3b | M1 plante – point d’étrier visé, |y| assis (droit) | 0,20 cm | 2 | ≤ 2,00 cm | oui | 0,31 | 0,20 |
 | E3b | M1 plante – point d’étrier visé, |z| assis (droit) | 0,85 cm | 0 | ≤ 2,00 cm | oui | 0,69 | 0,85 |
-| E3b | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | −0,01 cm | 78 | ≤ 3,00 cm | oui | 0,35 | −0,01 |
-| E3b | M1 plante – point d’étrier visé, |Δz| hors de la selle (droit) | 0,64 cm | 90 | ≤ 5,00 cm | oui | 0,57 | 0,60 |
-| E3b | M2 cheville au-delà de sa place naturelle xMax (droit) | −0,82 cm | 90 | ≤ 1,00 cm | oui | −0,80 | −0,85 |
+| E3b | M1 plante – point d’étrier visé, Δy hors de la selle (droit) | −0,01 cm | 99 | ≤ 3,00 cm | oui | 0,35 | −0,01 |
+| E3b | M1 plante – point d’étrier visé, |Δz| hors de la selle (droit) | 0,63 cm | 90 | ≤ 5,00 cm | oui | 0,57 | 0,60 |
+| E3b | M2 cheville au-delà de sa place naturelle xMax (droit) | −0,83 cm | 90 | ≤ 1,00 cm | oui | −0,80 | −0,85 |
 | E3b | M6 portée de la jambe ρ assis (droit) | 0,9322 | 2 | ≤ 0,9350 | oui | 0,9289 | 0,9320 |
 | E3b | M6 portée de la jambe ρ hors de la selle (droit) | 0,9459 | 23 | ≤ 0,9550 | oui | 0,9459 | 0,9467 |
 | E3b | M7 écart au flanc, minimum (droit) (plus longue suite sous −1 cm : 4 images ; sous −2 cm : 3) | −3,16 cm | 4 | ≥ −1,00 cm | **non** | −5,10 | −3,74 |
@@ -157,7 +157,7 @@ E5 hors de l’essai, aucun oracle).
 
 Colonnes de décomposition (information) : **O2 − O1**, ce que changent les seules proportions de la cavalière (cheval du
 web dans les deux) ; **contrôle − O2**, ce que le rejeu ajoute quand le cheval Unreal est posé comme celui du web (phase
-tenue au saut, clips à 30 images/s rééchantillonnés à l’import) ; le reste de **Unreal − O2** vient du cheval du jeu
+tenue au saut ; jusqu’à l’étape S5, clips du trot et du grand saut rééchantillonnés à 30 images/s) ; le reste de **Unreal − O2** vient du cheval du jeu
 (taille, pas d’inclinaison en virage ni de pente, corps non remonté au saut).
 
 | Scénario | Grandeur | Images | Tolérance | Unreal − O1 (max) | Image | Tenu | Unreal − O2 (max) | Image | Tenu | O2 − O1 | contrôle − O2 |
@@ -175,48 +175,48 @@ tenue au saut, clips à 30 images/s rééchantillonnés à l’import) ; le rest
 | E1 | M13 buste, assis | 65 | 3,00° | 2,07° | 0 | oui | 0,04° | 37 | oui | 2,10° | 0,00° |
 | E1 | M14 levée maximale de l’assise ≤ référence + 1 cm | 65 | 1,00 cm | −1,24 cm | — | oui | −0,13 cm | — | oui | — | — |
 | E1 | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 64 | 0,00° | −14,85° | 1 | oui | −14,85° | 1 | oui | — | — |
-| E1b | M11 hanche gauche | 130 | 6,00° | 3,70° | 0 | oui | 1,65° | 15 | oui | 3,70° | 0,49° |
-| E1b | M11 cheville gauche | 130 | 6,00° | 5,67° | 70 | oui | 0,79° | 48 | oui | 5,25° | 0,09° |
-| E1b | M12 ouverture du genou gauche | 130 | 8,00° | 24,00° | 1 | **non** | 0,82° | 70 | oui | 23,91° | 0,27° |
+| E1b | M11 hanche gauche | 130 | 6,00° | 3,70° | 0 | oui | 1,86° | 77 | oui | 3,70° | 0,01° |
+| E1b | M11 cheville gauche | 130 | 6,00° | 5,67° | 70 | oui | 0,79° | 48 | oui | 5,25° | 0,01° |
+| E1b | M12 ouverture du genou gauche | 130 | 8,00° | 24,00° | 1 | **non** | 0,82° | 70 | oui | 23,91° | 0,00° |
 | E1b | M15 talon gauche | 130 | 4,00° | 0,12° | 3 | oui | 0,00° | 5 | oui | 0,12° | 0,00° |
 | E1b | M15 pointe gauche | 130 | 4,00° | 0,07° | 4 | oui | 0,01° | 6 | oui | 0,08° | 0,00° |
-| E1b | M11 hanche droite | 130 | 6,00° | 2,07° | 0 | oui | 1,68° | 15 | oui | 2,57° | 0,64° |
-| E1b | M11 cheville droite | 130 | 6,00° | 2,66° | 88 | oui | 1,73° | 15 | oui | 2,73° | 0,34° |
-| E1b | M12 ouverture du genou droit | 130 | 8,00° | 11,59° | 1 | **non** | 3,82° | 15 | oui | 11,58° | 0,06° |
+| E1b | M11 hanche droite | 130 | 6,00° | 2,07° | 0 | oui | 1,73° | 25 | oui | 2,57° | 0,01° |
+| E1b | M11 cheville droite | 130 | 6,00° | 2,66° | 88 | oui | 1,73° | 15 | oui | 2,73° | 0,00° |
+| E1b | M12 ouverture du genou droit | 130 | 8,00° | 11,59° | 1 | **non** | 3,82° | 15 | oui | 11,58° | 0,01° |
 | E1b | M15 talon droit | 130 | 4,00° | 0,03° | 4 | oui | 0,00° | 4 | oui | 0,03° | 0,00° |
 | E1b | M15 pointe droite | 130 | 4,00° | 0,02° | 3 | oui | 0,01° | 4 | oui | 0,03° | 0,00° |
-| E1b | M13 buste, assis | 130 | 3,00° | 4,31° | 26 | **non** | 2,20° | 13 | oui | 3,37° | 0,02° |
-| E1b | M14 assise au pas | 24 | 0,40 cm | 2,00 cm | 15 | **non** | 0,53 cm | 15 | **non** | 1,55 cm | 0,06 cm |
-| E1b | M14 levée maximale de l’assise ≤ référence + 1 cm | 130 | 1,00 cm | −1,23 cm | — | oui | −0,27 cm | — | oui | — | — |
+| E1b | M13 buste, assis | 130 | 3,00° | 4,33° | 25 | **non** | 2,20° | 13 | oui | 3,37° | 0,00° |
+| E1b | M14 assise au pas | 24 | 0,40 cm | 2,00 cm | 15 | **non** | 0,53 cm | 15 | **non** | 1,55 cm | 0,00 cm |
+| E1b | M14 levée maximale de l’assise ≤ référence + 1 cm | 130 | 1,00 cm | −1,25 cm | — | oui | −0,30 cm | — | oui | — | — |
 | E1b | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 129 | 0,00° | −8,44° | 52 | oui | −8,44° | 52 | oui | — | — |
-| E2g | M11 hanche gauche | 140 | 6,00° | 3,78° | 1 | oui | 1,77° | 107 | oui | 3,70° | 0,03° |
-| E2g | M11 cheville gauche | 140 | 6,00° | 7,03° | 44 | **non** | 3,89° | 44 | oui | 5,76° | 0,04° |
-| E2g | M12 ouverture du genou gauche | 140 | 8,00° | 23,93° | 1 | **non** | 16,78° | 44 | **non** | 23,90° | 0,10° |
+| E2g | M11 hanche gauche | 140 | 6,00° | 3,78° | 1 | oui | 1,77° | 107 | oui | 3,70° | 0,00° |
+| E2g | M11 cheville gauche | 140 | 6,00° | 7,03° | 44 | **non** | 3,90° | 44 | oui | 5,76° | 0,00° |
+| E2g | M12 ouverture du genou gauche | 140 | 8,00° | 23,93° | 1 | **non** | 16,78° | 44 | **non** | 23,90° | 0,00° |
 | E2g | M15 talon gauche | 140 | 4,00° | 0,14° | 4 | oui | 0,01° | 3 | oui | 0,14° | 0,00° |
 | E2g | M15 pointe gauche | 140 | 4,00° | 0,12° | 3 | oui | 0,01° | 5 | oui | 0,13° | 0,00° |
-| E2g | M11 hanche droite | 140 | 6,00° | 3,40° | 19 | oui | 2,14° | 138 | oui | 2,51° | 0,17° |
-| E2g | M11 cheville droite | 140 | 6,00° | 2,77° | 39 | oui | 1,31° | 114 | oui | 2,71° | 0,02° |
-| E2g | M12 ouverture du genou droit | 140 | 8,00° | 11,32° | 4 | **non** | 1,10° | 114 | oui | 11,25° | 0,12° |
+| E2g | M11 hanche droite | 140 | 6,00° | 3,40° | 19 | oui | 2,14° | 138 | oui | 2,51° | 0,00° |
+| E2g | M11 cheville droite | 140 | 6,00° | 2,78° | 39 | oui | 1,31° | 114 | oui | 2,71° | 0,00° |
+| E2g | M12 ouverture du genou droit | 140 | 8,00° | 11,32° | 4 | **non** | 1,10° | 114 | oui | 11,25° | 0,00° |
 | E2g | M15 talon droit | 140 | 4,00° | 0,06° | 7 | oui | 0,02° | 7 | oui | 0,08° | 0,00° |
 | E2g | M15 pointe droite | 140 | 4,00° | 0,06° | 6 | oui | 0,01° | 12 | oui | 0,06° | 0,00° |
-| E2g | M13 buste, assis | 140 | 3,00° | 5,54° | 53 | **non** | 3,20° | 18 | **non** | 3,37° | 0,03° |
+| E2g | M13 buste, assis | 140 | 3,00° | 5,54° | 53 | **non** | 3,20° | 18 | **non** | 3,37° | 0,00° |
 | E2g | M14 assise au pas | 16 | 0,40 cm | 1,00 cm | 6 | **non** | 0,03 cm | 6 | oui | 1,03 cm | 0,00 cm |
 | E2g | M14 levée maximale de l’assise ≤ référence + 1 cm | 140 | 1,00 cm | −1,09 cm | — | oui | −0,00 cm | — | oui | — | — |
 | E2g | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 139 | 0,00° | −4,22° | 89 | oui | −4,22° | 89 | oui | — | — |
-| E2d | M11 hanche gauche | 140 | 6,00° | 3,70° | 0 | oui | 2,06° | 101 | oui | 3,70° | 0,16° |
-| E2d | M11 cheville gauche | 140 | 6,00° | 3,88° | 1 | oui | 0,66° | 57 | oui | 3,87° | 0,01° |
-| E2d | M12 ouverture du genou gauche | 140 | 8,00° | 24,00° | 1 | **non** | 0,46° | 36 | oui | 23,91° | 0,11° |
+| E2d | M11 hanche gauche | 140 | 6,00° | 3,70° | 0 | oui | 2,06° | 101 | oui | 3,70° | 0,02° |
+| E2d | M11 cheville gauche | 140 | 6,00° | 3,88° | 1 | oui | 0,66° | 57 | oui | 3,87° | 0,00° |
+| E2d | M12 ouverture du genou gauche | 140 | 8,00° | 24,00° | 1 | **non** | 0,48° | 36 | oui | 23,91° | 0,02° |
 | E2d | M15 talon gauche | 140 | 4,00° | 0,12° | 3 | oui | 0,00° | 5 | oui | 0,12° | 0,00° |
 | E2d | M15 pointe gauche | 140 | 4,00° | 0,07° | 4 | oui | 0,01° | 6 | oui | 0,08° | 0,00° |
-| E2d | M11 hanche droite | 140 | 6,00° | 6,11° | 20 | **non** | 2,17° | 105 | oui | 6,71° | 0,04° |
-| E2d | M11 cheville droite | 140 | 6,00° | 4,64° | 18 | oui | 1,62° | 57 | oui | 3,85° | 0,04° |
-| E2d | M12 ouverture du genou droit | 140 | 8,00° | 21,48° | 18 | **non** | 3,43° | 23 | oui | 18,49° | 0,07° |
+| E2d | M11 hanche droite | 140 | 6,00° | 6,11° | 20 | **non** | 2,17° | 105 | oui | 6,71° | 0,00° |
+| E2d | M11 cheville droite | 140 | 6,00° | 4,64° | 18 | oui | 1,62° | 57 | oui | 3,85° | 0,00° |
+| E2d | M12 ouverture du genou droit | 140 | 8,00° | 21,48° | 18 | **non** | 3,43° | 23 | oui | 18,49° | 0,00° |
 | E2d | M15 talon droit | 140 | 4,00° | 0,03° | 4 | oui | 0,00° | 4 | oui | 0,03° | 0,00° |
 | E2d | M15 pointe droite | 140 | 4,00° | 0,02° | 3 | oui | 0,01° | 4 | oui | 0,03° | 0,00° |
-| E2d | M13 buste, assis | 140 | 3,00° | 5,86° | 99 | **non** | 2,75° | 15 | oui | 3,44° | 0,01° |
+| E2d | M13 buste, assis | 140 | 3,00° | 5,86° | 99 | **non** | 2,75° | 15 | oui | 3,44° | 0,00° |
 | E2d | M14 assise au pas | 16 | 0,40 cm | 1,55 cm | 6 | **non** | 0,06 cm | 9 | oui | 1,51 cm | 0,00 cm |
 | E2d | M14 levée maximale de l’assise ≤ référence + 1 cm | 140 | 1,00 cm | −1,07 cm | — | oui | 0,01 cm | — | oui | — | — |
-| E2d | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 139 | 0,00° | −6,44° | 23 | oui | −6,44° | 23 | oui | — | — |
+| E2d | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 139 | 0,00° | −6,43° | 23 | oui | −6,43° | 23 | oui | — | — |
 | E3 | M11 hanche gauche | 105 | 6,00° | 5,59° | 50 | oui | 1,41° | 65 | oui | 5,57° | 2,87° |
 | E3 | M11 cheville gauche | 105 | 6,00° | 3,78° | 0 | oui | 1,81° | 64 | oui | 3,78° | 1,09° |
 | E3 | M12 ouverture du genou gauche | 105 | 8,00° | 23,83° | 0 | **non** | 6,13° | 62 | oui | 23,83° | 7,13° |
@@ -231,20 +231,20 @@ tenue au saut, clips à 30 images/s rééchantillonnés à l’import) ; le rest
 | E3 | M13 buste, à l’obstacle | 44 | 5,00° | 7,14° | 50 | **non** | 0,06° | 42 | oui | 7,15° | 2,91° |
 | E3 | M14 levée maximale de l’assise ≤ référence + 1 cm | 105 | 1,00 cm | −2,12 cm | — | oui | 0,00 cm | — | oui | — | — |
 | E3 | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 104 | 0,00° | 0,12° | 41 | **non** | −4,57° | 47 | oui | — | — |
-| E3b | M11 hanche gauche | 109 | 6,00° | 5,70° | 51 | oui | 0,44° | 93 | oui | 5,71° | 1,15° |
-| E3b | M11 cheville gauche | 109 | 6,00° | 3,78° | 0 | oui | 0,43° | 56 | oui | 3,78° | 0,57° |
-| E3b | M12 ouverture du genou gauche | 109 | 8,00° | 23,83° | 0 | **non** | 0,95° | 63 | oui | 23,83° | 0,34° |
+| E3b | M11 hanche gauche | 109 | 6,00° | 5,71° | 51 | oui | 0,44° | 93 | oui | 5,71° | 1,14° |
+| E3b | M11 cheville gauche | 109 | 6,00° | 3,78° | 0 | oui | 0,43° | 56 | oui | 3,78° | 0,31° |
+| E3b | M12 ouverture du genou gauche | 109 | 8,00° | 23,83° | 0 | **non** | 0,39° | 59 | oui | 23,83° | 0,05° |
 | E3b | M15 talon gauche | 109 | 4,00° | 0,20° | 4 | oui | 0,06° | 2 | oui | 0,18° | 0,00° |
 | E3b | M15 pointe gauche | 109 | 4,00° | 0,23° | 3 | oui | 0,05° | 2 | oui | 0,20° | 0,00° |
-| E3b | M11 hanche droite | 109 | 6,00° | 6,30° | 51 | **non** | 1,08° | 77 | oui | 6,32° | 1,26° |
-| E3b | M11 cheville droite | 109 | 6,00° | 3,54° | 19 | oui | 1,39° | 77 | oui | 3,60° | 0,68° |
-| E3b | M12 ouverture du genou droit | 109 | 8,00° | 14,00° | 3 | **non** | 4,47° | 72 | oui | 13,20° | 2,50° |
+| E3b | M11 hanche droite | 109 | 6,00° | 6,32° | 52 | **non** | 0,80° | 71 | oui | 6,32° | 1,15° |
+| E3b | M11 cheville droite | 109 | 6,00° | 3,54° | 19 | oui | 1,47° | 66 | oui | 3,60° | 0,36° |
+| E3b | M12 ouverture du genou droit | 109 | 8,00° | 14,00° | 3 | **non** | 5,53° | 66 | oui | 13,20° | 0,05° |
 | E3b | M15 talon droit | 109 | 4,00° | 0,10° | 3 | oui | 0,01° | 3 | oui | 0,09° | 0,00° |
 | E3b | M15 pointe droite | 109 | 4,00° | 0,09° | 3 | oui | 0,02° | 3 | oui | 0,07° | 0,00° |
-| E3b | M13 buste, assis | 62 | 3,00° | 3,57° | 88 | **non** | 0,04° | 40 | oui | 3,57° | 0,00° |
-| E3b | M13 buste, à l’obstacle | 47 | 5,00° | 7,33° | 51 | **non** | 0,17° | 62 | oui | 7,26° | 1,50° |
+| E3b | M13 buste, assis | 62 | 3,00° | 3,57° | 88 | **non** | 0,00° | 39 | oui | 3,57° | 0,00° |
+| E3b | M13 buste, à l’obstacle | 47 | 5,00° | 7,26° | 51 | **non** | 0,01° | 63 | oui | 7,26° | 1,52° |
 | E3b | M14 levée maximale de l’assise ≤ référence + 1 cm | 109 | 1,00 cm | −1,61 cm | — | oui | 0,00 cm | — | oui | — | — |
-| E3b | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 108 | 0,00° | −5,70° | 42 | oui | −5,70° | 42 | oui | — | — |
+| E3b | M16 continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès) | 108 | 0,00° | −5,71° | 42 | oui | −5,71° | 42 | oui | — | — |
 
 ## M17 : phases du saut (images depuis le début du scénario), tolérance ± 2 images
 
@@ -298,7 +298,7 @@ Unreal) ; M5 : étrivière, porte-étrivière → œil de l’étrier (0,115 m a
 | E2g | M4 gauche | 0,64 – 0,81 cm | 0,28 – 0,64 cm | — |
 | E2g | M4 droit | 0,64 – 0,82 cm | 0,33 – 0,67 cm | — |
 | E2g | M4a gauche | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
-| E2g | M4a droit | −0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E2g | M4a droit | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
 | E2g | M5 étrivière gauche | 46,33 – 62,64 cm | 46,66 – 63,23 cm | — |
 | E2g | M5 étrivière droite | 47,79 – 56,21 cm | 48,93 – 57,66 cm | — |
 | E2g | M18 rêne gauche | 80,14 – 104,79 cm | 81,13 – 105,04 cm | 80,38 – 104,85 cm |
@@ -324,12 +324,12 @@ Unreal) ; M5 : étrivière, porte-étrivière → œil de l’étrier (0,115 m a
 | E3 | M18 écartement des poignets | 16,58 – 20,61 cm | 16,44 – 19,89 cm | 16,57 – 20,60 cm |
 | E3b | M4 gauche | 0,61 – 1,01 cm | 0,11 – 0,82 cm | — |
 | E3b | M4 droit | 0,61 – 1,01 cm | 0,11 – 0,82 cm | — |
-| E3b | M4a gauche | −0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
-| E3b | M4a droit | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
-| E3b | M5 étrivière gauche | 42,99 – 49,53 cm | 43,72 – 49,87 cm | — |
-| E3b | M5 étrivière droite | 53,05 – 61,01 cm | 53,01 – 61,16 cm | — |
-| E3b | M18 rêne gauche | 83,52 – 118,55 cm | 82,19 – 120,50 cm | 83,83 – 118,59 cm |
-| E3b | M18 rêne droite | 84,30 – 118,89 cm | 82,90 – 120,92 cm | 84,61 – 118,99 cm |
+| E3b | M4a gauche | 0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E3b | M4a droit | −0,00 – 0,00 cm | −0,00 – 0,00 cm | — |
+| E3b | M5 étrivière gauche | 42,99 – 49,58 cm | 43,72 – 49,87 cm | — |
+| E3b | M5 étrivière droite | 53,05 – 61,00 cm | 53,01 – 61,16 cm | — |
+| E3b | M18 rêne gauche | 83,37 – 118,54 cm | 82,19 – 120,50 cm | 83,83 – 118,59 cm |
+| E3b | M18 rêne droite | 84,13 – 118,88 cm | 82,90 – 120,92 cm | 84,61 – 118,99 cm |
 | E3b | M18 écartement des poignets | 16,90 – 19,67 cm | 16,81 – 18,74 cm | 16,90 – 19,66 cm |
 
 ## Entrées de la règle venues du cheval Unreal, contre celles du web (information)
@@ -341,7 +341,7 @@ Unreal) ; M5 : étrivière, porte-étrivière → œil de l’étrier (0,115 m a
 | E2g | 140 | 119 | 34 | 0 ; 0.0e+0 | 0,000 | 1,06 cm | 4,67° |
 | E2d | 140 | 14 | 32 | 0 ; 0.0e+0 | 0,000 | 1,41 cm | 4,70° |
 | E3 | 105 | 105 | 3 | 0 ; 0.0e+0 | 0,000 | 0,82 cm | 0,09° |
-| E3b | 109 | 109 | 3 | 0 ; 0.0e+0 | 0,000 | 1,04 cm | 0,21° |
+| E3b | 109 | 109 | 3 | 0 ; 0.0e+0 | 0,000 | 0,82 cm | 0,02° |
 
 Phase tenue : à l’arrêt et pendant le saut, le web fait avancer la phase par sa locomotion procédurale
 (`horse/anim.js`), non portée ; Unreal la tient à sa dernière valeur. bob et tangage : le cheval Unreal est plus petit,
