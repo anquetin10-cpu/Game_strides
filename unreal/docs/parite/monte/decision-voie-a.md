@@ -43,7 +43,8 @@ galop-gauche | saut-sommet>-web.png` contre `-unreal-b.png`.
 2. **Taille du cheval** : 3,7 % plus petit que celui du web. Le changer touche le concours déjà prouvé. **Étape S3 a
    (25/11/2026)** : cause mesurée (constante 0,01 de l'acteur ; import et clips hors de cause), taille du web derrière
    `-StridesHorseScale=web` (garrot à 1,48 m des sabots comme le web) ; relevés du concours identiques, niveau B 61 → 58
-   critères non tenus ; captures `captures/s3/`.
+   critères non tenus ; captures `captures/s3/`. **Par défaut depuis l'étape S3 b** (`-StridesHorseScale=jeu` ou
+   `-StridesMonte=ancien` : 0,01), captures du CSO refaites.
 3. **Inclinaison dans les virages** et **corps au saut** (bascule face aux barres, hauteur du corps) : non portés.
 4. **Horloge du saut et cadence** : en partie jouée, le cheval Unreal joue ses clips à vitesse 1 ; le web règle la
    cadence sur la vitesse et cale le saut sur les appuis du clip. Pendant le saut, la phase de foulée est tenue (le web la
@@ -57,7 +58,7 @@ galop-gauche | saut-sommet>-web.png` contre `-unreal-b.png`.
 |---|---|---|
 | A. Cavalière par la règle (`-StridesRider=regles`) par défaut | posture du web, à toutes les allures | **fait (étape S2 b)** : captures du concours refaites |
 | B. Main du web (`-StridesHorseLead=web`) par défaut | galop à gauche, sauts en miroir, seuil du grand saut à 8 m/s comme le web | **fait (étape S2 b)** : le jeu part au galop à gauche ; preuves du concours refaites |
-| C. Cheval à la taille du web (+3,7 %) | rênes, poignets et portée de la jambe plus proches du web (niveau B 61 → 58) | **option `-StridesHorseScale=web` (étape S3 a)** ; captures du concours à refaire au passage par défaut |
+| C. Cheval à la taille du web (+3,7 %) | rênes, poignets et portée de la jambe plus proches du web (niveau B 61 → 58) | **fait (étape S3 b)**, par défaut ; captures du concours refaites |
 | D. Sellerie du web sur le cheval Unreal | selle, bride, rênes et étriers visibles, étriers qui suivent les pieds | **fait (étape S1)**, par défaut avec A et B (étape S2 b) |
 | E. Inclinaison en virage, corps et horloge du saut | galop en cercle et saut comme le web | une étape dédiée au saut animé, avec un oracle des appuis |
 | F. Clips du trot et du grand saut réimportés à 24 images/s | trot au millimètre | clips du concours touchés, preuves à refaire |

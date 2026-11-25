@@ -29,8 +29,8 @@ namespace StridesMonteOptionsTest
 // Défaut attendu du jeu sans option (étape S2 b : monte du web ; S2 a : ancien comportement). Épinglé ici : changer le
 // défaut du jeu exige de changer ce test, dans le même commit que les preuves refaites.
 constexpr bool bExpectedWebByDefault = true;
-// Étape S3 : taille du cheval du web par défaut (S3 a : non, jeu par défaut inchangé). Épinglée de même.
-constexpr bool bExpectedWebScaleByDefault = false;
+// Étape S3 : taille du cheval du web par défaut (S3 b : oui ; S3 a : non). Épinglée de même.
+constexpr bool bExpectedWebScaleByDefault = true;
 
 struct FTestWorld
 {

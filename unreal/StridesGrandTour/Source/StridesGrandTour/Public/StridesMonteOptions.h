@@ -45,8 +45,9 @@ STRIDESGRANDTOUR_API FString Describe(const FMonte& M);
 //  - -StridesHorseScale=web | jeu : « web » = échelle du web lue dans les données, « jeu » = 0,01 ;
 //  - sans elle : faux avec -StridesMonte=ancien, sinon bWebHorseScaleByDefault.
 // Une valeur inconnue est ignorée (signalée par WebHorseScaleFromCommandLine).
-// Faux à l'étape S3 a : jeu par défaut inchangé.
-inline constexpr bool bWebHorseScaleByDefault = false;
+// Vrai depuis l'étape S3 b (25/11/2026, contrôles de S3 a conformes) : cheval à la taille du web par défaut ;
+// -StridesHorseScale=jeu ou -StridesMonte=ancien rend l'échelle 0,01.
+inline constexpr bool bWebHorseScaleByDefault = true;
 STRIDESGRANDTOUR_API bool ResolveWebHorseScale(const TCHAR* CommandLine, TArray<FString>* Unknown = nullptr);
 STRIDESGRANDTOUR_API bool WebHorseScaleFromCommandLine();
 }  // namespace StridesMonteOptions

@@ -3,7 +3,7 @@
  "generator": "scripts/unreal/rider-rules-niveau-b.mjs",
  "source": "Strides.Parite.RiderOnHorse",
  "ok": false,
- "failed": 61,
+ "failed": 58,
  "criteria": 233,
  "scenarios": [
   {
@@ -16,8 +16,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (gauche)",
      "kind": "seuil",
-     "value": 0.00115023,
-     "at": 0,
+     "value": 0.001172981,
+     "at": 49,
      "images": 65,
      "limit": 0.02,
      "cmp": "max",
@@ -30,8 +30,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |z| assis (gauche)",
      "kind": "seuil",
-     "value": 0.007717619,
-     "at": 0,
+     "value": 0.007829364,
+     "at": 16,
      "images": 65,
      "limit": 0.02,
      "cmp": "max",
@@ -44,8 +44,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (gauche)",
      "kind": "seuil",
-     "value": -0.007294057,
-     "at": 58,
+     "value": -0.007029966,
+     "at": 14,
      "images": 65,
      "limit": 0.01,
      "cmp": "max",
@@ -58,8 +58,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (gauche)",
      "kind": "seuil",
-     "value": 0.9252127259,
-     "at": 8,
+     "value": 0.9252127262,
+     "at": 14,
      "images": 65,
      "limit": 0.935,
      "cmp": "max",
@@ -72,7 +72,7 @@
      "id": "M7",
      "label": "écart au flanc, minimum (gauche)",
      "kind": "seuil",
-     "value": 0.003936288405,
+     "value": 0.004322216837,
      "at": 1,
      "images": 65,
      "limit": -0.01,
@@ -88,8 +88,8 @@
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (gauche)",
      "kind": "seuil",
-     "value": 0.1777304016,
-     "at": 1,
+     "value": 0.1840958888,
+     "at": 18,
      "images": 65,
      "limit": 0.09,
      "cmp": "min",
@@ -102,8 +102,8 @@
      "id": "M10",
      "label": "coude (gauche)",
      "kind": "seuil",
-     "value": 151.8369376,
-     "at": 7,
+     "value": 151.8369366,
+     "at": 61,
      "images": 65,
      "limit": 155,
      "cmp": "max",
@@ -130,8 +130,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (droit)",
      "kind": "seuil",
-     "value": 0.001790073,
-     "at": 0,
+     "value": 0.002015076,
+     "at": 14,
      "images": 65,
      "limit": 0.02,
      "cmp": "max",
@@ -144,8 +144,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |z| assis (droit)",
      "kind": "seuil",
-     "value": 0.008514825,
-     "at": 0,
+     "value": 0.008601275,
+     "at": 64,
      "images": 65,
      "limit": 0.02,
      "cmp": "max",
@@ -158,8 +158,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (droit)",
      "kind": "seuil",
-     "value": -0.006279064,
-     "at": 14,
+     "value": -0.009948883,
+     "at": 0,
      "images": 65,
      "limit": 0.01,
      "cmp": "max",
@@ -172,8 +172,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (droit)",
      "kind": "seuil",
-     "value": 0.9239646039,
-     "at": 64,
+     "value": 0.9224812655,
+     "at": 0,
      "images": 65,
      "limit": 0.935,
      "cmp": "max",
@@ -186,8 +186,8 @@
      "id": "M7",
      "label": "écart au flanc, minimum (droit)",
      "kind": "seuil",
-     "value": 0.001030154044,
-     "at": 1,
+     "value": 0.006220897137,
+     "at": 0,
      "images": 65,
      "limit": -0.01,
      "cmp": "min",
@@ -202,7 +202,7 @@
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (droit)",
      "kind": "seuil",
-     "value": 0.1719965146,
+     "value": 0.1777423408,
      "at": 62,
      "images": 65,
      "limit": 0.09,
@@ -216,8 +216,8 @@
      "id": "M10",
      "label": "coude (droit)",
      "kind": "seuil",
-     "value": 151.8373534,
-     "at": 42,
+     "value": 151.8373539,
+     "at": 35,
      "images": 65,
      "limit": 155,
      "cmp": "max",
@@ -230,7 +230,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (droit)",
      "kind": "seuil",
-     "value": 0.006369872669,
+     "value": 0.006369872342,
      "at": 37,
      "images": 65,
      "limit": 0.02,
@@ -262,13 +262,13 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 3.701959138,
-      "at": 0,
+      "max": 3.75693744,
+      "at": 64,
       "pass": true
      },
      "o2": {
-      "max": 0.801815478,
-      "at": 53,
+      "max": 0.1871110492,
+      "at": 54,
       "pass": true
      },
      "prop": 3.883747091,
@@ -282,13 +282,13 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 3.779959516,
-      "at": 0,
+      "max": 4.026521218,
+      "at": 13,
       "pass": true
      },
      "o2": {
-      "max": 0.8586992353,
-      "at": 64,
+      "max": 0.2777980979,
+      "at": 38,
       "pass": true
      },
      "prop": 3.7799656,
@@ -302,13 +302,13 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 23.83404607,
-      "at": 0,
+      "max": 25.01100965,
+      "at": 16,
       "pass": false
      },
      "o2": {
-      "max": 3.204681632,
-      "at": 13,
+      "max": 1.33635056,
+      "at": 49,
       "pass": true
      },
      "prop": 23.83404439,
@@ -322,12 +322,12 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 0.00007226118277,
-      "at": 4,
+      "max": 0.00002592633732,
+      "at": 5,
       "pass": true
      },
      "o2": {
-      "max": 0.00006846529365,
+      "max": 0.00002964294229,
       "at": 5,
       "pass": true
      },
@@ -342,12 +342,12 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 0.00005635336412,
+      "max": 0.00004694701713,
       "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.00005593497034,
+      "max": 0.00004736541091,
       "at": 4,
       "pass": true
      },
@@ -367,7 +367,7 @@
       "pass": true
      },
      "o2": {
-      "max": 1.256127917,
+      "max": 0.3863763727,
       "at": 52,
       "pass": true
      },
@@ -382,13 +382,13 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 1.442847588,
-      "at": 64,
+      "max": 0.6103058104,
+      "at": 14,
       "pass": true
      },
      "o2": {
-      "max": 0.897714615,
-      "at": 64,
+      "max": 0.8873784802,
+      "at": 42,
       "pass": true
      },
      "prop": 0.576248282,
@@ -402,13 +402,13 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 11.25460405,
-      "at": 0,
+      "max": 12.40468765,
+      "at": 15,
       "pass": false
      },
      "o2": {
-      "max": 5.04992411,
-      "at": 64,
+      "max": 1.149568585,
+      "at": 41,
       "pass": true
      },
      "prop": 11.27926052,
@@ -422,13 +422,13 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 0.0008482325904,
-      "at": 2,
+      "max": 0.0006859601081,
+      "at": 5,
       "pass": true
      },
      "o2": {
-      "max": 0.0008488380623,
-      "at": 2,
+      "max": 0.0006856375198,
+      "at": 5,
       "pass": true
      },
      "prop": 0.000001352410695,
@@ -442,13 +442,13 @@
      "unit": "°",
      "images": 65,
      "o1": {
-      "max": 0.0008645477768,
-      "at": 2,
+      "max": 0.0007307372574,
+      "at": 5,
       "pass": true
      },
      "o2": {
-      "max": 0.0008658032339,
-      "at": 2,
+      "max": 0.0007288454047,
+      "at": 5,
       "pass": true
      },
      "prop": 0.00000308575673,
@@ -500,13 +500,13 @@
      "unit": "°",
      "images": 64,
      "o1": {
-      "max": -14.3934565,
+      "max": -14.85012988,
       "at": 1,
       "pass": true,
       "over": 0
      },
      "o2": {
-      "max": -14.3934565,
+      "max": -14.85012988,
       "at": 1,
       "pass": true,
       "over": 0
@@ -517,7 +517,7 @@
    "tack": {
     "M4L": {
      "ue": [
-      0.006366129171,
+      0.006366128878,
       0.006370084309
      ],
      "o1": [
@@ -528,8 +528,8 @@
     },
     "M4R": {
      "ue": [
-      0.006365917271,
-      0.006369872669
+      0.006365917597,
+      0.006369872342
      ],
      "o1": [
       0.003377017695,
@@ -539,8 +539,8 @@
     },
     "M4aL": {
      "ue": [
-      1.190700143e-10,
-      2.083213388e-9
+      -9.102379094e-11,
+      2.006077702e-9
      ],
      "o1": [
       -3.261280135e-16,
@@ -550,8 +550,8 @@
     },
     "M4aR": {
      "ue": [
-      2.329654525e-11,
-      2.062198592e-9
+      1.190700143e-10,
+      2.047362118e-9
      ],
      "o1": [
       -3.070460552e-16,
@@ -561,8 +561,8 @@
     },
     "M5L": {
      "ue": [
-      0.4915433291,
-      0.4951354605
+      0.4849823535,
+      0.4882968643
      ],
      "o1": [
       0.4792871444,
@@ -572,8 +572,8 @@
     },
     "M5R": {
      "ue": [
-      0.5347511534,
-      0.5374465835
+      0.5273767787,
+      0.5297210707
      ],
      "o1": [
       0.5292295441,
@@ -583,8 +583,8 @@
     },
     "reneL": {
      "ue": [
-      0.9691490401,
-      0.9918862063
+      1.02491859,
+      1.045705088
      ],
      "o1": [
       1.026490091,
@@ -597,8 +597,8 @@
     },
     "reneR": {
      "ue": [
-      0.9577685808,
-      0.971785996
+      1.010626019,
+      1.027137578
      ],
      "o1": [
       1.015058092,
@@ -611,8 +611,8 @@
     },
     "ecartPoignets": {
      "ue": [
-      0.1719687656,
-      0.1750730612
+      0.1744568713,
+      0.1750946053
      ],
      "o1": [
       0.1693989986,
@@ -628,7 +628,7 @@
     "phaseRewritten": 0,
     "phaseMaxRewritten": 0,
     "phaseMaxHeld": 0,
-    "bobMax": 0.07500422302,
+    "bobMax": 0.007923627731,
     "pitchMaxDeg": 0.05820961913
    }
   },
@@ -656,8 +656,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |z| assis (gauche)",
      "kind": "seuil",
-     "value": 0.008389912,
-     "at": 2,
+     "value": 0.007717619,
+     "at": 0,
      "images": 86,
      "limit": 0.02,
      "cmp": "max",
@@ -670,8 +670,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.0110883776,
-     "at": 26,
+     "value": 0.006862673944,
+     "at": 71,
      "images": 44,
      "limit": 0.03,
      "cmp": "max",
@@ -684,8 +684,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.00607961252,
-     "at": 46,
+     "value": 0.00520649996,
+     "at": 45,
      "images": 44,
      "limit": 0.05,
      "cmp": "max",
@@ -698,8 +698,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (gauche)",
      "kind": "seuil",
-     "value": -0.007758107,
-     "at": 126,
+     "value": 0.000202767,
+     "at": 79,
      "images": 130,
      "limit": 0.01,
      "cmp": "max",
@@ -712,8 +712,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (gauche)",
      "kind": "seuil",
-     "value": 0.956316069,
-     "at": 75,
+     "value": 0.9477943847,
+     "at": 77,
      "images": 86,
      "limit": 0.935,
      "cmp": "max",
@@ -726,8 +726,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.9490616698,
-     "at": 45,
+     "value": 0.9459199555,
+     "at": 25,
      "images": 44,
      "limit": 0.955,
      "cmp": "max",
@@ -740,8 +740,8 @@
      "id": "M7",
      "label": "écart au flanc, minimum (gauche)",
      "kind": "seuil",
-     "value": -0.0820417345,
-     "at": 60,
+     "value": -0.082752999,
+     "at": 47,
      "images": 130,
      "limit": -0.01,
      "cmp": "min",
@@ -750,13 +750,13 @@
      "o1": -0.06289879715,
      "o2": -0.06029026761,
      "runBelow1": 8,
-     "below2": 24
+     "below2": 34
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (gauche)",
      "kind": "seuil",
-     "value": 0.09155236014,
+     "value": 0.09570397407,
      "at": 60,
      "images": 130,
      "limit": 0.09,
@@ -770,7 +770,7 @@
      "id": "M10",
      "label": "coude (gauche)",
      "kind": "seuil",
-     "value": 151.8369531,
+     "value": 151.8369539,
      "at": 46,
      "images": 130,
      "limit": 155,
@@ -798,8 +798,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (droit)",
      "kind": "seuil",
-     "value": 0.00182766,
-     "at": 6,
+     "value": 0.001820195,
+     "at": 2,
      "images": 86,
      "limit": 0.02,
      "cmp": "max",
@@ -826,8 +826,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.006790552392,
-     "at": 74,
+     "value": 0.001208845804,
+     "at": 47,
      "images": 44,
      "limit": 0.03,
      "cmp": "max",
@@ -840,8 +840,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.00562314012,
-     "at": 40,
+     "value": 0.00482641864,
+     "at": 48,
      "images": 44,
      "limit": 0.05,
      "cmp": "max",
@@ -854,8 +854,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (droit)",
      "kind": "seuil",
-     "value": -0.006838735,
-     "at": 7,
+     "value": 0.008705716,
+     "at": 89,
      "images": 130,
      "limit": 0.01,
      "cmp": "max",
@@ -868,8 +868,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (droit)",
      "kind": "seuil",
-     "value": 0.9459200249,
-     "at": 75,
+     "value": 0.9413335875,
+     "at": 38,
      "images": 86,
      "limit": 0.935,
      "cmp": "max",
@@ -896,8 +896,8 @@
      "id": "M7",
      "label": "écart au flanc, minimum (droit)",
      "kind": "seuil",
-     "value": -0.0631219925,
-     "at": 22,
+     "value": -0.0607565945,
+     "at": 71,
      "images": 130,
      "limit": -0.01,
      "cmp": "min",
@@ -905,14 +905,14 @@
      "pass": false,
      "o1": -0.1516563392,
      "o2": -0.08213362983,
-     "runBelow1": 7,
-     "below2": 22
+     "runBelow1": 14,
+     "below2": 29
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (droit)",
      "kind": "seuil",
-     "value": 0.09151373209,
+     "value": 0.09567033572,
      "at": 60,
      "images": 130,
      "limit": 0.09,
@@ -926,8 +926,8 @@
      "id": "M10",
      "label": "coude (droit)",
      "kind": "seuil",
-     "value": 151.8373562,
-     "at": 96,
+     "value": 151.837358,
+     "at": 98,
      "images": 130,
      "limit": 155,
      "cmp": "max",
@@ -972,13 +972,13 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 5.602044885,
-      "at": 54,
+      "max": 5.973378169,
+      "at": 51,
       "pass": true
      },
      "o2": {
-      "max": 4.770907258,
-      "at": 45,
+      "max": 4.622476175,
+      "at": 62,
       "pass": true
      },
      "prop": 3.701923646,
@@ -992,13 +992,13 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 7.377957062,
-      "at": 65,
+      "max": 7.807622621,
+      "at": 63,
       "pass": false
      },
      "o2": {
-      "max": 3.337189873,
-      "at": 57,
+      "max": 4.65437874,
+      "at": 46,
       "pass": true
      },
      "prop": 5.251059042,
@@ -1012,13 +1012,13 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 23.83404607,
-      "at": 0,
+      "max": 23.99935495,
+      "at": 1,
       "pass": false
      },
      "o2": {
-      "max": 6.750634276,
-      "at": 21,
+      "max": 5.609688008,
+      "at": 20,
       "pass": true
      },
      "prop": 23.91004021,
@@ -1032,13 +1032,13 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 0.1254533324,
+      "max": 0.1191826734,
       "at": 3,
       "pass": true
      },
      "o2": {
-      "max": 0.01670703622,
-      "at": 1,
+      "max": 0.002233794538,
+      "at": 4,
       "pass": true
      },
      "prop": 0.1172019553,
@@ -1052,13 +1052,13 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 0.07231819036,
-      "at": 3,
+      "max": 0.07127025506,
+      "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.008777733951,
-      "at": 1,
+      "max": 0.006156521202,
+      "at": 6,
       "pass": true
      },
      "prop": 0.075875631,
@@ -1072,13 +1072,13 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 5.418114228,
-      "at": 52,
+      "max": 4.977981488,
+      "at": 53,
       "pass": true
      },
      "o2": {
-      "max": 4.975969882,
-      "at": 52,
+      "max": 4.489962756,
+      "at": 53,
       "pass": true
      },
      "prop": 2.573416861,
@@ -1092,12 +1092,12 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 7.454556056,
+      "max": 7.445777611,
       "at": 13,
       "pass": false
      },
      "o2": {
-      "max": 7.519641869,
+      "max": 7.510863424,
       "at": 13,
       "pass": false
      },
@@ -1112,12 +1112,12 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 14.64339322,
-      "at": 4,
+      "max": 13.18576509,
+      "at": 15,
       "pass": false
      },
      "o2": {
-      "max": 18.78100622,
+      "max": 18.55133567,
       "at": 13,
       "pass": false
      },
@@ -1132,12 +1132,12 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 0.04964224665,
-      "at": 12,
+      "max": 0.02008552085,
+      "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.0547911111,
+      "max": 0.01388285846,
       "at": 12,
       "pass": true
      },
@@ -1152,12 +1152,12 @@
      "unit": "°",
      "images": 130,
      "o1": {
-      "max": 0.0701035899,
-      "at": 12,
+      "max": 0.02323323378,
+      "at": 9,
       "pass": true
      },
      "o2": {
-      "max": 0.07721793995,
+      "max": 0.01943308131,
       "at": 12,
       "pass": true
      },
@@ -1177,7 +1177,7 @@
       "pass": false
      },
      "o2": {
-      "max": 2.074766774,
+      "max": 2.074766787,
       "at": 16,
       "pass": true
      },
@@ -1192,13 +1192,13 @@
      "unit": "m",
      "images": 24,
      "o1": {
-      "max": 0.01438044611,
-      "at": 7,
+      "max": 0.02688984762,
+      "at": 16,
       "pass": false
      },
      "o2": {
-      "max": 0.01340661665,
-      "at": 13,
+      "max": 0.01219533793,
+      "at": 16,
       "pass": false
      },
      "prop": 0.01552531488,
@@ -1212,14 +1212,14 @@
      "unit": "m",
      "images": 130,
      "o1": {
-      "max": 0.000728759445,
+      "max": -0.007500315555,
       "at": null,
       "pass": true
      },
      "o2": {
-      "max": 0.01029433981,
+      "max": 0.002065264813,
       "at": null,
-      "pass": false
+      "pass": true
      }
     },
     {
@@ -1230,14 +1230,14 @@
      "unit": "°",
      "images": 129,
      "o1": {
-      "max": -6.954848341,
-      "at": 60,
+      "max": -7.448979222,
+      "at": 71,
       "pass": true,
       "over": 0
      },
      "o2": {
-      "max": -6.954848341,
-      "at": 60,
+      "max": -7.448979222,
+      "at": 71,
       "pass": true,
       "over": 0
      }
@@ -1269,8 +1269,8 @@
     },
     "M4aL": {
      "ue": [
-      -1.094267177e-10,
-      1.992772733e-9
+      2.043240906e-10,
+      2.131738105e-9
      ],
      "o1": [
       -1.708355679e-14,
@@ -1280,8 +1280,8 @@
     },
     "M4aR": {
      "ue": [
-      -8.806479677e-11,
-      1.994932062e-9
+      -1.697299089e-10,
+      2.023240931e-9
      ],
      "o1": [
       -1.708355679e-14,
@@ -1291,8 +1291,8 @@
     },
     "M5L": {
      "ue": [
-      0.4700013311,
-      0.5467465267
+      0.4638377487,
+      0.54244416
      ],
      "o1": [
       0.4703019463,
@@ -1302,8 +1302,8 @@
     },
     "M5R": {
      "ue": [
-      0.4909704969,
-      0.5377154607
+      0.4841564971,
+      0.5404783166
      ],
      "o1": [
       0.4991306305,
@@ -1313,8 +1313,8 @@
     },
     "reneL": {
      "ue": [
-      0.8897896717,
-      1.217104434
+      0.9401815695,
+      1.270580076
      ],
      "o1": [
       0.9406507933,
@@ -1327,8 +1327,8 @@
     },
     "reneR": {
      "ue": [
-      0.8960341984,
-      1.135838998
+      0.9467533983,
+      1.185012655
      ],
      "o1": [
       0.9583691863,
@@ -1341,8 +1341,8 @@
     },
     "ecartPoignets": {
      "ue": [
-      0.1697227782,
-      0.1838705646
+      0.1698849692,
+      0.1852631369
      ],
      "o1": [
       0.1690887794,
@@ -1358,7 +1358,7 @@
     "phaseRewritten": 85,
     "phaseMaxRewritten": 4.999312631e-10,
     "phaseMaxHeld": 0.2678807259,
-    "bobMax": 0.07712335768,
+    "bobMax": 0.01240259755,
     "pitchMaxDeg": 3.866290919
    }
   },
@@ -1372,8 +1372,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (gauche)",
      "kind": "seuil",
-     "value": 0.00115023,
-     "at": 0,
+     "value": 0.004637482,
+     "at": 3,
      "images": 34,
      "limit": 0.02,
      "cmp": "max",
@@ -1386,8 +1386,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |z| assis (gauche)",
      "kind": "seuil",
-     "value": 0.007717619,
-     "at": 0,
+     "value": 0.007750046,
+     "at": 1,
      "images": 34,
      "limit": 0.02,
      "cmp": "max",
@@ -1400,8 +1400,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.006074187352,
-     "at": 45,
+     "value": 0.00090573212,
+     "at": 22,
      "images": 106,
      "limit": 0.03,
      "cmp": "max",
@@ -1414,7 +1414,7 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.00476399958,
+     "value": 0.00482095058,
      "at": 138,
      "images": 106,
      "limit": 0.05,
@@ -1428,8 +1428,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (gauche)",
      "kind": "seuil",
-     "value": -0.003364919,
-     "at": 5,
+     "value": 0.007455355,
+     "at": 8,
      "images": 140,
      "limit": 0.01,
      "cmp": "max",
@@ -1442,8 +1442,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (gauche)",
      "kind": "seuil",
-     "value": 0.9273228235,
-     "at": 31,
+     "value": 0.9259818435,
+     "at": 38,
      "images": 34,
      "limit": 0.935,
      "cmp": "max",
@@ -1456,7 +1456,7 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.9459199438,
+     "value": 0.9459199423,
      "at": 54,
      "images": 106,
      "limit": 0.955,
@@ -1470,8 +1470,8 @@
      "id": "M7",
      "label": "écart au flanc, minimum (gauche)",
      "kind": "seuil",
-     "value": -0.1425216728,
-     "at": 80,
+     "value": -0.144381816,
+     "at": 57,
      "images": 140,
      "limit": -0.01,
      "cmp": "min",
@@ -1480,13 +1480,13 @@
      "o1": -0.07466411285,
      "o2": -0.08462726064,
      "runBelow1": 118,
-     "below2": 132
+     "below2": 131
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (gauche)",
      "kind": "seuil",
-     "value": 0.08637019903,
+     "value": 0.0892501744,
      "at": 84,
      "images": 140,
      "limit": 0.09,
@@ -1500,7 +1500,7 @@
      "id": "M10",
      "label": "coude (gauche)",
      "kind": "seuil",
-     "value": 151.8369504,
+     "value": 151.8369523,
      "at": 45,
      "images": 140,
      "limit": 155,
@@ -1514,7 +1514,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (gauche)",
      "kind": "seuil",
-     "value": 0.00707409633,
+     "value": 0.007074095869,
      "at": 53,
      "images": 140,
      "limit": 0.02,
@@ -1528,8 +1528,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (droit)",
      "kind": "seuil",
-     "value": 0.001790073,
-     "at": 0,
+     "value": 0.001869218,
+     "at": 5,
      "images": 34,
      "limit": 0.02,
      "cmp": "max",
@@ -1542,8 +1542,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |z| assis (droit)",
      "kind": "seuil",
-     "value": 0.008767345,
-     "at": 2,
+     "value": 0.008514825,
+     "at": 0,
      "images": 34,
      "limit": 0.02,
      "cmp": "max",
@@ -1556,8 +1556,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.01202481404,
-     "at": 44,
+     "value": 0.00724940432,
+     "at": 91,
      "images": 106,
      "limit": 0.03,
      "cmp": "max",
@@ -1570,7 +1570,7 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.00569401756,
+     "value": 0.00563702156,
      "at": 60,
      "images": 106,
      "limit": 0.05,
@@ -1584,8 +1584,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (droit)",
      "kind": "seuil",
-     "value": -0.006628414,
-     "at": 8,
+     "value": 0.004494415,
+     "at": 24,
      "images": 140,
      "limit": 0.01,
      "cmp": "max",
@@ -1598,8 +1598,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (droit)",
      "kind": "seuil",
-     "value": 0.9459200257,
-     "at": 40,
+     "value": 0.9459200253,
+     "at": 39,
      "images": 34,
      "limit": 0.935,
      "cmp": "max",
@@ -1612,13 +1612,13 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.9605020413,
-     "at": 46,
+     "value": 0.9537603582,
+     "at": 24,
      "images": 106,
      "limit": 0.955,
      "cmp": "max",
      "unit": "",
-     "pass": false,
+     "pass": true,
      "o1": 0.9459205538,
      "o2": 0.9459199827
     },
@@ -1626,8 +1626,8 @@
      "id": "M7",
      "label": "écart au flanc, minimum (droit)",
      "kind": "seuil",
-     "value": -0.04192044105,
-     "at": 39,
+     "value": -0.05700061471,
+     "at": 16,
      "images": 140,
      "limit": -0.01,
      "cmp": "min",
@@ -1635,14 +1635,14 @@
      "pass": false,
      "o1": -0.2478688714,
      "o2": -0.230708988,
-     "runBelow1": 6,
-     "below2": 5
+     "runBelow1": 8,
+     "below2": 10
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (droit)",
      "kind": "seuil",
-     "value": 0.08608952786,
+     "value": 0.08891863858,
      "at": 84,
      "images": 140,
      "limit": 0.09,
@@ -1656,8 +1656,8 @@
      "id": "M10",
      "label": "coude (droit)",
      "kind": "seuil",
-     "value": 151.8373541,
-     "at": 40,
+     "value": 151.8373553,
+     "at": 9,
      "images": 140,
      "limit": 155,
      "cmp": "max",
@@ -1670,7 +1670,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (droit)",
      "kind": "seuil",
-     "value": 0.007073848868,
+     "value": 0.007073849329,
      "at": 53,
      "images": 140,
      "limit": 0.02,
@@ -1702,13 +1702,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 9.154451038,
+      "max": 8.526444059,
       "at": 103,
       "pass": false
      },
      "o2": {
-      "max": 8.088448614,
-      "at": 108,
+      "max": 7.14028977,
+      "at": 103,
       "pass": false
      },
      "prop": 3.701923646,
@@ -1722,12 +1722,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 10.78408236,
+      "max": 9.960459754,
       "at": 44,
       "pass": false
      },
      "o2": {
-      "max": 7.647961505,
+      "max": 6.824338898,
       "at": 44,
       "pass": false
      },
@@ -1742,12 +1742,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 23.83404607,
-      "at": 0,
+      "max": 23.92951293,
+      "at": 1,
       "pass": false
      },
      "o2": {
-      "max": 16.77964719,
+      "max": 16.33080352,
       "at": 43,
       "pass": false
      },
@@ -1762,13 +1762,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.1461903431,
+      "max": 0.1335384193,
       "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.03047084528,
-      "at": 5,
+      "max": 0.02901542723,
+      "at": 7,
       "pass": true
      },
      "prop": 0.1441625199,
@@ -1782,12 +1782,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.1213297842,
+      "max": 0.1202987745,
       "at": 3,
       "pass": true
      },
      "o2": {
-      "max": 0.03061236814,
+      "max": 0.007971327798,
       "at": 5,
       "pass": true
      },
@@ -1802,12 +1802,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 15.61821345,
-      "at": 16,
+      "max": 15.57932193,
+      "at": 19,
       "pass": false
      },
      "o2": {
-      "max": 14.03725479,
+      "max": 13.8095647,
       "at": 16,
       "pass": false
      },
@@ -1822,13 +1822,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 3.724502338,
-      "at": 39,
+      "max": 3.709932716,
+      "at": 24,
       "pass": true
      },
      "o2": {
-      "max": 3.985731102,
-      "at": 9,
+      "max": 3.929730634,
+      "at": 7,
       "pass": true
      },
      "prop": 2.713393307,
@@ -1842,13 +1842,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 16.58404302,
-      "at": 7,
+      "max": 16.39119383,
+      "at": 6,
       "pass": false
      },
      "o2": {
-      "max": 14.17046855,
-      "at": 8,
+      "max": 13.15201249,
+      "at": 7,
       "pass": false
      },
      "prop": 11.25460008,
@@ -1862,13 +1862,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.1124909198,
-      "at": 8,
+      "max": 0.0791019586,
+      "at": 7,
       "pass": true
      },
      "o2": {
-      "max": 0.05783981045,
-      "at": 11,
+      "max": 0.03943752533,
+      "at": 5,
       "pass": true
      },
      "prop": 0.07656716686,
@@ -1882,12 +1882,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.07500709248,
-      "at": 8,
+      "max": 0.06557697072,
+      "at": 12,
       "pass": true
      },
      "o2": {
-      "max": 0.03577332468,
+      "max": 0.07397658878,
       "at": 12,
       "pass": true
      },
@@ -1922,13 +1922,13 @@
      "unit": "m",
      "images": 16,
      "o1": {
-      "max": 0.01173731299,
-      "at": 21,
+      "max": 0.01156873899,
+      "at": 19,
       "pass": false
      },
      "o2": {
-      "max": 0.01253603224,
-      "at": 21,
+      "max": 0.01236745824,
+      "at": 19,
       "pass": false
      },
      "prop": 0.01030001182,
@@ -1942,12 +1942,12 @@
      "unit": "m",
      "images": 140,
      "o1": {
-      "max": 0.02079354117,
+      "max": 0.01481506317,
       "at": null,
       "pass": false
      },
      "o2": {
-      "max": 0.03164656027,
+      "max": 0.02566808227,
       "at": null,
       "pass": false
      }
@@ -1960,14 +1960,14 @@
      "unit": "°",
      "images": 139,
      "o1": {
-      "max": -4.197043938,
-      "at": 84,
+      "max": -4.369406107,
+      "at": 138,
       "pass": true,
       "over": 0
      },
      "o2": {
-      "max": -4.197043938,
-      "at": 84,
+      "max": -4.369406107,
+      "at": 138,
       "pass": true,
       "over": 0
      }
@@ -1978,7 +1978,7 @@
     "M4L": {
      "ue": [
       0.006265387912,
-      0.00707409633
+      0.007074095869
      ],
      "o1": [
       0.00279552906,
@@ -1988,8 +1988,8 @@
     },
     "M4R": {
      "ue": [
-      0.00626518813,
-      0.007073848868
+      0.006265188405,
+      0.007073849329
      ],
      "o1": [
       0.003261276892,
@@ -2010,8 +2010,8 @@
     },
     "M4aR": {
      "ue": [
-      8.201380894e-11,
-      2.033954482e-9
+      2.352387521e-10,
+      2.096911296e-9
      ],
      "o1": [
       -3.380802582e-14,
@@ -2021,8 +2021,8 @@
     },
     "M5L": {
      "ue": [
-      0.4204049102,
-      0.5089546706
+      0.4175723948,
+      0.5084051166
      ],
      "o1": [
       0.4666239876,
@@ -2032,8 +2032,8 @@
     },
     "M5R": {
      "ue": [
-      0.5268002712,
-      0.6350441311
+      0.5228177213,
+      0.6342095498
      ],
      "o1": [
       0.4893472322,
@@ -2043,8 +2043,8 @@
     },
     "reneL": {
      "ue": [
-      0.8126178372,
-      1.053887028
+      0.8534398766,
+      1.102083175
      ],
      "o1": [
       0.8112985017,
@@ -2057,8 +2057,8 @@
     },
     "reneR": {
      "ue": [
-      0.8894151415,
-      1.142731802
+      0.9350916831,
+      1.195531534
      ],
      "o1": [
       0.9223293772,
@@ -2071,8 +2071,8 @@
     },
     "ecartPoignets": {
      "ue": [
-      0.1695383757,
-      0.1813672635
+      0.1694157344,
+      0.1817921815
      ],
      "o1": [
       0.1687920228,
@@ -2088,7 +2088,7 @@
     "phaseRewritten": 138,
     "phaseMaxRewritten": 4.989885172e-10,
     "phaseMaxHeld": 0,
-    "bobMax": 0.07737099277,
+    "bobMax": 0.0231778191,
     "pitchMaxDeg": 5.585449146
    }
   },
@@ -2116,8 +2116,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |z| assis (gauche)",
      "kind": "seuil",
-     "value": 0.008389912,
-     "at": 2,
+     "value": 0.007717619,
+     "at": 0,
      "images": 32,
      "limit": 0.02,
      "cmp": "max",
@@ -2130,8 +2130,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.00386886894,
-     "at": 98,
+     "value": 0.00421071898,
+     "at": 39,
      "images": 108,
      "limit": 0.03,
      "cmp": "max",
@@ -2144,8 +2144,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.00617873078,
-     "at": 121,
+     "value": 0.006033495,
+     "at": 28,
      "images": 108,
      "limit": 0.05,
      "cmp": "max",
@@ -2158,8 +2158,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (gauche)",
      "kind": "seuil",
-     "value": -0.008368569,
-     "at": 121,
+     "value": -0.006274833,
+     "at": 4,
      "images": 140,
      "limit": 0.01,
      "cmp": "max",
@@ -2172,7 +2172,7 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (gauche)",
      "kind": "seuil",
-     "value": 0.9459199565,
+     "value": 0.9457640888,
      "at": 36,
      "images": 32,
      "limit": 0.935,
@@ -2186,8 +2186,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.9571272355,
-     "at": 115,
+     "value": 0.957336657,
+     "at": 112,
      "images": 108,
      "limit": 0.955,
      "cmp": "max",
@@ -2200,8 +2200,8 @@
      "id": "M7",
      "label": "écart au flanc, minimum (gauche)",
      "kind": "seuil",
-     "value": -0.06041404129,
-     "at": 2,
+     "value": -0.05790690048,
+     "at": 3,
      "images": 140,
      "limit": -0.01,
      "cmp": "min",
@@ -2209,20 +2209,20 @@
      "pass": false,
      "o1": -0.1354285271,
      "o2": -0.1109293153,
-     "runBelow1": 6,
+     "runBelow1": 7,
      "below2": 12
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (gauche)",
      "kind": "seuil",
-     "value": 0.08988747083,
+     "value": 0.09354227328,
      "at": 84,
      "images": 140,
      "limit": 0.09,
      "cmp": "min",
      "unit": "m",
-     "pass": false,
+     "pass": true,
      "o1": 0.0901012154,
      "o2": 0.09158938743
     },
@@ -2230,7 +2230,7 @@
      "id": "M10",
      "label": "coude (gauche)",
      "kind": "seuil",
-     "value": 151.8369496,
+     "value": 151.8369514,
      "at": 45,
      "images": 140,
      "limit": 155,
@@ -2244,7 +2244,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (gauche)",
      "kind": "seuil",
-     "value": 0.006964168485,
+     "value": 0.006963994014,
      "at": 6,
      "images": 140,
      "limit": 0.02,
@@ -2258,8 +2258,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (droit)",
      "kind": "seuil",
-     "value": 0.00182766,
-     "at": 6,
+     "value": 0.001820195,
+     "at": 2,
      "images": 32,
      "limit": 0.02,
      "cmp": "max",
@@ -2286,8 +2286,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.00489265556,
-     "at": 99,
+     "value": 0.00090504298,
+     "at": 39,
      "images": 108,
      "limit": 0.03,
      "cmp": "max",
@@ -2300,7 +2300,7 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.00495984,
+     "value": 0.004921965,
      "at": 22,
      "images": 108,
      "limit": 0.05,
@@ -2314,7 +2314,7 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (droit)",
      "kind": "seuil",
-     "value": -0.006838735,
+     "value": -0.007246802,
      "at": 7,
      "images": 140,
      "limit": 0.01,
@@ -2328,8 +2328,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (droit)",
      "kind": "seuil",
-     "value": 0.9252127944,
-     "at": 16,
+     "value": 0.926544908,
+     "at": 36,
      "images": 32,
      "limit": 0.935,
      "cmp": "max",
@@ -2342,8 +2342,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.9459200217,
-     "at": 26,
+     "value": 0.9459200204,
+     "at": 54,
      "images": 108,
      "limit": 0.955,
      "cmp": "max",
@@ -2356,7 +2356,7 @@
      "id": "M7",
      "label": "écart au flanc, minimum (droit)",
      "kind": "seuil",
-     "value": -0.1421420497,
+     "value": -0.1593681479,
      "at": 23,
      "images": 140,
      "limit": -0.01,
@@ -2365,14 +2365,14 @@
      "pass": false,
      "o1": -0.01512922212,
      "o2": -0.02243932065,
-     "runBelow1": 22,
-     "below2": 79
+     "runBelow1": 36,
+     "below2": 94
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (droit)",
      "kind": "seuil",
-     "value": 0.09010965415,
+     "value": 0.09368622326,
      "at": 84,
      "images": 140,
      "limit": 0.09,
@@ -2400,7 +2400,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (droit)",
      "kind": "seuil",
-     "value": 0.006951016004,
+     "value": 0.006950015278,
      "at": 6,
      "images": 140,
      "limit": 0.02,
@@ -2432,12 +2432,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 12.31245137,
+      "max": 10.20243382,
       "at": 40,
       "pass": false
      },
      "o2": {
-      "max": 10.50936392,
+      "max": 8.39934637,
       "at": 40,
       "pass": false
      },
@@ -2452,13 +2452,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 3.779959516,
-      "at": 0,
+      "max": 3.883574838,
+      "at": 1,
       "pass": true
      },
      "o2": {
-      "max": 2.958859747,
-      "at": 23,
+      "max": 3.481995189,
+      "at": 22,
       "pass": true
      },
      "prop": 3.870017081,
@@ -2472,14 +2472,14 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 23.83404607,
-      "at": 0,
+      "max": 23.99935495,
+      "at": 1,
       "pass": false
      },
      "o2": {
-      "max": 7.187376821,
-      "at": 40,
-      "pass": true
+      "max": 9.597952324,
+      "at": 37,
+      "pass": false
      },
      "prop": 23.91004021,
      "ctl": 0.1139155855
@@ -2492,13 +2492,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.1254533212,
+      "max": 0.1191826734,
       "at": 3,
       "pass": true
      },
      "o2": {
-      "max": 0.01670703622,
-      "at": 1,
+      "max": 0.002233794538,
+      "at": 4,
       "pass": true
      },
      "prop": 0.1172019553,
@@ -2512,12 +2512,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.07231865105,
-      "at": 3,
+      "max": 0.07127025506,
+      "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.02109723224,
+      "max": 0.01540978,
       "at": 12,
       "pass": true
      },
@@ -2532,12 +2532,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 9.26664994,
-      "at": 67,
+      "max": 8.887915105,
+      "at": 54,
       "pass": false
      },
      "o2": {
-      "max": 9.262157286,
+      "max": 8.664032623,
       "at": 63,
       "pass": false
      },
@@ -2552,13 +2552,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 14.67415035,
+      "max": 14.322925,
       "at": 79,
       "pass": false
      },
      "o2": {
-      "max": 11.84216431,
-      "at": 92,
+      "max": 11.47085867,
+      "at": 91,
       "pass": false
      },
      "prop": 3.846414463,
@@ -2572,13 +2572,13 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 19.99250687,
+      "max": 19.95849885,
       "at": 82,
       "pass": false
      },
      "o2": {
-      "max": 21.23600412,
-      "at": 21,
+      "max": 21.14682924,
+      "at": 95,
       "pass": false
      },
      "prop": 18.49005836,
@@ -2592,12 +2592,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.04557574562,
-      "at": 12,
+      "max": 0.02008552085,
+      "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.05423216291,
+      "max": 0.01332391028,
       "at": 12,
       "pass": true
      },
@@ -2612,12 +2612,12 @@
      "unit": "°",
      "images": 140,
      "o1": {
-      "max": 0.07058943759,
-      "at": 12,
+      "max": 0.02358168391,
+      "at": 9,
       "pass": true
      },
      "o2": {
-      "max": 0.08004792476,
+      "max": 0.02226306611,
       "at": 12,
       "pass": true
      },
@@ -2652,13 +2652,13 @@
      "unit": "m",
      "images": 16,
      "o1": {
-      "max": 0.02238766299,
-      "at": 20,
+      "max": 0.02044089699,
+      "at": 13,
       "pass": false
      },
      "o2": {
-      "max": 0.02321709524,
-      "at": 21,
+      "max": 0.02123961624,
+      "at": 13,
       "pass": false
      },
      "prop": 0.01511101879,
@@ -2672,12 +2672,12 @@
      "unit": "m",
      "images": 140,
      "o1": {
-      "max": 0.02232794117,
+      "max": 0.01508758117,
       "at": null,
       "pass": false
      },
      "o2": {
-      "max": 0.03307419747,
+      "max": 0.02583383747,
       "at": null,
       "pass": false
      }
@@ -2690,14 +2690,14 @@
      "unit": "°",
      "images": 139,
      "o1": {
-      "max": -6.478810667,
-      "at": 84,
+      "max": -6.963424859,
+      "at": 23,
       "pass": true,
       "over": 0
      },
      "o2": {
-      "max": -6.478810667,
-      "at": 84,
+      "max": -6.963424859,
+      "at": 23,
       "pass": true,
       "over": 0
      }
@@ -2708,7 +2708,7 @@
     "M4L": {
      "ue": [
       0.006208013391,
-      0.006964168485
+      0.006963994014
      ],
      "o1": [
       0.003481707354,
@@ -2719,7 +2719,7 @@
     "M4R": {
      "ue": [
       0.006207821111,
-      0.006951016004
+      0.006950015278
      ],
      "o1": [
       0.003416917831,
@@ -2729,8 +2729,8 @@
     },
     "M4aL": {
      "ue": [
-      9.069859794e-11,
-      2.141400878e-9
+      2.049974305e-10,
+      1.969981834e-9
      ],
      "o1": [
       -4.51635257e-14,
@@ -2741,7 +2741,7 @@
     "M4aR": {
      "ue": [
       9.06986309e-11,
-      2.092748733e-9
+      1.953330357e-9
      ],
      "o1": [
       -4.070702109e-14,
@@ -2751,8 +2751,8 @@
     },
     "M5L": {
      "ue": [
-      0.4915433291,
-      0.5845547621
+      0.4849823535,
+      0.580883851
      ],
      "o1": [
       0.4766862914,
@@ -2762,8 +2762,8 @@
     },
     "M5R": {
      "ue": [
-      0.4456318714,
-      0.5347511534
+      0.4431205327,
+      0.5297210707
      ],
      "o1": [
       0.5139856141,
@@ -2773,8 +2773,8 @@
     },
     "reneL": {
      "ue": [
-      0.953102561,
-      1.220590317
+      1.003725858,
+      1.273724308
      ],
      "o1": [
       0.9833083024,
@@ -2787,8 +2787,8 @@
     },
     "reneR": {
      "ue": [
-      0.8752097234,
-      1.134503272
+      0.9221965706,
+      1.183095488
      ],
      "o1": [
       0.8777798253,
@@ -2801,8 +2801,8 @@
     },
     "ecartPoignets": {
      "ue": [
-      0.1696018814,
-      0.1822175082
+      0.1697260324,
+      0.1814776208
      ],
      "o1": [
       0.1690458022,
@@ -2818,7 +2818,7 @@
     "phaseRewritten": 138,
     "phaseMaxRewritten": 4.948693677e-10,
     "phaseMaxHeld": 0,
-    "bobMax": 0.07569339343,
+    "bobMax": 0.02909960425,
     "pitchMaxDeg": 5.111145502
    }
   },
@@ -2832,7 +2832,7 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (gauche)",
      "kind": "seuil",
-     "value": 0.00287479058,
+     "value": 0.00290523458,
      "at": 2,
      "images": 3,
      "limit": 0.02,
@@ -2860,8 +2860,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.00768818758,
-     "at": 54,
+     "value": 0.0153109737,
+     "at": 42,
      "images": 102,
      "limit": 0.03,
      "cmp": "max",
@@ -2874,8 +2874,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.00543947378,
-     "at": 61,
+     "value": 0.00557735652,
+     "at": 64,
      "images": 102,
      "limit": 0.05,
      "cmp": "max",
@@ -2888,8 +2888,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (gauche)",
      "kind": "seuil",
-     "value": -0.008848183,
-     "at": 61,
+     "value": -0.008765601,
+     "at": 64,
      "images": 105,
      "limit": 0.01,
      "cmp": "max",
@@ -2902,8 +2902,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (gauche)",
      "kind": "seuil",
-     "value": 0.9308053474,
-     "at": 1,
+     "value": 0.9320806503,
+     "at": 2,
      "images": 3,
      "limit": 0.935,
      "cmp": "max",
@@ -2916,8 +2916,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.9513937623,
-     "at": 52,
+     "value": 0.9459199475,
+     "at": 26,
      "images": 102,
      "limit": 0.955,
      "cmp": "max",
@@ -2930,7 +2930,7 @@
      "id": "M7",
      "label": "écart au flanc, minimum (gauche)",
      "kind": "seuil",
-     "value": -0.0909122495,
+     "value": -0.0871070755,
      "at": 42,
      "images": 105,
      "limit": -0.01,
@@ -2939,15 +2939,15 @@
      "pass": false,
      "o1": -0.1150064344,
      "o2": -0.1018089204,
-     "runBelow1": 14,
-     "below2": 32
+     "runBelow1": 18,
+     "below2": 42
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (gauche)",
      "kind": "seuil",
-     "value": 0.08883268786,
-     "at": 49,
+     "value": 0.08011396339,
+     "at": 42,
      "images": 105,
      "limit": 0.09,
      "cmp": "min",
@@ -2960,8 +2960,8 @@
      "id": "M10",
      "label": "coude (gauche)",
      "kind": "seuil",
-     "value": 151.8369794,
-     "at": 62,
+     "value": 151.8369769,
+     "at": 63,
      "images": 105,
      "limit": 155,
      "cmp": "max",
@@ -2974,7 +2974,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (gauche)",
      "kind": "seuil",
-     "value": 0.009665113493,
+     "value": 0.009665112743,
      "at": 61,
      "images": 105,
      "limit": 0.02,
@@ -2988,7 +2988,7 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (droit)",
      "kind": "seuil",
-     "value": 0.00180976958,
+     "value": 0.00196841558,
      "at": 2,
      "images": 3,
      "limit": 0.02,
@@ -3016,8 +3016,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.00181551028,
-     "at": 97,
+     "value": 0.00040354798,
+     "at": 45,
      "images": 102,
      "limit": 0.03,
      "cmp": "max",
@@ -3030,8 +3030,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.00846840386,
-     "at": 6,
+     "value": 0.0063593981,
+     "at": 60,
      "images": 102,
      "limit": 0.05,
      "cmp": "max",
@@ -3044,8 +3044,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (droit)",
      "kind": "seuil",
-     "value": -0.008606951,
-     "at": 82,
+     "value": -0.008229073,
+     "at": 60,
      "images": 105,
      "limit": 0.01,
      "cmp": "max",
@@ -3058,7 +3058,7 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (droit)",
      "kind": "seuil",
-     "value": 0.9334981241,
+     "value": 0.932117517,
      "at": 2,
      "images": 3,
      "limit": 0.935,
@@ -3072,8 +3072,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.9473328548,
-     "at": 97,
+     "value": 0.9459200238,
+     "at": 13,
      "images": 102,
      "limit": 0.955,
      "cmp": "max",
@@ -3086,8 +3086,8 @@
      "id": "M7",
      "label": "écart au flanc, minimum (droit)",
      "kind": "seuil",
-     "value": -0.0481133355,
-     "at": 50,
+     "value": -0.02818840281,
+     "at": 64,
      "images": 105,
      "limit": -0.01,
      "cmp": "min",
@@ -3095,15 +3095,15 @@
      "pass": false,
      "o1": -0.07955131334,
      "o2": -0.03021270272,
-     "runBelow1": 5,
-     "below2": 6
+     "runBelow1": 3,
+     "below2": 4
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (droit)",
      "kind": "seuil",
-     "value": 0.08883278902,
-     "at": 49,
+     "value": 0.08011294222,
+     "at": 42,
      "images": 105,
      "limit": 0.09,
      "cmp": "min",
@@ -3130,7 +3130,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (droit)",
      "kind": "seuil",
-     "value": 0.009664835805,
+     "value": 0.009664836555,
      "at": 61,
      "images": 105,
      "limit": 0.02,
@@ -3162,14 +3162,14 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 8.063761966,
-      "at": 42,
+      "max": 7.058124186,
+      "at": 47,
       "pass": false
      },
      "o2": {
-      "max": 9.146996023,
+      "max": 5.191658102,
       "at": 42,
-      "pass": false
+      "pass": true
      },
      "prop": 5.573585046,
      "ctl": 2.86760204
@@ -3187,8 +3187,8 @@
       "pass": true
      },
      "o2": {
-      "max": 1.844599414,
-      "at": 42,
+      "max": 1.745019845,
+      "at": 45,
       "pass": true
      },
      "prop": 3.778153545,
@@ -3207,8 +3207,8 @@
       "pass": false
      },
      "o2": {
-      "max": 6.633464372,
-      "at": 63,
+      "max": 7.128256759,
+      "at": 64,
       "pass": true
      },
      "prop": 23.83344892,
@@ -3222,12 +3222,12 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 0.23774628,
+      "max": 0.2377457487,
       "at": 81,
       "pass": true
      },
      "o2": {
-      "max": 0.23774628,
+      "max": 0.2377457487,
       "at": 81,
       "pass": true
      },
@@ -3242,12 +3242,12 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 0.1790574957,
+      "max": 0.2170244615,
       "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.05358959625,
+      "max": 0.01218098383,
       "at": 2,
       "pass": true
      },
@@ -3262,14 +3262,14 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 9.152544696,
-      "at": 42,
+      "max": 7.039612032,
+      "at": 47,
       "pass": false
      },
      "o2": {
-      "max": 8.984345019,
+      "max": 5.015893167,
       "at": 42,
-      "pass": false
+      "pass": true
      },
      "prop": 5.971585374,
      "ctl": 3.65337064
@@ -3282,13 +3282,13 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 5.884614767,
+      "max": 3.825627127,
       "at": 42,
       "pass": true
      },
      "o2": {
-      "max": 3.670828744,
-      "at": 42,
+      "max": 2.168300416,
+      "at": 46,
       "pass": true
      },
      "prop": 3.434731652,
@@ -3302,14 +3302,14 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 18.85122186,
-      "at": 4,
+      "max": 13.78757362,
+      "at": 3,
       "pass": false
      },
      "o2": {
-      "max": 10.99069458,
-      "at": 55,
-      "pass": false
+      "max": 4.496269317,
+      "at": 61,
+      "pass": true
      },
      "prop": 13.24441097,
      "ctl": 0.3934484374
@@ -3322,13 +3322,13 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 0.2807302126,
-      "at": 6,
+      "max": 0.2377475047,
+      "at": 81,
       "pass": true
      },
      "o2": {
-      "max": 0.2830749295,
-      "at": 6,
+      "max": 0.2377475047,
+      "at": 81,
       "pass": true
      },
      "prop": 0.06542349368,
@@ -3342,13 +3342,13 @@
      "unit": "°",
      "images": 105,
      "o1": {
-      "max": 0.2381962531,
-      "at": 6,
+      "max": 0.06306969988,
+      "at": 3,
       "pass": true
      },
      "o2": {
-      "max": 0.2713725783,
-      "at": 6,
+      "max": 0.05433510919,
+      "at": 4,
       "pass": true
      },
      "prop": 0.05357369189,
@@ -3362,12 +3362,12 @@
      "unit": "°",
      "images": 63,
      "o1": {
-      "max": 5.505342779,
+      "max": 5.505342749,
       "at": 40,
       "pass": false
      },
      "o2": {
-      "max": 2.514058199,
+      "max": 2.514058169,
       "at": 40,
       "pass": true
      },
@@ -3402,12 +3402,12 @@
      "unit": "m",
      "images": 105,
      "o1": {
-      "max": -0.01569697567,
+      "max": -0.02119142467,
       "at": null,
       "pass": true
      },
      "o2": {
-      "max": 0.005547019253,
+      "max": 0.00005257025274,
       "at": null,
       "pass": true
      }
@@ -3420,14 +3420,14 @@
      "unit": "°",
      "images": 104,
      "o1": {
-      "max": -2.700376464,
-      "at": 48,
+      "max": -6.234031541,
+      "at": 43,
       "pass": true,
       "over": 0
      },
      "o2": {
-      "max": -2.700376464,
-      "at": 48,
+      "max": -6.234031541,
+      "at": 43,
       "pass": true,
       "over": 0
      }
@@ -3511,7 +3511,7 @@
     "M4L": {
      "ue": [
       0.00612113525,
-      0.009665113493
+      0.009665112743
      ],
      "o1": [
       0.001083715066,
@@ -3521,8 +3521,8 @@
     },
     "M4R": {
      "ue": [
-      0.006120979499,
-      0.009664835805
+      0.006120979519,
+      0.009664836555
      ],
      "o1": [
       0.001083715066,
@@ -3532,8 +3532,8 @@
     },
     "M4aL": {
      "ue": [
-      1.085653338e-10,
-      2.00888664e-9
+      2.093669509e-11,
+      2.023734376e-9
      ],
      "o1": [
       -1.745305289e-14,
@@ -3543,8 +3543,8 @@
     },
     "M4aR": {
      "ue": [
-      -1.961150166e-11,
-      1.97662731e-9
+      1.973910618e-12,
+      1.883857407e-9
      ],
      "o1": [
       -2.382122277e-14,
@@ -3554,8 +3554,8 @@
     },
     "M5L": {
      "ue": [
-      0.4531539915,
-      0.5210215562
+      0.4607195548,
+      0.5160180862
      ],
      "o1": [
       0.4642965481,
@@ -3565,8 +3565,8 @@
     },
     "M5R": {
      "ue": [
-      0.4698295646,
-      0.5855760539
+      0.4895165814,
+      0.5832520745
      ],
      "o1": [
       0.4941869956,
@@ -3576,8 +3576,8 @@
     },
     "reneL": {
      "ue": [
-      0.8780204532,
-      1.227672769
+      0.9265013994,
+      1.290582962
      ],
      "o1": [
       0.9394356912,
@@ -3590,8 +3590,8 @@
     },
     "reneR": {
      "ue": [
-      0.8876576792,
-      1.255022365
+      0.9372507826,
+      1.319035694
      ],
      "o1": [
       0.9510678738,
@@ -3604,8 +3604,8 @@
     },
     "ecartPoignets": {
      "ue": [
-      0.168248508,
-      0.1995524234
+      0.167909995,
+      0.1998190194
      ],
      "o1": [
       0.1643738012,
@@ -3621,7 +3621,7 @@
     "phaseRewritten": 75,
     "phaseMaxRewritten": 4.898934175e-10,
     "phaseMaxHeld": 0.4797691844,
-    "bobMax": 0.1465526218,
+    "bobMax": 0.1797586989,
     "pitchMaxDeg": 6.446142977
    }
   },
@@ -3635,7 +3635,7 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (gauche)",
      "kind": "seuil",
-     "value": 0.00288825858,
+     "value": 0.00313787258,
      "at": 2,
      "images": 3,
      "limit": 0.02,
@@ -3663,8 +3663,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.0079808127,
-     "at": 42,
+     "value": 0.00015164948,
+     "at": 74,
      "images": 106,
      "limit": 0.03,
      "cmp": "max",
@@ -3677,8 +3677,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.00498689954,
-     "at": 65,
+     "value": 0.0050659417,
+     "at": 62,
      "images": 106,
      "limit": 0.05,
      "cmp": "max",
@@ -3691,8 +3691,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (gauche)",
      "kind": "seuil",
-     "value": -0.009100007,
-     "at": 60,
+     "value": 0.007226068,
+     "at": 20,
      "images": 109,
      "limit": 0.01,
      "cmp": "max",
@@ -3705,8 +3705,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (gauche)",
      "kind": "seuil",
-     "value": 0.930889991,
-     "at": 1,
+     "value": 0.9335820724,
+     "at": 2,
      "images": 3,
      "limit": 0.935,
      "cmp": "max",
@@ -3719,13 +3719,13 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (gauche)",
      "kind": "seuil",
-     "value": 0.9460434028,
-     "at": 38,
+     "value": 0.9555900019,
+     "at": 20,
      "images": 106,
      "limit": 0.955,
      "cmp": "max",
      "unit": "",
-     "pass": true,
+     "pass": false,
      "o1": 0.9459205538,
      "o2": 0.955637492
     },
@@ -3733,7 +3733,7 @@
      "id": "M7",
      "label": "écart au flanc, minimum (gauche)",
      "kind": "seuil",
-     "value": -0.0947180595,
+     "value": -0.1009598765,
      "at": 41,
      "images": 109,
      "limit": -0.01,
@@ -3742,20 +3742,20 @@
      "pass": false,
      "o1": -0.1319555082,
      "o2": -0.103553815,
-     "runBelow1": 13,
-     "below2": 50
+     "runBelow1": 22,
+     "below2": 54
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (gauche)",
      "kind": "seuil",
-     "value": 0.08886273995,
-     "at": 13,
+     "value": 0.09162470228,
+     "at": 41,
      "images": 109,
      "limit": 0.09,
      "cmp": "min",
      "unit": "m",
-     "pass": false,
+     "pass": true,
      "o1": 0.08571776377,
      "o2": 0.09219663379
     },
@@ -3763,7 +3763,7 @@
      "id": "M10",
      "label": "coude (gauche)",
      "kind": "seuil",
-     "value": 151.8370073,
+     "value": 151.8370058,
      "at": 65,
      "images": 109,
      "limit": 155,
@@ -3777,7 +3777,7 @@
      "id": "M4",
      "label": "plante – étrier affiché (gauche)",
      "kind": "seuil",
-     "value": 0.01004868623,
+     "value": 0.01004868549,
      "at": 64,
      "images": 109,
      "limit": 0.02,
@@ -3791,7 +3791,7 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |y| assis (droit)",
      "kind": "seuil",
-     "value": 0.00181188258,
+     "value": 0.00198152058,
      "at": 2,
      "images": 3,
      "limit": 0.02,
@@ -3819,8 +3819,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.0080220907,
-     "at": 42,
+     "value": -0.00006780946,
+     "at": 78,
      "images": 106,
      "limit": 0.03,
      "cmp": "max",
@@ -3833,8 +3833,8 @@
      "id": "M1",
      "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.0083309193,
-     "at": 5,
+     "value": 0.0064491813,
+     "at": 90,
      "images": 106,
      "limit": 0.05,
      "cmp": "max",
@@ -3847,8 +3847,8 @@
      "id": "M2",
      "label": "cheville au-delà de sa place naturelle xMax (droit)",
      "kind": "seuil",
-     "value": -0.007307289,
-     "at": 88,
+     "value": -0.008164171,
+     "at": 90,
      "images": 109,
      "limit": 0.01,
      "cmp": "max",
@@ -3861,7 +3861,7 @@
      "id": "M6",
      "label": "portée de la jambe ρ assis (droit)",
      "kind": "seuil",
-     "value": 0.9335596462,
+     "value": 0.9322010176,
      "at": 2,
      "images": 3,
      "limit": 0.935,
@@ -3875,8 +3875,8 @@
      "id": "M6",
      "label": "portée de la jambe ρ hors de la selle (droit)",
      "kind": "seuil",
-     "value": 0.9472958047,
-     "at": 104,
+     "value": 0.9459200233,
+     "at": 23,
      "images": 106,
      "limit": 0.955,
      "cmp": "max",
@@ -3889,7 +3889,7 @@
      "id": "M7",
      "label": "écart au flanc, minimum (droit)",
      "kind": "seuil",
-     "value": -0.03256836623,
+     "value": -0.03161939033,
      "at": 4,
      "images": 109,
      "limit": -0.01,
@@ -3898,20 +3898,20 @@
      "pass": false,
      "o1": -0.05098716447,
      "o2": -0.03739660698,
-     "runBelow1": 2,
-     "below2": 1
+     "runBelow1": 4,
+     "below2": 3
     },
     {
      "id": "M9",
      "label": "poignet au-dessus de l’encolure (droit)",
      "kind": "seuil",
-     "value": 0.08881826955,
-     "at": 13,
+     "value": 0.09162578134,
+     "at": 41,
      "images": 109,
      "limit": 0.09,
      "cmp": "min",
      "unit": "m",
-     "pass": false,
+     "pass": true,
      "o1": 0.08572731728,
      "o2": 0.09219667031
     },
@@ -3965,13 +3965,13 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 6.94306627,
-      "at": 51,
+      "max": 6.214421223,
+      "at": 49,
       "pass": false
      },
      "o2": {
-      "max": 2.112948868,
-      "at": 17,
+      "max": 1.524722935,
+      "at": 84,
       "pass": true
      },
      "prop": 5.712046419,
@@ -3990,8 +3990,8 @@
       "pass": true
      },
      "o2": {
-      "max": 1.163707645,
-      "at": 75,
+      "max": 0.658637165,
+      "at": 97,
       "pass": true
      },
      "prop": 3.778153545,
@@ -4010,8 +4010,8 @@
       "pass": false
      },
      "o2": {
-      "max": 1.769175918,
-      "at": 62,
+      "max": 0.9587856469,
+      "at": 63,
       "pass": true
      },
      "prop": 23.83344892,
@@ -4025,12 +4025,12 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 0.1541918157,
-      "at": 85,
+      "max": 0.2000343905,
+      "at": 4,
       "pass": true
      },
      "o2": {
-      "max": 0.1541918157,
+      "max": 0.07921410874,
       "at": 85,
       "pass": true
      },
@@ -4045,12 +4045,12 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 0.1755273412,
-      "at": 4,
+      "max": 0.2267731388,
+      "at": 3,
       "pass": true
      },
      "o2": {
-      "max": 0.05015133906,
+      "max": 0.04575360035,
       "at": 2,
       "pass": true
      },
@@ -4065,13 +4065,13 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 6.913766504,
+      "max": 6.803819736,
       "at": 50,
       "pass": false
      },
      "o2": {
-      "max": 3.491148864,
-      "at": 17,
+      "max": 1.499424124,
+      "at": 97,
       "pass": true
      },
      "prop": 6.323005487,
@@ -4085,13 +4085,13 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 5.033619715,
-      "at": 17,
+      "max": 3.536180351,
+      "at": 19,
       "pass": true
      },
      "o2": {
-      "max": 3.81285603,
-      "at": 72,
+      "max": 1.386973229,
+      "at": 77,
       "pass": true
      },
      "prop": 3.597014794,
@@ -4105,14 +4105,14 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 16.46250654,
+      "max": 14.00014636,
       "at": 3,
       "pass": false
      },
      "o2": {
-      "max": 14.92720252,
+      "max": 4.467591332,
       "at": 72,
-      "pass": false
+      "pass": true
      },
      "prop": 13.20494074,
      "ctl": 2.497692046
@@ -4125,13 +4125,13 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 0.2969621459,
-      "at": 5,
+      "max": 0.1005688589,
+      "at": 3,
       "pass": true
      },
      "o2": {
-      "max": 0.2874479159,
-      "at": 6,
+      "max": 0.07921563289,
+      "at": 85,
       "pass": true
      },
      "prop": 0.09183438653,
@@ -4145,13 +4145,13 @@
      "unit": "°",
      "images": 109,
      "o1": {
-      "max": 0.2471279289,
-      "at": 5,
+      "max": 0.08776390418,
+      "at": 3,
       "pass": true
      },
      "o2": {
-      "max": 0.2632260724,
-      "at": 5,
+      "max": 0.01586137065,
+      "at": 3,
       "pass": true
      },
      "prop": 0.07190253353,
@@ -4170,7 +4170,7 @@
       "pass": false
      },
      "o2": {
-      "max": 1.583096772,
+      "max": 0.8415453556,
       "at": 87,
       "pass": true
      },
@@ -4185,13 +4185,13 @@
      "unit": "°",
      "images": 46,
      "o1": {
-      "max": 8.038023042,
+      "max": 8.038022948,
       "at": 48,
       "pass": false
      },
      "o2": {
-      "max": 1.785883717,
-      "at": 85,
+      "max": 1.69320068,
+      "at": 45,
       "pass": true
      },
      "prop": 7.263032474,
@@ -4205,12 +4205,12 @@
      "unit": "m",
      "images": 109,
      "o1": {
-      "max": -0.009853806522,
+      "max": -0.01607171552,
       "at": null,
       "pass": true
      },
      "o2": {
-      "max": 0.006224132969,
+      "max": 0.000006223968958,
       "at": null,
       "pass": true
      }
@@ -4223,13 +4223,13 @@
      "unit": "°",
      "images": 108,
      "o1": {
-      "max": -6.546064673,
+      "max": -6.526606415,
       "at": 48,
       "pass": true,
       "over": 0
      },
      "o2": {
-      "max": -6.546064673,
+      "max": -6.526606415,
       "at": 48,
       "pass": true,
       "over": 0
@@ -4263,19 +4263,19 @@
     },
     {
      "phase": "poserPosterieursDetecte",
-     "ue": 74,
+     "ue": 75,
      "o1": 76,
      "o2": 76,
-     "d1": 2,
-     "d2": 2
+     "d1": 1,
+     "d2": 1
     },
     {
      "phase": "poserPosterieursRegle",
-     "ue": 74,
+     "ue": 75,
      "o1": 76,
      "o2": 76,
-     "d1": 2,
-     "d2": 2
+     "d1": 1,
+     "d2": 1
     },
     {
      "phase": "jumpK50Montee",
@@ -4313,8 +4313,8 @@
    "tack": {
     "M4L": {
      "ue": [
-      0.006124013007,
-      0.01004868623
+      0.006124013056,
+      0.01004868549
      ],
      "o1": [
       0.001080114336,
@@ -4324,7 +4324,7 @@
     },
     "M4R": {
      "ue": [
-      0.006123845951,
+      0.006123845995,
       0.01004840584
      ],
      "o1": [
@@ -4335,8 +4335,8 @@
     },
     "M4aL": {
      "ue": [
-      -5.812532747e-11,
-      1.943493184e-9
+      4.154636513e-10,
+      2.07365128e-9
      ],
      "o1": [
       -1.790928517e-14,
@@ -4346,8 +4346,8 @@
     },
     "M4aR": {
      "ue": [
-      2.079202331e-10,
-      2.052109753e-9
+      -5.557752626e-10,
+      2.061503133e-9
      ],
      "o1": [
       -2.339621552e-14,
@@ -4357,8 +4357,8 @@
     },
     "M5L": {
      "ue": [
-      0.4370680117,
-      0.5008239595
+      0.4300471071,
+      0.4952237672
      ],
      "o1": [
       0.4371519776,
@@ -4368,8 +4368,8 @@
     },
     "M5R": {
      "ue": [
-      0.5290778384,
-      0.6097014898
+      0.530487379,
+      0.6099820247
      ],
      "o1": [
       0.5300673333,
@@ -4379,8 +4379,8 @@
     },
     "reneL": {
      "ue": [
-      0.7839205053,
-      1.107143374
+      0.8334240341,
+      1.165861064
      ],
      "o1": [
       0.8219439551,
@@ -4393,8 +4393,8 @@
     },
     "reneR": {
      "ue": [
-      0.7913167742,
-      1.110539722
+      0.8412081152,
+      1.169332668
      ],
      "o1": [
       0.8289744983,
@@ -4407,8 +4407,8 @@
     },
     "ecartPoignets": {
      "ue": [
-      0.169121386,
-      0.1950317303
+      0.169117978,
+      0.1955834523
      ],
      "o1": [
       0.1681297307,
@@ -4424,7 +4424,7 @@
     "phaseRewritten": 75,
     "phaseMaxRewritten": 4.869632197e-10,
     "phaseMaxHeld": 0.4985346547,
-    "bobMax": 0.1042083887,
+    "bobMax": 0.1681971927,
     "pitchMaxDeg": 0.2310402732
    }
   }

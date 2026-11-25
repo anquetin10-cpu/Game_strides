@@ -38,9 +38,10 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
 - **Par défaut depuis l'étape S2 b (25/11/2026)** : cavalière de la règle, main du web et sellerie du web forment un
   ensemble (`StridesMonteOptions`, `Strides.Monte.Options`) ; `-StridesMonte=ancien` rend l'ancien comportement.
   Captures du CSO refaites, relevés du concours identiques avant et après (étapes S2 a et S2 b ci-dessous).
-- **Taille du cheval (étape S3 a, 25/11/2026)** : l'écart de 3,74 % vient de la constante 0,01 de l'acteur (import et
-  clips redonnent l'échelle du web à 2,6e-7 près) ; `-StridesHorseScale=web` donne la taille du web (garrot à 1,48 m des
-  sabots, `Strides.Parite.HorseScale`) ; relevés du concours identiques, niveau B 61 → 58 critères non tenus.
+- **Taille du cheval (étapes S3 a et S3 b, 25/11/2026)** : l'écart de 3,74 % venait de la constante 0,01 de l'acteur
+  (import et clips redonnent l'échelle du web à 2,6e-7 près) ; **taille du web par défaut** (garrot à 1,48 m des sabots,
+  `Strides.Parite.HorseScale`), `-StridesHorseScale=jeu` rend l'ancienne ; relevés du concours identiques, captures du CSO
+  refaites, niveau B 61 → 58 critères non tenus.
 - **Coût en jeu, rendu réel (étape 7)** : la règle ajoute **+0,03 ms à l'arrêt et +0,05 ms au galop** au temps du jeu. Le
   seuil était de 0,3 ms ; la mesure se répète d'une passe à l'autre à 3,5 % près. Aucune différence de temps GPU n'est
   mesurable au-delà du bruit (`cout.md`).
@@ -1636,9 +1637,13 @@ Marge : os de sabot (articulation, quelques cm au-dessus de la sole) à moins de
 largeur de l'obstacle. Constat, **défaut existant avant S3** : sur 4 verticaux sur 7, un postérieur passe visuellement
 sous le dessus de la barre (−19 à −26 cm) alors que la simulation franchit sans faute, et le garrot monte à 2,9 – 3,1 m. Le
 corps du cheval au saut et l'horloge du saut du web ne sont pas portés (S4) ; les valeurs du web pour ce regard ne sont pas
-mesurées (à confirmer en S4). L'agrandissement ne crée aucun contact : il relève les marges de 4,1 à 6,0 cm sur 3 obstacles
-(3, 4A, 5 : de −1,2 à −2,5 cm à +2,9 à +4,7 cm), de 3,2 à 4,1 cm sur 4 autres, ne change pas l'oxer 2 et les baisse de 1,2
-et 1,3 cm sur les oxers 6B et 8 (toujours plus de 20 cm au-dessus).
+mesurées (à confirmer en S4). Lecture corrigée à l'étape S3 b (même configuration relancée, `ms2-defaut`) : la marge est échantillonnée
+image par image (le cheval avance d'environ 10 cm par image à 6,2 m/s, fenêtre de ± 15 cm), elle varie de plusieurs cm
+d'un passage à l'autre de la même configuration (saut 1 : −20,4 puis −14,9 cm ; saut 3 : +4,7 puis +119,6 cm, aucun
+postérieur échantillonné au-dessus de la barre) ; les écarts avant / après de la marge (−1,3 à +6,0 cm) sont du même ordre et
+**ne départagent pas** l'effet de la taille. Ce qui est stable : le garrot monte de 6,6 à 6,8 cm de plus au sommet
+(à 1 cm près entre « après » et le défaut de S3 b), le sabot le plus bas de 0,2 à 1,6 cm (à 1,3 cm près) ; aucun saut ne
+change dans la simulation (même nombre de sauts, 0 point).
 
 Concours (`-StridesShots=cso` par famille de poses, puis `-StridesShots=cso-jeu -TouchControls`, 80 captures, avant = jeu par
 défaut, après = `-StridesHorseScale=web`, même compilation, `.ue-cache/travail/s3/cso-*`) :
@@ -1694,3 +1699,69 @@ signalée » est précisé (il apparaissait deux fois). Sources rétablis, recom
 Conclusion de S3 a : contrôles conformes. La valeur vient du web (`asset.js`, exportée et recalculée sur les clips
 Unreal) ; aucune preuve du concours ne change hors image ; le niveau B s'améliore. Passage par défaut dans un commit séparé
 (S3 b), avec les captures du CSO refaites.
+
+## Étape S3 (b). Cheval à la taille du web par défaut (25/11/2026)
+
+Contrôles de S3 a conformes (commit `de86c205`) : la valeur vient du web, aucun relevé du concours ne change hors image, le
+niveau B s'améliore. La taille du web devient le comportement du jeu sans option.
+
+### Ce qui change
+
+- `StridesMonteOptions::bWebHorseScaleByDefault = true` : sans option, échelle du maillage du cheval 0,0103882601
+  (`inner.scale` du web). **Retour à l'ancienne taille : `-StridesHorseScale=jeu`** ; `-StridesMonte=ancien` rend tout
+  l'ancien comportement, taille comprise (les configurations nommées de `perf-summary.py` gardent donc leur sens).
+- `Strides.Monte.Options` épingle le nouveau défaut. Les tests dont le monde n'est pas commencé (`HorseSeat`, `HorseMirror`,
+  `RiderRules`, `HorseTackMesh`, `HorseScale`) gardent l'échelle du constructeur (0,01) : leurs mesures portent sur le
+  maillage et la pose, comparés au web par `inner.scale` ; `RiderOnHorse` applique la taille résolue (web par défaut).
+- `rider-rules-niveau-b.mjs` écrit la taille réellement rejouée (`meshScale` de l'export) au lieu d'une phrase fixe.
+- `niveau-b.md` et `niveau-b.json` refaits avec le nouveau défaut : **58 critères sur 233 non tenus** (61 avant), égaux à
+  1,7e-6 près à l'export avec l'option de S3 a.
+- Mutations : la mutation « `-StridesHorseScale=web` ignorée » devient « prise pour jeu » (l'ancienne est équivalente quand
+  le défaut est « web ») ; « `-StridesMonte=ancien` sans effet sur la taille » n'est plus attendue (désormais départagée).
+
+### Preuves du concours refaites
+
+Captures Unreal du CSO régénérées **sans option** (rendu GPU réel, `.ue-cache/travail/s3/cso-defaut/`, copiées dans
+`unreal/docs/parite/cso/`) : 75 `<pose>-unreal.png`, 5 `jeu-*.png`, 7 relevés JSON ; 71 montages refaits par
+`parite-montage.py` ; captures web, `-oracle.png` et `t4-hud-debogage-galop-unreal.png` inchangées.
+- Relevés `aide`, `bilan`, `cadrage`, `cmd`, `entree`, `hud` **identiques champ pour champ** à ceux de
+  `-StridesHorseScale=web` (S3 a) et aux versionnés ; `jeu-unreal.json` : seul le chrono au moment des captures 3 et 4 varie
+  (2,31 → 2,33 s ; 35,03 → 34,96 s) ; démonstration finie en 60,40 s « 0 pt Arrivée ✓ ».
+- Relances (déclarées) : `cmd` et `bilan` (deux fois) bloquées au démarrage par le serveur Zen local (même incident qu'en
+  S3 a ; 4 blocages sur 19 lancements en S3 b, 1 sur 29 en S3 a ; éditeur arrêté par `kill -9`, puis relancé sous une garde
+  `.ue-cache/travail/s3/garde.sh`) ; `entree` relancée car la pose `entree-3-annonce-844x390` avait été prise à 667 × 308
+  (fenêtre pas encore redimensionnée) ; `jeu` relancé : le premier passage affichait « Appel parfait » au lieu de « Bon
+  appel » au saut 6A (capture 4), le second redonne « Bon appel » comme les versionnés et comme « avant » et « après » de
+  S3 a : variabilité de la simulation d'un passage à l'autre (pas d'image fixe), pas un effet de la taille, que la
+  simulation ne lit pas. Le premier passage est gardé hors dépôt (`cso-defaut/jeu-premier/`).
+- `-StridesShots=monte-s2 -StridesMonteS2Parcours` sans option (`ms2-defaut`) : taille du web, mêmes 10 sauts, mêmes mains
+  et clips, « 0 pt » en 60,39 s.
+- **G5** : nouvelles empreintes dans `base.json` (`portes.G5`, 238 PNG, 155 changés, empreinte `3cf6ec13…`).
+
+### Écarts des captures du concours, justifiés par le web
+
+1. **Taille du cheval** : celle du web (`asset.js:144-154`, garrot à 1,48 m des articulations des sabots) au lieu de 3,74 %
+   plus petite ; visible sur toutes les poses où le cheval est vu (PSNR avant → après 24,4 à 72,0 dB en S3 a).
+2. La cavalière, la sellerie et les étriers suivent (siège et ancres lus sur le maillage).
+3. Restent au web : lacet de −0,69° et sol sur la sole (+0,80 cm) ; inclinaison en virage, corps et horloge du saut (S4) ;
+   clips à 30 images/s (S5).
+
+### Portes (S3 b)
+
+- G1 : ctest code 0 (cœur non touché depuis S3 a, même construction `.ue-cache/travail/core-s3`) : cœur 300 729, `monte`
+  306 914, `monte-cheval` 4 488, `monte-cavaliere` 72 547, `perf` 20, `monte-miroir` 7 069, `monte-sellerie` 7 443, 0 échec.
+- G2 : UBT code 0, aucun avertissement ni erreur.
+- G3 : `Automation RunTests Strides` avec le nouveau défaut : **41 tests, 41 en succès** (3 avec l'avertissement
+  `idevice_id`).
+- G4 : `mutations-monte-jeu.py --noms=S3` avec le nouveau défaut : **14 mutations, 14 détectées**, 1 226 s ; sources
+  rétablis, recompilation finale code 0. Les 29 mutations S2 et M1 ne sont pas rejouées (sources et tests qu'elles
+  visent inchangés hors taille ; dernière campagne : S2 b).
+- G5 : captures du CSO refaites volontairement, nouvelles empreintes (ci-dessus).
+- G6 : `build-parite.py` code 0 ; `cheval.pjl-modele` et `cheval.assise-cavalier` à jour (taille du web par défaut).
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Non vérifié : jeu empaqueté pour iOS (aucun paquet construit), coût sur appareil ; l'échelle ne change ni le nombre d'os
+ni le maillage (coût attendu inchangé, non mesuré : à confirmer).
+
+Reste à faire (S3) : rien pour la taille ; lacet de −0,69° et sol sur la sole (+0,80 cm) du web non repris (non demandés
+par la décision, à proposer) ; S4 (inclinaison en virage, corps et horloge du saut, oracle des appuis), S5.

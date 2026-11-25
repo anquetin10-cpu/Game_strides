@@ -75,8 +75,8 @@ M = [
  (OPTS_H, 'S2 défaut du jeu basculé', 'inline constexpr bool bWebByDefault = true;', 'inline constexpr bool bWebByDefault = false;'),
  # Étape S3 : taille du cheval du web (-StridesHorseScale=, StridesMonteOptions et AStridesHorse::EnableWebScale), prouvée
  # par Strides.Monte.Options (résolution, effet par BeginPlay) et Strides.Parite.HorseScale (échelle exacte, mesures).
- (OPTS_H, 'S3 taille du web par défaut basculée', 'inline constexpr bool bWebHorseScaleByDefault = false;', 'inline constexpr bool bWebHorseScaleByDefault = true;'),
- (OPTS, 'S3 -StridesHorseScale=web ignorée', 'if (V == TEXT("web")) return true;', 'if (V == TEXT("web")) return bWebHorseScaleByDefault;'),
+ (OPTS_H, 'S3 taille du web par défaut basculée', 'inline constexpr bool bWebHorseScaleByDefault = true;', 'inline constexpr bool bWebHorseScaleByDefault = false;'),
+ (OPTS, 'S3 -StridesHorseScale=web prise pour jeu', 'if (V == TEXT("web")) return true;', 'if (V == TEXT("web")) return false;'),
  (OPTS, 'S3 -StridesHorseScale=jeu prise pour web', 'if (V == TEXT("jeu")) return false;', 'if (V == TEXT("jeu")) return true;'),
  (OPTS, 'S3 -StridesMonte=ancien donne la taille du web', 'G == TEXT("ancien")) return false;', 'G == TEXT("ancien")) return true;'),
  (OPTS, 'S3 -StridesMonte=ancien sans effet sur la taille', 'G == TEXT("ancien")) return false;', 'G == TEXT("ancien")) return bWebHorseScaleByDefault;'),
@@ -95,10 +95,6 @@ M = [
 ATTENDUES = {
  'ordre : prérequis du cheval retiré': 'mutation équivalente : la sellerie tique en TG_PostUpdateWork, donc après le tick du cheval (TG_PrePhysics) ; '
                                       'son prérequis repousse la cavalière dans ce groupe, après le cheval',
- 'S3 -StridesMonte=ancien sans effet sur la taille': 'équivalente tant que la taille du web n’est pas le défaut (S3 a : '
-                                                     'bWebHorseScaleByDefault faux, « ancien » et le défaut donnent la même échelle) ; '
-                                                     'départagée par la mutation « donne la taille du web » et, au passage par défaut, par '
-                                                     'le cas « -StridesMonte=ancien » du test',
  'bornes : pas de rafraîchissement à chaque image': 'non départagée : sans lui, le cache invalidé à l’activation reste juste (bornes locales du meneur, déplacées avec le '
                                                     'composant ; au galop la pose assise bouge peu dans le repère du maillage). Gardé pour les grands changements de '
                                                     'pose (montée, saut), que le test n’exerce pas : faiblesse déclarée',

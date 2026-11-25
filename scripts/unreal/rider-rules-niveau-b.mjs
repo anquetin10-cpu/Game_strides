@@ -6,7 +6,7 @@
 // Références, image par image (même indice d'image) :
 //  - O1 : la règle du web sur le cheval du web, cavalier classique (référence nommée par le plan) ;
 //  - O2 rider_f : la même règle sur le cheval du web, avec les proportions de la cavalière Unreal : l'écart Unreal − O2 isole
-//    l'effet du cheval Unreal (taille −3,7 %, phase, profils, pas d'inclinaison ni de corps remonté au saut).
+//    l'effet du cheval Unreal (taille : −3,7 % avant l'étape S3, phase, profils, pas d'inclinaison ni de corps remonté au saut).
 // Seules les grandeurs qui ne dépendent pas de l'échelle du cheval sont comparées aux références (angles, phases) ; les
 // autres sont jugées sur les seuils absolus de la règle.
 //
@@ -63,6 +63,12 @@ const ss = (a, b, x) => {
 const walking = (fr) => ss(0.4, 1.2, fr.in?.hs || 0) * (1 - ss(2.8, 3.6, fr.in?.hs || 0)) >= 0.5;
 
 const index = load(join(UE, 'index.json'));
+// Étape S3 : échelle du maillage du cheval notée par le test (meshScale ; absente avant S3 : échelle du jeu, 0,01).
+const TACK = load(join(ROOT, 'unreal/StridesGrandTour/Content/Data/pjl_horse_tack.json'));
+const MESH_SCALE = typeof index.meshScale === 'number' ? index.meshScale : 0.01;
+const SIZE_GAP = MESH_SCALE / TACK.inner.scale - 1;
+const SIZE = Math.abs(SIZE_GAP) < 1e-6 ? 'cheval à la taille du web (échelle du maillage ' + MESH_SCALE.toPrecision(9).replace('.', ',') + ', étape S3)'
+  : 'échelle du maillage ' + String(MESH_SCALE).replace('.', ',') + ', ' + (100 * Math.abs(SIZE_GAP)).toFixed(1).replace('.', ',') + (SIZE_GAP < 0 ? ' % plus petit' : ' % plus grand') + ' que le web';
 const scen = [];
 let ok = true;
 for (const e of index.runs) {
@@ -256,7 +262,7 @@ L.push('# Niveau B : la cavalière Unreal posée par la règle sur le cheval Unr
 L.push('');
 L.push('Page générée par `node scripts/unreal/rider-rules-niveau-b.mjs` (ne pas modifier à la main), à partir de l’export du test');
 L.push('moteur `Strides.Parite.RiderOnHorse`. Les scénarios d’O1 sont rejoués sur le **cheval Unreal** (clips et temps du');
-L.push('mélangeur du web, clips miroir cuits dans Unreal, échelle du jeu, 3,7 % plus petit que le web) ; siège, profils,');
+L.push(`mélangeur du web, clips miroir cuits dans Unreal, ${SIZE}) ; siège, profils,`);
 L.push('postérieurs et phase de foulée sont calculés par Unreal ; la cavalière est posée par la chaîne du jeu (option');
 L.push('`-StridesRider=regles`) et ses articulations sont relues sur le maillage. Grandeurs : `rider-rules-metrics.mjs`, le même');
 L.push('code que pour O1 et O2. Tolérances : `plan-essai.md` §5, niveau B.');
@@ -302,7 +308,7 @@ L.push('## Sellerie affichée (étape S1) : étrier, étrivière, rênes (inform
 L.push('');
 L.push('M4 : plante – étrier affiché ; M4a : avant-pied – étrier, moins 0,015 · scale (0 par construction, dans le web comme dans');
 L.push('Unreal) ; M5 : étrivière, porte-étrivière → œil de l’étrier (0,115 m au-dessus) ; M18 : rêne, mors → poing de la règle ;');
-L.push('écartement des poignets. M5 et M18 dépendent de la taille du cheval (Unreal 3,7 % plus petit que le web).');
+L.push(`écartement des poignets. M5 et M18 dépendent de la taille du cheval (${SIZE}).`);
 L.push('');
 L.push('| Scénario | Grandeur | Unreal | O1 | O2 |');
 L.push('|---|---|---|---|---|');

@@ -63,13 +63,13 @@
 				"Pause"
 			],
 			"raceHud": [
-				"board=2,22|/ 64 s|0 pt|▸ 2",
+				"board=2,23|/ 64 s|0 pt|▸ 2",
 				"fb=Bon appel",
 				"hint=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>."
 			],
 			"classes": "cso-ctl cso-sober cso-on",
 			"minimapMasked": true,
-			"status": "2,31 / 64 s 0 pt ▸ 2 · Obstacle n°2 sur 10",
+			"status": "2,33 / 64 s 0 pt ▸ 2 · Obstacle n°2 sur 10",
 			"written": true
 		},
 		{
@@ -85,12 +85,12 @@
 				"Pause"
 			],
 			"raceHud": [
-				"board=34,87|/ 64 s|0 pt|▸ 6A",
+				"board=34,83|/ 64 s|0 pt|▸ 6A",
 				"fb=Bon appel"
 			],
 			"classes": "cso-ctl cso-sober cso-on",
 			"minimapMasked": true,
-			"status": "35,03 / 64 s 0 pt ▸ 6A · Obstacle n°6A · double sur 10",
+			"status": "34,96 / 64 s 0 pt ▸ 6A · Obstacle n°6A · double sur 10",
 			"written": true
 		},
 		{
