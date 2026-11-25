@@ -42,7 +42,7 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   (import et clips redonnent l'échelle du web à 2,6e-7 près) ; **taille du web par défaut** (garrot à 1,48 m des sabots,
   `Strides.Parite.HorseScale`), `-StridesHorseScale=jeu` rend l'ancienne ; relevés du concours identiques, captures du CSO
   refaites, niveau B 61 → 58 critères non tenus.
-- **Vue du cheval du web (étape S4 a, 25/11/2026, `-StridesHorseView=web`)** : inclinaison en virage, corps et horloge
+- **Vue du cheval du web (étapes S4 a et S4 b, 25/11/2026 ; par défaut depuis S4 b, `-StridesHorseView=jeu` pour l'ancienne)** : inclinaison en virage, corps et horloge
   du saut, cadence des clips, phase de foulée, membres repliés et bascule face aux barres portés en C++
   (`StridesCore/HorseView`, ctest `monte-vue` : 386 285 vérifications sur 17 scénarios, écart ≤ 8,4e-8) ; dans le moteur,
   logique égale au web à 2,8e-16 près (`Strides.Parite.HorseView`) ; appuis : 622 posers et levers sur 659 à l'image
@@ -1915,4 +1915,62 @@ cache Zen non touché ; cause à confirmer.
 
 Conclusion de S4 a : contrôles conformes (logique égale au web, appuis et niveau B améliorés, partie jouée identique hors
 image et sans sabot sous les barres). Passage par défaut dans un commit séparé (S4 b), avec les captures du CSO refaites.
+
+## Étape S4 (b). Vue du cheval du web par défaut (25/11/2026)
+
+Contrôles de S4 a conformes (commit `fe5701f9`) : la vue du web devient le comportement du jeu sans option.
+
+### Ce qui change
+
+- `StridesMonteOptions::bWebHorseViewByDefault = true`. **Retour à l'ancienne vue : `-StridesHorseView=jeu`** ;
+  `-StridesMonte=ancien` rend tout l'ancien comportement. `Strides.Monte.Options` épingle le nouveau défaut.
+- `Strides.Parite.RiderOnHorse` pose désormais le cheval par sa vue (oracle `vue/`) : `niveau-b.md` et `niveau-b.json`
+  refaits avec le nouveau défaut, **50 critères sur 233 non tenus** (58 avant), identiques à `s4/niveau-b-vue.md`.
+
+### Preuves du concours refaites
+
+Captures Unreal du CSO régénérées sans option (rendu GPU réel, `.ue-cache/travail/s4/cso-defaut/`, copiées dans
+`unreal/docs/parite/cso/`) : 75 `<pose>-unreal.png`, 5 `jeu-*.png`, 7 relevés JSON ; montages refaits par
+`parite-montage.py` ; captures web, `-oracle.png` et `t4-hud-debogage-galop-unreal.png` inchangées.
+- Relevés `aide` (1 173 champs), `bilan` (759), `cadrage` (111), `cmd` (201), `entree` (557), `hud` (731) **identiques champ
+  pour champ** aux versionnés. `jeu-unreal.json` : 5 champs sur 90 diffèrent, le chrono au moment des captures 3 et 4
+  (2,33 → 2,32 s ; 34,96 → 34,90 s) et le cran de cadence affiché à la capture de la cloche (5 → 4) : instant de capture
+  d'un passage à l'autre (même nature que les 4 champs constatés entre deux passages identiques à l'étape S3 a ; la
+  simulation ne lit pas le maillage, vérifié par lecture et par les relevés des six autres familles) ; démonstration finie
+  en 60,33 s « 0 pt Arrivée ✓ », mêmes « Bon appel ».
+- PSNR avant → après (`captures/s4/cso-avant-apres.json`) : 19,2 à 76,1 dB ; les plus bas sur la partie jouée
+  (`jeu-2-cloche`, `jeu-3-mot`, `jeu-4-course` : cheval en mouvement, corps plus bas au saut), puis les poses où le cheval
+  est vu de près (`robe-trois-quarts-avant` 39,7 dB). Montages avant | après | web : `captures/s4/cso/`.
+- Relances (déclarées) : le serveur Zen local a bloqué le démarrage de l'éditeur à de nombreux essais (familles `chute`
+  et `cadrage` en échec après 3 essais sous la garde de S3, reprises avec une garde à 150 s et 6 essais :
+  `.ue-cache/travail/s4/garde.sh` ; toutes les familles passées, jusqu'à 4 essais pour `cmd`).
+- **G5** : nouvelles empreintes dans `base.json` (`portes.G5`, 238 PNG, 155 changés, empreinte `80c630bf…`).
+
+### Écarts des captures du concours, justifiés par le web
+
+1. Corps du cheval au saut : la montée du tronc du clip n'est plus ajoutée à la parabole du jeu (`view.js` rootY) ; le
+   cheval est plus bas en vol, ses postérieurs passent au-dessus des barres (partie jouée de S4 a).
+2. Cadence des clips réglée sur la vitesse, virages L90 / R90, inclinaison en virage, phase de foulée du web : la pose du
+   cheval diffère à chaque image où il bouge.
+3. Restent au web : `SecondaryMotion` (queue, crinière, encolure, oreilles), contacts des membres avec les barres,
+   clips trot et jump_gallop rééchantillonnés à 30 images/s (S5), lacet de −0,69° et sol sur la sole (+0,80 cm).
+
+### Portes (S4 b)
+
+- G1 : ctest code 0 (cœur non touché depuis S4 a) : cœur 300 729, `monte` 306 914, `monte-cheval` 4 488, `monte-cavaliere`
+  72 547, `perf` 20, `monte-miroir` 7 069, `monte-sellerie` 7 443, `monte-vue` 386 285, 0 échec.
+- G2 : UBT code 0, aucun avertissement ni erreur.
+- G3 : `Automation RunTests Strides` avec le nouveau défaut : **42 tests, 42 en succès**.
+- G4 : la mutation « option : web prise pour jeu » reste départagée par `Strides.Monte.Options` (défaut épinglé) ; les
+  autres sources et tests visés sont inchangés depuis la campagne de S4 a (non rejouée).
+- G5 : captures du CSO refaites volontairement, nouvelles empreintes (ci-dessus).
+- G6 : `build-parite.py` code 0 ; lignes du cheval mises à jour (vue du web par défaut).
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Non vérifié : jeu empaqueté pour iOS (aucun paquet construit), coût sur appareil ; coût sur Mac de la vue mesuré dans le
+moteur sans rendu (0,006 ms en moyenne, 0,035 ms au plus, hors réévaluation des replis) ; coût en jeu avec rendu (méthode de
+l'étape 7) non mesuré à cette étape (à confirmer).
+
+Reste à faire (S4) : `SecondaryMotion` et `_limbContacts` (non demandés par la décision, à proposer) ; S5 : trot et grand
+saut réimportés à 24 images/s, puis preuves touchées refaites (jump_gallop : sabots jusqu'à 19,8 cm du web en vol).
 

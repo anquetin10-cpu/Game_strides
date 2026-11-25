@@ -32,8 +32,8 @@ namespace StridesMonteOptionsTest
 constexpr bool bExpectedWebByDefault = true;
 // Étape S3 : taille du cheval du web par défaut (S3 b : oui ; S3 a : non). Épinglée de même.
 constexpr bool bExpectedWebScaleByDefault = true;
-// Étape S4 a : vue du cheval du web derrière -StridesHorseView=web (jeu par défaut inchangé).
-constexpr bool bExpectedWebViewByDefault = false;
+// Étape S4 b : vue du cheval du web par défaut (-StridesHorseView=jeu ou -StridesMonte=ancien : vue du jeu).
+constexpr bool bExpectedWebViewByDefault = true;
 
 struct FTestWorld
 {

@@ -386,7 +386,7 @@
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "ctest « monte-vue » (unreal/core/tests/test_horse_view.cpp, oracle unreal/core/tests/oracles/monte/vue/, 17 scénarios, 386 285 vérifications, 0 échec, plus grand écart 8,4e-8) ; dans le moteur Strides.Parite.HorseView (logique égale au web à 2,8e-16 près sur le cheval Unreal, replis de la pose réévaluée à 0,0000 cm de la géométrie) ; appuis : unreal/docs/parite/monte/appuis.md (étape S4 a)",
-  "ecart": "WildMesh seulement (la locomotion procédurale du web n'est pas portée). Derrière -StridesHorseView=web à l'étape S4 a (jeu par défaut inchangé).",
+  "ecart": "WildMesh seulement (la locomotion procédurale du web n'est pas portée). Par défaut depuis l'étape S4 b (-StridesHorseView=jeu ou -StridesMonte=ancien : vue du jeu).",
   "tranche": "socle"
  },
  {
@@ -491,7 +491,7 @@
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "ctest « monte-vue » (unreal/core/tests/test_horse_view.cpp, oracle unreal/core/tests/oracles/monte/vue/, 17 scénarios, 386 285 vérifications, 0 échec, plus grand écart 8,4e-8) ; dans le moteur Strides.Parite.HorseView (logique égale au web à 2,8e-16 près sur le cheval Unreal, replis de la pose réévaluée à 0,0000 cm de la géométrie) ; appuis : unreal/docs/parite/monte/appuis.md (étape S4 a)",
-  "ecart": "Option. Derrière -StridesHorseView=web à l'étape S4 a (jeu par défaut inchangé). Sans l'option : un clip à la fois (mélangeur M2), cadence à vitesse 1.",
+  "ecart": "Par défaut depuis l'étape S4 b (-StridesHorseView=jeu ou -StridesMonte=ancien : vue du jeu). Avec -StridesHorseView=jeu : un clip à la fois (mélangeur M2), cadence à vitesse 1.",
   "tranche": "socle"
  },
  {
@@ -508,7 +508,7 @@
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "ctest « monte-vue » (unreal/core/tests/test_horse_view.cpp, oracle unreal/core/tests/oracles/monte/vue/, 17 scénarios, 386 285 vérifications, 0 échec, plus grand écart 8,4e-8) ; dans le moteur Strides.Parite.HorseView (logique égale au web à 2,8e-16 près sur le cheval Unreal, replis de la pose réévaluée à 0,0000 cm de la géométrie) ; appuis : unreal/docs/parite/monte/appuis.md (étape S4 a)",
-  "ecart": "Option, pas encore le défaut. Derrière -StridesHorseView=web à l'étape S4 a (jeu par défaut inchangé). Phase du cavalier = celle du web à 1e-5 près sur les 689 images du niveau B, arrêt et saut compris.",
+  "ecart": "Par défaut depuis l'étape S4 b (-StridesHorseView=jeu ou -StridesMonte=ancien : vue du jeu). Phase du cavalier = celle du web à 1e-5 près sur les 689 images du niveau B, arrêt et saut compris.",
   "tranche": "socle"
  },
  {
@@ -522,7 +522,7 @@
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "ctest « monte-vue » (unreal/core/tests/test_horse_view.cpp, oracle unreal/core/tests/oracles/monte/vue/, 17 scénarios, 386 285 vérifications, 0 échec, plus grand écart 8,4e-8) ; dans le moteur Strides.Parite.HorseView (logique égale au web à 2,8e-16 près sur le cheval Unreal, replis de la pose réévaluée à 0,0000 cm de la géométrie) ; appuis : unreal/docs/parite/monte/appuis.md (étape S4 a)",
-  "ecart": "Option. Derrière -StridesHorseView=web à l'étape S4 a (jeu par défaut inchangé).",
+  "ecart": "Par défaut depuis l'étape S4 b (-StridesHorseView=jeu ou -StridesMonte=ancien : vue du jeu).",
   "tranche": "socle"
  },
  {
@@ -539,7 +539,7 @@
   "etat": "partiel",
   "niveau": "joue_ecran",
   "preuve": "unreal/docs/validation-mac-2026-11-17.md:46 (les deux clips de saut sélectionnés selon la vitesse ; ancien rig). Choix du clip et du miroir avec l'option (correction de M2) : ctest monte-miroir, jumpViewStep rejoué aux 921 images d'O1 (clip jc et miroir jm de la vue du web, 2 départs) et aux 19 scénarios de synthèse de HorseView.update (miroir/decisions.json, 348 images, 20 départs dont 10 en miroir, vitesses 6,5 à 10 m/s dont 7,999, 8 et 8,000001) : identiques ; Strides.Parite.HorseMirror section 6 : cheval Unreal (StepAnimation) sur les mêmes scénarios, 0 écart de clip ou de miroir, couche du saut = jump_*_M cuit ou clip importé au poids 1 ; mutations moteur dont « saut en miroir à main droite », « miroir jamais joué », « galop dès 7 m/s », « choix refait à chaque image » détectées. jump_canter_M d'Unreal à 0,0092 cm du web aux 50 clés. Capture côte à côte avec l'option (illustration, pas une comparaison de pose) : unreal/docs/parite/monte/captures/monte-saut-gauche-{web,unreal}.png. ; étape S4 a : ctest « monte-vue » (unreal/core/tests/test_horse_view.cpp, oracle unreal/core/tests/oracles/monte/vue/, 17 scénarios, 386 285 vérifications, 0 échec, plus grand écart 8,4e-8) ; dans le moteur Strides.Parite.HorseView (logique égale au web à 2,8e-16 près sur le cheval Unreal, replis de la pose réévaluée à 0,0000 cm de la géométrie) ; appuis : unreal/docs/parite/monte/appuis.md (étape S4 a)",
-  "ecart": "Seuil de 8 m/s du web par défaut depuis l'étape S2 b (captures du CSO refaites) ; l'ancien comportement (-StridesMonte=ancien) garde 7 m/s. Avec ou sans l'option, non portés : horloge du saut du web (toeOff, jt / T, foreLand) et contacts du clip qui la calent (asset.js:174-230), fondu jumpWeight (18/s, 12/s au retour), suite après réception (postLand jusqu'au poser suivant), montée propre du clip retranchée (rootY ; double hauteur possible : à confirmer à l'écran), saut tenu à part du mélange des allures ; le clip est lu depuis 0 au temps du jeu et coupé à la réception. Miroir seulement avec l'option ; jump_gallop_M (source importée à 30 images/s) jusqu'à 20,9 cm du web. Aux images de saut d'O1, les ancres s'écartent de 9,4 cm : la vue du web bascule le corps face aux barres (pjlHorse.js _barClear), ce qu'O1 n'exporte pas ; la pose mêlée elle-même a été comparée au web à 0,0045 cm (diagnostic du 24/11, non versionné). Étape S4 a : horloge et corps du saut du web derrière -StridesHorseView=web (posers des postérieurs d'E3 à l'image du web, garrot au sommet 2,66 – 2,91 m au lieu de 2,93 – 3,14 m) ; trot et jump_gallop importés à 30 images/s (S5).",
+  "ecart": "Seuil de 8 m/s du web par défaut depuis l'étape S2 b (captures du CSO refaites) ; l'ancien comportement (-StridesMonte=ancien) garde 7 m/s. Avec ou sans l'option, non portés : horloge du saut du web (toeOff, jt / T, foreLand) et contacts du clip qui la calent (asset.js:174-230), fondu jumpWeight (18/s, 12/s au retour), suite après réception (postLand jusqu'au poser suivant), montée propre du clip retranchée (rootY ; double hauteur possible : à confirmer à l'écran), saut tenu à part du mélange des allures ; le clip est lu depuis 0 au temps du jeu et coupé à la réception. Miroir seulement avec l'option ; jump_gallop_M (source importée à 30 images/s) jusqu'à 20,9 cm du web. Aux images de saut d'O1, les ancres s'écartent de 9,4 cm : la vue du web bascule le corps face aux barres (pjlHorse.js _barClear), ce qu'O1 n'exporte pas ; la pose mêlée elle-même a été comparée au web à 0,0045 cm (diagnostic du 24/11, non versionné). Étape S4 a : horloge et corps du saut du web (option à S4 a, défaut à S4 b) (posers des postérieurs d'E3 à l'image du web, garrot au sommet 2,66 – 2,91 m au lieu de 2,93 – 3,14 m) ; trot et jump_gallop importés à 30 images/s (S5).",
   "tranche": "a"
  },
  {
@@ -553,7 +553,7 @@
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "ctest « monte-vue » (unreal/core/tests/test_horse_view.cpp, oracle unreal/core/tests/oracles/monte/vue/, 17 scénarios, 386 285 vérifications, 0 échec, plus grand écart 8,4e-8) ; dans le moteur Strides.Parite.HorseView (logique égale au web à 2,8e-16 près sur le cheval Unreal, replis de la pose réévaluée à 0,0000 cm de la géométrie) ; appuis : unreal/docs/parite/monte/appuis.md (étape S4 a)",
-  "ecart": "Option. Derrière -StridesHorseView=web à l'étape S4 a (jeu par défaut inchangé). Hauteur des sabots lue sur le cheval Unreal (sole +0,80 cm non reprise) : corps à 0,8 cm au plus du web.",
+  "ecart": "Par défaut depuis l'étape S4 b (-StridesHorseView=jeu ou -StridesMonte=ancien : vue du jeu). Hauteur des sabots lue sur le cheval Unreal (sole +0,80 cm non reprise) : corps à 0,8 cm au plus du web.",
   "tranche": "a"
  },
  {
@@ -567,7 +567,7 @@
   "etat": "partiel",
   "niveau": "teste",
   "preuve": "ctest « monte-vue » (unreal/core/tests/test_horse_view.cpp, oracle unreal/core/tests/oracles/monte/vue/, 17 scénarios, 386 285 vérifications, 0 échec, plus grand écart 8,4e-8) ; dans le moteur Strides.Parite.HorseView (logique égale au web à 2,8e-16 près sur le cheval Unreal, replis de la pose réévaluée à 0,0000 cm de la géométrie) ; appuis : unreal/docs/parite/monte/appuis.md (étape S4 a) ; partie jouée : 10 sauts, marge sabot − barre ≥ +13,5 cm (avant : −24,2 à −18,7 cm sur 3 verticaux)",
-  "ecart": "Option. Derrière -StridesHorseView=web à l'étape S4 a (jeu par défaut inchangé). Contacts membres / barres (_limbContacts) non portés : le jeu Unreal ne juge pas les membres visibles.",
+  "ecart": "Par défaut depuis l'étape S4 b (-StridesHorseView=jeu ou -StridesMonte=ancien : vue du jeu). Contacts membres / barres (_limbContacts) non portés : le jeu Unreal ne juge pas les membres visibles.",
   "tranche": "a"
  },
  {
