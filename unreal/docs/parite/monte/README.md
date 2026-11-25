@@ -42,6 +42,12 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   (import et clips redonnent l'échelle du web à 2,6e-7 près) ; **taille du web par défaut** (garrot à 1,48 m des sabots,
   `Strides.Parite.HorseScale`), `-StridesHorseScale=jeu` rend l'ancienne ; relevés du concours identiques, captures du CSO
   refaites, niveau B 61 → 58 critères non tenus.
+- **Vue du cheval du web (étape S4 a, 25/11/2026, `-StridesHorseView=web`)** : inclinaison en virage, corps et horloge
+  du saut, cadence des clips, phase de foulée, membres repliés et bascule face aux barres portés en C++
+  (`StridesCore/HorseView`, ctest `monte-vue` : 386 285 vérifications sur 17 scénarios, écart ≤ 8,4e-8) ; dans le moteur,
+  logique égale au web à 2,8e-16 près (`Strides.Parite.HorseView`) ; appuis : 622 posers et levers sur 659 à l'image
+  exacte du web (17 avant), 1,4 cm en moyenne (25 cm avant) ; niveau B 58 → 50 critères non tenus ; en partie jouée,
+  plus aucun sabot sous le dessus d'une barre (marge ≥ +13,5 cm) et garrot au sommet 2,66 – 2,91 m (`appuis.md`).
 - **Coût en jeu, rendu réel (étape 7)** : la règle ajoute **+0,03 ms à l'arrêt et +0,05 ms au galop** au temps du jeu. Le
   seuil était de 0,3 ms ; la mesure se répète d'une passe à l'autre à 3,5 % près. Aucune différence de temps GPU n'est
   mesurable au-delà du bruit (`cout.md`).
@@ -166,6 +172,16 @@ python3 scripts/unreal/mutations-horse-straps.py [--moteur]    # cœur ~30 s ; -
 "$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -game -windowed -ResX=844 -ResY=390 -StridesShots=monte-b -StridesRider=regles \
   -StridesHorseLead=web [-StridesTack=aucune] -StridesShotsDir=<dossier> -StridesMontePoses=unreal/docs/parite/monte/captures/niveau-b/poses.json -abslog=<journal>
 python3 scripts/unreal/perf-summary.py --mesurer --sellerie --sortie=<dossier> --passes=3     # regles contre regles-sans-sellerie
+# Étape S4 (vue du cheval du web : inclinaison en virage, corps et horloge du saut) : oracle vue/ (Vite 5178, ~30 min),
+# ctest « monte-vue », test moteur et appuis, niveau B avant / après, captures, mutations
+BASE=http://127.0.0.1:5178 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs --vue [--only=E3,V3e]  # -> oracles/monte/vue/, Content/Data/pjl_horse_view.json
+"$UE_REEL/…/UnrealEditor" … -ExecCmds="Automation RunTests Strides.Parite.HorseView; Quit" … -StridesMonteDir=<dossier>
+python3 scripts/unreal/horse-view-appuis.py --unreal=<dossier>/unreal-vue          # -> unreal/docs/parite/monte/appuis.md et .json
+"$UE_REEL/…/UnrealEditor" … -ExecCmds="Automation RunTests Strides.Parite.RiderOnHorse; Quit" … -StridesMonteDir=<dossier> [-StridesHorseView=web]
+BASE=http://127.0.0.1:5178 node --import ./scripts/unreal/pw-chrome.mjs scripts/unreal/export-rider-rules.mjs --shots=<dossier> \
+  --only-shots=galop,galop-gauche,appel,saut-sommet,reception                     # web + poses.json (-> captures/s4/poses.json)
+"$UE_REEL/…/UnrealEditor" … -game -windowed -ResX=844 -ResY=390 -StridesShots=monte-b -StridesMontePoses=<poses.json> -StridesShotsDir=<dossier> [-StridesHorseView=web]
+python3 scripts/unreal/mutations-horse-view.py [--moteur]                         # cœur ~70 s ; --moteur : UBT + éditeur
 # Étape S3 (taille du cheval) : mesure et option (sans rendu), niveau B avant / après, captures avant / après, mutations
 "$UE_REEL/…/UnrealEditor" "<chemin réel>/…/StridesGrandTour.uproject" -ExecCmds="Automation RunTests Strides.Parite.HorseScale+Strides.Monte.Options; Quit" \
   -unattended -nullrhi -nosplash -trace=none -abslog=<journal> -ReportExportPath=<dossier>
@@ -1765,3 +1781,138 @@ ni le maillage (coût attendu inchangé, non mesuré : à confirmer).
 
 Reste à faire (S3) : rien pour la taille ; lacet de −0,69° et sol sur la sole (+0,80 cm) du web non repris (non demandés
 par la décision, à proposer) ; S4 (inclinaison en virage, corps et horloge du saut, oracle des appuis), S5.
+
+## Étape S4 (a). Vue du cheval du web derrière une option : inclinaison en virage, corps et horloge du saut (25/11/2026)
+
+Décision de Julien du 24/11/2026 (`decisions.md`) : porter l'inclinaison du cheval dans les virages, le corps au saut et
+l'horloge du saut avec un oracle des appuis. Base : `5efa224e` (S3 b). Jeu par défaut inchangé à cette étape : tout est
+derrière **`-StridesHorseView=web`** (`StridesMonteOptions::ResolveWebHorseView`, défaut `bWebHorseViewByDefault = false`,
+`-StridesMonte=ancien` l'écarte ; elle demande la main du web).
+
+### Ce que le web fait (lu dans le JS)
+
+- `horse/anim.js` animateHorse : allure de la vitesse normalisée (seuils `GAIT_EDGES` et hystérésis), main au galop,
+  fréquence et facteur de service lissés (7/s, foulée bornée par Lmax = 1,35 m), mouvement lissé (6/s ou 4/s) ; la phase
+  `st.phase` avance à cette fréquence, y compris à l'arrêt qui commence et pendant le saut.
+- `pjlHorse.js` _snapshot : foulée lissée (5/s, 3,42 → 4,5 m de 8,2 à 11,5 m/s), phase de la vue qui avance de
+  vitesse / foulée, cadence bornée (`CADENCE`), figée au saut et à l'arrêt ; réécriture de `h.anim.phase` (calage `align`) ;
+  roulis −atan2(ω·v ; 9,81) × 0,9 lissé à 6/s ; `landT`, mode ; `_jumpTime` : vol du jeu réparti en deux morceaux autour du
+  sommet du tronc du clip, départ 0,12 s (`PUSH`) avant le décollage des postérieurs.
+- `pjl/view.js` update : fondu de main, clip de saut choisi au départ (jump_gallop au-delà de 8 m/s, miroir à gauche),
+  horloge `toeOff + jt / T × (foreLand − toeOff)`, fondu `jumpWeight` (18/s, puis 12/s), suite après réception
+  (`postLand`, jusqu'au poser suivant des antérieurs), poids des allures, des virages L90 / R90 (85 % à 0,95 rad/s) et des
+  miroirs lissés à 14/s, temps des clips = phase × durée ; hauteur du corps `rootY` (montée du tronc du clip annulée :
+  la parabole du jeu porte seule la hauteur) lissée à 30/s ; inclinaison × 0,75 (au plus 0,3 rad), annulée au saut.
+- `pjlHorse.js` _pushContact (corps abaissé tant que les postérieurs poussent, résorbé sur 25 % du vol), _barNeed,
+  _limbTuck (cuisse ou canon tourné autour de son attache, 0,6 rad au plus, par dichotomie) et _barClear (croupe relevée
+  autour des antérieurs, avant-main autour des postérieurs, relevé en vol).
+- `asset.js` : appuis des clips de saut (toeOff, foreLand, hindLand, nextFore ; sabot à moins de 3,5 cm de son point le
+  plus bas), montée du tronc (`trunkRise`).
+
+### Oracle (`unreal/core/tests/oracles/monte/vue/`, 7,8 Mo, plus gros fichier 0,6 Mo ; `Content/Data/pjl_horse_view.json`)
+
+`export-rider-rules.mjs --vue` : les 8 scénarios d'O1 rejoués à l'identique (repère S égal à O1 à chaque image, contrôlé)
+et 9 scénarios propres à la vue : trot en cercle à gauche et à droite, grand galop en cercle à gauche et à droite, sauts
+à main droite imposée (E3 et E3b), vertical abordé à 7,5 m/s (deux mains) et à 8,5 m/s (appel à 7,9 m/s : départage le
+seuil du grand saut, 8 m/s au web, 7 m/s dans l'ancien jeu). Pour chaque image : locomotion du jeu avant et après,
+entrées et sorties de `_snapshot`, état de la vue, `_pushContact`, chaque appel de `_barNeed` (positions des os, mémoire),
+`_barClear` (avec les entrées du repli), holder, et les **appuis** : os des quatre sabots après l'image (monde, repère du
+cheval, sol). Données : analyse des clips de saut du web, `gaitInfo`, durées et ordre des clips, constantes relues dans le
+source de `pjlHorse.js` (jamais recopiées). Deux exports donnent des fichiers identiques (E3 relancé : « inchangé »).
+
+### Cœur C++ (`StridesCore/HorseView`) et ctest `monte-vue`
+
+`locoStep`, `snapshotStep`, `jumpTimeOf`, `viewStep`, `pushStep`, `barNeed`, `tuckStep`, `barClearStep`. Deux rejeux par
+scénario : pas à pas (état du web repris à chaque image, fonction par fonction) et enchaîné (comme le jeu : la chaîne
+repart de son propre état). **386 285 vérifications, 0 échec**, 87 % des valeurs identiques au bit ; plus grand écart
+8,4e-8 m, sur les grandeurs qui dépendent des sabots repliés (le web tourne le quaternion local de l'os, le port tourne le
+sabot en bloc autour de l'origine de l'os ; seuil 1e-6 m), sinon ≤ 1e-9. Constantes du port égales à celles du source.
+
+### Dans Unreal (`FStridesHorseView`, `UStridesHorseViewPost`)
+
+- Avant la pose (tick du cheval) : entrées du cheval du cœur CSO (vitesse, `lastTurn`, `jumpT`, `jumpDur`, freinage et
+  cabré du refus) → couches du mélangeur à couches de l'étape M2 (clips importés ou miroirs, poids, temps, dans l'ordre
+  des actions du web) et repère du corps (hauteur, avance, bascule puis inclinaison, ordre XYZ de three.js), posé sur la
+  transformée relative du maillage (échelle comprise).
+- Après la pose (`TG_PostUpdateWork`, avant la sellerie) : sabots et os d'attache lus sur le maillage posé, abaissement
+  d'appel, repli des membres (rotation de l'os dans le mélangeur, pose réévaluée seulement quand un repli est actif),
+  bascule. La sellerie reçoit le roulis et la phase de la vue ; la cavalière, son abaissement d'appel (`contactOff`).
+- Deux défauts trouvés en partie jouée et corrigés : (1) une réévaluation pendant l'évaluation parallèle de la pose
+  (attente de la tâche ajoutée) ; (2) **plantage SIGBUS** à la 18e seconde : les clips de virage et d'arrêt, chargés sans
+  référence, étaient libérés par le ramasse-miettes puis lus par le mélangeur (désormais retenus par le cheval ;
+  `Strides.Parite.HorseView` passe le ramasse-miettes et vérifie qu'aucun n'est libéré).
+- Écarts déclarés : durées des clips = celles des clips importés (égales au web à 1e-6 s près, y compris trot et
+  jump_gallop ; leur contenu à 30 images/s reste l'objet de S5) ; `SecondaryMotion` (queue, crinière, encolure, oreilles)
+  et `_limbContacts` (faute comptée sur les membres visibles) non portés ; `speedMul` = 1 (Comète) ; monde ouvert :
+  horloge du saut figée au départ (`jumpT` 0 pendant le saut libre).
+
+### Preuves dans le moteur
+
+- `Strides.Parite.HorseView` (17 scénarios, cheval Unreal à la taille du web, repère de l'acteur = holder du web) :
+  allure, main, phase, poids et temps des clips, horloge et fondu du saut, inclinaison égaux au web à **2,8e-16** près à
+  chaque image ; replis : 222 images, sabots de la pose réévaluée à **0,0000 cm** de la géométrie du web ; clips retenus
+  après le ramasse-miettes ; coût de la vue 0,006 ms en moyenne (0,03 ms au plus) hors réévaluation.
+- **Appuis** (`appuis.md`, `appuis.json`) : 659 posers et levers du web. **Avant** (vue du jeu : clip de la vitesse à
+  vitesse 1, saut depuis 0, corps immobile) : 298 appariés à 8 images près, 17 à l'image exacte, écart moyen 3,8 images,
+  position 25 cm. **Après** : **647 appariés, 622 à l'image exacte**, écart moyen 0,04 image (au plus 2), position
+  1,4 cm en moyenne. Sauts : posers des postérieurs tous à l'image du web, à 0,6 – 3,3 cm. 12 événements non appariés
+  (cercles au galop E2g et au trot V2d, deux sauts), position au plus 45 cm sur un événement apparié (à confirmer à
+  l'image). Corps après la bascule : à 0,8 cm et 0,17° au plus du web (sabots Unreal : sole +0,80 cm, clips importés).
+- **Niveau B** (`Strides.Parite.RiderOnHorse`, `rider-rules-niveau-b.mjs`) : **58 → 50 critères non tenus sur 233**
+  (`s4/niveau-b-vue.md`). Galop en cercle : hanche E2g droite 15,6° → 3,4°, E2d gauche 10,2° → 3,7° (contre O1, seuil
+  6°) ; ouverture du genou E2g droit 16,4° → 11,3° (O2 − O1 = 11,25° : proportions de la cavalière), E2d droit contre O2
+  21,2° → 3,4°. Saut E3 : poser des postérieurs détecté image 70 → **82** (= O1), règle 70 → **73** (= O1) ; E3b 75 → 76
+  (= O1). Phase lue par la règle = `hz.ph` du web à 1e-5 près sur les 689 images, arrêt et saut compris (avant : jusqu'à
+  0,50 de phase tenue au saut).
+- `Strides.Monte.Options` : 10 lignes de commande de la vue résolues, 3 de plus créées par `BeginPlay`.
+
+### Partie jouée (`-StridesShots=monte-s2 -StridesMonteS2Parcours`, rendu GPU réel, 844 × 390)
+
+Mêmes 10 sauts aux mêmes instants (0,1 s près), « 0 pt Arrivée ✓ » en 60,46 s (avant) et 60,49 s (après), aucune image
+où la main de l'ombre diffère. Regard sur le maillage affiché (os des sabots au-dessus des barres) : **marge minimale
+sabot − barre +13,5 à +55,7 cm après**, contre −24,2 à +92,9 cm avant (trois verticaux sous la barre : −20,1, −24,2 et −18,7 cm) ;
+garrot au sommet **2,66 – 2,91 m** contre 2,93 – 3,14 m (la montée du tronc du clip n'est plus ajoutée à la parabole).
+La simulation (trajectoire, jugement, chrono) ne lit pas le maillage : inchangée.
+
+### Captures (`captures/s4/`, rendu GPU réel, 844 × 390 ; montages avant | après | web)
+
+- Poses jumelles du niveau B (même image d'O1, même caméra du web dans le repère du cheval) : `b-monte-<galop | galop-gauche
+  | appel | saut-sommet | reception>.png` ; web : appel et réception d'E3 relus dans O1 (`jumpPhases`), images 41 et 59.
+  PSNR avant → après 17,3 à 21,2 dB (`b-avant-apres.json`).
+- Partie jouée : `jeu-monte-<arret | galop-droite | galop-gauche | saut-droite | saut-gauche>.png` (web de l'étape S2 ; pas
+  de web pour le galop à droite). Au saut, le cheval après a la posture du web à la même durée de vol (avant-main
+  repliée, corps plus bas).
+
+### Mutations (`scripts/unreal/mutations-horse-view.py`)
+
+Cœur : **52 mutations, 46 détectées, 6 équivalentes sur l'oracle** (déclarées : rattrapage de hauteur au-delà de 0,25 m,
+inclinaison remise à plat au saut, antérieurs sous le sol à l'appel, barre tombée, levier sous 0,8 m, relevé en vol
+au-delà de 0,25 m : branches jamais prises par le jeu web dans les 17 scénarios). Moteur (`--moteur`, contre
+`Strides.Parite.HorseView` et `Strides.Monte.Options`, 3 436 s puis relance ciblée de 961 s après l'ajout du contrôle des
+sabots) : **9 mutations, 6 détectées** (option prise pour « jeu », axe du repli sans la symétrie web → Unreal, roulis
+inversé, main imposée ignorée, pose non réévaluée avec les replis, repli appliqué dans le repère local), **3 déclarées** :
+ordre bascule / inclinaison (jamais toutes deux non nulles dans l'oracle), ordre alphabétique des clips (écart sous les
+seuils, non mesuré, à confirmer), clips non retenus contre le ramasse-miettes (l'éditeur les garde chargés : le défaut ne
+se voit qu'en `-game`, où il a fait planter la partie avant la correction). Sources rétablis, recompilation finale code 0.
+
+### Portes (S4 a)
+
+- G1 : ctest code 0 (`.ue-cache/travail/core-s4`) : cœur 300 729, `monte` 306 914, `monte-cheval` 4 488, `monte-cavaliere`
+  72 547, `perf` 20, `monte-miroir` 7 069, `monte-sellerie` 7 443, **`monte-vue` 386 285** vérifications, 0 échec.
+- G2 : UBT code 0, aucun avertissement ni erreur du compilateur.
+- G3 : `Automation RunTests Strides` sans option : **42 tests, 42 en succès** (nouveau : `Strides.Parite.HorseView` ; 4 avec
+  l'avertissement `idevice_id`). Avec `-StridesHorseView=web` : 41 en succès, `Strides.Monte.Options` en échec par sa garde
+  (attendu : le test épingle le défaut) ; `Strides.Parite.RiderOnHorse` avec l'option : succès.
+- G4 : ci-dessus.
+- G5 : `git diff --quiet HEAD -- unreal/docs/parite/cso` code 0 (jeu par défaut inchangé).
+- G6 : `build-parite.py` code 0 ; lignes `cheval.pjl-phase`, `cheval.pjl-virages`, `cheval.pjl-allures`,
+  `cheval.inclinaison-virage`, `cheval.saut-animation`, `cheval.saut-appui-posterieurs`, `cheval.saut-membres-barres`.
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Incidents : le serveur Zen local a bloqué à plusieurs reprises le démarrage de l'éditeur en `-game` (attente « Waiting for ZenServer to
+be ready » alors que zenserver signalait être prêt) ; éditeurs arrêtés par la garde (`kill -9`, mes processus), relancés ;
+cache Zen non touché ; cause à confirmer.
+
+Conclusion de S4 a : contrôles conformes (logique égale au web, appuis et niveau B améliorés, partie jouée identique hors
+image et sans sabot sous les barres). Passage par défaut dans un commit séparé (S4 b), avec les captures du CSO refaites.
+

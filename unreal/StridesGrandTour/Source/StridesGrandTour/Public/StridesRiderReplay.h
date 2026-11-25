@@ -22,6 +22,7 @@
 #include "StridesCore/HorseTack.h"
 #include "StridesCore/MiniJson.h"
 #include "StridesCore/RiderPose.h"
+#include "StridesHorseView.h"
 
 class AStridesHorse;
 class UStridesHorseTack;
@@ -53,10 +54,20 @@ public:
 	// du jeu, ou la pose du web en contrôle) et passage espace du maillage → repère du cheval utilisé.
 	const TArray<FTransform>& LastPose() const;
 	const strides::tack::Affine& LastToHolder() const { return ToHolderLast; }
+	// Étape S4 : avec la vue du cheval du web (AStridesHorse::UsesWebView), le cheval n'est plus posé par le canal mx.a d'O1
+	// mais par sa vue (FStridesHorseView), nourrie des entrées du cheval du jeu web relevées dans l'oracle vue/ (même
+	// scénario, mêmes images qu'O1 : repère S identique, contrôlé à l'export) : clips, poids, temps, corps (hauteur,
+	// bascule, inclinaison), replis ; roulis et phase de foulée de la vue donnés à la sellerie. Vrai si le scénario est rejoué
+	// ainsi.
+	bool UsesView() const { return bView; }
 
 private:
 	const UAnimSequence* Clip(const FString& Name);
 	bool PoseHorse(const J& Mx, FString* Err);
+	bool PoseHorseView(const J& Rec, const J& H, FString* Err);
+	J VueRun;
+	bool bView = false;
+	FStridesHorseViewTestHooks Hooks;
 	AStridesHorse* Horse = nullptr;
 	UStridesHorseTack* Tack = nullptr;
 	UStridesRiderRig* Rig = nullptr;

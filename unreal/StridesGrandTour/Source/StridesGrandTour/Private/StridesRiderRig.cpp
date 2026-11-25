@@ -1,4 +1,6 @@
 #include "StridesRiderRig.h"
+#include "StridesHorse.h"
+#include "StridesHorseView.h"
 #include "Components/PoseableMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/SkinnedAsset.h"
@@ -284,10 +286,11 @@ RideHorseSample UStridesRiderRig::SampleFromTack(const UStridesHorseTack& Tack, 
 	H.attachY = O.seatPos.y;
 	H.attachZ = Vec3{Z.x, Z.y, Z.z};
 	H.horseY = 0;
-	// contactOff du web (pjlHorse.js _pushContact : corps abaissé à l'appel pendant que les postérieurs poussent) : le cheval
-	// Unreal n'abaisse pas son corps (horloge du saut non portée, étape M2) ; il n'y a donc rien à retirer : 0 exact pour ce
-	// cheval.
-	H.contactOff = 0;
+	// contactOff du web (pjlHorse.js _pushContact : corps abaissé à l'appel pendant que les postérieurs poussent) : avec la
+	// vue du web (-StridesHorseView=web, étape S4), celui de la vue du cheval Unreal ; sans elle, le cheval Unreal n'abaisse
+	// pas son corps : 0 exact.
+	const AStridesHorse* Hr = Cast<AStridesHorse>(Tack.GetOwner());
+	H.contactOff = Hr && Hr->UsesWebView() && Hr->HorseView() ? Hr->HorseView()->GetView().contactOff : 0;
 	H.speed = Speed;
 	// Phase de foulée, convention du web (étape M3 : calage des clips, UStridesHorseTack::StepPhase).
 	H.phase = Tack.RiderPhase();

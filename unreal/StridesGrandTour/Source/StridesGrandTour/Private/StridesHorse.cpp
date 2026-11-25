@@ -25,6 +25,7 @@
 #include "StridesHorseTack.h"
 #include "StridesHorseTackMesh.h"
 #include "StridesHorseMirror.h"
+#include "StridesHorseView.h"
 #include "StridesMonteOptions.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
@@ -123,6 +124,19 @@ void AStridesHorse::BeginPlay()
 		FString Err;
 		if (!EnableWebLead(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides main au galop : clips miroir non cuits (%s), clips d'origine gardés"), *Err);
 	}
+	// Étape S4 : vue du cheval du web (inclinaison en virage, corps et horloge du saut), sur le mélangeur à couches.
+	if (StridesMonteOptions::WebHorseViewFromCommandLine())
+	{
+		FString Err;
+		if (!bLeadWeb)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Strides vue du cheval du web : demande la main du web (-StridesHorseLead=web), vue du jeu gardée"));
+		}
+		else if (!EnableWebView(&Err))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Strides vue du cheval du web non appliquée (%s), vue du jeu gardée"), *Err);
+		}
+	}
 	// Essai de monte (voie A) : sellerie lue par les règles de monte, avec la cavalière de la règle.
 	if (Monte.bRiderRules && Mesh)
 	{
@@ -136,6 +150,134 @@ void AStridesHorse::BeginPlay()
 	{
 		FString Err;
 		if (!EnableTackMesh(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides sellerie complète non affichée (%s)"), *Err);
+	}
+	// Sellerie après la vue (corps et replis posés avant la lecture du siège et des ancres).
+	if (ViewPost && Tack) Tack->AddTickPrerequisiteComponent(ViewPost);
+}
+
+bool AStridesHorse::EnableWebView(FString* Err)
+{
+	if (bViewWeb) return true;
+	if (!bLeadWeb && !EnableWebLead(Err)) return false;
+	TSharedPtr<FStridesHorseView> V = MakeShared<FStridesHorseView>();
+	const FString ClipRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_");
+	if (!V->Init(Mesh, ClipRoot, Mirrors.Get(), Err)) return false;
+	View = V;
+	{
+		TArray<const UAnimSequence*> Seqs;
+		View->ClipAssets(Seqs);
+		for (int32 I = 0; Mirrors.IsValid() && I < Mirrors->Num(); I++)
+			if (Mirrors->Source(I)) Seqs.AddUnique(Mirrors->Source(I));
+		ViewClipRefs.Reset();
+		for (const UAnimSequence* S : Seqs) ViewClipRefs.Add(S);
+	}
+	if (!ViewPost)
+	{
+		ViewPost = NewObject<UStridesHorseViewPost>(this, TEXT("HorseViewPost"));
+		ViewPost->RegisterComponent();
+		ViewPost->AddTickPrerequisiteComponent(Mesh);
+	}
+	if (Tack) Tack->AddTickPrerequisiteComponent(ViewPost);
+	bViewWeb = true;
+	UE_LOG(LogTemp, Display, TEXT("Strides vue du cheval du web : %d clips ; durées différentes du web : %s"), (int32)View->Data().clips.size(),
+		View->DurationReport().IsEmpty() ? TEXT("aucune") : *View->DurationReport());
+	UpdateWebViewAnimation(0.0);
+	return true;
+}
+
+// Option -StridesHorseView=web : vue du web (FStridesHorseView). Entrées : cheval du cœur CSO (vitesse, virage lissé
+// lastTurn, saut jumpT et jumpDur, freinage et cabré du refus) ; hors concours, lacet du monde ouvert lissé (comme
+// UpdateWebLeadAnimation) et saut du monde ouvert (jumpT 0 pendant le saut : horloge figée au départ, déclaré).
+// speedMul du web = 1 (Comète : vitesse du profil 1 ; équipement, état et fatigue du cavalier non portés).
+void AStridesHorse::UpdateWebViewAnimation(double Dt)
+{
+	UStridesHorseAnimInstance* A = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
+	if (!A || !View.IsValid() || !View->IsReady()) return;
+	OpenWorldTurn = OpenWorldTurn + (YawRate - OpenWorldTurn) * (1 - FMath::Exp(-8.0 * Dt));
+	FStridesHorseView::FInputs In;
+	In.Dt = Dt;
+	In.Speed = bCsoControls ? Sim.speed : SpeedMS;
+	In.JumpT = bCsoControls ? Sim.jumpT : (bJumping ? 0.0 : -1.0);
+	In.JumpDur = Sim.jumpDur;
+	In.Brake = Sim.brake;
+	In.RearT = Sim.rearT;
+	In.RearAnim = Sim.rearAnim;
+	In.LastTurn = bTurnForTests ? TurnForTests : bCsoControls ? Sim.lastTurn : OpenWorldTurn;
+	if (ViewHooks) In = ViewHooks->In;
+	View->SetMeshScale(Mesh->GetRelativeScale3D().X);
+	TArray<FStridesHorseLayer> Layers;
+	if (Dt > 0 || !A->Layers.Num()) View->StepPre(In, Layers);
+	else Layers = A->Layers;
+	// Main, fondu de main et clip de saut vus par la sellerie, les tests et les captures (mêmes grandeurs que la vue).
+	LeadSt.lead = View->GetLoco().lead;
+	LeadSt.hold = View->GetLoco().leadHold;
+	LeadBlendV = View->GetView().leadBlend;
+	JumpV.wasJumping = View->GetView().wasJumping;
+	JumpV.hasClip = !View->GetView().jumpClip.empty();
+	JumpV.clip.gallop = View->GetView().jumpClip == "jump_gallop";
+	JumpV.clip.mirror = View->GetView().jumpMirror;
+	A->Tucks.Reset();
+	A->Layers = MoveTemp(Layers);
+	const double Scale = Mesh->GetRelativeScale3D().X;
+	Mesh->SetRelativeTransform(View->MeshRelative(Scale));
+}
+
+void AStridesHorse::SetWebViewActiveForTests(bool bOn)
+{
+	bViewWeb = bOn && View.IsValid();
+	if (UStridesHorseAnimInstance* A = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr) A->Tucks.Reset();
+	if (Mesh) Mesh->SetRelativeTransform(FTransform(FQuat::Identity, FVector::ZeroVector, Mesh->GetRelativeScale3D()));
+	if (View.IsValid()) View->Reset();
+}
+
+void AStridesHorse::SetViewPostTickEnabled(bool bOn)
+{
+	if (ViewPost) ViewPost->SetComponentTickEnabled(bOn);
+}
+
+void AStridesHorse::PostPoseView()
+{
+	if (!bViewWeb || !View.IsValid() || !Mesh || LastDt <= 0) return;
+	UStridesHorseAnimInstance* A = Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance());
+	if (!A) return;
+	// Évaluation parallèle de la pose de cette image terminée avant de la lire et de la réévaluer (sinon deux évaluations du
+	// même mélangeur en même temps : plantage constaté en partie jouée le 25/11/2026, SIGBUS dans FStridesHorseAnimProxy).
+	Mesh->HandleExistingParallelEvaluationTask(true, true);
+	FStridesHorseView::FObstacle Ob;
+	Ob.Time = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (Course && Sim.hasLastJump && Sim.lastJumpObstacle >= 0 && Sim.lastJumpObstacle < (int32)Course->Obstacles().size())
+	{
+		Ob.bNear = Sim.jumpT >= 0 || (Sim.lastLanded && Ob.Time - Sim.lastLandTime < 0.8);
+		const strides::CsoObstacle& O = Course->Obstacles()[Sim.lastJumpObstacle];
+		const std::vector<strides::CsoFenceState>& FS = Course->FenceStates();
+		const strides::CsoFenceState* St = Sim.lastJumpObstacle < (int32)FS.size() ? &FS[Sim.lastJumpObstacle] : nullptr;
+		Ob.O.id = Sim.lastJumpObstacle + 1;
+		Ob.O.x = O.x, Ob.O.z = O.z, Ob.O.nx = O.n.x, Ob.O.nz = O.n.z, Ob.O.tx = O.t.x, Ob.O.tz = O.t.z, Ob.O.w = O.w;
+		Ob.O.ground = GroundAt(O.x, O.z);
+		for (size_t I = 0; I < O.bars.size(); I++)
+		{
+			strides::hview::ObBar B;
+			B.s = O.bars[I].s;
+			B.h = O.bars[I].h;
+			B.mesh = St && I < St->rails.size();
+			B.fall = B.mesh && St->rails[I].falling;
+			Ob.O.bars.push_back(B);
+		}
+		Ob.O.sign = Sim.lastGeo.sign;
+		for (const strides::RailAhead& R : Sim.lastGeo.rails) Ob.O.rails.push_back(R.s);
+		Ob.O.margins = Sim.lastPlan.margins;
+	}
+	if (ViewHooks) Ob = ViewHooks->Ob;
+	TArray<FStridesHorseTuck> Tucks;
+	const bool bTuck = View->StepPost(Mesh->GetComponentSpaceTransforms(), ViewHooks && ViewHooks->bActorXf ? ViewHooks->ActorXf : GetActorTransform(), Ob,
+		[this](double Wx, double Wz) { return ViewHooks ? ViewHooks->Ground : GroundAt(Wx, Wz); }, Tucks);
+	Mesh->SetRelativeTransform(View->MeshRelative(Mesh->GetRelativeScale3D().X));
+	if (bTuck)
+	{
+		// Pose réévaluée avec les replis (mêmes couches) : la sellerie et le rendu lisent la pose repliée de cette image.
+		A->Tucks = Tucks;
+		Mesh->TickAnimation(0.f, false);
+		Mesh->RefreshBoneTransforms();
 	}
 }
 
@@ -358,6 +500,11 @@ void AStridesHorse::UpdateWebLeadAnimation(double Dt)
 void AStridesHorse::UpdateAnimation()
 {
 	if (!Mesh || !Mesh->GetSkeletalMeshAsset()) return;
+	if (bViewWeb)
+	{
+		UpdateWebViewAnimation(LastDt);
+		return;
+	}
 	if (bLeadWeb)
 	{
 		UpdateWebLeadAnimation(LastDt);

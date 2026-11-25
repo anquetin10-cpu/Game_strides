@@ -62,3 +62,11 @@ target_sources(strides_core PRIVATE ${CORE}/Private/HorseStraps.cpp)
 add_executable(strides_horse_straps_tests tests/test_horse_straps.cpp)
 target_link_libraries(strides_horse_straps_tests strides_core)
 add_test(NAME monte-sellerie COMMAND strides_horse_straps_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Étape S4 (inclinaison en virage, corps et horloge du saut) : vue du cheval WildMesh (pjl/view.js update, pjlHorse.js
+# _snapshot, _jumpTime, _pushContact, _barNeed, _limbTuck, _barClear ; horse/anim.js : allure, main, phase) portée en C++
+# (StridesCore/HorseView), contre l'oracle vue/ exporté du jeu web (scripts/unreal/export-rider-rules.mjs --vue)
+# (ctest « monte-vue ») ; dans le moteur : Strides.Parite.HorseView.
+target_sources(strides_core PRIVATE ${CORE}/Private/HorseView.cpp)
+add_executable(strides_horse_view_tests tests/test_horse_view.cpp)
+target_link_libraries(strides_horse_view_tests strides_core)
+add_test(NAME monte-vue COMMAND strides_horse_view_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)

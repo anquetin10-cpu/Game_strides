@@ -1988,6 +1988,7 @@ void AStridesShots::TickMonteB(float DeltaSeconds, APlayerController* PC)
 		}
 		Horse->SetActorTickEnabled(false);
 		Horse->HorseTack()->SetComponentTickEnabled(false);
+		Horse->SetViewPostTickEnabled(false);
 		Rider->SetActorTickEnabled(false);
 		MonteStep = 3;
 		MonteShot = 0;

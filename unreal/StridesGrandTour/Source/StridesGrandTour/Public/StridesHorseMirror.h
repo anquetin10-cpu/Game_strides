@@ -87,6 +87,17 @@ struct FStridesHorseLayer
 	double Weight = 0;
 };
 
+// Étape S4 (vue du web, -StridesHorseView=web) : repli d'un membre au-dessus d'une barre (pjlHorse.js _limbTuck) : l'os
+// (indice du squelette de référence du maillage) tourne de Angle autour de l'axe AxisCS (espace du composant, unitaire),
+// passant par son origine, après le mélange des clips : rotation locale q' = Wp⁻¹ · R · Wp · q (Wp : rotation de l'os
+// parent dans l'espace du composant), comme bone.quaternion.premultiply du web.
+struct FStridesHorseTuck
+{
+	int32 Bone = INDEX_NONE;
+	FVector AxisCS = FVector::ZeroVector;
+	double Angle = 0;
+};
+
 struct FStridesHorseAnimProxy : public FAnimInstanceProxy
 {
 	FStridesHorseAnimProxy() = default;
@@ -94,6 +105,7 @@ struct FStridesHorseAnimProxy : public FAnimInstanceProxy
 	virtual void PreUpdate(UAnimInstance* InAnimInstance, float DeltaSeconds) override;
 	virtual bool Evaluate(FPoseContext& Output) override;
 	TArray<FStridesHorseLayer> Layers;
+	TArray<FStridesHorseTuck> Tucks;
 	TSharedPtr<const FStridesHorseMirrorSet> Set;
 };
 
@@ -105,6 +117,7 @@ class STRIDESGRANDTOUR_API UStridesHorseAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 public:
 	TArray<FStridesHorseLayer> Layers;
+	TArray<FStridesHorseTuck> Tucks;
 	TSharedPtr<const FStridesHorseMirrorSet> Set;
 	// Phase du clip de la première couche (temps / durée), −1 sans couche (UStridesHorseTack::PlayedClipPhase).
 	double Phase() const;

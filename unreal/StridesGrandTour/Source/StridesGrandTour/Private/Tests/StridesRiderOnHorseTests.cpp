@@ -187,6 +187,11 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	double PenCtl = 1e9, PenCtlMax = 0;
 	int32 PenCtlIn = 0;
 	if (!TestTrue(FString::Printf(TEXT("option -StridesHorseLead=web activée (%s)"), *Err), Horse->EnableWebLead(&Err))) return false;
+	// Étape S4 : vue du cheval du web avec -StridesHorseView=web (cheval posé par sa vue, entrées de l'oracle vue/).
+	if (StridesMonteOptions::WebHorseViewFromCommandLine())
+		if (!TestTrue(FString::Printf(TEXT("vue du cheval du web (%s)"), *Err), Horse->EnableWebView(&Err))) return false;
+	AddInfo(FString::Printf(TEXT("vue du cheval : %s"), Horse->HorseView() ? TEXT("web (oracle vue/)") : TEXT("jeu (canal mx.a d'O1)")));
+	const bool bViewMode = Horse->HorseView() != nullptr;
 	if (!TestTrue(FString::Printf(TEXT("règles de monte activées (%s)"), *Err), Rider->EnableRulesRig(&Err))) return false;
 	UStridesRiderRig* Rig = Rider->RulesRig();
 	UPoseableMeshComponent* M = Rider->RulesMesh();
@@ -219,7 +224,7 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	FWorst WPhase, WHeld, WBob, WBobWeb, WPitchWeb, WRho, WReach, WSeatWeb, WCost;
 	int32 Images = 0, Rewritten = 0, Held = 0, MirrorFrames = 0, BadInputs = 0, NonFinite = 0, AdapterFrames = 0, AdapterBad = 0;
 	double CostSum = 0;
-	FString Index = FString::Printf(TEXT("{\"schema\":\"strides.monte.niveau_b_unreal/1\",\"generator\":\"Strides.Parite.RiderOnHorse\",\"meshScale\":%.9g,\"runs\":["), Horse->BodyMesh()->GetRelativeScale3D().X);
+	FString Index = FString::Printf(TEXT("{\"schema\":\"strides.monte.niveau_b_unreal/1\",\"generator\":\"Strides.Parite.RiderOnHorse\",\"meshScale\":%.9g,\"view\":%s,\"runs\":["), Horse->BodyMesh()->GetRelativeScale3D().X, Horse->HorseView() ? TEXT("true") : TEXT("false"));
 	const TCHAR* Ids[] = {TEXT("E1"), TEXT("E1b"), TEXT("E2g"), TEXT("E2d"), TEXT("E3"), TEXT("E3b")};
 	for (int32 Run = 0; Run < 6; Run++)
 	{
@@ -238,7 +243,7 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 		TackMesh->ResetStraps();
 		const J& F1 = O1["frames"];
 		FString Out = FString::Printf(TEXT("{\"id\":\"%s\",\"frames\":["), *Id);
-		double PrevSeatY = 0, PrevPhase = 0;
+		double PrevSeatY = 0, PrevPhase = 0, PrevCo = 0;
 		// Référence indépendante de l'adaptateur Unreal : le cœur (StridesCore/HorsePhase, prouvé par le ctest) nourri du
 		// premier clip d'allure de mx.a du web (temps / durée relevée par le web) ; l'adaptateur (clip relu sur le maillage)
 		// doit réécrire aux mêmes images et donner la même phase.
@@ -292,15 +297,17 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 			}
 			// Entrées de la règle : état du cheval Unreal de l'image précédente (retard d'une image ; image 0 : canal in).
 			const strides::tack::TackOut& O = Tack->Out();
-			if (H.contactOff != 0 || H.horseY != 0 || H.postOffset != 0 || H.attachY != O.seatPos.y || H.phase != Ph) BadInputs++;
+			const double WantCo = bViewMode && Horse->UsesWebView() ? Horse->HorseView()->GetView().contactOff : 0;
+			if (H.contactOff != WantCo || H.horseY != 0 || H.postOffset != 0 || H.attachY != O.seatPos.y || H.phase != Ph) BadInputs++;
 			if (I > 0)
 			{
-				WBob.See(FMath::Abs(A.bob - PrevSeatY), At);
+				WBob.See(FMath::Abs(A.bob - (PrevSeatY - PrevCo)), At);
 				if (PhaseGap(A.gaitPhase, PrevPhase) > 1e-12) BadInputs++;
 				WBobWeb.See(FMath::Abs(A.bob - F1[I]["in"]["bob"].num()), At);
 				WPitchWeb.See(FMath::RadiansToDegrees(FMath::Abs(A.pitch - F1[I]["in"]["pitch"].num())), At);
 			}
 			PrevSeatY = O.seatPos.y;
+			PrevCo = H.contactOff;
 			PrevPhase = Ph;
 			{
 				// Siège Unreal contre siège du web dans le repère du cheval (cheval 3,7 % plus petit : information).
@@ -460,13 +467,24 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	TestTrue(TEXT("M8 mesuré sur les images de la fenêtre"), PenFrames > 400);
 	TestTrue(FString::Printf(TEXT("M8, témoin positif : point 30 cm sous le siège vu dans le corps du cheval à %d images sur %d (profondeur max %.1f cm) : le lancer de rayons rencontre bien le maillage"), PenCtlIn, PenFrames, 100 * PenCtlMax), PenCtlIn >= PenFrames * 0.95 && PenCtlMax > 0.05 && PenCtlMax < 1.0);
 	AddInfo(FString::Printf(TEXT("M8, témoin positif : profondeur min %.1f cm, max %.1f cm, %d images sur %d dans le corps"), 100 * PenCtl, 100 * PenCtlMax, PenCtlIn, PenFrames));
-	TestTrue(FString::Printf(TEXT("phase de foulée réécrite depuis le clip Unreal = hz.ph du web : %d images, écart max %.3g (%s)"), Rewritten, WPhase.V, *WPhase.Where),
-		Rewritten > 400 && WPhase.V >= 0 && WPhase.V <= 1e-5);
-	TestTrue(FString::Printf(TEXT("adaptateur (clip relu sur le maillage Unreal) = cœur nourri des clips du web : mêmes images réécrites, même phase (%d images comparées, %d écarts)"), AdapterFrames, AdapterBad),
-		AdapterFrames > 600 && AdapterBad == 0);
-	AddInfo(FString::Printf(TEXT("phase tenue (arrêt, saut : locomotion procédurale du web non portée) : %d images, écart max à hz.ph %.4f (%s), information"), Held, WHeld.V, *WHeld.Where));
-	TestEqual(TEXT("entrées : contactOff, horseY, postOffset nuls, bob = siège Unreal, phase du composant, retard d'une image"), BadInputs, 0);
-	TestTrue(FString::Printf(TEXT("bob lu = hauteur du siège Unreal de l'image précédente (écart max %.3g m)"), WBob.V), WBob.V >= 0 && WBob.V <= 1e-12);
+	if (bViewMode)
+	{
+		// Étape S4 : phase de la vue du web (locomotion du jeu horse/anim.js et réécriture de pjlHorse.js portées) à toutes les
+		// images, arrêt et saut compris ; l'adaptateur du clip joué (étape M3) n'est pas utilisé par la vue.
+		const double Wv = FMath::Max(WPhase.V, WHeld.V);
+		TestTrue(FString::Printf(TEXT("vue du web : phase de foulée = hz.ph du web à toutes les images (%d), arrêt et saut compris : écart max %.3g (%s)"), Rewritten + Held, Wv,
+			WPhase.V >= WHeld.V ? *WPhase.Where : *WHeld.Where), Rewritten + Held > 600 && Wv >= 0 && Wv <= 1e-5);
+	}
+	else
+	{
+		TestTrue(FString::Printf(TEXT("phase de foulée réécrite depuis le clip Unreal = hz.ph du web : %d images, écart max %.3g (%s)"), Rewritten, WPhase.V, *WPhase.Where),
+			Rewritten > 400 && WPhase.V >= 0 && WPhase.V <= 1e-5);
+		TestTrue(FString::Printf(TEXT("adaptateur (clip relu sur le maillage Unreal) = cœur nourri des clips du web : mêmes images réécrites, même phase (%d images comparées, %d écarts)"), AdapterFrames, AdapterBad),
+			AdapterFrames > 600 && AdapterBad == 0);
+		AddInfo(FString::Printf(TEXT("phase tenue (arrêt, saut : locomotion procédurale du web non portée) : %d images, écart max à hz.ph %.4f (%s), information"), Held, WHeld.V, *WHeld.Where));
+	}
+	TestEqual(TEXT("entrées : contactOff (celui de la vue du web avec l'option, sinon nul), horseY, postOffset nuls, bob = siège Unreal, phase du composant, retard d'une image"), BadInputs, 0);
+	TestTrue(FString::Printf(TEXT("bob lu = hauteur du siège Unreal de l'image précédente, moins l'abaissement d'appel de la vue (écart max %.3g m)"), WBob.V), WBob.V >= 0 && WBob.V <= 1e-12);
 	TestEqual(TEXT("articulations finies"), NonFinite, 0);
 	// ρ n'est pas borné par la règle (O2 rider_f, cheval du web : jusqu'à 0,9556 en E3b) : seuils du niveau B jugés par
 	// rider-rules-niveau-b.mjs, ici relevé seulement.
@@ -483,6 +501,8 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	// Chemin du jeu (UStridesHorseTack::Step, appelé par le tick du composant) : allure lue sur GaitIndex, main sur la main du
 	// web (option) ; couche d'allure posée à un temps connu, phase attendue recalculée ici depuis les données du calage.
 	{
+		// (chemin sans la vue du web : avec elle, UStridesHorseTack::Step prend la phase de la vue, vérifiée plus haut)
+		if (bViewMode) Horse->SetWebViewActiveForTests(false);
 		UStridesHorseAnimInstance* Anim = Cast<UStridesHorseAnimInstance>(Horse->BodyMesh()->GetAnimInstance());
 		const strides::phase::PhaseModel& Pm = Tack->PhaseCalib();
 		struct FCase { int32 Gait; float Speed; int32 Lead; const TCHAR* Clip; const char* Key; const char* Fam; };

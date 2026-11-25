@@ -71,7 +71,17 @@ const SHOT_POSES = [
   // du web (horse/anim.js : st.lead, état qu'un virage à droite tenu donne en jeu), posée sur h.anim après la préparation.
   // Capture seulement : rien n'est écrit dans O1.
   { name: 'saut-droite', scenario: 'E3', frame: 50, lead: -1, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
+  // Étape S4 (corps et horloge du saut) : appel (première image de vol) et réception des antérieurs du saut d'E3, images
+  // relues dans O1 (jumpPhases : appel, poserAnterieurs), jamais recopiées ; avec galop, galop-gauche et saut-sommet.
+  { name: 'appel', scenario: 'E3', frame: phaseE3('appel'), eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
+  { name: 'reception', scenario: 'E3', frame: phaseE3('poserAnterieurs'), eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
 ];
+function phaseE3(k) {
+  const f = join(ROOT, 'unreal/core/tests/oracles/monte/o1/E3.json');
+  if (!existsSync(f)) return null;
+  const p = jumpPhases(JSON.parse(readFileSync(f, 'utf8')));
+  return p ? p[k] : null;
+}
 function sommetE3() {
   const f = join(ROOT, 'unreal/core/tests/oracles/monte/o1/E3.json');
   if (!existsSync(f)) return null;
@@ -85,6 +95,21 @@ const SELLERIE_OUT = arg('sellerie-out') || join(ROOT, 'unreal/core/tests/oracle
 const SELLERIE_MESH = arg('sellerie-maillage');
 // Sommets témoins des pièces skinnées : un sur TACK_STRIDE, relevés une image sur TACK_EVERY.
 const TACK_STRIDE = 97, TACK_EVERY = 10;
+// --vue (étape S4, inclinaison en virage, corps et horloge du saut) : les scénarios d'O1 rejoués à l'identique, plus des
+//   scénarios propres à la vue (cercles au trot et au grand galop, sauts à main droite imposée, autre vitesse d'abord),
+//   sans rien écrire dans O1 ; écrit unreal/core/tests/oracles/monte/vue/<id>.json et index.json (pour chaque image : ce que
+//   pjlHorse.js _snapshot, _pushContact, _barNeed, _barClear et pjl/view.js update lisent et produisent, locomotion du jeu
+//   horse/anim.js avant et après, appuis : os des sabots après l'image) et Content/Data/pjl_horse_view.json (analyse des
+//   clips de saut du web, gaitInfo, durées des clips, constantes relues dans le source de pjlHorse.js).
+const VUE = process.argv.includes('--vue');
+const VUE_OUT = arg('vue-out') || join(ROOT, 'unreal/core/tests/oracles/monte/vue');
+const VUE_DATA = join(ROOT, 'unreal/StridesGrandTour/Content/Data/pjl_horse_view.json');
+const PJL_SRC = readFileSync(join(ROOT, 'src/entities/pjlHorse.js'), 'utf8');
+function pjlConst(name) {
+  const m = new RegExp(`\\bconst ${name} = ([^;]+);`).exec(PJL_SRC);
+  if (!m) throw new Error(`pjlHorse.js : constante ${name} introuvable`);
+  return new Function(`return (${m[1]});`)();
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Plans des scénarios : table « plan » de tests/e2e/pjl/rider-audit.mjs (allures) et obstacles de sa préparation CSO,
@@ -113,6 +138,25 @@ const SCENARIOS = [
   { id: 'E6t', type: 'allures', plan: 'trot', pre: 45, accept: false, desc: 'trot enlevé : 45 images de mise en train en ligne droite, puis le plan « trot » (75 images) ; hors acceptation de l’essai' },
   { id: 'E6v', type: 'allures', plan: 'virage-droite', pre: 60, accept: false, desc: 'virage à droite au galop : 60 images au galop en ligne droite, puis le plan « virage-droite » (60 images) ; hors acceptation de l’essai' },
 ];
+// Scénarios propres à la vue (--vue) : mêmes commandes que les plans de rider-audit.mjs (cercle : turn ± 0,35 ; grand
+// galop : galop tenu, mag 1), à d'autres allures ; sauts d'O1 à main droite imposée (entrée st.lead de horse/anim.js,
+// comme la capture « saut-droite » de l'étape S2) et à une autre vitesse d'abord. Hors O1 : pas de contrôle du repère S.
+const VUE_SCENARIOS = [
+  { id: 'V2g-trot', type: 'allures', p: { mag: 0.5, n: 80, turn: 0.35 }, pre: 60, preTurn: true, desc: 'trot en cercle à gauche (plan « galop-gauche » à mag 0,5) : 60 images de mise en train sur le cercle, puis 80 images' },
+  { id: 'V2d-trot', type: 'allures', p: { mag: 0.5, n: 80, turn: -0.35 }, pre: 60, preTurn: true, desc: 'trot en cercle à droite (plan « galop-droite » à mag 0,5)' },
+  { id: 'V2g-gg', type: 'allures', p: { mag: 1, n: 80, turn: 0.35, gallop: true }, pre: 90, preTurn: true, desc: 'grand galop en cercle à gauche (galop tenu, mag 1, turn 0,35) : 90 images de mise en train, puis 80 images' },
+  { id: 'V2d-gg', type: 'allures', p: { mag: 1, n: 80, turn: -0.35, gallop: true }, pre: 90, preTurn: true, desc: 'grand galop en cercle à droite (galop tenu, mag 1, turn −0,35)' },
+  { id: 'V3d', type: 'cso', cas: 'v110:6.5:normal', lead: -1, desc: 'E3 à main droite imposée (st.lead = −1) : vertical de 1,10 m à 6,5 m/s, clip jump_canter d’origine' },
+  { id: 'V3bd', type: 'cso', cas: 'v140:9:normal', lead: -1, desc: 'E3b à main droite imposée : vertical de 1,40 m à 9 m/s, clip jump_gallop d’origine' },
+  { id: 'V3c', type: 'cso', cas: 'v110:7.5:normal', desc: 'vertical de 1,10 m à 7,5 m/s, main du jeu (gauche)' },
+  { id: 'V3cd', type: 'cso', cas: 'v110:7.5:normal', lead: -1, desc: 'vertical de 1,10 m à 7,5 m/s, main droite imposée' },
+  { id: 'V3e', type: 'cso', cas: 'v110:8.5:normal', desc: 'vertical de 1,10 m abordé à 8,5 m/s (vitesse à l’appel entre 7 et 8 m/s : seuil du grand saut du web, 8 m/s, contre 7 m/s dans l’ancien jeu Unreal), main du jeu' },
+];
+for (const sc of VUE_SCENARIOS) {
+  if (sc.type !== 'allures') continue;
+  sc.window = [sc.pre, sc.pre + sc.p.n];
+  sc.frames = sc.pre + sc.p.n;
+}
 for (const sc of SCENARIOS) {
   if (sc.type !== 'allures') continue;
   sc.p = PLANS[sc.plan];
@@ -254,7 +298,162 @@ function PAGE(TACK_STRIDE, TACK_EVERY) {
     return out;
   };
 
-  const FIT_KEYS = ['stirrupX', 'stirrupY', 'stirrupZ', 'kneeOut', 'handX', 'handY', 'handZ', 'legClear', 'mountKneeOut', 'flankL', 'flankR', 'crest'];
+  // ---- Vue du cheval WildMesh (--vue, étape S4) : relevé de pjlHorse.js update, _snapshot, _pushContact, _barNeed,
+  // _barClear et de pjl/view.js update, à l'appel. Les enveloppes ne font que lire (champs, positions monde des os,
+  // hauteur du sol), puis appellent la méthode d'origine inchangée. Installées avant la mise en place du scénario
+  // (l'image de mise en place est relevée aussi : état de départ de la première image exportée).
+  let vuRec = null, vuLast = null, vuEnd = null;
+  const locoOf = (an) => {
+    const A = an._a;
+    return { st: { speed: an.speed, vel: an.vel, jump: an.jump, turn: an.turn, rear: an.rear, lead: nul(an.lead), phase: an.phase },
+      A: A ? { gait: A.gait, lead: A.lead, leadHold: A.leadHold, freq: A.freq, duty: A.duty, move: A.move } : null };
+  };
+  const viewOf = (V) => {
+    const w = [];
+    for (const [name, act] of V.actions) {
+      const x = V.weights.get(name) ?? 0;
+      if (x !== 0) w.push([name, x, act.time, act.enabled ? 1 : 0]);
+    }
+    return { w, jc: V.jumpClip?.name ?? null, jm: V.jumpMirror, jt: V.jumpTime, jw: V.jumpWeight, pl: V.postLand, lj: V.lastJt, wj: V.wasJumping,
+      rt: V.refusalT, lb: V.leadBlend, it: V.idleTime, bb: nul(V.bodyBaseY), by: V.body.position.y, bz: V.body.position.z, rx: V.body.rotation.x, rz: V.body.rotation.z, co: V.contactOff };
+  };
+  const HOOFS = ['fingers_02_l', 'fingers_02_r', 'toes_02_l', 'toes_02_r'];
+  let _vq = null;
+  P.vue = (on) => {
+    _vq = new T.Quaternion();
+    P.vueOn = on;
+    const PH = Object.getPrototypeOf(h.pjl), VP = Object.getPrototypeOf(h.pjl.view);
+    if (PH.__vue) return;
+    PH.__vue = true;
+    const oUp = PH.update, oSn = PH._snapshot, oPush = PH._pushContact, oNeed = PH._barNeed, oBar = PH._barClear, oVU = VP.update;
+    const me = (self) => P.vueOn && h && self === h.pjl;
+    PH.update = function (dt) {
+      if (!me(this)) return oUp.call(this, dt);
+      const H = this.horse;
+      vuRec = { dt, pre: vuEnd, loco: locoOf(H.anim), need: [] };
+      const r = oUp.call(this, dt);
+      vuEnd = locoOf(H.anim);
+      vuRec.end = vuEnd;
+      vuLast = vuRec;
+      return r;
+    };
+    PH._snapshot = function (dt) {
+      if (!me(this) || !vuRec) return oSn.call(this, dt);
+      const H = this.horse;
+      const st0 = { ph: this.ph, stride: this.stride, roll: this.roll, landT: this.landT, wasJump: this.wasJump };
+      const inp = { speed: H.speed, gait: H.anim._a?.gait ?? null, lead: nul(H.anim._a?.lead), jumpT: H.jumpT, jumpDur: nul(H.jumpDur), brake: nul(H._brake), rearT: nul(H._rearT), lastTurn: nul(H.lastTurn), phase: H.anim.phase };
+      const s = oSn.call(this, dt);
+      vuRec.sn = { in: inp, st0, st: { ph: this.ph, stride: this.stride, roll: this.roll, landT: this.landT, wasJump: this.wasJump }, phaseOut: H.anim.phase,
+        s: { gait: s.gait, lead: s.lead, phase: s.phase, strideLen: s.strideLen, turnRate: s.turnRate, mode: s.mode, jt: s.jt, jT: s.jT, roll: s.roll, speed: s.speed, landingTimer: s.landingTimer } };
+      return s;
+    };
+    VP.update = function (s, dt) {
+      if (!(P.vueOn && h && h.pjl && this === h.pjl.view) || !vuRec) return oVU.call(this, s, dt);
+      const r = oVU.call(this, s, dt);
+      vuRec.view = viewOf(this);
+      return r;
+    };
+    PH._pushContact = function () {
+      if (!me(this) || !vuRec) return oPush.call(this);
+      const H = this.horse, V = this.view, j = V.jumpClip, lj = H._lastJump;
+      const P0 = this._push ? { ...this._push } : null;
+      const low = (names) => {
+        let m = Infinity;
+        for (const n of names) {
+          const p = V.boneWorld(n, new T.Vector3());
+          m = Math.min(m, p.y - H.groundAt(p.x, p.z));
+        }
+        return m;
+      };
+      const nearBar = !!(lj?.o && lj.geo && (H.jumpT >= 0 || (lj.land !== null && H.game.time - lj.land < 0.8)));
+      let d = null;
+      if (nearBar && H.jumpT >= 0) {
+        const o = lj.o, sg = Math.sign(lj.geo.sign || 1);
+        d = -Infinity;
+        for (const n of ['fingers_02_l', 'fingers_02_r']) {
+          const p = V.boneWorld(n, new T.Vector3());
+          const sh = (p.x - o.x) * o.n.x + (p.z - o.z) * o.n.z;
+          for (const bar of o.bars) d = Math.max(d, Math.min(0, (sh - bar.s) * sg));
+        }
+        if (d === -Infinity) d = null;
+      }
+      const inp = { P0, co0: V.contactOff, jumpT: H.jumpT, hasClip: !!j, jumpTime: V.jumpTime, toeOff: j ? j.toeOff : null, nearBar, d,
+        hind: low(['toes_02_l', 'toes_02_r']), fore: low(['fingers_02_l', 'fingers_02_r']), by0: V.body.position.y };
+      oPush.call(this);
+      vuRec.push = { in: inp, P: this._push ? { ...this._push } : null, co: V.contactOff, by: V.body.position.y };
+    };
+    PH._barNeed = function (names, lj, pivotNames = ['fingers_02_l', 'fingers_02_r'], tag = '') {
+      if (!me(this) || !vuRec) return oNeed.call(this, names, lj, pivotNames, tag);
+      const V = this.view, H = this.horse;
+      const pos = (n) => v3(V.boneWorld(n, new T.Vector3()));
+      const pv = (k) => {
+        const q = this._hprev?.[k];
+        return q ? { y: q.y, s: q.s, same: q.o === lj.o, t: q.t } : null;
+      };
+      const call = { names: names.slice(), piv: pivotNames.slice(), tag, p: names.map(pos), pp: pivotNames.map(pos), t: H.game.time, dt: this._dt ?? null,
+        prev: names.map((n) => pv(tag + n)) };
+      const r = oNeed.call(this, names, lj, pivotNames, tag);
+      call.out = { lift: r.lift, lever: r.lever, w: r.w, pivot: v3(r.pivot) };
+      vuRec.need.push(call);
+      return r;
+    };
+    PH._barClear = function () {
+      if (!me(this) || !vuRec) return oBar.call(this);
+      const H = this.horse, V = this.view, B = V.body, lj = H._lastJump;
+      const near = !!(lj?.o && lj.geo && (H.jumpT >= 0 || (lj.land !== null && H.game.time - lj.land < 0.8)));
+      const st0 = { clr: !!this._clr, a: this._clrA || 0, y: this._clrY || 0, f: this._clrF || 0, by: B.position.y, bz: B.position.z, rx: B.rotation.x,
+        pivF: this._pivF ? v3(this._pivF) : null, pivH: this._pivH ? v3(this._pivH) : null };
+      const ljr = near ? { t: H.game.time, land: lj.land, sign: lj.geo.sign, rails: lj.geo.rails.map((r) => r.s), margins: lj.plan.margins.slice(),
+        o: [lj.o.x, lj.o.z, lj.o.n.x, lj.o.n.z, lj.o.t.x, lj.o.t.z, lj.o.w, lj.o.ground], bars: lj.o.bars.map((b) => [b.s, b.h, b.mesh ? 1 : 0, b.mesh?.userData.fall ? 1 : 0]) } : null;
+      // Repli des membres (_limbTuck) : sabots et os qui tournent (cuisse upperleg, canon hand) avant le repli, axes latéral et
+      // avant du cheval (monde) ; les os d'attache ne bougent pas pendant le repli (chaînes distinctes).
+      let tk = null;
+      if (near) {
+        // Début de _barClear (corps sans bascule si la dernière image en avait une) fait ici avant la lecture : _barClear le
+        // refait à l'identique (rotation.x = 0, position.z = 0, mêmes matrices).
+        if (this._clr) {
+          B.rotation.x = 0;
+          B.position.z = 0;
+          this.holder.updateMatrixWorld(true);
+        }
+        this.holder.getWorldQuaternion(_vq);
+        tk = { toe: HOOFS.map((n) => v3(V.boneWorld(n, new T.Vector3()))), up: ['upperleg_l', 'upperleg_r', 'hand_l', 'hand_r'].map((n) => (V.bones.get(n) ? v3(V.boneWorld(n, new T.Vector3())) : null)),
+          ax: v3(new T.Vector3(1, 0, 0).applyQuaternion(_vq)), fw: v3(new T.Vector3(0, 0, 1).applyQuaternion(_vq)), tuck0: this._tuck ? { ...this._tuck } : null };
+      }
+      const n0 = vuRec.need.length;
+      oBar.call(this);
+      vuRec.bar = { near, st0, lj: ljr, tk, calls: [n0, vuRec.need.length], jumpT: H.jumpT, dt: this._dt ?? null,
+        out: { clr: !!this._clr, a: this._clrA, y: this._clrY, f: this._clrF, by: B.position.y, bz: B.position.z, rx: B.rotation.x,
+          pivF: this._pivF ? v3(this._pivF) : null, pivH: this._pivH ? v3(this._pivH) : null, tuck: this._tuck ? { ...this._tuck } : null } };
+    };
+  };
+  // Appuis (--vue) : os des sabots après l'image ([monde x, y, z, sol sous le sabot, repère du holder x, y, z]).
+  const hoofRec = () => {
+    const V = h.pjl.view, Ho = h.pjl.holder;
+    Ho.updateWorldMatrix(true, false);
+    const inv = Ho.matrixWorld.clone().invert();
+    return HOOFS.map((n) => {
+      const p = V.boneWorld(n, new T.Vector3());
+      return [...v3(p), h.groundAt(p.x, p.z), ...v3(p.clone().applyMatrix4(inv))];
+    });
+  };
+  P.vueSetup = () => (vuLast ? { ...vuLast, hoof: hoofRec() } : null);
+  // Données de la vue (--vue) : analyse des clips de saut (asset.jumps), gaitInfo, durées des clips, échelle ; constantes
+  // exportées par les modules du web (COM_CANTER_HEIGHT, GAIT_EDGES, JUMP.rub).
+  P.vueData = async () => {
+    const VW = await import('/src/entities/pjl/view.js');
+    const AN2 = await import('/src/entities/horse/anim.js');
+    const JM = await import('/src/gameplay/jumpModel.js');
+    const as = h.pjl.asset;
+    const jumps = {};
+    for (const [k, j] of as.jumps) jumps[k] = { toeOff: j.toeOff, foreLand: j.foreLand, hindLand: j.hindLand, nextFore: j.nextFore, end: j.end, pelvisRise: j.pelvisRise.slice(), trunkRise: j.trunkRise.slice() };
+    const clips = {};
+    for (const [k, c] of as.clips) clips[k] = c.duration;
+    return { scale: as.scale, gaitInfo: JSON.parse(JSON.stringify(as.gaitInfo)), jumps, clips, clipOrder: [...h.pjl.view.actions.keys()], comCanterHeight: VW.COM_CANTER_HEIGHT, gaitEdges: { ...AN2.GAIT_EDGES }, rub: JM.JUMP.rub,
+      align: Object.fromEntries(Object.entries(h.pjl.align).map(([k, v]) => [k, v ? v.off : null])), leadSwap: !!h.pjl.leadSwap };
+  };
+
+  const FIT_KEYS =['stirrupX', 'stirrupY', 'stirrupZ', 'kneeOut', 'handX', 'handY', 'handZ', 'legClear', 'mountKneeOut', 'flankL', 'flankR', 'crest'];
   const nul = (v) => (v === undefined ? null : v);
   function captureIn(dt) {
     const a = hu.anim;
@@ -362,6 +561,9 @@ function PAGE(TACK_STRIDE, TACK_EVERY) {
       Object.assign(h.anim, { phase: 0, t: 0, jump: -1, turn: 0, graze: 0, rear: 0, headYaw: 0, vel: 0, speed: 0 });
       delete h.anim._a;
     }
+    vuEnd = null;
+    vuLast = null;
+    vuRec = null;
     h.lastTurn = 0;
     g.player.csoCadence = undefined;
     // Cavaliers du décor remis à leur point de départ (export-cso-runs.mjs : leur état dépend du temps de chargement).
@@ -648,6 +850,10 @@ function PAGE(TACK_STRIDE, TACK_EVERY) {
       bT: Pp.blendT,
     } : null;
     rec.pe = withPen ? penetration() : null;
+    if (P.vueOn) {
+      rec.vu = vuRec ? { ...vuRec, hoof: hoofRec(), H: (() => { const Hh = Hm(); return [...v3(Hh.p), ...q4(Hh.q), h.groundAt(h.pos.x, h.pos.z)]; })() } : null;
+      vuRec = null;
+    }
     if (P.strapsOn) {
       rec.st = stRec;
       stRec = null;
@@ -979,7 +1185,74 @@ if (SELLERIE) {
     console.log(`index : ${writeIfChanged(prevFile, indexText(SHEAD, all)) ? 'écrit' : 'inchangé'}`);
   }
 }
-if (!ANCHORS_ONLY && !SHOTS && !SELLERIE && !SELLERIE_MESH) {
+if (VUE) {
+  const VHEAD = { schema: 'strides.oracle.vue/1', generator: 'scripts/unreal/export-rider-rules.mjs --vue', srcTree,
+    doc: 'vue du cheval WildMesh (pjlHorse.js _snapshot, _jumpTime, _pushContact, _barNeed, _barClear ; pjl/view.js update ; locomotion horse/anim.js) image par image ; scénarios d’O1 rejoués à l’identique (repère S égal à O1 à chaque image) et scénarios propres à la vue ; monde three.js (y vers le haut, m), pleine précision.',
+    channels: {
+      f: 'image (même indice qu’O1 pour les scénarios d’O1)', S: 'repère du siège (hz.S d’O1, contrôle du rejeu ; scénarios d’O1 seulement)',
+      vu: '{ dt, pre, loco, end, sn, view, push, need, bar, hoof } : pre / loco / end = locomotion du jeu (h.anim : st = speed, vel, jump, turn, rear, lead (entrée imposée), phase ; A = gait, lead, leadHold, freq, duty, move) à la fin de l’image précédente, à l’entrée de pjl.update (après animateHorse) et à sa sortie ; sn = _snapshot (in : H.speed, A.gait, A.lead, H.jumpT, H.jumpDur, H._brake, H._rearT, H.lastTurn, h.anim.phase ; st0 / st : ph, stride, roll, landT, wasJump avant / après ; phaseOut : h.anim.phase réécrite ; s : instantané) ; view = état de la vue après update (w : [clip, poids, temps, actif] des poids non nuls ; jc, jm, jt, jw, pl, lj (lastJt), wj, rt (refusalT), lb, it, bb (bodyBaseY), by, bz, rx, rz, co) ; push = _pushContact (in : P0, co0, jumpT, hasClip, jumpTime, toeOff, nearBar, d (distance des antérieurs à la barre la plus proche devant, jumpT ≥ 0), hind, fore (plus bas des os toes_02 / fingers_02 au-dessus du sol, pose de cette image), by0 ; P, co, by après) ; need = appels de _barNeed dans l’ordre (names, piv, tag, p et pp : positions monde des os, t, dt, prev : mémoire de l’image précédente [y, s, même obstacle, t], out : lift, lever, w, pivot) ; H = holder après l’image [x, y, z, qx, qy, qz, qw, sol sous le cheval] ; bar = _barClear (near, st0, tk (repli : toe = os des sabots, up = os upperleg_l, upperleg_r, hand_l, hand_r, ax et fw = axes latéral et avant du cheval, monde, avant le repli, corps sans bascule (début de _barClear) ; tuck0 = état avant), lj : t, land, sign, rails, margins, o [x, z, nx, nz, tx, tz, w, ground], bars [s, h, maillage, tombée] ; calls : plage des appels de need faits pendant _barClear ; out : clr, a, y, f, by, bz, rx, pivF, pivH (repère du parent du corps), tuck) ; hoof : os fingers_02_l, fingers_02_r, toes_02_l, toes_02_r après l’image [monde x, y, z, sol sous l’os, repère du holder x, y, z]',
+    } };
+  const O1DIR = join(ROOT, 'unreal/core/tests/oracles/monte/o1');
+  const all = [...SCENARIOS, ...VUE_SCENARIOS];
+  const vtodo = all.filter((s) => !ONLY.length || ONLY.includes(s.id));
+  const entries = [];
+  let data = null;
+  for (const sc of vtodo) {
+    const t0 = Date.now();
+    const { ctx, page } = await openGame();
+    await page.evaluate(() => window.__monte.vue(true));
+    let setup;
+    if (sc.type === 'cso') setup = await page.evaluate(([s, specs, N, seed]) => window.__monte.setupCso(s, specs, N, seed), [{ ...sc }, CSO_SPECS, CSO_N, SEED]);
+    else setup = await page.evaluate(([s, seed]) => window.__monte.setupAllures(s, seed), [{ ...sc }, SEED]);
+    if (sc.lead) await page.evaluate((l) => window.__monte.forceLead(l), sc.lead);
+    const vue0 = await page.evaluate(() => window.__monte.vueSetup());
+    if (!data) data = await page.evaluate(() => window.__monte.vueData());
+    const frames = [];
+    const win = sc.type === 'cso' ? [CSO_N - 20, null] : sc.window;
+    const total = sc.type === 'cso' ? 200 : sc.frames;
+    while (frames.length < total) {
+      const batch = await page.evaluate(([n, w]) => window.__monte.frames(n, w), [Math.min(10, total - frames.length), win]);
+      frames.push(...batch.map((r) => ({ f: r.f, S: r.hz.S, vu: r.vu })));
+      if (sc.type === 'cso' && (await page.evaluate(() => !!window.__monte.done))) break;
+    }
+    const fin = await page.evaluate(() => window.__monte.finish());
+    await ctx.close();
+    const inO1 = SCENARIOS.includes(sc);
+    if (inO1) {
+      const o1 = JSON.parse(readFileSync(join(O1DIR, `${sc.id}.json`), 'utf8'));
+      if (o1.frames.length !== frames.length) throw new Error(`${sc.id} : ${frames.length} images, O1 en a ${o1.frames.length}`);
+      let dS = 0;
+      for (let i = 0; i < frames.length; i++) for (let k = 0; k < 7; k++) dS = Math.max(dS, Math.abs(frames[i].S[k] - o1.frames[i].hz.S[k]));
+      if (dS !== 0) throw new Error(`${sc.id} : repère S différent d'O1 (écart ${dS})`);
+    } else for (const fr of frames) delete fr.S;
+    const missing = frames.filter((f) => !f.vu || !f.vu.view || !f.vu.sn).length;
+    if (missing) throw new Error(`${sc.id} : ${missing} images sans relevé de la vue`);
+    mkdirSync(VUE_OUT, { recursive: true });
+    const file = `${sc.id}.json`;
+    const head = { dt: 1 / 30, o1: inO1, type: sc.type, plan: sc.plan ?? null, planValues: sc.p ?? null, pre: sc.pre ?? null, preTurn: !!sc.preTurn, cas: sc.cas ?? null,
+      lead: sc.lead ?? null, window: sc.type === 'cso' ? [win[0], frames.length] : win, events: fin.ev ?? null, cso: setup.cso ?? null, vue0 };
+    const w = writeIfChanged(join(VUE_OUT, file), runText({ id: sc.id, desc: sc.desc, setup: head, frames }));
+    entries.push({ id: sc.id, file, frames: frames.length, o1: inO1 });
+    console.log(`vue ${sc.id} : ${frames.length} images${inO1 ? ' (S = O1 à l’identique)' : ''}, ${w ? 'écrit' : 'inchangé'}, ${((Date.now() - t0) / 1000).toFixed(0)} s${fin.ev ? ', ' + (fin.ev.join(', ') || 'aucun événement') : ''}`);
+  }
+  if (entries.length) {
+    const prevFile = join(VUE_OUT, 'index.json');
+    const prev = existsSync(prevFile) ? JSON.parse(readFileSync(prevFile, 'utf8')) : null;
+    const listed = all.map((x) => entries.find((e) => e.id === x.id) ?? prev?.runs?.find((e) => e.id === x.id && existsSync(join(VUE_OUT, e.file)))).filter(Boolean);
+    console.log(`index : ${writeIfChanged(prevFile, indexText(VHEAD, listed)) ? 'écrit' : 'inchangé'}`);
+  }
+  if (data) {
+    const consts = {};
+    for (const k of ['CADENCE', 'PUSH', 'PUSH_RELEASE', 'HOOF_SOLE', 'RAIL_R', 'HIND_CLEAR_MAX', 'HIND_TILT_MAX', 'HIND_LIFT_MAX', 'FORE_TILT_MAX', 'TUCK_MAX']) consts[k] = pjlConst(k);
+    const doc = { schema: 'strides.pjl_horse_view/1', generator: 'scripts/unreal/export-rider-rules.mjs --vue', srcTree,
+      source: ['src/entities/pjl/asset.js', 'src/entities/pjl/view.js', 'src/entities/pjlHorse.js', 'src/entities/horse/anim.js', 'src/gameplay/jumpModel.js'],
+      doc: 'vue du cheval WildMesh : analyse des clips de saut relue dans la page (asset.jumps : toeOff, foreLand, hindLand, nextFore, end en s ; pelvisRise et trunkRise en unités de la scène du GLB, une valeur par image à 24 images/s), gaitInfo (foulée en m, décalage de phase), durées des clips (s), clipOrder (ordre des actions du mélangeur, celui de l’accumulation des poses par three.js), échelle (m par unité du GLB), COM_CANTER_HEIGHT (view.js), GAIT_EDGES (anim.js), JUMP.rub (jumpModel.js), calage des clips (h.pjl.align, leadSwap) ; consts : constantes relues dans le source de pjlHorse.js (CADENCE en Hz, PUSH et PUSH_RELEASE, HOOF_SOLE, RAIL_R, HIND_CLEAR_MAX, HIND_LIFT_MAX en m, HIND_TILT_MAX, FORE_TILT_MAX et TUCK_MAX en rad).',
+      consts, ...data };
+    const text = JSON.stringify(doc, null, 1) + '\n';
+    console.log(`${VUE_DATA} : ${writeIfChanged(VUE_DATA, text) ? 'écrit' : 'inchangé'} (${text.length} octets)`);
+  }
+}
+if (!ANCHORS_ONLY && !SHOTS && !SELLERIE && !SELLERIE_MESH && !VUE) {
   for (const sc of todo) {
     const t0 = Date.now();
     const { ctx, page } = await openGame();

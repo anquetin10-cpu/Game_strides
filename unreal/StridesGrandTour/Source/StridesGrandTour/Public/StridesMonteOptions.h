@@ -50,4 +50,15 @@ STRIDESGRANDTOUR_API FString Describe(const FMonte& M);
 inline constexpr bool bWebHorseScaleByDefault = true;
 STRIDESGRANDTOUR_API bool ResolveWebHorseScale(const TCHAR* CommandLine, TArray<FString>* Unknown = nullptr);
 STRIDESGRANDTOUR_API bool WebHorseScaleFromCommandLine();
+
+// Étape S4 (décision de Julien du 24/11/2026) : vue du cheval du web (src/entities/pjl/view.js, pjlHorse.js, horse/anim.js :
+// inclinaison en virage, corps et horloge du saut, cadence des clips, phase de foulée, membres repliés et bascule face aux
+// barres ; AStridesHorse::EnableWebView). Elle demande la main du web (mélangeur à couches, clips miroir).
+//  - -StridesHorseView=web | jeu ;
+//  - sans elle : faux avec -StridesMonte=ancien, sinon bWebHorseViewByDefault.
+// Une valeur inconnue est ignorée (signalée par WebHorseViewFromCommandLine).
+// Faux à l'étape S4 a : jeu par défaut inchangé (vue du jeu : clip d'allure de la vitesse à vitesse 1, saut joué une fois).
+inline constexpr bool bWebHorseViewByDefault = false;
+STRIDESGRANDTOUR_API bool ResolveWebHorseView(const TCHAR* CommandLine, TArray<FString>* Unknown = nullptr);
+STRIDESGRANDTOUR_API bool WebHorseViewFromCommandLine();
 }  // namespace StridesMonteOptions

@@ -1,4 +1,5 @@
 #include "StridesHorseTack.h"
+#include "StridesHorseView.h"
 #include "AnimationRuntime.h"
 #include "Animation/AnimSequenceBase.h"
 #include "Animation/AnimSingleNodeInstance.h"
@@ -153,8 +154,18 @@ void UStridesHorseTack::Step(float Dt)
 		StridesUnits::UEToWeb(Actor.TransformPosition(HolderToActor(P)), X, Y, Z);
 		return Horse ? Y - Horse->GroundAt(X, Z) : P.y;
 	};
-	// (roulis de la vue : le cheval Unreal ne s'incline pas dans les virages, inclinaison nulle)
-	StepPose(Mesh->GetComponentSpaceTransforms(), GameMeshToHolder(), Dt, 0.0, Horse && Horse->IsJumping(), Height);
+	// Roulis de la vue (V.body.rotation.z) : celui de la vue du web avec -StridesHorseView=web (étape S4) ; sinon le cheval
+	// Unreal ne s'incline pas dans les virages, inclinaison nulle.
+	const FStridesHorseView* View = Horse && Horse->UsesWebView() ? Horse->HorseView() : nullptr;
+	StepPose(Mesh->GetComponentSpaceTransforms(), GameMeshToHolder(), Dt, View ? View->GetView().rotZ : 0.0, Horse && Horse->IsJumping(), Height);
+	// Étape S4 : phase de foulée de la vue du web (h.anim.phase : réécrite depuis la phase de la vue, sinon celle de la
+	// locomotion du jeu, qui avance à l'arrêt qui commence et pendant le saut).
+	if (View)
+	{
+		PhaseSt.animPhase = View->AnimPhase();
+		PhaseSt.rewritten = true;
+		return;
+	}
 	// Phase de foulée du cavalier : allure du jeu (GaitIndex) ; main du jeu, leadDest de pjlHorse.js (avant leadSwap) :
 	// option -StridesHorseLead=web : main du web ; jeu par défaut : clips d'origine seuls, à main droite d'après le calage du
 	// web (leadSwap faux, vérifié par le ctest « monte-cheval » ; s'il était vrai, le jeu par défaut serait à main gauche).

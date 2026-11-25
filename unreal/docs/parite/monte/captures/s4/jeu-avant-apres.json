@@ -1,0 +1,32 @@
+[
+ {
+  "capture": "monte-arret-unreal.png",
+  "psnr_avant_apres_db": 45.324375,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-galop-droite-unreal.png",
+  "psnr_avant_apres_db": 17.450445,
+  "web": false,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-galop-gauche-unreal.png",
+  "psnr_avant_apres_db": 19.077019,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-saut-droite-unreal.png",
+  "psnr_avant_apres_db": 15.55043,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-saut-gauche-unreal.png",
+  "psnr_avant_apres_db": 16.009202,
+  "web": true,
+  "montage_code": 0
+ }
+]

@@ -52,6 +52,29 @@ bool WebHorseScaleFromCommandLine()
 	return B;
 }
 
+bool ResolveWebHorseView(const TCHAR* CommandLine, TArray<FString>* Unknown)
+{
+	const TCHAR* Cmd = CommandLine ? CommandLine : TEXT("");
+	FString V;
+	if (FParse::Value(Cmd, TEXT("StridesHorseView="), V))
+	{
+		if (V == TEXT("web")) return true;
+		if (V == TEXT("jeu")) return false;
+		if (Unknown) Unknown->Add(FString::Printf(TEXT("-StridesHorseView=%s"), *V));
+	}
+	FString G;
+	if (FParse::Value(Cmd, TEXT("StridesMonte="), G) && G == TEXT("ancien")) return false;
+	return bWebHorseViewByDefault;
+}
+
+bool WebHorseViewFromCommandLine()
+{
+	TArray<FString> Unknown;
+	const bool B = ResolveWebHorseView(FCommandLine::Get(), &Unknown);
+	for (const FString& U : Unknown) UE_LOG(LogTemp, Warning, TEXT("Strides vue du cheval : option %s inconnue, ignorée"), *U);
+	return B;
+}
+
 FMonte FromCommandLine()
 {
 	TArray<FString> Unknown;

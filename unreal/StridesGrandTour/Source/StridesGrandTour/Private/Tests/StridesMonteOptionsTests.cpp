@@ -18,6 +18,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "StridesHorse.h"
+#include "StridesHorseView.h"
 #include "StridesHorseTack.h"
 #include "StridesHorseTackMesh.h"
 #include "StridesMonteOptions.h"
@@ -31,6 +32,8 @@ namespace StridesMonteOptionsTest
 constexpr bool bExpectedWebByDefault = true;
 // Étape S3 : taille du cheval du web par défaut (S3 b : oui ; S3 a : non). Épinglée de même.
 constexpr bool bExpectedWebScaleByDefault = true;
+// Étape S4 a : vue du cheval du web derrière -StridesHorseView=web (jeu par défaut inchangé).
+constexpr bool bExpectedWebViewByDefault = false;
 
 struct FTestWorld
 {
@@ -88,7 +91,7 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 	using StridesMonteOptions::FMonte;
 	using StridesMonteOptions::Resolve;
 	FString Opt;
-	for (const TCHAR* K : {TEXT("StridesMonte="), TEXT("StridesRider="), TEXT("StridesHorseLead="), TEXT("StridesTack="), TEXT("StridesHorseScale=")})
+	for (const TCHAR* K : {TEXT("StridesMonte="), TEXT("StridesRider="), TEXT("StridesHorseLead="), TEXT("StridesTack="), TEXT("StridesHorseScale="), TEXT("StridesHorseView=")})
 		if (!TestFalse(FString::Printf(TEXT("ligne de commande du test sans -%s (sinon le défaut ne serait pas testé)"), K), FParse::Value(FCommandLine::Get(), K, Opt))) return false;
 
 	// ---- 1. Résolution.
@@ -171,6 +174,34 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 		// La taille ne touche pas l'ensemble de la monte.
 		TestTrue(TEXT("taille : ensemble de la monte inchangé"), Resolve(TEXT("-StridesHorseScale=web")) == Resolve(TEXT("")) && Resolve(TEXT("-StridesMonte=ancien -StridesHorseScale=web")) == Make(false, false, false));
 	}
+	// ---- 1 ter. Vue du cheval (étape S4) : -StridesHorseView=web | jeu ; sans elle, non avec -StridesMonte=ancien, sinon le
+	// défaut.
+	{
+		const bool VD = bExpectedWebViewByDefault;
+		TestEqual(TEXT("vue du cheval par défaut épinglée par le test"), StridesMonteOptions::bWebHorseViewByDefault, VD);
+		struct FViewCase { const TCHAR* Cmd; bool Want; int32 Unknown; };
+		const FViewCase ViewCases[] = {
+			{TEXT(""), VD, 0},
+			{TEXT("-StridesHorseView=web"), true, 0},
+			{TEXT("-StridesHorseView=jeu"), false, 0},
+			{TEXT("-StridesMonte=web"), VD, 0},
+			{TEXT("-StridesMonte=ancien"), false, 0},
+			{TEXT("-StridesMonte=ancien -StridesHorseView=web"), true, 0},
+			{TEXT("-StridesMonte=web -StridesHorseView=jeu"), false, 0},
+			{TEXT("-StridesHorseScale=web -StridesHorseLead=web"), VD, 0},
+			{TEXT("-StridesHorseView=webb"), VD, 1},
+			{TEXT("-StridesMonte=ancien -StridesHorseView=x"), false, 1},
+		};
+		for (const FViewCase& C : ViewCases)
+		{
+			TArray<FString> Unknown;
+			const bool Got = StridesMonteOptions::ResolveWebHorseView(C.Cmd, &Unknown);
+			TestEqual(FString::Printf(TEXT("vue, « %s » : web %d (attendu %d)"), C.Cmd, (int32)Got, (int32)C.Want), Got, C.Want);
+			TestEqual(FString::Printf(TEXT("vue, « %s » : valeurs inconnues"), C.Cmd), Unknown.Num(), C.Unknown);
+		}
+		TestTrue(TEXT("vue : ensemble de la monte et taille inchangés"), Resolve(TEXT("-StridesHorseView=web")) == Resolve(TEXT("")) &&
+			StridesMonteOptions::ResolveWebHorseScale(TEXT("-StridesHorseView=web")) == StridesMonteOptions::ResolveWebHorseScale(TEXT("")));
+	}
 	TestEqual(TEXT("description de l'ensemble web"), StridesMonteOptions::Describe(Make(true, true, true)), FString(TEXT("web")));
 	TestEqual(TEXT("description de l'ancien comportement"), StridesMonteOptions::Describe(Make(false, false, false)), FString(TEXT("ancien")));
 
@@ -191,6 +222,9 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 		TEXT("-StridesHorseScale=web"),
 		TEXT("-StridesHorseScale=jeu"),
 		TEXT("-StridesMonte=ancien -StridesHorseScale=web"),
+		TEXT("-StridesHorseView=web"),
+		TEXT("-StridesHorseView=jeu"),
+		TEXT("-StridesMonte=web -StridesHorseLead=droite -StridesHorseView=web"),
 	};
 	AStridesHorse* WebHorse = nullptr;
 	AStridesRider* WebRider = nullptr;
@@ -217,6 +251,10 @@ bool FStridesMonteOptionsTest::RunTest(const FString&)
 		const bool bScale = StridesMonteOptions::ResolveWebHorseScale(Line);
 		TestEqual(FString::Printf(TEXT("« %s » : taille du cheval du web"), Line), Horse->UsesWebScale(), bScale);
 		TestEqual(FString::Printf(TEXT("« %s » : échelle du maillage"), Line), (double)Horse->BodyMesh()->GetRelativeScale3D().X, bScale ? AStridesHorse::WebMeshScale() : (double)AStridesHorse::GameMeshScale);
+		// Vue du web : demandée et main du web active (elle s'appuie sur le mélangeur à couches).
+		const bool bView = StridesMonteOptions::ResolveWebHorseView(Line) && Want.bWebLead;
+		TestEqual(FString::Printf(TEXT("« %s » : vue du cheval du web"), Line), Horse->UsesWebView(), bView);
+		TestEqual(FString::Printf(TEXT("« %s » : vue prête"), Line), Horse->HorseView() != nullptr && Horse->HorseView()->IsReady(), bView);
 		if (Want == Make(true, true, true) && !WebHorse)
 		{
 			WebHorse = Horse;

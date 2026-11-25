@@ -7,6 +7,8 @@
 #include "StridesHorse.h"
 #include "StridesHorseMirror.h"
 #include "StridesHorseTack.h"
+#include "StridesHorseView.h"
+#include "Misc/Paths.h"
 #include "StridesRiderRig.h"
 #include "StridesUnits.h"
 
@@ -127,6 +129,34 @@ bool FStridesRiderOnHorseReplay::Begin(const J& InRun, FString* Err)
 	FitScale = InRun["setup"]["scale"].num() / Rig->Driver()->rules().rig().scale;
 	Tack->ResetState();
 	Rig->ResetRide();
+	// Étape S4 : vue du cheval du web (oracle vue/ du même scénario).
+	bView = !bWebPose && Horse->HorseView() != nullptr;
+	Horse->SetViewTestHooks(nullptr);
+	if (Horse->HorseView()) Horse->SetWebViewActiveForTests(bView);
+	if (bView)
+	{
+		const FString Path = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../core/tests/oracles/monte/vue") / UTF8_TO_TCHAR(InRun["id"].s.c_str()) + TEXT(".json"));
+		try
+		{
+			VueRun = loadJson(TCHAR_TO_UTF8(*Path));
+		}
+		catch (const std::exception& Ex)
+		{
+			if (Err) *Err = FString::Printf(TEXT("oracle vue/ du scénario illisible (%hs)"), Ex.what());
+			return false;
+		}
+		if (VueRun["frames"].a.size() != InRun["frames"].a.size())
+		{
+			if (Err) *Err = TEXT("oracle vue/ : nombre d'images différent d'O1");
+			return false;
+		}
+		Horse->SetViewTestHooks(&Hooks);
+		if (!PoseHorseView(VueRun["setup"]["vue0"], VueRun["frames"][0]["vu"]["H"], Err)) return false;
+		Tack->StepPose(Horse->BodyMesh()->GetComponentSpaceTransforms(), Tack->GameMeshToHolder(), DtRun, Horse->HorseView()->GetView().rotZ, false,
+			[](const strides::tack::V3& P) { return P.y; });
+		Tack->RiderPhaseState().animPhase = Horse->HorseView()->AnimPhase();
+		return true;
+	}
 	// Image de mise en place (non exportée) : clip idle seul au premier pas (idleTime = dt), comme Strides.Parite.HorseSeat.
 	J Idle;
 	Idle.t = J::Obj;
@@ -149,6 +179,23 @@ bool FStridesRiderOnHorseReplay::Begin(const J& InRun, FString* Err)
 	return true;
 }
 
+bool FStridesRiderOnHorseReplay::PoseHorseView(const J& Rec, const J& H, FString* Err)
+{
+	USkeletalMeshComponent* Mesh = Horse->BodyMesh();
+	StridesHorseViewReplay::HooksFromRecord(Rec, H, Hooks);
+	Horse->StepAnimation(Hooks.In.Dt);
+	Mesh->TickAnimation(0.f, false);
+	Mesh->RefreshBoneTransforms();
+	Horse->PostPoseView();
+	const UStridesHorseAnimInstance* Anim = Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance());
+	LastClips = Anim ? Anim->Layers.Num() : 0;
+	LastMirrors = 0;
+	if (Anim)
+		for (const FStridesHorseLayer& L : Anim->Layers) LastMirrors += L.Mirror != INDEX_NONE;
+	if (!LastClips && Err) *Err = TEXT("vue du web : aucun clip");
+	return LastClips > 0;
+}
+
 const TArray<FTransform>& FStridesRiderOnHorseReplay::LastPose() const
 {
 	return bWebPose ? WebCS : Horse->BodyMesh()->GetComponentSpaceTransforms();
@@ -159,16 +206,19 @@ bool FStridesRiderOnHorseReplay::Step(int32 I, FString* Err)
 	const J& F = (*Run)["frames"][I];
 	const J& Hz = F["hz"];
 	const double T0 = FPlatformTime::Seconds();
-	if (!PoseHorse(F["mx"], Err)) return false;
+	if (bView ? !PoseHorseView(VueRun["frames"][I]["vu"], VueRun["frames"][I]["vu"]["H"], Err) : !PoseHorse(F["mx"], Err)) return false;
 	const bool bJump = Hz["jT"].num() >= 0;
 	// Hauteur au-dessus du sol du web : l'origine du repère du cheval est à hz.p.y, le sol à hz.gy (trajectoire enregistrée).
 	const double Lift = Hz["p"][1].num() - Hz["gy"].num();
-	const double Rz = bWebPose ? F["mx"]["rz"].num() : 0, By = bWebPose ? F["mx"]["by"].num() : 0;
+	const double Rz = bWebPose ? F["mx"]["rz"].num() : bView ? Horse->HorseView()->GetView().rotZ : 0, By = bWebPose ? F["mx"]["by"].num() : 0;
 	const strides::tack::Affine ToHolder = bWebPose ? strides::tack::compose(WebBody(Tack->Model(), By, Rz), strides::tack::invert(Tack->GlbToMesh())) : Tack->GameMeshToHolder();
 	ToHolderLast = ToHolder;
 	Tack->StepPose(bWebPose ? WebCS : Horse->BodyMesh()->GetComponentSpaceTransforms(), ToHolder, DtRun, Rz, bJump,
 		[Lift](const strides::tack::V3& P) { return P.y + Lift; });
-	Tack->StepPhase(UTF8_TO_TCHAR(Hz["gait"].s.c_str()), Hz["v"].num(), Hz["lead"].num() > 0 ? TEXT('L') : TEXT('R'), bJump);
+	if (bView)
+		Tack->RiderPhaseState().animPhase = Horse->HorseView()->AnimPhase();
+	else
+		Tack->StepPhase(UTF8_TO_TCHAR(Hz["gait"].s.c_str()), Hz["v"].num(), Hz["lead"].num() > 0 ? TEXT('L') : TEXT('R'), bJump);
 	LastH = UStridesRiderRig::SampleFromTack(*Tack, Hz["v"].num(), Hz["jT"].num(), 0);
 	if (bWebPhase) LastH.phase = Hz["ph"].num();
 	if (bWebPose)

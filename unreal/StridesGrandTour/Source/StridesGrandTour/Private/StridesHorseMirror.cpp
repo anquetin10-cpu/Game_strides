@@ -185,6 +185,7 @@ void FStridesHorseAnimProxy::PreUpdate(UAnimInstance* InAnimInstance, float Delt
 	if (const UStridesHorseAnimInstance* A = Cast<UStridesHorseAnimInstance>(InAnimInstance))
 	{
 		Layers = A->Layers;
+		Tucks = A->Tucks;
 		Set = A->Set;
 	}
 }
@@ -234,6 +235,17 @@ bool FStridesHorseAnimProxy::Evaluate(FPoseContext& Output)
 		StridesHorseAnim::Mix(Acc, In, 1 - W);
 	}
 	for (const FCompactPoseBoneIndex CI : Pose.ForEachBoneIndex()) Pose[CI] = Acc[CI.GetInt()];
+	// Replis des membres (étape S4) : rotation de l'os dans l'espace du composant autour de son origine.
+	for (const FStridesHorseTuck& Tk : Tucks)
+	{
+		if (Tk.Bone == INDEX_NONE || Tk.Angle == 0) continue;
+		const FCompactPoseBoneIndex CI = BC.MakeCompactPoseIndex(FMeshPoseBoneIndex(Tk.Bone));
+		if (CI == INDEX_NONE) continue;
+		FQuat Wp = FQuat::Identity;
+		for (FCompactPoseBoneIndex P = BC.GetParentBoneIndex(CI); P != INDEX_NONE; P = BC.GetParentBoneIndex(P)) Wp = Pose[P].GetRotation() * Wp;
+		const FQuat R(Tk.AxisCS.GetSafeNormal(), Tk.Angle);
+		Pose[CI].SetRotation((Wp.Inverse() * R * Wp * Pose[CI].GetRotation()).GetNormalized());
+	}
 	return true;
 }
 

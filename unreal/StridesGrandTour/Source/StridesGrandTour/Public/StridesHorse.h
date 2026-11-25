@@ -131,6 +131,22 @@ public:
 	static constexpr float GameMeshScale = 0.01f;
 	// inner.scale de Content/Data/pjl_horse_tack.json (export du web) ; 0 si illisible.
 	static double WebMeshScale(FString* Err = nullptr);
+	// Étape S4 : vue du cheval du web (-StridesHorseView=web ; StridesMonteOptions::ResolveWebHorseView) : inclinaison en
+	// virage, corps et horloge du saut, cadence des clips, phase de foulée, membres repliés et bascule face aux barres
+	// (FStridesHorseView : StridesCore/HorseView). Demande le mélangeur à couches (EnableWebLead). Faux (raison dans Err)
+	// si les données ou les clips manquent.
+	bool EnableWebView(FString* Err = nullptr);
+	bool UsesWebView() const { return bViewWeb; }
+	const class FStridesHorseView* HorseView() const { return View.Get(); }
+	class FStridesHorseView* MutableHorseView() { return View.Get(); }
+	// Après la pose (UStridesHorseViewPost, TG_PostUpdateWork) : abaissement d'appel, repli, bascule ; repère du corps posé.
+	void PostPoseView();
+	// Tests (Strides.Parite.HorseView) : entrées de la vue, obstacle et sol imposés (nuls : ceux du jeu) ; vue du web
+	// active ou non (le cheval rejoue alors la vue du jeu, maillage sans repère du corps).
+	void SetViewTestHooks(const struct FStridesHorseViewTestHooks* InHooks) { ViewHooks = InHooks; }
+	void SetWebViewActiveForTests(bool bOn);
+	// Captures du niveau B (-StridesShots=monte-b) : passe après la pose suspendue avec les autres ticks du cheval.
+	void SetViewPostTickEnabled(bool bOn);
 	// Une mise à jour de l'animation de pas Dt, hors simulation (tests Strides.Parite.HorseMirror).
 	void StepAnimation(double Dt)
 	{
@@ -182,6 +198,7 @@ private:
 	void StartOpenWorldJump();
 	void UpdateAnimation();
 	void UpdateWebLeadAnimation(double Dt);
+	void UpdateWebViewAnimation(double Dt);
 	void UpdateCourseCamera(float Dt);
 	const class UStridesDataSubsystem* DataSub() const;
 	UPROPERTY() TArray<TObjectPtr<class UAnimationAsset>> GaitAnimations;
@@ -222,4 +239,12 @@ private:
 	bool bTurnForTests = false;
 	double TurnForTests = 0;
 	double LastDt = 0;  // double : les tests rejouent les pas du web sans arrondi 32 bits
+	// Étape S4 : vue du cheval du web.
+	bool bViewWeb = false;
+	TSharedPtr<class FStridesHorseView> View;
+	UPROPERTY(Transient) TObjectPtr<class UStridesHorseViewPost> ViewPost;
+	// Clips joués par la vue du web et sources des clips miroir, retenus contre le ramasse-miettes (plantage constaté en
+	// partie jouée le 25/11/2026 : clips de virage et d'arrêt chargés sans référence, libérés, puis lus par le mélangeur).
+	UPROPERTY(Transient) TArray<TObjectPtr<const class UAnimSequence>> ViewClipRefs;
+	const struct FStridesHorseViewTestHooks* ViewHooks = nullptr;
 };
