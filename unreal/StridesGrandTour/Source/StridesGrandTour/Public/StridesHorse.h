@@ -88,14 +88,16 @@ public:
 	// Point d'assise du cavalier (repère monde Unreal).
 	FTransform SeatTransform() const;
 	// Sellerie du cheval WildMesh (essai de monte, étape 5 : siège S, ancres, profils, postérieurs ; UStridesHorseTack) :
-	// créée seulement avec -StridesRider=regles, sinon nulle (le jeu par défaut ne la lit pas ; SeatTransform inchangé).
+	// créée avec la cavalière de la règle ou la sellerie affichée (StridesMonteOptions : par défaut depuis l'étape S2 b ;
+	// -StridesMonte=ancien : nulle ; SeatTransform inchangé).
 	UStridesHorseTack* HorseTack() const { return Tack; }
 	// Étape S1 : sellerie complète affichée (selle, tapis, filet, mors, guêtres, étriers, étrivières, rênes ;
 	// UStridesHorseTackMesh), créée avec -StridesRider=regles ou -StridesTack=web (pas avec -StridesTack=aucune), sinon nulle.
 	UStridesHorseTackMesh* TackMesh() const { return TackMeshComp; }
 	// Crée la sellerie complète affichée (et la sellerie lue par la règle si elle manque). Faux (raison dans Err) sinon.
 	bool EnableTackMesh(FString* Err = nullptr);
-	// Étape M2 (option -StridesHorseLead=web) : main au galop et clips miroir comme le web ; sans l'option, nuls.
+	// Étape M2 (main du web : par défaut depuis l'étape S2 b ; -StridesHorseLead=droite ou -StridesMonte=ancien : clips
+	// d'origine, nuls) : main au galop et clips miroir comme le web.
 	bool UsesWebLead() const { return bLeadWeb; }
 	const class FStridesHorseMirrorSet* MirrorSet() const { return Mirrors.Get(); }
 	const strides::mirror::LeadState& LeadState() const { return LeadSt; }

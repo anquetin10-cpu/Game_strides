@@ -12,6 +12,8 @@ Usage, depuis n'importe où :
   python3 scripts/unreal/monte-base.py             relève la base et écrit unreal/docs/parite/monte/base.json
   python3 scripts/unreal/monte-base.py --verifier  repasse les portes et compare à base.json (code 1 si régression,
                                                    code 2 si moins de 8 Gio libres : condition d'arrêt S3 du plan)
+  python3 scripts/unreal/monte-base.py --maj-g5=<motif>  captures du CSO refaites volontairement : montages refaits,
+                                                   G5 de base.json remplacé (motif et ancienne empreinte gardés)
 Le cache de Vite va dans .tmp/monte/vite-cache : node_modules peut être un lien vers un autre dépôt, qu'on ne modifie pas.
 """
 import datetime
@@ -172,8 +174,30 @@ def portes():
     return {'G1': g1(), 'G5': g5(), 'G6': g6(), 'G7': g7()}
 
 
+def maj_g5(motif):
+    """Captures du CSO refaites volontairement (étape S2 b : monte du web par défaut) : G5 de base.json remplacé par les
+    empreintes actuelles (montages refaits par parite-montage.py), ancienne empreinte globale et motif gardés ; le reste de
+    la base n'est pas touché."""
+    with open(BASE) as f:
+        base = json.load(f)
+    old = base['portes']['G5']
+    new = g5()
+    new['ok'] = new['montage_code'] == 0
+    new['maj'] = {'date': datetime.datetime.now(ZoneInfo('Europe/Paris')).isoformat(timespec='seconds'), 'motif': motif,
+                  'empreinte_globale_precedente': old.get('empreinte_globale_sha256'),
+                  'png_changes': sorted(n for n, h in new['empreintes_sha256'].items() if old.get('empreintes_sha256', {}).get(n) != h)}
+    base['portes']['G5'] = new
+    with open(BASE, 'w') as f:
+        json.dump(base, f, ensure_ascii=False, indent=1)
+        f.write('\n')
+    print(f"G5 mis à jour : {new['png']} PNG, {len(new['maj']['png_changes'])} changés, empreinte {new['empreinte_globale_sha256'][:12]}")
+    return 0 if new['ok'] else 1
+
+
 def main():
     os.makedirs(TMP, exist_ok=True)
+    if any(a.startswith('--maj-g5=') for a in sys.argv[1:]):
+        sys.exit(maj_g5(next(a for a in sys.argv[1:] if a.startswith('--maj-g5='))[len('--maj-g5='):]))
     verifier = '--verifier' in sys.argv[1:]
     d = disque()
     if d['libre_gio'] < S3_GIO:

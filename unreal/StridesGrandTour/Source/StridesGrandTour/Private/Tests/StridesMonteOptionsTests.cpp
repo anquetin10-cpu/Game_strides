@@ -25,9 +25,9 @@
 
 namespace StridesMonteOptionsTest
 {
-// Défaut attendu du jeu sans option (étape S2 a : ancien comportement). Épinglé ici : changer le défaut du jeu exige de
-// changer ce test, dans le même commit que les preuves refaites.
-constexpr bool bExpectedWebByDefault = false;
+// Défaut attendu du jeu sans option (étape S2 b : monte du web ; S2 a : ancien comportement). Épinglé ici : changer le
+// défaut du jeu exige de changer ce test, dans le même commit que les preuves refaites.
+constexpr bool bExpectedWebByDefault = true;
 
 struct FTestWorld
 {

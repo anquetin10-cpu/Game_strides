@@ -10,7 +10,7 @@
 // l'initialisation par moindres carrés sur les positions de repos des 419 articulations (même rig, mêmes noms), et son
 // résidu est exposé (AxisFitRms). Transformée de peau d'un os : MeshToHolder ∘ os posé ∘ os au repos⁻¹ ∘ conversion.
 //
-// Le jeu par défaut ne crée pas ce composant : AStridesHorse ne le crée qu'avec -StridesRider=regles (étape 6), et
+// AStridesHorse le crée avec la cavalière de la règle (étape 6 ; par défaut depuis l'étape S2 b, StridesMonteOptions), et
 // SeatTransform() reste inchangé. Preuve : Strides.Parite.HorseSeat (StridesRiderTests.cpp), contre le canal hz d'O1.
 #pragma once
 #include "CoreMinimal.h"

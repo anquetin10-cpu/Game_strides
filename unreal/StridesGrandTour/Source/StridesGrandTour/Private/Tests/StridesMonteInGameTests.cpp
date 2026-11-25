@@ -1,8 +1,9 @@
 // Essai de monte, voie A, reliquats M1 : Strides.Monte.EnJeu, la cavalière montée par les règles DANS UN MONDE QUI TIQUE.
 //  Monde de test commencé comme le jeu (InitializeActorsForPlay puis BeginPlay distribué) ; cheval et cavalière créés par
 //  SpawnActor, donc BeginPlay passé, et la ligne de commande lue par BeginPlay comme en jeu.
-//  1. Jeu par défaut : sans -StridesRider=regles, BeginPlay ne crée ni la sellerie du cheval ni la règle de la cavalière ;
-//     avec l'option, BeginPlay les crée (contrôle positif : le test départage les deux cas).
+//  1. Ancien comportement (-StridesMonte=ancien ; jeu par défaut jusqu'à l'étape S2 a) : BeginPlay ne crée ni la sellerie du
+//     cheval ni la règle de la cavalière ; avec -StridesRider=regles, BeginPlay les crée (contrôle positif : le test
+//     départage les deux cas). Le défaut du jeu est vérifié par Strides.Monte.Options.
 //  2. Ordre des ticks au galop (240 images de 1/60 s, World->Tick et GFrameCounter avancé comme par la boucle du moteur) :
 //     en fin d'image (FWorldDelegates::OnWorldPostActorTick, après tous les groupes), l'acteur de la cavalière est sur le
 //     siège S de l'image (position et orientation) ; groupe réel de la cavalière ≥ celui de la sellerie. Un observateur qui
@@ -10,7 +11,7 @@
 //     l'écart de 9 cm relevé à l'étape 6, mesuré ici pour montrer que le test voit un retard quand il y en a un.
 //  3. Suiveurs (vêtements, yeux, sourcils, cils, queue de cheval) : en selle avec la règle, meneur = maillage posé et bornes
 //     prises au meneur ; les bornes des parties de la tête contiennent l'os de la tête. Pied à terre : meneur et bornes du
-//     jeu par défaut rétablis.
+//     maillage du jeu rétablis.
 #include "Misc/AutomationTest.h"
 #include "Components/PoseableMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -80,19 +81,24 @@ bool FStridesMonteInGameTest::RunTest(const FString&)
 {
 	using namespace StridesMonteInGameTest;
 	FString Opt;
-	if (!TestFalse(TEXT("ligne de commande du test sans -StridesRider= (sinon le cas « jeu par défaut » ne serait pas testé)"), FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), Opt))) return false;
+	if (!TestFalse(TEXT("ligne de commande du test sans -StridesRider= (sinon le cas « ancien » ne serait pas départagé)"), FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), Opt))) return false;
 	FTestWorld W(TEXT("StridesMonteInGameTest"));
 	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
 	if (!TestTrue(TEXT("monde commencé (BeginPlay distribué)"), W.Begin())) return false;
 
-	// ---- 1. Jeu par défaut contre option, par BeginPlay.
-	AStridesHorse* DefHorse = W.World->SpawnActor<AStridesHorse>(FVector(100000, 0, 0), FRotator::ZeroRotator);
-	AStridesRider* DefRider = W.World->SpawnActor<AStridesRider>(FVector(100000, -150, 90), FRotator::ZeroRotator);
-	if (!TestNotNull(TEXT("cheval (défaut)"), DefHorse) || !TestNotNull(TEXT("cavalière (défaut)"), DefRider)) return false;
-	TestTrue(TEXT("défaut : BeginPlay passé (cheval et cavalière)"), DefHorse->HasActorBegunPlay() && DefRider->HasActorBegunPlay());
-	TestNull(TEXT("défaut : sellerie du cheval non créée par BeginPlay"), DefHorse->HorseTack());
-	TestNull(TEXT("défaut : règle de la cavalière non créée par BeginPlay"), DefRider->RulesRig());
-	TestNull(TEXT("défaut : maillage posé non créé par BeginPlay"), DefRider->RulesMesh());
+	// ---- 1. Ancien comportement contre option, par BeginPlay.
+	AStridesHorse* DefHorse = nullptr;
+	AStridesRider* DefRider = nullptr;
+	{
+		FCommandLineScope Cl(TEXT("-StridesMonte=ancien"));
+		DefHorse = W.World->SpawnActor<AStridesHorse>(FVector(100000, 0, 0), FRotator::ZeroRotator);
+		DefRider = W.World->SpawnActor<AStridesRider>(FVector(100000, -150, 90), FRotator::ZeroRotator);
+	}
+	if (!TestNotNull(TEXT("cheval (ancien)"), DefHorse) || !TestNotNull(TEXT("cavalière (ancien)"), DefRider)) return false;
+	TestTrue(TEXT("ancien : BeginPlay passé (cheval et cavalière)"), DefHorse->HasActorBegunPlay() && DefRider->HasActorBegunPlay());
+	TestNull(TEXT("ancien : sellerie du cheval non créée par BeginPlay"), DefHorse->HorseTack());
+	TestNull(TEXT("ancien : règle de la cavalière non créée par BeginPlay"), DefRider->RulesRig());
+	TestNull(TEXT("ancien : maillage posé non créé par BeginPlay"), DefRider->RulesMesh());
 	AStridesHorse* Horse = nullptr;
 	AStridesRider* Rider = nullptr;
 	{
@@ -109,7 +115,7 @@ bool FStridesMonteInGameTest::RunTest(const FString&)
 	if (!TestNotNull(TEXT("option : maillage posé"), RB)) return false;
 	TestFalse(TEXT("option, à pied : maillage posé caché"), RB->IsVisible());
 	for (USkeletalMeshComponent* P : DefRider->Parts())
-		TestTrue(FString::Printf(TEXT("défaut : %s suit le maillage du jeu, bornes propres"), *P->GetName()), P->LeaderPoseComponent.Get() == DefRider->GetMesh() && !P->bUseBoundsFromLeaderPoseComponent);
+		TestTrue(FString::Printf(TEXT("ancien : %s suit le maillage du jeu, bornes propres"), *P->GetName()), P->LeaderPoseComponent.Get() == DefRider->GetMesh() && !P->bUseBoundsFromLeaderPoseComponent);
 
 	// ---- 2. Au galop : ordre des ticks, relevé en fin d'image et dans l'image.
 	// Sans rendu, le moteur ne rafraîchit pas les os d'un maillage non vu : on l'exige ici pour que le siège bouge avec la

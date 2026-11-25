@@ -6,7 +6,8 @@ Page pour Julien, 24/11/2026 (étape M3). Détails : `README.md` (journal), `niv
 
 La cavalière actuelle, montée par les règles du web, se tient comme dans le web quand on lui donne le cheval du web ;
 sur le cheval Unreal, elle reste assise et correcte, mais le cheval Unreal n'est pas encore celui du web (plus petit,
-ne s'incline pas ; sellerie ajoutée à l'étape S1, derrière l'option), et c'est lui qui fait l'essentiel des écarts.
+ne s'incline pas), et c'est lui qui fait l'essentiel des écarts. Depuis l'étape S2 b (25/11/2026), cavalière de la règle,
+main du web et sellerie sont le comportement par défaut du jeu (`-StridesMonte=ancien` pour revenir à l'ancien).
 
 ## Ce que la voie A donne (mesuré)
 
@@ -37,8 +38,8 @@ galop-gauche | saut-sommet>-web.png` contre `-unreal-b.png`.
 1. ~~**Selle, tapis, bride, rênes, étrivières, étriers** : absents du cheval Unreal.~~ **Fait à l'étape S1 (25/11/2026)**,
    derrière `-StridesRider=regles` (ou `-StridesTack=web`) : pièces du web importées (mêmes os, mêmes poids ; à 0,44 cm du
    web hors saut), étriers, étrivières et rênes identiques au bit au web (ctest), étrier sous le pied de la cavalière
-   (M4 ≤ 1,00 cm, seuil 2 cm). Captures avant / après : `captures/sellerie/`. Reste : visible dans le jeu par défaut avec
-   S2 ; au saut, les pièces suivent le cheval Unreal, qui ne bascule pas comme celui du web (S4).
+   (M4 ≤ 1,00 cm, seuil 2 cm). Captures avant / après : `captures/sellerie/`. Visible dans le jeu par défaut depuis
+   l'étape S2 b ; au saut, les pièces suivent le cheval Unreal, qui ne bascule pas comme celui du web (S4).
 2. **Taille du cheval** : 3,7 % plus petit que celui du web. Le changer touche le concours déjà prouvé.
 3. **Inclinaison dans les virages** et **corps au saut** (bascule face aux barres, hauteur du corps) : non portés.
 4. **Horloge du saut et cadence** : en partie jouée, le cheval Unreal joue ses clips à vitesse 1 ; le web règle la
@@ -51,10 +52,10 @@ galop-gauche | saut-sommet>-web.png` contre `-unreal-b.png`.
 
 | Choix | Effet | Coût de la décision |
 |---|---|---|
-| A. Cavalière par la règle (`-StridesRider=regles`) par défaut | posture du web, à toutes les allures | refaire les captures du concours où la cavalière est visible |
-| B. Main du web (`-StridesHorseLead=web`) par défaut | galop à gauche, sauts en miroir, seuil du grand saut à 8 m/s comme le web | le jeu part au galop à gauche ; preuves du concours à refaire |
+| A. Cavalière par la règle (`-StridesRider=regles`) par défaut | posture du web, à toutes les allures | **fait (étape S2 b)** : captures du concours refaites |
+| B. Main du web (`-StridesHorseLead=web`) par défaut | galop à gauche, sauts en miroir, seuil du grand saut à 8 m/s comme le web | **fait (étape S2 b)** : le jeu part au galop à gauche ; preuves du concours refaites |
 | C. Cheval à la taille du web (+3,7 %) | supprime la plus grande part des écarts du niveau B | preuves du concours à refaire (sauts, caméra) |
-| D. Sellerie du web sur le cheval Unreal | selle, bride, rênes et étriers visibles, étriers qui suivent les pieds | **fait (étape S1)**, derrière l'option ; par défaut avec A et B (S2) |
+| D. Sellerie du web sur le cheval Unreal | selle, bride, rênes et étriers visibles, étriers qui suivent les pieds | **fait (étape S1)**, par défaut avec A et B (étape S2 b) |
 | E. Inclinaison en virage, corps et horloge du saut | galop en cercle et saut comme le web | une étape dédiée au saut animé, avec un oracle des appuis |
 | F. Clips du trot et du grand saut réimportés à 24 images/s | trot au millimètre | clips du concours touchés, preuves à refaire |
 

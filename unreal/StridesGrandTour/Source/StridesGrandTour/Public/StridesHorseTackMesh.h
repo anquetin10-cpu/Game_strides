@@ -15,8 +15,8 @@
 // Repères : le cœur calcule dans le monde du web (y vers le haut, m) ; conversion Unreal → web : x = −Y/100, y = Z/100,
 // z = X/100 (la symétrie du repère du cheval, UStridesHorseTack::HolderToActor), appliquée aux positions monde.
 //
-// Créé par AStridesHorse seulement avec -StridesRider=regles ou -StridesTack=web ; -StridesTack=aucune l'empêche (captures
-// « avant »). Le jeu par défaut ne le crée pas. Preuve : Strides.Parite.HorseTackMesh (StridesHorseTackMeshTests.cpp).
+// Créé par AStridesHorse selon StridesMonteOptions : par défaut depuis l'étape S2 b (avant : -StridesRider=regles ou
+// -StridesTack=web) ; -StridesTack=aucune ou -StridesMonte=ancien l'empêche. Preuve : Strides.Parite.HorseTackMesh (StridesHorseTackMeshTests.cpp).
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"

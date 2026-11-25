@@ -35,8 +35,9 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   web (ctest `monte-miroir`) ; dans Unreal, avec `-StridesHorseLead=web`, galop et saut à main gauche, os visibles à
   0,0124 cm du web pour les clips importés à 24 images/s (`Strides.Parite.HorseMirror`) ; trot et jump_gallop, importés à
   30 images/s, s'écartent de 2,7 à 20,9 cm (import, déclaré).
-- Sans l'option, le jeu par défaut est inchangé. C'est vérifié par test (aucun composant créé) et par les captures du CSO,
-  dont les empreintes n'ont pas bougé.
+- **Par défaut depuis l'étape S2 b (25/11/2026)** : cavalière de la règle, main du web et sellerie du web forment un
+  ensemble (`StridesMonteOptions`, `Strides.Monte.Options`) ; `-StridesMonte=ancien` rend l'ancien comportement.
+  Captures du CSO refaites, relevés du concours identiques avant et après (étapes S2 a et S2 b ci-dessous).
 - **Coût en jeu, rendu réel (étape 7)** : la règle ajoute **+0,03 ms à l'arrêt et +0,05 ms au galop** au temps du jeu. Le
   seuil était de 0,3 ms ; la mesure se répète d'une passe à l'autre à 3,5 % près. Aucune différence de temps GPU n'est
   mesurable au-delà du bruit (`cout.md`).
@@ -82,7 +83,8 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
 - **Niveau B en jeu avec rendu** : le niveau B est mesuré sur le cheval Unreal rejoué par les oracles (trajectoire et
   clips du web), pas sur une partie jouée : en jeu, le cheval Unreal avance ses clips à vitesse 1 (cadence du web non
   portée), lit son propre virage et ses propres sauts (horloge du saut du web non portée).
-- Sellerie dans le jeu par défaut : derrière une option jusqu'à S2 (ensemble `-StridesMonte=web` à l'étape S2 a) ; M19 (montée, descente) sans oracle.
+- Sellerie dans le jeu par défaut : faite à l'étape S2 b ; M19 (montée, descente) sans oracle. Jeu empaqueté iOS avec le
+  nouveau défaut : non construit (à confirmer).
 - Coût sur iPhone ou iPad : aucun appareil branché (étape 16). Les chiffres du Mac classent les options, sans prédire le
   coût sur un téléphone.
 - Réalisme équestre : c'est à Julien d'en juger sur les captures ; aucun oracle ne le prouve.
@@ -1462,3 +1464,75 @@ chaque passe.
 
 Conclusion de S2 a : contrôles conformes (preuves vertes, relevés du concours identiques, captures conformes à la vue du
 web) ; passage par défaut fait dans un commit séparé (S2 b).
+
+## Étape S2 (b). Monte du web par défaut (25/11/2026)
+
+Contrôles de S2 a conformes (commit `544e1b7b`) : la monte du web devient le comportement du jeu sans option.
+
+### Ce qui change
+
+- `StridesMonteOptions::bWebByDefault = true` : sans option, cavalière posée par les règles du web, main du web (départ au
+  galop à main gauche comme le web, `A.lead = 1`, clips miroir, sauts en miroir, `jump_gallop` au-delà de **8 m/s** au lieu
+  de 7), sellerie du web affichée. **Retour à l'ancien comportement : `-StridesMonte=ancien`** ; ou partie par partie :
+  `-StridesRider=ancien`, `-StridesHorseLead=droite`, `-StridesTack=aucune`.
+- Tests : `Strides.Monte.Options` épingle le nouveau défaut ; `Strides.Monte.EnJeu` vérifie l'ancien comportement par
+  `-StridesMonte=ancien` ; les messages « jeu par défaut » des tests dont le monde n'est pas commencé (BeginPlay non
+  distribué : `HorseSeat`, `HorseMirror`, `RiderRules`, `HorseTackMesh`) disent maintenant ce qu'ils vérifient (« sans
+  BeginPlay »), sans changer les vérifications.
+- `perf-summary.py` : les configurations de l'étape 7 et de S1 sont nommées explicitement (`-StridesMonte=ancien`, avec
+  ou sans `-StridesRider=regles`) pour garder leur sens.
+- `monte-base.py --maj-g5=<motif>` : nouvelle base G5 (montages refaits, ancienne empreinte et motif gardés dans `base.json`).
+
+### Preuves du concours refaites
+
+Captures Unreal du CSO régénérées **sans option** (rendu GPU réel, `-StridesShots=cso` par famille de poses puis
+`-StridesShots=cso-jeu -TouchControls`, dossier dédié `.ue-cache/travail/s2/cso-defaut-web/`, copiées ensuite dans
+`unreal/docs/parite/cso/`) : 75 `<pose>-unreal.png`, 5 `jeu-*.png`, 7 relevés JSON ; 71 montages refaits par
+`parite-montage.py` ; captures web, `-oracle.png` et `t4-hud-debogage-galop-unreal.png` (antérieure à T7, sans moyen de
+la refaire à l'identique) inchangées.
+- Le défaut redonne l'ensemble « web » de S2 a : les 6 relevés `aide`, `bilan`, `cadrage`, `cmd`, `entree`, `hud` sont
+  **identiques champ pour champ** à ceux de `-StridesMonte=web` et à ceux de l'ancien comportement ; `jeu-unreal.json` :
+  seul le chrono au moment des captures 3 et 4 varie ; démonstration finie en 60,48 s « 0 pt Arrivée ✓ ».
+- `-StridesShots=monte-s2` sans option (`.ue-cache/travail/s2/ms2-defaut/`) : configuration « web », mêmes clips
+  (`canter_M`, `jump_canter_M` à gauche, `jump_canter` à droite), mêmes instants à 0,02 s près, main de l'ombre égale à
+  celle du cheval sur 1 061 images sur 1 061.
+- **G5** : nouvelles empreintes dans `unreal/docs/parite/monte/base.json` (`portes.G5`, 238 PNG, empreinte globale
+  `d51c51b9…` ; 195 PNG différents de l'ancienne base, qui datait de l'étape 1 et ne comptait que 150 PNG).
+
+### Écarts des captures du concours, un par un, justifiés par le web
+
+1. **Posture de la cavalière** : celle des règles du web v3 (pied dans l'étrier, jambe le long du flanc, mains au-dessus
+   de l'encolure, accompagnement du saut), prouvée au niveau A (0,0001 cm d'O2) ; elle remplace les clips cuits. Visible
+   sur toutes les poses où le couple est vu. Écart restant au web : cheval Unreal 3,7 % plus petit et sans inclinaison en
+   virage (niveau B, S3 et S4).
+2. **Sellerie** : selle, tapis, liseré, sangle, filet, mors, guêtres, étriers, étrivières et rênes du web (S1), désormais
+   sur toutes les captures où le cheval est vu, comme dans le web.
+3. **Main de départ** : le web part au galop à main gauche (`horse/anim.js` : `lead: 1` à la création) ; le cheval Unreal
+   aussi désormais (clips miroir, `bakeMirror` du web). Les poses du concours posent un cheval à l'arrêt (chute de barre,
+   robe, aides) : la main ne s'y voit pas ; elle se voit dans la partie réelle (`jeu-*`) et dans `monte-s2`.
+4. **Seuil du grand saut** : 8 m/s comme la vue du web (`pjl/view.js:229-233`, `s.speed > 8`) au lieu de 7 m/s ; aucune des
+   captures du concours ne saute entre 7 et 8 m/s (démonstration à 6,20 m/s aux sauts), donc aucun PNG n'en change.
+5. **Sauts en miroir** : saut à main gauche sur `jump_canter_M` (vue du web : `jumpMirror = s.lead === 'L'`).
+6. **Bruit de rendu** : une même configuration relancée ne redonne pas les PNG à l'octet (S2 a) ; les nouveaux PNG sont
+   ceux d'un seul passage.
+7. Les anciens PNG `chute-barre-*` et `jeu-*` montraient encore le cheval gris d'avant C1 : remplacés par le cheval bai.
+
+### Portes (S2 b)
+
+- G1 : ctest code 0 (cœur non touché) : cœur 300 729, `monte` 306 914, `monte-cheval` 4 488, `monte-cavaliere` 72 547,
+  `perf` 20, `monte-miroir` 7 069, `monte-sellerie` 7 443 vérifications, 0 échec.
+- G2 : UBT code 0, aucun avertissement ni erreur.
+- G3 : `Automation RunTests Strides` avec le nouveau défaut : **40 tests, 40 en succès** (2 avec l'avertissement
+  `idevice_id`), dont `Strides.Parite.RiderOnHorse`, `Strides.Parite.HorseMirror`, `Strides.Monte.Options`.
+- G4 : `mutations-monte-jeu.py` repassé avec le nouveau défaut (mutation du défaut inversée : vrai → faux) : 29 mutations,
+  **27 détectées, 2 attendues** (celles des reliquats M1), code 0, 2 350 s ; sources rétablis, recompilation finale code 0.
+- G5 : captures du CSO refaites volontairement, nouvelles empreintes (ci-dessus).
+- G6 : `build-parite.py` code 0, inventaire à jour (lignes `cavaliere.*`, `cheval.main-galop`, `cheval.saut-animation`,
+  `cheval.assise-cavalier`, `cheval.etriers`, `cheval.lanieres`, `cheval.sellerie`, `cheval.renes`).
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Non vérifié : le jeu empaqueté pour iOS avec le nouveau défaut (clips miroir cuits au chargement depuis des clips cuisinés,
+données de la règle sous `Content/Data`, coût sur appareil) : aucun paquet construit (interdit dans cette phase), à
+confirmer. Coût mesuré sur Mac seulement (règle +0,03 à +0,05 ms, sellerie +0,09 ms par image).
+
+Reste à faire (S2) : rien pour S2 ; S3 (cheval +3,7 % derrière une option), S4, S5.

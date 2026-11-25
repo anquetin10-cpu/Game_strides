@@ -70,7 +70,7 @@ M = [
  (OPTS, 'S2 valeur inconnue non signalée', '\t\tif (Unknown) Unknown->Add(', '\t\tif (Unknown && Unknown->Num() < 0) Unknown->Add('),
  (OPTS, 'S2 valeur inconnue prise pour « non »', '\t\treturn -1;\n\t};', '\t\treturn 0;\n\t};'),
  (OPTS, 'S2 description de l’ensemble inversée', 'return TEXT("web");', 'return TEXT("ancien");'),
- (OPTS_H, 'S2 défaut du jeu basculé', 'inline constexpr bool bWebByDefault = false;', 'inline constexpr bool bWebByDefault = true;'),
+ (OPTS_H, 'S2 défaut du jeu basculé', 'inline constexpr bool bWebByDefault = true;', 'inline constexpr bool bWebByDefault = false;'),
 ]
 
 ATTENDUES = {

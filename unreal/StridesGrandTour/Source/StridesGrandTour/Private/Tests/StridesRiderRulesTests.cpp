@@ -80,9 +80,10 @@ bool FStridesRiderRulesTest::RunTest(const FString&)
 	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
 	AStridesRider* Rider = W.World->SpawnActor<AStridesRider>(FVector::ZeroVector, FRotator::ZeroRotator);
 	if (!TestNotNull(TEXT("cavalière"), Rider)) return false;
-	// Jeu par défaut : sans -StridesRider=regles, rien de la règle n'est créé (BeginPlay ne l'appelle pas sans l'option).
-	TestNull(TEXT("jeu par défaut : composant de règle absent"), Rider->RulesRig());
-	TestNull(TEXT("jeu par défaut : maillage posé absent"), Rider->RulesMesh());
+	// Monde non commencé (BeginPlay non distribué) : rien de la règle n'est créé avant EnableRulesRig (effet des options par
+	// BeginPlay : Strides.Monte.Options).
+	TestNull(TEXT("sans BeginPlay : composant de règle absent"), Rider->RulesRig());
+	TestNull(TEXT("sans BeginPlay : maillage posé absent"), Rider->RulesMesh());
 	FString Err;
 	if (!TestTrue(FString::Printf(TEXT("règles de monte activées (%s)"), *Err), Rider->EnableRulesRig(&Err))) return false;
 	UStridesRiderRig* Rig = Rider->RulesRig();

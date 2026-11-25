@@ -670,7 +670,7 @@
   "etat": "absent",
   "niveau": "aucun",
   "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
-  "ecart": "Os de rêne du cheval procédural (masqué derrière le cheval WildMesh) non pilotés. Les rênes affichées du web (rubans du mors aux poings, pjlHorse.js _straps) sont portées derrière -StridesRider=regles ou -StridesTack=web : voir cheval.lanieres (étape S1).",
+  "ecart": "Os de rêne du cheval procédural (masqué derrière le cheval WildMesh) non pilotés. Les rênes affichées du web (rubans du mors aux poings, pjlHorse.js _straps) sont portées (par défaut depuis l'étape S2 b) : voir cheval.lanieres (étape S1).",
   "tranche": "b"
  },
  {

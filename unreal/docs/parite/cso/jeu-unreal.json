@@ -43,7 +43,7 @@
 				"board=Départ 45 s|· accordé 64 s|0 pt|▸ 1",
 				"hint(transparente)=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
 				"big=CLOCHE|TU AS 45 S POUR FRANCHIR LA LIGNE DE DÉPART",
-				"cad=4"
+				"cad=5"
 			],
 			"classes": "cso-ctl cso-sober cso-on big-on",
 			"minimapMasked": true,
@@ -69,7 +69,7 @@
 			],
 			"classes": "cso-ctl cso-sober cso-on",
 			"minimapMasked": true,
-			"status": "2,32 / 64 s 0 pt ▸ 2 · Obstacle n°2 sur 10",
+			"status": "2,31 / 64 s 0 pt ▸ 2 · Obstacle n°2 sur 10",
 			"written": true
 		},
 		{
@@ -85,12 +85,12 @@
 				"Pause"
 			],
 			"raceHud": [
-				"board=34,83|/ 64 s|0 pt|▸ 6A",
+				"board=34,87|/ 64 s|0 pt|▸ 6A",
 				"fb=Bon appel"
 			],
 			"classes": "cso-ctl cso-sober cso-on",
 			"minimapMasked": true,
-			"status": "34,95 / 64 s 0 pt ▸ 6A · Obstacle n°6A · double sur 10",
+			"status": "35,03 / 64 s 0 pt ▸ 6A · Obstacle n°6A · double sur 10",
 			"written": true
 		},
 		{

@@ -14,8 +14,8 @@
 // référence (comparaison au web) ou pose du clip source au même instant (jeu : rotation de la racine cuite par
 // Interchange, comme les clips d'origine joués par le jeu).
 //
-// Jeu : seulement avec l'option -StridesHorseLead=web (UStridesHorseAnimInstance, voir AStridesHorse::UpdateAnimation) ;
-// sans l'option, le jeu par défaut joue les clips d'origine comme avant.
+// Jeu : main du web (UStridesHorseAnimInstance, voir AStridesHorse::UpdateAnimation),
+// par défaut depuis l'étape S2 b ; avec -StridesHorseLead=droite ou -StridesMonte=ancien, le cheval joue les clips d'origine.
 // Preuve : Strides.Parite.HorseMirror (StridesHorseMirrorTests.cpp).
 #pragma once
 #include "CoreMinimal.h"

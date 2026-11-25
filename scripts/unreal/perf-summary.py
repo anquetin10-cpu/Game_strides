@@ -4,7 +4,8 @@ résumé.
 
 Deux usages.
 - Mesure (option --mesurer) : lance le jeu (rendu GPU réel, jamais -nullrhi) pour chaque passe, en alternant les
-  configurations « actuel » (jeu par défaut) et « regles » (-StridesRider=regles), --passes=N passes chacune (3 par
+  configurations « actuel » (ancien comportement, -StridesMonte=ancien, jeu par défaut jusqu'à l'étape S2 a) et « regles »
+  (-StridesMonte=ancien -StridesRider=regles), --passes=N passes chacune (3 par
   défaut), chaque passe dans <sortie>/<config>-<n>/ (perf-unreal.json, perf-arret.png, perf-galop.png, journal). Avant
   chaque passe : session graphique ouverte (« who » : console), économiseur d'écran arrêté (pgrep -x ScreenSaverEngine),
   aucune autre instance d'UnrealEditor, écran réveillé (caffeinate -u) ; pendant la passe : caffeinate -d -i.
@@ -222,15 +223,17 @@ def main():
             return 2
         n = int(opt.get('--passes', 3))
         for i in range(1, n + 1):
-            run_pass(out, f'actuel-{i}', [])
-            run_pass(out, f'regles-{i}', ['-StridesRider=regles'])
+            # Depuis l'étape S2 b (monte du web par défaut), les configurations de l'étape 7 sont nommées explicitement :
+            # « actuel » = ancien comportement, « regles » = règle (et sellerie, S1) avec les clips d'origine.
+            run_pass(out, f'actuel-{i}', ['-StridesMonte=ancien'])
+            run_pass(out, f'regles-{i}', ['-StridesMonte=ancien', '-StridesRider=regles'])
         if opt.get('--libre'):
             libre = ['-ExecCmds=r.VSync 0, t.MaxFPS 0']
             for i in range(1, n + 1):
-                run_pass(out, f'actuel-libre-{i}', libre)
-                run_pass(out, f'regles-libre-{i}', libre + ['-StridesRider=regles'])
+                run_pass(out, f'actuel-libre-{i}', libre + ['-StridesMonte=ancien'])
+                run_pass(out, f'regles-libre-{i}', libre + ['-StridesMonte=ancien', '-StridesRider=regles'])
         if opt.get('--apercu-mobile'):
-            run_pass(out, 'actuel-mobile-1', ['-FeatureLevelES31', '-StridesPerfSansCapture'])
+            run_pass(out, 'actuel-mobile-1', ['-FeatureLevelES31', '-StridesPerfSansCapture', '-StridesMonte=ancien'])
     elif opt.get('--mesurer') and opt.get('--sellerie'):
         # Étape S1 : coût de la sellerie complète affichée, règle avec et sans sellerie (-StridesTack=aucune), passes alternées.
         if not out:
@@ -238,8 +241,8 @@ def main():
             return 2
         n = int(opt.get('--passes', 3))
         for i in range(1, n + 1):
-            run_pass(out, f'regles-{i}', ['-StridesRider=regles'])
-            run_pass(out, f'regles-sans-sellerie-{i}', ['-StridesRider=regles', '-StridesTack=aucune'])
+            run_pass(out, f'regles-{i}', ['-StridesMonte=ancien', '-StridesRider=regles'])
+            run_pass(out, f'regles-sans-sellerie-{i}', ['-StridesMonte=ancien', '-StridesRider=regles', '-StridesTack=aucune'])
     paths = args or ([out] if out else [])
     if not paths:
         print(__doc__)

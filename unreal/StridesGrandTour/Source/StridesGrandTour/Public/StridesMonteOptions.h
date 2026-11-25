@@ -17,9 +17,10 @@
 // Une valeur inconnue est ignorée (signalée par FromCommandLine).
 namespace StridesMonteOptions
 {
-// Comportement du jeu sans aucune option. Faux : ancien comportement (cavalière aux clips cuits, clips d'origine, pas de
-// sellerie affichée).
-inline constexpr bool bWebByDefault = false;
+// Comportement du jeu sans aucune option. Vrai depuis l'étape S2 b (25/11/2026, contrôles de S2 a conformes) : monte du
+// web par défaut ; -StridesMonte=ancien rend l'ancien comportement (cavalière aux clips cuits, clips d'origine à main
+// droite, seuil du grand saut à 7 m/s, pas de sellerie affichée).
+inline constexpr bool bWebByDefault = true;
 
 struct FMonte
 {

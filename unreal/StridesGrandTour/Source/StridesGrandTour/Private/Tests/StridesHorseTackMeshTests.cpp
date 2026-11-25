@@ -135,7 +135,7 @@ bool FStridesHorseTackMeshTest::RunTest(const FString&)
 	AStridesHorse* Horse = Wd.World->SpawnActor<AStridesHorse>(FVector::ZeroVector, FRotator::ZeroRotator);
 	AStridesRider* Rider = Wd.World->SpawnActor<AStridesRider>(FVector::ZeroVector, FRotator::ZeroRotator);
 	if (!TestNotNull(TEXT("cheval"), Horse) || !TestNotNull(TEXT("cavalière"), Rider)) return false;
-	TestNull(TEXT("jeu par défaut : pas de sellerie affichée sans option"), Horse->TackMesh());
+	TestNull(TEXT("monde non commencé (BeginPlay non distribué) : pas de sellerie affichée"), Horse->TackMesh());
 	FString Err;
 	UStridesHorseTack* Tack = NewObject<UStridesHorseTack>(Horse);
 	if (!Check(FString::Printf(TEXT("sellerie lue par la règle initialisée (%s)"), *Err), Tack->Init(Horse->BodyMesh(), &Err))) return false;

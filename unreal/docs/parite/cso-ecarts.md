@@ -289,7 +289,7 @@ décrivent l'ancienne conduite. État courant : inventaire (`unreal/docs/PARITE.
 | § | Fonction | État | Niveau | Unreal | Écart précis |
 |---|---|---|---|---|---|
 | 12 | 14 événements sonores (notify, applause, bell, tone, snort, hoof, landing, railTouch, railFall, thud, fault, crowdOoh, neigh, cheer) et ambiance public | partiel | teste | T12 : `SC/CsoAudio.cpp`, `SG/StridesCsoAudio.cpp`, `Content/Audio/Cso` (19 `USoundWave`) ; `testCsoSounds`, `testCsoCrowd`, `Strides.Cso.AudioAssets`, `Strides.Cso.Audio` | journal identique au canal « audio » (94 exécutions ; légères : sons du cheval tirés des événements de l'oracle) ; compresseur du bus maître non porté, une seule réalisation du hasard, écoute non faite (`audio.concours`) |
-| 13 | Captures Unreal aux poses de la recette (844 × 390) | partiel | joue_ecran | T1 à T12 : `-StridesShots=cso`, `SG/StridesShots.cpp` ; `unreal/docs/parite/cso/` (montages côte à côte des 13 étapes, sauf le concours complet) | table des étapes : `unreal/docs/validation-mac-2026-11-20.md` ; captures antérieures à C1 : cheval gris |
+| 13 | Captures Unreal aux poses de la recette (844 × 390) | partiel | joue_ecran | T1 à T12 : `-StridesShots=cso`, `SG/StridesShots.cpp` ; `unreal/docs/parite/cso/` (montages côte à côte des 13 étapes, sauf le concours complet) | table des étapes : `unreal/docs/validation-mac-2026-11-20.md` ; captures Unreal refaites le 25/11/2026 avec la monte du web par défaut (étape S2 b de l'essai de monte : cavalière de la règle, main du web, sellerie ; relevés identiques, `unreal/docs/parite/monte/README.md`) |
 
 ---
 
@@ -1723,3 +1723,12 @@ une fois T1 livré (leurs tests rejouent la trajectoire web, pas le cheval Unrea
   paquet iOS.
 - Le web de référence (`claude/gt-humains-v3`) n'est pas la production : seul le chantier cavalier diffère, sans effet
   sur les règles du CSO ; recontrôler l'identité des oracles (procédure du §0, point 1) à chaque reprise.
+
+### Monte du web par défaut (étape S2 b de l'essai de monte, 25/11/2026)
+
+Les captures Unreal du banc (`<pose>-unreal.png`, `jeu-*.png`) et leurs relevés JSON sont refaits avec le nouveau
+comportement par défaut du jeu : cavalière posée par les règles du web v3, main du web au galop (départ à main gauche,
+sauts en miroir, `jump_gallop` au-delà de 8 m/s comme `pjl/view.js`), sellerie du web. Ancien comportement :
+`-StridesMonte=ancien`. Relevés `aide`, `bilan`, `cadrage`, `cmd`, `entree`, `hud` identiques champ pour champ avant et
+après (logique, HUD, cadrage et caméra inchangés) ; partie réelle finie « 0 pt Arrivée ✓ ». Écarts de l'image, un par un,
+et preuves : `unreal/docs/parite/monte/README.md`, étapes S2 a et S2 b. Nouvelles empreintes G5 : `unreal/docs/parite/monte/base.json`.

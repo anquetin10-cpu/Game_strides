@@ -192,7 +192,7 @@ bool FStridesHorseSeatTest::RunTest(const FString&)
 	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
 	AStridesHorse* Horse = W.World->SpawnActor<AStridesHorse>(FVector::ZeroVector, FRotator::ZeroRotator);
 	if (!TestNotNull(TEXT("cheval"), Horse)) return false;
-	TestNull(TEXT("jeu par défaut : sellerie non créée sans -StridesRider=regles"), Horse->HorseTack());
+	TestNull(TEXT("monde non commencé (BeginPlay non distribué) : sellerie non créée"), Horse->HorseTack());
 	USkeletalMeshComponent* Mesh = Horse->BodyMesh();
 	const USkeletalMesh* SkM = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
 	if (!TestNotNull(TEXT("maillage du cheval"), SkM)) return false;
@@ -442,7 +442,8 @@ bool FStridesHorseSeatTest::RunTest(const FString&)
 // Étape M2 de l'essai de monte (voie A) : Strides.Parite.HorseMirror. Clips miroir du cheval Unreal (FStridesHorseMirrorSet :
 // cuisson de StridesCore/HorseMirror, prouvée au bit près contre le web par le ctest « monte-miroir », nourrie ici des
 // clips importés d'Unreal) contre les clips « _M » cuits par le jeu web (oracle unreal/core/tests/oracles/monte/miroir).
-//  1. Jeu par défaut : sans l'option -StridesHorseLead=web, le cheval garde le mode à un clip (rien de changé).
+//  1. Cheval créé dans un monde non commencé (BeginPlay non distribué) : mode à un clip, rien de la main du web (l'effet des
+//     options par BeginPlay est vérifié par Strides.Monte.Options).
 //  2. Entrées de la cuisson : noms et durées des clips, paires d'os (par nom) identiques au web ; plan de symétrie.
 //  3. Pour chaque clip et chaque clé : positions des 419 articulations (repère de la scène du GLB, via la conversion d'axes
 //     de UStridesHorseTack), pose source d'Unreal contre pose source du web (écart d'import : rééchantillonnage), puis clip
@@ -468,10 +469,10 @@ bool FStridesHorseMirrorTest::RunTest(const FString&)
 	USkeletalMeshComponent* Mesh = Horse->BodyMesh();
 	const USkeletalMesh* SkM = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
 	if (!TestNotNull(TEXT("maillage du cheval"), SkM)) return false;
-	// 1. Jeu par défaut.
-	TestFalse(TEXT("jeu par défaut : option -StridesHorseLead=web absente, clips d'origine"), Horse->UsesWebLead());
-	TestNull(TEXT("jeu par défaut : pas de mélangeur à couches sur le maillage"), Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()));
-	TestNull(TEXT("jeu par défaut : aucun clip miroir cuit"), Horse->MirrorSet());
+	// 1. Sans BeginPlay : mode à un clip.
+	TestFalse(TEXT("sans BeginPlay : main du web non activée, clips d'origine"), Horse->UsesWebLead());
+	TestNull(TEXT("sans BeginPlay : pas de mélangeur à couches sur le maillage"), Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()));
+	TestNull(TEXT("sans BeginPlay : aucun clip miroir cuit"), Horse->MirrorSet());
 
 	UStridesHorseTack* Tack = NewObject<UStridesHorseTack>(Horse);
 	FString Err;
