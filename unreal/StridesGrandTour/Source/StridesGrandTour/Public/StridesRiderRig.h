@@ -62,6 +62,12 @@ public:
 	// Plante et poing (points sans os de la règle) dans l'espace du composant, à la dernière pose.
 	FVector SolePoint(int32 Side) const;
 	FVector FistPoint(int32 Side) const;
+	// Étape S1 (sellerie affichée), espace du composant, dernière pose : os de l'orteil (os du maillage associé à lToe, rToe :
+	// le web place l'étrier sous l'os de l'orteil du personnage classique, horse.js _stirrupsFollow) ; creux du poing
+	// (realistic.js gripPoint : milieu des os index_02, middle_02, pinky_02 et middle_01 du côté ; poing de la règle si l'un
+	// manque).
+	FVector ToePoint(int32 Side) const;
+	FVector GripPoint(int32 Side) const;
 	const TArray<FTransform>& ComponentPose() const { return CS; }
 	// Paramètres des deux os par membre (comme TwoBoneIKSimplePerItem : bEnableStretch faux, StretchStartRatio 0,75,
 	// StretchMaximumRatio 1,25) : lus par le test pour vérifier que l'étirement reste désactivé.
@@ -92,6 +98,7 @@ private:
 	FVector PelvisPos = FVector::ZeroVector;
 	int32 Pelvis = INDEX_NONE;
 	FVector SoleLocal[2], FistLocal[2];
+	TArray<int32> GripBones[2];          // realistic.js gripPoint : index_02, middle_02, pinky_02, middle_01
 	// Espace du maillage : p_maillage = Scale · Axes · p_modèle + Offset (Axes : permutation signée, Det = ±1).
 	FMatrix Axes = FMatrix::Identity;
 	double Scale = 100, Det = 1;

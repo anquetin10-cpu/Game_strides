@@ -96,6 +96,16 @@ bool UStridesRiderRig::Init(UPoseableMeshComponent* InMesh, FString* Err)
 	}
 	RuleToMesh[LFing] = Find("middle_01_l");
 	RuleToMesh[RFing] = Find("middle_01_r");
+	// Étape S1 : creux du poing (realistic.js gripPoint), quatre os par côté ; à défaut, poing de la règle (FistPoint).
+	for (int32 Sd = 0; Sd < 2; Sd++)
+	{
+		GripBones[Sd].Reset();
+		for (const char* Nm : {"index_02", "middle_02", "pinky_02", "middle_01"})
+		{
+			const int32 B = Find(std::string(Nm) + (Sd ? "_r" : "_l"));
+			if (B != INDEX_NONE) GripBones[Sd].Add(B);
+		}
+	}
 	Pelvis = RuleToMesh[Hips];
 	if (Pelvis == INDEX_NONE || RuleToMesh[LFing] == INDEX_NONE || RuleToMesh[RFing] == INDEX_NONE) return Fail(TEXT("pelvis ou middle_01 introuvable"));
 	// Pose de référence du maillage, espace du composant.
@@ -382,4 +392,19 @@ FVector UStridesRiderRig::FistPoint(int32 Side) const
 {
 	const int32 B = RuleToMesh[Side ? RHand : LHand];
 	return B != INDEX_NONE && CS.IsValidIndex(B) ? CS[B].TransformPosition(FistLocal[Side]) : FVector::ZeroVector;
+}
+
+FVector UStridesRiderRig::ToePoint(int32 Side) const
+{
+	const int32 B = RuleToMesh[Side ? RToe : LToe];
+	return B != INDEX_NONE && CS.IsValidIndex(B) ? CS[B].GetTranslation() : FVector::ZeroVector;
+}
+
+FVector UStridesRiderRig::GripPoint(int32 Side) const
+{
+	const TArray<int32>& G = GripBones[Side ? 1 : 0];
+	if (G.Num() != 4) return FistPoint(Side);
+	FVector P = FVector::ZeroVector;
+	for (int32 B : G) P += CS.IsValidIndex(B) ? CS[B].GetTranslation() : FVector::ZeroVector;
+	return P / 4.0;
 }

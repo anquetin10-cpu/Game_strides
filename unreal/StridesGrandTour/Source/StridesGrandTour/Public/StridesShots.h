@@ -114,7 +114,7 @@ private:
 	struct FPerfPhase
 	{
 		FString Name;
-		TArray<double> Game, Render, Gpu, Delta, Lod, Speed, RigMs, TackMs, Used, Peak;
+		TArray<double> Game, Render, Gpu, Delta, Lod, Speed, RigMs, TackMs, StrapsMs, Used, Peak;
 		int32 CourseCam = 0, Jumping = 0, Gallop = 0, Bones = 0;
 		FString BodyMesh;
 		double StartTime = 0;

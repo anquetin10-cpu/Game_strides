@@ -38,6 +38,7 @@
 #include "StridesRider.h"
 #include "StridesRiderRig.h"
 #include "StridesHorseTack.h"
+#include "StridesHorseTackMesh.h"
 #include "StridesRiderReplay.h"
 #include "Components/PoseableMeshComponent.h"
 #include "Components/PoseableMeshComponent.h"
@@ -1894,6 +1895,8 @@ void AStridesShots::TickPerf(float DeltaSeconds, APlayerController* PC)
 			Ph.Jumping += Horse->IsJumping() ? 1 : 0;
 			Ph.Gallop += Horse->GaitIndex >= 3 ? 1 : 0;
 			if (const UStridesHorseTack* T = Horse->HorseTack()) Ph.TackMs.Add(T->LastCostMs());
+			// Étape S1 : sellerie affichée (étriers, étrivières, rênes : logique et rubans).
+			if (const UStridesHorseTackMesh* Tm = Horse->TackMesh()) Ph.StrapsMs.Add(Tm->LastCostMs());
 		}
 		if (const UStridesRiderRig* R = Rider ? Rider->RulesRig() : nullptr) if (R->IsReady() && Rider->RulesMesh()->IsVisible()) Ph.RigMs.Add(R->LastCostMs());
 		if ((PerfFrame - PerfWarm - 1) % 30 == 0)
@@ -2001,7 +2004,7 @@ void AStridesShots::TickPerf(float DeltaSeconds, APlayerController* PC)
 		TSharedPtr<FJsonObject> Doc = MakeShared<FJsonObject>();
 		Doc->SetStringField(TEXT("schema"), TEXT("strides.perf/1"));
 		Doc->SetStringField(TEXT("generator"), TEXT("-StridesShots=perf (AStridesShots::TickPerf)"));
-		Doc->SetStringField(TEXT("doc"), TEXT("ms par image : gameMs = GGameThreadTime, renderMs = GRenderThreadTime, gpuMs = RHIGetGPUFrameCycles(0), frameMs = pas de l'image ; temps de l'image précédente, relevés au tick de fin d'image ; rigMs, tackMs : coût mesuré par la règle et la sellerie (FPlatformTime, option regles) ; usedMB, peakMB : FPlatformMemory UsedPhysical et PeakUsedPhysical toutes les 30 images ; lod : GetPredictedLODLevel du maillage du corps de la cavalière ; résumés par strides::perf::summarize (centile type 7)"));
+		Doc->SetStringField(TEXT("doc"), TEXT("ms par image : gameMs = GGameThreadTime, renderMs = GRenderThreadTime, gpuMs = RHIGetGPUFrameCycles(0), frameMs = pas de l'image ; temps de l'image précédente, relevés au tick de fin d'image ; rigMs, tackMs : coût mesuré par la règle et la sellerie (FPlatformTime, option regles) ; strapsMs : sellerie affichée (étape S1 : étriers, étrivières, rênes) ; usedMB, peakMB : FPlatformMemory UsedPhysical et PeakUsedPhysical toutes les 30 images ; lod : GetPredictedLODLevel du maillage du corps de la cavalière ; résumés par strides::perf::summarize (centile type 7)"));
 		FString RiderOpt;
 		FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOpt);
 		Doc->SetStringField(TEXT("config"), RiderOpt == TEXT("regles") ? TEXT("regles") : TEXT("actuel"));
@@ -2042,6 +2045,7 @@ void AStridesShots::TickPerf(float DeltaSeconds, APlayerController* PC)
 			Put(TEXT("speed"), Ph.Speed);
 			Put(TEXT("rigMs"), Ph.RigMs);
 			Put(TEXT("tackMs"), Ph.TackMs);
+			Put(TEXT("strapsMs"), Ph.StrapsMs);
 			Put(TEXT("usedMB"), Ph.Used);
 			Put(TEXT("peakMB"), Ph.Peak);
 			O->SetObjectField(TEXT("series"), Series);

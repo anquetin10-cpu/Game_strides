@@ -24,6 +24,7 @@ class AStridesCourse;
 class AStridesFence;
 class AStridesRider;
 class UStridesHorseTack;
+class UStridesHorseTackMesh;
 
 UCLASS()
 class STRIDESGRANDTOUR_API AStridesHorse : public APawn
@@ -89,6 +90,11 @@ public:
 	// Sellerie du cheval WildMesh (essai de monte, étape 5 : siège S, ancres, profils, postérieurs ; UStridesHorseTack) :
 	// créée seulement avec -StridesRider=regles, sinon nulle (le jeu par défaut ne la lit pas ; SeatTransform inchangé).
 	UStridesHorseTack* HorseTack() const { return Tack; }
+	// Étape S1 : sellerie complète affichée (selle, tapis, filet, mors, guêtres, étriers, étrivières, rênes ;
+	// UStridesHorseTackMesh), créée avec -StridesRider=regles ou -StridesTack=web (pas avec -StridesTack=aucune), sinon nulle.
+	UStridesHorseTackMesh* TackMesh() const { return TackMeshComp; }
+	// Crée la sellerie complète affichée (et la sellerie lue par la règle si elle manque). Faux (raison dans Err) sinon.
+	bool EnableTackMesh(FString* Err = nullptr);
 	// Étape M2 (option -StridesHorseLead=web) : main au galop et clips miroir comme le web ; sans l'option, nuls.
 	bool UsesWebLead() const { return bLeadWeb; }
 	const class FStridesHorseMirrorSet* MirrorSet() const { return Mirrors.Get(); }
@@ -153,6 +159,7 @@ protected:
 	// Caméra de concours (position et orientation absolues, posées à chaque image par StepCourseCamera).
 	UPROPERTY(VisibleAnywhere) TObjectPtr<class UCameraComponent> CourseCamera;
 	UPROPERTY(Transient) TObjectPtr<UStridesHorseTack> Tack;
+	UPROPERTY(Transient) TObjectPtr<UStridesHorseTackMesh> TackMeshComp;
 
 private:
 	// bSimPaused : simulation suspendue (téléphone ouvert : game.simPaused) ; cheval et chrono figés (hdt et sdt nuls),

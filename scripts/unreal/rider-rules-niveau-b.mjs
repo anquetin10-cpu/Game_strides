@@ -78,7 +78,7 @@ for (const e of index.runs) {
     id: e.id, setup: setupF,
     frames: o1.frames.map((f, i) => {
       const u = ue.frames[i];
-      return { f: f.f, mx: f.mx, cq: o2.frames[i].cq, rz: null, pe: null, cl: u.cl, dg: u.dg, tg: u.tg, hz: u.hz, in: { ...f.in, ...u.in } };
+      return { f: f.f, mx: f.mx, cq: o2.frames[i].cq, rz: null, pe: u.pe ?? null, cl: u.cl, dg: u.dg, tg: u.tg, hz: u.hz, in: { ...f.in, ...u.in } };
     }),
   };
   const N = o1.frames.length;
@@ -152,7 +152,15 @@ for (const e of index.runs) {
     absCheck('M7', `écart au flanc, minimum (${sel})`, (m) => m['M7min' + s], all, 'min', -0.01, 'm');
     absCheck('M9', `poignet au-dessus de l’encolure (${sel})`, (m) => m['M9' + s], all, 'min', 0.09, 'm');
     absCheck('M10', `coude (${sel})`, (m) => m['coude' + s], all, 'max', 155, '°');
+    // Étape S1 : étriers affichés (hz.ir de l'export : UStridesHorseTackMesh, sous l'orteil de la pose de l'image).
+    absCheck('M4', `plante – étrier affiché (${sel})`, (m) => m['M4' + s], all, 'max', 0.02, 'm');
     void si;
+  }
+  // Étape S1 : M8, pénétration de l'axe des os (export : 6 rayons contre le maillage du cheval Unreal, mêmes points que le web),
+  // seuil du plan : max(1 cm ; O1 du même scénario + 0,5 cm).
+  {
+    const o1Max = Math.max(0, ...m1.map((m) => m.M8).filter(Number.isFinite));
+    absCheck('M8', `pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm))`, (m) => m.M8, all, 'max', Math.max(0.01, o1Max + 0.005), 'm');
   }
   relCheck('M11', 'hanche (deux côtés)', (m) => Math.max(...side('hanche').map((g) => Math.abs(g(m)))), all, 6, '°');
   for (const s of SIDES) {
@@ -219,11 +227,20 @@ for (const e of index.runs) {
     if (i > 0) (bob = Math.max(bob, Math.abs(u.in.bob - f.in.bob))), (pitch = Math.max(pitch, Math.abs(u.in.pitch - f.in.pitch) * 180 / Math.PI));
   }
   const mirror = ue.frames.filter((f) => f.hz.mirror > 0).length;
+  // Étape S1 : étrivière (M5) et rênes (M18), information : grandeurs qui dépendent de la taille du cheval (plan §5 : M5 en
+  // simple information) ; min et max sur toutes les images, Unreal, O1 et O2.
+  const span = (arr, key) => {
+    const v = arr.map((m) => m[key]).filter(Number.isFinite);
+    return v.length ? [Math.min(...v), Math.max(...v)] : null;
+  };
+  const info = {};
+  // O2 rejoue la règle sur le cheval d'O1, sans étrier propre (hz.ir est celui du cavalier du web) : M4 et M5 sans objet pour O2.
+  for (const key of ['M4L', 'M4R', 'M4aL', 'M4aR', 'M5L', 'M5R', 'reneL', 'reneR', 'ecartPoignets']) info[key] = { ue: span(mU, key), o1: span(m1, key), o2: /^M[45]/.test(key) ? null : span(m2, key) };
   for (const c of checks) {
     const p = c.kind === 'seuil' ? c.pass : c.o1?.pass;
     if (p === false) ok = false;
   }
-  scen.push({ id: e.id, images: N, mirror, seated: runUE.frames.filter(seated).length, checks, phases, inputs: { phaseRewritten: phN, phaseMaxRewritten: ph, phaseMaxHeld: phHeld, bobMax: bob, pitchMaxDeg: pitch } });
+  scen.push({ id: e.id, images: N, mirror, seated: runUE.frames.filter(seated).length, checks, phases, tack: info, inputs: { phaseRewritten: phN, phaseMaxRewritten: ph, phaseMaxHeld: phHeld, bobMax: bob, pitchMaxDeg: pitch } });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -247,9 +264,11 @@ L.push('');
 L.push('Deux références image par image : **O1** (règle du web, cheval du web, cavalier classique : la référence du plan) et');
 L.push('**O2 rider_f** (règle du web, cheval du web, proportions de la cavalière Unreal) : l’écart à O2 isole l’effet du cheval');
 L.push('Unreal. Assis : levée de la règle sous 2 cm et hors du vol ; obstacle : vol ou accompagnement (jumpK ≥ 0,1) ; pas :');
-L.push('poids de l’allure du pas de la règle au moins 0,5. Non mesurés dans Unreal : M4 (le cheval Unreal n’affiche pas');
-L.push('d’étrier : pas de selle ni d’étrivières), M5 (étrivière), M8 (pénétration mesurée par rayons dans la page web),');
-L.push('M18 (rênes absentes), M19 (montée et descente : E4 et E5 hors de l’essai, aucun oracle).');
+L.push('poids de l’allure du pas de la règle au moins 0,5. Depuis l’étape S1 (sellerie complète), l’export donne les étriers');
+L.push('affichés par Unreal (`UStridesHorseTackMesh`) : M4 est jugé sur son seuil, M5 (étrivière) et M18 (rênes) sont relevés');
+L.push('plus bas (colonne O2 de M4 sans objet : O2 n’a pas d’étrier propre) ; M8 (pénétration) est mesuré dans le test moteur par');
+L.push('la méthode des 6 rayons du web contre le maillage du cheval Unreal skinné. Non mesuré : M19 (montée et descente : E4 et');
+L.push('E5 hors de l’essai, aucun oracle).');
 L.push('');
 L.push('## Seuils absolus de la règle (valeur Unreal ; O1 et O2 sur les mêmes images, pour mémoire)');
 L.push('');
@@ -278,6 +297,19 @@ L.push('| Scénario | Phase | Unreal | O1 | O2 | Écart à O1 | Écart à O2 |')
 L.push('|---|---|---|---|---|---|---|');
 for (const s of scen)
   if (s.phases) for (const p of s.phases) L.push(`| ${s.id} | ${p.phase} | ${p.ue ?? '—'} | ${p.o1 ?? '—'} | ${p.o2 ?? '—'} | ${Number.isFinite(p.d1) ? p.d1 : '—'}${p.d1 <= 2 ? '' : ' **(> 2)**'} | ${Number.isFinite(p.d2) ? p.d2 : '—'}${p.d2 <= 2 ? '' : ' **(> 2)**'} |`);
+L.push('');
+L.push('## Sellerie affichée (étape S1) : étrier, étrivière, rênes (information, min – max sur toutes les images)');
+L.push('');
+L.push('M4 : plante – étrier affiché ; M4a : avant-pied – étrier, moins 0,015 · scale (0 par construction, dans le web comme dans');
+L.push('Unreal) ; M5 : étrivière, porte-étrivière → œil de l’étrier (0,115 m au-dessus) ; M18 : rêne, mors → poing de la règle ;');
+L.push('écartement des poignets. M5 et M18 dépendent de la taille du cheval (Unreal 3,7 % plus petit que le web).');
+L.push('');
+L.push('| Scénario | Grandeur | Unreal | O1 | O2 |');
+L.push('|---|---|---|---|---|');
+const rg = (r) => (r ? `${f(r[0], 'm')} – ${f(r[1], 'm')} cm` : '—');
+const LAB = { M4L: 'M4 gauche', M4R: 'M4 droit', M4aL: 'M4a gauche', M4aR: 'M4a droit', M5L: 'M5 étrivière gauche', M5R: 'M5 étrivière droite', reneL: 'M18 rêne gauche', reneR: 'M18 rêne droite', ecartPoignets: 'M18 écartement des poignets' };
+for (const s of scen)
+  for (const [k, v] of Object.entries(s.tack || {})) L.push(`| ${s.id} | ${LAB[k]} | ${rg(v.ue)} | ${rg(v.o1)} | ${rg(v.o2)} |`);
 L.push('');
 L.push('## Entrées de la règle venues du cheval Unreal, contre celles du web (information)');
 L.push('');

@@ -23,6 +23,8 @@ Critères du plan (plan-essai.md, étape 7) : dispersion des médianes ≤ 5 % (
 
 Usage (DEVELOPER_DIR réglé sur Xcode) :
   python3 scripts/unreal/perf-summary.py --mesurer --sortie=<dossier> [--passes=3] [--apercu-mobile] [--ecrire]
+  python3 scripts/unreal/perf-summary.py --mesurer --sellerie --sortie=<dossier> [--passes=3]   (étape S1 : regles contre
+    regles-sans-sellerie, -StridesTack=aucune)
   python3 scripts/unreal/perf-summary.py <dossier ou perf-unreal.json>… [--ecrire]
 Code 1 : fichier incomplet ou résumé du jeu différent du recalcul ; code 2 : précondition de mesure non remplie ;
 code 0 sinon (les critères sont rapportés, pas changés en code de sortie).
@@ -141,9 +143,9 @@ def summarize(runs):
             if not phs:
                 continue
             e = cfg['phases'][pn] = {}
-            for k in SERIES + ['rigMs', 'tackMs']:
-                meds = [p['series'][k]['median'] for p in phs if p['series'][k]['n']]
-                p95s = [p['series'][k]['p95'] for p in phs if p['series'][k]['n']]
+            for k in SERIES + ['rigMs', 'tackMs', 'strapsMs']:
+                meds = [p['series'][k]['median'] for p in phs if p['series'].get(k, {'n': 0})['n']]
+                p95s = [p['series'][k]['p95'] for p in phs if p['series'].get(k, {'n': 0})['n']]
                 if not meds:
                     continue
                 spread = (max(meds) - min(meds)) / min(meds) if len(meds) > 1 and min(meds) > 0 else (0.0 if len(meds) < 2 else -1)
@@ -162,14 +164,14 @@ def summarize(runs):
             e['rhi'] = sorted({d['rhi'] + ' ' + d['featureLevel'] for _, d in lst})
             e['rulesActive'] = [d['rulesActive'] for _, d in lst]
     # Tableau
-    lines.append('| Configuration | Phase | Passes | Jeu (ms) méd. [p95] | Rendu (ms) méd. [p95] | GPU (ms) méd. [p95] | Image (ms) méd. | Dispersion des médianes jeu / rendu / GPU | Règle + sellerie (ms) méd. | Mémoire résidente (Mo) méd. / pic | Os du corps, LOD | Images : caméra de concours / au galop / en saut |')
+    lines.append('| Configuration | Phase | Passes | Jeu (ms) méd. [p95] | Rendu (ms) méd. [p95] | GPU (ms) méd. [p95] | Image (ms) méd. | Dispersion des médianes jeu / rendu / GPU | Règle + sellerie (+ sellerie affichée, S1) (ms) méd. | Mémoire résidente (Mo) méd. / pic | Os du corps, LOD | Images : caméra de concours / au galop / en saut |')
     lines.append('|---|---|---|---|---|---|---|---|---|---|---|---|')
     for key, cfg in res['configs'].items():
         for pn, e in cfg['phases'].items():
             def cell(k):
                 return f'{fmt(e[k]["mean_median"])} [{fmt(e[k]["mean_p95"])}]' if k in e else '—'
             sp = ' / '.join((fmt(100 * e[k]['spread'], 1) + ' %') if k in e else '—' for k in ['gameMs', 'renderMs', 'gpuMs'])
-            rule = fmt(e['rigMs']['mean_median'] + e.get('tackMs', {'mean_median': 0})['mean_median'], 4) if 'rigMs' in e else '—'
+            rule = fmt(e['rigMs']['mean_median'] + e.get('tackMs', {'mean_median': 0})['mean_median'] + e.get('strapsMs', {'mean_median': 0})['mean_median'], 4) if 'rigMs' in e else '—'
             lines.append(f'| {key} | {pn} | {len(e["frames"])} × {e["frames"][0]} | {cell("gameMs")} | {cell("renderMs")} | {cell("gpuMs")} | {fmt(e["frameMs"]["mean_median"], 2)} | {sp} | {rule} | {e["usedMB"]:.0f} / {e["peakMB"]:.0f} | {", ".join(map(str, e["bones"]))}, LOD {", ".join(map(str, e["lod"]))} | {"/".join(map(str, e["courseCamera"]))} ; {"/".join(map(str, e["gallop"]))} ; {"/".join(map(str, e["jumping"]))} |')
     # Critères
     crit = res['criteres']
@@ -178,6 +180,15 @@ def summarize(runs):
             for k in ['gameMs', 'renderMs', 'gpuMs']:
                 if k in e and len(e[k]['medians']) > 1:
                     crit[f'dispersion {key} {pn} {k}'] = {'valeur': e[k]['spread'], 'seuil': SPREAD_MAX, 'tenu': 0 <= e[k]['spread'] <= SPREAD_MAX}
+    # Étape S1 : Δ temps du jeu, règle avec sellerie affichée − règle sans (information, même seuil que la règle seule).
+    a, r = res['configs'].get('regles-sans-sellerie'), res['configs'].get('regles')
+    if a and r:
+        for pn in phases:
+            if pn in a['phases'] and pn in r['phases']:
+                d = r['phases'][pn]['gameMs']['mean_median'] - a['phases'][pn]['gameMs']['mean_median']
+                crit[f'delta jeu sellerie (regles - regles-sans-sellerie) {pn}'] = {'valeur': d, 'seuil': DELTA_MAX, 'tenu': d <= DELTA_MAX}
+                for k in ['renderMs', 'gpuMs', 'frameMs']:
+                    res.setdefault('deltas_sellerie', {})[f'{pn} {k}'] = r['phases'][pn][k]['mean_median'] - a['phases'][pn][k]['mean_median']
     for suf in ['', '-libre']:
         a, r = res['configs'].get('actuel' + suf), res['configs'].get('regles' + suf)
         if not (a and r):
@@ -198,12 +209,14 @@ def summarize(runs):
         lines.append(f'- {k} : {v} (seuil {s}) : {"tenu" if c["tenu"] else "NON TENU"}')
     for k, v in res.get('deltas', {}).items():
         lines.append(f'- information, Δ regles − actuel {k} : {fmt(v)} ms')
+    for k, v in res.get('deltas_sellerie', {}).items():
+        lines.append(f'- information, Δ sellerie affichée (regles − regles-sans-sellerie) {k} : {fmt(v)} ms')
     return lines, res
 
 
 def main():
     out = os.path.abspath(opt['--sortie']) if '--sortie' in opt else None
-    if opt.get('--mesurer'):
+    if opt.get('--mesurer') and not opt.get('--sellerie'):
         if not out:
             print('--sortie=<dossier> exigé')
             return 2
@@ -218,6 +231,15 @@ def main():
                 run_pass(out, f'regles-libre-{i}', libre + ['-StridesRider=regles'])
         if opt.get('--apercu-mobile'):
             run_pass(out, 'actuel-mobile-1', ['-FeatureLevelES31', '-StridesPerfSansCapture'])
+    elif opt.get('--mesurer') and opt.get('--sellerie'):
+        # Étape S1 : coût de la sellerie complète affichée, règle avec et sans sellerie (-StridesTack=aucune), passes alternées.
+        if not out:
+            print('--sortie=<dossier> exigé')
+            return 2
+        n = int(opt.get('--passes', 3))
+        for i in range(1, n + 1):
+            run_pass(out, f'regles-{i}', ['-StridesRider=regles'])
+            run_pass(out, f'regles-sans-sellerie-{i}', ['-StridesRider=regles', '-StridesTack=aucune'])
     paths = args or ([out] if out else [])
     if not paths:
         print(__doc__)

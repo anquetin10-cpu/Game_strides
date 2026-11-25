@@ -18,6 +18,7 @@
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesHorseTack.h"
+#include "StridesHorseTackMesh.h"
 #include "StridesHorseMirror.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
@@ -109,14 +110,48 @@ void AStridesHorse::BeginPlay()
 		if (!EnableWebLead(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides main au galop : clips miroir non cuits (%s), clips d'origine gardés"), *Err);
 	}
 	// Essai de monte (voie A) : sellerie lue par les règles de monte, seulement avec -StridesRider=regles.
-	FString RiderOption;
-	if (FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOption) && RiderOption == TEXT("regles") && Mesh)
+	FString RiderOption, TackOption;
+	const bool bRules = FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOption) && RiderOption == TEXT("regles");
+	FParse::Value(FCommandLine::Get(), TEXT("StridesTack="), TackOption);
+	if (bRules && Mesh)
 	{
 		Tack = NewObject<UStridesHorseTack>(this, TEXT("HorseTack"));
 		Tack->RegisterComponent();
 		Tack->AddTickPrerequisiteComponent(Mesh);
 		if (Tack->Init(Mesh)) Tack->SetComponentTickEnabled(true);
 	}
+	// Étape S1 : sellerie complète affichée avec la règle (sauf -StridesTack=aucune) ou avec -StridesTack=web.
+	if (Mesh && TackOption != TEXT("aucune") && (bRules || TackOption == TEXT("web")))
+	{
+		FString Err;
+		if (!EnableTackMesh(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides sellerie complète non affichée (%s)"), *Err);
+	}
+}
+
+bool AStridesHorse::EnableTackMesh(FString* Err)
+{
+	if (TackMeshComp) return TackMeshComp->IsReady();
+	if (!Mesh)
+	{
+		if (Err) *Err = TEXT("maillage du cheval absent");
+		return false;
+	}
+	if (!Tack)
+	{
+		// Sellerie lue par la règle (siège S, ancres) : nécessaire au dessin des étriers et des lanières ; elle ne change rien
+		// au jeu par défaut (SeatTransform inchangé, aucune lecture par la cavalière sans la règle).
+		Tack = NewObject<UStridesHorseTack>(this, TEXT("HorseTack"));
+		Tack->RegisterComponent();
+		Tack->AddTickPrerequisiteComponent(Mesh);
+		if (Tack->Init(Mesh, Err)) Tack->SetComponentTickEnabled(true);
+		else return false;
+	}
+	TackMeshComp = NewObject<UStridesHorseTackMesh>(this, TEXT("HorseTackMesh"));
+	TackMeshComp->RegisterComponent();
+	TackMeshComp->AddTickPrerequisiteComponent(Tack);
+	if (!TackMeshComp->Init(this, Err)) return false;
+	TackMeshComp->SetComponentTickEnabled(true);
+	return true;
 }
 
 bool AStridesHorse::ApplyEngagedCoat()

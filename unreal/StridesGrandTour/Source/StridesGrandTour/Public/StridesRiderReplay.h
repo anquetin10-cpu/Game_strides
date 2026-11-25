@@ -19,6 +19,7 @@
 // posé comme celui du web, et à séparer l'effet du cheval du jeu (taille, inclinaison, corps) de celui du rejeu.
 #pragma once
 #include "CoreMinimal.h"
+#include "StridesCore/HorseTack.h"
 #include "StridesCore/MiniJson.h"
 #include "StridesCore/RiderPose.h"
 
@@ -48,6 +49,10 @@ public:
 	int32 LastClipCount() const { return LastClips; }
 	int32 LastMirrorCount() const { return LastMirrors; }
 	double LastCostMs() const { return CostMs; }
+	// Étape S1 : pose du maillage donnée à la sellerie à la dernière image (transformées de composant : celles du maillage
+	// du jeu, ou la pose du web en contrôle) et passage espace du maillage → repère du cheval utilisé.
+	const TArray<FTransform>& LastPose() const;
+	const strides::tack::Affine& LastToHolder() const { return ToHolderLast; }
 
 private:
 	const UAnimSequence* Clip(const FString& Name);
@@ -65,4 +70,5 @@ private:
 	strides::rider::RideHorseSample LastH;
 	int32 LastClips = 0, LastMirrors = 0;
 	double CostMs = 0;
+	strides::tack::Affine ToHolderLast;
 };

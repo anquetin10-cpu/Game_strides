@@ -149,6 +149,11 @@ bool FStridesRiderOnHorseReplay::Begin(const J& InRun, FString* Err)
 	return true;
 }
 
+const TArray<FTransform>& FStridesRiderOnHorseReplay::LastPose() const
+{
+	return bWebPose ? WebCS : Horse->BodyMesh()->GetComponentSpaceTransforms();
+}
+
 bool FStridesRiderOnHorseReplay::Step(int32 I, FString* Err)
 {
 	const J& F = (*Run)["frames"][I];
@@ -160,6 +165,7 @@ bool FStridesRiderOnHorseReplay::Step(int32 I, FString* Err)
 	const double Lift = Hz["p"][1].num() - Hz["gy"].num();
 	const double Rz = bWebPose ? F["mx"]["rz"].num() : 0, By = bWebPose ? F["mx"]["by"].num() : 0;
 	const strides::tack::Affine ToHolder = bWebPose ? strides::tack::compose(WebBody(Tack->Model(), By, Rz), strides::tack::invert(Tack->GlbToMesh())) : Tack->GameMeshToHolder();
+	ToHolderLast = ToHolder;
 	Tack->StepPose(bWebPose ? WebCS : Horse->BodyMesh()->GetComponentSpaceTransforms(), ToHolder, DtRun, Rz, bJump,
 		[Lift](const strides::tack::V3& P) { return P.y + Lift; });
 	Tack->StepPhase(UTF8_TO_TCHAR(Hz["gait"].s.c_str()), Hz["v"].num(), Hz["lead"].num() > 0 ? TEXT('L') : TEXT('R'), bJump);

@@ -28,6 +28,8 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "Rendering/SkeletalMeshLODModel.h"
+#include "Rendering/SkeletalMeshModel.h"
 #include "StridesCore/HorsePhase.h"
 #include "StridesCore/HorseTack.h"
 #include "StridesCore/MiniJson.h"
@@ -35,6 +37,7 @@
 #include "StridesHorse.h"
 #include "StridesHorseMirror.h"
 #include "StridesHorseTack.h"
+#include "StridesHorseTackMesh.h"
 #include "Animation/AnimSequence.h"
 #include "StridesRider.h"
 #include "StridesRiderReplay.h"
@@ -95,6 +98,66 @@ FString Arr(const std::vector<double>& V)
 }
 FString V3s(const strides::tack::V3& P) { return FString::Printf(TEXT("[%s,%s,%s]"), *Num(P.x), *Num(P.y), *Num(P.z)); }
 FString Vec(const Vec3& P) { return FString::Printf(TEXT("[%s,%s,%s]"), *Num(P.x), *Num(P.y), *Num(P.z)); }
+
+// Étape S1, M8 : pénétration de l'axe des os de la cavalière dans le maillage du cheval, méthode des 6 rayons de la page web
+// (export-rider-rules.mjs penetration, d'après rider-audit.mjs:80-150) : pour chaque point, distance au premier triangle
+// rencontré (deux faces : le matériau de robe du web est DoubleSide) le long des axes du monde, portée 1,5 m ; 0 si l'un
+// des six rayons ne rencontre rien ; profondeur = la plus petite des six. Corps du cheval : modèle importé (LOD 0) du maillage
+// du jeu, skinné sur le processeur avec les os posés du composant.
+struct FBodyGeo
+{
+	TArray<FVector> P;                           // positions de référence (espace du maillage)
+	TArray<TArray<TPair<int32, double>>> W;      // influences (os du squelette du maillage, poids)
+	TArray<uint32> Idx;
+	TArray<FMatrix> Inv;
+	bool Load(const USkeletalMesh* Mesh)
+	{
+#if WITH_EDITORONLY_DATA
+		const FSkeletalMeshModel* Model = Mesh ? Mesh->GetImportedModel() : nullptr;
+		if (!Model || Model->LODModels.Num() == 0) return false;
+		const FSkeletalMeshLODModel& L = Model->LODModels[0];
+		P.SetNum(L.NumVertices);
+		W.SetNum(L.NumVertices);
+		for (const FSkelMeshSection& Sec : L.Sections)
+			for (int32 K = 0; K < Sec.SoftVertices.Num(); K++)
+			{
+				const FSoftSkinVertex& Sv = Sec.SoftVertices[K];
+				const int32 Vi = Sec.BaseVertexIndex + K;
+				if (!P.IsValidIndex(Vi)) return false;
+				P[Vi] = FVector(Sv.Position);
+				for (int32 I = 0; I < MAX_TOTAL_INFLUENCES; I++)
+					if (Sv.InfluenceWeights[I] > 0) W[Vi].Add({(int32)Sec.BoneMap[Sv.InfluenceBones[I]], Sv.InfluenceWeights[I] / 65535.0});
+			}
+		Idx = L.IndexBuffer;
+		for (const FMatrix44f& M : Mesh->GetRefBasesInvMatrix()) Inv.Add(FMatrix(M));
+		return Idx.Num() > 0;
+#else
+		return false;
+#endif
+	}
+};
+double FirstHit(const TArray<FVector>& V, const TArray<uint32>& Idx, const FVector& O, const FVector& D, double Far)
+{
+	double Best = -1;
+	for (int32 T = 0; T + 2 < Idx.Num(); T += 3)
+	{
+		const FVector& A = V[Idx[T]];
+		const FVector E1 = V[Idx[T + 1]] - A, E2 = V[Idx[T + 2]] - A;
+		const FVector Pv = FVector::CrossProduct(D, E2);
+		const double Det = FVector::DotProduct(E1, Pv);
+		if (FMath::Abs(Det) < 1e-14) continue;
+		const double Inv = 1.0 / Det;
+		const FVector Tv = O - A;
+		const double U = FVector::DotProduct(Tv, Pv) * Inv;
+		if (U < 0 || U > 1) continue;
+		const FVector Qv = FVector::CrossProduct(Tv, E1);
+		const double Vv = FVector::DotProduct(D, Qv) * Inv;
+		if (Vv < 0 || U + Vv > 1) continue;
+		const double Dist = FVector::DotProduct(E2, Qv) * Inv;
+		if (Dist >= 0 && Dist <= Far && (Best < 0 || Dist < Best)) Best = Dist;
+	}
+	return Best;
+}
 }  // namespace StridesRiderOnHorseTest
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesRiderOnHorseTest, "Strides.Parite.RiderOnHorse", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -109,6 +172,15 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	FString Err;
 	UStridesHorseTack* Tack = NewObject<UStridesHorseTack>(Horse);
 	if (!TestTrue(FString::Printf(TEXT("sellerie initialisée (%s)"), *Err), Tack->Init(Horse->BodyMesh(), &Err))) return false;
+	// Étape S1 : sellerie affichée (étriers sous les pieds, étrivières, rênes) : l'export donne les étriers affichés (hz.ir).
+	UStridesHorseTackMesh* TackMesh = NewObject<UStridesHorseTackMesh>(Horse);
+	if (!TestTrue(FString::Printf(TEXT("sellerie affichée initialisée (%s)"), *Err), TackMesh->Init(Horse, &Err))) return false;
+	FBodyGeo BodyGeo;
+	if (!TestTrue(TEXT("M8 : maillage du corps du cheval lu (modèle importé, LOD 0)"), BodyGeo.Load(Horse->BodyMesh()->GetSkeletalMeshAsset()))) return false;
+	FWorst WPen;
+	int32 PenFrames = 0;
+	double PenCtl = 1e9, PenCtlMax = 0;
+	int32 PenCtlIn = 0;
 	if (!TestTrue(FString::Printf(TEXT("option -StridesHorseLead=web activée (%s)"), *Err), Horse->EnableWebLead(&Err))) return false;
 	if (!TestTrue(FString::Printf(TEXT("règles de monte activées (%s)"), *Err), Rider->EnableRulesRig(&Err))) return false;
 	UStridesRiderRig* Rig = Rider->RulesRig();
@@ -158,6 +230,7 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 			continue;
 		}
 		if (!TestTrue(FString::Printf(TEXT("%s : rejeu commencé (%s)"), *Id, *Err), Replay.Begin(O1, &Err))) continue;
+		TackMesh->ResetStraps();
 		const J& F1 = O1["frames"];
 		FString Out = FString::Printf(TEXT("{\"id\":\"%s\",\"frames\":["), *Id);
 		double PrevSeatY = 0, PrevPhase = 0;
@@ -271,17 +344,103 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 			const RideTargets& Tg = Rig->Driver()->rules().targets();
 			Row += FString::Printf(TEXT(",\"tg\":{\"fL\":%s,\"fR\":%s,\"xL\":%s,\"xR\":%s,\"hL\":%s,\"hR\":%s,\"hp\":%s}"), *Vec(Tg.foot[0]), *Vec(Tg.foot[1]),
 				Tg.hasXMax[0] ? *Num(Tg.xMax[0]) : TEXT("null"), Tg.hasXMax[1] ? *Num(Tg.xMax[1]) : TEXT("null"), *Vec(Tg.hand[0]), *Vec(Tg.hand[1]), *Vec(Tg.hips));
-			// Repère du cheval Unreal : S dans le repère du cheval (H = identité : axes du monde à un lacet près), ancres et
-			// étriers qui pendent (ancres ironL, ironR : Unreal n'affiche pas d'étrier), postérieurs, réception, phase.
+			// Étape S1, M8 : pénétration (images où le web la mesure : fenêtre de mesure, O1 pe non nul), dans S.
+			FString Pe = TEXT("null");
+			if (F1[I]["pe"].t == J::Arr)
+			{
+				const TArray<FTransform>& CS = Horse->BodyMesh()->GetComponentSpaceTransforms();
+				const FTransform ToS = Horse->BodyMesh()->GetComponentTransform() * Tack->SeatWorld().Inverse();
+				TArray<FVector> Vs;
+				Vs.SetNum(BodyGeo.P.Num());
+				for (int32 Vi = 0; Vi < BodyGeo.P.Num(); Vi++)
+				{
+					FVector Q = FVector::ZeroVector;
+					for (const TPair<int32, double>& Wt : BodyGeo.W[Vi])
+						if (CS.IsValidIndex(Wt.Key)) Q += (BodyGeo.Inv[Wt.Key] * CS[Wt.Key].ToMatrixWithScale()).TransformPosition(BodyGeo.P[Vi]) * Wt.Value;
+					Vs[Vi] = ToSeat(ToS.TransformPosition(Q));
+				}
+				if (PenFrames == 0)
+				{
+					FBox Bx(ForceInit);
+					for (const FVector& Vv : Vs) Bx += Vv;
+					AddInfo(FString::Printf(TEXT("M8 : corps du cheval dans S, %d sommets, %d triangles, boîte %s"), Vs.Num(), BodyGeo.Idx.Num() / 3, *Bx.ToString()));
+				}
+				// Axes du monde du web dans S : verticale et axes horizontaux du monde Unreal, tournés dans le siège.
+				FVector Dirs[6];
+				const FVector Wx(0, -100, 0), Wy(0, 0, 100), Wz(100, 0, 0);  // x, y, z du web dans le monde Unreal
+				const FVector Ax = ToSeat(Tack->SeatWorld().InverseTransformVector(Wx)), Ay = ToSeat(Tack->SeatWorld().InverseTransformVector(Wy)), Az = ToSeat(Tack->SeatWorld().InverseTransformVector(Wz));
+				Dirs[0] = Ay, Dirs[1] = -Ay, Dirs[2] = Ax, Dirs[3] = -Ax, Dirs[4] = Az, Dirs[5] = -Az;
+				const auto Depth = [&](const FVector& Q) {
+					double D = 9;
+					for (const FVector& Dir : Dirs)
+					{
+						const double H = FirstHit(Vs, BodyGeo.Idx, Q, Dir.GetSafeNormal(), 1.5);
+						if (H < 0) return 0.0;
+						D = FMath::Min(D, H);
+					}
+					return D;
+				};
+				double Pen = 0;
+				FString PenAt = TEXT("null");
+				for (int32 Sd = 0; Sd < 2; Sd++)
+				{
+					const int Ch[4] = {Sd ? RThigh : LThigh, Sd ? RShin : LShin, Sd ? RFoot : LFoot, Sd ? RToe : LToe};
+					const TCHAR* Lab[3] = {TEXT("cuisse"), TEXT("jambe"), TEXT("pied")};
+					for (int32 K = 0; K < 3; K++)
+						for (const double T : {0.25, 0.5, 0.75, 1.0})
+						{
+							const double D = Depth(FMath::Lerp(U[Ch[K]], U[Ch[K + 1]], T));
+							if (D > Pen) Pen = D, PenAt = FString(Sd ? TEXT("r") : TEXT("l")) + Lab[K];
+						}
+					const int Arm[3] = {Sd ? RFore : LFore, Sd ? RHand : LHand, Sd ? RFing : LFing};
+					const TCHAR* ALab[2] = {TEXT("avant-bras"), TEXT("main")};
+					for (int32 K = 0; K < 2; K++)
+						for (const double T : {0.5, 1.0})
+						{
+							const double D = Depth(FMath::Lerp(U[Arm[K]], U[Arm[K + 1]], T));
+							if (D > Pen) Pen = D, PenAt = FString(Sd ? TEXT("r") : TEXT("l")) + ALab[K];
+						}
+				}
+				const int Tr[4] = {Hips, Spine, Chest, Neck};
+				for (int32 K = 0; K < 3; K++)
+					for (const double T : {0.0, 0.5, 1.0})
+					{
+						const double D = Depth(FMath::Lerp(U[Tr[K]], U[Tr[K + 1]], T));
+						if (D > Pen) Pen = D, PenAt = TEXT("buste");
+					}
+				// Témoin positif : point du tronc 30 cm sous le siège, dans le corps du cheval (profondeur attendue de plusieurs cm).
+				{
+					const double Dc = Depth(FVector(0, -0.3, 0));
+					PenCtl = FMath::Min(PenCtl, Dc);
+					PenCtlMax = FMath::Max(PenCtlMax, Dc);
+					PenCtlIn += Dc > 0;
+				}
+				Pe = FString::Printf(TEXT("[%s,%s]"), *Num(Pen), PenAt == TEXT("null") ? TEXT("null") : *(TEXT("\"") + PenAt + TEXT("\"")));
+				WPen.See(Pen, At + TEXT(" ") + PenAt);
+				PenFrames++;
+			}
+			// Étape S1 : étriers affichés (UStridesHorseTackMesh : sous l'orteil de la pose de l'image), dans S ; avant S1, ancres
+			// ironL, ironR (étriers qui pendent).
+			FVector IronS[2];
+			{
+				UStridesHorseTackMesh::FRiderPoints Rp;
+				UStridesHorseTackMesh::RiderPointsFromRig(Rig, M->GetComponentTransform(), Rp);
+				const FTransform SeatW = Tack->SeatWorld();
+				TackMesh->StepStraps(SeatW, O, &Rp, nullptr);
+				for (int32 K = 0; K < 2; K++) IronS[K] = ToSeat(SeatW.InverseTransformPosition(TackMesh->IronWorld(K)));
+			}
+			// Repère du cheval Unreal : S dans le repère du cheval (H = identité : axes du monde à un lacet près), ancres,
+			// étriers affichés, postérieurs, réception, phase.
 			FString An = TEXT("{");
 			for (int32 Ak = 0; Ak < strides::tack::AnchorCount; Ak++) An += FString::Printf(TEXT("%s\"%hs\":%s"), Ak ? TEXT(",") : TEXT(""), strides::tack::anchorName(Ak), *V3s(O.anchorS[Ak]));
 			An += TEXT("}");
 			const double Lift = Hz["p"][1].num() - Hz["gy"].num();
 			Row += FString::Printf(TEXT(",\"hz\":{\"S\":[%s,%s,%s,%s,%s,%s,%s],\"H\":[0,0,0,0,0,0,1],\"an\":%s,\"ir\":[%s,%s],\"hv\":[%s,%s,%s,%s],\"jT\":%s,\"cT\":%s,\"lT\":%s,\"hd\":%s,\"v\":%s,\"ph\":%s,\"phw\":%d,\"mirror\":%d}"),
 				*Num(O.seatPos.x), *Num(O.seatPos.y), *Num(O.seatPos.z), *Num(O.seatQ.x), *Num(O.seatQ.y), *Num(O.seatQ.z), *Num(O.seatQ.w), *An,
-				*V3s(O.anchorS[strides::tack::IronL]), *V3s(O.anchorS[strides::tack::IronR]), *Num(Hz["hv"][0].num()), *Num(Hz["hv"][1].num()), *Num(O.toe[0].y + Lift),
+				*FString::Printf(TEXT("[%s,%s,%s]"), *Num(IronS[0].X), *Num(IronS[0].Y), *Num(IronS[0].Z)), *FString::Printf(TEXT("[%s,%s,%s]"), *Num(IronS[1].X), *Num(IronS[1].Y), *Num(IronS[1].Z)), *Num(Hz["hv"][0].num()), *Num(Hz["hv"][1].num()), *Num(O.toe[0].y + Lift),
 				*Num(O.toe[1].y + Lift), *Num(Hz["jT"].num()), Hz["cT"].isNull() ? TEXT("null") : *Num(Hz["cT"].num()), *Num(Tack->State().landT), Tack->State().hindDown ? TEXT("true") : TEXT("false"),
 				*Num(Hz["v"].num()), *Num(Ph), (int32)Tack->PhaseRewritten(), Replay.LastMirrorCount());
+			Row += TEXT(",\"pe\":") + Pe;
 			Out += Row + TEXT("}");
 			Images++;
 		}
@@ -292,6 +451,10 @@ bool FStridesRiderOnHorseTest::RunTest(const FString&)
 	Index += TEXT("]}\n");
 	FFileHelper::SaveStringToFile(Index, *(OutDir / TEXT("index.json")), FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 	TestTrue(FString::Printf(TEXT("images rejouées sur le cheval Unreal : %d (dont %d avec un clip miroir)"), Images, MirrorFrames), Images > 600 && MirrorFrames > 100);
+	AddInfo(FString::Printf(TEXT("M8 (étape S1) : pénétration des axes d'os dans le maillage du cheval Unreal, %d images (fenêtre de mesure d'O1) : max %.2f cm (%s), information (seuil : rider-rules-niveau-b.mjs)"), PenFrames, 100 * WPen.V, *WPen.Where));
+	TestTrue(TEXT("M8 mesuré sur les images de la fenêtre"), PenFrames > 400);
+	TestTrue(FString::Printf(TEXT("M8, témoin positif : point 30 cm sous le siège vu dans le corps du cheval à %d images sur %d (profondeur max %.1f cm) : le lancer de rayons rencontre bien le maillage"), PenCtlIn, PenFrames, 100 * PenCtlMax), PenCtlIn >= PenFrames * 0.95 && PenCtlMax > 0.05 && PenCtlMax < 1.0);
+	AddInfo(FString::Printf(TEXT("M8, témoin positif : profondeur min %.1f cm, max %.1f cm, %d images sur %d dans le corps"), 100 * PenCtl, 100 * PenCtlMax, PenCtlIn, PenFrames));
 	TestTrue(FString::Printf(TEXT("phase de foulée réécrite depuis le clip Unreal = hz.ph du web : %d images, écart max %.3g (%s)"), Rewritten, WPhase.V, *WPhase.Where),
 		Rewritten > 400 && WPhase.V >= 0 && WPhase.V <= 1e-5);
 	TestTrue(FString::Printf(TEXT("adaptateur (clip relu sur le maillage Unreal) = cœur nourri des clips du web : mêmes images réécrites, même phase (%d images comparées, %d écarts)"), AdapterFrames, AdapterBad),
