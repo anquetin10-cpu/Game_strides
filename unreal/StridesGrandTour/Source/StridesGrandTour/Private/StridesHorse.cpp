@@ -20,6 +20,7 @@
 #include "StridesHorseTack.h"
 #include "StridesHorseTackMesh.h"
 #include "StridesHorseMirror.h"
+#include "StridesMonteOptions.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesCore/HorseCoat.h"
@@ -102,26 +103,25 @@ void AStridesHorse::BeginPlay()
 	SetActorTickEnabled(true);
 	UpdateAnimation();
 	ApplyEngagedCoat();
-	// Étape M2 : main au galop et clips miroir du web, seulement avec -StridesHorseLead=web.
-	FString LeadOption;
-	if (FParse::Value(FCommandLine::Get(), TEXT("StridesHorseLead="), LeadOption) && LeadOption == TEXT("web"))
+	// Étape S2 : monte du web lue comme un ensemble (StridesMonteOptions : -StridesMonte=, -StridesRider=, -StridesHorseLead=,
+	// -StridesTack=).
+	const StridesMonteOptions::FMonte Monte = StridesMonteOptions::FromCommandLine();
+	// Étape M2 : main au galop et clips miroir du web.
+	if (Monte.bWebLead)
 	{
 		FString Err;
 		if (!EnableWebLead(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides main au galop : clips miroir non cuits (%s), clips d'origine gardés"), *Err);
 	}
-	// Essai de monte (voie A) : sellerie lue par les règles de monte, seulement avec -StridesRider=regles.
-	FString RiderOption, TackOption;
-	const bool bRules = FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOption) && RiderOption == TEXT("regles");
-	FParse::Value(FCommandLine::Get(), TEXT("StridesTack="), TackOption);
-	if (bRules && Mesh)
+	// Essai de monte (voie A) : sellerie lue par les règles de monte, avec la cavalière de la règle.
+	if (Monte.bRiderRules && Mesh)
 	{
 		Tack = NewObject<UStridesHorseTack>(this, TEXT("HorseTack"));
 		Tack->RegisterComponent();
 		Tack->AddTickPrerequisiteComponent(Mesh);
 		if (Tack->Init(Mesh)) Tack->SetComponentTickEnabled(true);
 	}
-	// Étape S1 : sellerie complète affichée avec la règle (sauf -StridesTack=aucune) ou avec -StridesTack=web.
-	if (Mesh && TackOption != TEXT("aucune") && (bRules || TackOption == TEXT("web")))
+	// Étape S1 : sellerie complète affichée.
+	if (Mesh && Monte.bTackMesh)
 	{
 		FString Err;
 		if (!EnableTackMesh(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides sellerie complète non affichée (%s)"), *Err);

@@ -66,6 +66,11 @@ const SHOT_POSES = [
   // Étape M3 (niveau B, captures appariées) : sommet du saut d'E3, image relue dans O1 (rider-rules-metrics.mjs jumpPhases :
   // premier vol à mi-course, in.jump ≥ 0,5), jamais recopiée.
   { name: 'saut-sommet', scenario: 'E3', frame: sommetE3(), eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
+  // Étape S2 (captures avant / après de la monte du web) : le même saut d'E3 à main droite. Les deux sauts d'O1 sont à
+  // main gauche (main initiale du web : A.lead = 1) ; la main est imposée à droite par l'entrée « lead » de la locomotion
+  // du web (horse/anim.js : st.lead, état qu'un virage à droite tenu donne en jeu), posée sur h.anim après la préparation.
+  // Capture seulement : rien n'est écrit dans O1.
+  { name: 'saut-droite', scenario: 'E3', frame: 50, lead: -1, eyeH: [4.2, 1.5, 0.5], targetH: [0, 1.4, 0.1], fovV: 38, only: true },
 ];
 function sommetE3() {
   const f = join(ROOT, 'unreal/core/tests/oracles/monte/o1/E3.json');
@@ -709,7 +714,14 @@ function PAGE(TACK_STRIDE, TACK_EVERY) {
     }
     g.scene.updateMatrixWorld();
     g.renderer.render(g.scene, cam);
-    return { eye: v3(eye), target: v3(target), speed: h.speed, gait: h.pjl._s?.gait ?? null, phase: h.anim.phase, hour: g.hour(), canvas: [g.renderer.domElement.width, g.renderer.domElement.height] };
+    const V = h.pjl.view;
+    return { eye: v3(eye), target: v3(target), speed: h.speed, gait: h.pjl._s?.gait ?? null, phase: h.anim.phase, hour: g.hour(), canvas: [g.renderer.domElement.width, g.renderer.domElement.height],
+      lead: h.pjl._s?.lead ?? null, jc: V?.jumpClip?.name ?? null, jm: V ? !!V.jumpMirror : null, lb: V?.leadBlend ?? null };
+  };
+  // Main imposée (--shots, pose « lead ») : entrée st.lead de animateHorse (horse/anim.js), ±1, 0 pour la rendre au jeu.
+  P.forceLead = (l) => {
+    h.anim.lead = l;
+    return { lead: h.anim.lead };
   };
   P.finish = () => {
     const r = { fade: P.fade, ev: P.cso ? P.cso.evs.slice() : null };
@@ -873,6 +885,7 @@ if (SHOTS) {
     const { ctx, page } = await openGame({ width: VIEW.w, height: VIEW.h });
     if (sc.type === 'cso') await page.evaluate(([s, specs, N, seed]) => window.__monte.setupCso(s, specs, N, seed), [{ ...sc }, CSO_SPECS, CSO_N, SEED]);
     else await page.evaluate(([s, seed]) => window.__monte.setupAllures(s, seed), [{ ...sc }, SEED]);
+    if (ps.lead) await page.evaluate((l) => window.__monte.forceLead(l), ps.lead);
     let n = 0;
     const shotWin = sc.type === 'cso' ? [CSO_N - 20, null] : sc.window; // fenêtre de l'export (CSO : voir plus bas)
     while (n <= ps.frame) {

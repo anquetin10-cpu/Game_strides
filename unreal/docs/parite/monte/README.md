@@ -82,7 +82,7 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
 - **Niveau B en jeu avec rendu** : le niveau B est mesuré sur le cheval Unreal rejoué par les oracles (trajectoire et
   clips du web), pas sur une partie jouée : en jeu, le cheval Unreal avance ses clips à vitesse 1 (cadence du web non
   portée), lit son propre virage et ses propres sauts (horloge du saut du web non portée).
-- Sellerie dans le jeu par défaut : derrière une option jusqu'à S2 ; M19 (montée, descente) sans oracle.
+- Sellerie dans le jeu par défaut : derrière une option jusqu'à S2 (ensemble `-StridesMonte=web` à l'étape S2 a) ; M19 (montée, descente) sans oracle.
 - Coût sur iPhone ou iPad : aucun appareil branché (étape 16). Les chiffres du Mac classent les options, sans prédire le
   coût sur un téléphone.
 - Réalisme équestre : c'est à Julien d'en juger sur les captures ; aucun oracle ne le prouve.
@@ -1355,3 +1355,110 @@ recompilation finale code 0. Exemples : poings de l'image courante (rênes à 5,
 
 Reste à faire (S1) : sellerie visible dans le jeu par défaut (avec S2) ; corps du cheval au saut (S4) ; montée et
 descente ; coût sur iPhone ou iPad ; isoler le coût des pièces skinnées.
+
+## Étape S2 (a). Monte du web en un ensemble, derrière options, et preuves (25/11/2026)
+
+Décision de Julien du 24/11/2026 (`decisions.md`) : regrouper la cavalière réglée comme le web (étape 6) et la main du web
+(étape M2), avec la sellerie de l'étape S1, d'abord derrière options ; captures comparatives et preuves ; passage par
+défaut seulement si les contrôles sont conformes (S2 b, commit séparé). Base : `e7e4d3c9` (S1).
+
+### Ce qui est fait
+
+- **`StridesMonteOptions`** (`Public/StridesMonteOptions.h`, `Private/StridesMonteOptions.cpp`) : lecture unique de la
+  ligne de commande par le cheval, la cavalière et le mode `perf`. `-StridesMonte=web | ancien` règle l'ensemble ;
+  `-StridesRider=regles | ancien`, `-StridesHorseLead=web | droite`, `-StridesTack=web | aucune` règlent une partie et
+  l'emportent sur l'ensemble ; sans option de sellerie, la sellerie suit l'ensemble ou la cavalière de la règle
+  (comportement de S1 : `-StridesRider=regles` l'affiche) ; une valeur inconnue est ignorée et signalée au journal.
+  Défaut sans option : `bWebByDefault = false` à cette étape (ancien comportement : **jeu par défaut inchangé**).
+  `AStridesHorse::BeginPlay` et `AStridesRider::BeginPlay` ne lisent plus les options eux-mêmes ; le relevé `perf` note
+  l'ensemble (`monte`).
+- **Nouveau test `Strides.Monte.Options`** : 21 lignes de commande résolues (dont l'ensemble seul, chaque option seule,
+  chaque option contre l'ensemble, les clés voisines `-StridesMonteDir=` et `-StridesMontePoses=`), valeurs inconnues
+  ignorées et comptées, sous l'ensemble « web » et « ancien » ; défaut du jeu **épinglé dans le test** (changer le défaut
+  exige de changer le test) ; puis, pour 9 lignes de commande, cheval et cavalière créés par `SpawnActor` dans un monde
+  commencé comme le jeu : main du web et clips miroir cuits, sellerie lue, sellerie affichée prête, règle et maillage posé
+  de la cavalière **exactement** comme la résolution l'annonce ; avec l'ensemble « web », en selle : maillage posé visible,
+  maillage du jeu caché, règle prête sur la sellerie du cheval.
+- **Mode de capture `-StridesShots=monte-s2`** (`AStridesShots::TickMonteS2`) : partie jouée (parcours de démonstration
+  du Pôle, comme les modes `monte` et `miroir`) ; captures à l'arrêt, au premier galop hors saut à main droite et à main
+  gauche (fondu de main achevé avec la main du web), 0,35 s après le départ d'un saut à main droite et d'un saut à main
+  gauche. La main est celle du cheval avec la main du web, sinon celle que la main du web aurait au même virage
+  (`strides::mirror::leadStep` sur `lastTurn`, calculée par le mode) : les deux configurations sont capturées aux mêmes
+  instants du parcours. Avec la main du web, cette « ombre » est comparée à la main du cheval à chaque image.
+- **Référence web à main droite** (`export-rider-rules.mjs --shots`, pose `saut-droite`) : les deux sauts d'O1 sont à main
+  gauche (main initiale du web : `A.lead = 1`). Le même saut d'E3 est rejoué avec la main imposée à droite par l'entrée
+  `lead` de la locomotion du web (`horse/anim.js:287`, `st.lead`, posée sur `h.anim` après la préparation) : capture
+  seulement, rien n'est écrit dans O1. Relevé du web à l'image : main « R », clip `jump_canter`, miroir faux, leadBlend 1.
+- **Outil `scripts/unreal/parite-avant-apres.py`** : PSNR avant → après (ffmpeg) et montages avant | après | web.
+
+### Captures (rendu GPU réel, 844 × 390)
+
+Partie jouée (`captures/s2/`, `monte-<arret | galop-droite | galop-gauche | saut-droite | saut-gauche>-<avant | apres>.png`,
+web `monte-<arret | galop | galop-gauche | saut-droite | saut-gauche>-web.png`, poses `captures/s2/poses.json`) :
+- **avant** = jeu par défaut (aucune option) ; **après** = `-StridesMonte=web` ; même compilation, même parcours.
+- Instants (temps de parcours) : galop à gauche 2,83 s / 2,84 s ; départ du saut à main gauche 5,63 s / 5,63 s ; galop à
+  droite 9,45 s / 9,88 s (après : attente du fondu de main, leadBlend 0,9906) ; départ du saut à main droite 17,80 s /
+  17,82 s ; vitesse aux sauts 6,20 m/s. Main de l'ombre égale à la main du cheval : **1 041 images sur 1 041**.
+- Avant : clips d'origine partout (galop et saut « à gauche » joués sur les clips à main droite), clip `jump_canter`
+  (seuil de 7 m/s), cavalière aux clips cuits, sans sellerie. Après : `canter_M` puis `canter` (leadBlend 0,0000 puis
+  0,9906), sauts `jump_canter_M` à gauche et `jump_canter` à droite, comme la vue du web ; règle active (coût relevé
+  0,027 à 0,035 ms), sellerie affichée.
+- Ce sont des illustrations (décor, phase, obstacle et cheval 3,7 % plus petit différents du web), pas des poses jumelles.
+  Montages avant | après | web hors dépôt : `.ue-cache/travail/s2/montages/s2-*.png` et `s2-planche.png`.
+
+Concours (`-StridesShots=cso` par famille de poses, puis `-StridesShots=cso-jeu -TouchControls`), 80 captures, relancées
+avant (jeu par défaut) et après (`-StridesMonte=web`) avec la même compilation, dossiers dédiés sous `.ue-cache/travail/s2/` :
+- **Tous les relevés du concours sont identiques** entre avant et après : `aide-unreal.json` (1 173 champs),
+  `bilan-unreal.json` (759), `cadrage-unreal.json` (111 : cadrage, caméra, FOV), `cmd-unreal.json` (201),
+  `entree-unreal.json` (557), `hud-unreal.json` (731) : 0 champ différent. `jeu-unreal.json` (partie réelle) : 4 champs
+  sur 90, le chrono au moment de la capture (2,33 / 2,34 s ; 34,91 / 34,94 s) et le cran de cadence affiché (4 / 5) ;
+  démonstration finie en 60,33 et 60,42 s (« 0 pt Arrivée ✓ » les deux fois ; variabilité connue de ±0,3 s d'un passage
+  à l'autre, `relais-mac.md`). La monte du web ne change que l'image.
+- PSNR avant → après : 22,2 à 73,1 dB (`captures/s2/cso-avant-apres.json`) ; il mesure le changement, pas la justesse. Bruit
+  du rendu : la même configuration (jeu par défaut) relancée ne redonne pas les PNG versionnés à l'octet (robe-* : 28,5 à
+  36,4 dB contre les versionnés).
+- Montages avant | après | web (5 versionnés dans `captures/s2/cso/`, les 80 hors dépôt sous
+  `.ue-cache/travail/s2/montages/cso/`) : sellerie et posture de la règle visibles sur toutes les poses où le couple est
+  vu ; poses du concours inchangées par ailleurs (cheval posé à l'arrêt aux poses de chute de barre, comme avant).
+- Constat : plusieurs PNG versionnés du concours sont antérieurs à C1 (cheval gris : `chute-barre-*`, `jeu-*`) ; les
+  captures « avant » relancées montrent le cheval bai du jeu actuel.
+
+### Écarts déclarés (S2 a)
+
+1. La « main gauche » des captures avant est celle que la main du web aurait : le jeu par défaut joue les clips à main
+   droite partout (c'est l'écart que S2 corrige).
+2. Référence web à main droite obtenue en imposant `st.lead` (entrée de la locomotion du web, état qu'un virage à droite
+   tenu donne en jeu), pas par un virage joué.
+3. Le mode `monte-s2` n'a pas de test Automation (mode de capture) ; son relevé est dans le journal des captures.
+
+### Mutations (`scripts/unreal/mutations-monte-jeu.py`, étendu ; test `Strides.Monte`, soit EnJeu et Options)
+
+29 mutations (9 des reliquats M1, motifs du branchement mis à jour ; 20 de S2 : branchement du cheval sur l'ensemble,
+résolution, défaut épinglé) ; campagne du 25/11 (1 540 s) : 24 détectées, 2 attendues (déjà déclarées aux reliquats M1),
+3 **non compilées** (`if (false)` : code inaccessible traité en erreur par le module) ; réécrites sans constante
+(`&& GetWorld() == nullptr`, `Unknown->Num() < 0`) et repassées seules (`--noms=`, option ajoutée) : 3 détectées. La
+première (« règle jamais créée ») faisait planter `Strides.Monte.Options` (accès au maillage posé absent après l'échec
+d'EnJeu) : test corrigé (garde avant l'accès), mutation repassée : détectée proprement (« option : règle créée par
+BeginPlay »). Bilan : **27 détectées sur 29, 2 attendues**. Exemples : ensemble ignoré, valeurs de l'ensemble inversées, clé
+sans « = » (qui prend `-StridesMonteDir=`), chaque option précise ignorée ou détachée de l'ensemble, sellerie qui ne suit plus
+la cavalière ou l'ensemble, `-StridesTack=aucune` sans effet, valeur inconnue prise pour « non » ou non signalée, défaut
+basculé, main du web suivant la cavalière, sellerie lue suivant la main. Sources rétablis et recompilation finale code 0 à
+chaque passe.
+
+### Portes (S2 a)
+
+- G1 : ctest code 0 (construit sous `.ue-cache/travail/core-s2`) : cœur 300 729, `monte` 306 914, `monte-cheval` 4 488,
+  `monte-cavaliere` 72 547, `perf` 20, `monte-miroir` 7 069, `monte-sellerie` 7 443 vérifications, 0 échec (cœur non
+  touché).
+- G2 : UBT code 0, aucun avertissement ni erreur du compilateur.
+- G3 : `Automation RunTests Strides` : **40 tests, 40 en succès** (nouveau : `Strides.Monte.Options`), dont
+  `Strides.Parite.RiderOnHorse` et `Strides.Parite.HorseMirror` ; 2 avec l'avertissement `idevice_id` (erreur 86, déjà
+  relevé). Après la garde ajoutée au test : `Strides.Monte` (EnJeu, Options) repassé, vert.
+- G4 : ci-dessus.
+- G5 : `git diff --quiet HEAD -- unreal/docs/parite/cso` code 0 (jeu par défaut inchangé ; captures relancées dans des
+  dossiers dédiés seulement).
+- G6 : `build-parite.py` code 0, PARITE.md inchangé (inventaire mis à jour au passage par défaut, S2 b).
+- G7 : `git diff --quiet HEAD -- src public tests` code 0.
+
+Conclusion de S2 a : contrôles conformes (preuves vertes, relevés du concours identiques, captures conformes à la vue du
+web) ; passage par défaut fait dans un commit séparé (S2 b).

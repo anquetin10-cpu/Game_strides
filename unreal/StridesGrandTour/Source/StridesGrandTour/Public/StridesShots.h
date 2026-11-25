@@ -43,6 +43,7 @@
 #include "GameFramework/Actor.h"
 #include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoHud.h"
+#include "StridesCore/HorseMirror.h"
 #include "StridesShots.generated.h"
 
 UCLASS()
@@ -101,6 +102,17 @@ private:
 	// rejeu de cette image (FStridesRiderOnHorseReplay, le code du test Strides.Parite.RiderOnHorse), ticks du cheval, de
 	// sa sellerie et de la cavalière suspendus le temps de la capture ; même caméra que le web dans le repère du cheval.
 	void TickMonteB(float DeltaSeconds, class APlayerController* PC);
+	// Étape S2 (mode "monte-s2") : captures avant / après de la monte du web dans une partie jouée (parcours de démonstration),
+	// pour la configuration de la ligne de commande (StridesMonteOptions) : arrêt, galop à droite, galop à gauche, saut à
+	// main droite, saut à main gauche ; caméra du web dans le repère du cheval. La main est celle du cheval si la main du
+	// web est active, sinon celle que la main du web aurait (strides::mirror::leadStep sur le même virage) : mêmes instants
+	// du parcours dans les deux configurations.
+	void TickMonteS2(float DeltaSeconds, class APlayerController* PC);
+	TSet<FString> MonteS2Done;
+	strides::mirror::LeadState MonteS2Lead;
+	char MonteS2JumpLead = 0;  // main au départ du saut en cours (0 : pas de saut)
+	int32 MonteS2LeadMismatch = 0, MonteS2LeadFrames = 0;
+	TArray<FString> MonteS2Jumps;  // départs de saut relevés (temps, main, clip)
 	TSharedPtr<class FStridesRiderOnHorseReplay> MonteReplay;
 	int32 MonteShot = 0;
 	int32 MonteStep = 0;

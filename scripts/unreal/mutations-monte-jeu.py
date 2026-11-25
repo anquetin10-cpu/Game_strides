@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Mutations des reliquats M1 de l'essai de monte (voie A) : preuve que Strides.Monte.EnJeu départage l'ordre des ticks
 cheval → sellerie → cavalière, les bornes des suiveurs du maillage posé (queue de cheval, yeux, sourcils, cils) et la
-création de la règle par BeginPlay selon -StridesRider=regles.
+création de la règle par BeginPlay selon -StridesRider=regles ; étape S2 : la monte du web lue comme un ensemble
+(StridesMonteOptions : -StridesMonte=, -StridesRider=, -StridesHorseLead=, -StridesTack=, défaut du jeu épinglé), prouvée par
+Strides.Monte.Options (résolution et effet réel par BeginPlay).
 
-Niveau « moteur » seulement : la mutation est appliquée AU SOURCE DU DÉPÔT (StridesRider.cpp, StridesHorse.cpp), Unreal
-Build Tool recompile, l'éditeur rejoue Strides.Monte.EnJeu sans rendu, puis le source est rétabli (try/finally) et une
+Niveau « moteur » seulement : la mutation est appliquée AU SOURCE DU DÉPÔT (StridesRider.cpp, StridesHorse.cpp,
+StridesMonteOptions.cpp et .h), Unreal Build Tool recompile, l'éditeur rejoue Strides.Monte.EnJeu et Strides.Monte.Options
+sans rendu (Automation RunTests Strides.Monte ; mutation détectée si l'un des deux échoue), puis le source est rétabli (try/finally) et une
 dernière compilation remet le module à l'identique ; le script vérifie à la fin que les sources mutés sont identiques à
 leur état de départ. Environ 3 à 4 min par mutation. Une seule instance d'UnrealEditor à la fois.
 
@@ -26,7 +29,10 @@ out = os.path.abspath(arg.get('--sortie', ue_travail.sortie('mutations-monte-jeu
 game = os.path.join(ue_travail.REPO, 'unreal/StridesGrandTour/Source/StridesGrandTour')
 RIDER = os.path.join(game, 'Private/StridesRider.cpp')
 HORSE = os.path.join(game, 'Private/StridesHorse.cpp')
-TEST = 'Strides.Monte.EnJeu'
+OPTS = os.path.join(game, 'Private/StridesMonteOptions.cpp')
+OPTS_H = os.path.join(game, 'Public/StridesMonteOptions.h')
+TEST = 'Strides.Monte'
+TESTS = ('Strides.Monte.EnJeu', 'Strides.Monte.Options')
 
 # (fichier, nom, motif, remplacement) : chaque motif doit apparaître une seule fois.
 M = [
@@ -39,9 +45,32 @@ M = [
   '\t\tfor (USkeletalMeshComponent* Part : MeshParts)\n\t\t{\n\t\t\tPart->InvalidateCachedBounds();\n\t\t\tPart->UpdateBounds();\n\t\t\tPart->MarkRenderTransformDirty();\n\t\t}\n\t\treturn;',
   '\t\treturn;'),
  (RIDER, 'pied à terre : bornes du meneur gardées', 'Part->bUseBoundsFromLeaderPoseComponent = false;  // comme le jeu par défaut', 'Part->bUseBoundsFromLeaderPoseComponent = true;'),
- (RIDER, 'BeginPlay : règle créée sans l’option', 'RiderOption) && RiderOption == TEXT("regles"))', 'RiderOption) || true)'),
- (RIDER, 'BeginPlay : règle jamais créée', 'RiderOption) && RiderOption == TEXT("regles"))', 'RiderOption) && RiderOption == TEXT("jamais"))'),
- (HORSE, 'BeginPlay : sellerie créée sans l’option', 'RiderOption) && RiderOption == TEXT("regles") && Mesh)', 'RiderOption) || Mesh)'),
+ (RIDER, 'BeginPlay : règle créée sans l’option', 'if (StridesMonteOptions::FromCommandLine().bRiderRules)', 'if (true)'),
+ # Conditions jamais vraies écrites sans constante : « if (false) » ne compile pas (-Wunreachable-code traité en erreur).
+ (RIDER, 'BeginPlay : règle jamais créée', 'if (StridesMonteOptions::FromCommandLine().bRiderRules)', 'if (StridesMonteOptions::FromCommandLine().bRiderRules && GetWorld() == nullptr)'),
+ (HORSE, 'BeginPlay : sellerie créée sans l’option', 'if (Monte.bRiderRules && Mesh)', 'if (Mesh)'),
+ # Étape S2 : branchement du cheval sur l'ensemble.
+ (HORSE, 'S2 BeginPlay : main du web suivant la cavalière', 'if (Monte.bWebLead)', 'if (Monte.bRiderRules)'),
+ (HORSE, 'S2 BeginPlay : main du web jamais activée', 'if (Monte.bWebLead)', 'if (Monte.bWebLead && GetWorld() == nullptr)'),
+ (HORSE, 'S2 BeginPlay : sellerie affichée suivant la cavalière', 'if (Mesh && Monte.bTackMesh)', 'if (Mesh && Monte.bRiderRules)'),
+ (HORSE, 'S2 BeginPlay : sellerie lue suivant la main', 'if (Monte.bRiderRules && Mesh)', 'if (Monte.bWebLead && Mesh)'),
+ # Étape S2 : résolution des options (StridesMonteOptions.cpp, .h).
+ (OPTS, 'S2 ensemble -StridesMonte= ignoré', 'const bool bGroup = Group < 0 ? bWebByDefault : Group == 1;', 'const bool bGroup = bWebByDefault;'),
+ (OPTS, 'S2 ensemble : valeurs inversées', 'Read(TEXT("StridesMonte="), TEXT("web"), TEXT("ancien"))', 'Read(TEXT("StridesMonte="), TEXT("ancien"), TEXT("web"))'),
+ (OPTS, 'S2 clé de l’ensemble sans « = » (prend -StridesMonteDir=)', 'Read(TEXT("StridesMonte="), ', 'Read(TEXT("StridesMonte"), '),
+ (OPTS, 'S2 -StridesRider= ignorée', 'M.bRiderRules = Rider < 0 ? bGroup : Rider == 1;', 'M.bRiderRules = bGroup;'),
+ (OPTS, 'S2 cavalière hors de l’ensemble', 'M.bRiderRules = Rider < 0 ? bGroup : Rider == 1;', 'M.bRiderRules = Rider == 1;'),
+ (OPTS, 'S2 -StridesHorseLead= ignorée', 'M.bWebLead = Lead < 0 ? bGroup : Lead == 1;', 'M.bWebLead = bGroup;'),
+ (OPTS, 'S2 main hors de l’ensemble', 'M.bWebLead = Lead < 0 ? bGroup : Lead == 1;', 'M.bWebLead = Lead == 1;'),
+ (OPTS, 'S2 -StridesHorseLead=droite sans effet', 'Read(TEXT("StridesHorseLead="), TEXT("web"), TEXT("droite"))', 'Read(TEXT("StridesHorseLead="), TEXT("web"), TEXT("gauche"))'),
+ (OPTS, 'S2 sellerie ne suit plus la cavalière', '(bGroup || M.bRiderRules)', 'bGroup'),
+ (OPTS, 'S2 sellerie ne suit plus l’ensemble', '(bGroup || M.bRiderRules)', 'M.bRiderRules'),
+ (OPTS, 'S2 -StridesTack=aucune sans effet', ': Tack == 1;', ': true;'),
+ (OPTS, 'S2 -StridesRider=ancien sans effet', 'Read(TEXT("StridesRider="), TEXT("regles"), TEXT("ancien"))', 'Read(TEXT("StridesRider="), TEXT("regles"), TEXT("aucune"))'),
+ (OPTS, 'S2 valeur inconnue non signalée', '\t\tif (Unknown) Unknown->Add(', '\t\tif (Unknown && Unknown->Num() < 0) Unknown->Add('),
+ (OPTS, 'S2 valeur inconnue prise pour « non »', '\t\treturn -1;\n\t};', '\t\treturn 0;\n\t};'),
+ (OPTS, 'S2 description de l’ensemble inversée', 'return TEXT("web");', 'return TEXT("ancien");'),
+ (OPTS_H, 'S2 défaut du jeu basculé', 'inline constexpr bool bWebByDefault = false;', 'inline constexpr bool bWebByDefault = true;'),
 ]
 
 ATTENDUES = {
@@ -58,8 +87,22 @@ srcs = {p: open(p).read() for p in {m[0] for m in M}}
 
 
 def run(tag):
+    """Strides.Monte (EnJeu et Options) : Success seulement si les deux passent ; erreurs du premier en échec."""
+    import json
     state, errs, log = ue_travail.editor_test(TEST, out, tag)
-    return state, errs
+    rep = os.path.join(out, 'auto-' + ue_travail.re.sub(r'[^a-z0-9]+', '-', tag.lower())[:40], 'index.json')
+    try:
+        d = json.load(open(rep, encoding='utf-8-sig'))
+    except Exception as ex:
+        return f'sans rapport ({ex})', []
+    by = {t['fullTestPath']: t for t in d['tests']}
+    for name in TESTS:
+        t = by.get(name)
+        if not t:
+            return f'{name} absent du rapport', []
+        if t['state'] != 'Success':
+            return f"{name} : {t['state']}", [e['event']['message'] for e in t['entries'] if e['event']['type'] == 'Error']
+    return 'Success', []
 
 
 code, _ = ue_travail.ubt(os.path.join(out, 'ubt-temoin.log'))
@@ -69,8 +112,12 @@ if state != 'Success':
 print(f'témoin : {TEST} passe', flush=True)
 
 undetected = []
+# --noms=a,b : seulement les mutations dont le nom contient l'un de ces textes (reprise ciblée).
+noms = [n for n in str(arg.get('--noms', '')).split(',') if n]
 try:
     for i, (path, name, a, b) in enumerate(M):
+        if noms and not any(n in name for n in noms):
+            continue
         src = srcs[path]
         n = src.count(a)
         if n != 1:
@@ -93,7 +140,9 @@ finally:
     print(f'recompilation finale du source non muté : code {code}')
 clean = all(open(p).read() == s for p, s in srcs.items())
 unexpected = [n for n in undetected if n not in ATTENDUES]
-now_detected = [n for n in ATTENDUES if n not in undetected]
+ran = [m[1] for m in M if not noms or any(n in m[1] for n in noms)]
+now_detected = [n for n in ATTENDUES if n in ran and n not in undetected]
+M = [m for m in M if m[1] in ran]
 print(f'{len(M)} mutations, {len(M) - len(undetected)} détectées, {len(undetected)} non détectées' + (' : ' + ' ; '.join(undetected) if undetected else ''))
 for n in undetected:
     if n in ATTENDUES: print(f'  attendue : {n} ({ATTENDUES[n]})')

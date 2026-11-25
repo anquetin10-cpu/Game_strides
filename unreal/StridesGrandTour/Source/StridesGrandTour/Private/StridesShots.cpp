@@ -35,6 +35,7 @@
 #include "StridesHorse.h"
 #include "StridesCore/HorseMirror.h"
 #include "StridesHUD.h"
+#include "StridesMonteOptions.h"
 #include "StridesRider.h"
 #include "StridesRiderRig.h"
 #include "StridesHorseTack.h"
@@ -264,7 +265,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 		// Dossier de sortie résolu une fois, avant toute capture ; refus = sortie sans rien écrire.
 		bOutResolved = true;
 		FString Why;
-		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("miroir") || Mode() == TEXT("monte-b") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
+		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("miroir") || Mode() == TEXT("monte-b") || Mode() == TEXT("monte-s2") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
 		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Default, ProtectedShotsDirs(), OutDir, Why))
 		{
 			bRefused = true;
@@ -286,6 +287,11 @@ void AStridesShots::Tick(float DeltaSeconds)
 	if (Mode() == TEXT("monte") || Mode() == TEXT("miroir"))
 	{
 		TickMonte(DeltaSeconds, PC);
+		return;
+	}
+	if (Mode() == TEXT("monte-s2"))
+	{
+		TickMonteS2(DeltaSeconds, PC);
 		return;
 	}
 	if (Mode() == TEXT("monte-b"))
@@ -1664,6 +1670,169 @@ void AStridesShots::TickMonte(float DeltaSeconds, APlayerController* PC)
 	}
 }
 
+// ---------- Étape S2 : monte du web en partie jouée, avant / après (-StridesShots=monte-s2) ----------
+// Mise en selle à l'entrée du tracé (comme le mode monte), capture à l'arrêt, puis parcours de démonstration : première
+// image au galop hors saut à main droite puis à main gauche (main des clips ; avec la main du web, fondu achevé :
+// leadBlend > 0,99 ou < 0,01), puis 0,35 s après le départ d'un saut à main droite et d'un saut à main gauche. Main : celle
+// du cheval avec la main du web (-StridesHorseLead=web ou -StridesMonte=web), sinon celle que la main du web aurait au même
+// virage (strides::mirror::leadStep sur lastTurn, ici) : les captures tombent aux mêmes instants du parcours dans les deux
+// configurations. Caméra : pose du web de -StridesMontePoses (défaut unreal/docs/parite/monte/captures/s2/poses.json)
+// dans le repère de l'acteur du cheval. Fichiers : monte-<arret | galop-droite | galop-gauche | saut-droite |
+// saut-gauche>-<-StridesShotsTag=, défaut : configuration>.png. Exige -StridesShotsDir.
+void AStridesShots::TickMonteS2(float DeltaSeconds, APlayerController* PC)
+{
+	AStridesHorse* Horse = TActorIterator<AStridesHorse>(GetWorld()) ? *TActorIterator<AStridesHorse>(GetWorld()) : nullptr;
+	AStridesRider* Rider = Cast<AStridesRider>(PC->GetPawn());
+	if (!Rider && Horse) Rider = Horse->Rider;
+	const StridesMonteOptions::FMonte Monte = StridesMonteOptions::FromCommandLine();
+	FString Tag = StridesMonteOptions::Describe(Monte);
+	FParse::Value(FCommandLine::Get(), TEXT("StridesShotsTag="), Tag);
+	if (MonteStep == 0)
+	{
+		if (OutDir.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides monte-s2: -StridesShotsDir=<dossier dédié> exigé"));
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		FString PosesFile = RepoRoot() / TEXT("unreal/docs/parite/monte/captures/s2/poses.json");
+		FParse::Value(FCommandLine::Get(), TEXT("StridesMontePoses="), PosesFile);
+		FString Text;
+		TSharedPtr<FJsonObject> Doc;
+		if (!FFileHelper::LoadFileToString(Text, *PosesFile) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Doc) || !Doc)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Strides monte-s2: poses illisibles (%s)"), *PosesFile);
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		for (const TSharedPtr<FJsonValue>& V : Doc->GetArrayField(TEXT("poses"))) MontePoses.Add(V->AsObject());
+		UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: configuration %s (cavalière %s, main %s, sellerie %s), étiquette %s, cheval %s"),
+			*StridesMonteOptions::Describe(Monte), Monte.bRiderRules ? TEXT("règles") : TEXT("ancienne"), Monte.bWebLead ? TEXT("web") : TEXT("droite"),
+			Monte.bTackMesh ? TEXT("web") : TEXT("aucune"), *Tag, Horse ? (Horse->UsesWebLead() ? TEXT("main du web active") : TEXT("clips d'origine")) : TEXT("absent"));
+		MonteStep = 1;
+		MonteWait = 20.f;  // shaders et tuiles
+		return;
+	}
+	// Pose du web du même nom que la capture (repli : la première pose), caméra posée à chaque image.
+	const auto Pose = [this](const FString& Name) -> TSharedPtr<FJsonObject> {
+		for (const TSharedPtr<FJsonObject>& P : MontePoses)
+			if (P->GetStringField(TEXT("name")) == Name) return P;
+		return MontePoses.Num() ? MontePoses[0] : nullptr;
+	};
+	const auto View = [&](const TSharedPtr<FJsonObject>& P) {
+		if (!Horse || !P) return;
+		const auto H = [&](const TCHAR* K) {
+			const TArray<TSharedPtr<FJsonValue>>& A = P->GetArrayField(K);
+			return Horse->GetActorTransform().TransformPosition(FVector(100.0 * A[2]->AsNumber(), -100.0 * A[0]->AsNumber(), 100.0 * A[1]->AsNumber()));
+		};
+		const TSharedPtr<FJsonObject> VP = P->GetObjectField(TEXT("viewport"));
+		if (!Camera)
+		{
+			Camera = GetWorld()->SpawnActor<ACameraActor>();
+			Camera->GetCameraComponent()->bConstrainAspectRatio = false;
+			Camera->GetCameraComponent()->bOverrideAspectRatioAxisConstraint = true;
+			Camera->GetCameraComponent()->AspectRatioAxisConstraint = EAspectRatioAxisConstraint::AspectRatio_MaintainXFOV;
+		}
+		Camera->GetCameraComponent()->SetFieldOfView(HorizontalFov(P->GetNumberField(TEXT("fovV")), VP->GetNumberField(TEXT("w")), VP->GetNumberField(TEXT("h"))));
+		const FVector Eye = H(TEXT("eyeH"));
+		Camera->SetActorLocationAndRotation(Eye, (H(TEXT("targetH")) - Eye).Rotation());
+		PC->SetViewTarget(Camera);
+		if (PC->GetHUD()) PC->GetHUD()->bShowHUD = false;
+	};
+	// Main des clips : celle du cheval (main du web), sinon l'ombre calculée ici sur le même virage.
+	const bool bWebLead = Horse && Horse->UsesWebLead();
+	if (Horse && MonteStep >= 5)
+	{
+		strides::mirror::leadStep(MonteS2Lead, Horse->bCsoControls ? Horse->CsoState().lastTurn : 0.0, DeltaSeconds);
+		if (bWebLead)
+		{
+			MonteS2LeadFrames++;
+			if (strides::mirror::clipLead(MonteS2Lead.lead, false) != strides::mirror::clipLead(Horse->LeadState().lead, false)) MonteS2LeadMismatch++;
+		}
+	}
+	const char Lead = !Horse ? 0 : strides::mirror::clipLead(bWebLead ? Horse->LeadState().lead : MonteS2Lead.lead, false);
+	const auto Shot = [&](const FString& Name, const TCHAR* Detail) {
+		View(Pose(Name == TEXT("galop-droite") ? FString(TEXT("galop")) : Name));
+		const FString File = OutDir / FString::Printf(TEXT("monte-%s-%s.png"), *Name, *Tag);
+		FScreenshotRequest::RequestScreenshot(File, false, false);
+		MonteS2Done.Add(Name);
+		const UStridesRiderRig* Rig = Rider ? Rider->RulesRig() : nullptr;
+		UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: %s écrite (%s) ; %s ; temps de parcours %.2f s, vitesse %.2f m/s, allure %d, saut %d, main des clips %c, leadBlend %.4f, clip de saut %s, règle %s (coût %.4f ms), sellerie affichée %d, cheval %s"),
+			*Name, *File, Detail, RideTime, Horse ? Horse->SpeedMS : -1.f, Horse ? Horse->GaitIndex : -1, Horse ? (int32)Horse->IsJumping() : -1, Lead ? Lead : '?',
+			bWebLead ? Horse->LeadBlend() : -1.0, bWebLead ? UTF8_TO_TCHAR(strides::mirror::jumpClipName(Horse->JumpViewState().clip).c_str()) : (Horse && Horse->SpeedMS >= 7.f ? TEXT("jump_gallop (seuil 7 m/s)") : TEXT("jump_canter (seuil 7 m/s)")),
+			Rig && Rider->RulesMesh() && Rider->RulesMesh()->IsVisible() ? TEXT("active") : TEXT("absente"), Rig ? Rig->LastCostMs() : -1.0,
+			Horse && Horse->TackMesh() ? 1 : 0, Horse ? *Horse->GetActorLocation().ToString() : TEXT("-"));
+	};
+	if (MonteStep >= 5) EnterWhenPresented(PC);
+	if (MonteStep >= 3) View(Pose(TEXT("arret")));
+	MonteWait -= DeltaSeconds;
+	if (MonteWait > 0) return;
+	switch (MonteStep)
+	{
+	case 1:
+	{
+		if (!Horse || !Rider || !Horse->Course) { FPlatformMisc::RequestExit(false); return; }
+		const strides::CourseTrace& T = Horse->Course->CourseTraceData();
+		const strides::TracePoint& P0 = T.leadIn.empty() ? T.pts.front() : T.leadIn.front();
+		Horse->PlaceAt(P0.x, P0.z, P0.h);
+		Rider->SetActorLocation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 150.0 + FVector(0, 0, 90));
+		UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: monté=%d"), (int32)Rider->TryMount(PC));
+		MonteStep = 3;
+		MonteWait = 5.f;  // transition de montée (0,8 s) et fondu de la règle (0,45 s)
+		return;
+	}
+	case 3:
+		Shot(TEXT("arret"), TEXT("à l'arrêt"));
+		MonteStep = 4;
+		MonteWait = 2.f;
+		return;
+	case 4:
+		StartActivityAtPost(PC);
+		if (Horse) Horse->ToggleDemoCourse();
+		MonteS2Lead = strides::mirror::LeadState();
+		RideTime = 0.f;
+		JumpClock = -1.f;
+		MonteStep = 5;
+		MonteWait = 0.f;
+		return;
+	case 5:
+	{
+		RideTime += DeltaSeconds;
+		if (!Horse) { FPlatformMisc::RequestExit(false); return; }
+		const bool bGallop = Horse->GaitIndex >= 3 && Horse->SpeedMS >= 5.f && !Horse->IsJumping();
+		if (bGallop && Lead == 'R' && !MonteS2Done.Contains(TEXT("galop-droite")) && (!bWebLead || Horse->LeadBlend() > 0.99))
+			Shot(TEXT("galop-droite"), TEXT("galop hors saut à main droite"));
+		else if (bGallop && Lead == 'L' && !MonteS2Done.Contains(TEXT("galop-gauche")) && (!bWebLead || Horse->LeadBlend() < 0.01))
+			Shot(TEXT("galop-gauche"), TEXT("galop hors saut à main gauche"));
+		if (Horse->IsJumping())
+		{
+			if (JumpClock < 0)
+			{
+				JumpClock = 0.f;
+				MonteS2JumpLead = bWebLead ? (Horse->JumpMirrored() ? 'L' : 'R') : Lead;
+				MonteS2Jumps.Add(FString::Printf(TEXT("%.2f s : main %c, %.2f m/s"), RideTime, MonteS2JumpLead, Horse->SpeedMS));
+			}
+			else JumpClock += DeltaSeconds;
+			const FString Name = MonteS2JumpLead == 'R' ? TEXT("saut-droite") : TEXT("saut-gauche");
+			if (JumpClock >= 0.35f && !MonteS2Done.Contains(Name))
+				Shot(Name, MonteS2JumpLead == 'R' ? TEXT("0,35 s après le départ d'un saut à main droite") : TEXT("0,35 s après le départ d'un saut à main gauche"));
+		}
+		else JumpClock = -1.f;
+		const bool bAll = MonteS2Done.Num() >= 5;
+		if (bAll || RideTime > 150.f)
+		{
+			UE_LOG(LogTemp, Display, TEXT("Strides monte-s2: fin à %.2f s de parcours, %d captures sur 5%s ; départs de saut : %s ; main de l'ombre ≠ main du cheval : %d images sur %d"),
+				RideTime, MonteS2Done.Num(), bAll ? TEXT("") : TEXT(" (MANQUANTES)"), *FString::Join(MonteS2Jumps, TEXT(" | ")), MonteS2LeadMismatch, MonteS2LeadFrames);
+			MonteStep = 6;
+			MonteWait = 2.f;
+		}
+		return;
+	}
+	default:
+		FPlatformMisc::RequestExit(false);
+	}
+}
+
 
 // ---------- Essai de monte, étape M3 : niveau B, captures appariées au web (-StridesShots=monte-b) ----------
 // Mise en selle comme le mode monte (entrée du tracé du Pôle) ; puis, pour chaque pose de -StridesMontePoses (défaut
@@ -2005,9 +2174,9 @@ void AStridesShots::TickPerf(float DeltaSeconds, APlayerController* PC)
 		Doc->SetStringField(TEXT("schema"), TEXT("strides.perf/1"));
 		Doc->SetStringField(TEXT("generator"), TEXT("-StridesShots=perf (AStridesShots::TickPerf)"));
 		Doc->SetStringField(TEXT("doc"), TEXT("ms par image : gameMs = GGameThreadTime, renderMs = GRenderThreadTime, gpuMs = RHIGetGPUFrameCycles(0), frameMs = pas de l'image ; temps de l'image précédente, relevés au tick de fin d'image ; rigMs, tackMs : coût mesuré par la règle et la sellerie (FPlatformTime, option regles) ; strapsMs : sellerie affichée (étape S1 : étriers, étrivières, rênes) ; usedMB, peakMB : FPlatformMemory UsedPhysical et PeakUsedPhysical toutes les 30 images ; lod : GetPredictedLODLevel du maillage du corps de la cavalière ; résumés par strides::perf::summarize (centile type 7)"));
-		FString RiderOpt;
-		FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOpt);
-		Doc->SetStringField(TEXT("config"), RiderOpt == TEXT("regles") ? TEXT("regles") : TEXT("actuel"));
+		const StridesMonteOptions::FMonte Monte = StridesMonteOptions::FromCommandLine();
+		Doc->SetStringField(TEXT("config"), Monte.bRiderRules ? TEXT("regles") : TEXT("actuel"));
+		Doc->SetStringField(TEXT("monte"), StridesMonteOptions::Describe(Monte));
 		Doc->SetBoolField(TEXT("rulesActive"), Rider && Rider->RulesMesh() && Rider->RulesMesh()->IsVisible());
 		Doc->SetStringField(TEXT("rhi"), GDynamicRHI ? GDynamicRHI->GetName() : TEXT("?"));
 		FString FL;

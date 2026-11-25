@@ -1,4 +1,5 @@
 #include "StridesRider.h"
+#include "StridesMonteOptions.h"
 #include "Animation/AnimationAsset.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -73,9 +74,8 @@ void AStridesRider::BeginPlay()
 {
 	Super::BeginPlay();
 	GetMesh()->PlayAnimation(GaitAnimations.IsValidIndex(0) ? GaitAnimations[0].Get() : nullptr, true);
-	// Essai de monte (voie A, étape 6) : cavalière montée par les règles du web, seulement avec -StridesRider=regles.
-	FString RiderOption;
-	if (FParse::Value(FCommandLine::Get(), TEXT("StridesRider="), RiderOption) && RiderOption == TEXT("regles"))
+	// Essai de monte (voie A, étape 6) : cavalière montée par les règles du web (étape S2 : StridesMonteOptions).
+	if (StridesMonteOptions::FromCommandLine().bRiderRules)
 	{
 		FString Err;
 		if (!EnableRulesRig(&Err)) UE_LOG(LogTemp, Warning, TEXT("StridesRider=regles : règles de monte indisponibles (%s)"), *Err);
