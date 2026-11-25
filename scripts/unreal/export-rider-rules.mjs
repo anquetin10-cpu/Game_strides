@@ -28,6 +28,14 @@
 //   arrêtés à l'image de capture (SHOT_POSES) ; caméra posée dans le repère du cheval (holder : x à gauche, y vers le
 //   haut, z vers l'avant, m), FOV vertical, rendu, capture <dossier>/monte-<nom>-web.png ; poses et état de l'image dans
 //   <dossier>/poses.json, relu par -StridesShots=monte côté Unreal (même caméra dans le repère de l'acteur du cheval).
+// --sellerie (étape S1, sellerie complète) : les mêmes scénarios, rejoués à l'identique, sans rien écrire dans O1 ; écrit
+//   unreal/core/tests/oracles/monte/sellerie/<id>.json et index.json : pour chaque image, ce que pjlHorse.js _straps lit et
+//   produit (entrées relevées à l'appel : ancres, poings, repère du cheval, caméra, pied tenu par Horse._stirrupsFollow ;
+//   sorties : visibilité, étriers, sommets des étrivières et des rênes) et, une image sur dix, la position dans S de
+//   sommets témoins de chaque pièce de sellerie skinnée. --sellerie-maillage=<dossier> écrit en plus <dossier>/tack_mesh.json
+//   (géométrie des pièces de sellerie du web en espace de liaison et à la pose de repos de la scène du GLB, matériaux,
+//   visibilité ; géométrie et matériaux des étriers, étrivières et rênes), lu par scripts/unreal/tack-horse-glb.py et
+//   scripts/unreal/export-horse-straps.mjs (fichier lourd : hors dépôt, sous .ue-cache/travail).
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -67,6 +75,11 @@ function sommetE3() {
 }
 // --only-shots=a,b : seulement ces captures ; sans l'option, les captures de l'étape 6 (arrêt, galop) comme avant.
 const ONLY_SHOTS = arg('only-shots').split(',').filter(Boolean);
+const SELLERIE = process.argv.includes('--sellerie');
+const SELLERIE_OUT = arg('sellerie-out') || join(ROOT, 'unreal/core/tests/oracles/monte/sellerie');
+const SELLERIE_MESH = arg('sellerie-maillage');
+// Sommets témoins des pièces skinnées : un sur TACK_STRIDE, relevés une image sur TACK_EVERY.
+const TACK_STRIDE = 97, TACK_EVERY = 10;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Plans des scénarios : table « plan » de tests/e2e/pjl/rider-audit.mjs (allures) et obstacles de sa préparation CSO,
@@ -135,7 +148,7 @@ const HEAD = {
 
 // ---------------------------------------------------------------------------------------------------------------
 // Code injecté dans la page.
-function PAGE() {
+function PAGE(TACK_STRIDE, TACK_EVERY) {
   const g = window.__game, A = window.__auto;
   const DT = 1 / 30;
   const R6 = (v) => Math.round(v * 1e6) / 1e6;
@@ -183,6 +196,57 @@ function PAGE() {
       inRec = captureIn(dt);
     };
     return { scale: hu.scale, sex: hu.sex };
+  };
+
+  // ---- Sellerie affichée (--sellerie) : relevé de pjlHorse.js _straps et de Horse._stirrupsFollow, à l'appel ----
+  // Les méthodes des prototypes sont enveloppées (le cheval WildMesh est recréé à chaque scénario) ; les enveloppes ne
+  // font que lire (positions monde, ancres skinnées), puis appellent la méthode d'origine inchangée.
+  let stRec = null, stFollow = null;
+  P.straps = (on) => {
+    P.strapsOn = on;
+    const PH = Object.getPrototypeOf(h.pjl), HP = Object.getPrototypeOf(h);
+    if (PH.__parite) return;
+    PH.__parite = true;
+    const oStr = PH._straps, oFol = HP._stirrupsFollow;
+    HP._stirrupsFollow = function (...args) {
+      const r = oFol.apply(this, args);
+      if (this === h && P.strapsOn) {
+        const R = this.rider || this.mountingBy, inS = R?.inStirrup;
+        const toe = ['l', 'r'].map((s) => (inS && inS[s] && R.bones?.[s + 'Toe'] ? v3(R.bones[s + 'Toe'].getWorldPosition(new T.Vector3())) : null));
+        stFollow = { inS: inS ? [!!inS.l, !!inS.r] : null, toe, scale: R ? R.scale || 1 : null };
+      }
+      return r;
+    };
+    PH._straps = function (cfg) {
+      if (this !== h.pjl || !P.strapsOn) return oStr.call(this, cfg);
+      const H = this.horse, V = this.view;
+      const cam = H.game?.camera?.position;
+      const hands = H.rider?.getHandWorldPositions ? H.rider.getHandWorldPositions(new T.Vector3(), new T.Vector3()) : null;
+      const an = {};
+      for (const n of ['barL', 'barR', 'bitL', 'bitR', 'ironL', 'ironR', 'crest']) an[n] = v3(V.anchorWorld(n, new T.Vector3()));
+      const hq = this.holder.getWorldQuaternion(new T.Quaternion());
+      const st = [H.bones.stirL, H.bones.stirR].map((b) => (b ? v3(b.getWorldPosition(new T.Vector3())) : null));
+      const R = H.rider || H.mountingBy;
+      const inS = R?.inStirrup;
+      const fin = { saddle: !!cfg.saddle, cam: cam ? v3(cam) : null, hp: [H.pos.x, H.pos.z], hq: q4(hq), hands: hands ? hands.map(v3) : null, an, stir: st,
+        inS: inS ? [!!inS.l, !!inS.r] : null, follow: stFollow };
+      stFollow = null;
+      const r = oStr.call(this, cfg);
+      const pos = (s) => Array.from(s.geo.attributes.position.array);
+      stRec = { in: fin, out: { show: this.extras.visible, ir: this.irons.map((m) => v3(m.position)), iq: this.irons.map((m) => q4(m.quaternion)), le: this.leathers.map(pos), re: this.reins.map(pos) } };
+      return r;
+    };
+  };
+  // Pièces de sellerie skinnées (pjl/view.js buildTackMeshes) : sommets témoins dans S.
+  const tackSamples = (S) => {
+    const out = {};
+    for (const o of h.pjl.view.tackMeshes) {
+      const n = o.geometry.attributes.position.count, pts = [];
+      o.updateMatrixWorld(true);
+      for (let i = 0; i < n; i += TACK_STRIDE) pts.push(v3(o.getVertexPosition(i, new T.Vector3()).applyMatrix4(o.matrixWorld).applyMatrix4(S.inv)));
+      out[o.name] = pts;
+    }
+    return out;
   };
 
   const FIT_KEYS = ['stirrupX', 'stirrupY', 'stirrupZ', 'kneeOut', 'handX', 'handY', 'handZ', 'legClear', 'mountKneeOut', 'flankL', 'flankR', 'crest'];
@@ -579,6 +643,11 @@ function PAGE() {
       bT: Pp.blendT,
     } : null;
     rec.pe = withPen ? penetration() : null;
+    if (P.strapsOn) {
+      rec.st = stRec;
+      stRec = null;
+      rec.tk = P.f % TACK_EVERY === 0 ? tackSamples(S) : null;
+    }
     return rec;
   }
 
@@ -675,6 +744,73 @@ function PAGE() {
       fit: Object.fromEntries(Object.entries(pj.fit).filter(([, v]) => !Array.isArray(v))),
     };
   };
+
+  // ---- Géométrie de la sellerie (--sellerie-maillage) ----
+  // Pièces skinnées de pjl/view.js buildTackMeshes (géométries de pjl/tack.js, espace de liaison du corps) : attributs tels
+  // quels, plus la position et la normale à la pose de repos de la scène du GLB, par la formule de pjl/view.js anchorWorld
+  // (Σ w · os.matrixWorld · boneInverse · bindMatrix ; scène partagée remise au repos par resetPose) ; contrôle : la même
+  // formule sur des sommets du corps, que tack-horse-glb.py compare au corps du GLB normalisé importé dans Unreal.
+  P.tackMesh = () => {
+    const V = h.pjl.view, as = h.pjl.asset, pj = h.pjl;
+    as.resetPose?.();
+    as.scene.updateMatrixWorld(true);
+    let body = null;
+    as.scene.traverse((o) => o.isSkinnedMesh && o.material?.name === 'horse_body' && (body = o));
+    const sk = body.skeleton;
+    const M = sk.bones.map((b, i) => new T.Matrix4().multiplyMatrices(b.matrixWorld, sk.boneInverses[i]).multiply(body.bindMatrix));
+    const blend = (si, sw, i, out) => {
+      const e = out.elements;
+      e.fill(0);
+      for (let k = 0; k < 4; k++) {
+        const w = sw.getComponent(i, k);
+        if (w <= 0) continue;
+        const m = M[si.getComponent(i, k)].elements;
+        for (let j = 0; j < 16; j++) e[j] += m[j] * w;
+      }
+      return out;
+    };
+    const rest = (geo) => {
+      const P0 = geo.attributes.position, N0 = geo.attributes.normal, si = geo.attributes.skinIndex, sw = geo.attributes.skinWeight;
+      const m = new T.Matrix4(), n3 = new T.Matrix3(), v = new T.Vector3(), pos = [], nor = [];
+      for (let i = 0; i < P0.count; i++) {
+        blend(si, sw, i, m);
+        v.fromBufferAttribute(P0, i).applyMatrix4(m);
+        pos.push(v.x, v.y, v.z);
+        if (N0) {
+          v.fromBufferAttribute(N0, i).applyMatrix3(n3.setFromMatrix4(m)).normalize();
+          nor.push(v.x, v.y, v.z);
+        }
+      }
+      return { pos, nor };
+    };
+    const arr = (a) => (a ? Array.from(a.array) : null);
+    const col = (c) => [c.r, c.g, c.b];
+    const mat = (m) => ({ name: m.name || null, type: m.type, color: col(m.color), roughness: m.roughness, metalness: m.metalness, side: m.side, envMapIntensity: m.envMapIntensity ?? null,
+      quilt: m.customProgramCacheKey?.() === 'quilt-v1' });
+    const pieces = V.tackMeshes.map((o) => {
+      const g0 = o.geometry, r = rest(g0);
+      return { name: o.name, visible: o.visible, material: mat(o.material), count: g0.attributes.position.count, index: arr(g0.index),
+        bindPos: arr(g0.attributes.position), bindNormal: arr(g0.attributes.normal), uv: arr(g0.attributes.uv),
+        skinIndex: arr(g0.attributes.skinIndex), skinWeight: arr(g0.attributes.skinWeight), restPos: r.pos, restNormal: r.nor };
+    });
+    const bc = [];
+    const bp = body.geometry.attributes.position;
+    for (let i = 0; i < bp.count; i += 101) {
+      const m = blend(body.geometry.attributes.skinIndex, body.geometry.attributes.skinWeight, i, new T.Matrix4());
+      bc.push([i, ...v3(new T.Vector3().fromBufferAttribute(bp, i).applyMatrix4(m))]);
+    }
+    const ig = pj.irons[0].geometry;
+    const H = pj.horse, cfg = H.mesh.userData.tack?.userData.cfg || {};
+    return {
+      bones: sk.bones.map((b) => b.name), body: { name: body.name, vertexCount: bp.count, check: bc },
+      pieces,
+      cfg: { saddle: !!cfg.saddle, boots: !!cfg.boots, bonnet: !!H.mesh.userData.bonnet },
+      iron: { index: arr(ig.index), position: arr(ig.attributes.position), normal: arr(ig.attributes.normal), material: mat(pj.mats.iron), count: pj.irons.length },
+      leather: { n: pj.leathers[0].n, w: pj.leathers[0].w, material: mat(pj.mats.leather), count: pj.leathers.length },
+      rein: { n: pj.reins[0].n, w: pj.reins[0].w, material: mat(pj.mats.rein), count: pj.reins.length },
+      sampleStride: TACK_STRIDE, sampleEvery: TACK_EVERY,
+    };
+  };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -688,7 +824,7 @@ async function openGame(viewport = { width: 640, height: 360 }) {
   await page.goto(`${BASE}/?autostart&quality=high&lang=fr&real`, { timeout: 180000 });
   await page.waitForFunction(() => window.__game?.state === 'play', null, { timeout: 400000, polling: 500 });
   await page.addScriptTag({ content: AUTOPILOT });
-  await page.addScriptTag({ content: `(${PAGE.toString()})();` });
+  await page.addScriptTag({ content: `(${PAGE.toString()})(${TACK_STRIDE}, ${TACK_EVERY});` });
   await page.evaluate(() => window.__monte.install());
   return { ctx, page };
 }
@@ -758,7 +894,79 @@ if (SHOTS) {
 }
 const runs = [];
 const todo = SCENARIOS.filter((s) => !ONLY.length || ONLY.includes(s.id));
-if (!ANCHORS_ONLY && !SHOTS) {
+if (SELLERIE_MESH) {
+  // Géométrie de la sellerie (scénario E1, deux images après la mise en selle, comme --anchors).
+  const { ctx, page } = await openGame();
+  const sc = SCENARIOS[0];
+  await page.evaluate(([s, seed]) => window.__monte.setupAllures(s, seed), [{ ...sc }, SEED]);
+  await page.evaluate(([w]) => window.__monte.frames(2, w), [[999, 999]]);
+  const m = await page.evaluate(() => window.__monte.tackMesh());
+  await ctx.close();
+  mkdirSync(SELLERIE_MESH, { recursive: true });
+  const doc = { schema: 'strides.pjl_tack_mesh/1', generator: 'scripts/unreal/export-rider-rules.mjs --sellerie-maillage', srcTree,
+    source: ['src/entities/pjl/tack.js', 'src/entities/pjl/view.js', 'src/entities/pjlHorse.js'],
+    doc: 'pièces de sellerie du cheval WildMesh (h.pjl.view.tackMeshes) : attributs en espace de liaison du corps (bindPos, bindNormal, uv, skinIndex : indices dans bones, skinWeight, index), position et normale à la pose de repos de la scène du GLB (restPos, restNormal), matériau (couleur linéaire), visibilité dans le scénario E1 ; bones : noms des os du squelette du corps ; body.check : [indice, x, y, z] de sommets du corps par la même formule ; iron, leather, rein : étriers (géométrie locale), étrivières et rênes (Strap : segments n, demi-largeur w), matériaux.',
+    ...m };
+  const file = join(SELLERIE_MESH, 'tack_mesh.json');
+  const text = JSON.stringify(doc) + '\n';
+  writeFileSync(file, text);
+  console.log(`${file} : ${m.pieces.map((p) => `${p.name} ${p.count} sommets${p.visible ? '' : ' (masqué)'}`).join(', ')} ; ${text.length} octets`);
+}
+if (SELLERIE) {
+  // Sellerie affichée : mêmes scénarios que O1, rejoués à l'identique ; contrôle : repère S identique à O1 à chaque image.
+  const SHEAD = { schema: 'strides.oracle.sellerie/1', generator: 'scripts/unreal/export-rider-rules.mjs --sellerie', srcTree,
+    doc: 'sellerie affichée du cheval WildMesh (pjlHorse.js _straps, Horse._stirrupsFollow), rejeu à l’identique des scénarios d’O1 (mêmes images, même graine) ; monde three.js (y vers le haut, m), pleine précision ; les sommets des lanières sont ceux du Float32Array du web.',
+    channels: {
+      f: 'image (même indice qu’O1)', S: 'repère du siège (hz.S d’O1, contrôle du rejeu)',
+      st: '{ in, out } relevé à l’appel de _straps : in = saddle (cfg.saddle), cam (position de la caméra), hp ([x, z] du cheval), hq (quaternion monde du holder), hands (poings H.rider.getHandWorldPositions, null sans cavalier), an (ancres V.anchorWorld : barL, barR, bitL, bitR, ironL, ironR, crest), stir (os stirL, stirR du cheval du jeu, monde), inS (pied dans l’étrier [g, d]), follow (dernier Horse._stirrupsFollow avant l’appel : inS, toe = os lToe, rToe du cavalier, scale) ; out = show (extras.visible), ir (étriers), iq (quaternions des étriers), le (étrivières : 2 (n + 1) sommets), re (rênes) ; image 0 : hands et re nuls (poings du modèle réaliste avant la première image, non déterministes)',
+      tk: 'une image sur sampleEvery : pour chaque pièce skinnée, position dans S des sommets 0, sampleStride, 2 sampleStride… (getVertexPosition, monde, puis S)',
+    }, sampleStride: TACK_STRIDE, sampleEvery: TACK_EVERY };
+  const O1DIR = join(ROOT, 'unreal/core/tests/oracles/monte/o1');
+  const entries = [];
+  for (const sc of todo) {
+    const t0 = Date.now();
+    const { ctx, page } = await openGame();
+    if (sc.type === 'cso') await page.evaluate(([s, specs, N, seed]) => window.__monte.setupCso(s, specs, N, seed), [{ ...sc }, CSO_SPECS, CSO_N, SEED]);
+    else await page.evaluate(([s, seed]) => window.__monte.setupAllures(s, seed), [{ ...sc }, SEED]);
+    await page.evaluate(() => window.__monte.straps(true));
+    const frames = [];
+    const win = sc.type === 'cso' ? [CSO_N - 20, null] : sc.window;
+    const total = sc.type === 'cso' ? 200 : sc.frames;
+    while (frames.length < total) {
+      const batch = await page.evaluate(([n, w]) => window.__monte.frames(n, w), [Math.min(10, total - frames.length), win]);
+      frames.push(...batch.map((r) => ({ f: r.f, S: r.hz.S, st: r.st, tk: r.tk })));
+      if (sc.type === 'cso' && (await page.evaluate(() => !!window.__monte.done))) break;
+    }
+    await page.evaluate(() => window.__monte.finish());
+    await ctx.close();
+    // Image 0 : les poings lus par _straps sont ceux du modèle réaliste AVANT la première image (état laissé par la mise
+    // en selle) ; ils varient d'un export à l'autre (jusqu'à 3e-5 m constaté le 24/11/2026) : non exportés, ni les rênes
+    // qui en dépendent (le reste de l'image 0 est déterministe).
+    if (frames.length && frames[0].st) {
+      frames[0].st.in.hands = null;
+      frames[0].st.out.re = null;
+    }
+    // Contrôle : même rejeu qu'O1 (repère S identique à chaque image, même nombre d'images).
+    const o1 = JSON.parse(readFileSync(join(O1DIR, `${sc.id}.json`), 'utf8'));
+    if (o1.frames.length !== frames.length) throw new Error(`${sc.id} : ${frames.length} images, O1 en a ${o1.frames.length}`);
+    let dS = 0;
+    for (let i = 0; i < frames.length; i++) for (let k = 0; k < 7; k++) dS = Math.max(dS, Math.abs(frames[i].S[k] - o1.frames[i].hz.S[k]));
+    if (dS !== 0) throw new Error(`${sc.id} : repère S différent d'O1 (écart ${dS})`);
+    const missing = frames.filter((f) => !f.st).length;
+    mkdirSync(SELLERIE_OUT, { recursive: true });
+    const file = `${sc.id}.json`;
+    const w = writeIfChanged(join(SELLERIE_OUT, file), runText({ id: sc.id, setup: { dt: 1 / 30, scale: o1.setup.scale, window: o1.setup.window }, frames }));
+    entries.push({ id: sc.id, file, frames: frames.length });
+    console.log(`sellerie ${sc.id} : ${frames.length} images (S = O1 à l'identique), ${missing} sans relevé de _straps, ${w ? 'écrit' : 'inchangé'}, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+  }
+  if (entries.length) {
+    const prevFile = join(SELLERIE_OUT, 'index.json');
+    const prev = existsSync(prevFile) ? JSON.parse(readFileSync(prevFile, 'utf8')) : null;
+    const all = SCENARIOS.map((x) => entries.find((e) => e.id === x.id) ?? prev?.runs?.find((e) => e.id === x.id && existsSync(join(SELLERIE_OUT, e.file)))).filter(Boolean);
+    console.log(`index : ${writeIfChanged(prevFile, indexText(SHEAD, all)) ? 'écrit' : 'inchangé'}`);
+  }
+}
+if (!ANCHORS_ONLY && !SHOTS && !SELLERIE && !SELLERIE_MESH) {
   for (const sc of todo) {
     const t0 = Date.now();
     const { ctx, page } = await openGame();

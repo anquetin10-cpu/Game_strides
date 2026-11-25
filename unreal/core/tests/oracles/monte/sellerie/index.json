@@ -1,0 +1,23 @@
+{
+ "schema": "strides.oracle.sellerie/1",
+ "generator": "scripts/unreal/export-rider-rules.mjs --sellerie",
+ "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1",
+ "doc": "sellerie affichée du cheval WildMesh (pjlHorse.js _straps, Horse._stirrupsFollow), rejeu à l’identique des scénarios d’O1 (mêmes images, même graine) ; monde three.js (y vers le haut, m), pleine précision ; les sommets des lanières sont ceux du Float32Array du web.",
+ "channels": {
+  "f": "image (même indice qu’O1)",
+  "S": "repère du siège (hz.S d’O1, contrôle du rejeu)",
+  "st": "{ in, out } relevé à l’appel de _straps : in = saddle (cfg.saddle), cam (position de la caméra), hp ([x, z] du cheval), hq (quaternion monde du holder), hands (poings H.rider.getHandWorldPositions, null sans cavalier), an (ancres V.anchorWorld : barL, barR, bitL, bitR, ironL, ironR, crest), stir (os stirL, stirR du cheval du jeu, monde), inS (pied dans l’étrier [g, d]), follow (dernier Horse._stirrupsFollow avant l’appel : inS, toe = os lToe, rToe du cavalier, scale) ; out = show (extras.visible), ir (étriers), iq (quaternions des étriers), le (étrivières : 2 (n + 1) sommets), re (rênes) ; image 0 : hands et re nuls (poings du modèle réaliste avant la première image, non déterministes)",
+  "tk": "une image sur sampleEvery : pour chaque pièce skinnée, position dans S des sommets 0, sampleStride, 2 sampleStride… (getVertexPosition, monde, puis S)"
+ },
+ "sampleStride": 97,
+ "sampleEvery": 10,
+ "runs": [
+{"id":"E1","file":"E1.json","frames":65},
+{"id":"E1b","file":"E1b.json","frames":130},
+{"id":"E2g","file":"E2g.json","frames":140},
+{"id":"E2d","file":"E2d.json","frames":140},
+{"id":"E3","file":"E3.json","frames":105},
+{"id":"E3b","file":"E3b.json","frames":109},
+{"id":"E6t","file":"E6t.json","frames":120},
+{"id":"E6v","file":"E6v.json","frames":120}
+]}

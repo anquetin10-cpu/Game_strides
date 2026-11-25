@@ -54,3 +54,11 @@ target_sources(strides_core PRIVATE ${CORE}/Private/HorseMirror.cpp)
 add_executable(strides_horse_mirror_tests tests/test_horse_mirror.cpp)
 target_link_libraries(strides_horse_mirror_tests strides_core)
 add_test(NAME monte-miroir COMMAND strides_horse_mirror_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Étape S1 (sellerie complète) : étriers, étrivières et rênes du cheval WildMesh (pjlHorse.js Strap, _straps ; horse.js
+# _stirrupsFollow) portés en C++ (StridesCore/HorseStraps), contre l'oracle sellerie/ exporté du jeu web
+# (scripts/unreal/export-rider-rules.mjs --sellerie) et O1 (ctest « monte-sellerie ») ; dans le moteur :
+# Strides.Parite.HorseTackMesh.
+target_sources(strides_core PRIVATE ${CORE}/Private/HorseStraps.cpp)
+add_executable(strides_horse_straps_tests tests/test_horse_straps.cpp)
+target_link_libraries(strides_horse_straps_tests strides_core)
+add_test(NAME monte-sellerie COMMAND strides_horse_straps_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
