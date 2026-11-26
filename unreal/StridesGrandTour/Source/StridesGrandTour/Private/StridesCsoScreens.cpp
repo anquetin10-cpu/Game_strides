@@ -418,6 +418,9 @@ void UStridesCsoScreens::Refresh()
 	}
 	if (Key != ShownKey)
 	{
+		// Nouvelle carte (ou nouveau bilan) : le choix au clavier revient au bouton principal (relevé en partie le 26/11 :
+		// le liseré restait sur « Recommencer » du bilan précédent).
+		if (Key.Left(2) != ShownKey.Left(2) || Which == 3) SelectedId.Reset();
 		Clear();
 		if (Which) BuildCard(Which, V);
 		if (bDlg) BuildDialog(V);

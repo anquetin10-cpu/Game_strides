@@ -416,6 +416,7 @@ bool FStridesScenarioPoleRunTest::RunTest(const FString&)
 	if (!TestTrue(TEXT("parcours, poteau, cheval monté"), G.Make(W.World, *Data))) return false;
 	AStridesCourse* C = G.Course;
 	FDriver D(G);
+	UStridesCsoScreens* GScreensForTest = nullptr;
 	auto Info = [this](const FString& M) { AddInfo(M); UE_LOG(LogTemp, Display, TEXT("Strides.Scenario.PoleRun : %s"), *M); };
 	const std::vector<strides::CsoObstacle>& Obs = C->Obstacles();
 	const int32 N = (int32)Obs.size();
@@ -624,6 +625,7 @@ bool FStridesScenarioPoleRunTest::RunTest(const FString&)
 			Sw->MoveSelection(-1);
 			TestEqual(TEXT("bilan : gauche ×3 → « Recommencer » (borné)"), Sw->SelectedButtonId(), FString(TEXT("cso-retry")));
 			TestTrue(TEXT("« Recommencer » (bilan 1) au clavier"), Sw->PressPrimary());
+			GScreensForTest = Sw;
 		}
 	}
 	// ---- Manche 2 : 1 sauté puis deux refus au 2 = élimination ----
@@ -646,6 +648,11 @@ bool FStridesScenarioPoleRunTest::RunTest(const FString&)
 	TestTrue(FString::Printf(TEXT("deux refus : éliminé (%hs)"), St().eliminatedReason.c_str()), St().eliminated);
 	D.Release();
 	TestTrue(TEXT("manche 2 : bilan après élimination"), G.Until([&] { return C->Screen() == AStridesCourse::EScreen::Result; }));
+	if (GScreensForTest)
+	{
+		GScreensForTest->Refresh();
+		TestEqual(TEXT("bilan suivant : choix revenu au bouton principal"), GScreensForTest->SelectedButtonId(), FString(TEXT("cso-done")));
+	}
 
 	// ---- « Recommencer » : manche 3, état neuf, puis « Quitter l'épreuve » ----
 	TestTrue(TEXT("« Recommencer » (bilan 2)"), C->PressScreenButton(TEXT("cso-retry")));

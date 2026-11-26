@@ -166,7 +166,7 @@ lecture du code pour les lignes ci-dessous.
 | Jour et nuit, météo, énergie | src/game.js:824-838, src/world/weather.js:17-114, src/gameplay/energy.js | soleil fixe | **absent** |
 | Transport, camion, véhicules conduits | src/gameplay/transport.js:174, vehicle.js | aucun (StridesHorse.cpp:571 : « ni camion ni véhicule ») | **absent** |
 | Boutiques, collectibles (fers d'or) | src/gameplay/shops.js:38, collectibles.js:16 | aucun | **absent** |
-| Parcours CSO du Pôle (règles, HUD, caméra, appel, barres, chrono, résultat) | src/gameplay/courses.js, csoCourse.js, csoRide.js, jumpModel.js | StridesCore Cso* + 15 tests Strides.Cso.* et 14 Strides.Parite.* verts | **existant, testé moteur ; joué par l'agent le 26/11 en paquet Development jusqu'au bilan, Recommencer et retour au monde ; saut franchi, refus et arrivée non obtenus en partie réelle** (plan.md, État J1) |
+| Parcours CSO du Pôle (règles, HUD, caméra, appel, barres, chrono, résultat) | src/gameplay/courses.js, csoCourse.js, csoRide.js, jumpModel.js | StridesCore Cso* + 15 tests Strides.Cso.* et 14 Strides.Parite.* verts | **existant, testé moteur ; colliders du web (lice, ailes) portés le 26/11 après-midi ; parcours conduit au clavier dans le moteur (Strides.Scenario.PoleRun : refus, saut, barre, erreur de parcours, arrivée, Recommencer ×2) ; joué par l'agent en paquet Development : refus au 1 compté, 1 sauté, bilans, Recommencer ×2, retour au monde, 2e partie ; barre tombée et arrivée non obtenues en partie réelle** (plan.md, Correction après contrôle adverse) |
 
 ## 9. Ce qui reste à confirmer
 

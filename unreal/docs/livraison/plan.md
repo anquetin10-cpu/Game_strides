@@ -70,6 +70,50 @@ Défauts trouvés en partie réelle, à traiter avant de clore J1 :
   désormais un plan si le jeu n'est plus devant (un « e » parti dans l'app Claude de Julien à 09:34 a été effacé aussitôt, rien
   n'a été envoyé).
 
+### Correction après contrôle adverse (26/11 après-midi, base `e29b18a5`)
+
+Légende inchangée. Preuves : sélection `unreal/docs/livraison/preuves/fix-j1-20261126/` (12 captures, extrait du journal du
+jeu) ; toutes les captures, journaux du jeu et `drive.log` : `.ue-cache/travail/livraison/preuves/fix-j1/`.
+
+Cause du « cheval qui traverse les obstacles » : la règle des barres et des refus du cœur était juste (rejouée au clavier
+dans `Strides.Scenario.PoleRun` : refus, saut, barre, erreur de parcours), mais **le portage n'avait aucun des colliders du
+web** : ni la lice de la carrière (`world.js` `rectFence(POLE.arena, …, 's', 7, 0.5)`), ni les chandeliers et ailes des
+droits et oxers (`obstacles.js` `add`). Un cheval abordant en biais passait entre l'aile et la barre ; il sortait de la
+carrière. Second défaut trouvé en partie : hors épreuve, un refus relançait le cheval sans fin contre la barre (cadence
+gardée, cabré sans virage), d'où le cheval « coincé » dans le 3, le 5, le 8.
+
+| Point | État | Preuve |
+|---|---|---|
+| Colliders du web (lice du Pôle, ailes) | **écrit, testé (ctest + moteur), joué** : `StridesCore/Colliders` (portage de `colliders.js`, `fence`, `rectFence`, ailes, résolution de `horse.js:344-360`), appliqués dans `AStridesHorse::TickCso` | ctest « colliders » 597 vérifications contre l'oracle du web ; `Strides.Scenario.PoleRun` (lice, aile) ; en partie : le cheval reste dans la carrière, bloqué par la lice et par les obstacles abordés de dos (refus « sens -1 » au journal) |
+| Refus hors épreuve : cadence à 0 | **écrit, testé moteur, joué** | `Strides.World.PoleTarget` (refus, cadence 0, demi-tour possible) ; avant / après : `10-avant-correctif-coince-au-3.jpg` |
+| Événements d'obstacle au journal du jeu | **écrit, joué** : chaque `obstacle:clear / fault / refusal` est écrit | `journal-partie-finale.txt` |
+| Guidage en épreuve (choix n° 7) | **écrit, testé moteur, joué** : pastille « Ligne de départ / Obstacle n / Arrivée · m · direction » ; abord passé, la cible devient l'obstacle | `PoleRun` ; captures `06`, `07` |
+| J1-D écurie → poteau | **testé moteur** : `Strides.World.PoleTarget`, en ne suivant que le mot du guidage : **100,2 s de jeu, 0 contact** (< 2 min). **Joué** : 2 min 32 s de l'apparition à l'invite (16:04:41 → 16:07:13), latence de l'agent comprise, par le joueur de l'agent qui lit la ligne du HUD ; essais précédents 7 à 8 min (défauts du guidage corrigés entre-temps : aller-retour à l'entrée de la lice, lecture OCR). Balise au poteau, lignes du HUD sur fond sombre | `01-invite-chrono-poteau.jpg` |
+| Cartes au clavier / à la manette (choix n° 8) | **écrit, testé moteur, joué** : Entrée / E / F / X = bouton choisi ; gauche / droite (flèches, A / Q / D, stick) changent de bouton, liseré vert | `PoleRun` (« Recommencer » au clavier) ; captures `04`, `12` ; journal « bouton « cso-retry » au clavier » |
+| N et croix haut (J1-F) | **écrit, compilé, vérifié en paquet Shipping** : liés seulement hors Shipping ; Shipping de `b60f8c02` lancé, N puis F8 tapés : « Aucune mission active » inchangé, aucune démonstration ; contrôle des chaînes : **0 sur 13** dans le Shipping, 13 sur 13 dans le Development | `13-shipping-N-F8-sans-effet.jpg`, `check-shipping-tools.txt` |
+| Scénarios | **testé moteur** : `Strides.Scenario.PoleRun` (parcours conduit au clavier, obstacles réels : refus au 1 sans traversée, 1 sauté, barre au 2, erreur de parcours, doubles enchaînés, arrivée, « Recommencer » ×2 avec état remis à zéro champ par champ, élimination à deux refus, lice, aile), `Strides.World.PoleTarget` ; `Strides.Scenario.PoleLoop` gardé | Automation `Strides` 47/47, EXIT CODE 0 ; ctest 9/9 (nouveau : « colliders ») |
+
+Partie réelle (paquet Development de `b60f8c02`, plein écran par défaut, **entrées injectées par l'agent** : touches CGEvent,
+joueur de l'agent `scripts/unreal/partie-manuelle/suivre.py` qui lit la pastille par reconnaissance de texte ; ni F8, ni
+console, ni `-StridesShots` ; jeu à la main par Julien **à confirmer**) :
+
+- **obtenus** : écurie → poteau, invite, présentation (E), « Entrer en piste » au clavier, entrée, cloche, départ ;
+  **refus au 1 compté** (bilan « 4 pts : refus au 1 », capture `03`, `04`) ; **le 1 sauté** (`obstacle:clear 1`, marge
+  0,23 m, chrono reparti vers le 2, `06`) ; éliminations « Temps limite dépassé » (barème du web : double du temps
+  accordé), trois bilans ; **« Recommencer » deux fois** (manches 2 et 3, état neuf : 0 pt, ▸ 1, `07`) ; « Quitter
+  l'épreuve », **retour au monde** (`08`) ; **deuxième partie** relancée au poteau, état neuf (`09`) ; 0 `Fatal error`
+  sur 4 lancements du paquet Development.
+- **pas obtenus en partie réelle** : barre tombée, arrivée et record (ils le sont dans `PoleRun`). Le parcours complet en
+  moins de 128 s n'a pas été tenu par le joueur de l'agent : une lecture d'écran toutes les 1,5 à 2 s ne suffit pas à
+  tenir les courbes au galop entre obstacles rapprochés ; il bute dans des obstacles pris de dos (refus « sens -1 »).
+  **À confirmer par Julien à la main.**
+- **défauts restants** : (P1, à confirmer) en plein écran, le **clic souris** sur les boutons du bilan est resté sans
+  effet sur 4 essais (clics injectés), alors que le clic sur « Entrer en piste » de la présentation a marché ; le
+  relâchement de la capture de souris à l'ouverture des cartes n'a pas suffi ; contournement livré : clavier / manette.
+  (P2) le liseré du bouton choisi restait sur le bouton choisi au bilan précédent (corrigé après la partie, voir
+  commit suivant). (P2) le guidage vers le poteau mène tout droit, à travers les obstacles sur le chemin (le cheval
+  refuse puis il faut les contourner).
+
 ## J2 — Gameplay équestre fiable
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -143,6 +187,14 @@ Défauts trouvés en partie réelle, à traiter avant de clore J1 :
 6. **Pixel Streaming 2 retiré des paquets Mac** (J1-A, 26/11) : limité à l'éditeur (`TargetAllowList: Editor`), parce que la
    cuisson n'emporte pas les shaders de XRBase. Le paquet Mac avec Pixel Streaming n'a jamais démarré depuis le 18/11 ; rien de
    ce qui marchait n'est perdu. Réversible en une ligne du .uproject.
+
+7. **Guidage en épreuve** (26/11, correction J1) : le web masque la minicarte en concours et ne montre que le numéro vert
+   de l'obstacle attendu et les repères au sol ; le contrôle a constaté qu'on s'y perd. Choix : une pastille sous le
+   chrono avec la cible du GPS de l'étape de parcours du web (abord du départ, abord de l'obstacle attendu, arrivée),
+   distance et direction ; abord passé, l'obstacle lui-même. Écart assumé, à valider par Julien.
+8. **Cartes au clavier et à la manette** (26/11, correction J1) : le web n'offre que le clic / toucher (boutons HTML,
+   focalisables au clavier dans un navigateur). Choix : bouton principal choisi d'office, gauche / droite pour changer,
+   Entrée / E / F / X pour valider.
 
 ## Risques
 

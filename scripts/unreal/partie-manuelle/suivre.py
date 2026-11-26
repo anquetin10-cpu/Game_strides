@@ -29,7 +29,7 @@ def front_ok():
     n = subprocess.run(['/usr/bin/lsappinfo', 'info', '-only', 'name', r], capture_output=True, text=True).stdout
     return '"StridesGrandTour"' in n
 cur = os.path.join(out, 'courant.jpg')
-t0 = time.time(); slowed = False; refused = False; k = 0; lost = 0; last_d = None; same = 0; green_prev = False
+t0 = time.time(); slowed = False; refused = False; last_mash = 0; k = 0; lost = 0; last_d = None; same = 0; green_prev = False
 L('début suivre mode=%s durée=%.0f' % (mode, dur))
 try:
     while time.time() - t0 < dur:
@@ -39,7 +39,7 @@ try:
         k += 1
         if k % 3 == 1:
             subprocess.run(['/bin/cp', cur, os.path.join(out, time.strftime('%H%M%S-') + 's%s-%03d.jpg' % (mode, k))])
-        txt = subprocess.run([tools + '/ocr2', cur], capture_output=True, text=True).stdout
+        txt = subprocess.run([tools + ('/ocr' if mode == 'poteau' else '/ocr2'), cur], capture_output=True, text=True).stdout
         parts = [p.strip() for p in txt.split('|')[1:]]
         pill = next((p for p in parts if re.search(r'Obstacle|Ligne de d|Arriv|Chrono du P', p)), '')
         pts = next((p for p in parts if re.search(r'\d+\s*pts?\b', p)), '')
@@ -77,7 +77,17 @@ try:
         if mode == 'refus-puis-saut' and same >= 2 and 'Obstacle' in pill and d is not None and d < 10:
             refused = True; L('cheval arrêté devant l\'obstacle : refus présumé (journal du jeu pour preuve)')
         if same >= 3 and not (mode == 'poteau' and d is not None and d < 20):
-            hold(W, 0.6); same = 0; L('cadence reprise')
+            # Bloqué (barre, aile, lice) : s'écarter d'abord à droite, puis reprendre la cadence ; le guidage recorrige.
+            if not (mode == 'refus-puis-saut' and not refused): hold(D, 1.2)
+            hold(W, 0.7); same = 0; L('cadence reprise (écart à droite)')
+        # Abord de l'obstacle attendu, aligné, à moins de 14 m : SAUT tapé toutes les 0,15 s pendant 3,5 s (« trop tôt »
+        # ne fait pas sauter ; le premier appui dans la zone d'appel fait sauter), sans regarder l'écran entre-temps.
+        if mode == 'saut' and 'Obstacle' in pill and d is not None and d <= 14 and 'tout' in pill and time.time() - last_mash > 5:
+            L('abord : SAUT tapé en rafale')
+            for _ in range(23):
+                key(SPACE, True); time.sleep(0.05); key(SPACE, False); time.sleep(0.1)
+            last_mash = time.time(); same = 0; last_d = None
+            continue
         # Ligne de départ : la cible est l'abord, 8 m avant la ligne ; une fois tout près, continuer tout droit pour la
         # franchir (la pastille dirait « demi-tour » vers l'abord dépassé).
         if 'Ligne de d' in pill and d is not None and d < 12: continue
