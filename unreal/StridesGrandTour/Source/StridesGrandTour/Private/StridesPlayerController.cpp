@@ -104,9 +104,13 @@ void AStridesPlayerController::SetupInputComponent()
 	Context->MapKey(InteractAction, EKeys::Gamepad_FaceButton_Left);
 	Context->MapKey(GaitUpAction, EKeys::LeftShift);
 	Context->MapKey(GaitDownAction, EKeys::LeftControl);
+#if !UE_BUILD_SHIPPING
+	// Outils du portage (sauvegarde / rechargement manuels, démonstration automatique) : absents du Shipping (lot J1-F) ;
+	// le jeu publié sauvegarde seul (meilleur temps écrit en fin d'épreuve, AStridesCourse::FlushRunCalls).
 	Context->MapKey(SaveAction, EKeys::F5);
 	Context->MapKey(LoadAction, EKeys::F9);
 	Context->MapKey(DemoCourseAction, EKeys::F8);
+#endif
 	Context->MapKey(PhoneAction, EKeys::Gamepad_Special_Right);
 	Context->MapKey(MissionAction, EKeys::N);
 	Context->MapKey(MissionAction, EKeys::Gamepad_DPad_Up);

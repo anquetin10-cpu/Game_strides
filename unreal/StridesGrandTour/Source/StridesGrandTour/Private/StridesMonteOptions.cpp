@@ -5,6 +5,17 @@
 
 namespace StridesMonteOptions
 {
+#if UE_BUILD_SHIPPING
+// Shipping (lot J1-F) : options -Strides* de comparaison ignorées, réglages par défaut seulement.
+FMonte Resolve(const TCHAR*, TArray<FString>*)
+{
+	FMonte M;
+	M.bRiderRules = M.bWebLead = M.bTackMesh = bWebByDefault;
+	return M;
+}
+bool ResolveWebHorseScale(const TCHAR*, TArray<FString>*) { return bWebHorseScaleByDefault; }
+bool ResolveWebHorseView(const TCHAR*, TArray<FString>*) { return bWebHorseViewByDefault; }
+#else
 FMonte Resolve(const TCHAR* CommandLine, TArray<FString>* Unknown)
 {
 	const TCHAR* Cmd = CommandLine ? CommandLine : TEXT("");
@@ -29,6 +40,9 @@ FMonte Resolve(const TCHAR* CommandLine, TArray<FString>* Unknown)
 	return M;
 }
 
+#endif  // UE_BUILD_SHIPPING
+
+#if !UE_BUILD_SHIPPING
 bool ResolveWebHorseScale(const TCHAR* CommandLine, TArray<FString>* Unknown)
 {
 	const TCHAR* Cmd = CommandLine ? CommandLine : TEXT("");
@@ -44,6 +58,8 @@ bool ResolveWebHorseScale(const TCHAR* CommandLine, TArray<FString>* Unknown)
 	return bWebHorseScaleByDefault;
 }
 
+#endif
+
 bool WebHorseScaleFromCommandLine()
 {
 	TArray<FString> Unknown;
@@ -52,6 +68,7 @@ bool WebHorseScaleFromCommandLine()
 	return B;
 }
 
+#if !UE_BUILD_SHIPPING
 bool ResolveWebHorseView(const TCHAR* CommandLine, TArray<FString>* Unknown)
 {
 	const TCHAR* Cmd = CommandLine ? CommandLine : TEXT("");
@@ -66,6 +83,8 @@ bool ResolveWebHorseView(const TCHAR* CommandLine, TArray<FString>* Unknown)
 	if (FParse::Value(Cmd, TEXT("StridesMonte="), G) && G == TEXT("ancien")) return false;
 	return bWebHorseViewByDefault;
 }
+
+#endif
 
 bool WebHorseViewFromCommandLine()
 {

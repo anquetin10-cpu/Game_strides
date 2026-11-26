@@ -36,6 +36,40 @@ termine, voit chrono, pénalités, résultat et record, met en pause, sauvegarde
 
 Sortie de J1 : matrice complète verte, partie manuelle complète sur paquet Development, contrôle des chaînes sur paquet Shipping.
 
+### État J1 au 26/11/2026 (étape « Tranche jouable manuelle », base `c21918c5`)
+
+Légende : **écrit** (code), **compilé**, **testé moteur** (Automation), **joué par l'agent** (paquet lancé, entrées système
+injectées par l'agent : CGEvent via `scripts/unreal/partie-manuelle/`). Le jeu à la main par Julien reste **à confirmer**.
+Captures citées : `unreal/docs/livraison/preuves/j1-20261126/` (sélection) ; toutes les captures horodatées, plans d'entrées et
+journal du jeu : `.ue-cache/travail/livraison/preuves/j1-20261126/partie/`.
+
+| Lot | État | Preuve |
+|---|---|---|
+| J1-A paquet qui démarre | **fait, joué par l'agent** : paquet Development mis en scène lancé 2 fois, paquet Shipping lancé 1 fois (monde visible, données chargées), 0 `Fatal error` ; les 3 lancements par paquet du critère ne sont pas tous faits. Trois causes : (1) l'étape `-archive` de BuildCookRun recopie `unreal/StridesGrandTour/Binaries/Mac/StridesGrandTour.app`, qui contient des **paks du 17/11** (binaire neuf, contenu ancien) → on lance le paquet **mis en scène** (`-stage`, `staged-*/Mac/StridesGrandTour.app`), jamais l'archive ; (2) la cuisson n'écrit pas les shaders globaux de XRBase (`FXRCubemapPS` absent de `Saved/Cooked/Mac/Engine/GlobalShaderCache-METAL_SM6.bin`, vérifié) alors que Pixel Streaming 2 charge XRBase → `PixelStreaming2` limité à la cible **Editor** (`TargetAllowList`, choix n° 6) ; (3) `AndroidFileServer` désactivé dans le .uproject mais monté quand même par le jeu empaqueté, module absent → boîte « Plugin failed to load » puis sortie → entrée retirée (défaut du moteur, comme le 17/11). Manques de contenu corrigés : JSON de `Content/World/Cso` mis en scène, `rider_rules.json` / `monte_rider_f.json` lus par `FFileHelper` (pak) et non `std::ifstream`, `/Game/Audio` cuit (ces deux derniers : dans le paquet Shipping, pas dans le paquet Development joué) | `j1-01-monde-paquet-dev.jpg`, `j1-11-shipping-lancement.jpg` |
+| J1-B invite au clavier | **fait, testé moteur, joué par l'agent** : bulle « E · Chrono » en bas au centre hors tactile ; E lance l'activité dans le paquet | `Strides.Cso.ActivityPrompt` ; `j1-03-invite-chrono.jpg`, `j1-04-presentation.jpg` |
+| J1-C mini-carte | **sens corrigé, testé moteur, joué** (z vers le bas, `src/ui/minimap.js:9-11`) ; flèche de cap effilée (l'ancienne se lisait dans les deux sens, constaté en partie). Vitesse (B5) : au pas 2,8 m/s affiché pour 2,9 mesuré, au galop 6,7 affiché pour 6,4 à 6,9 mesuré sur la distance du guidage : **B5 non reproduit** | `Strides.Hud.MinimapFrame` ; relevés OCR de `drive.log` |
+| J1-D guidage | **fait (choix n° 5), joué** : sans mission, « Chrono du Pôle · 563 m · à gauche / tout droit / à droite / demi-tour » + repère de mini-carte. Écurie → poteau en 9 min de jeu par entrées injectées (latence de l'agent comprise), sans essai à l'aveugle | `j1-02-monte-guidage.jpg` |
+| J1-E parcours | **partiel** : joués en paquet : entrée, présentation, « Entrer en piste », annonce, cloche, départ lancé à 45 s, barre tombée au 3 (journal `railFall`), élimination « Temps limite dépassé », bilan, « Recommencer » (manche 2 remise à zéro : 0 pt, ▸1, barres remises), 2e bilan, « Quitter l'épreuve », retour au monde. **Pas obtenus en partie réelle** : saut franchi, refus compté, erreur de parcours comptée, arrivée, 2e partie relancée au poteau (défauts P1 ci-dessous ; partie interrompue quand Julien a repris la main sur l'écran). Boucle complète **testée moteur** : `Strides.Scenario.PoleLoop` (faute, refus, erreur de parcours, arrivée, élimination à 2 refus, Recommencer ×2, nouvelle partie, état remis à zéro champ par champ, meilleur temps écrit sans F5) | `j1-05` à `j1-10` |
+| J1-F outils hors Shipping | **écrit, compilé** : `AStridesShots` vide en Shipping, options `-Strides*` ignorées, F5 / F9 / F8 non liés, lignes F8 / F5 du HUD retirées ; contrôle `scripts/unreal/check-shipping-tools.py` : **0 chaîne sur 13 dans le binaire Shipping**, 13 sur 13 dans le témoin Development | `j1-20261126/check-shipping-tools.txt` |
+| J1-G pause, sauvegarde auto | inchangé ; meilleur temps écrit en fin d'épreuve sans F5 (vérifié par `Strides.Scenario.PoleLoop`) | — |
+| J1-H SIGBUS | **non traité** ; 0 plantage pendant ~25 min de paquet Development | journal du jeu |
+
+Défauts trouvés en partie réelle, à traiter avant de clore J1 :
+
+- **P1** le cheval traverse un obstacle en biais sans refus ni saut puis reste coincé dedans (le « 3 », manche 1), et n'en sort
+  qu'après « Recommencer » (`j1-06-traverse-obstacle-3.jpg`).
+- **P1** en épreuve, rien ne retient le cheval dans la carrière : il sort de la piste jusqu'en ville (240 m) sans élimination
+  (règle du web à vérifier : clôture de carrière ou sortie de piste).
+- **P1** en épreuve, aucun repère visible de l'obstacle suivant (mini-carte masquée comme au web, aides « repère vert » non vues) :
+  la navigation par entrées injectées n'a pas atteint le 1.
+- **P2** texte du HUD peu lisible sur fond clair ; saut hors obstacle refusé « TROP TÔT » (conforme au web : à confirmer).
+- **P3** sons `neigh` sans WAV, animation `Rider_jump_gallop` introuvable.
+- Dépôt : l'éditeur ajoute à `Config/DefaultEngine.ini` une section `AndroidFileServerRuntimeSettings` avec un `SecurityToken`
+  depuis que le greffon n'est plus désactivé : section **retirée avant commit**, à ne jamais versionner (`bIncludeInShipping=False`).
+- Banc de test : une touche injectée va à l'application au premier plan ; le garde-fou `front <nom>` d'`entrees.py` arrête
+  désormais un plan si le jeu n'est plus devant (un « e » parti dans l'app Claude de Julien à 09:34 a été effacé aussitôt, rien
+  n'a été envoyé).
+
 ## J2 — Gameplay équestre fiable
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -102,6 +136,13 @@ Sortie de J1 : matrice complète verte, partie manuelle complète sur paquet Dev
 3. **Cible GPS vers le Pôle hors mission** (J1-D) : le web passe par l'app Activités ou la carte pour poser un repère ; en
    attendant le téléphone interactif (J4-B), la cible vers le Pôle est posée par l'app « Événements » du téléphone, rien de plus.
 4. **Sauvegarde automatique en fin d'épreuve** (J1-G) : le web sauvegarde de lui-même ; F5/F9 deviennent des outils hors Shipping.
+
+5. **Guidage vers le chrono du Pôle sans mission** (J1-D, 26/11) : le plus simple a été retenu — la ligne de guidage et le repère de
+   mini-carte sont affichés dès qu'aucune mission ni épreuve n'est en cours, sans passer par l'app « Événements ». Écart assumé
+   avec le web, à valider par Julien.
+6. **Pixel Streaming 2 retiré des paquets Mac** (J1-A, 26/11) : limité à l'éditeur (`TargetAllowList: Editor`), parce que la
+   cuisson n'emporte pas les shaders de XRBase. Le paquet Mac avec Pixel Streaming n'a jamais démarré depuis le 18/11 ; rien de
+   ce qui marchait n'est perdu. Réversible en une ligne du .uproject.
 
 ## Risques
 

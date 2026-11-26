@@ -22,6 +22,18 @@ public:
 	// cso-ctl du jeu web, de l'entrée en piste à la sortie), l'interface d'épreuve UMG (UStridesCsoHud) le remplace et la
 	// minicarte est masquée (styles.css:988).
 	static bool DebugVisible(const strides::CsoHud* RaceHud) { return !RaceHud || !RaceHud->masked(strides::CsoHudElement::Minimap); }
+	// Invite de l'action proposée hors tactile (lot J1-B : bulle d'interaction du web, interact.js) : « E · Chrono » au
+	// clavier et à la manette (bouton X) ; vide sans action ou en mode tactile (le bouton d'action porte déjà le libellé).
+	static FString ActionPrompt(const FString& Label, bool bTouch);
+	// Minicarte (lot J1-C) : sens de la carte du web (src/ui/minimap.js:9-11 : x vers la droite, z vers le BAS) ; point du
+	// repère web (x, z) projeté autour du joueur (CX, CZ) placé au centre, et cap (vecteur avant Unreal) en direction écran.
+	static FVector2D MinimapPoint(const FVector2D& Center, double CX, double CZ, double PxPerM, const FVector2D& Web);
+	static FVector2D MinimapHeading(const FVector& Forward);
+	// Repère du chrono du Pôle (lot J1-D, choix signalé dans plan.md) : cible de guidage quand aucune mission de carrière ni
+	// aucune épreuve n'est en cours ; texte « Chrono du Pôle · 420 m · à droite » (cap relatif du cavalier). Vide sinon.
+	static FString PoleGuideText(double Distance, double RelAngleDeg);
+	// Invite affichée à la dernière image (tests, relevé en partie réelle) ; vide si aucune.
+	const FString& LastPromptShown() const { return LastPrompt; }
 	// Vrai si le HUD de débogage a été dessiné à la dernière image (tests, relevé des captures en partie réelle).
 	bool DrewDebugLastFrame() const { return bDrewDebug; }
 	// Toile de dessin hors PostRender (tests : DrawHUD appelé dans un monde de test).
@@ -33,8 +45,11 @@ private:
 	// Texte du HUD de débogage : balises <b> de l'astuce retirées (le web les rend en gras), « ▸ » rendu « > » (glyphe
 	// absent de la police par défaut du moteur ; l'interface d'épreuve UMG de la tranche T7 en aura une qui l'a).
 	static FString DebugText(const FString& S);
+	// Cible du guidage vers le chrono du Pôle (départ de l'activité, repère web x, z) ; faux si mission en cours.
+	bool PoleGoal(FVector2D& Out) const;
 	FString LastEvent;
 	bool bDrewDebug = false;
+	FString LastPrompt;
 	float EventT = 0.f;
 	TWeakObjectPtr<class AStridesCourse> Course;  // épreuve du Pôle (objectif affiché tant qu'elle est en cours)
 };

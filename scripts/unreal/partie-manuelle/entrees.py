@@ -3,6 +3,9 @@
 # Plan, une commande par ligne :
 #   down <keycode> | up <keycode> | tap <keycode> [ms] | wait <s> | shot <nom> | click <x> <y> | hold <keycode> <s>
 #   shots <n> <intervalle_s> <prefixe>   (captures successives)
+#   front <nom>   garde-fou : si l'application au premier plan n'est pas <nom> (LSDisplayName), le plan s'ARRÊTE avant
+#                 toute autre entrée (une touche injectée va à l'application au premier plan, pas forcément au jeu).
+#                 À mettre avant chaque groupe de touches ; activer le jeu avec « exec /usr/bin/open -a <app> ».
 import ctypes, ctypes.util, subprocess, sys, time, os
 cg = ctypes.CDLL(ctypes.util.find_library('CoreGraphics'))
 cg.CGEventCreateKeyboardEvent.restype = ctypes.c_void_p
@@ -42,6 +45,12 @@ try:
         elif c == 'shots':
             for i in range(int(a[1])): shot('%s-%02d' % (a[3], i)); time.sleep(float(a[2]))
         elif c == 'click': click(float(a[1]), float(a[2]))
+        elif c == 'front':
+            r = subprocess.run(['/usr/bin/lsappinfo', 'front'], capture_output=True, text=True).stdout.strip()
+            n = subprocess.run(['/usr/bin/lsappinfo', 'info', '-only', 'name', r], capture_output=True, text=True).stdout
+            if ('"' + a[1] + '"') not in n:
+                L('ABANDON : premier plan = ' + n.strip() + ', attendu ' + a[1]); break
+            L('premier plan ' + a[1])
         elif c == 'exec':
             r = subprocess.run(a[1:], capture_output=True, text=True); L('exec ' + (r.stdout + r.stderr).strip().replace('\n', ' | '))
         elif c == 'shotwin':

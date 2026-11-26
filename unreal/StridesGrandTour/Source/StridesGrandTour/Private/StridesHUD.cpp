@@ -1,4 +1,5 @@
 #include "StridesHUD.h"
+#include "StridesActivityPost.h"
 #include "Engine/Canvas.h"
 #include "EngineUtils.h"
 #include "StridesCourse.h"
@@ -65,15 +66,25 @@ void AStridesHUD::DrawHUD()
 		const FString Gait = D && D->Gaits.IsValidIndex(H->GaitIndex) ? D->Gaits[H->GaitIndex].Name.ToString() : TEXT("?");
 		Line(FString::Printf(TEXT("À cheval · %s · %.1f m/s (%.0f m/min) · cadence %.1f"), *Gait, H->SpeedMS, H->SpeedMS * 60, H->CadenceMS));
 		if (H->Course) Line(DebugText(H->Course->StatusText()));
+#if !UE_BUILD_SHIPPING
 		if (H->IsDemoCourseActive()) Line(TEXT("DÉMONSTRATION AUTOMATIQUE DU PARCOURS"), FLinearColor(0.4f, 0.9f, 1.f));
+#endif
 		if (!H->LastTakeoff.IsEmpty()) Line(FString::Printf(TEXT("Dernier appel : %s"), *H->LastTakeoff));
 		if (PLATFORM_IOS) Line(TEXT("Joystick : direction / cadence · boutons : SAUT, MONTER, ALLURE"), FLinearColor(0.8f, 0.8f, 0.8f));
-		else Line(TEXT("Joystick : direction / cadence · SAUT : Espace / A · Démo parcours : F8 · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
+#if UE_BUILD_SHIPPING
+		else Line(TEXT("Flèches / ZQSD : direction et cadence · Maj / Ctrl : allure · SAUT : Espace (manette : A) · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
+#else
+		else Line(TEXT("Flèches / ZQSD : direction et cadence · Maj / Ctrl : allure · SAUT : Espace (manette : A) · Démo parcours : F8 · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
+#endif
 	}
 	else Line(TEXT("À pied · Monter à cheval : E (à moins de 3 m)"));
 	if (EventT > 0) Line(LastEvent, FLinearColor(1.f, 0.85f, 0.3f));
 	if (const UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
+#if UE_BUILD_SHIPPING
+		if (!S->LastMessage.IsEmpty()) Line(S->LastMessage, FLinearColor(0.6f, 0.9f, 0.6f));
+#else
 		if (!S->LastMessage.IsEmpty()) Line(S->LastMessage + TEXT(" (F5 sauvegarder · F9 recharger)"), FLinearColor(0.6f, 0.9f, 0.6f));
+#endif
 	if (const UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
 	{
 		Line(FString::Printf(TEXT("%s · %d crédits · %d réputation"), *Progress->RankName(), Progress->Credits, Progress->Reputation), FLinearColor(0.35f, 0.9f, 0.75f));
@@ -85,8 +96,39 @@ void AStridesHUD::DrawHUD()
 		for (const FString& L : ObjectiveLines(bRunLive, Objective, Progress->ActiveMissionId, Progress->MissionStatus())) Line(DebugText(L), FLinearColor(1.f, 0.82f, 0.25f));
 		if (!Progress->LastMessage.IsEmpty()) Line(Progress->LastMessage, FLinearColor(0.7f, 0.9f, 1.f));
 
+		// Guidage vers le chrono du Pôle (lot J1-D) : sans mission de carrière ni épreuve en cours.
+		if (P && !Progress->HasActiveTarget())
+		{
+			FVector2D Goal;
+			if (PoleGoal(Goal))
+			{
+				double CX, CY, CZ;
+				StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
+				const FVector F = P->GetActorForwardVector();
+				const FVector2D D(Goal.X - CX, Goal.Y - CZ);
+				const double Rel = FMath::RadiansToDegrees(FMath::Atan2(F.X * D.Y - F.Y * D.X, F.X * D.X + F.Y * D.Y));
+				const FString G = PoleGuideText(D.Size(), Rel);
+				if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
+			}
+		}
 		DrawMinimap(P, Progress);
 		DrawPhone(Progress);
+	}
+	// Invite de l'action proposée (poteau « Chrono ») : grande bulle en bas au centre, hors tactile.
+	if (const AStridesPlayerController* SPC = Cast<AStridesPlayerController>(GetOwningPlayerController()))
+	{
+		const FString Prompt = ActionPrompt(SPC->ActionLabel(), AStridesPlayerController::TouchMode());
+		LastPrompt = Prompt;
+		if (!Prompt.IsEmpty() && Canvas)
+		{
+			float TW = 0, TH = 0;
+			const float Sc = 2.2f;
+			GetTextSize(Prompt, TW, TH, nullptr, Sc);
+			const float BX = (Canvas->SizeX - TW) * .5f - 28.f, BY = Canvas->SizeY * .72f;
+			DrawRect(FLinearColor(.02f, .03f, .04f, .82f), BX, BY, TW + 56.f, TH + 28.f);
+			DrawRect(FLinearColor(.3f, .9f, .75f, 1.f), BX, BY, 6.f, TH + 28.f);
+			DrawText(Prompt, FLinearColor::White, BX + 28.f, BY + 14.f, nullptr, Sc);
+		}
 	}
 	if (const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>())
 		for (const FString& L : D->LoadLog) if (L.Contains(TEXT("introuvable")) || L.Contains(TEXT("illisible"))) Line(L, FLinearColor::Red);
@@ -130,7 +172,7 @@ void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem
 	double CX = 0, CY = 0, CZ = 0;
 	if (P) StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
 	const FVector2D Center(MapX + MapSize * .5f, MapY + MapSize * .5f);
-	auto ToMap = [&](const FVector2D& Web) { return Center + FVector2D((Web.X - CX) * PxPerM, -(Web.Y - CZ) * PxPerM); };
+	auto ToMap = [&](const FVector2D& Web) { return MinimapPoint(Center, CX, CZ, PxPerM, Web); };
 	auto ToMapUE = [&](const FVector& UE) { double X, Y, Z; StridesUnits::UEToWeb(UE, X, Y, Z); return ToMap(FVector2D(X, Z)); };
 	auto Inside = [&](const FVector2D& S) { return S.X >= MapX && S.X <= MapX + MapSize && S.Y >= MapY && S.Y <= MapY + MapSize; };
 	// Segment découpé au cadre (Liang-Barsky).
@@ -196,10 +238,13 @@ void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem
 		const FVector2D S = ToMapUE(It->GetActorLocation());
 		if (Inside(S)) DrawRect(FLinearColor(.55f, .32f, .16f), S.X - 4, S.Y - 4, 8, 8);
 	}
-	// Cible GPS : au bord du cadre dans sa direction quand elle est hors champ.
-	if (Progress && Progress->HasActiveTarget())
+	// Cible GPS : au bord du cadre dans sa direction quand elle est hors champ ; sans mission, le chrono du Pôle (J1-D).
+	FVector2D Goal;
+	const bool bMissionGoal = Progress && Progress->HasActiveTarget();
+	if (bMissionGoal) Goal = Progress->ActiveTarget();
+	if (bMissionGoal || PoleGoal(Goal))
 	{
-		FVector2D T = ToMap(Progress->ActiveTarget());
+		FVector2D T = ToMap(Goal);
 		if (!Inside(T))
 		{
 			const FVector2D Dir = (T - Center).GetSafeNormal();
@@ -207,15 +252,16 @@ void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem
 			T = Center + Dir * K;
 		}
 		DrawRect(FLinearColor(1.f, .7f, .1f), T.X - 6, T.Y - 6, 12, 12);
-		DrawText(FString::Printf(TEXT("GPS %.0f m"), FVector2D::Distance(FVector2D(CX, CZ), Progress->ActiveTarget())), FLinearColor(1.f, .82f, .25f), MapX + 8, MapY + MapSize + 8, nullptr, 1.f);
+		DrawText(FString::Printf(TEXT("%s %.0f m"), bMissionGoal ? TEXT("GPS") : TEXT("Chrono du Pôle"), FVector2D::Distance(FVector2D(CX, CZ), Goal)), FLinearColor(1.f, .82f, .25f), MapX + 8, MapY + MapSize + 8, nullptr, 1.f);
 	}
 	if (P)
 	{
 		// Flèche de cap : direction avant de l'acteur ramenée sur la carte.
-		const FVector F = P->GetActorForwardVector();
-		const FVector2D Dir = FVector2D(F.X, -F.Y).GetSafeNormal();
+		const FVector2D Dir = MinimapHeading(P->GetActorForwardVector());
 		const FVector2D Side(-Dir.Y, Dir.X);
-		const FVector2D Tip = Center + Dir * 12.f, L = Center - Dir * 7.f + Side * 7.f, R = Center - Dir * 7.f - Side * 7.f;
+		// Flèche effilée (pointe à 16 px, base étroite) : l'ancienne (pointe 12 px, base 14 px) se lisait dans les deux sens
+		// (partie manuelle J1 du 26/11/2026).
+		const FVector2D Tip = Center + Dir * 16.f, L = Center - Dir * 6.f + Side * 5.f, R = Center - Dir * 6.f - Side * 5.f;
 		const FLinearColor C(.2f, .9f, 1.f);
 		DrawLine(Tip.X, Tip.Y, L.X, L.Y, C, 2.5f);
 		DrawLine(Tip.X, Tip.Y, R.X, R.Y, C, 2.5f);
@@ -231,4 +277,40 @@ void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem
 	DrawText(TEXT("N"), FLinearColor(1.f, .4f, .35f), Center.X - 4, MapY + 6, nullptr, 1.f);
 	DrawLine(MapX + MapSize - 70, MapY + MapSize - 12, MapX + MapSize - 70 + 50 * PxPerM, MapY + MapSize - 12, FLinearColor::White, 2.f);
 	DrawText(TEXT("50 m"), FLinearColor::White, MapX + MapSize - 70, MapY + MapSize - 30, nullptr, .7f);
+}
+
+FString AStridesHUD::ActionPrompt(const FString& Label, bool bTouch)
+{
+	if (Label.IsEmpty() || bTouch) return FString();
+	return FString::Printf(TEXT("E  ·  %s"), *Label);
+}
+
+FVector2D AStridesHUD::MinimapPoint(const FVector2D& Center, double CX, double CZ, double PxPerM, const FVector2D& Web)
+{
+	// Carte du web : px = (x + half)·S, pz = (z + half)·S : x vers la droite, z vers le bas de l'image.
+	return Center + FVector2D((Web.X - CX) * PxPerM, (Web.Y - CZ) * PxPerM);
+}
+
+FVector2D AStridesHUD::MinimapHeading(const FVector& Forward)
+{
+	// Avant Unreal (X, Y) = direction web (x, z) (StridesUnits) : même sens que MinimapPoint.
+	return FVector2D(Forward.X, Forward.Y).GetSafeNormal();
+}
+
+FString AStridesHUD::PoleGuideText(double Distance, double RelAngleDeg)
+{
+	if (Distance < 6.0) return FString();
+	const double A = FMath::Abs(RelAngleDeg);
+	const TCHAR* Way = A < 20.0 ? TEXT("tout droit") : A > 135.0 ? TEXT("demi-tour") : RelAngleDeg > 0 ? TEXT("à droite") : TEXT("à gauche");
+	FString D = Distance < 1000.0 ? FString::Printf(TEXT("%.0f m"), Distance) : FString::Printf(TEXT("%.1f km"), Distance / 1000.0).Replace(TEXT("."), TEXT(","));
+	return FString::Printf(TEXT("Chrono du Pôle · %s · %s"), *D, Way);
+}
+
+bool AStridesHUD::PoleGoal(FVector2D& Out) const
+{
+	const AStridesPlayerController* SPC = Cast<AStridesPlayerController>(GetOwningPlayerController());
+	const AStridesActivityPost* Post = SPC ? SPC->ActivityPost() : nullptr;
+	if (!Post || Post->MissionActive()) return false;
+	Out = FVector2D(Post->Activity().startX, Post->Activity().startZ);
+	return true;
 }

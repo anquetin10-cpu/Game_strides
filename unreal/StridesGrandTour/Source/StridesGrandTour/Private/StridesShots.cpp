@@ -68,6 +68,10 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
+// Outil de capture et de démonstration (-StridesShots*, -StridesPerf*, poses, F8) : compilé seulement hors Shipping
+// (règle de Julien, lot J1-F de unreal/docs/livraison/plan.md). En Shipping, la classe reste déclarée (UHT) mais n'a que
+// des corps vides : aucune option -Strides* n'est lue, aucun chemin de capture n'existe dans le binaire.
+#if !UE_BUILD_SHIPPING
 bool AStridesShots::Requested() { return FParse::Param(FCommandLine::Get(), TEXT("StridesShots")) || !Mode().IsEmpty(); }
 
 FString AStridesShots::Mode()
@@ -2292,3 +2296,31 @@ void AStridesShots::TickPerf(float DeltaSeconds, APlayerController* PC)
 		FPlatformMisc::RequestExit(false);
 	}
 }
+
+#else  // UE_BUILD_SHIPPING
+
+bool AStridesShots::Requested() { return false; }
+FString AStridesShots::Mode() { return FString(); }
+double AStridesShots::HorizontalFov(double FovV, double, double) { return FovV; }
+FString AStridesShots::RepoRoot() { return FString(); }
+FString AStridesShots::DefaultShotsDir() { return FString(); }
+TArray<FString> AStridesShots::ProtectedShotsDirs() { return {}; }
+bool AStridesShots::DirHasFiles(const FString&) { return false; }
+bool AStridesShots::ResolveShotsDir(const TCHAR*, const FString&, const FString&, const TArray<FString>&, FString& OutPath, FString& Why)
+{
+	OutPath.Reset();
+	Why.Reset();
+	return false;
+}
+TArray<double> AStridesShots::FramingYs(const FMinimalViewInfo&, int32, int32, double, double, double, double, const TArray<FVector2D>&) { return {}; }
+TSharedPtr<FJsonObject> AStridesShots::PerfSummaryJson(const TArray<double>&) { return nullptr; }
+bool AStridesShots::ReplayCourseCamera(AStridesHorse*, const TSharedPtr<FJsonObject>&, int32,
+	TFunctionRef<void(int32, const strides::CsoCamOut&, const TSharedPtr<FJsonObject>&)>, FString& Why)
+{
+	Why.Reset();
+	return false;
+}
+AStridesShots::AStridesShots() { PrimaryActorTick.bCanEverTick = false; }
+void AStridesShots::Tick(float DeltaSeconds) { Super::Tick(DeltaSeconds); }
+
+#endif  // UE_BUILD_SHIPPING

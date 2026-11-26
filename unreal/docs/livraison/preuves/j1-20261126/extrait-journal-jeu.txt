@@ -1,0 +1,9 @@
+[2026.11.26-08.32.57:050][  0]LogAudioMixerAudioUnit: Warning: Error querying Sample Rate: 2003332927
+[2026.11.26-08.44.29:552][838]LogTemp: Display: Strides épreuve : activité cso_train lancée (capacité : portée 1.55 m pour 1.15 m, dialogue 0)
+[2026.11.26-08.45.49:325][269]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/Audio/Cso/railFall (0x13D38D377ED31B2C) - The package to load does not exist on disk or in the loader
+[2026.11.26-08.45.49:325][269]LogUObjectGlobals: Warning: Failed to find object 'SoundWave /Game/Audio/Cso/railFall.railFall'
+[2026.11.26-08.45.49:325][269]LogTemp: Warning: Strides sons : actif /Game/Audio/Cso/railFall.railFall introuvable
+[2026.11.26-08.45.49:325][269]LogTemp: Warning: Strides sons : railFall()@gameplay/obstacles.js sans WAV (clé railFall)
+[2026.11.26-08.47.39:213][ 85]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES)
+[2026.11.26-08.51.03:755][358]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 2)
+[2026.11.26-08.52.52:166][663]LogTemp: Warning: Strides sons : railFall()@gameplay/obstacles.js sans WAV (clé railFall)

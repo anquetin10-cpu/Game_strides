@@ -166,7 +166,7 @@ lecture du code pour les lignes ci-dessous.
 | Jour et nuit, météo, énergie | src/game.js:824-838, src/world/weather.js:17-114, src/gameplay/energy.js | soleil fixe | **absent** |
 | Transport, camion, véhicules conduits | src/gameplay/transport.js:174, vehicle.js | aucun (StridesHorse.cpp:571 : « ni camion ni véhicule ») | **absent** |
 | Boutiques, collectibles (fers d'or) | src/gameplay/shops.js:38, collectibles.js:16 | aucun | **absent** |
-| Parcours CSO du Pôle (règles, HUD, caméra, appel, barres, chrono, résultat) | src/gameplay/courses.js, csoCourse.js, csoRide.js, jumpModel.js | StridesCore Cso* + 15 tests Strides.Cso.* et 14 Strides.Parite.* verts | **existant, testé moteur, non joué par l'agent dans cette étape** (B2) |
+| Parcours CSO du Pôle (règles, HUD, caméra, appel, barres, chrono, résultat) | src/gameplay/courses.js, csoCourse.js, csoRide.js, jumpModel.js | StridesCore Cso* + 15 tests Strides.Cso.* et 14 Strides.Parite.* verts | **existant, testé moteur ; joué par l'agent le 26/11 en paquet Development jusqu'au bilan, Recommencer et retour au monde ; saut franchi, refus et arrivée non obtenus en partie réelle** (plan.md, État J1) |
 
 ## 9. Ce qui reste à confirmer
 

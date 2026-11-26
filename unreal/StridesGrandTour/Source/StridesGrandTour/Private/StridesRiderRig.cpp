@@ -1,4 +1,5 @@
 #include "StridesRiderRig.h"
+#include "Misc/FileHelper.h"
 #include "StridesHorse.h"
 #include "StridesHorseView.h"
 #include "Components/PoseableMeshComponent.h"
@@ -51,15 +52,23 @@ bool UStridesRiderRig::Init(UPoseableMeshComponent* InMesh, FString* Err)
 	};
 	const USkinnedAsset* Asset = Mesh ? Mesh->GetSkinnedAsset() : nullptr;
 	if (!Asset) return Fail(TEXT("maillage de la cavalière absent"));
-	const FString Dir = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Data"));
+	// Lu par le système de fichiers du moteur (FFileHelper) et non par std::ifstream : dans un paquet, Content/Data est dans
+	// le pak (DirectoriesToAlwaysStageAsUFS) et n'existe pas sur le disque (constaté le 26/11/2026, paquet Mac J1).
+	const FString Dir = FPaths::ProjectContentDir() / TEXT("Data");
+	const auto LoadData = [](const FString& Path) -> J {
+		FString Text;
+		if (!FFileHelper::LoadFileToString(Text, *Path)) throw std::runtime_error(std::string("fichier introuvable : ") + TCHAR_TO_UTF8(*Path));
+		const std::string S = TCHAR_TO_UTF8(*Text);
+		return JParser(S).parse();
+	};
 	RideParams Params;
 	Rig R;
 	J Data;
 	try
 	{
 		std::string E;
-		if (!rideParamsFromJson(loadJson(TCHAR_TO_UTF8(*(Dir / TEXT("rider_rules.json")))), Params, E)) return Fail(TEXT("rider_rules.json : ") + FString(UTF8_TO_TCHAR(E.c_str())));
-		Data = loadJson(TCHAR_TO_UTF8(*(Dir / TEXT("monte_rider_f.json"))));
+		if (!rideParamsFromJson(LoadData(Dir / TEXT("rider_rules.json")), Params, E)) return Fail(TEXT("rider_rules.json : ") + FString(UTF8_TO_TCHAR(E.c_str())));
+		Data = LoadData(Dir / TEXT("monte_rider_f.json"));
 		if (Data["schema"].s != "strides.monte_rider/1") return Fail(TEXT("monte_rider_f.json : schéma inattendu"));
 		if (!rigFromJson(Data["rig"], R, E)) return Fail(TEXT("monte_rider_f.json : ") + FString(UTF8_TO_TCHAR(E.c_str())));
 		const J& F = Data["fit0"];
