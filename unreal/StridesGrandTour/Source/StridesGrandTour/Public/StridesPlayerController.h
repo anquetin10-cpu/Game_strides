@@ -151,6 +151,7 @@ private:
 	UPROPERTY() TObjectPtr<class UStridesCsoHud> CsoHud;
 	UPROPERTY() TObjectPtr<class UStridesPauseMenu> PauseMenu;
 	UPROPERTY() TObjectPtr<class UStridesCsoScreens> Screens;
+	int32 CardStickDir = 0;
 	mutable TWeakObjectPtr<class AStridesActivityPost> PostCache;
 	bool bCardInput = false;  // mode d'entrée « jeu et interface » posé pour la carte (pointeur sur Mac)
 	strides::CsoInput Cmd;

@@ -64,6 +64,10 @@ public:
 	// Faux sans carte ni bouton principal (jalon J1, correction, choix n° 8).
 	bool PressPrimary();
 	FString PrimaryButtonId() const { return PrimaryId; }
+	// Bouton choisi au clavier / à la manette (gauche / droite, croix ou stick) : le principal à l'ouverture ; liseré vert
+	// autour du bouton choisi. PressPrimary déclenche le bouton choisi (choix n° 8).
+	void MoveSelection(int32 Dir);
+	FString SelectedButtonId() const { return SelectedId.IsEmpty() ? PrimaryId : SelectedId; }
 	// Éléments affichés (« partie=texte »), pour les tests et les captures.
 	TArray<FString> Describe() const { return Shown; }
 	void SetViewCssForTest(const FVector2D& V) { TestView = V; }
@@ -126,7 +130,9 @@ private:
 	bool bResultLay = false;
 	TArray<FString> Shown;
 	TArray<FString> ButtonIds;
-	FString PrimaryId;
+	FString PrimaryId, SelectedId;
+	UPROPERTY(Transient) TObjectPtr<class UBorder> SelRing;
+	void PlaceSelRing();
 	TMap<FString, FVector4> Boxes;
 	FVector2D TestView = FVector2D::ZeroVector;
 	int32 ShownScreen = 0;  // 0 : aucune carte, 1 : présentation, 2 : plan, 3 : bilan

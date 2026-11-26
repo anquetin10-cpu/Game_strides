@@ -5,6 +5,7 @@
 # Usage : python3.11 -I suivre.py <dossier-preuves> <journal> <outils> <mode> <durée_s>
 #   mode « saut »     : suit la pastille, tape SAUT quand le bouton est vert (aide à l'appel du jeu) ;
 #   mode « sans-saut » : suit la pastille sans jamais sauter (refus attendu), s'arrête au premier point de pénalité ;
+#   mode « refus-puis-saut » : sans saut jusqu'au premier refus présumé (cheval arrêté devant l'obstacle), puis « saut » ;
 #   mode « poteau »   : suit la ligne « Chrono du Pôle » hors épreuve, s'arrête à moins de 6 m.
 import ctypes, ctypes.util, os, re, subprocess, sys, time
 cg = ctypes.CDLL(ctypes.util.find_library('CoreGraphics'))
@@ -28,7 +29,7 @@ def front_ok():
     n = subprocess.run(['/usr/bin/lsappinfo', 'info', '-only', 'name', r], capture_output=True, text=True).stdout
     return '"StridesGrandTour"' in n
 cur = os.path.join(out, 'courant.jpg')
-t0 = time.time(); k = 0; lost = 0; last_d = None; same = 0; green_prev = False
+t0 = time.time(); slowed = False; refused = False; k = 0; lost = 0; last_d = None; same = 0; green_prev = False
 L('début suivre mode=%s durée=%.0f' % (mode, dur))
 try:
     while time.time() - t0 < dur:
@@ -53,8 +54,10 @@ try:
         dm = re.search(r'(\d[\d,.]*)\s*m\b', pill.replace(' ,', ','))
         d = float(dm.group(1).replace(',', '.')) if dm else None
         L('i%d pastille=« %s » tableau=« %s » saut_vert=%d' % (k, pill, pts, green))
-        if mode == 'sans-saut' and re.search(r'\b[1-9]\d*\s*pts?\b', pts) and 'accord' not in pts:
+        if mode == 'sans-saut-arret' and re.search(r'(?<![\d,.])[1-9]\d?\s*pts?\b', pts) and 'accord' not in pts:
             L('pénalité affichée : arrêt du mode sans-saut'); break
+        # refus-puis-saut : pas de SAUT tant qu'aucun refus n'est vu (cheval arrêté tout près de l'obstacle attendu).
+        if mode == 'refus-puis-saut' and refused: mode = 'saut'; L('refus vu : SAUT désormais au bouton vert')
         if mode == 'saut' and green >= 2 and not green_prev:
             key(SPACE, True); time.sleep(0.08); key(SPACE, False); L('SAUT (bouton vert)')
         green_prev = green >= 2
@@ -63,16 +66,25 @@ try:
             if lost >= 4: L('plus de pastille : arrêt'); break
             continue
         lost = 0
-        if mode == 'poteau' and d is not None and d < 6: L('poteau atteint'); break
+        if mode == 'poteau' and d is not None and d < 9:
+            hold(S, 2.0); L('poteau proche : arrêt'); break
+        if mode == 'poteau' and d is not None and d < 45 and not slowed:
+            hold(S, 1.2); slowed = True; L('ralenti à l\'approche du poteau')
         # Pas d'avancée sur trois lectures (refus, arrêt) : reprendre la cadence.
         if d is not None and last_d is not None and abs(d - last_d) < 0.5: same += 1
         else: same = 0
         last_d = d
-        if same >= 3:
-            hold(W, 0.9); same = 0; L('cadence reprise')
-        if 'demi' in pill: hold(D, 0.55)
-        elif 'gauche' in pill: hold(A, 0.22)
-        elif 'droite' in pill: hold(D, 0.22)
+        if mode == 'refus-puis-saut' and same >= 2 and 'Obstacle' in pill and d is not None and d < 10:
+            refused = True; L('cheval arrêté devant l\'obstacle : refus présumé (journal du jeu pour preuve)')
+        if same >= 3 and not (mode == 'poteau' and d is not None and d < 20):
+            hold(W, 0.6); same = 0; L('cadence reprise')
+        # Ligne de départ : la cible est l'abord, 8 m avant la ligne ; une fois tout près, continuer tout droit pour la
+        # franchir (la pastille dirait « demi-tour » vers l'abord dépassé).
+        if 'Ligne de d' in pill and d is not None and d < 12: continue
+        # (lecture tolérante : « gauche » est parfois lu « dauche », « aauche »)
+        if 'demi' in pill: hold(D, 1.1)
+        elif 'auche' in pill: hold(A, 0.45)
+        elif 'roite' in pill: hold(D, 0.45)
 finally:
     for c in (A, D, W, S, SPACE): key(c, False)
     L('fin du plan')

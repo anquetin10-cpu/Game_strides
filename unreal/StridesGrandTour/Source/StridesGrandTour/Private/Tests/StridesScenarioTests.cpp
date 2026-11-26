@@ -24,6 +24,8 @@
 #include "StridesCore/CsoFences.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCourse.h"
+#include "StridesCsoScreens.h"
+#include "Blueprint/UserWidget.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
 #include "StridesHUD.h"
@@ -608,8 +610,23 @@ bool FStridesScenarioPoleRunTest::RunTest(const FString&)
 	Info(FString::Printf(TEXT("manche 1 : %.2f s, %d points, %d refus, erreurs de parcours %d, bilan « %hs » ; %s"), S1.t, C->Run()->points(), S1.refusals,
 		(int32)S1.wrong.size(), C->ResultCard().title.c_str(), *Events()));
 
-	// ---- « Recommencer » : manche 2, 1 sauté puis deux refus au 2 = élimination ----
-	TestTrue(TEXT("« Recommencer » (bilan 1)"), C->PressScreenButton(TEXT("cso-retry")));
+	// ---- « Recommencer » au clavier (choix n° 8) : bouton principal choisi d'office, deux fois gauche, Entrée ----
+	{
+		UStridesCsoScreens* Sw = CreateWidget<UStridesCsoScreens>(W.World, UStridesCsoScreens::StaticClass());
+		if (TestNotNull(TEXT("cartes"), Sw))
+		{
+			Sw->SetViewCssForTest(FVector2D(844, 390));
+			Sw->Bind(C);
+			Sw->Refresh();
+			TestEqual(TEXT("bilan : bouton choisi d'office = principal (Quitter / Continuer)"), Sw->SelectedButtonId(), FString(TEXT("cso-done")));
+			Sw->MoveSelection(-1);
+			Sw->MoveSelection(-1);
+			Sw->MoveSelection(-1);
+			TestEqual(TEXT("bilan : gauche ×3 → « Recommencer » (borné)"), Sw->SelectedButtonId(), FString(TEXT("cso-retry")));
+			TestTrue(TEXT("« Recommencer » (bilan 1) au clavier"), Sw->PressPrimary());
+		}
+	}
+	// ---- Manche 2 : 1 sauté puis deux refus au 2 = élimination ----
 	G.AwayFromStart(Start);
 	TestTrue(TEXT("manche 2 : parcours atteint"), G.Until([&] { return C->Run()->step() == CsoStep::Course; }));
 	CheckFresh(TEXT("manche 2 (après Recommencer)"), 2);

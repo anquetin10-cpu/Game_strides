@@ -346,6 +346,7 @@ void UStridesCsoScreens::Clear()
 	Shown.Reset();
 	ButtonIds.Reset();
 	PrimaryId.Reset();
+	SelRing = nullptr;
 	Boxes.Reset();
 	PlanW = nullptr;
 	CardScroll = nullptr;
@@ -848,6 +849,45 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 		if (Bn.bPrimary) PrimaryId = Bn.Id;
 		Shown.Add(FString::Printf(TEXT("bouton %s=%s%s"), *Bn.Id, *Bn.Label, Bn.bPrimary ? TEXT(" (primary)") : TEXT("")));
 	}
+	// Choix au clavier / à la manette : gardé s'il existe encore sur la carte reconstruite, sinon le bouton principal.
+	if (!ButtonIds.Contains(SelectedId)) SelectedId = PrimaryId;
+	PlaceSelRing();
+}
+
+void UStridesCsoScreens::PlaceSelRing()
+{
+	if (!Canvas || SelectedId.IsEmpty() || !Boxes.Contains(SelectedId)) return;
+	if (!SelRing)
+	{
+		SelRing = WidgetTree->ConstructWidget<UBorder>();
+		Parts.Add(SelRing);
+		FSlateBrush B;
+		B.DrawAs = ESlateBrushDrawType::RoundedBox;
+		B.TintColor = FSlateColor(FLinearColor(0, 0, 0, 0));
+		B.OutlineSettings = FSlateBrushOutlineSettings(FVector4(10, 10, 10, 10), FSlateColor(FLinearColor(.49f, 1.f, .77f, 1.f)), 3.f);
+		B.OutlineSettings.RoundingType = ESlateBrushRoundingType::FixedRadius;
+		SelRing->SetBrush(B);
+		SelRing->SetVisibility(ESlateVisibility::HitTestInvisible);
+		PlaceAt(Canvas, SelRing, FVector4(0, 0, 1, 1), 9);
+	}
+	const FVector4 Bx = Boxes[SelectedId];
+	if (UCanvasPanelSlot* S = Cast<UCanvasPanelSlot>(SelRing->Slot))
+	{
+		S->SetPosition(FVector2D(Bx.X - 4, Bx.Y - 4));
+		S->SetSize(FVector2D(Bx.Z + 8, Bx.W + 8));
+	}
+}
+
+void UStridesCsoScreens::MoveSelection(int32 Dir)
+{
+	Refresh();
+	if (ButtonIds.Num() == 0) return;
+	int32 I = ButtonIds.IndexOfByKey(SelectedButtonId());
+	if (I == INDEX_NONE) I = 0;
+	I = FMath::Clamp(I + (Dir > 0 ? 1 : -1), 0, ButtonIds.Num() - 1);
+	SelectedId = ButtonIds[I];
+	PlaceSelRing();
+	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton choisi « %s »"), *SelectedId);
 }
 
 void UStridesCsoScreens::BuildDialog(const FVector2D& ViewCss)
@@ -975,10 +1015,10 @@ void UStridesCsoScreens::OnDone() { if (Course) Course->PressScreenButton(TEXT("
 bool UStridesCsoScreens::PressPrimary()
 {
 	Refresh();
-	if (!Course || PrimaryId.IsEmpty() || !ButtonIds.Contains(PrimaryId)) return false;
-	const FString Id = PrimaryId;
+	const FString Id = SelectedButtonId();
+	if (!Course || Id.IsEmpty() || !ButtonIds.Contains(Id)) return false;
 	const bool bOk = Course->PressScreenButton(Id);
-	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton principal « %s » au clavier / à la manette (%d)"), *Id, bOk);
+	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton « %s » au clavier / à la manette (%d)"), *Id, bOk);
 	Refresh();
 	return bOk;
 }

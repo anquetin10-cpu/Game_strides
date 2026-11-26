@@ -239,7 +239,16 @@ bool AStridesPlayerController::InRace() const
 }
 
 // ---- Entrées vers les commandes du web ----
-void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRepeat) { Cmd.key(TCHAR_TO_UTF8(*Code), bDown, bRepeat); }
+void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRepeat)
+{
+	// Carte ouverte : gauche / droite choisissent le bouton (choix n° 8) ; la touche ne va pas au cheval (gel des commandes).
+	if (bDown && !bRepeat && Screens && CardOpen() && !bPausedState)
+	{
+		if (Code == TEXT("ArrowLeft") || Code == TEXT("KeyA") || Code == TEXT("KeyQ")) { Screens->MoveSelection(-1); return; }
+		if (Code == TEXT("ArrowRight") || Code == TEXT("KeyD")) { Screens->MoveSelection(1); return; }
+	}
+	Cmd.key(TCHAR_TO_UTF8(*Code), bDown, bRepeat);
+}
 
 void AStridesPlayerController::FeedPointerDown(int64 Id, bool bMouse, const FVector2D& Css)
 {
@@ -315,6 +324,14 @@ void AStridesPlayerController::StepCommands(float)
 			InputMode.SetHideCursorDuringCapture(false);
 			SetInputMode(InputMode);
 			bShowMouseCursor = !PLATFORM_IOS;
+			// Souris rendue au système (contrôle J1 : en plein écran, clics sans effet sur le bilan ouvert en épreuve, la souris
+			// restant capturée par la vue) : capture et verrou relâchés, pointeur Slate remis à zéro.
+			if (UGameViewportClient* VC = GetLocalPlayer()->ViewportClient)
+			{
+				VC->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+				if (FViewport* Vp = VC->Viewport) { Vp->CaptureMouse(false); Vp->LockMouseToViewport(false); }
+			}
+			if (FSlateApplication::IsInitialized()) FSlateApplication::Get().ReleaseAllPointerCapture();
 			Cmd.releaseAll();  // screens.card : input.releaseAll()
 		}
 		else RestoreInputMode();
@@ -436,9 +453,16 @@ void AStridesPlayerController::ResumeGame()
 void AStridesPlayerController::OnMove(const FInputActionValue& V)
 {
 	const FVector2D In = V.Get<FVector2D>();
+	// Carte ouverte : stick gauche poussé à gauche / à droite = bouton précédent / suivant (un pas par poussée).
+	if (Screens && CardOpen() && !bPausedState)
+	{
+		const int32 Dir = In.X > .6 ? 1 : In.X < -.6 ? -1 : 0;
+		if (Dir != 0 && Dir != CardStickDir) Screens->MoveSelection(Dir);
+		CardStickDir = Dir;
+	}
 	GamepadMove = In;
 }
-void AStridesPlayerController::OnMoveDone(const FInputActionValue&) { GamepadMove = FVector2D::ZeroVector; }
+void AStridesPlayerController::OnMoveDone(const FInputActionValue&) { GamepadMove = FVector2D::ZeroVector; CardStickDir = 0; }
 void AStridesPlayerController::OnLook(const FInputActionValue& V)
 {
 	const FVector2D In = V.Get<FVector2D>();
