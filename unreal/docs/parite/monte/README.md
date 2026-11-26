@@ -47,11 +47,13 @@ sont séparés : **hors moteur** (C++ seul, `ctest`), **dans le moteur sans rend
   du saut, cadence des clips, phase de foulée, membres repliés et bascule face aux barres portés en C++
   (`StridesCore/HorseView`, ctest `monte-vue` : 386 285 vérifications sur 17 scénarios, écart ≤ 8,4e-8) ; dans le moteur,
   logique égale au web à 2,8e-16 près (`Strides.Parite.HorseView`) ; appuis : 622 posers et levers sur 659 à l'image
-  exacte du web (17 avant), 1,4 cm en moyenne (25 cm avant) ; niveau B 58 → 50 critères non tenus ; en partie jouée,
-  plus aucun sabot sous le dessus d'une barre (marge ≥ +13,5 cm) et garrot au sommet 2,66 – 2,91 m (`appuis.md`).
+  exacte du web à S4 (17 avant), **632 après S5** (1,2 cm en moyenne ; 25 cm avant S4 ; `appuis.md`, refait au contrôle
+  complémentaire du 26/11/2026) ; niveau B 58 → 50 critères non tenus ; en partie jouée, plus aucun sabot sous le dessus
+  d'une barre (marge minimale +11,8 à +14,4 cm selon la partie, quatre parties) et garrot au sommet 2,66 – 2,94 m.
 - **Trot et grand saut à 24 images/s (étape S5, 25/11/2026)** : les 4 clips importés à 30 images/s par Interchange
   (trot, ses virages, jump_gallop) sont réimportés à 24 images/s comme les 13 autres (`import-horse-clips-24.py`, cadence
-  épinglée par `Strides.Parite.HorseMirror`) : source à 0,0002 et 0,0009 cm du web (2,84 et 8,10 cm avant), sabots au
+  épinglée par `Strides.Parite.HorseView` pour les 17 clips et `Strides.Parite.HorseMirror` pour les 11 sources des
+  miroirs) : source à 0,0002 et 0,0009 cm du web (2,84 et 8,10 cm avant), sabots au
   grand saut 2,46 cm (19,81 avant), cavalière du contrôle avant le premier saut à **0,037 cm d'O2** (0,64 cm avant) ;
   concours et partie jouée inchangés hors bruit de rendu, captures du CSO gardées.
 - **Coût en jeu, rendu réel (étape 7)** : la règle ajoute **+0,03 ms à l'arrêt et +0,05 ms au galop** au temps du jeu. Le
@@ -1865,6 +1867,12 @@ sabot en bloc autour de l'origine de l'os ; seuil 1e-6 m), sinon ≤ 1e-9. Const
   1,4 cm en moyenne. Sauts : posers des postérieurs tous à l'image du web, à 0,6 – 3,3 cm. 12 événements non appariés
   (cercles au galop E2g et au trot V2d, deux sauts), position au plus 45 cm sur un événement apparié (à confirmer à
   l'image). Corps après la bascule : à 0,8 cm et 0,17° au plus du web (sabots Unreal : sole +0,80 cm, clips importés).
+  *Chiffres de S4 (avant S5). Refaits après S5 au contrôle complémentaire du 26/11/2026 (`appuis.md` et `appuis.json`
+  régénérés) : **649 appariés, 632 à l'image exacte**, écart moyen 0,03 image (au plus 2), position 1,2 cm en moyenne,
+  35,2 cm au plus (V2g-gg, lever du postérieur gauche apparié à une image d'écart) ; 10 événements non appariés (E2g,
+  V2d-trot, V3c). Posers des postérieurs aux sauts (74) : 72 à l'image du web à 0,4 – 1,5 cm, 1 à une image d'écart
+  (V3c PD image 3, 20,7 cm), 1 non apparié (V3c PG image 40) ; à S4 déjà, ces deux-là n'étaient pas à l'image exacte et
+  V3bd PD image 104 n'était pas apparié : « tous à l'image du web » ci-dessus valait pour E3 et E3b, pas pour tous les sauts.*
 - **Niveau B** (`Strides.Parite.RiderOnHorse`, `rider-rules-niveau-b.mjs`) : **58 → 50 critères non tenus sur 233**
   (`s4/niveau-b-vue.md`). Galop en cercle : hanche E2g droite 15,6° → 3,4°, E2d gauche 10,2° → 3,7° (contre O1, seuil
   6°) ; ouverture du genou E2g droit 16,4° → 11,3° (O2 − O1 = 11,25° : proportions de la cavalière), E2d droit contre O2
@@ -1992,7 +2000,10 @@ clip importé n'est pas un comportement du jeu, c'est la donnée ; l'ancienne do
 
 - Interchange choisit lui-même la cadence d'échantillonnage de chaque clip du GLB normalisé : **24 images/s pour 13 clips,
   30 images/s pour trot, trot_L90, trot_R90 et jump_gallop** (25 et 55 images). Les clés du GLB ne sont sur aucune grille
-  (par piste, 15 à 67 pistes sur la grille 1/24 s, 31 à 42 irrégulières) : toute cadence fixe échantillonne la courbe du
+  (par clip, parmi les pistes à plus de 2 clés : 15 à 67 pistes dont toutes les clés sont sur la grille 1/24 s à 1e-3 image
+  près, 31 à 42 irrégulières, aucune sur la grille 1/30 s seule ; trot 19 / 34, trot_L90 61 / 35, trot_R90 67 / 31,
+  jump_gallop 15 / 42 ; recompté au contrôle du 25/11/2026 sur `.tmp/unreal-import/horse_pjl_normalized.glb`, empreinte MD5
+  `9e009acc…`, par un script de travail non versionné, `.ue-cache/travail/s5-grid.py`) : toute cadence fixe échantillonne la courbe du
   GLB ; à 24 images/s, les clés d'Unreal tombent aux instants f / 24 s où le web cuit et compare ses poses (`kBakeFps`).
   Les durées tombent juste aux deux cadences (trot 0,8333 s = 20 / 24 s ; jump_gallop 1,8333 s = 44 / 24 s) : rien n'est
   allongé ni raccourci.
@@ -2011,6 +2022,14 @@ clip importé n'est pas un comportement du jeu, c'est la donnée ; l'ancienne do
   (1e-5 s), les 13 autres clips inchangés (images, durée, cadence), aucun asset créé.
 - Résultat : trot et virages 20 images (21 clés), jump_gallop 44 images (45 clés), 24 images/s ; `git status` : seuls les
   4 `.uasset` changent (1,6 à 2,3 Mo).
+- **Données d'import des 4 clips réimportés** : leur fichier source enregistré dans l'asset est
+  `.ue-cache/travail/s5/import/Horse_.glb` (chemin relatif, `FileMD5` `652488a19a2e86433bc35eed8a103d38`), hors de git
+  (`.ue-cache/` exclu par `.git/info/exclude`) ; les 13 autres clips pointent vers le GLB normalisé de l'import d'origine.
+  Le fichier n'est pas versionné (10,6 Mo) : on le refait par `python3 scripts/unreal/import-horse-clips-24.py
+  --travail=.ue-cache/travail/s5/import` (étape 1, sans Unreal) à partir de `.tmp/unreal-import/horse_pjl_normalized.glb`
+  (lui-même refait par `normalize-horse-glb.py`). Contrôle du 25/11/2026 : refait dans `.ue-cache/travail/ctrl-final-s4/horse-glb`,
+  même MD5 `652488a1…` que celui enregistré dans les assets. Le jeu ne lit pas ce fichier ; seul un « Reimport » dans
+  l'éditeur en a besoin.
 
 ### Mesures avant / après (dans le moteur sans rendu ; avant = contrôle de S4 b à `35e5532f`, `.ue-cache/travail/ctrl-S4/auto.log`)
 
@@ -2037,7 +2056,9 @@ clip importé n'est pas un comportement du jeu, c'est la donnée ; l'ancienne do
 
 - `Strides.Parite.HorseMirror` : **les 11 clips sources doivent être à 24 images/s** (nouveau critère ; le seuil « au moins
   7 clips » devient 11) ; les images de trot en miroir entrent dans les critères d'O1.
-- `Strides.Parite.HorseView` : les sabots au saut sur jump_gallop entrent dans le critère de 4 cm (relevé à part avant).
+- `Strides.Parite.HorseView` : les sabots au saut sur jump_gallop entrent dans le critère de 4 cm (relevé à part avant) ;
+  depuis le contrôle complémentaire du 26/11/2026, il épingle aussi la cadence des **17** clips importés joués par la vue
+  (24 images/s ; `HorseMirror` n'épingle que les 11 sources des miroirs).
 - `Strides.Parite.RiderOnHorse` : contrôle avant le premier saut, seuil **1 cm → 0,1 cm**.
 - `StridesHorseView.h` (commentaire) et `rider-rules-niveau-b.mjs` (texte de la page) mis à jour.
 - Effets voisins mesurés par la campagne complète (G3) : `Strides.Parite.HorseSeat` (données brutes, toutes images) ancres
@@ -2103,3 +2124,47 @@ clips ont moins de clés : 21 et 45 au lieu de 26 et 56).
 
 Reste à faire (S5) : rien. Hors décision, à proposer : `SecondaryMotion` (queue, crinière, encolure, oreilles) et
 `_limbContacts` ; coût en jeu avec rendu de la vue du cheval (S4, méthode de l'étape 7) et coût sur iPhone ou iPad.
+
+## Contrôle complémentaire de S4 après S5 (26/11/2026)
+
+Points du contrôle ciblé de S4 que le contrôle final de S5 n'avait pas revus un par un, rejoués sur `4e7a378e` (S5).
+Fichiers de travail : `.ue-cache/travail/ctrl-final-s4/` (non versionnés).
+
+- **Mutations** (`mutations-horse-view.py`, cœur 73 s, `--moteur` 3 563 s) : **61 mutations, 52 détectées** (cœur 46 sur 52,
+  moteur 6 sur 9), sources rétablis, recompilation finale code 0 ; aucune non détectée hors de la liste déclarée. Les 9
+  raisons déclarées revues une par une :
+  - cœur, relevé par une copie instrumentée de `HorseView.cpp` rejouée sur l'oracle `vue/` (386 285 vérifications,
+    0 échec) : rattrapage de hauteur au-delà de 0,25 m jamais pris (écart au plus 0,030 m) ; roulis non nul à aucune
+    image où `jumpWeight` > 0 ; `fore` jamais négatif à l'appel (34 évaluations, au plus bas 0,343 m) ; aucune barre
+    tombée (3 688 barres vues) ; levier sabot – pivot brut 1,43 à 2,69 m sur 288 affectations, jamais sous 0,8 m (la
+    raison écrite, « 1,7 à 2,4 m », était inexacte sur les bornes, juste sur le fond) ; relevé en vol brut toujours nul
+    (la bascule seule suffit, plafond de 0,25 m jamais atteint). Les 6 raisons sont vraies.
+  - moteur, ordre bascule / inclinaison : `rx` (après `_barClear`) et `rz` jamais non nuls ensemble sur les 2 087 images
+    de l'oracle : raison vraie ; non départagé tant qu'aucun saut n'est abordé en virage (l'ordre du port est celui de
+    three.js, XYZ : Rz puis Rx).
+  - moteur, ordre alphabétique des clips : **écart mesuré** (export de `Strides.Parite.HorseView` avec et sans la mutation) :
+    sabots de la passe « web » différents sur 1 716 des 8 348 relevés, 0,0023 cm en moyenne, **0,23 cm au plus** (E2g
+    image 22, sabot 3), sous le seuil de 4 cm ; maxima du test inchangés à 0,01 cm près. Raison vraie, écart désormais mesuré.
+  - moteur, clips non retenus contre le ramasse-miettes : non détectée dans l'éditeur (confirmé), et **en `-game` la
+    partie jouée plante (SIGBUS dans `FStridesHorseAnimProxy::Evaluate`, vers la 32e seconde)** avec la mutation : raison
+    vraie ; le défaut n'est départagé que par une partie jouée, pas par un test Automation.
+- **Oracle des appuis du web** (`export-rider-rules.mjs --vue --vue-out=…`, Vite 5178, deux exports) : les 18 fichiers des
+  deux exports identiques entre eux et au versionné à l'octet ; `pjl_horse_view.json` « inchangé » les deux fois.
+- **Appuis après S5** : `appuis.md` et `appuis.json` régénérés (chiffres dans l'étape S4 ci-dessus) : 632 sur 659 à l'image
+  exacte (622 à S4), 1,2 cm en moyenne (1,4), 35,2 cm au plus (45,2).
+- **Niveau B après S5** (`Strides.Parite.RiderOnHorse` puis `rider-rules-niveau-b.mjs`) : `niveau-b.md` et `niveau-b.json`
+  identiques à l'octet aux versionnés, **50 critères non tenus sur 233**.
+- **Captures** : 12 regardées (S4 : appel, sommet, réception, saut à droite et à gauche, galop à gauche ; S5 : trot et
+  sommet du grand saut ; concours : `jeu-2-cloche`, `jeu-3-mot`, `jeu-4-course`, `robe-trois-quarts-avant`) : aucun
+  défaut visible (membres, sellerie, cavalière, barres).
+- **Partie jouée** (`-StridesShots=monte-s2 -StridesMonteS2Parcours`, rendu réel) : 10 départs de saut aux mêmes instants
+  (0,2 s près), « 0 pt Arrivée ✓ » en 60,33 s. Marges sabot − barre et garrot, comparées sur quatre parties (S4 a, S5,
+  contrôle final de S5, ce contrôle) : **marge minimale +13,5, +13,8, +14,4 et +11,8 cm** (saut 9, vertical 7), toujours
+  positive à chaque saut ; garrot au sommet 2,66 – 2,91, 2,66 – 2,90, 2,66 – 2,91 et **2,66 – 2,94 m**. La marge est relevée
+  aux seules images rendues (5 à 17 passages par barre) et varie d'une partie à l'autre de quelques centimètres : les
+  valeurs « ≥ +13,5 cm » et « 2,66 – 2,91 m » de S4 étaient celles d'une partie, pas des bornes.
+- **Test étendu** : `Strides.Parite.HorseView` épingle la cadence des 17 clips importés de la vue (24 images/s) ; UBT
+  code 0 sans avertissement ; `HorseView` et `HorseMirror` en succès ; le critère mis à 30 images/s le fait échouer
+  (« 0 sur 17 »).
+- Démarrages bloqués par Zen : 1 (premier démarrage `-game` de la partie avec la mutation du ramasse-miettes, arrêté
+  par la garde de ce contrôle, relancé) ; aucun sur les 25 lancements sans rendu.

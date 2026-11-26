@@ -50,7 +50,7 @@ galop-gauche | saut-sommet>-web.png` contre `-unreal-b.png`.
    en virage (12,9° au plus en cercle, comme le web), bascule face aux barres, hauteur du corps, repli des membres.
 4. ~~**Horloge du saut et cadence**~~ : **fait à l'étape S4** : cadence des clips réglée sur la vitesse, horloge du saut
    calée sur les appuis du clip, phase de foulée qui avance pendant le saut ; oracle des appuis : 622 posers et levers sur
-   659 à l'image exacte du web (17 avant).
+   659 à l'image exacte du web (17 avant), 632 après S5 (contrôle du 26/11/2026).
 5. ~~**Trot et saut au grand galop** importés à 30 images/s au lieu de 24 : jusqu'à 0,64 cm sur la cavalière au trot.~~
    **Fait à l'étape S5 (25/11/2026)** : réimportés à 24 images/s ; cavalière du contrôle à 0,037 cm d'O2 avant le premier
    saut, sabots au grand saut à 2,46 cm du web (19,81 cm avant).
@@ -81,8 +81,8 @@ cadence des clips de S5, qui est une donnée : l'ancienne reste dans l'historiqu
 | S1 sellerie complète | étriers, étrivières et rênes identiques au bit au web (ctest) ; pièces à 0,44 cm du web hors saut ; étrier sous le pied (M4 ≤ 1,00 cm) | au saut, pièces liées au corps du cheval Unreal (corrigé par S4) | rendu sur iPhone ou iPad |
 | S2 cavalière réglée comme le web, main du web | niveau A à 0,0001 cm ; relevés du concours identiques ; démonstration « 0 pt Arrivée ✓ » | niveau B : critères manqués venant du cheval (réduits par S3 à S5) et de la règle du web elle-même | paquet iOS, coût sur appareil |
 | S3 taille du web (+3,88 %) | garrot à 1,48 m comme le web ; relevés du concours identiques | niveau B 61 → 58 | idem |
-| S4 inclinaison, corps et horloge du saut | logique égale au web dans le moteur (2,8e-16) ; 622 appuis sur 659 à l'image du web ; plus aucun sabot sous une barre | `SecondaryMotion` et `_limbContacts` non portés (hors décision) ; coût en jeu avec rendu non mesuré | idem |
-| S5 trot et grand saut à 24 images/s | 17 clips à 24 images/s (épinglé) ; clips miroir à 0,05 cm du web ; cavalière du contrôle à 0,037 cm d'O2 avant le saut ; sabots du grand saut à 2,46 cm | — | coût non remesuré (moins de clés) |
+| S4 inclinaison, corps et horloge du saut | logique égale au web dans le moteur (2,8e-16) ; 632 appuis sur 659 à l'image du web après S5 (622 à S4) ; plus aucun sabot sous une barre (marge minimale +11,8 à +14,4 cm selon la partie) | `SecondaryMotion` et `_limbContacts` non portés (hors décision) ; coût en jeu avec rendu non mesuré | idem |
+| S5 trot et grand saut à 24 images/s | 17 clips à 24 images/s (épinglé : `HorseView` pour les 17, `HorseMirror` pour les 11 sources des miroirs) ; clips miroir à 0,05 cm du web ; cavalière du contrôle à 0,037 cm d'O2 avant le saut ; sabots du grand saut à 2,46 cm | — | coût non remesuré (moins de clés) |
 
 Sur le cheval Unreal (niveau B), **50 critères sur 233 restent non tenus** (61 sur 215 au départ, avant l'ajout des
 critères de sellerie) : la plupart sont aussi manqués par le web lui-même (limites de la règle du web : jambe tendue,
