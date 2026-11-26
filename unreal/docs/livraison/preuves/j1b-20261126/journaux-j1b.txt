@@ -1,0 +1,32 @@
+# Extraits de journaux J1b (26/11/2026, heure des journaux = UTC, Paris = UTC+1). Entrées injectées par l'agent (CGEvent).
+
+## Clic souris, éditeur -game (Development) : pause ouverte au clavier, 1 clic sur « Reprendre »
+# (a) jeu au premier plan ; (b) petite fenêtre « focuswin » de l'agent au premier plan (lsappinfo), puis 1 seul clic sur le jeu
+[2026.11.26-21.38.41:924][361]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1156, 647), application active 1, capture non, focus SViewport
+[2026.11.26-21.38.42:052][366]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1156, 647), application active 1, capture oui, focus SButton
+[2026.11.26-21.38.42:073][366]LogTemp: Display: Strides pause : bouton « resume » cliqué ou touché
+[2026.11.26-21.39.20:640][816]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1156, 647), application active 1, capture non, focus SViewport
+[2026.11.26-21.39.20:741][820]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1156, 647), application active 1, capture oui, focus SButton
+[2026.11.26-21.39.20:741][820]LogTemp: Display: Strides pause : bouton « resume » cliqué ou touché
+
+## Clic souris, paquet Development : 1 seul clic, le jeu n'étant pas au premier plan
+# carte de présentation (focuswin au premier plan), puis bilan (alerte système UserNotificationCenter au premier plan, non touchée)
+[2026.11.26-22.22.53:765][ 14]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1090, 664), application active 1, capture non, focus SViewport
+[2026.11.26-22.22.53:900][ 18]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1090, 664), application active 1, capture oui, focus SButton
+[2026.11.26-22.22.53:945][ 18]LogTemp: Display: Strides carte : bouton « enter » cliqué ou touché
+[2026.11.26-22.25.55:456][609]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (787, 676), application active 1, capture non, focus SViewport
+[2026.11.26-22.25.55:580][613]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (787, 676), application active 1, capture oui, focus SButton
+[2026.11.26-22.25.55:580][613]LogTemp: Display: Strides carte : bouton « cso-retry » cliqué ou touché
+
+## Record (J1-E, J1-G) : sauvegarde du scénario Strides.Scenario.PoleGuided (matrice de 23:20) copiée en strides_main du paquet
+604cc7ccd50bae87ae1fa20836ed72a27472ee10  ~/Library/Containers/com.strides.equestriantour/Data/Library/Application Support/Epic/StridesGrandTour/Saved/SaveGames/strides_main.sav
+604cc7ccd50bae87ae1fa20836ed72a27472ee10  /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/unreal/StridesGrandTour/Saved/SaveGames/strides_test_j1_poleguided.sav
+23:28:54 copie
+# dev01 (avant copie)
+[2026.11.26-22.14.34:196][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main absent ou illisible, partie neuve
+# dev02 (relancement après copie)
+[2026.11.26-22.29.04:913][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+23:32:43 kill -9 du paquet (fermeture brutale, en épreuve)
+604cc7ccd50bae87ae1fa20836ed72a27472ee10  ~/Library/Containers/com.strides.equestriantour/Data/Library/Application Support/Epic/StridesGrandTour/Saved/SaveGames/strides_main.sav
+# dev03 (relancement après la fermeture brutale)
+[2026.11.26-22.32.56:617][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
