@@ -86,6 +86,9 @@ void AStridesPlayerController::SetupInputComponent()
 	LookAction = MakeAction(this, TEXT("Look"), EInputActionValueType::Axis2D);
 	JumpAction = MakeAction(this, TEXT("Jump"), EInputActionValueType::Boolean);
 	InteractAction = MakeAction(this, TEXT("Interact"), EInputActionValueType::Boolean);
+	// Carte Pause à la manette (choix n° 9) : stick et X lus jeu suspendu.
+	MoveAction->bTriggerWhenPaused = true;
+	InteractAction->bTriggerWhenPaused = true;
 	GaitUpAction = MakeAction(this, TEXT("GaitUp"), EInputActionValueType::Boolean);
 	GaitDownAction = MakeAction(this, TEXT("GaitDown"), EInputActionValueType::Boolean);
 	SaveAction = MakeAction(this, TEXT("Save"), EInputActionValueType::Boolean);
@@ -179,6 +182,19 @@ void AStridesPlayerController::EndPlay(const EEndPlayReason::Type Reason)
 	Super::EndPlay(Reason);
 }
 
+void AStridesPlayerController::ReleaseMouseForCard()
+{
+	// Souris rendue au système (contrôles J1 : en plein écran, premier clic sur un bouton de carte absorbé par la capture
+	// de la vue, « MouseCaptureMode CapturePermanently » au journal) : capture et verrou relâchés, pointeur Slate remis à
+	// zéro. FInputModeGameAndUI remet CaptureDuringMouseDown : NoCapture est donc posé après lui.
+	if (UGameViewportClient* VC = GetLocalPlayer() ? GetLocalPlayer()->ViewportClient : nullptr)
+	{
+		VC->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+		if (FViewport* Vp = VC->Viewport) { Vp->CaptureMouse(false); Vp->LockMouseToViewport(false); }
+	}
+	if (FSlateApplication::IsInitialized()) FSlateApplication::Get().ReleaseAllPointerCapture();
+}
+
 void AStridesPlayerController::OnAppActivation(const bool bActive) { if (!bActive) Cmd.releaseAll(); }
 void AStridesPlayerController::OnAppDeactivate() { Cmd.releaseAll(); }
 
@@ -241,6 +257,19 @@ bool AStridesPlayerController::InRace() const
 // ---- Entrées vers les commandes du web ----
 void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRepeat)
 {
+	// Carte Pause ouverte (choix n° 9, 2e correction J1) : Échap la referme (Reprendre), Entrée / E / F déclenchent le
+	// bouton choisi (« Reprendre » d'office), gauche / droite changent de bouton. La touche ne va pas aux commandes du web :
+	// sinon l'Échap resterait dans pressed et remettrait la pause dès la reprise (input.js:138, 171).
+	if (bPausedState && PauseMenu && PauseMenu->IsOpen())
+	{
+		if (!bDown) { Cmd.key(TCHAR_TO_UTF8(*Code), false, false); return; }  // relâchés : état des touches tenu à jour
+		if (bRepeat) return;
+		if (Code == TEXT("Escape")) { UE_LOG(LogTemp, Display, TEXT("Strides pause : Échap, reprise")); ResumeGame(); return; }
+		if (Code == TEXT("Enter") || Code == TEXT("NumpadEnter") || Code == TEXT("KeyE") || Code == TEXT("KeyF")) { PauseMenu->PressSelected(); return; }
+		if (Code == TEXT("ArrowLeft") || Code == TEXT("KeyA") || Code == TEXT("KeyQ")) { PauseMenu->MoveSelection(-1); return; }
+		if (Code == TEXT("ArrowRight") || Code == TEXT("KeyD")) { PauseMenu->MoveSelection(1); return; }
+		return;
+	}
 	// Carte ouverte : gauche / droite choisissent le bouton (choix n° 8) ; la touche ne va pas au cheval (gel des commandes).
 	if (bDown && !bRepeat && Screens && CardOpen() && !bPausedState)
 	{
@@ -324,14 +353,7 @@ void AStridesPlayerController::StepCommands(float)
 			InputMode.SetHideCursorDuringCapture(false);
 			SetInputMode(InputMode);
 			bShowMouseCursor = !PLATFORM_IOS;
-			// Souris rendue au système (contrôle J1 : en plein écran, clics sans effet sur le bilan ouvert en épreuve, la souris
-			// restant capturée par la vue) : capture et verrou relâchés, pointeur Slate remis à zéro.
-			if (UGameViewportClient* VC = GetLocalPlayer()->ViewportClient)
-			{
-				VC->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
-				if (FViewport* Vp = VC->Viewport) { Vp->CaptureMouse(false); Vp->LockMouseToViewport(false); }
-			}
-			if (FSlateApplication::IsInitialized()) FSlateApplication::Get().ReleaseAllPointerCapture();
+			ReleaseMouseForCard();
 			Cmd.releaseAll();  // screens.card : input.releaseAll()
 		}
 		else RestoreInputMode();
@@ -432,6 +454,7 @@ void AStridesPlayerController::PauseGame()
 		InputMode.SetHideCursorDuringCapture(false);
 		SetInputMode(InputMode);
 		bShowMouseCursor = !PLATFORM_IOS;
+		ReleaseMouseForCard();
 	}
 }
 
@@ -453,15 +476,27 @@ void AStridesPlayerController::ResumeGame()
 void AStridesPlayerController::OnMove(const FInputActionValue& V)
 {
 	const FVector2D In = V.Get<FVector2D>();
-	// Carte ouverte : stick gauche poussé à gauche / à droite = bouton précédent / suivant (un pas par poussée).
-	if (Screens && CardOpen() && !bPausedState)
+	// Carte ouverte (ou carte Pause) : stick gauche poussé à gauche / à droite = bouton précédent / suivant (un pas par poussée).
+	const bool bPauseCard = bPausedState && PauseMenu && PauseMenu->IsOpen();
+	if ((Screens && CardOpen() && !bPausedState) || bPauseCard)
 	{
 		const int32 Dir = In.X > .6 ? 1 : In.X < -.6 ? -1 : 0;
-		if (Dir != 0 && Dir != CardStickDir) Screens->MoveSelection(Dir);
+		if (Dir != 0 && Dir != CardStickDir)
+		{
+			if (bPauseCard) PauseMenu->MoveSelection(Dir);
+			else Screens->MoveSelection(Dir);
+		}
 		CardStickDir = Dir;
 	}
 	GamepadMove = In;
 }
+#if WITH_DEV_AUTOMATION_TESTS
+void AStridesPlayerController::GamepadStickForTest(const FVector2D& V)
+{
+	if (V.IsZero()) OnMoveDone(FInputActionValue(V));
+	else OnMove(FInputActionValue(V));
+}
+#endif
 void AStridesPlayerController::OnMoveDone(const FInputActionValue&) { GamepadMove = FVector2D::ZeroVector; CardStickDir = 0; }
 void AStridesPlayerController::OnLook(const FInputActionValue& V)
 {
@@ -479,6 +514,8 @@ void AStridesPlayerController::OnInteract()
 	if (!bPhoneOpen && !CardOpen() && !bPausedState) DoAction();
 	// Carte ouverte : bouton principal (choix n° 8), comme Entrée / E / F au clavier.
 	else if (!bPhoneOpen && CardOpen() && !bPausedState && Screens) Screens->PressPrimary();
+	// Carte Pause : bouton choisi (choix n° 9).
+	else if (bPausedState && PauseMenu && PauseMenu->IsOpen()) PauseMenu->PressSelected();
 }
 
 // ---- Entrée dans l'épreuve (tranche T10) ----

@@ -14,6 +14,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "StridesCore/Colliders.h"
+#include "StridesCore/CsoGuide.h"
 #include "StridesCore/CourseAids.h"
 #include "StridesCore/CoursePlan.h"
 #include "StridesCore/CsoEntry.h"
@@ -109,7 +110,17 @@ public:
 	// Cible du GPS de l'étape de parcours (courses.js:174-179 target) : abord de la ligne de départ (8 m avant) tant que le
 	// départ n'est pas franchi, abord de l'obstacle attendu (7 m avant), puis la ligne d'arrivée ; faux hors parcours.
 	// Me : position du cavalier (repère web) ; abord passé dans l'axe, la cible devient l'obstacle.
-	bool CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVector2D& Me) const;
+	// Jalon J1 (2e correction) : le point visé contourne obstacles, ailes et lice (strides::guideAim, choix n° 7 révisé) ;
+	// abord à 10 m (au lieu de 7) pour arriver dans l'axe ; lignes de départ / d'arrivée visées 8 m avant puis franchies
+	// tout droit. OutDistance : longueur du chemin jusqu'à la cible (et non jusqu'au point visé).
+	// Forward (repère web, unitaire) et Speed (m/s) : dans les 3 derniers mètres avant la face, l'obstacle reste visé si
+	// le cheval y va (cap vers lui et vitesse ≥ 2,5 m/s) ; arrêté (refus) ou détourné, c'est l'abord (demi-tour).
+	bool CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVector2D& Me, double* OutDistance = nullptr, const FVector2D& Forward = FVector2D::ZeroVector, double Speed = 0) const;
+	// Point visé depuis Me vers Goal, autour des obstacles, ailes et lice (grille de guidage) ; Goal hors de la carrière
+	// et de ses abords (30 m) ou sans chemin : Goal. OutDistance : longueur du chemin.
+	FVector2D GuideAim(const FVector2D& Me, const FVector2D& Goal, double* OutDistance = nullptr) const;
+	const strides::GuideGrid& GuideMap() const { return GuideGridMap; }
+	strides::GuideMode LastCourseGuideMode() const { return LastGuideMode; }
 	// Événements des obstacles du cœur (obstacle:clear / fault / refusal) : journal, puis écouteurs de l'épreuve
 	// (courses.js : obstacle attendu, sens, chrono lancé ; refus compté : cadence remise à 0).
 	void HandleFenceOut(const strides::CsoFenceOut& Out, strides::CsoCadence& Cadence);
@@ -190,6 +201,8 @@ private:
 	std::vector<strides::CsoObstacle> CoreObstacles;
 	std::vector<strides::CsoFenceState> CoreStates;
 	strides::Colliders WorldCol;
+	strides::GuideGrid GuideGridMap;
+	mutable strides::GuideMode LastGuideMode = strides::GuideMode::Approach;
 	void RebuildColliders();
 	TArray<FString> FenceLog, HudCalls, AudioCalls;
 	int32 Allowed = 64, RailResetCount = 0;

@@ -62,6 +62,21 @@ void AStridesCourse::RebuildColliders()
 	// Chandeliers et ailes (obstacles.js add), solides pour le cheval.
 	for (const strides::CsoObstacle& O : CoreObstacles)
 		strides::addObstacleWings(WorldCol, O.kind, O.x, O.z, O.rot, O.w, O.h, O.spread, Ground(O.x, O.z));
+	// Grille du guidage (carrière et 30 m autour) : lice, ailes et obstacles gonflés de 1,8 m (rayon du cheval 0,85 + marge).
+	GuideGridMap = strides::GuideGrid();
+	if (Data && Data->PlanArena().w > 0 && Data->PlanArena().d > 0)
+	{
+		const double AX = Data->PoleArena.X, AZ = Data->PoleArena.Y, HW = Data->PlanArena().w / 2 + 30, HD = Data->PlanArena().d / 2 + 30;
+		GuideGridMap = strides::buildGuideGrid(strides::GuideBounds{AX - HW, AZ - HD, AX + HW, AZ + HD}, WorldCol, CoreObstacles);
+	}
+}
+
+FVector2D AStridesCourse::GuideAim(const FVector2D& Me, const FVector2D& Goal, double* OutDistance) const
+{
+	double Ax = Goal.X, Az = Goal.Y, Len = FVector2D::Distance(Me, Goal);
+	strides::guideAim(GuideGridMap, Me.X, Me.Y, Goal.X, Goal.Y, Ax, Az, 18.0, &Len);
+	if (OutDistance) *OutDistance = Len;
+	return FVector2D(Ax, Az);
 }
 
 std::vector<double> AStridesCourse::FenceHeights() const
@@ -516,32 +531,60 @@ float AStridesCourse::ElapsedTime() const { return RunPtr ? (float)RunPtr->state
 int32 AStridesCourse::Faults() const { return RunPtr ? RunPtr->state().faults : 0; }
 int32 AStridesCourse::NextFence() const { return RunPtr ? RunPtr->state().next : 1; }
 
-bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVector2D& Me) const
+bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVector2D& Me, double* OutDistance, const FVector2D& Forward, double Speed) const
 {
 	if (!RunPtr || RunPtr->finished() || RunPtr->step() != strides::CsoStep::Course) return false;
 	const strides::CsoRunState& S = RunPtr->state();
 	if (S.finished || S.eliminated) return false;
 	const strides::CsoRunConfig& Cfg = RunPtr->config();
-	if (!S.started)
+	// Abord d'un axe (strides::guideAxisTarget, 2e correction J1) : poursuite de l'axe dans le couloir d'abord, centre
+	// dans les 3 derniers mètres, sortie à 18 m si le cheval est dos à l'obstacle ou arrêté contre lui (refus), sinon
+	// l'abord par un chemin qui contourne obstacles, ailes et lice (relevé au contrôle du 26/11 : joueur bloqué au 7
+	// « sens −1 » en suivant la pastille vers le 1). Distance affichée : chemin jusqu'au centre.
+	auto Axis = [&](const strides::GuideAxis& A)
 	{
-		OutWeb = FVector2D(Cfg.start.x - FMath::Sin(Cfg.start.rot) * 8, Cfg.start.z - FMath::Cos(Cfg.start.rot) * 8);
-		OutLabel = TEXT("Ligne de départ");
+		double Tx = A.x, Tz = A.z;
+		bool bPath = false;
+		LastGuideMode = strides::guideAxisTarget(A, Me.X, Me.Y, Forward.X, Forward.Y, Speed, Tx, Tz, bPath);
+		double Len = FVector2D::Distance(Me, FVector2D(Tx, Tz));
+		OutWeb = bPath ? GuideAim(Me, FVector2D(Tx, Tz), &Len) : FVector2D(Tx, Tz);
+		if (OutDistance) *OutDistance = LastGuideMode == strides::GuideMode::Pursue || LastGuideMode == strides::GuideMode::Center ? FVector2D::Distance(Me, FVector2D(A.x, A.z))
+			: Len + FVector2D::Distance(FVector2D(Tx, Tz), FVector2D(A.x, A.z));
 		return true;
-	}
+	};
+	auto Line = [&](const strides::CsoRunLine& L, const TCHAR* Label)
+	{
+		strides::GuideAxis A;
+		A.x = L.x;
+		A.z = L.z;
+		A.nx = FMath::Sin(L.rot);
+		A.nz = FMath::Cos(L.rot);
+		A.tx = A.nz;
+		A.tz = -A.nx;
+		A.front = 0;
+		A.halfW = L.w / 2;
+		A.approach = 8;
+		OutLabel = Label;
+		return Axis(A);
+	};
+	if (!S.started) return Line(Cfg.start, TEXT("Ligne de départ"));
 	for (const strides::CsoObstacle& O : CoreObstacles)
 		if (O.num == S.next)
 		{
-			OutWeb = FVector2D(O.x - O.n.x * 7, O.z - O.n.z * 7);
-			// Abord passé, cheval dans l'axe devant l'obstacle : l'obstacle lui-même (sinon « demi-tour » vers l'abord, relevé
-			// en partie le 26/11 alors que l'obstacle était droit devant).
-			const double Sx = (Me.X - O.x) * O.n.x + (Me.Y - O.z) * O.n.z, Ux = (Me.X - O.x) * O.t.x + (Me.Y - O.z) * O.t.z;
-			if (Sx > -9 && Sx < 0 && FMath::Abs(Ux) < O.w / 2 + 3) OutWeb = FVector2D(O.x, O.z);
 			OutLabel = FString::Printf(TEXT("Obstacle %s"), UTF8_TO_TCHAR(O.label.c_str()));
-			return true;
+			strides::GuideAxis A;
+			A.x = O.x;
+			A.z = O.z;
+			A.nx = O.n.x;
+			A.nz = O.n.z;
+			A.tx = O.t.x;
+			A.tz = O.t.z;
+			A.front = O.front;
+			A.halfW = O.w / 2;
+			A.approach = 12;
+			return Axis(A);
 		}
-	OutWeb = FVector2D(Cfg.finish.x, Cfg.finish.z);
-	OutLabel = TEXT("Arrivée");
-	return true;
+	return Line(Cfg.finish, TEXT("Arrivée"));
 }
 FString AStridesCourse::StatusText() const
 {

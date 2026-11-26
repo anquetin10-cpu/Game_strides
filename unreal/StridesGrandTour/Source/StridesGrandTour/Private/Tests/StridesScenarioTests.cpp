@@ -25,11 +25,14 @@
 #include "StridesCore/CsoRun.h"
 #include "StridesCourse.h"
 #include "StridesCsoScreens.h"
+#include "StridesCsoHud.h"
+#include "StridesCore/CsoHorse.h"
 #include "Blueprint/UserWidget.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
 #include "StridesHUD.h"
 #include "StridesPlayerController.h"
+#include "StridesPauseMenu.h"
 #include "StridesRider.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesUnits.h"
@@ -545,14 +548,23 @@ bool FStridesScenarioPoleRunTest::RunTest(const FString&)
 	TestEqual(TEXT("refus : obstacle attendu toujours 1"), St().next, 1);
 	TestTrue(FString::Printf(TEXT("refus : le cheval ne traverse pas le 1 (centre au plus à s = %.2f m, face arrière %.2f m)"), MaxS1, O1.back), MaxS1 < O1.back);
 	Info(FString::Printf(TEXT("refus au 1 : %s"), *Events()));
-	// Guidage d'épreuve : loin, l'abord du 1 (7 m avant, cible du web) ; abord passé dans l'axe, le 1 lui-même.
+	// Guidage d'épreuve (strides::guideAxisTarget) : loin, l'abord du 1 (12 m devant la face) ; dans le couloir, tourné vers
+	// le 1, un point de son axe entre le cavalier et la face (poursuite de l'axe) ; tout contre et lancé, le 1 lui-même ;
+	// tout contre et arrêté (refus), la sortie à 18 m (« demi-tour »).
 	{
 		FVector2D Gw;
 		FString Gl;
-		TestTrue(TEXT("guidage : cible à 30 m"), C->CourseGuide(Gw, Gl, FVector2D(O1.x - O1.n.x * 30, O1.z - O1.n.z * 30)));
-		TestTrue(FString::Printf(TEXT("guidage loin : abord du 1 (%s)"), *Gl), Gw.Equals(FVector2D(O1.x - O1.n.x * 7, O1.z - O1.n.z * 7), 1e-6) && Gl == TEXT("Obstacle 1"));
-		C->CourseGuide(Gw, Gl, FVector2D(O1.x - O1.n.x * 4, O1.z - O1.n.z * 4));
-		TestTrue(TEXT("guidage près : le 1 (pas de demi-tour vers l'abord)"), Gw.Equals(FVector2D(O1.x, O1.z), 1e-6));
+		const FVector2D Nf(O1.n.x, O1.n.z);
+		auto At = [&](double Sx, double Ux = 0) { return FVector2D(O1.x + O1.n.x * Sx + O1.t.x * Ux, O1.z + O1.n.z * Sx + O1.t.z * Ux); };
+		TestTrue(TEXT("guidage : cible à 30 m"), C->CourseGuide(Gw, Gl, At(-30), nullptr, Nf, 5.0));
+		TestTrue(FString::Printf(TEXT("guidage loin : abord du 1, 12 m devant la face (%s, mode %hs)"), *Gl, strides::guideModeName(C->LastCourseGuideMode())), Gw.Equals(At(O1.front - 12), 1e-6) && Gl == TEXT("Obstacle 1"));
+		C->CourseGuide(Gw, Gl, At(-8, 2), nullptr, Nf, 5.0);
+		const double Sg = AlongS(O1, Gw.X, Gw.Y), Ug = (Gw.X - O1.x) * O1.t.x + (Gw.Y - O1.z) * O1.t.z;
+		TestTrue(FString::Printf(TEXT("guidage dans le couloir : point de l'axe devant (s %.2f, u %.2f)"), Sg, Ug), C->LastCourseGuideMode() == strides::GuideMode::Pursue && FMath::Abs(Ug) < 1e-6 && Sg > -8 && Sg < O1.front);
+		C->CourseGuide(Gw, Gl, At(O1.front - 1.5), nullptr, Nf, 5.0);
+		TestTrue(TEXT("guidage tout contre, lancé : le 1 (pas de demi-tour)"), Gw.Equals(FVector2D(O1.x, O1.z), 1e-6));
+		C->CourseGuide(Gw, Gl, At(O1.front - 0.6), nullptr, Nf, 0.2);
+		TestTrue(FString::Printf(TEXT("guidage après un refus (arrêté contre le 1) : sortie (%hs)"), strides::guideModeName(C->LastCourseGuideMode())), C->LastCourseGuideMode() == strides::GuideMode::RideOut);
 	}
 	// 1 sauté dans la zone d'appel.
 	LineUp(0);
@@ -739,8 +751,9 @@ bool FStridesWorldPoleTargetTest::RunTest(const FString&)
 		const FVector2D Me(G.Horse->CsoState().x, G.Horse->CsoState().z);
 		const FVector2D To = Goal - Me;
 		// Même calcul que le HUD (AStridesHUD::DrawHUD) : point de passage à l'entrée de la carrière, distance totale.
-		const FVector2D Way = AStridesHUD::PoleWaypoint(Me, Goal, Data->PoleArena, Data->PlanArena().w, Data->PlanArena().d);
-		const FString Text = AStridesHUD::PoleGuideText(FVector2D::Distance(Me, Way) + FVector2D::Distance(Way, Goal), AStridesHUD::RelativeAngleDeg(F, Way - Me));
+		double Dn = 0;
+		const FVector2D Way = AStridesHUD::PoleGuideAim(Me, Goal, Data, G.Course, Dn);
+		const FString Text = AStridesHUD::PoleGuideText(Dn, AStridesHUD::RelativeAngleDeg(F, Way - Me));
 		const bool bRight = Text.EndsWith(TEXT("à droite")), bLeft = Text.EndsWith(TEXT("à gauche")), bBack = Text.EndsWith(TEXT("demi-tour"));
 		if (Text != Last && (bRight || bLeft || bBack)) Turns++;
 		Last = Text;
@@ -753,9 +766,8 @@ bool FStridesWorldPoleTargetTest::RunTest(const FString&)
 		D.Set(TEXT("KeyW"), !bLeft && !bRight && Cad < Want - 0.3);
 		D.Set(TEXT("KeyS"), !bLeft && !bRight && Cad > Want + 0.3);
 		// Distance du guidage (par l'entrée de la carrière), relevée avant le pas de l'image.
-		const double Dn = FVector2D::Distance(Me, Way) + FVector2D::Distance(Way, Goal);
 		bAligned |= Text.EndsWith(TEXT("tout droit"));
-		if (bAligned && Frames > 0 && To.Size() > 8 && Way == PrevWay) Worst = FMath::Max(Worst, Dn - Prev);
+		if (bAligned && Frames > 0 && To.Size() > 8 && Way == PrevWay && !G.Course->GuideMap().inside(Me.X, Me.Y)) Worst = FMath::Max(Worst, Dn - Prev);
 		Prev = Dn;
 		PrevWay = Way;
 		G.Frame();
@@ -785,5 +797,328 @@ bool FStridesWorldPoleTargetTest::RunTest(const FString&)
 		const double Turned = FMath::Abs(FMath::UnwindRadians(G.Horse->CsoState().heading - H0));
 		TestTrue(FString::Printf(TEXT("promenade : demi-tour possible après le refus (%.0f°)"), FMath::RadiansToDegrees(Turned)), Turned > FMath::DegreesToRadians(60.0));
 	}
+	return true;
+}
+
+// Jalon J1 (2e correction après contrôle) : trois parcours complets du Pôle conduits SEULEMENT d'après la pastille de
+// guidage (CourseGuide, ce que lit le joueur : cible, distance, direction) et le bouton SAUT (vert = zone d'appel bonne,
+// JumpTiming), sans aucun placement du cheval entre l'entrée et le bilan, chacun avec un moyen de commande :
+//   1) clavier (touches du web : A / D, W / S, Espace) : refus voulu au 1 (pas de SAUT), barre voulue au 2 (SAUT hors
+//      de la bonne zone), arrivée, bilan ; « Recommencer » au clavier (gauche, Entrée) ;
+//   2) manette (rappels des actions Enhanced Input Move / Jump : stick gauche, bouton A) : parcours, arrivée, bilan ;
+//      « Recommencer » ;
+//   3) joystick tactile (doigts reçus par InputTouch dans la zone du joystick, bouton SAUT tactile) : parcours, arrivée,
+//      bilan, « Quitter l'épreuve », retour au monde, meilleur temps écrit.
+// Chaque manche : état neuf vérifié champ par champ, temps limite (2 × temps accordé) tenu. Limite : sans joueur local,
+// la correspondance touche de manette → action (contexte Enhanced Input) n'est pas rejouée ; la partie à la main sur
+// une vraie manette et sur iPad reste à confirmer par Julien.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesScenarioPoleGuidedTest, "Strides.Scenario.PoleGuided", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesScenarioPoleGuidedTest::RunTest(const FString&)
+{
+	using namespace StridesScenarioTest;
+	using strides::CsoStep;
+	FTestWorld W(TEXT("StridesScenarioPoleGuided"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestNotNull(TEXT("activité du Pôle"), Data ? Data->CsoActivity() : nullptr)) return false;
+	UStridesSaveSubsystem* Save = W.GI->GetSubsystem<UStridesSaveSubsystem>();
+	if (!TestNotNull(TEXT("sauvegarde"), Save)) return false;
+	Save->SlotName = TEXT("strides_test_j1_poleguided");
+	Save->MutableBestTimes().clear();
+	FGame G;
+	if (!TestTrue(TEXT("parcours, poteau, cheval monté"), G.Make(W.World, *Data))) return false;
+	AStridesCourse* C = G.Course;
+	FDriver D(G);
+	auto Info = [this](const FString& M) { AddInfo(M); UE_LOG(LogTemp, Display, TEXT("Strides.Scenario.PoleGuided : %s"), *M); };
+	auto St = [&]() -> const strides::CsoRunState& { return C->Run()->state(); };
+	auto Events = [&]() { return FString::Join(C->FenceEventLog(), TEXT(" ; ")); };
+	const std::vector<strides::CsoObstacle>& Obs = C->Obstacles();
+	UStridesCsoScreens* Sw = CreateWidget<UStridesCsoScreens>(W.World, UStridesCsoScreens::StaticClass());
+	if (!TestNotNull(TEXT("cartes"), Sw)) return false;
+	Sw->SetViewCssForTest(FVector2D(844, 390));
+	Sw->Bind(C);
+	auto CheckFresh = [&](const FString& When, int32 Attempt)
+	{
+		const strides::CsoRunState& S = St();
+		TestEqual(When + TEXT(" : manche"), S.attempt, Attempt);
+		TestEqual(When + TEXT(" : fautes"), S.faults, 0);
+		TestEqual(When + TEXT(" : refus"), S.refusals, 0);
+		TestEqual(When + TEXT(" : refus sur l'obstacle"), S.fenceRefusals, 0);
+		TestEqual(When + TEXT(" : obstacle attendu"), S.next, 1);
+		TestEqual(When + TEXT(" : pénalités de temps"), S.timeFaults, 0);
+		TestFalse(When + TEXT(" : arrivée non franchie"), S.finished);
+		TestFalse(When + TEXT(" : pas éliminé"), S.eliminated);
+		TestTrue(When + TEXT(" : aucune erreur de parcours"), S.wrong.empty());
+		int32 Knocked = 0;
+		for (const strides::CsoFenceState& F : C->FenceStates()) Knocked += F.knocked;
+		TestEqual(When + TEXT(" : barres sur leurs taquets"), Knocked, 0);
+	};
+	enum class EMode : uint8 { Keys, Pad, Touch };
+	const double R = UStridesCsoHud::PixelRatio();
+	const FInputDeviceId Dev = FInputDeviceId::CreateFromInternalId(0);
+	APlayerController* Base = G.PC;
+	bool bFinger = false, bJumpHeld = false;
+	const FVector2D Joy(150, 300);  // base du joystick : doigt posé dans sa zone (px CSS, comme Strides.Cso.Controls)
+	auto Release = [&]()
+	{
+		D.Release();
+		G.PC->GamepadStickForTest(FVector2D::ZeroVector);
+		if (bFinger) Base->InputTouch(FTouchId(Dev, ETouchIndex::Touch1), ETouchType::Ended, Joy * R, 1.f, 0);
+		bFinger = false;
+		if (bJumpHeld) G.PC->ButtonUp(TEXT("jump"));
+		bJumpHeld = false;
+	};
+	// Commandes d'une image : Steer (−1..1, + à droite), Fwd (−1..1, + accélère), SAUT.
+	auto Input = [&](EMode M, double Steer, double Fwd, bool bJump)
+	{
+		if (M == EMode::Keys)
+		{
+			D.Set(TEXT("KeyD"), Steer > 0.12);
+			D.Set(TEXT("KeyA"), Steer < -0.12);
+			D.Set(TEXT("KeyW"), Fwd > 0);
+			D.Set(TEXT("KeyS"), Fwd < 0);
+			D.Set(TEXT("Space"), bJump);
+		}
+		else if (M == EMode::Pad)
+		{
+			FVector2D V(Steer, Fwd);
+			if (V.Size() > 1) V = V.GetSafeNormal();  // stick : disque unité
+			G.PC->GamepadStickForTest(V);
+			if (bJump) G.PC->GamepadJumpForTest();
+		}
+		else
+		{
+			// Doigt placé par rapport à la base affichée du joystick (flottant : elle suit le doigt au-delà du rayon de 58 px),
+			// à 95 % du rayon au plus, comme un joueur qui garde le doigt dans le cercle.
+			if (!bFinger) Base->InputTouch(FTouchId(Dev, ETouchIndex::Touch1), ETouchType::Began, Joy * R, 1.f, 0);
+			bFinger = true;
+			FVector2D Off(Steer, -Fwd);
+			if (Off.Size() > 0.95) Off = Off.GetSafeNormal() * 0.95;
+			const strides::CsoInput& Cm = G.PC->Commands();
+			const FVector2D At = FVector2D(Cm.joy.ox, Cm.joy.oy) + Off * 58;
+			Base->InputTouch(FTouchId(Dev, ETouchIndex::Touch1), ETouchType::Moved, At * R, 1.f, 0);
+			if (bJump && !bJumpHeld) G.PC->ButtonDown(TEXT("jump"));
+			if (!bJump && bJumpHeld) G.PC->ButtonUp(TEXT("jump"));
+			bJumpHeld = bJump;
+		}
+	};
+	// Un parcours conduit d'après la pastille. RefuseAt / RailAt : rang de l'obstacle où le joueur ne saute pas (refus)
+	// / saute hors de la bonne zone (barre), 0 : aucun.
+	struct FRunStats { double Secs = 0; int32 Jumps = 0, Contacts = 0, Guides = 0, LastZone = -1; FString Texts, Trace; };
+	auto Ride = [&](EMode M, int32 RefuseAt, int32 RailAt, FRunStats& Out) -> bool
+	{
+		const int32 C0 = G.Horse->CollisionCount;
+		const double Limit = (double)C->Run()->config().timeAllowed * 2 + 40;
+		bool bRefused = false, bRailTried = false, bPendingJump = false;
+		FString LastLabel;
+		int32 K = 0;
+		for (; K < (int32)(Limit * 30) && !St().finished && !St().eliminated; K++)
+		{
+			const strides::CsoHorseState& S = G.Horse->CsoState();
+			const FVector F = G.Horse->GetActorForwardVector();
+			const FVector2D Me(S.x, S.z);
+			FVector2D Goal;
+			FString Label;
+			double Dist = 0;
+			if (!C->CourseGuide(Goal, Label, Me, &Dist, FVector2D(F.X, F.Y).GetSafeNormal(), S.speed)) { Input(M, 0, 0, false); G.Frame(); continue; }
+			const double Ang = AStridesHUD::RelativeAngleDeg(F, Goal - Me);
+			const FString Mode = UTF8_TO_TCHAR(strides::guideModeName(C->LastCourseGuideMode()));
+			if (Label + Mode != LastLabel) { Out.Guides++; Out.Texts += FString::Printf(TEXT(" %s (%s, t %.0f s)"), *AStridesHUD::CourseGuideText(Label, Dist, Ang), *Mode, K / 30.0); LastLabel = Label + Mode; }
+			const double Cad = S.hasCadence ? S.cadence : S.speed;
+			// Allure du joueur : lente pour tourner court (plus de 45° à reprendre), galop de concours en ligne droite, plus
+			// d'élan vers un oxer (à 5,3 m/s l'oxer passe de « loin » à « près » sans zone bonne, relevé dans PoleRun).
+			bool bOxer = false;
+			for (const strides::CsoObstacle& O : Obs) if (O.num == St().next) bOxer = O.kind == "o";
+			const double Want = FMath::Abs(Ang) > 45 ? 2.8 : bOxer ? 6.5 : 5.2;
+			const double Fwd = Cad < Want - 0.25 ? 1.0 : Cad > Want + 0.25 ? -1.0 : 0.0;
+			// SAUT : bouton vert (zone d'appel bonne) sur l'obstacle attendu ; refus voulu : jamais ; barre voulue : à la
+			// première image où la marge prévue est négative sans être hors d'atteinte (comme Strides.Scenario.PoleRun).
+			bool bJump = false;
+			const int32 Next = St().next;
+			const strides::CsoTarget T = strides::csoTarget(Obs, S, G.Horse->JumpPower(), 0.0, true, Data->Jump(), Data->HorseParams());
+			const bool bOnNext = T.index >= 0 && Obs[T.index].num == Next && S.jumpT < 0;
+			if (bOnNext && !(RefuseAt == Next && !bRefused))
+			{
+				if (RailAt == Next && !bRailTried)
+					bJump = (T.plan.zone == strides::Zone::Near || T.plan.zone == strides::Zone::Far) && T.plan.margin < -0.08 && T.plan.margin > -0.28;
+				// Bouton vert ; s'il ne vient pas, au plus tard dès « près » (marge encore positive), comme un joueur qui tape SAUT
+				// en rafale (« trop tôt » ne fait pas sauter, le premier appui hors de « loin » fait sauter).
+				else bJump = G.Horse->JumpTiming() == strides::Zone::Good || (T.plan.zone == strides::Zone::Near && T.plan.margin > -0.05);
+			}
+			{
+				const int32 Zn = T.index * 10 + (int32)T.plan.zone;
+				if (bOnNext && Zn != Out.LastZone)
+				{
+					const strides::CsoObstacle& O = Obs[T.index];
+					Out.Trace += FString::Printf(TEXT(" [%hs s %.1f u %.1f v %.1f zone %d cos %.2f marge %.2f]"), O.label.c_str(), AlongS(O, S.x, S.z), (S.x - O.x) * O.t.x + (S.z - O.z) * O.t.z, S.speed, (int32)T.plan.zone, T.plan.cosA, T.plan.margin);
+					Out.LastZone = Zn;
+				}
+			}
+			if (bJump && bPendingJump) bJump = false;  // une pression par saut (relâché l'image suivante)
+			bPendingJump = bJump;
+			if (bJump) { Out.Jumps++; if (RailAt == Next) bRailTried = true; }
+			Input(M, FMath::Clamp(Ang / 30.0, -1.0, 1.0), Fwd, bJump);
+			const int32 Ref0 = St().refusals;
+			G.Frame();
+			if (St().refusals > Ref0) bRefused = true;
+		}
+		Release();
+		for (int32 F = 0; F < 3; F++) G.Frame();
+		Out.Secs = K / 30.0;
+		Out.Contacts = G.Horse->CollisionCount - C0;
+		return St().finished && !St().eliminated;
+	};
+	auto EnterRun = [&]() -> bool
+	{
+		const strides::CsoActivity& A = G.Post->Activity();
+		G.Horse->PlaceAt(A.startX, A.startZ + 4, PI, 0);  // au poteau (l'aller y est prouvé par Strides.World.PoleTarget)
+		G.Frame();
+		G.Tap(TEXT("KeyE"));
+		if (!TestTrue(TEXT("activité lancée par E"), C->MissionActive())) return false;
+		G.Until([&] { return C->Screen() == AStridesCourse::EScreen::Presentation || C->DialogOpen(); }, 60);
+		if (C->DialogOpen()) C->AdvanceDialog();
+		G.Until([&] { return C->Screen() == AStridesCourse::EScreen::Presentation; }, 60);
+		TestTrue(TEXT("« Entrer en piste » au clavier (bouton principal)"), Sw->PressPrimary());
+		return TestTrue(TEXT("parcours atteint"), G.Until([&] { return C->Run()->step() == CsoStep::Course; }, 900));
+	};
+	auto Retry = [&](const TCHAR* When) -> bool
+	{
+		Sw->Refresh();
+		for (int32 I = 0; I < 3; I++) Sw->MoveSelection(-1);
+		TestEqual(FString::Printf(TEXT("%s : « Recommencer » choisi"), When), Sw->SelectedButtonId(), FString(TEXT("cso-retry")));
+		TestTrue(FString::Printf(TEXT("%s : « Recommencer »"), When), Sw->PressPrimary());
+		return TestTrue(FString::Printf(TEXT("%s : parcours atteint"), When), G.Until([&] { return C->Run()->step() == CsoStep::Course; }, 900));
+	};
+	// ---- Manche 1, clavier : refus au 1, barre au 2 ----
+	if (!EnterRun()) return false;
+	const int32 TA = C->Run()->config().timeAllowed;
+	{
+		FString L = FString::Printf(TEXT("carrière (%.1f ; %.1f) %.0f × %.0f ; départ (%.1f ; %.1f ; %.2f) ; arrivée (%.1f ; %.1f ; %.2f) ;"), Data->PoleArena.X, Data->PoleArena.Y, Data->PlanArena().w, Data->PlanArena().d,
+			C->Run()->config().start.x, C->Run()->config().start.z, C->Run()->config().start.rot, C->Run()->config().finish.x, C->Run()->config().finish.z, C->Run()->config().finish.rot);
+		for (const strides::CsoObstacle& O : Obs) L += FString::Printf(TEXT(" %hs %hs (%.1f ; %.1f ; %.2f) w %.1f"), O.label.c_str(), O.kind.c_str(), O.x, O.z, O.rot, O.w);
+		Info(L);
+	}
+	CheckFresh(TEXT("manche 1"), 1);
+	FRunStats S1;
+	const bool bFin1 = Ride(EMode::Keys, 1, 2, S1);
+	Info(FString::Printf(TEXT("manche 1 (clavier) : %.1f s de jeu, chrono %.2f s, %d points, %d refus, %d SAUT, %d contacts lice / ailes ; guidage :%s ; %s"), S1.Secs, St().t,
+		C->Run()->points(), St().refusals, S1.Jumps, S1.Contacts, *S1.Texts, *Events()));
+	Info(TEXT("manche 1 : abords") + S1.Trace);
+	TestTrue(FString::Printf(TEXT("manche 1 : arrivée franchie (temps limite %d s)"), TA * 2), bFin1);
+	TestEqual(TEXT("manche 1 : refus au 1 compté"), St().refusals, 1);
+	TestTrue(TEXT("manche 1 : barre tombée"), Events().Contains(TEXT("fault 2")));
+	TestTrue(TEXT("manche 1 : bilan"), G.Until([&] { return C->Screen() == AStridesCourse::EScreen::Result; }, 300));
+	// ---- Manche 2, manette ----
+	if (!Retry(TEXT("bilan 1"))) return false;
+	CheckFresh(TEXT("manche 2 (après Recommencer)"), 2);
+	FRunStats S2;
+	const bool bFin2 = Ride(EMode::Pad, 0, 0, S2);
+	Info(FString::Printf(TEXT("manche 2 (manette) : %.1f s de jeu, chrono %.2f s, %d points, %d refus, %d SAUT, %d contacts ; %s"), S2.Secs, St().t, C->Run()->points(), St().refusals, S2.Jumps, S2.Contacts, *Events()));
+	Info(TEXT("manche 2 : abords") + S2.Trace);
+	Info(TEXT("manche 2 : guidage") + S2.Texts);
+	TestTrue(TEXT("manche 2 (manette) : arrivée franchie"), bFin2);
+	TestTrue(TEXT("manche 2 : bilan"), G.Until([&] { return C->Screen() == AStridesCourse::EScreen::Result; }, 300));
+	// ---- Manche 3, joystick tactile ----
+	if (!Retry(TEXT("bilan 2"))) return false;
+	CheckFresh(TEXT("manche 3 (après le 2e Recommencer)"), 3);
+	FRunStats S3;
+	const bool bFin3 = Ride(EMode::Touch, 0, 0, S3);
+	Info(FString::Printf(TEXT("manche 3 (tactile) : %.1f s de jeu, chrono %.2f s, %d points, %d refus, %d SAUT, %d contacts ; %s"), S3.Secs, St().t, C->Run()->points(), St().refusals, S3.Jumps, S3.Contacts, *Events()));
+	Info(TEXT("manche 3 : abords") + S3.Trace);
+	TestTrue(TEXT("manche 3 (joystick tactile) : arrivée franchie"), bFin3);
+	TestTrue(TEXT("manche 3 : bilan"), G.Until([&] { return C->Screen() == AStridesCourse::EScreen::Result; }, 300));
+	// ---- « Quitter l'épreuve » (bouton principal du bilan), retour au monde ----
+	Sw->Refresh();
+	TestEqual(TEXT("bilan 3 : bouton principal choisi d'office"), Sw->SelectedButtonId(), FString(TEXT("cso-done")));
+	TestTrue(TEXT("« Quitter l'épreuve » au clavier"), Sw->PressPrimary());
+	G.Until([&] { return !C->MissionActive(); }, 300);
+	TestFalse(TEXT("retour au monde : épreuve terminée"), C->MissionActive());
+	TestTrue(TEXT("meilleur temps écrit"), Save->BestTimes().size() > 0);
+	// ---- Retour au poteau depuis l'arrivée (contrôle : 4 min depuis 59 m, 21 reprises, refus au 4B en chemin), en ne
+	// suivant que la ligne « Chrono du Pôle » (même calcul que le HUD) ----
+	{
+		const strides::CsoActivity& A = G.Post->Activity();
+		const FVector2D Goal(A.startX, A.startZ);
+		const int32 Ev0 = C->FenceEventLog().Num(), C0 = G.Horse->CollisionCount;
+		const double D0 = FVector2D::Distance(FVector2D(G.Horse->CsoState().x, G.Horse->CsoState().z), Goal);
+		int32 K = 0;
+		for (; K < 120 * 30 && G.PC->ActionLabel().IsEmpty(); K++)
+		{
+			const strides::CsoHorseState& S = G.Horse->CsoState();
+			const FVector F = G.Horse->GetActorForwardVector();
+			const FVector2D Me(S.x, S.z);
+			double Dn = 0;
+			const FVector2D Way = AStridesHUD::PoleGuideAim(Me, Goal, Data, C, Dn);
+			const FString Text = AStridesHUD::PoleGuideText(Dn, AStridesHUD::RelativeAngleDeg(F, Way - Me));
+			const bool bRight = Text.EndsWith(TEXT("à droite")) || Text.EndsWith(TEXT("demi-tour")), bLeft = Text.EndsWith(TEXT("à gauche"));
+			D.Set(TEXT("KeyD"), bRight);
+			D.Set(TEXT("KeyA"), bLeft);
+			const double Cad = S.hasCadence ? S.cadence : S.speed;
+			const double Want = FVector2D::Distance(Me, Goal) < 25 ? 2.0 : (bLeft || bRight) ? 3.0 : 5.0;
+			D.Set(TEXT("KeyW"), Cad < Want - 0.3);
+			D.Set(TEXT("KeyS"), Cad > Want + 0.3);
+			G.Frame();
+		}
+		D.Release();
+		TArray<FString> Ev = C->FenceEventLog();
+		Ev.RemoveAt(0, FMath::Min(Ev0, Ev.Num()));
+		Info(FString::Printf(TEXT("arrivée → poteau : %.0f m à vol d'oiseau, %.1f s de jeu, contacts %d, obstacles touchés : %s"), D0, K / 30.0, G.Horse->CollisionCount - C0, *FString::Join(Ev, TEXT(" ; "))));
+		TestEqual(TEXT("arrivée → poteau : invite « E · Chrono »"), G.PC->ActionLabel(), FString(TEXT("Chrono")));
+		TestTrue(FString::Printf(TEXT("arrivée → poteau en moins de 60 s (%.1f s)"), K / 30.0), K < 60 * 30);
+		TestEqual(TEXT("arrivée → poteau : aucun refus en chemin"), Ev.Num(), 0);
+	}
+	return true;
+}
+
+// Jalon J1 (2e correction) : carte Pause au clavier et à la manette (choix n° 9) ; au contrôle, Échap ouvrait la pause
+// mais ni Échap, ni Entrée, ni E, ni les flèches ne la refermaient. Échap → reprise (sans pause relancée à l'image
+// suivante) ; Entrée / E / F / X → bouton choisi, « Reprendre » d'office ; gauche / droite changent de bouton.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCsoPauseKeysTest, "Strides.Cso.PauseKeys", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesCsoPauseKeysTest::RunTest(const FString&)
+{
+	using namespace StridesScenarioTest;
+	FTestWorld W(TEXT("StridesPauseKeys"));
+	const UStridesDataSubsystem* Data = W.World ? W.GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	if (!TestNotNull(TEXT("données"), Data)) return false;
+	FGame G;
+	if (!TestTrue(TEXT("cheval monté"), G.Make(W.World, *Data))) return false;
+	AStridesPlayerController* PC = G.PC;
+	auto Key = [&](const TCHAR* Code) { PC->FeedKey(Code, true, false); PC->FeedKey(Code, false, false); };
+	// Échap (commande « pause » du web) : carte ouverte.
+	G.Tap(TEXT("Escape"));
+	G.Frame();
+	TestTrue(TEXT("Échap : pause"), PC->IsGamePausedState());
+	UStridesPauseMenu* M = PC->PauseMenuWidget();
+	if (!TestNotNull(TEXT("carte Pause"), M)) return false;
+	TestEqual(TEXT("« Reprendre » choisi d'office"), M->SelectedButtonId(), FString(TEXT("resume")));
+	Key(TEXT("Escape"));
+	TestFalse(TEXT("Échap en pause : reprise"), PC->IsGamePausedState());
+	for (int32 K = 0; K < 3; K++) G.Frame();
+	TestFalse(TEXT("Échap en pause : pas de pause relancée à la reprise"), PC->IsGamePausedState());
+	// Entrée : bouton choisi (Reprendre).
+	PC->PauseGame();
+	Key(TEXT("Enter"));
+	TestFalse(TEXT("Entrée : Reprendre"), PC->IsGamePausedState());
+	// E, puis flèches : gauche → « Partager », droite → « Reprendre » (borné), F → reprise.
+	PC->PauseGame();
+	TestEqual(TEXT("réouverture : « Reprendre » choisi d'office"), M->SelectedButtonId(), FString(TEXT("resume")));
+	Key(TEXT("ArrowLeft"));
+	TestEqual(TEXT("gauche : « Partager »"), M->SelectedButtonId(), FString(TEXT("share")));
+	Key(TEXT("KeyE"));
+	TestTrue(TEXT("E sur « Partager » : sans effet du portage, pause gardée"), PC->IsGamePausedState());
+	Key(TEXT("ArrowRight"));
+	Key(TEXT("ArrowRight"));
+	TestEqual(TEXT("droite ×2 : « Reprendre » (borné)"), M->SelectedButtonId(), FString(TEXT("resume")));
+	Key(TEXT("KeyF"));
+	TestFalse(TEXT("F : Reprendre"), PC->IsGamePausedState());
+	// Manette : X (Interact) reprend ; stick à gauche change de bouton.
+	PC->PauseGame();
+	PC->GamepadStickForTest(FVector2D(-1, 0));
+	PC->GamepadStickForTest(FVector2D::ZeroVector);
+	TestEqual(TEXT("stick à gauche : « Partager »"), M->SelectedButtonId(), FString(TEXT("share")));
+	PC->GamepadStickForTest(FVector2D(1, 0));
+	PC->GamepadStickForTest(FVector2D::ZeroVector);
+	PC->GamepadInteractForTest();
+	TestFalse(TEXT("manette X : Reprendre"), PC->IsGamePausedState());
 	return true;
 }

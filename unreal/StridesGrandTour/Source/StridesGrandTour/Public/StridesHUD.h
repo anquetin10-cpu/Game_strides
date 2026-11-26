@@ -39,6 +39,9 @@ public:
 	// Guidage en épreuve (jalon J1, correction ; choix n° 7 de plan.md) : cible du GPS de l'étape de parcours du web
 	// (courses.js target : abord de la ligne de départ, abord de l'obstacle attendu, arrivée), écrite sous le tableau :
 	// « Obstacle 3 · 25 m · à droite ». Vide à moins de 4 m.
+	// Point visé par la ligne « Chrono du Pôle » : entrée de la lice depuis l'extérieur (PoleWaypoint), puis, près de la
+	// carrière (grille de guidage du parcours), autour des obstacles et des ailes. OutDist : longueur du chemin.
+	static FVector2D PoleGuideAim(const FVector2D& Me, const FVector2D& Goal, const class UStridesDataSubsystem* Dt, const class AStridesCourse* C, double& OutDist);
 	static FString CourseGuideText(const FString& Label, double Distance, double RelAngleDeg);
 	// Dernier guidage d'épreuve affiché (tests, relevé des captures) ; vide si aucun.
 	const FString& LastCourseGuideShown() const { return LastCourseGuide; }

@@ -26,6 +26,12 @@ public:
 	// Clic sur un bouton par son identifiant du web (pause-line, pause-aid, resume, title, strides, share) : mêmes
 	// gestionnaires qu'au toucher (tests).
 	bool ClickForTest(const FString& Id);
+	// Clavier / manette (choix n° 9, 2e correction J1 : la carte Pause piégeait le joueur au clavier) : bouton choisi,
+	// « Reprendre » d'office à l'ouverture ; gauche / droite parcourent les boutons d'action (Écran titre, Découvrir…,
+	// Partager, Reprendre) avec le liseré vert des cartes ; Entrée / E / F / X déclenchent le bouton choisi.
+	FString SelectedButtonId() const { return SelectedId; }
+	void MoveSelection(int32 Dir);
+	bool PressSelected();
 	// Éléments affichés (« partie=texte »), pour les tests et les captures.
 	TArray<FString> Describe() const;
 	void SetViewCssForTest(const FVector2D& V) { TestView = V; }
@@ -61,6 +67,11 @@ private:
 	UPROPERTY() TObjectPtr<class UButton> AidButton;
 	UPROPERTY() TObjectPtr<class UTextBlock> AidText;
 	UPROPERTY() TMap<FString, TObjectPtr<class UButton>> ActionButtons;
+	UPROPERTY() TObjectPtr<class UBorder> SelRing;
+	TArray<FString> ActionOrder;
+	TMap<FString, FVector4> ActionBoxes;
+	FString SelectedId = TEXT("resume");
+	void PlaceSelRing();
 	UPROPERTY() TArray<TObjectPtr<class UTexture2D>> Textures;
 	UPROPERTY() TObjectPtr<class UDataTable> RichStyles;
 	TSharedPtr<class FJsonObject> Doc;

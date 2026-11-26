@@ -117,9 +117,10 @@ void AStridesHUD::DrawHUD()
 				const FVector F = P->GetActorForwardVector();
 				const UStridesDataSubsystem* Dt = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 				const FVector2D Me(CX, CZ);
-				// Départ dans la carrière : par l'entrée de la lice (colliders du web), pas au travers.
-				const FVector2D Way = Dt ? PoleWaypoint(Me, Goal, Dt->PoleArena, Dt->PlanArena().w, Dt->PlanArena().d) : Goal;
-				const double Dist = FVector2D::Distance(Me, Way) + FVector2D::Distance(Way, Goal);
+				// Départ dans la carrière : par l'entrée de la lice (colliders du web), pas au travers ; près de la carrière, autour
+				// des obstacles et des ailes (grille de guidage, 2e correction J1 : 4 refus au 4B sur le chemin du poteau).
+				double Dist = 0;
+				const FVector2D Way = PoleGuideAim(Me, Goal, Dt, Course.Get(), Dist);
 				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me));
 				if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
 			}
@@ -322,6 +323,14 @@ FVector2D AStridesHUD::PoleWaypoint(const FVector2D& Me, const FVector2D& Goal, 
 	return Gate;
 }
 
+FVector2D AStridesHUD::PoleGuideAim(const FVector2D& Me, const FVector2D& Goal, const UStridesDataSubsystem* Dt, const AStridesCourse* C, double& OutDist)
+{
+	FVector2D Way = Dt ? PoleWaypoint(Me, Goal, Dt->PoleArena, Dt->PlanArena().w, Dt->PlanArena().d) : Goal;
+	OutDist = FVector2D::Distance(Me, Way) + FVector2D::Distance(Way, Goal);
+	if (C && C->GuideMap().inside(Me.X, Me.Y)) Way = C->GuideAim(Me, Goal, &OutDist);
+	return Way;
+}
+
 double AStridesHUD::RelativeAngleDeg(const FVector& Forward, const FVector2D& ToGoalWeb)
 {
 	// Avant Unreal (X, Y) = direction web (x, z) (StridesUnits) ; positif : la cible est à droite du cavalier.
@@ -345,10 +354,12 @@ void AStridesHUD::DrawCourseGuide()
 	if (!P || !Canvas || !Course.IsValid()) return;
 	double CX, CY, CZ;
 	StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
-	if (!Course->CourseGuide(Goal, Label, FVector2D(CX, CZ))) return;
+	double Dist = 0;
 	const FVector F = P->GetActorForwardVector();
+	const AStridesHorse* H = Cast<AStridesHorse>(P);
+	if (!Course->CourseGuide(Goal, Label, FVector2D(CX, CZ), &Dist, FVector2D(F.X, F.Y).GetSafeNormal(), H ? H->CsoState().speed : 0.0)) return;
 	const FVector2D D(Goal.X - CX, Goal.Y - CZ);
-	const FString G = CourseGuideText(Label, D.Size(), RelativeAngleDeg(F, D));
+	const FString G = CourseGuideText(Label, Dist, RelativeAngleDeg(F, D));
 	LastCourseGuide = G;
 	if (G.IsEmpty()) return;
 	// Pastille sous le tableau du chrono (en haut à gauche), fond sombre, texte clair.

@@ -105,6 +105,13 @@ public:
 	// Relevé des doigts reçus par InputTouch (type, identifiant, px CSS), pour les captures : 32 derniers.
 	const TArray<FString>& TouchLog() const { return TouchEvents; }
 	void ClearTouchLog() { TouchEvents.Reset(); }
+#if WITH_DEV_AUTOMATION_TESTS
+	// Tests (sans joueur local, Enhanced Input ne lit pas la manette) : rappels des actions liées à Gamepad_Left2D (Move),
+	// Gamepad_FaceButton_Bottom (Jump) et Gamepad_FaceButton_Left (Interact), comme les appelle Enhanced Input.
+	void GamepadStickForTest(const FVector2D& V);
+	void GamepadJumpForTest() { OnJump(); }
+	void GamepadInteractForTest() { OnInteract(); }
+#endif
 
 private:
 	void InstallInputContext();
@@ -123,6 +130,7 @@ private:
 	void OnAppActivation(const bool bActive);
 	void OnAppDeactivate();
 	void RestoreInputMode();
+	void ReleaseMouseForCard();
 	UPROPERTY() TObjectPtr<class UInputMappingContext> Context;
 	UPROPERTY() TObjectPtr<class UInputAction> MoveAction;
 	UPROPERTY() TObjectPtr<class UInputAction> LookAction;

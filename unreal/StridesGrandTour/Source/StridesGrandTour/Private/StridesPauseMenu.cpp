@@ -106,6 +106,7 @@ void UStridesPauseMenu::Open(AStridesPlayerController* InPC)
 {
 	PC = InPC;
 	bOpen = true;
+	SelectedId = TEXT("resume");  // bouton principal choisi d'office à chaque ouverture
 	Build();
 	LastView = FVector2D::ZeroVector;  // mise en page refaite (épreuve ou non)
 	Refresh();
@@ -149,6 +150,9 @@ void UStridesPauseMenu::ApplyStyle(const FVector2D& ViewCss)
 	Parts.Reset();
 	Textures.Reset();
 	ActionButtons.Reset();
+	ActionOrder.Reset();
+	ActionBoxes.Reset();
+	SelRing = nullptr;
 	Shown.Reset();
 	LineButton = AidButton = nullptr;
 	LineText = AidText = nullptr;
@@ -361,8 +365,55 @@ void UStridesPauseMenu::ApplyStyle(const FVector2D& ViewCss)
 			else W->OnClicked.AddDynamic(this, &UStridesPauseMenu::OnOther);
 			PlaceIn(Canvas, W, Box(B), 8);
 			ActionButtons.Add(Id, W);
+			ActionOrder.Add(Id);
+			ActionBoxes.Add(Id, Box(B));
 			Shown.Add(FString::Printf(TEXT("bouton %s=%s"), *Id, *Sc::Str(B, TEXT("text"))));
 		}
+	if (!ActionOrder.Contains(SelectedId) && ActionOrder.Num()) SelectedId = ActionOrder.Contains(TEXT("resume")) ? FString(TEXT("resume")) : ActionOrder.Last();
+	PlaceSelRing();
+}
+
+void UStridesPauseMenu::PlaceSelRing()
+{
+	if (!Canvas || !ActionBoxes.Contains(SelectedId)) return;
+	if (!SelRing)
+	{
+		SelRing = WidgetTree->ConstructWidget<UBorder>();
+		Parts.Add(SelRing);
+		FSlateBrush B;
+		B.DrawAs = ESlateBrushDrawType::RoundedBox;
+		B.TintColor = FSlateColor(FLinearColor(0, 0, 0, 0));
+		B.OutlineSettings = FSlateBrushOutlineSettings(FVector4(10, 10, 10, 10), FSlateColor(FLinearColor(.49f, 1.f, .77f, 1.f)), 3.f);
+		B.OutlineSettings.RoundingType = ESlateBrushRoundingType::FixedRadius;
+		SelRing->SetBrush(B);
+		SelRing->SetVisibility(ESlateVisibility::HitTestInvisible);
+		PlaceIn(Canvas, SelRing, FVector4(0, 0, 1, 1), 9);
+	}
+	const FVector4 Bx = ActionBoxes[SelectedId];
+	if (UCanvasPanelSlot* S = Cast<UCanvasPanelSlot>(SelRing->Slot))
+	{
+		S->SetPosition(FVector2D(Bx.X - 4, Bx.Y - 4));
+		S->SetSize(FVector2D(Bx.Z + 8, Bx.W + 8));
+	}
+}
+
+void UStridesPauseMenu::MoveSelection(int32 Dir)
+{
+	Refresh();
+	if (!ActionOrder.Num()) return;
+	int32 I = ActionOrder.IndexOfByKey(SelectedId);
+	if (I == INDEX_NONE) I = ActionOrder.Num() - 1;
+	SelectedId = ActionOrder[FMath::Clamp(I + (Dir > 0 ? 1 : -1), 0, ActionOrder.Num() - 1)];
+	PlaceSelRing();
+	UE_LOG(LogTemp, Display, TEXT("Strides pause : bouton choisi « %s »"), *SelectedId);
+}
+
+bool UStridesPauseMenu::PressSelected()
+{
+	Refresh();
+	const FString Id = SelectedId;
+	UE_LOG(LogTemp, Display, TEXT("Strides pause : bouton « %s » au clavier / à la manette"), *Id);
+	return ClickForTest(Id);
 }
 
 void UStridesPauseMenu::RefreshLabels()

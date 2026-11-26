@@ -77,3 +77,9 @@ target_sources(strides_core PRIVATE ${CORE}/Private/Colliders.cpp)
 add_executable(strides_colliders_tests tests/test_colliders.cpp)
 target_link_libraries(strides_colliders_tests strides_core)
 add_test(NAME colliders COMMAND strides_colliders_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles)
+# Jalon J1 (2e correction) : guidage qui contourne obstacles, ailes et lice (StridesCore/CsoGuide, choix du portage) ;
+# ctest « guidage » sur la carrière et les obstacles de l'oracle colliders.json.
+target_sources(strides_core PRIVATE ${CORE}/Private/CsoGuide.cpp)
+add_executable(strides_guide_tests tests/test_guide.cpp)
+target_link_libraries(strides_guide_tests strides_core)
+add_test(NAME guidage COMMAND strides_guide_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles)
