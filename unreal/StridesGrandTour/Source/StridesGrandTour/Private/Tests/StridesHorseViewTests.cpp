@@ -114,6 +114,17 @@ bool FStridesHorseViewTest::RunTest(const FString&)
 		int32 Lost = 0;
 		for (const TWeakObjectPtr<const UAnimSequence>& Wp : Weak) Lost += !Wp.IsValid();
 		TestTrue(FString::Printf(TEXT("clips de la vue retenus après le ramasse-miettes (%d clips, %d libérés)"), Weak.Num(), Lost), Weak.Num() >= 17 && Lost == 0);
+		// Étape S5 : les 17 clips importés joués par la vue sont à 24 images/s, cadence de la cuisson du web (f / 24 s) ;
+		// Strides.Parite.HorseMirror n'épingle que les 11 sources des miroirs, ce critère épingle les 17.
+		int32 N24 = 0;
+		FString Off;
+		for (const UAnimSequence* S : Seqs)
+		{
+			const double Fps = S->GetSamplingFrameRate().AsDecimal();
+			if (FMath::IsNearlyEqual(Fps, 24.0, 1e-6)) N24++;
+			else Off += FString::Printf(TEXT(" %s (%.0f images/s)"), *S->GetName(), Fps);
+		}
+		TestTrue(FString::Printf(TEXT("clips importés de la vue tous à 24 images/s : %d sur %d%s"), N24, Seqs.Num(), *Off), Seqs.Num() == 17 && N24 == 17);
 	}
 
 	const FString Ora = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../core/tests/oracles/monte/vue"));
