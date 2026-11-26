@@ -49,7 +49,7 @@ struct Oeil {
     }
     // Repères en points (écran 1920 × 1080 points, 3840 × 2160 pixels) : bande haute gauche (tableau, pastille) et
     // bouton SAUT (bas droite).
-    let band = CGRect(x: 0, y: 0, width: 700, height: 175)
+    let band = CGRect(x: 0, y: 0, width: 760, height: 270)
     let jump = CGRect(x: 1815, y: 970, width: 75, height: 60)
     while let line = readLine() {
       if line == "fin" { break }

@@ -29,6 +29,10 @@ def key(code, down):
 def hold(code, s):
     key(code, True); time.sleep(s); key(code, False)
 A, D, W, S, SPACE = 0, 2, 13, 1, 49
+def press_e():
+    # option e=1 : E tapé à l'arrêt devant le poteau (invite « E · Chrono »), comme un joueur.
+    if opts.get('e'):
+        time.sleep(0.2); hold(14, 0.08); L('E tapé (invite du poteau)')
 def front_ok():
     r = subprocess.run(['/usr/bin/lsappinfo', 'front'], capture_output=True, text=True).stdout.strip()
     n = subprocess.run(['/usr/bin/lsappinfo', 'info', '-only', 'name', r], capture_output=True, text=True).stdout
@@ -55,7 +59,7 @@ def look():
     g = int(parts[gi + 1]) if gi + 1 < len(parts) else 0
     ms = int(parts[gi + 3]) if gi + 3 < len(parts) else 0
     return texts, g, ms
-PILL = re.compile(r'(Obstacle\s*\S+|Ligne de d\S*part|Arriv\S*e|Chrono du P\S*le)\s*[·.:,]?\s*([\d][\d,.\s]*)\s*(k?m)\s*[·.:,]?\s*(.*)')
+PILL = re.compile(r'(Obstacle\s*[0-9]+[AB]?|Ligne de d\S*part|Arriv\S*e|Chrono du P\S*le)[^\w]*([\d][\d,.]*)\s*(k?m)\b[^\w]*(.*)')
 def parse(texts):
     for t in texts:
         m = PILL.search(t)
@@ -67,7 +71,7 @@ def parse(texts):
     return None, None, None
 refuse = opts.get('refus'); slow_at = opts.get('lent')
 refused = False; near_refuse = False
-t0 = time.time(); k = 0; lost = 0; last = None; last_t = None; v_est = None; streak = 0; last_way = None
+t0 = time.time(); k = 0; lost = 0; last = None; last_d = None; stall = 0; stalls = 0; seen = False; last_t = None; v_est = None; streak = 0; last_way = None
 L('début pilote mode=%s durée=%.0f options=%s' % (mode, dur, opts))
 try:
     while time.time() - t0 < dur:
@@ -78,23 +82,41 @@ try:
         if k % 6 == 1:
             subprocess.Popen(['/usr/sbin/screencapture', '-x', '-t', 'jpg', os.path.join(out, time.strftime('%H%M%S-') + 'p%s-%04d.jpg' % (mode, k))])
         label, d, way = parse(texts)
+        # Ligne d'allure du HUD hors épreuve (« À cheval · GALOP · 6.6 m/s … cadence 6.6 ») : la cadence lue sert de vitesse.
+        cad = None
+        for t in texts:
+            mc = re.search(r'cadence\s*([\d]+[.,]\d)', t)
+            if mc: cad = float(mc.group(1).replace(',', '.'))
         board = next((t for t in texts if re.search(r'\bpts?\b|/\s*\d+\s*s', t)), '')
         L('i%d %dms « %s » d=%s %s | tableau « %s » | vert=%d' % (k, ms, label, d, way, board, green))
         if label is None:
+            L('   texte lu : %s' % ' | '.join(texts)[:300])
+            if mode == 'poteau' and last_d is not None and last_d < 20:
+                hold(S, 4.0); L('ligne du poteau effacée tout près (moins de 6 m) : arrêt'); press_e(); break
             lost += 1
+            if not seen and time.time() - t0 < 90: continue  # entrée en piste, cloche : pas encore de pastille
             if lost >= (6 if mode == 'parcours' else 10): L('plus de pastille : arrêt (bilan ou fin)'); break
             continue
-        lost = 0
+        lost = 0; seen = True
         if mode == 'poteau':
-            if d < 8:
-                hold(S, 2.5); L('poteau atteint : arrêt'); break
-            if d < 40 and (v_est is None or v_est > 3): hold(S, 0.3)
+            if d < 6.5:
+                hold(S, 4.0); L('poteau atteint : arrêt'); press_e(); break
+            if cad is not None:
+                want_p = 6.0 if d > 70 else 2.0 if d > 15 else 1.2
+                if cad > want_p + 0.4: hold(S, 0.3); L('ralenti (cadence %.1f, visée %.1f)' % (cad, want_p))
+                elif cad < want_p - 0.4 and way == 'droit': hold(W, 0.3)
         # Vitesse estimée par la distance lue (même cible, cap tenu).
         if last == label and last_t and way == 'droit' and last_way == 'droit' and d is not None:
             v = (last_d - d) / (now - last_t)
             if 0 < v < 12: v_est = v if v_est is None else 0.5 * v_est + 0.5 * v
+        # Arrêté (distance figée sur 4 lectures, refus ou cadence nulle) : reprendre la cadence.
+        stall = stall + 1 if (last == label and last_d is not None and abs(last_d - d) < 0.5) else 0
+        if stall >= 4:
+            stalls += 1
+            # Bloqué (lice, aile, refus) : s'écarter, alternativement à droite puis à gauche, puis reprendre la cadence.
+            hold(D if stalls % 2 else A, 0.6); hold(W, 0.5); stall = 0; v_est = 1.5; L('arrêté : écart et cadence reprise (%d)' % stalls)
         last, last_d, last_t, last_way = label, d, now, way
-        want = 5.2
+        want = 5.2 if mode == 'parcours' else (6.0 if d > 60 else 3.0)
         if slow_at and label == 'Obstacle ' + slow_at: want = 3.6
         if way in ('gauche', 'droite'): streak = streak + 1 if way == last_way else 1
         # Direction : appuis courts, plus longs si la consigne persiste ; demi-tour : à droite, au ralenti.
@@ -106,6 +128,7 @@ try:
         elif way == 'droite':
             hold(D, min(0.12 + 0.05 * streak, 0.35))
         elif way == 'droit' and mode == 'parcours':
+            if cad is not None: v_est = cad
             if v_est is not None and v_est < want - 0.6: hold(W, 0.25); L('cadence + (%.1f m/s estimés)' % v_est)
             elif v_est is not None and v_est > want + 0.8: hold(S, 0.2); L('cadence - (%.1f m/s estimés)' % v_est)
             elif v_est is None and k < 6: hold(W, 0.4)
@@ -126,3 +149,4 @@ finally:
     except Exception:
         pass
     L('fin du plan')
+    time.sleep(100000)  # launchd submit relance un programme sorti : on attend le retrait du job (jouer-pilote.sh)

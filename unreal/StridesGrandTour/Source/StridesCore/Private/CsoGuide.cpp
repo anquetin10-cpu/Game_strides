@@ -13,6 +13,12 @@ bool GuideGrid::inside(double x, double z) const {
   return nx > 0 && i >= 0 && j >= 0 && i < nx && j < nz;
 }
 
+int GuideGrid::levelAt(double x, double z) const {
+  if (!inside(x, z)) return 0;
+  const int i = (int)std::floor((x - minX) / cell), j = (int)std::floor((z - minZ) / cell);
+  return blocked[(size_t)j * nx + i];
+}
+
 bool GuideGrid::blockedAt(double x, double z) const {
   if (!inside(x, z)) return false;
   const int i = (int)std::floor((x - minX) / cell), j = (int)std::floor((z - minZ) / cell);
@@ -50,22 +56,26 @@ GuideGrid buildGuideGrid(const GuideBounds& b, const Colliders& cols, const std:
     const int j0 = std::max(0, (int)std::floor((cz - reach - g.minZ) / cell)), j1 = std::min(g.nz - 1, (int)std::floor((cz + reach - g.minZ) / cell));
     for (int j = j0; j <= j1; j++)
       for (int i = i0; i <= i1; i++)
-        if (test(g.minX + (i + 0.5) * cell, g.minZ + (j + 0.5) * cell)) g.blocked[(size_t)j * g.nx + i] = 1;
+        if (const uint8_t v = test(g.minX + (i + 0.5) * cell, g.minZ + (j + 0.5) * cell)) g.blocked[(size_t)j * g.nx + i] = std::max(g.blocked[(size_t)j * g.nx + i], v);
   };
   for (const Collider& c : cols.all()) {
     if (!c.enabled) continue;
     if (c.type == 'c') {
-      mark(c.x, c.z, c.r + inflate, [&](double px, double pz) { return std::hypot(px - c.x, pz - c.z) <= c.r + inflate; });
+      mark(c.x, c.z, c.r + inflate, [&](double px, double pz) -> uint8_t { const double d = std::hypot(px - c.x, pz - c.z); return d <= c.r + 0.5 ? 2 : d <= c.r + inflate ? 1 : 0; });
     } else {
       // Repère local de Colliders::resolve : lx = dx·c − dz·s, lz = dx·s + dz·c.
-      mark(c.x, c.z, std::hypot(c.hw, c.hd) + inflate, [&](double px, double pz) { return inBox(px, pz, c.x, c.z, c.c, -c.s, c.s, c.c, c.hw, c.hd, inflate); });
+      mark(c.x, c.z, std::hypot(c.hw, c.hd) + inflate, [&](double px, double pz) -> uint8_t {
+        return inBox(px, pz, c.x, c.z, c.c, -c.s, c.s, c.c, c.hw, c.hd, 0.5) ? 2 : inBox(px, pz, c.x, c.z, c.c, -c.s, c.s, c.c, c.hw, c.hd, inflate) ? 1 : 0;
+      });
     }
   }
   for (const CsoObstacle& o : obstacles) {
     if (o.off) continue;
     double cx, cz, hw, hd;
     guideObstacleBox(o, cx, cz, hw, hd);
-    mark(cx, cz, std::hypot(hw, hd) + inflate, [&](double px, double pz) { return inBox(px, pz, cx, cz, o.t.x, o.t.z, o.n.x, o.n.z, hw, hd, inflate); });
+    mark(cx, cz, std::hypot(hw, hd) + inflate, [&](double px, double pz) -> uint8_t {
+      return inBox(px, pz, cx, cz, o.t.x, o.t.z, o.n.x, o.n.z, hw, hd, 0.5) ? 2 : inBox(px, pz, cx, cz, o.t.x, o.t.z, o.n.x, o.n.z, hw, hd, inflate) ? 1 : 0;
+    });
   }
   return g;
 }
@@ -75,12 +85,15 @@ bool guideClear(const GuideGrid& g, double x0, double z0, double x1, double z1) 
   const int n = std::max(1, (int)std::ceil(len / (g.cell * 0.1)));
   // Départ dans une zone bloquée (cavalier contre une aile, réception d'un saut) : cette zone de départ est ignorée,
   // seule compte la traversée d'une zone bloquée après en être sorti.
+  // Le cœur des obstacles (0,5 m autour du collider) bloque toujours, sauf la case même du départ.
   bool left = !g.blockedAt(x0, z0);
+  const int start = g.levelAt(x0, z0);
   for (int k = 0; k <= n; k++) {
     const double t = (double)k / n;
-    const bool b = g.blockedAt(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t);
+    const int b = g.levelAt(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t);
     if (!b) left = true;
     else if (left) return false;
+    else if (b == 2 && !(start == 2 && k * len / n < g.cell)) return false;
   }
   return true;
 }

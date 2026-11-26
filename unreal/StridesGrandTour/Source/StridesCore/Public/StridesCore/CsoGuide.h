@@ -20,7 +20,8 @@ namespace strides {
 struct STRIDESCORE_API GuideGrid {
   double minX = 0, minZ = 0, cell = 1;
   int nx = 0, nz = 0;
-  std::vector<uint8_t> blocked;  // nx * nz, 1 = bloqué
+  std::vector<uint8_t> blocked;  // nx * nz : 0 libre, 1 marge (gonflé), 2 cœur (0,5 m du collider)
+  int levelAt(double x, double z) const;
   bool inside(double x, double z) const;
   bool blockedAt(double x, double z) const;
 };

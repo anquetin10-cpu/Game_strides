@@ -143,6 +143,20 @@ int main(int argc, char** argv) {
     }
     CHECK(ok == tot && intr == 0, "balayage : %d / %d buts atteints, %d entrées en zone bloquée", ok, tot, intr);
   }
+  // 6 bis) Cavalier dehors, collé au bout de la lice à côté de l'ouverture (relevé en partie le 26/11 : « tout droit »
+  //    vers le 1 à travers la lice, cheval bloqué 2 min) : la ligne au travers de la lice est refusée, le chemin passe
+  //    par l'ouverture.
+  {
+    const double mx = AX + 4.4, mz = AZ + AD / 2 + 0.9, gx = AX + 7, gz = AZ + AD / 2 - 12;
+    CHECK(g.levelAt(mx, mz) >= 1, "départ dans la marge de la lice (niveau %d)", g.levelAt(mx, mz));
+    CHECK(!strides::guideClear(g, mx, mz, gx, gz), "ligne droite à travers la lice : refusée malgré le départ dans la marge");
+    double ax, az;
+    strides::guideAim(g, mx, mz, gx, gz, ax, az);
+    CHECK(std::abs(ax - AX) < 3.5 || az > AZ + AD / 2, "point visé vers l'ouverture (%.2f ; %.2f)", ax - AX, az - AZ);
+    int in = 0;
+    double len = 0;
+    CHECK(walk(g, mx, mz, gx, gz, in, len) > 0, "bout de lice → carrière : but atteint (%.1f m)", len);
+  }
   // 7) Abord d'un axe (guideAxisTarget) : obstacle en (0, 0), saut vers +z, face avant à −0,5 m.
   {
     strides::GuideAxis a;

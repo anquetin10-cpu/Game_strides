@@ -12,7 +12,9 @@
     "test": "vitest run",
     "e2e": "node tests/e2e/smoke.mjs",
     "e2e:barres": "node tests/e2e/pjl/bars-check.mjs tests/e2e/out/bars-check",
-    "build:artifact": "vite build --mode single && node scripts/make-artifact.mjs"
+    "build:artifact": "vite build --mode single && node scripts/make-artifact.mjs",
+    "unreal:shipping-outils": "python3 scripts/unreal/check-shipping-tools.py",
+    "unreal:matrice": "zsh scripts/unreal/matrice.sh"
   },
   "dependencies": {
     "three": "^0.170.0"
