@@ -37,6 +37,9 @@
 #include "StridesSaveSubsystem.h"
 #include "StridesUnits.h"
 
+// Scénarios compilés seulement avec les tests (hors Shipping) : ils emploient les rappels de test de la manette.
+#if WITH_DEV_AUTOMATION_TESTS
+
 namespace StridesScenarioTest
 {
 struct FTestWorld
@@ -1122,3 +1125,5 @@ bool FStridesCsoPauseKeysTest::RunTest(const FString&)
 	TestFalse(TEXT("manette X : Reprendre"), PC->IsGamePausedState());
 	return true;
 }
+
+#endif  // WITH_DEV_AUTOMATION_TESTS

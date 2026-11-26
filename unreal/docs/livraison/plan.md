@@ -114,6 +114,40 @@ console, ni `-StridesShots` ; jeu à la main par Julien **à confirmer**) :
   commit suivant). (P2) le guidage vers le poteau mène tout droit, à travers les obstacles sur le chemin (le cheval
   refuse puis il faut les contourner).
 
+### 2e correction après contrôle adverse (26/11 soir, base `4754d020`)
+
+Légende inchangée : **écrit**, **compilé**, **testé moteur**, **joué par l'agent** (paquet lancé, entrées injectées par
+l'agent : touches CGEvent, joueur de l'agent `scripts/unreal/partie-manuelle/pilote.py` qui lit la pastille, le tableau, la
+ligne d'allure et le libellé du bouton SAUT par captures d'écran ; ni F8, ni autopilote, ni `-StridesShots`, ni console).
+Le jeu à la main par Julien reste **à confirmer**. Sélection : `unreal/docs/livraison/preuves/fix2-j1-20261126/` (12 captures,
+journal des événements du jeu, contrôle des chaînes) ; tout le reste : `.ue-cache/travail/livraison/preuves/fix2-j1/`.
+
+| Point du contrôle | État | Preuve |
+|---|---|---|
+| Guidage à travers les obstacles (bloquait J1-D et la boucle) | **écrit, testé (ctest + moteur), joué** : `StridesCore/CsoGuide` (choix n° 7 révisé) : grille de 1 m, chemin A* autour de la lice, des ailes et des obstacles (marge 1,8 m ; cœur à 0,5 m jamais traversé, même depuis la marge) ; abord d'un axe : poursuite de l'axe dans le couloir (16 m), centre dans les 3 derniers mètres s'il y va, sortie à 18 m après un refus ou dos à l'obstacle, sinon abord à 12 m par le chemin. Branché sur la pastille d'épreuve et la ligne « Chrono du Pôle » (distance = longueur du chemin) | ctest « guidage » 28 vérifications (dont le bout de lice relevé en partie) ; `Strides.Scenario.PoleGuided` : arrivée → poteau en 26,4 s, **0 refus** en chemin ; `Strides.World.PoleTarget` 100,4 s, 0 contact. Partie : écurie → invite en **2 min 11 s** (20:08:58 → 20:11:09), 2 min 2 s au 1er essai |
+| Joystick tactile et manette non testés | **testé moteur** : `Strides.Scenario.PoleGuided`, trois parcours complets conduits **seulement d'après la pastille et le bouton SAUT**, sans aucun placement entre l'entrée et le bilan : clavier (refus voulu au 1, barre voulue au 2, arrivée, 91,2 s, 36 pts), **manette** (rappels Enhanced Input Move/Jump, arrivée 61,1 s, 0 pt), **joystick tactile** (doigts par `InputTouch`, bouton SAUT tactile, arrivée 62,8 s, 0 pt) ; Recommencer ×2, Quitter, meilleur temps écrit. **Pas joué** : sans manette physique ni écran tactile sur le Mac mini (aucun moyen gratuit d'injecter une manette virtuelle) ; limite du test : sans joueur local, la correspondance touche de manette → action n'est pas rejouée. **À confirmer par Julien** sur manette et iPad | journal `.ue-cache/journaux/fix2-g6.log` |
+| Carte Pause qui piège le clavier | **écrit, testé moteur, joué** (choix n° 9) : Échap referme la pause (reprise, sans pause relancée), Entrée / E / F / X = bouton choisi, « Reprendre » d'office, gauche / droite / stick changent de bouton avec liseré | `Strides.Cso.PauseKeys` ; paquet : captures `08` à `10`, journal « Strides pause : Échap, reprise », « bouton choisi « share » », « bouton « resume » au clavier » |
+| Premier clic absorbé | **écrit (NoCapture posé après le mode GameAndUI, aussi pour la pause), non résolu en partie** : dans le paquet du soir, **aucun** clic souris injecté n'a eu d'effet, ni sur le bilan ni sur « Reprendre » (2 clics chacun, capture `11`), alors que le journal montre la vue en `NoCapture`. Une alerte système de confidentialité était ouverte pendant ces essais (voir blocage) : cause **à confirmer** ; P2, clavier et manette suffisent pour jouer | `11-pause-clics-souris-sans-effet.jpg` |
+| Contrôle Shipping hors matrice | **fait** : `npm run unreal:shipping-outils` et `npm run unreal:matrice` (`scripts/unreal/matrice.sh` : ctest, Automation `Strides` complet, chaînes du Shipping contre le Development) | `check-shipping-tools.txt` : 0 / 13 dans le Shipping de `e1cea4af`+, 13 / 13 dans le Development |
+| Jeton AndroidFileServer réécrit | **corrigé** : section figée dans `DefaultEngine.ini` (greffon désactivé, jeton public sans objet) ; après 6 lancements de l'éditeur et une cuisson complète, `DefaultEngine.ini` inchangé (shasum `15b62b1a…`) | `git status` propre après cuisson |
+| J1-A 3 lancements Shipping | **fait, joué** : paquet Shipping de ce soir lancé 3 fois (21:11, 21:12, 21:14), monde affiché, monte, N et F8 sans effet (« Aucune mission active », pas de démonstration, pas de ligne « Démo parcours ») ; Development lancé 3 fois, 0 `Fatal error` / `Critical error` | `12-shipping-N-F8-sans-effet.jpg` |
+| J1-H SIGBUS | **non reproduit, non traité** : 0 plantage sur ~1 h 05 de jeu continu du paquet Development (20:08 → 21:03, 15 manches) et 6 lancements de paquets ; le critère de 10 lancements n'est pas atteint | journal du jeu |
+| J1-E record relu après relancement, J1-G record après fermeture brutale | **non faits en paquet** (aucune arrivée obtenue en partie réelle) ; meilleur temps écrit sans F5 vérifié moteur (`PoleGuided`, `PoleLoop`) | — |
+
+Partie réelle de ce soir (paquet Development de `e1cea4af`, entrées injectées par l'agent) : écurie → poteau, invite, E,
+présentation, « Entrer en piste » au clavier, **15 manches** et **14 « Recommencer »** au clavier (gauche ×2, F), **8 obstacles
+franchis** (1, 2, 3, 4A en une manche), **5 barres tombées** (dont « barre au 1 » et « barre au 2 » au bilan de la manche 7,
+cause « saut trop court »), **45 refus** comptés (« Refus au 1 · +4 » à l'écran), 15 bilans « Éliminé » (deux refus, ou temps
+limite), pause ouverte et refermée au clavier. **Pas obtenu : l'arrivée** (donc ni bilan d'un parcours fini, ni record en
+paquet). Le joueur de l'agent lit l'écran 3 à 5 fois par seconde : il tient les lignes droites et le guidage, mais rate le
+plus souvent la zone d'appel (fenêtre de 0,1 à 0,2 s) ou arrive de biais ; deux refus éliminent (règle du web). Avec la
+capture ScreenCaptureKit (une lecture en ~0,25 s), il a franchi 1, 2, 3 et 4A d'affilée ; macOS a ensuite ouvert une demande
+d'accès direct à l'écran pour python3.11 que l'agent n'a pas le droit d'accorder, d'où le repli sur `screencapture`, plus lent.
+**Arrivée et parcours complet à la main : à confirmer par Julien.** Le parcours complet conduit d'après la pastille seule est
+prouvé dans le moteur (`PoleGuided`, trois arrivées).
+
+Sortie de J1 : **non atteinte** (arrivée en partie réelle, record relu après relance, J1-H).
+
 ## J2 — Gameplay équestre fiable
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -195,6 +229,11 @@ console, ni `-StridesShots` ; jeu à la main par Julien **à confirmer**) :
 8. **Cartes au clavier et à la manette** (26/11, correction J1) : le web n'offre que le clic / toucher (boutons HTML,
    focalisables au clavier dans un navigateur). Choix : bouton principal choisi d'office, gauche / droite pour changer,
    Entrée / E / F / X pour valider.
+9. **Carte Pause au clavier et à la manette** (26/11 soir, 2e correction J1) : le web ne referme pas la pause par Échap
+   (Échap reste en attente et reprend effet à la reprise). Choix : Échap referme la pause (Reprendre) sans relancer la
+   pause, Entrée / E / F / X déclenchent le bouton choisi, « Reprendre » choisi d'office. Écart assumé, à valider par Julien.
+10. **Guidage qui contourne** (26/11 soir) : le choix n° 7 est révisé : abord à 12 m de la face (et non 7 m), chemin autour des
+   obstacles, ailes et lice, « demi-tour » vers une sortie à 18 m après un refus. Toujours sans équivalent au web.
 
 ## Risques
 
