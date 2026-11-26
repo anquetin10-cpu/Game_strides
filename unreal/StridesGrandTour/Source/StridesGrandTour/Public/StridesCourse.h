@@ -108,7 +108,8 @@ public:
 	const strides::Colliders& WorldColliders() const { return WorldCol; }
 	// Cible du GPS de l'étape de parcours (courses.js:174-179 target) : abord de la ligne de départ (8 m avant) tant que le
 	// départ n'est pas franchi, abord de l'obstacle attendu (7 m avant), puis la ligne d'arrivée ; faux hors parcours.
-	bool CourseGuide(FVector2D& OutWeb, FString& OutLabel) const;
+	// Me : position du cavalier (repère web) ; abord passé dans l'axe, la cible devient l'obstacle.
+	bool CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVector2D& Me) const;
 	// Événements des obstacles du cœur (obstacle:clear / fault / refusal) : journal, puis écouteurs de l'épreuve
 	// (courses.js : obstacle attendu, sens, chrono lancé ; refus compté : cadence remise à 0).
 	void HandleFenceOut(const strides::CsoFenceOut& Out, strides::CsoCadence& Cadence);

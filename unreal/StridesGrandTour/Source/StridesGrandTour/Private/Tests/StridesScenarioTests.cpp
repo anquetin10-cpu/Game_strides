@@ -542,6 +542,15 @@ bool FStridesScenarioPoleRunTest::RunTest(const FString&)
 	TestEqual(TEXT("refus : obstacle attendu toujours 1"), St().next, 1);
 	TestTrue(FString::Printf(TEXT("refus : le cheval ne traverse pas le 1 (centre au plus à s = %.2f m, face arrière %.2f m)"), MaxS1, O1.back), MaxS1 < O1.back);
 	Info(FString::Printf(TEXT("refus au 1 : %s"), *Events()));
+	// Guidage d'épreuve : loin, l'abord du 1 (7 m avant, cible du web) ; abord passé dans l'axe, le 1 lui-même.
+	{
+		FVector2D Gw;
+		FString Gl;
+		TestTrue(TEXT("guidage : cible à 30 m"), C->CourseGuide(Gw, Gl, FVector2D(O1.x - O1.n.x * 30, O1.z - O1.n.z * 30)));
+		TestTrue(FString::Printf(TEXT("guidage loin : abord du 1 (%s)"), *Gl), Gw.Equals(FVector2D(O1.x - O1.n.x * 7, O1.z - O1.n.z * 7), 1e-6) && Gl == TEXT("Obstacle 1"));
+		C->CourseGuide(Gw, Gl, FVector2D(O1.x - O1.n.x * 4, O1.z - O1.n.z * 4));
+		TestTrue(TEXT("guidage près : le 1 (pas de demi-tour vers l'abord)"), Gw.Equals(FVector2D(O1.x, O1.z), 1e-6));
+	}
 	// 1 sauté dans la zone d'appel.
 	LineUp(0);
 	TestTrue(TEXT("1 : SAUT dans la zone d'appel"), JumpAt(0, strides::Zone::Good));

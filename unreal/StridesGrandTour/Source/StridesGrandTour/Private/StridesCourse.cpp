@@ -516,7 +516,7 @@ float AStridesCourse::ElapsedTime() const { return RunPtr ? (float)RunPtr->state
 int32 AStridesCourse::Faults() const { return RunPtr ? RunPtr->state().faults : 0; }
 int32 AStridesCourse::NextFence() const { return RunPtr ? RunPtr->state().next : 1; }
 
-bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel) const
+bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVector2D& Me) const
 {
 	if (!RunPtr || RunPtr->finished() || RunPtr->step() != strides::CsoStep::Course) return false;
 	const strides::CsoRunState& S = RunPtr->state();
@@ -532,6 +532,10 @@ bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel) const
 		if (O.num == S.next)
 		{
 			OutWeb = FVector2D(O.x - O.n.x * 7, O.z - O.n.z * 7);
+			// Abord passé, cheval dans l'axe devant l'obstacle : l'obstacle lui-même (sinon « demi-tour » vers l'abord, relevé
+			// en partie le 26/11 alors que l'obstacle était droit devant).
+			const double Sx = (Me.X - O.x) * O.n.x + (Me.Y - O.z) * O.n.z, Ux = (Me.X - O.x) * O.t.x + (Me.Y - O.z) * O.t.z;
+			if (Sx > -9 && Sx < 0 && FMath::Abs(Ux) < O.w / 2 + 3) OutWeb = FVector2D(O.x, O.z);
 			OutLabel = FString::Printf(TEXT("Obstacle %s"), UTF8_TO_TCHAR(O.label.c_str()));
 			return true;
 		}

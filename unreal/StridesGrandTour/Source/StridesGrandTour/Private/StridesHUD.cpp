@@ -315,7 +315,8 @@ FVector2D AStridesHUD::PoleWaypoint(const FVector2D& Me, const FVector2D& Goal, 
 	auto Inside = [&](const FVector2D& P, double M) { return FMath::Abs(P.X - Arena.X) < W / 2 + M && FMath::Abs(P.Y - Arena.Y) < D / 2 + M; };
 	// Cible dans la carrière, cavalier dehors : point devant l'ouverture de la lice (côté sud, rectFence 's', 7 m, milieu),
 	// 5 m à l'extérieur ; une fois à moins de 3 m de ce point (ou dedans), la cible elle-même.
-	if (!Inside(Goal, 0) || Inside(Me, -0.5)) return Goal;
+	// Tout près de la cible (entrée de la lice comprise) : la cible directement, sans aller-retour au point de passage.
+	if (!Inside(Goal, 0) || Inside(Me, -0.5) || FVector2D::Distance(Me, Goal) < 15) return Goal;
 	const FVector2D Gate(Arena.X, Arena.Y + D / 2 + 5);
 	if (FVector2D::Distance(Me, Gate) < 3 || (FMath::Abs(Me.X - Arena.X) < 2.5 && Me.Y > Arena.Y + D / 2 - 1)) return Goal;
 	return Gate;
@@ -341,9 +342,10 @@ void AStridesHUD::DrawCourseGuide()
 	const APawn* P = GetOwningPawn();
 	FVector2D Goal;
 	FString Label;
-	if (!P || !Canvas || !Course.IsValid() || !Course->CourseGuide(Goal, Label)) return;
+	if (!P || !Canvas || !Course.IsValid()) return;
 	double CX, CY, CZ;
 	StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
+	if (!Course->CourseGuide(Goal, Label, FVector2D(CX, CZ))) return;
 	const FVector F = P->GetActorForwardVector();
 	const FVector2D D(Goal.X - CX, Goal.Y - CZ);
 	const FString G = CourseGuideText(Label, D.Size(), RelativeAngleDeg(F, D));
