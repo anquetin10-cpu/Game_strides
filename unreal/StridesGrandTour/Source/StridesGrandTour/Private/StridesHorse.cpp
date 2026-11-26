@@ -799,6 +799,19 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 		Course->HandleFenceOut(Out, Cad);
 		Sim.hasCadence = Cad.has;
 		Sim.cadence = Cad.v;
+		// Hors épreuve, le web monte en commandes du monde ouvert : touches relâchées, le cheval s'arrête. Le portage garde
+		// les commandes de concours partout (cadence retenue) : sans cela, un refus hors épreuve repart sans fin contre la
+		// barre (cadence non réglable pendant le refus, pas de demi-tour pendant le cabré : cheval « coincé », contrôle J1).
+		// Hors épreuve, un refus remet donc la cadence à 0, comme un refus compté en épreuve (courses.js).
+		const bool bInCourse = Course->Run() && Course->Run()->course().active;
+		if (!bInCourse && Sim.hasCadence)
+		{
+			bool bRefused = false;
+			for (const strides::CsoHorseEvent E : Out.horse) bRefused |= E == strides::CsoHorseEvent::Refuse;
+			for (const strides::CsoFenceEvent& E : Out.events) bRefused |= E.kind == strides::CsoFenceEventKind::Refusal;
+			for (const strides::CsoHorseEvent E : Events) bRefused |= E == strides::CsoHorseEvent::Refuse;
+			if (bRefused) Sim.cadence = 0;
+		}
 		Course->UpdateFences(Dt, In.time, Sim.x, Sim.z);
 	}
 	X = Sim.x; Z = Sim.z; H = Sim.heading;

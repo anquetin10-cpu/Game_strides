@@ -734,5 +734,23 @@ bool FStridesWorldPoleTargetTest::RunTest(const FString&)
 	TestEqual(TEXT("invite « E · Chrono » atteinte"), G.PC->ActionLabel(), FString(TEXT("Chrono")));
 	TestTrue(FString::Printf(TEXT("en moins de 2 min de jeu (%.1f s)"), Secs), Secs < 120);
 	TestTrue(FString::Printf(TEXT("distance décroissante une fois le cap pris (pire remontée %.3f m par image)"), Worst), Worst < 0.05);
+	// Promenade libre (aucune épreuve) : cheval conduit droit sur le 3 sans SAUT ; il refuse, sa cadence retombe à 0 et il
+	// peut faire demi-tour (contrôle J1 : cheval « coincé » dans le 5 et le 8, refus relancé sans fin par la cadence gardée).
+	{
+		const std::vector<strides::CsoObstacle>& Obs = G.Course->Obstacles();
+		const strides::CsoObstacle& O = Obs[FMath::Min(2, (int32)Obs.size() - 1)];
+		G.Horse->PlaceAt(O.x - O.n.x * 14, O.z - O.n.z * 14, O.rot, 4.0);
+		for (int32 K = 0; K < 180; K++) D.Toward(O.x + O.n.x * 6, O.z + O.n.z * 6, 4.0);
+		D.Release();
+		const strides::CsoHorseState& S = G.Horse->CsoState();
+		TestTrue(FString::Printf(TEXT("promenade : refus devant le %hs, cadence retombée (%.2f)"), O.label.c_str(), S.cadence), S.hasCadence && S.cadence == 0);
+		for (int32 K = 0; K < 60; K++) G.Frame();  // fin du cabré
+		const double H0 = G.Horse->CsoState().heading;
+		D.Set(TEXT("KeyD"), true);
+		for (int32 K = 0; K < 120; K++) G.Frame();
+		D.Release();
+		const double Turned = FMath::Abs(FMath::UnwindRadians(G.Horse->CsoState().heading - H0));
+		TestTrue(FString::Printf(TEXT("promenade : demi-tour possible après le refus (%.0f°)"), FMath::RadiansToDegrees(Turned)), Turned > FMath::DegreesToRadians(60.0));
+	}
 	return true;
 }
