@@ -44,6 +44,24 @@ void AStridesCourse::ApplyHeights(const std::vector<double>& Heights)
 		CoreObstacles[I] = Fences[I]->CoreObstacle();
 	}
 	CoreStates = strides::csoFenceStates(CoreObstacles);
+	// Ailes : sommet à h + 0,75 m, suivent la hauteur posée.
+	RebuildColliders();
+}
+
+void AStridesCourse::RebuildColliders()
+{
+	WorldCol = strides::Colliders();
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	auto Ground = [Data](double X, double Z) { return Data ? (double)Data->TerrainHeight(X, Z) : 0.0; };
+	// Lice basse de la carrière du Pôle (world.js buildPole : rectFence(POLE.arena, { height: 1.0, tag: 'arena' }, 's', 7, 0.5)).
+	if (Data && Data->PlanArena().w > 0 && Data->PlanArena().d > 0)
+	{
+		const auto Pts = strides::rectFencePoints(Data->PoleArena.X, Data->PoleArena.Y, Data->PlanArena().w, Data->PlanArena().d, 's', 7, 0.5);
+		strides::addFence(WorldCol, Pts, false, 1.0, false, "arena", Ground);
+	}
+	// Chandeliers et ailes (obstacles.js add), solides pour le cheval.
+	for (const strides::CsoObstacle& O : CoreObstacles)
+		strides::addObstacleWings(WorldCol, O.kind, O.x, O.z, O.rot, O.w, O.h, O.spread, Ground(O.x, O.z));
 }
 
 std::vector<double> AStridesCourse::FenceHeights() const
@@ -134,6 +152,7 @@ void AStridesCourse::BuildWith(const strides::CourseDesign& Design, double Cours
 		CoreObstacles.push_back(Fence->CoreObstacle());
 	}
 	CoreStates = strides::csoFenceStates(CoreObstacles);
+	RebuildColliders();
 	// Temps accordé : longueur arrondie au mètre (obstacles.js, CSO_LENGTH) à la vitesse du niveau.
 	Allowed = strides::timeAllowedFor(FMath::RoundToDouble(Trace.length), CourseSpeedMS);
 }
@@ -462,6 +481,9 @@ void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::Cs
 	{
 		AStridesFence* Fence = FenceAt(E.obstacle);
 		FenceLog.Add(FString::Printf(TEXT("%s %s %d"), UTF8_TO_TCHAR(strides::csoFenceEventName(E.kind)), Fence ? *Fence->Label : TEXT("?"), E.dir));
+		// Journal du jeu (preuve d'une partie jouée : ce que les obstacles ont jugé au contact du cheval).
+		UE_LOG(LogTemp, Display, TEXT("Strides épreuve : %s %s (sens %d, marge %.2f m%s%s)"), UTF8_TO_TCHAR(strides::csoFenceEventName(E.kind)), Fence ? *Fence->Label : TEXT("?"),
+			E.dir, E.margin, E.cause.empty() ? TEXT("") : TEXT(", cause "), UTF8_TO_TCHAR(E.cause.c_str()));
 		if (!RunPtr || !Fence) continue;
 		const strides::CsoObstacleEventKind K = E.kind == strides::CsoFenceEventKind::Clear ? strides::CsoObstacleEventKind::Clear
 			: E.kind == strides::CsoFenceEventKind::Fault ? strides::CsoObstacleEventKind::Fault : strides::CsoObstacleEventKind::Refusal;
@@ -493,6 +515,30 @@ void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double 
 float AStridesCourse::ElapsedTime() const { return RunPtr ? (float)RunPtr->state().t : 0.f; }
 int32 AStridesCourse::Faults() const { return RunPtr ? RunPtr->state().faults : 0; }
 int32 AStridesCourse::NextFence() const { return RunPtr ? RunPtr->state().next : 1; }
+
+bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel) const
+{
+	if (!RunPtr || RunPtr->finished() || RunPtr->step() != strides::CsoStep::Course) return false;
+	const strides::CsoRunState& S = RunPtr->state();
+	if (S.finished || S.eliminated) return false;
+	const strides::CsoRunConfig& Cfg = RunPtr->config();
+	if (!S.started)
+	{
+		OutWeb = FVector2D(Cfg.start.x - FMath::Sin(Cfg.start.rot) * 8, Cfg.start.z - FMath::Cos(Cfg.start.rot) * 8);
+		OutLabel = TEXT("Ligne de départ");
+		return true;
+	}
+	for (const strides::CsoObstacle& O : CoreObstacles)
+		if (O.num == S.next)
+		{
+			OutWeb = FVector2D(O.x - O.n.x * 7, O.z - O.n.z * 7);
+			OutLabel = FString::Printf(TEXT("Obstacle %s"), UTF8_TO_TCHAR(O.label.c_str()));
+			return true;
+		}
+	OutWeb = FVector2D(Cfg.finish.x, Cfg.finish.z);
+	OutLabel = TEXT("Arrivée");
+	return true;
+}
 FString AStridesCourse::StatusText() const
 {
 	if (!RunPtr) return FString();

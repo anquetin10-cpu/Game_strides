@@ -32,6 +32,16 @@ public:
 	// Repère du chrono du Pôle (lot J1-D, choix signalé dans plan.md) : cible de guidage quand aucune mission de carrière ni
 	// aucune épreuve n'est en cours ; texte « Chrono du Pôle · 420 m · à droite » (cap relatif du cavalier). Vide sinon.
 	static FString PoleGuideText(double Distance, double RelAngleDeg);
+	// Cap relatif (degrés) de la cible vue du cavalier : avant Unreal du pion, vecteur vers la cible dans le repère web.
+	static double RelativeAngleDeg(const FVector& Forward, const FVector2D& ToGoalWeb);
+	// Point de passage du guidage (repère web) : l'ouverture de la lice quand la cible est dans la carrière et le cavalier dehors.
+	static FVector2D PoleWaypoint(const FVector2D& Me, const FVector2D& Goal, const FVector2D& Arena, double W, double D);
+	// Guidage en épreuve (jalon J1, correction ; choix n° 7 de plan.md) : cible du GPS de l'étape de parcours du web
+	// (courses.js target : abord de la ligne de départ, abord de l'obstacle attendu, arrivée), écrite sous le tableau :
+	// « Obstacle 3 · 25 m · à droite ». Vide à moins de 4 m.
+	static FString CourseGuideText(const FString& Label, double Distance, double RelAngleDeg);
+	// Dernier guidage d'épreuve affiché (tests, relevé des captures) ; vide si aucun.
+	const FString& LastCourseGuideShown() const { return LastCourseGuide; }
 	// Invite affichée à la dernière image (tests, relevé en partie réelle) ; vide si aucune.
 	const FString& LastPromptShown() const { return LastPrompt; }
 	// Vrai si le HUD de débogage a été dessiné à la dernière image (tests, relevé des captures en partie réelle).
@@ -42,6 +52,7 @@ private:
 	// Minicarte nord en haut, centrée sur le joueur : zones, routes, lieux, obstacles, cheval, cap et GPS.
 	void DrawMinimap(const APawn* P, const class UStridesProgressionSubsystem* Progress);
 	void DrawPhone(const class UStridesProgressionSubsystem* Progress);
+	void DrawCourseGuide();
 	// Texte du HUD de débogage : balises <b> de l'astuce retirées (le web les rend en gras), « ▸ » rendu « > » (glyphe
 	// absent de la police par défaut du moteur ; l'interface d'épreuve UMG de la tranche T7 en aura une qui l'a).
 	static FString DebugText(const FString& S);
@@ -50,6 +61,7 @@ private:
 	FString LastEvent;
 	bool bDrewDebug = false;
 	FString LastPrompt;
+	FString LastCourseGuide;
 	float EventT = 0.f;
 	TWeakObjectPtr<class AStridesCourse> Course;  // épreuve du Pôle (objectif affiché tant qu'elle est en cours)
 };

@@ -54,11 +54,21 @@ void AStridesHUD::DrawHUD()
 	bDrewDebug = DebugVisible(Course.IsValid() && Course->Run() ? &Course->HudModel() : nullptr);
 	if (!bDrewDebug)
 	{
+		DrawCourseGuide();
 		DrawPhone(GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>());
 		return;
 	}
+	LastCourseGuide.Reset();
 	float Y = 40.f;
-	auto Line = [this, &Y](const FString& S, const FLinearColor& C = FLinearColor::White) { DrawText(S, C, 40.f, Y, nullptr, 1.4f); Y += 30.f; };
+	// Lignes sur un fond sombre : lisibles sur le sable clair de la carrière et sur le ciel (relevé du contrôle J1).
+	auto Line = [this, &Y](const FString& S, const FLinearColor& C = FLinearColor::White)
+	{
+		float TW = 0, TH = 0;
+		GetTextSize(S, TW, TH, nullptr, 1.4f);
+		DrawRect(FLinearColor(0.f, 0.f, 0.f, .55f), 32.f, Y - 3.f, TW + 16.f, TH + 6.f);
+		DrawText(S, C, 40.f, Y, nullptr, 1.4f);
+		Y += 30.f;
+	};
 	const APawn* P = GetOwningPawn();
 	if (const AStridesHorse* H = Cast<AStridesHorse>(P))
 	{
@@ -105,9 +115,12 @@ void AStridesHUD::DrawHUD()
 				double CX, CY, CZ;
 				StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
 				const FVector F = P->GetActorForwardVector();
-				const FVector2D D(Goal.X - CX, Goal.Y - CZ);
-				const double Rel = FMath::RadiansToDegrees(FMath::Atan2(F.X * D.Y - F.Y * D.X, F.X * D.X + F.Y * D.Y));
-				const FString G = PoleGuideText(D.Size(), Rel);
+				const UStridesDataSubsystem* Dt = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+				const FVector2D Me(CX, CZ);
+				// Départ dans la carrière : par l'entrée de la lice (colliders du web), pas au travers.
+				const FVector2D Way = Dt ? PoleWaypoint(Me, Goal, Dt->PoleArena, Dt->PlanArena().w, Dt->PlanArena().d) : Goal;
+				const double Dist = FVector2D::Distance(Me, Way) + FVector2D::Distance(Way, Goal);
+				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me));
 				if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
 			}
 		}
@@ -295,6 +308,55 @@ FVector2D AStridesHUD::MinimapHeading(const FVector& Forward)
 {
 	// Avant Unreal (X, Y) = direction web (x, z) (StridesUnits) : même sens que MinimapPoint.
 	return FVector2D(Forward.X, Forward.Y).GetSafeNormal();
+}
+
+FVector2D AStridesHUD::PoleWaypoint(const FVector2D& Me, const FVector2D& Goal, const FVector2D& Arena, double W, double D)
+{
+	auto Inside = [&](const FVector2D& P, double M) { return FMath::Abs(P.X - Arena.X) < W / 2 + M && FMath::Abs(P.Y - Arena.Y) < D / 2 + M; };
+	// Cible dans la carrière, cavalier dehors : point devant l'ouverture de la lice (côté sud, rectFence 's', 7 m, milieu),
+	// 5 m à l'extérieur ; une fois à moins de 3 m de ce point (ou dedans), la cible elle-même.
+	if (!Inside(Goal, 0) || Inside(Me, -0.5)) return Goal;
+	const FVector2D Gate(Arena.X, Arena.Y + D / 2 + 5);
+	if (FVector2D::Distance(Me, Gate) < 3 || (FMath::Abs(Me.X - Arena.X) < 2.5 && Me.Y > Arena.Y + D / 2 - 1)) return Goal;
+	return Gate;
+}
+
+double AStridesHUD::RelativeAngleDeg(const FVector& Forward, const FVector2D& ToGoalWeb)
+{
+	// Avant Unreal (X, Y) = direction web (x, z) (StridesUnits) ; positif : la cible est à droite du cavalier.
+	return FMath::RadiansToDegrees(FMath::Atan2(Forward.X * ToGoalWeb.Y - Forward.Y * ToGoalWeb.X, Forward.X * ToGoalWeb.X + Forward.Y * ToGoalWeb.Y));
+}
+
+FString AStridesHUD::CourseGuideText(const FString& Label, double Distance, double RelAngleDeg)
+{
+	if (Distance < 4.0) return FString();
+	const double A = FMath::Abs(RelAngleDeg);
+	const TCHAR* Way = A < 20.0 ? TEXT("tout droit") : A > 135.0 ? TEXT("demi-tour") : RelAngleDeg > 0 ? TEXT("à droite") : TEXT("à gauche");
+	return FString::Printf(TEXT("%s · %.0f m · %s"), *Label, Distance, Way);
+}
+
+void AStridesHUD::DrawCourseGuide()
+{
+	LastCourseGuide.Reset();
+	const APawn* P = GetOwningPawn();
+	FVector2D Goal;
+	FString Label;
+	if (!P || !Canvas || !Course.IsValid() || !Course->CourseGuide(Goal, Label)) return;
+	double CX, CY, CZ;
+	StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
+	const FVector F = P->GetActorForwardVector();
+	const FVector2D D(Goal.X - CX, Goal.Y - CZ);
+	const FString G = CourseGuideText(Label, D.Size(), RelativeAngleDeg(F, D));
+	LastCourseGuide = G;
+	if (G.IsEmpty()) return;
+	// Pastille sous le tableau du chrono (en haut à gauche), fond sombre, texte clair.
+	float TW = 0, TH = 0;
+	const float Sc = 1.6f;
+	GetTextSize(G, TW, TH, nullptr, Sc);
+	const float BX = 24.f, BY = Canvas->SizeY * .11f;
+	DrawRect(FLinearColor(.02f, .03f, .04f, .78f), BX, BY, TW + 36.f, TH + 18.f);
+	DrawRect(FLinearColor(.49f, 1.f, .77f, 1.f), BX, BY, 5.f, TH + 18.f);
+	DrawText(G, FLinearColor::White, BX + 20.f, BY + 9.f, nullptr, Sc);
 }
 
 FString AStridesHUD::PoleGuideText(double Distance, double RelAngleDeg)

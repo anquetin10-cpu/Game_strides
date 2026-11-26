@@ -70,3 +70,10 @@ target_sources(strides_core PRIVATE ${CORE}/Private/HorseView.cpp)
 add_executable(strides_horse_view_tests tests/test_horse_view.cpp)
 target_link_libraries(strides_horse_view_tests strides_core)
 add_test(NAME monte-vue COMMAND strides_horse_view_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles/monte ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Jalon J1 (correction après contrôle) : collisions du monde (src/world/colliders.js, clôture de la carrière du Pôle,
+# ailes des obstacles, résolution du cheval de horse.js) portées en C++ (StridesCore/Colliders), contre l'oracle
+# tests/oracles/colliders.json (scripts/unreal/export-colliders.mjs) ; ctest « colliders ».
+target_sources(strides_core PRIVATE ${CORE}/Private/Colliders.cpp)
+add_executable(strides_colliders_tests tests/test_colliders.cpp)
+target_link_libraries(strides_colliders_tests strides_core)
+add_test(NAME colliders COMMAND strides_colliders_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles)

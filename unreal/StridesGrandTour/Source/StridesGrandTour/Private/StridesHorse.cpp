@@ -743,6 +743,21 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 	const double X0 = Sim.x, Z0 = Sim.z;
 	Events.clear();
 	strides::csoHorseStep(Sim, In, Obs, Events, R, JP, HP);
+	// Collisions du monde (horse.js:344-360) après le déplacement, avant les obstacles : lice de la carrière, chandeliers
+	// et ailes (colliders du web) ; au-dessus de leur sommet en plein saut, le cheval passe.
+	if (Course)
+	{
+		strides::HorseCollideInput CI;
+		CI.heading = Sim.heading;
+		CI.jumpY = Sim.jumpY;
+		CI.jumpT = Sim.jumpT;
+		CI.clearance = In.clearance;
+		CI.groundNow = GroundAt(Sim.x, Sim.z);
+		CI.dt = HDt;
+		CI.time = In.time;
+		const strides::HorseCollideOut Hit = strides::horseCollide(Course->WorldColliders(), Sim.x, Sim.z, Sim.speed, LastBump, CI);
+		if (Hit.hit) CollisionCount++;
+	}
 	FrameEvents.Reset();
 	// Sons (tranche T12) : écouteurs de game.js:716-728, cheval du joueur, commandes de concours, sol de la carrière.
 	UStridesCsoAudio* Audio = GetWorld() ? GetWorld()->GetSubsystem<UStridesCsoAudio>() : nullptr;

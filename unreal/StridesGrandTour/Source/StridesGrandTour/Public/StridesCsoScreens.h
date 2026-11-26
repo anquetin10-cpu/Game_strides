@@ -59,6 +59,11 @@ public:
 	// dialogue) : mêmes gestionnaires
 	// qu'au toucher (tests, captures) ; faux si ce bouton n'est pas affiché.
 	bool ClickForTest(const FString& Id);
+	// Bouton principal de la carte affichée (« Entrer en piste », « Retour », « Continuer ») déclenché au clavier ou à la
+	// manette (Entrée / E / F, bouton X) : un bouton HTML du web garde le focus clavier ; la carte du portage n'en a pas.
+	// Faux sans carte ni bouton principal (jalon J1, correction, choix n° 8).
+	bool PressPrimary();
+	FString PrimaryButtonId() const { return PrimaryId; }
 	// Éléments affichés (« partie=texte »), pour les tests et les captures.
 	TArray<FString> Describe() const { return Shown; }
 	void SetViewCssForTest(const FVector2D& V) { TestView = V; }
@@ -121,6 +126,7 @@ private:
 	bool bResultLay = false;
 	TArray<FString> Shown;
 	TArray<FString> ButtonIds;
+	FString PrimaryId;
 	TMap<FString, FVector4> Boxes;
 	FVector2D TestView = FVector2D::ZeroVector;
 	int32 ShownScreen = 0;  // 0 : aucune carte, 1 : présentation, 2 : plan, 3 : bilan

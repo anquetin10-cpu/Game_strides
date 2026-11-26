@@ -83,6 +83,8 @@ public:
 	double WebZ() const { return Z; }
 	double Heading() const { return H; }
 	bool IsJumping() const { return Sim.jumpT >= 0; }
+	// Contacts avec les colliders du monde (lice, ailes) depuis l'apparition (tests et journal).
+	int32 CollisionCount = 0;
 	bool IsDemoCourseActive() const { return bDemoCourse; }
 	void ToggleDemoCourse();
 	// Point d'assise du cavalier (repère monde Unreal).
@@ -190,6 +192,7 @@ protected:
 	UPROPERTY(Transient) TObjectPtr<UStridesHorseTackMesh> TackMeshComp;
 
 private:
+	double LastBump = -10;  // horse.js lastBump (horse:bump)
 	// bSimPaused : simulation suspendue (téléphone ouvert : game.simPaused) ; cheval et chrono figés (hdt et sdt nuls),
 	// obstacles, caméra et HUD au pas réel (game.js:1486-1507).
 	void TickCso(float Dt, bool bSimPaused = false);

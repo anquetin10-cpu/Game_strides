@@ -4,6 +4,7 @@
 #include "Engine/StaticMeshActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "StridesCourse.h"
+#include "StridesCore/CsoEntry.h"
 #include "StridesDataSubsystem.h"
 #include "StridesProgressionSubsystem.h"
 #include "StridesScenery.h"
@@ -43,6 +44,14 @@ void AStridesWorldDirector::BuildWorld()
 	PoleDesign.x += Data->PoleArena.X;
 	PoleDesign.z += Data->PoleArena.Y;
 	PoleCourse->Build(PoleDesign, *Data);
+	if (const strides::CsoActivity* A = Data->CsoActivity())
+	{
+		// Colonne de 1 m × 30 m, sans collision, à côté du poteau (hors du chemin du cheval : 1,5 m à l'est).
+		PoleBeacon = SpawnBlock(StridesUnits::WebToUE(A->startX + 1.5, Data->TerrainHeight(A->startX + 1.5, A->startZ) + 15.0, A->startZ), FVector(100.f, 100.f, 3000.f),
+			FRotator::ZeroRotator, FLinearColor(.49f, 1.f, .77f));
+		PoleBeacon->SetActorEnableCollision(false);
+		PoleBeacon->GetStaticMeshComponent()->SetCastShadow(false);
+	}
 }
 
 void AStridesWorldDirector::Tick(float DeltaSeconds)
@@ -53,6 +62,20 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 	MissionCheckTimer = 0.f;
 	UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>();
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+	if (PoleBeacon)
+	{
+		// Visible sans mission de carrière ni épreuve, et seulement de loin (à moins de 12 m, l'invite « E · Chrono » prend le relais).
+		bool bShow = Pawn && !(Progress && Progress->HasActiveTarget()) && !(PoleCourse && PoleCourse->MissionActive());
+		if (bShow)
+		{
+			double X, Y, Z;
+			StridesUnits::UEToWeb(Pawn->GetActorLocation(), X, Y, Z);
+			double BX, BY, BZ;
+			StridesUnits::UEToWeb(PoleBeacon->GetActorLocation(), BX, BY, BZ);
+			bShow = FVector2D::Distance(FVector2D(X, Z), FVector2D(BX, BZ)) > 12.0;
+		}
+		PoleBeacon->SetActorHiddenInGame(!bShow);
+	}
 	if (!Progress || !Pawn || !Progress->HasActiveTarget())
 	{
 		if (MissionBeacon) MissionBeacon->SetActorHiddenInGame(true);

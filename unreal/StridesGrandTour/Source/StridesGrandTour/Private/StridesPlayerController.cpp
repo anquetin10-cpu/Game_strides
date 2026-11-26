@@ -110,10 +110,11 @@ void AStridesPlayerController::SetupInputComponent()
 	Context->MapKey(SaveAction, EKeys::F5);
 	Context->MapKey(LoadAction, EKeys::F9);
 	Context->MapKey(DemoCourseAction, EKeys::F8);
-#endif
-	Context->MapKey(PhoneAction, EKeys::Gamepad_Special_Right);
+	// Mission suivante (N, croix haut) : outil du portage (audit B7), absent du Shipping comme F5 / F9 / F8.
 	Context->MapKey(MissionAction, EKeys::N);
 	Context->MapKey(MissionAction, EKeys::Gamepad_DPad_Up);
+#endif
+	Context->MapKey(PhoneAction, EKeys::Gamepad_Special_Right);
 	if (UEnhancedInputComponent* EI = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		EI->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AStridesPlayerController::OnMove);
@@ -332,6 +333,8 @@ void AStridesPlayerController::StepCommands(float)
 	const bool bCanAct = !bPhoneOpen && !bOverlay;
 	// game.js:1467-1469 : action (E, F, Entrée, bouton d'action) — dialogue fermé, sinon action proposée.
 	if (bCanAct && Cmd.wasPressed("action")) DoAction();
+	// Carte ouverte : Entrée / E / F déclenchent son bouton principal (choix n° 8 : le bouton HTML du web se prend au clavier).
+	else if (bOverlay && !bPhoneOpen && Cmd.wasPressed("action") && Screens) Screens->PressPrimary();
 	// frozenInput (game.js:1478) : téléphone, carte ou dialogue.
 	if (!bCanAct || DialogOpen())
 	{
@@ -450,6 +453,8 @@ void AStridesPlayerController::OnInteract()
 {
 	// Manette (X) et bouton tactile du portage : même action que E / F / Entrée, hors carte et téléphone.
 	if (!bPhoneOpen && !CardOpen() && !bPausedState) DoAction();
+	// Carte ouverte : bouton principal (choix n° 8), comme Entrée / E / F au clavier.
+	else if (!bPhoneOpen && CardOpen() && !bPausedState && Screens) Screens->PressPrimary();
 }
 
 // ---- Entrée dans l'épreuve (tranche T10) ----

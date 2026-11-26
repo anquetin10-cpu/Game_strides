@@ -17,4 +17,7 @@ private:
 	class AStaticMeshActor* SpawnBlock(const FVector& Location, const FVector& Size, const FRotator& Rotation = FRotator::ZeroRotator, const FLinearColor& Color = FLinearColor(.45f, .48f, .5f));
 	float MissionCheckTimer = 0.f;
 	UPROPERTY() TObjectPtr<class AStaticMeshActor> MissionBeacon;
+	// Balise du chrono du Pôle (lot J1-D, choix n° 5) : colonne claire au poteau « Chrono », visible de loin quand aucune
+	// mission ni épreuve n'est en cours (gps.set(a.start) du web pose une balise lumineuse ; ici, sans passer par l'app).
+	UPROPERTY() TObjectPtr<class AStaticMeshActor> PoleBeacon;
 };

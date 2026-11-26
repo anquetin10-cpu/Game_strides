@@ -345,6 +345,7 @@ void UStridesCsoScreens::Clear()
 	Textures.Reset();
 	Shown.Reset();
 	ButtonIds.Reset();
+	PrimaryId.Reset();
 	Boxes.Reset();
 	PlanW = nullptr;
 	CardScroll = nullptr;
@@ -844,6 +845,7 @@ void UStridesCsoScreens::BuildCard(int32 Which, const FVector2D& ViewCss)
 		PlaceAt(Canvas, W, Box(E), 8);
 		Boxes.Add(Bn.Id, Box(E));
 		ButtonIds.Add(Bn.Id);
+		if (Bn.bPrimary) PrimaryId = Bn.Id;
 		Shown.Add(FString::Printf(TEXT("bouton %s=%s%s"), *Bn.Id, *Bn.Label, Bn.bPrimary ? TEXT(" (primary)") : TEXT("")));
 	}
 }
@@ -969,6 +971,17 @@ void UStridesCsoScreens::OnDialog() { if (Course) Course->AdvanceDialog(); Refre
 void UStridesCsoScreens::OnRetry() { if (Course) Course->PressScreenButton(TEXT("cso-retry")); Refresh(); }
 void UStridesCsoScreens::OnTrain() { if (Course) Course->PressScreenButton(TEXT("cso-train")); Refresh(); }
 void UStridesCsoScreens::OnDone() { if (Course) Course->PressScreenButton(TEXT("cso-done")); Refresh(); }
+
+bool UStridesCsoScreens::PressPrimary()
+{
+	Refresh();
+	if (!Course || PrimaryId.IsEmpty() || !ButtonIds.Contains(PrimaryId)) return false;
+	const FString Id = PrimaryId;
+	const bool bOk = Course->PressScreenButton(Id);
+	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton principal « %s » au clavier / à la manette (%d)"), *Id, bOk);
+	Refresh();
+	return bOk;
+}
 
 bool UStridesCsoScreens::ClickForTest(const FString& Id)
 {
