@@ -11,6 +11,7 @@
 		{ "Name": "EnhancedInput", "Enabled": true },
 		{ "Name": "ProceduralMeshComponent", "Enabled": true },
 		{ "Name": "ModelingToolsEditorMode", "Enabled": false },
+		{ "Name": "AndroidFileServer", "Enabled": true, "TargetAllowList": [ "Game", "Client", "Server" ] },
 		{ "Name": "PixelStreaming2", "Enabled": true, "PlatformAllowList": [ "Mac" ], "TargetAllowList": [ "Editor" ] }
 	],
 	"TargetPlatforms": [ "IOS", "Mac" ]

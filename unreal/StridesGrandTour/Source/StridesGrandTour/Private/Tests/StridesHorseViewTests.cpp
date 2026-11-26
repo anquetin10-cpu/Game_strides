@@ -316,3 +316,45 @@ bool FStridesHorseViewTest::RunTest(const FString&)
 	AddInfo(FString::Printf(TEXT("export : %s"), *OutDir));
 	return true;
 }
+
+// J1-H (plan de livraison) : sources des clips miroir retenues contre le ramasse-miettes par la main du web SEULE (sans la
+// vue du web). Dans l'éditeur, un asset chargé porte RF_Standalone et survit au ramasse-miettes même sans référence : le
+// défaut n'apparaissait qu'en -game ou en paquet (SIGBUS de FStridesHorseAnimProxy::Evaluate, clips libérés puis lus par
+// le mélangeur). Le test retire RF_Standalone des sources le temps d'un passage du ramasse-miettes, comme dans un jeu
+// cuit, puis le remet aux survivantes.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesHorseMirrorRetentionTest, "Strides.Monte.MirrorRetention", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FStridesHorseMirrorRetentionTest::RunTest(const FString&)
+{
+	using namespace StridesHorseViewTest;
+	FTestWorld W(TEXT("StridesHorseMirrorRetention"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	AStridesHorse* Horse = W.World->SpawnActor<AStridesHorse>(FVector::ZeroVector, FRotator::ZeroRotator);
+	if (!TestNotNull(TEXT("cheval"), Horse)) return false;
+	FString Err;
+	if (!TestTrue(FString::Printf(TEXT("main du web activée (%s)"), *Err), Horse->EnableWebLead(&Err))) return false;
+	TestNull(TEXT("vue du web non activée (main du web seule)"), Horse->HorseView());
+	const FStridesHorseMirrorSet* Set = Horse->MirrorSet();
+	if (!TestNotNull(TEXT("clips miroir cuits"), Set)) return false;
+	TArray<TWeakObjectPtr<const UAnimSequence>> Weak;
+	TArray<TWeakObjectPtr<UAnimSequence>> Unflagged;
+	for (int32 I = 0; I < Set->Num(); I++)
+	{
+		UAnimSequence* S = const_cast<UAnimSequence*>(Set->Source(I));
+		if (!S || Weak.Contains(S)) continue;
+		Weak.Add(S);
+		if (S->HasAnyFlags(RF_Standalone))
+		{
+			S->ClearFlags(RF_Standalone);
+			Unflagged.Add(S);
+		}
+	}
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
+	int32 Lost = 0;
+	for (const TWeakObjectPtr<const UAnimSequence>& Wp : Weak) Lost += !Wp.IsValid();
+	for (const TWeakObjectPtr<UAnimSequence>& Wp : Unflagged)
+		if (UAnimSequence* S = Wp.Get()) S->SetFlags(RF_Standalone);
+	TestTrue(FString::Printf(TEXT("sources des clips miroir retenues après le ramasse-miettes, sans RF_Standalone (%d sources, %d sans le drapeau, %d libérées)"),
+				 Weak.Num(), Unflagged.Num(), Lost),
+		Weak.Num() == 11 && Lost == 0);
+	return true;
+}

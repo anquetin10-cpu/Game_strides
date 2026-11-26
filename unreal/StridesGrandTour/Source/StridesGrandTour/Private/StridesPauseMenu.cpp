@@ -460,7 +460,11 @@ void UStridesPauseMenu::OnAid()
 	RefreshLabels();
 }
 
-void UStridesPauseMenu::OnResume() { if (PC) PC->ResumeGame(); }
+void UStridesPauseMenu::OnResume()
+{
+	UE_LOG(LogTemp, Display, TEXT("Strides pause : bouton « resume » cliqué ou touché"));
+	if (PC) PC->ResumeGame();
+}
 
 // Écran titre, Découvrir la vraie application Strides, Partager : écrans et liens hors du portage (sans effet).
 void UStridesPauseMenu::OnOther() {}

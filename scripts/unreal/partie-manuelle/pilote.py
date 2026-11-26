@@ -14,6 +14,9 @@ cg = ctypes.CDLL(ctypes.util.find_library('CoreGraphics'))
 cg.CGEventCreateKeyboardEvent.restype = ctypes.c_void_p
 cg.CGEventCreateKeyboardEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint16, ctypes.c_bool]
 cg.CGEventPost.argtypes = [ctypes.c_uint32, ctypes.c_void_p]
+# Drapeaux de modification remis à zéro sur chaque touche injectée : sans cela une touche porte l'état courant (ex. Fn
+# resté posé après une touche F injectée) et Q + Fn = « Note rapide » de macOS (constaté le 26/11 au soir, J1b).
+cg.CGEventSetFlags.argtypes = [ctypes.c_void_p, ctypes.c_uint64]
 cf = ctypes.CDLL(ctypes.util.find_library('CoreFoundation'))
 cf.CFRelease.argtypes = [ctypes.c_void_p]
 out, logp, tools, mode, dur = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], float(sys.argv[5])
@@ -25,7 +28,7 @@ def L(m):
     with lock:
         log.write(time.strftime('%H:%M:%S') + ('%.2f' % (time.time() % 1))[1:] + ' ' + m + '\n'); log.flush()
 def key(code, down):
-    e = cg.CGEventCreateKeyboardEvent(None, code, down); cg.CGEventPost(0, e); cf.CFRelease(e)
+    e = cg.CGEventCreateKeyboardEvent(None, code, down); cg.CGEventSetFlags(e, 0); cg.CGEventPost(0, e); cf.CFRelease(e)
 keys_down = set()
 def setkey(code, on):
     if on and code not in keys_down: key(code, True); keys_down.add(code)

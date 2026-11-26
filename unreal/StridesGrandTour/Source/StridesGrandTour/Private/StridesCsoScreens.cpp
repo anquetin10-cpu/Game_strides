@@ -1009,11 +1009,31 @@ void UStridesCsoScreens::BuildDialog(const FVector2D& ViewCss)
 
 void UStridesCsoScreens::OnPlan() { if (Course) Course->PressScreenButton(TEXT("plan")); Refresh(); }
 void UStridesCsoScreens::OnBack() { if (Course) Course->PressScreenButton(TEXT("plan-back")); Refresh(); }
-void UStridesCsoScreens::OnEnter() { if (Course) Course->PressScreenButton(TEXT("enter")); Refresh(); }
+void UStridesCsoScreens::OnEnter()
+{
+	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton « enter » cliqué ou touché"));
+	if (Course) Course->PressScreenButton(TEXT("enter"));
+	Refresh();
+}
 void UStridesCsoScreens::OnDialog() { if (Course) Course->AdvanceDialog(); Refresh(); }
-void UStridesCsoScreens::OnRetry() { if (Course) Course->PressScreenButton(TEXT("cso-retry")); Refresh(); }
-void UStridesCsoScreens::OnTrain() { if (Course) Course->PressScreenButton(TEXT("cso-train")); Refresh(); }
-void UStridesCsoScreens::OnDone() { if (Course) Course->PressScreenButton(TEXT("cso-done")); Refresh(); }
+void UStridesCsoScreens::OnRetry()
+{
+	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton « cso-retry » cliqué ou touché"));
+	if (Course) Course->PressScreenButton(TEXT("cso-retry"));
+	Refresh();
+}
+void UStridesCsoScreens::OnTrain()
+{
+	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton « cso-train » cliqué ou touché"));
+	if (Course) Course->PressScreenButton(TEXT("cso-train"));
+	Refresh();
+}
+void UStridesCsoScreens::OnDone()
+{
+	UE_LOG(LogTemp, Display, TEXT("Strides carte : bouton « cso-done » cliqué ou touché"));
+	if (Course) Course->PressScreenButton(TEXT("cso-done"));
+	Refresh();
+}
 
 bool UStridesCsoScreens::PressPrimary()
 {

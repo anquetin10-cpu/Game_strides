@@ -411,6 +411,9 @@ bool AStridesHorse::EnableWebLead(FString* Err)
 	const FString ClipRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_");
 	if (!Set->Build(Mesh->GetSkeletalMeshAsset(), ClipRoot, Err)) return false;
 	Mirrors = Set;
+	MirrorClipRefs.Reset();
+	for (int32 I = 0; I < Mirrors->Num(); I++)
+		if (Mirrors->Source(I)) MirrorClipRefs.AddUnique(Mirrors->Source(I));
 	Mesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 	Mesh->SetAnimInstanceClass(UStridesHorseAnimInstance::StaticClass());
 	UStridesHorseAnimInstance* A = Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance());

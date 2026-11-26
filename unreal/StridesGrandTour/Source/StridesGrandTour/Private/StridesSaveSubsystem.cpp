@@ -101,11 +101,19 @@ bool UStridesSaveSubsystem::ReloadSettings()
 {
 	strides::SaveGame Core;
 	FString Msg;
-	if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0) || !ReadCore(SlotName, Core, Msg)) return false;
+	if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0) || !ReadCore(SlotName, Core, Msg))
+	{
+		UE_LOG(LogTemp, Display, TEXT("Strides sauvegarde : emplacement %s absent ou illisible, partie neuve"), *SlotName);
+		return false;
+	}
 	Settings = Core.settings;
 	Best = Core.bestTimes;
 	Horses = Core.horses;
 	ActiveHorse = Core.activeHorse;
+	// Journal du joueur (J1-E, J1-G) : meilleurs temps relus au lancement, comme le téléphone du web les affiche.
+	FString Times;
+	for (const auto& [Id, T] : Best) Times += FString::Printf(TEXT(" %hs = %.3f s ;"), Id.c_str(), T);
+	UE_LOG(LogTemp, Display, TEXT("Strides sauvegarde : emplacement %s lu, %d meilleur(s) temps%s"), *SlotName, (int32)Best.size(), *Times);
 	return true;
 }
 

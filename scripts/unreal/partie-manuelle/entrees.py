@@ -11,6 +11,9 @@ cg = ctypes.CDLL(ctypes.util.find_library('CoreGraphics'))
 cg.CGEventCreateKeyboardEvent.restype = ctypes.c_void_p
 cg.CGEventCreateKeyboardEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint16, ctypes.c_bool]
 cg.CGEventPost.argtypes = [ctypes.c_uint32, ctypes.c_void_p]
+# Drapeaux de modification remis à zéro sur chaque touche injectée : sans cela une touche porte l'état courant (ex. Fn
+# resté posé après une touche F injectée) et Q + Fn = « Note rapide » de macOS (constaté le 26/11 au soir, J1b).
+cg.CGEventSetFlags.argtypes = [ctypes.c_void_p, ctypes.c_uint64]
 class CGPoint(ctypes.Structure):
     _fields_ = [('x', ctypes.c_double), ('y', ctypes.c_double)]
 cg.CGEventCreateMouseEvent.restype = ctypes.c_void_p
@@ -23,7 +26,7 @@ log = open(logp, 'a')
 def L(m):
     log.write(time.strftime('%H:%M:%S') + ' ' + m + '\n'); log.flush()
 def key(code, down):
-    e = cg.CGEventCreateKeyboardEvent(None, code, down); cg.CGEventPost(0, e); cf.CFRelease(e)
+    e = cg.CGEventCreateKeyboardEvent(None, code, down); cg.CGEventSetFlags(e, 0); cg.CGEventPost(0, e); cf.CFRelease(e)
 def click(x, y):
     for t in (5, 1, 2):  # moved, down, up
         e = cg.CGEventCreateMouseEvent(None, t, CGPoint(x, y), 0); cg.CGEventPost(0, e); cf.CFRelease(e); time.sleep(0.06)

@@ -249,5 +249,9 @@ private:
 	// Clips joués par la vue du web et sources des clips miroir, retenus contre le ramasse-miettes (plantage constaté en
 	// partie jouée le 25/11/2026 : clips de virage et d'arrêt chargés sans référence, libérés, puis lus par le mélangeur).
 	UPROPERTY(Transient) TArray<TObjectPtr<const class UAnimSequence>> ViewClipRefs;
+	// Sources des clips miroir, retenues dès la main du web (EnableWebLead), avec ou sans la vue du web : le mélangeur les
+	// lit à chaque image (racines du clip miroir, FStridesHorseMirrorSet::SampleLocal). Sans elles, la main du web seule
+	// (vue du web refusée ou -StridesHorseView=jeu) lisait des clips libérés par le ramasse-miettes (SIGBUS du proxy, J1-H).
+	UPROPERTY(Transient) TArray<TObjectPtr<const class UAnimSequence>> MirrorClipRefs;
 	const struct FStridesHorseViewTestHooks* ViewHooks = nullptr;
 };

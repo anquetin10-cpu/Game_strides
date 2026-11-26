@@ -45,6 +45,18 @@ public:
 	virtual bool HandleKeyDownEvent(FSlateApplication&, const FKeyEvent& E) override { Feed(E, true); return false; }
 	virtual bool HandleKeyUpEvent(FSlateApplication&, const FKeyEvent& E) override { Feed(E, false); return false; }
 	virtual const TCHAR* GetDebugName() const override { return TEXT("StridesKeys"); }
+#if !UE_BUILD_SHIPPING
+	// Journal des clics (diagnostic J1 du premier clic absorbé, hors Shipping) : position, fenêtre active, capture.
+	virtual bool HandleMouseButtonDownEvent(FSlateApplication& App, const FPointerEvent& E) override { LogMouse(App, E, TEXT("enfoncé")); return false; }
+	virtual bool HandleMouseButtonUpEvent(FSlateApplication& App, const FPointerEvent& E) override { LogMouse(App, E, TEXT("relâché")); return false; }
+	void LogMouse(FSlateApplication& App, const FPointerEvent& E, const TCHAR* What)
+	{
+		const TSharedPtr<SWidget> Focus = App.GetUserFocusedWidget(0);
+		UE_LOG(LogTemp, Display, TEXT("Strides souris : bouton %s %s à (%.0f, %.0f), application active %d, capture %s, focus %s"), *E.GetEffectingButton().ToString(), What,
+			E.GetScreenSpacePosition().X, E.GetScreenSpacePosition().Y, App.IsActive(), App.HasAnyMouseCaptor() ? TEXT("oui") : TEXT("non"),
+			Focus.IsValid() ? *Focus->GetTypeAsString() : TEXT("aucun"));
+	}
+#endif
 private:
 	void Feed(const FKeyEvent& E, bool bDown)
 	{

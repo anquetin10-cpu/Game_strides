@@ -13,7 +13,7 @@ import sys
 CHAINES = [
     'StridesShotsDir', 'StridesShots=', 'StridesPerfSansCapture', 'StridesPerfWarm', 'StridesMontePoses',
     'StridesHorseView=', 'StridesHorseScale=', 'StridesMonte=', 'StridesRider=', 'StridesTack=',
-    'Démo parcours', 'DÉMONSTRATION AUTOMATIQUE', 'F5 sauvegarder',
+    'Démo parcours', 'DÉMONSTRATION AUTOMATIQUE', 'F5 sauvegarder', 'Strides souris',
 ]
 
 
