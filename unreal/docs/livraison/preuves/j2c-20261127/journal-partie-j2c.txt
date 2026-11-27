@@ -1,0 +1,14 @@
+[2026.11.27-07.23.02:909][  0]LogTemp: Display: Strides : paddock d'échauffement, 2 obstacles posés (pièces exportées : 1)
+[2026.11.27-07.26.37:207][418]LogTemp: Display: Strides épreuve : activité cso_train lancée (capacité : portée 1.55 m pour 1.15 m, dialogue 0)
+[2026.11.27-07.26.45:579][657]LogTemp: Display: Strides carte : bouton « enter » au clavier / à la manette (1)
+[2026.11.27-07.29.44:007][472]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES)
+[2026.11.27-07.30.18:966][456]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-07.30.19:687][477]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-07.30.20:500][499]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-07.30.22:727][565]LogTemp: Display: Strides carte : bouton « cso-train » au clavier / à la manette (1)
+[2026.11.27-07.30.23:444][577]LogTemp: Display: Strides entraînement : big ENTRAÎNEMENT À L’ABORD · Événement · Entraînement
+[2026.11.27-07.30.23:444][577]LogTemp: Display: Strides entraînement : activité cso_warmup lancée (paddock 240, -232)
+[2026.11.27-07.40.50:978][ 18]LogTemp: Display: Strides épreuve : obstacle:refusal  (sens 1, marge 0.00 m)
+[2026.11.27-07.40.51:020][ 18]LogTemp: Display: Strides entraînement : toast Refus : trop près, appelle plus tôt
+[2026.11.27-07.41.56:817][ 13]LogTemp: Display: Strides entraînement : « Terminer » (0 sans faute sur 0)
+[2026.11.27-07.41.56:861][ 13]LogTemp: Display: Strides entraînement : fin « Entraînement terminé » · Entraînement à l’abord · Strides · 0 saut sans faute sur 0.

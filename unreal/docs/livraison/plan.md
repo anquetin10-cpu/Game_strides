@@ -282,7 +282,7 @@ la main par Julien : **à confirmer**). Sélection : `unreal/docs/livraison/preu
 | J2-C tribunes (B9) | **écrit, testé ctest et moteur** : tribunes du Pôle pleines comme au web (`world.js buildStands` : boîte « stands » w × d sans sommet) — cheval : `strides::addStands` dans les colliders du parcours ; cavalier à pied : boîte invisible qui ne bloque que les pions (ni caméra ni visibilité). Oracle `colliders.json` régénéré par `export-colliders.mjs` avec les tribunes et 3 abords (dont un en saut) : ctest `colliders` 637 vérifications, 0 échec ; `Strides.World.Stands` : 5 abords au galop, 0 image dans l'emprise, contact sur les 5 ; piéton arrêté au bord ; la caméra traverse la boîte | idem |
 | J2-C descente | **déjà porté** (player.js:225 : « Descendre » proposé sous 2,5 m/s hors saut) ; **testé moteur** dans `Strides.World.Stands` : E refusé à 3 m/s, descente à l'arrêt | idem |
 | J2-C caméra collée au mur au départ | **non reproduit** : aucune trace précise dans l'audit ni dans les captures de J1/J2 ; la caméra de concours garde sa sonde portée en T6 (`t6-tribunes`, `t6-mat`). À décrire (lieu, vue) pour être traité ; à confirmer par Julien | — |
-| J2-D entraînement au paddock | **non fait** : activité `cso_warmup` du web (`activities.js:145` : paddock d'échauffement, vertical et oxer, explication de chaque saut, barres remontées) absente du portage ; le bouton « S'entraîner » du bilan existe mais ne lance pas cet entraînement | — |
+| J2-D entraînement au paddock | **fait en J2c (voir plus bas)** ; état J2b : non fait : activité `cso_warmup` du web (`activities.js:145` : paddock d'échauffement, vertical et oxer, explication de chaque saut, barres remontées) absente du portage ; le bouton « S'entraîner » du bilan existe mais ne lance pas cet entraînement | — |
 | J2-E tactile | **partiel, inchangé** : `Strides.Cso.Controls` couvre 844 × 390 et 667 × 308 (relevés du web) ; format iPad non relevé ; appareil réel : J6 | — |
 | Partie en paquet (Development, entrées injectées par l'agent) | **jouée par l'agent** : écurie → poteau (pilote), E, « Entrer en piste », 3 manches, 2 « Recommencer » au clavier. Manche 2 : refus contre l'oxer 2 en fin de manche, passage resté ouvert ; à l'entrée en piste de la manche 3, journal « entrée en piste, passage resté ouvert oublié (obstacle 2, faute 1) » ; premier saut de la manche 3 (le 1) : seulement « Barre au 1 · +4 · Barre touchée par les postérieurs » (contact réel du postérieur droit, 9,1 cm), **aucune faute du 2, aucune « Erreur de parcours »** (0 dans tout le journal), 0 `Fatal` / `Critical error`. Pas de parcours complet (mêmes limites du joueur de l'agent qu'en J2). Tribunes : **non jouées en paquet** (prouvées en ctest et dans le moteur seulement). Jeu à la main par Julien : à confirmer | `journal-partie-j2b.txt`, `055247-manche3-barre-au-1-sans-erreur.jpg` |
 | Matrice de fin d'étape | **verte** : ctest **11 / 11** (bancs `fantome` et `colliders` étendus), Automation `Strides` **55 succès, 0 échec** (`Jump.Fantome`, `Ride.Gaits`, `World.Stands` en plus ; 0 attente Zen sur ce passage, 1 attente résolue seule sur chacun des deux passages ciblés, aucun éditeur arrêté), paquets Development et Shipping de ce code (`-skipcook` : contenu inchangé), Shipping **0 / 14** chaînes d'outils (le réglage de test `bEntryPassResetForTest` n'existe que sous `WITH_DEV_AUTOMATION_TESTS`) ; captures CSO G5 non refaites (aucun visuel du CSO touché) | `check-shipping-tools.txt`, `.ue-cache/journaux/j2b-matrice-automation.log` |
@@ -291,6 +291,65 @@ Alerte macOS : une deuxième alerte de confidentialité (python3.11, enregistrem
 pendant la partie, bouton « Autoriser » en surbrillance ; le garde-fou `front` du plan a arrêté les touches ; le jeu a été
 remis au premier plan par `open`, l'alerte **n'a pas été touchée**.
 
+
+### État J2c au 27/11/2026 (correction de J2b après contrôle adverse, base `126d2493`)
+
+Même légende. Sélection : `unreal/docs/livraison/preuves/j2c-20261127/` ; reste : `.ue-cache/travail/livraison/preuves/j2c/`
+et `.ue-cache/travail/livraison/j2c/`.
+
+**J2-D entraînement au paddock (problème majeur du contrôle) : fait.**
+
+- **Web relevé** (lecture seule, Playwright sur Vite 5178) : `scripts/unreal/export-cso-training.mjs` lance l'activité
+  `cso_warmup` comme le bouton « S'entraîner » (`startTraining`) dans le jeu web réel, relève l'objectif à 9 positions
+  (loin, à pied, 60 / 50 / 47 / 19 m, dans le paddock), puis transmet aux écouteurs 8 événements d'obstacle (marges 8,5 /
+  31 / 11,5 / 0,4 cm, faute avec et sans cause, refus, obstacle du parcours ignoré) et « Terminer » : appels de
+  l'interface, son notify, mode de concours, action « Terminer », carte de fin. Oracle `unreal/core/tests/oracles/cso_training.json`
+  (français et anglais).
+- **Cœur** `strides::CsoTraining` (C++20 sans Unreal) : ctest `entrainement` **286 vérifications, 0 échec** ; mutation
+  « rayon du goto 13 m » détectée (2 échecs).
+- **Monde** : vertical (1,10 m) et oxer (1,00 m) du paddock exportés du web (`cso_fences.json « warmup »`, 11 maillages
+  ajoutés par `import-cso-fences-add.py`, aucun maillage existant réimporté) ; lice du paddock (`rectFence 'e', 6 m`) dans
+  les colliders du cheval et dans l'oracle `colliders.json` (ctest `colliders` **686 vérifications, 0 échec**, 3 abords du
+  paddock ajoutés) ; poteau « Chrono » de l'activité au paddock (`a.start + 3 m`).
+- **Jeu** : « S'entraîner » au bilan lance l'entraînement 300 ms après la fin de l'épreuve ; « Rejoins le paddock… ·
+  distance » puis, dans le paddock, astuce de 7 s, mode de concours (caméra, commandes, bouton SAUT et zone d'appel),
+  toasts « Sans faute · N cm de marge » / « Barre · cause » / « Refus : trop près… », barres remontées 2,5 s après,
+  « Terminer » (E / X / bouton Action, priorité 2), fin. L'épreuve du Pôle ne voit plus que la course « cso »
+  (resetRails, capacité, événements).
+- **Testé moteur** : `Strides.Scenario.Training` (entrées du joueur : E, S tenu, bouton « S'entraîner », stick, Espace) :
+  épreuve éliminée, « S'entraîner », entraînement lancé en 9 à 30 images, paddock atteint au stick par l'ouverture est,
+  vertical sauté (« Sans faute · 31 cm de marge »), oxer sauté en zone loin (« Barre · Appel trop loin », barre remontée),
+  refus au trot (« Refus… »), « Terminer » par E (« Entraînement terminé », « 1 saut sans faute sur 2. »), poteau du Pôle de
+  nouveau proposé, barres du parcours intactes ; poteau du paddock : E lance un second entraînement.
+- **Joué par l'agent dans le paquet Development** (entrées injectées CGEvent, captures système ; journal
+  `journal-partie-j2c.txt`) : écurie → poteau du Pôle (pilote), E, « Entrer en piste », S tenu jusqu'à l'élimination,
+  bilan, **« S'entraîner » au clavier** → « ENTRAÎNEMENT À L'ABORD », objectif « Rejoins le paddock d'échauffement du Pôle ·
+  100 m » et ligne « Paddock du Pôle · 136 m » (capture `083025-entrainement-lance.jpg`) ; paddock atteint en suivant la
+  ligne (capture `083227-etat-paddock.jpg`, vertical visible) ; **un refus** sur un obstacle du paddock avec le toast
+  « Refus : trop près, appelle plus tôt » ; « Terminer » au clavier → « Entraînement terminé · 0 saut sans faute sur 0 ».
+  **Aucun saut franchi dans le paquet** : le joueur de l'agent n'a pas de repère pour viser dans le paddock (pas de
+  pastille au web pendant l'entraînement) et le jeu a perdu le premier plan 6 fois en 2 minutes (application Claude passée
+  devant, garde-fou `front`) ; les sauts sont prouvés dans le moteur seulement. 0 `Fatal` / `Critical` / `Ensure`.
+  Jeu à la main par Julien : à confirmer.
+
+**Autres points du contrôle.**
+
+| Point | État | Preuve |
+|---|---|---|
+| Tribunes (mineur) | **mutation ajoutée** : `Strides.World.Stands` retire le collider « stands » et vérifie que le premier abord entre alors dans l'emprise (test vert = mutation détectée). Piéton : toujours un balayage de capsule, pas un pion qui marche ; tribunes non jouées en paquet | journal `.ue-cache/journaux/j2c-stands.log` |
+| Faute fantôme en paquet (mineur) | inchangé : cas non provoqué par le contrôle ; preuves moteur et ctest de J2b | — |
+| J2-A / J2-E (mineur) | inchangés (clavier seulement, iPad et appareil non relevés) | — |
+| Alertes macOS (mineur) | toujours présentes (4 alertes python3.11 superposées au centre de l'écran pendant toute la partie) ; **aucune touchée** ; à traiter par Julien | captures |
+
+**Matrice de fin d'étape : verte.** ctest **12 / 12** (nouveau banc `entrainement`, `colliders` étendu) ; Automation
+`Strides` **56 succès, 0 échec** (`Strides.Scenario.Training` en plus ; 1 attente Zen résolue seule, aucun éditeur
+arrêté ; tests `Parite.CsoScenery`, `Scenario.PoleLoop`, `Scenario.PoleRun` adaptés : ils comptent désormais les obstacles
+du parcours seuls, les deux du paddock suivant) ; paquet Development cuit (nouveaux maillages) puis reconstruit sur le
+commit, paquet Shipping (`-skipcook`) : **0 / 14** chaînes d'outils (`check-shipping-tools.txt` ; le réglage
+`SetStandsForTest` n'existe que sous `WITH_DEV_AUTOMATION_TESTS`). Captures CSO G5 non refaites (carrière du Pôle non
+modifiée ; paddock vu dans les captures de la partie).
+
+Choix nouveaux : n° 12 et 13 ci-dessous.
 
 ## J3 — Monde vivant de Deauville
 
@@ -373,6 +432,14 @@ remis au premier plan par `open`, l'alerte **n'a pas été touchée**.
    reproduit dans le portage) ; Unreal l'oublie à chaque entrée en piste. Remise à zéro seulement, aucune règle de jugement
    changée (pas de fermeture d'un passage à 8 m). Effet mesuré au web : une « Erreur de parcours » et un son de faute
    injustifiés, 0 point.
+
+12. **Fin de l'entraînement** (27/11, J2c) : le web ouvre la carte de fin de mission (`screens.missionResult` : titre,
+   kicker, texte, +15 réputation) ; le portage n'a pas encore cette carte ni la réputation des missions (comme pour
+   l'épreuve du Pôle) : titre et texte en grand message de 3,5 s. À reprendre avec la boucle produit (J4).
+13. **Refus pendant l'entraînement** (27/11, J2c) : la règle du portage hors épreuve (un refus remet la cadence à 0,
+   contrôle J1 : cheval « coincé » contre la barre) s'applique aussi à l'entraînement ; le web n'a pas d'écouteur qui
+   remet la cadence pendant l'entraînement. Guidage « Paddock du Pôle » pendant l'étape « rejoindre le paddock » (même
+   ligne que le choix n° 5, le GPS du web n'étant pas porté).
 
 ## Risques
 

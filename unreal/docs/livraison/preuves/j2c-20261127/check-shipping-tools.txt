@@ -1,0 +1,15 @@
+'StridesShotsDir'                Shipping : absente ; Development : utf-16-le
+'StridesShots='                  Shipping : absente ; Development : utf-16-le
+'StridesPerfSansCapture'         Shipping : absente ; Development : utf-16-le
+'StridesPerfWarm'                Shipping : absente ; Development : utf-16-le
+'StridesMontePoses'              Shipping : absente ; Development : utf-16-le
+'StridesHorseView='              Shipping : absente ; Development : utf-16-le
+'StridesHorseScale='             Shipping : absente ; Development : utf-16-le
+'StridesMonte='                  Shipping : absente ; Development : utf-16-le
+'StridesRider='                  Shipping : absente ; Development : utf-16-le
+'StridesTack='                   Shipping : absente ; Development : utf-16-le
+'Démo parcours'                  Shipping : absente ; Development : utf-16-le
+'DÉMONSTRATION AUTOMATIQUE'      Shipping : absente ; Development : utf-16-le
+'F5 sauvegarder'                 Shipping : absente ; Development : utf-16-le
+'Strides souris'                 Shipping : absente ; Development : utf-16-le
+0 chaîne(s) d'outils trouvée(s) dans le Shipping sur 14
