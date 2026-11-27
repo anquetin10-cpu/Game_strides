@@ -221,6 +221,12 @@ private:
 	bool bHudWall = false;  // origine fixée
 	double LastJumpTime = -1;
 	UPROPERTY() TObjectPtr<AStridesCourseAids> Aids;
+	// Jalon J2b (B9) : tribunes du Pôle pleines pour le cavalier à pied (boîte invisible, même emprise que le collider
+	// « stands » du cheval, comme le collider unique du web pour le cheval et le piéton).
+	UPROPERTY() TObjectPtr<class UBoxComponent> StandsBlock;
+public:
+	const class UBoxComponent* StandsBlocker() const { return StandsBlock; }
+private:
 	// Entrée dans l'épreuve (tranche T10).
 	bool bAutoEnter = false;         // StartRun : présentation validée d'office
 	int32 ScreenStep = -1;           // rang de l'étape de présentation dont la carte a été ouverte

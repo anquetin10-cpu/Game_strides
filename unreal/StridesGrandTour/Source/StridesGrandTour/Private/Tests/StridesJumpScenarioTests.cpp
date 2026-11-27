@@ -8,12 +8,19 @@
 //    lequel : antérieur ou postérieur). Écarts de pose entre le squelette Unreal et la vue du web mesurés et écrits.
 //  - Strides.Scenario.Jump.InCourse : dans l'épreuve du Pôle (poteau, Entrer en piste, cloche, départ), le 1 sauté trop
 //    loin : faute annoncée par l'interface (hud.big / toast) et comptée au tableau, son de la barre, barre à terre.
+//  - Strides.Scenario.Jump.Fantome (J2b) : faute fantôme. Le scénario web j2b-fantome (export-cso-runs.mjs) rejoué par
+//    les entrées du joueur : l'oxer 2 sauté bien trop tôt (passage resté ouvert, faute « short »), élimination au temps
+//    limite, « Recommencer », puis le 1 sauté. Deux passes dans le même moteur : comportement du web (passage gardé :
+//    « Erreur de parcours : ce n'est pas le 1 » et faute du 2 annoncée à l'abord du 1, reproduction) puis portage
+//    (passage oublié à l'entrée en piste : rien d'annoncé pour le 2, le 1 franchi, 0 point).
 // Ce n'est NI l'autopilote (F8) NI une partie jouée à la main : la partie par entrées système (paquet) le complète.
 #include "Misc/AutomationTest.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "Components/BoxComponent.h"
+#include "CollisionQueryParams.h"
 #include "Misc/Paths.h"
 #include "StridesActivityPost.h"
 #include "StridesCore/CsoFences.h"
@@ -28,6 +35,7 @@
 #include "StridesHorseView.h"
 #include "StridesPlayerController.h"
 #include "StridesRider.h"
+#include "StridesUnits.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -376,6 +384,268 @@ bool FStridesScenarioJumpInCourseTest::RunTest(const FString&)
 	TestTrue(TEXT("barre à terre"), bDown);
 	AddInfo(FString::Printf(TEXT("épreuve : %d images après le placement, fautes %d, contacts des membres %d (%s), interface : %s"), K, St.faults, G.Horse->LimbContactCount,
 		*G.Horse->LastLimbContact, *Hud));
+	return true;
+}
+
+// Jalon J2b : faute fantôme (voir l'en-tête). Placements déclarés (comme l'exporteur web, qui pose le cheval par
+// setPosition avant l'abord) : 24 m avant le 1 au départ, 11 m avant l'oxer 2. Après « Recommencer », le cheval n'est
+// plus posé : il est conduit au stick jusqu'au 1 (une pose oublierait le passage, au web comme ici).
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesScenarioJumpFantomeTest, "Strides.Scenario.Jump.Fantome", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesScenarioJumpFantomeTest::RunTest(const FString&)
+{
+	using namespace StridesJumpTest;
+	auto Wrap = [](double A) { return FMath::Atan2(FMath::Sin(A), FMath::Cos(A)); };
+	// Joystick vers un point (règle steerTo de l'exporteur : −écart de cap × 2,2, borné).
+	auto SteerTo = [&](const strides::CsoHorseState& S, double Wx, double Wz) { return FMath::Clamp(-Wrap(FMath::Atan2(Wx, Wz) - S.heading) * 2.2, -1.0, 1.0); };
+	for (int32 Pass = 0; Pass < 2; Pass++)
+	{
+		const bool bPort = Pass == 1;
+		const FString Who = bPort ? TEXT("portage (passage oublié à l'entrée en piste)") : TEXT("comportement du web (passage gardé)");
+		FTestWorld W(TEXT("StridesJumpFantome"));
+		const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+		if (!TestNotNull(TEXT("données"), Data)) return false;
+		FGame G;
+		if (!TestTrue(FString::Printf(TEXT("parcours, cheval en vue du web, monté (%s)"), *G.Err), G.Make(W.World, *Data))) return false;
+		G.Horse->bEntryPassResetForTest = bPort;
+		AStridesCourse* C = G.Course;
+		const strides::CsoActivity& A = G.Post->Activity();
+		G.Horse->PlaceAt(A.startX, A.startZ + 4, PI, 0);
+		G.Frame();
+		G.Tap(TEXT("KeyE"));
+		if (!TestTrue(TEXT("activité lancée par E"), C->MissionActive())) return false;
+		for (int32 K = 0; K < 60 && C->Screen() != AStridesCourse::EScreen::Presentation; K++)
+		{
+			if (C->DialogOpen()) C->AdvanceDialog();
+			G.Frame();
+		}
+		TestTrue(TEXT("« Entrer en piste »"), C->PressScreenButton(TEXT("enter")));
+		auto WaitCourse = [&]()
+		{
+			for (int32 K = 0; K < 900; K++)
+			{
+				G.Frame();
+				if (C->Run()->step() == strides::CsoStep::Course) return true;
+			}
+			return false;
+		};
+		if (!TestTrue(TEXT("parcours atteint (cloche)"), WaitCourse())) return false;
+		const std::vector<strides::CsoObstacle>& Obs = C->Obstacles();
+		int32 I1 = -1, I2 = -1;
+		for (int32 I = 0; I < (int32)Obs.size(); I++)
+		{
+			if (Obs[I].num == 1) I1 = I;
+			if (Obs[I].num == 2) I2 = I;
+		}
+		if (!TestTrue(TEXT("obstacles 1 et 2"), I1 >= 0 && I2 >= 0)) return false;
+		const strides::CsoObstacle& O1 = Obs[I1];
+		const strides::CsoObstacle& O2 = Obs[I2];
+		auto Target = [&]() { return strides::csoTarget(Obs, G.Horse->CsoState(), G.Horse->JumpPower(), 0.0, true, Data->Jump(), Data->HorseParams()); };
+		// Départ : le 1 sauté en bonne zone depuis 24 m (départ franchi), comme la manche 1 de j2b-fantome.
+		G.Horse->PlaceAt(O1.x - O1.n.x * 24, O1.z - O1.n.z * 24, O1.rot, 6.2);
+		bool bJ = false;
+		for (int32 K = 0; K < 400; K++)
+		{
+			const strides::CsoTarget T = Target();
+			if (!bJ && G.Horse->CsoState().jumpT < 0 && T.index == I1 && T.plan.zone == strides::Zone::Good && T.plan.ideal <= T.plan.L + 0.3) { bJ = true; G.Tap(TEXT("Space")); continue; }
+			G.Frame();
+			if (bJ && G.Horse->CsoState().jumpT < 0 && AlongS(O1, G.Horse->CsoState().x, G.Horse->CsoState().z) > 6) break;
+		}
+		TestTrue(Who + TEXT(" : manche 1, le 1 sauté"), bJ && C->Run()->state().next == 2);
+		// L'oxer 2 : posé à 11 m, SAUT quand sa barre avant passe sous 7,5 m (bien trop tôt), puis 40 images sans commande.
+		G.Horse->PlaceAt(O2.x - O2.n.x * 11, O2.z - O2.n.z * 11, O2.rot, 6.2);
+		bJ = false;
+		int32 Held = 0;
+		for (int32 K = 0; K < 300 && Held <= 40; K++)
+		{
+			const strides::CsoTarget T = Target();
+			if (!bJ && G.Horse->CsoState().jumpT < 0 && T.index == I2 && !T.geo.rails.empty() && T.geo.rails[0].x <= 7.5) { bJ = true; G.Tap(TEXT("Space")); continue; }
+			G.Frame();
+			if (bJ && G.Horse->CsoState().jumpT < 0) Held++;
+		}
+		const strides::CsoHorseState& S = G.Horse->CsoState();
+		const FString Cause = UTF8_TO_TCHAR(S.pass.cause.c_str());
+		TestTrue(FString::Printf(TEXT("%s : passage resté ouvert sur l'oxer 2 avec une faute « short », comme le web (ouvert %d, obstacle %d, faute %d, cause %s, fini %d)"), *Who,
+			S.hasPass, S.pass.o, S.pass.fault, *Cause, S.pass.done), bJ && S.hasPass && S.pass.o == I2 && S.pass.fault && Cause == TEXT("short") && !S.pass.done);
+		// Arrêt (S tenu) jusqu'à l'élimination au temps limite, bilan, « Recommencer ».
+		G.PC->FeedKey(TEXT("KeyS"), true, false);
+		for (int32 K = 0; K < 5000 && !C->Run()->state().eliminated; K++) G.Frame();
+		G.PC->FeedKey(TEXT("KeyS"), false, false);
+		TestTrue(Who + TEXT(" : éliminé (temps limite)"), C->Run()->state().eliminated);
+		for (int32 K = 0; K < 600 && C->Screen() != AStridesCourse::EScreen::Result; K++) G.Frame();
+		if (!TestTrue(Who + TEXT(" : « Recommencer »"), C->PressScreenButton(TEXT("cso-retry")))) return false;
+		const int32 Hud0 = C->HudLog().Num(), Fence0 = C->FenceEventLog().Num();
+		if (!TestTrue(Who + TEXT(" : manche 2, parcours atteint"), WaitCourse())) return false;
+		const strides::CsoHorseState& S2 = G.Horse->CsoState();
+		if (bPort) TestTrue(FString::Printf(TEXT("%s : passage oublié à l'entrée en piste (%d oubli)"), *Who, G.Horse->EntryPassResets), !S2.hasPass && G.Horse->EntryPassResets == 1);
+		else TestTrue(Who + TEXT(" : passage du 2 toujours ouvert après « Recommencer » (défaut du web)"), S2.hasPass && S2.pass.o == I2 && !S2.pass.done);
+		// Chrono lancé de lui-même (45 s), puis conduite au stick jusqu'à 34 m devant le 1 (4 m/s), puis sur son axe à
+		// 6,2 m/s, SAUT en bonne zone.
+		for (int32 K = 0; K < 1500 && !C->Run()->state().started; K++) G.Frame();
+		TestTrue(Who + TEXT(" : chrono lancé"), C->Run()->state().started);
+		const double Px = O1.x - O1.n.x * 34, Pz = O1.z - O1.n.z * 34;
+		int32 K = 0;
+		for (; K < 3000; K++)
+		{
+			const strides::CsoHorseState& H = G.Horse->CsoState();
+			if (FMath::Sqrt(FMath::Square(Px - H.x) + FMath::Square(Pz - H.z)) < 3) break;
+			G.PC->GamepadStickForTest(FVector2D(SteerTo(H, Px - H.x, Pz - H.z), (H.hasCadence ? H.cadence : 0) < 4 ? 1 : 0));
+			G.Frame();
+		}
+		TestTrue(FString::Printf(TEXT("%s : 34 m devant le 1 atteint au stick (%d images)"), *Who, K), K < 3000);
+		bJ = false;
+		for (K = 0; K < 600; K++)
+		{
+			const strides::CsoHorseState& H = G.Horse->CsoState();
+			const double Sa = FMath::Min(AlongS(O1, H.x, H.z) + 8, 0.0);
+			const strides::CsoTarget T = Target();
+			const bool bGo = !bJ && H.jumpT < 0 && T.index == I1 && T.plan.zone == strides::Zone::Good && T.plan.ideal <= T.plan.L + 0.3;
+			FVector2D V(SteerTo(H, O1.x + O1.n.x * Sa - H.x, O1.z + O1.n.z * Sa - H.z), (H.hasCadence ? H.cadence : 0) < 6.2 ? 1 : 0);
+			if (V.Size() > 1) V = V.GetSafeNormal();
+			G.PC->GamepadStickForTest(V);
+			if (bGo) { bJ = true; G.PC->GamepadJumpForTest(); }
+			G.Frame();
+			if (bJ && H.jumpT < 0 && AlongS(O1, H.x, H.z) > 6) break;
+		}
+		G.PC->GamepadStickForTest(FVector2D::ZeroVector);
+		for (int32 F = 0; F < 30; F++) G.Frame();
+		FString Hud, Fen;
+		for (int32 I = Hud0; I < C->HudLog().Num(); I++) Hud += C->HudLog()[I] + TEXT(" ; ");
+		for (int32 I = Fence0; I < C->FenceEventLog().Num(); I++) Fen += C->FenceEventLog()[I] + TEXT(" ; ");
+		const bool bWrong = Hud.Contains(TEXT("Erreur de parcours"));
+		const bool bFault2 = Fen.Contains(TEXT("obstacle:fault 2"));
+		const strides::CsoRunState& St = C->Run()->state();
+		TestTrue(Who + TEXT(" : manche 2, le 1 sauté au stick"), bJ);
+		if (bPort)
+		{
+			TestFalse(FString::Printf(TEXT("%s : aucune « Erreur de parcours » (%s)"), *Who, *Hud), bWrong);
+			TestFalse(FString::Printf(TEXT("%s : aucune faute du 2 annoncée (%s)"), *Who, *Fen), bFault2);
+			TestTrue(FString::Printf(TEXT("%s : le 1 franchi, 0 point, prochain obstacle 2 (%s ; fautes %d, prochain %d)"), *Who, *Fen, St.faults, St.next),
+				Fen.Contains(TEXT("obstacle:clear 1")) && St.faults == 0 && St.next == 2);
+		}
+		else
+		{
+			TestTrue(FString::Printf(TEXT("%s : défaut reproduit, « Erreur de parcours » et faute du 2 à l'abord du 1 (%s | %s)"), *Who, *Hud, *Fen), bWrong && bFault2);
+			TestEqual(Who + TEXT(" : aucun point compté pour la faute fantôme (erreur de parcours seulement, comme le web)"), St.faults, 0);
+		}
+		AddInfo(FString::Printf(TEXT("%s : obstacles %s ; interface %s ; fautes %d, prochain %d"), *Who, *Fen, *Hud, St.faults, St.next));
+	}
+	return true;
+}
+
+// Jalon J2b, lot J2-A : allures au clavier (commandes de concours partout : W monte la cadence, S la baisse, cadence
+// gardée quand on lâche, comme le web en concours). Temps mesurés pour atteindre puis quitter pas, trot, galop et grand
+// galop (seuils d'animation 0,2 / 3,2 / 5,5 / 7,0 m/s) ; critère du plan : chaque changement en moins de 2 s.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesRideGaitsTest, "Strides.Ride.Gaits", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesRideGaitsTest::RunTest(const FString&)
+{
+	using namespace StridesJumpTest;
+	FTestWorld W(TEXT("StridesRideGaits"));
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestNotNull(TEXT("données"), Data)) return false;
+	FGame G;
+	if (!TestTrue(FString::Printf(TEXT("cheval monté (%s)"), *G.Err), G.Make(W.World, *Data))) return false;
+	// Grande ligne droite de la carrière du Pôle, le long de la lice nord, vers l'est (aucun obstacle sur 60 m).
+	const double X0 = Data->PoleArena.X - 55, Z0 = Data->PoleArena.Y - Data->PlanArena().d / 2 + 3;
+	G.Horse->PlaceAt(X0, Z0, PI / 2, 0);
+	G.Frame();
+	const TCHAR* Names[] = {TEXT("arrêt"), TEXT("pas"), TEXT("trot"), TEXT("galop"), TEXT("grand galop")};
+	double Up[5] = {0, -1, -1, -1, -1}, Down[5] = {-1, -1, -1, -1, 0};
+	G.PC->FeedKey(TEXT("KeyW"), true, false);
+	int32 Last = 0, K = 0;
+	double T0 = 0;
+	for (; K < 300 && Last < 4; K++)
+	{
+		G.Frame();
+		const int32 Gt = G.Horse->GaitIndex;
+		if (Gt > Last) { for (int32 I = Last + 1; I <= Gt; I++) Up[I] = K / 30.0 - T0; T0 = K / 30.0; Last = Gt; }
+	}
+	G.PC->FeedKey(TEXT("KeyW"), false, false);
+	const float Vmax = G.Horse->SpeedMS;
+	// Cadence gardée sans touche (1 s).
+	for (int32 I = 0; I < 30; I++) G.Frame();
+	const float Vkept = G.Horse->SpeedMS;
+	G.PC->FeedKey(TEXT("KeyS"), true, false);
+	T0 = 0;
+	for (K = 0; K < 300 && Last > 0; K++)
+	{
+		G.Frame();
+		const int32 Gt = G.Horse->GaitIndex;
+		if (Gt < Last) { for (int32 I = Last - 1; I >= Gt; I--) Down[I] = K / 30.0 - T0; T0 = K / 30.0; Last = Gt; }
+	}
+	G.PC->FeedKey(TEXT("KeyS"), false, false);
+	FString Txt;
+	for (int32 I = 1; I <= 4; I++) Txt += FString::Printf(TEXT("%s atteint en %.2f s ; "), Names[I], Up[I]);
+	for (int32 I = 3; I >= 0; I--) Txt += FString::Printf(TEXT("%s retrouvé en %.2f s ; "), Names[I], Down[I]);
+	AddInfo(FString::Printf(TEXT("allures au clavier : %svitesse max %.2f m/s, gardée %.2f m/s après 1 s sans touche"), *Txt, Vmax, Vkept));
+	for (int32 I = 1; I <= 4; I++) TestTrue(FString::Printf(TEXT("%s atteint au clavier en moins de 2 s (%.2f s)"), Names[I], Up[I]), Up[I] >= 0 && Up[I] < 2.0);
+	for (int32 I = 0; I <= 3; I++) TestTrue(FString::Printf(TEXT("%s retrouvé au clavier en moins de 2 s (%.2f s)"), Names[I], Down[I]), Down[I] >= 0 && Down[I] < 2.0);
+	TestTrue(FString::Printf(TEXT("cadence gardée sans touche (%.2f → %.2f m/s)"), Vmax, Vkept), Vkept > 0.9f * Vmax);
+	return true;
+}
+
+// Jalon J2b, lot J2-C : tribunes du Pôle (B9 de l'audit) pleines pour le cheval (collider « stands » du cœur) et pour le
+// cavalier à pied (boîte bloquante des pions), sans gêner la caméra ; descente refusée au-dessus de 2,5 m/s.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesWorldStandsTest, "Strides.World.Stands", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesWorldStandsTest::RunTest(const FString&)
+{
+	using namespace StridesJumpTest;
+	FTestWorld W(TEXT("StridesWorldStands"));
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestNotNull(TEXT("données"), Data)) return false;
+	FGame G;
+	if (!TestTrue(FString::Printf(TEXT("cheval monté (%s)"), *G.Err), G.Make(W.World, *Data))) return false;
+	const FVector4 S = Data->PoleStands;
+	if (!TestTrue(TEXT("tribunes lues (cso_course_pole.json)"), S.Z > 0 && S.W > 0)) return false;
+	int32 NStands = 0;
+	for (const strides::Collider& Cl : G.Course->WorldColliders().all()) NStands += Cl.tag == "stands";
+	TestEqual(TEXT("un collider « stands » pour le cheval"), NStands, 1);
+	// Cheval lancé au galop vers les tribunes depuis 5 points connus (face côté carrière, entre la lice et les tribunes ;
+	// face arrière ; deux bouts ; en biais) : jamais
+	// dans leur emprise (point d'épaule à 0,45 m devant, rayon 0,85 m).
+	struct FP { double X, Z, H; };
+	const double Hx = S.Z / 2, Hz = S.W / 2;
+	const FP Pts[] = {{S.X - 20, S.Y - Hz - 6, 0}, {S.X + 15, S.Y + Hz + 2.5, PI}, {S.X - Hx - 6, S.Y, PI / 2}, {S.X + Hx + 6, S.Y + 2, -PI / 2}, {S.X + 25, S.Y - Hz - 6, 0.5}};
+	int32 Inside = 0, Hits = 0;
+	for (const FP& P : Pts)
+	{
+		G.Horse->PlaceAt(P.X, P.Z, P.H, 6.5);
+		const int32 C0 = G.Horse->CollisionCount;
+		G.PC->FeedKey(TEXT("KeyW"), true, false);
+		for (int32 K = 0; K < 90; K++)
+		{
+			G.Frame();
+			const strides::CsoHorseState& H = G.Horse->CsoState();
+			const double Cx = H.x + FMath::Sin(H.heading) * 0.45, Cz = H.z + FMath::Cos(H.heading) * 0.45;
+			Inside += FMath::Abs(Cx - S.X) < Hx && FMath::Abs(Cz - S.Y) < Hz;
+		}
+		G.PC->FeedKey(TEXT("KeyW"), false, false);
+		Hits += G.Horse->CollisionCount > C0;
+	}
+	TestEqual(TEXT("cheval : aucune image dans l'emprise des tribunes (5 abords)"), Inside, 0);
+	TestEqual(TEXT("cheval : contact avec les tribunes sur les 5 abords"), Hits, 5);
+	// Cavalier à pied : balayage d'une capsule de piéton (rayon 0,35 m) vers le centre des tribunes, canal des pions.
+	const UBoxComponent* B = G.Course->StandsBlocker();
+	if (TestNotNull(TEXT("boîte des tribunes pour le piéton"), B))
+	{
+		const double Gy = Data->TerrainHeight(S.X, S.Y - Hz - 4);
+		const FVector From = StridesUnits::WebToUE(S.X, Gy + 1.0, S.Y - Hz - 4), To = StridesUnits::WebToUE(S.X, Gy + 1.0, S.Y);
+		FHitResult Hit;
+		const bool bPawn = W.World->SweepSingleByChannel(Hit, From, To, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeCapsule(35.f, 90.f));
+		TestTrue(FString::Printf(TEXT("piéton arrêté au bord des tribunes (%s, %.2f m avant le bord)"), bPawn ? *GetNameSafe(Hit.GetComponent()) : TEXT("rien"), bPawn ? (Hz + 4 - (Hit.Location - From).Size() / 100.0) - Hz : -1.0),
+			bPawn && Hit.GetComponent() == B);
+		FHitResult HitCam;
+		const bool bCam = W.World->LineTraceSingleByChannel(HitCam, From, To, ECC_Camera) && HitCam.GetComponent() == B;
+		TestFalse(TEXT("la boîte ne gêne pas la caméra"), bCam);
+	}
+	// Descente (E) refusée à 3 m/s, acceptée à l'arrêt (player.js:225).
+	G.Horse->PlaceAt(S.X, S.Y - Hz - 30, 0, 3.0);
+	G.Frame();
+	G.Tap(TEXT("KeyE"));
+	TestTrue(FString::Printf(TEXT("descente refusée à %.1f m/s"), G.Horse->SpeedMS), G.PC->GetPawn() == G.Horse);
+	G.Horse->PlaceAt(S.X, S.Y - Hz - 30, 0, 0);
+	G.Frame();
+	G.Tap(TEXT("KeyE"));
+	TestTrue(TEXT("descente à l'arrêt"), G.PC->GetPawn() == G.Rider);
 	return true;
 }
 

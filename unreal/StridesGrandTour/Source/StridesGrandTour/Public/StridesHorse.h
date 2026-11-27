@@ -92,6 +92,16 @@ public:
 	bool JudgesLimbs() const;
 	int32 LimbContactCount = 0;
 	FString LastLimbContact;
+	// Jalon J2b (faute fantôme, écart volontaire au web) : remises des barres de l'entrée en piste déjà vues par le cheval
+	// (AStridesCourse::RailResets) ; à chaque nouvelle remise, le passage d'obstacle en cours est oublié
+	// (strides::csoEntryResetPass). Compteur des passages ouverts ainsi oubliés (tests et journal).
+	int32 SeenRailResets = 0;
+	int32 EntryPassResets = 0;
+#if WITH_DEV_AUTOMATION_TESTS
+	// Test Strides.Scenario.Jump.Fantome seulement (absent du Shipping) : faux = comportement du web (passage gardé), pour
+	// rejouer le défaut avant / après dans le même moteur.
+	bool bEntryPassResetForTest = true;
+#endif
 	bool IsDemoCourseActive() const { return bDemoCourse; }
 	void ToggleDemoCourse();
 	// Point d'assise du cavalier (repère monde Unreal).

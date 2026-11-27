@@ -59,6 +59,9 @@ STRIDESCORE_API std::vector<std::pair<double, double>> rectFencePoints(double x,
 // Renvoie le nombre de boîtes posées (0 pour les autres types).
 STRIDESCORE_API int addObstacleWings(Colliders& C, const std::string& kind, double x, double z, double rot, double w, double h, double spread,
                                      double ground, const std::string& tag = "wing");
+// Tribunes (world.js buildStands, jalon J2b / B9) : boîte pleine « stands » de w × d centrée sur (x, z), tournée de rot,
+// sans sommet (ni sautée ni traversée). Renvoie l'indice du collider.
+STRIDESCORE_API int addStands(Colliders& C, double x, double z, double w, double d, double rot = 0);
 
 // Cheval contre le monde (horse.js:344-360), après son déplacement de l'image.
 struct HorseCollideInput {

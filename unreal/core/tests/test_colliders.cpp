@@ -45,12 +45,16 @@ int main(int argc, char** argv) {
   strides::addFence(C, pts, false, 1.0, false, "arena", [](double, double) { return 0.0; });
   for (const J& ob : o["obstacles"].a)
     strides::addObstacleWings(C, ob["kind"].s, ob["x"].num(), ob["z"].num(), ob["rot"].num(), ob["w"].num(), ob["h"].num(), ob["spread"].isNull() ? 0.0 : ob["spread"].num(), 0.0);
+  // Jalon J2b (B9) : tribunes du Pôle.
+  const J& St = o["stands"];
+  CHECK(St["w"].num() > 0, "tribunes dans l'oracle");
+  strides::addStands(C, St["x"].num(), St["z"].num(), St["w"].num(), St["d"].num());
   CHECK(C.size() == o["boxes"].a.size(), "boîtes : %zu / %zu", C.size(), o["boxes"].a.size());
   for (size_t i = 0; i < C.size() && i < o["boxes"].a.size(); i++) {
     const strides::Collider& c = C.all()[i];
     const J& b = o["boxes"][i];
     CHECK(near(c.x, b["x"].num()) && near(c.z, b["z"].num()) && near(c.hw, b["hw"].num()) && near(c.hd, b["hd"].num()) && near(c.rot, b["rot"].num()) &&
-              near(c.top, b["top"].num()) && c.tag == b["tag"].s,
+              (b["top"].isNull() ? std::isinf(c.top) : near(c.top, b["top"].num())) && c.tag == b["tag"].s,  // Infinity → null en JSON
           "boîte %zu (%s)", i, b["tag"].s.c_str());
   }
   int contacts = 0, bumps = 0, steps = 0;
@@ -88,6 +92,18 @@ int main(int argc, char** argv) {
     CHECK(!strides::horseCollide(C, x, z, sp, lb, in).hit, "ouverture : passage libre");
     x = A["x"].num() + 10;
     CHECK(strides::horseCollide(C, x, z, sp, lb, in).hit, "lice : repoussé");
+  }
+  // Tribunes : cheval posé dessous (au milieu de leur emprise) : repoussé hors de la boîte ; en l'air aussi (sans sommet).
+  {
+    double x = St["x"].num(), z = St["z"].num() + St["d"].num() / 2 - 0.3, sp = 6, lb = -10;
+    strides::HorseCollideInput in;
+    in.heading = M_PI;
+    in.dt = 1.0 / 60;
+    const strides::HorseCollideOut r = strides::horseCollide(C, x, z, sp, lb, in);
+    CHECK(r.hit && z + std::cos(in.heading) * 0.45 >= St["z"].num() + St["d"].num() / 2 + 0.85 - 1e-6, "tribunes : cheval repoussé hors de l'emprise (z %.3f)", z);
+    in.jumpY = 2.0; in.jumpT = 0.5;
+    z = St["z"].num() + St["d"].num() / 2 - 0.3;
+    CHECK(strides::horseCollide(C, x, z, sp, lb, in).hit, "tribunes : pas de passage en saut");
   }
   std::printf("colliders : %d vérifications, %d échecs (%d images, %d contacts, %d chocs)\n", g_checks, g_fail, steps, contacts, bumps);
   return g_fail ? 1 : 0;

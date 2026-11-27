@@ -135,6 +135,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") float PondLevel = 0.f;
 	// Centre de la carrière du Pôle (repère du tracé du parcours, cso_course_pole.json : arena).
 	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") FVector2D PoleArena = FVector2D(330.f, -224.f);
+	// Tribunes du Pôle (POLE.stands du web, cso_course_pole.json) : centre x, z puis largeur w et profondeur d (m, repère web).
+	// Jalon J2b (B9) : boîte de collision du cheval (strides::addStands) et du cavalier à pied (AStridesCourse).
+	FVector4 PoleStands = FVector4(0, 0, 0, 0);
 	// Lit le décor exporté (appelé par Initialize ; public pour les tests).
 	void LoadScene();
 	bool HasTerrain() const { return TerrainN > 1 && TerrainHeights.Num() == TerrainN * TerrainN; }

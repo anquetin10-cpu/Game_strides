@@ -1178,6 +1178,69 @@ static void testFenceRuns() {
   std::printf("\n");
 }
 
+// Jalon J2b, faute fantôme (écart volontaire au web, plan.md « État J2b ») : passage resté ouvert sur l'oxer 2 (épaules
+// entrées au sol après un appel bien trop tôt, faute « short » pas encore annoncée), puis le 1 abordé en l'air à la manche
+// suivante. Sans remise à zéro (comportement du web, reproduit par scripts/unreal/export-cso-runs.mjs --only=j2b-fantome :
+// « obstacle:fault 2, marge −0,85, short » et « Erreur de parcours : ce n'est pas le 1 » à l'appel du 1) : la faute du 2
+// est annoncée au passage de l'entrée du 1. Avec csoEntryResetPass (entrée en piste du portage) : rien n'est annoncé
+// pour le 2 et le passage ouvert est celui du 1.
+static void testEntryResetPass() {
+  const J r = loadJson(ORA + "/cso_runs/j2-sans-faute.fr.json");
+  const std::vector<CsoObstacle> obs = obstaclesFrom(r["setup"]["ch0"]["obs"], "j2b");
+  int i1 = -1, i2 = -1;
+  for (int i = 0; i < (int)obs.size(); i++) {
+    if (obs[i].course == "cso" && obs[i].label == "1") i1 = i;
+    if (obs[i].course == "cso" && obs[i].label == "2") i2 = i;
+  }
+  CHECK(i1 >= 0 && i2 >= 0, "j2b : obstacles 1 et 2 du parcours");
+  if (i1 < 0 || i2 < 0) return;
+  const CsoObstacle& o = obs[i1];
+  const CsoHorseParams& P = csoHorseDefaults();
+  // Cheval en l'air, dans l'axe du 1, point de référence (épaules) passant l'entrée du 1 pendant l'image.
+  const auto airborne = [&](CsoHorseState& s, double sv) {
+    s.heading = std::atan2(o.n.x, o.n.z);
+    s.x = o.x + o.n.x * sv - std::sin(s.heading) * P.ref;
+    s.z = o.z + o.n.z * sv - std::cos(s.heading) * P.ref;
+    s.speed = 6.2;
+    s.jumpT = 0.3; s.jt0 = 0.29; s.jt1 = 0.31; s.jumpPeak = 1.6;
+  };
+  const auto open2 = [&](CsoHorseState& s) {
+    s.hasPass = true;
+    s.pass = CsoPass{};
+    s.pass.o = i2; s.pass.dir = 1; s.pass.fault = true; s.pass.cause = "short"; s.pass.margin = -0.85;
+  };
+  for (int withReset = 0; withReset < 2; withReset++) {
+    std::vector<CsoFenceState> st = csoFenceStates(obs);
+    CsoHorseState s;
+    open2(s);
+    if (withReset) csoEntryResetPass(s);
+    CsoHorseState prev;
+    airborne(prev, o.front - 0.05);
+    airborne(s, o.front + 0.05);
+    CsoUpdateHorseInput in;
+    in.prevX = prev.x; in.prevZ = prev.z; in.time = 100; in.limbJudged = true;
+    CsoFenceOut out;
+    csoFencesUpdateHorse(s, obs, st, in, out);
+    int f2 = 0;
+    double m2 = 0;
+    std::string c2;
+    for (const CsoFenceEvent& e : out.events)
+      if (e.obstacle == i2) { f2 += e.kind == CsoFenceEventKind::Fault; m2 = e.margin; c2 = e.cause; }
+    if (!withReset)
+      CHECK(f2 == 1 && c2 == "short" && near(m2, -0.85), "j2b sans remise (web) : faute du 2 annoncée à l'abord du 1 (%d, %s, %.2f)", f2, c2.c_str(), m2);
+    else
+      CHECK(f2 == 0 && out.events.empty(), "j2b avec remise à l'entrée en piste : rien d'annoncé pour le 2 (%d événements)", (int)out.events.size());
+    CHECK(s.hasPass && s.pass.o == i1 && !s.pass.fault, "j2b (%s) : passage ouvert sur le 1, sans faute", withReset ? "remise" : "web");
+  }
+  // La remise n'oublie que le passage : dernier refus et dernier saut gardés.
+  CsoHorseState s;
+  open2(s);
+  s.hasRefusal = true; s.refusal.o = i2; s.hasLastJump = true; s.lastJumpObstacle = i2;
+  csoEntryResetPass(s);
+  CHECK(!s.hasPass && s.pass.o == -1 && s.hasRefusal && s.refusal.o == i2 && s.hasLastJump && s.lastJumpObstacle == i2, "j2b : remise du passage seulement");
+  std::printf("faute fantôme (J2b) : passage ouvert sur le 2 annoncé à l'abord du 1 sans remise (web), oublié avec la remise de l'entrée en piste\n");
+}
+
 // Scénarios de jugement (règles de courses.js) : sans faute, barre, refus, double, temps, élimination.
 static void testJudge() {
   CourseTrace t = traceCourse(poleDesign());
@@ -3496,6 +3559,7 @@ int main(int argc, char** argv) {
     run("target", testTarget);
     run("press", testPress);
     run("judge", testJudge);
+    run("fantome", testEntryResetPass);
     run("save", testSave);
     loadText();
     run("text", testText);

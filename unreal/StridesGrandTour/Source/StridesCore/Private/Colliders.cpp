@@ -144,6 +144,11 @@ std::vector<std::pair<double, double>> rectFencePoints(double x, double z, doubl
   }
 }
 
+// world.js buildStands : colliders.addBox(r.x, r.z, r.w / 2, r.d / 2, rot, Infinity, 'stands').
+int addStands(Colliders& C, double x, double z, double w, double d, double rot) {
+  return C.addBox(x, z, w / 2, d / 2, rot, std::numeric_limits<double>::infinity(), "stands");
+}
+
 int addObstacleWings(Colliders& C, const std::string& kind, double x, double z, double rot, double w, double h, double spread, double ground,
                      const std::string& tag) {
   if (kind != "v" && kind != "o") return 0;

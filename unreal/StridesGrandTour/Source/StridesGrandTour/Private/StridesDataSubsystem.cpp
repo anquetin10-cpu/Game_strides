@@ -127,7 +127,13 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			(*A)->TryGetNumberField(TEXT("w"), PlanArenaDef.w);
 			(*A)->TryGetNumberField(TEXT("d"), PlanArenaDef.d);
 		}
-		if (const TSharedPtr<FJsonObject>* St; J->TryGetObjectField(TEXT("stands"), St)) (*St)->TryGetNumberField(TEXT("w"), PlanArenaDef.standsW);
+		if (const TSharedPtr<FJsonObject>* St; J->TryGetObjectField(TEXT("stands"), St))
+		{
+			(*St)->TryGetNumberField(TEXT("w"), PlanArenaDef.standsW);
+			double Sx = 0, Sz = 0, Sw = 0, Sd = 0;
+			if ((*St)->TryGetNumberField(TEXT("x"), Sx) && (*St)->TryGetNumberField(TEXT("z"), Sz) && (*St)->TryGetNumberField(TEXT("w"), Sw) && (*St)->TryGetNumberField(TEXT("d"), Sd))
+				PoleStands = FVector4(Sx, Sz, Sw, Sd);
+		}
 		J->TryGetNumberField(TEXT("length"), PoleLengthM);
 		// Tracé : lecture du cœur (strides::parseCourseFile), la même que celle que les tests du cœur comparent à
 		// l'oracle cso_course.json (unreal/core/tests/test_core.cpp, testCourse).

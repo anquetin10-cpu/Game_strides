@@ -902,6 +902,24 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 		Course->TickRun(RF, Cad);
 		Sim.hasCadence = Cad.has;
 		Sim.cadence = Cad.v;
+		// Jalon J2b : entrée en piste (première manche, « Recommencer ») : barres remises par le déroulé, passage
+		// d'obstacle en cours oublié (le web le garde : faute fantôme d'une manche précédente, voir CsoFences.h).
+		bool bEntryReset = true;
+#if WITH_DEV_AUTOMATION_TESTS
+		bEntryReset = bEntryPassResetForTest;
+#endif
+		if (bEntryReset && Course->RailResets() != SeenRailResets)
+		{
+			SeenRailResets = Course->RailResets();
+			if (Sim.hasPass && !Sim.pass.done)
+			{
+				EntryPassResets++;
+				const strides::CsoObstacle* PO = Sim.pass.o >= 0 && Sim.pass.o < (int32)Course->Obstacles().size() ? &Course->Obstacles()[Sim.pass.o] : nullptr;
+				UE_LOG(LogTemp, Display, TEXT("Strides épreuve : entrée en piste, passage resté ouvert oublié (obstacle %s, faute %d)"),
+					PO ? UTF8_TO_TCHAR(PO->label.c_str()) : TEXT("?"), Sim.pass.fault ? 1 : 0);
+			}
+			strides::csoEntryResetPass(Sim);
+		}
 		// Aides du parcours (tranche T9) : mises à jour par l'étape de parcours, après son déroulé de l'image.
 		Course->UpdateAids(SDt, Sim.x, Sim.z, Sim.speed, In.power, In.clearance, RF.riding, In.time);
 		// hud.update du jeu web (fin de l'image) : tableau, classes, crans de cadence (réglage au joystick), bouton SAUT.

@@ -6,7 +6,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { Colliders } from '../../src/world/colliders.js';
 // POLE.arena (src/world/sites.js, qui importe des images : non chargeable sous Node) relu dans l'export du jeu.
-const POLE = { arena: JSON.parse(readFileSync(new URL('../../unreal/StridesGrandTour/Content/Data/cso_course_pole.json', import.meta.url), 'utf8')).arena };
+const POLE_FILE = JSON.parse(readFileSync(new URL('../../unreal/StridesGrandTour/Content/Data/cso_course_pole.json', import.meta.url), 'utf8'));
+const POLE = { arena: POLE_FILE.arena, stands: POLE_FILE.stands };
 
 const C = new Colliders();
 const ground = () => 0;
@@ -41,6 +42,9 @@ function wings(o) {
 }
 const obstacles = [{ kind: 'v', x: 320, z: -230, rot: 0.6, w: 3.6, h: 1.15 }, { kind: 'o', x: 345, z: -215, rot: -1.1, w: 3.8, h: 1.2, spread: 0 }];
 obstacles.forEach(wings);
+// Jalon J2b (B9) : tribunes du Pôle, world.js buildStands(POLE.stands, 0) : boîte pleine w × d, sans sommet.
+const ST = POLE.stands;
+C.addBox(ST.x, ST.z, ST.w / 2, ST.d / 2, 0, Infinity, 'stands');
 const boxes = C.all.map((c) => ({ x: c.x, z: c.z, hw: c.hw, hd: c.hd, rot: c.rot, top: c.top, tag: c.tag }));
 
 // horse.js:344-360.
@@ -77,6 +81,10 @@ const starts = [
   { x: 350, z: -224 - 38 + 0.2, heading: Math.PI, speed: 5.5, jumpY: 1.4, jumpT: 0.5, clearance: 0 }, // au-dessus (saut)
   { x: 320 + Math.cos(0.6) * 2.6, z: -230 - Math.sin(0.6) * 2.6, heading: 0.6, speed: 6, jumpY: 0, jumpT: -1, clearance: 0 }, // aile du droit
   { x: 320, z: -230, heading: 0.6, speed: 6, jumpY: 0, jumpT: -1, clearance: 0 }, // milieu du droit : rien
+  // J2b (B9) : tribunes du Pôle, abordées par la carrière (nord de la lice) et par l'arrière, et au-dessus en saut.
+  { x: 340, z: -265.6, heading: Math.PI, speed: 7, jumpY: 0, jumpT: -1, clearance: 0 },
+  { x: 300, z: -280.6, heading: 0.15, speed: 5, jumpY: 0, jumpT: -1, clearance: 0 },
+  { x: 368.6, z: -273, heading: -Math.PI / 2, speed: 6, jumpY: 1.4, jumpT: 0.5, clearance: 0 },
 ];
 for (let i = 0; i < 40; i++) {
   starts.push({ x: 270 + rnd() * 120, z: -262 + rnd() * 76, heading: rnd() * 6.283 - 3.14, speed: rnd() * 8, jumpY: rnd() < 0.2 ? rnd() * 1.5 : 0, jumpT: rnd() < 0.2 ? 0.4 : -1, clearance: 0.05 });
@@ -92,5 +100,5 @@ for (const s of starts) {
   }
   cases.push({ start: s, steps });
 }
-writeFileSync(new URL('../../unreal/core/tests/oracles/colliders.json', import.meta.url), JSON.stringify({ source: 'src/world/colliders.js, world.js fence/rectFence, obstacles.js add, horse.js:344-360', arena: A, fence: pts, obstacles, boxes, cases }, null, 0));
+writeFileSync(new URL('../../unreal/core/tests/oracles/colliders.json', import.meta.url), JSON.stringify({ source: 'src/world/colliders.js, world.js fence/rectFence, buildStands, obstacles.js add, horse.js:344-360', arena: A, stands: ST, fence: pts, obstacles, boxes, cases }, null, 0));
 console.log(`colliders.json : ${boxes.length} boîtes, ${cases.length} cas`);

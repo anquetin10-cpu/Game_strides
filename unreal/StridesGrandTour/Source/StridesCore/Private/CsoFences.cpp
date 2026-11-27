@@ -177,6 +177,12 @@ void csoRestFence(CsoFenceState& st) {
   }
 }
 
+// Jalon J2b : passage en cours oublié à l'entrée en piste (écart volontaire, voir CsoFences.h).
+void csoEntryResetPass(CsoHorseState& s) {
+  s.hasPass = false;
+  s.pass = CsoPass{};
+}
+
 // obstacles.js knock.
 void csoKnock(const std::vector<CsoObstacle>& obstacles, std::vector<CsoFenceState>& states, int oi, int bar, double dir, double side,
               double hit, double time, CsoFenceOut& out) {

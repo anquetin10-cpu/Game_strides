@@ -1,5 +1,6 @@
 #include "StridesCourse.h"
 #include "StridesCsoAudio.h"
+#include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -58,6 +59,28 @@ void AStridesCourse::RebuildColliders()
 	{
 		const auto Pts = strides::rectFencePoints(Data->PoleArena.X, Data->PoleArena.Y, Data->PlanArena().w, Data->PlanArena().d, 's', 7, 0.5);
 		strides::addFence(WorldCol, Pts, false, 1.0, false, "arena", Ground);
+	}
+	// Tribunes du Pôle (world.js buildStands : boîte pleine, jalon J2b / B9) : cheval (cœur) et cavalier à pied (boîte
+	// invisible bloquante, hauteur 12 m, posée sur le sol au centre).
+	if (Data && Data->PoleStands.Z > 0 && Data->PoleStands.W > 0)
+	{
+		const FVector4 S = Data->PoleStands;
+		strides::addStands(WorldCol, S.X, S.Y, S.Z, S.W);
+		if (!StandsBlock)
+		{
+			StandsBlock = NewObject<UBoxComponent>(this, TEXT("StandsBlock"));
+			StandsBlock->SetupAttachment(GetRootComponent());
+			StandsBlock->SetHiddenInGame(true);
+			// Seulement les pions (cavalier à pied) : ni la caméra (sonde de la perche, tranche T6) ni les tracés de visibilité.
+			StandsBlock->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			StandsBlock->SetCollisionObjectType(ECC_WorldStatic);
+			StandsBlock->SetCollisionResponseToAllChannels(ECR_Ignore);
+			StandsBlock->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+			StandsBlock->RegisterComponent();
+		}
+		const double H = 12.0;
+		StandsBlock->SetBoxExtent(FVector(S.Z / 2 * StridesUnits::CmPerM, S.W / 2 * StridesUnits::CmPerM, H / 2 * StridesUnits::CmPerM));
+		StandsBlock->SetWorldLocationAndRotation(StridesUnits::WebToUE(S.X, Ground(S.X, S.Y) + H / 2, S.Y), FRotator::ZeroRotator);
 	}
 	// Chandeliers et ailes (obstacles.js add), solides pour le cheval.
 	for (const strides::CsoObstacle& O : CoreObstacles)

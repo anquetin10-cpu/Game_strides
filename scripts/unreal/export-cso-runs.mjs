@@ -344,6 +344,16 @@ const SCENARIOS = [
   // 5-abord-bonne-zone de la recette (réglages relus dans le test, voir readShots ; état forcé par le test entre deux
   // images relevé dans le champ fs, cheval posé dans tp). Rejoué par testCsoAids (canal « ai ») et par les poses
   // aide-4-* / aide-5-* ; pas par testCsoRuns (état de l'épreuve écrit par le test, hors de la logique du jeu).
+  // J2b (faute fantôme, contrôle de « Recommencer ») : passage resté ouvert sur l'oxer 2 après un appel bien trop tôt,
+  // temps limite, « Recommencer », puis le 1 sauté dans la nouvelle manche. Reproduction du défaut du web
+  // (horse._pass n'est remis à zéro ni par « Recommencer » ni par l'entrée en piste) ; hors de l'index des oracles
+  // rejoués (--out=… à part) : Unreal remet ce passage à zéro à l'entrée en piste (écart volontaire, plan J2b).
+  { id: 'j2b-fantome', type: 't4', langs: ['fr'], maxFrames: 9000, probePass: true,
+    acts: [{ do: 'line', until: 'started' }, { do: 'jump', label: '1', rule: 'good' }, { do: 'jump', label: '2', rule: 'far', far: Number(process.env.J2B_FAR || 7.5), hold: 40 },
+      { do: 'still', until: 'eliminated' }, { do: 'card', extra: 5 }, { do: 'tap', id: 'cso-retry' }, { do: 'still', until: 'started' },
+      { do: 'ride', label: '1', back: 34, r: 3 },
+      { do: 'jump', label: '1', rule: 'good', noPlace: true }, { do: 'wait', frames: 30 }],
+    desc: 'J2b faute fantôme : départ, le 1 sauté (bonne zone), l’oxer 2 abordé à 6,2 m/s avec SAUT à J2B_FAR m (défaut 7,5) de la barre avant (bien trop tôt : réception avant l’oxer, épaules entrées au sol, cheval arrêté entre les barres, passage resté ouvert), arrêt jusqu’à l’élimination (temps limite), bilan, « Recommencer », entrée en piste, cloche, arrêt jusqu’au départ du chrono (45 s), chevauchée sans pose jusqu’à 34 m devant le 1 (4 m/s), puis ramené sur son axe en montant à 6,2 m/s, le 1 sauté en bonne zone ; 30 images après. Canal ps : horse._pass à chaque image.' },
   { id: 't9-recette', type: 'recette', aides: true, langs: ['fr'], maxFrames: 400,
     desc: 'Recette des captures de l’épreuve (tests/e2e/cso-shots.mjs) : cheval monté posé 4 m au sud de l’entrée de piste, cap π ; Parcours du Pôle lancé, 6 images ; plan ouvert puis refermé, Entrer en piste, 80 images ; puis, pour chaque capture d’abord du 2 (trop loin, bonne zone), l’état forcé par le test (chrono lancé, obstacle attendu 2, chrono à 7,42 s, 2 surligné, cheval posé 16 m devant le 2 dans son axe à 6,6 m/s, caméra recalée) et sa boucle (joystick vers l’axe, cadence 6,2 m/s, une image, arrêt quand la première barre passe sous 7,5 + 0,6 m puis 1,7 + 0,6 m). Temporisations du HUD : voir setup.recette.pause.' },
 ];
@@ -1444,6 +1454,8 @@ function PAGE() {
       const h = st.h, o = F(a.label);
       const alt = !!(a.rev || a.ang), sg = a.rev ? -1 : 1;
       const hd = o.rot + (a.rev ? Math.PI : 0) + ((a.ang || 0) * Math.PI) / 180;
+      // J2b : `noPlace` = cheval pas posé (setPosition oublie horse._pass) : il arrive par ses propres moyens (action ride).
+      if (a.noPlace) a.placed = true;
       if (!a.placed) {
         if (h.jumpT >= 0 || h._rearT > 0 || h._refusing) return {};
         const prev = g.obstacles.ofCourse('cso').find((q) => q.num === o.num - 1);
@@ -1461,7 +1473,13 @@ function PAGE() {
           if (a.after > (a.extra ?? 10)) return null;
         }
       } else if (a.jumped && h.jumpT < 0 && sg * s2 > 2 && (!h._pass || h._pass.o !== o || h._pass.done)) return null;
-      if (a.k > 300) throw new Error(`${st.sc.id} : saut du ${a.label} sans fin`);
+      // J2b (faute fantôme) : `hold` = l'action s'arrête `hold` images après la réception, même si le passage de
+      // l'obstacle reste ouvert (cheval arrêté entre les barres d'un oxer après un appel bien trop tôt).
+      else if (a.hold !== undefined && a.jumped && h.jumpT < 0 && (a.held = (a.held || 0) + 1) > a.hold) return null;
+      if (a.k > 300) {
+        if (st.sc.lenient) return null; // --lenient : mise au point d'un scénario
+        throw new Error(`${st.sc.id} : saut du ${a.label} sans fin`);
+      }
       const tg = g.obstacles.target(h);
       let jump = false;
       // Tranche T9 : `early` = un appui SAUT quand la première barre de l'obstacle visé passe sous `early` m (bien trop
@@ -1473,6 +1491,12 @@ function PAGE() {
             : a.rule === 'near' ? tg.plan.zone === 'near'
               : tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3;
         if (go) jump = a.jumped = true;
+      }
+      if (a.noPlace && !alt) {
+        // Cheval non posé (J2b) : joystick vers un point de l'axe 8 m devant sa projection (ramené sur l'axe), cadence
+        // montée jusqu'à 6,2 m/s.
+        const sa = Math.min(s2 + 8, 0);
+        return { move: [steerTo(h, o.x + o.n.x * sa - h.pos.x, o.z + o.n.z * sa - h.pos.z), (g.player.csoCadence ?? 0) < 6.2 ? 1 : 0], jump };
       }
       return { move: [alt ? steerTo(h, Math.sin(hd), Math.cos(hd)) : steerTo(h, o.n.x, o.n.z), 0], jump };
     },
@@ -1494,6 +1518,18 @@ function PAGE() {
       return { move: [0, (g.player.csoCadence ?? 0) > 0 || h.speed > 0 ? -1 : 0] };
     },
     wait: (a, st) => (a.k >= a.frames ? null : {}),
+    // J2b : chevauchée sans pose jusqu'au point à `back` m devant l'obstacle `label`, dans son axe (cadence montée
+    // jusqu'à `v` m/s, joystick vers le point) ; finie à moins de `r` m du point (défaut 2 m).
+    ride: (a, st) => {
+      const h = st.h, o = F(a.label), back = a.back ?? 12;
+      const px = o.x - o.n.x * back, pz = o.z - o.n.z * back;
+      if (Math.hypot(px - h.pos.x, pz - h.pos.z) < (a.r ?? 2)) return null;
+      if (a.k > 3000) {
+        if (st.sc.lenient) return null;
+        throw new Error(`${st.sc.id} : chevauchée vers le ${a.label} sans fin`);
+      }
+      return { move: [steerTo(h, px - h.pos.x, pz - h.pos.z), (g.player.csoCadence ?? 0) < (a.v ?? 4) ? 1 : 0] };
+    },
     // Descente : ACTION pressée une fois (interaction « Descendre », à l'arrêt), puis rien jusqu'à la fin de la descente.
     dismount: (a, st) => {
       if (g.player.mode !== 'ride') return null;
@@ -1582,6 +1618,11 @@ function PAGE() {
         st.tp = null;
         const r = step(input(inp));
         if (tp) r.tp = tp;
+        // J2b : état du passage d'obstacle du cheval (horse._pass) relevé à chaque image (sc.probePass).
+        if (sc.probePass) {
+          const ps = h._pass;
+          r.ps = ps ? { o: ps.o?.label ?? null, dir: ps.dir, fault: ps.fault, cause: ps.cause, done: ps.done, exitT: !!ps.exitT } : null;
+        }
         st.k++;
         if (frames.length > sc.maxFrames) {
           if (sc.lenient) break; // --lenient : mise au point d'un scénario

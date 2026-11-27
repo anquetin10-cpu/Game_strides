@@ -87,6 +87,13 @@ struct CsoFenceOut {
 STRIDESCORE_API std::vector<CsoFenceState> csoFenceStates(const std::vector<CsoObstacle>& obstacles);
 // obstacles.js _rest : barres remises sur leurs taquets.
 STRIDESCORE_API void csoRestFence(CsoFenceState& st);
+// Jalon J2b (écart volontaire au web, documenté : unreal/docs/livraison/plan.md, « faute fantôme ») : à l'entrée en piste
+// (première manche et chaque « Recommencer »), le passage d'obstacle en cours (horse._pass) est oublié avec les barres
+// remises. Le web le garde (courses.js:446-466 ne touche pas au cheval) : un passage resté ouvert sur l'oxer 2 à la manche
+// précédente (épaules entrées au sol après un appel bien trop tôt, cheval arrêté entre les barres) est annoncé au
+// premier saut de la manche suivante (« faute au 2 », « Erreur de parcours : ce n'est pas le 1 »). Remise à zéro
+// seulement : le dernier refus compté (horse._refusal) et le dernier saut sont gardés, aucune règle de jugement changée.
+STRIDESCORE_API void csoEntryResetPass(CsoHorseState& s);
 // obstacles.js knock : barre `bar` (−1 : la plus haute) renversée dans le sens `dir`, bout `side` touché le premier,
 // profondeur `hit` ; entraînement (warmup, home, paris_warm) : remise 2,5 s plus tard.
 STRIDESCORE_API void csoKnock(const std::vector<CsoObstacle>& obstacles, std::vector<CsoFenceState>& states, int obstacle,
