@@ -15,6 +15,7 @@
 #include "StridesProgressionSubsystem.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesUnits.h"
+#include "StridesVehicle.h"
 
 void AStridesHUD::BeginPlay()
 {
@@ -98,7 +99,13 @@ void AStridesHUD::DrawHUD()
 		else Line(TEXT("Flèches / ZQSD : direction et cadence · Maj / Ctrl : allure · SAUT : Espace (manette : A) · Démo parcours : F8 · Descendre : E"), FLinearColor(0.8f, 0.8f, 0.8f));
 #endif
 	}
-	else Line(TEXT("À pied · Monter à cheval : E (à moins de 3 m)"));
+	else if (const AStridesVehicle* V = Cast<AStridesVehicle>(P))
+	{
+		// Jalon J3b : au volant (rapport, vitesse, carburant : ordinateur de bord du web).
+		Line(FString::Printf(TEXT("Au volant · %s%s"), *V->DriveText(), V->CarriesHorse() ? TEXT(" · cheval à bord") : TEXT("")));
+		Line(PLATFORM_IOS ? TEXT("Joystick : direction, gaz et frein · Descendre : bouton (à l'arrêt)") : TEXT("Flèches / ZQSD : direction, gaz, frein et marche arrière · Descendre : E (à l'arrêt)"), FLinearColor(0.8f, 0.8f, 0.8f));
+	}
+	else Line(TEXT("À pied · Monter à cheval : E (à moins de 3 m) · Monter en voiture : E à la portière"));
 	if (EventT > 0) Line(LastEvent, FLinearColor(1.f, 0.85f, 0.3f));
 	if (const UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
 #if UE_BUILD_SHIPPING

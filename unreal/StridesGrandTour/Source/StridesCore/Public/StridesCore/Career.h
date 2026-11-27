@@ -38,6 +38,8 @@ struct StoryMission {
   std::string id, title, category, place, placeName, payLabel, choice, timeoutText;
   int level = 1, pay = 0, xp = 0, cost = 0;
   bool full = false;  // itinéraire relevé dans les étapes du web (sinon : rejoindre le lieu)
+  // Choix n° 25 (J3b) : épreuve du web non portée ; l'offre reste celle du web mais ne s'accepte pas (« À venir »).
+  std::string upcoming;
   std::vector<std::string> prereqs, skipped;
   std::vector<MissionStep> route;
 };
@@ -66,7 +68,8 @@ STRIDESCORE_API TierInfo reputationTier(const StoryData& d, int points);
 struct CareerOffer {
   const StoryMission* mission = nullptr;
   bool locked = false, resume = false;
-  std::string lockText;  // « Débloqué au palier « … ». »
+  bool upcoming = false;  // choix n° 25 : épreuve non portée, offre visible mais refusée à l'acceptation
+  std::string lockText;  // « Débloqué au palier « … ». » ou « À venir : … »
 };
 
 struct CareerState {
@@ -97,6 +100,9 @@ std::vector<CareerOffer> storyOffers(const StoryData& d, const CareerState& s, R
       bool already = false;
       for (const CareerOffer& x : out) already = already || x.locked;
       if (already) continue;
+    } else if (!m.upcoming.empty()) {
+      o.upcoming = true;
+      o.lockText = "À venir : " + m.upcoming;
     }
     out.push_back(o);
   }
@@ -107,7 +113,7 @@ std::vector<CareerOffer> storyOffers(const StoryData& d, const CareerState& s, R
   return sorted;
 }
 
-enum class AcceptResult { Ok, Unknown, Locked, Busy, Funds };
+enum class AcceptResult { Ok, Unknown, Locked, Busy, Funds, Upcoming };
 STRIDESCORE_API AcceptResult acceptMission(const StoryData& d, CareerState& s, const std::string& id);
 
 // Fin de l'étape en cours. Pour « goto » : distance au point ≤ r. Pour « course » : courseFinishedSinceStep.

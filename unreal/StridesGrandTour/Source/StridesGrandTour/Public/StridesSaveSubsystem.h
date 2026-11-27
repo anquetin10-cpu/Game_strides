@@ -19,6 +19,10 @@ public:
 	UPROPERTY() TArray<FString> CompletedMissions;
 	// Jalon J3-D : fers d'or ramassés (save.data.horseshoes, rangs dans HORSESHOES du web).
 	UPROPERTY() TArray<int32> Horseshoes;
+	// Jalon J3b : véhicules déplacés par le joueur (game.js _storePositions : pos.vehicles, rang dans parkedVehicles ;
+	// pos.truck : rang −1) : rang, puis (x, z, cap) en repère web.
+	UPROPERTY() TArray<int32> VehicleIds;
+	UPROPERTY() TArray<FVector> VehiclePoses;
 };
 
 UCLASS()

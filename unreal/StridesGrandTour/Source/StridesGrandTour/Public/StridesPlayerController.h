@@ -206,4 +206,8 @@ private:
 	TArray<FString> TouchEvents;
 	mutable TWeakObjectPtr<class AStridesCourse> CourseCache;
 	class AStridesRider* Rider() const;
+	double FootLookAt = -10;  // dernier regard manuel (camera.js lastManual)
+public:
+	// Jalon J3b : véhicule dont la portière conducteur est à moins de 2,6 m du joueur à pied (nul sinon).
+	class AStridesVehicle* NearVehicle() const;
 };

@@ -184,6 +184,14 @@ const reduced = (def) => {
   return { route: [go(p, `Rejoins ${id && POI[id].name ? POI[id].name : def.placeName}`, 18)], skipped: ['déroulé du web non porté (J4-C)'] };
 };
 
+// Choix n° 25 de plan.md (J3b, arbitrage provisoire de Tom, réversible) : missions dont l'épreuve du web n'est pas encore
+// portée (cross de Saint-Gatien, course de l'hippodrome, Grand Prix de Paris) : offertes mais verrouillées « À venir »
+// jusqu'au portage de leur épreuve (J4). Aucune règle du web n'est changée ; l'offre et le verrou de palier restent ceux du web.
+const UPCOMING = {
+  cross: 'le cross de Saint-Gatien n’est pas encore porté.',
+  derby: 'la course de l’hippodrome de la Touques n’est pas encore portée.',
+  gpparis: 'le Grand Prix de Paris Indoor n’est pas encore porté.',
+};
 const all = [...STORY];
 if (!all.some((d) => d.id === PARIS_MISSION.id)) all.push(PARIS_MISSION);
 const missions = all.map((def) => {
@@ -194,6 +202,7 @@ const missions = all.map((def) => {
     pay: def.pay || 0, payLabel: def.payLabel || '', xp: def.xp || 0, cost: def.cost || 0, timeoutText: def.timeoutText || '',
     requires: def.requires || [], hours: def.hours || null,
     full: !!ROUTES[def.id], choice: R.choice || null, route: R.route, skipped: R.skipped,
+    ...(UPCOMING[def.id] ? { upcoming: UPCOMING[def.id] } : {}),
   };
 });
 const tiers = REPUTATION.map((r) => ({ xp: r.xp, title: r.title, short: r.short }));

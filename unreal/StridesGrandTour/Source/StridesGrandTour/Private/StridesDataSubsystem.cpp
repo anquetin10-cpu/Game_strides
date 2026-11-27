@@ -289,6 +289,13 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 		else LoadLog.Add(TEXT("world_parked.json : absent, aucune voiture garée"));
 	}
+	// Jalon J3b : véhicules conduisibles (TruckSim du web) et camion de l'écurie.
+	{
+		FString Text;
+		std::string Err;
+		bVehicles = FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/vehicles.json"))) && strides::loadVehicles(std::string(TCHAR_TO_UTF8(*Text)), VehiclesDef, Err);
+		LoadLog.Add(bVehicles ? FString::Printf(TEXT("vehicles.json : %d modèles"), (int32)VehiclesDef.specs.size()) : FString::Printf(TEXT("vehicles.json : illisible (%s), aucun véhicule conduisible"), UTF8_TO_TCHAR(Err.c_str())));
+	}
 	LoadScene();
 	// Obstacles, lignes et poteau du parcours du Pôle construits par le jeu web (tranche T5).
 	{

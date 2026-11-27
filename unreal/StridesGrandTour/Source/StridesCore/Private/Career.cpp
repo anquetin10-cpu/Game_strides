@@ -34,6 +34,7 @@ bool loadStory(const std::string& text, StoryData& out, std::string& err) {
       m.timeoutText = str(o["timeoutText"]);
       m.level = std::max(1, integer(o["level"])); m.pay = integer(o["pay"]); m.xp = integer(o["xp"]); m.cost = integer(o["cost"]);
       m.full = o["full"].t == J::Bool && o["full"].b;
+      m.upcoming = str(o["upcoming"]);
       for (const J& r : o["requires"].a) m.prereqs.push_back(str(r));
       for (const J& r : o["skipped"].a) m.skipped.push_back(str(r));
       for (const J& st : o["route"].a) {
@@ -82,6 +83,7 @@ AcceptResult acceptMission(const StoryData& d, CareerState& s, const std::string
   const StoryMission* m = d.find(id);
   if (!m || !storyAvailable(s, *m)) return AcceptResult::Unknown;
   if (m->level > reputationTier(d, s.reputation).level) return AcceptResult::Locked;
+  if (!m->upcoming.empty()) return AcceptResult::Upcoming;  // choix n° 25
   if (!s.active.empty()) return AcceptResult::Busy;
   if (m->cost > s.credits) return AcceptResult::Funds;
   s.active = m->id;

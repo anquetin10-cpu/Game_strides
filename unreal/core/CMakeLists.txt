@@ -120,3 +120,11 @@ target_sources(strides_core PRIVATE ${CORE}/Private/WorldClock.cpp)
 add_executable(strides_meteo_tests tests/test_meteo.cpp)
 target_link_libraries(strides_meteo_tests strides_core)
 add_test(NAME meteo COMMAND strides_meteo_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles)
+# Jalon J3b : véhicules conduisibles du web (src/entities/truckPhysics.js TruckSim, vehicle.js / truck.js : portière,
+# collision) portés en C++ (StridesCore/Vehicle), contre l'oracle calculé par la vraie TruckSim du web
+# (tests/oracles/vehicles.json, scripts/unreal/export-vehicules.mjs) ; données lues dans Content/Data/vehicles.json ;
+# ctest « vehicules ».
+target_sources(strides_core PRIVATE ${CORE}/Private/Vehicle.cpp)
+add_executable(strides_vehicules_tests tests/test_vehicules.cpp)
+target_link_libraries(strides_vehicules_tests strides_core)
+add_test(NAME vehicules COMMAND strides_vehicules_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)

@@ -11,6 +11,7 @@
 #include "StridesProgressionSubsystem.h"
 #include "StridesRider.h"
 #include "StridesUnits.h"
+#include "StridesVehicle.h"
 
 const FString UStridesSaveSubsystem::Slot = TEXT("strides_main");
 
@@ -42,7 +43,16 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	const FVector P = Riding ? Horse->GetActorLocation() : Rider ? Rider->GetActorLocation() : FVector::ZeroVector;
 	double X, Y, Z;
 	StridesUnits::UEToWeb(P, X, Y, Z);
-	const double Hd = Riding ? Horse->Heading() : StridesUnits::YawDegToHeading(Rider ? Rider->GetActorRotation().Yaw : 0);
+	double Hd = Riding ? Horse->Heading() : StridesUnits::YawDegToHeading(Rider ? Rider->GetActorRotation().Yaw : 0);
+	// Jalon J3b : au volant, le joueur est repris à pied à la portière (le web le pose à la position du véhicule et le
+	// repousse hors de sa boîte : placeFromSave, colliders.resolve).
+	if (const AStridesVehicle* Drv = Cast<AStridesVehicle>(PC->GetPawn()))
+	{
+		const FVector2D D = Drv->DoorWeb();
+		X = D.X;
+		Z = D.Y;
+		Hd = Drv->Heading();
+	}
 	Core.pose = {Riding ? "ride" : "foot", X, Y, Z, Hd, true};
 	// Cheval engagé (game.js _storePositions : pos.horse), aussi à pied : il est retrouvé là où il a été laissé.
 	if (Horse)
@@ -53,6 +63,13 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 		Core.pose.horseX = HX;
 		Core.pose.horseZ = HZ;
 		Core.pose.horseHeading = Horse->Heading();
+		// Jalon J3b : cheval embarqué dans le camion : repris à la rampe arrière.
+		for (TActorIterator<AStridesVehicle> It(W); It; ++It)
+			if (It->CarriesHorse())
+			{
+				Core.pose.horseX = It->RampWeb().X;
+				Core.pose.horseZ = It->RampWeb().Y;
+			}
 	}
 	if (Horse) Core.activeHorse = TCHAR_TO_UTF8(*Horse->ProfileId);
 	// Tranche T11 : l'ancien record « cso_pole » pris à la sauvegarde (compareResults des défis) est retiré : le Parcours du
@@ -68,6 +85,12 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 		S->CompletedMissions = Progress->CompletedMissions;
 	}
 	S->Horseshoes = Horseshoes;
+	for (TActorIterator<AStridesVehicle> It(W); It; ++It)
+		if (!It->bAtSpot || It->ParkedIndex() < 0)
+		{
+			S->VehicleIds.Add(It->ParkedIndex());
+			S->VehiclePoses.Add(FVector(It->WebPos().X, It->WebPos().Y, It->Heading()));
+		}
 	const bool Ok = UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
 	LastMessage = Ok ? TEXT("Partie sauvegardée") : TEXT("Échec de la sauvegarde");
 	UE_LOG(LogTemp, Display, TEXT("Strides sauvegarde : %s (%s, position %.1f, %.1f, mission %s, %d terminée(s))"), Ok ? TEXT("écrite") : TEXT("ÉCHEC"), *SlotName, X, Z,
@@ -109,9 +132,23 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	GameTime = Core.gameTime;
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W || !Core.pose.valid) { LastMessage = TEXT("Sauvegarde sans position"); return false; }
+	// Jalon J3b : au volant au moment du rechargement, descente d'abord (véhicule arrêté).
+	if (AStridesVehicle* Drv = Cast<AStridesVehicle>(PC->GetPawn()))
+	{
+		Drv->Sim.vx = 0;
+		Drv->Exit(PC);
+	}
 	if (UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)))
 	{
 		Horseshoes = Saved->Horseshoes;
+		for (int32 I = 0; I < Saved->VehicleIds.Num() && I < Saved->VehiclePoses.Num(); ++I)
+			for (TActorIterator<AStridesVehicle> It(W); It; ++It)
+				if (It->ParkedIndex() == Saved->VehicleIds[I])
+				{
+					const FVector& Vp = Saved->VehiclePoses[I];
+					It->PlaceAt(Vp.X, Vp.Y, Vp.Z);
+					It->bAtSpot = false;
+				}
 		if (UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
 			Progress->Restore(Saved->Credits, Saved->Reputation, Saved->ActiveMissionId, Saved->CompletedMissions);
 	}

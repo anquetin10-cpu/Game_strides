@@ -99,8 +99,17 @@ int main(int argc, char** argv) {
   int expectPay = 100, expectRep = 0, guard = 0;
   while (guard++ < 100) {
     const auto offers = strides::storyOffers(d, s, [](const std::string&) { return false; });
-    if (offers.empty()) break;
-    const std::string id = offers.front().mission->id;
+    // Choix n° 25 : les offres « À venir » (épreuve non portée) ne s'acceptent pas ; on prend la première autre.
+    std::string id;
+    for (const auto& o : offers) {
+      if (o.upcoming) {
+        CHECK(!o.locked && o.lockText.rfind("À venir : ", 0) == 0, "%s : mention « À venir » (%s)", o.mission->id.c_str(), o.lockText.c_str());
+        CHECK(strides::acceptMission(d, s, o.mission->id) == strides::AcceptResult::Upcoming, "%s acceptée alors que son épreuve n'est pas portée", o.mission->id.c_str());
+        continue;
+      }
+      if (id.empty() && !o.locked) id = o.mission->id;
+    }
+    if (id.empty()) break;
     const auto res = strides::acceptMission(d, s, id);
     CHECK(res == strides::AcceptResult::Ok, "acceptation de %s : %d", id.c_str(), (int)res);
     if (res != strides::AcceptResult::Ok) break;
@@ -123,7 +132,22 @@ int main(int argc, char** argv) {
     expectPay += m->pay - m->cost;
     expectRep += m->xp;
   }
-  CHECK(s.completed.size() == d.missions.size(), "missions terminées : %zu / %zu", s.completed.size(), d.missions.size());
+  // Choix n° 25 : cross, derby et gpparis « À venir » ; csi3 (prérequis : derby) puis gp ne sont pas encore atteignables.
+  {
+    std::string blocked;
+    for (const auto& m : d.missions) if (!s.done(m.id)) blocked += m.id + " ";
+    CHECK(blocked == "cross derby csi3 gp gpparis ", "missions non terminées : « %s »", blocked.c_str());
+    for (const char* u : {"cross", "derby", "gpparis"}) CHECK(d.find(u) && !d.find(u)->upcoming.empty(), "%s : non marquée « À venir »", u);
+    int nUp = 0;
+    for (const auto& m : d.missions) nUp += !m.upcoming.empty();
+    CHECK(nUp == 3, "%d missions « À venir » (attendu 3)", nUp);
+    // Le verrou n'est pas une règle de résultat : avec les prérequis remplis, csi3 et gp restent acceptables.
+    strides::CareerState late = s;
+    late.completed.push_back("cross");
+    late.completed.push_back("derby");
+    CHECK(strides::acceptMission(d, late, "csi3") == strides::AcceptResult::Ok, "csi3 refusée une fois le derby terminé");
+  }
+  CHECK(s.completed.size() == d.missions.size() - 5, "missions terminées : %zu / %zu", s.completed.size(), d.missions.size() - 5);
   CHECK(s.credits == expectPay && s.reputation == expectRep, "fin : %d crédits, %d points (attendu %d, %d)", s.credits, s.reputation, expectPay, expectRep);
   // Une mission de l'histoire ne paie qu'une fois (grantOnce).
   s.active = "tuto";

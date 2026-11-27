@@ -19,6 +19,9 @@ public:
 	AStridesAmbientLife();
 	// Apparition depuis les données du web (UStridesDataSubsystem::Ambient) ; faux sans données.
 	bool Build(const class UStridesDataSubsystem& Data);
+	// Jalon J3b : véhicules garés posés en véhicules conduisibles (AStridesVehicle, par le directeur du monde) : pas de
+	// silhouette fixe ici.
+	bool bParkedAsVehicles = false;
 	virtual void Tick(float DeltaSeconds) override;
 	const strides::AmbientLife& Life() const { return Sim; }
 	// Entrées de la dernière image (tests).

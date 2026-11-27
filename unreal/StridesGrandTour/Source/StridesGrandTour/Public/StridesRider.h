@@ -15,9 +15,13 @@ public:
 	AStridesRider();
 	virtual void Tick(float Dt) override;
 	virtual void BeginPlay() override;
+	// Jalon J3b : caméra posée derrière le cavalier à la prise de contrôle (descente de cheval ou de voiture, reprise).
+	virtual void PossessedBy(AController* NewController) override;
 	// Monte si un cheval est à moins de 3 m : rejoint le siège en 0,8 s (transition provisoire, voir relais), puis le
 	// contrôleur prend le cheval.
 	bool TryMount(class APlayerController* PC);
+	// Un cheval visible est à moins de 3 m (TryMount réussirait).
+	bool HorseInReach() const;
 	// Descend du côté montoir (gauche du cheval), 0,9 m du flanc ; pendant l'épreuve, le parcours le lit à l'image
 	// suivante (cavalier à pied) et élimine, avant le départ compris (règle de courses.js).
 	void Dismount(class APlayerController* PC);

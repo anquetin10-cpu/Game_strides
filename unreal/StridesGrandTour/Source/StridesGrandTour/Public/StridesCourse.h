@@ -131,6 +131,8 @@ public:
 	// Collisions du monde autour du parcours (jalon J1, correction) : lice de la carrière du Pôle (world.js rectFence,
 	// ouverture de 7 m au sud) et chandeliers / ailes des droits et oxers (obstacles.js add), comme les colliders du web.
 	const strides::Colliders& WorldColliders() const { return WorldCol; }
+	// Jalon J3b : véhicules conduisibles (boîtes déplacées avec eux, vehicle.js _syncCollider).
+	strides::Colliders& MutableWorldColliders() { return WorldCol; }
 	// Cible du GPS de l'étape de parcours (courses.js:174-179 target) : abord de la ligne de départ (8 m avant) tant que le
 	// départ n'est pas franchi, abord de l'obstacle attendu (7 m avant), puis la ligne d'arrivée ; faux hors parcours.
 	// Me : position du cavalier (repère web) ; abord passé dans l'axe, la cible devient l'obstacle.

@@ -1,7 +1,7 @@
 {
  "schema": "strides.story.v1",
  "source": {
-  "webCommit": "d559d6be",
+  "webCommit": "7302f52e",
   "files": [
    "src/gameplay/story.js",
    "src/gameplay/story2.js",
@@ -669,7 +669,8 @@
    ],
    "skipped": [
     "déroulé du web non porté (J4-C)"
-   ]
+   ],
+   "upcoming": "le cross de Saint-Gatien n’est pas encore porté."
   },
   {
    "id": "pension",
@@ -740,7 +741,8 @@
    ],
    "skipped": [
     "déroulé du web non porté (J4-C)"
-   ]
+   ],
+   "upcoming": "la course de l’hippodrome de la Touques n’est pas encore portée."
   },
   {
    "id": "csi3",
@@ -842,7 +844,8 @@
    ],
    "skipped": [
     "déroulé du web non porté (J4-C)"
-   ]
+   ],
+   "upcoming": "le Grand Prix de Paris Indoor n’est pas encore porté."
   }
  ]
 }

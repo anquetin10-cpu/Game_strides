@@ -125,7 +125,7 @@ FString UStridesProgressionSubsystem::OfferLock(const FString& Id) const
 	const strides::StoryData* St = StoryOf(GetGameInstance());
 	if (!St) return FString();
 	for (const strides::CareerOffer& O : strides::storyOffers(*St, MakeCareer(), [](const std::string&) { return false; }))
-		if (O.mission->id == TCHAR_TO_UTF8(*Id)) return O.locked ? FString(UTF8_TO_TCHAR(O.lockText.c_str())) : FString();
+		if (O.mission->id == TCHAR_TO_UTF8(*Id)) return O.locked || O.upcoming ? FString(UTF8_TO_TCHAR(O.lockText.c_str())) : FString();
 	return FString();
 }
 
@@ -215,7 +215,8 @@ bool UStridesProgressionSubsystem::StartMission(const FString& Id)
 	switch (R)
 	{
 	case strides::AcceptResult::Busy: LastMessage = TEXT("Termine ou abandonne ta mission en cours d’abord."); return false;
-	case strides::AcceptResult::Locked: LastMessage = OfferLock(Id); return false;
+	case strides::AcceptResult::Locked:
+	case strides::AcceptResult::Upcoming: LastMessage = OfferLock(Id); return false;
 	case strides::AcceptResult::Funds: LastMessage = FString::Printf(TEXT("Solde insuffisant : il faut %d € (solde %d €)."), M ? M->Cost : 0, Credits); return false;
 	case strides::AcceptResult::Unknown: return false;
 	default: break;

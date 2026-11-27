@@ -41,6 +41,8 @@ class STRIDESCORE_API Colliders {
   bool blocked(double x, double z, double y = 0) const;
   void removeTag(const std::string& tag);
   const std::vector<Collider>& all() const { return list_; }
+  // Jalon J3b : collider déplacé ou désactivé en place (vehicle.js _syncCollider) ; nul hors bornes.
+  Collider* get(int i) { return i >= 0 && (size_t)i < list_.size() ? &list_[(size_t)i] : nullptr; }
   size_t size() const { return list_.size(); }
 
  private:

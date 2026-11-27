@@ -100,7 +100,7 @@ bool AStridesAmbientLife::Build(const UStridesDataSubsystem& Data)
 	}
 	// Jalon J3 (correction) : véhicules garés du web (world.js parkedVehicles), même silhouette provisoire que la
 	// circulation (caisse, habitacle, roues), posés une fois ; collision dans les colliders du monde (AStridesCourse).
-	for (int32 I = 0; I < Data.Parked.Num(); ++I)
+	for (int32 I = 0; I < (bParkedAsVehicles ? 0 : Data.Parked.Num()); ++I)
 	{
 		const FStridesParked& V = Data.Parked[I];
 		USceneComponent* Root = NewObject<USceneComponent>(this, *FString::Printf(TEXT("Garee_%d"), I));

@@ -28,6 +28,9 @@
 #include "StridesHUD.h"
 #include "StridesDataSubsystem.h"
 #include "StridesUnits.h"
+#include "StridesVehicle.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "StridesCore/WindowFit.h"
 
 namespace
@@ -309,6 +312,24 @@ AStridesRider* AStridesPlayerController::Rider() const
 	return nullptr;
 }
 
+AStridesVehicle* AStridesPlayerController::NearVehicle() const
+{
+	// player.js « vehicle-in » : portière conducteur à moins de 2,6 m d'un véhicule sans conducteur.
+	const AStridesRider* R = Cast<AStridesRider>(GetPawn());
+	if (!R || R->MountedOn || !GetWorld()) return nullptr;
+	double X, Y, Z;
+	StridesUnits::UEToWeb(R->GetActorLocation(), X, Y, Z);
+	AStridesVehicle* Best = nullptr;
+	double BestD = 2.6;
+	for (TActorIterator<AStridesVehicle> It(GetWorld()); It; ++It)
+	{
+		if (It->IsDriven()) continue;
+		const double D = It->DoorDistance(X, Z);
+		if (D < BestD) { BestD = D; Best = *It; }
+	}
+	return Best;
+}
+
 FVector2D AStridesPlayerController::ViewCss() const
 {
 	const UWorld* W = GetWorld();
@@ -429,7 +450,7 @@ void AStridesPlayerController::PlayerTick(float DeltaTime)
 // game.update (src/game.js:1438-1490) côté commandes : input.poll, boutons globaux, gel des commandes, cheval, puis
 // input.endFrame. En pause, update() n'est pas appelée : rien n'est lu (un Échap tapé en pause reste dans pressed et
 // reprend effet à la reprise, comme dans le web).
-void AStridesPlayerController::StepCommands(float)
+void AStridesPlayerController::StepCommands(float Dt)
 {
 	bPauseThisFrame = false;
 	if (bPausedState) return;
@@ -489,16 +510,45 @@ void AStridesPlayerController::StepCommands(float)
 		H->SetMoveInput(M, Cmd.keyMove);
 		if (Cmd.wasPressed("jump")) H->RequestJump();
 	}
-	else if (P)
+	else if (AStridesVehicle* V = Cast<AStridesVehicle>(P))
 	{
-		// À pied : déplacement relatif à la caméra (le cavalier du portage, pas le marcheur du web).
+		// Jalon J3b : au volant (player.js:665-669), mêmes commandes que le cheval (mv.x : direction, mv.y : gaz / frein).
 		FVector2D M(Cmd.move.x, Cmd.move.y);
 		if (M.IsZero() && bCanAct) M = GamepadMove;
-		if (!M.IsZero())
+		V->SetDriveInput(M);
+	}
+	else if (P)
+	{
+		// À pied (player.js:625-636, camera.js:85-97) : déplacement relatif à la caméra (cam.worldDir) ; la caméra se
+		// recentre derrière le marcheur quand il avance (vitesse > 1,2 m/s, regard manuel il y a plus de 1,4 s,
+		// k = 1,4 + min(v / 10, 1,6)) ; vitesse du web : 2,4 × (mag / 0,55 + 0,25) sous mag 0,55, course 5,4 m/s
+		// au-delà (clavier : mag 1), sprint 7,2 m/s touche d'allure tenue. Jalon J3b (P2 : marche non dirigeable).
+		FVector2D M(Cmd.move.x, Cmd.move.y);
+		if (M.IsZero() && bCanAct) M = GamepadMove;
+		const double Mag = FMath::Min(1.0, (double)M.Size());
+		double Sp = 0;
+		if (Mag > 0.1)
 		{
+			Sp = Mag < 0.55 ? 2.4 * (Mag / 0.55 + 0.25) : 5.4;
+			if (Cmd.isHeld("gallop")) Sp = 7.2;
+		}
+		if (ACharacter* Ch = Cast<ACharacter>(P)) Ch->GetCharacterMovement()->MaxWalkSpeed = (float)FMath::Max(Sp, 0.1) * 100.f;
+		if (Mag > 0.1)
+		{
+			const FVector2D Dir = M.GetSafeNormal();
 			const FRotator Yaw(0, GetControlRotation().Yaw, 0);
-			P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::X), M.Y);
-			P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y), M.X);
+			P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::X), Dir.Y);
+			P->AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y), Dir.X);
+		}
+		const double Speed = P->GetVelocity().Size2D() / 100.0;
+		const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+		if (Speed > 1.2 && Now - FootLookAt > 1.4 && Dt > 0)
+		{
+			const double K = 1.4 + FMath::Min(Speed / 10.0, 1.6);
+			FRotator CR = GetControlRotation();
+			CR.Yaw += FMath::FindDeltaAngleDegrees(CR.Yaw, P->GetActorRotation().Yaw) * (1.0 - FMath::Exp(-K * Dt));
+			CR.Pitch = 0;
+			SetControlRotation(CR);
 		}
 	}
 	// Regard au doigt (glisser hors du joystick, camera.js:79-81 : 0,0062 rad par px en lacet, 0,0045 en tangage) sur la
@@ -507,6 +557,7 @@ void AStridesPlayerController::StepCommands(float)
 	{
 		AddYawInput((float)FMath::RadiansToDegrees(Cmd.look.dx * 0.0062));
 		AddPitchInput((float)FMath::RadiansToDegrees(Cmd.look.dy * 0.0045));
+		FootLookAt = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
 	}
 	Cmd.endFrame();
 }
@@ -819,6 +870,9 @@ FString AStridesPlayerController::ActionLabel() const
 {
 	// Jalon J2c : « Terminer » de l'entraînement (priorité 2, à cheval comme à pied, rayon illimité).
 	if (const AStridesCourse* C = EntryCourse(); C && C->TrainingEndAvailable()) return C->TrainingEndLabel();
+	// Jalon J3b : véhicules (player.js interactions « vehicle-in », « truck-out »).
+	if (const AStridesVehicle* V = Cast<AStridesVehicle>(GetPawn())) return V->CanExit() ? FString(TEXT("Descendre")) : FString();
+	if (const AStridesRider* R = Cast<AStridesRider>(GetPawn()); R && !R->MountedOn && !R->HorseInReach() && NearVehicle()) return TEXT("Monter");
 	const AStridesHorse* H = Cast<AStridesHorse>(GetPawn());
 	if (!H) return FString();
 	double X, Y, Z;
@@ -859,6 +913,13 @@ bool AStridesPlayerController::DoAction()
 				return true;
 			}
 		}
+	// Jalon J3b : au volant, « Descendre » (truck-out : vitesse < 1,5 m/s, sinon aucune action).
+	if (AStridesVehicle* V = Cast<AStridesVehicle>(GetPawn()))
+	{
+		const bool bOut = V->Exit(this);
+		if (Audio && bOut) Audio->Click();
+		return true;
+	}
 	// Action du portage (priorité 0 au web pour descendre) : monter, descendre.
 	if (AStridesRider* R = Rider())
 	{
@@ -872,7 +933,14 @@ bool AStridesPlayerController::DoAction()
 			bDone = M->SpeedMS < 2.5f && !M->IsJumping();
 			if (bDone) R->Dismount(this);
 		}
-		else bDone = R->TryMount(this);
+		else
+		{
+			// À pied : « Monter » à cheval (priorité 2, 3,2 m) l'emporte sur « Monter » au volant (priorité 1,4, portière à
+			// 2,6 m), comme le score priorité × 100 − distance d'interact.js.
+			bDone = R->TryMount(this);
+			if (!bDone)
+				if (AStridesVehicle* V = NearVehicle()) bDone = V->Enter(this, R);
+		}
 		if (Audio && bDone) Audio->Click();
 		return true;
 	}

@@ -15,6 +15,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Strides|World") class AStridesScenery* Scenery = nullptr;
 	UPROPERTY(BlueprintReadOnly, Category="Strides|World") class AStridesAmbientLife* Ambient = nullptr;
 	UPROPERTY(BlueprintReadOnly, Category="Strides|World") class AStridesCollectibles* Collectibles = nullptr;
+	// Jalon J3b : véhicules conduisibles (14 garés du web, puis le camion de l'écurie).
+	UPROPERTY() TArray<TObjectPtr<class AStridesVehicle>> Vehicles;
 private:
 	class AStaticMeshActor* SpawnBlock(const FVector& Location, const FVector& Size, const FRotator& Rotation = FRotator::ZeroRotator, const FLinearColor& Color = FLinearColor(.45f, .48f, .5f));
 	float MissionCheckTimer = 0.f;

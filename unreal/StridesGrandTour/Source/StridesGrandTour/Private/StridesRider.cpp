@@ -64,7 +64,11 @@ AStridesRider::AStridesRider()
 	Boom->SetRelativeRotation(FRotator(-8, 0, 0));
 	// La vue d'attente reste en poursuite fixe : la rotation de contrôle peut
 	// conserver un pitch extrême après une reprise de possession.
-	Boom->bUsePawnControlRotation = false;
+	// Jalon J3b : la perche suit le lacet de la rotation de contrôle (caméra du web à pied, recentrée derrière le marcheur
+	// par le contrôleur) ; tangage et roulis restent ceux de la perche (−8°), jamais ceux du contrôle.
+	Boom->bUsePawnControlRotation = true;
+	Boom->bInheritPitch = false;
+	Boom->bInheritRoll = false;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(Boom);
 	Camera->FieldOfView = 55.f;
@@ -182,6 +186,20 @@ void AStridesRider::UpdateMountedAnimation()
 	bLastAnimationJumping = bJumping;
 }
 
+void AStridesRider::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	if (NewController) NewController->SetControlRotation(FRotator(0, GetActorRotation().Yaw, 0));
+}
+
+bool AStridesRider::HorseInReach() const
+{
+	if (MountedOn || !GetWorld()) return false;
+	for (TActorIterator<AStridesHorse> It(GetWorld()); It; ++It)
+		if (!It->IsHidden() && FVector::Dist2D(It->GetActorLocation(), GetActorLocation()) < 300.0) return true;
+	return false;
+}
+
 bool AStridesRider::TryMount(APlayerController* PC)
 {
 	if (MountedOn) return false;
@@ -189,6 +207,7 @@ bool AStridesRider::TryMount(APlayerController* PC)
 	double BestD = 300.0;  // cm
 	for (TActorIterator<AStridesHorse> It(GetWorld()); It; ++It)
 	{
+		if (It->IsHidden()) continue;  // jalon J3b : cheval embarqué dans le camion
 		const double D = FVector::Dist2D(It->GetActorLocation(), GetActorLocation());
 		if (D < BestD) { BestD = D; Best = *It; }
 	}

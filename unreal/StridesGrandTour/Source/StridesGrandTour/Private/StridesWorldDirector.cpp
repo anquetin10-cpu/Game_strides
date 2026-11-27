@@ -1,4 +1,5 @@
 #include "StridesWorldDirector.h"
+#include "StridesVehicle.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
@@ -42,6 +43,7 @@ void AStridesWorldDirector::BuildWorld()
 	Scenery->Build(*Data);
 	// Jalon J3 : circulation, passants et spectateurs du web (src/gameplay/npcs.js Ambient), silhouettes provisoires.
 	Ambient = GetWorld()->SpawnActor<AStridesAmbientLife>();
+	if (Ambient) Ambient->bParkedAsVehicles = Data->Vehicles() != nullptr;
 	if (Ambient && !Ambient->Build(*Data)) UE_LOG(LogTemp, Warning, TEXT("Strides vie ambiante : données absentes"));
 	// Jalon J3-D : fers d'or du web (collectibles.js).
 	Collectibles = GetWorld()->SpawnActor<AStridesCollectibles>();
@@ -55,6 +57,23 @@ void AStridesWorldDirector::BuildWorld()
 	PoleDesign.x += Data->PoleArena.X;
 	PoleDesign.z += Data->PoleArena.Y;
 	PoleCourse->Build(PoleDesign, *Data);
+	// Jalon J3b : véhicules conduisibles du web (world.js parkedVehicles, Truck du Val) ; boîtes de collision du Pôle
+	// déplacées avec eux.
+	if (Data->Vehicles())
+	{
+		for (int32 I = 0; I < Data->Parked.Num(); ++I)
+		{
+			const FStridesParked& P = Data->Parked[I];
+			AStridesVehicle* V = GetWorld()->SpawnActor<AStridesVehicle>();
+			if (V && V->Init(*Data, P.Kind, P.X, P.Z, P.Heading, FLinearColor::FromSRGBColor(FColor::FromHex(P.Color)), I)) Vehicles.Add(V);
+			else if (V) V->Destroy();
+		}
+		const strides::VehicleData* VD = Data->Vehicles();
+		AStridesVehicle* T = GetWorld()->SpawnActor<AStridesVehicle>();
+		if (T && T->Init(*Data, TEXT("truck"), VD->truckX, VD->truckZ, VD->truckHeading, FLinearColor(.12f, .16f, .3f), -1)) Vehicles.Add(T);
+		else if (T) T->Destroy();
+		UE_LOG(LogTemp, Display, TEXT("Strides véhicules : %d conduisibles"), Vehicles.Num());
+	}
 	if (const strides::CsoActivity* A = Data->CsoActivity())
 	{
 		// Colonne de 1 m × 30 m, sans collision, à côté du poteau (hors du chemin du cheval : 1,5 m à l'est).
