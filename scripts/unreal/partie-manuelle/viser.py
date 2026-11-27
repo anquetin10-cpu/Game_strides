@@ -77,6 +77,8 @@ try:
             if k % 5 == 0: L('i%d bouton allumé (vert %d / %d, orange %d, rouge %d) : tout droit' % (k, rg_, ig, ro, rr))
         else:
             key(D, True); time.sleep(push); key(D, False)
+            # Cadence entretenue (les virages et la lice la font tomber) : W bref toutes les 40 lectures.
+            if cad > 0 and k % 40 == 0: key(W, True); time.sleep(min(cad, 0.3)); key(W, False)
         prev_good = good
 finally:
     for c in (D, W, SPACE): key(c, False)

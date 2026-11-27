@@ -351,6 +351,67 @@ modifiée ; paddock vu dans les captures de la partie).
 
 Choix nouveaux : n° 12 et 13 ci-dessous.
 
+### État J2d au 27/11/2026 (correction de J2c après contrôle adverse, base `126d2493`)
+
+Même légende. Sélection : `unreal/docs/livraison/preuves/j2d-20261127/` ; reste : `.ue-cache/travail/livraison/preuves/j2d/`
+(captures horodatées, `drive.log` des entrées injectées, journaux `j2d-g1..g3.log` du paquet) et `.ue-cache/travail/livraison/j2d/`.
+
+**HUD de l'entraînement au paddock (problème majeur du contrôle) : corrigé, vu à l'écran dans le paquet.**
+
+- **Cause confirmée** : `AStridesHUD::DrawHUD` sortait tôt dès que le modèle du HUD masquait la minicarte (classe
+  `cso-ctl`), et l'interface UMG d'épreuve n'a ni objectif ni bouton d'action. Le web ne masque la télémétrie et le bouton
+  d'action que sous `cso-sober` (`kind === 'cso'`, `hud.js:390-392`, `styles.css:988-995`) et l'objectif que sous
+  `cso-on` (tableau d'épreuve).
+- **Code** (`4b1d8317`) : `RaceOverlay` / `DrawRaceOverlay` dessinent en mode concours l'objectif (haut gauche), la
+  télémétrie « allure · km/h » (bas centre, km/h arrondis comme `hud.js:252`) et l'invite « E · Terminer », chacun selon
+  le masque du modèle ; en épreuve (`cso-sober`, `cso-on`) la surcouche reste vide. Le modèle décide aussi pour un
+  entraînement lancé au poteau du paddock sans épreuve préalable. La ligne d'objectif identique à la ligne d'état n'est
+  plus répétée (doublon « Rejoins le paddock… », P3 du contrôle).
+- **Testé moteur** : `Strides.Scenario.Training` appelle `DrawHUD` sur une toile 844 × 390 et lit le texte rendu :
+  « Entraînement : 0 saut sans faute sur 0 », « PAS · 11 km/h », « E  ·  Terminer » ; « 1 saut sans faute sur 1 » après
+  le vertical ; même rendu au poteau du paddock. `Strides.Cso.RunInGame` : surcouche vide en épreuve. Avant correction,
+  le même test échouait (télémétrie et invite vides, journal `j2d-hud-1.log`).
+- **Vu dans le paquet Development** (entrées injectées par l'agent, CGEvent, captures système) : `121743-paddock-hud.jpg`
+  montre en même temps l'objectif « Entraînement : 0 saut sans faute sur 0 », « E · Terminer » et « PAS · 2 km/h » ;
+  `123004-terminer.jpg` : « Terminer » par E (invite lue à l'écran, plus à l'aveugle) → « Entraînement terminé · 0 saut
+  sans faute sur 0 » ; `guidage-carriere-…jpg` : objectif affiché une seule fois.
+
+**Guidage « Paddock du Pôle » (défaut trouvé en jouant, P2 corrigé).** La ligne visait le centre du paddock en ligne
+droite : cheval arrêté contre la lice nord du paddock, puis contre la lice ouest de la carrière (l'entraînement part du
+bilan, cheval dans la carrière). `PaddockGuideAim` (`58c53baf`) : sortie de la carrière par son ouverture sud (autour des
+obstacles), coin sud-ouest, allée, ouverture est du paddock, centre. Testé moteur (la ligne suivie au stick : depuis la
+lice ouest de la carrière en 2 679 images, depuis le nord du paddock en 686) ; **joué en paquet** : bilan → « S'entraîner »
+au clavier → ligne suivie par le joueur de l'agent (`suivre.py`) jusqu'au paddock (« 173 m · demi-tour » puis 19 m, étape
+d'entraînement atteinte). Choix signalé n° 14 ci-dessous (le GPS du web n'est pas porté).
+
+**Saut franchi au paddock dans le paquet (mineur) : toujours non obtenu.** Joueur `viser.py` (cercle à main droite,
+tout droit si le bouton SAUT s'allume, SAUT au vert) : 555 lectures sur 3 essais, 0 bouton allumé détecté, 2 refus
+(toasts « Refus : trop près, appelle plus tôt » au journal à 11:24:42 et 11:24:47 UTC) ; puis conduite pas à pas sur
+captures : vertical manqué à droite. Les sauts sans faute et les barres avec cause restent prouvés dans le moteur seulement
+(scénario qui pose le cheval à 13 m, comme relevé par le contrôle). À confirmer par Julien au clavier.
+
+**Environnement de la partie (à connaître pour rejouer).** Le poste est partagé : boîte du trousseau « security veut
+utiliser… » ouverte à répétition par le gateway OpenClaw (`security find-generic-password`, Chrome Safe Storage puis
+`strides-ai-backoffice-session`), qui prend le premier plan et masque le haut-centre de l'écran (zone des toasts et de
+l'astuce de 7 s : **non vérifiables à l'écran dans cette partie**) ; une touche S injectée est arrivée une fois dans son
+champ (6 caractères, jamais validés ; aucune touche Entrée envoyée, aucun bouton touché). Chrome piloté par le gateway
+(ports 18804-18806) a pris le premier plan deux fois. Deux clics souris dans le jeu à 11:14-11:15 (heure de Paris) ne
+viennent pas de l'agent (bilan quitté). Mémoire saturée (swap 11,5 Go sur 12) : deux `CrashReportClient -Unattended`
+bloqués à 100 % CPU depuis 17 h et 2 jours (anciens plantages d'éditeur) ont été arrêtés ; les rapports restent sur
+disque, les deux autres (fenêtres) n'ont pas été touchés. Aucune alerte de confidentialité touchée.
+
+| Point du contrôle | État | Preuve |
+|---|---|---|
+| HUD d'entraînement (majeur) | **corrigé, vu en paquet** | `121743-paddock-hud.jpg`, `123004-terminer.jpg`, `Strides.Scenario.Training` |
+| Saut franchi en paquet (mineur) | **non obtenu** ; moteur seulement | `122446-viser-0080.jpg` (refus, cheval dans l'oxer), journal |
+| Objectif en double (mineur) | **corrigé** | `guidage-carriere-…jpg` |
+| Alertes et fenêtres système (mineur) | toujours présentes, aucune touchée ; trousseau ajouté à la liste | captures |
+
+**Matrice de fin d'étape.** ctest **12 / 12** ; Automation `Strides` **56 succès, 0 échec** (sur `4b1d8317`, 1 attente
+Zen résolue seule, aucun éditeur arrêté) ; `Strides.Scenario.Training` et `Strides.Cso.RunInGame` repassés verts sur
+`58c53baf` ; paquets Development (cuisson complète puis `-skipcook` sur chaque commit) et Shipping reconstruits sur `58c53baf` :
+**0 / 14** chaînes d'outils dans le Shipping (`check-shipping-tools.txt`). Captures CSO G5 non refaites (carrière du Pôle non modifiée).
+
 ## J3 — Monde vivant de Deauville
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -440,6 +501,10 @@ Choix nouveaux : n° 12 et 13 ci-dessous.
    contrôle J1 : cheval « coincé » contre la barre) s'applique aussi à l'entraînement ; le web n'a pas d'écouteur qui
    remet la cadence pendant l'entraînement. Guidage « Paddock du Pôle » pendant l'étape « rejoindre le paddock » (même
    ligne que le choix n° 5, le GPS du web n'étant pas porté).
+
+14. **Guidage vers le paddock** (27/11, J2d) : le web guide l'étape « rejoindre le paddock » par son GPS (non porté) ;
+    le portage trace la ligne « Paddock du Pôle » par des points fixes (ouverture sud de la carrière, coin sud-ouest,
+    allée, ouverture est du paddock), le plus simple qui ne traverse aucune lice.
 
 ## Risques
 
