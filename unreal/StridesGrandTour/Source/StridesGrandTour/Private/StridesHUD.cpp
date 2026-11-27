@@ -136,8 +136,7 @@ void AStridesHUD::DrawHUD()
 				double Dist = 0;
 				// Paddock : par son ouverture est (rectFence 'e', 6 m, milieu), pas au travers de la lice (partie J2d en paquet :
 				// cheval arrêté contre la lice nord, ligne « tout droit »).
-				const FVector2D Way = bPaddock ? PaddockWaypoint(Me, Goal, FVector4(Dd->PoleWarmup.X, Dd->PoleWarmup.Y, Dd->PoleWarmup.Z, Dd->PoleWarmup.W), Dist)
-					: PoleGuideAim(Me, Goal, Dt, Course.Get(), Dist);
+				const FVector2D Way = bPaddock ? PaddockGuideAim(Me, Goal, Dt, Course.Get(), Dist) : PoleGuideAim(Me, Goal, Dt, Course.Get(), Dist);
 				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me), bPaddock ? TEXT("Paddock du Pôle") : TEXT("Chrono du Pôle"));
 				if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
 			}
@@ -404,6 +403,34 @@ FVector2D AStridesHUD::PaddockWaypoint(const FVector2D& Me, const FVector2D& Goa
 	}
 	OutDist = FVector2D::Distance(Me, Gate) + FVector2D::Distance(Gate, Goal);
 	return Gate;
+}
+
+FVector2D AStridesHUD::PaddockGuideAim(const FVector2D& Me, const FVector2D& Goal, const UStridesDataSubsystem* Dt, const AStridesCourse* C, double& OutDist)
+{
+	if (!Dt) { OutDist = FVector2D::Distance(Me, Goal); return Goal; }
+	const FVector4 R(Dt->PoleWarmup.X, Dt->PoleWarmup.Y, Dt->PoleWarmup.Z, Dt->PoleWarmup.W);
+	const FVector2D A = Dt->PoleArena;
+	const double HW = Dt->PlanArena().w / 2, HD = Dt->PlanArena().d / 2;
+	// Sortie de la carrière (l'entraînement part du bilan, cheval dans la carrière) : par l'ouverture sud de la lice
+	// (rectFence 's', milieu), autour des obstacles (grille de guidage), puis le coin sud-ouest extérieur et l'allée
+	// entre la carrière et le paddock (partie J2d en paquet : cheval arrêté contre la lice ouest de la carrière).
+	const FVector2D Out(A.X, A.Y + HD + 5), SW(A.X - HW - 5, A.Y + HD + 5);
+	double Rest = 0;
+	PaddockWaypoint(SW, Goal, R, Rest);
+	if (FMath::Abs(Me.X - A.X) < HW - 0.5 && FMath::Abs(Me.Y - A.Y) < HD - 0.5)
+	{
+		const FVector2D Exit = FMath::Abs(Me.X - A.X) < 2.5 ? Out : FVector2D(A.X, A.Y + HD - 3);
+		OutDist = FVector2D::Distance(Me, Exit) + FVector2D::Distance(Exit, Out) + FVector2D::Distance(Out, SW) + Rest;
+		if (C && C->GuideMap().inside(Me.X, Me.Y)) { double Dd = 0; return C->GuideAim(Me, Exit, &Dd); }
+		return Exit;
+	}
+	// Au sud de la carrière, à l'est de son coin sud-ouest : le coin d'abord (la ligne droite couperait la carrière).
+	if (Me.Y > A.Y + HD - 0.5 && Me.X > A.X - HW - 2 && FVector2D::Distance(Me, SW) >= 3)
+	{
+		OutDist = FVector2D::Distance(Me, SW) + Rest;
+		return SW;
+	}
+	return PaddockWaypoint(Me, Goal, R, OutDist);
 }
 
 FVector2D AStridesHUD::PoleGuideAim(const FVector2D& Me, const FVector2D& Goal, const UStridesDataSubsystem* Dt, const AStridesCourse* C, double& OutDist)

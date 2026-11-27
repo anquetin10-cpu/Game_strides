@@ -44,6 +44,9 @@ public:
 	// Point visé par la ligne « Paddock du Pôle » (jalon J2d) : coin est extérieur, puis ouverture est (5 m devant), puis le
 	// centre ; R = (x, z, largeur, profondeur) du paddock (POLE.warmup du web). OutDist : longueur du chemin.
 	static FVector2D PaddockWaypoint(const FVector2D& Me, const FVector2D& Goal, const FVector4& R, double& OutDist);
+	// Ligne « Paddock du Pôle » complète : hors de la carrière par son ouverture sud, coin sud-ouest, allée, puis
+	// PaddockWaypoint.
+	static FVector2D PaddockGuideAim(const FVector2D& Me, const FVector2D& Goal, const class UStridesDataSubsystem* Dt, const class AStridesCourse* C, double& OutDist);
 	static FVector2D PoleGuideAim(const FVector2D& Me, const FVector2D& Goal, const class UStridesDataSubsystem* Dt, const class AStridesCourse* C, double& OutDist);
 	static FString CourseGuideText(const FString& Label, double Distance, double RelAngleDeg);
 	// Jalon J2d (contrôle de J2c) : éléments du HUD du web gardés en mode concours hors épreuve (entraînement au paddock,

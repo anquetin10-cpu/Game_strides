@@ -181,19 +181,36 @@ bool FStridesScenarioTrainingTest::RunTest(const FString&)
 		TestTrue(TEXT("guidage du paddock : dans l'allée est, l'ouverture"), AStridesHUD::PaddockWaypoint(FVector2D(Wu.X + Wu.Z / 2 + 5, Wu.Y - 15), Ctr, Wu, Dd).Equals(FVector2D(Wu.X + Wu.Z / 2 + 5, Wu.Y)));
 		TestTrue(TEXT("guidage du paddock : dans l'ouverture, le centre"), AStridesHUD::PaddockWaypoint(FVector2D(Wu.X + Wu.Z / 2 + 1, Wu.Y + 1), Ctr, Wu, Dd).Equals(Ctr));
 	}
-	G.Horse->PlaceAt(Wu.X, Wu.Y - Wu.W / 2 - 4, 0, 3);
-	for (K = 0; K < 1800 && C->Training()->step() == strides::CsoTrainingStep::Goto; K++)
+	// Deux départs, la ligne du HUD (PaddockGuideAim, celle que dessine DrawHUD) suivie au stick jusqu'à 17 m du centre
+	// (rayon du goto : 18 m) : (a) dans la carrière, au milieu de sa lice ouest, là où le bilan laisse le cheval (partie
+	// J2d : arrêté contre cette lice sur « tout droit ») ; (b) au nord du paddock, face à sa lice.
+	auto Drive = [&](double X, double Z, double Heading, const TCHAR* What)
 	{
+		G.Horse->PlaceAt(X, Z, Heading, 3);
+		int32 N = 0;
+		double Left = 0;
+		for (; N < 3600; N++)
+		{
+			const strides::CsoHorseState& H = G.Horse->CsoState();
+			if (FVector2D::Distance(FVector2D(H.x, H.z), FVector2D(Wu.X, Wu.Y)) < 17) break;
+			const FVector2D Way = AStridesHUD::PaddockGuideAim(FVector2D(H.x, H.z), FVector2D(Wu.X, Wu.Y), Data, C, Left);
+			G.PC->GamepadStickForTest(FVector2D(SteerTo(H, Way.X - H.x, Way.Y - H.z), (H.hasCadence ? H.cadence : 0) < 3 ? 1 : 0));
+			G.Frame();
+		}
+		G.PC->GamepadStickForTest(FVector2D::ZeroVector);
 		const strides::CsoHorseState& H = G.Horse->CsoState();
-		double Dd = 0;
-		const FVector2D Way = AStridesHUD::PaddockWaypoint(FVector2D(H.x, H.z), FVector2D(Wu.X, Wu.Y), Wu, Dd);
-		G.PC->GamepadStickForTest(FVector2D(SteerTo(H, Way.X - H.x, Way.Y - H.z), (H.hasCadence ? H.cadence : 0) < 3 ? 1 : 0));
-		G.Frame();
-	}
+		AddInfo(FString::Printf(TEXT("%s : cheval en (%.2f, %.2f), %d images"), What, H.x, H.z, N));
+		TestTrue(FString::Printf(TEXT("%s : paddock atteint en suivant la ligne du HUD (%d images)"), What, N), N < 3600 && FMath::Abs(H.x - Wu.X) < Wu.Z / 2 + 6);
+	};
+	const FVector2D Ar = Data->PoleArena;
+	Drive(Ar.X - Data->PlanArena().w / 2 + 3, Ar.Y, -PI / 2, TEXT("depuis la carrière"));
+	TestTrue(TEXT("étape d'entraînement atteinte"), C->Training()->step() == strides::CsoTrainingStep::Train);
+	Drive(Wu.X, Wu.Y - Wu.W / 2 - 4, 0, TEXT("depuis le nord du paddock"));
+	K = 0;
 	G.PC->GamepadStickForTest(FVector2D::ZeroVector);
 	AddInfo(FString::Printf(TEXT("entrée au paddock : cheval en (%.2f, %.2f), cap %.2f, vitesse %.2f m/s, cadence %.2f, %d images"), G.Horse->CsoState().x, G.Horse->CsoState().z,
 		G.Horse->CsoState().heading, G.Horse->CsoState().speed, G.Horse->CsoState().cadence, K));
-	TestTrue(FString::Printf(TEXT("paddock atteint au stick en suivant le guidage depuis le nord (%d images)"), K), C->Training()->step() == strides::CsoTrainingStep::Train);
+	TestTrue(TEXT("paddock atteint, étape d'entraînement"), C->Training()->step() == strides::CsoTrainingStep::Train);
 	Hud = Since(C->HudLog(), Hud0);
 	TestTrue(TEXT("astuce de l'entraînement (7 s)"), Hud.Contains(TEXT("hint | Vertical au nord")) && Hud.Contains(TEXT("| 7000")));
 	TestTrue(TEXT("mode de concours (game.course.camera, commandes de concours)"), C->CourseMode().active && !C->CourseMode().board);
