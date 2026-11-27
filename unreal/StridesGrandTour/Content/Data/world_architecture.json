@@ -37,30 +37,6 @@
     { "id": "haras", "width": 7, "points": [[-380,-122],[-380,-104],[-380,-74]] },
     { "id": "gatien", "width": 7, "points": [[-30,300],[-185,300],[-228,300]] }
   ],
-  "progression": [
-    { "id": "groom", "name": "Groom", "reputation": 0 },
-    { "id": "rider", "name": "Cavalier", "reputation": 500 },
-    { "id": "verified", "name": "Pro vérifié", "reputation": 1500 },
-    { "id": "international", "name": "International", "reputation": 3500 },
-    { "id": "legend", "name": "Légende 5★", "reputation": 7000 }
-  ],
   "phoneApps": ["Missions", "Écuries", "Transport", "Événements", "Annuaire", "Carte", "Messages", "Trophées", "Profil", "Réglages"],
-  "missions": [
-    { "id": "tuto", "title": "Premiers pas", "category": "Prise en main", "place": "home", "pay": 50, "xp": 60, "requires": [] },
-    { "id": "m1", "title": "Première mission", "category": "Jobs", "place": "home", "pay": 90, "xp": 100, "requires": ["tuto"] },
-    { "id": "m2", "title": "Trouver un professionnel", "category": "Annuaire", "place": "town", "pay": 120, "xp": 130, "requires": ["m1"] },
-    { "id": "m3", "title": "Premier concours", "category": "Événements", "place": "pole", "pay": 180, "xp": 200, "requires": ["m2"] },
-    { "id": "groom", "title": "Groom du matin", "category": "Groom", "place": "home", "pay": 90, "xp": 120, "requires": ["m3"] },
-    { "id": "livraison", "title": "Selle sur-mesure", "category": "Coursier", "place": "sellerie", "pay": 120, "xp": 150, "requires": ["groom"] },
-    { "id": "fugueur", "title": "Le fugueur", "category": "Urgence", "place": "haras", "pay": 150, "xp": 180, "requires": ["livraison"] },
-    { "id": "plage", "title": "Galop sur la plage", "category": "Cavalier", "place": "beach", "pay": 170, "xp": 200, "requires": ["fugueur"] },
-    { "id": "transport", "title": "Transport express", "category": "Transport", "place": "home", "pay": 260, "xp": 260, "requires": ["plage"] },
-    { "id": "fer", "title": "Fer perdu", "category": "Annuaire", "place": "forge", "pay": 200, "xp": 220, "requires": ["transport"] },
-    { "id": "pension", "title": "La pension parfaite", "category": "Écuries", "place": "dunes", "pay": 220, "xp": 240, "requires": ["fer"] },
-    { "id": "cross", "title": "Cross de Saint-Gatien", "category": "Événements", "place": "gatien", "pay": 300, "xp": 320, "requires": ["pension"] },
-    { "id": "derby", "title": "Derby de la Touques", "category": "Événements", "place": "hippo", "pay": 420, "xp": 400, "requires": ["cross"] },
-    { "id": "csi3", "title": "Qualificative CSI 3★", "category": "Événements", "place": "pole", "pay": 650, "xp": 600, "requires": ["derby"] },
-    { "id": "gp", "title": "Grand Prix CSI 5★", "category": "Événements", "place": "pole", "pay": 1500, "xp": 1000, "requires": ["csi3"] },
-    { "id": "gpparis", "title": "Grand Prix de Paris Indoor", "category": "Finale", "place": "paris", "pay": 3000, "xp": 1800, "requires": ["gp"] }
-  ]
+  "missionsSource": "story_missions.json (scripts/unreal/export-missions.mjs, exporté du jeu web)"
 }

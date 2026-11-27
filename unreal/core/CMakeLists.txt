@@ -105,3 +105,11 @@ target_sources(strides_core PRIVATE ${CORE}/Private/WorldLife.cpp ${CORE}/Privat
 add_executable(strides_monde_vivant_tests tests/test_monde_vivant.cpp)
 target_link_libraries(strides_monde_vivant_tests strides_core)
 add_test(NAME monde-vivant COMMAND strides_monde_vivant_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Jalon J3, correction après contrôle adverse : missions de l'histoire du web (StridesCore/Career : storyAvailable,
+# refreshOffers avec verrou de palier, accept, complete, reputationTier) et itinéraires relevés dans les étapes du web,
+# contre l'oracle calculé par la vraie MissionManager du web (tests/oracles/story_missions.json,
+# scripts/unreal/export-missions.mjs) ; données lues dans Content/Data/story_missions.json comme le jeu ; ctest « carriere ».
+target_sources(strides_core PRIVATE ${CORE}/Private/Career.cpp)
+add_executable(strides_carriere_tests tests/test_carriere.cpp)
+target_link_libraries(strides_carriere_tests strides_core)
+add_test(NAME carriere COMMAND strides_carriere_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)

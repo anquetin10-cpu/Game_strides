@@ -14,6 +14,8 @@ CHAINES = [
     'StridesShotsDir', 'StridesShots=', 'StridesPerfSansCapture', 'StridesPerfWarm', 'StridesMontePoses',
     'StridesHorseView=', 'StridesHorseScale=', 'StridesMonte=', 'StridesRider=', 'StridesTack=',
     'Démo parcours', 'DÉMONSTRATION AUTOMATIQUE', 'F5 sauvegarder', 'Strides souris',
+    # Jalon J3 (correction après contrôle adverse) : boutons tactiles d'outils du portage, non construits en Shipping.
+    'SAUVER', 'CHARGER', 'MISSION',
 ]
 
 

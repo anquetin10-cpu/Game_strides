@@ -104,7 +104,13 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 	const double D = FVector2D::Distance(FVector2D(X, Z), Target);
 	if (Progress->HasActiveTarget())
 	{
-		if (D <= 18.f && Progress->CompleteActiveMission())
+		// Jalon J3 (correction) : itinéraire de la mission du web, étape par étape (StridesCore/Career) ; étape « épreuve »
+		// franchie quand un parcours du Pôle commencé pendant l'étape est terminé.
+		const strides::CsoRun* Run = PoleCourse ? PoleCourse->Run() : nullptr;
+		const bool bRunning = Run && !Run->finished();
+		const bool bFinished = Run && Run->finished();
+		const FString Before = Progress->ActiveMissionId;
+		if (Progress->TickMission(FVector2D(X, Z), bRunning, bFinished) && Progress->ActiveMissionId.IsEmpty() && !Before.IsEmpty())
 		{
 			// missions.complete : sauvegarde tout de suite (saveNow), comme à l'acceptation.
 			if (UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())

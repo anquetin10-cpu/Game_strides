@@ -241,19 +241,34 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			for (const TSharedPtr<FJsonValue>& PV : O->GetArrayField(TEXT("points"))) { const TArray<TSharedPtr<FJsonValue>>& A = PV->AsArray(); R.Points.Add(FVector2D(A[0]->AsNumber(), A[1]->AsNumber())); }
 			Roads.Add(R);
 		}
-		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("missions")))
-		{
-			const TSharedPtr<FJsonObject> O = V->AsObject(); FStridesMissionDefinition M;
-			M.Id = O->GetStringField(TEXT("id")); M.Title = O->GetStringField(TEXT("title")); M.Category = O->GetStringField(TEXT("category")); M.Place = O->GetStringField(TEXT("place"));
-			M.Pay = O->GetIntegerField(TEXT("pay")); M.Xp = O->GetIntegerField(TEXT("xp"));
-			for (const TSharedPtr<FJsonValue>& R : O->GetArrayField(TEXT("requires"))) M.Requires.Add(R->AsString()); Missions.Add(M);
-		}
-		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("progression")))
-		{
-			const TSharedPtr<FJsonObject> O = V->AsObject(); FStridesProgressionLevel L;
-			L.Id = O->GetStringField(TEXT("id")); L.Name = O->GetStringField(TEXT("name")); L.Reputation = O->GetIntegerField(TEXT("reputation")); Progression.Add(L);
-		}
 		for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("phoneApps"))) PhoneApps.Add(V->AsString());
+	}
+	// Jalon J3 (correction après contrôle adverse) : missions et paliers de réputation du web (story_missions.json,
+	// export-missions.mjs) ; la liste écrite à la main dans world_architecture.json (titres et sommes inventés) est retirée.
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
+		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/story_missions.json"))) && strides::loadStory(std::string(TCHAR_TO_UTF8(*Text)), StoryDef, Err))
+		{
+			bStory = true;
+			for (const strides::StoryMission& S : StoryDef.missions)
+			{
+				FStridesMissionDefinition M;
+				M.Id = UTF8_TO_TCHAR(S.id.c_str()); M.Title = UTF8_TO_TCHAR(S.title.c_str()); M.Category = UTF8_TO_TCHAR(S.category.c_str());
+				M.Place = UTF8_TO_TCHAR(S.place.c_str()); M.PlaceName = UTF8_TO_TCHAR(S.placeName.c_str()); M.PayLabel = UTF8_TO_TCHAR(S.payLabel.c_str());
+				M.Pay = S.pay; M.Xp = S.xp; M.Level = S.level; M.Cost = S.cost;
+				for (const std::string& R : S.prereqs) M.Requires.Add(UTF8_TO_TCHAR(R.c_str()));
+				Missions.Add(M);
+			}
+			for (const strides::ReputationTier& T : StoryDef.tiers)
+			{
+				FStridesProgressionLevel L;
+				L.Id = UTF8_TO_TCHAR(T.shortTitle.c_str()); L.Name = UTF8_TO_TCHAR(T.title.c_str()); L.Reputation = T.xp;
+				Progression.Add(L);
+			}
+			LoadLog.Add(FString::Printf(TEXT("story_missions.json : %d missions, %d paliers"), Missions.Num(), Progression.Num()));
+		}
+		else LoadLog.Add(FString::Printf(TEXT("story_missions.json : illisible (%s), aucune mission"), UTF8_TO_TCHAR(Err.c_str())));
 	}
 	LoadScene();
 	// Obstacles, lignes et poteau du parcours du Pôle construits par le jeu web (tranche T5).

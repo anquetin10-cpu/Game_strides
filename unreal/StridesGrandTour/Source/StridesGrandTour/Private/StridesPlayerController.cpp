@@ -617,6 +617,16 @@ void AStridesPlayerController::PhoneActivate(const FString& Id)
 			PhoneToastAt = Now;
 			return;
 		}
+		// missions.accept : offre verrouillée (palier) ou solde insuffisant : refus expliqué, rien n'est réservé.
+		const FString Lock = P->OfferLock(PhoneReq);
+		const FStridesMissionDefinition* Req = P->FindMission(PhoneReq);
+		if (!Lock.IsEmpty() || (Req && Req->Cost > P->Credits))
+		{
+			PhoneArmedAt = -1;
+			PhoneToast = !Lock.IsEmpty() ? Lock : FString::Printf(TEXT("Solde insuffisant : il faut %d € (solde %d €)."), Req->Cost, P->Credits);
+			PhoneToastAt = Now;
+			return;
+		}
 		PhoneAcceptAt = Now;
 		PhoneToast = TEXT("Demande acceptée · Les créneaux sont réservés dans votre agenda.");
 		PhoneToastAt = Now;

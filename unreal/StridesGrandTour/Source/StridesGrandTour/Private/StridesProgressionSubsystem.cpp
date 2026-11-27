@@ -1,52 +1,117 @@
 #include "StridesProgressionSubsystem.h"
 #include "StridesDataSubsystem.h"
 
+static const strides::StoryData* StoryOf(const UGameInstance* GI)
+{
+	const UStridesDataSubsystem* Data = GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	return Data ? Data->Story() : nullptr;
+}
+
+strides::CareerState UStridesProgressionSubsystem::MakeCareer() const
+{
+	strides::CareerState S;
+	S.credits = Credits;
+	S.reputation = Reputation;
+	for (const FString& C : CompletedMissions) S.completed.push_back(TCHAR_TO_UTF8(*C));
+	S.active = TCHAR_TO_UTF8(*ActiveMissionId);
+	S.checkpoint = TCHAR_TO_UTF8(*CheckpointMission);
+	S.step = MissionStep;
+	return S;
+}
+
+void UStridesProgressionSubsystem::ApplyCareer(const strides::CareerState& S)
+{
+	Credits = S.credits;
+	Reputation = S.reputation;
+	CompletedMissions.Reset();
+	for (const std::string& C : S.completed) CompletedMissions.Add(UTF8_TO_TCHAR(C.c_str()));
+	ActiveMissionId = UTF8_TO_TCHAR(S.active.c_str());
+	CheckpointMission = UTF8_TO_TCHAR(S.checkpoint.c_str());
+	MissionStep = S.step;
+}
+
 bool UStridesProgressionSubsystem::IsAvailable(const FStridesMissionDefinition& Mission) const
 {
-	if (CompletedMissions.Contains(Mission.Id)) return false;
-	for (const FString& Required : Mission.Requires)
-		if (!CompletedMissions.Contains(Required)) return false;
-	return true;
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	const strides::StoryMission* M = St ? St->find(TCHAR_TO_UTF8(*Mission.Id)) : nullptr;
+	return M && strides::storyAvailable(MakeCareer(), *M);
 }
 
 bool UStridesProgressionSubsystem::StartNextMission()
 {
-	if (!ActiveMissionId.IsEmpty())
-	{
-		LastMessage = TEXT("Une mission est déjà active");
-		return false;
-	}
+	// Outil hors Shipping (touche M) : accepte la première offre acceptable, comme un toucher « Accepter ».
+	for (const FStridesMissionDefinition* M : Offers(0.0))
+		if (OfferLock(M->Id).IsEmpty()) return StartMission(M->Id);
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	if (!Data) return false;
-	for (const FStridesMissionDefinition& Mission : Data->Missions)
-		if (IsAvailable(Mission))
-		{
-			ActiveMissionId = Mission.Id;
-			CheckpointMission = Mission.Id;
-			ClearGps();
-			LastMessage = FString::Printf(TEXT("Mission lancée : %s"), *Mission.Title);
-			UE_LOG(LogTemp, Display, TEXT("Strides career start: %s"), *Mission.Id);
-			return true;
-		}
-	LastMessage = CompletedMissions.Num() == Data->Missions.Num() ? TEXT("Carrière terminée") : TEXT("Aucune mission disponible");
+	LastMessage = Data && CompletedMissions.Num() == Data->Missions.Num() ? TEXT("Carrière terminée") : TEXT("Aucune mission disponible");
 	return false;
 }
 
 bool UStridesProgressionSubsystem::CompleteActiveMission()
 {
-	if (ActiveMissionId.IsEmpty()) return false;
-	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	if (!Data) return false;
-	const FStridesMissionDefinition* Mission = Data->Missions.FindByPredicate([this](const FStridesMissionDefinition& M) { return M.Id == ActiveMissionId; });
-	if (!Mission) return false;
-	Credits += Mission->Pay;
-	Reputation += Mission->Xp;
-	CompletedMissions.AddUnique(Mission->Id);
-	if (CheckpointMission == Mission->Id) CheckpointMission.Empty();
-	LastMessage = FString::Printf(TEXT("%s terminée · +%d crédits · +%d réputation"), *Mission->Title, Mission->Pay, Mission->Xp);
-	UE_LOG(LogTemp, Display, TEXT("Strides career complete: %s credits=%d reputation=%d"), *Mission->Id, Credits, Reputation);
-	ActiveMissionId.Empty();
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	const FStridesMissionDefinition* Mission = ActiveMission();
+	if (!St || !Mission) return false;
+	strides::CareerState S = MakeCareer();
+	const strides::CareerReward R = strides::completeMission(*St, S);
+	ApplyCareer(S);
+	bCourseSeen = false;
+	// missions.complete : carte « Mission réussie » (paiement, réputation) ; coût réglé sur place (Fer perdu).
+	LastMessage = R.cost > 0
+		? FString::Printf(TEXT("Mission réussie · %s · +%d € · -%d € de soins · +%d réputation"), *Mission->Title, R.pay, R.cost, R.rep)
+		: FString::Printf(TEXT("Mission réussie · %s · +%d € · +%d réputation"), *Mission->Title, R.pay, R.rep);
+	UE_LOG(LogTemp, Display, TEXT("Strides career complete: %s credits=%d reputation=%d (+%d, +%d)"), *Mission->Id, Credits, Reputation, R.pay - R.cost, R.rep);
 	return true;
+}
+
+int32 UStridesProgressionSubsystem::StepCount() const
+{
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	const strides::StoryMission* M = St && !ActiveMissionId.IsEmpty() ? St->find(TCHAR_TO_UTF8(*ActiveMissionId)) : nullptr;
+	return M ? (int32)M->route.size() : 0;
+}
+
+FString UStridesProgressionSubsystem::StepText() const
+{
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	const strides::MissionStep* Step = St ? strides::currentStep(*St, MakeCareer()) : nullptr;
+	return Step ? FString(UTF8_TO_TCHAR(Step->text.c_str())) : FString();
+}
+
+bool UStridesProgressionSubsystem::CourseStepActive() const
+{
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	const strides::MissionStep* Step = St ? strides::currentStep(*St, MakeCareer()) : nullptr;
+	return Step && Step->kind == "course";
+}
+
+bool UStridesProgressionSubsystem::TickMission(const FVector2D& Me, bool bCourseRunning, bool bCourseFinished)
+{
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	if (!St || ActiveMissionId.IsEmpty()) return false;
+	if (CourseStepActive() && bCourseRunning) bCourseSeen = true;
+	strides::CareerState S = MakeCareer();
+	if (!strides::advanceStep(*St, S, Me.X, Me.Y, bCourseSeen && bCourseFinished && !bCourseRunning)) return false;
+	MissionStep = S.step;
+	bCourseSeen = false;
+	UE_LOG(LogTemp, Display, TEXT("Strides career step: %s %d/%d"), *ActiveMissionId, MissionStep, StepCount());
+	if (MissionStep >= StepCount()) CompleteActiveMission();
+	return true;
+}
+
+FString UStridesProgressionSubsystem::OfferLock(const FString& Id) const
+{
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	if (!St) return FString();
+	for (const strides::CareerOffer& O : strides::storyOffers(*St, MakeCareer(), [](const std::string&) { return false; }))
+		if (O.mission->id == TCHAR_TO_UTF8(*Id)) return O.locked ? FString(UTF8_TO_TCHAR(O.lockText.c_str())) : FString();
+	return FString();
+}
+
+double UStridesProgressionSubsystem::TierProgress() const
+{
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	return St ? strides::reputationTier(*St, Reputation).progress : 0.0;
 }
 
 FString UStridesProgressionSubsystem::MissionStatus() const
@@ -55,14 +120,16 @@ FString UStridesProgressionSubsystem::MissionStatus() const
 	if (!Data) return TEXT("Missions indisponibles");
 	if (ActiveMissionId.IsEmpty())
 		return CompletedMissions.Num() == Data->Missions.Num() ? TEXT("Carrière terminée") : TEXT("Aucune mission active");
-	const FStridesMissionDefinition* Mission = Data->Missions.FindByPredicate([this](const FStridesMissionDefinition& M) { return M.Id == ActiveMissionId; });
-	return Mission ? FString::Printf(TEXT("%s · rejoindre %s"), *Mission->Title, *PlaceName(Mission->Place)) : TEXT("Mission inconnue");
+	const FStridesMissionDefinition* Mission = ActiveMission();
+	if (!Mission) return TEXT("Mission inconnue");
+	// Objectif de l'étape du web (setObjective) ; numéro d'étape pour suivre l'itinéraire.
+	return FString::Printf(TEXT("%s (%d/%d)"), *StepText(), FMath::Min(MissionStep + 1, StepCount()), StepCount());
 }
 
 FString UStridesProgressionSubsystem::RankName() const
 {
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	FString Result = TEXT("Groom");
+	FString Result = Data && Data->Progression.Num() ? Data->Progression[0].Name : FString(TEXT("Premiers contrats"));
 	if (Data)
 		for (const FStridesProgressionLevel& Level : Data->Progression)
 			if (Reputation >= Level.Reputation) Result = Level.Name;
@@ -71,16 +138,9 @@ FString UStridesProgressionSubsystem::RankName() const
 
 FVector2D UStridesProgressionSubsystem::ActiveTarget() const
 {
-	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	if (!Data || ActiveMissionId.IsEmpty()) return FVector2D::ZeroVector;
-	const FStridesMissionDefinition* Mission = Data->Missions.FindByPredicate([this](const FStridesMissionDefinition& M) { return M.Id == ActiveMissionId; });
-	if (!Mission) return FVector2D::ZeroVector;
-	const FStridesPoi* Poi = Data->PointsOfInterest.FindByPredicate([Mission](const FStridesPoi& P) { return P.Id == Mission->Place; });
-	// La finale parisienne part du Pôle via le transport événementiel.
-	if (!Poi && Mission->Place == TEXT("paris")) Poi = Data->PointsOfInterest.FindByPredicate([](const FStridesPoi& P) { return P.Id == TEXT("pole"); });
-	if (Poi) return Poi->Position;
-	const FStridesWorldRegion* Region = Data->WorldRegions.FindByPredicate([Mission](const FStridesWorldRegion& R) { return R.Id == Mission->Place; });
-	return Region ? Region->Center : FVector2D::ZeroVector;
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	const strides::MissionStep* Step = St ? strides::currentStep(*St, MakeCareer()) : nullptr;
+	return Step ? FVector2D(Step->x, Step->z) : FVector2D::ZeroVector;
 }
 
 bool UStridesProgressionSubsystem::HasActiveTarget() const
@@ -97,6 +157,8 @@ void UStridesProgressionSubsystem::Restore(int32 InCredits, int32 InReputation, 
 	CompletedMissions = InCompleted;
 	ActiveMissionId.Empty();
 	CheckpointMission = CompletedMissions.Contains(InActiveMission) ? FString() : InActiveMission;
+	MissionStep = 0;
+	bCourseSeen = false;
 	ClearGps();
 	RefusedAt.Reset();
 	LastMessage = CheckpointMission.IsEmpty() ? TEXT("Progression rechargée") : TEXT("Progression rechargée · mission à reprendre dans l'app Strides");
@@ -110,34 +172,37 @@ const FStridesMissionDefinition* UStridesProgressionSubsystem::FindMission(const
 
 TArray<const FStridesMissionDefinition*> UStridesProgressionSubsystem::Offers(double Now) const
 {
+	// refreshOffers du web (StridesCore/Career::storyOffers) : ordre de STORY, verrou de palier, refus de moins de 40 s.
 	TArray<const FStridesMissionDefinition*> Out;
-	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	if (!Data) return Out;
-	for (const FStridesMissionDefinition& M : Data->Missions)
-	{
-		if (!IsAvailable(M) || M.Id == ActiveMissionId) continue;
-		if (const double* R = RefusedAt.Find(M.Id)) if (Now - *R < 40.0) continue;
-		if (M.Id == CheckpointMission) Out.Insert(&M, 0);
-		else Out.Add(&M);
-	}
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	if (!St) return Out;
+	const auto Refused = [this, Now](const std::string& Id) { const double* R = RefusedAt.Find(UTF8_TO_TCHAR(Id.c_str())); return R && Now - *R < 40.0; };
+	for (const strides::CareerOffer& O : strides::storyOffers(*St, MakeCareer(), Refused))
+		if (const FStridesMissionDefinition* M = FindMission(UTF8_TO_TCHAR(O.mission->id.c_str()))) Out.Add(M);
 	return Out;
 }
 
 bool UStridesProgressionSubsystem::StartMission(const FString& Id)
 {
-	if (!ActiveMissionId.IsEmpty())
-	{
-		LastMessage = TEXT("Mission en cours : termine ou abandonne ta mission en cours d'abord.");
-		return false;
-	}
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	if (!St) return false;
+	strides::CareerState S = MakeCareer();
+	const strides::AcceptResult R = strides::acceptMission(*St, S, TCHAR_TO_UTF8(*Id));
 	const FStridesMissionDefinition* M = FindMission(Id);
-	if (!M || !IsAvailable(*M)) return false;
-	ActiveMissionId = M->Id;
-	CheckpointMission = M->Id;  // point de reprise « start » (missions.start : enregistré tout de suite)
-	RefusedAt.Remove(M->Id);
+	switch (R)
+	{
+	case strides::AcceptResult::Busy: LastMessage = TEXT("Termine ou abandonne ta mission en cours d’abord."); return false;
+	case strides::AcceptResult::Locked: LastMessage = OfferLock(Id); return false;
+	case strides::AcceptResult::Funds: LastMessage = FString::Printf(TEXT("Solde insuffisant : il faut %d € (solde %d €)."), M ? M->Cost : 0, Credits); return false;
+	case strides::AcceptResult::Unknown: return false;
+	default: break;
+	}
+	ApplyCareer(S);  // point de reprise « start » (missions.start : enregistré tout de suite), étape 0
+	bCourseSeen = false;
+	RefusedAt.Remove(Id);
 	ClearGps();
 	LastMessage = FString::Printf(TEXT("%s · Mission Strides · %s"), *M->Title.ToUpper(), *M->Category);
-	UE_LOG(LogTemp, Display, TEXT("Strides career start: %s (téléphone)"), *M->Id);
+	UE_LOG(LogTemp, Display, TEXT("Strides career start: %s (téléphone) %d étapes"), *M->Id, StepCount());
 	return true;
 }
 
@@ -153,6 +218,8 @@ bool UStridesProgressionSubsystem::AbandonMission()
 	UE_LOG(LogTemp, Display, TEXT("Strides career abandon: %s"), *ActiveMissionId);
 	if (CheckpointMission == ActiveMissionId) CheckpointMission.Empty();
 	ActiveMissionId.Empty();
+	MissionStep = 0;
+	bCourseSeen = false;
 	LastMessage = TEXT("Mission abandonnée.");
 	return true;
 }
@@ -190,8 +257,10 @@ bool UStridesProgressionSubsystem::GuideTarget(FVector2D& Out, FString& Label) c
 	if (HasActiveTarget())
 	{
 		Out = ActiveTarget();
+		// Ligne « GPS · … » : objectif de l'étape (texte du web), sinon le lieu de la mission.
 		const FStridesMissionDefinition* M = FindMission(ActiveMissionId);
-		Label = M ? PlaceName(M->Place) : FString(TEXT("GPS"));
+		Label = StepText();
+		if (Label.IsEmpty()) Label = M ? (M->PlaceName.IsEmpty() ? PlaceName(M->Place) : M->PlaceName) : FString(TEXT("GPS"));
 		return true;
 	}
 	if (bGps) { Out = Gps; Label = GpsLabel; return true; }

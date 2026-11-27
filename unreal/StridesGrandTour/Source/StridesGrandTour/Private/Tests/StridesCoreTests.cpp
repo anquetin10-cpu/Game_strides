@@ -79,8 +79,8 @@ bool FStridesWorldArchitectureTest::RunTest(const FString&)
 	TestEqual(TEXT("carte 1,2 km"), Root->GetObjectField(TEXT("world"))->GetNumberField(TEXT("size")), 1200.0);
 	TestEqual(TEXT("8 régions structurantes"), Root->GetArrayField(TEXT("regions")).Num(), 8);
 	TestEqual(TEXT("14 lieux nommés"), Root->GetArrayField(TEXT("poi")).Num(), 14);
-	TestEqual(TEXT("16 missions de carrière"), Root->GetArrayField(TEXT("missions")).Num(), 16);
-	TestEqual(TEXT("5 rangs de progression"), Root->GetArrayField(TEXT("progression")).Num(), 5);
+	// Jalon J3 (correction) : missions et paliers lus dans story_missions.json (exporté du web), plus dans l'architecture.
+	TestFalse(TEXT("plus de liste de missions écrite à la main"), Root->HasField(TEXT("missions")) || Root->HasField(TEXT("progression")));
 	TestEqual(TEXT("10 applications du téléphone"), Root->GetArrayField(TEXT("phoneApps")).Num(), 10);
 	return true;
 }
@@ -88,17 +88,21 @@ bool FStridesWorldArchitectureTest::RunTest(const FString&)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCareerGraphTest, "Strides.World.CareerGraph", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
 bool FStridesCareerGraphTest::RunTest(const FString&)
 {
-	FString Text;
+	// Jalon J3 (correction après contrôle adverse) : chaîne des missions du web (story_missions.json, export-missions.mjs).
+	FString Text, StoryText;
 	TestTrue(TEXT("architecture présente"), FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/world_architecture.json"))));
-	TSharedPtr<FJsonObject> Root;
+	TestTrue(TEXT("missions du web présentes"), FFileHelper::LoadFileToString(StoryText, *(FPaths::ProjectContentDir() / TEXT("Data/story_missions.json"))));
+	TSharedPtr<FJsonObject> Root, Story;
 	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Text);
 	if (!FJsonSerializer::Deserialize(Reader, Root) || !Root.IsValid()) return false;
+	const TSharedRef<TJsonReader<>> StoryReader = TJsonReaderFactory<>::Create(StoryText);
+	if (!FJsonSerializer::Deserialize(StoryReader, Story) || !Story.IsValid()) return false;
 	TSet<FString> KnownPlaces;
 	for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("poi"))) KnownPlaces.Add(Value->AsObject()->GetStringField(TEXT("id")));
 	for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("regions"))) KnownPlaces.Add(Value->AsObject()->GetStringField(TEXT("id")));
 	TSet<FString> SeenMissions;
 	int32 TotalPay = 0, TotalXp = 0;
-	for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("missions")))
+	for (const TSharedPtr<FJsonValue>& Value : Story->GetArrayField(TEXT("missions")))
 	{
 		const TSharedPtr<FJsonObject> Mission = Value->AsObject();
 		const FString Id = Mission->GetStringField(TEXT("id"));
@@ -106,13 +110,16 @@ bool FStridesCareerGraphTest::RunTest(const FString&)
 		TestTrue(*FString::Printf(TEXT("lieu de %s connu"), *Id), KnownPlaces.Contains(Place) || Place == TEXT("paris"));
 		for (const TSharedPtr<FJsonValue>& Required : Mission->GetArrayField(TEXT("requires")))
 			TestTrue(*FString::Printf(TEXT("prérequis de %s déjà défini"), *Id), SeenMissions.Contains(Required->AsString()));
+		TestTrue(*FString::Printf(TEXT("itinéraire de %s"), *Id), Mission->GetArrayField(TEXT("route")).Num() > 0);
 		SeenMissions.Add(Id);
 		TotalPay += Mission->GetIntegerField(TEXT("pay"));
 		TotalXp += Mission->GetIntegerField(TEXT("xp"));
 	}
+	TestEqual(TEXT("5 paliers de réputation du web"), Story->GetArrayField(TEXT("tiers")).Num(), 5);
 	TestEqual(TEXT("chaîne complète de 16 missions"), SeenMissions.Num(), 16);
-	TestEqual(TEXT("récompenses de carrière"), TotalPay, 7520);
-	TestEqual(TEXT("réputation de carrière"), TotalXp, 5980);
+	// Sommes des def.pay et def.xp du web (story.js, story2.js, parisGP.js) : 4 130 € et 5 510 points.
+	TestEqual(TEXT("récompenses de carrière"), TotalPay, 4130);
+	TestEqual(TEXT("réputation de carrière"), TotalXp, 5510);
 	return true;
 }
 

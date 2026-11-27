@@ -13,6 +13,7 @@
 #include "StridesCore/CsoRide.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/WorldLife.h"
+#include "StridesCore/Career.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/Ranking.h"
@@ -87,6 +88,12 @@ struct FStridesMissionDefinition
 	UPROPERTY(BlueprintReadOnly) int32 Pay = 0;
 	UPROPERTY(BlueprintReadOnly) int32 Xp = 0;
 	UPROPERTY(BlueprintReadOnly) TArray<FString> Requires;
+	// Jalon J3 (correction) : champs du web (story_missions.json) : palier requis, nom du lieu (placeName), libellé du
+	// paiement (payLabel, « 150 € + dotation »), coût à régler (fer).
+	UPROPERTY(BlueprintReadOnly) int32 Level = 1;
+	UPROPERTY(BlueprintReadOnly) FString PlaceName;
+	UPROPERTY(BlueprintReadOnly) FString PayLabel;
+	UPROPERTY(BlueprintReadOnly) int32 Cost = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -198,10 +205,16 @@ public:
 	// complètes, voitures de la circulation, passants, spectateurs ; lecture du cœur, celle du ctest « monde-vivant ») ;
 	// nul si absente ou illisible.
 	const strides::AmbientData* Ambient() const { return bAmbient ? &AmbientDef : nullptr; }
+	// Jalon J3 (correction après contrôle adverse) : missions de l'histoire et paliers de réputation du web
+	// (Content/Data/story_missions.json, scripts/unreal/export-missions.mjs ; lecture du cœur, celle du ctest « carriere ») ;
+	// remplissent aussi Missions et Progression. Nul si absent ou illisible (aucune mission inventée de repli).
+	const strides::StoryData* Story() const { return bStory ? &StoryDef : nullptr; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
 
 private:
+	strides::StoryData StoryDef;
+	bool bStory = false;
 	strides::AmbientData AmbientDef;
 	bool bAmbient = false;
 	bool LoadJson(const FString& File, TSharedPtr<class FJsonObject>& Out);

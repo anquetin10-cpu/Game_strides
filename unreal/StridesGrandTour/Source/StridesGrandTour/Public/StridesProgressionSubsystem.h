@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "StridesCore/Career.h"
 #include "StridesProgressionSubsystem.generated.h"
 
 UCLASS()
@@ -53,7 +54,26 @@ public:
 	bool GuideTarget(FVector2D& Out, FString& Label) const;
 	// Objectif de la mission avec la distance (makeSteps withDist : « … · 340 m », « … · 1,2 km » ; arrondi à 10 m).
 	static FString WithDistance(const FString& Text, double Meters);
+	// ---- Jalon J3, correction après contrôle adverse : missions du web (StridesCore/Career, story_missions.json) ----
+	// Étape de l'itinéraire de la mission en cours (0 = première) ; texte et cible de l'étape.
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") int32 MissionStep = 0;
+	const struct FStridesMissionDefinition* ActiveMission() const { return ActiveMissionId.IsEmpty() ? nullptr : FindMission(ActiveMissionId); }
+	int32 StepCount() const;
+	FString StepText() const;
+	// Étape « épreuve » (3e étape de M3) : l'épreuve du Pôle est ouverte pendant cette étape (le poteau « Chrono » reste
+	// actif malgré la mission en cours) et l'étape se franchit quand un parcours commencé pendant l'étape est terminé.
+	bool CourseStepActive() const;
+	// Une image du directeur du monde : position du joueur (repère web) et épreuve du Pôle (en cours, terminée). Vrai si
+	// l'étape en cours a été franchie ; la mission est alors payée quand l'itinéraire est fini (CompleteActiveMission).
+	bool TickMission(const FVector2D& Me, bool bCourseRunning, bool bCourseFinished);
+	// Verrou de palier d'une offre (« Débloqué au palier « … ». »), vide si l'offre est acceptable.
+	FString OfferLock(const FString& Id) const;
+	// Palier de réputation du web (reputationTier) : titre et progression vers le suivant.
+	double TierProgress() const;
 private:
+	strides::CareerState MakeCareer() const;
+	void ApplyCareer(const strides::CareerState& S);
+	bool bCourseSeen = false;
 	TMap<FString, double> RefusedAt;
 	FVector2D Gps = FVector2D::ZeroVector;
 	FString GpsLabel;

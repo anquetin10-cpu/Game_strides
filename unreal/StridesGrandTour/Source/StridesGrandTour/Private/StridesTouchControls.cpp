@@ -129,17 +129,27 @@ void UStridesTouchControls::Build()
 	UButton* GaitUpButton = AddTouchButton(WidgetTree, Canvas, TEXT("GaitUp"), TEXT("ALLURE +"), BottomRight, FVector2D(-32, -242), FVector2D(150, 68), AlignRight);
 	UButton* GaitDownButton = AddTouchButton(WidgetTree, Canvas, TEXT("GaitDown"), TEXT("ALLURE -"), BottomRight, FVector2D(-198, -242), FVector2D(142, 68), AlignRight);
 	// SAUVER et CHARGER en haut au centre : le coin haut droit est celui du bouton pause du web.
+	// Jalon J3 (correction) : SAUVER, CHARGER et MISSION sont des outils du portage ; ils ne sont même pas construits en
+	// Shipping (le contrôle adverse a trouvé leurs libellés dans le binaire alors qu'ils étaient seulement masqués).
+#if !UE_BUILD_SHIPPING
 	UButton* SaveButton = AddTouchButton(WidgetTree, Canvas, TEXT("Save"), TEXT("SAUVER"), FAnchors(.5f, 0.f), FVector2D(6, 32), FVector2D(124, 54), FVector2D(0.f, 0.f));
 	UButton* LoadButton = AddTouchButton(WidgetTree, Canvas, TEXT("Load"), TEXT("CHARGER"), FAnchors(.5f, 0.f), FVector2D(-6, 32), FVector2D(124, 54), FVector2D(1.f, 0.f));
+#endif
 	UButton* PhoneButton = AddTouchButton(WidgetTree, Canvas, TEXT("Phone"), TEXT("TÉLÉPHONE"), FAnchors(.5f, 1.f), FVector2D(-82, -32), FVector2D(164, 58), FVector2D(.5f, 1.f));
+#if !UE_BUILD_SHIPPING
 	UButton* MissionButton = AddTouchButton(WidgetTree, Canvas, TEXT("Mission"), TEXT("MISSION"), FAnchors(.5f, 1.f), FVector2D(-82, -102), FVector2D(164, 58), FVector2D(.5f, 1.f));
+	SaveButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Save);
+	LoadButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Load);
+	MissionButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Mission);
+#else
+	UButton* SaveButton = nullptr;
+	UButton* LoadButton = nullptr;
+	UButton* MissionButton = nullptr;
+#endif
 	InteractButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Interact);
 	GaitUpButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitUp);
 	GaitDownButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitDown);
-	SaveButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Save);
-	LoadButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Load);
 	PhoneButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Phone);
-	MissionButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Mission);
 
 	// Calque en px CSS (tranche T8) : joystick, SAUT, pause.
 	Scale = WidgetTree->ConstructWidget<UScaleBox>();
@@ -189,7 +199,8 @@ void UStridesTouchControls::Build()
 	PauseButton->OnPressed.AddDynamic(this, &UStridesTouchControls::PauseDown);
 	PauseButton->OnReleased.AddDynamic(this, &UStridesTouchControls::PauseUp);
 
-	Buttons = {JumpButton, PauseButton, InteractButton, GaitUpButton, GaitDownButton, SaveButton, LoadButton, PhoneButton, MissionButton};
+	Buttons = {JumpButton, PauseButton, InteractButton, GaitUpButton, GaitDownButton, PhoneButton};
+	for (UButton* Tool : {SaveButton, LoadButton, MissionButton}) if (Tool) Buttons.Add(Tool);
 }
 
 void UStridesTouchControls::ApplyStyle(const FVector2D& ViewCss)

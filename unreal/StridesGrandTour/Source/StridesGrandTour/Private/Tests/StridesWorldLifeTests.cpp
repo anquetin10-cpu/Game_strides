@@ -246,7 +246,7 @@ bool FStridesPhoneMissionFlowTest::RunTest(const FString&)
 	TestTrue(TEXT("app Strides touchée"), G.Choose(TEXT("app:strides")));
 	TestEqual(TEXT("app Strides"), G.PC->PhoneApp(), FString(TEXT("strides")));
 	TestTrue(FString::Printf(TEXT("offre « Premiers pas » (%s)"), *G.Texts()), G.HasItem(TEXT("offer:tuto")) && G.Texts().Contains(TEXT("Premiers pas")));
-	TestFalse(TEXT("« Première mission » pas encore proposée (prérequis)"), G.HasItem(TEXT("offer:m1")));
+	TestFalse(TEXT("« Deux écuries, une matinée » pas encore proposée (prérequis)"), G.HasItem(TEXT("offer:m1")));
 	TestTrue(TEXT("demande ouverte"), G.Choose(TEXT("offer:tuto")));
 	TestEqual(TEXT("écran de la demande"), G.PC->PhoneApp(), FString(TEXT("request")));
 	TestTrue(TEXT("« Accepter la mission »"), G.Texts().Contains(TEXT("Accepter la mission")));
@@ -263,22 +263,35 @@ bool FStridesPhoneMissionFlowTest::RunTest(const FString&)
 	TestFalse(TEXT("téléphone rangé"), G.PC->IsPhoneOpen());
 	TestEqual(TEXT("mission « tuto » en cours"), P->ActiveMissionId, FString(TEXT("tuto")));
 	TestEqual(TEXT("point de reprise posé (missions.start)"), P->CheckpointMission, FString(TEXT("tuto")));
-	// Guidage et mini-carte : l'Écurie du Val est à ~7 m du départ ; le cheval est posé 200 m au sud pour suivre le GPS.
-	G.Horse->PlaceAt(-110, 372, PI, 0);
+	// Jalon J3 (correction après contrôle adverse) : itinéraire du web (story.js tuto : carrière, 5 anneaux, retour vers
+	// Camille). Au départ, rien n'est franchi : le contrôle a vu « Premiers pas » se terminer 0,1 s après l'acceptation.
+	Dir->Tick(0.3f);
+	TestEqual(TEXT("au départ : toujours à l'étape 1"), P->MissionStep, 0);
+	TestEqual(TEXT("7 étapes (carrière, 5 anneaux, Camille)"), P->StepCount(), 7);
+	TestTrue(FString::Printf(TEXT("objectif du web « Suis la balise jusqu’à la carrière » (%s)"), *P->MissionStatus()), P->MissionStatus().StartsWith(TEXT("Suis la balise jusqu’à la carrière (1/7)")));
+	// Guidage et mini-carte : le cheval est posé 200 m au sud de l'entrée de la carrière du Val (-100, 199).
+	G.Horse->PlaceAt(-100, 399, PI, 0);
 	G.Frame();
 	Info(FString::Printf(TEXT("guidage « %s », repères %s"), *G.Hud->GuideLineShown(), *FString::Join(G.Hud->MinimapBlips(), TEXT(", "))));
-	TestTrue(TEXT("guidage « GPS · Écurie du Val · 200 m »"), G.Hud->GuideLineShown().StartsWith(TEXT("GPS · Écurie du Val · 200 m")));
+	TestTrue(TEXT("guidage « GPS · Suis la balise jusqu’à la carrière · 200 m »"), G.Hud->GuideLineShown().StartsWith(TEXT("GPS · Suis la balise jusqu’à la carrière · 200 m")));
 	TestTrue(TEXT("repère GPS sur la mini-carte"), G.Hud->MinimapBlips().Contains(TEXT("GPS")));
-	TestTrue(TEXT("demi-tour : la cible est derrière (cap π, vers le nord ; Écurie au nord)"), G.Hud->GuideLineShown().EndsWith(TEXT("tout droit")) || G.Hud->GuideLineShown().EndsWith(TEXT("demi-tour")));
-	// Arrivée (balise du directeur du monde, rayon 18 m).
-	G.Horse->PlaceAt(-110, 180, PI, 0);
-	Dir->Tick(0.3f);
-	TestTrue(TEXT("mission terminée à l'arrivée"), P->ActiveMissionId.IsEmpty() && P->CompletedMissions.Contains(TEXT("tuto")));
-	TestEqual(TEXT("+50 crédits"), P->Credits, 50);
-	TestEqual(TEXT("+60 réputation"), P->Reputation, 60);
+	TestTrue(TEXT("demi-tour : la cible est derrière (cap π, vers le nord ; carrière au nord)"), G.Hud->GuideLineShown().EndsWith(TEXT("tout droit")) || G.Hud->GuideLineShown().EndsWith(TEXT("demi-tour")));
+	// Étapes franchies une à une (balise du directeur du monde, rayon du web) ; payée seulement à la dernière.
+	const strides::StoryMission* Tuto = Data->Story() ? Data->Story()->find("tuto") : nullptr;
+	if (!TestNotNull(TEXT("tuto dans story_missions.json"), Tuto)) return false;
+	for (size_t I = 0; I < Tuto->route.size(); ++I)
+	{
+		TestEqual(*FString::Printf(TEXT("tuto pas encore payée avant l'étape %d"), (int32)I + 1), P->Credits, 0);
+		G.Horse->PlaceAt(Tuto->route[I].x, Tuto->route[I].z, PI, 0);
+		Dir->Tick(0.3f);
+	}
+	TestTrue(TEXT("mission terminée à la dernière étape"), P->ActiveMissionId.IsEmpty() && P->CompletedMissions.Contains(TEXT("tuto")));
+	TestEqual(TEXT("+50 € (def.pay du web)"), P->Credits, 50);
+	TestEqual(TEXT("+60 réputation (def.xp du web)"), P->Reputation, 60);
 	TestTrue(TEXT("point de reprise effacé"), P->CheckpointMission.IsEmpty());
+	TestEqual(TEXT("palier du web « Premiers contrats »"), P->RankName(), FString(TEXT("Premiers contrats")));
 	// Mission suivante acceptée puis partie sauvegardée et rechargée (relance) : point de reprise proposé en tête.
-	TestTrue(TEXT("« Première mission » acceptée"), P->StartMission(TEXT("m1")));
+	TestTrue(TEXT("« Deux écuries, une matinée » acceptée"), P->StartMission(TEXT("m1")));
 	TestTrue(TEXT("sauvegarde écrite (emplacement de test)"), Save->SaveNow(G.PC));
 	P->Restore(0, 0, FString(), {});
 	TestTrue(TEXT("rechargement"), Save->LoadNow(G.PC));
@@ -338,6 +351,46 @@ bool FStridesHudMinimapRotationTest::RunTest(const FString&)
 		if (FMath::IsNearlyEqual(H, HALF_PI)) TestTrue(TEXT("cap π/2 (vers +x, l'est) : nord à gauche"), N.Equals(FVector2D(-1, 0), 1e-3));
 		if (FMath::IsNearlyEqual(H, PI)) TestTrue(TEXT("cap π (vers −z, le nord) : nord en haut"), N.Equals(FVector2D(0, -1), 1e-3));
 	}
+	return true;
+}
+
+// Jalon J3 (correction après contrôle adverse) : M3 « Le premier concours en équipe » du web : parking des camions du
+// Pôle, secrétariat, épreuve (le poteau « Chrono » reste ouvert pendant cette étape), retour vers l'équipe ; payée à la fin
+// (150 € de participation, 200 points ; dotation non portée). Verrou de palier (« plage », palier 2) et sommes du web.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesCareerStoryTest, "Strides.Career.Story", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesCareerStoryTest::RunTest(const FString&)
+{
+	StridesWorldLifeTest::FTestWorld W(TEXT("StridesCareerStory"));
+	UStridesProgressionSubsystem* P = W.GI->GetSubsystem<UStridesProgressionSubsystem>();
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	if (!TestTrue(TEXT("sous-systèmes et missions du web"), P && Data && Data->Story())) return false;
+	const FStridesMissionDefinition* M3 = P->FindMission(TEXT("m3"));
+	if (!TestNotNull(TEXT("m3"), M3)) return false;
+	TestEqual(TEXT("titre du web"), M3->Title, FString(TEXT("Le premier concours en équipe")));
+	TestEqual(TEXT("libellé du paiement du web"), M3->PayLabel, FString(TEXT("150 € + dotation")));
+	P->Restore(260, 220, FString(), {TEXT("tuto"), TEXT("m1"), TEXT("m2")});
+	TestTrue(TEXT("m3 seule offre"), P->Offers(0).Num() == 1 && P->Offers(0)[0]->Id == TEXT("m3"));
+	TestTrue(TEXT("m3 acceptée"), P->StartMission(TEXT("m3")));
+	const strides::StoryMission* S = Data->Story()->find("m3");
+	TestEqual(TEXT("4 étapes"), P->StepCount(), 4);
+	TestFalse(TEXT("pas franchie de l'Écurie du Val"), P->TickMission(FVector2D(-104, 168), false, false));
+	TestTrue(TEXT("parking des camions"), P->TickMission(FVector2D(S->route[0].x, S->route[0].z), false, false));
+	TestTrue(TEXT("secrétariat"), P->TickMission(FVector2D(S->route[1].x, S->route[1].z), false, false));
+	TestTrue(TEXT("étape « épreuve »"), P->CourseStepActive());
+	const FVector2D Gate(S->route[2].x, S->route[2].z);
+	TestFalse(TEXT("pas franchie au poteau sans parcours"), P->TickMission(Gate, false, false));
+	TestFalse(TEXT("pas franchie par un parcours terminé avant l'étape"), P->TickMission(Gate, false, true));
+	TestFalse(TEXT("parcours en cours"), P->TickMission(Gate, true, false));
+	TestTrue(TEXT("parcours terminé"), P->TickMission(Gate, false, true));
+	TestEqual(TEXT("pas encore payée"), P->Credits, 260);
+	TestTrue(TEXT("équipe retrouvée : mission finie"), P->TickMission(FVector2D(S->route[3].x, S->route[3].z), false, false) && P->ActiveMissionId.IsEmpty());
+	TestEqual(TEXT("+150 € de participation"), P->Credits, 410);
+	TestEqual(TEXT("+200 points"), P->Reputation, 420);
+	TestEqual(TEXT("palier « Professionnel apprécié » (300 points)"), P->RankName(), FString(TEXT("Professionnel apprécié")));
+	// Verrou de palier : « Galop sur la plage » (palier 2) à 0 point après « Le fugueur ».
+	P->Restore(0, 0, FString(), {TEXT("tuto"), TEXT("m1"), TEXT("m2"), TEXT("m3"), TEXT("groom"), TEXT("livraison"), TEXT("fugueur")});
+	TestTrue(FString::Printf(TEXT("plage verrouillée (%s)"), *P->OfferLock(TEXT("plage"))), P->OfferLock(TEXT("plage")).StartsWith(TEXT("Débloqué au palier « Professionnel apprécié »")));
+	TestFalse(TEXT("plage refusée sous le palier"), P->StartMission(TEXT("plage")));
 	return true;
 }
 

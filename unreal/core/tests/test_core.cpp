@@ -2913,9 +2913,10 @@ static void testCsoInput() {
   // Codes physiques (tables de la plateforme, sans oracle web) : W et Z, A et Q distincts ; flèches, modificateurs.
   CHECK(webCodeFromMacKeyCode(0x0D) == "KeyW" && webCodeFromMacKeyCode(0x06) == "KeyZ" && webCodeFromMacKeyCode(0x00) == "KeyA" && webCodeFromMacKeyCode(0x0C) == "KeyQ" &&
             webCodeFromMacKeyCode(0x7E) == "ArrowUp" && webCodeFromMacKeyCode(0x3B) == "ControlLeft" && webCodeFromMacKeyCode(0x3A) == "AltLeft" && webCodeFromMacKeyCode(0x35) == "Escape" &&
-            webCodeFromMacKeyCode(0x30) == "Tab" && webCodeFromMacKeyCode(0x31) == "Space" && webCodeFromMacKeyCode(0x2E) == "KeyM" && webCodeFromMacKeyCode(0x63).empty(),
+            webCodeFromMacKeyCode(0x30) == "Tab" && webCodeFromMacKeyCode(0x31) == "Space" && webCodeFromMacKeyCode(0x2E) == "KeyM" && webCodeFromMacKeyCode(0x63).empty() &&
+            webCodeFromMacKeyCode(0x33) == "Backspace" && webCodeFromMacKeyCode(0x4C) == "NumpadEnter",
         "codes physiques du Mac");
-  CHECK(webCodeFromKeyName("W") == "KeyW" && webCodeFromKeyName("SpaceBar") == "Space" && webCodeFromKeyName("LeftControl") == "ControlLeft" && webCodeFromKeyName("Up") == "ArrowUp" &&
+  CHECK(webCodeFromKeyName("W") == "KeyW" && webCodeFromKeyName("SpaceBar") == "Space" && webCodeFromKeyName("LeftControl") == "ControlLeft" && webCodeFromKeyName("Up") == "ArrowUp" && webCodeFromKeyName("BackSpace") == "Backspace" &&
             webCodeFromKeyName("F8").empty(),
         "noms de touches Unreal");
   std::printf("commandes : %d scénarios, %d appels rejoués (%d joysticks pris, %d rebasages, %d regards, %d touches, %d boutons), %d écarts\n", scen, calls, joyDowns, rebases, lookMoves, keyCalls,

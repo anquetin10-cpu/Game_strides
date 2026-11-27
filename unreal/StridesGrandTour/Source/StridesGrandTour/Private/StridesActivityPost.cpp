@@ -25,7 +25,9 @@ bool AStridesActivityPost::MissionActive() const
 {
 	if (Course && Course->MissionActive()) return true;
 	const UStridesProgressionSubsystem* P = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>() : nullptr;
-	return P && !P->ActiveMissionId.IsEmpty();
+	// Jalon J3 (correction) : pendant l'étape « épreuve » d'une mission (M3, épreuve Amateur au Pôle), le poteau reste
+	// actif : au web, l'épreuve fait partie des étapes de la mission (courseSteps) ; le portage la confie au poteau.
+	return P && !P->ActiveMissionId.IsEmpty() && !P->CourseStepActive();
 }
 
 bool AStridesActivityPost::Available(double FocusX, double FocusZ, const FString& Mode) const

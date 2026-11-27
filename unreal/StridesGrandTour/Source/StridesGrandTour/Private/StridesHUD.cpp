@@ -323,7 +323,7 @@ void AStridesHUD::DrawPhone(const UStridesProgressionSubsystem* Progress)
 			Text(TEXT("EN COURS"), Accent, L + 14, Y + 8, .8f);
 			Text(Active->Title, Ink, L + 14, Y + 28, 1.1f);
 			FVector2D T; FString Lb;
-			Text(Progress->GuideTarget(T, Lb) ? UStridesProgressionSubsystem::WithDistance(FString::Printf(TEXT("Rejoins %s"), *Lb), FVector2D::Distance(Me, T)) : Progress->MissionStatus(), Mute, L + 14, Y + 56, .85f);
+			Text(Progress->GuideTarget(T, Lb) ? UStridesProgressionSubsystem::WithDistance(Progress->MissionStatus(), FVector2D::Distance(Me, T)) : Progress->MissionStatus(), Mute, L + 14, Y + 56, .85f);
 			Y += 100;
 			Item(TEXT("abandon"), L, Y, CW, 40, Card);
 			Text(TEXT("Abandonner la mission"), Ink, L + 14, Y + 10, .95f);
@@ -335,9 +335,13 @@ void AStridesHUD::DrawPhone(const UStridesProgressionSubsystem* Progress)
 			if (Y > Top + Ht - 150) break;
 			const FVector2D Pl = Progress->PlacePosition(M->Place);
 			Item(FString(TEXT("offer:")) + M->Id, L, Y, CW, 84, Card);
+			// Carte d'offre du web (phone.js offerCard) : catégorie, titre, lieu (placeName), paiement (payLabel sinon montant),
+			// réputation ; offre verrouillée : « Débloqué au palier … ».
+			const FString Lock = Progress->OfferLock(M->Id);
 			Text(M->Id == Progress->CheckpointMission ? FString::Printf(TEXT("%s · REPRISE"), *M->Category.ToUpper()) : M->Category.ToUpper(), Gold, L + 14, Y + 8, .8f);
-			Text(M->Title, Ink, L + 14, Y + 28, 1.1f);
-			Text(FString::Printf(TEXT("%s · ~%d € · +%d réputation · %s"), *Progress->PlaceName(M->Place), M->Pay, M->Xp, *Km(FVector2D::Distance(Me, Pl))), Mute, L + 14, Y + 56, .8f);
+			Text(M->Title, Lock.IsEmpty() ? Ink : Mute, L + 14, Y + 28, 1.1f);
+			const FString Pay = M->PayLabel.IsEmpty() ? FString::Printf(TEXT("%d €"), M->Pay) : M->PayLabel;
+			Text(Lock.IsEmpty() ? FString::Printf(TEXT("%s · %s · +%d réputation · %s"), *M->PlaceName, *Pay, M->Xp, *Km(FVector2D::Distance(Me, Pl))) : Lock, Mute, L + 14, Y + 56, .8f);
 			Y += 94;
 		}
 	}
@@ -351,8 +355,11 @@ void AStridesHUD::DrawPhone(const UStridesProgressionSubsystem* Progress)
 			const FVector2D Pl = Progress->PlacePosition(M->Place);
 			Text(M->Title, Ink, L, Y, 1.4f); Y += 40;
 			Text(M->Category, Gold, L, Y, .95f); Y += 30;
-			Text(FString::Printf(TEXT("Lieu : %s · %s"), *Progress->PlaceName(M->Place), *Km(FVector2D::Distance(Me, Pl))), Ink, L, Y, .95f); Y += 28;
-			Text(FString::Printf(TEXT("Rémunération : ~%d € · +%d réputation"), M->Pay, M->Xp), Ink, L, Y, .95f); Y += 44;
+			Text(FString::Printf(TEXT("Lieu : %s · %s"), *M->PlaceName, *Km(FVector2D::Distance(Me, Pl))), Ink, L, Y, .95f); Y += 28;
+			Text(FString::Printf(TEXT("Rémunération : %s · +%d réputation"), *(M->PayLabel.IsEmpty() ? FString::Printf(TEXT("%d €"), M->Pay) : M->PayLabel), M->Xp), Ink, L, Y, .95f); Y += 28;
+			const FString Lock = Progress->OfferLock(M->Id);
+			if (!Lock.IsEmpty()) Text(Lock, Gold, L, Y, .9f);
+			Y += 16;
 			const FString Acc = PC->PhoneAcceptDone() ? TEXT("Demande acceptée — les créneaux sont réservés dans votre agenda.")
 				: PC->PhoneConfirmArmed() ? TEXT("Confirmer l'acceptation ?") : TEXT("Accepter la mission");
 			Item(TEXT("accept"), L, Y, CW, 48, FLinearColor(.12f, .42f, .34f));

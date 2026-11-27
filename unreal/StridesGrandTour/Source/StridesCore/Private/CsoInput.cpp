@@ -200,6 +200,10 @@ std::string webCodeFromMacKeyCode(std::uint32_t keyCode) {
       {0x28, "KeyK"},  {0x2D, "KeyN"},       {0x2E, "KeyM"},     {0x30, "Tab"},        {0x31, "Space"},      {0x35, "Escape"},
       {0x38, "ShiftLeft"}, {0x3A, "AltLeft"}, {0x3B, "ControlLeft"}, {0x3C, "ShiftRight"}, {0x3D, "AltRight"}, {0x3E, "ControlRight"},
       {0x7B, "ArrowLeft"}, {0x7C, "ArrowRight"}, {0x7D, "ArrowDown"}, {0x7E, "ArrowUp"},
+      // Jalon J3 (correction) : Retour arrière (kVK_Delete) et Entrée du pavé (kVK_ANSI_KeypadEnter) : touches du téléphone
+      // (choix n° 15) ; absentes, le Retour arrière n'arrivait jamais au jeu (contrôle adverse : Entrée suivante prise par
+      // l'élément « Retour » de l'écran).
+      {0x33, "Backspace"}, {0x4C, "NumpadEnter"},
   };
   const auto it = map.find(keyCode);
   return it == map.end() ? std::string() : it->second;
@@ -212,6 +216,7 @@ std::string webCodeFromKeyName(const std::string& keyName) {
       {"SpaceBar", "Space"},      {"Escape", "Escape"},        {"Tab", "Tab"},            {"Enter", "Enter"},
       {"LeftControl", "ControlLeft"}, {"RightControl", "ControlRight"}, {"LeftAlt", "AltLeft"}, {"RightAlt", "AltRight"},
       {"LeftShift", "ShiftLeft"}, {"RightShift", "ShiftRight"},
+      {"BackSpace", "Backspace"},
   };
   const auto it = map.find(keyName);
   return it == map.end() ? std::string() : it->second;

@@ -1,0 +1,725 @@
+{
+ "schema": "strides.story.v1",
+ "source": {
+  "webCommit": "a5bc8dd9",
+  "files": [
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js",
+   "src/gameplay/parisGP.js",
+   "src/config.js",
+   "src/gameplay/missions.js"
+  ]
+ },
+ "tiers": [
+  {
+   "xp": 0,
+   "title": "Premiers contrats",
+   "short": "DÉBUT"
+  },
+  {
+   "xp": 300,
+   "title": "Professionnel apprécié",
+   "short": "APPRÉCIÉ"
+  },
+  {
+   "xp": 900,
+   "title": "Référence locale",
+   "short": "RÉFÉRENCE"
+  },
+  {
+   "xp": 1800,
+   "title": "Équipe reconnue",
+   "short": "RECONNU"
+  },
+  {
+   "xp": 3200,
+   "title": "Réputation internationale",
+   "short": "INTERNATIONAL"
+  }
+ ],
+ "missions": [
+  {
+   "id": "tuto",
+   "title": "Premiers pas",
+   "category": "Prise en main",
+   "level": 1,
+   "place": "home",
+   "placeName": "Écurie du Val",
+   "pay": 50,
+   "payLabel": "",
+   "xp": 60,
+   "cost": 0,
+   "requires": [],
+   "hours": null,
+   "full": true,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Suis la balise jusqu’à la carrière",
+     "x": -100,
+     "z": 199,
+     "r": 5
+    },
+    {
+     "kind": "goto",
+     "text": "Fais le tour de la carrière dans les anneaux (1/5)",
+     "x": -100,
+     "z": 204.5,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Fais le tour de la carrière dans les anneaux (2/5)",
+     "x": -116,
+     "z": 207,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Fais le tour de la carrière dans les anneaux (3/5)",
+     "x": -116,
+     "z": 218,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Fais le tour de la carrière dans les anneaux (4/5)",
+     "x": -104,
+     "z": 219,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Fais le tour de la carrière dans les anneaux (5/5)",
+     "x": -100,
+     "z": 209,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Reviens voir Camille devant les boxes",
+     "x": -100,
+     "z": 166,
+     "r": 4
+    }
+   ],
+   "skipped": [
+    "dialogues de Camille",
+    "aller chercher Comète au box, la sortir en main, monter en selle"
+   ]
+  },
+  {
+   "id": "m1",
+   "title": "Deux écuries, une matinée",
+   "category": "Groom",
+   "level": 1,
+   "place": "home",
+   "placeName": "Écurie du Val · Haras de la Pommeraie",
+   "pay": 90,
+   "payLabel": "90 à 270 €",
+   "xp": 60,
+   "cost": 0,
+   "requires": [
+    "tuto"
+   ],
+   "hours": [
+    6,
+    20
+   ],
+   "full": true,
+   "choice": "val",
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins les boxes de l’Écurie du Val",
+     "x": -132.15,
+     "z": 162.5,
+     "r": 7
+    },
+    {
+     "kind": "goto",
+     "text": "Prépare Iris (devant le box n°3)",
+     "x": -135.75,
+     "z": 159.7,
+     "r": 2.8
+    },
+    {
+     "kind": "goto",
+     "text": "Prépare Narval (devant le box n°6)",
+     "x": -124.95,
+     "z": 159.7,
+     "r": 2.8
+    },
+    {
+     "kind": "goto",
+     "text": "Préviens Camille",
+     "x": -100,
+     "z": 166,
+     "r": 4
+    }
+   ],
+   "skipped": [
+    "carte de choix (Val, Haras, tournée, refuser) : option Val retenue",
+    "préparation au box (6 s, à pied)",
+    "dialogues"
+   ]
+  },
+  {
+   "id": "m2",
+   "title": "Un renfort avant le concours",
+   "category": "Groom",
+   "level": 1,
+   "place": "home",
+   "placeName": "Écurie du Val",
+   "pay": 120,
+   "payLabel": "",
+   "xp": 100,
+   "cost": 0,
+   "requires": [
+    "m1"
+   ],
+   "hours": null,
+   "full": true,
+   "choice": "solo",
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Reconnais le parcours du Pôle à pied : obstacle n°1 (1/5)",
+     "x": 313.28,
+     "z": -212.84,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Reconnais le parcours du Pôle à pied : obstacle n°2 (2/5)",
+     "x": 334.33,
+     "z": -252.78,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Reconnais le parcours du Pôle à pied : obstacle n°3 (3/5)",
+     "x": 356.33,
+     "z": -252.78,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Reconnais le parcours du Pôle à pied : obstacle n°4A (4/5)",
+     "x": 349.83,
+     "z": -223.78,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Reconnais le parcours du Pôle à pied : obstacle n°5 (5/5)",
+     "x": 320.03,
+     "z": -223.78,
+     "r": 4.5
+    },
+    {
+     "kind": "goto",
+     "text": "Rentre à l’Écurie du Val",
+     "x": -104,
+     "z": 168,
+     "r": 9
+    },
+    {
+     "kind": "goto",
+     "text": "Accueille Opale, la nouvelle pensionnaire (près du camion)",
+     "x": -68,
+     "z": 167,
+     "r": 3.4
+    }
+   ],
+   "skipped": [
+    "recrutement dans Strides › Recruter (Léa 120 €, Inès 200 €) : option seul·e retenue",
+    "préparation de Comète",
+    "reconnaissance à pied (le portage l’accepte à cheval)",
+    "installation d’Opale au box n°8, dialogues"
+   ]
+  },
+  {
+   "id": "m3",
+   "title": "Le premier concours en équipe",
+   "category": "CSO",
+   "level": 1,
+   "place": "home",
+   "placeName": "Écurie du Val → Pôle International",
+   "pay": 150,
+   "payLabel": "150 € + dotation",
+   "xp": 200,
+   "cost": 0,
+   "requires": [
+    "m2"
+   ],
+   "hours": null,
+   "full": true,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins le parking des camions du Pôle International",
+     "x": 311,
+     "z": -177,
+     "r": 13
+    },
+    {
+     "kind": "goto",
+     "text": "Secrétariat — retire ton dossard",
+     "x": 287.8,
+     "z": -179.9,
+     "r": 3.6
+    },
+    {
+     "kind": "course",
+     "text": "Épreuve du Pôle (Amateur 1,10 m) : présente-toi au départ, « Chrono », et termine le parcours",
+     "x": 330,
+     "z": -191,
+     "r": 6
+    },
+    {
+     "kind": "goto",
+     "text": "Retrouve l’équipe du Val au parking des camions",
+     "x": 303,
+     "z": -179,
+     "r": 4
+    }
+   ],
+   "skipped": [
+    "préparation de Comète, embarquement, conduite et débarquement du camion",
+    "dotation selon le classement (simulateField) : participation seule"
+   ]
+  },
+  {
+   "id": "groom",
+   "title": "Groom du matin",
+   "category": "Groom",
+   "level": 1,
+   "place": "home",
+   "placeName": "Écurie du Val",
+   "pay": 90,
+   "payLabel": "",
+   "xp": 120,
+   "cost": 0,
+   "requires": [
+    "m3"
+   ],
+   "hours": [
+    6,
+    18
+   ],
+   "full": true,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Prends une botte de foin (1/4)",
+     "x": -167.4,
+     "z": 176,
+     "r": 3.4
+    },
+    {
+     "kind": "goto",
+     "text": "Apporte le foin au box n°2",
+     "x": -139.35,
+     "z": 157.7,
+     "r": 3.4
+    },
+    {
+     "kind": "goto",
+     "text": "Prends une botte de foin (2/4)",
+     "x": -167.4,
+     "z": 176,
+     "r": 3.4
+    },
+    {
+     "kind": "goto",
+     "text": "Apporte le foin au box n°4",
+     "x": -132.15,
+     "z": 157.7,
+     "r": 3.4
+    },
+    {
+     "kind": "goto",
+     "text": "Prends une botte de foin (3/4)",
+     "x": -167.4,
+     "z": 176,
+     "r": 3.4
+    },
+    {
+     "kind": "goto",
+     "text": "Apporte le foin au box n°5",
+     "x": -128.55,
+     "z": 157.7,
+     "r": 3.4
+    },
+    {
+     "kind": "goto",
+     "text": "Prends une botte de foin (4/4)",
+     "x": -167.4,
+     "z": 176,
+     "r": 3.4
+    },
+    {
+     "kind": "goto",
+     "text": "Apporte le foin au box n°7",
+     "x": -121.35,
+     "z": 157.7,
+     "r": 3.4
+    }
+   ],
+   "skipped": [
+    "chrono de 150 s",
+    "porter la botte à pied"
+   ]
+  },
+  {
+   "id": "livraison",
+   "title": "Selle sur-mesure",
+   "category": "Coursier",
+   "level": 1,
+   "place": "sellerie",
+   "placeName": "Sellerie du Port",
+   "pay": 120,
+   "payLabel": "",
+   "xp": 150,
+   "cost": 0,
+   "requires": [
+    "groom"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Sellerie du Port",
+     "x": -134.6,
+     "z": -266,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "fugueur",
+   "title": "Le fugueur",
+   "category": "Urgence",
+   "level": 1,
+   "place": "haras",
+   "placeName": "Haras de la Pommeraie",
+   "pay": 160,
+   "payLabel": "",
+   "xp": 200,
+   "cost": 0,
+   "requires": [
+    "livraison"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Haras de la Pommeraie",
+     "x": -380,
+     "z": -96,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "plage",
+   "title": "Galop sur la plage",
+   "category": "Cavalier",
+   "level": 2,
+   "place": "dunes",
+   "placeName": "Écurie des Dunes",
+   "pay": 180,
+   "payLabel": "",
+   "xp": 250,
+   "cost": 0,
+   "requires": [
+    "fugueur"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Écurie des Dunes",
+     "x": 500,
+     "z": -318,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "transport",
+   "title": "Transport express",
+   "category": "Transport",
+   "level": 2,
+   "place": "home",
+   "placeName": "Écurie du Val (camion)",
+   "pay": 260,
+   "payLabel": "",
+   "xp": 300,
+   "cost": 0,
+   "requires": [
+    "fugueur"
+   ],
+   "hours": null,
+   "full": true,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Va chercher Quabar au Haras de la Pommeraie",
+     "x": -380,
+     "z": -98,
+     "r": 12
+    },
+    {
+     "kind": "goto",
+     "text": "Livre Quabar au Pôle International — parking des camions",
+     "x": 311,
+     "z": -177,
+     "r": 13
+    },
+    {
+     "kind": "goto",
+     "text": "Confie Quabar à Manon, sa groom",
+     "x": 302,
+     "z": -183,
+     "r": 4
+    }
+   ],
+   "skipped": [
+    "camion (monter, conduire, confort du cheval), embarquement et débarquement de Quabar"
+   ]
+  },
+  {
+   "id": "fer",
+   "title": "Fer perdu",
+   "category": "Urgence",
+   "level": 2,
+   "place": "forge",
+   "placeName": "Guide local",
+   "pay": 0,
+   "payLabel": "Soins : 60 €",
+   "xp": 220,
+   "cost": 60,
+   "requires": [
+    "transport",
+    "plage"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Forge Lemaire",
+     "x": -140,
+     "z": -199,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "cross",
+   "title": "Cross de Saint-Gatien",
+   "category": "Cross",
+   "level": 3,
+   "place": "gatien",
+   "placeName": "Domaine de Saint-Gatien",
+   "pay": 320,
+   "payLabel": "",
+   "xp": 350,
+   "cost": 0,
+   "requires": [
+    "fer"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Domaine de Saint-Gatien",
+     "x": -205,
+     "z": 300,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "pension",
+   "title": "La pension parfaite",
+   "category": "Recherche",
+   "level": 3,
+   "place": "haras",
+   "placeName": "Guide local › Pensions",
+   "pay": 170,
+   "payLabel": "",
+   "xp": 250,
+   "cost": 0,
+   "requires": [
+    "fer"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Haras de la Pommeraie",
+     "x": -380,
+     "z": -96,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "derby",
+   "title": "Derby de la Touques",
+   "category": "Course",
+   "level": 3,
+   "place": "hippo",
+   "placeName": "Hippodrome de la Touques",
+   "pay": 420,
+   "payLabel": "",
+   "xp": 400,
+   "cost": 0,
+   "requires": [
+    "cross"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Hippodrome de la Touques",
+     "x": 330,
+     "z": 140,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "csi3",
+   "title": "Qualificative CSI 3★",
+   "category": "CSO",
+   "level": 4,
+   "place": "pole",
+   "placeName": "Pôle International",
+   "pay": 500,
+   "payLabel": "",
+   "xp": 450,
+   "cost": 0,
+   "requires": [
+    "derby",
+    "pension"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Pôle International",
+     "x": 330,
+     "z": -180,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "gp",
+   "title": "Grand Prix CSI 5★",
+   "category": "Grand Prix",
+   "level": 4,
+   "place": "pole",
+   "placeName": "Pôle International",
+   "pay": 1500,
+   "payLabel": "",
+   "xp": 900,
+   "cost": 0,
+   "requires": [
+    "csi3"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Pôle International",
+     "x": 330,
+     "z": -180,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  },
+  {
+   "id": "gpparis",
+   "title": "Grand Prix de Paris Indoor",
+   "category": "Grand Prix",
+   "level": 4,
+   "place": "paris",
+   "placeName": "Paris · arène couverte",
+   "pay": 0,
+   "payLabel": "Dotation 42 000 €",
+   "xp": 1500,
+   "cost": 0,
+   "requires": [
+    "gp"
+   ],
+   "hours": null,
+   "full": false,
+   "choice": null,
+   "route": [
+    {
+     "kind": "goto",
+     "text": "Rejoins Paris · arène couverte",
+     "x": 546,
+     "z": -118,
+     "r": 18
+    }
+   ],
+   "skipped": [
+    "déroulé du web non porté (J4-C)"
+   ]
+  }
+ ]
+}
