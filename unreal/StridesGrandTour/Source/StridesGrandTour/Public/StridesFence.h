@@ -55,12 +55,19 @@ public:
 	// d'échauffement, entraînement à l'abord) avec son rang dans FStridesCsoScenery::Warmup. À poser avant Setup.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") FString Course = TEXT("cso");
 	int32 CourseIndex = 0;
+	// Jalon J4 : obstacle fixe du cross (obstacles.js add : solid, course « xc » ; troncs « log », haies « brush », entrée
+	// dans l'eau « water ») : rien ne tombe, un contact compte une faute. À poser avant Setup.
+	bool bSolid = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") float HeightM = 1.1f;
 
 private:
 	void ClearVisuals();
 	bool BuildExported();
 	void BuildBasicShapes();
+	// Jalon J4 : tronc, haie et entrée dans l'eau du cross (builders.js logJumpGeo, brushJumpGeo : formes et couleurs du
+	// web en formes de base du moteur).
+	void BuildCrossShapes();
+	class UStaticMeshComponent* AddBlock(class UStaticMesh* Mesh, const FVector& RelCm, const FVector& Scale, const FLinearColor& Color, const FRotator& Rot = FRotator::ZeroRotator);
 	strides::Fence Core;
 	strides::CsoObstacle Obstacle;
 	FString Kind;

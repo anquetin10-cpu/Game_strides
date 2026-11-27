@@ -37,6 +37,8 @@ void AStridesCourse::Build(const strides::CourseDesign& Design, const UStridesDa
 	else UE_LOG(LogTemp, Warning, TEXT("Strides : géométrie du parcours absente (Content/World/Cso), formes de base"));
 	// Jalon J2c : vertical et oxer du paddock d'échauffement (entraînement à l'abord).
 	BuildWarmup(Data);
+	// Jalon J4 : obstacles fixes du cross de Saint-Gatien (mission « cross »).
+	BuildCross(Data);
 }
 
 void AStridesCourse::ApplyHeights(const std::vector<double>& Heights)
@@ -308,6 +310,8 @@ bool AStridesCourse::AdvanceDialog()
 	if (!bDialog) return false;
 	// hud.advanceDialog : une seule ligne, dialogue fermé puis onDone (courses.js:524 : capWarn = false).
 	bDialog = false;
+	// Jalon J4 : dialogue d'une épreuve de mission (Paul au cross, Victor à la course).
+	if (bEventDialog && EventPtr) { bEventDialog = false; EventPtr->closeDialog(); return true; }
 	if (RunPtr) RunPtr->closeCapacityDialog();
 	return true;
 }
@@ -576,6 +580,7 @@ strides::CsoCourseMode AStridesCourse::CourseMode() const
 
 FString AStridesCourse::ObjectiveText() const
 {
+	if (EventActive()) return UTF8_TO_TCHAR(EventPtr->text().c_str());
 	if (RunPtr && !RunPtr->finished()) return UTF8_TO_TCHAR(RunPtr->text().c_str());
 	if (TrainingActive()) return UTF8_TO_TCHAR(TrainingPtr->text(LastTrainFrame).c_str());
 	return FString();
@@ -681,6 +686,16 @@ void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool
 		F.board = false;
 		F.jumpTiming = strides::csoJumpTiming(M.active, false, TCHAR_TO_UTF8(*JumpAid), Timing);
 	}
+	else if (EventActive())
+	{
+		// Jalon J4 : cross (game.course { kind: 'xc', controls: null, hud: hudInfo } : tableau sans commandes de
+		// concours) ; course de l'hippodrome : game.course nul.
+		Hud.setObjective(true);
+		F.board = EventPtr->board(F.info);
+		F.course = F.board;
+		F.controlsCso = false;
+		F.kindCso = false;
+	}
 	else if (RunPtr)
 	{
 		Hud.setObjective(!RunPtr->finished());
@@ -735,6 +750,12 @@ void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::Cs
 		// (courses.js:221 : obstacle.course !== courseId → ignoré).
 		if (TrainingPtr && !TrainingPtr->finished())
 			TrainingPtr->obstacleEvent(K0, TCHAR_TO_UTF8(*Fence->Course), E.margin, E.cause.empty() ? std::string() : RunText.cause(E.cause, TrainingPtr->config().lang));
+		// Jalon J4 : obstacles du cross vus par l'épreuve de la mission « cross » (courses.js : obstacle.course === 'xc').
+		if (EventPtr && Fence->Course == TEXT("xc"))
+		{
+			EventPtr->obstacleEvent(K0, Fence->Num, E.dir, E.cause, E.cause.empty() ? std::string() : RunText.cause(E.cause, strides::Lang::Fr), Cadence);
+			continue;
+		}
 		if (!RunPtr || Fence->Course != TEXT("cso")) continue;
 		const strides::CsoObstacleEventKind K = E.kind == strides::CsoFenceEventKind::Clear ? strides::CsoObstacleEventKind::Clear
 			: E.kind == strides::CsoFenceEventKind::Fault ? strides::CsoObstacleEventKind::Fault : strides::CsoObstacleEventKind::Refusal;
@@ -743,6 +764,7 @@ void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::Cs
 	}
 	FlushRunCalls();
 	FlushTrainingCalls();
+	FlushEventCalls();
 }
 
 void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double FocusZ)
@@ -752,7 +774,7 @@ void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double 
 	In.time = Time;
 	// obstacles.js update : hors mission (g.missions.active nul), une barre tombée est remise une fois le joueur à plus de
 	// 60 m ; la mission du portage est l'épreuve du Pôle, active jusqu'à sa fin (bilan ou échec).
-	In.missionActive = RunPtr && !RunPtr->finished();
+	In.missionActive = (RunPtr && !RunPtr->finished()) || EventActive();
 	In.focusX = FocusX;
 	In.focusZ = FocusZ;
 	strides::CsoFenceOut Out;
@@ -825,6 +847,15 @@ bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVe
 }
 FString AStridesCourse::StatusText() const
 {
+	if (EventActive())
+	{
+		strides::CsoBoard B;
+		const FString Objective = UTF8_TO_TCHAR(EventPtr->text().c_str());
+		if (!EventPtr->board(B)) return Objective;
+		FString S;
+		for (int32 K = 0; K < 4; K++) S += (K ? TEXT(" ") : TEXT("")) + FString(UTF8_TO_TCHAR(B.txt[K].c_str()));
+		return Objective.IsEmpty() ? S : S + TEXT(" · ") + Objective;
+	}
 	if ((!RunPtr || RunPtr->finished()) && TrainingActive()) return ObjectiveText();
 	if (!RunPtr) return FString();
 	strides::CsoBoard B;

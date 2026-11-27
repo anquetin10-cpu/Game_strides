@@ -296,6 +296,14 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		bVehicles = FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/vehicles.json"))) && strides::loadVehicles(std::string(TCHAR_TO_UTF8(*Text)), VehiclesDef, Err);
 		LoadLog.Add(bVehicles ? FString::Printf(TEXT("vehicles.json : %d modèles"), (int32)VehiclesDef.specs.size()) : FString::Printf(TEXT("vehicles.json : illisible (%s), aucun véhicule conduisible"), UTF8_TO_TCHAR(Err.c_str())));
 	}
+	// Jalon J4 : épreuves des missions (cross, derby) et concurrents du Grand Prix de Paris.
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
+		bEvents = FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/mission_events.json"))) && strides::loadMissionEvents(std::string(TCHAR_TO_UTF8(*Text)), EventsDef, Err);
+		LoadLog.Add(bEvents ? FString::Printf(TEXT("mission_events.json : cross (%d obstacles), course (%d adversaires)"), (int32)EventsDef.cross.fences.size(), (int32)EventsDef.race.rivals.size())
+			: FString::Printf(TEXT("mission_events.json : illisible (%s), épreuves des missions absentes"), UTF8_TO_TCHAR(Err.c_str())));
+	}
 	LoadScene();
 	// Obstacles, lignes et poteau du parcours du Pôle construits par le jeu web (tranche T5).
 	{

@@ -10,6 +10,7 @@
 #include "StridesCore/CsoEntry.h"
 #include "StridesDataSubsystem.h"
 #include "StridesProgressionSubsystem.h"
+#include "StridesCore/SaveGame.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesScenery.h"
 #include "StridesPlayerController.h"
@@ -108,6 +109,44 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 			bShow = FVector2D::Distance(FVector2D(X, Z), FVector2D(BX, BZ)) > 12.0;
 		}
 		PoleBeacon->SetActorHiddenInGame(!bShow);
+	}
+	// Jalon J4 : étape « event » de la mission en cours (cross, derby) : épreuve lancée sur l'acteur du parcours, état
+	// recopié dans la progression (objectif, GPS, issue, montant) ; épreuve retirée quand l'étape n'en est plus une.
+	if (Progress && PoleCourse)
+	{
+		const FString Ev = Progress->CurrentEventId();
+		if (!Ev.IsEmpty())
+		{
+			if (!PoleCourse->Event() || PoleCourse->EventId() != Ev)
+				PoleCourse->StartEvent(Ev, UTF8_TO_TCHAR(strides::SaveGame::fresh().playerName.c_str()));
+			if (const strides::EventRun* E = PoleCourse->Event())
+			{
+				Progress->EventText = UTF8_TO_TCHAR(E->text().c_str());
+				double TX = 0, TZ = 0;
+				Progress->bEventHasTarget = E->target(TX, TZ);
+				Progress->EventTargetPos = FVector2D(TX, TZ);
+				Progress->bEventDone = E->completed();
+				Progress->bEventFailed = E->failed();
+				Progress->EventFailText = UTF8_TO_TCHAR(E->failReason().c_str());
+				Progress->EventPay = E->completed() ? E->pay() : -1;
+				FString R = UTF8_TO_TCHAR(E->resultTitle().c_str());
+				if (!E->resultBody().empty()) R += TEXT(" · ") + FString(UTF8_TO_TCHAR(E->resultBody().c_str()));
+				if (E->stars() > 0) R += FString::Printf(TEXT(" · %d★"), E->stars());
+				Progress->EventResultText = R;
+				if (E->finished())
+				{
+					const FString Before = Progress->ActiveMissionId;
+					Progress->TickMission(FVector2D::ZeroVector, false, false, MissionDt);
+					if (Progress->ActiveMissionId.IsEmpty() && !Before.IsEmpty())
+					{
+						if (UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
+							if (Save->bAutoSave && Pawn) Save->SaveNow(Cast<APlayerController>(Pawn->GetController()));
+					}
+					PoleCourse->ClearEvent();
+				}
+			}
+		}
+		else if (PoleCourse->Event()) PoleCourse->ClearEvent();
 	}
 	// Balise du GPS (gps.js marker) : cible de la mission en cours, sinon le GPS posé à la main (app Activités, J3).
 	FVector2D Target;

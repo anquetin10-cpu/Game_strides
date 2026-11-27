@@ -15,6 +15,7 @@
 #include "StridesCore/CsoCamera.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRun.h"
+#include "StridesCore/Epreuves.h"
 #include "StridesCore/HorseMirror.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/LimbContact.h"
@@ -57,12 +58,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") int32 GaitIndex = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") FString LastTakeoff;
 	UPROPERTY() TObjectPtr<AStridesCourse> Course;
+	bool bBoostHeld = false;
+	strides::HorseStamina StaminaState;
 	UPROPERTY() TObjectPtr<AStridesRider> Rider;
 
 	// Commandes (−1..1), écrites par le contrôleur : x direction (droite > 0), y avant/arrière ; bKeyboard : venues du
 	// clavier (input.js keyMove : la direction de concours y monte progressivement).
 	void SetMoveInput(const FVector2D& In, bool bKeyboard = false) { Move = In; bKeyMove = bKeyboard; }
 	void RequestJump() { bJumpRequested = true; }
+	// Jalon J4 : BOOST tenu (Maj, input « gallop » du web) ; lu par la course de l'hippodrome (grand galop, endurance).
+	void SetBoost(bool bOn) { bBoostHeld = bOn; }
+	const strides::HorseStamina& Stamina() const { return StaminaState; }
 	void ChangeGait(int32 Delta);
 	// Pose le cheval (horse.js setPosition : arrêt, saut et refus oubliés) ; SpeedMS : vitesse donnée ensuite (scénarios
 	// de test, comme le banc web : la cadence de concours repart de cette vitesse arrondie au dixième).

@@ -30,7 +30,8 @@ const { REPUTATION } = await web('src/config.js');
 const { reputationTier } = await web('src/core/save.js');
 const { MissionManager } = await web('src/gameplay/missions.js');
 const { POI } = await web('src/world/layout.js');
-const { HOME, HARAS, DUNES, POLE, TOWN, homeBoxes } = await web('src/world/sites.js');
+const { HOME, HARAS, DUNES, POLE, TOWN, GATIEN, homeBoxes } = await web('src/world/sites.js');
+const { HIPPO } = await web('src/world/layout.js');
 const { COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } = await web('src/gameplay/courses.js');
 const { PARKS, SECRETARIAT } = await web('src/gameplay/trip.js');
 const { CSO_LAYOUT, CSO_GATE } = await web('src/gameplay/obstacles.js');
@@ -176,6 +177,17 @@ const ROUTES = {
     ],
     skipped: ['hauteurs de l’épreuve (1,50 à 1,60 m) et temps accordé à 400 m/min : ceux du Parcours du Pôle du portage', 'présentation et plan de l’épreuve'],
   },
+  // Jalon J4 : épreuves portées (StridesCore/Epreuves, Content/Data/mission_events.json, export-epreuves.mjs). L'étape
+  // « event » est tout le déroulé du web (story.js:574 courseSteps kind « xc », story.js:678 raceSteps) : rejoindre le
+  // départ, dialogue, compte à rebours, épreuve, bilan ; franchie quand l'épreuve est réussie, échec de la mission sinon.
+  cross: {
+    route: [{ kind: 'event', event: 'cross', text: 'Cross de Saint-Gatien : rejoins le départ', x: r2(GATIEN.start.x + 4), z: r2(GATIEN.start.z), r: 7 }],
+    skipped: ['Paul Faure, officiel posé au départ (personnage non affiché)', 'note de mission hors épreuve (avis du client)'],
+  },
+  derby: {
+    route: [{ kind: 'event', event: 'derby', text: 'Derby de la Touques : rejoins la piste de l’hippodrome', x: r2(HIPPO.x - 70), z: r2(HIPPO.z - HIPPO.radius), r: 8 }],
+    skipped: ['fondu au noir avant les stalles (placement immédiat)', 'cavalier d’entraînement de l’hippodrome qui libère la piste (non porté)', 'endurance du grand galop des adversaires (vitesse imposée par PathAI, comme au web)'],
+  },
 };
 // Missions sans itinéraire relevé dans cette étape : rejoindre le lieu du web (POI), rayon 18 m du portage.
 const reduced = (def) => {
@@ -187,9 +199,8 @@ const reduced = (def) => {
 // Choix n° 25 de plan.md (J3b, arbitrage provisoire de Tom, réversible) : missions dont l'épreuve du web n'est pas encore
 // portée (cross de Saint-Gatien, course de l'hippodrome, Grand Prix de Paris) : offertes mais verrouillées « À venir »
 // jusqu'au portage de leur épreuve (J4). Aucune règle du web n'est changée ; l'offre et le verrou de palier restent ceux du web.
+// Jalon J4 : cross et derby portés (étape « event ») et retirés de cette liste.
 const UPCOMING = {
-  cross: 'le cross de Saint-Gatien n’est pas encore porté.',
-  derby: 'la course de l’hippodrome de la Touques n’est pas encore portée.',
   gpparis: 'le Grand Prix de Paris Indoor n’est pas encore porté.',
 };
 const all = [...STORY];

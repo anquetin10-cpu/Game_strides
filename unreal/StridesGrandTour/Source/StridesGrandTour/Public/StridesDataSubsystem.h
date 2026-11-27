@@ -20,6 +20,7 @@
 #include "StridesCore/HorseCoat.h"
 #include "StridesCsoScenery.h"
 #include "StridesCore/Vehicle.h"
+#include "StridesCore/Epreuves.h"
 #include "StridesDataSubsystem.generated.h"
 
 USTRUCT(BlueprintType)
@@ -223,6 +224,9 @@ public:
 	// Jalon J3b : véhicules conduisibles du web (Content/Data/vehicles.json, scripts/unreal/export-vehicules.mjs ;
 	// lecture du cœur, celle du ctest « vehicules ») ; nul si absent ou illisible.
 	const strides::VehicleData* Vehicles() const { return bVehicles ? &VehiclesDef : nullptr; }
+	// Jalon J4 : épreuves des missions cross et derby, réglages du Grand Prix de Paris (Content/Data/mission_events.json,
+	// scripts/unreal/export-epreuves.mjs ; lecture du cœur, celle du ctest « epreuves ») ; nul si absent ou illisible.
+	const strides::MissionEvents* Events() const { return bEvents ? &EventsDef : nullptr; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
 
@@ -233,6 +237,8 @@ private:
 	bool bAmbient = false;
 	strides::VehicleData VehiclesDef;
 	bool bVehicles = false;
+	strides::MissionEvents EventsDef;
+	bool bEvents = false;
 	bool LoadJson(const FString& File, TSharedPtr<class FJsonObject>& Out);
 	TArray<float> TerrainHeights;
 	strides::JumpParams JumpP;

@@ -1,7 +1,7 @@
 {
  "schema": "strides.story.v1",
  "source": {
-  "webCommit": "7302f52e",
+  "webCommit": "3cb3e07f",
   "files": [
    "src/gameplay/story.js",
    "src/gameplay/story2.js",
@@ -656,21 +656,22 @@
     "fer"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
-     "kind": "goto",
-     "text": "Rejoins Domaine de Saint-Gatien",
-     "x": -205,
+     "kind": "event",
+     "event": "cross",
+     "text": "Cross de Saint-Gatien : rejoins le départ",
+     "x": -251,
      "z": 300,
-     "r": 18
+     "r": 7
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
-   ],
-   "upcoming": "le cross de Saint-Gatien n’est pas encore porté."
+    "Paul Faure, officiel posé au départ (personnage non affiché)",
+    "note de mission hors épreuve (avis du client)"
+   ]
   },
   {
    "id": "pension",
@@ -728,21 +729,23 @@
     "cross"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
-     "kind": "goto",
-     "text": "Rejoins Hippodrome de la Touques",
-     "x": 330,
-     "z": 140,
-     "r": 18
+     "kind": "event",
+     "event": "derby",
+     "text": "Derby de la Touques : rejoins la piste de l’hippodrome",
+     "x": 260,
+     "z": 168,
+     "r": 8
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
-   ],
-   "upcoming": "la course de l’hippodrome de la Touques n’est pas encore portée."
+    "fondu au noir avant les stalles (placement immédiat)",
+    "cavalier d’entraînement de l’hippodrome qui libère la piste (non porté)",
+    "endurance du grand galop des adversaires (vitesse imposée par PathAI, comme au web)"
+   ]
   },
   {
    "id": "csi3",

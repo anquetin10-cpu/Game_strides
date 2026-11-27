@@ -55,13 +55,18 @@ bool UStridesProgressionSubsystem::CompleteActiveMission()
 	const FStridesMissionDefinition* Mission = ActiveMission();
 	if (!St || !Mission) return false;
 	strides::CareerState S = MakeCareer();
-	const strides::CareerReward R = strides::completeMission(*St, S);
+	// Jalon J4 : mission finie par une épreuve : montant rendu par l'épreuve (payOverride, pourboire à 5 étoiles).
+	const strides::StoryMission* SM = St->find(TCHAR_TO_UTF8(*Mission->Id));
+	const bool bEvent = SM && !SM->route.empty() && SM->route.back().kind == "event" && EventPay >= 0;
+	const strides::CareerReward R = strides::completeMission(*St, S, bEvent ? EventPay : -1);
+	const FString Result = bEvent ? EventResultText : FString(TEXT("Mission réussie"));
 	ApplyCareer(S);
 	bCourseSeen = false;
+	ClearEventView();
 	// missions.complete : carte « Mission réussie » (paiement, réputation) ; coût réglé sur place (Fer perdu).
 	LastMessage = R.cost > 0
-		? FString::Printf(TEXT("Mission réussie · %s · +%d € · -%d € de soins · +%d réputation"), *Mission->Title, R.pay, R.cost, R.rep)
-		: FString::Printf(TEXT("Mission réussie · %s · +%d € · +%d réputation"), *Mission->Title, R.pay, R.rep);
+		? FString::Printf(TEXT("%s · %s · +%d € · -%d € de soins · +%d réputation"), *Result, *Mission->Title, R.pay, R.cost, R.rep)
+		: FString::Printf(TEXT("%s · %s · +%d € · +%d réputation"), *Result, *Mission->Title, R.pay, R.rep);
 	UE_LOG(LogTemp, Display, TEXT("Strides career complete: %s credits=%d reputation=%d (+%d, +%d)"), *Mission->Id, Credits, Reputation, R.pay - R.cost, R.rep);
 	return true;
 }
@@ -77,7 +82,15 @@ FString UStridesProgressionSubsystem::StepText() const
 {
 	const strides::StoryData* St = StoryOf(GetGameInstance());
 	const strides::MissionStep* Step = St ? strides::currentStep(*St, MakeCareer()) : nullptr;
+	if (Step && Step->kind == "event" && !EventText.IsEmpty()) return EventText;
 	return Step ? FString(UTF8_TO_TCHAR(Step->text.c_str())) : FString();
+}
+
+FString UStridesProgressionSubsystem::CurrentEventId() const
+{
+	const strides::StoryData* St = StoryOf(GetGameInstance());
+	const strides::MissionStep* Step = St && !ActiveMissionId.IsEmpty() ? strides::currentStep(*St, MakeCareer()) : nullptr;
+	return Step && Step->kind == "event" ? FString(UTF8_TO_TCHAR(Step->event.c_str())) : FString();
 }
 
 bool UStridesProgressionSubsystem::CourseStepActive() const
@@ -98,6 +111,13 @@ bool UStridesProgressionSubsystem::TickMission(const FVector2D& Me, bool bCourse
 	Out.penalties = Penalties;
 	Out.time = CourseTime;
 	Out.eliminated = bEliminated;
+	// Jalon J4 : étape « event » : issue de l'épreuve recopiée par le directeur du monde.
+	if (!CurrentEventId().IsEmpty())
+	{
+		Out.finished = bEventDone;
+		Out.failed = bEventFailed;
+		Out.failText = TCHAR_TO_UTF8(*EventFailText);
+	}
 	std::string Why;
 	const FString Was = ActiveMissionId;
 	const strides::StepUpdate U = strides::updateStep(*St, S, Me.X, Me.Y, Out, Dt, Why);
@@ -106,6 +126,7 @@ bool UStridesProgressionSubsystem::TickMission(const FVector2D& Me, bool bCourse
 	{
 		ApplyCareer(S);
 		bCourseSeen = false;
+		ClearEventView();
 		++FailCount;
 		// missions.fail : carte « Mission échouée » avec la raison du web ; l'offre est reproposée dans l'app Strides.
 		LastMessage = FString::Printf(TEXT("Mission échouée · %s"), UTF8_TO_TCHAR(Why.c_str()));
@@ -163,6 +184,8 @@ FVector2D UStridesProgressionSubsystem::ActiveTarget() const
 {
 	const strides::StoryData* St = StoryOf(GetGameInstance());
 	const strides::MissionStep* Step = St ? strides::currentStep(*St, MakeCareer()) : nullptr;
+	// Jalon J4 : étape « event » : cible du GPS de l'étape de l'épreuve (départ, obstacle attendu, arrivée).
+	if (Step && Step->kind == "event" && bEventHasTarget) return EventTargetPos;
 	return Step ? FVector2D(Step->x, Step->z) : FVector2D::ZeroVector;
 }
 
@@ -245,6 +268,7 @@ bool UStridesProgressionSubsystem::AbandonMission()
 	MissionStep = 0;
 	MissionTimeLeft = -1;
 	bCourseSeen = false;
+	ClearEventView();
 	LastMessage = TEXT("Mission abandonnée.");
 	return true;
 }
@@ -279,6 +303,8 @@ void UStridesProgressionSubsystem::SetGps(const FVector2D& Target, const FString
 
 bool UStridesProgressionSubsystem::GuideTarget(FVector2D& Out, FString& Label) const
 {
+	// Jalon J4 : épreuve sans cible (dialogue, stalles, course) : pas de GPS.
+	if (HasActiveTarget() && !CurrentEventId().IsEmpty() && !EventText.IsEmpty() && !bEventHasTarget) return false;
 	if (HasActiveTarget())
 	{
 		Out = ActiveTarget();

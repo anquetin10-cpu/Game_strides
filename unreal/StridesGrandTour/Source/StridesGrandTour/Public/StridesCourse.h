@@ -27,6 +27,7 @@
 #include "StridesCore/Ranking.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
+#include "StridesCore/Epreuves.h"
 #include <memory>
 #include "StridesCourse.generated.h"
 
@@ -66,7 +67,28 @@ public:
 	bool StartActivity(const FString& PlayerName, const FString& HorseName, double JumpPower, double Clearance);
 	// Mission en cours (g.missions.active) : déroulé lancé et pas terminé.
 	// Jalon J2c : l'entraînement à l'abord est aussi une mission (g.missions.active), de son lancement à sa fin.
-	bool MissionActive() const { return (RunPtr && !RunPtr->finished()) || TrainingActive(); }
+	bool MissionActive() const { return (RunPtr && !RunPtr->finished()) || TrainingActive() || EventActive(); }
+	// ---- Jalon J4 : épreuves des missions cross et derby (StridesCore/Epreuves, déroulé du web) ----
+	// Obstacles fixes du cross de Saint-Gatien (course « xc », après ceux du parcours et du paddock), posés par Build.
+	int32 CrossFenceCount() const { return NumCrossFences; }
+	int32 CrossFenceStart() const { return CrossFirst; }
+	// Lance l'épreuve d'une mission (« cross » ou « derby ») : faux si une mission est en cours ou sans données.
+	bool StartEvent(const FString& Id, const FString& PlayerName);
+	// Épreuve lancée et pas finie ; épreuve (même finie, jusqu'à ClearEvent) et son identifiant.
+	bool EventActive() const { return EventPtr && !EventPtr->finished(); }
+	const strides::EventRun* Event() const { return EventPtr.get(); }
+	strides::EventRun* MutableEvent() { return EventPtr.get(); }
+	const FString& EventId() const { return EventName; }
+	// Épreuve oubliée (mission terminée, échouée ou abandonnée) : adversaires retirés, mode d'épreuve rendu.
+	void ClearEvent();
+	// Une image de l'épreuve (appelée par le cheval après TickRun) : cheval du joueur (repère web), vitesse, monté ou non.
+	void TickEvent(const strides::CsoRunFrame& Frame, double SpeedMS, strides::CsoCadence& Cadence);
+	// Joueur bloqué par l'épreuve (player.locked : dialogue, compte à rebours).
+	bool EventLocksPlayer() const { return EventPtr && !EventPtr->finished() && EventPtr->locked(); }
+	// Position imposée au cheval du joueur par l'épreuve (stalles de départ de la course) : vrai une fois.
+	bool TakeEventTeleport(double& X, double& Z, double& Heading) { return EventPtr && EventPtr->takeTeleport(X, Z, Heading); }
+	// Adversaires affichés (course).
+	const TArray<TObjectPtr<class AStridesRivalHorse>>& RivalActors() const { return Rivals; }
 	// ---- Entraînement à l'abord au paddock du Pôle (jalon J2c, lot J2-D ; activities.js startTraining) ----
 	// Lancé 300 ms après la fin de la mission quand « S'entraîner » a été choisi au bilan (courses.js:434-439), ou
 	// directement (StartTraining) ; refusé si une mission est en cours ou sans paddock (cso_course_pole.json « warmup »).
@@ -221,6 +243,13 @@ public:
 
 private:
 	void FlushRunCalls();
+	void FlushEventCalls();
+	void BuildCross(const class UStridesDataSubsystem& Data);
+	std::unique_ptr<strides::EventRun> EventPtr;
+	FString EventName;
+	int32 NumCrossFences = 0, CrossFirst = -1;
+	bool bEventDialog = false;
+	UPROPERTY() TArray<TObjectPtr<class AStridesRivalHorse>> Rivals;
 	void FlushTrainingCalls();
 	void TickTraining(const strides::CsoRunFrame& Frame);
 	void BuildWarmup(const class UStridesDataSubsystem& Data);

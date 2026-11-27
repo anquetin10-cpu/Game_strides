@@ -509,6 +509,8 @@ void AStridesPlayerController::StepCommands(float Dt)
 		if (Cmd.move.mag == 0 && !Cmd.keyMove && bCanAct && !GamepadMove.IsZero()) M = GamepadMove;
 		H->SetMoveInput(M, Cmd.keyMove);
 		if (Cmd.wasPressed("jump")) H->RequestJump();
+		// Jalon J4 : BOOST (Maj tenue, input « gallop » du web), lu par la course de l'hippodrome.
+		H->SetBoost(bCanAct && Cmd.isHeld("gallop"));
 	}
 	else if (AStridesVehicle* V = Cast<AStridesVehicle>(P))
 	{

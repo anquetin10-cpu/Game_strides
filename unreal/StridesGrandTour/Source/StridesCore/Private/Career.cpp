@@ -45,7 +45,9 @@ bool loadStory(const std::string& text, StoryData& out, std::string& err) {
         s.stopTimer = st["stopTimer"].t == J::Bool && st["stopTimer"].b;
         if (st["maxPenalties"].t == J::Num) s.maxPenalties = integer(st["maxPenalties"]);
         if (st["beat"].t == J::Obj) { s.beatFaults = integer(st["beat"]["faults"]); s.beatTime = st["beat"]["time"].num(); s.beatName = str(st["beat"]["name"]); }
-        if (s.kind != "goto" && s.kind != "course") { err = "étape inconnue dans " + m.id; return false; }
+        s.event = str(st["event"]);
+        if (s.kind != "goto" && s.kind != "course" && s.kind != "event") { err = "étape inconnue dans " + m.id; return false; }
+        if (s.kind == "event" && s.event != "cross" && s.event != "derby") { err = "épreuve inconnue dans " + m.id; return false; }
         m.route.push_back(s);
       }
       if (m.id.empty() || m.route.empty()) { err = "mission sans identifiant ou sans itinéraire"; return false; }
@@ -133,7 +135,12 @@ StepUpdate updateStep(const StoryData& d, CareerState& s, double x, double z, co
       return StepUpdate::Failed;
     }
   }
-  const bool ok = st->kind == "course" ? course.finished : std::hypot(x - st->x, z - st->z) <= st->r;
+  if (st->kind == "event" && course.failed) {
+    failText = course.failText;
+    failMission(s);
+    return StepUpdate::Failed;
+  }
+  const bool ok = st->kind == "course" || st->kind == "event" ? course.finished : std::hypot(x - st->x, z - st->z) <= st->r;
   if (!ok) return StepUpdate::None;
   if (st->kind == "course" && (st->maxPenalties >= 0 || st->beatFaults >= 0)) {
     const int p = course.penalties;
@@ -155,14 +162,16 @@ StepUpdate updateStep(const StoryData& d, CareerState& s, double x, double z, co
   return StepUpdate::Advanced;
 }
 
-CareerReward completeMission(const StoryData& d, CareerState& s) {
+CareerReward completeMission(const StoryData& d, CareerState& s) { return completeMission(d, s, -1); }
+
+CareerReward completeMission(const StoryData& d, CareerState& s, int payOverride) {
   CareerReward r;
   const StoryMission* m = s.active.empty() ? nullptr : d.find(s.active);
   if (!m) return r;
   // grantOnce(`story:${id}`) : une mission de l'histoire ne paie qu'une fois.
   r.fresh = !s.done(m->id);
   if (r.fresh) {
-    r.pay = m->pay;
+    r.pay = payOverride >= 0 ? payOverride : m->pay;
     r.rep = m->xp;
     r.cost = std::min(m->cost, s.credits);  // coût de la mission (soins du « Fer perdu ») réglé sur place
     s.completed.push_back(m->id);

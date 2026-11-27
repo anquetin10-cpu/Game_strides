@@ -808,9 +808,28 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 	const double Fx = FMath::Sin(Sim.heading), Fz = FMath::Cos(Sim.heading);
 	In.slope = (GroundAt(Sim.x + Fx * 1.1, Sim.z + Fz * 1.1) - GroundAt(Sim.x - Fx * 1.1, Sim.z - Fz * 1.1)) / 2.2;
 	bJumpRequested = false;
+	// Jalon J4 : épreuve de mission. Dialogue et compte à rebours : joueur bloqué (player.locked), cheval arrêté (la
+	// cadence de concours retenue est remise à 0). Course de l'hippodrome (choix n° 30) : commandes de concours gardées,
+	// cadence jusqu'au galop allongé du web (9,72 m/s) ; BOOST tenu et cheval non épuisé : grand galop à 14 m/s.
+	strides::CsoRideParams RR = R;
+	if (Course && Course->EventLocksPlayer())
+	{
+		In.locked = true;
+		In.jumpPressed = false;
+		if (Sim.hasCadence) Sim.cadence = 0;
+	}
+	const strides::EventRun* Ev = Course ? Course->Event() : nullptr;
+	const bool bRace = Ev && !Ev->finished() && Ev->kind() == strides::EventRun::Kind::Race && Ev->race().started;
+	if (bRace)
+	{
+		const bool bBoost = bBoostHeld && !StaminaState.exhausted;
+		RR.maxSpeed = bBoost ? 14.0 : 9.72;
+		if (Sim.hasCadence) Sim.cadence = bBoost ? 14.0 : FMath::Min(Sim.cadence, 9.72);
+	}
 	const double X0 = Sim.x, Z0 = Sim.z;
 	Events.clear();
-	strides::csoHorseStep(Sim, In, Obs, Events, R, JP, HP);
+	strides::csoHorseStep(Sim, In, Obs, Events, RR, JP, HP);
+	strides::staminaStep(StaminaState, Sim.speed, HDt);
 	// Collisions du monde (horse.js:344-360) après le déplacement, avant les obstacles : lice de la carrière, chandeliers
 	// et ailes (colliders du web) ; au-dessus de leur sommet en plein saut, le cheval passe.
 	if (Course)
@@ -900,8 +919,17 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
 		const strides::CsoRunFrame RF = RunFrame(SDt, In.time);
 		Course->TickRun(RF, Cad);
+		// Jalon J4 : épreuve de la mission en cours (cross, course) après le parcours du Pôle.
+		Course->TickEvent(RF, Sim.speed, Cad);
 		Sim.hasCadence = Cad.has;
 		Sim.cadence = Cad.v;
+		double TX, TZ, TH;
+		if (Course->TakeEventTeleport(TX, TZ, TH))
+		{
+			PlaceAt(TX, TZ, TH);
+			StaminaState.v = StaminaState.max;  // raceSteps setup : stamina = maxStamina
+			StaminaState.exhausted = false;
+		}
 		// Jalon J2b : entrée en piste (première manche, « Recommencer ») : barres remises par le déroulé, passage
 		// d'obstacle en cours oublié (le web le garde : faute fantôme d'une manche précédente, voir CsoFences.h).
 		bool bEntryReset = true;
@@ -980,6 +1008,7 @@ void AStridesHorse::TickOpenWorld(float Dt, bool bSimPaused)
 		strides::CsoCadence Cad;
 		const strides::CsoRunFrame RF = RunFrame(SDt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0);
 		Course->TickRun(RF, Cad);
+		Course->TickEvent(RF, SpeedMS, Cad);
 		Course->UpdateAids(SDt, X, Z, SpeedMS, JumpPower(), 0.0, RF.riding, RF.time);
 		Course->UpdateHud(Dt, false, 0.0, false);
 		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.

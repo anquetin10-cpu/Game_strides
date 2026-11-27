@@ -20,7 +20,8 @@
 namespace strides {
 
 struct MissionStep {
-  std::string kind = "goto";  // « goto » ou « course »
+  std::string kind = "goto";  // « goto », « course » ou « event » (jalon J4 : épreuve de StridesCore/Epreuves)
+  std::string event;          // étape « event » : « cross » ou « derby » (EventRun), franchie quand l'épreuve est réussie
   std::string text;
   double x = 0, z = 0, r = 5;
   // Compte à rebours du web (missions.js r.timer, :226-228) : posé quand l'étape commence (s), arrêté quand une étape
@@ -127,6 +128,9 @@ struct CourseOutcome {
   int penalties = 0;
   double time = 0;
   bool eliminated = false;
+  // Étape « event » (jalon J4) : épreuve réussie (finished) ou échouée (failed, raison du web dans failText).
+  bool failed = false;
+  std::string failText;
 };
 enum class StepUpdate { None, Advanced, Failed };
 // Une image de la mission en cours (missions.js Run.update) : compte à rebours (dt, s), puis fin de l'étape. Échec :
@@ -142,5 +146,8 @@ struct CareerReward {
 };
 // missions.complete : paie et note la mission en cours une seule fois, l'enlève, efface le point de reprise.
 STRIDESCORE_API CareerReward completeMission(const StoryData& d, CareerState& s);
+// Jalon J4 : même fin avec le montant rendu par l'épreuve (missions.complete : payOverride sinon def.pay, pourboire de
+// 10 % à 5 étoiles compris ; EventRun::pay) ; payOverride < 0 : def.pay.
+STRIDESCORE_API CareerReward completeMission(const StoryData& d, CareerState& s, int payOverride);
 
 }  // namespace strides

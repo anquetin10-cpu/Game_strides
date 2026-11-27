@@ -134,3 +134,11 @@ target_sources(strides_core PRIVATE ${CORE}/Private/NightSky.cpp)
 add_executable(strides_ciel_tests tests/test_ciel.cpp)
 target_link_libraries(strides_ciel_tests strides_core)
 add_test(NAME ciel COMMAND strides_ciel_tests)
+# Jalon J4 : épreuves des missions cross (courseSteps « xc ») et derby (raceSteps) et concurrents simulés du Grand Prix de
+# Paris (parisGP.js) portés en C++ (StridesCore/Epreuves), contre l'oracle produit par la vraie MissionManager du web dans
+# une partie factice (tests/oracles/epreuves.json, scripts/unreal/export-epreuves.mjs) ; données lues dans
+# Content/Data/mission_events.json comme le jeu ; ctest « epreuves ».
+target_sources(strides_core PRIVATE ${CORE}/Private/Epreuves.cpp)
+add_executable(strides_epreuves_tests tests/test_epreuves.cpp)
+target_link_libraries(strides_epreuves_tests strides_core)
+add_test(NAME epreuves COMMAND strides_epreuves_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)

@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
     CHECK(!strides::advanceStep(d, s, 9999, 9999, false), "%s : étape franchie de loin", id.c_str());
     for (size_t i = 0; i < m->route.size(); ++i) {
       const auto& st = m->route[i];
-      if (st.kind == "course") {
+      if (st.kind == "course" || st.kind == "event") {
         CHECK(!strides::advanceStep(d, s, st.x, st.z, false), "%s : épreuve franchie sans parcours", id.c_str());
         CHECK(strides::advanceStep(d, s, st.x, st.z, true), "%s : épreuve terminée", id.c_str());
       } else {
@@ -132,22 +132,38 @@ int main(int argc, char** argv) {
     expectPay += m->pay - m->cost;
     expectRep += m->xp;
   }
-  // Choix n° 25 : cross, derby et gpparis « À venir » ; csi3 (prérequis : derby) puis gp ne sont pas encore atteignables.
+  // Choix n° 25 révisé en J4 : cross et derby portés (étape « event ») ; seul gpparis reste « À venir ».
   {
     std::string blocked;
     for (const auto& m : d.missions) if (!s.done(m.id)) blocked += m.id + " ";
-    CHECK(blocked == "cross derby csi3 gp gpparis ", "missions non terminées : « %s »", blocked.c_str());
-    for (const char* u : {"cross", "derby", "gpparis"}) CHECK(d.find(u) && !d.find(u)->upcoming.empty(), "%s : non marquée « À venir »", u);
+    CHECK(blocked == "gpparis ", "missions non terminées : « %s »", blocked.c_str());
+    CHECK(d.find("gpparis") && !d.find("gpparis")->upcoming.empty(), "gpparis : non marquée « À venir »");
     int nUp = 0;
     for (const auto& m : d.missions) nUp += !m.upcoming.empty();
-    CHECK(nUp == 3, "%d missions « À venir » (attendu 3)", nUp);
-    // Le verrou n'est pas une règle de résultat : avec les prérequis remplis, csi3 et gp restent acceptables.
-    strides::CareerState late = s;
-    late.completed.push_back("cross");
-    late.completed.push_back("derby");
-    CHECK(strides::acceptMission(d, late, "csi3") == strides::AcceptResult::Ok, "csi3 refusée une fois le derby terminé");
+    CHECK(nUp == 1, "%d missions « À venir » (attendu 1)", nUp);
+    for (const char* e : {"cross", "derby"}) {
+      const strides::StoryMission* m = d.find(e);
+      CHECK(m && m->upcoming.empty() && m->route.size() == 1 && m->route[0].kind == "event" && m->route[0].event == e, "%s : étape « event »", e);
+    }
+    // Échec de l'épreuve (raison du web) : mission arrêtée, rien payé, offre rendue.
+    strides::CareerState f;
+    f.credits = 0;
+    f.reputation = 2000;
+    for (const char* id : {"tuto", "m1", "m2", "m3", "groom", "livraison", "transport", "fugueur", "plage", "fer", "pension"}) f.completed.push_back(id);
+    CHECK(strides::acceptMission(d, f, "cross") == strides::AcceptResult::Ok, "cross acceptée");
+    strides::CourseOutcome bad;
+    bad.failed = true;
+    bad.failText = "4e refus : éliminé du parcours.";
+    std::string why;
+    CHECK(strides::updateStep(d, f, 0, 0, bad, 0.25, why) == strides::StepUpdate::Failed && why == bad.failText && f.active.empty() && !f.done("cross"), "cross : échec de l'épreuve");
+    CHECK(strides::acceptMission(d, f, "cross") == strides::AcceptResult::Ok, "cross reprise après l'échec");
+    strides::CourseOutcome good;
+    good.finished = true;
+    CHECK(strides::updateStep(d, f, 0, 0, good, 0.25, why) == strides::StepUpdate::Advanced, "cross : épreuve réussie");
+    const auto rr = strides::completeMission(d, f, 352);
+    CHECK(rr.fresh && rr.pay == 352 && rr.rep == 350 && f.credits == 352, "cross : 320 € + pourboire 32 € (%d)", rr.pay);
   }
-  CHECK(s.completed.size() == d.missions.size() - 5, "missions terminées : %zu / %zu", s.completed.size(), d.missions.size() - 5);
+  CHECK(s.completed.size() == d.missions.size() - 1, "missions terminées : %zu / %zu", s.completed.size(), d.missions.size() - 1);
   CHECK(s.credits == expectPay && s.reputation == expectRep, "fin : %d crédits, %d points (attendu %d, %d)", s.credits, s.reputation, expectPay, expectRep);
   // Une mission de l'histoire ne paie qu'une fois (grantOnce).
   s.active = "tuto";
@@ -232,7 +248,7 @@ int main(int argc, char** argv) {
     // Missions encore réduites (épreuve non portée) : listées, pour l'arbitrage de Julien.
     int reducedCount = 0;
     for (const auto& m : d.missions) if (!m.full) { reducedCount++; std::printf("carriere : %s encore réduite (lieu seul)\n", m.id.c_str()); }
-    CHECK(reducedCount == 3, "3 missions réduites (cross, derby, gpparis) : %d", reducedCount);
+    CHECK(reducedCount == 1, "1 mission réduite (gpparis) : %d", reducedCount);
   }
 
   // 6. Jalon J3-D : fers d'or (collectibles.js) lus dans Content/Data/world_horseshoes.json comme le jeu.

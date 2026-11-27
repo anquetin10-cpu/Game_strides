@@ -71,6 +71,18 @@ public:
 	// Compte à rebours de la mission en cours (s), -1 sans compte à rebours ; nombre d'échecs (journal, tests).
 	double MissionTimeLeft = -1;
 	int32 FailCount = 0;
+	// ---- Jalon J4 : étape « event » (épreuve de StridesCore/Epreuves, déroulée par AStridesCourse) ----
+	// Épreuve de l'étape en cours (« cross », « derby ») ; vide si l'étape n'en est pas une.
+	FString CurrentEventId() const;
+	// État de l'épreuve recopié à chaque vérification par le directeur du monde : objectif, cible du GPS, issue (réussie,
+	// échouée et raison du web), montant (payOverride ou def.pay, pourboire compris), titre et texte du résultat.
+	FString EventText;
+	bool bEventHasTarget = false;
+	FVector2D EventTargetPos = FVector2D::ZeroVector;
+	bool bEventDone = false, bEventFailed = false;
+	FString EventFailText, EventResultText;
+	int32 EventPay = -1;
+	void ClearEventView() { EventText.Empty(); bEventHasTarget = false; bEventDone = bEventFailed = false; EventFailText.Empty(); EventResultText.Empty(); EventPay = -1; }
 	// Verrou de palier d'une offre (« Débloqué au palier « … ». »), vide si l'offre est acceptable.
 	FString OfferLock(const FString& Id) const;
 	// Palier de réputation du web (reputationTier) : titre et progression vers le suivant.

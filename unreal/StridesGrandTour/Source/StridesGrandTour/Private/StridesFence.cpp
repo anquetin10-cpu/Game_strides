@@ -41,10 +41,11 @@ void AStridesFence::SetHeight(double H)
 	HeightM = H;
 	// Obstacle du cœur (obstacles.js add / _bars / faces) : repère n = (sin rot, cos rot) axe de saut, t = (cos rot,
 	// −sin rot) le long des barres ; barres, faces avant / arrière (refus), largeur (visée entre les chandeliers).
-	Obstacle = strides::makeCsoObstacle(TCHAR_TO_UTF8(*Kind), WebX, WebZ, Rot, H, Width, Spread, TCHAR_TO_UTF8(*Label), Num, TCHAR_TO_UTF8(*Course));
+	Obstacle = strides::makeCsoObstacle(TCHAR_TO_UTF8(*Kind), WebX, WebZ, Rot, H, Width, Spread, TCHAR_TO_UTF8(*Label), Num, TCHAR_TO_UTF8(*Course), bSolid);
 	Core = Obstacle.fence();
 	ClearVisuals();
-	if (!BuildExported()) BuildBasicShapes();
+	if (Kind == TEXT("log") || Kind == TEXT("brush") || Kind == TEXT("water")) BuildCrossShapes();
+	else if (!BuildExported()) BuildBasicShapes();
 	SetHighlighted(bHighlighted);
 }
 
@@ -104,6 +105,56 @@ bool AStridesFence::BuildExported()
 	}
 	bExported = true;
 	return true;
+}
+
+UStaticMeshComponent* AStridesFence::AddBlock(UStaticMesh* Mesh, const FVector& RelCm, const FVector& Scale, const FLinearColor& Color, const FRotator& RotIn)
+{
+	UStaticMeshComponent* C = NewObject<UStaticMeshComponent>(this);
+	C->SetupAttachment(Root);
+	C->RegisterComponent();
+	C->SetStaticMesh(Mesh);
+	C->SetRelativeLocation(RelCm);
+	C->SetRelativeRotation(RotIn);
+	C->SetRelativeScale3D(Scale);
+	C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")))
+	{
+		UMaterialInstanceDynamic* M = UMaterialInstanceDynamic::Create(Base, this);
+		M->SetVectorParameterValue(TEXT("Color"), Color);
+		C->SetMaterial(0, M);
+	}
+	Pieces.Add(C);
+	return C;
+}
+
+void AStridesFence::BuildCrossShapes()
+{
+	// Repère local de l'acteur : X = axe de saut (z web), Y = le long de l'obstacle (−x web), Z vers le haut ; cm.
+	UStaticMesh* Cyl = BasicMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	UStaticMesh* Cube = BasicMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
+	UStaticMesh* Cone = BasicMesh(TEXT("/Engine/BasicShapes/Cone.Cone"));
+	const double W = Width, Hh = Height;
+	if (Kind == TEXT("log"))
+	{
+		// logJumpGeo : tronc couché de diamètre h, longueur w, écorce #5d4a3a, bouts #b8946a.
+		AddBlock(Cyl, FVector(0, 0, Hh * 50.0), FVector(Hh, Hh, W), FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("5d4a3a"))), FRotator(0, 0, 90));
+		for (const double Side : {-1.0, 1.0})
+			AddBlock(Cyl, FVector(0, Side * (W * 50.0 + 0.2), Hh * 50.0), FVector(Hh * 0.95, Hh * 0.95, 0.004), FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("b8946a"))), FRotator(0, 0, 90));
+		return;
+	}
+	// brushJumpGeo : caisson #5b4533 (w × 0,45 h × 1,1), lisse #4a382a, branchages (cônes) jusqu'à h, poteaux blancs.
+	AddBlock(Cube, FVector(0, 0, Hh * 0.45 * 50.0), FVector(1.1, W, Hh * 0.45), FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("5b4533"))));
+	AddBlock(Cube, FVector(0, 0, Hh * 0.45 * 100.0 + 4.0), FVector(1.14, W + 0.04, 0.08), FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("4a382a"))));
+	const int32 N = FMath::Max(1, FMath::FloorToInt(W / 0.36));
+	for (int32 I = 0; I < N; ++I)
+		for (const double Zz : {-0.3, 0.0, 0.3})
+		{
+			const double U = -W / 2 + 0.18 + I * 0.36;
+			const double Ch = Hh * 0.62;
+			AddBlock(Cone, FVector(Zz * 100.0, -U * 100.0, (Hh * 0.38 + Ch / 2) * 100.0), FVector(0.22, 0.22, Ch), FLinearColor::FromSRGBColor(FColor::FromHex(I % 3 ? TEXT("4a4b33") : TEXT("57583c"))));
+		}
+	for (const double Side : {-1.0, 1.0})
+		AddBlock(Cube, FVector(0, Side * (W * 50.0 + 30.0), (Hh + 0.25) * 50.0), FVector(0.22, 0.22, Hh + 0.25), FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("f2f1ec"))));
 }
 
 void AStridesFence::BuildBasicShapes()
