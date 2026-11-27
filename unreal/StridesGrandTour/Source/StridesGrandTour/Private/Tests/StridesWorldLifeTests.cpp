@@ -34,6 +34,13 @@
 #include "StridesSaveSubsystem.h"
 #include "StridesUnits.h"
 #include "StridesWorldDirector.h"
+#include "StridesWorldClock.h"
+#include "StridesCollectibles.h"
+#include "StridesCore/WorldClock.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/SkyLight.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Components/SkyLightComponent.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -344,6 +351,172 @@ bool FStridesPhoneMissionFlowTest::RunTest(const FString&)
 	return true;
 }
 
+// Jalon J3 (2e correction après contrôle adverse, P1) : partie sauvegardée à pied → le cheval laissé est retrouvé à sa
+// place à la reprise (game.js _storePositions pos.horse, :1063 mainHorse.setPosition) et repéré sur la mini-carte tant que
+// le joueur est à pied (game.js:1382 kind 'horse', sticky). Avant : le cheval revenait au point d'apparition (~570 m).
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesSaveHorseOnFootTest, "Strides.Save.HorseOnFoot", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesSaveHorseOnFootTest::RunTest(const FString&)
+{
+	using namespace StridesWorldLifeTest;
+	FTestWorld W(TEXT("StridesSaveHorseOnFoot"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	UStridesSaveSubsystem* Save = W.GI->GetSubsystem<UStridesSaveSubsystem>();
+	UStridesProgressionSubsystem* P = W.GI->GetSubsystem<UStridesProgressionSubsystem>();
+	if (!TestTrue(TEXT("sous-systèmes"), Data && Save && P)) return false;
+	Save->SlotName = TEXT("strides_test_j3_horse_foot");
+	P->Restore(0, 0, FString(), {});
+	FGame G;
+	if (!TestTrue(TEXT("cheval monté"), G.Make(W.World, *Data))) return false;
+	G.Draw();
+	TestFalse(TEXT("à cheval : aucun repère « Cheval » (le web ne le montre qu'à pied)"), G.Hud->MinimapBlips().Contains(TEXT("Cheval")));
+	// Le cheval est laissé en (336,9 ; -187,9), le joueur s'en éloigne à pied jusqu'en (221 ; -493) (relevés du contrôle).
+	G.Horse->PlaceAt(336.9, -187.9, -1.25, 0);
+	G.Rider->Dismount(G.PC);
+	if (!TestTrue(TEXT("à pied"), !G.Rider->MountedOn && G.PC->GetPawn() == G.Rider)) return false;
+	G.Rider->SetActorLocation(StridesUnits::WebToUE(221, 0, -493) + FVector(0, 0, 90));
+	TestTrue(TEXT("sauvegarde à pied"), Save->SaveNow(G.PC));
+	// Relance : le monde repose le cheval à son point d'apparition (StridesGameMode, WorldSpawn), puis la reprise.
+	G.Horse->PlaceAt(-104, 168, 0.35, 0);
+	TestTrue(TEXT("rechargement"), Save->LoadNow(G.PC));
+	double HX, HY, HZ;
+	StridesUnits::UEToWeb(G.Horse->GetActorLocation(), HX, HY, HZ);
+	AddInfo(FString::Printf(TEXT("cheval relu en (%.2f ; %.2f), cap %.3f"), HX, HZ, G.Horse->Heading()));
+	TestTrue(TEXT("cheval retrouvé là où il a été laissé (< 0,5 m)"), FVector2D::Distance(FVector2D(HX, HZ), FVector2D(336.9, -187.9)) < 0.5);
+	TestTrue(TEXT("cap du cheval relu"), FMath::IsNearlyEqual(G.Horse->Heading(), -1.25, 1e-3));
+	TestTrue(TEXT("joueur toujours à pied"), !G.Rider->MountedOn && G.PC->GetPawn() == G.Rider);
+	G.Draw();
+	AddInfo(FString::Printf(TEXT("repères à pied : %s"), *FString::Join(G.Hud->MinimapBlips(), TEXT(", "))));
+	TestTrue(TEXT("repère « Cheval » sur la mini-carte (ramené au bord à 345 m)"), G.Hud->MinimapBlips().Contains(TEXT("Cheval")));
+	// Rejoint à pied (< 3 m) : la monte reprend.
+	G.Rider->SetActorLocation(G.Horse->GetActorLocation() - G.Horse->GetActorRightVector() * 120.0 + FVector(0, 0, 90));
+	TestTrue(TEXT("remonté à cheval après la reprise"), G.Rider->TryMount(G.PC) && G.PC->GetPawn() == G.Horse);
+	UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
+	return true;
+}
+
+// Jalon J3-C : heure du jeu, jour et nuit, météo et marée du web (AStridesWorldClock sur StridesCore/WorldClock, oracle
+// du web : ctest « meteo »). Lumière posée selon le soleil du web, nuit à la lune, mer à la hauteur de la marée, temps
+// arrêté téléphone ouvert (game.js:1448), journée de 1 200 s, heure écrite et relue avec la partie, heure et temps au HUD.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesWorldDayNightTest, "Strides.World.DayNight", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesWorldDayNightTest::RunTest(const FString&)
+{
+	using namespace StridesWorldLifeTest;
+	namespace C = strides::clock;
+	FTestWorld W(TEXT("StridesWorldDayNight"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	UStridesSaveSubsystem* Save = W.GI->GetSubsystem<UStridesSaveSubsystem>();
+	if (!TestTrue(TEXT("sous-systèmes"), Data && Save)) return false;
+	Save->SlotName = TEXT("strides_test_j3_clock");
+	FGame G;
+	if (!TestTrue(TEXT("cheval monté"), G.Make(W.World, *Data))) return false;
+	AStridesWorldClock* Clock = W.World->SpawnActor<AStridesWorldClock>();
+	Clock->Sun = W.World->SpawnActor<ADirectionalLight>();
+	Clock->Sky = W.World->SpawnActor<ASkyLight>();
+	AActor* SeaHolder = W.World->SpawnActor<AActor>();
+	UStaticMeshComponent* Sea = NewObject<UStaticMeshComponent>(SeaHolder);
+	Sea->RegisterComponent();
+	SeaHolder->SetRootComponent(Sea);
+	Clock->Sea = Sea;
+	// 14 h, jour 0 : soleil du web haut dans le ciel, lumière vers le bas, dans l'axe de sunDirection.
+	Clock->Apply(14 * 3600);
+	const C::SunPos P14 = C::sunPosition(14);
+	double X, Y, Z;
+	C::sunDirection(14, X, Y, Z);
+	const FVector Fw = Clock->Sun->GetActorForwardVector();
+	AddInfo(FString::Printf(TEXT("14 h : soleil à %.1f° (azimut %.1f°), lumière (%.3f ; %.3f ; %.3f), %.2f lux, mer %.2f m"), P14.alt, P14.az, Fw.X, Fw.Y, Fw.Z, Clock->SunLux, Clock->SeaLevel));
+	TestTrue(TEXT("14 h : soleil haut (> 40°)"), P14.alt > 40 && !Clock->bNight);
+	TestTrue(TEXT("lumière opposée à la direction du soleil du web"), Fw.Equals(-StridesUnits::WebToUE(X, Y, Z).GetSafeNormal(), 1e-3));
+	TestTrue(TEXT("jour : plus de 3 lux"), Clock->SunLux > 3);
+	TestTrue(TEXT("mer à la hauteur de la marée du web"), FMath::IsNearlyEqual(Sea->GetRelativeLocation().Z, C::tideLevel(14.0) * 100.0, 0.01));
+	// 7 h (départ du web, juste avant le lever de 7 h 01) puis 23 h : nuit, lune, lumière du ciel au plancher.
+	Clock->Apply(7 * 3600);
+	AddInfo(FString::Printf(TEXT("7 h : soleil à %.2f°, %.2f lux, ciel %.2f"), Clock->SunAltitude, Clock->SunLux, Clock->SkyIntensity));
+	TestTrue(TEXT("7 h : aube (soleil sous 2°)"), Clock->SunAltitude < 2 && Clock->SunAltitude > -6);
+	Clock->Apply(23 * 3600);
+	TestTrue(FString::Printf(TEXT("23 h : nuit (soleil à %.1f°)"), Clock->SunAltitude), Clock->bNight && Clock->SunLux < 0.5 && Clock->SkyIntensity >= 0.3);
+	TestTrue(TEXT("23 h : la lune éclaire d'en haut"), Clock->Sun->GetActorForwardVector().Z < -0.5);
+	// Marée basse puis haute : la mer bouge (marnage du web).
+	double Lo = 1e9, Hi = -1e9;
+	for (double T = 0; T < 13; T += .25) { Clock->Apply(T * 3600); Lo = FMath::Min(Lo, Clock->SeaLevel); Hi = FMath::Max(Hi, Clock->SeaLevel); }
+	AddInfo(FString::Printf(TEXT("marée du jour 0 : %.2f à %.2f m"), Lo, Hi));
+	TestTrue(TEXT("marnage du jour 0 de plus de 4 m"), Hi - Lo > 4);
+	// Écoulement du temps : 1 200 s = un jour ; arrêté téléphone ouvert (Step(…, true)).
+	Save->GameTime = 7 * 3600;
+	Clock->Step(600, false);
+	TestTrue(FString::Printf(TEXT("600 s → 19 h (%s)"), UTF8_TO_TCHAR(C::clockText(Save->GameTime).c_str())), FMath::IsNearlyEqual(Save->GameTime, 19.0 * 3600, 1e-3));
+	Clock->Step(30, true);
+	TestTrue(TEXT("téléphone ouvert : temps arrêté"), FMath::IsNearlyEqual(Save->GameTime, 19.0 * 3600, 1e-3));
+	// Phone réellement ouvert : Tick lit le contrôleur.
+	G.Tap(TEXT("KeyP"));
+	TestTrue(TEXT("téléphone ouvert"), G.PC->IsPhoneOpen());
+	Clock->Tick(10);
+	TestTrue(TEXT("Tick téléphone ouvert : temps arrêté"), FMath::IsNearlyEqual(Save->GameTime, 19.0 * 3600, 1e-3));
+	G.Tap(TEXT("Escape"));
+	// Heure écrite et relue avec la partie ; HUD « · 19:00 · <temps du web> · <°C> ».
+	TestTrue(TEXT("sauvegarde"), Save->SaveNow(G.PC));
+	Save->GameTime = 0;
+	TestTrue(TEXT("rechargement"), Save->LoadNow(G.PC));
+	TestTrue(TEXT("heure relue"), FMath::IsNearlyEqual(Save->GameTime, 19.0 * 3600, 1e-3));
+	if (G.PC->IsPhoneOpen()) G.Tap(TEXT("KeyP"));
+	G.Draw();
+	const FString Want = FString::Printf(TEXT(" · 19:00 · %s · "), UTF8_TO_TCHAR(C::conditionText(0, 19).c_str()));
+	TestTrue(FString::Printf(TEXT("HUD « %s »"), *G.Hud->LastWeatherLine), G.Hud->LastWeatherLine.StartsWith(Want));
+	UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
+	return true;
+}
+
+// Jalon J3-D : fers d'or du web (collectibles.js) : 20 fers posés, ramassés à 2,6 m du joueur réel (pion possédé), +25 €,
+// repère de la mini-carte à moins de 70 m, gardés à la sauvegarde et non reposés après le rechargement.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesWorldHorseshoesTest, "Strides.World.Horseshoes", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesWorldHorseshoesTest::RunTest(const FString&)
+{
+	using namespace StridesWorldLifeTest;
+	FTestWorld W(TEXT("StridesHorseshoes"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	UStridesSaveSubsystem* Save = W.GI->GetSubsystem<UStridesSaveSubsystem>();
+	UStridesProgressionSubsystem* P = W.GI->GetSubsystem<UStridesProgressionSubsystem>();
+	if (!TestTrue(TEXT("sous-systèmes"), Data && Save && P)) return false;
+	Save->SlotName = TEXT("strides_test_j3_shoes");
+	Save->Horseshoes.Reset();
+	P->Restore(0, 0, FString(), {});
+	FGame G;
+	if (!TestTrue(TEXT("cheval monté"), G.Make(W.World, *Data))) return false;
+	AStridesCollectibles* Shoes = W.World->SpawnActor<AStridesCollectibles>();
+	if (!TestTrue(TEXT("world_horseshoes.json lu"), Shoes && Shoes->Build())) return false;
+	TestEqual(TEXT("20 fers du web"), (int32)Shoes->Data().shoes.size(), 20);
+	const double X = Shoes->Data().shoes[19].first, Z = Shoes->Data().shoes[19].second;  // (-160 ; 232)
+	G.Horse->PlaceAt(X + 30, Z, 0, 0);
+	G.Draw();
+	TestTrue(FString::Printf(TEXT("repère « Fer d’or » à 30 m (%s)"), *FString::Join(G.Hud->MinimapBlips(), TEXT(", "))), G.Hud->MinimapBlips().Contains(TEXT("Fer d’or")));
+	Shoes->Tick(.1f);
+	TestEqual(TEXT("à 30 m : pas ramassé"), P->Credits, 0);
+	TestTrue(TEXT("visible à 30 m"), Shoes->VisibleCount() >= 1);
+	G.Horse->PlaceAt(X + 2, Z, 0, 0);
+	Shoes->Tick(.1f);
+	TestEqual(TEXT("à 2 m : ramassé, +25 €"), P->Credits, 25);
+	TestTrue(FString::Printf(TEXT("« Fer d’or 1/20 · +25 € » (%s)"), *P->LastMessage), P->LastMessage == TEXT("Fer d’or 1/20 · +25 €"));
+	TestTrue(TEXT("gardé (save.data.horseshoes)"), Save->Horseshoes.Num() == 1 && Save->Horseshoes[0] == 19);
+	TestTrue(TEXT("sauvegarde"), Save->SaveNow(G.PC));
+	Save->Horseshoes.Reset();
+	TestTrue(TEXT("rechargement"), Save->LoadNow(G.PC));
+	TestTrue(TEXT("fer relu"), Save->Horseshoes.Num() == 1);
+	G.Horse->PlaceAt(X + 2, Z, 0, 0);
+	Shoes->Tick(.1f);
+	TestEqual(TEXT("pas ramassé deux fois"), P->Credits, 25);
+	G.Draw();
+	// Le fer n°20 n'a plus de repère ; le n°12 (−212 ; 271), à 67 m, garde le sien (moins de 70 m).
+	int32 NShoes = 0;
+	for (const FString& B : G.Hud->MinimapBlips()) NShoes += B == TEXT("Fer d’or");
+	TArray<FVector2D> Left;
+	Shoes->Remaining(Left, FVector2D(X + 2, Z), 70);
+	TestTrue(FString::Printf(TEXT("repères des fers restants seulement (%d repères, %d fers à moins de 70 m)"), NShoes, Left.Num()), NShoes == Left.Num() && !Left.ContainsByPredicate([&](const FVector2D& V) { return V.Equals(FVector2D(X, Z)); }));
+	UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesHudMinimapRotationTest, "Strides.Hud.MinimapRotation", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
 bool FStridesHudMinimapRotationTest::RunTest(const FString&)
 {
@@ -405,6 +578,39 @@ bool FStridesCareerStoryTest::RunTest(const FString&)
 	P->Restore(0, 0, FString(), {TEXT("tuto"), TEXT("m1"), TEXT("m2"), TEXT("m3"), TEXT("groom"), TEXT("livraison"), TEXT("fugueur")});
 	TestTrue(FString::Printf(TEXT("plage verrouillée (%s)"), *P->OfferLock(TEXT("plage"))), P->OfferLock(TEXT("plage")).StartsWith(TEXT("Débloqué au palier « Professionnel apprécié »")));
 	TestFalse(TEXT("plage refusée sous le palier"), P->StartMission(TEXT("plage")));
+	// 2e correction après contrôle adverse (P1 « gains sans le déroulé ») : « Selle sur-mesure » n'est plus payée à
+	// l'arrivée à la Sellerie : comptoir, puis 1 min 45 pour livrer Clara aux écuries du Pôle (story.js:197).
+	P->Restore(500, 400, FString(), {TEXT("tuto"), TEXT("m1"), TEXT("m2"), TEXT("m3"), TEXT("groom")});
+	const strides::StoryMission* Liv = Data->Story()->find("livraison");
+	TestTrue(TEXT("livraison acceptée"), Liv && P->StartMission(TEXT("livraison")));
+	if (Liv && Liv->route.size() == 2)
+	{
+		TestTrue(TEXT("comptoir de la Sellerie"), P->TickMission(FVector2D(Liv->route[0].x, Liv->route[0].z), false, false, .25));
+		TestEqual(TEXT("pas payée au comptoir"), P->Credits, 500);
+		TestTrue(FString::Printf(TEXT("compte à rebours affiché (%s)"), *P->MissionStatus()), P->MissionStatus().EndsWith(TEXT("· 1:45")));
+		for (int32 I = 0; I < 480 && !P->ActiveMissionId.IsEmpty(); ++I) P->TickMission(FVector2D(-104, 168), false, false, .25);
+		TestTrue(TEXT("échec à 0 s : mission arrêtée"), P->ActiveMissionId.IsEmpty() && !P->CompletedMissions.Contains(TEXT("livraison")));
+		TestEqual(TEXT("rien payé"), P->Credits, 500);
+		TestTrue(FString::Printf(TEXT("raison du web (%s)"), *P->LastMessage), P->LastMessage.Contains(TEXT("Trop tard : l’épreuve a commencé sans la selle.")));
+		TestTrue(TEXT("reproposée"), P->Offers(0).Num() > 0 && P->Offers(0)[0]->Id == TEXT("livraison"));
+		TestTrue(TEXT("reprise"), P->StartMission(TEXT("livraison")));
+		P->TickMission(FVector2D(Liv->route[0].x, Liv->route[0].z), false, false, .25);
+		for (int32 I = 0; I < 200; ++I) P->TickMission(FVector2D(-104, 168), false, false, .25);  // 50 s de trajet
+		TestTrue(TEXT("Clara livrée à temps : mission finie"), P->TickMission(FVector2D(Liv->route[1].x, Liv->route[1].z), false, false, .25) && P->CompletedMissions.Contains(TEXT("livraison")));
+		TestEqual(TEXT("+120 € (def.pay du web)"), P->Credits, 620);
+	}
+	// Qualificative CSI 3★ : 9 pénalités, non qualifié(e) ; 8, qualifié(e).
+	P->Restore(500, 2000, FString(), {TEXT("tuto"), TEXT("m1"), TEXT("m2"), TEXT("m3"), TEXT("groom"), TEXT("livraison"), TEXT("fugueur"), TEXT("plage"), TEXT("transport"), TEXT("fer"), TEXT("cross"), TEXT("pension"), TEXT("derby")});
+	TestTrue(TEXT("csi3 acceptée"), P->StartMission(TEXT("csi3")));
+	const strides::StoryMission* Q = Data->Story()->find("csi3");
+	const FVector2D QGate = Q ? FVector2D(Q->route[0].x, Q->route[0].z) : FVector2D::ZeroVector;
+	TestTrue(TEXT("épreuve de la qualificative"), P->CourseStepActive());
+	P->TickMission(QGate, true, false, .25);
+	TestTrue(TEXT("9 pénalités : fin d'étape"), P->TickMission(QGate, false, true, .25, 9, 75.0, false));
+	TestTrue(FString::Printf(TEXT("non qualifié(e) (%s)"), *P->LastMessage), P->ActiveMissionId.IsEmpty() && P->Credits == 500 && P->LastMessage.Contains(TEXT("9 pénalités : non qualifié(e). Il en faut 8 au maximum.")));
+	TestTrue(TEXT("csi3 reprise"), P->StartMission(TEXT("csi3")));
+	P->TickMission(QGate, true, false, .25);
+	TestTrue(TEXT("8 pénalités : qualifié(e), payée"), P->TickMission(QGate, false, true, .25, 8, 75.0, false) && P->CompletedMissions.Contains(TEXT("csi3")) && P->Credits == 1000);
 	return true;
 }
 

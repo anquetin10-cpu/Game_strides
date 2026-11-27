@@ -1314,6 +1314,11 @@ static void testSave() {
   CHECK(SaveGame::fromJson(txt, r, err), "relecture : %s", err.c_str());
   CHECK(r.version == SaveGame::kVersion && r.playerName == "Julien" && r.gameTime == s.gameTime && r.money == 1250, "champs relus");
   CHECK(r.horses.size() == 2 && r.horses[1] == "biscotte" && r.pose.valid && r.pose.mode == "ride" && near(r.pose.z, -270.25), "chevaux et position relus");
+  CHECK(!r.pose.horseValid, "sans position du cheval : aucune relue (ancienne sauvegarde)");
+  // Partie sauvegardée à pied : position du cheval laissé (game.js _storePositions pos.horse), relue au bit près.
+  s.pose = {"foot", 221.0, 0.4, -493.0, 0.5, true, true, 336.9, -187.9, -1.25};
+  CHECK(SaveGame::fromJson(s.toJson(), r, err) && r.pose.mode == "foot" && r.pose.horseValid && r.pose.horseX == 336.9 && r.pose.horseZ == -187.9 && r.pose.horseHeading == -1.25,
+        "à pied : position du cheval relue");
   // Import d'une sauvegarde web (version 1 : l'expérience devient la réputation, comme la migration du jeu web).
   SaveGame w;
   CHECK(SaveGame::fromWebExport("{\"version\":1,\"playerName\":\"Léa\",\"xp\":340,\"money\":90,\"horses\":[\"comete\"],\"inventory\":{\"carrots\":3}}", w, err), "import web : %s", err.c_str());

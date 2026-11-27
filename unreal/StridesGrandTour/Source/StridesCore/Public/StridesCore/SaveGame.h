@@ -12,7 +12,15 @@
 namespace strides {
 
 struct SaveRecord { bool eliminated = false; int penalties = 0; double time = 0; };
-struct SavePose { std::string mode = "foot"; double x = 0, y = 0, z = 0, heading = 0; bool valid = false; };
+// Position du joueur ; et celle du cheval engagé (game.js _storePositions : pos.horse {x, z, heading}, restaurée par
+// mainHorse.setPosition au chargement, game.js:1063), sinon le cheval revient à son point d'apparition.
+struct SavePose {
+  std::string mode = "foot";
+  double x = 0, y = 0, z = 0, heading = 0;
+  bool valid = false;
+  bool horseValid = false;
+  double horseX = 0, horseZ = 0, horseHeading = 0;
+};
 
 struct STRIDESCORE_API SaveGame {
   static constexpr int kVersion = 1;

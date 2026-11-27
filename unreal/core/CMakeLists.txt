@@ -109,7 +109,14 @@ add_test(NAME monde-vivant COMMAND strides_monde_vivant_tests ${CMAKE_CURRENT_SO
 # refreshOffers avec verrou de palier, accept, complete, reputationTier) et itinéraires relevés dans les étapes du web,
 # contre l'oracle calculé par la vraie MissionManager du web (tests/oracles/story_missions.json,
 # scripts/unreal/export-missions.mjs) ; données lues dans Content/Data/story_missions.json comme le jeu ; ctest « carriere ».
-target_sources(strides_core PRIVATE ${CORE}/Private/Career.cpp)
+target_sources(strides_core PRIVATE ${CORE}/Private/Career.cpp ${CORE}/Private/Collectibles.cpp)
 add_executable(strides_carriere_tests tests/test_carriere.cpp)
 target_link_libraries(strides_carriere_tests strides_core)
 add_test(NAME carriere COMMAND strides_carriere_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Jalon J3-C (monde vivant de Deauville) : heure du jeu, météo, marées et soleil du web (weather.js, sun.js, game.js:1448)
+# portés en C++ (StridesCore/WorldClock), contre l'oracle calculé par les modules du web (tests/oracles/meteo.json,
+# scripts/unreal/export-meteo.mjs) ; ctest « meteo ».
+target_sources(strides_core PRIVATE ${CORE}/Private/WorldClock.cpp)
+add_executable(strides_meteo_tests tests/test_meteo.cpp)
+target_link_libraries(strides_meteo_tests strides_core)
+add_test(NAME meteo COMMAND strides_meteo_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles)

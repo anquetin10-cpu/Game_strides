@@ -4,6 +4,7 @@
 #include "Engine/StaticMeshActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "StridesAmbientLife.h"
+#include "StridesCollectibles.h"
 #include "StridesCourse.h"
 #include "StridesCore/CsoEntry.h"
 #include "StridesDataSubsystem.h"
@@ -42,6 +43,9 @@ void AStridesWorldDirector::BuildWorld()
 	// Jalon J3 : circulation, passants et spectateurs du web (src/gameplay/npcs.js Ambient), silhouettes provisoires.
 	Ambient = GetWorld()->SpawnActor<AStridesAmbientLife>();
 	if (Ambient && !Ambient->Build(*Data)) UE_LOG(LogTemp, Warning, TEXT("Strides vie ambiante : données absentes"));
+	// Jalon J3-D : fers d'or du web (collectibles.js).
+	Collectibles = GetWorld()->SpawnActor<AStridesCollectibles>();
+	if (Collectibles) Collectibles->Build();
 	MissionBeacon = SpawnBlock(FVector(0, 0, -5000), FVector(120.f, 120.f, 1800.f), FRotator::ZeroRotator, FLinearColor(1.f, .63f, .05f));
 	MissionBeacon->SetActorHiddenInGame(true);
 	MissionBeacon->SetActorEnableCollision(false);
@@ -66,6 +70,7 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	MissionCheckTimer += DeltaSeconds;
 	if (MissionCheckTimer < .25f) return;
+	const double MissionDt = MissionCheckTimer;  // compte à rebours des missions (temps réel écoulé depuis la dernière vérification)
 	MissionCheckTimer = 0.f;
 	UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>();
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
@@ -110,7 +115,10 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 		const bool bRunning = Run && !Run->finished();
 		const bool bFinished = Run && Run->finished();
 		const FString Before = Progress->ActiveMissionId;
-		if (Progress->TickMission(FVector2D(X, Z), bRunning, bFinished) && Progress->ActiveMissionId.IsEmpty() && !Before.IsEmpty())
+		const int32 Pen = Run ? Run->points() : 0;
+		const double CourseT = Run ? Run->state().t : 0.0;
+		const bool bElim = Run && Run->state().eliminated;
+		if (Progress->TickMission(FVector2D(X, Z), bRunning, bFinished, MissionDt, Pen, CourseT, bElim) && Progress->ActiveMissionId.IsEmpty() && !Before.IsEmpty())
 		{
 			// missions.complete : sauvegarde tout de suite (saveNow), comme à l'acceptation.
 			if (UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())

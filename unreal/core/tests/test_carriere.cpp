@@ -9,6 +9,7 @@
 #include <string>
 
 #include "StridesCore/Career.h"
+#include "StridesCore/Collectibles.h"
 #include "StridesCore/MiniJson.h"
 
 static int g_checks = 0, g_fail = 0;
@@ -136,6 +137,95 @@ int main(int argc, char** argv) {
   for (const auto& m : d.missions) if (m.id != "fer") poor.completed.push_back(m.id);
   poor.reputation = 9999;
   CHECK(strides::acceptMission(d, poor, "fer") == strides::AcceptResult::Funds, "fer accepté sans les 60 €");
+
+  // 5. Deuxième correction après contrôle adverse : comptes à rebours et règles de résultat du web.
+  {
+    auto after = [&](const char* id) {
+      strides::CareerState c;
+      c.reputation = 9999;
+      for (const auto& m : d.missions) if (m.id != id) for (const auto& r : d.find(id)->prereqs) if (m.id == r) c.completed.push_back(m.id);
+      return c;
+    };
+    std::string why;
+    strides::CourseOutcome none;
+    // Selle sur-mesure (story.js:197, r.timer = 105) : le compte à rebours part à l'étape de Clara.
+    strides::CareerState c = after("livraison");
+    CHECK(strides::acceptMission(d, c, "livraison") == strides::AcceptResult::Ok && c.timeLeft < 0, "livraison : pas de compte à rebours au comptoir");
+    const strides::StoryMission* liv = d.find("livraison");
+    CHECK(liv && liv->route.size() == 2, "livraison : 2 étapes (comptoir, Clara)");
+    if (liv && liv->route.size() == 2) {
+      CHECK(strides::updateStep(d, c, liv->route[0].x, liv->route[0].z, none, 0.25, why) == strides::StepUpdate::Advanced && c.timeLeft == 105, "livraison : 105 s au départ de la Sellerie (%.1f)", c.timeLeft);
+      CHECK(strides::updateStep(d, c, 9999, 9999, none, 104, why) == strides::StepUpdate::None && c.timeLeft > 0.9 && c.timeLeft < 1.1, "livraison : 1 s restante");
+      CHECK(strides::updateStep(d, c, liv->route[1].x, liv->route[1].z, none, 0.25, why) == strides::StepUpdate::Advanced && c.timeLeft < 0 && !strides::currentStep(d, c), "livraison : livrée à temps, compte à rebours arrêté");
+      strides::CareerState late = after("livraison");
+      strides::acceptMission(d, late, "livraison");
+      strides::updateStep(d, late, liv->route[0].x, liv->route[0].z, none, 0.25, why);
+      why.clear();
+      CHECK(strides::updateStep(d, late, 9999, 9999, none, 105.5, why) == strides::StepUpdate::Failed, "livraison : échec à 0 s");
+      CHECK(why == liv->timeoutText && why == "Trop tard : l’épreuve a commencé sans la selle.", "livraison : raison du web (%s)", why.c_str());
+      CHECK(late.active.empty() && late.checkpoint.empty() && late.credits == 0 && !late.done("livraison"), "livraison : rien payé, mission arrêtée");
+      bool again = false;
+      for (const auto& o : strides::storyOffers(d, late, [](const std::string&) { return false; })) again = again || o.mission->id == "livraison";
+      CHECK(again, "livraison : reproposée après l'échec");
+    }
+    // Galop sur la plage : 95 s du 1er anneau au retour aux Dunes.
+    const strides::StoryMission* pl = d.find("plage");
+    CHECK(pl && pl->route.size() == 9 && pl->route[1].timer == 95 && pl->route[8].stopTimer, "plage : Dunes, 7 anneaux, retour ; 95 s");
+    // Le fugueur : 130 s pour rattraper Tonnerre.
+    const strides::StoryMission* fu = d.find("fugueur");
+    CHECK(fu && fu->route.size() == 3 && fu->route[1].timer == 130 && fu->route[1].stopTimer && fu->timeoutText == "Tonnerre s’est enfui trop loin…", "fugueur : 130 s");
+    // Qualificative CSI 3★ : « p > 8 » échoue (story.js:717).
+    strides::CareerState q = after("csi3");
+    strides::acceptMission(d, q, "csi3");
+    const strides::MissionStep* qs = strides::currentStep(d, q);
+    CHECK(qs && qs->kind == "course" && qs->maxPenalties == 8, "csi3 : épreuve, 8 pénalités au plus");
+    strides::CourseOutcome o9{true, 9, 70, false}, o8{true, 8, 70, false};
+    why.clear();
+    CHECK(strides::updateStep(d, q, 0, 0, o9, 0.25, why) == strides::StepUpdate::Failed && why == "9 pénalités : non qualifié(e). Il en faut 8 au maximum.", "csi3 : 9 pénalités (%s)", why.c_str());
+    strides::acceptMission(d, q, "csi3");
+    CHECK(strides::updateStep(d, q, 0, 0, o8, 0.25, why) == strides::StepUpdate::Advanced, "csi3 : qualifié à 8");
+    // Grand Prix CSI 5★ : Van Dijk 4 points en 52,4 s (timeAllowedFor(cso, 400) − 3,6).
+    strides::CareerState g = after("gp");
+    strides::acceptMission(d, g, "gp");
+    const strides::MissionStep* gs = strides::currentStep(d, g);
+    CHECK(gs && gs->beatFaults == 4 && gs->beatName == "K. Van Dijk" && gs->beatTime > 40 && gs->beatTime < 70, "gp : meilleur adversaire du web (%.1f s)", gs ? gs->beatTime : 0.0);
+    if (gs) {
+      const double bt = gs->beatTime;
+      strides::CourseOutcome slow{true, 4, bt + 0.1, false}, fast{true, 4, bt - 0.1, false}, clear{true, 0, 99, false}, out{true, 0, 10, true};
+      why.clear();
+      CHECK(strides::updateStep(d, g, 0, 0, slow, 0.25, why) == strides::StepUpdate::Failed && why.find("K. Van Dijk reste devant") != std::string::npos, "gp : 4 points plus lent (%s)", why.c_str());
+      strides::acceptMission(d, g, "gp");
+      CHECK(strides::updateStep(d, g, 0, 0, fast, 0.25, why) == strides::StepUpdate::Advanced, "gp : 4 points plus vite");
+      strides::CareerState g2 = after("gp");
+      strides::acceptMission(d, g2, "gp");
+      CHECK(strides::updateStep(d, g2, 0, 0, clear, 0.25, why) == strides::StepUpdate::Advanced, "gp : sans-faute");
+      strides::acceptMission(d, g2, "gp");
+      strides::CareerState g3 = after("gp");
+      strides::acceptMission(d, g3, "gp");
+      why.clear();
+      CHECK(strides::updateStep(d, g3, 0, 0, out, 0.25, why) == strides::StepUpdate::Failed, "gp : élimination");
+    }
+    // Missions encore réduites (épreuve non portée) : listées, pour l'arbitrage de Julien.
+    int reducedCount = 0;
+    for (const auto& m : d.missions) if (!m.full) { reducedCount++; std::printf("carriere : %s encore réduite (lieu seul)\n", m.id.c_str()); }
+    CHECK(reducedCount == 3, "3 missions réduites (cross, derby, gpparis) : %d", reducedCount);
+  }
+
+  // 6. Jalon J3-D : fers d'or (collectibles.js) lus dans Content/Data/world_horseshoes.json comme le jeu.
+  {
+    strides::HorseshoeData hs;
+    CHECK(strides::loadHorseshoes(readAll(data + "/world_horseshoes.json"), hs, err), "fers d'or : %s", err.c_str());
+    CHECK(hs.shoes.size() == 20 && hs.shoes[0].first == -498 && hs.shoes[0].second == -392 && hs.shoes[19].first == -160, "20 fers du web");
+    std::vector<int> got;
+    CHECK(strides::collectShoes(hs, got, hs.shoes[3].first + 2.7, hs.shoes[3].second).empty(), "fer à 2,7 m : pas ramassé");
+    auto p = strides::collectShoes(hs, got, hs.shoes[3].first + 2.5, hs.shoes[3].second);
+    CHECK(p.size() == 1 && p[0].index == 3 && p[0].money == 25 && p[0].count == 1 && got == std::vector<int>{3}, "fer n°4 ramassé : +25 €");
+    CHECK(strides::collectShoes(hs, got, hs.shoes[3].first, hs.shoes[3].second).empty(), "fer déjà ramassé : rien");
+    int money = 25;
+    for (size_t i = 0; i < hs.shoes.size(); ++i)
+      for (const auto& q : strides::collectShoes(hs, got, hs.shoes[i].first, hs.shoes[i].second)) money += q.money;
+    CHECK(got.size() == 20 && money == 20 * 25 + 500, "collection complète : %d € (attendu 1 000)", money);
+  }
 
   std::printf("carriere : %d vérifications, %d échecs\n", g_checks, g_fail);
   return g_fail ? 1 : 0;

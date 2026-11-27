@@ -65,7 +65,12 @@ public:
 	bool CourseStepActive() const;
 	// Une image du directeur du monde : position du joueur (repère web) et épreuve du Pôle (en cours, terminée). Vrai si
 	// l'étape en cours a été franchie ; la mission est alors payée quand l'itinéraire est fini (CompleteActiveMission).
-	bool TickMission(const FVector2D& Me, bool bCourseRunning, bool bCourseFinished);
+	// Dt : temps écoulé depuis l'appel précédent (compte à rebours du web) ; Penalties, CourseTime, bEliminated : résultat de
+	// l'épreuve terminée (règles de csi3 et du Grand Prix). Échec (missions.fail) : LastMessage = raison du web, rien payé.
+	bool TickMission(const FVector2D& Me, bool bCourseRunning, bool bCourseFinished, double Dt = 0, int32 Penalties = 0, double CourseTime = 0, bool bEliminated = false);
+	// Compte à rebours de la mission en cours (s), -1 sans compte à rebours ; nombre d'échecs (journal, tests).
+	double MissionTimeLeft = -1;
+	int32 FailCount = 0;
 	// Verrou de palier d'une offre (« Débloqué au palier « … ». »), vide si l'offre est acceptable.
 	FString OfferLock(const FString& Id) const;
 	// Palier de réputation du web (reputationTier) : titre et progression vers le suivant.

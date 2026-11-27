@@ -1,4 +1,5 @@
 #include "StridesGameMode.h"
+#include "StridesWorldClock.h"
 #include "StridesSaveSubsystem.h"
 #include "StridesCore/SaveGame.h"
 #include "Components/DirectionalLightComponent.h"
@@ -124,6 +125,7 @@ void AStridesGameMode::StartPlay()
 			Pawn->SetActorLocationAndRotation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 200.0 + FVector(0, 0, 90), Horse->GetActorRotation());
 	if (AStridesShots::Requested())
 	{
+		// Outil de capture : lumière fixe des captures de référence (CSO G5), sans horloge du monde.
 		W->SpawnActor<AStridesShots>();
 		// Outil de capture et de mesure : la partie du joueur n'est ni reprise ni réécrite par la sauvegarde automatique.
 		if (UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr) Save->bAutoSave = false;
@@ -131,5 +133,9 @@ void AStridesGameMode::StartPlay()
 	// Jalon J3 : reprise de la partie sauvegardée (position, cheval, crédits, réputation, missions terminées, mission à
 	// reprendre), comme « Continuer » au web ; jamais pendant les tests ni en mode de capture.
 	else if (UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr)
+	{
 		Save->ResumeAtStart(UGameplayStatics::GetPlayerController(W, 0));
+		// Jalon J3-C : heure, jour et nuit, météo et marée du web (après la reprise : heure de la sauvegarde).
+		if (!GIsAutomationTesting) W->SpawnActor<AStridesWorldClock>();
+	}
 }

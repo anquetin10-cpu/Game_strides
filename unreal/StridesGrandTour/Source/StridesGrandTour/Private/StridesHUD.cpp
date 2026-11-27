@@ -5,6 +5,8 @@
 #include "Algo/Reverse.h"
 #include "Camera/PlayerCameraManager.h"
 #include "EngineUtils.h"
+#include "StridesCollectibles.h"
+#include "StridesCore/WorldClock.h"
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
@@ -106,7 +108,18 @@ void AStridesHUD::DrawHUD()
 #endif
 	if (const UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
 	{
-		Line(FString::Printf(TEXT("%s · %d crédits · %d réputation"), *Progress->RankName(), Progress->Credits, Progress->Reputation), FLinearColor(0.35f, 0.9f, 0.75f));
+		// Jalon J3-C : heure et temps du web (game.js clockText, weatherText : « Éclaircies · 19 °C »).
+		FString Weather;
+		if (const UStridesSaveSubsystem* Sv = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
+		{
+			const double Gt = Sv->GameTime;
+			const int32 Day = strides::clock::dayOf(Gt);
+			const double Hr = strides::clock::hourOf(Gt);
+			Weather = FString::Printf(TEXT(" · %s · %s · %d °C"), UTF8_TO_TCHAR(strides::clock::clockText(Gt).c_str()), UTF8_TO_TCHAR(strides::clock::conditionText(Day, Hr).c_str()),
+				FMath::RoundToInt(strides::clock::temperature(Day, Hr)));
+		}
+		LastWeatherLine = Weather;
+		Line(FString::Printf(TEXT("%s · %d crédits · %d réputation%s"), *Progress->RankName(), Progress->Credits, Progress->Reputation, *Weather), FLinearColor(0.35f, 0.9f, 0.75f));
 		// Objectif : celui de l'épreuve en cours (Run.text, setObjective du web ; vide : aucune ligne), puis l'état de la
 		// mission de carrière quand l'une est lancée (touche M) ; « Aucune mission active » seulement hors épreuve.
 		// Jalon J2c : l'entraînement à l'abord est une mission comme l'épreuve (missions.objectiveText).
@@ -626,6 +639,21 @@ void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem
 			Blip(Poi.Position.X, Poi.Position.Y, false, Poi.Icon == TEXT("shop") ? FLinearColor(.85f, .71f, .42f) : (Poi.Icon == TEXT("stable") || Poi.Icon == TEXT("pro")) ? FLinearColor(.61f, .62f, .64f) : FLinearColor(.96f, .95f, .94f), 4.f * Ui, Poi.Name);
 		}
 	if (bGoal) Blip(Goal.X, Goal.Y, true, FLinearColor(1.f, .7f, .1f), 5.f * Ui, TEXT("GPS"));
+	// Fers d'or à moins de 70 m (game.js getBlips : collectibles.blips, kind 'shoe', petits).
+	{
+		TArray<FVector2D> Shoes;
+		for (TActorIterator<AStridesCollectibles> It(GetWorld()); It; ++It) It->Remaining(Shoes, FVector2D(CX, CZ), It->Data().blipDist);
+		for (const FVector2D& S : Shoes) Blip(S.X, S.Y, false, FLinearColor(.85f, .71f, .42f), 2.5f * Ui, TEXT("Fer d’or"));
+	}
+	// Cheval engagé quand le joueur est à pied (game.js:1382 getBlips kind 'horse', sticky : ramené au bord ; minimap.js
+	// pastille #c8a46a de 4,5 px).
+	if (P && !Horse)
+		if (TActorIterator<AStridesHorse> It(GetWorld()); It)
+		{
+			double HX, HY, HZ;
+			StridesUnits::UEToWeb(It->GetActorLocation(), HX, HY, HZ);
+			Blip(HX, HZ, true, FLinearColor(.784f, .643f, .416f), 4.5f * Ui, TEXT("Cheval"));
+		}
 	if (bGoal) DrawText(FString::Printf(TEXT("%s %.0f m"), *GoalLabel, FVector2D::Distance(FVector2D(CX, CZ), Goal)), FLinearColor(1.f, .82f, .25f), MapX + 8, MapY + MapSize + 8, nullptr, 1.f);
 	// Joueur (flèche) : rotate(−(cap − lacet + π)), pointe en (0, −8) ; sens de la toile (y vers le bas).
 	if (P)

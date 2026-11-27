@@ -17,6 +17,8 @@ public:
 	UPROPERTY() int32 Reputation = 0;
 	UPROPERTY() FString ActiveMissionId;
 	UPROPERTY() TArray<FString> CompletedMissions;
+	// Jalon J3-D : fers d'or ramassés (save.data.horseshoes, rangs dans HORSESHOES du web).
+	UPROPERTY() TArray<int32> Horseshoes;
 };
 
 UCLASS()
@@ -36,6 +38,11 @@ public:
 	bool ResumeAtStart(class APlayerController* PC);
 	float AutoSaveT = 0.f;
 	static const FString Slot;
+	// Jalon J3-C : heure du jeu (save.data.gameTime du web, s depuis le début ; 7 h au départ), avancée par
+	// AStridesWorldClock, écrite par SaveNow, relue au lancement (ReloadSettings) et par LoadNow.
+	double GameTime = strides::SaveGame::fresh().gameTime;
+	// Jalon J3-D : fers d'or ramassés (save.data.horseshoes), écrits par SaveNow, relus au lancement et par LoadNow.
+	TArray<int32> Horseshoes;
 	// Emplacement utilisé (Slot par défaut) ; les tests en prennent un à eux pour ne jamais toucher la partie du joueur.
 	FString SlotName = Slot;
 

@@ -22,6 +22,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") int32 ArchitectureMeshes = 0;
 	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") int32 TreeInstances = 0;
 	UPROPERTY(BlueprintReadOnly, Category = "Strides|World") int32 HedgeMeshes = 0;
+	// Mer (jalon J3-C : hauteur suivant la marée du web, AStridesWorldClock).
+	UPROPERTY() TObjectPtr<class UStaticMeshComponent> SeaMesh;
 
 private:
 	void BuildTerrain(const UStridesDataSubsystem& Data, class UMaterialInterface* Material);

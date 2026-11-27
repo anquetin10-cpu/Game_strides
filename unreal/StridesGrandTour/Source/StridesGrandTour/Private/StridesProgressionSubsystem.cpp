@@ -16,6 +16,7 @@ strides::CareerState UStridesProgressionSubsystem::MakeCareer() const
 	S.active = TCHAR_TO_UTF8(*ActiveMissionId);
 	S.checkpoint = TCHAR_TO_UTF8(*CheckpointMission);
 	S.step = MissionStep;
+	S.timeLeft = MissionTimeLeft;
 	return S;
 }
 
@@ -28,6 +29,7 @@ void UStridesProgressionSubsystem::ApplyCareer(const strides::CareerState& S)
 	ActiveMissionId = UTF8_TO_TCHAR(S.active.c_str());
 	CheckpointMission = UTF8_TO_TCHAR(S.checkpoint.c_str());
 	MissionStep = S.step;
+	MissionTimeLeft = S.timeLeft;
 }
 
 bool UStridesProgressionSubsystem::IsAvailable(const FStridesMissionDefinition& Mission) const
@@ -85,13 +87,32 @@ bool UStridesProgressionSubsystem::CourseStepActive() const
 	return Step && Step->kind == "course";
 }
 
-bool UStridesProgressionSubsystem::TickMission(const FVector2D& Me, bool bCourseRunning, bool bCourseFinished)
+bool UStridesProgressionSubsystem::TickMission(const FVector2D& Me, bool bCourseRunning, bool bCourseFinished, double Dt, int32 Penalties, double CourseTime, bool bEliminated)
 {
 	const strides::StoryData* St = StoryOf(GetGameInstance());
 	if (!St || ActiveMissionId.IsEmpty()) return false;
 	if (CourseStepActive() && bCourseRunning) bCourseSeen = true;
 	strides::CareerState S = MakeCareer();
-	if (!strides::advanceStep(*St, S, Me.X, Me.Y, bCourseSeen && bCourseFinished && !bCourseRunning)) return false;
+	strides::CourseOutcome Out;
+	Out.finished = bCourseSeen && bCourseFinished && !bCourseRunning;
+	Out.penalties = Penalties;
+	Out.time = CourseTime;
+	Out.eliminated = bEliminated;
+	std::string Why;
+	const FString Was = ActiveMissionId;
+	const strides::StepUpdate U = strides::updateStep(*St, S, Me.X, Me.Y, Out, Dt, Why);
+	MissionTimeLeft = S.timeLeft;
+	if (U == strides::StepUpdate::Failed)
+	{
+		ApplyCareer(S);
+		bCourseSeen = false;
+		++FailCount;
+		// missions.fail : carte « Mission échouée » avec la raison du web ; l'offre est reproposée dans l'app Strides.
+		LastMessage = FString::Printf(TEXT("Mission échouée · %s"), UTF8_TO_TCHAR(Why.c_str()));
+		UE_LOG(LogTemp, Display, TEXT("Strides career fail: %s (%s)"), *Was, UTF8_TO_TCHAR(Why.c_str()));
+		return true;
+	}
+	if (U != strides::StepUpdate::Advanced) return false;
 	MissionStep = S.step;
 	bCourseSeen = false;
 	UE_LOG(LogTemp, Display, TEXT("Strides career step: %s %d/%d"), *ActiveMissionId, MissionStep, StepCount());
@@ -123,7 +144,9 @@ FString UStridesProgressionSubsystem::MissionStatus() const
 	const FStridesMissionDefinition* Mission = ActiveMission();
 	if (!Mission) return TEXT("Mission inconnue");
 	// Objectif de l'étape du web (setObjective) ; numéro d'étape pour suivre l'itinéraire.
-	return FString::Printf(TEXT("%s (%d/%d)"), *StepText(), FMath::Min(MissionStep + 1, StepCount()), StepCount());
+	// Compte à rebours visible (missions.js r.timer, hud) : « · 1:43 ».
+	const FString Clock = MissionTimeLeft >= 0 ? FString::Printf(TEXT(" · %d:%02d"), FMath::CeilToInt(MissionTimeLeft) / 60, FMath::CeilToInt(MissionTimeLeft) % 60) : FString();
+	return FString::Printf(TEXT("%s (%d/%d)%s"), *StepText(), FMath::Min(MissionStep + 1, StepCount()), StepCount(), *Clock);
 }
 
 FString UStridesProgressionSubsystem::RankName() const
@@ -219,6 +242,7 @@ bool UStridesProgressionSubsystem::AbandonMission()
 	if (CheckpointMission == ActiveMissionId) CheckpointMission.Empty();
 	ActiveMissionId.Empty();
 	MissionStep = 0;
+	MissionTimeLeft = -1;
 	bCourseSeen = false;
 	LastMessage = TEXT("Mission abandonnée.");
 	return true;

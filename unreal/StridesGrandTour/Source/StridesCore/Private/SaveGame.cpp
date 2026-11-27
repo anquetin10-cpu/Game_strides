@@ -41,7 +41,12 @@ std::string SaveGame::toJson() const {
   first = true;
   for (auto& [k, v] : settings) { o << (first ? "" : ",") << esc(k) << ":" << esc(v); first = false; }
   o << "},\"pose\":";
-  if (pose.valid) o << "{\"mode\":" << esc(pose.mode) << ",\"x\":" << num(pose.x) << ",\"y\":" << num(pose.y) << ",\"z\":" << num(pose.z) << ",\"heading\":" << num(pose.heading) << "}";
+  if (pose.valid) {
+    o << "{\"mode\":" << esc(pose.mode) << ",\"x\":" << num(pose.x) << ",\"y\":" << num(pose.y) << ",\"z\":" << num(pose.z) << ",\"heading\":" << num(pose.heading);
+    if (pose.horseValid) o << ",\"horse\":{\"x\":" << num(pose.horseX) << ",\"z\":" << num(pose.horseZ) << ",\"heading\":" << num(pose.horseHeading) << "}";
+    else o << ",\"horse\":null";
+    o << "}";
+  }
   else o << "null";
   o << ",\"legacy\":" << (legacyJson.empty() ? std::string("null") : esc(legacyJson)) << "}";
   return o.str();
@@ -79,6 +84,13 @@ bool SaveGame::fromJson(const std::string& text, SaveGame& out, std::string& err
   for (auto& [k, v2] : j["bestTimes"].o) if (v2.t == J::Num) s.bestTimes[k] = v2.n;
   for (auto& [k, v2] : j["settings"].o) s.settings[k] = v2.s;
   if (j["pose"].t == J::Obj) s.pose = {j["pose"]["mode"].s, j["pose"]["x"].n, j["pose"]["y"].n, j["pose"]["z"].n, j["pose"]["heading"].n, true};
+  if (j["pose"].t == J::Obj && j["pose"]["horse"].t == J::Obj) {
+    const J& h = j["pose"]["horse"];
+    s.pose.horseValid = true;
+    s.pose.horseX = h["x"].n;
+    s.pose.horseZ = h["z"].n;
+    s.pose.horseHeading = h["heading"].n;
+  }
   if (j["legacy"].t == J::Str) s.legacyJson = j["legacy"].s;
   out = s;
   return true;

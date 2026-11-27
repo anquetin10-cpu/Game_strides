@@ -1,7 +1,7 @@
 {
  "schema": "strides.story.v1",
  "source": {
-  "webCommit": "7cb7292a",
+  "webCommit": "d559d6be",
   "files": [
    "src/gameplay/story.js",
    "src/gameplay/story2.js",
@@ -49,6 +49,7 @@
    "payLabel": "",
    "xp": 60,
    "cost": 0,
+   "timeoutText": "",
    "requires": [],
    "hours": null,
    "full": true,
@@ -120,6 +121,7 @@
    "payLabel": "90 à 270 €",
    "xp": 60,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "tuto"
    ],
@@ -176,6 +178,7 @@
    "payLabel": "",
    "xp": 100,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "m1"
    ],
@@ -251,6 +254,7 @@
    "payLabel": "150 € + dotation",
    "xp": 200,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "m2"
    ],
@@ -303,6 +307,7 @@
    "payLabel": "",
    "xp": 120,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "m3"
    ],
@@ -386,23 +391,35 @@
    "payLabel": "",
    "xp": 150,
    "cost": 0,
+   "timeoutText": "Trop tard : l’épreuve a commencé sans la selle.",
    "requires": [
     "groom"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
      "kind": "goto",
-     "text": "Rejoins Sellerie du Port",
+     "text": "Retire la selle au comptoir de la Sellerie du Port, à Deauville City",
      "x": -134.6,
      "z": -266,
-     "r": 18
+     "r": 4
+    },
+    {
+     "kind": "goto",
+     "text": "Livre la selle à Clara, aux écuries du Pôle",
+     "x": 409,
+     "z": -234,
+     "r": 4.5,
+     "timer": 105,
+     "stopTimer": true
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
+    "comptoir à l’intérieur de la boutique, à pied (intérieurs non portés : devant la porte, rayon 4 m au lieu de 2,2)",
+    "dialogues de Margaux et Clara",
+    "note selon le temps restant (pourboire de 10 % à 5 étoiles)"
    ]
   },
   {
@@ -416,23 +433,41 @@
    "payLabel": "",
    "xp": 200,
    "cost": 0,
+   "timeoutText": "Tonnerre s’est enfui trop loin…",
    "requires": [
     "livraison"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
      "kind": "goto",
-     "text": "Rejoins Haras de la Pommeraie",
+     "text": "Rejoins le Haras de la Pommeraie",
      "x": -380,
-     "z": -96,
-     "r": 18
+     "z": -82,
+     "r": 9
+    },
+    {
+     "kind": "goto",
+     "text": "Rattrape Tonnerre !",
+     "x": -385,
+     "z": 70,
+     "r": 4.2,
+     "timer": 130,
+     "stopTimer": true
+    },
+    {
+     "kind": "goto",
+     "text": "Ramène Tonnerre au paddock n°1 (il te suit)",
+     "x": -449,
+     "z": -11,
+     "r": 6
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
+    "Tonnerre en fuite (FleeAI) puis qui suit (FollowAI) : point d’apparition fixe du web, pas de cheval à rattraper",
+    "dialogues d’Antoine"
    ]
   },
   {
@@ -446,23 +481,84 @@
    "payLabel": "",
    "xp": 250,
    "cost": 0,
+   "timeoutText": "Trop lent : Tornade n’a pas eu le travail prévu.",
    "requires": [
     "fugueur"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
      "kind": "goto",
-     "text": "Rejoins Écurie des Dunes",
-     "x": 500,
-     "z": -318,
-     "r": 18
+     "text": "Rejoins l’Écurie des Dunes",
+     "x": 496,
+     "z": -290,
+     "r": 9
+    },
+    {
+     "kind": "goto",
+     "text": "Galop sur la plage : passe les anneaux (1/7)",
+     "x": 420,
+     "z": -390,
+     "r": 5.5,
+     "timer": 95
+    },
+    {
+     "kind": "goto",
+     "text": "Galop sur la plage : passe les anneaux (2/7)",
+     "x": 350,
+     "z": -388.07,
+     "r": 5.5
+    },
+    {
+     "kind": "goto",
+     "text": "Galop sur la plage : passe les anneaux (3/7)",
+     "x": 280,
+     "z": -388.97,
+     "r": 5.5
+    },
+    {
+     "kind": "goto",
+     "text": "Galop sur la plage : passe les anneaux (4/7)",
+     "x": 210,
+     "z": -391.38,
+     "r": 5.5
+    },
+    {
+     "kind": "goto",
+     "text": "Galop sur la plage : passe les anneaux (5/7)",
+     "x": 140,
+     "z": -391.77,
+     "r": 5.5
+    },
+    {
+     "kind": "goto",
+     "text": "Galop sur la plage : passe les anneaux (6/7)",
+     "x": 70,
+     "z": -389.57,
+     "r": 5.5
+    },
+    {
+     "kind": "goto",
+     "text": "Galop sur la plage : passe les anneaux (7/7)",
+     "x": 0,
+     "z": -388,
+     "r": 5.5
+    },
+    {
+     "kind": "goto",
+     "text": "Ramène Tornade à l’Écurie des Dunes",
+     "x": 498,
+     "z": -290,
+     "r": 7,
+     "stopTimer": true
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
+    "monter sur Tornade (cheval de la cliente) : galop fait sur le cheval engagé",
+    "anneaux posés selon la marée (marées non portées : position à mi-marée du web, temps de base 95 s)",
+    "dialogues d’Hélène"
    ]
   },
   {
@@ -476,6 +572,7 @@
    "payLabel": "",
    "xp": 300,
    "cost": 0,
+   "timeoutText": "Quabar est arrivé trop tard pour son épreuve.",
    "requires": [
     "fugueur"
    ],
@@ -520,24 +617,27 @@
    "payLabel": "Soins : 60 €",
    "xp": 220,
    "cost": 60,
+   "timeoutText": "",
    "requires": [
     "transport",
     "plage"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
      "kind": "goto",
-     "text": "Rejoins Forge Lemaire",
-     "x": -140,
-     "z": -199,
-     "r": 18
+     "text": "Rejoins la Forge Lemaire (au pas)",
+     "x": -150,
+     "z": -197,
+     "r": 5
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
+    "boiterie de Comète",
+    "Guide local › Santé et soins › contacter Hugo Lemaire (Guide local non porté)",
+    "dialogues d’Hugo"
    ]
   },
   {
@@ -551,6 +651,7 @@
    "payLabel": "",
    "xp": 350,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "fer"
    ],
@@ -581,23 +682,33 @@
    "payLabel": "",
    "xp": 250,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "fer"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
      "kind": "goto",
-     "text": "Rejoins Haras de la Pommeraie",
+     "text": "Récupère Galant au Haras de la Pommeraie",
      "x": -380,
-     "z": -96,
-     "r": 18
+     "z": -34,
+     "r": 5
+    },
+    {
+     "kind": "goto",
+     "text": "Conduis Galant à l’Écurie des Dunes (il te suit)",
+     "x": 495,
+     "z": -284,
+     "r": 7
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
+    "Guide local › Pensions : choix de l’Écurie des Dunes (Guide local non porté)",
+    "Galant pris en longe et qui suit (FollowAI)",
+    "dialogue de Chloé"
    ]
   },
   {
@@ -611,6 +722,7 @@
    "payLabel": "",
    "xp": 400,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "cross"
    ],
@@ -641,24 +753,27 @@
    "payLabel": "",
    "xp": 450,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "derby",
     "pension"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
-     "kind": "goto",
-     "text": "Rejoins Pôle International",
+     "kind": "course",
+     "text": "Qualificative CSI 3★ au Pôle : « Chrono », 8 pénalités au maximum",
      "x": 330,
-     "z": -180,
-     "r": 18
+     "z": -191,
+     "r": 6,
+     "maxPenalties": 8
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
+    "hauteurs de l’épreuve (jusqu’à 1,45 m) et temps accordé à 375 m/min : ceux du Parcours du Pôle du portage",
+    "présentation et plan de l’épreuve"
    ]
   },
   {
@@ -672,23 +787,30 @@
    "payLabel": "",
    "xp": 900,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "csi3"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
-     "kind": "goto",
-     "text": "Rejoins Pôle International",
+     "kind": "course",
+     "text": "Grand Prix CSI 5★ au Pôle : « Chrono », un sans-faute ou 4 points plus vite que Van Dijk",
      "x": 330,
-     "z": -180,
-     "r": 18
+     "z": -191,
+     "r": 6,
+     "beat": {
+      "name": "K. Van Dijk",
+      "faults": 4,
+      "time": 52.4
+     }
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
+    "hauteurs de l’épreuve (1,50 à 1,60 m) et temps accordé à 400 m/min : ceux du Parcours du Pôle du portage",
+    "présentation et plan de l’épreuve"
    ]
   },
   {
@@ -702,6 +824,7 @@
    "payLabel": "Dotation 42 000 €",
    "xp": 1500,
    "cost": 0,
+   "timeoutText": "",
    "requires": [
     "gp"
    ],

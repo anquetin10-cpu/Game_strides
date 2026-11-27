@@ -258,6 +258,7 @@ void AStridesScenery::BuildWater(const UStridesDataSubsystem& D, UMaterialInterf
 	Sea->SetMaterial(0, Material);
 	Sea->SetRelativeLocation(StridesUnits::WebToUE(0, 0, -2600));
 	Sea->SetRelativeScale3D(FVector(10000, 10000, 1));
+	SeaMesh = Sea;
 	UStaticMeshComponent* PondWater = AddMesh(Plane, false, false);
 	PondWater->SetMaterial(0, Material);
 	PondWater->SetRelativeLocation(StridesUnits::WebToUE(D.Pond.X, D.PondLevel, D.Pond.Y));

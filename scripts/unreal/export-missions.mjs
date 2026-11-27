@@ -30,7 +30,8 @@ const { REPUTATION } = await web('src/config.js');
 const { reputationTier } = await web('src/core/save.js');
 const { MissionManager } = await web('src/gameplay/missions.js');
 const { POI } = await web('src/world/layout.js');
-const { HOME, HARAS, DUNES, homeBoxes } = await web('src/world/sites.js');
+const { HOME, HARAS, DUNES, POLE, TOWN, homeBoxes } = await web('src/world/sites.js');
+const { COURSE_LENGTH, COURSE_SPEED, timeAllowedFor } = await web('src/gameplay/courses.js');
 const { PARKS, SECRETARIAT } = await web('src/gameplay/trip.js');
 const { CSO_LAYOUT, CSO_GATE } = await web('src/gameplay/obstacles.js');
 
@@ -112,6 +113,69 @@ const ROUTES = {
     ],
     skipped: ['camion (monter, conduire, confort du cheval), embarquement et débarquement de Quabar'],
   },
+  // ---- 2e correction après contrôle adverse : déroulé des 10 missions restantes (P1 « gains sans le déroulé ») ----
+  // story.js:188-214 : selle retirée au comptoir de la Sellerie du Port, puis 1 min 45 (r.timer = 105) pour la livrer à
+  // Clara aux écuries du Pôle (npcAt POLE.stables − (11, 8), r 4.5) ; « Trop tard » à 0.
+  livraison: {
+    route: [
+      go(POI.sellerie, 'Retire la selle au comptoir de la Sellerie du Port, à Deauville City', 4),
+      { ...go({ x: POLE.stables.x - 11, z: POLE.stables.z - 8 }, 'Livre la selle à Clara, aux écuries du Pôle', 4.5), timer: 105, stopTimer: true },
+    ],
+    skipped: ['comptoir à l’intérieur de la boutique, à pied (intérieurs non portés : devant la porte, rayon 4 m au lieu de 2,2)', 'dialogues de Margaux et Clara', 'note selon le temps restant (pourboire de 10 % à 5 étoiles)'],
+  },
+  // story.js:227-290 : haras (portail − 8, r 9), Tonnerre à rattraper en 130 s (apparu en (−385, 70), saisi à 4,2 m),
+  // ramené au paddock n°1 (P.z − P.d / 2 − 4, r 6).
+  fugueur: {
+    route: [
+      go({ x: HARAS.gate.x, z: HARAS.gate.z - 8 }, 'Rejoins le Haras de la Pommeraie', 9),
+      { ...go({ x: -385, z: 70 }, 'Rattrape Tonnerre !', 4.2), timer: 130, stopTimer: true },
+      go({ x: HARAS.paddocks[0].x, z: HARAS.paddocks[0].z - HARAS.paddocks[0].d / 2 - 4 }, 'Ramène Tonnerre au paddock n°1 (il te suit)', 6),
+    ],
+    skipped: ['Tonnerre en fuite (FleeAI) puis qui suit (FollowAI) : point d’apparition fixe du web, pas de cheval à rattraper', 'dialogues d’Antoine'],
+  },
+  // story.js:334-385 : Écurie des Dunes, Tornade, 7 anneaux sur la plage (checkpointSteps r 5.5) en 95 s, retour.
+  plage: {
+    route: [
+      go({ x: DUNES.barn.x - 4, z: DUNES.barn.z + 12 }, 'Rejoins l’Écurie des Dunes', 9),
+      ...Array.from({ length: 7 }, (_, i) => ({
+        ...go({ x: 420 - i * 70, z: -390 + Math.sin(i * 1.3) * 2 }, `Galop sur la plage : passe les anneaux (${i + 1}/7)`, 5.5),
+        ...(i === 0 ? { timer: 95 } : {}),
+      })),
+      { ...go({ x: DUNES.barn.x - 2, z: DUNES.barn.z + 12 }, 'Ramène Tornade à l’Écurie des Dunes', 7), stopTimer: true },
+    ],
+    skipped: ['monter sur Tornade (cheval de la cliente) : galop fait sur le cheval engagé', 'anneaux posés selon la marée (marées non portées : position à mi-marée du web, temps de base 95 s)', 'dialogues d’Hélène'],
+  },
+  // story.js:491-555 : Guide local › maréchal-ferrant, puis la Forge Lemaire (Hugo, TOWN.forge + (w / 2 + 3, 2), r 5) ;
+  // ferrure 60 € (def.cost).
+  fer: {
+    route: [go({ x: TOWN.forge.x + TOWN.forge.w / 2 + 3, z: TOWN.forge.z + 2 }, 'Rejoins la Forge Lemaire (au pas)', 5)],
+    skipped: ['boiterie de Comète', 'Guide local › Santé et soins › contacter Hugo Lemaire (Guide local non porté)', 'dialogues d’Hugo'],
+  },
+  // story.js:602-666 : Guide local › Pensions (Dunes), Galant au Haras (cour + 6, r 5), conduit aux Dunes (paddock, r 7).
+  pension: {
+    route: [
+      go({ x: HARAS.court.x, z: HARAS.court.z + 6 }, 'Récupère Galant au Haras de la Pommeraie', 5),
+      go({ x: DUNES.paddock.x, z: DUNES.paddock.z - DUNES.paddock.d / 2 - 3 }, 'Conduis Galant à l’Écurie des Dunes (il te suit)', 7),
+    ],
+    skipped: ['Guide local › Pensions : choix de l’Écurie des Dunes (Guide local non porté)', 'Galant pris en longe et qui suit (FollowAI)', 'dialogue de Chloé'],
+  },
+  // story.js:696-724 : courseSteps cso au Pôle (étape « épreuve » comme M3 : poteau « Chrono »), qualifié à 8 pénalités au plus (« p > 8 » : échec).
+  csi3: {
+    route: [
+      { kind: 'course', text: 'Qualificative CSI 3★ au Pôle : « Chrono », 8 pénalités au maximum', x: r2(CSO_GATE.x), z: r2(CSO_GATE.z), r: 6, maxPenalties: 8 },
+    ],
+    skipped: ['hauteurs de l’épreuve (jusqu’à 1,45 m) et temps accordé à 375 m/min : ceux du Parcours du Pôle du portage', 'présentation et plan de l’épreuve'],
+  },
+  // story.js:733-757 : Grand Prix, meilleur adversaire K. Van Dijk 4 points en (temps accordé à 400 m/min − 3,6) s.
+  gp: {
+    route: [
+      {
+        kind: 'course', text: 'Grand Prix CSI 5★ au Pôle : « Chrono », un sans-faute ou 4 points plus vite que Van Dijk', x: r2(CSO_GATE.x), z: r2(CSO_GATE.z), r: 6,
+        beat: { name: 'K. Van Dijk', faults: 4, time: Math.round((timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.gp) - 3.6) * 10) / 10 },
+      },
+    ],
+    skipped: ['hauteurs de l’épreuve (1,50 à 1,60 m) et temps accordé à 400 m/min : ceux du Parcours du Pôle du portage', 'présentation et plan de l’épreuve'],
+  },
 };
 // Missions sans itinéraire relevé dans cette étape : rejoindre le lieu du web (POI), rayon 18 m du portage.
 const reduced = (def) => {
@@ -127,7 +191,7 @@ const missions = all.map((def) => {
   return {
     id: def.id, title: def.title, category: def.category, level: def.level || 1,
     place: poiId(def.place) ?? 'paris', placeName: def.placeName,
-    pay: def.pay || 0, payLabel: def.payLabel || '', xp: def.xp || 0, cost: def.cost || 0,
+    pay: def.pay || 0, payLabel: def.payLabel || '', xp: def.xp || 0, cost: def.cost || 0, timeoutText: def.timeoutText || '',
     requires: def.requires || [], hours: def.hours || null,
     full: !!ROUTES[def.id], choice: R.choice || null, route: R.route, skipped: R.skipped,
   };

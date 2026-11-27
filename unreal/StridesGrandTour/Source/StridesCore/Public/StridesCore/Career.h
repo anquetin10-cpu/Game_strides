@@ -23,10 +23,19 @@ struct MissionStep {
   std::string kind = "goto";  // « goto » ou « course »
   std::string text;
   double x = 0, z = 0, r = 5;
+  // Compte à rebours du web (missions.js r.timer, :226-228) : posé quand l'étape commence (s), arrêté quand une étape
+  // marquée stopTimer est franchie ; à 0, la mission échoue (missions.fail, def.timeoutText).
+  double timer = 0;
+  bool stopTimer = false;
+  // Étape « course » : règle de résultat du web. maxPenalties ≥ 0 : échec au-delà (csi3, story.js:717 « p > 8 ») ;
+  // beatFaults ≥ 0 : victoire si p < beatFaults ou (p == beatFaults et chrono < beatTime), sinon échec (gp, story.js:748).
+  int maxPenalties = -1, beatFaults = -1;
+  double beatTime = 0;
+  std::string beatName;
 };
 
 struct StoryMission {
-  std::string id, title, category, place, placeName, payLabel, choice;
+  std::string id, title, category, place, placeName, payLabel, choice, timeoutText;
   int level = 1, pay = 0, xp = 0, cost = 0;
   bool full = false;  // itinéraire relevé dans les étapes du web (sinon : rejoindre le lieu)
   std::vector<std::string> prereqs, skipped;
@@ -66,6 +75,7 @@ struct CareerState {
   std::string active;      // mission en cours
   std::string checkpoint;  // point de reprise (mission en cours à la sauvegarde)
   int step = 0;            // étape de l'itinéraire de la mission en cours
+  double timeLeft = -1;    // compte à rebours de la mission en cours (s), -1 : aucun
   STRIDESCORE_API bool done(const std::string& id) const;
 };
 
@@ -104,6 +114,21 @@ STRIDESCORE_API AcceptResult acceptMission(const StoryData& d, CareerState& s, c
 // Renvoie vrai si l'étape a été franchie (s.step avance) ; la mission est alors finie si s.step == route.size().
 STRIDESCORE_API bool advanceStep(const StoryData& d, CareerState& s, double x, double z, bool courseFinishedSinceStep);
 STRIDESCORE_API const MissionStep* currentStep(const StoryData& d, const CareerState& s);
+
+// Résultat de l'épreuve du Pôle lancée pendant une étape « course » (CsoRun : points(), state().t, state().eliminated).
+struct CourseOutcome {
+  bool finished = false;
+  int penalties = 0;
+  double time = 0;
+  bool eliminated = false;
+};
+enum class StepUpdate { None, Advanced, Failed };
+// Une image de la mission en cours (missions.js Run.update) : compte à rebours (dt, s), puis fin de l'étape. Échec :
+// failText reçoit la raison du web (timeoutText ou règle de l'épreuve) et la mission est arrêtée (failMission).
+STRIDESCORE_API StepUpdate updateStep(const StoryData& d, CareerState& s, double x, double z, const CourseOutcome& course, double dt, std::string& failText);
+// missions.fail : mission arrêtée, rien n'est payé ; le point de reprise sans données est effacé (missions.js:536-538) et
+// l'offre redevient disponible (offers.unshift).
+STRIDESCORE_API void failMission(CareerState& s);
 
 struct CareerReward {
   int pay = 0, rep = 0, cost = 0;

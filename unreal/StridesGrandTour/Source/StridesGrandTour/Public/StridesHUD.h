@@ -124,6 +124,10 @@ private:
 	double MiniYaw = 0;
 	FVector2D LastArrowDir = FVector2D::ZeroVector, LastNorth = FVector2D::ZeroVector;
 	TArray<FString> LastBlips;
+public:
+	// Jalon J3-C : « · 7:12 · Éclaircies · 19 °C » de la dernière image (tests).
+	FString LastWeatherLine;
+private:
 	FString LastGuideLine;
 	TWeakObjectPtr<class AStridesCourse> Course;  // épreuve du Pôle (objectif affiché tant qu'elle est en cours)
 };

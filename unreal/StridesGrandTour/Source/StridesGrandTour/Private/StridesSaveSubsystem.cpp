@@ -5,6 +5,7 @@
 #include "Misc/FileHelper.h"
 #include "StridesCore/CsoCourse.h"
 #include "StridesCore/SaveGame.h"
+#include "StridesCollectibles.h"
 #include "StridesCourse.h"
 #include "StridesHorse.h"
 #include "StridesProgressionSubsystem.h"
@@ -29,6 +30,7 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	ReadCore(SlotName, Core, Msg);  // part de la sauvegarde existante (records importés) ; sinon une sauvegarde neuve
 	Core.settings = Settings;  // réglages en cours (carte Pause)
 	Core.bestTimes = Best;     // meilleurs temps des activités (tranche T11)
+	Core.gameTime = GameTime;  // heure du jeu (J3-C)
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W) return false;
 	AStridesHorse* Horse = nullptr;
@@ -42,6 +44,16 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	StridesUnits::UEToWeb(P, X, Y, Z);
 	const double Hd = Riding ? Horse->Heading() : StridesUnits::YawDegToHeading(Rider ? Rider->GetActorRotation().Yaw : 0);
 	Core.pose = {Riding ? "ride" : "foot", X, Y, Z, Hd, true};
+	// Cheval engagé (game.js _storePositions : pos.horse), aussi à pied : il est retrouvé là où il a été laissé.
+	if (Horse)
+	{
+		double HX, HY, HZ;
+		StridesUnits::UEToWeb(Horse->GetActorLocation(), HX, HY, HZ);
+		Core.pose.horseValid = true;
+		Core.pose.horseX = HX;
+		Core.pose.horseZ = HZ;
+		Core.pose.horseHeading = Horse->Heading();
+	}
 	if (Horse) Core.activeHorse = TCHAR_TO_UTF8(*Horse->ProfileId);
 	// Tranche T11 : l'ancien record « cso_pole » pris à la sauvegarde (compareResults des défis) est retiré : le Parcours du
 	// Pôle du web n'écrit pas de record de défi, il écrit bestTimes.cso_train à la fin de l'activité (RecordBestTime).
@@ -55,6 +67,7 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 		S->ActiveMissionId = Progress->ActiveMissionId.IsEmpty() ? Progress->CheckpointMission : Progress->ActiveMissionId;
 		S->CompletedMissions = Progress->CompletedMissions;
 	}
+	S->Horseshoes = Horseshoes;
 	const bool Ok = UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
 	LastMessage = Ok ? TEXT("Partie sauvegardée") : TEXT("Échec de la sauvegarde");
 	UE_LOG(LogTemp, Display, TEXT("Strides sauvegarde : %s (%s, position %.1f, %.1f, mission %s, %d terminée(s))"), Ok ? TEXT("écrite") : TEXT("ÉCHEC"), *SlotName, X, Z,
@@ -93,11 +106,15 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	Best = Core.bestTimes;
 	Horses = Core.horses;
 	ActiveHorse = Core.activeHorse;
+	GameTime = Core.gameTime;
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
 	if (!W || !Core.pose.valid) { LastMessage = TEXT("Sauvegarde sans position"); return false; }
 	if (UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)))
+	{
+		Horseshoes = Saved->Horseshoes;
 		if (UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
 			Progress->Restore(Saved->Credits, Saved->Reputation, Saved->ActiveMissionId, Saved->CompletedMissions);
+	}
 	AStridesHorse* Horse = nullptr;
 	for (TActorIterator<AStridesHorse> It(W); It; ++It) Horse = *It;
 	AStridesRider* Rider = nullptr;
@@ -112,7 +129,14 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 		Rider->SetActorLocation(Horse->GetActorLocation() - Horse->GetActorRightVector() * 120.0 + FVector(0, 0, 90));
 		Rider->TryMount(PC);
 	}
-	else Rider->SetActorLocationAndRotation(StridesUnits::WebToUE(Core.pose.x, Core.pose.y, Core.pose.z) + FVector(0, 0, 90), FRotator(0, StridesUnits::HeadingToYawDeg(Core.pose.heading), 0));
+	else
+	{
+		// À pied : le cheval revient où il a été laissé (game.js:1063 mainHorse.setPosition(pos.horse)) ; ancienne
+		// sauvegarde sans cette position : il reste à son point d'apparition, repéré sur la mini-carte (StridesHUD).
+		if (Core.pose.horseValid) Horse->PlaceAt(Core.pose.horseX, Core.pose.horseZ, Core.pose.horseHeading);
+		Rider->SetActorLocationAndRotation(StridesUnits::WebToUE(Core.pose.x, Core.pose.y, Core.pose.z) + FVector(0, 0, 90), FRotator(0, StridesUnits::HeadingToYawDeg(Core.pose.heading), 0));
+	}
+	for (TActorIterator<AStridesCollectibles> It(W); It; ++It) It->Refresh();
 	LastMessage = TEXT("Partie rechargée");
 	return true;
 }
@@ -136,6 +160,8 @@ bool UStridesSaveSubsystem::ReloadSettings()
 	Best = Core.bestTimes;
 	Horses = Core.horses;
 	ActiveHorse = Core.activeHorse;
+	GameTime = Core.gameTime;
+	if (const UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0))) Horseshoes = Saved->Horseshoes;
 	// Journal du joueur (J1-E, J1-G) : meilleurs temps relus au lancement, comme le téléphone du web les affiche.
 	FString Times;
 	for (const auto& [Id, T] : Best) Times += FString::Printf(TEXT(" %hs = %.3f s ;"), Id.c_str(), T);
