@@ -1,0 +1,8 @@
+LogCsvProfiler: Display: Metadata set : commandline="" -StridesShots=perf-monde -StridesShotsDir=/Users/julien/Library/Containers/com.strides.equestriantour/Data/tmp/perf-844d -StridesPerfWarm=120 -StridesPerfFrames=600 -abslog=/Users/julien/Library/Containers
+LogInit: Command Line:  -StridesShots=perf-monde -StridesShotsDir=/Users/julien/Library/Containers/com.strides.equestriantour/Data/tmp/perf-844d -StridesPerfWarm=120 -StridesPerfFrames=600 -abslog=/Users/julien/Library/Containers/com.strides.equestriantour/Dat
+[2026.11.27-14.51.42:849][922]LogTemp: Display: Strides perf-monde : phase ville-vide
+[2026.11.27-14.51.54:850][642]LogTemp: Display: Strides perf-monde : phase ville-vivante
+[2026.11.27-14.52.07:883][418]LogTemp: Display: Strides perf-monde : ville-vide : jeu médiane 1.52 ms, dessins 0, primitives 0, 0 voitures, 0 passants
+[2026.11.27-14.52.07:883][418]LogTemp: Display: Strides perf-monde : ville-vivante : jeu médiane 1.96 ms, dessins 0, primitives 0, 5 voitures, 21 passants
+[2026.11.27-14.52.10:399][567]LogTemp: Display: Strides perf-monde : cheval posé 30 m devant la voiture 1 (3.8 ; 496.9, 13.5 m/s)
+[2026.11.27-14.52.18:416][ 48]LogTemp: Display: Strides perf-monde : voiture 1 à 5.0 m du cheval, 0.00 m/s, klaxons 0

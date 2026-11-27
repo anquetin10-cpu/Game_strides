@@ -422,6 +422,47 @@ Zen résolue seule, aucun éditeur arrêté) ; `Strides.Scenario.Training` et `S
 | J3-D | Lieux et intérieurs utiles (sellerie, clinique, cafés), boutiques (shops.js:38), fers d'or (collectibles.js:16) | Chaque POI a une entrée ou une action | ctest | captures | J3-A |
 | J3-E | Performance du monde vivant sur Mac et budget iOS mesuré (dessin, triangles, mémoire) | Valeurs mesurées et écrites | -StridesShots=perf **hors Shipping** | relevé | J3-A à J3-D |
 
+### État J3 au 27/11/2026 (étape « Monde vivant de Deauville », base `d6c08ee7`)
+
+Légende : **écrit** (code), **compilé**, **testé moteur** (Automation ou ctest), **joué par l'agent** (paquet, entrées
+système injectées par l'agent : CGEvent, captures `screencapture` ; jeu à la main par Julien : **à confirmer par Julien**).
+Sélection : `unreal/docs/livraison/preuves/j3-20261127/` (1,7 Mo) ; reste : `.ue-cache/travail/livraison/preuves/j3/`
+(captures horodatées, `drive.log`, journaux `j3-g1.log`, `j3-g2.log`, `j3-perf-844*.log`, sauvegardes avant / après).
+Actifs définitifs, provisoires et hors V1 : [`actifs.md`](actifs.md).
+
+**Ordre suivi : chemin principal d'abord.**
+
+| Lot | État | Preuve |
+|---|---|---|
+| Mini-carte dans le sens du web (tournée selon le regard, ronde, portée selon la vitesse, repères au bord, flèche, N) | **testé moteur, joué** | ctest « monde-vivant » (90 images du web, écart < 5e-7) ; `Strides.Hud.MinimapRotation` (flèche en haut, N en bas en regardant le sud, à gauche en regardant l'est) ; captures `144105`, `144623` |
+| GPS : guidage « GPS · lieu · distance · direction » vers la mission, balise, itinéraire sur la carte (direct à cheval, comme `gps.js`) ; « Itinéraire » de l'app Activités vers le chrono du Pôle | **testé moteur, joué** | `Strides.Phone.MissionFlow` ; paquet : mission « Trouver un professionnel » suivie au GPS de l'Écurie du Val à Deauville City (451 → 23 m, `suivre.py` mode gps), « Premier concours » jusqu'au Pôle International |
+| Téléphone : 12 apps de l'accueil du web, app Strides (offres, demande, « Accepter la mission » en deux touchers ≥ 350 ms, rangé 1,3 s après), Activités (Itinéraire), Carte plein écran, autres apps « pas encore portée » ; clavier, souris, doigt | **testé moteur, joué au clavier** | `Strides.Phone.MissionFlow` ; journal `j3-g1.log` : `offer:tuto` → `accept` ×2 → `career start: tuto (téléphone)` |
+| Missions et progression : 4 missions acceptées au téléphone et terminées en paquet (tuto, m1, m2, m3) : 440 crédits, 490 réputation | **joué par l'agent** | `journal-parties-g1-g2.txt` |
+| Sauvegarde automatique (12 s, acceptation, fin de mission) et reprise au lancement ; mission en cours rechargée en point de reprise « REPRISE » (le web ne relance pas une mission seul) | **testé moteur, joué** | paquet relancé : « reprise au lancement faite », `offer:m3` en tête, acceptée puis terminée au Pôle ; Shipping relancé : 440 crédits, 490 réputation, offre suivante « Groom du matin » (`1559-shipping-reprise.jpg`) |
+| J3-A circulation : 7 voitures du web (`Car` porté : voie de droite, 50 / 70 km/h, cheval croisé à 20 km/h, arrêt 5 m avant l'obstacle, klaxon devant un piéton, priorité à droite, demi-tour) | **testé (ctest + moteur), vu en paquet** | ctest (4 scénarios du web, écart < 1e-6 m) ; `Strides.World.AmbientLife` (2 voitures arrêtées derrière le cheval, klaxon devant le piéton) ; paquet : voiture arrêtée à 5,0 m du cheval, 0 klaxon (`perf-voiture-arretee-devant-cheval.jpg`) |
+| J3-B passants et foule : 24 passants (ville, Planches, palefreniers) et 8 spectateurs du Pôle, séparation des passants, arrêt face au joueur | **testé, vu en paquet** | ctest ; `perf-passants-planches.jpg` |
+| J3-C jour / nuit, météo, marées | **non fait** | hors de cette étape (voir actifs.md) |
+| J3-D intérieurs, boutiques, fers d'or | **non fait** | idem |
+| J3-E coût du monde vivant à 844 × 390 (paquet Development, Metal, Mac mini) | **mesuré** | `perf-monde-844.json` : jeu 1,52 → 1,96 ms (médiane, + 0,44 ms), GPU 14,6 → 14,4 ms, image 16,7 ms (60 i/s tenues), mémoire 3 065 → 3 084 Mo (+ 19 Mo) ; 170 pièces (≤ 170 appels de dessin), 80 544 triangles au LOD 0 (test moteur). Appels de dessin du RHI : compteur resté à 0 dans le paquet, **à confirmer** ; valeurs iPhone : **à confirmer sur appareil (J6)** |
+
+**Défauts trouvés en jouant.** Corrigés : « rejoindre town » (identifiant du lieu au lieu de son nom, P3) ; têtes en
+sphères trop coûteuses (109 216 triangles, P2) ; **une mesure `-StridesShots` a écrasé la sauvegarde** (outil avec
+sauvegarde automatique, P1 côté outil, jamais côté joueur) : la sauvegarde de la 2e partie a été restaurée depuis la copie
+gardée, et le mode capture n'écrit plus la sauvegarde (vérifié par empreinte md5 avant / après une mesure). Ouverts : HUD
+et mini-carte trop grands à 844 × 390 (P2, J5-A) ; le téléphone dessiné est petit sur grand écran (P3) ; voitures et
+passants provisoires (P2, actifs.md) ; touches SAUVER / CHARGER masquées mais textes présents dans le binaire Shipping
+(P3, non comptés par le contrôle des 14 chaînes).
+
+**Environnement des parties.** La boîte du trousseau « security veut utiliser… strides-ai-backoffice-session » est restée
+ouverte au centre de l'écran toute la partie 1 et 2 (elle masque le haut du téléphone sur les captures ; le journal du jeu
+fait foi pour les écrans) ; puis une boîte « CrashReportClientEditor a quitté de manière imprévue » pendant la partie
+Shipping. Aucune n'a été touchée ; aucune touche n'est arrivée dans le champ du trousseau (premier plan vérifié avant chaque
+groupe de touches, clic dans le jeu d'abord). Aucune alerte de confidentialité touchée.
+
+**Matrice de fin d'étape** (sur `0e9566a6`) : ctest **13 / 13** ; Automation `Strides` **59 succès, 0 échec** ;
+paquets Development (cuisson complète puis `-skipcook`) et Shipping reconstruits : **0 / 14** chaînes d'outils dans le
+Shipping, et `perf-monde` absent du Shipping. Attentes « Waiting for ZenServer » : 6 lancements d'éditeur sur 7 en ont eu une, toutes résolues seules ; aucun éditeur arrêté.
+
 ## J4 — Boucle produit
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -505,6 +546,16 @@ Zen résolue seule, aucun éditeur arrêté) ; `Strides.Scenario.Training` et `S
 14. **Guidage vers le paddock** (27/11, J2d) : le web guide l'étape « rejoindre le paddock » par son GPS (non porté) ;
     le portage trace la ligne « Paddock du Pôle » par des points fixes (ouverture sud de la carrière, coin sud-ouest,
     allée, ouverture est du paddock), le plus simple qui ne traverse aucune lice.
+
+15. **Téléphone au clavier** (27/11, J3) : le web n'a que le toucher et la souris (boutons HTML). Choix : flèches / ZQSD
+    pour choisir, Entrée / E / F pour toucher, Retour arrière pour revenir, Échap / P / Tab ferment (comme au web).
+16. **Carte plein écran** (27/11, J3) : `drawFullMap` du web permet zoom, déplacement et repère posé au doigt ; le
+    portage affiche la carte centrée sur le joueur (700 m), nord en haut, sans geste. À reprendre en J4-B.
+17. **Reprise au lancement** (27/11, J3) : le web reprend par « Continuer » à l'écran titre (non porté, J4-A) ; le
+    portage recharge la sauvegarde dès le lancement. La mission en cours n'est pas relancée d'office (règle du web) :
+    elle est reproposée en tête de l'app Strides, marquée « REPRISE ».
+18. **Arrivée du GPS posé à la main** (27/11, J3) : effacé à 6 m (rayon par défaut de `gps.set`) ; une mission reste
+    terminée à 18 m (choix antérieur du portage : missions à une étape).
 
 ## Risques
 
