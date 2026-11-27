@@ -32,6 +32,8 @@ public:
 	// Relevés de la dernière application (tests, journal) : hauteur du soleil (°), intensité (lux), niveau de la mer (m).
 	double SunAltitude = 0, SunLux = 0, SeaLevel = 0, SkyIntensity = 0, Cover = 0, Rain = 0;
 	bool bNight = false;
+	// Jalon J3b : direction de la lune (unitaire, repère Unreal), posée la nuit ; lue par le ciel de nuit.
+	FVector MoonDir = FVector(0, 0, 1);
 private:
 	double RecaptureT = 0, LastCaptureHour = -100;
 };

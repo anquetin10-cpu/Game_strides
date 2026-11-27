@@ -128,3 +128,9 @@ target_sources(strides_core PRIVATE ${CORE}/Private/Vehicle.cpp)
 add_executable(strides_vehicules_tests tests/test_vehicules.cpp)
 target_link_libraries(strides_vehicules_tests strides_core)
 add_test(NAME vehicules COMMAND strides_vehicules_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Jalon J3b : ciel de nuit et pluie du web (sky.js étoiles et nightFactor, rain.js) portés en C++ (StridesCore/NightSky) ;
+# ctest « ciel ».
+target_sources(strides_core PRIVATE ${CORE}/Private/NightSky.cpp)
+add_executable(strides_ciel_tests tests/test_ciel.cpp)
+target_link_libraries(strides_ciel_tests strides_core)
+add_test(NAME ciel COMMAND strides_ciel_tests)

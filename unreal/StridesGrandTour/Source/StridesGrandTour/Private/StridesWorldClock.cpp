@@ -1,4 +1,5 @@
 #include "StridesWorldClock.h"
+#include "StridesNightSky.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/SkyLightComponent.h"
@@ -30,6 +31,8 @@ AStridesWorldClock::AStridesWorldClock()
 void AStridesWorldClock::BeginPlay()
 {
 	Super::BeginPlay();
+	// Jalon J3b : étoiles, lune et pluie du web (absents avec l'horloge : mode capture, tests).
+	if (UWorld* World = GetWorld()) World->SpawnActor<AStridesNightSky>();
 	UWorld* W = GetWorld();
 	if (!Sun) if (TActorIterator<ADirectionalLight> It(W); It) Sun = *It;
 	if (!Sky) if (TActorIterator<ASkyLight> It(W); It) Sky = *It;
@@ -77,6 +80,7 @@ void AStridesWorldClock::Apply(double GameTime)
 		Z = -FMath::Cos(Az) * FMath::Cos(Alt);
 	}
 	const FVector ToLight = StridesUnits::WebToUE(X, Y, Z).GetSafeNormal();
+	if (bNight) MoonDir = ToLight;
 	const double Day01 = Smooth(-3, 12, Pos.alt);
 	SunLux = bNight ? 0.35 * (1 - 0.6 * Cover) : 10.0 * Day01 * (1 - 0.55 * Cover) * (1 - 0.4 * Rain);
 	SkyIntensity = 0.3 + 1.2 * Smooth(-6, 10, Pos.alt) * (1 - 0.3 * Cover);

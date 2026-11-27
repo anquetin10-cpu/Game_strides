@@ -1,0 +1,8 @@
+Paquet Development, Mac mini, 1920x1080, -csvCaptureFrames, lancé sans entrée ; 211 images
+FrameTime médiane 28.94 p95 29.55
+GameThreadTime médiane 1.7 p95 1.89
+RenderThreadTime médiane 28.94 p95 29.53
+GPUTime médiane 28.63 p95 28.94
+PhysicalUsedMB médiane 3098.05 p95 3129.69
+RHI/DrawCalls médiane 0.0 p95 0.0
+RHI/PrimitivesDrawn médiane 0.0 p95 0.0

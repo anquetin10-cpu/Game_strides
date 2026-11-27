@@ -535,6 +535,40 @@ lancement d'éditeur (6), toutes résolues seules, aucun éditeur arrêté. Paqu
 (`-skipcook`, données `Content/Data` mises en scène) : **0 / 17** chaînes d'outils dans le Shipping
 (`check-shipping-tools.txt`). Sauvegarde du joueur remise à l'identique après les parties (md5 `8d46a855…`).
 
+### J3b « J3 suite : monde vivant, reste du périmètre » (27/11 nuit, base `7302f52e`)
+
+Légende inchangée : **écrit**, **compilé**, **testé moteur** (ctest ou Automation), **vu en paquet** (lancé sans
+aucune entrée), **joué par l'agent** (entrées système injectées par l'agent). Jeu à la main par Julien : **à confirmer
+par Julien**. Preuves : `.ue-cache/travail/livraison/preuves/j3b/` ; sélection versionnée : `preuves/j3b-20261127/`.
+
+| Lot | État | Preuve |
+|---|---|---|
+| Missions cross, derby, gpparis : « À venir » (choix n° 25, arbitrage provisoire de Tom) | **testé** | ctest « carriere » : offres identiques au web (23 relevés), acceptation refusée « À venir : … », carrière complète jusqu'à pension, csi3 acceptée si le derby était fait |
+| Véhicules pilotables du web : 14 garés + camion de l'écurie (`truckPhysics.js`, `vehicle.js`, `truck.js`) | **testé moteur, vu en paquet ; non joué** | ctest « vehicules » (4 379 vérifications contre la vraie `TruckSim` du web, écart < 7e-7 m) ; `Strides.World.Vehicles` : E à la portière, Z 4 s → 31,9 m et 56 km/h en D2, S jusqu'à l'arrêt, E → à pied à la portière, boîte de collision déplacée ; contre une Golf garée : arrêtée à 4,38 m (2 chocs) ; camion : cheval embarqué, 9,2 m, déchargé 6,7 m derrière ; sauvegarde au volant relue |
+| Camion des missions (m3, transport) | **écrit et testé moteur** : le camion se conduit et emporte le cheval (choix n° 26) ; les étapes du web restent franchies au lieu, en camion ou à cheval | `Strides.World.Vehicles` § 6 |
+| Phares la nuit (`lightK`) | **testé moteur** | `Strides.World.Vehicles` § 5 |
+| Pluie, étoiles, lune (`rain.js`, `sky.js`) | **testé, vu en paquet** : à 1 h 06 de jeu, les étoiles apparaissent, mais **le ciel de nuit reste clair** (atmosphère d'Unreal et exposition relevée du choix n° 22) et elles se détachent en gris sur ce fond (**P2 ouvert**, `paquet-dev-nuit-etoiles.jpg`) ; pluie non vue (pas d'averse pendant le lancement) | ctest « ciel » (hash13 du web, 1 693 étoiles, gouttes) ; `Strides.World.NightSky` |
+| Marche à pied dirigeable (P2) | **testé moteur ; non joué** | `Strides.World.FootSteering` : 5,4 m/s au clavier, 7,2 m/s en sprint, Z + D en avant à droite de la caméra, caméra recentrée à 77° en 1 s sur un marcheur à 90° (camera.js) |
+| Fer d'or ramassé | **testé moteur** (au volant : +25 € après 2,6 s) ; **non joué en paquet** | `Strides.World.Vehicles` § 8 |
+| Nuages, halos des lampadaires | **non faits** : proposés en J5 (actifs.md) | — |
+| Chevaux et cavaliers d'ambiance | **non faits** : proposés en J5 (actifs.md) | — |
+| Commerces, intérieurs, discussions | **non faits** : achats proposés en J4, intérieurs **hors V1 PROPOSÉ**, discussions en J4 (actifs.md) | — |
+| J3-E appels de dessin du RHI | **bloqué par le moteur** : le profileur CSV du paquet Development (`-csvCaptureFrames`) relève aussi `RHI/DrawCalls` = 0 et toutes les catégories `DrawCall/*` = 0 : le RHI Metal de cette version ne remplit pas ces compteurs. Même relevé : image 28,9 ms, jeu 1,7 ms, GPU 28,6 ms, 3,1 Go (Mac mini, 1920 × 1080). Mesure à reprendre sur iPhone avec la capture GPU de Xcode (J6) | `preuves/j3b/passif/profil-csv-dev.csv` |
+| Forme noire au poteau Chrono (P3) | **non corrigé, cause non trouvée** : ce n'est ni la balise du Pôle (cachée à moins de 12 m) ni le repère des aides (cône de 30 cm) d'après le code ; à reproduire en jouant | — |
+
+**Partie manuelle en paquet : BLOQUÉE.** La fenêtre système « Forcer des applications à quitter » (processus
+`loginwindow`, 392 × 455 en (1500 ; 466)), ouverte depuis l'incident mémoire de J3, est toujours affichée et garde le
+premier plan. Les règles du poste partagé interdisent toute entrée injectée tant qu'elle est ouverte, et interdisent d'y
+toucher. Le nouvel outil `scripts/unreal/partie-manuelle/joueur-sur.py` (entrées au seul processus du jeu par
+`CGEventPostToPid`, `garde.swift` avant chaque rafale, captures de la seule fenêtre du jeu) attend donc sans rien taper.
+Non joués en paquet : mission au téléphone suivie au GPS puis reprise, véhicule conduit, fer d'or ramassé, remonte
+après une reprise. Le paquet Development a été lancé **sans aucune entrée** : il démarre, reprend la partie et affiche
+le HUD à pied avec « Monter en voiture : E à la portière ».
+
+**Matrice** : ctest **17 / 17** (« vehicules » et « ciel » nouveaux) ; Automation `Strides` **66 / 66**, EXIT CODE 0, une
+attente « Waiting for ZenServer » résolue seule ; paquets Development (cuisson complète, 12 min) et Shipping (`-skipcook`)
+reconstruits : **0 / 17** chaînes d'outils dans le Shipping.
+
 ## J4 — Boucle produit
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -654,6 +688,33 @@ lancement d'éditeur (6), toutes résolues seules, aucun éditeur arrêté. Paqu
     accordé du Parcours, pas 1,45 m / 1,55 m du web) avec les règles de résultat du web : 8 pénalités au plus ; battre
     Van Dijk (4 points en 52,4 s, `timeAllowedFor(cso, 400) − 3,6`). Un échec arrête la mission sans paiement, comme
     `missions.fail`.
+
+25. **Missions « Cross de Saint-Gatien », « Derby de la Touques » et « Grand Prix de Paris Indoor »** (27/11 nuit, J3b,
+    **arbitrage provisoire et réversible de Tom**, option A de la décision demandée en J3) : leur épreuve du web (cross
+    `xc` de `courses.js`, course de `raceSteps`, `parisGP.js` / `paris.js`) n'est pas portée. Elles restent offertes
+    dans l'app Strides **exactement comme au web** (ordre, verrou de palier : oracle `refreshOffers` inchangé) mais ne
+    s'acceptent pas : « À venir : le cross de Saint-Gatien n'est pas encore porté. » (`story_missions.json` `upcoming`,
+    `AcceptResult::Upcoming`). Raison : ne rien payer à la simple arrivée (P1 du contrôle) sans inventer de règle de
+    résultat. Effet : la carrière s'arrête après « Fer perdu » et « La pension parfaite » (csi3 demande le derby, gp
+    demande csi3). Les épreuves seront portées en J4 et les missions déverrouillées à ce moment-là (retirer `UPCOMING`
+    dans `export-missions.mjs`).
+26. **Camion de l'écurie et cheval** (27/11 nuit, J3b) : le web charge le cheval par la rampe (`vanLoading.js`,
+    `transport.js` : longe, stalle, rampe, porte) ; le portage n'a pas cette séquence. Choix : en montant au volant du
+    camion, le cheval laissé à moins de 15 m est embarqué d'office (`transport.loadInstant` du web, utilisé par le web
+    pour les missions et la reprise), et il est déchargé à 2,5 m derrière le camion à la descente. Le camion a le gabarit
+    du porteur d'origine (`truckModel.js` `TRUCK_DIM`, 8,5 m) et non le camion STX de 13 m chargé par défaut au web.
+27. **Véhicules : simplifications** (27/11 nuit, J3b) : dynamique, commandes, portière, boîte de collision, phares et
+    sauvegarde sont ceux du web. Non portés : séquence animée de montée et de descente (`boarding.js` ; le cavalier est
+    caché au volant), eau trop profonde (`waterDepth`), bord de région (`clampToRegion`), collision boîte contre boîte
+    avec les autres véhicules en plus des colliders (le portage garde les colliders du web, où chaque véhicule a déjà sa
+    boîte), voitures de la circulation reprises au vol (`ambient.takeOver`), son du moteur, compteur et carburant à la
+    pompe (`fuel.js`). Adhérence route / terre : le portage reste sur l'adhérence de route (`soft` = 0) ; le web la
+    lit dans `nearestRoad`. Les bâtiments n'arrêtent pas les véhicules (pas plus que le cheval : leurs collisions ne
+    sont pas dans les colliders du portage).
+28. **Ciel de nuit et pluie** (27/11 nuit, J3b) : étoiles (densité, éclat, estompage de `sky.js`), lune et pluie
+    (`rain.js`) portées ; le ciel physique de `sky.js` (diffusion, nuages procéduraux) ne l'est pas, le portage garde
+    l'atmosphère d'Unreal. Étoiles et lune posées sur une sphère de 900 m qui suit la caméra (le brouillard d'Unreal
+    masquerait une sphère plus lointaine). À confirmer à l'œil par Julien.
 
 ## Risques
 

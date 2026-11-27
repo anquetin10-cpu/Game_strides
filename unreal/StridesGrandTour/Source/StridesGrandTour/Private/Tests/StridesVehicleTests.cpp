@@ -18,6 +18,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMesh.h"
+#include "StaticMeshResources.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "StridesActivityPost.h"
@@ -29,6 +30,10 @@
 #include "StridesSaveSubsystem.h"
 #include "StridesUnits.h"
 #include "StridesVehicle.h"
+#include "StridesCollectibles.h"
+#include "StridesProgressionSubsystem.h"
+#include "StridesNightSky.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -236,6 +241,36 @@ bool FStridesWorldVehiclesTest::RunTest(const FString&)
 		UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
 		Save->SlotName = UStridesSaveSubsystem::Slot;
 	}
+
+	// 8. Fer d'or ramassé au volant (collectibles.js : player.focus.pos, la voiture quand on conduit), +25 €.
+	{
+		UStridesSaveSubsystem* Save = W.GI->GetSubsystem<UStridesSaveSubsystem>();
+		UStridesProgressionSubsystem* Prog = W.GI->GetSubsystem<UStridesProgressionSubsystem>();
+		Save->SlotName = TEXT("strides_test_j3b_shoes");
+		Save->Horseshoes.Reset();
+		Prog->Restore(0, 0, FString(), {});
+		AStridesCollectibles* Shoes = W.World->SpawnActor<AStridesCollectibles>();
+		if (!TestTrue(TEXT("fers d'or posés"), Shoes && Shoes->Build())) return false;
+		const double X = Shoes->Data().shoes[19].first, Z = Shoes->Data().shoes[19].second;
+		V->PlaceAt(X, Z - 14, 0);
+		const FVector2D D3 = V->DoorWeb();
+		G.PutRider(*Data, D3.X, D3.Y);
+		G.Tap(TEXT("KeyE"), V);
+		G.PC->FeedKey(TEXT("KeyW"), true, false);
+		int32 F = 0;
+		for (; F < 240 && Prog->Credits == 0; ++F)
+		{
+			G.Frame(V);
+			Shoes->Tick(1.0 / 30);
+		}
+		G.PC->FeedKey(TEXT("KeyW"), false, false);
+		AddInfo(FString::Printf(TEXT("fer d'or ramassé au volant après %.1f s : %d €"), F / 30.0, Prog->Credits));
+		TestTrue(TEXT("fer d'or ramassé au volant (+25 €)"), G.PC->GetPawn() == V && Prog->Credits == 25 && Save->Horseshoes.Num() == 1);
+		Save->Horseshoes.Reset();
+		Prog->Restore(0, 0, FString(), {});
+		UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
+		Save->SlotName = UStridesSaveSubsystem::Slot;
+	}
 	return true;
 }
 
@@ -301,6 +336,38 @@ bool FStridesWorldFootSteeringTest::RunTest(const FString&)
 	TestTrue(FString::Printf(TEXT("Z suit la caméra : direction (%.2f ; %.2f)"), In.X, In.Y), In.Y > 0.95);
 	M->Velocity = FVector::ZeroVector;
 	G.PC->FeedKey(TEXT("KeyW"), false, false);
+	return true;
+}
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesWorldNightSkyTest, "Strides.World.NightSky", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesWorldNightSkyTest::RunTest(const FString&)
+{
+	using namespace StridesVehicleTest;
+	FTestWorld W(TEXT("StridesWorldNightSky"));
+	if (!TestNotNull(TEXT("monde de test"), W.World)) return false;
+	AStridesNightSky* S = W.World->SpawnActor<AStridesNightSky>();
+	if (!TestNotNull(TEXT("ciel de nuit"), S)) return false;
+	const FVector Cam(1000, -2000, 500), MoonDir = FVector(.3, .2, .9).GetSafeNormal();
+	// Jour, sans pluie : rien d'affiché.
+	S->Apply(Cam, 0.0, 0.0, MoonDir, 1.0 / 30);
+	TestFalse(TEXT("étoiles cachées de jour"), S->StarsVisible());
+	TestEqual(TEXT("aucune goutte sans pluie"), S->DropsShown(), 0);
+	// Nuit, averse de moitié : étoiles du web (sky.js), lune, gouttes gardées selon leur graine (rain.js).
+	S->Apply(Cam, 1.0, 0.5, MoonDir, 1.0 / 30);
+	TestTrue(FString::Printf(TEXT("%d étoiles visibles la nuit"), S->StarCount()), S->StarsVisible() && S->StarCount() > 1000);
+	TestTrue(FString::Printf(TEXT("%d gouttes sur 900 à mi-intensité"), S->DropsShown()), S->DropsShown() > 350 && S->DropsShown() < 550);
+	TestTrue(TEXT("ciel centré sur la caméra"), S->GetActorLocation().Equals(Cam, 1.0));
+	int64 Tris = 0;
+	TArray<UStaticMeshComponent*> Parts;
+	S->GetComponents(Parts);
+	for (const UStaticMeshComponent* C : Parts)
+	{
+		const UInstancedStaticMeshComponent* I = Cast<UInstancedStaticMeshComponent>(C);
+		const int64 N = I ? I->GetInstanceCount() : 1;
+		if (C->GetStaticMesh() && C->GetStaticMesh()->GetRenderData()) Tris += N * C->GetStaticMesh()->GetRenderData()->LODResources[0].GetNumTriangles();
+	}
+	AddInfo(FString::Printf(TEXT("coût du ciel de nuit : %d composants (appels de dessin au plus), %lld triangles au LOD 0"), Parts.Num(), Tris));
 	return true;
 }
 
