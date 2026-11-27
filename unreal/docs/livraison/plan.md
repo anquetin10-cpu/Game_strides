@@ -239,6 +239,59 @@ même chose pour un postérieur (j2-effleurement, 9,1 cm). Résultat faux : P1. 
 - les refus comptés juste après « Recommencer » quand le cheval est resté devant un obstacle (manches 7 et 8) : même
   comportement que le web (pas de remise en place au recommencement) ; à confirmer.
 
+### État J2b au 27/11/2026 (étape « J2 suite : faute fantôme et lots restants », base `bcafa138`)
+
+Même légende que J2 (**écrit**, **compilé**, **testé ctest / moteur**, **joué par l'agent** avec entrées injectées ; jeu à
+la main par Julien : **à confirmer**). Sélection : `unreal/docs/livraison/preuves/j2b-20261127/` ; reste :
+`.ue-cache/travail/livraison/j2b/` et `.ue-cache/travail/livraison/preuves/j2b/`.
+
+**Faute fantôme (P1 candidat de J2) : reproduite au web et dans Unreal, corrigée dans le portage (option b).**
+
+- Cause relevée dans le code du web : `horse._pass` (passage d'obstacle en cours) n'est remis à zéro que par
+  `horse.setPosition` ; « Recommencer » (`courses.js:428-431`) et l'entrée en piste (`courses.js:446-466`) ne touchent pas
+  au cheval. Un passage resté ouvert (épaules entrées dans l'oxer au sol après un appel bien trop tôt, cheval arrêté entre
+  les barres, sortie jamais franchie) survit à la manche et est annoncé au premier saut suivant (`_judge` : « résultat
+  précédent encore en attente »).
+- **Reproduit au web** (lecture seule, Playwright sur Vite 5178) : scénario `j2b-fantome` ajouté au banc
+  `scripts/unreal/export-cso-runs.mjs` (canal `ps` = `horse._pass` à chaque image ; actions `ride` et `noPlace` qui ne
+  posent pas le cheval, puisque `setPosition` oublierait le passage) : le 1 franchi, l'oxer 2 sauté à 7,5 m (passage
+  ouvert, faute `short`, image 308), temps limite, « Recommencer », chevauchée jusqu'au 1 sauté : à l'appel du 1,
+  `obstacle:fault 2 (marge −0,85, short)` et toast « Erreur de parcours : ce n'est pas le 1 » (image 6795). Oracle hors
+  index : `.ue-cache/travail/livraison/j2b/web-oracle/`.
+- **Même trace qu'en partie** (J2, manche 8 : « obstacle:fault 2, marge −0,85 m, cause short » puis « Erreur de
+  parcours ») et **reproduit dans le moteur** : `Strides.Scenario.Jump.Fantome`, passe « comportement du web » (remise
+  désactivée par un réglage de test absent du Shipping) : faute du 2 et « Erreur de parcours » à l'abord du 1.
+- **Gravité revue : P2, pas P1.** Mesuré au web et dans Unreal : 0 point compté (la faute d'un autre obstacle ne passe
+  que par `wrongCourse` : toast, astuce et son de faute) ; le 1 reste franchi. Une variante P1 n'existerait que si le
+  passage ouvert était sur l'obstacle 1 (le premier saut de la manche suivante le continuerait) ; le 1 du Pôle est un
+  droit, dont l'entrée et la sortie se franchissent dans la même image : non atteignable sur ce parcours.
+- **Correction (option b de l'arbitrage, remise à zéro, pas une nouvelle règle)** : `strides::csoEntryResetPass`
+  (StridesCore/CsoFences) appelé par `AStridesHorse` à chaque remise des barres de l'entrée en piste (première manche et
+  « Recommencer ») ; dernier refus et dernier saut gardés ; option c (fermeture à 8 m) **non appliquée**. Écart volontaire
+  au web, documenté (choix n° 11 ci-dessous).
+- Tests : ctest `fantome` (cœur : sans remise, faute du 2 annoncée à l'abord du 1 comme au web ; avec remise, rien ;
+  mutation « remise vide » détectée : 2 échecs) ; Automation `Strides.Scenario.Jump.Fantome` (moteur, entrées du joueur :
+  Espace, S tenu, bouton « Recommencer », manche 2 conduite au stick sans pose) : web → défaut reproduit ; portage →
+  aucune « Erreur de parcours », aucune faute du 2, le 1 franchi, 0 point, prochain obstacle 2.
+
+**Lots J2 restants.**
+
+| Lot | État | Preuve |
+|---|---|---|
+| J2-A allures au clavier | **testé moteur** `Strides.Ride.Gaits` (W tenu, S tenu, ligne droite de la carrière) : pas 0,07 s, trot +1,37 s, galop +1,37 s, grand galop +1,27 s (7,02 m/s) ; retour galop 0,00 s (seuil 7,0 m/s), trot +1,27 s, pas +1,37 s, arrêt +1,37 s : chaque changement **< 2 s** ; cadence gardée sans touche (7,02 m/s après 1 s, comportement du web en concours). Pas de nouvel affichage d'aide (B8 reste P2). Tactile : non mesuré ici (voir J2-E) | journal `.ue-cache/journaux/j2b-tests-2.log` |
+| J2-C tribunes (B9) | **écrit, testé ctest et moteur** : tribunes du Pôle pleines comme au web (`world.js buildStands` : boîte « stands » w × d sans sommet) — cheval : `strides::addStands` dans les colliders du parcours ; cavalier à pied : boîte invisible qui ne bloque que les pions (ni caméra ni visibilité). Oracle `colliders.json` régénéré par `export-colliders.mjs` avec les tribunes et 3 abords (dont un en saut) : ctest `colliders` 637 vérifications, 0 échec ; `Strides.World.Stands` : 5 abords au galop, 0 image dans l'emprise, contact sur les 5 ; piéton arrêté au bord ; la caméra traverse la boîte | idem |
+| J2-C descente | **déjà porté** (player.js:225 : « Descendre » proposé sous 2,5 m/s hors saut) ; **testé moteur** dans `Strides.World.Stands` : E refusé à 3 m/s, descente à l'arrêt | idem |
+| J2-C caméra collée au mur au départ | **non reproduit** : aucune trace précise dans l'audit ni dans les captures de J1/J2 ; la caméra de concours garde sa sonde portée en T6 (`t6-tribunes`, `t6-mat`). À décrire (lieu, vue) pour être traité ; à confirmer par Julien | — |
+| J2-D entraînement au paddock | **non fait** : activité `cso_warmup` du web (`activities.js:145` : paddock d'échauffement, vertical et oxer, explication de chaque saut, barres remontées) absente du portage ; le bouton « S'entraîner » du bilan existe mais ne lance pas cet entraînement | — |
+| J2-E tactile | **partiel, inchangé** : `Strides.Cso.Controls` couvre 844 × 390 et 667 × 308 (relevés du web) ; format iPad non relevé ; appareil réel : J6 | — |
+| Partie en paquet (Development, entrées injectées par l'agent) | **jouée par l'agent** : écurie → poteau (pilote), E, « Entrer en piste », 3 manches, 2 « Recommencer » au clavier. Manche 2 : refus contre l'oxer 2 en fin de manche, passage resté ouvert ; à l'entrée en piste de la manche 3, journal « entrée en piste, passage resté ouvert oublié (obstacle 2, faute 1) » ; premier saut de la manche 3 (le 1) : seulement « Barre au 1 · +4 · Barre touchée par les postérieurs » (contact réel du postérieur droit, 9,1 cm), **aucune faute du 2, aucune « Erreur de parcours »** (0 dans tout le journal), 0 `Fatal` / `Critical error`. Pas de parcours complet (mêmes limites du joueur de l'agent qu'en J2). Tribunes : **non jouées en paquet** (prouvées en ctest et dans le moteur seulement). Jeu à la main par Julien : à confirmer | `journal-partie-j2b.txt`, `055247-manche3-barre-au-1-sans-erreur.jpg` |
+| Matrice de fin d'étape | **verte** : ctest **11 / 11** (bancs `fantome` et `colliders` étendus), Automation `Strides` **55 succès, 0 échec** (`Jump.Fantome`, `Ride.Gaits`, `World.Stands` en plus ; 0 attente Zen sur ce passage, 1 attente résolue seule sur chacun des deux passages ciblés, aucun éditeur arrêté), paquets Development et Shipping de ce code (`-skipcook` : contenu inchangé), Shipping **0 / 14** chaînes d'outils (le réglage de test `bEntryPassResetForTest` n'existe que sous `WITH_DEV_AUTOMATION_TESTS`) ; captures CSO G5 non refaites (aucun visuel du CSO touché) | `check-shipping-tools.txt`, `.ue-cache/journaux/j2b-matrice-automation.log` |
+
+Alerte macOS : une deuxième alerte de confidentialité (python3.11, enregistrement de l'écran) est passée au premier plan
+pendant la partie, bouton « Autoriser » en surbrillance ; le garde-fou `front` du plan a arrêté les touches ; le jeu a été
+remis au premier plan par `open`, l'alerte **n'a pas été touchée**.
+
+
 ## J3 — Monde vivant de Deauville
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -315,6 +368,11 @@ même chose pour un postérieur (j2-effleurement, 9,1 cm). Résultat faux : P1. 
    pause, Entrée / E / F / X déclenchent le bouton choisi, « Reprendre » choisi d'office. Écart assumé, à valider par Julien.
 10. **Guidage qui contourne** (26/11 soir) : le choix n° 7 est révisé : abord à 12 m de la face (et non 7 m), chemin autour des
    obstacles, ailes et lice, « demi-tour » vers une sortie à 18 m après un refus. Toujours sans équivalent au web.
+11. **Faute fantôme : passage d'obstacle oublié à l'entrée en piste** (27/11, J2b, arbitrage de Tom dans le mandat de
+   Julien « recommencer une partie proprement ») : le web garde `horse._pass` d'une manche à l'autre (défaut du web, non
+   reproduit dans le portage) ; Unreal l'oublie à chaque entrée en piste. Remise à zéro seulement, aucune règle de jugement
+   changée (pas de fermeture d'un passage à 8 m). Effet mesuré au web : une « Erreur de parcours » et un son de faute
+   injustifiés, 0 point.
 
 ## Risques
 
