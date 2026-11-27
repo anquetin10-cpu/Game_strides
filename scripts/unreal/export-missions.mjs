@@ -45,7 +45,9 @@ const CAMILLE_VAL = { x: -100, z: 166 }; // story.js:74, story2.js:137 et :270 (
 const recon = (nums) =>
   nums.map((n) => {
     const o = CSO_LAYOUT.find((f) => f.label.replace(/[A-C]$/, '') === String(n));
-    return go(o, `Reconnais le parcours du Pôle à pied : obstacle n°${o.label} (${nums.indexOf(n) + 1}/${nums.length})`, 4.5);
+    // Rayon : 4,5 m au web, à pied. Le portage n'a pas de marche à pied (le joueur descendu ne se déplace pas) et le
+    // cheval ne peut pas se poser au centre d'un obstacle : 7 m, cheval arrêté le long de l'aile (choix n° 20 de plan.md).
+    return go(o, `Reconnais le parcours du Pôle : obstacle n°${o.label} (${nums.indexOf(n) + 1}/${nums.length})`, 7);
   });
 const ROUTES = {
   // story.js:67-128 : box, sortie en main et mise en selle (cheval déjà monté au départ du portage), puis carrière,

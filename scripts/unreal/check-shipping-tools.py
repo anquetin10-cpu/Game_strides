@@ -15,12 +15,15 @@ CHAINES = [
     'StridesHorseView=', 'StridesHorseScale=', 'StridesMonte=', 'StridesRider=', 'StridesTack=',
     'Démo parcours', 'DÉMONSTRATION AUTOMATIQUE', 'F5 sauvegarder', 'Strides souris',
     # Jalon J3 (correction après contrôle adverse) : boutons tactiles d'outils du portage, non construits en Shipping.
-    'SAUVER', 'CHARGER', 'MISSION',
+    # Libellés courts cherchés comme chaînes ENTIÈRES (zéro final et initial) : « MISSION » est aussi dans des chaînes
+    # du moteur en UTF-8 (« ADMISSIONS », « U_NO_WRITE_PERMISSION »).
+    '\0SAUVER\0', '\0CHARGER\0', '\0MISSION\0',
 ]
 
 
 def trouve(data, s):
     return [enc for enc in ('utf-16-le', 'utf-32-le', 'utf-8') if s.encode(enc) in data]
+
 
 
 def main():

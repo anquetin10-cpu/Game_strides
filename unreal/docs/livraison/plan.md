@@ -463,6 +463,47 @@ groupe de touches, clic dans le jeu d'abord). Aucune alerte de confidentialité 
 paquets Development (cuisson complète puis `-skipcook`) et Shipping reconstruits : **0 / 14** chaînes d'outils dans le
 Shipping, et `perf-monde` absent du Shipping. Attentes « Waiting for ZenServer » : 6 lancements d'éditeur sur 7 en ont eu une, toutes résolues seules ; aucun éditeur arrêté.
 
+### Correction de J3 après contrôle adverse (27/11 soir, base `d6c08ee7`)
+
+Légende inchangée (écrit, compilé, testé moteur, joué par l'agent avec entrées système injectées par l'agent ; jeu à la
+main par Julien : **à confirmer par Julien**). Preuves : `.ue-cache/travail/livraison/preuves/j3c/` (captures
+horodatées, `drive.log` par dossier, journaux du jeu `j3c-g1.log` à `j3c-g3.log` en heure UTC, `journal-carriere.txt`,
+sauvegardes avant / après) ; sélection versionnée : `preuves/j3c-20261127/`.
+
+| Problème du contrôle | Verdict | Ce qui a été fait | Preuve |
+|---|---|---|---|
+| Missions et progression inventées (titres, lieux, gains de m1 à m3, fugueur, plage, csi3, gp) | **fondé, P1, corrigé** | Liste écrite à la main le 17/11 retirée de `world_architecture.json`. `scripts/unreal/export-missions.mjs` importe les modules du web sous Node (`story.js` `STORY`, `story2.js`, `parisGP.js`, `config.js` `REPUTATION`) et calcule les offres avec la vraie `MissionManager.refreshOffers` → `Content/Data/story_missions.json` et oracle. `StridesCore/Career` (offres, verrou de palier, acceptation, paiement unique, paliers) | ctest « carriere » 225 vérifications (m1 « Deux écuries, une matinée » 90 € / 60, m3 150 € + dotation / 200, fugueur 160 / 200, csi3 500 / 450, 23 relevés d'offres du web) ; tests moteur `Strides.Career.Story`, `Strides.World.CareerGraph` (somme du web 4 130 € / 5 510 points) |
+| Tuto et m1 terminés 0,1 s après l'acceptation | **fondé, corrigé** | Chaque mission suit un **itinéraire relevé dans les étapes du web** (positions, textes, rayons) : tuto = entrée de la carrière du Val, 5 anneaux, Camille (7 étapes) ; m1 option Val (boxes, Iris, Narval, Camille) ; m2 option seul·e (obstacles 1 à 5 du Pôle, retour, Opale) ; m3 (parking des camions du Pôle, secrétariat, **épreuve du Pôle**, équipe) ; groom (foin ×4) ; transport (Haras, Pôle, Manon). Les 10 autres : lieu du web, déroulé J4-C. Étapes d'action non portées listées dans `skipped` | Paquet Development, entrées injectées : tuto acceptée au téléphone à 17:10:56 (UTC), 1re étape franchie à 17:11:58, payée à la 7e à 17:17:22 (+50 €, +60) ; m1 acceptée 17:18:31, payée 17:28:26 (+90 €, +60 ; total 140 € / 120) ; `journal-carriere.txt` |
+| Voiture arrêtée devant le cheval vue seulement dans l'outil perf-monde | **fondé** | Critère J3-A ramené à **partiel** : arrêt prouvé par ctest et Automation, vu dans l'outil de mesure ; **aucune partie par entrées injectées ne l'a montré** (ni celles du contrôle, ni celles-ci) | — |
+| GPS « direct à cheval » dans les façades et contre la lice | **fondé (P2), non corrigé** | Règle du web gardée (`gps.js` : direct à cheval). M3 passe désormais par le parking des camions et le secrétariat, hors de la lice. Reconnaissance de m2 : le cheval bute contre l'oxer n° 1 (le web la fait à pied ; le portage n'a pas de marche à pied utilisable, voir plus bas) → rayon 7 m au lieu de 4,5 (choix n° 20) | captures `m2/`, `m2d/` |
+| Clavier du téléphone perdu après « Retour arrière » ; fuite des touches vers le cheval | **cause trouvée, corrigé ; fuite infondée** | Le Retour arrière (kVK_Delete) n'avait **aucun code** dans la table des touches : il n'arrivait jamais au jeu, et l'Entrée suivante touchait l'élément « ‹ Retour » de l'écran (ligne `back (écran map)` du journal du contrôle). Ajouté avec l'Entrée du pavé ; ctest. La « fuite » : la capture `g2-itin` est prise **après** « Itinéraire », qui range le téléphone (journal du contrôle : `itinerary:cso_train` puis `fermé` à 15:50:55) ; les touches suivantes vont légitimement au cheval | ctest « oracles » (codes physiques) ; `ctrlJ3-g2.log` lignes 1003-1051 |
+| Plantage `AStridesHUD::DrawHUD` sous `-nullrhi` non signalé, boîte du rapport de plantage | **fondé, déjà corrigé avant 2ebc5a34, désormais signalé** | Plantage du 27/11 14:17 (pendant le développement de J3) : `AHUD::DrawRect` sans `FCanvas` sur une toile de test ; les enveloppes `DrawRect` / `DrawText` / `DrawLine` gardées par `Canvas->Canvas` sont entrées dans `2ebc5a34` (14:26). Le `CrashReportClient` 10899 resté ouvert a été arrêté (SIGTERM) ; la boîte système « CrashReportClientEditor a quitté » a été fermée par « Ignorer » | `Strides.Hud.MinimapRotation` vert (2 matrices) |
+| J3-E : appels de dessin à 0, triangles comptés par test | **fondé, reste partiel** | Non repris dans cette correction | — |
+| SAUVER, CHARGER, MISSION dans le binaire Shipping ; clic souris non prouvé en Shipping | **fondé, corrigé (libellés) ; clic à confirmer** | Les trois boutons ne sont plus construits en Shipping ; ajoutés au contrôle `check-shipping-tools.py` (17 chaînes) | contrôle du Shipping ci-dessous |
+| J3 incomplet (voitures garées, véhicules pilotables, cavaliers et chevaux d'ambiance, commerces, intérieurs, jour/nuit, météo, marées) | **fondé** | **14 véhicules garés du web** (tracteur et Duster du Val, 12 places de la ville ; `export-voitures-garees.mjs`), infranchissables (collision de `vehicle.js`). Le reste : **non fait**, voir actifs.md | `Strides.World.AmbientLife` (14 garées, 14 collisions, cheval repoussé) ; journal du paquet « 7 voitures, 14 garées, 24 passants, 8 spectateurs » |
+
+**Parties de l'agent (paquet Development, entrées injectées par l'agent, aucune console, ni F8, ni -StridesShots).**
+Sauvegarde précédente mise de côté (copie et empreinte dans `sauvegardes-avant/`), partie neuve : « Premiers contrats ·
+0 crédits · 0 réputation ». Tuto et m1 **acceptées au téléphone et terminées par tout leur itinéraire** (ci-dessus). m2
+acceptée, étapes 1 à 6 sur 7 franchies (5 obstacles reconnus à cheval au rayon 4,5 m, retour au Val), la 7e (Opale, 3,4 m)
+non atteinte avant l'incident ci-dessous. **Relance du paquet** : « reprise au lancement faite », 140 crédits, 120 points,
+m2 reproposée « REPRISE », acceptée de nouveau (repart de l'étape 1, choix n° 17). **m3 et son étape d'épreuve n'ont pas
+été jouées en paquet** (testées moteur seulement). Joué à la main par Julien : **à confirmer**.
+
+**Incident pendant la 1re partie (non résolu, à surveiller).** 25 s après l'acceptation du tuto, le paquet est tombé de
+33 à ~2 images/s, et son empreinte mémoire a atteint **42 Go, dont 39 Go d'IOSurface (5 246 régions)** au bout de 55 min
+(`footprint`) ; macOS a mis en pause Claude, Chrome, Terminal et TextEdit (boîte « Forcer des applications à quitter »,
+laissée telle quelle). Au même moment, une alerte de confidentialité macOS (« python3.11 … contourner le sélecteur de
+fenêtre privée ») est apparue : **jamais touchée** ; le joueur de l'agent a cessé de pouvoir capturer pendant 11 min.
+Relancé ensuite à l'identique (même paquet, même sauvegarde, mêmes entrées et captures toutes les secondes) : **24 Mo
+d'IOSurface stables, 27 à 31 images/s** pendant 20 min. Cause **à confirmer** ; le jeu n'alloue aucune surface par image
+dans le code de J3 (HUD dessiné au canevas, pièces posées une fois).
+
+**Limites trouvées en jouant (ouvertes).** À pied, le joueur ne se déplace presque pas et la direction du guidage ne suit
+pas la marche (P2, antérieur à J3) : la reconnaissance « à pied » du web est faite à cheval. Le joueur de l'agent tourne
+autour des points de 4 m au galop (ralenti ajouté dans `suivre.py`, outil hors jeu). Libellé de l'étape doublement
+numéroté « (4/5) (5/7) » (P3).
+
 ## J4 — Boucle produit
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -556,6 +597,17 @@ Shipping, et `perf-monde` absent du Shipping. Attentes « Waiting for ZenServer 
     elle est reproposée en tête de l'app Strides, marquée « REPRISE ».
 18. **Arrivée du GPS posé à la main** (27/11, J3) : effacé à 6 m (rayon par défaut de `gps.set`) ; une mission reste
     terminée à 18 m (choix antérieur du portage : missions à une étape).
+
+19. **Paiement des missions** (27/11, correction J3) : `def.pay` et `def.xp` du web, une seule fois ; le pourboire de
+    10 % à 5 étoiles (`missions.complete`) n'est pas porté, la note dépendant du déroulé complet (J4-C). Dotation de M3
+    (classement simulé) non portée : participation seule.
+20. **Itinéraires des missions** (27/11, correction J3) : étapes du web à position fixe, dans l'ordre, au rayon du web ;
+    choix figés (m1 : « Préparation (Val) », le tarif de base du web ; m2 : « s'organiser seul·e ») ; trajets du camion
+    (m3, transport) faits à cheval ; reconnaissance des obstacles de m2 à cheval, rayon 7 m (4,5 m à pied au web), le
+    portage n'ayant pas de marche à pied utilisable.
+21. **Épreuve de M3** (27/11, correction J3) : l'étape « épreuve » ouvre le poteau « Chrono » du Pôle (épreuve Amateur
+    1,10 m, la même classe que M3 au web) malgré la mission en cours, et se franchit quand le parcours commencé pendant
+    l'étape est terminé, quel qu'en soit le résultat (la participation est due même éliminé, comme au web).
 
 ## Risques
 

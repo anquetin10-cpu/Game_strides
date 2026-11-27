@@ -1,7 +1,7 @@
 {
  "schema": "strides.story.v1",
  "source": {
-  "webCommit": "a5bc8dd9",
+  "webCommit": "7cb7292a",
   "files": [
    "src/gameplay/story.js",
    "src/gameplay/story2.js",
@@ -185,38 +185,38 @@
    "route": [
     {
      "kind": "goto",
-     "text": "Reconnais le parcours du Pôle à pied : obstacle n°1 (1/5)",
+     "text": "Reconnais le parcours du Pôle : obstacle n°1 (1/5)",
      "x": 313.28,
      "z": -212.84,
-     "r": 4.5
+     "r": 7
     },
     {
      "kind": "goto",
-     "text": "Reconnais le parcours du Pôle à pied : obstacle n°2 (2/5)",
+     "text": "Reconnais le parcours du Pôle : obstacle n°2 (2/5)",
      "x": 334.33,
      "z": -252.78,
-     "r": 4.5
+     "r": 7
     },
     {
      "kind": "goto",
-     "text": "Reconnais le parcours du Pôle à pied : obstacle n°3 (3/5)",
+     "text": "Reconnais le parcours du Pôle : obstacle n°3 (3/5)",
      "x": 356.33,
      "z": -252.78,
-     "r": 4.5
+     "r": 7
     },
     {
      "kind": "goto",
-     "text": "Reconnais le parcours du Pôle à pied : obstacle n°4A (4/5)",
+     "text": "Reconnais le parcours du Pôle : obstacle n°4A (4/5)",
      "x": 349.83,
      "z": -223.78,
-     "r": 4.5
+     "r": 7
     },
     {
      "kind": "goto",
-     "text": "Reconnais le parcours du Pôle à pied : obstacle n°5 (5/5)",
+     "text": "Reconnais le parcours du Pôle : obstacle n°5 (5/5)",
      "x": 320.03,
      "z": -223.78,
-     "r": 4.5
+     "r": 7
     },
     {
      "kind": "goto",

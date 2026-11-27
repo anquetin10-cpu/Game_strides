@@ -68,9 +68,17 @@ try:
         green_prev = green >= 2
         if not pill:
             lost += 1
-            if lost >= 4: L('plus de pastille : arrêt'); break
+            # Mode gps (missions à plusieurs étapes, J3 correction) : la balise posée près de la caméra masque parfois la
+            # pastille quelques images ; 12 lectures vides de suite avant de conclure à la fin de la mission.
+            if lost >= (12 if mode == "gps" else 4): L("plus de pastille : arrêt"); break
             continue
         lost = 0
+        # Mode gps (J3 correction) : étapes à petit rayon (4 m, interact du web) ; au galop, le cercle de virage est plus
+        # grand que le rayon et le cheval tourne autour du point. Allure lue sur la ligne « À cheval · … » : ralentir au
+        # trot à moins de 30 m, jamais de grand galop.
+        allure = next((p for p in parts if 'cheval' in p and '·' in p or 'cheval' in p and '-' in p), '')
+        if mode == 'gps' and ('GRAND' in allure or (d is not None and d < 30 and 'GALOP' in allure)):
+            hold(S, 0.5); L('ralenti (%s)' % allure[:40])
         if mode == 'poteau' and d is not None and d < 9:
             hold(S, 2.0); L('poteau proche : arrêt'); break
         if mode == 'poteau' and d is not None and d < 45 and not slowed:
@@ -96,6 +104,14 @@ try:
         # Ligne de départ : la cible est l'abord, 8 m avant la ligne ; une fois tout près, continuer tout droit pour la
         # franchir (la pastille dirait « demi-tour » vers l'abord dépassé).
         if 'Ligne de d' in pill and d is not None and d < 12: continue
+        # À pied (J3 correction) : pas de cadence entretenue, les touches déplacent le joueur par rapport à la caméra ;
+        # tourner brièvement puis marcher.
+        if 'pied' in ''.join(parts[:2]):
+            if 'demi' in pill: hold(S, 0.6)
+            elif 'auche' in pill: hold(A, 0.35)
+            elif 'roite' in pill: hold(D, 0.35)
+            hold(W, 1.2); same = 0
+            continue
         # (lecture tolérante : « gauche » est parfois lu « dauche », « aauche »)
         if 'demi' in pill: hold(D, 1.1)
         elif 'auche' in pill: hold(A, 0.45)
