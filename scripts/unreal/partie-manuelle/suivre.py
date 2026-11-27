@@ -44,7 +44,7 @@ try:
             subprocess.run(['/bin/cp', cur, os.path.join(out, time.strftime('%H%M%S-') + 's%s-%03d.jpg' % (mode, k))])
         txt = subprocess.run([tools + ('/ocr' if mode == 'poteau' else '/ocr2'), cur], capture_output=True, text=True).stdout
         parts = [p.strip() for p in txt.split('|')[1:]]
-        pill = next((p for p in parts if re.search(r'Obstacle|Ligne de d|Arriv|Chrono du P', p)), '')
+        pill = next((p for p in parts if re.search(r'Obstacle|Ligne de d|Arriv|Chrono du P|Paddock du P', p)), '')
         pts = next((p for p in parts if re.search(r'\d+\s*pts?\b', p)), '')
         # Bouton SAUT (bas droite, plein écran 3840 × 2160) : fond vert quand l'appel est bon (.btn-jump.good du web).
         px = subprocess.run([tools + '/pix', cur, '3660', '2025', '3750', '2025', '3706', '1975'], capture_output=True, text=True).stdout.split('\n')

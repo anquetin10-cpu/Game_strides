@@ -47,14 +47,18 @@ void AStridesHUD::DrawHUD()
 	Super::DrawHUD();
 	EventT -= GetWorld()->GetDeltaSeconds();
 	// Épreuve du monde cherchée à chaque image tant qu'aucune n'est connue (parcours apparu après BeginPlay, monde de test).
-	if (!Course.IsValid() || !Course->Run())
+	if (!Course.IsValid() || (!Course->Run() && !Course->TrainingActive()))
 		for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It)
-			if (It->Run()) { Course = *It; break; }
-	// Épreuve (mode concours) : interface d'épreuve UMG seule, ni lignes de débogage ni minicarte.
-	bDrewDebug = DebugVisible(Course.IsValid() && Course->Run() ? &Course->HudModel() : nullptr);
+			if (It->Run() || It->TrainingActive()) { Course = *It; break; }
+	// Épreuve (mode concours) : interface d'épreuve UMG seule, ni lignes de débogage ni minicarte. Jalon J2d : le modèle
+	// du HUD décide aussi pendant l'entraînement lancé au poteau du paddock (sans épreuve préalable).
+	const bool bModel = Course.IsValid() && (Course->Run() || Course->TrainingActive());
+	bDrewDebug = DebugVisible(bModel ? &Course->HudModel() : nullptr);
+	LastOverlay = FRaceOverlay();
 	if (!bDrewDebug)
 	{
 		DrawCourseGuide();
+		DrawRaceOverlay();
 		DrawPhone(GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>());
 		return;
 	}
@@ -70,12 +74,14 @@ void AStridesHUD::DrawHUD()
 		Y += 30.f;
 	};
 	const APawn* P = GetOwningPawn();
+	FString StatusShown;
 	if (const AStridesHorse* H = Cast<AStridesHorse>(P))
 	{
 		const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 		const FString Gait = D && D->Gaits.IsValidIndex(H->GaitIndex) ? D->Gaits[H->GaitIndex].Name.ToString() : TEXT("?");
 		Line(FString::Printf(TEXT("À cheval · %s · %.1f m/s (%.0f m/min) · cadence %.1f"), *Gait, H->SpeedMS, H->SpeedMS * 60, H->CadenceMS));
-		if (H->Course) Line(DebugText(H->Course->StatusText()));
+		if (H->Course) StatusShown = DebugText(H->Course->StatusText());
+		if (H->Course) Line(StatusShown);
 #if !UE_BUILD_SHIPPING
 		if (H->IsDemoCourseActive()) Line(TEXT("DÉMONSTRATION AUTOMATIQUE DU PARCOURS"), FLinearColor(0.4f, 0.9f, 1.f));
 #endif
@@ -103,7 +109,10 @@ void AStridesHUD::DrawHUD()
 		// Jalon J2c : l'entraînement à l'abord est une mission comme l'épreuve (missions.objectiveText).
 		const bool bRunLive = Course.IsValid() && Course->MissionActive();
 		const FString Objective = bRunLive ? Course->ObjectiveText() : FString();
-		for (const FString& L : ObjectiveLines(bRunLive, Objective, Progress->ActiveMissionId, Progress->MissionStatus())) Line(DebugText(L), FLinearColor(1.f, 0.82f, 0.25f));
+		// Contrôle de J2c : pendant l'étape « rejoindre le paddock », la ligne d'état du parcours porte déjà l'objectif (même
+		// texte) ; une ligne identique à celle de l'état n'est pas répétée.
+		for (const FString& L : ObjectiveLines(bRunLive, Objective, Progress->ActiveMissionId, Progress->MissionStatus()))
+			if (DebugText(L) != StatusShown) Line(DebugText(L), FLinearColor(1.f, 0.82f, 0.25f));
 		if (!Progress->LastMessage.IsEmpty()) Line(Progress->LastMessage, FLinearColor(0.7f, 0.9f, 1.f));
 
 		// Guidage vers le chrono du Pôle (lot J1-D) : sans mission de carrière ni épreuve en cours.
@@ -125,7 +134,10 @@ void AStridesHUD::DrawHUD()
 				// Départ dans la carrière : par l'entrée de la lice (colliders du web), pas au travers ; près de la carrière, autour
 				// des obstacles et des ailes (grille de guidage, 2e correction J1 : 4 refus au 4B sur le chemin du poteau).
 				double Dist = 0;
-				const FVector2D Way = PoleGuideAim(Me, Goal, Dt, Course.Get(), Dist);
+				// Paddock : par son ouverture est (rectFence 'e', 6 m, milieu), pas au travers de la lice (partie J2d en paquet :
+				// cheval arrêté contre la lice nord, ligne « tout droit »).
+				const FVector2D Way = bPaddock ? PaddockWaypoint(Me, Goal, FVector4(Dd->PoleWarmup.X, Dd->PoleWarmup.Y, Dd->PoleWarmup.Z, Dd->PoleWarmup.W), Dist)
+					: PoleGuideAim(Me, Goal, Dt, Course.Get(), Dist);
 				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me), bPaddock ? TEXT("Paddock du Pôle") : TEXT("Chrono du Pôle"));
 				if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
 			}
@@ -151,6 +163,46 @@ void AStridesHUD::DrawHUD()
 	}
 	if (const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>())
 		for (const FString& L : D->LoadLog) if (L.Contains(TEXT("introuvable")) || L.Contains(TEXT("illisible"))) Line(L, FLinearColor::Red);
+}
+
+AStridesHUD::FRaceOverlay AStridesHUD::RaceOverlay(const strides::CsoHud& H, bool bMission, const FString& Objective, const FString& Gait, double SpeedMS, const FString& ActionLabel, bool bTouch)
+{
+	// Mode concours du web (classe cso-ctl) : objectif masqué par cso-on (tableau d'épreuve) ou par un grand message ;
+	// télémétrie (allure et vitesse, km/h arrondis : hud.js:252-262) et bouton d'action masqués par cso-sober seulement
+	// (hud.js:390-392, styles.css:995). L'entraînement au paddock (kind 'cso-train') garde donc les trois.
+	FRaceOverlay O;
+	if (bMission && !H.objectiveOff() && !H.masked(strides::CsoHudElement::Objective) && !Objective.IsEmpty()) O.Objective = DebugText(Objective);
+	if (!H.masked(strides::CsoHudElement::Telemetry)) O.Telemetry = FString::Printf(TEXT("%s · %d km/h"), *Gait, (int32)FMath::RoundHalfFromZero(FMath::Abs(SpeedMS) * 3.6));
+	if (!H.masked(strides::CsoHudElement::Action)) O.Prompt = ActionPrompt(ActionLabel, bTouch);
+	return O;
+}
+
+void AStridesHUD::DrawRaceOverlay()
+{
+	if (!Course.IsValid() || !Canvas) return;
+	const AStridesHorse* H = Cast<AStridesHorse>(GetOwningPawn());
+	const AStridesPlayerController* SPC = Cast<AStridesPlayerController>(GetOwningPlayerController());
+	const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+	const FString Gait = H && D && D->Gaits.IsValidIndex(H->GaitIndex) ? D->Gaits[H->GaitIndex].Name.ToString() : FString();
+	LastOverlay = RaceOverlay(Course->HudModel(), Course->MissionActive(), Course->ObjectiveText(), Gait, H ? H->SpeedMS : 0.0,
+		SPC ? SPC->ActionLabel() : FString(), AStridesPlayerController::TouchMode());
+	if (!H) LastOverlay.Telemetry.Reset();
+	// Toile sans FCanvas (tests Automation) : textes relevés, rien dessiné.
+	if (!Canvas->Canvas) return;
+	auto Pill = [this](const FString& S, float X, float Y, float Sc, const FLinearColor& Accent, bool bCenter)
+	{
+		float TW = 0, TH = 0;
+		GetTextSize(S, TW, TH, nullptr, Sc);
+		const float BX = bCenter ? (Canvas->SizeX - TW) * .5f - 22.f : X;
+		DrawRect(FLinearColor(.02f, .03f, .04f, .78f), BX, Y, TW + 44.f, TH + 18.f);
+		DrawRect(Accent, BX, Y, 5.f, TH + 18.f);
+		DrawText(S, FLinearColor::White, BX + 22.f, Y + 9.f, nullptr, Sc);
+	};
+	// Objectif en haut à gauche (barre du haut du web), télémétrie en bas au centre, invite d'action comme hors épreuve.
+	if (!LastOverlay.Objective.IsEmpty()) Pill(LastOverlay.Objective, 24.f, Canvas->SizeY * .035f, 1.5f, FLinearColor(1.f, .82f, .25f), false);
+	if (!LastOverlay.Telemetry.IsEmpty()) Pill(LastOverlay.Telemetry, 0.f, Canvas->SizeY * .86f, 1.5f, FLinearColor(.49f, 1.f, .77f), true);
+	if (!LastOverlay.Prompt.IsEmpty()) Pill(LastOverlay.Prompt, 0.f, Canvas->SizeY * .72f, 2.2f, FLinearColor(.3f, .9f, .75f), true);
+	LastPrompt = LastOverlay.Prompt;
 }
 
 // Téléphone ouvert (P / Tab, M sur la carte) : panneau dessiné aussi en épreuve (le web ouvre le téléphone en concours ;
@@ -328,6 +380,32 @@ FVector2D AStridesHUD::PoleWaypoint(const FVector2D& Me, const FVector2D& Goal, 
 	return Gate;
 }
 
+FVector2D AStridesHUD::PaddockWaypoint(const FVector2D& Me, const FVector2D& Goal, const FVector4& R, double& OutDist)
+{
+	// R : centre (X, Y) du paddock dans le repère web, largeur Z (selon x), profondeur W (selon z) ; ouverture côté est.
+	const double HX = R.Z / 2, HZ = R.W / 2;
+	const FVector2D Gate(R.X + HX + 5, R.Y);
+	const bool bInside = FMath::Abs(Me.X - R.X) < HX - 0.5 && FMath::Abs(Me.Y - R.Y) < HZ - 0.5;
+	const bool bCorridor = FMath::Abs(Me.Y - R.Y) < 2.5 && Me.X > R.X + HX - 1;
+	if (bInside || bCorridor || FVector2D::Distance(Me, Gate) < 3)
+	{
+		OutDist = FVector2D::Distance(Me, Goal);
+		return Goal;
+	}
+	if (Me.X < R.X + HX + 2)
+	{
+		// À l'ouest, au nord ou au sud du paddock : d'abord le coin est le plus proche, dehors.
+		const FVector2D Corner(R.X + HX + 5, Me.Y < R.Y ? R.Y - HZ - 5 : R.Y + HZ + 5);
+		if (FVector2D::Distance(Me, Corner) >= 3)
+		{
+			OutDist = FVector2D::Distance(Me, Corner) + FVector2D::Distance(Corner, Gate) + FVector2D::Distance(Gate, Goal);
+			return Corner;
+		}
+	}
+	OutDist = FVector2D::Distance(Me, Gate) + FVector2D::Distance(Gate, Goal);
+	return Gate;
+}
+
 FVector2D AStridesHUD::PoleGuideAim(const FVector2D& Me, const FVector2D& Goal, const UStridesDataSubsystem* Dt, const AStridesCourse* C, double& OutDist)
 {
 	FVector2D Way = Dt ? PoleWaypoint(Me, Goal, Dt->PoleArena, Dt->PlanArena().w, Dt->PlanArena().d) : Goal;
@@ -366,7 +444,7 @@ void AStridesHUD::DrawCourseGuide()
 	const FVector2D D(Goal.X - CX, Goal.Y - CZ);
 	const FString G = CourseGuideText(Label, Dist, RelativeAngleDeg(F, D));
 	LastCourseGuide = G;
-	if (G.IsEmpty()) return;
+	if (G.IsEmpty() || !Canvas->Canvas) return;
 	// Pastille sous le tableau du chrono (en haut à gauche), fond sombre, texte clair.
 	float TW = 0, TH = 0;
 	const float Sc = 1.6f;

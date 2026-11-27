@@ -21,6 +21,8 @@
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesHorse.h"
+#include "StridesHUD.h"
+#include "Engine/Canvas.h"
 #include "StridesPlayerController.h"
 #include "StridesRider.h"
 #include "StridesUnits.h"
@@ -170,22 +172,60 @@ bool FStridesScenarioTrainingTest::RunTest(const FString&)
 	// 2. Entrée au stick par l'ouverture est du paddock (lice « fence » du web, 6 m), depuis l'allée de 10 m entre la lice
 	// de la carrière (x = 270) et celle du paddock (x = 260).
 	const FVector4 Wu = Data->PoleWarmup;
-	G.Horse->PlaceAt(Wu.X + Wu.Z / 2 + 6, Wu.Y, -PI / 2, 3);
-	for (K = 0; K < 900 && C->Training()->step() == strides::CsoTrainingStep::Goto; K++)
+	// Jalon J2d (partie en paquet : cheval arrêté contre la lice nord en suivant « Paddock du Pôle · tout droit ») : départ
+	// au nord du paddock, face à la lice ; le stick suit le point visé par la ligne du HUD (coin est, ouverture est, centre).
+	{
+		double Dd = 0;
+		const FVector2D Ctr(Wu.X, Wu.Y);
+		TestTrue(TEXT("guidage du paddock : au nord, coin nord-est d'abord"), AStridesHUD::PaddockWaypoint(FVector2D(Wu.X, Wu.Y - Wu.W / 2 - 4), Ctr, Wu, Dd).Equals(FVector2D(Wu.X + Wu.Z / 2 + 5, Wu.Y - Wu.W / 2 - 5)));
+		TestTrue(TEXT("guidage du paddock : dans l'allée est, l'ouverture"), AStridesHUD::PaddockWaypoint(FVector2D(Wu.X + Wu.Z / 2 + 5, Wu.Y - 15), Ctr, Wu, Dd).Equals(FVector2D(Wu.X + Wu.Z / 2 + 5, Wu.Y)));
+		TestTrue(TEXT("guidage du paddock : dans l'ouverture, le centre"), AStridesHUD::PaddockWaypoint(FVector2D(Wu.X + Wu.Z / 2 + 1, Wu.Y + 1), Ctr, Wu, Dd).Equals(Ctr));
+	}
+	G.Horse->PlaceAt(Wu.X, Wu.Y - Wu.W / 2 - 4, 0, 3);
+	for (K = 0; K < 1800 && C->Training()->step() == strides::CsoTrainingStep::Goto; K++)
 	{
 		const strides::CsoHorseState& H = G.Horse->CsoState();
-		G.PC->GamepadStickForTest(FVector2D(SteerTo(H, Wu.X - H.x, Wu.Y - H.z), (H.hasCadence ? H.cadence : 0) < 3 ? 1 : 0));
+		double Dd = 0;
+		const FVector2D Way = AStridesHUD::PaddockWaypoint(FVector2D(H.x, H.z), FVector2D(Wu.X, Wu.Y), Wu, Dd);
+		G.PC->GamepadStickForTest(FVector2D(SteerTo(H, Way.X - H.x, Way.Y - H.z), (H.hasCadence ? H.cadence : 0) < 3 ? 1 : 0));
 		G.Frame();
 	}
 	G.PC->GamepadStickForTest(FVector2D::ZeroVector);
 	AddInfo(FString::Printf(TEXT("entrée au paddock : cheval en (%.2f, %.2f), cap %.2f, vitesse %.2f m/s, cadence %.2f, %d images"), G.Horse->CsoState().x, G.Horse->CsoState().z,
 		G.Horse->CsoState().heading, G.Horse->CsoState().speed, G.Horse->CsoState().cadence, K));
-	TestTrue(FString::Printf(TEXT("paddock atteint au stick (%d images)"), K), C->Training()->step() == strides::CsoTrainingStep::Train);
+	TestTrue(FString::Printf(TEXT("paddock atteint au stick en suivant le guidage depuis le nord (%d images)"), K), C->Training()->step() == strides::CsoTrainingStep::Train);
 	Hud = Since(C->HudLog(), Hud0);
 	TestTrue(TEXT("astuce de l'entraînement (7 s)"), Hud.Contains(TEXT("hint | Vertical au nord")) && Hud.Contains(TEXT("| 7000")));
 	TestTrue(TEXT("mode de concours (game.course.camera, commandes de concours)"), C->CourseMode().active && !C->CourseMode().board);
 	TestEqual(TEXT("action « Terminer » proposée"), G.PC->ActionLabel(), FString(TEXT("Terminer")));
 	TestTrue(FString::Printf(TEXT("objectif « 0 saut sans faute sur 0 » (%s)"), *C->ObjectiveText()), C->ObjectiveText() == TEXT("Entraînement : 0 saut sans faute sur 0"));
+	// Contrôle adverse de J2c : ce que le HUD rend (DrawHUD sur une toile de 844 × 390), pas seulement l'état interne.
+	// Le web garde l'objectif, l'allure et « Terminer » pendant l'entraînement (hud.js:390-392).
+	FActorSpawnParameters HudSp;
+	HudSp.Owner = G.PC;
+	AStridesHUD* Hud2 = W.World->SpawnActor<AStridesHUD>(HudSp);
+	if (Hud2) Hud2->PlayerOwner = G.PC;  // ce que fait ClientSetHUD du contrôleur en jeu (SpawnActor ne le renseigne pas)
+	UCanvas* Toile = NewObject<UCanvas>();
+	Toile->SizeX = 844;
+	Toile->SizeY = 390;
+	AddInfo(FString::Printf(TEXT("HUD : propriétaire %s, pion %s, cso-ctl %d, cso-sober %d, action « %s », tactile %d"), Hud2 && Hud2->GetOwningPlayerController() ? TEXT("PC") : TEXT("aucun"),
+		Hud2 && Hud2->GetOwningPawn() ? *Hud2->GetOwningPawn()->GetClass()->GetName() : TEXT("aucun"), C->HudModel().csoCtl(), C->HudModel().csoSober(), *G.PC->ActionLabel(), AStridesPlayerController::TouchMode()));
+	auto Rendered = [&]() -> AStridesHUD::FRaceOverlay
+	{
+		if (!Hud2) return AStridesHUD::FRaceOverlay();
+		Hud2->SetCanvasForTest(Toile);
+		Hud2->DrawHUD();
+		return Hud2->LastOverlayShown();
+	};
+	for (K = 0; K < 90 && C->HudModel().bigOn(); K++) G.Frame();  // grand message éventuel retombé
+	{
+		const AStridesHUD::FRaceOverlay O = Rendered();
+		AddInfo(FString::Printf(TEXT("HUD rendu à l'entraînement : objectif « %s », télémétrie « %s », invite « %s »"), *O.Objective, *O.Telemetry, *O.Prompt));
+		TestTrue(TEXT("HUD de débogage non dessiné (mode concours)"), Hud2 && !Hud2->DrewDebugLastFrame());
+		TestEqual(TEXT("objectif rendu à l'écran"), O.Objective, FString(TEXT("Entraînement : 0 saut sans faute sur 0")));
+		TestTrue(TEXT("télémétrie rendue (allure · km/h)"), O.Telemetry.EndsWith(TEXT(" km/h")) && !O.Telemetry.StartsWith(TEXT(" ·")));
+		TestEqual(TEXT("invite « Terminer » rendue"), O.Prompt, FString(TEXT("E  ·  Terminer")));
+	}
 
 	// 3. Vertical (sauté vers l'est) en bonne zone depuis 13 m (abord droit de 14 m au plus dans le paddock, obstacles.js:194).
 	int32 H1 = C->HudLog().Num();
@@ -204,6 +244,7 @@ bool FStridesScenarioTrainingTest::RunTest(const FString&)
 	TestTrue(TEXT("obstacle suivant = le vertical visé (game.course.next)"), bNext);
 	TestTrue(FString::Printf(TEXT("vertical sauté sans faute, marge en cm (%s ; %s)"), *Hud, *Since(C->FenceEventLog(), 0)), bJ && Hud.Contains(TEXT("toast | Sans faute · ")) && Hud.Contains(TEXT(" cm de marge")) && C->Training()->clean() == 1);
 	TestTrue(TEXT("objectif « 1 saut sans faute sur 1 »"), C->ObjectiveText() == TEXT("Entraînement : 1 saut sans faute sur 1"));
+	TestEqual(TEXT("objectif rendu « 1 saut sans faute sur 1 »"), Rendered().Objective, FString(TEXT("Entraînement : 1 saut sans faute sur 1")));
 	AddInfo(FString::Printf(TEXT("vertical : %s"), *Hud));
 
 	// 4. Oxer (sauté vers l'ouest) en zone « loin » (marge prévue sous −6 cm, règle du test Jump.InCourse) : barre,
@@ -271,6 +312,13 @@ bool FStridesScenarioTrainingTest::RunTest(const FString&)
 	for (K = 0; K < 5; K++) G.Frame();
 	TestTrue(TEXT("entraînement lancé au poteau du paddock, étape d'entraînement"), C->TrainingsStarted() == N0 + 1 && C->TrainingActive() && C->Training()->step() == strides::CsoTrainingStep::Train);
 	TestFalse(TEXT("poteau du paddock non proposé pendant l'entraînement"), Warm->Available(WA.startX, WA.startZ, TEXT("ride")));
+	for (K = 0; K < 90 && C->HudModel().bigOn(); K++) G.Frame();
+	{
+		// Lancé au poteau du paddock (sans épreuve préalable) : même HUD rendu.
+		const AStridesHUD::FRaceOverlay O = Rendered();
+		TestTrue(FString::Printf(TEXT("poteau du paddock : objectif, télémétrie et « Terminer » rendus (%s | %s | %s)"), *O.Objective, *O.Telemetry, *O.Prompt),
+			Hud2 && !Hud2->DrewDebugLastFrame() && O.Objective == TEXT("Entraînement : 0 saut sans faute sur 0") && !O.Telemetry.IsEmpty() && O.Prompt == TEXT("E  ·  Terminer"));
+	}
 	G.Tap(TEXT("KeyE"));
 	for (K = 0; K < 5; K++) G.Frame();
 	TestTrue(TEXT("second entraînement terminé (0 saut sans faute sur 0)"), !C->MissionActive() && C->LastTrainingResult().body == "0 saut sans faute sur 0.");

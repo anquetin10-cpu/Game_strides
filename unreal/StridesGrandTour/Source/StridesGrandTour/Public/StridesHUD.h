@@ -41,8 +41,18 @@ public:
 	// « Obstacle 3 · 25 m · à droite ». Vide à moins de 4 m.
 	// Point visé par la ligne « Chrono du Pôle » : entrée de la lice depuis l'extérieur (PoleWaypoint), puis, près de la
 	// carrière (grille de guidage du parcours), autour des obstacles et des ailes. OutDist : longueur du chemin.
+	// Point visé par la ligne « Paddock du Pôle » (jalon J2d) : coin est extérieur, puis ouverture est (5 m devant), puis le
+	// centre ; R = (x, z, largeur, profondeur) du paddock (POLE.warmup du web). OutDist : longueur du chemin.
+	static FVector2D PaddockWaypoint(const FVector2D& Me, const FVector2D& Goal, const FVector4& R, double& OutDist);
 	static FVector2D PoleGuideAim(const FVector2D& Me, const FVector2D& Goal, const class UStridesDataSubsystem* Dt, const class AStridesCourse* C, double& OutDist);
 	static FString CourseGuideText(const FString& Label, double Distance, double RelAngleDeg);
+	// Jalon J2d (contrôle de J2c) : éléments du HUD du web gardés en mode concours hors épreuve (entraînement au paddock,
+	// kind 'cso-train') : objectif, télémétrie (allure · km/h), invite d'action (« E · Terminer ») ; vides quand le modèle
+	// du HUD les masque (cso-on, cso-sober, grand message).
+	struct FRaceOverlay { FString Objective, Telemetry, Prompt; };
+	static FRaceOverlay RaceOverlay(const strides::CsoHud& H, bool bMission, const FString& Objective, const FString& Gait, double SpeedMS, const FString& ActionLabel, bool bTouch);
+	// Surcouche dessinée à la dernière image en mode concours (tests, relevé des captures) ; vide hors mode concours.
+	const FRaceOverlay& LastOverlayShown() const { return LastOverlay; }
 	// Dernier guidage d'épreuve affiché (tests, relevé des captures) ; vide si aucun.
 	const FString& LastCourseGuideShown() const { return LastCourseGuide; }
 	// Invite affichée à la dernière image (tests, relevé en partie réelle) ; vide si aucune.
@@ -56,6 +66,7 @@ private:
 	void DrawMinimap(const APawn* P, const class UStridesProgressionSubsystem* Progress);
 	void DrawPhone(const class UStridesProgressionSubsystem* Progress);
 	void DrawCourseGuide();
+	void DrawRaceOverlay();
 	// Texte du HUD de débogage : balises <b> de l'astuce retirées (le web les rend en gras), « ▸ » rendu « > » (glyphe
 	// absent de la police par défaut du moteur ; l'interface d'épreuve UMG de la tranche T7 en aura une qui l'a).
 	static FString DebugText(const FString& S);
@@ -65,6 +76,7 @@ private:
 	bool bDrewDebug = false;
 	FString LastPrompt;
 	FString LastCourseGuide;
+	FRaceOverlay LastOverlay;
 	float EventT = 0.f;
 	TWeakObjectPtr<class AStridesCourse> Course;  // épreuve du Pôle (objectif affiché tant qu'elle est en cours)
 };

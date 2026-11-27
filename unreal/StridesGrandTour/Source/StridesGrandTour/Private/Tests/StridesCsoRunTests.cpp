@@ -323,6 +323,11 @@ bool FStridesCsoRunInGameTest::RunTest(const FString&)
 	if (DebugHud) DebugHud->SetCanvasForTest(Toile);
 	if (DebugHud) DebugHud->DrawHUD();
 	TestTrue(TEXT("DrawHUD en épreuve : rien dessiné (retour anticipé)"), DebugHud && !DebugHud->DrewDebugLastFrame());
+	// Jalon J2d : en épreuve (cso-sober, cso-on), ni objectif, ni télémétrie, ni invite d'action dans la surcouche.
+	{
+		const AStridesHUD::FRaceOverlay O = AStridesHUD::RaceOverlay(Course->HudModel(), true, TEXT("Parcours"), TEXT("Galop"), 6.0, TEXT("Terminer"), false);
+		TestTrue(TEXT("épreuve : surcouche vide (HUD sobre du web)"), O.Objective.IsEmpty() && O.Telemetry.IsEmpty() && O.Prompt.IsEmpty());
+	}
 	// Tranche T8 : widget en mode tactile, cavalière en selle (bouton SAUT du mode « ride ») ; en épreuve, SAUT et pause seuls.
 	UStridesTouchControls* Touch = CreateWidget<UStridesTouchControls>(W.World, UStridesTouchControls::StaticClass());
 	strides::CsoInput TouchCmd;
