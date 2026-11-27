@@ -1,4 +1,5 @@
 #include "StridesCourse.h"
+#include <limits>
 #include "StridesCsoAudio.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -98,6 +99,10 @@ void AStridesCourse::RebuildColliders()
 	// Chandeliers et ailes (obstacles.js add), solides pour le cheval.
 	for (const strides::CsoObstacle& O : CoreObstacles)
 		strides::addObstacleWings(WorldCol, O.kind, O.x, O.z, O.rot, O.w, O.h, O.spread, Ground(O.x, O.z));
+	// Jalon J3 (correction) : véhicules garés du web, obstacles statiques (vehicle.js : addBox(x, z, W/2 + 0.12, L/2 + 0.1,
+	// cap, Infinity, id)) ; le cheval ne les traverse plus.
+	if (Data)
+		for (const FStridesParked& V : Data->Parked) WorldCol.addBox(V.X, V.Z, V.Hw, V.Hd, V.Heading, std::numeric_limits<double>::infinity(), "parked");
 	// Grille du guidage (carrière et 30 m autour) : lice, ailes et obstacles gonflés de 1,8 m (rayon du cheval 0,85 + marge).
 	GuideGridMap = strides::GuideGrid();
 	if (Data && Data->PlanArena().w > 0 && Data->PlanArena().d > 0)

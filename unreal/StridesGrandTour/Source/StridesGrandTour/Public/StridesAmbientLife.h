@@ -26,6 +26,7 @@ public:
 	// Composants posés (tests, relevé de coût) : une racine par voiture, par passant, par spectateur.
 	int32 CarCount() const { return Cars.Num(); }
 	int32 PeopleCount() const { return Walkers.Num() + Spectators.Num(); }
+	int32 ParkedCount() const { return Parked.Num(); }
 	FVector CarLocation(int32 I) const;
 	FVector WalkerLocation(int32 I) const;
 	// Avance la simulation d'une image avec des entrées données (tests : joueur posé où on veut).
@@ -38,6 +39,7 @@ private:
 	UPROPERTY() TArray<TObjectPtr<class USceneComponent>> Cars;
 	UPROPERTY() TArray<TObjectPtr<class USceneComponent>> Walkers;
 	UPROPERTY() TArray<TObjectPtr<class USceneComponent>> Spectators;
+	UPROPERTY() TArray<TObjectPtr<class USceneComponent>> Parked;
 	UPROPERTY() TArray<TObjectPtr<class UStaticMeshComponent>> CarWheels;  // 4 par voiture
 	class USceneComponent* MakeFigure(const strides::LifeOutfit& O, const FString& Name);
 	class UStaticMeshComponent* MakePart(USceneComponent* Parent, class UStaticMesh* Mesh, const FVector& Loc, const FVector& Size, const FLinearColor& Color, const FRotator& Rot = FRotator::ZeroRotator);

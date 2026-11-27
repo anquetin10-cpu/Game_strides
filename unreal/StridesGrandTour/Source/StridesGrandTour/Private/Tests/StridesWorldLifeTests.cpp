@@ -156,6 +156,20 @@ bool FStridesWorldAmbientLifeTest::RunTest(const FString&)
 	AStridesAmbientLife* A = W.World->SpawnActor<AStridesAmbientLife>();
 	if (!TestTrue(TEXT("vie ambiante posée"), A && A->Build(*Data))) return false;
 	TestEqual(TEXT("7 voitures (Ambient.spawn : coast, main, ew ×2, main, hippo, coast)"), A->CarCount(), 7);
+	// Jalon J3 (correction) : 14 véhicules garés du web (tracteur et voiture du Val, 12 places en ville), infranchissables.
+	TestEqual(TEXT("14 véhicules garés (world.js parkedVehicles)"), A->ParkedCount(), 14);
+	TestEqual(TEXT("14 véhicules garés chargés"), Data->Parked.Num(), 14);
+	{
+		AStridesCourse* Pc = W.World->SpawnActor<AStridesCourse>();
+		Pc->Build(Data->PoleCourse(), *Data);
+		int32 Boxes = 0;
+		for (const strides::Collider& C : Pc->WorldColliders().all()) Boxes += C.tag == "parked";
+		TestEqual(TEXT("14 collisions « parked »"), Boxes, 14);
+		const FStridesParked& V = Data->Parked[2];
+		double X = V.X, Z = V.Z + 0.3;
+		const strides::ColliderHit Hit = Pc->WorldColliders().resolve(X, Z, 0.85);
+		TestTrue(FString::Printf(TEXT("cheval repoussé hors de la voiture garée (%.2f ; %.2f)"), X, Z), Hit.hit && FVector2D::Distance(FVector2D(X, Z), FVector2D(V.X, V.Z)) > 1.0);
+	}
 	TestEqual(TEXT("24 passants et 8 spectateurs"), A->PeopleCount(), 32);
 	int32 Colliding = 0;
 	TArray<UStaticMeshComponent*> Parts;

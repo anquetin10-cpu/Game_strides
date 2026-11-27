@@ -270,6 +270,25 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 		else LoadLog.Add(FString::Printf(TEXT("story_missions.json : illisible (%s), aucune mission"), UTF8_TO_TCHAR(Err.c_str())));
 	}
+	// Jalon J3 (correction) : véhicules garés du web (tracteur et voiture du Val, places de la ville).
+	{
+		TSharedPtr<FJsonObject> P;
+		if (LoadJson(TEXT("world_parked.json"), P))
+		{
+			for (const TSharedPtr<FJsonValue>& V : P->GetArrayField(TEXT("vehicles")))
+			{
+				const TSharedPtr<FJsonObject> O = V->AsObject();
+				FStridesParked C;
+				C.Kind = O->GetStringField(TEXT("kind")); C.Color = O->GetStringField(TEXT("color"));
+				C.X = O->GetNumberField(TEXT("x")); C.Z = O->GetNumberField(TEXT("z")); C.Heading = O->GetNumberField(TEXT("heading"));
+				C.L = O->GetNumberField(TEXT("L")); C.W = O->GetNumberField(TEXT("W")); C.Wb = O->GetNumberField(TEXT("wb")); C.R = O->GetNumberField(TEXT("r"));
+				C.Hw = O->GetNumberField(TEXT("hw")); C.Hd = O->GetNumberField(TEXT("hd"));
+				Parked.Add(C);
+			}
+			LoadLog.Add(FString::Printf(TEXT("world_parked.json : %d véhicules garés"), Parked.Num()));
+		}
+		else LoadLog.Add(TEXT("world_parked.json : absent, aucune voiture garée"));
+	}
 	LoadScene();
 	// Obstacles, lignes et poteau du parcours du Pôle construits par le jeu web (tranche T5).
 	{

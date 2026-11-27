@@ -105,6 +105,14 @@ struct FStridesProgressionLevel
 	UPROPERTY(BlueprintReadOnly) int32 Reputation = 0;
 };
 
+// Jalon J3 (correction) : véhicule garé du web (world.js parkedVehicles ; Content/Data/world_parked.json,
+// scripts/unreal/export-voitures-garees.mjs) : modèle, teinte, position et cap (repère web), gabarit, collision.
+struct FStridesParked
+{
+	FString Kind, Color;
+	double X = 0, Z = 0, Heading = 0, L = 4, W = 1.8, Wb = 2.6, R = 0.31, Hw = 1, Hd = 2;
+};
+
 UCLASS()
 class STRIDESGRANDTOUR_API UStridesDataSubsystem : public UGameInstanceSubsystem
 {
@@ -209,6 +217,8 @@ public:
 	// (Content/Data/story_missions.json, scripts/unreal/export-missions.mjs ; lecture du cœur, celle du ctest « carriere ») ;
 	// remplissent aussi Missions et Progression. Nul si absent ou illisible (aucune mission inventée de repli).
 	const strides::StoryData* Story() const { return bStory ? &StoryDef : nullptr; }
+	// Véhicules garés du web (vide si world_parked.json absent).
+	TArray<FStridesParked> Parked;
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
 

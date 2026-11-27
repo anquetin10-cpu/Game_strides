@@ -98,6 +98,28 @@ bool AStridesAmbientLife::Build(const UStridesDataSubsystem& Data)
 		}
 		Cars.Add(Root);
 	}
+	// Jalon J3 (correction) : véhicules garés du web (world.js parkedVehicles), même silhouette provisoire que la
+	// circulation (caisse, habitacle, roues), posés une fois ; collision dans les colliders du monde (AStridesCourse).
+	for (int32 I = 0; I < Data.Parked.Num(); ++I)
+	{
+		const FStridesParked& V = Data.Parked[I];
+		USceneComponent* Root = NewObject<USceneComponent>(this, *FString::Printf(TEXT("Garee_%d"), I));
+		Root->SetMobility(EComponentMobility::Movable);
+		Root->SetupAttachment(RootComponent);
+		Root->RegisterComponent();
+		const FLinearColor Paint = Hex(TCHAR_TO_UTF8(*V.Color));
+		const double L = V.L * 100, W = V.W * 100, R = V.R * 100;
+		const bool bTractor = V.Kind == TEXT("tractor");
+		MakePart(Root, Cube, FVector(0, 0, R + 30), FVector(L, W, bTractor ? 90 : 62), Paint);
+		MakePart(Root, Cube, FVector(bTractor ? -L * .2 : -L * .08, 0, R + (bTractor ? 120 : 85)), FVector(L * (bTractor ? .3 : .55), W * .9, bTractor ? 110 : 48), FLinearColor(.06f, .09f, .11f));
+		for (int32 K = 0; K < 4; ++K)
+		{
+			const double X = (K < 2 ? 1 : -1) * V.Wb * 50, Y = (K % 2 ? 1 : -1) * (W * .5 - 12);
+			MakePart(Root, Cylinder, FVector(X, Y, R), FVector(2 * R, 2 * R, 22), FLinearColor(.03f, .03f, .035f), FRotator(0, 0, 90));
+		}
+		Root->SetWorldLocationAndRotation(StridesUnits::WebToUE(V.X, Data.TerrainHeight(V.X, V.Z), V.Z), FRotator(0, StridesUnits::HeadingToYawDeg(V.Heading), 0));
+		Parked.Add(Root);
+	}
 	for (int32 I = 0; I < (int32)A->walkers.size(); ++I) Walkers.Add(MakeFigure(A->walkers[I].outfit, FString::Printf(TEXT("Passant_%d"), I)));
 	for (int32 I = 0; I < (int32)A->spectators.size(); ++I)
 	{
@@ -107,7 +129,7 @@ bool AStridesAmbientLife::Build(const UStridesDataSubsystem& Data)
 		Spectators.Add(F);
 	}
 	Pose();
-	UE_LOG(LogTemp, Display, TEXT("Strides vie ambiante : %d voitures, %d passants, %d spectateurs"), Cars.Num(), Walkers.Num(), Spectators.Num());
+	UE_LOG(LogTemp, Display, TEXT("Strides vie ambiante : %d voitures, %d garées, %d passants, %d spectateurs"), Cars.Num(), Parked.Num(), Walkers.Num(), Spectators.Num());
 	return true;
 }
 
