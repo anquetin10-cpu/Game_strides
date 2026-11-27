@@ -109,9 +109,13 @@ void AStridesWorldClock::Apply(double GameTime)
 			F->SetFogDensity((float)(.0035 * (1 + 1.2 * Cover + 2.0 * Rain)));
 	if (Post)
 	{
-		// Exposition fixe du portage (−1 de jour) relevée la nuit pour garder la scène lisible.
+		// Exposition fixe du portage (−1 de jour, 10 lux) relevée quand la lumière baisse (aube, soir, nuit, ciel couvert),
+		// pour garder la scène lisible : +0,8 diaphragme par moitié de lumière en moins (réglage du portage).
+		// Éclairement d'une surface horizontale : soleil × sin(hauteur), rapporté au soleil fixe d'avant J3-C (42°).
+		const double Grazing = bNight ? 1.0 : FMath::Sin(FMath::DegreesToRadians(FMath::Max(Pos.alt, 3.0))) / FMath::Sin(FMath::DegreesToRadians(42.0));
+		const double Light = FMath::Max(SunLux * Grazing + 2.0 * SkyIntensity, .6);
 		Post->Settings.bOverride_AutoExposureBias = true;
-		Post->Settings.AutoExposureBias = (float)(-1.0 + 3.0 * (1 - Smooth(-6, 6, Pos.alt)));
+		Post->Settings.AutoExposureBias = (float)FMath::Clamp(-1.0 + .8 * FMath::Log2(13.0 / Light), -1.5, 2.5);
 	}
 	// Marée (weather.js tideLevel, mètres autour du niveau moyen, zéro du jeu) : hauteur de la mer.
 	SeaLevel = C::tideLevel(GameTime / 3600);

@@ -504,6 +504,37 @@ pas la marche (P2, antérieur à J3) : la reconnaissance « à pied » du web es
 autour des points de 4 m au galop (ralenti ajouté dans `suivre.py`, outil hors jeu). Libellé de l'étape doublement
 numéroté « (4/5) (5/7) » (P3).
 
+### Deuxième correction de J3 après contrôle adverse (27/11 soir, base `d6c08ee7`, commits depuis `d559d6be`)
+
+Légende inchangée : **écrit**, **compilé**, **testé moteur** (Automation ou ctest), **joué par l'agent** (paquet,
+entrées système injectées par l'agent : CGEvent, captures `screencapture`). Jeu à la main par Julien : **à confirmer
+par Julien**. Preuves : `.ue-cache/travail/livraison/preuves/j3d/` (dossiers `g1` à `g10`, `s1`, `s2`, `drive.log`,
+journaux du jeu `j3d-g2.log`, `j3d-g3-relance.log`, sauvegardes avant / pendant / après) ; sélection versionnée :
+`preuves/j3d-20261127/` (0,6 Mo).
+
+| Problème du contrôle | Verdict | Ce qui a été fait | État et preuve |
+|---|---|---|---|
+| Partie sauvegardée à pied : cheval perdu à la reprise (P1) | **fondé, corrigé** | La sauvegarde garde la position et le cap du cheval (`game.js` `_storePositions` `pos.horse`) ; la reprise à pied le repose (`game.js:1063`). Repère « Cheval » sur la mini-carte quand le joueur est à pied (`game.js:1382`, ramené au bord) ; aussi pour une ancienne sauvegarde sans position du cheval | **testé moteur** (`Strides.Save.HorseOnFoot` : cheval laissé à 345 m, relu à < 0,5 m, repère, remonté ; ctest « oracles ») ; **joué par l'agent en paquet Development** : descendu, éloigné de 8,6 m, sauvegarde automatique (`pose-sauvegardee-a-pied.json` : joueur (13,4 ; 486,2), cheval (9,4 ; 478,7)), paquet arrêté puis relancé : « Partie reprise », **cheval à côté du joueur et repère sur la mini-carte** (`g3-221315-demi-tour.jpg`). Shipping relancé sur l'ancienne sauvegarde du contrôle : repère « Cheval » au bord de la mini-carte (`s2-222900-ship2.jpg`). **Remonter après la reprise : non obtenu par entrées injectées** (10 plans : la marche à pied du portage ne se dirige pas au clavier de façon fiable, P2 antérieur à J3 ; le joueur est passé à 4,1 m du cheval) ; prouvé dans le moteur seulement |
+| « Missions et progression conformes au web » exagéré : 10 missions payées à l'arrivée (P1) | **fondé, corrigé pour 7 sur 10** | `export-missions.mjs` relève les étapes du web de livraison, fugueur, plage, fer, pension, csi3, gp ; `StridesCore/Career` porte le compte à rebours et l'échec du web (`missions.js:226-228`, `fail`, `timeoutText`) et les règles de résultat de csi3 et du Grand Prix. Choix n° 23 et 24 | **testé** (ctest « carriere » : 105 s de la selle, échec « Trop tard : l’épreuve a commencé sans la selle. », rien payé, reproposée ; 9 pénalités refusées, 8 acceptées ; Van Dijk battu ou non ; moteur `Strides.Career.Story`). **Non joué en paquet** (ces missions demandent le palier 2 et la fin de groom). **Restent réduites : cross, derby, gpparis** (épreuves non portées) : décision demandée à Julien |
+| J3 incomplet (véhicules, chevaux et cavaliers d'ambiance, J3-C, J3-D, J3-E) | **fondé** | **J3-C** : heure, soleil, météo et marée du web (`StridesCore/WorldClock`, oracle `export-meteo.mjs`, ctest « meteo » : 780 relevés de météo, 236 de marée, 97 de soleil, écarts < 1e-12) ; `AStridesWorldClock` : lumière, nuit, brouillard, mer à la marée ; heure gardée dans la sauvegarde, arrêtée téléphone ouvert ; HUD « 7:35 · Éclaircies · 13 °C ». **J3-D** : 20 fers d'or du web (`export-fers.mjs`, `StridesCore/Collectibles`) : 2,6 m, +25 €, +500 € à 20, sauvegardés, repères à 70 m | **testé moteur** (`Strides.World.DayNight` : soleil à 52,3° à 14 h, nuit à 23 h, marnage du jour 0 de −3,74 à 3,33 m, 1 200 s = un jour, heure relue ; `Strides.World.Horseshoes`) ; **vu en paquet** : heure qui avance (7:35 → 13:52 en 18 min réelles, relances comprises), aube, matin, Shipping (`g1`, `g2`, `g3`, `s2`). Fers d'or : **non ramassés en paquet**. **Restent non faits** : véhicules pilotables, chevaux et cavaliers d'ambiance, commerces et intérieurs, discussions, pluie visible et éclairage nocturne, J3-E (appels de dessin) |
+| actifs.md range des lots en « Hors V1 » sans arbitrage | **fondé, corrigé** | Section renommée « Non faits », chaque ligne marquée **J3 à faire**, **jalon Jx** ou **à arbitrer** | `actifs.md` |
+| m3 et son épreuve jamais jouées en paquet | **fondé, toujours vrai** | non rejoué dans cette correction | moteur seulement |
+| Incident mémoire de 42 Go | **non reproduit** | sessions de cette correction : 2,89 à 3,24 Go pour le paquet Development, 2,97 à 4,99 Go pour le Shipping (au chargement), relevés dans le panneau système | cause à confirmer |
+| Panneau « Forcer des applications à quitter » ; touche fn collée ; note de Notes | **constaté** | panneau toujours ouvert (non touché ; le premier plan a été vérifié avant chaque touche, aucune touche perdue au journal) ; joueur avec drapeaux à 0 (aucune touche N ni A envoyée) ; Notes non ouverte | **à signaler à Julien : un secret serait stocké en clair dans une note rapide de Notes (relevé du contrôle, non vérifié ici)** |
+| Forme noire au poteau Chrono (P3) | **non traité** | — | ouvert |
+
+**Défaut trouvé en jouant (corrigé)** : à l'aube (7 h 37 de jeu, soleil à 4°), la première version de l'éclairage
+laissait la scène presque noire (`g1-215917-fin.jpg`) ; l'exposition suit désormais la lumière reçue au sol (choix n° 22)
+(`g3-221315-demi-tour.jpg`, 8 h 48). **Défauts ouverts** : la marche à pied (P2, antérieur) ; au démarrage d'une partie
+neuve (7 h, soleil à −1°) la lumière est celle de l'aube (fidèle à l'heure du web, à confirmer à l'œil par Julien).
+
+**Matrice** (sur `7b3b6d4f` puis le réglage d'exposition) : ctest **15 / 15** (dont « meteo » nouveau) ; Automation `Strides`
+**63 / 63** (62 succès sur la matrice complète, `Strides.World.Horseshoes` corrigé dans son test puis repassé ; les 14 tests
+`Strides.World`, `Save`, `Career`, `Phone`, `Hud` repassés après le réglage) ; une attente « Waiting for ZenServer » par
+lancement d'éditeur (6), toutes résolues seules, aucun éditeur arrêté. Paquets Development et Shipping reconstruits
+(`-skipcook`, données `Content/Data` mises en scène) : **0 / 17** chaînes d'outils dans le Shipping
+(`check-shipping-tools.txt`). Sauvegarde du joueur remise à l'identique après les parties (md5 `8d46a855…`).
+
 ## J4 — Boucle produit
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -608,6 +639,21 @@ numéroté « (4/5) (5/7) » (P3).
 21. **Épreuve de M3** (27/11, correction J3) : l'étape « épreuve » ouvre le poteau « Chrono » du Pôle (épreuve Amateur
     1,10 m, la même classe que M3 au web) malgré la mission en cours, et se franchit quand le parcours commencé pendant
     l'étape est terminé, quel qu'en soit le résultat (la participation est due même éliminé, comme au web).
+22. **Lumière du jour et de la nuit** (27/11 soir, J3-C) : la direction du soleil, l'heure, la couverture nuageuse, les
+    averses et la marée sont ceux du web (oracle) ; les intensités (10 lux au plus, lune de 0,35 lux à l'opposé du
+    soleil, lumière du ciel 0,3 à 1,5) et l'exposition (relevée quand la lumière baisse) sont un réglage du portage,
+    `sky.js` n'étant pas porté. À confirmer à l'œil par Julien. Absent en mode capture (`-StridesShots`) pour garder la
+    lumière des captures de référence (G5).
+23. **Missions dont l'étape du web est à l'intérieur ou suit un cheval qui bouge** (27/11 soir) : « Selle sur-mesure » se
+    retire devant la porte de la Sellerie (rayon 4 m ; comptoir intérieur au web, intérieurs non portés) ; « Le fugueur »
+    se rattrape au point d'apparition de Tonnerre (−385 ; 70) dans les 130 s du web (Tonnerre ne fuit pas) ; « Galop sur la
+    plage » garde les anneaux à mi-marée et le temps de base de 95 s (le web les recule à marée basse et ajoute du temps) ;
+    « Fer perdu » et « La pension parfaite » sautent l'étape du Guide local (non porté). Chaque réduction est listée dans
+    `skipped` de `story_missions.json`.
+24. **Qualificative CSI 3★ et Grand Prix** (27/11 soir) : courus sur le Parcours du Pôle du portage (hauteurs et temps
+    accordé du Parcours, pas 1,45 m / 1,55 m du web) avec les règles de résultat du web : 8 pénalités au plus ; battre
+    Van Dijk (4 points en 52,4 s, `timeAllowedFor(cso, 400) − 3,6`). Un échec arrête la mission sans paiement, comme
+    `missions.fail`.
 
 ## Risques
 
