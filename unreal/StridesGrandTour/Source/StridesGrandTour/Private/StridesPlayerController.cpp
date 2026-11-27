@@ -9,6 +9,8 @@
 #include "Engine/GameViewportClient.h"
 #include "Framework/Application/IInputProcessor.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Layout/WidgetPath.h"
+#include "Widgets/SWindow.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
 #include "Misc/CoreDelegates.h"
@@ -25,6 +27,7 @@
 #include "StridesCsoScreens.h"
 #include "StridesDataSubsystem.h"
 #include "StridesUnits.h"
+#include "StridesCore/WindowFit.h"
 
 namespace
 {
@@ -35,19 +38,55 @@ UInputAction* MakeAction(UObject* Outer, const TCHAR* Name, EInputActionValueTyp
 	return A;
 }
 
+// Position de la fenêtre de jeu connue de Slate, recalée sur l'écran qui la porte (Mac, plein écran). Contrôle J1b : en
+// plein écran fenêtré, jeu lancé normalement et resté au premier plan, la fenêtre native elle-même rend une position
+// périmée ((0, 2159) au lieu de (0, 0) sur l'écran 1920 x 1080, GetFullScreenInfo compris), que Slate garde : le test de
+// position d'un clic ne trouve aucun widget (« sous le pointeur rien ») et aucun bouton de carte ne répond, quel que soit
+// le nombre de clics, jusqu'à une sortie de l'espace plein écran suivie d'un retour. Règle (StridesCore/WindowFit,
+// ctest « fenetre ») : la fenêtre plein écran couvre l'écran du pointeur. Appelé à chaque image de Slate (Tick du
+// préprocesseur, avant le dessin qui bâtit la grille de recherche des widgets : recaler au clic seulement laisserait le
+// clic courant chercher dans la grille de l'image d'avant, constaté) et avant chaque clic.
+static void ResyncGameWindowPosition(FSlateApplication& App, const FVector2D& Cursor)
+{
+#if PLATFORM_MAC
+	const FDisplayMetrics& DM = App.GetCachedDisplayMetricsByRef();
+	std::vector<strides::ScreenRect> Screens;
+	for (const FMonitorInfo& M : DM.MonitorInfo) Screens.push_back({M.DisplayRect.Left, M.DisplayRect.Top, M.DisplayRect.Right, M.DisplayRect.Bottom});
+	for (const TSharedRef<SWindow>& W : App.GetInteractiveTopLevelWindows())
+	{
+		const TSharedPtr<FGenericWindow> N = W->GetNativeWindow();
+		if (!N.IsValid() || W->GetWindowMode() == EWindowMode::Windowed) continue;
+		const FVector2D Pos = W->GetPositionInScreen(), Size = W->GetSizeInScreen();
+		if (const std::optional<strides::WindowOrigin> O = strides::fullscreenWindowResync(Cursor.X, Cursor.Y, Pos.X, Pos.Y, Size.X, Size.Y, Screens))
+		{
+			UE_LOG(LogTemp, Display, TEXT("Strides fenêtre : position Slate (%.0f, %.0f) recalée sur l'écran du pointeur (%d, %d), taille %.0f x %.0f"), Pos.X, Pos.Y, O->x, O->y, Size.X, Size.Y);
+			App.OnMovedWindow(N.ToSharedRef(), O->x, O->y);
+		}
+	}
+#endif
+}
+
 // Préprocesseur Slate : chaque touche enfoncée ou relâchée (répétition automatique comprise) est versée aux commandes
 // du web (window keydown / keyup) ; l'événement continue vers Enhanced Input et les widgets.
 class FStridesKeyProcessor : public IInputProcessor
 {
 public:
 	explicit FStridesKeyProcessor(AStridesPlayerController* InPC) : PC(InPC) {}
-	virtual void Tick(const float, FSlateApplication&, TSharedRef<ICursor>) override {}
+	virtual void Tick(const float, FSlateApplication& App, TSharedRef<ICursor> Cursor) override { ResyncGameWindowPosition(App, Cursor->GetPosition()); }
 	virtual bool HandleKeyDownEvent(FSlateApplication&, const FKeyEvent& E) override { Feed(E, true); return false; }
 	virtual bool HandleKeyUpEvent(FSlateApplication&, const FKeyEvent& E) override { Feed(E, false); return false; }
 	virtual const TCHAR* GetDebugName() const override { return TEXT("StridesKeys"); }
+	// Avant que Slate cherche le widget sous le pointeur : position de la fenêtre recalée (voir ResyncGameWindowPosition).
+	virtual bool HandleMouseButtonDownEvent(FSlateApplication& App, const FPointerEvent& E) override
+	{
+		ResyncGameWindowPosition(App, E.GetScreenSpacePosition());
+#if !UE_BUILD_SHIPPING
+		LogMouse(App, E, TEXT("enfoncé"));
+#endif
+		return false;
+	}
 #if !UE_BUILD_SHIPPING
 	// Journal des clics (diagnostic J1 du premier clic absorbé, hors Shipping) : position, fenêtre active, capture.
-	virtual bool HandleMouseButtonDownEvent(FSlateApplication& App, const FPointerEvent& E) override { LogMouse(App, E, TEXT("enfoncé")); return false; }
 	virtual bool HandleMouseButtonUpEvent(FSlateApplication& App, const FPointerEvent& E) override { LogMouse(App, E, TEXT("relâché")); return false; }
 	void LogMouse(FSlateApplication& App, const FPointerEvent& E, const TCHAR* What)
 	{
@@ -55,6 +94,26 @@ public:
 		UE_LOG(LogTemp, Display, TEXT("Strides souris : bouton %s %s à (%.0f, %.0f), application active %d, capture %s, focus %s"), *E.GetEffectingButton().ToString(), What,
 			E.GetScreenSpacePosition().X, E.GetScreenSpacePosition().Y, App.IsActive(), App.HasAnyMouseCaptor() ? TEXT("oui") : TEXT("non"),
 			Focus.IsValid() ? *Focus->GetTypeAsString() : TEXT("aucun"));
+		// Ce que Slate trouve sous le pointeur (fenêtre, chemin de widgets), géométrie de la fenêtre et mode de la souris.
+		const FVector2D Pos = E.GetScreenSpacePosition();
+		const FWidgetPath Path = App.LocateWindowUnderMouse(Pos, App.GetInteractiveTopLevelWindows(), false, E.GetUserIndex());
+		FString Under = TEXT("rien");
+		if (Path.IsValid())
+		{
+			Under.Reset();
+			for (int32 i = FMath::Max(0, Path.Widgets.Num() - 3); i < Path.Widgets.Num(); ++i) Under += Path.Widgets[i].Widget->GetTypeAsString() + TEXT(" ");
+			Under += FString::Printf(TEXT("(%d)"), Path.Widgets.Num());
+		}
+		const TSharedPtr<GenericApplication> PA = App.GetPlatformApplication();
+		const TSharedPtr<SWindow> W = App.GetActiveTopLevelWindow();
+		const FVector2D CurPos = PA.IsValid() && PA->Cursor.IsValid() ? PA->Cursor->GetPosition() : FVector2D(-1, -1);
+		int32 FX = -1, FY = -1, FW = -1, FH = -1;
+		if (W.IsValid() && W->GetNativeWindow().IsValid()) W->GetNativeWindow()->GetFullScreenInfo(FX, FY, FW, FH);
+		UE_LOG(LogTemp, Display, TEXT("Strides souris (détail) : sous le pointeur %s ; au-dessus d'une fenêtre Slate %d, haute précision %d, curseur (%.0f, %.0f) ; fenêtre active %s à (%.0f, %.0f) taille (%.0f, %.0f), mode %d, %d fenêtre(s) interactive(s), écran natif (%d, %d, %d, %d)"),
+			*Under, PA.IsValid() && PA->IsCursorDirectlyOverSlateWindow(), PA.IsValid() && PA->IsUsingHighPrecisionMouseMode(), CurPos.X, CurPos.Y,
+			W.IsValid() ? TEXT("oui") : TEXT("aucune"), W.IsValid() ? W->GetPositionInScreen().X : 0.f, W.IsValid() ? W->GetPositionInScreen().Y : 0.f,
+			W.IsValid() ? W->GetSizeInScreen().X : 0.f, W.IsValid() ? W->GetSizeInScreen().Y : 0.f, W.IsValid() ? (int32)W->GetWindowMode() : -1,
+			App.GetInteractiveTopLevelWindows().Num(), FX, FY, FW, FH);
 	}
 #endif
 private:
@@ -204,7 +263,11 @@ void AStridesPlayerController::ReleaseMouseForCard()
 		VC->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
 		if (FViewport* Vp = VC->Viewport) { Vp->CaptureMouse(false); Vp->LockMouseToViewport(false); }
 	}
-	if (FSlateApplication::IsInitialized()) FSlateApplication::Get().ReleaseAllPointerCapture();
+	if (FSlateApplication::IsInitialized())
+	{
+		FSlateApplication::Get().ReleaseAllPointerCapture();
+		ResyncGameWindowPosition(FSlateApplication::Get(), FSlateApplication::Get().GetCursorPos());
+	}
 }
 
 void AStridesPlayerController::OnAppActivation(const bool bActive) { if (!bActive) Cmd.releaseAll(); }

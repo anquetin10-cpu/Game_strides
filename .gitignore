@@ -27,4 +27,6 @@ unreal/StridesGrandTour/Builds/
 unreal/StridesGrandTour/DerivedDataCache/
 unreal/StridesGrandTour/Intermediate/
 unreal/StridesGrandTour/Saved/
+# Scripts de téléchargement des serveurs web copiés par le greffon Pixel Streaming 2 au lancement de l'éditeur (régénérés)
+unreal/StridesGrandTour/Samples/PixelStreaming2/
 *.xcworkspace/

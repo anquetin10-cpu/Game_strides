@@ -83,3 +83,9 @@ target_sources(strides_core PRIVATE ${CORE}/Private/CsoGuide.cpp)
 add_executable(strides_guide_tests tests/test_guide.cpp)
 target_link_libraries(strides_guide_tests strides_core)
 add_test(NAME guidage COMMAND strides_guide_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles)
+# J1b (contrôle adverse) : recalage de la position d'une fenêtre plein écran connue de l'interface (StridesCore/WindowFit,
+# choix du portage : premier clic sur les cartes en paquet Mac) ; ctest « fenetre ».
+target_sources(strides_core PRIVATE ${CORE}/Private/WindowFit.cpp)
+add_executable(strides_window_fit_tests tests/test_window_fit.cpp)
+target_link_libraries(strides_window_fit_tests strides_core)
+add_test(NAME fenetre COMMAND strides_window_fit_tests)
