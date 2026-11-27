@@ -24,6 +24,7 @@
 #include "StridesShots.h"
 #include "StridesUnits.h"
 #include "StridesWorldDirector.h"
+#include "EngineUtils.h"
 
 AStridesGameMode::AStridesGameMode()
 {
@@ -134,8 +135,38 @@ void AStridesGameMode::StartPlay()
 	// reprendre), comme « Continuer » au web ; jamais pendant les tests ni en mode de capture.
 	else if (UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr)
 	{
-		Save->ResumeAtStart(UGameplayStatics::GetPlayerController(W, 0));
-		// Jalon J3-C : heure, jour et nuit, météo et marée du web (après la reprise : heure de la sauvegarde).
-		if (!GIsAutomationTesting) W->SpawnActor<AStridesWorldClock>();
+		// Jalon J4-A : écran titre du web (Continuer / Nouvelle partie, ou Jouer) avant la partie ; la reprise et l'horloge
+		// du monde attendent le choix du joueur. Sans joueur local (tests) : reprise directe comme avant.
+		AStridesPlayerController* SPC = Cast<AStridesPlayerController>(UGameplayStatics::GetPlayerController(W, 0));
+		if (SPC && SPC->GetLocalPlayer() && !GIsAutomationTesting && Save->bAutoSave)
+		{
+			bool bHas = false;
+			FString Issue;
+			Save->CheckSave(bHas, Issue);
+			SPC->ShowTitle(bHas, Issue);
+		}
+		else StartFromTitle(false, FString(), FString());
 	}
+}
+
+void AStridesGameMode::StartFromTitle(bool bNew, const FString& Name, const FString& Avatar)
+{
+	if (bStarted) return;
+	bStarted = true;
+	StartGameIn(GetWorld(), bNew, Name, Avatar);
+}
+
+void AStridesGameMode::StartGameIn(UWorld* W, bool bNew, const FString& Name, const FString& Avatar)
+{
+	UStridesSaveSubsystem* Save = W && W->GetGameInstance() ? W->GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
+	if (!W || !Save) return;
+	APlayerController* PC = UGameplayStatics::GetPlayerController(W, 0);
+	if (!PC) for (TActorIterator<AStridesPlayerController> It(W); It && !PC; ++It) PC = *It;
+	if (bNew) Save->NewGame(PC, Name, Avatar);
+	else Save->ResumeAtStart(PC);
+	// Joueur des épreuves (annonce du dossard) : prénom de la sauvegarde.
+	for (TActorIterator<AStridesActivityPost> It(W); It; ++It) It->PlayerName = Save->PlayerName;
+	// Jalon J3-C : heure, jour et nuit, météo et marée du web (après la reprise : heure de la sauvegarde).
+	if (!GIsAutomationTesting) W->SpawnActor<AStridesWorldClock>();
+	UE_LOG(LogTemp, Display, TEXT("Strides : partie lancée depuis l'écran titre (%s, joueur %s)"), bNew ? TEXT("nouvelle") : TEXT("continuer"), *Save->PlayerName);
 }

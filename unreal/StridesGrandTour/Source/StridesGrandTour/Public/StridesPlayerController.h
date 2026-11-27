@@ -109,6 +109,11 @@ public:
 	bool DialogOpen() const;
 	class UStridesCsoScreens* ScreensWidget() const { return Screens; }
 	class UStridesPauseMenu* PauseMenuWidget() const { return PauseMenu; }
+	// Jalon J4-A : écran titre (jeu en pause derrière, pointeur rendu) ; choix transmis au mode de jeu.
+	void ShowTitle(bool bHasSave, const FString& Issue);
+	bool IsTitleOpen() const;
+	class UStridesTitleScreen* TitleWidget() const { return TitleScreen; }
+	void OnTitleChoice(bool bNew, const FString& Name, const FString& Avatar);
 	// Mode concours (classe cso-ctl du HUD de l'épreuve du monde).
 	bool InRace() const;
 
@@ -181,6 +186,7 @@ public:
 private:
 	UPROPERTY() TObjectPtr<class UStridesCsoHud> CsoHud;
 	UPROPERTY() TObjectPtr<class UStridesPauseMenu> PauseMenu;
+	UPROPERTY() TObjectPtr<class UStridesTitleScreen> TitleScreen;
 	UPROPERTY() TObjectPtr<class UStridesCsoScreens> Screens;
 	int32 CardStickDir = 0;
 	mutable TWeakObjectPtr<class AStridesActivityPost> PostCache;

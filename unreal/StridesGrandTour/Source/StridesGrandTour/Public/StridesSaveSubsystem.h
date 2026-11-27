@@ -40,6 +40,15 @@ public:
 	bool bAutoSave = !GIsAutomationTesting;
 	bool AutoSaveTick(class APlayerController* PC, float Dt);
 	bool ResumeAtStart(class APlayerController* PC);
+	// Jalon J4-A : écran titre. Sauvegarde présente et lisible (bHas) ; présente mais illisible : raison (Issue, rien
+	// n'est écrasé avant le choix du joueur).
+	void CheckSave(bool& bHas, FString& Issue) const;
+	// « Nouvelle partie » (game.js startGame(true) : save.reset() en gardant les réglages, prénom et personnage choisis,
+	// Comète au départ, saveNow) : partie neuve écrite tout de suite dans l'emplacement.
+	bool NewGame(class APlayerController* PC, const FString& Name, const FString& InAvatar);
+	// Prénom et personnage du joueur (save.data.playerName, avatar), lus avec les réglages et par LoadNow, écrits par SaveNow.
+	FString PlayerName = TEXT("Alex");
+	FString Avatar = TEXT("f");
 	float AutoSaveT = 0.f;
 	static const FString Slot;
 	// Jalon J3-C : heure du jeu (save.data.gameTime du web, s depuis le début ; 7 h au départ), avancée par

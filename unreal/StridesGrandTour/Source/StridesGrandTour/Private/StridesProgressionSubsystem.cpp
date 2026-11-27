@@ -161,7 +161,17 @@ FString UStridesProgressionSubsystem::MissionStatus() const
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 	if (!Data) return TEXT("Missions indisponibles");
 	if (ActiveMissionId.IsEmpty())
-		return CompletedMissions.Num() == Data->Missions.Num() ? TEXT("Carrière terminée") : TEXT("Aucune mission active");
+	{
+		if (CompletedMissions.Num() == Data->Missions.Num()) return TEXT("Carrière terminée");
+		// Jalon J4 (premier lancement, missions.js update :660-664) : sans mission en cours, prochaine étape discrète vers
+		// l'app Strides (« Une mission t’attend sur Strides », « N missions t’attendent sur Strides »). Le web écrit
+		// « Prochaine étape · touche pour ouvrir » (bandeau tactile) ; au clavier, la touche du téléphone (choix n° 32).
+		int32 N = 0;
+		for (const FStridesMissionDefinition* M : Offers(0.0)) N += OfferLock(M->Id).IsEmpty() ? 1 : 0;
+		if (N == 0) return TEXT("Aucune mission active");
+		const FString Tag = PLATFORM_IOS ? TEXT("Prochaine étape · touche pour ouvrir") : TEXT("Prochaine étape · P pour ouvrir le téléphone");
+		return N > 1 ? FString::Printf(TEXT("%s · %d missions t’attendent sur Strides"), *Tag, N) : FString::Printf(TEXT("%s · Une mission t’attend sur Strides"), *Tag);
+	}
 	const FStridesMissionDefinition* Mission = ActiveMission();
 	if (!Mission) return TEXT("Mission inconnue");
 	// Objectif de l'étape du web (setObjective) ; numéro d'étape pour suivre l'itinéraire.

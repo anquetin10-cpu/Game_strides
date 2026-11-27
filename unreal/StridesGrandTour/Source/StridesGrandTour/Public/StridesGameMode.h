@@ -13,4 +13,10 @@ class STRIDESGRANDTOUR_API AStridesGameMode : public AGameModeBase
 public:
 	AStridesGameMode();
 	virtual void StartPlay() override;
+	// Jalon J4-A : choix de l'écran titre (« Continuer » : reprise de la sauvegarde ; « C'est parti » : nouvelle partie),
+	// puis l'horloge du monde (heure de la sauvegarde ou 7 h).
+	void StartFromTitle(bool bNew, const FString& Name, const FString& Avatar);
+	// Même lancement sans mode de jeu (mondes de test) : reprise ou nouvelle partie, prénom des poteaux, horloge (hors tests).
+	static void StartGameIn(UWorld* W, bool bNew, const FString& Name, const FString& Avatar);
+	bool bStarted = false;
 };

@@ -29,6 +29,8 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	strides::SaveGame Core;
 	FString Msg;
 	ReadCore(SlotName, Core, Msg);  // part de la sauvegarde existante (records importés) ; sinon une sauvegarde neuve
+	Core.playerName = TCHAR_TO_UTF8(*PlayerName);  // jalon J4-A : création du personnage
+	Core.avatar = TCHAR_TO_UTF8(*Avatar);
 	Core.settings = Settings;  // réglages en cours (carte Pause)
 	Core.bestTimes = Best;     // meilleurs temps des activités (tranche T11)
 	Core.gameTime = GameTime;  // heure du jeu (J3-C)
@@ -127,6 +129,8 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	if (!ReadCore(SlotName, Core, LastMessage)) return false;
 	Settings = Core.settings;
 	Best = Core.bestTimes;
+	PlayerName = UTF8_TO_TCHAR(Core.playerName.c_str());
+	Avatar = UTF8_TO_TCHAR(Core.avatar.c_str());
 	Horses = Core.horses;
 	ActiveHorse = Core.activeHorse;
 	GameTime = Core.gameTime;
@@ -178,6 +182,51 @@ bool UStridesSaveSubsystem::LoadNow(APlayerController* PC)
 	return true;
 }
 
+void UStridesSaveSubsystem::CheckSave(bool& bHas, FString& Issue) const
+{
+	bHas = false;
+	Issue.Reset();
+	if (!UGameplayStatics::DoesSaveGameExist(SlotName, 0)) return;
+	strides::SaveGame Core;
+	FString Msg;
+	if (!ReadCore(SlotName, Core, Msg)) { Issue = Msg + TEXT("."); return; }
+	bHas = Core.pose.valid;
+	if (!bHas) Issue = TEXT("La sauvegarde ne contient pas de position.");
+}
+
+bool UStridesSaveSubsystem::NewGame(APlayerController* PC, const FString& Name, const FString& InAvatar)
+{
+	UWorld* W = PC ? PC->GetWorld() : nullptr;
+	if (!W) return false;
+	// save.reset() : tout repart de zéro sauf les réglages ; prénom et personnage de la création.
+	const strides::SaveGame Fresh = strides::SaveGame::fresh();
+	PlayerName = Name.IsEmpty() ? TEXT("Alex") : Name;
+	Avatar = InAvatar.IsEmpty() ? TEXT("f") : InAvatar;
+	Best.clear();
+	Horses = Fresh.horses;
+	ActiveHorse = Fresh.activeHorse;
+	GameTime = Fresh.gameTime;
+	Horseshoes.Reset();
+	if (UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
+	{
+		Progress->Restore(0, 0, FString(), {});
+		Progress->LastMessage.Empty();
+	}
+	for (TActorIterator<AStridesCollectibles> It(W); It; ++It) It->Refresh();
+	// Partie neuve écrite tout de suite (saveNow) : rien de l'ancienne sauvegarde n'est gardé (ni records, ni import).
+	strides::SaveGame Core = Fresh;
+	Core.playerName = TCHAR_TO_UTF8(*PlayerName);
+	Core.avatar = TCHAR_TO_UTF8(*Avatar);
+	Core.settings = Settings;
+	UStridesSaveGame* S = Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
+	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
+	UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
+	const bool Ok = SaveNow(PC);  // position de départ, cheval, crédits nuls
+	UE_LOG(LogTemp, Display, TEXT("Strides : nouvelle partie (%s, %s) %s"), *PlayerName, *Avatar, Ok ? TEXT("écrite") : TEXT("NON écrite"));
+	LastMessage.Empty();
+	return Ok;
+}
+
 void UStridesSaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -198,6 +247,8 @@ bool UStridesSaveSubsystem::ReloadSettings()
 	Horses = Core.horses;
 	ActiveHorse = Core.activeHorse;
 	GameTime = Core.gameTime;
+	PlayerName = UTF8_TO_TCHAR(Core.playerName.c_str());
+	Avatar = UTF8_TO_TCHAR(Core.avatar.c_str());
 	if (const UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0))) Horseshoes = Saved->Horseshoes;
 	// Journal du joueur (J1-E, J1-G) : meilleurs temps relus au lancement, comme le téléphone du web les affiche.
 	FString Times;

@@ -118,7 +118,10 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 		if (!Ev.IsEmpty())
 		{
 			if (!PoleCourse->Event() || PoleCourse->EventId() != Ev)
-				PoleCourse->StartEvent(Ev, UTF8_TO_TCHAR(strides::SaveGame::fresh().playerName.c_str()));
+			{
+				const UStridesSaveSubsystem* Sv = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>();
+				PoleCourse->StartEvent(Ev, Sv ? Sv->PlayerName : FString(TEXT("Alex")));
+			}
 			if (const strides::EventRun* E = PoleCourse->Event())
 			{
 				Progress->EventText = UTF8_TO_TCHAR(E->text().c_str());

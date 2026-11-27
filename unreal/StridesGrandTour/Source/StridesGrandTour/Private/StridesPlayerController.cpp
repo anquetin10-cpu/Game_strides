@@ -23,6 +23,8 @@
 #include "StridesTouchControls.h"
 #include "StridesCsoHud.h"
 #include "StridesPauseMenu.h"
+#include "StridesTitleScreen.h"
+#include "StridesGameMode.h"
 #include "StridesActivityPost.h"
 #include "StridesCsoScreens.h"
 #include "StridesHUD.h"
@@ -354,6 +356,26 @@ bool AStridesPlayerController::InRace() const
 // ---- Entrées vers les commandes du web ----
 void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRepeat)
 {
+	// Jalon J4-A : écran titre ouvert : haut / bas choisissent, Entrée / E / F (hors saisie du prénom) touchent, Retour
+	// arrière efface le prénom ; rien ne va aux commandes du jeu.
+	if (IsTitleOpen())
+	{
+		if (!bDown) return;
+		const bool bTyping = TitleScreen->NameFieldSelected();
+		if (Code == TEXT("ArrowUp") || (!bTyping && (Code == TEXT("KeyW") || Code == TEXT("KeyZ")))) { TitleScreen->MoveSelection(-1); return; }
+		if (Code == TEXT("ArrowDown") || Code == TEXT("Tab") || (!bTyping && Code == TEXT("KeyS"))) { TitleScreen->MoveSelection(1); return; }
+		if (Code == TEXT("ArrowLeft") || (!bTyping && (Code == TEXT("KeyA") || Code == TEXT("KeyQ")))) { TitleScreen->MoveSelection(-1); return; }
+		if (Code == TEXT("ArrowRight") || (!bTyping && Code == TEXT("KeyD"))) { TitleScreen->MoveSelection(1); return; }
+		if (Code == TEXT("Backspace")) { TitleScreen->Backspace(); return; }
+		if (bRepeat) return;
+		if (Code == TEXT("Enter") || Code == TEXT("NumpadEnter") || (!bTyping && (Code == TEXT("KeyE") || Code == TEXT("KeyF") || Code == TEXT("Space"))))
+		{
+			// Entrée dans le prénom : passage au bouton « C'est parti » (input keydown Enter → blur du web).
+			if (bTyping) TitleScreen->MoveSelection(3);
+			else TitleScreen->PressSelected();
+		}
+		return;
+	}
 	// Carte Pause ouverte (choix n° 9, 2e correction J1) : Échap la referme (Reprendre), Entrée / E / F déclenchent le
 	// bouton choisi (« Reprendre » d'office), gauche / droite changent de bouton. La touche ne va pas aux commandes du web :
 	// sinon l'Échap resterait dans pressed et remettrait la pause dès la reprise (input.js:138, 171).
@@ -442,8 +464,9 @@ void AStridesPlayerController::PlayerTick(float DeltaTime)
 	Super::PlayerTick(DeltaTime);
 	StepCommands(DeltaTime);
 	PhoneTick();
-	// Sauvegarde automatique toutes les 12 s de jeu (game.js update), jamais en pause.
-	if (!bPausedState && DeltaTime > 0)
+	// Sauvegarde automatique toutes les 12 s de jeu (game.js update), jamais en pause ni sur l'écran titre (state 'title' :
+	// la partie n'a pas commencé, la sauvegarde du joueur n'est pas touchée avant son choix).
+	if (!bPausedState && !IsTitleOpen() && !(GetWorld() && GetWorld()->IsPaused()) && DeltaTime > 0)
 		if (UStridesSaveSubsystem* S = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr) S->AutoSaveTick(this, DeltaTime);
 }
 
@@ -745,6 +768,42 @@ void AStridesPlayerController::TogglePhone()
 	else OpenPhone(TEXT("home"));
 }
 
+bool AStridesPlayerController::IsTitleOpen() const { return TitleScreen && TitleScreen->IsOpen(); }
+
+void AStridesPlayerController::ShowTitle(bool bHasSave, const FString& Issue)
+{
+	if (!TitleScreen) TitleScreen = GetLocalPlayer() ? CreateWidget<UStridesTitleScreen>(this, UStridesTitleScreen::StaticClass()) : CreateWidget<UStridesTitleScreen>(GetWorld(), UStridesTitleScreen::StaticClass());
+	if (!TitleScreen) return;
+	TitleScreen->OnChoice.BindUObject(this, &AStridesPlayerController::OnTitleChoice);
+	TitleScreen->Open(bHasSave, Issue);
+	if (GetWorld() && GetWorld()->GetGameViewport() && !TitleScreen->IsInViewport()) TitleScreen->AddToViewport(400);
+	Cmd.releaseAll();
+	Cmd.setEnabled(false);
+	UGameplayStatics::SetGamePaused(this, true);
+	if (GetLocalPlayer())
+	{
+		FInputModeUIOnly InputMode;
+		InputMode.SetWidgetToFocus(TitleScreen->TakeWidget());
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		SetInputMode(InputMode);
+		bShowMouseCursor = !PLATFORM_IOS;
+		ReleaseMouseForCard();
+	}
+	UE_LOG(LogTemp, Display, TEXT("Strides écran titre : ouvert (%s)"), *FString::Join(TitleScreen->Describe(), TEXT(" ; ")));
+}
+
+void AStridesPlayerController::OnTitleChoice(bool bNew, const FString& Name, const FString& Avatar)
+{
+	UE_LOG(LogTemp, Display, TEXT("Strides écran titre : %s (%s, %s)"), bNew ? TEXT("nouvelle partie") : TEXT("continuer"), *Name, *Avatar);
+	if (TitleScreen) TitleScreen->RemoveFromParent();
+	UGameplayStatics::SetGamePaused(this, false);
+	Cmd.setEnabled(true);
+	Cmd.releaseAll();
+	RestoreInputMode();
+	if (AStridesGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<AStridesGameMode>() : nullptr) GM->StartFromTitle(bNew, Name, Avatar);
+	else AStridesGameMode::StartGameIn(GetWorld(), bNew, Name, Avatar);  // mondes de test (sans mode de jeu)
+}
+
 void AStridesPlayerController::PauseGame()
 {
 	if (bPausedState) return;  // game.pause : seulement depuis l'état « play »
@@ -790,6 +849,14 @@ void AStridesPlayerController::ResumeGame()
 void AStridesPlayerController::OnMove(const FInputActionValue& V)
 {
 	const FVector2D In = V.Get<FVector2D>();
+	// Écran titre (jalon J4-A) : stick haut / bas = bouton précédent / suivant (un pas par poussée).
+	if (IsTitleOpen())
+	{
+		const int32 Dir = In.Y > .6 ? -1 : In.Y < -.6 ? 1 : 0;
+		if (Dir != 0 && Dir != CardStickDir) TitleScreen->MoveSelection(Dir);
+		CardStickDir = Dir;
+		return;
+	}
 	// Carte ouverte (ou carte Pause) : stick gauche poussé à gauche / à droite = bouton précédent / suivant (un pas par poussée).
 	const bool bPauseCard = bPausedState && PauseMenu && PauseMenu->IsOpen();
 	if ((Screens && CardOpen() && !bPausedState) || bPauseCard)
@@ -820,6 +887,8 @@ void AStridesPlayerController::OnLook(const FInputActionValue& V)
 }
 void AStridesPlayerController::OnJump()
 {
+	// Écran titre (jalon J4-A) : bouton A de la manette = bouton choisi.
+	if (IsTitleOpen()) { TitleScreen->PressSelected(); return; }
 	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->RequestJump();
 }
 void AStridesPlayerController::OnInteract()
