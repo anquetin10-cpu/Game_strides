@@ -198,6 +198,47 @@ Sélection : `unreal/docs/livraison/preuves/j1c-20261127/` ; tout le reste : `.u
 | J2-D | Entraînement à l'abord au paddock du Pôle (vertical + oxer, explications de saut) | Activité lançable, explications en cm comme le web | ctest + scénario | partie manuelle | J2-B |
 | J2-E | Commandes tactiles sur iPhone / iPad simulées (844 × 390 et iPad) | Tous les boutons atteignables, zones sûres | Strides.Cso.Controls + captures | captures | J1 |
 
+### État J2 au 27/11/2026 (étape « Gameplay équestre fiable », base `f61faf8d`)
+
+Légende : **écrit**, **compilé**, **testé (ctest / moteur)**, **joué par l'agent** (paquet Development lancé normalement,
+entrées injectées par l'agent : touches CGEvent, joueur de l'agent `pilote.py` qui lit l'écran ; ni F8, ni autopilote, ni
+`-StridesShots`, ni console). Jeu à la main par Julien : **à confirmer**. Sélection : `unreal/docs/livraison/preuves/j2-20261127/`
+(5 captures, extrait du journal du jeu) ; tout le reste : `.ue-cache/travail/livraison/preuves/j2/`.
+
+Audit d'entrée (réel, pas les README) : le jugement des barres, refus, chutes, vibrations et sons était déjà porté et prouvé
+(tranche T3, `CsoFences`) ; **écart P1 trouvé** : le cheval du jeu est affiché en vue du web (WildMesh) par défaut, et le web
+juge alors les **membres visibles** (`Obstacles._limbJudged`, `PjlHorse._limbContacts`) ; le portage passait
+`limbJudged = false` et ne détectait aucun contact. Conséquence mesurée sur l'oracle : avec une marge de trajectoire de
++0,02 à +0,04 m, le web fait tomber la barre (antérieur à 2,3 cm dans la barre, faute) là où le portage annonçait « franchi » ;
+même chose pour un postérieur (j2-effleurement, 9,1 cm). Résultat faux : P1. Aucun oracle existant ne contenait de contact
+(canal `lc` vide partout) : la règle de `csoLimbContact` n'était donc pas prouvée non plus.
+
+| Point | État | Preuve |
+|---|---|---|
+| Contacts membres / barres (port de `_limbContacts`, `limbContact.js`) | **écrit, testé ctest, testé moteur, joué** : `StridesCore/LimbContact` (géométrie, choix de l'obstacle jugé ou visé à 4 m, pose précédente, balayage 6 pas, contact le plus profond par barre, au-delà de 1 cm, barre en chute ignorée) ; branché dans `AStridesHorse::PostPoseView` sur la pose finale (replis et bascule compris), contact passé à `csoLimbContact` (barre, faute, cause), son et faute vus par l'épreuve ; `limbJudged` vrai quand la vue du web est active | ctest `limb` : 1 149 cas de `limb_contact.json`, 0 écart (≤ 1e-12) ; ctest `fences` : 10 scénarios `j2-*` exportés du jeu web avec pose des membres (canal `lb`), contacts recalculés identiques au web (5 contacts, écart ≤ 3e-17 m), rejeu complet sans écart |
+| Jugement épaules / postérieurs, résultat différé | **testé** : résultat annoncé après le passage des postérieurs (2,2 m) ou 1,2 s, comme le web (témoin « résultat différé » 179 images) | ctest `fences` |
+| Saut propre, postérieur qui touche, antérieur qui touche, barre qui tombe, effleurement sans chute, refus, saut en virage | **oracle exporté du web** (`export-cso-runs.mjs --only=j2-…`, cheval WildMesh) et **rejoué** (ctest) ; **scénarios moteur** `Strides.Scenario.Jump.Oracle` pilotés par les entrées du joueur (Espace, manette pour le virage), pose réellement évaluée : **10 / 10** abords avec le même résultat que le web (événements, barres tombées, tintements) ; contacts : **9 / 10** identiques au web, membre compris ; écart de pose déclaré sur `j2-posterieurs` (antérieur à 6,0 cm au web, aucun ici ; barre tombée sous les postérieurs 12 images plus tard : faute, cause et barre identiques) | journal `.ue-cache/journaux/j2-jump-3.log` |
+| Sons et annonces de faute | **testé moteur** `Strides.Scenario.Jump.InCourse` : épreuve lancée au poteau (E), « Entrer en piste », cloche, 1 sauté trop loin à l'Espace : toast « Barre au 1 · +4 · Appel trop loin », 4 points, journal d'épreuve, son `railFall`, barre à terre ; **joué en paquet** : toast identique après un contact du postérieur droit (7,1 cm) | capture `040954-…`, `journal-partie-j2.txt` |
+| Refus ; dérobés | refus : déjà portés (T3), rejoués avec le cheval WildMesh (`j2-refus-lent`) et 29 refus comptés en partie ; **dérobés : absents du jeu web** (aucune règle dans `src/`), non ajoutés | — |
+| Collisions des obstacles | déjà portées (chandeliers, ailes, lice : `horseCollide`, J1) ; inchangées ; rien de neuf constaté en partie | — |
+| Trajectoire et calage visuel du saut | inchangés (vue du web, ctest « monte-vue », `Strides.Parite.HorseView`) ; les contacts mesurés sur la pose montrent le calage : 9 / 10 contacts identiques au web | ci-dessus |
+| Mutations | `mutations-limb-contact.py` : **26 mutations, 24 détectées**, 2 attendues (cheval d'un autre cavalier ; changement d'obstacle en moins de 0,1 s), raisons écrites ; `mutations-cso-fences.py` : la mutation « profondeur minimale » est désormais détectée (liste corrigée), raisons des deux autres mutations « membres » réécrites ; relancé : **55 mutations, 39 détectées, 16 attendues, code 0** | `.ue-cache/travail/livraison/mutations-fences-2.log` |
+| Matrice de fin d'étape | **verte** : ctest **11 / 11**, Automation `Strides` **52 succès, 0 échec** (`Jump.Oracle`, `Jump.InCourse` en plus ; 1 attente « Waiting for ZenServer » résolue seule, aucun arrêt d'éditeur), paquets Development et Shipping de ce code (`-skipcook` : contenu inchangé), Shipping **0 / 14** chaînes d'outils ; captures CSO G5 non refaites (aucun visuel du CSO touché) | `check-shipping-tools.txt`, `.ue-cache/journaux/j2-matrice-automation.log` |
+| Partie en paquet (Development, entrées injectées) | **jouée par l'agent** : écurie → poteau, invite « E · Chrono », E, « Entrer en piste » au clavier, 8 manches, 7 « Recommencer » au clavier ; **1 obstacle franchi** (1, marge 0,26 m), **4 fautes** dont **2 par contact d'un membre** (postérieur droit 7,1 cm, postérieur gauche 9,5 cm : « Barre au 1 · +4 »), 29 refus, 8 bilans « Éliminé », 0 `Fatal` / `Critical error`. Option `rafale=<m>` ajoutée au joueur de l'agent (SAUT toutes les 0,2 s dès <m> m). **Pas obtenu : parcours complet** (même limite qu'en J1 : zone d'appel ratée, refus) ; à confirmer par Julien | `journal-partie-j2.txt`, captures |
+
+Écarts déclarés :
+- **ordre dans l'image** : le web mesure les membres pendant `horse.update`, avant `Obstacles.updateHorse` ; le portage après
+  l'animation (après `updateHorse` de la même image). Effet seulement si un contact et l'annonce différée tombent sur la même
+  image (non vu dans les 10 scénarios ni en partie).
+- **P1 candidat, à confirmer** : en partie (manche 8), une faute « au 2, saut trop court » a été annoncée à l'abord du 1, avec
+  « Erreur de parcours : ce n'est pas le 1 », alors que le cheval venait de l'autre côté de la carrière (capture `041240-…`).
+  Lecture : un passage de l'oxer 2 resté ouvert (épaules entrées sans ressortir, refus contre l'oxer) est annoncé à l'abord
+  suivant, comme le prévoit `_judge` du web (« résultat précédent encore en attente »), et « Recommencer » ne remet pas
+  `horse._pass` à zéro, ni au web ni ici. Code porté ligne à ligne : défaut probablement **commun au web**. Non corrigé
+  (le web tranche) ; à reproduire au web puis à décider (voir décision demandée).
+- les refus comptés juste après « Recommencer » quand le cheval est resté devant un obstacle (manches 7 et 8) : même
+  comportement que le web (pas de remise en place au recommencement) ; à confirmer.
+
 ## J3 — Monde vivant de Deauville
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
