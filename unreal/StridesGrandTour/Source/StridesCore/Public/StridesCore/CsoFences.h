@@ -8,9 +8,9 @@
 //   - update : chute déterministe des barres (taquets, élan, rebonds, glisse, roulement, inclinaison), vibration
 //     d'effleurement, remise par le jury (refus tout contre, entraînement) ou hors mission à plus de 60 m.
 // Oracle : unreal/core/tests/oracles/cso_runs/, canal « ch » (lc, oe, ob), rejoué image par image par
-// unreal/core/tests/test_core.cpp (testFenceRuns). Ce qui n'est PAS porté ici : la détection des contacts des membres
-// (pose animée du cheval WildMesh, pjlHorse.js / limbContact.js : l'appelant fournit le contact), l'affichage et les sons
-// (l'appelant reçoit les événements et les transformées).
+// unreal/core/tests/test_core.cpp (testFenceRuns). Ce qui n'est PAS ici : la détection des contacts des membres (pose
+// animée du cheval WildMesh, pjlHorse.js / limbContact.js : StridesCore/LimbContact, jalon J2 ; l'appelant passe le
+// contact à csoLimbContact), l'affichage et les sons (l'appelant reçoit les événements et les transformées).
 // Repère web : x est, z sud, y haut ; transformées des barres dans le repère local de l'obstacle (x le long des barres,
 // y vers le haut depuis le pied de l'obstacle, z le long de l'axe de saut n), angles en radians (Euler XYZ de Three.js).
 #pragma once

@@ -107,7 +107,7 @@ ATTENDUES = {
 only = os.environ.get('MUT_ONLY')
 if only: M = [m for m in M if only in m[1]]
 os.makedirs(out, exist_ok=True)
-allc = ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')
+allc = ('JumpModel.cpp', 'LimbContact.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 # broken : mutations non jouées (motif absent ou en double, compilation échouée) : jamais comptées non détectées.

@@ -17,6 +17,7 @@
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/HorseMirror.h"
 #include "StridesCore/JumpModel.h"
+#include "StridesCore/LimbContact.h"
 #include <vector>
 #include "StridesHorse.generated.h"
 
@@ -85,6 +86,12 @@ public:
 	bool IsJumping() const { return Sim.jumpT >= 0; }
 	// Contacts avec les colliders du monde (lice, ailes) depuis l'apparition (tests et journal).
 	int32 CollisionCount = 0;
+	// Jalon J2 : membres visibles jugés (Obstacles._limbJudged du web : cheval du joueur affiché en vue du web) ; contacts
+	// réels des membres de la pose finale avec les barres (pjlHorse.js _limbContacts, StridesCore/LimbContact), passés au
+	// jugement (csoLimbContact) dans AStridesHorse::PostPoseView. Comptés depuis l'apparition, détail du dernier.
+	bool JudgesLimbs() const;
+	int32 LimbContactCount = 0;
+	FString LastLimbContact;
 	bool IsDemoCourseActive() const { return bDemoCourse; }
 	void ToggleDemoCourse();
 	// Point d'assise du cavalier (repère monde Unreal).
@@ -254,4 +261,8 @@ private:
 	// (vue du web refusée ou -StridesHorseView=jeu) lisait des clips libérés par le ramasse-miettes (SIGBUS du proxy, J1-H).
 	UPROPERTY(Transient) TArray<TObjectPtr<const class UAnimSequence>> MirrorClipRefs;
 	const struct FStridesHorseViewTestHooks* ViewHooks = nullptr;
+	// Jalon J2 : pose des membres de l'image précédente (this._limbPrev) et entrées du jugement de l'image (TickCso).
+	strides::limb::State LimbSt;
+	double LimbPower = 1.35, LimbClearance = 0;
+	void StepLimbContacts(const FTransform& ActorXf);
 };

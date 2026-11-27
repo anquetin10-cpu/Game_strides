@@ -279,6 +279,71 @@ void AStridesHorse::PostPoseView()
 		Mesh->TickAnimation(0.f, false);
 		Mesh->RefreshBoneTransforms();
 	}
+	// Jalon J2 : contacts des membres sur la pose finale de l'image (replis et bascule compris), comme pjlHorse.js
+	// _limbContacts après _barClear.
+	StepLimbContacts(ViewHooks && ViewHooks->bActorXf ? ViewHooks->ActorXf : GetActorTransform());
+}
+
+bool AStridesHorse::JudgesLimbs() const
+{
+	// obstacles.js _limbJudged : cheval du joueur affiché en WildMesh (vue du web active, os des membres trouvés).
+	return bViewWeb && View.IsValid() && View->IsReady() && View->HasContactBones();
+}
+
+// pjlHorse.js _limbContacts : obstacle jugé (dernier saut, en vol ou moins de 0,8 s après la réception) ou visé à moins de
+// 4 m (pose gardée) ; capsules canon et paturon-sabot balayées entre l'image précédente et celle-ci ; contact le plus
+// profond de chaque barre passé à Obstacles.limbContact (csoLimbContact : barre qui tombe, faute, cause), dans l'ordre des
+// barres. Écart d'ordre au web, déclaré : le web mesure la pose pendant horse.update, avant Obstacles.updateHorse de la
+// même image ; ici la pose n'existe qu'après l'animation, donc après Obstacles.updateHorse de l'image (et avant celui de la
+// suivante). Effet seulement si un contact et l'annonce différée du résultat tombent à la même image (le contact ouvre
+// alors un nouveau passage : faute annoncée une image après le franchissement, cas non vu dans les scénarios j2-*).
+void AStridesHorse::StepLimbContacts(const FTransform& ActorXf)
+{
+	if (!Course || !bCsoControls || !JudgesLimbs() || !GetWorld())
+	{
+		LimbSt = strides::limb::State();
+		return;
+	}
+	const double Time = GetWorld()->GetTimeSeconds();
+	// Image déjà relevée (passe après la pose rejouée sans pas de jeu, pause) : rien de neuf.
+	if (LimbSt.has && Time == LimbSt.time) return;
+	const std::vector<strides::CsoObstacle>& Obs = Course->Obstacles();
+	std::vector<strides::CsoFenceState>& FS = Course->FenceStates();
+	strides::CsoTarget Tg;
+	const bool bNeedT = !strides::limb::judgingNow(Sim, Obs, true, Time);
+	const UStridesDataSubsystem* Data = DataSub();
+	if (bNeedT)
+		Tg = strides::csoTarget(Obs, Sim, LimbPower, LimbClearance, true, Data ? Data->Jump() : strides::jumpDefaults(),
+			Data ? Data->HorseParams() : strides::csoHorseDefaults());
+	const strides::limb::Choice C = strides::limb::choose(Sim, Obs, true, Time, bNeedT ? &Tg : nullptr);
+	strides::limb::Pose P{};
+	const int32 Oi = C.obstacle;
+	if (Oi >= 0 && Oi < (int32)Obs.size())
+	{
+		Mesh->HandleExistingParallelEvaluationTask(true, true);
+		strides::hview::V3 W[4][3];
+		View->LimbPoseWeb(Mesh->GetComponentSpaceTransforms(), ActorXf, W);
+		const strides::CsoObstacle& O = Obs[Oi];
+		const double G = GroundAt(O.x, O.z);
+		for (int32 K = 0; K < 4; K++)
+			for (int32 I = 0; I < 3; I++) P[K][I] = strides::limb::toLocal(O, G, W[K][I].x, W[K][I].y, W[K][I].z);
+	}
+	strides::CsoFenceOut Out;
+	strides::limb::step(LimbSt, C, P, Time, Oi >= 0 && Oi < (int32)Obs.size() ? &Obs[Oi] : nullptr, Oi >= 0 && Oi < (int32)FS.size() ? &FS[Oi] : nullptr,
+		[&](const strides::limb::Hit& Hit) {
+			strides::csoLimbContact(Sim, Obs, FS, strides::limb::toFenceHit(Hit, Oi), Time, Out);
+			LimbContactCount++;
+			LastLimbContact = FString::Printf(TEXT("obstacle %hs barre %d %hs profondeur %.3f m"), Obs[Oi].label.c_str(), Hit.bar, strides::limb::limbKeys()[Hit.limb], Hit.depth);
+			UE_LOG(LogTemp, Display, TEXT("Strides contact de membre : %s, %.2f s"), *LastLimbContact, Time);
+		});
+	if (Out.events.empty() && Out.sounds.empty()) return;
+	// Barre qui tombe (son) et faute vues par l'épreuve, comme à la sortie de Obstacles.updateHorse.
+	if (UStridesCsoAudio* Audio = GetWorld()->GetSubsystem<UStridesCsoAudio>())
+		for (const strides::CsoFenceSound S : Out.sounds) Audio->FenceSound(S);
+	strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
+	Course->HandleFenceOut(Out, Cad);
+	Sim.hasCadence = Cad.has;
+	Sim.cadence = Cad.v;
 }
 
 bool AStridesHorse::EnableTackMesh(FString* Err)
@@ -774,15 +839,19 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 	}
 	// Obstacles.updateHorse (tranche T3, cœur) : jugement de chaque barre au passage des épaules, refus (décision à
 	// l'abord, comptage à l'arrêt, barre emportée tout contre, garde-fou du nez, glissade), barres des postérieurs ; puis
-	// Obstacles.update (chute des barres, vibration, remise par le jury) et affichage des barres. Pas de cheval WildMesh :
-	// membres non jugés, résultat annoncé à la sortie des épaules (comme le web en personnages classiques).
+	// Obstacles.update (chute des barres, vibration, remise par le jury) et affichage des barres. Jalon J2 : cheval affiché
+	// en vue du web (WildMesh) = membres visibles jugés comme au web (Obstacles._limbJudged) : résultat différé jusqu'au
+	// passage des postérieurs, contacts réels des membres comptés après la pose (PostPoseView → StepLimbContacts) ; sinon
+	// résultat annoncé à la sortie des épaules (comme le web en personnages classiques).
+	LimbPower = In.power;
+	LimbClearance = In.clearance;
 	if (Course)
 	{
 		strides::CsoUpdateHorseInput U;
 		U.prevX = X0;
 		U.prevZ = Z0;
 		U.time = In.time;
-		U.limbJudged = false;
+		U.limbJudged = JudgesLimbs();
 		U.power = In.power;
 		U.clearance = In.clearance;
 		U.csoCourse = true;

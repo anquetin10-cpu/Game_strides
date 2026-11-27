@@ -11,8 +11,9 @@
 // Repère du corps : groupe « body » de la vue du web (position y, z ; rotation.x puis rotation.z, ordre XYZ de three.js),
 // exprimé dans le repère de l'acteur (X = 100 z, Y = −100 x, Z = 100 y) et composé avec l'échelle du maillage.
 // Écarts au web déclarés : durées des clips = celles des clips importés (tous à 24 images/s depuis l'étape S5, mêmes
-// durées que le web) ; mouvements secondaires (SecondaryMotion : queue, crinière, encolure, oreilles) et contacts des membres avec les
-// barres (_limbContacts : faute comptée par le jeu web) non portés.
+// durées que le web) ; mouvements secondaires (SecondaryMotion : queue, crinière, encolure, oreilles) non portés. Contacts
+// des membres avec les barres (_limbContacts, jalon J2) : os lus ici (LimbPoseWeb), règle dans StridesCore/LimbContact,
+// appelée par AStridesHorse::PostPoseView sur la pose finale.
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -80,6 +81,10 @@ public:
 	// Os des sabots (fingers_02_l, fingers_02_r, toes_02_l, toes_02_r) et des membres (upperleg_l, upperleg_r, hand_l, hand_r).
 	const int32* HoofBones() const { return HoofB; }
 	const int32* LimbBones() const { return LimbB; }
+	// Jalon J2 : os des capsules des membres (pjlHorse.js LIMBS : canon, paturon, bout du sabot ; AG, AD, PG, PD), tous
+	// trouvés dans le squelette ; positions monde (repère du web) de ces os sur la pose CS avec le corps courant.
+	bool HasContactBones() const { return bContactBones; }
+	void LimbPoseWeb(const TArray<FTransform>& CS, const FTransform& ActorXf, strides::hview::V3 Out[4][3]) const;
 	// Durées des clips : web (données) et Unreal (clip importé ou miroir) ; écart maximal (s).
 	double MaxDurationGap() const { return DurGap; }
 	FString DurationReport() const { return DurReport; }
@@ -121,6 +126,8 @@ private:
 	double MeshScale = 0.01;
 	int32 HoofB[4] = {INDEX_NONE, INDEX_NONE, INDEX_NONE, INDEX_NONE};
 	int32 LimbB[4] = {INDEX_NONE, INDEX_NONE, INDEX_NONE, INDEX_NONE};
+	int32 ContactB[4][3];
+	bool bContactBones = false;
 	double LastJumpT = -1;
 	bool bTuckedLast = false;
 	strides::hview::V3 TuckedToe[4];

@@ -6,7 +6,7 @@ project(StridesCore CXX)
 set(CMAKE_CXX_STANDARD 20)  # comme Unreal 5.3+ (le code reste compatible C++17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CORE ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Source/StridesCore)
-add_library(strides_core ${CORE}/Private/JumpModel.cpp ${CORE}/Private/CsoRide.cpp ${CORE}/Private/CsoCourse.cpp ${CORE}/Private/CsoHorse.cpp ${CORE}/Private/CsoFences.cpp ${CORE}/Private/CsoRun.cpp ${CORE}/Private/CsoHud.cpp ${CORE}/Private/CsoCamera.cpp ${CORE}/Private/CsoInput.cpp ${CORE}/Private/CourseAids.cpp ${CORE}/Private/Text.cpp ${CORE}/Private/SaveGame.cpp ${CORE}/Private/CoursePlan.cpp ${CORE}/Private/CsoEntry.cpp ${CORE}/Private/Ranking.cpp ${CORE}/Private/CsoAudio.cpp ${CORE}/Private/HorseCoat.cpp)
+add_library(strides_core ${CORE}/Private/JumpModel.cpp ${CORE}/Private/CsoRide.cpp ${CORE}/Private/CsoCourse.cpp ${CORE}/Private/CsoHorse.cpp ${CORE}/Private/CsoFences.cpp ${CORE}/Private/LimbContact.cpp ${CORE}/Private/CsoRun.cpp ${CORE}/Private/CsoHud.cpp ${CORE}/Private/CsoCamera.cpp ${CORE}/Private/CsoInput.cpp ${CORE}/Private/CourseAids.cpp ${CORE}/Private/Text.cpp ${CORE}/Private/SaveGame.cpp ${CORE}/Private/CoursePlan.cpp ${CORE}/Private/CsoEntry.cpp ${CORE}/Private/Ranking.cpp ${CORE}/Private/CsoAudio.cpp ${CORE}/Private/HorseCoat.cpp)
 target_include_directories(strides_core PUBLIC ${CORE}/Public)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   target_compile_options(strides_core PRIVATE -Wall -Wextra -Wpedantic)
@@ -15,6 +15,8 @@ enable_testing()
 add_executable(strides_core_tests tests/test_core.cpp)
 target_link_libraries(strides_core_tests strides_core)
 # Arguments : oracles exportés du JS, puis données lues par le jeu (Content/Data) pour tester le chemin du jeu.
+# Jalon J2 : contacts des membres avec les barres (StridesCore/LimbContact, limbContact.js et pjlHorse.js _limbContacts),
+# bancs « limb » (limb_contact.json) et « fences » (scénarios j2-* : pose des membres relevée dans le jeu web, canal lb).
 add_test(NAME oracles COMMAND strides_core_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
 # Essai de monte, voie A, étape 4 : règles de monte du web (src/entities/human/anim.js, human.js) portées en C++
 # (StridesCore/RiderRules), prouvées contre l'oracle O2 (tests/oracles/monte) ; banc de coût strides_monte_bench (hors

@@ -7,7 +7,8 @@
 #   mode « poteau »   : suit « Chrono du Pôle », s'arrête à moins de 8 m (invite « E · Chrono »).
 #   mode « parcours » : suit la pastille ; tape SAUT en rafale (fil dédié) à l'abord de l'obstacle attendu, aligné ;
 #                       refus=<label> : premier abord de cet obstacle sans SAUT (refus voulu) ;
-#                       lent=<label>  : abord de cet obstacle au trot (barre probable, faute voulue).
+#                       lent=<label>  : abord de cet obstacle au trot (barre probable, faute voulue) ;
+#                       rafale=<m>    : SAUT en rafale à l'abord dès que la pastille lit au plus <m> m (jalon J2).
 #   S'arrête quand la pastille disparaît (bilan affiché) ou au bout de la durée.
 import ctypes, ctypes.util, os, re, subprocess, sys, threading, time
 cg = ctypes.CDLL(ctypes.util.find_library('CoreGraphics'))
@@ -66,10 +67,19 @@ def band_loop():
         line = grab(eye_t, 'T', '0,0,760,270', os.path.join(tmp, 'bande.png'))
         with cond:
             latest['n'] += 1; latest['line'] = line; cond.notify_all()
+# Option rafale=<m> (jalon J2) : à l'abord armé, SAUT tapé toutes les 0,2 s dès que la pastille lit au plus <m> m, sans
+# attendre le libellé du bouton (un joueur pressé qui saute « au jugé ») : le premier appui dans la portée fait sauter,
+# le plus souvent d'un peu loin (barre probable). Les appuis hors portée valent « Trop tôt » comme au web.
+rafale = float(opts['rafale']) if 'rafale' in opts else None
+seen_d = {'d': None}
 def jump_loop():
     pressed_at = 0.0
     while not stop:
         if time.time() > mash_until: time.sleep(0.05); continue
+        if rafale is not None:
+            if seen_d['d'] is not None and seen_d['d'] <= rafale and front_ok():
+                key(SPACE, True); time.sleep(0.05); key(SPACE, False); L('SAUT en rafale (%.0f m lus)' % seen_d['d'])
+            time.sleep(0.2); continue
         # Libellé du bouton SAUT (cso_jump_style.json) : « Trop loin », « Saute ! » (bon appel), « Trop près », « Trop tôt »
         # (appui trop tôt), « Saut » (aucun abord). SAUT dès « Saute ! », ou dès « Trop près » ; jamais sur « Trop loin ».
         line = grab(eye_s, 'T', '1805,965,95,100', os.path.join(tmp, 'saut.png'))
@@ -116,6 +126,7 @@ try:
         if k % 6 == 1:
             subprocess.Popen(['/usr/sbin/screencapture', '-x', '-t', 'jpg', os.path.join(out, time.strftime('%H%M%S-') + 'p%s-%04d.jpg' % (mode, k))])
         label, d, way = parse(texts)
+        seen_d['d'] = d if label and label.startswith('Obstacle') else None
         # Ligne d'allure du HUD hors épreuve (« À cheval · GALOP · 6.6 m/s … cadence 6.6 ») : la cadence lue sert de vitesse.
         cad = None
         for t in texts:

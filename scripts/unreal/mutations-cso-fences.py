@@ -91,9 +91,8 @@ ATTENDUES = {
  'refus à l\'abord : marge < −late supprimée': 'aucun abord où la marge passe sous −late avec ideal ≤ L avant la zone « refuse » ou le refus lent',
  'postérieurs : chute si éloigné de 8 m -> 20 m': 'les barres en attente tombent toujours après ~1,1 m de marche, jamais par éloignement',
  'cause : angle -> far': 'aucune faute dont le plan est sans cause et de marge ≥ 0 (cause « angle »)',
- 'membres : postérieurs -> antérieurs': 'aucun contact de membre relevé (canal lc vide dans toutes les exécutions)',
- 'membres : barre déjà en chute non ignorée': 'aucun contact de membre relevé (canal lc vide dans toutes les exécutions)',
- 'membres : profondeur minimale 0,05 -> 0,1': 'aucun contact de membre relevé (canal lc vide dans toutes les exécutions)',
+ 'membres : postérieurs -> antérieurs': 'jalon J2 : les 5 contacts relevés (j2-*) ont tous un plan de saut avec cause ou zone « loin » / « près » : la cause « hindRail » / « foreRail » n’est jamais atteinte',
+ 'membres : barre déjà en chute non ignorée': 'jalon J2 : strides::limb::step ignore déjà les barres en chute avant d’appeler csoLimbContact (garde doublée, comme au web)',
  'passage : résultat précédent non annoncé à l\'abord suivant': 'aucun obstacle abordé pendant qu’un résultat attend (membres jugés)',
  'détour : distance ignorée': 'aucun refus après un éloignement de plus de profondeur / 2 + 6 m sans demi-tour (seul le sens est exercé)',
  'obstacle plein : vitesse × 0,55 -> × 0,6 (jugement)': 'aucun obstacle plein (solid) dans le parcours du Pôle (cross seulement)',
@@ -102,7 +101,7 @@ ATTENDUES = {
  'effleurement : seuil de vibration 0,04 -> 0,06': 'aucune barre passée avec une marge entre 0,04 et 0,06 m',
 }
 os.makedirs(out, exist_ok=True)
-others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')]
+others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'LimbContact.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoHorse.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')]
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 # broken : mutations non jouées (motif absent ou en double, compilation échouée) : jamais comptées non détectées.

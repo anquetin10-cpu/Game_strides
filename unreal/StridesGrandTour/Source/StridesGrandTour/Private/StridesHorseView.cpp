@@ -1,5 +1,6 @@
 // Étape S4 : vue du cheval WildMesh du web appliquée au cheval Unreal. Voir StridesHorseView.h.
 #include "StridesHorseView.h"
+#include "StridesCore/LimbContact.h"
 
 #include "Animation/AnimSequence.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -112,6 +113,20 @@ bool FStridesHorseView::Init(USkeletalMeshComponent* InMesh, const FString& Clip
 			if (Err) *Err = FString::Printf(TEXT("os %hs absent"), HoofN[K]);
 			return false;
 		}
+	// Jalon J2 : os des capsules des membres (pjlHorse.js LIMBS).
+	bContactBones = true;
+	for (int32 K = 0; K < 4; K++)
+		for (int32 I = 0; I < 3; I++)
+		{
+			ContactB[K][I] = INDEX_NONE;
+			for (int32 B = 0; B < Ref.GetNum(); B++)
+				if (strides::mirror::baseName(TCHAR_TO_UTF8(*Ref.GetBoneName(B).ToString())) == strides::limb::limbBones()[K][I]) ContactB[K][I] = B;
+			if (ContactB[K][I] == INDEX_NONE)
+			{
+				bContactBones = false;
+				UE_LOG(LogTemp, Warning, TEXT("Strides contacts des membres : os %hs absent, contacts non jugés"), strides::limb::limbBones()[K][I]);
+			}
+		}
 	MeshScale = Mesh->GetRelativeScale3D().X;
 	Reset();
 	bReady = true;
@@ -201,6 +216,12 @@ V3 FStridesHorseView::BoneWeb(const TArray<FTransform>& CS, int32 B, const FTran
 	if (!CS.IsValidIndex(B)) return V3();
 	const FTransform Rel = MeshRelative(InScale);
 	return ToWeb(ActorXf.TransformPosition(Rel.TransformPosition(CS[B].GetLocation())));
+}
+
+void FStridesHorseView::LimbPoseWeb(const TArray<FTransform>& CS, const FTransform& ActorXf, V3 Out[4][3]) const
+{
+	for (int32 K = 0; K < 4; K++)
+		for (int32 I = 0; I < 3; I++) Out[K][I] = bContactBones ? BoneWeb(CS, ContactB[K][I], ActorXf, MeshScale) : V3();
 }
 
 bool FStridesHorseView::StepPost(const TArray<FTransform>& CS, const FTransform& ActorXf, const FObstacle& Ob, const TFunctionRef<double(double, double)>& Ground,

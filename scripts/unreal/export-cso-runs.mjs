@@ -162,6 +162,31 @@ const SCENARIOS = [
     desc: 'Abord droit du vertical 3 à 1,6 m/s : refus lent compté ; joystick en arrière jusqu’à l’arrêt (cadence 0) : les refus repris entre-temps, face au même obstacle sans détour, ne sont pas recomptés et repoussent chacun l’échéance de 5 s ; joystick vers l’avant 4 s après le dernier refus : refus non recompté ; retour à l’arrêt ; joystick vers l’avant 5,5 s après le dernier refus : refus compté ; jusqu’à 45 images après.' },
   { id: 't3-glissade', type: 'pose', classic: true, langs: ['fr'], pose: { x: 22, z: -28.78, h: Math.PI / 2, v: 0.4 }, maxFrames: 500,
     desc: 'Abord droit du vertical 3 au pas de fourmi (0,4 m/s : pas de décision de refus sous 0,5 m/s) : les épaules entrent dans l’obstacle, refus sur place (cheval ramené devant la face, cabré), compté une fois ; il repart et recommence (non recompté avant 5 s) ; jusqu’à 10 images après le deuxième cabré.' },
+  // Jalon J2 : mêmes abords que la tranche T3, cheval WildMesh du joueur (pas de ?classic) : membres visibles jugés
+  // (Obstacles._limbJudged vrai), résultat différé jusqu'au passage des postérieurs, contacts réels des membres avec les
+  // barres (PjlHorse._limbContacts → Obstacles.limbContact, canal lc) et pose des membres (canal lb). Le résultat (franchi,
+  // faute, barre qui tombe, effleurement) est celui que le jeu web donne avec ses membres visibles : oracle des règles de
+  // faute et de contact du portage.
+  { id: 'j2-sans-faute', type: 'pose', langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : abord droit du vertical 3 à 6,2 m/s, SAUT en bonne zone (règle de t3-sans-faute) ; membres jugés, résultat après les postérieurs ; jusqu’à 8 m après le 3, barres au repos.' },
+  { id: 'j2-posterieurs', type: 'pose', langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : SAUT en zone « loin » avec une marge prévue sous −0,06 m (règle de t3-posterieurs) : barre touchée en descente.' },
+  { id: 'j2-pres-montee', type: 'pose', langs: ['fr'], pose: { x: 8.1, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : SAUT en zone « près » avec une marge prévue sous −0,06 m (règle de t3-pres-montee) : barre touchée en montée (antérieurs).' },
+  { id: 'j2-pres-juste', type: 'pose', langs: ['fr'], pose: { x: 8.1, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : SAUT à la première image où le 3 est en zone « près » avec une marge prévue entre −0,06 et +0,04 m : trajectoire jugée franchie ou effleurée, antérieurs au plus près de la barre.' },
+  { id: 'j2-oxer-loin', type: 'pose', langs: ['fr'], pose: { x: -19.67, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : abord droit de l’oxer 2, SAUT en zone « loin » barre avant à moins de 5 m (règle de t3-oxer-loin) : barres qui tombent, une seule faute.' },
+  { id: 'j2-effleurement', type: 'pose', langs: ['fr'], pose: { x: 8, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : SAUT avec une marge prévue entre −0,06 et +0,04 m (règle de t3-effleurement) : effleurement par la trajectoire ; membres jugés.' },
+  { id: 'j2-effleurement-haut', type: 'pose', langs: ['fr'], pose: { x: 8.13, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : SAUT avec une marge prévue entre +0,02 et +0,04 m (règle de t3-effleurement-haut) : effleurement sans chute attendu.' },
+  { id: 'j2-faute-limite', type: 'pose', langs: ['fr'], pose: { x: 8.16, z: -28.78, h: Math.PI / 2, v: 6.2 }, maxFrames: 400,
+    desc: 'J2, cheval WildMesh : SAUT avec une marge prévue entre −0,08 et −0,06 m en zone « loin » (règle de t3-faute-limite).' },
+  { id: 'j2-refus-lent', type: 'pose', langs: ['fr'], pose: { x: 16, z: -28.78, h: Math.PI / 2, v: 2.6 }, maxFrames: 300,
+    desc: 'J2, cheval WildMesh : abord du 3 au trot lent sans appui (règle de t3-refus-lent) : refus, freinage, cabré ; jusqu’à 10 images après le cabré.' },
+  { id: 'j2-virage', type: 'pose', langs: ['fr'], pose: { x: -19.67, z: -28.78, h: Math.PI / 2, v: 6.23 }, maxFrames: 300,
+    desc: 'J2, cheval WildMesh : abord de l’oxer 2 en tournant (joystick à 0,3 vers la droite dès que la barre avant est à moins de 9 m, tenu en l’air) ; SAUT à la première image en bonne zone ; jusqu’à 30 images après la réception.' },
   // Scénarios du déroulé d'épreuve (tranche T4) : enregistrés depuis le lancement de l'activité (présentation, Entrer
   // en piste, annonce, cloche), en français et en anglais, en images « légères » (sans caméra ni canal « ch » ; canal
   // « ep » = entrées de la mission). Personnages classiques. Actions : voir ACTS dans la page.
@@ -846,6 +871,7 @@ function PAGE() {
       if (wd > 0 || wa > 0) Object.assign(ch.in, { wd, wa });
       inHorse = true;
       col = false;
+      wrapPjl();
       try {
         return hu(dt, camPos);
       } finally {
@@ -890,6 +916,26 @@ function PAGE() {
       if (ch && horse === g.player.horse) (ch.lc ||= []).push({ o: idx(o), bar: o.bars.indexOf(bar), d: hit.depth, u: hit.u, hind: !!hit.hind });
       return lc(horse, o, bar, hit);
     };
+    // Jalon J2 (canal « lb ») : pose des membres relevée par le cheval WildMesh (PjlHorse._limbContacts) à chaque image où
+    // il garde une pose (obstacle jugé, ou visé à moins de 4 m) : o = obstacle, j = jugé (contacts cherchés), t = heure de
+    // jeu, p = [membre AG, AD, PG, PD][os canon, paturon, bout du sabot] = [s, u, y] dans le repère de l'obstacle.
+    // Rejoué par unreal/core/tests/test_core.cpp (testFenceRuns : contacts recalculés par strides::limb, comparés à lc).
+    // Enveloppe posée à la première image du cheval (le cheval WildMesh est créé après le chargement de son modèle).
+    function wrapPjl() {
+      const pj = h.pjl;
+      if (!pj || pj.__lbWrapped || typeof pj._limbContacts !== 'function') return;
+      pj.__lbWrapped = true;
+      const lcs = pj._limbContacts.bind(pj);
+      pj._limbContacts = () => {
+        const ch = cur?.ch;
+        const lj = h._lastJump;
+        const judging = !!(h.isPlayerHorse && O && lj?.o && !lj.o.off && (h.jumpT >= 0 || (lj.land !== null && g.time - lj.land < 0.8)));
+        const r = lcs();
+        const pv = pj._limbPrev;
+        if (ch && pv) ch.lb = { o: idx(pv.o), j: judging, t: pv.t, p: pv.cur.map((c) => c.p.map((q) => [q.s, q.u, q.y])) };
+        return r;
+      };
+    }
     // Tranche T4 (canal « ep ») : demandes de l'épreuve aux obstacles du parcours « cso » — numéro surligné
     // (Obstacles.highlight, dernier numéro demandé) et barres remises (Obstacles.resetRails, appels comptés).
     const hl = O.highlight.bind(O), rr = O.resetRails.bind(O);
@@ -998,6 +1044,18 @@ function PAGE() {
     if (st.jumped && h.jumpT < 0 && sAlong(o, h) > 8 && idleRails(o)) return null;
     return { jump: press };
   };
+  // Jalon J2 : comme jumpDrive, fin quand les chutes sont terminées et qu'aucune barre n'attend les postérieurs ; la
+  // vibration d'une barre tombée n'est pas attendue (le jeu web ne l'éteint pas sur une barre à terre).
+  const settled = (o) => !o._pending?.length && o.rails.every((r) => (r.userData.fall ? r.userData.fall.done : !(r.userData.rattle > 0)));
+  const jumpDriveJ2 = (label, rule) => (st) => {
+    const o = F(label), h = st.h;
+    const tg = g.obstacles.target(h);
+    const press = !st.jumped && h.jumpT < 0 && !h._refusing && !!tg && tg.o === o && rule(tg);
+    if (press) st.jumped = true;
+    if (!st.jumped && (h._refusing || h._rearT > 0)) throw new Error(`${st.sc.id} : refus avant l’appui`);
+    if (st.jumped && h.jumpT < 0 && sAlong(o, h) > 8 && settled(o)) return null;
+    return { jump: press };
+  };
   // Règle des entrées de chaque scénario « pose » : évaluée avant l'image k (état de fin de l'image k − 1) ; null = fin.
   const DRIVES = {
     'bonne-zone': (st) => {
@@ -1095,6 +1153,27 @@ function PAGE() {
     't3-effleurement': jumpDrive('3', (tg) => tg.plan.zone !== 'refuse' && tg.plan.zone !== 'none' && tg.plan.margin >= -0.06 && tg.plan.margin < 0.04 && tg.geo.rails[0].x > 2),
     't3-faute-limite': jumpDrive('3', (tg) => tg.plan.zone === 'far' && tg.plan.margin < -0.06 && tg.plan.margin >= -0.08 && tg.geo.rails[0].x > 2),
     't3-effleurement-haut': jumpDrive('3', (tg) => tg.plan.zone !== 'refuse' && tg.plan.zone !== 'none' && tg.plan.margin >= 0.02 && tg.plan.margin < 0.04 && tg.geo.rails[0].x > 2),
+    // ---- Jalon J2 (cheval WildMesh, membres jugés) ----
+    'j2-sans-faute': jumpDriveJ2('3', (tg) => tg.plan.zone === 'good' && tg.plan.ideal <= tg.plan.L + 0.3),
+    'j2-posterieurs': jumpDriveJ2('3', (tg) => tg.plan.zone === 'far' && tg.plan.margin < -0.06 && tg.geo.rails[0].x < tg.plan.L),
+    'j2-pres-montee': jumpDriveJ2('3', (tg) => tg.plan.zone === 'near' && tg.plan.margin < -0.06),
+    'j2-pres-juste': jumpDriveJ2('3', (tg) => tg.plan.zone === 'near' && tg.plan.margin >= -0.06 && tg.plan.margin < 0.04),
+    'j2-oxer-loin': jumpDriveJ2('2', (tg) => tg.plan.zone === 'far' && tg.geo.rails[0].x <= 5),
+    'j2-effleurement': jumpDriveJ2('3', (tg) => tg.plan.zone !== 'refuse' && tg.plan.zone !== 'none' && tg.plan.margin >= -0.06 && tg.plan.margin < 0.04 && tg.geo.rails[0].x > 2),
+    'j2-effleurement-haut': jumpDriveJ2('3', (tg) => tg.plan.zone !== 'refuse' && tg.plan.zone !== 'none' && tg.plan.margin >= 0.02 && tg.plan.margin < 0.04 && tg.geo.rails[0].x > 2),
+    'j2-faute-limite': jumpDriveJ2('3', (tg) => tg.plan.zone === 'far' && tg.plan.margin < -0.06 && tg.plan.margin >= -0.08 && tg.geo.rails[0].x > 2),
+    'j2-refus-lent': (st) => (afterRear(st, 10) && idleRails(F('3')) ? null : st.k >= 280 ? null : {}),
+    'j2-virage': (st) => {
+      const h = st.h;
+      const press = !st.jumped && h.jumpT < 0 && g.obstacles.timing(h) === 'good';
+      if (press) st.jumped = true;
+      if (st.jumped && h.jumpT >= 0) st.air = true;
+      if (st.air && h.jumpT < 0 && st.land === undefined) st.land = st.k;
+      if (st.land !== undefined && st.k - st.land >= 30) return null;
+      const tg = g.obstacles.target(h);
+      if (!st.turn && tg && tg.o === F('2') && tg.geo.rails[0].x < 9) st.turn = true;
+      return { jump: press, move: [st.turn && st.land === undefined ? 0.3 : 0, 0] };
+    },
     't3-refus-62': (st) => (afterRear(st, 10) && idleRails(F('6A')) ? null : st.k >= 380 ? null : {}),
     't3-refus-lent': (st) => (afterRear(st, 10) && idleRails(F('3')) ? null : st.k >= 280 ? null : {}),
     't3-refus-oblique': (st) => (afterRear(st, 10) || st.k >= 200 ? null : {}),
@@ -2334,7 +2413,7 @@ const head = {
   bl: 'carte de bilan (tranche T11, courses.js:414 : screens.card reconnue à son bouton cso-retry), relevée dans le DOM à l’image où elle s’ouvre : kicker, title, rows = grille .cso-pres [clé, valeur], table = lignes de .cso-rank { me = classe me, td = textes des cellules }, buttons = [data-id, texte, classe]',
   calls: 'hud / audio : { fn, args, src } ; src = fichier de l’appelant immédiat sous src/ (ex. gameplay/courses.js), null sinon',
   lite: 'setup.lite (scénarios t4-*) : images sans cam, sim ni ch ; tp = cheval posé avant l’image (x, z, h, v) ; setup.acts = suite d’actions du scénario ; setup.pre = actions avant la présentation (étape « rejoindre l’entrée »), setup.at = cheval posé à (dx, dz) m de l’entrée au lancement ; setup.ent = actions pendant l’étape « Entrée en piste », achevées avant la cloche ; in.press = actions pressées (ex. action) ; scénario t9-recette (tests/e2e/cso-shots.mjs, setup.recette = réglages relus dans le test, shots = images capturées, pause = modèle des temporisations du HUD) : in.taps = boutons de carte touchés avant in.ui, fs = état de l’épreuve écrit par le test avant l’image (started, next, t, hl = obstacle surligné, o = rang de l’obstacle abordé, snap = caméra recalée), hw = ticks de l’horloge virtuelle du HUD écoulés après l’image (captures du test, sans image de jeu)',
-  ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic)',
+  ch: 'canal du cheval (tranche T2), nombres en pleine précision : in = entrées vues par player.update (dt, mx / my = input.move après poll, key = input.keyMove, jp = SAUT pressé, cso = commandes de concours, lk = player.locked) et par horse.update (fz = figé, pl = cheval du joueur, pow = jumpPower, clr = bonus de franchissement, t = game.time, sl = pente, wd / wa = profondeur d’eau si > 0, hdt = pas du cheval s’il diffère) ; s = état en fin d’image (x, z, h, v, yr = _yawRate, lt = lastTurn, jT / jY / jP / jL / jD = saut, j0 / j1 = _jt0 / _jt1, rT = _rearT, ra = anim.rear, bk = _brake, rf = obstacle refusé, lj = obstacle du dernier saut, cad = cadence, ks = _kbdSteer, ca = _cadAdjust) ; b = état après horse.update s’il diffère de s (correction extérieure : collisions, Obstacles.updateHorse) ; a = état à l’entrée de player.update s’il diffère du s précédent ; col = collision du cheval ; tm = obstacles.timing ; tg = obstacles.target résumé ; obs = liste des obstacles (rang = indice des champs rf, lj, tg.o), relevée quand elle change ; état initial : setup.ch0 { s, obs, ob }. he = événements horse:* émis pendant horse.update (hors foulées) ; tranche T3 : in.lj = membres visibles jugés (Obstacles._limbJudged), in.ma = mission en cours, in.ut / in.ot / in.odt = heure de jeu vue par updateHorse / update et pas de update s’ils diffèrent ; lc = contacts des membres signalés pendant horse.update (o, bar = rang de la barre, d = profondeur, u, hind) ; oe = événements obstacle:* en pleine précision (o, dir, m = marge, c = cause) ; ob = fin d’image : ps = passage en cours (horse._pass : o, dir, f = faute, c = cause, m = marge, x = heure de sortie, d = annoncé), rl = dernier refus compté (horse._refusal : o, t, a = détourné), fs = obstacles hors repos (i = rang, kn = renversé, rb = remise, pd = barres en attente [barre, sens, côté, profondeur, reste], r = barres déplacées [barre, y, z, rx, rz, vibration, chute]) ; setup.classic = personnages classiques (?classic) ; jalon J2 : lb = pose des membres relevée par PjlHorse._limbContacts (o = obstacle, j = jugé, t = heure de jeu, p = [AG, AD, PG, PD][canon, paturon, bout du sabot] = [s, u, y] dans le repère de l’obstacle), absente quand le cheval ne garde aucune pose',
   cc: 'canal de la caméra de concours (tranche T6), nombres en pleine précision, un appel de FollowCamera._updateComp par image en épreuve : hz = cheval vu par la caméra [pos.x, pos.z, heading, _yawRate (null : indéfini), jumpT, jumpY, groundY] ; dt s’il diffère du pas ; i = instant (snap) ; e0 = camera.position et f0 = [this.fov, camera.fov] avant l’appel quand l’état de concours est (re)créé ; nx = rang dans cc0.obs de game.course.next (null : aucun) ; sonde de la perche (colliders.cameraBlocked) : pn = points sondés, pb = rang du premier point bloqué (−1 : aucun), pq = points [x, y, z] sondés (premier appel de l’exécution et appels bloqués) ; th = [x, z, hauteur] rendus par terrain.getHeight (sol sous la caméra) ; eye = camera.position, look = arguments de camera.lookAt, fov = camera.fov (vertical, appliqué), fs = this.fov (lissé), bk = _comp.back (recul retenu, amorti) ; obs = obstacles [x, z, n.x, n.z, t.x, t.z, w, depth (null : absent), ground, h, off] quand l’un d’eux change ; ccp = appels hors image (snap) avant l’image ; setup.cc0 = état de départ { st = _comp (cH, w, t, ax, az, ay, back, from, fromLook, aim) ou null, eye, fov = this.fov, camFov = camera.fov, obs }',
   ai: 'canal des aides à l’appel (tranche T9, scénarios t9-*, setup.aides ; setup.aid / setup.courseLine = réglages jumpAid / courseLine posés avant le lancement ; setup.virtualEarly = temporisations de « Trop tôt » passées sur l’horloge virtuelle), pleine précision : c = appel de CourseAids.update (courseAids.js:104-167) de l’image, absent sans appel : in = entrées (dt ; n = rang de l’obstacle suivant dans ob, null : aucun ; ps = prevS ; sl / sz = showLine / showZone ; hh = cheval présent ; x, z, v, pw, cl = cheval : position, vitesse, jumpPower, mods.clearance ; md = mode « ride » ; t = game.time), gq = appels de terrain.getHeight pendant l’appel [x, z, y] dans l’ordre, out = maillages après l’appel (ln / af = tracé jusqu’à l’obstacle suivant / après lui [visible, premier tiret, nombre de tirets (null : drawRange infini, jamais réglé)] ; mk = repère [visible, x, y, z, rotation.y] ; ok / gd = bandes ambre / verte [visible, x, y, z, rotation.y, scale.x, scale.z] ; zt = _zoneT ; zf = rang de _zoneFor ; zo = _zone { p = pass, g = good }) ; b = bouton SAUT : jt = valeur lue par hud.update (g.course?.jumpTiming?.() || ’none’, relevée à l’appel), tm = obstacles.timing du cheval au même moment, c = game.course non nul, pre = game.course.pre (entrée en piste), aid = réglage jumpAid || ’full’, line = courseLine !== false, to / tx = cible (rang dans ob, première barre en m) ou null, cad / ca = player.csoCadence (null : indéfinie) et player._cadAdjust lus par la même hud.update ; puis, en fin d’image : st = hud._jt (null : non défini ou remis à null), cl = classes far / good / near / early de .btn-jump, sg = signe, lb = libellé ; ob = obstacles du parcours dans l’ordre (label, num, kind, x, z, rot, h, w, spread, ground, lineS, n, bars [s, h], off) quand la liste change ; temporisation de « Trop tôt » (hud.js:438) sur une horloge virtuelle de 100 ticks de 1/3 ms par image, échéances déclenchées avant l’image suivante',
   fr: 'scénario « cadrage » (tranche T6) : mesure de tests/e2e/cso-framing.mjs:31-39 après l’image (silhouette setup.framing.pts projetée par la caméra du jeu, matrices à jour comme au rendu) : part, top, bottom (0 = haut de l’écran), jump (en l’air), ys (ordonnées des points), asp = camera.aspect, pose = [pos.x, pos.z, heading, groundY, jumpY, jumpT] ; setup.framing = réglages relus dans le test, setup.posed = cheval posé avant la première image (x, z, h, course = caméra de concours active, step = étape de la mission)',

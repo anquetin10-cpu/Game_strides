@@ -26,6 +26,7 @@
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
+#include "StridesCore/LimbContact.h"
 #include "StridesCore/MathUtil.h"
 #include "StridesCore/SaveGame.h"
 #include "StridesCore/MiniJson.h"
@@ -840,6 +841,56 @@ static std::string diffFences(const CsoHorseState& s, const std::vector<CsoFence
   return why;
 }
 
+// Jalon J2 : fonctions géométriques du contact membre / barre (limbContact.js) contre l'oracle limb_contact.json
+// (scripts/unreal/export-limb-contact.mjs) : toLocal, segAxis, capsuleRail (hors largeur : null), sweepRail (null sans
+// contact) ; écart toléré 1e-12 m.
+static void testLimbContact() {
+  const J o = loadJson(ORA + "/limb_contact.json");
+  CHECK(o["RAIL_R"].num() == limb::defaults().railR, "RAIL_R web %g / portage %g", o["RAIL_R"].num(), limb::defaults().railR);
+  auto P = [](const J& j) { return limb::P3{j["s"].num(), j["u"].num(), j["y"].num()}; };
+  const double tol = 1e-12;
+  int n = 0, bad = 0, hits = 0, outW = 0, misses = 0;
+  for (const J& c : o["toLocal"].a) {
+    CsoObstacle ob;
+    ob.x = c["o"]["x"].num(); ob.z = c["o"]["z"].num();
+    ob.n = Vec2{c["o"]["n"]["x"].num(), c["o"]["n"]["z"].num()};
+    ob.t = Vec2{c["o"]["t"]["x"].num(), c["o"]["t"]["z"].num()};
+    const limb::P3 q = limb::toLocal(ob, c["o"]["ground"].num(), c["p"]["x"].num(), c["p"]["y"].num(), c["p"]["z"].num());
+    n++;
+    if (!(std::abs(q.s - c["r"]["s"].num()) <= tol && std::abs(q.u - c["r"]["u"].num()) <= tol && std::abs(q.y - c["r"]["y"].num()) <= tol)) bad++;
+  }
+  for (const J& c : o["segAxis"].a) {
+    const limb::SegAxis q = limb::segAxis(P(c["a"]), P(c["b"]), c["bar"]["s"].num(), c["bar"]["h"].num());
+    n++;
+    if (!(std::abs(q.dist - c["r"]["dist"].num()) <= tol && std::abs(q.u - c["r"]["u"].num()) <= tol && std::abs(q.k - c["r"]["k"].num()) <= tol)) bad++;
+  }
+  for (const J& c : o["capsuleRail"].a) {
+    const limb::Contact q = limb::capsuleRail(P(c["a"]), P(c["b"]), c["rad"].num(), c["bar"]["s"].num(), c["bar"]["h"].num(), c["halfW"].num());
+    n++;
+    if (c["r"].isNull()) {
+      outW++;
+      if (q.valid) bad++;
+    } else if (!q.valid || !(std::abs(q.depth - c["r"]["depth"].num()) <= tol && std::abs(q.dist - c["r"]["dist"].num()) <= tol && std::abs(q.u - c["r"]["u"].num()) <= tol)) bad++;
+  }
+  for (const J& c : o["sweepRail"].a) {
+    const limb::Contact q = limb::sweepRail(P(c["a0"]), P(c["b0"]), P(c["a1"]), P(c["b1"]), c["rad"].num(), c["bar"]["s"].num(), c["bar"]["h"].num(),
+                                            c["halfW"].num(), (int)c["steps"].num());
+    n++;
+    if (c["r"].isNull()) {
+      misses++;
+      if (q.valid) bad++;
+    } else {
+      hits++;
+      if (!q.valid || !(std::abs(q.depth - c["r"]["depth"].num()) <= tol && std::abs(q.u - c["r"]["u"].num()) <= tol && std::abs(q.t - c["r"]["t"].num()) <= tol)) bad++;
+    }
+  }
+  CHECK(bad == 0, "limb_contact.json : %d cas en écart sur %d", bad, n);
+  CHECK(hits > 50 && misses > 50 && outW > 3, "limb_contact.json : cas trop peu variés (%d contacts, %d sans contact, %d hors largeur)", hits, misses, outW);
+  // Membres et os (pjlHorse.js LIMBS) : antérieurs puis postérieurs, gauche puis droite.
+  CHECK(std::string(limb::limbBones()[0][0]) == "hand_l" && std::string(limb::limbBones()[3][2]) == "toes_end_r", "os des membres");
+  std::printf("contacts des membres (limbContact.js) : %d cas, %d écarts ; balayages : %d contacts, %d sans contact ; %d capsules hors largeur\n", n, bad, hits, misses, outW);
+}
+
 static void testFenceRuns() {
   J o = loadRuns();
   const J hp = loadJson(DATA + "/cso_horse.json");
@@ -851,7 +902,7 @@ static void testFenceRuns() {
   // Rejoués sans écart, recalés seulement aux images de collision avec le décor (colliders.resolve, non porté) : le
   // cheval s'éloigne du 7 en frôlant une aile après avoir tourné le dos (remise de la barre par le jury).
   const char* withCollisions[] = {"t3-tout-contre-remonte"};
-  std::map<std::string, int> clean, colOnly;
+  std::map<std::string, int> clean, colOnly, limbRuns;
   // Témoins relevés dans l'oracle (jeu web) et branches du portage exercées.
   std::map<std::string, int> wit;
   int frames = 0, railCmp = 0;
@@ -875,6 +926,11 @@ static void testFenceRuns() {
     std::map<std::string, std::vector<double>> rails;
     for (const auto& [k, v] : r["setup"]["rails"].o) { std::vector<double> t; for (const J& x : v.a) t.push_back(x.num()); rails[k] = t; }
     std::set<int> knockedBefore;
+    // Jalon J2 : contacts des membres recalculés (canal lb).
+    limb::State limbSt;
+    bool hasLb = false;
+    int limbBad = 0, limbFrames = 0, limbHits = 0;
+    double limbDev = 0;
     std::string why0 = diffFences(s, st, ch0["ob"], fdev);
     CHECK(why0.empty(), "%s : état initial des obstacles :%s", who.c_str(), why0.c_str());
     for (const J& f : r["frames"].a) {
@@ -894,11 +950,57 @@ static void testFenceRuns() {
       // Collision du monde pendant horse.update (non portée) : recalage sur l'état relevé après horse.update.
       if (ch["col"].b) { loadHorse(s, ch["b"].isNull() ? ch["s"] : ch["b"]); resync++; cols++; }
       CsoFenceOut out;
-      // Contacts des membres signalés par le cheval WildMesh pendant horse.update (détection non portée : entrée).
-      for (const J& c : ch["lc"].a) {
-        csoLimbContact(s, obs, st, CsoLimbHit{(int)c["o"].num(), (int)c["bar"].num(), c["d"].num(), c["u"].num(), c["hind"].b}, fi.time, out);
-        wit["contact de membre"]++;
-      }
+      // Contacts des membres (jalon J2) : pose des membres relevée dans le jeu web (canal lb), obstacle et moment choisis
+      // et contacts recalculés par strides::limb (pjlHorse.js _limbContacts, limbContact.js), comparés aux contacts
+      // signalés (lc), puis passés à csoLimbContact comme le jeu web le fait pendant horse.update. Scénarios sans canal lb
+      // (antérieurs au jalon J2) : contacts signalés pris tels quels.
+      if (ch["lb"].t == J::Obj || hasLb) {
+        hasLb = true;
+        const J& lb = ch["lb"];
+        CsoTarget tg;
+        const bool needT = !limb::judgingNow(s, obs, fi.playerHorse, fi.time);
+        if (needT) tg = csoTarget(obs, s, fi.power, fi.clearance, fi.csoControls);
+        const limb::Choice chc = limb::choose(s, obs, fi.playerHorse, fi.time, needT ? &tg : nullptr);
+        const int wantO = lb.t == J::Obj ? (int)lb["o"].num() : -1;
+        if (chc.obstacle != wantO || (wantO >= 0 && chc.judging != lb["j"].b)) {
+          limbBad++;
+          if (limbBad < 4) std::printf("  %s image %d : membres : obstacle %d jugé %d / web %d jugé %d\n", who.c_str(), (int)f["f"].num(), chc.obstacle, chc.judging, wantO, wantO >= 0 ? (int)lb["j"].b : 0);
+        }
+        limb::Pose pose{};
+        if (lb.t == J::Obj)
+          for (int i = 0; i < 4; i++)
+            for (int k = 0; k < 3; k++) pose[i][k] = limb::P3{lb["p"][i][k][0].num(), lb["p"][i][k][1].num(), lb["p"][i][k][2].num()};
+        const int oi = chc.obstacle;
+        size_t kHit = 0;
+        const J& lcw = ch["lc"];
+        limb::step(limbSt, chc, pose, lb.t == J::Obj ? lb["t"].num() : fi.time, oi >= 0 ? &obs[oi] : nullptr, oi >= 0 ? &st[oi] : nullptr,
+                   [&](const limb::Hit& h) {
+                     const CsoLimbHit fh = limb::toFenceHit(h, oi);
+                     if (kHit >= lcw.a.size()) limbBad++;
+                     else {
+                       const J& c = lcw[kHit];
+                       const double dd = std::abs(fh.depth - c["d"].num()), du = std::abs(fh.u - c["u"].num());
+                       limbDev = std::max(limbDev, std::max(dd, du));
+                       if ((int)c["o"].num() != oi || (int)c["bar"].num() != fh.bar || c["hind"].b != fh.hind || !(dd <= 1e-9) || !(du <= 1e-9)) {
+                         limbBad++;
+                         if (limbBad < 4) std::printf("  %s image %d : contact barre %d prof %.17g u %.17g post %d / web barre %d prof %.17g u %.17g post %d\n", who.c_str(), (int)f["f"].num(), fh.bar, fh.depth, fh.u, fh.hind, (int)c["bar"].num(), c["d"].num(), c["u"].num(), (int)c["hind"].b);
+                       }
+                     }
+                     kHit++;
+                     wit[std::string("contact de membre ") + (fh.hind ? "postérieur" : "antérieur") + " (recalculé)"]++;
+                     limbHits++;
+                     csoLimbContact(s, obs, st, fh, fi.time, out);
+                   });
+        if (kHit != lcw.a.size()) {
+          limbBad++;
+          if (limbBad < 4) std::printf("  %s image %d : %zu contacts / web %zu\n", who.c_str(), (int)f["f"].num(), kHit, lcw.a.size());
+        }
+        if (lb.t == J::Obj) limbFrames++;
+      } else
+        for (const J& c : ch["lc"].a) {
+          csoLimbContact(s, obs, st, CsoLimbHit{(int)c["o"].num(), (int)c["bar"].num(), c["d"].num(), c["u"].num(), c["hind"].b}, fi.time, out);
+          wit["contact de membre"]++;
+        }
       CsoUpdateHorseInput uh;
       uh.prevX = prevX; uh.prevZ = prevZ;
       uh.time = in["ut"].isNull() ? fi.time : in["ut"].num();
@@ -1017,10 +1119,15 @@ static void testFenceRuns() {
       n++;
     }
     frames += n;
-    CHECK(bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0,
-          "%s : rejeu des obstacles : %d images en écart (cheval), %d (obstacles), %d (événements du cheval), %d (événements d'obstacle), %d (sons), %d (barres)",
-          who.c_str(), bad, fbad, evBad, oeBad, sndBad, railBad);
-    if (bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0 && resync == 0 && n > 0) clean[id] = n;
+    CHECK(bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0 && limbBad == 0,
+          "%s : rejeu des obstacles : %d images en écart (cheval), %d (obstacles), %d (événements du cheval), %d (événements d'obstacle), %d (sons), %d (barres), %d (contacts des membres)",
+          who.c_str(), bad, fbad, evBad, oeBad, sndBad, railBad, limbBad);
+    if (hasLb) {
+      std::printf("membres  %-22s %-2s : %3d images avec pose relevée, %d contacts recalculés (écart max profondeur / u %.2g m), %d écarts\n", id.c_str(), lang.c_str(),
+                  limbFrames, limbHits, limbDev, limbBad);
+      limbRuns[id] = limbBad == 0 ? limbHits : -1;
+    }
+    if (bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0 && limbBad == 0 && resync == 0 && n > 0) clean[id] = n;
     if (bad == 0 && fbad == 0 && evBad == 0 && oeBad == 0 && sndBad == 0 && railBad == 0 && resync == cols && n > 0) colOnly[id] = cols;
     std::printf("obstacles %-22s %-2s : %3d images, %d recalages, écarts max : position %.2g m, vitesse %.2g m/s, barres %.2g, chute %.2g, marge %.2g ; franchi %d, faute %d, refus compté %d, cabré %d, chute %d, effleurement %d, choc %d\n",
                 id.c_str(), lang.c_str(), n, resync, dev.pos, dev.speed, fdev.rail, fdev.fall, fdev.margin, cnt["obstacle:clear"], cnt["obstacle:fault"],
@@ -1038,6 +1145,23 @@ static void testFenceRuns() {
     if (id == "t3-refus-lent" || id == "t3-refus-oblique") CHECK(c("obstacle:refusal") == 1 && c("railFall") == 0, "%s : refus sans barre", who.c_str());
     if (id == "t3-refus-5s") CHECK(c("obstacle:refusal") == 2 && c("horse:refuse") > 2, "%s : refus recompté après 5 s seulement (%d cabrés)", who.c_str(), c("horse:refuse"));
     if (id == "t3-glissade") CHECK(c("obstacle:refusal") == 1 && c("horse:refuse") >= 2, "%s : glissades, refus compté une fois", who.c_str());
+    // Jalon J2 (cheval WildMesh, membres jugés) : résultats du jeu web relevés à l'export, épinglés ici (en plus de
+    // l'identité image par image). Membres visibles : un effleurement de la trajectoire peut devenir une barre tombée.
+    if (id == "j2-sans-faute" || id == "j2-virage") CHECK(c("obstacle:clear") == 1 && c("obstacle:fault") == 0 && c("railFall") == 0 && limbHits == 0, "%s : sans faute, aucun contact", who.c_str());
+    if (id == "j2-pres-juste") CHECK(c("obstacle:clear") == 1 && c("railFall") == 0 && limbHits == 0 && margins.size() == 1 && margins[0] < 0, "%s : trajectoire effleurée, membres dégagés, franchi", who.c_str());
+    if (id == "j2-effleurement-haut") CHECK(c("obstacle:fault") == 1 && c("railFall") == 1 && limbHits == 1, "%s : marge +0,02..0,04 mais antérieur sur la barre : barre tombée, faute", who.c_str());
+    if (id == "j2-effleurement") CHECK(c("obstacle:fault") == 1 && c("railFall") == 1 && limbHits == 1, "%s : postérieur sur la barre : barre tombée, faute", who.c_str());
+    if (id == "j2-faute-limite" || id == "j2-posterieurs") CHECK(c("obstacle:fault") == 1 && c("railFall") == 1 && limbHits == 1, "%s : une barre (contact d'un antérieur), une faute", who.c_str());
+    if (id == "j2-pres-montee") CHECK(c("obstacle:fault") == 1 && c("railFall") == 1 && limbHits == 1 && margins.size() == 1 && margins[0] < -0.06, "%s : appel trop près, antérieur sur la barre et trajectoire sous la barre : une barre, une faute", who.c_str());
+    if (id == "j2-oxer-loin") CHECK(c("obstacle:fault") == 1 && c("railFall") == 2, "%s : deux barres, une faute", who.c_str());
+    if (id == "j2-refus-lent") CHECK(c("obstacle:refusal") == 1 && c("railFall") == 0 && limbHits == 0, "%s : refus sans barre", who.c_str());
+  }
+  CHECK(wit["contact de membre antérieur (recalculé)"] > 0 && wit["contact de membre postérieur (recalculé)"] > 0, "jalon J2 : contacts recalculés d'un antérieur (%d) et d'un postérieur (%d)",
+        wit["contact de membre antérieur (recalculé)"], wit["contact de membre postérieur (recalculé)"]);
+  for (const char* id : {"j2-sans-faute", "j2-posterieurs", "j2-pres-montee", "j2-pres-juste", "j2-oxer-loin", "j2-effleurement", "j2-effleurement-haut",
+                         "j2-faute-limite", "j2-refus-lent", "j2-virage"}) {
+    CHECK(limbRuns.count(id) && limbRuns[id] >= 0, "scénario %s (jalon J2) : absent, sans pose des membres ou contacts en écart", id);
+    CHECK(clean.count(id), "scénario %s (jalon J2) : absent, recalé ou en écart", id);
   }
   int ok = 0;
   for (const char* id : required) {
@@ -3367,6 +3491,7 @@ int main(int argc, char** argv) {
     run("course", testCourse);
     run("runs", testRuns);
     run("horse", testHorseRuns);
+    run("limb", testLimbContact);
     run("fences", testFenceRuns);
     run("target", testTarget);
     run("press", testPress);

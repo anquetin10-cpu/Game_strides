@@ -68,7 +68,7 @@ ATTENDUES = {
  'abord : marge < −late supprimée': 'aucun abord où la marge passe sous −late avec ideal ≤ L avant que la zone ne devienne « refuse » ou que le refus lent ne s’applique',
 }
 os.makedirs(out, exist_ok=True)
-others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')]
+others = [os.path.join(core, 'Private', f) for f in ('JumpModel.cpp', 'LimbContact.cpp', 'CsoRide.cpp', 'CsoCourse.cpp', 'CsoFences.cpp', 'CsoRun.cpp', 'CsoHud.cpp', 'CsoCamera.cpp', 'CsoInput.cpp', 'CourseAids.cpp', 'Text.cpp', 'SaveGame.cpp', 'CoursePlan.cpp', 'CsoEntry.cpp', 'Ranking.cpp', 'CsoAudio.cpp', 'HorseCoat.cpp')]
 test = os.path.join(repo, 'unreal/core/tests/test_core.cpp')
 data = os.path.join(repo, 'unreal/StridesGrandTour/Content/Data')
 # broken : mutations non jouées (motif absent ou en double, compilation échouée) : jamais comptées non détectées.
