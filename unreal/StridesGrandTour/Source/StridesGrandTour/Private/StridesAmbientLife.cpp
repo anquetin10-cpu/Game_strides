@@ -58,8 +58,10 @@ USceneComponent* AStridesAmbientLife::MakeFigure(const strides::LifeOutfit& O, c
 	// 1,70 m : jambes (ou robe) jusqu'à 0,85 m, buste jusqu'à 1,45 m, tête de 22 cm, cheveux ou casquette.
 	MakePart(Root, Cylinder, FVector(0, 0, 42.5), FVector(30, 34, 85), O.dress ? Top : Pants);
 	MakePart(Root, Cylinder, FVector(0, 0, 115), FVector(30, 42, 60), Top);
-	MakePart(Root, Sphere, FVector(0, 0, 157), FVector(22, 22, 24), Skin);
-	MakePart(Root, Sphere, FVector(-2, 0, 164), FVector(23, 23, 14), O.cap.empty() ? Hair : Hex(O.cap));
+	// Tête et cheveux en cylindres courts : la sphère de base (≈ 1 500 triangles) coûtait 96 000 triangles pour 64 têtes
+	// (relevé de Strides.World.AmbientLife, budget iPhone).
+	MakePart(Root, Cylinder, FVector(0, 0, 156), FVector(21, 21, 22), Skin);
+	MakePart(Root, Cylinder, FVector(-2, 0, 166), FVector(23, 23, 8), O.cap.empty() ? Hair : Hex(O.cap));
 	return Root;
 }
 
@@ -155,6 +157,30 @@ void AStridesAmbientLife::Tick(float DeltaSeconds)
 		UE_LOG(LogTemp, Display, TEXT("Strides vie ambiante : klaxon (%d)"), LastHorns);
 	}
 	Pose();
+#if !UE_BUILD_SHIPPING
+	// Relevé pour les parties jouées par entrées système (journal du jeu) : voiture et passant les plus proches du joueur.
+	LogT += DeltaSeconds;
+	if (LogT >= 5.f)
+	{
+		LogT = 0.f;
+		double NearCar = 1e9, CarV = 0, Walk = 1e9;
+		int32 Shown = 0, Near = 0;
+		for (const strides::TrafficCar& C : Sim.cars)
+		{
+			const double D = FVector2D::Distance(FVector2D(C.x, C.z), FVector2D(Input.player.x, Input.player.z));
+			if (D < NearCar) { NearCar = D; CarV = C.speed; }
+			Shown += C.visible ? 1 : 0;
+		}
+		for (const strides::Walker& W : Sim.walkers)
+		{
+			const double D = FVector2D::Distance(FVector2D(W.x, W.z), FVector2D(Input.player.x, Input.player.z));
+			Walk = FMath::Min(Walk, D);
+			Near += D < 80 ? 1 : 0;
+		}
+		UE_LOG(LogTemp, Display, TEXT("Strides vie ambiante : joueur (%.0f ; %.0f), voiture la plus proche %.0f m à %.1f m/s, %d voiture(s) affichée(s), passant le plus proche %.0f m, %d passant(s) à moins de 80 m"),
+			Input.player.x, Input.player.z, NearCar, CarV, Shown, Walk, Near);
+	}
+#endif
 }
 
 void AStridesAmbientLife::Pose()

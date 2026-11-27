@@ -56,7 +56,7 @@ FString UStridesProgressionSubsystem::MissionStatus() const
 	if (ActiveMissionId.IsEmpty())
 		return CompletedMissions.Num() == Data->Missions.Num() ? TEXT("Carrière terminée") : TEXT("Aucune mission active");
 	const FStridesMissionDefinition* Mission = Data->Missions.FindByPredicate([this](const FStridesMissionDefinition& M) { return M.Id == ActiveMissionId; });
-	return Mission ? FString::Printf(TEXT("%s · rejoindre %s"), *Mission->Title, *Mission->Place) : TEXT("Mission inconnue");
+	return Mission ? FString::Printf(TEXT("%s · rejoindre %s"), *Mission->Title, *PlaceName(Mission->Place)) : TEXT("Mission inconnue");
 }
 
 FString UStridesProgressionSubsystem::RankName() const

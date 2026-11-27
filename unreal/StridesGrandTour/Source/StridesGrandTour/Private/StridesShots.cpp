@@ -270,7 +270,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 		// Dossier de sortie résolu une fois, avant toute capture ; refus = sortie sans rien écrire.
 		bOutResolved = true;
 		FString Why;
-		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("miroir") || Mode() == TEXT("monte-b") || Mode() == TEXT("monte-s2") || Mode() == TEXT("perf") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
+		const FString Default = Mode() == TEXT("cso") || Mode() == TEXT("monte") || Mode() == TEXT("miroir") || Mode() == TEXT("monte-b") || Mode() == TEXT("monte-s2") || Mode() == TEXT("perf") || Mode() == TEXT("perf-monde") ? FString() : Mode() == TEXT("cso-jeu") ? RepoRoot() / TEXT("unreal/docs/parite/cso") : DefaultShotsDir();
 		if (!ResolveShotsDir(FCommandLine::Get(), RepoRoot(), Default, ProtectedShotsDirs(), OutDir, Why))
 		{
 			bRefused = true;
@@ -307,6 +307,11 @@ void AStridesShots::Tick(float DeltaSeconds)
 	if (Mode() == TEXT("perf"))
 	{
 		TickPerf(DeltaSeconds, PC);
+		return;
+	}
+	if (Mode() == TEXT("perf-monde"))
+	{
+		TickPerfMonde(DeltaSeconds, PC);
 		return;
 	}
 	// Tranche T10 : « Entrer en piste » touché dès que la carte de présentation de l'activité lancée s'ouvre.

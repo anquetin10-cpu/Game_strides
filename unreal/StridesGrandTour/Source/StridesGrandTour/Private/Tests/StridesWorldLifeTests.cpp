@@ -18,6 +18,8 @@
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "StaticMeshResources.h"
 #include "HAL/PlatformProcess.h"
 #include "Kismet/GameplayStatics.h"
 #include "StridesActivityPost.h"
@@ -161,6 +163,17 @@ bool FStridesWorldAmbientLifeTest::RunTest(const FString&)
 	for (const UStaticMeshComponent* C : Parts) if (C->IsCollisionEnabled()) Colliding++;
 	TestEqual(TEXT("aucune collision bloquante (silhouettes sans collision)"), Colliding, 0);
 	AddInfo(FString::Printf(TEXT("%d composants de maillage posés"), Parts.Num()));
+	{
+		int32 NoMesh = 0, NotReg = 0;
+		for (const UStaticMeshComponent* C : Parts) { NoMesh += C->GetStaticMesh() ? 0 : 1; NotReg += C->IsRegistered() ? 0 : 1; }
+		TestEqual(TEXT("chaque pièce a un maillage"), NoMesh, 0);
+		// Coût ajouté par la vie ambiante (J3-E) : triangles du LOD 0 de toutes les pièces.
+		int64 Tris = 0;
+		for (const UStaticMeshComponent* C : Parts) if (C->GetStaticMesh() && C->GetStaticMesh()->GetRenderData()) Tris += C->GetStaticMesh()->GetRenderData()->LODResources[0].GetNumTriangles();
+		AddInfo(FString::Printf(TEXT("coût de la vie ambiante : %d pièces (un appel de dessin chacune au plus), %lld triangles au LOD 0"), Parts.Num(), Tris));
+		UE_LOG(LogTemp, Display, TEXT("Strides.World.AmbientLife : %d pièces, %lld triangles au LOD 0"), Parts.Num(), Tris);
+		TestEqual(TEXT("chaque pièce est enregistrée (rendue)"), NotReg, 0);
+	}
 	// Joueur réel : cheval possédé arrêté sur la voie de droite de la route principale (sens +z), à (−32,2 ; 100).
 	G.Horse->PlaceAt(-32.2, 100, 0, 0);
 	for (int32 F = 0; F < 1800; ++F) A->Tick(1.0 / 30);
@@ -181,6 +194,12 @@ bool FStridesWorldAmbientLifeTest::RunTest(const FString&)
 		const strides::Walker& P = A->Life().walkers[0];
 		const FVector L = A->WalkerLocation(0);
 		TestTrue(TEXT("passant 0 posé au point simulé"), FMath::Abs(L.X / 100 - P.x) < 0.01 && FMath::Abs(L.Y / 100 - P.z) < 0.01);
+		// Pièces du passant : visibles près de la caméra, à hauteur d'homme au-dessus du sol (relevé du rendu en paquet).
+		TArray<UStaticMeshComponent*> Mine;
+		for (UStaticMeshComponent* C : Parts) if (C->GetAttachParent() && C->GetAttachParent()->GetName() == TEXT("Passant_0")) Mine.Add(C);
+		for (const UStaticMeshComponent* C : Mine)
+			AddInfo(FString::Printf(TEXT("pièce %s : visible %d, caché %d, centre (%.1f ; %.1f ; %.1f) m, rayon %.2f m, sol %.2f m"), *C->GetName(), C->IsVisible(), C->bHiddenInGame, C->Bounds.Origin.X / 100, C->Bounds.Origin.Y / 100, C->Bounds.Origin.Z / 100, C->Bounds.SphereRadius / 100, Data->TerrainHeight(P.x, P.z)));
+		TestEqual(TEXT("4 pièces au passant 0"), Mine.Num(), 4);
 	}
 	// À pied sur la chaussée (pion à pied) : klaxon au bout de 4 s à moins de 14 m.
 	{

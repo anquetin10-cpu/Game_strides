@@ -7,6 +7,8 @@
 #   mode « sans-saut » : suit la pastille sans jamais sauter (refus attendu), s'arrête au premier point de pénalité ;
 #   mode « refus-puis-saut » : sans saut jusqu'au premier refus présumé (cheval arrêté devant l'obstacle), puis « saut » ;
 #   mode « poteau »   : suit la ligne « Chrono du Pôle » hors épreuve, s'arrête à moins de 6 m.
+#   mode « gps »      : suit la ligne « GPS · lieu » d'une mission (jalon J3) ; s'arrête quand elle disparaît (mission
+#                       terminée à l'arrivée).
 import ctypes, ctypes.util, os, re, subprocess, sys, time
 cg = ctypes.CDLL(ctypes.util.find_library('CoreGraphics'))
 cg.CGEventCreateKeyboardEvent.restype = ctypes.c_void_p
@@ -42,9 +44,9 @@ try:
         k += 1
         if k % 3 == 1:
             subprocess.run(['/bin/cp', cur, os.path.join(out, time.strftime('%H%M%S-') + 's%s-%03d.jpg' % (mode, k))])
-        txt = subprocess.run([tools + ('/ocr' if mode == 'poteau' else '/ocr2'), cur], capture_output=True, text=True).stdout
+        txt = subprocess.run([tools + ('/ocr' if mode in ('poteau', 'gps') else '/ocr2'), cur], capture_output=True, text=True).stdout
         parts = [p.strip() for p in txt.split('|')[1:]]
-        pill = next((p for p in parts if re.search(r'Obstacle|Ligne de d|Arriv|Chrono du P|Paddock du P', p)), '')
+        pill = next((p for p in parts if re.search(r'GPS' if mode == 'gps' else r'Obstacle|Ligne de d|Arriv|Chrono du P|Paddock du P', p)), '')
         pts = next((p for p in parts if re.search(r'\d+\s*pts?\b', p)), '')
         # Bouton SAUT (bas droite, plein écran 3840 × 2160) : fond vert quand l'appel est bon (.btn-jump.good du web).
         px = subprocess.run([tools + '/pix', cur, '3660', '2025', '3750', '2025', '3706', '1975'], capture_output=True, text=True).stdout.split('\n')

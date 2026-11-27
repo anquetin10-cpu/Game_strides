@@ -146,6 +146,13 @@ private:
 	int32 PerfStep = 0, PerfFrame = 0, PerfWarm = 120, PerfFrames = 600, PerfResizeTries = 0;
 	float PerfWait = 0.f, PerfClock = 0.f;
 	FIntPoint PerfViewport = FIntPoint::ZeroValue;
+	// Jalon J3-E : coût du monde vivant (mode "perf-monde", hors Shipping) : cheval arrêté dans la rue principale de
+	// Deauville City, phases « ville-vide » (vie ambiante cachée et figée) puis « ville-vivante » ; temps du jeu, du rendu
+	// et du GPU, appels de dessin et primitives (RHI), mémoire. Écrit perf-monde.json dans -StridesShotsDir.
+	void TickPerfMonde(float DeltaSeconds, class APlayerController* PC);
+	struct FPerfMonde { FString Name; TArray<double> Game, Render, Gpu, Delta, Draws, Prims, Used; int32 Cars = 0, People = 0; };
+	TArray<FPerfMonde> MondePhases;
+	int32 CarProbe = 1;
 
 	// Banc de parité CSO (mode "cso").
 	struct FPose

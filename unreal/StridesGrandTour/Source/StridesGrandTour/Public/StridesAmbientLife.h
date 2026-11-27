@@ -48,4 +48,5 @@ private:
 	UPROPERTY() TObjectPtr<class UStaticMesh> Cylinder;
 	UPROPERTY() TObjectPtr<class UStaticMesh> Sphere;
 	int32 LastHorns = 0;
+	float LogT = 0.f;
 };
