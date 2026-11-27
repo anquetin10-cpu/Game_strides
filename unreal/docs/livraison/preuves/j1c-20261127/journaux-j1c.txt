@@ -1,0 +1,69 @@
+# J1c, 27/11 : extraits des journaux du paquet Mac Development (entrées injectées par l'agent, CGEvent ; jeu au premier plan depuis le lancement)
+
+== j1c-diag1.log (~/Library/Containers/com.strides.equestriantour/Data/Library/Logs/StridesGrandTour/)
+[2026.11.26-23.35.54:603][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+[2026.11.26-23.36.33:130][310]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1156, 678), application active 1, capture non, focus SViewport
+[2026.11.26-23.36.33:130][310]LogTemp: Display: Strides souris (détail) : sous le pointeur rien ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 2159) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s)
+[2026.11.26-23.36.33:197][312]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1156, 678), application active 1, capture non, focus SViewport
+[2026.11.26-23.36.33:197][312]LogTemp: Display: Strides souris (détail) : sous le pointeur rien ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 2159) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s)
+[2026.11.26-23.36.36:728][419]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1156, 678), application active 1, capture non, focus SViewport
+[2026.11.26-23.36.36:728][419]LogTemp: Display: Strides souris (détail) : sous le pointeur rien ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 2159) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s)
+[2026.11.26-23.36.36:827][422]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1156, 678), application active 1, capture non, focus SViewport
+[2026.11.26-23.36.36:827][422]LogTemp: Display: Strides souris (détail) : sous le pointeur rien ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 2159) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s)
+
+== j1c-fix2.log (~/Library/Containers/com.strides.equestriantour/Data/Library/Logs/StridesGrandTour/)
+[2026.11.27-00.30.14:166][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+[2026.11.27-00.30.51:772][283]LogTemp: Display: Strides fenêtre : position Slate (0, 2159) recalée sur l'écran du pointeur (0, 0), taille 1920 x 1080
+[2026.11.27-00.30.51:772][283]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1156, 678), application active 1, capture non, focus SViewport
+[2026.11.27-00.30.51:772][283]LogTemp: Display: Strides souris (détail) : sous le pointeur rien ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.30.51:904][287]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1156, 678), application active 1, capture non, focus SViewport
+[2026.11.27-00.30.51:904][287]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+
+== j1c-g1.log (~/Library/Containers/com.strides.equestriantour/Data/Library/Logs/StridesGrandTour/)
+[2026.11.27-00.37.04:296][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+[2026.11.27-00.37.31:933][  0]LogTemp: Display: Strides fenêtre : position Slate (0, 2159) recalée sur l'écran du pointeur (0, 0), taille 1920 x 1080
+[2026.11.27-00.46.30:376][302]LogTemp: Display: Strides épreuve : activité cso_train lancée (capacité : portée 1.55 m pour 1.15 m, dialogue 0)
+[2026.11.27-00.46.33:294][309]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1090, 665), application active 1, capture non, focus SViewport
+[2026.11.27-00.46.33:315][309]LogTemp: Display: Strides souris (détail) : sous le pointeur SBox SConstraintCanvas SButton (17) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1090, 665) ; fenêtre active oui à (0, 30) taille (1920, 1050), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.46.34:377][310]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1090, 665), application active 1, capture oui, focus SButton
+[2026.11.27-00.46.34:377][310]LogTemp: Display: Strides souris (détail) : sous le pointeur SBox SConstraintCanvas SButton (17) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1090, 665) ; fenêtre active oui à (0, 30) taille (1920, 1050), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.46.34:377][310]LogTemp: Display: Strides carte : bouton « enter » cliqué ou touché
+[2026.11.27-00.48.14:514][553]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (770, 557), application active 1, capture non, focus SViewport
+[2026.11.27-00.48.14:514][553]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (24) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (770, 557) ; fenêtre active oui à (0, 30) taille (1920, 1050), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.48.14:514][553]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (770, 557), application active 1, capture oui, focus SButton
+[2026.11.27-00.48.14:515][553]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (24) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (770, 557) ; fenêtre active oui à (0, 30) taille (1920, 1050), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+
+== j1c-g2.log (~/Library/Containers/com.strides.equestriantour/Data/Library/Logs/StridesGrandTour/)
+[2026.11.27-00.48.39:590][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+[2026.11.27-00.49.06:909][  0]LogTemp: Display: Strides fenêtre : position Slate (0, 2159) recalée sur l'écran du pointeur (0, 0), taille 1920 x 1080
+[2026.11.27-00.56.01:819][779]LogTemp: Display: Strides épreuve : activité cso_train lancée (capacité : portée 1.55 m pour 1.15 m, dialogue 0)
+[2026.11.27-00.56.06:305][915]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1090, 665), application active 1, capture non, focus SViewport
+[2026.11.27-00.56.06:305][915]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1090, 665) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.06:470][920]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1090, 665), application active 1, capture oui, focus SButton
+[2026.11.27-00.56.06:470][920]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1090, 665) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.06:470][920]LogTemp: Display: Strides carte : bouton « enter » cliqué ou touché
+[2026.11.27-00.56.14:657][169]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1156, 678), application active 1, capture non, focus SViewport
+[2026.11.27-00.56.14:657][169]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.14:726][171]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1156, 678), application active 1, capture oui, focus SButton
+[2026.11.27-00.56.14:726][171]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.14:726][171]LogTemp: Display: Strides pause : bouton « resume » cliqué ou touché
+[2026.11.27-00.56.37:504][869]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (770, 542), application active 1, capture non, focus SViewport
+[2026.11.27-00.56.37:504][869]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (24) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (770, 542) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.37:669][874]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (770, 542), application active 1, capture oui, focus SButton
+[2026.11.27-00.56.37:669][874]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (24) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (770, 542) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.41:270][983]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (1156, 678), application active 1, capture non, focus SButton
+[2026.11.27-00.56.41:270][983]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.41:369][986]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (1156, 678), application active 1, capture oui, focus SButton
+[2026.11.27-00.56.41:369][986]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (1156, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.56.41:369][986]LogTemp: Display: Strides pause : bouton « resume » cliqué ou touché
+[2026.11.27-00.59.11:858][679]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES)
+[2026.11.27-00.59.37:272][477]LogTemp: Display: Strides souris : bouton LeftMouseButton enfoncé à (785, 678), application active 1, capture non, focus SViewport
+[2026.11.27-00.59.37:272][477]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (785, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.59.37:363][480]LogTemp: Display: Strides souris : bouton LeftMouseButton relâché à (785, 678), application active 1, capture oui, focus SButton
+[2026.11.27-00.59.37:363][480]LogTemp: Display: Strides souris (détail) : sous le pointeur SConstraintCanvas SButton STextBlock (18) ; au-dessus d'une fenêtre Slate 1, haute précision 0, curseur (785, 678) ; fenêtre active oui à (0, 0) taille (1920, 1080), mode 1, 1 fenêtre(s) interactive(s), écran natif (0, 2159, 1920, 1080)
+[2026.11.27-00.59.37:364][480]LogTemp: Display: Strides carte : bouton « cso-retry » cliqué ou touché
+
+== Sauvegarde strides_main.sav (paquet)
+avant J1c : 604cc7cc… (copie du scénario, courseLine true)
+01:48:14 clic « Tracé au sol » en pause (paquet) : fichier réécrit, eb824670…, courseLine false ; 01:48:20 kill -9
+relance 01:48:39 : emplacement lu (ligne ci-dessus) ; 01:56:37 même bascule : courseLine true (74e0ad71…), donc false avait été relu

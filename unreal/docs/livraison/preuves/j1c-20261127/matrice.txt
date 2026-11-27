@@ -1,0 +1,10 @@
+== ctest
+100% tests passed, 0 tests failed out of 11
+
+Total Test time (real) =  91.83 sec
+== Automation Strides
+succès : 50
+échecs : 0
+== Outils absents du Shipping
+0 chaîne(s) d'outils trouvée(s) dans le Shipping sur 14
+matrice verte
