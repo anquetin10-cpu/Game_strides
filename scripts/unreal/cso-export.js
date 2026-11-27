@@ -342,6 +342,16 @@ export async function exportCso(g, opts) {
       num: o.num, label: o.label, kind: o.kind, spread: R6(o.spread), x: R6(o.x), z: R6(o.z), rot: R6(o.rot), ground: R6(o.ground), w: R6(o.w), colors: o.colors,
       states: fenceStates.get(o),
     }));
+    // Jalon J2c (lot J2-D) : vertical et oxer du paddock d'échauffement du Pôle (obstacles.js:199-201, course « warmup »),
+    // hauteurs fixes (1,10 et 1,00 m), sans panneau ; une seule pose (« paddock »).
+    const warm = W.ofCourse('warmup');
+    if (warm.length !== 2) throw new Error(`paddock : ${warm.length} obstacles`);
+    const warmup = warm.map((o, i) => {
+      const { parts, group } = partsOfFence.get(o);
+      if (group !== o.group) throw new Error('groupe inattendu (paddock)');
+      const pieces = groupPieces(o.group, parts, o);
+      return { index: i, label: o.label, kind: o.kind, spread: R6(o.spread), x: R6(o.x), z: R6(o.z), rot: R6(o.rot), ground: R6(o.ground), w: R6(o.w), h: R6(o.h), colors: o.colors, pieces, counts: counts(pieces) };
+    });
     // Lignes de départ et d'arrivée (Obstacles._timingLine).
     const lines = [['start', O.CSO_START, 'DÉPART'], ['finish', O.CSO_FINISH, 'ARRIVÉE']].map(([id, L, key]) => {
       const { parts, mesh, sign } = partsOfLine.get(L);
@@ -420,6 +430,7 @@ export async function exportCso(g, opts) {
       textures,
       triangles,
       fences,
+      warmup,
       lines: lines.map(({ hash, ...l }) => l),
       marker: (({ hash, ...m }) => m)(marker),
       live: { horsEpreuve: !!opts.liveOff, epreuve: !!opts.liveIn, lignes: !!opts.liveLines, poteau: !!opts.liveMarker },

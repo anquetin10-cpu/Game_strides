@@ -134,6 +134,13 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			if ((*St)->TryGetNumberField(TEXT("x"), Sx) && (*St)->TryGetNumberField(TEXT("z"), Sz) && (*St)->TryGetNumberField(TEXT("w"), Sw) && (*St)->TryGetNumberField(TEXT("d"), Sd))
 				PoleStands = FVector4(Sx, Sz, Sw, Sd);
 		}
+		// Jalon J2c (lot J2-D) : paddock d'échauffement du Pôle (POLE.warmup) : étape goto de l'entraînement, lice.
+		if (const TSharedPtr<FJsonObject>* Wu; J->TryGetObjectField(TEXT("warmup"), Wu))
+		{
+			double Wx = 0, Wz = 0, Ww = 0, Wd = 0;
+			if ((*Wu)->TryGetNumberField(TEXT("x"), Wx) && (*Wu)->TryGetNumberField(TEXT("z"), Wz) && (*Wu)->TryGetNumberField(TEXT("w"), Ww) && (*Wu)->TryGetNumberField(TEXT("d"), Wd))
+				PoleWarmup = FVector4(Wx, Wz, Ww, Wd);
+		}
 		J->TryGetNumberField(TEXT("length"), PoleLengthM);
 		// Tracé : lecture du cœur (strides::parseCourseFile), la même que celle que les tests du cœur comparent à
 		// l'oracle cso_course.json (unreal/core/tests/test_core.cpp, testCourse).

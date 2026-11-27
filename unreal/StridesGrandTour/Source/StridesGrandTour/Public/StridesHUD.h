@@ -31,7 +31,7 @@ public:
 	static FVector2D MinimapHeading(const FVector& Forward);
 	// Repère du chrono du Pôle (lot J1-D, choix signalé dans plan.md) : cible de guidage quand aucune mission de carrière ni
 	// aucune épreuve n'est en cours ; texte « Chrono du Pôle · 420 m · à droite » (cap relatif du cavalier). Vide sinon.
-	static FString PoleGuideText(double Distance, double RelAngleDeg);
+	static FString PoleGuideText(double Distance, double RelAngleDeg, const TCHAR* Name = TEXT("Chrono du Pôle"));
 	// Cap relatif (degrés) de la cible vue du cavalier : avant Unreal du pion, vecteur vers la cible dans le repère web.
 	static double RelativeAngleDeg(const FVector& Forward, const FVector2D& ToGoalWeb);
 	// Point de passage du guidage (repère web) : l'ouverture de la lice quand la cible est dans la carrière et le cavalier dehors.

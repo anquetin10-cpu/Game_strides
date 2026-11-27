@@ -596,9 +596,19 @@ void AStridesPlayerController::OnInteract()
 // ---- Entrée dans l'épreuve (tranche T10) ----
 AStridesActivityPost* AStridesPlayerController::ActivityPost() const
 {
+	// Poteau du Pôle (cso_train) : épreuve et guidage ; le poteau du paddock (cso_warmup, jalon J2c) est vu par Posts().
 	if (!PostCache.IsValid() && GetWorld())
-		if (TActorIterator<AStridesActivityPost> It(GetWorld()); It) PostCache = *It;
+		for (TActorIterator<AStridesActivityPost> It(GetWorld()); It; ++It)
+			if (!PostCache.IsValid() || It->Activity().id == "cso_train") PostCache = *It;
 	return PostCache.Get();
+}
+
+TArray<AStridesActivityPost*> AStridesPlayerController::Posts() const
+{
+	TArray<AStridesActivityPost*> Out;
+	if (GetWorld())
+		for (TActorIterator<AStridesActivityPost> It(GetWorld()); It; ++It) Out.Add(*It);
+	return Out;
 }
 
 AStridesCourse* AStridesPlayerController::EntryCourse() const
@@ -621,12 +631,15 @@ bool AStridesPlayerController::DialogOpen() const
 
 FString AStridesPlayerController::ActionLabel() const
 {
-	const AStridesActivityPost* P = ActivityPost();
+	// Jalon J2c : « Terminer » de l'entraînement (priorité 2, à cheval comme à pied, rayon illimité).
+	if (const AStridesCourse* C = EntryCourse(); C && C->TrainingEndAvailable()) return C->TrainingEndLabel();
 	const AStridesHorse* H = Cast<AStridesHorse>(GetPawn());
-	if (!P || !H) return FString();
+	if (!H) return FString();
 	double X, Y, Z;
 	StridesUnits::UEToWeb(H->GetActorLocation(), X, Y, Z);
-	return P->Available(X, Z, TEXT("ride")) ? P->Label() : FString();
+	for (const AStridesActivityPost* P : Posts())
+		if (P && P->Available(X, Z, TEXT("ride"))) return P->Label();
+	return FString();
 }
 
 bool AStridesPlayerController::DoAction()
@@ -639,10 +652,17 @@ bool AStridesPlayerController::DoAction()
 		if (Audio) Audio->Call(strides::csoClickCall(), "ui/hud.js");
 		return true;
 	}
+	// Jalon J2c : « Terminer » l'entraînement (interact train:end, priorité 2 : l'emporte sur le poteau et la descente).
+	if (AStridesCourse* C = EntryCourse(); C && C->PressTrainingEnd())
+	{
+		if (Audio) Audio->Click();
+		return true;
+	}
 	// Action du poteau « Chrono » (priorité 1) : à cheval, point suivi = le cheval, sans mission en cours.
 	if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn()))
-		if (AStridesActivityPost* P = ActivityPost())
+		for (AStridesActivityPost* P : Posts())
 		{
+			if (!P) continue;
 			double X, Y, Z;
 			StridesUnits::UEToWeb(H->GetActorLocation(), X, Y, Z);
 			const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;

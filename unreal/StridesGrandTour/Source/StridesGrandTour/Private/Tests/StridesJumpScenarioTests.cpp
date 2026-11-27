@@ -623,6 +623,25 @@ bool FStridesWorldStandsTest::RunTest(const FString&)
 	}
 	TestEqual(TEXT("cheval : aucune image dans l'emprise des tribunes (5 abords)"), Inside, 0);
 	TestEqual(TEXT("cheval : contact avec les tribunes sur les 5 abords"), Hits, 5);
+	// Contrôle (J2c, mutation « sans tribunes ») : collider « stands » retiré, le premier abord entre dans l'emprise ;
+	// le test échouerait donc sans le collider. Remis ensuite.
+	{
+		G.Course->SetStandsForTest(false);
+		int32 InsideMut = 0;
+		const FP& P = Pts[0];
+		G.Horse->PlaceAt(P.X, P.Z, P.H, 6.5);
+		G.PC->FeedKey(TEXT("KeyW"), true, false);
+		for (int32 K = 0; K < 90; K++)
+		{
+			G.Frame();
+			const strides::CsoHorseState& H = G.Horse->CsoState();
+			const double Cx = H.x + FMath::Sin(H.heading) * 0.45, Cz = H.z + FMath::Cos(H.heading) * 0.45;
+			InsideMut += FMath::Abs(Cx - S.X) < Hx && FMath::Abs(Cz - S.Y) < Hz;
+		}
+		G.PC->FeedKey(TEXT("KeyW"), false, false);
+		G.Course->SetStandsForTest(true);
+		TestTrue(FString::Printf(TEXT("mutation « sans tribunes » détectée : %d images dans l'emprise sans le collider"), InsideMut), InsideMut > 0);
+	}
 	// Cavalier à pied : balayage d'une capsule de piéton (rayon 0,35 m) vers le centre des tribunes, canal des pions.
 	const UBoxComponent* B = G.Course->StandsBlocker();
 	if (TestNotNull(TEXT("boîte des tribunes pour le piéton"), B))

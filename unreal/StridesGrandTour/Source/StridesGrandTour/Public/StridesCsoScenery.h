@@ -77,6 +77,9 @@ public:
 
 	TArray<FStridesCsoState> States;
 	TArray<FStridesCsoFenceData> Fences;
+	// Jalon J2c (lot J2-D) : obstacles du paddock d'échauffement du Pôle (obstacles.js:199-201, course « warmup »), dans
+	// l'ordre du jeu web (vertical, puis oxer) ; une pose « paddock » à leur hauteur fixe.
+	TArray<FStridesCsoFenceData> Warmup;
 	TArray<FStridesCsoGroup> Lines;  // « start », « finish »
 	FStridesCsoGroup Marker;          // poteau « Chrono » de l'activité cso_train
 	FLinearColor HighlightOn = FLinearColor::White, HighlightOff = FLinearColor::White;

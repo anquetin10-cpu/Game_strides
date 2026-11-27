@@ -49,6 +49,12 @@ public:
 	bool UsesExportedGeometry() const { return bExported; }
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") FString Label;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") int32 Num = 0;
+	// Pièces exportées du jeu web posées (sinon formes de base).
+	bool IsExported() const { return bExported; }
+	// Course de l'obstacle (ob.course du web) : « cso » (parcours du Pôle) ; jalon J2c : « warmup » (paddock
+	// d'échauffement, entraînement à l'abord) avec son rang dans FStridesCsoScenery::Warmup. À poser avant Setup.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") FString Course = TEXT("cso");
+	int32 CourseIndex = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Strides") float HeightM = 1.1f;
 
 private:

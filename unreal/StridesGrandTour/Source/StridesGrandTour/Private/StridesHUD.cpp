@@ -100,9 +100,9 @@ void AStridesHUD::DrawHUD()
 		Line(FString::Printf(TEXT("%s · %d crédits · %d réputation"), *Progress->RankName(), Progress->Credits, Progress->Reputation), FLinearColor(0.35f, 0.9f, 0.75f));
 		// Objectif : celui de l'épreuve en cours (Run.text, setObjective du web ; vide : aucune ligne), puis l'état de la
 		// mission de carrière quand l'une est lancée (touche M) ; « Aucune mission active » seulement hors épreuve.
-		const strides::CsoRun* Run = Course.IsValid() ? Course->Run() : nullptr;
-		const bool bRunLive = Run && !Run->finished();
-		const FString Objective = bRunLive ? FString(UTF8_TO_TCHAR(Run->text().c_str())) : FString();
+		// Jalon J2c : l'entraînement à l'abord est une mission comme l'épreuve (missions.objectiveText).
+		const bool bRunLive = Course.IsValid() && Course->MissionActive();
+		const FString Objective = bRunLive ? Course->ObjectiveText() : FString();
 		for (const FString& L : ObjectiveLines(bRunLive, Objective, Progress->ActiveMissionId, Progress->MissionStatus())) Line(DebugText(L), FLinearColor(1.f, 0.82f, 0.25f));
 		if (!Progress->LastMessage.IsEmpty()) Line(Progress->LastMessage, FLinearColor(0.7f, 0.9f, 1.f));
 
@@ -110,7 +110,12 @@ void AStridesHUD::DrawHUD()
 		if (P && !Progress->HasActiveTarget())
 		{
 			FVector2D Goal;
-			if (PoleGoal(Goal))
+			// Jalon J2c : étape « rejoindre le paddock » de l'entraînement, même guidage (le GPS du web n'est pas porté).
+			const strides::CsoTraining* Tr = Course.IsValid() ? Course->Training() : nullptr;
+			const UStridesDataSubsystem* Dd = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+			const bool bPaddock = Tr && !Tr->finished() && Tr->step() == strides::CsoTrainingStep::Goto && Dd;
+			if (bPaddock) Goal = FVector2D(Dd->PoleWarmup.X, Dd->PoleWarmup.Y);
+			if (bPaddock || PoleGoal(Goal))
 			{
 				double CX, CY, CZ;
 				StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
@@ -121,7 +126,7 @@ void AStridesHUD::DrawHUD()
 				// des obstacles et des ailes (grille de guidage, 2e correction J1 : 4 refus au 4B sur le chemin du poteau).
 				double Dist = 0;
 				const FVector2D Way = PoleGuideAim(Me, Goal, Dt, Course.Get(), Dist);
-				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me));
+				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me), bPaddock ? TEXT("Paddock du Pôle") : TEXT("Chrono du Pôle"));
 				if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
 			}
 		}
@@ -372,13 +377,13 @@ void AStridesHUD::DrawCourseGuide()
 	DrawText(G, FLinearColor::White, BX + 20.f, BY + 9.f, nullptr, Sc);
 }
 
-FString AStridesHUD::PoleGuideText(double Distance, double RelAngleDeg)
+FString AStridesHUD::PoleGuideText(double Distance, double RelAngleDeg, const TCHAR* Name)
 {
 	if (Distance < 6.0) return FString();
 	const double A = FMath::Abs(RelAngleDeg);
 	const TCHAR* Way = A < 20.0 ? TEXT("tout droit") : A > 135.0 ? TEXT("demi-tour") : RelAngleDeg > 0 ? TEXT("à droite") : TEXT("à gauche");
 	FString D = Distance < 1000.0 ? FString::Printf(TEXT("%.0f m"), Distance) : FString::Printf(TEXT("%.1f km"), Distance / 1000.0).Replace(TEXT("."), TEXT(","));
-	return FString::Printf(TEXT("Chrono du Pôle · %s · %s"), *D, Way);
+	return FString::Printf(TEXT("%s · %s · %s"), Name, *D, Way);
 }
 
 bool AStridesHUD::PoleGoal(FVector2D& Out) const

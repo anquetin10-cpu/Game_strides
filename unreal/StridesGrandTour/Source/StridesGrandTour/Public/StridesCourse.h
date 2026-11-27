@@ -23,6 +23,7 @@
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoHud.h"
 #include "StridesCore/CsoRun.h"
+#include "StridesCore/CsoTraining.h"
 #include "StridesCore/Ranking.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
@@ -64,7 +65,30 @@ public:
 	// obstacles posés et hauteurs de l'épreuve) ; la présentation attend « Entrer en piste ». Faux sans données.
 	bool StartActivity(const FString& PlayerName, const FString& HorseName, double JumpPower, double Clearance);
 	// Mission en cours (g.missions.active) : déroulé lancé et pas terminé.
-	bool MissionActive() const { return RunPtr && !RunPtr->finished(); }
+	// Jalon J2c : l'entraînement à l'abord est aussi une mission (g.missions.active), de son lancement à sa fin.
+	bool MissionActive() const { return (RunPtr && !RunPtr->finished()) || TrainingActive(); }
+	// ---- Entraînement à l'abord au paddock du Pôle (jalon J2c, lot J2-D ; activities.js startTraining) ----
+	// Lancé 300 ms après la fin de la mission quand « S'entraîner » a été choisi au bilan (courses.js:434-439), ou
+	// directement (StartTraining) ; refusé si une mission est en cours ou sans paddock (cso_course_pole.json « warmup »).
+	bool StartTraining();
+	bool TrainingActive() const { return TrainingPtr && !TrainingPtr->finished(); }
+	const strides::CsoTraining* Training() const { return TrainingPtr.get(); }
+	// Action « Terminer » (interact train:end, priorité 2 : l'emporte sur le poteau et la descente) : proposée pendant
+	// l'étape d'entraînement, à cheval comme à pied ; PressTrainingEnd la déclenche (faux si elle n'est pas proposée).
+	bool TrainingEndAvailable() const { return TrainingPtr && TrainingPtr->endAvailable(); }
+	FString TrainingEndLabel() const;
+	bool PressTrainingEnd();
+	// Mode de concours (game.course) : celui de l'épreuve tant qu'elle l'a, sinon celui de l'entraînement, dont
+	// l'obstacle suivant (game.course.next) est l'obstacle visé par le cheval s'il est du paddock (SetTrainingNext).
+	strides::CsoCourseMode CourseMode() const;
+	void SetTrainingNext(int32 Index) { TrainingNext = Index; }
+	// Objectif affiché (missions.objectiveText : Run.text de la mission active), vide sans mission.
+	FString ObjectiveText() const;
+	// Obstacles du parcours dans Obstacles() (les premiers) ; ceux du paddock suivent (course « warmup »).
+	int32 CourseFenceCount() const { return NumCourseFences; }
+	// Dernière carte de fin d'entraînement (missions.complete : titre, kicker, texte), affichée en grand message.
+	const strides::CsoTrainingResult& LastTrainingResult() const { return TrainingResult; }
+	int32 TrainingsStarted() const { return TrainingCount; }
 	// Carte modale ouverte (overlay du web : simulation en pause, boutons globaux et action coupés).
 	enum class EScreen : uint8 { None, Presentation, Plan, Result };
 	EScreen Screen() const { return ScreenNow; }
@@ -195,6 +219,15 @@ public:
 
 private:
 	void FlushRunCalls();
+	void FlushTrainingCalls();
+	void TickTraining(const strides::CsoRunFrame& Frame);
+	void BuildWarmup(const class UStridesDataSubsystem& Data);
+	std::unique_ptr<strides::CsoTraining> TrainingPtr;
+	strides::CsoRunFrame LastTrainFrame;
+	strides::CsoTrainingResult TrainingResult;
+	int32 TrainingNext = -1, NumCourseFences = 0, TrainingCount = 0;
+	double TrainingAt = -1;               // heure murale du lancement demandé par « S'entraîner » (300 ms après la fin)
+	int32 RunSerial = 0, TrainingAskedSerial = -1;  // épreuve (rang de lancement) dont la demande a déjà été prise
 	void BuildProps(const class UStridesDataSubsystem& Data);
 	void RefreshPropSigns();
 	strides::CourseTrace Trace;
@@ -226,6 +259,11 @@ private:
 	UPROPERTY() TObjectPtr<class UBoxComponent> StandsBlock;
 public:
 	const class UBoxComponent* StandsBlocker() const { return StandsBlock; }
+#if WITH_DEV_AUTOMATION_TESTS
+	// Contrôle du test Strides.World.Stands (mutation « sans tribunes ») : collider « stands » du cheval retiré ou remis.
+	void SetStandsForTest(bool bOn) { bStandsForTest = bOn; RebuildColliders(); }
+	bool bStandsForTest = true;
+#endif
 private:
 	// Entrée dans l'épreuve (tranche T10).
 	bool bAutoEnter = false;         // StartRun : présentation validée d'office

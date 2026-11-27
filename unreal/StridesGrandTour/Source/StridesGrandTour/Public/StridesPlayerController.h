@@ -161,6 +161,10 @@ private:
 	UPROPERTY() TObjectPtr<class UStridesCsoScreens> Screens;
 	int32 CardStickDir = 0;
 	mutable TWeakObjectPtr<class AStridesActivityPost> PostCache;
+public:
+	// Tous les poteaux d'activité (Pôle, paddock : jalon J2c), dans l'ordre de création.
+	TArray<class AStridesActivityPost*> Posts() const;
+private:
 	bool bCardInput = false;  // mode d'entrée « jeu et interface » posé pour la carte (pointeur sur Mac)
 	strides::CsoInput Cmd;
 	TSharedPtr<class IInputProcessor> KeyProcessor;

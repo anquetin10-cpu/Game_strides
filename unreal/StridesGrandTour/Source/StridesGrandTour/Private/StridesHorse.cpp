@@ -1023,13 +1023,27 @@ void AStridesHorse::UpdateCourseCamera(float Dt)
 {
 	// camera.js:74 : branche concours quand le joueur est à cheval et que l'épreuve est en mode concours
 	// (game.course.camera : de l'entrée en piste à la fin de la sortie de piste).
-	const strides::CsoRun* Run = Course ? Course->Run() : nullptr;
-	if (!Run || !Run->course().active || !Rider)
+	// Jalon J2c : entraînement à l'abord (game.course { camera: true }) : obstacle suivant = obstacle visé par le cheval
+	// s'il est du paddock (activities.js:185-188 : ob.target(h), tg.o.course === 'warmup').
+	if (Course && Course->TrainingActive())
+	{
+		int32 Next = -1;
+		if (Course->CourseMode().active)
+		{
+			const UStridesDataSubsystem* Data = DataSub();
+			const strides::CsoTarget Tg = strides::csoTarget(Course->Obstacles(), Sim, JumpPower(), 0.0, true, Data ? Data->Jump() : strides::jumpDefaults(),
+				Data ? Data->HorseParams() : strides::csoHorseDefaults());
+			if (Tg.index >= 0 && Tg.index < (int32)Course->Obstacles().size() && Course->Obstacles()[Tg.index].course == "warmup") Next = Tg.index;
+		}
+		Course->SetTrainingNext(Next);
+	}
+	const strides::CsoCourseMode Mode = Course ? Course->CourseMode() : strides::CsoCourseMode();
+	if (!Mode.active || !Rider)
 	{
 		LeaveCourseCamera();
 		return;
 	}
-	StepCourseCamera(Dt, CameraHorse(), Run->course().next, false);
+	StepCourseCamera(Dt, CameraHorse(), Mode.next, false);
 }
 
 void AStridesHorse::LeaveCourseCamera()

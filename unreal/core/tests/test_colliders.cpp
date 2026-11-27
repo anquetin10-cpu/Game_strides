@@ -49,6 +49,14 @@ int main(int argc, char** argv) {
   const J& St = o["stands"];
   CHECK(St["w"].num() > 0, "tribunes dans l'oracle");
   strides::addStands(C, St["x"].num(), St["z"].num(), St["w"].num(), St["d"].num());
+  // Jalon J2c (lot J2-D) : lice du paddock d'échauffement (rectFence 'e', 6 m, 0,5), tag « fence ».
+  const J& Wu = o["warmup"];
+  CHECK(Wu["w"].num() > 0, "paddock dans l'oracle");
+  const auto wpts = strides::rectFencePoints(Wu["x"].num(), Wu["z"].num(), Wu["w"].num(), Wu["d"].num(), 'e', 6, 0.5);
+  CHECK(wpts.size() == o["warmupFence"].a.size(), "points de la lice du paddock : %zu", wpts.size());
+  for (size_t i = 0; i < wpts.size() && i < o["warmupFence"].a.size(); i++)
+    CHECK(near(wpts[i].first, o["warmupFence"][i][0].num()) && near(wpts[i].second, o["warmupFence"][i][1].num()), "point %zu de la lice du paddock", i);
+  strides::addFence(C, wpts, false, 1.0, false, "fence", [](double, double) { return 0.0; });
   CHECK(C.size() == o["boxes"].a.size(), "boîtes : %zu / %zu", C.size(), o["boxes"].a.size());
   for (size_t i = 0; i < C.size() && i < o["boxes"].a.size(); i++) {
     const strides::Collider& c = C.all()[i];

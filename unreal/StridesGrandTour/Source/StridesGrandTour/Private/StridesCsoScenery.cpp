@@ -111,6 +111,30 @@ bool FStridesCsoScenery::Load(const FString& ManifestFile, const FString& Assets
 		}
 		Fences.Add(F);
 	}
+	// Jalon J2c (lot J2-D) : vertical et oxer du paddock d'échauffement (course « warmup », une seule pose « paddock »).
+	Warmup.Reset();
+	const TArray<TSharedPtr<FJsonValue>>* Wa = nullptr;
+	if (J->TryGetArrayField(TEXT("warmup"), Wa))
+		for (const TSharedPtr<FJsonValue>& V : *Wa)
+		{
+			const TSharedPtr<FJsonObject> O = V->AsObject();
+			FStridesCsoFenceData F;
+			F.Num = 0;
+			F.Label = O->GetStringField(TEXT("label"));
+			F.Kind = O->GetStringField(TEXT("kind"));
+			F.Spread = O->GetNumberField(TEXT("spread"));
+			F.X = O->GetNumberField(TEXT("x"));
+			F.Z = O->GetNumberField(TEXT("z"));
+			F.Rot = O->GetNumberField(TEXT("rot"));
+			F.Ground = O->GetNumberField(TEXT("ground"));
+			F.W = O->GetNumberField(TEXT("w"));
+			FStridesCsoLook Look;
+			Look.State = TEXT("paddock");
+			Look.H = O->GetNumberField(TEXT("h"));
+			Pieces(O, Look.Pieces, Look.Counts);
+			F.Looks.Add(Look);
+			Warmup.Add(F);
+		}
 	for (const TSharedPtr<FJsonValue>& V : J->GetArrayField(TEXT("lines")))
 	{
 		FStridesCsoGroup G;

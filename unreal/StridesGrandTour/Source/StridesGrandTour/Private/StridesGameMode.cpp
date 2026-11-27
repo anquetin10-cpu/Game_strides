@@ -107,6 +107,13 @@ void AStridesGameMode::StartPlay()
 			Pole->PlayerName = UTF8_TO_TCHAR(Fresh.playerName.c_str());
 		}
 		else UE_LOG(LogTemp, Warning, TEXT("Strides : activité du Pôle absente (cso_activity.json) : pas de poteau actif"));
+		// Jalon J2c : poteau « Chrono » de l'entraînement à l'abord (activité cso_warmup, Activities._markers : a.start + 3 m).
+		if (Data && Data->PoleWarmup.Z > 0)
+		{
+			AStridesActivityPost* Warm = W->SpawnActor<AStridesActivityPost>();
+			Warm->Setup(strides::csoWarmupActivity(strides::CsoPaddock{Data->PoleWarmup.X, Data->PoleWarmup.Y, Data->PoleWarmup.Z, Data->PoleWarmup.W}), Course);
+			Warm->PlayerName = UTF8_TO_TCHAR(Fresh.playerName.c_str());
+		}
 	}
 	const FVector Spawn = Data ? Data->WorldSpawn : FVector(-104.f, 168.f, .35f);
 	Horse->PlaceAt(Spawn.X, Spawn.Y, Spawn.Z);

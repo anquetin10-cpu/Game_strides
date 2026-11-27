@@ -34,6 +34,8 @@ void AStridesCourse::Build(const strides::CourseDesign& Design, const UStridesDa
 		BuildProps(Data);
 	}
 	else UE_LOG(LogTemp, Warning, TEXT("Strides : géométrie du parcours absente (Content/World/Cso), formes de base"));
+	// Jalon J2c : vertical et oxer du paddock d'échauffement (entraînement à l'abord).
+	BuildWarmup(Data);
 }
 
 void AStridesCourse::ApplyHeights(const std::vector<double>& Heights)
@@ -62,7 +64,11 @@ void AStridesCourse::RebuildColliders()
 	}
 	// Tribunes du Pôle (world.js buildStands : boîte pleine, jalon J2b / B9) : cheval (cœur) et cavalier à pied (boîte
 	// invisible bloquante, hauteur 12 m, posée sur le sol au centre).
-	if (Data && Data->PoleStands.Z > 0 && Data->PoleStands.W > 0)
+	bool bStands = true;
+#if WITH_DEV_AUTOMATION_TESTS
+	bStands = bStandsForTest;
+#endif
+	if (bStands && Data && Data->PoleStands.Z > 0 && Data->PoleStands.W > 0)
 	{
 		const FVector4 S = Data->PoleStands;
 		strides::addStands(WorldCol, S.X, S.Y, S.Z, S.W);
@@ -81,6 +87,13 @@ void AStridesCourse::RebuildColliders()
 		const double H = 12.0;
 		StandsBlock->SetBoxExtent(FVector(S.Z / 2 * StridesUnits::CmPerM, S.W / 2 * StridesUnits::CmPerM, H / 2 * StridesUnits::CmPerM));
 		StandsBlock->SetWorldLocationAndRotation(StridesUnits::WebToUE(S.X, Ground(S.X, S.Y) + H / 2, S.Y), FRotator::ZeroRotator);
+	}
+	// Jalon J2c : lice du paddock d'échauffement (world.js:573 rectFence(POLE.warmup, { height: 1.0, board: true }, 'e', 6,
+	// 0.5), tag « fence » par défaut), solide pour le cheval ; ouverture de 6 m au milieu du côté est.
+	if (Data && Data->PoleWarmup.Z > 0 && Data->PoleWarmup.W > 0)
+	{
+		const FVector4 Wu = Data->PoleWarmup;
+		strides::addFence(WorldCol, strides::rectFencePoints(Wu.X, Wu.Y, Wu.Z, Wu.W, 'e', 6, 0.5), false, 1.0, false, "fence", Ground);
 	}
 	// Chandeliers et ailes (obstacles.js add), solides pour le cheval.
 	for (const strides::CsoObstacle& O : CoreObstacles)
@@ -189,6 +202,7 @@ void AStridesCourse::BuildWith(const strides::CourseDesign& Design, double Cours
 		Fences.Add(Fence);
 		CoreObstacles.push_back(Fence->CoreObstacle());
 	}
+	NumCourseFences = (int32)Trace.fences.size();
 	CoreStates = strides::csoFenceStates(CoreObstacles);
 	RebuildColliders();
 	// Temps accordé : longueur arrondie au mètre (obstacles.js, CSO_LENGTH) à la vitesse du niveau.
@@ -243,7 +257,8 @@ bool AStridesCourse::StartActivity(const FString& PlayerName, const FString& Hor
 	// Contrôle de capacité (courses.js:499-528) : obstacles tels qu'ils sont posés (hors épreuve) et hauteurs de l'épreuve
 	// (heights[i] ?? o.h), cheval du joueur (puissance du saut, bonus de franchissement de l'équipement).
 	strides::CsoCapacityInput In;
-	for (const strides::CsoObstacle& O : CoreObstacles) In.fences.push_back({O.kind, O.spread, O.h});
+	for (const strides::CsoObstacle& O : CoreObstacles)
+		if (O.course == "cso") In.fences.push_back({O.kind, O.spread, O.h});  // ofCourse('cso') (paddock exclu)
 	In.heights = CourseHeightsV;
 	In.power = JumpPower;
 	In.clearance = Clearance;
@@ -344,6 +359,7 @@ void AStridesCourse::StartRunWith(const strides::CsoRunConfig& Config, const str
 	bHudWall = true;
 	LastJumpTime = -1;
 	RunPtr = std::make_unique<strides::CsoRun>(Config, RunText);
+	RunSerial++;
 	bAutoEnter = false;
 	ScreenStep = -1;
 	ScreenNow = EScreen::None;
@@ -396,6 +412,7 @@ void AStridesCourse::FlushRunCalls()
 		if (FenceHeights() != CourseHeightsV) ApplyHeights(CourseHeightsV);
 		for (int32 I = 0; I < (int32)CoreStates.size(); I++)
 		{
+			if (CoreObstacles[I].course != "cso") continue;  // resetRails('cso') : le paddock garde ses barres
 			strides::csoRestFence(CoreStates[I]);
 			if (Fences.IsValidIndex(I) && Fences[I]) Fences[I]->ApplyRails(CoreStates[I]);
 		}
@@ -446,6 +463,8 @@ void AStridesCourse::FlushRunCalls()
 
 void AStridesCourse::TickRun(const strides::CsoRunFrame& Frame, strides::CsoCadence& Cadence)
 {
+	// Jalon J2c : entraînement (lancé par « S'entraîner » ou directement), mission à part de l'épreuve.
+	TickTraining(Frame);
 	if (!RunPtr) return;
 	// Présentation (tranche T10) : carte affichée jusqu'à « Entrer en piste » (PressScreenButton) ; lancement direct des
 	// tests et outils (StartRun) : validée d'office, sans carte.
@@ -456,6 +475,176 @@ void AStridesCourse::TickRun(const strides::CsoRunFrame& Frame, strides::CsoCade
 	}
 	RunPtr->update(Frame, Cadence);
 	FlushRunCalls();
+}
+
+// ---------- Entraînement à l'abord (jalon J2c, lot J2-D) ----------
+
+void AStridesCourse::BuildWarmup(const UStridesDataSubsystem& Data)
+{
+	// Obstacles du paddock (obstacles.js:199-201) posés comme le web les construit (manifeste « warmup »), après ceux du
+	// parcours : indices NumCourseFences et suivants, course « warmup », sans numéro.
+	const FStridesCsoScenery& S = Data.CsoScenery();
+	if (!S.IsLoaded() || S.Warmup.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Strides : obstacles du paddock absents (cso_fences.json « warmup ») : entraînement sans obstacles"));
+		return;
+	}
+	for (int32 I = 0; I < S.Warmup.Num(); I++)
+	{
+		const FStridesCsoFenceData& W = S.Warmup[I];
+		AStridesFence* Fence = GetWorld()->SpawnActor<AStridesFence>();
+		Fence->Course = TEXT("warmup");
+		Fence->CourseIndex = I;
+		Fence->Setup(W.Label, W.Kind, W.Looks.Num() ? W.Looks[0].H : 1.0, W.Spread, W.X, W.Z, W.Rot, 0, W.W);
+		Fences.Add(Fence);
+		CoreObstacles.push_back(Fence->CoreObstacle());
+	}
+	CoreStates = strides::csoFenceStates(CoreObstacles);
+	RebuildColliders();
+	// Poteau « Chrono » de l'activité cso_warmup (Activities._markers : même maillage pour chaque activité, posé en
+	// a.marker || a.start + 3 m sur x, sans rotation).
+	if (Data.PoleWarmup.Z > 0)
+	{
+		const strides::CsoActivity WA = strides::csoWarmupActivity(strides::CsoPaddock{Data.PoleWarmup.X, Data.PoleWarmup.Y, Data.PoleWarmup.Z, Data.PoleWarmup.W});
+		for (const FStridesCsoPiece& P : S.Marker.Pieces)
+		{
+			UStaticMesh* M = S.LoadMesh(P.Mesh);
+			if (!M) continue;
+			const FVector Wp = FStridesCsoScenery::PieceWorldWeb(WA.markerX, Data.TerrainHeight(WA.markerX, WA.markerZ), WA.markerZ, S.Marker.Rot, P);
+			UStaticMeshComponent* Cm = NewObject<UStaticMeshComponent>(this);
+			Cm->SetupAttachment(GetRootComponent());
+			Cm->SetStaticMesh(M);
+			Cm->ComponentTags.Add(FName(TEXT("cso_warmup")));
+			Cm->ComponentTags.Add(FName(*P.Cat));
+			Cm->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Cm->RegisterComponent();
+			Cm->SetWorldTransform(FTransform(FRotator(0, -FMath::RadiansToDegrees(S.Marker.Rot + P.Yaw), 0), StridesUnits::WebToUE(Wp.X, Wp.Y, Wp.Z)));
+			Props.Add(Cm);
+			PropTex.Add(P.Tex);
+			PropTexEn.Add(P.TexEn);
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("Strides : paddock d'échauffement, %d obstacles posés (pièces exportées : %d)"), S.Warmup.Num(), Fences.Num() && Fences.Last() ? (int32)Fences.Last()->IsExported() : 0);
+}
+
+bool AStridesCourse::StartTraining()
+{
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	// startTraining : `if (g.missions.active) return;`.
+	if (MissionActive() || !Data || Data->PoleWarmup.Z <= 0 || !Data->CsoText()) return false;
+	const strides::CsoPaddock P{Data->PoleWarmup.X, Data->PoleWarmup.Y, Data->PoleWarmup.Z, Data->PoleWarmup.W};
+	if (RunText.size() == 0) RunText = *Data->CsoText();
+	TrainingPtr = std::make_unique<strides::CsoTraining>(strides::csoTrainingConfig(P, RunText, RunLang()), RunText);
+	TrainingResult = strides::CsoTrainingResult();
+	TrainingNext = -1;
+	TrainingCount++;
+	SyncHudClock(WallSeconds());
+	TrainingPtr->begin();
+	FlushTrainingCalls();
+	UE_LOG(LogTemp, Display, TEXT("Strides entraînement : activité cso_warmup lancée (paddock %.0f, %.0f)"), P.x, P.z);
+	return true;
+}
+
+FString AStridesCourse::TrainingEndLabel() const
+{
+	return TrainingPtr ? FString(UTF8_TO_TCHAR(TrainingPtr->endLabel().c_str())) : FString();
+}
+
+bool AStridesCourse::PressTrainingEnd()
+{
+	if (!TrainingPtr || !TrainingPtr->finish()) return false;
+	UE_LOG(LogTemp, Display, TEXT("Strides entraînement : « Terminer » (%d sans faute sur %d)"), TrainingPtr->clean(), TrainingPtr->jumps());
+	return true;
+}
+
+strides::CsoCourseMode AStridesCourse::CourseMode() const
+{
+	if (RunPtr && !RunPtr->finished() && RunPtr->course().active) return RunPtr->course();
+	if (TrainingActive())
+	{
+		strides::CsoCourseMode M = TrainingPtr->course();
+		if (M.active) M.next = TrainingNext;
+		return M;
+	}
+	return RunPtr ? RunPtr->course() : strides::CsoCourseMode();
+}
+
+FString AStridesCourse::ObjectiveText() const
+{
+	if (RunPtr && !RunPtr->finished()) return UTF8_TO_TCHAR(RunPtr->text().c_str());
+	if (TrainingActive()) return UTF8_TO_TCHAR(TrainingPtr->text(LastTrainFrame).c_str());
+	return FString();
+}
+
+void AStridesCourse::TickTraining(const strides::CsoRunFrame& Frame)
+{
+	// « S'entraîner » au bilan (courses.js:439) : setTimeout(startTraining, 300) une fois la mission refermée.
+	if (RunPtr && RunPtr->finished() && RunPtr->trainingRequested() && TrainingAskedSerial != RunSerial)
+	{
+		TrainingAskedSerial = RunSerial;
+		TrainingAt = WallSeconds() + 0.3;
+	}
+	if (TrainingAt >= 0 && WallSeconds() >= TrainingAt)
+	{
+		TrainingAt = -1;
+		StartTraining();
+	}
+	if (!TrainingPtr) return;
+	LastTrainFrame = Frame;
+	if (Frame.dt > 0) TrainingPtr->update(Frame);
+	FlushTrainingCalls();
+}
+
+void AStridesCourse::FlushTrainingCalls()
+{
+	if (!TrainingPtr) return;
+	auto Line = [](const strides::CsoCall& C)
+	{
+		FString L = UTF8_TO_TCHAR(C.fn.c_str());
+		for (const strides::CsoArg& A : C.args) L += TEXT(" | ") + (A.isNum ? FString::SanitizeFloat(A.n) : FString(UTF8_TO_TCHAR(A.s.c_str())));
+		return L;
+	};
+	for (const strides::CsoCall& C : TrainingPtr->takeHud())
+	{
+		HudCalls.Add(Line(C));
+		Hud.call(C);
+		FString Text = C.args.empty() || C.args[0].isNum ? FString() : FString(UTF8_TO_TCHAR(C.args[0].s.c_str()));
+		if (C.fn == "big" && C.args.size() > 1 && !C.args[1].isNum && !C.args[1].s.empty()) Text += TEXT(" · ") + FString(UTF8_TO_TCHAR(C.args[1].s.c_str()));
+		if (C.fn == "toast" || C.fn == "big") UE_LOG(LogTemp, Display, TEXT("Strides entraînement : %s %s"), UTF8_TO_TCHAR(C.fn.c_str()), *Text);
+		OnCourseEvent.Broadcast(UTF8_TO_TCHAR(C.fn.c_str()), Text);
+	}
+	{
+		const std::vector<strides::CsoCall> Sounds = TrainingPtr->takeAudio();
+		for (const strides::CsoCall& C : Sounds) AudioCalls.Add(Line(C));
+		if (UStridesCsoAudio* Audio = GetWorld() ? GetWorld()->GetSubsystem<UStridesCsoAudio>() : nullptr) Audio->RunCalls(Sounds);
+	}
+	// start de l'étape d'entraînement : ob.resetRails('warmup').
+	if (TrainingPtr->takeResetRails())
+		for (int32 I = 0; I < (int32)CoreStates.size(); I++)
+		{
+			if (CoreObstacles[I].course != "warmup") continue;
+			strides::csoRestFence(CoreStates[I]);
+			if (Fences.IsValidIndex(I) && Fences[I]) Fences[I]->ApplyRails(CoreStates[I]);
+		}
+	// Fin de la mission (missions.complete) : carte de résultat du web (titre, kicker, texte) rendue en grand message
+	// (choix n° 12 du plan : carte de fin de mission non portée).
+	const strides::CsoTrainingResult R = TrainingPtr->takeResult();
+	if (R.taken)
+	{
+		TrainingResult = R;
+		strides::CsoCall Big;
+		Big.fn = "big";
+		strides::CsoArg T, B, Ms;
+		T.s = R.title;
+		B.s = R.body;
+		Ms.isNum = true;
+		Ms.n = 3500;
+		Big.args = {T, B, Ms};
+		HudCalls.Add(Line(Big));
+		Hud.call(Big);
+		OnCourseEvent.Broadcast(TEXT("big"), UTF8_TO_TCHAR((R.title + " · " + R.body).c_str()));
+		UE_LOG(LogTemp, Display, TEXT("Strides entraînement : fin « %s » · %s · %s"), UTF8_TO_TCHAR(R.title.c_str()), UTF8_TO_TCHAR(R.kicker.c_str()), UTF8_TO_TCHAR(R.body.c_str()));
+	}
 }
 
 double AStridesCourse::WallSeconds() const
@@ -475,7 +664,19 @@ void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool
 	// hud.update du jeu web (après la mission) : game.course (commandes et tableau de l'épreuve), cadence du joueur.
 	// Objectif (setObjective de missions.js) : affiché tant que l'épreuve n'est pas terminée.
 	strides::CsoHudFrame F;
-	if (RunPtr)
+	if (TrainingActive() && (!RunPtr || RunPtr->finished()))
+	{
+		// Entraînement (jalon J2c) : game.course { kind: 'cso-train', controls: 'cso', camera } pendant l'étape
+		// d'entraînement, sans tableau ; bouton SAUT : jumpTiming (aide « off » : 'none', sinon ob.timing du cheval).
+		Hud.setObjective(true);
+		const strides::CsoCourseMode M = CourseMode();
+		F.course = M.active;
+		F.controlsCso = M.active;
+		F.kindCso = false;  // kind === 'cso-train' : pas de classe cso-sober
+		F.board = false;
+		F.jumpTiming = strides::csoJumpTiming(M.active, false, TCHAR_TO_UTF8(*JumpAid), Timing);
+	}
+	else if (RunPtr)
 	{
 		Hud.setObjective(!RunPtr->finished());
 		const strides::CsoCourseMode& M = RunPtr->course();
@@ -522,13 +723,21 @@ void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::Cs
 		// Journal du jeu (preuve d'une partie jouée : ce que les obstacles ont jugé au contact du cheval).
 		UE_LOG(LogTemp, Display, TEXT("Strides épreuve : %s %s (sens %d, marge %.2f m%s%s)"), UTF8_TO_TCHAR(strides::csoFenceEventName(E.kind)), Fence ? *Fence->Label : TEXT("?"),
 			E.dir, E.margin, E.cause.empty() ? TEXT("") : TEXT(", cause "), UTF8_TO_TCHAR(E.cause.c_str()));
-		if (!RunPtr || !Fence) continue;
+		if (!Fence) continue;
+		const strides::CsoObstacleEventKind K0 = E.kind == strides::CsoFenceEventKind::Clear ? strides::CsoObstacleEventKind::Clear
+			: E.kind == strides::CsoFenceEventKind::Fault ? strides::CsoObstacleEventKind::Fault : strides::CsoObstacleEventKind::Refusal;
+		// Jalon J2c : écouteurs de l'entraînement (course « warmup ») ; ceux de l'épreuve ne voient que la course « cso »
+		// (courses.js:221 : obstacle.course !== courseId → ignoré).
+		if (TrainingPtr && !TrainingPtr->finished())
+			TrainingPtr->obstacleEvent(K0, TCHAR_TO_UTF8(*Fence->Course), E.margin, E.cause.empty() ? std::string() : RunText.cause(E.cause, TrainingPtr->config().lang));
+		if (!RunPtr || Fence->Course != TEXT("cso")) continue;
 		const strides::CsoObstacleEventKind K = E.kind == strides::CsoFenceEventKind::Clear ? strides::CsoObstacleEventKind::Clear
 			: E.kind == strides::CsoFenceEventKind::Fault ? strides::CsoObstacleEventKind::Fault : strides::CsoObstacleEventKind::Refusal;
 		// Texte de la cause (jumpModel.js CAUSES, traduit) transmis avec la faute, comme causeText dans le jeu web.
 		RunPtr->obstacleEvent(K, Fence->Num, E.dir, E.cause, E.cause.empty() ? std::string() : RunText.cause(E.cause, RunPtr->config().lang), Cadence);
 	}
 	FlushRunCalls();
+	FlushTrainingCalls();
 }
 
 void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double FocusZ)
@@ -611,6 +820,7 @@ bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVe
 }
 FString AStridesCourse::StatusText() const
 {
+	if ((!RunPtr || RunPtr->finished()) && TrainingActive()) return ObjectiveText();
 	if (!RunPtr) return FString();
 	strides::CsoBoard B;
 	const FString Objective = UTF8_TO_TCHAR(RunPtr->text().c_str());
@@ -667,6 +877,31 @@ void AStridesCourse::UpdateAids(double Dt, double HorseX, double HorseZ, double 
 	// Étape de parcours en cours (courseStep : CourseAids créé à start, supprimé à end).
 	const bool bCourse = RunPtr && !RunPtr->finished() && RunPtr->step() == strides::CsoStep::Course;
 	if (Aids && Aids->bFrozen) return;
+	// Entraînement (jalon J2c) : CourseAids(game, 'warmup') de l'étape d'entraînement, mis à jour avec l'obstacle visé du
+	// paddock, sans tracé (showLine: false), zone si l'aide est « full » ; pas fixe de 1/30 s (activities.js:190).
+	if (!bCourse && TrainingActive() && TrainingPtr->step() == strides::CsoTrainingStep::Train)
+	{
+		EnsureAids();
+		const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+		if (!Aids->Active()) Aids->Begin(std::vector<strides::TracePoint>(), [Data](double X, double Z) { return Data ? Data->TerrainHeight(X, Z) : 0.0; });
+		const std::vector<strides::CsoAidsFence> Fs = AidFences();
+		strides::CsoAidsInput In;
+		In.dt = 1.0 / 30;
+		In.hasHorse = true;
+		In.hx = HorseX;
+		In.hz = HorseZ;
+		In.speed = Speed;
+		In.power = Power;
+		In.clearance = Clearance;
+		In.riding = bRiding;
+		In.time = Time;
+		In.next = TrainingNext >= 0 && TrainingNext < (int32)Fs.size() ? &Fs[(size_t)TrainingNext] : nullptr;
+		In.prevS = 0;
+		In.showLine = false;
+		In.showZone = JumpAid == TEXT("full");
+		Aids->Step(In);
+		return;
+	}
 	if (!bCourse)
 	{
 		if (Aids && Aids->Active()) Aids->End();

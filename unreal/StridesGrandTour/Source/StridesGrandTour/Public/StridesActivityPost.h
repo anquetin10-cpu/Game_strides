@@ -3,7 +3,8 @@
 // celle exportée du jeu web et posée par AStridesCourse (BuildProps, tranche T5) ; cet acteur porte l'action : proposée
 // à cheval, à moins de r m du départ de l'activité, sans mission en cours (strides::csoActivityAvailable, oracle
 // unreal/core/tests/oracles/cso_entry.json), elle lance l'activité (AStridesCourse::StartActivity : grand message,
-// contrôle de capacité, présentation…). Seule l'activité du Pôle (cso_train) est portée.
+// contrôle de capacité, présentation…). Activités portées : Parcours du Pôle (cso_train) ; jalon J2c : entraînement à
+// l'abord au paddock (cso_warmup, strides::csoWarmupActivity → AStridesCourse::StartTraining).
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"

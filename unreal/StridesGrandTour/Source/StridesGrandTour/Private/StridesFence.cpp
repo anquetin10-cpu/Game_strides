@@ -41,7 +41,7 @@ void AStridesFence::SetHeight(double H)
 	HeightM = H;
 	// Obstacle du cœur (obstacles.js add / _bars / faces) : repère n = (sin rot, cos rot) axe de saut, t = (cos rot,
 	// −sin rot) le long des barres ; barres, faces avant / arrière (refus), largeur (visée entre les chandeliers).
-	Obstacle = strides::makeCsoObstacle(TCHAR_TO_UTF8(*Kind), WebX, WebZ, Rot, H, Width, Spread, TCHAR_TO_UTF8(*Label), Num, "cso");
+	Obstacle = strides::makeCsoObstacle(TCHAR_TO_UTF8(*Kind), WebX, WebZ, Rot, H, Width, Spread, TCHAR_TO_UTF8(*Label), Num, TCHAR_TO_UTF8(*Course));
 	Core = Obstacle.fence();
 	ClearVisuals();
 	if (!BuildExported()) BuildBasicShapes();
@@ -66,7 +66,8 @@ bool AStridesFence::BuildExported()
 	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
 	if (!Data || !Data->CsoScenery().IsLoaded()) return false;
 	const FStridesCsoScenery& S = Data->CsoScenery();
-	const FStridesCsoFenceData* F = S.Fence(Num);
+	// Paddock (jalon J2c) : obstacle de la course « warmup » par son rang ; parcours : par son numéro.
+	const FStridesCsoFenceData* F = Course == TEXT("warmup") ? (S.Warmup.IsValidIndex(CourseIndex) ? &S.Warmup[CourseIndex] : nullptr) : S.Fence(Num);
 	const FStridesCsoLook* Look = F && F->Label == Label && F->Kind == Kind ? F->LookAt(Height) : nullptr;
 	if (!Look) return false;
 	// Barres du haut : une par barre du cœur (même rang que ob.rails), posées à la position de repos du cœur.

@@ -79,7 +79,7 @@ const csoRun = {
   start: CSO_START, finish: CSO_FINISH,
   timeAllowed: timeAllowedFor(COURSE_LENGTH.cso, COURSE_SPEED.national),
 };
-write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, stands: POLE.stands, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: csoRun.rail, firstRefusal: csoRun.pen, refusalsToEliminate: csoRun.maxRefusals, timeFaultPerSecond: timeFaults(65, 64, 1) }, run: csoRun });
+write(DATA, 'cso_course_pole.json', { schema: 'strides.cso_course/1', source: src('gameplay/csoCourse.js'), frame: 'arena: x east, z south, heading h -> (sin h, cos h)', arena: POLE.arena, stands: POLE.stands, warmup: POLE.warmup, design: CSO_DESIGN, length: COURSE_LENGTH.cso, speeds: COURSE_SPEED, rules: { rail: csoRun.rail, firstRefusal: csoRun.pen, refusalsToEliminate: csoRun.maxRefusals, timeFaultPerSecond: timeFaults(65, 64, 1) }, run: csoRun });
 
 // ---------- Oracles ----------
 // Saut : grille d'appels devant un vertical et un oxer, plusieurs vitesses, angles, puissances.

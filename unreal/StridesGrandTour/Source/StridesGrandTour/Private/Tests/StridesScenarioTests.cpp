@@ -188,7 +188,7 @@ bool FStridesScenarioPoleLoopTest::RunTest(const FString&)
 		TestEqual(FString::Printf(TEXT("%s : chrono affiché (ElapsedTime)"), When), C->ElapsedTime(), 0.f);
 		TestEqual(FString::Printf(TEXT("%s : fautes affichées (Faults)"), When), C->Faults(), 0);
 	};
-	const int32 N = (int32)C->Obstacles().size();
+	const int32 N = C->CourseFenceCount();  // obstacles du parcours (ceux du paddock suivent, jalon J2c)
 	auto Labels = [&]() { TArray<FString> L; for (const strides::CsoRunFence& F : C->Run()->config().fences) L.Add(UTF8_TO_TCHAR(F.label.c_str())); return L; };
 	// Entrée par le poteau : E, présentation, « Entrer en piste », jusqu'au parcours.
 	auto EnterFromPost = [&](const TCHAR* When) -> bool
@@ -425,7 +425,7 @@ bool FStridesScenarioPoleRunTest::RunTest(const FString&)
 	UStridesCsoScreens* GScreensForTest = nullptr;
 	auto Info = [this](const FString& M) { AddInfo(M); UE_LOG(LogTemp, Display, TEXT("Strides.Scenario.PoleRun : %s"), *M); };
 	const std::vector<strides::CsoObstacle>& Obs = C->Obstacles();
-	const int32 N = (int32)Obs.size();
+	const int32 N = C->CourseFenceCount();  // obstacles du parcours (ceux du paddock suivent, jalon J2c)
 	auto St = [&]() -> const strides::CsoRunState& { return C->Run()->state(); };
 	auto Events = [&]() { return FString::Join(C->FenceEventLog(), TEXT(" ; ")); };
 	auto Enter = [&](const TCHAR* When) -> bool

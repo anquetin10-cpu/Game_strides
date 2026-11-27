@@ -138,6 +138,9 @@ public:
 	// Tribunes du Pôle (POLE.stands du web, cso_course_pole.json) : centre x, z puis largeur w et profondeur d (m, repère web).
 	// Jalon J2b (B9) : boîte de collision du cheval (strides::addStands) et du cavalier à pied (AStridesCourse).
 	FVector4 PoleStands = FVector4(0, 0, 0, 0);
+	// Paddock d'échauffement du Pôle (POLE.warmup, cso_course_pole.json « warmup ») : centre x, z, largeur w, profondeur d
+	// (m, repère web). Jalon J2c : entraînement à l'abord (strides::CsoTraining) et lice (rectFence 'e', 6 m, 0,5).
+	FVector4 PoleWarmup = FVector4(0, 0, 0, 0);
 	// Lit le décor exporté (appelé par Initialize ; public pour les tests).
 	void LoadScene();
 	bool HasTerrain() const { return TerrainN > 1 && TerrainHeights.Num() == TerrainN * TerrainN; }

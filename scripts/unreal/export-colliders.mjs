@@ -23,7 +23,9 @@ function fence(points, height, tag) {
 function rectFence(r, gapSide, gap, gapPos) {
   const x0 = r.x - r.w / 2, x1 = r.x + r.w / 2, z0 = r.z - r.d / 2, z1 = r.z + r.d / 2;
   const gx = x0 + r.w * gapPos;
+  const gz = z0 + r.d * gapPos;
   if (gapSide === 's') return [[gx + gap / 2, z1], [x1, z1], [x1, z0], [x0, z0], [x0, z1], [gx - gap / 2, z1]];
+  if (gapSide === 'e') return [[x1, gz - gap / 2], [x1, z0], [x0, z0], [x0, z1], [x1, z1], [x1, gz + gap / 2]];
   throw new Error('côté non couvert');
 }
 const A = POLE.arena;
@@ -45,6 +47,11 @@ obstacles.forEach(wings);
 // Jalon J2b (B9) : tribunes du Pôle, world.js buildStands(POLE.stands, 0) : boîte pleine w × d, sans sommet.
 const ST = POLE.stands;
 C.addBox(ST.x, ST.z, ST.w / 2, ST.d / 2, 0, Infinity, 'stands');
+// Jalon J2c (lot J2-D) : lice du paddock d'échauffement, world.js:573 rectFence(POLE.warmup, { height: 1.0, board: true },
+// 'e', 6, 0.5) (tag par défaut « fence »).
+const WU = POLE_FILE.warmup;
+const wpts = rectFence(WU, 'e', 6, 0.5);
+fence(wpts, 1.0, 'fence');
 const boxes = C.all.map((c) => ({ x: c.x, z: c.z, hw: c.hw, hd: c.hd, rot: c.rot, top: c.top, tag: c.tag }));
 
 // horse.js:344-360.
@@ -85,6 +92,10 @@ const starts = [
   { x: 340, z: -265.6, heading: Math.PI, speed: 7, jumpY: 0, jumpT: -1, clearance: 0 },
   { x: 300, z: -280.6, heading: 0.15, speed: 5, jumpY: 0, jumpT: -1, clearance: 0 },
   { x: 368.6, z: -273, heading: -Math.PI / 2, speed: 6, jumpY: 1.4, jumpT: 0.5, clearance: 0 },
+  // J2c : paddock, par l'ouverture est (libre), contre la lice est hors ouverture, contre la lice nord depuis l'intérieur.
+  { x: 262, z: -232, heading: -Math.PI / 2, speed: 6, jumpY: 0, jumpT: -1, clearance: 0 },
+  { x: 261.2, z: -245, heading: -Math.PI / 2, speed: 6, jumpY: 0, jumpT: -1, clearance: 0 },
+  { x: 230, z: -253.6, heading: Math.PI, speed: 7, jumpY: 0, jumpT: -1, clearance: 0 },
 ];
 for (let i = 0; i < 40; i++) {
   starts.push({ x: 270 + rnd() * 120, z: -262 + rnd() * 76, heading: rnd() * 6.283 - 3.14, speed: rnd() * 8, jumpY: rnd() < 0.2 ? rnd() * 1.5 : 0, jumpT: rnd() < 0.2 ? 0.4 : -1, clearance: 0.05 });
@@ -100,5 +111,5 @@ for (const s of starts) {
   }
   cases.push({ start: s, steps });
 }
-writeFileSync(new URL('../../unreal/core/tests/oracles/colliders.json', import.meta.url), JSON.stringify({ source: 'src/world/colliders.js, world.js fence/rectFence, buildStands, obstacles.js add, horse.js:344-360', arena: A, stands: ST, fence: pts, obstacles, boxes, cases }, null, 0));
+writeFileSync(new URL('../../unreal/core/tests/oracles/colliders.json', import.meta.url), JSON.stringify({ source: 'src/world/colliders.js, world.js fence/rectFence, buildStands, obstacles.js add, horse.js:344-360', arena: A, stands: ST, fence: pts, warmup: WU, warmupFence: wpts, obstacles, boxes, cases }, null, 0));
 console.log(`colliders.json : ${boxes.length} boîtes, ${cases.length} cas`);

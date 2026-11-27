@@ -5,6 +5,8 @@
 # Lancé par jouer-pilote.sh (job launchd : seul ce python a les droits Accessibilité / Enregistrement de l'écran).
 # Usage : python3.11 -I pilote.py <dossier-preuves> <journal> <outils> <mode> <durée_s> [refus=<label>] [lent=<label>]
 #   mode « poteau »   : suit « Chrono du Pôle », s'arrête à moins de 8 m (invite « E · Chrono »).
+#   mode « paddock »  : (jalon J2c) suit « Paddock du Pôle » (étape « rejoindre le paddock » de l'entraînement) ; s'arrête
+#                       quand la ligne disparaît (paddock atteint, étape d'entraînement), sans taper E.
 #   mode « parcours » : suit la pastille ; tape SAUT en rafale (fil dédié) à l'abord de l'obstacle attendu, aligné ;
 #                       refus=<label> : premier abord de cet obstacle sans SAUT (refus voulu) ;
 #                       lent=<label>  : abord de cet obstacle au trot (barre probable, faute voulue) ;
@@ -103,7 +105,7 @@ def look():
     texts = [p.strip() for p in parts[1:gi]]
     ms = int(parts[gi + 3]) if gi + 3 < len(parts) else 0
     return texts, 0, ms
-PILL = re.compile(r'(Obstacle\s*[0-9]+[AB]?|Ligne de d\S*part|Arriv\S*e|Chrono du P\S*le)[^\w]*([\d][\d,.]*)\s*(k?m)\b[^\w]*(.*)')
+PILL = re.compile(r'(Obstacle\s*[0-9]+[AB]?|Ligne de d\S*part|Arriv\S*e|Chrono du P\S*le|Paddock du P\S*le)[^\w]*([\d][\d,.]*)\s*(k?m)\b[^\w]*(.*)')
 def parse(texts):
     for t in texts:
         m = PILL.search(t)
@@ -137,6 +139,8 @@ try:
         if label is None:
             setkey(A, False); setkey(D, False)
             L('   texte lu : %s' % ' | '.join(texts)[:300])
+            if mode == 'paddock' and seen and lost >= 3:
+                hold(S, 1.0); L('ligne du paddock effacée : paddock atteint'); break
             if mode == 'poteau' and last_d is not None and last_d < 20:
                 hold(S, 4.0); L('ligne du poteau effacée tout près (moins de 6 m) : arrêt'); press_e(); break
             lost += 1
@@ -144,8 +148,8 @@ try:
             if lost >= (25 if mode == 'parcours' else 10): L('plus de pastille : arrêt (bilan ou fin)'); break
             continue
         lost = 0; seen = True
-        if mode == 'poteau':
-            if d < 6.5:
+        if mode in ('poteau', 'paddock'):
+            if mode == 'poteau' and d < 6.5:
                 hold(S, 4.0); L('poteau atteint : arrêt'); press_e(); break
             if cad is not None:
                 want_p = 6.0 if d > 70 else 2.0 if d > 15 else 1.2

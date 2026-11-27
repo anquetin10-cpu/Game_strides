@@ -42,5 +42,7 @@ FString AStridesActivityPost::Label() const
 bool AStridesActivityPost::Trigger(double FocusX, double FocusZ, const FString& Mode, const FString& Player, const FString& HorseName, double JumpPower, double Clearance)
 {
 	if (!Available(FocusX, FocusZ, Mode)) return false;
+	// Jalon J2c : poteau du paddock (activité cso_warmup) : Activities.start → entraînement à l'abord.
+	if (Def.id == "cso_warmup") return Course->StartTraining();
 	return Course->StartActivity(Player, HorseName, JumpPower, Clearance);
 }
