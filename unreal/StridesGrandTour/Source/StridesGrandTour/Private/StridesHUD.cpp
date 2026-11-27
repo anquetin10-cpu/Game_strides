@@ -1,6 +1,9 @@
 #include "StridesHUD.h"
 #include "StridesActivityPost.h"
 #include "Engine/Canvas.h"
+#include "CanvasItem.h"
+#include "Algo/Reverse.h"
+#include "Camera/PlayerCameraManager.h"
 #include "EngineUtils.h"
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
@@ -111,10 +114,30 @@ void AStridesHUD::DrawHUD()
 		const FString Objective = bRunLive ? Course->ObjectiveText() : FString();
 		// Contrôle de J2c : pendant l'étape « rejoindre le paddock », la ligne d'état du parcours porte déjà l'objectif (même
 		// texte) ; une ligne identique à celle de l'état n'est pas répétée.
-		for (const FString& L : ObjectiveLines(bRunLive, Objective, Progress->ActiveMissionId, Progress->MissionStatus()))
+		// Jalon J3 : objectif de la mission avec la distance (makeSteps withDist), comme au web.
+		FString Status = Progress->MissionStatus();
+		if (P && Progress->HasActiveTarget())
+		{
+			double MX, MY, MZ;
+			StridesUnits::UEToWeb(P->GetActorLocation(), MX, MY, MZ);
+			Status = UStridesProgressionSubsystem::WithDistance(Status, FVector2D::Distance(FVector2D(MX, MZ), Progress->ActiveTarget()));
+		}
+		for (const FString& L : ObjectiveLines(bRunLive, Objective, Progress->ActiveMissionId, Status))
 			if (DebugText(L) != StatusShown) Line(DebugText(L), FLinearColor(1.f, 0.82f, 0.25f));
 		if (!Progress->LastMessage.IsEmpty()) Line(Progress->LastMessage, FLinearColor(0.7f, 0.9f, 1.f));
 
+		// Jalon J3 : guidage vers la cible de la mission (GPS du web : direct à cheval), ou vers le GPS posé à la main.
+		LastGuideLine.Reset();
+		FVector2D MissionGoal; FString MissionLabel;
+		if (P && Progress->HasActiveTarget() && Progress->GuideTarget(MissionGoal, MissionLabel))
+		{
+			double MX, MY, MZ;
+			StridesUnits::UEToWeb(P->GetActorLocation(), MX, MY, MZ);
+			const FVector2D Me(MX, MZ);
+			const FString G = PoleGuideText(FVector2D::Distance(Me, MissionGoal), RelativeAngleDeg(P->GetActorForwardVector(), MissionGoal - Me), *FString::Printf(TEXT("GPS · %s"), *MissionLabel));
+			LastGuideLine = G;
+			if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
+		}
 		// Guidage vers le chrono du Pôle (lot J1-D) : sans mission de carrière ni épreuve en cours.
 		if (P && !Progress->HasActiveTarget())
 		{
@@ -124,7 +147,10 @@ void AStridesHUD::DrawHUD()
 			const UStridesDataSubsystem* Dd = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 			const bool bPaddock = Tr && !Tr->finished() && Tr->step() == strides::CsoTrainingStep::Goto && Dd;
 			if (bPaddock) Goal = FVector2D(Dd->PoleWarmup.X, Dd->PoleWarmup.Y);
-			if (bPaddock || PoleGoal(Goal))
+			// GPS posé à la main (app Activités, « Itinéraire ») : même ligne, vers le départ de l'activité choisie.
+			const bool bGps = !bPaddock && Progress->HasGps();
+			if (bGps) Goal = Progress->GpsTarget();
+			if (bPaddock || bGps || PoleGoal(Goal))
 			{
 				double CX, CY, CZ;
 				StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
@@ -137,7 +163,9 @@ void AStridesHUD::DrawHUD()
 				// Paddock : par son ouverture est (rectFence 'e', 6 m, milieu), pas au travers de la lice (partie J2d en paquet :
 				// cheval arrêté contre la lice nord, ligne « tout droit »).
 				const FVector2D Way = bPaddock ? PaddockGuideAim(Me, Goal, Dt, Course.Get(), Dist) : PoleGuideAim(Me, Goal, Dt, Course.Get(), Dist);
-				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me), bPaddock ? TEXT("Paddock du Pôle") : TEXT("Chrono du Pôle"));
+				const FString Name = bPaddock ? FString(TEXT("Paddock du Pôle")) : bGps ? FString::Printf(TEXT("GPS · %s"), *Progress->GpsName()) : FString(TEXT("Chrono du Pôle"));
+				const FString G = PoleGuideText(Dist, RelativeAngleDeg(F, Way - Me), *Name);
+				LastGuideLine = G;
 				if (!G.IsEmpty()) Line(G, FLinearColor(1.f, .82f, .25f));
 			}
 		}
@@ -204,149 +232,414 @@ void AStridesHUD::DrawRaceOverlay()
 	LastPrompt = LastOverlay.Prompt;
 }
 
-// Téléphone ouvert (P / Tab, M sur la carte) : panneau dessiné aussi en épreuve (le web ouvre le téléphone en concours ;
-// tranche T8 : il fige le cheval et le chrono).
+// ---- Téléphone (jalon J3 : phone.js, requests.js, activities-app.js) ----
+// Applications de l'accueil du web (phone.js renderHome), dans l'ordre : identifiant de l'écran, libellé.
+static const TCHAR* const GPhoneApps[][2] = {
+	{TEXT("strides"), TEXT("Strides")}, {TEXT("map"), TEXT("Carte")}, {TEXT("messages"), TEXT("Messages")},
+	{TEXT("stable"), TEXT("Mes chevaux")}, {TEXT("ecurie"), TEXT("Mon écurie")}, {TEXT("activities"), TEXT("Activités")},
+	{TEXT("guide"), TEXT("Guide local")}, {TEXT("ranking"), TEXT("Classements")}, {TEXT("trophies"), TEXT("Trophées")},
+	{TEXT("weather"), TEXT("Météo")}, {TEXT("photo"), TEXT("Photo")}, {TEXT("settings"), TEXT("Réglages")},
+};
+
+FString AStridesHUD::PhoneAppLabel(const FString& App)
+{
+	for (const auto& A : GPhoneApps) if (App == A[0]) return A[1];
+	return App;
+}
+
 void AStridesHUD::DrawPhone(const UStridesProgressionSubsystem* Progress)
 {
-	if (!Progress) return;
+	Phone.Reset();
+	PhoneCols = 1;
+	PhoneBox = FBox2D(ForceInit);
+	PhoneLines.Reset();
+	if (!Progress || !Canvas) return;
+	const AStridesPlayerController* PC = Cast<AStridesPlayerController>(GetOwningPlayerController());
+	if (!PC || !PC->IsPhoneOpen()) return;
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	const AStridesPlayerController* Controller = Cast<AStridesPlayerController>(GetOwningPlayerController());
-	if (Controller && Controller->IsPhoneOpen())
+	const FString App = PC->PhoneApp();
+	const float W = FMath::Min(480.f, Canvas->SizeX - 32.f), Ht = FMath::Min(720.f, Canvas->SizeY - 40.f);
+	const float X = (Canvas->SizeX - W) * .5f, Top = (Canvas->SizeY - Ht) * .5f;
+	PhoneBox = FBox2D(FVector2D(X, Top), FVector2D(X + W, Top + Ht));
+	const FLinearColor Ink(.94f, .94f, .92f), Mute(.62f, .66f, .7f), Accent(.3f, .9f, .75f), Gold(1.f, .82f, .25f), Card(.08f, .1f, .13f), Sel(.16f, .42f, .36f);
+	DrawRect(FLinearColor(.0f, .0f, .0f, .45f), 0, 0, Canvas->SizeX, Canvas->SizeY);  // phone-layer
+	DrawRect(FLinearColor(.025f, .03f, .04f, .98f), X, Top, W, Ht);
+	auto Text = [&](const FString& S, const FLinearColor& C, float TX, float TY, float Sc)
 	{
-		const float W = 440.f, Ht = FMath::Min(650.f, Canvas->SizeY - 80.f), X = (Canvas->SizeX - W) * .5f, Top = 40.f;
-		DrawRect(FLinearColor(.025f, .03f, .04f, .96f), X, Top, W, Ht);
-		DrawText(TEXT("STRIDES"), FLinearColor(.3f, .9f, .75f), X + 28, Top + 24, nullptr, 1.8f);
-		DrawText(Controller->PhoneApp() == TEXT("map") ? TEXT("Carte · M pour fermer (application Carte non portée)") : TEXT("Téléphone · P ou Tab pour fermer"), FLinearColor(.7f, .75f, .8f), X + 28, Top + 62, nullptr, 1.f);
-		float AppY = Top + 108;
-		if (Data) for (int32 I = 0; I < Data->PhoneApps.Num(); ++I)
+		DrawText(S, C, TX, TY, nullptr, Sc);
+		PhoneLines.Add(S);
+	};
+	// Élément touchable : fond, cadre de sélection (clavier), boîte gardée pour la souris et le doigt.
+	auto Item = [&](const FString& Id, float IX, float IY, float IW, float IH, const FLinearColor& Fill)
+	{
+		const bool bSel = Phone.Num() == PC->PhoneSelection();
+		DrawRect(bSel ? Sel : Fill, IX, IY, IW, IH);
+		if (bSel)
 		{
-			const int32 Col = I % 2, Row = I / 2;
-			DrawRect(FLinearColor(.08f, .1f, .13f, 1.f), X + 26 + Col * 198, AppY + Row * 48, 184, 38);
-			DrawText(Data->PhoneApps[I], FLinearColor::White, X + 38 + Col * 198, AppY + 8 + Row * 48, nullptr, .9f);
+			const FLinearColor B(.49f, 1.f, .77f);
+			DrawLine(IX, IY, IX + IW, IY, B, 2.f); DrawLine(IX, IY + IH, IX + IW, IY + IH, B, 2.f);
+			DrawLine(IX, IY, IX, IY + IH, B, 2.f); DrawLine(IX + IW, IY, IX + IW, IY + IH, B, 2.f);
 		}
-		const float MissionY = AppY + 260;
-		DrawText(TEXT("MISSION ACTIVE"), FLinearColor(.3f, .9f, .75f), X + 28, MissionY, nullptr, 1.f);
-		DrawText(Progress->MissionStatus(), FLinearColor::White, X + 28, MissionY + 32, nullptr, 1.05f);
-		DrawText(TEXT("N / bouton MISSION : lancer la prochaine mission"), FLinearColor(1.f, .82f, .25f), X + 28, MissionY + 72, nullptr, .85f);
-		DrawText(FString::Printf(TEXT("Carrière : %d / %d missions"), Progress->CompletedMissions.Num(), Data ? Data->Missions.Num() : 0), FLinearColor(.8f, .84f, .9f), X + 28, MissionY + 108, nullptr, 1.f);
+		Phone.Add({Id, FBox2D(FVector2D(IX, IY), FVector2D(IX + IW, IY + IH))});
+	};
+	const float L = X + 24, CW = W - 48;
+	Text(TEXT("STRIDES"), Accent, L, Top + 18, 1.6f);
+	float Y = Top + 62;
+	double MeX = 0, MeY = 0, MeZ = 0;
+	if (const APawn* P = GetOwningPawn()) StridesUnits::UEToWeb(P->GetActorLocation(), MeX, MeY, MeZ);
+	const FVector2D Me(MeX, MeZ);
+	auto Km = [](double D) { return FString::Printf(TEXT("%.1f km"), D / 1000.0).Replace(TEXT("."), TEXT(",")); };
+	const FStridesMissionDefinition* Active = Progress->ActiveMissionId.IsEmpty() ? nullptr : Progress->FindMission(Progress->ActiveMissionId);
+	const TArray<const FStridesMissionDefinition*> Offers = Progress->Offers(GetWorld()->GetTimeSeconds());
+	if (App == TEXT("home"))
+	{
+		// Widget STRIDES (phone.js renderHome) : mission en cours, sinon nombre de missions disponibles.
+		DrawRect(Card, L, Y, CW, 78);
+		Text(TEXT("STRIDES"), Accent, L + 14, Y + 8, .85f);
+		Text(Active ? Active->Title : Offers.Num() > 1 ? FString::Printf(TEXT("%d missions dispo"), Offers.Num()) : Offers.Num() ? TEXT("1 mission dispo") : TEXT("0 mission dispo"), Ink, L + 14, Y + 28, 1.2f);
+		Text(Active ? Progress->MissionStatus() : FString::Printf(TEXT("%s · %d mission%s réalisée%s"), *Progress->RankName(), Progress->CompletedMissions.Num(), Progress->CompletedMissions.Num() > 1 ? TEXT("s") : TEXT(""), Progress->CompletedMissions.Num() > 1 ? TEXT("s") : TEXT("")), Mute, L + 14, Y + 54, .85f);
+		Y += 96;
+		PhoneCols = 3;
+		const float TW = (CW - 2 * 10) / 3, TH = 70;
+		for (int32 I = 0; I < UE_ARRAY_COUNT(GPhoneApps); ++I)
+		{
+			const float TX = L + (I % 3) * (TW + 10), TY = Y + (I / 3) * (TH + 10);
+			Item(FString(TEXT("app:")) + GPhoneApps[I][0], TX, TY, TW, TH, Card);
+			Text(GPhoneApps[I][1], Ink, TX + 10, TY + 26, .95f);
+			if (I == 0 && Offers.Num() && !Active)
+			{
+				DrawRect(FLinearColor(.86f, .2f, .18f), TX + TW - 26, TY + 6, 20, 20);
+				Text(FString::FromInt(Offers.Num()), Ink, TX + TW - 21, TY + 7, .8f);
+			}
+		}
 	}
+	else if (App == TEXT("strides"))
+	{
+		Text(TEXT("Strides · Missions"), Ink, L, Y, 1.25f);
+		Y += 40;
+		if (Active)
+		{
+			DrawRect(Card, L, Y, CW, 92);
+			Text(TEXT("EN COURS"), Accent, L + 14, Y + 8, .8f);
+			Text(Active->Title, Ink, L + 14, Y + 28, 1.1f);
+			FVector2D T; FString Lb;
+			Text(Progress->GuideTarget(T, Lb) ? UStridesProgressionSubsystem::WithDistance(FString::Printf(TEXT("Rejoins %s"), *Lb), FVector2D::Distance(Me, T)) : Progress->MissionStatus(), Mute, L + 14, Y + 56, .85f);
+			Y += 100;
+			Item(TEXT("abandon"), L, Y, CW, 40, Card);
+			Text(TEXT("Abandonner la mission"), Ink, L + 14, Y + 10, .95f);
+			Y += 52;
+		}
+		if (!Offers.Num()) { Text(TEXT("Aucune demande pour l'instant."), Mute, L, Y, .95f); Y += 34; }
+		for (const FStridesMissionDefinition* M : Offers)
+		{
+			if (Y > Top + Ht - 150) break;
+			const FVector2D Pl = Progress->PlacePosition(M->Place);
+			Item(FString(TEXT("offer:")) + M->Id, L, Y, CW, 84, Card);
+			Text(M->Id == Progress->CheckpointMission ? FString::Printf(TEXT("%s · REPRISE"), *M->Category.ToUpper()) : M->Category.ToUpper(), Gold, L + 14, Y + 8, .8f);
+			Text(M->Title, Ink, L + 14, Y + 28, 1.1f);
+			Text(FString::Printf(TEXT("%s · ~%d € · +%d réputation · %s"), *Progress->PlaceName(M->Place), M->Pay, M->Xp, *Km(FVector2D::Distance(Me, Pl))), Mute, L + 14, Y + 56, .8f);
+			Y += 94;
+		}
+	}
+	else if (App == TEXT("request"))
+	{
+		const FStridesMissionDefinition* M = Progress->FindMission(PC->PhoneRequest());
+		Text(TEXT("Demande reçue"), Mute, L, Y, .9f);
+		Y += 28;
+		if (M)
+		{
+			const FVector2D Pl = Progress->PlacePosition(M->Place);
+			Text(M->Title, Ink, L, Y, 1.4f); Y += 40;
+			Text(M->Category, Gold, L, Y, .95f); Y += 30;
+			Text(FString::Printf(TEXT("Lieu : %s · %s"), *Progress->PlaceName(M->Place), *Km(FVector2D::Distance(Me, Pl))), Ink, L, Y, .95f); Y += 28;
+			Text(FString::Printf(TEXT("Rémunération : ~%d € · +%d réputation"), M->Pay, M->Xp), Ink, L, Y, .95f); Y += 44;
+			const FString Acc = PC->PhoneAcceptDone() ? TEXT("Demande acceptée — les créneaux sont réservés dans votre agenda.")
+				: PC->PhoneConfirmArmed() ? TEXT("Confirmer l'acceptation ?") : TEXT("Accepter la mission");
+			Item(TEXT("accept"), L, Y, CW, 48, FLinearColor(.12f, .42f, .34f));
+			Text(Acc, Ink, L + 14, Y + 13, PC->PhoneAcceptDone() ? .75f : 1.05f);
+			Y += 56;
+			if (PC->PhoneConfirmArmed() && !PC->PhoneAcceptDone()) { Text(TEXT("Touchez à nouveau pour confirmer — le client sera informé."), Mute, L, Y, .8f); Y += 28; }
+			Item(TEXT("refuse"), L, Y, CW, 44, Card);
+			Text(TEXT("Refuser"), Ink, L + 14, Y + 11, 1.f);
+			Y += 54;
+		}
+		else { Text(TEXT("Cette demande n'est plus disponible."), Mute, L, Y, .95f); Y += 34; }
+	}
+	else if (App == TEXT("activities"))
+	{
+		Text(TEXT("Activités"), Ink, L, Y, 1.25f);
+		Text(TEXT("Défis · concours · chronos"), Mute, L, Y + 30, .85f);
+		Y += 64;
+		if (Active) { Text(FString::Printf(TEXT("En cours : %s"), *Active->Title), Accent, L, Y, .9f); Y += 30; }
+		Text(TEXT("Entraînements libres (chrono)"), Gold, L, Y, .9f);
+		Y += 30;
+		const UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>();
+		for (const AStridesActivityPost* Post : PC->Posts())
+		{
+			if (!Post || Y > Top + Ht - 150) continue;
+			const strides::CsoActivity& A = Post->Activity();
+			double Best = 0;
+			const bool bBest = Save && Save->BestTime(UTF8_TO_TCHAR(A.id.c_str()), Best);
+			DrawRect(Card, L, Y, CW, 104);
+			Text(UTF8_TO_TCHAR(A.kind.c_str()), Mute, L + 14, Y + 8, .75f);
+			Text(bBest ? FString::Printf(TEXT("%.2f s"), Best).Replace(TEXT("."), TEXT(",")) : FString(TEXT("—")), Gold, L + CW - 90, Y + 8, .85f);
+			Text(UTF8_TO_TCHAR(A.name.c_str()), Ink, L + 14, Y + 26, 1.1f);
+			Text(FString::Printf(TEXT("%s"), *Km(FVector2D::Distance(Me, FVector2D(A.startX, A.startZ)))), Mute, L + 14, Y + 52, .8f);
+			Item(FString(TEXT("itinerary:")) + UTF8_TO_TCHAR(A.id.c_str()), L + 14, Y + 70, 140, 28, FLinearColor(.12f, .42f, .34f));
+			Text(TEXT("Itinéraire"), Ink, L + 26, Y + 74, .9f);
+			Y += 114;
+		}
+	}
+	else if (App == TEXT("map"))
+	{
+		// Carte plein écran (minimap.js drawFullMap : nord en haut, toScreen = centre + (x − cx, z − cz) · échelle),
+		// centrée sur le joueur, 700 m dans la plus petite dimension. Le geste (zoom, déplacement, repère au doigt) n'est
+		// pas porté (choix n° 16).
+		const float MX = L, MY = Y, MW = CW, MH = Ht - (Y - Top) - 110;
+		DrawRect(FLinearColor(.12f, .2f, .11f, 1.f), MX, MY, MW, MH);
+		const double Sc = FMath::Min(MW, MH) / 700.0;
+		auto ToS = [&](const FVector2D& P) { return FVector2D(MX + MW * .5 + (P.X - Me.X) * Sc, MY + MH * .5 + (P.Y - Me.Y) * Sc); };
+		const FBox2D Clip(FVector2D(MX, MY), FVector2D(MX + MW, MY + MH));
+		if (Data)
+		{
+			for (const FStridesWorldRegion& R : Data->WorldRegions)
+			{
+				FVector2D A = ToS(R.Center - R.Size * .5), B = ToS(R.Center + R.Size * .5);
+				A = FVector2D(FMath::Clamp(A.X, MX, MX + MW), FMath::Clamp(A.Y, MY, MY + MH));
+				B = FVector2D(FMath::Clamp(B.X, MX, MX + MW), FMath::Clamp(B.Y, MY, MY + MH));
+				if (B.X - A.X > 1 && B.Y - A.Y > 1) DrawRect(R.Kind == TEXT("competition") ? FLinearColor(.36f, .45f, .36f) : R.Kind == TEXT("stable") ? FLinearColor(.42f, .36f, .22f) : R.Kind == TEXT("nature") ? FLinearColor(.1f, .22f, .1f) : FLinearColor(.36f, .36f, .34f), A.X, A.Y, B.X - A.X, B.Y - A.Y);
+			}
+			const strides::AmbientData* Amb = Data->Ambient();
+			if (Amb)
+				for (const strides::LifeRoad& R : Amb->roads)
+					for (size_t I = 1; I < R.pts.size(); ++I)
+					{
+						const FVector2D A = ToS(FVector2D(R.pts[I - 1].x, R.pts[I - 1].z)), B = ToS(FVector2D(R.pts[I].x, R.pts[I].z));
+						if (Clip.IsInside(A) || Clip.IsInside(B)) DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.89f, .89f, .87f), FMath::Max(1.5f, float(R.w * Sc)));
+					}
+			for (const FStridesPoi& Poi : Data->PointsOfInterest)
+			{
+				const FVector2D S = ToS(Poi.Position);
+				if (!Clip.IsInside(S)) continue;
+				DrawRect(FLinearColor(.96f, .95f, .93f), S.X - 4, S.Y - 4, 8, 8);
+				if (S.X < MX + MW - 60) DrawText(Poi.Name, Ink, S.X + 7, S.Y - 8, nullptr, .7f);
+			}
+		}
+		FVector2D T; FString Lb;
+		if (Progress->GuideTarget(T, Lb))
+		{
+			FVector2D S = ToS(T);
+			S = FVector2D(FMath::Clamp(S.X, MX + 6, MX + MW - 6), FMath::Clamp(S.Y, MY + 6, MY + MH - 6));
+			DrawRect(Gold, S.X - 6, S.Y - 6, 12, 12);
+			Text(FString::Printf(TEXT("GPS : %s"), *Lb), Gold, MX + 8, MY + MH + 6, .85f);
+		}
+		DrawRect(FLinearColor(.2f, .9f, 1.f), MX + MW * .5f - 4, MY + MH * .5f - 4, 8, 8);
+		Text(TEXT("N ↑"), Ink, MX + MW - 34, MY + 6, .85f);
+		Y = MY + MH + 30;
+	}
+	else
+	{
+		Text(PhoneAppLabel(App), Ink, L, Y, 1.25f);
+		Y += 44;
+		Text(TEXT("Application pas encore portée dans cette version."), Mute, L, Y, .9f);
+		Text(TEXT("Prévue avec la boucle produit (jalon J4)."), Mute, L, Y + 26, .9f);
+		Y += 70;
+	}
+	if (App != TEXT("home"))
+	{
+		const float BY = FMath::Min(Y + 6, Top + Ht - 96);
+		Item(TEXT("back"), L, BY, 140, 36, Card);
+		Text(TEXT("‹ Retour"), Ink, L + 14, BY + 8, .95f);
+	}
+	if (!PC->PhoneToast.IsEmpty())
+	{
+		DrawRect(FLinearColor(.12f, .42f, .34f, .95f), L, Top + Ht - 92, CW, 34);
+		Text(PC->PhoneToast, Ink, L + 10, Top + Ht - 86, .78f);
+	}
+	Text(AStridesPlayerController::TouchMode() ? TEXT("Touchez un élément · touchez hors du téléphone pour le fermer")
+		: TEXT("Flèches : choisir · Entrée : toucher · Retour arrière : revenir · Échap : fermer"), Mute, L, Top + Ht - 44, .72f);
+}
+
+// ---- Mini-carte (jalon J3 : minimap.js draw, portée par strides::MinimapView) ----
+namespace
+{
+// Polygone convexe découpé par un polygone convexe (Sutherland-Hodgman) : la carte ronde est un polygone à 48 côtés.
+double Area2(const TArray<FVector2D>& P)
+{
+	double A = 0;
+	for (int32 I = 0; I < P.Num(); ++I) A += P[I].X * P[(I + 1) % P.Num()].Y - P[(I + 1) % P.Num()].X * P[I].Y;
+	return A;
+}
+TArray<FVector2D> ClipConvex(const TArray<FVector2D>& Poly, const TArray<FVector2D>& Clip)
+{
+	// Même sens de parcours pour les deux polygones ; intérieur : du côté de l'aire du polygone de découpe.
+	TArray<FVector2D> Out = Poly;
+	const double Sign = Area2(Clip) >= 0 ? 1.0 : -1.0;
+	if (Area2(Out) * Sign < 0) Algo::Reverse(Out);
+	for (int32 E = 0; E < Clip.Num() && Out.Num(); ++E)
+	{
+		const FVector2D A = Clip[E], B = Clip[(E + 1) % Clip.Num()];
+		auto Inside = [&](const FVector2D& P) { return ((B.X - A.X) * (P.Y - A.Y) - (B.Y - A.Y) * (P.X - A.X)) * Sign >= 0; };
+		TArray<FVector2D> In = MoveTemp(Out);
+		Out.Reset();
+		for (int32 I = 0; I < In.Num(); ++I)
+		{
+			const FVector2D P = In[I], Q = In[(I + 1) % In.Num()];
+			const bool bP = Inside(P), bQ = Inside(Q);
+			if (bP) Out.Add(P);
+			if (bP != bQ)
+			{
+				const FVector2D D = Q - P, Ed = B - A;
+				const double Den = D.X * Ed.Y - D.Y * Ed.X;
+				if (FMath::Abs(Den) > 1e-9) Out.Add(P + D * (((A.X - P.X) * Ed.Y - (A.Y - P.Y) * Ed.X) / Den));
+			}
+		}
+	}
+	return Out;
+}
+// Segment découpé par un disque ; faux s'il est entièrement dehors.
+bool ClipToCircle(FVector2D& A, FVector2D& B, const FVector2D& C, double R)
+{
+	const FVector2D D = B - A, F = A - C;
+	const double a = D.SizeSquared(), b = 2 * FVector2D::DotProduct(F, D), c = F.SizeSquared() - R * R;
+	if (a < 1e-12) return c <= 0;
+	const double Disc = b * b - 4 * a * c;
+	if (Disc <= 0) return false;
+	const double S = FMath::Sqrt(Disc), T0 = FMath::Max(0.0, (-b - S) / (2 * a)), T1 = FMath::Min(1.0, (-b + S) / (2 * a));
+	if (T0 >= T1) return false;
+	const FVector2D A0 = A;
+	A = A0 + D * T0;
+	B = A0 + D * T1;
+	return true;
+}
 }
 
 void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem* Progress)
 {
-	// Vue nord en haut centrée sur le joueur, 320 m de côté : à l'échelle du monde entier (1,2 km sur
-	// 190 px), le joueur restait un point immobile. Coordonnées du jeu web : (x, z) au sol, z vers le haut.
+	// Carte du web (minimap.js) : ronde, centrée sur le joueur, TOURNÉE selon le regard de la caméra (le haut de la carte
+	// est la direction regardée), portée de 150 m + 6 m par m/s (lissée), repères au bord, flèche, pastille N.
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
 	const float MapSize = 240.f, MapX = Canvas->SizeX - MapSize - 28.f, MapY = 104.f;
-	const double RadiusM = 160.0, PxPerM = MapSize / (2.0 * RadiusM);
+	const double W = MapSize, R = W / 2, Ui = W / 132.0;
 	double CX = 0, CY = 0, CZ = 0;
 	if (P) StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
-	const FVector2D Center(MapX + MapSize * .5f, MapY + MapSize * .5f);
-	auto ToMap = [&](const FVector2D& Web) { return MinimapPoint(Center, CX, CZ, PxPerM, Web); };
-	auto ToMapUE = [&](const FVector& UE) { double X, Y, Z; StridesUnits::UEToWeb(UE, X, Y, Z); return ToMap(FVector2D(X, Z)); };
-	auto Inside = [&](const FVector2D& S) { return S.X >= MapX && S.X <= MapX + MapSize && S.Y >= MapY && S.Y <= MapY + MapSize; };
-	// Segment découpé au cadre (Liang-Barsky).
-	auto Segment = [&](FVector2D A, FVector2D B, const FLinearColor& Color, float Thickness)
+	const AStridesHorse* Horse = Cast<AStridesHorse>(P);
+	const double Speed = Horse ? Horse->SpeedMS : P ? P->GetVelocity().Size2D() / 100.0 : 0.0;
+	MiniView.step(GetWorld()->GetDeltaSeconds(), Speed, false);
+	// Lacet du web depuis le regard de la caméra : avant Unreal (X, Y) = direction web (x, z) (StridesUnits).
+	FVector Look = P ? P->GetActorForwardVector() : FVector::ForwardVector;
+	if (const APlayerController* PCc = GetOwningPlayerController()) if (PCc->PlayerCameraManager) Look = PCc->PlayerCameraManager->GetCameraRotation().Vector();
+	const double Yaw = strides::MinimapView::yawFromLook(Look.X, Look.Y);
+	MiniYaw = Yaw;
+	const FVector Fw = P ? P->GetActorForwardVector() : FVector::ForwardVector;
+	const double Heading = FMath::Atan2(Fw.X, Fw.Y);
+	const FVector2D O(MapX, MapY), C = O + FVector2D(R, R);
+	auto ToMap = [&](double X, double Z) { const strides::MinimapPoint S = MiniView.toScreen(W, CX, CZ, Yaw, X, Z); return O + FVector2D(S.x, S.y); };
+	TArray<FVector2D> Disc;
+	for (int32 I = 0; I < 48; ++I) Disc.Add(C + FVector2D(FMath::Cos(-2 * PI * I / 48), FMath::Sin(-2 * PI * I / 48)) * (R - 1));
+	auto Fill = [&](const TArray<FVector2D>& Poly, const FLinearColor& Col)
 	{
-		const FVector2D D = B - A;
-		double T0 = 0, T1 = 1;
-		const double Pv[4] = {-D.X, D.X, -D.Y, D.Y};
-		const double Qv[4] = {A.X - MapX, MapX + MapSize - A.X, A.Y - MapY, MapY + MapSize - A.Y};
-		for (int32 I = 0; I < 4; ++I)
+		if (Poly.Num() < 3 || !Canvas->Canvas) return;  // toile de test sans FCanvas : rien à dessiner
+		TArray<FCanvasUVTri> Tris;
+		for (int32 I = 1; I + 1 < Poly.Num(); ++I)
 		{
-			if (FMath::IsNearlyZero(Pv[I])) { if (Qv[I] < 0) return; continue; }
-			const double R = Qv[I] / Pv[I];
-			if (Pv[I] < 0) T0 = FMath::Max(T0, R); else T1 = FMath::Min(T1, R);
-			if (T0 > T1) return;
+			FCanvasUVTri T;
+			T.V0_Pos = Poly[0]; T.V1_Pos = Poly[I]; T.V2_Pos = Poly[I + 1];
+			T.V0_Color = T.V1_Color = T.V2_Color = Col;
+			Tris.Add(T);
 		}
-		const FVector2D S = A + D * T0, E = A + D * T1;
-		DrawLine(S.X, S.Y, E.X, E.Y, Color, Thickness);
+		FCanvasTriangleItem Item(Tris, GWhiteTexture);
+		Item.BlendMode = SE_BLEND_Translucent;
+		Canvas->DrawItem(Item);
 	};
-	auto Box = [&](FVector2D Min, FVector2D Max, const FLinearColor& Color)
-	{
-		const float X0 = FMath::Clamp<float>(FMath::Min(Min.X, Max.X), MapX, MapX + MapSize), X1 = FMath::Clamp<float>(FMath::Max(Min.X, Max.X), MapX, MapX + MapSize);
-		const float Y0 = FMath::Clamp<float>(FMath::Min(Min.Y, Max.Y), MapY, MapY + MapSize), Y1 = FMath::Clamp<float>(FMath::Max(Min.Y, Max.Y), MapY, MapY + MapSize);
-		if (X1 - X0 > .5f && Y1 - Y0 > .5f) DrawRect(Color, X0, Y0, X1 - X0, Y1 - Y0);
-	};
-
-	DrawRect(FLinearColor(.16f, .27f, .14f, .9f), MapX, MapY, MapSize, MapSize);
+	// Fond (#16191d), puis zones du monde, routes (bord sombre puis chaussée), comme l'image de buildMapImage.
+	Fill(Disc, FLinearColor(.16f, .27f, .14f, .92f));
 	if (Data)
 	{
-		for (const FStridesWorldRegion& R : Data->WorldRegions)
+		for (const FStridesWorldRegion& Rg : Data->WorldRegions)
 		{
-			const FLinearColor C = R.Kind == TEXT("competition") ? FLinearColor(.36f, .45f, .36f, .95f)
-				: R.Kind == TEXT("stable") ? FLinearColor(.42f, .36f, .22f, .95f)
-				: R.Kind == TEXT("nature") ? FLinearColor(.12f, .24f, .11f, .95f)
-				: FLinearColor(.38f, .38f, .36f, .95f);
-			Box(ToMap(R.Center - R.Size * .5), ToMap(R.Center + R.Size * .5), C);
+			const FVector2D A = Rg.Center - Rg.Size * .5, B = Rg.Center + Rg.Size * .5;
+			TArray<FVector2D> Q = {ToMap(A.X, A.Y), ToMap(B.X, A.Y), ToMap(B.X, B.Y), ToMap(A.X, B.Y)};
+			const FLinearColor Col = Rg.Kind == TEXT("competition") ? FLinearColor(.36f, .45f, .36f, .95f) : Rg.Kind == TEXT("stable") ? FLinearColor(.42f, .36f, .22f, .95f)
+				: Rg.Kind == TEXT("nature") ? FLinearColor(.12f, .24f, .11f, .95f) : FLinearColor(.38f, .38f, .36f, .95f);
+			Fill(ClipConvex(Q, Disc), Col);
 		}
-		for (const FStridesRoad& Road : Data->Roads)
-			for (int32 I = 1; I < Road.Points.Num(); ++I)
-				Segment(ToMap(Road.Points[I - 1]), ToMap(Road.Points[I]), FLinearColor(.78f, .74f, .62f), FMath::Max(2.f, float(Road.Width * PxPerM)));
+		const double Px = (W / 2) / MiniView.range;
+		if (const strides::AmbientData* Amb = Data->Ambient())
+			for (int32 Pass = 0; Pass < 2; ++Pass)
+				for (const strides::LifeRoad& Rd : Amb->roads)
+					for (size_t I = 1; I < Rd.pts.size(); ++I)
+					{
+						FVector2D A = ToMap(Rd.pts[I - 1].x, Rd.pts[I - 1].z), B = ToMap(Rd.pts[I].x, Rd.pts[I].z);
+						if (!ClipToCircle(A, B, C, R - 1)) continue;
+						const float Wd = FMath::Max(1.5f, float(Rd.w * Px));
+						if (Pass == 0) DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.06f, .06f, .07f), Wd + 1.4f);
+						else DrawLine(A.X, A.Y, B.X, B.Y, Rd.id.rfind("t_", 0) == 0 ? FLinearColor(.75f, .75f, .74f) : FLinearColor(.89f, .89f, .87f), Wd);
+					}
 	}
 	for (TActorIterator<AStridesFence> It(GetWorld()); It; ++It)
 	{
-		const FVector2D S = ToMapUE(It->GetActorLocation());
-		if (Inside(S)) DrawRect(FLinearColor(.95f, .95f, .95f), S.X - 2, S.Y - 2, 4, 4);
+		double X, Y, Z; StridesUnits::UEToWeb(It->GetActorLocation(), X, Y, Z);
+		const FVector2D S = ToMap(X, Z);
+		if (FVector2D::Distance(S, C) < R - 4) DrawRect(FLinearColor(.95f, .95f, .95f), S.X - 2, S.Y - 2, 4, 4);
 	}
+	// Itinéraire du GPS (gps.js : direct à cheval et à pied) : tirets clairs du joueur à la cible.
+	FVector2D Goal; FString GoalLabel;
+	bool bGoal = Progress && Progress->GuideTarget(Goal, GoalLabel);
+	if (!bGoal && PoleGoal(Goal)) { bGoal = true; GoalLabel = TEXT("Chrono du Pôle"); }
+	if (bGoal)
+	{
+		FVector2D A = ToMap(CX, CZ), B = ToMap(Goal.X, Goal.Y);
+		if (ClipToCircle(A, B, C, R - 1))
+		{
+			const double Len = FVector2D::Distance(A, B);
+			const FVector2D U = (B - A) / FMath::Max(Len, 1e-6);
+			for (double T = 0; T < Len; T += 11 * Ui)
+			{
+				const FVector2D S = A + U * T, E = A + U * FMath::Min(Len, T + 6 * Ui);
+				DrawLine(S.X, S.Y, E.X, E.Y, FLinearColor(.96f, .95f, .94f, .95f), 3.2f * Ui);
+			}
+		}
+	}
+	// Repères (getBlips) : lieux (non sticky, cachés hors du cadre), cible du GPS (sticky, ramenée au bord).
+	LastBlips.Reset();
+	auto Blip = [&](double X, double Z, bool bSticky, const FLinearColor& Col, float Size, const FString& Name)
+	{
+		strides::MinimapPoint S;
+		if (!MiniView.blip(W, CX, CZ, Yaw, X, Z, bSticky, S)) return;
+		const FVector2D Sp = O + FVector2D(S.x, S.y);
+		DrawRect(FLinearColor(.07f, .07f, .08f), Sp.X - Size - 1, Sp.Y - Size - 1, 2 * Size + 2, 2 * Size + 2);
+		DrawRect(Col, Sp.X - Size, Sp.Y - Size, 2 * Size, 2 * Size);
+		LastBlips.Add(Name);
+	};
 	if (Data)
 		for (const FStridesPoi& Poi : Data->PointsOfInterest)
 		{
-			const FVector2D S = ToMap(Poi.Position);
-			if (!Inside(S)) continue;
-			const FLinearColor C = Poi.Icon == TEXT("event") ? FLinearColor(.3f, .6f, 1.f) : (Poi.Icon == TEXT("shop") || Poi.Icon == TEXT("pro")) ? FLinearColor(1.f, .6f, .2f) : FLinearColor(.85f, .55f, .35f);
-			DrawRect(C, S.X - 4, S.Y - 4, 8, 8);
-			if (S.X < MapX + MapSize - 30)
-			{
-				DrawText(Poi.Name, FLinearColor(0, 0, 0, .8f), S.X + 7, S.Y - 7, nullptr, .8f);
-				DrawText(Poi.Name, FLinearColor(1.f, 1.f, .95f), S.X + 6, S.Y - 8, nullptr, .8f);
-			}
+			if (Poi.Icon == TEXT("view") || Poi.Icon == TEXT("town")) continue;  // getBlips : ni points de vue ni ville
+			Blip(Poi.Position.X, Poi.Position.Y, false, Poi.Icon == TEXT("shop") ? FLinearColor(.85f, .71f, .42f) : (Poi.Icon == TEXT("stable") || Poi.Icon == TEXT("pro")) ? FLinearColor(.61f, .62f, .64f) : FLinearColor(.96f, .95f, .94f), 4.f * Ui, Poi.Name);
 		}
-	for (TActorIterator<AStridesHorse> It(GetWorld()); It; ++It)
-	{
-		if (*It == P) continue;
-		const FVector2D S = ToMapUE(It->GetActorLocation());
-		if (Inside(S)) DrawRect(FLinearColor(.55f, .32f, .16f), S.X - 4, S.Y - 4, 8, 8);
-	}
-	// Cible GPS : au bord du cadre dans sa direction quand elle est hors champ ; sans mission, le chrono du Pôle (J1-D).
-	FVector2D Goal;
-	const bool bMissionGoal = Progress && Progress->HasActiveTarget();
-	if (bMissionGoal) Goal = Progress->ActiveTarget();
-	if (bMissionGoal || PoleGoal(Goal))
-	{
-		FVector2D T = ToMap(Goal);
-		if (!Inside(T))
-		{
-			const FVector2D Dir = (T - Center).GetSafeNormal();
-			const float K = (MapSize * .5f - 8.f) / FMath::Max(FMath::Abs(Dir.X), FMath::Abs(Dir.Y));
-			T = Center + Dir * K;
-		}
-		DrawRect(FLinearColor(1.f, .7f, .1f), T.X - 6, T.Y - 6, 12, 12);
-		DrawText(FString::Printf(TEXT("%s %.0f m"), bMissionGoal ? TEXT("GPS") : TEXT("Chrono du Pôle"), FVector2D::Distance(FVector2D(CX, CZ), Goal)), FLinearColor(1.f, .82f, .25f), MapX + 8, MapY + MapSize + 8, nullptr, 1.f);
-	}
+	if (bGoal) Blip(Goal.X, Goal.Y, true, FLinearColor(1.f, .7f, .1f), 5.f * Ui, TEXT("GPS"));
+	if (bGoal) DrawText(FString::Printf(TEXT("%s %.0f m"), *GoalLabel, FVector2D::Distance(FVector2D(CX, CZ), Goal)), FLinearColor(1.f, .82f, .25f), MapX + 8, MapY + MapSize + 8, nullptr, 1.f);
+	// Joueur (flèche) : rotate(−(cap − lacet + π)), pointe en (0, −8) ; sens de la toile (y vers le bas).
 	if (P)
 	{
-		// Flèche de cap : direction avant de l'acteur ramenée sur la carte.
-		const FVector2D Dir = MinimapHeading(P->GetActorForwardVector());
-		const FVector2D Side(-Dir.Y, Dir.X);
-		// Flèche effilée (pointe à 16 px, base étroite) : l'ancienne (pointe 12 px, base 14 px) se lisait dans les deux sens
-		// (partie manuelle J1 du 26/11/2026).
-		const FVector2D Tip = Center + Dir * 16.f, L = Center - Dir * 6.f + Side * 5.f, R = Center - Dir * 6.f - Side * 5.f;
-		const FLinearColor C(.2f, .9f, 1.f);
-		DrawLine(Tip.X, Tip.Y, L.X, L.Y, C, 2.5f);
-		DrawLine(Tip.X, Tip.Y, R.X, R.Y, C, 2.5f);
-		DrawLine(L.X, L.Y, R.X, R.Y, C, 2.5f);
-		DrawRect(C, Center.X - 2, Center.Y - 2, 4, 4);
+		const double Rot = strides::MinimapView::arrowRotation(Heading, Yaw);
+		auto Rp = [&](double X, double Y) { return C + FVector2D(X * FMath::Cos(Rot) - Y * FMath::Sin(Rot), X * FMath::Sin(Rot) + Y * FMath::Cos(Rot)) * Ui; };
+		// Flèche du web : pointe (0, −8), ailes (±6, 6), creux (0, 3), dans le repère tourné.
+		const FVector2D Tip = Rp(0, -8), Lw = Rp(6, 6), Mid = Rp(0, 3), Rw = Rp(-6, 6);
+		Fill({Tip, Lw, Mid}, FLinearColor(.96f, .95f, .94f));
+		Fill({Tip, Mid, Rw}, FLinearColor(.96f, .95f, .94f));
+		LastArrowDir = (Tip - C).GetSafeNormal();
 	}
-	const FLinearColor Frame(.85f, .9f, .95f, .9f);
-	DrawLine(MapX, MapY, MapX + MapSize, MapY, Frame, 1.5f);
-	DrawLine(MapX, MapY + MapSize, MapX + MapSize, MapY + MapSize, Frame, 1.5f);
-	DrawLine(MapX, MapY, MapX, MapY + MapSize, Frame, 1.5f);
-	DrawLine(MapX + MapSize, MapY, MapX + MapSize, MapY + MapSize, Frame, 1.5f);
-	DrawText(TEXT("CARTE"), FLinearColor::White, MapX + 8, MapY + 6, nullptr, 1.f);
-	DrawText(TEXT("N"), FLinearColor(1.f, .4f, .35f), Center.X - 4, MapY + 6, nullptr, 1.f);
-	DrawLine(MapX + MapSize - 70, MapY + MapSize - 12, MapX + MapSize - 70 + 50 * PxPerM, MapY + MapSize - 12, FLinearColor::White, 2.f);
-	DrawText(TEXT("50 m"), FLinearColor::White, MapX + MapSize - 70, MapY + MapSize - 30, nullptr, .7f);
+	// Nord : pastille au bord, dans la direction du nord du monde (−z).
+	const strides::MinimapPoint N = MiniView.north(W, CX, CZ, Yaw);
+	const FVector2D Np = O + FVector2D(N.x, N.y);
+	TArray<FVector2D> Dot;
+	for (int32 I = 0; I < 16; ++I) Dot.Add(Np + FVector2D(FMath::Cos(2 * PI * I / 16), FMath::Sin(2 * PI * I / 16)) * 7 * Ui);
+	Fill(Dot, FLinearColor(.07f, .07f, .08f));
+	DrawText(TEXT("N"), FLinearColor(.96f, .95f, .94f), Np.X - 4 * Ui, Np.Y - 6 * Ui, nullptr, Ui * .75f);
+	LastNorth = Np - C;
+	for (int32 I = 0; I < 48; ++I) DrawLine(Disc[I].X, Disc[I].Y, Disc[(I + 1) % 48].X, Disc[(I + 1) % 48].Y, FLinearColor(.85f, .9f, .95f, .9f), 1.5f);
 }
 
 FString AStridesHUD::ActionPrompt(const FString& Label, bool bTouch)

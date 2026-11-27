@@ -12,6 +12,7 @@
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/CsoRide.h"
 #include "StridesCore/CsoRun.h"
+#include "StridesCore/WorldLife.h"
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/Ranking.h"
@@ -193,10 +194,16 @@ public:
 	// Géométrie du parcours exportée du jeu web (tranche T5) : Content/World/Cso/cso_fences.json et cso_assets.json ;
 	// IsLoaded() faux si absente (obstacles en formes de base, lignes et poteau invisibles).
 	const FStridesCsoScenery& CsoScenery() const { return CsoSceneryData; }
+	// Jalon J3 : vie ambiante du web (Content/Data/world_ambient.json, scripts/unreal/export-monde-vivant.mjs : routes
+	// complètes, voitures de la circulation, passants, spectateurs ; lecture du cœur, celle du ctest « monde-vivant ») ;
+	// nul si absente ou illisible.
+	const strides::AmbientData* Ambient() const { return bAmbient ? &AmbientDef : nullptr; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
 	float CourseSpeed(const FString& Level) const;
 
 private:
+	strides::AmbientData AmbientDef;
+	bool bAmbient = false;
 	bool LoadJson(const FString& File, TSharedPtr<class FJsonObject>& Out);
 	TArray<float> TerrainHeights;
 	strides::JumpParams JumpP;

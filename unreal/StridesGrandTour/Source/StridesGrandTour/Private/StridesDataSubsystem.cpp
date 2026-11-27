@@ -192,6 +192,17 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 		else LoadLog.Add(FString::Printf(TEXT("horse_coats.json : illisible (%s), robe d'origine du modèle"), UTF8_TO_TCHAR(Err.c_str())));
 	}
+	// Jalon J3 : vie ambiante du web (lecture du cœur, celle du ctest « monde-vivant »).
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
+		if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/world_ambient.json"))) && strides::loadAmbient(std::string(TCHAR_TO_UTF8(*Text)), AmbientDef, Err))
+		{
+			bAmbient = true;
+			LoadLog.Add(FString::Printf(TEXT("world_ambient.json : %d voitures, %d passants, %d spectateurs, %d routes"), (int32)AmbientDef.cars.size(), (int32)AmbientDef.walkers.size(), (int32)AmbientDef.spectators.size(), (int32)AmbientDef.roads.size()));
+		}
+		else LoadLog.Add(FString::Printf(TEXT("world_ambient.json : illisible (%s), pas de vie ambiante"), UTF8_TO_TCHAR(Err.c_str())));
+	}
 	LoadJson(TEXT("cso_result_style.json"), CsoResultJson);
 	// Textes de l'épreuve (tranche T4) : table lue par le cœur (strides::TextTable), la même que testCsoRuns.
 	{

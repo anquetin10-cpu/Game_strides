@@ -4,7 +4,9 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "Engine/Canvas.h"
 #include "StridesCore/CsoHud.h"
+#include "StridesCore/Minimap.h"
 #include "StridesHUD.generated.h"
 
 UCLASS()
@@ -62,10 +64,43 @@ public:
 	const FString& LastPromptShown() const { return LastPrompt; }
 	// Vrai si le HUD de débogage a été dessiné à la dernière image (tests, relevé des captures en partie réelle).
 	bool DrewDebugLastFrame() const { return bDrewDebug; }
+	// ---- Jalon J3 : téléphone interactif et mini-carte tournée ----
+	// Éléments touchables du téléphone dessinés à la dernière image (ordre de sélection au clavier) : identifiant de l'effet
+	// (AStridesPlayerController::PhoneActivate) et boîte en px du viewport (souris, doigt).
+	struct FPhoneItem { FString Id; FBox2D Box; };
+	const TArray<FPhoneItem>& PhoneItems() const { return Phone; }
+	int32 PhoneColumns() const { return PhoneCols; }
+	FBox2D PhoneFrame() const { return PhoneBox; }
+	// Textes du téléphone dessinés à la dernière image (tests, relevé des captures).
+	const TArray<FString>& PhoneTexts() const { return PhoneLines; }
+	static FString PhoneAppLabel(const FString& App);
+	// Mini-carte de la dernière image : lacet de la carte (rad, celui du web), direction de la flèche et de la pastille N
+	// à l'écran depuis le centre, repères dessinés (tests).
+	double MinimapYaw() const { return MiniYaw; }
+	FVector2D MinimapArrowDir() const { return LastArrowDir; }
+	FVector2D MinimapNorthDir() const { return LastNorth; }
+	const TArray<FString>& MinimapBlips() const { return LastBlips; }
+	double MinimapRange() const { return MiniView.range; }
+	// Ligne de guidage hors épreuve de la dernière image (« Chrono du Pôle · 145 m · à droite », mission, GPS), vide sinon.
+	const FString& GuideLineShown() const { return LastGuideLine; }
 	// Toile de dessin hors PostRender (tests : DrawHUD appelé dans un monde de test).
 	void SetCanvasForTest(class UCanvas* C) { Canvas = C; }
 private:
-	// Minicarte nord en haut, centrée sur le joueur : zones, routes, lieux, obstacles, cheval, cap et GPS.
+	// Dessin de base d'AHUD, sans effet sur une toile de test sans FCanvas (DrawHUD appelé hors rendu : la mise en page,
+	// les éléments du téléphone et les textes restent calculés).
+	void DrawText(const FString& Text, FLinearColor TextColor, float ScreenX, float ScreenY, UFont* Font = nullptr, float Scale = 1.f, bool bScalePosition = false)
+	{
+		if (Canvas && Canvas->Canvas) Super::DrawText(Text, TextColor, ScreenX, ScreenY, Font, Scale, bScalePosition);
+	}
+	void DrawLine(float X0, float Y0, float X1, float Y1, FLinearColor Color, float Thickness = 0.f)
+	{
+		if (Canvas && Canvas->Canvas) Super::DrawLine(X0, Y0, X1, Y1, Color, Thickness);
+	}
+	void DrawRect(FLinearColor Color, float X, float Y, float W, float H)
+	{
+		if (Canvas && Canvas->Canvas) Super::DrawRect(Color, X, Y, W, H);
+	}
+	// Minicarte du web : ronde, tournée selon le regard, centrée sur le joueur : zones, routes, lieux, obstacles, GPS, flèche, N.
 	void DrawMinimap(const APawn* P, const class UStridesProgressionSubsystem* Progress);
 	void DrawPhone(const class UStridesProgressionSubsystem* Progress);
 	void DrawCourseGuide();
@@ -81,5 +116,14 @@ private:
 	FString LastCourseGuide;
 	FRaceOverlay LastOverlay;
 	float EventT = 0.f;
+	TArray<FPhoneItem> Phone;
+	TArray<FString> PhoneLines;
+	int32 PhoneCols = 1;
+	FBox2D PhoneBox = FBox2D(ForceInit);
+	strides::MinimapView MiniView;
+	double MiniYaw = 0;
+	FVector2D LastArrowDir = FVector2D::ZeroVector, LastNorth = FVector2D::ZeroVector;
+	TArray<FString> LastBlips;
+	FString LastGuideLine;
 	TWeakObjectPtr<class AStridesCourse> Course;  // épreuve du Pôle (objectif affiché tant qu'elle est en cours)
 };

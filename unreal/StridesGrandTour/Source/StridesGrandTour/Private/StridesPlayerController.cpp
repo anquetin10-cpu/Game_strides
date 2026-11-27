@@ -25,6 +25,7 @@
 #include "StridesPauseMenu.h"
 #include "StridesActivityPost.h"
 #include "StridesCsoScreens.h"
+#include "StridesHUD.h"
 #include "StridesDataSubsystem.h"
 #include "StridesUnits.h"
 #include "StridesCore/WindowFit.h"
@@ -345,6 +346,20 @@ void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRe
 		if (Code == TEXT("ArrowRight") || Code == TEXT("KeyD")) { PauseMenu->MoveSelection(1); return; }
 		return;
 	}
+	// Téléphone ouvert (choix n° 15) : flèches / ZQSD choisissent, Entrée / E / F touchent, Retour arrière revient ; la touche
+	// ne va pas aux commandes (elles sont désactivées : phone.open → input.setEnabled(false)). Échap, P, Tab et M gardent leur
+	// effet du web (fermer, carte).
+	if (bPhoneOpen && !bPausedState && !CardOpen() && bDown)
+	{
+		const AStridesHUD* H = Cast<AStridesHUD>(GetHUD());
+		const int32 Cols = H ? FMath::Max(1, H->PhoneColumns()) : 1;
+		if (Code == TEXT("ArrowLeft") || Code == TEXT("KeyA") || Code == TEXT("KeyQ")) { if (!bRepeat) PhoneMove(-1); return; }
+		if (Code == TEXT("ArrowRight") || Code == TEXT("KeyD")) { if (!bRepeat) PhoneMove(1); return; }
+		if (Code == TEXT("ArrowUp") || Code == TEXT("KeyW") || Code == TEXT("KeyZ")) { if (!bRepeat) PhoneMove(-Cols); return; }
+		if (Code == TEXT("ArrowDown") || Code == TEXT("KeyS")) { if (!bRepeat) PhoneMove(Cols); return; }
+		if (Code == TEXT("Enter") || Code == TEXT("NumpadEnter") || Code == TEXT("KeyE") || Code == TEXT("KeyF")) { if (!bRepeat) PhonePressSelected(); return; }
+		if (Code == TEXT("Backspace")) { if (!bRepeat) PhoneBack(); return; }
+	}
 	// Carte ouverte : gauche / droite choisissent le bouton (choix n° 8) ; la touche ne va pas au cheval (gel des commandes).
 	if (bDown && !bRepeat && Screens && CardOpen() && !bPausedState)
 	{
@@ -382,7 +397,12 @@ bool AStridesPlayerController::InputTouch(const FTouchId TouchId, const ETouchTy
 	const TCHAR* Name = TEXT("?");
 	switch (Type)
 	{
-	case ETouchType::Began: Name = TEXT("Began"); FeedPointerDown(Id, false, Css); break;
+	case ETouchType::Began:
+		Name = TEXT("Began");
+		// Téléphone ouvert : le doigt touche ses éléments (px du viewport), pas la surface de jeu.
+		if (bPhoneOpen && !bPausedState) { PhoneTapAt(TouchLocation); break; }
+		FeedPointerDown(Id, false, Css);
+		break;
 	case ETouchType::Moved: Name = TEXT("Moved"); FeedPointerMove(Id, false, Css); break;
 	case ETouchType::FirstMove: Name = TEXT("FirstMove"); FeedPointerMove(Id, false, Css); break;
 	case ETouchType::Ended: Name = TEXT("Ended"); FeedPointerUp(Id); break;
@@ -400,6 +420,10 @@ void AStridesPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 	StepCommands(DeltaTime);
+	PhoneTick();
+	// Sauvegarde automatique toutes les 12 s de jeu (game.js update), jamais en pause.
+	if (!bPausedState && DeltaTime > 0)
+		if (UStridesSaveSubsystem* S = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr) S->AutoSaveTick(this, DeltaTime);
 }
 
 // game.update (src/game.js:1438-1490) côté commandes : input.poll, boutons globaux, gel des commandes, cheval, puis
@@ -490,15 +514,167 @@ void AStridesPlayerController::StepCommands(float)
 // ---- Téléphone et pause ----
 void AStridesPlayerController::OpenPhone(const FString& App)
 {
-	PhoneAppName = App;
+	PhoneShow(App);
 	bPhoneOpen = true;
 	Cmd.setEnabled(false);
+	// Pointeur rendu sur Mac pour toucher les applications à la souris (le web garde toujours le pointeur).
+	if (GetLocalPlayer() && !bCardInput)
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetHideCursorDuringCapture(false);
+		SetInputMode(InputMode);
+		bShowMouseCursor = !PLATFORM_IOS;
+		ReleaseMouseForCard();
+	}
+	UE_LOG(LogTemp, Display, TEXT("Strides téléphone : ouvert (%s)"), *PhoneAppName);
 }
 void AStridesPlayerController::ClosePhone()
 {
 	if (!bPhoneOpen) return;
 	bPhoneOpen = false;
+	PhoneArmedAt = -1;
 	Cmd.setEnabled(true);
+	if (GetLocalPlayer() && !bCardInput) RestoreInputMode();
+	UE_LOG(LogTemp, Display, TEXT("Strides téléphone : fermé"));
+}
+
+double AStridesPlayerController::PhoneNow() const { return FPlatformTime::Seconds(); }
+
+void AStridesPlayerController::PhoneShow(const FString& App)
+{
+	PhoneAppName = App;
+	PhoneSel = 0;
+	PhoneArmedAt = -1;
+	UE_LOG(LogTemp, Display, TEXT("Strides téléphone : écran %s"), *App);
+}
+
+void AStridesPlayerController::PhoneMove(int32 Delta)
+{
+	const AStridesHUD* H = Cast<AStridesHUD>(GetHUD());
+	const int32 N = H ? H->PhoneItems().Num() : 0;
+	if (N <= 0) { PhoneSel = 0; return; }
+	PhoneSel = FMath::Clamp(PhoneSel + Delta, 0, N - 1);
+}
+
+void AStridesPlayerController::PhonePressSelected()
+{
+	const AStridesHUD* H = Cast<AStridesHUD>(GetHUD());
+	if (H && H->PhoneItems().IsValidIndex(PhoneSel)) PhoneActivate(H->PhoneItems()[PhoneSel].Id);
+}
+
+void AStridesPlayerController::PhoneBack()
+{
+	if (PhoneAcceptAt >= 0) return;
+	if (PhoneAppName == TEXT("request")) PhoneShow(TEXT("strides"));
+	else if (PhoneAppName == TEXT("home")) ClosePhone();
+	else PhoneShow(TEXT("home"));
+}
+
+bool AStridesPlayerController::PhoneTapAt(const FVector2D& Px)
+{
+	const AStridesHUD* H = Cast<AStridesHUD>(GetHUD());
+	if (!bPhoneOpen || !H) return false;
+	for (int32 I = 0; I < H->PhoneItems().Num(); ++I)
+		if (H->PhoneItems()[I].Box.IsInside(Px))
+		{
+			PhoneSel = I;
+			UE_LOG(LogTemp, Display, TEXT("Strides téléphone : touché %s à (%.0f, %.0f)"), *H->PhoneItems()[I].Id, Px.X, Px.Y);
+			PhoneActivate(H->PhoneItems()[I].Id);
+			return true;
+		}
+	// Toucher hors du téléphone (phone-layer) : fermeture, comme au web.
+	if (!H->PhoneFrame().IsInside(Px)) ClosePhone();
+	return false;
+}
+
+void AStridesPlayerController::PhoneActivate(const FString& Id)
+{
+	UStridesProgressionSubsystem* P = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>() : nullptr;
+	UE_LOG(LogTemp, Display, TEXT("Strides téléphone : %s (écran %s)"), *Id, *PhoneAppName);
+	if (PhoneAcceptAt >= 0) return;  // demande acceptée : le téléphone se range tout seul
+	if (Id == TEXT("back")) { PhoneBack(); return; }
+	if (Id.StartsWith(TEXT("app:"))) { PhoneShow(Id.Mid(4)); return; }
+	if (Id.StartsWith(TEXT("offer:"))) { PhoneReq = Id.Mid(6); PhoneShow(TEXT("request")); return; }
+	if (Id == TEXT("refuse") && P)
+	{
+		P->RefuseMission(PhoneReq, GetWorld()->GetTimeSeconds());
+		PhoneToast = P->LastMessage;
+		PhoneToastAt = PhoneNow();
+		PhoneShow(TEXT("strides"));
+		return;
+	}
+	if (Id == TEXT("accept") && P)
+	{
+		// requests.js : premier toucher « Confirmer l'acceptation ? » (5 s), second toucher après 350 ms au moins.
+		const double Now = PhoneNow();
+		if (PhoneArmedAt < 0) { PhoneArmedAt = Now; return; }
+		if (Now - PhoneArmedAt < 0.35) return;
+		if (!P->ActiveMissionId.IsEmpty())
+		{
+			PhoneArmedAt = -1;
+			PhoneToast = TEXT("Mission en cours · Terminez ou abandonnez votre mission en cours d'abord.");
+			PhoneToastAt = Now;
+			return;
+		}
+		PhoneAcceptAt = Now;
+		PhoneToast = TEXT("Demande acceptée · Les créneaux sont réservés dans votre agenda.");
+		PhoneToastAt = Now;
+		return;
+	}
+	if (Id == TEXT("abandon") && P)
+	{
+		P->AbandonMission();
+		if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) if (S->bAutoSave) S->SaveNow(this);
+		PhoneToast = P->LastMessage;
+		PhoneToastAt = PhoneNow();
+		return;
+	}
+	if (Id.StartsWith(TEXT("itinerary:")) && P)
+	{
+		// activities-app.js « Itinéraire » : gps.set(a.start, a.name), puis le téléphone se range.
+		for (const AStridesActivityPost* Post : Posts())
+			if (Post && UTF8_TO_TCHAR(Post->Activity().id.c_str()) == Id.Mid(10))
+			{
+				P->SetGps(FVector2D(Post->Activity().startX, Post->Activity().startZ), UTF8_TO_TCHAR(Post->Activity().name.c_str()));
+				break;
+			}
+		ClosePhone();
+		return;
+	}
+}
+
+void AStridesPlayerController::PhoneTick()
+{
+	const double Now = PhoneNow();
+	if (PhoneArmedAt >= 0 && Now - PhoneArmedAt > 5.0) PhoneArmedAt = -1;  // confirmation annulée au bout de 5 s
+	if (PhoneToastAt >= 0 && Now - PhoneToastAt > 3.0) { PhoneToast.Empty(); PhoneToastAt = -1; }
+	// Demande acceptée : 1,3 s plus tard le téléphone se range et la mission démarre (missions.accept → start).
+	if (PhoneAcceptAt >= 0 && Now - PhoneAcceptAt >= 1.3)
+	{
+		PhoneAcceptAt = -1;
+		PhoneArmedAt = -1;
+		ClosePhone();
+		UStridesProgressionSubsystem* P = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>() : nullptr;
+		if (P && P->StartMission(PhoneReq))
+		{
+			// Mission d'histoire acceptée : enregistrée tout de suite (missions.start : saveNow).
+			if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) if (S->bAutoSave) S->SaveNow(this);
+			if (AStridesHUD* H = Cast<AStridesHUD>(GetHUD())) H->OnCourseEvent(TEXT("big"), P->LastMessage);
+		}
+		PhoneShow(TEXT("home"));
+	}
+}
+
+bool AStridesPlayerController::InputKey(const FInputKeyEventArgs& Params)
+{
+	// Clic gauche sur le téléphone ouvert (Mac) : élément touché.
+	if (bPhoneOpen && !bPausedState && Params.Key == EKeys::LeftMouseButton && Params.Event == IE_Pressed)
+	{
+		float X = 0, Y = 0;
+		if (GetMousePosition(X, Y)) { PhoneTapAt(FVector2D(X, Y)); return true; }
+	}
+	return Super::InputKey(Params);
 }
 void AStridesPlayerController::TogglePhone()
 {

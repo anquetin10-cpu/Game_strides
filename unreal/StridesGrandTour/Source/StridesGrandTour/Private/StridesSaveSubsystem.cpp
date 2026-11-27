@@ -51,11 +51,37 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	{
 		S->Credits = Progress->Credits;
 		S->Reputation = Progress->Reputation;
-		S->ActiveMissionId = Progress->ActiveMissionId;
+		// Mission en cours, sinon le point de reprise (rechargée, pas encore reprise) : il survit à une 2e relance.
+		S->ActiveMissionId = Progress->ActiveMissionId.IsEmpty() ? Progress->CheckpointMission : Progress->ActiveMissionId;
 		S->CompletedMissions = Progress->CompletedMissions;
 	}
 	const bool Ok = UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
 	LastMessage = Ok ? TEXT("Partie sauvegardée") : TEXT("Échec de la sauvegarde");
+	UE_LOG(LogTemp, Display, TEXT("Strides sauvegarde : %s (%s, position %.1f, %.1f, mission %s, %d terminée(s))"), Ok ? TEXT("écrite") : TEXT("ÉCHEC"), *SlotName, X, Z,
+		S->ActiveMissionId.IsEmpty() ? TEXT("aucune") : *S->ActiveMissionId, S->CompletedMissions.Num());
+	return Ok;
+}
+
+bool UStridesSaveSubsystem::AutoSaveTick(APlayerController* PC, float Dt)
+{
+	// game.js update : _saveT > 12 s → saveSoon (positions puis save.save).
+	if (!bAutoSave) return false;
+	AutoSaveT += Dt;
+	if (AutoSaveT <= 12.f) return false;
+	AutoSaveT = 0.f;
+	const FString Keep = LastMessage;
+	const bool Ok = SaveNow(PC);
+	LastMessage = Keep;  // sauvegarde silencieuse, comme le web (aucun message)
+	return Ok;
+}
+
+bool UStridesSaveSubsystem::ResumeAtStart(APlayerController* PC)
+{
+	// Reprise de la partie au lancement (bouton « Continuer » de l'écran titre du web, pas encore porté : J4-A).
+	if (!bAutoSave || !UGameplayStatics::DoesSaveGameExist(SlotName, 0)) return false;
+	const bool Ok = LoadNow(PC);
+	UE_LOG(LogTemp, Display, TEXT("Strides sauvegarde : reprise au lancement %s (%s)"), Ok ? TEXT("faite") : TEXT("impossible"), *LastMessage);
+	if (Ok) LastMessage = TEXT("Partie reprise");
 	return Ok;
 }
 

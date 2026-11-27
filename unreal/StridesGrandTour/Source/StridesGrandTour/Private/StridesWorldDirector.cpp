@@ -3,11 +3,15 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "StridesAmbientLife.h"
 #include "StridesCourse.h"
 #include "StridesCore/CsoEntry.h"
 #include "StridesDataSubsystem.h"
 #include "StridesProgressionSubsystem.h"
+#include "StridesSaveSubsystem.h"
 #include "StridesScenery.h"
+#include "StridesPlayerController.h"
+#include "EngineUtils.h"
 #include "StridesUnits.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -35,6 +39,9 @@ void AStridesWorldDirector::BuildWorld()
 	// Décor complet exporté du jeu web (relief, routes, mer, architecture, haies, arbres), habillé de matériaux photo.
 	Scenery = GetWorld()->SpawnActor<AStridesScenery>();
 	Scenery->Build(*Data);
+	// Jalon J3 : circulation, passants et spectateurs du web (src/gameplay/npcs.js Ambient), silhouettes provisoires.
+	Ambient = GetWorld()->SpawnActor<AStridesAmbientLife>();
+	if (Ambient && !Ambient->Build(*Data)) UE_LOG(LogTemp, Warning, TEXT("Strides vie ambiante : données absentes"));
 	MissionBeacon = SpawnBlock(FVector(0, 0, -5000), FVector(120.f, 120.f, 1800.f), FRotator::ZeroRotator, FLinearColor(1.f, .63f, .05f));
 	MissionBeacon->SetActorHiddenInGame(true);
 	MissionBeacon->SetActorEnableCollision(false);
@@ -62,10 +69,12 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 	MissionCheckTimer = 0.f;
 	UStridesProgressionSubsystem* Progress = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>();
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+	// Monde de test (contrôleur créé sans joueur local) : le pion du contrôleur du jeu.
+	if (!Pawn) for (TActorIterator<AStridesPlayerController> It(GetWorld()); It && !Pawn; ++It) Pawn = It->GetPawn();
 	if (PoleBeacon)
 	{
 		// Visible sans mission de carrière ni épreuve, et seulement de loin (à moins de 12 m, l'invite « E · Chrono » prend le relais).
-		bool bShow = Pawn && !(Progress && Progress->HasActiveTarget()) && !(PoleCourse && PoleCourse->MissionActive());
+		bool bShow = Pawn && !(Progress && (Progress->HasActiveTarget() || Progress->HasGps())) && !(PoleCourse && PoleCourse->MissionActive());
 		if (bShow)
 		{
 			double X, Y, Z;
@@ -76,12 +85,14 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 		}
 		PoleBeacon->SetActorHiddenInGame(!bShow);
 	}
-	if (!Progress || !Pawn || !Progress->HasActiveTarget())
+	// Balise du GPS (gps.js marker) : cible de la mission en cours, sinon le GPS posé à la main (app Activités, J3).
+	FVector2D Target;
+	FString Label;
+	if (!Progress || !Pawn || !Progress->GuideTarget(Target, Label))
 	{
 		if (MissionBeacon) MissionBeacon->SetActorHiddenInGame(true);
 		return;
 	}
-	const FVector2D Target = Progress->ActiveTarget();
 	if (MissionBeacon)
 	{
 		MissionBeacon->SetActorHiddenInGame(false);
@@ -90,6 +101,19 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 	}
 	double X, Y, Z;
 	StridesUnits::UEToWeb(Pawn->GetActorLocation(), X, Y, Z);
-	if (FVector2D::Distance(FVector2D(X, Z), Target) <= 18.f)
-		Progress->CompleteActiveMission();
+	const double D = FVector2D::Distance(FVector2D(X, Z), Target);
+	if (Progress->HasActiveTarget())
+	{
+		if (D <= 18.f && Progress->CompleteActiveMission())
+		{
+			// missions.complete : sauvegarde tout de suite (saveNow), comme à l'acceptation.
+			if (UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
+				if (Save->bAutoSave) Save->SaveNow(Cast<APlayerController>(Pawn->GetController()));
+		}
+	}
+	else if (D <= 6.0)
+	{
+		UE_LOG(LogTemp, Display, TEXT("Strides GPS : arrivé à %s"), *Label);
+		Progress->ClearGps();
+	}
 }

@@ -29,6 +29,12 @@ public:
 	// Import du fichier exporté depuis Réglages du jeu web (chemin local) : devient la sauvegarde native.
 	UFUNCTION(BlueprintCallable, Category = "Strides") bool ImportWebExport(const FString& Path);
 	UPROPERTY(BlueprintReadOnly, Category = "Strides") FString LastMessage;
+	// Jalon J3 : sauvegarde automatique toutes les 12 s de jeu (game.js _saveT, saveSoon) et reprise au lancement ; coupées
+	// pendant les tests d'automatisation (la partie du joueur n'est jamais touchée par un test).
+	bool bAutoSave = !GIsAutomationTesting;
+	bool AutoSaveTick(class APlayerController* PC, float Dt);
+	bool ResumeAtStart(class APlayerController* PC);
+	float AutoSaveT = 0.f;
 	static const FString Slot;
 	// Emplacement utilisé (Slot par défaut) ; les tests en prennent un à eux pour ne jamais toucher la partie du joueur.
 	FString SlotName = Slot;

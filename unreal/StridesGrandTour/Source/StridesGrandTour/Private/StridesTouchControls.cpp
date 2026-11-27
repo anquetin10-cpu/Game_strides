@@ -309,6 +309,11 @@ void UStridesTouchControls::PressForTest(const FString& Name, bool bDown)
 
 bool UStridesTouchControls::ButtonVisible(const FString& Name, const strides::CsoHud* RaceHud)
 {
+#if UE_BUILD_SHIPPING
+	// Jalon J3 : SAUVER, CHARGER et MISSION sont des outils du portage ; le jeu publié sauvegarde seul (toutes les 12 s,
+	// acceptation et fin de mission) et lance les missions depuis le téléphone.
+	if (Name == TEXT("Save") || Name == TEXT("Load") || Name == TEXT("Mission")) return false;
+#endif
 	if (Name == TEXT("Pause")) return true;  // jamais masqué (styles.css : aucune règle de concours)
 	if (!RaceHud) return true;
 	using E = strides::CsoHudElement;

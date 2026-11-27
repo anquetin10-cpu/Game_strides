@@ -63,6 +63,29 @@ public:
 	void OpenPhone(const FString& App = TEXT("home"));
 	void ClosePhone();
 	void TogglePhone();
+	// ---- Jalon J3 : téléphone interactif (phone.js, requests.js, activities-app.js) ----
+	// Écrans : home (accueil, 12 apps du web), strides (offres de missions), request (demande : Accepter / Refuser),
+	// activities (Itinéraire vers le chrono du Pôle), map (carte plein écran), app:<nom> (application non portée).
+	// Choix n° 15 (plan.md) : au clavier, flèches / ZQSD pour choisir, Entrée / E / F pour toucher, Retour arrière pour
+	// revenir (le web n'a que le toucher et la souris : boutons HTML) ; souris et doigt touchent les éléments dessinés.
+	int32 PhoneSelection() const { return PhoneSel; }
+	void PhoneMove(int32 Delta);
+	void PhonePressSelected();
+	void PhoneBack();
+	// Toucher / clic au point (px du viewport) : élément du téléphone touché, sinon rien. Vrai si un élément a été touché.
+	bool PhoneTapAt(const FVector2D& ViewportPx);
+	// Effet d'un élément (identifiant dessiné par le HUD : « app:strides », « offer:tuto », « accept », « refuse »,
+	// « itinerary:cso_train », « abandon », « back »).
+	void PhoneActivate(const FString& Id);
+	const FString& PhoneRequest() const { return PhoneReq; }
+	bool PhoneConfirmArmed() const { return PhoneArmedAt >= 0; }
+	bool PhoneAcceptDone() const { return PhoneAcceptAt >= 0; }
+	FString PhoneToast;  // toast de l'app (appToast) : texte, effacé après 3 s
+	// Horloge de l'interface (s, temps réel : la confirmation et le rangement du téléphone ne dépendent pas du jeu).
+	double PhoneNow() const;
+	// Une image du téléphone (confirmation expirée, toast, demande acceptée → mission lancée) : appelée par PlayerTick.
+	void PhoneTick();
+	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
 	// Pause (game.pause) et reprise (Reprendre de la carte).
 	void PauseGame();
 	void ResumeGame();
@@ -173,6 +196,10 @@ private:
 	FVector2D TestViewCss = FVector2D(844, 390);
 	FString PhoneAppName = TEXT("home");
 	bool bPhoneOpen = false;
+	int32 PhoneSel = 0;
+	FString PhoneReq;
+	double PhoneArmedAt = -1, PhoneAcceptAt = -1, PhoneToastAt = -1;
+	void PhoneShow(const FString& App);
 	bool bPausedState = false;
 	bool bPauseThisFrame = false;
 	bool bSimPausedFrame = false;

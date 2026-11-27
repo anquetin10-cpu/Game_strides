@@ -97,3 +97,11 @@ target_sources(strides_core PRIVATE ${CORE}/Private/CsoTraining.cpp)
 add_executable(strides_training_tests tests/test_training.cpp)
 target_link_libraries(strides_training_tests strides_core)
 add_test(NAME entrainement COMMAND strides_training_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Jalon J3 (monde vivant de Deauville) : circulation (Car), passants (WalkAI, séparation d'Ambient) et mini-carte
+# (Minimap.draw) du web portés en C++ (StridesCore/WorldLife, StridesCore/Minimap), contre l'oracle relevé dans le jeu web
+# en cours d'exécution (tests/oracles/monde_vivant.json, scripts/unreal/export-monde-vivant.mjs), données lues dans
+# Content/Data/world_ambient.json comme le jeu ; ctest « monde-vivant ».
+target_sources(strides_core PRIVATE ${CORE}/Private/WorldLife.cpp ${CORE}/Private/Minimap.cpp)
+add_executable(strides_monde_vivant_tests tests/test_monde_vivant.cpp)
+target_link_libraries(strides_monde_vivant_tests strides_core)
+add_test(NAME monde-vivant COMMAND strides_monde_vivant_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
