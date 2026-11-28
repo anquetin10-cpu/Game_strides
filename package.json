@@ -12,7 +12,14 @@
     "test": "vitest run",
     "e2e": "node tests/e2e/smoke.mjs",
     "e2e:barres": "node tests/e2e/pjl/bars-check.mjs tests/e2e/out/bars-check",
-    "build:artifact": "vite build --mode single && node scripts/make-artifact.mjs"
+    "build:artifact": "vite build --mode single && node scripts/make-artifact.mjs",
+    "unreal:shipping-outils": "python3 scripts/unreal/check-shipping-tools.py",
+    "unreal:matrice": "zsh scripts/unreal/matrice.sh",
+    "unreal:oracles-epreuves": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-epreuves.mjs --check",
+    "unreal:oracles-defis": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-defis.mjs --check",
+    "unreal:oracles-missions": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-missions.mjs --check",
+    "unreal:oracles-paris": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-paris.mjs --check",
+    "unreal:oracles": "npm run unreal:oracles-epreuves && npm run unreal:oracles-defis && npm run unreal:oracles-missions && npm run unreal:oracles-paris"
   },
   "dependencies": {
     "three": "^0.170.0"

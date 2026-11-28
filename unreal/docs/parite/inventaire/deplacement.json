@@ -1,0 +1,1010 @@
+[
+ {
+  "id": "joueur.marche-course",
+  "domaine": "Joueur",
+  "fonction": "À pied, déplacement relatif à la caméra : marche analogique de 1,0 à 3,0 m/s (joystick < 0,55 : 2,4 × (mag/0,55 + 0,25)), course 5,4 m/s, sprint 7,2 m/s touche galop maintenue, plafonds 3,6 m/s en portant un objet et 3,3 m/s en menant un cheval, malus de fatigue (energy.malus run/sprint).",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:54-58 (MaxWalkSpeed 140 cm/s, orientation vers le déplacement 540°/s) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:349-358 (AddMovementInput relatif au lacet de contrôle)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test. validation-mac-2026-11-17.md ne cite pas la marche à pied (seulement monter, descendre, l.15) ; README.md:35 l'affirme vérifiée, non prouvé. Manque : oracle des vitesses + capture côte à côte.",
+  "ecart": "Vitesse plafonnée à 1,4 m/s (commentaire : course renvoyée à une tranche suivante) ; ni course 5,4 m/s ni sprint 7,2 m/s ; aucun malus d'énergie, de portage ou de longe ; pas de clip de marche à pied : le personnage joue le clip 'idle' monté (StridesRider.cpp:75, 133 ; scripts/unreal/export-rider-animations.py : « La pose source est déjà montée »).",
+  "tranche": "b"
+ },
+ {
+  "id": "joueur.modes",
+  "domaine": "Joueur",
+  "fonction": "Trois modes du joueur (à pied, à cheval, au volant) qui choisissent l'entité suivie par la caméra (focus), la vitesse et le cap affichés, et le profil caméra du véhicule conduit (camDist, camHeight).",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:208-213 (Rider() selon le pawn possédé) ; StridesRider.cpp:206, 134 (Possess cheval / cavalier) ; StridesRider.cpp:59-69 (caméra à pied : bras 4,2 m, FOV 55) ; StridesGameMode.cpp:29, 114-117 (départ à pied, 2 m à gauche du cheval)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 : boucle monter / descendre vérifiée à l'écran (bascule à pied ↔ à cheval). Aucun test automatisé ni capture de parité.",
+  "ecart": "Mode « au volant » absent ; deux caméras fixes par pawn, pas de profil par véhicule ni de point de suivi unifié.",
+  "tranche": "socle"
+ },
+ {
+  "id": "joueur.tenue-quotidienne",
+  "domaine": "Joueur",
+  "fonction": "Tenue de tous les jours : polo bleu Strides #2f5f8a avec logo, culotte d'équitation beige #c2b49a, boots et mini-chaps ; les articles achetés et équipés (Sellerie du Port, boutique d'équitation) remplacent la tenue pièce par pièce ; veste de concours équipée portée aussi hors concours ; tenue réévaluée 4 fois par seconde, jamais pendant une séquence. En personnages réalistes (réglage par défaut « auto », hors qualité Économie), les pièces du GLB rider_f / rider_m sont teintées (realistic.js:416-422) : Cloth_shirt à la couleur du haut, Cloth_jeans à celle de la culotte, Cloth_boots à celle des boots, Cloth_jacket visible seulement avec une veste.",
+  "js": [
+   "src/gameplay/player.js",
+   "src/entities/realistic.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:41-48 (pièces fixes du GLB rider_f : Cloth_boots, Cloth_jacket, Cloth_jeans, Cloth_shirt, Hair_ponytail01)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; validation-mac l.16 contrôle seulement l'échelle, l'orientation et le placement en selle. Manque : capture côte à côte de la tenue.",
+  "ecart": "Mêmes pièces Cloth_* que le modèle web, mais affichées dans leurs couleurs d'origine : veste (Cloth_jacket) toujours visible au lieu d'être masquée sans veste équipée, chemise, culotte et boots non teintées (polo #2f5f8a, culotte #c2b49a) ; aucun article acheté équipé, aucune réévaluation.",
+  "tranche": "b"
+ },
+ {
+  "id": "joueur.tenue-concours",
+  "domaine": "Joueur",
+  "fonction": "Tenue de concours automatique pendant toute mission de concours (vertical EVENEMENTS ou catégorie CSO, hors Entraînement et Défi) : veste équipée, sinon bleu marine #1f2b45 si la veste de la Sellerie est achetée, sinon noire ; chemise blanche, pantalon blanc (ou pantalon équipé admis en concours), gants équipés, bottes noires.",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun changement de tenue côté Unreal (pièces de maillage fixes, StridesRider.cpp:41-48).",
+  "tranche": "b"
+ },
+ {
+  "id": "joueur.avatar",
+  "domaine": "Joueur",
+  "fonction": "Choix cavalière ou cavalier (avatar f/m) avec une identité fixe quelle que soit la tenue (cavalière : échelle 0,985, yeux #5b4632, chignon ; cavalier : échelle 1,0, cheveux courts) ; reconstruction du personnage sur place, y compris en selle ; en personnages réalistes, modèle rider_f.glb ou rider_m.glb selon le sexe (realistic.js:1180).",
+  "js": [
+   "src/gameplay/player.js",
+   "src/entities/realistic.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Public/StridesCore/SaveGame.h:20 (champ avatar sauvegardé) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:31-48 (charge toujours rider_f)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Champ avatar seulement sérialisé (SaveGame.cpp:24,67,90) ; aucun test sur l'avatar. Content/Characters/Riders/Male/rider_m_unreal est importé mais référencé par aucun code.",
+  "ecart": "Cavalier masculin jamais utilisé ; pas d'identité paramétrée ni de reconstruction ; l'avatar sauvegardé n'a aucun effet.",
+  "tranche": "b"
+ },
+ {
+  "id": "joueur.pansage",
+  "domaine": "Joueur",
+  "fonction": "Gestes de soin à pied (pansage 'brush', pieds 'hooves', préparation 'prep') : le personnage se place du côté gauche du cheval (ou du côté où il se trouve déjà), enchaîne les phases outil en main (brosse à 0,95 m du centre du cheval, cure-pied à 0,62 m, protections), marche à 1,6 m/s entre les places ; arrêt si le cheval est monté ou dans le camion.",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun geste de soin, aucun outil tenu, aucune pose 'brush' / 'hoof' / 'boots'.",
+  "tranche": "b"
+ },
+ {
+  "id": "joueur.sifflet",
+  "domaine": "Joueur",
+  "fonction": "Siffler son cheval (touche ou téléphone) : refus avec message en intérieur, cheval au box ou dans le camion, hors mode à pied, ou au-delà de 700 m ; au-delà de 160 m le cheval réapparaît à 45-69 m sur un point dégagé (route à moins de 25 m de préférence, ligne de vue libre), sinon à 7 m ; il suit ensuite le joueur (FollowAI, arrêt à 2,6 m).",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ni sifflet, ni réapparition, ni IA de suivi du cheval.",
+  "tranche": "e"
+ },
+ {
+  "id": "joueur.teleport-reprise",
+  "domaine": "Joueur",
+  "fonction": "Téléportation (player.teleport : transport Strides vers un lieu, départ d'un défi) : annule les séquences d'embarquement et de montée, déplace le véhicule, le cheval ou le personnage selon le mode ; à pied, le cheval est replacé 2,4 m à droite du joueur (le joueur se retrouve côté montoir, à gauche du cheval) et son IA arrêtée ; caméra recalée sur le cap. Reprise d'une partie (game.js placeFromSave) : toujours à pied, personnage à la position sauvegardée (point sûr à pied pendant une montée, position du cheval si monté), cheval à sa propre position sauvegardée, caméra recalée.",
+  "js": [
+   "src/gameplay/player.js",
+   "src/game.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:38-44 (pose 'ride' / 'foot' sauvegardée) et :82-89 (rechargement : descente, cheval replacé puis TryMount, ou cavalier replacé à pied)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (sauvegarder puis recharger vérifié à l'écran) ; Strides.Core.Save (Private/Tests/StridesCoreTests.cpp:58-68) et unreal/core/tests/test_core.cpp testSave : aller-retour de la pose écrit à la main, sans oracle JS.",
+  "ecart": "Au rechargement, remise en selle (TryMount, transition de 0,8 s) quand la pose sauvegardée est 'ride', alors que le web reprend toujours à pied ; position du cheval non sauvegardée : à pied, le cheval reste où il est (ni à sa position sauvegardée, ni à côté du joueur) ; transport et mode volant absents ; pas de recalage caméra explicite ; le Dismount du rechargement (StridesSaveSubsystem.cpp:82) fait aussi descendre le cavalier pendant une épreuve : le déroulé, qui lit à chaque image si le cavalier est en selle (StridesHorse.cpp:226, CsoRunFrame::riding ; StridesRider.cpp:215-216), élimine alors.",
+  "tranche": "socle"
+ },
+ {
+  "id": "joueur.action-secondaire",
+  "domaine": "Joueur",
+  "fonction": "Action secondaire (bouton contextuel ou touche L), bloquée pendant une séquence, un dialogue ou le téléphone ouvert : priorité au van Master (fermer le pont / faire descendre), puis au camion (transport), puis au Defender.",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ni bouton secondaire ni touche L ; StridesTouchControls a SAUT et pause (boutons du web) et, en mode tactile, MONTER, ALLURE +/-, SAUVER, CHARGER, TÉLÉPHONE, MISSION.",
+  "tranche": "f"
+ },
+ {
+  "id": "monte.interaction-monter",
+  "domaine": "Monte",
+  "fonction": "Interaction « Monter » (ACTION) proposée à pied à moins de 3,2 m du cheval du joueur, si le cheval n'est ni figé ni dans le camion, mains libres, aucune séquence de transport ; préparation : pansage arrêté, séquence de chargement annulée, cheval sorti du camion et lâché de la longe, sellerie de route retirée.",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:185-208 (TryMount : cheval le plus proche à moins de 3 m) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:445-529 (E, X manette, bouton MONTER) ; StridesHUD.cpp:73",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran). Aucun test ni capture côte à côte.",
+  "ecart": "Rayon 3 m au lieu de 3,2 m ; n'importe quel AStridesHorse, pas seulement celui du joueur ; aucune condition (portage, camion, transport) ; libellé tactile « MONTER » fixe et ligne HUD permanente au lieu d'une invite contextuelle de proximité.",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.sequence-montee",
+  "domaine": "Monte",
+  "fonction": "Séquence animée de montée en un appui : cheval arrêté, contournement par l'avant à 1,4 m/s, puis 12 clés (environ 2,47 s = 2,94 × 0,84) : main gauche aux rênes sur le garrot, casque mis, main droite au pommeau, pied gauche à l'étrier, poussée, jambe droite haute au-dessus de la croupe, descente douce en selle, pied droit à l'étrier ; pieds et mains posés par IK, repère du siège basculé vers l'os de selle.",
+  "js": [
+   "src/gameplay/horseMount.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:198-206 et :148-156 (fondu SmoothStep de 0,8 s de la transformation du personnage vers SeatTransform)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter vérifié à l'écran ; TryMount et le fondu de 0,8 s sont inchangés depuis le commit e7d80898 qui a écrit cette ligne). La l.19 (cavalière sur mountpoint_01_0179, repli saddle_0168) décrit le commit 5777b8b7 : depuis 9d167156, StridesHorse.cpp:299 lit saddle_0168 en premier, placement actuel non revérifié à l'écran. Valeurs non issues d'un oracle ; aucune capture côte à côte.",
+  "ecart": "Ni approche ni contournement, ni clés de geste, ni IK étrier/rênes, ni casque ; 0,8 s au lieu d'environ 2,5 s ; le personnage glisse en ligne droite et peut traverser le cheval ; le cheval n'est pas arrêté.",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.cote-montoir",
+  "domaine": "Monte",
+  "fonction": "Côté du montoir : gauche par défaut, droit en miroir si un obstacle longe le flanc gauche (test à 1,3 m) ; deux flancs bloqués : refus de monter (« Pas la place de monter ici : éloigne le cheval de la clôture. ») et descente immédiate sans séquence.",
+  "js": [
+   "src/gameplay/horseMount.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:221-223 (descente toujours à gauche, 1,2 m du centre du cheval)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; la validation Mac ne cite pas le côté de descente.",
+  "ecart": "Aucun test d'obstacle, jamais de côté droit, aucun message de refus ; la montée part de n'importe quelle position.",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.interaction-descendre",
+  "domaine": "Monte",
+  "fonction": "« Descendre » proposé à cheval seulement si le cheval va à moins de 2,5 m/s, hors saut, hors interdiction de mission (noDismount) et sans séquence en cours.",
+  "js": [
+   "src/gameplay/player.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:511-527 (AStridesPlayerController::DoAction : descente seulement sous 2,5 m/s et hors saut, player.js:225 ; click seulement si l'action a eu lieu) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:210-213 (Dismount : refus pendant un saut, descente forcée du chargement inconditionnelle comme player.dismount(true))",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (descendre vérifié à l'écran, avant la limite de vitesse). Limite de 2,5 m/s ajoutée le 22/11/2026 (contrôle adverse de l'hygiène finale de la tranche a) : compilée, 32 tests Automation Strides au vert, démonstration de l'épreuve au vert ; aucun test ne descend à cheval lancé (code relu contre player.js:225).",
+  "ecart": "Seuil comparé à la vitesse du cheval du portage (SpeedMS, float) ; pas de noDismount de mission ; séquence de descente non portée (monte.sequence-descente) : le cheval est mis à 0 m/s instantanément (StridesRider.cpp:219) ; aucun bouton « Descendre » affiché (l'étiquette d'action ne porte que le poteau).",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.sequence-descente",
+  "domaine": "Monte",
+  "fonction": "Séquence animée de descente : le cheval s'arrête (< 0,15 m/s), cavalier en selle, puis 11 clés (environ 2,48 s = 2,76 × 0,9) : pied droit libéré, appui sur l'étrier gauche, jambe droite au-dessus de la croupe, transfert du poids, pied gauche libéré, réception genoux fléchis à l'épaule (0,6 m du point d'assise), casque retiré, rênes en main.",
+  "js": [
+   "src/gameplay/horseMount.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:210-231 (téléportation immédiate 1,2 m à gauche et 0,9 m plus haut, mouvement Character rétabli, clip idle)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15. Aucun test ni capture côte à côte.",
+  "ecart": "Aucune animation de descente ni arrêt progressif du cheval ; arrivée à 1,2 m du centre au lieu d'environ 0,6 m du point d'assise (écart en monde à confirmer) ; casque non géré.",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.annulation",
+  "domaine": "Monte",
+  "fonction": "Interruption sûre d'une séquence (téléportation, cheval retiré, chargement de partie) : montée interrompue → à pied à côté du cheval, collisions résolues, casque retiré ; descente interrompue → de nouveau en selle ; point sûr enregistré pendant une montée (safeFoot).",
+  "js": [
+   "src/gameplay/horseMount.js",
+   "src/gameplay/player.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:82 (rechargement : Dismount avant de replacer) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:210-231 (Dismount : MountT remis à -1, cavalier posé à pied 1,2 m à gauche du cheval, ce qui interrompt aussi la transition de 0,8 s) ; StridesPlayerController.cpp:522 (E pendant la transition → Dismount, cheval à l’arrêt sous 2,5 m/s)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test d'interruption.",
+  "ecart": "Pas d'annulation dédiée : une interruption passe par Dismount (rechargement, ou E pendant la transition de 0,8 s), qui pose le cavalier à pied 1,2 m à gauche du cheval mais notifie aussi le parcours (élimination si une épreuve est en cours) ; cheval retiré non géré ; aucune résolution de collision explicite ; pas de point sûr : une sauvegarde pendant la transition enregistre la pose 'ride' (StridesSaveSubsystem.cpp:39, MountedOn posé dès TryMount) au lieu de la position à pied.",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.camera-transition",
+  "domaine": "Monte",
+  "fonction": "Caméra glissante pendant la montée et la descente : point suivi interpolé du personnage au cheval, recul de 4,6 à 6,6 m, hauteur de 1,55 à 2,35 m ; montée : glissement entre 35 % et 100 % de la séquence ; descente : entre 0 et 75 %.",
+  "js": [
+   "src/gameplay/horseMount.js",
+   "src/gameplay/player.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesRider.cpp:206, 134 (Possess : coupe franche entre la caméra du cavalier et celle du cheval)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; la caméra n'est pas citée dans la validation Mac.",
+  "ecart": "Coupe instantanée au lieu d'un glissement ; distances et hauteurs différentes (bras du cavalier 4,2 m).",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.casque",
+  "domaine": "Monte",
+  "fonction": "Casque mis pendant la montée (clé helmetOn) et retiré après la descente (helmetOff) ; à pied : casquette équipée ou tête nue ; essai d'un casque en boutique.",
+  "js": [
+   "src/gameplay/player.js",
+   "src/gameplay/horseMount.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun casque dans les pièces de maillage du cavalier (StridesRider.cpp:41).",
+  "tranche": "b"
+ },
+ {
+  "id": "monte.descente-elimination",
+  "domaine": "CSO",
+  "fonction": "Descendre de cheval pendant une épreuve en cours élimine (« Tu es descendu de cheval : éliminé. »).",
+  "js": [
+   "src/gameplay/player.js",
+   "src/gameplay/courses.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp (RunFrame : cavalier en selle lu à chaque image) → unreal/StridesGrandTour/Source/StridesCore/Private/CsoRun.cpp (courseUpdate)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "Scénario t4-descente de cso_runs/ (fr et en) rejoué sans écart par testCsoRuns et Strides.Parite.CsoRun ; Strides.Cso.RunInGame : AStridesRider::Dismount pendant le parcours → éliminé.",
+  "ecart": "Aucun sur la règle. Descente proposée, comme le web, sous 2,5 m/s et hors saut seulement (AStridesPlayerController::DoAction, depuis le 22/11/2026), sans noDismount de mission (monte.interaction-descendre) ni la séquence animée du web (monte.sequence-descente).",
+  "tranche": "a"
+ },
+ {
+  "id": "pnj.chevaux-paddock",
+  "domaine": "PNJ",
+  "fonction": "Chevaux au paddock qui broutent (GrazeAI) : 9 chevaux (Écurie du Val 1, Haras 1+2+2+1, Écurie des Dunes 2), robes tirées de 7 robes, liste et balzanes aléatoires (graine 99).",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Un seul cheval créé (StridesGameMode.cpp:89) ; aucun cheval d'ambiance.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.chevaux-box",
+  "domaine": "PNJ",
+  "fonction": "9 chevaux au box, tête par-dessus la porte coulissante (Écurie du Val 3, tente du Pôle 2, Haras 2, Dunes 1, Saint-Gatien 1), figés, visibles à moins de 30 m.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun cheval au box.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.palefreniers",
+  "domaine": "PNJ",
+  "fonction": "3 palefreniers qui marchent dans les allées des écuries (Écurie du Val jusqu'à la cour 1,0 m/s ; Haras 0,9 m/s ; tente du Pôle 1,1 m/s).",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun personnage non joueur.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.cavaliers-entrainement",
+  "domaine": "PNJ",
+  "fonction": "4 cavaliers PNJ montés sur une boucle (PathAI qui cède le passage) : paddock d'échauffement du Pôle 5 m/s, hippodrome à la corde 11 m/s (libère la piste pendant le Derby), plage 3,5 m/s, carrière de l'Écurie du Val 4,2 m/s.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun cavalier PNJ.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.passants",
+  "domaine": "PNJ",
+  "fonction": "Passants : 16 sur les trottoirs de Deauville City (boucles à 5,4 m de l'axe des rues, 1,2 ou 1,6 m/s) et 5 promeneurs sur les Planches qui tiennent leur droite (1,1 m/s) ; pause aléatoire (15 %, 2 à 6 s) ; glissent le long des obstacles.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun passant.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.reaction-joueur",
+  "domaine": "PNJ",
+  "fonction": "Un passant s'arrête et se tourne vers le joueur quand celui-ci est à moins de 2,2 m (ou pendant une conversation).",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun passant.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.separation",
+  "domaine": "PNJ",
+  "fonction": "Les passants ne se traversent pas : deux passants à moins de 0,9 m s'écartent d'un pas de côté (une image sur deux).",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun passant.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.conversation",
+  "domaine": "PNJ",
+  "fonction": "Parler au passant le plus proche (moins de 3,2 m, hors volant) : il dit une réplique tirée de CHATTER.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ni passant ni dialogue.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.spectateurs-pole",
+  "domaine": "PNJ",
+  "fonction": "8 spectateurs au bord de la carrière du Pôle (entrée de piste dégagée), debout, qui applaudissent (pose 'cheer') quand cheerT > 0.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun spectateur.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.circulation",
+  "domaine": "PNJ",
+  "fonction": "Circulation : 7 voitures (routes coast, main, ew, ew, main, hippo, coast), modèles courants en Normandie dans leurs teintes d'origine, voie de droite à 2,2 m de l'axe ; 50 km/h en ville (13,9 m/s, emprise des îlots + 30 m), 70 km/h ailleurs (19,4 m/s) × facteur de croisière 0,88 à 1,08 ; caisse qui suit la pente aux deux essieux et plonge au freinage.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune voiture : les routes ne sont que du décor (StridesScenery).",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.circulation-prudence",
+  "domaine": "PNJ",
+  "fonction": "Conduite prudente : vue devant 8 + 1,5 × v m, freinage doux (environ 5 m/s²) pour s'arrêter 5 m avant l'obstacle ; attend derrière un cavalier sans klaxonner ; 20 km/h (5,5 m/s) en croisant des chevaux ; cède au véhicule du joueur aux carrefours (prédiction sur 4 s), priorité à droite entre voitures ; ralentit près d'un véhicule du joueur qui manœuvre ; recule de quelques mètres après 4 s nez à nez.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune voiture.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.circulation-demi-tour",
+  "domaine": "PNJ",
+  "fonction": "En bout de route : demi-tour immédiat hors de vue ; sinon arrêt, attente de 1,5 s place libre, puis demi-tour au pas (2,2 m/s) d'une voie à l'autre.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune voiture.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.feux-voitures",
+  "domaine": "PNJ",
+  "fonction": "Feux et phares des voitures (circulation et véhicules conduisibles) allumés la nuit, à l'aube, au crépuscule et sous la pluie (min(1, nuit × 1,6 + pluie × 0,8)) ; roues et optiques instanciées.",
+  "js": [
+   "src/gameplay/npcs.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune voiture, aucun cycle jour/nuit.",
+  "tranche": "g"
+ },
+ {
+  "id": "pnj.prendre-voiture",
+  "domaine": "Véhicules",
+  "fonction": "Prendre le volant d'une voiture de la circulation arrêtée (moins de 0,6 m/s, portière conducteur à moins de 2,6 m) : elle quitte le trafic et devient un véhicule conduisible (même modèle, même couleur, même place).",
+  "js": [
+   "src/gameplay/npcs.js",
+   "src/gameplay/player.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ni circulation ni véhicule conduisible.",
+  "tranche": "f"
+ },
+ {
+  "id": "transport.mener-en-main",
+  "domaine": "Transport",
+  "fonction": "« Mener en main » un cheval (le sien ou un cheval menable) à moins de 2,7 m : longe visible (tube souple main-licol), le cheval se place épaule gauche à hauteur du meneur (0,95 m à droite, 0,55 m en arrière), jusqu'à 4,4 m/s, se range parallèlement à l'arrêt ; « Lâcher ».",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ni longe ni IA de cheval mené.",
+  "tranche": "f"
+ },
+ {
+  "id": "transport.rampe-camion",
+  "domaine": "Transport",
+  "fonction": "Rampe arrière du camion : « Ouvrir / Fermer la rampe » à moins de 2,9 m de l'arrière, camion arrêté sans conducteur ; refus si un obstacle se trouve sur environ 4,5 m derrière la charnière (« Pas assez de place derrière le camion… ») ; feux de détresse rampe ouverte ; « Rampe fermée — prêt à partir » une fois le pont relevé (environ 3,5 s) ; joueur et chevaux repoussés hors de la course du pont et des portillons.",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun camion ni rampe (aucun modèle de véhicule importé dans Content).",
+  "tranche": "f"
+ },
+ {
+  "id": "transport.charger-camion",
+  "domaine": "Transport",
+  "fonction": "Chargement scénarisé : cheval mené à moins de 7 m du pied de la rampe ouverte, stalle libre (2 stalles) → plans de caméra, approche, hésitation au pied du pont (65 %, 0,7 à 1,6 s), montée au pas, entrée dans la stalle (camion STX en épi : couloir du groom, barre de poitrail), attache à l'anneau, sortie du meneur par la porte de service ; joueur verrouillé ; selle retirée pour la route.",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun chargement.",
+  "tranche": "f"
+ },
+ {
+  "id": "transport.decharger-camion",
+  "domaine": "Transport",
+  "fonction": "Déchargement scénarisé : le meneur entre par la porte de service, rejoint la tête, détache, fait reculer le cheval hors de la stalle et le long du pont (0,62 m/s), courte pause des postérieurs, puis repart en main ; sellerie remise.",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun déchargement.",
+  "tranche": "f"
+ },
+ {
+  "id": "transport.cheval-a-bord",
+  "domaine": "Transport",
+  "fonction": "Cheval à bord : attaché dans sa stalle, suit le camion, balancement amorti opposé aux accélérations (±8 cm latéral, ±7 cm longitudinal), mange au filet à l'arrêt, tourne la tête vers la fenêtre ; longe d'attache visible.",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun cheval embarqué.",
+  "tranche": "f"
+ },
+ {
+  "id": "transport.confort",
+  "domaine": "Transport",
+  "fonction": "Confort du cheval (0 à 100) pendant le trajet : stress si accélération ou virage au-delà de 2 m/s² (environ 0,2 g), à-coups (jerk > 8), vitesse > 7 m/s ; choc : −(6 + 1,5 × v) plafonné à 30, hennissement, secousse caméra, « Choc ! … est secoué(e) » ; « s'agite dans le camion » si stress > 3 (au plus toutes les 6 s) ; récupération 0,5/s à l'arrêt, 5/s sans cheval.",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun confort ni stress de transport.",
+  "tranche": "f"
+ },
+ {
+  "id": "transport.sons-sabots",
+  "domaine": "Transport",
+  "fonction": "Sons de sabots dédiés sur le pont et le plancher du camion pendant les séquences de chargement.",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun son dans le portage.",
+  "tranche": "h"
+ },
+ {
+  "id": "transport.sauvegarde",
+  "domaine": "Transport",
+  "fonction": "État du camion sauvegardé (rampe, cheval principal à bord et sa stalle) et repris au chargement (embarquement immédiat loadInstant / unloadInstant) ; nouvelle partie : camion à l'Écurie du Val, rampe fermée, confort 100.",
+  "js": [
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "SaveGame::fromWebExport garde le JSON web brut dans legacyJson (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:107) ; aucun code ne le relit. À prouver après portage : oracle JS + test C++.",
+  "ecart": "Le bloc 'transport' d'un export web est conservé tel quel dans legacyJson mais jamais interprété.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.monter-volant",
+  "domaine": "Véhicules",
+  "fonction": "« Monter » au volant en un appui : à pied près de la portière conducteur (camion 3,2 m ; voitures garées et tracteur 2,6 m ; Defender via son accès), mains libres, aucun cheval mené ; séquence animée : approche en contournant la caisse, poignée, ouverture, seuil, marchepieds et prises de main (poids lourd), assise, jambes rentrées, fermeture, mains au volant ; profils par véhicule (STX portière 1,22 m, Defender seuil 0,52 m, Master assise 1,10 m, tracteur 3 marches, voitures basses) ; installation immédiate pour missions et reprise.",
+  "js": [
+   "src/gameplay/boarding.js",
+   "src/gameplay/player.js",
+   "src/gameplay/defenderAccess.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun véhicule conduisible dans Source ni Content.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.degagement-portiere",
+  "domaine": "Véhicules",
+  "fonction": "Vérification avant montée ou descente : débattement de la portière libre, points d'approche au sol hors obstacles (dénivelé < 0,6 m, eau < 0,15 m, autres véhicules) ; refus « Pas la place d'ouvrir la portière… » ; véhicule tenu à l'arrêt, siège réservé.",
+  "js": [
+   "src/gameplay/boarding.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.descendre",
+  "domaine": "Véhicules",
+  "fonction": "« Descendre » du volant si |vitesse| < 1,5 m/s (séquence refusée au-delà de 0,3 m/s : « Arrête-toi pour descendre. ») ; séquence inverse, moteur coupé, point de descente libre (Defender) ou portière conducteur, caméra placée devant la portière ; interruption : remis à pied en lieu sûr ou assis, portière fermée.",
+  "js": [
+   "src/gameplay/boarding.js",
+   "src/gameplay/player.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.camera-montee",
+  "domaine": "Véhicules",
+  "fonction": "Caméra amenée sur le flanc conducteur puis glissant vers le profil de conduite pendant la montée (de 45 % à 100 %) et inversement à la descente ; profils camion 9,5 m / 3,1 m, Defender 7,0 m / 2,4 m.",
+  "js": [
+   "src/gameplay/boarding.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune caméra de véhicule.",
+  "tranche": "f"
+ },
+ {
+  "id": "vehicules.conduite",
+  "domaine": "Véhicules",
+  "fonction": "Au volant : personnage assis visible (mains au volant, pieds au pédalier) ; commandes accélérateur = joystick avant × 1,25 et direction = latéral × 1,2 (bornés à ±1), nulles pendant une séquence ; le camion vit en permanence (pont, feux, moteur).",
+  "js": [
+   "src/gameplay/player.js",
+   "src/gameplay/boarding.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune conduite (MATRICE.md : tranche « véhicules et transport » à faire).",
+  "tranche": "f"
+ },
+ {
+  "id": "van.pont-portes",
+  "domaine": "Van",
+  "fonction": "Van porte-chevaux Master : ouvrir ou fermer le pont latéral droit (et ses volets) et la porte arrière (sellerie), à pied, van arrêté sans conducteur ; « Pont latéral baissé : amène ton cheval en main au pied du pont. »",
+  "js": [
+   "src/gameplay/vanLoading.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun van.",
+  "tranche": "f"
+ },
+ {
+  "id": "van.charger",
+  "domaine": "Van",
+  "fonction": "Chargement par le pont latéral : cheval mené au pied du pont ouvert → il monte perpendiculairement, pivote et entre tête vers l'arrière (1,05 m/s, pivot 1,4 rad/s) ; 2 stalles, stalle du fond d'abord (bas-flanc central ouvert puis refermé) ; « … est attaché(e) dans le van. Ferme le pont latéral avant de partir. »",
+  "js": [
+   "src/gameplay/vanLoading.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun van.",
+  "tranche": "f"
+ },
+ {
+  "id": "van.decharger",
+  "domaine": "Van",
+  "fonction": "Déchargement : le cheval recule hors de la stalle, pivote vers le pont et descend ; stalle du fond seulement si la stalle côté pont est vide ; le cheval revient en main ; « … est descendu(e) du van. »",
+  "js": [
+   "src/gameplay/vanLoading.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun van.",
+  "tranche": "f"
+ },
+ {
+  "id": "van.sauvegarde",
+  "domaine": "Van",
+  "fonction": "État du van sauvegardé (pont, porte arrière, cheval principal à bord et stalle) et repris au chargement (absent des anciennes sauvegardes : fermé, vide).",
+  "js": [
+   "src/gameplay/vanLoading.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "SaveGame::fromWebExport garde le JSON web brut dans legacyJson (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:107) ; aucun code ne le relit. À prouver après portage : oracle JS + test C++.",
+  "ecart": "Bloc 'van' de l'export web gardé dans legacyJson sans interprétation.",
+  "tranche": "f"
+ },
+ {
+  "id": "voyage.etape-charger",
+  "domaine": "Voyage",
+  "fonction": "Étape de mission « charger un cheval » dont la consigne suit la situation : descends du camion, descends de cheval, ouvre la rampe, ramène-le (à plus de 30 m du camion), prends-le en main, fais-le monter, chargement en cours, ferme la rampe.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune étape composée : les missions Unreal se terminent en atteignant un lieu à 18 m (StridesWorldDirector.cpp:70).",
+  "tranche": "f"
+ },
+ {
+  "id": "voyage.etape-decharger",
+  "domaine": "Voyage",
+  "fonction": "Étape de mission « décharger un cheval » : gare-toi et descends du camion, ouvre la rampe, fais descendre, déchargement en cours.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune étape de déchargement.",
+  "tranche": "f"
+ },
+ {
+  "id": "voyage.etape-rouler",
+  "domaine": "Voyage",
+  "fonction": "Étape « rouler jusqu'à une aire » : réussie camion à l'arrêt (< 0,3 m/s) dans le rayon de l'aire, joueur au volant ; confort du cheval mesuré si demandé ; aide affichée 6 s.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "La mission 'transport' de Content/Data/world_architecture.json (lieu 'home') se valide en arrivant à pied ou à cheval à 18 m : aucun camion requis.",
+  "tranche": "f"
+ },
+ {
+  "id": "voyage.aires-camion",
+  "domaine": "Voyage",
+  "fonction": "Aires de stationnement des camions : Écurie du Val (rayon 14 m), Haras de la Pommeraie (−380, −98, rayon 12 m), parking des camions du Pôle (311, −177, rayon 13 m) ; secrétariat du concours (288, −179).",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Seuls les 14 POI de world_architecture.json existent ; aucune aire de camion ni secrétariat.",
+  "tranche": "c"
+ },
+ {
+  "id": "voyage.offre-concours",
+  "domaine": "Voyage",
+  "fonction": "Offre « Concours du Pôle » poussée dans l'app Strides (vérification toutes les 20 s) si le tutoriel est fini, aucune mission active, offre absente, non refusée depuis moins de 120 s, non faite depuis moins de 90 s ; notification la première fois.",
+  "js": [
+   "src/gameplay/trip.js",
+   "src/gameplay/transport.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "StridesProgressionSubsystem::StartNextMission lance la mission linéaire suivante (StridesProgressionSubsystem.cpp:12-31) : aucune offre récurrente.",
+  "tranche": "e"
+ },
+ {
+  "id": "voyage.classes-concours",
+  "domaine": "Voyage",
+  "fonction": "Classe selon le niveau : Amateur 2 1,05 m (engagement 22 €, dotation 260/180/130/100/80), Amateur 1 1,15 m (28 €, 420/290/210/160/120/90) au niveau 3, Pro 2 1,25 m (36 €, 650/450/320/240/180/140, temps accordé à la vitesse CSI) au niveau 4 ; 240 XP.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune classe, aucun engagement ni dotation (le parcours du Pôle existe sans hauteur de classe).",
+  "tranche": "e"
+ },
+ {
+  "id": "voyage.deroule-concours",
+  "domaine": "Voyage",
+  "fonction": "Déroulé de la sortie en concours : message d'engagement (dossard 30 à 89), charger, rouler au parking du Pôle (confort mesuré), décharger, retirer le dossard au secrétariat (PNJ, dialogue), seller et monter, échauffement de 2 sauts au paddock, parcours barème A au chrono (2 refus au plus), classement simulé, note de 2 à 5 selon le rang (−1 en cas de retard), conseil pour rentrer.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun enchaînement : la mission « Événements » du Pôle se valide en atteignant le POI.",
+  "tranche": "e"
+ },
+ {
+  "id": "voyage.heure-passage",
+  "domaine": "Voyage",
+  "fonction": "Heure de passage : heure courante + 5 h si l'engagement est pris entre 3 h 30 et 16 h, sinon lendemain 8 h 30 + 0 à 5 quarts d'heure ; épreuves de 8 h 30 à 21 h ; retard = départ en fin d'épreuve ; conseil de dormir à la maison de l'Écurie du Val.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucune heure de jeu exploitée par les missions Unreal.",
+  "tranche": "e"
+ },
+ {
+  "id": "voyage.engagement",
+  "domaine": "Voyage",
+  "fonction": "Engagement débité au départ avec le message « Engagement réglé au secrétariat du concours : n € », mémorisé (pendingFee) pour être remboursé si la partie est rechargée avant la fin du concours.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun coût de mission (les missions Unreal ne font que créditer).",
+  "tranche": "e"
+ },
+ {
+  "id": "voyage.decor-secretariat",
+  "domaine": "Voyage",
+  "fonction": "Décor du concours le temps de la mission : tente du secrétariat et panneau, officiel en blanc posté devant la tente.",
+  "js": [
+   "src/gameplay/trip.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun décor temporaire de mission.",
+  "tranche": "c"
+ },
+ {
+  "id": "voyage.paris-proposition",
+  "domaine": "Voyage",
+  "fonction": "Au bout de l'A13 (bretelle de Deauville (546, −118) ou bretelle de Paris, rayon 12 m), au volant du camion à moins de 4 m/s : carte « Direction Paris » / « Retour en Normandie » (200 km, environ 2 h 10, environ 46 l de gazole, chevaux à bord), boutons « Rester ici » / « Partir ».",
+  "js": [
+   "src/gameplay/travel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "La mission 'gpparis' est redirigée vers le POI du Pôle (StridesProgressionSubsystem.cpp:76-77) : aucune région Paris ni trajet.",
+  "tranche": "f"
+ },
+ {
+  "id": "voyage.paris-blocages",
+  "domaine": "Voyage",
+  "fonction": "Départ refusé si le joueur n'est pas au volant, si le réservoir contient moins de 48 l sans argent pour compléter à l'aire, ou si le cheval principal resterait seul à Paris (« Charge d'abord … dans le camion »).",
+  "js": [
+   "src/gameplay/travel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun trajet.",
+  "tranche": "f"
+ },
+ {
+  "id": "voyage.plein-aire",
+  "domaine": "Voyage",
+  "fonction": "Plein proposé à l'aire de service de l'A13 quand le réservoir est trop bas : gazole 8 % plus cher qu'à la station de Deauville City, réservoir de 80 l (l'aller-retour, 2 × 46 l, l'exige), argent débité.",
+  "js": [
+   "src/gameplay/travel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ni carburant ni station.",
+  "tranche": "f"
+ },
+ {
+  "id": "voyage.paris-trajet",
+  "domaine": "Voyage",
+  "fonction": "Trajet : fondu au noir, son du moteur, camion placé à l'arrivée de l'autre région, −46 l, +130 min de temps de jeu, changement de région, caméra recalée, sauvegarde immédiate, carte « Bienvenue à Paris » / « De retour en Normandie ».",
+  "js": [
+   "src/gameplay/travel.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun changement de région (un seul monde de 1,2 km).",
+  "tranche": "f"
+ },
+ {
+  "id": "gps.cible",
+  "domaine": "GPS",
+  "fonction": "Repère GPS général : cible (position, libellé, rayon 6 m par défaut) posée par les missions et l'interface, cible mobile possible (cheval en fuite), effacement.",
+  "js": [
+   "src/gameplay/gps.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesProgressionSubsystem.cpp:69-88 (ActiveTarget / HasActiveTarget : lieu de la mission active, POI ou centre de région, Paris → Pôle)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de la cible ; Strides.World.CareerGraph (Private/Tests/StridesCoreTests.cpp:88-117) vérifie seulement que chaque lieu de mission existe et n'est pas cité comme réussi dans validation-mac.",
+  "ecart": "Cible limitée à la mission active ; ni libellé, ni rayon paramétrable (arrivée fixe à 18 m, StridesWorldDirector.cpp:70), ni cible mobile, ni fonctions poser / effacer.",
+  "tranche": "e"
+ },
+ {
+  "id": "gps.balise",
+  "domaine": "GPS",
+  "fonction": "Balise lumineuse 3D sur la cible : faisceau additif blanc (#f4f3ef) de 60 m de haut et 1,3 m de rayon qui pulse, anneau au sol de 2,2 à 2,7 m qui respire (±8 %), opacité 0,15 près de la cible remontant à 1 vers 34 m ; balise masquable (beacon: false).",
+  "js": [
+   "src/gameplay/gps.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesWorldDirector.cpp:37-39 et :61-67 (MissionBeacon : cube orange 1,2 × 1,2 × 18 m centré 9 m au-dessus du relief, donc du sol à 18 m ; tourne de 20° toutes les 0,25 s ; masqué sans mission active)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture ; non cité dans validation-mac.",
+  "ecart": "Forme, couleur et hauteur différentes (bloc orange de 18 m au lieu d'un faisceau blanc de 60 m) ; pas d'anneau, pas de pulsation ni d'atténuation de près.",
+  "tranche": "h"
+ },
+ {
+  "id": "gps.itineraire",
+  "domaine": "GPS",
+  "fonction": "Itinéraire : au volant, chemin par la route (graphe des routes coupé aux intersections, raccords en T à moins de 3 m, nœuds soudés à moins de 4 m, A*), abandonné si l'accès aux nœuds dépasse 90 % de la distance directe ; à pied ou à cheval, ligne directe ; recalcul toutes les 0,8 s au volant, 0,15 s sinon.",
+  "js": [
+   "src/gameplay/gps.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Les polylignes de routes sont chargées (Data->Roads, dessinées par StridesHUD.cpp:171-173) mais il n'existe ni graphe ni calcul d'itinéraire.",
+  "tranche": "c"
+ },
+ {
+  "id": "gps.minicarte",
+  "domaine": "GPS",
+  "fonction": "Itinéraire GPS (gps.route) tracé en pointillés sur la minicarte et sur la carte (src/ui/minimap.js), de la position suivie jusqu'à la cible : par la route au volant, en ligne droite à pied ou à cheval.",
+  "js": [
+   "src/gameplay/gps.js",
+   "src/ui/minimap.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:199-211 (cible GPS sur la minicarte, ramenée au bord du cadre hors champ, distance « GPS n m »)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ni capture ; minicarte non citée dans validation-mac.",
+  "ecart": "Aucun tracé, même en ligne droite : seulement un carré de cible (ramené au bord du cadre hors champ) et une distance à vol d'oiseau ; aucune carte plein écran repérée dans StridesHUD.cpp.",
+  "tranche": "h"
+ },
+ {
+  "id": "defender.portieres",
+  "domaine": "Defender",
+  "fonction": "Defender 110 à pied : ouvrir ou fermer la portière la plus proche (4 portières, moins de 1,5 m), priorité avant/arrière avec « Monter » en secondaire ; bloqué si quelqu'un est au volant, en montée, véhicule roulant, cheval mené, transport en cours ou en intérieur.",
+  "js": [
+   "src/gameplay/defenderAccess.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun Defender.",
+  "tranche": "f"
+ },
+ {
+  "id": "defender.coffre",
+  "domaine": "Defender",
+  "fonction": "Coffre (ouverture latérale à l'arrière, moins de 2,2 m) : ouvrir ou fermer (refus en roulant : « Le coffre ne s'ouvre pas en roulant. »), ranger un objet porté (botte de foin, selle, sac, carton), le reprendre.",
+  "js": [
+   "src/gameplay/defenderAccess.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Ni coffre ni objet porté.",
+  "tranche": "f"
+ },
+ {
+  "id": "defender.teinte",
+  "domaine": "Defender",
+  "fonction": "Teinte de la carrosserie choisie devant le capot (moins de 1,6 m) : 6 teintes en cycle (Vert forêt, Blanc glacier, Gris pierre, Bleu nuit, Sable, Noir).",
+  "js": [
+   "src/gameplay/defenderAccess.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "rg dans unreal/StridesGrandTour/Source, Content, scripts/unreal et unreal/core : aucun code. À prouver après portage : oracle exporté du JS comparé par un test C++, ou capture côte à côte dans unreal/docs/parite/.",
+  "ecart": "Aucun Defender.",
+  "tranche": "f"
+ },
+ {
+  "id": "defender.sauvegarde",
+  "domaine": "Defender",
+  "fonction": "État du Defender sauvegardé (identifiant, type, teinte, accès ouverts, objet du coffre) et repris ; ajouté une seule fois, garé à l'Écurie du Val, aux sauvegardes antérieures.",
+  "js": [
+   "src/gameplay/defenderAccess.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "SaveGame::fromWebExport garde le JSON web brut dans legacyJson (unreal/StridesGrandTour/Source/StridesCore/Private/SaveGame.cpp:107) ; aucun code ne le relit. À prouver après portage : oracle JS + test C++.",
+  "ecart": "Bloc 'defender' de l'export web gardé dans legacyJson sans interprétation.",
+  "tranche": "f"
+ }
+]

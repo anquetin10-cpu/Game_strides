@@ -1,0 +1,482 @@
+[
+ {
+  "capture": "aide-4-trop-loin-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.957121,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-4-trop-loin-844x390-unreal.png",
+  "psnr_avant_apres_db": 49.652681,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-5-bonne-zone-667x308-unreal.png",
+  "psnr_avant_apres_db": 48.543161,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-5-bonne-zone-844x390-unreal.png",
+  "psnr_avant_apres_db": 46.62044,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-ambre-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.640985,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-ambre-844x390-unreal.png",
+  "psnr_avant_apres_db": 46.648731,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-bouton-667x308-unreal.png",
+  "psnr_avant_apres_db": 46.74627,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-bouton-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.004444,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-off-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.430394,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-off-844x390-unreal.png",
+  "psnr_avant_apres_db": 47.010842,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-sans-trace-667x308-unreal.png",
+  "psnr_avant_apres_db": 49.135187,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-sans-trace-844x390-unreal.png",
+  "psnr_avant_apres_db": 47.328586,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-saute-667x308-unreal.png",
+  "psnr_avant_apres_db": 44.039885,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-saute-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.272188,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-trace-667x308-unreal.png",
+  "psnr_avant_apres_db": 45.856828,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-trace-844x390-unreal.png",
+  "psnr_avant_apres_db": 49.237238,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-trop-pres-667x308-unreal.png",
+  "psnr_avant_apres_db": 46.493557,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-trop-pres-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.389464,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-trop-tot-667x308-unreal.png",
+  "psnr_avant_apres_db": 48.502446,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "aide-trop-tot-844x390-unreal.png",
+  "psnr_avant_apres_db": 59.864834,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-1-sans-faute-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.783088,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-1-sans-faute-844x390-unreal.png",
+  "psnr_avant_apres_db": 47.147859,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-2-carte-667x308-unreal.png",
+  "psnr_avant_apres_db": 70.423439,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-2-carte-844x390-unreal.png",
+  "psnr_avant_apres_db": 68.211505,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-3-trois-barres-667x308-unreal.png",
+  "psnr_avant_apres_db": 67.894473,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-3-trois-barres-844x390-unreal.png",
+  "psnr_avant_apres_db": 68.534747,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-4-trois-barres-bas-667x308-unreal.png",
+  "psnr_avant_apres_db": 70.527722,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "bilan-4-trois-barres-bas-844x390-unreal.png",
+  "psnr_avant_apres_db": 68.401426,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cadrage-040-unreal.png",
+  "psnr_avant_apres_db": 48.033082,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cadrage-120-unreal.png",
+  "psnr_avant_apres_db": 48.529455,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cadrage-200-unreal.png",
+  "psnr_avant_apres_db": 48.3884,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cadrage-280-unreal.png",
+  "psnr_avant_apres_db": 49.053222,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cadrage-360-unreal.png",
+  "psnr_avant_apres_db": 46.96181,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cadrage-440-unreal.png",
+  "psnr_avant_apres_db": 49.882044,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "carriere-aerienne-unreal.png",
+  "psnr_avant_apres_db": 46.346451,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "chute-barre-0_1s-unreal.png",
+  "psnr_avant_apres_db": 41.531348,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "chute-barre-0_3s-unreal.png",
+  "psnr_avant_apres_db": 47.120094,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "chute-barre-0_6s-unreal.png",
+  "psnr_avant_apres_db": 47.629338,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "chute-barre-1_5s-unreal.png",
+  "psnr_avant_apres_db": 48.994282,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cmd-joystick-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.685675,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cmd-joystick-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.656575,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cmd-pause-667x308-unreal.png",
+  "psnr_avant_apres_db": 71.123929,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "cmd-pause-844x390-unreal.png",
+  "psnr_avant_apres_db": 69.750838,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-1-presentation-667x308-unreal.png",
+  "psnr_avant_apres_db": 70.533232,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-1-presentation-844x390-unreal.png",
+  "psnr_avant_apres_db": 68.722652,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-2-plan-667x308-unreal.png",
+  "psnr_avant_apres_db": 71.864873,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-2-plan-844x390-unreal.png",
+  "psnr_avant_apres_db": 69.280971,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-3-annonce-667x308-unreal.png",
+  "psnr_avant_apres_db": 49.169563,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-3-annonce-844x390-unreal.png",
+  "psnr_avant_apres_db": 50.644928,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-4-cloche-667x308-unreal.png",
+  "psnr_avant_apres_db": 49.658598,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "entree-4-cloche-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.472989,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-appel-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.746658,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-appel-844x390-unreal.png",
+  "psnr_avant_apres_db": 47.736547,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-barre-667x308-unreal.png",
+  "psnr_avant_apres_db": 48.057545,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-barre-844x390-unreal.png",
+  "psnr_avant_apres_db": 50.368873,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-cadence-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.629593,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-cadence-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.225516,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-cloche-667x308-unreal.png",
+  "psnr_avant_apres_db": 48.059261,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-cloche-844x390-unreal.png",
+  "psnr_avant_apres_db": 47.026361,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-course-667x308-unreal.png",
+  "psnr_avant_apres_db": 45.073398,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-course-844x390-unreal.png",
+  "psnr_avant_apres_db": 49.317594,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-depart-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.035953,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-depart-844x390-unreal.png",
+  "psnr_avant_apres_db": 47.524015,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-depassement-667x308-unreal.png",
+  "psnr_avant_apres_db": 47.348986,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-depassement-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.652269,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-elimine-667x308-unreal.png",
+  "psnr_avant_apres_db": 46.497474,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-elimine-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.161333,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-refus-667x308-unreal.png",
+  "psnr_avant_apres_db": 48.206534,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "hud-refus-844x390-unreal.png",
+  "psnr_avant_apres_db": 48.95792,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "jeu-1-hors-epreuve.png",
+  "psnr_avant_apres_db": 49.511592,
+  "web": false,
+  "montage_code": 0
+ },
+ {
+  "capture": "jeu-2-cloche.png",
+  "psnr_avant_apres_db": 22.25012,
+  "web": false,
+  "montage_code": 0
+ },
+ {
+  "capture": "jeu-3-mot.png",
+  "psnr_avant_apres_db": 20.390217,
+  "web": false,
+  "montage_code": 0
+ },
+ {
+  "capture": "jeu-4-course.png",
+  "psnr_avant_apres_db": 34.198374,
+  "web": false,
+  "montage_code": 0
+ },
+ {
+  "capture": "jeu-5-bilan.png",
+  "psnr_avant_apres_db": 41.33718,
+  "web": false,
+  "montage_code": 0
+ },
+ {
+  "capture": "ligne-arrivee-unreal.png",
+  "psnr_avant_apres_db": 49.003019,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "ligne-depart-unreal.png",
+  "psnr_avant_apres_db": 47.824612,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "poteau-chrono-unreal.png",
+  "psnr_avant_apres_db": 50.066261,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "robe-profil-unreal.png",
+  "psnr_avant_apres_db": 44.26527,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "robe-trois-quarts-arriere-unreal.png",
+  "psnr_avant_apres_db": 49.84497,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "robe-trois-quarts-avant-unreal.png",
+  "psnr_avant_apres_db": 41.236829,
+  "web": true,
+  "montage_code": 0
+ }
+]

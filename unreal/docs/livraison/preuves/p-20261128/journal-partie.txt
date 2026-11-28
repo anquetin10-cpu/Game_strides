@@ -1,0 +1,114 @@
+Etape P du 28/11/2026 : preuves jouees dans le paquet Development j4d (construit depuis 57a2aab4).
+Entrees injectees par l'agent (CGEventPostToPid au seul processus du jeu, garde avant chaque rafale, aucun modificateur),
+sans console, sans F8, sans autopilote, sans -StridesShots. Jeu a la main par Julien : a confirmer.
+
+== Journal horodate (heure de Paris)
+09:32:00
+09:32:43 lancement paquet Development j4d (57a2aab4) par open, sauvegarde de Julien copiee (m2 active)
+09:33:45 DEBUT CHRONO partie A : Entree sur Continuer
+09:47:01 partie A : joueur bloque au pied d'un talus a ~280 m de l'obstacle 1 ; arret propre du paquet par SIGTERM (pid 45459)
+09:47:49 RELANCE 1 du paquet (open), meme sauvegarde (md5 d1d0c150)
+09:49:02 reprise verifiee (meme position 215.4,-482.1 ; 140 credits ; 120 reputation ; m2 a reprendre ; 2 terminees) ; arret SIGTERM ; RELANCE 2 pour Nouvelle partie
+09:50:14 DEBUT CHRONO partie C : Nouvelle partie, C'est parti (Alex, cavaliere)
+10:19:59 partie C : tuto et m1 reussies (140 cr / 120 rep), m2 reconnaissance des 5 obstacles faite (etape 6/7) ; 10:13 effondrement a 1,8 i/s apres redimensionnement de la fenetre par macOS (Viewport 1920x1050) ; arret SIGTERM ; RELANCE 3
+10:20:48 RELANCE 3 effective
+11:12:39 fin partie D : arret SIGTERM ; fer d'or n11 ramasse 10:36 ; m2 non terminee (joueur egare a pied)
+
+== Lignes du journal du jeu (UTC, heure de Paris = UTC+1)
+-- a/journal-jeu-partie-a.log
+[2026.11.28-08.32.52:353][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 0 meilleur(s) temps
+[2026.11.28-08.33.23:502][  0]LogTemp: Display: Strides écran titre : ouvert (page=title ; *continue=Continuer ; new=Nouvelle partie)
+[2026.11.28-08.33.47:382][788]LogTemp: Display: Strides écran titre : continuer (Alex, f)
+[2026.11.28-08.33.47:436][788]LogTemp: Display: Strides sauvegarde : reprise au lancement faite (Partie rechargée)
+[2026.11.28-08.34.20:375][926]LogTemp: Display: Strides téléphone : offer:m2 (écran strides)
+[2026.11.28-08.34.29:851][261]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-08.34.31:498][319]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-08.42.55:284][861]LogMetal: Display: Viewport Size Mismatch: Drawable W:1920.000000 H:1080.000000, Viewport W:1920 H:1050
+[2026.11.28-08.47.01:309][308]LogCore: Engine exit requested (reason: Mac GracefulTerminationHandler)
+[2026.11.28-08.46.56:044][294]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 215.4, -482.1, mission m2, 2 terminée(s))
+-- b/journal-jeu-relance.log
+[2026.11.28-08.47.53:565][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 0 meilleur(s) temps
+[2026.11.28-08.48.22:713][  0]LogTemp: Display: Strides écran titre : ouvert (page=title ; *continue=Continuer ; new=Nouvelle partie)
+[2026.11.28-08.48.24:964][ 62]LogTemp: Display: Strides écran titre : continuer (Alex, f)
+[2026.11.28-08.48.24:982][ 62]LogTemp: Display: Strides sauvegarde : reprise au lancement faite (Partie rechargée)
+[2026.11.28-08.48.56:278][135]LogCore: Engine exit requested (reason: Mac GracefulTerminationHandler)
+[2026.11.28-08.48.49:030][886]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 215.4, -482.1, mission m2, 2 terminée(s))
+-- c/journal-jeu-partie-c.log
+[2026.11.28-08.49.07:761][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 0 meilleur(s) temps
+[2026.11.28-08.49.48:216][  0]LogTemp: Display: Strides écran titre : ouvert (page=title ; *continue=Continuer ; new=Nouvelle partie)
+[2026.11.28-08.50.14:439][866]LogTemp: Display: Strides écran titre : nouvelle partie (Alex, f)
+[2026.11.28-08.50.34:640][437]LogTemp: Display: Strides téléphone : offer:tuto (écran strides)
+[2026.11.28-08.50.36:277][488]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-08.50.37:471][525]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-08.54.31:518][781]LogTemp: Display: Strides téléphone : offer:m1 (écran strides)
+[2026.11.28-08.54.33:283][838]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-08.54.34:613][881]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-08.56.57:603][443]LogTemp: Display: Strides téléphone : offer:m2 (écran strides)
+[2026.11.28-08.56.59:347][497]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-08.57.00:609][536]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-09.10.50:718][ 83]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.11.50:181][999]LogTemp: Display: Strides épreuve : obstacle:refusal 4A (sens 1, marge 0.00 m)
+[2026.11.28-09.12.06:003][485]LogTemp: Display: Strides épreuve : obstacle:refusal 4A (sens 1, marge 0.00 m)
+[2026.11.28-09.12.56:316][ 57]LogMetal: Display: Viewport Size Mismatch: Drawable W:1920.000000 H:1080.000000, Viewport W:1920 H:1050
+[2026.11.28-09.13.05:344][ 92]LogTemp: Display: Strides épreuve : obstacle:refusal 4A (sens 1, marge 0.00 m)
+[2026.11.28-09.13.20:090][115]LogTemp: Display: Strides épreuve : obstacle:refusal 4A (sens 1, marge 0.00 m)
+[2026.11.28-09.13.50:258][172]LogTemp: Display: Strides épreuve : obstacle:refusal 4B (sens 1, marge 0.00 m)
+[2026.11.28-09.15.35:858][371]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.16.14:408][440]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.16.43:395][491]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.18.01:732][632]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.18.31:760][685]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.19.08:284][750]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.19.28:685][789]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.19.51:527][831]LogCore: Engine exit requested (reason: Mac GracefulTerminationHandler)
+[2026.11.28-09.19.34:138][800]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 320.8, -224.1, mission m2, 2 terminée(s))
+-- d/journal-jeu-partie-d.log
+[2026.11.28-09.20.56:493][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 0 meilleur(s) temps
+[2026.11.28-09.21.37:690][  0]LogTemp: Display: Strides écran titre : ouvert (page=title ; *continue=Continuer ; new=Nouvelle partie)
+[2026.11.28-09.21.42:976][125]LogTemp: Display: Strides écran titre : continuer (Alex, f)
+[2026.11.28-09.21.43:004][125]LogTemp: Display: Strides sauvegarde : reprise au lancement faite (Partie rechargée)
+[2026.11.28-09.21.59:664][549]LogTemp: Display: Strides téléphone : offer:m2 (écran strides)
+[2026.11.28-09.22.01:091][594]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-09.22.02:355][634]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.28-09.22.16:357][ 69]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.28-09.24.46:227][568]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.25.02:310][ 87]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.27.20:510][617]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.27.28:361][850]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.27.36:261][ 83]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.27.44:211][317]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.27.52:212][552]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.28.01:750][834]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.28.09:254][ 82]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.28.17:150][341]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.28.24:966][598]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.28.32:975][862]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.28.40:975][128]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.28.55:829][626]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.28-09.36.10:909][645]LogTemp: Display: Strides fer d'or : n°11 ramassé (1/20, +25 crédits, total 165)
+[2026.11.28-10.12.29:618][891]LogCore: Engine exit requested (reason: Mac GracefulTerminationHandler)
+[2026.11.28-10.12.19:304][428]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -753.5, 996.3, mission m2, 2 terminée(s))
+
+== Images par seconde (compteur d'images du journal, par minute)
+-- a/journal-jeu-partie-a.log
+08:33 12.6 | 08:34 34.8 | 08:35 33.7 | 08:36 31.2 | 08:37 32.4 | 08:38 34.0 | 08:39 32.9 | 08:40 32.9 | 08:41 33.5 | 08:42 31.5 | 08:43 6.0 | 08:44 1.9 | 08:45 1.8 | 08:46 1.3
+-- c/journal-jeu-partie-c.log
+08:50 12.6 | 08:51 30.2 | 08:52 30.8 | 08:53 30.5 | 08:54 31.3 | 08:55 32.3 | 08:56 32.6 | 08:57 30.5 | 08:58 31.2 | 08:59 32.3 | 09:00 33.5 | 09:01 33.5 | 09:02 33.6 | 09:03 33.7 | 09:04 33.4 | 09:05 33.4 | 09:06 33.4 | 09:07 33.4 | 09:08 33.6 | 09:09 33.7 | 09:10 32.9 | 09:11 33.5 | 09:12 31.3 | 09:13 22.0 | 09:14 1.9 | 09:15 1.9 | 09:16 1.8 | 09:17 1.8 | 09:18 1.8 | 09:19 1.8 | 09:20 1.0
+
+== Sauvegarde de Julien
+avant : 8d46a855da75b737ad19ac36f8ce6bde ; remise a la fin : 8d46a855da75b737ad19ac36f8ce6bde ; Config/Mac identique
+
+== Lectures de l'ecran (OCR des captures de la fenetre du jeu, drive.log)
+10:21:49 ocr 102147-reprise.jpg | A cheval - ARRET : 0.0 m/s (0 m/min) - cadence 0.0 | Flèches / ZQSD : direction et cadence • Maj / Ctri : allure • SAUT : Espace (ma | Partie reprise (F5 sauvegarder : F9 recharger) | Premiers contrats 140 crédits - 120 réputation • 12:45 - Nuageux : 17°C | Prochaine étape • P pour ouvrir le téléphone - Une mission t'attend sur Stride: | Progression rechargée - mission à reprendre da
+10:22:06 ocr 102205-m2-reprise-acceptee.jpg | A cheval - ARRET : 0.0 m/s (0 m/min) • cadence 0.0 | Flèches / ZQSD : direction et cadence • Maj / Ctrl : allure • SAUT : Espace (ma | UN RENFORT AVANT LE CONCOURS - Mission Strides • Groom | Partie sauvegardée (F5 sauvegarder +F9 recharger) | Late | Premiers contrats 140 crédits - 120 réputation : 12:57 - Nuageux - 17 °C | Reconnais le parcours du Pôle : obstacle n°1 (1/
+10:36:25 ocr 103623-fer.jpg | À pied - Monter à cheval : E (à moins de 3 m) - Monter en voiture : E à la portiè | Partie sauvegardée (F5 sauvegarder • F9 recharger) | | Premiers contrats • 165 crédits • 120 réputation • 6:08 • Ensoleillé • 12 °C | Reconnais le parcours du Pôle : obstacle n°5 (5/5) (5/7) - 40 m | Fer d'or 1/20 - +25 € | GPS - Reconnais le parcours du Pôle : obstacle n°5 (5/5) - 39 m • demi-tour
+10:40:27 ocr 104026-apres-pole.jpg | A pied - Monter à cheval : E (à moins de 3 m) - Monter en voiture : E à la portie | Partie sauvegardée (F5 sauvegarder • F9 recharger) | Premiers contrats 165 crédits 120 réputation • 10:59 • Ensoleillé 17 °C | Rentre à l'Écurie du Val (6/7) - 560 m | Fer d'or 1/20 - +25 € | GPS - Rentre à l'Écurie du Val - 557 m- à droite
+09:48:30 ocr 094829-relance-continuer.jpg | A pied - Monter à cheval : E (à moins de 3 m) - Monter en voiture : E à la portie | Partie reprise (F5 sauvegarder - F9 recharger) | Premiers contrats • 140 crédits • 120 réputation • 19:13 • Éclaircies - 20 °C | Prochaine étape • P pour ouvrir le téléphone - Une mission t'attend sur Stride: | Progression rechargée • mission à reprendre dans l'app Strides | Chrono du Pôle •
+09:33:53 ocr 093351-continuer.jpg | Partie reprise (F5 sauvegarder • F9 recharger) | Premiers contrats • 140 crédits • 120 réputation • 7:04 • Éclaircies • 12°C | Prochaine étape • P pour ouvrir le téléphone • Une mission t'attend sur Stride: | Progression rechargée - mission à reprendre dans l'app Strides | Chrono du Pôle • 340 m • à gauche
+09:34:35 ocr 093434-tel-acceptee.jpg | UN RENFORT AVANT LE CONCOURS • Mission Strides • Groom | Partie sauvegardée (F5 sauvegarder • F9 recharger) | Premiers contrats • 140 crédits • 120 réputation • 7:19 • Éclaircies • 13 °C | Reconnais le parcours du Pôle : obstacle n°1 (1/5) (1/7) - 290 m | UN RENFORT AVANT LE CONCOURS - Mission Strides • Groom | GPS • Reconnais le parcours du Pôle : obstacle n°1 (1/5) • 295 m • à
+09:50:21 ocr 095019-depart.jpg | A pied • Monter à cheval: E (à moins de 3 m) - Monter en voiture : E à la portiè | Premiers contrats 0 crédits O réputation 7:04 Éclaircies • 12°C | Prochaine étape - P pour ouvrir le téléphone • Une mission t'attend sur Stride: | Chrono du Pôle - 565 m - à gauchę
+09:50:42 ocr 095040-tuto-acceptee.jpg | A pied • Monter à cheval; E (à moins de 3 m) - Monter en voiture : E à la portiè | PREMIERS PAS - Mission Strides Prise en main | Partie sauvegardée (F5 sauvegarder F9 recharger) * | Premiers contrats • 0 crédits +0 réputation 7:08 Eclaircies • 12°C | Suis la balise jusqu'a la carriere (1/7): 30 m | PREMIERS PAS • Mission Strides - Prise en main | GPS • Suis la balise jusqu'à l
+09:54:20 ocr 095418-fin-tuto.jpg | À cheval - ARRET • 0.0 m/s (0 m/min) • cadence 0.0 | Flèches / ZQSD : direction et cadence • Maj / Ctri : allure • SAUT : Espace (ma | Partie sauvegardée (F5 sauvegarder • F9 recharger) | Premiers contrats - 50 crédits • 60 réputation • 11:30 - Éclaircies • 18 °C | Prochaine étape - P pour ouvrir le téléphone • Une mission t'attend sur Stride: | Mission réussie - Premiers pas • +50 
+09:54:38 ocr 095437-m1-acceptee.jpg | A cheval - ARRET - 0.0 m/s (0 m/min) • cadence 0.0 | Flèches / ZQSD : direction et cadence • Maj / Ctrl : allure • SAUT : Espace (ma | DEUX éCURIES, UNE MATINéE • Mission Strides • Groom | Partie sauvegardée (F5 sauvegarder - F9 recharger) | Premiers contrats • 50 crédits • 60 réputation - 11:44 • Éclaircies • 18 °C | Rejoins les boxes de l'Écurie du Val (1/4) • 30 m | DEUX éCURI
+09:56:46 ocr 095645-fin-m1.jpg | A cheval - ARRET : 0:0 m/s (0 m/min) - cadence 0.0 | Flèches / ZQSD : direction et cadence • Maj / Ctri allure • SAUT : Espace (ma | Partie sauvegardée (F5 sauvegarder • F9 recharger) | Premiers contrats • 140 crédits • 120 réputation 14:17 Eclaircies. 21 °C" | Prochaine étape • P pour ouvrir le téléphone - Une mission t'attend sur Stride | Mission réussie • Deux écuries, une matinée 
+10:14:57 ocr 101457-pole-reconnu.jpg | A cheval - PAS - 1.9 m/s (112 m/min) • cadence 1.9 | Flèches /'ZQSD : direction et cadence : Maj / Ctrl : allure • SAUT : Espace (ma | Partie sauvegardée (F5 sauvegarder - F9 recharger) | Premiers contrats 140 crédits 120 réputation 10:31 - Nuageux - 16°C | Rentre à l'Écurie du Val (6/7) • 580 m * | UN RENFORT AVANT LE CONCOURS - Mission Strides - Groom | GPS - Rentre à l'Écurie

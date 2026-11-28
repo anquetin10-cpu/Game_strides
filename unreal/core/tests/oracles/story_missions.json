@@ -1,0 +1,544 @@
+{
+ "schema": "strides.story.oracle.v1",
+ "source": {
+  "webCommit": "a5bc8dd9",
+  "files": [
+   "src/gameplay/story.js",
+   "src/gameplay/story2.js",
+   "src/gameplay/parisGP.js",
+   "src/config.js",
+   "src/gameplay/missions.js"
+  ]
+ },
+ "offersAfter": [
+  {
+   "completed": [],
+   "reputation": 0,
+   "offers": [
+    {
+     "id": "tuto",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto"
+   ],
+   "reputation": 60,
+   "offers": [
+    {
+     "id": "m1",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1"
+   ],
+   "reputation": 120,
+   "offers": [
+    {
+     "id": "m2",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2"
+   ],
+   "reputation": 220,
+   "offers": [
+    {
+     "id": "m3",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3"
+   ],
+   "reputation": 420,
+   "offers": [
+    {
+     "id": "groom",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom"
+   ],
+   "reputation": 540,
+   "offers": [
+    {
+     "id": "livraison",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison"
+   ],
+   "reputation": 690,
+   "offers": [
+    {
+     "id": "fugueur",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur"
+   ],
+   "reputation": 890,
+   "offers": [
+    {
+     "id": "plage",
+     "locked": false
+    },
+    {
+     "id": "transport",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage"
+   ],
+   "reputation": 1140,
+   "offers": [
+    {
+     "id": "transport",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport"
+   ],
+   "reputation": 1440,
+   "offers": [
+    {
+     "id": "fer",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer"
+   ],
+   "reputation": 1660,
+   "offers": [
+    {
+     "id": "cross",
+     "locked": false
+    },
+    {
+     "id": "pension",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross"
+   ],
+   "reputation": 2010,
+   "offers": [
+    {
+     "id": "pension",
+     "locked": false
+    },
+    {
+     "id": "derby",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross",
+    "pension"
+   ],
+   "reputation": 2260,
+   "offers": [
+    {
+     "id": "derby",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross",
+    "pension",
+    "derby"
+   ],
+   "reputation": 2660,
+   "offers": [
+    {
+     "id": "csi3",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross",
+    "pension",
+    "derby",
+    "csi3"
+   ],
+   "reputation": 3110,
+   "offers": [
+    {
+     "id": "gp",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross",
+    "pension",
+    "derby",
+    "csi3",
+    "gp"
+   ],
+   "reputation": 4010,
+   "offers": [
+    {
+     "id": "gpparis",
+     "locked": false
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross",
+    "pension",
+    "derby",
+    "csi3",
+    "gp",
+    "gpparis"
+   ],
+   "reputation": 5510,
+   "offers": []
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur"
+   ],
+   "reputation": 0,
+   "offers": [
+    {
+     "id": "plage",
+     "locked": true
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur"
+   ],
+   "reputation": 299,
+   "offers": [
+    {
+     "id": "plage",
+     "locked": true
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer"
+   ],
+   "reputation": 300,
+   "offers": [
+    {
+     "id": "cross",
+     "locked": true
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer"
+   ],
+   "reputation": 899,
+   "offers": [
+    {
+     "id": "cross",
+     "locked": true
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross",
+    "pension",
+    "derby"
+   ],
+   "reputation": 900,
+   "offers": [
+    {
+     "id": "csi3",
+     "locked": true
+    }
+   ]
+  },
+  {
+   "completed": [
+    "tuto",
+    "m1",
+    "m2",
+    "m3",
+    "groom",
+    "livraison",
+    "fugueur",
+    "plage",
+    "transport",
+    "fer",
+    "cross",
+    "pension",
+    "derby"
+   ],
+   "reputation": 1799,
+   "offers": [
+    {
+     "id": "csi3",
+     "locked": true
+    }
+   ]
+  }
+ ],
+ "tierProbe": [
+  {
+   "points": 0,
+   "level": 1,
+   "title": "Premiers contrats",
+   "progress": 0
+  },
+  {
+   "points": 1,
+   "level": 1,
+   "title": "Premiers contrats",
+   "progress": 0
+  },
+  {
+   "points": 299,
+   "level": 1,
+   "title": "Premiers contrats",
+   "progress": 1
+  },
+  {
+   "points": 300,
+   "level": 2,
+   "title": "Professionnel apprécié",
+   "progress": 0
+  },
+  {
+   "points": 301,
+   "level": 2,
+   "title": "Professionnel apprécié",
+   "progress": 0
+  },
+  {
+   "points": 899,
+   "level": 2,
+   "title": "Professionnel apprécié",
+   "progress": 1
+  },
+  {
+   "points": 900,
+   "level": 3,
+   "title": "Référence locale",
+   "progress": 0
+  },
+  {
+   "points": 1799,
+   "level": 3,
+   "title": "Référence locale",
+   "progress": 1
+  },
+  {
+   "points": 1800,
+   "level": 4,
+   "title": "Équipe reconnue",
+   "progress": 0
+  },
+  {
+   "points": 3199,
+   "level": 4,
+   "title": "Équipe reconnue",
+   "progress": 1
+  },
+  {
+   "points": 3200,
+   "level": 5,
+   "title": "Réputation internationale",
+   "progress": 1
+  },
+  {
+   "points": 9999,
+   "level": 5,
+   "title": "Réputation internationale",
+   "progress": 1
+  }
+ ]
+}

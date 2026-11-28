@@ -1,0 +1,1505 @@
+[
+ {
+  "id": "boucle.verif-webgl",
+  "domaine": "Boucle",
+  "fonction": "Au lancement, vérifie WebGL2 ou WebGL ; sinon message FR/EN « Votre navigateur ne prend pas en charge WebGL. Essayez Safari ou Chrome à jour. » et arrêt.",
+  "js": [
+   "src/main.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Sans objet en natif (rendu Metal imposé par le moteur) ; aucun message d'incompatibilité d'appareil prévu.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.erreur-demarrage",
+  "domaine": "Boucle",
+  "fonction": "Toute exception au démarrage s'affiche en plein écran (« Erreur au démarrage : message + pile », FR/EN) au lieu d'un écran figé.",
+  "js": [
+   "src/main.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun écran d'erreur : un JSON de données absent ou illisible est seulement noté dans LoadLog (StridesDataSubsystem.cpp:16, 22) et le jeu démarre avec des valeurs de repli.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.lecteur-integre",
+  "domaine": "Interface",
+  "fonction": "Dans un cadre intégré sur écran tactile (lecteur claude.ai), classe body.embedded qui abaisse le HUD sous les boutons du lecteur (--st ≥ 8 px).",
+  "js": [
+   "src/main.js",
+   "src/styles.css"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Sans objet dans une application native ; l'équivalent utile (marges de sécurité iOS) manque aussi : voir interface.zones-sures.",
+  "tranche": "h"
+ },
+ {
+  "id": "boucle.polices",
+  "domaine": "Interface",
+  "fonction": "Avant de construire le jeu, attend au plus 1,8 s les polices Geist (600 40px, 400 20px) et Geist Mono (500 20px) utilisées par les textures générées ; repli sur les polices système.",
+  "js": [
+   "src/main.js",
+   "src/styles.css"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Le HUD Unreal dessine avec la police Canvas par défaut (StridesHUD.cpp:60, DrawText(..., nullptr, 1.4f)) ; Geist n'est pas importée.",
+  "tranche": "h"
+ },
+ {
+  "id": "boucle.ecran-chargement",
+  "domaine": "Boucle",
+  "fonction": "Écran de chargement avec barre : construction du monde 0-80 %, « Chevaux et cavaliers » 82 %, « Fers d'or et parcours » 90 %, « Préparation des shaders » 97 %, « Prêt » 100 % ; tous les shaders compilés avant la première image hors mode sûr.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "AStridesGameMode::StartPlay construit le monde sans écran de progression (StridesGameMode.cpp:34-39) ; précompilation des shaders/PSO : à confirmer.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.ecran-titre",
+  "domaine": "Interface",
+  "fonction": "Écran titre : Continuer si une partie commencée et lisible existe, Nouvelle partie (nom, avatar), restauration d'une copie si la sauvegarde est illisible, note du mode sûr ; caméra en orbite lente autour de (60, -330) sur 190 × 120 m à 46 ± 6 m de haut, ciel figé à 18 h 24 ; dialogue en cours fermé.",
+  "js": [
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Le jeu démarre directement en partie sur /Engine/Maps/Entry avec StridesGameMode (DefaultEngine.ini:5-7) : ni titre, ni Continuer, ni Nouvelle partie, ni caméra de présentation.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.nouvelle-partie",
+  "domaine": "Sauvegarde",
+  "fonction": "Nouvelle partie : sauvegarde remise à zéro en gardant les réglages, nom (« Alex » par défaut) et avatar (« f »), Comète recréée reposée et mise au box du Val, écriture forcée, carte « Bienvenue à Deauville City » ; première offre de mission juste après « En selle » (minuterie 55 s, 999 s avant).",
+  "js": [
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "SaveGame::fresh() (SaveGame.h:34) n'est appelé par aucun parcours de jeu (seulement implicitement quand la lecture échoue) ; StridesGameMode place toujours cheval et cavalier à WorldSpawn (StridesGameMode.cpp:87-117), sans box ni carte d'accueil.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.continuer",
+  "domaine": "Sauvegarde",
+  "fonction": "Continuer : avatar restauré, retour à l'intérieur du commerce ou de la maison si la partie y a été sauvée, engagement d'un concours interrompu remboursé, offres de mission après 3 s, carte « Reprendre » si une mission à étapes a été interrompue, toasts des modèles non chargés.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "UStridesSaveSubsystem::LoadNow (StridesSaveSubsystem.cpp:62-92), déclenché seulement par F9 ou le bouton CHARGER (StridesPlayerController.cpp:108, 528 ; StridesTouchControls.cpp:133)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (« sauvegarder puis recharger » contrôlé à l'écran) ; aucun oracle JS.",
+  "ecart": "Pas de reprise automatique au lancement ; seuls position (à pied / à cheval), crédits, réputation, mission active et missions terminées sont rétablis ; ni commerce, ni maison, ni remboursement, ni cheval actif (ProfileId écrit mais jamais relu).",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.pause",
+  "domaine": "Interface",
+  "fonction": "Échap ou bouton pause : état « paused », commandes désactivées, menu Reprendre (reprise sans saut de temps) ou Écran titre (sauvegarde immédiate et abandon de la mission active).",
+  "js": [
+   "src/game.js",
+   "src/core/input.js"
+  ],
+  "unreal": "AStridesPlayerController::PauseGame / ResumeGame (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:388-426 : état « paused », commandes désactivées, carte Pause, UGameplayStatics::SetGamePaused) ; mise à jour suspendue à partir de l'image suivante, l'image d'Échap avançant encore comme dans le web (SkipsUpdate, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesPlayerController.h:72 ; AStridesHorse::Tick, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:362) ; carte UStridesPauseMenu (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPauseMenu.cpp:105-114, 412 : Reprendre)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Oracle unreal/core/tests/oracles/cso_freeze.json (scripts/unreal/export-cso-runs.mjs --freeze : 338 images jouées au pas fixe selon la condition de la boucle du jeu web, game.js:1406 : update seulement aux états « play » et « photo », avec Échap, P, M et Reprendre) rejoué par Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374) : 338 images, 0 écart (update appelée, état « paused », simPaused, téléphone, chrono avancé, cheval déplacé) ; l'image d'Échap avance (chrono 0,433333 → 0,466667 s), puis 150 images (5 s) sans update : chrono figé à 0,466667 s et position du cheval inchangée au bit près ; carte ouverte, Reprendre → le chrono et le cheval repartent à l'image du clic ; bouton pause du HUD → pause. Mutations « pause dès l'image d'Échap » et « simPaused vivant » détectées (scripts/unreal/mutations-cso-controls.py). Capture : cmd-pause-844x390.png, cmd-pause-667x308.png (montages côte à côte).",
+  "ecart": "Écran titre (sauvegarde immédiate, abandon de la mission) non porté : bouton affiché sans effet ; pas de reprise « sans saut de temps » à vérifier (le moteur ne compte pas le temps en pause) ; un Échap tapé pendant la pause reste dans pressed et remet en pause à la reprise, comme dans le web. Contrôle des remarques (20/11/2026) : cso_freeze.json n'était comparé que par booléens à chaque image ; Strides.Cso.Controls compare désormais aussi la valeur du chrono écoulé depuis la première image de la séquence (au millionième de l'oracle), la position du cheval reste comparée par « déplacé ou non » (arrivée sur la ligne différente : cheval posé côté Unreal). L'exporteur n'exécute pas la boucle de game.js:1406 elle-même : il en reproduit la condition (g.update(DT) aux états « play » et « photo », sinon l'horloge avance seule), sans la branche renderHold (écran couvert) ni le garde du portrait.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.pas-de-temps",
+  "domaine": "Boucle",
+  "fonction": "Boucle par image : dt = min(0,05 s, max(0, écart)) (0,016 s si invalide, jamais négatif) ; ordre entrées, boutons globaux, joueur, chevaux, obstacles, passants, caméra, gameplay, ciel, marée, eau, pluie, sons, HUD, sauvegarde ; une exception est journalisée sans arrêter la boucle (relancée avec ?debug).",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "Tick du moteur : AStridesHorse::Tick (StridesHorse.cpp:354-369), AStridesWorldDirector::Tick (StridesWorldDirector.cpp:48-72), AStridesHUD::DrawHUD (StridesHUD.cpp:44-93)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:14-15 (démarrage en jeu, boucle monter / galop 8,0 m/s / descendre / sauver / recharger) ; aucun test de pas de temps.",
+  "ecart": "Pas de borne de 0,05 s : seule la borne par défaut du moteur s'applique (MaxUndilatedFrameTime=0.4, section WorldSettings de Engine/Config/BaseGame.ini:199 d'UE 5.8, non surchargée dans Config/), donc un à-coup jusqu'à 0,4 s fait avancer cheval et chrono d'autant ; ordre fixé par les groupes de Tick du moteur, non comparé ; la plupart des systèmes de la boucle web n'existent pas.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.suspension-simulation",
+  "domaine": "Boucle",
+  "fonction": "Simulation suspendue (heure du monde, besoins, météo, marées, délais, chronos ; cheval figé en épreuve ou en CSO) tant que le téléphone, un écran de choix ou un dialogue est ouvert ; rendu et caméra continuent.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "game.simPaused relevé en tête de l'image de commandes, après input.poll et avant les boutons globaux (AStridesPlayerController::StepCommands, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:295-313 : téléphone ouvert, carte de présentation ou du plan ouverte, dialogue de l'entraîneur affiché (tranche T10) ; IsSimPaused, unreal/StridesGrandTour/Source/StridesGrandTour/Public/StridesPlayerController.h:75) ; AStridesHorse::TickCso (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:373-379, 383 : hdt et sdt nuls, obstacles, caméra et HUD au pas réel, game.js:1444-1445, 1488, 1507)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_freeze.json (condition de la boucle de game.js:1406 reproduite par l'exporteur) rejoué image par image par Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374), 0 écart sur 338 images : l'image où le téléphone s'ouvre (P) ou s'ouvre sur la carte (M) avance encore, les suivantes sont figées, l'image de la fermeture (P, M ou Échap) reste figée, la suivante repart ; téléphone ouvert 150 images (5 s) : chrono figé à 0,700000 s (même valeur que le web) et position du cheval inchangée au bit près, touche W non retenue. Mutations « simPaused relevé après les boutons globaux », « chrono (sdt) / cheval (hdt) non figés » détectées (scripts/unreal/mutations-cso-controls.py). Tranche T10 : Strides.Cso.Entry et Strides.Cso.EntryDialog : carte ouverte (15 images) ou dialogue affiché (10 images), touche W tenue : simulation suspendue, cheval immobile ; mutation « carte sans simulation suspendue » détectée (module, en session).",
+  "ecart": "Seuls le cheval et le chrono de l'épreuve sont suspendus : heure du monde, besoins, météo, marées et délais ne sont pas portés ; seuls les écrans de l'entrée du Pôle (présentation, plan) et le dialogue de l'entraîneur sont portés (tranche T10). Contrôle des remarques (20/11/2026) : cso_freeze.json n'était comparé que par booléens à chaque image ; Strides.Cso.Controls compare désormais aussi la valeur du chrono écoulé depuis la première image de la séquence (au millionième de l'oracle), la position du cheval reste comparée par « déplacé ou non » (arrivée sur la ligne différente : cheval posé côté Unreal). L'exporteur n'exécute pas la boucle de game.js:1406 elle-même : il en reproduit la condition (g.update(DT) aux états « play » et « photo », sinon l'horloge avance seule), sans la branche renderHold (écran couvert) ni le garde du portrait.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.gel-commandes",
+  "domaine": "Entrées",
+  "fonction": "Téléphone, écran de choix ou dialogue ouverts : déplacement mis à zéro et saut retiré ; action et sifflet bloqués ; téléphone, carte et pause restent utilisables (hors écran de choix).",
+  "js": [
+   "src/game.js",
+   "src/core/input.js"
+  ],
+  "unreal": "AStridesPlayerController::StepCommands (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:328-337 : téléphone, carte de l'entrée ou dialogue de l'entraîneur → déplacement à zéro, saut retiré ; action seulement hors téléphone et carte, tranche T10) ; commandes désactivées par le téléphone et la pause (strides::CsoInput::setEnabled : seules phone, pause et map comptent)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "testCsoInput (scénarios desactive, desactive-suite : 0 écart) ; Strides.Cso.Controls : téléphone ouvert, touche W ignorée, cheval immobile (cso_freeze.json, 0 écart). Tranche T10 : Strides.Cso.Entry (carte ouverte : W, P, M, Échap et E sans effet) et Strides.Cso.EntryDialog (dialogue : W sans effet, E ferme le dialogue).",
+  "ecart": "Seuls les écrans de l'entrée du Pôle et le dialogue de l'entraîneur sont portés (autres écrans de choix et dialogues absents) ; sifflet du web absent ; l'action passe par les commandes du web (E, F, Entrée) et le bouton gauche de la manette.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.portrait",
+  "domaine": "Boucle",
+  "fonction": "Sur mobile en portrait : écran « Tourne ton téléphone » (icône qui pivote en 2,2 s) et rien n'avance (chronos, heure, déplacements) ; commandes relâchées à chaque changement d'orientation.",
+  "js": [
+   "src/game.js",
+   "src/styles.css",
+   "src/core/input.js"
+  ],
+  "unreal": "DefaultEngine.ini:30-33 (iOS : paysage gauche et droit seulement)",
+  "etat": "partiel",
+  "niveau": "code_ecrit",
+  "preuve": "Aucun test ; aucun appareil iOS détecté (unreal/docs/validation-mac-2026-11-17.md:44-45).",
+  "ecart": "Orientation verrouillée par l'OS au lieu d'un écran d'attente : équivalent suffisant en natif si le verrou tient, non vérifié sur iPhone/iPad.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.ecran-couvert",
+  "domaine": "Boucle",
+  "fonction": "Écran entièrement couvert (publicités de la nuit, renderHold) : ni scène, ni HUD, ni carte mis à jour ou redessinés ; seules les commandes sont lues puis vidées (batterie).",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Pas de séquence de nuit ni d'économie de rendu équivalente.",
+  "tranche": "d"
+ },
+ {
+  "id": "boucle.arriere-plan",
+  "domaine": "Sauvegarde",
+  "fonction": "Mise en arrière-plan (pagehide, onglet masqué en jeu) : sauvegarde locale et copie en ligne immédiates ; contexte WebGL perdu : sauvegarde puis rechargement à sa restauration ; audio suspendu puis repris.",
+  "js": [
+   "src/game.js",
+   "src/core/audio.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun délégué ApplicationWillEnterBackground / ApplicationWillDeactivate : si iOS arrête l'application, tout ce qui n'a pas été sauvé par F5 / SAUVER est perdu.",
+  "tranche": "socle"
+ },
+ {
+  "id": "sauvegarde.auto",
+  "domaine": "Sauvegarde",
+  "fonction": "Sauvegarde automatique toutes les 12 s de jeu, et après achats, messages, compétences, changements de monture ; saveSoon regroupe les écritures (délai 400 ms).",
+  "js": [
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Pas de sauvegarde automatique périodique (12 s) ni après achats, messages, compétences ou changements de monture : la partie se sauve par F5 ou le bouton SAUVER (StridesPlayerController.cpp:107, 527 ; StridesTouchControls.cpp:132). Deux écritures automatiques ciblées existent : réglages de la carte Pause (UStridesSaveSubsystem::SaveSettings, StridesPauseMenu.cpp:395, 406) et meilleur temps du Parcours du Pôle (bestTimes.cso_train, écrit dans l'emplacement à l'étape d'enregistrement : UStridesSaveSubsystem::RecordBestTime, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesSaveSubsystem.cpp:120-131, appelé par unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCourse.cpp:369-380 ; tranche T11) ; ni saveSoon ni regroupement.",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.qualite",
+  "domaine": "Interface",
+  "fonction": "Réglage Qualité : Économie = résolution ×1 sans ombres ; Haute = min(dpr, 2), carte d'ombre 2048 ; Auto = min(dpr, 1,5 tactile / 1,75 bureau), carte 1024 tactile / 2048 bureau sur 55 m ; changer la qualité lève le mode sûr gardé.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Rendu figé dans DefaultEngine.ini:9-23 (mobile forward, MSAA 4x, 2 cascades) et StridesGameMode.cpp:49-52 (ombres jusqu'à 250 m, 3 cascades) ; aucun réglage joueur, quality « auto » seulement stocké (SaveGame.h:30).",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.qualite-auto",
+  "domaine": "Boucle",
+  "fonction": "Qualité Auto adaptative : cadence mesurée sur 3 s ; < 42 i/s → résolution -0,25 (min 1) ; < 30 i/s → ombres coupées (fondu 0,8 s, 3 coupures max par partie) ; 2 fenêtres > 50 i/s → ombres rétablies ; > 58 i/s → résolution +0,25 ; < 30 i/s à résolution minimale → repli unique sur les modèles 3D classiques.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Pas de résolution dynamique ni de scalability pilotée par la cadence ; pas de modèles classiques de repli (réglage characters stocké sans effet, SaveGame.h:30).",
+  "tranche": "socle"
+ },
+ {
+  "id": "boucle.entites",
+  "domaine": "Boucle",
+  "fonction": "Création et retrait des chevaux et humains ; monture principale = cheval actif de la sauvegarde (Comète si inconnu), visible jusqu'à 600 m, bonus d'équipement appliqués ; retirer un cheval monté force la descente.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "AStridesGameMode::StartPlay (StridesGameMode.cpp:88-117) : un seul AStridesHorse (ProfileId « comete » par défaut, StridesHorse.h:28) placé à WorldSpawn, cavalier à 2 m côté montoir",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:14-16 (démarrage, modèles cheval et cavalière en place).",
+  "ecart": "Un seul cheval, jamais celui de la sauvegarde ; pas de passants ni de chevaux d'ambiance ; pas de retrait ou de remplacement à chaud.",
+  "tranche": "socle"
+ },
+ {
+  "id": "vehicules.chargement-differe",
+  "domaine": "Véhicules",
+  "fonction": "Camion STX détaillé chargé au démarrage (camion de secours et toast si échec) ; van Master et Defender 110 chargés en tâche de fond après la prise en main, emplacements sauvegardés conservés en attendant ; jamais en mode sûr minimal.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun véhicule dans le portage.",
+  "tranche": "f"
+ },
+ {
+  "id": "cheval.monture-active",
+  "domaine": "Économie",
+  "fonction": "« Mes chevaux » : changer de monture parmi les chevaux possédés ; état (énergie, hydratation, propreté) gardé, descente puis remise en selle si monté, toast « X est sellé(e). », sauvegarde.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "activeHorse est écrit à la sauvegarde depuis Horse->ProfileId (StridesSaveSubsystem.cpp:45) mais aucune commande ne change de monture.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.location-cheval",
+  "domaine": "Économie",
+  "fonction": "Louer un cheval pour la saison : refus si déjà à l'écurie ou sans prix, « Solde insuffisant. » si argent < prix ; sinon débit, ajout à l'écurie, son de pièce, message « Normandie Horse Transport », sauvegarde immédiate.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune dépense possible (crédits seulement gagnés, StridesProgressionSubsystem.cpp:40) ; price et value de horse_profiles.json ne sont pas lus (StridesDataSubsystem.cpp:49-64).",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.bonus-equipement",
+  "domaine": "Économie",
+  "fonction": "Bonus du cheval = somme des effets vitesse, saut, endurance et marge (clearance) des articles achetés et équipés ; tapis, guêtres et bonnet visibles changés sur le cheval là où il est.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Le saut Unreal passe une marge d'équipement nulle (StridesHorse.cpp:243, 469-471, JumpHorse{..., 0.0, ...}) ; pas d'équipement.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.competences",
+  "domaine": "Économie",
+  "fonction": "Compétences préparation, équitation, transport, organisation de 0 à 100 (arrondi au dixième) ; toast à chaque dizaine franchie ; +0,5 équitation par saut réussi ; transport + max(1, round(confort / 20)) après un trajet en camion.",
+  "js": [
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Les quatre compétences sont seulement stockées et relues (SaveGame.h:23, SaveGame.cpp:76, 99) ; aucune règle ne les fait évoluer.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.recrutement",
+  "domaine": "Économie",
+  "fonction": "Recrutement fictif (parcours client) : débit à la confirmation, une seule fois par clé ; résultat ok / already / funds / error ; en cas d'échec technique, argent et registre restaurés et sauvegardés.",
+  "js": [
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun recrutement.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.ameliorations-ecurie",
+  "domaine": "Économie",
+  "fonction": "Amélioration de l'écurie : achat unique, prérequis (drapeau) sinon texte de verrou, « Solde insuffisant. », débit par le registre unique, installation visible au Val, toast « X : installée au Val ! », sauvegarde.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune amélioration d'écurie.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.invitation-strides",
+  "domaine": "Interface",
+  "fonction": "Invitation vers la vraie application, une seule fois, après le bilan du chapitre 1 : différée pendant une conduite, un saut, une mission, un écran ou le téléphone ; carte « Découvrir la vraie application Strides » (Plus tard / Je cherche un professionnel / Je cherche des missions), mesurée.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Ni chapitre, ni invitation.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.reprise-mission",
+  "domaine": "Économie",
+  "fonction": "Mission à étapes interrompue (checkpoint) : carte « Mission en cours · Reprendre » au retour en jeu ; choix et paiements conservés, rien débité ni versé deux fois.",
+  "js": [
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "Mission active et missions terminées rangées dans UStridesSaveGame (StridesSaveSubsystem.h:18-19) et rétablies par LoadNow (StridesSaveSubsystem.cpp:72-74)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de reprise de mission ; non cité dans unreal/docs/validation-mac-2026-11-17.md.",
+  "ecart": "Pas d'étapes ni de point de reprise : la mission redevient active sans carte de reprise.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.fin-mission",
+  "domaine": "Économie",
+  "fonction": "Fin de mission : joueur débloqué, objectif effacé, cheval défigé et plus boiteux, monture principale reprise ; mission d'histoire = acclamations 4 s.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::CompleteActiveMission (StridesProgressionSubsystem.cpp:33-47), déclenché à 18 m de la cible (StridesWorldDirector.cpp:70-71)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de fin de mission ; non cité dans unreal/docs/validation-mac-2026-11-17.md.",
+  "ecart": "Seuls crédits et réputation sont versés ; ni acclamations, ni boiterie, ni verrouillage du joueur ; validation par simple proximité.",
+  "tranche": "e"
+ },
+ {
+  "id": "sauvegarde.recompense-unique",
+  "domaine": "Sauvegarde",
+  "fonction": "Registre des récompenses : une clé (offre, tentative, achat, amélioration) n'est payée qu'une fois, même après double appui ou rechargement.",
+  "js": [
+   "src/core/save.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Seule protection : une mission terminée n'est plus proposée (StridesProgressionSubsystem.cpp:6, 42).",
+  "tranche": "e"
+ },
+ {
+  "id": "interface.strides-hq",
+  "domaine": "Interface",
+  "fonction": "Strides HQ (rayon 7 m, à pied ou à cheval) : dialogue d'Inès en 3 répliques puis ouverture de la page de téléchargement.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune interaction de lieu hors montée/descente.",
+  "tranche": "e"
+ },
+ {
+  "id": "pnj.parler",
+  "domaine": "PNJ",
+  "fonction": "Action « Parler » au passant le plus proche (3,2 m) : prénom tiré au hasard s'il n'en a pas, sa réplique en dialogue, passant occupé 6 s.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun passant.",
+  "tranche": "g"
+ },
+ {
+  "id": "interface.messages",
+  "domaine": "Interface",
+  "fonction": "Message reçu : ajouté à la messagerie (non lu, horodaté), sauvegarde, notification « MESSAGES » 7 s en jeu qui ouvre la conversation au toucher.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune messagerie.",
+  "tranche": "e"
+ },
+ {
+  "id": "economie.contact-pro",
+  "domaine": "Économie",
+  "fonction": "Contacter un professionnel via Strides : réponse en dialogue (« J'ai bien reçu ta demande via Strides… ») et GPS vers son lieu (sauf pendant la mission « fer »).",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun professionnel.",
+  "tranche": "e"
+ },
+ {
+  "id": "enligne.liens-strides",
+  "domaine": "En ligne",
+  "fonction": "Liens vers la vraie plateforme : présentation get.strides-app.com, application strides-app.com, App Store id6793963102, Google Play com.stridesapp ; sauvegarde avant de sortir ; adresse affichée en toast si l'ouverture est bloquée ; carte « Emportez STRIDES avec vous » s'il n'y a pas de lien magasin.",
+  "js": [
+   "src/game.js",
+   "src/config.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune ouverture de lien (FPlatformProcess::LaunchURL absent).",
+  "tranche": "e"
+ },
+ {
+  "id": "interface.partage",
+  "domaine": "Interface",
+  "fonction": "Partager le jeu : feuille de partage du système (titre, phrase, adresse) ou copie du lien et toast « Lien du jeu copié ! » (sinon l'adresse) ; message dans le cadre en mode photo.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun partage.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.fondu",
+  "domaine": "Interface",
+  "fonction": "Fondu au noir : 470 ms, action, maintien (0,5 s par défaut) puis réouverture ; immédiat en mode synchrone de test.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun fondu (rechargement F9 instantané).",
+  "tranche": "h"
+ },
+ {
+  "id": "vehicules.transport-rapide",
+  "domaine": "Véhicules",
+  "fonction": "Transport Strides : prix débité, fondu, arrivée à 6 m du lieu dans une direction au hasard (à cheval ou à pied), collisions résolues, toast « Transport Strides : arrivée — lieu », sauvegarde.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun transport rapide.",
+  "tranche": "f"
+ },
+ {
+  "id": "interface.celebration",
+  "domaine": "Interface",
+  "fonction": "Célébration : 400 confettis (crème, or, encre, vert ; graine 7) qui tombent 7 s, foule qui acclame (gain 0,28 puis retombée), acclamations 6 s.",
+  "js": [
+   "src/game.js",
+   "src/core/audio.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Célébration (400 confettis, cheerT = 6, audio.cheer) appelée par les missions d'histoire et le Grand Prix de Paris (src/gameplay/story.js:763, src/gameplay/parisGP.js:313, 338), pas par le parcours du Pôle : non portée. À l'arrivée d'un sans-faute du Pôle, le web pose game.cheerT = 3,5 et joue audio.cheer() (courses.js:343-345) : l'ovation du bus du public est jouée depuis T12 (audio.concours), cheerT est demandé par strides::CsoRun (takeCheer) mais le public en liesse n'est pas animé.",
+  "tranche": "a"
+ },
+ {
+  "id": "interface.mode-photo",
+  "domaine": "Interface",
+  "fonction": "Mode photo : HUD et commandes tactiles masqués, cadre photo, caméra orientable, ciel et eau animés, monde figé.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "AStridesShots sert aux captures de contrôle (StridesGameMode.cpp:118), pas au joueur.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.reperes-carte",
+  "domaine": "Interface",
+  "fonction": "Repères de carte : offres de mission (si aucune active), destination GPS, 12 lieux (maison, sellerie, café, boutique, Pôle, hippodrome, 3 écuries, Strides HQ, forge, vétérinaire), cheval (à pied), camion (hors conduite), collectibles à moins de 70 m.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "AStridesHUD::DrawMinimap (StridesHUD.cpp:123-234) : régions, routes, obstacles, lieux, autres chevaux, cible GPS ramenée au bord, flèche de cap, carré de 320 m",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; minicarte non citée dans unreal/docs/validation-mac-2026-11-17.md.",
+  "ecart": "Lieux lus dans world_architecture.json (14, fichier non exporté du JS) ; ni offres, ni camion, ni collectibles ; pas de carte plein écran dans le téléphone.",
+  "tranche": "h"
+ },
+ {
+  "id": "monde.positions-sauvegardees",
+  "domaine": "Sauvegarde",
+  "fonction": "Positions sauvegardées : joueur (point d'approche sûr pendant une montée ou descente, porte du commerce si à l'intérieur), cheval principal, camion, van Master, Defender, véhicules garés déplacés ; état du cheval ; carburant (3/4 du réservoir en nouvelle partie) ; cheval laissé au box ; reprise à Paris si sauvée là-bas.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:38-44 : mode foot/ride, x, y, z, cap ; à cheval, position du cheval) et LoadNow (87-93 : cheval replacé et cavalier remis en selle, ou cavalier à pied) ; conversions StridesUnits.h:10-14",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 ; relecture de la pose testée à la main par unreal/core/tests/test_core.cpp:1123-1129 et StridesCoreTests.cpp:58-68 (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec ; Strides.Core.Save réussi selon unreal/docs/validation-mac-2026-11-17.md:13) ; aucun oracle JS.",
+  "ecart": "Une seule pose : à pied, le cheval n'est ni sauvé ni replacé ; aucun véhicule, état du cheval, carburant, box ou commerce.",
+  "tranche": "socle"
+ },
+ {
+  "id": "monde.region-paris",
+  "domaine": "Monde",
+  "fonction": "Région Deauville ou Paris (x > PARIS.x - 1000) : terrain, mer, étang, herbe, oiseaux et bateaux de l'autre région masqués ; salle du Grand Prix de Paris Indoor sans pluie, éclairage de salle.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "La mission finale « paris » est ramenée au Pôle (StridesProgressionSubsystem.cpp:76-77) ; pas de région Paris.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.nom-zone",
+  "domaine": "Interface",
+  "fonction": "Nom de zone au HUD, recalculé toutes les 0,5 s avec 8 m d'hystérésis : Deauville City (front de mer compris), Pôle International, Hippodrome de la Touques, Écurie du Val, Haras de la Pommeraie, Écurie des Dunes, Domaine de Saint-Gatien, Falaises d'Aval, Plage de Deauville City (< 70 m du rivage), Forêt de Saint-Gatien (densité > 0,45), Colline Strides, Pays d'Auge, Paris / Grand Prix de Paris Indoor.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Pas de nom de zone ; les régions de world_architecture.json ne servent qu'aux aplats de la minicarte (StridesHUD.cpp:163-170).",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.surface-sol",
+  "domaine": "Monde",
+  "fonction": "Surface sous le cheval : eau si profondeur > 0,08 m, bois sur les Planches, route, sable à < 60 m du rivage et dans les carrières du Pôle et du Val, sinon classe du sol (herbe, terre, gravier) ; pilote sons et particules.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune notion de surface.",
+  "tranche": "c"
+ },
+ {
+  "id": "monde.particules-foulee",
+  "domaine": "Monde",
+  "fonction": "Particules à chaque foulée : éclaboussures par sabot dans l'eau (moins en eau profonde, aucune à l'arrêt), mottes et gouttelettes sur sol détrempé (> 0,35) au-delà de 3 m/s, sable (×3 si sec), herbe > 9 m/s, poussière > 8 m/s ; empreintes dans le sable et la terre ; gerbe de 10 particules à la réception.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune particule ni empreinte.",
+  "tranche": "c"
+ },
+ {
+  "id": "cheval.renes",
+  "domaine": "Cheval",
+  "fonction": "Rênes : les os de rênes du cheval rejoignent les poings du cavalier (cheval à moins de 35 m de la caméra), retour au repos sur l'encolure sans cavalier.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Os de rêne du cheval procédural (masqué derrière le cheval WildMesh) non pilotés. Les rênes affichées du web (rubans du mors aux poings, pjlHorse.js _straps) sont portées (par défaut depuis l'étape S2 b) : voir cheval.lanieres (étape S1).",
+  "tranche": "b"
+ },
+ {
+  "id": "socle.separation-chevaux-vehicules",
+  "domaine": "PNJ",
+  "fonction": "Séparation : chevaux écartés sous 2,6 m (cercles encolure +1,3 m, garrot +0,3 m, croupe -0,75 m), joueur à pied écarté des chevaux (< 1 m), des véhicules et des passants.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Seules les collisions du moteur s'appliquent (comportement non mesuré, à confirmer).",
+  "tranche": "g"
+ },
+ {
+  "id": "economie.statistiques",
+  "domaine": "Économie",
+  "fonction": "Statistiques de carrière : distance parcourue à cheval (m), sauts réussis, fautes (barres, touchers), missions, gains.",
+  "js": [
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune statistique sauvegardée.",
+  "tranche": "e"
+ },
+ {
+  "id": "cso.sauts-libres",
+  "domaine": "CSO",
+  "fonction": "Saut hors épreuve : réussi = +1 saut, +0,5 équitation, toast « Beau saut ! » (marge > 0,3 m) ou « Saut réussi » ; faute = +1 faute, son, toast « Touché ! » (obstacle fixe) ou « Barre ! » avec la cause.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "Messages du parcours du Pôle seulement (toasts de courses.js portés par strides::CsoRun : « Barre au X · +4 · cause », erreur de parcours, refus) affichés 3 s par le HUD (StridesHUD.cpp)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de ces messages ; parcours complet non cité dans unreal/docs/validation-mac-2026-11-17.md.",
+  "ecart": "Pas d'obstacles hors parcours, ni statistiques, ni compétence, ni son de faute.",
+  "tranche": "a"
+ },
+ {
+  "id": "interface.astuces-cheval",
+  "domaine": "Interface",
+  "fonction": "Astuces limitées à une par 45 s : « Trop lent pour sauter : passe au trot » (2,5 s), « Cheval essoufflé : relâche BOOST » (3,5 s) ; appel trop tôt signalé au HUD.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "Appel trop tôt signalé au HUD : bouton SAUT « Trop tôt » 600 ms (strides::CsoHud, tranche T9 : interface.aide-appel-bouton-saut) ; horse:tooSlow émis par le cœur (unreal/StridesGrandTour/Source/StridesCore/Private/CsoHorse.cpp:338), non affiché",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "« Trop tôt » : canal « ai » des exécutions t9-* rejoué par testCsoAids (état du bouton à chaque image, temporisation de 600 ms sur l'horloge virtuelle), mutation « Trop tôt 500 ms » détectée (scripts/unreal/mutations-cso-aids.py), montages unreal/docs/parite/cso/aide-trop-tot-*.png ; astuces : aucun code. État passé de absent à partiel à l'hygiène finale du 21/11/2026.",
+  "ecart": "« Trop lent pour sauter : passe au trot » (2,5 s) non affichée (événement émis par le cœur, rien ne l'affiche) ; « Cheval essoufflé : relâche BOOST » absente (BOOST et endurance non portés) ; limite d'une astuce par 45 s non portée ; hors épreuve, sous MinJumpSpeed le saut est ignoré sans message (StridesHorse.cpp:500).",
+  "tranche": "a"
+ },
+ {
+  "id": "temps.horloge",
+  "domaine": "Temps",
+  "fonction": "Heure du monde : journée de 1 200 s réelles (20 min) ou temps réel (24 h) selon Réglages, départ à 9 h ; n'avance qu'hors pause de simulation ; « H:MM » sur le téléphone toutes les 0,5 s ; jour = floor(gameTime / 86 400).",
+  "js": [
+   "src/game.js",
+   "src/config.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "gameTime seulement stocké, par défaut à 7 h au lieu de 9 h (SaveGame.h:22) ; soleil fixe (StridesGameMode.cpp:46).",
+  "tranche": "d"
+ },
+ {
+  "id": "temps.meteo-maree",
+  "domaine": "Temps",
+  "fonction": "Texte météo « condition · température °C » selon le jour et l'heure ; marée : niveau de la mer chaque image, estran mouillé recalculé chaque seconde, rivage par pas de 10 m.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Ni météo, ni marée.",
+  "tranche": "d"
+ },
+ {
+  "id": "interface.portefeuille",
+  "domaine": "Interface",
+  "fonction": "Portefeuille : solde en euros, palier de réputation et note moyenne des clients, mis à jour à chaque gain ou achat.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "Ligne HUD « <rang> · N crédits · N réputation » (StridesHUD.cpp:79)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; ligne non citée dans unreal/docs/validation-mac-2026-11-17.md.",
+  "ecart": "Crédits au lieu d'euros, pas de note moyenne, paliers différents (voir config.paliers-reputation), texte brut.",
+  "tranche": "e"
+ },
+ {
+  "id": "config.identite",
+  "domaine": "Configuration",
+  "fonction": "Nom « Equestrian Tour » (titre « EQUESTRIAN TOUR »), STRIDES = application du téléphone et non le nom du jeu ; version 2.0.0 et identifiant de build (commit et date).",
+  "js": [
+   "src/config.js"
+  ],
+  "unreal": "DefaultGame.ini:3 (ProjectName=Equestrian Tour) ; DefaultEngine.ini:26-29 (BundleDisplayName Equestrian Tour, VersionInfo=1.0.0)",
+  "etat": "partiel",
+  "niveau": "code_ecrit",
+  "preuve": "Aucun test.",
+  "ecart": "Version 1.0.0 au lieu de 2.0.0 ; pas d'identifiant de build affiché.",
+  "tranche": "socle"
+ },
+ {
+  "id": "config.paliers-reputation",
+  "domaine": "Configuration",
+  "fonction": "Paliers de réputation à 0, 300, 900, 1 800 et 3 200 points : Premiers contrats (DÉBUT), Professionnel apprécié, Référence locale, Équipe reconnue, Réputation internationale ; niveau = index + 1, progression vers le palier suivant bornée à [0, 1].",
+  "js": [
+   "src/config.js",
+   "src/core/save.js"
+  ],
+  "unreal": "UStridesProgressionSubsystem::RankName (StridesProgressionSubsystem.cpp:59-67) sur la liste progression de world_architecture.json",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Architecture compte 5 rangs (StridesCoreTests.cpp:83) sans vérifier les valeurs, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13 ; aucun oracle JS.",
+  "ecart": "Paliers et noms différents : 0 / 500 / 1 500 / 3 500 / 7 000 (Groom, Cavalier, Pro vérifié, International, Légende 5★) ; ni libellé court, ni progression.",
+  "tranche": "e"
+ },
+ {
+  "id": "config.allures",
+  "domaine": "Configuration",
+  "fonction": "Réglages du cheval : ARRÊT 0, PAS 1,9, TROT 4,6, GALOP 6,5 m/s (jusqu'à 9,72 m/s au joystick), GRAND GALOP 14 m/s ; saut 1,35 m, 0,8 s ; vitesse minimale d'appel 3,2 m/s ; endurance 100, dépense au galop 7, récupération 9.",
+  "js": [
+   "src/config.js"
+  ],
+  "unreal": "horse_gaits.json exporté par scripts/unreal/export-data.mjs:40, lu par StridesDataSubsystem.cpp:33-48 ; seuls servent les noms d'allure (HUD, StridesHUD.cpp:65), jumpPeak (StridesHorse.cpp:260) et minJumpSpeed (StridesHorse.cpp:500) ; la vitesse cible par allure (StridesHorse.cpp:494) est une branche morte, bCsoControls valant toujours vrai (StridesHorse.h:51, jamais remis à faux dans Source/)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:18 (PAS, TROT, GALOP, GRAND GALOP déclenchés et lus au HUD) ; données exportées du JS mais aucun test C++ ne les compare.",
+  "ecart": "Vitesses d'allure jamais appliquées : même hors épreuve, la vitesse suit la cadence de concours (StridesHorse.cpp:400, plafond maxSpeed 8 m/s de cso_ride.json) et l'allure affichée est déduite de la vitesse par des seuils codés en dur 0,2 / 3,2 / 5,5 / 7,0 m/s (StridesHorse.cpp:468 ; clip GRAND GALOP dès 7 m/s, unreal/docs/validation-mac-2026-11-17.md:18) ; GALOP 9,72 m/s et GRAND GALOP 14 m/s inatteignables ; ALLURE +/- sans effet durable (GaitIndex réécrit à chaque image) ; endurance (stamina, gallopDrain, staminaRegen) et jumpDuration non lus.",
+  "tranche": "socle"
+ },
+ {
+  "id": "sauvegarde.schema",
+  "domaine": "Sauvegarde",
+  "fonction": "Sauvegarde version 2 : nom, avatar, argent, réputation, 4 compétences, missions terminées et refusées, notes, chevaux, cheval actif, améliorations, inventaire, équipement, achats, reprise commerce/maison, fers d'or, meilleurs temps, statistiques, messages, réglages (son, musique, qualité auto, caméra 1, temps « jeu », personnages auto, aide à l'appel complète, ligne de parcours), heure 9 h, rythme de vie, publicités, position, récompenses, drapeaux, choix, relations, prestations, point de reprise, mesure, défis, méta.",
+  "js": [
+   "src/core/save.js",
+   "src/config.js"
+  ],
+  "unreal": "strides::SaveGame, schéma « strides.save » v1 (SaveGame.h:17-34 ; SaveGame.cpp:22-85) ; réglages courseLine et jumpAid de la carte Pause (SaveGame.h:43-54 ; SaveGame.cpp:112-145)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:1115-1141 (testSave), testCsoPause (unreal/core/tests/test_core.cpp:2741 : bascules de la vraie carte Pause du web, cso_pause.json, 27 étapes, 0 écart ; réglages relus après un aller-retour JSON et depuis un export du web) et StridesCoreTests.cpp:58-68 (Strides.Core.Save) ; Strides.Cso.Controls : réglages écrits dans un emplacement de test puis relus (UStridesSaveSubsystem::SaveSettings / ReloadSettings).",
+  "ecart": "Sous-ensemble : nom, avatar, langue, argent, réputation, heure, cheval actif, compétences, chevaux, records, 4 réglages (quality, jumpAid, characters, courseLine), pose ; heure par défaut 7 h au lieu de 9 h ; réglages son, musique, camSens, timeScale absents ; le reste n'existe que dans legacyJson après un import.",
+  "tranche": "socle"
+ },
+ {
+  "id": "sauvegarde.migration",
+  "domaine": "Sauvegarde",
+  "fonction": "Migrations en chaîne v1 → v2 (xp devient réputation), copie de secours de l'ancien format (`.backup.v1`) avant migration, version future refusée (« sauvegarde vN plus récente que le jeu »), migration manquante = erreur.",
+  "js": [
+   "src/core/save.js"
+  ],
+  "unreal": "SaveGame::fromWebExport (SaveGame.cpp:90-96 : web v1 → réputation = xp) ; SaveGame::fromJson refuse une version < 1 ou > 1 (SaveGame.cpp:65-66)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:1132-1138 (import v1 xp 340 → réputation 340 ; version 99 refusée), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec) ; tests/unit/save.test.js non exporté en oracle.",
+  "ecart": "Pas de copie de secours avant migration ; pas de chaîne de migrations du schéma natif (v1 seule).",
+  "tranche": "socle"
+ },
+ {
+  "id": "sauvegarde.validation",
+  "domaine": "Sauvegarde",
+  "fonction": "Validation au chargement : argent, réputation, heure numériques finis ; listes (missions, chevaux non vide, améliorations, notes, fers, messages, refus) ; objets (statistiques, réglages, compétences, récompenses, drapeaux, choix, meilleurs temps, prestations) ; nom texte, started booléen ; fusion d'un niveau avec les valeurs par défaut.",
+  "js": [
+   "src/core/save.js"
+  ],
+  "unreal": "SaveGame::fromJson (SaveGame.cpp:61-85) : schéma et version seulement",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:1138-1139 (version future et texte non JSON refusés), écrit à la main, passé.",
+  "ecart": "Aucun contrôle de type : champ absent ou mal typé lu comme 0 ou chaîne vide (MiniJson.h:21-25) ; liste de chevaux vide acceptée ; pas de started.",
+  "tranche": "socle"
+ },
+ {
+  "id": "sauvegarde.quarantaine",
+  "domaine": "Sauvegarde",
+  "fonction": "Sauvegarde illisible, invalide ou trop récente : copie gardée sous `.invalid`, partie verrouillée et jamais écrasée, écran titre qui l'explique et propose les copies (secours avant migration, dernière illisible) ; restauration validée puis rechargement, sinon « Copie illisible ».",
+  "js": [
+   "src/core/save.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Comportement inverse : SaveNow repart d'une sauvegarde neuve quand la lecture échoue puis écrit l'emplacement (StridesSaveSubsystem.cpp:29, 48-57) ; une sauvegarde illisible est écrasée sans copie.",
+  "tranche": "socle"
+ },
+ {
+  "id": "sauvegarde.ecriture",
+  "domaine": "Sauvegarde",
+  "fonction": "Écriture : rien tant que la partie n'est pas commencée (sauf nouvelle partie forcée), jamais sur une sauvegarde verrouillée ; date et build ajoutés ; clé historique `strides-grand-tour-v1` inchangée ; stockage indisponible (quota, navigation privée) ignoré sans erreur.",
+  "js": [
+   "src/core/save.js",
+   "src/config.js"
+  ],
+  "unreal": "UStridesSaveSubsystem::SaveNow (StridesSaveSubsystem.cpp:25-60), emplacement « strides_main » (ligne 14), UStridesSaveGame (StridesSaveSubsystem.h:10-20)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (sauvegarder puis recharger à l'écran) ; aucun oracle.",
+  "ecart": "Pas de garde « partie commencée » ni de verrou ; ni date ni build ; crédits et réputation de la progression rangés hors du JSON du cœur (StridesSaveSubsystem.cpp:50-56) : deux sources d'argent qui divergent.",
+  "tranche": "socle"
+ },
+ {
+  "id": "sauvegarde.export-import",
+  "domaine": "Sauvegarde",
+  "fonction": "Export de la sauvegarde en JSON et import depuis Réglages : l'import est validé et migré, sinon refusé sans rien changer.",
+  "js": [
+   "src/core/save.js"
+  ],
+  "unreal": "SaveGame::fromWebExport (SaveGame.cpp:87-110) ; UStridesSaveSubsystem::ImportWebExport(Path) (StridesSaveSubsystem.cpp:145-159)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:1132-1133 (import v1, reste conservé dans legacyJson), écrit à la main, passé (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec).",
+  "ecart": "Pas d'export natif ; ImportWebExport n'a aucun appelant (ni bouton ni commande) ; argent et réputation importés ignorés par la progression (Credits / Reputation du USaveGame laissés à 0 puis relus par LoadNow : StridesSaveSubsystem.cpp:72-74, 154-156) ; un défi sans record (best null) devient 0 pénalité en 0 s (SaveGame.cpp:103-106) ; échappements \\r, \\b, \\f relus comme r, b, f (MiniJson.h:68).",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.joystick",
+  "domaine": "Entrées",
+  "fonction": "Joystick tactile flottant : apparaît sous le doigt dans la zone gauche (x < 45 % de la largeur, y > 30 % de la hauteur), rayon 58 px, la base suit le doigt au-delà, amplitude = min(1, distance / 58), y vers l'avant ; retour au repos au relâchement.",
+  "js": [
+   "src/core/input.js",
+   "src/styles.css"
+  ],
+  "unreal": "strides::CsoInput (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:12-99 : zone, prise, base qui suit le doigt, amplitude, élément affiché) ; doigts reçus par AStridesPlayerController::InputTouch, appelé par UGameViewportClient::InputTouch (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:252-279 : px du viewport divisés par le facteur de pixels, identifiant = index + 100 × appareil, Began → pointerdown, Moved et FirstMove → pointermove, Ended → pointerup, Stationary et ForceChanged sans effet) ; joystick dessiné par UStridesTouchControls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:264-288, 401-417 : base en dégradé radial, bouton et ombre, opacité du repos 0,55, place de repos et tailles relevées dans la page tactile, Content/Data/cso_controls_style.json) ; joysticks virtuels du moteur retirés (unreal/StridesGrandTour/Config/DefaultInput.ini:4-7)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "Logique : unreal/core/tests/oracles/cso_input.json (vraie classe Input du web sous événements tactiles, souris et clavier synthétiques, scripts/unreal/export-cso-input.mjs) rejoué par testCsoInput (unreal/core/tests/test_core.cpp:2651) : 18 scénarios, 624 appels, 0 écart ; 59 mutations de CsoInput.cpp détectées (scripts/unreal/mutations-cso-input.py ; 2 de plus depuis le contrôle des remarques, stylet et d ≥ R, déclarées non départagées dans ATTENDUES : 69 mutations, 67 détectées, code 0). Chemin du doigt : Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374) appelle InputTouch par l'interface de APlayerController avec des positions en px du viewport et un facteur de pixels imposé à 3 : Began à (450 ; 900) px → joystick tenu, base en (150 ; 300) px CSS ; FirstMove puis Moved → bouton suivi, Moved répété au même point sans effet ; Stationary et ForceChanged sans effet ; doigt d'un second appareil (même index) → regard distinct (25 ; −12,5) ; Ended → relâché ; cadence qui monte, gardée au relâché ; 8 mutations du chemin détectées (scripts/unreal/mutations-cso-controls.py). Écran : montages côte à côte unreal/docs/parite/cso/cmd-joystick-844x390.png et cmd-joystick-667x308.png, doigt envoyé comme un message tactile de la plateforme (FSlateApplication::OnTouchStarted / OnTouchMoved, ceux qu'envoie iOS), routé par Slate jusqu'au viewport du jeu puis à InputTouch (AStridesShots::SlateTouch et ApplyControlsPose, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:748-765, 767-806) : relevé cmd-unreal.json, touch.events = Began#1(150.0;300.0) Moved#1(178.0;270.0) ; mêmes boîtes du joystick qu'avant ; partie réelle -StridesShots=cso-jeu -TouchControls : joystick au repos sur jeu-1 à jeu-5.",
+  "ecart": "Rendu approché : dégradé radial et ombre portée dessinés dans des textures (pas de flou CSS exact) ; pas d'animation de fondu (transition d'opacité 0,2 s du repos). Coordonnées : facteur de pixels du Mac (1) aux captures, 3 imposé au test ; sur iOS, facteur natif à confirmer sur appareil (UStridesCsoHud::PixelRatio). Toucher réel non essayé (aucun appareil iOS) : sur Mac, le doigt part de FSlateApplication (couche UIKit d'iOS non exercée) ; sur Mac, Slate a livré Began puis Moved (pas de FirstMove) ; la souris ne pilote pas le joystick (comme le web : -TouchControls n'active pas bUseMouseForTouch). Contrôle des remarques (20/11/2026) : état ramené de identique_prouve à partiel : la logique est identique (oracle), le rendu ne l'est pas (pas de transition d'opacité de 0,2 s au relâché, styles.css:90 ; dégradé et ombre approchés) et le facteur de pixels iOS n'est pas vérifié (couche UIKit non exercée). Branches de CsoInput non départagées par cso_input.json : type de pointeur « pen » (mutation « pen traité comme souris » non détectée ; sans effet en jeu, InputTouch n'envoie jamais Pen) ; seuil « d > R » contre « d >= R » (équivalente : k = 0 quand d = R) ; déclarées dans ATTENDUES de scripts/unreal/mutations-cso-input.py.",
+  "tranche": "h"
+ },
+ {
+  "id": "entrees.regard",
+  "domaine": "Entrées",
+  "fonction": "Caméra : glisser un doigt hors du joystick (×1,25) ou la souris bouton enfoncé (×1) ; sensibilité réglable (camSens, 1 par défaut).",
+  "js": [
+   "src/core/input.js",
+   "src/game.js"
+  ],
+  "unreal": "Pointeur de regard de strides::CsoInput (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:51-66 : × 1,25 au doigt, × 1 à la souris) ; regard au doigt appliqué à la perche du monde ouvert (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:359-365 : 0,0062 rad / px en lacet, 0,0045 en tangage) ; souris et manette : action Look (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:101-102, 435-440)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Pointeur de regard (prise, facteurs, suivi, levée) rejoué par testCsoInput sur cso_input.json, 0 écart ; mutations « regard » détectées.",
+  "ecart": "Regard au doigt branché sur la perche du monde ouvert du portage (sens et échelle de camera.js:79-81 à confirmer sur appareil ; sans effet sur la caméra de concours) ; souris lue sans clic (Mouse2D) au lieu du glisser du web ; pas de réglage de sensibilité (camSens).",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.clavier-deplacement",
+  "domaine": "Entrées",
+  "fonction": "Clavier : WASD ou flèches (codes physiques, donc ZQSD en AZERTY), direction normalisée ; à fond = galop, Ctrl gauche = trot (0,5), Alt gauche = pas (0,25).",
+  "js": [
+   "src/core/input.js"
+  ],
+  "unreal": "Codes physiques : préprocesseur Slate FStridesKeyProcessor (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:40-55) et AStridesPlayerController::WebCodeOf (:67-74, code matériel de la touche sur Mac, table strides::webCodeFromMacKeyCode, unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:193-206) ; strides::CsoInput::key et poll (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:119-163 : diagonale, Ctrl gauche 0,5, Alt gauche 0,25) ; déplacement versé au cheval par StepCommands (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:290-367)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Clavier de cso_input.json (scénarios clavier et azerty : code KeyW tapé « z », KeyA tapé « q »…) rejoué par testCsoInput, 0 écart ; keyboardMove comparé aux images au clavier de cso_runs/ (test_core.cpp:497) ; Strides.Cso.Controls (KeyZ sans effet, KeyW avance avec keyMove, Ctrl gauche 0,5, dans l'épreuve réelle) ; Strides.Cso.PhysicalKeys (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:376-396 : touche Z d'un clavier AZERTY, code matériel de W, lue KeyW).",
+  "ecart": "Le code matériel de macOS passé par Unreal dans FKeyEvent::GetKeyCode est supposé égal au kVK_* (sources privées Mac du moteur absentes) : vérifié par test sur des événements construits, pas sur un vrai clavier AZERTY (à confirmer à la main). Hors Mac (iOS, clavier matériel), repli sur le nom de touche Unreal, lié au caractère produit (pas aux codes physiques). Hors épreuve, l'avant / arrière règle toujours une cadence (bCsoControls toujours vrai).",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.touches-actions",
+  "domaine": "Entrées",
+  "fonction": "Touches : Espace saut, Maj galop maintenu (BOOST), E / F / Entrée action, Q / R sifflet, P / Tab téléphone, M carte, Échap pause, C caméra, H klaxon ; appui (une image) distinct du maintien.",
+  "js": [
+   "src/core/input.js"
+  ],
+  "unreal": "Table de _key portée (strides::CsoInput::keyAction, unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:109-117) ; effets en jeu par StepCommands (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:290-367) : Espace saut, P / Tab téléphone, M carte, Échap pause ; Enhanced Input garde E / X monter-descendre, Maj / Ctrl allure hors épreuve (sans effet en épreuve, :525-526), F5 / F9, F8 démonstration, N mission (outils du portage, :100-112)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Table et appui / maintien / répétition rejoués par testCsoInput (cso_input.json : scénario clavier, 0 écart) ; Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374) : Échap met en pause, P et Tab ouvrent le téléphone, M ouvre la carte et ferme le téléphone, Échap ferme d'abord le téléphone (séquence comparée image par image à unreal/core/tests/oracles/cso_freeze.json) ; Maj et Ctrl (OnGaitUp / OnGaitDown) sans effet en épreuve (allure 2 gardée), effectifs une fois le parcours retiré (2 → 3 → 2) ; mutations « allure ± en épreuve » détectées (scripts/unreal/mutations-cso-controls.py).",
+  "ecart": "Effets non portés : BOOST maintenu (Maj), sifflet (Q / R), caméra (C), klaxon (H), action par F et Entrée (E reste l'action du portage : monter / descendre) ; la carte (M) ouvre le panneau du téléphone avec le titre « Carte » (application Carte non portée) ; manette en plus du web ; mission suivante passée de M à N (M = carte du web).",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.boutons-tactiles",
+  "domaine": "Entrées",
+  "fonction": "Boutons tactiles du HUD : appui pris à la pression (appui + maintien), doigt capturé, relâchement sur levée ou annulation ; téléphone et pause utilisables même quand les commandes sont désactivées.",
+  "js": [
+   "src/core/input.js"
+  ],
+  "unreal": "Boutons SAUT et pause du HUD (UStridesTouchControls, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesTouchControls.cpp:167-190, 195-262 : appui pris à la pression OnPressed, relâché OnReleased → AStridesPlayerController::ButtonDown / ButtonUp, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:249-250 → strides::CsoInput::buttonDown / buttonUp) ; boutons du portage MONTER, ALLURE ±, SAUVER, CHARGER, TÉLÉPHONE, MISSION au clic (StridesTouchControls.cpp:128-142)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Règles de bindButton (appui, maintien, pause et téléphone actifs commandes désactivées, SAUT ignoré) rejouées par testCsoInput (cso_input.json : scénarios boutons, desactive, desactive-suite, 0 écart) ; Strides.Cso.Controls : bouton pause du HUD → jeu en pause.",
+  "ecart": "Capture du doigt par Slate (pas de lostpointercapture) ; état enfoncé .down (réduction à 0,92, fond clair) non porté ; boutons du portage au clic, sans maintien ; bouton BOOST, ACTION contextuelle et sifflet non portés. Contrôle des remarques (20/11/2026) : dans Strides.Cso.Controls, la comparaison des boîtes SAUT et pause en 844 × 390 était tautologique (boîte affichée calculée depuis le relevé auquel on la compare) : le test relit maintenant le slot du canevas (placement effectif) et le dit (placement, pas identité) ; la preuve d'identité reste le montage côte à côte (cmd-*, hud-*) ; l'ancrage pour un viewport sans relevé (autre que 844 × 390 et 667 × 308) n'est comparé par aucun test.",
+  "tranche": "h"
+ },
+ {
+  "id": "entrees.liberation",
+  "domaine": "Entrées",
+  "fonction": "Toutes les commandes relâchées à la perte de focus, en arrière-plan, au changement d'orientation et à chaque activation ou désactivation ; touche pressée pendant une désactivation non retenue ; répétition automatique ignorée.",
+  "js": [
+   "src/core/input.js",
+   "src/game.js"
+  ],
+  "unreal": "strides::CsoInput::releaseAll, setEnabled, key (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:119-134, 179-191) ; perte de focus et passage en arrière-plan : OnApplicationActivationStateChanged et ApplicationWillDeactivateDelegate → releaseAll (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:156-162, 177-178) ; téléphone et pause : setEnabled (:370-426)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Scénarios desactive, desactive-suite, releche de cso_input.json (touche pressée pendant une désactivation non retenue, répétition ignorée, releaseAll en plein geste) rejoués par testCsoInput, 0 écart ; mutations releaseAll / setEnabled détectées.",
+  "ecart": "Changement d'orientation de l'écran (orientationchange du web) non branché ; perte de focus vérifiée par lecture du code seulement (aucun test ne bascule l'application).",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.gestes-navigateur",
+  "domaine": "Entrées",
+  "fonction": "Dans le navigateur iOS : défilement, zoom, loupe, double-tap et menu contextuel bloqués sur le jeu (sauf zones .scrollable).",
+  "js": [
+   "src/core/input.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Sans objet dans une application native.",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.action-contextuelle",
+  "domaine": "Entrées",
+  "fonction": "Action (E, F, Entrée ou bouton) : fait avancer le dialogue, sinon déclenche l'interaction disponible la plus prioritaire (monter, descendre, parler, entrer, Strides HQ…).",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "AStridesPlayerController::DoAction (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:487-529 : dialogue fermé d'abord, puis poteau « Chrono », sinon monter / descendre), appelée par l'action des commandes du web hors téléphone et carte (:329-330) et par OnInteract (:445-449)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:15 (monter puis descendre à l'écran) ; tranche T10 : Strides.Cso.EntryDialog (touche E : le dialogue se ferme, rien d'autre), Strides.Cso.Entry (touche E au poteau : activité lancée ; carte ouverte : sans effet).",
+  "ecart": "Deux interactions (poteau du Pôle, monter / descendre) et un dialogue (entraîneur) ; aucune autre interaction du web.",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.sifflet",
+  "domaine": "Entrées",
+  "fonction": "Sifflet (Q / R) : le cheval principal accourt (sifflet, hennissement 0,7 s après, toast « X arrive ! ») ; refusé dans un commerce (« X t'attend dehors. ») et pendant certaines missions.",
+  "js": [
+   "src/game.js",
+   "src/core/input.js",
+   "src/core/audio.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun rappel du cheval.",
+  "tranche": "socle"
+ },
+ {
+  "id": "entrees.boutons-globaux",
+  "domaine": "Entrées",
+  "fonction": "Téléphone (P / Tab / bouton) : ouvre ou ferme ; carte (M) : ouvre le téléphone sur la carte ou le ferme ; pause : ferme d'abord le téléphone ; inactifs si un écran de choix est ouvert.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "AStridesPlayerController::StepCommands (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:290-367 : phone → TogglePhone, map → téléphone sur la carte ou fermeture, pause → ferme le téléphone sinon PauseGame) ; OpenPhone / ClosePhone / TogglePhone (:370-386) ; panneau du téléphone dessiné aussi en épreuve (AStridesHUD::DrawPhone, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp:56, 97-121)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Strides.Cso.Controls (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesControlsTests.cpp:74-374) : P ouvre, Échap ferme le téléphone sans mettre en pause, Tab ouvre, M ferme, M ouvre la carte puis la referme ; P, M et Échap comparés image par image au jeu web (unreal/core/tests/oracles/cso_freeze.json, 0 écart) ; mutation « Échap avec le téléphone ouvert : pause » détectée.",
+  "ecart": "Garde « overlay » : cartes de présentation et du plan de l'entrée du Pôle (tranche T10, Strides.Cso.Entry : P, M et Échap sans effet sous la carte) ; aucun autre écran de choix ; la carte n'est qu'un titre du panneau du téléphone (application Carte non portée).",
+  "tranche": "e"
+ },
+ {
+  "id": "outils.mouvement-virtuel",
+  "domaine": "Outils",
+  "fonction": "setVirtualMove : direction imposée par les tests automatisés, sans clavier ni toucher.",
+  "js": [
+   "src/core/input.js"
+  ],
+  "unreal": "strides::CsoInput::setVirtualMove (unreal/StridesGrandTour/Source/StridesCore/Private/CsoInput.cpp:165-171)",
+  "etat": "identique_prouve",
+  "niveau": "teste",
+  "preuve": "Scénarios virtuel et desactive-suite de cso_input.json rejoués par testCsoInput, 0 écart ; mutations « virtuel » détectées.",
+  "ecart": "Aucun dans le cœur ; seuls les tests l'appellent (comme le web).",
+  "tranche": "socle"
+ },
+ {
+  "id": "audio.deverrouillage",
+  "domaine": "Audio",
+  "fonction": "Contexte audio créé au premier geste (exigence iOS) avec un son silencieux, compresseur maître, gain 0,8 ; suspendu en arrière-plan, repris au retour et au prochain toucher si le son est activé.",
+  "js": [
+   "src/core/audio.js",
+   "src/game.js"
+  ],
+  "unreal": "scripts/unreal/export-cso-sounds.mjs (unlock() du web appelé sur un OfflineAudioContext : gain maître 0,8 compris dans les WAV) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoAudio.cpp:18-28 (manifeste lu au démarrage du monde)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Gain maître 0,8 lu dans le source par l'exporteur (champ crowd.master du manifeste) et appliqué au rendu de chaque WAV ; WAV identiques au rendu (Strides.Cso.AudioAssets, SHA-1).",
+  "ecart": "Compresseur maître non porté (voir audio.concours) ; pas de contexte à déverrouiller dans Unreal (moteur audio natif) ; suspension en arrière-plan laissée au moteur (non vérifiée sur iOS).",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.reglages",
+  "domaine": "Audio",
+  "fonction": "Réglages Son (gain maître 0,8 ou 0, fondu 0,05 s) et Musique (bus 0,55 ou 0, fondu 1,2 s), appliqués au démarrage et sauvegardés.",
+  "js": [
+   "src/core/audio.js",
+   "src/game.js",
+   "src/core/save.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Réglages sound et music absents de SaveGame.settings (SaveGame.h:30) et de la carte Pause ; UStridesCsoAudio::SoundEnabled (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoAudio.cpp:44-53) lit un réglage « sound » s'il existe (« false » : muet), sinon son actif comme le web.",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.ambiance",
+  "domaine": "Audio",
+  "fonction": "Ambiance continue : vent 0,02 + min(v / 16, 1) × 0,12 (-85 % à l'intérieur), vagues si la mer est à < 160 m, foule 0,6 à < 90 m de la carrière du Pôle ou en CSO (brouhaha du commerce à l'intérieur), moteur du camion 42 + 4,2 × v Hz.",
+  "js": [
+   "src/core/audio.js",
+   "src/game.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoAudio.cpp:82-105 (AudioParam, niveau du public, bus du public : ambience, cheer, applause) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoAudio.cpp:126-180 (horloge audio, boucle du bus du public crowd_loop, niveau de l'image)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/oracles/cso_crowd.json (scripts/unreal/export-cso-sounds.mjs : gain du bus du public rendu hors ligne par la classe Audio, ambience à chaque image, cheer / applause, 7 séquences dont images de durée variable) rejoué par unreal/core/tests/test_core.cpp:3201-3267 (testCsoCrowd) : 3 380 relevés, écart max 4,47e-5 ; constantes lues dans le source (audio.js : 0,08, τ 0,5, cheer 0,28 / 1,6 s / τ 0,8 ; game.js : 90 m, 0,6) et niveau relevé dans le jeu en cours d'exécution à 88 / 89,5 / 90,5 / 92 / 40 / 200 m du centre de la carrière (manifeste crowd.inGame) ; test moteur Strides.Cso.Audio : niveau 0,6 à 50 m, 0 à 120 m, 0,6 en épreuve à 300 m, gain établi 0,048 = 0,6 × 0,08 après 6 s dans les 90 m, cheer à 0,28 ; mutations-cso-audio.py (bus du public : 13 mutations, 11 détectées, 2 déclarées)",
+  "ecart": "Porté : bus du public (foule) seul : boucle de bruit filtré rendue par le web (passe-bande 900 Hz, Q 0,7, seconde période de 2 s), volume = gain du bus (formule de la spécification Web Audio). Écart : le gain rendu par Chrome cale juste sous la cible (0,0479553 au lieu de 0,048 ; cause supposée, à confirmer : float32), toléré 5e-5 ; horloge audio = temps réel de l'image côté Unreal (instants du web : quantum de rendu de 128 échantillons). Absents : vent, vagues, moteur, brouhaha des commerces, musique (musicTick).",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.oiseaux-pluie",
+  "domaine": "Audio",
+  "fonction": "Toutes les 3 à 10 s de jour : goélands à < 90 m du rivage, oiseaux des haies hors ville (> 30 m), rien à l'intérieur ; pluie en bruit filtré (×0,09 aigu, ×0,05 grave, fondu 1,5 s), ×0,25 à l'intérieur.",
+  "js": [
+   "src/core/audio.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun son dans le portage : aucune USoundBase, SoundCue, MetaSound ni UAudioComponent dans Source.",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.sabots",
+  "domaine": "Audio",
+  "fonction": "Sabots du cheval du joueur selon la surface (route, gravier, sable, bois, boue, eau, herbe, terre, pont et plancher du camion), intensité clamp(v / 10, 0,35, 1), impacts de la foulée espacés de 35 ms ; expiration à chaque foulée au-delà de 6 m/s.",
+  "js": [
+   "src/core/audio.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Pas des sabots et souffle au galop absents (foulées de l'animation du cheval, horse:step et horse.anim.phase, non portées ; les pas des sabots, joués par setTimeout, ne sont pas non plus relevés dans le canal « audio » de l'oracle). Seul le sabot de l'appel en concours (hoof « sand » 1,4) est joué : voir audio.cheval.",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.cheval",
+  "domaine": "Audio",
+  "fonction": "Sons du cheval : ébrouement au saut et à la montée (+ poussée de l'appel en CSO), hennissement au refus et au sifflet, réception en deux temps (0,11 s), choc sourd et secousse caméra 0,12 hors épreuve.",
+  "js": [
+   "src/core/audio.js",
+   "src/game.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoAudio.cpp:29-48 (écouteurs de game.js:716-728 : landing, snort, hoof à l'appel en concours, neigh) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHorse.cpp:403-406 et 358-362 ; Content/Audio/Cso (snort, hoof_sand_1p4, landing_1, neigh)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:3080-3197 (testCsoSounds) : journal des sons du portage comparé image par image et dans l'ordre (fn, arguments, fichier appelant) au canal « audio » des 94 exécutions de unreal/core/tests/oracles/cso_runs/ (34 complètes, 60 légères) : 94/94 identiques, 52 446 images, 1 367 appels comparés (applause 82, bell 71, cheer 8, click 3, crowdOoh 19, fault 21, hoof 256, landing 256, neigh 54, railFall 9, railTouch 2, snort 256, thud 8, tone 260, notify au lancement) ; parties produites par les rejeux du cœur dans les 34 exécutions complètes (testFenceRuns : écouteurs de game.js sur les événements du cheval du cœur, sons des obstacles du cœur ; testCsoRuns : déroulé), dans l'ordre de game.update ; dans les 60 exécutions légères (sans canal « ch », sautées par testHorseRuns et testFenceRuns), les sons du cheval sont tirés des événements horse:jump, horse:land et horse:refuse de l'oracle (champ ev), pas d'un rejeu du cœur, et le click est recomposé par une règle écrite dans le test (appui action + player:dismountStart), pas par la logique du portage (AStridesPlayerController::DoAction) ; chaque appel a son WAV au manifeste ; scripts/unreal/mutations-cso-audio.py : 27 mutations, 22 détectées, 5 déclarées (code 0) ; WAV rendus hors ligne par la classe Audio du jeu web (scripts/unreal/export-cso-sounds.mjs, OfflineAudioContext, Math.random → mulberry32 à graine fixe) et importés sous /Game/Audio/Cso (scripts/unreal/import-cso-sounds.py, compression PCM) : test moteur Strides.Cso.AudioAssets (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoAudioTests.cpp:32-65) : PCM importé = SHA-1 du rendu pour les 19 sons, Result={Success} ; Strides.Cso.Audio (:98-239) : sources câblées dans le jeu (lancement par l'action du poteau, entrée, cloche, départ, appel, réception, obstacle franchi, cabré, descente, élimination), Result={Success}",
+  "ecart": "Portés : sons du cheval en épreuve de concours (cheval du joueur, commandes de concours). Absents : ébrouement à la montée et au sifflet, hennissement du sifflet (story.js), landing(0,5) des chevaux du décor (aucun ne saute dans le portage ; WAV non rendu, absent de l'oracle), sons du cheval hors épreuve (monde ouvert du portage : code d'origine), secousse caméra au choc. Déclaré : (1) compresseur du bus maître (DynamicsCompressor par défaut de Chrome, avec gain de rattrapage) non porté : par son seul, la chaîne du jeu web change le RMS de −8,7 à +3,5 dB (mesure gameChain de Content/Data/cso_sounds.json) ; (2) le web tire un hasard neuf à chaque appel (bruit, jitter, applaudissements) : Unreal rejoue une seule réalisation (graine fixe) ; (3) WAV en PCM 16 bits (quantification) ; deux rendus de Chrome diffèrent d'un pas sur quelques échantillons (ordre de sommation), le fichier existant est gardé quand l'écart reste dans la tolérance (au plus 1 pas sur au plus 16 échantillons) : deux exports successifs donnent donc les mêmes octets, mais un export dans un dossier vide change la SHA-1 de 3 sons sur 19 (applause_1p3_4, bell_2 et bell ; constat du contrôle adverse, non refait) ; (4) exclus du journal comparé : breath (foulées de l'animation, non portées), sons des obstacles des 60 exécutions légères (obstacles non rejoués), sons du déroulé de 32 exécutions posées en cours de parcours ; sol du sabot à l'appel : « sand » passé par le jeu (carrière), non relevé ; ordre des sons dans une même image entre barres, glissade et écouteurs d'obstacle choisi fixe (barres, cabré de la glissade, écouteurs), aucune image de l'oracle ne les mêle ; (5) lecture réelle non écoutée ni enregistrée : périphérique de sortie du Mac mini « Beyond TV » (CoreAudio, 48 kHz), aucun appareil iOS.",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.concours",
+  "domaine": "Audio",
+  "fonction": "Sons de concours : cloche du jury (880 Hz et partiels, coups espacés de 0,55 s), applaudissements (90 × intensité × durée claquements, 3,2 s), « Oh ! » du public, barre effleurée, barre qui tombe, faute.",
+  "js": [
+   "src/core/audio.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoAudio.cpp:11-51 ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoAudio.cpp:85-124 ; Content/Audio/Cso (bell, bell_2, applause_0p5_2p2, applause_0p55_2p6, applause_1p3_4, crowdOoh, railTouch, railFall, thud, fault)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:3080-3197 (testCsoSounds) : journal des sons du portage comparé image par image et dans l'ordre (fn, arguments, fichier appelant) au canal « audio » des 94 exécutions de unreal/core/tests/oracles/cso_runs/ (34 complètes, 60 légères) : 94/94 identiques, 52 446 images, 1 367 appels comparés (applause 82, bell 71, cheer 8, click 3, crowdOoh 19, fault 21, hoof 256, landing 256, neigh 54, railFall 9, railTouch 2, snort 256, thud 8, tone 260, notify au lancement) ; parties produites par les rejeux du cœur dans les 34 exécutions complètes (testFenceRuns : écouteurs de game.js sur les événements du cheval du cœur, sons des obstacles du cœur ; testCsoRuns : déroulé), dans l'ordre de game.update ; dans les 60 exécutions légères (sans canal « ch », sautées par testHorseRuns et testFenceRuns), les sons du cheval sont tirés des événements horse:jump, horse:land et horse:refuse de l'oracle (champ ev), pas d'un rejeu du cœur, et le click est recomposé par une règle écrite dans le test (appui action + player:dismountStart), pas par la logique du portage (AStridesPlayerController::DoAction) ; chaque appel a son WAV au manifeste ; scripts/unreal/mutations-cso-audio.py : 27 mutations, 22 détectées, 5 déclarées (code 0) ; WAV rendus hors ligne par la classe Audio du jeu web (scripts/unreal/export-cso-sounds.mjs, OfflineAudioContext, Math.random → mulberry32 à graine fixe) et importés sous /Game/Audio/Cso (scripts/unreal/import-cso-sounds.py, compression PCM) : test moteur Strides.Cso.AudioAssets (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoAudioTests.cpp:32-65) : PCM importé = SHA-1 du rendu pour les 19 sons, Result={Success} ; Strides.Cso.Audio (:98-239) : sources câblées dans le jeu (lancement par l'action du poteau, entrée, cloche, départ, appel, réception, obstacle franchi, cabré, descente, élimination), Result={Success}",
+  "ecart": "Déclaré : (1) compresseur du bus maître (DynamicsCompressor par défaut de Chrome, avec gain de rattrapage) non porté : par son seul, la chaîne du jeu web change le RMS de −8,7 à +3,5 dB (mesure gameChain de Content/Data/cso_sounds.json) ; (2) le web tire un hasard neuf à chaque appel (bruit, jitter, applaudissements) : Unreal rejoue une seule réalisation (graine fixe) ; (3) WAV en PCM 16 bits (quantification) ; deux rendus de Chrome diffèrent d'un pas sur quelques échantillons (ordre de sommation), le fichier existant est gardé quand l'écart reste dans la tolérance (au plus 1 pas sur au plus 16 échantillons) : deux exports successifs donnent donc les mêmes octets, mais un export dans un dossier vide change la SHA-1 de 3 sons sur 19 (applause_1p3_4, bell_2 et bell ; constat du contrôle adverse, non refait) ; (4) exclus du journal comparé : breath (foulées de l'animation, non portées), sons des obstacles des 60 exécutions légères (obstacles non rejoués), sons du déroulé de 32 exécutions posées en cours de parcours ; sol du sabot à l'appel : « sand » passé par le jeu (carrière), non relevé ; ordre des sons dans une même image entre barres, glissade et écouteurs d'obstacle choisi fixe (barres, cabré de la glissade, écouteurs), aucune image de l'oracle ne les mêle ; (5) lecture réelle non écoutée ni enregistrée : périphérique de sortie du Mac mini « Beyond TV » (CoreAudio, 48 kHz), aucun appareil iOS.",
+  "tranche": "a"
+ },
+ {
+  "id": "audio.interface",
+  "domaine": "Audio",
+  "fonction": "Sons d'interface : clic, notification, pièce, succès, échec, niveau, tic ; commerces : porte et clochette, caisse, percolateur.",
+  "js": [
+   "src/core/audio.js"
+  ],
+  "unreal": "unreal/StridesGrandTour/Source/StridesCore/Private/CsoAudio.cpp:23, 51 (notify de missions.start, click) ; unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesPlayerController.cpp:490-525 (click : action du poteau, monter ou descendre, réplique du dialogue) ; Content/Audio/Cso (notify, click)",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "unreal/core/tests/test_core.cpp:3080-3197 (testCsoSounds) : journal des sons du portage comparé image par image et dans l'ordre (fn, arguments, fichier appelant) au canal « audio » des 94 exécutions de unreal/core/tests/oracles/cso_runs/ (34 complètes, 60 légères) : 94/94 identiques, 52 446 images, 1 367 appels comparés (applause 82, bell 71, cheer 8, click 3, crowdOoh 19, fault 21, hoof 256, landing 256, neigh 54, railFall 9, railTouch 2, snort 256, thud 8, tone 260, notify au lancement) ; parties produites par les rejeux du cœur dans les 34 exécutions complètes (testFenceRuns : écouteurs de game.js sur les événements du cheval du cœur, sons des obstacles du cœur ; testCsoRuns : déroulé), dans l'ordre de game.update ; dans les 60 exécutions légères (sans canal « ch », sautées par testHorseRuns et testFenceRuns), les sons du cheval sont tirés des événements horse:jump, horse:land et horse:refuse de l'oracle (champ ev), pas d'un rejeu du cœur, et le click est recomposé par une règle écrite dans le test (appui action + player:dismountStart), pas par la logique du portage (AStridesPlayerController::DoAction) ; chaque appel a son WAV au manifeste ; scripts/unreal/mutations-cso-audio.py : 27 mutations, 22 détectées, 5 déclarées (code 0) ; WAV rendus hors ligne par la classe Audio du jeu web (scripts/unreal/export-cso-sounds.mjs, OfflineAudioContext, Math.random → mulberry32 à graine fixe) et importés sous /Game/Audio/Cso (scripts/unreal/import-cso-sounds.py, compression PCM) : test moteur Strides.Cso.AudioAssets (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesCsoAudioTests.cpp:32-65) : PCM importé = SHA-1 du rendu pour les 19 sons, Result={Success} ; Strides.Cso.Audio (:98-239) : sources câblées dans le jeu (lancement par l'action du poteau, entrée, cloche, départ, appel, réception, obstacle franchi, cabré, descente, élimination), Result={Success}",
+  "ecart": "Portés : notify du lancement de l'activité, click d'une action (interact.js:52) et d'une réplique (hud.js:570). Absents : pièce, succès, échec, niveau, tic, commerces, notification du téléphone. Déclaré : (1) compresseur du bus maître (DynamicsCompressor par défaut de Chrome, avec gain de rattrapage) non porté : par son seul, la chaîne du jeu web change le RMS de −8,7 à +3,5 dB (mesure gameChain de Content/Data/cso_sounds.json) ; (2) le web tire un hasard neuf à chaque appel (bruit, jitter, applaudissements) : Unreal rejoue une seule réalisation (graine fixe) ; (3) WAV en PCM 16 bits (quantification) ; deux rendus de Chrome diffèrent d'un pas sur quelques échantillons (ordre de sommation), le fichier existant est gardé quand l'écart reste dans la tolérance (au plus 1 pas sur au plus 16 échantillons) : deux exports successifs donnent donc les mêmes octets, mais un export dans un dossier vide change la SHA-1 de 3 sons sur 19 (applause_1p3_4, bell_2 et bell ; constat du contrôle adverse, non refait) ; (4) exclus du journal comparé : breath (foulées de l'animation, non portées), sons des obstacles des 60 exécutions légères (obstacles non rejoués), sons du déroulé de 32 exécutions posées en cours de parcours ; sol du sabot à l'appel : « sand » passé par le jeu (carrière), non relevé ; ordre des sons dans une même image entre barres, glissade et écouteurs d'obstacle choisi fixe (barres, cabré de la glissade, écouteurs), aucune image de l'oracle ne les mêle ; (5) lecture réelle non écoutée ni enregistrée : périphérique de sortie du Mac mini « Beyond TV » (CoreAudio, 48 kHz), aucun appareil iOS ; (6) click de la descente aligné le 22/11/2026 : comme le web (« Descendre » proposé sous 2,5 m/s et hors saut, sinon interact.trigger ne fait rien et ne joue pas de click), AStridesPlayerController::DoAction ne descend et ne joue click() que sous 2,5 m/s et hors saut ; noDismount de mission non porté (monte.interaction-descendre).",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.musique",
+  "domaine": "Audio",
+  "fonction": "Musique procédurale discrète : 84 BPM, Ré maj7, Si min7, Sol maj7, La 6 sus (2 mesures chacun), pads, basse, arpège en croches avec 22 % de silences.",
+  "js": [
+   "src/core/audio.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun son dans le portage : aucune USoundBase, SoundCue, MetaSound ni UAudioComponent dans Source.",
+  "tranche": "h"
+ },
+ {
+  "id": "audio.vehicules",
+  "domaine": "Audio",
+  "fonction": "Moteurs : impulsions d'allumage (régime / 60 × cylindres / 2), diesel (claquement, turbo au-delà de 1 100 tr/min) ou essence, atténuation sur 70 m, bip de recul 0,4 s / 0,4 s ; démarreur, frein à air, rapports, pont (vérins, choc, loquet), portière, klaxon.",
+  "js": [
+   "src/core/audio.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun son dans le portage : aucune USoundBase, SoundCue, MetaSound ni UAudioComponent dans Source.",
+  "tranche": "f"
+ },
+ {
+  "id": "langue.choix",
+  "domaine": "Langue",
+  "fonction": "Premier lancement : choix Français / English avant le chargement (sauf partie déjà sauvée → français, ou ?lang=) ; langue gardée (`strides-lang`) ; changement depuis le titre ou les Réglages = sauvegarde puis rechargement complet.",
+  "js": [
+   "src/main.js",
+   "src/core/i18n.js",
+   "src/styles.css"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Champ lang « fr » stocké dans SaveGame (SaveGame.h:20) sans aucun effet ni écran de choix.",
+  "tranche": "h"
+ },
+ {
+  "id": "langue.traduction",
+  "domaine": "Langue",
+  "fonction": "Traduction : tout texte passe par t('…') ou T`…${x}…` (clé = texte français exact, gabarits {0}, {1}) ; anglais pris dans 12 dictionnaires src/i18n/en ; texte non traduit affiché en français et listé (__i18nMissing).",
+  "js": [
+   "src/core/i18n.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Table de chaînes pour l'épreuve de CSO seulement (Content/Data/strings_cso.json, strides::TextTable) ; ailleurs, textes Unreal en français codés en dur (StridesHUD.cpp, StridesTouchControls.cpp).",
+  "tranche": "h"
+ },
+ {
+  "id": "langue.formats",
+  "domaine": "Langue",
+  "fonction": "Formats selon la langue : décimales (virgule / point), milliers (« 14 850 » / « 14,850 »), euros (« 14 850 € » / « €14,850 »), heure (« 20 h 30 » / « 8:30 pm »), chrono m:ss.d.",
+  "js": [
+   "src/core/i18n.js",
+   "src/core/math.js"
+  ],
+  "unreal": "Épreuve de CSO : dec / toFixed du jeu web (StridesCore Text.cpp). Ailleurs : « %.1f m/s » (StridesHUD.cpp), « %d crédits » (StridesHUD.cpp)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test de format.",
+  "ecart": "Hors épreuve : point décimal en français, ni séparateur de milliers, ni euros, ni heure ; formatTime (m:ss.d) non porté.",
+  "tranche": "h"
+ },
+ {
+  "id": "enligne.sauvegarde-nuage",
+  "domaine": "En ligne",
+  "fonction": "Sauvegarde dans le nuage (base de la page claude.ai, document privé par joueur) : copie au plus toutes les 30 s après chaque sauvegarde locale, immédiate en arrière-plan ; seulement connecté, partie commencée, < 240 000 caractères ; écritures en file ; refus d'écriture → lecture seule ; hors claude.ai tout reste local sans erreur.",
+  "js": [
+   "src/core/online.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "CloudKit et Game Center désactivés (DefaultEngine.ini:37-38) ; service natif à choisir (à confirmer, rien de payant engagé).",
+  "tranche": "socle"
+ },
+ {
+  "id": "enligne.reprise-nuage",
+  "domaine": "En ligne",
+  "fonction": "Sauvegarde en ligne plus récente d'au moins 60 s : au titre, carte « Reprendre ta partie ? » (Reprendre / Garder cet appareil ; copie locale gardée en `.backup.local`) ; en jeu, message renvoyant aux Réglages ; pendant le chargement, proposée à l'affichage du titre.",
+  "js": [
+   "src/core/online.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucune sauvegarde distante.",
+  "tranche": "socle"
+ },
+ {
+  "id": "enligne.classements",
+  "domaine": "En ligne",
+  "fonction": "Classements partagés de 8 épreuves (Défi du Pôle v6, Concours Amateur 2 et 1, Pro 2, Parcours du Pôle, Cross de Saint-Gatien, Sprint de la plage, Tour de l'hippodrome) : note = pénalités × 100 000 + chrono au centième, égalité au plus ancien ; chrono sous le minimum physique (26, 54, 38 ou 50 s) non inscrit ; écrit seulement si meilleur ; toast « Classement · épreuve : 1er sur N ».",
+  "js": [
+   "src/core/online.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun classement partagé, aucun rang ; le meilleur temps de l'activité Parcours du Pôle est gardé localement (bestTimes.cso_train, tranche T11 : activites.parcours-pole).",
+  "tranche": "socle"
+ },
+ {
+  "id": "enligne.pseudo",
+  "domaine": "En ligne",
+  "fonction": "Pseudonyme : pseudo du défi, sinon nom du joueur, sinon « Cavalier » ; textes des autres joueurs nettoyés (24 caractères, sans caractères de contrôle ni < >) ; changement de pseudo = ligne réécrite.",
+  "js": [
+   "src/core/online.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun pseudonyme.",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.arret-brutal",
+  "domaine": "Outils",
+  "fonction": "Garde d'arrêt brutal : marque `strides-run-guard` posée tant que la page est affichée (retirée en arrière-plan), avec l'étape atteinte (construction du monde, véhicules, personnages 3D, shaders, écran titre, « partie (N min) » mise à jour toutes les 15 s) ; marque restée < 6 h = arrêt brutal compté ; compteur remis à 0 après 3 min stables.",
+  "js": [
+   "src/core/crashGuard.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core). tests/unit/crashGuard.test.js existe côté web, non exporté.",
+  "ecart": "Aucune détection d'arrêt ni journal d'étapes (le rapporteur de plantage du moteur n'est pas configuré ici : à confirmer).",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.mode-sur",
+  "domaine": "Outils",
+  "fonction": "Mode sûr après arrêt brutal : niveau 1 = seuls joueur et monture réalistes, qualité Économie, shaders au fil de l'eau ; niveau 2 = aucun modèle réaliste, camion de secours, ni van ni Defender ; +1 niveau par arrêt (max 2), cheval Tripo remplacé par Comète, niveau gardé (`strides-safe-level`) jusqu'au changement de qualité ou de modèles ; ?secours = niveau 2 ; note au titre et toast en jeu.",
+  "js": [
+   "src/core/crashGuard.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Aucun mode dégradé.",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.debug",
+  "domaine": "Outils",
+  "fonction": "Avec ?debug : bandeau i/s, résolution, appels de rendu, triangles (k) et position (x, z) ; exceptions de la boucle relancées.",
+  "js": [
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Remplaçable par les commandes stat du moteur, sans code dans le projet.",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.acces-test",
+  "domaine": "Outils",
+  "fonction": "Accès de test (développement et build e2e seulement) : window.__game, ?autostart (partie « Test », avatar f), ?debug, ?real, ?classic, ?truck=classic, ?metrics, ?tripohorse ; restent pour les joueurs : ?secours et ?lang.",
+  "js": [
+   "src/core/devHooks.js",
+   "src/game.js",
+   "src/main.js"
+  ],
+  "unreal": "Option -TouchControls (StridesPlayerController.cpp:76-79) ; captures AStridesShots si demandées (StridesGameMode.cpp:118), dossier de sortie -StridesShotsDir et refus d'écrire dans Saved/Screenshots/Strides ou MacEditor non vides (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesShots.cpp:78-124, résolution avant toute capture :242-257) ; démo du parcours F8 (StridesPlayerController.cpp:109, 529)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Dossier de sortie des captures : test moteur Strides.Shots.OutputDir (unreal/StridesGrandTour/Source/StridesGrandTour/Private/Tests/StridesShotsTests.cpp ; Result={Success} le 19/11/2026 : dossier protégé non vide refusé avec ou sans l'option, y compris écrit avec une autre casse (contrôle des remarques : comparaison sans casse, le volume APFS du Mac ne la distingue pas ; …/Screenshots/strides désigne le vrai dossier Strides), dossier vide accepté, option absolue ou relative à la racine du dépôt, mode cso sans option sur les chemins de poses.json, capture préexistante intacte, -StridesShots sans option refusé tant que Saved/Screenshots/Strides contient des fichiers). Essais réels du 19/11/2026 (jeu -game, rendu Metal) : -StridesShots sans option : journal « Strides shots: REFUS, aucune capture écrite », sortie à l'image 1, les 33 fichiers de Saved/Screenshots/Strides et MacEditor identiques avant et après (shasum, date, taille) ; -StridesShots=cso -StridesPose=carriere -StridesShotsDir=<dossier absolu> : carriere-aerienne-unreal.png écrite dans ce dossier en 844 × 390 (sips), captures versionnées de unreal/docs/parite/cso inchangées ; -StridesShots -StridesShotsDir=.tmp/shots/r0-essai (relatif à la racine du dépôt) : 26 captures dans ce dossier, parcours de démonstration jusqu'à l'arrivée. Aucun test des autres options (-TouchControls, F8).",
+  "ecart": "Options différentes : rien n'équivaut à ?autostart, ?secours ou ?lang ; pas d'accès scriptable à l'état du jeu pour des tests de bout en bout. Contrôle des remarques (20/11/2026) : le garde-fou de -StridesShotsDir se contournait avec une autre casse (FPaths::IsSamePath distingue la casse sur Mac) : corrigé (AStridesShots::ResolveShotsDir compare sans tenir compte de la casse), cas ajoutés à Strides.Shots.OutputDir (dossier de travail en majuscules, relatif, et vrai dossier Strides en minuscules) ; un lien symbolique vers un dossier protégé n'est pas reconnu (non testé).",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.mesure",
+  "domaine": "Outils",
+  "fonction": "Mesure locale des résultats : 9 événements (partie lancée une fois par session ; première mission, 2e activité, mission de recrutement, premier recrutement une fois par partie ; défi par tentative ; affichage et clic de l'invitation Strides, partage), 6 paramètres admis + version 2.0.0, journal de 200, aucun envoi tant que l'adresse est vide.",
+  "js": [
+   "src/core/metrics.js",
+   "src/config.js",
+   "src/game.js"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Seulement des journaux UE_LOG « Strides career start / complete » (StridesProgressionSubsystem.cpp:26, 44), sans dédoublonnage ni paramètres.",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.bus",
+  "domaine": "Outils",
+  "fonction": "Bus d'événements (on / off / emit) reliant cheval, obstacles et missions aux sons, particules, astuces, statistiques et HUD.",
+  "js": [
+   "src/core/bus.js",
+   "src/game.js"
+  ],
+  "unreal": "Délégué OnCourseEvent (StridesCourse.h) diffusé par AStridesCourse::FlushRunCalls (appels d'interface de strides::CsoRun) et écouté par le HUD (unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesHUD.cpp) ; sinon appels directs",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; infra.",
+  "ecart": "Pas de bus générique : seuls les événements de parcours sont diffusés, sans abonnés son, particules ou statistiques.",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.gltf",
+  "domaine": "Outils",
+  "fonction": "Chargement des modèles glTF ; dans la version en un seul fichier, .glb intégrés en base64 décodés sans requête (repli du chargeur pour les images, test WebP).",
+  "js": [
+   "src/core/gltfInline.js"
+  ],
+  "unreal": "Import hors exécution par Interchange : scripts/unreal/import-horse-glb.py:20, scripts/unreal/import-rider-animations.py, scripts/unreal/import-world.py:652-719 → Content/Characters, Content/World",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:16 (cheval et cavalière importés, échelle, orientation et placement contrôlés sur capture) ; tests/unit/gltfInline.test.js sans équivalent.",
+  "ecart": "Fonction remplacée : aucun chargement glTF à l'exécution ; la version « un seul fichier » est sans objet.",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.maths",
+  "domaine": "Outils",
+  "fonction": "Utilitaires : clamp, lerp, invLerp, smoothstep, damp, wrapAngle, angleDiff, dampAngle, mulberry32 (aléa reproductible), distances point-segment / polyligne / rectangle tourné, longueur et point le long d'une polyligne, tirage dans une liste.",
+  "js": [
+   "src/core/math.js"
+  ],
+  "unreal": "MathUtil.h:8-13 (clampd, smoothstep, signd), utilisés par JumpModel.cpp et CsoRide.cpp ; le reste via FMath",
+  "etat": "partiel",
+  "niveau": "teste",
+  "preuve": "Indirect : oracles jump.json et cso_ride.json rejoués par unreal/core/tests/test_core.cpp (relancé le 18/11/2026 hors dépôt : 4 944 vérifications, 0 échec) ; aucun oracle propre à math.js.",
+  "ecart": "Seuls clamp et smoothstep portés ; ni mulberry32 (confettis graine 7, placements du monde), ni fonctions de distance, ni amortissements.",
+  "tranche": "socle"
+ },
+ {
+  "id": "outils.bruit",
+  "domaine": "Outils",
+  "fonction": "Bruit simplex 2D à graine et fbm (4 octaves par défaut, lacunarité 2, gain 0,5) : relief, densité de forêt, texture du terrain, ciel.",
+  "js": [
+   "src/core/noise.js"
+  ],
+  "unreal": "Pas de bruit : relief échantillonné dans la grille exportée (scripts/unreal/world-export.js:64-66 → terrain.bin ; StridesDataSubsystem.cpp:246-291, TerrainHeight)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Strides.World.Scenery (StridesCoreTests.cpp:119-132) compare 4 hauteurs de la grille à des valeurs recopiées à la main d'analyticHeight, sans oracle exporté, et n'est pas cité comme exécuté dans unreal/docs/validation-mac-2026-11-17.md:13.",
+  "ecart": "Effets figés à l'export ; densité de forêt (nom de zone « Forêt de Saint-Gatien ») et nuages du ciel non reproduits.",
+  "tranche": "socle"
+ },
+ {
+  "id": "interface.charte",
+  "domaine": "Interface",
+  "fonction": "Charte STRIDES : crème #efeae0, encre #0f0f0e, or #b8953a, vert #2e8a65, rouge #c84545, bleu #3e7cab ; surfaces claires (cartes, téléphone, notifications, dialogues, objectif, toasts, portefeuille) ; polices Geist et Geist Mono ; bouton principal encre, secondaire bordé.",
+  "js": [
+   "src/styles.css"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "HUD provisoire : texte Canvas coloré (StridesHUD.cpp:44-93), boutons sombres à 82 % d'opacité (StridesTouchControls.cpp:30).",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.zones-sures",
+  "domaine": "Interface",
+  "fonction": "Marges de sécurité : gauche et droite ≥ 16 px, haut et bas ≥ 10 px (encoche, barre d'accueil) ; HUD compact sur écran court (iPhone en paysage, 375 à 430 px de haut).",
+  "js": [
+   "src/styles.css"
+  ],
+  "unreal": "",
+  "etat": "absent",
+  "niveau": "aucun",
+  "preuve": "Aucun code Unreal ne fait cette fonction (recherche rg dans Source, Content, scripts/unreal, unreal/core).",
+  "ecart": "Positions fixes en pixels sans marge de sécurité (StridesTouchControls.cpp:128-135 ; minicarte à 28 px du bord, StridesHUD.cpp:128).",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.disposition-hud",
+  "domaine": "Interface",
+  "fonction": "HUD : bandeau haut minicarte | objectif, astuces, toasts | portefeuille ; télémétrie (allure, vitesse, endurance) en bas, étroite à cheval, masquée pendant un dialogue ; HUD allégé en concours (ni carte, ni portefeuille, ni BOOST).",
+  "js": [
+   "src/styles.css"
+  ],
+  "unreal": "AStridesHUD::DrawHUD : lignes de texte à gauche (StridesHUD.cpp:44-93) et minicarte en haut à droite (StridesHUD.cpp:123-234)",
+  "etat": "partiel",
+  "niveau": "joue_ecran",
+  "preuve": "unreal/docs/validation-mac-2026-11-17.md:14 (HUD visible), :18 (allures lues au HUD).",
+  "ecart": "Colonne de texte provisoire ; pas d'allègement en concours ni de masquage pendant un dialogue.",
+  "tranche": "h"
+ },
+ {
+  "id": "interface.ecrans-styles",
+  "domaine": "Interface",
+  "fonction": "Styles des écrans : téléphone façon iPhone (accueil, grille de 12 apps sur 4 colonnes, app STRIDES et ses demandes), notifications iOS, toasts, dialogues, cartes plein écran, écran titre, choix de langue, classements, commerces, énergie, transition du sommeil, publicités de nuit.",
+  "js": [
+   "src/styles.css"
+  ],
+  "unreal": "Téléphone dessiné au Canvas : les 10 applications de world_architecture.json en tuiles inertes sur 2 colonnes, mission active et compteur de carrière (StridesHUD.cpp:104-119)",
+  "etat": "partiel",
+  "niveau": "compile",
+  "preuve": "Aucun test ; téléphone non cité dans unreal/docs/validation-mac-2026-11-17.md.",
+  "ecart": "Seul ce téléphone au Canvas existe, sans application utilisable ; cartes UMG : Pause (tranche T8), présentation et plan de l'épreuve du Pôle, dialogue de l'entraîneur (tranche T10, unreal/StridesGrandTour/Source/StridesGrandTour/Private/StridesCsoScreens.cpp) ; aucun autre écran.",
+  "tranche": "h"
+ }
+]

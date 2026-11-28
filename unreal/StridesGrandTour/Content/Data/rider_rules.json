@@ -1,0 +1,86 @@
+{
+ "schema": "strides.rider_rules/1",
+ "generator": "scripts/unreal/export-rider-rules-data.mjs",
+ "source": [
+  "src/entities/human/anim.js",
+  "src/entities/human.js",
+  "src/entities/pjlHorse.js"
+ ],
+ "units": "unités du personnage (≈ m), s, fractions ; RIDER_FIT, RIDER_SEAT, FIST, LEG_THICK, HIND_DOWN : m",
+ "doc": "paramètres des règles de monte du jeu web v3, lus par StridesCore (RiderRules.h, rideParamsFromJson) : RIDE importé d’anim.js ; constantes nommées relues dans le source (anim : riding, hugFlank, hugMemory ; human : animateRiding ; pjlHorse : profil et postérieurs reposés)",
+ "RIDE": {
+  "postLift": 0.085,
+  "twoLift": 0.1,
+  "jumpLift": 0.05,
+  "seatReach": 0.93,
+  "riseReach": 0.95,
+  "foldIn": 0.18,
+  "releaseIn": [
+   0.12,
+   0.35
+  ],
+  "holdMax": 0.45,
+  "recover": 0.5,
+  "handBack": 0.4,
+  "landFold": 0.6,
+  "hindFold": 0.4,
+  "breathRate": 0.25,
+  "breathChest": 0.012,
+  "breathShoulder": 0.012,
+  "idleShift": 0.018,
+  "handSpread": 0.02,
+  "handReach": 0.97,
+  "handClear": 0.1
+ },
+ "anim": {
+  "THIGH_MARGIN": 0.02,
+  "POLE_OPEN": 0.9,
+  "HUG_OPEN": 2.4,
+  "HUG_RELAX": 0.12,
+  "FOOT_OPEN": 0.6,
+  "FOOT_RELAX": 0.02,
+  "DEFAULT_FIT": {
+   "stirrupX": 0.33,
+   "stirrupY": -0.64,
+   "stirrupZ": 0.06,
+   "kneeOut": 0.45,
+   "handX": 0.06,
+   "handY": 0.3,
+   "handZ": 0.36
+  }
+ },
+ "human": {
+  "FLANK_RELAX": 0.3,
+  "FLANK_LEAD": 2,
+  "FIST": [
+   0,
+   -0.068,
+   0.012
+  ],
+  "RIDER_FIT": {
+   "stirrupX": 0.38,
+   "stirrupY": -0.69,
+   "stirrupZ": 0.06,
+   "kneeOut": 0.45,
+   "handX": 0.065,
+   "handY": 0.2,
+   "handZ": 0.36
+  },
+  "RIDER_SEAT": {
+   "saddle": [
+    0,
+    0,
+    0
+   ],
+   "body": [
+    0,
+    0.575,
+    0
+   ]
+  }
+ },
+ "pjlHorse": {
+  "LEG_THICK": 0.05,
+  "HIND_DOWN": 0.1
+ }
+}

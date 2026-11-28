@@ -1,0 +1,8 @@
+# Paquet Development j4d (BuildCookRun -skipcook, code 0, binaire 06:11:24), lancé par open avec -StridesShots=titre (outil hors Shipping), aucune entrée injectée
+[2026.11.28-05.21.50:885][  1]LogTemp: Display: Strides shots: captures dans /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/preuves/j4d/titre-paquet-dev
+[2026.11.28-05.21.50:886][  1]LogTemp: Display: Strides écran titre : ouvert (page=title ; *play=Jouer)
+[2026.11.28-05.22.15:349][ 46]LogTemp: Display: Strides shot: 30_titre_1 (titre ouvert 1, HUD masqué 1, caméra de survol 1)
+[2026.11.28-05.22.23:358][397]LogTemp: Display: Strides shot: 30_titre_2 (titre ouvert 1, HUD masqué 1, caméra de survol 1)
+# PNG non écrits : bac à sable du paquet (aucun fichier hors conteneur) ; sauvegarde strides_main.sav md5 avant/après : 8d46a855da75b737ad19ac36f8ce6bde / 8d46a855da75b737ad19ac36f8ce6bde
+# Shipping j4d (binaire 06:16:54) :
+0 chaîne(s) d'outils trouvée(s) dans le Shipping sur 17

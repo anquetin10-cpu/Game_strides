@@ -1,0 +1,25 @@
+j3c-g1 17.10.56:959 Strides career start: tuto (téléphone) 7 étapes
+j3c-g1 17.11.58:178 Strides career step: tuto 1/7
+j3c-g1 17.12.01:378 Strides career step: tuto 2/7
+j3c-g1 17.12.28:263 Strides career step: tuto 3/7
+j3c-g1 17.13.03:778 Strides career step: tuto 4/7
+j3c-g1 17.13.56:463 Strides career step: tuto 5/7
+j3c-g1 17.14.41:743 Strides career step: tuto 6/7
+j3c-g1 17.17.22:814 Strides career step: tuto 7/7
+j3c-g1 17.17.22:814 Strides career complete: tuto credits=50 reputation=60 (+50, +60)
+j3c-g1 17.18.31:499 Strides career start: m1 (téléphone) 4 étapes
+j3c-g1 17.20.47:827 Strides career step: m1 1/4
+j3c-g1 17.20.49:957 Strides career step: m1 2/4
+j3c-g1 17.22.01:741 Strides career step: m1 3/4
+j3c-g1 17.28.26:389 Strides career step: m1 4/4
+j3c-g1 17.28.26:389 Strides career complete: m1 credits=140 reputation=120 (+90, +60)
+j3c-g1 17.28.54:279 Strides career start: m2 (téléphone) 7 étapes
+j3c-g1 17.40.27:511 Strides career step: m2 1/7
+j3c-g1 17.41.52:795 Strides career step: m2 2/7
+j3c-g1 17.42.08:860 Strides career step: m2 3/7
+j3c-g1 17.42.27:062 Strides career step: m2 4/7
+j3c-g1 17.45.03:027 Strides career step: m2 5/7
+j3c-g1 17.50.48:745 Strides career step: m2 6/7
+j3c-g3 18.33.14:823 Strides career start: m2 (téléphone) 7 étapes
+j3c-g3 18.35.02:075 Strides career step: m2 1/7
+j3c-g2 18.09.17:930 Strides career start: m2 (téléphone) 7 étapes

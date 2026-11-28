@@ -1,0 +1,37 @@
+{
+ "schema": "strides.oracle.rider_rules/1",
+ "generator": "scripts/unreal/export-rider-rules.mjs",
+ "doc": "oracle O1 des règles de monte du jeu web v3 (essai de monte, voie A, étape 2) : entrées vues par la règle, pose du squelette classique de 25 os, cibles, repères et profils du cheval WildMesh, état de son mélangeur, rendu réaliste (information), état interne, pour chaque image depuis la mise en selle (pas fixe de 1/30 s, graine 20261118). Métriques M1 à M17 : scripts/unreal/rider-rules-metrics.mjs.",
+ "layout": "un fichier par scénario dans ce dossier (runs[].file = <id>.json) : objet { id, desc, setup, frames }, en-tête sur la première ligne puis une image par ligne ; runs[].frames = nombre d’images ; runs[].window = [première, dernière + 1] images de la fenêtre de mesure ; ordre = ordre des scénarios de l’exporteur",
+ "frames": {
+  "S": "repère du siège : os « saddle » du cheval du jeu, sans échelle (matrixWorld décomposée, recomposée à l’échelle 1, comme pjlHorse.js _flankUpdate) ; x vers la gauche du cheval, y vers le haut, z vers l’avant ; mètres",
+  "H": "repère du cheval : groupe « holder » de la vue WildMesh (origine au sol sous le cheval, axes du cap) ; sert à la verticale et à l’avant pour le buste",
+  "model": "repère du personnage classique (unités du modèle, avant l’échelle hu.scale) ; le maillage est enfant de l’os « saddle » à l’offset nul, sans rotation, à l’échelle monde hu.scale : point dans S = point modèle × scale",
+  "world": "monde three.js (y vers le haut)",
+  "quaternions": "[x, y, z, w]"
+ },
+ "setup": "seed, dt, scale (hu.scale), sex, rig (rigInfo : thighLen, shinLen, upperArmLen, foreArmLen, ankleY, toe, heelBack, seatToHips, hipsY, …), rest (positions de repos des 25 os, unités du modèle, ordre setup.bones), bones (ordre des os de cl), cq (ordre des quaternions de cq), points (points sans os ajoutés à cl), RIDE (paramètres de human/anim.js), fit0 (réglages à la mise en selle, mètres, hu._fit), pjlFit (réglages du cheval WildMesh, mètres), pjlRest (ancres d’étrier et de siège au repos, repère du cheval, d’où viennent stirrupY et stirrupZ avant bornage), plan, window, fade (première image hors du fondu de 0,45 s), cso (cas d’obstacle), real (calage de la plante du modèle réaliste)",
+ "channels": {
+  "f": "indice de l’image depuis la mise en selle (0 = première image exportée)",
+  "ui": "commande appliquée avant l’image : [move.x, move.y, galop tenu (0/1), appui SAUT (0/1), vitesse imposée en m/s ou null]",
+  "in": "entrées de la règle, relevées dans hu.anim juste après hu.animateRiding (human.js:317-383) : ce que riding() a lu à cette image (animateHuman ne les modifie pas). dt, t, hs (horseSpeed), ph (horseGaitPhase), turn, jump (vol du jeu, -1 au sol), landT (s depuis le poser des antérieurs ; null = absent, la règle lit -1), hindDown, bob (m), pitch (rad), wave, fit : réglages en UNITÉS DU MODÈLE tels que lus par la règle (mètres = valeur × scale, sauf kneeOut et mountKneeOut, directions) : stirrupX/Y/Z, kneeOut, handX/Y/Z, legClear, mountKneeOut, flankL et flankR ([y0, pas, d0..d19], profil vu par le cavalier : image précédente, resserrement borné FLANK_RELAX, élargissement anticipé FLANK_LEAD), crest ([z0, pas, h0..h17], -9 sans mesure). Pleine précision.",
+  "cl": "squelette classique dans S (m), pleine précision : 25 articulations dans l’ordre setup.bones, puis planteL, planteR (lFoot/rFoot.localToWorld(0, -ankleY+0.012, toe.z-0.005), anim.js:771), poingL, poingR (lHand/rHand.localToWorld(FIST = 0, -0.068, 0.012), human.js:56)",
+  "cq": "quaternions locaux des 24 os animés (ordre setup.cq, NAMES de human/anim.js), pleine précision",
+  "tg": "cibles de la règle (hu.anim._P), dans S (m ; positions du modèle × scale) : fL, fR (cheville visée), qL, qR (orientation du pied, repère du modèle = S), xL, xR (place naturelle du pied f.xMax, m, null sans profil), hL, hR (poignet visé), hp (bassin visé)",
+  "hz": "cheval, pleine précision : S et H ([px, py, pz, qx, qy, qz, qw] dans le monde), an (ancres skinnées V.anchorWorld dans S : seat, barL, barR, bitL, bitR, withers, crest, kneeL, kneeR, ironL, ironR), ir (étriers affichés h.pjl.irons dans S, [gauche, droit]), fl, fr, cr (profils bruts de cette image, h.pjl.fit, mètres, repère S de cette image), hv (hauteur au-dessus du sol des os fingers_02_l, fingers_02_r, toes_02_l, toes_02_r, m), jT (h.jumpT), jd (h.jumpDur), jc (clip de saut), cT (V.jumpTime), toeOff, foreLand, hd (h.pjl.hindDown), lT (h.pjl.landT), v (h.speed), gait, lead (locomotion du jeu), p ([x, y, z] du cheval), hdg (cap), ph (h.anim.phase), gy (sol sous le cheval)",
+  "mx": "mélangeur WildMesh (pjl/view.js update) : a = actions actives [nom, poids, temps du clip (s)], jc, jm (miroir), jt (jumpTime), jw (jumpWeight), pl (postLand), lb (leadBlend), it (idleTime), by (body.position.y), rz (body.rotation.z), co (contactOff), sec (ressorts de SecondaryMotion : bascule, headLift, maneRoll, earPrick, valeur x), s (instantané _snapshot : gait, lead, phase, strideLen, turnRate, mode, jt, jT, roll). Pleine précision.",
+  "rz": "rendu visible, modèle réaliste rider_f.glb (information, sans valeur de preuve) : os dans S (m, au millionième) dans l’ordre setup.real.bones, puis gripL, gripR (RealBody.gripPoint), planteL, planteR (point calé, setup.real)",
+  "dg": "état interne de la règle après l’image (hu.anim._ride) : post, diag, wantDiag, diagT, two, jumpK, rel, bobAvg, hd, wasJump, look [a, to, t], hug { l: [px, fx, t], r: […] } ; bT (_P.blendT)",
+  "pe": "pénétration de l’axe des os dans le maillage du cheval (m), méthode des 6 rayons de rider-audit.mjs:80-150 (mêmes points : cuisse, jambe, pied, avant-bras, main, buste) : [profondeur maximale, lieu] ; seulement dans la fenêtre de mesure (null ailleurs)"
+ },
+ "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1",
+ "runs": [
+{"id":"E1","file":"E1.json","frames":65,"window":[20,65],"accept":true},
+{"id":"E1b","file":"E1b.json","frames":130,"window":[60,130],"accept":true},
+{"id":"E2g","file":"E2g.json","frames":140,"window":[60,140],"accept":true},
+{"id":"E2d","file":"E2d.json","frames":140,"window":[60,140],"accept":true},
+{"id":"E3","file":"E3.json","frames":105,"window":[20,105],"accept":true},
+{"id":"E3b","file":"E3b.json","frames":109,"window":[20,109],"accept":true},
+{"id":"E6t","file":"E6t.json","frames":120,"window":[45,120],"accept":false},
+{"id":"E6v","file":"E6v.json","frames":120,"window":[60,120],"accept":false}
+]}

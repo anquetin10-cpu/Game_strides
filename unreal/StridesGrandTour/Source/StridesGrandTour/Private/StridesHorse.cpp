@@ -1,0 +1,1146 @@
+#include "StridesHorse.h"
+#include "StridesCsoAudio.h"
+#include "StridesPlayerController.h"
+#include "Animation/AnimationAsset.h"
+#include "Animation/AnimSequence.h"
+#include "Camera/CameraComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/GameInstance.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
+#include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "StridesCore/CsoRide.h"
+#include "StridesCourse.h"
+#include "StridesDataSubsystem.h"
+#include "StridesFence.h"
+#include "StridesHorseTack.h"
+#include "StridesHorseTackMesh.h"
+#include "StridesHorseMirror.h"
+#include "StridesHorseView.h"
+#include "StridesMonteOptions.h"
+#include "StridesRider.h"
+#include "StridesSaveSubsystem.h"
+#include "StridesCore/HorseCoat.h"
+#include "StridesUnits.h"
+
+AStridesHorse::AStridesHorse()
+{
+	PrimaryActorTick.bCanEverTick = true;
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	SetRootComponent(Root);
+	// Forme provisoire : tronc d'un cheval de 1,65 m au garrot (2,2 × 0,6 × 0,7 m), à remplacer par le cheval PJL importé.
+	Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
+	Body->SetupAttachment(Root);
+	Body->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
+	Body->SetRelativeLocation(FVector(0, 0, 125));
+	Body->SetRelativeScale3D(FVector(2.2, 0.6, 0.7));
+	Body->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	Mesh->SetupAttachment(Root);
+	// Rig normalisé (scripts/unreal/normalize-horse-glb.py puis import-horse-glb.py) : maillage, squelette
+	// et clips partagent l'échelle du GLB, ~100 fois trop grande ; l'échelle 0,01 ramène le cheval à 1,5 m
+	// au bassin. L'ancien rig (horse_pjl_unreal) avait des os 100 fois plus loin que ses sommets.
+	const TCHAR* HorseAssetRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/");
+	// Robe du cheval engagé (C1) : corps porteur des masques de robe du jeu web (UV 1 à 3, scripts/unreal/coat-horse-glb.py
+	// et import-horse-coat.py ; même squelette, mêmes clips) ; à défaut, corps d'origine (robe grise de la texture).
+	USkeletalMesh* HorseBody = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_coat/SK_HorseCoatBody.SK_HorseCoatBody"));
+	bCoatBody = HorseBody != nullptr;
+	if (!HorseBody) HorseBody = LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_426.Object_426")));
+	if (HorseBody)
+	{
+		Mesh->SetSkeletalMesh(HorseBody);
+		Mesh->SetRelativeScale3D(FVector(GameMeshScale));
+		Body->SetVisibility(false);
+		Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	EyesMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("EyesMesh"));
+	EyesMesh->SetupAttachment(Mesh);
+	EyesMesh->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_427.Object_427"))));
+	EyesMesh->SetLeaderPoseComponent(Mesh);
+	HairMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HairMesh"));
+	HairMesh->SetupAttachment(Mesh);
+	HairMesh->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr, *(FString(HorseAssetRoot) + TEXT("Object_428.Object_428"))));
+	HairMesh->SetLeaderPoseComponent(Mesh);
+	const FString AnimRoot = FString(HorseAssetRoot) + TEXT("Horse_");
+	for (const TCHAR* Name : {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")})
+		GaitAnimations.Add(LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + Name + TEXT(".Horse_") + Name)));
+	JumpCanterAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_canter.Horse_jump_canter")));
+	JumpGallopAnimation = LoadObject<UAnimationAsset>(nullptr, *(AnimRoot + TEXT("jump_gallop.Horse_jump_gallop")));
+	Boom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Boom"));
+	Boom->SetupAttachment(Root);
+	// Garder la caméra hors du volume du cheval importé pour éviter le clipping.
+	Boom->TargetArmLength = 650.f;
+	Boom->SetRelativeLocation(FVector(0, 0, 185));
+	Boom->SetRelativeRotation(FRotator(-9, 0, 0));
+	Boom->bEnableCameraLag = true;
+	Boom->CameraLagSpeed = 6.f;
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(Boom);
+	Camera->FieldOfView = 55.f;
+	// Caméra de concours (tranche T6) : inactive hors épreuve ; position et orientation posées en absolu à chaque image par
+	// StepCourseCamera ; FieldOfView = champ VERTICAL du jeu web (camera.js : 58°). Mesuré sur la projection du moteur
+	// (Strides.Cso.CameraInGame) : avec l'axe Y maintenu, UE 5.8 garde le champ vertical 2 atan(tan(FOV / 2) / AspectRatio)
+	// (FieldOfView y reste horizontal au rapport AspectRatio de la caméra, 16:9 par défaut) ; d'où axe Y imposé ET
+	// AspectRatio 1 (sans bandes : bConstrainAspectRatio faux), pour que FieldOfView soit le champ vertical à tout format.
+	CourseCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CourseCamera"));
+	CourseCamera->SetupAttachment(Root);
+	CourseCamera->SetUsingAbsoluteLocation(true);
+	CourseCamera->SetUsingAbsoluteRotation(true);
+	CourseCamera->bConstrainAspectRatio = false;
+	CourseCamera->SetAspectRatio(1.f);
+	CourseCamera->bOverrideAspectRatioAxisConstraint = true;
+	CourseCamera->SetAspectRatioAxisConstraint(EAspectRatioAxisConstraint::AspectRatio_MaintainYFOV);
+	CourseCamera->FieldOfView = 58.f;
+	CourseCamera->SetAutoActivate(false);
+}
+
+void AStridesHorse::BeginPlay()
+{
+	Super::BeginPlay();
+	SetActorTickEnabled(true);
+	UpdateAnimation();
+	ApplyEngagedCoat();
+	// Étape S2 : monte du web lue comme un ensemble (StridesMonteOptions : -StridesMonte=, -StridesRider=, -StridesHorseLead=,
+	// -StridesTack=).
+	const StridesMonteOptions::FMonte Monte = StridesMonteOptions::FromCommandLine();
+	// Étape S3 : taille du cheval du web (-StridesHorseScale=web), avant la sellerie (qui lit l'échelle à chaque image).
+	if (StridesMonteOptions::WebHorseScaleFromCommandLine())
+	{
+		FString Err;
+		if (!EnableWebScale(true, &Err)) UE_LOG(LogTemp, Warning, TEXT("Strides taille du cheval du web non appliquée (%s), échelle du jeu gardée"), *Err);
+	}
+	// Étape M2 : main au galop et clips miroir du web.
+	if (Monte.bWebLead)
+	{
+		FString Err;
+		if (!EnableWebLead(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides main au galop : clips miroir non cuits (%s), clips d'origine gardés"), *Err);
+	}
+	// Étape S4 : vue du cheval du web (inclinaison en virage, corps et horloge du saut), sur le mélangeur à couches.
+	if (StridesMonteOptions::WebHorseViewFromCommandLine())
+	{
+		FString Err;
+		if (!bLeadWeb)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Strides vue du cheval du web : demande la main du web (-StridesHorseLead=web), vue du jeu gardée"));
+		}
+		else if (!EnableWebView(&Err))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Strides vue du cheval du web non appliquée (%s), vue du jeu gardée"), *Err);
+		}
+	}
+	// Essai de monte (voie A) : sellerie lue par les règles de monte, avec la cavalière de la règle.
+	if (Monte.bRiderRules && Mesh)
+	{
+		Tack = NewObject<UStridesHorseTack>(this, TEXT("HorseTack"));
+		Tack->RegisterComponent();
+		Tack->AddTickPrerequisiteComponent(Mesh);
+		if (Tack->Init(Mesh)) Tack->SetComponentTickEnabled(true);
+	}
+	// Étape S1 : sellerie complète affichée.
+	if (Mesh && Monte.bTackMesh)
+	{
+		FString Err;
+		if (!EnableTackMesh(&Err)) UE_LOG(LogTemp, Warning, TEXT("Strides sellerie complète non affichée (%s)"), *Err);
+	}
+	// Sellerie après la vue (corps et replis posés avant la lecture du siège et des ancres).
+	if (ViewPost && Tack) Tack->AddTickPrerequisiteComponent(ViewPost);
+}
+
+bool AStridesHorse::EnableWebView(FString* Err)
+{
+	if (bViewWeb) return true;
+	if (!bLeadWeb && !EnableWebLead(Err)) return false;
+	TSharedPtr<FStridesHorseView> V = MakeShared<FStridesHorseView>();
+	const FString ClipRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_");
+	if (!V->Init(Mesh, ClipRoot, Mirrors.Get(), Err)) return false;
+	View = V;
+	{
+		TArray<const UAnimSequence*> Seqs;
+		View->ClipAssets(Seqs);
+		for (int32 I = 0; Mirrors.IsValid() && I < Mirrors->Num(); I++)
+			if (Mirrors->Source(I)) Seqs.AddUnique(Mirrors->Source(I));
+		ViewClipRefs.Reset();
+		for (const UAnimSequence* S : Seqs) ViewClipRefs.Add(S);
+	}
+	if (!ViewPost)
+	{
+		ViewPost = NewObject<UStridesHorseViewPost>(this, TEXT("HorseViewPost"));
+		ViewPost->RegisterComponent();
+		ViewPost->AddTickPrerequisiteComponent(Mesh);
+	}
+	if (Tack) Tack->AddTickPrerequisiteComponent(ViewPost);
+	bViewWeb = true;
+	UE_LOG(LogTemp, Display, TEXT("Strides vue du cheval du web : %d clips ; durées différentes du web : %s"), (int32)View->Data().clips.size(),
+		View->DurationReport().IsEmpty() ? TEXT("aucune") : *View->DurationReport());
+	UpdateWebViewAnimation(0.0);
+	return true;
+}
+
+// Option -StridesHorseView=web : vue du web (FStridesHorseView). Entrées : cheval du cœur CSO (vitesse, virage lissé
+// lastTurn, saut jumpT et jumpDur, freinage et cabré du refus) ; hors concours, lacet du monde ouvert lissé (comme
+// UpdateWebLeadAnimation) et saut du monde ouvert (jumpT 0 pendant le saut : horloge figée au départ, déclaré).
+// speedMul du web = 1 (Comète : vitesse du profil 1 ; équipement, état et fatigue du cavalier non portés).
+void AStridesHorse::UpdateWebViewAnimation(double Dt)
+{
+	UStridesHorseAnimInstance* A = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
+	if (!A || !View.IsValid() || !View->IsReady()) return;
+	OpenWorldTurn = OpenWorldTurn + (YawRate - OpenWorldTurn) * (1 - FMath::Exp(-8.0 * Dt));
+	FStridesHorseView::FInputs In;
+	In.Dt = Dt;
+	In.Speed = bCsoControls ? Sim.speed : SpeedMS;
+	In.JumpT = bCsoControls ? Sim.jumpT : (bJumping ? 0.0 : -1.0);
+	In.JumpDur = Sim.jumpDur;
+	In.Brake = Sim.brake;
+	In.RearT = Sim.rearT;
+	In.RearAnim = Sim.rearAnim;
+	In.LastTurn = bTurnForTests ? TurnForTests : bCsoControls ? Sim.lastTurn : OpenWorldTurn;
+	if (ViewHooks) In = ViewHooks->In;
+	View->SetMeshScale(Mesh->GetRelativeScale3D().X);
+	TArray<FStridesHorseLayer> Layers;
+	if (Dt > 0 || !A->Layers.Num()) View->StepPre(In, Layers);
+	else Layers = A->Layers;
+	// Main, fondu de main et clip de saut vus par la sellerie, les tests et les captures (mêmes grandeurs que la vue).
+	LeadSt.lead = View->GetLoco().lead;
+	LeadSt.hold = View->GetLoco().leadHold;
+	LeadBlendV = View->GetView().leadBlend;
+	JumpV.wasJumping = View->GetView().wasJumping;
+	JumpV.hasClip = !View->GetView().jumpClip.empty();
+	JumpV.clip.gallop = View->GetView().jumpClip == "jump_gallop";
+	JumpV.clip.mirror = View->GetView().jumpMirror;
+	A->Tucks.Reset();
+	A->Layers = MoveTemp(Layers);
+	const double Scale = Mesh->GetRelativeScale3D().X;
+	Mesh->SetRelativeTransform(View->MeshRelative(Scale));
+}
+
+void AStridesHorse::SetWebViewActiveForTests(bool bOn)
+{
+	bViewWeb = bOn && View.IsValid();
+	if (UStridesHorseAnimInstance* A = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr) A->Tucks.Reset();
+	if (Mesh) Mesh->SetRelativeTransform(FTransform(FQuat::Identity, FVector::ZeroVector, Mesh->GetRelativeScale3D()));
+	if (View.IsValid()) View->Reset();
+}
+
+void AStridesHorse::SetViewPostTickEnabled(bool bOn)
+{
+	if (ViewPost) ViewPost->SetComponentTickEnabled(bOn);
+}
+
+void AStridesHorse::PostPoseView()
+{
+	if (!bViewWeb || !View.IsValid() || !Mesh || LastDt <= 0) return;
+	UStridesHorseAnimInstance* A = Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance());
+	if (!A) return;
+	// Évaluation parallèle de la pose de cette image terminée avant de la lire et de la réévaluer (sinon deux évaluations du
+	// même mélangeur en même temps : plantage constaté en partie jouée le 25/11/2026, SIGBUS dans FStridesHorseAnimProxy).
+	Mesh->HandleExistingParallelEvaluationTask(true, true);
+	FStridesHorseView::FObstacle Ob;
+	Ob.Time = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (Course && Sim.hasLastJump && Sim.lastJumpObstacle >= 0 && Sim.lastJumpObstacle < (int32)Course->Obstacles().size())
+	{
+		Ob.bNear = Sim.jumpT >= 0 || (Sim.lastLanded && Ob.Time - Sim.lastLandTime < 0.8);
+		const strides::CsoObstacle& O = Course->Obstacles()[Sim.lastJumpObstacle];
+		const std::vector<strides::CsoFenceState>& FS = Course->FenceStates();
+		const strides::CsoFenceState* St = Sim.lastJumpObstacle < (int32)FS.size() ? &FS[Sim.lastJumpObstacle] : nullptr;
+		Ob.O.id = Sim.lastJumpObstacle + 1;
+		Ob.O.x = O.x, Ob.O.z = O.z, Ob.O.nx = O.n.x, Ob.O.nz = O.n.z, Ob.O.tx = O.t.x, Ob.O.tz = O.t.z, Ob.O.w = O.w;
+		Ob.O.ground = GroundAt(O.x, O.z);
+		for (size_t I = 0; I < O.bars.size(); I++)
+		{
+			strides::hview::ObBar B;
+			B.s = O.bars[I].s;
+			B.h = O.bars[I].h;
+			B.mesh = St && I < St->rails.size();
+			B.fall = B.mesh && St->rails[I].falling;
+			Ob.O.bars.push_back(B);
+		}
+		Ob.O.sign = Sim.lastGeo.sign;
+		for (const strides::RailAhead& R : Sim.lastGeo.rails) Ob.O.rails.push_back(R.s);
+		Ob.O.margins = Sim.lastPlan.margins;
+	}
+	if (ViewHooks) Ob = ViewHooks->Ob;
+	TArray<FStridesHorseTuck> Tucks;
+	const bool bTuck = View->StepPost(Mesh->GetComponentSpaceTransforms(), ViewHooks && ViewHooks->bActorXf ? ViewHooks->ActorXf : GetActorTransform(), Ob,
+		[this](double Wx, double Wz) { return ViewHooks ? ViewHooks->Ground : GroundAt(Wx, Wz); }, Tucks);
+	Mesh->SetRelativeTransform(View->MeshRelative(Mesh->GetRelativeScale3D().X));
+	if (bTuck)
+	{
+		// Pose réévaluée avec les replis (mêmes couches) : la sellerie et le rendu lisent la pose repliée de cette image.
+		A->Tucks = Tucks;
+		Mesh->TickAnimation(0.f, false);
+		Mesh->RefreshBoneTransforms();
+	}
+	// Jalon J2 : contacts des membres sur la pose finale de l'image (replis et bascule compris), comme pjlHorse.js
+	// _limbContacts après _barClear.
+	StepLimbContacts(ViewHooks && ViewHooks->bActorXf ? ViewHooks->ActorXf : GetActorTransform());
+}
+
+bool AStridesHorse::JudgesLimbs() const
+{
+	// obstacles.js _limbJudged : cheval du joueur affiché en WildMesh (vue du web active, os des membres trouvés).
+	return bViewWeb && View.IsValid() && View->IsReady() && View->HasContactBones();
+}
+
+// pjlHorse.js _limbContacts : obstacle jugé (dernier saut, en vol ou moins de 0,8 s après la réception) ou visé à moins de
+// 4 m (pose gardée) ; capsules canon et paturon-sabot balayées entre l'image précédente et celle-ci ; contact le plus
+// profond de chaque barre passé à Obstacles.limbContact (csoLimbContact : barre qui tombe, faute, cause), dans l'ordre des
+// barres. Écart d'ordre au web, déclaré : le web mesure la pose pendant horse.update, avant Obstacles.updateHorse de la
+// même image ; ici la pose n'existe qu'après l'animation, donc après Obstacles.updateHorse de l'image (et avant celui de la
+// suivante). Effet seulement si un contact et l'annonce différée du résultat tombent à la même image (le contact ouvre
+// alors un nouveau passage : faute annoncée une image après le franchissement, cas non vu dans les scénarios j2-*).
+void AStridesHorse::StepLimbContacts(const FTransform& ActorXf)
+{
+	if (!Course || !bCsoControls || !JudgesLimbs() || !GetWorld())
+	{
+		LimbSt = strides::limb::State();
+		return;
+	}
+	const double Time = GetWorld()->GetTimeSeconds();
+	// Image déjà relevée (passe après la pose rejouée sans pas de jeu, pause) : rien de neuf.
+	if (LimbSt.has && Time == LimbSt.time) return;
+	const std::vector<strides::CsoObstacle>& Obs = Course->Obstacles();
+	std::vector<strides::CsoFenceState>& FS = Course->FenceStates();
+	strides::CsoTarget Tg;
+	const bool bNeedT = !strides::limb::judgingNow(Sim, Obs, true, Time);
+	const UStridesDataSubsystem* Data = DataSub();
+	if (bNeedT)
+		Tg = strides::csoTarget(Obs, Sim, LimbPower, LimbClearance, true, Data ? Data->Jump() : strides::jumpDefaults(),
+			Data ? Data->HorseParams() : strides::csoHorseDefaults());
+	const strides::limb::Choice C = strides::limb::choose(Sim, Obs, true, Time, bNeedT ? &Tg : nullptr);
+	strides::limb::Pose P{};
+	const int32 Oi = C.obstacle;
+	if (Oi >= 0 && Oi < (int32)Obs.size())
+	{
+		Mesh->HandleExistingParallelEvaluationTask(true, true);
+		strides::hview::V3 W[4][3];
+		View->LimbPoseWeb(Mesh->GetComponentSpaceTransforms(), ActorXf, W);
+		const strides::CsoObstacle& O = Obs[Oi];
+		const double G = GroundAt(O.x, O.z);
+		for (int32 K = 0; K < 4; K++)
+			for (int32 I = 0; I < 3; I++) P[K][I] = strides::limb::toLocal(O, G, W[K][I].x, W[K][I].y, W[K][I].z);
+	}
+	strides::CsoFenceOut Out;
+	strides::limb::step(LimbSt, C, P, Time, Oi >= 0 && Oi < (int32)Obs.size() ? &Obs[Oi] : nullptr, Oi >= 0 && Oi < (int32)FS.size() ? &FS[Oi] : nullptr,
+		[&](const strides::limb::Hit& Hit) {
+			strides::csoLimbContact(Sim, Obs, FS, strides::limb::toFenceHit(Hit, Oi), Time, Out);
+			LimbContactCount++;
+			LastLimbContact = FString::Printf(TEXT("obstacle %hs barre %d %hs profondeur %.3f m"), Obs[Oi].label.c_str(), Hit.bar, strides::limb::limbKeys()[Hit.limb], Hit.depth);
+			UE_LOG(LogTemp, Display, TEXT("Strides contact de membre : %s, %.2f s"), *LastLimbContact, Time);
+		});
+	if (Out.events.empty() && Out.sounds.empty()) return;
+	// Barre qui tombe (son) et faute vues par l'épreuve, comme à la sortie de Obstacles.updateHorse.
+	if (UStridesCsoAudio* Audio = GetWorld()->GetSubsystem<UStridesCsoAudio>())
+		for (const strides::CsoFenceSound S : Out.sounds) Audio->FenceSound(S);
+	strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
+	Course->HandleFenceOut(Out, Cad);
+	Sim.hasCadence = Cad.has;
+	Sim.cadence = Cad.v;
+}
+
+bool AStridesHorse::EnableTackMesh(FString* Err)
+{
+	if (TackMeshComp) return TackMeshComp->IsReady();
+	if (!Mesh)
+	{
+		if (Err) *Err = TEXT("maillage du cheval absent");
+		return false;
+	}
+	if (!Tack)
+	{
+		// Sellerie lue par la règle (siège S, ancres) : nécessaire au dessin des étriers et des lanières ; elle ne change rien
+		// au jeu par défaut (SeatTransform inchangé, aucune lecture par la cavalière sans la règle).
+		Tack = NewObject<UStridesHorseTack>(this, TEXT("HorseTack"));
+		Tack->RegisterComponent();
+		Tack->AddTickPrerequisiteComponent(Mesh);
+		if (Tack->Init(Mesh, Err)) Tack->SetComponentTickEnabled(true);
+		else return false;
+	}
+	TackMeshComp = NewObject<UStridesHorseTackMesh>(this, TEXT("HorseTackMesh"));
+	TackMeshComp->RegisterComponent();
+	TackMeshComp->AddTickPrerequisiteComponent(Tack);
+	if (!TackMeshComp->Init(this, Err)) return false;
+	TackMeshComp->SetComponentTickEnabled(true);
+	return true;
+}
+
+bool AStridesHorse::ApplyEngagedCoat()
+{
+	const UGameInstance* GI = GetGameInstance();
+	const UStridesDataSubsystem* Data = GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const UStridesSaveSubsystem* Save = GI ? GI->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
+	const strides::HorseCoatData* Coats = Data ? Data->HorseCoats() : nullptr;
+	if (!Coats || !Mesh || !HairMesh) return bCoatApplied = false;
+	strides::CoatUniforms U;
+	strides::EngagedHorse E;
+	try
+	{
+		// game.js spawnMainHorse(activeHorseId(d)) : HORSES[id] || HORSES.comete, robe coatOf(def) (pjlHorse.js).
+		const std::string Id = Save ? strides::activeHorseId(Save->StableHorses(), Save->SavedActiveHorse(), *Coats) : std::string("comete");
+		E = strides::engagedHorse(Id, *Coats);
+		U = strides::coatUniforms(E.coat, *Coats);
+	}
+	catch (const std::exception& Ex)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Strides robe : %s, robe d'origine du modèle gardée"), UTF8_TO_TCHAR(Ex.what()));
+		return bCoatApplied = false;
+	}
+	ProfileId = UTF8_TO_TCHAR(E.id.c_str());
+	UMaterialInterface* CoatBase = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_coat/M_HorseCoat.M_HorseCoat"));
+	UMaterialInterface* HairBase = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Characters/Horse/horse_pjl_coat/M_HorseHair.M_HorseHair"));
+	if (!bCoatBody || !CoatBase || !HairBase)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Strides robe : corps à masques ou matériaux de robe absents (scripts/unreal/import-horse-coat.py), robe d'origine du modèle gardée"));
+		return bCoatApplied = false;
+	}
+	if (!CoatMID || CoatMID->Parent != CoatBase) CoatMID = UMaterialInstanceDynamic::Create(CoatBase, this);
+	if (!HairMID || HairMID->Parent != HairBase) HairMID = UMaterialInstanceDynamic::Create(HairBase, this);
+	auto Col = [](const std::array<double, 3>& C) { return FLinearColor((float)C[0], (float)C[1], (float)C[2], 1.f); };
+	auto V4 = [](const std::array<double, 4>& C) { return FLinearColor((float)C[0], (float)C[1], (float)C[2], (float)C[3]); };
+	CoatMID->SetVectorParameterValue(TEXT("CoatColor"), Col(U.coat));
+	CoatMID->SetVectorParameterValue(TEXT("PointsColor"), Col(U.points));
+	CoatMID->SetVectorParameterValue(TEXT("Socks"), V4(U.socks));
+	CoatMID->SetVectorParameterValue(TEXT("Blaze"), V4(U.blaze));
+	CoatMID->SetScalarParameterValue(TEXT("PointsAmt"), (float)U.pointsAmt);
+	CoatMID->SetScalarParameterValue(TEXT("Detail"), (float)U.detail);
+	CoatMID->SetScalarParameterValue(TEXT("Roughness"), (float)U.roughness);
+	// Robe mouillée (pjlHorse.js : uWet = max(pluie, sueur × 0,6) du cheval du jeu) : pluie et sueur non portées, 0.
+	CoatMID->SetScalarParameterValue(TEXT("Wet"), (float)U.wet);
+	HairMID->SetVectorParameterValue(TEXT("HairColor"), Col(U.hair));
+	HairMID->SetScalarParameterValue(TEXT("Roughness"), (float)U.hairRoughness);
+	for (int32 I = 0; I < Mesh->GetNumMaterials(); I++) Mesh->SetMaterial(I, CoatMID);
+	for (int32 I = 0; I < HairMesh->GetNumMaterials(); I++) HairMesh->SetMaterial(I, HairMID);
+	bCoatApplied = true;
+	UE_LOG(LogTemp, Display, TEXT("Strides robe : cheval engagé %s, robe %s, liste %s, balzanes (%g %g %g %g)%s"), *ProfileId, UTF8_TO_TCHAR(E.coat.colour.c_str()),
+		E.coat.blaze ? UTF8_TO_TCHAR(E.coat.blaze->c_str()) : TEXT("-"), U.socks[0], U.socks[1], U.socks[2], U.socks[3],
+		E.model.empty() ? TEXT("") : *FString::Printf(TEXT(" ; le web l'affiche avec le modèle %s, non porté"), UTF8_TO_TCHAR(E.model.c_str())));
+	return true;
+}
+
+double AStridesHorse::WebMeshScale(FString* Err)
+{
+	FString Text;
+	const FString Path = FPaths::ProjectContentDir() / TEXT("Data/pjl_horse_tack.json");
+	TSharedPtr<FJsonObject> Doc;
+	const TSharedPtr<FJsonObject>* Inner = nullptr;
+	double S = 0;
+	if (!FFileHelper::LoadFileToString(Text, *Path) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Doc) || !Doc)
+	{
+		if (Err) *Err = TEXT("Content/Data/pjl_horse_tack.json illisible (scripts/unreal/export-horse-tack.mjs)");
+		return 0;
+	}
+	if (!Doc->TryGetObjectField(TEXT("inner"), Inner) || !Inner || !(*Inner)->TryGetNumberField(TEXT("scale"), S) || !(S > 0) || !FMath::IsFinite(S))
+	{
+		if (Err) *Err = TEXT("pjl_horse_tack.json : inner.scale absent ou invalide");
+		return 0;
+	}
+	return S;
+}
+
+bool AStridesHorse::EnableWebScale(bool bWeb, FString* Err)
+{
+	if (!Mesh)
+	{
+		if (Err) *Err = TEXT("maillage absent");
+		return false;
+	}
+	double S = GameMeshScale;
+	if (bWeb)
+	{
+		S = WebMeshScale(Err);
+		if (!(S > 0)) return false;
+	}
+	Mesh->SetRelativeScale3D(FVector(S));
+	bScaleWeb = bWeb;
+	UE_LOG(LogTemp, Display, TEXT("Strides taille du cheval : %s, échelle du maillage %.9g (rapport au jeu %.6f)"), bWeb ? TEXT("web") : TEXT("jeu"), S, S / GameMeshScale);
+	return true;
+}
+
+bool AStridesHorse::EnableWebLead(FString* Err)
+{
+	if (bLeadWeb) return true;
+	if (!Mesh || !Mesh->GetSkeletalMeshAsset())
+	{
+		if (Err) *Err = TEXT("maillage absent");
+		return false;
+	}
+	TSharedPtr<FStridesHorseMirrorSet> Set = MakeShared<FStridesHorseMirrorSet>();
+	const FString ClipRoot = TEXT("/Game/Characters/Horse/horse_pjl_normalized/horse_pjl_normalized/SkeletalMeshes/Horse_");
+	if (!Set->Build(Mesh->GetSkeletalMeshAsset(), ClipRoot, Err)) return false;
+	Mirrors = Set;
+	MirrorClipRefs.Reset();
+	for (int32 I = 0; I < Mirrors->Num(); I++)
+		if (Mirrors->Source(I)) MirrorClipRefs.AddUnique(Mirrors->Source(I));
+	Mesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	Mesh->SetAnimInstanceClass(UStridesHorseAnimInstance::StaticClass());
+	UStridesHorseAnimInstance* A = Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance());
+	if (!A)
+	{
+		if (Err) *Err = TEXT("mélangeur du cheval non créé");
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		LastAnimationGait = INDEX_NONE;
+		return false;
+	}
+	A->Set = Mirrors;
+	bLeadWeb = true;
+	LeadSt = strides::mirror::LeadState();
+	LeadBlendV = 1;
+	JumpV = strides::mirror::JumpView();
+	LastAnimationGait = INDEX_NONE;
+	bLastAnimationJumping = false;
+	UpdateWebLeadAnimation(0.f);
+	UE_LOG(LogTemp, Display, TEXT("Strides main au galop : %d clips miroir cuits en %.1f ms"), Mirrors->Num(), Mirrors->BuildMs());
+	return true;
+}
+
+// Option -StridesHorseLead=web : main du galop (horse/anim.js) depuis le virage lissé, fondu de main leadBlend (pjl/view.js,
+// 10/s) entre clip d'origine (poids leadBlend) et clip miroir (1 − leadBlend) au même temps de clip ; clip de saut choisi
+// au départ du saut comme la vue du web (strides::mirror::jumpViewStep, view.js:229-233 : « jump_gallop » au-delà de
+// 8 m/s, miroir si la main des clips est à gauche). Horloge : celle du jeu par défaut (allure du jeu, clip repris à 0 à
+// chaque changement, boucle des allures, saut joué une fois depuis 0) ; l'horloge du saut du web (toeOff, jt / T,
+// foreLand), son fondu jumpWeight (18/s) et la suite après réception (postLand) ne sont pas portés.
+void AStridesHorse::UpdateWebLeadAnimation(double Dt)
+{
+	UStridesHorseAnimInstance* A = Mesh ? Cast<UStridesHorseAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
+	if (!A || !Mirrors.IsValid()) return;
+	// Virage : H.lastTurn (cœur CSO) ; hors concours, lacet du monde ouvert lissé comme lastTurn (8/s, csoHorseStep).
+	OpenWorldTurn = OpenWorldTurn + (YawRate - OpenWorldTurn) * (1 - FMath::Exp(-8.0 * Dt));
+	const double Turn = bTurnForTests ? TurnForTests : bCsoControls ? Sim.lastTurn : OpenWorldTurn;
+	strides::mirror::leadStep(LeadSt, Turn, Dt);
+	// leadSwap du web (pjlHorse.js _calibrate) : faux pour ce cheval (O1 : main 1 ↔ clips « L » à chaque image, ctest).
+	const char Lead = strides::mirror::clipLead(LeadSt.lead, false);
+	LeadBlendV = strides::mirror::leadBlendStep(LeadBlendV, Lead, Dt);
+	strides::mirror::jumpViewStep(JumpV, bJumping, SpeedMS, Lead);
+	if (bJumping != bLastAnimationJumping || (!bJumping && GaitIndex != LastAnimationGait))
+	{
+		ClipTime = 0;
+		LastAnimationGait = GaitIndex;
+		bLastAnimationJumping = bJumping;
+	}
+	else
+		ClipTime += Dt;
+	TArray<FStridesHorseLayer> Layers;
+	static const TCHAR* GaitNames[] = {TEXT("idle"), TEXT("walk"), TEXT("trot"), TEXT("canter"), TEXT("gallop")};
+	if (bJumping)
+	{
+		const bool bGallop = JumpV.clip.gallop;
+		const UAnimSequence* Seq = Cast<UAnimSequence>(bGallop ? JumpGallopAnimation.Get() : JumpCanterAnimation.Get());
+		const int32 M = JumpV.clip.mirror ? Mirrors->Find(UTF8_TO_TCHAR(strides::mirror::jumpClipName(JumpV.clip).c_str())) : INDEX_NONE;
+		const double Len = Seq ? Seq->GetPlayLength() : 0;
+		FStridesHorseLayer L;
+		L.Time = FMath::Min(ClipTime, Len);
+		L.Weight = 1;
+		if (M != INDEX_NONE) L.Mirror = M;
+		else L.Seq = Seq;
+		Layers.Add(L);
+	}
+	else if (GaitAnimations.IsValidIndex(GaitIndex))
+	{
+		const UAnimSequence* Seq = Cast<UAnimSequence>(GaitAnimations[GaitIndex].Get());
+		const double Len = Seq ? Seq->GetPlayLength() : 0;
+		const double T = Len > 0 ? strides::mirror::loopClipTime(ClipTime, Len) : 0;
+		const int32 M = GaitIndex < (int32)UE_ARRAY_COUNT(GaitNames) ? Mirrors->Find(FString(GaitNames[GaitIndex]) + TEXT("_M")) : INDEX_NONE;
+		FStridesHorseLayer O;
+		O.Seq = Seq;
+		O.Time = T;
+		O.Weight = M != INDEX_NONE ? LeadBlendV : 1;
+		Layers.Add(O);
+		if (M != INDEX_NONE)
+		{
+			FStridesHorseLayer Mi;
+			Mi.Mirror = M;
+			Mi.Time = T;
+			Mi.Weight = 1 - LeadBlendV;
+			Layers.Add(Mi);
+		}
+	}
+	A->Layers = MoveTemp(Layers);
+}
+
+void AStridesHorse::UpdateAnimation()
+{
+	if (!Mesh || !Mesh->GetSkeletalMeshAsset()) return;
+	if (bViewWeb)
+	{
+		UpdateWebViewAnimation(LastDt);
+		return;
+	}
+	if (bLeadWeb)
+	{
+		UpdateWebLeadAnimation(LastDt);
+		return;
+	}
+	if (bJumping != bLastAnimationJumping || (!bJumping && GaitIndex != LastAnimationGait))
+	{
+		UAnimationAsset* Next = bJumping
+			? (SpeedMS >= 7.f ? JumpGallopAnimation.Get() : JumpCanterAnimation.Get())
+			: (GaitAnimations.IsValidIndex(GaitIndex) ? GaitAnimations[GaitIndex].Get() : nullptr);
+		if (Next)
+		{
+			Mesh->PlayAnimation(Next, !bJumping);
+			Mesh->SetPlayRate(1.f);
+		}
+		LastAnimationGait = GaitIndex;
+		bLastAnimationJumping = bJumping;
+	}
+}
+
+void AStridesHorse::PlaceAt(double WebX, double WebZ, double Heading, double InSpeedMS)
+{
+	X = WebX; Z = WebZ; H = Heading;
+	// horse.js setPosition : arrêt, saut, freinage, refus et dernier saut oubliés.
+	Sim.x = WebX; Sim.z = WebZ; Sim.heading = Heading;
+	Sim.speed = InSpeedMS;
+	Sim.jumpT = -1; Sim.jumpY = 0; Sim.brake = 0; Sim.refusing = -1;
+	Sim.hasLastJump = false; Sim.lastJumpObstacle = -1;
+	Sim.jt0 = Sim.jt1 = -1;
+	// (horse._pass oublié ; le dernier refus compté, horse._refusal, est gardé comme dans le jeu web)
+	Sim.hasPass = false;
+	// Cadence de concours reprise de la vitesse réelle à l'image suivante (csoRide.js:65).
+	Sim.hasCadence = false;
+	SpeedMS = (float)InSpeedMS;
+	bJumping = false;
+	JumpFence = nullptr;
+	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z), Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+}
+
+void AStridesHorse::Halt()
+{
+	Sim.speed = 0; Sim.hasCadence = false; Sim.kbdSteer = 0;
+	SpeedMS = 0; CadenceMS = 0;
+	Move = FVector2D::ZeroVector;
+}
+
+const UStridesDataSubsystem* AStridesHorse::DataSub() const
+{
+	const UGameInstance* GI = GetGameInstance();
+	return GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+}
+
+strides::CsoRunFrame AStridesHorse::RunFrame(double Dt, double Time) const
+{
+	// Entrées de l'épreuve vues par missions.update : cheval du joueur, point suivi (cheval monté, sinon le cavalier
+	// à pied), mode monté ou non (descente = élimination à tout moment du parcours, courses.js:329).
+	strides::CsoRunFrame F;
+	F.dt = Dt;
+	F.time = Time;
+	F.x = X;
+	F.z = Z;
+	F.heading = H;
+	F.riding = Rider != nullptr;
+	// (au volant : F.driving, F.inTruck, F.vehicle restent faux, le jeu Unreal n'a ni camion ni véhicule conduit)
+	F.focusX = X;
+	F.focusZ = Z;
+	if (!F.riding)
+		if (const APawn* Pawn = GetWorld() ? GetWorld()->GetFirstPlayerController() ? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr : nullptr)
+		{
+			double Y;
+			StridesUnits::UEToWeb(Pawn->GetActorLocation(), F.focusX, Y, F.focusZ);
+		}
+	return F;
+}
+
+strides::Zone AStridesHorse::JumpTiming() const
+{
+	if (!Course || !bCsoControls) return strides::Zone::None;
+	const UStridesDataSubsystem* Data = DataSub();
+	return strides::csoTiming(Course->Obstacles(), Sim, JumpPower(), 0.0, true, Data ? Data->Jump() : strides::jumpDefaults(),
+		Data ? Data->HorseParams() : strides::csoHorseDefaults());
+}
+
+double AStridesHorse::GroundAt(double WebX, double WebZ) const
+{
+	// Sol du relief exporté du jeu web (Content/Data/World) ; la parabole du saut s'y ajoute.
+	const UGameInstance* GI = GetGameInstance();
+	const UStridesDataSubsystem* Data = GI ? GI->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	return Data ? Data->TerrainHeight(WebX, WebZ) : 0.0;
+}
+
+double AStridesHorse::JumpPower() const
+{
+	const UStridesDataSubsystem* Data = DataSub();
+	const FStridesHorseProfile* P = Data ? Data->FindHorse(ProfileId) : nullptr;
+	// horse.js : jumpPower = HORSE.jumpPeak × jump du cheval × (1 + équipement) × état (équipement et état : tranches suivantes).
+	return (Data ? Data->JumpPeak : 1.35) * (JumpMulOverride > 0 ? JumpMulOverride : P ? P->JumpMul : 1.0);
+}
+
+void AStridesHorse::ChangeGait(int32 Delta)
+{
+	const UStridesDataSubsystem* Data = DataSub();
+	const int32 N = Data ? Data->Gaits.Num() : 5;
+	GaitIndex = FMath::Clamp(GaitIndex + Delta, 0, N - 1);
+}
+
+void AStridesHorse::ToggleDemoCourse()
+{
+#if UE_BUILD_SHIPPING
+	// Démonstration automatique (F8, -StridesShots) : outil de développement, absente des versions publiées.
+	UE_LOG(LogTemp, Display, TEXT("Strides demo course unavailable in shipping builds"));
+#else
+	bDemoCourse = !bDemoCourse;
+	DemoPoint = 1;
+	if (bDemoCourse)
+	{
+		UE_LOG(LogTemp, Display, TEXT("Strides demo course started"));
+	}
+	else
+	{
+		Move = FVector2D::ZeroVector;
+		UE_LOG(LogTemp, Display, TEXT("Strides demo course stopped"));
+	}
+#endif
+}
+
+FTransform AStridesHorse::SeatTransform() const
+{
+	// Le cheval PJL fournit un repère de monte et un os de selle. Les lire sur
+	// le composant animé synchronise le cavalier avec chaque foulée et le saut.
+	if (Mesh && Mesh->GetSkeletalMeshAsset())
+	{
+		// `mountpoint_01_0179` part du bas du squelette (environ 65 cm) : ce
+		// n'est pas l'assise malgré son nom. L'os de selle est au vrai contact
+		// du dos (environ 173 cm) et conserve le rebond animé des allures.
+		for (const FName SeatBone : {FName(TEXT("saddle_0168")), FName(TEXT("mountpoint_01_0179")), FName(TEXT("SaddleSeat"))})
+			// Position de l'os seulement : le maillage est à l'échelle 0,01 et l'axe local de l'os
+			// n'est pas celui du cavalier ; l'orientation suit l'acteur cheval.
+			if (Mesh->DoesSocketExist(SeatBone)) return FTransform(GetActorRotation(), Mesh->GetSocketLocation(SeatBone));
+	}
+	return FTransform(GetActorRotation(), GetActorLocation() + FVector(0, 0, 175 + (Body ? Body->GetRelativeLocation().Z - 125 : 0)));
+}
+
+// Démonstration automatique du parcours (outil de développement : F8, captures -StridesShots) : suit le tracé, garde la
+// cadence de référence et appuie sur SAUT selon la règle du pilote des tests web (tests/e2e/autopilot.js : bonne zone et
+// sommet du saut sur l'obstacle). Le saut lui-même passe par le cœur, comme un appui du joueur.
+void AStridesHorse::TickDemo()
+{
+#if !UE_BUILD_SHIPPING
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
+	const strides::CourseTrace& T = Course->CourseTraceData();
+	const int32 LeadCount = static_cast<int32>(T.leadIn.size());
+	const int32 Total = LeadCount + static_cast<int32>(T.pts.size());
+	auto PointAt = [&T, LeadCount](int32 Index) -> const strides::TracePoint&
+	{
+		return Index < LeadCount ? T.leadIn[Index] : T.pts[Index - LeadCount];
+	};
+	if (Total > 1)
+	{
+		DemoPoint = FMath::Clamp(DemoPoint, 0, Total - 1);
+		// Se recaler sur le point le plus proche devant nous évite de faire demi-tour après avoir dépassé un échantillon.
+		int32 Nearest = DemoPoint;
+		double NearestD2 = TNumericLimits<double>::Max();
+		for (int32 I = DemoPoint; I <= FMath::Min(DemoPoint + 40, Total - 1); ++I)
+		{
+			const strides::TracePoint& P = PointAt(I);
+			const double D2 = FMath::Square(P.x - Sim.x) + FMath::Square(P.z - Sim.z);
+			if (D2 < NearestD2) { NearestD2 = D2; Nearest = I; }
+		}
+		DemoPoint = FMath::Max(DemoPoint, Nearest);
+		// Viser environ 6 m plus loin lisse le cap dans les grandes courbes.
+		const strides::TracePoint& Target = PointAt(FMath::Min(DemoPoint + 12, Total - 1));
+		const double Error = FMath::UnwindRadians(FMath::Atan2(Target.x - Sim.x, Target.z - Sim.z) - Sim.heading);
+		// steerRate : joystick à droite => cap qui diminue ; une erreur de cap positive demande donc un axe négatif.
+		Move = FVector2D(FMath::Clamp(-Error * 1.8, -1.0, 1.0), Sim.hasCadence && Sim.cadence >= R.cadence ? 0.0 : 1.0);
+		bKeyMove = false;
+		const strides::CsoTarget Tg = strides::csoTarget(Course->Obstacles(), Sim, JumpPower(), 0.0, true,
+			Data ? Data->Jump() : strides::jumpDefaults(), Data ? Data->HorseParams() : strides::csoHorseDefaults());
+		if (Sim.jumpT < 0 && Tg.index >= 0 && Tg.plan.zone == strides::Zone::Good && Tg.plan.ideal <= Tg.plan.L + 0.3) bJumpRequested = true;
+	}
+	if (const strides::CsoRun* Run = Course->Run(); Run && (Run->state().finished || Run->state().eliminated))
+	{
+		bDemoCourse = false;
+		Move = FVector2D::ZeroVector;
+		UE_LOG(LogTemp, Display, TEXT("Strides demo course completed: %s"), *Course->StatusText());
+	}
+#endif
+}
+
+void AStridesHorse::Tick(float Dt)
+{
+	Super::Tick(Dt);
+	// Tranche T8 : en pause (game.state « paused »), la boucle du web n'appelle plus update() : ni pas du cheval, ni
+	// obstacles, ni caméra, ni épreuve (le jeu est aussi suspendu par SetGamePaused ; ce garde vaut sans lui, tests
+	// compris) ; l'image d'Échap avance encore (PauseGame : SkipsUpdate faux à cette image). Téléphone ouvert en tête
+	// d'image (game.simPaused relevé par StepCommands avant les boutons globaux) : cheval et chrono figés.
+	const AStridesPlayerController* PC = Cast<AStridesPlayerController>(GetController());
+	if (PC && PC->SkipsUpdate()) return;
+	const bool bSimPaused = PC && PC->IsSimPaused();
+	// Interface d'épreuve (tranche T7) : temporisations du HUD échues avant les appels de l'image (horloge murale).
+	if (Course) Course->BeginHudFrame();
+	if (bCsoControls) TickCso(Dt, bSimPaused);
+	else TickOpenWorld(Dt, bSimPaused);
+	LastDt = bSimPaused ? 0.0 : Dt;
+	UpdateAnimation();
+}
+
+// Concours : une image du cœur (csoRideStep + Horse.update), puis Obstacles.updateHorse et Obstacles.update du cœur
+// (jugement des barres au passage, refus, chute des barres : tranche T3).
+void AStridesHorse::TickCso(float Dt, bool bSimPaused)
+{
+	// hdt (cheval, en épreuve et en commandes de concours) et sdt (chrono de l'épreuve) : nuls simulation suspendue.
+	const float HDt = bSimPaused ? 0.f : Dt;
+	const float SDt = bSimPaused ? 0.f : Dt;
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
+	const strides::JumpParams& JP = Data ? Data->Jump() : strides::jumpDefaults();
+	const strides::CsoHorseParams& HP = Data ? Data->HorseParams() : strides::csoHorseDefaults();
+	static const std::vector<strides::CsoObstacle> NoObstacles;
+	const std::vector<strides::CsoObstacle>& Obs = Course ? Course->Obstacles() : NoObstacles;
+	if (bDemoCourse && Course) TickDemo();
+	strides::CsoFrameInput In;
+	In.dt = HDt;
+	In.moveX = Move.X;
+	In.moveY = Move.Y;
+	In.keyMove = bKeyMove;
+	In.jumpPressed = bJumpRequested;
+	In.csoControls = true;
+	In.power = JumpPower();
+	In.time = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	// Pente devant le cheval (horse.js : sol à ±1,1 m sur le cap).
+	const double Fx = FMath::Sin(Sim.heading), Fz = FMath::Cos(Sim.heading);
+	In.slope = (GroundAt(Sim.x + Fx * 1.1, Sim.z + Fz * 1.1) - GroundAt(Sim.x - Fx * 1.1, Sim.z - Fz * 1.1)) / 2.2;
+	bJumpRequested = false;
+	// Jalon J4 : épreuve de mission. Dialogue et compte à rebours : joueur bloqué (player.locked), cheval arrêté (la
+	// cadence de concours retenue est remise à 0). Course de l'hippodrome (choix n° 30) : commandes de concours gardées,
+	// cadence jusqu'au galop allongé du web (9,72 m/s) ; BOOST tenu et cheval non épuisé : grand galop à 14 m/s.
+	strides::CsoRideParams RR = R;
+	if (Course && Course->EventLocksPlayer())
+	{
+		In.locked = true;
+		In.jumpPressed = false;
+		if (Sim.hasCadence) Sim.cadence = 0;
+	}
+	const strides::EventRun* Ev = Course ? Course->Event() : nullptr;
+	const bool bRace = Ev && !Ev->finished() && Ev->kind() == strides::EventRun::Kind::Race && Ev->race().started;
+	if (bRace)
+	{
+		const bool bBoost = bBoostHeld && !StaminaState.exhausted;
+		RR.maxSpeed = bBoost ? 14.0 : 9.72;
+		if (Sim.hasCadence) Sim.cadence = bBoost ? 14.0 : FMath::Min(Sim.cadence, 9.72);
+	}
+	const double X0 = Sim.x, Z0 = Sim.z;
+	Events.clear();
+	strides::csoHorseStep(Sim, In, Obs, Events, RR, JP, HP);
+	strides::staminaStep(StaminaState, Sim.speed, HDt);
+	// Collisions du monde (horse.js:344-360) après le déplacement, avant les obstacles : lice de la carrière, chandeliers
+	// et ailes (colliders du web) ; au-dessus de leur sommet en plein saut, le cheval passe.
+	if (Course)
+	{
+		strides::HorseCollideInput CI;
+		CI.heading = Sim.heading;
+		CI.jumpY = Sim.jumpY;
+		CI.jumpT = Sim.jumpT;
+		CI.clearance = In.clearance;
+		CI.groundNow = GroundAt(Sim.x, Sim.z);
+		CI.dt = HDt;
+		CI.time = In.time;
+		const strides::HorseCollideOut Hit = strides::horseCollide(Course->WorldColliders(), Sim.x, Sim.z, Sim.speed, LastBump, CI);
+		if (Hit.hit) CollisionCount++;
+	}
+	FrameEvents.Reset();
+	// Sons (tranche T12) : écouteurs de game.js:716-728, cheval du joueur, commandes de concours, sol de la carrière.
+	UStridesCsoAudio* Audio = GetWorld() ? GetWorld()->GetSubsystem<UStridesCsoAudio>() : nullptr;
+	for (const strides::CsoHorseEvent E : Events)
+	{
+		if (Audio) Audio->HorseEvent(E, In.playerHorse, In.csoControls, "sand");
+		FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
+		if (E == strides::CsoHorseEvent::Jump && Sim.hasLastJump) LastTakeoff = UTF8_TO_TCHAR(strides::qualityName(strides::takeoffQuality(Sim.lastPlan)));
+		// game.js:727 : horse:jumpEarly → hud.jumpEarly() (bouton « Trop tôt » 600 ms, tranche T9).
+		if (E == strides::CsoHorseEvent::JumpEarly && Course) Course->HudModel().jumpEarly();
+	}
+	// Obstacles.updateHorse (tranche T3, cœur) : jugement de chaque barre au passage des épaules, refus (décision à
+	// l'abord, comptage à l'arrêt, barre emportée tout contre, garde-fou du nez, glissade), barres des postérieurs ; puis
+	// Obstacles.update (chute des barres, vibration, remise par le jury) et affichage des barres. Jalon J2 : cheval affiché
+	// en vue du web (WildMesh) = membres visibles jugés comme au web (Obstacles._limbJudged) : résultat différé jusqu'au
+	// passage des postérieurs, contacts réels des membres comptés après la pose (PostPoseView → StepLimbContacts) ; sinon
+	// résultat annoncé à la sortie des épaules (comme le web en personnages classiques).
+	LimbPower = In.power;
+	LimbClearance = In.clearance;
+	if (Course)
+	{
+		strides::CsoUpdateHorseInput U;
+		U.prevX = X0;
+		U.prevZ = Z0;
+		U.time = In.time;
+		U.limbJudged = JudgesLimbs();
+		U.power = In.power;
+		U.clearance = In.clearance;
+		U.csoCourse = true;
+		strides::CsoFenceOut Out;
+		strides::csoFencesUpdateHorse(Sim, Obs, Course->FenceStates(), U, Out, JP, HP, Data ? Data->FenceParams() : strides::csoFenceDefaults());
+		// Dernier saut (horse._lastJump), lu par le mot d'appel des écouteurs d'obstacle (tranche T7).
+		Course->NoteLastJump(Sim.hasLastJump, Sim.lastJumpObstacle, Sim.lastPlan, Sim.lastJumpTime);
+		// Sons des barres (knock, _judge) puis cabré de la glissade (horse:refuse → neigh), avant les écouteurs de courses.js.
+		if (Audio)
+		{
+			for (const strides::CsoFenceSound S : Out.sounds) Audio->FenceSound(S);
+			for (const strides::CsoHorseEvent E : Out.horse) Audio->HorseEvent(E, In.playerHorse, In.csoControls, "sand");
+		}
+		for (const strides::CsoHorseEvent E : Out.horse) FrameEvents.Add(UTF8_TO_TCHAR(strides::csoHorseEventName(E)));
+		// Événements d'obstacle vus par l'épreuve (courses.js) : un refus compté remet la cadence à 0.
+		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
+		Course->HandleFenceOut(Out, Cad);
+		Sim.hasCadence = Cad.has;
+		Sim.cadence = Cad.v;
+		// Hors épreuve, le web monte en commandes du monde ouvert : touches relâchées, le cheval s'arrête. Le portage garde
+		// les commandes de concours partout (cadence retenue) : sans cela, un refus hors épreuve repart sans fin contre la
+		// barre (cadence non réglable pendant le refus, pas de demi-tour pendant le cabré : cheval « coincé », contrôle J1).
+		// Hors épreuve, un refus remet donc la cadence à 0, comme un refus compté en épreuve (courses.js).
+		const bool bInCourse = Course->Run() && Course->Run()->course().active;
+		if (!bInCourse && Sim.hasCadence)
+		{
+			bool bRefused = false;
+			for (const strides::CsoHorseEvent E : Out.horse) bRefused |= E == strides::CsoHorseEvent::Refuse;
+			for (const strides::CsoFenceEvent& E : Out.events) bRefused |= E.kind == strides::CsoFenceEventKind::Refusal;
+			for (const strides::CsoHorseEvent E : Events) bRefused |= E == strides::CsoHorseEvent::Refuse;
+			if (bRefused) Sim.cadence = 0;
+		}
+		Course->UpdateFences(Dt, In.time, Sim.x, Sim.z);
+	}
+	X = Sim.x; Z = Sim.z; H = Sim.heading;
+	SpeedMS = (float)Sim.speed;
+	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
+	bJumping = Sim.jumpT >= 0;
+	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Sim.jumpY, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+	// Caméra après le cheval et les obstacles, avant le déroulé de l'épreuve (ordre de src/game.js:1489-1507).
+	UpdateCourseCamera(Dt);
+	if (Course)
+	{
+		// Déroulé de l'épreuve (Run.update) après le cheval et les obstacles ; la sortie de piste ramène la cadence vers
+		// 1,9 m/s.
+		strides::CsoCadence Cad{Sim.hasCadence, Sim.cadence};
+		const strides::CsoRunFrame RF = RunFrame(SDt, In.time);
+		Course->TickRun(RF, Cad);
+		// Jalon J4 : épreuve de la mission en cours (cross, course) après le parcours du Pôle.
+		Course->TickEvent(RF, Sim.speed, Cad);
+		// Jalon J4-D : fin d'un défi : cheval du joueur rendu (statistiques), position d'avant la tentative.
+		if (JumpMulOverride > 0 && !Course->ChallengeActive())
+		{
+			JumpMulOverride = -1;
+			if (bChallengeReturn) PlaceAt(ChallengeReturn.X, ChallengeReturn.Y, ChallengeReturn.Z);
+			bChallengeReturn = false;
+		}
+		Sim.hasCadence = Cad.has;
+		Sim.cadence = Cad.v;
+		double TX, TZ, TH;
+		if (Course->TakeEventTeleport(TX, TZ, TH))
+		{
+			PlaceAt(TX, TZ, TH);
+			StaminaState.v = StaminaState.max;  // raceSteps setup : stamina = maxStamina
+			StaminaState.exhausted = false;
+		}
+		// Jalon J2b : entrée en piste (première manche, « Recommencer ») : barres remises par le déroulé, passage
+		// d'obstacle en cours oublié (le web le garde : faute fantôme d'une manche précédente, voir CsoFences.h).
+		bool bEntryReset = true;
+#if WITH_DEV_AUTOMATION_TESTS
+		bEntryReset = bEntryPassResetForTest;
+#endif
+		if (bEntryReset && Course->RailResets() != SeenRailResets)
+		{
+			SeenRailResets = Course->RailResets();
+			if (Sim.hasPass && !Sim.pass.done)
+			{
+				EntryPassResets++;
+				const strides::CsoObstacle* PO = Sim.pass.o >= 0 && Sim.pass.o < (int32)Course->Obstacles().size() ? &Course->Obstacles()[Sim.pass.o] : nullptr;
+				UE_LOG(LogTemp, Display, TEXT("Strides épreuve : entrée en piste, passage resté ouvert oublié (obstacle %s, faute %d)"),
+					PO ? UTF8_TO_TCHAR(PO->label.c_str()) : TEXT("?"), Sim.pass.fault ? 1 : 0);
+			}
+			strides::csoEntryResetPass(Sim);
+		}
+		// Aides du parcours (tranche T9) : mises à jour par l'étape de parcours, après son déroulé de l'image.
+		Course->UpdateAids(SDt, Sim.x, Sim.z, Sim.speed, In.power, In.clearance, RF.riding, In.time);
+		// hud.update du jeu web (fin de l'image) : tableau, classes, crans de cadence (réglage au joystick), bouton SAUT.
+		Course->UpdateHud(Dt, Sim.hasCadence, Sim.cadence, Sim.cadAdjust, JumpTiming());
+	}
+	CadenceMS = Sim.hasCadence ? (float)Sim.cadence : 0.f;
+	// En CSO la vitesse plafonne à 8 m/s : le seuil de grand galop reste atteignable (aligné sur le clip de saut rapide).
+	const double Spd = SpeedMS;
+	GaitIndex = Spd < 0.2 ? 0 : Spd < 3.2 ? 1 : Spd < 5.5 ? 2 : Spd < 7.0 ? 3 : 4;
+}
+
+// Monde ouvert (hors épreuve) : allures du joueur, code d'origine (le monde ouvert du jeu web, dirigé par rapport à la
+// caméra, n'est pas porté). Visée : obstacle du cœur (target), sinon saut libre.
+void AStridesHorse::StartOpenWorldJump()
+{
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::JumpParams& P = Data ? Data->Jump() : strides::jumpDefaults();
+	strides::CsoHorseState Probe = Sim;
+	Probe.x = X; Probe.z = Z; Probe.heading = H; Probe.speed = SpeedMS;
+	const strides::CsoTarget T = Course ? strides::csoTarget(Course->Obstacles(), Probe, JumpPower(), 0.0, false, P,
+		Data ? Data->HorseParams() : strides::csoHorseDefaults()) : strides::CsoTarget();
+	Plan = T.index >= 0 ? T.plan : strides::planJump(strides::JumpHorse{(double)SpeedMS, JumpPower(), 0.0, false}, nullptr, P);
+	if (T.index >= 0 && Plan.zone == strides::Zone::Refuse) return;
+	bJumping = true;
+	JumpX = 0;
+	JumpFence = T.index >= 0 && Course ? Course->FenceAt(T.index) : nullptr;
+	JumpDir = T.geo.sign;
+}
+
+void AStridesHorse::TickOpenWorld(float Dt, bool bSimPaused)
+{
+	const float SDt = bSimPaused ? 0.f : Dt;
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::CsoRideParams& R = Data ? Data->Ride() : strides::csoRideDefaults();
+	const double Target = Data && Data->Gaits.IsValidIndex(GaitIndex) ? Data->Gaits[GaitIndex].Speed : 0.0;
+	if (!bJumping) SpeedMS = FMath::FInterpConstantTo(SpeedMS, (float)Target, Dt, 3.0f);
+	const double Want = strides::steerRate(Move.X, SpeedMS, R) * (bJumping ? R.airTurn : 1.0);
+	const double Acc = FMath::Clamp((Want - YawRate) / FMath::Max(R.yawTau, 1e-3), -R.yawAcc, R.yawAcc);
+	YawRate += Acc * Dt;
+	H += YawRate * Dt;
+	if (bJumpRequested && !bJumping && SpeedMS >= (Data ? Data->MinJumpSpeed : 3.2f)) StartOpenWorldJump();
+	bJumpRequested = false;
+	const double Step = SpeedMS * Dt;
+	X += FMath::Sin(H) * Step;
+	Z += FMath::Cos(H) * Step;
+	double Y = 0;
+	if (bJumping)
+	{
+		JumpX += Step;
+		Y = strides::arcY(Plan.H, Plan.L, JumpX);
+		if (JumpX >= Plan.L) { bJumping = false; JumpFence = nullptr; }
+	}
+	Sim.x = X; Sim.z = Z; Sim.heading = H; Sim.speed = SpeedMS; Sim.jumpT = bJumping ? 0 : -1; Sim.hasCadence = false;
+	SetActorLocationAndRotation(StridesUnits::WebToUE(X, GroundAt(X, Z) + Y, Z), FRotator(0, StridesUnits::HeadingToYawDeg(H), 0));
+	UpdateCourseCamera(Dt);
+	if (Course)
+	{
+		strides::CsoCadence Cad;
+		const strides::CsoRunFrame RF = RunFrame(SDt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0);
+		Course->TickRun(RF, Cad);
+		Course->TickEvent(RF, SpeedMS, Cad);
+		Course->UpdateAids(SDt, X, Z, SpeedMS, JumpPower(), 0.0, RF.riding, RF.time);
+		Course->UpdateHud(Dt, false, 0.0, false);
+		// Obstacles.update tourne à chaque image dans le jeu web : les barres finissent de tomber.
+		Course->UpdateFences(Dt, GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0, X, Z);
+	}
+}
+
+// ---------- Caméra de concours (tranche T6) ----------
+
+strides::CsoCamHorse AStridesHorse::CameraHorse() const
+{
+	strides::CsoCamHorse V;
+	V.x = Sim.x;
+	V.z = Sim.z;
+	V.heading = Sim.heading;
+	V.yawRate = Sim.yawRate;
+	V.jumpT = Sim.jumpT;
+	V.jumpY = Sim.jumpY;
+	V.groundY = GroundAt(Sim.x, Sim.z);
+	return V;
+}
+
+bool AStridesHorse::CameraBlockedAt(double WebX, double WebY, double WebZ) const
+{
+	const UWorld* W = GetWorld();
+	if (!W) return false;
+	FCollisionQueryParams Q(SCENE_QUERY_STAT(StridesCourseCamera), false, this);
+	if (Rider) Q.AddIgnoredActor(Rider.Get());
+	return W->OverlapBlockingTestByChannel(StridesUnits::WebToUE(WebX, WebY, WebZ), FQuat::Identity, ECC_Camera, FCollisionShape::MakeSphere(45.f), Q);
+}
+
+void AStridesHorse::SetCameraBefore(const strides::CsoVec3& Eye, double Fov, double CamFov)
+{
+	CamState.eye = Eye;
+	CamState.fov = Fov;
+	CamState.camFov = CamFov;
+	bCameraBefore = true;
+}
+
+void AStridesHorse::UpdateCourseCamera(float Dt)
+{
+	// camera.js:74 : branche concours quand le joueur est à cheval et que l'épreuve est en mode concours
+	// (game.course.camera : de l'entrée en piste à la fin de la sortie de piste).
+	// Jalon J2c : entraînement à l'abord (game.course { camera: true }) : obstacle suivant = obstacle visé par le cheval
+	// s'il est du paddock (activities.js:185-188 : ob.target(h), tg.o.course === 'warmup').
+	if (Course && Course->TrainingActive())
+	{
+		int32 Next = -1;
+		if (Course->CourseMode().active)
+		{
+			const UStridesDataSubsystem* Data = DataSub();
+			const strides::CsoTarget Tg = strides::csoTarget(Course->Obstacles(), Sim, JumpPower(), 0.0, true, Data ? Data->Jump() : strides::jumpDefaults(),
+				Data ? Data->HorseParams() : strides::csoHorseDefaults());
+			if (Tg.index >= 0 && Tg.index < (int32)Course->Obstacles().size() && Course->Obstacles()[Tg.index].course == "warmup") Next = Tg.index;
+		}
+		Course->SetTrainingNext(Next);
+	}
+	const strides::CsoCourseMode Mode = Course ? Course->CourseMode() : strides::CsoCourseMode();
+	if (!Mode.active || !Rider)
+	{
+		LeaveCourseCamera();
+		return;
+	}
+	StepCourseCamera(Dt, CameraHorse(), Mode.next, false);
+}
+
+void AStridesHorse::LeaveCourseCamera()
+{
+	if (CamState.active) strides::csoCamLeave(CamState);
+	if (CourseCamera && CourseCamera->IsActive())
+	{
+		CourseCamera->Deactivate();
+		if (Camera) Camera->Activate();
+	}
+}
+
+strides::CsoCamOut AStridesHorse::StepCourseCamera(double Dt, const strides::CsoCamHorse& HorseView, int32 NextIndex, bool bInstant)
+{
+	const UStridesDataSubsystem* Data = DataSub();
+	const strides::CsoCamParams& P = Data ? Data->CameraParams() : strides::csoCamDefaults();
+	if (!CamState.active && !bCameraBefore && Camera)
+	{
+		// Entrée (camera.js:191-204) : la caméra de concours part de la perche du monde ouvert, position et FOV. Champ
+		// vertical de la perche : axe Y maintenu par le joueur local d'UE 5.8 (BaseEngine.ini [/Script/Engine.LocalPlayer])
+		// au rapport AspectRatio de la perche, soit 2 atan(tan(FieldOfView / 2) / AspectRatio).
+		double Ex, Ey, Ez;
+		StridesUnits::UEToWeb(Camera->GetComponentLocation(), Ex, Ey, Ez);
+		CamState.eye = strides::CsoVec3{Ex, Ey, Ez};
+		const double HalfV = FMath::Atan(FMath::Tan(FMath::DegreesToRadians((double)Camera->FieldOfView) / 2) / FMath::Max(0.1, (double)Camera->AspectRatio));
+		CamState.fov = CamState.camFov = FMath::RadiansToDegrees(2 * HalfV);
+	}
+	bCameraBefore = false;
+	// Obstacles survolés (camera.js:233-238 : game.obstacles.list) : ceux du parcours, au sol du relief.
+	CamFences.clear();
+	static const std::vector<strides::CsoObstacle> NoObstacles;
+	const std::vector<strides::CsoObstacle>& Obs = Course ? Course->Obstacles() : NoObstacles;
+	for (const strides::CsoObstacle& O : Obs)
+	{
+		strides::CsoCamFence F;
+		F.x = O.x; F.z = O.z; F.nx = O.n.x; F.nz = O.n.z; F.tx = O.t.x; F.tz = O.t.z;
+		F.w = O.w; F.depth = O.depth; F.ground = GroundAt(O.x, O.z); F.h = O.h; F.off = O.off;
+		CamFences.push_back(F);
+	}
+	strides::CsoCamInput In;
+	In.dt = Dt;
+	In.instant = bInstant;
+	In.horse = HorseView;
+	if (NextIndex >= 0 && NextIndex < (int32)Obs.size())
+	{
+		In.hasNext = true;
+		In.nextX = Obs[NextIndex].x;
+		In.nextZ = Obs[NextIndex].z;
+	}
+	In.fences = &CamFences;
+	In.blocked = [this](double Bx, double By, double Bz) { return CameraBlockedAt(Bx, By, Bz); };
+	In.ground = [this](double Gx, double Gz) { return GroundAt(Gx, Gz); };
+	const strides::CsoCamOut Out = strides::csoCamStep(CamState, In, P);
+	const FVector Eye = StridesUnits::WebToUE(Out.eye.x, Out.eye.y, Out.eye.z);
+	const FVector Look = StridesUnits::WebToUE(Out.look.x, Out.look.y, Out.look.z);
+	CourseCamera->SetWorldLocationAndRotation(Eye, (Look - Eye).Rotation());
+	CourseCamera->SetFieldOfView((float)Out.fov);
+	if (!CourseCamera->IsActive())
+	{
+		if (Camera) Camera->Deactivate();
+		CourseCamera->Activate();
+	}
+	return Out;
+}

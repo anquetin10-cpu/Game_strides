@@ -1,0 +1,28 @@
+Paquet Development (builds/j2b/staged-dev), entrées injectées par l'agent (CGEvent, pilote.py), journal du jeu filtré (Strides épreuve / carte, contacts de membres). Fatal/Critical/Ensure : 0. « Erreur de parcours » : 0.
+[2026.11.27-04.45.12:489][377]LogTemp: Display: Strides épreuve : activité cso_train lancée (capacité : portée 1.55 m pour 1.15 m, dialogue 0)
+[2026.11.27-04.45.34:023][ 23]LogTemp: Display: Strides carte : bouton « enter » au clavier / à la manette (1)
+[2026.11.27-04.46.50:334][365]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-04.47.16:610][142]LogTemp: Display: Strides contact de membre : obstacle 1 barre 0 PD profondeur 0.080 m, 266.36 s
+[2026.11.27-04.47.16:641][143]LogTemp: Display: Strides épreuve : obstacle:fault 1 (sens 1, marge -0.08 m, cause hindRail)
+[2026.11.27-04.47.37:731][811]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.27-04.47.37:732][811]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES)
+[2026.11.27-04.47.54:875][342]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-04.47.55:587][364]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-04.47.56:423][390]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-04.48.19:357][ 50]LogTemp: Display: Strides épreuve : obstacle:refusal 7 (sens 1, marge 0.00 m)
+[2026.11.27-04.48.59:226][266]LogTemp: Display: Strides épreuve : obstacle:fault 1 (sens 1, marge -0.85 m, cause short)
+[2026.11.27-04.50.32:644][174]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.27-04.50.36:488][303]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 2)
+[2026.11.27-04.50.36:642][308]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-04.51.15:928][582]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-04.51.16:674][606]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-04.51.17:447][631]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-04.51.17:448][631]LogTemp: Display: Strides épreuve : entrée en piste, passage resté ouvert oublié (obstacle 2, faute 1)
+[2026.11.27-04.51.24:269][860]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.27-04.52.39:974][122]LogTemp: Display: Strides épreuve : obstacle:refusal 6B (sens -1, marge 0.00 m)
+[2026.11.27-04.52.45:449][299]LogTemp: Display: Strides contact de membre : obstacle 1 barre 0 PD profondeur 0.091 m, 595.19 s
+[2026.11.27-04.52.45:582][303]LogTemp: Display: Strides épreuve : obstacle:fault 1 (sens 1, marge -0.09 m, cause hindRail)
+[2026.11.27-04.52.56:869][667]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.27-04.53.29:014][615]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.27-04.53.29:015][615]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 3)
+[2026.11.27-04.53.29:412][628]LogTemp: Display: Strides carte : bouton choisi « cso-train »

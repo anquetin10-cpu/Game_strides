@@ -1,0 +1,46 @@
+# Extraits des journaux du paquet Development (heure UTC), parties de l'agent par entrées injectées
+[2026.11.27-17.10.27:698][  0]LogTemp: Display: Strides vie ambiante : 7 voitures, 14 garées, 24 passants, 8 spectateurs
+[2026.11.27-17.10.52:083][758]LogTemp: Display: Strides téléphone : offer:tuto (écran strides)
+[2026.11.27-17.10.54:630][798]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-17.10.55:647][799]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-17.10.56:959][810]LogTemp: Display: Strides career start: tuto (téléphone) 7 étapes
+[2026.11.27-17.11.58:178][932]LogTemp: Display: Strides career step: tuto 1/7
+[2026.11.27-17.12.01:378][938]LogTemp: Display: Strides career step: tuto 2/7
+[2026.11.27-17.12.28:263][994]LogTemp: Display: Strides career step: tuto 3/7
+[2026.11.27-17.13.03:778][ 67]LogTemp: Display: Strides career step: tuto 4/7
+[2026.11.27-17.13.56:463][175]LogTemp: Display: Strides career step: tuto 5/7
+[2026.11.27-17.14.41:743][272]LogTemp: Display: Strides career step: tuto 6/7
+[2026.11.27-17.17.22:814][599]LogTemp: Display: Strides career step: tuto 7/7
+[2026.11.27-17.17.22:814][599]LogTemp: Display: Strides career complete: tuto credits=50 reputation=60 (+50, +60)
+[2026.11.27-17.18.27:232][728]LogTemp: Display: Strides téléphone : offer:m1 (écran strides)
+[2026.11.27-17.18.28:295][730]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-17.18.29:365][732]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-17.18.31:499][736]LogTemp: Display: Strides career start: m1 (téléphone) 4 étapes
+[2026.11.27-17.20.47:827][ 14]LogTemp: Display: Strides career step: m1 1/4
+[2026.11.27-17.20.49:957][ 18]LogTemp: Display: Strides career step: m1 2/4
+[2026.11.27-17.22.01:741][161]LogTemp: Display: Strides career step: m1 3/4
+[2026.11.27-17.28.26:389][927]LogTemp: Display: Strides career step: m1 4/4
+[2026.11.27-17.28.26:389][927]LogTemp: Display: Strides career complete: m1 credits=140 reputation=120 (+90, +60)
+[2026.11.27-17.28.48:905][972]LogTemp: Display: Strides téléphone : offer:m2 (écran strides)
+[2026.11.27-17.28.51:074][977]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-17.28.52:139][979]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-17.28.54:279][983]LogTemp: Display: Strides career start: m2 (téléphone) 7 étapes
+[2026.11.27-17.40.27:511][513]LogTemp: Display: Strides career step: m2 1/7
+[2026.11.27-17.41.52:795][700]LogTemp: Display: Strides career step: m2 2/7
+[2026.11.27-17.42.08:860][732]LogTemp: Display: Strides career step: m2 3/7
+[2026.11.27-17.42.27:062][767]LogTemp: Display: Strides career step: m2 4/7
+[2026.11.27-17.45.03:027][ 87]LogTemp: Display: Strides career step: m2 5/7
+[2026.11.27-17.50.48:745][750]LogTemp: Display: Strides career step: m2 6/7
+[2026.11.27-18.32.56:223][  0]LogTemp: Display: Strides vie ambiante : 7 voitures, 14 garées, 24 passants, 8 spectateurs
+[2026.11.27-18.32.56:293][  0]LogTemp: Display: Strides sauvegarde : reprise au lancement faite (Partie rechargée)
+[2026.11.27-18.33.09:979][417]LogTemp: Display: Strides téléphone : offer:m2 (écran strides)
+[2026.11.27-18.33.12:390][495]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-18.33.13:501][531]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-18.33.14:823][574]LogTemp: Display: Strides career start: m2 (téléphone) 7 étapes
+[2026.11.27-18.35.02:075][ 37]LogTemp: Display: Strides career step: m2 1/7
+[2026.11.27-18.07.50:048][  0]LogTemp: Display: Strides vie ambiante : 7 voitures, 14 garées, 24 passants, 8 spectateurs
+[2026.11.27-18.07.50:441][  0]LogTemp: Display: Strides sauvegarde : reprise au lancement faite (Partie rechargée)
+[2026.11.27-18.09.13:211][244]LogTemp: Display: Strides téléphone : offer:m2 (écran strides)
+[2026.11.27-18.09.15:525][307]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-18.09.16:625][337]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-18.09.17:930][373]LogTemp: Display: Strides career start: m2 (téléphone) 7 étapes

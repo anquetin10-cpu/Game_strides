@@ -1,0 +1,63 @@
+{
+ "schema": "strides.cso_ranking/1",
+ "source": [
+  "src/gameplay/data.js",
+  "src/gameplay/ranking.js"
+ ],
+ "first": [
+  "Camille",
+  "Léa",
+  "Hugo",
+  "Louis",
+  "Chloé",
+  "Manon",
+  "Jules",
+  "Inès",
+  "Paul",
+  "Emma",
+  "Lucas",
+  "Zoé",
+  "Arthur",
+  "Margaux",
+  "Victor",
+  "Alice",
+  "Théo",
+  "Julie",
+  "Nathan",
+  "Clara"
+ ],
+ "last": [
+  "Martin",
+  "Bernard",
+  "Duval",
+  "Lefèvre",
+  "Moreau",
+  "Leroy",
+  "Roux",
+  "Fournier",
+  "Girard",
+  "Lambert",
+  "Bonnet",
+  "Mercier",
+  "Blanc",
+  "Guérin",
+  "Faure",
+  "Marchand"
+ ],
+ "horses": [
+  "Quartz du Val",
+  "Ubris de Mai",
+  "Vendôme",
+  "Tiara du Ter",
+  "Diamant Rouge",
+  "Saphir des Bois",
+  "Oural",
+  "Ninja Z",
+  "Belle d’Auge",
+  "Utopie",
+  "Kalimba",
+  "Rubis Blanc",
+  "Galaxie",
+  "Hermès du Lac"
+ ]
+}

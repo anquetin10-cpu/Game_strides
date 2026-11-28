@@ -1,0 +1,1262 @@
+{
+ "schema": "strides.world_assets/1",
+ "terrainMaterial": "/Game/World/Materials/M_WorldTerrain.M_WorldTerrain",
+ "roadMaterial": "/Game/World/Materials/M_WorldRoad.M_WorldRoad",
+ "waterMaterial": "/Game/World/Materials/M_WorldWater.M_WorldWater",
+ "architecture": [
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_0_m3.detail_0_m3",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_0_m4.detail_0_m4",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_3_1.detail_3_1",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_3_m3.detail_3_m3",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_3_m4.detail_3_m4",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_42_0.detail_42_0",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_42_m1.detail_42_m1",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_43_0.detail_43_0",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_44_0.detail_44_0",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_44_m1.detail_44_m1",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_45_0.detail_45_0",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_m1_m3.detail_m1_m3",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/detail_m1_m4.detail_m1_m4",
+   "collide": false,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_0_m2.glass_0_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_0_m3.glass_0_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_26_0.glass_26_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_26_m1.glass_26_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_2_m2.glass_2_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_3_m3.glass_3_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m1_0.glass_m1_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m1_1.glass_m1_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m1_m1.glass_m1_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m1_m2.glass_m1_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m1_m3.glass_m1_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m2_1.glass_m2_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m2_2.glass_m2_2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m2_m2.glass_m2_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m2_m3.glass_m2_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m3_m1.glass_m3_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/glass_m4_m3.glass_m4_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_0_m2.lights_0_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_0_m3.lights_0_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_1_m2.lights_1_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_23_0.lights_23_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_23_m1.lights_23_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_23_m3.lights_23_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_24_0.lights_24_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_24_1.lights_24_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_24_m1.lights_24_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_24_m2.lights_24_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_25_0.lights_25_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_25_1.lights_25_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_25_2.lights_25_2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_25_m1.lights_25_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_25_m2.lights_25_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_26_0.lights_26_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_26_1.lights_26_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_26_m1.lights_26_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_26_m2.lights_26_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_27_0.lights_27_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_27_1.lights_27_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_27_m1.lights_27_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_27_m2.lights_27_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_28_0.lights_28_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_28_1.lights_28_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_28_m1.lights_28_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_2_m2.lights_2_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_3_m3.lights_3_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m1_0.lights_m1_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m1_1.lights_m1_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m1_m1.lights_m1_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m1_m2.lights_m1_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m1_m3.lights_m1_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m2_1.lights_m2_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m2_m2.lights_m2_m2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m2_m3.lights_m2_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m3_m1.lights_m3_m1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/lights_m4_m3.lights_m4_m3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_0.sign_0",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_1.sign_1",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_10.sign_10",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_11.sign_11",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_12.sign_12",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_13.sign_13",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_14.sign_14",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_15.sign_15",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_16.sign_16",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_17.sign_17",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_18.sign_18",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_19.sign_19",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_2.sign_2",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_20.sign_20",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_21.sign_21",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_22.sign_22",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_23.sign_23",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_24.sign_24",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_25.sign_25",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_26.sign_26",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_27.sign_27",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_28.sign_28",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_29.sign_29",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_3.sign_3",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_30.sign_30",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_31.sign_31",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_32.sign_32",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_33.sign_33",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_34.sign_34",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_35.sign_35",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_36.sign_36",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_37.sign_37",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_38.sign_38",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_39.sign_39",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_4.sign_4",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_40.sign_40",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_41.sign_41",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_42.sign_42",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_43.sign_43",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_44.sign_44",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_45.sign_45",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_46.sign_46",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_47.sign_47",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_48.sign_48",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_49.sign_49",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_5.sign_5",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_50.sign_50",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_51.sign_51",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_52.sign_52",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_53.sign_53",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_54.sign_54",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_55.sign_55",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_56.sign_56",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_57.sign_57",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_58.sign_58",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_59.sign_59",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_6.sign_6",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_60.sign_60",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_61.sign_61",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_62.sign_62",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_63.sign_63",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_64.sign_64",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_65.sign_65",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_66.sign_66",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_67.sign_67",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_68.sign_68",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_69.sign_69",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_7.sign_7",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_70.sign_70",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_71.sign_71",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_8.sign_8",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/sign_9.sign_9",
+   "collide": false,
+   "shadow": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_0_3.static_0_3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_0_m1.static_0_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_0_m2.static_0_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_0_m3.static_0_m3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_1_0.static_1_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_1_1.static_1_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_1_2.static_1_2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_1_m1.static_1_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_1_m2.static_1_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_1_m3.static_1_m3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_23_0.static_23_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_23_m1.static_23_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_23_m3.static_23_m3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_24_0.static_24_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_24_1.static_24_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_24_m1.static_24_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_24_m2.static_24_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_25_0.static_25_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_25_1.static_25_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_25_2.static_25_2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_25_m1.static_25_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_25_m2.static_25_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_26_0.static_26_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_26_1.static_26_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_26_m1.static_26_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_26_m2.static_26_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_27_0.static_27_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_27_1.static_27_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_27_m1.static_27_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_27_m2.static_27_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_28_0.static_28_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_28_1.static_28_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_28_m1.static_28_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_2_0.static_2_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_2_1.static_2_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_2_2.static_2_2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_2_3.static_2_3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_2_m1.static_2_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_2_m2.static_2_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_3_0.static_3_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_3_1.static_3_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_3_m1.static_3_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_3_m2.static_3_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_3_m3.static_3_m3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m1_0.static_m1_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m1_1.static_m1_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m1_2.static_m1_2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m1_m1.static_m1_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m1_m2.static_m1_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m1_m3.static_m1_m3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m2_0.static_m2_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m2_1.static_m2_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m2_2.static_m2_2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m2_3.static_m2_3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m2_m1.static_m2_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m2_m2.static_m2_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m2_m3.static_m2_m3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m3_m1.static_m3_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_0.static_m4_0",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_1.static_m4_1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_2.static_m4_2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_3.static_m4_3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_m1.static_m4_m1",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_m2.static_m4_m2",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_m3.static_m4_m3",
+   "collide": true,
+   "shadow": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Architecture/architecture/StaticMeshes/static_m4_m4.static_m4_m4",
+   "collide": true,
+   "shadow": true
+  }
+ ],
+ "trees": [
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_birch_0.tree_birch_0",
+   "kind": "birch",
+   "height": 15.58,
+   "radius": 5.17
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_oak_3.tree_oak_3",
+   "kind": "oak",
+   "height": 14.3,
+   "radius": 8.31
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_birch_2.tree_birch_2",
+   "kind": "birch",
+   "height": 15.13,
+   "radius": 4.97
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_oak_0.tree_oak_0",
+   "kind": "oak",
+   "height": 14.32,
+   "radius": 8.25
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_birch_1.tree_birch_1",
+   "kind": "birch",
+   "height": 14.97,
+   "radius": 4.26
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_oak_2.tree_oak_2",
+   "kind": "oak",
+   "height": 14.54,
+   "radius": 9.2
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_poplar_0.tree_poplar_0",
+   "kind": "poplar",
+   "height": 24.79,
+   "radius": 3.42
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_poplar_1.tree_poplar_1",
+   "kind": "poplar",
+   "height": 24.91,
+   "radius": 3.53
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_apple_0.tree_apple_0",
+   "kind": "apple",
+   "height": 6.28,
+   "radius": 4.96
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_apple_2.tree_apple_2",
+   "kind": "apple",
+   "height": 6.22,
+   "radius": 4.98
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_apple_1.tree_apple_1",
+   "kind": "apple",
+   "height": 6.75,
+   "radius": 4.72
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_apple_3.tree_apple_3",
+   "kind": "apple",
+   "height": 6.01,
+   "radius": 4.88
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_beech_2.tree_beech_2",
+   "kind": "beech",
+   "height": 19.88,
+   "radius": 10.57
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_beech_1.tree_beech_1",
+   "kind": "beech",
+   "height": 20.21,
+   "radius": 9.43
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_oak_1.tree_oak_1",
+   "kind": "oak",
+   "height": 15.37,
+   "radius": 8.83
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_beech_0.tree_beech_0",
+   "kind": "beech",
+   "height": 20.48,
+   "radius": 9.59
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_pollard_0.tree_pollard_0",
+   "kind": "pollard",
+   "height": 10.39,
+   "radius": 4.55
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_ash_0.tree_ash_0",
+   "kind": "ash",
+   "height": 19.27,
+   "radius": 6.23
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_ash_1.tree_ash_1",
+   "kind": "ash",
+   "height": 19.42,
+   "radius": 7.28
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_pollard_1.tree_pollard_1",
+   "kind": "pollard",
+   "height": 10.34,
+   "radius": 5.23
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_bush_2.tree_bush_2",
+   "kind": "bush",
+   "height": 4.07,
+   "radius": 3.33
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_bush_0.tree_bush_0",
+   "kind": "bush",
+   "height": 4.14,
+   "radius": 3.63
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_bush_1.tree_bush_1",
+   "kind": "bush",
+   "height": 3.81,
+   "radius": 3.3
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_pine_2.tree_pine_2",
+   "kind": "pine",
+   "height": 18.43,
+   "radius": 5.98
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_pine_1.tree_pine_1",
+   "kind": "pine",
+   "height": 18.07,
+   "radius": 6.68
+  },
+  {
+   "mesh": "/Game/World/Meshes/Trees/trees/StaticMeshes/tree_pine_0.tree_pine_0",
+   "kind": "pine",
+   "height": 18.7,
+   "radius": 5.42
+  }
+ ],
+ "hedges": [
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_0.hedge_0",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_1.hedge_1",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_10.hedge_10",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_11.hedge_11",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_12.hedge_12",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_13.hedge_13",
+   "collide": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_14.hedge_14",
+   "collide": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_15.hedge_15",
+   "collide": false
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_2.hedge_2",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_3.hedge_3",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_4.hedge_4",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_5.hedge_5",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_6.hedge_6",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_7.hedge_7",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_8.hedge_8",
+   "collide": true
+  },
+  {
+   "mesh": "/Game/World/Meshes/Hedges/hedges/StaticMeshes/hedge_9.hedge_9",
+   "collide": true
+  }
+ ]
+}

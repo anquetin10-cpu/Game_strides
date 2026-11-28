@@ -1,0 +1,6 @@
+Paquet Development (code J5), Mac mini, écran titre (survol de Deauville), 1280x800, -csvCaptureFrames=300, aucune entrée ; 300 images ; médiane et p95 sur les 200 dernières
+FrameTime médiane 30.57 p95 31.82
+GameThreadTime médiane 0.54 p95 0.64
+RenderThreadTime médiane 30.56 p95 31.81
+GPUTime médiane 30.18 p95 30.67
+PhysicalUsedMB médiane 6296.77 p95 6297.4

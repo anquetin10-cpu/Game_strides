@@ -1,0 +1,197 @@
+[2026.11.27-14.01.06:381][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+[2026.11.27-14.01.34:378][  0]LogTemp: Display: Strides vie ambiante : 7 voitures, 24 passants, 8 spectateurs
+[2026.11.27-14.01.34:448][  0]LogTemp: Display: Strides sauvegarde : reprise au lancement faite (Partie rechargée)
+[2026.11.27-14.01.35:649][ 21]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-14.01.35:649][ 21]LogTemp: Display: Strides téléphone : ouvert (home)
+[2026.11.27-14.01.36:698][ 56]LogTemp: Display: Strides téléphone : app:strides (écran home)
+[2026.11.27-14.01.36:698][ 56]LogTemp: Display: Strides téléphone : écran strides
+[2026.11.27-14.01.39:743][156]LogTemp: Display: Strides vie ambiante : joueur (119 ; -307), voiture la plus proche 220 m à 12.1 m/s, 2 voiture(s) affichée(s), passant le plus proche 18 m, 4 passant(s) à moins de 80 m
+[2026.11.27-14.01.44:766][321]LogTemp: Display: Strides vie ambiante : joueur (119 ; -307), voiture la plus proche 188 m à 18.0 m/s, 2 voiture(s) affichée(s), passant le plus proche 14 m, 4 passant(s) à moins de 80 m
+[2026.11.27-14.01.46:737][386]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 119.1, -307.2, mission m3, 3 terminée(s))
+[2026.11.27-14.01.49:769][486]LogTemp: Display: Strides vie ambiante : joueur (119 ; -307), voiture la plus proche 170 m à 12.6 m/s, 2 voiture(s) affichée(s), passant le plus proche 13 m, 4 passant(s) à moins de 80 m
+[2026.11.27-14.01.54:781][651]LogTemp: Display: Strides vie ambiante : joueur (119 ; -307), voiture la plus proche 110 m à 12.6 m/s, 3 voiture(s) affichée(s), passant le plus proche 17 m, 4 passant(s) à moins de 80 m
+[2026.11.27-14.01.58:460][772]LogTemp: Display: Strides téléphone : offer:m3 (écran strides)
+[2026.11.27-14.01.58:460][772]LogTemp: Display: Strides téléphone : écran request
+[2026.11.27-14.01.58:759][782]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 119.1, -307.2, mission m3, 3 terminée(s))
+[2026.11.27-14.01.59:782][816]LogTemp: Display: Strides vie ambiante : joueur (119 ; -307), voiture la plus proche 57 m à 12.6 m/s, 4 voiture(s) affichée(s), passant le plus proche 23 m, 4 passant(s) à moins de 80 m
+[2026.11.27-14.02.00:713][847]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-14.02.01:823][884]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-14.02.03:140][928]LogTemp: Display: Strides téléphone : fermé
+[2026.11.27-14.02.03:140][928]LogTemp: Display: Strides career start: m3 (téléphone)
+[2026.11.27-14.02.03:142][928]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 119.1, -307.2, mission m3, 3 terminée(s))
+[2026.11.27-14.02.03:142][928]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-14.02.04:807][983]LogTemp: Display: Strides vie ambiante : joueur (119 ; -307), voiture la plus proche 49 m à 12.6 m/s, 3 voiture(s) affichée(s), passant le plus proche 30 m, 4 passant(s) à moins de 80 m
+[2026.11.27-14.02.09:838][149]LogTemp: Display: Strides vie ambiante : joueur (135 ; -313), voiture la plus proche 79 m à 13.7 m/s, 3 voiture(s) affichée(s), passant le plus proche 50 m, 4 passant(s) à moins de 80 m
+[2026.11.27-14.02.10:780][180]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 137.9, -314.2, mission m3, 3 terminée(s))
+[2026.11.27-14.02.14:858][312]LogTemp: Display: Strides vie ambiante : joueur (153 ; -316), voiture la plus proche 39 m à 13.7 m/s, 3 voiture(s) affichée(s), passant le plus proche 68 m, 3 passant(s) à moins de 80 m
+[2026.11.27-14.02.19:882][471]LogTemp: Display: Strides vie ambiante : joueur (170 ; -309), voiture la plus proche 55 m à 19.0 m/s, 3 voiture(s) affichée(s), passant le plus proche 82 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.22:810][561]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 178.9, -302.7, mission m3, 3 terminée(s))
+[2026.11.27-14.02.24:902][625]LogTemp: Display: Strides vie ambiante : joueur (185 ; -298), voiture la plus proche 129 m à 19.1 m/s, 2 voiture(s) affichée(s), passant le plus proche 91 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.29:905][776]LogTemp: Display: Strides vie ambiante : joueur (200 ; -286), voiture la plus proche 210 m à 19.1 m/s, 2 voiture(s) affichée(s), passant le plus proche 101 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.34:834][925]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 214.7, -275.1, mission m3, 3 terminée(s))
+[2026.11.27-14.02.34:931][928]LogTemp: Display: Strides vie ambiante : joueur (215 ; -275), voiture la plus proche 291 m à 19.1 m/s, 1 voiture(s) affichée(s), passant le plus proche 113 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.39:948][ 82]LogTemp: Display: Strides vie ambiante : joueur (230 ; -263), voiture la plus proche 226 m à 17.6 m/s, 2 voiture(s) affichée(s), passant le plus proche 120 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.44:958][237]LogTemp: Display: Strides vie ambiante : joueur (240 ; -256), voiture la plus proche 146 m à 17.6 m/s, 4 voiture(s) affichée(s), passant le plus proche 120 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.46:855][296]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 241.4, -256.3, mission m3, 3 terminée(s))
+[2026.11.27-14.02.49:976][393]LogTemp: Display: Strides vie ambiante : joueur (243 ; -256), voiture la plus proche 98 m à 17.6 m/s, 5 voiture(s) affichée(s), passant le plus proche 119 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.54:984][548]LogTemp: Display: Strides vie ambiante : joueur (245 ; -256), voiture la plus proche 119 m à 19.1 m/s, 5 voiture(s) affichée(s), passant le plus proche 118 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.02.58:876][669]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 247.3, -256.3, mission m3, 3 terminée(s))
+[2026.11.27-14.02.59:998][704]LogTemp: Display: Strides vie ambiante : joueur (248 ; -256), voiture la plus proche 101 m à 19.1 m/s, 6 voiture(s) affichée(s), passant le plus proche 118 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.05:020][860]LogTemp: Display: Strides vie ambiante : joueur (250 ; -256), voiture la plus proche 151 m à 13.7 m/s, 6 voiture(s) affichée(s), passant le plus proche 118 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.10:041][ 16]LogTemp: Display: Strides vie ambiante : joueur (253 ; -256), voiture la plus proche 144 m à 18.0 m/s, 5 voiture(s) affichée(s), passant le plus proche 118 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.10:904][ 43]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 253.2, -256.3, mission m3, 3 terminée(s))
+[2026.11.27-14.03.15:070][173]LogTemp: Display: Strides vie ambiante : joueur (255 ; -256), voiture la plus proche 144 m à 18.0 m/s, 3 voiture(s) affichée(s), passant le plus proche 121 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.20:087][329]LogTemp: Display: Strides vie ambiante : joueur (258 ; -256), voiture la plus proche 191 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 129 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.22:910][417]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 259.0, -256.3, mission m3, 3 terminée(s))
+[2026.11.27-14.03.25:113][486]LogTemp: Display: Strides vie ambiante : joueur (261 ; -256), voiture la plus proche 260 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 131 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.30:138][642]LogTemp: Display: Strides vie ambiante : joueur (269 ; -249), voiture la plus proche 304 m à 3.6 m/s, 0 voiture(s) affichée(s), passant le plus proche 130 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.34:931][791]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -247.4, mission m3, 3 terminée(s))
+[2026.11.27-14.03.35:155][798]LogTemp: Display: Strides vie ambiante : joueur (269 ; -247), voiture la plus proche 258 m à 16.6 m/s, 1 voiture(s) affichée(s), passant le plus proche 129 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.40:173][954]LogTemp: Display: Strides vie ambiante : joueur (269 ; -246), voiture la plus proche 183 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 129 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.45:185][110]LogTemp: Display: Strides vie ambiante : joueur (269 ; -244), voiture la plus proche 129 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 130 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.46:953][165]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -243.9, mission m3, 3 terminée(s))
+[2026.11.27-14.03.50:192][266]LogTemp: Display: Strides vie ambiante : joueur (269 ; -243), voiture la plus proche 128 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 132 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.55:199][422]LogTemp: Display: Strides vie ambiante : joueur (269 ; -242), voiture la plus proche 180 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 134 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.03.58:956][539]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -240.5, mission m3, 3 terminée(s))
+[2026.11.27-14.04.00:205][578]LogTemp: Display: Strides vie ambiante : joueur (269 ; -240), voiture la plus proche 254 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 137 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.05:233][734]LogTemp: Display: Strides vie ambiante : joueur (269 ; -239), voiture la plus proche 312 m à 20.4 m/s, 0 voiture(s) affichée(s), passant le plus proche 140 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.10:247][890]LogTemp: Display: Strides vie ambiante : joueur (269 ; -237), voiture la plus proche 276 m à 12.6 m/s, 2 voiture(s) affichée(s), passant le plus proche 148 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.10:985][913]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -237.0, mission m3, 3 terminée(s))
+[2026.11.27-14.04.15:255][ 46]LogTemp: Display: Strides vie ambiante : joueur (269 ; -236), voiture la plus proche 220 m à 12.6 m/s, 2 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.20:263][202]LogTemp: Display: Strides vie ambiante : joueur (269 ; -234), voiture la plus proche 171 m à 12.6 m/s, 3 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.23:001][287]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -233.6, mission m3, 3 terminée(s))
+[2026.11.27-14.04.25:270][358]LogTemp: Display: Strides vie ambiante : joueur (269 ; -233), voiture la plus proche 129 m à 17.6 m/s, 4 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.30:285][514]LogTemp: Display: Strides vie ambiante : joueur (269 ; -231), voiture la plus proche 117 m à 17.0 m/s, 4 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.35:007][661]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -230.1, mission m3, 3 terminée(s))
+[2026.11.27-14.04.35:296][670]LogTemp: Display: Strides vie ambiante : joueur (269 ; -230), voiture la plus proche 111 m à 17.1 m/s, 4 voiture(s) affichée(s), passant le plus proche 152 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.40:320][826]LogTemp: Display: Strides vie ambiante : joueur (269 ; -229), voiture la plus proche 141 m à 17.1 m/s, 4 voiture(s) affichée(s), passant le plus proche 153 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.45:327][972]LogTemp: Display: Strides vie ambiante : joueur (269 ; -223), voiture la plus proche 204 m à 17.1 m/s, 3 voiture(s) affichée(s), passant le plus proche 153 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.47:040][ 21]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.8, -221.8, mission m3, 3 terminée(s))
+[2026.11.27-14.04.50:339][117]LogTemp: Display: Strides vie ambiante : joueur (269 ; -220), voiture la plus proche 280 m à 14.7 m/s, 4 voiture(s) affichée(s), passant le plus proche 153 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.55:347][266]LogTemp: Display: Strides vie ambiante : joueur (269 ; -218), voiture la plus proche 219 m à 17.6 m/s, 4 voiture(s) affichée(s), passant le plus proche 152 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.04.59:043][376]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.7, -216.3, mission m3, 3 terminée(s))
+[2026.11.27-14.05.00:373][416]LogTemp: Display: Strides vie ambiante : joueur (269 ; -216), voiture la plus proche 161 m à 17.6 m/s, 4 voiture(s) affichée(s), passant le plus proche 152 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.05:376][565]LogTemp: Display: Strides vie ambiante : joueur (269 ; -214), voiture la plus proche 129 m à 17.1 m/s, 3 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.10:388][714]LogTemp: Display: Strides vie ambiante : joueur (269 ; -212), voiture la plus proche 89 m à 17.1 m/s, 4 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.11:060][734]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.7, -211.6, mission m3, 3 terminée(s))
+[2026.11.27-14.05.15:391][863]LogTemp: Display: Strides vie ambiante : joueur (269 ; -210), voiture la plus proche 117 m à 17.1 m/s, 5 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.20:419][ 17]LogTemp: Display: Strides vie ambiante : joueur (269 ; -208), voiture la plus proche 99 m à 18.0 m/s, 5 voiture(s) affichée(s), passant le plus proche 151 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.23:069][ 99]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -207.6, mission m3, 3 terminée(s))
+[2026.11.27-14.05.25:425][167]LogTemp: Display: Strides vie ambiante : joueur (269 ; -206), voiture la plus proche 98 m à 18.0 m/s, 3 voiture(s) affichée(s), passant le plus proche 150 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.30:455][312]LogTemp: Display: Strides vie ambiante : joueur (269 ; -201), voiture la plus proche 161 m à 18.0 m/s, 2 voiture(s) affichée(s), passant le plus proche 150 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.35:077][451]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.6, -199.3, mission m3, 3 terminée(s))
+[2026.11.27-14.05.35:459][463]LogTemp: Display: Strides vie ambiante : joueur (269 ; -199), voiture la plus proche 242 m à 18.0 m/s, 2 voiture(s) affichée(s), passant le plus proche 149 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.40:486][619]LogTemp: Display: Strides vie ambiante : joueur (269 ; -198), voiture la plus proche 282 m à 5.9 m/s, 2 voiture(s) affichée(s), passant le plus proche 142 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.45:499][766]LogTemp: Display: Strides vie ambiante : joueur (269 ; -194), voiture la plus proche 222 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 136 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.47:085][812]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.8, -193.0, mission m3, 3 terminée(s))
+[2026.11.27-14.05.50:508][913]LogTemp: Display: Strides vie ambiante : joueur (269 ; -191), voiture la plus proche 138 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 131 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.55:516][ 68]LogTemp: Display: Strides vie ambiante : joueur (269 ; -190), voiture la plus proche 73 m à 18.0 m/s, 1 voiture(s) affichée(s), passant le plus proche 130 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.05.59:116][180]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 268.7, -190.0, mission m3, 3 terminée(s))
+[2026.11.27-14.06.00:522][221]LogTemp: Display: Strides vie ambiante : joueur (269 ; -189), voiture la plus proche 90 m à 18.0 m/s, 2 voiture(s) affichée(s), passant le plus proche 130 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.06.05:555][367]LogTemp: Display: Strides vie ambiante : joueur (271 ; -184), voiture la plus proche 165 m à 18.0 m/s, 3 voiture(s) affichée(s), passant le plus proche 132 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.06.10:579][520]LogTemp: Display: Strides vie ambiante : joueur (303 ; -163), voiture la plus proche 263 m à 14.1 m/s, 2 voiture(s) affichée(s), passant le plus proche 145 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.06.11:129][537]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 307.5, -162.0, mission m3, 3 terminée(s))
+[2026.11.27-14.06.13:979][627]LogTemp: Display: Strides career complete: m3 credits=440 reputation=490
+[2026.11.27-14.06.13:980][627]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 329.9, -162.7, mission aucune, 4 terminée(s))
+[2026.11.27-14.06.15:606][679]LogTemp: Display: Strides vie ambiante : joueur (342 ; -168), voiture la plus proche 259 m à 11.1 m/s, 1 voiture(s) affichée(s), passant le plus proche 113 m, 0 passant(s) à moins de 80 m
+[2026.11.27-14.06.20:628][840]LogTemp: Display: Strides vie ambiante : joueur (374 ; -185), voiture la plus proche 273 m à 20.4 m/s, 1 voiture(s) affichée(s), passant le plus proche 74 m, 1 passant(s) à moins de 80 m
+[2026.11.27-14.06.23:141][922]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 375.4, -184.8, mission aucune, 4 terminée(s))
+[2026.11.27-14.06.25:629][  3]LogTemp: Display: Strides vie ambiante : joueur (377 ; -185), voiture la plus proche 327 m à 20.4 m/s, 0 voiture(s) affichée(s), passant le plus proche 68 m, 1 passant(s) à moins de 80 m
+[2026.11.27-14.06.30:648][167]LogTemp: Display: Strides vie ambiante : joueur (380 ; -185), voiture la plus proche 345 m à 12.6 m/s, 0 voiture(s) affichée(s), passant le plus proche 61 m, 1 passant(s) à moins de 80 m
+[2026.11.27-14.06.35:157][314]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 383.4, -184.8, mission aucune, 4 terminée(s))
+[2026.11.27-14.06.35:648][330]LogTemp: Display: Strides vie ambiante : joueur (384 ; -185), voiture la plus proche 294 m à 12.6 m/s, 1 voiture(s) affichée(s), passant le plus proche 55 m, 1 passant(s) à moins de 80 m
+[2026.11.27-14.06.40:676][494]LogTemp: Display: Strides vie ambiante : joueur (387 ; -185), voiture la plus proche 241 m à 17.6 m/s, 3 voiture(s) affichée(s), passant le plus proche 48 m, 1 passant(s) à moins de 80 m
+[2026.11.27-13.40.36:229][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+[2026.11.27-13.41.05:728][  0]LogTemp: Display: Strides vie ambiante : 7 voitures, 24 passants, 8 spectateurs
+[2026.11.27-13.41.05:818][  0]LogTemp: Display: Strides sauvegarde : reprise au lancement impossible (Sauvegarde sans position)
+[2026.11.27-13.41.18:911][370]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 0 terminée(s))
+[2026.11.27-13.41.30:932][743]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 0 terminée(s))
+[2026.11.27-13.41.42:949][116]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 0 terminée(s))
+[2026.11.27-13.41.46:767][235]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.41.46:767][235]LogTemp: Display: Strides téléphone : ouvert (home)
+[2026.11.27-13.41.49:227][312]LogTemp: Display: Strides téléphone : app:strides (écran home)
+[2026.11.27-13.41.49:227][312]LogTemp: Display: Strides téléphone : écran strides
+[2026.11.27-13.41.51:571][384]LogTemp: Display: Strides téléphone : offer:tuto (écran strides)
+[2026.11.27-13.41.51:571][384]LogTemp: Display: Strides téléphone : écran request
+[2026.11.27-13.41.54:055][460]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.41.54:966][488]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 0 terminée(s))
+[2026.11.27-13.41.56:537][536]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.41.57:846][576]LogTemp: Display: Strides téléphone : fermé
+[2026.11.27-13.41.57:846][576]LogTemp: Display: Strides career start: tuto (téléphone)
+[2026.11.27-13.41.57:847][576]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission tuto, 0 terminée(s))
+[2026.11.27-13.41.57:847][576]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.41.57:911][578]LogTemp: Display: Strides career complete: tuto credits=50 reputation=60
+[2026.11.27-13.41.57:912][578]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 1 terminée(s))
+[2026.11.27-13.42.06:970][858]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 1 terminée(s))
+[2026.11.27-13.42.18:987][231]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 1 terminée(s))
+[2026.11.27-13.42.25:069][420]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.42.25:069][420]LogTemp: Display: Strides téléphone : ouvert (home)
+[2026.11.27-13.42.26:127][453]LogTemp: Display: Strides téléphone : app:strides (écran home)
+[2026.11.27-13.42.26:127][453]LogTemp: Display: Strides téléphone : écran strides
+[2026.11.27-13.42.27:131][484]LogTemp: Display: Strides téléphone : offer:m1 (écran strides)
+[2026.11.27-13.42.27:131][484]LogTemp: Display: Strides téléphone : écran request
+[2026.11.27-13.42.29:507][557]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.42.30:548][589]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.42.31:001][603]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 1 terminée(s))
+[2026.11.27-13.42.31:852][629]LogTemp: Display: Strides téléphone : fermé
+[2026.11.27-13.42.31:852][629]LogTemp: Display: Strides career start: m1 (téléphone)
+[2026.11.27-13.42.31:853][629]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission m1, 1 terminée(s))
+[2026.11.27-13.42.31:853][629]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.42.31:917][631]LogTemp: Display: Strides career complete: m1 credits=140 reputation=160
+[2026.11.27-13.42.31:918][631]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 2 terminée(s))
+[2026.11.27-13.42.37:778][812]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.42.37:778][812]LogTemp: Display: Strides téléphone : ouvert (home)
+[2026.11.27-13.42.38:804][844]LogTemp: Display: Strides téléphone : app:strides (écran home)
+[2026.11.27-13.42.38:804][844]LogTemp: Display: Strides téléphone : écran strides
+[2026.11.27-13.42.39:932][879]LogTemp: Display: Strides téléphone : offer:m2 (écran strides)
+[2026.11.27-13.42.39:932][879]LogTemp: Display: Strides téléphone : écran request
+[2026.11.27-13.42.42:248][950]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.42.43:030][974]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission aucune, 2 terminée(s))
+[2026.11.27-13.42.43:255][981]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.42.44:557][ 21]LogTemp: Display: Strides téléphone : fermé
+[2026.11.27-13.42.44:557][ 21]LogTemp: Display: Strides career start: m2 (téléphone)
+[2026.11.27-13.42.44:558][ 21]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -102.1, 167.3, mission m2, 2 terminée(s))
+[2026.11.27-13.42.44:558][ 21]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.42.55:047][345]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -104.0, 168.0, mission m2, 2 terminée(s))
+[2026.11.27-13.43.07:070][716]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -104.0, 168.0, mission m2, 2 terminée(s))
+[2026.11.27-13.43.19:072][ 88]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -104.0, 168.0, mission m2, 2 terminée(s))
+[2026.11.27-13.43.31:081][431]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -121.9, 194.9, mission m2, 2 terminée(s))
+[2026.11.27-13.43.43:109][795]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -156.2, 175.0, mission m2, 2 terminée(s))
+[2026.11.27-13.43.55:137][158]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -152.6, 131.5, mission m2, 2 terminée(s))
+[2026.11.27-13.44.07:150][525]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -143.8, 88.1, mission m2, 2 terminée(s))
+[2026.11.27-13.44.19:157][898]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -135.1, 44.8, mission m2, 2 terminée(s))
+[2026.11.27-13.44.31:168][271]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -126.4, 1.4, mission m2, 2 terminée(s))
+[2026.11.27-13.44.43:179][645]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -117.6, -42.0, mission m2, 2 terminée(s))
+[2026.11.27-13.44.55:205][ 25]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -101.0, -82.9, mission m2, 2 terminée(s))
+[2026.11.27-13.45.07:227][404]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -82.9, -123.3, mission m2, 2 terminée(s))
+[2026.11.27-13.45.19:245][782]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -64.7, -163.7, mission m2, 2 terminée(s))
+[2026.11.27-13.45.31:247][175]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -46.4, -203.9, mission m2, 2 terminée(s))
+[2026.11.27-13.45.47:015][474]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position -18.7, -238.5, mission m2, 2 terminée(s))
+[2026.11.27-13.45.55:714][647]LogTemp: Display: Strides career complete: m2 credits=260 reputation=290
+[2026.11.27-13.45.55:716][647]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 3.0, -262.8, mission aucune, 3 terminée(s))
+[2026.11.27-13.45.58:830][700]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 13.2, -267.7, mission aucune, 3 terminée(s))
+[2026.11.27-13.46.10:915][885]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 54.9, -283.2, mission aucune, 3 terminée(s))
+[2026.11.27-13.46.23:744][ 78]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 85.7, -294.7, mission aucune, 3 terminée(s))
+[2026.11.27-13.46.46:392][414]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 85.7, -294.7, mission aucune, 3 terminée(s))
+[2026.11.27-13.46.58:264][816]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 85.7, -294.7, mission aucune, 3 terminée(s))
+[2026.11.27-13.47.10:268][219]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 85.9, -294.8, mission aucune, 3 terminée(s))
+[2026.11.27-13.47.22:368][608]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 90.3, -296.4, mission aucune, 3 terminée(s))
+[2026.11.27-13.47.34:361][  6]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 94.7, -298.1, mission aucune, 3 terminée(s))
+[2026.11.27-13.47.46:374][405]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 99.1, -299.7, mission aucune, 3 terminée(s))
+[2026.11.27-13.47.58:372][804]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 103.5, -301.4, mission aucune, 3 terminée(s))
+[2026.11.27-13.48.10:371][202]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 107.9, -303.0, mission aucune, 3 terminée(s))
+[2026.11.27-13.48.22:391][602]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 112.4, -304.7, mission aucune, 3 terminée(s))
+[2026.11.27-13.48.31:966][920]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.48.31:967][920]LogTemp: Display: Strides téléphone : ouvert (home)
+[2026.11.27-13.48.33:040][956]LogTemp: Display: Strides téléphone : app:strides (écran home)
+[2026.11.27-13.48.33:040][956]LogTemp: Display: Strides téléphone : écran strides
+[2026.11.27-13.48.34:163][993]LogTemp: Display: Strides téléphone : offer:m3 (écran strides)
+[2026.11.27-13.48.34:163][993]LogTemp: Display: Strides téléphone : écran request
+[2026.11.27-13.48.34:405][  1]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 115.9, -306.0, mission aucune, 3 terminée(s))
+[2026.11.27-13.48.35:274][ 30]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.48.36:350][ 66]LogTemp: Display: Strides téléphone : accept (écran request)
+[2026.11.27-13.48.37:674][110]LogTemp: Display: Strides téléphone : fermé
+[2026.11.27-13.48.37:674][110]LogTemp: Display: Strides career start: m3 (téléphone)
+[2026.11.27-13.48.37:675][110]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 115.9, -306.0, mission m3, 3 terminée(s))
+[2026.11.27-13.48.37:675][110]LogTemp: Display: Strides téléphone : écran home
+[2026.11.27-13.48.46:431][401]LogTemp: Display: Strides sauvegarde : écrite (strides_main, position 119.1, -307.2, mission m3, 3 terminée(s))

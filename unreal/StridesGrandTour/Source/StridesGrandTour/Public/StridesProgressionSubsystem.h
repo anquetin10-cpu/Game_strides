@@ -1,0 +1,98 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "StridesCore/Career.h"
+#include "StridesProgressionSubsystem.generated.h"
+
+UCLASS()
+class STRIDESGRANDTOUR_API UStridesProgressionSubsystem : public UGameInstanceSubsystem
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") int32 Credits = 0;
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") int32 Reputation = 0;
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") FString ActiveMissionId;
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") TArray<FString> CompletedMissions;
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") FString LastMessage;
+
+	UFUNCTION(BlueprintCallable, Category="Strides|Progression") bool StartNextMission();
+	UFUNCTION(BlueprintCallable, Category="Strides|Progression") bool CompleteActiveMission();
+	UFUNCTION(BlueprintPure, Category="Strides|Progression") FString MissionStatus() const;
+	UFUNCTION(BlueprintPure, Category="Strides|Progression") FString RankName() const;
+	UFUNCTION(BlueprintPure, Category="Strides|Progression") FVector2D ActiveTarget() const;
+	UFUNCTION(BlueprintPure, Category="Strides|Progression") bool HasActiveTarget() const;
+	bool IsAvailable(const struct FStridesMissionDefinition& Mission) const;
+	// Rechargement (save.js) : crédits, réputation, missions terminées ; la mission en cours à la sauvegarde devient un
+	// point de reprise (d.checkpoint du web) : elle est reproposée en tête de l'app Strides, marquée « Reprise », et ne
+	// redémarre qu'acceptée à nouveau (missions.js refreshOffers : o.resume ; « les missions ordinaires ne sont pas reprises »).
+	void Restore(int32 InCredits, int32 InReputation, const FString& InActiveMission, const TArray<FString>& InCompleted);
+
+	// ---- Jalon J3 : téléphone, offres, GPS ----
+	// Mission en cours à reprendre (point de reprise du web, checkpoint.mission), vide sinon.
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") FString CheckpointMission;
+	// Offres de l'app Strides (refreshOffers, missions de l'histoire) : missions disponibles (prérequis terminés), sauf la
+	// mission en cours et celles refusées depuis moins de 40 s ; le point de reprise en tête. Now : temps de jeu (s).
+	TArray<const struct FStridesMissionDefinition*> Offers(double Now) const;
+	const struct FStridesMissionDefinition* FindMission(const FString& Id) const;
+	// Acceptation depuis la demande (requests.js « Accepter la mission », missions.start) : faux si une mission est déjà en
+	// cours ou si l'offre n'est pas disponible. Le GPS manuel est remplacé par la cible de la mission (applyWaypoint).
+	bool StartMission(const FString& Id);
+	// Refus (missions.refuse) : reproposée après 40 s de jeu ; Abandon (missions.abandon) : mission arrêtée, point de reprise effacé.
+	void RefuseMission(const FString& Id, double Now);
+	bool AbandonMission();
+	// Nom du lieu d'une mission (lieu, sinon région du monde).
+	FString PlaceName(const FString& Place) const;
+	FVector2D PlacePosition(const FString& Place) const;
+	// GPS posé à la main (app Activités « Itinéraire » : gps.set(a.start, a.name)) ; effacé à l'arrivée (rayon 6 m, gps.set).
+	void SetGps(const FVector2D& Target, const FString& Label);
+	void ClearGps() { bGps = false; GpsLabel.Empty(); }
+	bool HasGps() const { return bGps; }
+	FVector2D GpsTarget() const { return Gps; }
+	const FString& GpsName() const { return GpsLabel; }
+	// Cible du guidage : celle de la mission en cours, sinon le GPS posé à la main ; Label : titre de la mission ou nom du lieu.
+	bool GuideTarget(FVector2D& Out, FString& Label) const;
+	// Objectif de la mission avec la distance (makeSteps withDist : « … · 340 m », « … · 1,2 km » ; arrondi à 10 m).
+	static FString WithDistance(const FString& Text, double Meters);
+	// ---- Jalon J3, correction après contrôle adverse : missions du web (StridesCore/Career, story_missions.json) ----
+	// Étape de l'itinéraire de la mission en cours (0 = première) ; texte et cible de l'étape.
+	UPROPERTY(BlueprintReadOnly, Category="Strides|Progression") int32 MissionStep = 0;
+	const struct FStridesMissionDefinition* ActiveMission() const { return ActiveMissionId.IsEmpty() ? nullptr : FindMission(ActiveMissionId); }
+	int32 StepCount() const;
+	FString StepText() const;
+	// Étape « épreuve » (3e étape de M3) : l'épreuve du Pôle est ouverte pendant cette étape (le poteau « Chrono » reste
+	// actif malgré la mission en cours) et l'étape se franchit quand un parcours commencé pendant l'étape est terminé.
+	bool CourseStepActive() const;
+	// Une image du directeur du monde : position du joueur (repère web) et épreuve du Pôle (en cours, terminée). Vrai si
+	// l'étape en cours a été franchie ; la mission est alors payée quand l'itinéraire est fini (CompleteActiveMission).
+	// Dt : temps écoulé depuis l'appel précédent (compte à rebours du web) ; Penalties, CourseTime, bEliminated : résultat de
+	// l'épreuve terminée (règles de csi3 et du Grand Prix). Échec (missions.fail) : LastMessage = raison du web, rien payé.
+	bool TickMission(const FVector2D& Me, bool bCourseRunning, bool bCourseFinished, double Dt = 0, int32 Penalties = 0, double CourseTime = 0, bool bEliminated = false);
+	// Compte à rebours de la mission en cours (s), -1 sans compte à rebours ; nombre d'échecs (journal, tests).
+	double MissionTimeLeft = -1;
+	int32 FailCount = 0;
+	// ---- Jalon J4 : étape « event » (épreuve de StridesCore/Epreuves, déroulée par AStridesCourse) ----
+	// Épreuve de l'étape en cours (« cross », « derby ») ; vide si l'étape n'en est pas une.
+	FString CurrentEventId() const;
+	// État de l'épreuve recopié à chaque vérification par le directeur du monde : objectif, cible du GPS, issue (réussie,
+	// échouée et raison du web), montant (payOverride ou def.pay, pourboire compris), titre et texte du résultat.
+	FString EventText;
+	bool bEventHasTarget = false;
+	FVector2D EventTargetPos = FVector2D::ZeroVector;
+	bool bEventDone = false, bEventFailed = false;
+	FString EventFailText, EventResultText;
+	int32 EventPay = -1;
+	void ClearEventView() { EventText.Empty(); bEventHasTarget = false; bEventDone = bEventFailed = false; EventFailText.Empty(); EventResultText.Empty(); EventPay = -1; }
+	// Verrou de palier d'une offre (« Débloqué au palier « … ». »), vide si l'offre est acceptable.
+	FString OfferLock(const FString& Id) const;
+	// Palier de réputation du web (reputationTier) : titre et progression vers le suivant.
+	double TierProgress() const;
+private:
+	strides::CareerState MakeCareer() const;
+	void ApplyCareer(const strides::CareerState& S);
+	bool bCourseSeen = false;
+	TMap<FString, double> RefusedAt;
+	FVector2D Gps = FVector2D::ZeroVector;
+	FString GpsLabel;
+	bool bGps = false;
+};

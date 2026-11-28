@@ -1,0 +1,29 @@
+{
+ "schema": "strides.oracle.vue/1",
+ "generator": "scripts/unreal/export-rider-rules.mjs --vue",
+ "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1",
+ "doc": "vue du cheval WildMesh (pjlHorse.js _snapshot, _jumpTime, _pushContact, _barNeed, _barClear ; pjl/view.js update ; locomotion horse/anim.js) image par image ; scénarios d’O1 rejoués à l’identique (repère S égal à O1 à chaque image) et scénarios propres à la vue ; monde three.js (y vers le haut, m), pleine précision.",
+ "channels": {
+  "f": "image (même indice qu’O1 pour les scénarios d’O1)",
+  "S": "repère du siège (hz.S d’O1, contrôle du rejeu ; scénarios d’O1 seulement)",
+  "vu": "{ dt, pre, loco, end, sn, view, push, need, bar, hoof } : pre / loco / end = locomotion du jeu (h.anim : st = speed, vel, jump, turn, rear, lead (entrée imposée), phase ; A = gait, lead, leadHold, freq, duty, move) à la fin de l’image précédente, à l’entrée de pjl.update (après animateHorse) et à sa sortie ; sn = _snapshot (in : H.speed, A.gait, A.lead, H.jumpT, H.jumpDur, H._brake, H._rearT, H.lastTurn, h.anim.phase ; st0 / st : ph, stride, roll, landT, wasJump avant / après ; phaseOut : h.anim.phase réécrite ; s : instantané) ; view = état de la vue après update (w : [clip, poids, temps, actif] des poids non nuls ; jc, jm, jt, jw, pl, lj (lastJt), wj, rt (refusalT), lb, it, bb (bodyBaseY), by, bz, rx, rz, co) ; push = _pushContact (in : P0, co0, jumpT, hasClip, jumpTime, toeOff, nearBar, d (distance des antérieurs à la barre la plus proche devant, jumpT ≥ 0), hind, fore (plus bas des os toes_02 / fingers_02 au-dessus du sol, pose de cette image), by0 ; P, co, by après) ; need = appels de _barNeed dans l’ordre (names, piv, tag, p et pp : positions monde des os, t, dt, prev : mémoire de l’image précédente [y, s, même obstacle, t], out : lift, lever, w, pivot) ; H = holder après l’image [x, y, z, qx, qy, qz, qw, sol sous le cheval] ; bar = _barClear (near, st0, tk (repli : toe = os des sabots, up = os upperleg_l, upperleg_r, hand_l, hand_r, ax et fw = axes latéral et avant du cheval, monde, avant le repli, corps sans bascule (début de _barClear) ; tuck0 = état avant), lj : t, land, sign, rails, margins, o [x, z, nx, nz, tx, tz, w, ground], bars [s, h, maillage, tombée] ; calls : plage des appels de need faits pendant _barClear ; out : clr, a, y, f, by, bz, rx, pivF, pivH (repère du parent du corps), tuck) ; hoof : os fingers_02_l, fingers_02_r, toes_02_l, toes_02_r après l’image [monde x, y, z, sol sous l’os, repère du holder x, y, z]"
+ },
+ "runs": [
+{"id":"E1","file":"E1.json","frames":65,"o1":true},
+{"id":"E1b","file":"E1b.json","frames":130,"o1":true},
+{"id":"E2g","file":"E2g.json","frames":140,"o1":true},
+{"id":"E2d","file":"E2d.json","frames":140,"o1":true},
+{"id":"E3","file":"E3.json","frames":105,"o1":true},
+{"id":"E3b","file":"E3b.json","frames":109,"o1":true},
+{"id":"E6t","file":"E6t.json","frames":120,"o1":true},
+{"id":"E6v","file":"E6v.json","frames":120,"o1":true},
+{"id":"V2g-trot","file":"V2g-trot.json","frames":140,"o1":false},
+{"id":"V2d-trot","file":"V2d-trot.json","frames":140,"o1":false},
+{"id":"V2g-gg","file":"V2g-gg.json","frames":170,"o1":false},
+{"id":"V2d-gg","file":"V2d-gg.json","frames":170,"o1":false},
+{"id":"V3d","file":"V3d.json","frames":105,"o1":false},
+{"id":"V3bd","file":"V3bd.json","frames":109,"o1":false},
+{"id":"V3c","file":"V3c.json","frames":108,"o1":false},
+{"id":"V3cd","file":"V3cd.json","frames":108,"o1":false},
+{"id":"V3e","file":"V3e.json","frames":108,"o1":false}
+]}

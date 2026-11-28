@@ -1,0 +1,1074 @@
+{
+ "schema": "strides.monte.niveau_a/1",
+ "generator": "scripts/unreal/rider-rules-niveau-a.mjs",
+ "source": "Strides.Parite.RiderRules",
+ "ok": true,
+ "scenarios": [
+  {
+   "id": "E1",
+   "images": 65,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier, y et z",
+     "max": 1.059407883641228e-7,
+     "at": 14,
+     "key": "M1yR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M2",
+     "label": "écart latéral du pied",
+     "max": 5.8325759444421976e-8,
+     "at": 32,
+     "key": "M2L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ",
+     "max": 4.147257270936677e-8,
+     "at": 8,
+     "key": "M6R",
+     "tol": 0.005,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M7",
+     "label": "écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %)",
+     "max": 1.3005146320965721e-7,
+     "at": 52,
+     "key": "M7genouR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure",
+     "max": 1.4330650832672376e-9,
+     "at": 49,
+     "key": "M9L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : allonge",
+     "max": 3.0317609189811634e-7,
+     "at": 33,
+     "key": "M10R",
+     "tol": 0.0001,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : coude",
+     "max": 0.0006349026063219299,
+     "at": 37,
+     "key": "coudeR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M11",
+     "label": "genou, hanche, cheville",
+     "max": 0.00005798623232067257,
+     "at": 52,
+     "key": "genouR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou",
+     "max": 0.000004051905726498717,
+     "at": 44,
+     "key": "ouvGenouR",
+     "tol": 3,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M13",
+     "label": "buste",
+     "max": 0.000003281085354078783,
+     "at": 33,
+     "key": "buste",
+     "tol": 1,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M14",
+     "label": "assise",
+     "max": 4.987090879149392e-10,
+     "at": 3,
+     "key": "assise",
+     "tol": 0.005,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M15",
+     "label": "talon bas, pointe ouverte",
+     "max": 0.0000013888869254685687,
+     "at": 11,
+     "key": "talonR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : rotation des segments par image (Unreal ≤ O2 + 2°)",
+     "max": 2.682465317857541e-7,
+     "at": 8,
+     "key": "rotSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : à-coup (Unreal ≤ O2 + 2°)",
+     "max": 2.0318352300652265e-7,
+     "at": 45,
+     "key": "acoupSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "id": "E1b",
+   "images": 130,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier, y et z",
+     "max": 1.0594588106815905e-7,
+     "at": 98,
+     "key": "M1yR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M2",
+     "label": "écart latéral du pied",
+     "max": 5.8316526829749193e-8,
+     "at": 104,
+     "key": "M2L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ",
+     "max": 4.368057515691248e-8,
+     "at": 28,
+     "key": "M6R",
+     "tol": 0.005,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M7",
+     "label": "écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %)",
+     "max": 5.76960380138658e-7,
+     "at": 54,
+     "key": "M7genouR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure",
+     "max": 6.237836830402799e-9,
+     "at": 95,
+     "key": "M9R",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : allonge",
+     "max": 3.2972060004521353e-7,
+     "at": 20,
+     "key": "M10R",
+     "tol": 0.0001,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : coude",
+     "max": 0.0006477297094988899,
+     "at": 20,
+     "key": "coudeR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M11",
+     "label": "genou, hanche, cheville",
+     "max": 0.0000711887443287651,
+     "at": 59,
+     "key": "genouR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou",
+     "max": 0.000004045105324479437,
+     "at": 1,
+     "key": "ouvGenouR",
+     "tol": 3,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M13",
+     "label": "buste",
+     "max": 0.0000034223512415110235,
+     "at": 8,
+     "key": "buste",
+     "tol": 1,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M14",
+     "label": "assise",
+     "max": 4.938021935796399e-10,
+     "at": 116,
+     "key": "assise",
+     "tol": 0.005,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M15",
+     "label": "talon bas, pointe ouverte",
+     "max": 0.0000014899221678632557,
+     "at": 111,
+     "key": "talonR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : rotation des segments par image (Unreal ≤ O2 + 2°)",
+     "max": 0.00005614053071623104,
+     "at": 59,
+     "key": "rotSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : à-coup (Unreal ≤ O2 + 2°)",
+     "max": 0.00006300617292076538,
+     "at": 28,
+     "key": "acoupSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "id": "E2g",
+   "images": 140,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier, y et z",
+     "max": 1.0596133714901868e-7,
+     "at": 27,
+     "key": "M1yR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M2",
+     "label": "écart latéral du pied",
+     "max": 5.8314502782153e-8,
+     "at": 14,
+     "key": "M2L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ",
+     "max": 4.543857690109121e-8,
+     "at": 110,
+     "key": "M6L",
+     "tol": 0.005,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M7",
+     "label": "écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %)",
+     "max": 5.871128998524711e-7,
+     "at": 40,
+     "key": "M7cuisse75R",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure",
+     "max": 1.4206699427976588e-9,
+     "at": 72,
+     "key": "M9R",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : allonge",
+     "max": 2.9749890528840695e-7,
+     "at": 40,
+     "key": "M10R",
+     "tol": 0.0001,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : coude",
+     "max": 0.0006329611026956172,
+     "at": 40,
+     "key": "coudeR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M11",
+     "label": "genou, hanche, cheville",
+     "max": 0.00007125625907633548,
+     "at": 40,
+     "key": "genouR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou",
+     "max": 0.0000039720094662243355,
+     "at": 0,
+     "key": "ouvGenouR",
+     "tol": 3,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M13",
+     "label": "buste",
+     "max": 0.000003266870086449103,
+     "at": 7,
+     "key": "buste",
+     "tol": 1,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M14",
+     "label": "assise",
+     "max": 4.858338731317247e-10,
+     "at": 71,
+     "key": "assise",
+     "tol": 0.005,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M15",
+     "label": "talon bas, pointe ouverte",
+     "max": 0.000001589961650338978,
+     "at": 37,
+     "key": "talonR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : rotation des segments par image (Unreal ≤ O2 + 2°)",
+     "max": 0.00007637689213968457,
+     "at": 13,
+     "key": "rotSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : à-coup (Unreal ≤ O2 + 2°)",
+     "max": 0.00006356309436039709,
+     "at": 73,
+     "key": "acoupSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "id": "E2d",
+   "images": 140,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier, y et z",
+     "max": 1.0588052212767707e-7,
+     "at": 7,
+     "key": "M1yR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M2",
+     "label": "écart latéral du pied",
+     "max": 5.8289402526945366e-8,
+     "at": 26,
+     "key": "M2L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ",
+     "max": 4.708364875760651e-8,
+     "at": 61,
+     "key": "M6L",
+     "tol": 0.005,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M7",
+     "label": "écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %)",
+     "max": 4.1613931883732747e-7,
+     "at": 25,
+     "key": "M7genouL",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure",
+     "max": 1.4213947241437097e-9,
+     "at": 23,
+     "key": "M9L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : allonge",
+     "max": 3.055874961965799e-7,
+     "at": 20,
+     "key": "M10R",
+     "tol": 0.0001,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : coude",
+     "max": 0.000633289488803257,
+     "at": 21,
+     "key": "coudeR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M11",
+     "label": "genou, hanche, cheville",
+     "max": 0.000056602513808456933,
+     "at": 0,
+     "key": "genouR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou",
+     "max": 0.000004790683796329631,
+     "at": 45,
+     "key": "ouvGenouL",
+     "tol": 3,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M13",
+     "label": "buste",
+     "max": 0.0000034582341017497242,
+     "at": 20,
+     "key": "buste",
+     "tol": 1,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M14",
+     "label": "assise",
+     "max": 4.967160710522833e-10,
+     "at": 113,
+     "key": "assise",
+     "tol": 0.005,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M15",
+     "label": "talon bas, pointe ouverte",
+     "max": 0.000001503593209051246,
+     "at": 39,
+     "key": "talonR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : rotation des segments par image (Unreal ≤ O2 + 2°)",
+     "max": 0.00007850683563948024,
+     "at": 23,
+     "key": "rotSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : à-coup (Unreal ≤ O2 + 2°)",
+     "max": 0.00006878800951071184,
+     "at": 79,
+     "key": "acoupSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "id": "E3",
+   "images": 105,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier, y et z",
+     "max": 1.0607993461420051e-7,
+     "at": 6,
+     "key": "M1yR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M2",
+     "label": "écart latéral du pied",
+     "max": 5.8486487541919985e-8,
+     "at": 6,
+     "key": "M2L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ",
+     "max": 5.217132159618387e-8,
+     "at": 50,
+     "key": "M6L",
+     "tol": 0.005,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M7",
+     "label": "écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %)",
+     "max": 5.577089075559094e-7,
+     "at": 64,
+     "key": "M7genouR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure",
+     "max": 1.2311479613558163e-9,
+     "at": 67,
+     "key": "M9R",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : allonge",
+     "max": 5.058704904969957e-7,
+     "at": 52,
+     "key": "M10R",
+     "tol": 0.0001,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : coude",
+     "max": 0.0006316035015458965,
+     "at": 0,
+     "key": "coudeR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M11",
+     "label": "genou, hanche, cheville",
+     "max": 0.00007230495742760468,
+     "at": 50,
+     "key": "genouR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou",
+     "max": 0.0000043801996056913595,
+     "at": 44,
+     "key": "ouvGenouL",
+     "tol": 3,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M13",
+     "label": "buste",
+     "max": 0.0000032231154971640308,
+     "at": 3,
+     "key": "buste",
+     "tol": 1,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M14",
+     "label": "assise",
+     "max": 4.931660080309541e-10,
+     "at": 61,
+     "key": "assise",
+     "tol": 0.005,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M15",
+     "label": "talon bas, pointe ouverte",
+     "max": 0.0000015426088317838094,
+     "at": 31,
+     "key": "talonR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : rotation des segments par image (Unreal ≤ O2 + 2°)",
+     "max": 0.00014394731408984285,
+     "at": 41,
+     "key": "rotSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : à-coup (Unreal ≤ O2 + 2°)",
+     "max": 0.00006374108259787903,
+     "at": 33,
+     "key": "acoupSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "id": "E3b",
+   "images": 109,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier, y et z",
+     "max": 1.0588695786850622e-7,
+     "at": 27,
+     "key": "M1yR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M2",
+     "label": "écart latéral du pied",
+     "max": 5.8643123301838074e-8,
+     "at": 5,
+     "key": "M2L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ",
+     "max": 5.222535570670317e-8,
+     "at": 50,
+     "key": "M6L",
+     "tol": 0.005,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M7",
+     "label": "écarts au flanc (genou, tibia 35 et 65 %, cuisse 50 et 75 %)",
+     "max": 5.11268085312544e-7,
+     "at": 80,
+     "key": "M7genouR",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure",
+     "max": 3.835397194285051e-9,
+     "at": 66,
+     "key": "M9L",
+     "tol": 0.01,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : allonge",
+     "max": 5.829959508485416e-7,
+     "at": 54,
+     "key": "M10R",
+     "tol": 0.0001,
+     "unit": "",
+     "pass": true
+    },
+    {
+     "id": "M10",
+     "label": "bras : coude",
+     "max": 0.0006316035015458965,
+     "at": 0,
+     "key": "coudeR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M11",
+     "label": "genou, hanche, cheville",
+     "max": 0.0000721899051541186,
+     "at": 47,
+     "key": "genouR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou",
+     "max": 0.000004342298254300658,
+     "at": 13,
+     "key": "ouvGenouL",
+     "tol": 3,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M13",
+     "label": "buste",
+     "max": 0.0000032379490093603636,
+     "at": 1,
+     "key": "buste",
+     "tol": 1,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M14",
+     "label": "assise",
+     "max": 4.925672925093494e-10,
+     "at": 93,
+     "key": "assise",
+     "tol": 0.005,
+     "unit": "m",
+     "pass": true
+    },
+    {
+     "id": "M15",
+     "label": "talon bas, pointe ouverte",
+     "max": 0.0000015168301903401016,
+     "at": 12,
+     "key": "talonR",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : rotation des segments par image (Unreal ≤ O2 + 2°)",
+     "max": 0.00007528581207250085,
+     "at": 94,
+     "key": "rotSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    },
+    {
+     "id": "M16",
+     "label": "continuité : à-coup (Unreal ≤ O2 + 2°)",
+     "max": 0.000056487778631542085,
+     "at": 73,
+     "key": "acoupSeg",
+     "tol": 2,
+     "unit": "°",
+     "pass": true
+    }
+   ]
+  }
+ ],
+ "phases": [
+  {
+   "id": "E3",
+   "phases": [
+    {
+     "phase": "appel",
+     "ue": 41,
+     "o2": 41,
+     "diff": 0
+    },
+    {
+     "phase": "sommet",
+     "ue": 50,
+     "o2": 50,
+     "diff": 0
+    },
+    {
+     "phase": "poserAnterieurs",
+     "ue": 59,
+     "o2": 59,
+     "diff": 0
+    },
+    {
+     "phase": "poserPosterieursRegle",
+     "ue": 73,
+     "o2": 73,
+     "diff": 0
+    },
+    {
+     "phase": "jumpK50Montee",
+     "ue": 43,
+     "o2": 43,
+     "diff": 0
+    },
+    {
+     "phase": "jumpKMax",
+     "ue": 50,
+     "o2": 50,
+     "diff": 0
+    },
+    {
+     "phase": "jumpK50Descente",
+     "ue": 68,
+     "o2": 68,
+     "diff": 0
+    },
+    {
+     "phase": "jumpK10Descente",
+     "ue": 85,
+     "o2": 85,
+     "diff": 0
+    }
+   ],
+   "pass": true
+  },
+  {
+   "id": "E3b",
+   "phases": [
+    {
+     "phase": "appel",
+     "ue": 41,
+     "o2": 41,
+     "diff": 0
+    },
+    {
+     "phase": "sommet",
+     "ue": 52,
+     "o2": 52,
+     "diff": 0
+    },
+    {
+     "phase": "poserAnterieurs",
+     "ue": 63,
+     "o2": 63,
+     "diff": 0
+    },
+    {
+     "phase": "poserPosterieursRegle",
+     "ue": 76,
+     "o2": 76,
+     "diff": 0
+    },
+    {
+     "phase": "jumpK50Montee",
+     "ue": 44,
+     "o2": 44,
+     "diff": 0
+    },
+    {
+     "phase": "jumpKMax",
+     "ue": 52,
+     "o2": 52,
+     "diff": 0
+    },
+    {
+     "phase": "jumpK50Descente",
+     "ue": 72,
+     "o2": 72,
+     "diff": 0
+    },
+    {
+     "phase": "jumpK10Descente",
+     "ue": 88,
+     "o2": 88,
+     "diff": 0
+    }
+   ],
+   "pass": true
+  }
+ ],
+ "absolutes": [
+  {
+   "id": "E1",
+   "unreal": {
+    "M7": 0.006093937813297645,
+    "M9": 0.17877920342402184,
+    "M10": 0.970000303176092
+   },
+   "o2": {
+    "M7": 0.006093906170610119,
+    "M9": 0.17877920290028132,
+    "M10": 0.9700000000000003
+   }
+  },
+  {
+   "id": "E1b",
+   "unreal": {
+    "M7": -0.08213353341126417,
+    "M9": 0.09457918644090244,
+    "M10": 0.9700003182811123
+   },
+   "o2": {
+    "M7": -0.08213362982607686,
+    "M9": 0.09457918631578427,
+    "M10": 0.9700000000000003
+   }
+  },
+  {
+   "id": "E2g",
+   "unreal": {
+    "M7": -0.23070887842510834,
+    "M9": 0.09027558691622806,
+    "M10": 0.9700002954811057
+   },
+   "o2": {
+    "M7": -0.2307089880392701,
+    "M9": 0.09027558549555811,
+    "M10": 0.9700000000000003
+   }
+  },
+  {
+   "id": "E2d",
+   "unreal": {
+    "M7": -0.11092963777757502,
+    "M9": 0.09158938833449193,
+    "M10": 0.9700002971982388
+   },
+   "o2": {
+    "M7": -0.11092931528911441,
+    "M9": 0.0915893874256732,
+    "M10": 0.9700000000000003
+   }
+  },
+  {
+   "id": "E3",
+   "unreal": {
+    "M7": -0.10180891083724862,
+    "M9": 0.07091067407145052,
+    "M10": 0.9700002939374058
+   },
+   "o2": {
+    "M7": -0.10180892041452534,
+    "M9": 0.07091067375028703,
+    "M10": 0.9700000000000003
+   }
+  },
+  {
+   "id": "E3b",
+   "unreal": {
+    "M7": -0.10355380885102093,
+    "M9": 0.0921966337579263,
+    "M10": 0.9700002939374058
+   },
+   "o2": {
+    "M7": -0.10355381500919338,
+    "M9": 0.09219663379134144,
+    "M10": 0.9700000000000003
+   }
+  }
+ ]
+}

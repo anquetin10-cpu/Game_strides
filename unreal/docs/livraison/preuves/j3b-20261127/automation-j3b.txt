@@ -1,0 +1,74 @@
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Story} Path={Strides.Career.Story}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Course} Path={Strides.Core.Course}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Save} Path={Strides.Core.Save}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={ActivityPrompt} Path={Strides.Cso.ActivityPrompt}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Aids} Path={Strides.Cso.Aids}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Audio} Path={Strides.Cso.Audio}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={AudioAssets} Path={Strides.Cso.AudioAssets}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CameraInGame} Path={Strides.Cso.CameraInGame}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Controls} Path={Strides.Cso.Controls}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Entry} Path={Strides.Cso.Entry}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={EntryDialog} Path={Strides.Cso.EntryDialog}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={FencesInGame} Path={Strides.Cso.FencesInGame}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HorseInGame} Path={Strides.Cso.HorseInGame}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HudClock} Path={Strides.Cso.HudClock}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HudWidget} Path={Strides.Cso.HudWidget}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={PauseKeys} Path={Strides.Cso.PauseKeys}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={PhysicalKeys} Path={Strides.Cso.PhysicalKeys}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Result} Path={Strides.Cso.Result}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={ResultLayout} Path={Strides.Cso.ResultLayout}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={RunInGame} Path={Strides.Cso.RunInGame}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Coat} Path={Strides.Horse.Coat}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CoatMesh} Path={Strides.Horse.CoatMesh}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={MinimapFrame} Path={Strides.Hud.MinimapFrame}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={MinimapRotation} Path={Strides.Hud.MinimapRotation}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={ObjectiveLines} Path={Strides.Hud.ObjectiveLines}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={EnJeu} Path={Strides.Monte.EnJeu}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={MirrorRetention} Path={Strides.Monte.MirrorRetention}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Options} Path={Strides.Monte.Options}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Cso} Path={Strides.Parite.Cso}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CsoCamera} Path={Strides.Parite.CsoCamera}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CsoFences} Path={Strides.Parite.CsoFences}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CsoHorse} Path={Strides.Parite.CsoHorse}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CsoHud} Path={Strides.Parite.CsoHud}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CsoRun} Path={Strides.Parite.CsoRun}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CsoScenery} Path={Strides.Parite.CsoScenery}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HorseMirror} Path={Strides.Parite.HorseMirror}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HorseScale} Path={Strides.Parite.HorseScale}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HorseSeat} Path={Strides.Parite.HorseSeat}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HorseTackMesh} Path={Strides.Parite.HorseTackMesh}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HorseView} Path={Strides.Parite.HorseView}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={RiderOnHorse} Path={Strides.Parite.RiderOnHorse}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={RiderRules} Path={Strides.Parite.RiderRules}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={MissionFlow} Path={Strides.Phone.MissionFlow}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Gaits} Path={Strides.Ride.Gaits}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={HorseOnFoot} Path={Strides.Save.HorseOnFoot}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Fantome} Path={Strides.Scenario.Jump.Fantome}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={InCourse} Path={Strides.Scenario.Jump.InCourse}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Oracle} Path={Strides.Scenario.Jump.Oracle}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={PoleGuided} Path={Strides.Scenario.PoleGuided}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={PoleLoop} Path={Strides.Scenario.PoleLoop}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={PoleRun} Path={Strides.Scenario.PoleRun}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Training} Path={Strides.Scenario.Training}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={OutputDir} Path={Strides.Shots.OutputDir}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={PerfStats} Path={Strides.Shots.PerfStats}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={AmbientLife} Path={Strides.World.AmbientLife}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Architecture} Path={Strides.World.Architecture}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={CareerGraph} Path={Strides.World.CareerGraph}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={DayNight} Path={Strides.World.DayNight}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={FootSteering} Path={Strides.World.FootSteering}
+]LogAutomationController: caméra après 1 s : 77.1° (marcheur à 90°)
+]LogTemp: Display: Strides fer d'or : n°20 ramassé (1/20, +25 crédits, total 25)
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Horseshoes} Path={Strides.World.Horseshoes}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={NightSky} Path={Strides.World.NightSky}
+]LogAutomationController: coût du ciel de nuit : 5 composants (appels de dessin au plus), 46468 triangles au LOD 0
+]LogAutomationController: Display: Test Completed. Result={Success} Name={PoleTarget} Path={Strides.World.PoleTarget}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Scenery} Path={Strides.World.Scenery}
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Stands} Path={Strides.World.Stands}
+]LogTemp: Display: Strides fer d'or : n°20 ramassé (1/20, +25 crédits, total 25)
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Vehicles} Path={Strides.World.Vehicles}
+]LogAutomationController: après 4 s de gaz : 31.9 m, 15.4 m/s, D2 · 56 km/h · 25 l
+]LogAutomationController: contre la Golf : centre à 4.38 m du sien, 2 choc(s)
+]LogAutomationController: camion : 9.2 m parcourus, cheval déchargé à -6.7 m dans l'axe
+]LogAutomationController: fer d'or ramassé au volant après 2.6 s : 25 €
+]LogAutomationController: Display: Test Completed. Result={Success} Name={Units} Path={Strides.Units}

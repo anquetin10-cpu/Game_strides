@@ -1,0 +1,10 @@
+[2026.11.27-10.58.42:611][  0]LogTemp: Display: Strides sauvegarde : emplacement strides_main lu, 1 meilleur(s) temps cso_train = 62.967 s ;
+[2026.11.27-11.06.46:997][239]LogTemp: Display: Strides carte : bouton « enter » au clavier / à la manette (1)
+[2026.11.27-11.12.11:894][748]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-11.12.14:069][799]LogTemp: Display: Strides carte : bouton « cso-train » au clavier / à la manette (1)
+[2026.11.27-11.12.14:442][810]LogTemp: Display: Strides entraînement : big ENTRAÎNEMENT À L’ABORD · Événement · Entraînement
+[2026.11.27-11.12.14:442][810]LogTemp: Display: Strides entraînement : activité cso_warmup lancée (paddock 240, -232)
+[2026.11.27-11.24.42:444][ 98]LogTemp: Display: Strides entraînement : toast Refus : trop près, appelle plus tôt
+[2026.11.27-11.24.47:955][270]LogTemp: Display: Strides entraînement : toast Refus : trop près, appelle plus tôt
+[2026.11.27-11.30.03:660][ 50]LogTemp: Display: Strides entraînement : « Terminer » (0 sans faute sur 0)
+[2026.11.27-11.30.03:660][ 50]LogTemp: Display: Strides entraînement : fin « Entraînement terminé » · Entraînement à l’abord · Strides · 0 saut sans faute sur 0.

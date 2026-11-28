@@ -1,0 +1,323 @@
+{
+	"schema": "strides.parite_hud/1",
+	"generator": "-StridesShots=cso (AStridesShots::ApplyHudPose, UStridesCsoHud::Describe)",
+	"doc": "par pose : images rejouées, parties de l'état du HUD différentes de l'état du DOM du web (vide : identique), éléments affichés par le widget à la capture (partie=texte)",
+	"poses": [
+		{
+			"name": "cmd-joystick-844x390",
+			"frames": 736,
+			"diffs": [],
+			"touch":
+			{
+				"via": "FSlateApplication::OnTouchStarted / OnTouchMoved -> SViewport -> UGameViewportClient::InputTouch -> AStridesPlayerController::InputTouch",
+				"events": [
+					"Began#1(150.0;300.0)",
+					"Moved#1(178.0;270.0)"
+				],
+				"pixelRatio": 1,
+				"move": [
+					0.48275862068965519,
+					0.51724137931034486,
+					0.70752705271321359
+				]
+			},
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					88,
+					238,
+					124,
+					124
+				],
+				"Knob": [
+					151,
+					243,
+					54,
+					54
+				],
+				"joystickOpacity": 1,
+				"tactile": true
+			}
+		},
+		{
+			"name": "cmd-pause-844x390",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					46,
+					226,
+					124,
+					124
+				],
+				"Knob": [
+					81,
+					261,
+					54,
+					54
+				],
+				"joystickOpacity": 0.55000000000000004,
+				"tactile": true
+			},
+			"pauseMenu": [
+				"kicker=PAUSE",
+				"title=Equestrian Tour",
+				"p0=<b>Épreuve</b> — <b>diriger</b> : joystick gauche/droite (←/→) · <b>cadence</b> : joystick avant/arrière (↑/↓), gardée quand on relâche · <b>SAUT</b> au bon moment (Espace).",
+				"p1=<b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).",
+				"p2=Version 2.0.0 · Unreal",
+				"promo=Cette app existe pour de vrai.",
+				"bouton title=Écran titre",
+				"bouton strides=Découvrir la vraie application Strides",
+				"bouton share=Partager",
+				"bouton resume=Reprendre",
+				"pause-line=Tracé au sol : affiché",
+				"pause-aid=Aide au saut : complète"
+			]
+		},
+		{
+			"name": "cmd-joystick-667x308",
+			"frames": 736,
+			"diffs": [],
+			"touch":
+			{
+				"via": "FSlateApplication::OnTouchStarted / OnTouchMoved -> SViewport -> UGameViewportClient::InputTouch -> AStridesPlayerController::InputTouch",
+				"events": [
+					"Began#1(120.0;240.0)",
+					"Moved#1(148.0;210.0)"
+				],
+				"pixelRatio": 1,
+				"move": [
+					0.48275862068965519,
+					0.51724137931034486,
+					0.70752705271321359
+				]
+			},
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					64,
+					184,
+					112,
+					112
+				],
+				"Knob": [
+					121,
+					183,
+					54,
+					54
+				],
+				"joystickOpacity": 1,
+				"tactile": true
+			}
+		},
+		{
+			"name": "cmd-pause-667x308",
+			"frames": 736,
+			"diffs": [],
+			"shown": [
+				"board=17,97|/ 64 s|0 pt|▸ 4A",
+				"fb=Bon appel"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					86,
+					172,
+					112,
+					112
+				],
+				"Knob": [
+					115,
+					201,
+					54,
+					54
+				],
+				"joystickOpacity": 0.55000000000000004,
+				"tactile": true
+			},
+			"pauseMenu": [
+				"kicker=PAUSE",
+				"title=Equestrian Tour",
+				"p0=<b>Épreuve</b> — <b>diriger</b> : joystick gauche/droite (←/→) · <b>cadence</b> : joystick avant/arrière (↑/↓), gardée quand on relâche · <b>SAUT</b> au bon moment (Espace).",
+				"p1=<b>Tactile</b> — joystick à gauche (glisser), caméra : glisser à droite. joystick à fond = galop. Boutons : <b>Saut</b>, <b>Boost</b> (maintenir : grand galop), <b>Action</b>, sifflet.<br><b>Clavier</b> — ZQSD/WASD (galop ; Ctrl : trot, Alt : pas), Espace (saut), Maj (boost : grand galop), E (action), Q (siffler), P (téléphone), M (carte), Échap (pause).",
+				"p2=Version 2.0.0 · Unreal",
+				"promo=Cette app existe pour de vrai.",
+				"bouton title=Écran titre",
+				"bouton strides=Découvrir la vraie application Strides",
+				"bouton share=Partager",
+				"bouton resume=Reprendre",
+				"pause-line=Tracé au sol : affiché",
+				"pause-aid=Aide au saut : complète"
+			]
+		}
+	]
+}

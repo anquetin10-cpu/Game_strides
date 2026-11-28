@@ -1,0 +1,2 @@
+727:[2026.11.26-06.18.14:308][  0]LogMac: Error: appError called: Fatal error: [File:./Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp] [Line: 4974] 
+728:Missing global shader FXRCubemapPS's permutation 0, Please make sure cooking was successful.

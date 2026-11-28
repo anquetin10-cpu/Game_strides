@@ -1,0 +1,25 @@
+ 9/19 Test  #9: colliders ........................   Passed    0.22 sec
+      Start 10: guidage
+10/19 Test #10: guidage ..........................   Passed    0.57 sec
+      Start 11: fenetre
+11/19 Test #11: fenetre ..........................   Passed    0.04 sec
+      Start 12: entrainement
+12/19 Test #12: entrainement .....................   Passed    0.05 sec
+      Start 13: monde-vivant
+13/19 Test #13: monde-vivant .....................   Passed    0.12 sec
+      Start 14: carriere
+14/19 Test #14: carriere .........................   Passed    0.07 sec
+      Start 15: meteo
+15/19 Test #15: meteo ............................   Passed    0.15 sec
+      Start 16: vehicules
+16/19 Test #16: vehicules ........................   Passed    0.16 sec
+      Start 17: ciel
+17/19 Test #17: ciel .............................   Passed    0.14 sec
+      Start 18: epreuves
+18/19 Test #18: epreuves .........................   Passed    0.24 sec
+      Start 19: defis
+19/19 Test #19: defis ............................   Passed    0.09 sec
+
+100% tests passed, 0 tests failed out of 19
+
+Total Test time (real) =  73.45 sec

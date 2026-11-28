@@ -1,0 +1,18 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.8",
+	"Category": "Game",
+	"Description": "Equestrian Tour (STRIDES) — portage natif du jeu web, iPhone/iPad en priorité.",
+	"Modules": [
+		{ "Name": "StridesGrandTour", "Type": "Runtime", "LoadingPhase": "Default" },
+		{ "Name": "StridesCore", "Type": "Runtime", "LoadingPhase": "PreDefault" }
+	],
+	"Plugins": [
+		{ "Name": "EnhancedInput", "Enabled": true },
+		{ "Name": "ProceduralMeshComponent", "Enabled": true },
+		{ "Name": "ModelingToolsEditorMode", "Enabled": false },
+		{ "Name": "AndroidFileServer", "Enabled": true, "TargetAllowList": [ "Game", "Client", "Server" ] },
+		{ "Name": "PixelStreaming2", "Enabled": true, "PlatformAllowList": [ "Mac" ], "TargetAllowList": [ "Editor" ] }
+	],
+	"TargetPlatforms": [ "IOS", "Mac" ]
+}

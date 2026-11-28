@@ -1,0 +1,787 @@
+{
+ "schema": "strides.defis.oracle.v1",
+ "source": {
+  "webCommit": "31a27d65",
+  "files": [
+   "src/gameplay/challenge.js"
+  ]
+ },
+ "challenge": "defi-pole-v6",
+ "seq": [
+  {
+   "in": {
+    "attempt": "a1",
+    "faults": 0,
+    "refusals": 0,
+    "rails": 0,
+    "t": 61.237
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 0,
+    "refusals": 0,
+    "faults": 0,
+    "timeFaults": 0,
+    "penalties": 0,
+    "time": 61.24
+   },
+   "line": "0 pt · 61,24 s",
+   "isRecord": true,
+   "duplicate": false,
+   "previous": null,
+   "best": "0 pt · 61,24 s",
+   "attempts": 1
+  },
+  {
+   "in": {
+    "attempt": "a2",
+    "faults": 4,
+    "refusals": 0,
+    "rails": 1,
+    "t": 58.004
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 1,
+    "refusals": 0,
+    "faults": 4,
+    "timeFaults": 0,
+    "penalties": 4,
+    "time": 58
+   },
+   "line": "4 pts · 58,00 s",
+   "isRecord": false,
+   "duplicate": false,
+   "previous": "0 pt · 61,24 s",
+   "best": "0 pt · 61,24 s",
+   "attempts": 2
+  },
+  {
+   "in": {
+    "attempt": "a3",
+    "faults": 0,
+    "refusals": 0,
+    "rails": 0,
+    "t": 64
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 0,
+    "refusals": 0,
+    "faults": 0,
+    "timeFaults": 0,
+    "penalties": 0,
+    "time": 64
+   },
+   "line": "0 pt · 64,00 s",
+   "isRecord": false,
+   "duplicate": false,
+   "previous": "0 pt · 61,24 s",
+   "best": "0 pt · 61,24 s",
+   "attempts": 3
+  },
+  {
+   "in": {
+    "attempt": "a4",
+    "faults": 0,
+    "refusals": 0,
+    "rails": 0,
+    "t": 64.0000001
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 0,
+    "refusals": 0,
+    "faults": 0,
+    "timeFaults": 1,
+    "penalties": 1,
+    "time": 64
+   },
+   "line": "1 pt · 64,00 s",
+   "isRecord": false,
+   "duplicate": false,
+   "previous": "0 pt · 61,24 s",
+   "best": "0 pt · 61,24 s",
+   "attempts": 4
+  },
+  {
+   "in": {
+    "attempt": "a5",
+    "faults": 0,
+    "refusals": 0,
+    "rails": 0,
+    "t": 66.5
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 0,
+    "refusals": 0,
+    "faults": 0,
+    "timeFaults": 3,
+    "penalties": 3,
+    "time": 66.5
+   },
+   "line": "3 pts · 66,50 s",
+   "isRecord": false,
+   "duplicate": false,
+   "previous": "0 pt · 61,24 s",
+   "best": "0 pt · 61,24 s",
+   "attempts": 5
+  },
+  {
+   "in": {
+    "attempt": "a6",
+    "faults": 8,
+    "refusals": 1,
+    "rails": 1,
+    "t": 70.33
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 1,
+    "refusals": 1,
+    "faults": 8,
+    "timeFaults": 7,
+    "penalties": 15,
+    "time": 70.33
+   },
+   "line": "15 pts · 70,33 s",
+   "isRecord": false,
+   "duplicate": false,
+   "previous": "0 pt · 61,24 s",
+   "best": "0 pt · 61,24 s",
+   "attempts": 6
+  },
+  {
+   "in": {
+    "attempt": "a7",
+    "faults": 4,
+    "refusals": 1,
+    "rails": 0,
+    "t": 40,
+    "eliminated": "2e refus : éliminé du parcours."
+   },
+   "res": {
+    "eliminated": "2e refus : éliminé du parcours.",
+    "rails": 0,
+    "refusals": 1,
+    "faults": null,
+    "timeFaults": null,
+    "penalties": null,
+    "time": 40
+   },
+   "line": "Éliminé",
+   "isRecord": false,
+   "duplicate": false,
+   "previous": "0 pt · 61,24 s",
+   "best": "0 pt · 61,24 s",
+   "attempts": 7
+  },
+  {
+   "in": {
+    "attempt": "a8",
+    "faults": 0,
+    "refusals": 0,
+    "rails": 0,
+    "t": 60.5
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 0,
+    "refusals": 0,
+    "faults": 0,
+    "timeFaults": 0,
+    "penalties": 0,
+    "time": 60.5
+   },
+   "line": "0 pt · 60,50 s",
+   "isRecord": true,
+   "duplicate": false,
+   "previous": "0 pt · 61,24 s",
+   "best": "0 pt · 60,50 s",
+   "attempts": 8
+  },
+  {
+   "in": {
+    "attempt": "a8",
+    "faults": 0,
+    "refusals": 0,
+    "rails": 0,
+    "t": 59
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 0,
+    "refusals": 0,
+    "faults": 0,
+    "timeFaults": 0,
+    "penalties": 0,
+    "time": 59
+   },
+   "line": "0 pt · 59,00 s",
+   "isRecord": false,
+   "duplicate": true,
+   "previous": "0 pt · 60,50 s",
+   "best": "0 pt · 60,50 s",
+   "attempts": 8
+  },
+  {
+   "in": {
+    "attempt": "a9",
+    "faults": 0,
+    "refusals": 0,
+    "rails": 0,
+    "t": 60.5
+   },
+   "res": {
+    "eliminated": null,
+    "rails": 0,
+    "refusals": 0,
+    "faults": 0,
+    "timeFaults": 0,
+    "penalties": 0,
+    "time": 60.5
+   },
+   "line": "0 pt · 60,50 s",
+   "isRecord": false,
+   "duplicate": false,
+   "previous": "0 pt · 60,50 s",
+   "best": "0 pt · 60,50 s",
+   "attempts": 9
+  }
+ ],
+ "cmp": [
+  [
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   1,
+   -1
+  ],
+  [
+   0,
+   2,
+   -1
+  ],
+  [
+   0,
+   3,
+   -1
+  ],
+  [
+   0,
+   4,
+   -1
+  ],
+  [
+   0,
+   5,
+   -1
+  ],
+  [
+   0,
+   6,
+   -1
+  ],
+  [
+   0,
+   7,
+   1
+  ],
+  [
+   0,
+   8,
+   1
+  ],
+  [
+   0,
+   9,
+   1
+  ],
+  [
+   1,
+   0,
+   1
+  ],
+  [
+   1,
+   1,
+   0
+  ],
+  [
+   1,
+   2,
+   1
+  ],
+  [
+   1,
+   3,
+   1
+  ],
+  [
+   1,
+   4,
+   1
+  ],
+  [
+   1,
+   5,
+   -1
+  ],
+  [
+   1,
+   6,
+   -1
+  ],
+  [
+   1,
+   7,
+   1
+  ],
+  [
+   1,
+   8,
+   1
+  ],
+  [
+   1,
+   9,
+   1
+  ],
+  [
+   2,
+   0,
+   1
+  ],
+  [
+   2,
+   1,
+   -1
+  ],
+  [
+   2,
+   2,
+   0
+  ],
+  [
+   2,
+   3,
+   -1
+  ],
+  [
+   2,
+   4,
+   -1
+  ],
+  [
+   2,
+   5,
+   -1
+  ],
+  [
+   2,
+   6,
+   -1
+  ],
+  [
+   2,
+   7,
+   1
+  ],
+  [
+   2,
+   8,
+   1
+  ],
+  [
+   2,
+   9,
+   1
+  ],
+  [
+   3,
+   0,
+   1
+  ],
+  [
+   3,
+   1,
+   -1
+  ],
+  [
+   3,
+   2,
+   1
+  ],
+  [
+   3,
+   3,
+   0
+  ],
+  [
+   3,
+   4,
+   -1
+  ],
+  [
+   3,
+   5,
+   -1
+  ],
+  [
+   3,
+   6,
+   -1
+  ],
+  [
+   3,
+   7,
+   1
+  ],
+  [
+   3,
+   8,
+   1
+  ],
+  [
+   3,
+   9,
+   1
+  ],
+  [
+   4,
+   0,
+   1
+  ],
+  [
+   4,
+   1,
+   -1
+  ],
+  [
+   4,
+   2,
+   1
+  ],
+  [
+   4,
+   3,
+   1
+  ],
+  [
+   4,
+   4,
+   0
+  ],
+  [
+   4,
+   5,
+   -1
+  ],
+  [
+   4,
+   6,
+   -1
+  ],
+  [
+   4,
+   7,
+   1
+  ],
+  [
+   4,
+   8,
+   1
+  ],
+  [
+   4,
+   9,
+   1
+  ],
+  [
+   5,
+   0,
+   1
+  ],
+  [
+   5,
+   1,
+   1
+  ],
+  [
+   5,
+   2,
+   1
+  ],
+  [
+   5,
+   3,
+   1
+  ],
+  [
+   5,
+   4,
+   1
+  ],
+  [
+   5,
+   5,
+   0
+  ],
+  [
+   5,
+   6,
+   -1
+  ],
+  [
+   5,
+   7,
+   1
+  ],
+  [
+   5,
+   8,
+   1
+  ],
+  [
+   5,
+   9,
+   1
+  ],
+  [
+   6,
+   0,
+   1
+  ],
+  [
+   6,
+   1,
+   1
+  ],
+  [
+   6,
+   2,
+   1
+  ],
+  [
+   6,
+   3,
+   1
+  ],
+  [
+   6,
+   4,
+   1
+  ],
+  [
+   6,
+   5,
+   1
+  ],
+  [
+   6,
+   6,
+   0
+  ],
+  [
+   6,
+   7,
+   1
+  ],
+  [
+   6,
+   8,
+   1
+  ],
+  [
+   6,
+   9,
+   1
+  ],
+  [
+   7,
+   0,
+   -1
+  ],
+  [
+   7,
+   1,
+   -1
+  ],
+  [
+   7,
+   2,
+   -1
+  ],
+  [
+   7,
+   3,
+   -1
+  ],
+  [
+   7,
+   4,
+   -1
+  ],
+  [
+   7,
+   5,
+   -1
+  ],
+  [
+   7,
+   6,
+   -1
+  ],
+  [
+   7,
+   7,
+   0
+  ],
+  [
+   7,
+   8,
+   1
+  ],
+  [
+   7,
+   9,
+   0
+  ],
+  [
+   8,
+   0,
+   -1
+  ],
+  [
+   8,
+   1,
+   -1
+  ],
+  [
+   8,
+   2,
+   -1
+  ],
+  [
+   8,
+   3,
+   -1
+  ],
+  [
+   8,
+   4,
+   -1
+  ],
+  [
+   8,
+   5,
+   -1
+  ],
+  [
+   8,
+   6,
+   -1
+  ],
+  [
+   8,
+   7,
+   -1
+  ],
+  [
+   8,
+   8,
+   0
+  ],
+  [
+   8,
+   9,
+   -1
+  ],
+  [
+   9,
+   0,
+   -1
+  ],
+  [
+   9,
+   1,
+   -1
+  ],
+  [
+   9,
+   2,
+   -1
+  ],
+  [
+   9,
+   3,
+   -1
+  ],
+  [
+   9,
+   4,
+   -1
+  ],
+  [
+   9,
+   5,
+   -1
+  ],
+  [
+   9,
+   6,
+   -1
+  ],
+  [
+   9,
+   7,
+   0
+  ],
+  [
+   9,
+   8,
+   1
+  ],
+  [
+   9,
+   9,
+   0
+  ]
+ ],
+ "timeFaults": [
+  [
+   64,
+   64,
+   0
+  ],
+  [
+   64.0000001,
+   64,
+   1
+  ],
+  [
+   64.2,
+   64,
+   1
+  ],
+  [
+   65,
+   64,
+   1
+  ],
+  [
+   70.5,
+   64,
+   7
+  ],
+  [
+   10,
+   64,
+   0
+  ]
+ ]
+}

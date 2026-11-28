@@ -1,0 +1,42 @@
+{
+  "schema": "equestrian.world.v1",
+  "world": { "size": 1200, "seaLevel": 0, "spawn": [-104, 168, 0.35] },
+  "regions": [
+    { "id": "home", "name": "Écurie du Val", "kind": "stable", "x": -110, "z": 180, "w": 144, "d": 116 },
+    { "id": "town", "name": "Deauville City", "kind": "town", "x": -30, "z": -255, "w": 356, "d": 184 },
+    { "id": "pole", "name": "Pôle International", "kind": "competition", "x": 330, "z": -235, "w": 224, "d": 124 },
+    { "id": "hippo", "name": "Hippodrome de la Touques", "kind": "competition", "x": 330, "z": 230, "w": 356, "d": 200 },
+    { "id": "haras", "name": "Haras de la Pommeraie", "kind": "stable", "x": -380, "z": -40, "w": 196, "d": 152 },
+    { "id": "dunes", "name": "Écurie des Dunes", "kind": "stable", "x": 500, "z": -290, "w": 92, "d": 72 },
+    { "id": "gatien", "name": "Domaine de Saint-Gatien", "kind": "cross", "x": -228, "z": 300, "w": 92, "d": 72 },
+    { "id": "beach", "name": "Plage et Planches", "kind": "nature", "x": 0, "z": -430, "w": 1200, "d": 260 }
+  ],
+  "poi": [
+    { "id": "home", "name": "Écurie du Val", "icon": "home", "x": -110, "z": 172 },
+    { "id": "town", "name": "Deauville City", "icon": "town", "x": 20, "z": -266 },
+    { "id": "pole", "name": "Pôle International", "icon": "event", "x": 330, "z": -180 },
+    { "id": "hippo", "name": "Hippodrome de la Touques", "icon": "event", "x": 330, "z": 140 },
+    { "id": "haras", "name": "Haras de la Pommeraie", "icon": "stable", "x": -380, "z": -96 },
+    { "id": "dunes", "name": "Écurie des Dunes", "icon": "stable", "x": 500, "z": -318 },
+    { "id": "gatien", "name": "Domaine de Saint-Gatien", "icon": "stable", "x": -205, "z": 300 },
+    { "id": "sellerie", "name": "Sellerie du Port", "icon": "shop", "x": -134.6, "z": -266 },
+    { "id": "cafe", "name": "Le Galop", "icon": "shop", "x": 19, "z": -227.3 },
+    { "id": "forge", "name": "Forge Lemaire", "icon": "pro", "x": -140, "z": -199 },
+    { "id": "vet", "name": "Clinique vétérinaire de la Côte", "icon": "pro", "x": 80, "z": -199 },
+    { "id": "hq", "name": "Strides HQ", "icon": "strides", "x": 108, "z": -306 },
+    { "id": "cliffs", "name": "Phare d’Aval", "icon": "view", "x": -505, "z": -395 },
+    { "id": "sign", "name": "Colline Strides", "icon": "view", "x": 120, "z": 470 }
+  ],
+  "roads": [
+    { "id": "coast", "width": 9, "points": [[-418,-354],[-300,-352],[-205,-352],[-30,-352],[145,-352],[300,-350],[420,-352],[575,-350]] },
+    { "id": "main", "width": 9, "points": [[-30,-352],[-30,-166],[-30,-118],[-30,60],[-30,180],[-30,300],[-12,420],[10,545]] },
+    { "id": "east-west", "width": 9, "points": [[-565,-120],[-480,-118],[-380,-122],[-200,-120],[-30,-118],[150,-120],[330,-122],[460,-120],[560,-118]] },
+    { "id": "pole", "width": 8, "points": [[330,-122],[330,-172]] },
+    { "id": "hippo", "width": 8, "points": [[-30,60],[120,62],[250,66],[330,72],[330,128]] },
+    { "id": "home", "width": 6, "points": [[-30,172],[-58,172],[-110,172]] },
+    { "id": "haras", "width": 7, "points": [[-380,-122],[-380,-104],[-380,-74]] },
+    { "id": "gatien", "width": 7, "points": [[-30,300],[-185,300],[-228,300]] }
+  ],
+  "phoneApps": ["Missions", "Écuries", "Transport", "Événements", "Annuaire", "Carte", "Messages", "Trophées", "Profil", "Réglages"],
+  "missionsSource": "story_missions.json (scripts/unreal/export-missions.mjs, exporté du jeu web)"
+}

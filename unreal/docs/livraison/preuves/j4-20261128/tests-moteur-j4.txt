@@ -1,0 +1,92 @@
+# Tests moteur J4 (éditeur -nullrhi), extraits des journaux .ue-cache/journaux/j4-*.log
+## j4-events-2.log
+LogTemp: Display: Strides career start: cross (téléphone) 1 étapes
+LogTemp: Display: Strides career step: cross 1/1
+LogTemp: Display: Strides career complete: cross credits=1352 reputation=2350 (+352, +350)
+LogAutomationController: Display: Test Completed. Result={Success} Name={Cross} Path={Strides.Events.Cross}
+LogAutomationController: objectif « Rejoins le départ du cross · 200 m (1/1) »
+LogAutomationController: cross : fautes 0, refus 0, chrono 29.33 s ; obstacles obstacle:clear 1 1, obstacle:clear 2 1, obstacle:clear 3 1, obstacle:clear 4 1, obstacle:clear 5 1, obstacle:clear 6 1, obstacle:clear 7 1, obstacle:clear 8 1, obstacle:clear 9 1, obstacle:clear 10 1
+LogAutomationController: fin : Mission réussie · Pénalités : 0 · Chrono 29 s · 5★ · Cross de Saint-Gatien · +352 € · +350 réputation
+LogTemp: Display: Strides career start: cross (téléphone) 1 étapes
+LogTemp: Display: Strides career fail: cross (3e refus sur le même obstacle : éliminé du parcours.)
+LogTemp: Display: Strides career start: cross (téléphone) 1 étapes
+LogAutomationController: Display: Test Completed. Result={Success} Name={CrossRefusals} Path={Strides.Events.CrossRefusals}
+LogAutomationController: présentation 1 : refus 1, fautes 20
+LogAutomationController: présentation 2 : refus 2, fautes 40
+LogAutomationController: présentation 3 : refus 3, fautes 60
+LogAutomationController: fin : Mission échouée · 3e refus sur le même obstacle : éliminé du parcours. ; obstacles obstacle:refusal 1 1, obstacle:refusal 1 1, obstacle:refusal 1 1
+LogTemp: Display: Strides career start: derby (téléphone) 1 étapes
+LogTemp: Display: Strides career step: derby 1/1
+LogTemp: Display: Strides career complete: derby credits=1462 reputation=2400 (+462, +400)
+LogAutomationController: Display: Test Completed. Result={Success} Name={Derby} Path={Strides.Events.Derby}
+LogAutomationController: stalles : cheval en (290.00, 167.00), 5 adversaires affichés
+LogAutomationController: course : 2246 images, vitesse max 14.0 m/s, fin « Victoire ! · 5★ · Derby de la Touques · +462 € · +400 réputation »
+## j4-scenario-1.log
+LogTemp: Display: Strides career start: cross (téléphone) 1 étapes
+LogTemp: Display: Strides career step: cross 1/1
+LogTemp: Display: Strides career complete: cross credits=1352 reputation=2350 (+352, +350)
+LogAutomationController: Display: Test Completed. Result={Success} Name={Cross} Path={Strides.Events.Cross}
+LogAutomationController: objectif « Rejoins le départ du cross · 200 m (1/1) »
+LogAutomationController: cross : fautes 0, refus 0, chrono 29.33 s ; obstacles obstacle:clear 1 1, obstacle:clear 2 1, obstacle:clear 3 1, obstacle:clear 4 1, obstacle:clear 5 1, obstacle:clear 6 1, obstacle:clear 7 1, obstacle:clear 8 1, obstacle:clear 9 1, obstacle:clear 10 1
+LogAutomationController: fin : Mission réussie · Pénalités : 0 · Chrono 29 s · 5★ · Cross de Saint-Gatien · +352 € · +350 réputation
+LogTemp: Display: Strides career start: cross (téléphone) 1 étapes
+LogTemp: Display: Strides career fail: cross (3e refus sur le même obstacle : éliminé du parcours.)
+LogTemp: Display: Strides career start: cross (téléphone) 1 étapes
+LogAutomationController: Display: Test Completed. Result={Success} Name={CrossRefusals} Path={Strides.Events.CrossRefusals}
+LogAutomationController: présentation 1 : refus 1, fautes 20
+LogAutomationController: présentation 2 : refus 2, fautes 40
+LogAutomationController: présentation 3 : refus 3, fautes 60
+LogAutomationController: fin : Mission échouée · 3e refus sur le même obstacle : éliminé du parcours. ; obstacles obstacle:refusal 1 1, obstacle:refusal 1 1, obstacle:refusal 1 1
+LogTemp: Display: Strides career start: derby (téléphone) 1 étapes
+LogTemp: Display: Strides career step: derby 1/1
+LogTemp: Display: Strides career complete: derby credits=1462 reputation=2400 (+462, +400)
+LogAutomationController: Display: Test Completed. Result={Success} Name={Derby} Path={Strides.Events.Derby}
+LogAutomationController: stalles : cheval en (290.00, 167.00), 5 adversaires affichés
+LogAutomationController: course : 2246 images, vitesse max 14.0 m/s, fin « Victoire ! · 5★ · Derby de la Touques · +462 € · +400 réputation »
+LogTemp: Display: Strides.Scenario.Career : titre : page=title ; *play=Jouer
+LogTemp: Display: Strides.Scenario.Career : objectif d'accueil : Prochaine étape · P pour ouvrir le téléphone · Une mission t’attend sur Strides
+LogTemp: Display: Strides career start: tuto (téléphone) 7 étapes
+LogTemp: Display: Strides career step: tuto 1/7
+LogTemp: Display: Strides career step: tuto 2/7
+LogTemp: Display: Strides career step: tuto 3/7
+LogTemp: Display: Strides career step: tuto 4/7
+LogTemp: Display: Strides career step: tuto 5/7
+LogTemp: Display: Strides career step: tuto 6/7
+LogTemp: Display: Strides career step: tuto 7/7
+LogTemp: Display: Strides career complete: tuto credits=50 reputation=60 (+50, +60)
+LogTemp: Display: Strides career start: m1 (téléphone) 4 étapes
+LogTemp: Display: Strides career step: m1 1/4
+LogTemp: Display: Strides career step: m1 2/4
+LogTemp: Display: Strides career step: m1 3/4
+LogTemp: Display: Strides career step: m1 4/4
+LogTemp: Display: Strides career complete: m1 credits=140 reputation=120 (+90, +60)
+LogTemp: Display: Strides career start: m2 (téléphone) 7 étapes
+LogTemp: Display: Strides career step: m2 1/7
+LogTemp: Display: Strides career step: m2 2/7
+LogTemp: Display: Strides career step: m2 3/7
+LogTemp: Display: Strides career step: m2 4/7
+LogTemp: Display: Strides career step: m2 5/7
+LogTemp: Display: Strides career step: m2 6/7
+LogTemp: Display: Strides career step: m2 7/7
+LogTemp: Display: Strides career complete: m2 credits=260 reputation=220 (+120, +100)
+LogTemp: Display: Strides.Scenario.Career : après m2 : 260 €, 220 réputation
+LogTemp: Display: Strides career start: cross (téléphone) 1 étapes
+LogTemp: Display: Strides career step: cross 1/1
+LogTemp: Display: Strides career complete: cross credits=612 reputation=2010 (+352, +350)
+LogTemp: Display: Strides.Scenario.Career : cross : Mission réussie · Pénalités : 0 · Chrono 25 s · 5★ · Cross de Saint-Gatien · +352 € · +350 réputation
+LogTemp: Display: Strides.Scenario.Career : avant la relance : 612 €, 2010 réputation, 11 missions, cheval en (-253.2, 300.0)
+LogTemp: Display: Strides.Scenario.Career : titre (relance) : page=title ; *continue=Continuer ; new=Nouvelle partie
+LogTemp: Display: Strides.Scenario.Career : reprise : Julie · 612 € · 2010 · 11 missions · cheval en (-253.2, 300.0)
+LogTemp: Display: Strides career start: derby (téléphone) 1 étapes
+LogAutomationController: Display: Test Completed. Result={Success} Name={Career} Path={Strides.Scenario.Career}
+LogAutomationController: objectif d'accueil : Prochaine étape · P pour ouvrir le téléphone · Une mission t’attend sur Strides
+LogAutomationController: cross : Mission réussie · Pénalités : 0 · Chrono 25 s · 5★ · Cross de Saint-Gatien · +352 € · +350 réputation
+## j4-defi-2.log
+LogTemp: Display: Strides défi : defi-pole-v6 lancé (tentative defi-pole-v6-264813700-1, 64 s accordées, 1.10 m)
+LogTemp: Display: Strides défi : defi-pole-v6 0 pt · 23,00 s (record, 1 tentative(s))
+LogTemp: Display: Strides défi : defi-pole-v6 lancé (tentative defi-pole-v6-267836471-2, 64 s accordées, 1.10 m)
+LogTemp: Display: Strides défi : defi-pole-v6 Éliminé (pas de record, 2 tentative(s))
+LogAutomationController: Display: Test Completed. Result={Success} Name={Pole} Path={Strides.Challenge.Pole}
+LogAutomationController: défi : suivant 11 / 10, fautes 0, chrono 22.33 s ; obstacles obstacle:clear 1 1, obstacle:clear 2 1, obstacle:clear 3 1, obstacle:clear 4A 1, obstacle:clear 4B 1, obstacle:clear 5 1, obstacle:clear 6A 1, obstacle:clear 6B 1, obstacle:clear 7 1, obstacle:clear 8 1
+LogAutomationController: fin : Défi du Pôle · Nouveau record · 0 pt · 23,00 s
+LogAutomationController: 2e tentative : Défi du Pôle · Éliminé · Éliminé

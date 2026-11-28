@@ -1,0 +1,60 @@
+12:29:02 wait 0.1
+12:29:02 tap 49 50
+12:29:03 wait 0.1
+12:29:03 tap 49 50
+12:29:03 wait 0.1
+12:29:03 tap 49 50
+12:29:03 wait 0.1
+12:29:03 tap 49 50
+12:29:04 wait 0.1
+12:29:04 tap 49 50
+12:29:04 wait 0.1
+12:29:04 tap 49 50
+12:29:04 wait 0.1
+12:29:04 tap 49 50
+12:29:04 wait 0.1
+12:29:05 tap 49 50
+12:29:05 wait 0.1
+12:29:05 tap 49 50
+12:29:05 wait 0.1
+12:29:05 tap 49 50
+12:29:05 wait 0.1
+12:29:07 shot /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/preuves/j2d/122905-apres-v1.png
+12:29:07 shot apres-v1
+12:29:08 wait 1.5
+12:29:10 shot /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/preuves/j2d/122908-vertical-1.png
+12:29:10 shot vertical-1
+12:29:10 fin du plan
+12:29:29 exec 
+12:29:29 exec /usr/bin/open /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/builds/j2d/staged-dev/Mac/StridesGrandTour.app
+12:29:30 wait 0.8
+12:29:30 premier plan StridesGrandTour
+12:29:30 front StridesGrandTour
+12:29:31 hold 1 0.8
+12:29:35 hold 0 3.6
+12:29:35 wait 0.4
+12:29:37 shot /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/preuves/j2d/122935-retour.png
+12:29:37 shot retour
+12:29:37 fin du plan
+12:29:45 exec 
+12:29:45 exec /usr/bin/open /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/builds/j2d/staged-dev/Mac/StridesGrandTour.app
+12:29:46 wait 0.8
+12:29:46 premier plan StridesGrandTour
+12:29:46 front StridesGrandTour
+12:29:46 hold 1 0.5
+12:29:48 hold 0 1.3
+12:29:48 wait 0.4
+12:29:50 shot /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/preuves/j2d/122948-vers-oxer.png
+12:29:50 shot vers-oxer
+12:29:50 fin du plan
+12:30:02 exec 
+12:30:02 exec /usr/bin/open /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/builds/j2d/staged-dev/Mac/StridesGrandTour.app
+12:30:02 wait 0.8
+12:30:02 premier plan StridesGrandTour
+12:30:02 front StridesGrandTour
+12:30:03 hold 1 0.6
+12:30:03 tap 14 100
+12:30:04 wait 1.0
+12:30:06 shot /Volumes/Stockage-Qualification/Mac-Mini-Migration/Active-Projects/grand-tour-unreal/.ue-cache/travail/livraison/preuves/j2d/123004-terminer.png
+12:30:06 shot terminer
+12:30:06 fin du plan

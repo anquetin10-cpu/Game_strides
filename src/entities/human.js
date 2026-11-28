@@ -55,6 +55,10 @@ const _w = new THREE.Vector3();
 const _s = new THREE.Vector3();
 const FIST = new THREE.Vector3(0, -0.068, 0.012);
 const IN_BOTH = Object.freeze({ l: true, r: true });
+// Vitesse maximale (m/s) à laquelle le profil du flanc vu par le cavalier se resserre (voir animateRiding).
+const FLANK_RELAX = 0.3;
+// Anticipation de l'élargissement du flanc (part de la variation de la dernière image ajoutée, voir animateRiding).
+const FLANK_LEAD = 2;
 // Hauteur du sol sous les pieds : surfaces praticables surélevées comprises (platelage des Planches, trottoirs).
 const groundY = (g, x, z) => (g.world ? g.world.walkHeight(x, z) : g.terrain.getHeight(x, z));
 
@@ -224,6 +228,10 @@ export class Human {
     this._lastHeading = this.heading;
     this.anim.turnRate = this.anim.turnRate * 0.6 + (dh / step) * 0.4;
     const pose = this.carrying ? 'carry' : this.pose === 'stand' || this.pose === 'walk' ? 'walk' : this.pose;
+    // Repère du monde pour les pieds posés (anim.js, lockFoot) : seulement au sol, à pied (pas au volant, pas porté).
+    const W = (this.anim.world ||= { x: 0, z: 0, h: 0, s: 1 });
+    W.x = this.pos.x; W.z = this.pos.z; W.h = this.heading; W.s = this.mesh.scale.x;
+    if (this.mesh.parent !== this.game.scene) this.anim.world = null;
     animateHuman(this.bones, pose, this.anim, step);
   }
 
@@ -329,6 +337,13 @@ export class Human {
     // un autre cheval peut décaler sa convention avec horse.riderPostOffset.
     a.horseGaitPhase = (h.anim.phase + (h.riderPostOffset || 0) + 1) % 1;
     a.jump = h.jumpT;
+    // Réception (événements du cheval, pour l'accompagnement du saut) : temps depuis le poser des antérieurs (fin du vol
+    // du jeu) et postérieurs reposés (cheval WildMesh : contact mesuré ; autre cheval : le cavalier attend RIDE.holdMax).
+    if (h.jumpT >= 0) a.landT = -1;
+    else if (a._wasJump) a.landT = 0;
+    else if (a.landT >= 0) a.landT += step;
+    a._wasJump = h.jumpT >= 0;
+    a.hindDown = !!h.pjl?.hindDown;
     a.turn = clamp((h.lastTurn || 0) * 1.4, -1, 1);
     a.wave = this.wave;
     // Ajustement exprimé en mètres → unités du modèle (taille du cavalier).
@@ -339,8 +354,24 @@ export class Human {
     for (const key in f) {
       const v = f[key];
       if (Array.isArray(v)) {
-        const arr = rf[key] && rf[key].length === v.length ? rf[key] : (rf[key] = new Array(v.length));
-        for (let i = 0; i < v.length; i++) arr[i] = v[i] * k;
+        const keep = rf[key] && rf[key].length === v.length;
+        const arr = keep ? rf[key] : (rf[key] = new Array(v.length));
+        // Profil du flanc : il peut s'élargir tout de suite (la jambe ne doit pas y entrer), mais ne se resserre que de
+        // FLANK_RELAX m/s au plus : au changement de pied ou d'allure, le tronc du cheval passe d'un côté à l'autre en
+        // deux ou trois images, et le genou qui s'était ouvert se refermait d'autant en une image (à-coups de 25 à 40°).
+        const env = keep && (key === 'flankL' || key === 'flankR' || key === 'flank');
+        // Le cavalier est animé avant la mise à jour du cheval : profil de l'image précédente. Élargissement en cours prolongé
+        // d'une image (FLANK_LEAD), pour que la jambe ne rentre pas dans un flanc qui gonfle (changement de pied en virage).
+        const raw = env ? (this._flankRaw ||= {})[key] || ((this._flankRaw[key] = v.slice())) : null;
+        for (let i = 0; i < v.length; i++) {
+          if (!env || i < 2) {
+            arr[i] = v[i] * k;
+            continue;
+          }
+          const grow = Math.max(0, v[i] - raw[i]) * FLANK_LEAD;
+          arr[i] = Math.max((v[i] + grow) * k, arr[i] - FLANK_RELAX * k * step);
+          raw[i] = v[i];
+        }
       } else rf[key] = key === 'kneeOut' || key === 'mountKneeOut' ? v : v * k;
     }
     // Réglages retirés (cheval WildMesh remplacé par le cheval du jeu) : plus de profil de flanc.
@@ -353,6 +384,9 @@ export class Human {
 
   // Positions monde des poings (prise des rênes). Met à jour les matrices du squelette.
   getHandWorldPositions(outL = this.handL, outR = this.handR) {
+    // Modèle réaliste affiché : creux de ses poings (ses mains sont plus grandes que celles du personnage classique).
+    const rb = this._realBody;
+    if (rb?.active && rb.root.visible && rb.gripPoint('l', outL) && rb.gripPoint('r', outR)) return [outL, outR];
     this.mesh.updateWorldMatrix(true, true);
     outL.copy(FIST).applyMatrix4(this.bones.lHand.matrixWorld);
     outR.copy(FIST).applyMatrix4(this.bones.rHand.matrixWorld);

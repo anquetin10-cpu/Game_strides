@@ -1,0 +1,32 @@
+[
+ {
+  "capture": "monte-appel-unreal.png",
+  "psnr_avant_apres_db": 17.354686,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-galop-gauche-unreal.png",
+  "psnr_avant_apres_db": 20.564052,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-galop-unreal.png",
+  "psnr_avant_apres_db": 20.779836,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-reception-unreal.png",
+  "psnr_avant_apres_db": 21.255866,
+  "web": true,
+  "montage_code": 0
+ },
+ {
+  "capture": "monte-saut-sommet-unreal.png",
+  "psnr_avant_apres_db": 17.315702,
+  "web": true,
+  "montage_code": 0
+ }
+]

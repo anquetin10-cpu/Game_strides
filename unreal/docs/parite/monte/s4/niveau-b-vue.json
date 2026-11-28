@@ -1,0 +1,4432 @@
+{
+ "schema": "strides.monte.niveau_b/1",
+ "generator": "scripts/unreal/rider-rules-niveau-b.mjs",
+ "source": "Strides.Parite.RiderOnHorse",
+ "ok": false,
+ "failed": 50,
+ "criteria": 233,
+ "scenarios": [
+  {
+   "id": "E1",
+   "images": 65,
+   "mirror": 0,
+   "seated": 65,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.001172981,
+     "at": 49,
+     "images": 65,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.0004462081947,
+     "o2": 0.001160249555
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.007829364,
+     "at": 16,
+     "images": 65,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.004281552182,
+     "o2": 0.007717591553
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (gauche)",
+     "kind": "seuil",
+     "value": -0.007029966,
+     "at": 14,
+     "images": 65,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.03257088099,
+     "o2": -0.01252307206
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (gauche)",
+     "kind": "seuil",
+     "value": 0.9252127262,
+     "at": 14,
+     "images": 65,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9121377638,
+     "o2": 0.9252127545
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (gauche)",
+     "kind": "seuil",
+     "value": 0.004322216837,
+     "at": 1,
+     "images": 65,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.001966768558,
+     "o2": 0.006315513585,
+     "runBelow1": 0,
+     "below2": 0
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (gauche)",
+     "kind": "seuil",
+     "value": 0.1840958888,
+     "at": 18,
+     "images": 65,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.1637407391,
+     "o2": 0.1844188572
+    },
+    {
+     "id": "M10",
+     "label": "coude (gauche)",
+     "kind": "seuil",
+     "value": 151.8369366,
+     "at": 61,
+     "images": 65,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 130.249247,
+     "o2": 151.8367338
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (gauche)",
+     "kind": "seuil",
+     "value": 0.006370084309,
+     "at": 37,
+     "images": 65,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.003387856202,
+     "o2": 0.02113312516
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (droit)",
+     "kind": "seuil",
+     "value": 0.002015076,
+     "at": 14,
+     "images": 65,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.001253977437,
+     "o2": 0.002044855131
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (droit)",
+     "kind": "seuil",
+     "value": 0.008601275,
+     "at": 64,
+     "images": 65,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006907078649,
+     "o2": 0.008563550194
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (droit)",
+     "kind": "seuil",
+     "value": -0.009948883,
+     "at": 0,
+     "images": 65,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.01794970012,
+     "o2": -0.00834724536
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (droit)",
+     "kind": "seuil",
+     "value": 0.9224812655,
+     "at": 0,
+     "images": 65,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9182848503,
+     "o2": 0.9253062552
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (droit)",
+     "kind": "seuil",
+     "value": 0.006220897137,
+     "at": 0,
+     "images": 65,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005118871945,
+     "o2": 0.006093906171,
+     "runBelow1": 0,
+     "below2": 0
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (droit)",
+     "kind": "seuil",
+     "value": 0.1777423408,
+     "at": 62,
+     "images": 65,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.1637551629,
+     "o2": 0.1787792029
+    },
+    {
+     "id": "M10",
+     "label": "coude (droit)",
+     "kind": "seuil",
+     "value": 151.8373539,
+     "at": 35,
+     "images": 65,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 128.1512288,
+     "o2": 151.8367203
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (droit)",
+     "kind": "seuil",
+     "value": 0.006369872342,
+     "at": 37,
+     "images": 65,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.003387856202,
+     "o2": 0.01069463403
+    },
+    {
+     "id": "M8",
+     "label": "pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm))",
+     "kind": "seuil",
+     "value": 0,
+     "at": 20,
+     "images": 45,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0,
+     "o2": null
+    },
+    {
+     "id": "M11",
+     "label": "hanche gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 3.75693744,
+      "at": 64,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.1871110492,
+      "at": 54,
+      "pass": true
+     },
+     "prop": 3.883747091,
+     "ctl": 0.0006939806184
+    },
+    {
+     "id": "M11",
+     "label": "cheville gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 4.026521218,
+      "at": 13,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.2777980979,
+      "at": 38,
+      "pass": true
+     },
+     "prop": 3.7799656,
+     "ctl": 0.002544125447
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou gauche",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 25.01100965,
+      "at": 16,
+      "pass": false
+     },
+     "o2": {
+      "max": 1.33635056,
+      "at": 49,
+      "pass": true
+     },
+     "prop": 23.83404439,
+     "ctl": 0.01093658428
+    },
+    {
+     "id": "M15",
+     "label": "talon gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 0.00002592633732,
+      "at": 5,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.00002964294229,
+      "at": 5,
+      "pass": true
+     },
+     "prop": 0.000004815242141,
+     "ctl": 6.73719617e-7
+    },
+    {
+     "id": "M15",
+     "label": "pointe gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 0.00004694701713,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.00004736541091,
+      "at": 4,
+      "pass": true
+     },
+     "prop": 9.962356335e-7,
+     "ctl": 3.420830756e-7
+    },
+    {
+     "id": "M11",
+     "label": "hanche droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 2.073429544,
+      "at": 0,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.3863763727,
+      "at": 52,
+      "pass": true
+     },
+     "prop": 2.323610586,
+     "ctl": 0.001011590971
+    },
+    {
+     "id": "M11",
+     "label": "cheville droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 0.6103058104,
+      "at": 14,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.8873784802,
+      "at": 42,
+      "pass": true
+     },
+     "prop": 0.576248282,
+     "ctl": 0.0008407484706
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou droit",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 12.40468765,
+      "at": 15,
+      "pass": false
+     },
+     "o2": {
+      "max": 1.149568585,
+      "at": 41,
+      "pass": true
+     },
+     "prop": 11.27926052,
+     "ctl": 0.001813252812
+    },
+    {
+     "id": "M15",
+     "label": "talon droit",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 0.0006859601081,
+      "at": 5,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.0006856375198,
+      "at": 5,
+      "pass": true
+     },
+     "prop": 0.000001352410695,
+     "ctl": 0.000001388886925
+    },
+    {
+     "id": "M15",
+     "label": "pointe droite",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 0.0007307372574,
+      "at": 5,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.0007288454047,
+      "at": 5,
+      "pass": true
+     },
+     "prop": 0.00000308575673,
+     "ctl": 4.149024457e-7
+    },
+    {
+     "id": "M13",
+     "label": "buste, assis",
+     "kind": "écart",
+     "tol": 3,
+     "unit": "°",
+     "images": 65,
+     "o1": {
+      "max": 2.069984142,
+      "at": 0,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.04265047042,
+      "at": 37,
+      "pass": true
+     },
+     "prop": 2.0975783,
+     "ctl": 0.0001927187195
+    },
+    {
+     "id": "M14",
+     "label": "levée maximale de l’assise ≤ référence + 1 cm",
+     "kind": "écart",
+     "tol": 0.01,
+     "unit": "m",
+     "images": 65,
+     "o1": {
+      "max": -0.01235046983,
+      "at": null,
+      "pass": true
+     },
+     "o2": {
+      "max": -0.001254296487,
+      "at": null,
+      "pass": true
+     }
+    },
+    {
+     "id": "M16",
+     "label": "continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès)",
+     "kind": "écart",
+     "tol": 0,
+     "unit": "°",
+     "images": 64,
+     "o1": {
+      "max": -14.85012988,
+      "at": 1,
+      "pass": true,
+      "over": 0
+     },
+     "o2": {
+      "max": -14.85012988,
+      "at": 1,
+      "pass": true,
+      "over": 0
+     }
+    }
+   ],
+   "phases": null,
+   "tack": {
+    "M4L": {
+     "ue": [
+      0.006366128878,
+      0.006370084309
+     ],
+     "o1": [
+      0.003377017695,
+      0.003387856202
+     ],
+     "o2": null
+    },
+    "M4R": {
+     "ue": [
+      0.006365917597,
+      0.006369872342
+     ],
+     "o1": [
+      0.003377017695,
+      0.003387856202
+     ],
+     "o2": null
+    },
+    "M4aL": {
+     "ue": [
+      -9.102379094e-11,
+      2.006077702e-9
+     ],
+     "o1": [
+      -3.261280135e-16,
+      1.42247325e-16
+     ],
+     "o2": null
+    },
+    "M4aR": {
+     "ue": [
+      1.190700143e-10,
+      2.047362118e-9
+     ],
+     "o1": [
+      -3.070460552e-16,
+      1.509209424e-16
+     ],
+     "o2": null
+    },
+    "M5L": {
+     "ue": [
+      0.4849823535,
+      0.4882968643
+     ],
+     "o1": [
+      0.4792871444,
+      0.4800148667
+     ],
+     "o2": null
+    },
+    "M5R": {
+     "ue": [
+      0.5273767787,
+      0.5297210707
+     ],
+     "o1": [
+      0.5292295441,
+      0.5301798301
+     ],
+     "o2": null
+    },
+    "reneL": {
+     "ue": [
+      1.02491859,
+      1.045705088
+     ],
+     "o1": [
+      1.026490091,
+      1.045927221
+     ],
+     "o2": [
+      1.025021499,
+      1.046689363
+     ]
+    },
+    "reneR": {
+     "ue": [
+      1.010626019,
+      1.027137578
+     ],
+     "o1": [
+      1.015058092,
+      1.032848808
+     ],
+     "o2": [
+      1.012546129,
+      1.029609318
+     ]
+    },
+    "ecartPoignets": {
+     "ue": [
+      0.1744568713,
+      0.1750946053
+     ],
+     "o1": [
+      0.1693989986,
+      0.1694
+     ],
+     "o2": [
+      0.1750730611,
+      0.1755720358
+     ]
+    }
+   },
+   "inputs": {
+    "phaseRewritten": 0,
+    "phaseMaxRewritten": 0,
+    "phaseMaxHeld": 0,
+    "bobMax": 0.007923627731,
+    "pitchMaxDeg": 0.05820961913
+   }
+  },
+  {
+   "id": "E1b",
+   "images": 130,
+   "mirror": 15,
+   "seated": 86,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.00115023,
+     "at": 0,
+     "images": 86,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.0009521857181,
+     "o2": 0.001150311955
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.007717619,
+     "at": 0,
+     "images": 86,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.004597975519,
+     "o2": 0.007717591553
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.003810288944,
+     "at": 71,
+     "images": 44,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.002057529261,
+     "o2": 0.002138453469
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.0052195691,
+     "at": 70,
+     "images": 44,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005323301334,
+     "o2": 0.00519425623
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (gauche)",
+     "kind": "seuil",
+     "value": 0.000203278,
+     "at": 79,
+     "images": 130,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.007451861362,
+     "o2": 0.000200781112
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (gauche)",
+     "kind": "seuil",
+     "value": 0.9492836293,
+     "at": 77,
+     "images": 86,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": false,
+     "o1": 0.9437921419,
+     "o2": 0.9523673965
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.9459199555,
+     "at": 26,
+     "images": 44,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9459205538,
+     "o2": 0.9459915669
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (gauche)",
+     "kind": "seuil",
+     "value": -0.06725316652,
+     "at": 3,
+     "images": 130,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.06289879715,
+     "o2": -0.06029026761,
+     "runBelow1": 17,
+     "below2": 25
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (gauche)",
+     "kind": "seuil",
+     "value": 0.09387771563,
+     "at": 59,
+     "images": 130,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.09076922562,
+     "o2": 0.09464853653
+    },
+    {
+     "id": "M10",
+     "label": "coude (gauche)",
+     "kind": "seuil",
+     "value": 151.8369525,
+     "at": 45,
+     "images": 130,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 148.8897248,
+     "o2": 151.8367338
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (gauche)",
+     "kind": "seuil",
+     "value": 0.007219280732,
+     "at": 67,
+     "images": 130,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005488559448,
+     "o2": 0.03835392305
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (droit)",
+     "kind": "seuil",
+     "value": 0.001818588,
+     "at": 2,
+     "images": 86,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.001247426676,
+     "o2": 0.001886025687
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (droit)",
+     "kind": "seuil",
+     "value": 0.008514825,
+     "at": 0,
+     "images": 86,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006852440758,
+     "o2": 0.008514827062
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.02086301821,
+     "at": 52,
+     "images": 44,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.01115554483,
+     "o2": 0.02131050109
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.0050147033,
+     "at": 52,
+     "images": 44,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.004848297624,
+     "o2": 0.005018221652
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (droit)",
+     "kind": "seuil",
+     "value": 0.008569678,
+     "at": 89,
+     "images": 130,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.00159546988,
+     "o2": 0.0100183565
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (droit)",
+     "kind": "seuil",
+     "value": 0.9410244713,
+     "at": 77,
+     "images": 86,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": false,
+     "o1": 0.9403326883,
+     "o2": 0.9459199827
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.9459200242,
+     "at": 22,
+     "images": 44,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9459205538,
+     "o2": 0.9459199827
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (droit)",
+     "kind": "seuil",
+     "value": -0.07914071775,
+     "at": 55,
+     "images": 130,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.1516563392,
+     "o2": -0.08213362983,
+     "runBelow1": 38,
+     "below2": 43
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (droit)",
+     "kind": "seuil",
+     "value": 0.09374930765,
+     "at": 59,
+     "images": 130,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.0907647805,
+     "o2": 0.09457918632
+    },
+    {
+     "id": "M10",
+     "label": "coude (droit)",
+     "kind": "seuil",
+     "value": 151.8373586,
+     "at": 97,
+     "images": 130,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 150.0585782,
+     "o2": 151.8367203
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (droit)",
+     "kind": "seuil",
+     "value": 0.007263674616,
+     "at": 67,
+     "images": 130,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005375357689,
+     "o2": 0.03787159968
+    },
+    {
+     "id": "M8",
+     "label": "pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm))",
+     "kind": "seuil",
+     "value": 0,
+     "at": 60,
+     "images": 70,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0,
+     "o2": null
+    },
+    {
+     "id": "M11",
+     "label": "hanche gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 3.701959138,
+      "at": 0,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.650883444,
+      "at": 15,
+      "pass": true
+     },
+     "prop": 3.701923646,
+     "ctl": 0.494332239
+    },
+    {
+     "id": "M11",
+     "label": "cheville gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 5.670781844,
+      "at": 70,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.7863235678,
+      "at": 48,
+      "pass": true
+     },
+     "prop": 5.251059042,
+     "ctl": 0.09305603228
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou gauche",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 23.99935487,
+      "at": 1,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.8221543243,
+      "at": 70,
+      "pass": true
+     },
+     "prop": 23.91004021,
+     "ctl": 0.274291321
+    },
+    {
+     "id": "M15",
+     "label": "talon gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 0.1185816324,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.001921452415,
+      "at": 5,
+      "pass": true
+     },
+     "prop": 0.1172019553,
+     "ctl": 7.879148196e-7
+    },
+    {
+     "id": "M15",
+     "label": "pointe gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 0.07134284061,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.005144536289,
+      "at": 6,
+      "pass": true
+     },
+     "prop": 0.075875631,
+     "ctl": 4.844670087e-7
+    },
+    {
+     "id": "M11",
+     "label": "hanche droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 2.073429544,
+      "at": 0,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.679483095,
+      "at": 15,
+      "pass": true
+     },
+     "prop": 2.573416861,
+     "ctl": 0.6446042631
+    },
+    {
+     "id": "M11",
+     "label": "cheville droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 2.660487412,
+      "at": 88,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.728254073,
+      "at": 15,
+      "pass": true
+     },
+     "prop": 2.731076417,
+     "ctl": 0.3392269454
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou droit",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 11.59136585,
+      "at": 1,
+      "pass": false
+     },
+     "o2": {
+      "max": 3.821471001,
+      "at": 15,
+      "pass": true
+     },
+     "prop": 11.58309605,
+     "ctl": 0.06122836536
+    },
+    {
+     "id": "M15",
+     "label": "talon droit",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 0.02998603154,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.004766579919,
+      "at": 4,
+      "pass": true
+     },
+     "prop": 0.02521945162,
+     "ctl": 0.00000175410047
+    },
+    {
+     "id": "M15",
+     "label": "pointe droite",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 0.02408038963,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.009748559706,
+      "at": 4,
+      "pass": true
+     },
+     "prop": 0.03382159405,
+     "ctl": 0.000001876151906
+    },
+    {
+     "id": "M13",
+     "label": "buste, assis",
+     "kind": "écart",
+     "tol": 3,
+     "unit": "°",
+     "images": 130,
+     "o1": {
+      "max": 4.311650257,
+      "at": 26,
+      "pass": false
+     },
+     "o2": {
+      "max": 2.204830072,
+      "at": 13,
+      "pass": true
+     },
+     "prop": 3.367144014,
+     "ctl": 0.01747358479
+    },
+    {
+     "id": "M14",
+     "label": "assise au pas",
+     "kind": "écart",
+     "tol": 0.004,
+     "unit": "m",
+     "images": 24,
+     "o1": {
+      "max": 0.01995502081,
+      "at": 15,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.005289073179,
+      "at": 15,
+      "pass": false
+     },
+     "prop": 0.01552531488,
+     "ctl": 0.0005963478125
+    },
+    {
+     "id": "M14",
+     "label": "levée maximale de l’assise ≤ référence + 1 cm",
+     "kind": "écart",
+     "tol": 0.01,
+     "unit": "m",
+     "images": 130,
+     "o1": {
+      "max": -0.01225068455,
+      "at": null,
+      "pass": true
+     },
+     "o2": {
+      "max": -0.002685104187,
+      "at": null,
+      "pass": true
+     }
+    },
+    {
+     "id": "M16",
+     "label": "continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès)",
+     "kind": "écart",
+     "tol": 0,
+     "unit": "°",
+     "images": 129,
+     "o1": {
+      "max": -8.43583096,
+      "at": 52,
+      "pass": true,
+      "over": 0
+     },
+     "o2": {
+      "max": -8.43583096,
+      "at": 52,
+      "pass": true,
+      "over": 0
+     }
+    }
+   ],
+   "phases": null,
+   "tack": {
+    "M4L": {
+     "ue": [
+      0.006211046302,
+      0.007219280732
+     ],
+     "o1": [
+      0.003210614501,
+      0.005488559448
+     ],
+     "o2": null
+    },
+    "M4R": {
+     "ue": [
+      0.006215765321,
+      0.007263674616
+     ],
+     "o1": [
+      0.003224618795,
+      0.005375357689
+     ],
+     "o2": null
+    },
+    "M4aL": {
+     "ue": [
+      -5.733371763e-11,
+      2.090801888e-9
+     ],
+     "o1": [
+      -1.708355679e-14,
+      1.153417639e-14
+     ],
+     "o2": null
+    },
+    "M4aR": {
+     "ue": [
+      -9.823169708e-11,
+      2.120459669e-9
+     ],
+     "o1": [
+      -1.708355679e-14,
+      1.577210584e-14
+     ],
+     "o2": null
+    },
+    "M5L": {
+     "ue": [
+      0.4668406075,
+      0.5456706347
+     ],
+     "o1": [
+      0.4703019463,
+      0.5516169778
+     ],
+     "o2": null
+    },
+    "M5R": {
+     "ue": [
+      0.4926871776,
+      0.5632746344
+     ],
+     "o1": [
+      0.4991306305,
+      0.5688085996
+     ],
+     "o2": null
+    },
+    "reneL": {
+     "ue": [
+      0.9258029978,
+      1.234614706
+     ],
+     "o1": [
+      0.9406507933,
+      1.232315107
+     ],
+     "o2": [
+      0.9270808592,
+      1.245127883
+     ]
+    },
+    "reneR": {
+     "ue": [
+      0.9386630192,
+      1.167611029
+     ],
+     "o1": [
+      0.9583691863,
+      1.181095126
+     ],
+     "o2": [
+      0.9404636346,
+      1.170176794
+     ]
+    },
+    "ecartPoignets": {
+     "ue": [
+      0.1696796916,
+      0.1823359079
+     ],
+     "o1": [
+      0.1690887794,
+      0.1694321195
+     ],
+     "o2": [
+      0.1697627584,
+      0.1839251184
+     ]
+    }
+   },
+   "inputs": {
+    "phaseRewritten": 0,
+    "phaseMaxRewritten": 0,
+    "phaseMaxHeld": 4.999312631e-10,
+    "bobMax": 0.01321379021,
+    "pitchMaxDeg": 3.315538715
+   }
+  },
+  {
+   "id": "E2g",
+   "images": 140,
+   "mirror": 119,
+   "seated": 34,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.00341732,
+     "at": 3,
+     "images": 34,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.001119304615,
+     "o2": 0.002844133137
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.007747826,
+     "at": 1,
+     "images": 34,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006028116555,
+     "o2": 0.007726926995
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.00143686592,
+     "at": 93,
+     "images": 106,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.00148168025,
+     "o2": 0.001436752124
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.00660122172,
+     "at": 43,
+     "images": 106,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006187113978,
+     "o2": 0.006638924913
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (gauche)",
+     "kind": "seuil",
+     "value": 0.013818774,
+     "at": 8,
+     "images": 140,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.009854578134,
+     "o2": 0.01183844584
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (gauche)",
+     "kind": "seuil",
+     "value": 0.9252127256,
+     "at": 0,
+     "images": 34,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9218867228,
+     "o2": 0.9252127545
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.9235301849,
+     "at": 22,
+     "images": 106,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9128547768,
+     "o2": 0.9228022254
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (gauche)",
+     "kind": "seuil",
+     "value": -0.08766081983,
+     "at": 2,
+     "images": 140,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.07466411285,
+     "o2": -0.08462726064,
+     "runBelow1": 6,
+     "below2": 11
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (gauche)",
+     "kind": "seuil",
+     "value": 0.08950588037,
+     "at": 72,
+     "images": 140,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.08938594564,
+     "o2": 0.09057456133
+    },
+    {
+     "id": "M10",
+     "label": "coude (gauche)",
+     "kind": "seuil",
+     "value": 151.8369491,
+     "at": 45,
+     "images": 140,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 137.1394747,
+     "o2": 151.8367338
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (gauche)",
+     "kind": "seuil",
+     "value": 0.008055348648,
+     "at": 53,
+     "images": 140,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006393261574,
+     "o2": 0.03100326385
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (droit)",
+     "kind": "seuil",
+     "value": 0.08958636,
+     "at": 16,
+     "images": 34,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.08443570065,
+     "o2": 0.09162594049
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (droit)",
+     "kind": "seuil",
+     "value": 0.008514825,
+     "at": 0,
+     "images": 34,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.0068540463,
+     "o2": 0.008525806651
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.05810666093,
+     "at": 41,
+     "images": 106,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.05157826451,
+     "o2": 0.06016113548
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.005253114,
+     "at": 22,
+     "images": 106,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005114750662,
+     "o2": 0.005270582826
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (droit)",
+     "kind": "seuil",
+     "value": -0.008614671,
+     "at": 39,
+     "images": 140,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.008056767178,
+     "o2": -0.007465462784
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (droit)",
+     "kind": "seuil",
+     "value": 0.9459200177,
+     "at": 40,
+     "images": 34,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": false,
+     "o1": 0.9454372954,
+     "o2": 0.9458848862
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.9459200221,
+     "at": 137,
+     "images": 106,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9459205538,
+     "o2": 0.9459199827
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (droit)",
+     "kind": "seuil",
+     "value": -0.2270430658,
+     "at": 15,
+     "images": 140,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.2478688714,
+     "o2": -0.230708988,
+     "runBelow1": 84,
+     "below2": 121
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (droit)",
+     "kind": "seuil",
+     "value": 0.08936670544,
+     "at": 72,
+     "images": 140,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.08930094829,
+     "o2": 0.0902755855
+    },
+    {
+     "id": "M10",
+     "label": "coude (droit)",
+     "kind": "seuil",
+     "value": 151.8373527,
+     "at": 7,
+     "images": 140,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 140.9211667,
+     "o2": 151.8367203
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (droit)",
+     "kind": "seuil",
+     "value": 0.008173114193,
+     "at": 53,
+     "images": 140,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006658105859,
+     "o2": 0.03182841717
+    },
+    {
+     "id": "M8",
+     "label": "pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm))",
+     "kind": "seuil",
+     "value": 0,
+     "at": 60,
+     "images": 80,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0,
+     "o2": null
+    },
+    {
+     "id": "M11",
+     "label": "hanche gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 3.778093721,
+      "at": 1,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.765216827,
+      "at": 107,
+      "pass": true
+     },
+     "prop": 3.701923646,
+     "ctl": 0.03430273388
+    },
+    {
+     "id": "M11",
+     "label": "cheville gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 7.031095753,
+      "at": 44,
+      "pass": false
+     },
+     "o2": {
+      "max": 3.894974897,
+      "at": 44,
+      "pass": true
+     },
+     "prop": 5.764790662,
+     "ctl": 0.03616495879
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou gauche",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 23.92726782,
+      "at": 1,
+      "pass": false
+     },
+     "o2": {
+      "max": 16.78185609,
+      "at": 44,
+      "pass": false
+     },
+     "prop": 23.89900925,
+     "ctl": 0.09663271755
+    },
+    {
+     "id": "M15",
+     "label": "talon gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.1354686663,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.008705996396,
+      "at": 3,
+      "pass": true
+     },
+     "prop": 0.1441625199,
+     "ctl": 9.984693499e-7
+    },
+    {
+     "id": "M15",
+     "label": "pointe gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.1205764705,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.008634688613,
+      "at": 5,
+      "pass": true
+     },
+     "prop": 0.1276139309,
+     "ctl": 5.314708158e-7
+    },
+    {
+     "id": "M11",
+     "label": "hanche droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 3.401057226,
+      "at": 19,
+      "pass": true
+     },
+     "o2": {
+      "max": 2.135536857,
+      "at": 138,
+      "pass": true
+     },
+     "prop": 2.514410819,
+     "ctl": 0.1674101338
+    },
+    {
+     "id": "M11",
+     "label": "cheville droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 2.770954735,
+      "at": 39,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.307301702,
+      "at": 114,
+      "pass": true
+     },
+     "prop": 2.713393307,
+     "ctl": 0.01589867108
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou droit",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 11.32211765,
+      "at": 4,
+      "pass": false
+     },
+     "o2": {
+      "max": 1.097722573,
+      "at": 114,
+      "pass": true
+     },
+     "prop": 11.25460008,
+     "ctl": 0.1191280894
+    },
+    {
+     "id": "M15",
+     "label": "talon droit",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.05830330643,
+      "at": 7,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.01826386043,
+      "at": 7,
+      "pass": true
+     },
+     "prop": 0.07656716686,
+     "ctl": 0.000001521893667
+    },
+    {
+     "id": "M15",
+     "label": "pointe droite",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.05592714169,
+      "at": 6,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.01162423352,
+      "at": 12,
+      "pass": true
+     },
+     "prop": 0.05689913163,
+     "ctl": 5.517816746e-7
+    },
+    {
+     "id": "M13",
+     "label": "buste, assis",
+     "kind": "écart",
+     "tol": 3,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 5.544514489,
+      "at": 53,
+      "pass": false
+     },
+     "o2": {
+      "max": 3.197191676,
+      "at": 18,
+      "pass": false
+     },
+     "prop": 3.370304966,
+     "ctl": 0.02903429845
+    },
+    {
+     "id": "M14",
+     "label": "assise au pas",
+     "kind": "écart",
+     "tol": 0.004,
+     "unit": "m",
+     "images": 16,
+     "o1": {
+      "max": 0.01001275372,
+      "at": 6,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.0002872580981,
+      "at": 6,
+      "pass": true
+     },
+     "prop": 0.01030001182,
+     "ctl": 4.712381874e-10
+    },
+    {
+     "id": "M14",
+     "label": "levée maximale de l’assise ≤ référence + 1 cm",
+     "kind": "écart",
+     "tol": 0.01,
+     "unit": "m",
+     "images": 140,
+     "o1": {
+      "max": -0.01089246483,
+      "at": null,
+      "pass": true
+     },
+     "o2": {
+      "max": -0.00003944573478,
+      "at": null,
+      "pass": true
+     }
+    },
+    {
+     "id": "M16",
+     "label": "continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès)",
+     "kind": "écart",
+     "tol": 0,
+     "unit": "°",
+     "images": 139,
+     "o1": {
+      "max": -4.22371289,
+      "at": 89,
+      "pass": true,
+      "over": 0
+     },
+     "o2": {
+      "max": -4.22371289,
+      "at": 89,
+      "pass": true,
+      "over": 0
+     }
+    }
+   ],
+   "phases": null,
+   "tack": {
+    "M4L": {
+     "ue": [
+      0.006367891943,
+      0.008055348648
+     ],
+     "o1": [
+      0.00279552906,
+      0.006393261574
+     ],
+     "o2": null
+    },
+    "M4R": {
+     "ue": [
+      0.00636796268,
+      0.008173114193
+     ],
+     "o1": [
+      0.003261276892,
+      0.006658105859
+     ],
+     "o2": null
+    },
+    "M4aL": {
+     "ue": [
+      9.220984393e-11,
+      1.958916215e-9
+     ],
+     "o1": [
+      -4.944482324e-14,
+      3.524264214e-14
+     ],
+     "o2": null
+    },
+    "M4aR": {
+     "ue": [
+      -4.15983567e-11,
+      2.126229182e-9
+     ],
+     "o1": [
+      -3.380802582e-14,
+      3.401619264e-14
+     ],
+     "o2": null
+    },
+    "M5L": {
+     "ue": [
+      0.4633452828,
+      0.6264014669
+     ],
+     "o1": [
+      0.4666239876,
+      0.632279532
+     ],
+     "o2": null
+    },
+    "M5R": {
+     "ue": [
+      0.4779265051,
+      0.5620610383
+     ],
+     "o1": [
+      0.4893472322,
+      0.5765645619
+     ],
+     "o2": null
+    },
+    "reneL": {
+     "ue": [
+      0.8013949043,
+      1.047918009
+     ],
+     "o1": [
+      0.8112985017,
+      1.05042842
+     ],
+     "o2": [
+      0.8037643537,
+      1.048537952
+     ]
+    },
+    "reneR": {
+     "ue": [
+      0.8929131686,
+      1.143577926
+     ],
+     "o1": [
+      0.9223293772,
+      1.161550887
+     ],
+     "o2": [
+      0.8958439909,
+      1.13510633
+     ]
+    },
+    "ecartPoignets": {
+     "ue": [
+      0.1693721643,
+      0.1795353269
+     ],
+     "o1": [
+      0.1687920228,
+      0.1694
+     ],
+     "o2": [
+      0.1694802657,
+      0.1811663369
+     ]
+    }
+   },
+   "inputs": {
+    "phaseRewritten": 0,
+    "phaseMaxRewritten": 0,
+    "phaseMaxHeld": 4.989885172e-10,
+    "bobMax": 0.01061582467,
+    "pitchMaxDeg": 4.667569245
+   }
+  },
+  {
+   "id": "E2d",
+   "images": 140,
+   "mirror": 14,
+   "seated": 32,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.03519651453,
+     "at": 38,
+     "images": 32,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.02187261965,
+     "o2": 0.03444082123
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.007717619,
+     "at": 0,
+     "images": 32,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.004844745218,
+     "o2": 0.007717591553
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.07127007698,
+     "at": 39,
+     "images": 108,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.06476705783,
+     "o2": 0.06977130618
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.00533595324,
+     "at": 39,
+     "images": 108,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005203255621,
+     "o2": 0.00532514368
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (gauche)",
+     "kind": "seuil",
+     "value": -0.004734567,
+     "at": 4,
+     "images": 140,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.008068785331,
+     "o2": -0.005526438236
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (gauche)",
+     "kind": "seuil",
+     "value": 0.9432414239,
+     "at": 36,
+     "images": 32,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": false,
+     "o1": 0.9429609356,
+     "o2": 0.9431916998
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.9459199559,
+     "at": 23,
+     "images": 108,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9459205538,
+     "o2": 0.9459199819
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (gauche)",
+     "kind": "seuil",
+     "value": -0.1162171868,
+     "at": 29,
+     "images": 140,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.1354285271,
+     "o2": -0.1109293153,
+     "runBelow1": 138,
+     "below2": 137
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (gauche)",
+     "kind": "seuil",
+     "value": 0.09234549964,
+     "at": 130,
+     "images": 140,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.0901012154,
+     "o2": 0.09158938743
+    },
+    {
+     "id": "M10",
+     "label": "coude (gauche)",
+     "kind": "seuil",
+     "value": 151.8369406,
+     "at": 13,
+     "images": 140,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 139.6299368,
+     "o2": 151.8367338
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (gauche)",
+     "kind": "seuil",
+     "value": 0.00799214041,
+     "at": 20,
+     "images": 140,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006342720704,
+     "o2": 0.02148603949
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (droit)",
+     "kind": "seuil",
+     "value": 0.001818588,
+     "at": 2,
+     "images": 32,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.001252832042,
+     "o2": 0.001886025687
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (droit)",
+     "kind": "seuil",
+     "value": 0.008514825,
+     "at": 0,
+     "images": 32,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006852440758,
+     "o2": 0.008514827062
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.00216244292,
+     "at": 93,
+     "images": 108,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.002220477868,
+     "o2": 0.00220996955
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.00730320728,
+     "at": 59,
+     "images": 108,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006379167867,
+     "o2": 0.007152437304
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (droit)",
+     "kind": "seuil",
+     "value": -0.007373615,
+     "at": 5,
+     "images": 140,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.01003500847,
+     "o2": -0.007153249457
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (droit)",
+     "kind": "seuil",
+     "value": 0.9224812655,
+     "at": 0,
+     "images": 32,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9181488388,
+     "o2": 0.9224812258
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.9102682986,
+     "at": 22,
+     "images": 108,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9089229066,
+     "o2": 0.9104452501
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (droit)",
+     "kind": "seuil",
+     "value": -0.01786384266,
+     "at": 2,
+     "images": 140,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.01512922212,
+     "o2": -0.02243932065,
+     "runBelow1": 1,
+     "below2": 0
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (droit)",
+     "kind": "seuil",
+     "value": 0.09222100364,
+     "at": 93,
+     "images": 140,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.09016088445,
+     "o2": 0.09173277047
+    },
+    {
+     "id": "M10",
+     "label": "coude (droit)",
+     "kind": "seuil",
+     "value": 151.8373514,
+     "at": 0,
+     "images": 140,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 134.303667,
+     "o2": 151.8367203
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (droit)",
+     "kind": "seuil",
+     "value": 0.007823324399,
+     "at": 20,
+     "images": 140,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006066280714,
+     "o2": 0.01042924642
+    },
+    {
+     "id": "M8",
+     "label": "pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm))",
+     "kind": "seuil",
+     "value": 0,
+     "at": 60,
+     "images": 80,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.0007002335133,
+     "o2": null
+    },
+    {
+     "id": "M11",
+     "label": "hanche gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 3.701959138,
+      "at": 0,
+      "pass": true
+     },
+     "o2": {
+      "max": 2.060694956,
+      "at": 101,
+      "pass": true
+     },
+     "prop": 3.701923646,
+     "ctl": 0.162853917
+    },
+    {
+     "id": "M11",
+     "label": "cheville gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 3.883574589,
+      "at": 1,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.6579805881,
+      "at": 57,
+      "pass": true
+     },
+     "prop": 3.870017081,
+     "ctl": 0.01060354758
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou gauche",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 23.99935487,
+      "at": 1,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.4639659565,
+      "at": 36,
+      "pass": true
+     },
+     "prop": 23.91004021,
+     "ctl": 0.1139155855
+    },
+    {
+     "id": "M15",
+     "label": "talon gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.1185816324,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.001921452415,
+      "at": 5,
+      "pass": true
+     },
+     "prop": 0.1172019553,
+     "ctl": 8.049014593e-7
+    },
+    {
+     "id": "M15",
+     "label": "pointe gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.07134284061,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.005144536289,
+      "at": 6,
+      "pass": true
+     },
+     "prop": 0.075875631,
+     "ctl": 4.844670087e-7
+    },
+    {
+     "id": "M11",
+     "label": "hanche droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 6.11295415,
+      "at": 20,
+      "pass": false
+     },
+     "o2": {
+      "max": 2.168275775,
+      "at": 105,
+      "pass": true
+     },
+     "prop": 6.712413713,
+     "ctl": 0.04188841218
+    },
+    {
+     "id": "M11",
+     "label": "cheville droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 4.637535843,
+      "at": 18,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.617355014,
+      "at": 57,
+      "pass": true
+     },
+     "prop": 3.846414463,
+     "ctl": 0.04457721611
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou droit",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 21.47522928,
+      "at": 18,
+      "pass": false
+     },
+     "o2": {
+      "max": 3.430402973,
+      "at": 23,
+      "pass": true
+     },
+     "prop": 18.49005836,
+     "ctl": 0.06517725524
+    },
+    {
+     "id": "M15",
+     "label": "talon droit",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.02998603154,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.004766579919,
+      "at": 4,
+      "pass": true
+     },
+     "prop": 0.02521945162,
+     "ctl": 0.00000175410047
+    },
+    {
+     "id": "M15",
+     "label": "pointe droite",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 0.02408038963,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.009748559706,
+      "at": 4,
+      "pass": true
+     },
+     "prop": 0.03382159405,
+     "ctl": 0.000001876151906
+    },
+    {
+     "id": "M13",
+     "label": "buste, assis",
+     "kind": "écart",
+     "tol": 3,
+     "unit": "°",
+     "images": 140,
+     "o1": {
+      "max": 5.864257816,
+      "at": 99,
+      "pass": false
+     },
+     "o2": {
+      "max": 2.745124294,
+      "at": 15,
+      "pass": true
+     },
+     "prop": 3.441269545,
+     "ctl": 0.01172022608
+    },
+    {
+     "id": "M14",
+     "label": "assise au pas",
+     "kind": "écart",
+     "tol": 0.004,
+     "unit": "m",
+     "images": 16,
+     "o1": {
+      "max": 0.01552276973,
+      "at": 6,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.0005532369063,
+      "at": 9,
+      "pass": true
+     },
+     "prop": 0.01511101879,
+     "ctl": 7.794541929e-8
+    },
+    {
+     "id": "M14",
+     "label": "levée maximale de l’assise ≤ référence + 1 cm",
+     "kind": "écart",
+     "tol": 0.01,
+     "unit": "m",
+     "images": 140,
+     "o1": {
+      "max": -0.01069398183,
+      "at": null,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.00005227446813,
+      "at": null,
+      "pass": true
+     }
+    },
+    {
+     "id": "M16",
+     "label": "continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès)",
+     "kind": "écart",
+     "tol": 0,
+     "unit": "°",
+     "images": 139,
+     "o1": {
+      "max": -6.438690531,
+      "at": 23,
+      "pass": true,
+      "over": 0
+     },
+     "o2": {
+      "max": -6.438690531,
+      "at": 23,
+      "pass": true,
+      "over": 0
+     }
+    }
+   ],
+   "phases": null,
+   "tack": {
+    "M4L": {
+     "ue": [
+      0.006368166374,
+      0.00799214041
+     ],
+     "o1": [
+      0.003481707354,
+      0.006342720704
+     ],
+     "o2": null
+    },
+    "M4R": {
+     "ue": [
+      0.006367673314,
+      0.007823324399
+     ],
+     "o1": [
+      0.003416917831,
+      0.006066280714
+     ],
+     "o2": null
+    },
+    "M4aL": {
+     "ue": [
+      -5.733371763e-11,
+      2.090801888e-9
+     ],
+     "o1": [
+      -4.51635257e-14,
+      3.175064378e-14
+     ],
+     "o2": null
+    },
+    "M4aR": {
+     "ue": [
+      1.565844052e-10,
+      2.053884724e-9
+     ],
+     "o1": [
+      -4.070702109e-14,
+      4.372370521e-14
+     ],
+     "o2": null
+    },
+    "M5L": {
+     "ue": [
+      0.4624366842,
+      0.5271446339
+     ],
+     "o1": [
+      0.4766862914,
+      0.5428455388
+     ],
+     "o2": null
+    },
+    "M5R": {
+     "ue": [
+      0.5095372725,
+      0.626677192
+     ],
+     "o1": [
+      0.5139856141,
+      0.6307298746
+     ],
+     "o2": null
+    },
+    "reneL": {
+     "ue": [
+      0.9591710127,
+      1.219233663
+     ],
+     "o1": [
+      0.9833083024,
+      1.218036856
+     ],
+     "o2": [
+      0.9573536884,
+      1.230788438
+     ]
+    },
+    "reneR": {
+     "ue": [
+      0.8696685229,
+      1.123584159
+     ],
+     "o1": [
+      0.8777798253,
+      1.118076541
+     ],
+     "o2": [
+      0.8684453083,
+      1.133272465
+     ]
+    },
+    "ecartPoignets": {
+     "ue": [
+      0.1695525852,
+      0.1786959525
+     ],
+     "o1": [
+      0.1690458022,
+      0.1694044673
+     ],
+     "o2": [
+      0.1695243695,
+      0.1804111609
+     ]
+    }
+   },
+   "inputs": {
+    "phaseRewritten": 0,
+    "phaseMaxRewritten": 0,
+    "phaseMaxHeld": 4.948693677e-10,
+    "bobMax": 0.01411254424,
+    "pitchMaxDeg": 4.698344595
+   }
+  },
+  {
+   "id": "E3",
+   "images": 105,
+   "mirror": 105,
+   "seated": 3,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.00290523458,
+     "at": 2,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.002347955388,
+     "o2": 0.002749018007
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.007717599,
+     "at": 0,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.004278908224,
+     "o2": 0.007717571898
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.0160701847,
+     "at": 42,
+     "images": 102,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.01003528168,
+     "o2": 0.01404839283
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.00514562488,
+     "at": 74,
+     "images": 102,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005033972908,
+     "o2": 0.005506099922
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (gauche)",
+     "kind": "seuil",
+     "value": -0.009019239,
+     "at": 74,
+     "images": 105,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.008439375683,
+     "o2": -0.008810075497
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (gauche)",
+     "kind": "seuil",
+     "value": 0.9320806503,
+     "at": 2,
+     "images": 3,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9223948514,
+     "o2": 0.9306769551
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.9459199475,
+     "at": 26,
+     "images": 102,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9463321475,
+     "o2": 0.9459199819
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (gauche)",
+     "kind": "seuil",
+     "value": -0.0999084215,
+     "at": 41,
+     "images": 105,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.1150064344,
+     "o2": -0.1018089204,
+     "runBelow1": 17,
+     "below2": 38
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (gauche)",
+     "kind": "seuil",
+     "value": 0.07152854703,
+     "at": 42,
+     "images": 105,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.06751084805,
+     "o2": 0.07091194179
+    },
+    {
+     "id": "M10",
+     "label": "coude (gauche)",
+     "kind": "seuil",
+     "value": 151.8369976,
+     "at": 58,
+     "images": 105,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 151.7013287,
+     "o2": 151.8367338
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (gauche)",
+     "kind": "seuil",
+     "value": 0.009860569942,
+     "at": 61,
+     "images": 105,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.008019751305,
+     "o2": 0.02116247017
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (droit)",
+     "kind": "seuil",
+     "value": 0.00196841558,
+     "at": 2,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.003066407014,
+     "o2": 0.001956412178
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (droit)",
+     "kind": "seuil",
+     "value": 0.008514791,
+     "at": 0,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006852089712,
+     "o2": 0.008514792908
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.0004484787,
+     "at": 42,
+     "images": 102,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.01003528168,
+     "o2": 0.0004484481608
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.0063592601,
+     "at": 60,
+     "images": 102,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005633423085,
+     "o2": 0.006359255007
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (droit)",
+     "kind": "seuil",
+     "value": -0.008229234,
+     "at": 60,
+     "images": 105,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.008051925437,
+     "o2": -0.008229233177
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (droit)",
+     "kind": "seuil",
+     "value": 0.932117517,
+     "at": 2,
+     "images": 3,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9288562371,
+     "o2": 0.9319539271
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.9459200238,
+     "at": 13,
+     "images": 102,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9465808526,
+     "o2": 0.9460077802
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (droit)",
+     "kind": "seuil",
+     "value": -0.02819627887,
+     "at": 64,
+     "images": 105,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.07955131334,
+     "o2": -0.03021270272,
+     "runBelow1": 3,
+     "below2": 4
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (droit)",
+     "kind": "seuil",
+     "value": 0.07152711381,
+     "at": 42,
+     "images": 105,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": 0.06751233875,
+     "o2": 0.07091067375
+    },
+    {
+     "id": "M10",
+     "label": "coude (droit)",
+     "kind": "seuil",
+     "value": 151.8373519,
+     "at": 0,
+     "images": 105,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 151.7013287,
+     "o2": 151.8367203
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (droit)",
+     "kind": "seuil",
+     "value": 0.009860291537,
+     "at": 61,
+     "images": 105,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.008019751305,
+     "o2": 0.03890504343
+    },
+    {
+     "id": "M8",
+     "label": "pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm))",
+     "kind": "seuil",
+     "value": 0,
+     "at": 20,
+     "images": 85,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0,
+     "o2": null
+    },
+    {
+     "id": "M11",
+     "label": "hanche gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 5.594056897,
+      "at": 50,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.413293604,
+      "at": 65,
+      "pass": true
+     },
+     "prop": 5.573585046,
+     "ctl": 2.86760204
+    },
+    {
+     "id": "M11",
+     "label": "cheville gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 3.778147361,
+      "at": 0,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.808111311,
+      "at": 64,
+      "pass": true
+     },
+     "prop": 3.778153545,
+     "ctl": 1.094120441
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou gauche",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 23.83345057,
+      "at": 0,
+      "pass": false
+     },
+     "o2": {
+      "max": 6.126183135,
+      "at": 62,
+      "pass": true
+     },
+     "prop": 23.83344892,
+     "ctl": 7.128294582
+    },
+    {
+     "id": "M15",
+     "label": "talon gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 0.1843117742,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.01641872084,
+      "at": 2,
+      "pass": true
+     },
+     "prop": 0.1786087244,
+     "ctl": 0.0001934716056
+    },
+    {
+     "id": "M15",
+     "label": "pointe gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 0.2170244615,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.01218098383,
+      "at": 2,
+      "pass": true
+     },
+     "prop": 0.2132460163,
+     "ctl": 0.0001346145607
+    },
+    {
+     "id": "M11",
+     "label": "hanche droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 6.086227806,
+      "at": 49,
+      "pass": false
+     },
+     "o2": {
+      "max": 2.258509923,
+      "at": 36,
+      "pass": true
+     },
+     "prop": 5.971585374,
+     "ctl": 3.65337064
+    },
+    {
+     "id": "M11",
+     "label": "cheville droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 3.350578554,
+      "at": 102,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.17266069,
+      "at": 61,
+      "pass": true
+     },
+     "prop": 3.434731652,
+     "ctl": 2.193497542
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou droit",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 13.78757362,
+      "at": 3,
+      "pass": false
+     },
+     "o2": {
+      "max": 4.500302635,
+      "at": 61,
+      "pass": true
+     },
+     "prop": 13.24441097,
+     "ctl": 0.3934484374
+    },
+    {
+     "id": "M15",
+     "label": "talon droit",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 0.07249323981,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.05359630268,
+      "at": 7,
+      "pass": true
+     },
+     "prop": 0.06542349368,
+     "ctl": 0.0002608811517
+    },
+    {
+     "id": "M15",
+     "label": "pointe droite",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 105,
+     "o1": {
+      "max": 0.06306969988,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.05433510919,
+      "at": 4,
+      "pass": true
+     },
+     "prop": 0.05357369189,
+     "ctl": 0.0001954960057
+    },
+    {
+     "id": "M13",
+     "label": "buste, assis",
+     "kind": "écart",
+     "tol": 3,
+     "unit": "°",
+     "images": 61,
+     "o1": {
+      "max": 3.518084889,
+      "at": 85,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.01519414929,
+      "at": 40,
+      "pass": true
+     },
+     "prop": 3.51870948,
+     "ctl": 0.00009375559542
+    },
+    {
+     "id": "M13",
+     "label": "buste, à l’obstacle",
+     "kind": "écart",
+     "tol": 5,
+     "unit": "°",
+     "images": 44,
+     "o1": {
+      "max": 7.13773257,
+      "at": 50,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.06416884456,
+      "at": 42,
+      "pass": true
+     },
+     "prop": 7.150492797,
+     "ctl": 2.906674142
+    },
+    {
+     "id": "M14",
+     "label": "levée maximale de l’assise ≤ référence + 1 cm",
+     "kind": "écart",
+     "tol": 0.01,
+     "unit": "m",
+     "images": 105,
+     "o1": {
+      "max": -0.02124382367,
+      "at": null,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.712527423e-7,
+      "at": null,
+      "pass": true
+     }
+    },
+    {
+     "id": "M16",
+     "label": "continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès)",
+     "kind": "écart",
+     "tol": 0,
+     "unit": "°",
+     "images": 104,
+     "o1": {
+      "max": 0.1211560693,
+      "at": 41,
+      "pass": false,
+      "over": 1
+     },
+     "o2": {
+      "max": -4.567884892,
+      "at": 47,
+      "pass": true,
+      "over": 0
+     }
+    }
+   ],
+   "phases": [
+    {
+     "phase": "appel",
+     "ue": 41,
+     "o1": 41,
+     "o2": 41,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "sommet",
+     "ue": 50,
+     "o1": 50,
+     "o2": 50,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "poserAnterieurs",
+     "ue": 59,
+     "o1": 59,
+     "o2": 59,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "poserPosterieursDetecte",
+     "ue": 82,
+     "o1": 82,
+     "o2": 82,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "poserPosterieursRegle",
+     "ue": 73,
+     "o1": 73,
+     "o2": 73,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpK50Montee",
+     "ue": 43,
+     "o1": 43,
+     "o2": 43,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpKMax",
+     "ue": 50,
+     "o1": 50,
+     "o2": 50,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpK50Descente",
+     "ue": 68,
+     "o1": 68,
+     "o2": 68,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpK10Descente",
+     "ue": 85,
+     "o1": 85,
+     "o2": 85,
+     "d1": 0,
+     "d2": 0
+    }
+   ],
+   "tack": {
+    "M4L": {
+     "ue": [
+      0.006124171725,
+      0.009860569942
+     ],
+     "o1": [
+      0.001083715066,
+      0.008019751305
+     ],
+     "o2": null
+    },
+    "M4R": {
+     "ue": [
+      0.006124021195,
+      0.009860291537
+     ],
+     "o1": [
+      0.001083715066,
+      0.008019751305
+     ],
+     "o2": null
+    },
+    "M4aL": {
+     "ue": [
+      2.356369301e-10,
+      2.062151583e-9
+     ],
+     "o1": [
+      -1.745305289e-14,
+      2.428959811e-14
+     ],
+     "o2": null
+    },
+    "M4aR": {
+     "ue": [
+      1.973910618e-12,
+      2.077675225e-9
+     ],
+     "o1": [
+      -2.382122277e-14,
+      4.102794493e-14
+     ],
+     "o2": null
+    },
+    "M5L": {
+     "ue": [
+      0.4607195471,
+      0.515395101
+     ],
+     "o1": [
+      0.4642965481,
+      0.5204861804
+     ],
+     "o2": null
+    },
+    "M5R": {
+     "ue": [
+      0.4887993113,
+      0.5891710404
+     ],
+     "o1": [
+      0.4941869956,
+      0.5942847352
+     ],
+     "o2": null
+    },
+    "reneL": {
+     "ue": [
+      0.9264369124,
+      1.290593603
+     ],
+     "o1": [
+      0.9394356912,
+      1.335763908
+     ],
+     "o2": [
+      0.9268951135,
+      1.317143121
+     ]
+    },
+    "reneR": {
+     "ue": [
+      0.9372309487,
+      1.318914764
+     ],
+     "o1": [
+      0.9510678738,
+      1.361319409
+     ],
+     "o2": [
+      0.9380345325,
+      1.344912501
+     ]
+    },
+    "ecartPoignets": {
+     "ue": [
+      0.165772314,
+      0.2061080604
+     ],
+     "o1": [
+      0.1643738012,
+      0.1988933813
+     ],
+     "o2": [
+      0.1656954544,
+      0.2060281907
+     ]
+    }
+   },
+   "inputs": {
+    "phaseRewritten": 0,
+    "phaseMaxRewritten": 0,
+    "phaseMaxHeld": 4.898937089e-10,
+    "bobMax": 0.008245684174,
+    "pitchMaxDeg": 0.08972197209
+   }
+  },
+  {
+   "id": "E3b",
+   "images": 109,
+   "mirror": 109,
+   "seated": 3,
+   "checks": [
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.00313787158,
+     "at": 2,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.002631307525,
+     "o2": 0.00274864252
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (gauche)",
+     "kind": "seuil",
+     "value": 0.007717599,
+     "at": 0,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.004278908224,
+     "o2": 0.007717571898
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.00015164948,
+     "at": 74,
+     "images": 106,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.01235050544,
+     "o2": 0.002570434359
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.00501380782,
+     "at": 64,
+     "images": 106,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.004670940451,
+     "o2": 0.005144512594
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (gauche)",
+     "kind": "seuil",
+     "value": 0.007226068,
+     "at": 20,
+     "images": 109,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.008589736587,
+     "o2": 0.007353094273
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (gauche)",
+     "kind": "seuil",
+     "value": 0.933582055,
+     "at": 2,
+     "images": 3,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9242280641,
+     "o2": 0.9307479356
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (gauche)",
+     "kind": "seuil",
+     "value": 0.9555900019,
+     "at": 20,
+     "images": 106,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": false,
+     "o1": 0.9459205538,
+     "o2": 0.955637492
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (gauche)",
+     "kind": "seuil",
+     "value": -0.1009594955,
+     "at": 41,
+     "images": 109,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.1319555082,
+     "o2": -0.103553815,
+     "runBelow1": 22,
+     "below2": 55
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (gauche)",
+     "kind": "seuil",
+     "value": 0.09219258841,
+     "at": 88,
+     "images": 109,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.08571776377,
+     "o2": 0.09219663379
+    },
+    {
+     "id": "M10",
+     "label": "coude (gauche)",
+     "kind": "seuil",
+     "value": 151.8370035,
+     "at": 64,
+     "images": 109,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 151.7013286,
+     "o2": 151.8367338
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (gauche)",
+     "kind": "seuil",
+     "value": 0.0100537677,
+     "at": 64,
+     "images": 109,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.008245885619,
+     "o2": 0.02303460764
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |y| assis (droit)",
+     "kind": "seuil",
+     "value": 0.00198151958,
+     "at": 2,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.003083530989,
+     "o2": 0.001969072307
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |z| assis (droit)",
+     "kind": "seuil",
+     "value": 0.008514791,
+     "at": 0,
+     "images": 3,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.006852089712,
+     "o2": 0.008514792908
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, Δy hors de la selle (droit)",
+     "kind": "seuil",
+     "value": -0.00006923846,
+     "at": 78,
+     "images": 106,
+     "limit": 0.03,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.003542795478,
+     "o2": -0.00005920863125
+    },
+    {
+     "id": "M1",
+     "label": "plante – point d’étrier visé, |Δz| hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.0064496043,
+     "at": 90,
+     "images": 106,
+     "limit": 0.05,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.005672024099,
+     "o2": 0.006024581508
+    },
+    {
+     "id": "M2",
+     "label": "cheville au-delà de sa place naturelle xMax (droit)",
+     "kind": "seuil",
+     "value": -0.008163765,
+     "at": 90,
+     "images": 109,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": -0.008042968883,
+     "o2": -0.008468917049
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ assis (droit)",
+     "kind": "seuil",
+     "value": 0.9322009996,
+     "at": 2,
+     "images": 3,
+     "limit": 0.935,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9289424871,
+     "o2": 0.9320369542
+    },
+    {
+     "id": "M6",
+     "label": "portée de la jambe ρ hors de la selle (droit)",
+     "kind": "seuil",
+     "value": 0.9459200233,
+     "at": 23,
+     "images": 106,
+     "limit": 0.955,
+     "cmp": "max",
+     "unit": "",
+     "pass": true,
+     "o1": 0.9459205538,
+     "o2": 0.9467346559
+    },
+    {
+     "id": "M7",
+     "label": "écart au flanc, minimum (droit)",
+     "kind": "seuil",
+     "value": -0.03161938727,
+     "at": 4,
+     "images": 109,
+     "limit": -0.01,
+     "cmp": "min",
+     "unit": "m",
+     "pass": false,
+     "o1": -0.05098716447,
+     "o2": -0.03739660698,
+     "runBelow1": 4,
+     "below2": 3
+    },
+    {
+     "id": "M9",
+     "label": "poignet au-dessus de l’encolure (droit)",
+     "kind": "seuil",
+     "value": 0.09219262531,
+     "at": 88,
+     "images": 109,
+     "limit": 0.09,
+     "cmp": "min",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.08572731728,
+     "o2": 0.09219667031
+    },
+    {
+     "id": "M10",
+     "label": "coude (droit)",
+     "kind": "seuil",
+     "value": 151.8373519,
+     "at": 0,
+     "images": 109,
+     "limit": 155,
+     "cmp": "max",
+     "unit": "°",
+     "pass": true,
+     "o1": 151.7013286,
+     "o2": 151.8367203
+    },
+    {
+     "id": "M4",
+     "label": "plante – étrier affiché (droit)",
+     "kind": "seuil",
+     "value": 0.01005348945,
+     "at": 64,
+     "images": 109,
+     "limit": 0.02,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0.008245885619,
+     "o2": 0.03893117966
+    },
+    {
+     "id": "M8",
+     "label": "pénétration de l’axe des os (seuil max(1 cm ; O1 + 0,5 cm))",
+     "kind": "seuil",
+     "value": 0,
+     "at": 20,
+     "images": 89,
+     "limit": 0.01,
+     "cmp": "max",
+     "unit": "m",
+     "pass": true,
+     "o1": 0,
+     "o2": null
+    },
+    {
+     "id": "M11",
+     "label": "hanche gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 5.699907667,
+      "at": 51,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.4437669421,
+      "at": 93,
+      "pass": true
+     },
+     "prop": 5.712046419,
+     "ctl": 1.146072653
+    },
+    {
+     "id": "M11",
+     "label": "cheville gauche",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 3.778147361,
+      "at": 0,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.4263559251,
+      "at": 56,
+      "pass": true
+     },
+     "prop": 3.778153545,
+     "ctl": 0.5734297004
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou gauche",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 23.83345057,
+      "at": 0,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.9459502147,
+      "at": 63,
+      "pass": true
+     },
+     "prop": 23.83344892,
+     "ctl": 0.3434710888
+    },
+    {
+     "id": "M15",
+     "label": "talon gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 0.2000349309,
+      "at": 4,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.05841459292,
+      "at": 2,
+      "pass": true
+     },
+     "prop": 0.1758471758,
+     "ctl": 7.657469716e-7
+    },
+    {
+     "id": "M15",
+     "label": "pointe gauche",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 0.2267731828,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.04575364483,
+      "at": 2,
+      "pass": true
+     },
+     "prop": 0.2028946085,
+     "ctl": 4.300310588e-7
+    },
+    {
+     "id": "M11",
+     "label": "hanche droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 6.299404515,
+      "at": 51,
+      "pass": false
+     },
+     "o2": {
+      "max": 1.08281479,
+      "at": 77,
+      "pass": true
+     },
+     "prop": 6.323005487,
+     "ctl": 1.259100291
+    },
+    {
+     "id": "M11",
+     "label": "cheville droite",
+     "kind": "écart",
+     "tol": 6,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 3.536180351,
+      "at": 19,
+      "pass": true
+     },
+     "o2": {
+      "max": 1.38881968,
+      "at": 77,
+      "pass": true
+     },
+     "prop": 3.597014794,
+     "ctl": 0.6758340673
+    },
+    {
+     "id": "M12",
+     "label": "ouverture du genou droit",
+     "kind": "écart",
+     "tol": 8,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 14.00014665,
+      "at": 3,
+      "pass": false
+     },
+     "o2": {
+      "max": 4.465709369,
+      "at": 72,
+      "pass": true
+     },
+     "prop": 13.20494074,
+     "ctl": 2.497692046
+    },
+    {
+     "id": "M15",
+     "label": "talon droit",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 0.100568423,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.00873403648,
+      "at": 3,
+      "pass": true
+     },
+     "prop": 0.09183438653,
+     "ctl": 0.000001540021715
+    },
+    {
+     "id": "M15",
+     "label": "pointe droite",
+     "kind": "écart",
+     "tol": 4,
+     "unit": "°",
+     "images": 109,
+     "o1": {
+      "max": 0.08776390418,
+      "at": 3,
+      "pass": true
+     },
+     "o2": {
+      "max": 0.01586137065,
+      "at": 3,
+      "pass": true
+     },
+     "prop": 0.07190253353,
+     "ctl": 4.28235726e-7
+    },
+    {
+     "id": "M13",
+     "label": "buste, assis",
+     "kind": "écart",
+     "tol": 3,
+     "unit": "°",
+     "images": 62,
+     "o1": {
+      "max": 3.571068454,
+      "at": 88,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.03846430666,
+      "at": 40,
+      "pass": true
+     },
+     "prop": 3.570380019,
+     "ctl": 0.0005098906259
+    },
+    {
+     "id": "M13",
+     "label": "buste, à l’obstacle",
+     "kind": "écart",
+     "tol": 5,
+     "unit": "°",
+     "images": 47,
+     "o1": {
+      "max": 7.332310343,
+      "at": 51,
+      "pass": false
+     },
+     "o2": {
+      "max": 0.1737145175,
+      "at": 62,
+      "pass": true
+     },
+     "prop": 7.263032474,
+     "ctl": 1.504269032
+    },
+    {
+     "id": "M14",
+     "label": "levée maximale de l’assise ≤ référence + 1 cm",
+     "kind": "écart",
+     "tol": 0.01,
+     "unit": "m",
+     "images": 109,
+     "o1": {
+      "max": -0.01607771652,
+      "at": null,
+      "pass": true
+     },
+     "o2": {
+      "max": 2.229689583e-7,
+      "at": null,
+      "pass": true
+     }
+    },
+    {
+     "id": "M16",
+     "label": "continuité : ≤ 15° par image en régime établi, ≤ référence + 5° en transition (excès)",
+     "kind": "écart",
+     "tol": 0,
+     "unit": "°",
+     "images": 108,
+     "o1": {
+      "max": -5.696911275,
+      "at": 42,
+      "pass": true,
+      "over": 0
+     },
+     "o2": {
+      "max": -5.696911275,
+      "at": 42,
+      "pass": true,
+      "over": 0
+     }
+    }
+   ],
+   "phases": [
+    {
+     "phase": "appel",
+     "ue": 41,
+     "o1": 41,
+     "o2": 41,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "sommet",
+     "ue": 52,
+     "o1": 52,
+     "o2": 52,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "poserAnterieurs",
+     "ue": 63,
+     "o1": 63,
+     "o2": 63,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "poserPosterieursDetecte",
+     "ue": 76,
+     "o1": 76,
+     "o2": 76,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "poserPosterieursRegle",
+     "ue": 76,
+     "o1": 76,
+     "o2": 76,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpK50Montee",
+     "ue": 44,
+     "o1": 44,
+     "o2": 44,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpKMax",
+     "ue": 52,
+     "o1": 52,
+     "o2": 52,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpK50Descente",
+     "ue": 72,
+     "o1": 72,
+     "o2": 72,
+     "d1": 0,
+     "d2": 0
+    },
+    {
+     "phase": "jumpK10Descente",
+     "ue": 88,
+     "o1": 88,
+     "o2": 88,
+     "d1": 0,
+     "d2": 0
+    }
+   ],
+   "tack": {
+    "M4L": {
+     "ue": [
+      0.006123724711,
+      0.0100537677
+     ],
+     "o1": [
+      0.001080114336,
+      0.008245885619
+     ],
+     "o2": null
+    },
+    "M4R": {
+     "ue": [
+      0.006123558947,
+      0.01005348945
+     ],
+     "o1": [
+      0.001080114336,
+      0.008245885619
+     ],
+     "o2": null
+    },
+    "M4aL": {
+     "ue": [
+      -5.674939858e-11,
+      2.196959108e-9
+     ],
+     "o1": [
+      -1.790928517e-14,
+      2.972101731e-14
+     ],
+     "o2": null
+    },
+    "M4aR": {
+     "ue": [
+      2.440519661e-11,
+      2.073651313e-9
+     ],
+     "o1": [
+      -2.339621552e-14,
+      2.812680644e-14
+     ],
+     "o2": null
+    },
+    "M5L": {
+     "ue": [
+      0.4299050286,
+      0.4952957682
+     ],
+     "o1": [
+      0.4371519776,
+      0.4987173273
+     ],
+     "o2": null
+    },
+    "M5R": {
+     "ue": [
+      0.530487379,
+      0.610122149
+     ],
+     "o1": [
+      0.5300673333,
+      0.6116483799
+     ],
+     "o2": null
+    },
+    "reneL": {
+     "ue": [
+      0.8351776769,
+      1.185535548
+     ],
+     "o1": [
+      0.8219439551,
+      1.205044113
+     ],
+     "o2": [
+      0.8383079636,
+      1.185861498
+     ]
+    },
+    "reneR": {
+     "ue": [
+      0.8429512727,
+      1.188859846
+     ],
+     "o1": [
+      0.8289744983,
+      1.209198099
+     ],
+     "o2": [
+      0.8461250718,
+      1.18994549
+     ]
+    },
+    "ecartPoignets": {
+     "ue": [
+      0.169019469,
+      0.1966971204
+     ],
+     "o1": [
+      0.1681297307,
+      0.1874044792
+     ],
+     "o2": [
+      0.1690321012,
+      0.1965688373
+     ]
+    }
+   },
+   "inputs": {
+    "phaseRewritten": 0,
+    "phaseMaxRewritten": 0,
+    "phaseMaxHeld": 4.869632197e-10,
+    "bobMax": 0.01043023278,
+    "pitchMaxDeg": 0.2101565284
+   }
+  }
+ ]
+}

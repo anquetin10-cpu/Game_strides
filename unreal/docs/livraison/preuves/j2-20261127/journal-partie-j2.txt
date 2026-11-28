@@ -1,0 +1,67 @@
+[2026.11.27-02.56.23:645][663]LogTemp: Display: Strides épreuve : activité cso_train lancée (capacité : portée 1.55 m pour 1.15 m, dialogue 0)
+[2026.11.27-02.56.29:211][822]LogTemp: Display: Strides carte : bouton « enter » au clavier / à la manette (1)
+[2026.11.27-02.57.06:581][916]LogTemp: Display: Strides épreuve : obstacle:refusal 7 (sens 1, marge 0.00 m)
+[2026.11.27-02.57.15:711][186]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-02.57.42:267][952]LogTemp: Display: Strides épreuve : obstacle:refusal 6B (sens 1, marge 0.00 m)
+[2026.11.27-02.57.46:831][105]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-02.57.46:832][105]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES)
+[2026.11.27-02.58.05:030][690]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-02.58.05:775][714]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-02.58.06:612][741]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-02.58.14:394][  4]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-02.59.00:540][433]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-02.59.00:540][433]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 2)
+[2026.11.27-02.59.12:382][743]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-02.59.13:102][762]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-02.59.13:897][783]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-03.00.04:243][286]LogTemp: Display: Strides épreuve : obstacle:refusal 6B (sens -1, marge 0.00 m)
+[2026.11.27-03.00.15:632][664]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.27-03.00.20:886][833]LogTemp: Display: Strides épreuve : obstacle:refusal 4B (sens -1, marge 0.00 m)
+[2026.11.27-03.00.25:878][973]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.27-03.00.44:392][575]LogTemp: Display: Strides épreuve : obstacle:refusal 4B (sens -1, marge 0.00 m)
+[2026.11.27-03.02.09:382][136]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 3)
+[2026.11.27-03.02.21:777][521]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-03.02.22:510][544]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-03.02.23:246][567]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-03.02.51:283][421]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-03.03.11:027][ 41]LogTemp: Display: Strides épreuve : obstacle:refusal 7 (sens 1, marge 0.00 m)
+[2026.11.27-03.03.29:907][614]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens -1, marge 0.00 m)
+[2026.11.27-03.04.12:931][942]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens 1, marge 0.00 m)
+[2026.11.27-03.04.50:697][ 77]LogTemp: Display: Strides épreuve : obstacle:refusal 6B (sens 1, marge 0.00 m)
+[2026.11.27-03.04.56:552][270]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 4)
+[2026.11.27-03.05.42:416][743]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-03.05.43:133][766]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-03.05.43:877][790]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-03.05.47:626][916]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-03.06.23:538][ 45]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens -1, marge 0.00 m)
+[2026.11.27-03.06.31:598][280]LogTemp: Display: Strides épreuve : obstacle:refusal 7 (sens 1, marge 0.00 m)
+[2026.11.27-03.07.03:280][222]LogTemp: Display: Strides épreuve : obstacle:refusal 6B (sens -1, marge 0.00 m)
+[2026.11.27-03.07.10:579][449]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-03.07.10:579][449]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 5)
+[2026.11.27-03.07.20:937][760]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-03.07.21:666][782]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-03.07.22:488][807]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-03.07.30:271][ 48]LogTemp: Display: Strides épreuve : obstacle:refusal 1 (sens 1, marge 0.00 m)
+[2026.11.27-03.08.06:631][150]LogTemp: Display: Strides épreuve : obstacle:clear 1 (sens 1, marge 0.26 m)
+[2026.11.27-03.08.18:127][521]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.27-03.08.18:127][521]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 6)
+[2026.11.27-03.08.44:606][364]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-03.08.45:328][387]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-03.08.46:081][411]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-03.08.53:620][661]LogTemp: Display: Strides épreuve : obstacle:refusal 2 (sens 1, marge 0.00 m)
+[2026.11.27-03.09.52:247][401]LogTemp: Display: Strides contact de membre : obstacle 1 barre 0 PD profondeur 0.071 m, 1157.68 s
+[2026.11.27-03.09.52:413][406]LogTemp: Display: Strides épreuve : obstacle:fault 1 (sens 1, marge -0.07 m, cause far)
+[2026.11.27-03.10.26:792][462]LogTemp: Display: Strides épreuve : obstacle:refusal 5 (sens -1, marge 0.00 m)
+[2026.11.27-03.11.27:090][320]LogTemp: Display: Strides épreuve : obstacle:refusal 3 (sens 1, marge 0.00 m)
+[2026.11.27-03.11.39:703][731]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 7)
+[2026.11.27-03.11.48:335][997]LogTemp: Display: Strides carte : bouton choisi « cso-train »
+[2026.11.27-03.11.49:051][ 19]LogTemp: Display: Strides carte : bouton choisi « cso-retry »
+[2026.11.27-03.11.49:840][ 43]LogTemp: Display: Strides carte : bouton « cso-retry » au clavier / à la manette (1)
+[2026.11.27-03.11.50:632][ 67]LogTemp: Display: Strides épreuve : obstacle:refusal 3 (sens 1, marge 0.00 m)
+[2026.11.27-03.12.38:819][480]LogTemp: Display: Strides épreuve : obstacle:fault 2 (sens 1, marge -0.85 m, cause short)
+[2026.11.27-03.12.39:324][497]LogTemp: Display: Strides contact de membre : obstacle 1 barre 0 PG profondeur 0.095 m, 1324.75 s
+[2026.11.27-03.12.39:681][509]LogTemp: Display: Strides épreuve : obstacle:fault 1 (sens 1, marge -0.09 m, cause near)
+[2026.11.27-03.13.09:547][459]LogTemp: Display: Strides épreuve : obstacle:fault 2 (sens 1, marge -0.90 m, cause far)
+[2026.11.27-03.13.13:269][576]LogTemp: Display: Strides épreuve : obstacle:refusal 3 (sens 1, marge 0.00 m)
+[2026.11.27-03.13.44:603][530]LogTemp: Display: Strides épreuve : obstacle:refusal 3 (sens 1, marge 0.00 m)
+[2026.11.27-03.13.44:604][530]LogTemp: Display: Strides épreuve : bilan « Éliminé » (Résultats · Prix STRIDES · manche 8)

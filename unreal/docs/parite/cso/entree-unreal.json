@@ -1,0 +1,980 @@
+{
+	"schema": "strides.parite_hud/1",
+	"generator": "-StridesShots=cso (AStridesShots::ApplyHudPose, UStridesCsoHud::Describe)",
+	"doc": "par pose : images rejouées, parties de l'état du HUD différentes de l'état du DOM du web (vide : identique), éléments affichés par le widget à la capture (partie=texte)",
+	"poses": [
+		{
+			"name": "entree-1-presentation-844x390",
+			"frames": 6,
+			"diffs": [],
+			"shown": [
+				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 0,
+				"diffs": [
+					"aucun appel à l'image de la pose"
+				],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			},
+			"entree":
+			{
+				"screen": "presentation",
+				"gestures": [
+					"action « Chrono » du poteau : activité lancée=1"
+				],
+				"diffs": [],
+				"step": "presentation",
+				"shown": [
+					"kicker=EQUESTRIAN TOUR · PÔLE INTERNATIONAL",
+					"title=Prix STRIDES · Parcours du Pôle",
+					"k0=Épreuve",
+					"v0=Amateur 1,10 m · barème A au chrono",
+					"k1=Hauteur",
+					"v1=1,10 m · difficulté moyenne",
+					"k2=Cheval engagé",
+					"v2=Comète",
+					"k3=Temps accordé",
+					"v3=64 s",
+					"k4=Parcours",
+					"v4=8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 m",
+					"rules=Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.",
+					"bouton plan=Voir le plan",
+					"bouton enter=Entrer en piste (primary)"
+				],
+				"card": 1
+			}
+		},
+		{
+			"name": "entree-1-presentation-667x308",
+			"frames": 6,
+			"diffs": [],
+			"shown": [
+				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 0,
+				"diffs": [
+					"aucun appel à l'image de la pose"
+				],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			},
+			"entree":
+			{
+				"screen": "presentation",
+				"gestures": [],
+				"diffs": [],
+				"step": "presentation",
+				"shown": [
+					"kicker=EQUESTRIAN TOUR · PÔLE INTERNATIONAL",
+					"title=Prix STRIDES · Parcours du Pôle",
+					"k0=Épreuve",
+					"v0=Amateur 1,10 m · barème A au chrono",
+					"k1=Hauteur",
+					"v1=1,10 m · difficulté moyenne",
+					"k2=Cheval engagé",
+					"v2=Comète",
+					"k3=Temps accordé",
+					"v3=64 s",
+					"k4=Parcours",
+					"v4=8 obstacles dont 2 doubles (4A – 4B, 6A – 6B) · 368 m",
+					"rules=Barre ou premier refus : 4 points · deuxième refus : élimination · 1 point par seconde entamée au-delà du temps accordé.",
+					"bouton plan=Voir le plan",
+					"bouton enter=Entrer en piste (primary)"
+				],
+				"card": 1
+			}
+		},
+		{
+			"name": "entree-2-plan-844x390",
+			"frames": 6,
+			"diffs": [],
+			"shown": [
+				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 0,
+				"diffs": [
+					"aucun appel à l'image de la pose"
+				],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			},
+			"entree":
+			{
+				"screen": "plan",
+				"gestures": [
+					"Voir le plan=1"
+				],
+				"diffs": [],
+				"step": "presentation",
+				"shown": [
+					"kicker=PLAN DU PARCOURS",
+					"title=Prix STRIDES · Parcours du Pôle",
+					"svg=viewBox -66 -48 132 96 ; 3 rect, 16 line, 2 polyline, 10 path, 10 circle, 24 text ; textes ENTRÉE,TRIBUNES,Départ,Arrivée,1,1,05,2,1,10,3,1,10,4A,1,05,4B,1,10,5,1,10,6A,1,10,6B,1,10,7,1,10,8,1,15",
+					"legend=1 vertical · 2 oxer · 3 vertical · 4A vertical · 4B oxer · 5 mur · 6A vertical · 6B oxer · 7 vertical · 8 oxer · 368 m · temps accordé 64 s",
+					"bouton plan-back=Retour (primary)"
+				],
+				"card": 2,
+				"planPainted":
+				{
+					"rect": 3,
+					"text": 24,
+					"polyline": 2,
+					"line": 16,
+					"path": 10,
+					"circle": 10
+				}
+			}
+		},
+		{
+			"name": "entree-2-plan-667x308",
+			"frames": 6,
+			"diffs": [],
+			"shown": [
+				"big=PARCOURS DU PÔLE|ÉVÉNEMENT · ENTRAÎNEMENT"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 0,
+				"diffs": [
+					"aucun appel à l'image de la pose"
+				],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			},
+			"entree":
+			{
+				"screen": "plan",
+				"gestures": [],
+				"diffs": [],
+				"step": "presentation",
+				"shown": [
+					"kicker=PLAN DU PARCOURS",
+					"title=Prix STRIDES · Parcours du Pôle",
+					"svg=viewBox -66 -48 132 96 ; 3 rect, 16 line, 2 polyline, 10 path, 10 circle, 24 text ; textes ENTRÉE,TRIBUNES,Départ,Arrivée,1,1,05,2,1,10,3,1,10,4A,1,05,4B,1,10,5,1,10,6A,1,10,6B,1,10,7,1,10,8,1,15",
+					"legend=1 vertical · 2 oxer · 3 vertical · 4A vertical · 4B oxer · 5 mur · 6A vertical · 6B oxer · 7 vertical · 8 oxer · 368 m · temps accordé 64 s",
+					"bouton plan-back=Retour (primary)"
+				],
+				"card": 2,
+				"planPainted":
+				{
+					"rect": 3,
+					"text": 24,
+					"polyline": 2,
+					"line": 16,
+					"path": 10,
+					"circle": 10
+				}
+			}
+		},
+		{
+			"name": "entree-3-annonce-844x390",
+			"frames": 34,
+			"diffs": [],
+			"shown": [
+				"big=N° 40 · Test|ET COMÈTE"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 0,
+				"diffs": [
+					"aucun appel à l'image de la pose"
+				],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			},
+			"entree":
+			{
+				"screen": "",
+				"gestures": [
+					"Retour=1",
+					"Entrer en piste=1"
+				],
+				"diffs": [],
+				"step": "course",
+				"shown": [],
+				"card": 0
+			}
+		},
+		{
+			"name": "entree-3-annonce-667x308",
+			"frames": 34,
+			"diffs": [],
+			"shown": [
+				"big=N° 40 · Test|ET COMÈTE"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 0,
+				"diffs": [
+					"aucun appel à l'image de la pose"
+				],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 0
+				},
+				"lineQuads": 0,
+				"afterQuads": 0
+			},
+			"entree":
+			{
+				"screen": "",
+				"gestures": [],
+				"diffs": [],
+				"step": "course",
+				"shown": [],
+				"card": 0
+			}
+		},
+		{
+			"name": "entree-4-cloche-844x390",
+			"frames": 86,
+			"diffs": [],
+			"shown": [
+				"board=Départ 45 s|· accordé 64 s|0 pt|▸ 1",
+				"hint(transparente)=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+				"big=CLOCHE|TU AS 45 S POUR FRANCHIR LA LIGNE DE DÉPART"
+			],
+			"window": "844x390",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					784,
+					10,
+					44,
+					48
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 6,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": true,
+					"vertices": 28,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": true,
+					"vertices": 32,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 7,
+				"afterQuads": 8
+			},
+			"entree":
+			{
+				"screen": "",
+				"gestures": [],
+				"diffs": [],
+				"step": "course",
+				"shown": [],
+				"card": 0
+			}
+		},
+		{
+			"name": "entree-4-cloche-667x308",
+			"frames": 86,
+			"diffs": [],
+			"shown": [
+				"board=Départ 45 s|· accordé 64 s|0 pt|▸ 1",
+				"hint(transparente)=<b>Gauche/droite</b> : diriger · <b>avant/arrière</b> : cadence (gardée) · <b>SAUT</b> au bon moment. Franchis la <b>ligne de départ</b>.",
+				"big=CLOCHE|TU AS 45 S POUR FRANCHIR LA LIGNE DE DÉPART"
+			],
+			"window": "667x308",
+			"controls":
+			{
+				"buttons": [
+					"Jump",
+					"Pause"
+				],
+				"jump":
+				{
+					"style": "none",
+					"label": "SAUT",
+					"sign": [
+						0,
+						0,
+						0,
+						0
+					],
+					"glow": [
+						0,
+						0,
+						0,
+						0
+					],
+					"backgroundColor": "rgba(15, 15, 14, 0.62)",
+					"ringColor": "rgba(0, 0, 0, 0.00)",
+					"signColor": "rgba(0, 0, 0, 0.00)",
+					"signTextColor": "rgba(15, 15, 14, 1.00)",
+					"labelColor": "rgba(251, 250, 245, 1.00)",
+					"ring": [
+						0,
+						0,
+						0,
+						0
+					]
+				},
+				"Pause": [
+					613,
+					10,
+					38,
+					42
+				],
+				"Joystick": [
+					0,
+					0,
+					0,
+					0
+				],
+				"Knob": [
+					0,
+					0,
+					0,
+					0
+				],
+				"joystickOpacity": 0,
+				"tactile": false
+			},
+			"aids":
+			{
+				"calls": 6,
+				"diffs": [],
+				"groundDev": 0,
+				"line":
+				{
+					"shown": true,
+					"vertices": 28,
+					"sortPriority": 2
+				},
+				"after":
+				{
+					"shown": true,
+					"vertices": 32,
+					"sortPriority": 2
+				},
+				"ok":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"good":
+				{
+					"shown": false,
+					"vertices": 0,
+					"sortPriority": 2
+				},
+				"mark":
+				{
+					"shown": true,
+					"vertices": 15,
+					"sortPriority": 0
+				},
+				"lineQuads": 7,
+				"afterQuads": 8
+			},
+			"entree":
+			{
+				"screen": "",
+				"gestures": [],
+				"diffs": [],
+				"step": "course",
+				"shown": [],
+				"card": 0
+			}
+		}
+	]
+}

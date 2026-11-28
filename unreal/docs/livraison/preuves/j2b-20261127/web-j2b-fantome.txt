@@ -1,0 +1,31 @@
+Jeu web (lecture seule), scénario j2b-fantome de scripts/unreal/export-cso-runs.mjs, Vite 127.0.0.1:5178, pas fixe 1/30 s, cheval WildMesh.
+Colonnes : image, état de horse._pass (canal ps) ou événement / appel du HUD.
+0 PS - pos 332.376346 -193.752483 v 0
+2 HUD ["N° 40 · Test", "et Comète", 2400]
+74 HUD ["CLOCHE", "Tu as 45 s pour franchir la ligne de départ", 2000]
+75 PS None pos 332.374618 -193.754212 v 0.073333
+237 {"e": "horse:jump", "d": {"horse": "comete"}}
+247 PS {'o': '1', 'dir': 1, 'fault': False, 'cause': None, 'done': False, 'exitT': False} pos 313.609732 -212.519097 v 6.2
+248 PS {'o': '1', 'dir': 1, 'fault': False, 'cause': None, 'done': False, 'exitT': True} pos 313.463597 -212.665233 v 6.2
+258 {"e": "horse:land", "d": {"horse": "comete"}}
+259 PS {'o': '1', 'dir': 1, 'fault': False, 'cause': None, 'done': True, 'exitT': True} pos 311.862047 -214.266783 v 6.134
+259 {"e": "obstacle:clear", "d": {"cause": null, "causeText": "", "dir": 1, "margin": 0.310903, "obstacle": {"course": "cso", "num": 1, "label": "1"}}}
+260 PS None pos 323.535466 -252.779974 v 6.2
+272 {"e": "horse:jump", "d": {"horse": "comete"}}
+294 {"e": "horse:land", "d": {"horse": "comete"}}
+307 PS {'o': '2', 'dir': 1, 'fault': False, 'cause': None, 'done': False, 'exitT': False} pos 333.240399 -252.779974 v 6.2
+308 PS {'o': '2', 'dir': 1, 'fault': True, 'cause': 'short', 'done': False, 'exitT': False} pos 333.447066 -252.779974 v 6.2
+4037 HUD ["ÉLIMINÉ", "Temps limite dépassé : éliminé.", 2600]
+4043 HUD ["N° 74 · Test", "et Comète", 2400]
+4115 HUD ["CLOCHE", "Tu as 45 s pour franchir la ligne de départ", 2000]
+5466 HUD ["45 s écoulées : le chrono est lancé"]
+5834 {"e": "obstacle:refusal", "d": {"dir": 1, "obstacle": {"course": "cso", "num": 4, "label": "4A"}}}
+6606 {"e": "horse:bump", "d": {"horse": {"horse": "comete"}, "speed": 5.66}}
+6784 {"e": "horse:jump", "d": {"horse": "comete"}}
+6795 PS {'o': '1', 'dir': 1, 'fault': False, 'cause': None, 'done': False, 'exitT': True} pos 313.790073 -212.952647 v 6.22
+6795 {"e": "obstacle:fault", "d": {"cause": "short", "causeText": "Saut trop court : atterrissage dans l’obstacle", "dir": 1, "margin": -0.85, "obstacle": {"course": "cso", "num": 2, "label": "2"}}}
+6795 HUD ["Erreur de parcours : ce n’est pas le 1"]
+6805 {"e": "horse:land", "d": {"horse": "comete"}}
+6806 PS {'o': '1', 'dir': 1, 'fault': False, 'cause': None, 'done': True, 'exitT': True} pos 312.03371 -214.393083 v 6.1534
+6806 {"e": "obstacle:clear", "d": {"cause": null, "causeText": "", "dir": 1, "margin": 0.309257, "obstacle": {"course": "cso", "num": 1, "label": "1"}}}
+6838 {"i": 9, "stepT": 90.7, "text": "Obstacle n°2 sur 10", "course": {"attempt": 2, "bell": 0, "eliminated": null, "faults": 0, "fenceRefusals": 0, "finished": false, "log": [null], "next": 2, "refusals": 0, "running": true, "started": true, "t": 45.7, "timeFaults": 0}}

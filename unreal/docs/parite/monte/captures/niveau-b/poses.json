@@ -1,0 +1,172 @@
+{
+ "schema": "strides.monte.captures/1",
+ "generator": "scripts/unreal/export-rider-rules.mjs --shots",
+ "srcTree": "fe5c551c756f07510b7bf36522738e5aa7fd72f1",
+ "doc": "captures côte à côte de la cavalière montée par les règles : caméra dans le repère du cheval (holder du web : x à gauche, y vers le haut, z vers l’avant, m ; Unreal : X = 100 z, Y = −100 x, Z = 100 y dans le repère de l’acteur du cheval), FOV vertical (degrés), viewport ; état du web à l’image de capture.",
+ "poses": [
+  {
+   "name": "arret",
+   "scenario": "E1",
+   "frame": 40,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-arret-web.png",
+    "eye": [
+     159.5015242286238,
+     -0.6323009088259268,
+     -438.9169028819401
+    ],
+    "target": [
+     159.90142242414254,
+     -0.7327072493670235,
+     -443.11690288194006
+    ],
+    "speed": 0,
+    "gait": "halt",
+    "phase": 0,
+    "hour": 11.028000000000016,
+    "canvas": [
+     844,
+     390
+    ]
+   }
+  },
+  {
+   "name": "galop",
+   "scenario": "E2d",
+   "frame": 100,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-galop-web.png",
+    "eye": [
+     151.93465833252802,
+     -0.543555268239734,
+     -441.85143956689143
+    ],
+    "target": [
+     156.15311098438877,
+     -0.6118134145945768,
+     -441.95142981374227
+    ],
+    "speed": 8.451515151515153,
+    "gait": "canter",
+    "phase": 0.5610246046146907,
+    "hour": 11.06800000000004,
+    "canvas": [
+     844,
+     390
+    ]
+   }
+  },
+  {
+   "name": "galop-gauche",
+   "scenario": "E2g",
+   "frame": 100,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-galop-gauche-web.png",
+    "eye": [
+     160.2963177238969,
+     -0.7128690092024765,
+     -443.55946247748204
+    ],
+    "target": [
+     156.17399575667545,
+     -0.8311464279557808,
+     -444.4552705209694
+    ],
+    "speed": 8.451515151515153,
+    "gait": "canter",
+    "phase": 0.5053790580000818,
+    "hour": 11.06800000000004,
+    "canvas": [
+     844,
+     390
+    ]
+   }
+  },
+  {
+   "name": "saut-sommet",
+   "scenario": "E3",
+   "frame": 50,
+   "eyeH": [
+    4.2,
+    1.5,
+    0.5
+   ],
+   "targetH": [
+    0,
+    1.4,
+    0.1
+   ],
+   "fovV": 38,
+   "viewport": {
+    "w": 844,
+    "h": 390
+   },
+   "web": {
+    "file": "monte-saut-sommet-web.png",
+    "eye": [
+     300.7713333333332,
+     5.6348751539613335,
+     -296.2
+    ],
+    "target": [
+     300.3713333333332,
+     5.534875153961333,
+     -292
+    ],
+    "speed": 6.74,
+    "gait": "canter",
+    "phase": 0.9443299451221027,
+    "hour": 11.034666666666688,
+    "canvas": [
+     844,
+     390
+    ]
+   }
+  }
+ ]
+}

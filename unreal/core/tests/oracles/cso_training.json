@@ -1,0 +1,1518 @@
+{
+ "schema": "strides.oracle.cso_training/1",
+ "generator": "scripts/unreal/export-cso-training.mjs",
+ "source": [
+  "src/gameplay/activities.js (startTraining, trainingSteps, cso_warmup)",
+  "src/gameplay/missions.js (start, goto, Run.next, complete)",
+  "src/gameplay/obstacles.js (CAUSES via _judge)"
+ ],
+ "steps": [
+  {
+   "id": "lance-loin",
+   "p": [
+    330,
+    -224
+   ],
+   "ticks": 2
+  },
+  {
+   "id": "a-pied-pres",
+   "p": [
+    262,
+    -232
+   ],
+   "foot": true,
+   "ticks": 2
+  },
+  {
+   "id": "approche",
+   "p": [
+    300,
+    -232
+   ],
+   "ticks": 2
+  },
+  {
+   "id": "approche-50",
+   "p": [
+    290,
+    -232
+   ],
+   "ticks": 1
+  },
+  {
+   "id": "approche-47",
+   "p": [
+    287,
+    -232
+   ],
+   "ticks": 1
+  },
+  {
+   "id": "bord-19",
+   "p": [
+    259,
+    -232
+   ],
+   "ticks": 1
+  },
+  {
+   "id": "paddock",
+   "p": [
+    252,
+    -232
+   ],
+   "ticks": 3
+  },
+  {
+   "id": "clear-juste",
+   "ev": {
+    "kind": "clear",
+    "course": "warmup",
+    "i": 0,
+    "margin": 0.085
+   },
+   "ticks": 1
+  },
+  {
+   "id": "clear-large",
+   "ev": {
+    "kind": "clear",
+    "course": "warmup",
+    "i": 1,
+    "margin": 0.31
+   },
+   "ticks": 1
+  },
+  {
+   "id": "clear-arrondi",
+   "ev": {
+    "kind": "clear",
+    "course": "warmup",
+    "i": 0,
+    "margin": 0.115
+   },
+   "ticks": 1
+  },
+  {
+   "id": "faute-cause",
+   "ev": {
+    "kind": "fault",
+    "course": "warmup",
+    "i": 1,
+    "cause": "far"
+   },
+   "ticks": 1
+  },
+  {
+   "id": "faute-sans-cause",
+   "ev": {
+    "kind": "fault",
+    "course": "warmup",
+    "i": 0,
+    "cause": null
+   },
+   "ticks": 1
+  },
+  {
+   "id": "refus",
+   "ev": {
+    "kind": "refusal",
+    "course": "warmup",
+    "i": 1
+   },
+   "ticks": 1
+  },
+  {
+   "id": "parcours-ignore",
+   "ev": {
+    "kind": "clear",
+    "course": "cso",
+    "i": 0,
+    "margin": 0.2
+   },
+   "ticks": 1
+  },
+  {
+   "id": "clear-zero",
+   "ev": {
+    "kind": "clear",
+    "course": "warmup",
+    "i": 1,
+    "margin": 0.004
+   },
+   "ticks": 1
+  },
+  {
+   "id": "terminer",
+   "end": true,
+   "ticks": 2
+  }
+ ],
+ "langs": {
+  "fr": {
+   "frames": [
+    {
+     "id": "lancement",
+     "calls": [
+      [
+       "hud.big",
+       "ENTRAÎNEMENT À L’ABORD",
+       "Événement · Entraînement",
+       2600
+      ],
+      [
+       "audio.notify"
+      ],
+      [
+       "hud.clearHint"
+      ]
+     ],
+     "text": "Rejoins le paddock d’échauffement du Pôle · 90 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "lance-loin",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Rejoins le paddock d’échauffement du Pôle · 90 m",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Rejoins le paddock d’échauffement du Pôle · 90 m",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Rejoins le paddock d’échauffement du Pôle · 90 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "a-pied-pres",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Monte sur ton cheval (siffle-le si besoin).",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Monte sur ton cheval (siffle-le si besoin).",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Monte sur ton cheval (siffle-le si besoin).",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "mount",
+     "mode": "foot",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "approche",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Rejoins le paddock d’échauffement du Pôle · 60 m",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Rejoins le paddock d’échauffement du Pôle · 60 m",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Rejoins le paddock d’échauffement du Pôle · 60 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "approche-50",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Rejoins le paddock d’échauffement du Pôle · 50 m",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Rejoins le paddock d’échauffement du Pôle · 50 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "approche-47",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Rejoins le paddock d’échauffement du Pôle",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Rejoins le paddock d’échauffement du Pôle",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "bord-19",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Rejoins le paddock d’échauffement du Pôle",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Rejoins le paddock d’échauffement du Pôle",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "paddock",
+     "calls": [
+      [
+       "hud.clearHint"
+      ],
+      [
+       "hud.hint",
+       "Vertical au nord (sauté vers l’est), oxer au sud (sauté vers l’ouest) : un cercle à main droite les enchaîne. Au galop, appuie sur <b>SAUT</b> quand le bouton est <b>vert</b> (zone verte au sol). Termine quand tu veux.",
+       7000
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 0 saut sans faute sur 0",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 0 saut sans faute sur 0",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 0 saut sans faute sur 0",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 0 saut sans faute sur 0",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-juste",
+     "calls": [
+      [
+       "hud.toast",
+       "Sans faute · 9 cm de marge (juste : appel un peu long ou un peu près)"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 1 saut sans faute sur 1",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 1 saut sans faute sur 1",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 1,
+      "clean": 1,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-large",
+     "calls": [
+      [
+       "hud.toast",
+       "Sans faute · 31 cm de marge"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 2 sauts sans faute sur 2",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 2 sauts sans faute sur 2",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 2,
+      "clean": 2,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-arrondi",
+     "calls": [
+      [
+       "hud.toast",
+       "Sans faute · 12 cm de marge (juste : appel un peu long ou un peu près)"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 3 sauts sans faute sur 3",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 3 sauts sans faute sur 3",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 3,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "faute-cause",
+     "calls": [
+      [
+       "hud.toast",
+       "Barre · Appel trop loin"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 3 sauts sans faute sur 4",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 3 sauts sans faute sur 4",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 4,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "faute-sans-cause",
+     "calls": [
+      [
+       "hud.toast",
+       "Barre · appel à revoir"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 3 sauts sans faute sur 5",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 3 sauts sans faute sur 5",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 5,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "refus",
+     "calls": [
+      [
+       "hud.toast",
+       "Refus : trop près, appelle plus tôt"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 3 sauts sans faute sur 5",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 3 sauts sans faute sur 5",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 5,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "parcours-ignore",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 3 sauts sans faute sur 5",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 3 sauts sans faute sur 5",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 5,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-zero",
+     "calls": [
+      [
+       "hud.toast",
+       "Sans faute · 0 cm de marge (juste : appel un peu long ou un peu près)"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Événement · Entraînement à l’abord",
+        "text": "Entraînement : 4 sauts sans faute sur 6",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Entraînement : 4 sauts sans faute sur 6",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Terminer",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 6,
+      "clean": 4,
+      "done": false
+     }
+    },
+    {
+     "id": "terminer",
+     "calls": [
+      [
+       "hud.clearHint"
+      ],
+      [
+       "hud.clearHint"
+      ],
+      [
+       "hud.setObjective",
+       null
+      ],
+      [
+       "screens.missionResult"
+      ],
+      [
+       "hud.setObjective",
+       null
+      ]
+     ],
+     "text": null,
+     "step": null,
+     "course": null,
+     "end": null,
+     "current": "act:cso_warmup",
+     "mode": "ride",
+     "training": {
+      "jumps": 6,
+      "clean": 4,
+      "done": true
+     }
+    }
+   ],
+   "result": {
+    "title": "Entraînement terminé",
+    "kicker": "Entraînement à l’abord · Strides",
+    "body": "4 sauts sans faute sur 6.",
+    "pay": 0,
+    "xp": 15,
+    "stars": 5,
+    "timeLabel": null
+   },
+   "warm": [
+    {
+     "kind": "v",
+     "x": 242,
+     "z": -242,
+     "rot": 1.5707963267948966,
+     "h": 1.1,
+     "w": 3.4,
+     "spread": 0,
+     "label": "",
+     "num": 0
+    },
+    {
+     "kind": "o",
+     "x": 238,
+     "z": -222,
+     "rot": -1.5707963267948966,
+     "h": 1,
+     "w": 3.4,
+     "spread": 1.2,
+     "label": "",
+     "num": 0
+    }
+   ],
+   "active": false,
+   "course": false
+  },
+  "en": {
+   "frames": [
+    {
+     "id": "lancement",
+     "calls": [
+      [
+       "hud.big",
+       "APPROACH TRAINING",
+       "Event · Training",
+       2600
+      ],
+      [
+       "audio.notify"
+      ],
+      [
+       "hud.clearHint"
+      ]
+     ],
+     "text": "Head to the Pôle warm-up paddock · 90 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "lance-loin",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Head to the Pôle warm-up paddock · 90 m",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Head to the Pôle warm-up paddock · 90 m",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Head to the Pôle warm-up paddock · 90 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "a-pied-pres",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Mount your horse (whistle for it if needed).",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Mount your horse (whistle for it if needed).",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Mount your horse (whistle for it if needed).",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "mount",
+     "mode": "foot",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "approche",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Head to the Pôle warm-up paddock · 60 m",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Head to the Pôle warm-up paddock · 60 m",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Head to the Pôle warm-up paddock · 60 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "approche-50",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Head to the Pôle warm-up paddock · 50 m",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Head to the Pôle warm-up paddock · 50 m",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "approche-47",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Head to the Pôle warm-up paddock",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Head to the Pôle warm-up paddock",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "bord-19",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Head to the Pôle warm-up paddock",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Head to the Pôle warm-up paddock",
+     "step": 0,
+     "course": null,
+     "end": null,
+     "current": "dismount",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "paddock",
+     "calls": [
+      [
+       "hud.clearHint"
+      ],
+      [
+       "hud.hint",
+       "Vertical to the north (jumped eastwards), oxer to the south (jumped westwards): one circle on the right rein links them. At canter, press <b>JUMP</b> when the button is <b>green</b> (green zone on the ground). Finish whenever you like.",
+       7000
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 0 clear jump out of 0",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 0 clear jump out of 0",
+        "timer": null,
+        "sub": null
+       }
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 0 clear jump out of 0",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 0 clear jump out of 0",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 0,
+      "clean": 0,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-juste",
+     "calls": [
+      [
+       "hud.toast",
+       "Clear · 9 cm to spare (tight: take-off a little long or a little close)"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 1 clear jump out of 1",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 1 clear jump out of 1",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 1,
+      "clean": 1,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-large",
+     "calls": [
+      [
+       "hud.toast",
+       "Clear · 31 cm to spare"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 2 clear jumps out of 2",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 2 clear jumps out of 2",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 2,
+      "clean": 2,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-arrondi",
+     "calls": [
+      [
+       "hud.toast",
+       "Clear · 12 cm to spare (tight: take-off a little long or a little close)"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 3 clear jumps out of 3",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 3 clear jumps out of 3",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 3,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "faute-cause",
+     "calls": [
+      [
+       "hud.toast",
+       "Rail down · Took off too far"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 3 clear jumps out of 4",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 3 clear jumps out of 4",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 4,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "faute-sans-cause",
+     "calls": [
+      [
+       "hud.toast",
+       "Rail down · work on the take-off"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 3 clear jumps out of 5",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 3 clear jumps out of 5",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 5,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "refus",
+     "calls": [
+      [
+       "hud.toast",
+       "Refusal: too close, take off earlier"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 3 clear jumps out of 5",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 3 clear jumps out of 5",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 5,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "parcours-ignore",
+     "calls": [
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 3 clear jumps out of 5",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 3 clear jumps out of 5",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 5,
+      "clean": 3,
+      "done": false
+     }
+    },
+    {
+     "id": "clear-zero",
+     "calls": [
+      [
+       "hud.toast",
+       "Clear · 0 cm to spare (tight: take-off a little long or a little close)"
+      ],
+      [
+       "hud.setObjective",
+       {
+        "tag": "Event · Approach training",
+        "text": "Training: 4 clear jumps out of 6",
+        "timer": null,
+        "sub": null
+       }
+      ]
+     ],
+     "text": "Training: 4 clear jumps out of 6",
+     "step": 1,
+     "course": {
+      "kind": "cso-train",
+      "courseId": "warmup",
+      "camera": true,
+      "controls": "cso",
+      "running": false
+     },
+     "end": {
+      "label": "Finish",
+      "r": 999,
+      "priority": 2,
+      "modes": [
+       "ride",
+       "foot"
+      ]
+     },
+     "current": "train:end",
+     "mode": "ride",
+     "training": {
+      "jumps": 6,
+      "clean": 4,
+      "done": false
+     }
+    },
+    {
+     "id": "terminer",
+     "calls": [
+      [
+       "hud.clearHint"
+      ],
+      [
+       "hud.clearHint"
+      ],
+      [
+       "hud.setObjective",
+       null
+      ],
+      [
+       "screens.missionResult"
+      ],
+      [
+       "hud.setObjective",
+       null
+      ]
+     ],
+     "text": null,
+     "step": null,
+     "course": null,
+     "end": null,
+     "current": "act:cso_warmup",
+     "mode": "ride",
+     "training": {
+      "jumps": 6,
+      "clean": 4,
+      "done": true
+     }
+    }
+   ],
+   "result": {
+    "title": "Training complete",
+    "kicker": "Approach training · Strides",
+    "body": "4 clear jumps out of 6.",
+    "pay": 0,
+    "xp": 15,
+    "stars": 5,
+    "timeLabel": null
+   },
+   "warm": [
+    {
+     "kind": "v",
+     "x": 242,
+     "z": -242,
+     "rot": 1.5707963267948966,
+     "h": 1.1,
+     "w": 3.4,
+     "spread": 0,
+     "label": "",
+     "num": 0
+    },
+    {
+     "kind": "o",
+     "x": 238,
+     "z": -222,
+     "rot": -1.5707963267948966,
+     "h": 1,
+     "w": 3.4,
+     "spread": 1.2,
+     "label": "",
+     "num": 0
+    }
+   ],
+   "active": false,
+   "course": false
+  }
+ }
+}
