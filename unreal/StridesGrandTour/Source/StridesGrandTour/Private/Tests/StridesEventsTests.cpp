@@ -21,6 +21,7 @@
 #include "StridesCore/Epreuves.h"
 #include "StridesCore/CsoHorse.h"
 #include "StridesCourse.h"
+#include "StridesCourseAids.h"
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesHorse.h"
@@ -171,6 +172,9 @@ bool FStridesEventsCrossTest::RunTest(const FString&)
 	TestTrue(TEXT("tableau du cross (accordé 110 s)"), G.Ev()->board(B) && B.ta == 110 && B.txt[1] == "/ 110 s");
 	TestEqual(TEXT("objectif « Obstacle n°1 sur 10 »"), FString(UTF8_TO_TCHAR(G.Ev()->text().c_str())), FString(TEXT("Obstacle n°1 sur 10")));
 	// Les dix obstacles : abord à 13 m dans l'axe au galop de concours, Espace en bonne zone (aide à l'appel du cœur).
+	// Aides du cross (courses.js:188 CourseAids(game, 'xc') : pas de PARIS_COURSES.xc ni de CSO_LINE, donc pas de tracé ;
+	// repère au-dessus de l'obstacle suivant et zone d'appel si l'aide au saut est « Complète »), relevées à chaque image.
+	bool bAidsXc = true, bAidsSeen = false, bMark = false, bZone = false, bLine = false;
 	for (const strides::EventFence& F : X.fences)
 	{
 		const int32 Idx = G.Course->CrossFenceStart() + F.num - 1;
@@ -181,10 +185,22 @@ bool FStridesEventsCrossTest::RunTest(const FString&)
 			const strides::CsoTarget Tg = strides::csoTarget(G.Course->Obstacles(), G.Horse->CsoState(), G.Horse->JumpPower(), 0.0, true, Data->Jump(), Data->HorseParams());
 			if (!bJ && G.Horse->CsoState().jumpT < 0 && Tg.index == Idx && Tg.plan.zone == strides::Zone::Good && Tg.plan.ideal <= Tg.plan.L + 0.3) { bJ = true; G.Tap(TEXT("Space")); continue; }
 			G.Frame();
+			if (const AStridesCourseAids* A = G.Course->CourseAids(); A && A->Active())
+			{
+				bAidsSeen = true;
+				bAidsXc &= G.Course->AidsCourse() == TEXT("xc");
+				bMark |= A->IsShown(TEXT("mark"));
+				bZone |= A->IsShown(TEXT("ok")) || A->IsShown(TEXT("good"));
+				bLine |= A->IsShown(TEXT("line")) || A->LineQuads() > 0;
+			}
 			if (bJ && G.Horse->CsoState().jumpT < 0 && Along(F, G.Horse->CsoState().x, G.Horse->CsoState().z) > 5) break;
 		}
 		TestTrue(*FString::Printf(TEXT("obstacle %d (%s) sauté : suivant %d, fautes %d"), F.num, UTF8_TO_TCHAR(F.kind.c_str()), G.Ev()->course().next, G.Ev()->course().faults), bJ && G.Ev()->course().next == F.num + 1);
 	}
+	TestTrue(TEXT("aides du cross en place pendant le parcours (course « xc »)"), bAidsSeen && bAidsXc);
+	TestTrue(TEXT("aides du cross : repère au-dessus de l'obstacle suivant"), bMark);
+	TestTrue(TEXT("aides du cross : zone d'appel (aide « Complète »)"), bZone);
+	TestFalse(TEXT("aides du cross : pas de tracé au sol (le web n'en a pas pour 'xc')"), bLine);
 	AddInfo(FString::Printf(TEXT("cross : fautes %d, refus %d, chrono %.2f s ; obstacles %s"), G.Ev()->course().faults, G.Ev()->course().refusals, G.Ev()->course().t, *FString::Join(G.Course->FenceEventLog(), TEXT(", "))));
 	TestEqual(TEXT("objectif « Passe la ligne d’arrivée ! »"), FString(UTF8_TO_TCHAR(G.Ev()->text().c_str())), FString(TEXT("Passe la ligne d’arrivée !")));
 	const int32 Faults = G.Ev()->course().faults;
@@ -197,6 +213,7 @@ bool FStridesEventsCrossTest::RunTest(const FString&)
 	TestEqual(FString::Printf(TEXT("payée %d € (320 € %s)"), Pay, Faults == 0 ? TEXT("+ pourboire 5★") : TEXT("sans pourboire")), P->Credits, 1000 + Pay);
 	TestEqual(TEXT("+350 réputation"), P->Reputation, 2350);
 	TestTrue(TEXT("épreuve retirée"), G.Ev() == nullptr && !G.Course->MissionActive());
+	TestTrue(TEXT("aides du cross retirées après l'épreuve"), !G.Course->CourseAids() || !G.Course->CourseAids()->Active());
 	TestTrue(TEXT("derby proposé ensuite"), P->OfferLock(TEXT("derby")).IsEmpty());
 	UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
 	return true;

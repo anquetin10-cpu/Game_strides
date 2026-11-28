@@ -72,6 +72,12 @@ ParisCourseData course(const J& c) {
 }
 }  // namespace
 
+std::vector<TracePoint> parisAidLine(const ParisGpData& d, const ParisCourseData& c) {
+  std::vector<TracePoint> out;
+  for (const TracePoint& p : traceCourse(c.design).pts) out.push_back({d.site.arena.x + p.x, d.site.arena.z + p.z, p.h, p.s});
+  return out;
+}
+
 std::vector<double> ParisCourseData::heights(double h) const {
   std::vector<double> out;
   for (const ParisFenceData& f : fences) {

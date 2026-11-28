@@ -270,9 +270,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strides") bool bCourseLine = true;
 	bool CourseLineShown() const;
 	// Obstacles du parcours tels que les lit CourseAids.update (sol, abscisse du tracé lineS).
-	std::vector<strides::CsoAidsFence> AidFences() const;
-	// Ligne du cavalier (CSO_LINE : tracé du design local décalé de la carrière point par point, obstacles.js:44).
-	std::vector<strides::TracePoint> AidLine() const;
+	// Course : « cso » (Pôle), « paris_sprint », « paris_gp » (manches du Grand Prix de Paris), « xc » (cross, sans tracé).
+	std::vector<strides::CsoAidsFence> AidFences(const FString& CourseId = TEXT("cso")) const;
+	// Ligne du cavalier (courseAids.js:45 : CSO_LINE au Pôle, PARIS_COURSES[courseId].line à Paris, rien ailleurs).
+	std::vector<strides::TracePoint> AidLine(const FString& CourseId = TEXT("cso")) const;
+	// Course des aides en place (nouvelles aides à chaque parcours, comme new CourseAids à start).
+	FString AidsCourse() const { return AidsKey; }
 	// Dernier saut du cheval du joueur (horse._lastJump, mot d'appel) : présent ou non (effacé quand le cheval est posé),
 	// obstacle (indice du cœur, −1 : aucun obstacle du parcours), qualité de l'appel et instant ; transmis à l'épreuve
 	// quand il change.
@@ -333,6 +336,7 @@ private:
 	void TickChallenge();
 	FString EventName;
 	int32 NumCrossFences = 0, CrossFirst = -1;
+	FString AidsKey;
 	bool bEventDialog = false;
 	UPROPERTY() TArray<TObjectPtr<class AStridesRivalHorse>> Rivals;
 	void FlushTrainingCalls();

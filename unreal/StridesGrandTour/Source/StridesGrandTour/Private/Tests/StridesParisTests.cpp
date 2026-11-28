@@ -18,6 +18,7 @@
 #include "StridesCore/CsoHorse.h"
 #include "StridesCore/Paris.h"
 #include "StridesCourse.h"
+#include "StridesCourseAids.h"
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesHorse.h"
@@ -179,6 +180,29 @@ bool PlayRound(FAutomationTestBase& T, FGame& G, const UStridesDataSubsystem& Da
 	T.TestTrue(FString::Printf(TEXT("%s : mode de concours (caméra, commandes)"), Name), G.Course->CourseMode().active && G.Course->Run() == G.R()->round());
 	if (!T.TestTrue(FString::Printf(TEXT("%s : ligne de départ franchie"), Name), CrossLine(G, C.start, [&] { return G.R()->round() && G.R()->round()->state().started; }))) return false;
 	const int32 First = G.Course->ParisFenceStart(UTF8_TO_TCHAR(C.id.c_str()));
+	// Aides au sol de la manche (courses.js:188 CourseAids(game, courseId), courseAids.js:45 PARIS_COURSES[courseId].line) :
+	// tracé vers l'obstacle 1, repère au-dessus, puis zone d'appel à l'abord (aide « Complète »).
+	{
+		G.Frame();
+		const AStridesCourseAids* A = G.Course->CourseAids();
+		T.TestTrue(FString::Printf(TEXT("%s : aides de la manche en place (course %s)"), Name, *G.Course->AidsCourse()), A && A->Active() && G.Course->AidsCourse() == UTF8_TO_TCHAR(C.id.c_str()));
+		T.TestTrue(FString::Printf(TEXT("%s : tracé au sol vers l'obstacle 1 (%d tirets) et repère"), Name, A ? A->LineQuads() : -1), A && A->IsShown(TEXT("line")) && A->LineQuads() > 0 && A->IsShown(TEXT("mark")));
+		const strides::CsoObstacle& O = G.Course->Obstacles()[(size_t)First];
+		G.Horse->PlaceAt(O.x - FMath::Sin(O.rot) * 12, O.z - FMath::Cos(O.rot) * 12, O.rot, 6.4);
+		// La bande n'existe que si le cheval engagé peut passer (takeoffZone : aucune distance → rien, comme au web) : on
+		// vérifie le calcul fait pour l'obstacle 1 et l'affichage qui en découle.
+		bool bOk = true, bSeen = false, bPass = false;
+		for (int32 K = 0; K < 6; K++)
+		{
+			G.Frame();
+			if (!A || !A->CoreAids() || A->CoreAids()->zoneFor() != 0) continue;
+			bSeen = true;
+			bPass |= A->CoreAids()->zone().hasPass;
+			bOk &= A->IsShown(TEXT("ok")) == A->CoreAids()->zone().hasPass && A->IsShown(TEXT("good")) == A->CoreAids()->zone().hasGood;
+		}
+		T.AddInfo(FString::Printf(TEXT("%s : aides %s, %d tirets vers l'obstacle 1, zone d'appel calculée %d (passe %d)"), Name, *G.Course->AidsCourse(), A ? A->LineQuads() : -1, bSeen ? 1 : 0, bPass ? 1 : 0));
+		T.TestTrue(FString::Printf(TEXT("%s : zone d'appel calculée pour l'obstacle 1 et affichée selon le calcul (passe : %d)"), Name, bPass ? 1 : 0), bSeen && bOk);
+	}
 	for (int32 I = 0; I < (int32)C.fences.size(); I++)
 	{
 		if (!G.R()->round()) break;
@@ -188,7 +212,16 @@ bool PlayRound(FAutomationTestBase& T, FGame& G, const UStridesDataSubsystem& Da
 	}
 	const strides::CsoRun* Rd = G.R()->round();
 	if (Rd) T.AddInfo(FString::Printf(TEXT("%s : fautes %d, refus %d, chrono %.2f s"), Name, Rd->state().faults, Rd->state().refusals, Rd->state().t));
-	return T.TestTrue(FString::Printf(TEXT("%s : arrivée franchie"), Name), CrossLine(G, C.finish, [&] { return !G.R()->round() || G.R()->round()->state().finished; }));
+	if (!T.TestTrue(FString::Printf(TEXT("%s : arrivée franchie"), Name), CrossLine(G, C.finish, [&] { return !G.R()->round() || G.R()->round()->state().finished; }))) return false;
+	// Sortie de piste (courses.js:309) : cadence ramenée vers 1,9 m/s à 1,6 m/s², réécrite dans le cheval (avant : gardée).
+	const double C0 = G.Horse->CsoCadenceNow().v;
+	for (int32 K = 0; K < 15; K++) G.Frame();
+	const double C1 = G.Horse->CsoCadenceNow().v, Want = FMath::Max(1.9, C0 - 1.6 * 15 / 30.0);
+	T.AddInfo(FString::Printf(TEXT("%s : sortie de piste, cadence %.2f → %.2f m/s en 0,5 s (attendu %.2f)"), Name, C0, C1, Want));
+	T.TestTrue(FString::Printf(TEXT("%s : sortie de piste au pas, cadence %.2f → %.2f m/s en 0,5 s (attendu %.2f)"), Name, C0, C1, Want), G.Horse->CsoCadenceNow().has && FMath::Abs(C1 - Want) < 0.1 && C1 < C0 - 0.5);
+	const AStridesCourseAids* A = G.Course->CourseAids();
+	T.TestTrue(FString::Printf(TEXT("%s : après l'arrivée, ni tracé ni repère"), Name), !A || !A->Active() || (!A->IsShown(TEXT("line")) && !A->IsShown(TEXT("mark"))));
+	return true;
 }
 }  // namespace StridesParisTest
 

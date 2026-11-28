@@ -59,6 +59,9 @@ struct ParisGpData {
   std::vector<int> prizes;
 };
 STRIDESCORE_API bool loadParisGp(const std::string& jsonText, ParisGpData& out, std::string& err);
+// Ligne du cavalier d'un tracé de Paris (parisCourse.js course() : line = traceCourse(design).pts.map(toWorld)), repère
+// du monde, cap et abscisse compris : c'est elle que CourseAids(game, courseId) pose au sol (courseAids.js:45).
+STRIDESCORE_API std::vector<TracePoint> parisAidLine(const ParisGpData& d, const ParisCourseData& c);
 
 // Entrées d'une image (ce que lisent les étapes du web).
 struct ParisFrame {

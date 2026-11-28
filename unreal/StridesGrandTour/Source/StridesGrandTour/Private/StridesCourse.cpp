@@ -968,31 +968,57 @@ bool AStridesCourse::CourseLineShown() const
 	return Save ? strides::courseLineShown(Save->GetSettings()) : bCourseLine;
 }
 
-std::vector<strides::TracePoint> AStridesCourse::AidLine() const
+std::vector<strides::TracePoint> AStridesCourse::AidLine(const FString& CourseId) const
 {
 	std::vector<strides::TracePoint> Line;
 	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
 	if (!Data) return Line;
+	// courseAids.js:45 : lineData = courseId === 'cso' ? CSO_LINE : PARIS_COURSES[courseId]?.line || null (cross : aucun tracé).
+	if (CourseId == TEXT("paris_sprint") || CourseId == TEXT("paris_gp"))
+	{
+		const strides::ParisGpData* P = Data->Paris();
+		if (P) Line = strides::parisAidLine(*P, CourseId == TEXT("paris_sprint") ? P->sprint : P->gp);
+		return Line;
+	}
+	if (CourseId != TEXT("cso")) return Line;
 	// CSO_LINE = CSO_TRACE.pts.map(toWorld) : tracé local du design, puis décalage de la carrière.
 	for (const strides::TracePoint& P : strides::traceCourse(Data->PoleCourse()).pts)
 		Line.push_back({Data->PoleArena.X + P.x, Data->PoleArena.Y + P.z, P.h, P.s});
 	return Line;
 }
 
-std::vector<strides::CsoAidsFence> AStridesCourse::AidFences() const
+std::vector<strides::CsoAidsFence> AStridesCourse::AidFences(const FString& CourseId) const
 {
 	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
 	std::vector<strides::CsoAidsFence> Out;
-	for (size_t I = 0; I < CoreObstacles.size(); I++)
+	auto Push = [&](int32 Id, int32 I, bool bLineS, double LineS)
 	{
+		if (I < 0 || I >= (int32)CoreObstacles.size()) return;
 		strides::CsoAidsFence F;
-		F.id = (int)I;
-		F.ob = CoreObstacles[I];
+		F.id = Id;
+		F.ob = CoreObstacles[(size_t)I];
 		F.ground = Data ? Data->TerrainHeight(F.ob.x, F.ob.z) : 0.0;
-		F.hasLineS = I < Trace.fences.size();
-		F.lineS = F.hasLineS ? Trace.fences[I].s : 0.0;
+		F.hasLineS = bLineS;
+		F.lineS = LineS;
 		Out.push_back(F);
+	};
+	// Manches de Paris : obstacles du tracé (obstacles.js:207, lineS: f.s du tracé de Paris), dans l'ordre des numéros.
+	if (CourseId == TEXT("paris_sprint") || CourseId == TEXT("paris_gp"))
+	{
+		const strides::ParisGpData* P = Data ? Data->Paris() : nullptr;
+		const int32 First = ParisFenceStart(CourseId);
+		if (!P || First < 0) return Out;
+		const strides::ParisCourseData& C = CourseId == TEXT("paris_sprint") ? P->sprint : P->gp;
+		for (int32 I = 0; I < (int32)C.fences.size(); I++) Push(I, First + I, true, C.fences[(size_t)I].lineS);
+		return Out;
 	}
+	// Cross de Saint-Gatien : obstacles « xc » numérotés 1 à 10, sans lineS (obstacles.js:187).
+	if (CourseId == TEXT("xc"))
+	{
+		for (int32 I = 0; I < NumCrossFences; I++) Push(I, CrossFirst + I, false, 0.0);
+		return Out;
+	}
+	for (int32 I = 0; I < (int32)CoreObstacles.size(); I++) Push(I, I, I < (int32)Trace.fences.size(), I < (int32)Trace.fences.size() ? Trace.fences[(size_t)I].s : 0.0);
 	return Out;
 }
 
@@ -1004,8 +1030,20 @@ AStridesCourseAids* AStridesCourse::EnsureAids()
 
 void AStridesCourse::UpdateAids(double Dt, double HorseX, double HorseZ, double Speed, double Power, double Clearance, bool bRiding, double Time)
 {
-	// Étape de parcours en cours (courseStep : CourseAids créé à start, supprimé à end).
-	const bool bCourse = RunPtr && !RunPtr->finished() && RunPtr->step() == strides::CsoStep::Course;
+	// Étape de parcours en cours (courseStep : CourseAids créé à start, supprimé à end) : parcours du Pôle, manche du
+	// Grand Prix de Paris (courseSteps sans kind : même étape que le Pôle, aides de PARIS_COURSES[courseId]) ou cross de
+	// Saint-Gatien (courseSteps kind 'xc' : repère et zone d'appel, pas de tracé).
+	const strides::CsoRun* Rd = nullptr;
+	FString Key;
+	if (RunPtr && !RunPtr->finished() && RunPtr->step() == strides::CsoStep::Course) { Rd = RunPtr.get(); Key = TEXT("cso"); }
+	else if (ParisPtr && !ParisPtr->finished() && ParisPtr->round() && !ParisPtr->round()->finished() && ParisPtr->round()->step() == strides::CsoStep::Course)
+	{
+		Rd = ParisPtr->round();
+		Key = ParisPtr->roundKind() == strides::ParisRun::Round::Sprint ? TEXT("paris_sprint") : TEXT("paris_gp");
+	}
+	const bool bXc = !Rd && EventPtr && !EventPtr->finished() && EventPtr->kind() == strides::EventRun::Kind::Cross && EventPtr->step() == strides::EventRun::Step::XcCourse;
+	if (bXc) Key = TEXT("xc");
+	const bool bCourse = Rd || bXc;
 	if (Aids && Aids->bFrozen) return;
 	// Entraînement (jalon J2c) : CourseAids(game, 'warmup') de l'étape d'entraînement, mis à jour avec l'obstacle visé du
 	// paddock, sans tracé (showLine: false), zone si l'aide est « full » ; pas fixe de 1/30 s (activities.js:190).
@@ -1035,14 +1073,15 @@ void AStridesCourse::UpdateAids(double Dt, double HorseX, double HorseZ, double 
 	if (!bCourse)
 	{
 		if (Aids && Aids->Active()) Aids->End();
+		AidsKey.Reset();
 		return;
 	}
 	EnsureAids();
 	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
-	if (!Aids->Active()) Aids->Begin(AidLine(), [Data](double X, double Z) { return Data ? Data->TerrainHeight(X, Z) : 0.0; });
-	// courses.js:300-320 : obstacle suivant (le 1 avant le départ), début du tronçon (obstacle précédent), réglages.
-	const strides::CsoRunState& S = RunPtr->state();
-	const std::vector<strides::CsoAidsFence> Fs = AidFences();
+	if (Aids->Active() && AidsKey != Key) Aids->End();
+	AidsKey = Key;
+	if (!Aids->Active()) Aids->Begin(AidLine(Key), [Data](double X, double Z) { return Data ? Data->TerrainHeight(X, Z) : 0.0; });
+	const std::vector<strides::CsoAidsFence> Fs = AidFences(Key);
 	strides::CsoAidsInput In;
 	In.dt = Dt;
 	In.hasHorse = true;
@@ -1053,15 +1092,28 @@ void AStridesCourse::UpdateAids(double Dt, double HorseX, double HorseZ, double 
 	In.clearance = Clearance;
 	In.riding = bRiding;
 	In.time = Time;
-	if (!S.finished)
+	// courses.js:300-320 : obstacle suivant (le 1 avant le départ), début du tronçon (obstacle précédent), réglages ; après
+	// l'arrivée, aids.update(dt, { next: null }).
+	const int N = (int)Fs.size();
+	if (Rd && !Rd->state().finished)
 	{
-		const int N = (int)Fs.size();
+		const strides::CsoRunState& S = Rd->state();
 		const int NextI = S.started ? S.next - 1 : 0;
 		In.next = NextI >= 0 && NextI < N ? &Fs[(size_t)NextI] : nullptr;
 		const int PrevI = S.next - 2;
 		In.prevS = !S.started || PrevI < 0 || PrevI >= N ? 0.0 : Fs[(size_t)PrevI].lineS;
 		In.showLine = CourseLineShown();
-		In.showZone = RunPtr->config().aid == "full";
+		In.showZone = Rd->config().aid == "full";
+	}
+	else if (bXc && !EventPtr->course().finished)
+	{
+		// Cross : aide du réglage du joueur (aid() : settings().jumpAid || 'full', pas d'aide imposée par la mission).
+		const strides::XcState& S = EventPtr->course();
+		const int NextI = S.started ? S.next - 1 : 0;
+		In.next = NextI >= 0 && NextI < N ? &Fs[(size_t)NextI] : nullptr;
+		In.prevS = 0;
+		In.showLine = CourseLineShown();
+		In.showZone = JumpAid == TEXT("full");
 	}
 	Aids->Step(In);
 }

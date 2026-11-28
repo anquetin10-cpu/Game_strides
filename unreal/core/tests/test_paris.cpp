@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <algorithm>
 #include <map>
 #include <sstream>
 #include <string>
@@ -109,6 +110,15 @@ int main(int argc, char** argv) {
       CHECK(std::fabs(std::round(T.length) - c->length) < 1e-9, "%s longueur %.3f / %.0f", c->id.c_str(), T.length, c->length);
       const std::vector<double> h = c->heights(1.45);
       for (size_t i = 0; i < h.size(); i++) CHECK(std::fabs(h[i] - c->fences[i].h) < 1e-9, "%s hauteur %zu", c->id.c_str(), i);
+      // Aides au sol des manches (courseAids.js:45 : PARIS_COURSES[courseId].line) : ligne du cœur = ligne du web point par
+      // point (exportée au 1/10 000 de mètre), abscisse des obstacles (lineS du web) prise sur cette ligne.
+      const std::vector<strides::TracePoint> L = strides::parisAidLine(pd, *c);
+      CHECK(L.size() == c->line.size() && !L.empty(), "%s : ligne des aides %zu points / web %zu", c->id.c_str(), L.size(), c->line.size());
+      double worst = 0;
+      for (size_t i = 0; i < L.size() && i < c->line.size(); i++) worst = std::max(worst, std::max(std::fabs(L[i].x - c->line[i].first), std::fabs(L[i].z - c->line[i].second)));
+      CHECK(worst <= 5e-5 + 1e-9, "%s : ligne des aides, écart maximal %.6f m au web", c->id.c_str(), worst);
+      for (size_t i = 0; i < T.fences.size() && i < c->fences.size(); i++)
+        CHECK(std::fabs(T.fences[i].s - c->fences[i].lineS) < 1e-6, "%s obstacle %s : lineS %.4f / web %.4f", c->id.c_str(), c->fences[i].label.c_str(), T.fences[i].s, c->fences[i].lineS);
     }
   }
 

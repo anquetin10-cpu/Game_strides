@@ -323,9 +323,12 @@ void AStridesCourse::Tick(float DeltaSeconds)
 		const double Dt = ParisPtr->cardOpen() ? 0.0 : (double)DeltaSeconds;
 		if (BuildParisFrame(F, Dt))
 		{
-			strides::CsoCadence Cad;
-			if (const AStridesHorse* H = PlayerHorse()) Cad = strides::CsoCadence{H->CadenceMS > 0, (double)H->CadenceMS};
+			// Cadence du cheval passée à la manche puis réécrite : après l'arrivée, la sortie de piste la ramène vers 1,9 m/s
+			// (courses.js:309, CsoRun::courseUpdate), comme le web qui modifie game.player.csoCadence.
+			AStridesHorse* H = PlayerHorse();
+			strides::CsoCadence Cad = H ? H->CsoCadenceNow() : strides::CsoCadence{};
 			TickParis(F, Cad);
+			if (H) H->SetCsoCadence(Cad);
 		}
 	}
 	TickTravel();

@@ -77,6 +77,10 @@ public:
 	void Halt();
 	// État du cœur (simulation de concours) et événements de la dernière image ("horse:jump", "horse:jumpEarly", …).
 	const strides::CsoHorseState& CsoState() const { return Sim; }
+	// Cadence de concours lue et réécrite par une épreuve qui ne tourne pas dans l'image du cheval (Grand Prix de Paris :
+	// courses.js:309, sortie de piste ramenée vers 1,9 m/s ; refus compté : cadence à 0).
+	strides::CsoCadence CsoCadenceNow() const { return strides::CsoCadence{Sim.hasCadence, Sim.cadence}; }
+	void SetCsoCadence(const strides::CsoCadence& Cad) { Sim.hasCadence = Cad.has; Sim.cadence = Cad.v; CadenceMS = Cad.has ? (float)Cad.v : 0.f; }
 	// Entrées d'une image de l'épreuve (strides::CsoRun) : pas, heure, cheval, point suivi, monté ou non.
 	strides::CsoRunFrame RunFrame(double Dt, double Time) const;
 	const TArray<FString>& LastEvents() const { return FrameEvents; }
