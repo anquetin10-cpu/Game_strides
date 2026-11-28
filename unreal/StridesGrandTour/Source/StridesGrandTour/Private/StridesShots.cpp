@@ -314,6 +314,36 @@ void AStridesShots::Tick(float DeltaSeconds)
 		TickPerfMonde(DeltaSeconds, PC);
 		return;
 	}
+	// Jalon J4 (2e correction) : -StridesShots=titre : écran titre ouvert (sans sauvegarde : « Jouer », aucun choix fait),
+	// deux captures AVEC l'interface à 8 s d'écart (caméra de survol, HUD masqué), puis sortie. Outil hors Shipping.
+	if (Mode() == TEXT("titre"))
+	{
+		static int32 TitreStep = 0;
+		static double TitreWait = 0;
+		AStridesPlayerController* SPC = Cast<AStridesPlayerController>(PC);
+		if (!SPC) return;
+		if (TitreStep == 0)
+		{
+			SPC->ShowTitle(false, FString());
+			TitreStep = 1;
+			TitreWait = 25;
+			return;
+		}
+		TitreWait -= FApp::GetDeltaTime();
+		if (TitreWait > 0) return;
+		if (TitreStep <= 2)
+		{
+			const FString Name = FString::Printf(TEXT("30_titre_%d"), TitreStep);
+			FScreenshotRequest::RequestScreenshot(OutDir / (Name + TEXT(".png")), true, false);
+			UE_LOG(LogTemp, Display, TEXT("Strides shot: %s (titre ouvert %d, HUD masqué %d, caméra de survol %d)"), *Name, SPC->IsTitleOpen() ? 1 : 0, SPC->HudHiddenForTitle() ? 1 : 0,
+				SPC->TitleCameraActor() && SPC->GetViewTarget() == SPC->TitleCameraActor() ? 1 : 0);
+			TitreStep++;
+			TitreWait = 8;
+			return;
+		}
+		FPlatformMisc::RequestExit(false);
+		return;
+	}
 	// Tranche T10 : « Entrer en piste » touché dès que la carte de présentation de l'activité lancée s'ouvre.
 	EnterWhenPresented(PC);
 	if (Mode() == TEXT("cso-jeu"))

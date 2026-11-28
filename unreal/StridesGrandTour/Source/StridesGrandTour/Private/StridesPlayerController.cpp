@@ -32,6 +32,9 @@
 #include "StridesUnits.h"
 #include "StridesVehicle.h"
 #include "GameFramework/Character.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
+#include "Misc/App.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "StridesCore/WindowFit.h"
 
@@ -461,9 +464,54 @@ bool AStridesPlayerController::InputTouch(const FTouchId TouchId, const ETouchTy
 	return true;
 }
 
+void AStridesPlayerController::TitleOrbit(double T, FVector& Eye, FVector& Target)
+{
+	// game.js:1416-1422 : t = titleT · 0,035 ; centre (60 ; −330) ; œil (c.x + cos t · 190, 46 + sin 0,7t · 6,
+	// c.z + 70 + sin t · 120), regard vers (c.x, 6, c.z − 40).
+	const double A = T * 0.035, CX = 60, CZ = -330;
+	Eye = FVector(CX + FMath::Cos(A) * 190, 46 + FMath::Sin(A * 0.7) * 6, CZ + 70 + FMath::Sin(A) * 120);
+	Target = FVector(CX, 6, CZ - 40);
+}
+
 void AStridesPlayerController::SyncTitleHud()
 {
 	const bool bTitle = IsTitleOpen();
+	// Écran titre du web : la caméra survole Deauville (updateTitle) au lieu de rester sur le personnage (gros plan sur le
+	// cavalier dans le portage) ; le monde reste en pause derrière (choix du portage), seule la caméra bouge.
+	if (bTitle && GetWorld())
+	{
+		if (!TitleCamera)
+		{
+			TitleCamera = GetWorld()->SpawnActor<ACameraActor>();
+			if (TitleCamera)
+			{
+				// Champ vertical de 60° du web (PerspectiveCamera(60, …)) à tout format : axe Y imposé, rapport 1 (voir
+				// AStridesHorse, caméra de concours).
+				UCameraComponent* C = TitleCamera->GetCameraComponent();
+				C->bConstrainAspectRatio = false;
+				C->SetAspectRatio(1.f);
+				C->bOverrideAspectRatioAxisConstraint = true;
+				C->SetAspectRatioAxisConstraint(EAspectRatioAxisConstraint::AspectRatio_MaintainYFOV);
+				C->SetFieldOfView(60.f);
+			}
+			TitleT = 0;
+		}
+		if (TitleCamera)
+		{
+			TitleT += FMath::Min(0.1, (double)FApp::GetDeltaTime());
+			FVector E, T;
+			TitleOrbit(TitleT, E, T);
+			const FVector Eye = StridesUnits::WebToUE(E.X, E.Y, E.Z), At = StridesUnits::WebToUE(T.X, T.Y, T.Z);
+			TitleCamera->SetActorLocationAndRotation(Eye, (At - Eye).Rotation());
+			if (GetViewTarget() != TitleCamera) SetViewTarget(TitleCamera);
+		}
+	}
+	else if (TitleCamera)
+	{
+		if (GetViewTarget() == TitleCamera && GetPawn()) SetViewTarget(GetPawn());
+		TitleCamera->Destroy();
+		TitleCamera = nullptr;
+	}
 	if (bTitle == bHudHiddenForTitle) return;
 	UUserWidget* Hud = CsoHud.Get();
 	if (bTitle)
@@ -477,6 +525,18 @@ void AStridesPlayerController::SyncTitleHud()
 		if (TouchControls) TouchControls->SetVisibility((ESlateVisibility)SavedTouchVis);
 	}
 	bHudHiddenForTitle = bTitle;
+}
+
+void AStridesPlayerController::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction)
+{
+	Super::TickActor(DeltaTime, TickType, ThisTickFunction);
+	// 2e correction de J4 (relevé en jeu, -StridesShots=titre : « HUD masqué 0 ») : le titre met le jeu en pause, et en
+	// pause le moteur ne passe pas par PlayerTick ; sans cet appel, ni le masquage ni la caméra du titre n'avaient lieu.
+	if (TickType != LEVELTICK_PauseTick) return;
+	SyncTitleHud();
+	// En pause, le monde ne recalcule plus le point de vue (relevé en jeu : vue figée, caméra de survol pourtant choisie) :
+	// sous le titre, le gestionnaire de caméra est mis à jour ici pour suivre le survol.
+	if (IsTitleOpen()) UpdateCameraManager(DeltaTime);
 }
 
 void AStridesPlayerController::PlayerTick(float DeltaTime)
@@ -854,6 +914,7 @@ void AStridesPlayerController::ShowTitle(bool bHasSave, const FString& Issue)
 		bShowMouseCursor = !PLATFORM_IOS;
 		ReleaseMouseForCard();
 	}
+	SyncTitleHud();
 	UE_LOG(LogTemp, Display, TEXT("Strides écran titre : ouvert (%s)"), *FString::Join(TitleScreen->Describe(), TEXT(" ; ")));
 }
 
@@ -861,6 +922,7 @@ void AStridesPlayerController::OnTitleChoice(bool bNew, const FString& Name, con
 {
 	UE_LOG(LogTemp, Display, TEXT("Strides écran titre : %s (%s, %s)"), bNew ? TEXT("nouvelle partie") : TEXT("continuer"), *Name, *Avatar);
 	if (TitleScreen) TitleScreen->RemoveFromParent();
+	SyncTitleHud();
 	UGameplayStatics::SetGamePaused(this, false);
 	Cmd.setEnabled(true);
 	Cmd.releaseAll();

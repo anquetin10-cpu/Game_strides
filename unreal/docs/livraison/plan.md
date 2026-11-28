@@ -652,6 +652,22 @@ donc **compilé, non vu** : à confirmer.
 ceux de Paris : comptes corrigés), attentes « Waiting for ZenServer » résolues seules (0 blocage). Jeu web intact
 (`export-paris`, `export-epreuves`, `export-missions`, `export-defis` `--check` : inchangés).
 
+### 2e correction de J4 après contrôle adverse (28/11, base `3cb3e07f`, commits depuis `25e4f433`)
+
+Le 2e contrôle a relevé quatre points. Ils sont tous fondés. Trois sont corrigés. Le quatrième reste bloqué.
+
+| Point | État | Preuve |
+|---|---|---|
+| Aides au sol des manches de Paris et du cross (courses.js:188 `CourseAids(game, courseId)`, courseAids.js:45) | **compilé, testé moteur** | `UpdateAids` couvre trois cas : le Pôle, la manche de Paris en cours et le cross. Paris : tracé `PARIS_COURSES[courseId].line`, repère, zone d'appel. Cross : repère et zone, sans tracé, car le web n'a pas de ligne pour `'xc'`. Le cœur expose `strides::parisAidLine`. Le ctest « paris » vérifie cette ligne point par point contre la `line` exportée du web, plus les `lineS` des obstacles : 18 834 vérifications, soit 20 de plus. `Strides.Events.Paris` vérifie, pour chaque manche, les aides en place (course `paris_sprint` / `paris_gp`), les tirets vers l'obstacle 1 et le repère. Il vérifie aussi que la zone d'appel affichée suit le calcul `takeoffZone`. `Strides.Events.Cross` vérifie la course « xc », le repère, la zone, l'absence de tracé et le retrait des aides en fin d'épreuve |
+| Sortie de piste au pas après l'arrivée à Paris (courses.js:309) | **compilé, testé moteur** | Avant, la cadence calculée par la manche était jetée. Elle est maintenant relue dans le cheval (`CsoCadenceNow`), passée à `TickParis`, puis réécrite (`SetCsoCadence`). Un refus compté pendant une manche la remet aussi à 0 par ce chemin. `Strides.Events.Paris` : après l'arrivée, la cadence descend de 1,6 m/s² vers 1,9 m/s. L'écart à la formule du web est vérifié sous 0,1 m/s |
+| `export-paris.mjs` absent de `package.json` | **corrigé** | Ajout de `unreal:oracles-paris` et de `unreal:oracles`, qui lance les quatre `--check`. La matrice (`scripts/unreal/matrice.sh`) commence désormais par ces quatre contrôles. Les quatre passent, et les fichiers sont inchangés |
+| Écran titre : HUD masqué non vu en paquet ; gros plan du jean ; miniature en bas d'écran | **compilé, testé moteur, vu dans le moteur** (voir plus bas) | La cause du gros plan et de la miniature : la caméra restait sur le personnage. Le web, lui, survole Deauville sous le titre (game.js:1416-1422 `updateTitle`). Ce survol est porté : orbite autour de (60 ; −330), à 46 ± 6 m de haut, avec un champ vertical de 60°. La caméra du personnage revient à la fermeture du titre. `Strides.Scenario.Career` vérifie la caméra créée sur l'orbite du web, le regard vers (60 ; 6 ; −370), l'interface masquée et la caméra retirée à la fermeture. Dans un monde de test sans joueur local, le gestionnaire de caméra n'applique pas la cible. La vue réelle est donc vérifiée en jeu (`-StridesShots=titre`, outil hors Shipping). **Défaut trouvé en jeu** : le premier passage a écrit « HUD masqué 0, caméra de survol 0 ». Le titre met le jeu en pause, et en pause le moteur n'appelle pas `PlayerTick`. Le masquage de la 1re correction n'avait donc **jamais** lieu en jeu. Correction : `TickActor` en pause appelle `SyncTitleHud`. Au 2e passage, le HUD était masqué mais la vue restait figée (`titre-moteur-avant-camera-en-pause.jpg`) : en pause, le monde ne recalcule pas le point de vue. Le gestionnaire de caméra est maintenant mis à jour sous le titre. 3e passage : « HUD masqué 1, caméra de survol 1 ». Deauville est vue d'en haut, avec la mer, et la vue change entre les deux captures prises à 8 s d'écart (`preuves/j4d-20261128/titre-moteur-survol-1.jpg`, `-2.jpg`). Il n'y a plus de bouton « II », de mini-carte, de miniature ni de gros plan. **Vu dans le moteur** (éditeur en `-game`), **pas en paquet** : en paquet, la session n'a pas le droit de capture de l'écran |
+| Partie de 15 minutes en paquet par entrées injectées ; reprise après vraie relance ; vérifications de J3b en paquet | **BLOQUÉE** (inchangé) | La fenêtre « Forcer des applications à quitter » (`loginwindow`, couche 8, 392 × 455 en (1500 ; 466)) est toujours ouverte. Relevés de cette correction : 05:17:46 et 05:38:25, à la suite de `ctrl-J4/panneau.log`. Elle n'est pas de l'agent : l'agent ne l'a pas touchée et n'a rien injecté |
+
+Ce qui reste à confirmer : toute la boucle J4 côté joueur (missions, cross, derby, Grand Prix de Paris, récompenses,
+sauvegarde, reprise après vraie relance) n'est prouvée que par des tests fonctionnels (`PlaceAt`, relance simulée par un
+2e monde). La partie jouée en paquet attend la fermeture du panneau système. Le jeu à la main par Julien est à confirmer.
+
 ## J5 — Finition et performance
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -828,6 +844,13 @@ ceux de Paris : comptes corrigés), attentes « Waiting for ZenServer » résolu
 36. **Camion sans rampe** (28/11, correction de J4, suite du choix n° 26) : le portage n'a ni rampe ni cheval mené en
     main ; l'état « Ouvre la rampe arrière du camion » du chargement devient « Monte au volant du camion : … embarque
     avec toi », celui du déchargement « Gare-toi et descends du camion (ACTION à l'arrêt) ».
+37. **Écran titre** (28/11, 2e correction de J4) : la caméra survole Deauville comme le web (`updateTitle`), mais le monde
+    reste en pause derrière le titre. Ni l'heure fixée à 18 h 24 du web (`sky.update(18.4)`), ni les oiseaux, les bateaux
+    ou les chevaux d'ambiance n'avancent : on voit l'heure et l'état de la partie au lancement. C'est le plus simple, et la
+    sauvegarde du joueur reste intacte avant son choix.
+38. **Aides des manches de Paris** (28/11, 2e correction de J4) : elles sont mises à jour dans l'image du cheval, alors que
+    la manche avance dans l'image du parcours. L'obstacle suivant affiché peut donc changer une image (1/30 s) après le
+    web. Effet invisible (P3).
 
 ## Risques
 

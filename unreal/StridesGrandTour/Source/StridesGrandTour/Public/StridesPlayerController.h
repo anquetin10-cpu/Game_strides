@@ -116,6 +116,9 @@ public:
 	// Jalon J4-A : écran titre (jeu en pause derrière, pointeur rendu) ; choix transmis au mode de jeu.
 	void ShowTitle(bool bHasSave, const FString& Issue);
 	bool IsTitleOpen() const;
+	// Caméra de l'écran titre (nulle hors titre) et position du survol au temps T (repère web, m : œil, cible).
+	class ACameraActor* TitleCameraActor() const { return TitleCamera; }
+	static void TitleOrbit(double T, FVector& Eye, FVector& Target);
 	class UStridesTitleScreen* TitleWidget() const { return TitleScreen; }
 	void OnTitleChoice(bool bNew, const FString& Name, const FString& Avatar);
 	// Mode concours (classe cso-ctl du HUD de l'épreuve du monde).
@@ -126,6 +129,9 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void SetupInputComponent() override;
 	virtual void PlayerTick(float DeltaTime) override;
+	// Jeu en pause (écran titre) : APlayerController n'appelle pas PlayerTick ; l'écran titre (HUD masqué, caméra de survol)
+	// est tenu ici.
+	virtual void TickActor(float DeltaTime, enum ELevelTick TickType, FActorTickFunction& ThisTickFunction) override;
 
 public:
 	// Doigt reçu du viewport du jeu (UGameViewportClient::InputTouch, position en px du viewport) : px CSS (divisés par
@@ -180,8 +186,10 @@ private:
 	// ouvert (state 'title' du web : HUD masqué) ; visibilités d'avant rendues à sa fermeture.
 	bool bHudHiddenForTitle = false;
 	uint8 SavedCsoHudVis = 0, SavedTouchVis = 0;  // ESlateVisibility
-	void SyncTitleHud();
 public:
+	// Appelée par PlayerTick : interface masquée et caméra de survol tant que l'écran titre est ouvert (publique pour les
+	// tests, qui n'appellent pas PlayerTick).
+	void SyncTitleHud();
 	bool HudHiddenForTitle() const { return bHudHiddenForTitle; }
 private:
 public:
@@ -199,6 +207,9 @@ private:
 	UPROPERTY() TObjectPtr<class UStridesCsoHud> CsoHud;
 	UPROPERTY() TObjectPtr<class UStridesPauseMenu> PauseMenu;
 	UPROPERTY() TObjectPtr<class UStridesTitleScreen> TitleScreen;
+	// Caméra de l'écran titre (game.js updateTitle : survol lent de Deauville), vue tant que le titre est ouvert.
+	UPROPERTY() TObjectPtr<class ACameraActor> TitleCamera;
+	double TitleT = 0;
 	UPROPERTY() TObjectPtr<class UStridesCsoScreens> Screens;
 	int32 CardStickDir = 0;
 	mutable TWeakObjectPtr<class AStridesActivityPost> PostCache;

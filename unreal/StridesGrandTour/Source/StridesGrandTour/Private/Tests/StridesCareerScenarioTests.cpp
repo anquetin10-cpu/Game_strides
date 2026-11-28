@@ -10,6 +10,8 @@
 //    Entrée → reprise : prénom, crédits, réputation, missions faites, position, derby proposé.
 // Ce n'est NI l'autopilote (F8) NI une partie jouée à la main : la partie par entrées système (paquet) le complète.
 #include "Misc/AutomationTest.h"
+#include "Camera/CameraActor.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
@@ -23,6 +25,7 @@
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
 #include "StridesHUD.h"
+#include "StridesCsoHud.h"
 #include "StridesPlayerController.h"
 #include "StridesProgressionSubsystem.h"
 #include "StridesRider.h"
@@ -168,6 +171,28 @@ bool FStridesScenarioCareerTest::RunTest(const FString&)
 		G.PC->ShowTitle(bHas, Issue);
 		Info(FString::Printf(TEXT("titre : %s"), *G.Title()));
 		TestTrue(TEXT("écran titre ouvert"), G.PC->IsTitleOpen());
+		// Caméra du titre (game.js updateTitle) : survol de Deauville, pas le personnage ; interface de jeu masquée.
+		for (int32 K = 0; K < 3; ++K) G.PC->SyncTitleHud();
+		{
+			const ACameraActor* Cam = G.PC->TitleCameraActor();
+			// Monde de test sans joueur local : le gestionnaire de caméra n'applique pas la cible ; la vue réelle est vérifiée en
+			// jeu (-StridesShots=titre, journal « caméra de survol 1 »).
+			Info(FString::Printf(TEXT("titre : gestionnaire de caméra %d, cible vue %s"), G.PC->PlayerCameraManager ? 1 : 0, G.PC->GetViewTarget() ? *G.PC->GetViewTarget()->GetName() : TEXT("aucune")));
+			TestTrue(TEXT("titre : caméra de survol créée"), Cam != nullptr);
+			if (Cam)
+			{
+				double X, Y, Z;
+				StridesUnits::UEToWeb(Cam->GetActorLocation(), X, Y, Z);
+				const double U = (X - 60) / 190, V = (Z - (-330 + 70)) / 120;
+				Info(FString::Printf(TEXT("titre : caméra (%.1f ; %.1f ; %.1f)"), X, Y, Z));
+				TestTrue(TEXT("titre : caméra sur l'orbite du web (centre 60 ; −260, rayons 190 × 120, hauteur 46 ± 6 m)"), FMath::Abs(U * U + V * V - 1) < 1e-3 && Y >= 40 - 1e-6 && Y <= 52 + 1e-6);
+				FVector E, T;
+				AStridesPlayerController::TitleOrbit(0, E, T);
+				const FVector Fwd = (StridesUnits::WebToUE(T.X, T.Y, T.Z) - Cam->GetActorLocation()).GetSafeNormal();
+				TestTrue(TEXT("titre : regard vers (60 ; 6 ; −370)"), FVector::DotProduct(Fwd, Cam->GetActorForwardVector()) > 0.9999);
+			}
+			if (const UUserWidget* H = (const UUserWidget*)G.PC->CsoHudWidget()) TestTrue(TEXT("titre : interface d'épreuve masquée"), H->GetVisibility() == ESlateVisibility::Collapsed);
+		}
 		TestEqual(TEXT("menu sans sauvegarde : « Jouer »"), G.PC->TitleWidget()->Items(), TArray<FString>{TEXT("play")});
 		TestTrue(TEXT("libellé « Jouer »"), G.Title().Contains(TEXT("*play=Jouer")));
 		// Les commandes du jeu ne reçoivent rien pendant l'écran titre.
@@ -186,6 +211,8 @@ bool FStridesScenarioCareerTest::RunTest(const FString&)
 		TestEqual(TEXT("Entrée dans le prénom : « C'est parti » choisi"), G.PC->TitleWidget()->SelectedId(), FString(TEXT("start")));
 		G.Tap(TEXT("Enter"));
 		TestFalse(TEXT("écran titre fermé"), G.PC->IsTitleOpen());
+		G.PC->SyncTitleHud();
+		TestTrue(TEXT("titre fermé : caméra de survol retirée"), !G.PC->TitleCameraActor());
 		TestEqual(TEXT("prénom « Julie »"), Save->PlayerName, FString(TEXT("Julie")));
 		TestTrue(TEXT("partie neuve écrite"), UGameplayStatics::DoesSaveGameExist(Slot, 0) && P->Credits == 0 && P->CompletedMissions.Num() == 0);
 		G.Frame();
