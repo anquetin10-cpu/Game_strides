@@ -132,16 +132,16 @@ int main(int argc, char** argv) {
     expectPay += m->pay - m->cost;
     expectRep += m->xp;
   }
-  // Choix n° 25 révisé en J4 : cross et derby portés (étape « event ») ; seul gpparis reste « À venir ».
+  // Choix n° 25 révisé en J4, puis J4 (correction) : cross, derby et Grand Prix de Paris portés (étape « event ») ; plus
+  // aucune mission « À venir » ; toute l'histoire se termine.
   {
     std::string blocked;
     for (const auto& m : d.missions) if (!s.done(m.id)) blocked += m.id + " ";
-    CHECK(blocked == "gpparis ", "missions non terminées : « %s »", blocked.c_str());
-    CHECK(d.find("gpparis") && !d.find("gpparis")->upcoming.empty(), "gpparis : non marquée « À venir »");
+    CHECK(blocked.empty(), "missions non terminées : « %s »", blocked.c_str());
     int nUp = 0;
     for (const auto& m : d.missions) nUp += !m.upcoming.empty();
-    CHECK(nUp == 1, "%d missions « À venir » (attendu 1)", nUp);
-    for (const char* e : {"cross", "derby"}) {
+    CHECK(nUp == 0, "%d missions « À venir » (attendu 0)", nUp);
+    for (const char* e : {"cross", "derby", "gpparis"}) {
       const strides::StoryMission* m = d.find(e);
       CHECK(m && m->upcoming.empty() && m->route.size() == 1 && m->route[0].kind == "event" && m->route[0].event == e, "%s : étape « event »", e);
     }
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
     const auto rr = strides::completeMission(d, f, 352);
     CHECK(rr.fresh && rr.pay == 352 && rr.rep == 350 && f.credits == 352, "cross : 320 € + pourboire 32 € (%d)", rr.pay);
   }
-  CHECK(s.completed.size() == d.missions.size() - 1, "missions terminées : %zu / %zu", s.completed.size(), d.missions.size() - 1);
+  CHECK(s.completed.size() == d.missions.size(), "missions terminées : %zu / %zu", s.completed.size(), d.missions.size());
   CHECK(s.credits == expectPay && s.reputation == expectRep, "fin : %d crédits, %d points (attendu %d, %d)", s.credits, s.reputation, expectPay, expectRep);
   // Une mission de l'histoire ne paie qu'une fois (grantOnce).
   s.active = "tuto";
@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
     // Missions encore réduites (épreuve non portée) : listées, pour l'arbitrage de Julien.
     int reducedCount = 0;
     for (const auto& m : d.missions) if (!m.full) { reducedCount++; std::printf("carriere : %s encore réduite (lieu seul)\n", m.id.c_str()); }
-    CHECK(reducedCount == 1, "1 mission réduite (gpparis) : %d", reducedCount);
+    CHECK(reducedCount == 0, "aucune mission réduite : %d", reducedCount);
   }
 
   // 6. Jalon J3-D : fers d'or (collectibles.js) lus dans Content/Data/world_horseshoes.json comme le jeu.

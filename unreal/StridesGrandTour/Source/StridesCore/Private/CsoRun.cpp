@@ -83,7 +83,7 @@ double CsoRun::takeCheer() { const double r = cheer_; cheer_ = 0; return r; }
 std::string csoGotoText(const CsoRunConfig& cfg, const TextTable& text, const CsoRunFrame& f) {
   // text : far(pos, r) — distance au-delà de max(NEAR = 45, r + 30) m — puis withDist, sinon modeHint('ride'), sinon le
   // texte.
-  const std::string base = text.t("Entre en piste : rejoins l’entrée de la carrière", cfg.lang);
+  const std::string base = text.t(cfg.gateText.empty() ? std::string("Entre en piste : rejoins l’entrée de la carrière") : cfg.gateText, cfg.lang);
   const double d = jsHypot(f.focusX - cfg.gateX, f.focusZ - cfg.gateZ);  // Math.hypot du jeu web (MathUtil.h)
   if (d > std::max(45.0, cfg.gateR + 30)) {
     // withDist : « 1,2 km » (num(d / 1000, 1)) ou « 120 m » (Math.round(d / 10) * 10)
@@ -121,6 +121,11 @@ void CsoRun::next() {
   hud("clearHint", {});
   i_++;
   stepT_ = 0;
+  if (i_ >= (int)steps_.size() && cfg_.embedded) {
+    // Manche intégrée (Grand Prix de Paris) : la mission continue, son étape suivante commence dans la même image.
+    done_ = true;
+    return;
+  }
   if (i_ >= (int)steps_.size()) {
     // missions.complete (missions.js:558-624 ; tranche T11 : le bilan tient lieu d'écran de résultat) : run.cleanup
     // (missions.js:235-253 : aucune étape en cours à terminer, consigne effacée, dialogue fermé).

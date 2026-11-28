@@ -26,6 +26,7 @@ const git = (...a) => execFileSync('git', a, { cwd: ROOT }).toString().trim();
 
 const { STORY } = await web('src/gameplay/story.js');
 const { PARIS_MISSION } = await web('src/gameplay/parisGP.js');
+const { A13 } = await web('src/gameplay/travel.js');
 const { REPUTATION } = await web('src/config.js');
 const { reputationTier } = await web('src/core/save.js');
 const { MissionManager } = await web('src/gameplay/missions.js');
@@ -188,6 +189,13 @@ const ROUTES = {
     route: [{ kind: 'event', event: 'derby', text: 'Derby de la Touques : rejoins la piste de l’hippodrome', x: r2(HIPPO.x - 70), z: r2(HIPPO.z - HIPPO.radius), r: 8 }],
     skipped: ['fondu au noir avant les stalles (placement immédiat)', 'cavalier d’entraînement de l’hippodrome qui libère la piste (non porté)', 'endurance du grand galop des adversaires (vitesse imposée par PathAI, comme au web)'],
   },
+  // Jalon J4 (correction) : Grand Prix de Paris Indoor porté (StridesCore/Paris, Content/Data/paris_gp.json,
+  // export-paris.mjs). L'étape « event » est tout PARIS_MISSION : invitation, camion jusqu'à l'A13, Paris, accréditation,
+  // échauffement, Sprint, présentation, Grand Prix, barrage, podium.
+  gpparis: {
+    route: [{ kind: 'event', event: 'gpparis', text: 'Grand Prix de Paris Indoor : l’invitation de Margot', x: r2(A13.deauville.x), z: r2(A13.deauville.z), r: 10 }],
+    skipped: ['écran de fin de carrière (screens.ending) : message de fin seulement', 'fondu et carte du trajet sur l’autoroute (trajet immédiat)', 'écran géant et public de l’arène (textes relevés, non affichés)'],
+  },
 };
 // Missions sans itinéraire relevé dans cette étape : rejoindre le lieu du web (POI), rayon 18 m du portage.
 const reduced = (def) => {
@@ -200,9 +208,8 @@ const reduced = (def) => {
 // portée (cross de Saint-Gatien, course de l'hippodrome, Grand Prix de Paris) : offertes mais verrouillées « À venir »
 // jusqu'au portage de leur épreuve (J4). Aucune règle du web n'est changée ; l'offre et le verrou de palier restent ceux du web.
 // Jalon J4 : cross et derby portés (étape « event ») et retirés de cette liste.
-const UPCOMING = {
-  gpparis: 'le Grand Prix de Paris Indoor n’est pas encore porté.',
-};
+// Jalon J4 (correction) : Grand Prix de Paris porté à son tour ; plus aucune mission « À venir ».
+const UPCOMING = {};
 const all = [...STORY];
 if (!all.some((d) => d.id === PARIS_MISSION.id)) all.push(PARIS_MISSION);
 const missions = all.map((def) => {

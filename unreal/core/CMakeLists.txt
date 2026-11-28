@@ -142,6 +142,14 @@ target_sources(strides_core PRIVATE ${CORE}/Private/Epreuves.cpp)
 add_executable(strides_epreuves_tests tests/test_epreuves.cpp)
 target_link_libraries(strides_epreuves_tests strides_core)
 add_test(NAME epreuves COMMAND strides_epreuves_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Jalon J4 (correction après contrôle adverse) : Grand Prix de Paris Indoor (PARIS_MISSION de parisGP.js : trajet par
+# l'A13, accréditation, échauffement, Sprint, présentation, Grand Prix, barrage, podium) porté en C++ (StridesCore/Paris),
+# contre l'oracle de la vraie MissionManager du web dans une partie factice (tests/oracles/paris_gp.json,
+# scripts/unreal/export-paris.mjs) ; données lues dans Content/Data/paris_gp.json comme le jeu ; ctest « paris ».
+target_sources(strides_core PRIVATE ${CORE}/Private/Paris.cpp)
+add_executable(strides_paris_tests tests/test_paris.cpp)
+target_link_libraries(strides_paris_tests strides_core)
+add_test(NAME paris COMMAND strides_paris_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
 # Jalon J4-D : défis à conditions fixes du web (challenge.js : makeResult, compareResults, recordResult, resultLine)
 # portés en C++ (StridesCore/Challenge), contre l'oracle du vrai module (tests/oracles/defis.json,
 # scripts/unreal/export-defis.mjs) ; données lues dans Content/Data/challenges.json ; ctest « defis ».

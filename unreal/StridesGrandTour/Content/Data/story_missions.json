@@ -1,7 +1,7 @@
 {
  "schema": "strides.story.v1",
  "source": {
-  "webCommit": "3cb3e07f",
+  "webCommit": "d2305bdb",
   "files": [
    "src/gameplay/story.js",
    "src/gameplay/story2.js",
@@ -834,21 +834,23 @@
     "gp"
    ],
    "hours": null,
-   "full": false,
+   "full": true,
    "choice": null,
    "route": [
     {
-     "kind": "goto",
-     "text": "Rejoins Paris · arène couverte",
+     "kind": "event",
+     "event": "gpparis",
+     "text": "Grand Prix de Paris Indoor : l’invitation de Margot",
      "x": 546,
      "z": -118,
-     "r": 18
+     "r": 10
     }
    ],
    "skipped": [
-    "déroulé du web non porté (J4-C)"
-   ],
-   "upcoming": "le Grand Prix de Paris Indoor n’est pas encore porté."
+    "écran de fin de carrière (screens.ending) : message de fin seulement",
+    "fondu et carte du trajet sur l’autoroute (trajet immédiat)",
+    "écran géant et public de l’arène (textes relevés, non affichés)"
+   ]
   }
  ]
 }

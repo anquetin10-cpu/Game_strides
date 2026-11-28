@@ -47,7 +47,7 @@ bool loadStory(const std::string& text, StoryData& out, std::string& err) {
         if (st["beat"].t == J::Obj) { s.beatFaults = integer(st["beat"]["faults"]); s.beatTime = st["beat"]["time"].num(); s.beatName = str(st["beat"]["name"]); }
         s.event = str(st["event"]);
         if (s.kind != "goto" && s.kind != "course" && s.kind != "event") { err = "étape inconnue dans " + m.id; return false; }
-        if (s.kind == "event" && s.event != "cross" && s.event != "derby") { err = "épreuve inconnue dans " + m.id; return false; }
+        if (s.kind == "event" && s.event != "cross" && s.event != "derby" && s.event != "gpparis") { err = "épreuve inconnue dans " + m.id; return false; }
         m.route.push_back(s);
       }
       if (m.id.empty() || m.route.empty()) { err = "mission sans identifiant ou sans itinéraire"; return false; }

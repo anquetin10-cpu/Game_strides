@@ -92,6 +92,11 @@ struct CsoRunConfig {
   bool penalties = true;     // a.penalties
   bool hasBest = false;
   double best = 0;
+  // Jalon J4 (Grand Prix de Paris) : opts.gateText de courseSteps (vide : « Entre en piste : rejoins l’entrée de la
+  // carrière ») ; manche intégrée au déroulé d'une autre mission (PARIS_MISSION) : la fin de la dernière étape passe à
+  // l'étape suivante de cette mission, sans le nettoyage de missions.complete (aucun appel après la dernière étape).
+  std::string gateText;
+  bool embedded = false;
 };
 // Règles et lignes de Content/Data/cso_course_pole.json (objet « run », exporté de courses.js / obstacles.js) ;
 // fences : libellés dans l'ordre du tracé. Exception si mal formé.
@@ -182,6 +187,8 @@ class STRIDESCORE_API CsoRun {
   CsoRun(CsoRunConfig cfg, const TextTable& text);
   // Lancement de l'activité (Run.begin : première étape).
   void begin();
+  // Image courante connue avant la première mise à jour (manche intégrée commencée dans l'image : textes de l'objectif).
+  void prime(const CsoRunFrame& f) { cur_ = f; }
   // Bouton « Entrer en piste » de la présentation ; fermeture du dialogue de capacité ; choix du bilan.
   void enter();
   void closeCapacityDialog();
