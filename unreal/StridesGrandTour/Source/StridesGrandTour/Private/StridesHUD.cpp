@@ -398,9 +398,33 @@ void AStridesHUD::DrawPhone(const UStridesProgressionSubsystem* Progress)
 		Text(TEXT("Défis · concours · chronos"), Mute, L, Y + 30, .85f);
 		Y += 64;
 		if (Active) { Text(FString::Printf(TEXT("En cours : %s"), *Active->Title), Accent, L, Y, .9f); Y += 30; }
+		const UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>();
+		// Jalon J4-D : défis à conditions fixes (activities-app.js challengeCard) : version, record, conditions, dernier
+		// résultat, « Règles et départ ».
+		if (const strides::ChallengeData* CD = Data ? Data->Challenges() : nullptr)
+		{
+			Text(TEXT("Défis à conditions fixes"), Gold, L, Y, .9f);
+			Y += 30;
+			for (const strides::ChallengeConfig& Cf : CD->challenges)
+			{
+				if (Y > Top + Ht - 260) break;
+				const strides::ChallengeRecord* Rc = nullptr;
+				if (Save) if (const auto It = Save->ChallengeRecords.find(Cf.id); It != Save->ChallengeRecords.end()) Rc = &It->second;
+				DrawRect(Card, L, Y, CW, 118);
+				Text(FString::Printf(TEXT("Défi · v%d"), Cf.version), Mute, L + 14, Y + 8, .75f);
+				Text(Rc && Rc->hasBest ? FString::Printf(TEXT("Record : %s"), UTF8_TO_TCHAR(strides::challengeResultLine(Rc->best).c_str())) : FString(TEXT("Pas encore de record")), Gold, L + CW - 250, Y + 8, .8f);
+				Text(UTF8_TO_TCHAR(Cf.name.c_str()), Ink, L + 14, Y + 26, 1.1f);
+				Text(FString::Printf(TEXT("%s · %d obstacles · %s m · %s fourni · %d s accordées"), UTF8_TO_TCHAR(Cf.place.c_str()), (int32)Cf.obstacles.size(),
+					*FString::Printf(TEXT("%.2f"), Cf.height).Replace(TEXT("."), TEXT(",")), UTF8_TO_TCHAR(Cf.horseName.c_str()), Cf.timeAllowed), Mute, L + 14, Y + 52, .72f);
+				Text(Rc && Rc->hasLast ? FString::Printf(TEXT("Dernier résultat : %s · %d tentative%s"), UTF8_TO_TCHAR(strides::challengeResultLine(Rc->last).c_str()), Rc->attempts, Rc->attempts > 1 ? TEXT("s") : TEXT(""))
+					: FString(TEXT("Aucune tentative pour l’instant.")), Mute, L + 14, Y + 70, .72f);
+				Item(FString(TEXT("challenge:")) + UTF8_TO_TCHAR(Cf.id.c_str()), L + 14, Y + 88, 170, 26, FLinearColor(.12f, .42f, .34f));
+				Text(TEXT("Règles et départ"), Ink, L + 24, Y + 91, .85f);
+				Y += 128;
+			}
+		}
 		Text(TEXT("Entraînements libres (chrono)"), Gold, L, Y, .9f);
 		Y += 30;
-		const UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>();
 		for (const AStridesActivityPost* Post : PC->Posts())
 		{
 			if (!Post || Y > Top + Ht - 150) continue;

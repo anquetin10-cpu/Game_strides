@@ -32,6 +32,8 @@ bool UStridesSaveSubsystem::SaveNow(APlayerController* PC)
 	Core.playerName = TCHAR_TO_UTF8(*PlayerName);  // jalon J4-A : création du personnage
 	Core.avatar = TCHAR_TO_UTF8(*Avatar);
 	Core.settings = Settings;  // réglages en cours (carte Pause)
+	Core.challenges = ChallengeRecords;  // records des défis (J4-D)
+	for (const auto& [Id, R] : ChallengeRecords) if (R.hasBest) Core.records[Id] = {R.best.isEliminated(), R.best.penalties, R.best.time};
 	Core.bestTimes = Best;     // meilleurs temps des activités (tranche T11)
 	Core.gameTime = GameTime;  // heure du jeu (J3-C)
 	UWorld* W = PC ? PC->GetWorld() : nullptr;
@@ -203,6 +205,7 @@ bool UStridesSaveSubsystem::NewGame(APlayerController* PC, const FString& Name, 
 	PlayerName = Name.IsEmpty() ? TEXT("Alex") : Name;
 	Avatar = InAvatar.IsEmpty() ? TEXT("f") : InAvatar;
 	Best.clear();
+	ChallengeRecords.clear();
 	Horses = Fresh.horses;
 	ActiveHorse = Fresh.activeHorse;
 	GameTime = Fresh.gameTime;
@@ -249,6 +252,7 @@ bool UStridesSaveSubsystem::ReloadSettings()
 	GameTime = Core.gameTime;
 	PlayerName = UTF8_TO_TCHAR(Core.playerName.c_str());
 	Avatar = UTF8_TO_TCHAR(Core.avatar.c_str());
+	ChallengeRecords = Core.challenges;
 	if (const UStridesSaveGame* Saved = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0))) Horseshoes = Saved->Horseshoes;
 	// Journal du joueur (J1-E, J1-G) : meilleurs temps relus au lancement, comme le téléphone du web les affiche.
 	FString Times;
@@ -276,6 +280,23 @@ bool UStridesSaveSubsystem::RecordBestTime(const FString& Id, double Score)
 	UStridesSaveGame* S = Old ? Old : Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
 	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
 	return UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
+}
+
+strides::RecordOutcome UStridesSaveSubsystem::RecordChallenge(const strides::ChallengeResult& Res)
+{
+	const strides::RecordOutcome O = strides::recordChallengeResult(ChallengeRecords, Res);
+	strides::SaveGame Core;
+	FString Msg;
+	UStridesSaveGame* Old = UGameplayStatics::DoesSaveGameExist(SlotName, 0) ? Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)) : nullptr;
+	if (Old) ReadCore(SlotName, Core, Msg);
+	Core.challenges = ChallengeRecords;
+	for (const auto& [Id, R] : ChallengeRecords) if (R.hasBest) Core.records[Id] = {R.best.isEliminated(), R.best.penalties, R.best.time};
+	UStridesSaveGame* S = Old ? Old : Cast<UStridesSaveGame>(UGameplayStatics::CreateSaveGameObject(UStridesSaveGame::StaticClass()));
+	S->Json = UTF8_TO_TCHAR(Core.toJson().c_str());
+	UGameplayStatics::SaveGameToSlot(S, SlotName, 0);
+	UE_LOG(LogTemp, Display, TEXT("Strides défi : %hs %hs (%s, %d tentative(s))"), Res.challenge.c_str(), strides::challengeResultLine(Res).c_str(),
+		O.isRecord ? TEXT("record") : O.duplicate ? TEXT("doublon") : TEXT("pas de record"), ChallengeRecords[Res.challenge].attempts);
+	return O;
 }
 
 bool UStridesSaveSubsystem::SaveSettings()

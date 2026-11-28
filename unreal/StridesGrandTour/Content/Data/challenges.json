@@ -1,0 +1,108 @@
+{
+ "schema": "strides.challenges.v1",
+ "current": "defi-pole-v6",
+ "challenges": [
+  {
+   "id": "defi-pole-v6",
+   "version": 6,
+   "name": "Défi du Pôle",
+   "course": "cso",
+   "place": "Pôle International",
+   "courseId": "cso",
+   "obstacles": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "height": 1.1,
+   "timeAllowed": 64,
+   "timeLimit": 128,
+   "horse": {
+    "id": "defi-onyx",
+    "name": "Onyx",
+    "coat": "black",
+    "speed": 1.13,
+    "jump": 1.06,
+    "stamina": 1
+   },
+   "weather": {
+    "label": "Jour dégagé",
+    "day": 2,
+    "hour": 11,
+    "rain": 0,
+    "wet": 0
+   },
+   "jumpAid": true,
+   "rules": {
+    "rail": 4,
+    "firstRefusal": 4,
+    "refusalsToEliminate": 2,
+    "timeFaultPerSecond": 1
+   },
+   "where": null
+  },
+  {
+   "id": "defi-paris-v3",
+   "version": 3,
+   "name": "Défi du Grand Prix de Paris",
+   "course": "cso",
+   "place": "Grand Prix de Paris Indoor",
+   "courseId": "paris_gp",
+   "obstacles": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "height": 1.5,
+   "timeAllowed": 54,
+   "timeLimit": 108,
+   "horse": {
+    "id": "defi-lumiere",
+    "name": "Lumière de Paris",
+    "coat": "grey",
+    "speed": 1.15,
+    "jump": 1.24,
+    "stamina": 1
+   },
+   "weather": {
+    "label": "Soirée en salle",
+    "day": 2,
+    "hour": 20.5,
+    "rain": 0,
+    "wet": 0
+   },
+   "jumpAid": true,
+   "rules": {
+    "rail": 4,
+    "firstRefusal": 4,
+    "refusalsToEliminate": 2,
+    "timeFaultPerSecond": 1
+   },
+   "where": "Paris, arène couverte : départ directement en piste, sans trajet."
+  }
+ ],
+ "start": {
+  "x": 321.0626378983364,
+  "z": -205.06619199146718,
+  "rot": 3.926990816987246
+ },
+ "source": {
+  "webCommit": "31a27d65",
+  "files": [
+   "src/gameplay/challenge.js"
+  ]
+ }
+}

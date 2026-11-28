@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "StridesCore/Api.h"
+#include "StridesCore/Challenge.h"
 
 namespace strides {
 
@@ -34,6 +35,9 @@ struct STRIDESCORE_API SaveGame {
   // Meilleur temps des activités chronométrées (save.js:34 bestTimes : identifiant → secondes, chrono + pénalités pour
   // le Parcours du Pôle ; activities.js:120, tranche T11). Importé de la sauvegarde web.
   std::map<std::string, double> bestTimes;
+  // Jalon J4-D : records des défis à conditions fixes (save.data.challenges.records du web : meilleur, dernier,
+  // tentatives, identifiants vus), par version du défi. Écrits sous « challenges » ; records ci-dessus tenus à jour.
+  std::map<std::string, ChallengeRecord> challenges;
   // Réglages (save.js:37) : valeurs en texte ; courseLine « true » / « false » (booléen du web, tranche T8).
   std::map<std::string, std::string> settings{{"quality", "auto"}, {"jumpAid", "full"}, {"characters", "auto"}, {"courseLine", "true"}};
   SavePose pose;

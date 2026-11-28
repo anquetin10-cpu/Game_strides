@@ -716,6 +716,45 @@ void AStridesPlayerController::PhoneActivate(const FString& Id)
 		PhoneToastAt = PhoneNow();
 		return;
 	}
+	// Jalon J4-D : « Règles et départ » d'un défi de l'app Activités (activities-app.js challengeCard → challenge.start) :
+	// mission en cours refusée (blocker), arène de Paris non portée ; sinon départ derrière la ligne, à cheval.
+	if (Id.StartsWith(TEXT("challenge:")) && P)
+	{
+		const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+		const strides::ChallengeData* CD = Data ? Data->Challenges() : nullptr;
+		const strides::ChallengeConfig* Cfg = CD ? CD->find(TCHAR_TO_UTF8(*Id.Mid(10))) : nullptr;
+		AStridesCourse* C = EntryCourse();
+		AStridesHorse* H = nullptr;
+		for (TActorIterator<AStridesHorse> It(GetWorld()); It; ++It) H = *It;
+		const double Now = PhoneNow();
+		if (!Cfg || !C || !H) return;
+		if (!P->ActiveMissionId.IsEmpty() || C->MissionActive()) { PhoneToast = TEXT("Termine ou abandonne ta mission en cours d’abord."); PhoneToastAt = Now; return; }
+		if (Cfg->courseId != "cso") { PhoneToast = TEXT("À venir : l’arène du Grand Prix de Paris n’est pas encore portée."); PhoneToastAt = Now; return; }
+		// _enter : 8 m derrière la ligne de départ, dans l'axe ; cavalier en selle.
+		const double SX = CD->startX - FMath::Sin(CD->startRot) * 8, SZ = CD->startZ - FMath::Cos(CD->startRot) * 8;
+		H->bChallengeReturn = true;
+		H->ChallengeReturn = FVector(H->WebX(), H->WebZ(), H->Heading());
+		AStridesRider* R = nullptr;
+		for (TActorIterator<AStridesRider> It(GetWorld()); It; ++It) R = *It;
+		if (R && R->MountedOn) R->Dismount(this);
+		H->PlaceAt(SX, SZ, CD->startRot, 0);
+		if (R)
+		{
+			R->SetActorLocation(H->GetActorLocation() - H->GetActorRightVector() * 120.0 + FVector(0, 0, 90));
+			R->TryMount(this);
+		}
+		H->JumpMulOverride = Cfg->horseJump;
+		const UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>();
+		if (!C->StartChallenge(*Cfg, Save ? Save->PlayerName : FString(TEXT("Alex")), H->JumpPower()))
+		{
+			H->JumpMulOverride = -1;
+			PhoneToast = TEXT("Défi indisponible.");
+			PhoneToastAt = Now;
+			return;
+		}
+		ClosePhone();
+		return;
+	}
 	if (Id.StartsWith(TEXT("itinerary:")) && P)
 	{
 		// activities-app.js « Itinéraire » : gps.set(a.start, a.name), puis le téléphone se range.

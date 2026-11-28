@@ -48,6 +48,10 @@ public:
 	bool NewGame(class APlayerController* PC, const FString& Name, const FString& InAvatar);
 	// Prénom et personnage du joueur (save.data.playerName, avatar), lus avec les réglages et par LoadNow, écrits par SaveNow.
 	FString PlayerName = TEXT("Alex");
+	// Jalon J4-D : records des défis (save.data.challenges.records du web), lus avec les réglages et par LoadNow, écrits
+	// par SaveNow ; RecordChallenge (challengeRun._finish : recordResult) écrit tout de suite dans l'emplacement.
+	std::map<std::string, strides::ChallengeRecord> ChallengeRecords;
+	strides::RecordOutcome RecordChallenge(const strides::ChallengeResult& Res);
 	FString Avatar = TEXT("f");
 	float AutoSaveT = 0.f;
 	static const FString Slot;

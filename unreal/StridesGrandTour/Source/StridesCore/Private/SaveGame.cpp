@@ -19,6 +19,28 @@ static std::string esc(const std::string& s) {
 }
 static std::string num(double v) { char b[32]; std::snprintf(b, sizeof b, "%.17g", v); return b; }
 
+static std::string resJson(const ChallengeResult& r) {
+  std::ostringstream o;
+  o << "{\"challenge\":" << esc(r.challenge) << ",\"attempt\":" << esc(r.attempt) << ",\"eliminated\":" << (r.eliminated.empty() ? std::string("null") : esc(r.eliminated))
+    << ",\"version\":" << r.version << ",\"rails\":" << r.rails << ",\"refusals\":" << r.refusals << ",\"faults\":" << r.faults
+    << ",\"timeFaults\":" << r.timeFaults << ",\"penalties\":" << r.penalties << ",\"time\":" << num(r.time) << "}";
+  return o.str();
+}
+static ChallengeResult resOf(const J& j) {
+  ChallengeResult r;
+  r.challenge = j["challenge"].s;
+  r.attempt = j["attempt"].s;
+  r.eliminated = j["eliminated"].t == J::Str ? j["eliminated"].s : std::string();
+  r.version = (int)j["version"].n;
+  r.rails = (int)j["rails"].n;
+  r.refusals = (int)j["refusals"].n;
+  r.faults = (int)j["faults"].n;
+  r.timeFaults = (int)j["timeFaults"].n;
+  r.penalties = (int)j["penalties"].n;
+  r.time = j["time"].n;
+  return r;
+}
+
 std::string SaveGame::toJson() const {
   std::ostringstream o;
   o << "{\"schema\":\"strides.save\",\"version\":" << version << ",\"playerName\":" << esc(playerName) << ",\"avatar\":" << esc(avatar)
@@ -32,6 +54,14 @@ std::string SaveGame::toJson() const {
   first = true;
   for (auto& [k, r] : records) {
     o << (first ? "" : ",") << esc(k) << ":{\"eliminated\":" << (r.eliminated ? "true" : "false") << ",\"penalties\":" << r.penalties << ",\"time\":" << num(r.time) << "}";
+    first = false;
+  }
+  o << "},\"challenges\":{";
+  first = true;
+  for (auto& [k, c] : challenges) {
+    o << (first ? "" : ",") << esc(k) << ":{\"attempts\":" << c.attempts << ",\"seen\":[";
+    for (size_t i = 0; i < c.seen.size(); i++) o << (i ? "," : "") << esc(c.seen[i]);
+    o << "],\"best\":" << (c.hasBest ? resJson(c.best) : std::string("null")) << ",\"last\":" << (c.hasLast ? resJson(c.last) : std::string("null")) << "}";
     first = false;
   }
   o << "},\"bestTimes\":{";
@@ -82,6 +112,14 @@ bool SaveGame::fromJson(const std::string& text, SaveGame& out, std::string& err
   if (j["horses"].t == J::Arr) { s.horses.clear(); for (auto& h : j["horses"].a) s.horses.push_back(h.s); }
   for (auto& [k, r] : j["records"].o) s.records[k] = {r["eliminated"].b, (int)r["penalties"].n, r["time"].n};
   for (auto& [k, v2] : j["bestTimes"].o) if (v2.t == J::Num) s.bestTimes[k] = v2.n;
+  for (auto& [k, c] : j["challenges"].o) {
+    ChallengeRecord r;
+    r.attempts = (int)c["attempts"].n;
+    for (auto& x : c["seen"].a) r.seen.push_back(x.s);
+    if (c["best"].t == J::Obj) { r.hasBest = true; r.best = resOf(c["best"]); }
+    if (c["last"].t == J::Obj) { r.hasLast = true; r.last = resOf(c["last"]); }
+    s.challenges[k] = r;
+  }
   for (auto& [k, v2] : j["settings"].o) s.settings[k] = v2.s;
   if (j["pose"].t == J::Obj) s.pose = {j["pose"]["mode"].s, j["pose"]["x"].n, j["pose"]["y"].n, j["pose"]["z"].n, j["pose"]["heading"].n, true};
   if (j["pose"].t == J::Obj && j["pose"]["horse"].t == J::Obj) {

@@ -28,6 +28,7 @@
 #include "StridesCore/Text.h"
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/Epreuves.h"
+#include "StridesCore/Challenge.h"
 #include <memory>
 #include "StridesCourse.generated.h"
 
@@ -87,6 +88,15 @@ public:
 	bool EventLocksPlayer() const { return EventPtr && !EventPtr->finished() && EventPtr->locked(); }
 	// Position imposée au cheval du joueur par l'épreuve (stalles de départ de la course) : vrai une fois.
 	bool TakeEventTeleport(double& X, double& Z, double& Heading) { return EventPtr && EventPtr->takeTeleport(X, Z, Heading); }
+	// ---- Jalon J4-D : défi à conditions fixes (challengeRun.js) sur le parcours du Pôle ----
+	// Lance le défi : départ 8 m derrière la ligne, hauteur unique, temps accordé et refus éliminatoires du défi,
+	// sans présentation ni bilan ; heure et météo du défi tenues ; puissance de saut du cheval fourni. Faux si une mission
+	// est en cours ou sans données. Pose : cheval du joueur (le jeu le place et le monte).
+	bool StartChallenge(const strides::ChallengeConfig& Cfg, const FString& PlayerName, double JumpPower);
+	bool ChallengeActive() const { return bChallenge; }
+	const strides::ChallengeConfig& ChallengeConfig() const { return ChallengeCfg; }
+	// Fin de la tentative (challengeRun._finish) : résultat, record ; vrai une fois par tentative finie.
+	bool TakeChallengeResult(strides::ChallengeResult& Out, strides::RecordOutcome& Rec);
 	// Adversaires affichés (course).
 	const TArray<TObjectPtr<class AStridesRivalHorse>>& RivalActors() const { return Rivals; }
 	// ---- Entraînement à l'abord au paddock du Pôle (jalon J2c, lot J2-D ; activities.js startTraining) ----
@@ -246,6 +256,13 @@ private:
 	void FlushEventCalls();
 	void BuildCross(const class UStridesDataSubsystem& Data);
 	std::unique_ptr<strides::EventRun> EventPtr;
+	bool bChallenge = false, bChallengeResult = false;
+	strides::ChallengeConfig ChallengeCfg;
+	strides::ChallengeResult ChallengeRes;
+	strides::RecordOutcome ChallengeRec;
+	std::string ChallengeAttempt;
+	int32 ChallengeSerial = 0;
+	void TickChallenge();
 	FString EventName;
 	int32 NumCrossFences = 0, CrossFirst = -1;
 	bool bEventDialog = false;

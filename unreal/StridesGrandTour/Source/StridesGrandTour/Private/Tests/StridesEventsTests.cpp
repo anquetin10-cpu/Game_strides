@@ -11,6 +11,7 @@
 //    déplacés par le cœur (PathAI) ; arrivée, place, dotation au prorata, réputation.
 // Ce n'est NI l'autopilote (F8) NI une partie jouée à la main : la partie par entrées système (paquet) le complète.
 #include "Misc/AutomationTest.h"
+#include "StridesCore/SaveGame.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -306,6 +307,118 @@ bool FStridesEventsDerbyTest::RunTest(const FString&)
 	}
 	else TestTrue(TEXT("échec expliqué (« Il faut finir dans le top 3 » ou « Course terminée sans toi »)"), P->LastMessage.Contains(TEXT("top 3")) || P->LastMessage.Contains(TEXT("sans toi")));
 	TestTrue(TEXT("adversaires retirés"), G.Course->RivalActors().Num() == 0);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesChallengePoleTest, "Strides.Challenge.Pole", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
+bool FStridesChallengePoleTest::RunTest(const FString&)
+{
+	// Jalon J4-D : défi du Pôle (v6) lancé par l'app Activités du téléphone (« Règles et départ », touches du joueur) ;
+	// départ derrière la ligne, à cheval, cheval fourni (saut 1,06), heure du défi tenue ; ligne de départ, obstacles du
+	// parcours sautés (Espace en bonne zone), ligne d'arrivée → résultat, record écrit dans la sauvegarde (emplacement de
+	// test), carte du défi mise à jour ; 2e tentative éliminée (cavalier descendu) : pas de record, 2 tentatives.
+	using namespace StridesEventsTest;
+	FTestWorld W(TEXT("StridesChallengePole"));
+	const UStridesDataSubsystem* Data = W.GI->GetSubsystem<UStridesDataSubsystem>();
+	UStridesProgressionSubsystem* P = W.GI->GetSubsystem<UStridesProgressionSubsystem>();
+	UStridesSaveSubsystem* Save = W.GI->GetSubsystem<UStridesSaveSubsystem>();
+	if (!TestTrue(TEXT("sous-systèmes"), Data && P && Save && Data->Challenges())) return false;
+	Save->SlotName = TEXT("strides_test_j4_defi");
+	UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
+	Save->ChallengeRecords.clear();
+	P->Restore(0, 0, FString(), {});
+	FGame G;
+	if (!TestTrue(TEXT("jeu monté"), G.Make(W.World, *Data))) return false;
+	FActorSpawnParameters Sp;
+	Sp.Owner = G.PC;
+	AStridesHUD* Hud = W.World->SpawnActor<AStridesHUD>(Sp);
+	Hud->PlayerOwner = G.PC;
+	G.PC->MyHUD = Hud;
+	UCanvas* Toile = NewObject<UCanvas>();
+	Toile->SizeX = 1280;
+	Toile->SizeY = 800;
+	auto Draw = [&] { Hud->SetCanvasForTest(Toile); Hud->DrawHUD(); };
+	auto Index = [&](const FString& Id) { for (int32 I = 0; I < Hud->PhoneItems().Num(); ++I) if (Hud->PhoneItems()[I].Id == Id) return I; return -1; };
+	auto Choose = [&](const FString& Id)
+	{
+		Draw();
+		const int32 Want = Index(Id);
+		if (Want < 0) return false;
+		for (int32 K = 0; K < 40 && G.PC->PhoneSelection() != Want; ++K) { G.Tap(G.PC->PhoneSelection() < Want ? TEXT("ArrowRight") : TEXT("ArrowLeft")); Draw(); }
+		if (G.PC->PhoneSelection() != Want) return false;
+		G.Tap(TEXT("Enter"));
+		Draw();
+		return true;
+	};
+	const strides::ChallengeConfig* Cfg = Data->Challenges()->find(Data->Challenges()->current);
+	if (!TestNotNull(TEXT("défi courant"), Cfg)) return false;
+	const FString Item = FString(TEXT("challenge:")) + UTF8_TO_TCHAR(Cfg->id.c_str());
+	auto Launch = [&]
+	{
+		G.Tap(TEXT("KeyP"));
+		Draw();
+		return Choose(TEXT("app:activities")) && Index(Item) >= 0 && Choose(Item);
+	};
+	TestTrue(TEXT("app Activités : carte du défi, « Règles et départ »"), Launch());
+	TestTrue(TEXT("défi lancé, téléphone rangé"), G.Course->ChallengeActive() && !G.PC->IsPhoneOpen());
+	TestTrue(TEXT("cheval fourni : saut 1,06"), FMath::Abs(G.Horse->JumpMulOverride - 1.06) < 1e-9);
+	const strides::CsoRunConfig& RC = G.Course->Run()->config();
+	TestTrue(TEXT("règles du défi : 64 s accordées, 2 refus, sans présentation ni bilan"), RC.timeAllowed == Cfg->timeAllowed && RC.maxRefusals == 2 && !RC.present && !RC.result);
+	// Entrée en piste et cloche.
+	int32 K = 0;
+	for (; K < 400 && G.Course->Run()->step() != strides::CsoStep::Course; ++K) G.Frame();
+	if (!TestTrue(TEXT("parcours du défi (cloche passée)"), G.Course->Run()->step() == strides::CsoStep::Course)) return false;
+	TestTrue(TEXT("heure du défi tenue (jour 2, 11 h)"), FMath::Abs(Save->GameTime - (2 * 86400.0 + 11 * 3600.0)) < 1e-6);
+	TestTrue(TEXT("hauteur unique 1,10 m"), G.Course->FenceHeights().size() > 0 && FMath::Abs(G.Course->FenceHeights()[0] - 1.1) < 1e-9);
+	// Ligne de départ franchie au galop, dans son sens.
+	const strides::CsoRunLine& S0 = RC.start;
+	G.Horse->PlaceAt(S0.x - FMath::Sin(S0.rot) * 4, S0.z - FMath::Cos(S0.rot) * 4, S0.rot, 6.2);
+	for (K = 0; K < 60 && !G.Course->Run()->state().started; ++K) G.Frame();
+	TestTrue(TEXT("chrono lancé à la ligne de départ"), G.Course->Run()->state().started);
+	// Obstacles du parcours dans l'ordre (cœur : abord à 13 m dans l'axe, Espace en bonne zone).
+	for (int32 I = 0; I < G.Course->CourseFenceCount(); ++I)
+	{
+		const strides::CsoObstacle& O = G.Course->Obstacles()[I];
+		// Élément B d'une combinaison : enchaîné depuis l'élément A, sans replacer le cheval.
+		if (O.label.empty() || O.label.back() != 'B') G.Horse->PlaceAt(O.x - O.n.x * 13, O.z - O.n.z * 13, O.rot, 6.2);
+		bool bJ = false;
+		for (K = 0; K < 300; ++K)
+		{
+			const strides::CsoTarget Tg = strides::csoTarget(G.Course->Obstacles(), G.Horse->CsoState(), G.Horse->JumpPower(), 0.0, true, Data->Jump(), Data->HorseParams());
+			if (!bJ && G.Horse->CsoState().jumpT < 0 && Tg.index == I && Tg.plan.zone == strides::Zone::Good && Tg.plan.ideal <= Tg.plan.L + 0.3) { bJ = true; G.Tap(TEXT("Space")); continue; }
+			G.Frame();
+			if (bJ && G.Horse->CsoState().jumpT < 0 && G.Course->Run()->state().next > O.num) break;
+		}
+	}
+	AddInfo(FString::Printf(TEXT("défi : suivant %d / %d, fautes %d, chrono %.2f s ; obstacles %s"), G.Course->Run()->state().next, G.Course->CourseFenceCount(), G.Course->Run()->state().faults, G.Course->Run()->state().t, *FString::Join(G.Course->FenceEventLog(), TEXT(", "))));
+	const strides::CsoRunLine& F0 = RC.finish;
+	G.Horse->PlaceAt(F0.x - FMath::Sin(F0.rot) * 4, F0.z - FMath::Cos(F0.rot) * 4, F0.rot, 6.2);
+	for (K = 0; K < 200 && G.Course->ChallengeActive(); ++K) G.Frame();
+	TestFalse(TEXT("tentative terminée"), G.Course->ChallengeActive());
+	AddInfo(FString::Printf(TEXT("fin : %s"), *P->LastMessage));
+	const auto It = Save->ChallengeRecords.find(Cfg->id);
+	TestTrue(TEXT("record écrit"), It != Save->ChallengeRecords.end() && It->second.hasBest && It->second.attempts == 1 && P->LastMessage.Contains(TEXT("Nouveau record")));
+	TestTrue(TEXT("cheval du joueur rendu"), G.Horse->JumpMulOverride < 0);
+	{
+		strides::SaveGame Core;
+		UStridesSaveGame* SG = Cast<UStridesSaveGame>(UGameplayStatics::LoadGameFromSlot(Save->SlotName, 0));
+		std::string E;
+		TestTrue(TEXT("record relu dans l'emplacement"), SG && strides::SaveGame::fromJson(TCHAR_TO_UTF8(*SG->Json), Core, E) && Core.challenges.count(Cfg->id) && Core.challenges[Cfg->id].hasBest);
+	}
+	G.Tap(TEXT("KeyP"));
+	Draw();
+	Choose(TEXT("app:activities"));
+	Draw();
+	const FString Texts = FString::Join(Hud->PhoneTexts(), TEXT(" | "));
+	TestTrue(FString::Printf(TEXT("carte : « Record : … » (%s)"), *Texts.Left(300)), Texts.Contains(TEXT("Record : ")) && Texts.Contains(TEXT("1 tentative")));
+	// 2e tentative : cavalier descendu → éliminé, pas de record.
+	TestTrue(TEXT("2e tentative lancée"), Index(Item) >= 0 && Choose(Item) && G.Course->ChallengeActive());
+	for (K = 0; K < 400 && G.Course->Run()->step() != strides::CsoStep::Course; ++K) G.Frame();
+	G.Tap(TEXT("KeyE"));  // descendre (à l'arrêt)
+	for (K = 0; K < 200 && G.Course->ChallengeActive(); ++K) G.Frame();
+	AddInfo(FString::Printf(TEXT("2e tentative : %s"), *P->LastMessage));
+	TestTrue(TEXT("2e tentative : éliminé, record gardé, 2 tentatives"), !G.Course->ChallengeActive() && Save->ChallengeRecords[Cfg->id].attempts == 2 && Save->ChallengeRecords[Cfg->id].hasBest && P->LastMessage.Contains(TEXT("Éliminé")));
+	UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
 	return true;
 }
 

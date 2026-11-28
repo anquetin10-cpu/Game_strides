@@ -484,6 +484,7 @@ void AStridesCourse::TickRun(const strides::CsoRunFrame& Frame, strides::CsoCade
 	}
 	RunPtr->update(Frame, Cadence);
 	FlushRunCalls();
+	TickChallenge();
 }
 
 // ---------- Entraînement à l'abord (jalon J2c, lot J2-D) ----------

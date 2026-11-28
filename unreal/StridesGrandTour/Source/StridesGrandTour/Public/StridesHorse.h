@@ -84,6 +84,11 @@ public:
 	strides::Zone JumpTiming() const;
 	// Puissance du saut (horse.js jumpPower) : jumpPeak lu dans Content/Data × saut du profil (équipement et état absents).
 	double JumpPower() const;
+	// Jalon J4-D : cheval fourni d'un défi (statistique de saut fixe : HORSE.jumpPeak × saut du défi) ; < 0 : cheval du joueur.
+	double JumpMulOverride = -1;
+	// Position d'avant la tentative (x, z, cap ; repère web), rendue à la fin du défi (challengeRun._exit).
+	bool bChallengeReturn = false;
+	FVector ChallengeReturn = FVector::ZeroVector;
 	// Hauteur du sol (m, repère web) sous un point.
 	double GroundAt(double WebX, double WebZ) const;
 	double WebX() const { return X; }

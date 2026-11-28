@@ -5,6 +5,8 @@
 #include "StridesDataSubsystem.h"
 #include "StridesFence.h"
 #include "StridesRivalHorse.h"
+#include "StridesSaveSubsystem.h"
+#include "StridesProgressionSubsystem.h"
 #include "StridesUnits.h"
 #include "Engine/World.h"
 
@@ -150,4 +152,101 @@ void AStridesCourse::TickEvent(const strides::CsoRunFrame& Frame, double SpeedMS
 	}
 	for (int32 I = 0; I < Rivals.Num() && I < (int32)RV.size(); ++I)
 		if (Rivals[I]) Rivals[I]->Apply(RV[I].x, RV[I].z, RV[I].heading, RV[I].speed, Data ? Data->TerrainHeight(RV[I].x, RV[I].z) : 0.0);
+}
+
+// ---------- Jalon J4-D : défi à conditions fixes ----------
+
+bool AStridesCourse::StartChallenge(const strides::ChallengeConfig& Cfg, const FString& PlayerName, double JumpPower)
+{
+	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
+	const strides::ChallengeData* CD = Data ? Data->Challenges() : nullptr;
+	if (!bRunConfig || !CD || MissionActive() || Cfg.courseId != "cso") return false;
+	strides::CsoRunConfig C = RunConfig;
+	C.playerName = TCHAR_TO_UTF8(*PlayerName);
+	C.horseName = Cfg.horseName;
+	C.lang = strides::Lang::Fr;
+	// challengeRun._steps : courseSteps({ gate: V.start, present: false, maxRefusals, timeAllowed, heights, jumpAid }) ; pas
+	// de bilan (résultat du défi à la place) ; élimination = fin de la tentative avec un résultat (et non un échec).
+	C.timeAllowed = Cfg.timeAllowed;
+	C.maxRefusals = Cfg.refusalsToEliminate;
+	C.present = false;
+	C.result = false;
+	C.soft = true;
+	C.record = false;
+	C.gateX = CD->startX;
+	C.gateZ = CD->startZ;
+	C.gateR = 9;
+	C.aid = Cfg.jumpAid ? "full" : "off";
+	C.launch = true;
+	C.launchBig.fn = "big";
+	strides::CsoArg A0, A1, A2;
+	A0.s = strides::jsUpper(Cfg.name);
+	A1.s = "Défi rejouable · " + Cfg.id;
+	A2.isNum = true;
+	A2.n = 2400;
+	C.launchBig.args = {A0, A1, A2};
+	// Hauteur unique du défi (ob.setHeights(cfg.obstacles.map(() => cfg.height))) ; contrôle de capacité du cheval fourni.
+	CourseHeightsV.assign((size_t)NumCourseFences, Cfg.height);
+	strides::CsoCapacityInput In;
+	for (const strides::CsoObstacle& O : CoreObstacles)
+		if (O.course == "cso") In.fences.push_back({O.kind, O.spread, O.h});
+	In.heights = CourseHeightsV;
+	In.power = JumpPower;
+	In.horseName = C.horseName;
+	const strides::CsoCapacity Cap = strides::csoCapacity(In, RunText, C.lang, Data->Jump());
+	C.capacity = Cap.step;
+	C.hopeless = Cap.hopeless;
+	C.capWho = Cap.who;
+	C.capInitials = Cap.initials;
+	C.capText = Cap.text;
+	C.courseTitle = Cfg.name;
+	ChallengeCfg = Cfg;
+	bChallenge = true;
+	bChallengeResult = false;
+	ChallengeAttempt = Cfg.id + "-" + std::to_string(FPlatformTime::Cycles64() % 1000000007ULL) + "-" + std::to_string(++ChallengeSerial);
+	RefreshPropSigns();
+	StartRunWith(C, RunText);
+	UE_LOG(LogTemp, Display, TEXT("Strides défi : %hs lancé (tentative %hs, %d s accordées, %.2f m)"), Cfg.id.c_str(), ChallengeAttempt.c_str(), Cfg.timeAllowed, Cfg.height);
+	return true;
+}
+
+void AStridesCourse::TickChallenge()
+{
+	if (!bChallenge || !RunPtr) return;
+	// _pin : heure et météo du défi réappliquées à chaque image.
+	if (UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr)
+		Save->GameTime = ChallengeCfg.weatherDay * 86400.0 + ChallengeCfg.weatherHour * 3600.0;
+	if (!RunPtr->finished()) return;
+	// _finish : résultat de la tentative (barres = (fautes − refus × 4) / 4), record, titre.
+	const strides::CsoRunState& St = RunPtr->state();
+	const int Rails = FMath::Max(0, FMath::RoundToInt((St.faults - St.refusals * ChallengeCfg.firstRefusal) / (double)ChallengeCfg.rail));
+	ChallengeRes = strides::makeChallengeResult(ChallengeCfg, ChallengeAttempt, St.faults, St.refusals, Rails, St.t, St.eliminated ? (St.eliminatedReason.empty() ? std::string("Éliminé") : St.eliminatedReason) : std::string());
+	UStridesSaveSubsystem* Save = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>() : nullptr;
+	ChallengeRec = Save ? Save->RecordChallenge(ChallengeRes) : strides::RecordOutcome();
+	const std::string Title = ChallengeRes.isEliminated() ? "Éliminé" : ChallengeRec.isRecord ? "Nouveau record" : "Parcours terminé";
+	strides::CsoCall Big;
+	Big.fn = "big";
+	strides::CsoArg B0, B1, B2;
+	B0.s = strides::jsUpper(Title);
+	B1.s = strides::challengeResultLine(ChallengeRes);
+	B2.isNum = true;
+	B2.n = 3200;
+	Big.args = {B0, B1, B2};
+	Hud.call(Big);
+	if (UStridesProgressionSubsystem* P = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>())
+		P->LastMessage = FString::Printf(TEXT("%s · %s · %s"), UTF8_TO_TCHAR(ChallengeCfg.name.c_str()), UTF8_TO_TCHAR(Title.c_str()),
+			UTF8_TO_TCHAR((ChallengeRes.isEliminated() ? ChallengeRes.eliminated : strides::challengeResultLine(ChallengeRes)).c_str()));
+	// _exit : hauteurs du parcours rendues.
+	CourseHeightsV = HeightsFor(CourseHeight);
+	bChallenge = false;
+	bChallengeResult = true;
+}
+
+bool AStridesCourse::TakeChallengeResult(strides::ChallengeResult& Out, strides::RecordOutcome& Rec)
+{
+	if (!bChallengeResult) return false;
+	bChallengeResult = false;
+	Out = ChallengeRes;
+	Rec = ChallengeRec;
+	return true;
 }

@@ -142,3 +142,10 @@ target_sources(strides_core PRIVATE ${CORE}/Private/Epreuves.cpp)
 add_executable(strides_epreuves_tests tests/test_epreuves.cpp)
 target_link_libraries(strides_epreuves_tests strides_core)
 add_test(NAME epreuves COMMAND strides_epreuves_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)
+# Jalon J4-D : défis à conditions fixes du web (challenge.js : makeResult, compareResults, recordResult, resultLine)
+# portés en C++ (StridesCore/Challenge), contre l'oracle du vrai module (tests/oracles/defis.json,
+# scripts/unreal/export-defis.mjs) ; données lues dans Content/Data/challenges.json ; ctest « defis ».
+target_sources(strides_core PRIVATE ${CORE}/Private/Challenge.cpp)
+add_executable(strides_defis_tests tests/test_defis.cpp)
+target_link_libraries(strides_defis_tests strides_core)
+add_test(NAME defis COMMAND strides_defis_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/oracles ${CMAKE_CURRENT_SOURCE_DIR}/../StridesGrandTour/Content/Data)

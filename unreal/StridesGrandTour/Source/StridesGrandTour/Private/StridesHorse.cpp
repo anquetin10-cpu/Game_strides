@@ -669,7 +669,7 @@ double AStridesHorse::JumpPower() const
 	const UStridesDataSubsystem* Data = DataSub();
 	const FStridesHorseProfile* P = Data ? Data->FindHorse(ProfileId) : nullptr;
 	// horse.js : jumpPower = HORSE.jumpPeak × jump du cheval × (1 + équipement) × état (équipement et état : tranches suivantes).
-	return (Data ? Data->JumpPeak : 1.35) * (P ? P->JumpMul : 1.0);
+	return (Data ? Data->JumpPeak : 1.35) * (JumpMulOverride > 0 ? JumpMulOverride : P ? P->JumpMul : 1.0);
 }
 
 void AStridesHorse::ChangeGait(int32 Delta)
@@ -921,6 +921,13 @@ void AStridesHorse::TickCso(float Dt, bool bSimPaused)
 		Course->TickRun(RF, Cad);
 		// Jalon J4 : épreuve de la mission en cours (cross, course) après le parcours du Pôle.
 		Course->TickEvent(RF, Sim.speed, Cad);
+		// Jalon J4-D : fin d'un défi : cheval du joueur rendu (statistiques), position d'avant la tentative.
+		if (JumpMulOverride > 0 && !Course->ChallengeActive())
+		{
+			JumpMulOverride = -1;
+			if (bChallengeReturn) PlaceAt(ChallengeReturn.X, ChallengeReturn.Y, ChallengeReturn.Z);
+			bChallengeReturn = false;
+		}
 		Sim.hasCadence = Cad.has;
 		Sim.cadence = Cad.v;
 		double TX, TZ, TH;
