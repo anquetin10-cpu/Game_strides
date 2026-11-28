@@ -608,7 +608,7 @@ pied est collée à son corps (gros plan du jean). Sauvegarde de Julien du paque
 inchangée après les lancements (aucun choix fait sur le titre, sauvegarde automatique coupée).
 
 **Partie manuelle en paquet : BLOQUÉE.** La fenêtre système « Forcer des applications à quitter » (`loginwindow`, 392 × 455
-en (1500 ; 466)) est restée ouverte pendant toute l'étape (vérifiée à 23 h 57, 0 h 48, 1 h 09, 1 h 45 et 2 h 30) ; les règles
+en (1500 ; 466)) est restée ouverte pendant toute l'étape (vérifiée à 23 h 57, 0 h 48, 1 h 09, après chaque paquet et à 2 h 20) ; les règles
 du poste partagé interdisent toute entrée injectée tant qu'elle est affichée. Ni la session de 15 minutes de J4, ni les
 vérifications en paquet de J3b (mission au téléphone, GPS, reprise, véhicule conduit, fer d'or) n'ont pu être jouées :
 **à confirmer**. Le parcours joueur complet est couvert dans le moteur par `Strides.Scenario.Career`.
