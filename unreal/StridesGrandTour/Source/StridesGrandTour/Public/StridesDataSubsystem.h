@@ -21,6 +21,7 @@
 #include "StridesCsoScenery.h"
 #include "StridesCore/Vehicle.h"
 #include "StridesCore/Epreuves.h"
+#include "StridesCore/Paris.h"
 #include "StridesCore/Challenge.h"
 #include "StridesDataSubsystem.generated.h"
 
@@ -228,6 +229,11 @@ public:
 	// Jalon J4 : épreuves des missions cross et derby, réglages du Grand Prix de Paris (Content/Data/mission_events.json,
 	// scripts/unreal/export-epreuves.mjs ; lecture du cœur, celle du ctest « epreuves ») ; nul si absent ou illisible.
 	const strides::MissionEvents* Events() const { return bEvents ? &EventsDef : nullptr; }
+	// Jalon J4 (correction) : Grand Prix de Paris Indoor (Content/Data/paris_gp.json, scripts/unreal/export-paris.mjs ;
+	// lecture du cœur, celle du ctest « paris ») : arène de Paris, tracés du Sprint et du Grand Prix, paddock, A13.
+	const strides::ParisGpData* Paris() const { return bParis ? &ParisDef : nullptr; }
+	// Région de Paris (sites.js inParis : x > PARIS.x − 1000) : sol plat de la dalle de Paris (TerrainHeight).
+	bool InParis(double X) const { return bParis && X > ParisDef.site.x - 1000; }
 	// Jalon J4-D : défis à conditions fixes du web (Content/Data/challenges.json, scripts/unreal/export-defis.mjs).
 	const strides::ChallengeData* Challenges() const { return bChallenges ? &ChallengesDef : nullptr; }
 	const FStridesHorseProfile* FindHorse(const FString& Id) const;
@@ -242,6 +248,8 @@ private:
 	bool bVehicles = false;
 	strides::MissionEvents EventsDef;
 	bool bEvents = false;
+	strides::ParisGpData ParisDef;
+	bool bParis = false;
 	strides::ChallengeData ChallengesDef;
 	bool bChallenges = false;
 	bool LoadJson(const FString& File, TSharedPtr<class FJsonObject>& Out);

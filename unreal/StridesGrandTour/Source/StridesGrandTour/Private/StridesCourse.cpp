@@ -15,6 +15,8 @@
 AStridesCourse::AStridesCourse()
 {
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("Root")));
+	// Jalon J4 (correction) : Grand Prix de Paris et autoroute A13 (StridesCourseParis.cpp).
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void AStridesCourse::Build(const strides::CourseDesign& Design, const UStridesDataSubsystem& Data)
@@ -39,6 +41,8 @@ void AStridesCourse::Build(const strides::CourseDesign& Design, const UStridesDa
 	BuildWarmup(Data);
 	// Jalon J4 : obstacles fixes du cross de Saint-Gatien (mission « cross »).
 	BuildCross(Data);
+	// Jalon J4 (correction) : obstacles de l'arène de Paris (Sprint, Grand Prix) et du paddock de Paris.
+	BuildParis(Data);
 }
 
 void AStridesCourse::ApplyHeights(const std::vector<double>& Heights)
@@ -100,7 +104,38 @@ void AStridesCourse::RebuildColliders()
 	}
 	// Chandeliers et ailes (obstacles.js add), solides pour le cheval.
 	for (const strides::CsoObstacle& O : CoreObstacles)
-		strides::addObstacleWings(WorldCol, O.kind, O.x, O.z, O.rot, O.w, O.h, O.spread, Ground(O.x, O.z));
+		if (!O.off) strides::addObstacleWings(WorldCol, O.kind, O.x, O.z, O.rot, O.w, O.h, O.spread, Ground(O.x, O.z));
+	// Jalon J4 (correction) : arène de Paris (paris.js) : murs de la salle (porte des cavaliers à l'ouest), lice de la
+	// piste (sommet sol + 1,3 m, entrée de 5,6 m à l'ouest), tribunes, lice du paddock, tentes ; mêmes boîtes que le web.
+	if (const strides::ParisGpData* PD = Data ? Data->Paris() : nullptr)
+	{
+		const strides::ParisSite& P = PD->site;
+		const double X = P.x, Z = P.z, Inf = std::numeric_limits<double>::infinity();
+		const double HW = P.hall.w / 2, HD = P.hall.d / 2;
+		const double Dz0 = P.door.z - Z - P.doorW / 2, Dz1 = P.door.z - Z + P.doorW / 2;
+		WorldCol.addBox(X - HW, Z + (-HD + Dz0) / 2, 0.3, (Dz0 + HD) / 2, 0, Inf, "arena-wall");
+		WorldCol.addBox(X - HW, Z + (Dz1 + HD) / 2, 0.3, (HD - Dz1) / 2, 0, Inf, "arena-wall");
+		WorldCol.addBox(X + HW, Z, 0.3, HD, 0, Inf, "arena-wall");
+		WorldCol.addBox(X, Z - HD, HW, 0.3, 0, Inf, "arena-wall");
+		WorldCol.addBox(X, Z + HD, HW, 0.3, 0, Inf, "arena-wall");
+		const double Hx = P.arena.w / 2, Hz = P.arena.d / 2, Top = P.y + 1.3;
+		const double Gz0 = P.gate.z - Z - 2.8, Gz1 = P.gate.z - Z + 2.8;
+		WorldCol.addBox(X, Z - Hz, Hx, 0.1, 0, Top, "arena-boards");
+		WorldCol.addBox(X, Z + Hz, Hx, 0.1, 0, Top, "arena-boards");
+		WorldCol.addBox(X + Hx, Z, 0.1, Hz, 0, Top, "arena-boards");
+		WorldCol.addBox(X - Hx, Z + (Gz1 + Hz) / 2, 0.1, (Hz - Gz1) / 2, 0, Top, "arena-boards");
+		WorldCol.addBox(X - Hx, Z + (-Hz + Gz0) / 2, 0.1, (Gz0 + Hz) / 2, 0, Top, "arena-boards");
+		for (const strides::ParisRect& St : P.stands)
+		{
+			const bool bEast = FMath::Abs(FMath::Abs(St.rot) - UE_DOUBLE_HALF_PI) < 0.01;
+			WorldCol.addBox(St.x, St.z, (bEast ? St.d : St.w) / 2, (bEast ? St.w : St.d) / 2, St.rot, Inf, "stands");
+		}
+		const strides::ParisRect& Wu = P.warmup;
+		const double GapPos = FMath::Clamp((P.door.z - (Wu.z - Wu.d / 2)) / Wu.d, 0.15, 0.85);
+		strides::addFence(WorldCol, strides::rectFencePoints(Wu.x, Wu.z, Wu.w, Wu.d, 'e', 6, GapPos), false, 1.0, false, "fence", Ground);
+		WorldCol.addBox(P.stables.x, P.stables.z, P.stables.w / 2, P.stables.d / 2, 0, Inf, "barn");
+		WorldCol.addBox(P.secretariat.x, P.secretariat.z - 3.5, 2.5, 1.5, 0, Inf, "tent");
+	}
 	// Jalon J3 (correction) : véhicules garés du web, obstacles statiques (vehicle.js : addBox(x, z, W/2 + 0.12, L/2 + 0.1,
 	// cap, Infinity, id)) ; le cheval ne les traverse plus.
 	if (Data)
@@ -313,6 +348,21 @@ bool AStridesCourse::AdvanceDialog()
 	bDialog = false;
 	// Jalon J4 : dialogue d'une épreuve de mission (Paul au cross, Victor à la course).
 	if (bEventDialog && EventPtr) { bEventDialog = false; EventPtr->closeDialog(); return true; }
+	// Jalon J4 (correction) : dialogue de Margot (Grand Prix de Paris) : réplique suivante, puis fin du dialogue.
+	if (bParisDialog && ParisPtr)
+	{
+		if (ParisDialogQueue.Num())
+		{
+			DialogLine = ParisDialogQueue[0];
+			ParisDialogQueue.RemoveAt(0);
+			bDialog = true;
+			return true;
+		}
+		bParisDialog = false;
+		ParisPtr->closeDialog();
+		return true;
+	}
+	if (bParisCap && ParisPtr) { bParisCap = false; ParisPtr->capacityClosed(); return true; }
 	if (RunPtr) RunPtr->closeCapacityDialog();
 	return true;
 }
@@ -570,6 +620,14 @@ bool AStridesCourse::PressTrainingEnd()
 
 strides::CsoCourseMode AStridesCourse::CourseMode() const
 {
+	// Jalon J4 (correction) : manche du Grand Prix de Paris ; obstacle suivant ramené à son rang dans Obstacles().
+	if (ParisPtr && ParisPtr->round() && ParisPtr->round()->course().active)
+	{
+		strides::CsoCourseMode M = ParisPtr->round()->course();
+		const int32 First = ParisPtr->roundKind() == strides::ParisRun::Round::Sprint ? ParisSprintFirst : ParisGpFirst;
+		if (M.next >= 0 && First >= 0) M.next += First;
+		return M;
+	}
 	if (RunPtr && !RunPtr->finished() && RunPtr->course().active) return RunPtr->course();
 	if (TrainingActive())
 	{
@@ -583,6 +641,7 @@ strides::CsoCourseMode AStridesCourse::CourseMode() const
 FString AStridesCourse::ObjectiveText() const
 {
 	if (EventActive()) return UTF8_TO_TCHAR(EventPtr->text().c_str());
+	if (ParisActive()) return UTF8_TO_TCHAR(ParisPtr->text().c_str());
 	if (RunPtr && !RunPtr->finished()) return UTF8_TO_TCHAR(RunPtr->text().c_str());
 	if (TrainingActive()) return UTF8_TO_TCHAR(TrainingPtr->text(LastTrainFrame).c_str());
 	return FString();
@@ -688,6 +747,20 @@ void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool
 		F.board = false;
 		F.jumpTiming = strides::csoJumpTiming(M.active, false, TCHAR_TO_UTF8(*JumpAid), Timing);
 	}
+	else if (ParisPtr && ParisPtr->round())
+	{
+		// Jalon J4 (correction) : manche du Grand Prix de Paris (courseSteps CSO : game.course { kind: 'cso', controls:
+		// 'cso', hud }).
+		const strides::CsoRun* R = ParisPtr->round();
+		Hud.setObjective(true);
+		const strides::CsoCourseMode& M = R->course();
+		F.course = M.active;
+		F.controlsCso = M.active;
+		F.kindCso = M.active;
+		F.board = R->board(F.info);
+		F.jumpTiming = strides::csoJumpTiming(M.active, M.pre, R->config().aid, Timing);
+	}
+	else if (ParisActive()) Hud.setObjective(true);
 	else if (EventActive())
 	{
 		// Jalon J4 : cross (game.course { kind: 'xc', controls: null, hud: hudInfo } : tableau sans commandes de
@@ -717,23 +790,25 @@ void AStridesCourse::UpdateHud(double Dt, bool bHasCadence, double Cadence, bool
 
 void AStridesCourse::NoteLastJump(bool bHas, int32 ObstacleIndex, const strides::JumpPlan& Plan, double JumpTime)
 {
-	if (!RunPtr) return;
+	// Jalon J4 (correction) : manche du Grand Prix de Paris comprise (Run()).
+	strides::CsoRun* RP = Run();
+	if (!RP) return;
 	if (!bHas)
 	{
 		// Cheval posé (horse.setPosition : _lastJump = null).
-		if (RunPtr->lastJump().has) RunPtr->setLastJump(strides::CsoLastJump());
+		if (RP->lastJump().has) RP->setLastJump(strides::CsoLastJump());
 		LastJumpTime = -1;
 		return;
 	}
 	// Un nouveau saut (horse._lastJump remplacé) : obstacle sauté (numéro du parcours) et qualité de l'appel.
-	if (JumpTime == LastJumpTime && RunPtr->lastJump().has) return;
+	if (JumpTime == LastJumpTime && RP->lastJump().has) return;
 	LastJumpTime = JumpTime;
 	strides::CsoLastJump L;
 	L.has = true;
 	const AStridesFence* F = FenceAt(ObstacleIndex);
 	L.num = F ? F->Num : -1;
 	L.quality = strides::qualityName(strides::takeoffQuality(Plan));
-	RunPtr->setLastJump(L);
+	RP->setLastJump(L);
 }
 
 void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::CsoCadence& Cadence)
@@ -758,6 +833,13 @@ void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::Cs
 			EventPtr->obstacleEvent(K0, Fence->Num, E.dir, E.cause, E.cause.empty() ? std::string() : RunText.cause(E.cause, strides::Lang::Fr), Cadence);
 			continue;
 		}
+		// Jalon J4 (correction) : Grand Prix de Paris : paddock (échauffement : sauts comptés) et manche en cours.
+		if (ParisPtr && Fence->Course.StartsWith(TEXT("paris")))
+		{
+			if (Fence->Course == TEXT("paris_warm")) ParisPtr->warmEvent(K0);
+			else ParisPtr->obstacleEvent(K0, TCHAR_TO_UTF8(*Fence->Course), Fence->Num, E.dir, E.cause, E.cause.empty() ? std::string() : RunText.cause(E.cause, strides::Lang::Fr), Cadence);
+			continue;
+		}
 		if (!RunPtr || Fence->Course != TEXT("cso")) continue;
 		const strides::CsoObstacleEventKind K = E.kind == strides::CsoFenceEventKind::Clear ? strides::CsoObstacleEventKind::Clear
 			: E.kind == strides::CsoFenceEventKind::Fault ? strides::CsoObstacleEventKind::Fault : strides::CsoObstacleEventKind::Refusal;
@@ -767,6 +849,7 @@ void AStridesCourse::HandleFenceOut(const strides::CsoFenceOut& Out, strides::Cs
 	FlushRunCalls();
 	FlushTrainingCalls();
 	FlushEventCalls();
+	FlushParisCalls();
 }
 
 void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double FocusZ)
@@ -776,7 +859,7 @@ void AStridesCourse::UpdateFences(double Dt, double Time, double FocusX, double 
 	In.time = Time;
 	// obstacles.js update : hors mission (g.missions.active nul), une barre tombée est remise une fois le joueur à plus de
 	// 60 m ; la mission du portage est l'épreuve du Pôle, active jusqu'à sa fin (bilan ou échec).
-	In.missionActive = (RunPtr && !RunPtr->finished()) || EventActive();
+	In.missionActive = (RunPtr && !RunPtr->finished()) || EventActive() || ParisActive();
 	In.focusX = FocusX;
 	In.focusZ = FocusZ;
 	strides::CsoFenceOut Out;
@@ -849,6 +932,15 @@ bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVe
 }
 FString AStridesCourse::StatusText() const
 {
+	if (ParisActive())
+	{
+		const FString Objective = UTF8_TO_TCHAR(ParisPtr->text().c_str());
+		strides::CsoBoard B;
+		if (!ParisPtr->round() || !ParisPtr->round()->board(B)) return Objective;
+		FString S;
+		for (int32 K = 0; K < 4; K++) S += (K ? TEXT(" ") : TEXT("")) + FString(UTF8_TO_TCHAR(B.txt[K].c_str()));
+		return Objective.IsEmpty() ? S : S + TEXT(" · ") + Objective;
+	}
 	if (EventActive())
 	{
 		strides::CsoBoard B;

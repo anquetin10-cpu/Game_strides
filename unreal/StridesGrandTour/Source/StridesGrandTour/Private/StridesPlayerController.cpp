@@ -404,10 +404,10 @@ void AStridesPlayerController::FeedKey(const FString& Code, bool bDown, bool bRe
 		if (Code == TEXT("Backspace")) { if (!bRepeat) PhoneBack(); return; }
 	}
 	// Carte ouverte : gauche / droite choisissent le bouton (choix n° 8) ; la touche ne va pas au cheval (gel des commandes).
-	if (bDown && !bRepeat && Screens && CardOpen() && !bPausedState)
+	if (bDown && !bRepeat && CardOpen() && !bPausedState)
 	{
-		if (Code == TEXT("ArrowLeft") || Code == TEXT("KeyA") || Code == TEXT("KeyQ")) { Screens->MoveSelection(-1); return; }
-		if (Code == TEXT("ArrowRight") || Code == TEXT("KeyD")) { Screens->MoveSelection(1); return; }
+		if (Code == TEXT("ArrowLeft") || Code == TEXT("KeyA") || Code == TEXT("KeyQ")) { CardMove(-1); return; }
+		if (Code == TEXT("ArrowRight") || Code == TEXT("KeyD")) { CardMove(1); return; }
 	}
 	Cmd.key(TCHAR_TO_UTF8(*Code), bDown, bRepeat);
 }
@@ -444,6 +444,8 @@ bool AStridesPlayerController::InputTouch(const FTouchId TouchId, const ETouchTy
 		Name = TEXT("Began");
 		// Téléphone ouvert : le doigt touche ses éléments (px du viewport), pas la surface de jeu.
 		if (bPhoneOpen && !bPausedState) { PhoneTapAt(TouchLocation); break; }
+		// Carte du Grand Prix de Paris ou de l'A13 (dessinée sur le canevas) : bouton touché.
+		if (!bPausedState && CardTapAt(TouchLocation)) break;
 		FeedPointerDown(Id, false, Css);
 		break;
 	case ETouchType::Moved: Name = TEXT("Moved"); FeedPointerMove(Id, false, Css); break;
@@ -459,9 +461,28 @@ bool AStridesPlayerController::InputTouch(const FTouchId TouchId, const ETouchTy
 	return true;
 }
 
+void AStridesPlayerController::SyncTitleHud()
+{
+	const bool bTitle = IsTitleOpen();
+	if (bTitle == bHudHiddenForTitle) return;
+	UUserWidget* Hud = CsoHud.Get();
+	if (bTitle)
+	{
+		if (Hud) { SavedCsoHudVis = (uint8)Hud->GetVisibility(); Hud->SetVisibility(ESlateVisibility::Collapsed); }
+		if (TouchControls) { SavedTouchVis = (uint8)TouchControls->GetVisibility(); TouchControls->SetVisibility(ESlateVisibility::Collapsed); }
+	}
+	else
+	{
+		if (Hud) Hud->SetVisibility((ESlateVisibility)SavedCsoHudVis);
+		if (TouchControls) TouchControls->SetVisibility((ESlateVisibility)SavedTouchVis);
+	}
+	bHudHiddenForTitle = bTitle;
+}
+
 void AStridesPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
+	SyncTitleHud();
 	StepCommands(DeltaTime);
 	PhoneTick();
 	// Sauvegarde automatique toutes les 12 s de jeu (game.js update), jamais en pause ni sur l'écran titre (state 'title' :
@@ -516,7 +537,7 @@ void AStridesPlayerController::StepCommands(float Dt)
 	// game.js:1467-1469 : action (E, F, Entrée, bouton d'action) — dialogue fermé, sinon action proposée.
 	if (bCanAct && Cmd.wasPressed("action")) DoAction();
 	// Carte ouverte : Entrée / E / F déclenchent son bouton principal (choix n° 8 : le bouton HTML du web se prend au clavier).
-	else if (bOverlay && !bPhoneOpen && Cmd.wasPressed("action") && Screens) Screens->PressPrimary();
+	else if (bOverlay && !bPhoneOpen && Cmd.wasPressed("action")) CardPress();
 	// frozenInput (game.js:1478) : téléphone, carte ou dialogue.
 	if (!bCanAct || DialogOpen())
 	{
@@ -799,6 +820,11 @@ bool AStridesPlayerController::InputKey(const FInputKeyEventArgs& Params)
 		float X = 0, Y = 0;
 		if (GetMousePosition(X, Y)) { PhoneTapAt(FVector2D(X, Y)); return true; }
 	}
+	if (!bPhoneOpen && !bPausedState && Params.Key == EKeys::LeftMouseButton && Params.Event == IE_Pressed)
+	{
+		float X = 0, Y = 0;
+		if (GetMousePosition(X, Y) && CardTapAt(FVector2D(X, Y))) return true;
+	}
 	return Super::InputKey(Params);
 }
 void AStridesPlayerController::TogglePhone()
@@ -898,13 +924,13 @@ void AStridesPlayerController::OnMove(const FInputActionValue& V)
 	}
 	// Carte ouverte (ou carte Pause) : stick gauche poussé à gauche / à droite = bouton précédent / suivant (un pas par poussée).
 	const bool bPauseCard = bPausedState && PauseMenu && PauseMenu->IsOpen();
-	if ((Screens && CardOpen() && !bPausedState) || bPauseCard)
+	if ((CardOpen() && !bPausedState) || bPauseCard)
 	{
 		const int32 Dir = In.X > .6 ? 1 : In.X < -.6 ? -1 : 0;
 		if (Dir != 0 && Dir != CardStickDir)
 		{
 			if (bPauseCard) PauseMenu->MoveSelection(Dir);
-			else Screens->MoveSelection(Dir);
+			else CardMove(Dir);
 		}
 		CardStickDir = Dir;
 	}
@@ -935,7 +961,7 @@ void AStridesPlayerController::OnInteract()
 	// Manette (X) et bouton tactile du portage : même action que E / F / Entrée, hors carte et téléphone.
 	if (!bPhoneOpen && !CardOpen() && !bPausedState) DoAction();
 	// Carte ouverte : bouton principal (choix n° 8), comme Entrée / E / F au clavier.
-	else if (!bPhoneOpen && CardOpen() && !bPausedState && Screens) Screens->PressPrimary();
+	else if (!bPhoneOpen && CardOpen() && !bPausedState) CardPress();
 	// Carte Pause : bouton choisi (choix n° 9).
 	else if (bPausedState && PauseMenu && PauseMenu->IsOpen()) PauseMenu->PressSelected();
 }
@@ -967,7 +993,30 @@ AStridesCourse* AStridesPlayerController::EntryCourse() const
 bool AStridesPlayerController::CardOpen() const
 {
 	const AStridesCourse* C = EntryCourse();
-	return C && C->Screen() != AStridesCourse::EScreen::None;
+	// Jalon J4 (correction) : cartes du Grand Prix de Paris et de l'autoroute A13 (dessinées par AStridesHUD).
+	return C && (C->Screen() != AStridesCourse::EScreen::None || C->ActiveCardOpen());
+}
+
+bool AStridesPlayerController::CardPress()
+{
+	if (AStridesCourse* C = EntryCourse(); C && C->ActiveCardOpen()) return C->PressCardSelected();
+	return Screens && Screens->PressPrimary();
+}
+
+void AStridesPlayerController::CardMove(int32 Dir)
+{
+	if (AStridesCourse* C = EntryCourse(); C && C->ActiveCardOpen()) { C->MoveCardSelection(Dir); return; }
+	if (Screens) Screens->MoveSelection(Dir);
+}
+
+bool AStridesPlayerController::CardTapAt(const FVector2D& ViewportPx)
+{
+	AStridesCourse* C = EntryCourse();
+	const AStridesHUD* H = Cast<AStridesHUD>(GetHUD());
+	if (!C || !H || !C->ActiveCardOpen()) return false;
+	// Bouton touché ; ailleurs sur la carte : rien (le bouton HTML du web se touche lui-même).
+	const FString Id = H->CardButtonAt(ViewportPx);
+	return !Id.IsEmpty() && C->PressCard(Id);
 }
 
 bool AStridesPlayerController::DialogOpen() const
@@ -980,6 +1029,7 @@ FString AStridesPlayerController::ActionLabel() const
 {
 	// Jalon J2c : « Terminer » de l'entraînement (priorité 2, à cheval comme à pied, rayon illimité).
 	if (const AStridesCourse* C = EntryCourse(); C && C->TrainingEndAvailable()) return C->TrainingEndLabel();
+	if (const AStridesCourse* C = EntryCourse(); C && C->ParisInteractAvailable()) return TEXT("Accréditation");
 	// Jalon J3b : véhicules (player.js interactions « vehicle-in », « truck-out »).
 	if (const AStridesVehicle* V = Cast<AStridesVehicle>(GetPawn())) return V->CanExit() ? FString(TEXT("Descendre")) : FString();
 	if (const AStridesRider* R = Cast<AStridesRider>(GetPawn()); R && !R->MountedOn && !R->HorseInReach() && NearVehicle()) return TEXT("Monter");
@@ -1000,6 +1050,12 @@ bool AStridesPlayerController::DoAction()
 	{
 		// hud.advanceDialog : réplique passée → click() (hud.js:570).
 		if (Audio) Audio->Call(strides::csoClickCall(), "ui/hud.js");
+		return true;
+	}
+	// Jalon J4 (correction) : « Accréditation » du Grand Prix de Paris (priorité 3 : l'emporte sur monter / descendre).
+	if (AStridesCourse* C = EntryCourse(); C && C->PressParisInteract())
+	{
+		if (Audio) Audio->Click();
 		return true;
 	}
 	// Jalon J2c : « Terminer » l'entraînement (interact train:end, priorité 2 : l'emporte sur le poteau et la descente).

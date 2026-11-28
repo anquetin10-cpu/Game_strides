@@ -7,6 +7,8 @@
 #include "StridesAmbientLife.h"
 #include "StridesCollectibles.h"
 #include "StridesCourse.h"
+#include "StridesHorse.h"
+#include "StridesParisVenue.h"
 #include "StridesCore/CsoEntry.h"
 #include "StridesDataSubsystem.h"
 #include "StridesProgressionSubsystem.h"
@@ -58,6 +60,9 @@ void AStridesWorldDirector::BuildWorld()
 	PoleDesign.x += Data->PoleArena.X;
 	PoleDesign.z += Data->PoleArena.Y;
 	PoleCourse->Build(PoleDesign, *Data);
+	// Jalon J4 (correction) : arène couverte du Grand Prix de Paris Indoor (région de Paris, 4 km à l'est).
+	if (Data->Paris())
+		if (AStridesParisVenue* PV = GetWorld()->SpawnActor<AStridesParisVenue>()) PV->Build(*Data);
 	// Jalon J3b : véhicules conduisibles du web (world.js parkedVehicles, Truck du Val) ; boîtes de collision du Pôle
 	// déplacées avec eux.
 	if (Data->Vehicles())
@@ -115,7 +120,50 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 	if (Progress && PoleCourse)
 	{
 		const FString Ev = Progress->CurrentEventId();
-		if (!Ev.IsEmpty())
+		if (Ev == TEXT("gpparis"))
+		{
+			// Jalon J4 (correction) : Grand Prix de Paris Indoor (StridesCore/Paris) ; déroulé tenu à chaque image par
+			// l'acteur du parcours, état recopié ici dans la progression (objectif, GPS, issue, montant).
+			if (!PoleCourse->Paris())
+			{
+				const UStridesSaveSubsystem* Sv = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>();
+				const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
+				TActorIterator<AStridesHorse> HIt(GetWorld());
+				AStridesHorse* Hs = HIt ? *HIt : nullptr;
+				const FStridesHorseProfile* Pr = Hs && D ? D->FindHorse(Hs->ProfileId) : nullptr;
+				PoleCourse->StartParis(Sv ? Sv->PlayerName : FString(TEXT("Alex")), Pr ? Pr->Name : FString(TEXT("ton cheval")), Hs ? Hs->JumpPower() : 1.35);
+			}
+			if (const strides::ParisRun* R = PoleCourse->Paris())
+			{
+				Progress->EventText = UTF8_TO_TCHAR(R->text().c_str());
+				double TX = 0, TZ = 0;
+				Progress->bEventHasTarget = R->target(TX, TZ);
+				Progress->EventTargetPos = FVector2D(TX, TZ);
+				Progress->bEventDone = R->finished();
+				Progress->bEventFailed = false;
+				Progress->EventFailText.Empty();
+				Progress->EventPay = R->finished() ? R->pay() : -1;
+				FString Res = UTF8_TO_TCHAR(R->resultTitle().c_str());
+				if (!R->resultBody().empty()) Res += TEXT(" · ") + FString(UTF8_TO_TCHAR(R->resultBody().c_str()));
+				if (R->stars() > 0) Res += FString::Printf(TEXT(" · %d★"), R->stars());
+				Progress->EventResultText = Res;
+				if (R->finished())
+				{
+					UE_LOG(LogTemp, Display, TEXT("Strides Grand Prix de Paris : fin « %s » (%d €, %d★, Sprint %d, départ %d, place %d)"), *Res, R->pay(), R->stars(), R->sprintRank(), R->order(), R->finalRank());
+					const FString Before = Progress->ActiveMissionId;
+					Progress->TickMission(FVector2D::ZeroVector, false, false, MissionDt);
+					if (Progress->ActiveMissionId.IsEmpty() && !Before.IsEmpty())
+					{
+						// def.after : message de fin de l'histoire (l'écran de fin du web n'est pas porté, choix n° 34).
+						Progress->LastMessage = TEXT("Grand Prix de Paris Indoor · Merci pour ce Grand Prix ! Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.");
+						if (UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
+							if (Save->bAutoSave && Pawn) Save->SaveNow(Cast<APlayerController>(Pawn->GetController()));
+					}
+					PoleCourse->ClearParis();
+				}
+			}
+		}
+		else if (!Ev.IsEmpty())
 		{
 			if (!PoleCourse->Event() || PoleCourse->EventId() != Ev)
 			{
@@ -150,6 +198,7 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 			}
 		}
 		else if (PoleCourse->Event()) PoleCourse->ClearEvent();
+		if (Ev != TEXT("gpparis") && PoleCourse->Paris()) PoleCourse->ClearParis();
 	}
 	// Balise du GPS (gps.js marker) : cible de la mission en cours, sinon le GPS posé à la main (app Activités, J3).
 	FVector2D Target;

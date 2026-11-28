@@ -29,6 +29,7 @@
 #include "StridesCore/JumpModel.h"
 #include "StridesCore/Epreuves.h"
 #include "StridesCore/Challenge.h"
+#include "StridesCore/Paris.h"
 #include <memory>
 #include "StridesCourse.generated.h"
 
@@ -68,7 +69,7 @@ public:
 	bool StartActivity(const FString& PlayerName, const FString& HorseName, double JumpPower, double Clearance);
 	// Mission en cours (g.missions.active) : déroulé lancé et pas terminé.
 	// Jalon J2c : l'entraînement à l'abord est aussi une mission (g.missions.active), de son lancement à sa fin.
-	bool MissionActive() const { return (RunPtr && !RunPtr->finished()) || TrainingActive() || EventActive(); }
+	bool MissionActive() const { return (RunPtr && !RunPtr->finished()) || TrainingActive() || EventActive() || ParisActive(); }
 	// ---- Jalon J4 : épreuves des missions cross et derby (StridesCore/Epreuves, déroulé du web) ----
 	// Obstacles fixes du cross de Saint-Gatien (course « xc », après ceux du parcours et du paddock), posés par Build.
 	int32 CrossFenceCount() const { return NumCrossFences; }
@@ -77,6 +78,52 @@ public:
 	bool StartEvent(const FString& Id, const FString& PlayerName);
 	// Épreuve lancée et pas finie ; épreuve (même finie, jusqu'à ClearEvent) et son identifiant.
 	bool EventActive() const { return EventPtr && !EventPtr->finished(); }
+	// ---- Jalon J4 (correction) : Grand Prix de Paris Indoor (StridesCore/Paris, mission « gpparis ») ----
+	// Obstacles du Sprint (« paris_sprint »), du Grand Prix (« paris_gp ») et du paddock de Paris (« paris_warm »), posés
+	// par Build après ceux du cross ; un seul des deux tracés en piste à la fois (obstacles.js showParisCourse).
+	bool StartParis(const FString& PlayerName, const FString& HorseName, double JumpPower);
+	bool ParisActive() const { return ParisPtr && !ParisPtr->finished(); }
+	const strides::ParisRun* Paris() const { return ParisPtr.get(); }
+	strides::ParisRun* MutableParis() { return ParisPtr.get(); }
+	void ClearParis();
+	// Une image du déroulé (appelée par le directeur du monde : joueur, cheval, camion, région).
+	void TickParis(const strides::ParisFrame& Frame, strides::CsoCadence& Cadence);
+	// Carte du Grand Prix ouverte (présentation d'une manche, classement du Sprint, podium) et son bouton choisi.
+	bool ParisCardOpen() const { return ParisPtr && ParisPtr->cardOpen(); }
+	const strides::ParisCard* ParisCard() const { return ParisCardOpen() ? &ParisPtr->card() : nullptr; }
+	bool PressParisButton(const FString& Id);
+	FString ParisPrimaryButton() const;
+	int32 ParisFenceStart(const FString& Course) const;
+	const FString& ParisShownCourse() const { return ParisShown; }
+	int32 ParisFenceCount() const { return NumParisFences; }
+	// Image de l'acteur : déroulé du Grand Prix de Paris à chaque image (pas de la simulation ; rien en pause), et
+	// bretelles de l'autoroute A13 (travel.js : proposition de trajet au volant du camion arrêté sur une bretelle).
+	virtual void Tick(float DeltaSeconds) override;
+	// Carte modale affichée par l'interface (Grand Prix de Paris, autoroute A13) : en-tête, titre, texte, lignes,
+	// classement, boutons (data-id du web, libellé, principal).
+	struct FCardButton { FString Id, Label; bool bPrimary = false; };
+	struct FCardView
+	{
+		FString Kicker, Title, Body;
+		TArray<TPair<FString, FString>> Rows;
+		TArray<TArray<FString>> Table;
+		TArray<bool> TableMe;
+		TArray<FCardButton> Buttons;
+	};
+	bool ActiveCard(FCardView& Out) const;
+	bool ActiveCardOpen() const { return ParisCardOpen() || TravelCard != ETravel::None; }
+	bool PressCard(const FString& Id);
+	// Clavier / manette : bouton choisi (le principal à l'ouverture), déclenché par Entrée / E / F / X.
+	void MoveCardSelection(int32 Dir);
+	bool PressCardSelected();
+	FString CardSelectedId() const;
+	// Trajet par l'autoroute A13 (travel.js Travel.go) : camion posé à l'arrivée de l'autre région, +2 h 10, gazole.
+	bool TravelTo(const FString& To);
+	// Action « Accréditation » du Grand Prix de Paris (S.interact, à pied ou à cheval, à moins de 3,6 m) : proposée ? et
+	// déclenchée par l'action du joueur (E / F / Entrée, bouton d'action).
+	bool ParisInteractAvailable() const;
+	bool PressParisInteract();
+	int32 TravelsDone() const { return Travels; }
 	const strides::EventRun* Event() const { return EventPtr.get(); }
 	strides::EventRun* MutableEvent() { return EventPtr.get(); }
 	const FString& EventId() const { return EventName; }
@@ -151,8 +198,10 @@ public:
 	// événements (même ordre que src/game.js:1489-1507). La cadence de concours peut être réécrite (refus compté,
 	// sortie de piste).
 	void TickRun(const strides::CsoRunFrame& Frame, strides::CsoCadence& Cadence);
-	const strides::CsoRun* Run() const { return RunPtr.get(); }
-	strides::CsoRun* Run() { return RunPtr.get(); }
+	// Jalon J4 (correction) : manche du Grand Prix de Paris en cours (Sprint, Grand Prix, barrage) vue comme l'épreuve
+	// (caméra et commandes de concours, tableau de chrono, bouton SAUT) tant qu'elle court.
+	const strides::CsoRun* Run() const { return ParisPtr && ParisPtr->round() ? ParisPtr->round() : RunPtr.get(); }
+	strides::CsoRun* Run() { return ParisPtr && ParisPtr->round() ? ParisPtr->mutableRound() : RunPtr.get(); }
 	// Obstacles vus par le cheval (visée, aide à l'appel, refus : strides::csoTarget / csoTiming / csoApproachRefusal),
 	// dans l'ordre du parcours ; l'indice d'un obstacle du cœur est celui de son acteur (FenceAt).
 	const std::vector<strides::CsoObstacle>& Obstacles() const { return CoreObstacles; }
@@ -255,6 +304,25 @@ private:
 	void FlushRunCalls();
 	void FlushEventCalls();
 	void BuildCross(const class UStridesDataSubsystem& Data);
+	void BuildParis(const class UStridesDataSubsystem& Data);
+	void ShowParisCourse(const FString& Course);
+	void FlushParisCalls();
+	std::unique_ptr<strides::ParisRun> ParisPtr;
+	int32 ParisSprintFirst = -1, ParisGpFirst = -1, ParisWarmFirst = -1, NumParisFences = 0;
+	FString ParisShown;
+	int32 ParisHighlight = -1;
+	TArray<strides::CsoCall> ParisDialogQueue;
+	enum class ETravel : uint8 { None, Prompt, Fuel, Blocked, Arrived };
+	ETravel TravelCard = ETravel::None;
+	FString TravelFrom, TravelTitle, TravelBody;
+	bool bTravelPrompted = false;
+	int32 Travels = 0, CardSel = -1;
+	double ParisClock = 0;
+	bool BuildParisFrame(strides::ParisFrame& F, double Dt) const;
+	void TickTravel();
+	class AStridesVehicle* StableTruck() const;
+	class AStridesHorse* PlayerHorse() const;
+	bool bParisDialog = false, bParisCap = false;
 	std::unique_ptr<strides::EventRun> EventPtr;
 	bool bChallenge = false, bChallengeResult = false;
 	strides::ChallengeConfig ChallengeCfg;

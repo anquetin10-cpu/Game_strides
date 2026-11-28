@@ -83,6 +83,10 @@ public:
 	double MinimapRange() const { return MiniView.range; }
 	// Ligne de guidage hors épreuve de la dernière image (« Chrono du Pôle · 145 m · à droite », mission, GPS), vide sinon.
 	const FString& GuideLineShown() const { return LastGuideLine; }
+	// Bouton de la carte du Grand Prix de Paris / de l'A13 sous ce point (px du viewport) ; vide : aucun.
+	FString CardButtonAt(const FVector2D& ViewportPx) const;
+	// Dernière carte dessinée (titre et boutons), pour les tests et le journal.
+	FString LastCardShown;
 	// Toile de dessin hors PostRender (tests : DrawHUD appelé dans un monde de test).
 	void SetCanvasForTest(class UCanvas* C) { Canvas = C; }
 private:
@@ -105,6 +109,10 @@ private:
 	void DrawPhone(const class UStridesProgressionSubsystem* Progress);
 	void DrawCourseGuide();
 	void DrawRaceOverlay();
+	// Jalon J4 (correction) : carte du Grand Prix de Paris ou de l'autoroute A13 (AStridesCourse::ActiveCard), au centre,
+	// boutons mémorisés pour le toucher et le clic (CardButtonAt).
+	void DrawActiveCard();
+	TArray<TPair<FString, FBox2D>> CardButtons;
 	// Texte du HUD de débogage : balises <b> de l'astuce retirées (le web les rend en gras), « ▸ » rendu « > » (glyphe
 	// absent de la police par défaut du moteur ; l'interface d'épreuve UMG de la tranche T7 en aura une qui l'a).
 	static FString DebugText(const FString& S);

@@ -74,6 +74,10 @@ public:
 	void PhoneBack();
 	// Toucher / clic au point (px du viewport) : élément du téléphone touché, sinon rien. Vrai si un élément a été touché.
 	bool PhoneTapAt(const FVector2D& ViewportPx);
+	// Jalon J4 (correction) : carte ouverte (épreuve du Pôle, Grand Prix de Paris, A13) : bouton choisi, choix, toucher.
+	bool CardPress();
+	void CardMove(int32 Dir);
+	bool CardTapAt(const FVector2D& ViewportPx);
 	// Effet d'un élément (identifiant dessiné par le HUD : « app:strides », « offer:tuto », « accept », « refuse »,
 	// « itinerary:cso_train », « abandon », « back »).
 	void PhoneActivate(const FString& Id);
@@ -172,6 +176,14 @@ private:
 	UPROPERTY() TObjectPtr<class UInputAction> PhoneAction;
 	UPROPERTY() TObjectPtr<class UInputAction> MissionAction;
 	UPROPERTY() TObjectPtr<class UUserWidget> TouchControls;
+	// Jalon J4 (correction après contrôle) : interface d'épreuve et commandes tactiles masquées tant que l'écran titre est
+	// ouvert (state 'title' du web : HUD masqué) ; visibilités d'avant rendues à sa fermeture.
+	bool bHudHiddenForTitle = false;
+	uint8 SavedCsoHudVis = 0, SavedTouchVis = 0;  // ESlateVisibility
+	void SyncTitleHud();
+public:
+	bool HudHiddenForTitle() const { return bHudHiddenForTitle; }
+private:
 public:
 	// Interface d'épreuve UMG (tranche T7).
 	class UStridesCsoHud* CsoHudWidget() const { return CsoHud; }

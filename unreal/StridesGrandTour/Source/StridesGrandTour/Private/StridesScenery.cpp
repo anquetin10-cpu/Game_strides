@@ -144,7 +144,17 @@ void AStridesScenery::BuildTerrain(const UStridesDataSubsystem& D, UMaterialInte
 		const double Dist = FMath::Max3(FMath::Abs(X) - Half, FMath::Abs(Z) - Half, 0.0);
 		if (H0 < 0.5) return FMath::Min(H0, -12.0) - Dist * 0.004;
 		const double Wave = 0.65 + 0.35 * FMath::Sin(X * 0.0023 + 1.3) * FMath::Cos(Z * 0.0019 - 0.4);
-		return H0 - 1.0 + 55.0 * (1.0 - FMath::Exp(-Dist / 1100.0)) * Wave;
+		const double Hill = H0 - 1.0 + 55.0 * (1.0 - FMath::Exp(-Dist / 1100.0)) * Wave;
+		// Jalon J4 (correction) : région de Paris (4 km à l'est) : collines aplanies sous la dalle de Paris (sites.js
+		// PARIS.y), raccordées sur 300 m autour de la zone (bounds + 40 m).
+		if (const strides::ParisGpData* PD = D.Paris())
+		{
+			const strides::ParisSite& P = PD->site;
+			const double Dx = FMath::Max3(P.x - 255 - X, X - (P.x + 112), 0.0), Dz = FMath::Max(FMath::Abs(Z - P.z) - 132, 0.0);
+			const double K = FMath::SmoothStep(0.0, 300.0, FMath::Sqrt(Dx * Dx + Dz * Dz));
+			return FMath::Lerp(P.y - 1.5, Hill, K);
+		}
+		return Hill;
 	};
 	{
 		const double Step = 60.0, Ext = 4200.0;

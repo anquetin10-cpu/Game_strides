@@ -321,6 +321,19 @@ void AStridesShots::Tick(float DeltaSeconds)
 		TickJeu(DeltaSeconds, PC);
 		return;
 	}
+	// Jalon J4 (correction) : -StridesShots=paris : points de vue de l'arène de Paris seulement (outil de capture, hors
+	// Shipping), puis sortie.
+	static bool bParisList = false;
+	if (Mode() == TEXT("paris") && !bParisList)
+	{
+		bParisList = true;
+		Shots.Reset();
+		Shots.Add({TEXT("20_paris_arene"), FVector(3962, 12, 26), FVector(4012, 0, -6)});
+		Shots.Add({TEXT("21_paris_piste_tribunes"), FVector(3965, 2.2, 10), FVector(4040, 4, -2)});
+		Shots.Add({TEXT("22_paris_paddock"), FVector(3888, 7, 26), FVector(3910, 0, 4)});
+		Shots.Add({TEXT("23_paris_parking_salle"), FVector(3820, 12, 40), FVector(3960, 6, 0)});
+	}
+	if (Mode() == TEXT("paris") && Index >= Shots.Num() && bCaptured) { FPlatformMisc::RequestExit(false); return; }
 	Wait -= DeltaSeconds;
 	if (Wait > 0) return;
 	if (Index >= 0 && Index <= Shots.Num() && RideShot < 0 && !bCaptured)

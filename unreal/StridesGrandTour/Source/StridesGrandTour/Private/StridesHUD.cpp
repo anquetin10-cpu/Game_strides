@@ -68,6 +68,7 @@ void AStridesHUD::DrawHUD()
 		DrawCourseGuide();
 		DrawRaceOverlay();
 		DrawPhone(GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>());
+		DrawActiveCard();
 		return;
 	}
 	LastCourseGuide.Reset();
@@ -212,6 +213,77 @@ void AStridesHUD::DrawHUD()
 	}
 	if (const UStridesDataSubsystem* D = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>())
 		for (const FString& L : D->LoadLog) if (L.Contains(TEXT("introuvable")) || L.Contains(TEXT("illisible"))) Line(L, FLinearColor::Red);
+	DrawActiveCard();
+}
+
+void AStridesHUD::DrawActiveCard()
+{
+	CardButtons.Reset();
+	LastCardShown.Reset();
+	const AStridesCourse* C = nullptr;
+	for (TActorIterator<AStridesCourse> It(GetWorld()); It; ++It) if (It->ActiveCardOpen()) { C = *It; break; }
+	AStridesCourse::FCardView V;
+	if (!C || !C->ActiveCard(V) || !Canvas) return;
+	// Carte du web (screens.card) : voile, carte sombre centrée, en-tête, titre, lignes clé / valeur, classement, boutons.
+	const float Ui = FMath::Clamp(Canvas->SizeY / 720.f, .6f, 2.f);
+	const float W = FMath::Min(Canvas->SizeX - 32.f, 760.f * Ui);
+	const float Pad = 22.f * Ui, LineH = 26.f * Ui;
+	const float Rows = 3 + V.Rows.Num() + V.Table.Num() + (V.Body.IsEmpty() ? 0 : 2) + 2;
+	const float H = FMath::Min(Canvas->SizeY - 24.f, Rows * LineH + 2 * Pad);
+	const float X = (Canvas->SizeX - W) * .5f, Y = (Canvas->SizeY - H) * .5f;
+	DrawRect(FLinearColor(0, 0, 0, .45f), 0, 0, Canvas->SizeX, Canvas->SizeY);
+	DrawRect(FLinearColor(.035f, .04f, .05f, .97f), X, Y, W, H);
+	DrawRect(FLinearColor(.49f, 1.f, .77f, 1.f), X, Y, W, 4.f * Ui);
+	float TY = Y + Pad;
+	DrawText(V.Kicker, FLinearColor(.49f, 1.f, .77f), X + Pad, TY, nullptr, 1.0f * Ui);
+	TY += LineH;
+	DrawText(V.Title, FLinearColor::White, X + Pad, TY, nullptr, 1.6f * Ui);
+	TY += LineH * 1.5f;
+	for (const TPair<FString, FString>& R : V.Rows)
+	{
+		DrawText(R.Key, FLinearColor(.62f, .66f, .7f), X + Pad, TY, nullptr, 1.0f * Ui);
+		DrawText(R.Value, FLinearColor::White, X + Pad + 200.f * Ui, TY, nullptr, 1.0f * Ui);
+		TY += LineH;
+	}
+	if (!V.Body.IsEmpty())
+	{
+		DrawText(V.Body, FLinearColor(.85f, .87f, .9f), X + Pad, TY, nullptr, .95f * Ui);
+		TY += LineH * 1.4f;
+	}
+	const float Cols[4] = {0.f, 44.f, 380.f, 530.f};
+	for (int32 I = 0; I < V.Table.Num(); I++)
+	{
+		const bool bMe = V.TableMe.IsValidIndex(I) && V.TableMe[I];
+		if (bMe) DrawRect(FLinearColor(.12f, .42f, .34f, .6f), X + Pad - 6.f, TY - 2.f, W - 2 * Pad + 12.f, LineH);
+		for (int32 K = 0; K < V.Table[I].Num() && K < 4; K++)
+			DrawText(V.Table[I][K], bMe ? FLinearColor::White : FLinearColor(.85f, .87f, .9f), X + Pad + Cols[K] * Ui, TY, nullptr, .9f * Ui);
+		TY += LineH * .9f;
+	}
+	// Boutons, de droite à gauche (principal à droite comme screens.card) ; bouton choisi entouré de vert.
+	const FString Sel = C->CardSelectedId();
+	float BX = X + W - Pad;
+	const float BY = Y + H - Pad - 40.f * Ui;
+	for (int32 I = V.Buttons.Num() - 1; I >= 0; I--)
+	{
+		const AStridesCourse::FCardButton& B = V.Buttons[I];
+		float TW = 0, TH = 0;
+		GetTextSize(B.Label, TW, TH, nullptr, 1.1f * Ui);
+		const float BW = TW + 36.f * Ui, BH = 40.f * Ui;
+		BX -= BW;
+		if (B.Id == Sel) DrawRect(FLinearColor(.49f, 1.f, .77f, 1.f), BX - 3.f, BY - 3.f, BW + 6.f, BH + 6.f);
+		DrawRect(B.bPrimary ? FLinearColor(.12f, .62f, .48f, 1.f) : FLinearColor(.2f, .22f, .25f, 1.f), BX, BY, BW, BH);
+		DrawText(B.Label, FLinearColor::White, BX + 18.f * Ui, BY + (BH - TH) * .5f, nullptr, 1.1f * Ui);
+		CardButtons.Add(TPair<FString, FBox2D>(B.Id, FBox2D(FVector2D(BX, BY), FVector2D(BX + BW, BY + BH))));
+		BX -= 14.f * Ui;
+	}
+	LastCardShown = V.Title;
+}
+
+FString AStridesHUD::CardButtonAt(const FVector2D& P) const
+{
+	for (const TPair<FString, FBox2D>& B : CardButtons)
+		if (B.Value.IsInside(P)) return B.Key;
+	return FString();
 }
 
 AStridesHUD::FRaceOverlay AStridesHUD::RaceOverlay(const strides::CsoHud& H, bool bMission, const FString& Objective, const FString& Gait, double SpeedMS, const FString& ActionLabel, bool bTouch)

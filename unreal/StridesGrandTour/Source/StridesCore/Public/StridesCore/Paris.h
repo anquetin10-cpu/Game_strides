@@ -33,7 +33,7 @@ struct ParisCourseData {
   std::vector<std::pair<double, double>> line;  // tracé du cavalier (repère monde)
   CourseDesign design;                          // tracé du web (repère de la piste)
   // Hauteurs de l'épreuve (parisCourse.js heights(h) : h + profil, arrondi au centimètre).
-  std::vector<double> heights(double h) const;
+  STRIDESCORE_API std::vector<double> heights(double h) const;
 };
 struct ParisRect { double x = 0, z = 0, w = 0, d = 0, h = 0, rot = 0; };
 struct ParisSite {
@@ -106,6 +106,10 @@ class STRIDESCORE_API ParisRun {
   void obstacleEvent(CsoObstacleEventKind k, const std::string& course, int num, int dir, const std::string& cause, const std::string& causeText, CsoCadence& cad);
   void capacityClosed();
   void setHopeless(bool sprint, bool gp) { hopelessSprint_ = sprint; hopelessGp_ = gp; }
+  // Jeu Unreal (choix n° 26 de plan.md) : pas de rampe ni de cheval mené en main ; le cheval laissé à moins de 15 m
+  // embarque quand le joueur monte au volant et descend à la rampe quand il sort. L'état « open » de loadStep devient
+  // « Monte au volant du camion : … embarque avec toi » (choix n° 35).
+  void setRampless(bool b) { rampless_ = b; }
   void setLastJump(const CsoLastJump& lj) { if (cso_) cso_->setLastJump(lj); }
 
   std::string text() const;
@@ -181,7 +185,7 @@ class STRIDESCORE_API ParisRun {
   int warm_ = 0;
   std::unique_ptr<CsoRun> cso_;
   Round roundKind_ = Round::Sprint;
-  bool hopelessSprint_ = false, hopelessGp_ = false;
+  bool hopelessSprint_ = false, hopelessGp_ = false, rampless_ = false;
   std::string shown_ = "paris_gp";
   std::vector<CsoCall> hud_, audio_;
   ParisCard card_;

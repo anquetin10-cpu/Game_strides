@@ -299,7 +299,7 @@ std::string ParisRun::text() const {
       const std::string st = loadState();
       if (st == "exit") return "Arrête le camion et descends (ACTION)";
       if (st == "dismount") return fill("Descends de {0} pour le charger", {horse_});
-      if (st == "open") return "Ouvre la rampe arrière du camion";
+      if (st == "open") return rampless_ ? fill("Monte au volant du camion : {0} embarque avec toi", {horse_}) : std::string("Ouvre la rampe arrière du camion");
       if (st == "bring") return fill("Ramène {0} jusqu’au camion (monte-le ou mène-le en main)", {horse_});
       return std::string();
     }
@@ -313,7 +313,7 @@ std::string ParisRun::text() const {
     case Step::Unload: {
       const std::string st = unloadState();
       if (st == "exit") return "Gare-toi et descends du camion (ACTION à l’arrêt)";
-      if (st == "open") return "Ouvre la rampe arrière";
+      if (st == "open") return rampless_ ? std::string("Gare-toi et descends du camion (ACTION à l’arrêt)") : std::string("Ouvre la rampe arrière");
       if (st == "unload") return fill("Fais descendre {0}", {horse_});
       return std::string();
     }

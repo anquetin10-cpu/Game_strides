@@ -37,7 +37,7 @@ bool AStridesCourse::StartEvent(const FString& Id, const FString& PlayerName)
 {
 	const UStridesDataSubsystem* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UStridesDataSubsystem>() : nullptr;
 	const strides::MissionEvents* E = Data ? Data->Events() : nullptr;
-	if (!E || (RunPtr && !RunPtr->finished()) || TrainingActive() || EventActive()) return false;
+	if (!E || (RunPtr && !RunPtr->finished()) || TrainingActive() || EventActive() || ParisActive()) return false;
 	if (Id != TEXT("cross") && Id != TEXT("derby")) return false;
 	ClearEvent();
 	const strides::EventRun::Kind K = Id == TEXT("cross") ? strides::EventRun::Kind::Cross : strides::EventRun::Kind::Race;

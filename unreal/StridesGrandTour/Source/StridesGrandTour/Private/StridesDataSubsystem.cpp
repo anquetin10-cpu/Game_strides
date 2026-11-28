@@ -307,6 +307,13 @@ void UStridesDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		FString Text;
 		std::string Err = "fichier introuvable";
+		bParis = FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/paris_gp.json"))) && strides::loadParisGp(std::string(TCHAR_TO_UTF8(*Text)), ParisDef, Err);
+		LoadLog.Add(bParis ? FString::Printf(TEXT("paris_gp.json : Sprint (%d obstacles), Grand Prix (%d obstacles), arène en (%.0f ; %.0f)"), (int32)ParisDef.sprint.fences.size(), (int32)ParisDef.gp.fences.size(), ParisDef.site.x, ParisDef.site.z)
+			: FString::Printf(TEXT("paris_gp.json : illisible (%s), Grand Prix de Paris absent"), UTF8_TO_TCHAR(Err.c_str())));
+	}
+	{
+		FString Text;
+		std::string Err = "fichier introuvable";
 		bChallenges = FFileHelper::LoadFileToString(Text, *(FPaths::ProjectContentDir() / TEXT("Data/challenges.json"))) && strides::loadChallenges(std::string(TCHAR_TO_UTF8(*Text)), ChallengesDef, Err);
 		LoadLog.Add(bChallenges ? FString::Printf(TEXT("challenges.json : %d défis, courant %hs"), (int32)ChallengesDef.challenges.size(), ChallengesDef.current.c_str())
 			: FString::Printf(TEXT("challenges.json : illisible (%s)"), UTF8_TO_TCHAR(Err.c_str())));
@@ -359,6 +366,19 @@ void UStridesDataSubsystem::LoadScene()
 
 double UStridesDataSubsystem::TerrainHeight(double X, double Z) const
 {
+	// Jalon J4 (correction) : région de Paris, dalle plate (sites.js PARIS.y) et sols posés dessus (parisFloor : sable de
+	// la piste, paddock, sol de la salle, parvis).
+	if (InParis(X))
+	{
+		const strides::ParisSite& P = ParisDef.site;
+		const double Dx = FMath::Abs(X - P.x), Dz = FMath::Abs(Z - P.z);
+		double F = 0;
+		if (Dx < P.arena.w / 2 && Dz < P.arena.d / 2) F = 0.09;
+		else if (Dx < (P.hall.w - 1) / 2 && Dz < (P.hall.d - 1) / 2) F = 0.06;
+		else if (FMath::Abs(X - P.warmup.x) < P.warmup.w / 2 && FMath::Abs(Z - P.warmup.z) < P.warmup.d / 2) F = 0.08;
+		else if (Dx < P.hall.w / 2 + 7 && Dz < P.hall.d / 2 + 7) F = 0.02;
+		return P.y + F;
+	}
 	if (!HasTerrain()) return 0.0;
 	const double Fx = FMath::Clamp((X - TerrainOrigin.X) / TerrainStep, 0.0, TerrainN - 1.0001);
 	const double Fz = FMath::Clamp((Z - TerrainOrigin.Y) / TerrainStep, 0.0, TerrainN - 1.0001);

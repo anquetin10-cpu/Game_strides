@@ -596,9 +596,12 @@ bool FStridesWorldStandsTest::RunTest(const FString&)
 	if (!TestTrue(FString::Printf(TEXT("cheval monté (%s)"), *G.Err), G.Make(W.World, *Data))) return false;
 	const FVector4 S = Data->PoleStands;
 	if (!TestTrue(TEXT("tribunes lues (cso_course_pole.json)"), S.Z > 0 && S.W > 0)) return false;
-	int32 NStands = 0;
-	for (const strides::Collider& Cl : G.Course->WorldColliders().all()) NStands += Cl.tag == "stands";
-	TestEqual(TEXT("un collider « stands » pour le cheval"), NStands, 1);
+	// Jalon J4 (correction) : les tribunes de l'arène de Paris (3, région de Paris, x > 3000 m) sont comptées à part.
+	int32 NStands = 0, NParis = 0;
+	for (const strides::Collider& Cl : G.Course->WorldColliders().all())
+		if (Cl.tag == "stands") (Cl.x > 3000 ? NParis : NStands)++;
+	TestEqual(TEXT("un collider « stands » pour le cheval au Pôle"), NStands, 1);
+	if (Data->Paris()) TestEqual(TEXT("trois tribunes à Paris (nord, sud, est)"), NParis, 3);
 	// Cheval lancé au galop vers les tribunes depuis 5 points connus (face côté carrière, entre la lice et les tribunes ;
 	// face arrière ; deux bouts ; en biais) : jamais
 	// dans leur emprise (point d'épaule à 0,45 m devant, rayon 0,85 m).
