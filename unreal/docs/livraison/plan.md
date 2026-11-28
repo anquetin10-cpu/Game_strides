@@ -635,7 +635,7 @@ partiellement visible sous l'écran titre ; paquets antérieurs au dernier commi
 | Défi de Paris (app Activités) | **non porté** (choix n° 33 inchangé) | l'arène existe désormais ; le défi rejouable de Paris reste à brancher (J5) |
 | HUD sous l'écran titre | **compilé, à revoir en paquet** | interface d'épreuve UMG et commandes tactiles (bouton « II ») masquées tant que le titre est ouvert (`SyncTitleHud`) ; le gros plan sur le jean du cavalier (P2) reste |
 | Missions, récompenses, erreurs, pause, sauvegarde et reprise | **partiel** (révisé) | `Strides.Scenario.Career` est un **test fonctionnel** (téléportations, 7 missions intermédiaires marquées faites, relance simulée par un 2e monde dans le même processus) : il prouve l'enchaînement et la sauvegarde, **pas** une partie jouée ni la reprise après une vraie relance du paquet : **à confirmer** |
-| Partie de 15 minutes en paquet par entrées injectées ; reprise après vraie relance | **BLOQUÉE** | fenêtre système « Forcer des applications à quitter » (`loginwindow`, 392 × 455 en (1500 ; 466)) toujours ouverte (relevés de 02:21 à 04:45 : `ctrl-J4/panneau.log`, `ctrl-J4c/panneau.log`, et contrôles avant chaque étape) ; les règles du poste partagé interdisent toute entrée tant qu'elle est affichée ; elle n'est pas de l'agent et n'a pas été touchée |
+| Partie de 15 minutes en paquet par entrées injectées ; reprise après vraie relance | **BLOQUÉE** | fenêtre système « Forcer des applications à quitter » (`loginwindow`, 392 × 455 en (1500 ; 466)) toujours ouverte (relevés de 02:21 à 04:37 : `ctrl-J4/panneau.log`, `ctrl-J4c/panneau.log`, et contrôles avant chaque étape) ; les règles du poste partagé interdisent toute entrée tant qu'elle est affichée ; elle n'est pas de l'agent et n'a pas été touchée |
 
 **Paquets de HEAD** : Development et Shipping refaits **après** le commit de code `c425ca7e` (04:20:17) : binaires
 Development 04:29:26 et Shipping 04:35:24 (`-skipcook` : seuls le code et les données JSON non cuites ont changé ; le
@@ -647,7 +647,7 @@ puis fermée par l'agent (son propre processus) ; sauvegarde de Julien (`strides
 (`screencapture -l` : « could not create image from window », outil `oeil` : refus) ; le masquage du HUD sous le titre est
 donc **compilé, non vu** : à confirmer.
 
-**Matrice** : ctest **20 / 20** (nouveau : « paris ») ; Automation `Strides` **72 / 72**, EXIT CODE 0 (nouveau :
+**Matrice** : ctest **20 / 20** (nouveau : « paris ») ; Automation `Strides` **72 / 72**, EXIT CODE 0, repassée à HEAD après le dernier changement de code (`j4c-matrice-3.log`) (nouveau :
 `Strides.Events.Paris` ; `Strides.Parite.CsoScenery` et `Strides.World.Stands` comptaient les obstacles et tribunes sans
 ceux de Paris : comptes corrigés), attentes « Waiting for ZenServer » résolues seules (0 blocage). Jeu web intact
 (`export-paris`, `export-epreuves`, `export-missions`, `export-defis` `--check` : inchangés).
