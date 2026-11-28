@@ -1,5 +1,7 @@
 #!/bin/zsh
 # Matrice de fin de jalon du portage Unreal (plan de livraison, « Règles communes ») :
+#   0) oracles du web à jour (export-epreuves, export-defis, export-missions, export-paris --check : données du cœur =
+#      ce que le jeu web produit aujourd'hui) ;
 #   1) ctest de toutes les cibles du cœur (unreal/core) ;
 #   2) Automation « Strides » complet dans l'éditeur (-nullrhi) ;
 #   3) contrôle des chaînes d'outils du binaire Shipping (lot J1-F) contre le témoin Development.
@@ -12,6 +14,9 @@ R=${0:A:h:h:h}
 W=${1:?dossier de travail}; SHIP=${2:?binaire Shipping}; DEV=${3:?binaire Development}
 E=/Volumes/Stockage-Qualification/Mac-Mini-Migration/Applications/UE_5.8/Engine
 mkdir -p $W/journaux
+echo "== Oracles du web"
+(cd $R && npm run --silent unreal:oracles >/dev/null 2>$W/journaux/matrice-oracles.log) || { echo "oracles : écart (journal $W/journaux/matrice-oracles.log)"; exit 1; }
+echo "oracles à jour"
 echo "== ctest"
 cmake -S $R/unreal/core -B $W/core-build >/dev/null && cmake --build $W/core-build -j8 >/dev/null && ctest --test-dir $W/core-build 2>&1 | tail -3 || exit 1
 echo "== Automation Strides"

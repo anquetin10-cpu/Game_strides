@@ -17,7 +17,9 @@
     "unreal:matrice": "zsh scripts/unreal/matrice.sh",
     "unreal:oracles-epreuves": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-epreuves.mjs --check",
     "unreal:oracles-defis": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-defis.mjs --check",
-    "unreal:oracles-missions": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-missions.mjs --check"
+    "unreal:oracles-missions": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-missions.mjs --check",
+    "unreal:oracles-paris": "node --import ./scripts/unreal/node-web/register.mjs scripts/unreal/export-paris.mjs --check",
+    "unreal:oracles": "npm run unreal:oracles-epreuves && npm run unreal:oracles-defis && npm run unreal:oracles-missions && npm run unreal:oracles-paris"
   },
   "dependencies": {
     "three": "^0.170.0"
