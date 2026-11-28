@@ -620,6 +620,38 @@ complet a révélé que des tests et le surlignage du Pôle cherchaient les obst
 (`course == "cso"`), puis matrice verte. Shipping : **0 / 17** chaîne d'outils. Jeu web intact (`export-epreuves`,
 `export-defis`, `export-missions` `--check` : inchangés).
 
+### Correction de J4 après contrôle adverse (28/11 matin, base `3cb3e07f`, commits depuis `d2305bdb`)
+
+Le contrôle a relevé : Grand Prix de Paris non porté (critère du jalon non atteint) ; aucune partie en paquet par entrées
+injectées ; critère « missions, récompenses, erreurs, pause, sauvegarde et reprise » déclaré atteint sur la foi de
+`Strides.Scenario.Career` (téléportations, missions marquées faites, « relance » = 2e monde dans le même éditeur) ; HUD
+partiellement visible sous l'écran titre ; paquets antérieurs au dernier commit. Les cinq points sont fondés.
+
+| Lot | État | Preuve |
+|---|---|---|
+| Grand Prix de Paris Indoor : logique (`PARIS_MISSION` de `parisGP.js`) | **testé (ctest)** contre le web | `export-paris.mjs` fait jouer la **vraie** `MissionManager` du web dans une partie factice (trajet A13, chargement, accréditation, échauffement, Sprint, présentation à 20 h, Grand Prix, barrage, podium, dotation, note, pourboire) ; ctest « paris » : 5 scénarios (victoire avec trajet complet et barrage, barres, double élimination, temps dépassé, barrage avec une barre) rejoués image par image : type d'étape, objectif, état de la manche, grands messages, toasts, dialogues, **cartes** (en-tête, titre, lignes, classement), issue : **18 814 vérifications, 0 écart** ; tracés du Sprint et du Grand Prix retracés par le cœur = obstacles posés par `Obstacles` du web |
+| Arène de Paris, A13, manches jouables, podium | **compilé, testé moteur** (test fonctionnel), **vu dans le moteur** | `AStridesParisVenue` (salle, piste 86 × 46 m, lice, tribunes, paddock, tentes, parking, projecteurs provisoires, choix n° 35) ; obstacles du Sprint / du Grand Prix / du paddock sur l'acteur du parcours ; `Strides.Events.Paris` : mission acceptée → Margot (E ×3) → descendre, monter au volant (cheval embarqué) → bretelle → carte « Direction Paris » (Entrée) → +2 h 10, −46 l → descendre → accréditation (E) → monter → 2 sauts au paddock → Sprint (présentation, cloche, départ, 7 obstacles, arrivée) → classement → présentation des 40 cavaliers à 20 h → Grand Prix (dialogue de l'entraîneur : Comète plafonne sous 1,60 m) → podium → mission payée (+1 500 réputation). **Test fonctionnel** : cheval posé devant chaque obstacle et ligne (`PlaceAt`), Espace au moment calculé ; ce n'est pas une partie jouée. Captures du moteur (`-StridesShots=paris`, outil hors Shipping) : `preuves/j4c-20261128/paris-arene.jpg`, `paris-exterieur.jpg` |
+| Mission gpparis déverrouillée | **testé** | `story_missions.json` : étape « event » `gpparis`, plus aucune mission « À venir » ; ctest « carriere » : les 16 missions se terminent |
+| Défi de Paris (app Activités) | **non porté** (choix n° 33 inchangé) | l'arène existe désormais ; le défi rejouable de Paris reste à brancher (J5) |
+| HUD sous l'écran titre | **compilé, à revoir en paquet** | interface d'épreuve UMG et commandes tactiles (bouton « II ») masquées tant que le titre est ouvert (`SyncTitleHud`) ; le gros plan sur le jean du cavalier (P2) reste |
+| Missions, récompenses, erreurs, pause, sauvegarde et reprise | **partiel** (révisé) | `Strides.Scenario.Career` est un **test fonctionnel** (téléportations, 7 missions intermédiaires marquées faites, relance simulée par un 2e monde dans le même processus) : il prouve l'enchaînement et la sauvegarde, **pas** une partie jouée ni la reprise après une vraie relance du paquet : **à confirmer** |
+| Partie de 15 minutes en paquet par entrées injectées ; reprise après vraie relance | **BLOQUÉE** | fenêtre système « Forcer des applications à quitter » (`loginwindow`, 392 × 455 en (1500 ; 466)) toujours ouverte (relevés de 02:21 à 04:45 : `ctrl-J4/panneau.log`, `ctrl-J4c/panneau.log`, et contrôles avant chaque étape) ; les règles du poste partagé interdisent toute entrée tant qu'elle est affichée ; elle n'est pas de l'agent et n'a pas été touchée |
+
+**Paquets de HEAD** : Development et Shipping refaits **après** le commit de code `c425ca7e` (04:20:17) : binaires
+Development 04:29:26 et Shipping 04:35:24 (`-skipcook` : seuls le code et les données JSON non cuites ont changé ; le
+commit suivant ne change que des commentaires et le plan), sorties `.ue-cache/travail/livraison/builds/j4c/`, BuildCookRun
+code 0 pour les deux. Shipping : **0 / 17** chaîne d'outils (`check-shipping-tools.txt`) ; le mode `-StridesShots=paris`
+est dans le code compilé hors Shipping. Paquet Shipping lancé sans aucune entrée : fenêtre de jeu 1920 × 1080 ouverte,
+puis fermée par l'agent (son propre processus) ; sauvegarde de Julien (`strides_main.sav`, md5 `8d46a855…`) inchangée.
+**Capture de l'écran titre en paquet non refaite** : la session n'a pas le droit « Enregistrement de l'écran »
+(`screencapture -l` : « could not create image from window », outil `oeil` : refus) ; le masquage du HUD sous le titre est
+donc **compilé, non vu** : à confirmer.
+
+**Matrice** : ctest **20 / 20** (nouveau : « paris ») ; Automation `Strides` **72 / 72**, EXIT CODE 0 (nouveau :
+`Strides.Events.Paris` ; `Strides.Parite.CsoScenery` et `Strides.World.Stands` comptaient les obstacles et tribunes sans
+ceux de Paris : comptes corrigés), attentes « Waiting for ZenServer » résolues seules (0 blocage). Jeu web intact
+(`export-paris`, `export-epreuves`, `export-missions`, `export-defis` `--check` : inchangés).
+
 ## J5 — Finition et performance
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -786,6 +818,16 @@ complet a révélé que des tests et le surlignage du Pôle cherchaient les obst
 34. **Cross** (28/11, J4) : obstacles fixes en formes de base aux dimensions et couleurs de `builders.js` (tronc, haie,
     entrée dans l'eau), sans panneau numéro ; Paul Faure n'est pas affiché ; l'eau de la mare ne ralentit pas le cheval
     (profondeur d'eau non portée dans le pas du cheval). Le chrono part au compte à rebours, comme au web.
+35. **Grand Prix de Paris Indoor** (28/11, correction de J4) : arène en blocs aux cotes de `sites.js` (salle sans toit,
+    murs, piste, lice, tribunes en gradins, paddock, tentes, parking, voie d'accès) ; non portés : toit, écrans géants
+    (`screenInfo` tenu par le cœur, non affiché), public, panneaux de lice, officiel des accréditations (tente seule),
+    plan du parcours de Paris (« Voir le plan » retiré de la carte de présentation), fondu et carte de route du trajet
+    (trajet immédiat puis carte « Bienvenue à Paris »), écran de fin de carrière (`screens.ending` : message de fin).
+    Projecteurs : 8 lumières ponctuelles sans ombre (le Grand Prix se court à 20 h). Plein à l'aire de service : plein du
+    réservoir payé sur le solde (le détail de `fillQuote` n'est pas porté). Textes en français seulement.
+36. **Camion sans rampe** (28/11, correction de J4, suite du choix n° 26) : le portage n'a ni rampe ni cheval mené en
+    main ; l'état « Ouvre la rampe arrière du camion » du chargement devient « Monte au volant du camion : … embarque
+    avec toi », celui du déchargement « Gare-toi et descends du camion (ACTION à l'arrêt) ».
 
 ## Risques
 

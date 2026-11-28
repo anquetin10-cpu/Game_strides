@@ -112,7 +112,7 @@ void AStridesParisVenue::Build(const UStridesDataSubsystem& Data)
 	Block(P.secretariat.x, P.secretariat.z - 3.5, Y, 5, 3, 2.6, FLinearColor::FromSRGBColor(FColor(0xf4, 0xf4, 0xf0)), true);
 	Block(P.secretariat.x, P.secretariat.z - 1.6, Y, 3.2, 0.8, 1.0, FLinearColor::FromSRGBColor(FColor(0x15, 0x16, 0x1a)), true);
 	// Projecteurs (paris.js _flood, floodlights du paddock) : le Grand Prix se court le soir (20 h). Lumières ponctuelles
-	// sans ombre au-dessus de la piste (3 × 2) et du paddock (2) : rendu provisoire (choix n° 34).
+	// sans ombre au-dessus de la piste (3 × 2) et du paddock (2) : rendu provisoire (choix n° 35).
 	auto Flood = [&](double Lx, double Lz, double Hh, double Cd, double R)
 	{
 		UPointLightComponent* L = NewObject<UPointLightComponent>(this);

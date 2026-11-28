@@ -154,7 +154,7 @@ void AStridesWorldDirector::Tick(float DeltaSeconds)
 					Progress->TickMission(FVector2D::ZeroVector, false, false, MissionDt);
 					if (Progress->ActiveMissionId.IsEmpty() && !Before.IsEmpty())
 					{
-						// def.after : message de fin de l'histoire (l'écran de fin du web n'est pas porté, choix n° 34).
+						// def.after : message de fin de l'histoire (l'écran de fin du web n'est pas porté, choix n° 35).
 						Progress->LastMessage = TEXT("Grand Prix de Paris Indoor · Merci pour ce Grand Prix ! Pour rentrer : charge ton cheval dans le camion, puis roule jusqu’à l’autoroute A13, à l’ouest du parking.");
 						if (UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
 							if (Save->bAutoSave && Pawn) Save->SaveNow(Cast<APlayerController>(Pawn->GetController()));

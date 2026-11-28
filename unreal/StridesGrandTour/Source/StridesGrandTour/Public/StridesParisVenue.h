@@ -4,7 +4,7 @@
 // (entrée de piste à l'ouest), tribunes au nord, au sud et à l'est (PARIS_STANDS), paddock d'échauffement, tente des
 // écuries provisoires, accréditations, parking des camions et voie d'accès jusqu'à la bretelle de l'A13.
 // Silhouette PROVISOIRE (actifs.md) : blocs aux cotes et teintes du web ; toit, projecteurs, écrans géants et public non
-// modélisés (choix n° 34 de plan.md). Collisions : maillages pour le cavalier à pied et le camion ; le cheval lit les
+// modélisés (choix n° 35 de plan.md). Collisions : maillages pour le cavalier à pied et le camion ; le cheval lit les
 // boîtes ajoutées aux collisions du parcours (AStridesCourse::RebuildColliders).
 #pragma once
 #include "CoreMinimal.h"

@@ -108,7 +108,7 @@ class STRIDESCORE_API ParisRun {
   void setHopeless(bool sprint, bool gp) { hopelessSprint_ = sprint; hopelessGp_ = gp; }
   // Jeu Unreal (choix n° 26 de plan.md) : pas de rampe ni de cheval mené en main ; le cheval laissé à moins de 15 m
   // embarque quand le joueur monte au volant et descend à la rampe quand il sort. L'état « open » de loadStep devient
-  // « Monte au volant du camion : … embarque avec toi » (choix n° 35).
+  // « Monte au volant du camion : … embarque avec toi » (choix n° 36).
   void setRampless(bool b) { rampless_ = b; }
   void setLastJump(const CsoLastJump& lj) { if (cso_) cso_->setLastJump(lj); }
 

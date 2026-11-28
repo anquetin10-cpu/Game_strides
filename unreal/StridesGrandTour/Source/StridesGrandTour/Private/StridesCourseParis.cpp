@@ -426,7 +426,7 @@ bool AStridesCourse::ActiveCard(FCardView& Out) const
 		}
 		if (C->presentation)
 		{
-			// « Voir le plan » : plan de l'arène de Paris non porté (choix n° 34) ; « Entrer en piste ».
+			// « Voir le plan » : plan de l'arène de Paris non porté (choix n° 35) ; « Entrer en piste ».
 			Out.Body = TEXT("Barre ou premier refus : 4 points · deuxième refus : élimination.");
 			Out.Buttons.Add({TEXT("enter"), TEXT("Entrer en piste"), true});
 		}
