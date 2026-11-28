@@ -680,6 +680,53 @@ Ce qui reste à confirmer : toute la boucle J4 côté joueur (missions, cross, d
 sauvegarde, reprise après vraie relance) n'est prouvée que par des tests fonctionnels (`PlaceAt`, relance simulée par un
 2e monde). La partie jouée en paquet attend la fermeture du panneau système. Le jeu à la main par Julien est à confirmer.
 
+### Étape P : preuves jouées en paquet de J3b et J4 (28/11, 09:32 à 11:13, base `9086e57f`)
+
+Panneau « Forcer des applications à quitter » fermé par Julien (aucune fenêtre `loginwindow` au relevé de 09:30). Paquet
+Development **déjà construit** de J4 (`builds/j4d/staged-dev`, depuis `57a2aab4`), lancé par `open`, **sans reconstruction**.
+Entrées **injectées par l'agent** au seul processus du jeu (`CGEventPostToPid`, garde avant chaque rafale, modificateurs à
+0), regard par captures de la seule fenêtre du jeu et OCR ; positions lues dans le journal du jeu. Aucune console, ni F8, ni
+autopilote, ni `-StridesShots`. Outils de l'étape hors dépôt (`.ue-cache/travail/livraison/outils-p/` : copie de
+`joueur-sur.py` avec un mode « à pied »). Le jeu à la main par Julien reste **à confirmer**. Preuves :
+`preuves/p-20261128/` (13 captures, `journal-partie.txt`) ; complètes dans `.ue-cache/travail/livraison/preuves/p-20261128/`.
+
+| Vérification | État | Preuve |
+|---|---|---|
+| Partie suivie d'au moins 15 min, sans console ni F8 | **joué par l'agent** : partie C de **30 min** d'un seul tenant (09:50:14 → 10:19:59), puis partie D de 52 min après relance | `journal-partie.txt` |
+| Nouvelle partie (écran titre, création du personnage) | **joué** : « Nouvelle partie » → « C'est parti » ; départ à l'Écurie du Val, 0 crédit | `05-nouvelle-partie-creation.jpg` |
+| Mission lancée au téléphone, suivie au GPS, terminée (J3b) | **joué** : `tuto` (P, Strides, accepter, confirmer) suivie au GPS à cheval → « Mission réussie · Premiers pas · +50 € · +60 réputation » en 3 min 40 ; `m1` → « Mission réussie · Deux écuries, une matinée · +90 € · +60 réputation » (140 crédits, 120 réputation) | `06`, `07`, `08`, `09-*.jpg` |
+| Récompense et sauvegarde | **joué** : crédits et réputation affichés après chaque mission ; sauvegarde automatique écrite toutes les 12 s (`Strides sauvegarde : écrite …`) | journal du jeu |
+| Vraie relance et reprise au même point | **joué, 3 fois** : arrêt propre par SIGTERM (`Engine exit requested (reason: Mac GracefulTerminationHandler)`), relance par `open`, « Continuer » : même position (215,4 ; −482,1 avant comme après), mêmes 140 crédits / 120 réputation / 2 missions terminées, heure du jeu conservée ; relance 3 : reprise à cheval au Pôle, 140 / 120 | `02`, `04`, `11-*.jpg` |
+| Fer d'or ramassé (J3b) | **joué** (à pied) : « Fer d'or 1/20 · +25 € », 165 crédits ; journal : `fer d'or : n°11 ramassé (1/20, +25 crédits, total 165)` | `13-fer-d-or-ramasse.jpg` |
+| Véhicule conduit (J3b) | **non atteint** : arrivé à pied à 6 m de la place de la voiture de l'écurie au web (−84 ; 146), aucune voiture dans la capture ; E sans effet ; aucune voiture montée (emplacement dans le portage à vérifier) | — |
+| Une épreuve (cross, derby ou Paris) | **non atteint** : le cross exige 10 missions avant lui (`fer`) ; la partie s'est arrêtée dans `m2` | — |
+| Arrivée de parcours au Pôle | **non atteint** (reconnaissance des 5 obstacles de `m2` faite, à cheval puis à pied ; pas d'épreuve chronométrée) | — |
+
+**Défauts trouvés (non corrigés : aucun n'est petit, ou il touche des fichiers du travail J5 en cours)**
+
+- **P1 (Mac)** : après un redimensionnement de la fenêtre par macOS (`Viewport Size Mismatch … Viewport 1920 × 1050`,
+  à 09:42:55 puis 10:12:56, la seconde fois sans action de l'agent sur la fenêtre), le jeu tombe de **33 à 1,8 image/s**
+  et ne s'en remet pas ; seule une relance le rétablit. Fenêtre par défaut 1920 × 1080 sur un écran de 1920 × 1080
+  points : le moteur garde un drawable de 1080 de haut. Sans effet sur iOS ; à traiter en J5 (taille de fenêtre par défaut
+  ou recalage du drawable).
+- **P1** : hors épreuve, un cheval mené au pas dans l'oxer n° 2 du Pôle se retrouve **entre les barres** ; chaque pression
+  donne `obstacle:refusal 2` et le cheval reste à l'arrêt ; il faut descendre. Comportement du web à vérifier
+  (`obstacles.js`), puis empêcher l'entrée dans l'obstacle.
+- **P2** : la sauvegarde de Julien place le joueur à pied à (215 ; −482), au pied d'un talus que le personnage ne monte
+  pas, à 280 m de l'obstacle n° 1 ; le cheval est resté à l'écurie (−104 ; 168). Le GPS indique la ligne droite à travers
+  le talus. 13 min sans atteindre l'objectif.
+- **P2** : à pied, le personnage reste pris dans la lice de la carrière du Val (glisse le long de z = 200) ; il en sort
+  par un saut (Espace).
+- **P2** : le personnage peut marcher jusqu'à (−753 ; 985), loin du monde du web ; limites à comparer au web.
+- **P2** : `StridesScenery` déplace chaque image un composant statique (`has to be 'Movable'`), ~2 000 avertissements par
+  minute dans le journal.
+- **P3** : reprise d'une mission après relance : `m2` repart à l'étape 1/7 (au web : point de reprise à vérifier) ;
+  caméra dans la croupe du cheval au départ d'une nouvelle partie ; posture « mains sur les genoux » à pied.
+
+Images par seconde mesurées (journal, 1920 × 1080, paquet Development) : 30 à 34 en jeu normal. Sauvegarde de Julien
+(`strides_main.sav`) remise à l'identique (md5 `8d46a855…`), `Config/Mac` inchangé ; `Saved/SaveGames` du projet intact
+(`fc4b403e…`).
+
 ## J5 — Finition et performance
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
