@@ -1,4 +1,5 @@
 #include "StridesCsoHud.h"
+#include "StridesCore/WindowFit.h"
 
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Blueprint/WidgetTree.h"
@@ -556,9 +557,17 @@ void UStridesCsoHud::SetPixelRatioForTest(double Ratio) { GPixelRatioForTest = R
 double UStridesCsoHud::PixelRatio()
 {
 	if (GPixelRatioForTest > 0) return GPixelRatioForTest;
-	// Mac : facteur de l'écran (FPlatformApplicationMisc) ; iOS : la plateforme générique rend 1 (à confirmer sur
-	// appareil, facteur d'écran natif 2 ou 3 attendu).
+#if PLATFORM_IOS
+	// Jalon J5 : sur iOS, la plateforme générique rend 1 ; un px CSS du web = un point d'écran, et le rendu compte
+	// r.MobileContentScaleFactor pixels par point (1,5 dans DefaultDeviceProfiles.ini), borné par le facteur natif de
+	// l'écran (3 sur les iPhone récents, 2 sur iPad : 3 retenu comme borne, à confirmer sur appareil en J6). Sans cela,
+	// les commandes (SAUT, pause, joystick) seraient dessinées à 1/1,5 de leur taille du web.
+	static const IConsoleVariable* Mcsf = IConsoleManager::Get().FindConsoleVariable(TEXT("r.MobileContentScaleFactor"));
+	return strides::iosContentScale(Mcsf ? (double)Mcsf->GetFloat() : 0.0, 3.0);
+#else
+	// Mac : facteur de l'écran (FPlatformApplicationMisc).
 	return FMath::Max(1.0, (double)FPlatformApplicationMisc::GetDPIScaleFactorAtPoint(0, 0));
+#endif
 }
 
 void UStridesCsoHud::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

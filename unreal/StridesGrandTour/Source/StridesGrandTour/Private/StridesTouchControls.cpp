@@ -12,6 +12,8 @@
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "EngineUtils.h"
+#include "Framework/Application/SlateApplication.h"
+#include "StridesCore/WindowFit.h"
 #include "StridesCourse.h"
 #include "StridesCss.h"
 #include "StridesCsoHud.h"
@@ -124,33 +126,6 @@ void UStridesTouchControls::Build()
 	const FAnchors BottomRight(1.f, 1.f);
 	const FVector2D AlignRight(1.f, 1.f);
 
-	// Boutons du portage (mode tactile, hors épreuve).
-	UButton* InteractButton = AddTouchButton(WidgetTree, Canvas, TEXT("Interact"), TEXT("MONTER"), BottomRight, FVector2D(-198, -132), FVector2D(142, 72), AlignRight);
-	UButton* GaitUpButton = AddTouchButton(WidgetTree, Canvas, TEXT("GaitUp"), TEXT("ALLURE +"), BottomRight, FVector2D(-32, -242), FVector2D(150, 68), AlignRight);
-	UButton* GaitDownButton = AddTouchButton(WidgetTree, Canvas, TEXT("GaitDown"), TEXT("ALLURE -"), BottomRight, FVector2D(-198, -242), FVector2D(142, 68), AlignRight);
-	// SAUVER et CHARGER en haut au centre : le coin haut droit est celui du bouton pause du web.
-	// Jalon J3 (correction) : SAUVER, CHARGER et MISSION sont des outils du portage ; ils ne sont même pas construits en
-	// Shipping (le contrôle adverse a trouvé leurs libellés dans le binaire alors qu'ils étaient seulement masqués).
-#if !UE_BUILD_SHIPPING
-	UButton* SaveButton = AddTouchButton(WidgetTree, Canvas, TEXT("Save"), TEXT("SAUVER"), FAnchors(.5f, 0.f), FVector2D(6, 32), FVector2D(124, 54), FVector2D(0.f, 0.f));
-	UButton* LoadButton = AddTouchButton(WidgetTree, Canvas, TEXT("Load"), TEXT("CHARGER"), FAnchors(.5f, 0.f), FVector2D(-6, 32), FVector2D(124, 54), FVector2D(1.f, 0.f));
-#endif
-	UButton* PhoneButton = AddTouchButton(WidgetTree, Canvas, TEXT("Phone"), TEXT("TÉLÉPHONE"), FAnchors(.5f, 1.f), FVector2D(-82, -32), FVector2D(164, 58), FVector2D(.5f, 1.f));
-#if !UE_BUILD_SHIPPING
-	UButton* MissionButton = AddTouchButton(WidgetTree, Canvas, TEXT("Mission"), TEXT("MISSION"), FAnchors(.5f, 1.f), FVector2D(-82, -102), FVector2D(164, 58), FVector2D(.5f, 1.f));
-	SaveButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Save);
-	LoadButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Load);
-	MissionButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Mission);
-#else
-	UButton* SaveButton = nullptr;
-	UButton* LoadButton = nullptr;
-	UButton* MissionButton = nullptr;
-#endif
-	InteractButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Interact);
-	GaitUpButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitUp);
-	GaitDownButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitDown);
-	PhoneButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Phone);
-
 	// Calque en px CSS (tranche T8) : joystick, SAUT, pause.
 	Scale = WidgetTree->ConstructWidget<UScaleBox>();
 	Scale->SetStretch(EStretch::UserSpecified);
@@ -166,6 +141,34 @@ void UStridesTouchControls::Build()
 	CssCanvas = WidgetTree->ConstructWidget<UCanvasPanel>();
 	CssCanvas->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	Css->AddChild(CssCanvas);
+	// Boutons du portage (mode tactile, hors épreuve). Jalon J5 : posés dans le calque en px CSS (comme SAUT et pause),
+	// donc à la même échelle sur iPhone, iPad et Mac ; ancrés au calque (taille du viewport en px CSS).
+	UButton* InteractButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Interact"), TEXT("MONTER"), BottomRight, FVector2D(-198, -132), FVector2D(142, 72), AlignRight);
+	UButton* GaitUpButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("GaitUp"), TEXT("ALLURE +"), BottomRight, FVector2D(-32, -242), FVector2D(150, 68), AlignRight);
+	UButton* GaitDownButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("GaitDown"), TEXT("ALLURE -"), BottomRight, FVector2D(-198, -242), FVector2D(142, 68), AlignRight);
+	// SAUVER et CHARGER en haut au centre : le coin haut droit est celui du bouton pause du web.
+	// Jalon J3 (correction) : SAUVER, CHARGER et MISSION sont des outils du portage ; ils ne sont même pas construits en
+	// Shipping (le contrôle adverse a trouvé leurs libellés dans le binaire alors qu'ils étaient seulement masqués).
+#if !UE_BUILD_SHIPPING
+	UButton* SaveButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Save"), TEXT("SAUVER"), FAnchors(.5f, 0.f), FVector2D(6, 32), FVector2D(124, 54), FVector2D(0.f, 0.f));
+	UButton* LoadButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Load"), TEXT("CHARGER"), FAnchors(.5f, 0.f), FVector2D(-6, 32), FVector2D(124, 54), FVector2D(1.f, 0.f));
+#endif
+	UButton* PhoneButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Phone"), TEXT("TÉLÉPHONE"), FAnchors(.5f, 1.f), FVector2D(0, -32), FVector2D(164, 58), FVector2D(.5f, 1.f));
+#if !UE_BUILD_SHIPPING
+	UButton* MissionButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Mission"), TEXT("MISSION"), FAnchors(.5f, 1.f), FVector2D(0, -102), FVector2D(164, 58), FVector2D(.5f, 1.f));
+	SaveButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Save);
+	LoadButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Load);
+	MissionButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Mission);
+#else
+	UButton* SaveButton = nullptr;
+	UButton* LoadButton = nullptr;
+	UButton* MissionButton = nullptr;
+#endif
+	InteractButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Interact);
+	GaitUpButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitUp);
+	GaitDownButton->OnClicked.AddDynamic(this, &UStridesTouchControls::GaitDown);
+	PhoneButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Phone);
+
 	auto AddImage = [this](const TCHAR* Name)
 	{
 		UImage* I = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), Name);
@@ -201,6 +204,10 @@ void UStridesTouchControls::Build()
 
 	Buttons = {JumpButton, PauseButton, InteractButton, GaitUpButton, GaitDownButton, PhoneButton};
 	for (UButton* Tool : {SaveButton, LoadButton, MissionButton}) if (Tool) Buttons.Add(Tool);
+	// Positions de base des boutons du portage (avant le décalage des zones sûres, voir ApplyStyle).
+	for (UButton* B : Buttons)
+		if (B && B != JumpButton && B != PauseButton)
+			if (const UCanvasPanelSlot* S = Cast<UCanvasPanelSlot>(B->Slot)) BasePos.Add(B->GetName(), S->GetPosition());
 }
 
 void UStridesTouchControls::ApplyStyle(const FVector2D& ViewCss)
@@ -223,8 +230,14 @@ void UStridesTouchControls::ApplyStyle(const FVector2D& ViewCss)
 	Textures.Reset();
 
 	// SAUT : bas à droite (bloc d'actions .actions réduit par sa transformation : la boîte relevée est celle affichée).
+	// Jalon J5 : zones sûres d'iOS (encoche, coins, barre d'accueil), comme le web : .actions à droite de
+	// max(16 px, env(safe-area-inset-right)), en bas de max(10 px, inset bas) ; joystick à gauche de max(16 px, inset
+	// gauche) ; haut de max(10 px, inset haut) (styles.css:45-49). Les relevés sont faits sans encoche (16 et 10 px) :
+	// seul l'excédent de l'encoche décale les boîtes. Sur Mac, insets nuls : aucun décalage.
+	SafeShift = strides::safeAreaShift(SafeCss.Left, SafeCss.Top, SafeCss.Right, SafeCss.Bottom);
+	const double ER = SafeShift.right, EB = SafeShift.bottom, EL = SafeShift.left, ET = SafeShift.top;
 	const FVector4 Jr = Sc::Rect(J);
-	JumpBox = FVector4(ViewCss.X - (View0.X - Jr.X), ViewCss.Y - (View0.Y - Jr.Y), Jr.Z, Jr.W);
+	JumpBox = FVector4(ViewCss.X - (View0.X - Jr.X) - ER, ViewCss.Y - (View0.Y - Jr.Y) - EB, Jr.Z, Jr.W);
 	const double K = Jr.Z / FMath::Max(1.0, Sc::Num(J, TEXT("width"), Jr.Z));  // échelle du bloc (0,88 sous 420 px)
 	{
 		UCanvasPanel* C = StyleButton(WidgetTree, JumpButton, Sc::Rounded(Sc::Color(J, TEXT("backgroundColor")), Jr.Z / 2, Sc::Color(J, TEXT("borderTopColor")), Sc::Num(J, TEXT("borderTopWidth")) * K));
@@ -250,7 +263,7 @@ void UStridesTouchControls::ApplyStyle(const FVector2D& ViewCss)
 	}
 	// Pause : en haut à droite.
 	const FVector4 Pr = Sc::Rect(P);
-	PauseBox = FVector4(ViewCss.X - (View0.X - Pr.X), Pr.Y, Pr.Z, Pr.W);
+	PauseBox = FVector4(ViewCss.X - (View0.X - Pr.X) - ER, Pr.Y + ET, Pr.Z, Pr.W);
 	{
 		UCanvasPanel* C = StyleButton(WidgetTree, PauseButton, Sc::Rounded(Sc::Color(P, TEXT("backgroundColor")), Sc::Radius(P)));
 		PauseIcon = WidgetTree->ConstructWidget<UImage>();
@@ -275,7 +288,15 @@ void UStridesTouchControls::ApplyStyle(const FVector2D& ViewCss)
 	// Joystick : base (dégradé radial, bordure), bouton (et son ombre) ; place de repos ancrée en bas à gauche.
 	const Sc::FJ Jb = Sc::Obj(Rest, TEXT("base")), Jk = Sc::Obj(Rest, TEXT("knob"));
 	const FVector4 Rb = Sc::Rect(Jb);
-	RestBox = FVector4(Rb.X, ViewCss.Y - (View0.Y - Rb.Y), Rb.Z, Rb.W);
+	RestBox = FVector4(Rb.X + EL, ViewCss.Y - (View0.Y - Rb.Y) - EB, Rb.Z, Rb.W);
+	// Boutons du portage : même décalage selon leur ancrage (bas à droite, haut au centre, bas au centre).
+	for (UButton* B : Buttons)
+		if (UCanvasPanelSlot* S = B ? Cast<UCanvasPanelSlot>(B->Slot) : nullptr)
+			if (const FVector2D* P0 = BasePos.Find(B->GetName()))
+			{
+				const FAnchors A = S->GetAnchors();
+				S->SetPosition(*P0 + FVector2D(A.Minimum.X >= 1.f ? -ER : A.Minimum.X <= 0.f ? EL : 0.0, A.Minimum.Y >= 1.f ? -EB : A.Minimum.Y <= 0.f ? ET : 0.0));
+			}
 	KnobSize = Sc::Rect(Jk);
 	{
 		const TArray<FLinearColor> G = Sc::Colors(Sc::Str(Jb, TEXT("backgroundImage")));
@@ -353,6 +374,22 @@ FVector4 UStridesTouchControls::BoxOf(const FString& Name) const
 	return FVector4(0, 0, 0, 0);
 }
 
+TMap<FString, FVector4> UStridesTouchControls::VisibleButtonBoxes() const
+{
+	TMap<FString, FVector4> Out;
+	const FVector2D V = LastView;
+	for (const UButton* B : Buttons)
+	{
+		const UCanvasPanelSlot* S = B ? Cast<UCanvasPanelSlot>(B->Slot) : nullptr;
+		if (!S || B->GetVisibility() == ESlateVisibility::Collapsed) continue;
+		const FAnchors A = S->GetAnchors();
+		const FVector2D Sz = S->GetSize(), Al = S->GetAlignment();
+		const FVector2D P = FVector2D(A.Minimum.X * V.X, A.Minimum.Y * V.Y) + S->GetPosition() - Al * Sz;
+		Out.Add(B->GetName(), FVector4(P.X, P.Y, Sz.X, Sz.Y));
+	}
+	return Out;
+}
+
 FVector4 UStridesTouchControls::SlotBoxOf(const FString& Name) const
 {
 	const UWidget* W = Name == TEXT("Jump") ? JumpButton : Name == TEXT("Pause") ? PauseButton : nullptr;
@@ -403,8 +440,18 @@ void UStridesTouchControls::Sync()
 		Scale->SetUserSpecifiedScale((float)(UStridesCsoHud::PixelRatio() / D));
 	}
 	if (Css) { Css->SetWidthOverride(V.X); Css->SetHeightOverride(V.Y); }
-	if (V != LastView || !View.IsValid())
+	// Zones sûres en px CSS : celles de l'écran (FDisplayMetrics, px de l'écran) ramenées au viewport, ou forcées (tests).
+	FMargin Safe = TestSafe.IsSet() ? TestSafe.GetValue() : FMargin(0);
+	if (!TestSafe.IsSet() && FSlateApplication::IsInitialized())
 	{
+		FDisplayMetrics M;
+		FSlateApplication::Get().GetCachedDisplayMetrics(M);
+		const double K = M.PrimaryDisplayWidth > 0 && V.X > 0 ? V.X / M.PrimaryDisplayWidth : 0;
+		Safe = FMargin(M.TitleSafePaddingSize.X * K, M.TitleSafePaddingSize.Y * K, M.TitleSafePaddingSize.Z * K, M.TitleSafePaddingSize.W * K);
+	}
+	if (V != LastView || !View.IsValid() || Safe != SafeCss)
+	{
+		SafeCss = Safe;
 		ApplyStyle(V);
 		LastView = V;
 	}
@@ -486,7 +533,7 @@ void UStridesTouchControls::ApplyJumpState(const strides::CsoHud* RaceHud, const
 	JumpSignShown = Sign;
 	const Sc::FJ J = Sc::Obj(S, TEXT("jump")), R = Sc::Obj(S, TEXT("ring")), G = Sc::Obj(S, TEXT("sign")), L = Sc::Obj(S, TEXT("label"));
 	// Boîtes relevées ancrées en bas à droite, comme le bouton (bloc d'actions réduit à 0,88 sous 420 px : boîtes affichées).
-	auto Anchor = [&](const FVector4& B) { return FVector4(ViewCss.X - (JumpView0.X - B.X), ViewCss.Y - (JumpView0.Y - B.Y), B.Z, B.W); };
+	auto Anchor = [&](const FVector4& B) { return FVector4(ViewCss.X - (JumpView0.X - B.X) - SafeShift.right, ViewCss.Y - (JumpView0.Y - B.Y) - SafeShift.bottom, B.Z, B.W); };
 	const FVector4 Jr = Sc::Rect(J);
 	const double Kx = Jr.Z / FMath::Max(1.0, Sc::Num(J, TEXT("width"), Jr.Z));
 	// Fond et bordure du bouton (.btn-jump.good : fond vert).

@@ -176,6 +176,9 @@ void AStridesPlayerController::SetupInputComponent()
 	DemoCourseAction = MakeAction(this, TEXT("DemoCourse"), EInputActionValueType::Boolean);
 	PhoneAction = MakeAction(this, TEXT("Phone"), EInputActionValueType::Boolean);
 	MissionAction = MakeAction(this, TEXT("Mission"), EInputActionValueType::Boolean);
+	// Jalon J5 : pause à la manette (bouton Menu), lue aussi jeu suspendu pour refermer la carte Pause.
+	PauseAction = MakeAction(this, TEXT("Pause"), EInputActionValueType::Boolean);
+	PauseAction->bTriggerWhenPaused = true;
 	// Clavier du web (déplacement, Espace, Échap, P / Tab, M, Ctrl / Alt) : commandes du web (FeedKey, codes physiques).
 	// Restent ici : manette (stick gauche / droit, A, X, Start, croix), souris (regard), outils du portage (Maj / Ctrl allure
 	// hors épreuve, F5 / F9, F8 démonstration, N mission suivante). E, F et Entrée : « action » des commandes du web
@@ -197,7 +200,12 @@ void AStridesPlayerController::SetupInputComponent()
 	Context->MapKey(MissionAction, EKeys::N);
 	Context->MapKey(MissionAction, EKeys::Gamepad_DPad_Up);
 #endif
-	Context->MapKey(PhoneAction, EKeys::Gamepad_Special_Right);
+	// Jalon J5 (choix n° 40, le web n'a pas de manette) : disposition usuelle d'une manette. Menu (Start) = pause, comme
+	// Échap ; Vue (Select) = téléphone ; gâchettes hautes droite / gauche = allure + / − (BOOST du web).
+	Context->MapKey(PauseAction, EKeys::Gamepad_Special_Right);
+	Context->MapKey(PhoneAction, EKeys::Gamepad_Special_Left);
+	Context->MapKey(GaitUpAction, EKeys::Gamepad_RightShoulder);
+	Context->MapKey(GaitDownAction, EKeys::Gamepad_LeftShoulder);
 	if (UEnhancedInputComponent* EI = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		EI->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AStridesPlayerController::OnMove);
@@ -212,6 +220,7 @@ void AStridesPlayerController::SetupInputComponent()
 		EI->BindAction(DemoCourseAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnDemoCourse);
 		EI->BindAction(PhoneAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnPhone);
 		EI->BindAction(MissionAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnMission);
+		EI->BindAction(PauseAction, ETriggerEvent::Started, this, &AStridesPlayerController::OnGamepadPause);
 	}
 	InstallInputContext();
 }
@@ -1182,6 +1191,25 @@ void AStridesPlayerController::OnSave() { if (UStridesSaveSubsystem* S = GetGame
 void AStridesPlayerController::OnLoad() { if (UStridesSaveSubsystem* S = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>()) S->LoadNow(this); }
 void AStridesPlayerController::OnDemoCourse() { if (AStridesHorse* H = Cast<AStridesHorse>(GetPawn())) H->ToggleDemoCourse(); }
 void AStridesPlayerController::OnPhone() { TogglePhone(); }
+// Bouton Menu de la manette : exactement la touche Échap du clavier (ouvre la pause, la referme, ferme le téléphone).
+void AStridesPlayerController::OnGamepadPause()
+{
+	FeedKey(TEXT("Escape"), true, false);
+	FeedKey(TEXT("Escape"), false, false);
+}
+TArray<FString> AStridesPlayerController::GamepadMappingsForTest() const
+{
+	TArray<FString> L;
+	if (Context)
+		for (const FEnhancedActionKeyMapping& M : Context->GetMappings())
+			if (M.Key.IsGamepadKey() && M.Action) L.Add(M.Key.GetFName().ToString() + TEXT("=") + M.Action->GetName());
+	return L;
+}
+void AStridesPlayerController::SetupInputForTest()
+{
+	if (!InputComponent) InputComponent = NewObject<UEnhancedInputComponent>(this, TEXT("StridesTestInput"));
+	SetupInputComponent();
+}
 void AStridesPlayerController::OnMission()
 {
 	if (UStridesProgressionSubsystem* P = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>()) P->StartNextMission();

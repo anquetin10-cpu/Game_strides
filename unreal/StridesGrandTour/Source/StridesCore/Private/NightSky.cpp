@@ -55,6 +55,12 @@ double nightFactor(double sunY) {
   return t * t * (3 - 2 * t);
 }
 
+void fogColor(double night, const double day[3], double out[3]) {
+  static const double nightHor[3] = {0.004, 0.007, 0.016};
+  const double k = std::clamp(night, 0.0, 1.0);
+  for (int i = 0; i < 3; ++i) out[i] = day[i] + (nightHor[i] - day[i]) * k;
+}
+
 std::vector<RainDrop> rainDrops(int count, uint32_t seed) {
   std::vector<RainDrop> out;
   out.reserve((size_t)count);

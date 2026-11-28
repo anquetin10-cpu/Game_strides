@@ -11,6 +11,7 @@
 #include "Blueprint/UserWidget.h"
 #include "StridesCore/CsoHud.h"
 #include "StridesCore/CsoInput.h"
+#include "StridesCore/WindowFit.h"
 #include "StridesTouchControls.generated.h"
 
 UCLASS()
@@ -36,6 +37,10 @@ public:
 	// Tests sans joueur : commandes lues (joystick) et cheval monté ou non.
 	void SetCommandsForTest(const strides::CsoInput* Commands, bool bRiding) { TestCommands = Commands; bTestRiding = bRiding; }
 	void SetViewCssForTest(const FVector2D& V) { TestView = V; }
+	// Jalon J5 : zones sûres forcées en px CSS (gauche, haut, droite, bas), comme celles d'un iPhone à encoche (tests).
+	void SetSafeInsetsForTest(const FMargin& M) { TestSafe = M; }
+	// Boîtes en px CSS [x, y, largeur, hauteur] de tous les boutons visibles (tests de mise en page iPhone / iPad).
+	TMap<FString, FVector4> VisibleButtonBoxes() const;
 	// Affichage (tests, captures) : boîte en px CSS [x, y, largeur, hauteur] d'un bouton ou du joystick (« Joystick »,
 	// « Knob »), opacité du joystick ; zéro si masqué.
 	FVector4 BoxOf(const FString& Name) const;
@@ -112,6 +117,11 @@ private:
 	const strides::CsoInput* TestCommands = nullptr;
 	bool bTestRiding = false;
 	FVector2D TestView = FVector2D::ZeroVector;
+	// Jalon J5 : zones sûres (px CSS) appliquées et décalage qui en résulte ; positions de base des boutons du portage.
+	TOptional<FMargin> TestSafe;
+	FMargin SafeCss = FMargin(0);
+	strides::SafeShift SafeShift;
+	TMap<FString, FVector2D> BasePos;
 	// Bouton SAUT coloré (tranche T9) : relevé du viewport retenu, clé et textes affichés, boîtes posées.
 	TSharedPtr<class FJsonObject> JumpView;
 	FVector2D JumpView0 = FVector2D(844, 390);

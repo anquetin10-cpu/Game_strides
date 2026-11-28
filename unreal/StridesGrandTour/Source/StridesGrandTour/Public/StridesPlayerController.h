@@ -149,6 +149,11 @@ public:
 	void GamepadStickForTest(const FVector2D& V);
 	void GamepadJumpForTest() { OnJump(); }
 	void GamepadInteractForTest() { OnInteract(); }
+	// Jalon J5 : bouton Menu de la manette (pause) ; correspondances touche de manette → action (« Gamepad_X=Action ») ;
+	// tests sans joueur local : composant d'entrée créé et correspondances posées.
+	void GamepadPauseForTest() { OnGamepadPause(); }
+	TArray<FString> GamepadMappingsForTest() const;
+	void SetupInputForTest();
 #endif
 
 private:
@@ -165,6 +170,7 @@ private:
 	void OnDemoCourse();
 	void OnPhone();
 	void OnMission();
+	void OnGamepadPause();
 	void OnAppActivation(const bool bActive);
 	void OnAppDeactivate();
 	void RestoreInputMode();
@@ -181,6 +187,7 @@ private:
 	UPROPERTY() TObjectPtr<class UInputAction> DemoCourseAction;
 	UPROPERTY() TObjectPtr<class UInputAction> PhoneAction;
 	UPROPERTY() TObjectPtr<class UInputAction> MissionAction;
+	UPROPERTY() TObjectPtr<class UInputAction> PauseAction;
 	UPROPERTY() TObjectPtr<class UUserWidget> TouchControls;
 	// Jalon J4 (correction après contrôle) : interface d'épreuve et commandes tactiles masquées tant que l'écran titre est
 	// ouvert (state 'title' du web : HUD masqué) ; visibilités d'avant rendues à sa fermeture.

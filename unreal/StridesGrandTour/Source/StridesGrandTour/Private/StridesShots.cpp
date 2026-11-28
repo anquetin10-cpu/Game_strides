@@ -72,6 +72,9 @@
 // (règle de Julien, lot J1-F de unreal/docs/livraison/plan.md). En Shipping, la classe reste déclarée (UHT) mais n'a que
 // des corps vides : aucune option -Strides* n'est lue, aucun chemin de capture n'existe dans le binaire.
 #if !UE_BUILD_SHIPPING
+#include "StridesWorldClock.h"
+#include "StridesCore/WorldClock.h"
+#include "StridesSaveSubsystem.h"
 bool AStridesShots::Requested() { return FParse::Param(FCommandLine::Get(), TEXT("StridesShots")) || !Mode().IsEmpty(); }
 
 FString AStridesShots::Mode()
@@ -363,7 +366,37 @@ void AStridesShots::Tick(float DeltaSeconds)
 		Shots.Add({TEXT("22_paris_paddock"), FVector(3888, 7, 26), FVector(3910, 0, 4)});
 		Shots.Add({TEXT("23_paris_parking_salle"), FVector(3820, 12, 40), FVector(3960, 6, 0)});
 	}
-	if (Mode() == TEXT("paris") && Index >= Shots.Num() && bCaptured) { FPlatformMisc::RequestExit(false); return; }
+	// Jalon J5 : -StridesShots=nuit : finition du ciel et du poteau Chrono, avec l'horloge du monde (absente des autres
+	// modes de capture) ; heure fixée avant chaque point de vue (nuit claire la plus proche, puis midi). Outil hors Shipping.
+	static bool bNuitList = false;
+	if (Mode() == TEXT("nuit") && !bNuitList)
+	{
+		bNuitList = true;
+		Shots.Reset();
+		NuitHours.Reset();
+		// Nuit la moins couverte à 23 h sur les dix premiers jours (météo du web), puis midi du même jour.
+		int32 BestDay = 0;
+		double BestCover = 2;
+		for (int32 D = 0; D < 10; ++D) { const double Cv = strides::clock::coverAt(D, 23); if (Cv < BestCover) { BestCover = Cv; BestDay = D; } }
+		const double Night = BestDay * 86400.0 + 23 * 3600.0, Noon = BestDay * 86400.0 + 12 * 3600.0;
+		Shots.Add({TEXT("40_nuit_ciel_mer"), FVector(20, 6, -352), FVector(70, 80, -460)}); NuitHours.Add(Night);
+		Shots.Add({TEXT("41_nuit_ville_rue"), FVector(-30, 1.8, -170), FVector(-30, 4, -260)}); NuitHours.Add(Night);
+		Shots.Add({TEXT("42_nuit_pole"), FVector(278, 9, -178), FVector(335, 0, -228)}); NuitHours.Add(Night);
+		Shots.Add({TEXT("43_nuit_chrono"), FVector(326, 1.8, -176), FVector(336, 1.2, -184)}); NuitHours.Add(Night);
+		Shots.Add({TEXT("44_jour_chrono"), FVector(326, 1.8, -176), FVector(336, 1.2, -184)}); NuitHours.Add(Noon);
+		Shots.Add({TEXT("45_jour_chrono_loin"), FVector(316, 3, -168), FVector(336, 1, -188)}); NuitHours.Add(Noon);
+		Shots.Add({TEXT("46_jour_chrono_cote"), FVector(343, 1.6, -178), FVector(334, 1.2, -188)}); NuitHours.Add(Noon);
+		if (!NuitClock) NuitClock = GetWorld()->SpawnActor<AStridesWorldClock>();
+		UE_LOG(LogTemp, Display, TEXT("Strides shots nuit : jour %d, couverture %.2f à 23 h"), BestDay, BestCover);
+	}
+	if (Mode() == TEXT("nuit") && NuitClock && Index >= 0 && Index < NuitHours.Num())
+		if (UStridesSaveSubsystem* Save = GetGameInstance()->GetSubsystem<UStridesSaveSubsystem>())
+			if (!bCaptured && FMath::Abs(Save->GameTime - NuitHours[Index]) > 600)
+			{
+				Save->GameTime = NuitHours[Index];
+				NuitClock->Apply(Save->GameTime);
+			}
+	if ((Mode() == TEXT("paris") || Mode() == TEXT("nuit")) && Index >= Shots.Num() && bCaptured) { FPlatformMisc::RequestExit(false); return; }
 	Wait -= DeltaSeconds;
 	if (Wait > 0) return;
 	if (Index >= 0 && Index <= Shots.Num() && RideShot < 0 && !bCaptured)
@@ -371,6 +404,7 @@ void AStridesShots::Tick(float DeltaSeconds)
 		const FString Name = Index < Shots.Num() ? Shots[Index].Name : FString(TEXT("09_jeu"));
 		FScreenshotRequest::RequestScreenshot(OutDir / (Name + TEXT(".png")), false, false);
 		UE_LOG(LogTemp, Display, TEXT("Strides shot: %s"), *Name);
+		if (NuitClock) UE_LOG(LogTemp, Display, TEXT("Strides shot nuit : %s, soleil %.1f°, nuit %.2f, brouillard (%.3f ; %.3f ; %.3f), exposition relevée"), *Name, NuitClock->SunAltitude, NuitClock->NightK, NuitClock->FogRgb[0], NuitClock->FogRgb[1], NuitClock->FogRgb[2]);
 		bCaptured = true;
 		Wait = 1.0f;
 		return;

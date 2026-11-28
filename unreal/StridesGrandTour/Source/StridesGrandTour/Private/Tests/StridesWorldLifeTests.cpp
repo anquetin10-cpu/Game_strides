@@ -35,6 +35,8 @@
 #include "StridesUnits.h"
 #include "StridesWorldDirector.h"
 #include "StridesWorldClock.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Components/ExponentialHeightFogComponent.h"
 #include "StridesCollectibles.h"
 #include "StridesCore/WorldClock.h"
 #include "Engine/DirectionalLight.h"
@@ -414,6 +416,7 @@ bool FStridesWorldDayNightTest::RunTest(const FString&)
 	AStridesWorldClock* Clock = W.World->SpawnActor<AStridesWorldClock>();
 	Clock->Sun = W.World->SpawnActor<ADirectionalLight>();
 	Clock->Sky = W.World->SpawnActor<ASkyLight>();
+	Clock->Fog = W.World->SpawnActor<AExponentialHeightFog>();
 	AActor* SeaHolder = W.World->SpawnActor<AActor>();
 	UStaticMeshComponent* Sea = NewObject<UStaticMeshComponent>(SeaHolder);
 	Sea->RegisterComponent();
@@ -437,6 +440,17 @@ bool FStridesWorldDayNightTest::RunTest(const FString&)
 	Clock->Apply(23 * 3600);
 	TestTrue(FString::Printf(TEXT("23 h : nuit (soleil à %.1f°)"), Clock->SunAltitude), Clock->bNight && Clock->SunLux < 0.5 && Clock->SkyIntensity >= 0.3);
 	TestTrue(TEXT("23 h : la lune éclaire d'en haut"), Clock->Sun->GetActorForwardVector().Z < -0.5);
+	// Jalon J5 (P2 de J3b, ciel de nuit clair) : brouillard de la nuit du web (sky.js nightHor), appliqué au composant.
+	{
+		const FLinearColor Fc = Clock->Fog->GetComponent()->FogInscatteringLuminance;
+		AddInfo(FString::Printf(TEXT("23 h : nuit %.2f, brouillard (%.4f ; %.4f ; %.4f)"), Clock->NightK, Fc.R, Fc.G, Fc.B));
+		TestTrue(TEXT("23 h : nuit pleine (nightFactor 1)"), Clock->NightK > .99);
+		TestTrue(TEXT("23 h : brouillard sombre (< 0,02, sky.js 0,004 ; 0,007 ; 0,016)"), Fc.R < .02f && Fc.G < .02f && Fc.B < .02f && Fc.B > Fc.R);
+		Clock->Apply(14 * 3600);
+		const FLinearColor Fd = Clock->Fog->GetComponent()->FogInscatteringLuminance;
+		TestTrue(FString::Printf(TEXT("14 h : brouillard du jour (%.2f ; %.2f ; %.2f)"), Fd.R, Fd.G, Fd.B), FMath::IsNearlyEqual(Fd.R, .45f, 1e-3f) && FMath::IsNearlyEqual(Fd.B, .75f, 1e-3f));
+		Clock->Apply(23 * 3600);
+	}
 	// Marée basse puis haute : la mer bouge (marnage du web).
 	double Lo = 1e9, Hi = -1e9;
 	for (double T = 0; T < 13; T += .25) { Clock->Apply(T * 3600); Lo = FMath::Min(Lo, Clock->SeaLevel); Hi = FMath::Max(Hi, Clock->SeaLevel); }

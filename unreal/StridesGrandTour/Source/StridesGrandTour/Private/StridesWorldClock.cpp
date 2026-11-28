@@ -9,6 +9,7 @@
 #include "Engine/PostProcessVolume.h"
 #include "Engine/SkyLight.h"
 #include "EngineUtils.h"
+#include "StridesCore/NightSky.h"
 #include "StridesCore/WorldClock.h"
 #include "StridesPlayerController.h"
 #include "StridesSaveSubsystem.h"
@@ -108,9 +109,19 @@ void AStridesWorldClock::Apply(double GameTime)
 				LastCaptureHour = Hour;
 			}
 		}
+	// Jalon J5 : couleur du brouillard du web la nuit (sky.js : fog.color → nightHor), sinon le ciel de nuit restait de
+	// la couleur du jour, relevé par l'exposition (+2 IL) : ciel clair et étoiles grises (P2 de J3b).
+	NightK = strides::sky::nightFactor(FMath::Sin(FMath::DegreesToRadians(Pos.alt)));
+	{
+		const double DayFog[3] = {.45, .58, .75};  // couleur du brouillard posée par le mode de jeu (StridesGameMode)
+		strides::sky::fogColor(NightK, DayFog, FogRgb);
+	}
 	if (Fog)
 		if (UExponentialHeightFogComponent* F = Fog->GetComponent())
+		{
 			F->SetFogDensity((float)(.0035 * (1 + 1.2 * Cover + 2.0 * Rain)));
+			F->SetFogInscatteringColor(FLinearColor((float)FogRgb[0], (float)FogRgb[1], (float)FogRgb[2]));
+		}
 	if (Post)
 	{
 		// Exposition fixe du portage (−1 de jour, 10 lux) relevée quand la lumière baisse (aube, soir, nuit, ciel couvert),

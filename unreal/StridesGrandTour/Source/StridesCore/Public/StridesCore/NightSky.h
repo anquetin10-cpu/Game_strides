@@ -19,6 +19,11 @@ struct Star {
 };
 STRIDESCORE_API std::vector<Star> stars();
 STRIDESCORE_API double nightFactor(double sunY);
+// sky.js (Sky.update) : couleur du brouillard = mix(couleur d'horizon du jour, nightHor, night), nightHor = (0,004 ;
+// 0,007 ; 0,016) en linéaire. Le jour, le portage garde sa couleur d'horizon fixe (le modèle de Preetham n'est pas porté,
+// choix n° 22) : `day` est cette couleur. Jalon J5 : avant, le brouillard gardait la couleur du jour la nuit, d'où un ciel
+// de nuit clair et des étoiles grises (P2 de J3b).
+STRIDESCORE_API void fogColor(double night, const double day[3], double out[3]);
 
 struct RainDrop {
   float x, y, z, seed;

@@ -41,6 +41,19 @@ int main() {
   CHECK(r && r->x == 1920 && r->y == -360, "second écran : origine (1920, -360) attendue");
   // Pointeur sur l'écran 1 mais fenêtre de la taille de l'écran 2 : rien (fenêtre ailleurs).
   CHECK(!strides::fullscreenWindowResync(500, 500, 1920, 2000, 2560, 1440, two), "recalage sur le mauvais écran");
+  // J5 : zones sûres (styles.css:45-49, max(16 px, inset) à gauche et à droite, max(10 px, inset) en haut et en bas).
+  {
+    const strides::SafeShift z = strides::safeAreaShift(0, 0, 0, 0);
+    CHECK(z.left == 0 && z.top == 0 && z.right == 0 && z.bottom == 0, "sans encoche : aucun décalage");
+    // iPhone à îlot dynamique en paysage : 59 pt à gauche et à droite, 21 pt en bas (valeurs d'iOS, à confirmer sur appareil).
+    const strides::SafeShift i = strides::safeAreaShift(59, 0, 59, 21);
+    CHECK(i.left == 43 && i.right == 43 && i.bottom == 11 && i.top == 0, "iPhone paysage : %.0f %.0f %.0f %.0f", i.left, i.top, i.right, i.bottom);
+    const strides::SafeShift p = strides::safeAreaShift(12, 8, 16, 10);
+    CHECK(p.left == 0 && p.top == 0 && p.right == 0 && p.bottom == 0, "insets sous les marges du web : aucun décalage");
+    // Facteur de pixels iOS : r.MobileContentScaleFactor borné par l'écran ; 0 = natif.
+    CHECK(strides::iosContentScale(1.5, 3) == 1.5 && strides::iosContentScale(0, 3) == 3 && strides::iosContentScale(4, 2) == 2 && strides::iosContentScale(1.5, 0) == 1,
+          "facteur de pixels iOS");
+  }
   std::printf("%d vérifications, %d échec(s)\n", g_checks, g_fail);
   return g_fail ? 1 : 0;
 }

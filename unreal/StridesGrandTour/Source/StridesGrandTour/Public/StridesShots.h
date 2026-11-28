@@ -85,6 +85,9 @@ public:
 private:
 	struct FShot { FString Name; FVector Eye; FVector Target; };
 	TArray<FShot> Shots;
+	// Jalon J5 (mode « nuit ») : heure de jeu de chaque point de vue et horloge du monde créée pour ce mode.
+	TArray<double> NuitHours;
+	UPROPERTY() TObjectPtr<class AStridesWorldClock> NuitClock;
 	int32 Index = -1;
 	float Wait = 0.f;
 	bool bCaptured = false;
@@ -150,7 +153,10 @@ private:
 	// Deauville City, phases « ville-vide » (vie ambiante cachée et figée) puis « ville-vivante » ; temps du jeu, du rendu
 	// et du GPU, appels de dessin et primitives (RHI), mémoire. Écrit perf-monde.json dans -StridesShotsDir.
 	void TickPerfMonde(float DeltaSeconds, class APlayerController* PC);
-	struct FPerfMonde { FString Name; TArray<double> Game, Render, Gpu, Delta, Draws, Prims, Used; int32 Cars = 0, People = 0; };
+	// J5 : MeshDraws / Tris = compteurs du moteur de rendu (« stat scenerendering » : STAT_MeshDrawCalls ; « stat engine » :
+	// triangles des maillages statiques et animés), lus dans les statistiques du fil de jeu. Le RHI Metal rend 0 pour
+	// GNumDrawCallsRHI (constat J3-E) ; ces compteurs-ci sont tenus par le moteur de rendu, indépendamment du RHI.
+	struct FPerfMonde { FString Name; TArray<double> Game, Render, Gpu, Delta, Draws, Prims, Used, MeshDraws, Tris; int32 Cars = 0, People = 0; };
 	TArray<FPerfMonde> MondePhases;
 	int32 CarProbe = 1;
 

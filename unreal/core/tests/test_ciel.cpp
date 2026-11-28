@@ -39,6 +39,22 @@ int main() {
   CHECK(st.size() > 1000 && st.size() < 2600, "%zu étoiles", st.size());
   CHECK(low == 0 && bmin > 0 && bmax <= 0.85f + 1e-4f, "estompage : %d sous l'horizon, éclat %.3f à %.3f", low, bmin, bmax);
   CHECK(S::nightFactor(0.1) == 0 && S::nightFactor(-0.2) == 1 && std::fabs(S::nightFactor(-0.065) - 0.5) < 1e-9, "nightFactor");
+  {
+    // sky.js : fog.color = lerp(horizon du jour, nightHor (0,004 ; 0,007 ; 0,016), night).
+    const double day[3] = {0.45, 0.58, 0.75};
+    double o[3];
+    S::fogColor(0, day, o);
+    CHECK(o[0] == 0.45 && o[1] == 0.58 && o[2] == 0.75, "brouillard de jour %.3f %.3f %.3f", o[0], o[1], o[2]);
+    S::fogColor(1, day, o);
+    CHECK(std::fabs(o[0] - 0.004) < 1e-12 && std::fabs(o[1] - 0.007) < 1e-12 && std::fabs(o[2] - 0.016) < 1e-12, "brouillard de nuit %.4f %.4f %.4f", o[0], o[1], o[2]);
+    S::fogColor(0.5, day, o);
+    CHECK(std::fabs(o[2] - (0.75 + 0.016) / 2) < 1e-12, "brouillard à mi-nuit %.4f", o[2]);
+    S::fogColor(2, day, o);
+    CHECK(std::fabs(o[0] - 0.004) < 1e-12, "night borné à 1");
+    // Nuit pleine (soleil à −10°) : le brouillard est au moins 25 fois plus sombre que le jour sur chaque canal.
+    S::fogColor(S::nightFactor(std::sin(-10 * 3.14159265358979 / 180)), day, o);
+    CHECK(o[0] * 25 < day[0] && o[1] * 25 < day[1] && o[2] * 25 < day[2], "nuit pleine encore claire %.4f %.4f %.4f", o[0], o[1], o[2]);
+  }
   const auto drops = S::rainDrops(3000);
   int outside = 0;
   for (const auto& d : drops) {

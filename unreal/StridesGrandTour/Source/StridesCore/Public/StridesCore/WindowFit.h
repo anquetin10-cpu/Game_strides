@@ -25,4 +25,17 @@ STRIDESCORE_API std::optional<WindowOrigin> fullscreenWindowResync(double cursor
                                                                    double winW, double winH,
                                                                    const std::vector<ScreenRect>& screens);
 
+// Jalon J5 : zones sûres d'iOS (encoche, coins arrondis, barre d'accueil) appliquées aux commandes à l'écran comme le
+// web (styles.css:45-49) : --sl / --sr = max(16 px, inset gauche / droit), --st / --sb = max(10 px, inset haut / bas).
+// Les boîtes relevées dans le navigateur le sont sans encoche (16 et 10 px) : le décalage à ajouter est l'excédent,
+// max(marge, inset) − marge, côté par côté (px CSS, toujours ≥ 0).
+struct SafeShift {
+  double left = 0, top = 0, right = 0, bottom = 0;
+};
+STRIDESCORE_API SafeShift safeAreaShift(double insetLeft, double insetTop, double insetRight, double insetBottom);
+
+// Jalon J5 : pixels rendus par point d'écran sur iOS (facteur de pixels des commandes en px CSS) : r.MobileContentScaleFactor
+// demandé (> 0), borné par le facteur natif de l'écran ; 0 ou moins = facteur natif (comportement du moteur, IOSView).
+STRIDESCORE_API double iosContentScale(double requested, double nativeScale);
+
 }  // namespace strides
