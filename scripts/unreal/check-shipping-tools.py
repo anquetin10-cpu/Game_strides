@@ -18,6 +18,8 @@ CHAINES = [
     # Libellés courts cherchés comme chaînes ENTIÈRES (zéro final et initial) : « MISSION » est aussi dans des chaînes
     # du moteur en UTF-8 (« ADMISSIONS », « U_NO_WRITE_PERMISSION »).
     '\0SAUVER\0', '\0CHARGER\0', '\0MISSION\0',
+    # Jalon J5 : mode de capture « nuit » et relevé des appels de dessin du moteur de rendu (outils hors Shipping).
+    'Strides shot nuit', 'dessins du rendu',
 ]
 
 

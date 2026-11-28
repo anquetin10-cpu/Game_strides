@@ -26,7 +26,7 @@ namespace
 namespace Sc = StridesCss;
 
 UButton* AddTouchButton(UWidgetTree* Tree, UCanvasPanel* Canvas, const TCHAR* Name, const TCHAR* Caption,
-	const FAnchors& Anchors, const FVector2D& Position, const FVector2D& Size, const FVector2D& Alignment)
+	const FAnchors& Anchors, const FVector2D& Position, const FVector2D& Size, const FVector2D& Alignment, float FontSize = 0.f)
 {
 	UButton* Button = Tree->ConstructWidget<UButton>(UButton::StaticClass(), Name);
 	Button->SetBackgroundColor(FLinearColor(0.04f, 0.05f, 0.06f, 0.82f));
@@ -34,6 +34,15 @@ UButton* AddTouchButton(UWidgetTree* Tree, UCanvasPanel* Canvas, const TCHAR* Na
 	Label->SetText(FText::FromString(Caption));
 	Label->SetColorAndOpacity(FSlateColor(FLinearColor::White));
 	Label->SetJustification(ETextJustify::Center);
+	// Jalon J5 : libellé à la taille des boutons du HUD du web (9,5 à 11 px CSS), sur deux lignes au besoin.
+	if (FontSize > 0)
+	{
+		FSlateFontInfo F = Label->GetFont();
+		F.Size = FontSize;
+		F.TypefaceFontName = TEXT("Bold");
+		Label->SetFont(F);
+		Label->SetAutoWrapText(true);
+	}
 	Button->AddChild(Label);
 	UCanvasPanelSlot* Slot = Canvas->AddChildToCanvas(Button);
 	Slot->SetAnchors(Anchors);
@@ -143,19 +152,23 @@ void UStridesTouchControls::Build()
 	Css->AddChild(CssCanvas);
 	// Boutons du portage (mode tactile, hors épreuve). Jalon J5 : posés dans le calque en px CSS (comme SAUT et pause),
 	// donc à la même échelle sur iPhone, iPad et Mac ; ancrés au calque (taille du viewport en px CSS).
-	UButton* InteractButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Interact"), TEXT("MONTER"), BottomRight, FVector2D(-198, -132), FVector2D(142, 72), AlignRight);
-	UButton* GaitUpButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("GaitUp"), TEXT("ALLURE +"), BottomRight, FVector2D(-32, -242), FVector2D(150, 68), AlignRight);
-	UButton* GaitDownButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("GaitDown"), TEXT("ALLURE -"), BottomRight, FVector2D(-198, -242), FVector2D(142, 68), AlignRight);
+	// Places et tailles des boutons du HUD du web (styles.css:255-270, bloc .actions à max(16 px) de la droite et
+	// max(10 px) du bas) : action = .btn-action (72 px, à 18 / 102 px du coin du bloc), allure + = BOOST (.btn-gallop,
+	// 68 px, 100 / 4 px), allure − à la place du sifflet (.btn-whistle, 108 / 86 px, porté à 56 px), téléphone à gauche
+	// de la pause comme le bouton du bandeau (.phone-btn, 48 px de haut). Le web n'a pas d'« allure − » (choix n° 41).
+	UButton* InteractButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Interact"), TEXT("MONTER"), BottomRight, FVector2D(-34, -112), FVector2D(72, 72), AlignRight, 10.f);
+	UButton* GaitUpButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("GaitUp"), TEXT("ALLURE +"), BottomRight, FVector2D(-116, -14), FVector2D(68, 68), AlignRight, 10.f);
+	UButton* GaitDownButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("GaitDown"), TEXT("ALLURE -"), BottomRight, FVector2D(-124, -96), FVector2D(56, 56), AlignRight, 10.f);
 	// SAUVER et CHARGER en haut au centre : le coin haut droit est celui du bouton pause du web.
 	// Jalon J3 (correction) : SAUVER, CHARGER et MISSION sont des outils du portage ; ils ne sont même pas construits en
 	// Shipping (le contrôle adverse a trouvé leurs libellés dans le binaire alors qu'ils étaient seulement masqués).
 #if !UE_BUILD_SHIPPING
-	UButton* SaveButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Save"), TEXT("SAUVER"), FAnchors(.5f, 0.f), FVector2D(6, 32), FVector2D(124, 54), FVector2D(0.f, 0.f));
-	UButton* LoadButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Load"), TEXT("CHARGER"), FAnchors(.5f, 0.f), FVector2D(-6, 32), FVector2D(124, 54), FVector2D(1.f, 0.f));
+	UButton* SaveButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Save"), TEXT("SAUVER"), FAnchors(.5f, 0.f), FVector2D(4, 10), FVector2D(76, 36), FVector2D(0.f, 0.f), 10.f);
+	UButton* LoadButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Load"), TEXT("CHARGER"), FAnchors(.5f, 0.f), FVector2D(-4, 10), FVector2D(76, 36), FVector2D(1.f, 0.f), 10.f);
 #endif
-	UButton* PhoneButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Phone"), TEXT("TÉLÉPHONE"), FAnchors(.5f, 1.f), FVector2D(0, -32), FVector2D(164, 58), FVector2D(.5f, 1.f));
+	UButton* PhoneButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Phone"), TEXT("TÉLÉPHONE"), FAnchors(1.f, 0.f), FVector2D(-68, 10), FVector2D(76, 48), FVector2D(1.f, 0.f), 9.f);
 #if !UE_BUILD_SHIPPING
-	UButton* MissionButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Mission"), TEXT("MISSION"), FAnchors(.5f, 1.f), FVector2D(0, -102), FVector2D(164, 58), FVector2D(.5f, 1.f));
+	UButton* MissionButton = AddTouchButton(WidgetTree, CssCanvas, TEXT("Mission"), TEXT("MISSION"), FAnchors(.5f, 0.f), FVector2D(0, 52), FVector2D(76, 36), FVector2D(.5f, 0.f), 10.f);
 	SaveButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Save);
 	LoadButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Load);
 	MissionButton->OnClicked.AddDynamic(this, &UStridesTouchControls::Mission);

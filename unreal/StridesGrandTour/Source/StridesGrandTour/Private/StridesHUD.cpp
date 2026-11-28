@@ -1,4 +1,7 @@
 #include "StridesHUD.h"
+#include "StridesCsoHud.h"
+#include "StridesCore/WindowFit.h"
+#include "Framework/Application/SlateApplication.h"
 #include "StridesActivityPost.h"
 #include "Engine/Canvas.h"
 #include "CanvasItem.h"
@@ -644,7 +647,20 @@ void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem
 	// Carte du web (minimap.js) : ronde, centrée sur le joueur, TOURNÉE selon le regard de la caméra (le haut de la carte
 	// est la direction regardée), portée de 150 m + 6 m par m/s (lissée), repères au bord, flèche, pastille N.
 	const UStridesDataSubsystem* Data = GetGameInstance()->GetSubsystem<UStridesDataSubsystem>();
-	const float MapSize = 240.f, MapX = Canvas->SizeX - MapSize - 28.f, MapY = 104.f;
+	// Jalon J5 : taille du web (.minimap : 132 px CSS, 104 px sous 420 px de haut, styles.css:107, 745) en px CSS (facteur
+	// de pixels de la plateforme : 1,5 sur iPhone et iPad), en haut à droite, à max(16 px, inset) du bord droit et sous la
+	// ligne de la pause et du téléphone (10 + 48 + 8 px) ; avant : 240 px fixes, qui recouvraient les boutons tactiles.
+	const double Kpx = UStridesCsoHud::PixelRatio();
+	FVector4 SafePx(0, 0, 0, 0);
+	if (FSlateApplication::IsInitialized())
+	{
+		FDisplayMetrics M;
+		FSlateApplication::Get().GetCachedDisplayMetrics(M);
+		if (M.PrimaryDisplayWidth > 0) SafePx = M.TitleSafePaddingSize * (Canvas->SizeX / (double)M.PrimaryDisplayWidth);
+	}
+	const strides::SafeShift Sh = strides::safeAreaShift(SafePx.X / Kpx, SafePx.Y / Kpx, SafePx.Z / Kpx, SafePx.W / Kpx);
+	const float MapSize = (float)(((Canvas->SizeY / Kpx) < 420 ? 104.0 : 132.0) * Kpx);
+	const float MapX = (float)(Canvas->SizeX - MapSize - (16.0 + Sh.right) * Kpx), MapY = (float)((66.0 + Sh.top) * Kpx);
 	const double W = MapSize, R = W / 2, Ui = W / 132.0;
 	double CX = 0, CY = 0, CZ = 0;
 	if (P) StridesUnits::UEToWeb(P->GetActorLocation(), CX, CY, CZ);
@@ -759,7 +775,14 @@ void AStridesHUD::DrawMinimap(const APawn* P, const UStridesProgressionSubsystem
 			StridesUnits::UEToWeb(It->GetActorLocation(), HX, HY, HZ);
 			Blip(HX, HZ, true, FLinearColor(.784f, .643f, .416f), 4.5f * Ui, TEXT("Cheval"));
 		}
-	if (bGoal) DrawText(FString::Printf(TEXT("%s %.0f m"), *GoalLabel, FVector2D::Distance(FVector2D(CX, CZ), Goal)), FLinearColor(1.f, .82f, .25f), MapX + 8, MapY + MapSize + 8, nullptr, 1.f);
+	if (bGoal)
+	{
+		// Jalon J5 : libellé calé sur le bord droit de la carte (il débordait de l'écran avec la carte de 104 px).
+		const FString Gl = FString::Printf(TEXT("%s %.0f m"), *GoalLabel, FVector2D::Distance(FVector2D(CX, CZ), Goal));
+		float Tw = 0, Th = 0;
+		GetTextSize(Gl, Tw, Th, nullptr, 1.f);
+		DrawText(Gl, FLinearColor(1.f, .82f, .25f), FMath::Min(MapX + 8.f, MapX + MapSize - Tw), MapY + MapSize + 8, nullptr, 1.f);
+	}
 	// Joueur (flèche) : rotate(−(cap − lacet + π)), pointe en (0, −8) ; sens de la toile (y vers le bas).
 	if (P)
 	{

@@ -1,0 +1,4 @@
+2026-11-28 06:26:59 panneau loginwindow 61016 ouvert (392x455 @1500,466)
+2026-11-28 06:48:50 panneau: 1 fenetre(s) loginwindow
+2026-11-28 07:14:12 panneau: 1 fenetre(s) loginwindow
+2026-11-28 08:01:02 panneau: 1 fenetre(s) loginwindow

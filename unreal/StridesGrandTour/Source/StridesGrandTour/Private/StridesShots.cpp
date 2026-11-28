@@ -386,6 +386,9 @@ void AStridesShots::Tick(float DeltaSeconds)
 		Shots.Add({TEXT("44_jour_chrono"), FVector(326, 1.8, -176), FVector(336, 1.2, -184)}); NuitHours.Add(Noon);
 		Shots.Add({TEXT("45_jour_chrono_loin"), FVector(316, 3, -168), FVector(336, 1, -188)}); NuitHours.Add(Noon);
 		Shots.Add({TEXT("46_jour_chrono_cote"), FVector(343, 1.6, -178), FVector(334, 1.2, -188)}); NuitHours.Add(Noon);
+		// Portique de l'entrée de piste (world.js:607-617 : deux poteaux de 3,5 m, poutre de 9 m, panneau), de face.
+		Shots.Add({TEXT("47_jour_portique_piste"), FVector(330, 1.7, -202), FVector(330, 4.5, -186)}); NuitHours.Add(Noon);
+		Shots.Add({TEXT("48_jour_portique_dehors"), FVector(330, 1.7, -170), FVector(330, 4.5, -186)}); NuitHours.Add(Noon);
 		if (!NuitClock) NuitClock = GetWorld()->SpawnActor<AStridesWorldClock>();
 		UE_LOG(LogTemp, Display, TEXT("Strides shots nuit : jour %d, couverture %.2f à 23 h"), BestDay, BestCover);
 	}

@@ -689,6 +689,56 @@ sauvegarde, reprise après vraie relance) n'est prouvée que par des tests fonct
 | J5-C | Stabilité : 60 min de jeu cumulé sans plantage, mémoire stable | 0 plantage | test d'endurance | journaux | J1-H |
 | J5-D | Matrice complète et contrôle des chaînes Shipping | tout vert | matrice | rapport | J5-A à J5-C |
 
+### État J5 au 28/11/2026 (étape « Finition et performance », base `a5333ffd`)
+
+Légende : **écrit** (code), **compilé**, **testé moteur** (Automation ou ctest), **vu dans le moteur** (éditeur en `-game`,
+outil de capture hors Shipping), **joué par l'agent** (entrées injectées). Aucune partie jouée dans cette étape : le panneau
+« Forcer des applications à quitter » est resté ouvert (relevés de 06:26 à 08:01, `preuves/j5-20261128/panneau-releves.txt`).
+
+| Lot | État | Preuve |
+|---|---|---|
+| J5-B profil mobile | **écrit, testé moteur** : `Config/DefaultDeviceProfiles.ini` ramène `IOS_Epic` et `IOS_High` (iPhone 15 à 18, iPad récents) au réglage « Strides mobile » (choix n° 39) : rendu 1,5x les points (comme le web en tactile, `game.js` `applyQuality`), distance de vue 0,8, une cascade d'ombre de 1024 à 0,7, post-traitement 1, effets 1, herbe 1, textures 2. Verrou à **30 i/s** (`FrameRateLock=PUFRL_30`). Foule du web inchangée | `Strides.Mobile.DeviceProfiles` (iPhone15Pro, iPhone16, iPhone17Pro, iPhone18ProMax, IOS_High : 10 réglages chacun ; plus de rendu 2x) |
+| Mesures sur le Mac mini (pas un iPhone) | **mesuré** (voir le tableau des budgets) : aperçu du rendu mobile (`-FeatureLevelES31 -DeviceProfile=iPhone15Pro`, Metal ES3_1, profil actif lu au journal) en 1266 × 585, rue principale de Deauville, 300 images après 60 de chauffe. Appels de dessin **mesurés autrement** : compteur du moteur de rendu `STAT_MeshDrawCalls` (« stat scenerendering », lu par l'outil `perf-monde`) ; le RHI Metal rend toujours 0 | `perf-monde-apercu-mobile-iphone15pro.json`, `perf-monde-bureau-1266x585.json`, `profil-paquet-dev-resume.txt` |
+| Facteur de pixels iOS (**P1 trouvé**) | **écrit, testé moteur (règle), à confirmer sur appareil** : sur iOS, `PixelRatio()` rendait 1 ; avec un rendu à 1,5x, SAUT, pause et joystick auraient été dessinés à 2/3 de leur taille du web. Il vaut maintenant `r.MobileContentScaleFactor` borné par l'écran (`strides::iosContentScale`) | ctest « fenetre » (14 vérifications) |
+| J5 tactile | **écrit, testé moteur, vu dans le moteur** : boutons du portage dans le calque en px CSS, aux places et tailles des boutons du HUD du web (action 72 px, allure + à la place de BOOST, allure − à la place du sifflet, téléphone à gauche de la pause ; choix n° 41) ; zones sûres d'iOS comme le web (`max(16 px, inset)`, `strides::safeAreaShift`) ; mini-carte à la taille du web (132 / 104 px), sous la pause. Le nouveau test a d'abord **échoué** sur de vrais défauts (TÉLÉPHONE sur le joystick en iPhone SE, chevauchements), corrigés | `Strides.Mobile.TouchLayout` : 6 formats (iPhone 844 × 390 et 932 × 430 avec îlot dynamique, SE 667 × 375, iPad mini, Air, Pro 13) × à pied / à cheval : tous les boutons dans la zone sûre, ≥ 44 pt, sans chevauchement entre eux, avec le joystick ni avec la mini-carte ; SAUT décalé de (−43 ; −11) par l'encoche. `Strides.Cso.Controls` inchangé (doigts par `InputTouch`). Captures `moteur-tactile-iphone-844x390.jpg` (avant : `…-avant-correction.jpg`), `moteur-tactile-ipad-1180x820.jpg`, `moteur-tactile-iphone-epreuve.jpg` |
+| J5 manette | **écrit, testé moteur** (choix n° 40, le web n'a pas de manette) : Menu = pause (comme Échap, aussi jeu suspendu), Vue = téléphone, gâchettes hautes = allure ± ; A saut, X action, sticks inchangés. **Pas jouée** : aucune manette sur le Mac mini | `Strides.Mobile.Gamepad` (correspondances relues dans le contexte d'entrée, pause puis reprise) |
+| Ciel de nuit clair, étoiles grises (P2 de J3b) | **corrigé, testé moteur, vu dans le moteur** : cause, le brouillard gardait sa couleur de jour la nuit, relevée de +2 IL par l'exposition. Il prend maintenant la couleur de nuit du web (`sky.js` `nightHor` 0,004 ; 0,007 ; 0,016, `strides::sky::fogColor`). À 23 h, ciel bleu nuit, étoiles blanches, lanternes allumées | ctest « ciel » (+5 vérifications, 1 708), `Strides.World.DayNight` (brouillard < 0,02 à 23 h, couleur du jour à 14 h) ; `moteur-nuit-ciel-mer.jpg`, `moteur-nuit-ville-lanternes.jpg` (mode `-StridesShots=nuit`, hors Shipping) |
+| Forme noire au poteau Chrono | **cause localisée, non corrigée** : c'est le portique de l'entrée de piste (`world.js:607-617` : deux poteaux de 0,32 m, poutre de 9 m, panneau). Dans Unreal il est **déformé** : poteaux larges et penchés, grands pans, pointes noires (`moteur-portique-*-deforme.jpg`). Le `.glb` exporté du web est juste (poteaux 0,32 m, poutre de 325,5 à 334,5 à 6,3 m, relu triangle par triangle). Le défaut vient de l'import Unreal : 56 des 206 maillages d'architecture sont concernés d'après les comptes de triangles (à confirmer : le compte du moteur peut ne porter que sur une section). Piste « attributs partagés entre primitives » essayée et **réfutée** (réimport d'essai dans un dossier temporaire, supprimé : mêmes comptes). Prochaine étape : comparer les sommets du maillage Unreal à ceux du `.glb` | — |
+| Nuages, halos des lampadaires | **hors V1, PROPOSÉ** (choix n° 42) : les lanternes brillent la nuit (matériau émissif, vu) ; ni flaques de lumière au sol ni nuages. Nuages volumétriques trop coûteux sur iPhone ; flaques : positions des lanternes à exporter du web et matériau à créer | `moteur-nuit-ville-lanternes.jpg` |
+| Défi de Paris (choix n° 33), chevaux d'ambiance | **hors V1, PROPOSÉ** (choix n° 43) : non portés, le budget de l'étape est allé au profil mobile, au tactile et au ciel | — |
+| J5-C stabilité 60 min | **non fait** : exige une partie en paquet (panneau ouvert) | — |
+| J5-D matrice et Shipping | voir plus bas | — |
+
+**Budgets mobiles (iPhone récent, objectif 30 i/s = 33,3 ms) et mesures sur ce Mac.** L'aperçu ES3_1 tourne sur le GPU du Mac
+mini, bien plus rapide que celui d'un iPhone : ces chiffres servent à comparer des réglages, pas à prédire l'iPhone.
+
+| Poste | Budget iPhone (écrit) | Mesuré sur le Mac, aperçu mobile, profil iPhone15Pro, 1266 × 585 | Mesuré sur le Mac, rendu de bureau SM6, 1266 × 585 |
+|---|---|---|---|
+| Image | ≤ 33,3 ms (30 i/s verrouillés) | 16,7 ms (synchronisation 60 Hz), p95 25,4 ms | 23,9 ms, p95 24,5 |
+| GPU | ≤ 25 ms | **9,7 ms**, p95 13,0 | 23,0 ms, p95 23,3 |
+| Fil de jeu | ≤ 8 ms | 4,6 ms (ville vivante), p95 9,8 | 3,7 ms |
+| Fil de rendu | ≤ 12 ms | 12,0 ms, p95 24,6 | 23,9 ms |
+| Appels de dessin (moteur de rendu) | ≤ 1 000 | **750**, p95 819 | 1 215 |
+| Triangles (maillages statiques et animés) | ≤ 500 000 | 297 000, p95 357 000 | 309 000 |
+| Mémoire | ≤ 2 Go pour le jeu (à confirmer sur appareil) | non mesurable ici (éditeur : 5,3 Go). Paquet Development de bureau : 6,3 Go relevés par le profileur CSV à l'écran titre (3,1 Go en J3b, en jeu ; écart non expliqué, à confirmer) | — |
+| Taille | ≤ 1 Go pour l'`.ipa` (à confirmer en J6) | `.app` Mac Shipping **790 Mo**, dont contenu 349 Mo (`.ucas`) ; Development 948 Mo | — |
+
+Le fil de rendu de l'aperçu mobile au p95 (24,6 ms) et le GPU de l'iPhone restent les deux risques : **à mesurer sur
+appareil en J6** (Xcode, capture GPU). Chauffe : J6.
+
+**Paquets de ce code** : Development et Shipping (`BuildCookRun -skipcook`, contenu inchangé, code 0) dans
+`.ue-cache/travail/livraison/builds/j5/`. Shipping : **0 / 19** chaîne d'outils (deux de plus : le mode « nuit » et le relevé
+des appels de dessin). Ta sauvegarde du paquet (`strides_main.sav`, md5 `8d46a855…`) est inchangée après le lancement du
+profil CSV.
+
+**Matrice de fin d'étape (code final, binaires de 08:13 et 08:16)** : **verte**. Oracles du web à jour ; ctest **20 / 20** ;
+Automation `Strides` **75 / 75** (72 + `Mobile.DeviceProfiles`, `Mobile.TouchLayout`, `Mobile.Gamepad`), EXIT CODE 0, une
+attente « Waiting for ZenServer » résolue seule, 0 blocage ; Shipping **0 / 19**. Paquet Shipping lancé par `open` (processus
+vivant à 45 s, arrêté par l'agent, aucun rapport de plantage) ; sauvegarde inchangée. Captures CSO G5 non refaites : en
+épreuve, seuls SAUT et pause s'affichent et leur place sur Mac est inchangée (`Strides.Cso.Controls` relit les boîtes du
+relevé : identiques). Ce qui reste à confirmer : tout ce qui touche l'iPhone (30 i/s, mémoire, zones sûres réelles, taille
+de l'`.ipa`) en J6, la partie en paquet de J4 / J3b et l'endurance de 60 min (panneau), le jeu à la main par Julien.
+
 ## J6 — Build iOS réel
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -863,6 +913,17 @@ sauvegarde, reprise après vraie relance) n'est prouvée que par des tests fonct
 38. **Aides des manches de Paris** (28/11, 2e correction de J4) : elles sont mises à jour dans l'image du cheval, alors que
     la manche avance dans l'image du parcours. L'obstacle suivant affiché peut donc changer une image (1/30 s) après le
     web. Effet invisible (P3).
+
+39. **Profil mobile « Strides mobile »** (28/11, J5) : un seul réglage pour tous les iPhone et iPad récents (IOS_Epic et
+    IOS_High ramenés au même niveau), rendu 1,5x comme le web en tactile, sans résolution dynamique (le web baisse son
+    facteur de pixels sous 42 i/s ; non porté). Verrou à 30 i/s. Valeurs à confirmer sur appareil (J6).
+40. **Manette** (28/11, J5) : le web n'en a pas. Disposition usuelle : Menu = pause (Échap), Vue = téléphone (avant : Menu),
+    gâchettes hautes = allure + / −, A = saut, X = action.
+41. **Boutons tactiles du portage** (28/11, J5) : aux places et tailles des boutons du HUD du web (`.btn-action`,
+    `.btn-gallop`, `.btn-whistle`, `.phone-btn`) ; « allure − », sans équivalent au web, prend la place du sifflet (non
+    porté). Mini-carte à la taille du web mais en haut à droite (le portage y garde ses lignes d'état en haut à gauche).
+42. **Nuages et flaques de lumière des lampadaires** : hors V1, PROPOSÉ (coût mobile, matériau et export à créer).
+43. **Défi de Paris dans l'app Activités et chevaux d'ambiance** : hors V1, PROPOSÉ.
 
 ## Risques
 

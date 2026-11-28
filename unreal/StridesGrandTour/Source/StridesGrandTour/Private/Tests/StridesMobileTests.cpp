@@ -1,6 +1,8 @@
 // Jalon J5 « Finition et performance » : profil mobile (profils d'appareils iOS du jeu, verrou à 30 i/s), mise en page
 // des commandes tactiles sur les formats d'iPhone et d'iPad (zones sûres comprises), manette (pause, téléphone, allures).
 #include "Misc/AutomationTest.h"
+
+#if WITH_DEV_AUTOMATION_TESTS  // crochets de test du contrôleur (absents du Shipping)
 #include "Blueprint/UserWidget.h"
 #include "DeviceProfiles/DeviceProfile.h"
 #include "DeviceProfiles/DeviceProfileManager.h"
@@ -11,6 +13,7 @@
 #include "Misc/ConfigCacheIni.h"
 #include "StridesCore/CsoRun.h"
 #include "StridesCore/SaveGame.h"
+#include "StridesCore/WindowFit.h"
 #include "StridesCourse.h"
 #include "StridesDataSubsystem.h"
 #include "StridesHorse.h"
@@ -49,6 +52,7 @@ bool Overlap(const FVector4& A, const FVector4& B)
 }
 }  // namespace StridesMobileTest
 
+#if WITH_EDITOR  // valeurs consolidées des profils d'appareils : API de l'éditeur
 // Profils d'appareils (DefaultDeviceProfiles.ini) : les iPhone et iPad récents, qui héritent d'IOS_Epic ou d'IOS_High dans
 // le moteur, reçoivent le réglage « Strides mobile » ; verrou à 30 i/s (DefaultEngine.ini, FrameRateLock).
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FStridesMobileDeviceProfilesTest, "Strides.Mobile.DeviceProfiles", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -87,6 +91,7 @@ bool FStridesMobileDeviceProfilesTest::RunTest(const FString&)
 	TestEqual(TEXT("iOS : verrou à 30 images par seconde"), Lock, FString(TEXT("PUFRL_30")));
 	return true;
 }
+#endif  // WITH_EDITOR
 
 // Commandes tactiles sur les formats d'iPhone et d'iPad (points d'écran = px CSS du web), à pied, à cheval hors épreuve et
 // en épreuve, avec les zones sûres d'un iPhone à îlot dynamique en paysage (59 pt à gauche et à droite, 21 pt en bas ;
@@ -141,6 +146,15 @@ bool FStridesMobileTouchLayoutTest::RunTest(const FString&)
 					if (M > N && Overlap(X, Boxes[M])) Bad.Add(N + TEXT(" sur ") + M);
 			}
 			if (Joy.Z > 0 && (Joy.X < L - 1e-3 || Joy.Y + Joy.W > B + 1e-3)) Bad.Add(TEXT("joystick hors zone sûre"));
+			// Mini-carte du HUD (AStridesHUD::DrawMinimap, même règle en px CSS) : aucun bouton dessus.
+			{
+				const strides::SafeShift Sh = strides::safeAreaShift(F.Safe.Left, F.Safe.Top, F.Safe.Right, F.Safe.Bottom);
+				const double Ms = F.View.Y < 420 ? 104 : 132;
+				const FVector4 Map(F.View.X - Ms - 16 - Sh.right, 66 + Sh.top, Ms, Ms);
+				if (Map.X + Map.Z > R + 1e-3 || Map.Y < T - 1e-3) Bad.Add(TEXT("mini-carte hors zone sûre"));
+				for (const FString& N : Names)
+					if (Overlap(Boxes[N], Map)) Bad.Add(N + TEXT(" sur la mini-carte"));
+			}
 			const bool bNeed = Boxes.Contains(TEXT("Pause")) && Boxes.Contains(TEXT("Interact")) && Boxes.Contains(TEXT("Phone")) && (Riding == 0 || Boxes.Contains(TEXT("Jump")));
 			AddInfo(FString::Printf(TEXT("%s, %s : %s ; joystick (%.0f ; %.0f) %.0f"), F.Name, Riding ? TEXT("à cheval") : TEXT("à pied"), *FString::Join(Desc, TEXT(", ")), Joy.X, Joy.Y, Joy.Z));
 			TestTrue(FString::Printf(TEXT("%s, %s : pause, action, téléphone%s présents ; défauts : %s"), F.Name, Riding ? TEXT("à cheval") : TEXT("à pied"), Riding ? TEXT(", SAUT") : TEXT(""),
@@ -207,3 +221,5 @@ bool FStridesMobileGamepadTest::RunTest(const FString&)
 	UGameplayStatics::DeleteGameInSlot(Save->SlotName, 0);
 	return true;
 }
+
+#endif  // WITH_DEV_AUTOMATION_TESTS

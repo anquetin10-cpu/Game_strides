@@ -1197,6 +1197,7 @@ void AStridesPlayerController::OnGamepadPause()
 	FeedKey(TEXT("Escape"), true, false);
 	FeedKey(TEXT("Escape"), false, false);
 }
+#if WITH_DEV_AUTOMATION_TESTS
 TArray<FString> AStridesPlayerController::GamepadMappingsForTest() const
 {
 	TArray<FString> L;
@@ -1210,6 +1211,7 @@ void AStridesPlayerController::SetupInputForTest()
 	if (!InputComponent) InputComponent = NewObject<UEnhancedInputComponent>(this, TEXT("StridesTestInput"));
 	SetupInputComponent();
 }
+#endif
 void AStridesPlayerController::OnMission()
 {
 	if (UStridesProgressionSubsystem* P = GetGameInstance()->GetSubsystem<UStridesProgressionSubsystem>()) P->StartNextMission();
