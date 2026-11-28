@@ -187,7 +187,7 @@ bool FStridesCsoAudioTest::RunTest(const FString&)
 	//    obstacle franchi (tone 990).
 	const std::vector<strides::CsoObstacle>& Obs = Course->Obstacles();
 	int32 One = -1;
-	for (int32 I = 0; I < (int32)Obs.size(); I++) if (Obs[I].label == "1") One = I;
+	for (int32 I = 0; I < (int32)Obs.size(); I++) if (Obs[I].course == "cso" && Obs[I].label == "1") One = I;
 	if (!TestTrue(TEXT("obstacle 1"), One >= 0)) return false;
 	const strides::CsoObstacle& F1 = Obs[One];
 	const double Head = FMath::Atan2(F1.n.x, F1.n.z);
@@ -214,7 +214,7 @@ bool FStridesCsoAudioTest::RunTest(const FString&)
 	TestEqual(TEXT("appels sans WAV"), Missing, 0);
 	// 5) Cabré : abord sans appel du 2 → refus (neigh), compté (fault, crowdOoh).
 	int32 Two = -1;
-	for (int32 I = 0; I < (int32)Obs.size(); I++) if (Obs[I].label == "2") Two = I;
+	for (int32 I = 0; I < (int32)Obs.size(); I++) if (Obs[I].course == "cso" && Obs[I].label == "2") Two = I;
 	if (Two >= 0)
 	{
 		const strides::CsoObstacle& F2 = Obs[Two];

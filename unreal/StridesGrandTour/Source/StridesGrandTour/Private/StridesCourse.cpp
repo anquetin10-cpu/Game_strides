@@ -133,7 +133,8 @@ void AStridesCourse::SetHighlight(int32 InNum)
 {
 	HighlightNum = InNum;
 	for (AStridesFence* F : Fences)
-		if (F) F->SetHighlighted(F->Num == InNum);
+		// Jalon J4 : seuls les obstacles du parcours du Pôle (les obstacles du cross portent aussi des numéros 1 à 10).
+		if (F && F->Course == TEXT("cso")) F->SetHighlighted(F->Num == InNum);
 }
 
 void AStridesCourse::BuildProps(const UStridesDataSubsystem& Data)
@@ -829,7 +830,7 @@ bool AStridesCourse::CourseGuide(FVector2D& OutWeb, FString& OutLabel, const FVe
 	};
 	if (!S.started) return Line(Cfg.start, TEXT("Ligne de départ"));
 	for (const strides::CsoObstacle& O : CoreObstacles)
-		if (O.num == S.next)
+		if (O.course == "cso" && O.num == S.next)
 		{
 			OutLabel = FString::Printf(TEXT("Obstacle %s"), UTF8_TO_TCHAR(O.label.c_str()));
 			strides::GuideAxis A;

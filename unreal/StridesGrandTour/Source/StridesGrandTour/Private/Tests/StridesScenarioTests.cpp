@@ -931,7 +931,7 @@ bool FStridesScenarioPoleGuidedTest::RunTest(const FString&)
 			// Allure du joueur : lente pour tourner court (plus de 45° à reprendre), galop de concours en ligne droite, plus
 			// d'élan vers un oxer (à 5,3 m/s l'oxer passe de « loin » à « près » sans zone bonne, relevé dans PoleRun).
 			bool bOxer = false;
-			for (const strides::CsoObstacle& O : Obs) if (O.num == St().next) bOxer = O.kind == "o";
+			for (const strides::CsoObstacle& O : Obs) if (O.course == "cso" && O.num == St().next) bOxer = O.kind == "o";
 			const double Want = FMath::Abs(Ang) > 45 ? 2.8 : bOxer ? 6.5 : 5.2;
 			const double Fwd = Cad < Want - 0.25 ? 1.0 : Cad > Want + 0.25 ? -1.0 : 0.0;
 			// SAUT : bouton vert (zone d'appel bonne) sur l'obstacle attendu ; refus voulu : jamais ; barre voulue : à la

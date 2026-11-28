@@ -274,8 +274,8 @@ bool FStridesCsoFencesInGameTest::RunTest(const FString&)
 	int32 Three = -1, FourA = -1;
 	for (int32 i = 0; i < (int32)Obs.size(); i++)
 	{
-		if (Obs[i].label == "3") Three = i;
-		if (Obs[i].label == "4A") FourA = i;
+		if (Obs[i].course == "cso" && Obs[i].label == "3") Three = i;
+		if (Obs[i].course == "cso" && Obs[i].label == "4A") FourA = i;
 	}
 	if (!TestTrue(TEXT("obstacles 3 et 4A trouvés"), Three >= 0 && FourA >= 0)) { Cleanup(); return false; }
 	AStridesHorse* Horse = World->SpawnActor<AStridesHorse>();

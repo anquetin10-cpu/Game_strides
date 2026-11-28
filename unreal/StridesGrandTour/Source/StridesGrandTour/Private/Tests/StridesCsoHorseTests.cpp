@@ -214,7 +214,7 @@ bool FStridesCsoHorseInGameTest::RunTest(const FString&)
 	const std::vector<strides::CsoObstacle>& Obs = Course->Obstacles();
 	TestEqual(TEXT("obstacles du parcours"), (int32)Obs.size(), 10);
 	int32 Three = -1;
-	for (int32 i = 0; i < (int32)Obs.size(); i++) if (Obs[i].label == "3") Three = i;
+	for (int32 i = 0; i < (int32)Obs.size(); i++) if (Obs[i].course == "cso" && Obs[i].label == "3") Three = i;
 	if (!TestTrue(TEXT("obstacle 3 trouvé"), Three >= 0)) { Cleanup(); return false; }
 	const strides::CsoObstacle& F3 = Obs[Three];
 	TestTrue(TEXT("largeur des obstacles = cso_horse.json"), F3.w == HorseJ->GetNumberField(TEXT("csoFenceWidth")));

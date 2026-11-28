@@ -51,6 +51,8 @@ void AStridesHUD::OnCourseEvent(const FString& Kind, const FString& Text)
 void AStridesHUD::DrawHUD()
 {
 	Super::DrawHUD();
+	// Jalon J4-A : écran titre ouvert (state 'title' du web : HUD masqué) : rien n'est dessiné derrière.
+	if (const AStridesPlayerController* TPC = Cast<AStridesPlayerController>(GetOwningPlayerController()); TPC && TPC->IsTitleOpen()) return;
 	EventT -= GetWorld()->GetDeltaSeconds();
 	// Épreuve du monde cherchée à chaque image tant qu'aucune n'est connue (parcours apparu après BeginPlay, monde de test).
 	if (!Course.IsValid() || (!Course->Run() && !Course->TrainingActive()))

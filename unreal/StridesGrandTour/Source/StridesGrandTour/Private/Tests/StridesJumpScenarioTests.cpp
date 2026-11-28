@@ -194,7 +194,7 @@ bool FStridesScenarioJumpOracleTest::RunTest(const FString&)
 		const std::vector<strides::CsoObstacle>& Obs = G.Course->Obstacles();
 		int32 Oi = -1;
 		for (int32 I = 0; I < (int32)Obs.size(); I++)
-			if (Obs[I].label == Cs.Label) Oi = I;
+			if (Obs[I].course == "cso" && Obs[I].label == Cs.Label) Oi = I;
 		if (!TestTrue(FString::Printf(TEXT("%s : obstacle %hs"), *Id, Cs.Label), Oi >= 0)) continue;
 		const strides::CsoObstacle& O = Obs[Oi];
 		// Pose du jeu web relative à l'obstacle (même rang dans la liste des obstacles de l'exécution).
@@ -346,7 +346,7 @@ bool FStridesScenarioJumpInCourseTest::RunTest(const FString&)
 	const std::vector<strides::CsoObstacle>& Obs = C->Obstacles();
 	int32 Oi = -1;
 	for (int32 I = 0; I < (int32)Obs.size(); I++)
-		if (Obs[I].num == 1) Oi = I;
+		if (Obs[I].course == "cso" && Obs[I].num == 1) Oi = I;
 	if (!TestTrue(TEXT("obstacle 1"), Oi >= 0)) return false;
 	const strides::CsoObstacle& O = Obs[Oi];
 	G.Horse->PlaceAt(O.x - O.n.x * 24, O.z - O.n.z * 24, O.rot, 6.2);
@@ -433,8 +433,8 @@ bool FStridesScenarioJumpFantomeTest::RunTest(const FString&)
 		int32 I1 = -1, I2 = -1;
 		for (int32 I = 0; I < (int32)Obs.size(); I++)
 		{
-			if (Obs[I].num == 1) I1 = I;
-			if (Obs[I].num == 2) I2 = I;
+			if (Obs[I].course == "cso" && Obs[I].num == 1) I1 = I;
+			if (Obs[I].course == "cso" && Obs[I].num == 2) I2 = I;
 		}
 		if (!TestTrue(TEXT("obstacles 1 et 2"), I1 >= 0 && I2 >= 0)) return false;
 		const strides::CsoObstacle& O1 = Obs[I1];

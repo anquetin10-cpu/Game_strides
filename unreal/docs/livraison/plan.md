@@ -579,6 +579,47 @@ reconstruits : **0 / 17** chaînes d'outils dans le Shipping.
 | J4-D | Défis (challenge.js:15-87, challengeRun.js:31) et records par défi, classement | Défi Pôle V1 jouable, record enregistré | ctest + scénario | partie manuelle | J1-E |
 | J4-E | Sauvegarde complète (save.js:129 version 2, migration) et reprise | Relance du paquet : tout l'état revient | Strides.Core.Save étendu | fichiers avant / après | J4-C |
 
+### État J4 au 28/11/2026 (étape « Boucle produit », base `3cb3e07f`)
+
+Légende inchangée : **écrit**, **compilé**, **testé moteur** (ctest ou Automation), **vu en paquet** (lancé sans
+aucune entrée), **joué par l'agent** (entrées système injectées par l'agent). Jeu à la main par Julien : **à confirmer
+par Julien**. Preuves : `.ue-cache/travail/livraison/preuves/j4/` ; sélection versionnée : `preuves/j4-20261128/`.
+
+| Lot | État | Preuve |
+|---|---|---|
+| Cross de Saint-Gatien (`courseSteps` kind « xc », mission `cross`) | **testé moteur** ; mission déverrouillée (choix n° 25 révisé) | ctest « epreuves » : la vraie MissionManager du web dans une partie factice (`export-epreuves.mjs`), 6 scénarios (sans faute, touché et temps dépassé, 3 refus au même obstacle, 4e refus, erreur de parcours puis cavalier descendu, temps limite) rejoués image par image : étape, objectif, état, appels `hud.*` / `audio.*`, issue et paiement ; `Strides.Events.Cross` (10 obstacles fixes sautés par le cœur, Espace en bonne zone, 320 € + pourboire 32 €, +350) et `Strides.Events.CrossRefusals` (3 refus au trot : « 3e refus sur le même obstacle : éliminé du parcours. », rien payé, offre rendue) |
+| Derby de la Touques (`raceSteps`, mission `derby`) | **testé moteur** ; mission déverrouillée | ctest « epreuves » : 6 scénarios (victoire, 4e, 3e, 6e, sortie de piste, cavalier descendu) avec les 5 adversaires (PathAI du web) à 2e-3 m près ; `Strides.Events.Derby` : stalles, 5 adversaires affichés, course au clavier (Z, Q / D, Maj par à-coups), grand galop 14 m/s, victoire 420 € + 42 €, +400 |
+| Grand Prix de Paris Indoor (`parisGP.js`) | **partiel : logique seule, testée** ; mission toujours « À venir » | ctest « epreuves » : `parisRivals`, `sprintField`, `rankSprint`, `gpField`, `barrageField` identiques au web sur 4 graines. Non porté : arène couverte de Paris (`paris.js`, région à part), trajet A13, Sprint et Grand Prix jouables, podium. Reste à faire (J4 suite) |
+| J4-A Écran titre, création du personnage | **testé moteur** | `Strides.Scenario.Career` : « Jouer » sans sauvegarde, « Qui monte en selle ? », prénom effacé puis « Julie », « C'est parti » → partie neuve écrite ; relance : « Continuer » choisi d'office → reprise. Langue FR / EN non portée (choix n° 31) |
+| Premier lancement : objectif clair | **testé moteur** | objectif d'accueil « Prochaine étape · P pour ouvrir le téléphone · Une mission t’attend sur Strides » (missions.js update, choix n° 32) |
+| J4-C Missions, récompenses | **testé moteur** | 15 missions sur 16 jouables jusqu'au Grand Prix CSI 5★ (ctest « carriere » : 273 vérifications) ; pourboire de 10 % à 5 étoiles porté pour le cross et le derby (note du web calculable sur l'épreuve seule) |
+| J4-D Défis et records | **testé moteur** | défi du Pôle v6 du web (`challenge.js`) : ctest « defis » (179 vérifications contre le vrai module : résultats, comparaisons, record par version, doublons) ; `Strides.Challenge.Pole` : app Activités → « Règles et départ », parcours sauté → « Nouveau record · 0 pt · … s » écrit dans la sauvegarde ; 2e tentative éliminée : record gardé, 2 tentatives. Défi de Paris refusé (« À venir ») |
+| Erreurs et éliminations | **testé** | cross (refus, temps limite, descendu, erreur de parcours), derby (descendu, hors top 3, « Course terminée sans toi… »), défi (élimination = résultat, comme `challengeRun`) |
+| J4-E Sauvegarde et reprise | **testé moteur** | `Strides.Scenario.Career` : titre → personnage → « Premiers pas » par le téléphone → m1, m2 → cross → récompense → sauvegarde → 2e monde (relance) → « Continuer » : prénom, 612 €, 2 010 points, 11 missions, position à 1 m près, derby proposé |
+| Pause | inchangée (J1, carte Pause) ; l'écran titre met aussi le jeu en pause et coupe la sauvegarde automatique | `Strides.Scenario.Career` |
+| Partie de 15 minutes en paquet par entrées injectées | **BLOQUÉE** : panneau « Forcer des applications à quitter » toujours ouvert (voir plus bas) | — |
+
+**Vu en paquet (sans aucune entrée)** : paquets Development (cuisson complète, 16 min 36 s, code 0) et Shipping
+(`-skipcook`, code 0) de cette étape ; lancés par `open`, ils s'ouvrent sur l'écran titre (« Continuer » choisi d'office,
+« Nouvelle partie », pied de page du clavier ; journal : `Strides écran titre : ouvert`). Premier lancement : le HUD
+de débogage restait visible derrière le titre (`titre-paquet-dev-hud-visible-avant-correction.jpg`), corrigé (HUD masqué
+tant que le titre est ouvert, `titre-paquet-shipping.jpg`). **P2 ouvert** : derrière le titre, la caméra du cavalier à
+pied est collée à son corps (gros plan du jean). Sauvegarde de Julien du paquet (`strides_main.sav`, md5 `8d46a855…`)
+inchangée après les lancements (aucun choix fait sur le titre, sauvegarde automatique coupée).
+
+**Partie manuelle en paquet : BLOQUÉE.** La fenêtre système « Forcer des applications à quitter » (`loginwindow`, 392 × 455
+en (1500 ; 466)) est restée ouverte pendant toute l'étape (vérifiée à 23 h 57, 0 h 48, 1 h 09, 1 h 45 et 2 h 30) ; les règles
+du poste partagé interdisent toute entrée injectée tant qu'elle est affichée. Ni la session de 15 minutes de J4, ni les
+vérifications en paquet de J3b (mission au téléphone, GPS, reprise, véhicule conduit, fer d'or) n'ont pu être jouées :
+**à confirmer**. Le parcours joueur complet est couvert dans le moteur par `Strides.Scenario.Career`.
+
+**Matrice** : ctest **19 / 19** (« epreuves » 51 385 vérifications, « defis » 179, « carriere » 273, nouveaux ou étendus) ;
+Automation `Strides` **71 / 71**, EXIT CODE 0, une attente « Waiting for ZenServer » résolue seule. Le premier passage
+complet a révélé que des tests et le surlignage du Pôle cherchaient les obstacles par numéro sans filtrer le parcours
+(les obstacles du cross portent aussi 1 à 10) ; un test (`Strides.Scenario.Jump.Oracle`) faisait tomber l'éditeur. Corrigé
+(`course == "cso"`), puis matrice verte. Shipping : **0 / 17** chaîne d'outils. Jeu web intact (`export-epreuves`,
+`export-defis`, `export-missions` `--check` : inchangés).
+
 ## J5 — Finition et performance
 
 | Lot | Contenu | Critères | Tests | Preuves | Dépend de |
@@ -664,7 +705,8 @@ reconstruits : **0 / 17** chaînes d'outils dans le Shipping.
     terminée à 18 m (choix antérieur du portage : missions à une étape).
 
 19. **Paiement des missions** (27/11, correction J3) : `def.pay` et `def.xp` du web, une seule fois ; le pourboire de
-    10 % à 5 étoiles (`missions.complete`) n'est pas porté, la note dépendant du déroulé complet (J4-C). Dotation de M3
+    10 % à 5 étoiles (`missions.complete`) n'est pas porté, la note dépendant du déroulé complet (J4-C). **J4** : porté
+    pour le cross et le derby, dont la note du web ne dépend que de l'épreuve. Dotation de M3
     (classement simulé) non portée : participation seule.
 20. **Itinéraires des missions** (27/11, correction J3) : étapes du web à position fixe, dans l'ordre, au rayon du web ;
     choix figés (m1 : « Préparation (Val) », le tarif de base du web ; m2 : « s'organiser seul·e ») ; trajets du camion
@@ -697,7 +739,8 @@ reconstruits : **0 / 17** chaînes d'outils dans le Shipping.
     `AcceptResult::Upcoming`). Raison : ne rien payer à la simple arrivée (P1 du contrôle) sans inventer de règle de
     résultat. Effet : la carrière s'arrête après « Fer perdu » et « La pension parfaite » (csi3 demande le derby, gp
     demande csi3). Les épreuves seront portées en J4 et les missions déverrouillées à ce moment-là (retirer `UPCOMING`
-    dans `export-missions.mjs`).
+    dans `export-missions.mjs`). **Révisé le 28/11 (J4)** : cross et derby portés et déverrouillés ; seul le Grand Prix
+    de Paris Indoor reste « À venir ».
 26. **Camion de l'écurie et cheval** (27/11 nuit, J3b) : le web charge le cheval par la rampe (`vanLoading.js`,
     `transport.js` : longe, stalle, rampe, porte) ; le portage n'a pas cette séquence. Choix : en montant au volant du
     camion, le cheval laissé à moins de 15 m est embarqué d'office (`transport.loadInstant` du web, utilisé par le web
@@ -715,6 +758,34 @@ reconstruits : **0 / 17** chaînes d'outils dans le Shipping.
     (`rain.js`) portées ; le ciel physique de `sky.js` (diffusion, nuages procéduraux) ne l'est pas, le portage garde
     l'atmosphère d'Unreal. Étoiles et lune posées sur une sphère de 900 m qui suit la caméra (le brouillard d'Unreal
     masquerait une sphère plus lointaine). À confirmer à l'œil par Julien.
+
+29. **Adversaires de la course de l'hippodrome** (28/11, J4) : vitesse et trajectoire par la vraie règle `PathAI.update`
+    du web (points du couloir, regard à 7 m, vitesse selon l'écart au joueur et le dernier virage), puis le sous-ensemble
+    cinématique de `Horse.update` (cap borné à `lerp(2,8 ; 1,45 ; v / 16)` rad/s, accélération 4,5 / 3,6 m/s², 9 au
+    freinage, avance sur le cap) sur sol plat, sans pente, eau ni collision entre chevaux. Le fondu au noir avant les
+    stalles est remplacé par un placement immédiat ; le cavalier d'entraînement de l'hippodrome n'est pas porté. Les
+    adversaires sont affichés par un acteur léger (cheval du jeu, cavalière, casaque colorée), sans robe propre.
+30. **Commandes à la course** (28/11, J4) : le portage garde les commandes de concours (direction par taux de virage,
+    cadence) ; à la course, la cadence va jusqu'au galop allongé du web (9,72 m/s) et BOOST (Maj tenue) donne le grand
+    galop à 14 m/s tant que le cheval n'est pas épuisé (endurance de `horse.js` : −7 / s au-dessus de 10,5 m/s, reprise
+    9 / s, épuisé jusqu'à 35 %). Au web, la course se monte avec les commandes du monde ouvert (joystick relatif à la
+    caméra), non portées.
+31. **Écran titre** (28/11, J4-A) : non portés : bouton « Découvrir la vraie application Strides » (lien externe), bascule
+    FR | EN (les textes des missions et des épreuves du portage sont en français seulement), écran de chargement et ses
+    astuces, mode sûr après arrêt brutal. « Cavalier » est enregistré mais le portage n'a que le modèle de cavalière
+    (à confirmer par Julien). Le prénom se tape au clavier (champ choisi aux flèches) ; sur iPhone, la saisie tactile est
+    à faire en J6.
+32. **Objectif d'accueil au clavier** (28/11, J4) : le web écrit « Prochaine étape · touche pour ouvrir » (bandeau qu'on
+    touche) ; sur Mac, le bandeau n'est pas touchable : « Prochaine étape · P pour ouvrir le téléphone », sur iOS le
+    texte du web.
+33. **Défi du Pôle** (28/11, J4-D) : conditions de la version courante du web (v6 : 10 obstacles à 1,10 m, 64 s, 2 refus,
+    Onyx, jour 2 à 11 h). Départ direct depuis « Règles et départ » de l'app Activités, sans la carte d'introduction ni
+    la carte de résultat partageable (`challenge-screens.js`) : grand message (« NOUVEAU RECORD », résultat) et carte de
+    l'app mise à jour. Le cheval fourni ne change que la puissance du saut (1,06) : robe, vitesse et endurance d'Onyx non
+    portées. Ni panneau du défi au Pôle, ni classement en ligne. Défi de Paris refusé tant que l'arène n'est pas portée.
+34. **Cross** (28/11, J4) : obstacles fixes en formes de base aux dimensions et couleurs de `builders.js` (tronc, haie,
+    entrée dans l'eau), sans panneau numéro ; Paul Faure n'est pas affiché ; l'eau de la mare ne ralentit pas le cheval
+    (profondeur d'eau non portée dans le pas du cheval). Le chrono part au compte à rebours, comme au web.
 
 ## Risques
 

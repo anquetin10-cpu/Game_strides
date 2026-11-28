@@ -357,7 +357,8 @@ bool FStridesPariteCsoSceneryTest::RunTest(const FString&)
 	// Jalon J2c : les obstacles du paddock (course « warmup ») suivent ceux du parcours dans Obstacles().
 	const int32 N = Course->CourseFenceCount();
 	if (!TestEqual(TEXT("obstacles du parcours = obstacles du manifeste"), N, S.Fences.Num())) return false;
-	TestEqual(TEXT("obstacles du paddock (manifeste « warmup »)"), (int32)Course->Obstacles().size() - N, S.Warmup.Num());
+	// (jalon J4 : les obstacles fixes du cross suivent ceux du paddock)
+	TestEqual(TEXT("obstacles du paddock (manifeste « warmup »)"), (int32)Course->Obstacles().size() - N - Course->CrossFenceCount(), S.Warmup.Num());
 
 	// Un état : hauteurs du jeu, pièces de chaque obstacle comparées au relevé de cet état.
 	auto CheckState = [&](const FString& State, FCheck& K)
